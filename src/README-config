@@ -1,0 +1,59 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+Configuration options recognized by the kernel/libc
+>> All of these options must be identical when building the kernel core, modules and libc.
+
+IFDEF CONFIG_32BIT_FILESYSTEM               // Use 32-bit integers for filesystem types
+IFDEF CONFIG_32BIT_TIME                     // Use 32-bit integers for time_t
+IFDEF CONFIG_64BIT_STRING                   // Define 64-bit string operations
+IFDEF CONFIG_ALLOW_USER_IO                  // Allow in/out I/O instructions in ring #3
+IFDEF CONFIG_BUILDING_KERNEL_CORE           // Define when building the kernel core
+IFDEF CONFIG_DEBUG                          // Define to configure for debug mode
+IFDEF CONFIG_DEBUG_HEAP                     // Enable the kernel debug-heap
+IFDEF CONFIG_DEBUG_MALLOC                   // Enable debug-malloc in user-space
+IFDEF CONFIG_HAVE_STRDUP_IN_KERNEL          // Provide strdup() and friends in kernel-space
+VALUE CONFIG_HOST_STACKINIT=0xCCCCCCCCu     // Pattern used to pre-initialize kernel memory when CONFIG_DEBUG is defined
+VALUE CONFIG_HZ=20                          // Frequency with which to pre-configure the PIT
+IFDEF CONFIG_LIBC_NO_DOS_ALIASES            // Exclude DOS function aliases from libc
+IFDEF CONFIG_LIBC_NO_DOS_EXTENSIONS         // Exclude DOS extension functions from libc
+IFDEF CONFIG_LIBC_NO_WCHAR_STRING           // Exclude wchar support from libc
+IFDEF CONFIG_LOCKLESS_ENVIRON               // Don't attempt to synchronize access to "environ"
+IFDEF CONFIG_LOG_WAITING                    // Log calls to 'task_yield()' and 'task_waitfor()'
+IFDEF CONFIG_TRACE_LEAKS                    // Configure to trace memory leaks within the kernel
+IFDEF CONFIG_MALLOC_NO_DEBUG_INIT           // Disable debug-heap memory pre-initialization
+VALUE CONFIG_MALLOC_DEBUG_INIT=0xBAADF00Du  // Pattern used to pre-initialize memory allocated using the kernel debug-heap
+VALUE CONFIG_MALLOC_FOOTSIZE=HEAP_ALIGNMENT // Size of the overflow detection area used by the kernel debug-heap
+VALUE CONFIG_MALLOC_HEADSIZE=HEAP_ALIGNMENT // Size of the underflow detection area used by the kernel debug-heap
+IFDEF CONFIG_MALLOC_NO_FREQUENCY            // Disable periodic heap validation
+VALUE CONFIG_MALLOC_FREQUENCY=1024          // Frequency in which the kernel heap is validated
+VALUE CONFIG_MALLOC_TRACEBACK=1             // Enable/Disable inclusion of a small traceback in kernel debug-heap memory
+VALUE CONFIG_MALLOC_TRACEBACK_MINSIZE=4     // The smallest size of the malloc traceback to always include (#entries)
+IFDEF CONFIG_NO_BOOTLOADER                  // Don't include a minimal bootloader in the kernel core (Not needed when booted using grub)
+IFDEF CONFIG_NO_LDT                         // Don't support handling of Local Descriptor Tables
+IFDEF CONFIG_NO_MODULE_CLEANUP              // Don't include cleanup functions for kernel core modules
+IFDEF CONFIG_PDIR_SELFMAP                   // Create page-directory self-mappings
+IFDEF CONFIG_NO_PDIR_SELFMAP                // Don't create page-directory self-mappings
+IFDEF CONFIG_SYSCALL_CHECK_SEGMENTS         // Check user-space segments upon system-call exit
+IFDEF CONFIG_NO_SYSCALL_CHECK_SEGMENTS      // Don't check user-space segments upon system-call exit
+IFDEF CONFIG_NO_TESTS                       // Don't include tests in the in the kernel binary
+VALUE CONFIG_OPTIMIZE=__OPTIMIZE__          // Configure to generate optimized code
+IFDEF CONFIG_RESERVE_NULL_PAGE              // Reserve the physical page at NULL, thus never allocating it
+IFDEF CONFIG_SIGNAL_USING_ATOMIC_RWPTR      // Use atomic R/W-pointers for signal, thus allowing for a size of a single pointer
+IFDEF CONFIG_SMP                            // Configure with support for multiple CPUs

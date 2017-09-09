@@ -22,6 +22,9 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <sync/sig.h>
+#ifdef CONFIG_SMP
+#include <hybrid/sync/atomic-rwlock.h>
+#endif /* CONFIG_SMP */
 
 DECL_BEGIN
 
@@ -40,7 +43,7 @@ struct atomic_iobuffer {
  ATOMIC_DATA byte_t *aib_apos;   /*< [1..1][in(aib_buffer)][cyclic:<=aib_wpos] Current avail-pointer (lazily updated as data is written). */
 #ifdef CONFIG_SMP
  atomic_rwlock_t     aib_using;  /*< Lock used to reset the buffer into its empty state. */
-#endif
+#endif /* CONFIG_SMP */
 };
 
 #define ATOMIC_IOBUFFER_INIT(buffer)      ATOMIC_IOBUFFER_INIT_EX(buffer,sizeof(buffer))

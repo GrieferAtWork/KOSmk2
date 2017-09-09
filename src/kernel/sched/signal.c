@@ -1129,7 +1129,7 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
  if (!(ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IF))
      sigill("EFLAGS (%.8I32x misses EFLAGS_IF:%.8I32x)",
              ctx.uc_mcontext.gregs[REG_EFL],EFLAGS_IF);
-#if 0 /* TODO: Re-enable me. */
+#ifndef CONFIG_ALLOW_USER_IO
  if (ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IOPL(3))
      sigill("EFLAGS (%.8I32x contains EFLAGS_IOPL:%.8I32x)",
              ctx.uc_mcontext.gregs[REG_EFL],EFLAGS_IOPL(3));

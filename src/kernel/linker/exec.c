@@ -262,7 +262,11 @@ endwrite:
    state.ss          = SEG(SEG_USER_DATA)|3;
    state._n2         = 0;
    state.host.eip    = (uintptr_t)inst->i_base+mod->m_entry;
+#ifdef CONFIG_ALLOW_USER_IO
    state.host.eflags = EFLAGS_IF|EFLAGS_IOPL(3);
+#else
+   state.host.eflags = EFLAGS_IF;
+#endif
 
 
    syslogf(LOG_EXEC|LOG_INFO,"[APP] Starting user app '%[file]' at %p\n",
