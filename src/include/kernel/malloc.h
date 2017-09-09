@@ -118,7 +118,7 @@ FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t f
                            *  WARNING: Unless stated otherwise, _ALL_ dynamically allocated
                            *           structures must be allocated as shared (that is they
                            *           are accessible for all page directories) */
-#define GFP_LOCKED 0x0001 /*< Allocate in-core locked virtual memory.
+#define GFP_LOCKED 0x0001 /*< Allocate in-core-locked virtual memory.
                            *  NOTE: May only or'd together with 'GFP_KERNEL' and 'GFP_SHARED'
                            *  HINT: You may or' this heap name with 'GFP_INCORE' to  */
 #define GFP_KERNEL 0x0002 /*< [KPD] Allocate virtual memory only visible to the kernel

@@ -88,7 +88,7 @@ ATTR_FREEDATA struct task inittask = {
     .t_critical  = 1, /* Start out as a critical task. */
     .t_nointr    = 1, /* Start out as a no-interrupt task. */
     .t_addrlimit = KERNEL_BASE,
-    .t_suspend   = 0,
+    .t_suspend   = {0,0},
     .t_ustack    = NULL,
     .t_pid = {
         .tp_parlock   = ATOMIC_RWLOCK_INIT,
@@ -126,6 +126,16 @@ ATTR_FREEDATA struct task inittask = {
     .t_sighand = &sighand_kernel,
     .t_sigpend = SIGPENDING_INIT,
     .t_sigshare = &sigshare_kernel,
+#ifndef CONFIG_NO_LDT
+    .t_arch = {
+        .at_ldt_tasks = {
+            .le_pself = &ldt_kernel.l_tasks,
+            .le_next  = &__bootcpu.c_idle,
+        },
+        .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
+        .at_ldt_tls = LDT_ERROR,
+    },
+#endif
 };
 
 
@@ -267,7 +277,7 @@ PUBLIC struct cpu __bootcpu = {
         .t_critical  = 1,
         .t_nointr    = 1,
         .t_addrlimit = KERNEL_BASE,
-        .t_suspend   = 0,
+        .t_suspend   = {0,0},
         .t_ustack    = NULL,
         .t_pid = {
             .tp_parlock   = ATOMIC_RWLOCK_INIT,
@@ -310,6 +320,16 @@ PUBLIC struct cpu __bootcpu = {
         .t_sighand = &sighand_kernel,
         .t_sigpend = SIGPENDING_INIT,
         .t_sigshare = &sigshare_kernel,
+#ifndef CONFIG_NO_LDT
+        .t_arch = {
+            .at_ldt_tasks = {
+                .le_pself = &inittask.t_arch.at_ldt_tasks.le_next,
+                .le_next  = NULL,
+            },
+            .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
+            .at_ldt_tls = LDT_ERROR,
+        },
+#endif
     },
     .c_arch = {
 #if defined(__i386__) || defined(__x86_64__)

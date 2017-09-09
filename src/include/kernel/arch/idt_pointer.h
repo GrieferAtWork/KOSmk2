@@ -24,20 +24,24 @@
 
 DECL_BEGIN
 
+
+#define IDT_POINTER_OFFSETOF_LIMIT 0
+#define IDT_POINTER_OFFSETOF_BASE  2
+#define IDT_POINTER_SIZE          (2+__SIZEOF_POINTER__)
+
+#ifdef __CC__
 struct idtentry;
 struct segment;
-
-#define IDT_POINTER_SIZEOF           (2+__SIZEOF_POINTER__)
-#define IDT_POINTER_OFFSETOF_LIMIT   (0)
-#define IDT_POINTER_OFFSETOF_BASE    (2)
 struct PACKED idt_pointer {
  /* Interrupt/GDT descriptor pointer. */
  u16              ip_limit;
 union PACKED {
  struct idtentry *ip_idt;
  struct segment  *ip_gdt;
-};
-};
+ struct segment  *ip_ldt;
+};};
+#endif /* __CC__ */
+
 
 DECL_END
 

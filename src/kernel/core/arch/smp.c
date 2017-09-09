@@ -602,7 +602,8 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_idle.t_nointr                    = 1;
  vcpu->c_idle.t_addrlimit                 = KERNEL_BASE;
  vcpu->c_idle.t_ic                        = NULL;
- vcpu->c_idle.t_suspend                   = 0;
+ vcpu->c_idle.t_suspend[0]                = 0;
+ vcpu->c_idle.t_suspend[1]                = 0;
  vcpu->c_idle.t_ustack                    = NULL;
  sig_init(&vcpu->c_idle.t_event);
 

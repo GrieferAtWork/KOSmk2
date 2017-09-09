@@ -39,6 +39,9 @@
 #include <sched/task.h>
 #include <stdalign.h>
 #include <string.h>
+#ifndef CONFIG_NO_LDT
+#include <kernel/arch/task.h>
+#endif
 
 DECL_BEGIN
 
@@ -875,6 +878,9 @@ PHYS struct mman __mman_kernel_p = {
     .m_tasks_lock = ATOMIC_RWLOCK_INIT,
     .m_tasks  = &inittask,
     .m_inst   = THIS_INSTANCE,
+#ifndef CONFIG_NO_LDT
+    .m_ldt    = &ldt_empty,
+#endif
     .m_uheap  = MMAN_UHEAP_DEFAULT_ADDR,
     .m_ustck  = MMAN_USTCK_DEFAULT_ADDR,
 };

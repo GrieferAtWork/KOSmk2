@@ -44,6 +44,12 @@
     <None Include="..\..\src\kernel\sched\pid.c.inl">
       <Filter>kernel\sched</Filter>
     </None>
+    <None Include="..\..\src\kernel\mman\ldt.c.inl">
+      <Filter>kernel\mman</Filter>
+    </None>
+    <None Include="..\..\src\kernel\mman\ldt-set-new.c.inl">
+      <Filter>kernel\mman</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -577,6 +583,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\dev\rtc.h">
       <Filter>include\dev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\task.h">
+      <Filter>include\kernel\arch</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

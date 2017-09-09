@@ -22,10 +22,13 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <assert.h>
+#include <errno.h>
 
 DECL_BEGIN
 
 #ifdef __CC__
+struct cpu;
+
 /* Segment Descriptor / GDT (Global Descriptor Table) Entry
  * NOTE: Another valid name of this would be 'gdtentry' or 'ldtentry' */
 struct PACKED segment {
@@ -160,15 +163,19 @@ struct PACKED {
  {{{ __SEG_ENCODELO(base,size,config),  \
      __SEG_ENCODEHI(base,size,config) }}}
 
-LOCAL void KCALL
-segment_encode(struct segment *self, u32 base,
-               u32 size, u32 config) {
+LOCAL struct segment KCALL
+make_segment(u32 base, u32 size, u32 config) {
+ struct segment result;
  __assertf(size <= SEG_LIMIT_MAX,"Size %I32x is too large",size);
- self->ul32 = __SEG_ENCODELO(base,size,config);
- self->uh32 = __SEG_ENCODEHI(base,size,config);
+ result.ul32 = __SEG_ENCODELO(base,size,config);
+ result.uh32 = __SEG_ENCODEHI(base,size,config);
+ return result;
 }
 
+#ifndef __segid_t_defined
+#define __segid_t_defined 1
 typedef u16 segid_t;
+#endif /* !__segid_t_defined */
 
 #else /* __CC__ */
 #define __SEG_ENCODELO(base,size,config) \
@@ -198,7 +205,7 @@ typedef u16 segid_t;
 #define SEG_KERNEL_DATA    2 /*< [0x10] Ring #0 data segment. */
 #define SEG_KERNEL_CODE_16 3 /*< [0x18] Ring #0 16-bit code segment. */
 #define SEG_KERNEL_DATA_16 4 /*< [0x20] Ring #0 16-bit data segment. */
-#define SEG_KERNELLDT      5 /*< [0x28] Symbolic kernel LDT (Usually empty). */
+#define SEG_KERNEL_LDT     5 /*< [0x28] Symbolic kernel LDT (Usually empty). */
 #define SEG_CPUTSS         6 /*< [0x30] TSS segment of the current CPU. */
 #define SEG_CPUSELF        7 /*< [0x38] CPU-self segment (stored in %fs/%gs while in kernel-space). */
 #define SEG_USER_CODE      8 /*< [0x40] Ring #3 code segment. */         
@@ -218,10 +225,17 @@ typedef u16 segid_t;
 /* Allocate/Free/Update a (new) descriptor index within global descriptor table.
  * These are mainly used to implement the higher-level LDT table and its functions.
  * @return: SEG_NULL: Failed to allocate a new segment. */
-FUNDEF SAFE segid_t KCALL gdt_alloc(struct segment const *seg);
-FUNDEF SAFE    void KCALL gdt_free(segid_t id);
-FUNDEF SAFE    void KCALL gdt_update(segid_t id, struct segment const *seg);
-#endif
+FUNDEF SAFE segid_t KCALL gdt_new(void);
+FUNDEF SAFE void KCALL gdt_del(segid_t id);
+FUNDEF SAFE struct segment KCALL gdt_get(segid_t id);
+FUNDEF SAFE errno_t KCALL gdt_set(segid_t id, struct segment seg, struct segment *oldseg);
+#ifdef CONFIG_SMP
+/* Same as the functions above, but executed on the given CPU. */
+FUNDEF SAFE struct segment KCALL vgdt_get(struct cpu *__restrict c, segid_t id);
+FUNDEF SAFE errno_t KCALL vgdt_set(struct cpu *__restrict c, segid_t id,
+                                   struct segment seg, struct segment *oldseg);
+#endif /* CONFIG_SMP */
+#endif /* __CC__ */
 
 DECL_END
 

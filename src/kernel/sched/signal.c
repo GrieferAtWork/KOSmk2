@@ -790,10 +790,10 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
     goto ignore_signal;
 
    case DA_STOP:
-    return task_suspend_now_cpu_endwrite(t,was);
+    return task_suspend_cpu_endwrite(t,TASK_SUSP_USER|TASK_SUSP_NOW,was);
 
    case DA_CONT:
-    return task_resume_now_cpu_endwrite(t,was);
+    return task_resume_cpu_endwrite(t,TASK_SUSP_USER|TASK_SUSP_NOW,was);
 
    default:
     goto do_term;

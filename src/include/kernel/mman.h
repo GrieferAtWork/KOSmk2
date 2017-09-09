@@ -477,6 +477,9 @@ struct mman {
  LIST_HEAD(struct instance)
                    m_inst;   /*< [lock(m_lock)][0..1][sort(ASCENDING(i_base))]
                               *   Linked list of instances loaded into the address space. */
+#ifndef CONFIG_NO_LDT
+ REF struct ldt   *m_ldt;    /*< [lock(m_lock)][1..1] The LDT descriptor table used by tasks using this memory manager. */
+#endif
  VIRT ppage_t      m_uheap;  /*< [lock(m_lock)] End address of the user-space heap (Used as hint when auto-allocating user-space heap memory). */
  VIRT ppage_t      m_ustck;  /*< [lock(m_lock)] Start address of the user-space heap (Used as hint when auto-allocating user-space stack memory). */
  PAGE_ALIGNED

@@ -44,6 +44,7 @@
 #include <sched/task.h>
 #include <sched/types.h>
 #include <string.h>
+#include <alloca.h>
 
 DECL_BEGIN
 
@@ -128,6 +129,46 @@ PRIVATE REF struct task *KCALL task_do_fork(void) {
   * HINT: This function also handle duplication of module instances. */
  error = mman_init_copy_unlocked(nm,om);
  if (E_ISERR(error)) goto end_double_lock;
+
+
+#ifndef CONFIG_NO_LDT
+ { ldt_t *ldt_vec,*iter; size_t ldt_cnt = 0;
+   struct task *ldt_user;
+   ldt_read(nm->m_ldt);
+   LDT_FOREACH_TASK(ldt_user,nm->m_ldt) {
+    if (ldt_user != caller) ++ldt_cnt;
+   }
+   if (ldt_cnt) {
+    /* Must delete the LDT entires of all of these tasks. */
+    ldt_vec = (ldt_t *)amalloc(ldt_cnt*sizeof(ldt_t));
+    if unlikely(!ldt_vec) { error = -ENOMEM; goto end_double_lock; }
+    iter = ldt_vec;
+    LDT_FOREACH_TASK(ldt_user,nm->m_ldt) {
+     if (ldt_user != caller) {
+      assert(iter < ldt_vec+ldt_cnt);
+      /* XXX: You're relying on the fact that other tasks running
+       *      in the calling process won't decide to change their
+       *      TLS segment. - This is wrong: they are allowed to... */
+      *iter++ = ATOMIC_READ(ldt_user->t_arch.at_ldt_tls);
+     }
+    }
+    ldt_endread(nm->m_ldt);
+    assert(iter == ldt_vec+ldt_cnt);
+    iter = ldt_vec+ldt_cnt;
+    /* Delete all LDT entries used for TLS by tasks
+     * that won't be apart of the new process. */
+    while (iter-- != ldt_vec) {
+     if (*iter != LDT_ERROR)
+          mman_delldt_unlocked(nm,*iter);
+    }
+    afree(ldt_vec);
+   } else {
+    ldt_endread(nm->m_ldt);
+   }
+ }
+ /* Simply inherit the TLS segment index used by the returned task. */
+ result->t_arch.at_ldt_tls = caller->t_arch.at_ldt_tls;
+#endif
 
  //pdir_print(&om->m_pdir,&syslog_printer,SYSLOG_PRINTER_CLOSURE(0));
 

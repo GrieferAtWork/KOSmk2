@@ -21,6 +21,8 @@
     <None Include="..\..\src\kernel\memory\memory-free.c.inl" />
     <None Include="..\..\src\kernel\memory\memory-info.c.inl" />
     <None Include="..\..\src\kernel\mman\environ.c.inl" />
+    <None Include="..\..\src\kernel\mman\ldt-set-new.c.inl" />
+    <None Include="..\..\src\kernel\mman\ldt.c.inl" />
     <None Include="..\..\src\kernel\mman\mcore.c.inl" />
     <None Include="..\..\src\kernel\sched\pid.c.inl" />
     <None Include="..\..\src\linker-scripts\kernel.ld" />
@@ -123,6 +125,7 @@
     <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\mp.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\realmode.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\task.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\tss.h" />
     <ClInclude Include="..\..\src\include\kernel\boot.h" />
     <ClInclude Include="..\..\src\include\kernel\exec.h" />

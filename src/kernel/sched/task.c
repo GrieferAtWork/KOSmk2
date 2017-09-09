@@ -98,18 +98,20 @@ task_cinit(struct task *t) {
   CHECK_HOST_DOBJ(t->t_cstate);
   assert(t->t_mode == TASKMODE_RUNNING);
   assert(!t->t_signals.ts_first.tss_sig);
-  assert(t->t_refcnt    == 0);
-  assert(t->t_weakcnt   == 0);
-  assert(t->t_critical  == 0);
-  assert(t->t_nointr    == 0);
-  assert(t->t_ic        == NULL);
-  assert(t->t_suspend   == 0);
-  assert(t->t_prioscore == 0);
+  assert(t->t_refcnt        == 0);
+  assert(t->t_weakcnt       == 0);
+  assert(t->t_critical      == 0);
+  assert(t->t_nointr        == 0);
+  assert(t->t_ic            == NULL);
+  assert(t->t_suspend[0]    == 0);
+  assert(t->t_suspend[1]    == 0);
+  assert(t->t_prioscore     == 0);
   assert(t->t_pid.tp_leader == NULL);
   assert(t->t_pid.tp_parent == NULL);
-  assert(t->t_sighand == NULL);
-  assert(t->t_sigshare == NULL);
-  t->t_mode     = TASKMODE_NOTSTARTED;
+  assert(t->t_sighand       == NULL);
+  assert(t->t_sigshare      == NULL);
+
+  t->t_mode = TASKMODE_NOTSTARTED;
   t->t_priority = TASKPRIO_DEFAULT;
 
   /* Generic initialization. */
@@ -124,6 +126,13 @@ task_cinit(struct task *t) {
   t->t_addrlimit = KERNEL_BASE;
   t->t_weakcnt   = 1; /* The initial weak reference owned by 't_refcnt' itself. */
   t->t_refcnt    = 1;
+
+  assert(t->t_arch.at_ldt_gdt == 0);
+  assert(t->t_arch.at_ldt_tls == 0);
+  assert(t->t_arch.at_ldt_tasks.le_pself == NULL);
+  assert(t->t_arch.at_ldt_tasks.le_next == NULL);
+  t->t_arch.at_ldt_tls = LDT_ERROR;
+
   COMPILER_WRITE_BARRIER();
  }
  return t;
@@ -252,7 +261,6 @@ task_start(struct task *__restrict t) {
  assert(t->t_critical  == 0);
  assert(t->t_nointr    == 0);
  assert(t->t_ic        == NULL);
- assert(t->t_suspend   == 0);
  assert(t->t_prioscore == 0);
  assertf(t->t_pid.tp_parent != NULL,"No thread parent set (forgot to call 'task_set_parent()')");
  assertf(t->t_pid.tp_leader != NULL,"No group leader set (forgot to call 'task_set_leader()')");
@@ -268,7 +276,6 @@ task_start(struct task *__restrict t) {
          "User-level tasks must run with the #IF flag enabled\n"
          "Either change the task CPL to non-3, or set EFLAGS_IF in eflags.");
  t->t_real_mman = t->t_mman;
- t->t_mode      = TASKMODE_RUNNING; /* Switch to running-mode. */
  t->t_addrlimit = KERNEL_BASE;
  COMPILER_WRITE_BARRIER();
  /* Schedule the task for its first time. */
@@ -285,19 +292,46 @@ task_start(struct task *__restrict t) {
 #endif
  /* Create the reference owned by the CPU the task is running on. */
  TASK_INCREF(t);
+
+#ifndef CONFIG_NO_LDT
+ /* With the CPU determined, add the task to the associated mman's LDT chain. */
+ { struct ldt *ldt;
+   error = mman_read(t->t_mman);
+   if (E_ISERR(error)) goto end;
+   ldt = t->t_mman->m_ldt;
+   assert(ldt);
+   CHECK_HOST_DOBJ(ldt);
+   ldt_write(ldt);
+   LIST_INSERT(ldt->l_tasks,t,t_arch.at_ldt_tasks);
+   ldt_endwrite(ldt);
+   mman_endread(t->t_mman);
+ }
+#endif
+
 #ifdef CONFIG_SMP
  if (t->t_cpu != THIS_CPU) {
   PREEMPTION_POP(was);
-  ATOMIC_WRITE(t->t_mode,TASKMODE_WAKEUP);
-  t->t_timeout.tv_sec  = 0;
-  t->t_timeout.tv_nsec = 0;
   cpu_write(t->t_cpu);
-  cpu_add_sleeping(t->t_cpu,t);
+  if (TASK_ISSUSPENDED(t)) {
+   ATOMIC_WRITE(t->t_mode,TASKMODE_SUSPENDED);
+   cpu_add_suspended(t->t_cpu,t);
+  } else {
+   ATOMIC_WRITE(t->t_mode,TASKMODE_WAKEUP);
+   t->t_timeout.tv_sec  = 0;
+   t->t_timeout.tv_nsec = 0;
+   cpu_add_sleeping(t->t_cpu,t);
+  }
   cpu_endwrite(t->t_cpu);
  } else
 #endif
  {
-  cpu_add_running(t);
+  if (TASK_ISSUSPENDED(t)) {
+   ATOMIC_WRITE(t->t_mode,TASKMODE_SUSPENDED);
+   cpu_add_suspended(THIS_CPU,t);
+  } else {
+   ATOMIC_WRITE(t->t_mode,TASKMODE_RUNNING);
+   cpu_add_running(t);
+  }
 end: ATTR_UNUSED;
   PREEMPTION_POP(was);
  }
@@ -536,6 +570,19 @@ task_destroy(struct task *__restrict t) {
   if (t->t_ustack)
       mman_munmap_stack_unlocked(t->t_mman,t->t_ustack);
 
+#ifndef CONFIG_NO_LDT
+  if (t->t_arch.at_ldt_tasks.le_pself) {
+   ldt_write(t->t_mman->m_ldt);
+   COMPILER_READ_BARRIER();
+   if (t->t_arch.at_ldt_tasks.le_pself)
+       LIST_REMOVE(t,t_arch.at_ldt_tasks);
+   ldt_endwrite(t->t_mman->m_ldt);
+  }
+  /* Delete an LDT entry. */
+  if (t->t_arch.at_ldt_tls != LDT_ERROR)
+      mman_delldt_unlocked(t->t_mman,t->t_arch.at_ldt_tls);
+#endif
+
   /* XXX: Unmap thread-local data? */
   mman_endwrite(t->t_mman);
   task_endnointr();
@@ -645,6 +692,18 @@ L(    pushl %eax                                                              )
 L(    pushl %ecx                                                              )
 L(    movl 8(%esp),                   %eax                                    )
 L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING),%ecx                                 )
+#ifndef CONFIG_NO_LDT
+L(    /* Switch the LDT if it changed */                                      )
+L(    pushl %ebx                                                              )
+L(    movl (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%eax), %ebx         )
+L(    cmpl  %ebx, (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%ecx)        )
+L(    je    1f /* No change required */                                       )
+L(    /* Load the new LDT table. */                                           )
+L(    lldt (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%ecx)               )
+L(1:  popl  %ebx                                                              )
+#endif
+L(    /* TODO: Switch FPU */                                                  )
+L(                                                                            )
 L(    movl TASK_OFFSETOF_MMAN(%eax),  %eax                                    )
 L(    movl TASK_OFFSETOF_MMAN(%ecx),  %ecx                                    )
 L(    cmpl %eax, %ecx /* Check if memory managers (and thereby page directories) changed. */)
@@ -1150,14 +1209,7 @@ pit_exc(struct cpustate *__restrict state) {
  }
 #endif
 
- if (old_task->t_mman != new_task->t_mman) {
-  /* Switch page directories. */
-  __asm__ __volatile__("movl %0, %%cr3\n"
-                       :
-                       : "r" (new_task->t_mman->m_ppdir)
-                       : "memory");
- }
-
+ TASK_SWITCH_CONTEXT(old_task,new_task);
  /* Signal completion of the PIT interrupt.
   * NOTE: Actual new signals will only be received once iret turns interrupts back on.
   *       And in the event that the new task didn't have interrupts
@@ -1310,13 +1362,7 @@ has_old_lock:
   /* If we've set our own new CPU, we must make
    * sure not to return in the context of the old! */
   if (was_running) {
-   struct mman *new_mm = THIS_CPU->c_running->t_mman;
-   if (t->t_mman != new_mm) {
-    __asm__ __volatile__("movl %0, %%cr3\n"
-                         :
-                         : "r" (&new_mm->m_ppdir->pd_directory)
-                         : "memory");
-   }
+   TASK_SWITCH_CONTEXT(t,THIS_CPU->c_running);
    cpu_sched_setrunning_savef(t,was);
    return result;
   }
@@ -1801,14 +1847,7 @@ task_waitfor(struct timespec const *abstime) {
 
  assert(!PREEMPTION_ENABLED());
  cpu_endwrite(THIS_CPU);
- { struct mman *new_mm = THIS_CPU->c_running->t_mman;
-   if (t->t_mman != new_mm) {
-    __asm__ __volatile__("movl %0, %%cr3\n"
-                         :
-                         : "r" (&new_mm->m_ppdir->pd_directory)
-                         : "memory");
-   }
- }
+ TASK_SWITCH_CONTEXT(t,THIS_CPU->c_running);
  cpu_validate_counters(true);
  cpu_sched_setrunning_save(t); /* Switch to the new task. */
  cpu_validate_counters(true);
@@ -1925,19 +1964,11 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
  assert(!PREEMPTION_ENABLED());
 
  /* Make sure to activate the new task's page directory as early as possible! */
- { struct mman *new_mman = new_task->t_mman;
-   if (t->t_mman != new_mman) {
-    /* Switch to the new task's page directory. */
-    assert(memcmp(&t->t_mman->m_pdir.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
-                   &new_mman->m_pdir.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
-                 ((THIS_PDIR_BASE-KERNEL_BASE)/PDTABLE_REPRSIZE)*4) == 0);
-
-    __asm__ __volatile__("movl %0, %%cr3\n"
-                         :
-                         : "r" (&new_mman->m_ppdir->pd_directory)
-                         : "memory");
-   }
- }
+ assert(t->t_mman == new_task->t_mman ||
+        memcmp(&       t->t_mman->m_pdir.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
+               &new_task->t_mman->m_pdir.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
+              ((THIS_PDIR_BASE-KERNEL_BASE)/PDTABLE_REPRSIZE)*4) == 0);
+ TASK_SWITCH_CONTEXT(t,new_task);
 
 #if 0
  syslogf(LOG_DEBUG,"Terminating SELF: %p (%d)\n",t,t->t_refcnt);
@@ -2310,21 +2341,36 @@ task_signal_cont_cpu_endwrite(struct cpu *__restrict c,
  TASK_DECREF(parent);
 }
 
-PRIVATE SAFE errno_t KCALL
-task_suspend_cpu_endwrite(struct cpu *__restrict c,
-                          struct task *__restrict t,
-                          pflag_t was) {
- errno_t result = -EOK;
+PUBLIC errno_t KCALL
+task_suspend_cpu_endwrite(struct task *__restrict t, u32 mode, pflag_t was) {
+ errno_t result = -EOK; s32 *counter;
+ struct cpu *c = TASK_CPU(t);
  assert(cpu_writing(c));
- assert(c == TASK_CPU(t));
  assert(!PREEMPTION_ENABLED());
  assert(t != &c->c_idle);
+ assertf((mode&(TASK_SUSP_HOST|TASK_SUSP_NOW)) != (TASK_SUSP_HOST|TASK_SUSP_NOW),
+         "suspend-now using host-recursion is unsafe as many "
+         "components rely on recursive suspend/resume");
+
+#if TASK_SUSP_HOST == 1
+ counter = &t->t_suspend[mode&TASK_SUSP_HOST];
+#else
+ counter = &t->t_suspend[mode&TASK_SUSP_HOST ? 1 : 0];
+#endif
+ if (mode&TASK_SUSP_NOW) *counter = 1;
+ else if ((++*counter,TASK_ISSUSPENDED(t))) {
+  /* Still suspended after recursion. */
+  cpu_endwrite(c);
+  PREEMPTION_POP(was);
+  return -EOK;
+ }
 
  switch (t->t_mode) {
 
  case TASKMODE_TERMINATED:
-  t->t_suspend = 0;
-  result       = -EINVAL;
+  t->t_suspend[0] = 0;
+  t->t_suspend[1] = 0;
+  result = -EINVAL;
   break;
 
  case TASKMODE_SLEEPING:
@@ -2339,9 +2385,10 @@ task_suspend_cpu_endwrite(struct cpu *__restrict c,
  case TASKMODE_RUNNING:
 #ifdef CONFIG_SMP
   if (c != THIS_CPU) {
-   --t->t_suspend;
    /* TODO: Send an RPC command to suspend a remote task. */
    result = -ECOMM;
+
+   if (E_ISERR(result)) --*counter;
   } else
 #endif
   {
@@ -2353,14 +2400,7 @@ task_suspend_cpu_endwrite(struct cpu *__restrict c,
    /* Switch to the new CPU if necessary. */
    if (is_this_task) {
     assert(!PREEMPTION_ENABLED());
-    { struct mman *new_mm = THIS_CPU->c_running->t_mman;
-      if (t->t_mman != new_mm) {
-       __asm__ __volatile__("movl %0, %%cr3\n"
-                            :
-                            : "r" (&new_mm->m_ppdir->pd_directory)
-                            : "memory");
-      }
-    }
+    TASK_SWITCH_CONTEXT(t,THIS_CPU->c_running);
     task_signal_stop_cpu_endwrite(c,t,was);
     cpu_sched_setrunning_save(t);
     return -EOK;
@@ -2374,22 +2414,44 @@ task_suspend_cpu_endwrite(struct cpu *__restrict c,
  task_signal_stop_cpu_endwrite(c,t,was);
  return result;
 }
-
-PRIVATE SAFE errno_t KCALL
-task_resume_cpu_endwrite(struct cpu *__restrict c,
-                         struct task *__restrict t,
-                         pflag_t was) {
- errno_t result = -EOK;
+PUBLIC errno_t KCALL
+task_resume_cpu_endwrite(struct task *__restrict t, u32 mode, pflag_t was) {
+ errno_t result = -EOK; s32 *counter;
+ struct cpu *c = TASK_CPU(t); bool was_suspended;
  assert(cpu_writing(c));
- assert(c == TASK_CPU(t));
  assert(t != THIS_TASK);
  assert(!PREEMPTION_ENABLED());
+ assertf((mode&(TASK_SUSP_HOST|TASK_SUSP_NOW)) != (TASK_SUSP_HOST|TASK_SUSP_NOW),
+         "suspend-now using host-recursion is unsafe as many "
+         "components rely on recursive suspend/resume");
+
+#if TASK_SUSP_HOST == 1
+ counter = &t->t_suspend[mode&TASK_SUSP_HOST];
+#else
+ counter = &t->t_suspend[mode&TASK_SUSP_HOST ? 1 : 0];
+#endif
+ was_suspended = TASK_ISSUSPENDED(t);
+ if (mode&TASK_SUSP_NOW) *counter = 0;
+ else {
+  assertf(*counter > 0 || !(mode&TASK_SUSP_HOST),
+          "Illegal recursion: Host-level suspension cannot be negative "
+          "(aka. you can't resume a task that isn't suspended using kernel recursion)");
+  --*counter;
+ }
+
+ if (!was_suspended) {
+  /* Wasn't suspended to begin with. */
+  cpu_endwrite(c);
+  PREEMPTION_POP(was);
+  return -EOK;
+ }
 
  switch (t->t_mode) {
 
  case TASKMODE_TERMINATED:
-  t->t_suspend = 0;
-  result       = -EINVAL;
+  t->t_suspend[0] = 0;
+  t->t_suspend[1] = 0;
+  result = -EINVAL;
   break;
 
  case TASKMODE_SUSPENDED:
@@ -2422,23 +2484,7 @@ set_running:
  return result;
 }
 
-PUBLIC SAFE errno_t KCALL
-task_suspend_now_cpu_endwrite(struct task *__restrict t, pflag_t was) {
- CHECK_HOST_DOBJ(t);
- t->t_suspend = 1;
- COMPILER_WRITE_BARRIER();
- return task_suspend_cpu_endwrite(TASK_CPU(t),t,was);
-}
-PUBLIC SAFE errno_t KCALL
-task_resume_now_cpu_endwrite(struct task *__restrict t, pflag_t was) {
- CHECK_HOST_DOBJ(t);
- t->t_suspend = 0;
- COMPILER_WRITE_BARRIER();
- return task_resume_cpu_endwrite(TASK_CPU(t),t,was);
-}
-
-PUBLIC errno_t KCALL
-task_suspend_now(struct task *__restrict t) {
+PUBLIC errno_t KCALL task_suspend(struct task *__restrict t, u32 mode) {
  struct cpu *c; pflag_t was;
  CHECK_HOST_DOBJ(t);
  was = PREEMPTION_PUSH();
@@ -2449,15 +2495,9 @@ task_suspend_now(struct task *__restrict t) {
   if (TASK_CPU(t) == c) break;
   cpu_endwrite(c);
  }
- /* Force the suspension counter to be '1' */
- t->t_suspend = 1;
- COMPILER_WRITE_BARRIER();
- return task_suspend_cpu_endwrite(c,t,was);
+ return task_suspend_cpu_endwrite(t,mode,was);
 }
-
-
-PUBLIC errno_t KCALL
-task_resume_now(struct task *__restrict t) {
+PUBLIC errno_t KCALL task_resume(struct task *__restrict t, u32 mode) {
  struct cpu *c; pflag_t was;
  CHECK_HOST_DOBJ(t);
  was = PREEMPTION_PUSH();
@@ -2468,230 +2508,8 @@ task_resume_now(struct task *__restrict t) {
   if (TASK_CPU(t) == c) break;
   cpu_endwrite(c);
  }
- /* Force the suspension counter to be '0' */
- t->t_suspend = 0;
- COMPILER_WRITE_BARRIER();
- return task_resume_cpu_endwrite(c,t,was);
+ return task_resume_cpu_endwrite(t,mode,was);
 }
-
-PUBLIC errno_t KCALL
-task_suspend(struct task *__restrict t) {
- struct cpu *c; pflag_t was;
- errno_t result;
- CHECK_HOST_DOBJ(t);
- was = PREEMPTION_PUSH();
- for (;;) {
-  c = TASK_CPU(t);
-  COMPILER_READ_BARRIER();
-  cpu_write(c);
-  if (TASK_CPU(t) == c) break;
-  cpu_endwrite(c);
- }
- /* Handle recursion. */
- if (t->t_suspend++ != 0) {
-  cpu_endwrite(c);
-  PREEMPTION_POP(was);
-  result = -EOK;
- } else {
-  result = task_suspend_cpu_endwrite(c,t,was);
- }
- PREEMPTION_POP(was);
- return result;
-}
-
-PUBLIC errno_t KCALL
-task_resume(struct task *__restrict t) {
- struct cpu *c; pflag_t was;
- errno_t result = -EOK;
- CHECK_HOST_DOBJ(t);
- was = PREEMPTION_PUSH();
- for (;;) {
-  c = TASK_CPU(t);
-  COMPILER_READ_BARRIER();
-  cpu_write(c);
-  if (TASK_CPU(t) == c) break;
-  cpu_endwrite(c);
- }
- /* Handle recursion. */
- if (--t->t_suspend != 0) {
-  cpu_endwrite(c);
-  PREEMPTION_POP(was);
-  result = -EOK;
- } else {
-  result = task_resume_cpu_endwrite(c,t,was);
- }
- return result;
-}
-
-
-#define TASK_SUSPEND_FAILED   0 /*< Failed to suspend the task ('task_force_resume()' is a no-op). */
-#define TASK_SUSPEND_CONTINUE 1 /*< Continue task execution in 'task_force_resume()'. */
-
-PUBLIC errno_t KCALL
-task_force_suspend(struct task *__restrict t,
-                   int *__restrict pstate) {
- struct cpu *c; pflag_t was;
- errno_t result = -EOK;
- CHECK_HOST_DOBJ(t);
- CHECK_HOST_DOBJ(pstate);
-again:
- was = PREEMPTION_PUSH();
- for (;;) {
-  c = TASK_CPU(t);
-  COMPILER_READ_BARRIER();
-  cpu_write(c);
-  if (TASK_CPU(t) == c) break;
-  cpu_endwrite(c);
- }
- assert(t != &c->c_idle);
- /* Wait until the task is no longer being
-  * forcefully suspended by someone else. */
- if (ATOMIC_FETCHOR(t->t_flags,TASKFLAG_SUSP_FIXED)&
-                              (TASKFLAG_SUSP_FIXED)) {
-  cpu_endwrite(c);
-  PREEMPTION_POP(was);
-  do {
-   /* Test for interrupts while spinning. */
-   result = task_testintr();
-   if (E_ISERR(result)) {
-    *pstate = TASK_SUSPEND_FAILED;
-    return result;
-   }
-   task_yield();
-  } while (ATOMIC_READ(t->t_flags)&TASKFLAG_SUSP_FIXED);
-  goto again;
- }
-
- *pstate = TASK_SUSPEND_CONTINUE;
-
- /* Let's do this! */
- switch (t->t_mode) {
-
- case TASKMODE_TERMINATED:
-  /* Since this is about private-data access, let's act like this worked... */
-  *pstate = TASK_SUSPEND_FAILED;
-  result = -EOK;
-  break;
-
- case TASKMODE_SLEEPING:
-  /* Mark the task as using a timeout. */
-  t->t_flags |= TASKFLAG_SUSP_TIMED;
- case TASKMODE_WAKEUP:
-  cpu_del_sleeping(c,t);
-  ATOMIC_WRITE(t->t_mode,TASKMODE_SUSPENDED);
-  cpu_add_suspended(c,t);
-  break;
-
- case TASKMODE_RUNNING:
-#ifdef CONFIG_SMP
-  if (c != THIS_CPU) {
-   /* Must also lock our own CPU to prevent deadlocks when two
-    * tasks running on different CPUs try to suspend each other.
-    * NOTE: The deadlock is prevented, because the other task
-    *       would need to acquire a write-lock to 'THIS_CPU',
-    *       which it can't while we're holding a read-lock! */
-   if (!cpu_tryread(THIS_CPU)) {
-    cpu_endwrite(c);
-    task_yield();
-    goto again;
-   }
-
-   /* TODO: Send an RPC command to suspend a remote task. */
-   result = -ECOMM;
-   cpu_endread(THIS_CPU);
-
-
-
-   if (E_ISERR(result)) {
-    union ht {u32      t_data;
-    struct {taskflag_t t_flags;
-            taskmode_t t_mode;
-            u8         t_padding;};};
-    union ht hybrid,new_hybrid;
-    do {
-     hybrid.t_data     = ATOMIC_READ(*(u32 *)&t->t_flags);
-     new_hybrid.t_data = hybrid.t_data;
-     /* There is a chance that the task noticed our suspension request. */
-     if (hybrid.t_mode != TASKMODE_SUSPENDED)
-         new_hybrid.t_flags &= ~(TASKFLAG_SUSP_FIXED);
-    } while (!ATOMIC_CMPXCH(*(u32 *)&t->t_flags,hybrid.t_data,new_hybrid.t_data));
-    if (new_hybrid.t_mode == TASKMODE_SUSPENDED) {
-     if (result == -EINTR) task_intr_later();
-     result = -EOK;
-    }
-   }
-  } else
-#endif
-  {
-   assertf(t != THIS_TASK,"You must not force-suspend yourself");
-   cpu_del_running(t);
-   ATOMIC_WRITE(t->t_mode,TASKMODE_SUSPENDED);
-   cpu_add_suspended(c,t);
-  }
-  break;
-
- default:
-  break;
- }
- cpu_endwrite(c);
- PREEMPTION_POP(was);
- return result;
-}
-
-PUBLIC void KCALL
-task_force_resume(struct task *__restrict t, int state) {
- struct cpu *c; pflag_t was;
- CHECK_HOST_DOBJ(t);
- if (state == TASK_SUSPEND_FAILED)
-     return;
- was = PREEMPTION_PUSH();
- for (;;) {
-  c = TASK_CPU(t);
-  COMPILER_READ_BARRIER();
-  cpu_write(c);
-  if (TASK_CPU(t) == c) break;
-  cpu_endwrite(c);
- }
- assert(t != THIS_TASK);
- assertf(t->t_flags&TASKFLAG_SUSP_FIXED,
-         "You didn't call 'task_force_suspend()', did you...");
- t->t_flags &= ~(TASKFLAG_SUSP_FIXED);
-
- switch (t->t_mode) {
-
- case TASKMODE_TERMINATED:
-  break;
-
- case TASKMODE_SUSPENDED:
-  /* Suspended task. */
-  if ((t->t_flags&(TASKFLAG_TIMEDOUT|TASKFLAG_SUSP_TIMED)) ==
-                                    (TASKFLAG_SUSP_TIMED)) {
-   struct timespec now; sysrtc_get(&now);
-   /* Check for a timeout. */
-   if (TIMESPEC_GREATER_EQUAL(now,t->t_timeout))
-       t->t_flags |= TASKFLAG_TIMEDOUT;
-  }
-  t->t_flags &= ~(TASKFLAG_SUSP_TIMED);
-
-  /* The task timed out, or was interrupted. - Wake it up for that! */
-  if (t->t_flags&(TASKFLAG_TIMEDOUT|TASKFLAG_INTERRUPT))
-      goto set_running;
-  /* The task has received a signal. - Wake it up for that! */
-  if (t->t_signals.ts_recv != NULL)
-      goto set_running;
-  break;
-set_running:
-  /* Switch the task's state to RUNNING. */
-  task_set_running(t);
-  break;
-
- default:
-  break;
- }
- cpu_endwrite(c);
- PREEMPTION_POP(was);
-}
-
 
 
 PUBLIC errno_t KCALL
@@ -2771,14 +2589,7 @@ task_pause_cpu_endwrite(struct timespec const *abstime) {
   ATOMIC_WRITE(caller->t_mode,TASKMODE_SUSPENDED);
   cpu_add_suspended(THIS_CPU,caller);
  }
- { struct mman *new_mm = THIS_CPU->c_running->t_mman;
-   if (caller->t_mman != new_mm) {
-    __asm__ __volatile__("movl %0, %%cr3\n"
-                         :
-                         : "r" (&new_mm->m_ppdir->pd_directory)
-                         : "memory");
-   }
- }
+ TASK_SWITCH_CONTEXT(caller,THIS_CPU->c_running);
  cpu_endwrite(THIS_CPU);
 
  /* Switch to the next thread. */
@@ -2847,13 +2658,7 @@ PUBLIC ATTR_HOTTEXT CRIT void (KCALL task_endcrit)(void) {
 
   /* Switch to the next task if we've just got parked. */
   if (THIS_CPU->c_running != t) {
-   struct mman *new_mm = THIS_CPU->c_running->t_mman;
-   if (t->t_mman != new_mm) {
-    __asm__ __volatile__("movl %0, %%cr3\n"
-                         :
-                         : "r" (&new_mm->m_ppdir->pd_directory)
-                         : "memory");
-   }
+   TASK_SWITCH_CONTEXT(t,THIS_CPU->c_running);
    cpu_sched_setrunning_savef(t,was);
    return;
   }

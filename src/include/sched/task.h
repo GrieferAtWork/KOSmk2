@@ -30,6 +30,37 @@
 
 DECL_BEGIN
 
+#ifdef CONFIG_NO_LDT
+#define __TASK_SWITCH_LDT(old,new) /* nothing */
+#else
+#define __TASK_SWITCH_LDT(old,new) \
+    if ((old)->t_arch.at_ldt_gdt != \
+        (new)->t_arch.at_ldt_gdt) { \
+     __asm__ __volatile__("lldt %0\n" \
+                          : \
+                          : "g" ((new)->t_arch.at_ldt_gdt) \
+                          : "memory"); \
+    } \
+
+#endif
+
+
+/* Switch secondary context registers such as LDT, page-directory or
+ * the FPU-state as is required when switching from 'old' to 'new'. */
+#define TASK_SWITCH_CONTEXT(old,new) \
+do{ struct mman *const new_mm = (new)->t_mman; \
+    if ((old)->t_mman != new_mm) { \
+     /* Switch page directories. */ \
+     __asm__ __volatile__("movl %0, %%cr3\n" \
+                          : \
+                          : "r" (new_mm->m_ppdir) \
+                          : "memory"); \
+     /* Switch LDT descriptors. (NOTE: Must always be equal within the same page-directory) */ \
+     __TASK_SWITCH_LDT(old,new) \
+    } \
+}while(0)
+
+
 struct task;
 
 /* Allocate a new task. The caller must initialize the following
@@ -47,9 +78,9 @@ struct task;
  *  - t_sighand (As a real reference; Set to 'sighand_kernel' for kernel threads)
  *  - t_sigshare (As a real reference; Set to 'sigshare_kernel' for kernel threads')
  *  - t_priority (Optional; pre-initialized to 'TASKPRIO_DEFAULT')
+ *  - t_arch->at_ldt_tls (Optional; Pre-initialized to 'LDT_ERROR')
  * @return: * :   A reference to the newly allocated task.
- * @return: NULL: Not enough available memory.
- */
+ * @return: NULL: Not enough available memory. */
 #define task_new() task_cinit((struct task *)kmemalign(TASK_ALIGN,sizeof(struct task), \
                                                        GFP_SHARED|GFP_LOCKED|GFP_CALLOC))
 FUNDEF struct task *KCALL task_cinit(struct task *self);
@@ -307,57 +338,30 @@ FUNDEF errno_t KCALL task_set_priority(struct task *__restrict self,
                                        taskprio_t *pold_priority);
 #define task_get_priority(self) ATOMIC_READ((self)->t_priority)
 
+#ifndef __pflag_t_defined
+#define __pflag_t_defined 1
+typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
+#endif
+
 
 /* Recursively suspend/resume the given task.
  * WARNING: '-EINVAL' can only be returned when the
  *          suspension counter of 'self' rolls over.
  *          With that in mind, don't rely on the return value
  *          to determine if a task has already terminated!
+ * @param: mode:     Set of 'TASK_SUSP_*'
  * @return: -EOK:    Successfully suspended the given task.
  * @return: -EINVAL: The given task has terminated.
  * @return: -ECOMM:  Failed to communicate with the CPU the thread is running under.
  * @return: -EINTR:  The calling thread was interrupted. */
-FUNDEF errno_t KCALL task_suspend(struct task *__restrict self);
-FUNDEF errno_t KCALL task_resume(struct task *__restrict self);
-
-#ifndef __pflag_t_defined
-#define __pflag_t_defined 1
-typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
-#endif
-
-/* Same as the recursive functions above, but non-recursive.
- * NOTE: These functions are called when a signal delivery
- *       should suspend(STOP) or resume(CONT) the thread. */
-FUNDEF errno_t KCALL task_suspend_now(struct task *__restrict self);
-FUNDEF errno_t KCALL task_resume_now(struct task *__restrict self);
-FUNDEF SAFE errno_t KCALL task_suspend_now_cpu_endwrite(struct task *__restrict self, pflag_t was);
-FUNDEF SAFE errno_t KCALL task_resume_now_cpu_endwrite(struct task *__restrict self, pflag_t was);
-
-/* Similar to 'task_suspend/task_resume', but does not make use of recursion,
- * thus enabling the caller to make assumptions on the task's running-state
- * until they (and only they) call 'task_force_resume' once again to continue.
- * WARNING: Calling this function on yourself is a no-op.
- * NOTE: Special precaution is taken to ensure that no deadlocks
- *       can arise when two tasks (from any CPU) attempt to suspend
- *       each other at the same time.
- * NOTE: 'task_force_resume()' can _always_ be called after
- *       'task_force_suspend()' has been used to fill in 'state'.
- * NOTE: If the task was already suspended forcefully,
- *      'task_force_suspend()' will block until the task
- *       that caused the suspension calls 'task_force_resume()'
- * HINT: Using these functions, you can gain READ-ONLY access to task
- *       fields marked as '[lock(PRIVATE(THIS_TASK))]', as you essentially
- *       guaranty that the task itself can't access them (by suspending it),
- *       and prevent anyone else from accessing them, because anyone
- *       else attempting to call 'task_force_suspend()' will block
- *       until you descide that you're done by calling 'task_force_resume()'
- * @return: -EOK:    Successfully suspended the given task.
- * @return: -EINVAL: The given task has terminated.
- * @return: -ECOMM:  Failed to communicate with the CPU the thread is running under.
- * @return: -EINTR:  The calling thread was interrupted. */
-FUNDEF errno_t KCALL task_force_suspend(struct task *__restrict self, int *__restrict pstate);
-FUNDEF void    KCALL task_force_resume(struct task *__restrict self, int state);
-
+FUNDEF errno_t KCALL task_suspend(struct task *__restrict self, u32 mode);
+FUNDEF errno_t KCALL task_resume(struct task *__restrict self, u32 mode);
+FUNDEF errno_t KCALL task_suspend_cpu_endwrite(struct task *__restrict self, u32 mode, pflag_t was);
+FUNDEF errno_t KCALL task_resume_cpu_endwrite(struct task *__restrict self, u32 mode, pflag_t was);
+#define TASK_SUSP_REC  0x00 /*< Recursively suspend/resume the task. */
+#define TASK_SUSP_USER 0x00 /*< Use user-level recursion for suspend/resume. */
+#define TASK_SUSP_HOST 0x01 /*< Use host-level recursion for suspend/resume. */
+#define TASK_SUSP_NOW  0x02 /*< NOTE: May only be used with 'TASK_SUSP_USER': Suspend/resume the task _NOW_. */
 
 /* Test for pending interrupts within the calling thread.
  * NOTE: No-op when interrupts are disabled using 'task_nointr()'

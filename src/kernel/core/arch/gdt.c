@@ -18,7 +18,9 @@
  */
 #ifndef GUARD_KERNEL_CORE_ARCH_GDT_C
 #define GUARD_KERNEL_CORE_ARCH_GDT_C 1
+#define _KOS_SOURCE 1
 
+#include <assert.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <kernel/arch/tss.h>
@@ -27,6 +29,7 @@
 #include <sched/percpu.h>
 #include <assert.h>
 #include <stdint.h>
+#include <sched/smp.h>
 
 DECL_BEGIN
 
@@ -36,20 +39,68 @@ STATIC_ASSERT(sizeof(struct segment) == 8);
 
 /* Allocate/Free/Update a (new) descriptor index within global descriptor table.
  * These are mainly used to implement the higher-level LDT table and its functions.
- * @return: KSEG_NULL: Failed to allocate a new segment. */
-PUBLIC SAFE segid_t KCALL
-gdt_alloc(struct segment const *seg) {
+ * @return: SEG_NULL: Failed to allocate a new segment. */
+PUBLIC SAFE segid_t KCALL gdt_new(void) {
  /* TODO */
  return SEG_NULL;
 }
-PUBLIC SAFE void KCALL
-gdt_free(segid_t id) {
+PUBLIC SAFE void KCALL gdt_del(segid_t id) {
+ assert(id >= SEG_BUILTIN);
  /* TODO */
 }
-PUBLIC SAFE void KCALL
-gdt_update(segid_t id, struct segment const *seg) {
+
+
+PUBLIC SAFE struct segment KCALL
+gdt_get(segid_t id) {
+#ifdef CONFIG_SMP
+ assertf(SMP_COUNT <= 1 || !PREEMPTION_ENABLED(),
+         "What if your CPU suddenly changes?");
+#endif
  /* TODO */
+ return make_segment(0,0,0);
 }
+PUBLIC SAFE errno_t KCALL
+gdt_set(segid_t id, struct segment seg,
+        struct segment *oldseg) {
+#ifdef CONFIG_SMP
+ assertf(SMP_COUNT <= 1 || !PREEMPTION_ENABLED(),
+         "What if your CPU suddenly changes?");
+#endif
+ /* TODO */
+ if (oldseg) *oldseg = make_segment(0,0,0);
+ return -EOK;
+}
+
+
+#ifdef CONFIG_SMP
+PUBLIC SAFE struct segment KCALL
+vgdt_get(struct cpu *__restrict c, segid_t id) {
+ struct segment result;
+ pflag_t was = PREEMPTION_PUSH();
+ if (c == THIS_CPU)
+  result = gdt_get(id);
+ else {
+  assertf(0,"TODO: Use an IPC to get the given CPU's GDT entry.");
+ }
+ PREEMPTION_POP(was);
+ return result;
+}
+PUBLIC SAFE errno_t KCALL
+vgdt_set(struct cpu *__restrict c, segid_t id,
+         struct segment seg, struct segment *oldseg) {
+ errno_t result;
+ pflag_t was = PREEMPTION_PUSH();
+ if (c == THIS_CPU)
+  result = gdt_set(id,seg,oldseg);
+ else {
+  /* TODO: Use an IPC to set the given CPU's GDT entry. */
+  result = -ECOMM;
+ }
+ PREEMPTION_POP(was);
+ return result;
+}
+#endif /* CONFIG_SMP */
+
 
 INTDEF byte_t __kernel_seg_cputss_lo[];
 INTDEF byte_t __kernel_seg_cputss_hi[];
@@ -62,7 +113,7 @@ INTERN CPU_DATA struct segment cpu_gdt[SEG_BUILTIN] = {
     [SEG_KERNEL_DATA]    = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0), /* Kernel data segment */
     [SEG_KERNEL_CODE_16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL0_16), /* 16-bit kernel code segment. */
     [SEG_KERNEL_DATA_16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0_16), /* 16-bit kernel data segment. */
-    [SEG_KERNELLDT]      = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
+    [SEG_KERNEL_LDT]      = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
     [SEG_CPUTSS]         = {{{(u32)__kernel_seg_cputss_lo,(u32)__kernel_seg_cputss_hi}}}, /* CPU TSS */
     [SEG_CPUSELF]        = {{{(u32)__kernel_seg_cpuself_lo,(u32)__kernel_seg_cpuself_hi}}}, /* CPU-self */
 #ifdef SEG_USER_CODE

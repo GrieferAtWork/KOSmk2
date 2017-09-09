@@ -198,6 +198,17 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
   /* Terminate the chain of module instances associated with this mman. */
   *pdst = NULL;
  }
+
+#ifndef CONFIG_NO_LDT
+ assert(nm->m_ldt == &ldt_empty);
+ assert(ldt_empty.l_refcnt >= 2);
+ ATOMIC_FETCHDEC(ldt_empty.l_refcnt);
+ nm->m_ldt = om->m_ldt;
+ assert(nm->m_ldt);
+ CHECK_HOST_DOBJ(nm->m_ldt);
+ LDT_INCREF(nm->m_ldt);
+#endif
+
  /* Copy environment context and linear allocation hints. */
  nm->m_uheap   = om->m_uheap;
  nm->m_ustck   = om->m_ustck;

@@ -597,10 +597,14 @@ L(.flush:                                      )
 L(    movw  $(SEG(SEG_CPUTSS)|3), %SX          ) /* TODO: Check if this |3 is really required. */
 L(    ltr   %SX                                )
 #endif
+#ifndef CONFIG_NO_LDT
+L(    movw  $(SEG(SEG_KERNEL_LDT)), %SX         )
+L(    lldt  %SX                                )
+#endif /* !CONFIG_NO_LDT */
 #ifdef CONFIG_DEBUG
 L(    xorl  %ebp, %ebp                         )
 L(    pushl $0                                 )
-#endif
+#endif /* CONFIG_DEBUG */
 /* Jump to the high-level C kernel-boot function. */
 L(    jmp   kernel_boot                        )
 L(.size __start, . - __start                   )

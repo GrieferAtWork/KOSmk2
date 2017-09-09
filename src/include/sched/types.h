@@ -26,6 +26,7 @@
 #include <hybrid/timespec.h>
 #include <hybrid/types.h>
 #include <kernel/arch/cpu.h>
+#include <kernel/arch/task.h>
 #include <kernel/memory.h>
 #include <sched.h>
 #include <sync/sig.h>
@@ -170,7 +171,6 @@ struct hstack {
 #endif /* __CC__ */
 
 #define TASKFLAG_NONE        0x0000
-#define TASKFLAG_SUSP_FIXED  0x0001 /*< Set if the task has been forced into a suspended-state. */
 #define TASKFLAG_SUSP_TIMED  0x0002 /*< Set if a task was suspended from 'TASKMODE_SLEEPING' using 'task_suspend()'.
                                      *  When set, 'task_resume()' must re-schedule the task as sleeping. */
 #define TASKFLAG_WILLTERM    0x0004 /*< The task currently resides within a critical section,
@@ -622,20 +622,25 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #define TASK_OFFSETOF_ADDRLIMIT    (TASK_OFFSETOF_FLAGS+16+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
 #define TASK_OFFSETOF_IC           (TASK_OFFSETOF_FLAGS+16+4*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
 #define TASK_OFFSETOF_SUSPEND      (TASK_OFFSETOF_FLAGS+16+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
-#define TASK_OFFSETOF_PID          (TASK_OFFSETOF_FLAGS+20+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
-#define TASK_OFFSETOF_HSTACK       (TASK_OFFSETOF_FLAGS+20+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE)
-#define TASK_OFFSETOF_LASTCR2      (TASK_OFFSETOF_FLAGS+20+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_MMAN_TASKS   (TASK_OFFSETOF_FLAGS+20+6*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_REAL_MMAN    (TASK_OFFSETOF_FLAGS+20+8*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_MMAN         (TASK_OFFSETOF_FLAGS+20+9*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_FDMAN        (TASK_OFFSETOF_FLAGS+20+10*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_USTACK       (TASK_OFFSETOF_FLAGS+20+11*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGHAND      (TASK_OFFSETOF_FLAGS+20+12*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGBLOCK     (TASK_OFFSETOF_FLAGS+20+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGPEND      (TASK_OFFSETOF_FLAGS+20+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__)
-#define TASK_OFFSETOF_SIGSHARE     (TASK_OFFSETOF_FLAGS+20+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
-#define TASK_OFFSETOF_SIGENTER     (TASK_OFFSETOF_FLAGS+20+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
-#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+20+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#define TASK_OFFSETOF_PID          (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
+#define TASK_OFFSETOF_HSTACK       (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE)
+#define TASK_OFFSETOF_LASTCR2      (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_MMAN_TASKS   (TASK_OFFSETOF_FLAGS+24+6*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_REAL_MMAN    (TASK_OFFSETOF_FLAGS+24+8*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_MMAN         (TASK_OFFSETOF_FLAGS+24+9*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_FDMAN        (TASK_OFFSETOF_FLAGS+24+10*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_USTACK       (TASK_OFFSETOF_FLAGS+24+11*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_SIGHAND      (TASK_OFFSETOF_FLAGS+24+12*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_SIGBLOCK     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_SIGPEND      (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__)
+#define TASK_OFFSETOF_SIGSHARE     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
+#define TASK_OFFSETOF_SIGENTER     (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
+#ifdef ARCHTASK_SIZE
+#define TASK_OFFSETOF_ARCH         (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE+ARCHTASK_SIZE)
+#else
+#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#endif
 #define TASK_ALIGN                  TASKSIGSLOT_ALIGN
 
 #ifdef __CC__
@@ -682,14 +687,16 @@ struct task {
  u32                     t_nointr;    /*< [lock(PRIVATE(THIS_TASK))] While non-zero, don't receive interrupts ('-EINTR' is not accepted). */
  uintptr_t               t_addrlimit; /*< [lock(PRIVATE(THIS_TASK))] Only USER-pointers < than this are considered valid. */
  HOST struct intchain   *t_ic;        /*< [lock(PRIVATE(THIS_TASK))][0..1] Chain of local, kernel-level interrupt handlers. */
- s32                     t_suspend;   /*< [lock(t_cpu->c_lock)] Recursion counter for task_(resume|suspend)
+ s32                     t_suspend[2];/*< [lock(t_cpu->c_lock)] Recursion counter for task_(resume|suspend)
                                        *  NOTE: The lock must only be held when writing in the event that the
                                        *        updated value would require the task's state to be changed.
                                        *  >> When <= 0, 'TASKMODE_RUNNING' (Or other states, based on)
                                        *  >> When >  0, 'TASKMODE_SUSPENDED'
                                        *  NOTE: When a suspended task receives a signal, this field is
                                        *        checked to confirm that the task should really wake up.
-                                       *        When it isn't allowed to wake up, the 'TASKFLAG_SUSP_NOCONT' flag is deleted. */
+                                       *        When it isn't allowed to wake up, the 'TASKFLAG_SUSP_NOCONT' flag is deleted.
+                                       *  NOTE: The first counter is used for user-space and the second for kernel-space. 
+                                       *        In addition, the second element is unsigned and does not allow for running-recursion! */
  /* TODO: TLS data (will also be used for raising exceptions) */
 
  /* Thread descriptor/context information. */
@@ -710,8 +717,11 @@ struct task {
  struct sigpending        t_sigpend;   /*< Controller for pending signals. */
  REF struct sigshare     *t_sigshare;  /*< [1..1] Controller for shared signal data (Including the shared pending-signal list). */
  struct sigenter          t_sigenter;  /*< Signal enter controller. */
+#ifdef ARCHTASK_SIZE
+ struct archtask          t_arch;      /*< Arch-specific task information controller. */
+#endif
 };
-#define TASK_ISSUSPENDED(self) ((self)->t_suspend > 0 || ((self)->t_flags&TASKFLAG_SUSP_FIXED))
+#define TASK_ISSUSPENDED(self) ((self)->t_suspend[0] > 0 || (self)->t_suspend[1] != 0)
 
 LOCAL SAFE pid_t KCALL thread_pid_getpgid(struct thread_pid *__restrict self, pidtype_t type) {
  pid_t result;

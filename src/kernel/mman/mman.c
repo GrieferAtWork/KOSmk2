@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_KERNEL_MMAN_MMAN_C
 #define GUARD_KERNEL_MMAN_MMAN_C 1
+#define _GNU_SOURCE 1
 #define _KOS_SOURCE 2
 
 #include "../debug-config.h"
@@ -324,6 +325,9 @@ PUBLIC SAFE struct mman *KCALL mman_new(void) {
  owner_rwlock_cinit(&result->m_lock);
  result->m_uheap = MMAN_UHEAP_DEFAULT_ADDR;
  result->m_ustck = MMAN_USTCK_DEFAULT_ADDR;
+ /* Start out with an empty LDT. */
+ LDT_INCREF(&ldt_empty);
+ result->m_ldt = &ldt_empty;
 end:
  TASK_PDIR_KERNEL_END(old_mm);
  return result;
@@ -362,6 +366,7 @@ mman_destroy(struct mman *__restrict self) {
            (ppage_t)&self->m_pdir,sizeof(self->m_pdir),(errno_t)-error);
    }
  }
+ LDT_DECREF(self->m_ldt);
  kfree(self);
  TASK_PDIR_KERNEL_END(old_mman);
 }
@@ -2065,6 +2070,9 @@ DECL_END
 #ifndef __INTELLISENSE__
 #include "environ.c.inl"
 #include "mcore.c.inl"
+#ifndef CONFIG_NO_LDT
+#include "ldt.c.inl"
+#endif /* !CONFIG_NO_LDT */
 #endif
 
 #endif /* !GUARD_KERNEL_MMAN_MMAN_C */
