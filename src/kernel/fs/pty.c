@@ -27,6 +27,7 @@
 #include <fs/fd.h>
 #include <fs/file.h>
 #include <fs/pty.h>
+#include <hybrid/align.h>
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
@@ -39,6 +40,8 @@
 #include <sched/signal.h>
 #include <sched/task.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 DECL_BEGIN
 
@@ -374,6 +377,18 @@ PRIVATE void KCALL master_fini(struct inode *__restrict ino) {
  if (M->pm_fproc) TASK_WEAK_DECREF(M->pm_fproc);
  chrdev_fini(&M->pm_chr);
 }
+PRIVATE errno_t KCALL
+master_stat(struct inode *__restrict ino,
+            struct stat64 *__restrict statbuf) {
+ ssize_t read_size;
+ CHECK_HOST_DOBJ(ino);
+ CHECK_HOST_DOBJ(statbuf);
+ read_size = iobuffer_get_read_size(&M->pm_s2m);
+ if (E_ISERR(read_size)) return (errno_t)read_size;
+ statbuf->st_size64   = (pos64_t)read_size;
+ statbuf->st_blocks64 = CEILDIV((blkcnt64_t)read_size,S_BLKSIZE);
+ return -EOK;
+}
 #undef M
 
 
@@ -453,6 +468,21 @@ PRIVATE void KCALL slave_fini(struct inode *__restrict ino) {
  CHRDEV_DECREF(&master->pm_chr);
  chrdev_fini(&container_of(ino,struct ptyslave,ps_chr.cd_device.d_node)->ps_chr);
 }
+PRIVATE errno_t KCALL
+slave_stat(struct inode *__restrict ino,
+           struct stat64 *__restrict statbuf) {
+ ssize_t read_size;
+ struct ptymaster *master;
+ CHECK_HOST_DOBJ(ino);
+ CHECK_HOST_DOBJ(statbuf);
+ master = container_of(ino,struct ptyslave,ps_chr.cd_device.d_node)->ps_master;
+ CHECK_HOST_DOBJ(master);
+ read_size = iobuffer_get_read_size(&master->pm_m2s);
+ if (E_ISERR(read_size)) return (errno_t)read_size;
+ statbuf->st_size64   = (pos64_t)read_size;
+ statbuf->st_blocks64 = CEILDIV((blkcnt64_t)read_size,S_BLKSIZE);
+ return -EOK;
+}
 
 
 /* PTY master/slave INode operations. */
@@ -460,6 +490,7 @@ PUBLIC struct inodeops ptymaster_ops = {
     .ino_fopen  = &inode_fopen_default,
     .ino_fclose = &pty_fclose,
     .ino_fini   = &master_fini,
+    .ino_stat   = &master_stat,
     .f_flags    = INODE_FILE_LOCKLESS,
     .f_read     = &master_read,
     .f_write    = &master_write,
@@ -470,6 +501,7 @@ PUBLIC struct inodeops ptyslave_ops = {
     .ino_fopen  = &inode_fopen_default,
     .ino_fclose = &pty_fclose,
     .ino_fini   = &slave_fini,
+    .ino_stat   = &slave_stat,
     .f_flags    = INODE_FILE_LOCKLESS,
     .f_read     = &slave_read,
     .f_write    = &slave_write,

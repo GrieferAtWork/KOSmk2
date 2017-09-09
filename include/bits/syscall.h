@@ -36,10 +36,17 @@ for (local line: fp) {
     print "#define SYS_"+name,"__NR_"+name;
 }
 ]]]*/
+#define SYS_getcwd __NR_getcwd
 #define SYS_dup __NR_dup
 #define SYS_dup3 __NR_dup3
 #define SYS_fcntl __NR_fcntl
 #define SYS_ioctl __NR_ioctl
+#define SYS_mknodat __NR_mknodat
+#define SYS_mkdirat __NR_mkdirat
+#define SYS_unlinkat __NR_unlinkat
+#define SYS_symlinkat __NR_symlinkat
+#define SYS_linkat __NR_linkat
+#define SYS_renameat __NR_renameat
 #define SYS_truncate __NR_truncate
 #define SYS_ftruncate __NR_ftruncate
 #define SYS_fallocate __NR_fallocate
@@ -58,17 +65,49 @@ for (local line: fp) {
 #define SYS_write __NR_write
 #define SYS_pread64 __NR_pread64
 #define SYS_pwrite64 __NR_pwrite64
+#define SYS_pselect6 __NR_pselect6
+#define SYS_ppoll __NR_ppoll
+#define SYS_readlinkat __NR_readlinkat
+#define SYS_fstatat64 __NR_fstatat64
+#define SYS_fstat64 __NR_fstat64
+#define SYS_sync __NR_sync
+#define SYS_fsync __NR_fsync
+#define SYS_fdatasync __NR_fdatasync
+#define SYS_utimensat __NR_utimensat
 #define SYS_exit __NR_exit
+#define SYS_waitid __NR_waitid
 #define SYS_unshare __NR_unshare
+#define SYS_sched_yield __NR_sched_yield
+#define SYS_kill __NR_kill
+#define SYS_tkill __NR_tkill
+#define SYS_tgkill __NR_tgkill
+#define SYS_sigaction __NR_sigaction
+#define SYS_sigprocmask __NR_sigprocmask
+#define SYS_sigpending __NR_sigpending
+#define SYS_sigtimedwait __NR_sigtimedwait
+#define SYS_sigreturn __NR_sigreturn
+#define SYS_setpgid __NR_setpgid
+#define SYS_getpgid __NR_getpgid
+#define SYS_gettimeofday __NR_gettimeofday
+#define SYS_settimeofday __NR_settimeofday
+#define SYS_getpid __NR_getpid
+#define SYS_getppid __NR_getppid
+#define SYS_gettid __NR_gettid
 #define SYS_munmap __NR_munmap
 #define SYS_mremap __NR_mremap
 #define SYS_execve __NR_execve
 #define SYS_mmap __NR_mmap
+#define SYS_wait4 __NR_wait4
+#define SYS_syncfs __NR_syncfs
 #define SYS_fork __NR_fork
 #define SYS_xsysprint __NR_xsysprint
 #define SYS_xmmap __NR_xmmap
 #define SYS_xmunmap __NR_xmunmap
 #define SYS_xsharesym __NR_xsharesym
+#define SYS_xreaddir __NR_xreaddir
+#define SYS_xopenpty __NR_xopenpty
+#define SYS_xfdname __NR_xfdname
+#define SYS_xpaused __NR_xpaused
 //[[[end]]]
 
 #endif /* !_BITS_SYSCALL_H */

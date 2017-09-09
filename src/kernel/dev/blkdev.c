@@ -24,6 +24,7 @@
 #include <fs/file.h>
 #include <fs/inode.h>
 #include <fs/superblock.h>
+#include <hybrid/align.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/panic.h>
@@ -41,6 +42,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 DECL_BEGIN
@@ -59,6 +62,16 @@ blkdev_fopen(struct inode *__restrict ino,
  if unlikely(!result) return E_PTR(-ENOMEM);
  file_setup(&result->b_file,ino,node_ent,oflags);
  return &result->b_file;
+}
+PRIVATE errno_t KCALL
+blkdev_stat(struct inode *__restrict ino,
+            struct stat64 *__restrict statbuf) {
+ /* Use stat() information based on the actual block device. */
+ statbuf->st_size64   = (pos64_t)INODE_TOBLK(ino)->bd_blockcount*
+                        (pos64_t)INODE_TOBLK(ino)->bd_blocksize;
+ statbuf->st_blocks64 = (blkcnt64_t)CEILDIV(statbuf->st_size64,S_BLKSIZE);
+ statbuf->st_blksize  = (blksize_t)INODE_TOBLK(ino)->bd_blocksize;
+ return -EOK;
 }
 #define DEV    container_of(fp->f_node,struct blkdev,bd_device.d_node)
 #define SELF ((struct blkfile *)fp)
@@ -173,6 +186,7 @@ blkfile_flush(struct file *__restrict fp) {
 PRIVATE struct inodeops block_ops = {
     .ino_fini  = (void (KCALL *)(struct inode *__restrict ino))&blkdev_fini,
     .ino_fopen = &blkdev_fopen,
+    .ino_stat  = &blkdev_stat,
     .f_read    = &blkfile_read,
     .f_write   = &blkfile_write,
     .f_pread   = &blkfile_pread,

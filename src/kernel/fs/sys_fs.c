@@ -454,69 +454,6 @@ SYSCALL_DEFINE4(fstatat64,int,dfd,USER char const *,filename,
  return -EOK;
 }
 #else
-PRIVATE SAFE errno_t KCALL
-inode_stat(struct inode *__restrict ino,
-           USER struct stat64 *buf) {
- struct stat64 data;
- struct blkdev *block;
- errno_t error;
- CHECK_HOST_DOBJ(ino);
- CHECK_HOST_DOBJ(ino->i_super);
-
- /*memset(&data,0,sizeof(struct stat64));*/
-
- /* Read attribute-specific data. */
- error = rwlock_read(&ino->i_attr_lock);
- if (E_ISERR(error)) return error;
- data.st_mode   = ino->i_attr.ia_mode;
- data.st_uid    = ino->i_attr.ia_mode;
- data.st_gid    = ino->i_attr.ia_mode;
-#ifdef CONFIG_32BIT_TIME
- data.st_atim32 = ino->i_attr.ia_atime;
- data.st_mtim32 = ino->i_attr.ia_mtime;
- data.st_ctim32 = ino->i_attr.ia_ctime;
-#else
- data.st_atim64 = ino->i_attr.ia_atime;
- data.st_mtim64 = ino->i_attr.ia_mtime;
- data.st_ctim64 = ino->i_attr.ia_ctime;
-#endif
- data.st_size64 = ino->i_attr.ia_siz;
- rwlock_endread(&ino->i_attr_lock);
-
- /* XXX: KOS doesn't implement holes (yet?) */
- data.st_blocks64 = CEILDIV(data.st_size64,512);
- data.st_ino64    = ino->i_ino;
- data.st_nlink    = ATOMIC_READ(ino->i_nlink);
-
-#ifdef CONFIG_32BIT_TIME
- data.st_atim64.tv_sec  = (time64_t)data.st_atim32.tv_sec;
- data.st_atim64.tv_nsec = data.st_atim32.tv_sec;
- data.st_mtim64.tv_sec  = (time64_t)data.st_mtim32.tv_sec;
- data.st_mtim64.tv_nsec = data.st_mtim32.tv_sec;
- data.st_ctim64.tv_sec  = (time64_t)data.st_ctim32.tv_sec;
- data.st_ctim64.tv_nsec = data.st_ctim32.tv_sec;
-#else
- data.st_atim32.tv_sec  = (time32_t)data.st_atim64.tv_sec;
- data.st_atim32.tv_nsec = data.st_atim64.tv_sec;
- data.st_mtim32.tv_sec  = (time32_t)data.st_mtim64.tv_sec;
- data.st_mtim32.tv_nsec = data.st_mtim64.tv_sec;
- data.st_ctim32.tv_sec  = (time32_t)data.st_ctim64.tv_sec;
- data.st_ctim32.tv_nsec = data.st_ctim64.tv_sec;
-#endif
-
- if ((block = ino->i_super->sb_blkdev) != NULL) {
-  data.st_dev     = block->bd_device.d_id;
-  data.st_blksize = block->bd_blocksize;
- } else {
-  data.st_blksize = 512; /* Default */
- }
- if (INODE_ISDEV(ino))
-     data.st_rdev = container_of(ino,struct device,d_node)->d_id;
- if (copy_to_user(buf,&data,sizeof(struct stat64)))
-     return -EFAULT;
- return -EOK;
-}
-
 SYSCALL_DEFINE2(fstat64,int,fd,USER struct stat64 *,statbuf) {
  REF struct inode *ino; errno_t result;
  task_crit();

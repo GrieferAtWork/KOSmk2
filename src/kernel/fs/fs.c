@@ -46,6 +46,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <hybrid/align.h>
 
 DECL_BEGIN
 
@@ -371,6 +372,72 @@ ok:
  rwlock_endread(&self->i_attr_lock);
  return error;
 }
+
+PUBLIC errno_t KCALL
+inode_stat(struct inode *__restrict self,
+           struct stat64 *__restrict statbuf) {
+ errno_t error;
+ struct blkdev *block;
+ CHECK_HOST_DOBJ(self);
+ CHECK_HOST_DOBJ(statbuf);
+ memset(statbuf,0,sizeof(struct stat64));
+
+ /* Read attribute-specific statbuf-> */
+ error = rwlock_read(&self->i_attr_lock);
+ if (E_ISERR(error)) return error;
+ statbuf->st_mode   = self->i_attr.ia_mode;
+ statbuf->st_uid    = self->i_attr.ia_uid;
+ statbuf->st_gid    = self->i_attr.ia_gid;
+#ifdef CONFIG_32BIT_TIME
+ statbuf->st_atim32 = self->i_attr.ia_atime;
+ statbuf->st_mtim32 = self->i_attr.ia_mtime;
+ statbuf->st_ctim32 = self->i_attr.ia_ctime;
+#else
+ statbuf->st_atim64 = self->i_attr.ia_atime;
+ statbuf->st_mtim64 = self->i_attr.ia_mtime;
+ statbuf->st_ctim64 = self->i_attr.ia_ctime;
+#endif
+ statbuf->st_size64 = self->i_attr.ia_siz;
+ rwlock_endread(&self->i_attr_lock);
+
+ /* XXX: KOS doesn't implement holes (yet?) */
+ statbuf->st_blocks64 = CEILDIV(statbuf->st_size64,S_BLKSIZE);
+ statbuf->st_ino64 = self->i_ino;
+ statbuf->st_nlink = ATOMIC_READ(self->i_nlink);
+
+#ifdef CONFIG_32BIT_TIME
+ statbuf->st_atim64.tv_sec  = (time64_t)statbuf->st_atim32.tv_sec;
+ statbuf->st_atim64.tv_nsec = statbuf->st_atim32.tv_sec;
+ statbuf->st_mtim64.tv_sec  = (time64_t)statbuf->st_mtim32.tv_sec;
+ statbuf->st_mtim64.tv_nsec = statbuf->st_mtim32.tv_sec;
+ statbuf->st_ctim64.tv_sec  = (time64_t)statbuf->st_ctim32.tv_sec;
+ statbuf->st_ctim64.tv_nsec = statbuf->st_ctim32.tv_sec;
+#else
+ statbuf->st_atim32.tv_sec  = (time32_t)statbuf->st_atim64.tv_sec;
+ statbuf->st_atim32.tv_nsec = statbuf->st_atim64.tv_sec;
+ statbuf->st_mtim32.tv_sec  = (time32_t)statbuf->st_mtim64.tv_sec;
+ statbuf->st_mtim32.tv_nsec = statbuf->st_mtim64.tv_sec;
+ statbuf->st_ctim32.tv_sec  = (time32_t)statbuf->st_ctim64.tv_sec;
+ statbuf->st_ctim32.tv_nsec = statbuf->st_ctim64.tv_sec;
+#endif
+
+ if ((block = self->i_super->sb_blkdev) != NULL) {
+  statbuf->st_dev     = block->bd_device.d_id;
+  statbuf->st_blksize = block->bd_blocksize;
+ } else {
+  statbuf->st_blksize = S_BLKSIZE; /* Default */
+ }
+
+ if (INODE_ISDEV(self))
+     statbuf->st_rdev = INODE_TODEV(self)->d_id;
+
+ /* Call a custom stat-callback and allow it override stat information. */
+ if (self->i_ops->ino_stat)
+     error = (*self->i_ops->ino_stat)(self,statbuf);
+
+ return error;
+}
+
 
 PRIVATE errno_t KCALL
 inode_mirror_diskattr_unlocked(struct inode *__restrict self,

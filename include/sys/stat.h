@@ -160,6 +160,7 @@ typedef __blksize_t blksize_t;
 #   define S_BLKSIZE    512 /* Block size for `st_blocks'. */
 #endif
 
+#ifndef __KERNEL__
 /* NOTE: Since KOS uses a different 'stat' buffer than glibc, but still wants to
  *       maintain binary compatibility, the 'stat()' function provided internally
  *       accepts a glibc-compatible stat buffer, while the functions making use
@@ -213,9 +214,6 @@ __LIBC __NONNULL((2)) int (__LIBCCALL utimensat)(int __fd, char const *__path, s
 #ifdef __USE_TIME64
 __LIBC __NONNULL((2)) int (__LIBCCALL utimensat64)(int __fd, char const *__path, struct __timespec64 const __times[2], int __flags);
 #endif /* __USE_TIME64 */
-#ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((2,3)) int (__LIBCCALL fstatat64)(int __fd, char const *__restrict __file, struct stat64 *__restrict __buf, int __flag);
-#endif /* __USE_LARGEFILE64 */
 #endif /* __USE_ATFILE */
 #ifdef __USE_MISC
 __LIBC __NONNULL((1)) int (__LIBCCALL lchmod)(char const *__file, __mode_t __mode);
@@ -239,6 +237,7 @@ __LIBC __NONNULL((2)) int (__LIBCCALL futimens)(int __fd, struct timespec const 
 __LIBC __NONNULL((2)) int (__LIBCCALL futimens64)(int __fd, struct __timespec64 const __times[2]);
 #endif /* __USE_TIME64 */
 #endif /* __USE_XOPEN2K8 */
+#endif /* !__KERNEL__ */
 
 __DECL_END
 
