@@ -1,0 +1,75 @@
+#!/bin/bash --only-for-syntax-highlighting-dont-actually-execute
+# === How to compile Busybox for KOS (And get a proper shell) ===
+
+# All paths are absolute to the base of your KOS root path.
+# Before staring to follow these instructions, replace all
+# occurances of "${PREFIX}" with your KOS source root path.
+
+mkdir ${PREFIX}/apps/private
+mkdir ${PREFIX}/apps/private/build-busybox-1.27.2
+
+# Download busybox 1.27.2 from here: https://busybox.net/downloads/
+# Other versions should work just as well, but this is the one I'm using
+# Extract the archive so that the following file would exist:
+# ${PREFIX}/apps/private/busybox-1.27.2/Makefile
+
+cd ${PREFIX}/apps/private/build-busybox-1.27.2
+make KBUILD_SRC=../busybox-1.27.2 -f ../busybox-1.27.2/Makefile allnoconfig
+
+# Override "${PREFIX}/apps/private/build-busybox-1.27.2/.config"
+# with the "busybox-config" file found in this directory.
+# Doing so should override an existing file previously created by 'make'
+# NOTE: You must rename "busybox-config" to ".config"
+# NOTE: Failing this step will produce 
+cp "${PREFIX}/apps/busybox-config" "${PREFIX}/apps/private/build-busybox-1.27.2/.config"
+
+# In ".config", find the option "CONFIG_CROSS_COMPILER_PREFIX=".
+# Replace it with the prefix of your KOS toolchain previously created, like so:
+# CONFIG_CROSS_COMPILER_PREFIX="${PREFIX}/binutils/build-binutils-i686-kos/bin/i686-kos-"
+# If you wish, you may enable/disable additional busybox applets and see what works.
+# (As KOS advances in development, I will also enable more applets as they will be
+#  able to function properly)
+
+# Add the following to above the comment block stating
+# "Now, define prototypes for all the functions defined..."
+echo <<EOF
+#ifdef __KOS__
+# include <linux/fs.h>
+# undef HAVE_NET_ETHERNET_H
+# undef HAVE_SYS_STATFS_H
+# undef ENABLE_ASH_INTERNAL_GLOB
+# define ENABLE_ASH_INTERNAL_GLOB 1
+#endif
+EOF
+vi ${PREFIX}/apps/private/busybox-1.27.2/platform.h
+
+
+# Add to "${PREFIX}/apps/private/.sources"
+# NOTE: You must create this file the fist time.
+#       It is automatically included from 
+echo 'DISK_SYNC("install/bin/busybox","/bin/busybox")' > "${PREFIX}/apps/private/.sources"
+
+# Run the following commands to build busybox for KOS and update the disk image to 
+deemon ${PREFIX}/magic.dee --build-only
+cd ${PREFIX}/apps/private/build-busybox-1.27.2
+make
+make CONFIG_PREFIX=${PREFIX}/apps/private/install install
+deemon ${PREFIX}/magic.dee --build-only
+
+# DONE. (The symlinks created by busybox will be missing, but that's ok)
+
+# NOTE: If you wish to use busybox on a USB installation, copy the contents of
+#       "${PREFIX}/apps/private/install" to the root directory of the drive.
+
+# HINT: The busybox binary installed will be stripped of debug information.
+#       Use "${PREFIX}/apps/private/build-busybox-1.27.2/busybox_unstripped" instead.
+
+
+# === How to recompile Busybox after making changes ===
+deemon ${PREFIX}/magic.dee --build-only
+cd ${PREFIX}/apps/private/build-busybox-1.27.2
+make
+make CONFIG_PREFIX=${PREFIX}/apps/private/install install
+deemon ${PREFIX}/magic.dee --build-only
+
+

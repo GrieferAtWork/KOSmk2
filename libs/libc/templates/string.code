@@ -1,0 +1,429 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+/*
+ * #define T     ... <Bit-width type>
+ * #define X(x)  ... <Function name generator>
+ * #define S     ... <Bit-width in bytes>
+ * #define w     ... <Assembly nmemonic>
+ * #define W     ... <Assembly nmemonic as string>
+ * #define WM(x) ... <Translate 'x' into a size value compatible with 'W'>
+ * #define B     ... <Parameter list version of 'T' (memset(... int byte); memsetw(... u16 word))>
+ * #define sB    ... <Same as 'B', but signed>
+ * #define vB    ... <Same as 'B', but void for smallest width>
+ * #define n     ... <length name (optional)>
+ * #define h     ... <Bit-width name (optional)>
+ */ 
+
+#if   BITS ==  8
+#	define T  u8
+#	define X(x)x
+#	define S   1
+#	define w   b
+#	define W  "b"
+#	define B  int
+#	define sB int
+#	define vB void
+#	define n   n_bytes
+#	define h   byte
+#elif BITS == 16
+#	define T u16
+#	define X(x)x##w
+#	define S   2
+#	define w   w
+#	define W  "w"
+#	define B  u16
+#	define sB s16
+#	define vB u16
+#	define n   n_words
+#elif BITS == 32
+#	define T u32
+#	define X(x)x##l
+#	define S   4
+#	define w   l
+#	define W  "l"
+#	define B  u32
+#	define sB s32
+#	define vB u32
+#	define n   n_dwords
+#elif BITS == 64
+#	define T u64
+#	define X(x)x##q
+#	define S   8
+#ifdef __x86_64__
+#	define w   q
+#	define W  "q"
+#else
+#	define w   l
+#	define W  "l"
+#	define WM(x) ((x)*2)
+#endif
+#	define B  u64
+#	define sB s64
+#	define vB u64
+#	define n   n_qwords
+#else
+#	error "Invalid BITS"
+#endif
+
+#ifndef WM
+#	define WM(x) (x)
+#endif
+
+#	define STRING_LARGE_OP_LIMIT 0x200
+#ifdef CONFIG_64BIT_STRING
+#	define STRING_ALIGNMENT_MASK 7
+#else
+#	define STRING_ALIGNMENT_MASK 3
+#endif
+
+
+#ifdef CONFIG_DEBUG
+#define CHECK_DF() \
+{	register u32 temp; \
+	__asm__ __volatile__("pushfl\npopl %0\n" : "=g" (temp) : : "memory"); \
+	assertf(!(temp&EFLAGS_DF),"Direction flag is set (%x)\n",temp); \
+}
+#else
+#define CHECK_DF() {}
+#endif
+
+FORCELOCAL void *(LIBCCALL X(core_memcpy))
+(void *__restrict dst, void const *__restrict src, size_t n) {
+	CHECK_HOST_DATA(dst,n*S);
+	CHECK_HOST_TEXT(src,n*S);
+	CHECK_DF();	
+#if S == 1
+	if (n >= STRING_LARGE_OP_LIMIT) {
+		switch (n & STRING_ALIGNMENT_MASK) {
+		case 0:
+#ifdef CONFIG_64BIT_STRING
+			return core_memcpyq(dst,src,n >> 3);
+		case 4:
+#endif
+			return core_memcpyl(dst,src,n >> 2);
+#ifdef CONFIG_64BIT_STRING
+		case 6:
+#endif
+		case 2:
+			return core_memcpyw(dst,src,n >> 1);
+		default: break;
+		}
+	}
+#endif
+#if defined(__i386__) || defined(__x86_64__)
+	__asm__ __volatile__("rep; movs" W "\n"
+	                     :
+	                     : "D" (dst)
+	                     , "S" (src)
+	                     , "c" (WM(n))
+	                     : "memory");
+#else
+	{	T *_dst = (T *)dst;
+		T *_src = (T *)src;
+		while (n--) *_dst++ = *_src++;
+	}
+#endif
+	return dst;
+}
+
+DECL void *(LIBCCALL X(memcpy))
+(void *__restrict dst, void const *__restrict src, size_t n) {
+	assertf(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
+	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
+	           dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
+	assertf(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
+	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
+	           dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
+	return X(core_memcpy)(dst,src,n);
+}
+DECL void *(LIBCCALL PP_CAT2(X(_memcpy),_d))
+(void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO) {
+	CHECK_HOST_DATA(dst,n*S);
+	CHECK_HOST_TEXT(src,n*S);
+	assertf_d(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
+	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
+	             dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
+	assertf_d(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
+	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
+	             dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
+	return X(core_memcpy)(dst,src,n);
+}
+
+DECL void *(LIBCCALL X(memset))(void *dst, B h, size_t n) {
+	CHECK_HOST_DATA(dst,n*S);
+#if S == 1
+	if (n >= STRING_LARGE_OP_LIMIT) {
+		switch (n & STRING_ALIGNMENT_MASK) {
+		case 0:
+#ifdef CONFIG_64BIT_STRING
+			return memsetq(dst,(u64)0x0101010101010101ull*h,n >> 3);
+		case 4:
+#endif
+			return memsetl(dst,(u32)0x01010101u*h,n >> 2);
+#ifdef CONFIG_64BIT_STRING
+		case 6:
+#endif
+		case 2:
+			return memsetw(dst,(u16)0x0101u*h,n >> 1);
+		default: break;
+		}
+	}
+#endif
+#if defined(__i386__) || defined(__x86_64__)
+	CHECK_DF();
+	__asm__ __volatile__("rep; stos" W "\n"
+	                     :
+	                     : "D" (dst)
+	                     , "a" (h)
+	                     , "c" (WM(n))
+	                     : "memory", "esi");
+#else
+	{	T *iter = (T *)dst;
+		while (n--) *iter++ = (T)h;
+	}
+#endif
+ return dst;
+}
+
+DECL sB (LIBCCALL X(memcmp))
+(void const *a, void const *b, size_t n) {
+#if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
+	sB result = 0;
+	CHECK_DF();
+	__asm__ __volatile__("    jcxz 1f\n"
+						 "    repe cmps" W "\n"
+						 "    seta %b0\n"
+						 "    jnb 1f\n"
+						 "    mov $-1, %0\n"
+						 "1:\n"
+						 : "+a" (result)
+						 : "D" (a)
+						 , "S" (b)
+						 , "c" (WM(n))
+						 : "memory", "cc");
+	return result;
+#else
+	T av,bv; T const *aiter,*biter,*end;
+	av = bv = 0;
+	CHECK_HOST_TEXT(a,n*S);
+	CHECK_HOST_TEXT(b,n*S);
+	end = (aiter = (T const *)a)+n,biter = (T const *)b;
+	while (aiter != end && ((av = *aiter++) == (bv = *biter++)));
+	return (sB)(av-bv);
+#endif
+}
+
+DECL vB *(LIBCCALL X(memchr))
+(vB const *__restrict haystack, B needle, size_t n) {
+#if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
+	vB *result;
+	CHECK_DF();
+	__asm__ __volatile__("    jcxz 2f\n"
+	                     "    repne scas" W "\n"
+	                     "    mov %%edi, %0\n"
+	                     "    je 1f\n"
+	                     "2:  xor %0, %0\n"
+#if S == 1
+	                     "    inc %0\n"
+	                     "1:  dec %0\n"
+#else
+	                     "    add $" PP_STR(S) ", %0\n"
+	                     "1:  sub $" PP_STR(S) ", %0\n"
+#endif
+	                     : "=a" (result)
+	                     : "D" (haystack)
+	                     , "a" (needle)
+	                     , "c" (WM(n))
+	                     : "memory", "cc");
+	return result;
+#else
+	T *iter,*end;
+	end = (iter = (T *)haystack)+n;
+#ifdef CONFIG_DEBUG
+	if (n) CHECK_HOST_TEXT(iter,S);
+#endif
+	for (; iter != end; ++iter) {
+		if (*iter == (T)needle) return (vB *)iter;
+#ifdef CONFIG_DEBUG
+		/* Re-validate the first pointer of the next page. */
+		if (!((uintptr_t)iter & (PAGESIZE-1)))
+		    CHECK_HOST_TEXT(iter,S);
+#endif
+	}
+	return NULL;
+#endif
+}
+
+
+DECL vB *(LIBCCALL X(memrchr))
+(vB const *__restrict haystack, B needle, size_t n) {
+	T *iter = (T *)haystack+n;
+	/* TODO: 'rep scas' */
+#ifdef CONFIG_DEBUG
+	if (n) CHECK_HOST_TEXT(iter-1,S);
+#endif
+	while (iter != haystack) {
+#ifdef CONFIG_DEBUG
+		/* Re-validate the first pointer of the prev page. */
+		if (!((uintptr_t)iter & (PAGESIZE-1)))
+		    CHECK_HOST_TEXT(iter-1,S);
+#endif
+		if (*--iter == (T)needle) return (vB *)iter;
+	}
+	return NULL;
+}
+
+DECL vB *(LIBCCALL X(memend))
+(vB const *__restrict haystack, B needle, size_t n) {
+	T *iter,*end;
+	/* TODO: 'rep scas' */
+	end = (iter = (T *)haystack)+n;
+#ifdef CONFIG_DEBUG
+	if (n) CHECK_HOST_TEXT(iter,S);
+#endif
+	for (; iter != end; ++iter) {
+		if (*iter == (T)needle) break;
+#ifdef CONFIG_DEBUG
+		/* Re-validate the first pointer of the next page. */
+		if (!((uintptr_t)iter & (PAGESIZE-1)))
+		    CHECK_HOST_TEXT(iter,S);
+#endif
+	}
+	return (vB *)iter;
+}
+
+DECL vB *(LIBCCALL X(memrend))
+(vB const *__restrict haystack, B needle, size_t n) {
+	T *iter = (T *)haystack+n;
+#ifdef CONFIG_DEBUG
+	if (n) CHECK_HOST_TEXT(iter-1,S);
+#endif
+	while (iter != haystack) {
+#ifdef CONFIG_DEBUG
+		/* Re-validate the first pointer of the prev page. */
+		if (!((uintptr_t)iter & (PAGESIZE-1)))
+		    CHECK_HOST_TEXT(iter-1,S);
+#endif
+		if (*--iter == (T)needle) break;
+	}
+	return (vB *)iter;
+}
+
+DECL size_t (LIBCCALL X(memlen))
+(vB const *__restrict haystack, B needle, size_t n) {
+	return (uintptr_t)X(memend)(haystack,needle,n) - (uintptr_t)haystack;
+}
+DECL size_t (LIBCCALL X(memrlen))
+(vB const *__restrict haystack, B needle, size_t n) {
+	return (uintptr_t)X(memrend)(haystack,needle,n) - (uintptr_t)haystack;
+}
+
+
+
+DECL vB *(LIBCCALL X(rawmemchr))
+(vB const *__restrict haystack, B needle) {
+	T *iter = (T *)haystack;
+	/* TODO: 'rep scas' */
+#ifdef CONFIG_DEBUG
+	CHECK_HOST_TEXT(iter,S);
+#endif
+	for (;; ++iter) {
+		if (*iter == (T)needle) break;
+#ifdef CONFIG_DEBUG
+		/* Re-validate the first pointer of the next page. */
+		if (!((uintptr_t)iter & (PAGESIZE-1)))
+		    CHECK_HOST_TEXT(iter,S);
+#endif
+	}
+	return (vB *)iter;
+}
+
+DECL vB *(LIBCCALL X(rawmemrchr))
+(vB const *__restrict haystack, B needle) {
+	T *iter = (T *)haystack;
+#ifdef CONFIG_DEBUG
+	CHECK_HOST_TEXT(iter-1,S);
+#endif
+	while (iter != haystack) {
+#ifdef CONFIG_DEBUG
+		/* Re-validate the first pointer of the prev page. */
+		if (!((uintptr_t)iter & (PAGESIZE-1)))
+		    CHECK_HOST_TEXT(iter-1,S);
+#endif
+		if (*--iter == (T)needle) break;
+	}
+	return (vB *)iter;
+}
+
+DECL size_t (LIBCCALL X(rawmemlen))
+(vB const *__restrict haystack, B needle) {
+	return (uintptr_t)X(rawmemchr)(haystack,needle) - (uintptr_t)haystack;
+}
+DECL size_t (LIBCCALL X(rawmemrlen))
+(vB const *__restrict haystack, B needle) {
+	return (uintptr_t)X(rawmemrchr)(haystack,needle) - (uintptr_t)haystack;
+}
+
+
+#if S != 1
+DECL void *(LIBCCALL X(mempat))
+(void *__restrict dst, B pattern, size_t n_bytes) {
+	byte_t *iter = (byte_t *)dst;
+#if S == 2
+	if (n_bytes && (uintptr_t)iter & (S-1)) {
+		*iter = ((u8 *)&pattern)[1];
+		++iter,--n_bytes;
+	}
+#else
+	while (n_bytes && (uintptr_t)iter & (S-1)) {
+		*iter = ((u8 *)&pattern)[(uintptr_t)iter & (S-1)];
+		++iter,--n_bytes;
+	}
+#endif
+	X(memset)(dst,pattern,n_bytes/S);
+	n_bytes &= (S-1);
+#if S == 2
+	if (n_bytes) *iter = ((u8 *)&pattern)[0];
+#else
+	while (n_bytes) {
+		*iter = ((u8 *)&pattern)[(uintptr_t)iter & (S-1)];
+		++iter,--n_bytes;
+	}
+#endif
+	return dst;
+}
+#endif
+
+
+
+#undef STRING_LARGE_OP_LIMIT
+#undef STRING_ALIGNMENT_MASK
+#undef CHECK_DF
+#undef h
+#undef n
+#undef vB
+#undef B
+#undef sB
+#undef W
+#undef w
+#undef S
+#undef X
+#undef T
+#undef BITS

@@ -1,0 +1,299 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\.sources" />
+    <None Include="..\..\src\kernel\core-modules\autopart\efi.c.inl" />
+    <None Include="..\..\src\kernel\core-modules\fs\fat-readdir.c.inl" />
+    <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl" />
+    <None Include="..\..\src\kernel\fs\canonbuffer.c.inl" />
+    <None Include="..\..\src\kernel\linker\ksym.S" />
+    <None Include="..\..\src\kernel\memory\malloc-realign.c.inl" />
+    <None Include="..\..\src\kernel\memory\memory-free.c.inl" />
+    <None Include="..\..\src\kernel\memory\memory-info.c.inl" />
+    <None Include="..\..\src\kernel\mman\environ.c.inl" />
+    <None Include="..\..\src\kernel\mman\mcore.c.inl" />
+    <None Include="..\..\src\kernel\sched\pid.c.inl" />
+    <None Include="..\..\src\linker-scripts\kernel.ld" />
+    <None Include="..\..\src\linker-scripts\module.ld" />
+    <None Include="..\..\src\modules\block\ata-pio.c.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\kernel\core-modules\autopart\mbr.c" />
+    <ClCompile Include="..\..\src\kernel\core-modules\disk\bios-disk.c" />
+    <ClCompile Include="..\..\src\kernel\core-modules\fs\fat.c" />
+    <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c" />
+    <ClCompile Include="..\..\src\kernel\core-modules\linker\elf.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\boot.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\gdt.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\irq.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\realmode.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\smp.c" />
+    <ClCompile Include="..\..\src\kernel\core\boot.c" />
+    <ClCompile Include="..\..\src\kernel\core\main.c" />
+    <ClCompile Include="..\..\src\kernel\core\paging.c" />
+    <ClCompile Include="..\..\src\kernel\core\stack.c" />
+    <ClCompile Include="..\..\src\kernel\core\syscall.c" />
+    <ClCompile Include="..\..\src\kernel\core\syslog.c" />
+    <ClCompile Include="..\..\src\kernel\core\user.c" />
+    <ClCompile Include="..\..\src\kernel\dev\blkdev.c" />
+    <ClCompile Include="..\..\src\kernel\dev\chrdev.c" />
+    <ClCompile Include="..\..\src\kernel\dev\device.c" />
+    <ClCompile Include="..\..\src\kernel\dev\diskpart.c" />
+    <ClCompile Include="..\..\src\kernel\dev\fstype.c" />
+    <ClCompile Include="..\..\src\kernel\dev\rtc.c" />
+    <ClCompile Include="..\..\src\kernel\fs\cache.c" />
+    <ClCompile Include="..\..\src\kernel\fs\fd.c" />
+    <ClCompile Include="..\..\src\kernel\fs\file-lock.c" />
+    <ClCompile Include="..\..\src\kernel\fs\file.c" />
+    <ClCompile Include="..\..\src\kernel\fs\fs-test.c" />
+    <ClCompile Include="..\..\src\kernel\fs\fs.c" />
+    <ClCompile Include="..\..\src\kernel\fs\iobuffer.c" />
+    <ClCompile Include="..\..\src\kernel\fs\pty.c" />
+    <ClCompile Include="..\..\src\kernel\fs\sys_fs.c" />
+    <ClCompile Include="..\..\src\kernel\fs\vfs.c" />
+    <ClCompile Include="..\..\src\kernel\input\keyboard.c" />
+    <ClCompile Include="..\..\src\kernel\linker\driver-module.c" />
+    <ClCompile Include="..\..\src\kernel\linker\exec.c" />
+    <ClCompile Include="..\..\src\kernel\linker\kernel-module.c" />
+    <ClCompile Include="..\..\src\kernel\linker\module.c" />
+    <ClCompile Include="..\..\src\kernel\linker\patch.c" />
+    <ClCompile Include="..\..\src\kernel\memory\detect.c" />
+    <ClCompile Include="..\..\src\kernel\memory\malloc.c" />
+    <ClCompile Include="..\..\src\kernel\memory\memory.c" />
+    <ClCompile Include="..\..\src\kernel\mman\branch.c" />
+    <ClCompile Include="..\..\src\kernel\mman\futex.c" />
+    <ClCompile Include="..\..\src\kernel\mman\mman.c" />
+    <ClCompile Include="..\..\src\kernel\mman\mswap.c" />
+    <ClCompile Include="..\..\src\kernel\mman\pagefault.c" />
+    <ClCompile Include="..\..\src\kernel\mman\part.c" />
+    <ClCompile Include="..\..\src\kernel\mman\sys_mman.c" />
+    <ClCompile Include="..\..\src\kernel\sched\cpu.c" />
+    <ClCompile Include="..\..\src\kernel\sched\rpc.c" />
+    <ClCompile Include="..\..\src\kernel\sched\signal.c" />
+    <ClCompile Include="..\..\src\kernel\sched\sys_sched.c" />
+    <ClCompile Include="..\..\src\kernel\sched\task-util.c" />
+    <ClCompile Include="..\..\src\kernel\sched\task.c" />
+    <ClCompile Include="..\..\src\kernel\sched\unshare.c" />
+    <ClCompile Include="..\..\src\kernel\test\owner_rwlock.c" />
+    <ClCompile Include="..\..\src\kernel\test\string.c" />
+    <ClCompile Include="..\..\src\modules\block\ata.c" />
+    <ClCompile Include="..\..\src\modules\char\memdev.c" />
+    <ClCompile Include="..\..\src\modules\fs\devfs.c" />
+    <ClCompile Include="..\..\src\modules\input\ps2.c" />
+    <ClCompile Include="..\..\src\modules\lib\libterm.c" />
+    <ClCompile Include="..\..\src\modules\linker\pe.c" />
+    <ClCompile Include="..\..\src\modules\video\vga-tty.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\include\dev\blkdev.h" />
+    <ClInclude Include="..\..\src\include\dev\chrdev.h" />
+    <ClInclude Include="..\..\src\include\dev\device.h" />
+    <ClInclude Include="..\..\src\include\dev\rtc.h" />
+    <ClInclude Include="..\..\src\include\fs\access.h" />
+    <ClInclude Include="..\..\src\include\fs\atomic-iobuffer.h" />
+    <ClInclude Include="..\..\src\include\fs\basic_types.h" />
+    <ClInclude Include="..\..\src\include\fs\canonbuffer.h" />
+    <ClInclude Include="..\..\src\include\fs\dentry.h" />
+    <ClInclude Include="..\..\src\include\fs\fd.h" />
+    <ClInclude Include="..\..\src\include\fs\file.h" />
+    <ClInclude Include="..\..\src\include\fs\fs.h" />
+    <ClInclude Include="..\..\src\include\fs\inode.h" />
+    <ClInclude Include="..\..\src\include\fs\iobuffer.h" />
+    <ClInclude Include="..\..\src\include\fs\pty.h" />
+    <ClInclude Include="..\..\src\include\fs\superblock.h" />
+    <ClInclude Include="..\..\src\include\fs\vfs.h" />
+    <ClInclude Include="..\..\src\include\input\keyboard.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\apic.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\apicdef.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\cpu.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\cpufeatures.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\cpustate.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\gdt.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\mp.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\realmode.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\tss.h" />
+    <ClInclude Include="..\..\src\include\kernel\boot.h" />
+    <ClInclude Include="..\..\src\include\kernel\exec.h" />
+    <ClInclude Include="..\..\src\include\kernel\export.h" />
+    <ClInclude Include="..\..\src\include\kernel\irq.h" />
+    <ClInclude Include="..\..\src\include\kernel\malloc.h" />
+    <ClInclude Include="..\..\src\include\kernel\memory.h" />
+    <ClInclude Include="..\..\src\include\kernel\mman.h" />
+    <ClInclude Include="..\..\src\include\kernel\mswap.h" />
+    <ClInclude Include="..\..\src\include\kernel\paging-util.h" />
+    <ClInclude Include="..\..\src\include\kernel\paging.h" />
+    <ClInclude Include="..\..\src\include\kernel\stack.h" />
+    <ClInclude Include="..\..\src\include\kernel\syscall-table.h" />
+    <ClInclude Include="..\..\src\include\kernel\syscall.h" />
+    <ClInclude Include="..\..\src\include\kernel\syslog.h" />
+    <ClInclude Include="..\..\src\include\kernel\test.h" />
+    <ClInclude Include="..\..\src\include\kernel\user.h" />
+    <ClInclude Include="..\..\src\include\linker\module.h" />
+    <ClInclude Include="..\..\src\include\linker\patch.h" />
+    <ClInclude Include="..\..\src\include\modules\ata.h" />
+    <ClInclude Include="..\..\src\include\modules\bios-disk.h" />
+    <ClInclude Include="..\..\src\include\modules\efi.h" />
+    <ClInclude Include="..\..\src\include\modules\fat.h" />
+    <ClInclude Include="..\..\src\include\modules\libterm.h" />
+    <ClInclude Include="..\..\src\include\modules\mbr.h" />
+    <ClInclude Include="..\..\src\include\modules\memdev.h" />
+    <ClInclude Include="..\..\src\include\modules\ps2.h" />
+    <ClInclude Include="..\..\src\include\modules\tty.h" />
+    <ClInclude Include="..\..\src\include\modules\vga.h" />
+    <ClInclude Include="..\..\src\include\proprietary\multiboot.h" />
+    <ClInclude Include="..\..\src\include\proprietary\multiboot2.h" />
+    <ClInclude Include="..\..\src\include\sched\cpu.h" />
+    <ClInclude Include="..\..\src\include\sched\paging.h" />
+    <ClInclude Include="..\..\src\include\sched\percpu.h" />
+    <ClInclude Include="..\..\src\include\sched\rpc.h" />
+    <ClInclude Include="..\..\src\include\sched\signal.h" />
+    <ClInclude Include="..\..\src\include\sched\smp.h" />
+    <ClInclude Include="..\..\src\include\sched\task.h" />
+    <ClInclude Include="..\..\src\include\sched\types.h" />
+    <ClInclude Include="..\..\src\include\sync\owner-rwlock.h" />
+    <ClInclude Include="..\..\src\include\sync\rwlock.h" />
+    <ClInclude Include="..\..\src\include\sync\sig.h" />
+    <ClInclude Include="..\..\src\kernel\debug-config.h" />
+    <ClInclude Include="..\..\src\kernel\linker\ksym.h" />
+    <ClInclude Include="..\..\src\kernel\mman\intern.h" />
+    <ClInclude Include="..\..\src\modules\input\ps2_keymaps.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{86D226C5-EF62-4562-AC06-E6A753DFA7CF}</ProjectGuid>
+    <RootNamespace>kos_kernel</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+    <OutDir>$(SolutionDir)..\</OutDir>
+    <IncludePath>$(SolutionDir)..\include;$(SolutionDir)..\src\include\</IncludePath>
+    <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
+    <NMakeReBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" $(SolutionDir)..\magic.dee --build-only --format-error-messages --force</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" $(SolutionDir)..\magic.dee --build-only --format-error-messages</NMakeBuildCommandLine>
+    <ReferencePath>
+    </ReferencePath>
+    <LibraryPath>
+    </LibraryPath>
+    <LibraryWPath>
+    </LibraryWPath>
+    <SourcePath>
+    </SourcePath>
+    <ExcludePath />
+    <NMakeCleanCommandLine>
+    </NMakeCleanCommandLine>
+    <NMakeForcedIncludes>$(SolutionDir)..\include\__stdinc-syntax.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <AdditionalOptions>/TP</AdditionalOptions>
+    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1;CONFIG_DEBUG=1;CONFIG_TRACE_LEAKS=1</NMakePreprocessorDefinitions>
+    <NMakeOutput>
+    </NMakeOutput>
+    <NMakeIncludeSearchPath>
+    </NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+    <OutDir>$(SolutionDir)..\</OutDir>
+    <IncludePath>$(SolutionDir)..\include;$(SolutionDir)..\src\include\</IncludePath>
+    <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
+    <NMakeReBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" $(SolutionDir)..\magic.dee --build-only --format-error-messages --force --optimize</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" $(SolutionDir)..\magic.dee --build-only --format-error-messages --optimize</NMakeBuildCommandLine>
+    <ReferencePath>
+    </ReferencePath>
+    <LibraryPath>
+    </LibraryPath>
+    <LibraryWPath>
+    </LibraryWPath>
+    <SourcePath>
+    </SourcePath>
+    <ExcludePath />
+    <NMakeCleanCommandLine>
+    </NMakeCleanCommandLine>
+    <NMakeForcedIncludes>$(SolutionDir)..\include\__stdinc-syntax.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <AdditionalOptions>/TP</AdditionalOptions>
+    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1</NMakePreprocessorDefinitions>
+    <NMakeOutput>
+    </NMakeOutput>
+    <NMakeIncludeSearchPath>
+    </NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

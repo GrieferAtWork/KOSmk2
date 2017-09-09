@@ -1,0 +1,144 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+#define GCC_LIBPATH "/binutils/build-gcc-i686-kos/i686-kos/libgcc"
+
+
+#define __STATIC_LIBGCC \
+		LIBPATH(GCC_LIBPATH) \
+		LIB("gcc") C_FLAGS("-static-libgcc")
+#define __NOSTDLIB \
+		C_FLAGS("-nostdlib") \
+		L_FLAGS("-nostdlib")
+
+/* Pre-defined project types:
+ * >> BEGIN APPLICATION("my_app")
+ * >>     SET_OUTPUT("/bin/apps/my_app")
+ * >>     SET_DISKFILE("/bin/my_app")
+ * >>
+ * >>     SOURCE("/apps/my_app/*.c")
+ * >> END
+ */
+#define ARCHIVE(name) \
+        PROJECT(name) \
+        SET_ARCHIVER(default_ar)
+#define LIBRARY(name) \
+		PROJECT(name) \
+		__NOSTDLIB \
+		__STATIC_LIBGCC \
+		L_FLAGS("-shared") \
+		C_FLAGS("-fPIC")
+#define APPLICATION_NOSTDLIB(name) \
+		PROJECT(name) \
+		__NOSTDLIB \
+		__STATIC_LIBGCC
+#define APPLICATION(name) \
+		APPLICATION_NOSTDLIB(name) \
+		LIBPATH("/bin/libs") \
+		LIB("c") \
+		PROJ_DEP("libc") \
+		PROJ_DEP("_start") \
+		OBJECT("/bin/libs/crt0.o")
+
+#define MODULE_NOSTDLIB(name) \
+		PROJECT(name) \
+		__STATIC_LIBGCC \
+		__NOSTDLIB \
+		L_FLAGS("--shared") \
+		LINKER_SCRIPT("linker-scripts/module.ld")
+#define STATIC_MODULE(name) \
+		MODULE_NOSTDLIB(name) \
+		PROJ_DEP("kernel") \
+		STATIC_SYMBOLS("/bin/kos.bin")
+#define MODULE(name) \
+		MODULE_NOSTDLIB(name) \
+		LIBPATH("/bin/mod")
+
+
+/* TODO: Get rid of modes */
+BEGIN_MODE("tpp")
+	SET_PREPROCESSOR("tpp")
+	DEL_MODE("cpp")
+END
+BEGIN_MODE("cpp")
+	SET_PREPROCESSOR(none)
+	DEL_MODE("tpp")
+END
+
+
+BEGIN_MODE("elf")
+	DEFINE("__ELF__")
+	UNDEF("__SYMBOL_NEED_UNDERSCORE")
+	UNDEF("__USER_LABEL_PREFIX__")
+	UNDEF("__PE__")
+	SET_COMPILER("i686-elf-c")
+	SET_LINKER("i686-elf-ld")
+	if (_proj._exe_a !is none) {
+		SET_ARCHIVER("i686-elf-ar")
+	}
+END
+ALIAS_MODE("i686-elf","elf")
+ALIAS_MODE("i386-elf","elf")
+
+BEGIN_MODE("pe")
+	DEFINE("__SYMBOL_NEED_UNDERSCORE")
+	DEFINE("__USER_LABEL_PREFIX__=_")
+	DEFINE("__PE__")
+	UNDEF("__ELF__")
+	SET_COMPILER("i686-pe-c")
+	SET_LINKER("i686-pe-ld")
+	if (_proj._exe_a !is none) {
+		SET_ARCHIVER("i686-pe-ar")
+	}
+END
+ALIAS_MODE("i686-pe","pe")
+ALIAS_MODE("i386-pe","pe")
+
+
+/* Define some default macros for the platform */
+DEFINE("__KOS__")
+DEFINE("__ELF__")
+INCLUDE("/include")
+C_FLAGS("-nostdlib")
+P_FLAGS("-nostdlib")
+
+/* Configure default warning behavior. */
+C_FLAGS("-ffreestanding")
+C_FLAGS("-Wall")
+C_FLAGS("-Wextra")
+C_FLAGS("-Wno-nonnull-compare")
+C_FLAGS("-Wno-comment")
+C_FLAGS("-Wno-strict-aliasing")
+C_FLAGS("-Wno-format")
+C_FLAGS("-Wno-unused-parameter") /* TODO: Remove me */
+if (config_debug) {
+	C_FLAGS("-fstack-protector-strong")
+	C_FLAGS("-g")
+}
+
+
+#include "apps/.sources"
+#include "libs/.sources"
+#include "src/.sources"
+
+/* Synchronize some disk data. */
+DISK_SYNC("/misc/keymaps/*.map","/lib/keymap/")
+
+
+

@@ -1,0 +1,202 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+#ifndef GUARD_HYBRID_COMPILER_H
+#define GUARD_HYBRID_COMPILER_H 1
+
+#include "../__stdinc.h"
+
+#define ATTR_NOINLINE       __ATTR_NOINLINE
+#define ATTR_NORETURN       __ATTR_NORETURN
+#define ATTR_FASTCALL       __ATTR_FASTCALL
+#define ATTR_STDCALL        __ATTR_STDCALL
+#define ATTR_CDECL          __ATTR_CDECL
+#define ATTR_PURE           __ATTR_PURE
+#define ATTR_CONST          __ATTR_CONST
+#define ATTR_MALLOC         __ATTR_MALLOC
+#define ATTR_HOT            __ATTR_HOT
+#define ATTR_COLD           __ATTR_COLD
+#define ATTR_ALLOC_SIZE     __ATTR_ALLOC_SIZE
+#define ATTR_ALLOC_ALIGN    __ATTR_ALLOC_ALIGN
+#define ATTR_ASSUME_ALIGNED __ATTR_ASSUME_ALIGNED
+#define ATTR_NOCLONE        __ATTR_NOCLONE
+#define ATTR_USED           __ATTR_USED
+#define ATTR_UNUSED         __ATTR_UNUSED
+#define ATTR_SENTINEL       __ATTR_SENTINEL
+#define ATTR_THREAD         __ATTR_THREAD
+#define ATTR_DEPRECATED     __ATTR_DEPRECATED
+#define ATTR_WARNING        __ATTR_WARNING
+#define ATTR_ERROR          __ATTR_ERROR
+#define ATTR_SECTION        __ATTR_SECTION
+#define ATTR_RETNONNULL     __ATTR_RETNONNULL
+#define ATTR_ALIGNED        __ATTR_ALIGNED
+#define ATTR_ALIAS          __ATTR_ALIAS
+
+#define COMPILER_LENOF      __COMPILER_LENOF
+#define COMPILER_ENDOF      __COMPILER_ENDOF
+#define COMPILER_STRLEN     __COMPILER_STRLEN
+#define COMPILER_STREND     __COMPILER_STREND
+#define COMPILER_UNUSED     __COMPILER_UNUSED
+#define COMPILER_UNIPOINTER __COMPILER_UNIPOINTER
+#define COMPILER_BARRIER    __COMPILER_BARRIER
+#define COMPILER_READ_BARRIER __COMPILER_READ_BARRIER
+#define COMPILER_WRITE_BARRIER __COMPILER_WRITE_BARRIER
+
+#define DEFINE_PRIVATE_ALIAS __DEFINE_PRIVATE_ALIAS
+#define DEFINE_PUBLIC_ALIAS __DEFINE_PUBLIC_ALIAS
+#define DEFINE_INTERN_ALIAS __DEFINE_INTERN_ALIAS
+#define ALIAS_IMPL          __ALIAS_IMPL
+#define ALIAS_FUNC          __ALIAS_FUNC
+#define ALIAS_SYMBOL        __ALIAS_SYMBOL
+
+#define likely              __likely
+#define unlikely            __unlikely
+
+#define ASMNAME             __ASMNAME
+#define DECL_BEGIN          __DECL_BEGIN
+#define DECL_END            __DECL_END
+#define PACKED              __ATTR_PACKED
+#define FCALL               __FCALL
+#define KCALL               __KCALL
+#define XBLOCK              __XBLOCK
+#define XRETURN             __XRETURN
+
+#define PP_PRIVATE_STR      __PP_PRIVATE_STR
+#define PP_STR              __PP_STR
+#define PP_PRIVATE_CAT2     __PP_PRIVATE_CAT2
+#define PP_PRIVATE_CAT3     __PP_PRIVATE_CAT3
+#define PP_CAT2             __PP_CAT2
+#define PP_CAT3             __PP_CAT3
+#define PP_PRIVATE_MUL8     __PP_PRIVATE_MUL8
+#define PP_MUL8             __PP_MUL8
+#define STATIC_ASSERT       __STATIC_ASSERT
+
+#define NONNULL             __NONNULL
+#define WUNUSED             __WUNUSED
+#define UNUSED              __UNUSED
+
+#define CLEARED             __CLEARED      /* Annotation for allocators returning zero-initialized memory. */
+#define WEAK                __WEAK         /* Annotation for weakly referenced data. */
+#define REF                 __REF          /* Annotation for reference holders. */
+#define ATOMIC_DATA         __ATOMIC_DATA  /* Annotation for atomic data. */
+#define PAGE_ALIGNED        __PAGE_ALIGNED /* Annotation for page-aligned pointers. */
+#define USER                __USER         /* Annotation for user-space memory (default outside kernel). */
+#define HOST                __HOST         /* Annotation for kernel-space memory (default within kernel). */
+#define VIRT                __VIRT         /* Annotation for virtual memory (default). */
+#define PHYS                __PHYS         /* Annotation for physical memory. */
+#define CRIT                __CRIT         /* Annotation for functions that require 'TASK_ISCRIT()' (When called from within the kernel). */
+#define SAFE                __SAFE         /* Annotation for functions that require 'TASK_ISSAFE()' (When called from within the kernel). */
+#define NOMP                __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */
+#define PERCPU              __PERCPU       /* Annotation for variables that must be accessed using the per-cpu API. */
+#define ASMCALL             __ASMCALL      /* Annotation for functions that are implemented in assembly and require a custom calling convention. */
+
+#ifdef __KERNEL__
+#define KPD                                /* Annotation for functions that may only be called when the active page directory
+                                            * maps all dynamic physical memory 1-on-1 (aka. all pointers marked as 'PHYS').
+                                            * HINT: 'pdir_kernel' is (the only?) directory applicable for this. */
+#endif
+
+#define FUNDEF              __PUBDEF
+#define DATDEF              __PUBDEF
+#define PUBLIC              __PUBLIC
+#define INTERN              __INTERN
+#define INTDEF              __INTDEF
+#define PRIVATE             __PRIVATE
+#define FORCELOCAL          __FORCELOCAL
+#define LOCAL               __LOCAL
+#define LIBCCALL            __LIBCCALL
+
+#define SECTION_STRING(section,str) \
+ (*(char(*)[sizeof(str)/sizeof(char)])XBLOCK({ \
+    static ATTR_SECTION(section) char const _s[] = str; \
+    XRETURN &_s; }))
+
+#define __PRIVATE_ARG_PLACEHOLDER_1    ,
+#define __PRIVATE_ARG_PLACEHOLDER_true ,
+#define __PRIVATE_ARG_PLACEHOLDER_yes  ,
+#define __PRIVATE_ARG_PLACEHOLDER_ok   ,
+#define __PRIVATE_TAKE_SECOND_ARG_IMPL(x,val,...) val
+#define __PRIVATE_TAKE_SECOND_ARG(x) __PRIVATE_TAKE_SECOND_ARG_IMPL x
+#define __PRIVATE_IS_TRUE2(x) __PRIVATE_TAKE_SECOND_ARG((x 1,0))
+#define __PRIVATE_IS_TRUE(x) __PRIVATE_IS_TRUE2(__PRIVATE_ARG_PLACEHOLDER_##x)
+#define __PRIVATE_OR_0(y)   __PRIVATE_IS_TRUE(y)
+#define __PRIVATE_OR_1(y)   1
+#define __PRIVATE_OR2(x,y)  __PRIVATE_OR_##x(y)
+#define __PRIVATE_OR(x,y)   __PRIVATE_OR2(x,y)
+#define __PRIVATE_AND_0(y)  0
+#define __PRIVATE_AND_1(y)  __PRIVATE_IS_TRUE(y)
+#define __PRIVATE_AND2(x,y) __PRIVATE_OR_##x(y)
+#define __PRIVATE_AND(x,y)  __PRIVATE_OR2(x,y)
+
+#define __is_true(x)    __PRIVATE_IS_TRUE(x)
+#define __or(x,y)       __PRIVATE_OR(__PRIVATE_IS_TRUE(x),y)
+#define __and(x,y)      __PRIVATE_AND(__PRIVATE_IS_TRUE(x),y)
+
+#ifdef __KERNEL__
+#   define IS_BUILTIN(x) __PRIVATE_IS_TRUE(x)
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+#   define IS_ENABLED(x) __PRIVATE_IS_TRUE(x)
+#else
+#   define IS_ENABLED(x) __or(x,x##_MODULE)
+#endif
+#endif
+
+
+#ifdef GUARD_HYBRID_LIMITS_H
+#ifndef PAGESIZE
+#   define PAGESIZE         __PAGESIZE
+#endif /* !PAGESIZE */
+#   define CACHELINE        __CACHELINE
+#   define CACHELINE_ALIGNED ATTR_ALIGNED(CACHELINE)
+#endif /* GUARD_HYBRID_LIMITS_H */
+#ifdef __CC__
+#ifdef GUARD_HYBRID_DEBUGINFO_H
+#   define DEBUGINFO         __DEBUGINFO
+#   define DEBUGINFO_GEN     __DEBUGINFO_GEN
+#   define DEBUGINFO_MUNUSED __DEBUGINFO_MUNUSED
+#   define DEBUGINFO_UNUSED  __DEBUGINFO_UNUSED
+#   define DEBUGINFO_FWD     __DEBUGINFO_FWD
+#   define DEBUGINFO_NUL     __DEBUGINFO_NUL
+#endif /* GUARD_HYBRID_DEBUGINFO_H */
+#ifdef GUARD_HYBRID_CHECK_H
+#   define OK_USER_TEXT     __OK_USER_TEXT
+#   define OK_HOST_TEXT     __OK_HOST_TEXT
+#   define OK_USER_DATA     __OK_USER_DATA
+#   define OK_HOST_DATA     __OK_HOST_DATA
+#   define CHECK_HOST_TEXT  __CHECK_HOST_TEXT
+#   define CHECK_HOST_DATA  __CHECK_HOST_DATA
+#   define CHECK_USER_TEXT  __CHECK_USER_TEXT
+#   define CHECK_USER_DATA  __CHECK_USER_DATA
+#   define CHECK_USER_TOBJ  __CHECK_USER_TOBJ
+#   define CHECK_HOST_TOBJ  __CHECK_HOST_TOBJ
+#   define CHECK_USER_DOBJ  __CHECK_USER_DOBJ
+#   define CHECK_HOST_DOBJ  __CHECK_HOST_DOBJ
+#endif /* GUARD_HYBRID_CHECK_H */
+#ifdef GUARD_HYBRID_TIMESPEC_H
+#   define TIMESPEC_ADD     __TIMESPEC_ADD
+#   define TIMESPEC_SUB     __TIMESPEC_SUB
+#   define TIMESPEC_LO   __TIMESPEC_LOWER
+#   define TIMESPEC_LE   __TIMESPEC_LOWER_EQUAL
+#   define TIMESPEC_EQ   __TIMESPEC_EQUAL
+#   define TIMESPEC_NE   __TIMESPEC_NOT_EQUAL
+#   define TIMESPEC_GR   __TIMESPEC_GREATER
+#   define TIMESPEC_GE   __TIMESPEC_GREATER_EQUAL
+#endif /* GUARD_HYBRID_TIMESPEC_H */
+#endif /* __CC__ */
+
+#endif /* !GUARD_HYBRID_COMPILER_H */

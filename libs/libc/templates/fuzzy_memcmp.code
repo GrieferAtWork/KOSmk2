@@ -1,0 +1,66 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+#ifdef NOCASE
+PUBLIC size_t (LIBCCALL fuzzy_memcasecmp)(void const *a, size_t a_bytes,
+                                          void const *b, size_t b_bytes)
+#define A(i) tolower(((char *)a)[i])
+#define B(i) tolower(((char *)b)[i])
+#undef NOCASE
+#else
+PUBLIC size_t (LIBCCALL fuzzy_memcmp)(void const *a, size_t a_bytes,
+                                      void const *b, size_t b_bytes)
+#define A(i) ((char *)a)[i]
+#define B(i) ((char *)b)[i]
+#endif
+{
+ size_t *v0,*v1,i,j,cost,temp;
+ bool is_malloc = false;
+ if unlikely(!a_bytes) return b_bytes;
+ if unlikely(!b_bytes) return a_bytes;
+ if (b_bytes > a_bytes) SWAP(a,b),SWAP(a_bytes,b_bytes);
+ if (b_bytes >= 128) {
+  v0 = (size_t *)(malloc)((b_bytes+1)*sizeof(size_t));
+  if unlikely(!v0) goto use_alloca;
+  v1 = (size_t *)(malloc)((b_bytes+1)*sizeof(size_t));
+  if unlikely(!v1) { (free)(v1); goto use_alloca; }
+  is_malloc = true;
+ } else use_alloca: {
+  v0 = (size_t *)alloca((b_bytes+1)*sizeof(size_t));
+  v1 = (size_t *)alloca((b_bytes+1)*sizeof(size_t));
+ }
+ for (i = 0; i < b_bytes; ++i) v0[i] = i;
+ for (i = 0; i < a_bytes; ++i) {
+  v1[0] = i+1;
+  for (j = 0; j < b_bytes; j++) {
+   cost  = A(i) != B(j);
+   cost += v0[j];
+   temp  = v1[j]+1;
+   if (cost > temp) cost = temp;
+   temp  = v0[j+1]+1;
+   if (cost > temp) cost = temp;
+   v1[j+1] = cost;
+  }
+  memcpy(v0,v1,b_bytes*sizeof(size_t));
+ }
+ if (is_malloc) free(v1),free(v0);
+ return v1[b_bytes];
+}
+#undef B
+#undef A

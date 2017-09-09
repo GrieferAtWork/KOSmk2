@@ -1,0 +1,211 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+#ifndef GUARD_INCLUDE_SCHED_CPU_H
+#define GUARD_INCLUDE_SCHED_CPU_H 1
+
+#include <hybrid/compiler.h>
+#include <hybrid/types.h>
+#include <sched/percpu.h>
+#include <sched/types.h>
+
+DECL_BEGIN
+
+/* CPU locking control.
+ * NOTE: To prevent dead-locks when a hardware-interrupt
+ *       such as a key press tries to send a signal and
+ *       therefor needs to acquire a write-lock to all
+ *       CPUs with tasks waiting for the event, you
+ *       must _always_ disable interrupts before acquiring any
+ *       kind of lock to your own CPU's 'c_lock' lock.
+ *    >> In connection to the fact that the scheduler is
+ *       allowed to change the CPU you're running on at
+ *       any time, you'll probably have to always disable
+ *       interrupts when accessing any kind of CPU.
+ * NOTE: A similar rule applies to signal locks, but to safely
+ *       use those, you can simply disable preemption before
+ *       locking the signal to start receiving, and re-enabling
+ *       it once it has been received.
+ */
+#define cpu_reading(x)     atomic_rwlock_reading(&(x)->c_lock)
+#define cpu_writing(x)     atomic_rwlock_writing(&(x)->c_lock)
+#define cpu_tryread(x)     atomic_rwlock_tryread(&(x)->c_lock)
+#define cpu_trywrite(x)    atomic_rwlock_trywrite(&(x)->c_lock)
+#define cpu_tryupgrade(x)  atomic_rwlock_tryupgrade(&(x)->c_lock)
+#define cpu_read(x)        atomic_rwlock_read(&(x)->c_lock)
+#define cpu_write(x)       atomic_rwlock_write(&(x)->c_lock)
+#define cpu_upgrade(x)     atomic_rwlock_upgrade(&(x)->c_lock)
+#define cpu_downgrade(x)   atomic_rwlock_downgrade(&(x)->c_lock)
+#define cpu_endread(x)     atomic_rwlock_endread(&(x)->c_lock)
+#define cpu_endwrite(x)    atomic_rwlock_endwrite(&(x)->c_lock)
+
+/* Lock the current CPU for reading/writing, as well as
+ * disabling preemption similar to PREEMPTION_PUSH() */
+#define CPU_READTHIS() \
+ XBLOCK({ register pflag_t _r; \
+          struct cpu *_c; \
+          for (;;) { \
+            _c = THIS_CPU; \
+            cpu_read(_c); \
+            __asm__ __volatile__("pushfl\n" \
+                                 "popl %0\n" \
+                                 "cli" : "=g" (_r)); \
+            COMPILER_READ_BARRIER(); \
+            if likely(_c == THIS_CPU) break; \
+            __asm__ __volatile__("pushl %0\n" \
+                                 "popfl\n" : : "g" (_r)); \
+            COMPILER_BARRIER(); \
+          } \
+          XRETURN _r; \
+ })
+#define CPU_WRITETHIS() \
+ XBLOCK({ register pflag_t _r; \
+          struct cpu *_c; \
+          for (;;) { \
+            _c = THIS_CPU; \
+            cpu_write(_c); \
+            __asm__ __volatile__("pushfl\n" \
+                                 "popl %0\n" \
+                                 "cli" : "=g" (_r)); \
+            COMPILER_READ_BARRIER(); \
+            if likely(_c == THIS_CPU) break; \
+            __asm__ __volatile__("pushl %0\n" \
+                                 "popfl\n" : : "g" (_r)); \
+            COMPILER_BARRIER(); \
+          } \
+          XRETURN _r; \
+ })
+#define CPU_ENDREADTHIS(was)  (cpu_endread(THIS_CPU),PREEMPTION_POP(was))
+#define CPU_ENDWRITETHIS(was) (cpu_endwrite(THIS_CPU),PREEMPTION_POP(was))
+
+
+#ifdef CONFIG_SMP
+/* Find the most suitable (least used) CPU allowed by the given affinity.
+ * To aid in this choice, many factors are considered:
+ *   - The amount/set of CPUs allowed by affinity (If only one CPU is allowed, that one is used).
+ *   - The current state of different CPUs that could be used (Try not to turn on too much).
+ *   - The current power configuration (How willing is the kernel to turn on multiple CPUs)
+ *   - The per-cpu load average over the past few seconds/minutes/hours.
+ *   - etc.
+ * @return: * :   The CPU that the kernel is suggesting to use.
+ * @return: NULL: No CPU matching restrictions put forth by 'affinity' found. */
+FUNDEF struct cpu *KCALL cpu_get_suitable(__cpu_set_t const *__restrict affinity);
+#else
+#define cpu_get_suitable(affinity)       (&__bootcpu)
+#endif
+
+
+/* Thread/CPU-local preemption control. */
+#define PREEMPTION_ENABLE()  XBLOCK({ __asm__ __volatile__("sti" : : : "memory"); (void)0; })
+#define PREEMPTION_DISABLE() XBLOCK({ __asm__ __volatile__("cli" : : : "memory"); (void)0; })
+#define PREEMPTION_ENABLED() XBLOCK({ u32 _efl; __asm__ __volatile__("pushfl\npopl %0" : "=g" (_efl)); XRETURN !!(_efl&0x00000200); })
+#define PREEMPTION_IDLE()    XBLOCK({ __asm__ __volatile__("hlt\n" : : : "memory"); })
+#define PREEMPTION_FREEZE()  XBLOCK({ __asm__ __volatile__("1: cli\nhlt\njmp 1b" : : : "memory"); __builtin_unreachable(); (void)0; })
+
+/* Relax the calling CPU. */
+#define cpu_relax()   XBLOCK({ __asm__("pause"); (void)0; })
+
+#ifndef __pflag_t_defined
+#define __pflag_t_defined 1
+typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
+#endif
+#define PREEMPTION_PUSH()   XBLOCK({ register pflag_t _r; __asm__ __volatile__("pushfl\npopl %0\ncli" : "=g" (_r)); XRETURN _r; })
+#define PREEMPTION_PUSHON() XBLOCK({ register pflag_t _r; __asm__ __volatile__("pushfl\npopl %0\nsti" : "=g" (_r)); XRETURN _r; })
+#define PREEMPTION_POP(f)   XBLOCK({ __asm__ __volatile__("pushl %0\npopfl\n" : : "g" (f) : "memory", "cc"); (void)0; })
+
+/* Special CPU ID reserved for the boot CPU. */
+#define CPUID_BOOTCPU 0 /* NOTE: Always ZERO(0). */
+
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+INTDEF void KCALL cpu_add_running(REF struct task *__restrict t);
+INTDEF void KCALL cpu_del_running(/*OUT REF*/struct task *__restrict t);
+INTDEF void KCALL cpu_add_sleeping(struct cpu *__restrict c, REF struct task *__restrict t);
+INTDEF void KCALL cpu_del_sleeping(struct cpu *__restrict c, /*OUT REF*/struct task *__restrict t);
+INTDEF void KCALL cpu_add_suspended(struct cpu *__restrict c, REF struct task *__restrict t);
+INTDEF void KCALL cpu_del_suspended(struct cpu *__restrict c, /*OUT REF*/struct task *__restrict t);
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
+
+
+/* Load the CPU state of the currently selected task in the calling CPU.
+ * HINT: You may use 'jmp cpu_sched_setrunning' even when no valid stack is set in %ESP */
+FUNDEF ATTR_NORETURN void KCALL cpu_sched_setrunning(void);
+
+/* Same as 'cpu_sched_setrunning', but saves the previous CPU state inside of 'task'.
+ * NOTE: To ensure that the saved CPU state is that of the caller,
+ *       this function must be called using CDECL conventions (call-cleanup),
+ *       as self-hosting cleanup would require at least one register
+ *       to become clobbered before a CPU state can be generated.
+ * NOTE: 'cpu_sched_setrunning_savef()' is the same as 'cpu_sched_setrunning_save()',
+ *       but allows you to specify the EFLAGS that shall be set upon return, thus
+ *       allowing you to atomically switch() and enable interrupts upon return.
+ * HINT: You can use the 'pflag_t' returned by 'PREEMPTION_PUSH()' for 'eflags'
+ * WARNING: The caller is responsible to disable interrupts before calling either of these!
+ */
+FUNDEF void ATTR_CDECL cpu_sched_setrunning_save(struct task *__restrict task);
+FUNDEF void ATTR_CDECL cpu_sched_setrunning_savef(struct task *__restrict task, u32 eflags);
+
+
+/* Perform a regular task rotation, selecting the next appropriate task for execution.
+ * NOTE: The caller must disable preemption before calling this function.
+ * @return: * : The newly selected task (aka. what 'THIS_TASK' resolves to). */
+FUNDEF struct task *FCALL cpu_sched_rotate(void);
+
+/* Remove the current task, causing the caller to inherit a
+ * reference to it, before switching to the next available task.
+ * NOTE: The caller must disable preemption before calling this function.
+ * WARNING: The caller is responsible to ensure that the current task wasn't the IDLE task.
+ * @return: * : The task that was removed. */
+FUNDEF REF struct task *FCALL cpu_sched_remove_current(void);
+
+#ifdef CONFIG_DEBUG
+FUNDEF void KCALL cpu_validate_counters(bool private_only);
+#else
+#define cpu_validate_counters(private_only) (void)0
+#endif
+
+/* The initial boot cpu (Always has id #0; same as 'smp_hwcpu.hw_cpuv[0]') */
+DATDEF struct cpu __bootcpu;
+
+/* The original BOOT-task, as well as host for '/bin/init'. */
+DATDEF struct task inittask;
+
+
+
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+INTDEF byte_t __bootstack[];
+#define BOOTSTACK_ADDR  (byte_t *)__bootstack
+#define BOOTSTACK_SIZE            0x4000
+
+struct mb_info; /* From '/proprietary/multiboot.h' */
+
+/* Initialize the scheduler by installing a PIT IRQ
+ * handler & enabling PIT interrupts on the boot CPU.
+ * In addition, secondary CPUs are scanned for, initialized,
+ * and controller structures initialized for them.
+ * WARNING: This is an init-call, meaning it can't
+ *          be used once free-data has been released. */
+INTDEF void KCALL sched_initialize(void);
+
+/* Kernel main() function, called after __bootstack has been installed.
+ * By the time this function is called, nothing has been initialized, yet. */
+INTDEF void ATTR_FASTCALL kernel_boot(u32 mb_magic, struct mb_info *mb_mbt);
+#endif
+
+DECL_END
+
+#endif /* !GUARD_INCLUDE_SCHED_CPU_H */

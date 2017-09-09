@@ -1,0 +1,252 @@
+const copyright = "\
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */";
+#define _KOS_SOURCE 1
+#define __USE_KOS 1
+#include "../../include/errno.h"
+
+
+local errno = [];
+function __errno(id,name,text) {
+	if (id >= #errno) {
+		errno.resize(id+1,none);
+	}
+	errno[id] = pack name,text;
+}
+
+#define ERRNO(id,text) __errno(id,#id,text);
+ERRNO(EOK,             "Operation completed successfully")
+ERRNO(EPERM,           "Operation not permitted")
+ERRNO(ENOENT,          "No such file or directory")
+ERRNO(ESRCH,           "No such process")
+ERRNO(EINTR,           "Interrupted system call")
+ERRNO(EIO,             "I/O error")
+ERRNO(ENXIO,           "No such device or address")
+ERRNO(E2BIG,           "Argument list too long")
+ERRNO(ENOEXEC,         "Exec format error")
+ERRNO(EBADF,           "Bad file number")
+ERRNO(ECHILD,          "No child processes")
+ERRNO(EAGAIN,          "Try again")
+ERRNO(ENOMEM,          "Out of memory")
+ERRNO(EACCES,          "Permission denied")
+ERRNO(EFAULT,          "Bad address")
+ERRNO(ENOTBLK,         "Block device required")
+ERRNO(EBUSY,           "Device or resource busy")
+ERRNO(EEXIST,          "File exists")
+ERRNO(EXDEV,           "Cross-device link")
+ERRNO(ENODEV,          "No such device")
+ERRNO(ENOTDIR,         "Not a directory")
+ERRNO(EISDIR,          "Is a directory")
+ERRNO(EINVAL,          "Invalid argument")
+ERRNO(ENFILE,          "File table overflow")
+ERRNO(EMFILE,          "Too many open files")
+ERRNO(ENOTTY,          "Not a typewriter")
+ERRNO(ETXTBSY,         "Text file busy")
+ERRNO(EFBIG,           "File too large")
+ERRNO(ENOSPC,          "No space left on device")
+ERRNO(ESPIPE,          "Illegal seek")
+ERRNO(EROFS,           "Read-only file system")
+ERRNO(EMLINK,          "Too many links")
+ERRNO(EPIPE,           "Broken pipe")
+ERRNO(EDOM,            "Math argument out of domain of func")
+ERRNO(ERANGE,          "Math result not representable")
+ERRNO(EDEADLK,         "Resource deadlock would occur")
+ERRNO(ENAMETOOLONG,    "File name too long")
+ERRNO(ENOLCK,          "No record locks available")
+ERRNO(ENOSYS,          "Invalid system call number")
+ERRNO(ENOTEMPTY,       "Directory not empty")
+ERRNO(ELOOP,           "Too many symbolic links encountered")
+#undef EWOULDBLOCK
+#define EWOULDBLOCK 41
+ERRNO(EWOULDBLOCK,     "Operation would block")
+ERRNO(ENOMSG,          "No message of desired type")
+ERRNO(EIDRM,           "Identifier removed")
+ERRNO(ECHRNG,          "Channel number out of range")
+ERRNO(EL2NSYNC,        "Level 2 not synchronized")
+ERRNO(EL3HLT,          "Level 3 halted")
+ERRNO(EL3RST,          "Level 3 reset")
+ERRNO(ELNRNG,          "Link number out of range")
+ERRNO(EUNATCH,         "Protocol driver not attached")
+ERRNO(ENOCSI,          "No CSI structure available")
+ERRNO(EL2HLT,          "Level 2 halted")
+ERRNO(EBADE,           "Invalid exchange")
+ERRNO(EBADR,           "Invalid request descriptor")
+ERRNO(EXFULL,          "Exchange full")
+ERRNO(ENOANO,          "No anode")
+ERRNO(EBADRQC,         "Invalid request code")
+#undef EDEADLOCK
+#define EDEADLOCK 58
+ERRNO(EDEADLOCK,       "Resource deadlock would occur")
+ERRNO(EBADSLT,         "Invalid slot")
+ERRNO(EBFONT,          "Bad font file format")
+ERRNO(ENOSTR,          "Device not a stream")
+ERRNO(ENODATA,         "No data available")
+ERRNO(ETIME,           "Timer expired")
+ERRNO(ENOSR,           "Out of streams resources")
+ERRNO(ENONET,          "Machine is not on the network")
+ERRNO(ENOPKG,          "Package not installed")
+ERRNO(EREMOTE,         "Object is remote")
+ERRNO(ENOLINK,         "Link has been severed")
+ERRNO(EADV,            "Advertise error")
+ERRNO(ESRMNT,          "Srmount error")
+ERRNO(ECOMM,           "Communication error on send")
+ERRNO(EPROTO,          "Protocol error")
+ERRNO(EMULTIHOP,       "Multihop attempted")
+ERRNO(EDOTDOT,         "RFS specific error")
+ERRNO(EBADMSG,         "Not a data message")
+ERRNO(EOVERFLOW,       "Value too large for defined data type")
+ERRNO(ENOTUNIQ,        "Name not unique on network")
+ERRNO(EBADFD,          "File descriptor in bad state")
+ERRNO(EREMCHG,         "Remote address changed")
+ERRNO(ELIBACC,         "Can not access a needed shared library")
+ERRNO(ELIBBAD,         "Accessing a corrupted shared library")
+ERRNO(ELIBSCN,         ".lib section in a.out corrupted")
+ERRNO(ELIBMAX,         "Attempting to link in too many shared libraries")
+ERRNO(ELIBEXEC,        "Cannot exec a shared library directly")
+ERRNO(EILSEQ,          "Illegal byte sequence")
+ERRNO(ERESTART,        "Interrupted system call should be restarted")
+ERRNO(ESTRPIPE,        "Streams pipe error")
+ERRNO(EUSERS,          "Too many users")
+ERRNO(ENOTSOCK,        "Socket operation on non-socket")
+ERRNO(EDESTADDRREQ,    "Destination address required")
+ERRNO(EMSGSIZE,        "Message too long")
+ERRNO(EPROTOTYPE,      "Protocol wrong type for socket")
+ERRNO(ENOPROTOOPT,     "Protocol not available")
+ERRNO(EPROTONOSUPPORT, "Protocol not supported")
+ERRNO(ESOCKTNOSUPPORT, "Socket type not supported")
+ERRNO(EOPNOTSUPP,      "Operation not supported on transport endpoint")
+ERRNO(EPFNOSUPPORT,    "Protocol family not supported")
+ERRNO(EAFNOSUPPORT,    "Address family not supported by protocol")
+ERRNO(EADDRINUSE,      "Address already in use")
+ERRNO(EADDRNOTAVAIL,   "Cannot assign requested address")
+ERRNO(ENETDOWN,        "Network is down")
+ERRNO(ENETUNREACH,     "Network is unreachable")
+ERRNO(ENETRESET,       "Network dropped connection because of reset")
+ERRNO(ECONNABORTED,    "Software caused connection abort")
+ERRNO(ECONNRESET,      "Connection reset by peer")
+ERRNO(ENOBUFS,         "No buffer space available")
+ERRNO(EISCONN,         "Transport endpoint is already connected")
+ERRNO(ENOTCONN,        "Transport endpoint is not connected")
+ERRNO(ESHUTDOWN,       "Cannot send after transport endpoint shutdown")
+ERRNO(ETOOMANYREFS,    "Too many references: cannot splice")
+ERRNO(ETIMEDOUT,       "Connection timed out")
+ERRNO(ECONNREFUSED,    "Connection refused")
+ERRNO(EHOSTDOWN,       "Host is down")
+ERRNO(EHOSTUNREACH,    "No route to host")
+ERRNO(EALREADY,        "Operation already in progress")
+ERRNO(EINPROGRESS,     "Operation now in progress")
+ERRNO(ESTALE,          "Stale file handle")
+ERRNO(EUCLEAN,         "Structure needs cleaning")
+ERRNO(ENOTNAM,         "Not a XENIX named type file")
+ERRNO(ENAVAIL,         "No XENIX semaphores available")
+ERRNO(EISNAM,          "Is a named type file")
+ERRNO(EREMOTEIO,       "Remote I/O error")
+ERRNO(EDQUOT,          "Quota exceeded")
+ERRNO(ENOMEDIUM,       "No medium found")
+ERRNO(EMEDIUMTYPE,     "Wrong medium type")
+ERRNO(ECANCELED,       "Operation Canceled")
+ERRNO(ENOKEY,          "Required key not available")
+ERRNO(EKEYEXPIRED,     "Key has expired")
+ERRNO(EKEYREVOKED,     "Key has been revoked")
+ERRNO(EKEYREJECTED,    "Key was rejected by service")
+ERRNO(EOWNERDEAD,      "Owner died")
+ERRNO(ENOTRECOVERABLE, "State not recoverable")
+ERRNO(ERFKILL,         "Operation not possible due to RF-kill")
+ERRNO(EHWPOISON,       "Memory page has hardware error")
+#undef ERRNO
+
+#include <file>
+#include <util>
+
+
+local errno_strings = "";
+local string_offsets = [none] * #errno;
+for (local i,name_and_text: util::enumerate(errno)) {
+	local name,text = name_and_text...;
+	local name_offset = errno_strings.find(name);
+	local text_offset = errno_strings.find(text);
+	if (name_offset == -1) {
+		name_offset = #errno_strings;
+		errno_strings += name+"\0";
+	}
+	if (text_offset == -1) {
+		text_offset = #errno_strings;
+		errno_strings += text+"\0";
+	}
+	string_offsets[i] = pack name_offset,text_offset;
+}
+
+function line(s) {
+	print "L("+s.ljust(80)+")";
+}
+
+print copyright;
+line(".section .rodata.user");
+line(".hidden strerror_strings");
+line(".local strerror_strings");
+line("strerror_strings:");
+for (local s: errno_strings.split("\0")) {
+	if (s) line("    .string "+repr s);
+}
+line(".size strerror_strings, . - strerror_strings");
+line("");
+line(".local strerror_vector");
+line(".hidden strerror_vector");
+line("strerror_vector:");
+local index = 0;
+for (local off_name,off_text: string_offsets) {
+	line("    /* ["+(str index).rjust(3)+"].ete_name */.word "+off_name);
+	line("    /* ["+(str index).rjust(3)+"].ete_text */.word "+off_text);
+	++index;
+}
+line(".size strerror_vector, . - strerror_vector");
+line("");
+line(".extern errnotext");
+line(".global errnotext");
+line("errnotext:");
+line("    /* etd_version */ .long STRERROR_VERSION             ");
+line("    /* etd_strtab  */ .long strerror_strings - errnotext ");
+line("    /* etd_enotab  */ .long strerror_vector - errnotext  ");
+line("    /* etd_enocnt  */ .long "+#string_offsets+"          ");
+line("    /* etd_enoent  */ .long 4                            ");
+line(".size errnotext, . - errnotext");
+line(".previous");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

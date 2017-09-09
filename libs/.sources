@@ -1,0 +1,60 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+BEGIN LIBRARY("libc")
+	SET_OUTPUT("/bin/libs/libc.so")
+	SET_DISKFILE("/lib/libc.so")
+	//if (config_debug)
+	//	DEFINE("CONFIG_DEBUG_MALLOC") /* TODO: Requires local exception handling. */
+	DEFINE("__BUILDING_LIBC=1")
+	DEFINE("_TIME64_SOURCE")
+	DEFINE("_FILE_OFFSET_BITS=32")
+	DEFINE("_TIME_T_BITS=32")
+
+	/* Linking with -Bsymbolic further speeds up linking,
+	 * because no GOT needs to be used meaning that the 
+	 * runtime linker (the kernel) will not have to re-link
+	 * every function that libc calls.
+	 * >> This prevents user-applications from declaring
+	 *    their own version of e.g. strlen(), which would
+	 *    otherwise force libc to use theirs in internal
+	 *    calls, rather than the its own.
+	 * >> Without this flag, every function that is called
+	 *    at least once would add some overhead whenever
+	 *    libc is patched, but with it, the only relocations
+	 *    that libc really needs are a few 'R_386_RELATIVE'
+	 *   (last I checked 9) to fix-up its .dynamic section.
+	 */
+	C_FLAGS("-Bsymbolic")
+	//L_FLAGS("-Bsymbolic")
+	
+	SOURCE("libc/*.c")
+	SOURCE("libc/inet/*.c")
+END
+
+BEGIN ARCHIVE("_start")
+	SET_ARCHIVER("")
+	SET_OUTPUT("/bin/libs/crt0.o")
+	SET_DISKFILE(none)
+	SOURCE("_start/_start.c")
+END
+
+#if __has_include("private/.sources")
+#include "private/.sources"
+#endif

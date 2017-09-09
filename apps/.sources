@@ -1,0 +1,40 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+BEGIN APPLICATION("init")
+	SET_OUTPUT("/bin/apps/init")
+	SET_DISKFILE("/bin/init")
+	SOURCE("init/*.c")
+END
+BEGIN APPLICATION("terminal-vga")
+	SET_OUTPUT("/bin/apps/terminal-vga")
+	SET_DISKFILE("/bin/terminal-vga")
+	SOURCE("terminal-vga/*.c")
+END
+BEGIN_NEW PROJECT("elfimg")
+	SET_COMPILER("host-c")
+	SET_LINKER("host-c")
+	SET_OUTPUT("/bin/apps/elfimg")
+	SET_DISKFILE(none)
+	SOURCE("elfimg/*.c")
+END
+
+#if __has_include("private/.sources")
+#include "private/.sources"
+#endif

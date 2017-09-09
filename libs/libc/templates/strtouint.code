@@ -1,0 +1,58 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+DECL UTYPE (LIBCCALL STRTOUINT)(char const *__restrict nptr, char **endptr, int base) {
+ UTYPE result,temp;
+ if (!base) {
+  if (*nptr == '0') {
+   ++nptr;
+        if (*nptr == 'x' || *nptr == 'X') ++nptr,base = 16;
+   else if (*nptr == 'b' || *nptr == 'B') ++nptr,base = 2;
+   else base = 8;
+  } else base = 10;
+ }
+ result = 0;
+ for (;;) {
+  char ch = *nptr;
+       if (ch >= '0' && ch <= '9') temp = (UTYPE)(ch-'0');
+  else if (ch >= 'a' && ch <= 'z') temp = (UTYPE)(10+(ch-'a'));
+  else if (ch >= 'A' && ch <= 'Z') temp = (UTYPE)(10+(ch-'A'));
+  else break;
+  if (temp >= (UTYPE)base) break;
+  ++nptr;
+  result *= base;
+  result += temp;
+ }
+ if (endptr) *endptr = (char *)nptr;
+ return result;
+}
+
+DECL TYPE (LIBCCALL STRTOINT)(char const *__restrict nptr, char **endptr, int base) {
+ bool is_neg = false; TYPE result;
+ while (*nptr == '-') { is_neg ^= 1; ++nptr; }
+ result = (TYPE)strtoul(nptr,endptr,base);
+ if (is_neg) result = -result;
+ return result;
+}
+
+#undef STRTOUINT
+#undef STRTOINT
+#undef UTYPE
+#undef TYPE
+#undef DECL

@@ -1,0 +1,100 @@
+#!/bin/bash --only-for-syntax-highlighting-dont-actually-execute
+# === Installing KOS on a bootable USB stick and running it on real hardware ===
+
+# Step #1: Make sure you've followed all steps detailed in "INSTALL".
+#       >> You should be able to run 'deemon ${PREFIX}/magic.dee' and
+#          be prompted with KOS booting and running, potentially also
+#          starting a busybox terminal if you chose to do that part
+#          which I highly recommend you to do.
+
+# Step #2: Find a USB stick. - _ANY_ USB stick can be booted when setup
+#          properly and if the target machine's BIOS is configured correctly.
+#    NOTE: If you're maving troubles booting, 99% of the time it'll be
+#          be because your target's BIOS is configured for UEFI, while
+#          KOS requires being booted in LEGACY mode.
+# CAUTION: Changing the BIOS boot mode to LEGACY will prevent you from
+#          booting operating systems installed for UEFI. - When done
+#          playing around, be sure to switch back to UEFI or else your
+#          mum will shout at you because ~YOU BROKE HER 'PUTER~ ;)
+
+# Step #3: You will need a linux machine for this part, but what's being done
+#          here is a one-time-only thing, meaning you everything afterwards
+#          can be done on a windows machine.
+#          More than that, it must be 386 machine
+#         (Sorry. - There may be workarounds for this...)
+
+
+# Write a new, empty GPT partition-table to the drive using fdisk
+# NOTE: This command will prompt you to select that option
+# NOTE: "/dev/sdb" is the device name of the USB stick.
+# HINT: You can confirm that this isn't your harddrive using "df"
+#       Also make sure to use the /dev name of your stick in all
+#       of the following commands!
+sudo fdisk /dev/sdb
+
+# Select your USB stick in gparted and create 3 partitions:
+#    - #1: 2Kb         ... N-(1Gb+2Mb)   - [NAME:KOS]  Format as FAT-12/16/32 (Probably FAT-32)
+#    - #2: N-(1Gb+2Mb) ... N-(1Gb+2Mb)   - [NAME:SWAP] Format as Linux-swap
+#    - #3: N-2Mb       ... N             - [NAME:GRUB] Format as grub partition
+# NOTE: N Referrs to the available space on your stick
+sudo gparted
+sudo parted /dev/sdb set 3 bios_grub on
+
+# Mount the primary partition (#1; KOS)
+# and create the folder structure used by GRUB
+mkdir /opt/kos-usb
+sudo mount /dev/sdb1 /opt/kos-usb/
+cd /opt/kos-usb
+mkdir -p boot/grub
+
+# Copy data needed by grub
+cp /usr/lib/grub/i386-pc/* boot/grub/
+cd ..
+
+# Install grub on the USB stick
+grub-install --root-directory=/opt/kos-usb/ /dev/sdb
+
+# Unmount 
+umount /opt/kos-usb
+
+# Remove the temporary directory again
+rmdir /opt/kos-usb
+
+# If everything worked, the rest can also be done on a windows machine.
+
+# Step #4: Now in the possesion of a bootable USB-stick with GRUB installed,
+#          it is time to copy all necessary data onto it.
+# Edit "${PREFIX}/magic.dee" and find the option "config_usbdisk"
+# Replace the path specified with the mounting point of the usb stick
+# on your development machine (As you can see, that is "H:\\" on my
+# machine, meaning you will probably have to adjust it on yours)
+
+# Run the magic script again, and it will copy all disk files to your USB stick
+# >> From now on, this is done lazily for all changed files
+#    whenever magic detects your stick being connected.
+deemon ${PREFIX}/magic.dee
+
+
+# Step #5: Create the menu list for grub.
+cd "/path/to/usb/stick/mounting/point/"
+# Create/Override grub's menu list.
+# NOTE: The options here are used to select the keyboard layout
+echo <<EOF
+menuentry "KOS developer boot (en_US)" {
+	multiboot2 /boot/kos.bin
+}
+menuentry "KOS developer boot (de_DE)" {
+	multiboot2 /boot/kos.bin keymap=/lib/keymap/de_DE.map
+}
+EOF
+vi boot/grub/grub.cfg
+
+# DONE!
+
+
+
+
+# HINT: You may instruct magic to use your USB stick as primary disk:
+# NOTE: For this to function, you may need to adjust "\\\\.\\PhysicalDrive2"
+#       to patch the device name of your USB stick in "magic.dee"
+deemon ${PREFIX}/magic.dee --usb

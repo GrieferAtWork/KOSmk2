@@ -1,0 +1,582 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="..\..\src\.sources" />
+    <None Include="..\..\src\linker-scripts\module.ld">
+      <Filter>linker-scripts</Filter>
+    </None>
+    <None Include="..\..\src\linker-scripts\kernel.ld">
+      <Filter>linker-scripts</Filter>
+    </None>
+    <None Include="..\..\src\kernel\linker\ksym.S">
+      <Filter>kernel\linker</Filter>
+    </None>
+    <None Include="..\..\src\kernel\core-modules\autopart\efi.c.inl">
+      <Filter>kernel\core-modules\autopart</Filter>
+    </None>
+    <None Include="..\..\src\kernel\core-modules\fs\fat-readdir.c.inl">
+      <Filter>kernel\core-modules\fs</Filter>
+    </None>
+    <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl">
+      <Filter>kernel\fs</Filter>
+    </None>
+    <None Include="..\..\src\kernel\memory\memory-info.c.inl">
+      <Filter>kernel\memory</Filter>
+    </None>
+    <None Include="..\..\src\kernel\memory\malloc-realign.c.inl">
+      <Filter>kernel\memory</Filter>
+    </None>
+    <None Include="..\..\src\kernel\memory\memory-free.c.inl">
+      <Filter>kernel\memory</Filter>
+    </None>
+    <None Include="..\..\src\kernel\mman\mcore.c.inl">
+      <Filter>kernel\mman</Filter>
+    </None>
+    <None Include="..\..\src\modules\block\ata-pio.c.inl">
+      <Filter>modules\block</Filter>
+    </None>
+    <None Include="..\..\src\kernel\mman\environ.c.inl">
+      <Filter>kernel\mman</Filter>
+    </None>
+    <None Include="..\..\src\kernel\fs\canonbuffer.c.inl">
+      <Filter>kernel\fs</Filter>
+    </None>
+    <None Include="..\..\src\kernel\sched\pid.c.inl">
+      <Filter>kernel\sched</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{af4b3c4e-5c6b-445d-8768-2c1c30159846}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\kernel">
+      <UniqueIdentifier>{bdae1602-365a-4620-aeed-e8f28ccab9c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\kernel\arch">
+      <UniqueIdentifier>{cb5682d3-1349-49fa-aab4-929bb45d5026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\sync">
+      <UniqueIdentifier>{3e4c52a8-e8c1-4e00-b5a4-bad94742d3b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\sched">
+      <UniqueIdentifier>{a4ab89d5-b3eb-4117-91f1-6cdae4ce31b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\proprietary">
+      <UniqueIdentifier>{b4edf22d-0f80-4d10-990f-463723ee219a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\modules">
+      <UniqueIdentifier>{8d564cdf-b6ba-4b24-9a4c-47ecb31d832c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel">
+      <UniqueIdentifier>{a880b7af-3b4a-45ea-9fdd-e6f7bf7b325e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\core">
+      <UniqueIdentifier>{842e262f-30cc-4af9-adf4-a583770df1be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\core\arch">
+      <UniqueIdentifier>{e682f747-44f4-4597-b188-c944bd2d98da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\sched">
+      <UniqueIdentifier>{9d6fdc92-fa22-4fef-92dc-58ed32c0ca3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\mman">
+      <UniqueIdentifier>{3a9f611c-663e-4ed2-9fe1-40ae0be7b252}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\core-modules">
+      <UniqueIdentifier>{2a29f1bd-7352-4642-916e-ff7a0767649e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\fs">
+      <UniqueIdentifier>{41afd6f8-89db-4ba8-a160-09c242acf33c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\dev">
+      <UniqueIdentifier>{1debcea3-784f-4669-a6bb-6c20203f432f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="linker-scripts">
+      <UniqueIdentifier>{06ac0445-88dd-4b66-ac30-92c6e2256fce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules">
+      <UniqueIdentifier>{5a748a9f-d4bb-4097-b8c4-afbb881af239}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\dev">
+      <UniqueIdentifier>{78075379-d41c-4039-a797-75e25a4fe1fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\core-modules\disk">
+      <UniqueIdentifier>{a564439d-3357-4d13-bd16-9842db0b14ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\core-modules\linker">
+      <UniqueIdentifier>{e8658633-db8d-4780-aff8-e90b009cf724}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\core-modules\fs">
+      <UniqueIdentifier>{f8315923-3512-49d9-91e9-8f9fe04864a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\core-modules\autopart">
+      <UniqueIdentifier>{f7eb02ad-cd37-444d-91cc-60f26cda9a2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\core-modules\io">
+      <UniqueIdentifier>{7cc0721a-c2a1-4154-9f91-27f7bae6dc9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\memory">
+      <UniqueIdentifier>{5de744a6-4d5f-4ef0-86e9-932ea8e0e536}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\linker">
+      <UniqueIdentifier>{7b385711-6820-4faf-9d21-e50b8a61d98a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\fs">
+      <UniqueIdentifier>{245b0152-c1c0-4c37-b5ac-c133656f9f65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\test">
+      <UniqueIdentifier>{89d291a6-b387-4686-b588-769a8f19498e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\input">
+      <UniqueIdentifier>{da43a984-3dd3-419c-b7d2-3b799d03fe57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\input">
+      <UniqueIdentifier>{63a2f3e2-0f6e-4601-bbf7-23e51fa02483}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\linker">
+      <UniqueIdentifier>{315d7f31-ceb7-4511-9e83-cfa03c6b38dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\block">
+      <UniqueIdentifier>{db745050-45cf-4f16-9403-71849340addf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\char">
+      <UniqueIdentifier>{d17c9d65-31a9-4cd0-a583-d466f6a51a1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\fs">
+      <UniqueIdentifier>{bc9ce92d-44d4-4ed4-8a80-2546c8f328ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\input">
+      <UniqueIdentifier>{447959ca-96eb-4fa0-a4d3-01f275fa0a69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\linker">
+      <UniqueIdentifier>{062a9817-3e30-40df-b07d-2ab94e14f152}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\video">
+      <UniqueIdentifier>{f2017257-1b37-40cb-a937-dce71360f2e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\lib">
+      <UniqueIdentifier>{89f5c1af-a12f-486c-aa97-afdf882e2cd8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\kernel\core\main.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\syslog.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\sched\cpu.c">
+      <Filter>kernel\sched</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\sched\task.c">
+      <Filter>kernel\sched</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\gdt.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\irq.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\paging.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\mman\mman.c">
+      <Filter>kernel\mman</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\mman\part.c">
+      <Filter>kernel\mman</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\mman\futex.c">
+      <Filter>kernel\mman</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\mman\mswap.c">
+      <Filter>kernel\mman</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\mman\branch.c">
+      <Filter>kernel\mman</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\mman\pagefault.c">
+      <Filter>kernel\mman</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\syscall.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\user.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\stack.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\sched\unshare.c">
+      <Filter>kernel\sched</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\mman\sys_mman.c">
+      <Filter>kernel\mman</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\fs.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\file.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\file-lock.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\dev\blkdev.c">
+      <Filter>kernel\dev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\dev\chrdev.c">
+      <Filter>kernel\dev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\dev\device.c">
+      <Filter>kernel\dev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\sys_fs.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\sched\sys_sched.c">
+      <Filter>kernel\sched</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\smp.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\realmode.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\dev\diskpart.c">
+      <Filter>kernel\dev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core-modules\linker\elf.c">
+      <Filter>kernel\core-modules\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core-modules\autopart\mbr.c">
+      <Filter>kernel\core-modules\autopart</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c">
+      <Filter>kernel\core-modules\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core-modules\disk\bios-disk.c">
+      <Filter>kernel\core-modules\disk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core-modules\fs\fat.c">
+      <Filter>kernel\core-modules\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\dev\fstype.c">
+      <Filter>kernel\dev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\boot.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\boot.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\sched\rpc.c">
+      <Filter>kernel\sched</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\memory\memory.c">
+      <Filter>kernel\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\memory\malloc.c">
+      <Filter>kernel\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\memory\detect.c">
+      <Filter>kernel\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\linker\driver-module.c">
+      <Filter>kernel\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\linker\module.c">
+      <Filter>kernel\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\linker\kernel-module.c">
+      <Filter>kernel\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\sched\task-util.c">
+      <Filter>kernel\sched</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\vfs.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\iobuffer.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\fs-test.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\fd.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\test\string.c">
+      <Filter>kernel\test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\input\keyboard.c">
+      <Filter>kernel\input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\linker\patch.c">
+      <Filter>kernel\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\linker\exec.c">
+      <Filter>kernel\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\test\owner_rwlock.c">
+      <Filter>kernel\test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\linker\pe.c">
+      <Filter>modules\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\input\ps2.c">
+      <Filter>modules\input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\fs\devfs.c">
+      <Filter>modules\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\char\memdev.c">
+      <Filter>modules\char</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\block\ata.c">
+      <Filter>modules\block</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\video\vga-tty.c">
+      <Filter>modules\video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\lib\libterm.c">
+      <Filter>modules\lib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\cache.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\pty.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\sched\signal.c">
+      <Filter>kernel\sched</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\dev\rtc.c">
+      <Filter>kernel\dev</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\kernel\mman\intern.h">
+      <Filter>kernel\mman</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\irq.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\memory.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\mman.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\mswap.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\paging.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\syslog.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\user.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\export.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\tss.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\cpustate.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\gdt.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\fat.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\tty.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\ata.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\proprietary\multiboot.h">
+      <Filter>include\proprietary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\task.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\types.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\cpu.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\percpu.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sync\rwlock.h">
+      <Filter>include\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sync\sig.h">
+      <Filter>include\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\malloc.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\paging.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\syscall.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sync\owner-rwlock.h">
+      <Filter>include\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\test.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\syscall-table.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\stack.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\mp.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\cpu.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\apicdef.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\apic.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\realmode.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\cpufeatures.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\bios-disk.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\dev\chrdev.h">
+      <Filter>include\dev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\dev\device.h">
+      <Filter>include\dev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\dev\blkdev.h">
+      <Filter>include\dev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\mbr.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\efi.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\proprietary\multiboot2.h">
+      <Filter>include\proprietary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\boot.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\ps2.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\smp.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\rpc.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\debug-config.h">
+      <Filter>kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\linker\ksym.h">
+      <Filter>kernel\linker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\exec.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\fs.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\file.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\dentry.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\inode.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\access.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\basic_types.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\superblock.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\vfs.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\iobuffer.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\fd.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\input\keyboard.h">
+      <Filter>include\input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\linker\module.h">
+      <Filter>include\linker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\linker\patch.h">
+      <Filter>include\linker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\paging-util.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\memdev.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\atomic-iobuffer.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\input\ps2_keymaps.h">
+      <Filter>modules\input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\vga.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\libterm.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\pty.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\canonbuffer.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\signal.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\dev\rtc.h">
+      <Filter>include\dev</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

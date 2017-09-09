@@ -1,0 +1,94 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+BEGIN KEYMAP("en_US")
+	MAP(KEY_DELETE,     '\x7f')
+	MAP(KEY_BACKTICK,   '`',   '~')
+	MAP(KEY_1,          '1',   '!')
+	MAP(KEY_2,          '2',   '@')
+	MAP(KEY_3,          '3',   '#')
+	MAP(KEY_4,          '4',   '$')
+	MAP(KEY_5,          '5',   '%')
+	MAP(KEY_6,          '6',   '^')
+	MAP(KEY_7,          '7',   '&')
+	MAP(KEY_8,          '8',   '*')
+	MAP(KEY_9,          '9',   '(')
+	MAP(KEY_0,          '0',   ')')
+	MAP(KEY_MINUS,      '-',   '_')
+	MAP(KEY_EQUALS,     '=',   '+')
+	MAP(KEY_BACKSLASH,  '\\',  '|')
+	MAP(KEY_BACKSPACE,  '\x8')
+
+	MAP(KEY_TAB,        '\t')
+	MAP(KEY_Q,          'q',   'Q')
+	MAP(KEY_W,          'w',   'W')
+	MAP(KEY_E,          'e',   'E')
+	MAP(KEY_R,          'r',   'R')
+	MAP(KEY_T,          't',   'T')
+	MAP(KEY_Y,          'y',   'Y')
+	MAP(KEY_U,          'u',   'U')
+	MAP(KEY_I,          'i',   'I')
+	MAP(KEY_O,          'o',   'O')
+	MAP(KEY_P,          'p',   'P')
+	MAP(KEY_LBRACKET,   '[',   '{')
+	MAP(KEY_RBRACKET,   ']',   '}')
+	MAP(KEY_ENTER,      '\n',  '\xc') /* Form feed (New page) */
+
+	MAP(KEY_A,          'a',   'A')
+	MAP(KEY_S,          's',   'S')
+	MAP(KEY_D,          'd',   'D')
+	MAP(KEY_F,          'f',   'F')
+	MAP(KEY_G,          'g',   'G')
+	MAP(KEY_H,          'h',   'H')
+	MAP(KEY_J,          'j',   'J')
+	MAP(KEY_K,          'k',   'K')
+	MAP(KEY_L,          'l',   'L')
+	MAP(KEY_SEMICOLON,  ';',   ':')
+	MAP(KEY_SINGLEQUOTE,'\'',  '\"')
+
+	MAP(KEY_Z,          'z',   'Z')
+	MAP(KEY_X,          'x',   'X')
+	MAP(KEY_C,          'c',   'C')
+	MAP(KEY_V,          'v',   'V')
+	MAP(KEY_B,          'b',   'B')
+	MAP(KEY_N,          'n',   'N')
+	MAP(KEY_M,          'm',   'M')
+	MAP(KEY_COMMA,      ',',   '<')
+	MAP(KEY_DOT,        '.',   '>')
+	MAP(KEY_SLASH,      '/',   '?')
+
+	MAP(KEY_SPACE,      ' ')
+
+	MAP(KEY_KP_SLASH,   '/')
+	MAP(KEY_KP_STAR,    '*')
+	MAP(KEY_KP_MINUS,   '-')
+	MAP(KEY_KP_7,       '7')
+	MAP(KEY_KP_8,       '8')
+	MAP(KEY_KP_9,       '9')
+	MAP(KEY_KP_PLUS,    '+')
+	MAP(KEY_KP_4,       '4')
+	MAP(KEY_KP_5,       '5')
+	MAP(KEY_KP_6,       '6')
+	MAP(KEY_KP_1,       '1')
+	MAP(KEY_KP_2,       '2')
+	MAP(KEY_KP_3,       '3')
+	MAP(KEY_KP_ENTER,   '\n')
+	MAP(KEY_KP_0,       '0')
+	MAP(KEY_KP_DOT,     '.')
+END

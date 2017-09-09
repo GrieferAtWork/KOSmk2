@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\libs\libc\malloc.c" />
+    <ClCompile Include="..\..\libs\libc\string.c" />
+    <ClCompile Include="..\..\libs\libc\ctype.c" />
+    <ClCompile Include="..\..\libs\libc\assert.c" />
+    <ClCompile Include="..\..\libs\libc\stdlib.c" />
+    <ClCompile Include="..\..\libs\libc\format-printer.c" />
+    <ClCompile Include="..\..\libs\libc\stdio.c" />
+    <ClCompile Include="..\..\libs\libc\errno.c" />
+    <ClCompile Include="..\..\libs\libc\system.c" />
+    <ClCompile Include="..\..\libs\libc\fcntl.c" />
+    <ClCompile Include="..\..\libs\libc\unistd.c" />
+    <ClCompile Include="..\..\libs\libc\start.c" />
+    <ClCompile Include="..\..\libs\libc\environ.c" />
+    <ClCompile Include="..\..\libs\libc\inet\netdb.c">
+      <Filter>inet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libs\libc\asm.c" />
+    <ClCompile Include="..\..\libs\libc\signal.c" />
+    <ClCompile Include="..\..\libs\libc\sysconf.c" />
+    <ClCompile Include="..\..\libs\libc\termios.c" />
+    <ClCompile Include="..\..\libs\libc\dirent.c" />
+    <ClCompile Include="..\..\libs\libc\inet\socket.c">
+      <Filter>inet</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libs\libc\getopt.c" />
+    <ClCompile Include="..\..\libs\libc\time.c" />
+    <ClCompile Include="..\..\libs\libc\sched.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\libs\libc\templates\strtouint.code">
+      <Filter>templates</Filter>
+    </None>
+    <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code">
+      <Filter>templates</Filter>
+    </None>
+    <None Include="..\..\libs\libc\templates\string.code">
+      <Filter>templates</Filter>
+    </None>
+    <None Include="..\..\libs\libc\dlmalloc.c.inl" />
+    <None Include="..\..\libs\libc\stdio-file.c.inl" />
+    <None Include="..\..\libs\libc\strerror.inl" />
+    <None Include="..\..\libs\libc\typecore.c.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\libs\libc\system.h" />
+    <ClInclude Include="..\..\libs\libc\libc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="templates">
+      <UniqueIdentifier>{216cf073-0605-474a-9846-5f5c3f733b4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inet">
+      <UniqueIdentifier>{b65281b6-411d-4702-bf58-b2e7025bac68}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

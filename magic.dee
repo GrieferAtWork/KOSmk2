@@ -1,0 +1,1352 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+/* Compiler configuration */
+local config_format_compiler_messages = false; /* Format GCC warning/error messages to MSVC format. */
+local config_generate_preprocessor    = false; /* Generate preprocessor output instead of object files. */
+local config_generate_assembly        = false; /* Generate assembly instead of object files. */
+local config_compile_single           = <false>; /* Only run one compiler at a time. */
+local config_force_rebuild            = <false>; /* Force a full recompilation. */
+local config_force_disk               = false; /* Force a full disk rebuild. */
+local config_force_usb                = false; /* Force a full USB rebuild. */
+local config_build_only               = false; /* Don't start emulation once compilation is done. */
+local config_debug                    = true; /* Enable compiling with debug information. */
+local config_optimize                 = none; /* Otherwise: A string "0", "1", etc... */
+local config_max_compilers            = 8; /* Max amount of compilers to run in parallel */
+local config_build_path               = "build/i386-elf";
+local config_usbdisk                  = <"H:\\">; /* If non-existant or older, mirror the KOS disk contents here. */
+//local config_usbdisk = <none>; /* Uncomment this if you have an H: drive, or simply don't wish to use a USB stick for testing on real hardware. */
+
+/* Compiler script options. */
+local config_verbose = false;
+
+/* Disk configuration */
+local config_disk_image = "disk/kos.img"; /* Output path of the disk image. */
+local config_disk_size  = 16*1024*1024; /* 16Mib */
+
+/* Runtime/Emulation configuration */
+local run_mode_bochs    = false; /* Use BOCHS as emulator. */
+local run_mode_run_only = false; /* Skip compilation and only run the emulator. */
+local run_bochs_binary  = "bochs"; /* If existing & older, copy generated kernel binary here. */
+local run_qemu_binary   = "qemu-system-i386"; /*  */
+local run_mode_remote   = false; /* --remote */
+local run_mode_usb      = false; /* --usb */
+local run_mode_hosted   = true; /* --hosted */
+local run_kernel_flat   = "bin/flat_kernel.bin";
+local run_kernel_binary = "bin/kos.bin"; /* Output name of the kernel binary. */
+ /* Executable used for '#!$addr2line' formating of serial emulator output. */
+local run_addr2line_exe = run_kernel_binary;
+//local run_addr2line_exe = "bin/libs/libc.so";
+//local run_addr2line_exe = "apps/private/build-busybox-1.27.2/busybox_unstripped";
+
+/* Default executable names. */
+local const default_mtools    = "mtools";
+local const default_mode      = "i386-kos";
+local const default_c         = "i686-kos-c";
+local const default_nm        = "i686-kos-nm";
+local const default_cpp       = "i686-kos-cpp";
+local const default_ar        = "i686-kos-ar";
+local const default_ld        = "i686-kos-ld";
+local const default_asm       = "i686-kos-asm";
+local const default_readelf   = "i686-kos-readelf";
+local const default_addr2line = "i686-kos-addr2line";
+
+#ifdef __WINDOWS__
+#	define EXE(x) x ".exe"
+#else
+#	define EXE(x) x
+#endif
+
+/* Paths to used executables */
+local executables = dict {
+	"mtools"             : EXE("binutils/build-mtools/mtools"),
+	"i686-kos-asm"       : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-gcc"),
+	"i686-kos-c"         : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-gcc"),
+	"i686-kos-cpp"       : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-cpp"),
+	"i686-kos-ar"        : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-ar"),
+	"i686-kos-ld"        : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-ld"),
+	"i686-kos-nm"        : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-nm"),
+	"i686-kos-cxx"       : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-g++"),
+	"i686-kos-addr2line" : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-addr2line"),
+	"i686-kos-readelf"   : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-readelf"),
+	"host-asm"           : EXE("gcc"),
+	"host-c"             : EXE("gcc"),
+	"host-cpp"           : EXE("cpp"),
+	"host-ar"            : EXE("ar"),
+	"host-ld"            : EXE("ld"),
+	"host-nm"            : EXE("nm"),
+	"host-cxx"           : EXE("g++"),
+	"host-addr2line"     : EXE("addr2line"),
+	"host-readelf"       : EXE("readelf"),
+#ifdef __WINDOWS__
+	"bochs"              : "D:\\Bochs-2.6.8\\bochs.exe",
+	"bochsdbg"           : "D:\\Bochs-2.6.8\\bochsdbg.exe",
+	"qemu-system-i386"   : "D:\\qemu\\qemu-system-i386.exe",
+#else
+	"bochs"              : "bochs",
+	"bochsdbg"           : "bochsdbg",
+	"qemu-system-i386"   : "qemu-system-i386",
+#endif
+};
+
+#include <file>
+#include <fs>
+#include <util>
+#include <process>
+#include <thread>
+#include <time>
+#include <pipe>
+#include <sys>
+#include <error>
+
+local root_folder = fs::path::head(__FILE__).replace("\\","/").rstrip("/");
+function fix_pathstring(path) {
+	local pos;
+	while ((pos = path.find("/..")) != -1) {
+		local end = path.rfind("/",0,pos);
+		if (end == -1) break;
+		path = path[:end]+path[pos+3:];
+	}
+	return path;
+}
+root_folder = fix_pathstring(root_folder);
+
+fs::chdir(root_folder);
+
+local kernel_args = sys.argv[1:];
+while (kernel_args && kernel_args.front().startswith("-")) {
+	local arg = kernel_args.pop_front();
+	if (arg == "--cmd") break;
+	switch (arg) {
+	case "-f":
+	case "--force":
+		::config_force_rebuild.set(true);
+		break;
+	case "-fdisk":
+	case "--fdisk":
+	case "--force-disk":
+		::config_force_disk = true;
+		break;
+	case "-fusb":
+	case "--fusb":
+	case "--force-usb":
+		::config_force_usb = true;
+		break;
+	case "-b":
+	case "--build":
+	case "--build-only":
+		::config_build_only = true;
+		break;
+	case "--format-error-messages":
+		::config_format_compiler_messages = true;
+		break;
+	case "-E":
+	case "--gen-pp":
+		::config_generate_preprocessor = true;
+		break;
+	case "-S":
+	case "--asm":
+		::config_generate_assembly = true;
+		break;
+	case "--remote":
+		::run_mode_remote = true;
+		break;
+	case "--usb":
+		::run_mode_usb = true;
+		break;
+	case "-dbox":
+	case "--dbochs":
+	case "--bochs-debug":
+		::run_bochs_binary = "bochsdbg";
+	case "-box":
+	case "--bochs":
+		::run_mode_bochs = true;
+		break;
+	case "-qemu":
+	case "--qemu":
+		::run_mode_bochs = false;
+		break;
+	case "-r":
+	case "--run":
+	case "--run-only":
+		::run_mode_run_only = true;
+		break;
+	case "--hosted":
+		::run_mode_hosted = true;
+		break;
+	case "--optimize":
+		::config_optimize = "3";
+	case "--ndebug":
+		::config_debug = false;
+		break;
+	case "--single":
+	case "-1":
+		::config_compile_single.set(true);
+		break;
+	case "-v":
+	case "--verbose":
+		config_verbose = true;
+		break;
+	default:
+		if (arg.startswith("-O")) {
+			::config_optimize = arg[2:];
+			break;
+		}
+		print "Unknown argument:",repr arg;
+		break;
+	}
+}
+
+if (config_debug) {
+	config_build_path += "-debug";
+}
+
+
+#define SYNC(x) \
+  ({ local _o = config_compile_single.get(); \
+     ::config_compile_single.set(true); \
+     (x); \
+     ::config_compile_single.set(_o); \
+  })
+
+/* List of files that will/have changed since the
+ * last compilation, until the end of the current
+ * (Yes: This also contains files that will have changed later) */
+local _mtime_cache = dict {};
+local _mtime_change_year = 9999;
+function set_file_changed(filename) {
+#ifdef __WINDOWS__
+	filename = fs::path::abs(filename,root_folder).replace("/","\\");
+#else
+	filename = fs::path::abs(filename,root_folder);
+#endif
+	_mtime_cache[filename] = time.years(_mtime_change_year++);
+}
+function unset_file_changed(filename) {
+#ifdef __WINDOWS__
+	filename = fs::path::abs(filename,root_folder).replace("/","\\");
+#else
+	filename = fs::path::abs(filename,root_folder);
+#endif
+	_mtime_cache[filename] = time(1);
+}
+function fast_getmtime(filename) {
+	local result;
+#ifdef __WINDOWS__
+	filename = fs::path::abs(filename,root_folder).replace("/","\\");
+	try return _mtime_cache[filename]; catch (...);
+	try result = fs::getmtime(filename);
+	catch (...) result = fs::getmtime(filename+".exe");
+#else
+	filename = fs::path::abs(filename,root_folder);
+	try return _mtime_cache[filename]; catch (...);
+	result = fs::getmtime(filename);
+#endif
+	_mtime_cache[filename] = result;
+	return result;
+}
+local existing_paths = [];
+function fast_mkdir(path) {
+	path = fs::path::abs(path,root_folder);
+	if (path !in existing_paths) {
+		existing_paths.append(path);
+		try fs::mkdir(path);
+		catch (...);
+	}
+}
+function force_mkdir(path) {
+	path = fs::path::exctrail(path);
+	local head = fs::path::head(path);
+	local tail = fs::path::tail(path);
+	if (head && !fs::exists(head)) force_mkdir(head);
+	try fast_mkdir(path); catch (...);
+}
+
+local print_lock = mutex();
+local running_processes = [];
+#define wait_all_processes() \
+	({ while (#running_processes) thread.sleep(1); })
+#define SYNC_PRINT(...) \
+	({	print_lock.acquire(); \
+		try {\
+			print __VA_ARGS__; \
+		} finally {\
+			print_lock.release(); \
+		}\
+	})
+
+function do_start_process(proc) {
+	if (config_verbose) {
+		print "PROCESS:",proc.exe," ".join(proc.argv);
+	}
+	proc.start();
+}
+function mtools(fun,args) {
+	local proc = process(executables[default_mtools],[
+		"-c",fun,"-i",config_disk_image,args...
+	]);
+	do_start_process(proc);
+	return proc.join() == 0;
+}
+function disk_mkdir(path) {
+	mtools("mmd",["-D","s","::"+path]);
+}
+local disk_existing_paths = [];
+function disk_fast_mkdir(path) {
+	path = path.strip().rstrip("/");
+	if (path !in disk_existing_paths) {
+		disk_existing_paths.append(path);
+		try disk_mkdir(path);
+		catch (...);
+	}
+}
+function disk_force_mkdir(path) {
+	path = fs::path::exctrail(path);
+	local head = fs::path::head(path);
+	local tail = fs::path::tail(path);
+	if (head != "/") disk_fast_mkdir(head);
+	try disk_fast_mkdir(path); catch (...);
+}
+
+function start_io_process(proc,process_callback) {
+	local process_out_read,process_out_write = pipe.new()...;
+	proc.stdout = process_out_write;
+	//proc.stderr = process_out_write;
+	do_start_process(proc);
+	process_out_write.close();
+	while (#running_processes > config_max_compilers) thread.sleep(1);
+	running_processes.append(proc);
+	local t = thread([]{
+		try {
+			process_callback(process_out_read);
+			local error = proc.join();
+			/* remove may fail sporadically in an SMP environment... (sorry about that) */
+			while (!running_processes.remove(proc));
+			if (error != 0) {
+				print "Process failed:",repr proc.cmd;
+				sys.exit(error);
+			}
+		} catch (e...) {
+			print "Process failed:",e;
+			print repr proc.cmd;
+			sys.exit(1);
+		}
+	});
+	t.start();
+	if (::config_compile_single.get()) t.join();
+}
+function fix_binutils(filename) {
+	local start = filename.rfind("/binutils/");
+	if (start != -1) {
+		filename = fix_pathstring(filename[start:]);
+		filename = "${ROOT}"+filename;
+	}
+	return filename;
+}
+
+function start_process(proc,proj) {
+	local compiler_out_read,compiler_out_write = none...;
+	if (config_format_compiler_messages) {
+		compiler_out_read,compiler_out_write = pipe.new()...;
+		proc.stdout = compiler_out_write;
+		proc.stderr = compiler_out_write;
+	}
+	do_start_process(proc);
+	compiler_out_write.close();
+	while (#running_processes > config_max_compilers) thread.sleep(1);
+	running_processes.append(proc);
+
+	local t = thread([]{
+		try {
+			if (config_format_compiler_messages) {
+				for (local line: compiler_out_read) {
+					local filename,lno,col,rest;
+					try {
+						filename,lno,col,rest = line.scanf("%[^:]:%[^:]:%[^:]:%[^]")...;
+						if (filename.endswith("/ld") || filename.endswith("-ld")) {
+							rest = "{} ({})".format({ rest.strip(),repr fix_binutils(filename.strip()) });
+							filename = lno;
+							lno = col;
+							col = none;
+						}
+#ifdef __WINDOWS__
+						if (lno.startswith("/cygdrive/")) {
+							local a,none,b = lno[#"/cygdrive/":].partition("/")...;
+							SYNC_PRINT("{}:\\{}({}) : error : <{}> : {} ({})".format({
+								a.upper(),b.replace("/","\\"),col,proj._name,
+								rest,filename
+							}));
+							continue;
+						}
+#endif
+					} catch (...) try {
+						filename,lno,rest = line.scanf("%[^:]:%[^:]:%[^]")...;
+						col = none;
+					} catch (...) try {
+						filename,lno,rest = line.scanf("%[^:]:%[^,]%[^]")...;
+						col = none;
+					} catch (...) {
+						SYNC_PRINT(line,);
+						continue;
+					}
+					if (!lno.isdigit()) {
+						if (filename.endswith("/ld") || filename.endswith("-ld")) {
+							rest = "{} ({})".format({ rest.strip(),repr fix_binutils(filename.strip()) });
+							filename = lno;
+							lno      = "0";
+							if (" " in filename && "/" !in filename) {
+								rest     = filename.strip()+": "+rest.strip();
+								filename = proj._outfile;
+							}
+						} else {
+							SYNC_PRINT(line,);
+							continue;
+						}
+					}
+					filename = filename.strip();
+					rest = rest.strip();
+					local const inc_prefix = "In file included from ";
+					local const frm_prefix = "from ";
+					if (filename.startswith(inc_prefix)) {
+						rest = "warning : "+inc_prefix+"here "+rest;
+						filename = filename[#inc_prefix:];
+					}
+					if (filename.startswith(frm_prefix)) {
+						rest = "warning : "+inc_prefix+"here "+rest;
+						filename = filename[#frm_prefix:];
+					}
+#ifdef __WINDOWS__
+					if (filename.startswith("/cygdrive/")) {
+						filename = filename[#"/cygdrive/":];
+						local drive,none,path = filename.partition("/")...;
+						filename = drive.upper()+":/"+path;
+					} else if (filename.startswith("/opt/kos/usr/include/")) {
+						filename = "../../include/"+filename[#"/opt/kos/usr/include/":];
+					} else {
+						filename = "../../"+filename;
+					}
+#endif /* __WINDOWS__ */
+					local msg_class = "warning";
+					if (col && !col.isdigit()) {
+						rest = col.strip()+" : "+rest.strip();
+						col = "";
+					}
+					if (rest.startswith("note")) {
+						rest = rest[#"note":];
+					} else if (rest.startswith("warning")) {
+						rest = rest[#"warning":];
+					} else if (rest.startswith("error")) {
+						rest = rest[#"error":];
+						msg_class = "error";
+					} else {
+						if (rest.startswith("multiple definition of"))
+							msg_class = "error";
+					}
+					rest = rest.strip(" :\t\r\n");
+					if (col) {
+						SYNC_PRINT("{}({},{}) : {} : <{}> : {}".format({
+							filename,lno,col,msg_class,proj._name,rest
+						}));
+					} else {
+						SYNC_PRINT("{}({}) : {} : <{}> : {}".format({
+							filename,lno,msg_class,proj._name,rest
+						}));
+					}
+				}
+			}
+			local error = proc.join();
+			/* remove may fail sporadically in an SMP environment... (sorry about that) */
+			while (!running_processes.remove(proc));
+			if (error != 0) {
+				print "Process failed:",repr proc.cmd;
+				sys.exit(error);
+			}
+		} catch (e...) {
+			print "Process failed:",e;
+			print repr proc.cmd;
+			sys.exit(1);
+		}
+	});
+	t.start();
+	if (::config_compile_single.get()) t.join();
+}
+
+class Source {
+	this(p_exe,p_flags,c_flags,file) {
+		/* NOTE: For 'justsym'-style sources, '_exe_p' is the 'nm' executable. */
+		this._exe_p   = p_exe;
+		this._p_flags = copy p_flags;
+		this._c_flags = copy c_flags;
+		this._file    = file;
+		this._changed = false;
+	}
+	get_dep_file(proj) -> config_build_path+"/"+proj._name+"/"+this._file.replace("/",".")+".mf";
+	get_pp_file(proj)  -> config_build_path+"/"+proj._name+"/"+this._file.replace("/",".")+".E";
+	get_asm_file(proj) -> config_build_path+"/"+proj._name+"/"+this._file.replace("/",".")+".S";
+	get_sym_file(proj) -> config_build_path+"/"+proj._name+"/"+this._file.replace("/",".")+".nm";
+	get_o_file(proj)   -> config_build_path+"/"+proj._name+"/"+this._file.replace("/",".")+".o";
+	get_obj_file(proj) {
+		if (config_generate_assembly) {
+			return this.get_asm_file(proj);
+		} else if (config_generate_preprocessor) {
+			return this.get_pp_file(proj);
+		} else {
+			return this.get_o_file(proj);
+		}
+	}
+
+	get_dep(proj) {
+		local text = file.open(this.get_dep_file(proj),"r").read();
+		text = text.replace("\r\n","\n").replace("\r","\n");
+		text = text.replace("\\\n","").replace("\n"," ");
+		text = text.partition(":")[2];
+		for (local part: text.split(" ")) {
+			if (part) {
+#ifdef __WINDOWS__
+				const prefix_1 = "/cygdrive/e/c/kxs/kos/";
+				const prefix_2 = "/opt/kos/usr/";
+				if (part.startswith(prefix_1)) {
+					yield part[#prefix_1:];
+				} else if (part.startswith(prefix_2)) {
+					yield part[#prefix_2:];
+				} else if (part.startswith("/usr/lib")) {
+					yield "D:\\cygwin\\root\\lib"+part[#"/usr/lib":];
+				} else if (part.startswith("/")) {
+					yield "D:\\cygwin\\root"+part;
+				} else
+#endif
+				{
+					yield part;
+				}
+			}
+		}
+	}
+
+	must_perform_action(proj,output_file) {
+		if (::config_force_rebuild.get()) return true;
+		try {
+			local mtime = fast_getmtime(output_file);
+			for (local d: this.get_dep(proj)) {
+				if (fast_getmtime(d) > mtime) {
+					return true;
+				}
+			}
+		} catch (...) {
+			return true;
+		}
+		return false;
+	}
+	must_perform_action_nodep(proj,output_file) {
+		if (::config_force_rebuild.get()) return true;
+		try {
+			if (fast_getmtime(this._file) >
+			    fast_getmtime(output_file))
+				return true;
+		} catch (...) {
+			return true;
+		}
+		return false;
+	}
+
+	must_compile(proj) -> this.must_perform_action(proj,this.get_obj_file(proj));
+	must_preprocess(proj) -> this.must_perform_action(proj,this.get_pp_file(proj));
+	must_justsym(proj) -> this.must_perform_action_nodep(proj,this.get_sym_file(proj));
+
+	unset_changes(proj) {
+		unset_file_changed(this._file);
+		try {
+			for (local d: this.get_dep(proj)) {
+				unset_file_changed(d);
+			}
+		} catch (...) {
+		}
+	}
+	compile(proj) {
+		SYNC_PRINT("["+proj.logname()+"] Compiling",repr this._file);
+		local objfile = this.get_obj_file(proj);
+		local depfile = this.get_dep_file(proj);
+		local compiler_args = ["-o",objfile,"-MD","-MF",depfile];
+		force_mkdir(fs::path::head(objfile));
+		if (this._exe_p !is none) {
+			/* TODO: Pass input through custom preprocessor. */
+		} else {
+			compiler_args.extend(this._p_flags);
+		}
+		compiler_args.extend(this._c_flags);
+		if (config_optimize !is none) {
+			compiler_args.append("-O"+config_optimize);
+		}
+		if (config_generate_assembly) {
+			compiler_args.append("-S");
+		} else if (config_generate_preprocessor) {
+			compiler_args.append("-E");
+		} else {
+			compiler_args.append("-c");
+		}
+		compiler_args.append(this._file);
+		local proc = process(executables[proj._exe_c],compiler_args);
+		start_process(proc,proj);
+		this.unset_changes(proj);
+	}
+	preprocess(proj) {
+		SYNC_PRINT("["+proj.logname()+"] Proprocessing",repr this._file);
+		local ppfile = this.get_pp_file(proj);
+		local depfile = this.get_dep_file(proj);
+		local pp_args = ["-E","-o",ppfile,"-MMD","-MF",depfile];
+		force_mkdir(fs::path::head(ppfile));
+		local used_pp = this._exe_p;
+		if (used_pp is none) used_pp = proj._exe_cpp;
+		pp_args.extend(this._p_flags);
+		pp_args.append(this._file);
+		local proc = process(executables[used_pp],pp_args);
+		start_process(proc,proj);
+		this.unset_changes(proj);
+	}
+	justsym(proj) {
+		SYNC_PRINT("["+proj.logname()+"] Creating symbol list for",repr this._file);
+		local nmfile = this.get_sym_file(proj);
+		local nm_args = ["-g",this._file];
+		force_mkdir(fs::path::head(nmfile));
+		nm_args.extend(this._p_flags);
+		local proc = process(executables[this._exe_p],nm_args);
+		start_io_process(proc,[](process_pipe){
+			local output = file.open(nmfile,"w");
+			for (local line: process_pipe) {
+				local addr,name;
+				try addr,none,name = line.scanf("%[^ ] %[^ ] %[^]")...;
+				catch (...) {
+					print "Unrecognized NM line:",repr line;
+					continue;
+				}
+				output.write("PROVIDE({} = 0x{});\n".format({
+					name.strip(),addr
+				}));
+			}
+			output.close();
+		});
+	}
+};
+
+local projects = [];
+
+function files(text,def_file) {
+	if (text is list) {
+		for (local e: text)
+			yield files(e,def_file);
+	} else {
+		if (text && text.startswith("/")) {
+			text = text[1:];
+		} else {
+			text = fs::path::rel(fs::path::abs(text,
+								 fs::path::head(def_file)),
+								 root_folder);
+		}
+		text = text.replace("\\","/");
+		if ("*" in text) {
+			local head = fs::path::head(text);
+			for (local q: fs::query(text)) {
+				yield head+q;
+			}
+		} else {
+			yield text;
+		}
+	}
+}
+
+local user_modes = dict();
+class Project {
+	this(name) {
+		this._name       = name;
+		this._sources    = []; /* Array of 'Source' objects. */
+		this._l_flags    = []; /* Linker flags. */
+		this._l_deps     = []; /* Shared library dependencies. */
+		this._l_requires = []; /* Additional files who's absense requires a relink. */
+		this._l_objs     = []; /* Additional object files. */
+		this._l_script   = []; /* Linker script used ('Source' file). */
+		this._l_jstsym   = []; /* Static link descriptors for '--just-symbols=...'. */
+		this._outfile    = "bin/"+name; /* Binary output path. */
+		this._dskfile    = "bin/"+name; /* Disk output path (or none if not put on disk) */
+		this._exe_c      = default_c; /* Used compiler. */
+		this._exe_cpp    = default_cpp; /* Used preprocessor. */
+		this._exe_a      = none; /* Archiver executable (when 'none', do linking with '_exe_l'). */
+		this._exe_l      = default_ld; /* Used linker. */
+		this._cus_link   = none; /* Custom linker commandline. ("ld -o {output} {objects}") */
+		this._exe_nm     = default_nm; /* Used linker. */
+		this._modes      = []; /* Active user-modes. */
+		this._relink     = false; /* Set to true if the project must be re-linked. */
+		this._created    = false; /* Set to true when the project was been linked. */
+		this._deps       = []; /* Dependencies on other projects */
+		::projects.append(this);
+	}
+	logname() {
+		return "{} ({})".format({ this._name, this._outfile });
+	}
+	add_source(p_exe,p_flags,c_flags,fps) {
+		for (local f: fps) {
+			this._sources.append(Source(p_exe,p_flags,c_flags,f));
+		}
+	}
+	add_linker_scripts(p_exe,p_flags,c_flags,filename) {
+		for (local f: filename) {
+			this._l_script.append(Source(p_exe,p_flags,c_flags,f));
+		}
+	}
+	add_justsyms(filename) {
+		for (local f: filename) {
+			this._l_jstsym.append(Source(this._exe_nm,[],[],f));
+		}
+	}
+	set_mode(_p_exe,p_flags,c_flags,name) {
+		user_modes[name](this,_p_exe,p_flags,c_flags);
+		this._modes.append(name);
+	}
+	will_relink() {
+		if (!this._relink) {
+			set_file_changed(this._outfile);
+			this._relink = true;
+			return true;
+		}
+		return false;
+	}
+	reset_changes() {
+		this._relink = false;
+		for (local src: this._sources) src._changed = false;
+		for (local src: this._l_jstsym) src._changed = false;
+		for (local src: this._l_script) src._changed = false;
+	}
+	determine_changes() {
+		local result = false;
+		for (local src: this._sources) {
+			if (src.must_compile(this)) {
+				src._changed = true;
+				set_file_changed(src.get_obj_file(this));
+				set_file_changed(src.get_dep_file(this));
+				if (this.will_relink()) result = true;
+			}
+		}
+		for (local src: this._l_jstsym) {
+			if (src.must_justsym(this)) {
+				src._changed = true;
+				set_file_changed(src.get_sym_file(this));
+				if (this.will_relink()) result = true;
+			}
+		}
+		for (local script: this._l_script) {
+			if (script.must_preprocess(this)) {
+				/* Make sure not to generate line directives */
+				script._changed = true;
+				set_file_changed(script.get_pp_file(this));
+				set_file_changed(script.get_dep_file(this));
+				if (this.will_relink()) result = true;
+			}
+		}
+		if (result) return true;
+		/* Checked for changes in additional object files. */
+		try {
+			for (local s: this._l_requires) fast_getmtime(s);
+			local out_time = fast_getmtime(this._outfile);
+			for (local s: this._l_objs) {
+				if (out_time < fast_getmtime(s)) {
+					return this.will_relink();
+				}
+			}
+		} catch (...) {
+			return this.will_relink();
+		}
+		return false;
+	}
+	compile_changes() {
+		for (local src: this._sources) {
+			if (src._changed) {
+				src.compile(this);
+			}
+		}
+		for (local script: this._l_script) {
+			if (script._changed) {
+				/* Make sure not to generate line directives */
+				script._p_flags.remove("-P");
+				script._p_flags.append("-P");
+				script._p_flags.remove("-D__LINKER__");
+				script._p_flags.append("-D__LINKER__");
+				script.preprocess(this);
+				this.will_relink();
+			}
+		}
+	}
+
+	relink() {
+		local source_objects = [];
+		for (local s: this._sources) {
+			source_objects.append(s.get_obj_file(this));
+		}
+		source_objects.extend(this._l_objs);
+		force_mkdir(fs::path::head(this._outfile));
+		if (this._exe_a !is none) {
+			SYNC_PRINT("["+this.logname()+"] Archiving",repr this._outfile);
+			if (this._exe_a == "" && #source_objects == 1) {
+				try fs::unlink(this._outfile);
+				catch (...);
+				fs::copy_(fs::path::abs(source_objects[0],root_folder),
+				          fs::path::abs(this._outfile,root_folder));
+			} else {
+				local archive_flags = [];
+				archive_flags.extend(this._l_flags);
+				archive_flags.append("rcs",this._outfile);
+				archive_flags.extend(source_objects);
+				local proc = process(executables[this._exe_a],archive_flags);
+				start_process(proc,this);
+			}
+		} else {
+			SYNC_PRINT("["+this.logname()+"] Linking",repr this._outfile);
+			local linker_flags = ["-o",this._outfile];
+			if (config_optimize !is none) {
+				linker_flags.append("-O"+config_optimize);
+			}
+			for (local src: this._l_jstsym) {
+				if (src._changed) {
+					SYNC(src.justsym(this));
+				}
+			}
+			for (local script: this._l_jstsym) {
+				linker_flags.append("--just-symbols="+script.get_sym_file(this));
+			}
+			for (local script: this._l_script) {
+				linker_flags.append("-T",script.get_pp_file(this));
+			}
+			linker_flags.extend(this._l_flags);
+			linker_flags.extend(source_objects);
+			/* Make sure that '-lgcc' goes at the end. */
+			if ("gcc" in this._l_deps) {
+				this._l_deps.remove("gcc");
+				this._l_deps.append("gcc");
+			}
+			for (local lib: this._l_deps)
+				linker_flags.append("-l"+lib);
+			//print repr linker_flags;
+			local proc = process(executables[this._exe_l],linker_flags);
+			if (this._cus_link !is none) {
+				SYNC(start_process(proc,this));
+				if (this._cus_link is string) {
+					local custom_proc = process(this._cus_link.format({
+						.input = this._outfile,
+						.root  = root_folder,
+					}));
+					start_process(custom_proc,this);
+				} else {
+					this._cus_link(this._outfile);
+				}
+			} else {
+				start_process(proc,this);
+			}
+		}
+		this._created = true;
+	}
+	must_update_disk() {
+		if (this._dskfile is none) return false;
+		if (this._created || ::config_force_disk) return true;
+		try {
+			if (fast_getmtime(this._outfile) > fast_getmtime(config_disk_image))
+				return true;
+		} catch (...) {
+			return true;
+		}
+		return false;
+	}
+	usb_outfile() {
+#ifdef __WINDOWS__
+		return fs::path::join(config_usbdisk.get(),this._dskfile.replace("/","\\"));
+#else
+		return fs::path::join(config_usbdisk.get(),this._dskfile);
+#endif
+	}
+	must_update_usb() {
+		if (this._dskfile is none) return false;
+		if (this._created || ::config_force_usb) return true;
+		try {
+			if (fast_getmtime(this._outfile) > fast_getmtime(this.usb_outfile()))
+				return true;
+		} catch (...) {
+			return true;
+		}
+		return false;
+	}
+	update_disk() {
+		local output_file = this._dskfile;
+		SYNC_PRINT("["+this.logname()+"] Updating disk",repr output_file);
+		disk_force_mkdir(fs::path::head(output_file));
+		mtools("mcopy",["-D","o",this._outfile,"::"+output_file]);
+	}
+	update_usb() {
+		local output_file = this.usb_outfile();
+		SYNC_PRINT("["+this.logname()+"] Updating USB",repr output_file);
+		force_mkdir(fs::path::head(output_file));
+		try fs::unlink(output_file); catch (...);
+		fs::copy_(fs::path::abs(this._outfile,root_folder),output_file);
+	}
+};
+function must_update_flat_kernel() {
+	try {
+		if (fast_getmtime(run_kernel_binary) > fast_getmtime(run_kernel_flat)) {
+			return true;
+		}
+	} catch (...) {
+		return true;
+	}
+	return false;
+}
+function update_flat_kernel() {
+	if (must_update_flat_kernel()) {
+		print "Updating flat kernel image";
+		local update = process("bin/apps/elfimg");
+		update.stdin = file.open(run_kernel_binary,"r");
+		update.stdout = file.open(run_kernel_flat,"w");
+		update.start();
+		update.join();
+	}
+}
+
+
+local disk_ops = [];
+function disk_do_sync_file(src,dst) {
+	disk_ops.append([]{
+		try {
+			local src_mtime = fast_getmtime(src);
+			if (src_mtime > fast_getmtime(config_disk_image) || config_force_disk) {
+				print "Updating disk",repr dst;
+				disk_force_mkdir(fs::path::head(dst));
+				mtools("mcopy",["-D","o",src,"::"+dst]);
+			}
+			if (config_usbdisk.get() !is none) {
+#ifdef __WINDOWS__
+				local usb_target = fs::path::join(config_usbdisk.get(),dst.replace("/","\\"));
+#else
+				local usb_target = fs::path::join(config_usbdisk.get(),dst);
+#endif
+				local must_update_target = config_force_usb;
+				if (!must_update_target) {
+					try must_update_target = src_mtime > fast_getmtime(usb_target);
+					catch (...) must_update_target = true;
+				}
+				if (must_update_target) {
+					print "Updating USB",repr usb_target;
+					force_mkdir(fs::path::head(usb_target));
+					try fs::unlink(usb_target); catch (...);
+					fs::copy_(fs::path::abs(src,root_folder),usb_target);
+				}
+			}
+		} catch (...) {
+		}
+	});
+}
+function disk_sync_file(files,dst) {
+	for (local f: files) {
+		if (dst.endswith("/")) {
+			disk_do_sync_file(f,dst+fs::path::tail(f));
+		} else {
+			disk_do_sync_file(f,dst);
+		}
+	}
+}
+
+
+#define FILES(x)         files(x,__FILE__)
+
+/* General project compilation. */
+#define BEGIN_NEW      { local _p_flags = []; \
+                         local _c_flags = []; \
+						 local _p_exe   = <none>;
+#define BEGIN          { local _p_flags = copy(__nth(2) _p_flags); \
+                         local _c_flags = copy(__nth(2) _c_flags); \
+						 local _p_exe   = copy(__nth(2) _p_exe);
+#define PROJECT(x)       local _proj = Project(x);
+#define PROJ_DEP(x)      _proj._deps.append(x);
+#define END            };
+
+/* Build environment configuration */
+#define SET_OUTPUT(x)       _proj._outfile = FILES(x)[0];
+#define SET_DISKFILE(x)     _proj._dskfile = (x);
+#define SET_PREPROCESSOR(x) _p_exe.set(x);
+#define SET_COMPILER(x)     _proj._exe_c = (x);
+#define SET_NM(x)           _proj._exe_nm = (x);
+#define SET_ARCHIVER(x)     _proj._exe_a = (x);
+#define SET_LINKER(x)       _proj._exe_l = (x);
+#define SET_CUSTOM_LINK(x)  _proj._cus_link = (x);
+
+/* Preprocessor utilities. */
+#define DEFINE(x)        _p_flags.append("-D"+(x));
+#define UNDEF(x)         _p_flags.remove("-D"+(x));
+#define P_FLAGS(...)     _p_flags.append(__VA_ARGS__);
+#define INCLUDE(x)       _p_flags.extend(for (local _f: FILES(x)) "-I"+_f);
+#define UNINCLUDE(x)   { for (local _f: FILES(x)) _p_flags.remove("-I"+_f); }
+
+/* Compiler utilities. */
+#define C_FLAGS(...)     _c_flags.append(__VA_ARGS__);
+#define SOURCE(x)        _proj.add_source(_p_exe.get(),_p_flags,_c_flags,FILES(x));
+
+/* Linker utilities. */
+#define L_FLAGS(...)       _proj._l_flags.append(__VA_ARGS__);
+#define LIBPATH(x)         _proj._l_flags.extend(for (local _f: FILES(x)) "-L"+_f);
+#define LIB(x)             _proj._l_deps.append(x);
+#define UNLIB(x)           _proj._l_deps.remove(x);
+#define OBJECT(x)          _proj._l_objs.extend(FILES(x));
+#define LINKER_SCRIPT(x)   _proj.add_linker_scripts(_p_exe.get(),_p_flags,_c_flags,FILES(x));
+#define STATIC_SYMBOLS(x)  _proj.add_justsyms(FILES(x));
+#define LINK_IF_MISSING(x) _proj._l_requires.extend(FILES(x));
+
+/* Disk synchronization */
+#define DISK_SYNC(src,dst) disk_sync_file(FILES(src),dst);
+
+/* User-defined modes */
+#define ALIAS_MODE(nam,old) user_modes[nam] = user_modes[old];
+#define BEGIN_MODE(nam)  user_modes[nam] = function(_proj,_p_exe,_p_flags,_c_flags) {
+#define MODE(x)          _proj.set_mode(_p_exe,_p_flags,_c_flags,x);
+#define DEL_MODE(x)      _proj._modes.remove(x);
+#define HAS_MODE(x)    ((x) in _proj._modes)
+
+try {
+if (!run_mode_run_only) {
+
+	/* Include project definition files. */
+	BEGIN_NEW
+#		include ".sources"
+	END
+
+	function link_and_compile_everything() {
+		local result = false;
+		for (local p: projects) {
+			p.reset_changes();
+		}
+		{	local found_changes;
+			do {
+				found_changes = false;
+				for (local proj: projects) {
+					if (proj.determine_changes()) {
+						found_changes = true;
+						result        = true;
+					}
+				}
+			} while (found_changes);
+		}
+		for (local proj: projects)
+			proj.compile_changes();
+		
+		local link_projects = [];
+		local done_projects = [];
+		for (local p: projects) {
+			if (::config_force_rebuild.get() || p._relink) {
+				link_projects.append(p);
+			} else {
+				done_projects.append(p);
+			}
+		}
+		function was_linked(name) {
+			for (local p: done_projects)
+				if (p._name == name) return true;
+			return false;
+		}
+		while (link_projects) {
+			local linking_projects = [];
+			for (local i = 0; i < #link_projects; ) {
+				local can_link = true;
+				local proj = link_projects[i];
+				for (local d: proj._deps) {
+					if (!was_linked(d)) {
+						can_link = false;
+						break;
+					}
+				}
+				if (can_link) {
+					linking_projects.append(proj);
+					link_projects.erase(i);
+				} else {
+					++i;
+				}
+			}
+			wait_all_processes();
+			if (!linking_projects) break;
+			local i = 0;
+			function is_linking_project(name) {
+				for (local p: linking_projects)
+					if (p._name == name) return true;
+				return false;
+			}
+			for (i = 0; i < #linking_projects;) {
+				local proj = linking_projects[i];
+				proj._relink = false;
+				for (local d: proj._deps) {
+					local p = none;
+					for (p: projects) {
+						if (p._name == d) {
+							if (p._relink) proj._relink = true;
+							break;
+						}
+					}
+					if (proj._relink) break;
+				}
+				if (!proj._relink) proj.relink();
+				if (proj._relink) {
+					/* Something has changed. - Must compile/link this project again. */
+					linking_projects.erase(i);
+				} else {
+					++i;
+				}
+			}
+			done_projects.extend(linking_projects);
+		}
+		if (link_projects) {
+			print done_projects;
+			print "CANNOT LINK DEPENDENCY LOOP:";
+			for (local proj: link_projects) {
+				print "   ",proj._name;
+				for (local d: proj._deps) {
+					if (!was_linked(d)) {
+						print "       ",d;
+					}
+				}
+			}
+		}
+		return result;
+	}
+	local first_pass = true;
+	function create_missing_disk() {
+		if (config_force_disk || !fs::exists(config_disk_image)) {
+			local fp = file.open(config_disk_image,"w");
+			for (none: util::range(config_disk_size/512))
+				fp.write(" "*512);
+			fp.close();
+			set_file_changed(config_disk_image);
+			mtools("mformat",["-t","8","-h","2","-s","3600"]);
+			/* TODO: We should do this more elegantly... */
+			disk_force_mkdir("/dev");
+		}
+	}
+	
+	while (link_and_compile_everything()) {
+		config_force_rebuild.set(false);
+		if (first_pass)
+			create_missing_disk();
+		first_pass = false;
+		wait_all_processes();
+	}
+	if (first_pass)
+		create_missing_disk();
+	
+	wait_all_processes();
+
+	/* Update the hard-disk. */
+	for (local p: projects) {
+		if (p.must_update_disk()) {
+			p.update_disk();
+		}
+	}
+	
+	/* Update my USB developer installation. */
+	if (config_usbdisk.get() !is none) {
+		if (!fs::exists(config_usbdisk.get()))
+			config_usbdisk.set(none);
+		if (config_usbdisk.get() !is none) {
+			for (local p: projects) {
+				if (p.must_update_usb()) {
+					p.update_usb();
+				}
+			}
+		}
+	}
+	
+	/* Update generic disk synchronization. */
+	for (local op: disk_ops) op();
+}
+
+/* QEMU + Runtime helpers from here on! */
+
+local addr2line_proc = <>;
+local addr2line_inw = <>;
+local addr2line_outr = <>;
+function start_addr2line() {
+	if (!addr2line_proc) {
+		addr2line_proc.set(process(executables[default_addr2line],[
+			"-e",run_addr2line_exe,"-i","-f"
+		]));
+		local inr,inw = pipe.new()...;
+		local outr,outw = pipe.new()...;
+		addr2line_inw.set(inw);
+		addr2line_outr.set(outr);
+		addr2line_proc.get().stdout = outw;
+		addr2line_proc.get().stdin = inr;
+		addr2line_proc.get().start();
+		outw.close();
+		inr.close();
+	}
+}
+
+// -> (string filename,string line,string function)
+function run_addr2line(addr) {
+	start_addr2line();
+	addr2line_inw.get().write(addr+"\n");
+	local func = addr2line_outr.get().readline();
+	local data = addr2line_outr.get().read();
+	local filename,line = data.scanf("%[^:]:%[A-Fa-f0-9]")...;
+	filename = filename.strip();
+	line = line.strip();
+#ifdef __WINDOWS__
+	if (filename.startswith("/cygdrive/")) {
+		filename = filename[#"/cygdrive/":].strip();
+		local drive,none,path = filename.partition("/")...;
+		filename = drive.upper()+":\\"+path.strip().strip("/").replace("/","\\");
+	} else if (filename.startswith("/opt/kos/usr/include/")) {
+		filename = filename[#"/opt/kos/usr/":].strip().replace("/","\\");
+	}
+	filename = filename.replace("\\\\","\\");
+	filename = "..\\"+fs::path::rel(filename);
+	filename = filename.replace("\\","/");
+#endif
+	return pack filename,line,func;
+}
+
+function run_bochs() {
+	update_flat_kernel();
+	local bochs = process(executables[run_bochs_binary],[
+		"-q","-f","bochsrc.bxrc"
+	]);
+	bochs.start();
+	bochs.join();
+}
+
+function run_qemu() {
+	local qemu = process(executables[run_qemu_binary],[
+		(run_mode_hosted ? ["-no-reboot","-no-shutdown"] : [])...,
+		"-serial","stdio","-d","debug",//"-smp","2",
+		(run_mode_remote ? ["-s","-S"] : [])...,
+		(run_mode_usb ? ["-hda","\\\\.\\PhysicalDrive2"]
+		              : ["-kernel",run_kernel_binary,
+		                 "-drive","file="+config_disk_image+",format=raw,index=0,media=disk"/*,
+		                 "-drive","file=disk/kos.img2,format=raw,index=1,media=disk"*/])...,
+		"-device","isa-debug-exit,iobase=0xf4,iosize=0x04",
+		"-display","gtk",
+		//"-vga","std",
+		(kernel_args ? ["-append","\""+
+			" ".join(for (local a: kernel_args) if (a) a)
+		+"\""] : [])...,
+		"-d","guest_errors",
+	]);
+	local r,w = pipe.new()...;
+	/* Redirect stdout to format special serial output (tracebacks...) */
+	qemu.stdout = w;
+	qemu.stderr = w;
+	qemu.start();
+	w.close();
+#ifdef __WINDOWS__
+	/* Also redirect to stddbg (OutputDebugString), so stuff shows up in the Vistual Studio log. */
+	local outfile = file.io.stddbg|file.io.stderr;
+#else
+	local outfile = file.io.stderr;
+#endif
+	while (local c = r.readall(1)) {
+		if (c == "\n") {
+			outfile.write("\n");
+on_line_start:
+			c = r.readall(1);
+			if (c == "#") {
+				c = r.readall(1);
+				if (c == "!") {
+					c = r.readall(1);
+					if (c == "$") {
+						// Parse special command, as output through serial #01
+						local cmd = r.readline().strip();
+						local name,args;
+						try name,args = cmd.scanf("%[A-Za-z0-9] %[^]")...;
+						catch (...) name = "",args = "";
+						name = name.strip();
+						args = args.strip();
+						try {
+							if (name == "addr2line") {
+								// Quick & dirty way of printing getting tracebacks...
+								// I know this is a really questionable solution.
+								// >> If it looks stupid but works, it ain't stupid!
+								local addr,fmt = args.scanf(" ( %[^)] ) '%[^']'")...;
+								local file,line,func = run_addr2line(addr.strip())...;
+								outfile.write(fmt.format({
+									.file = file.strip(),
+									.line = line.strip(),
+									.func = func.strip(),
+								})+"\n");
+							} else {
+								outfile.write("UNKNOWN CMD:"+repr(name ?: cmd)+"\n");
+							}
+						} catch (e...) {
+							outfile.write("CMD FAILED:"+repr(e)+"\n");
+						}
+						goto on_line_start;
+					} else outfile.write("#!"+c);
+				} else outfile.write("#"+c);
+				continue;
+			}
+#ifdef __WINDOWS__
+			/* Since Visual Studio debugging sucks, the double-click & go-to-source
+			 * feature uses the '.sln'-folder instead of the debugger-pwd, meaning
+			 * that because that sln-file is in .vs, we need to manually prepend
+			 * '../', so that one can actually click it!
+			 * >> The pattern recognized is: '\n%[^ ]/' --> '\n../%[^ ]/' */
+			local part = "";
+			for (;;) {
+				part += c;
+				if (c == "/") {
+					outfile.write("../");
+					break;
+				}
+				if (!c || c.isspace()) {
+					break;
+				}
+				c = r.readall(1);
+			}
+			outfile.write(part);
+			if (c == "\n") goto on_line_start;
+#endif
+		} else {
+			outfile.write(c);
+		}
+	}
+	qemu.join();
+}
+
+if (!config_build_only) {
+	try {
+		if (run_mode_bochs) {
+			run_bochs();
+		} else {
+			start_addr2line();
+			run_qemu();
+		}
+	} finally {
+		if (addr2line_proc) {
+			addr2line_proc.get().terminate();
+			addr2line_proc.del();
+		}
+	}
+}
+} catch (e...) {
+	print repr e;
+	print repr __builtin_last_traceback();
+	sys.exit(0);
+}
+sys.exit(0);
+
+
+
+

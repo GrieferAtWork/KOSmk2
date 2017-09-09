@@ -1,0 +1,206 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+BEGIN
+	INCLUDE("include")
+	DEFINE("__KERNEL__")
+	DEFINE("CONFIG_SMP")
+	//C_FLAGS("-momit-lock-prefix=no") /* Enable when 'CONFIG_SMP' is disabled. */
+	if (config_debug) {
+		DEFINE("CONFIG_DEBUG")
+		DEFINE("CONFIG_TRACE_LEAKS")
+		DEFINE("CONFIG_RESERVE_NULL_PAGE")
+	} else {
+		DEFINE("CONFIG_NO_TESTS")
+	}
+	if (config_optimize !is none)
+		DEFINE("CONFIG_OPTIMIZE="+config_optimize)
+
+	BEGIN
+		DEFINE("CONFIG_BUILDING_KERNEL_CORE")
+		if (!config_debug)
+			DEFINE("CONFIG_NO_MODULE_CLEANUP")
+
+		/* Minimal LIBC used by the kernel. */
+		BEGIN ARCHIVE("libk")
+			SET_OUTPUT("/bin/libs/libk.a")
+			SET_DISKFILE(none)
+
+			/* LIBK Source files */
+			SOURCE("../libs/libc/malloc.c")
+			SOURCE("../libs/libc/stdlib.c")
+			SOURCE("../libs/libc/string.c")
+			SOURCE("../libs/libc/assert.c")
+			SOURCE("../libs/libc/ctype.c")
+			SOURCE("../libs/libc/format-printer.c")
+			SOURCE("../libs/libc/stdio.c")
+		END
+
+
+		/* Bootstraps */
+		BEGIN PROJECT("kernel")
+			SET_OUTPUT("/"+run_kernel_binary)
+			SET_DISKFILE("/boot/kos.bin")
+			LINKER_SCRIPT("linker-scripts/kernel.ld")
+			__STATIC_LIBGCC
+			__NOSTDLIB
+
+#if 1
+#define KERNEL_SYMBOL_TABLE "src/kernel/linker/ksym.h"
+			SET_CUSTOM_LINK([](outfile) {
+				/* Generate the kernel's symbol export table using a custom linker step. */
+				local proc = process(executables[default_readelf],["-s","-W",outfile]);
+				start_io_process(proc,[](infd) {
+					local kernel_export_symbols = [];
+					for (local l: infd) {
+						local addr,v1,v2,name;
+						try none,addr,none,none,v1,v2,none,name = l.scanf(" %[^ \t] %[^ \t] %[^ \t] %[^ \t] %[^ \t] %[^ \t] %[^ \t] %[^ \t]")...;
+						catch (...) continue;
+						if (v1 != "GLOBAL" || v2 != "DEFAULT") continue;
+						kernel_export_symbols.append(pack(name.strip(),addr.strip()));
+					}
+					function get_name_hash(name) {
+						/* Kernel symbol name hashing function (Standard ELF hashing). */
+						local h = (uint32_t)0,g;
+						for (local c: name) {
+							h = (h << 4) + c.ord();
+							g = h & 0xf0000000;
+							if (g) h ^= g >> 24;
+							h &= ~g;
+						}
+						return h;
+					}
+					kernel_export_symbols.sort([](a,b) -> #a[0] > #b[0]);
+					local tempfd  = file.writer();
+					local strings = "";
+					local offsets = [none] * #kernel_export_symbols;
+					tempfd.write("STRING_BEGIN\n");
+					for (local i,name_addr: util::enumerate(kernel_export_symbols)) {
+						local name = name_addr[0];
+						local o = strings.find(name+"\0");
+						/* Optimization: Re-use sub-strings of existing names. */
+						if (o == -1) {
+							o        = #strings;
+							strings += name+"\0";
+							tempfd.write("\tSTR("+repr name+")\n");
+						}
+						offsets[i] = o;
+					}
+					tempfd.write("STRING_END\n");
+					strings = none;
+					local bucket_count = (#kernel_export_symbols * 2) / 3;
+					local symbol_list  = [none] * bucket_count;
+					for (local i,name_addr: util::enumerate(kernel_export_symbols)) {
+						local name = name_addr[0];
+						local hash = get_name_hash(name);
+						local index = hash % bucket_count;
+						local l = symbol_list[index];
+						if (l is none)
+							symbol_list[index] = l = [];
+						l.append(pack(offsets[i],hash,name_addr[0],"0x"+name_addr[1]));
+					}
+					for (local i,bucket: util::enumerate(symbol_list)) {
+						if (!bucket) {
+							tempfd.write("EMPTY_BUCKET\n");
+							continue;
+						}
+						tempfd.write("BUCKET_BEGIN\n");
+						/* Sort bucket contents by element length */
+						bucket.sort([](a,b) -> #a[2] < #b[2]);
+						for (local elem: bucket) {
+							tempfd.write("\tSYM("+",".join(elem)+")\n");
+						}
+						tempfd.write("BUCKET_END\n");
+					}
+					local outtext = tempfd.pack();
+					if (outtext != file.open(KERNEL_SYMBOL_TABLE,"r").read()) {
+						local outfd = file.open(KERNEL_SYMBOL_TABLE,"w");
+						outfd.write(outtext);
+						outfd.close();
+						set_file_changed(KERNEL_SYMBOL_TABLE);
+						_proj._relink = true;
+					} else {
+						update_flat_kernel();
+					}
+				});
+			})
+#endif
+
+			PROJ_DEP("libk")
+			OBJECT("/bin/libs/libk.a")
+		
+			/* Kernel core source files */
+			SOURCE("kernel/core/*.c")
+			SOURCE("kernel/core/arch/*.c")
+			SOURCE("kernel/dev/*.c")
+			SOURCE("kernel/fs/*.c")
+			SOURCE("kernel/memory/*.c")
+			SOURCE("kernel/mman/*.c")
+			SOURCE("kernel/sched/*.c")
+			SOURCE("kernel/input/*.c")
+			SOURCE("kernel/linker/*.c")
+			if (config_debug)
+				SOURCE("kernel/test/*.c")
+			BEGIN
+				DEFINE("__ASSEMBLY__")
+				SOURCE("kernel/linker/ksym.S")
+			END
+
+			/* Builtin modules
+			 * >> Bare minimum required to get disk + filesystem working,
+			 *    thus lying the basis for dynamically loading more.
+			 * WARNING: The order in which these modules appear here is their load order!
+			 */
+			SOURCE("kernel/core-modules/io/tty.c")
+			/* Must be installed before disk drivers! */
+			SOURCE("kernel/core-modules/autopart/mbr.c")
+//			SOURCE("kernel/core-modules/disk/ata.c")
+			SOURCE("kernel/core-modules/disk/bios-disk.c")
+			SOURCE("kernel/core-modules/fs/fat.c")
+			SOURCE("kernel/core-modules/linker/elf.c")
+		END
+	END
+
+#define BASIC_MODULE(name) \
+		MODULE_NOSTDLIB(name) \
+		SET_OUTPUT("/bin/mod/" name) \
+		SET_DISKFILE("/mod/" name)
+#define DEFAULT_MODULE(name) \
+		MODULE(name) \
+		SET_OUTPUT("/bin/mod/" name) \
+		SET_DISKFILE("/mod/" name)
+#define LIBRARY_MODULE(name) \
+		MODULE(name) \
+		SET_OUTPUT("/bin/mod/" name ".so") \
+		SET_DISKFILE("/mod/" name ".so")
+#define USING(name) PROJ_DEP(name) LIB(name.lsstrip("lib"))
+
+	BEGIN BASIC_MODULE("ps2")       SOURCE("modules/input/ps2.c")   END
+	BEGIN BASIC_MODULE("devfs")     SOURCE("modules/fs/devfs.c")    END
+	BEGIN BASIC_MODULE("memdev")    SOURCE("modules/char/memdev.c") END
+	BEGIN BASIC_MODULE("ata")       SOURCE("modules/block/ata.c")   END
+	BEGIN LIBRARY_MODULE("libterm") SOURCE("modules/lib/libterm.c") END
+	BEGIN DEFAULT_MODULE("vga-tty")
+		SOURCE("modules/video/vga-tty.c")
+		//USING("libterm")
+	END
+
+END
+
+

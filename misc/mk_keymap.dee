@@ -1,0 +1,96 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+ 
+#include <file>
+#include <fs>
+
+fs::chdir(fs::path::head(__FILE__));
+
+class keymap {
+	this() {
+		this.name  = "";
+		this.press = [0]*256;
+		this.shift = [0]*256;
+		this.altgr = [0]*256;
+	}
+	
+	write_map() {
+		this.write_map_file("keymaps/"+this.name+".map");
+	}
+	write_map_file(filename) {
+		local fp = file.open(filename,"w");
+		local has_altgr = false;
+		for (local c: this.altgr) {
+			if (c) {
+				has_altgr = true;
+				break;
+			}
+		}
+		local flags = 0;
+		if (!has_altgr) flags |= (1 << 0); /* 'KEYMAP_FLAG_NO_ALTGR' */
+		
+		fp.write("k\xE1M\xA9"); /* Magic */
+		fp.writeo((uint8_t)0); /* Version */
+		fp.writeo((uint8_t)0); /* Encoding */
+		fp.writeo((uint8_t)flags); /* Flags */
+		local name = this.name;
+		if (#name > 9) name = name[:9];
+		fp.write(name.ljust(9,"\0")); /* Name */
+		function pack_map(m) {
+			local w = file.writer();
+			for (local k: m) {
+				if (k is string) k = k[0].ord();
+				w.writeo((uint8_t)k);
+			}
+			return w.pack();
+		}
+		fp.write(pack_map(this.press));
+		fp.write(pack_map(this.shift));
+		if (has_altgr)
+			fp.write(pack_map(this.altgr));
+		fp.close();
+	}
+	
+	add_key(k,args...) {
+		if (#args >= 1) this.press[k] = args[0];
+		if (#args >= 2) this.shift[k] = args[1];
+		else            this.shift[k] = args[0];
+		if (#args >= 3) this.altgr[k] = args[2];
+	}
+};
+
+#include "../include/kos/keyboard.h"
+
+#define BEGIN     { local _map = keymap();
+#define KEYMAP(x)   _map.name = (x);
+#define END         _map.write_map(); \
+                  }
+#define MAP(...)  _map.add_key(__VA_ARGS__);
+
+/* Include all the keymap definitions. */
+#include "keymaps/en_US.dee"
+#include "keymaps/de_DE.dee"
+
+
+
+
+
+
+
+
