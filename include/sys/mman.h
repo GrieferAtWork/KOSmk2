@@ -188,7 +188,8 @@ union{
  __uint16_t mv_funds; /*< [valid_if(MAP_GROWSDOWN||MAP_GROWSUP)] Max amount of times the guard can replicate itself.
                        *   HINT: mmap() has this field set to 'MMAP_VIRT_MAXFUNDS' (to emulate linux behavior)
                        *   >> The total max amount of bytes that can be allocated by the guard is equal to 'mv_funds*mv_guard'. */
- /* XXX: Add some way of receiving signals from guards? */
+ /* XXX: Add some way of receiving signals from guards?
+  *     (define a signal number to-be called when guard events occur) */
 };
 
 struct mmap_phys {
@@ -236,7 +237,7 @@ struct mmap_info_v1 {
                              *  NOTE: This member is always ceil-aligned by PAGESIZE internally. */
  size_t           mi_align; /*< [valid_if(!MAP_FIXED)] Minimum alignment required when searching for free ranges.
                              *   NOTE: This value must be a power-of-2 and is ignored when < PAGESIZE. */
- size_t           mi_gap;   /*< [valid_if(!MAP_FIXED)] When search for suitable addresses and 'mi_addr...+=mi_size'
+ size_t           mi_gap;   /*< [valid_if(!MAP_FIXED)] When searching for suitable addresses and 'mi_addr...+=mi_size'
                              *   was already in use, any address range considered there-after must not be closer to another existing range than 'mi_gap' bytes.
                              *   HINT: This member is useful for discovering free memory while leaving a gap for guard mappings to expand into.
                              *   HINT: mmap() has this argument is set to 16*PAGESIZE, not setting 'XMAP_NOTRYNGAP'. */

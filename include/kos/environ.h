@@ -20,10 +20,10 @@
 #define GUARD_INCLUDE_KERNEL_ENVIRON_H 1
 
 #include <hybrid/compiler.h>
-#include <hybrid/types.h>
 #include <hybrid/limits.h>
-#include <kos/ksym.h>
 #include <hybrid/typecore.h>
+#include <hybrid/types.h>
+#include <kos/ksym.h>
 
 DECL_BEGIN
 

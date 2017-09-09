@@ -4,6 +4,9 @@
 # All paths are absolute to the base of your KOS root path.
 # Before staring to follow these instructions, replace all
 # occurances of "${PREFIX}" with your KOS source root path.
+# NOTE: This file is _NOT_ a bash scrict.
+#       It is only written like one to improve readability,
+#       but it should not be executed as such!
 
 mkdir ${PREFIX}/apps/private
 mkdir ${PREFIX}/apps/private/build-busybox-1.27.2

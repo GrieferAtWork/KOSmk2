@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
   *   (By passing 'sh' through the first argument 'argv[0]') */
  execl("/bin/terminal-vga","terminal-vga","/bin/busybox","sh","-i",(char *)NULL);
  error(0,errno,"exec('/bin/terminal-vga') failed");
+ /* If the terminal doesn't work for some reason, run directly off of the system log. */
  execl("/bin/busybox","sh","-i",(char *)NULL);
  error(0,errno,"exec('/bin/busybox') failed");
 #endif

@@ -1,9 +1,13 @@
 #!/bin/bash --only-for-syntax-highlighting-dont-actually-execute
+
 # === Installing/Building KOS ===
 # All paths are absolute to the base of your KOS root path
 # (That is the folder this file is located inside of).
 # Before staring to follow these instructions, replace all
 # occurances of "${PREFIX}" with the absolute name of that path.
+# NOTE: This file is _NOT_ a bash scrict.
+#       It is only written like one to improve readability,
+#       but it should not be executed as such!
 
 # If they don't already exist, create the following folders.
 mkdir ${PREFIX}/binutils/bin
@@ -15,10 +19,11 @@ mkdir ${PREFIX}/binutils/src
 # === DEEMON ===
 # Download and install deemon from here "https://github.com/GrieferAtWork/deemon"
 # It's an open source scripting language developed by me and used to implement
-# a quick build system from compiling KOS's kernel and system libraries (libc, etc.).
+# a quick build system for compiling KOS's kernel and system libraries (libc, etc.).
 # Depending on how you choose to install it, make sure that "deemon" itself
 # (Installed to /usr/bin/deemon by default) is located in ${PATH}.
 # You should now be able to execute deemon scripts such as "magic.dee"
+# (Although you probably should run that one yet...)
 
 
 
@@ -48,9 +53,10 @@ ln -s ${PREFIX}/bin/libs  ${GCC_PREFIX}/usr/lib
 #       applications (NOTE: These _EXACT_ version numbers are required!)
 #        - "autoconf-2.64"  (https://ftp.gnu.org/gnu/autoconf/)
 #        - "automake-1.11.6" (https://ftp.gnu.org/gnu/automake/)
-#       Since I had neither installed, go download _THESE_EXACT_VERSIONS_
+#       Download _THESE_EXACT_VERSIONS_!
 # Build & compile autoconf and automake
-# NOTE: I use temporary folders in "/opt" that you can delete once binutils and GCC are built
+# NOTE: I use temporary folders in "/opt" that you
+#       can delete once binutils and GCC are built
 mkdir /opt/build-autoconf-2.64
 mkdir /opt/build-automake-1.11.6
 # Extract autoconf to "/opt/autoconf-2.64" such that "/opt/autoconf-2.64/configure" exists
@@ -64,7 +70,7 @@ cd /opt/build-automake-1.11.6
 make
 make install
 # Make sure that the following files now exist as links (If they don't
-# or are anything else, create backup and replace them accordingly).
+# or are anything else, create a backup and replace them accordingly).
 # NOTE: You can delete/restore these files alongside autoconf/automake
 #       once BINUTILS and GCC have been created.
 ln -s /opt/build-automake-1.11.6/bin/aclocal   /bin/aclocal
@@ -106,7 +112,7 @@ echo <<EOF
 EOF
 vi ${PREFIX}/binutils/src/binutils-2.27/bfd/config.bfd
 
-# In the switch "case ${generic_target} in" add the following case
+# In the switch "case ${generic_target} in" add the following case:
 echo <<EOF
   i386-*-kos*)			fmt=elf em=linux ;;
 EOF
@@ -142,11 +148,13 @@ echo <<EOF
 GENERATE_SHLIB_SCRIPT=yes
 GENERATE_PIE_SCRIPT=yes
 EOF
-vi ${PREFIX}/binutils/src/binutils-2.27/ld/emulparams/elf_x86_64_kos.sh.sh
+vi ${PREFIX}/binutils/src/binutils-2.27/ld/emulparams/elf_x86_64_kos.sh
 
 # Edit the LD makefile script:
-echo '	eelf_i386_kos.c \' # add after '	eelf_i386.c \'
-echo '	eelf_x86_64_kos.c \' # add after '	eelf_x86_64.c \'
+# add after '	eelf_i386.c \'
+echo '	eelf_i386_kos.c \'
+# add after '	eelf_x86_64.c \'
+echo '	eelf_x86_64_kos.c \'
 # add after 'eelf_i386.c: $(srcdir)/emulparams'... (NOTE: Make sure to keep TABS)
 echo <<EOF
 eelf_i386_kos.c: $(srcdir)/emulparams/elf_i386_kos.sh \
@@ -172,7 +180,7 @@ cd ${PREFIX}/binutils/src/binutils-2.27/ld
 echo "| -kos*"
 vi ${PREFIX}/binutils/src/gcc-6.2.0/config.sub
 
-# Add to the switch "case ${target} in" with the common
+# Add to the switch "case ${target} in" with the comment
 # "# Common parts for widely ported systems.":
 echo <<EOF
 *-*-kos*)
@@ -274,7 +282,7 @@ vi ${PREFIX}/binutils/make-build-gcc-i686-kos.sh
 # FINALLY! That's all the changes that need to be made! Phew...
 
 # Run these two helper scripts to compile binutils and GCC
-# NOTE: If you didn't use by binutils/gcc versions, you may
+# NOTE: If you used different binutils/gcc versions, you may
 #       need to adjust these scripts.
 bash ${PREFIX}/binutils/make-build-binutils-i686-kos.sh
 bash ${PREFIX}/binutils/make-build-gcc-i686-kos.sh

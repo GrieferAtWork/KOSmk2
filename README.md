@@ -33,9 +33,9 @@ Chaos|KOS - Even more chaotic that last time.
    - Highly linux-compatible using 0x80 and same ids/registers
  - Unix-compliant user-space interfaces
    - ANSI-compliant Terminal
-   - <code>fork</code>()/<code>exec</code>()/<code>wait</code>()
-   - <code>mmap</code>()/<code>munmap</code>()/<code>brk</code>()/<code>sbrk</code>()
-   - <code>signal</code>()/<code>raise</code>()/<code>kill</code>()/<code>sigprocmask</code>()
+   - <code>fork()</code>/<code>exec()</code>/<code>wait()</code>
+   - <code>mmap()</code>/<code>munmap()</code>/<code>brk()</code>/<code>sbrk()</code>
+   - <code>signal()</code>/<code>raise()</code>/<code>kill()</code>/<code>sigprocmask()</code>
      - terminate/suspend/resume support for <code>SIGKILL</code>, <code>SIGSTOP</code>, <code>SIGCONT</code>
    - <code>open()</code>/<code>read()</code>/<code>write()</code>/<code>lseek()</code>
    - <code>argc</code>/<code>argv</code>/<code>environ</code>
@@ -68,11 +68,11 @@ Chaos|KOS - Even more chaotic that last time.
  - Finally add write-support for FAT (Yeesh...)
  - <code>pipe()</code>
  - <code>futex()</code>
- - /proc
+ - <code>/proc</code>
 
 ## Planned (As not seen in the old KOS) ##
- - /proc (Finished)
- - /sys
+ - <code>/proc</code> (Complete)
+ - <code>/sys</code>
  - IP-stack
  - WLAN support for "Atheros AR2427 Wireless" (That one's inside my test machine)
 
