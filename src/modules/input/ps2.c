@@ -292,7 +292,7 @@ ps2_command(struct ps2_cmd *__restrict c) {
    /* Check again in case 'sysrtc_get()'
     * enabled interrupts momentarily. */
    if (p.p_cmdb != c) break;
-   if (TIMESPEC_GREATER_EQUAL(tmo,now)) {
+   if (TIMESPEC_GREATER_EQUAL(now,tmo)) {
     /* Delete the command. */
     assert(p.p_cmdb == c);
     p.p_cmdb = p.p_cmdb->c_prev;
@@ -312,6 +312,11 @@ ps2_command(struct ps2_cmd *__restrict c) {
   }
  }
  PREEMPTION_POP(was);
+#if 1
+ syslogf(LOG_HW|LOG_DEBUG,"[PS2] Command finished: %d (%.2I8x,%.2I8x) %.2I8X %.2I8X %.2I8X %.2I8X %.2I8X %.2I8X\n",
+         result,c->c_cmd,c->c_arg,
+         c->c_resp[0],c->c_resp[1],c->c_resp[2],c->c_resp[3],c->c_resp[4],c->c_resp[5]);
+#endif
  return result;
 }
 
@@ -597,7 +602,7 @@ PRIVATE ATTR_UNUSED bool KCALL ps2_keyboard_reset(u8 port); /* Reset & start sel
 PRIVATE ATTR_UNUSED u8   KCALL ps2_keyboard_get_scanset(u8 port);
 PRIVATE ATTR_UNUSED bool KCALL ps2_keyboard_set_scanset(u8 port, u8 v);
 
-/* Preferrs scan-set. */
+/* Preferred scan-set. */
 #define PS2_PREFERRED_SCANSET 2
 
 PRIVATE MODULE_INIT errno_t ps2_init(void) {
@@ -630,7 +635,7 @@ PRIVATE MODULE_INIT errno_t ps2_init(void) {
  //  while (x--);
  //}
 
-#if 1
+#if 0
  port = PS2_PORT1;
  goto got_keyboard;
 #endif

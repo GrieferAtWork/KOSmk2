@@ -831,10 +831,11 @@ irq_setup(struct cpu *__restrict self) {
 PRIVATE ATTR_COLDDATA u8 pic_bios_mask1 = 1 << (IRQ_PIC1_PIT-IRQ_PIC1_BASE);
 PRIVATE ATTR_COLDDATA u8 pic_bios_mask2 = 0;
 
-#define pit_sethz(hz)       pit_sethz_(1193180/(hz))
+#define GET_RELOAD_VALUE(hz) ((3579545/(hz))/3)
+#define pit_sethz(hz)       pit_sethz_(GET_RELOAD_VALUE(hz))
 #define pit_sethz_default() pit_sethz_(65536) /* 18.2065hz */
 LOCAL void KCALL pit_sethz_(int d) {
- outb(0x43,0x36);
+ outb(0x43,0x36); /* Mode #3: Square wave generator. */
  outb(0x40,d & 0xFF);
  outb(0x40,d >> 8);
 }

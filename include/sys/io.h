@@ -196,6 +196,12 @@ __MAKEOUT(__UINT8_TYPE__, b,"b",1)
 __MAKEOUT(__UINT16_TYPE__,w,"w",2)
 __MAKEOUT(__UINT32_TYPE__,l,"",4)
 
+#if defined(__USE_KOS) || defined(__KERNEL__)
+__FORCELOCAL void (__LIBCCALL io_delay)(void) {
+ __asm__ __volatile__(__IO_SLOWDOWN : : : "memory");
+}
+#endif
+
 #undef __IOPORT_T
 #undef __MEMPORT_T
 
