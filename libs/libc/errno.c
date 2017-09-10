@@ -30,8 +30,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
 #include <kos/environ.h>
+#include <err.h>
+#include <stdarg.h>
 
 DECL_BEGIN
 
@@ -48,11 +51,53 @@ PUBLIC void (LIBCCALL __set_errno)(int err) {
  __ERRNO = err;
 }
 
+#define ERROR_EXIT(code) _exit(code)
+
 PUBLIC char *(LIBCCALL __libc_program_invocation_name)(void) {
  return appenv->e_argc ? appenv->e_argv[0] : "";
 }
 PUBLIC char *(LIBCCALL __libc_program_invocation_short_name)(void) {
  return basename(program_invocation_name);
+}
+
+PUBLIC void (LIBCCALL vwarn)(const char *format, va_list args) {
+ fprintf(stderr,"%s: ",program_invocation_short_name);
+ vfprintf(stderr,format,args);
+ fprintf(stderr,": %[errno]",errno);
+}
+PUBLIC void (LIBCCALL vwarnx)(const char *format, va_list args) {
+ fprintf(stderr,"%s: ",program_invocation_short_name);
+ vfprintf(stderr,format,args);
+}
+PUBLIC void (LIBCCALL verr)(int status, const char *format, va_list args) {
+ vwarn(format,args);
+ ERROR_EXIT(status);
+}
+PUBLIC void (LIBCCALL verrx)(int status, const char *format, va_list args) {
+ vwarnx(format,args);
+ ERROR_EXIT(status);
+}
+PUBLIC void (LIBCCALL warn)(const char *format, ...) {
+ va_list args;
+ va_start(args,format);
+ vwarn(format,args);
+ va_end(args);
+}
+PUBLIC void (LIBCCALL warnx)(const char *format, ...) {
+ va_list args;
+ va_start(args,format);
+ vwarnx(format,args);
+ va_end(args);
+}
+PUBLIC void (LIBCCALL err)(int status, const char *format, ...) {
+ va_list args;
+ va_start(args,format);
+ verr(status,format,args);
+}
+PUBLIC void (LIBCCALL errx)(int status, const char *format, ...) {
+ va_list args;
+ va_start(args,format);
+ verrx(status,format,args);
 }
 
 PUBLIC ATTR_COLDDATA unsigned int error_message_count = 0;
@@ -73,7 +118,7 @@ error_suffix(int status, int errnum) {
  fprintf(stderr,": %s\n",strerror(errnum));
 #endif
  ++error_message_count;
- if (status) exit(status);
+ if (status) ERROR_EXIT(status);
 }
 
 PUBLIC ATTR_COLDTEXT void LIBCCALL

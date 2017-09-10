@@ -142,10 +142,10 @@ PUBLIC struct drtc drtc __ASMNAME("default_system_rtc") = {
 
 #ifdef CONFIG_SMP
 PRIVATE DEFINE_ATOMIC_RWLOCK(sysrtc_lock);
-#define sysrtc_read()     atomic_rwlock_read(&sysrtc_lock)
-#define sysrtc_write()    atomic_rwlock_write(&sysrtc_lock)
-#define sysrtc_endread()  atomic_rwlock_endread(&sysrtc_lock)
-#define sysrtc_endwrite() atomic_rwlock_endwrite(&sysrtc_lock)
+#define sysrtc_read()      atomic_rwlock_read(&sysrtc_lock)
+#define sysrtc_write()     atomic_rwlock_write(&sysrtc_lock)
+#define sysrtc_endread()   atomic_rwlock_endread(&sysrtc_lock)
+#define sysrtc_endwrite()  atomic_rwlock_endwrite(&sysrtc_lock)
 #else
 #define sysrtc_read()     (void)0
 #define sysrtc_write()    (void)0

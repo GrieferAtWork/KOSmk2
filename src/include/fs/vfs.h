@@ -275,7 +275,7 @@ DATDEF struct superblockops vsuperblock_ops;
         .sb_achng_lock = ATOMIC_RWLOCK_INIT, \
         .sb_mount = { \
             .sm_mount_lock = ATOMIC_RWLOCK_INIT, \
-            .sm_mountv     = 0, \
+            .sm_mountv     = NULL, \
         }, \
         .sb_blkdev = NULL, \
     }, \

@@ -21,7 +21,10 @@
 #define _KOS_SOURCE 1
 
 #include <ctype.h>
+#include <err.h>
 #include <errno.h>
+#include <error.h>
+#include <fcntl.h>
 #include <format-printer.h>
 #include <hybrid/atomic.h>
 #include <hybrid/compiler.h>
@@ -33,7 +36,10 @@
 #include <pty.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "libterm.h"
@@ -113,11 +119,6 @@ PRIVATE struct term_rgba vga_colors[VTTY_COLORS] = {
     [VTTY_COLOR_WHITE         ] = TERM_RGBA_INIT(0xff,0xff,0xff,0xff),
 #endif
 };
-#include <sys/wait.h>
-#include <sys/mman.h>
-#include <error.h>
-#include <fcntl.h>
-#include <stdlib.h>
 
 /* UGH... Doing this correctly would have waaaay too huge of an overhead.
    But I have to admit that this approximation is pretty CRAP... */
@@ -702,8 +703,7 @@ rescan:
   }
 send_nothing:;
  }
- error(errno,errno,"Unexpected input relay failure");
- error(EXIT_FAILURE,errno,"Unexpected input relay failure");
+ err(EXIT_FAILURE,"Unexpected input relay failure");
 }
 
 
@@ -716,23 +716,23 @@ int main(int argc, char *argv[]) {
 
  if (argc < 2) { usage(argv[0],EXIT_FAILURE); }
  current_keymap = GET_ACTIVE_KEYMAP();
- if (!current_keymap) error(EXIT_FAILURE,errno,"Failed to load keyboard map");
+ if (!current_keymap) err(EXIT_FAILURE,"Failed to load keyboard map");
 
 
  /* Map the x86 VGA terminal.
   * NOTE: We map it as loose, so that the device memory won't be
   *       mapped in the child process we're forking into below. */
  vga_fd = open(TTY_DEVNAME,O_RDWR);
- if (vga_fd < 0) error(EXIT_FAILURE,errno,"Failed to open %q",TTY_DEVNAME);
+ if (vga_fd < 0) err(EXIT_FAILURE,"Failed to open %q",TTY_DEVNAME);
  fcntl(vga_fd,F_SETFL,FD_CLOEXEC|FD_CLOFORK);
 
  vga_dev = (cell_t *)mmap(0,PAGESIZE,PROT_READ|PROT_WRITE,
                           MAP_SHARED,vga_fd,0);
  if (vga_dev == (cell_t *)MAP_FAILED)
-     error(EXIT_FAILURE,errno,"Failed to mmap() VGA terminal");
+     err(EXIT_FAILURE,"Failed to mmap() VGA terminal");
  /*printf("Mapped terminal driver to %p\n",vga_dev);*/
  vga_buf = (cell_t *)malloc((VGA_SIZE+VTTY_WIDTH)*sizeof(cell_t));
- if (!vga_buf) error(EXIT_FAILURE,errno,"Failed to allocate VGA buffer");
+ if (!vga_buf) err(EXIT_FAILURE,"Failed to allocate VGA buffer");
  vga_bufend        = vga_buf+VGA_SIZE;
  vga_bufpos        = vga_buf;
  vga_bufsecondline = vga_buf+VTTY_WIDTH;
@@ -742,13 +742,13 @@ int main(int argc, char *argv[]) {
    for (; iter != end; ++iter) *iter = filler;
  }
  if (!term_init(&pty,&term_ops,NULL,NULL))
-      error(EXIT_FAILURE,errno,"Failed to create terminal host");
+      err(EXIT_FAILURE,"Failed to create terminal host");
 
  /* The terminal driver runtime is loaded and operational! */
 
  /* Create the PTY device. */
  if (openpty(&amaster,&aslave,NULL,NULL,&winsize) == -1)
-     error(EXIT_FAILURE,errno,"Failed to create PTY device");
+     err(EXIT_FAILURE,"Failed to create PTY device");
  fcntl(amaster,F_SETFL,FD_CLOEXEC);
 
 #if 1
@@ -786,7 +786,7 @@ int main(int argc, char *argv[]) {
  if ((relay_incoming_thread = fork()) == 0) {
   relay_incoming_threadmain();
  } else if (relay_incoming_thread < 0) {
-  error(EXIT_FAILURE,errno,"Failed to start relay-incoming process");
+  err(EXIT_FAILURE,"Failed to start relay-incoming process");
  }
 
  /*k_syslogf(KLOG_DEBUG,"Updating screen for the first time\n");*/

@@ -88,7 +88,7 @@ struct file {
  * file instances within 'struct inodeops::ino_fopen' */
 #define file_new(type_size) ((struct file *)calloc(1,type_size))
 FUNDEF void KCALL file_setup(struct file *__restrict fp,
-                             struct inode  *__restrict node,
+                             struct inode *__restrict node,
                              struct dentry *__restrict dent,
                              oflag_t oflags);
 

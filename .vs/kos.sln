@@ -21,6 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\dirent.h = ..\include\dirent.h
 		..\include\elf.h = ..\include\elf.h
 		..\include\endian.h = ..\include\endian.h
+		..\include\err.h = ..\include\err.h
 		..\include\errno.h = ..\include\errno.h
 		..\include\error.h = ..\include\error.h
 		..\include\fcntl.h = ..\include\fcntl.h

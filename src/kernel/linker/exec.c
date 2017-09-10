@@ -241,7 +241,13 @@ endwrite:
  /* Reset signal handlers. */
  sighand_reset(exec_task->t_sighand);
 
- /* TODO: call module constructors? */
+ /* TODO: call module constructors? (Push the real entry point and all
+  *       constructors but the first in reverse order on the user-stack,
+  *       then simply jump to the first. - When it rets, it will execute
+  *       the next constructor, and so on.
+  *    >> With that in mind, we'll probably have to move the
+  *       environment block to a callee-save register such as EBX.
+  */
 
  /* All right! Everything's been set up!
   * >> The last thing remaining now, is to actually start execution of the module! */

@@ -55,9 +55,9 @@ struct superblockops {
 };
 
 struct supermount {
- LIST_NODE(struct superblock) sm_chain; /*< [lock(INTERNAL(fs_mountlock))] Chain entry for mounted superblocks. */
- atomic_rwlock_t      sm_mount_lock;     /*< R/W-lock for superblock mounting points. */
- REF struct dentry  **sm_mountv;         /*< [1..1][0..:sb_root.i_nlink][owned][lock(sm_mount_lock)] Vector of mounting points (Used to keep the superblock alive). */
+ LIST_NODE(struct superblock)      sm_chain;      /*< [lock(INTERNAL(fs_mountlock))] Chain entry for mounted superblocks. */
+ atomic_rwlock_t                   sm_mount_lock; /*< R/W-lock for superblock mounting points. */
+ REF struct dentry               **sm_mountv;     /*< [1..1][0..:sb_root.i_nlink][owned][lock(sm_mount_lock)] Vector of mounting points (Used to keep the superblock alive). */
 };
 
 struct superblock {

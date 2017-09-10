@@ -363,6 +363,9 @@
     <ClCompile Include="..\..\src\kernel\fs\pipe.c">
       <Filter>kernel\fs</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\textfile.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -585,6 +588,9 @@
       <Filter>include\kernel\arch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\fs\pipe.h">
+      <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\textfile.h">
       <Filter>include\fs</Filter>
     </ClInclude>
   </ItemGroup>

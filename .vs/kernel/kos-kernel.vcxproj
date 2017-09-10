@@ -64,6 +64,7 @@
     <ClCompile Include="..\..\src\kernel\fs\pipe.c" />
     <ClCompile Include="..\..\src\kernel\fs\pty.c" />
     <ClCompile Include="..\..\src\kernel\fs\sys_fs.c" />
+    <ClCompile Include="..\..\src\kernel\fs\textfile.c" />
     <ClCompile Include="..\..\src\kernel\fs\vfs.c" />
     <ClCompile Include="..\..\src\kernel\input\keyboard.c" />
     <ClCompile Include="..\..\src\kernel\linker\driver-module.c" />
@@ -115,6 +116,7 @@
     <ClInclude Include="..\..\src\include\fs\pipe.h" />
     <ClInclude Include="..\..\src\include\fs\pty.h" />
     <ClInclude Include="..\..\src\include\fs\superblock.h" />
+    <ClInclude Include="..\..\src\include\fs\textfile.h" />
     <ClInclude Include="..\..\src\include\fs\vfs.h" />
     <ClInclude Include="..\..\src\include\input\keyboard.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\apic.h" />
