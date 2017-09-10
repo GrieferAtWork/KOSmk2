@@ -34,6 +34,7 @@
 #include <sched/task.h>
 #include <kernel/user.h>
 #include <fs/fd.h>
+#include <bits/poll.h>
 
 DECL_BEGIN
 
@@ -88,6 +89,44 @@ pipe_seek(struct file *__restrict fp,
  }
 }
 
+PRIVATE pollmode_t KCALL
+pipe_poll(struct file *__restrict fp, pollmode_t mode) {
+ pollmode_t result = 0; errno_t temp = -EOK;
+ struct pipe *p = container_of(fp->f_node,struct pipe,p_node);
+ if (!(mode&(POLLIN|POLLOUT)))
+     return -EWOULDBLOCK;
+ /* If the file was opened as non-blocking, it obviously won't block... */
+ if (fp->f_mode&O_NONBLOCK) return mode;
+
+ /* NOTE: The filesystem core API already checked that the given
+  *       file 'fp' was opened in a way compatible with 'mode'. */
+ if (mode&POLLIN) {
+  /* Poll the data-avail-signal. */
+  sig_write(&p->p_data.ib_avail);
+  if (IOBUFFER_MAXREAD(&p->p_data,p->p_data.ib_rpos))
+   result |= POLLIN;
+  else {
+   temp = task_addwait(&p->p_data.ib_avail,NULL,0);
+  }
+  sig_endwrite(&p->p_data.ib_avail);
+  if (E_ISERR(temp)) return temp;
+ }
+
+ if (mode&POLLOUT) {
+  /* Poll the not-full-signal. */
+  sig_write(&p->p_data.ib_nfull);
+  if (IOBUFFER_MAXWRITE(&p->p_data,p->p_data.ib_rpos))
+   result |= POLLOUT;
+  else {
+   temp = task_addwait(&p->p_data.ib_nfull,NULL,0);
+  }
+  sig_endwrite(&p->p_data.ib_nfull);
+  if (E_ISERR(temp)) return temp;
+ }
+
+ return result;
+}
+
 
 /* Pipe INode operations. */
 PUBLIC struct inodeops pipe_ops = {
@@ -98,6 +137,7 @@ PUBLIC struct inodeops pipe_ops = {
     .f_read     = &pipe_read,
     .f_write    = &pipe_write,
     .f_seek     = &pipe_seek,
+    .f_poll     = &pipe_poll,
 };
 
 
