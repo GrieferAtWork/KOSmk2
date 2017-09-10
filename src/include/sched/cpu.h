@@ -42,52 +42,40 @@ DECL_BEGIN
  *       locking the signal to start receiving, and re-enabling
  *       it once it has been received.
  */
-#define cpu_reading(x)     atomic_rwlock_reading(&(x)->c_lock)
-#define cpu_writing(x)     atomic_rwlock_writing(&(x)->c_lock)
-#define cpu_tryread(x)     atomic_rwlock_tryread(&(x)->c_lock)
-#define cpu_trywrite(x)    atomic_rwlock_trywrite(&(x)->c_lock)
-#define cpu_tryupgrade(x)  atomic_rwlock_tryupgrade(&(x)->c_lock)
-#define cpu_read(x)        atomic_rwlock_read(&(x)->c_lock)
-#define cpu_write(x)       atomic_rwlock_write(&(x)->c_lock)
-#define cpu_upgrade(x)     atomic_rwlock_upgrade(&(x)->c_lock)
-#define cpu_downgrade(x)   atomic_rwlock_downgrade(&(x)->c_lock)
-#define cpu_endread(x)     atomic_rwlock_endread(&(x)->c_lock)
-#define cpu_endwrite(x)    atomic_rwlock_endwrite(&(x)->c_lock)
+#define cpu_reading(x)      atomic_rwlock_reading(&(x)->c_lock)
+#define cpu_writing(x)      atomic_rwlock_writing(&(x)->c_lock)
+#if 0 /* Too expensive... */
+#define cpu_tryread(x)     (assert(!PREEMPTION_ENABLED()),atomic_rwlock_tryread(&(x)->c_lock))
+#define cpu_trywrite(x)    (assert(!PREEMPTION_ENABLED()),atomic_rwlock_trywrite(&(x)->c_lock))
+#define cpu_tryupgrade(x)  (assert(!PREEMPTION_ENABLED()),atomic_rwlock_tryupgrade(&(x)->c_lock))
+#define cpu_read(x)        (assert(!PREEMPTION_ENABLED()),atomic_rwlock_read(&(x)->c_lock))
+#define cpu_write(x)       (assert(!PREEMPTION_ENABLED()),atomic_rwlock_write(&(x)->c_lock))
+#define cpu_upgrade(x)     (assert(!PREEMPTION_ENABLED()),atomic_rwlock_upgrade(&(x)->c_lock))
+#define cpu_downgrade(x)   (assert(!PREEMPTION_ENABLED()),atomic_rwlock_downgrade(&(x)->c_lock))
+#define cpu_endread(x)     (assert(!PREEMPTION_ENABLED()),atomic_rwlock_endread(&(x)->c_lock))
+#define cpu_endwrite(x)    (assert(!PREEMPTION_ENABLED()),atomic_rwlock_endwrite(&(x)->c_lock))
+#else
+#define cpu_tryread(x)      atomic_rwlock_tryread(&(x)->c_lock)
+#define cpu_trywrite(x)     atomic_rwlock_trywrite(&(x)->c_lock)
+#define cpu_tryupgrade(x)   atomic_rwlock_tryupgrade(&(x)->c_lock)
+#define cpu_read(x)         atomic_rwlock_read(&(x)->c_lock)
+#define cpu_write(x)        atomic_rwlock_write(&(x)->c_lock)
+#define cpu_upgrade(x)      atomic_rwlock_upgrade(&(x)->c_lock)
+#define cpu_downgrade(x)    atomic_rwlock_downgrade(&(x)->c_lock)
+#define cpu_endread(x)      atomic_rwlock_endread(&(x)->c_lock)
+#define cpu_endwrite(x)     atomic_rwlock_endwrite(&(x)->c_lock)
+#endif
 
 /* Lock the current CPU for reading/writing, as well as
  * disabling preemption similar to PREEMPTION_PUSH() */
 #define CPU_READTHIS() \
- XBLOCK({ register pflag_t _r; \
-          struct cpu *_c; \
-          for (;;) { \
-            _c = THIS_CPU; \
-            cpu_read(_c); \
-            __asm__ __volatile__("pushfl\n" \
-                                 "popl %0\n" \
-                                 "cli" : "=g" (_r)); \
-            COMPILER_READ_BARRIER(); \
-            if likely(_c == THIS_CPU) break; \
-            __asm__ __volatile__("pushl %0\n" \
-                                 "popfl\n" : : "g" (_r)); \
-            COMPILER_BARRIER(); \
-          } \
+ XBLOCK({ register pflag_t _r = PREEMPTION_PUSH(); \
+          cpu_read(THIS_CPU); \
           XRETURN _r; \
  })
 #define CPU_WRITETHIS() \
- XBLOCK({ register pflag_t _r; \
-          struct cpu *_c; \
-          for (;;) { \
-            _c = THIS_CPU; \
-            cpu_write(_c); \
-            __asm__ __volatile__("pushfl\n" \
-                                 "popl %0\n" \
-                                 "cli" : "=g" (_r)); \
-            COMPILER_READ_BARRIER(); \
-            if likely(_c == THIS_CPU) break; \
-            __asm__ __volatile__("pushl %0\n" \
-                                 "popfl\n" : : "g" (_r)); \
-            COMPILER_BARRIER(); \
-          } \
+ XBLOCK({ register pflag_t _r = PREEMPTION_PUSH(); \
+          cpu_write(THIS_CPU); \
           XRETURN _r; \
  })
 #define CPU_ENDREADTHIS(was)  (cpu_endread(THIS_CPU),PREEMPTION_POP(was))

@@ -40,6 +40,7 @@
 #include <sched/task.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sched/signal.h>
 
 DECL_BEGIN
 
@@ -236,6 +237,9 @@ endwrite:
                        TASK_USERSTACK_GUARDSIZE,
                        TASK_USERSTACK_FUNDS);
  if (E_ISERR(error)) goto end_too_late_patch;
+
+ /* Reset signal handlers. */
+ sighand_reset(exec_task->t_sighand);
 
  /* TODO: call module constructors? */
 

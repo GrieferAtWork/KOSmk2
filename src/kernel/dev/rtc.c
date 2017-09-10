@@ -38,6 +38,8 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <sched/cpu.h>
+#include <hybrid/arch/eflags.h>
 
 DECL_BEGIN
 
@@ -138,34 +140,53 @@ PUBLIC struct drtc drtc __ASMNAME("default_system_rtc") = {
 };
 
 
+#ifdef CONFIG_SMP
 PRIVATE DEFINE_ATOMIC_RWLOCK(sysrtc_lock);
+#define sysrtc_read()     atomic_rwlock_read(&sysrtc_lock)
+#define sysrtc_write()    atomic_rwlock_write(&sysrtc_lock)
+#define sysrtc_endread()  atomic_rwlock_endread(&sysrtc_lock)
+#define sysrtc_endwrite() atomic_rwlock_endwrite(&sysrtc_lock)
+#else
+#define sysrtc_read()     (void)0
+#define sysrtc_write()    (void)0
+#define sysrtc_endread()  (void)0
+#define sysrtc_endwrite() (void)0
+#endif
 PRIVATE REF struct rtc *sysrtc = &drtc.d_rtc;
 
 INTERN void KCALL
 delete_default_rtc(struct rtc *__restrict dev) {
- atomic_rwlock_read(&sysrtc_lock);
+ pflag_t was = PREEMPTION_PUSH();
+ sysrtc_read();
  if (sysrtc == dev) {
+#ifdef CONFIG_SMP
   if (!atomic_rwlock_upgrade(&sysrtc_lock)) {
    if (sysrtc != dev) {
     atomic_rwlock_endwrite(&sysrtc_lock);
+    PREEMPTION_POP(was);
     return;
    }
   }
+#endif
   assert(sysrtc == dev);
   sysrtc = &default_system_rtc;
   RTC_INCREF(&default_system_rtc);
-  atomic_rwlock_endwrite(&sysrtc_lock);
+  sysrtc_endwrite();
+  PREEMPTION_POP(was);
   RTC_DECREF(dev);
   return;
  }
- atomic_rwlock_endread(&sysrtc_lock);
+ sysrtc_endread();
+ PREEMPTION_POP(was);
 }
 PUBLIC REF struct rtc *KCALL get_system_rtc(void) {
  REF struct rtc *result;
- atomic_rwlock_read(&sysrtc_lock);
+ pflag_t was = PREEMPTION_PUSH();
+ sysrtc_read();
  result = sysrtc;
  if (result) RTC_INCREF(result);
- atomic_rwlock_endread(&sysrtc_lock);
+ sysrtc_endread();
+ PREEMPTION_POP(was);
  return result;
 }
 PUBLIC bool KCALL
@@ -173,13 +194,15 @@ set_system_rtc(struct rtc *__restrict rtc,
                bool replace_existing) {
  REF struct rtc *old_device = NULL;
  CHECK_HOST_DOBJ(rtc);
- atomic_rwlock_write(&sysrtc_lock);
+ pflag_t was = PREEMPTION_PUSH();
+ sysrtc_write();
  if (replace_existing || !sysrtc) {
   RTC_INCREF(rtc);
   old_device = sysrtc;
   sysrtc = rtc;
  }
- atomic_rwlock_endwrite(&sysrtc_lock);
+ sysrtc_endwrite();
+ PREEMPTION_POP(was);
  if (old_device) RTC_DECREF(old_device);
  return old_device != NULL;
 }
@@ -187,28 +210,54 @@ set_system_rtc(struct rtc *__restrict rtc,
 
 
 
-PUBLIC void KCALL
+PUBLIC SAFE void KCALL
 sysrtc_get(struct timespec *__restrict val) {
- task_crit();
- atomic_rwlock_read(&sysrtc_lock);
- rtc_get(sysrtc,val);
- atomic_rwlock_endread(&sysrtc_lock);
+ pflag_t was = PREEMPTION_PUSH();
+ if (was&EFLAGS_IF) {
+  struct rtc *clock;
+  sysrtc_read();
+  clock = sysrtc;
+  RTC_INCREF(clock);
+  sysrtc_endread();
+  PREEMPTION_POP(was);
+  /* Read the time without holding a sysrtc lock. */
+  rtc_get(clock,val);
+  RTC_DECREF(clock);
+ } else {
+  sysrtc_read();
+  rtc_get(sysrtc,val);
+  sysrtc_endread();
+  PREEMPTION_POP(was);
+ }
  /* TODO: High precision time. */
- task_endcrit();
 }
 
-PUBLIC errno_t KCALL
+PUBLIC SAFE errno_t KCALL
 sysrtc_set(struct timespec const *__restrict val) {
- struct timespec set_time; errno_t error;
+ struct timespec set_time;
+ errno_t error; pflag_t was;
  memcpy(&set_time,val,sizeof(struct timespec));
- task_crit();
- atomic_rwlock_read(&sysrtc_lock);
- error = rtc_set(sysrtc,&set_time);
- atomic_rwlock_endread(&sysrtc_lock);
+ was = PREEMPTION_PUSH();
+ sysrtc_read();
+ if (was&EFLAGS_IF) {
+  struct rtc *clock;
+  sysrtc_read();
+  clock = sysrtc;
+  RTC_INCREF(clock);
+  sysrtc_endread();
+  PREEMPTION_POP(was);
+  /* Read the time without holding a sysrtc lock. */
+  error = rtc_set(clock,&set_time);
+  RTC_DECREF(clock);
+ } else {
+  sysrtc_read();
+  error = rtc_set(sysrtc,&set_time);
+  sysrtc_endread();
+  PREEMPTION_POP(was);
+ }
  if (E_ISOK(error)) {
   /* TODO: Adjust high precision time. */
  }
- task_endcrit();
  return error;
 }
 

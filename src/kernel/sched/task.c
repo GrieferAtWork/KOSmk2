@@ -514,10 +514,10 @@ task_destroy(struct task *__restrict t) {
  /* Validate the consistency of the task's state. */
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_cpu != NULL));
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_mman != NULL));
+ assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_mman == t->t_real_mman));
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_fdman != NULL));
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_pid.tp_parent != NULL));
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_pid.tp_leader != NULL));
- assert(!t->t_real_mman || t->t_real_mman == t->t_mman);
 
  /* Since it is possible for a task to die while waiting for signals,
   * we must clear them now so make sure it doesn't leave any of them
@@ -1142,7 +1142,7 @@ pit_exc(struct cpustate *__restrict state) {
  /* Update the sub-second clock. */
  sysrtc_periodic();
 
- if (atomic_rwlock_trywrite(&THIS_CPU->c_lock)) {
+ if (cpu_trywrite(THIS_CPU)) {
   struct task *wake;
   /* Check for wakeups in sleeping tasks. */
   if ((wake = THIS_CPU->c_sleeping) != NULL) {
@@ -1164,7 +1164,7 @@ pit_exc(struct cpustate *__restrict state) {
     wake->t_sched.sd_sleeping.le_pself = &THIS_CPU->c_sleeping;
    }
   }
-  atomic_rwlock_endwrite(&THIS_CPU->c_lock);
+  cpu_endwrite(THIS_CPU);
  }
 
  cpu_validate_counters(true);

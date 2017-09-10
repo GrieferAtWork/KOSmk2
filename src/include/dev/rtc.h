@@ -69,13 +69,13 @@ FUNDEF bool KCALL set_system_rtc(struct rtc *__restrict rtc, bool replace_existi
  * NOTE: 'sysrtc_get()' makes use of 'sysrtc_periodic()' to
  *        provide a clock resolution more precise than 'r_res',
  *        meaning that this function does more than 'rtc_get()' would. */
-FUNDEF void    KCALL sysrtc_get(struct timespec *__restrict val);
-FUNDEF errno_t KCALL sysrtc_set(struct timespec const *__restrict val);
+FUNDEF SAFE void KCALL sysrtc_get(struct timespec *__restrict val);
+FUNDEF SAFE errno_t KCALL sysrtc_set(struct timespec const *__restrict val);
 
 /* Making use of PIT interrupts, this function is called periodically
  * in order to constantly recalibrate the high precision clock to provide
  * better timer resolution than would other be possible by 'r_res'. */
-FUNDEF void KCALL sysrtc_periodic(void);
+FUNDEF SAFE void KCALL sysrtc_periodic(void);
 
 
 /* Amount of times jiffies are incremented per
