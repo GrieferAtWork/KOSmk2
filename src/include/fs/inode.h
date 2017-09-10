@@ -146,6 +146,7 @@ struct inodeops {
  errno_t (KCALL *f_flush)(struct file *__restrict fp); /* Flush all unwritten data. */ /* NOTE: Caller-synchronized:write */
  errno_t (KCALL *f_allocate)(struct file *__restrict fp, fallocmode_t mode, pos_t start, pos_t size);
  /* Poll for events on this file descriptor. This function should do:
+  * >> bool got_unsupported_signals = false;
   * >> FOREACH_BIT_IN(b,mode) {
   * >>     struct sig *s;
   * >>     if (!IS_SIGNAL_SUPPORTED(b)) {

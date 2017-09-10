@@ -42,6 +42,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <bits/poll.h>
 
 DECL_BEGIN
 
@@ -422,6 +423,39 @@ PRIVATE errno_t KCALL
 master_ioctl(struct file *__restrict fp, int name, USER void *arg) {
  return pty_ioctl(M,name,arg);
 }
+PRIVATE pollmode_t KCALL
+master_poll(struct file *__restrict fp, pollmode_t mode) {
+ pollmode_t result = 0;
+ struct ptymaster *master = M;
+ /* Poll input data. */
+ if (mode&POLLIN) {
+  errno_t temp = -EOK;
+  sig_write(&master->pm_s2m.ib_avail);
+  if (IOBUFFER_MAXREAD(&master->pm_s2m,master->pm_s2m.ib_rpos))
+      result |= POLLIN;
+  else {
+   temp = task_addwait(&master->pm_s2m.ib_avail,NULL,0);
+  }
+  sig_endwrite(&master->pm_s2m.ib_avail);
+  if (E_ISERR(temp)) return temp;
+ }
+ /* Poll output data. */
+ if (mode&POLLOUT) {
+  errno_t temp = -EOK;
+  sig_write(&master->pm_m2s.ib_nfull);
+  if (IOBUFFER_MAXWRITE(&master->pm_m2s,master->pm_m2s.ib_rpos))
+      result |= POLLOUT;
+  else {
+   temp = task_addwait(&master->pm_m2s.ib_nfull,NULL,0);
+  }
+  sig_endwrite(&master->pm_m2s.ib_nfull);
+  if (E_ISERR(temp)) return temp;
+ }
+
+ if (!result && mode&(POLLERR|POLLPRI))
+      result = -EWOULDBLOCK;
+ return result;
+}
 #undef M
 
 #define M (S->ps_master)
@@ -441,6 +475,39 @@ slave_write(struct file *__restrict fp, USER void const *buf, size_t bufsize) {
 PRIVATE errno_t KCALL
 slave_ioctl(struct file *__restrict fp, int name, USER void *arg) {
  return pty_ioctl(M,name,arg);
+}
+PRIVATE pollmode_t KCALL
+slave_poll(struct file *__restrict fp, pollmode_t mode) {
+ pollmode_t result = 0;
+ struct ptymaster *master = M;
+ /* Poll input data. */
+ if (mode&POLLIN) {
+  errno_t temp = -EOK;
+  sig_write(&master->pm_m2s.ib_avail);
+  if (IOBUFFER_MAXREAD(&master->pm_m2s,master->pm_m2s.ib_rpos))
+      result |= POLLIN;
+  else {
+   temp = task_addwait(&master->pm_m2s.ib_avail,NULL,0);
+  }
+  sig_endwrite(&master->pm_m2s.ib_avail);
+  if (E_ISERR(temp)) return temp;
+ }
+ /* Poll output data. */
+ if (mode&POLLOUT) {
+  errno_t temp = -EOK;
+  sig_write(&master->pm_s2m.ib_nfull);
+  if (IOBUFFER_MAXWRITE(&master->pm_s2m,master->pm_s2m.ib_rpos))
+      result |= POLLOUT;
+  else {
+   temp = task_addwait(&master->pm_s2m.ib_nfull,NULL,0);
+  }
+  sig_endwrite(&master->pm_s2m.ib_nfull);
+  if (E_ISERR(temp)) return temp;
+ }
+
+ if (!result && mode&(POLLERR|POLLPRI))
+      result = -EWOULDBLOCK;
+ return result;
 }
 #undef S
 #undef M
@@ -495,6 +562,7 @@ PUBLIC struct inodeops ptymaster_ops = {
     .f_read     = &master_read,
     .f_write    = &master_write,
     .f_ioctl    = &master_ioctl,
+    .f_poll     = &master_poll,
 };
 
 PUBLIC struct inodeops ptyslave_ops = {
@@ -506,6 +574,7 @@ PUBLIC struct inodeops ptyslave_ops = {
     .f_read     = &slave_read,
     .f_write    = &slave_write,
     .f_ioctl    = &slave_ioctl,
+    .f_poll     = &slave_poll,
 };
 
 

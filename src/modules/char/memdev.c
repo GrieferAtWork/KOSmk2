@@ -298,7 +298,7 @@ INTERN struct inodeops md_urandom = {
 PRIVATE ssize_t KCALL
 mb_zero_read(struct file *__restrict UNUSED(self),
              USER void *__restrict buf, size_t bufsize) {
- return memset_user(buf,0,bufsize) ? -EFAULT : bufsize;
+ return memset_user(buf,0,bufsize) ? -EFAULT : (ssize_t)bufsize;
 }
 PRIVATE ssize_t KCALL
 mb_null_read(struct file *__restrict UNUSED(self),
