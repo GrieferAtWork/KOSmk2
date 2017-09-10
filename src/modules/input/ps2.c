@@ -156,6 +156,7 @@ PRIVATE void KCALL keyboard_send(key_t k) {
     }
     task_crit();
     if (cpu_tryread(THIS_CPU)) {
+     cpu_validate_counters(false);
      for (iter = THIS_CPU->c_suspended; iter;
           iter = iter->t_sched.sd_suspended.le_next) {
       __assertion_printf("SUSPENDED TASK %p (PID = %d/%d) - %[file]\n",iter,
@@ -175,6 +176,9 @@ PRIVATE void KCALL keyboard_send(key_t k) {
       __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
      }
      cpu_endread(THIS_CPU);
+    } else {
+     __assertion_printf("Failed to lock CPU for reading\n");
+     cpu_validate_counters(true);
     }
     task_endcrit();
     PREEMPTION_POP(was);

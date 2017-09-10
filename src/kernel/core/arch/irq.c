@@ -470,14 +470,14 @@ print_segment_register(char const *__restrict name, u16 value) {
  }
 }
 
-#define IRQPANIC_DISP_SEGMENTS  1
+#define IRQPANIC_DISP_SEGMENTS  0
 #define IRQPANIC_DISP_CRX       1
 #define IRQPANIC_DISP_DRX       0
 #define IRQPANIC_DISP_TRACEBACK 1
 #define IRQPANIC_DISP_STACK     0
 #define IRQPANIC_DISP_TSS       0
 #define IRQPANIC_DISP_GDT_LDT   0
-#define IRQPANIC_DISP_MMAN      0
+#define IRQPANIC_DISP_MMAN      1
 #define IRQPANIC_DISP_PDIR      0
 
 INTERN ATTR_COLDTEXT ATTR_NOINLINE void FCALL

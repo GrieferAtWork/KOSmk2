@@ -78,6 +78,8 @@ PRIVATE void KCALL fd_mman_decref(struct mman *__restrict self) { MMAN_DECREF(se
 PRIVATE void KCALL fd_stack_incref(struct stack *__restrict self) { STACK_INCREF(self); }
 PRIVATE void KCALL fd_stack_decref(struct stack *__restrict self) { STACK_DECREF(self); }
 
+/* This is a requirement to ensure that all ops (not just the first) are properly aligned. */
+STATIC_ASSERT(IS_ALIGNED(sizeof(struct fdops),FDOPS_ALIGN));
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverride-init"

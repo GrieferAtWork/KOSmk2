@@ -795,7 +795,7 @@ PUBLIC SAFE void KCALL cpu_validate_counters(bool private_only) {
  }
  CPU_FOREACH_IDLING(iter,THIS_CPU) ++n_idling;
  if (!private_only) {
-  assert(cpu_writing(THIS_CPU));
+  assert(cpu_reading(THIS_CPU));
   CPU_FOREACH_SUSPENDED(iter,THIS_CPU) ++n_suspended;
   CPU_FOREACH_SLEEPING(iter,THIS_CPU) ++n_sleeping;
  }
@@ -964,7 +964,7 @@ INTDEF void KCALL
 cpu_add_sleeping(struct cpu *__restrict c,
              REF struct task *__restrict t) {
  struct task **piter,*iter;
- assert(atomic_rwlock_writing(&c->c_lock));
+ assert(cpu_writing(c));
  assert(t->t_mode == TASKMODE_SLEEPING ||
         t->t_mode == TASKMODE_WAKEUP);
  assert(TASK_CPU(t) == c);
@@ -1000,7 +1000,7 @@ INTDEF void KCALL
 cpu_add_suspended(struct cpu *__restrict c,
               REF struct task *__restrict t) {
  struct task **piter,*iter;
- assert(atomic_rwlock_writing(&c->c_lock));
+ assert(cpu_writing(c));
  assert(t->t_mode == TASKMODE_SUSPENDED);
  assert(TASK_CPU(t) == c);
  ++THIS_CPU->c_n_susp;
@@ -1020,7 +1020,7 @@ cpu_add_suspended(struct cpu *__restrict c,
 INTDEF void KCALL
 cpu_del_sleeping(struct cpu *__restrict c,
       /*OUT REF*/struct task *__restrict t) {
- assert(atomic_rwlock_writing(&c->c_lock));
+ assert(cpu_writing(c));
  assert(t->t_mode == TASKMODE_SLEEPING ||
         t->t_mode == TASKMODE_WAKEUP);
  assert(TASK_CPU(t) == c);
@@ -1033,7 +1033,7 @@ cpu_del_sleeping(struct cpu *__restrict c,
 INTDEF void KCALL
 cpu_del_suspended(struct cpu *__restrict c,
        /*OUT REF*/struct task *__restrict t) {
- assert(atomic_rwlock_writing(&c->c_lock));
+ assert(cpu_writing(c));
  assert(t->t_mode == TASKMODE_SUSPENDED);
  assert(TASK_CPU(t) == c);
  LIST_REMOVE(t,t_sched.sd_suspended);
@@ -1157,6 +1157,7 @@ pit_exc(struct cpustate *__restrict state) {
 
     /* Steal the wake-task from the sleeper chain */
     THIS_CPU->c_sleeping = wake->t_sched.sd_sleeping.le_next;
+    --THIS_CPU->c_n_sleep;
     ATOMIC_WRITE(wake->t_mode,TASKMODE_RUNNING);
     cpu_add_running(wake);
     if ((wake = THIS_CPU->c_sleeping) == NULL) break;
@@ -1418,6 +1419,7 @@ sig_vsendone_unlocked(struct sig *__restrict s,
   if likely(TASK_CPU(t) == c) break;
   cpu_endwrite(c);
  }
+ cpu_validate_counters(c != THIS_CPU);
 
  next = slot->tss_chain.le_next;
  assert(IS_ALIGNED((uintptr_t)next,TASKSIGSLOT_ALIGN));
@@ -1445,7 +1447,7 @@ sig_vsendone_unlocked(struct sig *__restrict s,
      copy_to_user(slot->tss_buf,data,
                   MIN(slot->tss_siz,datasize));
 
- cpu_validate_counters(false);
+ cpu_validate_counters(c != THIS_CPU);
  switch (t->t_mode) {
 
  case TASKMODE_SUSPENDED:

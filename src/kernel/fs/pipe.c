@@ -33,6 +33,7 @@
 #include <kernel/syscall.h>
 #include <sched/task.h>
 #include <kernel/user.h>
+#include <kos/syslog.h>
 #include <fs/fd.h>
 #include <bits/poll.h>
 
@@ -42,30 +43,29 @@ DECL_BEGIN
 PRIVATE void KCALL
 pipe_fclose(struct inode *__restrict ino,
             struct file *__restrict fp) {
- if ((fp->f_mode&O_ACCMODE) != O_RDONLY) {
-  struct pipe *p = container_of(ino,struct pipe,p_node);
-  /* The writer has been closed.
-   * >> Mark the INode as closing and interrupts any readers. */
-  ATOMIC_FETCHOR(p->p_node.i_state,INODE_STATE_CLOSING);
-  task_nointr();
-  iobuffer_interrupt(&p->p_data);
-  task_endnointr();
- }
+ struct pipe *p = container_of(ino,struct pipe,p_node);
+ /* End end of the pipe was closed. - Mark the pipe itself as closing. */
+ ATOMIC_FETCHOR(p->p_node.i_state,INODE_STATE_CLOSING);
+ task_nointr();
+ iobuffer_interrupt(&p->p_data);
+ /* XXX: Interrupt write operations? */
+ task_endnointr();
 }
 PRIVATE ssize_t KCALL
 pipe_read(struct file *__restrict fp,
           USER void *buf, size_t bufsize) {
  struct pipe *p = container_of(fp->f_node,struct pipe,p_node);
- if (p->p_node.i_state&INODE_STATE_CLOSING) return 0;
  return iobuffer_read(&p->p_data,buf,bufsize,
                       /* Don't block if we're not supposed to. */
-                      fp->f_mode&O_NONBLOCK ? IO_BLOCKNONE
-                                            : IO_BLOCKFIRST);
+                      (fp->f_mode&O_NONBLOCK || 
+                       p->p_node.i_state&INODE_STATE_CLOSING)
+                     ? IO_BLOCKNONE : IO_BLOCKFIRST);
 }
 PRIVATE ssize_t KCALL
 pipe_write(struct file *__restrict fp,
            USER void const *buf, size_t bufsize) {
  struct pipe *p = container_of(fp->f_node,struct pipe,p_node);
+ if (p->p_node.i_state&INODE_STATE_CLOSING) return 0;
  return iobuffer_write(&p->p_data,buf,bufsize,
                        /* Don't block if we're not supposed to. */
                        fp->f_mode&O_NONBLOCK ? IO_BLOCKNONE
@@ -210,14 +210,16 @@ PUBLIC REF struct pipe *KCALL pipe_new(void) {
 }
 
 
-struct pipefd {
-union{
+union pipefd {
+   s64     data;
+struct{union{
    errno_t error;
    int     fd_reader;
 }; int     fd_writer; };
+};
 
-PRIVATE SAFE struct pipefd KCALL mkpipe(int flags) {
- struct pipefd result;
+PRIVATE SAFE union pipefd KCALL mkpipe(int flags) {
+ union pipefd result;
  REF struct pipe *pfd;
  struct fd reader,writer;
  struct fdman *fdm = THIS_FDMAN;
@@ -248,7 +250,6 @@ PRIVATE SAFE struct pipefd KCALL mkpipe(int flags) {
    result.error = E_GTERR(result.fd_writer);
   }
  }
-
  FILE_DECREF(writer.fo_obj.fo_file);
 end3: FILE_DECREF(reader.fo_obj.fo_file);
 end2: PIPE_DECREF(pfd);
@@ -257,7 +258,7 @@ end:  return result;
 
 
 SYSCALL_DEFINE2(pipe2,USER int *,fildes,int,flags) {
- struct pipefd fd;
+ union pipefd fd;
  errno_t result = -EOK;
  /* Mainly here for ABI-compatibility with linux. - libc uses xpipe() below! */
  task_crit();
@@ -278,13 +279,13 @@ SYSCALL_DEFINE2(pipe2,USER int *,fildes,int,flags) {
 }
 
 SYSCALL_LDEFINE1(xpipe,int,flags) {
- struct pipefd fd;
+ union pipefd fd;
  /* Much simpler & doesn't suffer from potential FAULT errors. */
  task_crit();
  fd = mkpipe(flags);
  task_endcrit();
  if (E_ISERR(fd.error)) return (s64)fd.error;
- return (s64)fd.fd_writer << 32 | fd.fd_reader;
+ return fd.data;
 }
 
 

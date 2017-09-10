@@ -289,7 +289,7 @@ handle_intr2:
  goto buffer_is_empty;
 end_rpos:
  //(void)(bufend = bufend); /* It is always initialized! */
- assert(result != 0 || bufsize == 0);
+ assert(result != 0 || bufsize == 0 || !(mode&IO_BLOCKFIRST));
  assert(bufend == self->ib_buffer+self->ib_size);
  assert(start_rpos >= self->ib_buffer && start_rpos <= bufend);
  assert(rpos >= self->ib_buffer && rpos <= bufend);
@@ -359,7 +359,7 @@ wake_writers:
  }
  error = (ssize_t)result;
 end_read:   rwlock_endread(&self->ib_rwlock);
-end_always: assert(error != 0 || bufsize == 0);
+end_always: assert(error != 0 || bufsize == 0 || !(mode&IO_BLOCKFIRST));
 end_always2:return error;
 err_fault:  error = -EFAULT; goto end_read;
 }
