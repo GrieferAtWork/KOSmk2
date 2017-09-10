@@ -153,6 +153,8 @@ LOCAL SYSCALL5(int,waitid,(int,which,pid_t,upid,USER siginfo_t *,infop,int,optio
 LOCAL SYSCALL4(pid_t,wait4,(pid_t,upid,USER __WAIT_STATUS,stat_addr,int,options,USER struct rusage *,ru));
 LOCAL SYSCALL6(ssize_t,pselect6,(size_t,n,USER fd_set *,inp,USER fd_set *,outp,USER fd_set *,exp,USER struct kernel_timespec const *,tsp,USER void *,sig));
 LOCAL SYSCALL5(ssize_t,ppoll,(USER struct pollfd *,ufds,size_t,nfds,USER struct kernel_timespec const *,tsp,USER sigset_t const *,sigmask,size_t,sigsetsize));
+LOCAL SYSCALL2(__errno_t,pipe2,(USER int *,pfd,int,flags));
+LOCAL SYSCALL1(s64,xpipe,(int,flags));
 
 LOCAL SYSCALL2(__errno_t,gettimeofday,(USER struct kernel_timeval *,tv,USER struct timezone *,tz));
 LOCAL SYSCALL2(__errno_t,settimeofday,(USER struct kernel_timeval const *,tv,USER struct timezone const *,tz));

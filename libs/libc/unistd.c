@@ -358,8 +358,28 @@ PUBLIC int (LIBCCALL getgroups)(int size, gid_t list[]) { NOT_IMPLEMENTED(); ret
 PUBLIC int (LIBCCALL setuid)(uid_t uid) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL setgid)(gid_t gid) { NOT_IMPLEMENTED(); return -1; }
 
-PUBLIC int (LIBCCALL pipe)(int pipedes[2]) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL pipe2)(int pipedes[2], int flags) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC int (LIBCCALL pipe)(int pipedes[2]) { return pipe2(pipedes,0); }
+PUBLIC int (LIBCCALL pipe2)(int pipedes[2], int flags) {
+#if 0
+ return FORWARD_SYSTEM_ERROR(sys_pipe2(pipedes,flags));
+#else
+ union pipefd {
+    s64     data;
+ struct{union{
+    errno_t error;
+    int     fd_reader;
+ }; int     fd_writer; };
+ } pfd;
+ pfd.data = sys_xpipe(flags);
+ if (E_ISERR(pfd.error)) {
+  __set_errno(-pfd.error);
+  return -1;
+ }
+ pipedes[0] = pfd.fd_reader;
+ pipedes[1] = pfd.fd_writer;
+ return 0;
+#endif
+}
 PUBLIC mode_t (LIBCCALL umask)(mode_t mask) { /* TODO */ return 0022; }
 PUBLIC mode_t (LIBCCALL getumask)(void) { /* TODO */ return 0022; }
 

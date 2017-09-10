@@ -400,9 +400,17 @@ master_stat(struct inode *__restrict ino,
 PRIVATE ssize_t KCALL
 master_read(struct file *__restrict fp, USER void *buf, size_t bufsize) {
  ssize_t result;
+ struct ptymaster *master;
  SUPPRESS_WAITLOGS_BEGIN();
- result = iobuffer_read(&M->pm_s2m,buf,bufsize,IO_BLOCKFIRST);
- assert(result != 0);
+ master = M;
+ if (master->pm_chr.cd_device.d_node.i_state&INODE_STATE_CLOSING)
+  result = 0; /* Don't read any more data if the slave was closed. */
+ else {
+  result = iobuffer_read(&M->pm_s2m,buf,bufsize,IO_BLOCKFIRST);
+  assertf(result != 0 ||
+         (ATOMIC_READ(master->pm_chr.cd_device.d_node.i_state)&INODE_STATE_CLOSING),
+          "The master PTY must only indicate EOF once being closed!");
+ }
  SUPPRESS_WAITLOGS_END();
  return result;
 }
@@ -431,8 +439,11 @@ master_poll(struct file *__restrict fp, pollmode_t mode) {
  if (mode&POLLIN) {
   errno_t temp = -EOK;
   sig_write(&master->pm_s2m.ib_avail);
-  if (IOBUFFER_MAXREAD(&master->pm_s2m,master->pm_s2m.ib_rpos))
-      result |= POLLIN;
+  if (master->pm_chr.cd_device.d_node.i_state&INODE_STATE_CLOSING)
+   result |= POLLIN; /* Technically correct, but POLLIN must return once read() no longer blocks...
+                      * Plus: This prevents a soft-lock when the master poll()s after the slave was close()d. */
+  else if (IOBUFFER_MAXREAD(&master->pm_s2m,master->pm_s2m.ib_rpos))
+   result |= POLLIN;
   else {
    temp = task_addwait(&master->pm_s2m.ib_avail,NULL,0);
   }
@@ -532,6 +543,13 @@ pty_fclose(struct inode *__restrict UNUSED(ino),
 PRIVATE void KCALL slave_fini(struct inode *__restrict ino) {
  struct ptymaster *master;
  master = container_of(ino,struct ptyslave,ps_chr.cd_device.d_node)->ps_master;
+ /* Set the closing bit in the master, thus preventing any further read()s. */
+ ATOMIC_FETCHOR(master->pm_chr.cd_device.d_node.i_state,INODE_STATE_CLOSING);
+ task_nointr();
+ /* Interrupt a potential running read() operation in the master. */
+ iobuffer_interrupt(&master->pm_s2m);
+ task_endnointr();
+
  CHRDEV_DECREF(&master->pm_chr);
  chrdev_fini(&container_of(ino,struct ptyslave,ps_chr.cd_device.d_node)->ps_chr);
 }

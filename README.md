@@ -33,7 +33,7 @@ Chaos|KOS - Even more chaotic that last time.
    - Highly linux-compatible using 0x80 and same ids/registers
  - Unix-compliant user-space interfaces
    - ANSI-compliant Terminal
-   - <code>fork()</code>/<code>exec()</code>/<code>wait()</code>
+   - <code>fork()</code>/<code>exec()</code>/<code>wait()</code>/<code>pipe()</code>
    - <code>mmap()</code>/<code>munmap()</code>/<code>brk()</code>/<code>sbrk()</code>
    - <code>signal()</code>/<code>raise()</code>/<code>kill()</code>/<code>sigprocmask()</code>
      - terminate/suspend/resume support for <code>SIGKILL</code>, <code>SIGSTOP</code>, <code>SIGCONT</code>
@@ -66,7 +66,6 @@ Chaos|KOS - Even more chaotic that last time.
  - signal exception handling
  - local exception handling
  - Finally add write-support for FAT (Yeesh...)
- - <code>pipe()</code>
  - <code>futex()</code>
  - <code>/proc</code>
 

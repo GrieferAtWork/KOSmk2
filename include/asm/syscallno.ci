@@ -91,6 +91,8 @@ __SYSCALL(__NR_fchown,sys_fchown)
 __SYSCALL(__NR_openat,sys_openat)
 #define __NR_close        57
 __SYSCALL(__NR_close,sys_close)
+#define __NR_pipe2        59
+__SYSCALL(__NR_pipe2,sys_pipe2)
 #define __SC_ATTRIB_ISLNG_62 1
 #define __NR_lseek        62
 __SYSCALL(__NR_lseek,sys_lseek)
@@ -234,6 +236,9 @@ __XSYSCALL(__NR_xreaddir,sys_xreaddir)
 __XSYSCALL(__NR_xopenpty,sys_xopenpty)
 #define __NR_xfdname      0x80000006
 __XSYSCALL(__NR_xfdname,sys_xfdname)
+#define __NR_xpipe        0x80000007
+#define __SC_ATTRIB_ISLNG_0x80000007 1
+__XSYSCALL(__NR_xpipe,sys_xpipe) /* Returns reader fd in EAX; writer fd in EDX */
 
 /* Dynamic linker system calls.
  * NOTE: Library handles and simply the instance base pointer,

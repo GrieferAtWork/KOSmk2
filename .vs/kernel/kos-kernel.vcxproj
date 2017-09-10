@@ -61,6 +61,7 @@
     <ClCompile Include="..\..\src\kernel\fs\fs-test.c" />
     <ClCompile Include="..\..\src\kernel\fs\fs.c" />
     <ClCompile Include="..\..\src\kernel\fs\iobuffer.c" />
+    <ClCompile Include="..\..\src\kernel\fs\pipe.c" />
     <ClCompile Include="..\..\src\kernel\fs\pty.c" />
     <ClCompile Include="..\..\src\kernel\fs\sys_fs.c" />
     <ClCompile Include="..\..\src\kernel\fs\vfs.c" />
@@ -111,6 +112,7 @@
     <ClInclude Include="..\..\src\include\fs\fs.h" />
     <ClInclude Include="..\..\src\include\fs\inode.h" />
     <ClInclude Include="..\..\src\include\fs\iobuffer.h" />
+    <ClInclude Include="..\..\src\include\fs\pipe.h" />
     <ClInclude Include="..\..\src\include\fs\pty.h" />
     <ClInclude Include="..\..\src\include\fs\superblock.h" />
     <ClInclude Include="..\..\src\include\fs\vfs.h" />
