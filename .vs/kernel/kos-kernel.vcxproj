@@ -93,7 +93,6 @@
     <ClCompile Include="..\..\src\modules\char\memdev.c" />
     <ClCompile Include="..\..\src\modules\fs\devfs.c" />
     <ClCompile Include="..\..\src\modules\input\ps2.c" />
-    <ClCompile Include="..\..\src\modules\lib\libterm.c" />
     <ClCompile Include="..\..\src\modules\linker\pe.c" />
     <ClCompile Include="..\..\src\modules\video\vga-tty.c" />
   </ItemGroup>
@@ -149,7 +148,6 @@
     <ClInclude Include="..\..\src\include\modules\bios-disk.h" />
     <ClInclude Include="..\..\src\include\modules\efi.h" />
     <ClInclude Include="..\..\src\include\modules\fat.h" />
-    <ClInclude Include="..\..\src\include\modules\libterm.h" />
     <ClInclude Include="..\..\src\include\modules\mbr.h" />
     <ClInclude Include="..\..\src\include\modules\memdev.h" />
     <ClInclude Include="..\..\src\include\modules\ps2.h" />

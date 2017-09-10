@@ -195,10 +195,8 @@ BEGIN
 	BEGIN BASIC_MODULE("devfs")     SOURCE("modules/fs/devfs.c")    END
 	BEGIN BASIC_MODULE("memdev")    SOURCE("modules/char/memdev.c") END
 	BEGIN BASIC_MODULE("ata")       SOURCE("modules/block/ata.c")   END
-	BEGIN LIBRARY_MODULE("libterm") SOURCE("modules/lib/libterm.c") END
 	BEGIN DEFAULT_MODULE("vga-tty")
 		SOURCE("modules/video/vga-tty.c")
-		//USING("libterm")
 	END
 
 END

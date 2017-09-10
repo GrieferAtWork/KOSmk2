@@ -348,9 +348,6 @@
     <ClCompile Include="..\..\src\modules\video\vga-tty.c">
       <Filter>modules\video</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\modules\lib\libterm.c">
-      <Filter>modules\lib</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\fs\cache.c">
       <Filter>kernel\fs</Filter>
     </ClCompile>
@@ -567,9 +564,6 @@
       <Filter>modules\input</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\modules\vga.h">
-      <Filter>include\modules</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\modules\libterm.h">
       <Filter>include\modules</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\fs\pty.h">
