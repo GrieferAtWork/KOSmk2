@@ -110,11 +110,11 @@ struct vsuperblock {
 
 
 /* Builtin INode/Superblock operators for virtual filesystems. */
-DATDEF struct inodeops      vnode_ops;
-DATDEF struct inodeops      vlink_ops;
-DATDEF struct inodeops      vdev_ops;
+DATDEF struct inodeops const vnode_ops;
+DATDEF struct inodeops const vlink_ops;
+DATDEF struct inodeops const vdev_ops;
 /* NOTE: Also used as INode ops tag to indicate 'i_data' pointing to a 'vnode_common' structure. */
-DATDEF struct superblockops vsuperblock_ops;
+DATDEF struct superblockops const vsuperblock_ops;
 #define INODE_ISVNODE(self) ((self)->i_ops->o_tag == &vsuperblock_ops)
 
 

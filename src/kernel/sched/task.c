@@ -2180,6 +2180,8 @@ task_terminate_cpu_endwrite(struct cpu *__restrict c,
  assert(ATOMIC_READ(t->t_mode) != TASKMODE_NOTSTARTED);
 #if 0
  syslogf(LOG_DEBUG,"Terminate: %p\n",exitcode);
+#undef __assertion_tbprint
+ __assertion_tbprint();
 #endif
 
  if (ATOMIC_READ(t->t_critical)) {

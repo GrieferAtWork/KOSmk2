@@ -46,10 +46,12 @@ PUBLIC ATTR_NORETURN void (LIBCCALL exit)(int status) {
  /* TODO: Run atexit() */
  _exit(status);
 }
+#if 0
 PUBLIC ATTR_NORETURN void (LIBCCALL quick_exit)(int status) {
  /* TODO: Run at_quick_exit() */
  _exit(status);
 }
+#endif
 PUBLIC int (LIBCCALL atexit)(void (*LIBCCALL func)(void)) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL at_quick_exit)(void (*LIBCCALL func) (void)) { NOT_IMPLEMENTED(); return 0; }
 #endif

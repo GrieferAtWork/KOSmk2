@@ -45,7 +45,9 @@ sprintf_callback(char const *__restrict data, size_t datalen,
 }
 
 PUBLIC size_t (LIBCCALL vsprintf)(char *__restrict s, char const *__restrict format, va_list args) {
- return format_vprintf((pformatprinter)&sprintf_callback,(void *)&s,format,args);
+ size_t result = (size_t)format_vprintf((pformatprinter)&sprintf_callback,
+                                        (void *)&s,format,args);
+ return (*s = '\0',result);
 }
 
 

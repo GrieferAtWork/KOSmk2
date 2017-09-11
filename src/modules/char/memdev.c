@@ -40,22 +40,22 @@
 
 DECL_BEGIN
 
-INTDEF struct inodeops md_mem;
-INTDEF struct inodeops md_kmem;
-INTDEF struct inodeops md_null;
-INTDEF struct inodeops md_port;
-INTDEF struct inodeops md_zero;
-INTDEF struct inodeops md_full;
-INTDEF struct inodeops md_random;
-INTDEF struct inodeops md_urandom;
-INTDEF struct inodeops md_aio;
-INTDEF struct inodeops md_kmsg;
+INTDEF struct inodeops const md_mem;
+INTDEF struct inodeops const md_kmem;
+INTDEF struct inodeops const md_null;
+INTDEF struct inodeops const md_port;
+INTDEF struct inodeops const md_zero;
+INTDEF struct inodeops const md_full;
+INTDEF struct inodeops const md_random;
+INTDEF struct inodeops const md_urandom;
+INTDEF struct inodeops const md_aio;
+INTDEF struct inodeops const md_kmsg;
 
 struct mdev_setup {
- dev_t            ms_dev;  /*< Device ID. */
- struct inodeops *ms_ops;  /*< [1..1] INode operation for the device. */
- mode_t           ms_mode; /*< Device mode & permissions. (NOTE: Must always contain S_IFCHR) */
- pos_t            ms_size; /*< Device size. */
+ dev_t                  ms_dev;  /*< Device ID. */
+ struct inodeops const *ms_ops;  /*< [1..1] INode operation for the device. */
+ mode_t                 ms_mode; /*< Device mode & permissions. (NOTE: Must always contain S_IFCHR) */
+ pos_t                  ms_size; /*< Device size. */
 };
 
 PRIVATE struct mdev_setup const mdev[] = {
@@ -129,10 +129,10 @@ struct memfile {
  uintptr_t   f_addr; /*< Current seek position (aka. next read/write address). */
 };
 
-INTERN struct inodeops md_mem = {
+INTERN struct inodeops const md_mem = {
     /* TODO */
 };
-INTERN struct inodeops md_kmem = {
+INTERN struct inodeops const md_kmem = {
     /* TODO */
 };
 
@@ -225,7 +225,7 @@ md_port_seek(struct file *__restrict fp,
 }
 #undef SELF
 
-INTERN struct inodeops md_port = {
+INTERN struct inodeops const md_port = {
     .ino_fopen = &md_port_fopen,
     .f_read    = &md_port_read,
     .f_write   = &md_port_write,
@@ -277,7 +277,7 @@ md_random_pwrite(struct file *__restrict fp,
 }
 
 
-INTERN struct inodeops md_random = {
+INTERN struct inodeops const md_random = {
     .ino_fopen = &inode_fopen_default,
     /* TODO: Use hardware randomization if available. */
     .f_flags   = INODE_FILE_LOCKLESS,
@@ -286,7 +286,7 @@ INTERN struct inodeops md_random = {
     .f_pread   = &md_random_pread,
     .f_pwrite  = &md_random_pwrite,
 };
-INTERN struct inodeops md_urandom = {
+INTERN struct inodeops const md_urandom = {
     .ino_fopen = &inode_fopen_default,
     .f_flags   = INODE_FILE_LOCKLESS,
     .f_read    = &md_random_read,
@@ -348,7 +348,7 @@ mb_null_seek(struct file *__restrict UNUSED(self),
  return 0;
 }
 
-INTERN struct inodeops md_null = {
+INTERN struct inodeops const md_null = {
     .ino_fopen = &inode_fopen_default,
     .f_flags   = INODE_FILE_LOCKLESS,
     .f_read    = &mb_null_read,
@@ -357,7 +357,7 @@ INTERN struct inodeops md_null = {
     .f_pwrite  = &mb_null_pwrite,
     .f_seek    = &mb_null_seek,
 };
-INTERN struct inodeops md_zero = {
+INTERN struct inodeops const md_zero = {
     .ino_fopen = &inode_fopen_default,
     .f_flags   = INODE_FILE_LOCKLESS,
     .f_read    = &mb_zero_read,
@@ -366,7 +366,7 @@ INTERN struct inodeops md_zero = {
     .f_pwrite  = &mb_null_pwrite,
     .f_seek    = &mb_null_seek,
 };
-INTERN struct inodeops md_full = {
+INTERN struct inodeops const md_full = {
     .ino_fopen = &inode_fopen_default,
     .f_flags   = INODE_FILE_LOCKLESS,
     .f_read    = &mb_zero_read,
@@ -403,7 +403,7 @@ md_kmsg_write(struct file *__restrict fp,
  return result;
 }
 
-INTERN struct inodeops md_kmsg = {
+INTERN struct inodeops const md_kmsg = {
     .ino_fopen = &inode_fopen_default,
     .f_flags   = INODE_FILE_LOCKLESS,
     .f_write   = &md_kmsg_write,
@@ -412,7 +412,7 @@ INTERN struct inodeops md_kmsg = {
 
 
 /* ??? */
-INTERN struct inodeops md_aio = {
+INTERN struct inodeops const md_aio = {
     .ino_fopen = &inode_fopen_default,
 };
 

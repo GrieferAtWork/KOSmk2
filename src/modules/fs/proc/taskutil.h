@@ -16,65 +16,22 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_MODULES_VIDEO_VGA_TTY_C
-#define GUARD_MODULES_VIDEO_VGA_TTY_C 1
-#define _KOS_SOURCE 1
+#ifndef GUARD_MODULES_FS_PROC_TASKUTIL_H
+#define GUARD_MODULES_FS_PROC_TASKUTIL_H 1
 
-#include <dev/chrdev.h>
 #include <hybrid/compiler.h>
-#include <kernel/export.h>
-#include <malloc.h>
-#include <modules/tty.h>
-#include <modules/vga.h>
-#include <fs/inode.h>
-#include <kernel/mman.h>
-#include <hybrid/align.h>
-#include <hybrid/limits.h>
-#include <kos/syslog.h>
 
 DECL_BEGIN
 
-#define VGA_BASEADDR 0xB8000
-#define VGA_PAGESIZE CEIL_ALIGN(VTTY_WIDTH*VTTY_HEIGHT*2,PAGESIZE)
-STATIC_ASSERT(IS_ALIGNED(VGA_BASEADDR,PAGESIZE));
+struct fdman;
+struct task;
 
-
-
-
-
-PRIVATE REF struct mregion *KCALL
-vga_mmap(struct file *__restrict fp, pos_t pos, size_t size) {
- /* Allow mapping the VGA display to memory. */
- if (pos != 0 || size != VGA_PAGESIZE)
-     return E_PTR(-EINVAL);
- return mregion_new_phys(MMAN_UNIGFP,(ppage_t)VGA_BASEADDR,VGA_PAGESIZE);
-}
-
-
-PRIVATE struct inodeops const vga_ops = {
-    .ino_fopen = &inode_fopen_default,
-    .f_mmap    = &vga_mmap,
-};
-
-
-
-PRIVATE MODULE_INIT errno_t KCALL vga_init(void) {
- struct chrdev *dev; errno_t error;
- dev = chrdev_new(sizeof(struct chrdev));
- if unlikely(!dev) return -ENOMEM;
-
- dev->cd_device.d_node.i_ops = &vga_ops;
- error = device_setup(&dev->cd_device,THIS_INSTANCE);
- if (E_ISERR(error)) goto err;
- CHRDEV_REGISTER(dev,VGA_TTY);
- CHRDEV_DECREF(dev);
- return -EOK;
-err:
- free(dev);
- return error;
-}
+/* General purpose utilities to safely load various parts of a given
+ * task, that would otherwise be considered 'PRIVATE(THIS_TASK)'.
+ * NOTE: These functions all return E_ISERR(*) upon error; NULL is never returned. */
+INTDEF REF struct fdman *KCALL task_getfdman(WEAK struct task *__restrict t);
 
 
 DECL_END
 
-#endif /* !GUARD_MODULES_VIDEO_VGA_TTY_C */
+#endif /* !GUARD_MODULES_FS_PROC_TASKUTIL_H */

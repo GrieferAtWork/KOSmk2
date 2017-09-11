@@ -1,17 +1,19 @@
 
+#include <__stdinc.h>
+#include <assert.h>
 #include <hybrid/compiler.h>
 #include <hybrid/limits.h>
+#include <hybrid/panic.h>
 #include <hybrid/sched/yield.h>
-#include <assert.h>
 #include <malloc.h>
 #include <stddef.h>
-#include <__stdinc.h>
+
 #define DLCALL           __LIBCCALL
 #define SPIN_LOCK_YIELD  SCHED_YIELD();
+#define ABORT            PANIC("dlmalloc panic")
 
 #ifdef __KERNEL__
 #include <kernel/memory.h>
-#include <hybrid/panic.h>
 #define MALLOC_ZONE     (MZONE_SHARE/*|MZONE_VIRTUAL*/) /* TODO: Use paging */
 #define MMAP(s)          page_malloc(s,PAGEATTR_NONE,MALLOC_ZONE)
 #define MREMAP(p,o,n,mv) \
@@ -27,7 +29,6 @@
 #define LACKS_SYS_MMAN_H
 #define LACKS_TIME_H
 #define LACKS_SCHED_H
-#define ABORT            PANIC("dlmalloc panic")
 #else
 #define LACKS_TIME_H
 #define NO_MALLOC_STATS 1

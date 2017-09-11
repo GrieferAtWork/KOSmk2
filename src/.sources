@@ -195,7 +195,7 @@ BEGIN
 	BEGIN BASIC_MODULE("devfs")     SOURCE("modules/fs/devfs.c")    END
 	BEGIN BASIC_MODULE("memdev")    SOURCE("modules/char/memdev.c") END
 	BEGIN BASIC_MODULE("ata")       SOURCE("modules/block/ata.c")   END
-	BEGIN BASIC_MODULE("procfs")    SOURCE("modules/fs/procfs.c")   END
+	BEGIN BASIC_MODULE("procfs")    SOURCE("modules/fs/proc/*.c")   END
 	BEGIN DEFAULT_MODULE("vga-tty")
 		SOURCE("modules/video/vga-tty.c")
 	END

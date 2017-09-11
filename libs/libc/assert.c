@@ -188,6 +188,9 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
   __assertion_print(iter,COMPILER_ENDOF(buffer)-iter,NULL);
   __assertion_print("\n",1,NULL);
  }
+#ifndef __KERNEL__
+ __asm__ __volatile__("int $3\n" : : : "memory");
+#endif
 #ifdef PREEMPTION_FREEZE
  PREEMPTION_FREEZE();
 #else

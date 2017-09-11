@@ -16,65 +16,51 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_MODULES_VIDEO_VGA_TTY_C
-#define GUARD_MODULES_VIDEO_VGA_TTY_C 1
+#ifndef GUARD_MODULES_FS_PROC_TASKUTIL_C
+#define GUARD_MODULES_FS_PROC_TASKUTIL_C 1
 #define _KOS_SOURCE 1
 
-#include <dev/chrdev.h>
-#include <hybrid/compiler.h>
-#include <kernel/export.h>
-#include <malloc.h>
-#include <modules/tty.h>
-#include <modules/vga.h>
-#include <fs/inode.h>
-#include <kernel/mman.h>
-#include <hybrid/align.h>
-#include <hybrid/limits.h>
-#include <kos/syslog.h>
+#include "taskutil.h"
+#include <fs/fd.h>
+#include <sched/task.h>
+#include <errno.h>
+#include <sched/cpu.h>
+#include <sched/smp.h>
 
 DECL_BEGIN
 
-#define VGA_BASEADDR 0xB8000
-#define VGA_PAGESIZE CEIL_ALIGN(VTTY_WIDTH*VTTY_HEIGHT*2,PAGESIZE)
-STATIC_ASSERT(IS_ALIGNED(VGA_BASEADDR,PAGESIZE));
-
-
-
-
-
-PRIVATE REF struct mregion *KCALL
-vga_mmap(struct file *__restrict fp, pos_t pos, size_t size) {
- /* Allow mapping the VGA display to memory. */
- if (pos != 0 || size != VGA_PAGESIZE)
-     return E_PTR(-EINVAL);
- return mregion_new_phys(MMAN_UNIGFP,(ppage_t)VGA_BASEADDR,VGA_PAGESIZE);
-}
-
-
-PRIVATE struct inodeops const vga_ops = {
-    .ino_fopen = &inode_fopen_default,
-    .f_mmap    = &vga_mmap,
-};
-
-
-
-PRIVATE MODULE_INIT errno_t KCALL vga_init(void) {
- struct chrdev *dev; errno_t error;
- dev = chrdev_new(sizeof(struct chrdev));
- if unlikely(!dev) return -ENOMEM;
-
- dev->cd_device.d_node.i_ops = &vga_ops;
- error = device_setup(&dev->cd_device,THIS_INSTANCE);
- if (E_ISERR(error)) goto err;
- CHRDEV_REGISTER(dev,VGA_TTY);
- CHRDEV_DECREF(dev);
- return -EOK;
-err:
- free(dev);
- return error;
+INTERN REF struct fdman *KCALL
+task_getfdman(WEAK struct task *__restrict tsk) {
+ REF struct fdman *result; pflag_t was; errno_t temp;
+ if (!TASK_TRYINCREF(tsk)) return E_PTR(-ESRCH);
+ was = PREEMPTION_PUSH();
+#ifdef CONFIG_SMP
+ if (ATOMIC_READ(tsk->t_cpu) != THIS_CPU) {
+  assert(tsk != THIS_TASK);
+  temp = task_suspend(tsk,TASK_SUSP_HOST);
+  if (E_ISERR(temp)) return E_PTR(temp);
+  result = ATOMIC_READ(tsk->t_fdman);
+  /* NOTE: 't_fdman' may be NULL if the task was
+   *       assigned a PID but is still being setup. */
+  if (!result) result = E_PTR(-ESRCH);
+  else FDMAN_INCREF(result);
+  task_resume(tsk,TASK_SUSP_HOST);
+ } else
+#endif
+ {
+  /* Task on same CPU. -> With interrupts off,
+   * we can simply read its fd-manager directly. */
+  result = ATOMIC_READ(tsk->t_fdman);
+  /* NOTE: Same reason as above... */
+  if (!result) result = E_PTR(-ESRCH);
+  else FDMAN_INCREF(result);
+ }
+ PREEMPTION_POP(was);
+ TASK_DECREF(tsk);
+ return result;
 }
 
 
 DECL_END
 
-#endif /* !GUARD_MODULES_VIDEO_VGA_TTY_C */
+#endif /* !GUARD_MODULES_FS_PROC_TASKUTIL_C */

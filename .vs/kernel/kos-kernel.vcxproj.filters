@@ -163,6 +163,9 @@
     <Filter Include="modules\lib">
       <UniqueIdentifier>{89f5c1af-a12f-486c-aa97-afdf882e2cd8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="modules\fs\proc">
+      <UniqueIdentifier>{df502986-ada3-4049-9c22-d9462234d91e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core\main.c">
@@ -366,8 +369,14 @@
     <ClCompile Include="..\..\src\kernel\fs\textfile.c">
       <Filter>kernel\fs</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\modules\fs\procfs.c">
-      <Filter>modules\fs</Filter>
+    <ClCompile Include="..\..\src\modules\fs\proc\procfs.c">
+      <Filter>modules\fs\proc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\fs\proc\taskutil.c">
+      <Filter>modules\fs\proc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\fs\proc\pidnode.c">
+      <Filter>modules\fs\proc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -595,6 +604,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\fs\textfile.h">
       <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\fs\proc\taskutil.h">
+      <Filter>modules\fs\proc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\fs\proc\procfs.h">
+      <Filter>modules\fs\proc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -94,7 +94,9 @@
     <ClCompile Include="..\..\src\modules\block\ata.c" />
     <ClCompile Include="..\..\src\modules\char\memdev.c" />
     <ClCompile Include="..\..\src\modules\fs\devfs.c" />
-    <ClCompile Include="..\..\src\modules\fs\procfs.c" />
+    <ClCompile Include="..\..\src\modules\fs\proc\pidnode.c" />
+    <ClCompile Include="..\..\src\modules\fs\proc\procfs.c" />
+    <ClCompile Include="..\..\src\modules\fs\proc\taskutil.c" />
     <ClCompile Include="..\..\src\modules\input\ps2.c" />
     <ClCompile Include="..\..\src\modules\linker\pe.c" />
     <ClCompile Include="..\..\src\modules\video\vga-tty.c" />
@@ -174,6 +176,8 @@
     <ClInclude Include="..\..\src\kernel\debug-config.h" />
     <ClInclude Include="..\..\src\kernel\linker\ksym.h" />
     <ClInclude Include="..\..\src\kernel\mman\intern.h" />
+    <ClInclude Include="..\..\src\modules\fs\proc\procfs.h" />
+    <ClInclude Include="..\..\src\modules\fs\proc\taskutil.h" />
     <ClInclude Include="..\..\src\modules\input\ps2_keymaps.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

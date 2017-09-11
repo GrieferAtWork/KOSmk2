@@ -212,7 +212,7 @@ PRIVATE ssize_t KCALL fat_readlink(struct inode *__restrict ino, USER char *__re
 
 
 /* Fat INode/File operation descriptors. */
-PRIVATE struct inodeops fatops_reg = {
+PRIVATE struct inodeops const fatops_reg = {
     .f_read       = &fat_fread,
     .f_write      = &fat_fwrite,
     .f_pread      = &fat_fpread,
@@ -223,7 +223,7 @@ PRIVATE struct inodeops fatops_reg = {
     .ino_setattr  = &fat_setattr,
     .ino_readlink = &fat_readlink,
 };
-PRIVATE struct inodeops fatops_dir = {
+PRIVATE struct inodeops const fatops_dir = {
     .f_read      = &fat_fread,
     .f_write     = &fat_fwrite,
     .f_pread     = &fat_fpread,
@@ -235,7 +235,7 @@ PRIVATE struct inodeops fatops_dir = {
     .ino_setattr = &fat_setattr,
     .ino_lookup  = &fat_lookup,
 };
-PRIVATE struct inodeops fatops_root_16 = {
+PRIVATE struct inodeops const fatops_root_16 = {
     .f_read     = &fat16_root_fread,
     .f_write    = &fat16_root_fwrite,
     .f_pread    = &fat16_root_fpread,
@@ -246,7 +246,7 @@ PRIVATE struct inodeops fatops_root_16 = {
     .ino_fopen  = &fat16_root_fopen,
     .ino_lookup = &fat16_root_lookup,
 };
-PRIVATE struct inodeops fatops_root_32 = {
+PRIVATE struct inodeops const fatops_root_32 = {
     .f_read     = &fat_fread,
     .f_write    = &fat_fwrite,
     .f_pread    = &fat_fpread,
@@ -257,7 +257,7 @@ PRIVATE struct inodeops fatops_root_32 = {
     .ino_fopen  = &fat_fopen,
     .ino_lookup = &fat_lookup,
 };
-PRIVATE struct superblockops fatops_super = {
+PRIVATE struct superblockops const fatops_super = {
     .sb_sync = &fat_fssync,
     .sb_fini = &fat_fsfini,
 };

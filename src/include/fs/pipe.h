@@ -39,8 +39,8 @@ struct pipe {
 #define PIPE_DECREF(x) INODE_DECREF(&(x)->p_node)
 
 /* Pipe INode operations. */
-DATDEF struct inodeops   pipe_ops;
-DATDEF struct superblock pipe_fs; /* A stub filesystem for managing pipes. */
+DATDEF struct inodeops const pipe_ops;
+DATDEF struct superblock     pipe_fs; /* A stub filesystem for managing pipes. */
 
 /* Allocate a new pipe INode. - The caller may open the pipe for
  * reading/writing to create the two descriptors returned by 'pipe()'.

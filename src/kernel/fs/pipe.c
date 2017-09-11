@@ -129,7 +129,7 @@ pipe_poll(struct file *__restrict fp, pollmode_t mode) {
 
 
 /* Pipe INode operations. */
-PUBLIC struct inodeops pipe_ops = {
+PUBLIC struct inodeops const pipe_ops = {
     /* XXX: Support for packet-mode (O_DIRECT?) */
     .ino_fopen  = &inode_fopen_default,
     .ino_fclose = &pipe_fclose,
@@ -144,10 +144,10 @@ PUBLIC struct inodeops pipe_ops = {
 
 
 
-PUBLIC struct inodeops pipefs_rootops = {
+PUBLIC struct inodeops const pipefs_rootops = {
  /* XXX: Emulate a virtual directory that enumerates 'pipe_fs.sb_nodes' */
 };
-PUBLIC struct superblockops pipefs_ops = {
+PUBLIC struct superblockops const pipefs_ops = {
 };
 PUBLIC struct superblock pipe_fs = {
     .sb_root = {

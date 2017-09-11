@@ -43,7 +43,7 @@
 
 DECL_BEGIN
 
-PUBLIC struct inodeops rtc_ops = {
+PUBLIC struct inodeops const rtc_ops = {
  /* TODO */
 };
 PUBLIC struct rtc *KCALL rtc_cinit(struct rtc *self) {

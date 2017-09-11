@@ -105,7 +105,7 @@ PRIVATE ssize_t KCALL kbd_read(struct file *__restrict fp,
 }
 #undef KBD
 
-PRIVATE struct inodeops kbd_ops = {
+PRIVATE struct inodeops const kbd_ops = {
     .ino_fopen  = &kbd_fopen,
     .ino_fclose = &kbd_fclose,
     .ino_fini   = (void (KCALL *)(struct inode *))&chrdev_fini,

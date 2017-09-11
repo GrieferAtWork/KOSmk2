@@ -21,7 +21,7 @@
 
 #include <__stdinc.h>
 #include <features.h>
-#include <signal.h>
+#include <bits/sigset.h>
 #include <bits/sigcontext.h>
 
 /* Copyright (C) 2001-2016 Free Software Foundation, Inc.

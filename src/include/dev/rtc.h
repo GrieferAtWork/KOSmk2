@@ -51,7 +51,7 @@ struct rtc {
  */
 #define rtc_new(type_size) rtc_cinit((struct rtc *)calloc(1,type_size))
 FUNDEF struct rtc *KCALL rtc_cinit(struct rtc *self);
-DATDEF struct inodeops rtc_ops;
+DATDEF struct inodeops const rtc_ops;
 
 
 /* Get/Set the time represented by a given RTC clock. */

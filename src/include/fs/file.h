@@ -63,7 +63,7 @@ struct filelock {
 };
 struct file {
  ATOMIC_DATA ref_t       f_refcnt; /*< Reference counter. */
- struct inodeops        *f_ops;    /*< [1..1][const][== f_node->i_ops] Local copy of file operations. */
+ struct inodeops const  *f_ops;    /*< [1..1][const][== f_node->i_ops] Local copy of file operations. */
  REF struct inode       *f_node;   /*< [1..1][const] INode associated with this file stream. */
  REF struct dentry      *f_dent;   /*< [1..1][const] Directory entry associated with this file stream.
                                     *   WARNING: This directory entry does not necessarily point to 'f_node'! */

@@ -42,19 +42,28 @@ struct ptymaster {
  atomic_rwlock_t       pm_lock;  /*< R/W lock for members below. */
  struct winsize        pm_size;  /*< [lock(ty_lock)] Terminal window size. */
  struct termios        pm_ios;   /*< [lock(ty_lock)] termios data. */
+#ifdef __INTELLISENSE__
+          struct task *pm_cproc; /*< [lock(ty_lock)][0..1] Controlling process. */
+          struct task *pm_fproc; /*< [lock(ty_lock)][0..1] Foreground process. */
+#else
  WEAK REF struct task *pm_cproc; /*< [lock(ty_lock)][0..1] Controlling process. */
  WEAK REF struct task *pm_fproc; /*< [lock(ty_lock)][0..1] Foreground process. */
+#endif
 };
 
 struct ptyslave {
  struct chrdev         ps_chr;    /*< Underlying character device. */
+#ifdef __INTELLISENSE__
+     struct ptymaster *ps_master; /*< [1..1][const] Connected PTY master device. */
+#else
  REF struct ptymaster *ps_master; /*< [1..1][const] Connected PTY master device. */
+#endif
 };
 
 
 /* PTY master/slave INode operations. */
-DATDEF struct inodeops ptymaster_ops;
-DATDEF struct inodeops ptyslave_ops;
+DATDEF struct inodeops const ptymaster_ops;
+DATDEF struct inodeops const ptyslave_ops;
 
 
 /* Create a new PTY master device. The caller must fill in:

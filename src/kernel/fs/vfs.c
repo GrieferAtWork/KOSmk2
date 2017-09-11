@@ -711,8 +711,8 @@ PRIVATE errno_t KCALL vdev_remove(struct inode *__restrict UNUSED(dir_node), str
 /* Builtin INode/Superblock operators for virtual filesystems.
  * NOTE: All vnode files are directories, as anything
  *       but requires custom implementations. */
-PUBLIC struct inodeops vnode_ops = {
-    .o_tag       = &vsuperblock_ops,
+PUBLIC struct inodeops const vnode_ops = {
+    .o_tag       = (void *)&vsuperblock_ops,
     .f_seek      = &vfile_dir_seek,
     .f_readdir   = &vfile_dir_readdir,
     .ino_fini    = &vnode_fini,
@@ -725,13 +725,13 @@ PUBLIC struct inodeops vnode_ops = {
     .ino_rename  = &vnode_rename,
     .ino_remove  = &vnode_remove,
 };
-PUBLIC struct inodeops vlink_ops = {
-    .o_tag        = &vsuperblock_ops,
+PUBLIC struct inodeops const vlink_ops = {
+    .o_tag        = (void *)&vsuperblock_ops,
     .ino_fini     = &vlink_fini,
     .ino_readlink = &vlink_readlink,
 };
-PUBLIC struct inodeops vdev_ops = {
-    .o_tag         = &vsuperblock_ops,
+PUBLIC struct inodeops const vdev_ops = {
+    .o_tag         = (void *)&vsuperblock_ops,
     .ino_effective = &vdev_effective,
     .ino_fopen     = &vdev_fopen,
     .ino_setattr   = &vdev_setattr,
@@ -745,7 +745,7 @@ PUBLIC struct inodeops vdev_ops = {
     .ino_rename    = &vdev_rename,
     .ino_remove    = &vdev_remove,
 };
-PUBLIC struct superblockops vsuperblock_ops = {
+PUBLIC struct superblockops const vsuperblock_ops = {
     .sb_remove_inode = &vfs_remove_inode,
     .sb_umount       = &vfs_umount,
 };

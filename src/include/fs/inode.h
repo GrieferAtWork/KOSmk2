@@ -402,7 +402,7 @@ struct inode {
                                        *   Per-superblock linked list of all loaded INodes.
                                        *   NOTE: The superblock itself is _NOT_ part of this
                                        *         list, but instead resembles an empty link. */
- struct inodeops        *i_ops;       /*< [1..1][const] Additional INode operations & hardware I/O interfaces. */
+ struct inodeops const  *i_ops;       /*< [1..1][const] Additional INode operations & hardware I/O interfaces. */
  REF struct instance    *i_owner;     /*< [1..1][const] Owner module of this INode. */
 union{
  ino_t                   i_ino;       /*< Per-filesystem, unique inode descriptor number. */

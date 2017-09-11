@@ -183,7 +183,7 @@ blkfile_flush(struct file *__restrict fp) {
 #undef SELF
 #undef DEV
 
-PRIVATE struct inodeops block_ops = {
+PRIVATE struct inodeops const block_ops = {
     .ino_fini  = (void (KCALL *)(struct inode *__restrict ino))&blkdev_fini,
     .ino_fopen = &blkdev_fopen,
     .ino_stat  = &blkdev_stat,

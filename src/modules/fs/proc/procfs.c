@@ -16,16 +16,19 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_MODULES_FS_PROCFS_C
-#define GUARD_MODULES_FS_PROCFS_C 1
+#ifndef GUARD_MODULES_FS_PROC_PROCFS_C
+#define GUARD_MODULES_FS_PROC_PROCFS_C 1
 #define _KOS_SOURCE 1
 
+#include "taskutil.h"
+#include "procfs.h"
+
 #include <dev/blkdev.h>
-#include <kos/syslog.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <fs/basic_types.h>
 #include <fs/dentry.h>
+#include <fs/fd.h>
 #include <fs/fs.h>
 #include <fs/inode.h>
 #include <fs/superblock.h>
@@ -35,119 +38,15 @@
 #include <hybrid/minmax.h>
 #include <kernel/export.h>
 #include <kernel/user.h>
+#include <kos/syslog.h>
 #include <malloc.h>
+#include <sched/cpu.h>
+#include <sched/task.h>
 #include <sched/types.h>
 #include <stdlib.h>
-#include <sched/task.h>
 
 DECL_BEGIN
 
-#if __SIZEOF_PID_T__ == __SIZEOF_INT__
-#   define PID_FMT  "%u"
-#elif __SIZEOF_PID_T__ == __SIZEOF_LONG__
-#   define PID_FMT  "%lu"
-#elif __SIZEOF_PID_T__ == __SIZEOF_LONG_LONG__
-#   define PID_FMT  "%llu"
-#elif !defined(__DEEMON__)
-#   error FIXME
-#endif
-
-#if __SIZEOF_SIZE_T__ == 4
-#   define H(h32,h64) h32
-#elif __SIZEOF_SIZE_T__ == 8
-#   define H(h32,h64) h64
-#elif !defined(__DEEMON__)
-#   error FIXME
-#endif
-
-
-/* Per-PID Inode descriptor. */
-struct pidnode {
- struct inode          p_node; /*< Underlying INode. */
- WEAK REF struct task *p_task; /*< [1..1][const] A weak reference to the associated task.
-                                *  NOTE: This _MUST_ be a weak reference to cancel the following loop:
-                                *  >> p_task->t_fdman->[...(struct file)]->f_node->p_task. */
-};
-#define SELF container_of(ino,struct pidnode,p_node)
-PRIVATE void KCALL pidnode_fini(struct inode *__restrict ino) {
- /* Cleanup the weak reference to the represented task. */
- TASK_WEAK_DECREF(SELF->p_task);
-}
-PRIVATE struct inodeops pidops = {
-    .ino_fini = &pidnode_fini,
-};
-
-
-/* Create a new PID INode and _ALWAYS_ inherit a weak reference to 't' */
-PRIVATE REF struct pidnode *
-KCALL pidnode_new_inherited(struct superblock *__restrict procfs,
-                            WEAK REF struct task *__restrict t) {
- REF struct pidnode *result; errno_t error;
- result = (REF struct pidnode *)inode_new(sizeof(struct pidnode));
- if unlikely(!result) { result = E_PTR(-ENOMEM); goto err; }
- /* Initialize basic node members. */
- result->p_node.__i_nlink           = 1;
- result->p_node.i_ops               = &pidops;
- result->p_node.i_attr.ia_mode      = S_IFDIR|0555;
- result->p_node.i_attr_disk.ia_mode = S_IFDIR|0555;
- /* Store the given task as a weak reference within the node. */
- result->p_task = t;
- error = inode_setup(&result->p_node,procfs,THIS_INSTANCE);
- if (E_ISERR(error)) {
-  free(result);
-  result = E_PTR(error);
-err:
-  TASK_WEAK_DECREF(t);
- }
- return result;
-}
-
-
-
-
-
-
-struct procnode {
- ino_t             n_ino;  /*< Inode number of this entry. */
- mode_t            n_mode; /*< The type and mode of this node. */
- struct dentryname n_name; /*< Name of this node. */
- struct inodeops   n_ops;  /*< Operators for this node. */
-};
-
-#ifdef __DEEMON__
-#define DNAME_HASH32(x) \
-({ local hash = uint32(0); \
-   local temp = string.utf32.from_data((char *)x,#(x)/4); \
-   for (local c: temp) { hash += c.ord(); hash *= 9; } \
-   local temp = x[#(x) - #(x) % 4 : #(x)]; \
-   switch (#temp) { \
-   case 3:  hash += x[2].ord() << 16; \
-   case 2:  hash += x[1].ord() << 8; \
-   case 1:  hash += x[0].ord(); \
-   default: break; \
-   } \
-   hash;\
-})
-#define DNAME_HASH64(x) \
-({ local hash = uint64(0); \
-   local temp = (uint64 *)(char *)x; \
-   for (local i = 0; i < #(x) / 8; ++i) { hash += temp[i]; hash *= 9; } \
-   local temp = x[#(x) - #(x) % 8 : #(x)]; \
-   switch (#temp) { \
-   case 7:  hash += x[6].ord() << 48; \
-   case 6:  hash += x[5].ord() << 40; \
-   case 5:  hash += x[4].ord() << 32; \
-   case 4:  hash += x[3].ord() << 24; \
-   case 3:  hash += x[2].ord() << 16; \
-   case 2:  hash += x[1].ord() << 8; \
-   case 1:  hash += x[0].ord(); \
-   default: break; \
-   } \
-   hash;\
-})
-#define DNAM(x) ({ local _x = x; print "{"+repr(_x)+","+#_x+",H("+DNAME_HASH32(_x)+"u,"+DNAME_HASH64(_x)+"llu)}",; })
-#endif
-  
 
 PRIVATE SAFE ssize_t KCALL
 self_readlink(struct inode *__restrict UNUSED(ino),
@@ -156,21 +55,10 @@ self_readlink(struct inode *__restrict UNUSED(ino),
 }
 
 /* Misc. contents of the /proc root directory. */
-PRIVATE struct procnode root_content[] = {
+INTERN struct procnode const root_content[] = {
  {0,S_IFLNK|0444,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
  { .ino_readlink = &self_readlink,
  }},
-};
-
-struct rootfile {
- /* Open file descriptor within the /proc root directory. */
- struct file               rf_file;   /*< Underlying file descriptor. */
- REF struct pid_namespace *rf_proc;   /*< PID namespace being enumerated by this file. */
- size_t                    rf_diridx; /*< [lock(rf_file->f_lock)] Current absolute in-directory position. */
- size_t                    rf_bucket; /*< [lock(rf_file->f_lock)] Current bucket index. */
- size_t                    rf_bucpos; /*< [lock(rf_file->f_lock)] Current position within that bucket. */
- size_t                    rf_pidcnt; /*< [const] == rf_proc->pn_mapc (When the file was opened initially)
-                                       *   HINT: When 'rf_diridx >= rf_pidcnt', read from 'root_content' */
 };
 
 PRIVATE REF struct file *KCALL
@@ -188,11 +76,12 @@ root_fopen(struct inode *__restrict ino,
  file_setup(&result->rf_file,ino,node_ent,oflags);
  return &result->rf_file;
 }
+#define SELF container_of(fp,struct rootfile,rf_file)
 PRIVATE void KCALL
 root_fclose(struct inode *__restrict UNUSED(ino),
             struct file *__restrict fp) {
  /* Drop a reference from the associated PID namespace. */
- PID_NAMESPACE_DECREF(container_of(fp,struct rootfile,rf_file)->rf_proc);
+ PID_NAMESPACE_DECREF(SELF->rf_proc);
 }
 
 PRIVATE ssize_t KCALL
@@ -210,17 +99,52 @@ root_read(struct file *__restrict fp,
      return -EFAULT;
  return (ssize_t)len;
 }
+PRIVATE off_t KCALL
+root_seek(struct file *__restrict fp,
+          off_t off, int whence) {
+ size_t new_position;
+ switch (whence) {
+ case SEEK_SET: new_position = (size_t)(off); break;
+ case SEEK_CUR: new_position = (size_t)(SELF->rf_diridx+off); break;
+ case SEEK_END: new_position = (size_t)((SELF->rf_pidcnt+COMPILER_LENOF(root_content))-off); break;
+ default: return -EINVAL;
+ }
+ SELF->rf_diridx = new_position;
+ if (new_position < SELF->rf_pidcnt) {
+  SELF->rf_bucket = 0;
+  SELF->rf_bucpos = 0;
+  atomic_rwlock_read(&SELF->rf_proc->pn_lock);
+  for (;;) {
+   struct task *iter;
+   if (SELF->rf_bucket >= SELF->rf_proc->pn_mapa) {
+    /* Simply switch to the non-pid portion. */
+    SELF->rf_diridx = SELF->rf_pidcnt;
+    break;
+   }
+   iter = SELF->rf_proc->pn_map[SELF->rf_bucket].pb_chain;
+   while (iter) {
+    if (!new_position) goto gotpos;
+    ++SELF->rf_bucpos,--new_position;
+    iter = iter->t_pid.tp_ids[PIDTYPE_PID].tl_link.le_next;
+   }
+   SELF->rf_bucpos = 0;
+   ++SELF->rf_bucket;
+  }
+gotpos:
+  atomic_rwlock_endread(&SELF->rf_proc->pn_lock);
+ }
+ return new_position;
+}
 PRIVATE ssize_t KCALL
 root_readdir(struct file *__restrict fp,
              USER struct dirent *buf,
              size_t bufsize, rdmode_t mode) {
- struct rootfile *self = container_of(fp,struct rootfile,rf_file);
  ssize_t result = 0;
- if (self->rf_diridx >= self->rf_pidcnt) {
+ if (SELF->rf_diridx >= SELF->rf_pidcnt) {
   struct dirent header; size_t name_avail;
-  struct procnode *node; size_t index;
+  struct procnode const *node; size_t index;
 enum_content:
-  index = self->rf_diridx-self->rf_pidcnt;
+  index = SELF->rf_diridx-SELF->rf_pidcnt;
   if (index >= COMPILER_LENOF(root_content))
       return 0; /* End of directory. */
   node = &root_content[index];
@@ -241,26 +165,31 @@ enum_content:
       return -EFAULT;
  } else {
   /* Enumerate running PIDs */
-  struct pid_namespace *ns = self->rf_proc;
+  struct pid_namespace *ns = SELF->rf_proc;
   struct task *iter; size_t position; pid_t taskpid;
   atomic_rwlock_read(&ns->pn_lock);
   for (;;) {
-   if (self->rf_bucket >= ns->pn_mapa) {
+   if (SELF->rf_bucket >= ns->pn_mapa) {
     atomic_rwlock_endread(&ns->pn_lock);
-    self->rf_diridx = self->rf_pidcnt;
+    SELF->rf_diridx = SELF->rf_pidcnt;
     goto enum_content;
    }
-   iter = ns->pn_map[self->rf_bucket].pb_chain;
-   position = self->rf_bucpos;
+   iter = ns->pn_map[SELF->rf_bucket].pb_chain;
+   position = SELF->rf_bucpos;
    for (;;) {
     if (!iter) break;
-    if (!position) goto got_task;
-    --position;
+#if 0 /* Only enumerate leaders. */
+    if (iter->t_pid.tp_leader == iter)
+#endif
+    {
+     if (!position) goto got_task;
+     --position;
+    }
     iter = iter->t_pid.tp_ids[PIDTYPE_PID].tl_link.le_next;
    }
    /* Switch to the next bucket. */
-   ++self->rf_bucket;
-   self->rf_bucpos = 0;
+   ++SELF->rf_bucket;
+   SELF->rf_bucpos = 0;
   }
 got_task:
   taskpid = iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid;
@@ -272,7 +201,6 @@ got_task:
     name_avail = 0;
     if (bufsize >= offsetof(struct dirent,d_name))
         name_avail = bufsize-offsetof(struct dirent,d_name);
-    syslogf(LOG_DEBUG,"ENUM_PID(%d)\n",taskpid);
     result = snprintf_user(buf->d_name,name_avail,PID_FMT,taskpid)*sizeof(char);
     if (bufsize >= offsetof(struct dirent,d_name)) {
      header.d_namlen = result-1;
@@ -283,16 +211,15 @@ got_task:
   }
  }
  if (FILE_READDIR_SHOULDINC(mode,bufsize,result)) {
-  ++self->rf_diridx;
-  ++self->rf_bucpos;
+  ++SELF->rf_diridx;
+  ++SELF->rf_bucpos;
  }
  return result;
 }
-
 PRIVATE REF struct inode *KCALL
 root_lookup(struct inode *__restrict dir_node,
             struct dentry *__restrict result_path) {
- struct procnode *iter; errno_t error;
+ struct procnode const *iter; errno_t error;
  REF struct inode *result;
  for (iter = root_content;
       iter != COMPILER_ENDOF(root_content); ++iter) {
@@ -342,18 +269,19 @@ root_lookup(struct inode *__restrict dir_node,
  return E_PTR(-ENOENT);
 }
 
-PRIVATE struct inodeops rootops = {
+INTERN struct inodeops const rootops = {
     .ino_fopen  = &root_fopen,
     .ino_fclose = &root_fclose,
     .ino_lookup = &root_lookup,
     .f_readdir  = &root_readdir,
     .f_read     = &root_read,
+    .f_seek     = &root_seek,
 };
-PRIVATE struct superblockops sb_rootops = {
+INTERN struct superblockops const sb_rootops = {
 };
 
 
-PRIVATE SAFE REF struct superblock *KCALL
+INTERN SAFE REF struct superblock *KCALL
 procfs_make(struct blkdev *__restrict UNUSED(dev), u32 flags,
             char const *UNUSED(devname),
             USER void *UNUSED(data), void *UNUSED(closure)) {
@@ -378,6 +306,8 @@ procfs_make(struct blkdev *__restrict UNUSED(dev), u32 flags,
 }
 
 
+
+
 PRIVATE struct fstype procfs = {
     .f_owner    = THIS_INSTANCE,
     .f_sysid    = BLKSYS_EXPLICIT,
@@ -386,8 +316,8 @@ PRIVATE struct fstype procfs = {
     .f_name     = "proc",
 };
 
-
 PRIVATE MODULE_INIT errno_t KCALL procfs_init(void) {
+ /* Simply register our new filesystem type. */
  fs_addtype(&procfs);
  return -EOK;
 }
@@ -395,4 +325,4 @@ PRIVATE MODULE_INIT errno_t KCALL procfs_init(void) {
 
 DECL_END
 
-#endif /* !GUARD_MODULES_FS_PROCFS_C */
+#endif /* !GUARD_MODULES_FS_PROC_PROCFS_C */

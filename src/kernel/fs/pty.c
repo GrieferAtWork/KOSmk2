@@ -571,7 +571,7 @@ slave_stat(struct inode *__restrict ino,
 
 
 /* PTY master/slave INode operations. */
-PUBLIC struct inodeops ptymaster_ops = {
+PUBLIC struct inodeops const ptymaster_ops = {
     .ino_fopen  = &inode_fopen_default,
     .ino_fclose = &pty_fclose,
     .ino_fini   = &master_fini,
@@ -583,7 +583,7 @@ PUBLIC struct inodeops ptymaster_ops = {
     .f_poll     = &master_poll,
 };
 
-PUBLIC struct inodeops ptyslave_ops = {
+PUBLIC struct inodeops const ptyslave_ops = {
     .ino_fopen  = &inode_fopen_default,
     .ino_fclose = &pty_fclose,
     .ino_fini   = &slave_fini,

@@ -225,7 +225,7 @@ PUBLIC SAFE char *(LIBCCALL vstrdupf)(char const *__restrict format, va_list arg
  data.end = data.start+format_length;
  data.iter = data.start;
  if unlikely(format_vprintf((pformatprinter)&strdupf_printer,
-                            &data,format,args) != 0) {
+                            &data,format,args) < 0) {
   free(data.start); /* Out-of-memory */
   return NULL;
  }

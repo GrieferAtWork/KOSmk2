@@ -61,7 +61,7 @@ struct supermount {
 struct superblock {
  /* NOTE: A superblock is always implicitly an INode. */
  struct inode            sb_root;      /*< [.i_super == self] Superblock root INode ('.i_super' isn't a reference). */
- struct superblockops   *sb_ops;       /*< [const][1..1] Additional, filesystem-specific superblock operations. */
+ struct superblockops const *sb_ops;   /*< [const][1..1] Additional, filesystem-specific superblock operations. */
  atomic_rwlock_t         sb_nodes_lock;/*< R/W-lock for INodes within this superblock. */
  LIST_HEAD(struct inode) sb_nodes;     /*< [lock(sb_nodes_lock)] Linked list of all nodes within this superblock (NOTE: Does not include 'sb_root'). */
  atomic_rwlock_t         sb_achng_lock;/*< [order(AFTER(inode::i_attr_lock))] R/W-lock for INodes with changed attributes. */
