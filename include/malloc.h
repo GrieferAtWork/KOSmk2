@@ -64,6 +64,7 @@ __LIBC __SAFE __NONNULL((1)) int (__LIBCCALL posix_memalign)(void **__restrict _
 
 #ifdef __KERNEL__
 #ifndef __malloc_stdlib_defined
+#define __malloc_stdlib_defined 1
 __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr) __ASMNAME("kfree");
 #endif /* !__malloc_stdlib_defined */
 #ifndef __cfree_defined
@@ -73,6 +74,7 @@ __LIBC __SAFE void (__LIBCCALL cfree)(void *__restrict __mallptr) __ASMNAME("kfr
 __LIBC __SAFE __WUNUSED size_t (__LIBCCALL malloc_usable_size)(void *__restrict __mallptr) __ASMNAME("kmalloc_usable_size");
 #else
 #ifndef __malloc_stdlib_defined
+#define __malloc_stdlib_defined 1
 __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr);
 #endif /* !__malloc_stdlib_defined */
 #ifndef __cfree_defined
@@ -83,9 +85,6 @@ __LIBC __SAFE __WUNUSED int    (__LIBCCALL malloc_trim)(size_t __pad);
 __LIBC __SAFE __WUNUSED size_t (__LIBCCALL malloc_usable_size)(void *__restrict __mallptr);
 #define M_MMAP_THRESHOLD     (-3)
 #endif
-#ifndef __malloc_stdlib_defined
-#define __malloc_stdlib_defined 1
-#endif /* !__malloc_stdlib_defined */
 
 __LIBC __SAFE int (__LIBCCALL mallopt)(int __parameter_number, int __parameter_value);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL __memdup)(void const *__restrict __ptr, size_t __n_bytes) __ASMNAME("memdup");

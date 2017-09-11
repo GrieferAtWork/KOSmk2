@@ -342,11 +342,10 @@ PRIVATE void KCALL unwind_scanset_2(key_t flag, u8 const *keys, u8 last) {
  p.p_state = STATE_INPUT_SET2;
 }
 
-PRIVATE ATTR_USED void ps2_int_1(void) {
- u8 e;
- if (IRQ_PIC_SPURIOUS(IRQ_PIC1_KBD)) return;
+PRIVATE void KCALL
+ps2_handle_interrupt(void) {
  /* Read the scancode. */
- e = inb(PS2_DATA);
+ u8 e = inb(PS2_DATA);
 
 #if 0
  syslogf(LOG_HW|LOG_DEBUG,"[PS2] IRQ %#.2I8x (%d)\n",e,p.p_state);
@@ -580,7 +579,24 @@ remove_cmd:
  } break;
 
  }
+}
 
+PRIVATE void KCALL
+keyboard_irq_lost(struct device *__restrict self) {
+ /* Check if keyboard data arrived while we were gone. */
+ if (inb(PS2_STATUS) & PS2_STATUS_OUTFULL) {
+  pflag_t was;
+  syslogf(LOG_HW|LOG_INFO,"[PS2] Handling lost interrupt\n");
+  was = PREEMPTION_PUSH();
+  ps2_handle_interrupt();
+  PREEMPTION_POP(was);
+ }
+}
+
+
+PRIVATE ATTR_USED void ps2_int_1(void) {
+ if (IRQ_PIC_SPURIOUS(IRQ_PIC1_KBD)) return;
+ ps2_handle_interrupt();
  IRQ_PIC_EOI(IRQ_PIC1_KBD);
 }
 PRIVATE ATTR_USED void ps2_int_c(void) {
@@ -686,6 +702,7 @@ got_keyboard:
  if unlikely(!ps2_keyboard) return -ENOMEM;
  ps2_keyboard->kb_port                          = port;
  ps2_keyboard->kb_device.cd_device.d_node.i_ops = &kbd_ops;
+ ps2_keyboard->kb_device.cd_device.d_irq_lost   = &keyboard_irq_lost;
  error = device_setup(&ps2_keyboard->kb_device.cd_device,THIS_INSTANCE);
  if (E_ISERR(error)) goto err;
 

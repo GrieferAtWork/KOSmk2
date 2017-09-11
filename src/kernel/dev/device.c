@@ -168,8 +168,10 @@ again:
  assert(self);
  CHECK_HOST_DOBJ(self);
  if (self->d_irq_lost) {
+#if 0
   syslogf(LOG_DEBUG,"d_irq_lost@%p(%p) - %[dev_t]\n",
           self->d_irq_lost,self,self->d_id);
+#endif
   (*self->d_irq_lost)(self);
  }
  /* Recursively scan other devices. */
