@@ -21,15 +21,15 @@
 #define _KOS_SOURCE 1
 
 #include <dev/blkdev.h>
+#include <kos/syslog.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <fs/basic_types.h>
+#include <fs/dentry.h>
 #include <fs/fs.h>
-#include <fs/vfs.h>
-#include <malloc.h>
+#include <fs/inode.h>
 #include <fs/superblock.h>
-#include <kernel/user.h>
-#include <dev/blkdev.h>
-#include <kernel/export.h>
+#include <fs/vfs.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
@@ -38,15 +38,19 @@
 #include <malloc.h>
 #include <sched/types.h>
 #include <stdlib.h>
+#include <sched/task.h>
 
 DECL_BEGIN
 
-struct procnode {
- ino_t             n_ino;  /*< Inode number of this entry. */
- mode_t            n_mode; /*< The type and mode of this node. */
- struct dentryname n_name; /*< Name of this node. */
- struct inodeops   n_ops;  /*< Operators for this node. */
-};
+#if __SIZEOF_PID_T__ == __SIZEOF_INT__
+#   define PID_FMT  "%u"
+#elif __SIZEOF_PID_T__ == __SIZEOF_LONG__
+#   define PID_FMT  "%lu"
+#elif __SIZEOF_PID_T__ == __SIZEOF_LONG_LONG__
+#   define PID_FMT  "%llu"
+#elif !defined(__DEEMON__)
+#   error FIXME
+#endif
 
 #if __SIZEOF_SIZE_T__ == 4
 #   define H(h32,h64) h32
@@ -55,6 +59,60 @@ struct procnode {
 #elif !defined(__DEEMON__)
 #   error FIXME
 #endif
+
+
+/* Per-PID Inode descriptor. */
+struct pidnode {
+ struct inode          p_node; /*< Underlying INode. */
+ WEAK REF struct task *p_task; /*< [1..1][const] A weak reference to the associated task.
+                                *  NOTE: This _MUST_ be a weak reference to cancel the following loop:
+                                *  >> p_task->t_fdman->[...(struct file)]->f_node->p_task. */
+};
+#define SELF container_of(ino,struct pidnode,p_node)
+PRIVATE void KCALL pidnode_fini(struct inode *__restrict ino) {
+ /* Cleanup the weak reference to the represented task. */
+ TASK_WEAK_DECREF(SELF->p_task);
+}
+PRIVATE struct inodeops pidops = {
+    .ino_fini = &pidnode_fini,
+};
+
+
+/* Create a new PID INode and _ALWAYS_ inherit a weak reference to 't' */
+PRIVATE REF struct pidnode *
+KCALL pidnode_new_inherited(struct superblock *__restrict procfs,
+                            WEAK REF struct task *__restrict t) {
+ REF struct pidnode *result; errno_t error;
+ result = (REF struct pidnode *)inode_new(sizeof(struct pidnode));
+ if unlikely(!result) { result = E_PTR(-ENOMEM); goto err; }
+ /* Initialize basic node members. */
+ result->p_node.__i_nlink           = 1;
+ result->p_node.i_ops               = &pidops;
+ result->p_node.i_attr.ia_mode      = S_IFDIR|0555;
+ result->p_node.i_attr_disk.ia_mode = S_IFDIR|0555;
+ /* Store the given task as a weak reference within the node. */
+ result->p_task = t;
+ error = inode_setup(&result->p_node,procfs,THIS_INSTANCE);
+ if (E_ISERR(error)) {
+  free(result);
+  result = E_PTR(error);
+err:
+  TASK_WEAK_DECREF(t);
+ }
+ return result;
+}
+
+
+
+
+
+
+struct procnode {
+ ino_t             n_ino;  /*< Inode number of this entry. */
+ mode_t            n_mode; /*< The type and mode of this node. */
+ struct dentryname n_name; /*< Name of this node. */
+ struct inodeops   n_ops;  /*< Operators for this node. */
+};
 
 #ifdef __DEEMON__
 #define DNAME_HASH32(x) \
@@ -94,11 +152,12 @@ struct procnode {
 PRIVATE SAFE ssize_t KCALL
 self_readlink(struct inode *__restrict UNUSED(ino),
               USER char *__restrict buf, size_t bufsize) {
- return snprintf_user(buf,bufsize,"%d",GET_THIS_PID());
+ return snprintf_user(buf,bufsize,PID_FMT,GET_THIS_PID());
 }
 
+/* Misc. contents of the /proc root directory. */
 PRIVATE struct procnode root_content[] = {
- {0,S_IFLNK|0555,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
+ {0,S_IFLNK|0444,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
  { .ino_readlink = &self_readlink,
  }},
 };
@@ -126,7 +185,6 @@ root_fopen(struct inode *__restrict ino,
  CHECK_HOST_DOBJ(result->rf_proc);
  result->rf_pidcnt = ATOMIC_READ(result->rf_proc->pn_mapc);
  PID_NAMESPACE_INCREF(result->rf_proc);
- result->rf_pidcnt = 0; /* TODO: Remove me. */
  file_setup(&result->rf_file,ino,node_ent,oflags);
  return &result->rf_file;
 }
@@ -161,6 +219,7 @@ root_readdir(struct file *__restrict fp,
  if (self->rf_diridx >= self->rf_pidcnt) {
   struct dirent header; size_t name_avail;
   struct procnode *node; size_t index;
+enum_content:
   index = self->rf_diridx-self->rf_pidcnt;
   if (index >= COMPILER_LENOF(root_content))
       return 0; /* End of directory. */
@@ -181,7 +240,47 @@ root_readdir(struct file *__restrict fp,
                    name_avail)))
       return -EFAULT;
  } else {
-  /* TODO: Enumerate running PIDs */
+  /* Enumerate running PIDs */
+  struct pid_namespace *ns = self->rf_proc;
+  struct task *iter; size_t position; pid_t taskpid;
+  atomic_rwlock_read(&ns->pn_lock);
+  for (;;) {
+   if (self->rf_bucket >= ns->pn_mapa) {
+    atomic_rwlock_endread(&ns->pn_lock);
+    self->rf_diridx = self->rf_pidcnt;
+    goto enum_content;
+   }
+   iter = ns->pn_map[self->rf_bucket].pb_chain;
+   position = self->rf_bucpos;
+   for (;;) {
+    if (!iter) break;
+    if (!position) goto got_task;
+    --position;
+    iter = iter->t_pid.tp_ids[PIDTYPE_PID].tl_link.le_next;
+   }
+   /* Switch to the next bucket. */
+   ++self->rf_bucket;
+   self->rf_bucpos = 0;
+  }
+got_task:
+  taskpid = iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid;
+  atomic_rwlock_endread(&ns->pn_lock);
+  { struct dirent header; size_t name_avail;
+    /* All right! */
+    header.d_ino  = taskpid; /* TODO: (COUNT_OF_CONTENT_NODES + taskpid*MAX_COUNT_OF_PER_PID_NODES) */
+    header.d_type = DT_DIR;
+    name_avail = 0;
+    if (bufsize >= offsetof(struct dirent,d_name))
+        name_avail = bufsize-offsetof(struct dirent,d_name);
+    syslogf(LOG_DEBUG,"ENUM_PID(%d)\n",taskpid);
+    result = snprintf_user(buf->d_name,name_avail,PID_FMT,taskpid)*sizeof(char);
+    if (bufsize >= offsetof(struct dirent,d_name)) {
+     header.d_namlen = result-1;
+     if (copy_to_user(buf,&header,offsetof(struct dirent,d_name)))
+         return -EFAULT;
+    }
+    result += offsetof(struct dirent,d_name);
+  }
  }
  if (FILE_READDIR_SHOULDINC(mode,bufsize,result)) {
   ++self->rf_diridx;
@@ -222,7 +321,24 @@ root_lookup(struct inode *__restrict dir_node,
    return result;
   }
  }
- /* TODO: Decode PID decimals. */
+ /* Decode a decimals PID. */
+ if (result_path->d_name.dn_size >= 1) {
+   pid_t refpid; char *textpos = result_path->d_name.dn_name;
+#if __SIZEOF_PID_T__ <= __SIZEOF_LONG__
+   refpid = (pid_t)strtoul(textpos,&textpos,10);
+#else
+   refpid = (pid_t)strtoull(textpos,&textpos,10);
+#endif
+   /* Make sure entire entry name was parsed as a PID (this can't be
+    * left ambiguous, as that would break coherency in dentry caches). */
+   if (textpos == result_path->d_name.dn_name+
+                  result_path->d_name.dn_size) {
+    WEAK REF struct task *tsk;
+    /* All right. - This is a PID. */
+    tsk = pid_namespace_lookup_weak(THIS_NAMESPACE,refpid);
+    if (tsk) return (struct inode *)pidnode_new_inherited(dir_node->i_super,tsk);
+   }
+ }
  return E_PTR(-ENOENT);
 }
 

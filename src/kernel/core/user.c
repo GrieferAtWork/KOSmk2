@@ -369,9 +369,12 @@ vsnprintf_user(USER char *s, size_t maxlen,
  struct snprintf_data data; ssize_t result;
  data.bufend = (data.bufpos = s)+maxlen;
  result = format_vprintf((pformatprinter)&snprintf_callback,&data,format,args);
- if (E_ISOK(result) && data.bufpos < data.bufend &&
-     copy_to_user(data.bufpos,"",sizeof(char)))
-     result = -EFAULT;
+ if (E_ISOK(result)) {
+  ++result;
+  if (data.bufpos < data.bufend &&
+      copy_to_user(data.bufpos,"",sizeof(char)))
+      result = -EFAULT;
+ }
  return result;
 }
 

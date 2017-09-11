@@ -60,7 +60,12 @@ ATTR_FREEDATA struct task inittask = {
      *   - pid_global.pn_map[BOOTTASK_PID]
      *   - pid_init.pn_map[BOOTTASK_PID]
      */
+#ifdef CONFIG_DEBUG
     .t_refcnt    = 4,
+#else
+    .t_refcnt    = 0x80000004,
+#endif
+    .t_weakcnt   = 1, /* Held by the non-zero 't_refcnt' */
 #ifdef CONFIG_SMP
     .t_affinity_lock = ATOMIC_RWLOCK_INIT,
     .t_affinity  = CPU_SETALL,
@@ -248,6 +253,7 @@ PUBLIC struct cpu __bootcpu = {
 #else
         .t_refcnt    = 0x80000004,
 #endif
+        .t_weakcnt   = 1, /* Held by the non-zero 't_refcnt' */
         /* The location of the bootstrap cpu-state block. */
         .t_cstate    = (struct cpustate *)&__bootidlestack.s_boot,
 #ifdef CONFIG_SMP
