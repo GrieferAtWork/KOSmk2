@@ -37,7 +37,7 @@ FUNDEF char  *(KCALL __stpncpy_from_user)(HOST void *__restrict dst, USER char c
 FUNDEF bool   (KCALL __addr_isuser)(void const *addr, size_t len) ASMNAME("addr_isuser"); /* Returns true if user-space is allowed access to 'addr'. */
 
 /* Formatted printing to user-space data buffers.
- * Returns -EFAULT on error, or the total amount to written bytes. */
+ * Returns -EFAULT on error, or the total amount to required bytes. */
 FUNDEF ssize_t (ATTR_CDECL sprintf_user)(USER char *dst, char const *format, ...);
 FUNDEF ssize_t (ATTR_CDECL snprintf_user)(USER char *dst, size_t dst_max, char const *format, ...);
 FUNDEF ssize_t (KCALL vsprintf_user)(USER char *dst, char const *format, __VA_LIST args);
