@@ -39,6 +39,10 @@ struct biosblkdev {
 #define BIOS_DISK_B  MKDEV(14,64)  /*< /dev/dos_hdb */
 #define BIOS_DISK_C  MKDEV(14,128) /*< /dev/dos_hdc */
 #define BIOS_DISK_D  MKDEV(14,192) /*< /dev/dos_hdd */
+/* NOTE: We've got more than 256 minor numbers. - So we can do this:
+ * >> Support for more than 4 bios drives _AND_ a clear
+ *    way of mapping device ids to drive numbers! */
+#define BIOS_DISK(drive)  MKDEV(14,((drive)-0x80)*64)
 
 DECL_END
 

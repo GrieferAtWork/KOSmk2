@@ -235,7 +235,7 @@ device_add(struct device *__restrict dev, dev_t id) {
    name.dn_name[base_size+1] = '\0';
   }
  }
-/*got_name:*/
+got_name:
  dentryname_loadhash(&name);
  /* Actually insert the device as a node within the virtual device filesystem. */
  mount_path = dentry_insnod(devfs_root,&name,&ac,dev,NULL);
@@ -259,6 +259,43 @@ device_add(struct device *__restrict dev, dev_t id) {
   *       an error, which we log by the way... */
  return -EOK;
 unknown:
+ switch (MAJOR(id)) {
+
+ {
+  minor_t drive_letter;
+  minor_t drive_part;
+  char *iter;
+ case 14:
+  /* /dev/dos_hd[abcdef...][1-63] */
+  drive_letter = MINOR(id)/64;
+  drive_part   = MINOR(id)%64;
+#define BUFSIZE 64 /* Should never overflow... */
+  name.dn_name = (char *)alloca(BUFSIZE);
+  iter = name.dn_name+BUFSIZE;
+  *--iter = '\0';
+  if (drive_part) {
+   *--iter = '0'+(drive_part % 10);
+   if (drive_part >= 10) *--iter = '0'+(drive_part / 10);
+  }
+  while (drive_letter) {
+   *--iter = 'a'+(drive_part % 26);
+   drive_letter /= 26;
+  }
+  *--iter = 'd';
+  *--iter = 'h';
+  *--iter = '_';
+  *--iter = 's';
+  *--iter = 'o';
+  *--iter = 'd';
+  name.dn_size = (name.dn_name+(BUFSIZE-1))-iter;
+  name.dn_name = iter;
+  goto got_name;
+#undef BUFSIZE
+ } break;
+
+ default: break;
+ }
+
  /* Custom device naming conventions. */
  syslogf(LOG_FS|LOG_MESSAGE,
          "[DEVFS] Unknown %s-device %[dev_t] not added to dev-fs\n",

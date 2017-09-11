@@ -203,7 +203,15 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
 
   /* Execute the BIOS interrupt. */
   rm_interrupt(&c,0x13);
-  if (c.eflags&EFLAGS_CF) { result = -EIO; break; } /* Stop on error. */
+  if (c.eflags&EFLAGS_CF) {
+   /* Stop on error. */
+#if 1
+   syslogf(LOG_DEBUG,"[BIOS] Disk I/O failure in drive %#.2I8x (Error %#.2I8x; %I8d)\n",
+           self->b_drive,c.ah,c.ah);
+#endif
+   result = -EIO;
+   break;
+  }
   if (!buffer->b_seccnt) break; /* Stop if nothing was read/written. */
 
   /* Copy data to the user-buffer. */
@@ -335,11 +343,25 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
   c.sp = realmode_stack;
   rm_interrupt(&c,0x13);
   if (c.eflags&EFLAGS_CF || !buf->b_abs_secnum || !buf->b_abs_secsiz) {
-   //syslogf(LOG_HW|LOG_WARN,
-   //        FREESTR("[BIOS] Attempting legacy initialization for drive %#.2I8x\n"),
-   //        drive);
+   syslogf(LOG_HW|LOG_WARN,
+           FREESTR("[BIOS] Attempting legacy initialization for drive %#.2I8x\n"),
+           drive);
    goto try_legacy;
   }
+  /* Make sure this disk isn't impossibly (I know it'll probably be
+   * possible someday) in that is has now that 2^64 total bytes.
+   * NOTE: QEMU seems to have something weird going on in drive 0xe0 that acts
+   *       like it has 2^64-1 sectors, each 2048 bytes large. (I know: rediculous!)
+   *       But when you try to access it, you'll just get I/O errors...
+   * >> So instead of confusing the user, lets just filter it out here...
+   * NOTE: I have no idea what that device in QEMU is about. - Googling it didn't yield anything? */
+#if 1
+  { u64 total_bytes = buf->b_abs_secnum*buf->b_abs_secsiz;
+    if (total_bytes < buf->b_abs_secnum)
+        return E_PTR(-ENODEV);
+  }
+#endif
+
 
   result = (bd_t *)blkdev_new(sizeof(bd_t));
   if unlikely(!result) return E_PTR(-ENOMEM);
@@ -368,8 +390,6 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
 
   result->b_sectors_per_track = c.cl & 0x3f;
   result->b_number_of_heads   = c.dh+1;
-  syslogf(LOG_DEBUG,"result->b_sectors_per_track = %I8u\n",result->b_sectors_per_track);
-  syslogf(LOG_DEBUG,"result->b_number_of_heads   = %I8u\n",result->b_number_of_heads);
   result->b_device.bd_blockcount = (blkaddr_t)max_cylinder*
                                    (blkaddr_t)result->b_sectors_per_track*
                                    (blkaddr_t)result->b_number_of_heads;
@@ -417,7 +437,9 @@ bios_probe_disk(dev_t id, u8 drive) {
            FREESTR("[BIOS] Failed to register Bios disk driver %[dev_t]: %[errno]\n"),
            id,-error);
   } else {
-   blkdev_autopart(&dev->b_device,(MINOR(BIOS_DISK_B)-MINOR(BIOS_DISK_A))-1);
+   blkdev_autopart(&dev->b_device,
+                  (MINOR(BIOS_DISK_B)-
+                   MINOR(BIOS_DISK_A))-1);
   }
   BLKDEV_DECREF(&dev->b_device);
   return true;
@@ -425,37 +447,13 @@ bios_probe_disk(dev_t id, u8 drive) {
  return false;
 }
 
-PRIVATE ATTR_FREERODATA dev_t const bios_devids[] =
-{ BIOS_DISK_A,BIOS_DISK_B,BIOS_DISK_C,BIOS_DISK_D, };
 
 
 INTERN ATTR_FREETEXT
 REF struct biosblkdev *KCALL bios_find_dev(u8 drive) {
- struct biosblkdev *result;
- dev_t devid; unsigned int i;
- switch (drive) {
-  if (0) { case 0x80: devid = BIOS_DISK_A; }
-  if (0) { case 0x81: devid = BIOS_DISK_B; }
-  if (0) { case 0x82: devid = BIOS_DISK_C; }
-  if (0) { case 0x83: devid = BIOS_DISK_D; }
-  result = (REF struct biosblkdev *)BLKDEV_LOOKUP(devid);
-  if (result) {
-   if (result->b_drive == drive) return result;
-   BLKDEV_DECREF(&result->b_device);
-  }
-  break;
- default: goto nodev;
- }
- /* Non-standard, or incomplete mapping. */
- for (i = 0; i < COMPILER_LENOF(bios_devids); ++i) {
-  if (bios_devids[i] == devid) continue;
-  result = (REF struct biosblkdev *)BLKDEV_LOOKUP(bios_devids[i]);
-  if (result) {
-   if (result->b_drive == drive) return result;
-   BLKDEV_DECREF(&result->b_device);
-  }
- }
-nodev:
+ REF struct biosblkdev *result;
+ result = (REF struct biosblkdev *)BLKDEV_LOOKUP(BIOS_DISK(drive));
+ if (result) { assert(result->b_drive == drive); return result; }
  /* The device wasn't part of the mapped device tree.
   * If this happens, it is most likely that the BIOS is faulty,
   * or the drive ID we've got isn't the correct one.
@@ -476,33 +474,21 @@ nodev:
 }
 
 PRIVATE MODULE_INIT void KCALL bios_disk_init(void) {
- bool ok;
- ok  = bios_probe_disk(BIOS_DISK_A,0x80);
- ok |= bios_probe_disk(BIOS_DISK_B,0x81);
- ok |= bios_probe_disk(BIOS_DISK_C,0x82);
- ok |= bios_probe_disk(BIOS_DISK_D,0x83);
- if (!ok) {
-  u8 i; dev_t disk_id = BIOS_DISK_A;
-  /* If we didn't find any disks, stalk the bios by searching for more. */
-  syslogf(LOG_HW|LOG_WARN,
-          FREESTR("[BIOS] Failed to find BIOS disk drivers. - Probing for more...\n"));
-  for (i = 0x84; i < 0xff; ++i) {
-   if (bios_probe_disk(disk_id,i)) {
-    /**/ if (disk_id == BIOS_DISK_D) break;
-    else if (disk_id == BIOS_DISK_C) disk_id = BIOS_DISK_D;
-    else if (disk_id == BIOS_DISK_B) disk_id = BIOS_DISK_C;
-    else                             disk_id = BIOS_DISK_B;
-   }
-  }
+ size_t count = 0; u8 i;
+ for (i = 0x80; i; ++i) {
+  if (bios_probe_disk(BIOS_DISK(i),i))
+      ++count;
  }
+ syslogf(LOG_HW|LOG_INFO,
+         FREESTR("[BIOS] Found %Iu BIOS drives.\n"),
+         count);
 }
 
 #ifndef CONFIG_NO_MODULE_CLEANUP
 PRIVATE MODULE_FINI void KCALL bios_disk_fini(void) {
- devns_erase(&ns_blkdev,BIOS_DISK_D,DEVNS_ERASE_NORMAL);
- devns_erase(&ns_blkdev,BIOS_DISK_C,DEVNS_ERASE_NORMAL);
- devns_erase(&ns_blkdev,BIOS_DISK_B,DEVNS_ERASE_NORMAL);
- devns_erase(&ns_blkdev,BIOS_DISK_A,DEVNS_ERASE_NORMAL);
+ u8 i; /* Erase all bios disks. */
+ for (i = 0x80; i; ++i)
+  devns_erase(&ns_blkdev,BIOS_DISK(i),DEVNS_ERASE_NORMAL);
 }
 #endif
 

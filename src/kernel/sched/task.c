@@ -1536,8 +1536,8 @@ PUBLIC SAFE struct sig *KCALL task_clrwait(void) {
  struct task *t = THIS_TASK;
  task_waitfor_clr(t);
  COMPILER_WRITE_BARRIER();
- result = THIS_TASK->t_signals.ts_recv;
- THIS_TASK->t_signals.ts_recv = NULL;
+ result = t->t_signals.ts_recv;
+ t->t_signals.ts_recv = NULL;
  COMPILER_WRITE_BARRIER();
  return result;
 }

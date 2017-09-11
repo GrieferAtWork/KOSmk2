@@ -206,6 +206,7 @@ FUNDEF bool KCALL devns_erase(struct devns *__restrict self, dev_t id, u32 mode)
 #define DEVNS_ERASE_RELEASE    0x01 /*< Release the associated major number when this operation removes the last associated minor device. */
 #define DEVNS_ERASE_PARTITIONS 0x02 /*< Also erase all associated partition devices associated with a block-device. */
 
+
 /* ~normal~ set of flags used to delete a device simply registered by a call
  * to 'devns_insert' without prior reservation of major device numbers.
  * In addition: Delete any partition devices that may have been created automatically. */
