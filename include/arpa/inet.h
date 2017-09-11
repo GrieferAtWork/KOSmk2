@@ -38,11 +38,11 @@ __LIBC in_addr_t (__LIBCCALL inet_netof)(struct in_addr __in);
 __LIBC in_addr_t (__LIBCCALL inet_network)(char const *__cp);
 __LIBC char *(__LIBCCALL inet_ntoa)(struct in_addr __in);
 __LIBC int (__LIBCCALL inet_pton)(int __af, char const *__restrict __cp, void *__restrict __buf);
-__LIBC char const *(__LIBCCALL inet_ntop)(int __af, const void *__restrict __cp, char *__restrict __buf, socklen_t __len);
+__LIBC char const *(__LIBCCALL inet_ntop)(int __af, void const *__restrict __cp, char *__restrict __buf, socklen_t __len);
 #ifdef __USE_MISC
 __LIBC int (__LIBCCALL inet_aton)(char const *__cp, struct in_addr *__inp);
 __LIBC char *(__LIBCCALL inet_neta)(in_addr_t __net, char *__buf, size_t __len);
-__LIBC char *(__LIBCCALL inet_net_ntop)(int __af, const void *__cp, int __bits, char *__buf, size_t __len);
+__LIBC char *(__LIBCCALL inet_net_ntop)(int __af, void const *__cp, int __bits, char *__buf, size_t __len);
 __LIBC int (__LIBCCALL inet_net_pton)(int __af, char const *__cp, void *__buf, size_t __len);
 __LIBC unsigned int (__LIBCCALL inet_nsap_addr)(char const *__cp, unsigned char *__buf, int __len);
 __LIBC char *(__LIBCCALL inet_nsap_ntoa)(int __len, const unsigned char *__cp, char *__buf);

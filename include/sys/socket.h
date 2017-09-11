@@ -111,14 +111,14 @@ __LIBC int (__LIBCCALL bind)(int __fd, __CONST_SOCKADDR_ARG __addr, socklen_t __
 __LIBC int (__LIBCCALL getsockname)(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __len);
 __LIBC int (__LIBCCALL connect)(int __fd, __CONST_SOCKADDR_ARG __addr, socklen_t __len);
 __LIBC int (__LIBCCALL getpeername)(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __len);
-__LIBC ssize_t (__LIBCCALL send)(int __fd, const void *__buf, size_t __n, int __flags);
+__LIBC ssize_t (__LIBCCALL send)(int __fd, void const *__buf, size_t __n, int __flags);
 __LIBC ssize_t (__LIBCCALL recv)(int __fd, void *__buf, size_t __n, int __flags);
-__LIBC ssize_t (__LIBCCALL sendto)(int __fd, const void *__buf, size_t __n, int __flags, __CONST_SOCKADDR_ARG __addr, socklen_t __addr_len);
+__LIBC ssize_t (__LIBCCALL sendto)(int __fd, void const *__buf, size_t __n, int __flags, __CONST_SOCKADDR_ARG __addr, socklen_t __addr_len);
 __LIBC ssize_t (__LIBCCALL recvfrom)(int __fd, void *__restrict __buf, size_t __n, int __flags, __SOCKADDR_ARG __addr, socklen_t *__restrict __addr_len);
 __LIBC ssize_t (__LIBCCALL sendmsg)(int __fd, const struct msghdr *__message, int __flags);
 __LIBC ssize_t (__LIBCCALL recvmsg)(int __fd, struct msghdr *__message, int __flags);
 __LIBC int (__LIBCCALL getsockopt)(int __fd, int __level, int __optname, void *__restrict __optval, socklen_t *__restrict __optlen);
-__LIBC int (__LIBCCALL setsockopt)(int __fd, int __level, int __optname, const void *__optval, socklen_t __optlen);
+__LIBC int (__LIBCCALL setsockopt)(int __fd, int __level, int __optname, void const *__optval, socklen_t __optlen);
 __LIBC int (__LIBCCALL listen)(int __fd, int __n);
 __LIBC int (__LIBCCALL accept)(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __addr_len);
 __LIBC int (__LIBCCALL shutdown)(int __fd, int __how);

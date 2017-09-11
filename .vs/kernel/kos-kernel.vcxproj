@@ -94,6 +94,7 @@
     <ClCompile Include="..\..\src\modules\block\ata.c" />
     <ClCompile Include="..\..\src\modules\char\memdev.c" />
     <ClCompile Include="..\..\src\modules\fs\devfs.c" />
+    <ClCompile Include="..\..\src\modules\fs\procfs.c" />
     <ClCompile Include="..\..\src\modules\input\ps2.c" />
     <ClCompile Include="..\..\src\modules\linker\pe.c" />
     <ClCompile Include="..\..\src\modules\video\vga-tty.c" />

@@ -366,6 +366,9 @@
     <ClCompile Include="..\..\src\kernel\fs\textfile.c">
       <Filter>kernel\fs</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\modules\fs\procfs.c">
+      <Filter>modules\fs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">

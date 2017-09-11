@@ -34,11 +34,11 @@ PUBLIC char const *(LIBCCALL hstrerror)(int err_num) { NOT_IMPLEMENTED(); return
 PUBLIC void (LIBCCALL sethostent)(int stay_open) { NOT_IMPLEMENTED(); }
 PUBLIC void (LIBCCALL endhostent)(void) { NOT_IMPLEMENTED(); }
 PUBLIC struct hostent *(LIBCCALL gethostent)(void) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC struct hostent *(LIBCCALL gethostbyaddr)(const void *__addr, socklen_t __len, int type) { NOT_IMPLEMENTED(); return NULL; }
+PUBLIC struct hostent *(LIBCCALL gethostbyaddr)(void const *__addr, socklen_t __len, int type) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC struct hostent *(LIBCCALL gethostbyname)(char const *name) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC struct hostent *(LIBCCALL gethostbyname2)(char const *name, int af) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC int (LIBCCALL gethostent_r)(struct hostent *__restrict result_buf, char *__restrict buf, size_t buflen, struct hostent **__restrict result, int *__restrict h_errnop) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL gethostbyaddr_r)(const void *__restrict __addr, socklen_t __len, int type, struct hostent *__restrict result_buf, char *__restrict buf, size_t buflen, struct hostent **__restrict result, int *__restrict h_errnop) { NOT_IMPLEMENTED(); return 0; }
+PUBLIC int (LIBCCALL gethostbyaddr_r)(void const *__restrict __addr, socklen_t __len, int type, struct hostent *__restrict result_buf, char *__restrict buf, size_t buflen, struct hostent **__restrict result, int *__restrict h_errnop) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL gethostbyname_r)(char const *__restrict name, struct hostent *__restrict result_buf, char *__restrict buf, size_t buflen, struct hostent **__restrict result, int *__restrict h_errnop) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL gethostbyname2_r)(char const *__restrict name, int af, struct hostent *__restrict result_buf, char *__restrict buf, size_t buflen, struct hostent **__restrict result, int *__restrict h_errnop) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC void (LIBCCALL setnetent)(int stay_open) { NOT_IMPLEMENTED(); }
@@ -77,7 +77,7 @@ PUBLIC int (LIBCCALL rexec_af)(char **__restrict ahost, int rport, char const *_
 PUBLIC int (LIBCCALL ruserok)(char const *rhost, int suser, char const *remuser, char const *locuser) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL ruserok_af)(char const *rhost, int suser, char const *remuser, char const *locuser, sa_family_t af) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL iruserok)(uint32_t raddr, int suser, char const *remuser, char const *locuser) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL iruserok_af)(const void *raddr, int suser, char const *remuser, char const *locuser, sa_family_t af) { NOT_IMPLEMENTED(); return 0; }
+PUBLIC int (LIBCCALL iruserok_af)(void const *raddr, int suser, char const *remuser, char const *locuser, sa_family_t af) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL rresvport)(int *alport) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL rresvport_af)(int *alport, sa_family_t af) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL getaddrinfo)(char const *__restrict name, char const *__restrict service, const struct addrinfo *__restrict req, struct addrinfo **__restrict pai) { NOT_IMPLEMENTED(); return 0; }

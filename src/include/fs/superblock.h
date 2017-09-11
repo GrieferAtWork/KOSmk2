@@ -50,8 +50,6 @@ struct superblockops {
   * @return: E_ISERR(*): Failed to remove all instances for some reason. */
  ssize_t (KCALL *sb_remove_inode)(struct superblock *__restrict sb,
                                   struct inode *__restrict node);
- /*  */
- void (KCALL *sb_v_clear)(struct superblock *__restrict sb);
 };
 
 struct supermount {

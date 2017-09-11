@@ -811,7 +811,7 @@ PUBLIC int (LIBCCALL memcasecmp)(void const *s1, void const *s2, size_t n_bytes)
  while (result == 0 && p1 != end);
  return result;
 }
-PUBLIC int (LIBCCALL memcasecmp_l)(const void *a, const void *b, size_t n_bytes, locale_t lc) { NOT_IMPLEMENTED(); return 0; }
+PUBLIC int (LIBCCALL memcasecmp_l)(void const *a, void const *b, size_t n_bytes, locale_t lc) { NOT_IMPLEMENTED(); return 0; }
 
 #ifndef CONFIG_LIBC_NO_WCHAR_STRING
 typedef u16 dosch_t;

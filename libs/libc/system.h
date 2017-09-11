@@ -155,6 +155,8 @@ LOCAL SYSCALL6(ssize_t,pselect6,(size_t,n,USER fd_set *,inp,USER fd_set *,outp,U
 LOCAL SYSCALL5(ssize_t,ppoll,(USER struct pollfd *,ufds,size_t,nfds,USER struct kernel_timespec const *,tsp,USER sigset_t const *,sigmask,size_t,sigsetsize));
 LOCAL SYSCALL2(__errno_t,pipe2,(USER int *,pfd,int,flags));
 LOCAL SYSCALL1(s64,xpipe,(int,flags));
+LOCAL SYSCALL5(__errno_t,mount,(USER char const *,dev_name,USER char const *,dir_name,USER char const *,type,unsigned long,flags,USER void const *,data));
+LOCAL SYSCALL2(__errno_t,umount2,(USER char const *,name,int,flags));
 
 LOCAL SYSCALL2(__errno_t,gettimeofday,(USER struct kernel_timeval *,tv,USER struct timezone *,tz));
 LOCAL SYSCALL2(__errno_t,settimeofday,(USER struct kernel_timeval const *,tv,USER struct timezone const *,tz));

@@ -62,6 +62,10 @@ __SYSCALL(__NR_symlinkat,sys_symlinkat)
 __SYSCALL(__NR_linkat,sys_linkat)
 #define __NR_renameat     38
 __SYSCALL(__NR_renameat,sys_renameat)
+#define __NR_umount2      39
+__SYSCALL(__NR_umount2,sys_umount)
+#define __NR_mount        40
+__SYSCALL(__NR_mount,sys_mount)
 
 #define __NR_truncate     45
 __SYSCALL(__NR_truncate,sys_truncate)

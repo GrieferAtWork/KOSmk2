@@ -110,12 +110,12 @@ struct hostent {
 __LIBC void (__LIBCCALL sethostent)(int __stay_open);
 __LIBC void (__LIBCCALL endhostent)(void);
 __LIBC struct hostent *(__LIBCCALL gethostent)(void);
-__LIBC struct hostent *(__LIBCCALL gethostbyaddr)(const void *__addr, __socklen_t __len, int __type);
+__LIBC struct hostent *(__LIBCCALL gethostbyaddr)(void const *__addr, __socklen_t __len, int __type);
 __LIBC struct hostent *(__LIBCCALL gethostbyname)(char const *__name);
 #ifdef __USE_MISC
 __LIBC struct hostent *(__LIBCCALL gethostbyname2)(char const *__name, int __af);
 __LIBC int (__LIBCCALL gethostent_r)(struct hostent *__restrict __result_buf, char *__restrict __buf, size_t __buflen, struct hostent **__restrict __result, int *__restrict __h_errnop);
-__LIBC int (__LIBCCALL gethostbyaddr_r)(const void *__restrict __addr, __socklen_t __len, int __type, struct hostent *__restrict __result_buf, char *__restrict __buf, size_t __buflen, struct hostent **__restrict __result, int *__restrict __h_errnop);
+__LIBC int (__LIBCCALL gethostbyaddr_r)(void const *__restrict __addr, __socklen_t __len, int __type, struct hostent *__restrict __result_buf, char *__restrict __buf, size_t __buflen, struct hostent **__restrict __result, int *__restrict __h_errnop);
 __LIBC int (__LIBCCALL gethostbyname_r)(char const *__restrict __name, struct hostent *__restrict __result_buf, char *__restrict __buf, size_t __buflen, struct hostent **__restrict __result, int *__restrict __h_errnop);
 __LIBC int (__LIBCCALL gethostbyname2_r)(char const *__restrict __name, int __af, struct hostent *__restrict __result_buf, char *__restrict __buf, size_t __buflen, struct hostent **__restrict __result, int *__restrict __h_errnop);
 #endif /* __USE_MISC */
@@ -179,7 +179,7 @@ __LIBC int (__LIBCCALL rexec_af)(char **__restrict __ahost, int __rport, char co
 __LIBC int (__LIBCCALL ruserok)(char const *__rhost, int __suser, char const *__remuser, char const *__locuser);
 __LIBC int (__LIBCCALL ruserok_af)(char const *__rhost, int __suser, char const *__remuser, char const *__locuser, sa_family_t __af);
 __LIBC int (__LIBCCALL iruserok)(uint32_t __raddr, int __suser, char const *__remuser, char const *__locuser);
-__LIBC int (__LIBCCALL iruserok_af)(const void *__raddr, int __suser, char const *__remuser, char const *__locuser, sa_family_t __af);
+__LIBC int (__LIBCCALL iruserok_af)(void const *__raddr, int __suser, char const *__remuser, char const *__locuser, sa_family_t __af);
 __LIBC int (__LIBCCALL rresvport)(int *__alport);
 __LIBC int (__LIBCCALL rresvport_af)(int *__alport, sa_family_t __af);
 #endif /* __USE_MISC */

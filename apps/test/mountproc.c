@@ -17,29 +17,19 @@
  * 3. This notice may not be removed or altered from any source distribution. *
  */
 
-BEGIN APPLICATION("init")
-	SET_OUTPUT("/bin/apps/init")
-	SET_DISKFILE("/bin/init")
-	SOURCE("init/*.c")
-END
-BEGIN APPLICATION("terminal-vga")
-	SET_OUTPUT("/bin/apps/terminal-vga")
-	SET_DISKFILE("/bin/terminal-vga")
-	SOURCE("terminal-vga/*.c")
-END
-BEGIN APPLICATION("mountproc")
-	SET_OUTPUT("/bin/apps/mountproc")
-	SET_DISKFILE("/bin/mountproc")
-	SOURCE("test/mountproc.c")
-END
-BEGIN_NEW PROJECT("elfimg")
-	SET_COMPILER("host-c")
-	SET_LINKER("host-c")
-	SET_OUTPUT("/bin/apps/elfimg")
-	SET_DISKFILE(none)
-	SOURCE("elfimg/*.c")
-END
 
-#if __has_include("private/.sources")
-#include "private/.sources"
-#endif
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <sys/mount.h>
+
+int main(int argc, char *argv[]) {
+
+	if (mount("proc","/proc","proc",0,NULL))
+		perror("mount");
+
+	return 0;
+}
+
+
+

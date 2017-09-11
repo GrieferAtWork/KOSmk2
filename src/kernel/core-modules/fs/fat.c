@@ -1389,14 +1389,16 @@ PRIVATE void KCALL trimspecstring(char *__restrict buf, size_t size) {
  * @return: -ENOMEM:    Not enough available kernel memory.
  * @return: E_ISERR(*): Failed to create a FAT superblock for some reason. */
 PRIVATE REF struct superblock *KCALL
-fat_mksuper(struct blkdev *__restrict blkdev, void *UNUSED(closure)) {
+fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
+            char const *UNUSED(devname),
+            USER void *UNUSED(data), void *UNUSED(closure)) {
  fat_t *result; fat_header_t header;
  errno_t error; fattype_t type;
- CHECK_HOST_DOBJ(blkdev);
+ CHECK_HOST_DOBJ(dev);
 #define ERROR(e) return E_PTR(e)
  memset(&header,0,sizeof(header));
  HOSTMEMORY_BEGIN {
-  error = blkdev_readall(blkdev,0,&header,sizeof(header));
+  error = blkdev_readall(dev,0,&header,sizeof(header));
  }
  HOSTMEMORY_END;
  if (E_ISERR(error)) return E_PTR(error);
@@ -1520,8 +1522,8 @@ fat_mksuper(struct blkdev *__restrict blkdev, void *UNUSED(closure)) {
  if unlikely(!result->f_fat_meta) { free(result->f_fat_table); ERROR(-ENOMEM); }
 
  /* Register the block-device with the superblock. */
- result->f_super.sb_blkdev = blkdev;
- BLKDEV_INCREF(blkdev);
+ result->f_super.sb_blkdev = dev;
+ BLKDEV_INCREF(dev);
 
  /* NOTE: The kernel's own 'THIS_INSTANCE' must never get unloaded! */
  asserte(E_ISOK(superblock_setup(&result->f_super,THIS_INSTANCE)));
@@ -1600,7 +1602,7 @@ fat_set32(fat_t *__restrict self, fatid_t id, fatid_t value) {
 
 /* FAT system hooks. */
 PRIVATE struct fstype fat_fshooks[] = {
-#define HOOK(name,id) {{NULL},THIS_INSTANCE,id,&fat_mksuper,NULL,name}
+#define HOOK(name,id) {{NULL},THIS_INSTANCE,id,&fat_mksuper,FSTYPE_NORMAL,NULL,name}
  HOOK("fat-12",BLKSYS_FAT12),
  HOOK("fat-16",BLKSYS_FAT16ALT),
  HOOK("fat-16",BLKSYS_FAT16),

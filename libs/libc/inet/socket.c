@@ -36,14 +36,14 @@ PUBLIC int (LIBCCALL bind)(int fd, __CONST_SOCKADDR_ARG addr, socklen_t len) { N
 PUBLIC int (LIBCCALL getsockname)(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict len) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL connect)(int fd, __CONST_SOCKADDR_ARG addr, socklen_t len) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL getpeername)(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC ssize_t (LIBCCALL send)(int fd, const void *buf, size_t n, int flags) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC ssize_t (LIBCCALL send)(int fd, void const *buf, size_t n, int flags) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC ssize_t (LIBCCALL recv)(int fd, void *buf, size_t n, int flags) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC ssize_t (LIBCCALL sendto)(int fd, const void *buf, size_t n, int flags, __CONST_SOCKADDR_ARG addr, socklen_t addr_len) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC ssize_t (LIBCCALL sendto)(int fd, void const *buf, size_t n, int flags, __CONST_SOCKADDR_ARG addr, socklen_t addr_len) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC ssize_t (LIBCCALL recvfrom)(int fd, void *__restrict buf, size_t n, int flags, __SOCKADDR_ARG addr, socklen_t *__restrict addr_len) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC ssize_t (LIBCCALL sendmsg)(int fd, const struct msghdr *message, int flags) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC ssize_t (LIBCCALL recvmsg)(int fd, struct msghdr *message, int flags) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL getsockopt)(int fd, int level, int optname, void *__restrict optval, socklen_t *__restrict optlen) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL setsockopt)(int fd, int level, int optname, const void *optval, socklen_t optlen) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC int (LIBCCALL setsockopt)(int fd, int level, int optname, void const *optval, socklen_t optlen) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL listen)(int fd, int n) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL accept)(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict addr_len) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL shutdown)(int fd, int how) { NOT_IMPLEMENTED(); return -1; }
@@ -59,10 +59,10 @@ PUBLIC in_addr_t (LIBCCALL inet_netof)(struct in_addr in) { NOT_IMPLEMENTED(); r
 PUBLIC in_addr_t (LIBCCALL inet_network)(char const *cp) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC char *(LIBCCALL inet_ntoa)(struct in_addr in) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC int (LIBCCALL inet_pton)(int af, char const *__restrict cp, void *__restrict buf) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC char const *(LIBCCALL inet_ntop)(int af, const void *__restrict cp, char *__restrict buf, socklen_t len) { NOT_IMPLEMENTED(); return NULL; }
+PUBLIC char const *(LIBCCALL inet_ntop)(int af, void const *__restrict cp, char *__restrict buf, socklen_t len) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC int (LIBCCALL inet_aton)(char const *cp, struct in_addr *inp) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC char *(LIBCCALL inet_neta)(in_addr_t net, char *buf, size_t len) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC char *(LIBCCALL inet_net_ntop)(int af, const void *cp, int bits, char *buf, size_t len) { NOT_IMPLEMENTED(); return NULL; }
+PUBLIC char *(LIBCCALL inet_net_ntop)(int af, void const *cp, int bits, char *buf, size_t len) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC int (LIBCCALL inet_net_pton)(int af, char const *cp, void *buf, size_t len) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC unsigned int (LIBCCALL inet_nsap_addr)(char const *cp, unsigned char *buf, int len) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC char *(LIBCCALL inet_nsap_ntoa)(int len, const unsigned char *cp, char *buf) { NOT_IMPLEMENTED(); return NULL; }

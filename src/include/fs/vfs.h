@@ -119,6 +119,7 @@ DATDEF struct superblockops vsuperblock_ops;
 
 
 
+
 /* Default initializers for virtual filesystem elements.
  * NOTE: The first INode should pass '&v_superblock->v_data' for 'prev_data' */
 #define VNODE_INIT(prev,self_pointer,next,superblock_pointer,mode,ent_c,ent_v) \

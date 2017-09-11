@@ -49,6 +49,8 @@
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/stat.h>
+#include <sys/mount.h>
+#include <linker/module.h>
 
 DECL_BEGIN
 
@@ -1081,6 +1083,260 @@ done:
 efault: result = -EFAULT; goto done;
 }
 
+
+INTDEF struct fstype *KCALL
+fschain_find_name(struct fstype *start,
+                  char const *__restrict name,
+                  size_t namelen);
+
+
+PRIVATE REF struct blkdev *KCALL
+mount_open_device(char const *dev_name, u32 flags) {
+ struct fdman *fdm = THIS_FDMAN;
+ struct dentry_walker walker;
+ struct dentry *cwd; errno_t error;
+ struct dentry *dev_entry;
+ struct inode *dev_node;
+ /* XXX: I'm pretty sure 'dev_name' can be more than just a filename.
+  * >> What if the /dev filesystem isn't mounted? Then how can mount()
+  *    even access the block devices required to use as mount source?
+  * I'm guessing you're also allowed to use device IDs somehow... */
+
+ /* Assume a standard filename. */
+ FSACCESS_SETUSER(walker.dw_access);
+ walker.dw_nlink    = 0;
+ walker.dw_nofollow = false;
+ error = fdman_read(fdm);
+ if (E_ISERR(error)) return E_PTR(error);;
+ walker.dw_root = fdm->fm_root;
+ cwd            = fdm->fm_cwd;
+ DENTRY_INCREF(walker.dw_root);
+ DENTRY_INCREF(cwd);
+ fdman_endread(fdm);
+ dev_entry = dentry_user_xwalk(cwd,&walker,dev_name);
+ DENTRY_DECREF(walker.dw_root);
+ DENTRY_DECREF(cwd);
+ if (E_ISERR(dev_entry))
+     return E_PTR(E_GTERR(dev_entry));
+ /* Load the INode from the directory entry described by 'dev_name' */
+ dev_node = dentry_inode(dev_entry);
+ DENTRY_DECREF(dev_entry);
+ if unlikely(!dev_node)
+    return E_PTR(-ENOENT);
+
+ /* Check required permissions on the given INode. */
+ error = inode_mayaccess(dev_node,&walker.dw_access,
+                         flags&MS_RDONLY ? R_OK : R_OK|W_OK);
+ if (E_ISERR(error)) {
+  INODE_DECREF(dev_node);
+  return E_PTR(error);
+ }
+ /* If the node the user specified already is
+  * a block-device, we can simply go ahead! */
+ if (INODE_ISBLK(dev_node))
+     return INODE_TOBLK(dev_node);
+
+ /* Since this isn't actually a block-device, check
+  * if it is a regular file that can later be used as
+  * a loopback device. (For this we require it at the
+  * very least be implementing 'pread()', as this is
+  * what comes the closest to, and is used to emulate
+  * the most basic functionality required by any block-device,
+  * or filesystem running there-on).  */
+ if (INODE_ISREG(dev_node) &&
+     dev_node->i_ops->f_pread) {
+  /* TODO: Open a file descriptor for reading/writing
+   *       and use it to create a loopback block-device.
+   * NOTE: For this to work properly, we must add some
+   *       alternate version that can work without the
+   *       immediate buffer (which we can't rely on
+   *       since the underlying file of the loopback
+   *       device may, and probably is, connected to
+   *       another block-device, meaning we'd break
+   *       cache coherency if we did so...)
+   */
+ }
+
+ INODE_DECREF(dev_node);
+ /* YES! This is the only place this error is actually used! */
+ return E_PTR(-ENOTBLK);
+}
+
+PRIVATE REF struct superblock *KCALL
+mount_make_superblock(USER char const *dev_name,
+                      USER char const *type, u32 flags,
+                      USER void const *data) {
+ size_t typelen; errno_t error;
+ struct fstype *ft = NULL;
+ REF struct superblock *result;
+ /* Figure out which filesystem type is requested. */
+
+ /* When type is NULL, use automatic filesystem type
+  * deduction, as provided as a core concept by KOS. */
+ if (!type) goto automount;
+
+ /* TODO: Copy 'type' to kernel-space. */
+ error = rwlock_read(&fstype_lock);
+ if (E_ISERR(error)) return E_PTR(error);
+ typelen = strlen(type);
+ /* .. */ ft = fschain_find_name(fstype_none,type,typelen);
+ if (!ft) ft = fschain_find_name(fstype_auto,type,typelen);
+ if (!ft) ft = fschain_find_name(fstype_any,type,typelen);
+ /* Handle the case of an unknown filesystem type. */
+ if (!ft || !INSTANCE_TRYINCREF(ft->f_owner)) {
+  rwlock_endread(&fstype_lock);
+  return E_PTR(-ENODEV);
+ }
+ CHECK_HOST_TEXT(ft->f_callback,1);
+ if (ft->f_flags&FSTYPE_NODEV) {
+  /* We must open this filesystem without an actual device. */
+  result = (*ft->f_callback)(NULL,flags,dev_name,(USER void *)data,ft->f_closure);
+ } else {
+  struct blkdev *dev;
+automount:
+  /* XXX: What exactly is 'dev_name?' POSIX doesn't really seem to say.
+   *    - I know it can be the path-name of a block device.
+   *    - I'm also guessing it's allowed to be the name of a regular
+   *      file, for which the kernel (us) must automatically generate
+   *      a loopback device (haven't implemented that part yet, but
+   *      should be quite easy; 'MKDEV(7,<LOOPNO>)')
+   *    - What else is it allowed to be. - Because judging by exceptions
+   *      such as procfs, I'm guess it doesn't always need to be a pathname.
+   *      And if so, what _EXACTLY_ is it allowed to be?
+   * >> OK. For now I'm going to ignore that ~dummy string~ as POSIX calls
+   *    it and simply focus on mounting /dev block devices, or LOOP files. */
+
+  /* TODO: Copy 'dev_name' from userspace. */
+  dev = mount_open_device(dev_name,flags);
+  if (E_ISERR(dev))
+   result = E_PTR(E_GTERR(dev));
+  else {
+   if (ft) {
+    /* Use the given filesystem format _explicitly_ */
+    result = (*ft->f_callback)(dev,flags,dev_name,
+                              (void *)data,ft->f_closure);
+   } else {
+    result = blkdev_mksuper(dev,NULL,0);
+   }
+   BLKDEV_DECREF(dev);
+  }
+ }
+ if (ft) {
+  INSTANCE_DECREF(ft->f_owner);
+  rwlock_endread(&fstype_lock);
+ }
+ return result;
+}
+
+PRIVATE errno_t KCALL
+mount_at(struct dentry *__restrict target,
+         struct fsaccess *__restrict access,
+         USER char const *dev_name,
+         USER char const *type,
+         u32 flags, USER void const *data) {
+ REF struct superblock *sb; errno_t error;
+ /* Create a new superblock using the given arguments. */
+ sb = mount_make_superblock(dev_name,type,flags,data);
+ if (E_ISERR(sb)) return E_GTERR(sb);
+ /* Apply some of the flags we've been given to the superblock. */
+ if (flags&MS_RDONLY) sb->sb_root.i_state |= INODE_STATE_READONLY;
+ /* TODO: MS_NOSUID      0x00000002 */ /*< Ignore suid and sgid bits. */
+ /* TODO: MS_NODEV       0x00000004 */ /*< Disallow access to device special files. */
+ /* TODO: MS_NOEXEC      0x00000008 */ /*< Disallow program execution. */
+ /* TODO: MS_SYNCHRONOUS 0x00000010 */ /*< Writes are synced at once. */
+ /* TODO: MS_DIRSYNC     0x00000080 */ /*< Directory modifications are synchronous. */
+ /* TODO: MS_NOATIME     0x00000400 */ /*< Do not update access times. */
+ /* TODO: MS_NODIRATIME  0x00000800 */ /*< Do not update directory access times. */
+
+ /* Mount the newly created superblock at this location. */
+ error = dentry_mount(target,access,sb);
+ SUPERBLOCK_DECREF(sb);
+ return error;
+}
+
+
+SYSCALL_DEFINE5(mount,USER char const *,dev_name,USER char const *,dir_name,
+                      USER char const *,type,u32,flags,
+                      USER void const *,data) {
+ struct fdman *fdm = THIS_FDMAN;
+ struct dentry_walker walker;
+ struct dentry *access_dentry;
+ struct dentry *cwd; errno_t result;
+
+ /* Check for the required capabilities. */
+ if (!capable(CAP_SYS_ADMIN))
+     return -EPERM;
+
+ FSACCESS_SETUSER(walker.dw_access);
+ walker.dw_nlink    = 0;
+ walker.dw_nofollow = false; /* Erm... Security hole? Linux seems to do the same? */
+ task_crit();
+
+ result = fdman_read(fdm);
+ if (E_ISERR(result)) goto end;
+ cwd            = fdm->fm_cwd;
+ walker.dw_root = fdm->fm_root;
+ DENTRY_INCREF(cwd);
+ DENTRY_INCREF(walker.dw_root);
+ fdman_endread(fdm);
+ access_dentry = dentry_user_xwalk(cwd,&walker,dir_name);
+ DENTRY_DECREF(walker.dw_root);
+ DENTRY_DECREF(cwd);
+
+ if (E_ISERR(access_dentry))
+  result = E_GTERR(access_dentry);
+ else {
+  /* Mount the new filesystem at this location. */
+  // TODO: MS_REMOUNT
+  // TODO: MS_BIND
+  // TODO: MS_MOVE
+  flags &= ~MS_KERNMOUNT; /* NOPE! */
+  result = mount_at(access_dentry,&walker.dw_access,
+                    dev_name,type,flags,data);
+  DENTRY_DECREF(access_dentry);
+ }
+
+end: task_endcrit();
+ return result;
+}
+
+SYSCALL_DEFINE2(umount,USER char const *,name,int,flags) {
+ struct fdman *fdm = THIS_FDMAN;
+ struct dentry_walker walker;
+ struct dentry *access_dentry;
+ struct dentry *cwd; errno_t result;
+
+ /* Check for the required capabilities. */
+ if (!capable(CAP_SYS_ADMIN))
+     return -EPERM;
+
+ FSACCESS_SETUSER(walker.dw_access);
+ walker.dw_nlink    = 0;
+ walker.dw_nofollow = !!(flags&UMOUNT_NOFOLLOW);
+ task_crit();
+
+ result = fdman_read(fdm);
+ if (E_ISERR(result)) goto end;
+ cwd            = fdm->fm_cwd;
+ walker.dw_root = fdm->fm_root;
+ DENTRY_INCREF(cwd);
+ DENTRY_INCREF(walker.dw_root);
+ fdman_endread(fdm);
+ access_dentry = dentry_user_xwalk(cwd,&walker,name);
+ DENTRY_DECREF(walker.dw_root);
+ DENTRY_DECREF(cwd);
+
+ if (E_ISERR(access_dentry))
+  result = E_GTERR(access_dentry);
+ else {
+  /* Unmount the filesystem at this location. */
+  result = dentry_umount(access_dentry,&walker.dw_access);
+  DENTRY_DECREF(access_dentry);
+ }
+
+end: task_endcrit();
+ return result;
+}
 
 
 DECL_END

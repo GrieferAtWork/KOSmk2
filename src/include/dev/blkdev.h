@@ -371,12 +371,15 @@ blkdev_mksuper(struct blkdev *__restrict self,
 
 
 /* Try to create a filesystem superblock that using the given block-device 'dev'.
+ * @param: data:        A user-space data control block passed to 'sys_mount()', or NULL when not given.
+ * @param: flags:       A set of 'MS_*', as found in <sys/mount.h>
+ * @param: devname:     The name of 'dev' or NULL when not given.
  * @return: * :         A reference to the (newly created) filesystem, now connected to 'self'.
  * @return: -EINVAL:    The given device 'self' cannot be mounted with the implementer's filesystem type.
  * @return: -ENOMEM:    Not enough available kernel memory.
  * @return: E_ISERR(*): Failed to create the filesystem for some reason. */
-typedef SAFE REF struct superblock *(KCALL *fstype_callback)(struct blkdev *__restrict dev,
-                                                             void *closure);
+typedef SAFE REF struct superblock *(KCALL *fstype_callback)(struct blkdev *__restrict dev, u32 flags,
+                                                             char const *devname, USER void *data, void *closure);
 
 struct fstype {
  SLIST_NODE(struct fstype)
@@ -385,6 +388,10 @@ struct fstype {
  blksys_t                  f_sysid;    /*< [const] System id or 'BLKSYS_ANY' or 'BLKSYS_EXPLICIT', for which 'f_callback'
                                         *          should be executed to create a filesystem driver for a block-device. */
  fstype_callback           f_callback; /*< [1..1][const] Automatic partitioning callback. */
+#define FSTYPE_NORMAL      0x00000000  /*< A regular filesystem type used for generating mounting points of block-devices. */
+#define FSTYPE_NODEV       0x00000001  /*< When set, the 'dev' argument passed to 'f_callback' is allowed to be NULL.
+                                        *  NOTE: When set, 'f_sysid' is usually 'BLKSYS_EXPLICIT', with an example being 'procfs'. */
+ u32                       f_flags;    /*< A set of 'FSTYPE_*' */
  void                     *f_closure;  /*< [?..?][const] User-defined closure callback for 'f_callback'. */
  char const               *f_name;     /*< [0..1][const] Filesystem type name. */
 };
@@ -396,6 +403,11 @@ FUNDEF SAFE void KCALL fs_addtype(struct fstype *__restrict self);
  * @return: false: The given filesystem type callback was never added. */
 FUNDEF SAFE bool KCALL fs_deltype(struct fstype *__restrict self);
 
+/* Internal data components for filesystem types. */
+DATDEF rwlock_t                  fstype_lock;
+DATDEF SLIST_HEAD(struct fstype) fstype_none; /*< [0..1][lock(fstype_lock)] Chain of filesystem types only accessible by being named explicitly. */
+DATDEF SLIST_HEAD(struct fstype) fstype_auto; /*< [0..1][lock(fstype_lock)] Chain of filesystem types automatically used when blksys_t ids match. */
+DATDEF SLIST_HEAD(struct fstype) fstype_any;  /*< [0..1][lock(fstype_lock)] Chain of filesystem types always used when attempting to load a filesystem. */
 
 
 

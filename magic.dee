@@ -1134,6 +1134,7 @@ if (!run_mode_run_only) {
 			mtools("mformat",["-t","8","-h","2","-s","3600"]);
 			/* TODO: We should do this more elegantly... */
 			disk_force_mkdir("/dev");
+			disk_force_mkdir("/proc");
 		}
 	}
 	

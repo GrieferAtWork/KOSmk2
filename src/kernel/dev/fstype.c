@@ -28,13 +28,14 @@
 #include <linker/module.h>
 #include <sched/task.h>
 #include <string.h>
+#include <sys/mount.h>
 
 DECL_BEGIN
 
-PRIVATE DEFINE_RWLOCK(fstype_lock);
-PRIVATE SLIST_HEAD(struct fstype) fstype_none; /*< [0..1][lock(fstype_lock)] Chain of filesystem types only accessible by being named explicitly. */
-PRIVATE SLIST_HEAD(struct fstype) fstype_auto; /*< [0..1][lock(fstype_lock)] Chain of filesystem types automatically used when blksys_t ids match. */
-PRIVATE SLIST_HEAD(struct fstype) fstype_any;  /*< [0..1][lock(fstype_lock)] Chain of filesystem types always used when attempting to load a filesystem. */
+PUBLIC DEFINE_RWLOCK(fstype_lock);
+PUBLIC SLIST_HEAD(struct fstype) fstype_none = NULL;
+PUBLIC SLIST_HEAD(struct fstype) fstype_auto = NULL;
+PUBLIC SLIST_HEAD(struct fstype) fstype_any  = NULL;
 
 
 INTERN void KCALL
@@ -57,7 +58,7 @@ fstype_delete_from_instance(struct instance *__restrict inst) {
 }
 
 
-PRIVATE struct fstype *KCALL
+INTERN struct fstype *KCALL
 fschain_find_name(struct fstype *start,
                   char const *__restrict name,
                   size_t namelen) {
@@ -88,7 +89,7 @@ blkdev_mksuper(struct blkdev *__restrict self,
   if (!ft) ft = fschain_find_name(fstype_auto,name,namelen);
   if (!ft) ft = fschain_find_name(fstype_any,name,namelen);
   if (ft && INSTANCE_LOCKWEAK(ft->f_owner)) {
-   result = (*ft->f_callback)(self,ft->f_closure);
+   result = (*ft->f_callback)(self,MS_KERNMOUNT,NULL,NULL,ft->f_closure);
    INSTANCE_DECREF(ft->f_owner);
   }
  } else {
@@ -97,7 +98,7 @@ blkdev_mksuper(struct blkdev *__restrict self,
   if (sysid != BLKSYS_ANY &&
      (ft = fschain_find_sys(fstype_auto,sysid)) != NULL) {
    if (INSTANCE_LOCKWEAK(ft->f_owner)) {
-    result = (*ft->f_callback)(self,ft->f_closure);
+    result = (*ft->f_callback)(self,MS_KERNMOUNT,NULL,NULL,ft->f_closure);
     INSTANCE_DECREF(ft->f_owner);
    }
   }
@@ -105,7 +106,7 @@ blkdev_mksuper(struct blkdev *__restrict self,
   for (ft = fstype_any; ft && result == E_PTR(-EINVAL);
        ft = ft->f_chain.le_next) {
    if (INSTANCE_LOCKWEAK(ft->f_owner)) {
-    result = (*ft->f_callback)(self,ft->f_closure);
+    result = (*ft->f_callback)(self,MS_KERNMOUNT,NULL,NULL,ft->f_closure);
     INSTANCE_DECREF(ft->f_owner);
    }
   }

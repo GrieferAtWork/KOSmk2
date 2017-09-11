@@ -535,8 +535,8 @@ __LIBC char *(__LIBCCALL strnset)(char *__str, int __char, size_t __max_chars);
 __LIBC char *(__LIBCCALL strrev)(char *__str);
 __LIBC char *(__LIBCCALL strset)(char *__str, int __char);
 __LIBC char *(__LIBCCALL strupr)(char *__str);
-__LIBC int (__LIBCCALL _memicmp)(const void *__a, const void *__b, size_t __n_bytes) __ASMNAME("memcasecmp");
-__LIBC int (__LIBCCALL _memicmp_l)(const void *__a, const void *__b, size_t __n_bytes, __locale_t __lc) __ASMNAME("memcasecmp_l");
+__LIBC int (__LIBCCALL _memicmp)(void const *__a, void const *__b, size_t __n_bytes) __ASMNAME("memcasecmp");
+__LIBC int (__LIBCCALL _memicmp_l)(void const *__a, void const *__b, size_t __n_bytes, __locale_t __lc) __ASMNAME("memcasecmp_l");
 __LIBC int (__LIBCCALL _strcmpi)(char const *__str1, char const *__str2) __ASMNAME("strcasecmp");
 __LIBC int (__LIBCCALL _strcoll_l)(char const *__str1, char const *__str2, __locale_t __lc) __ASMNAME("strcoll_l");
 __LIBC int (__LIBCCALL _stricmp)(char const *__str1, char const *__str2) __ASMNAME("strcasecmp");
@@ -549,12 +549,12 @@ __LIBC int (__LIBCCALL _strnicmp)(char const *__str1, char const *__str2, size_t
 __LIBC int (__LIBCCALL _strnicmp_l)(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __lc) __ASMNAME("strncasecmp_l");
 __LIBC int (__LIBCCALL _strnicoll)(char const *__str1, char const *__str2, size_t __max_chars) __ASMNAME("strncasecoll");
 __LIBC int (__LIBCCALL _strnicoll_l)(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __lc) __ASMNAME("strncasecoll_l");
-__LIBC int (__LIBCCALL memicmp)(const void *__a, const void *__b, size_t __n_bytes) __ASMNAME("memcasecmp");
+__LIBC int (__LIBCCALL memicmp)(void const *__a, void const *__b, size_t __n_bytes) __ASMNAME("memcasecmp");
 __LIBC int (__LIBCCALL strcmpi)(char const *__str1, char const *__str2) __ASMNAME("strcasecmp");
 __LIBC int (__LIBCCALL stricmp)(char const *__str1, char const *__str2) __ASMNAME("strcasecmp");
 __LIBC int (__LIBCCALL strnicmp)(char const *__str1, char const *__str, size_t __max_chars) __ASMNAME("strncasecmp");
 __LIBC size_t (__LIBCCALL _strxfrm_l)(char *__dst, char const *__src, size_t __max_chars, __locale_t __lc) __ASMNAME("strxfrm_l");
-__LIBC void *(__LIBCCALL _memccpy)(void *__dst, const void *__src, int __needle, size_t __max_chars) __ASMNAME("memccpy");
+__LIBC void *(__LIBCCALL _memccpy)(void *__dst, void const *__src, int __needle, size_t __max_chars) __ASMNAME("memccpy");
 
 #ifndef __wstring_defined
 #define __wstring_defined 1

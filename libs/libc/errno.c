@@ -60,41 +60,41 @@ PUBLIC char *(LIBCCALL __libc_program_invocation_short_name)(void) {
  return basename(program_invocation_name);
 }
 
-PUBLIC void (LIBCCALL vwarn)(const char *format, va_list args) {
+PUBLIC void (LIBCCALL vwarn)(char const *format, va_list args) {
  fprintf(stderr,"%s: ",program_invocation_short_name);
  vfprintf(stderr,format,args);
  fprintf(stderr,": %[errno]",errno);
 }
-PUBLIC void (LIBCCALL vwarnx)(const char *format, va_list args) {
+PUBLIC void (LIBCCALL vwarnx)(char const *format, va_list args) {
  fprintf(stderr,"%s: ",program_invocation_short_name);
  vfprintf(stderr,format,args);
 }
-PUBLIC void (LIBCCALL verr)(int status, const char *format, va_list args) {
+PUBLIC void (LIBCCALL verr)(int status, char const *format, va_list args) {
  vwarn(format,args);
  ERROR_EXIT(status);
 }
-PUBLIC void (LIBCCALL verrx)(int status, const char *format, va_list args) {
+PUBLIC void (LIBCCALL verrx)(int status, char const *format, va_list args) {
  vwarnx(format,args);
  ERROR_EXIT(status);
 }
-PUBLIC void (LIBCCALL warn)(const char *format, ...) {
+PUBLIC void (LIBCCALL warn)(char const *format, ...) {
  va_list args;
  va_start(args,format);
  vwarn(format,args);
  va_end(args);
 }
-PUBLIC void (LIBCCALL warnx)(const char *format, ...) {
+PUBLIC void (LIBCCALL warnx)(char const *format, ...) {
  va_list args;
  va_start(args,format);
  vwarnx(format,args);
  va_end(args);
 }
-PUBLIC void (LIBCCALL err)(int status, const char *format, ...) {
+PUBLIC void (LIBCCALL err)(int status, char const *format, ...) {
  va_list args;
  va_start(args,format);
  verr(status,format,args);
 }
-PUBLIC void (LIBCCALL errx)(int status, const char *format, ...) {
+PUBLIC void (LIBCCALL errx)(int status, char const *format, ...) {
  va_list args;
  va_start(args,format);
  verrx(status,format,args);

@@ -55,6 +55,7 @@
 #include <sys/times.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <sys/mount.h>
 #include <unistd.h>
 
 DECL_BEGIN
@@ -495,6 +496,9 @@ PUBLIC int (LIBCCALL getpriority)(__priority_which_t which, id_t who) { NOT_IMPL
 PUBLIC int (LIBCCALL setpriority)(__priority_which_t which, id_t who, int prio) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL prlimit)(pid_t pid, enum __rlimit_resource resource, struct rlimit const *new_limit, struct rlimit *old_limit) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL prlimit64)(pid_t pid, enum __rlimit_resource resource, struct rlimit64 const *new_limit, struct rlimit64 *old_limit) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC int (LIBCCALL umount)(char const *special_file) { return umount2(special_file,0); }
+PUBLIC int (LIBCCALL mount)(char const *special_file, char const *dir, char const *fstype, unsigned long int rwflag, void const *data) { return FORWARD_SYSTEM_ERROR(sys_mount(special_file,dir,fstype,rwflag,data)); }
+PUBLIC int (LIBCCALL umount2)(char const *special_file, int flags) { return FORWARD_SYSTEM_ERROR(sys_umount2(special_file,flags)); }
 PUBLIC int (LIBCCALL getrusage)(__rusage_who_t who, struct rusage *usage) { memset(usage,0,sizeof(struct rusage)); return 0; } /* xxx? */
 
 
@@ -543,10 +547,10 @@ struct glibc_stat {
     glibc_ino64_t st_ino64;
 #endif
 };
-PUBLIC int (LIBCCALL glibc_stat)(const char *path, struct glibc_stat *statbuf) __ASMNAME("stat");
-PUBLIC int (LIBCCALL glibc_lstat)(const char *path, struct glibc_stat *statbuf) __ASMNAME("lstat");
+PUBLIC int (LIBCCALL glibc_stat)(char const *path, struct glibc_stat *statbuf) __ASMNAME("stat");
+PUBLIC int (LIBCCALL glibc_lstat)(char const *path, struct glibc_stat *statbuf) __ASMNAME("lstat");
 PUBLIC int (LIBCCALL glibc_fstat)(int fd, struct glibc_stat *statbuf) __ASMNAME("fstat");
-PUBLIC int (LIBCCALL glibc_fstatat)(int fd, const char *filename, struct glibc_stat *statbuf, int flag) __ASMNAME("fstatat");
+PUBLIC int (LIBCCALL glibc_fstatat)(int fd, char const *filename, struct glibc_stat *statbuf, int flag) __ASMNAME("fstatat");
 
 LOCAL void LIBCCALL
 glibc_load_stat_buffer(struct glibc_stat *__restrict dst,
@@ -577,19 +581,19 @@ PUBLIC int (LIBCCALL glibc_fstat)(int fd, struct glibc_stat *statbuf) {
  if (!result) glibc_load_stat_buffer(statbuf,&buf);
  return result;
 }
-PUBLIC int (LIBCCALL glibc_fstatat)(int fd, const char *filename, struct glibc_stat *statbuf, int flag) {
+PUBLIC int (LIBCCALL glibc_fstatat)(int fd, char const *filename, struct glibc_stat *statbuf, int flag) {
  struct stat64 buf; int result;
  result = kfstatat64(fd,filename,&buf,flag);
  if (!result) glibc_load_stat_buffer(statbuf,&buf);
  return result;
 }
-PUBLIC int (LIBCCALL glibc_stat)(const char *path, struct glibc_stat *statbuf) { return glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_FOLLOW); }
-PUBLIC int (LIBCCALL glibc_lstat)(const char *path, struct glibc_stat *statbuf) { return glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_NOFOLLOW); }
+PUBLIC int (LIBCCALL glibc_stat)(char const *path, struct glibc_stat *statbuf) { return glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_FOLLOW); }
+PUBLIC int (LIBCCALL glibc_lstat)(char const *path, struct glibc_stat *statbuf) { return glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_NOFOLLOW); }
 #define VERCHK { if (ver != 0) { __set_errno(-EINVAL); return -1; } }
 PUBLIC int (LIBCCALL __fxstat)(int ver, int fd, struct glibc_stat *statbuf) { VERCHK return glibc_fstat(fd,statbuf); }
-PUBLIC int (LIBCCALL __xstat)(int ver, const char *filename, struct glibc_stat *statbuf) { VERCHK return glibc_stat(filename,statbuf); }
-PUBLIC int (LIBCCALL __lxstat)(int ver, const char *filename, struct glibc_stat *statbuf) { VERCHK return glibc_lstat(filename,statbuf); }
-PUBLIC int (LIBCCALL __fxstatat)(int ver, int fd, const char *filename, struct glibc_stat *statbuf, int flag) { VERCHK return glibc_fstatat(fd,filename,statbuf,flag); }
+PUBLIC int (LIBCCALL __xstat)(int ver, char const *filename, struct glibc_stat *statbuf) { VERCHK return glibc_stat(filename,statbuf); }
+PUBLIC int (LIBCCALL __lxstat)(int ver, char const *filename, struct glibc_stat *statbuf) { VERCHK return glibc_lstat(filename,statbuf); }
+PUBLIC int (LIBCCALL __fxstatat)(int ver, int fd, char const *filename, struct glibc_stat *statbuf, int flag) { VERCHK return glibc_fstatat(fd,filename,statbuf,flag); }
 #undef VERCHK
 /* GLIBC does the same trick where the 32-bit stat
  * buffer has binary compatibility with the 64-bit one! */

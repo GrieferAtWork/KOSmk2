@@ -460,6 +460,7 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/ps2");
  kinsmod("/mod/memdev");
  kinsmod("/mod/vga-tty");
+ kinsmod("/mod/procfs");
 
  PREEMPTION_ENABLE();
 #ifdef CONFIG_DEBUG
