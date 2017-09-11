@@ -47,6 +47,8 @@ sprintf_callback(char const *__restrict data, size_t datalen,
 PUBLIC size_t (LIBCCALL vsprintf)(char *__restrict s, char const *__restrict format, va_list args) {
  size_t result = (size_t)format_vprintf((pformatprinter)&sprintf_callback,
                                         (void *)&s,format,args);
+ /* Random fact: Forgetting to terminate the string
+  *              breaks tab-completion in busybox... */
  return (*s = '\0',result);
 }
 
