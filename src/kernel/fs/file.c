@@ -39,6 +39,8 @@
 #include <sync/rwlock.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fs/superblock.h>
+#include <kernel/boot.h>
 
 DECL_BEGIN
 
@@ -81,15 +83,33 @@ file_setup(struct file *__restrict self,
  atomic_rwlock_endwrite(&node->i_file.i_files_lock);
 }
 
+/* Flush the associated INode and superblock
+ * when closing a file that was written to. */
+PRIVATE int opt_flush_fs_on_close = 1;
+DEFINE_EARLY_SETUP_VAR("flush-fs-on-close",opt_flush_fs_on_close);
 
 PUBLIC void KCALL
 file_destroy(struct file *__restrict self) {
  struct inode *ino;
  CHECK_HOST_DOBJ(self);
  ino = self->f_node;
+ /* Flush a file that we written to. */
+ if (self->f_flag&FILE_FLAG_DIDWRITE &&
+     self->f_ops->f_flush)
+   (*self->f_ops->f_flush)(self);
+
  /* Invoke the file-close callback. */
  if (ino->i_ops->ino_fclose)
    (*ino->i_ops->ino_fclose)(ino,self);
+
+ if (self->f_flag&FILE_FLAG_DIDWRITE &&
+     opt_flush_fs_on_close) {
+  /* Flush the file's INode and superblock. */
+  inode_flushattr(self->f_node);
+  /* XXX: Maybe not flush everything? */
+  superblock_flush(self->f_node->i_super);
+ }
+
  /* Remove the file from the list of open files. */
  atomic_rwlock_write(&ino->i_file.i_files_lock);
  LIST_REMOVE(self,f_open);
@@ -158,16 +178,18 @@ file_write(struct file *__restrict self,
   inode_invalidate(self->f_node);
   if ((self->f_mode&O_APPEND) &&
      !(self->f_flag&FILE_FLAG_BACK)) {
-   self->f_flag |= FILE_FLAG_BACK;
    if (self->f_ops->f_seek) {
     result = (*self->f_ops->f_seek)(self,0,SEEK_END);
     if (E_ISERR(result)) goto end;
    }
+   self->f_flag |= FILE_FLAG_BACK;
   }
   result = (*self->f_ops->f_write)(self,buf,bufsize);
 end:
   rwlock_endwrite(&self->f_lock);
  }
+ if (E_ISOK(result))
+     self->f_flag |= FILE_FLAG_DIDWRITE;
  return result;
 }
 PUBLIC ssize_t KCALL
@@ -182,21 +204,29 @@ file_pread(struct file *__restrict self,
 PUBLIC ssize_t KCALL
 file_pwrite(struct file *__restrict self,
             USER void const *buf, size_t bufsize, pos_t pos) {
+ ssize_t result;
  CHECK_HOST_DOBJ(self);
  CHECK_USER_TEXT(buf,bufsize);
  if ((self->f_mode&O_ACCMODE) == O_RDONLY ||
      !self->f_ops->f_pwrite) return -EPERM;
  inode_invalidate(self->f_node);
- return (*self->f_ops->f_pwrite)(self,buf,bufsize,pos);
+ result = (*self->f_ops->f_pwrite)(self,buf,bufsize,pos);
+ if (E_ISOK(result))
+     self->f_flag |= FILE_FLAG_DIDWRITE;
+ return result;
 }
 
 PUBLIC errno_t KCALL
 file_allocate(struct file *__restrict self, fallocmode_t mode,
               pos_t start, pos_t size) {
+ errno_t result;
  CHECK_HOST_DOBJ(self);
  if ((self->f_mode&O_ACCMODE) == O_RDONLY ||
      !self->f_ops->f_allocate) return -EPERM;
- return (*self->f_ops->f_allocate)(self,mode,start,size);
+ result = (*self->f_ops->f_allocate)(self,mode,start,size);
+ if (E_ISOK(result))
+     self->f_flag |= FILE_FLAG_DIDWRITE;
+ return result;
 }
 
 

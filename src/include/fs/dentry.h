@@ -328,7 +328,7 @@ FUNDEF REF struct dentry *KCALL
 dentry_symlink(struct dentry *__restrict dir_ent,
                struct dentryname const *__restrict ent_name,
                struct fsaccess const *__restrict access,
-               USER char const *__restrict target_text,
+               USER char const *target_text,
                struct iattr const *__restrict result_attr,
                REF struct inode **result_inode);
 

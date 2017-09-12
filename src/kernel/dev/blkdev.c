@@ -526,6 +526,9 @@ blkdev_write(struct blkdev *__restrict self, pos_t offset,
  CHECK_HOST_DOBJ(self);
  CHECK_USER_TEXT(buf,bufsize);
  assert(INODE_ISBLK(&self->bd_device.d_node));
+#if 0
+ syslog(LOG_FS|LOG_INFO,"BLKDEV_WRITE(%I64u,%p,%Iu) (%$q)\n",offset,buf,bufsize,bufsize,buf);
+#endif
  if unlikely(!bufsize) return 0;
  if unlikely(BLKDEV_ISREADONLY(self)) return -EROFS;
  result = rwlock_read(&self->bd_buffer.bs_lock);

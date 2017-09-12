@@ -44,7 +44,7 @@
 #include <string.h>
 #include <sys/mman.h>
 
-#define READONLY 1 /* Ignore attempts of writing to disk. */
+#define READONLY 0 /* Ignore attempts of writing to disk. */
 
 DECL_BEGIN
 
@@ -93,6 +93,9 @@ bd_access_chs(bd_t *__restrict self, blkaddr_t block,
  if (write) return n_blocks;
 #endif
  if unlikely(!n_blocks) return 0;
+#if 1
+ if (write) syslog(LOG_FS|LOG_DEBUG,"BIOS_WRITE(%I64u,%p,%Iu)\n",block,buf,n_blocks);
+#endif
  result = (ssize_t)rwlock_write(&bios_lock);
  if (E_ISERR(result)) goto end;
  result = 0;
@@ -166,6 +169,9 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
  if (write) return n_blocks;
 #endif
  if unlikely(!n_blocks) return 0;
+#if 1
+ if (write) syslog(LOG_FS|LOG_DEBUG,"BIOS_WRITE(%I64u,%p,%Iu)\n",block,buf,n_blocks);
+#endif
  result = (ssize_t)rwlock_write(&bios_lock);
  if (E_ISERR(result)) goto end;
  result      = 0;

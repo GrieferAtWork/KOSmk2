@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_KERNEL_CORE_MODULES_FS_FAT_C
 #define GUARD_KERNEL_CORE_MODULES_FS_FAT_C 1
+#define _GNU_SOURCE 1
 #define _KOS_SOURCE 2
 
 #include <alloca.h>
@@ -70,10 +71,27 @@ PRIVATE errno_t KCALL fat_flushtable(fat_t *__restrict self);
 /* High-level get/set fat entries, while ensuring that they are automatically loaded/marked as dirty. */
 PRIVATE errno_t KCALL fat_get(fat_t *__restrict self, fatid_t id, fatid_t *__restrict result);
 PRIVATE ATTR_UNUSED errno_t KCALL fat_set(fat_t *__restrict self, fatid_t id, fatid_t value);
-#if 0
+#if 1
 PRIVATE errno_t KCALL fat_get_unlocked(fat_t *__restrict self, fatid_t id, fatid_t *__restrict result);
 PRIVATE errno_t KCALL fat_set_unlocked(fat_t *__restrict self, fatid_t id, fatid_t value);
 #endif
+
+/* Find an unused FAT table entry, preferably located at 'hint'.
+ * @return: -EOK:       Successfully found an unused FAT entry that was stored in '*result'
+ * @return: -EINTR:     The calling thread was interrupted.
+ * @return: -ENOSPC:    The disk is full. - There are literally no more unused fat entries...
+ * @return: E_ISERR(*): Failed to find an unused entry for some reason. */
+PRIVATE errno_t KCALL fat_get_unused_unlocked(fat_t *__restrict self,
+                                              fatid_t hint,
+                                              fatid_t *__restrict result);
+/* Given a cluster id, walk the chain it describes while
+ * marking all entries along the way as unused, effectively
+ * allowing them to be returned by 'fat_get_unused_unlocked'.
+ * @return: * :         The actual amount of deleted entries.
+ * @return: -EINTR:     The calling thread was interrupted.
+ * @return: E_ISERR(*): Failed to delete at least one cluster for some reason. */
+PRIVATE ssize_t KCALL fat_delall_unlocked(fat_t *__restrict self, fatid_t start);
+PRIVATE ssize_t KCALL fat_delall(fat_t *__restrict self, fatid_t start);
 
 /* FAT time decode/encode. */
 DEFINE_MONTH_STARTING_DAY_OF_YEAR
@@ -114,19 +132,57 @@ PRIVATE off_t   KCALL fat_fseek(struct file *__restrict fp, off_t off, int whenc
 PRIVATE ssize_t KCALL fat_fpread(struct file *__restrict fp, USER void *buf, size_t bufsize, pos_t pos);
 PRIVATE ssize_t KCALL fat_fpwrite(struct file *__restrict fp, USER void const *buf, size_t bufsize, pos_t pos);
 PRIVATE ssize_t KCALL fat_freaddir(struct file *__restrict fp, USER struct dirent *buf, size_t bufsize, rdmode_t mode);
-PRIVATE errno_t KCALL fat_fflush(struct file *__restrict fp);
 PRIVATE REF struct inode *KCALL fat_lookup(struct inode *__restrict dir_node, struct dentry *__restrict result_path);
+PRIVATE REF struct inode *KCALL fat_mkreg(struct inode *__restrict dir_node, struct dentry *__restrict path, struct iattr const *__restrict result_attr, iattrset_t mode);
+PRIVATE REF struct inode *KCALL fat_symlink(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, USER char const *target_text, struct iattr const *__restrict result_attr);
+PRIVATE REF struct inode *KCALL fat_mkdir(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, struct iattr const *__restrict result_attr);
+PRIVATE errno_t KCALL fat_remove(struct inode *__restrict dir_node, struct dentry *__restrict file_path, struct inode *__restrict file_node);
+
 PRIVATE REF struct file *KCALL fat16_root_fopen(struct inode *__restrict ino, struct dentry *__restrict node_ent, oflag_t oflags);
 PRIVATE ssize_t KCALL fat16_root_fread(struct file *__restrict fp, USER void *buf, size_t bufsize);
 PRIVATE ssize_t KCALL fat16_root_fwrite(struct file *__restrict fp, USER void const *buf, size_t bufsize);
 PRIVATE off_t   KCALL fat16_root_fseek(struct file *__restrict fp, off_t off, int whence);
 PRIVATE ssize_t KCALL fat16_root_fpread(struct file *__restrict fp, USER void *buf, size_t bufsize, pos_t pos);
 PRIVATE ssize_t KCALL fat16_root_fpwrite(struct file *__restrict fp, USER void const *buf, size_t bufsize, pos_t pos);
-PRIVATE REF struct inode *KCALL fat16_root_lookup(struct inode *__restrict dir_node, struct dentry *__restrict result_path);
 PRIVATE ssize_t KCALL fat16_root_freaddir(struct file *__restrict fp, USER struct dirent *buf, size_t bufsize, rdmode_t mode);
+PRIVATE REF struct inode *KCALL fat16_root_lookup(struct inode *__restrict dir_node, struct dentry *__restrict result_path);
+PRIVATE REF struct inode *KCALL fat16_root_mkreg(struct inode *__restrict dir_node, struct dentry *__restrict path, struct iattr const *__restrict result_attr, iattrset_t mode);
+PRIVATE REF struct inode *KCALL fat16_root_symlink(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, USER char const *target_text, struct iattr const *__restrict result_attr);
+PRIVATE REF struct inode *KCALL fat16_root_mkdir(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, struct iattr const *__restrict result_attr);
+PRIVATE errno_t KCALL fat16_root_remove(struct inode *__restrict dir_node, struct dentry *__restrict file_path, struct inode *__restrict file_node);
+
 PRIVATE errno_t KCALL fat_setattr(struct inode *__restrict ino, iattrset_t changed);
 PRIVATE errno_t KCALL fat_fssync(struct superblock *__restrict sb);
 PRIVATE void    KCALL fat_fsfini(struct superblock *__restrict sb);
+
+/* Search for an existing directory entry 'path->d_name' and return
+ * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in 'mode'.
+ * Otherwise create a new entry and pre-initialize it using 'result_attr',
+ * as well as set '*is_new' to true.
+ * NOTE: The caller is responsible for holding a write-lock to
+ *      'dir_node->i_data->i_dirlock', which must be a FAT-directory node.
+ * @return: * : A reference to either a previously existing, or a newly allocated INode.
+ */
+PRIVATE REF struct fatnode *KCALL
+fat_mkent_unlocked(struct inode *__restrict dir_node,
+                   struct dentry *__restrict path, u8 ent_attr,
+                   struct iattr const *__restrict result_attr,
+                   iattrset_t mode, bool *__restrict is_new);
+PRIVATE REF struct fatnode *KCALL
+fat16_root_mkent_unlocked(struct inode *__restrict dir_node,
+                          struct dentry *__restrict path, u8 ent_attr,
+                          struct iattr const *__restrict result_attr,
+                          iattrset_t mode, bool *__restrict is_new);
+PRIVATE errno_t KCALL
+fat_rment_unlocked(struct inode *__restrict dir_node,
+                   struct fatnode *__restrict file_node);
+PRIVATE errno_t KCALL
+fat16_root_rment_unlocked(struct inode *__restrict dir_node,
+                          struct fatnode *__restrict file_node);
+
+/* Check if a given directory 'node' is empty.
+ * Return ONE(1) if it is, ZERO(0) if it isn't, or E_ISERR(*) on error. */
+PRIVATE errno_t KCALL fat_is_empty_directory(fat_t *__restrict fs, struct fatnode *__restrict node);
 
 /* Load the correct cluster within the given file when
  * NOTE: In addition, also handles the special case of an empty file
@@ -203,6 +259,31 @@ PRIVATE ssize_t KCALL fat_readlink(struct inode *__restrict ino, USER char *__re
 
 
 
+PRIVATE file_t const fat_newdir_template[3] = {
+    [0] = { /* '.' */
+        .f_name    = {[0 ... FAT_NAMEMAX-1] = ' ' },
+        .f_ext     = {[1 ... FAT_EXTMAX-1] = ' ' },
+        .f_attr    = ATTR_DIRECTORY,
+        .f_ntflags = NTFLAG_NONE,
+        .f_size    = 0,
+    },
+    [1] = { /* '..' */
+        .f_name    = {'.', [1 ... FAT_NAMEMAX-1] = ' ' },
+        .f_ext     = {[1 ... FAT_EXTMAX-1] = ' ' },
+        .f_attr    = ATTR_DIRECTORY,
+        .f_ntflags = NTFLAG_NONE,
+        .f_size    = 0,
+    },
+    [2] = {
+        .f_marker  = MARKER_DIREND,
+    },
+};
+
+
+
+
+
+
 
 
 
@@ -218,7 +299,6 @@ PRIVATE struct inodeops const fatops_reg = {
     .f_pread      = &fat_fpread,
     .f_pwrite     = &fat_fpwrite,
     .f_seek       = &fat_fseek,
-    .f_flush      = &fat_fflush,
     .ino_fopen    = &fat_fopen,
     .ino_setattr  = &fat_setattr,
     .ino_readlink = &fat_readlink,
@@ -230,32 +310,41 @@ PRIVATE struct inodeops const fatops_dir = {
     .f_pwrite    = &fat_fpwrite,
     .f_seek      = &fat_fseek,
     .f_readdir   = &fat_freaddir,
-    .f_flush     = &fat_fflush,
     .ino_fopen   = &fat_fopen,
     .ino_setattr = &fat_setattr,
     .ino_lookup  = &fat_lookup,
+    .ino_mkreg   = &fat_mkreg,
+    .ino_symlink = &fat_symlink,
+    .ino_mkdir   = &fat_mkdir,
+    .ino_remove  = &fat_remove,
 };
 PRIVATE struct inodeops const fatops_root_16 = {
-    .f_read     = &fat16_root_fread,
-    .f_write    = &fat16_root_fwrite,
-    .f_pread    = &fat16_root_fpread,
-    .f_pwrite   = &fat16_root_fpwrite,
-    .f_seek     = &fat16_root_fseek,
-    .f_readdir  = &fat16_root_freaddir,
-    .f_flush    = &fat_fflush,
-    .ino_fopen  = &fat16_root_fopen,
-    .ino_lookup = &fat16_root_lookup,
+    .f_read      = &fat16_root_fread,
+    .f_write     = &fat16_root_fwrite,
+    .f_pread     = &fat16_root_fpread,
+    .f_pwrite    = &fat16_root_fpwrite,
+    .f_seek      = &fat16_root_fseek,
+    .f_readdir   = &fat16_root_freaddir,
+    .ino_fopen   = &fat16_root_fopen,
+    .ino_lookup  = &fat16_root_lookup,
+    .ino_mkreg   = &fat16_root_mkreg,
+    .ino_symlink = &fat16_root_symlink,
+    .ino_mkdir   = &fat16_root_mkdir,
+    .ino_remove  = &fat16_root_remove,
 };
 PRIVATE struct inodeops const fatops_root_32 = {
-    .f_read     = &fat_fread,
-    .f_write    = &fat_fwrite,
-    .f_pread    = &fat_fpread,
-    .f_pwrite   = &fat_fpwrite,
-    .f_seek     = &fat_fseek,
-    .f_readdir  = &fat_freaddir,
-    .f_flush    = &fat_fflush,
-    .ino_fopen  = &fat_fopen,
-    .ino_lookup = &fat_lookup,
+    .f_read      = &fat_fread,
+    .f_write     = &fat_fwrite,
+    .f_pread     = &fat_fpread,
+    .f_pwrite    = &fat_fpwrite,
+    .f_seek      = &fat_fseek,
+    .f_readdir   = &fat_freaddir,
+    .ino_fopen   = &fat_fopen,
+    .ino_lookup  = &fat_lookup,
+    .ino_mkreg   = &fat_mkreg,
+    .ino_symlink = &fat_symlink,
+    .ino_mkdir   = &fat_mkdir,
+    .ino_remove  = &fat_remove,
 };
 PRIVATE struct superblockops const fatops_super = {
     .sb_sync = &fat_fssync,
@@ -503,13 +592,14 @@ fat_lookup_memory(struct lookupdata *__restrict data,
     data->ld_fpos.fp_namepos = filev_pos+((uintptr_t)iter-(uintptr_t)filev);
 found_entry:
     /* GOTI! */
-    result = (struct fatnode *)inode_new(sizeof(struct fatnode));
+    result = fatnode_new();
     if unlikely(!result) result = E_PTR(-ENOMEM);
     else {
      /* Fill in INode information about the directory entry. */
      result->f_idata.i_cluster = (BSWAP_LE2H16(iter->f_clusterhi) << 16 |
                                   BSWAP_LE2H16(iter->f_clusterlo));
      result->f_idata.i_pos     = data->ld_fpos;
+     rwlock_cinit(&result->f_idata.i_dirlock);
      result->f_inode.__i_nlink = 1;
      result->f_inode.i_data    = &result->f_idata;
      /* We (ab-)use the header position as INode number. (It's better than nothing...) */
@@ -643,7 +733,7 @@ filedata_load(struct filedata *__restrict self, fat_t *__restrict fs,
   pos_t file_pos,file_size,clus_offset;
   cluster_t file_start;
   FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Sector jump: %Iu -> %Iu\n",
-                    self->fd_cls_act,self->fd_cls_sel));
+                   self->fd_cls_act,self->fd_cls_sel));
   /* A different cluster has been selected. */
   file_pos = FILEDATA_FPOS(self,fs);
   temp = rwlock_read(&node->i_attr_lock);
@@ -656,7 +746,7 @@ filedata_load(struct filedata *__restrict self, fat_t *__restrict fs,
 
   if (self->fd_cls_act == (size_t)-1) {
    /* Special case: Illegal cluster selected. - Check if it exists now. */
-   if likely(file_size <= file_pos) return 0;
+   if (file_size <= file_pos) return 0;
    self->fd_cluster = file_start; /* It no longer is! */
    /* Ups. - it actually is, still... (race condition?) */
    if unlikely(self->fd_cluster >= fs->f_cluster_eof) return 0;
@@ -681,10 +771,10 @@ filedata_load(struct filedata *__restrict self, fat_t *__restrict fs,
   }
 
   /* Cluster is located behind. - got forward. */
+  assert(self->fd_cls_sel > self->fd_cls_act);
   n_ahead = (size_t)(self->fd_cls_sel-
                      self->fd_cls_act);
   self->fd_cls_act = self->fd_cls_sel;
-  assert(n_ahead);
   do {
    /* Seek ahead a couple of clusters. */
    if (self->fd_cluster >= fs->f_cluster_eof) {
@@ -786,26 +876,261 @@ filedata_read(struct filedata *__restrict self, fat_t *__restrict fs,
 
 PRIVATE errno_t KCALL
 filedata_alloc(struct filedata *__restrict self,
-               fat_t *__restrict fs, struct inode *__restrict node) {
- return -ENOSYS; /* TODO */
+               fat_t *__restrict fs,
+               struct inode *__restrict node) {
+ errno_t temp; size_t n_ahead;
+ pos_t file_size,clus_offset;
+ cluster_t file_start; bool has_fat_lock;
+ if (self->fd_cls_act != self->fd_cls_sel) {
+  has_fat_lock = false;
+  FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Sector jump: %Iu -> %Iu\n",
+                   self->fd_cls_act,self->fd_cls_sel));
+  /* A different cluster has been selected. */
+  if (self->fd_cls_act == (size_t)-1) {
+   bool has_write_lock = false;
+   temp = rwlock_read(&node->i_attr_lock);
+   if (E_ISERR(temp)) goto err;
+load_node_again:
+   if (S_ISDIR(node->i_attr.ia_mode)) 
+        file_size = ((pos_t)-1)/2;
+   else file_size = node->i_attr.ia_siz;
+   file_start = node->i_data->i_cluster;
+   /* Check if the file's initial cluster must be allocated. */
+   if unlikely(file_start >= fs->f_cluster_eof) {
+    /* Must create missing clusters. */
+    if (!has_write_lock) {
+     has_write_lock = true;
+     temp = rwlock_upgrade(&node->i_attr_lock);
+     if (E_ISERR(temp)) {
+      if (temp == -ERELOAD) goto load_node_again;
+      goto err;
+     }
+    }
+    assert(!has_fat_lock);
+    temp = rwlock_write(&fs->f_fat_lock);
+    if (E_ISERR(temp)) goto err;
+    has_fat_lock = true;
+
+    /* Allocate the initial cluster. */
+    temp = fat_get_unused_unlocked(fs,node->i_data->i_pos.fp_namecls+1,&file_start);
+    if (E_ISERR(temp)) goto err;
+
+    /* Mark the cluster as used by pointing it to EOF. */
+    temp = fat_set_unlocked(fs,file_start,fs->f_cluster_eof_marker);
+    if (E_ISERR(temp)) goto err;
+
+    node->i_data->i_cluster = file_start;
+    rwlock_downgrade(&node->i_attr_lock);
+    /* Write the file's first cluster number to the underlying system. */
+    { struct {
+        le16        f_clusterhi; /*< High 2 bytes of the file's cluster. */
+        filemtime_t f_mtime;     /*< Last modification time. */
+        le16        f_clusterlo; /*< Lower 2 bytes of the file's cluster. */
+      } buf;
+      buf.f_clusterhi = BSWAP_H2LE16((u16)((u32)file_start >> 16));
+      buf.f_clusterlo = BSWAP_H2LE16((u16)file_start);
+      fat_mtime_encode(buf.f_mtime,&node->i_attr_disk.ia_mtime);
+      HOSTMEMORY_BEGIN {
+       /* Write the new directory table entry to disk. */
+       temp = blkdev_writeall(fs->f_super.sb_blkdev,
+                              node->i_data->i_pos.fp_headpos+
+                              offsetof(file_t,f_clusterhi),
+                              &buf,sizeof(buf));
+      } HOSTMEMORY_END;
+    }
+    rwlock_endread(&node->i_attr_lock);
+    if (E_ISERR(temp)) goto err;
+   } else {
+    if (has_write_lock)
+         rwlock_endread(&node->i_attr_lock);
+    else rwlock_endwrite(&node->i_attr_lock);
+   }
+   self->fd_cluster = file_start;
+   self->fd_pos    -= self->fd_begin;
+   self->fd_cls_act = 0;
+   self->fd_begin   = FAT_SECTORADDR(fs,FAT_CLUSTERSTART(fs,self->fd_cluster));
+   self->fd_end     = self->fd_begin+fs->f_clustersize;
+   self->fd_max     = self->fd_begin+MIN(file_size,fs->f_clustersize);
+   self->fd_pos    += self->fd_begin;
+   assertf(self->fd_pos < self->fd_end,"%I64u >= %I64u",self->fd_pos,self->fd_end);
+   if (!self->fd_cls_sel) goto sel_this;
+  }
+  FAT_DEBUG(syslog(LOG_DEBUG,"SELECT %I32u -> %I32u\n",self->fd_cls_act,self->fd_cls_sel));
+
+  /* Cluster is located behind. - got forward. */
+  assert(self->fd_cls_sel > self->fd_cls_act);
+  n_ahead = (size_t)(self->fd_cls_sel-
+                     self->fd_cls_act);
+  self->fd_cls_act = self->fd_cls_sel;
+  /* Acquire read/write access to the FAT table. */
+  if (!has_fat_lock) {
+   temp = rwlock_write(&fs->f_fat_lock);
+   if (E_ISERR(temp)) goto err;
+   has_fat_lock = true;
+  }
+  do {
+   cluster_t next_cluster;
+   /* Seek ahead a couple of clusters. */
+   assert(self->fd_cluster < fs->f_cluster_eof);
+   temp = fat_get_unlocked(fs,self->fd_cluster,&next_cluster);
+   if (E_ISERR(temp)) {err_noact: self->fd_cls_act = (size_t)-1; goto err; }
+   if (next_cluster >= fs->f_cluster_eof) {
+    /* Allocate a new cluster. */
+    temp = fat_get_unused_unlocked(fs,self->fd_cluster+1,&next_cluster);
+    if (E_ISERR(temp)) goto err_noact;
+    /* Point this cluster to EOF and point the previous to this one. */
+    temp = fat_set_unlocked(fs,next_cluster,fs->f_cluster_eof_marker);
+    if (E_ISERR(temp)) goto err_noact;
+    temp = fat_set_unlocked(fs,self->fd_cluster,next_cluster);
+    if (E_ISERR(temp)) { fat_set_unlocked(fs,next_cluster,FAT_CUSTER_UNUSED); goto err_noact; }
+   }
+   self->fd_cluster = next_cluster;
+  } while (--n_ahead);
+sel_this:
+  /* Unlock the FAT table if we've locked it before. */
+  if (has_fat_lock)
+      rwlock_endwrite(&fs->f_fat_lock);
+  self->fd_pos  -= self->fd_begin;
+  self->fd_begin = FAT_SECTORADDR(fs,FAT_CLUSTERSTART(fs,self->fd_cluster));
+  self->fd_end   = self->fd_begin+fs->f_clustersize;
+  self->fd_pos  += self->fd_begin;
+  assert(self->fd_pos >= self->fd_begin);
+  assert(self->fd_pos <  self->fd_end);
+  clus_offset  = (pos_t)self->fd_cls_sel*fs->f_clustersize;
+  self->fd_max = self->fd_begin;
+  /* Update the cluster's max-position according to what is currently allocated. */
+  if (file_size > clus_offset)
+      self->fd_max += MIN(file_size-clus_offset,fs->f_clustersize);
+  assert(self->fd_max <= self->fd_end);
+ }
+ assert(self->fd_pos <= self->fd_max);
+ assert(self->fd_max <= self->fd_end);
+ assert(self->fd_cls_act == self->fd_cls_sel);
+ return -EOK;
+err:
+ if (has_fat_lock) rwlock_endwrite(&fs->f_fat_lock);
+ return temp;
 }
 PRIVATE ssize_t KCALL
 filedata_write(struct filedata *__restrict self,
                fat_t *__restrict fs, struct inode *__restrict node,
                USER void const *buf, size_t bufsize) {
- return -ENOSYS; /* TODO */
+ ssize_t temp; size_t result = 0;
+ while (bufsize) {
+  size_t max_write;
+  temp = filedata_alloc(self,fs,node);
+  if (E_ISERR(temp)) return temp;
+  assert(self->fd_pos >= self->fd_begin);
+  assert(self->fd_pos <= self->fd_max);
+  max_write = (size_t)(self->fd_end-self->fd_pos);
+  if (!max_write) break;
+  if (max_write > bufsize)
+      max_write = bufsize;
+  temp = blkdev_write(fs->f_super.sb_blkdev,
+                      self->fd_pos,buf,max_write);
+  if unlikely(temp < 0) return temp;
+  assert((size_t)temp <= max_write);
+  result             += (size_t)temp;
+  self->fd_pos       += (size_t)temp;
+  if (!temp) break;
+  bufsize            -= (size_t)temp;
+  *(uintptr_t *)&buf += (size_t)temp;
+  if (self->fd_pos > self->fd_max) {
+   pos_t new_size;
+   bool have_write_lock = false;
+   /* Update the stored file size. */
+   temp = rwlock_read(&node->i_attr_lock);
+update_size_again:
+   if (E_ISERR(temp)) return temp;
+   new_size = ((pos_t)self->fd_cls_act*fs->f_clustersize)+
+               (self->fd_pos-self->fd_begin);
+   if (node->i_attr.ia_siz < new_size) {
+#if __SIZEOF_POS_T__ > 4
+    /* Handle special case: The absolute FAT file size limit (4Gb) */
+    if (new_size > (pos_t)(u32)-1) {
+     assert(result >= new_size-(pos_t)(u32)-1);
+     result -= new_size-(pos_t)(u32)-1;
+     if (node->i_attr.ia_siz != (pos_t)(u32)-1) {
+      /* Write the absolutely greatest possible size. */
+      new_size = (pos_t)(u32)-1;
+     } else {
+      if (have_write_lock)
+           rwlock_endwrite(&node->i_attr_lock);
+      else rwlock_endread(&node->i_attr_lock);
+      return (ssize_t)result;
+     }
+    }
+#endif
+    if (!have_write_lock) {
+     have_write_lock = true;
+     temp = rwlock_upgrade(&node->i_attr_lock);
+     if (E_ISERR(temp)) {
+      if (temp == -ERELOAD) goto update_size_again;
+      return temp;
+     }
+    }
+    assert(node->i_attr.ia_siz < new_size);
+    node->i_attr.ia_siz = new_size;
+    if (!INODE_ISDIR(node)) {
+     /* Write the new size to the FAT directory table. */
+     le32 ent_size = BSWAP_H2LE32((u32)new_size);
+     HOSTMEMORY_BEGIN {
+      temp = blkdev_writeall(fs->f_super.sb_blkdev,node->i_data->i_pos.fp_headpos+
+                             offsetof(file_t,f_size),&ent_size,4);
+     } HOSTMEMORY_END;
+    }
+    /* If the write was OK, mirror the disk size-attribute. */
+    if (E_ISOK(temp))
+        node->i_attr_disk.ia_siz = new_size;
+    rwlock_endwrite(&node->i_attr_lock);
+    if (E_ISERR(temp)) return temp;
+   } else {
+    if (have_write_lock)
+         rwlock_endwrite(&node->i_attr_lock);
+    else rwlock_endread(&node->i_attr_lock);
+   }
+   self->fd_max = self->fd_pos;
+  }
+  assert(self->fd_max <= self->fd_end);
+  if (self->fd_pos == self->fd_end) {
+   /* Go to the next cluster. */
+   ++self->fd_cls_sel;
+   self->fd_pos = self->fd_begin;
+  }
+ }
+ return (ssize_t)result;
 }
 
 
 PRIVATE ssize_t KCALL
 fat_fread(struct file *__restrict fp,
           USER void *buf, size_t bufsize) {
- return filedata_read(&FILE->f_data,FILE->f_fs,fp->f_node,buf,bufsize);
+ ssize_t result;
+ struct inode *node = fp->f_node;
+ if (INODE_ISDIR(node)) {
+  result = (ssize_t)rwlock_read(&node->i_data->i_dirlock);
+  if (E_ISERR(result)) return result;
+  result = filedata_read(&FILE->f_data,FILE->f_fs,node,buf,bufsize);
+  rwlock_endread(&node->i_data->i_dirlock);
+ } else {
+  result = filedata_read(&FILE->f_data,FILE->f_fs,node,buf,bufsize);
+ }
+ return result;
 }
 PRIVATE ssize_t KCALL
 fat_fwrite(struct file *__restrict fp,
            USER void const *buf, size_t bufsize) {
- return filedata_write(&FILE->f_data,FILE->f_fs,fp->f_node,buf,bufsize);
+ ssize_t result;
+ struct inode *node = fp->f_node;
+ if (INODE_ISDIR(node)) {
+  result = (ssize_t)rwlock_write(&node->i_data->i_dirlock);
+  if (E_ISERR(result)) return result;
+  result = filedata_write(&FILE->f_data,FILE->f_fs,node,buf,bufsize);
+  rwlock_endwrite(&node->i_data->i_dirlock);
+ } else {
+  result = filedata_write(&FILE->f_data,FILE->f_fs,node,buf,bufsize);
+ }
+ return result;
 }
 PRIVATE off_t KCALL
 fat_fseek(struct file *__restrict fp, off_t off, int whence) {
@@ -834,26 +1159,44 @@ PRIVATE ssize_t KCALL
 fat_fpread(struct file *__restrict fp,
            USER void *buf, size_t bufsize,
            pos_t pos) {
- struct filedata data;
+ struct filedata data; ssize_t result;
+ struct inode *node = fp->f_node;
  errno_t error = rwlock_read(&FILE->f_file.f_lock);
  if (E_ISERR(error)) return error;
  memcpy(&data,&FILE->f_data,sizeof(struct filedata));
  rwlock_endread(&FILE->f_file.f_lock);
  FATFILE_FSEEK_SET(&data,FILE->f_fs,pos);
- //data.fd_cls_act = (size_t)-1;
- return filedata_read(&data,FILE->f_fs,fp->f_node,buf,bufsize);
+ /* data.fd_cls_act = (size_t)-1; */
+ if (INODE_ISDIR(node)) {
+  result = (ssize_t)rwlock_read(&node->i_data->i_dirlock);
+  if (E_ISERR(result)) return result;
+  result = filedata_read(&data,FILE->f_fs,node,buf,bufsize);
+  rwlock_endread(&node->i_data->i_dirlock);
+ } else {
+  result = filedata_read(&data,FILE->f_fs,node,buf,bufsize);
+ }
+ return result;
 }
 PRIVATE ssize_t KCALL
 fat_fpwrite(struct file *__restrict fp,
             USER void const *buf, size_t bufsize,
             pos_t pos) {
- struct filedata data;
+ struct filedata data; ssize_t result;
+ struct inode *node = fp->f_node;
  errno_t error = rwlock_read(&FILE->f_file.f_lock);
  if (E_ISERR(error)) return error;
  memcpy(&data,&FILE->f_data,sizeof(struct filedata));
  rwlock_endread(&FILE->f_file.f_lock);
  FATFILE_FSEEK_SET(&data,FILE->f_fs,pos);
- return filedata_write(&data,FILE->f_fs,fp->f_node,buf,bufsize);
+ if (INODE_ISDIR(node)) {
+  result = (ssize_t)rwlock_read(&node->i_data->i_dirlock);
+  if (E_ISERR(result)) return result;
+  result = filedata_write(&data,FILE->f_fs,node,buf,bufsize);
+  rwlock_endread(&node->i_data->i_dirlock);
+ } else {
+  result = filedata_write(&data,FILE->f_fs,node,buf,bufsize);
+ }
+ return result;
 }
 #undef FILE
 
@@ -880,7 +1223,7 @@ fat16_root_fopen(struct inode *__restrict ino,
 PRIVATE ssize_t KCALL
 fat16_root_fread(struct file *__restrict fp,
                  USER void *buf, size_t bufsize) {
- pos_t max_read; ssize_t result;
+ pos_t max_read; ssize_t result; fat_t *fat;
  assert(FILE->f_begin <= FILE->f_end);
  assert(FILE->f_pos >= FILE->f_begin);
  assert(FILE->f_pos <= FILE->f_end);
@@ -888,8 +1231,12 @@ fat16_root_fread(struct file *__restrict fp,
  max_read = FILE->f_end-FILE->f_pos;
  if (max_read > bufsize)
      max_read = bufsize;
- result = blkdev_read(INODE_TOSUPERBLOCK(fp->f_node)->sb_blkdev,
+ fat = container_of(INODE_TOSUPERBLOCK(fp->f_node),fat_t,f_super);
+ result = (ssize_t)rwlock_read(&fat->f_idata.i_dirlock);
+ if (E_ISERR(result)) return result;
+ result = blkdev_read(fat->f_super.sb_blkdev,
                       FILE->f_pos,buf,(size_t)max_read);
+ rwlock_endread(&fat->f_idata.i_dirlock);
  if (E_ISOK(result)) {
   FILE->f_pos += result;
   assert(FILE->f_pos >= FILE->f_begin);
@@ -900,7 +1247,7 @@ fat16_root_fread(struct file *__restrict fp,
 PRIVATE ssize_t KCALL
 fat16_root_fwrite(struct file *__restrict fp,
                   USER void const *buf, size_t bufsize) {
- pos_t max_read; ssize_t result;
+ pos_t max_read; ssize_t result; fat_t *fat;
  assert(FILE->f_begin <= FILE->f_end);
  assert(FILE->f_pos >= FILE->f_begin);
  assert(FILE->f_pos <= FILE->f_end);
@@ -908,8 +1255,12 @@ fat16_root_fwrite(struct file *__restrict fp,
  max_read = FILE->f_end-FILE->f_pos;
  if (max_read > bufsize)
      max_read = bufsize;
- result = blkdev_write(INODE_TOSUPERBLOCK(fp->f_node)->sb_blkdev,
+ fat = container_of(INODE_TOSUPERBLOCK(fp->f_node),fat_t,f_super);
+ result = (ssize_t)rwlock_write(&fat->f_idata.i_dirlock);
+ if (E_ISERR(result)) return result;
+ result = blkdev_write(fat->f_super.sb_blkdev,
                        FILE->f_pos,buf,(size_t)max_read);
+ rwlock_endwrite(&fat->f_idata.i_dirlock);
  if (E_ISOK(result)) {
   FILE->f_pos += result;
   assert(FILE->f_pos >= FILE->f_begin);
@@ -938,6 +1289,7 @@ fat16_root_fpread(struct file *__restrict fp,
                   USER void *buf, size_t bufsize,
                   pos_t pos) {
  pos_t start_offset,max_read;
+ ssize_t result; fat_t *fat;
  assert(FILE->f_begin <= FILE->f_end);
  assert(INODE_ISSUPERBLOCK(fp->f_node));
  start_offset = FILE->f_begin+pos;
@@ -947,14 +1299,20 @@ fat16_root_fpread(struct file *__restrict fp,
  max_read = (pos_t)(FILE->f_end-start_offset);
  if (max_read > bufsize)
      max_read = bufsize;
- return blkdev_read(INODE_TOSUPERBLOCK(fp->f_node)->sb_blkdev,
-                    start_offset,buf,bufsize);
+ fat = container_of(INODE_TOSUPERBLOCK(fp->f_node),fat_t,f_super);
+ result = (ssize_t)rwlock_read(&fat->f_idata.i_dirlock);
+ if (E_ISERR(result)) return result;
+ result = blkdev_read(fat->f_super.sb_blkdev,
+                      start_offset,buf,bufsize);
+ rwlock_endread(&fat->f_idata.i_dirlock);
+ return result;
 }
 PRIVATE ssize_t KCALL
 fat16_root_fpwrite(struct file *__restrict fp,
                    USER void const *buf, size_t bufsize,
                    pos_t pos) {
  pos_t start_offset,max_read;
+ fat_t *fat; ssize_t result;
  assert(FILE->f_begin <= FILE->f_end);
  assert(INODE_ISSUPERBLOCK(fp->f_node));
  start_offset = FILE->f_begin+pos;
@@ -964,19 +1322,15 @@ fat16_root_fpwrite(struct file *__restrict fp,
  max_read = (pos_t)(FILE->f_end-start_offset);
  if (max_read > bufsize)
      max_read = bufsize;
- return blkdev_write(INODE_TOSUPERBLOCK(fp->f_node)->sb_blkdev,
-                     start_offset,buf,bufsize);
+ fat = container_of(INODE_TOSUPERBLOCK(fp->f_node),fat_t,f_super);
+ result = (ssize_t)rwlock_write(&fat->f_idata.i_dirlock);
+ if (E_ISERR(result)) return result;
+ result = blkdev_write(fat->f_super.sb_blkdev,
+                       start_offset,buf,bufsize);
+ rwlock_endwrite(&fat->f_idata.i_dirlock);
+ return result;
 }
 #undef FILE
-
-PRIVATE errno_t KCALL
-fat_fflush(struct file *__restrict fp) {
- CHECK_HOST_DOBJ(fp);
- CHECK_HOST_DOBJ(fp->f_node);
- CHECK_HOST_DOBJ(fp->f_node->i_super);
- CHECK_HOST_DOBJ(fp->f_node->i_super->sb_blkdev);
- return blkdev_flush(fp->f_node->i_super->sb_blkdev);
-}
 
 #define NODE ((struct fatnode *)ino)
 PRIVATE errno_t KCALL
@@ -1024,7 +1378,7 @@ fat_setattr(struct inode *__restrict ino, iattrset_t changed) {
                           &mtime,sizeof(mtime));
   if (E_ISERR(error)) return error;
  }
- if (changed&IATTR_SIZ) {
+ if (changed&IATTR_SIZ && !INODE_ISDIR(ino)) {
   le32 size = BSWAP_H2LE32((u32)ino->i_attr.ia_siz);
   /* TODO: Change FAT link length. */
   error = blkdev_writeall(ino->i_super->sb_blkdev,
@@ -1042,10 +1396,10 @@ fat_lookup(struct inode *__restrict dir_node,
  size_t sector_size; byte_t *buffer;
  struct dentryname *name = &result_path->d_name;
  REF struct inode *result = NULL;
- fat_t *fat = (fat_t *)dir_node->i_super;
+ fat_t *fat = container_of(dir_node->i_super,fat_t,f_super);
  cluster_t cluster_id;
- sector_size = fat->f_sectorsize;
  cluster_id  = dir_node->i_data->i_cluster;
+ sector_size = fat->f_sectorsize;
  /* Special case: Root-directory references on FAT12/16 filesystems. */
  if (cluster_id == FAT_CUSTER_FAT16_ROOT && fat->f_type != FAT32)
      return fat16_root_lookup(&dir_node->i_super->sb_root,result_path);
@@ -1054,6 +1408,8 @@ fat_lookup(struct inode *__restrict dir_node,
  buffer = (byte_t *)malloc(sector_size);
  if unlikely(!buffer) return E_PTR(-ENOMEM);
  lookupdata_init(&data);
+ result = E_PTR(rwlock_read(&dir_node->i_data->i_dirlock));
+ if (E_ISERR(result)) goto done;
  while (cluster_id < fat->f_cluster_eof) {
   /* Figure out from where to where this cluster goes. */
   begin  = FAT_SECTORADDR(fat,FAT_CLUSTERSTART(fat,cluster_id));
@@ -1080,6 +1436,8 @@ fat_lookup(struct inode *__restrict dir_node,
   result = E_PTR(fat_get(fat,cluster_id,&cluster_id));
   if (E_ISERR(result)) break;
  }
+ rwlock_endread(&dir_node->i_data->i_dirlock);
+done:
  lookupdata_fini(&data);
  /* Return '-ENOENT' when the entry wasn't found. */
  if (!result) result = E_PTR(-ENOENT);
@@ -1088,7 +1446,6 @@ fat_lookup(struct inode *__restrict dir_node,
 }
 
 STATIC_ASSERT(offsetof(file_t,f_marker) == 0);
-
 
 #define FAT  ((fat_t *)dir_node)
 PRIVATE REF struct inode *KCALL
@@ -1106,6 +1463,8 @@ fat16_root_lookup(struct inode *__restrict dir_node,
  begin = FAT_SECTORADDR(FAT,FAT->f_idata.i_fat16_root);
  end   = begin+FAT->f_fat16_rootmax*sizeof(file_t);
  lookupdata_init(&data);
+ result = E_PTR(rwlock_read(&FAT->f_idata.i_dirlock));
+ if (E_ISERR(result)) goto done;
  while (begin < end) {
   pos_t part_size = (pos_t)(end-begin);
   /* Read the directory one sector at a time. */
@@ -1123,6 +1482,8 @@ fat16_root_lookup(struct inode *__restrict dir_node,
   if (result != NULL) break;
   begin += sector_size;
  }
+ rwlock_endread(&FAT->f_idata.i_dirlock);
+done:
  lookupdata_fini(&data);
  /* Return '-ENOENT' when the entry wasn't found. */
  if (!result) result = E_PTR(-ENOENT);
@@ -1132,10 +1493,798 @@ fat16_root_lookup(struct inode *__restrict dir_node,
 #undef FAT
 #undef NODE
 
+LOCAL ATTR_CONST int KCALL dos8dot3_isvalid(char ch) {
+ if (ch <= 31 || ch == 127) return 0;
+ return !strchr("\"*+,/:;<=>?\\[]|.",ch);
+}
+
+/* Fill a short filename entry 'f', using the provided information
+ * and return the number of LFN entries required to-be prepended.
+ * when the entry is written.
+ * NOTE: When the filename described by the short directory entry
+ *       already exists, the function should be re-called with
+ *      'disambiguation' incremented by one (start out with ZERO(0) the first time)
+ *       This can be repeated until 'disambiguation' is equal to
+ *      'FAT_8DOT3_MAX_DISAMBIGUATION+1', at which point all possible
+ *       filename combination have been taken up and the file cannot
+ *       actually be created. */
+#define FAT_8DOT3_MAX_DISAMBIGUATION  (0xffff*9)
+PRIVATE size_t KCALL fat_make8dot3(file_t *__restrict f,
+                                   struct dentryname *__restrict dname,
+                                   size_t disambiguation) {
+ char const *extstart,*iter,*end; char *dst,ch,*name;
+ size_t basesize,extsize,matchsize,namesize,result;
+ int retry_hex,retry_dig; bool has_mixed_case = false;
+ assert(disambiguation < FAT_8DOT3_MAX_DISAMBIGUATION);
+ f->f_ntflags = NTFLAG_NONE;
+ name = dname->dn_name,namesize = dname->dn_size;
+ /* Strip leading+terminating dots & space. */
+ while (namesize && (isspace(*name) || *name == '.')) ++name,--namesize;
+ while (namesize && (isspace(name[namesize-1]))) --namesize;
+ extstart = name+namesize;
+ while (extstart != name && (extstart[-1] != '.')) --extstart;
+ if (extstart == name) {
+  extstart = name+namesize; /* No extension */
+  extsize  = 0;
+  basesize = namesize;
+ } else {
+  basesize = (size_t)(extstart-name)-1;
+  extsize  = (namesize-basesize)-1;
+ }
+ memset(f->f_nameext,' ',sizeof(f->f_nameext));
+
+ /* Generate the extension */
+ if (extsize) {
+  dst = f->f_nameext+FAT_NAMEMAX;
+  end = (iter = extstart)+MIN(extsize,FAT_EXTMAX);
+  f->f_ntflags |= NTFLAG_LOWEXT;
+  while (iter != end) {
+   ch = *iter++;
+   if (islower(ch)) {
+    if (!(f->f_ntflags&NTFLAG_LOWEXT))
+        has_mixed_case = true;
+    ch = toupper(ch);
+   } else {
+    if (f->f_ntflags&NTFLAG_LOWEXT && iter != extstart)
+        has_mixed_case = true;
+    f->f_ntflags &= ~(NTFLAG_LOWEXT);
+   }
+   if unlikely(!dos8dot3_isvalid(ch)) ch = '~';
+   *dst++ = ch;
+  }
+ }
+
+ if (basesize <= FAT_NAMEMAX &&
+     extsize <= FAT_EXTMAX) {
+  /* We can generate a (possibly mixed-case) 8.3-compatible filename */
+  end = (iter = name)+basesize,dst = f->f_name;
+  f->f_ntflags |= NTFLAG_LOWBASE;
+  while (iter != end) {
+   ch = *iter++;
+   if (islower(ch)) {
+    if (!(f->f_ntflags&NTFLAG_LOWBASE))
+        has_mixed_case = true;
+    ch = toupper(ch);
+   } else {
+    if (f->f_ntflags&NTFLAG_LOWBASE && iter != extstart)
+        has_mixed_case = true;
+    f->f_ntflags &= ~(NTFLAG_LOWBASE);
+   }
+   if unlikely(!dos8dot3_isvalid(ch)) ch = '~';
+   *dst++ = ch;
+  }
+  /* Fix 0xE5 --> 0x05 (srsly, dos?) */
+  if (((__u8 *)f->f_name)[0] == 0xE5) ((__u8 *)f->f_name)[0] = 0x05;
+  if (has_mixed_case) goto need_lfn;
+  result = 0;
+ } else {
+need_lfn:
+  /* Must __MUST__ generate a long filename, also
+   * taking the value of 'retry' into consideration.
+   * Now for the hard part: The filename itself... */
+  retry_hex = disambiguation/9,retry_dig = (disambiguation % 9);
+
+  /* The first 2 short characters always match the
+   * first 2 characters of the original base (in uppercase).
+   * If no hex-range retries are needed, the first 6 match. */
+  matchsize = retry_hex ? 2 : 6;
+  if (matchsize > basesize) matchsize = basesize;
+  end = (iter = name)+matchsize,dst = f->f_nameext;
+  while (iter != end) {
+   ch = toupper(*iter++);
+   *dst++ = dos8dot3_isvalid(ch) ? ch : '~';
+  }
+  if (retry_hex) {
+   PRIVATE char const xch[16] = {'0','1','2','3','4','5','6','7',
+                                 '8','9','A','B','C','D','E','F'};
+   /* Following the matching characters are 4 hex-chars
+    * whenever more than 9 retry attempts have failed
+    * >> This multiplies the amount of available names by 0xffff */
+   *dst++ = xch[(retry_hex & 0xf000) >> 12];
+   *dst++ = xch[(retry_hex & 0x0f00) >> 8];
+   *dst++ = xch[(retry_hex & 0x00f0) >> 4];
+   *dst++ = xch[(retry_hex & 0x000f)];
+  }
+  assert(dst <= f->f_nameext+6);
+  /* Following the shared name and the hex part is always a tilde '~' */
+  *dst++ = '~';
+  /* The last character then, is the non-hex digit (1..9) */
+  *dst = '1'+retry_dig;
+  /* Fix 0xE5 --> 0x05 (srsly, dos?) */
+  if (((u8 *)f->f_nameext)[0] == 0xE5)
+      ((u8 *)f->f_nameext)[0] = 0x05;
+
+  result = CEILDIV(dname->dn_size,LFN_NAME);
+ }
+
+ /* And we're done! */
+ return result;
+}
+
+
+
+PRIVATE u8 KCALL fat_LFNchksum(char const *short_name) {
+ u8 result = 0; char const *iter,*end;
+ /* Algorithm can be found here:
+  * https://en.wikipedia.org/wiki/Design_of_the_FAT_file_system */
+ end = (iter = short_name)+(FAT_NAMEMAX+FAT_EXTMAX);
+ for (; iter != end; ++iter) result = ((result & 1) << 7) + (result >> 1) + *iter;
+ return result;
+}
+/* To-be used in conjunction with 'fat_make8dot3()', fill in
+ * 'f' as the 'number'th' LFN entry for the given filename 'name'.
+ * WARNING: The caller must not call this function when 'fat_make8dot3()'
+ *          returned ZERO(0), or call it with a 'number' greater than
+ *          the return value of 'fat_make8dot3()' for the same 'name'.
+ * @param: chksum: == fat_LFNchksum(DOS83_ENTRY.f_nameext);
+ */
+PRIVATE void KCALL fat_makeLFN(file_t *__restrict f,
+                               struct dentryname *__restrict dname,
+                               size_t number, u8 chksum) {
+ char part[LFN_NAME]; size_t partsize;
+ assertf(number < CEILDIV(dname->dn_size,LFN_NAME),"Invalid LFN index");
+ partsize = MIN(dname->dn_size,LFN_NAME);
+ memcpy(part,dname->dn_name,partsize*sizeof(char));
+ memset(part+partsize,LFN_TRAIL,(LFN_NAME-partsize)*sizeof(char));
+ /* Fill in the LFN name entry. */
+ f->lfn_seqnum    = LFN_SEQNUM_MIN+number;
+ f->lfn_type      = 0;
+ f->lfn_clus      = 0;
+ f->lfn_attr      = ATTR_LONGFILENAME;
+ f->lfn_csum      = chksum;
+ f->lfn_name_1[0] = (usc2ch_t)part[0];
+ f->lfn_name_1[1] = (usc2ch_t)part[1];
+ f->lfn_name_1[2] = (usc2ch_t)part[2];
+ f->lfn_name_1[3] = (usc2ch_t)part[3];
+ f->lfn_name_1[4] = (usc2ch_t)part[4];
+ f->lfn_name_2[0] = (usc2ch_t)part[5];
+ f->lfn_name_2[1] = (usc2ch_t)part[6];
+ f->lfn_name_2[2] = (usc2ch_t)part[7];
+ f->lfn_name_2[3] = (usc2ch_t)part[8];
+ f->lfn_name_2[4] = (usc2ch_t)part[9];
+ f->lfn_name_2[5] = (usc2ch_t)part[10];
+ f->lfn_name_3[0] = (usc2ch_t)part[11];
+ f->lfn_name_3[1] = (usc2ch_t)part[12];
+}
+
+
+
+/* Search for an existing directory entry 'path->d_name' and return
+ * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in 'mode'.
+ * Otherwise create a new entry and pre-initialize it using 'result_attr',
+ * as well as set '*is_new' to true.
+ * NOTE: The caller is responsible for holding a write-lock to
+ *      'dir_node->i_data->i_dirlock', which must be a FAT-directory node.
+ * @return: * : A reference to either a previously existing, or a newly allocated INode.
+ */
+PRIVATE REF struct fatnode *KCALL
+fat_mkent_unlocked(struct inode *__restrict dir_node,
+                   struct dentry *__restrict path, u8 ent_attr,
+                   struct iattr const *__restrict result_attr,
+                   iattrset_t mode, bool *__restrict is_new) {
+ fat_t *fat = container_of(dir_node->i_super,fat_t,f_super);
+ struct filedata rw; struct lookupdata lookup_data;
+ REF struct fatnode *result; file_t dirent,short_entry;
+ size_t lfn_count,disambiguation = 0; errno_t error;
+ size_t current_unused_score = 0; /* Amount of unused entries currently tracked. */
+ cluster_t target_cluster; pos_t target_pos; /* Suitable location within the directory to put our data. */
+ bool got_suitable_target = false; /* True if a suitable target location was found. */
+#define must_write_end_of_directory  (!got_suitable_target) /* True if the new entry is appended to the directory. */
+ assert(rwlock_writing(&dir_node->i_data->i_dirlock));
+retry_disambiguation:
+ /* Figure out how many consecutive file-entries
+  * are required for the file to-be created.
+  * HINT: 'lfn_count == CONSECUTIVE_REQUIRED-1'. */
+ lfn_count = fat_make8dot3(&short_entry,&path->d_name,disambiguation);
+ /* Fill in generic file information. */
+ fat_atime_encode(short_entry.f_atime,&result_attr->ia_atime);
+ fat_ctime_encode(short_entry.f_ctime,&result_attr->ia_ctime);
+ fat_mtime_encode(short_entry.f_mtime,&result_attr->ia_mtime);
+ short_entry.f_size      = 0;
+ short_entry.f_attr      = ent_attr;
+ short_entry.f_clusterhi = BSWAP_H2LE16((u16)((u32)fat->f_cluster_eof_marker >> 16));
+ short_entry.f_clusterlo = BSWAP_H2LE16((u16)fat->f_cluster_eof_marker);
+
+ FILEDATA_OPENDIR(&rw,fat,dir_node->i_data);
+ lookupdata_init(&lookup_data);
+ for (;;) {
+  HOSTMEMORY_BEGIN {
+   result = E_PTR(filedata_read(&rw,fat,dir_node,&dirent,sizeof(file_t)));
+  }
+  HOSTMEMORY_END;
+  if (E_ISERR(result)) goto end;
+  if (!result) break;
+  FAT_DEBUG(syslog(LOG_DEBUG,"DENTRY: %$q\n",sizeof(dirent.f_nameext),dirent.f_nameext));
+  if (dirent.f_marker == MARKER_UNUSED) {
+   /* Reclaim unused directory entries. */
+   if (!current_unused_score) {
+    target_cluster = rw.fd_cluster;
+    target_pos     = rw.fd_pos-sizeof(file_t);
+    assert(target_pos >= rw.fd_begin);
+    assert(target_pos <= rw.fd_end);
+   }
+   if (!got_suitable_target) {
+    /* Check if the unused entry are we've
+     * discovered is of sufficient size. */
+    if (++current_unused_score >= disambiguation+1)
+        got_suitable_target = true;
+   }
+   continue;
+  }
+  if (!got_suitable_target) {
+   current_unused_score = 0;
+  }
+  if (dirent.f_marker == MARKER_DIREND) {
+   /* (Current) end of directory. */
+   rw.fd_pos -= sizeof(file_t);
+   assert(rw.fd_pos >= rw.fd_begin);
+   assert(rw.fd_pos <= rw.fd_end);
+   break;
+  }
+  result = (REF struct fatnode *)fat_lookup_memory(&lookup_data,&path->d_name,
+                                                   &dirent,1,rw.fd_begin,
+                                                    rw.fd_cluster,fat);
+  if (result != NULL) {
+   /* Found an existing entry with the same name. */
+   if (!(mode&IATTR_EXISTS)) {
+    /* If we've not supposed to return existing nodes,
+     * return '-EEXIST' (Already exists) instead. */
+    INODE_DECREF(&result->f_inode);
+    result = E_PTR(-EEXIST);
+   }
+   /* Return the existing Inode. */
+   *is_new = false;
+   goto end;
+  }
+
+  /* Check if out short entry collides with another existing one. */
+  if (memcmp(short_entry.f_nameext,dirent.f_nameext,
+             sizeof(dirent.f_nameext)) == 0) {
+   assertf(lfn_count >= 1,
+           "But if this one collides (%$q), how come 'fat_lookup_memory()' didn't pick up on it?",
+           sizeof(dirent.f_nameext),dirent.f_nameext);
+   /* It does. (Try again with a greater disambiguation) */
+   assert(disambiguation <= FAT_8DOT3_MAX_DISAMBIGUATION);
+   if unlikely(disambiguation == FAT_8DOT3_MAX_DISAMBIGUATION) {
+    /* _very_ unlikely: Too many collisions. */
+    result = E_PTR(-EEXIST);
+    goto end;
+   }
+
+   /* Retry with greater 'disambiguation' */
+   ++disambiguation;
+   goto retry_disambiguation;
+  }
+ }
+ /* No entry with the name we were looking for exists.
+  * >> With that in mind, we are allowed to create our new entry! */
+ if (got_suitable_target || current_unused_score) {
+  /* If the directory ended just after a few unused entries, re-use them. */
+  rw.fd_cluster = target_cluster;
+  rw.fd_begin   = FAT_SECTORADDR(fat,FAT_CLUSTERSTART(fat,target_cluster));
+  rw.fd_end     = rw.fd_max = rw.fd_begin+fat->f_clustersize;
+  rw.fd_pos     = target_pos;
+  assert(rw.fd_pos >= rw.fd_begin);
+  assert(rw.fd_pos <= rw.fd_end);
+ }
+
+ /* Create the new INode we're going to return. */
+ result = fatnode_new();
+ if unlikely(!result) { result = E_PTR(-ENOMEM); goto end; }
+ result->f_idata.i_cluster        = fat->f_cluster_eof_marker;
+ result->f_idata.i_pos.fp_namecls = rw.fd_cluster;
+ result->f_idata.i_pos.fp_namepos = rw.fd_pos;
+ //result->f_idata.i_pos.fp_headpos = ...; /* Filled later. */
+ rwlock_cinit(&result->f_idata.i_dirlock);
+ result->f_inode.__i_nlink = 1;
+ result->f_inode.i_data    = &result->f_idata;
+ memcpy(&result->f_inode.i_attr,result_attr,sizeof(struct iattr));
+ result->f_inode.i_attr.ia_mode &= ~__S_IFMT;
+ if (ent_attr&ATTR_DIRECTORY) {
+  result->f_inode.i_ops = &fatops_dir;
+  result->f_inode.i_attr.ia_mode |= S_IFDIR;
+ } else {
+  result->f_inode.i_ops = &fatops_reg;
+  result->f_inode.i_attr.ia_mode |= S_IFREG;
+ }
+ /* Mirror attributes in disk cache. */
+ memcpy(&result->f_inode.i_attr_disk,
+        &result->f_inode.i_attr,
+         sizeof(struct iattr));
+
+ HOSTMEMORY_BEGIN {
+  /* Start by writing all long-filename entries. */
+  if (lfn_count) {
+   size_t i; u8 chksum;
+   chksum = fat_LFNchksum(short_entry.f_nameext);
+   for (i = 0; i < lfn_count; ++i) {
+    file_t buf; fat_makeLFN(&buf,&path->d_name,i,chksum);
+    error = (errno_t)filedata_write(&rw,fat,dir_node,&buf,sizeof(file_t));
+    if (E_ISERR(error)) goto stop_writing;
+   }
+  }
+  /* Store the position of the actual file header in the result INode. */
+  result->f_idata.i_pos.fp_headpos = rw.fd_pos;
+  /* Next write the short-name entry. */
+  error = (errno_t)filedata_write(&rw,fat,dir_node,&short_entry,sizeof(file_t));
+  if (E_ISERR(error)) goto stop_writing;
+  /* And finally, if we have to, write a directory terminator. */
+  if (must_write_end_of_directory) {
+   memset(&short_entry,0,sizeof(file_t));
+#if MARKER_DIREND != 0
+   short_entry.f_marker = MARKER_DIREND;
+#endif
+   error = (errno_t)filedata_write(&rw,fat,dir_node,&short_entry,sizeof(file_t));
+  }
+stop_writing:;
+ }
+ HOSTMEMORY_END;
+ if (E_ISERR(error)) { free(result); result = E_PTR(error); goto end; }
+ *is_new = true;
+
+ /* We (ab-)use the header position as INode number. (It's better than nothing...) */
+ result->f_inode.i_ino = (ino_t)result->f_idata.i_pos.fp_headpos;
+
+ /* Setup the resulting node to use. (NOTE: May never fail, because FAT is a core module) */
+ asserte(E_ISOK(inode_setup(&result->f_inode,&fat->f_super,THIS_INSTANCE)));
+end:
+ lookupdata_fini(&lookup_data);
+ return result;
+#undef must_write_end_of_directory
+}
+
+PRIVATE REF struct fatnode *KCALL
+fat16_root_mkent_unlocked(struct inode *__restrict dir_node,
+                          struct dentry *__restrict path, u8 ent_attr,
+                          struct iattr const *__restrict result_attr,
+                          iattrset_t mode, bool *__restrict is_new) {
+#define FAT   container_of(dir_node,fat_t,f_super.sb_root)
+ assert(rwlock_writing(&FAT->f_idata.i_dirlock));
+ /* TODO: Same as 'fat_mkent_unlocked()' */
+ return (struct fatnode *)fat16_root_lookup(dir_node,path);
+#undef FAT
+}
+
+PRIVATE errno_t KCALL
+fat_rment_unlocked(struct inode *__restrict dir_node,
+                   struct fatnode *__restrict file_node) {
+ file_t empty_file; errno_t temp = -EOK;
+ pos_t cluster_end,clear_pos = file_node->f_idata.i_pos.fp_namepos;
+ cluster_t name_cluster = file_node->f_idata.i_pos.fp_namecls;
+ fat_t *fs = container_of(dir_node->i_super,fat_t,f_super);
+ assert(rwlock_writing(&dir_node->i_data->i_dirlock));
+ memset(&empty_file,0,sizeof(file_t));
+ empty_file.f_marker = MARKER_UNUSED;
+ HOSTMEMORY_BEGIN {
+load_cluster_end:
+  assert(name_cluster < fs->f_cluster_eof);
+  cluster_end = FAT_SECTORADDR(fs,FAT_CLUSTERSTART(fs,name_cluster))+fs->f_clustersize;
+  for (;;) {
+   assert(clear_pos != cluster_end);
+   /* Write an empty file marked as unused. */
+   temp = blkdev_writeall(fs->f_super.sb_blkdev,clear_pos,
+                         &empty_file,sizeof(empty_file));
+   if (E_ISERR(temp)) break;
+   if (clear_pos == file_node->f_idata.i_pos.fp_headpos) break;
+   clear_pos += sizeof(file_t);
+   if (clear_pos == cluster_end) {
+    temp = fat_get_unlocked(fs,name_cluster,&name_cluster);
+    if (E_ISERR(temp) || name_cluster >= fs->f_cluster_eof) break;
+    goto load_cluster_end;
+   }
+  }
+  /* TODO: Check if 'file_node's' cluster is now empty. If so,
+   *       and if it is the last cluster, free now unused clusters. */
+ }
+ HOSTMEMORY_END;
+ return temp;
+}
+PRIVATE errno_t KCALL
+fat16_root_rment_unlocked(struct inode *__restrict dir_node,
+                          struct fatnode *__restrict file_node) {
+ file_t empty_file; errno_t temp = -EOK;
+ fat_t *fs = container_of(dir_node,fat_t,f_super.sb_root);
+ pos_t iter,last;
+ /* Very simple: All we have to do, is to mark the directory entry as unused. */
+ assert(rwlock_writing(&dir_node->i_data->i_dirlock));
+ iter = file_node->f_idata.i_pos.fp_namepos;
+ last = file_node->f_idata.i_pos.fp_headpos;
+ HOSTMEMORY_BEGIN {
+  do {
+   temp = blkdev_writeall(fs->f_super.sb_blkdev,iter,
+                          &empty_file,sizeof(file_t));
+   if (E_ISERR(temp)) break;
+  } while ((iter += sizeof(file_t)) < last);
+ }
+ HOSTMEMORY_END;
+ return temp;
+}
+
+PRIVATE errno_t KCALL
+fat_is_empty_directory(fat_t *__restrict fs,
+                       struct fatnode *__restrict node) {
+ struct filedata reader; ssize_t temp;
+ reader.fd_cluster = node->f_idata.i_cluster;
+ reader.fd_cls_sel = 0;
+ reader.fd_cls_act = 0;
+ if (reader.fd_cluster >= fs->f_cluster_eof)
+     reader.fd_cls_act  = (size_t)-1;
+ reader.fd_begin   = FAT_SECTORADDR(fs,FAT_CLUSTERSTART(fs,reader.fd_cluster));
+ reader.fd_max     = reader.fd_begin+fs->f_clustersize;
+ reader.fd_end     = reader.fd_begin+fs->f_clustersize;
+ reader.fd_pos     = reader.fd_begin;
+ for (;;) {
+  file_t fp;
+  HOSTMEMORY_BEGIN {
+   temp = filedata_read(&reader,fs,&node->f_inode,&fp,sizeof(file_t));
+  }
+  HOSTMEMORY_END;
+  if (E_ISERR(temp)) return (errno_t)temp;
+  if ((size_t)temp < sizeof(file_t)) break;
+  /* Simple case: The entry is marked as unused. */
+  if (fp.f_marker == MARKER_UNUSED) continue;
+  /* Special case: Ignore '.' and '..' entries. */
+  if (fp.f_attr&ATTR_DIRECTORY &&
+     (memcmp(fp.f_nameext,fat_newdir_template[0].f_nameext,sizeof(fp.f_nameext)) == 0 ||
+      memcmp(fp.f_nameext,fat_newdir_template[1].f_nameext,sizeof(fp.f_nameext)) == 0))
+      continue;
+  /* Not empty! */
+  return 0;
+ }
+ return 1;
+}
+
+PRIVATE errno_t KCALL
+fat_remove(struct inode *__restrict dir_node,
+           struct dentry *__restrict file_path,
+           struct inode *__restrict file_node) {
+ if (INODE_ISDIR(file_node)) {
+  errno_t temp; /* Make sure that a directory is empty before removing it. */
+  temp = fat_is_empty_directory(container_of(dir_node->i_super,fat_t,f_super),
+                                container_of(file_node,struct fatnode,f_inode));
+  if (E_ISERR(temp)) return temp;
+  if (temp == 0) return -ENOTEMPTY;
+ }
+ return fat_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
+}
+PRIVATE errno_t KCALL
+fat16_root_remove(struct inode *__restrict dir_node,
+                  struct dentry *__restrict UNUSED(file_path),
+                  struct inode *__restrict file_node) {
+ if (INODE_ISDIR(file_node)) {
+  errno_t temp; /* Make sure that a directory is empty before removing it. */
+  temp = fat_is_empty_directory(container_of(dir_node->i_super,fat_t,f_super),
+                                container_of(file_node,struct fatnode,f_inode));
+  if (E_ISERR(temp)) return temp;
+  if (temp == 0) return -ENOTEMPTY;
+ }
+ return fat16_root_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
+}
+
+
+PRIVATE errno_t KCALL
+fatnode_truncate_for_open(struct fatnode *__restrict open_node,
+                          struct iattr const *__restrict result_attr,
+                          iattrset_t mode) {
+ ssize_t error;
+ fat_t *fat = container_of(open_node->f_inode.i_super,fat_t,f_super);
+ assert(open_node->f_inode.i_data == &open_node->f_idata);
+ /* Truncate the file. */
+ /* Try not to get interrupted while we do this. */
+ task_nointr();
+ error = fat_delall(fat,open_node->f_idata.i_cluster);
+ if (E_ISERR(error)) goto err;
+ assert(error != 0 || open_node->f_idata.i_cluster >= fat->f_cluster_eof);
+ if (error != 0) {
+  struct {
+   le16        f_clusterhi;
+   filemtime_t f_mtime;
+   le16        f_clusterlo;
+  } buf;
+  /* Mirror the deletion within the directory itself. */
+  open_node->f_idata.i_cluster = fat->f_cluster_eof_marker;
+  buf.f_clusterhi = BSWAP_H2LE16((u16)((u32)open_node->f_idata.i_cluster >> 16));
+  buf.f_clusterlo = BSWAP_H2LE16((u16)open_node->f_idata.i_cluster);
+  /* Also encode the file's modification time. */
+  fat_mtime_encode(buf.f_mtime,mode&IATTR_MTIME
+                   ? &result_attr->ia_mtime
+                   : &open_node->f_inode.i_attr_disk.ia_mtime);
+  /* Try to prevent us from being interrupted here. */
+  task_nointr();
+  HOSTMEMORY_BEGIN {
+   error = blkdev_writeall(fat->f_super.sb_blkdev,
+                           open_node->f_idata.i_pos.fp_headpos+
+                           offsetof(file_t,f_clusterhi),
+                           &buf,sizeof(buf));
+  }
+  HOSTMEMORY_END;
+ }
+err:
+ task_endnointr();
+ return (errno_t)error;
+}
+
+PRIVATE REF struct inode *KCALL
+fat_mkreg(struct inode *__restrict dir_node,
+          struct dentry *__restrict path,
+          struct iattr const *__restrict result_attr,
+          iattrset_t mode) {
+ errno_t temp; bool is_new; REF struct fatnode *result;
+ result = E_PTR(rwlock_write(&dir_node->i_data->i_dirlock));
+ if (E_ISERR(result)) return (struct inode *)result;
+ result = fat_mkent_unlocked(dir_node,path,0,result_attr,mode,&is_new);
+ if (E_ISOK(result)) {
+  assertf(is_new || (mode&IATTR_EXISTS),
+          "No new entry created when 'IATTR_EXISTS' wasn't set.");
+  if (!is_new && mode&IATTR_TRUNC) {
+   temp = fatnode_truncate_for_open(result,result_attr,mode);
+   if (E_ISERR(temp)) goto err;
+  }
+ }
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return &result->f_inode;
+err: INODE_DECREF(&result->f_inode);
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return E_PTR(temp);
+}
+PRIVATE REF struct inode *KCALL
+fat16_root_mkreg(struct inode *__restrict dir_node,
+                 struct dentry *__restrict path,
+                 struct iattr const *__restrict result_attr,
+                 iattrset_t mode) {
+ errno_t temp; bool is_new = false;
+ REF struct fatnode *result;
+ result = E_PTR(rwlock_write(&dir_node->i_data->i_dirlock));
+ if (E_ISERR(result)) return (struct inode *)result;
+ result = fat16_root_mkent_unlocked(dir_node,path,0,result_attr,mode,&is_new);
+ if (E_ISOK(result)) {
+  assertf(is_new || (mode&IATTR_EXISTS),
+          "No new entry created when 'IATTR_EXISTS' wasn't set.");
+  if (!is_new && mode&IATTR_TRUNC) {
+   temp = fatnode_truncate_for_open(result,result_attr,mode);
+   if (E_ISERR(temp)) goto err;
+  }
+ }
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return &result->f_inode;
+err: INODE_DECREF(&result->f_inode);
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return E_PTR(temp);
+}
+
+PRIVATE errno_t KCALL
+fat_alloc_symlink(fat_t *__restrict fs,
+                  struct fatnode *__restrict linknode,
+                  USER char const *target_text) {
+ size_t link_size; ssize_t temp;
+ /* Figure out how large the link file will have to be. */
+ char *taget_end = strend_user(target_text);
+ struct filedata writer; u16 *link_text;
+ u8 *src; u16 *dst;
+ if unlikely(!taget_end) return -EFAULT;
+ /* XXX: Impose some upper limit on link length? */
+ link_size = (size_t)(taget_end-target_text);
+ writer.fd_cluster = linknode->f_idata.i_cluster;
+ assert(writer.fd_cluster == fs->f_cluster_eof_marker);
+ writer.fd_cls_sel = 0;
+ writer.fd_cls_act = (size_t)-1;
+ writer.fd_begin   = FAT_SECTORADDR(fs,FAT_CLUSTERSTART(fs,writer.fd_cluster));
+ writer.fd_max     = writer.fd_begin;
+ writer.fd_end     = writer.fd_begin+fs->f_clustersize;
+ writer.fd_pos     = writer.fd_begin;
+ /* Write the symlink magic header. */
+ link_text = (u16 *)amalloc((link_size+1)*2);
+ if (copy_from_user(link_text,target_text,link_size)) { temp = -EFAULT; goto err2; }
+ link_text[link_size] = 0;
+ src = (u8 *)link_text+link_size;
+ dst = (u16 *)link_text+link_size;
+ while (dst != link_text) *--dst = *--src;
+ HOSTMEMORY_BEGIN {
+  /* Write the symlink magic header. */
+  temp = filedata_write(&writer,fs,&linknode->f_inode,
+                        symlnk_magic,sizeof(symlnk_magic));
+  if (E_ISOK(temp)) {
+   /* Write the symlink content. */
+   temp = filedata_write(&writer,fs,&linknode->f_inode,
+                         link_text,(link_size+1)*2);
+  }
+ }
+ HOSTMEMORY_END;
+ afree(link_text);
+ if (E_ISERR(temp)) goto err;
+ return -EOK;
+err2:
+ afree(link_text);
+err:
+ task_nointr();
+ fat_delall(fs,linknode->f_idata.i_cluster);
+ task_endnointr();
+ return (errno_t)temp;
+}
+
+PRIVATE errno_t KCALL
+fat_alloc_directory(fat_t *__restrict fs,
+                    struct fatnode *__restrict dirnode,
+                    struct inode *__restrict parnode) {
+ file_t content[3]; ssize_t temp;
+ struct filedata writer;
+ STATIC_ASSERT(sizeof(content) == sizeof(fat_newdir_template));
+ writer.fd_cluster = dirnode->f_idata.i_cluster;
+ assert(writer.fd_cluster == fs->f_cluster_eof_marker);
+ writer.fd_cls_sel = 0;
+ writer.fd_cls_act = (size_t)-1;
+ writer.fd_begin   = FAT_SECTORADDR(fs,FAT_CLUSTERSTART(fs,writer.fd_cluster));
+ writer.fd_max     = writer.fd_begin;
+ writer.fd_end     = writer.fd_begin+fs->f_clustersize;
+ writer.fd_pos     = writer.fd_begin;
+ memcpy(content,fat_newdir_template,sizeof(content));
+
+ /* Directory self-reference. */
+ content[0].f_clusterlo = BSWAP_H2LE16((u16)((u32)dirnode->f_idata.i_cluster >> 16));
+ content[0].f_clusterhi = BSWAP_H2LE16((u16)dirnode->f_idata.i_cluster);
+ fat_ctime_encode(content[0].f_ctime,&dirnode->f_inode.i_attr_disk.ia_ctime);
+ fat_atime_encode(content[0].f_atime,&dirnode->f_inode.i_attr_disk.ia_atime);
+ fat_mtime_encode(content[0].f_mtime,&dirnode->f_inode.i_attr_disk.ia_mtime);
+
+ /* Parent directory reference. */
+ content[1].f_clusterlo = BSWAP_H2LE16((u16)((u32)parnode->i_data->i_cluster >> 16));
+ content[1].f_clusterhi = BSWAP_H2LE16((u16)parnode->i_data->i_cluster);
+ content[1].f_ctime = content[0].f_ctime;
+ content[1].f_atime = content[0].f_atime;
+ content[1].f_mtime = content[0].f_mtime;
+
+ /* Write the directory content. */
+ HOSTMEMORY_BEGIN {
+  temp = filedata_write(&writer,fs,&dirnode->f_inode,
+                        content,sizeof(content));
+ }
+ HOSTMEMORY_END;
+ if (E_ISERR(temp)) goto err;
+ return -EOK;
+err:
+ task_nointr();
+ fat_delall(fs,dirnode->f_idata.i_cluster);
+ task_endnointr();
+ return (errno_t)temp;
+}
+
+PRIVATE REF struct inode *KCALL
+fat_symlink(struct inode *__restrict dir_node,
+            struct dentry *__restrict target_ent,
+            USER char const *target_text,
+            struct iattr const *__restrict result_attr) {
+ errno_t temp; bool is_new; REF struct fatnode *result;
+ if unlikely(!support_cygwin_symlinks) return E_PTR(-EPERM);
+ result = E_PTR(rwlock_write(&dir_node->i_data->i_dirlock));
+ if (E_ISERR(result)) return (struct inode *)result;
+ result = fat_mkent_unlocked(dir_node,target_ent,0,result_attr,0,&is_new);
+ if (E_ISOK(result)) {
+  assertf(is_new,"Not a new entry when one was required.");
+  result->f_inode.i_attr.ia_mode &= ~__S_IFMT;
+  result->f_inode.i_attr.ia_mode |= S_IFLNK;
+  /* Allocate the symlink text. */
+  temp = fat_alloc_symlink(container_of(dir_node->i_super,fat_t,f_super),
+                           result,target_text);
+  if (E_ISERR(temp)) goto err;
+ }
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return &result->f_inode;
+err:
+ task_nointr();
+ fat_rment_unlocked(dir_node,result);
+ task_endnointr();
+ INODE_DECREF(&result->f_inode);
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return E_PTR(temp);
+}
+PRIVATE REF struct inode *KCALL
+fat16_root_symlink(struct inode *__restrict dir_node,
+                   struct dentry *__restrict target_ent,
+                   USER char const *target_text,
+                   struct iattr const *__restrict result_attr) {
+ errno_t temp; bool is_new = false; REF struct fatnode *result;
+ if unlikely(!support_cygwin_symlinks) return E_PTR(-EPERM);
+ result = E_PTR(rwlock_write(&dir_node->i_data->i_dirlock));
+ if (E_ISERR(result)) return (struct inode *)result;
+ result = fat16_root_mkent_unlocked(dir_node,target_ent,0,result_attr,0,&is_new);
+ if (E_ISOK(result)) {
+  assertf(is_new,"Not a new entry when one was required.");
+  result->f_inode.i_attr.ia_mode &= ~__S_IFMT;
+  result->f_inode.i_attr.ia_mode |= S_IFLNK;
+  /* Allocate the symlink text. */
+  temp = fat_alloc_symlink(container_of(dir_node->i_super,fat_t,f_super),
+                           result,target_text);
+  if (E_ISERR(temp)) goto err;
+ }
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return &result->f_inode;
+err:
+ task_nointr();
+ fat_rment_unlocked(dir_node,result);
+ task_endnointr();
+ INODE_DECREF(&result->f_inode);
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return E_PTR(temp);
+}
+PRIVATE REF struct inode *KCALL
+fat_mkdir(struct inode *__restrict dir_node,
+          struct dentry *__restrict target_ent,
+          struct iattr const *__restrict result_attr) {
+ errno_t temp; bool is_new; REF struct fatnode *result;
+ if unlikely(!support_cygwin_symlinks) return E_PTR(-EPERM);
+ result = E_PTR(rwlock_write(&dir_node->i_data->i_dirlock));
+ if (E_ISERR(result)) return (struct inode *)result;
+ result = fat_mkent_unlocked(dir_node,target_ent,ATTR_DIRECTORY,result_attr,0,&is_new);
+ if (E_ISOK(result)) {
+  assertf(is_new,"Not a new entry when one was required.");
+  assert(INODE_ISDIR(&result->f_inode));
+  /* Allocate the directory's contents. */
+  temp = fat_alloc_directory(container_of(dir_node->i_super,fat_t,f_super),
+                             result,dir_node);
+  if (E_ISERR(temp)) goto err;
+ }
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return &result->f_inode;
+err:
+ task_nointr();
+ fat_rment_unlocked(dir_node,result);
+ task_endnointr();
+ INODE_DECREF(&result->f_inode);
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return E_PTR(temp);
+}
+PRIVATE REF struct inode *KCALL
+fat16_root_mkdir(struct inode *__restrict dir_node,
+                 struct dentry *__restrict target_ent,
+                 struct iattr const *__restrict result_attr) {
+ errno_t temp; bool is_new; REF struct fatnode *result;
+ if unlikely(!support_cygwin_symlinks) return E_PTR(-EPERM);
+ result = E_PTR(rwlock_write(&dir_node->i_data->i_dirlock));
+ if (E_ISERR(result)) return (struct inode *)result;
+ result = fat16_root_mkent_unlocked(dir_node,target_ent,ATTR_DIRECTORY,result_attr,0,&is_new);
+ if (E_ISOK(result)) {
+  assertf(is_new,"Not a new entry when one was required.");
+  assert(INODE_ISDIR(&result->f_inode));
+  /* Allocate the directory's contents. */
+  temp = fat_alloc_directory(container_of(dir_node->i_super,fat_t,f_super),
+                             result,dir_node);
+  if (E_ISERR(temp)) goto err;
+ }
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return &result->f_inode;
+err:
+ task_nointr();
+ fat_rment_unlocked(dir_node,result);
+ task_endnointr();
+ INODE_DECREF(&result->f_inode);
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return E_PTR(temp);
+}
+
+
 PRIVATE errno_t KCALL
 fat_fssync(struct superblock *__restrict sb) {
- errno_t error = fat_flushtable((fat_t *)sb);
- return E_ISERR(error) ? error : blkdev_flush(sb->sb_blkdev);
+ return fat_flushtable((fat_t *)sb);
 }
 #define FAT ((fat_t *)sb)
 PRIVATE void KCALL
@@ -1326,7 +2475,7 @@ end:
  return error;
 }
 
-#if 0
+#if 1
 PRIVATE errno_t KCALL
 fat_get_unlocked(fat_t *__restrict self, fatid_t id,
                  fatid_t *__restrict result) {
@@ -1370,7 +2519,65 @@ fat_set_unlocked(fat_t *__restrict self,
  return -EOK;
 }
 #endif
+PRIVATE errno_t KCALL
+fat_get_unused_unlocked(fat_t *__restrict self,
+                        fatid_t hint,
+                        fatid_t *__restrict result) {
+ fatid_t candidate,deref; errno_t temp;
+ /* Starting at 'hint', search for clusters marked as 'FAT_CUSTER_UNUSED'
+  * If we can't manage to find anything, wrap around and search lower half.
+  * If that half is completely in use as well, return -ENOSPC. */
+ for (candidate = hint;
+      candidate < self->f_fat_length; ++candidate) {
+  temp = fat_get_unlocked(self,candidate,&deref);
+  if (E_ISERR(temp)) return temp;
+  if (deref == FAT_CUSTER_UNUSED) {
+gotit:
+   /* Use this one! */
+   *result = candidate;
+   FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] GET_UNUSED_SECTOR(%I32u) -> %I32u\n",
+                    hint,candidate));
+   return -EOK;
+  }
+ }
+ for (candidate = 0;
+      candidate < hint; ++candidate) {
+  temp = fat_get_unlocked(self,candidate,&deref);
+  if (E_ISERR(temp)) return temp;
+  if (deref == FAT_CUSTER_UNUSED) goto gotit;
+ }
+ /* The disk is totally filled up... */
+ return -ENOSPC;
+}
 
+
+PRIVATE ssize_t KCALL
+fat_delall_unlocked(fat_t *__restrict self, fatid_t start) {
+ ssize_t result = 0; errno_t temp;
+ CHECK_HOST_DOBJ(self);
+ assert(rwlock_writing(&self->f_fat_lock));
+ while (start < self->f_cluster_eof) {
+  fatid_t next;
+  /* Read the next cluster in the chain. */
+  temp = fat_get_unlocked(self,start,&next);
+  FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] UNLINK(%I32u -> %I32u)\n",start,next));
+  if (E_ISERR(temp)) return temp;
+  /* Mark the cluster as unused. */
+  temp = fat_set_unlocked(self,start,FAT_CUSTER_UNUSED);
+  if (E_ISERR(temp)) return temp;
+  ++result,start = next;
+ }
+ return result;
+}
+PRIVATE ssize_t KCALL
+fat_delall(fat_t *__restrict self, fatid_t start) {
+ ssize_t result;
+ result = rwlock_write(&self->f_fat_lock);
+ if (E_ISERR(result)) return result;
+ result = fat_delall_unlocked(self,start);
+ rwlock_endwrite(&self->f_fat_lock);
+ return result;
+}
 
 
 
@@ -1467,11 +2674,15 @@ fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
   result->f_cluster_eof_marker = 0xffffffff;
   /* Must lookup the cluster of the root directory. */
   result->f_idata.i_cluster    = BSWAP_LE2H32(header.fat32.f32_root_cluster);
-  result->f_idata.i_cluster    = BSWAP_LE2H32(header.fat32.f32_root_cluster);
   result->f_fat_get            = &fat_get32;
   result->f_fat_set            = &fat_set32;
   result->f_fat_sector         = &fat_sec32;
  } else {
+#if FAT_CUSTER_FAT16_ROOT != 0
+  result->f_idata.i_cluster = FAT_CUSTER_FAT16_ROOT;
+#else
+  assert(result->f_idata.i_cluster == FAT_CUSTER_FAT16_ROOT);
+#endif
   if (type == FAT12) {
    result->f_cluster_eof_marker = 0xfff;
    result->f_fat_get            = &fat_get12;
@@ -1508,11 +2719,12 @@ fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
  } else {
   result->f_super.sb_root.i_ops = &fatops_root_16;
  }
+ rwlock_cinit(&result->f_idata.i_dirlock);
  result->f_super.sb_root.i_data         = &result->f_idata;
  result->f_super.sb_root.__i_nlink      = 0;
  result->f_super.sb_root.i_attr.ia_mode = S_IFDIR|0777;
  result->f_super.sb_root.i_attr_disk    = result->f_super.sb_root.i_attr;
- result->f_super.sb_root.i_state        = INODE_STATE_READONLY; /* Read-only. */
+ result->f_super.sb_root.i_state        = 0;
  result->f_super.sb_ops                 = &fatops_super;
  result->f_mode                         = 0777;
 

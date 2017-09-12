@@ -197,10 +197,12 @@ superblock_flush(struct superblock *__restrict self) {
   INODE_DECREF(changed);
   if (E_ISERR(error)) return error;
  }
+ /* Call the superblock-specific sync-callback. */
  if (self->sb_ops->sb_sync) {
   error = (*self->sb_ops->sb_sync)(self);
   if (E_ISERR(error)) return error;
  }
+ /* Flush the underlying block-device. */
  return self->sb_blkdev ? blkdev_flush(self->sb_blkdev) : -EOK;
 }
 
@@ -1571,7 +1573,7 @@ PUBLIC REF struct dentry *KCALL
 dentry_symlink(struct dentry *__restrict dir_ent,
                struct dentryname const *__restrict ent_name,
                struct fsaccess const *__restrict access,
-               USER char const *__restrict target_text,
+               USER char const *target_text,
                struct iattr const *__restrict result_attr,
                REF struct inode **result_inode) {
  REF struct inode *ino;
@@ -2087,7 +2089,7 @@ PUBLIC REF struct dentry *KCALL
 fs_xsymlink(struct dentry_walker *__restrict walker,
             struct dentry *__restrict cwd,
             HOST char const *__restrict path, size_t pathlen,
-            USER char const *__restrict target_text,
+            USER char const *target_text,
             struct iattr const *__restrict result_attr,
             REF struct inode **result_inode) {
  REF struct dentry *result;
@@ -2250,8 +2252,8 @@ fs_user_xhrdlink(struct dentry_walker *__restrict walker,
 PUBLIC REF struct dentry *KCALL
 fs_user_xsymlink(struct dentry_walker *__restrict walker,
                  struct dentry *__restrict cwd,
-                 USER char const *__restrict path,
-                 USER char const *__restrict target_text,
+                 USER char const *path,
+                 USER char const *target_text,
                  struct iattr const *__restrict result_attr,
                  REF struct inode **result_inode) {
  /* TODO: Copy filename from userspace. */

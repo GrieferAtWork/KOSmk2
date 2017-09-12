@@ -421,7 +421,7 @@ vnode_mknod(struct inode *__restrict dir_node,
 PRIVATE REF struct inode *KCALL
 vnode_symlink(struct inode *__restrict dir_node,
               struct dentry *__restrict target_ent,
-              USER char const *__restrict target_text,
+              USER char const *target_text,
               struct iattr const *__restrict result_attr) {
  REF struct vlink *link; errno_t error;
  char const *target_text_end = strend_user(target_text);
@@ -711,7 +711,7 @@ PRIVATE errno_t KCALL vdev_setattr(struct inode *__restrict UNUSED(ino), iattrse
 PRIVATE ssize_t KCALL vdev_readlink(struct inode *__restrict UNUSED(ino), USER char *__restrict UNUSED(buf), size_t UNUSED(bufsize)) { return -ENODEV; }
 PRIVATE REF struct inode *KCALL vdev_lookup(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(result_path)) { return E_PTR(-ENODEV); }
 PRIVATE errno_t KCALL vdev_hrdlink(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(target_ent), struct inode *__restrict UNUSED(dst_node)) { return -ENODEV; }
-PRIVATE REF struct inode *KCALL vdev_symlink(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(target_ent), USER char const *__restrict UNUSED(target_text), struct iattr const *__restrict UNUSED(result_attr)) { return E_PTR(-ENODEV); }
+PRIVATE REF struct inode *KCALL vdev_symlink(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(target_ent), USER char const *UNUSED(target_text), struct iattr const *__restrict UNUSED(result_attr)) { return E_PTR(-ENODEV); }
 PRIVATE REF struct inode *KCALL vdev_mkdir(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(target_ent), struct iattr const *__restrict UNUSED(result_attr)) { return E_PTR(-ENODEV); }
 PRIVATE REF struct inode *KCALL vdev_mkreg(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(path), struct iattr const *__restrict UNUSED(result_attr), iattrset_t UNUSED(mode)) { return E_PTR(-ENODEV); }
 PRIVATE REF struct inode *KCALL vdev_mknod(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(target), struct device *__restrict UNUSED(dev)) { return E_PTR(-ENODEV); }

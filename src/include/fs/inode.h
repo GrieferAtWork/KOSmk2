@@ -267,7 +267,7 @@ struct inodeops {
   * @return: -EOK:       Successfully created a symbolic link.
   * @return: E_ISERR(*): An error occurred. */
  REF struct inode *(KCALL *ino_symlink)(struct inode *__restrict dir_node, struct dentry *__restrict target_ent,
-                                        USER char const *__restrict target_text, struct iattr const *__restrict result_attr);
+                                        USER char const *target_text, struct iattr const *__restrict result_attr);
  /* $ mkdir "/foo/bar"
   * >> ino_mkdir(EFFECTIVE_INODE("/foo"),DENTRY("/foo/bar")) -> INODE("/foo/bar");
   * @assume(S_ISDIR(dir_node->i_attr.ia_mode));

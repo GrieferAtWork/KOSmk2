@@ -76,7 +76,8 @@ struct file {
                                     *        by the 'NOTE: Caller-synchronized:(read|write)' comments. */
  struct filelock         f_flock;  /*< Locks in 'f_node' owned by this file. */
 #define FILE_FLAG_NONE     0x00000000
-#define FILE_FLAG_BACK     0x00000001 /*< Set when the file pointer is located at the back (used to implement 'O_APPEND' during writing) */
+#define FILE_FLAG_BACK     0x00000001 /*< Set when the file pointer is located at the back (Used to implement 'O_APPEND' during writing) */
+#define FILE_FLAG_DIDWRITE 0x00000002 /*< At some point, this file was used to write data (Used to implement automatic disk synchronization) */
 #define FILE_FLAG_LOCKLESS 0x80000000 /*< [const] Local alias for 'f_ops->f_flags&INODE_FILE_LOCKLESS' */
  u32                     f_flag;   /*< [lock(f_lock)] File state flags (Set of 'FILE_FLAG_*'). */
  /* Additional user-file-data goes here. */

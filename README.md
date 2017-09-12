@@ -57,6 +57,7 @@ Chaos|KOS - Even more chaotic that last time.
      - EFI
    - Filesystem
      - FAT-12/16/32
+       - Write support & symlink extension (uses cygwin symlinks)
      - <code>/dev</code>
      - <code>/proc</code> (Not finished)
  - Modular kernel design (New features loaded by drivers)
@@ -72,7 +73,6 @@ Chaos|KOS - Even more chaotic that last time.
  - <code>/proc</code> (Finished)
  - <code>/sys</code>
  - signal exception handling
- - Finally add write-support for FAT (Yeesh...)
  - IP-stack
  - WLAN support for "Atheros AR2427 Wireless" (That one's inside my test machine)
 

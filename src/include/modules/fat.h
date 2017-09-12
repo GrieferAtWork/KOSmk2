@@ -20,7 +20,9 @@
 #define GUARD_INCLUDE_MODULES_FAT_H 1
 
 #include <hybrid/compiler.h>
-#include <fs/fs.h>
+#include <fs/file.h>
+#include <fs/inode.h>
+#include <fs/superblock.h>
 #include <sync/rwlock.h>
 #include <stddef.h>
 
@@ -28,7 +30,6 @@ DECL_BEGIN
 
 struct blkdev;
 struct superblock;
-
 
 #define FAT12 0
 #define FAT16 1
@@ -130,7 +131,7 @@ union PACKED {struct PACKED {union PACKED {
 #define LFN_NAME3      2
 #define LFN_NAME      (LFN_NAME1+LFN_NAME2+LFN_NAME3)
  usc2ch_t              lfn_name_1[LFN_NAME1];
- u8                    lfn_attr;   /*< Attributes (always 'KFATFILE_ATTR_LONGFILENAME') */
+ u8                    lfn_attr;   /*< Attributes (always 'ATTR_LONGFILENAME') */
  u8                    lfn_type;   /*< Long directory entry type (set to ZERO(0)) */
  u8                    lfn_csum;   /*< Checksum of DOS filename (s.a.: 'kfat_genlfnchecksum'). */
  usc2ch_t              lfn_name_2[LFN_NAME2];
@@ -218,7 +219,7 @@ typedef struct _fat fat_t;
 
 struct fatfpos {
  pos_t     fp_namepos; /*< Absolute on-disk location of the first name header. */
- pos_t     fp_headpos; /*< Absolute on-disk location of the file's header. */
+ pos_t     fp_headpos; /*< Absolute on-disk location of the file's 'file_t'-header. */
  cluster_t fp_namecls; /*< The cluster in which the name starts.
                         *  NOTE: Set to 'f_cluster_eof_marker' for
                         *        FAT12/16 root directory entries. */
@@ -229,12 +230,13 @@ struct idata {
                                *   >> Used when writing the file header, or renaming a file. */
 union{cluster_t i_cluster;    /*< On-disk file starting cluster.
                                *  NOTE:    Set to >= :f_cluster_eof for empty files.
-                               *  WARNING: On FAT12/16 filesystems, this field is undefined
-                               *           for the root inode (aka. superblock).
+                               *  WARNING: On FAT12/16 filesystems, this field is set to
+                               *           'FAT_CUSTER_FAT16_ROOT' for the root inode (aka. superblock).
                                *  NOTE: == BSWAP_LE2H16(file_t::f_clusterhi) << 16 | BSWAP_LE2H16(file_t::f_clusterlo)
                                */
       sector_t  i_fat16_root; /*< [const][valid_if(INODE_ISUPERBLOCK(:) && :f_type != FAT32)]
                                *   Sector of the root directory of non-FAT32 fat types. */};
+ rwlock_t       i_dirlock;    /*< Lock for access to directory contents. */
 };
 
 
@@ -261,7 +263,13 @@ struct filedata {
                         *         from f_cluster_begin in the theoretical cluster #f_cluster_num */
 };
 
-
+#define FILEDATA_OPENDIR(self,fat,idata) \
+ (void)((self)->fd_cluster = (idata)->i_cluster, \
+        (self)->fd_cls_sel = 0, \
+        (self)->fd_cls_act = (self)->fd_cluster >= (fat)->f_cluster_eof ? (size_t)-1 : 0, \
+        (self)->fd_begin = FAT_SECTORADDR(fat,FAT_CLUSTERSTART(fat,(self)->fd_cluster)), \
+        (self)->fd_max = (self)->fd_end = (self)->fd_begin+(fat)->f_clustersize, \
+        (self)->fd_pos = (self)->fd_begin)
 
 /* Returns (as a 'pos_t') the absolute, logical in-file position. */
 #define FILEDATA_FPOS(self,fs) ((self)->fd_cls_sel*(fs)->f_clustersize+\

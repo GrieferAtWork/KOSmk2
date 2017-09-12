@@ -189,14 +189,14 @@ FUNDEF REF struct dentry *KCALL
 fs_xsymlink(struct dentry_walker *__restrict walker,
             struct dentry *__restrict cwd,
             HOST char const *__restrict path, size_t pathlen,
-            USER char const *__restrict target_text,
+            USER char const *target_text,
             struct iattr const *__restrict result_attr,
             REF struct inode **result_inode);
 FUNDEF REF struct dentry *KCALL
 fs_user_xsymlink(struct dentry_walker *__restrict walker,
                  struct dentry *__restrict cwd,
-                 USER char const *__restrict path,
-                 USER char const *__restrict target_text,
+                 USER char const *path,
+                 USER char const *target_text,
                  struct iattr const *__restrict result_attr,
                  REF struct inode **result_inode);
 
