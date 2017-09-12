@@ -30,7 +30,7 @@
 #include <kernel/paging.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <linker/patch.h>
 #include <string.h>

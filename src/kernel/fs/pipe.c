@@ -33,7 +33,7 @@
 #include <kernel/syscall.h>
 #include <sched/task.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <fs/fd.h>
 #include <bits/poll.h>
 

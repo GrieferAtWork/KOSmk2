@@ -30,6 +30,19 @@
 
 DECL_BEGIN
 
+#if __BYTE_ORDER == __BIG_ENDIAN
+PUBLIC uint32_t (LIBCCALL ntohl)(uint32_t netlong) { return netlong; }
+PUBLIC uint16_t (LIBCCALL ntohs)(uint16_t netshort) { return netshort; }
+DEFINE_PUBLIC_ALIAS(htonl,ntohl);
+DEFINE_PUBLIC_ALIAS(htons,ntohs);
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+PUBLIC uint32_t (LIBCCALL ntohl)(uint32_t netlong) { return __bswap_32(netlong); }
+PUBLIC uint16_t (LIBCCALL ntohs)(uint16_t netshort) { return __bswap_16(netshort); }
+DEFINE_PUBLIC_ALIAS(htonl,ntohl);
+DEFINE_PUBLIC_ALIAS(htons,ntohs);
+#else
+#error FIXME
+#endif
 PUBLIC int (LIBCCALL socket)(int domain, int type, int protocol) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL socketpair)(int domain, int type, int protocol, int fds[2]) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL bind)(int fd, __CONST_SOCKADDR_ARG addr, socklen_t len) { NOT_IMPLEMENTED(); return -1; }

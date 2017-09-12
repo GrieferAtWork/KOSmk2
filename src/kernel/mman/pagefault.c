@@ -29,7 +29,7 @@
 #include <kernel/arch/cpustate.h>
 #include <kernel/export.h>
 #include <kernel/irq.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <sched/paging.h>
 #include <sched/percpu.h>
@@ -77,7 +77,7 @@ mman_irq_pf(struct cpustate_irq_c *__restrict info) {
 #endif
  }
 #if defined(CONFIG_DEBUG) && 0
- syslogf(LOG_DEBUG,"#PF at %p (IF=%d)\n",
+ syslog(LOG_DEBUG,"#PF at %p (IF=%d)\n",
          info->host.eip,!!(info->host.eflags&EFLAGS_IF));
 #endif
 
@@ -91,7 +91,7 @@ mman_irq_pf(struct cpustate_irq_c *__restrict info) {
 #endif
 
 #if 0
- syslogf(LOG_MEM|LOG_DEBUG,
+ syslog(LOG_MEM|LOG_DEBUG,
          "[MEM] Checking to load core memory after PAGEFAULT near %p %p %p\n",
          fault_addr,&fault_addr,info->host.eip);
  if (!addr_isvirt(fault_addr))
@@ -164,7 +164,7 @@ mman_irq_pf(struct cpustate_irq_c *__restrict info) {
    if (user_mman != &mman_kernel) __asm__ __volatile__("movl %0, %%cr3\n" : : "r" (&pdir_kernel.pd_directory) : "memory");
    if (!pdir_maccess_addr(&user_mman->m_pdir,(void *)fault_page,req_attr)) {
 #if 0
-    syslogf(LOG_DEBUG,"Faulty address: %p\n",fault_page);
+    syslog(LOG_DEBUG,"Faulty address: %p\n",fault_page);
 #endif
     error = -EFAULT;
    }
@@ -182,7 +182,7 @@ end_mcore: ATTR_UNUSED;
      pdir_flush((ppage_t)fault_page,PAGESIZE);
  else {
   if (error != -EFAULT)
-      syslogf(LOG_MEM|LOG_ERROR,"[MEM] Failed to load core at %p: %[errno]\n",
+      syslog(LOG_MEM|LOG_ERROR,"[MEM] Failed to load core at %p: %[errno]\n",
               fault_addr,-error);
   /* Save the latest fault address in the current task, thus preserving it
    * throughout preemption, as well as allowing later handling code to referr to it. */

@@ -23,6 +23,12 @@
 #define CRTDBG_INIT_ALLOCA  0xcd
 #define CRTDBG_INIT_ALLOCA4 0xcdcdcdcd
 
+/* NOTE: Dispite all the __KERNEL__ ifdefs, this file isn't actually used by the kernel.
+ *       It was used in early private builds, but this was dropped in favor of a dedicated
+ *       heap manager capable of so much more functionality, such as 'realign()', and most
+ *       importantly the design change of using multiple heaps for different situations.
+ * HINT: At the time of this being written, there are actually 5 different kernel heaps (Wow...) */
+
 #ifndef __KERNEL__
 #define _KOS_SOURCE 1
 #define __ptbwalker     ptbwalker
@@ -248,8 +254,8 @@ PUBLIC SAFE char *(ATTR_CDECL strdupf)(char const *__restrict format, ...) {
 #endif /* !__KERNEL__ */
 
 DECL_END
-
 #else
+
 #include <assert.h>
 #include <hybrid/align.h>
 #include <hybrid/atomic.h>
@@ -263,6 +269,8 @@ DECL_END
 #include <stdbool.h>
 #include <stdint.h>
 
+/* Define dlmalloc-functions as internals.
+ * >> We'll be using them as basis for MALL. */
 #define USE_DL_PREFIX    1
 #define DLMALLOC_EXPORT  INTDEF
 #include "dlmalloc.c.inl"

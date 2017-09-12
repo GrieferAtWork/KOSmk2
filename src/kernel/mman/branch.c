@@ -27,7 +27,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <kernel/mman.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/paging.h>
 #include <sys/mman.h>
 

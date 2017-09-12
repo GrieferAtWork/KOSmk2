@@ -38,7 +38,7 @@
 #include <kernel/export.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <malloc.h>
 #include <sched/task.h>
@@ -101,8 +101,8 @@ module_setup(struct module *__restrict self,
  self->m_end    = addr_max;
  self->m_size   = addr_max-addr_min;
  atomic_rwlock_init(&self->m_rlock);
- /*syslogf(LOG_DEBUG,"addr_min = %p\n",addr_min);*/
- /*syslogf(LOG_DEBUG,"addr_max = %p\n",addr_max);*/
+ /*syslog(LOG_DEBUG,"addr_min = %p\n",addr_min);*/
+ /*syslog(LOG_DEBUG,"addr_max = %p\n",addr_max);*/
  if (!self->m_name)
       self->m_name = &fp->f_dent->d_name;
 }
@@ -520,7 +520,7 @@ module_mkregions(struct module *__restrict self) {
    region->mr_size += page_offset;
    region->mr_size  = CEIL_ALIGN(region->mr_size,PAGESIZE);
 #if 0
-   syslogf(LOG_EXEC|LOG_DEBUG,"[MOD] SEGMENT '%[file]' - %p...%p from %I64X + %Ix\n",
+   syslog(LOG_EXEC|LOG_DEBUG,"[MOD] SEGMENT '%[file]' - %p...%p from %I64X + %Ix\n",
            region->mr_setup.mri_file,
            FLOOR_ALIGN(iter->ms_paddr,PAGESIZE)+region->mr_setup.mri_begin,
            FLOOR_ALIGN(iter->ms_paddr,PAGESIZE)+region->mr_size-1,

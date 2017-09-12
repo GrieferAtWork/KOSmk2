@@ -37,7 +37,7 @@
 #include <hybrid/list/list.h>
 #include <kernel/boot.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <malloc.h>
 #include <sched/cpu.h>
@@ -91,7 +91,7 @@ void KCALL mount_root_filesystem(void) {
  struct blkdev *bootpart = get_bootpart();
  rootfs = blkdev_mksuper(bootpart,NULL,0);
  if (E_ISERR(rootfs)) {
-  syslogf(LOG_FS|LOG_ERROR,
+  syslog(LOG_FS|LOG_ERROR,
           FREESTR("[FS] Failed to create root-fs superblock for %[dev_t]: %[errno]\n"),
           bootpart->bd_device.d_id,-E_GTERR(rootfs));
  } else {
@@ -99,7 +99,7 @@ void KCALL mount_root_filesystem(void) {
   error = dentry_mount(&fs_root,&ac,rootfs);
   SUPERBLOCK_DECREF(rootfs);
   if (E_ISERR(error)) {
-   syslogf(LOG_FS|LOG_ERROR,
+   syslog(LOG_FS|LOG_ERROR,
            FREESTR("[FS] Failed to mount root filesystem: %[errno]\n"),
            -error);
   }
@@ -309,7 +309,7 @@ inode_destroy(struct inode *__restrict self) {
  CHECK_HOST_DOBJ(super);
  error = inode_flushattr(self);
  if (E_ISERR(error)) {
-  syslogf(LOG_ERROR|LOG_FS,
+  syslog(LOG_ERROR|LOG_FS,
           "[FS] Failed to flush INode %ld before unloading: %[errno]\n",
          (long)self->i_ino,-error);
  }
@@ -322,7 +322,7 @@ inode_destroy(struct inode *__restrict self) {
   if (super->sb_ops->sb_sync) {
    error = (*super->sb_ops->sb_sync)(super);
    if (E_ISERR(error)) {
-    syslogf(LOG_ERROR|LOG_FS,
+    syslog(LOG_ERROR|LOG_FS,
             "[FS] Failed to synchronize superblock on %[dev_t] before unloading: %[errno]\n",
             super->sb_blkdev ? super->sb_blkdev->bd_device.d_id : 0,-error);
    }
@@ -700,7 +700,7 @@ dentry_delsub_unlocked(struct dentry *__restrict self,
 }
 
 /* Inherit cache-behavior from parent directories. */
-#define DENTRY_ADDSUM_FINALIZE(parent,parent_node,sub,sub_node) \
+#define DENTRY_ADDSUB_FINALIZE(parent,parent_node,sub,sub_node) \
 { (sub_node)->i_state |= (parent_node)->i_state&INODE_STATE_DONTCACHE; \
 }
 
@@ -815,7 +815,7 @@ reload_subs:
     INODE_GET_EFFECTIVE(res_ino);
     result->d_inode = res_ino; /* Inherit reference. */
     INODE_INCREF(res_ino);
-    DENTRY_ADDSUM_FINALIZE(self,ino,result,res_ino);
+    DENTRY_ADDSUB_FINALIZE(self,ino,result,res_ino);
    } else {
     assert(has_write_lock);
     /* Delete the entry of a filed node. */
@@ -880,7 +880,7 @@ return_self:
  }
 #endif
 #if 0
- syslogf(LOG_DEBUG|LOG_FS,"FS::WALK(%$q)\n",
+ syslog(LOG_DEBUG|LOG_FS,"FS::WALK(%$q)\n",
          name->dn_size,name->dn_name);
 #endif
  return dentry_walk(self,walker,name);
@@ -1046,7 +1046,7 @@ def_name:default:
    INODE_GET_EFFECTIVE(res_ino);
    INODE_INCREF(res_ino); /* Create reference. */
    res_entry->d_inode = res_ino; /* Inherit reference. */
-   DENTRY_ADDSUM_FINALIZE(dir_ent,ino,res_entry,res_ino);
+   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,res_entry,res_ino);
   } else {
    /* Remove 'res_entry' from the hash-table. */
    dentry_delsub_unlocked(dir_ent,res_entry);
@@ -1078,12 +1078,16 @@ got_res_ino:
  else if (!(oflags&O_NOFOLLOW) && INODE_ISLNK(res_ino) &&
             res_ino->i_ops->ino_readlink) {
   struct dentry *link_result; /* Follow this symbolic link. */
-  syslogf(LOG_DEBUG,"WALK_SYMLINK('%[dentry]')\n",dir_ent);
+#if 0
+  syslog(LOG_DEBUG,"WALK_SYMLINK('%[dentry]')\n",dir_ent);
+#endif
   dentry_used(res_entry);
   link_result = dentry_walklnk(dir_ent,walker,res_ino);
+#if 0
   if (E_ISOK(link_result))
-       syslogf(LOG_DEBUG,"OPEN_SYMLINK('%[dentry]')\n",link_result);
-  else syslogf(LOG_DEBUG,"OPEN_SYMLINK(?) -> %[errno]\n",-E_GTERR(link_result));
+       syslog(LOG_DEBUG,"OPEN_SYMLINK('%[dentry]')\n",link_result);
+  else syslog(LOG_DEBUG,"OPEN_SYMLINK(?) -> %[errno]\n",-E_GTERR(link_result));
+#endif
   assert(link_result != 0);
   INODE_DECREF(res_ino);
   DENTRY_DECREF(res_entry);
@@ -1329,7 +1333,7 @@ wend:
   }
   assert(!result->d_inode);
   result->d_inode = res_ino;
-  DENTRY_ADDSUM_FINALIZE(dir_ent,ino,result,res_ino);
+  DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
  } else {
   /* Delete the miss-leading directory entry. */
@@ -1391,7 +1395,7 @@ wend:
   }
   /* Finalize the setup of the resulting directory entry. */
   result->d_inode = res_ino; /* Inherit reference. */
-  DENTRY_ADDSUM_FINALIZE(dir_ent,ino,result,res_ino);
+  DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
  } else {
   /* Delete the directory entry after the operator failed. */
@@ -1548,7 +1552,7 @@ wend:
   assert(!result->d_inode);
   INODE_INCREF(dst_node);
   result->d_inode = dst_node;
-  DENTRY_ADDSUM_FINALIZE(dir_ent,ino,result,dst_node);
+  DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,dst_node);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
  } else {
   /* Delete the miss-leading directory entry. */
@@ -1617,7 +1621,7 @@ wend:
    *result_inode = res_ino;
   }
   result->d_inode = res_ino; /* Inherit reference. */
-  DENTRY_ADDSUM_FINALIZE(dir_ent,ino,result,res_ino);
+  DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
  } else {
   /* Delete the miss-leading directory entry. */
@@ -1697,7 +1701,7 @@ samedir_wend:
     INODE_INCREF(result_ino);
    }
    result->d_inode = result_ino; /* Inherit reference. */
-   DENTRY_ADDSUM_FINALIZE(dst_dir,dstdir_ino,result,result_ino);
+   DENTRY_ADDSUB_FINALIZE(dst_dir,dstdir_ino,result,result_ino);
    /* Remove the existing directory entry. */
    dentry_delsub_unlocked(dst_dir,existing_ent);
    atomic_rwlock_endwrite(&dst_dir->d_subs_lock);
@@ -1771,7 +1775,7 @@ diffdir_wend2:
     INODE_INCREF(result_ino);
    }
    result->d_inode = result_ino; /* Inherit reference. */
-   DENTRY_ADDSUM_FINALIZE(dst_dir,dstdir_ino,result,result_ino);
+   DENTRY_ADDSUB_FINALIZE(dst_dir,dstdir_ino,result,result_ino);
    atomic_rwlock_endwrite(&dst_dir->d_subs_lock);
 
    /* Remove the existing directory entry. */

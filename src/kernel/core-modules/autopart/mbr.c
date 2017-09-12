@@ -24,7 +24,7 @@
 #include <hybrid/compiler.h>
 #include <kernel/export.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <modules/mbr.h>
 
@@ -99,15 +99,15 @@ mbr_autopart(struct blkdev *__restrict self,
     *       partition limit, thus allowing the EFI partition to grow beyond. */
    temp = efi_autopart_at(self,start,max_parts);
    /* NOTE: If EFI failed to load anything, still create a regular partition. */
-   if (E_ISERR(temp)) syslogf(LOG_WARN,"[MBR] Failed to load EFI partition table: %[errno]\n",EINVAL);
+   if (E_ISERR(temp)) syslog(LOG_WARN,"[MBR] Failed to load EFI partition table: %[errno]\n",EINVAL);
    if (temp != 0 && temp != -EINVAL) goto done_load;
-   if (temp == 0) syslogf(LOG_INFO,"[MBR] Loading empty EFI partition table as MBR partition\n");
+   if (temp == 0) syslog(LOG_INFO,"[MBR] Loading empty EFI partition table as MBR partition\n");
   }
   part = blkdev_mkpart(self,start,size,sysid,result);
   if (E_ISERR(part)) { temp = E_GTERR(part); goto end; }
 
   /* Log creation of the partition. */
-  syslogf(LOG_HW|LOG_INFO,
+  syslog(LOG_HW|LOG_INFO,
           "[MBR] Created partition #%d (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes)\n",
          (int)DISKPART_ID(part),part->dp_device.bd_device.d_id,
          (u64)(part->dp_start),

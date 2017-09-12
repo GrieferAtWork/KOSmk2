@@ -63,7 +63,7 @@ PUBLIC size_t (LIBCCALL fwrite_unlocked)(void const *__restrict ptr, size_t size
                                          size_t n, FILE *__restrict stream) {
  /* TODO: proper implementation! */
 #if 0
- syslogf(LOG_DEBUG,"FWRITE(%$q)\n",size*n,ptr);
+ syslog(LOG_DEBUG,"FWRITE(%$q)\n",size*n,ptr);
  if (size == 1 && n == 1 && ((char *)ptr)[0] == '\n') {
   __asm__("int $3");
  }

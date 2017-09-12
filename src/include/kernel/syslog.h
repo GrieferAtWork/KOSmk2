@@ -21,7 +21,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <format-printer.h>
 
 DECL_BEGIN

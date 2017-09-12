@@ -27,7 +27,7 @@
 #include <hybrid/section.h>
 #include <kernel/boot.h>
 #include <kernel/malloc.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <string.h>
 #include <sys/utsname.h>
@@ -75,14 +75,14 @@ help_print(struct setup_opt *setup_begin,
            struct setup_opt *setup_end) {
  struct setup_opt *iter = setup_begin;
  for (; iter < setup_end; ++iter) {
-  syslogf(LOG_MESSAGE,SETUPSTR("\t%s%s\n"),
+  syslog(LOG_MESSAGE,SETUPSTR("\t%s%s\n"),
           iter->so_name,!iter->so_func ? SETUPSTR(" (OBSOLETE)") :
              iter->so_flag&SETUP_NOARG ? SETUPSTR("") : SETUPSTR("{...}"));
  }
 }
 
 DEFINE_EARLY_SETUP_NOARG("help",help) {
- syslogf(LOG_MESSAGE,SETUPSTR("Recognized boot options:\n"));
+ syslog(LOG_MESSAGE,SETUPSTR("Recognized boot options:\n"));
  help_print(__setup_early_start,__setup_early_end);
  help_print(__setup_start,__setup_end);
  return true;
@@ -144,7 +144,7 @@ commandline_initialize_parse(void) {
       if unlikely(!new_argv) goto fail;
       argv = new_argv;
      }
-     syslogf(LOG_MESSAGE,FREESTR("[CMD] Option: %.?q\n"),
+     syslog(LOG_MESSAGE,FREESTR("[CMD] Option: %.?q\n"),
              optlen,arg_start);
      argv[argc++] = arg_start;
     }
@@ -168,7 +168,7 @@ commandline_initialize_parse(void) {
  return;
 fail:
  kfree(argv);
- syslogf(LOG_ERROR,
+ syslog(LOG_ERROR,
          FREESTR("[CMD] Failed to parse commandline: %[errno]\n"),
          ENOMEM);
 }
@@ -183,7 +183,7 @@ INTERN void KCALL commandline_initialize_repage(void) {
  relocated_cmd = (char *)kmalloc((_kernel_commandline.cl_size+1)*
                                   sizeof(char),GFP_SHARED);
  if unlikely(!relocated_cmd) goto fail;
- syslogf(LOG_DEBUG,FREESTR("[CMD] Relocated commandline from %p...%p to %p...%p\n"),
+ syslog(LOG_DEBUG,FREESTR("[CMD] Relocated commandline from %p...%p to %p...%p\n"),
         (uintptr_t)_kernel_commandline.cl_text,
         (uintptr_t)_kernel_commandline.cl_text+_kernel_commandline.cl_size-1,
         (uintptr_t)relocated_cmd,
@@ -204,7 +204,7 @@ INTERN void KCALL commandline_initialize_repage(void) {
  (void)_mall_nofree(_kernel_commandline.cl_argv);
  return;
 fail:
- syslogf(LOG_ERROR,
+ syslog(LOG_ERROR,
          FREESTR("[CMD] Failed to re-page commandline: %[errno]\n"),
          ENOMEM);
  free(_kernel_commandline.cl_argv);
@@ -232,7 +232,7 @@ parse_opt(struct setup_opt *setup_begin,
    if (iter->so_func) {
     if ((*iter->so_func)(opt+setup_len)) return;
    } else {
-    syslogf(LOG_WARN,
+    syslog(LOG_WARN,
             SETUPSTR("[CMD] Option %.?q is obsolete\n"),
             optlen,opt);
     return;
@@ -240,7 +240,7 @@ parse_opt(struct setup_opt *setup_begin,
   }
  }
 #if 0
- syslogf(LOG_WARN,SETUPSTR("[CMD] Unknown option: %.?q\n"),optlen,opt);
+ syslog(LOG_WARN,SETUPSTR("[CMD] Unknown option: %.?q\n"),optlen,opt);
 #endif
 }
 PRIVATE ATTR_FREETEXT void KCALL

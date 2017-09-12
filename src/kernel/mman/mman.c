@@ -41,7 +41,7 @@
 #include <kernel/mman.h>
 #include <kernel/paging-util.h>
 #include <kernel/stack.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <limits.h>
 #include <linker/module.h>
 #include <malloc.h>
@@ -361,7 +361,7 @@ mman_destroy(struct mman *__restrict self) {
    mman_endwrite(&mman_kernel);
    task_endnointr();
    if (E_ISERR(error)) {
-    syslogf(LOG_MEM|LOG_ERROR,
+    syslog(LOG_MEM|LOG_ERROR,
             "[MMAN] Failed to unlock virtual page directory %p...%p: %[errno]\n",
            (ppage_t)&self->m_pdir,sizeof(self->m_pdir),(errno_t)-error);
    }
@@ -1866,7 +1866,7 @@ mman_map_dynmem(PHYS ppage_t start, size_t n_bytes) {
  region = (struct mregion *)kcalloc(sizeof(struct mregion),GFP_MEMORY);
  branch = (struct mbranch *)kcalloc(sizeof(struct mbranch),GFP_MEMORY);
  if unlikely(!region || !branch) {
-  syslogf(LOG_ERROR|LOG_MEM,
+  syslog(LOG_ERROR|LOG_MEM,
           FREESTR("[MEM] Failed to create mman-controller for physical memory %p...%p: %[errno]\n"),
          (uintptr_t)start,(uintptr_t)start+n_bytes-1,ENOMEM);
   free(region);
@@ -1919,7 +1919,7 @@ mman_initialize(void) {
   struct mbranch *b;
   b = (struct mbranch *)kcalloc(sizeof(struct mbranch),GFP_MEMORY);
   if unlikely(!b) {
-   syslogf(LOG_ERROR|LOG_MEM,
+   syslog(LOG_ERROR|LOG_MEM,
            FREESTR("[MEM] Failed to allocate mman kernel root branch #%d\n"),
            region_index);
    continue;

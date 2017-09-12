@@ -25,7 +25,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 
 DECL_BEGIN
 

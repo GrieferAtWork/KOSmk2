@@ -44,7 +44,7 @@
 #include <kernel/mman.h>
 #include <kernel/paging-util.h>
 #include <kernel/paging.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <sched/cpu.h>
 #include <sched/paging.h>
@@ -1096,7 +1096,7 @@ core_again:
 end:
 #if LOG_MANAGED_ALLOCATIONS
  if (result != PAGE_ERROR) {
-  syslogf(LOG_MEM|LOG_ERROR,"[MEM] ALLOC(%p...%p) (%Iu/%Iu)\n",
+  syslog(LOG_MEM|LOG_ERROR,"[MEM] ALLOC(%p...%p) (%Iu/%Iu)\n",
           result,(uintptr_t)result+*alloc_bytes-1,*alloc_bytes,n_bytes);
  }
 #endif
@@ -1276,7 +1276,7 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
  assert(!(GFP_GTPAGEATTR(flags)&MFREE_SIZEMASK));
 #endif
 #if LOG_MANAGED_ALLOCATIONS
- syslogf(LOG_MEM|LOG_ERROR,"[MEM] FREE(%p...%p)\n",
+ syslog(LOG_MEM|LOG_ERROR,"[MEM] FREE(%p...%p)\n",
          p,(uintptr_t)p+n_bytes-1);
 #endif
 
@@ -1698,7 +1698,7 @@ priv_memnchr_noalloc(void *__restrict begin, u32 dword, size_t n_bytes) {
  byte_t *iter,*end,*aligned; void *result;
  size_t scan_bytes;
  end = (iter = (byte_t *)begin)+n_bytes;
- //syslogf(LOG_MEM|LOG_ERROR,"CHECK: %p...%p\n",iter,end-1);
+ //syslog(LOG_MEM|LOG_ERROR,"CHECK: %p...%p\n",iter,end-1);
  assert(iter <= end);
  while (iter != end && (uintptr_t)iter&3) {
   if (*iter != ((u8 *)&dword)[(uintptr_t)iter&3]) return iter;
@@ -2175,7 +2175,7 @@ PRIVATE ATOMIC_DATA mfreq_t mall_checkfreq = CONFIG_MALLOC_FREQUENCY; /*< MALL c
 PRIVATE ATTR_COLDTEXT void KCALL
 mall_onfreq(struct dsetup *__restrict setup) {
 #if 0
- syslogf(LOG_MEM|LOG_DEBUG,"[MEM] Performing periodic memory validation\n");
+ syslog(LOG_MEM|LOG_DEBUG,"[MEM] Performing periodic memory validation\n");
 #endif
  debug_validate(setup,NULL);
 }
@@ -2682,7 +2682,7 @@ mptr_mvtail(struct mptr *__restrict self,
  assert((uintptr_t)self+new_size >= (uintptr_t)new_tail+tail_size);
 
 #if 0
- syslogf(LOG_DEBUG,"MOVE_TAIL %Iu(%Iu) -> %Iu(%Iu) (%p -> %p)\n",
+ syslog(LOG_DEBUG,"MOVE_TAIL %Iu(%Iu) -> %Iu(%Iu) (%p -> %p)\n",
          old_size-MPTR_SIZEOF(0),old_user_size-MPTR_SIZEOF(0),
          new_size-MPTR_SIZEOF(0),new_user_size-MPTR_SIZEOF(0),
          old_tail,new_tail);

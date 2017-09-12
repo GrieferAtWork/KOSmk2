@@ -36,7 +36,7 @@
 #include <kernel/mman.h>
 #include <kernel/stack.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <sched.h>
 #include <sched/cpu.h>
@@ -286,14 +286,14 @@ intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
     static int inside = 0;
     __asm__ __volatile__("pushf; sti; hlt; popf\n");
     if (ATOMIC_XCH(inside,1) == 0) {
-     syslogf(LOG_DEBUG,"[INT] Execuring local interrupt handler: %p, %p, %p, %p (CR2 = %p)\n",
+     syslog(LOG_DEBUG,"[INT] Execuring local interrupt handler: %p, %p, %p, %p (CR2 = %p)\n",
              iter,iter->ic_prev,*(void **)&iter->ic_irq,iter->ic_int,
              THIS_TASK->t_lastcr2);
-     syslogf(LOG_DEBUG,"EAX %p ECX %p EDX %p EBX %p\n",
+     syslog(LOG_DEBUG,"EAX %p ECX %p EDX %p EBX %p\n",
              data.state.eax,data.state.ecx,data.state.edx,data.state.ebx);
-     syslogf(LOG_DEBUG,"ESP %p EBP %p ESI %p EDI %p\n",
+     syslog(LOG_DEBUG,"ESP %p EBP %p ESI %p EDI %p\n",
              data.esp_minus_4+4,data.state.ebp,data.state.esi,data.state.edi);
-     syslogf(LOG_DEBUG,"DS %.4I16X ES %.4I16X FS %.4I16X GS %.4I16X\n",
+     syslog(LOG_DEBUG,"DS %.4I16X ES %.4I16X FS %.4I16X GS %.4I16X\n",
              data.state.ds,data.state.es,data.state.fs,data.state.gs);
      __assertion_tbprint(0);
      struct mman *omm;

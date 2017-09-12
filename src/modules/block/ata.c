@@ -27,7 +27,7 @@
 #include <hybrid/section.h>
 #include <kernel/export.h>
 #include <kernel/irq.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <modules/ata.h>
 #include <sched/cpu.h>
@@ -83,14 +83,14 @@ ata_probe(dev_t id, u16 ctrl, ata_bus_t bus, ata_drv_t drive) {
  if (dev != E_PTR(-ENODEV)) {
   if (E_ISOK(dev)) {
    errno_t error;
-   syslogf(LOG_HW|LOG_INFO,
+   syslog(LOG_HW|LOG_INFO,
            FREESTR("[ATA] Created ATA disk driver %[dev_t] at %d/%d (%I64ux%Iu bytes; %s)\n"),
            id,bus,drive,dev->a_device.bd_blockcount,dev->a_device.bd_blocksize,
            dev->a_device.bd_read == (ssize_t (KCALL *)(struct blkdev *__restrict,blkaddr_t,USER void *,size_t))&ata_pio48_readlba
            ? "LBA48" : "LBA");
    error = devns_insert(&ns_blkdev,&dev->a_device.bd_device,id);
    if (E_ISERR(error)) {
-    syslogf(LOG_HW|LOG_ERROR,
+    syslog(LOG_HW|LOG_ERROR,
             FREESTR("[ATA] Failed to register ATA disk driver %[dev_t]: %[errno]\n"),
             id,-error);
    } else {
@@ -99,7 +99,7 @@ ata_probe(dev_t id, u16 ctrl, ata_bus_t bus, ata_drv_t drive) {
    BLKDEV_DECREF(&dev->a_device);
    return true;
   } else {
-   syslogf(LOG_HW|LOG_ERROR,
+   syslog(LOG_HW|LOG_ERROR,
            FREESTR("[ATA] Error while probing ATA device %[dev_t] at %d/%d: %[errno]\n"),
            id,bus,drive,-(intptr_t)dev);
   }
@@ -124,7 +124,7 @@ PRIVATE MODULE_INIT void KCALL ata_init(void) {
  found_some |= ata_probe(ATA_SECONDARY_MASTER,ATA_IOPORT_CTRL_SECONDARY,ATA_IOPORT_SECONDARY,ATA_DRIVE_MASTER);
  found_some |= ata_probe(ATA_SECONDARY_SLAVE, ATA_IOPORT_CTRL_SECONDARY,ATA_IOPORT_SECONDARY,ATA_DRIVE_SLAVE);
  if (!found_some) {
-  syslogf(LOG_HW|LOG_ERROR,FREESTR("[ATA] Failed to detect any ATA device\n"));
+  syslog(LOG_HW|LOG_ERROR,FREESTR("[ATA] Failed to detect any ATA device\n"));
   /* TODO: If no devices were found, this entire module can be unloaded. */
 
   /* Restore the old IRQ handlers. */
@@ -157,7 +157,7 @@ LOCAL errno_t KCALL ata_poll(ata_bus_t bus, u8 mask, u8 state) {
  for (;;) {
   status = inb(ATA_IOPORT_STATUS(bus));
   if (status & ATA_STATUS_ERR) {
-   syslogf(LOG_HW|LOG_ERROR,
+   syslog(LOG_HW|LOG_ERROR,
            "[ATA] ERR received while polling (flags = %#I8x)\n",status);
    return -EIO;
   }
@@ -173,7 +173,7 @@ ata_poll_timeout(ata_bus_t bus, u8 mask, u8 state, unsigned int attempts) {
   status = inb(ATA_IOPORT_STATUS(bus));
 #if 0
   if (status & ATA_STATUS_ERR) {
-   syslogf(LOG_HW|LOG_ERROR,
+   syslog(LOG_HW|LOG_ERROR,
            "[ATA] ERR received while polling (flags = %#I8x)\n",status);
    return -EIO;
   }
@@ -277,7 +277,7 @@ ata_getprobe(u16 ctrl, ata_bus_t bus, ata_drv_t drive) {
   result->a_device.bd_blockcount = (blkaddr_t)result->a_spec.UserAddressableSectors;
  } else {
   free(result);
-  syslogf(LOG_HW|LOG_WARN,FREESTR("[ATA] TODO: CHS-compatibility mode\n"));
+  syslog(LOG_HW|LOG_WARN,FREESTR("[ATA] TODO: CHS-compatibility mode\n"));
   return E_PTR(-EINVAL);
  }
  result->a_descr = &ATA_DESCR(bus);

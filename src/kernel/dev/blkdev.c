@@ -32,7 +32,7 @@
 #include <kernel/boot.h>
 #include <kernel/export.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linux/fs.h>
 #include <malloc.h>
 #include <modules/ata.h>
@@ -231,7 +231,7 @@ blkdev_fini(struct blkdev *__restrict self) {
    error = (*self->bd_write)(self,iter->bb_id,iter->bb_data,1);
    if unlikely(!error) error = -ENOSPC;
    if (E_ISERR(error)) {
-    syslogf(LOG_FS|LOG_ERROR,
+    syslog(LOG_FS|LOG_ERROR,
             "[DEV] Failed to flush block-device %[dev_t] buffered block #%I64d: %[errno]\n",
             self->bd_device.d_id,iter->bb_id,-error);
    }
@@ -782,10 +782,10 @@ blkdev_bootdisk_initialize(void) {
  if ((bootdisk = (REF struct blkdev *)bios_find_dev(boot_drive)) != NULL) {
   /* NOTE: At this point, the boot disk driver is always a 'struct biosblkdev'! */
   /* TODO: Check if we have a proprietary driver for the bootdisk! */
-  syslogf(LOG_FS|LOG_CONFIRM,FREESTR("[BIOS] Using bios root drive %#.2I8x in %[dev_t]\n"),
+  syslog(LOG_FS|LOG_CONFIRM,FREESTR("[BIOS] Using bios root drive %#.2I8x in %[dev_t]\n"),
           boot_drive,bootdisk->bd_device.d_id);
  } else {
-  syslogf(LOG_FS|LOG_ERROR,FREESTR("[BOOT] Failed to determine correct boot disk (just guess).\n"));
+  syslog(LOG_FS|LOG_ERROR,FREESTR("[BOOT] Failed to determine correct boot disk (just guess).\n"));
   /* Use the first ATA driver. */
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_PRIMARY_MASTER);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_PRIMARY_SLAVE);
@@ -809,7 +809,7 @@ blkdev_bootdisk_initialize(void) {
  BLKDEV_INCREF(default_bootdisk);
  BLKDEV_INCREF(default_bootpart);
 
- syslogf(LOG_FS|LOG_CONFIRM,FREESTR("[BOOT] Using root partition %[dev_t] from disk %[dev_t]\n"),
+ syslog(LOG_FS|LOG_CONFIRM,FREESTR("[BOOT] Using root partition %[dev_t] from disk %[dev_t]\n"),
          BLKDEV_ID(bootpart),BLKDEV_ID(bootdisk));
 }
 

@@ -75,7 +75,7 @@ modpatch_common_dlsym_impl(struct modpatch *__restrict self,
  struct instance **iter,**end;
  struct modsym new_sym;
 #if 0
- syslogf(LOG_DEBUG,"DLSYM(%q,%I32d)\n",name,hash);
+ syslog(LOG_DEBUG,"DLSYM(%q,%I32d)\n",name,hash);
 #endif
 
  /* Search upper modules first. */
@@ -308,7 +308,7 @@ find_space:
   /* The dependency module isn't relocatable. */
   /* TODO: Go through all of the dependencies segments
    *       and ensure that all of them are unused. */
-  syslogf(LOG_DEBUG,"TODO: Load module without relocations\n");
+  syslog(LOG_DEBUG,"TODO: Load module without relocations\n");
 
   /* If the default segment mappings are already in use, fail. */
   if (!(dependency->m_flag&MODFLAG_RELO))

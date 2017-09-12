@@ -34,7 +34,7 @@
 #include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <sched/cpu.h>
 #include <sched/paging.h>
@@ -69,7 +69,7 @@ PUBLIC struct spurious_pic irq_pic_spurious = {0,0};
 PUBLIC bool KCALL irq_pic_1_spurious(void) {
  if unlikely(!(IRQ_PIC1_ISR()&0x80)) {
   u32 num = ATOMIC_INCFETCH(irq_pic_spurious.sp_pic1);
-  syslogf(LOG_HW|LOG_ERROR,"[IRQ] Ignoring spurious interrupt on PIC #1 (#%I32u)\n",num);
+  syslog(LOG_HW|LOG_ERROR,"[IRQ] Ignoring spurious interrupt on PIC #1 (#%I32u)\n",num);
   return true;
  }
  return false;
@@ -77,7 +77,7 @@ PUBLIC bool KCALL irq_pic_1_spurious(void) {
 PUBLIC bool KCALL irq_pic_2_spurious(void) {
  if unlikely(!(IRQ_PIC2_ISR()&0x80)) {
   u32 num = ATOMIC_INCFETCH(irq_pic_spurious.sp_pic2);
-  syslogf(LOG_HW|LOG_ERROR,"[IRQ] Ignoring spurious interrupt on PIC #2 (#%I32u)\n",num);
+  syslog(LOG_HW|LOG_ERROR,"[IRQ] Ignoring spurious interrupt on PIC #2 (#%I32u)\n",num);
   /* Since the spurious interrupt came from the slave, we must still send
    * an EOI to the master, as it doesn't know that it was spurious after
    * being notified by the slave. */
@@ -498,7 +498,7 @@ irq_default(struct irq_info *__restrict info) {
                    info->eflags);
  }
  if (IRQ_ISPIC(info->intno)) {
-  syslogf(LOG_IRQ|LOG_WARN,
+  syslog(LOG_IRQ|LOG_WARN,
           "[IRQ] Unmapped PIC interrupt %#.2I8x (%I8d) (%s pin #%d)\n",
           info->intno,info->intno,
           info->intno >= IRQ_PIC2_BASE ? "Slave" : "Master",
@@ -959,7 +959,7 @@ PUBLIC SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
  used_handler.i_flags |= IDTFLAG_DPL(3); /* TODO: Remove me */
 
 #if 0
- syslogf(LOG_IRQ|LOG_INFO,"[IRQ] Set interrupt %#.2I8x handler at %p\n",
+ syslog(LOG_IRQ|LOG_INFO,"[IRQ] Set interrupt %#.2I8x handler at %p\n",
          new_handler->i_num,new_handler->i_func);
 #endif
 

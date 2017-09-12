@@ -35,7 +35,7 @@
 #include <kernel/irq.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linux/unistd.h>
 #include <sched/cpu.h>
 #include <sched/task.h>
@@ -105,7 +105,7 @@ PRIVATE ATTR_NORETURN ATTR_USED void FCALL preemption_not_enabled_leave(void)
 #if 0
 PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
  if (1) {
-  syslogf(LOG_DEBUG,"SYSCALL_ENTER:0x%.8I32X (%I32u) (EIP: %p)\n",
+  syslog(LOG_DEBUG,"SYSCALL_ENTER:0x%.8I32X (%I32u) (EIP: %p)\n",
           sysno,sysno,THIS_SYSCALL_EIP);
   volatile unsigned int i = 0;
   while (++i < (1 << 28));
@@ -131,11 +131,11 @@ PRIVATE ATTR_USED void FCALL syscall_leave(void) {
   task_endcrit();
 #endif
   THIS_SYSCALL_EFLAGS &= ~(EFLAGS_IF);
-  syslogf(LOG_DEBUG,"SYSCALL_LEAVE: (EIP: %p)\n",
+  syslog(LOG_DEBUG,"SYSCALL_LEAVE: (EIP: %p)\n",
           THIS_SYSCALL_EIP);
-  syslogf(LOG_DEBUG,"SS = %p; ESP = %p; EFLAGS = %p;\n",
+  syslog(LOG_DEBUG,"SS = %p; ESP = %p; EFLAGS = %p;\n",
           THIS_SYSCALL_SS,THIS_SYSCALL_USERESP,THIS_SYSCALL_EFLAGS);
-  syslogf(LOG_DEBUG,"CS = %p; EBP = %p;\n",
+  syslog(LOG_DEBUG,"CS = %p; EBP = %p;\n",
           THIS_SYSCALL_CS,THIS_SYSCALL_EBP);
   { struct idt_pointer p;
     INTDEF struct segment cpu_gdt[SEG_BUILTIN];
@@ -159,12 +159,12 @@ PRIVATE ATTR_USED void FCALL syscall_leave(void) {
   }
   { struct idtentry e;
     e = CPU(cpu_idt).i_vector[0x80];
-    syslogf(LOG_DEBUG,"e.ie_data  = %p\n",e.ie_data);
-    syslogf(LOG_DEBUG,"e.ie_off1  = %p\n",e.ie_off1);
-    syslogf(LOG_DEBUG,"e.ie_sel   = %p\n",e.ie_sel);
-    syslogf(LOG_DEBUG,"e.ie_zero  = %p\n",e.ie_zero);
-    syslogf(LOG_DEBUG,"e.ie_flags = %p\n",e.ie_flags);
-    syslogf(LOG_DEBUG,"e.ie_off2  = %p\n",e.ie_off2);
+    syslog(LOG_DEBUG,"e.ie_data  = %p\n",e.ie_data);
+    syslog(LOG_DEBUG,"e.ie_off1  = %p\n",e.ie_off1);
+    syslog(LOG_DEBUG,"e.ie_sel   = %p\n",e.ie_sel);
+    syslog(LOG_DEBUG,"e.ie_zero  = %p\n",e.ie_zero);
+    syslog(LOG_DEBUG,"e.ie_flags = %p\n",e.ie_flags);
+    syslog(LOG_DEBUG,"e.ie_off2  = %p\n",e.ie_off2);
   }
 
   //volatile unsigned int i = 0;

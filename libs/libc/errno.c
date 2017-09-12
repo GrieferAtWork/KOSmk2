@@ -45,7 +45,7 @@ PUBLIC int (LIBCCALL __get_errno)(void) {
 }
 PUBLIC void (LIBCCALL __set_errno)(int err) {
 #if 0
- syslogf(LOG_DEBUG,"__set_errno(%[errno])\n",err);
+ syslog(LOG_DEBUG,"__set_errno(%[errno])\n",err);
  __asm__("int $3");
 #endif
  __ERRNO = err;

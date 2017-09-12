@@ -30,7 +30,7 @@
 #include <hybrid/traceback.h>
 #include <kernel/malloc.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <malloc.h>
 #include <sched/task.h>
@@ -223,11 +223,11 @@ blkdev_autopart(struct blkdev *__restrict self,
 done:
  rwlock_endread(&autopart_lock);
  if (E_ISERR(result)) {
-  syslogf(LOG_HW|LOG_ERROR,
+  syslog(LOG_HW|LOG_ERROR,
           "[PART] Failed to partition block device %[dev_t] (sysid %#.2I8x): %[errno]\n",
           self->bd_device.d_id,(u8)sysid,(errno_t)-result);
  } else {
-  syslogf(LOG_HW|LOG_CONFIRM,
+  syslog(LOG_HW|LOG_CONFIRM,
           "[PART] Created %Iu/%Iu partition devices for block device %[dev_t] (sysid %#.2I8x)\n",
          (size_t)result,max_parts,self->bd_device.d_id,(u8)sysid);
  }

@@ -80,7 +80,7 @@ struct cpustate_irq_c;
  * >> PRIVATE void my_inthandler(void) {
  * >>     if (IRQ_PIC_SPURIOUS(MY_INTNO)) return;
  * >>     
- * >>     syslogf(LOG_DEBUG,"[IRQ] Interrupt #%d fired\n",MY_INTNO);
+ * >>     syslog(LOG_DEBUG,"[IRQ] Interrupt #%d fired\n",MY_INTNO);
  * >>     
  * >>     IRQ_PIC_EOI(MY_INTNO);
  * >> }

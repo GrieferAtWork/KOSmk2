@@ -34,7 +34,7 @@
 #include <kernel/mman.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/task.h>
 #include <stdbool.h>
 #include <sys/mman.h>

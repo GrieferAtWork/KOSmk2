@@ -29,7 +29,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <kos/environ.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -38,6 +38,8 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
 
 DECL_BEGIN
 
@@ -59,6 +61,18 @@ int main(int argc, char **argv) {
  open2(STDIN_FILENO,"/dev/keyboard",O_RDONLY);
  open2(STDOUT_FILENO,"/dev/kmsg",O_WRONLY);
  open2(STDERR_FILENO,"/dev/kmsg",O_WRONLY);
+
+ /* Setup some volatile components of a regular linux filesystem environment. */
+ if (mount("proc","/proc","proc",0,NULL) &&
+     errno == ENOENT) {
+  mkdir("/proc",0777);
+  mount("proc","/proc","proc",0,NULL);
+ }
+ symlink("kmsg","/dev/log");
+ symlink("/proc/self/fd/" PP_STR(STDIN_FILENO),"/dev/stdin");
+ symlink("/proc/self/fd/" PP_STR(STDOUT_FILENO),"/dev/stdout");
+ symlink("/proc/self/fd/" PP_STR(STDERR_FILENO),"/dev/stderr");
+
 
 #if 0
  printf("appenv         = %p\n",appenv);

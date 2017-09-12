@@ -33,7 +33,7 @@
 #include <kernel/export.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/task.h>
 #include <string.h>
 #include <sys/time.h>

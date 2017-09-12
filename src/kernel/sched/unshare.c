@@ -29,7 +29,7 @@
 #include <hybrid/sync/atomic-rwlock.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <sched/paging.h>
 #include <sched/task.h>
@@ -127,7 +127,7 @@ loose_branch:
  /* Delete the page-directory mapping for
   * this branch in the new mman's directory. */
 #if 1
- syslogf(LOG_DEBUG,"Deleting branch %p...%p\n",
+ syslog(LOG_DEBUG,"Deleting branch %p...%p\n",
          MBRANCH_MIN(old_branch),MBRANCH_MAX(old_branch));
 #endif
  error = pdir_munmap(&self->m_pdir,
@@ -166,7 +166,7 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
     if (branch->mb_notify  == &instance_mnotify &&
         branch->mb_closure == iter) {
 #if 0
-     syslogf(LOG_DEBUG,"Updating instance branch %p...%p for %[file]\n",
+     syslog(LOG_DEBUG,"Updating instance branch %p...%p for %[file]\n",
              MBRANCH_MIN(branch),MBRANCH_MAX(branch),
              iter->i_module->m_file);
 #endif

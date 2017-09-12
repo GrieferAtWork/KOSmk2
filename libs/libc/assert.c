@@ -31,7 +31,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 
 #ifdef __KERNEL__
 #include <sched/percpu.h>
@@ -87,7 +87,7 @@ __assertion_print(char const *data, size_t datalen,
  TTY_POPCOLOR();
  return result;
 #else
- return syslog_printer(data,datalen,SYSLOG_PRINTER_CLOSURE(LOG_CRITICAL));
+ return syslog_printer(data,datalen,SYSLOG_PRINTER_CLOSURE(LOG_EMERG));
 #endif
 }
 

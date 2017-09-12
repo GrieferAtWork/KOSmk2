@@ -35,7 +35,7 @@
 #include <kernel/malloc.h>
 #include <kernel/paging.h>
 #include <kos/keyboard.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <string.h>
 
@@ -352,18 +352,18 @@ load_keymap_file(struct file *__restrict fp, bool log_errors) {
                         : "memory");
  }
 #endif
- syslogf(LOG_IO|LOG_INFO,"[KEYMAP] Loading new keymap from '%[file]'\n",fp);
+ syslog(LOG_IO|LOG_INFO,"[KEYMAP] Loading new keymap from '%[file]'\n",fp);
 
  /* Cleanup... */
  free(buffer);
  return -EOK;
 err_invalid_file:
  if (log_errors)
-     syslogf(LOG_IO|LOG_ERROR,"[KEYMAP] Invalid keymap file '%[file]'\n",fp);
+     syslog(LOG_IO|LOG_ERROR,"[KEYMAP] Invalid keymap file '%[file]'\n",fp);
  return -EINVAL;
 err:
  if (log_errors) {
-  syslogf(LOG_IO|LOG_ERROR,
+  syslog(LOG_IO|LOG_ERROR,
           "[KEYMAP] Failed to read keymap file '%[file]': %[errno]\n",
           fp,-error);
  }
@@ -375,7 +375,7 @@ DEFINE_SETUP("keymap=",setup_keymap) {
  /* Load the keymap from a file given via the commandline. */
  fp = kopen(arg,O_RDONLY);
  if (E_ISERR(fp)) {
-  syslogf(LOG_IO|LOG_ERROR,
+  syslog(LOG_IO|LOG_ERROR,
           SETUPSTR("[KEYMAP] Failed to open keymap file %q: %[errno]\n"),
           arg,-E_GTERR(fp));
  } else {

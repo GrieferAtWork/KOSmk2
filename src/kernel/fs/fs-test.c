@@ -38,21 +38,21 @@ TEST(readdir) {
  task_crit();
  fp = kopen(S("/"),O_RDONLY);
  if (E_ISERR(fp))  {
-  syslogf(LOG_FS|LOG_ERROR,S("[FS] Failed to open root: %[errno]\n"),-E_GTERR(fp));
+  syslog(LOG_FS|LOG_ERROR,S("[FS] Failed to open root: %[errno]\n"),-E_GTERR(fp));
  } else {
   char buffer[512]; errno_t error;
   struct dirent *entry = (struct dirent *)buffer;
-  /*syslogf(LOG_FS|LOG_INFO,"[FS] Opened file at %p\n",fp);*/
+  /*syslog(LOG_FS|LOG_INFO,"[FS] Opened file at %p\n",fp);*/
   for (;;) {
    /* Read file entries until they've all been read. */
    error = file_kreaddir(fp,entry,sizeof(buffer),
                          FILE_READDIR_CONTINUE);
    if (!error) break;
    if (E_ISERR(error)) {
-    syslogf(LOG_FS|LOG_ERROR,S("[FS] Failed to readdir(): %[errno]\n"),-error);
+    syslog(LOG_FS|LOG_ERROR,S("[FS] Failed to readdir(): %[errno]\n"),-error);
     break;
    }
-   syslogf(LOG_FS|LOG_INFO,S("DIRENT: %$s\n"),
+   syslog(LOG_FS|LOG_INFO,S("DIRENT: %$s\n"),
            entry->d_namlen,entry->d_name);
   }
   FILE_DECREF(fp);

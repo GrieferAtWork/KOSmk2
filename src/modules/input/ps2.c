@@ -33,7 +33,7 @@
 #include <kernel/export.h>
 #include <kernel/irq.h>
 #include <dev/rtc.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <kernel/user.h>
 #include <kos/keyboard.h>
 #include <linker/module.h>
@@ -94,7 +94,7 @@ PRIVATE ssize_t KCALL kbd_read(struct file *__restrict fp,
  ssize_t result;
  SUPPRESS_WAITLOGS_BEGIN();
 #if 0
- syslogf(LOG_HW|LOG_DEBUG,"READ_KEYBOARD()\n");
+ syslog(LOG_HW|LOG_DEBUG,"READ_KEYBOARD()\n");
  while ((result = atomic_iobuffer_read(&keyboard_pipe,buf,bufsize,true)) == 0)
          PREEMPTION_IDLE();
 #else
@@ -190,9 +190,9 @@ PRIVATE void KCALL keyboard_send(key_t k) {
 #if 0
  { char c;
    if (k < 256 && (c = active_keymap.km_press[k]) != '\0') {
-    syslogf(LOG_HW|LOG_DEBUG,"Sending key %#.4I16x ('%#:1q')\n",k,&c);
+    syslog(LOG_HW|LOG_DEBUG,"Sending key %#.4I16x ('%#:1q')\n",k,&c);
    } else {
-    syslogf(LOG_HW|LOG_DEBUG,"Sending key %#.4I16x\n",k);
+    syslog(LOG_HW|LOG_DEBUG,"Sending key %#.4I16x\n",k);
    }
  }
 #endif
@@ -207,7 +207,7 @@ PRIVATE void KCALL keyboard_send(key_t k) {
   if (atomic_iobuffer_kwrite(&keyboard_pipe,&k,sizeof(k)) != sizeof(k))
 #endif
   {
-   syslogf(LOG_HW|LOG_WARN,
+   syslog(LOG_HW|LOG_WARN,
            "[KBD] Failed to queue key press %#.2I16x: buffer is full\n",k);
   }
  }
@@ -242,7 +242,7 @@ LOCAL void KCALL ps2_write_data(u8 data) {
 PRIVATE void KCALL
 ps2_start_command(struct ps2_cmd *__restrict c) {
 #if 0
- syslogf(LOG_HW|LOG_DEBUG,"[PS2] Execute command %#.2I8x (port %d)\n",
+ syslog(LOG_HW|LOG_DEBUG,"[PS2] Execute command %#.2I8x (port %d)\n",
          c->c_cmd,c->c_port&PS2_PORT2 ? 2 : 1);
 #endif
  if (c->c_port&PS2_PORT2)
@@ -317,7 +317,7 @@ ps2_command(struct ps2_cmd *__restrict c) {
  }
  PREEMPTION_POP(was);
 #if 1
- syslogf(LOG_HW|LOG_DEBUG,"[PS2] Command finished: %d (%.2I8x,%.2I8x) %.2I8X %.2I8X %.2I8X %.2I8X %.2I8X %.2I8X\n",
+ syslog(LOG_HW|LOG_DEBUG,"[PS2] Command finished: %d (%.2I8x,%.2I8x) %.2I8X %.2I8X %.2I8X %.2I8X %.2I8X %.2I8X\n",
          result,c->c_cmd,c->c_arg,
          c->c_resp[0],c->c_resp[1],c->c_resp[2],c->c_resp[3],c->c_resp[4],c->c_resp[5]);
 #endif
@@ -326,17 +326,17 @@ ps2_command(struct ps2_cmd *__restrict c) {
 
 
 PRIVATE void KCALL unwind_scanset_1(u8 const *keys, u8 last) {
- syslogf(LOG_HW|LOG_WARN,"[PS2] Unknown set-1 keycode {");
- for (; *keys; ++keys) syslogf(LOG_HW|LOG_WARN,"%.2I8X-",*keys);
- syslogf(LOG_HW|LOG_WARN,"%.2I8X}\n",last);
+ syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-1 keycode {");
+ for (; *keys; ++keys) syslog(LOG_HW|LOG_WARN,"%.2I8X-",*keys);
+ syslog(LOG_HW|LOG_WARN,"%.2I8X}\n",last);
  for (; *keys; ++keys) keyboard_send(KEYMAP_GET_PS2_SCANSET1(*keys));
  keyboard_send(KEYMAP_GET_PS2_SCANSET1(last));
  p.p_state = STATE_INPUT_SET1;
 }
 PRIVATE void KCALL unwind_scanset_2(key_t flag, u8 const *keys, u8 last) {
- syslogf(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {");
- for (; *keys; ++keys) syslogf(LOG_HW|LOG_WARN,"%.2I8X-",*keys);
- syslogf(LOG_HW|LOG_WARN,"%.2I8X}\n",last);
+ syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {");
+ for (; *keys; ++keys) syslog(LOG_HW|LOG_WARN,"%.2I8X-",*keys);
+ syslog(LOG_HW|LOG_WARN,"%.2I8X}\n",last);
  for (; *keys; ++keys) keyboard_send(flag|keymap_ps2_scanset_2[*keys]);
  keyboard_send(flag|keymap_ps2_scanset_2[last]);
  p.p_state = STATE_INPUT_SET2;
@@ -348,14 +348,14 @@ ps2_handle_interrupt(void) {
  u8 e = inb(PS2_DATA);
 
 #if 0
- syslogf(LOG_HW|LOG_DEBUG,"[PS2] IRQ %#.2I8x (%d)\n",e,p.p_state);
+ syslog(LOG_HW|LOG_DEBUG,"[PS2] IRQ %#.2I8x (%d)\n",e,p.p_state);
 #endif
 
  assert(!PREEMPTION_ENABLED());
  switch (p.p_state) {
  case STATE_IGNORE:
   /* Ignore everything! */
-  syslogf(LOG_HW|LOG_WARN,"[PS2] Ignoring interrupt for %#.2I8x\n",e);
+  syslog(LOG_HW|LOG_WARN,"[PS2] Ignoring interrupt for %#.2I8x\n",e);
   break;
 
  {
@@ -505,13 +505,13 @@ remove_cmd:
   if (e == 0xe1) { p.p_state = STATE_INPUT_SET2_E1; break; }
   key = (key_t)keymap_ps2_scanset_2[e];
   if (key == KEY_UNKNOWN)
-      syslogf(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {%.2I8X}\n",e);
+      syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {%.2I8X}\n",e);
   keyboard_send(key);
   break;
  case STATE_INPUT_SET2_F0:
   key = (key_t)keymap_ps2_scanset_2[e];
   if (key == KEY_UNKNOWN)
-      syslogf(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {F0-%.2I8X}\n",e);
+      syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {F0-%.2I8X}\n",e);
   keyboard_send(KEY_RELEASED|key);
   p.p_state = STATE_INPUT_SET2;
   break;
@@ -567,13 +567,13 @@ remove_cmd:
   if (e == 0xf0) { p.p_state = STATE_INPUT_SET3_F0; break; }
   key = keymap_ps2_scanset_3[e];
   if (key == KEY_UNKNOWN)
-      syslogf(LOG_HW|LOG_WARN,"[PS2] Unknown set-3 keycode {%.2I8X}\n",e);
+      syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-3 keycode {%.2I8X}\n",e);
   keyboard_send(key);
   break;
  case STATE_INPUT_SET3_F0:
   key = keymap_ps2_scanset_3[e];
   if (key == KEY_UNKNOWN)
-      syslogf(LOG_HW|LOG_WARN,"[PS2] Unknown set-3 keycode {F0-%.2I8X}\n",e);
+      syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-3 keycode {F0-%.2I8X}\n",e);
   keyboard_send(KEY_RELEASED|key);
   p.p_state = STATE_INPUT_SET3;
  } break;
@@ -586,7 +586,7 @@ keyboard_irq_lost(struct device *__restrict self) {
  /* Check if keyboard data arrived while we were gone. */
  if (inb(PS2_STATUS) & PS2_STATUS_OUTFULL) {
   pflag_t was;
-  syslogf(LOG_HW|LOG_INFO,"[PS2] Handling lost interrupt\n");
+  syslog(LOG_HW|LOG_INFO,"[PS2] Handling lost interrupt\n");
   was = PREEMPTION_PUSH();
   ps2_handle_interrupt();
   PREEMPTION_POP(was);
@@ -687,7 +687,7 @@ got_keyboard:
  if (ps_scanset) --ps_scanset;
  ps_scanset &= PS2_SCANSET;
  if (ps_scanset == 2) ps_scanset = 0; /* Fix illegal scansets. */
- syslogf(LOG_HW|LOG_INFO,"[PS2] Using keyboard scanset %I8u\n",ps_scanset+1);
+ syslog(LOG_HW|LOG_INFO,"[PS2] Using keyboard scanset %I8u\n",ps_scanset+1);
  p.p_flags |= ps_scanset;
  ps2_device_command(port,0xf4); /* Enable scanning. */
 
@@ -719,7 +719,7 @@ err:
  free(ps2_keyboard);
  return error;
 no_keyboard:
- syslogf(LOG_HW|LOG_WARN,"[PS2] No keyboard found (Assuming one is connected to port #1)\n");
+ syslog(LOG_HW|LOG_WARN,"[PS2] No keyboard found (Assuming one is connected to port #1)\n");
  ps2_keyboard_reset(PS2_PORT1);
  port = PS2_PORT1;
  goto got_keyboard;

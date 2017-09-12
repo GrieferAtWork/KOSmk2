@@ -34,7 +34,7 @@
 #include <kernel/irq.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <limits.h>
 #include <sched/cpu.h>
 #include <sched/signal.h>
@@ -162,7 +162,7 @@ pty_ioctl(struct ptymaster *__restrict self, int name, USER void *arg) {
   newproc = oldproc;
 
   atomic_rwlock_write(&self->pm_lock);
-  syslogf(LOG_INFO,"[PTY] Set group %I32d (%I32d) (%p)\n",
+  syslog(LOG_INFO,"[PTY] Set group %I32d (%I32d) (%p)\n",
           TASK_GETPID(newproc),pid,newproc);
   oldproc = self->pm_fproc;
   self->pm_fproc = newproc; /* Inherit reference. */
@@ -364,7 +364,7 @@ handle_clear:
 
 #define M ((struct ptymaster *)ino)
 PRIVATE void KCALL master_fini(struct inode *__restrict ino) {
- syslogf(LOG_DEBUG,"[PTY] Finalize PTY master controller\n");
+ syslog(LOG_DEBUG,"[PTY] Finalize PTY master controller\n");
  if (ino->i_ops == &ptymaster_ops) {
   /* Try to re-use this pty's id for the next call to 'openpty()' */
   minor_t min = MINOR(DEVICE_ID(&M->pm_chr.cd_device));
@@ -532,9 +532,9 @@ pty_fclose(struct inode *__restrict UNUSED(ino),
  /* Delete the main associated directory entry. */
  error = dentry_remove(fp->f_dent,&ac,DENTRY_REMOVE_REG);
  if (E_ISOK(error))
-  syslogf(LOG_INFO,"[PTY] Deleted PTY device file '%[dentry]'\n",fp->f_dent);
+  syslog(LOG_INFO,"[PTY] Deleted PTY device file '%[dentry]'\n",fp->f_dent);
  else {
-  syslogf(LOG_WARN,
+  syslog(LOG_WARN,
           "[PTY] Failed to delete PTY device file '%[dentry]': %[errno]\n",
           fp->f_dent,-error);
  }
@@ -826,7 +826,7 @@ end2:
 end:
  task_endcrit();
 #if 0
- syslogf(LOG_DEBUG,"[PTY] Created new drier %d, %d\n",fd_master,fd_slave);
+ syslog(LOG_DEBUG,"[PTY] Created new drier %d, %d\n",fd_master,fd_slave);
 #endif
  return (s64)fd_master | (s64)fd_slave << 32;
 err5: FILE_DECREF(fd_s.fo_obj.fo_file);

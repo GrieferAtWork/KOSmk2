@@ -38,7 +38,7 @@
 #include <hybrid/minmax.h>
 #include <kernel/export.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <sched/cpu.h>
 #include <sched/task.h>

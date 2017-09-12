@@ -26,7 +26,7 @@
 #include <hybrid/section.h>
 #include <kernel/memory.h>
 #include <kernel/paging.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -97,7 +97,7 @@ memory_register_info(ppage_t start, size_t n_bytes) {
  if (zone_id == MZONE_DEV) return;
 
 #if 0
- syslogf(LOG_DEBUG,"Adding meminfo: %p...%p (Zone %d)\n",
+ syslog(LOG_DEBUG,"Adding meminfo: %p...%p (Zone %d)\n",
          start,(uintptr_t)free_end-1,zone_id);
 #endif
 
@@ -155,7 +155,7 @@ memory_register_info(ppage_t start, size_t n_bytes) {
 
  /* Fallback: Create & insert a new free-range. */
  if unlikely((entry = meminfo_alloc()) == NULL) {
-  syslogf(LOG_MEM|LOG_DEBUG,
+  syslog(LOG_MEM|LOG_DEBUG,
           FREESTR("[MEM] Failed to allocate core-memory information page: %[errno]\n"),
           ENOMEM);
  } else {
@@ -211,7 +211,7 @@ INTERN ATTR_FREETEXT SAFE KPD void KCALL memory_relocate_info(void) {
      page_free((ppage_t)copy,sizeof(struct meminfo_data));
     } else {
      memcpy(copy,iter,sizeof(struct meminfo_data));
-     syslogf(LOG_MEM|LOG_DEBUG,FREESTR("[MEM] Relocating meminfo table %p...%p to %p...%p\n"),
+     syslog(LOG_MEM|LOG_DEBUG,FREESTR("[MEM] Relocating meminfo table %p...%p to %p...%p\n"),
             (uintptr_t)iter,(uintptr_t)iter+sizeof(struct meminfo_data)-1,
             (uintptr_t)copy,(uintptr_t)copy+sizeof(struct meminfo_data)-1);
      /* Relocate data. */

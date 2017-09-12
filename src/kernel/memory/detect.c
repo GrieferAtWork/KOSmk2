@@ -33,7 +33,7 @@
 #include <kernel/irq.h>
 #include <kernel/memory.h>
 #include <kernel/paging.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <sched/percpu.h>
 #include <string.h>
@@ -118,7 +118,7 @@ ok: memory_install_data();
 INTDEF ATTR_FREETEXT SAFE KPD
 void KCALL memory_load_detect(void) {
  if (!memory_try_detect()) {
-  syslogf(LOG_MEM|LOG_WARN,FREESTR("[MEM] Guess available dynamic memory\n"));
+  syslog(LOG_MEM|LOG_WARN,FREESTR("[MEM] Guess available dynamic memory\n"));
 #define RANGE(a,b) memory_install(a,(b-a)+1)
   /* Most likely that at least this memory exists... */
   RANGE(0x00000500,0x0008ffff);
@@ -131,7 +131,7 @@ void KCALL memory_load_detect(void) {
 DEFINE_EARLY_SETUP_NOARG("detect-memory",detect_memory) {
  /* Detect additional memory. */
  if (!memory_try_detect())
-      syslogf(LOG_MEM|LOG_INFO,SETUPSTR("[CMD] No additional memory detected"));
+      syslog(LOG_MEM|LOG_INFO,SETUPSTR("[CMD] No additional memory detected"));
  return true;
 }
 

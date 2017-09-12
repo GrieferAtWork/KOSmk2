@@ -40,7 +40,7 @@
 #include <kernel/paging.h>
 #include <kernel/stack.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <sched/cpu.h>
 #include <sched/paging.h>
@@ -422,7 +422,7 @@ task_is_terminating(struct task *__restrict t) {
    }
 
 #if 1
-   syslogf(LOG_SCHED|LOG_INFO,
+   syslog(LOG_SCHED|LOG_INFO,
            "[SCHED] Transferring orphaned %sthread %p (gpid %d) to init\n",
            end->t_mode == TASKMODE_TERMINATED ? "zombie " : "",
            end,end->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
@@ -748,7 +748,7 @@ INTERN void ATTR_CDECL noyield_without_irq(void *eip) {
  if (SMP_ONLINE > 1) {
   PRIVATE CPU_DATA void *noyield_last_eip = (void *)-1;
   if (eip == CPU(noyield_last_eip)) return;
-  syslogf(LOG_SCHED|LOG_WARN,
+  syslog(LOG_SCHED|LOG_WARN,
           "#!$ addr2line(%Ix) '{file}({line}) : {func} : %p : Cannot yield while interrupts are disabled'\n",
          (uintptr_t)eip-1,eip);
   __assertion_tbprint(0);
@@ -1179,7 +1179,7 @@ pit_exc(struct cpustate *__restrict state) {
   *       cpustate _must_ have interrupts enabled.
   *      (Or the task executed an 'int $0' manually?) */
 #if 0
- syslogf(LOG_SCHED|LOG_WARN,"[IRQ] %#.2I8x, %#.2I8x, %#.2I8x %Iu %Iu\n",
+ syslog(LOG_SCHED|LOG_WARN,"[IRQ] %#.2I8x, %#.2I8x, %#.2I8x %Iu %Iu\n",
          THIS_CPU->c_prio_min,THIS_CPU->c_prio_max,
          old_task->t_priority,old_task->t_critical,
          THIS_CPU->c_n_run);
@@ -1188,7 +1188,7 @@ pit_exc(struct cpustate *__restrict state) {
     !TASKPRIO_ISIDLE(THIS_CPU->c_prio_max) &&
     !old_task->t_critical && old_task != new_task) {
 #if 0
-  syslogf(LOG_SCHED|LOG_DEBUG,"[IRQ] Parking task %p (priority %#.2I8x) during IRQ\n",
+  syslog(LOG_SCHED|LOG_DEBUG,"[IRQ] Parking task %p (priority %#.2I8x) during IRQ\n",
           old_task,old_task->t_priority);
 #endif
   /* Must park the old task. */
@@ -1203,7 +1203,7 @@ pit_exc(struct cpustate *__restrict state) {
 
 #if 0
  if (old_task != new_task) {
-  syslogf(LOG_DEBUG,"#PIT %p(%p) --> %p(%p) (IF 1->%d)\n",
+  syslog(LOG_DEBUG,"#PIT %p(%p) --> %p(%p) (IF 1->%d)\n",
           old_task,old_task->t_cstate->host.eip,
           new_task,new_task->t_cstate->host.eip,
        !!(new_task->t_cstate->host.eflags&EFLAGS_IF));
@@ -1792,7 +1792,7 @@ task_waitfor(struct timespec const *abstime) {
   /* NOTE: The following code assumes that IDLE tasks cannot change CPU affinity. */
   cpu_endwrite(THIS_CPU);
 #if 0
-  syslogf(LOG_DEBUG,"IDLE task waitfor()\n");
+  syslog(LOG_DEBUG,"IDLE task waitfor()\n");
 #endif
   if (was&EFLAGS_IF) PREEMPTION_ENABLE();
   for (;;) {
@@ -1888,7 +1888,7 @@ __task_destroy2(struct task *__restrict t) {
          "Still on stack that'll be destroyed (%p in %p...%p)",
          &t,t->t_hstack.hs_begin,(uintptr_t)t->t_hstack.hs_end-1);
 #if 0
- syslogf(LOG_DEBUG,"DESTROYING TASK AFTER TERMINATE: %p\n",t);
+ syslog(LOG_DEBUG,"DESTROYING TASK AFTER TERMINATE: %p\n",t);
 #endif
  task_destroy(t);
 }
@@ -1973,7 +1973,7 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
  TASK_SWITCH_CONTEXT(t,new_task);
 
 #if 0
- syslogf(LOG_DEBUG,"Terminating SELF: %p (%d)\n",t,t->t_refcnt);
+ syslog(LOG_DEBUG,"Terminating SELF: %p (%d)\n",t,t->t_refcnt);
 #endif
 
  assert(THIS_TASK == new_task);
@@ -2179,7 +2179,7 @@ task_terminate_cpu_endwrite(struct cpu *__restrict c,
  assert(t != &c->c_idle);
  assert(ATOMIC_READ(t->t_mode) != TASKMODE_NOTSTARTED);
 #if 0
- syslogf(LOG_DEBUG,"Terminate: %p\n",exitcode);
+ syslog(LOG_DEBUG,"Terminate: %p\n",exitcode);
 #undef __assertion_tbprint
  __assertion_tbprint();
 #endif

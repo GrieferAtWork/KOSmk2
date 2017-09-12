@@ -37,7 +37,7 @@
 #include <kernel/syscall.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <sched/cpu.h>
 #include <sched/paging.h>
@@ -314,7 +314,7 @@ STATIC_ASSERT(offsetof(struct sigenter_info,ei_ctx)  == SIGENTER_INFO_OFFSETOF_C
 /* Exception handler for managing broken signal stacks. */
 INTERN ATTR_NORETURN void KCALL sigfault(void) {
  assert(!THIS_TASK->t_critical);
- syslogf(LOG_ERROR,"[SIG] Terminating thread %d:%d with faulty signal stack pointer at %p\n",
+ syslog(LOG_ERROR,"[SIG] Terminating thread %d:%d with faulty signal stack pointer at %p\n",
          GET_THIS_PID(),GET_THIS_TID(),THIS_TASK->t_lastcr2);
  task_terminate(THIS_TASK,(void *)(__WCOREFLAG|__W_EXITCODE(1,0)));
  __builtin_unreachable();
@@ -322,12 +322,12 @@ INTERN ATTR_NORETURN void KCALL sigfault(void) {
 INTERN ATTR_NORETURN void KCALL sigill(char const *__restrict format, ...) {
  va_list args;
  assert(!THIS_TASK->t_critical);
- syslogf(LOG_ERROR,"[SIG] Terminating thread %d:%d with illegal signal context: Invalid ",
+ syslog(LOG_ERROR,"[SIG] Terminating thread %d:%d with illegal signal context: Invalid ",
          GET_THIS_PID(),GET_THIS_TID());
  va_start(args,format);
- vsyslogf(LOG_DEBUG,format,args);
+ vsyslog(LOG_DEBUG,format,args);
  va_end(args);
- syslogf(LOG_ERROR,"\n");
+ syslog(LOG_ERROR,"\n");
  task_terminate(THIS_TASK,(void *)(__WCOREFLAG|__W_EXITCODE(2,0)));
  __builtin_unreachable();
 }
@@ -581,7 +581,7 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
    copy_error = copy_to_user(user_info,&info,sizeof(info));
    TASK_PDIR_END(omm,t->t_real_mman);
    if unlikely(copy_error) {
-    syslogf(LOG_WARN,
+    syslog(LOG_WARN,
             "[SIG] Failed to deliver signal to process %d/%d: Target stack at %p is faulty\n",
            (int)t->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
            (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,user_info);
@@ -628,7 +628,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
   memcpy(&t->t_sigenter.se_eip,&ss_descr->eip,20);
   /* Setup the register state to not return to user-space, but to 'sigenter()' instead. */
 #if 1
-  syslogf(LOG_DEBUG,"Override system call return EIP %p with sigenter %p\n",
+  syslog(LOG_DEBUG,"Override system call return EIP %p with sigenter %p\n",
           ss_descr->eip,&sigenter);
 #endif
   ss_descr->eip    = (u32)&sigenter;
@@ -709,7 +709,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
    copy_error = copy_to_user(user_info,&info,sizeof(info));
    TASK_PDIR_END(omm,t->t_real_mman);
    if unlikely(copy_error) {
-    syslogf(LOG_WARN,
+    syslog(LOG_WARN,
             "[SIG] Failed to deliver signal to process %d/%d: Target stack at %p is faulty\n",
            (int)t->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
            (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,user_info);
@@ -767,7 +767,7 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
    PREEMPTION_POP(was);
    return sigpending_enqueue(&t->t_sigpend,signal_info);
   }
-  syslogf(LOG_DEBUG,"[SIG] kill(%d,%d) %p -> %p\n",
+  syslog(LOG_DEBUG,"[SIG] kill(%d,%d) %p -> %p\n",
          (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,signo,
           THIS_TASK,t);
 #if 0

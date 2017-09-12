@@ -34,7 +34,7 @@
 
 #define TRACE_SYSTEM_CALLS 0
 #if TRACE_SYSTEM_CALLS
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #endif
 
 
@@ -75,10 +75,10 @@ struct timezone;
 #if TRACE_SYSTEM_CALLS
 #if 1
 #define TRACE0()   \
- (void)(syslogf(LOG_DEBUG,"%s\n",__FUNCTION__))
+ (void)(syslog(LOG_DEBUG,"%s\n",__FUNCTION__))
 #else
 #define TRACE0()   \
- (void)(syslogf(LOG_DEBUG,"%s(%d) : %s()\n",__FILE__,__LINE__,__FUNCTION__))
+ (void)(syslog(LOG_DEBUG,"%s(%d) : %s()\n",__FILE__,__LINE__,__FUNCTION__))
 #endif
 #undef __SYSCALL_TRACE
 #define __SYSCALL_TRACE(id) { if (id != __NR_xsysprint) TRACE0(); }

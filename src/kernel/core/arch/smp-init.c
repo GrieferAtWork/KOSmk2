@@ -39,7 +39,7 @@
 #include <kernel/malloc.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <sched/percpu.h>
 #include <sched/smp.h>
@@ -110,7 +110,7 @@ smp_add_cpu(u8 flags, u8 lapic_id, u8 lapic_ver, u32 cpusig, u32 features);
 
 PRIVATE ATTR_FREETEXT bool KCALL smp_init_default(u8 cfg) {
  u32 boot_apic_id;
- syslogf(LOG_SCHED|LOG_INFO,FREESTR("[SMP] Using default configuration %#.2I8x\n"),cfg);
+ syslog(LOG_SCHED|LOG_INFO,FREESTR("[SMP] Using default configuration %#.2I8x\n"),cfg);
  __apic_base_p_rw = APIC_DEFAULT_PHYS_BASE;
 #if APIC_DEFAULT_PHYS_BASE >= KERNEL_BASE
 #define PHYS_PAGE  FLOOR_ALIGN(APIC_DEFAULT_PHYS_BASE+APIC_ID,PAGESIZE)
@@ -121,7 +121,7 @@ PRIVATE ATTR_FREETEXT bool KCALL smp_init_default(u8 cfg) {
    error = pdir_mmap_early(&pdir_kernel_v,(ppage_t)VIRT_PAGE,PAGESIZE,
                           (ppage_t)PHYS_PAGE,PDIR_ATTR_PRESENT|PDIR_ATTR_WRITE);
    if (E_ISERR(error)) {
-    syslogf(LOG_SCHED|LOG_ERROR,
+    syslog(LOG_SCHED|LOG_ERROR,
             FREESTR("[SMP] Failed to map LAPIC configuration table %p to %p...%p: %[errno]\n"),
            (uintptr_t)PHYS_PAGE,(uintptr_t)VIRT_PAGE,(uintptr_t)(VIRT_PAGE+PAGESIZE-1),-error);
     return false;
@@ -149,7 +149,7 @@ PRIVATE ATTR_FREETEXT bool KCALL smp_init_table(uintptr_t table_addr) {
  if (tab->tab_length < offsetafter(struct mpcfgtab,tab_chksum)) return false;
  if (smp_memsum(tab,tab->tab_length) != 0) return false;
  __apic_base_p_rw = tab->tab_lapicaddr;
- syslogf(LOG_SCHED|LOG_INFO,
+ syslog(LOG_SCHED|LOG_INFO,
          FREESTR("[SMP] Found LAPIC configuration table at %p\n"),
          __apic_base_p_rw);
  n = (size_t)tab->tab_entryc;
@@ -163,18 +163,18 @@ PRIVATE ATTR_FREETEXT bool KCALL smp_init_table(uintptr_t table_addr) {
     if (iter->mc_processor.cp_cpuflag&MP_PROCESSOR_BOOTPROCESSOR) {
      /* The boot processor. */
      if unlikely(got_boot) {
-      syslogf(LOG_SCHED|LOG_WARN,
+      syslog(LOG_SCHED|LOG_WARN,
               FREESTR("[SMP] Boot processor (LOCAL APIC ID %#.2I8x) respecified as LOCAL APIC ID %#.2I8x\n"),
               __bootcpu.c_arch.ac_lapic_id,iter->mc_processor.cp_lapicid);
       goto normal_cpu;
      }
      got_boot = true;
      if (!(iter->mc_processor.cp_cpuflag&MP_PROCESSOR_ENABLED)) {
-      syslogf(LOG_SCHED|LOG_ERROR,
+      syslog(LOG_SCHED|LOG_ERROR,
               FREESTR("[SMP] Using boot processor (LOCAL APIC ID %#.2I8x) marked as unusable\n"),
               iter->mc_processor.cp_lapicid);
      }
-     syslogf(LOG_SCHED|LOG_INFO,
+     syslog(LOG_SCHED|LOG_INFO,
              FREESTR("[SMP] Found boot processor (LOCAL APIC ID %#.2I8x)\n"),
              iter->mc_processor.cp_lapicid);
      __bootcpu.c_arch.ac_flags         = CPUFLAG_LAPIC;
@@ -199,7 +199,7 @@ normal_cpu:
   }
  }
  if (!got_boot)
-      syslogf(LOG_SCHED|LOG_ERROR,FREESTR("[SMP] Failed to locate boot CPU in LAPIC table\n"));
+      syslog(LOG_SCHED|LOG_ERROR,FREESTR("[SMP] Failed to locate boot CPU in LAPIC table\n"));
  return true;
 }
 
@@ -215,18 +215,18 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize(void) {
                        : "ecx", "edx");
  }
  if unlikely((mp = mpfps_locate()) == NULL) {
-  syslogf(LOG_SCHED|LOG_INFO,FREESTR("[SMP] No valid MP descriptor detected\n"));
+  syslog(LOG_SCHED|LOG_INFO,FREESTR("[SMP] No valid MP descriptor detected\n"));
 nocfg:
   /* XXX: Additional default initialization? */
   return;
  }
- syslogf(LOG_SCHED|LOG_INFO,FREESTR("[SMP] MPFPS structure at %p (v1.%I8u)\n"),mp,mp->mp_specrev);
+ syslog(LOG_SCHED|LOG_INFO,FREESTR("[SMP] MPFPS structure at %p (v1.%I8u)\n"),mp,mp->mp_specrev);
  if (mp->mp_defcfg != 0) {
   /* Use default configuration. */
   if (!smp_init_default(mp->mp_defcfg)) goto nocfg;
  } else if (mp->mp_cfgtab != 0) {
   /* Use configuration based on 'mp_cfgtab'. */
-  syslogf(LOG_SCHED|LOG_INFO,
+  syslog(LOG_SCHED|LOG_INFO,
           FREESTR("[SMP] Using configuration table at %p\n"),
           mp->mp_cfgtab);
   if (mp->mp_cfgtab >= KERNEL_BASE) {
@@ -238,7 +238,7 @@ nocfg:
                           (ppage_t)FLOOR_ALIGN(mp->mp_cfgtab,PAGESIZE),
                            PDIR_ATTR_PRESENT|PDIR_ATTR_WRITE);
    if (E_ISERR(error)) {
-    syslogf(LOG_SCHED|LOG_ERROR,
+    syslog(LOG_SCHED|LOG_ERROR,
             FREESTR("[SMP] Failed to map SMP configuration table %p to %p...%p: %[errno]\n"),
            (uintptr_t)mp->mp_cfgtab,(uintptr_t)0xf0000000,
            (uintptr_t)0xf0000000+max_bytes-1,-error);
@@ -252,14 +252,14 @@ nocfg:
    ok = smp_init_table((uintptr_t)mp->mp_cfgtab);
    if (!ok) {
 invalid_mptab:
-    syslogf(LOG_SCHED|LOG_ERROR,
+    syslog(LOG_SCHED|LOG_ERROR,
             FREESTR("[SMP] Invalid SMP table at %p\n"),
             mp->mp_cfgtab);
     goto nocfg;
    }
   }
  } else {
-  syslogf(LOG_SCHED|LOG_WARN,
+  syslog(LOG_SCHED|LOG_WARN,
           FREESTR("[SMP] No SMP configuration table\n"));
   goto nocfg;
  }
@@ -270,7 +270,7 @@ invalid_mptab:
 PRIVATE ATTR_FREETEXT void KCALL
 smp_add_cpu(u8 flags, u8 lapic_id, u8 lapic_ver, u32 cpusig, u32 features) {
  struct cpu *controller;
- syslogf(LOG_SCHED|LOG_CONFIRM,
+ syslog(LOG_SCHED|LOG_CONFIRM,
          FREESTR("[SMP] Installing secondary CPU (LOCAL APIC ID %#.2I8x, "
                  "version %#.2I8x, signature %#.8I32x, features %#.8I32x)\n"),
          lapic_id,lapic_ver,cpusig,features);
@@ -305,7 +305,7 @@ smp_add_cpu(u8 flags, u8 lapic_id, u8 lapic_ver, u32 cpusig, u32 features) {
  controller->c_arch.ac_features      = features;
  return;
 nomem:
- syslogf(LOG_SCHED|LOG_INFO,
+ syslog(LOG_SCHED|LOG_INFO,
          FREESTR("[SMP] Failed to register new CPU: %[errno]\n"),
          ENOMEM);
 }
@@ -377,7 +377,7 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
   (void)_mall_untrack(branch);
   (void)_mall_untrack(region);
 
-  syslogf(LOG_SCHED|LOG_INFO,
+  syslog(LOG_SCHED|LOG_INFO,
           FREESTR("[SMP] Relocating CPU #%d controller from %p...%p to %p...%p\n"),
          (int)(dst_iter-newvec),
          (uintptr_t)*iter,(uintptr_t)*iter+region->mr_size-1,
@@ -453,7 +453,7 @@ done_cpu:
    MREGION_DECREF(lapic_region);
    if (E_ISERR(error)) goto err;
    __apic_base_rw = (VIRT uintptr_t)lapic_vpage + (apic_base_p & (PAGESIZE-1));
-   syslogf(LOG_SCHED|LOG_INFO,
+   syslog(LOG_SCHED|LOG_INFO,
            FREESTR("[SMP] Mapped LAPIC %p...%p to %p...%p\n"),
           (uintptr_t)lapic_ppage,(uintptr_t)lapic_ppage+lapic_size-1,
           (uintptr_t)lapic_vpage,(uintptr_t)lapic_vpage+lapic_size-1);
@@ -482,7 +482,7 @@ done_cpu:
    MREGION_DECREF(jmp_region);
    if (E_ISERR(error)) goto err;
    cpu_trampoline_jmppage = jmp_vpage;
-   syslogf(LOG_SCHED|LOG_INFO,
+   syslog(LOG_SCHED|LOG_INFO,
            FREESTR("[SMP] Mapped JMP page %p...%p to %p...%p\n"),
           (uintptr_t)0,(uintptr_t)0+PAGESIZE-1,
           (uintptr_t)jmp_vpage,(uintptr_t)jmp_vpage+PAGESIZE-1);
@@ -519,7 +519,7 @@ enomem:
 err:
  /* XXX: No all errors are so severe that we must discard all SMP information.
   *      -> Add better error handling here. */
- syslogf(LOG_SCHED|LOG_ERROR,
+ syslog(LOG_SCHED|LOG_ERROR,
          FREESTR("[SMP] Failed to repage secondary CPU information (SMP mode cannot be used): %[errno]\n"),
          -error);
  while (end-- != iter) {

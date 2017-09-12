@@ -27,7 +27,7 @@
 #include <hybrid/minmax.h>
 #include <hybrid/types.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <sched/task.h>
 #include <string.h>
@@ -212,7 +212,7 @@ handle_intr2:
    /* Wait until at there is at least something to read
     * NOTE: The following like essentially performs what a
     *       condition variable calls its wait-operation. */
-   //DEBUG_TRACE(syslogf(LOG_DEBUG,"WAIT FOR DATA\n"));
+   //DEBUG_TRACE(syslog(LOG_DEBUG,"WAIT FOR DATA\n"));
    sig_write(&self->ib_avail);
    rwlock_endread(&self->ib_rwlock);
    if (IOBUFFER_CONSUME_INTR(self)) {
@@ -220,7 +220,7 @@ handle_intr2:
     goto handle_intr2;
    }
    error = sig_recv_endwrite(&self->ib_avail);
-   DEBUG_TRACE(syslogf(LOG_DEBUG,"DATA AVAILABLE %Iu %p %p %p %p\n",
+   DEBUG_TRACE(syslog(LOG_DEBUG,"DATA AVAILABLE %Iu %p %p %p %p\n",
                        IOBUFFER_MAXREAD(self,self->ib_rpos),
                        self->ib_rpos,self->ib_wpos,
                        self->ib_buffer,self->ib_buffer+self->ib_size));
@@ -316,13 +316,13 @@ end_rpos:
    COMPILER_BARRIER();
    /* Make sure our original start r-pos is still valid.
     * Also make sure no other was performed a write, thus making this just a regular case. */
-   DEBUG_TRACE(syslogf(LOG_DEBUG,"BUFFER BECAME EMPTY\n"));
+   DEBUG_TRACE(syslog(LOG_DEBUG,"BUFFER BECAME EMPTY\n"));
    /* NOTE: the second check might fail if some other task quickly performed a read/write. */
    if __unlikely(error == -ERELOAD &&
                 (self->ib_rpos != start_rpos || rpos != self->ib_wpos)) {
     /* Some other task already performed a read. */
     rwlock_endwrite(&self->ib_rwlock);
-    DEBUG_TRACE(syslogf(LOG_DEBUG,"Some other task already performed a read.\n"));
+    DEBUG_TRACE(syslog(LOG_DEBUG,"Some other task already performed a read.\n"));
     goto again_full;
    }
    assert(bufend == self->ib_buffer+self->ib_size);
@@ -334,7 +334,7 @@ end_rpos:
    COMPILER_WRITE_BARRIER();
 
    if (buffer_was_full) {
-    DEBUG_TRACE(syslogf(LOG_DEBUG,"FULL BUFFER BECAME EMPTY\n"));
+    DEBUG_TRACE(syslog(LOG_DEBUG,"FULL BUFFER BECAME EMPTY\n"));
     /* Wake writers if the buffer used to be full */
     rwlock_downgrade(&self->ib_rwlock);
     goto wake_writers;
@@ -352,9 +352,9 @@ end_rpos:
   /* Wake writers if the buffer used to be full */
   if (buffer_was_full) {
 wake_writers:
-   DEBUG_TRACE(syslogf(LOG_DEBUG,"Waking writers..."));
+   DEBUG_TRACE(syslog(LOG_DEBUG,"Waking writers..."));
    sig_broadcast(&self->ib_nfull);
-   DEBUG_TRACE(syslogf(LOG_DEBUG," (OK)\n"));
+   DEBUG_TRACE(syslog(LOG_DEBUG," (OK)\n"));
   }
  }
  error = (ssize_t)result;
@@ -399,7 +399,7 @@ buffer_is_full:
    assert(!IOBUFFER_MAXWRITE(self,self->ib_rpos));
    rwlock_endwrite(&self->ib_rwlock);
    error = sig_recv_endwrite(&self->ib_nfull);
-   DEBUG_TRACE(syslogf(LOG_DEBUG,"Writer awoke\n"));
+   DEBUG_TRACE(syslog(LOG_DEBUG,"Writer awoke\n"));
    if (E_ISERR(error)) goto end_always;
    goto again;
   } /*else goto end;*/
@@ -414,7 +414,7 @@ buffer_is_full:
   write_pos = (size_t)(self->ib_wpos-self->ib_buffer);
   new_buffer_size = self->ib_size+(bufsize-max_write);
   new_buffer_size = MIN(new_buffer_size,max_size);
-  //syslogf(LOG_DEBUG,"[IOBUF] Realloc for %Iu bytes (%Iu; %Iu)\n",bufsize,new_buffer_size,max_size);
+  //syslog(LOG_DEBUG,"[IOBUF] Realloc for %Iu bytes (%Iu; %Iu)\n",bufsize,new_buffer_size,max_size);
   assert(new_buffer_size >= self->ib_size);
   assert(new_buffer_size <= max_size);
   if (new_buffer_size != self->ib_size) {
@@ -505,9 +505,9 @@ end:
    ) {
    /* Prevent the buffer from appearing as though it was empty */
    self->ib_rpos = self->ib_buffer;
-   DEBUG_TRACE(syslogf(LOG_DEBUG,"FIX READ POINTER\n"));
+   DEBUG_TRACE(syslog(LOG_DEBUG,"FIX READ POINTER\n"));
   }
-  DEBUG_TRACE(syslogf(LOG_DEBUG,"BROADCAST_DATA_AVAILABLE\n"));
+  DEBUG_TRACE(syslog(LOG_DEBUG,"BROADCAST_DATA_AVAILABLE\n"));
   /* Signal that data has become available */
   sig_broadcast(&self->ib_avail);
  }

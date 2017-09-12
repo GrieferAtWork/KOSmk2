@@ -38,7 +38,7 @@
 #include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <sched/signal.h>
 #include <sched/task.h>

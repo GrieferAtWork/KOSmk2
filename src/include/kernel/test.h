@@ -21,7 +21,7 @@
 
 #include <hybrid/compiler.h>
 #include <string.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 
 DECL_BEGIN
 
@@ -59,7 +59,7 @@ LOCAL void KCALL test_run(char const *name) {
  struct testrecord const *iter = __testrec_start;
  for (; iter < __testrec_end; ++iter) {
   if (name && strcmp(iter->tr_name,name) != 0) continue;
-  syslogf(LOG_DEBUG|LOG_TEST,"%s(%d) : Testing : %q (%p)\n",
+  syslog(LOG_DEBUG,"%s(%d) : Testing : %q (%p)\n",
           iter->tr_file,iter->tr_line,iter->tr_name,iter->tr_test);
   (*iter->tr_test)();
  }

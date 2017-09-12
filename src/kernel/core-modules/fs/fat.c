@@ -41,7 +41,7 @@
 #include <kernel/boot.h>
 #include <kernel/export.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <malloc.h>
 #include <modules/fat.h>
@@ -342,7 +342,7 @@ fat_readlink(struct inode *__restrict ino,
  if unlikely(bufsize < read_total) goto end;
  read_chars = ((size_t)error-sizeof(symlnk_magic))/2;
  utf16_to_utf8_inplace((u16 *)(temp+sizeof(symlnk_magic)),read_chars);
- FAT_DEBUG(syslogf(LOG_DEBUG,"SYMLINK: %$q\n",
+ FAT_DEBUG(syslog(LOG_DEBUG,"SYMLINK: %$q\n",
                    read_chars,temp+sizeof(symlnk_magic)));
  if (copy_to_user(buf,temp+sizeof(symlnk_magic),read_chars*sizeof(char)))
      goto err_fault;
@@ -494,7 +494,7 @@ fat_lookup_memory(struct lookupdata *__restrict data,
        filenameiter[-1] == '.')
        --filenameiter;
    if (*(u8 *)filename == MARKER_IS0XE5) *(u8 *)filename = 0xE5;
-   FAT_DEBUG(syslogf(LOG_DEBUG,"[FAT] Short filename: %$q (Looking for %$q)\n",
+   FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Short filename: %$q (Looking for %$q)\n",
                     (size_t)(filenameiter-filename),filename,
                      name->dn_size,name->dn_name));
    if ((size_t)(filenameiter-filename) == name->dn_size &&
@@ -538,7 +538,7 @@ found_entry:
                                 (struct superblock *)fatfs,
                                  THIS_INSTANCE)));
     }
-    FAT_DEBUG(syslogf(LOG_DEBUG,"[FAT] Found INode for %$q\n",
+    FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Found INode for %$q\n",
                       name->dn_size,name->dn_name));
     return &result->f_inode;
    }
@@ -642,7 +642,7 @@ filedata_load(struct filedata *__restrict self, fat_t *__restrict fs,
   errno_t temp; size_t n_ahead;
   pos_t file_pos,file_size,clus_offset;
   cluster_t file_start;
-  FAT_DEBUG(syslogf(LOG_DEBUG,"[FAT] Sector jump: %Iu -> %Iu\n",
+  FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Sector jump: %Iu -> %Iu\n",
                     self->fd_cls_act,self->fd_cls_sel));
   /* A different cluster has been selected. */
   file_pos = FILEDATA_FPOS(self,fs);
@@ -1289,13 +1289,13 @@ is_loaded:
    *result = FAT_TABLEGET(self,id);
   }
   rwlock_endwrite(&self->f_fat_lock);
-  FAT_DEBUG(syslogf(LOG_DEBUG,"READ_CLUSTER (%I32u -> %I32u) %d (LOAD)\n",
+  FAT_DEBUG(syslog(LOG_DEBUG,"READ_CLUSTER (%I32u -> %I32u) %d (LOAD)\n",
                     id,*result,self->f_type));
   return error;
  }
  /* Now just read the FAT entry. */
  *result = FAT_TABLEGET(self,id);
- FAT_DEBUG(syslogf(LOG_DEBUG,"READ_CLUSTER (%I32u -> %I32u) %d\n",
+ FAT_DEBUG(syslog(LOG_DEBUG,"READ_CLUSTER (%I32u -> %I32u) %d\n",
                    id,*result,self->f_type));
  rwlock_endread(&self->f_fat_lock);
  return -EOK;

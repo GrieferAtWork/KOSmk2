@@ -39,7 +39,7 @@
 #include <kernel/mman.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <sched/cpu.h>
 #include <sched/signal.h>

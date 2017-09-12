@@ -31,7 +31,7 @@
 #include <hybrid/sync/atomic-rwlock.h>
 #include <hybrid/types.h>
 #include <kos/keyboard.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <limits.h>
 #include <pty.h>
 #include <signal.h>
@@ -798,7 +798,7 @@ int main(int argc, char *argv[]) {
   while ((s = read(amaster,buf,sizeof(buf))) > 0) {
 #if 0
    format_printf(&term_printer,&pty,"%$q\n",s,buf);
-   syslogf(LOG_DEBUG,"TERM: %$q\n",s,buf);
+   syslog(LOG_DEBUG,"TERM: %$q\n",s,buf);
 #else
    term_printer(buf,(size_t)s,&pty);
 #endif
@@ -819,7 +819,7 @@ int main(int argc, char *argv[]) {
   break;
  }
  /* The pipe was broken. - Wait for the child to terminate. */
- syslogf(LOG_DEBUG,"TERMINAL-VGA: Waiting for child process %d\n",child_proc);
+ syslog(LOG_DEBUG,"TERMINAL-VGA: Waiting for child process %d\n",child_proc);
  waitpid(child_proc,&result,WEXITED);
  result = WEXITSTATUS(result);
 child_joined:

@@ -30,7 +30,7 @@
 #include <kernel/mman.h>
 #include <hybrid/align.h>
 #include <hybrid/limits.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 
 DECL_BEGIN
 

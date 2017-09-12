@@ -39,7 +39,7 @@
 #include <kernel/paging.h>
 #include <dev/rtc.h>
 #include <sched/smp.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <sched/percpu.h>
 #include <sched/task.h>
@@ -186,7 +186,7 @@ INTERN ATTR_NORETURN void cpu_bootstrap_c(void) {
  case CPUMODE_SHUTDOWN:
  case CPUMODE_SHUTDOWN_NOMIGRATE:
  case CPUMODE_OFFLINE: /* This can happen due to a race condition with startup timeouts. */
-  syslogf(LOG_SCHED|LOG_INFO,
+  syslog(LOG_SCHED|LOG_INFO,
           "[SMP] CPU #%d shutting down immediately!\n",
           THIS_CPU->c_id);
   __cpu_shutdown_now_endwrite();
@@ -217,7 +217,7 @@ INTERN ATTR_NORETURN void cpu_bootstrap_c(void) {
    __asm__ __volatile__("lidt %0\n" : : "m" (idt) : "memory");
  }
 
- syslogf(LOG_SCHED|LOG_DEBUG,"[SMP] Secondary CPU!\n");
+ syslog(LOG_SCHED|LOG_DEBUG,"[SMP] Secondary CPU!\n");
 
  if (THIS_CPU->c_arch.ac_flags&CPUFLAG_LAPIC) {
   /* Enable LAPIC before turning on interrupts! */
@@ -276,11 +276,11 @@ apic_exec_ipc(u32 icr_word, u32 icr2_word) {
   i8253_delay10ms();
   error = apic_read(APIC_ESR) ? -ECOMM : -EOK;
   if (E_ISOK(error) || !--attempt) break;
-  syslogf(LOG_SCHED|LOG_DEBUG,"[SMP] Resending LAPIC IPC-irc command %.8I32x:%.8I32x #%d: %[errno]\n",
+  syslog(LOG_SCHED|LOG_DEBUG,"[SMP] Resending LAPIC IPC-irc command %.8I32x:%.8I32x #%d: %[errno]\n",
           icr_word,icr2_word,CPUINIT_IPI_ATTEMPTS-attempt,-error);
  }
  if (E_ISERR(error)) {
-  syslogf(LOG_SCHED|LOG_ERROR,
+  syslog(LOG_SCHED|LOG_ERROR,
           "[SMP] Failed to execute LAPIC IPC-irc command %.8I32x:%.8I32x: %[errno]\n",
           icr_word,icr2_word);
  }
@@ -308,7 +308,7 @@ cpu_do_activate_endwrite(struct cpu *__restrict self) {
  gdt->ip_limit = sizeof(cpu_gdt);
  gdt->ip_gdt   = VCPU(self,cpu_gdt);
  gdt->ip_gdt   = (struct segment *)PDIR_TRANSLATE(&pdir_kernel_v,gdt->ip_gdt);
- syslogf(LOG_SCHED|LOG_DEBUG,"[SMP] Booting CPU #%d at %p\n",self->c_id,start_ip);
+ syslog(LOG_SCHED|LOG_DEBUG,"[SMP] Booting CPU #%d at %p\n",self->c_id,start_ip);
 
  /* Set BIOS shutdown code to warm start. */
  outb(0x70,0xf);
@@ -401,7 +401,7 @@ again:
   bool shutdown;
  case CPUMODE_SHUTDOWN:
  case CPUMODE_SHUTDOWN_NOMIGRATE:
-  syslogf(LOG_SCHED|LOG_WARN,
+  syslog(LOG_SCHED|LOG_WARN,
           "[SMP] Re-starting CPU #%d that is still shutting down (Race condition?)\n",
           self->c_id);
  case CPUMODE_STARTUP:
@@ -522,7 +522,7 @@ again:
  {
   bool startup;
  case CPUMODE_STARTUP:
-  syslogf(LOG_SCHED|LOG_WARN,
+  syslog(LOG_SCHED|LOG_WARN,
           "[SMP] Shutting down CPU #%d that is still starting up (Race condition?)\n",
           self->c_id);
  case CPUMODE_SHUTDOWN:

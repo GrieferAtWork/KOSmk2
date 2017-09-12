@@ -28,7 +28,7 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <kernel/boot.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <stdlib.h>
 
 DECL_BEGIN
@@ -69,7 +69,7 @@ PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
  }
  atomic_rwlock_endread(&self->d_inode_lock);
 #if 0
- syslogf(LOG_DEBUG,"[FS] CACHE: %[dentry]\n",self);
+ syslog(LOG_DEBUG,"[FS] CACHE: %[dentry]\n",self);
 #endif
 
  /* Now to cache this entry!

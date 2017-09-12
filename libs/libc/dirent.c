@@ -93,7 +93,7 @@ PUBLIC struct dirent *(LIBCCALL readdir)(DIR *dirp) {
 read_again:
  error = xreaddir(dirp->d_fd,(result = dirp->d_buf),
                   dirp->d_bufsz,READDIR_DEFAULT);
- //syslogf(LOG_CONFIRM,"xreaddir(%d,%p,%Iu,%d) -> %Id\n",
+ //syslog(LOG_CONFIRM,"xreaddir(%d,%p,%Iu,%d) -> %Id\n",
  //        dirp->d_fd,result,dirp->d_bufsz,
  //        READDIR_DEFAULT,error);
  //sys_xpaused("PAUSE");

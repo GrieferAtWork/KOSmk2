@@ -27,7 +27,7 @@
 #include <hybrid/minmax.h>
 #include <hybrid/section.h>
 #include <kernel/export.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <kernel/user.h>
 #include <malloc.h>
 #include <modules/memdev.h>
@@ -108,7 +108,7 @@ memdev_mkdev(struct mdev_setup const *__restrict setup) {
  if (E_ISERR(error)) goto err;
  return;
 err:
- syslogf(LOG_MEM|LOG_ERROR,
+ syslog(LOG_MEM|LOG_ERROR,
          "[MEMDEV] Failed to register memory device %[dev_t]: %[errno]\n",
          setup->ms_dev,-error);
 }

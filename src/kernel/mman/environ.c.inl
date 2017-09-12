@@ -33,7 +33,7 @@
 #include <kernel/paging.h>
 #include <kernel/user.h>
 #include <kos/environ.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/paging.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -124,7 +124,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
   char *str_end = strend_user(str);
   if (!str_end) goto efault;
 #if 0
-  syslogf(LOG_DEBUG,"Add argument: %p...%p (%Iu bytes)\n",
+  syslog(LOG_DEBUG,"Add argument: %p...%p (%Iu bytes)\n",
           str,str_end,(size_t)((str_end-str)+1));
 #endif
   if unlikely(__builtin_add_overflow(arg_text,(size_t)((str_end-str)+1),&arg_text))
@@ -161,7 +161,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
  assert(IS_ALIGNED(new_total_pages,PAGESIZE));
 
 #if 0
- syslogf(LOG_DEBUG,"Update environ: %Iu -> %Iu (%Iu + %Iu)\n",
+ syslog(LOG_DEBUG,"Update environ: %Iu -> %Iu (%Iu + %Iu)\n",
          old_total_pages,new_total_pages,arg_text,env_text);
 #endif
  if (new_total_pages < old_total_pages) {

@@ -40,7 +40,7 @@
 #include <kernel/syscall.h>
 #include <kernel/user.h>
 #include <kos/fcntl.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <limits.h>
 #include <linker/module.h>
 #include <malloc.h>
@@ -662,7 +662,7 @@ SYSCALL_DEFINE3(fcntl,int,fd,int,cmd,USER void *,arg) {
    *       descriptors in favor of allocating more high-index ones.
    */
   result = fdman_put_nearby(fdm,(unsigned int)(uintptr_t)arg,f);
-  FD_DECREF(f);
+  FD_SAFE_DECREF(f);
   break;
 
  case F_GETFD:
@@ -754,7 +754,7 @@ SYSCALL_DEFINE3(dup3,int,oldfd,int,newfd,oflag_t,flags) {
   if (flags&O_CLOEXEC) f.fo_flags |= FD_CLOEXEC;
   if (flags&O_CLOFORK) f.fo_flags |= FD_CLOFORK;
   result = fdman_set(fdm,newfd,f);
-  FD_DECREF(f);
+  FD_SAFE_DECREF(f);
  }
  task_endcrit();
  return result;

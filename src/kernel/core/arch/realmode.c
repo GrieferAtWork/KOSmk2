@@ -27,7 +27,7 @@
 #include <kernel/memory.h>
 #include <hybrid/panic.h>
 #include <string.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <hybrid/asm.h>
 #include <hybrid/arch/eflags.h>
 #include <kernel/arch/gdt.h>
@@ -292,7 +292,7 @@ early_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
   memcpy((void *)(REALMODE_STARTRELO),
          (void *)(rm_bios_int_begin),
          (size_t)(rm_bios_int_end-rm_bios_int_begin));
-  syslogf(LOG_DEBUG,FREESTR("[X86] Loaded early realmode interrupt code to %p...%p\n"),
+  syslog(LOG_DEBUG,FREESTR("[X86] Loaded early realmode interrupt code to %p...%p\n"),
           (uintptr_t)REALMODE_STARTRELO,
           (uintptr_t)REALMODE_STARTRELO+(size_t)(rm_bios_int_end-rm_bios_int_begin)-1);
   /* Setup the realmode so-as to indicate 'rm_bios_int_begin' being loaded at 'REALMODE_STARTRELO'. */
@@ -356,7 +356,7 @@ KCALL realmode_initialize(void) {
     end  = descr_iter->rd_rel_end;
     for (; iter < end; ++iter) {
 #if 0
-     syslogf(LOG_MEM|LOG_INFO,"%p + %p\n",
+     syslog(LOG_MEM|LOG_INFO,"%p + %p\n",
              descr_iter->rd_virt_begin,*iter);
 #endif
      *(u16 *)(descr_iter->rd_virt_begin+*iter) += offset;
@@ -392,12 +392,12 @@ KCALL realmode_initialize(void) {
 
    realmode_vstack = realmode_vbase+(realmode_stack-realmode_base);
  }
- syslogf(LOG_MEM|LOG_INFO,
+ syslog(LOG_MEM|LOG_INFO,
          FREESTR("[X86] Relocating realmode segment to %.5I16X...%.5I16X (%p...%p)\n"),
         (u16)realmode_base,(u16)(realmode_base+alloc_size-1),
          realmode_vbase,(realmode_vbase+alloc_size-1));
 #else
- syslogf(LOG_MEM|LOG_INFO,
+ syslog(LOG_MEM|LOG_INFO,
          FREESTR("[X86] Relocating realmode segment to %.5I16X...%.5I16X\n"),
         (u16)realmode_base,(u16)(realmode_base+alloc_size-1));
 #endif

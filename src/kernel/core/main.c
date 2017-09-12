@@ -52,7 +52,7 @@
 #include <kernel/syslog.h>
 #include <kernel/test.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <linker/patch.h>
 #include <malloc.h>
@@ -81,7 +81,7 @@ void KCALL kinsmod(char const *filename) {
  struct instance *inst;
  inst = kernel_insmod_s(filename,NULL,INSMOD_NORMAL);
  if (E_ISERR(inst))
-     syslogf(LOG_EXEC|LOG_ERROR,"[MOD] Failed to open module %q: %[errno]\n",
+     syslog(LOG_EXEC|LOG_ERROR,"[MOD] Failed to open module %q: %[errno]\n",
              filename,-E_GTERR(inst));
  else INSTANCE_DECREF(inst);
 }
@@ -122,7 +122,7 @@ run_init(char const *__restrict filename) {
  task_nointr();
  mod = module_open_s(filename);
  if (E_ISERR(mod)) {
-  syslogf(LOG_EXEC|LOG_ERROR,"[MOD] Failed to load module %q: %[errno]\n",
+  syslog(LOG_EXEC|LOG_ERROR,"[MOD] Failed to load module %q: %[errno]\n",
           filename,-E_GTERR(mod));
   return;
  }
@@ -220,7 +220,7 @@ run_init(char const *__restrict filename) {
  //mman_print_unlocked(mm,&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_DEBUG));
  //mman_endread(mm);
 
- syslogf(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in '%[file]') at %p\n",
+ syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in '%[file]') at %p\n",
          filename,mod->m_file,state->host.eip);
  assert(mm == thrd->t_mman);
 
@@ -237,7 +237,7 @@ run_init(char const *__restrict filename) {
  task_yield();
 
 
- syslogf(LOG_EXEC|LOG_INFO,"JOIN\n");
+ syslog(LOG_EXEC|LOG_INFO,"JOIN\n");
 
  /* And now join it! */
  { errno_t error;
@@ -249,7 +249,7 @@ run_init(char const *__restrict filename) {
  assert(PREEMPTION_ENABLED());
  syslog_set_printer(&syslog_print_default);
 
- syslogf(LOG_EXEC|LOG_INFO,"[APP] App %q exited with %p\n",
+ syslog(LOG_EXEC|LOG_INFO,"[APP] App %q exited with %p\n",
          filename,exitcode);
 
  TASK_DECREF(thrd);
@@ -302,7 +302,7 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
      *(uintptr_t *)&tag_end += CEIL_ALIGN(tag_end->size,MB2_TAG_ALIGN);
   temp = (uintptr_t)tag_end-(uintptr_t)tag_begin;
   if unlikely(mbt_min_size < temp) {
-   syslogf(LOG_BOOT|LOG_WARN,
+   syslog(LOG_BOOT|LOG_WARN,
            FREESTR("[MB2] Announced MBT size %Iu is smaller than actual size %Iu\n"),
            mbt_min_size,temp);
   }
@@ -342,7 +342,7 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
 
    default:
 #if 0
-    syslogf(LOG_BOOT|LOG_DEBUG,
+    syslog(LOG_BOOT|LOG_DEBUG,
             FREESTR("[MB2] Unused TAG: %I32u\n"),
             tag_iter->type);
 #endif
@@ -352,13 +352,13 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
  } break;
 
  default:
-  syslogf(LOG_WARN,FREESTR("[BOOT] No known hosting bootloader detected\n"));
+  syslog(LOG_WARN,FREESTR("[BOOT] No known hosting bootloader detected\n"));
   break;
  }
 
  /* If the Bootloader didn't locate enough memory (<= 10Mb), search for more ourself. */
  if (mbt_memory <= 0x1000000) {
-  syslogf(LOG_INFO,
+  syslog(LOG_INFO,
           FREESTR("[MEM] Searching for more available memory... (Only %Iu bytes detected thus far)\n"),
           mbt_memory);
   memory_load_detect();
@@ -480,16 +480,16 @@ end: ATTR_UNUSED;
  task_endcrit();
 
 #if 0
- syslogf(LOG_DEBUG,"Done #1\n");
+ syslog(LOG_DEBUG,"Done #1\n");
  test_run(NULL);
- syslogf(LOG_DEBUG,"Done #2\n");
+ syslog(LOG_DEBUG,"Done #2\n");
 #endif
 
 #if 1
  for (;;) {
   assert(PREEMPTION_ENABLED());
   PREEMPTION_IDLE();
-  //syslogf(LOG_DEBUG,"I AM ALIVE!\n");
+  //syslog(LOG_DEBUG,"I AM ALIVE!\n");
  }
 #endif
 
@@ -500,11 +500,11 @@ end: ATTR_UNUSED;
   rwlock_write(&apic_lock);
 
   error = cpu_enable_unlocked(CPUI(1));
-  syslogf(LOG_DEBUG,"cpu_enable_unlocked() -> %[errno]\n",-error);
+  syslog(LOG_DEBUG,"cpu_enable_unlocked() -> %[errno]\n",-error);
   error = cpu_sendipc_unlocked(CPUI(1),0xff);
-  syslogf(LOG_DEBUG,"cpu_sendipc() -> %[errno]\n",-error);
+  syslog(LOG_DEBUG,"cpu_sendipc() -> %[errno]\n",-error);
   error = cpu_sendipc_unlocked(CPUI(1),0xff);
-  syslogf(LOG_DEBUG,"cpu_sendipc() -> %[errno]\n",-error);
+  syslog(LOG_DEBUG,"cpu_sendipc() -> %[errno]\n",-error);
 
   rwlock_endwrite(&apic_lock);
   task_endcrit();
@@ -546,7 +546,7 @@ end: ATTR_UNUSED;
 #endif
  task_endcrit();
 
- syslogf(LOG_DEBUG,"Done #3\n");
+ syslog(LOG_DEBUG,"Done #3\n");
  for (;;) PREEMPTION_IDLE();
 }
 

@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_KERNEL_CORE_SYSLOG_C
 #define GUARD_KERNEL_CORE_SYSLOG_C 1
+#define _KOS_SOURCE 1
 
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
@@ -35,16 +36,20 @@ DECL_BEGIN
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverride-init"
 
-#define SYSLOG_LEVEL_SHIFT 24
-PRIVATE u8 const syslog_colors[16] = {
-   [0 ... 15]                           = TTY_DEFAULT_COLOR,
-   [LOG_CRITICAL >> SYSLOG_LEVEL_SHIFT] = tty_entry_color(TTY_COLOR_RED,TTY_COLOR_BLACK),
-   [LOG_ERROR    >> SYSLOG_LEVEL_SHIFT] = tty_entry_color(TTY_COLOR_LIGHT_RED,TTY_COLOR_BLACK),
-   [LOG_WARN     >> SYSLOG_LEVEL_SHIFT] = tty_entry_color(TTY_COLOR_LIGHT_BROWN,TTY_COLOR_BLACK),
-   [LOG_CONFIRM  >> SYSLOG_LEVEL_SHIFT] = tty_entry_color(TTY_COLOR_LIGHT_GREEN,TTY_COLOR_BLACK),
-   [LOG_MESSAGE  >> SYSLOG_LEVEL_SHIFT] = tty_entry_color(TTY_COLOR_WHITE,TTY_COLOR_BLACK),
-   [LOG_INFO     >> SYSLOG_LEVEL_SHIFT] = tty_entry_color(TTY_COLOR_LIGHT_GREY,TTY_COLOR_BLACK),
-   [LOG_DEBUG    >> SYSLOG_LEVEL_SHIFT] = tty_entry_color(TTY_COLOR_DARK_GREY,TTY_COLOR_BLACK),
+PRIVATE u8 const syslog_colors[LOG_PRIMASK+1] = {
+   [0 ... LOG_PRIMASK] = TTY_DEFAULT_COLOR,
+   [LOG_EMERG]         = tty_entry_color(TTY_COLOR_RED,TTY_COLOR_BLACK),
+   [LOG_ALERT]         = tty_entry_color(TTY_COLOR_LIGHT_RED,TTY_COLOR_BLACK),
+   [LOG_CRIT]          = tty_entry_color(TTY_COLOR_MAGENTA,TTY_COLOR_BLACK),
+   [LOG_ERR]           = tty_entry_color(TTY_COLOR_LIGHT_MAGENTA,TTY_COLOR_BLACK),
+   [LOG_WARNING]       = tty_entry_color(TTY_COLOR_LIGHT_BROWN,TTY_COLOR_BLACK),
+   [LOG_NOTICE]        = tty_entry_color(TTY_COLOR_LIGHT_GREEN,TTY_COLOR_BLACK),
+#if 1
+   [LOG_INFO]          = tty_entry_color(TTY_COLOR_WHITE,TTY_COLOR_BLACK),
+#else
+   [LOG_INFO]          = tty_entry_color(TTY_COLOR_LIGHT_GREY,TTY_COLOR_BLACK),
+#endif
+   [LOG_DEBUG]         = tty_entry_color(TTY_COLOR_DARK_GREY,TTY_COLOR_BLACK),
 };
 
 #pragma GCC diagnostic pop
@@ -52,7 +57,7 @@ PRIVATE u8 const syslog_colors[16] = {
 FUNDEF ssize_t KCALL
 syslog_print_tty(char const *__restrict data,
                  size_t datalen, void *closure) {
- TTY_PUSHCOLOR(syslog_colors[((uintptr_t)closure >> SYSLOG_LEVEL_SHIFT) & 0xf]);
+ TTY_PUSHCOLOR(syslog_colors[(uintptr_t)closure & LOG_PRIMASK]);
  tty_print(data,datalen);
  TTY_POPCOLOR();
  return (ssize_t)datalen;
@@ -100,25 +105,24 @@ PUBLIC pformatprinter KCALL syslog_set_printer(pformatprinter printer) {
 
 
 
-PUBLIC ssize_t syslogf(u32 level, char const *format, ...) {
- va_list args; ssize_t result;
+PUBLIC void (ATTR_CDECL syslog)(int level, char const *format, ...) {
+ va_list args;
  va_start(args,format);
- result = format_vprintf(&syslog_printer,
-                         SYSLOG_PRINTER_CLOSURE(level),
-                         format,args);
+ format_vprintf(&syslog_printer,
+                 SYSLOG_PRINTER_CLOSURE(level),
+                 format,args);
  va_end(args);
- return result;
 }
-PUBLIC ssize_t KCALL vsyslogf(u32 level, char const *format, va_list args) {
- return format_vprintf(&syslog_printer,
-                        SYSLOG_PRINTER_CLOSURE(level),
-                        format,args);
+PUBLIC void (LIBCCALL vsyslog)(int level, char const *format, va_list args) {
+ format_vprintf(&syslog_printer,
+                 SYSLOG_PRINTER_CLOSURE(level),
+                 format,args);
 }
 
 #ifdef CONFIG_DEBUG
 SYSCALL_DEFINE1(xpaused,USER char const *,message) {
  volatile unsigned int i = 0;
- syslogf(LOG_CONFIRM,"PAUSED: %q (EIP = %p)\n",message,THIS_SYSCALL_EIP);
+ syslog(LOG_CONFIRM,"PAUSED: %q (EIP = %p)\n",message,THIS_SYSCALL_EIP);
  while (++i < (1 << 29));
  return -EOK;
 }

@@ -24,7 +24,7 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/sync/atomic-rwlock.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <sched/task.h>
 #include <string.h>
@@ -112,7 +112,7 @@ blkdev_mksuper(struct blkdev *__restrict self,
   }
  }
  if (E_ISOK(result)) {
-  syslogf(LOG_FS|LOG_CONFIRM,"[FS] Created %s superblock for block device %[dev_t]\n",
+  syslog(LOG_FS|LOG_CONFIRM,"[FS] Created %s superblock for block device %[dev_t]\n",
           ft->f_name,self->bd_device.d_id);
  }
  rwlock_endread(&fstype_lock);

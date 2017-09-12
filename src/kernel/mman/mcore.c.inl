@@ -31,7 +31,7 @@
 #include <kernel/malloc.h>
 #include <kernel/memory.h>
 #include <kernel/mman.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -51,7 +51,7 @@ mscatter_kpread(struct mscatter *__restrict scatter,
  ssize_t temp; size_t part;
 #if 0
  /* Log a debug message describing how we're going to load this scatter tab. */
- syslogf(LOG_DEBUG,"LOAD: %[file] FILL(%.4IX,%IX), READ(%.4IX,%IX,%I64X), FILL(%.4IX,...)\n",
+ syslog(LOG_DEBUG,"LOAD: %[file] FILL(%.4IX,%IX), READ(%.4IX,%IX,%I64X), FILL(%.4IX,...)\n",
          fp,(void *)0,fill_before,
         (void *)fill_before,max_read,pos,
         (void *)(fill_before+max_read));
@@ -312,7 +312,7 @@ load_swap:
      if (max_read < part_begin) max_read  = 0;
      else max_read -= part_begin;
 #if 0
-     syslogf(LOG_DEBUG,"SCATTER (%[file]:%I64X - %IX bytes; offset %IX)\n",
+     syslog(LOG_DEBUG,"SCATTER (%[file]:%I64X - %IX bytes; offset %IX)\n",
              self->mr_setup.mri_file,
              self->mr_setup.mri_start+part_begin,
              max_read,part_begin);
@@ -418,7 +418,7 @@ mbranch_mcore(struct mbranch *__restrict self,
  struct mman *old_mman = NULL;
  CHECK_HOST_DOBJ(self);
 #if 0
- syslogf(LOG_DEBUG|LOG_MEM,"[MEM] Loading branch %p...%p into the core\n",
+ syslog(LOG_DEBUG|LOG_MEM,"[MEM] Loading branch %p...%p into the core\n",
          self->mb_node.a_vmin,self->mb_node.a_vmax);
 #endif
  /* Simple check: Ignore no-user branches. */

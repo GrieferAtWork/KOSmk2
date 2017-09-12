@@ -26,7 +26,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>
 #include <kernel/mman.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <linker/patch.h>
 #include <sched/task.h>
@@ -122,7 +122,7 @@ local_nomem:
   * TODO: Must somehow pass 'cmdline' to the driver. */
  instance_callinit(result);
 
- syslogf(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module %.?q from %[file]\n",
+ syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module %.?q from %[file]\n",
          mod->m_name->dn_size,mod->m_name->dn_name,mod->m_file);
 
  return result;
@@ -266,7 +266,7 @@ can_unload:
    }
    /* Log an error message if the reference counter is still too great. */
    if (refcnt > ok_refcnt) {
-    syslogf(LOG_EXEC|LOG_ERROR,
+    syslog(LOG_EXEC|LOG_ERROR,
             "[MOD] DANGER: Unloading module %.?q (from '%[file]') despite non-zero use counter of %d\n",
             mod->m_name->dn_size,
             mod->m_name->dn_name,
@@ -282,7 +282,7 @@ can_unload:
    assert(ATOMIC_READ(inst->i_branch) == 0);
    ATOMIC_WRITE(inst->i_refcnt,0);
    instance_destroy(inst);
-   syslogf(LOG_EXEC|LOG_INFO,"[MOD] Unloaded module %.?q from '%[file]'\n",
+   syslog(LOG_EXEC|LOG_INFO,"[MOD] Unloaded module %.?q from '%[file]'\n",
            mod->m_name->dn_size,mod->m_name->dn_name,mod->m_file);
    MODULE_DECREF(mod);
  }
@@ -367,11 +367,11 @@ rechain:
    /* We're not getting anywhere here... -> Lets get more drastic! */
    ++level;
    if unlikely(level == COMPILER_LENOF(delmod_cleanup_modes)) {
-    syslogf(LOG_EXEC|LOG_ERROR,"[MOD] Failed to unload %Iu kernel modules:\n",level);
+    syslog(LOG_EXEC|LOG_ERROR,"[MOD] Failed to unload %Iu kernel modules:\n",level);
     for (iter = mman_kernel.m_inst; iter;
          iter = iter->i_chain.le_next) {
      if (iter != THIS_INSTANCE) {
-      syslogf(LOG_EXEC|LOG_ERROR,"[MOD] Module %.?q (from '%[file]')\n",
+      syslog(LOG_EXEC|LOG_ERROR,"[MOD] Module %.?q (from '%[file]')\n",
               iter->i_module->m_name->dn_size,
               iter->i_module->m_name->dn_name,
               iter->i_module->m_file);
@@ -379,7 +379,7 @@ rechain:
     }
     goto done;
    } else if (!DELMOD_CLEANUP_MODEOK(level)) {
-    syslogf(LOG_EXEC|LOG_WARN,
+    syslog(LOG_EXEC|LOG_WARN,
             "[MOD] Failed to unload %Iu kernel module%s. - Entering level #%d (mode %#.8I32x)\n",
             fail_count,fail_count > 1 ? "s" : "",level,delmod_cleanup_modes[level]);
    }

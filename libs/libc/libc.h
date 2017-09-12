@@ -21,12 +21,13 @@
 
 #include <assert.h>
 #include <hybrid/compiler.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 
 DECL_BEGIN
 
 #if !defined(__KERNEL__) && 1
-#define NOT_IMPLEMENTED() syslogf(LOG_WARN,"%s(%d) : %s : NOT_IMPLEMENTED()\n",__FILE__,__LINE__,__FUNCTION__)
+#define NOT_IMPLEMENTED() \
+  syslog(LOG_WARNING,"%s(%d) : %s : NOT_IMPLEMENTED()\n",__FILE__,__LINE__,__FUNCTION__)
 #else
 #define NOT_IMPLEMENTED() assert(0)
 #endif

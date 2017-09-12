@@ -33,7 +33,7 @@
 #include <kernel/stack.h>
 #include <kernel/syscall.h>
 #include <kos/environ.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <linker/patch.h>
 #include <sched/cpu.h>
@@ -59,7 +59,7 @@ user_execve(REF struct module *__restrict mod,
  USER struct envdata *environ;
  struct mman_maps env_maps = {NULL};
  CHECK_HOST_DOBJ(mod);
- syslogf(LOG_DEBUG,"Begin exec: '%[file]'\n",mod->m_file);
+ syslog(LOG_DEBUG,"Begin exec: '%[file]'\n",mod->m_file);
  assertf(mm != &mman_kernel,"You can't exec() with the kernel memory manager set!");
 
  /* Make sure the module is really an executable. */
@@ -279,7 +279,7 @@ endwrite:
 #endif
 
 
-   syslogf(LOG_EXEC|LOG_INFO,"[APP] Starting user app '%[file]' at %p\n",
+   syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app '%[file]' at %p\n",
            mod->m_file,state.host.eip);
 
    /* Last phase: actually switch to the new task! */
@@ -299,7 +299,7 @@ end_too_late_patch:
 end_too_late:
  /* It's too late to rewind, after failing to start the application.
   * >> Log failure and mark the caller to termination once its critical block ends. */
- syslogf(LOG_EXEC|LOG_ERROR,
+ syslog(LOG_EXEC|LOG_ERROR,
          "[EXEC] Failed to execute module '%[file]': %[errno]\n",
          mod->m_file,-error);
  mman_maps_fini(&env_maps);
@@ -351,7 +351,7 @@ end:
  task_endcrit();
  assert(!task_iscrit());
 #if 1
- syslogf(LOG_EXEC|LOG_DEBUG,"[EXEC] exec failed: %[errno]\n",-result);
+ syslog(LOG_EXEC|LOG_DEBUG,"[EXEC] exec failed: %[errno]\n",-result);
 #endif
  return result;
 }

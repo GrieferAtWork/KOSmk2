@@ -36,7 +36,7 @@
 #include <kernel/memory.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <proprietary/multiboot.h>
 #include <proprietary/multiboot2.h>
@@ -254,7 +254,7 @@ search_zone:
   /* Search for the most suitable free range. */
   PAGE_FOREACH(iter,zone) {
 #if 0
-   syslogf(LOG_DEBUG,"zone #%d: %p...%p\n",
+   syslog(LOG_DEBUG,"zone #%d: %p...%p\n",
           (int)(zone-page_zones),iter,(uintptr_t)PAGE_END(iter)-1);
 #endif
    assertf(iter->p_free.p_next == PAGE_ERROR ||
@@ -319,7 +319,7 @@ search_zone:
    atomic_rwlock_endwrite(&zone->z_lock);
 
 #if LOG_PHYSICAL_ALLOCATIONS
-   syslogf(LOG_MEM|LOG_DEBUG,
+   syslog(LOG_MEM|LOG_DEBUG,
            "[MEM] Allocated memory %p...%p from zone #%d (#%d)\n",
            result,(uintptr_t)result+(n_bytes-1),
           (int)(zone-page_zones),zone_id);
@@ -732,7 +732,7 @@ memory_do_install(PHYS PAGE_ALIGNED uintptr_t start,
  /* Mark the region as available. */
  if (size) {
   if (mode != MEMORY_INSTALL_MODE_ONLYINFO) {
-   syslogf(LOG_MEM|LOG_INFO,
+   syslog(LOG_MEM|LOG_INFO,
            FREESTR("[MEM] Using dynamic memory %p..%p\n"),
            start,start+size-1);
    memory_register((ppage_t)start,size,mode == MEMORY_INSTALL_MODE_NOINFO);
@@ -815,7 +815,7 @@ memory_install(PHYS uintptr_t start, size_t size) {
   /* Mark this portion of the no-touch guard as free-later. */
   assert(start < mend);
   if (!memory_install_free_later(start,mend)) {
-   syslogf(LOG_MEM|LOG_WARN,
+   syslog(LOG_MEM|LOG_WARN,
            FREESTR("[MEM] Insufficient free-later-ranges to mark %p...%p\n"),
            start,mend-1);
   }
@@ -895,7 +895,7 @@ memory_install64(u64 begin, u64 size) {
 
 INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
 memory_load_mb_lower_upper(u32 mem_lower, u32 mem_upper) {
- syslogf(LOG_MEM|LOG_INFO,
+ syslog(LOG_MEM|LOG_INFO,
          "TODO: memory_load_mb_lower_upper: %I32u / %I32u\n",
          mem_lower,mem_upper);
  return 0;

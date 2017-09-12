@@ -25,7 +25,7 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <string.h>
 

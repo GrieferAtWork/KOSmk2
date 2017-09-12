@@ -552,7 +552,7 @@ enter_escape_mode:
    coord_t x,y;
   case ANSI_DSR:
    GET_CURSOR(x,y);
-   //syslogf(KLOG_INFO,"Requested cursor position %d;%d\n",y,x);
+   //syslog(KLOG_INFO,"Requested cursor position %d;%d\n",y,x);
    sprintf(buf,ANSI_ESCAPE_S "[%d;%dR",y+1,x+1);
    OUTPUT(buf);
    break;

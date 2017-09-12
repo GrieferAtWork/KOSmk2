@@ -38,6 +38,7 @@ Chaos|KOS - Even more chaotic that last time.
    - <code>signal()</code>/<code>raise()</code>/<code>kill()</code>/<code>sigprocmask()</code>
      - terminate/suspend/resume support for <code>SIGKILL</code>, <code>SIGSTOP</code>, <code>SIGCONT</code>
    - <code>open()</code>/<code>read()</code>/<code>write()</code>/<code>lseek()</code>
+   - <code>mount()</code>/<code>umount()</code>
    - <code>argc</code>/<code>argv</code>/<code>environ</code>
    - Can run <b>BUSYBOX</b>!
  - PS/2 keyboard input
@@ -57,21 +58,21 @@ Chaos|KOS - Even more chaotic that last time.
    - Filesystem
      - FAT-12/16/32
      - <code>/dev</code>
+     - <code>/proc</code> (Not finished)
  - Modular kernel design (New features loaded by drivers)
 
 ## Planned (As seen in the old KOS) ##
  - PE binaries/libraries (.exe / .dll)
  - dlopen (Shared libraries)
  - cmos rtc driver (Currently 'date' uses PIT interrupts and is reset during boot)
- - signal exception handling
  - local exception handling
- - Finally add write-support for FAT (Yeesh...)
  - <code>futex()</code>
- - <code>/proc</code>
 
 ## Planned (As not seen in the old KOS) ##
- - <code>/proc</code> (Complete)
+ - <code>/proc</code> (Finished)
  - <code>/sys</code>
+ - signal exception handling
+ - Finally add write-support for FAT (Yeesh...)
  - IP-stack
  - WLAN support for "Atheros AR2427 Wireless" (That one's inside my test machine)
 

@@ -34,7 +34,7 @@
 #include <kernel/stack.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <sched.h>
 #include <sched/cpu.h>
@@ -182,11 +182,11 @@ PRIVATE REF struct task *KCALL task_do_fork(void) {
   if unlikely(!ustack) { error = -ENOMEM; goto end_double_lock; }
  }
 end_double_lock:
- //syslogf(LOG_CONFIRM,"OLD PAGEDIRECTORY\n");
+ //syslog(LOG_CONFIRM,"OLD PAGEDIRECTORY\n");
  //pdir_print(&om->m_pdir,&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_CONFIRM));
- //syslogf(LOG_CONFIRM,"NEW PAGEDIRECTORY\n");
+ //syslog(LOG_CONFIRM,"NEW PAGEDIRECTORY\n");
  //pdir_print(&nm->m_pdir,&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_CONFIRM));
- //syslogf(LOG_CONFIRM,"--END\n");
+ //syslog(LOG_CONFIRM,"--END\n");
 
  mman_endwrite(om);
  if (E_ISERR(error)) { mman_endwrite(nm); goto err1; }
@@ -196,7 +196,7 @@ end_double_lock:
  if (ustack) {
   struct mbranch *branch;
 #if 0
-  syslogf(LOG_DEBUG,"Duplicating stack: %p -> %p (%p...%p | %p)\n",
+  syslog(LOG_DEBUG,"Duplicating stack: %p -> %p (%p...%p | %p)\n",
           caller->t_ustack,ustack,ustack->s_begin,(uintptr_t)ustack->s_end-1,
           THIS_SYSCALL_USERESP);
 #endif
@@ -265,13 +265,13 @@ end_double_lock:
    __asm__ __volatile__("movw %%es, %0\n" : "=g" (cs->host.es));
    __asm__ __volatile__("movw %%ds, %0\n" : "=g" (cs->host.ds));
 #if 0
-   syslogf(LOG_DEBUG,"FORK at %p\n",cs->host.eip);
-   syslogf(LOG_DEBUG,"EAX %p  ECX %p  EDX %p  EBX %p EFLAGS %p\n",
+   syslog(LOG_DEBUG,"FORK at %p\n",cs->host.eip);
+   syslog(LOG_DEBUG,"EAX %p  ECX %p  EDX %p  EBX %p EFLAGS %p\n",
                      cs->host.eax,
                      cs->host.ecx,
                      cs->host.edx,
                      cs->host.ebx,cs->host.eflags);
-   syslogf(LOG_DEBUG,"ESP %p  EBP %p  ESI %p  EDI %p\n",
+   syslog(LOG_DEBUG,"ESP %p  EBP %p  ESI %p  EDI %p\n",
                      cs->host.eip,cs->useresp,
                      cs->host.ebp,
                      cs->host.esi,

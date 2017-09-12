@@ -132,7 +132,7 @@ fat_freaddir(struct file *__restrict fp,
   }
   assert(!filename[filename_size]);
 #if 0
-  syslogf(LOG_DEBUG,"[FAT] READDIR(%$q)\n",
+  syslog(LOG_DEBUG,"[FAT] READDIR(%$q)\n",
           filename_size,filename);
 #endif
   /* Copy collected data to user-space. */

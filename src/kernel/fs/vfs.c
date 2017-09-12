@@ -36,7 +36,7 @@
 #include <hybrid/minmax.h>
 #include <hybrid/types.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <malloc.h>
 #include <unistd.h>
@@ -374,6 +374,15 @@ done:
  }
  return error;
 }
+PRIVATE REF struct inode *KCALL
+vnode_mkreg(struct inode *__restrict dir_node,
+            struct dentry *__restrict path,
+            struct iattr const *__restrict result_attr,
+            iattrset_t mode) {
+ /* TODO: Create text files? */
+ if (!(mode&IATTR_EXISTS)) return E_PTR(-EROFS);
+ return vnode_lookup(dir_node,path);
+}
 
 
 PRIVATE REF struct inode *KCALL
@@ -428,9 +437,11 @@ vnode_symlink(struct inode *__restrict dir_node,
       link->v_data.v_text = (char *)malloc((target_text_size+1)*sizeof(char));
  else link->v_data.v_text = NULL;
  if unlikely(!link->v_data.v_text) { free(link); return E_PTR(-ENOMEM); }
- link->v_node.i_ops   = &vlink_ops;
+ link->v_node.i_ops = &vlink_ops;
  assert(link->v_node.i_nlink == 0);
  memcpy(&link->v_node.i_attr,result_attr,sizeof(struct iattr));
+ link->v_node.i_attr.ia_mode &= ~__S_IFMT;
+ link->v_node.i_attr.ia_mode |= S_IFLNK;
  memcpy(&link->v_node.i_attr_disk,&link->v_node.i_attr,sizeof(struct iattr));
  link->v_node.i_data = &link->v_data.v_common;
 #if VDATA_DYNAMIC != 0
@@ -473,6 +484,8 @@ vnode_mkdir(struct inode *__restrict dir_node,
  dir->v_node.i_ops = &vnode_ops;
  assert(dir->v_node.i_nlink == 0);
  memcpy(&dir->v_node.i_attr,result_attr,sizeof(struct iattr));
+ dir->v_node.i_attr.ia_mode &= ~__S_IFMT;
+ dir->v_node.i_attr.ia_mode |= S_IFDIR;
  memcpy(&dir->v_node.i_attr_disk,&dir->v_node.i_attr,sizeof(struct iattr));
  dir->v_node.i_data = &dir->v_data.v_common;
 #if VDATA_DYNAMIC != 0
@@ -722,6 +735,7 @@ PUBLIC struct inodeops const vnode_ops = {
     .ino_symlink = &vnode_symlink,
     .ino_mkdir   = &vnode_mkdir,
     .ino_mknod   = &vnode_mknod,
+    .ino_mkreg   = &vnode_mkreg,
     .ino_rename  = &vnode_rename,
     .ino_remove  = &vnode_remove,
 };

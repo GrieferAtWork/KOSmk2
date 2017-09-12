@@ -27,26 +27,42 @@
 #include <hybrid/compiler.h>
 #include <hybrid/limits.h>
 #include <sys/mman.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <format-printer.h>
+#include <hybrid/atomic.h>
 
 DECL_BEGIN
 
+PRIVATE int syslog_options = 0;
+PRIVATE int syslog_facility = 0;
+PRIVATE int syslog_mask = -1;
+PUBLIC void (LIBCCALL closelog)(void) {}
+PUBLIC void (LIBCCALL openlog)(const char *UNUSED(ident), int option, int facility) {
+ syslog_options  = option;
+ syslog_facility = facility;
+}
+PUBLIC int (LIBCCALL setlogmask)(int mask) { return ATOMIC_XCH(syslog_mask,mask); }
 PUBLIC ssize_t (LIBCCALL syslog_printer)(char const *__restrict data,
                                          size_t datalen, void *closure) {
- return sys_xsysprint((int)(uint32_t)closure,data,datalen);
+ /* Check if the specified priority should be ignored. */
+ if (!(syslog_mask&LOG_MASK(LOG_FAC((int)(uintptr_t)closure))))
+     return 0;
+ /* Also log to stderr if requested to. */
+ if (syslog_options&LOG_PERROR)
+     fwrite(data,sizeof(char),datalen,stderr);
+ return sys_xsysprint((int)(uintptr_t)closure,data,datalen);
 }
-PUBLIC ssize_t (LIBCCALL vsyslogf)(uint32_t level, char const *format, va_list args) {
- return format_vprintf(&syslog_printer,SYSLOG_PRINTER_CLOSURE(level),format,args);
+PUBLIC void (LIBCCALL vsyslog)(int level, char const *format, va_list args) {
+ format_vprintf(&syslog_printer,SYSLOG_PRINTER_CLOSURE(level),format,args);
 }
-PUBLIC ssize_t (ATTR_CDECL syslogf)(uint32_t level, char const *format, ...) {
- va_list args; ssize_t result;
+PUBLIC void (ATTR_CDECL syslog)(int level, char const *format, ...) {
+ va_list args;
  va_start(args,format);
- result = vsyslogf(level,format,args);
+ vsyslog(level,format,args);
  va_end(args);
- return result;
 }
 
 

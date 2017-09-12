@@ -29,7 +29,7 @@
 #include <hybrid/compiler.h>
 #include <kernel/boot.h>
 #include <kernel/export.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <string.h>
 #include <hybrid/section.h>
 #include <stdio.h>
@@ -176,7 +176,7 @@ device_del(struct device *__restrict dev, dev_t id) {
  error = superblock_remove_inode(&dev_fs.v_super,
                                  &dev->d_node);
  if (E_ISERR(error)) {
-  syslogf(LOG_DEBUG,
+  syslog(LOG_DEBUG,
           FREESTR("[DEVFS] Failed to remove superblock at %q: %[errno]\n"),
           -error);
  }
@@ -241,12 +241,12 @@ got_name:
  mount_path = dentry_insnod(devfs_root,&name,&ac,dev,NULL);
 
  if (E_ISERR(mount_path)) {
-  syslogf(LOG_FS|LOG_ERROR,
+  syslog(LOG_FS|LOG_ERROR,
           "[DEVFS] Failed to install %s-device %[dev_t] (%q): %[errno]\n",
           DEVICE_ISBLK(dev) ? "block" : "character",id,name.dn_name,
           -E_GTERR(mount_path));
  } else {
-  syslogf(LOG_FS|LOG_MESSAGE,
+  syslog(LOG_FS|LOG_MESSAGE,
           "[DEVFS] Added %s-device %[dev_t] as %[dentry]\n",
           DEVICE_ISBLK(dev) ? "block" : "character",id,mount_path);
   DENTRY_DECREF(mount_path);
@@ -297,7 +297,7 @@ unknown:
  }
 
  /* Custom device naming conventions. */
- syslogf(LOG_FS|LOG_MESSAGE,
+ syslog(LOG_FS|LOG_MESSAGE,
          "[DEVFS] Unknown %s-device %[dev_t] not added to dev-fs\n",
          DEVICE_ISBLK(dev) ? "block" : "character",id);
  return -EOK;

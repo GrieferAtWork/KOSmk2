@@ -617,7 +617,7 @@ FUNDEF ssize_t KCALL mman_swapmem(size_t max_swap, gfp_t flags);
  * >>    if (!result) {
  * >>        if (MMAN_SWAPOK(mman_swapmem(n_bytes,MMAN_SWAPMEM_ALL))) goto again;
  * >>    }
- * >>    syslogf(LOG_DEBUG,"[MEM] Allocated: %p\n",result);
+ * >>    syslog(LOG_DEBUG,"[MEM] Allocated: %p\n",result);
  * >>    kfree(result); */
 #define MMAN_SWAPOK(e) XBLOCK({ ssize_t const _e = (e); XRETURN E_ISOK(_e) || _e == -EAGAIN; })
 

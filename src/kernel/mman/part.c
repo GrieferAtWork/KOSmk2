@@ -30,7 +30,7 @@
 #include <hybrid/section.h>
 #include <kernel/malloc.h>
 #include <kernel/mman.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <sched/paging.h>
 #include <string.h>
@@ -236,7 +236,7 @@ next:
    }
 done_write:
    if (E_ISERR(error)) {
-    syslogf(LOG_MEM|LOG_ERROR,
+    syslog(LOG_MEM|LOG_ERROR,
             "[MEM] Failed to sync file mapping in %[file] at %I64u\n",
             file_pos);
    }
@@ -289,7 +289,7 @@ mregion_part_incref(struct mregion *__restrict self,
 PRIVATE ATTR_COLDTEXT void KCALL
 mregion_part_decref_failed(struct mregion *__restrict self,
                            raddr_t start, rsize_t n_bytes) {
- syslogf(LOG_MEM|LOG_ERROR,"[MEM] Failed to decref %p...%p of region %p...%p: %[errno]\n",
+ syslog(LOG_MEM|LOG_ERROR,"[MEM] Failed to decref %p...%p of region %p...%p: %[errno]\n",
          start,start+n_bytes-1,0,self->mr_size-1,ENOMEM);
 }
 INTERN void KCALL
@@ -320,7 +320,7 @@ mregion_part_declock(struct mregion *__restrict self,
  assert(self->mr_type != MREGION_TYPE_PHYSICAL);
  return mregion_part_action(self,start,n_bytes,&action_declck,&action_inclck);
 #if 0
- syslogf(LOG_MEM|LOG_ERROR,"[MEM] Failed to declck %p...%p of region %p...%p: %[errno]\n",
+ syslog(LOG_MEM|LOG_ERROR,"[MEM] Failed to declck %p...%p of region %p...%p: %[errno]\n",
          start,start+n_bytes-1,0,self->mr_size-1,ENOMEM);
 #endif
 }

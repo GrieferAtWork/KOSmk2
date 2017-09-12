@@ -37,7 +37,7 @@
 #include <kernel/paging.h>
 #include <kernel/user.h>
 #include <kos/ksym.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <linker/patch.h>
 #include <malloc.h>
@@ -329,7 +329,7 @@ elf_load_dyn(struct elf_module *__restrict self,
  default:
   if (dyn->d_tag >= DT_NUM) break;
   /* Warn about unknown core dynamic entries. */
-  syslogf(LOG_EXEC|LOG_WARN,
+  syslog(LOG_EXEC|LOG_WARN,
           "[ELF] Unknown 'PT_DYNAMIC' segment entry in '%[file]' taged as %.8x\n",
           fp,dyn->d_tag);
   break;
@@ -380,9 +380,9 @@ done:
 
 typedef void (*elf_func)(void);
 PRIVATE void KCALL elf_callfun(elf_func fun) {
- syslogf(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (BEGIN)\n",fun);
+ syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (BEGIN)\n",fun);
  (*fun)();
- syslogf(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (END)\n",fun);
+ syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (END)\n",fun);
 }
 
 
@@ -396,7 +396,7 @@ elf_exec_init(struct module *__restrict self, VIRT ppage_t load_addr) {
  for (; iter != end; ++iter) elf_callfun(*iter);
  end = (iter = (elf_func *)((uintptr_t)load_addr+DYNAMIC.d_init_array))+
                                                  DYNAMIC.d_init_array_sz;
- syslogf(LOG_EXEC|LOG_DEBUG,"[ELF] INIT_VECTOR: %p\n",iter);
+ syslog(LOG_EXEC|LOG_DEBUG,"[ELF] INIT_VECTOR: %p\n",iter);
  for (; iter != end; ++iter) elf_callfun(*iter);
  if (DYNAMIC.d_flags&ELF_DYNAMIC_HAS_INIT)
      elf_callfun((elf_func)((uintptr_t)load_addr+DYNAMIC.d_init));
@@ -432,7 +432,7 @@ PRIVATE void KCALL
 log_invalid_addr(struct module *__restrict mod,
                  uintptr_t p, size_t s,
                  uintptr_t rp, size_t re) {
- syslogf(LOG_EXEC|LOG_ERROR,
+ syslog(LOG_EXEC|LOG_ERROR,
          "[ELF] Faulty address %p...%p outside of %p...%p encountered during relocations in '%[file]'\n",
          p,p+s-1,rp,re-1,mod->m_file,mod->m_size);
 }
@@ -493,7 +493,7 @@ elf_symaddr(struct instance *__restrict inst,
    if unlikely(!hashtab.ht_nbuckts || !hashtab.ht_nbuckts) {
     /* Nope. - The hash-table is broken. */
 broken_hash:
-    syslogf(LOG_EXEC|LOG_WARN,"[ELF] Module '%[file]' contains invalid hash table\n",self->m_file);
+    syslog(LOG_EXEC|LOG_WARN,"[ELF] Module '%[file]' contains invalid hash table\n",self->m_file);
     ATOMIC_FETCHAND(DYNAMIC.d_flags,~(ELF_DYNAMIC_HAS_HASH));
    } else {
     Elf(Word) max_attempts = hashtab.ht_nchains;
@@ -517,7 +517,7 @@ broken_hash:
      if unlikely((uintptr_t)sym_name <  (uintptr_t)string_table || 
                  (uintptr_t)sym_name >= (uintptr_t)string_end) break;
 #if 0
-     syslogf(LOG_EXEC|LOG_DEBUG,
+     syslog(LOG_EXEC|LOG_DEBUG,
              "Checking hashed symbol name %q == %q (chain = %X)\n",
              name,sym_name,chain);
 #endif
@@ -536,7 +536,7 @@ next_candidate:
      else chain = ptable[chain];
     }
 #if 0
-    syslogf(LOG_EXEC|LOG_WARN,"[ELF] Failed to find symbol %q in hash table of '%[file]' (hash = %x)\n",
+    syslog(LOG_EXEC|LOG_WARN,"[ELF] Failed to find symbol %q in hash table of '%[file]' (hash = %x)\n",
             name,self->m_file,hash);
 #endif
    }
@@ -624,7 +624,7 @@ elf_patch(struct modpatch *__restrict patcher) {
     mod = modpatch_dlopen(patcher,&filename);
 got_module:
     if (E_ISERR(mod)) {
-     syslogf(LOG_EXEC|LOG_ERROR,
+     syslog(LOG_EXEC|LOG_ERROR,
              "[ELF] Failed to open module %$q dependency %q: %[errno]\n",
              self->m_name->dn_size,self->m_name->dn_name,
              filename.dn_name,-E_GTERR(mod));
@@ -634,7 +634,7 @@ got_module:
     dep = modpatch_dldep(patcher,mod);
     MODULE_DECREF(mod);
     if (E_ISERR(dep)) {
-     syslogf(LOG_EXEC|LOG_ERROR,
+     syslog(LOG_EXEC|LOG_ERROR,
              "[ELF] Failed to patch module %$q dependency %q: %[errno]\n",
              self->m_name->dn_size,self->m_name->dn_name,
              filename.dn_name,-E_GTERR(dep));
@@ -688,7 +688,7 @@ find_extern:
     if (!rel_value) {
      if (sym->st_shndx == SHN_UNDEF) {
       if (ELF(ST_BIND)(sym->st_info) == STB_WEAK) goto got_symbol;
-      syslogf(LOG_EXEC|LOG_ERROR,"[ELF] Failed to patch symbol %$q (hash %#.8I32x) from module %$q at %p\n",
+      syslog(LOG_EXEC|LOG_ERROR,"[ELF] Failed to patch symbol %$q (hash %#.8I32x) from module %$q at %p\n",
               STRLEN(sym_name),sym_name,sym_hash,
               self->m_name->dn_size,self->m_name->dn_name,rel_addr);
       return -ENOREL;
@@ -702,7 +702,7 @@ got_symbol:
    }
 
 #if 0
-   syslogf(LOG_EXEC|LOG_DEBUG,"REL: %I8u -> %p:%p\n",type,rel_addr,rel_value);
+   syslog(LOG_EXEC|LOG_DEBUG,"REL: %I8u -> %p:%p\n",type,rel_addr,rel_value);
 #endif
    switch (type) {
 
@@ -763,7 +763,7 @@ got_symbol:
        if (sym_name < string_table ||
            sym_name >= string_end)
            sym_name = "??" "?";
-       syslogf(LOG_EXEC|LOG_ERROR,
+       syslog(LOG_EXEC|LOG_ERROR,
                "[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from '%[file]'\n",
                sym_name,rel_value,rel_value+sym->st_size-1,self->m_file);
        goto end;
@@ -819,7 +819,7 @@ got_symbol:
 #endif
 
    default:
-    syslogf(LOG_EXEC|LOG_WARN,"[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in '%[file]'\n",
+    syslog(LOG_EXEC|LOG_WARN,"[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in '%[file]'\n",
           ((uintptr_t)iter-DATAADDR(relgroup_iter->er_rel))/relgroup_iter->er_relent,
             iter->r_offset,type,(unsigned)(ELF(R_SYM)(iter->r_info)),self->m_file);
     break;
@@ -903,7 +903,7 @@ elf_loader(struct file *__restrict fp) {
 
  /* Prevent exploits... */
  if (ehdr.e_phnum > ELF_PHNUM_MAX) {
-  syslogf(LOG_EXEC|LOG_ERROR,
+  syslog(LOG_EXEC|LOG_ERROR,
           "[ELF] Elf binary '%[file]' PHDR count %u exceeds limit of %u\n",
           fp,(unsigned)ehdr.e_phnum,ELF_PHNUM_MAX);
   goto enoexec;
@@ -911,7 +911,7 @@ elf_loader(struct file *__restrict fp) {
 
  /* Only warn if the binary wasn't compiled for SYSV (which KOS tries to follow) */
  if (ehdr.e_ident[EI_OSABI] != ELFOSABI_SYSV) {
-  syslogf(LOG_EXEC|LOG_WARN,
+  syslog(LOG_EXEC|LOG_WARN,
           "[ELF] Loading ELF binary '%[file]' that isn't SYSV (EI_OSABI = %d)\n",
           fp,(int)ehdr.e_ident[EI_OSABI]);
  }
@@ -920,7 +920,7 @@ elf_loader(struct file *__restrict fp) {
   * (For some reason the version appears twice?) */
  if (ehdr.e_version           != EV_CURRENT ||
      ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
-  syslogf(LOG_EXEC|LOG_WARN,
+  syslog(LOG_EXEC|LOG_WARN,
           "[ELF] Loading ELF binary '%[file]' that has an unrecognized version (%d/%d)\n",
           ehdr.e_version,ehdr.e_ident[EI_VERSION]);
  }
@@ -975,7 +975,7 @@ elf_loader(struct file *__restrict fp) {
        iter->p_memsz) ++n_load_hdr;
   }
   if (!n_load_hdr) {
-   syslogf(LOG_EXEC|LOG_WARN,
+   syslog(LOG_EXEC|LOG_WARN,
            "[ELF] ELF binary '%[file]' doesn't contain any PT_LOAD headers\n",fp);
    goto enoexec;
   }
@@ -1153,7 +1153,7 @@ elf_loader(struct file *__restrict fp) {
    end = (iter = result->e_module.m_segv)+
                  result->e_module.m_segc;
    for (; iter != end; ++iter) {
-    syslogf(LOG_EXEC|LOG_DEBUG,"[ELF] SEGMENT '%[file]' - %p...%p %p...%p from %I64X + %Ix\n",
+    syslog(LOG_EXEC|LOG_DEBUG,"[ELF] SEGMENT '%[file]' - %p...%p %p...%p from %I64X + %Ix\n",
             fp,
             iter->ms_vaddr,
             iter->ms_vaddr+iter->ms_msize-1,

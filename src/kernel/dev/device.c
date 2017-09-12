@@ -36,7 +36,7 @@
 #include <hybrid/section.h>
 #include <kernel/boot.h>
 #include <kernel/export.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <malloc.h>
 #include <sched/task.h>
@@ -67,7 +67,7 @@ INTERN ATTR_FREETEXT void KCALL devfs_mount_initialize(void) {
   if (E_GTERR(_devfs_root) == -ENOENT) {
    /* XXX: Recursively create the directory path described by 'devfs_path'? */
   }
-  syslogf(LOG_DEBUG,
+  syslog(LOG_DEBUG,
           FREESTR("[DEVFS] Failed to mount dev-fs superblock at %q: %[errno]\n"),
           devfs_path,-E_GTERR(_devfs_root));
   _devfs_root = NULL;
@@ -169,7 +169,7 @@ again:
  CHECK_HOST_DOBJ(self);
  if (self->d_irq_lost) {
 #if 0
-  syslogf(LOG_DEBUG,"d_irq_lost@%p(%p) - %[dev_t]\n",
+  syslog(LOG_DEBUG,"d_irq_lost@%p(%p) - %[dev_t]\n",
           self->d_irq_lost,self,self->d_id);
 #endif
   (*self->d_irq_lost)(self);
@@ -562,7 +562,7 @@ end_upper_fail:
  }
  return result;
 err_upper_fail:
- syslogf(LOG_HW|LOG_INFO,"[DEV] Failed to release major device number #%d: %[errno]\n",
+ syslog(LOG_HW|LOG_INFO,"[DEV] Failed to release major device number #%d: %[errno]\n",
         (int)MAJOR(id),ENOMEM);
  goto end_upper_fail;
 }

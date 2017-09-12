@@ -26,7 +26,7 @@
 #include <kernel/arch/apic.h>
 #include <kernel/paging.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <linker/module.h>
 #include <sched/cpu.h>
 #include <sched/percpu.h>

@@ -32,7 +32,7 @@
 #include <hybrid/types.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <kos/syslog.h>
+#include <sys/syslog.h>
 #include <malloc.h>
 #include <poll.h>
 #include <sched/task.h>
