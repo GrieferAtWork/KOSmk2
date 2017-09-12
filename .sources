@@ -136,9 +136,4 @@ if (config_debug) {
 #include "apps/.sources"
 #include "libs/.sources"
 #include "src/.sources"
-
-/* Synchronize some disk data. */
-DISK_SYNC("/misc/keymaps/*.map","/lib/keymap/")
-
-
-
+#include "misc/.sources"

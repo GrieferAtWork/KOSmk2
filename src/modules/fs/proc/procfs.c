@@ -44,6 +44,7 @@
 #include <sched/task.h>
 #include <sched/types.h>
 #include <stdlib.h>
+#include <fs/textfile.h>
 
 DECL_BEGIN
 
@@ -53,11 +54,56 @@ self_readlink(struct inode *__restrict UNUSED(ino),
               USER char *__restrict buf, size_t bufsize) {
  return snprintf_user(buf,bufsize,PID_FMT,GET_THIS_PID());
 }
+PRIVATE errno_t KCALL
+write_typechain(struct textfile *__restrict buf,
+                struct fstype *chain, int *is_first) {
+ ssize_t error;
+ for (; chain; chain = chain->f_chain.le_next) {
+  PRIVATE char const prefix[2][12] = {"\n        ","\nnodev   "};
+  if (!chain->f_name || chain->f_flags&FSTYPE_HIDDEN)
+      continue;
+#if FSTYPE_NODEV == 1
+  error = textfile_printer(prefix[chain->f_flags&FSTYPE_NODEV]+*is_first,11-*is_first,buf);
+#else
+  error = textfile_printer(prefix[chain->f_flags&FSTYPE_NODEV ? 1 : 0]+*is_first,11-*is_first,buf);
+#endif
+  if (E_ISERR(error)) return (errno_t)error;
+  error = textfile_printer(chain->f_name,strlen(chain->f_name),buf);
+  if (E_ISERR(error)) return (errno_t)error;
+  *is_first = 0;
+ }
+ return -EOK;
+}
+
+PRIVATE REF struct file *KCALL
+filesystems_fopen(struct inode *__restrict ino,
+                  struct dentry *__restrict node_ent,
+                  oflag_t oflags) {
+ REF struct textfile *result; errno_t error; int is_first = 1;
+ result = textfile_new();
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ error = rwlock_read(&fstype_lock);
+ if (E_ISERR(error)) goto err;
+ if ((error = write_typechain(result,fstype_none,&is_first),E_ISERR(error))) goto err2;
+ if ((error = write_typechain(result,fstype_auto,&is_first),E_ISERR(error))) goto err2;
+ if ((error = write_typechain(result,fstype_any,&is_first),E_ISERR(error))) goto err2;
+ if (!is_first && (error = textfile_printer("\n",1,result),E_ISERR(error))) goto err2;
+ rwlock_endread(&fstype_lock);
+ textfile_truncate(result);
+ file_setup(&result->tf_file,ino,node_ent,oflags);
+ return &result->tf_file;
+err2: rwlock_endread(&fstype_lock);
+err:  textfile_delete(result);
+ return E_PTR(error);
+}
 
 /* Misc. contents of the /proc root directory. */
 INTERN struct procnode const root_content[] = {
  {0,S_IFLNK|0444,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
  { .ino_readlink = &self_readlink,
+ }},
+ {1,S_IFREG|0444,/*[[[deemon DNAM("filesystems"); ]]]*/{"filesystems",11,H(802163638u,1733680310429884923llu)}/*[[[end]]]*/,
+ { .ino_fopen = &filesystems_fopen, TEXTFILE_OPS_INIT
  }},
 };
 
@@ -229,8 +275,9 @@ root_lookup(struct inode *__restrict dir_node,
   name_copy.dn_size = iter->n_name.dn_size;
   dentryname_loadhash(&name_copy);
   assertf(name_copy.dn_hash == iter->n_name.dn_hash,
-          "Broken hash generator (%Ix != %Ix)",
-          name_copy.dn_hash,iter->n_name.dn_hash);
+          "Broken hash generator (%$q - %Ix != %Ix)",
+          iter->n_name.dn_size,iter->n_name.dn_name,
+          iter->n_name.dn_hash,name_copy.dn_hash);
 #endif
   if (iter->n_name.dn_hash == result_path->d_name.dn_hash &&
       iter->n_name.dn_size == result_path->d_name.dn_size &&

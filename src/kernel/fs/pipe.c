@@ -36,6 +36,8 @@
 #include <sys/syslog.h>
 #include <fs/fd.h>
 #include <bits/poll.h>
+#include <dev/blkdev.h>
+#include <kernel/export.h>
 
 DECL_BEGIN
 
@@ -191,6 +193,28 @@ PUBLIC struct superblock pipe_fs = {
     },
     .sb_blkdev = NULL,
 };
+
+PRIVATE SAFE REF struct superblock *KCALL
+pipefs_callback(struct blkdev *__restrict UNUSED(dev), u32 UNUSED(flags),
+                char const *UNUSED(devname), USER void *UNUSED(data),
+                void *UNUSED(closure)) {
+ SUPERBLOCK_INCREF(&pipe_fs);
+ return &pipe_fs;
+}
+
+PRIVATE struct fstype pipefs_type = {
+    .f_owner    = THIS_INSTANCE,
+    .f_sysid    = BLKSYS_EXPLICIT,
+    .f_callback = &pipefs_callback,
+    .f_flags    = FSTYPE_NODEV|FSTYPE_SINGLETON,
+    .f_closure  = NULL,
+    .f_name     = "pipefs",
+};
+PRIVATE MODULE_INIT errno_t KCALL pipefs_init(void) {
+ /* Register the pipe filesystem as a mountable superblock. */
+ fs_addtype(&pipefs_type);
+ return -EOK;
+}
 
 
 

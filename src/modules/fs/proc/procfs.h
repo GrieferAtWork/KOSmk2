@@ -49,13 +49,13 @@ DECL_BEGIN
 #ifdef __DEEMON__
 #define DNAME_HASH32(x) \
 ({ local hash = uint32(0); \
-   local temp = string.utf32.from_data((char *)x,#(x)/4); \
-   for (local c: temp) { hash += c.ord(); hash *= 9; } \
+   local temp = (uint32 *)(char *)x; \
+   for (local i = 0; i < #(x) / 4; ++i) { hash += temp[i]; hash *= 9; } \
    local temp = x[#(x) - #(x) % 4 : #(x)]; \
    switch (#temp) { \
-   case 3:  hash += x[2].ord() << 16; \
-   case 2:  hash += x[1].ord() << 8; \
-   case 1:  hash += x[0].ord(); \
+   case 3:  hash += (uint32)temp[2].ord() << 16; \
+   case 2:  hash += (uint32)temp[1].ord() << 8; \
+   case 1:  hash += (uint32)temp[0].ord(); \
    default: break; \
    } \
    hash;\
@@ -66,13 +66,13 @@ DECL_BEGIN
    for (local i = 0; i < #(x) / 8; ++i) { hash += temp[i]; hash *= 9; } \
    local temp = x[#(x) - #(x) % 8 : #(x)]; \
    switch (#temp) { \
-   case 7:  hash += x[6].ord() << 48; \
-   case 6:  hash += x[5].ord() << 40; \
-   case 5:  hash += x[4].ord() << 32; \
-   case 4:  hash += x[3].ord() << 24; \
-   case 3:  hash += x[2].ord() << 16; \
-   case 2:  hash += x[1].ord() << 8; \
-   case 1:  hash += x[0].ord(); \
+   case 7:  hash += (uint64)temp[6].ord() << 48; \
+   case 6:  hash += (uint64)temp[5].ord() << 40; \
+   case 5:  hash += (uint64)temp[4].ord() << 32; \
+   case 4:  hash += (uint64)temp[3].ord() << 24; \
+   case 3:  hash += (uint64)temp[2].ord() << 16; \
+   case 2:  hash += (uint64)temp[1].ord() << 8; \
+   case 1:  hash += (uint64)temp[0].ord(); \
    default: break; \
    } \
    hash;\

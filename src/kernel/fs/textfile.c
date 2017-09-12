@@ -30,6 +30,8 @@
 #include <hybrid/check.h>
 #include <string.h>
 #include <unistd.h>
+#include <hybrid/minmax.h>
+#include <kernel/user.h>
 
 DECL_BEGIN
 
@@ -37,8 +39,14 @@ DECL_BEGIN
 PUBLIC ssize_t KCALL
 textfile_read(struct file *__restrict fp,
               USER void *buf, size_t bufsize) {
- /* TODO */
- return 0;
+ size_t maxread;
+ if unlikely(TF->tf_bufpos >= TF->tf_bufmax)
+    return 0; /* EOF */
+ maxread = MIN((size_t)(TF->tf_bufmax-TF->tf_bufpos)*sizeof(char),bufsize);
+ if (copy_to_user(buf,TF->tf_bufpos,maxread))
+     return -EFAULT;
+ TF->tf_bufpos += maxread;
+ return (ssize_t)maxread;
 }
 PUBLIC ssize_t KCALL
 textfile_write(struct file *__restrict fp,
@@ -127,8 +135,8 @@ textfile_printer(char const *__restrict data,
  assert(!TF->tf_file.f_node);
  assert(!TF->tf_file.f_dent);
  assert(!TF->tf_file.f_ops);
- /* Before setup, the buffer position is always equal to its max-pointer. */
- assert(TF->tf_bufpos == TF->tf_bufmax);
+ /* Before setup, the buffer position is always equal to its start. */
+ assert(TF->tf_bufpos == TF->tf_buffer);
  size_avail = TEXTFILE_BUFAVAIL(TF);
  if (datalen > size_avail) {
   char *new_buffer;
@@ -146,12 +154,12 @@ textfile_printer(char const *__restrict data,
   TF->tf_bufmax = new_buffer+(TF->tf_bufmax-TF->tf_buffer);
   TF->tf_bufend = new_buffer+new_size;
   TF->tf_buffer = new_buffer;
+  TF->tf_bufpos = new_buffer;
   assert(TF->tf_bufmax < TF->tf_bufend);
  }
  assert(TF->tf_bufmax+datalen <= TF->tf_bufend);
  memcpy(TF->tf_bufmax,data,datalen*sizeof(char));
  TF->tf_bufmax += datalen;
- TF->tf_bufpos  = TF->tf_bufmax;
  return datalen;
 }
 #undef TF

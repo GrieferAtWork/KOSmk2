@@ -1221,6 +1221,18 @@ automount:
    BLKDEV_DECREF(dev);
   }
  }
+ if (E_ISOK(result) &&
+    (!ft || !(ft->f_flags&FSTYPE_SINGLETON))) {
+  /* Apply some of the flags we've been given to the superblock. */
+  if (flags&MS_RDONLY) result->sb_root.i_state |= INODE_STATE_READONLY;
+  /* TODO: MS_NOSUID      0x00000002 */ /*< Ignore suid and sgid bits. */
+  /* TODO: MS_NODEV       0x00000004 */ /*< Disallow access to device special files. */
+  /* TODO: MS_NOEXEC      0x00000008 */ /*< Disallow program execution. */
+  /* TODO: MS_SYNCHRONOUS 0x00000010 */ /*< Writes are synced at once. */
+  /* TODO: MS_DIRSYNC     0x00000080 */ /*< Directory modifications are synchronous. */
+  /* TODO: MS_NOATIME     0x00000400 */ /*< Do not update access times. */
+  /* TODO: MS_NODIRATIME  0x00000800 */ /*< Do not update directory access times. */
+ }
  if (ft) {
   INSTANCE_DECREF(ft->f_owner);
   rwlock_endread(&fstype_lock);
@@ -1238,16 +1250,6 @@ mount_at(struct dentry *__restrict target,
  /* Create a new superblock using the given arguments. */
  sb = mount_make_superblock(dev_name,type,flags,data);
  if (E_ISERR(sb)) return E_GTERR(sb);
- /* Apply some of the flags we've been given to the superblock. */
- if (flags&MS_RDONLY) sb->sb_root.i_state |= INODE_STATE_READONLY;
- /* TODO: MS_NOSUID      0x00000002 */ /*< Ignore suid and sgid bits. */
- /* TODO: MS_NODEV       0x00000004 */ /*< Disallow access to device special files. */
- /* TODO: MS_NOEXEC      0x00000008 */ /*< Disallow program execution. */
- /* TODO: MS_SYNCHRONOUS 0x00000010 */ /*< Writes are synced at once. */
- /* TODO: MS_DIRSYNC     0x00000080 */ /*< Directory modifications are synchronous. */
- /* TODO: MS_NOATIME     0x00000400 */ /*< Do not update access times. */
- /* TODO: MS_NODIRATIME  0x00000800 */ /*< Do not update directory access times. */
-
  /* Mount the newly created superblock at this location. */
  error = dentry_mount(target,access,sb);
  SUPERBLOCK_DECREF(sb);

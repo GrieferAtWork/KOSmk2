@@ -63,7 +63,7 @@ struct textfile {
 #define TEXTFILE_BUFALLOC(self) (size_t)((self)->tf_bufend-(self)->tf_buffer)
 #define TEXTFILE_BUFINUSE(self) (size_t)((self)->tf_bufmax-(self)->tf_buffer)
 #define TEXTFILE_BUFTOTAL(self) (size_t)((self)->tf_bufmax-(self)->tf_buffer)
-#define TEXTFILE_BUFAVAIL(self) (size_t)((self)->tf_bufend-(self)->tf_bufpos)
+#define TEXTFILE_BUFAVAIL(self) (size_t)((self)->tf_bufend-(self)->tf_bufmax)
 #define TEXTFILE_BUFINDEX(self) (size_t)((self)->tf_bufpos-(self)->tf_buffer)
 
 #define TEXTFILE_DEFAULT_MAXSIZE 2048

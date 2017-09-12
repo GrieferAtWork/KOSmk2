@@ -391,6 +391,8 @@ struct fstype {
 #define FSTYPE_NORMAL      0x00000000  /*< A regular filesystem type used for generating mounting points of block-devices. */
 #define FSTYPE_NODEV       0x00000001  /*< When set, the 'dev' argument passed to 'f_callback' is allowed to be NULL.
                                         *  NOTE: When set, 'f_sysid' is usually 'BLKSYS_EXPLICIT', with an example being 'procfs'. */
+#define FSTYPE_HIDDEN      0x40000000  /*< Don't enumerate the filesystem type in '/proc/filesystems'. */
+#define FSTYPE_SINGLETON   0x80000000  /*< The filesystem exists as a singleton and flags such as RO should not be applied. */
  u32                       f_flags;    /*< A set of 'FSTYPE_*' */
  void                     *f_closure;  /*< [?..?][const] User-defined closure callback for 'f_callback'. */
  char const               *f_name;     /*< [0..1][const] Filesystem type name. */

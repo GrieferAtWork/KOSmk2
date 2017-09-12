@@ -1602,7 +1602,8 @@ fat_set32(fat_t *__restrict self, fatid_t id, fatid_t value) {
 
 /* FAT system hooks. */
 PRIVATE struct fstype fat_fshooks[] = {
-#define HOOK(name,id) {{NULL},THIS_INSTANCE,id,&fat_mksuper,FSTYPE_NORMAL,NULL,name}
+#define HOOK(name,id)   {{NULL},THIS_INSTANCE,id,&fat_mksuper,FSTYPE_NORMAL|FSTYPE_HIDDEN,NULL,name}
+#define HOOK_V(name,id) {{NULL},THIS_INSTANCE,id,&fat_mksuper,FSTYPE_NORMAL,NULL,name}
  HOOK("fat-12",BLKSYS_FAT12),
  HOOK("fat-16",BLKSYS_FAT16ALT),
  HOOK("fat-16",BLKSYS_FAT16),
@@ -1615,10 +1616,12 @@ PRIVATE struct fstype fat_fshooks[] = {
  HOOK("fat-32",BLKSYS_FAT32_HIDDEN),
  HOOK("fat-32-lba",BLKSYS_FAT32_LBA_HIDDEN),
  HOOK("fat-16-lba",BLKSYS_FAT16_LBA_HIDDEN),
- HOOK("fat",BLKSYS_MICROSOFT_BASIC_DATA),
+ /* Only mark the generic FAT filesystem type as visible. - Don't clobber '/proc/filesystems' */
+ HOOK_V("fat",BLKSYS_MICROSOFT_BASIC_DATA),
 #if 1 /* Given how generic it is, try to use FAT as a default-loader. */
  HOOK("fat",BLKSYS_ANY),
 #endif
+#undef HOOK_V
 #undef HOOK
 };
 
