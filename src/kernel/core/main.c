@@ -82,7 +82,7 @@ void KCALL kinsmod(char const *filename) {
  inst = kernel_insmod_s(filename,NULL,INSMOD_NORMAL);
  if (E_ISERR(inst))
      syslog(LOG_EXEC|LOG_ERROR,"[MOD] Failed to open module %q: %[errno]\n",
-             filename,-E_GTERR(inst));
+            filename,-E_GTERR(inst));
  else INSTANCE_DECREF(inst);
 }
 
@@ -123,7 +123,7 @@ run_init(char const *__restrict filename) {
  mod = module_open_s(filename);
  if (E_ISERR(mod)) {
   syslog(LOG_EXEC|LOG_ERROR,"[MOD] Failed to load module %q: %[errno]\n",
-          filename,-E_GTERR(mod));
+         filename,-E_GTERR(mod));
   return;
  }
  if (E_ISERR(module_mkregions(mod))) goto end;
@@ -221,7 +221,7 @@ run_init(char const *__restrict filename) {
  //mman_endread(mm);
 
  syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in '%[file]') at %p\n",
-         filename,mod->m_file,state->host.eip);
+        filename,mod->m_file,state->host.eip);
  assert(mm == thrd->t_mman);
 
  assert(!mman_reading(mm));
@@ -250,7 +250,7 @@ run_init(char const *__restrict filename) {
  syslog_set_printer(&syslog_print_default);
 
  syslog(LOG_EXEC|LOG_INFO,"[APP] App %q exited with %p\n",
-         filename,exitcode);
+        filename,exitcode);
 
  TASK_DECREF(thrd);
 end3: MMAN_DECREF(mm);
@@ -303,8 +303,8 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
   temp = (uintptr_t)tag_end-(uintptr_t)tag_begin;
   if unlikely(mbt_min_size < temp) {
    syslog(LOG_BOOT|LOG_WARN,
-           FREESTR("[MB2] Announced MBT size %Iu is smaller than actual size %Iu\n"),
-           mbt_min_size,temp);
+          FREESTR("[MB2] Announced MBT size %Iu is smaller than actual size %Iu\n"),
+          mbt_min_size,temp);
   }
   mbt_min_size = temp;
 
@@ -343,8 +343,8 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
    default:
 #if 0
     syslog(LOG_BOOT|LOG_DEBUG,
-            FREESTR("[MB2] Unused TAG: %I32u\n"),
-            tag_iter->type);
+           FREESTR("[MB2] Unused TAG: %I32u\n"),
+           tag_iter->type);
 #endif
     break;
    }
@@ -359,8 +359,8 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
  /* If the Bootloader didn't locate enough memory (<= 10Mb), search for more ourself. */
  if (mbt_memory <= 0x1000000) {
   syslog(LOG_INFO,
-          FREESTR("[MEM] Searching for more available memory... (Only %Iu bytes detected thus far)\n"),
-          mbt_memory);
+         FREESTR("[MEM] Searching for more available memory... (Only %Iu bytes detected thus far)\n"),
+         mbt_memory);
   memory_load_detect();
  }
 }

@@ -315,7 +315,7 @@ STATIC_ASSERT(offsetof(struct sigenter_info,ei_ctx)  == SIGENTER_INFO_OFFSETOF_C
 INTERN ATTR_NORETURN void KCALL sigfault(void) {
  assert(!THIS_TASK->t_critical);
  syslog(LOG_ERROR,"[SIG] Terminating thread %d:%d with faulty signal stack pointer at %p\n",
-         GET_THIS_PID(),GET_THIS_TID(),THIS_TASK->t_lastcr2);
+        GET_THIS_PID(),GET_THIS_TID(),THIS_TASK->t_lastcr2);
  task_terminate(THIS_TASK,(void *)(__WCOREFLAG|__W_EXITCODE(1,0)));
  __builtin_unreachable();
 }
@@ -323,7 +323,7 @@ INTERN ATTR_NORETURN void KCALL sigill(char const *__restrict format, ...) {
  va_list args;
  assert(!THIS_TASK->t_critical);
  syslog(LOG_ERROR,"[SIG] Terminating thread %d:%d with illegal signal context: Invalid ",
-         GET_THIS_PID(),GET_THIS_TID());
+        GET_THIS_PID(),GET_THIS_TID());
  va_start(args,format);
  vsyslog(LOG_DEBUG,format,args);
  va_end(args);
@@ -582,9 +582,9 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
    TASK_PDIR_END(omm,t->t_real_mman);
    if unlikely(copy_error) {
     syslog(LOG_WARN,
-            "[SIG] Failed to deliver signal to process %d/%d: Target stack at %p is faulty\n",
-           (int)t->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-           (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,user_info);
+           "[SIG] Failed to deliver signal to process %d/%d: Target stack at %p is faulty\n",
+          (int)t->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+          (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,user_info);
     return -EFAULT;
    }
  }
@@ -629,7 +629,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
   /* Setup the register state to not return to user-space, but to 'sigenter()' instead. */
 #if 1
   syslog(LOG_DEBUG,"Override system call return EIP %p with sigenter %p\n",
-          ss_descr->eip,&sigenter);
+         ss_descr->eip,&sigenter);
 #endif
   ss_descr->eip    = (u32)&sigenter;
   ss_descr->cs     = SEG(SEG_KERNEL_CODE);
@@ -710,9 +710,9 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
    TASK_PDIR_END(omm,t->t_real_mman);
    if unlikely(copy_error) {
     syslog(LOG_WARN,
-            "[SIG] Failed to deliver signal to process %d/%d: Target stack at %p is faulty\n",
-           (int)t->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-           (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,user_info);
+           "[SIG] Failed to deliver signal to process %d/%d: Target stack at %p is faulty\n",
+          (int)t->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+          (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,user_info);
     return -EFAULT;
    }
  }
@@ -768,8 +768,8 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
    return sigpending_enqueue(&t->t_sigpend,signal_info);
   }
   syslog(LOG_DEBUG,"[SIG] kill(%d,%d) %p -> %p\n",
-         (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,signo,
-          THIS_TASK,t);
+        (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,signo,
+         THIS_TASK,t);
 #if 0
   __assertion_tbprint(0);
 #endif

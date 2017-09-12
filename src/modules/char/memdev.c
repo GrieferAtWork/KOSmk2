@@ -109,8 +109,8 @@ memdev_mkdev(struct mdev_setup const *__restrict setup) {
  return;
 err:
  syslog(LOG_MEM|LOG_ERROR,
-         "[MEMDEV] Failed to register memory device %[dev_t]: %[errno]\n",
-         setup->ms_dev,-error);
+        "[MEMDEV] Failed to register memory device %[dev_t]: %[errno]\n",
+        setup->ms_dev,-error);
 }
 
 

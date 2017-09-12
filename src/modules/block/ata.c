@@ -84,15 +84,15 @@ ata_probe(dev_t id, u16 ctrl, ata_bus_t bus, ata_drv_t drive) {
   if (E_ISOK(dev)) {
    errno_t error;
    syslog(LOG_HW|LOG_INFO,
-           FREESTR("[ATA] Created ATA disk driver %[dev_t] at %d/%d (%I64ux%Iu bytes; %s)\n"),
-           id,bus,drive,dev->a_device.bd_blockcount,dev->a_device.bd_blocksize,
-           dev->a_device.bd_read == (ssize_t (KCALL *)(struct blkdev *__restrict,blkaddr_t,USER void *,size_t))&ata_pio48_readlba
-           ? "LBA48" : "LBA");
+          FREESTR("[ATA] Created ATA disk driver %[dev_t] at %d/%d (%I64ux%Iu bytes; %s)\n"),
+          id,bus,drive,dev->a_device.bd_blockcount,dev->a_device.bd_blocksize,
+          dev->a_device.bd_read == (ssize_t (KCALL *)(struct blkdev *__restrict,blkaddr_t,USER void *,size_t))&ata_pio48_readlba
+          ? "LBA48" : "LBA");
    error = devns_insert(&ns_blkdev,&dev->a_device.bd_device,id);
    if (E_ISERR(error)) {
     syslog(LOG_HW|LOG_ERROR,
-            FREESTR("[ATA] Failed to register ATA disk driver %[dev_t]: %[errno]\n"),
-            id,-error);
+           FREESTR("[ATA] Failed to register ATA disk driver %[dev_t]: %[errno]\n"),
+           id,-error);
    } else {
     blkdev_autopart(&dev->a_device,(MINOR(ATA_PRIMARY_SLAVE)-MINOR(ATA_PRIMARY_MASTER))-1);
    }
@@ -100,8 +100,8 @@ ata_probe(dev_t id, u16 ctrl, ata_bus_t bus, ata_drv_t drive) {
    return true;
   } else {
    syslog(LOG_HW|LOG_ERROR,
-           FREESTR("[ATA] Error while probing ATA device %[dev_t] at %d/%d: %[errno]\n"),
-           id,bus,drive,-(intptr_t)dev);
+          FREESTR("[ATA] Error while probing ATA device %[dev_t] at %d/%d: %[errno]\n"),
+          id,bus,drive,-(intptr_t)dev);
   }
  }
  return false;
@@ -158,7 +158,7 @@ LOCAL errno_t KCALL ata_poll(ata_bus_t bus, u8 mask, u8 state) {
   status = inb(ATA_IOPORT_STATUS(bus));
   if (status & ATA_STATUS_ERR) {
    syslog(LOG_HW|LOG_ERROR,
-           "[ATA] ERR received while polling (flags = %#I8x)\n",status);
+          "[ATA] ERR received while polling (flags = %#I8x)\n",status);
    return -EIO;
   }
   if ((status & mask) == state) break;
@@ -174,7 +174,7 @@ ata_poll_timeout(ata_bus_t bus, u8 mask, u8 state, unsigned int attempts) {
 #if 0
   if (status & ATA_STATUS_ERR) {
    syslog(LOG_HW|LOG_ERROR,
-           "[ATA] ERR received while polling (flags = %#I8x)\n",status);
+          "[ATA] ERR received while polling (flags = %#I8x)\n",status);
    return -EIO;
   }
 #endif

@@ -125,7 +125,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
   if (!str_end) goto efault;
 #if 0
   syslog(LOG_DEBUG,"Add argument: %p...%p (%Iu bytes)\n",
-          str,str_end,(size_t)((str_end-str)+1));
+         str,str_end,(size_t)((str_end-str)+1));
 #endif
   if unlikely(__builtin_add_overflow(arg_text,(size_t)((str_end-str)+1),&arg_text))
      goto enomem;
@@ -162,7 +162,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
 
 #if 0
  syslog(LOG_DEBUG,"Update environ: %Iu -> %Iu (%Iu + %Iu)\n",
-         old_total_pages,new_total_pages,arg_text,env_text);
+        old_total_pages,new_total_pages,arg_text,env_text);
 #endif
  if (new_total_pages < old_total_pages) {
   /* Reduce the size of the environment block. */

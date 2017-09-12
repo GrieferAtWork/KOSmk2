@@ -128,7 +128,7 @@ loose_branch:
   * this branch in the new mman's directory. */
 #if 1
  syslog(LOG_DEBUG,"Deleting branch %p...%p\n",
-         MBRANCH_MIN(old_branch),MBRANCH_MAX(old_branch));
+        MBRANCH_MIN(old_branch),MBRANCH_MAX(old_branch));
 #endif
  error = pdir_munmap(&self->m_pdir,
                     (ppage_t)MBRANCH_BEGIN(old_branch),
@@ -167,8 +167,8 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
         branch->mb_closure == iter) {
 #if 0
      syslog(LOG_DEBUG,"Updating instance branch %p...%p for %[file]\n",
-             MBRANCH_MIN(branch),MBRANCH_MAX(branch),
-             iter->i_module->m_file);
+            MBRANCH_MIN(branch),MBRANCH_MAX(branch),
+            iter->i_module->m_file);
 #endif
      instance_mnotify(MNOTIFY_DECREF,iter,nm,0,0);
      /* No need to use atomic instructions here. - The branch isn't yet visible. */

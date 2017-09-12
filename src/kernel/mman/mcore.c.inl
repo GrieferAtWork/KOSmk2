@@ -52,9 +52,9 @@ mscatter_kpread(struct mscatter *__restrict scatter,
 #if 0
  /* Log a debug message describing how we're going to load this scatter tab. */
  syslog(LOG_DEBUG,"LOAD: %[file] FILL(%.4IX,%IX), READ(%.4IX,%IX,%I64X), FILL(%.4IX,...)\n",
-         fp,(void *)0,fill_before,
-        (void *)fill_before,max_read,pos,
-        (void *)(fill_before+max_read));
+        fp,(void *)0,fill_before,
+       (void *)fill_before,max_read,pos,
+       (void *)(fill_before+max_read));
 #endif
  for (; scatter; scatter = scatter->m_next) {
   uintptr_t start = (uintptr_t)scatter->m_start;
@@ -313,9 +313,9 @@ load_swap:
      else max_read -= part_begin;
 #if 0
      syslog(LOG_DEBUG,"SCATTER (%[file]:%I64X - %IX bytes; offset %IX)\n",
-             self->mr_setup.mri_file,
-             self->mr_setup.mri_start+part_begin,
-             max_read,part_begin);
+            self->mr_setup.mri_file,
+            self->mr_setup.mri_start+part_begin,
+            max_read,part_begin);
 #endif
      /* Read the file data into the allocated scatter. */
      error = mscatter_kpread(&load_scatter,self->mr_setup.mri_file,
@@ -419,7 +419,7 @@ mbranch_mcore(struct mbranch *__restrict self,
  CHECK_HOST_DOBJ(self);
 #if 0
  syslog(LOG_DEBUG|LOG_MEM,"[MEM] Loading branch %p...%p into the core\n",
-         self->mb_node.a_vmin,self->mb_node.a_vmax);
+        self->mb_node.a_vmin,self->mb_node.a_vmax);
 #endif
  /* Simple check: Ignore no-user branches. */
  if ((mode&MMAN_MCORE_USER) &&

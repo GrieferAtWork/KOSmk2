@@ -133,7 +133,7 @@ fat_freaddir(struct file *__restrict fp,
   assert(!filename[filename_size]);
 #if 0
   syslog(LOG_DEBUG,"[FAT] READDIR(%$q)\n",
-          filename_size,filename);
+         filename_size,filename);
 #endif
   /* Copy collected data to user-space. */
   result = offsetof(struct dirent,d_name)+

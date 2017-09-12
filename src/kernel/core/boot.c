@@ -76,8 +76,8 @@ help_print(struct setup_opt *setup_begin,
  struct setup_opt *iter = setup_begin;
  for (; iter < setup_end; ++iter) {
   syslog(LOG_MESSAGE,SETUPSTR("\t%s%s\n"),
-          iter->so_name,!iter->so_func ? SETUPSTR(" (OBSOLETE)") :
-             iter->so_flag&SETUP_NOARG ? SETUPSTR("") : SETUPSTR("{...}"));
+         iter->so_name,!iter->so_func ? SETUPSTR(" (OBSOLETE)") :
+            iter->so_flag&SETUP_NOARG ? SETUPSTR("") : SETUPSTR("{...}"));
  }
 }
 
@@ -145,7 +145,7 @@ commandline_initialize_parse(void) {
       argv = new_argv;
      }
      syslog(LOG_MESSAGE,FREESTR("[CMD] Option: %.?q\n"),
-             optlen,arg_start);
+            optlen,arg_start);
      argv[argc++] = arg_start;
     }
    }
@@ -169,8 +169,8 @@ commandline_initialize_parse(void) {
 fail:
  kfree(argv);
  syslog(LOG_ERROR,
-         FREESTR("[CMD] Failed to parse commandline: %[errno]\n"),
-         ENOMEM);
+        FREESTR("[CMD] Failed to parse commandline: %[errno]\n"),
+        ENOMEM);
 }
 
 INTERN void KCALL commandline_initialize_repage(void) {
@@ -184,10 +184,10 @@ INTERN void KCALL commandline_initialize_repage(void) {
                                   sizeof(char),GFP_SHARED);
  if unlikely(!relocated_cmd) goto fail;
  syslog(LOG_DEBUG,FREESTR("[CMD] Relocated commandline from %p...%p to %p...%p\n"),
-        (uintptr_t)_kernel_commandline.cl_text,
-        (uintptr_t)_kernel_commandline.cl_text+_kernel_commandline.cl_size-1,
-        (uintptr_t)relocated_cmd,
-        (uintptr_t)relocated_cmd+_kernel_commandline.cl_size-1);
+       (uintptr_t)_kernel_commandline.cl_text,
+       (uintptr_t)_kernel_commandline.cl_text+_kernel_commandline.cl_size-1,
+       (uintptr_t)relocated_cmd,
+       (uintptr_t)relocated_cmd+_kernel_commandline.cl_size-1);
 
  memcpy(relocated_cmd,_kernel_commandline.cl_text,
        (_kernel_commandline.cl_size+1)*sizeof(char));
@@ -205,8 +205,8 @@ INTERN void KCALL commandline_initialize_repage(void) {
  return;
 fail:
  syslog(LOG_ERROR,
-         FREESTR("[CMD] Failed to re-page commandline: %[errno]\n"),
-         ENOMEM);
+        FREESTR("[CMD] Failed to re-page commandline: %[errno]\n"),
+        ENOMEM);
  free(_kernel_commandline.cl_argv);
  _kernel_commandline.cl_size = 0;
  _kernel_commandline.cl_text = NULL;
@@ -233,8 +233,8 @@ parse_opt(struct setup_opt *setup_begin,
     if ((*iter->so_func)(opt+setup_len)) return;
    } else {
     syslog(LOG_WARN,
-            SETUPSTR("[CMD] Option %.?q is obsolete\n"),
-            optlen,opt);
+           SETUPSTR("[CMD] Option %.?q is obsolete\n"),
+           optlen,opt);
     return;
    }
   }

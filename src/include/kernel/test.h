@@ -60,7 +60,7 @@ LOCAL void KCALL test_run(char const *name) {
  for (; iter < __testrec_end; ++iter) {
   if (name && strcmp(iter->tr_name,name) != 0) continue;
   syslog(LOG_DEBUG,"%s(%d) : Testing : %q (%p)\n",
-          iter->tr_file,iter->tr_line,iter->tr_name,iter->tr_test);
+         iter->tr_file,iter->tr_line,iter->tr_name,iter->tr_test);
   (*iter->tr_test)();
  }
 }

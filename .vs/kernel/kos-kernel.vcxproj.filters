@@ -50,6 +50,9 @@
     <None Include="..\..\src\kernel\mman\ldt-set-new.c.inl">
       <Filter>kernel\mman</Filter>
     </None>
+    <None Include="..\..\src\kernel\core-modules\fs\fat-mkent.c.inl">
+      <Filter>kernel\core-modules\fs</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

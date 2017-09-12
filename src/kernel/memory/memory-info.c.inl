@@ -98,7 +98,7 @@ memory_register_info(ppage_t start, size_t n_bytes) {
 
 #if 0
  syslog(LOG_DEBUG,"Adding meminfo: %p...%p (Zone %d)\n",
-         start,(uintptr_t)free_end-1,zone_id);
+        start,(uintptr_t)free_end-1,zone_id);
 #endif
 
  piter = (struct meminfo **)&_mem_info[zone_id];
@@ -156,8 +156,8 @@ memory_register_info(ppage_t start, size_t n_bytes) {
  /* Fallback: Create & insert a new free-range. */
  if unlikely((entry = meminfo_alloc()) == NULL) {
   syslog(LOG_MEM|LOG_DEBUG,
-          FREESTR("[MEM] Failed to allocate core-memory information page: %[errno]\n"),
-          ENOMEM);
+         FREESTR("[MEM] Failed to allocate core-memory information page: %[errno]\n"),
+         ENOMEM);
  } else {
   assert(iter  != PAGE_ERROR);
   assert(entry != PAGE_ERROR);
@@ -212,8 +212,8 @@ INTERN ATTR_FREETEXT SAFE KPD void KCALL memory_relocate_info(void) {
     } else {
      memcpy(copy,iter,sizeof(struct meminfo_data));
      syslog(LOG_MEM|LOG_DEBUG,FREESTR("[MEM] Relocating meminfo table %p...%p to %p...%p\n"),
-            (uintptr_t)iter,(uintptr_t)iter+sizeof(struct meminfo_data)-1,
-            (uintptr_t)copy,(uintptr_t)copy+sizeof(struct meminfo_data)-1);
+           (uintptr_t)iter,(uintptr_t)iter+sizeof(struct meminfo_data)-1,
+           (uintptr_t)copy,(uintptr_t)copy+sizeof(struct meminfo_data)-1);
      /* Relocate data. */
      meminfo_relocate_data(copy,iter,(uintptr_t)copy-(uintptr_t)iter);
      /* Free the pages previously used for meminfo. */

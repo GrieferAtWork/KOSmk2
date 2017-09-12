@@ -330,8 +330,8 @@ elf_load_dyn(struct elf_module *__restrict self,
   if (dyn->d_tag >= DT_NUM) break;
   /* Warn about unknown core dynamic entries. */
   syslog(LOG_EXEC|LOG_WARN,
-          "[ELF] Unknown 'PT_DYNAMIC' segment entry in '%[file]' taged as %.8x\n",
-          fp,dyn->d_tag);
+         "[ELF] Unknown 'PT_DYNAMIC' segment entry in '%[file]' taged as %.8x\n",
+         fp,dyn->d_tag);
   break;
  }
  return error;
@@ -433,8 +433,8 @@ log_invalid_addr(struct module *__restrict mod,
                  uintptr_t p, size_t s,
                  uintptr_t rp, size_t re) {
  syslog(LOG_EXEC|LOG_ERROR,
-         "[ELF] Faulty address %p...%p outside of %p...%p encountered during relocations in '%[file]'\n",
-         p,p+s-1,rp,re-1,mod->m_file,mod->m_size);
+        "[ELF] Faulty address %p...%p outside of %p...%p encountered during relocations in '%[file]'\n",
+        p,p+s-1,rp,re-1,mod->m_file,mod->m_size);
 }
 
 #ifdef __i386__
@@ -518,8 +518,8 @@ broken_hash:
                  (uintptr_t)sym_name >= (uintptr_t)string_end) break;
 #if 0
      syslog(LOG_EXEC|LOG_DEBUG,
-             "Checking hashed symbol name %q == %q (chain = %X)\n",
-             name,sym_name,chain);
+            "Checking hashed symbol name %q == %q (chain = %X)\n",
+            name,sym_name,chain);
 #endif
      if (strcmp(sym_name,name) != 0) goto next_candidate;
      if (symtab_iter->st_shndx == SHN_UNDEF) goto end; /* Symbol not defined by this library. */
@@ -537,7 +537,7 @@ next_candidate:
     }
 #if 0
     syslog(LOG_EXEC|LOG_WARN,"[ELF] Failed to find symbol %q in hash table of '%[file]' (hash = %x)\n",
-            name,self->m_file,hash);
+           name,self->m_file,hash);
 #endif
    }
   }
@@ -625,9 +625,9 @@ elf_patch(struct modpatch *__restrict patcher) {
 got_module:
     if (E_ISERR(mod)) {
      syslog(LOG_EXEC|LOG_ERROR,
-             "[ELF] Failed to open module %$q dependency %q: %[errno]\n",
-             self->m_name->dn_size,self->m_name->dn_name,
-             filename.dn_name,-E_GTERR(mod));
+            "[ELF] Failed to open module %$q dependency %q: %[errno]\n",
+            self->m_name->dn_size,self->m_name->dn_name,
+            filename.dn_name,-E_GTERR(mod));
      return E_GTERR(mod);
     }
     /* Load this additional dependency. */
@@ -635,9 +635,9 @@ got_module:
     MODULE_DECREF(mod);
     if (E_ISERR(dep)) {
      syslog(LOG_EXEC|LOG_ERROR,
-             "[ELF] Failed to patch module %$q dependency %q: %[errno]\n",
-             self->m_name->dn_size,self->m_name->dn_name,
-             filename.dn_name,-E_GTERR(dep));
+            "[ELF] Failed to patch module %$q dependency %q: %[errno]\n",
+            self->m_name->dn_size,self->m_name->dn_name,
+            filename.dn_name,-E_GTERR(dep));
      return E_GTERR(dep);
     }
    }
@@ -689,8 +689,8 @@ find_extern:
      if (sym->st_shndx == SHN_UNDEF) {
       if (ELF(ST_BIND)(sym->st_info) == STB_WEAK) goto got_symbol;
       syslog(LOG_EXEC|LOG_ERROR,"[ELF] Failed to patch symbol %$q (hash %#.8I32x) from module %$q at %p\n",
-              STRLEN(sym_name),sym_name,sym_hash,
-              self->m_name->dn_size,self->m_name->dn_name,rel_addr);
+             STRLEN(sym_name),sym_name,sym_hash,
+             self->m_name->dn_size,self->m_name->dn_name,rel_addr);
       return -ENOREL;
      }
      rel_value = (uintptr_t)load_addr+sym->st_value;
@@ -764,8 +764,8 @@ got_symbol:
            sym_name >= string_end)
            sym_name = "??" "?";
        syslog(LOG_EXEC|LOG_ERROR,
-               "[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from '%[file]'\n",
-               sym_name,rel_value,rel_value+sym->st_size-1,self->m_file);
+              "[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from '%[file]'\n",
+              sym_name,rel_value,rel_value+sym->st_size-1,self->m_file);
        goto end;
       }
      }
@@ -820,8 +820,8 @@ got_symbol:
 
    default:
     syslog(LOG_EXEC|LOG_WARN,"[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in '%[file]'\n",
-          ((uintptr_t)iter-DATAADDR(relgroup_iter->er_rel))/relgroup_iter->er_relent,
-            iter->r_offset,type,(unsigned)(ELF(R_SYM)(iter->r_info)),self->m_file);
+         ((uintptr_t)iter-DATAADDR(relgroup_iter->er_rel))/relgroup_iter->er_relent,
+           iter->r_offset,type,(unsigned)(ELF(R_SYM)(iter->r_info)),self->m_file);
     break;
    }
   }
@@ -904,16 +904,16 @@ elf_loader(struct file *__restrict fp) {
  /* Prevent exploits... */
  if (ehdr.e_phnum > ELF_PHNUM_MAX) {
   syslog(LOG_EXEC|LOG_ERROR,
-          "[ELF] Elf binary '%[file]' PHDR count %u exceeds limit of %u\n",
-          fp,(unsigned)ehdr.e_phnum,ELF_PHNUM_MAX);
+         "[ELF] Elf binary '%[file]' PHDR count %u exceeds limit of %u\n",
+         fp,(unsigned)ehdr.e_phnum,ELF_PHNUM_MAX);
   goto enoexec;
  }
 
  /* Only warn if the binary wasn't compiled for SYSV (which KOS tries to follow) */
  if (ehdr.e_ident[EI_OSABI] != ELFOSABI_SYSV) {
   syslog(LOG_EXEC|LOG_WARN,
-          "[ELF] Loading ELF binary '%[file]' that isn't SYSV (EI_OSABI = %d)\n",
-          fp,(int)ehdr.e_ident[EI_OSABI]);
+         "[ELF] Loading ELF binary '%[file]' that isn't SYSV (EI_OSABI = %d)\n",
+         fp,(int)ehdr.e_ident[EI_OSABI]);
  }
 
  /* Only warn if the binary has a future version number
@@ -921,8 +921,8 @@ elf_loader(struct file *__restrict fp) {
  if (ehdr.e_version           != EV_CURRENT ||
      ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
   syslog(LOG_EXEC|LOG_WARN,
-          "[ELF] Loading ELF binary '%[file]' that has an unrecognized version (%d/%d)\n",
-          ehdr.e_version,ehdr.e_ident[EI_VERSION]);
+         "[ELF] Loading ELF binary '%[file]' that has an unrecognized version (%d/%d)\n",
+         ehdr.e_version,ehdr.e_ident[EI_VERSION]);
  }
 
  /* All checks are done. - Now to read the program headers. */
@@ -976,7 +976,7 @@ elf_loader(struct file *__restrict fp) {
   }
   if (!n_load_hdr) {
    syslog(LOG_EXEC|LOG_WARN,
-           "[ELF] ELF binary '%[file]' doesn't contain any PT_LOAD headers\n",fp);
+          "[ELF] ELF binary '%[file]' doesn't contain any PT_LOAD headers\n",fp);
    goto enoexec;
   }
   /* Allocate the result module object. */
@@ -1154,12 +1154,12 @@ elf_loader(struct file *__restrict fp) {
                  result->e_module.m_segc;
    for (; iter != end; ++iter) {
     syslog(LOG_EXEC|LOG_DEBUG,"[ELF] SEGMENT '%[file]' - %p...%p %p...%p from %I64X + %Ix\n",
-            fp,
-            iter->ms_vaddr,
-            iter->ms_vaddr+iter->ms_msize-1,
-            iter->ms_paddr,
-            iter->ms_paddr+iter->ms_msize-1,
-            iter->ms_fpos,iter->ms_fsize);
+           fp,
+           iter->ms_vaddr,
+           iter->ms_vaddr+iter->ms_msize-1,
+           iter->ms_paddr,
+           iter->ms_paddr+iter->ms_msize-1,
+           iter->ms_fpos,iter->ms_fsize);
    }
  }
 #endif

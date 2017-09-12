@@ -1097,7 +1097,7 @@ end:
 #if LOG_MANAGED_ALLOCATIONS
  if (result != PAGE_ERROR) {
   syslog(LOG_MEM|LOG_ERROR,"[MEM] ALLOC(%p...%p) (%Iu/%Iu)\n",
-          result,(uintptr_t)result+*alloc_bytes-1,*alloc_bytes,n_bytes);
+         result,(uintptr_t)result+*alloc_bytes-1,*alloc_bytes,n_bytes);
  }
 #endif
  return result;
@@ -1277,7 +1277,7 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
 #endif
 #if LOG_MANAGED_ALLOCATIONS
  syslog(LOG_MEM|LOG_ERROR,"[MEM] FREE(%p...%p)\n",
-         p,(uintptr_t)p+n_bytes-1);
+        p,(uintptr_t)p+n_bytes-1);
 #endif
 
  /* Check for extending a free range above. */
@@ -2683,9 +2683,9 @@ mptr_mvtail(struct mptr *__restrict self,
 
 #if 0
  syslog(LOG_DEBUG,"MOVE_TAIL %Iu(%Iu) -> %Iu(%Iu) (%p -> %p)\n",
-         old_size-MPTR_SIZEOF(0),old_user_size-MPTR_SIZEOF(0),
-         new_size-MPTR_SIZEOF(0),new_user_size-MPTR_SIZEOF(0),
-         old_tail,new_tail);
+        old_size-MPTR_SIZEOF(0),old_user_size-MPTR_SIZEOF(0),
+        new_size-MPTR_SIZEOF(0),new_user_size-MPTR_SIZEOF(0),
+        old_tail,new_tail);
 #endif
  assertf(tail_size < new_size,
          "old_tail      = %p\n"

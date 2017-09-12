@@ -364,8 +364,8 @@ err_invalid_file:
 err:
  if (log_errors) {
   syslog(LOG_IO|LOG_ERROR,
-          "[KEYMAP] Failed to read keymap file '%[file]': %[errno]\n",
-          fp,-error);
+         "[KEYMAP] Failed to read keymap file '%[file]': %[errno]\n",
+         fp,-error);
  }
  return error;
 }
@@ -376,8 +376,8 @@ DEFINE_SETUP("keymap=",setup_keymap) {
  fp = kopen(arg,O_RDONLY);
  if (E_ISERR(fp)) {
   syslog(LOG_IO|LOG_ERROR,
-          SETUPSTR("[KEYMAP] Failed to open keymap file %q: %[errno]\n"),
-          arg,-E_GTERR(fp));
+         SETUPSTR("[KEYMAP] Failed to open keymap file %q: %[errno]\n"),
+         arg,-E_GTERR(fp));
  } else {
   load_keymap_file(fp,true);
   FILE_DECREF(fp);

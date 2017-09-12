@@ -113,7 +113,7 @@ blkdev_mksuper(struct blkdev *__restrict self,
  }
  if (E_ISOK(result)) {
   syslog(LOG_FS|LOG_CONFIRM,"[FS] Created %s superblock for block device %[dev_t]\n",
-          ft->f_name,self->bd_device.d_id);
+         ft->f_name,self->bd_device.d_id);
  }
  rwlock_endread(&fstype_lock);
  assertf(result != NULL,"Must return an error code. - Don't return NULL");

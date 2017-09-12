@@ -136,8 +136,8 @@ PUBLIC bool KCALL pdir_init(pdir_t *__restrict self) {
 
 #if 0
  syslog(LOG_DEBUG,"%.?[hex]\n",
-       ((KERNEL_GLOBAL_END-KERNEL_BASE)/PDTABLE_REPRSIZE)*sizeof(union pd_table),
-         &self->pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE]);
+      ((KERNEL_GLOBAL_END-KERNEL_BASE)/PDTABLE_REPRSIZE)*sizeof(union pd_table),
+        &self->pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE]);
 #endif
  return true;
 }
@@ -933,8 +933,8 @@ pdir_kernel_transform_tables(void) {
   }
   if unlikely(table == PAGE_ERROR) {
    syslog(LOG_MEM|LOG_ERROR,
-           FREESTR("[PD] Failed to transform 4Mib kernel page-table for %p...%p: %[errno]\n"),
-           local_addr_iter,local_addr_iter+PDTABLE_REPRSIZE-1,ENOMEM);
+          FREESTR("[PD] Failed to transform 4Mib kernel page-table for %p...%p: %[errno]\n"),
+          local_addr_iter,local_addr_iter+PDTABLE_REPRSIZE-1,ENOMEM);
   } else {
    table_end = (table_iter = table)+PTTABLE_ARRAYSIZE;
    for (; table_iter != table_end; ++table_iter) {
@@ -973,8 +973,8 @@ pdir_kernel_do_unmap(VIRT uintptr_t begin, size_t n_bytes) {
                      PDIR_FLAG_NOFLUSH);
  if (E_ISERR(error)) {
   syslog(LOG_MEM|LOG_ERROR,
-          FREESTR("[PD] Failed to unmap unused kernel mapping %p...%p: %[errno]\n"),
-          begin,(uintptr_t)begin+n_bytes-1,-error);
+         FREESTR("[PD] Failed to unmap unused kernel mapping %p...%p: %[errno]\n"),
+         begin,(uintptr_t)begin+n_bytes-1,-error);
  }
 }
 
@@ -1028,7 +1028,7 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
   else {
 #if 0
    syslog(LOG_MEM|LOG_DEBUG,FREESTR("[PD] CORE_RANGE(%p...%p) (zone #%d)\n"),
-           iter->mi_start,(uintptr_t)iter->mi_start+iter->mi_size-1,zone_id);
+          iter->mi_start,(uintptr_t)iter->mi_start+iter->mi_size-1,zone_id);
 #endif
    del_end = (uintptr_t)iter->mi_start;
   }
@@ -1108,8 +1108,8 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
                          PDIR_ATTR_PRESENT|PDIR_ATTR_GLOBAL|PDIR_FLAG_NOFLUSH);
    if (E_ISERR(error)) {
     syslog(LOG_MEM|LOG_ERROR,
-            FREESTR("[PD] Failed to mark kernel text %p...%p as read-only: %[errno]\n"),
-            KERNEL_RO_BEGIN,KERNEL_RO_END-1,-error);
+           FREESTR("[PD] Failed to mark kernel text %p...%p as read-only: %[errno]\n"),
+           KERNEL_RO_BEGIN,KERNEL_RO_END-1,-error);
    }
 #if 1
    error = pdir_mprotect(&pdir_kernel,
@@ -1117,8 +1117,8 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
                          PDIR_ATTR_USER|PDIR_ATTR_GLOBAL|PDIR_ATTR_PRESENT|PDIR_FLAG_NOFLUSH);
    if (E_ISERR(error)) {
     syslog(LOG_MEM|LOG_ERROR,
-            FREESTR("[PD] Failed to mark user-data %p...%p as shared: %[errno]\n"),
-           (uintptr_t)__kernel_user_start,(uintptr_t)__kernel_user_end-1,-error);
+           FREESTR("[PD] Failed to mark user-data %p...%p as shared: %[errno]\n"),
+          (uintptr_t)__kernel_user_start,(uintptr_t)__kernel_user_end-1,-error);
    }
 #endif
  }
@@ -1130,7 +1130,7 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
    for (addr_iter = 0; addr_iter < (0-KERNEL_BASE);
         addr_iter += PDTABLE_REPRSIZE,++iter) {
     syslog(LOG_MEM|LOG_DEBUG,FREESTR("KERNEL_PD[%p] = %p\n"),
-            addr_iter,PDTABLE_GETPTEV(*iter));
+           addr_iter,PDTABLE_GETPTEV(*iter));
    }
  }
 #endif

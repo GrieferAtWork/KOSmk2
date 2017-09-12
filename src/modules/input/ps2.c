@@ -208,7 +208,7 @@ PRIVATE void KCALL keyboard_send(key_t k) {
 #endif
   {
    syslog(LOG_HW|LOG_WARN,
-           "[KBD] Failed to queue key press %#.2I16x: buffer is full\n",k);
+          "[KBD] Failed to queue key press %#.2I16x: buffer is full\n",k);
   }
  }
 }
@@ -243,7 +243,7 @@ PRIVATE void KCALL
 ps2_start_command(struct ps2_cmd *__restrict c) {
 #if 0
  syslog(LOG_HW|LOG_DEBUG,"[PS2] Execute command %#.2I8x (port %d)\n",
-         c->c_cmd,c->c_port&PS2_PORT2 ? 2 : 1);
+        c->c_cmd,c->c_port&PS2_PORT2 ? 2 : 1);
 #endif
  if (c->c_port&PS2_PORT2)
      ps2_write_cmd(PS2_CONTROLLER_WRITE_PORT2_INPUT);
@@ -318,8 +318,8 @@ ps2_command(struct ps2_cmd *__restrict c) {
  PREEMPTION_POP(was);
 #if 1
  syslog(LOG_HW|LOG_DEBUG,"[PS2] Command finished: %d (%.2I8x,%.2I8x) %.2I8X %.2I8X %.2I8X %.2I8X %.2I8X %.2I8X\n",
-         result,c->c_cmd,c->c_arg,
-         c->c_resp[0],c->c_resp[1],c->c_resp[2],c->c_resp[3],c->c_resp[4],c->c_resp[5]);
+        result,c->c_cmd,c->c_arg,
+        c->c_resp[0],c->c_resp[1],c->c_resp[2],c->c_resp[3],c->c_resp[4],c->c_resp[5]);
 #endif
  return result;
 }

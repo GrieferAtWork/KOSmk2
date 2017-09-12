@@ -521,11 +521,11 @@ module_mkregions(struct module *__restrict self) {
    region->mr_size  = CEIL_ALIGN(region->mr_size,PAGESIZE);
 #if 0
    syslog(LOG_EXEC|LOG_DEBUG,"[MOD] SEGMENT '%[file]' - %p...%p from %I64X + %Ix\n",
-           region->mr_setup.mri_file,
-           FLOOR_ALIGN(iter->ms_paddr,PAGESIZE)+region->mr_setup.mri_begin,
-           FLOOR_ALIGN(iter->ms_paddr,PAGESIZE)+region->mr_size-1,
-           region->mr_setup.mri_start,
-           region->mr_setup.mri_size);
+          region->mr_setup.mri_file,
+          FLOOR_ALIGN(iter->ms_paddr,PAGESIZE)+region->mr_setup.mri_begin,
+          FLOOR_ALIGN(iter->ms_paddr,PAGESIZE)+region->mr_size-1,
+          region->mr_setup.mri_start,
+          region->mr_setup.mri_size);
 #endif
    mregion_setup(region);
    atomic_rwlock_downgrade(&self->m_rlock);

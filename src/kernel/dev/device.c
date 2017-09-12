@@ -70,8 +70,8 @@ INTERN ATTR_FREETEXT void KCALL devfs_mount_initialize(void) {
    /* XXX: Recursively create the directory path described by 'devfs_path'? */
   }
   syslog(LOG_DEBUG,
-          FREESTR("[DEVFS] Failed to mount dev-fs superblock at %q: %[errno]\n"),
-          devfs_path,-E_GTERR(_devfs_root));
+         FREESTR("[DEVFS] Failed to mount dev-fs superblock at %q: %[errno]\n"),
+         devfs_path,-E_GTERR(_devfs_root));
   _devfs_root = NULL;
  }
 }
@@ -172,7 +172,7 @@ again:
  if (self->d_irq_lost) {
 #if 0
   syslog(LOG_DEBUG,"d_irq_lost@%p(%p) - %[dev_t]\n",
-          self->d_irq_lost,self,self->d_id);
+         self->d_irq_lost,self,self->d_id);
 #endif
   (*self->d_irq_lost)(self);
  }
@@ -565,7 +565,7 @@ end_upper_fail:
  return result;
 err_upper_fail:
  syslog(LOG_HW|LOG_INFO,"[DEV] Failed to release major device number #%d: %[errno]\n",
-        (int)MAJOR(id),ENOMEM);
+       (int)MAJOR(id),ENOMEM);
  goto end_upper_fail;
 }
 

@@ -237,8 +237,8 @@ next:
 done_write:
    if (E_ISERR(error)) {
     syslog(LOG_MEM|LOG_ERROR,
-            "[MEM] Failed to sync file mapping in %[file] at %I64u\n",
-            file_pos);
+           "[MEM] Failed to sync file mapping in %[file] at %I64u\n",
+           file_pos);
    }
   }
   if (region->mr_type == MREGION_TYPE_MEM) {
@@ -290,7 +290,7 @@ PRIVATE ATTR_COLDTEXT void KCALL
 mregion_part_decref_failed(struct mregion *__restrict self,
                            raddr_t start, rsize_t n_bytes) {
  syslog(LOG_MEM|LOG_ERROR,"[MEM] Failed to decref %p...%p of region %p...%p: %[errno]\n",
-         start,start+n_bytes-1,0,self->mr_size-1,ENOMEM);
+        start,start+n_bytes-1,0,self->mr_size-1,ENOMEM);
 }
 INTERN void KCALL
 mregion_part_decref(struct mregion *__restrict self,
@@ -321,7 +321,7 @@ mregion_part_declock(struct mregion *__restrict self,
  return mregion_part_action(self,start,n_bytes,&action_declck,&action_inclck);
 #if 0
  syslog(LOG_MEM|LOG_ERROR,"[MEM] Failed to declck %p...%p of region %p...%p: %[errno]\n",
-         start,start+n_bytes-1,0,self->mr_size-1,ENOMEM);
+        start,start+n_bytes-1,0,self->mr_size-1,ENOMEM);
 #endif
 }
 PRIVATE void KCALL

@@ -197,8 +197,8 @@ end_double_lock:
   struct mbranch *branch;
 #if 0
   syslog(LOG_DEBUG,"Duplicating stack: %p -> %p (%p...%p | %p)\n",
-          caller->t_ustack,ustack,ustack->s_begin,(uintptr_t)ustack->s_end-1,
-          THIS_SYSCALL_USERESP);
+         caller->t_ustack,ustack,ustack->s_begin,(uintptr_t)ustack->s_end-1,
+         THIS_SYSCALL_USERESP);
 #endif
   ustack->s_refcnt = 1; /* The reference owned by 'result->t_ustack' */
   ustack->s_branch = 0;

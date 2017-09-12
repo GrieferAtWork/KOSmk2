@@ -53,7 +53,7 @@
 
 DECL_BEGIN
 
-#if 0
+#if defined(CONFIG_DEBUG) && 0
 #   define FAT_DEBUG(x) x
 #else
 #   define FAT_DEBUG(x) (void)0
@@ -137,6 +137,7 @@ PRIVATE REF struct inode *KCALL fat_mkreg(struct inode *__restrict dir_node, str
 PRIVATE REF struct inode *KCALL fat_symlink(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, USER char const *target_text, struct iattr const *__restrict result_attr);
 PRIVATE REF struct inode *KCALL fat_mkdir(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, struct iattr const *__restrict result_attr);
 PRIVATE errno_t KCALL fat_remove(struct inode *__restrict dir_node, struct dentry *__restrict file_path, struct inode *__restrict file_node);
+PRIVATE errno_t KCALL fat_stat_dir(struct inode *__restrict ino, struct stat64 *__restrict statbuf);
 
 PRIVATE REF struct file *KCALL fat16_root_fopen(struct inode *__restrict ino, struct dentry *__restrict node_ent, oflag_t oflags);
 PRIVATE ssize_t KCALL fat16_root_fread(struct file *__restrict fp, USER void *buf, size_t bufsize);
@@ -150,6 +151,7 @@ PRIVATE REF struct inode *KCALL fat16_root_mkreg(struct inode *__restrict dir_no
 PRIVATE REF struct inode *KCALL fat16_root_symlink(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, USER char const *target_text, struct iattr const *__restrict result_attr);
 PRIVATE REF struct inode *KCALL fat16_root_mkdir(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, struct iattr const *__restrict result_attr);
 PRIVATE errno_t KCALL fat16_root_remove(struct inode *__restrict dir_node, struct dentry *__restrict file_path, struct inode *__restrict file_node);
+
 
 PRIVATE errno_t KCALL fat_setattr(struct inode *__restrict ino, iattrset_t changed);
 PRIVATE errno_t KCALL fat_fssync(struct superblock *__restrict sb);
@@ -183,6 +185,9 @@ fat16_root_rment_unlocked(struct inode *__restrict dir_node,
 /* Check if a given directory 'node' is empty.
  * Return ONE(1) if it is, ZERO(0) if it isn't, or E_ISERR(*) on error. */
 PRIVATE errno_t KCALL fat_is_empty_directory(fat_t *__restrict fs, struct fatnode *__restrict node);
+
+/* Truncate (clear) a given FAT INode, as is done when 'O_TRUNC' is passed to 'open()'. */
+PRIVATE errno_t KCALL fatnode_truncate_for_open(struct fatnode *__restrict open_node, struct iattr const *__restrict result_attr, iattrset_t mode);
 
 /* Load the correct cluster within the given file when
  * NOTE: In addition, also handles the special case of an empty file
@@ -317,6 +322,8 @@ PRIVATE struct inodeops const fatops_dir = {
     .ino_symlink = &fat_symlink,
     .ino_mkdir   = &fat_mkdir,
     .ino_remove  = &fat_remove,
+    .ino_stat    = &fat_stat_dir,
+    /* TODO: rename() */
 };
 PRIVATE struct inodeops const fatops_root_16 = {
     .f_read      = &fat16_root_fread,
@@ -331,6 +338,8 @@ PRIVATE struct inodeops const fatops_root_16 = {
     .ino_symlink = &fat16_root_symlink,
     .ino_mkdir   = &fat16_root_mkdir,
     .ino_remove  = &fat16_root_remove,
+    .ino_stat    = &fat_stat_dir,
+    /* TODO: rename() */
 };
 PRIVATE struct inodeops const fatops_root_32 = {
     .f_read      = &fat_fread,
@@ -345,6 +354,8 @@ PRIVATE struct inodeops const fatops_root_32 = {
     .ino_symlink = &fat_symlink,
     .ino_mkdir   = &fat_mkdir,
     .ino_remove  = &fat_remove,
+    .ino_stat    = &fat_stat_dir,
+    /* TODO: rename() */
 };
 PRIVATE struct superblockops const fatops_super = {
     .sb_sync = &fat_fssync,
@@ -432,7 +443,7 @@ fat_readlink(struct inode *__restrict ino,
  read_chars = ((size_t)error-sizeof(symlnk_magic))/2;
  utf16_to_utf8_inplace((u16 *)(temp+sizeof(symlnk_magic)),read_chars);
  FAT_DEBUG(syslog(LOG_DEBUG,"SYMLINK: %$q\n",
-                   read_chars,temp+sizeof(symlnk_magic)));
+                  read_chars,temp+sizeof(symlnk_magic)));
  if (copy_to_user(buf,temp+sizeof(symlnk_magic),read_chars*sizeof(char)))
      goto err_fault;
  read_ok = read_total;
@@ -473,7 +484,7 @@ lookupdata_addlfn(struct lookupdata *__restrict self,
   self->ld_entryv = inspos;
  }
  insend = inspos+(self->ld_entryc++);
- prio = entry->f_marker;
+ prio = entry->lfn_seqnum;
  /* Search for where we need to insert this long filename entry */
  while (inspos != insend) {
   if (inspos->le_namepos > prio) {
@@ -584,8 +595,8 @@ fat_lookup_memory(struct lookupdata *__restrict data,
        --filenameiter;
    if (*(u8 *)filename == MARKER_IS0XE5) *(u8 *)filename = 0xE5;
    FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Short filename: %$q (Looking for %$q)\n",
-                    (size_t)(filenameiter-filename),filename,
-                     name->dn_size,name->dn_name));
+                   (size_t)(filenameiter-filename),filename,
+                    name->dn_size,name->dn_name));
    if ((size_t)(filenameiter-filename) == name->dn_size &&
        !memcmp(filename,name->dn_name,name->dn_size)) {
     data->ld_fpos.fp_namecls = cluster_id;
@@ -629,7 +640,7 @@ found_entry:
                                  THIS_INSTANCE)));
     }
     FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Found INode for %$q\n",
-                      name->dn_size,name->dn_name));
+                     name->dn_size,name->dn_name));
     return &result->f_inode;
    }
   }
@@ -682,6 +693,16 @@ filetime_encodetime(filetime_t *__restrict self, time_t tmt) {
 
 
 
+PRIVATE errno_t KCALL
+fat_stat_dir(struct inode *__restrict ino,
+         struct stat64 *__restrict statbuf) {
+ /* Fat directories have a size of ZERO(0) by default.
+  * This looks kind-of ugly, so we stat() them as 4096 bytes. */
+ assert(INODE_ISDIR(ino));
+ statbuf->st_size   = 4096;
+ statbuf->st_blocks = CEILDIV(4096,512);
+ return -EOK;
+}
 PRIVATE REF struct file *KCALL
 fat_fopen(struct inode *__restrict ino,
           struct dentry *__restrict node_ent,
@@ -1044,13 +1065,13 @@ update_size_again:
    if (E_ISERR(temp)) return temp;
    new_size = ((pos_t)self->fd_cls_act*fs->f_clustersize)+
                (self->fd_pos-self->fd_begin);
-   if (node->i_attr.ia_siz < new_size) {
+   if (node->i_attr_disk.ia_siz < new_size) {
 #if __SIZEOF_POS_T__ > 4
     /* Handle special case: The absolute FAT file size limit (4Gb) */
     if (new_size > (pos_t)(u32)-1) {
      assert(result >= new_size-(pos_t)(u32)-1);
      result -= new_size-(pos_t)(u32)-1;
-     if (node->i_attr.ia_siz != (pos_t)(u32)-1) {
+     if (node->i_attr_disk.ia_siz != (pos_t)(u32)-1) {
       /* Write the absolutely greatest possible size. */
       new_size = (pos_t)(u32)-1;
      } else {
@@ -1069,15 +1090,17 @@ update_size_again:
       return temp;
      }
     }
-    assert(node->i_attr.ia_siz < new_size);
-    node->i_attr.ia_siz = new_size;
+    assert(node->i_attr_disk.ia_siz < new_size);
+    node->i_attr.ia_siz      = new_size;
+    node->i_attr_disk.ia_siz = new_size;
     if (!INODE_ISDIR(node)) {
      /* Write the new size to the FAT directory table. */
      le32 ent_size = BSWAP_H2LE32((u32)new_size);
      HOSTMEMORY_BEGIN {
       temp = blkdev_writeall(fs->f_super.sb_blkdev,node->i_data->i_pos.fp_headpos+
                              offsetof(file_t,f_size),&ent_size,4);
-     } HOSTMEMORY_END;
+     }
+     HOSTMEMORY_END;
     }
     /* If the write was OK, mirror the disk size-attribute. */
     if (E_ISOK(temp))
@@ -1249,6 +1272,7 @@ fat16_root_fwrite(struct file *__restrict fp,
                   USER void const *buf, size_t bufsize) {
  pos_t max_read; ssize_t result; fat_t *fat;
  assert(FILE->f_begin <= FILE->f_end);
+ if (FILE->f_pos >= FILE->f_end) return 0;
  assert(FILE->f_pos >= FILE->f_begin);
  assert(FILE->f_pos <= FILE->f_end);
  assert(INODE_ISSUPERBLOCK(fp->f_node));
@@ -1667,203 +1691,11 @@ PRIVATE void KCALL fat_makeLFN(file_t *__restrict f,
  f->lfn_name_3[1] = (usc2ch_t)part[12];
 }
 
-
-
-/* Search for an existing directory entry 'path->d_name' and return
- * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in 'mode'.
- * Otherwise create a new entry and pre-initialize it using 'result_attr',
- * as well as set '*is_new' to true.
- * NOTE: The caller is responsible for holding a write-lock to
- *      'dir_node->i_data->i_dirlock', which must be a FAT-directory node.
- * @return: * : A reference to either a previously existing, or a newly allocated INode.
- */
-PRIVATE REF struct fatnode *KCALL
-fat_mkent_unlocked(struct inode *__restrict dir_node,
-                   struct dentry *__restrict path, u8 ent_attr,
-                   struct iattr const *__restrict result_attr,
-                   iattrset_t mode, bool *__restrict is_new) {
- fat_t *fat = container_of(dir_node->i_super,fat_t,f_super);
- struct filedata rw; struct lookupdata lookup_data;
- REF struct fatnode *result; file_t dirent,short_entry;
- size_t lfn_count,disambiguation = 0; errno_t error;
- size_t current_unused_score = 0; /* Amount of unused entries currently tracked. */
- cluster_t target_cluster; pos_t target_pos; /* Suitable location within the directory to put our data. */
- bool got_suitable_target = false; /* True if a suitable target location was found. */
-#define must_write_end_of_directory  (!got_suitable_target) /* True if the new entry is appended to the directory. */
- assert(rwlock_writing(&dir_node->i_data->i_dirlock));
-retry_disambiguation:
- /* Figure out how many consecutive file-entries
-  * are required for the file to-be created.
-  * HINT: 'lfn_count == CONSECUTIVE_REQUIRED-1'. */
- lfn_count = fat_make8dot3(&short_entry,&path->d_name,disambiguation);
- /* Fill in generic file information. */
- fat_atime_encode(short_entry.f_atime,&result_attr->ia_atime);
- fat_ctime_encode(short_entry.f_ctime,&result_attr->ia_ctime);
- fat_mtime_encode(short_entry.f_mtime,&result_attr->ia_mtime);
- short_entry.f_size      = 0;
- short_entry.f_attr      = ent_attr;
- short_entry.f_clusterhi = BSWAP_H2LE16((u16)((u32)fat->f_cluster_eof_marker >> 16));
- short_entry.f_clusterlo = BSWAP_H2LE16((u16)fat->f_cluster_eof_marker);
-
- FILEDATA_OPENDIR(&rw,fat,dir_node->i_data);
- lookupdata_init(&lookup_data);
- for (;;) {
-  HOSTMEMORY_BEGIN {
-   result = E_PTR(filedata_read(&rw,fat,dir_node,&dirent,sizeof(file_t)));
-  }
-  HOSTMEMORY_END;
-  if (E_ISERR(result)) goto end;
-  if (!result) break;
-  FAT_DEBUG(syslog(LOG_DEBUG,"DENTRY: %$q\n",sizeof(dirent.f_nameext),dirent.f_nameext));
-  if (dirent.f_marker == MARKER_UNUSED) {
-   /* Reclaim unused directory entries. */
-   if (!current_unused_score) {
-    target_cluster = rw.fd_cluster;
-    target_pos     = rw.fd_pos-sizeof(file_t);
-    assert(target_pos >= rw.fd_begin);
-    assert(target_pos <= rw.fd_end);
-   }
-   if (!got_suitable_target) {
-    /* Check if the unused entry are we've
-     * discovered is of sufficient size. */
-    if (++current_unused_score >= disambiguation+1)
-        got_suitable_target = true;
-   }
-   continue;
-  }
-  if (!got_suitable_target) {
-   current_unused_score = 0;
-  }
-  if (dirent.f_marker == MARKER_DIREND) {
-   /* (Current) end of directory. */
-   rw.fd_pos -= sizeof(file_t);
-   assert(rw.fd_pos >= rw.fd_begin);
-   assert(rw.fd_pos <= rw.fd_end);
-   break;
-  }
-  result = (REF struct fatnode *)fat_lookup_memory(&lookup_data,&path->d_name,
-                                                   &dirent,1,rw.fd_begin,
-                                                    rw.fd_cluster,fat);
-  if (result != NULL) {
-   /* Found an existing entry with the same name. */
-   if (!(mode&IATTR_EXISTS)) {
-    /* If we've not supposed to return existing nodes,
-     * return '-EEXIST' (Already exists) instead. */
-    INODE_DECREF(&result->f_inode);
-    result = E_PTR(-EEXIST);
-   }
-   /* Return the existing Inode. */
-   *is_new = false;
-   goto end;
-  }
-
-  /* Check if out short entry collides with another existing one. */
-  if (memcmp(short_entry.f_nameext,dirent.f_nameext,
-             sizeof(dirent.f_nameext)) == 0) {
-   assertf(lfn_count >= 1,
-           "But if this one collides (%$q), how come 'fat_lookup_memory()' didn't pick up on it?",
-           sizeof(dirent.f_nameext),dirent.f_nameext);
-   /* It does. (Try again with a greater disambiguation) */
-   assert(disambiguation <= FAT_8DOT3_MAX_DISAMBIGUATION);
-   if unlikely(disambiguation == FAT_8DOT3_MAX_DISAMBIGUATION) {
-    /* _very_ unlikely: Too many collisions. */
-    result = E_PTR(-EEXIST);
-    goto end;
-   }
-
-   /* Retry with greater 'disambiguation' */
-   ++disambiguation;
-   goto retry_disambiguation;
-  }
- }
- /* No entry with the name we were looking for exists.
-  * >> With that in mind, we are allowed to create our new entry! */
- if (got_suitable_target || current_unused_score) {
-  /* If the directory ended just after a few unused entries, re-use them. */
-  rw.fd_cluster = target_cluster;
-  rw.fd_begin   = FAT_SECTORADDR(fat,FAT_CLUSTERSTART(fat,target_cluster));
-  rw.fd_end     = rw.fd_max = rw.fd_begin+fat->f_clustersize;
-  rw.fd_pos     = target_pos;
-  assert(rw.fd_pos >= rw.fd_begin);
-  assert(rw.fd_pos <= rw.fd_end);
- }
-
- /* Create the new INode we're going to return. */
- result = fatnode_new();
- if unlikely(!result) { result = E_PTR(-ENOMEM); goto end; }
- result->f_idata.i_cluster        = fat->f_cluster_eof_marker;
- result->f_idata.i_pos.fp_namecls = rw.fd_cluster;
- result->f_idata.i_pos.fp_namepos = rw.fd_pos;
- //result->f_idata.i_pos.fp_headpos = ...; /* Filled later. */
- rwlock_cinit(&result->f_idata.i_dirlock);
- result->f_inode.__i_nlink = 1;
- result->f_inode.i_data    = &result->f_idata;
- memcpy(&result->f_inode.i_attr,result_attr,sizeof(struct iattr));
- result->f_inode.i_attr.ia_mode &= ~__S_IFMT;
- if (ent_attr&ATTR_DIRECTORY) {
-  result->f_inode.i_ops = &fatops_dir;
-  result->f_inode.i_attr.ia_mode |= S_IFDIR;
- } else {
-  result->f_inode.i_ops = &fatops_reg;
-  result->f_inode.i_attr.ia_mode |= S_IFREG;
- }
- /* Mirror attributes in disk cache. */
- memcpy(&result->f_inode.i_attr_disk,
-        &result->f_inode.i_attr,
-         sizeof(struct iattr));
-
- HOSTMEMORY_BEGIN {
-  /* Start by writing all long-filename entries. */
-  if (lfn_count) {
-   size_t i; u8 chksum;
-   chksum = fat_LFNchksum(short_entry.f_nameext);
-   for (i = 0; i < lfn_count; ++i) {
-    file_t buf; fat_makeLFN(&buf,&path->d_name,i,chksum);
-    error = (errno_t)filedata_write(&rw,fat,dir_node,&buf,sizeof(file_t));
-    if (E_ISERR(error)) goto stop_writing;
-   }
-  }
-  /* Store the position of the actual file header in the result INode. */
-  result->f_idata.i_pos.fp_headpos = rw.fd_pos;
-  /* Next write the short-name entry. */
-  error = (errno_t)filedata_write(&rw,fat,dir_node,&short_entry,sizeof(file_t));
-  if (E_ISERR(error)) goto stop_writing;
-  /* And finally, if we have to, write a directory terminator. */
-  if (must_write_end_of_directory) {
-   memset(&short_entry,0,sizeof(file_t));
-#if MARKER_DIREND != 0
-   short_entry.f_marker = MARKER_DIREND;
+#ifndef __INTELLISENSE__
+#define FAT16_ROOT
+#include "fat-mkent.c.inl"
+#include "fat-mkent.c.inl"
 #endif
-   error = (errno_t)filedata_write(&rw,fat,dir_node,&short_entry,sizeof(file_t));
-  }
-stop_writing:;
- }
- HOSTMEMORY_END;
- if (E_ISERR(error)) { free(result); result = E_PTR(error); goto end; }
- *is_new = true;
-
- /* We (ab-)use the header position as INode number. (It's better than nothing...) */
- result->f_inode.i_ino = (ino_t)result->f_idata.i_pos.fp_headpos;
-
- /* Setup the resulting node to use. (NOTE: May never fail, because FAT is a core module) */
- asserte(E_ISOK(inode_setup(&result->f_inode,&fat->f_super,THIS_INSTANCE)));
-end:
- lookupdata_fini(&lookup_data);
- return result;
-#undef must_write_end_of_directory
-}
-
-PRIVATE REF struct fatnode *KCALL
-fat16_root_mkent_unlocked(struct inode *__restrict dir_node,
-                          struct dentry *__restrict path, u8 ent_attr,
-                          struct iattr const *__restrict result_attr,
-                          iattrset_t mode, bool *__restrict is_new) {
-#define FAT   container_of(dir_node,fat_t,f_super.sb_root)
- assert(rwlock_writing(&FAT->f_idata.i_dirlock));
- /* TODO: Same as 'fat_mkent_unlocked()' */
- return (struct fatnode *)fat16_root_lookup(dir_node,path);
-#undef FAT
-}
 
 PRIVATE errno_t KCALL
 fat_rment_unlocked(struct inode *__restrict dir_node,
@@ -1943,6 +1775,10 @@ fat_is_empty_directory(fat_t *__restrict fs,
   if ((size_t)temp < sizeof(file_t)) break;
   /* Simple case: The entry is marked as unused. */
   if (fp.f_marker == MARKER_UNUSED) continue;
+  /* According to wikipedia, VOLUMEID entires shouldn't not prevent directory deletion.
+   * >> This makes sense, because LFN entries are marked as VOLUMEID, but
+   *    shouldn't be responsible for keeping a directory from being removed. */
+  if (fp.f_attr&ATTR_VOLUMEID) continue;
   /* Special case: Ignore '.' and '..' entries. */
   if (fp.f_attr&ATTR_DIRECTORY &&
      (memcmp(fp.f_nameext,fat_newdir_template[0].f_nameext,sizeof(fp.f_nameext)) == 0 ||
@@ -2284,15 +2120,13 @@ err:
 
 PRIVATE errno_t KCALL
 fat_fssync(struct superblock *__restrict sb) {
- return fat_flushtable((fat_t *)sb);
+ return fat_flushtable(container_of(sb,fat_t,f_super));
 }
-#define FAT ((fat_t *)sb)
 PRIVATE void KCALL
 fat_fsfini(struct superblock *__restrict sb) {
- free(FAT->f_fat_meta);
- free(FAT->f_fat_table);
+ free(container_of(sb,fat_t,f_super)->f_fat_meta);
+ free(container_of(sb,fat_t,f_super)->f_fat_table);
 }
-#undef FAT
 
 
 
@@ -2439,13 +2273,13 @@ is_loaded:
   }
   rwlock_endwrite(&self->f_fat_lock);
   FAT_DEBUG(syslog(LOG_DEBUG,"READ_CLUSTER (%I32u -> %I32u) %d (LOAD)\n",
-                    id,*result,self->f_type));
+                   id,*result,self->f_type));
   return error;
  }
  /* Now just read the FAT entry. */
  *result = FAT_TABLEGET(self,id);
  FAT_DEBUG(syslog(LOG_DEBUG,"READ_CLUSTER (%I32u -> %I32u) %d\n",
-                   id,*result,self->f_type));
+                  id,*result,self->f_type));
  rwlock_endread(&self->f_fat_lock);
  return -EOK;
 }
@@ -2519,6 +2353,7 @@ fat_set_unlocked(fat_t *__restrict self,
  return -EOK;
 }
 #endif
+
 PRIVATE errno_t KCALL
 fat_get_unused_unlocked(fat_t *__restrict self,
                         fatid_t hint,
@@ -2608,9 +2443,11 @@ fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
   error = blkdev_readall(dev,0,&header,sizeof(header));
  }
  HOSTMEMORY_END;
- if (E_ISERR(error)) return E_PTR(error);
+ if (E_ISERR(error)) ERROR(error);
+ /* Validate the boot signature. */
  if unlikely(header.fat32.f32_bootsig[0] != 0x55 ||
-             header.fat32.f32_bootsig[1] != 0xAA) ERROR(-EINVAL);
+             header.fat32.f32_bootsig[1] != 0xAA)
+    ERROR(-EINVAL);
  result = (fat_t *)superblock_new(sizeof(fat_t));
  if unlikely(!result) ERROR(-ENOMEM);
 #undef ERROR

@@ -287,14 +287,14 @@ intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
     __asm__ __volatile__("pushf; sti; hlt; popf\n");
     if (ATOMIC_XCH(inside,1) == 0) {
      syslog(LOG_DEBUG,"[INT] Execuring local interrupt handler: %p, %p, %p, %p (CR2 = %p)\n",
-             iter,iter->ic_prev,*(void **)&iter->ic_irq,iter->ic_int,
-             THIS_TASK->t_lastcr2);
+            iter,iter->ic_prev,*(void **)&iter->ic_irq,iter->ic_int,
+            THIS_TASK->t_lastcr2);
      syslog(LOG_DEBUG,"EAX %p ECX %p EDX %p EBX %p\n",
-             data.state.eax,data.state.ecx,data.state.edx,data.state.ebx);
+            data.state.eax,data.state.ecx,data.state.edx,data.state.ebx);
      syslog(LOG_DEBUG,"ESP %p EBP %p ESI %p EDI %p\n",
-             data.esp_minus_4+4,data.state.ebp,data.state.esi,data.state.edi);
+            data.esp_minus_4+4,data.state.ebp,data.state.esi,data.state.edi);
      syslog(LOG_DEBUG,"DS %.4I16X ES %.4I16X FS %.4I16X GS %.4I16X\n",
-             data.state.ds,data.state.es,data.state.fs,data.state.gs);
+            data.state.ds,data.state.es,data.state.fs,data.state.gs);
      __assertion_tbprint(0);
      struct mman *omm;
      TASK_PDIR_KERNEL_BEGIN(omm);

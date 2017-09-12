@@ -108,13 +108,13 @@ mbr_autopart(struct blkdev *__restrict self,
 
   /* Log creation of the partition. */
   syslog(LOG_HW|LOG_INFO,
-          "[MBR] Created partition #%d (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes)\n",
-         (int)DISKPART_ID(part),part->dp_device.bd_device.d_id,
-         (u64)(part->dp_start),
-         (u64)(part->dp_start+part->dp_device.bd_blockcount),
-               part->dp_ref->bd_device.d_id,
-         (u64)(part->dp_device.bd_blockcount),
-               part->dp_device.bd_blocksize);
+         "[MBR] Created partition #%d (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes)\n",
+        (int)DISKPART_ID(part),part->dp_device.bd_device.d_id,
+        (u64)(part->dp_start),
+        (u64)(part->dp_start+part->dp_device.bd_blockcount),
+              part->dp_ref->bd_device.d_id,
+        (u64)(part->dp_device.bd_blockcount),
+              part->dp_device.bd_blocksize);
 
   ++result,--max_parts;
   /* Must not read sub-partitions that start where we being ourself.

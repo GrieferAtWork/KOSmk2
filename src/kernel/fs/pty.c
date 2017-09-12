@@ -163,7 +163,7 @@ pty_ioctl(struct ptymaster *__restrict self, int name, USER void *arg) {
 
   atomic_rwlock_write(&self->pm_lock);
   syslog(LOG_INFO,"[PTY] Set group %I32d (%I32d) (%p)\n",
-          TASK_GETPID(newproc),pid,newproc);
+         TASK_GETPID(newproc),pid,newproc);
   oldproc = self->pm_fproc;
   self->pm_fproc = newproc; /* Inherit reference. */
   atomic_rwlock_endwrite(&self->pm_lock);
@@ -535,8 +535,8 @@ pty_fclose(struct inode *__restrict UNUSED(ino),
   syslog(LOG_INFO,"[PTY] Deleted PTY device file '%[dentry]'\n",fp->f_dent);
  else {
   syslog(LOG_WARN,
-          "[PTY] Failed to delete PTY device file '%[dentry]': %[errno]\n",
-          fp->f_dent,-error);
+         "[PTY] Failed to delete PTY device file '%[dentry]': %[errno]\n",
+         fp->f_dent,-error);
  }
 }
 

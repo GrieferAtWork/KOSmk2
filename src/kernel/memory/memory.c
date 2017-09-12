@@ -255,7 +255,7 @@ search_zone:
   PAGE_FOREACH(iter,zone) {
 #if 0
    syslog(LOG_DEBUG,"zone #%d: %p...%p\n",
-          (int)(zone-page_zones),iter,(uintptr_t)PAGE_END(iter)-1);
+         (int)(zone-page_zones),iter,(uintptr_t)PAGE_END(iter)-1);
 #endif
    assertf(iter->p_free.p_next == PAGE_ERROR ||
            iter->p_free.p_next >  PAGE_END(iter),
@@ -320,9 +320,9 @@ search_zone:
 
 #if LOG_PHYSICAL_ALLOCATIONS
    syslog(LOG_MEM|LOG_DEBUG,
-           "[MEM] Allocated memory %p...%p from zone #%d (#%d)\n",
-           result,(uintptr_t)result+(n_bytes-1),
-          (int)(zone-page_zones),zone_id);
+          "[MEM] Allocated memory %p...%p from zone #%d (#%d)\n",
+          result,(uintptr_t)result+(n_bytes-1),
+         (int)(zone-page_zones),zone_id);
    if (zone_id == 0) __assertion_tbprint(0);
 #endif /* LOG_PHYSICAL_ALLOCATIONS */
 
@@ -733,8 +733,8 @@ memory_do_install(PHYS PAGE_ALIGNED uintptr_t start,
  if (size) {
   if (mode != MEMORY_INSTALL_MODE_ONLYINFO) {
    syslog(LOG_MEM|LOG_INFO,
-           FREESTR("[MEM] Using dynamic memory %p..%p\n"),
-           start,start+size-1);
+          FREESTR("[MEM] Using dynamic memory %p..%p\n"),
+          start,start+size-1);
    memory_register((ppage_t)start,size,mode == MEMORY_INSTALL_MODE_NOINFO);
   } else {
    memory_register_info((ppage_t)start,size);
@@ -816,8 +816,8 @@ memory_install(PHYS uintptr_t start, size_t size) {
   assert(start < mend);
   if (!memory_install_free_later(start,mend)) {
    syslog(LOG_MEM|LOG_WARN,
-           FREESTR("[MEM] Insufficient free-later-ranges to mark %p...%p\n"),
-           start,mend-1);
+          FREESTR("[MEM] Insufficient free-later-ranges to mark %p...%p\n"),
+          start,mend-1);
   }
   return result;
  }
@@ -896,8 +896,8 @@ memory_install64(u64 begin, u64 size) {
 INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
 memory_load_mb_lower_upper(u32 mem_lower, u32 mem_upper) {
  syslog(LOG_MEM|LOG_INFO,
-         "TODO: memory_load_mb_lower_upper: %I32u / %I32u\n",
-         mem_lower,mem_upper);
+        "TODO: memory_load_mb_lower_upper: %I32u / %I32u\n",
+        mem_lower,mem_upper);
  return 0;
 }
 

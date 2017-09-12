@@ -106,7 +106,7 @@ PRIVATE ATTR_NORETURN ATTR_USED void FCALL preemption_not_enabled_leave(void)
 PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
  if (1) {
   syslog(LOG_DEBUG,"SYSCALL_ENTER:0x%.8I32X (%I32u) (EIP: %p)\n",
-          sysno,sysno,THIS_SYSCALL_EIP);
+         sysno,sysno,THIS_SYSCALL_EIP);
   volatile unsigned int i = 0;
   while (++i < (1 << 28));
  }
@@ -132,11 +132,11 @@ PRIVATE ATTR_USED void FCALL syscall_leave(void) {
 #endif
   THIS_SYSCALL_EFLAGS &= ~(EFLAGS_IF);
   syslog(LOG_DEBUG,"SYSCALL_LEAVE: (EIP: %p)\n",
-          THIS_SYSCALL_EIP);
+         THIS_SYSCALL_EIP);
   syslog(LOG_DEBUG,"SS = %p; ESP = %p; EFLAGS = %p;\n",
-          THIS_SYSCALL_SS,THIS_SYSCALL_USERESP,THIS_SYSCALL_EFLAGS);
+         THIS_SYSCALL_SS,THIS_SYSCALL_USERESP,THIS_SYSCALL_EFLAGS);
   syslog(LOG_DEBUG,"CS = %p; EBP = %p;\n",
-          THIS_SYSCALL_CS,THIS_SYSCALL_EBP);
+         THIS_SYSCALL_CS,THIS_SYSCALL_EBP);
   { struct idt_pointer p;
     INTDEF struct segment cpu_gdt[SEG_BUILTIN];
     p.ip_limit = sizeof(cpu_gdt);

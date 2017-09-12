@@ -63,7 +63,7 @@ DECL_BEGIN
 #define DN_ALL 0x8000 /*< FLAG: Append the name-suffix to all entries, including 'dn_min' itself. */
 struct devname {
  dev_t       dn_min;  /*< The lowest device number described by this. */
- u16         dn_num;  /*< [!0] The amount of device ids described by this. NOTE: ZERO in this field indicates a sentinel. */
+ u32         dn_num;  /*< [!0] The amount of device ids described by this. NOTE: ZERO in this field indicates a sentinel. */
  u16         dn_flag; /*< A set of 'DN_*' describing how unique name ids are generated. */
  char const *dn_name; /*< [1..1] The base name of the device. */
 };
@@ -79,6 +79,7 @@ PRIVATE struct devname const dnam_blk[] = {
     {ATA_PRIMARY_SLAVE,   64,DN_INT,"hdb"},
     {ATA_SECONDARY_MASTER,64,DN_INT,"hdc"},
     {ATA_SECONDARY_SLAVE, 64,DN_INT,"hdd"},
+    {MKDEV(7,0), MINORMASK+1,DN_INT|DN_ALL,"loop"},
     {0,0,0,NULL},
 };
 PRIVATE struct devname const dnam_chr[] = {
@@ -177,8 +178,7 @@ device_del(struct device *__restrict dev, dev_t id) {
                                  &dev->d_node);
  if (E_ISERR(error)) {
   syslog(LOG_DEBUG,
-          FREESTR("[DEVFS] Failed to remove superblock at %q: %[errno]\n"),
-          -error);
+        FREESTR("[DEVFS] Failed to remove superblock at %q: %[errno]\n"),-error);
  }
 }
 
@@ -219,21 +219,17 @@ device_add(struct device *__restrict dev, dev_t id) {
   name.dn_name = (char *)iter->dn_name;
  } else {
   /* Create a custom name. */
-  unsigned char offset = (unsigned char)(id-iter->dn_min);
+  minor_t offset; char *dst;
   size_t base_size = name.dn_size;
-  assert(offset <= 99);
   ++name.dn_size;
-  if (offset >= 10) ++name.dn_size;
+  offset = (minor_t)(id-iter->dn_min);
+  while (offset >= 10) ++name.dn_size,offset /= 10;
   name.dn_name = (char *)alloca((name.dn_size+1)*sizeof(char));
   memcpy(name.dn_name,iter->dn_name,base_size*sizeof(char));
-  if (offset >= 10) {
-   name.dn_name[base_size]   = '0'+(offset/10);
-   name.dn_name[base_size+1] = '0'+(offset%10);
-   name.dn_name[base_size+2] = '\0';
-  } else {
-   name.dn_name[base_size]   = '0'+offset;
-   name.dn_name[base_size+1] = '\0';
-  }
+  *(dst = name.dn_name+name.dn_size) = '\0';
+  offset = (minor_t)(id-iter->dn_min);
+  do *--dst = '0'+(offset % 10);
+  while ((offset /= 10) != 0);
  }
 got_name:
  dentryname_loadhash(&name);
@@ -242,13 +238,13 @@ got_name:
 
  if (E_ISERR(mount_path)) {
   syslog(LOG_FS|LOG_ERROR,
-          "[DEVFS] Failed to install %s-device %[dev_t] (%q): %[errno]\n",
-          DEVICE_ISBLK(dev) ? "block" : "character",id,name.dn_name,
-          -E_GTERR(mount_path));
+         "[DEVFS] Failed to install %s-device %[dev_t] (%q): %[errno]\n",
+         DEVICE_ISBLK(dev) ? "block" : "character",id,name.dn_name,
+         -E_GTERR(mount_path));
  } else {
   syslog(LOG_FS|LOG_MESSAGE,
-          "[DEVFS] Added %s-device %[dev_t] as %[dentry]\n",
-          DEVICE_ISBLK(dev) ? "block" : "character",id,mount_path);
+         "[DEVFS] Added %s-device %[dev_t] as %[dentry]\n",
+         DEVICE_ISBLK(dev) ? "block" : "character",id,mount_path);
   DENTRY_DECREF(mount_path);
  }
 
@@ -298,8 +294,8 @@ unknown:
 
  /* Custom device naming conventions. */
  syslog(LOG_FS|LOG_MESSAGE,
-         "[DEVFS] Unknown %s-device %[dev_t] not added to dev-fs\n",
-         DEVICE_ISBLK(dev) ? "block" : "character",id);
+        "[DEVFS] Unknown %s-device %[dev_t] not added to dev-fs\n",
+        DEVICE_ISBLK(dev) ? "block" : "character",id);
  return -EOK;
 }
 

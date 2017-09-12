@@ -362,8 +362,8 @@ mman_destroy(struct mman *__restrict self) {
    task_endnointr();
    if (E_ISERR(error)) {
     syslog(LOG_MEM|LOG_ERROR,
-            "[MMAN] Failed to unlock virtual page directory %p...%p: %[errno]\n",
-           (ppage_t)&self->m_pdir,sizeof(self->m_pdir),(errno_t)-error);
+           "[MMAN] Failed to unlock virtual page directory %p...%p: %[errno]\n",
+          (ppage_t)&self->m_pdir,sizeof(self->m_pdir),(errno_t)-error);
    }
  }
  LDT_DECREF(self->m_ldt);
@@ -1867,8 +1867,8 @@ mman_map_dynmem(PHYS ppage_t start, size_t n_bytes) {
  branch = (struct mbranch *)kcalloc(sizeof(struct mbranch),GFP_MEMORY);
  if unlikely(!region || !branch) {
   syslog(LOG_ERROR|LOG_MEM,
-          FREESTR("[MEM] Failed to create mman-controller for physical memory %p...%p: %[errno]\n"),
-         (uintptr_t)start,(uintptr_t)start+n_bytes-1,ENOMEM);
+         FREESTR("[MEM] Failed to create mman-controller for physical memory %p...%p: %[errno]\n"),
+        (uintptr_t)start,(uintptr_t)start+n_bytes-1,ENOMEM);
   free(region);
   free(branch);
   return;
@@ -1920,8 +1920,8 @@ mman_initialize(void) {
   b = (struct mbranch *)kcalloc(sizeof(struct mbranch),GFP_MEMORY);
   if unlikely(!b) {
    syslog(LOG_ERROR|LOG_MEM,
-           FREESTR("[MEM] Failed to allocate mman kernel root branch #%d\n"),
-           region_index);
+          FREESTR("[MEM] Failed to allocate mman kernel root branch #%d\n"),
+          region_index);
    continue;
   }
   /* NOTE: Protect the mappings on the debug heap by marking them as NOFREE. */

@@ -1097,6 +1097,7 @@ mount_open_device(char const *dev_name, u32 flags) {
  struct dentry *cwd; errno_t error;
  struct dentry *dev_entry;
  struct inode *dev_node;
+ REF struct blkdev *result;
  /* XXX: I'm pretty sure 'dev_name' can be more than just a filename.
   * >> What if the /dev filesystem isn't mounted? Then how can mount()
   *    even access the block devices required to use as mount source?
@@ -1120,21 +1121,18 @@ mount_open_device(char const *dev_name, u32 flags) {
      return E_PTR(E_GTERR(dev_entry));
  /* Load the INode from the directory entry described by 'dev_name' */
  dev_node = dentry_inode(dev_entry);
- DENTRY_DECREF(dev_entry);
- if unlikely(!dev_node)
-    return E_PTR(-ENOENT);
+ if unlikely(!dev_node) { result = E_PTR(-ENOENT); goto end; }
 
  /* Check required permissions on the given INode. */
  error = inode_mayaccess(dev_node,&walker.dw_access,
                          flags&MS_RDONLY ? R_OK : R_OK|W_OK);
- if (E_ISERR(error)) {
-  INODE_DECREF(dev_node);
-  return E_PTR(error);
- }
+ if (E_ISERR(error)) { result = E_PTR(error); goto end2; }
  /* If the node the user specified already is
   * a block-device, we can simply go ahead! */
- if (INODE_ISBLK(dev_node))
-     return INODE_TOBLK(dev_node);
+ if (INODE_ISBLK(dev_node)) {
+  result = INODE_TOBLK(dev_node); /* Inherit reference. */
+  goto end;
+ }
 
  /* Since this isn't actually a block-device, check
   * if it is a regular file that can later be used as
@@ -1145,21 +1143,30 @@ mount_open_device(char const *dev_name, u32 flags) {
   * or filesystem running there-on).  */
  if (INODE_ISREG(dev_node) &&
      dev_node->i_ops->f_pread) {
-  /* TODO: Open a file descriptor for reading/writing
-   *       and use it to create a loopback block-device.
+  /* Open a file descriptor for reading/writing
+   * and use it to create a loopback block-device.
    * NOTE: For this to work properly, we must add some
    *       alternate version that can work without the
    *       immediate buffer (which we can't rely on
    *       since the underlying file of the loopback
    *       device may, and probably is, connected to
    *       another block-device, meaning we'd break
-   *       cache coherency if we did so...)
-   */
+   *       cache coherency if we did so...) */
+  REF struct file *fp; struct iattr attrib;
+  fp = dentry_open_with_inode(dev_entry,dev_node,&walker.dw_access,
+                              &attrib,IATTR_NONE,O_RDWR);
+  if (E_ISERR(fp)) { result = E_PTR(E_GTERR(fp)); goto end2; }
+  result = blkdev_newloop(fp);
+  FILE_DECREF(fp);
+  goto end2;
  }
 
- INODE_DECREF(dev_node);
  /* YES! This is the only place this error is actually used! */
- return E_PTR(-ENOTBLK);
+ result = E_PTR(-ENOTBLK);
+
+end2: INODE_DECREF(dev_node);
+end:  DENTRY_DECREF(dev_entry);
+ return result;
 }
 
 PRIVATE REF struct superblock *KCALL

@@ -78,7 +78,7 @@ mman_irq_pf(struct cpustate_irq_c *__restrict info) {
  }
 #if defined(CONFIG_DEBUG) && 0
  syslog(LOG_DEBUG,"#PF at %p (IF=%d)\n",
-         info->host.eip,!!(info->host.eflags&EFLAGS_IF));
+        info->host.eip,!!(info->host.eflags&EFLAGS_IF));
 #endif
 
 #if PF_W == MMAN_MCORE_WRITE && \
@@ -92,8 +92,8 @@ mman_irq_pf(struct cpustate_irq_c *__restrict info) {
 
 #if 0
  syslog(LOG_MEM|LOG_DEBUG,
-         "[MEM] Checking to load core memory after PAGEFAULT near %p %p %p\n",
-         fault_addr,&fault_addr,info->host.eip);
+        "[MEM] Checking to load core memory after PAGEFAULT near %p %p %p\n",
+        fault_addr,&fault_addr,info->host.eip);
  if (!addr_isvirt(fault_addr))
       __assertion_tbprintl((void *)info->host.eip,NULL,0);
 #endif
@@ -183,7 +183,7 @@ end_mcore: ATTR_UNUSED;
  else {
   if (error != -EFAULT)
       syslog(LOG_MEM|LOG_ERROR,"[MEM] Failed to load core at %p: %[errno]\n",
-              fault_addr,-error);
+             fault_addr,-error);
   /* Save the latest fault address in the current task, thus preserving it
    * throughout preemption, as well as allowing later handling code to referr to it. */
   THIS_TASK->t_lastcr2 = (VIRT void *)fault_addr;

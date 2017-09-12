@@ -128,17 +128,17 @@ retry:
     rm_interrupt(&c,0x13);
     if (c.eflags&EFLAGS_CF) {
      syslog(LOG_HW|LOG_ERROR,
-             "[BIOS] Disk access failed: drive %#.2I8x al:%.2I8x, ah:%.2I8x "
-             "(block:%I64u, cylinder: %I16u, head: %I8u, sector: %I8u)\n",
-             self->b_drive,c.al,c.ah,block,cylinder,head,sector);
+            "[BIOS] Disk access failed: drive %#.2I8x al:%.2I8x, ah:%.2I8x "
+            "(block:%I64u, cylinder: %I16u, head: %I8u, sector: %I8u)\n",
+            self->b_drive,c.al,c.ah,block,cylinder,head,sector);
      if (!did_retry) {
       CPU16(c);
       c.dl = self->b_drive;
       c.sp = realmode_stack;
       rm_interrupt(&c,0x13);
       syslog(LOG_HW|LOG_ERROR,
-              "[BIOS] Reset drive: %#.2I8x: %s %d\n",
-              self->b_drive,c.eflags&EFLAGS_CF ? "ERR" : "OK",c.ah);
+             "[BIOS] Reset drive: %#.2I8x: %s %d\n",
+             self->b_drive,c.eflags&EFLAGS_CF ? "ERR" : "OK",c.ah);
       did_retry = true;
       goto retry;
      }
@@ -213,7 +213,7 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
    /* Stop on error. */
 #if 1
    syslog(LOG_DEBUG,"[BIOS] Disk I/O failure in drive %#.2I8x (Error %#.2I8x; %I8d)\n",
-           self->b_drive,c.ah,c.ah);
+          self->b_drive,c.ah,c.ah);
 #endif
    result = -EIO;
    break;
@@ -299,9 +299,9 @@ bd_set_bios_page_size(PAGE_ALIGNED size_t n_bytes) {
  task_endnointr();
 
  syslog(LOG_HW|LOG_DEBUG,
-         FREESTR("[BIOS] Allocated Bios communication page: %p...%p (%p...%p)\n"),
-         bios_page_p,(uintptr_t)bios_page_p+n_bytes-1,
-         bios_page_v,(uintptr_t)bios_page_v+n_bytes-1);
+        FREESTR("[BIOS] Allocated Bios communication page: %p...%p (%p...%p)\n"),
+        bios_page_p,(uintptr_t)bios_page_p+n_bytes-1,
+        bios_page_v,(uintptr_t)bios_page_v+n_bytes-1);
  return true;
 }
 
@@ -319,7 +319,7 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
   /* Allocate the communication page during the first pass. */
   if unlikely(!bd_set_bios_page_size(PAGESIZE)) {
    syslog(LOG_HW|LOG_ERROR,
-           FREESTR("[BIOS] Failed to allocate communication page\n"));
+          FREESTR("[BIOS] Failed to allocate communication page\n"));
    return E_PTR(-ENOMEM);
   }
  }
@@ -350,8 +350,8 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
   rm_interrupt(&c,0x13);
   if (c.eflags&EFLAGS_CF || !buf->b_abs_secnum || !buf->b_abs_secsiz) {
    syslog(LOG_HW|LOG_WARN,
-           FREESTR("[BIOS] Attempting legacy initialization for drive %#.2I8x\n"),
-           drive);
+          FREESTR("[BIOS] Attempting legacy initialization for drive %#.2I8x\n"),
+          drive);
    goto try_legacy;
   }
   /* Make sure this disk isn't impossibly (I know it'll probably be
@@ -414,8 +414,8 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
                               PAGESIZE);
   assert(newsize != bios_page_sz);
   syslog(LOG_HW|LOG_INFO,
-          FREESTR("[BIOS] Resizing Bios page for large sector size %I64u for drive %#.2I8x\n"),
-          result->b_device.bd_blocksize,drive);
+         FREESTR("[BIOS] Resizing Bios page for large sector size %I64u for drive %#.2I8x\n"),
+         result->b_device.bd_blocksize,drive);
   if unlikely(!bd_set_bios_page_size(newsize)) {
    syslog(LOG_HW|LOG_INFO,FREESTR("[BIOS] Failed to resize Bios page\n"));
    free(result);
@@ -434,14 +434,14 @@ bios_probe_disk(dev_t id, u8 drive) {
  if (E_ISOK(dev)) {
   errno_t error;
   syslog(LOG_HW|LOG_INFO,
-          FREESTR("[BIOS] Created Bios disk driver %[dev_t] for drive %#.2I8x (%I64ux%Iu bytes; %s)\n"),
-          id,drive,dev->b_device.bd_blockcount,dev->b_device.bd_blocksize,
-          dev->b_device.bd_read == &bd_lba_read ? "LBA" : "CHS");
+         FREESTR("[BIOS] Created Bios disk driver %[dev_t] for drive %#.2I8x (%I64ux%Iu bytes; %s)\n"),
+         id,drive,dev->b_device.bd_blockcount,dev->b_device.bd_blocksize,
+         dev->b_device.bd_read == &bd_lba_read ? "LBA" : "CHS");
   error = devns_insert(&ns_blkdev,&dev->b_device.bd_device,id);
   if (E_ISERR(error)) {
    syslog(LOG_HW|LOG_ERROR,
-           FREESTR("[BIOS] Failed to register Bios disk driver %[dev_t]: %[errno]\n"),
-           id,-error);
+          FREESTR("[BIOS] Failed to register Bios disk driver %[dev_t]: %[errno]\n"),
+          id,-error);
   } else {
    blkdev_autopart(&dev->b_device,
                   (MINOR(BIOS_DISK_B)-
@@ -465,14 +465,14 @@ REF struct biosblkdev *KCALL bios_find_dev(u8 drive) {
   * or the drive ID we've got isn't the correct one.
   * In both cases, try one last time to load the given drive directly! */
  syslog(LOG_HW|LOG_ERROR,
-         FREESTR("[BIOS] Failed to locate boot drive %#.2I8x (Try direct access)\n"),
-         drive);
+        FREESTR("[BIOS] Failed to locate boot drive %#.2I8x (Try direct access)\n"),
+        drive);
  result = bd_new(drive);
  /* WARNING: We do not register this device! */
  if (E_ISERR(result)) {
   syslog(LOG_HW|LOG_ERROR,
-          FREESTR("[BIOS] Failed to directly access boot drive %#.2I8x: %[errno]\n"),
-          drive,-E_GTERR(result));
+         FREESTR("[BIOS] Failed to directly access boot drive %#.2I8x: %[errno]\n"),
+         drive,-E_GTERR(result));
   /* Return NULL if load failed. */
   result = NULL;
  }
@@ -486,8 +486,8 @@ PRIVATE MODULE_INIT void KCALL bios_disk_init(void) {
       ++count;
  }
  syslog(LOG_HW|LOG_INFO,
-         FREESTR("[BIOS] Found %Iu BIOS drives.\n"),
-         count);
+        FREESTR("[BIOS] Found %Iu BIOS drives.\n"),
+        count);
 }
 
 #ifndef CONFIG_NO_MODULE_CLEANUP

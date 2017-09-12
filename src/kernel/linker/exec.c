@@ -280,7 +280,7 @@ endwrite:
 
 
    syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app '%[file]' at %p\n",
-           mod->m_file,state.host.eip);
+          mod->m_file,state.host.eip);
 
    /* Last phase: actually switch to the new task! */
    MODULE_DECREF(mod);
@@ -300,8 +300,8 @@ end_too_late:
  /* It's too late to rewind, after failing to start the application.
   * >> Log failure and mark the caller to termination once its critical block ends. */
  syslog(LOG_EXEC|LOG_ERROR,
-         "[EXEC] Failed to execute module '%[file]': %[errno]\n",
-         mod->m_file,-error);
+        "[EXEC] Failed to execute module '%[file]': %[errno]\n",
+        mod->m_file,-error);
  mman_maps_fini(&env_maps);
  INSTANCE_DECREF(inst);
  assert(exec_task->t_critical == 1);

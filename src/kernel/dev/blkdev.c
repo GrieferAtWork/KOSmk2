@@ -58,6 +58,14 @@ blkdev_fopen(struct inode *__restrict ino,
              struct dentry *__restrict node_ent,
              oflag_t oflags) {
  REF struct blkfile *result;
+#if 1
+ /* Return the underlying loop-descriptor itself.
+  * XXX: Should we really do this? */
+ if (BLKDEV_ISLOOPBACK(INODE_TOBLK(ino))) {
+  FILE_INCREF(INODE_TOBLK(ino)->bd_loopback);
+  return INODE_TOBLK(ino)->bd_loopback;
+ }
+#endif
  result = (struct blkfile *)file_new(sizeof(struct blkfile));
  if unlikely(!result) return E_PTR(-ENOMEM);
  file_setup(&result->b_file,ino,node_ent,oflags);
@@ -212,6 +220,47 @@ blkdev_cinit(struct blkdev *self) {
  return self;
 }
 
+PRIVATE ATOMIC_DATA minor_t next_loopid = 0;
+
+PUBLIC REF struct blkdev *KCALL
+blkdev_newloop(struct file *__restrict fp) {
+ REF struct blkdev *result; errno_t temp;
+ CHECK_HOST_DOBJ(fp);
+ CHECK_HOST_DOBJ(fp->f_node);
+ /* NOTE: Only allocate what is actually needed. */
+ result = (REF struct blkdev *)device_new(offsetafter(struct blkdev,bd_loopback));
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ atomic_rwlock_cinit(&result->bd_partlock);
+ result->bd_device.d_node.i_ops               = &block_ops;
+ result->bd_device.d_node.i_attr.ia_mode      = S_IFBLK|0660;
+ result->bd_device.d_node.i_attr_disk.ia_mode = S_IFBLK|0660;
+ result->bd_loopback                          = fp;
+ DEVICE_SETWEAK(&result->bd_device); /* Mark the device as weakly linked. */
+ FILE_INCREF(fp);
+ temp = device_setup(&result->bd_device,fp->f_node->i_owner);
+ if (E_ISERR(temp)) { FILE_DECREF(fp); free(result); return E_PTR(temp); }
+ /* All right. - The device is not in a consistent state.
+  * Now all that's left, is to register it.
+  * >> We use lazy binding that cycles through all available
+  *    minor IDs, as it provides an O(1) success-rate for
+  *    the first 2^12 accesses, after which it will start
+  *    searching for free slots with the worst case of failing
+  *    to find a free slot being O(2^12). */
+ { minor_t id,first_id;
+   id = first_id = ATOMIC_FETCHINC(next_loopid) % (MINORMASK+1);
+   do temp = BLKDEV_REGISTER(result,MKDEV(7,id));
+   while (temp == -EEXIST &&
+         (id = ATOMIC_FETCHINC(next_loopid) % (MINORMASK+1),
+          id != first_id));
+   if (E_ISERR(temp)) {
+    BLKDEV_DECREF(result);
+    result = E_PTR(temp);
+   }
+ }
+
+ return result;
+}
+
 PUBLIC void KCALL
 blkdev_fini(struct blkdev *__restrict self) {
  struct blockbuf *iter,*end;
@@ -220,6 +269,15 @@ blkdev_fini(struct blkdev *__restrict self) {
  assert(self->bd_buffer.bs_bufc <= self->bd_buffer.bs_bufa);
  assert(self->bd_buffer.bs_bufa <= self->bd_buffer.bs_bufm);
  assert(!self->bd_partitions);
+ /* There is no buffer if this is a loopback device. */
+ if (BLKDEV_ISLOOPBACK(self)) {
+  minor_t id = MINOR(self->bd_device.d_id);
+  /* Try to re-use this loop-id immediately if
+   * it is still the latest (reduces redundancy). */
+  ATOMIC_CMPXCH(next_loopid,id+1,id);
+  FILE_DECREF(self->bd_loopback);
+  goto fini_dev;
+ }
 
  /* Cleanup buffer allocations. */
  end = (iter = self->bd_buffer.bs_bufv)+
@@ -232,13 +290,14 @@ blkdev_fini(struct blkdev *__restrict self) {
    if unlikely(!error) error = -ENOSPC;
    if (E_ISERR(error)) {
     syslog(LOG_FS|LOG_ERROR,
-            "[DEV] Failed to flush block-device %[dev_t] buffered block #%I64d: %[errno]\n",
-            self->bd_device.d_id,iter->bb_id,-error);
+           "[DEV] Failed to flush block-device %[dev_t] buffered block #%I64d: %[errno]\n",
+           self->bd_device.d_id,iter->bb_id,-error);
    }
   }
   free(iter->bb_data);
  }
  free(self->bd_buffer.bs_bufv);
+fini_dev:
  device_fini(&self->bd_device);
 }
 
@@ -248,8 +307,12 @@ blkdev_flush(struct blkdev *__restrict self) {
  ssize_t error; bool has_hwlock = false;
  CHECK_HOST_DOBJ(self);
  assert(INODE_ISBLK(&self->bd_device.d_node));
+ /* Override: Flush the loopback file descriptor. */
+ if (BLKDEV_ISLOOPBACK(self))
+     return file_flush(self->bd_loopback);
  assert(self->bd_buffer.bs_bufc <= self->bd_buffer.bs_bufa);
  assert(self->bd_buffer.bs_bufa <= self->bd_buffer.bs_bufm);
+
  /* Cleanup buffer allocations. */
  error = rwlock_write(&self->bd_buffer.bs_lock);
  if (E_ISERR(error)) return error;
@@ -378,6 +441,9 @@ blkdev_read(struct blkdev *__restrict self, pos_t offset,
  CHECK_HOST_DOBJ(self);
  CHECK_USER_DATA(buf,bufsize);
  assert(INODE_ISBLK(&self->bd_device.d_node));
+ /* Override: Read using the loopback file descriptor. */
+ if (BLKDEV_ISLOOPBACK(self))
+     return file_pread(self->bd_loopback,buf,bufsize,offset);
  if unlikely(!bufsize) return 0;
  result = rwlock_read(&self->bd_buffer.bs_lock);
  if (E_ISERR(result)) return result;
@@ -526,6 +592,9 @@ blkdev_write(struct blkdev *__restrict self, pos_t offset,
  CHECK_HOST_DOBJ(self);
  CHECK_USER_TEXT(buf,bufsize);
  assert(INODE_ISBLK(&self->bd_device.d_node));
+ /* Override: Write using the loopback file descriptor. */
+ if (BLKDEV_ISLOOPBACK(self))
+     return file_pwrite(self->bd_loopback,buf,bufsize,offset);
 #if 0
  syslog(LOG_FS|LOG_INFO,"BLKDEV_WRITE(%I64u,%p,%Iu) (%$q)\n",offset,buf,bufsize,bufsize,buf);
 #endif
@@ -786,7 +855,7 @@ blkdev_bootdisk_initialize(void) {
   /* NOTE: At this point, the boot disk driver is always a 'struct biosblkdev'! */
   /* TODO: Check if we have a proprietary driver for the bootdisk! */
   syslog(LOG_FS|LOG_CONFIRM,FREESTR("[BIOS] Using bios root drive %#.2I8x in %[dev_t]\n"),
-          boot_drive,bootdisk->bd_device.d_id);
+         boot_drive,bootdisk->bd_device.d_id);
  } else {
   syslog(LOG_FS|LOG_ERROR,FREESTR("[BOOT] Failed to determine correct boot disk (just guess).\n"));
   /* Use the first ATA driver. */
@@ -813,7 +882,7 @@ blkdev_bootdisk_initialize(void) {
  BLKDEV_INCREF(default_bootpart);
 
  syslog(LOG_FS|LOG_CONFIRM,FREESTR("[BOOT] Using root partition %[dev_t] from disk %[dev_t]\n"),
-         BLKDEV_ID(bootpart),BLKDEV_ID(bootdisk));
+        BLKDEV_ID(bootpart),BLKDEV_ID(bootdisk));
 }
 
 

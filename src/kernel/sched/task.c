@@ -423,9 +423,9 @@ task_is_terminating(struct task *__restrict t) {
 
 #if 1
    syslog(LOG_SCHED|LOG_INFO,
-           "[SCHED] Transferring orphaned %sthread %p (gpid %d) to init\n",
-           end->t_mode == TASKMODE_TERMINATED ? "zombie " : "",
-           end,end->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
+          "[SCHED] Transferring orphaned %sthread %p (gpid %d) to init\n",
+          end->t_mode == TASKMODE_TERMINATED ? "zombie " : "",
+          end,end->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
 #endif
 
    /* Create the reference to 'inittask' used below. */
@@ -749,8 +749,8 @@ INTERN void ATTR_CDECL noyield_without_irq(void *eip) {
   PRIVATE CPU_DATA void *noyield_last_eip = (void *)-1;
   if (eip == CPU(noyield_last_eip)) return;
   syslog(LOG_SCHED|LOG_WARN,
-          "#!$ addr2line(%Ix) '{file}({line}) : {func} : %p : Cannot yield while interrupts are disabled'\n",
-         (uintptr_t)eip-1,eip);
+         "#!$ addr2line(%Ix) '{file}({line}) : {func} : %p : Cannot yield while interrupts are disabled'\n",
+        (uintptr_t)eip-1,eip);
   __assertion_tbprint(0);
   CPU(noyield_last_eip) = eip;
  } else
@@ -1180,16 +1180,16 @@ pit_exc(struct cpustate *__restrict state) {
   *      (Or the task executed an 'int $0' manually?) */
 #if 0
  syslog(LOG_SCHED|LOG_WARN,"[IRQ] %#.2I8x, %#.2I8x, %#.2I8x %Iu %Iu\n",
-         THIS_CPU->c_prio_min,THIS_CPU->c_prio_max,
-         old_task->t_priority,old_task->t_critical,
-         THIS_CPU->c_n_run);
+        THIS_CPU->c_prio_min,THIS_CPU->c_prio_max,
+        old_task->t_priority,old_task->t_critical,
+        THIS_CPU->c_n_run);
 #endif
  if (TASKPRIO_ISIDLE(old_task->t_priority) &&
     !TASKPRIO_ISIDLE(THIS_CPU->c_prio_max) &&
     !old_task->t_critical && old_task != new_task) {
 #if 0
   syslog(LOG_SCHED|LOG_DEBUG,"[IRQ] Parking task %p (priority %#.2I8x) during IRQ\n",
-          old_task,old_task->t_priority);
+         old_task,old_task->t_priority);
 #endif
   /* Must park the old task. */
   assert(THIS_CPU->c_n_run >= 2);
@@ -1204,9 +1204,9 @@ pit_exc(struct cpustate *__restrict state) {
 #if 0
  if (old_task != new_task) {
   syslog(LOG_DEBUG,"#PIT %p(%p) --> %p(%p) (IF 1->%d)\n",
-          old_task,old_task->t_cstate->host.eip,
-          new_task,new_task->t_cstate->host.eip,
-       !!(new_task->t_cstate->host.eflags&EFLAGS_IF));
+         old_task,old_task->t_cstate->host.eip,
+         new_task,new_task->t_cstate->host.eip,
+      !!(new_task->t_cstate->host.eflags&EFLAGS_IF));
  }
 #endif
 

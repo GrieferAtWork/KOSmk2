@@ -33,6 +33,7 @@ DECL_BEGIN
 
 struct blkdev;
 struct instance;
+struct file;
 
 typedef u32 blksys_t; /*< s.a.: 'BLKSYS_*' */
 #define BLKSYS_ACTIVE  0x80000000 /*< Flag: The partition/device was marked as active. */
@@ -92,7 +93,11 @@ struct blockbuf {
 };
 
 
-#define BLOCKBUFFER_DEFAULT_MAX 16 /* Default max buffer count. */
+#if 0 /* XXX: Enable this at some point... (128*512 == 16 pages MAX; seems farily acceptible) */
+#define BLOCKBUFFER_DEFAULT_MAX 128 /*< Default max buffer count. */
+#else
+#define BLOCKBUFFER_DEFAULT_MAX 16  /*< Default max buffer count. */
+#endif
 struct blockbuffers {
  rwlock_t         bs_lock; /*< [order(BEFORE(:bd_hwlock))] Lock for controlling buffer usage. */
  size_t           bs_bufc; /*< [lock(bs_lock)][<= bs_bufa] Amount of buffered blocks. */
@@ -113,18 +118,13 @@ struct blkdev {
                                             *  WARNING: Pointers in this chain are weakly linked, meaning that you need to try-incref
                                             *           them, or check their reference counter before unlocking 'bd_partlock'
                                             *  NOTE: This chain is _always_ empty for partition devices themself. */
-#ifdef __INTELLISENSE__
- struct { struct blkdev    *le_next,**le_pself; }
-                            bd_neighbor;   /*< [const][head(bd_contains)] Neighboring block devices. */
- struct blkdev             *bd_contains;   /*< [const][list(bd_neighbor)] List of contained block devices. */
-#else
- LIST_NODE(struct blkdev)   bd_neighbor;   /*< [const][head(bd_contains)] Neighboring block devices. */
- LIST_HEAD(struct blkdev)   bd_contains;   /*< [const][list(bd_neighbor)] List of contained block devices. */
-#endif
+ REF struct file           *bd_loopback;   /*< [0..1][const] When non-NULL, a file-stream to-be used for unbuffered
+                                            *                loop-back I/O. (file_pread/file_pwrite is used for access) */
+ /* NOTE: Nothing that follows is valid when 'bd_loopback != NULL' */
  struct blockbuffers        bd_buffer;     /*< Buffer/byte-wise abstractor for this block-device. */
  rwlock_t                   bd_hwlock;     /*< [order(AFTER(:bd_hwlock))] Device lock held when reading/writing. */
  /* Read/write full blocks to/from the device (bufsize is floor-aligned to 'bd_blocksize')
-  * NOTE: These functions are caller-synchronized using 'bd_hwlock'.
+  * NOTE: These functions are caller-synchronized using 'bd_hwlock' (in write-mode).
   * NOTE: These functions must _always_ be assigned!
   * @return: * :         The actual amount of blocks read/written.
   * @return: -EFAULT:    A faulty buffer pointer was provided.
@@ -138,12 +138,13 @@ struct blkdev {
 #define BLKDEV_FOREACH_PARTITION(part,self) \
           LIST_FOREACH(part,(self)->bd_partitions,dp_chain)
 
-#define BLKDEV_TRYINCREF(self)  DEVICE_TRYINCREF(&(self)->bd_device)
-#define BLKDEV_INCREF(self)     DEVICE_INCREF(&(self)->bd_device)
-#define BLKDEV_DECREF(self)     DEVICE_DECREF(&(self)->bd_device)
-#define BLKDEV_ISREADONLY(self) DEVICE_ISREADONLY(&(self)->bd_device)
-#define BLKDEV_ISPART(self)   ((self)->bd_read == &diskpart_read)
-#define BLKDEV_ID(self)       ((self)->bd_device.d_id)
+#define BLKDEV_TRYINCREF(self)    DEVICE_TRYINCREF(&(self)->bd_device)
+#define BLKDEV_INCREF(self)       DEVICE_INCREF(&(self)->bd_device)
+#define BLKDEV_DECREF(self)       DEVICE_DECREF(&(self)->bd_device)
+#define BLKDEV_ISREADONLY(self)   DEVICE_ISREADONLY(&(self)->bd_device)
+#define BLKDEV_ISPART(self)     ((self)->bd_read == &diskpart_read)
+#define BLKDEV_ISLOOPBACK(self) ((self)->bd_loopback != NULL)
+#define BLKDEV_ID(self)         ((self)->bd_device.d_id)
 
 FUNDEF ssize_t KCALL
 diskpart_read(struct blkdev *__restrict self, blkaddr_t block,
@@ -160,6 +161,19 @@ diskpart_read(struct blkdev *__restrict self, blkaddr_t block,
 #define blkdev_new(type_size) \
         blkdev_cinit((struct blkdev *)calloc(1,type_size))
 FUNDEF struct blkdev *KCALL blkdev_cinit(struct blkdev *self);
+
+
+/* Create and register a new loopback block device, looping against 'fp'.
+ * NOTE: The device is created with a weak binding, meaning that
+ *       that when being returned to the caller, they inherit one
+ *       reference that, once dropped, will cause the loopback
+ *       device to be removed from 'ns_blkdev', as well as '/dev'
+ *      (when devfs is loaded).
+ * @return: * :         A reference to the newly created block device.
+ * @return: -ENOMEM:    Not enough available memory.
+ * @return: -EPERM:     The owner instance of the INode opened by 'fp' doesn't allow new references.
+ * @return: E_ISERR(*): Failed to create/register the device for some reason. */
+FUNDEF REF struct blkdev *KCALL blkdev_newloop(struct file *__restrict fp);
 
 /* Destructor that must be called when destructing a block-device.
  * NOTE: This function must be called from 'bd_device.d_node.i_ops->ino_fini'

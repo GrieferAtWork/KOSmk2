@@ -123,7 +123,7 @@ local_nomem:
  instance_callinit(result);
 
  syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module %.?q from %[file]\n",
-         mod->m_name->dn_size,mod->m_name->dn_name,mod->m_file);
+        mod->m_name->dn_size,mod->m_name->dn_name,mod->m_file);
 
  return result;
 err2:
@@ -267,10 +267,10 @@ can_unload:
    /* Log an error message if the reference counter is still too great. */
    if (refcnt > ok_refcnt) {
     syslog(LOG_EXEC|LOG_ERROR,
-            "[MOD] DANGER: Unloading module %.?q (from '%[file]') despite non-zero use counter of %d\n",
-            mod->m_name->dn_size,
-            mod->m_name->dn_name,
-            mod->m_file,refcnt-ok_refcnt);
+           "[MOD] DANGER: Unloading module %.?q (from '%[file]') despite non-zero use counter of %d\n",
+           mod->m_name->dn_size,
+           mod->m_name->dn_name,
+           mod->m_file,refcnt-ok_refcnt);
    }
    assert(!(inst->i_flags&INSTANCE_FLAG_DID_UNLOAD));
    inst->i_flags |= INSTANCE_FLAG_DID_UNLOAD;
@@ -283,7 +283,7 @@ can_unload:
    ATOMIC_WRITE(inst->i_refcnt,0);
    instance_destroy(inst);
    syslog(LOG_EXEC|LOG_INFO,"[MOD] Unloaded module %.?q from '%[file]'\n",
-           mod->m_name->dn_size,mod->m_name->dn_name,mod->m_file);
+          mod->m_name->dn_size,mod->m_name->dn_name,mod->m_file);
    MODULE_DECREF(mod);
  }
  return -EOK;
@@ -372,16 +372,16 @@ rechain:
          iter = iter->i_chain.le_next) {
      if (iter != THIS_INSTANCE) {
       syslog(LOG_EXEC|LOG_ERROR,"[MOD] Module %.?q (from '%[file]')\n",
-              iter->i_module->m_name->dn_size,
-              iter->i_module->m_name->dn_name,
-              iter->i_module->m_file);
+             iter->i_module->m_name->dn_size,
+             iter->i_module->m_name->dn_name,
+             iter->i_module->m_file);
      }
     }
     goto done;
    } else if (!DELMOD_CLEANUP_MODEOK(level)) {
     syslog(LOG_EXEC|LOG_WARN,
-            "[MOD] Failed to unload %Iu kernel module%s. - Entering level #%d (mode %#.8I32x)\n",
-            fail_count,fail_count > 1 ? "s" : "",level,delmod_cleanup_modes[level]);
+           "[MOD] Failed to unload %Iu kernel module%s. - Entering level #%d (mode %#.8I32x)\n",
+           fail_count,fail_count > 1 ? "s" : "",level,delmod_cleanup_modes[level]);
    }
   }
   last_fail_count = fail_count;

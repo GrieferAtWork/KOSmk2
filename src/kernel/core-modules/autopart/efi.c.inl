@@ -94,7 +94,7 @@ efi_autopart_at(struct blkdev *__restrict self,
  if (efi.gpt_hdrsize <
      offsetafter(efi_t,gpt_partition_count)) {
   syslog(LOG_FS|LOG_WARN,"[EFI] GPT partition table header is too small (%I32u < %Iu)\n",
-          efi.gpt_hdrsize,offsetafter(efi_t,gpt_partition_count));
+         efi.gpt_hdrsize,offsetafter(efi_t,gpt_partition_count));
  }
  /* Substitute missing members. */
  if (efi.gpt_hdrsize <
@@ -102,7 +102,7 @@ efi_autopart_at(struct blkdev *__restrict self,
      efi.gpt_partition_entsz = BSWAP_H2LE64(128);
  else if (BSWAP_LE2H64(efi.gpt_partition_entsz) < offsetafter(efi_part_t,p_part_max)) {
   syslog(LOG_FS|LOG_WARN,"[EFI] GPT partition table entries are too small (%I32u < %Iu)\n",
-          BSWAP_LE2H64(efi.gpt_partition_entsz),offsetafter(efi_part_t,p_part_max));
+         BSWAP_LE2H64(efi.gpt_partition_entsz),offsetafter(efi_part_t,p_part_max));
   goto end;
  }
 #if 1
@@ -131,12 +131,12 @@ efi_autopart_at(struct blkdev *__restrict self,
   if (E_ISERR(temp)) goto end;
   if unlikely((size_t)temp < partition_entused) {
    syslog(LOG_FS|LOG_WARN,"[EFI] Failed to read full partition entry (at %I64u, only read %Iu/%Iu)\n",
-           partition_addr,temp,partition_entused);
+          partition_addr,temp,partition_entused);
    partition_entused = (size_t)temp;
   }
   if (partition_entused < offsetafter(efi_part_t,p_part_max)) {
    syslog(LOG_FS|LOG_ERROR,"[EFI] Partition entry at %I64u is too small (%Iu < %Iu)\n",
-           partition_addr,partition_entused,offsetafter(efi_part_t,p_part_max));
+          partition_addr,partition_entused,offsetafter(efi_part_t,p_part_max));
   } else {
    REF struct diskpart *dp;
    blksys_t dp_sysid; sysmap_t const *iter;
@@ -156,12 +156,12 @@ efi_autopart_at(struct blkdev *__restrict self,
    if (dp_sysid == BLKSYS_EFI_UNUSED) goto next;
    if (dp_sysid == BLKSYS_UNKNOWN) {
     syslog(LOG_FS|LOG_WARN,"[EFI] Unknown partition type GUID: {" GUID_PRINTF_FMT "}\n",
-            GUID_PRINTF_ARG(&part.p_type_guid));
+           GUID_PRINTF_ARG(&part.p_type_guid));
    }
 
    if (part.p_part_max < part.p_part_min) {
     syslog(LOG_FS|LOG_ERROR,"[EFI] Partition entry at %I64u has invalid min/max (max:%Iu < min:%Iu)\n",
-            partition_addr,part.p_part_max,part.p_part_min);
+           partition_addr,part.p_part_max,part.p_part_min);
    } else if (part.p_part_max == part.p_part_min) {
     syslog(LOG_FS|LOG_WARN,"[EFI] Partition entry at %I64u is empty\n",partition_addr);
     goto next;
@@ -186,14 +186,14 @@ efi_autopart_at(struct blkdev *__restrict self,
 
 
    syslog(LOG_FS|LOG_INFO,
-           "[EFI] Created partition #%d: %.36Ls (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes%s)\n",
-          (int)DISKPART_ID(dp),part.p_name,dp->dp_device.bd_device.d_id,
-          (u64)(dp->dp_start),
-          (u64)(dp->dp_start+dp->dp_device.bd_blockcount),
-                dp->dp_ref->bd_device.d_id,
-          (u64)(dp->dp_device.bd_blockcount),
-                dp->dp_device.bd_blocksize,
-           BLKDEV_ISREADONLY(&dp->dp_device) ? "; read-only" : "");
+          "[EFI] Created partition #%d: %.36Ls (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes%s)\n",
+         (int)DISKPART_ID(dp),part.p_name,dp->dp_device.bd_device.d_id,
+         (u64)(dp->dp_start),
+         (u64)(dp->dp_start+dp->dp_device.bd_blockcount),
+               dp->dp_ref->bd_device.d_id,
+         (u64)(dp->dp_device.bd_blockcount),
+               dp->dp_device.bd_blocksize,
+          BLKDEV_ISREADONLY(&dp->dp_device) ? "; read-only" : "");
    ++result,--max_parts;
    /* NOTE: Don't sub-partition this drive. - EFI doesn't do that! */
 

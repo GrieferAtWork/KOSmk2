@@ -499,10 +499,10 @@ irq_default(struct irq_info *__restrict info) {
  }
  if (IRQ_ISPIC(info->intno)) {
   syslog(LOG_IRQ|LOG_WARN,
-          "[IRQ] Unmapped PIC interrupt %#.2I8x (%I8d) (%s pin #%d)\n",
-          info->intno,info->intno,
-          info->intno >= IRQ_PIC2_BASE ? "Slave" : "Master",
-         (info->intno-IRQ_PIC1_BASE) % 8);
+         "[IRQ] Unmapped PIC interrupt %#.2I8x (%I8d) (%s pin #%d)\n",
+         info->intno,info->intno,
+         info->intno >= IRQ_PIC2_BASE ? "Slave" : "Master",
+        (info->intno-IRQ_PIC1_BASE) % 8);
 #if 0
 #if 1
   __assertion_tbprintl((void *)inittask.t_cstate->host.eip,NULL,0);
@@ -960,7 +960,7 @@ PUBLIC SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
 
 #if 0
  syslog(LOG_IRQ|LOG_INFO,"[IRQ] Set interrupt %#.2I8x handler at %p\n",
-         new_handler->i_num,new_handler->i_func);
+        new_handler->i_num,new_handler->i_func);
 #endif
 
  was = PREEMPTION_PUSH();

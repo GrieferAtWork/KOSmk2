@@ -81,19 +81,19 @@ page_free_(ppage_t start, size_t n_bytes, pgattr_t attr)
  if (zone_id == MZONE_DEV) {
   /* Special case: Ignore free requested for the DEV memory zone. */
   syslog(LOG_MEM|LOG_INFO,
-          MY_FREESTR("[MEM] Ignoring free memory range %p..%p apart of the device memory zone\n"),
-          start,(uintptr_t)start+(n_bytes-1));
+         MY_FREESTR("[MEM] Ignoring free memory range %p..%p apart of the device memory zone\n"),
+         start,(uintptr_t)start+(n_bytes-1));
   return;
  }
 #if LOG_PHYSICAL_ALLOCATIONS
 #ifndef MMAN_REGISTER
  syslog(LOG_MEM|LOG_DEBUG,
-         MY_FREESTR("[MEM] Feeing memory %p...%p from zone #%d\n"),
-         start,(uintptr_t)start+(n_bytes-1),zone_id);
+        MY_FREESTR("[MEM] Feeing memory %p...%p from zone #%d\n"),
+        start,(uintptr_t)start+(n_bytes-1),zone_id);
 #else
  syslog(LOG_MEM|LOG_DEBUG,
-         MY_FREESTR("[MEM] Registering memory %p...%p in zone #%d\n"),
-         start,(uintptr_t)start+(n_bytes-1),zone_id);
+        MY_FREESTR("[MEM] Registering memory %p...%p in zone #%d\n"),
+        start,(uintptr_t)start+(n_bytes-1),zone_id);
 #endif /* !MMAN_REGISTER */
 #endif /* LOG_PHYSICAL_ALLOCATIONS */
  VERIFY_MEMORY_F(start,n_bytes,attr);
@@ -132,8 +132,8 @@ page_free_(ppage_t start, size_t n_bytes, pgattr_t attr)
    assert(skip_end > (uintptr_t)start);
    assert(skip_end > (uintptr_t)iter);
    syslog(LOG_MEM|LOG_WARN,
-           MY_FREESTR("[MEM] Skipping overlapping free-memory range at %p...%p already within %p...%p\n"),
-           start,skip_end-1,iter,(uintptr_t)PAGE_END(iter)-1);
+          MY_FREESTR("[MEM] Skipping overlapping free-memory range at %p...%p already within %p...%p\n"),
+          start,skip_end-1,iter,(uintptr_t)PAGE_END(iter)-1);
    /* Free memory below the skipped range. */
    if ((uintptr_t)iter <= (uintptr_t)start) goto free_after_skip;
    n_bytes = (uintptr_t)iter-(uintptr_t)start;

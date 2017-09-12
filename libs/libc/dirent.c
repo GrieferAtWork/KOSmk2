@@ -94,8 +94,8 @@ read_again:
  error = xreaddir(dirp->d_fd,(result = dirp->d_buf),
                   dirp->d_bufsz,READDIR_DEFAULT);
  //syslog(LOG_CONFIRM,"xreaddir(%d,%p,%Iu,%d) -> %Id\n",
- //        dirp->d_fd,result,dirp->d_bufsz,
- //        READDIR_DEFAULT,error);
+ //       dirp->d_fd,result,dirp->d_bufsz,
+ //       READDIR_DEFAULT,error);
  //sys_xpaused("PAUSE");
  if (error <= 0) return NULL; /* Error, or end-of-directory. */
  if unlikely((size_t)error > dirp->d_bufsz) {

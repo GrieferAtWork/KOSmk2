@@ -92,16 +92,16 @@ void KCALL mount_root_filesystem(void) {
  rootfs = blkdev_mksuper(bootpart,NULL,0);
  if (E_ISERR(rootfs)) {
   syslog(LOG_FS|LOG_ERROR,
-          FREESTR("[FS] Failed to create root-fs superblock for %[dev_t]: %[errno]\n"),
-          bootpart->bd_device.d_id,-E_GTERR(rootfs));
+         FREESTR("[FS] Failed to create root-fs superblock for %[dev_t]: %[errno]\n"),
+         bootpart->bd_device.d_id,-E_GTERR(rootfs));
  } else {
   errno_t error; struct fsaccess ac = {0,0};
   error = dentry_mount(&fs_root,&ac,rootfs);
   SUPERBLOCK_DECREF(rootfs);
   if (E_ISERR(error)) {
    syslog(LOG_FS|LOG_ERROR,
-           FREESTR("[FS] Failed to mount root filesystem: %[errno]\n"),
-           -error);
+          FREESTR("[FS] Failed to mount root filesystem: %[errno]\n"),
+          -error);
   }
  }
  BLKDEV_DECREF(bootpart);
@@ -312,8 +312,8 @@ inode_destroy(struct inode *__restrict self) {
  error = inode_flushattr(self);
  if (E_ISERR(error)) {
   syslog(LOG_ERROR|LOG_FS,
-          "[FS] Failed to flush INode %ld before unloading: %[errno]\n",
-         (long)self->i_ino,-error);
+         "[FS] Failed to flush INode %ld before unloading: %[errno]\n",
+        (long)self->i_ino,-error);
  }
  if (INODE_ISSUPERBLOCK(self)) {
   assert(super == INODE_TOSUPERBLOCK(self));
@@ -325,8 +325,8 @@ inode_destroy(struct inode *__restrict self) {
    error = (*super->sb_ops->sb_sync)(super);
    if (E_ISERR(error)) {
     syslog(LOG_ERROR|LOG_FS,
-            "[FS] Failed to synchronize superblock on %[dev_t] before unloading: %[errno]\n",
-            super->sb_blkdev ? super->sb_blkdev->bd_device.d_id : 0,-error);
+           "[FS] Failed to synchronize superblock on %[dev_t] before unloading: %[errno]\n",
+           super->sb_blkdev ? super->sb_blkdev->bd_device.d_id : 0,-error);
    }
   }
   /* Call the superblock fini-function. */
@@ -883,7 +883,7 @@ return_self:
 #endif
 #if 0
  syslog(LOG_DEBUG|LOG_FS,"FS::WALK(%$q)\n",
-         name->dn_size,name->dn_name);
+        name->dn_size,name->dn_name);
 #endif
  return dentry_walk(self,walker,name);
 }

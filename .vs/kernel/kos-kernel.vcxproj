@@ -13,6 +13,7 @@
   <ItemGroup>
     <None Include="..\..\src\.sources" />
     <None Include="..\..\src\kernel\core-modules\autopart\efi.c.inl" />
+    <None Include="..\..\src\kernel\core-modules\fs\fat-mkent.c.inl" />
     <None Include="..\..\src\kernel\core-modules\fs\fat-readdir.c.inl" />
     <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\canonbuffer.c.inl" />

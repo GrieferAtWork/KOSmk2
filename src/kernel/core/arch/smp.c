@@ -187,8 +187,8 @@ INTERN ATTR_NORETURN void cpu_bootstrap_c(void) {
  case CPUMODE_SHUTDOWN_NOMIGRATE:
  case CPUMODE_OFFLINE: /* This can happen due to a race condition with startup timeouts. */
   syslog(LOG_SCHED|LOG_INFO,
-          "[SMP] CPU #%d shutting down immediately!\n",
-          THIS_CPU->c_id);
+         "[SMP] CPU #%d shutting down immediately!\n",
+         THIS_CPU->c_id);
   __cpu_shutdown_now_endwrite();
   __builtin_unreachable();
 
@@ -277,12 +277,12 @@ apic_exec_ipc(u32 icr_word, u32 icr2_word) {
   error = apic_read(APIC_ESR) ? -ECOMM : -EOK;
   if (E_ISOK(error) || !--attempt) break;
   syslog(LOG_SCHED|LOG_DEBUG,"[SMP] Resending LAPIC IPC-irc command %.8I32x:%.8I32x #%d: %[errno]\n",
-          icr_word,icr2_word,CPUINIT_IPI_ATTEMPTS-attempt,-error);
+         icr_word,icr2_word,CPUINIT_IPI_ATTEMPTS-attempt,-error);
  }
  if (E_ISERR(error)) {
   syslog(LOG_SCHED|LOG_ERROR,
-          "[SMP] Failed to execute LAPIC IPC-irc command %.8I32x:%.8I32x: %[errno]\n",
-          icr_word,icr2_word);
+         "[SMP] Failed to execute LAPIC IPC-irc command %.8I32x:%.8I32x: %[errno]\n",
+         icr_word,icr2_word);
  }
  return error;
 }
@@ -402,8 +402,8 @@ again:
  case CPUMODE_SHUTDOWN:
  case CPUMODE_SHUTDOWN_NOMIGRATE:
   syslog(LOG_SCHED|LOG_WARN,
-          "[SMP] Re-starting CPU #%d that is still shutting down (Race condition?)\n",
-          self->c_id);
+         "[SMP] Re-starting CPU #%d that is still shutting down (Race condition?)\n",
+         self->c_id);
  case CPUMODE_STARTUP:
   shutdown = self->c_arch.ac_mode != CPUMODE_STARTUP;
   /* Someone else has already booted this cpu.
@@ -523,8 +523,8 @@ again:
   bool startup;
  case CPUMODE_STARTUP:
   syslog(LOG_SCHED|LOG_WARN,
-          "[SMP] Shutting down CPU #%d that is still starting up (Race condition?)\n",
-          self->c_id);
+         "[SMP] Shutting down CPU #%d that is still starting up (Race condition?)\n",
+         self->c_id);
  case CPUMODE_SHUTDOWN:
  case CPUMODE_SHUTDOWN_NOMIGRATE:
   startup = self->c_arch.ac_mode == CPUMODE_STARTUP;

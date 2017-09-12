@@ -221,9 +221,9 @@ handle_intr2:
    }
    error = sig_recv_endwrite(&self->ib_avail);
    DEBUG_TRACE(syslog(LOG_DEBUG,"DATA AVAILABLE %Iu %p %p %p %p\n",
-                       IOBUFFER_MAXREAD(self,self->ib_rpos),
-                       self->ib_rpos,self->ib_wpos,
-                       self->ib_buffer,self->ib_buffer+self->ib_size));
+                      IOBUFFER_MAXREAD(self,self->ib_rpos),
+                      self->ib_rpos,self->ib_wpos,
+                      self->ib_buffer,self->ib_buffer+self->ib_size));
    if (E_ISERR(error)) goto end_always;
    goto again;
   } else goto end_rpos;

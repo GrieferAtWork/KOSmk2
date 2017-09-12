@@ -53,7 +53,7 @@ TEST(readdir) {
     break;
    }
    syslog(LOG_FS|LOG_INFO,S("DIRENT: %$s\n"),
-           entry->d_namlen,entry->d_name);
+          entry->d_namlen,entry->d_name);
   }
   FILE_DECREF(fp);
  }

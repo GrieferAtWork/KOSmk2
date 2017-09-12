@@ -293,8 +293,8 @@ early_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
          (void *)(rm_bios_int_begin),
          (size_t)(rm_bios_int_end-rm_bios_int_begin));
   syslog(LOG_DEBUG,FREESTR("[X86] Loaded early realmode interrupt code to %p...%p\n"),
-          (uintptr_t)REALMODE_STARTRELO,
-          (uintptr_t)REALMODE_STARTRELO+(size_t)(rm_bios_int_end-rm_bios_int_begin)-1);
+        (uintptr_t)REALMODE_STARTRELO,
+        (uintptr_t)REALMODE_STARTRELO+(size_t)(rm_bios_int_end-rm_bios_int_begin)-1);
   /* Setup the realmode so-as to indicate 'rm_bios_int_begin' being loaded at 'REALMODE_STARTRELO'. */
   realmode_base   = REALMODE_STARTRELO-(u16)(rm_bios_int_begin-__rm_core_start);
   early_rm_loaded = true;
@@ -357,7 +357,7 @@ KCALL realmode_initialize(void) {
     for (; iter < end; ++iter) {
 #if 0
      syslog(LOG_MEM|LOG_INFO,"%p + %p\n",
-             descr_iter->rd_virt_begin,*iter);
+            descr_iter->rd_virt_begin,*iter);
 #endif
      *(u16 *)(descr_iter->rd_virt_begin+*iter) += offset;
     }
@@ -393,13 +393,13 @@ KCALL realmode_initialize(void) {
    realmode_vstack = realmode_vbase+(realmode_stack-realmode_base);
  }
  syslog(LOG_MEM|LOG_INFO,
-         FREESTR("[X86] Relocating realmode segment to %.5I16X...%.5I16X (%p...%p)\n"),
-        (u16)realmode_base,(u16)(realmode_base+alloc_size-1),
-         realmode_vbase,(realmode_vbase+alloc_size-1));
+        FREESTR("[X86] Relocating realmode segment to %.5I16X...%.5I16X (%p...%p)\n"),
+       (u16)realmode_base,(u16)(realmode_base+alloc_size-1),
+        realmode_vbase,(realmode_vbase+alloc_size-1));
 #else
  syslog(LOG_MEM|LOG_INFO,
-         FREESTR("[X86] Relocating realmode segment to %.5I16X...%.5I16X\n"),
-        (u16)realmode_base,(u16)(realmode_base+alloc_size-1));
+        FREESTR("[X86] Relocating realmode segment to %.5I16X...%.5I16X\n"),
+       (u16)realmode_base,(u16)(realmode_base+alloc_size-1));
 #endif
 }
 
