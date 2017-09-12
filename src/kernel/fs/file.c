@@ -65,7 +65,6 @@ file_setup(struct file *__restrict self,
  self->f_refcnt = 1;
  self->f_ops    = node->i_ops;
  self->f_mode   = oflags;
- assert(self->f_flag == 0);
 #if INODE_FILE_LOCKLESS == FILE_FLAG_LOCKLESS
  self->f_flag |= self->f_ops->f_flags&INODE_FILE_LOCKLESS;
 #else

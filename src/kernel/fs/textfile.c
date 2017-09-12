@@ -105,6 +105,12 @@ textfile_flush(struct file *__restrict fp) {
  rwlock_endwrite(&TF->tf_lock);
  return error;
 }
+PUBLIC void KCALL
+textfile_fclose(struct inode *__restrict ino,
+                struct file *__restrict fp) {
+ if (!(TF->tf_file.f_flag&TEXTFILE_FLAG_WEAK))
+     free(TF->tf_buffer);
+}
 #undef TF
 
 PUBLIC void KCALL
@@ -112,7 +118,8 @@ textfile_truncate(struct textfile *__restrict self) {
  CHECK_HOST_DOBJ(self);
  assert(!self->tf_file.f_node ||
          rwlock_writing(&self->tf_lock));
- if (self->tf_bufmax != self->tf_bufend) {
+ if (self->tf_bufmax != self->tf_bufend &&
+   !(self->tf_file.f_flag&TEXTFILE_FLAG_WEAK)) {
   char *new_buffer; size_t new_size;
   /* Re-alloc to only what is required. */
   new_size   = TEXTFILE_BUFTOTAL(self);
@@ -135,6 +142,7 @@ textfile_printer(char const *__restrict data,
  assert(!TF->tf_file.f_node);
  assert(!TF->tf_file.f_dent);
  assert(!TF->tf_file.f_ops);
+ assert(!(TF->tf_file.f_flag&TEXTFILE_FLAG_WEAK));
  /* Before setup, the buffer position is always equal to its start. */
  assert(TF->tf_bufpos == TF->tf_buffer);
  size_avail = TEXTFILE_BUFAVAIL(TF);

@@ -52,6 +52,9 @@ DECL_BEGIN
  *       to using textfile-specific file printers, such as 'textfile_printer'
  */
 struct textfile {
+ /* Additional flag for 'tf_file.f_flags'. - When set, text
+  * data is being weakly aliased and my not be freed/relocated. */
+#define TEXTFILE_FLAG_WEAK (FILE_FLAG_LOCKLESS >> 1)
  struct file tf_file;    /*< Underlying file. */
  WEAK size_t tf_maxsize; /*< Max allowed size (in bytes) that the file can grow to when regular file_write is used. */
  rwlock_t    tf_lock;    /*< Lock for accessing this textfile's text buffer. */
@@ -77,14 +80,16 @@ FUNDEF ssize_t KCALL textfile_pread(struct file *__restrict fp, USER void *buf, 
 FUNDEF ssize_t KCALL textfile_pwrite(struct file *__restrict fp, USER void const *buf, size_t bufsize, pos_t pos);
 FUNDEF off_t KCALL textfile_seek(struct file *__restrict fp, off_t off, int whence);
 FUNDEF errno_t KCALL textfile_flush(struct file *__restrict fp);
+FUNDEF void KCALL textfile_fclose(struct inode *__restrict ino, struct file *__restrict fp);
 #define TEXTFILE_OPS_INIT \
-    .f_flags  = TEXTFILE_FLAGS, \
-    .f_read   = &textfile_read, \
-    .f_write  = &textfile_write, \
-    .f_pread  = &textfile_pread, \
-    .f_pwrite = &textfile_pwrite, \
-    .f_seek   = &textfile_seek, \
-    .f_flush  = &textfile_flush, \
+    .f_flags    = TEXTFILE_FLAGS, \
+    .ino_fclose = &textfile_fclose, \
+    .f_read     = &textfile_read, \
+    .f_write    = &textfile_write, \
+    .f_pread    = &textfile_pread, \
+    .f_pwrite   = &textfile_pwrite, \
+    .f_seek     = &textfile_seek, \
+    .f_flush    = &textfile_flush, \
 
 /* Create a new text file.
  * Following a successful call to this function, the caller may write data
@@ -115,15 +120,17 @@ LOCAL struct textfile *KCALL textfile_cinit(struct textfile *self);
 
 /* Helper functions for quickly creating a textfile filled with printf-style text. */
 LOCAL REF struct textfile *KCALL
-make_textfilef(struct file *__restrict fp,
-               struct inode *__restrict node,
+make_textfilef(struct inode *__restrict node,
                struct dentry *__restrict dent, oflag_t oflags,
                char const *__restrict format, ...);
 LOCAL REF struct textfile *KCALL
-make_vtextfilef(struct file *__restrict fp,
-                struct inode *__restrict node,
+make_vtextfilef(struct inode *__restrict node,
                 struct dentry *__restrict dent, oflag_t oflags,
                 char const *__restrict format, __VA_LIST args);
+LOCAL REF struct textfile *KCALL
+make_weak_textfile(struct inode *__restrict node,
+                   struct dentry *__restrict dent, oflag_t oflags,
+                   HOST char const *__restrict start, size_t n_characters);
 
 
 
@@ -151,10 +158,22 @@ LOCAL struct textfile *KCALL textfile_cinit(struct textfile *self) {
  }
  return self;
 }
+LOCAL REF struct textfile *KCALL
+make_weak_textfile(struct inode *__restrict node,
+                   struct dentry *__restrict dent, oflag_t oflags,
+                   HOST char const *__restrict start, size_t n_characters) {
+ REF struct textfile *result;
+ result = (REF struct textfile *)file_new(sizeof(struct textfile));
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ result->tf_buffer = result->tf_bufpos = (char *)start;
+ result->tf_bufend = result->tf_bufmax = (char *)start+n_characters;
+ result->tf_file.f_flag |= TEXTFILE_FLAG_WEAK;
+ file_setup(&result->tf_file,node,dent,oflags);
+ return result;
+}
 
 LOCAL REF struct textfile *KCALL
-make_vtextfilef(struct file *__restrict fp,
-                struct inode *__restrict node,
+make_vtextfilef(struct inode *__restrict node,
                 struct dentry *__restrict dent, oflag_t oflags,
                 char const *__restrict format, va_list args) {
  REF struct textfile *result; ssize_t error;
@@ -170,13 +189,12 @@ make_vtextfilef(struct file *__restrict fp,
  return result;
 }
 LOCAL REF struct textfile *KCALL
-make_textfilef(struct file *__restrict fp,
-               struct inode *__restrict node,
+make_textfilef(struct inode *__restrict node,
                struct dentry *__restrict dent, oflag_t oflags,
                char const *__restrict format, ...) {
  REF struct textfile *result;
  va_list args; va_start(args,format);
- result = make_vtextfilef(fp,node,dent,oflags,format,args);
+ result = make_vtextfilef(node,dent,oflags,format,args);
  va_end(args);
  return result;
 }

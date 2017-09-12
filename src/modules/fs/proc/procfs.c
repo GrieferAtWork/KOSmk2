@@ -45,6 +45,7 @@
 #include <sched/types.h>
 #include <stdlib.h>
 #include <fs/textfile.h>
+#include <kernel/boot.h>
 
 DECL_BEGIN
 
@@ -97,6 +98,16 @@ err:  textfile_delete(result);
  return E_PTR(error);
 }
 
+PRIVATE REF struct file *KCALL
+cmdline_fopen(struct inode *__restrict ino,
+              struct dentry *__restrict node_ent,
+              oflag_t oflags) {
+ if unlikely((oflags&O_ACCMODE) != O_RDONLY) return E_PTR(-EACCES);
+ return (REF struct file *)make_weak_textfile(ino,node_ent,oflags,
+                                              kernel_commandline.cl_text,
+                                              kernel_commandline.cl_size);
+}
+
 /* Misc. contents of the /proc root directory. */
 INTERN struct procnode const root_content[] = {
  {0,S_IFLNK|0444,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
@@ -104,6 +115,9 @@ INTERN struct procnode const root_content[] = {
  }},
  {1,S_IFREG|0444,/*[[[deemon DNAM("filesystems"); ]]]*/{"filesystems",11,H(802163638u,1733680310429884923llu)}/*[[[end]]]*/,
  { .ino_fopen = &filesystems_fopen, TEXTFILE_OPS_INIT
+ }},
+ {2,S_IFREG|0444,/*[[[deemon DNAM("cmdline"); ]]]*/{"cmdline",7,H(3488433892u,28550371716918627llu)}/*[[[end]]]*/,
+ { .ino_fopen = &cmdline_fopen, TEXTFILE_OPS_INIT
  }},
 };
 
