@@ -63,7 +63,7 @@ PRIVATE ssize_t KCALL null_pread_pwrite(void *__restrict UNUSED(o), pos_t UNUSED
 PRIVATE off_t   KCALL null_seek(void *__restrict UNUSED(o), off_t UNUSED(off), int UNUSED(whence)) { return -EBADF; }
 PRIVATE errno_t KCALL null_ioctl(void *__restrict UNUSED(o), int UNUSED(name), USER void *UNUSED(arg)) { return -EBADF; }
 PRIVATE ssize_t KCALL null_readdir(void *__restrict UNUSED(o), USER struct dirent *UNUSED(buf), size_t UNUSED(bufsize), rdmode_t UNUSED(mode)) { return -EBADF; }
-PRIVATE errno_t KCALL null_flush(void *__restrict UNUSED(o)) { return -EBADF; }
+PRIVATE errno_t KCALL null_sync(void *__restrict UNUSED(o)) { return -EBADF; }
 
 PRIVATE void KCALL fd_inode_incref(struct inode *__restrict self) { INODE_INCREF(self); }
 PRIVATE void KCALL fd_inode_decref(struct inode *__restrict self) { INODE_DECREF(self); }
@@ -94,12 +94,12 @@ PUBLIC struct fdops const fd_ops[FD_TYPE_COUNT] = {
         .fd_seek    = &null_seek,
         .fd_ioctl   = &null_ioctl,
         .fd_readdir = &null_readdir,
-        .fd_flush   = &null_flush,
+        .fd_sync    = &null_sync,
     },
     [FD_TYPE_INODE] = {
         .fd_incref  = (void(KCALL *)(void *__restrict))&fd_inode_incref,
         .fd_decref  = (void(KCALL *)(void *__restrict))&fd_inode_decref,
-        .fd_flush   = (errno_t(KCALL *)(void *__restrict))&inode_flushattr,
+        .fd_sync    = (errno_t(KCALL *)(void *__restrict))&inode_syncattr,
     },
     [FD_TYPE_FILE] = {
         .fd_incref  = (void(KCALL *)(void *__restrict))&fd_file_incref,
@@ -111,7 +111,7 @@ PUBLIC struct fdops const fd_ops[FD_TYPE_COUNT] = {
         .fd_seek    = (off_t(KCALL *)(void *__restrict,off_t,int))&file_seek,
         .fd_ioctl   = (errno_t(KCALL *)(void *__restrict,int,USER void *))&file_ioctl,
         .fd_readdir = (ssize_t(KCALL *)(void *__restrict,USER struct dirent *,size_t,rdmode_t))&file_readdir,
-        .fd_flush   = (errno_t(KCALL *)(void *__restrict))&file_flush,
+        .fd_sync    = (errno_t(KCALL *)(void *__restrict))&file_sync,
     },
     [FD_TYPE_DENTRY] = {
         .fd_incref  = (void(KCALL *)(void *__restrict))&fd_dentry_incref,
@@ -872,7 +872,7 @@ SYSCALL_DEFINE4(pwrite64,int,fd,USER void const *,buf,size_t,bufsize,lpos_t,pos)
 }
 #undef pos
 
-
+#if 0
 PRIVATE SAFE ssize_t KCALL
 do_syncfs(struct fdman *__restrict fdm,
           struct superblock *fs) {
@@ -883,7 +883,7 @@ do_syncfs(struct fdman *__restrict fdm,
  end = (iter = fdm->fm_vecv)+fdm->fm_veca;
  assert(result == 0);
  for (; iter != end; ++iter) {
-  error = (*FD_SAFE_OPS(*iter)->fd_flush)(iter->fo_ptr);
+  error = (*FD_SAFE_OPS(*iter)->fd_sync)(iter->fo_ptr);
   if (E_ISOK(error)) ++result;
   else if (error == -EINTR ||
            error == -ENOMEM) {
@@ -896,11 +896,29 @@ do_syncfs(struct fdman *__restrict fdm,
 done:
  return result;
 }
+#endif
 
 SYSCALL_DEFINE0(sync) {
- ssize_t result;
+ ssize_t result = 0;
+ errno_t temp = 0;
+ struct superblock *sb;
  task_crit();
- result = do_syncfs(THIS_FDMAN,NULL);
+ result = rwlock_read(&fs_mountlock);
+ if (E_ISERR(result)) goto end;
+ FS_FOREACH_MOUNT(sb) {
+  temp = superblock_sync(sb);
+  if (E_ISOK(temp)) ++result;
+  else if (temp == -ENOMEM || temp == -EINTR) {
+   /* Stop for crucial errors. */
+   result = temp;
+   break;
+  }
+ }
+ rwlock_endread(&fs_mountlock);
+ /* If nothing else was synced, return the
+  * last error that prevented anything. */
+ if (!result) result = (ssize_t)temp;
+end:
  task_endcrit();
  return result;
 }
@@ -915,7 +933,7 @@ SYSCALL_DEFINE1(syncfs,int,fd) {
  else {
   CHECK_HOST_DOBJ(ino);
   CHECK_HOST_DOBJ(ino->i_super);
-  result = do_syncfs(fdm,ino->i_super);
+  result = superblock_sync(ino->i_super);
   INODE_DECREF(ino);
  }
  task_endcrit();
@@ -926,7 +944,7 @@ SYSCALL_DEFINE1(fsync,int,fd) {
  struct fd fent; errno_t res;
  task_crit();
  fent = fdman_get(THIS_FDMAN,fd);
- res = (*fent.fo_ops->fd_flush)(fent.fo_ptr);
+ res = (*fent.fo_ops->fd_sync)(fent.fo_ptr);
  FD_DECREF(fent);
  task_endcrit();
  return res;
@@ -937,7 +955,7 @@ SYSCALL_DEFINE1(fdatasync,int,fd) {
  task_crit();
  fent = fdman_get(THIS_FDMAN,fd);
  /* XXX: Different implementation from 'fsync?' */
- res = (*fent.fo_ops->fd_flush)(fent.fo_ptr);
+ res = (*fent.fo_ops->fd_sync)(fent.fo_ptr);
  FD_DECREF(fent);
  task_endcrit();
  return res;

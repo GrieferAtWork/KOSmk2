@@ -154,7 +154,7 @@ FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t f
                            *  NOTE: Any heap currently locked will not be trimmed! */
 #define GFP_NOSWAP 0x0200 /*< Don't initialize any kind of I/O during swap.
                            *  NOTE: 'GFP_NOFS' only prevents write-mapped files from
-                           *         being flushed, while this flag is required to
+                           *         being synched, while this flag is required to
                            *         prevents any use of a potential swap partition. */
 #define GFP_NOFS   0x0400 /*< Don't sync + unload write-mapped files to free up core memory. */
 #define GFP_INCORE 0x0800 /*< Allocate all memory directly. - Don't use allocate-on-access.

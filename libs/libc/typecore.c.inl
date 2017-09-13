@@ -22,9 +22,14 @@
 #include <hybrid/compiler.h>
 #include <hybrid/limitcore.h>
 #include <hybrid/typecore.h>
+#include <hybrid/byteswap.h>
 #include <stdlib.h>
 
 DECL_BEGIN
+
+STATIC_ASSERT(BSWAP16_C(0xaabbu) == 0xbbaau);
+STATIC_ASSERT(BSWAP32_C(0xaabbccddu) == 0xddccbbaau);
+STATIC_ASSERT(BSWAP64_C(0x66778899aabbccddull) == 0xddccbbaa99887766ull);
 
 STATIC_ASSERT(sizeof(char) == __SIZEOF_CHAR__);
 STATIC_ASSERT(sizeof(wchar_t) == __SIZEOF_WCHAR_T__);

@@ -36,9 +36,18 @@ typedef __UINT8_TYPE__  KTYPE(u8);
 typedef __UINT16_TYPE__ KTYPE(u16);
 typedef __UINT32_TYPE__ KTYPE(u32);
 typedef __UINT64_TYPE__ KTYPE(u64);
+#ifdef __INTELLISENSE__
+typedef ____INTELLISENSE_integer<1234,__UINT16_TYPE__> KTYPE(le16);
+typedef ____INTELLISENSE_integer<4321,__UINT16_TYPE__> KTYPE(be16);
+typedef ____INTELLISENSE_integer<1234,__UINT32_TYPE__> KTYPE(le32);
+typedef ____INTELLISENSE_integer<4321,__UINT32_TYPE__> KTYPE(be32);
+typedef ____INTELLISENSE_integer<1234,__UINT64_TYPE__> KTYPE(le64);
+typedef ____INTELLISENSE_integer<4321,__UINT64_TYPE__> KTYPE(be64);
+#else
 typedef __UINT16_TYPE__ KTYPE(le16),KTYPE(be16);
 typedef __UINT32_TYPE__ KTYPE(le32),KTYPE(be32);
 typedef __UINT64_TYPE__ KTYPE(le64),KTYPE(be64);
+#endif
 #undef KTYPE
 
 #ifndef __byte_t_defined

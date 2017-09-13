@@ -89,7 +89,7 @@ FUNDEF void KCALL textfile_fclose(struct inode *__restrict ino, struct file *__r
     .f_pread    = &textfile_pread, \
     .f_pwrite   = &textfile_pwrite, \
     .f_seek     = &textfile_seek, \
-    .f_flush    = &textfile_flush, \
+    .f_sync     = &textfile_flush, \
 
 /* Create a new text file.
  * Following a successful call to this function, the caller may write data

@@ -243,7 +243,7 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #   define __restrict_arr /* Nothing */
 #endif
 
-#define __COMPILER_BARRIER()       __asm__ __volatile__("" : : : "memory")
-#define __COMPILER_READ_BARRIER()  __asm__ __volatile__("" : : : "memory")
-#define __COMPILER_WRITE_BARRIER() __asm__ __volatile__("" : : : "memory")
+#define __COMPILER_BARRIER()       __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
+#define __COMPILER_READ_BARRIER()  __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
+#define __COMPILER_WRITE_BARRIER() __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
 

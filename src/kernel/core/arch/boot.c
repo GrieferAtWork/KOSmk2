@@ -591,8 +591,8 @@ L(    movw  %SX, %fs                           )
 L(    movw  %TX, %gs                           )
 #endif
 L(    movw  %SX, %ss                           )
-L(    ljmp  $(SEG(SEG_KERNEL_CODE)), $.flush   )
-L(.flush:                                      )
+L(    ljmp  $(SEG(SEG_KERNEL_CODE)), $1f       )
+L(1:                                           )
 /* Load our custom boot TSS. */
 L(    movw  $(SEG(SEG_CPUTSS)|3), %SX          ) /* TODO: Check if this |3 is really required. */
 L(    ltr   %SX                                )

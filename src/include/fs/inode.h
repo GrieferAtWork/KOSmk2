@@ -119,7 +119,7 @@ struct inodeops {
  u32             f_flags; /*< Set of 'INODE_FILE_*' */
 #define INODE_FILE_NORMAL   0x00000000
 #define INODE_FILE_LOCKLESS 0x80000000 /*< Allow for interlocked read/write, meaning that 'f_read', 'f_write',
-                                        * 'f_seek', 'f_readdir' and 'f_flush' are no longer caller-synchronized.
+                                        * 'f_seek', 'f_readdir' and 'f_sync' are no longer caller-synchronized.
                                         *  WARNING: When this flag is set, the file itself must implement
                                         *           locking capabilities, as well as support for 'O_APPEND'. */
  ssize_t (KCALL *f_read)(struct file *__restrict fp, USER void *buf, size_t bufsize); /* NOTE: Caller-synchronized:write */
@@ -143,7 +143,7 @@ struct inodeops {
  errno_t (KCALL *f_ioctl)(struct file *__restrict fp, int name, USER void *arg);
  /* NOTE: 'f_readdir' returns ZERO(0) when the end of the directory is reached (ZERO: no more data can be read) */
  ssize_t (KCALL *f_readdir)(struct file *__restrict fp, USER struct dirent *buf, size_t bufsize, rdmode_t mode); /* NOTE: Caller-synchronized:write */
- errno_t (KCALL *f_flush)(struct file *__restrict fp); /* Flush all unwritten data. */ /* NOTE: Caller-synchronized:write */
+ errno_t (KCALL *f_sync)(struct file *__restrict fp); /* Sync all unwritten data. */ /* NOTE: Caller-synchronized:write */
  errno_t (KCALL *f_allocate)(struct file *__restrict fp, fallocmode_t mode, pos_t start, pos_t size);
  /* Poll for events on this file descriptor. This function should do:
   * >> bool got_unsupported_signals = false;
@@ -600,11 +600,11 @@ inode_setattr(struct inode *__restrict self,
               struct iattr const *__restrict attr,
               iattrset_t valid);
 
-/* Flush non-mirrored INode attributes and unbind
+/* Sync non-mirrored INode attributes and unbind
  * the node from its superblock's attr-change list.
- * @param: self: The EFFECTIVE inode to flush attributes of. */
+ * @param: self: The EFFECTIVE inode to sync attributes of. */
 FUNDEF errno_t KCALL
-inode_flushattr(struct inode *__restrict self);
+inode_syncattr(struct inode *__restrict self);
 
 DECL_END
 

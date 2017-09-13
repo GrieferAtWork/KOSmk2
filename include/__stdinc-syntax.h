@@ -884,27 +884,23 @@ public:
  template<class __S> explicit bool operator != (____INTELLISENSE_integer<endian,__S>) const throw();
  template<class __S> explicit bool operator >  (____INTELLISENSE_integer<endian,__S>) const throw();
  template<class __S> explicit bool operator >= (____INTELLISENSE_integer<endian,__S>) const throw();
+ explicit ____INTELLISENSE_integer() throw();
  explicit ____INTELLISENSE_integer(__T) throw();
 };
 #pragma pack(pop)
 
-unsigned short ____INTELLISENSE_leswap16(____INTELLISENSE_integer<1234,unsigned short>);
-unsigned int ____INTELLISENSE_leswap32(____INTELLISENSE_integer<1234,unsigned int>);
-unsigned long ____INTELLISENSE_leswap32(____INTELLISENSE_integer<1234,unsigned long>);
-unsigned __int64 ____INTELLISENSE_leswap64(____INTELLISENSE_integer<1234,unsigned __int64>);
-____INTELLISENSE_integer<1234,unsigned short> ____INTELLISENSE_leswap16(unsigned short);
-____INTELLISENSE_integer<1234,unsigned int> ____INTELLISENSE_leswap32(unsigned int);
-____INTELLISENSE_integer<1234,unsigned long> ____INTELLISENSE_leswap32(unsigned long);
-____INTELLISENSE_integer<1234,unsigned __int64> ____INTELLISENSE_leswap64(unsigned __int64);
-
-unsigned short ____INTELLISENSE_beswap16(____INTELLISENSE_integer<4321,unsigned short>);
-unsigned int ____INTELLISENSE_beswap32(____INTELLISENSE_integer<4321,unsigned int>);
-unsigned long ____INTELLISENSE_beswap32(____INTELLISENSE_integer<4321,unsigned long>);
-unsigned __int64 ____INTELLISENSE_beswap64(____INTELLISENSE_integer<4321,unsigned __int64>);
-____INTELLISENSE_integer<4321,unsigned short> ____INTELLISENSE_beswap16(unsigned short);
-____INTELLISENSE_integer<4321,unsigned int> ____INTELLISENSE_beswap32(unsigned int);
-____INTELLISENSE_integer<4321,unsigned long> ____INTELLISENSE_beswap32(unsigned long);
-____INTELLISENSE_integer<4321,unsigned __int64> ____INTELLISENSE_beswap64(unsigned __int64);
+____INTELLISENSE_integer<1234,__UINT16_TYPE__> ____INTELLISENSE_BSWAP_H2LE16(__UINT16_TYPE__ x);
+____INTELLISENSE_integer<1234,__UINT32_TYPE__> ____INTELLISENSE_BSWAP_H2LE32(__UINT32_TYPE__ x);
+____INTELLISENSE_integer<1234,__UINT64_TYPE__> ____INTELLISENSE_BSWAP_H2LE64(__UINT64_TYPE__ x);
+____INTELLISENSE_integer<4321,__UINT16_TYPE__> ____INTELLISENSE_BSWAP_H2BE16(__UINT16_TYPE__ x);
+____INTELLISENSE_integer<4321,__UINT32_TYPE__> ____INTELLISENSE_BSWAP_H2BE32(__UINT32_TYPE__ x);
+____INTELLISENSE_integer<4321,__UINT64_TYPE__> ____INTELLISENSE_BSWAP_H2BE64(__UINT64_TYPE__ x);
+__UINT16_TYPE__ ____INTELLISENSE_BSWAP_LE2H16(____INTELLISENSE_integer<1234,__UINT16_TYPE__> x);
+__UINT32_TYPE__ ____INTELLISENSE_BSWAP_LE2H32(____INTELLISENSE_integer<1234,__UINT32_TYPE__> x);
+__UINT64_TYPE__ ____INTELLISENSE_BSWAP_LE2H64(____INTELLISENSE_integer<1234,__UINT64_TYPE__> x);
+__UINT16_TYPE__ ____INTELLISENSE_BSWAP_BE2H16(____INTELLISENSE_integer<4321,__UINT16_TYPE__> x);
+__UINT32_TYPE__ ____INTELLISENSE_BSWAP_BE2H32(____INTELLISENSE_integer<4321,__UINT32_TYPE__> x);
+__UINT64_TYPE__ ____INTELLISENSE_BSWAP_BE2H64(____INTELLISENSE_integer<4321,__UINT64_TYPE__> x);
 
 
 /* Sparse emulation */

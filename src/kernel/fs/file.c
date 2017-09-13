@@ -84,7 +84,7 @@ file_setup(struct file *__restrict self,
 }
 
 INTDEF void KCALL
-superblock_autoflush(struct superblock *__restrict self);
+superblock_autosync(struct superblock *__restrict self);
 
 PUBLIC void KCALL
 file_destroy(struct file *__restrict self) {
@@ -93,16 +93,16 @@ file_destroy(struct file *__restrict self) {
  ino = self->f_node;
  /* Flush a file that we written to. */
  if (self->f_flag&FILE_FLAG_DIDWRITE &&
-     self->f_ops->f_flush)
-   (*self->f_ops->f_flush)(self);
+     self->f_ops->f_sync)
+   (*self->f_ops->f_sync)(self);
 
  /* Invoke the file-close callback. */
  if (ino->i_ops->ino_fclose)
    (*ino->i_ops->ino_fclose)(ino,self);
 
  /* XXX: Maybe not flush everything? */
- if (fs_autoflush && self->f_flag&FILE_FLAG_DIDWRITE)
-     superblock_autoflush(self->f_node->i_super);
+ if (fs_autosync && self->f_flag&FILE_FLAG_DIDWRITE)
+     superblock_autosync(self->f_node->i_super);
 
  /* Remove the file from the list of open files. */
  atomic_rwlock_write(&ino->i_file.i_files_lock);
@@ -280,17 +280,17 @@ file_readdir(struct file *__restrict self,
 }
 
 PUBLIC errno_t KCALL
-file_flush(struct file *__restrict self) {
+file_sync(struct file *__restrict self) {
  errno_t result;
  CHECK_HOST_DOBJ(self);
  if ((self->f_mode&O_ACCMODE) == O_RDONLY) return -EROFS;
- if (!self->f_ops->f_flush) return -EOK; /* Don't error out in this case! */
+ if (!self->f_ops->f_sync) return -EOK; /* Don't error out in this case! */
  if (FILE_ISLOCKLESS(self)) {
-  result = (*self->f_ops->f_flush)(self);
+  result = (*self->f_ops->f_sync)(self);
  } else {
   result = rwlock_write(&self->f_lock);
   if (E_ISERR(result)) return result;
-  result = (*self->f_ops->f_flush)(self);
+  result = (*self->f_ops->f_sync)(self);
   rwlock_endwrite(&self->f_lock);
  }
  return result;

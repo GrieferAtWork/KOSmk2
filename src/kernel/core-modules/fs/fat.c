@@ -54,7 +54,11 @@
 DECL_BEGIN
 
 #define FAT_ISSPACE(c) __isctype((c),(_ISspace|_ISblank|_IScntrl))
-#define LFN_ISTRAIL    FAT_ISSPACE
+#if 1
+#define LFN_ISTRAIL(c) ((c) == '\0' || (c) == '\xff')
+#else
+#define LFN_ISTRAIL(c) __isctype((c),(_IScntrl))
+#endif
 
 #if defined(CONFIG_DEBUG) && 0
 #   define FAT_DEBUG(x) x
@@ -68,8 +72,8 @@ STATIC_ASSERT(sizeof(fat_header_t) == 512);
 PRIVATE errno_t KCALL fat_loadtable_unlocked(fat_t *__restrict self, sector_t fat_sector_index, size_t n_sectors);
 PRIVATE errno_t KCALL fat_savetable_unlocked(fat_t *__restrict self, sector_t fat_sector_index, size_t n_sectors);
 
-/* Flush all changes to the FAT table. */
-PRIVATE errno_t KCALL fat_flushtable(fat_t *__restrict self);
+/* Sync all changes to the FAT table. */
+PRIVATE errno_t KCALL fat_synctable(fat_t *__restrict self);
 
 /* High-level get/set fat entries, while ensuring that they are automatically loaded/marked as dirty. */
 PRIVATE errno_t KCALL fat_get(fat_t *__restrict self, fatid_t id, fatid_t *__restrict result);
@@ -536,6 +540,9 @@ lookupdata_cmplfn(struct lookupdata *__restrict self,
  assert(self->ld_entryc);
  name_end = (name_iter = name->dn_name)+name->dn_size;
  lfn_end = (lfn_iter = self->ld_entryv)+self->ld_entryc;
+ FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] LONG filename: %$q (Looking for %$q)\n",
+                  self->ld_entryc*sizeof(struct lfn_entry),self->ld_entryv,
+                  name->dn_size,name->dn_name));
  while (lfn_iter < lfn_end-1) {
   /* Compare full long-name entries. */
   if ((name_end-name_iter) < LFN_NAME) return false;
@@ -766,8 +773,10 @@ filedata_load(struct filedata *__restrict self, fat_t *__restrict fs,
   errno_t temp; size_t n_ahead;
   pos_t file_pos,file_size,clus_offset;
   cluster_t file_start;
+#if 0
   FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Sector jump: %Iu -> %Iu\n",
                    self->fd_cls_act,self->fd_cls_sel));
+#endif
   /* A different cluster has been selected. */
   file_pos = FILEDATA_FPOS(self,fs);
   temp = rwlock_read(&node->i_attr_lock);
@@ -917,8 +926,10 @@ filedata_alloc(struct filedata *__restrict self,
  cluster_t file_start; bool has_fat_lock;
  if (self->fd_cls_act != self->fd_cls_sel) {
   has_fat_lock = false;
+#if 0
   FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Sector jump: %Iu -> %Iu\n",
                    self->fd_cls_act,self->fd_cls_sel));
+#endif
   /* A different cluster has been selected. */
   if (self->fd_cls_act == (size_t)-1) {
    bool has_write_lock = false;
@@ -1698,7 +1709,7 @@ PRIVATE void KCALL fat_makeLFN(file_t *__restrict f,
  /* Fill in the LFN name entry. */
  f->lfn_seqnum    = LFN_SEQNUM_MIN+number;
  f->lfn_type      = 0;
- f->lfn_clus      = 0;
+ f->lfn_clus      = (le16)0;
  f->lfn_attr      = ATTR_LONGFILENAME;
  f->lfn_csum      = chksum;
  f->lfn_name_1[0] = (usc2ch_t)part[0];
@@ -2199,7 +2210,7 @@ err:
 
 PRIVATE errno_t KCALL
 fat_fssync(struct superblock *__restrict sb) {
- return fat_flushtable(container_of(sb,fat_t,f_super));
+ return fat_synctable(container_of(sb,fat_t,f_super));
 }
 PRIVATE void KCALL
 fat_fsfini(struct superblock *__restrict sb) {
@@ -2275,7 +2286,7 @@ fat_savetable_unlocked(fat_t *__restrict self,
 }
 
 PRIVATE errno_t KCALL
-fat_flushtable(fat_t *__restrict self) {
+fat_synctable(fat_t *__restrict self) {
  errno_t error;
  sector_t changed_begin,changed_end;
  error = rwlock_read(&self->f_fat_lock);
@@ -2351,14 +2362,18 @@ is_loaded:
    *result = FAT_TABLEGET(self,id);
   }
   rwlock_endwrite(&self->f_fat_lock);
+#if 0
   FAT_DEBUG(syslog(LOG_DEBUG,"READ_CLUSTER (%I32u -> %I32u) %d (LOAD)\n",
                    id,*result,self->f_type));
+#endif
   return error;
  }
  /* Now just read the FAT entry. */
  *result = FAT_TABLEGET(self,id);
+#if 0
  FAT_DEBUG(syslog(LOG_DEBUG,"READ_CLUSTER (%I32u -> %I32u) %d\n",
                   id,*result,self->f_type));
+#endif
  rwlock_endread(&self->f_fat_lock);
  return -EOK;
 }

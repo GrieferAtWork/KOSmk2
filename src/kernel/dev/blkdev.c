@@ -150,7 +150,7 @@ blkfile_ioctl(struct file *__restrict fp, int name, USER void *arg) {
       return -EFAULT;
  } break;
  case BLKFLSBUF:
-  result = blkdev_flush(DEV);
+  result = blkdev_sync(DEV);
   break;
  case BLKRASET:
  case BLKFRASET:
@@ -185,8 +185,8 @@ blkfile_ioctl(struct file *__restrict fp, int name, USER void *arg) {
  return result;
 }
 PRIVATE errno_t KCALL
-blkfile_flush(struct file *__restrict fp) {
- return blkdev_flush(DEV);
+blkfile_sync(struct file *__restrict fp) {
+ return blkdev_sync(DEV);
 }
 #undef SELF
 #undef DEV
@@ -201,7 +201,7 @@ PRIVATE struct inodeops const block_ops = {
     .f_pwrite  = &blkfile_pwrite,
     .f_seek    = &blkfile_seek,
     .f_ioctl   = &blkfile_ioctl,
-    .f_flush   = &blkfile_flush,
+    .f_sync    = &blkfile_sync,
 };
 
 PUBLIC struct blkdev *KCALL
@@ -283,14 +283,14 @@ blkdev_fini(struct blkdev *__restrict self) {
  end = (iter = self->bd_buffer.bs_bufv)+
                self->bd_buffer.bs_bufc;
  for (; iter != end; ++iter) {
-  /* Make sure to flush all buffers that were changed. */
+  /* Make sure to sync all buffers that were changed. */
   if (iter->bb_flag&BLOCKBUF_FLAG_CHNG) {
    ssize_t error;
    error = (*self->bd_write)(self,iter->bb_id,iter->bb_data,1);
    if unlikely(!error) error = -ENOSPC;
    if (E_ISERR(error)) {
     syslog(LOG_FS|LOG_ERROR,
-           "[DEV] Failed to flush block-device %[dev_t] buffered block #%I64d: %[errno]\n",
+           "[DEV] Failed to sync block-device %[dev_t] buffered block #%I64d: %[errno]\n",
            self->bd_device.d_id,iter->bb_id,-error);
    }
   }
@@ -302,14 +302,14 @@ fini_dev:
 }
 
 PUBLIC errno_t KCALL
-blkdev_flush(struct blkdev *__restrict self) {
+blkdev_sync(struct blkdev *__restrict self) {
  struct blockbuf *iter,*end;
  ssize_t error; bool has_hwlock = false;
  CHECK_HOST_DOBJ(self);
  assert(INODE_ISBLK(&self->bd_device.d_node));
  /* Override: Flush the loopback file descriptor. */
  if (BLKDEV_ISLOOPBACK(self))
-     return file_flush(self->bd_loopback);
+     return file_sync(self->bd_loopback);
  assert(self->bd_buffer.bs_bufc <= self->bd_buffer.bs_bufa);
  assert(self->bd_buffer.bs_bufa <= self->bd_buffer.bs_bufm);
 
@@ -402,13 +402,13 @@ new_buffer(struct blkdev *__restrict self,
  assert(self->bd_buffer.bs_bufc != 0);
  iter = self->bd_buffer.bs_bufv;
  while (end-- != iter) if (!(end->bb_flag&BLOCKBUF_FLAG_CHNG)) { iter = end; goto gotit; }
- /* No unchanged buffers available. - Must flush an existing buffer. */
+ /* No unchanged buffers available. - Must sync an existing buffer. */
  iter = self->bd_buffer.bs_bufv+(rand() % self->bd_buffer.bs_bufc);
  assert(iter >= self->bd_buffer.bs_bufv &&
         iter <  self->bd_buffer.bs_bufv+
                 self->bd_buffer.bs_bufc);
  assert(iter->bb_flag&BLOCKBUF_FLAG_CHNG);
- /* Actually flush the buffer. */
+ /* Actually sync the buffer. */
  { ssize_t error;
    /* Make sure to acquire a hard-ware lock! */
    if (!(*locks&LOCK_HW)) {

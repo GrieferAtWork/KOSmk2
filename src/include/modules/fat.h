@@ -309,7 +309,7 @@ typedef void    (KCALL *psetfat)(fat_t       *__restrict self, fatid_t id, fatid
 typedef sector_t (KCALL *pfatsec)(fat_t const *__restrict self, fatid_t id);
 
 #define FAT_METALOAD  0x1 /*< When set, the associated sector has been loaded. */
-#define FAT_METACHNG  0x2 /*< When set, the associated sector has been changed (Write data during the flush). */
+#define FAT_METACHNG  0x2 /*< When set, the associated sector has been changed (Write data when syncing the filesystem). */
 #define FAT_METABITS    2
 
 struct _fat {

@@ -37,13 +37,21 @@ DECL_BEGIN
 #define BSWAP32_C(x)  __bswap_constant_32(x)
 #define BSWAP64_C(x)  __bswap_constant_64(x)
 
-#ifdef __KERNEL__
-STATIC_ASSERT(BSWAP16_C(0xaabbu) == 0xbbaau);
-STATIC_ASSERT(BSWAP32_C(0xaabbccddu) == 0xddccbbaau);
-STATIC_ASSERT(BSWAP64_C(0x66778899aabbccddull) == 0xddccbbaa99887766ull);
-#endif /* __KERNEL__ */
-
-#if BYTEORDER == LITTLE_ENDIAN_ORDER
+#ifdef __INTELLISENSE__
+/* Highlight improper usage (For use alongside [__](le|be)(16|32|64) types from <hybrid/types.h>) */
+#   define BSWAP_H2LE16(x)    ____INTELLISENSE_BSWAP_H2LE16(x)
+#   define BSWAP_H2LE32(x)    ____INTELLISENSE_BSWAP_H2LE32(x)
+#   define BSWAP_H2LE64(x)    ____INTELLISENSE_BSWAP_H2LE64(x)
+#   define BSWAP_H2BE16(x)    ____INTELLISENSE_BSWAP_H2BE16(x)
+#   define BSWAP_H2BE32(x)    ____INTELLISENSE_BSWAP_H2BE32(x)
+#   define BSWAP_H2BE64(x)    ____INTELLISENSE_BSWAP_H2BE64(x)
+#   define BSWAP_LE2H16(x)    ____INTELLISENSE_BSWAP_LE2H16(x)
+#   define BSWAP_LE2H32(x)    ____INTELLISENSE_BSWAP_LE2H32(x)
+#   define BSWAP_LE2H64(x)    ____INTELLISENSE_BSWAP_LE2H64(x)
+#   define BSWAP_BE2H16(x)    ____INTELLISENSE_BSWAP_BE2H16(x)
+#   define BSWAP_BE2H32(x)    ____INTELLISENSE_BSWAP_BE2H32(x)
+#   define BSWAP_BE2H64(x)    ____INTELLISENSE_BSWAP_BE2H64(x)
+#elif BYTEORDER == LITTLE_ENDIAN_ORDER
 #   define BSWAP_H2LE16(x)   (x)
 #   define BSWAP_H2LE32(x)   (x)
 #   define BSWAP_H2LE64(x)   (x)
@@ -56,18 +64,6 @@ STATIC_ASSERT(BSWAP64_C(0x66778899aabbccddull) == 0xddccbbaa99887766ull);
 #   define BSWAP_BE2H16(x)    BSWAP16(x)
 #   define BSWAP_BE2H32(x)    BSWAP32(x)
 #   define BSWAP_BE2H64(x)    BSWAP64(x)
-#   define BSWAP_H2LE16_C(x) (x)
-#   define BSWAP_H2LE32_C(x) (x)
-#   define BSWAP_H2LE64_C(x) (x)
-#   define BSWAP_H2BE16_C(x)  BSWAP16_C(x)
-#   define BSWAP_H2BE32_C(x)  BSWAP32_C(x)
-#   define BSWAP_H2BE64_C(x)  BSWAP64_C(x)
-#   define BSWAP_LE2H16_C(x) (x)
-#   define BSWAP_LE2H32_C(x) (x)
-#   define BSWAP_LE2H64_C(x) (x)
-#   define BSWAP_BE2H16_C(x)  BSWAP16_C(x)
-#   define BSWAP_BE2H32_C(x)  BSWAP32_C(x)
-#   define BSWAP_BE2H64_C(x)  BSWAP64_C(x)
 #elif BYTEORDER == BIG_ENDIAN_ORDER
 #   define BSWAP_H2LE16(x)    BSWAP16(x)
 #   define BSWAP_H2LE32(x)    BSWAP32(x)
@@ -81,6 +77,24 @@ STATIC_ASSERT(BSWAP64_C(0x66778899aabbccddull) == 0xddccbbaa99887766ull);
 #   define BSWAP_BE2H16(x)   (x)
 #   define BSWAP_BE2H32(x)   (x)
 #   define BSWAP_BE2H64(x)   (x)
+#else
+#   error FIXME
+#endif
+
+#if BYTEORDER == LITTLE_ENDIAN_ORDER
+#   define BSWAP_H2LE16_C(x) (x)
+#   define BSWAP_H2LE32_C(x) (x)
+#   define BSWAP_H2LE64_C(x) (x)
+#   define BSWAP_H2BE16_C(x)  BSWAP16_C(x)
+#   define BSWAP_H2BE32_C(x)  BSWAP32_C(x)
+#   define BSWAP_H2BE64_C(x)  BSWAP64_C(x)
+#   define BSWAP_LE2H16_C(x) (x)
+#   define BSWAP_LE2H32_C(x) (x)
+#   define BSWAP_LE2H64_C(x) (x)
+#   define BSWAP_BE2H16_C(x)  BSWAP16_C(x)
+#   define BSWAP_BE2H32_C(x)  BSWAP32_C(x)
+#   define BSWAP_BE2H64_C(x)  BSWAP64_C(x)
+#elif BYTEORDER == BIG_ENDIAN_ORDER
 #   define BSWAP_H2LE16_C(x)  BSWAP16_C(x)
 #   define BSWAP_H2LE32_C(x)  BSWAP32_C(x)
 #   define BSWAP_H2LE64_C(x)  BSWAP64_C(x)

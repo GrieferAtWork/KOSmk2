@@ -230,13 +230,13 @@ FUNDEF ssize_t KCALL file_readdir(struct file *__restrict self,
                                   USER struct dirent *buf,
                                   size_t bufsize, rdmode_t mode);
 
-/* Flush any unwritten data from the given file stream 'self'.
- * @return: -EOK:       Successfully flushed some, or no data.
+/* Sync any unwritten data from the given file stream 'self'.
+ * @return: -EOK:       Successfully synced some, or no data.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: -EROFS:     The given file stream 'self' was not opened for writing,
- *                      meaning that no unwritten data needed to be flushed.
- * @return: E_ISERR(*): Some error prevented data from being flushed. */
-FUNDEF errno_t KCALL file_flush(struct file *__restrict self);
+ *                      meaning that no unwritten data needed to be synced.
+ * @return: E_ISERR(*): Some error prevented data from being synced. */
+FUNDEF errno_t KCALL file_sync(struct file *__restrict self);
 
 /* Kernel-space equivalents of some of the above functions using user-space buffers. */
 LOCAL ssize_t KCALL file_kread(struct file *__restrict self, HOST void *__restrict buf, size_t bufsize);

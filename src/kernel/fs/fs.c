@@ -75,8 +75,8 @@ PUBLIC struct dentry fs_root = {
     },
 };
 
-PRIVATE DEFINE_ATOMIC_RWLOCK(fs_mountlock); /*< Lock for the global mounting point list. */
-PRIVATE LIST_HEAD(struct superblock) fs_mountlist; /*< [lock(fs_mountlock)] Global mounting point list. */
+PUBLIC DEFINE_RWLOCK(fs_mountlock); /*< Lock for the global mounting point list. */
+PUBLIC LIST_HEAD(struct superblock) fs_mountlist; /*< [lock(fs_mountlock)] Global mounting point list. */
 
 LOCAL bool KCALL dentry_rehashsubs_unlocked(struct dentry *__restrict self);
 LOCAL struct dentry *KCALL dentry_getsub_unlocked(struct dentry const *__restrict self, struct dentryname const *__restrict name);
@@ -86,14 +86,14 @@ PRIVATE REF struct dentry *KCALL dentry_walklnk(struct dentry *__restrict link_d
 
 
 /* Enable this feature by default. */
-PUBLIC bool fs_autoflush = true;
-DEFINE_EARLY_SETUP_VAR("autoflush",fs_autoflush);
+PUBLIC bool fs_autosync = true;
+DEFINE_EARLY_SETUP_VAR("autosync",fs_autosync);
 INTERN void KCALL
-superblock_autoflush(struct superblock *__restrict self) {
- errno_t error = superblock_flush(self);
+superblock_autosync(struct superblock *__restrict self) {
+ errno_t error = superblock_sync(self);
  if (E_ISERR(error)) {
   syslog(LOG_FS|LOG_ERROR,
-         "[FS] Failed to auto-flush superblock: %[errno]\n",
+         "[FS] Failed to autosync superblock: %[errno]\n",
          -error);
  }
 }
@@ -191,7 +191,7 @@ superblock_setup(struct superblock *__restrict self,
  return -EOK;
 }
 PUBLIC errno_t KCALL
-superblock_flush(struct superblock *__restrict self) {
+superblock_sync(struct superblock *__restrict self) {
  errno_t error;
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(self->sb_ops);
@@ -207,7 +207,7 @@ superblock_flush(struct superblock *__restrict self) {
   /* Flush INode attributes.
    * NOTE: Upon success, this will remove the
    *       node from the 'sb_achng' chain. */
-  error = inode_flushattr(changed);
+  error = inode_syncattr(changed);
   INODE_DECREF(changed);
   if (E_ISERR(error)) return error;
  }
@@ -217,7 +217,7 @@ superblock_flush(struct superblock *__restrict self) {
   if (E_ISERR(error)) return error;
  }
  /* Flush the underlying block-device. */
- return self->sb_blkdev ? blkdev_flush(self->sb_blkdev) : -EOK;
+ return self->sb_blkdev ? blkdev_sync(self->sb_blkdev) : -EOK;
 }
 
 PUBLIC ssize_t KCALL
@@ -323,7 +323,7 @@ inode_destroy(struct inode *__restrict self) {
  CHECK_HOST_DOBJ(self);
  super = self->i_super;
  CHECK_HOST_DOBJ(super);
- error = inode_flushattr(self);
+ error = inode_syncattr(self);
  if (E_ISERR(error)) {
   syslog(LOG_ERROR|LOG_FS,
          "[FS] Failed to flush INode %ld before unloading: %[errno]\n",
@@ -480,7 +480,7 @@ inode_mirror_diskattr_unlocked(struct inode *__restrict self,
    * within the associated superblock. */
   LIST_UNBIND(self,i_attr_chng);
   atomic_rwlock_endwrite(&sb->sb_achng_lock);
-  if (fs_autoflush) superblock_autoflush(sb);
+  if (fs_autosync) superblock_autosync(sb);
  }
 end:
  return error;
@@ -573,7 +573,7 @@ rend: rwlock_endread(&self->i_attr_lock); goto end;
 
 
 PUBLIC errno_t KCALL
-inode_flushattr(struct inode *__restrict self) {
+inode_syncattr(struct inode *__restrict self) {
  struct superblock *sb;
  errno_t error;
  bool has_write_lock = false;
@@ -974,7 +974,7 @@ dentry_open(struct dentry *__restrict dir_ent,
  REF struct inode *ino,*res_ino;
  struct dentry *res_entry;
  bool has_write_lock = false;
- bool must_flush = false;
+ bool must_sync = false;
  CHECK_HOST_DOBJ(dir_ent);
  CHECK_HOST_TOBJ(ent_name);
  CHECK_HOST_TOBJ(walker);
@@ -1049,7 +1049,7 @@ def_name:default:
     if (!(oflags&O_EXCL)) attr_mode |= IATTR_EXISTS;
     if (oflags&O_TRUNC)   attr_mode |= IATTR_TRUNC;
     res_ino = (*ino->i_ops->ino_mkreg)(ino,res_entry,attr,attr_mode);
-    must_flush = true;
+    must_sync = fs_autosync;
     assert(res_ino);
    }
   } else {
@@ -1091,8 +1091,8 @@ drop_inode:
 got_res_ino:
  CHECK_HOST_DOBJ(res_entry);
  CHECK_HOST_DOBJ(res_ino);
- if (must_flush && fs_autoflush)
-     superblock_autoflush(res_ino->i_super);
+ if (must_sync)
+     superblock_autosync(res_ino->i_super);
  /* Check for proper permissions in the result INode. */
  if (INODE_ISCLOSING(res_ino))
   result = E_PTR(-EBUSY);
@@ -1290,8 +1290,8 @@ wend:
   assert(!result->d_inode);
   result->d_inode = res_ino;
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
-  if (fs_autoflush)
-      superblock_autoflush(ino->i_super);
+  if (fs_autosync)
+      superblock_autosync(ino->i_super);
  } else {
   /* Delete the miss-leading directory entry. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1358,8 +1358,8 @@ wend:
   result->d_inode = res_ino;
   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
-  if (fs_autoflush)
-      superblock_autoflush(ino->i_super);
+  if (fs_autosync)
+      superblock_autosync(ino->i_super);
  } else {
   /* Delete the miss-leading directory entry. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1422,8 +1422,8 @@ wend:
   result->d_inode = res_ino; /* Inherit reference. */
   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
-  if (fs_autoflush)
-      superblock_autoflush(ino->i_super);
+  if (fs_autosync)
+      superblock_autosync(ino->i_super);
  } else {
   /* Delete the directory entry after the operator failed. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1473,12 +1473,21 @@ dentry_mount(struct dentry *__restrict self,
   DENTRY_INCREF(self); /* Create reference. */
   *newvec = self; /* Inherit reference. */
   atomic_rwlock_endwrite(&filesystem->sb_mount.sm_mount_lock);
-  atomic_rwlock_write(&fs_mountlock);
+  /* XXX: This could be done without a nointr()-block... */
+  task_nointr();
+  rwlock_read(&fs_mountlock);
   /* Add the filesystem to the list of those
    * mounted, if it was previously unbound. */
-  if (LIST_ISUNBOUND(filesystem,sb_mount.sm_chain))
-      LIST_INSERT(fs_mountlist,filesystem,sb_mount.sm_chain);
-  atomic_rwlock_endwrite(&fs_mountlock);
+  if (LIST_ISUNBOUND(filesystem,sb_mount.sm_chain)) {
+   if (rwlock_upgrade(&fs_mountlock) != -ERELOAD ||
+      (COMPILER_READ_BARRIER(),
+       LIST_ISUNBOUND(filesystem,sb_mount.sm_chain))) {
+    LIST_INSERT(fs_mountlist,filesystem,sb_mount.sm_chain);
+    rwlock_downgrade(&fs_mountlock);
+   }
+  }
+  rwlock_endread(&fs_mountlock);
+  task_endnointr();
  }
  return error;
 }
@@ -1581,8 +1590,8 @@ wend:
   result->d_inode = dst_node;
   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,dst_node);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
-  if (fs_autoflush)
-      superblock_autoflush(ino->i_super);
+  if (fs_autosync)
+      superblock_autosync(ino->i_super);
  } else {
   /* Delete the miss-leading directory entry. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1652,8 +1661,8 @@ wend:
   result->d_inode = res_ino; /* Inherit reference. */
   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
-  if (fs_autoflush)
-      superblock_autoflush(ino->i_super);
+  if (fs_autosync)
+      superblock_autosync(ino->i_super);
  } else {
   /* Delete the miss-leading directory entry. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1744,8 +1753,8 @@ samedir_wend:
    atomic_rwlock_endwrite(&existing_ent->d_inode_lock);
    /* Drop the reference created above. */
    DENTRY_DECREF(existing_ent);
-   if (fs_autoflush)
-       superblock_autoflush(dstdir_ino->i_super);
+   if (fs_autosync)
+       superblock_autosync(dstdir_ino->i_super);
   } else {
    /* Delete the miss-leading directory entry. */
    dentry_delsub_unlocked(dst_dir,result);
@@ -1821,8 +1830,8 @@ diffdir_wend2:
    atomic_rwlock_endwrite(&existing_ent->d_inode_lock);
    /* Drop the reference created above. */
    DENTRY_DECREF(existing_ent);
-   if (fs_autoflush)
-       superblock_autoflush(dstdir_ino->i_super);
+   if (fs_autosync)
+       superblock_autosync(dstdir_ino->i_super);
   } else {
    /* Delete the miss-leading directory entry. */
    dentry_delsub_unlocked(dst_dir,result);
@@ -1912,12 +1921,14 @@ not_empty:
    free(sb->sb_mount.sm_mountv);
    sb->sb_mount.sm_mountv = NULL;
    atomic_rwlock_endwrite(&sb->sb_mount.sm_mount_lock);
-   atomic_rwlock_write(&fs_mountlock);
+   task_nointr();
+   rwlock_write(&fs_mountlock);
    atomic_rwlock_write(&sb->sb_mount.sm_mount_lock);
    /* Unbind the last filesystem hook. */
    LIST_UNBIND(sb,sb_mount.sm_chain);
    atomic_rwlock_endwrite(&sb->sb_mount.sm_mount_lock);
-   atomic_rwlock_endwrite(&fs_mountlock);
+   rwlock_endwrite(&fs_mountlock);
+   task_endnointr();
    if (sb->sb_ops->sb_umount)
      (*sb->sb_ops->sb_umount)(sb);
   } else {
@@ -1982,8 +1993,8 @@ remove_parent:
   } else {
    atomic_rwlock_endwrite(&self->d_inode_lock);
   }
-  if (parent_node && fs_autoflush)
-      superblock_autoflush(parent_node->i_super);
+  if (parent_node && fs_autosync)
+      superblock_autosync(parent_node->i_super);
  }
 end3: if (parent_node) INODE_DECREF(parent_node);
 end2: atomic_rwlock_endread(&self->d_subs_lock);

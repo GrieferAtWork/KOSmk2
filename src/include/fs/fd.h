@@ -66,7 +66,7 @@ struct fdops {
  off_t   (KCALL *fd_seek)(void *__restrict o, off_t off, int whence);
  errno_t (KCALL *fd_ioctl)(void *__restrict o, int name, USER void *arg);
  ssize_t (KCALL *fd_readdir)(void *__restrict o, USER struct dirent *buf, size_t bufsize, rdmode_t mode);
- errno_t (KCALL *fd_flush)(void *__restrict o);
+ errno_t (KCALL *fd_sync)(void *__restrict o);
 };
 
 struct fd {

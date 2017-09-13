@@ -606,7 +606,7 @@ FUNDEF ssize_t KCALL mman_swapmem(size_t max_swap, gfp_t flags);
 #define MMAN_SWAPMEM_NOTRIM GFP_NOTRIM /*< Don't trim kernel heaps to make more memory available. */
 #define MMAN_SWAPMEM_NOSWAP GFP_NOSWAP /*< Don't initialize any kind of I/O during swap.
                                         *  NOTE: 'MMAN_SWAPMEM_NOFS' only prevents write-mapped files
-                                        *         from being flushed, while this flag is required
+                                        *         from being synched, while this flag is required
                                         *         to prevents any use of a potential swap partition. */
 #define MMAN_SWAPMEM_NOFS   GFP_NOFS   /*< Don't sync + unload write-mapped files to free up core memory. */
 

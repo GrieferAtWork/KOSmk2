@@ -84,7 +84,7 @@ typedef u32 blksys_t; /*< s.a.: 'BLKSYS_*' */
 
 #define BLOCKBUF_FLAG_NONE 0x00000000
 #define BLOCKBUF_FLAG_LOAD 0x00000001 /*< 'bb_data' has been filled with disk data. */
-#define BLOCKBUF_FLAG_CHNG 0x00000002 /*< Changes were made to the buffer and must be flushed before deletion. */
+#define BLOCKBUF_FLAG_CHNG 0x00000002 /*< Changes were made to the buffer and must be synced before deletion. */
 
 struct blockbuf {
  blkaddr_t bb_id;   /*< [lock(:bs_lock)] Block ID that this buffer is describing. */
@@ -202,11 +202,11 @@ FUNDEF ssize_t KCALL blkdev_write(struct blkdev *__restrict self, pos_t offset, 
 LOCAL errno_t KCALL blkdev_readall(struct blkdev *__restrict self, pos_t offset, USER void *buf, size_t bufsize);
 LOCAL errno_t KCALL blkdev_writeall(struct blkdev *__restrict self, pos_t offset, USER void const *buf, size_t bufsize);
 
-/* Flush all unwritten data to disk.
- * @return: -EOK:       Successfully flushed all data, or no data needed to be flushed.
+/* Sync all unwritten data with the underlying disk.
+ * @return: -EOK:       Successfully synced all data, or no data needed to be synced.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: E_ISERR(*): Failed to write data for some reason. */
-FUNDEF errno_t KCALL blkdev_flush(struct blkdev *__restrict self);
+FUNDEF errno_t KCALL blkdev_sync(struct blkdev *__restrict self);
 
 /* Find the first partition of 'self' matching '(return->dp_device.bd_system & mask) == type'
  * NOTE: In the event that it was impossible to acquire a reference to a matching

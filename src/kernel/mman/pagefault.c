@@ -185,7 +185,7 @@ end_mcore: ATTR_UNUSED;
       syslog(LOG_MEM|LOG_ERROR,"[MEM] Failed to load core at %p: %[errno]\n",
              fault_addr,-error);
   /* Save the latest fault address in the current task, thus preserving it
-   * throughout preemption, as well as allowing later handling code to referr to it. */
+   * throughout preemption, as well as allowing later handling code to refer to it. */
   THIS_TASK->t_lastcr2 = (VIRT void *)fault_addr;
   /* Propagate the pagefault if no data was loaded. */
   irq_unhandled_c(EXC_PAGE_FAULT,info);

@@ -64,7 +64,7 @@ typedef u16 pdir_attr_t; /* Set of 'PDIR_ATTR_*|PDIR_FLAG_*' */
 #endif /* __CC__ */
 
 /* Page directory action flags (accepted by 'pdir_mprotect', 'pdir_mmap', 'pdir_mremap' and 'pdir_munmap') */
-#define PDIR_FLAG_NOFLUSH  0x8000u /* Don't flush the page directory entry - instead, the caller must invalidate it. */
+#define PDIR_FLAG_NOFLUSH  0x8000u /* Don't sync the page directory entry - instead, the caller must invalidate it. */
 
 
 /* Internal/arch-specific attributes. */
