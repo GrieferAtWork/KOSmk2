@@ -1358,6 +1358,8 @@ wend:
   result->d_inode = res_ino;
   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
+  if (fs_autoflush)
+      superblock_autoflush(ino->i_super);
  } else {
   /* Delete the miss-leading directory entry. */
   dentry_delsub_unlocked(dir_ent,result);

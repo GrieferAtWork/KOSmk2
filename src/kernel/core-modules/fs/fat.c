@@ -1782,6 +1782,8 @@ fat_is_empty_directory(fat_t *__restrict fs,
   HOSTMEMORY_END;
   if (E_ISERR(temp)) return (errno_t)temp;
   if ((size_t)temp < sizeof(file_t)) break;
+  /* Simple case: The entry marks the directory end. */
+  if (fp.f_marker == MARKER_DIREND) break;
   /* Simple case: The entry is marked as unused. */
   if (fp.f_marker == MARKER_UNUSED) continue;
   /* According to wikipedia, VOLUMEID entires shouldn't not prevent directory deletion.
@@ -1789,11 +1791,30 @@ fat_is_empty_directory(fat_t *__restrict fs,
    *    shouldn't be responsible for keeping a directory from being removed. */
   if (fp.f_attr&ATTR_VOLUMEID) continue;
   /* Special case: Ignore '.' and '..' entries. */
-  if (fp.f_attr&ATTR_DIRECTORY &&
-     (memcmp(fp.f_nameext,fat_newdir_template[0].f_nameext,sizeof(fp.f_nameext)) == 0 ||
-      memcmp(fp.f_nameext,fat_newdir_template[1].f_nameext,sizeof(fp.f_nameext)) == 0))
-      continue;
+  if (fp.f_attr&ATTR_DIRECTORY) {
+   if (isspace(fp.f_ext[0])) {
+    if (isspace(fp.f_name[0])) continue;
+    if (fp.f_name[0] == '.') {
+     if (isspace(fp.f_name[1])) continue; /* '.' */
+     if (fp.f_name[1] == '.' &&
+         isspace(fp.f_name[2])) continue; /* '..' */
+    }
+   } else if (fp.f_ext[0] == '.') {
+    if (isspace(fp.f_ext[1])) {
+     if (isspace(fp.f_name[0])) continue; /* '.' */
+     if (fp.f_name[0] == '.' &&
+         isspace(fp.f_name[1])) continue; /* '..' */
+    } else {
+     if (isspace(fp.f_ext[2]) &&
+         isspace(fp.f_name[0])) continue; /* '..' */
+    }
+   }
+  }
+
+  /* XXX: Can there be invisible, broken entries that manage to get here? */
   /* Not empty! */
+  syslog(LOG_DEBUG,"Directory not empty (still contains %$q)\n",
+         sizeof(fp.f_nameext),fp.f_nameext);
   return -ENOTEMPTY;
  }
  return -EOK;
@@ -1803,15 +1824,15 @@ PRIVATE errno_t KCALL
 fat_remove(struct inode *__restrict dir_node,
            struct dentry *__restrict file_path,
            struct inode *__restrict file_node) {
- errno_t error;
+ errno_t error; fat_t *fat;
+ fat = container_of(dir_node->i_super,fat_t,f_super);
  error = rwlock_write(&dir_node->i_data->i_dirlock);
  if (E_ISERR(error)) return error;
  if (INODE_ISDIR(file_node)) {
   /* Make sure that a directory is empty before removing it. */
   error = rwlock_write(&container_of(file_node,struct fatnode,f_inode)->f_idata.i_dirlock);
   if (E_ISERR(error)) goto end;
-  error = fat_is_empty_directory(container_of(dir_node->i_super,fat_t,f_super),
-                                 container_of(file_node,struct fatnode,f_inode));
+  error = fat_is_empty_directory(fat,container_of(file_node,struct fatnode,f_inode));
   if (E_ISOK(error))
       error = fat_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
   rwlock_endwrite(&container_of(file_node,struct fatnode,f_inode)->f_idata.i_dirlock);
@@ -1820,22 +1841,25 @@ fat_remove(struct inode *__restrict dir_node,
  }
 end:
  rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ /* Delete cluster data for this file. */
+ if (E_ISOK(error))
+     fat_delall(fat,file_node->i_data->i_cluster);
  return error;
 }
 PRIVATE errno_t KCALL
 fat16_root_remove(struct inode *__restrict dir_node,
                   struct dentry *__restrict /*UNUSED*/(file_path),
                   struct inode *__restrict file_node) {
+#define FAT  container_of(dir_node,fat_t,f_super.sb_root)
  errno_t error;
  assert(INODE_ISSUPERBLOCK(dir_node));
- error = rwlock_write(&container_of(dir_node,fat_t,f_super.sb_root)->f_idata.i_dirlock);
+ error = rwlock_write(&FAT->f_idata.i_dirlock);
  if (E_ISERR(error)) return error;
  if (INODE_ISDIR(file_node)) {
   /* Make sure that a directory is empty before removing it. */
   error = rwlock_write(&container_of(file_node,struct fatnode,f_inode)->f_idata.i_dirlock);
   if (E_ISERR(error)) goto end;
-  error = fat_is_empty_directory(container_of(dir_node,fat_t,f_super.sb_root),
-                                 container_of(file_node,struct fatnode,f_inode));
+  error = fat_is_empty_directory(FAT,container_of(file_node,struct fatnode,f_inode));
   if (E_ISOK(error))
       error = fat16_root_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
   rwlock_endwrite(&container_of(file_node,struct fatnode,f_inode)->f_idata.i_dirlock);
@@ -1843,8 +1867,12 @@ fat16_root_remove(struct inode *__restrict dir_node,
   error = fat16_root_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
  }
 end:
- rwlock_endwrite(&container_of(dir_node,fat_t,f_super.sb_root)->f_idata.i_dirlock);
+ rwlock_endwrite(&FAT->f_idata.i_dirlock);
+ /* Delete cluster data for this file. */
+ if (E_ISOK(error))
+     fat_delall(FAT,file_node->i_data->i_cluster);
  return error;
+#undef FAT
 }
 
 
@@ -2328,6 +2356,8 @@ fat_set(fat_t *__restrict self, fatid_t id, fatid_t value) {
   if (E_ISERR(error)) goto end;
   FAT_META_STLOAD(self,table_sector);
  }
+ FAT_DEBUG(syslog(LOG_FS|LOG_DEBUG,"[FAT] LINK(%I32u -> %I32u)\n",id,value));
+
  /* Now just read the FAT entry. */
  FAT_TABLESET(self,id,value);
 
@@ -2374,7 +2404,9 @@ fat_set_unlocked(fat_t *__restrict self,
   if (E_ISERR(error)) return error;
   FAT_META_STLOAD(self,table_sector);
  }
- /* Now just read the FAT entry. */
+ FAT_DEBUG(syslog(LOG_FS|LOG_DEBUG,"[FAT] LINK(%I32u -> %I32u)\n",id,value));
+
+ /* Now just write the FAT entry. */
  FAT_TABLESET(self,id,value);
 
  /* Mark the metadata associated with the sector as changed. */
@@ -2573,8 +2605,8 @@ fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
   result->f_cluster_eof         = (result->f_sec4fat*result->f_sectorsize)/2;
  }
 
- if (result->f_cluster_eof > result->f_cluster_eof_marker)
-     result->f_cluster_eof = result->f_cluster_eof_marker;
+ if (result->f_cluster_eof_marker < result->f_cluster_eof)
+     result->f_cluster_eof_marker = result->f_cluster_eof;
  memcpy(&result->f_oem,header.bpb.bpb_oem,8*sizeof(char));
  result->f_fat_size = result->f_sec4fat*result->f_sectorsize;
  trimspecstring(result->f_oem,8);
