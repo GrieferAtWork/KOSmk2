@@ -41,6 +41,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sched/signal.h>
+#include <bits/waitstatus.h>
 
 DECL_BEGIN
 
@@ -305,7 +306,7 @@ end_too_late:
  mman_maps_fini(&env_maps);
  INSTANCE_DECREF(inst);
  assert(exec_task->t_critical == 1);
- task_terminate(exec_task,(void *)-1);
+ task_terminate(exec_task,(void *)(uintptr_t)__W_STOPCODE(SIGSEGV));
 end:
  return error;
 }

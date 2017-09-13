@@ -711,8 +711,6 @@ reap_zombie:
  result = do_wait(which,upid,options,stat_addr,NULL,ru,NULL);
 end:
  task_endcrit();
- syslog(LOG_DEBUG,"wait4(%d,%p,%x,%p) -> %d\n",
-        upid,stat_addr,options,ru,result);
  return result;
 }
 
