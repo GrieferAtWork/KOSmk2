@@ -1892,7 +1892,8 @@ not_empty:
  if (INODE_ISSUPERBLOCK(del_inode)) {
   /* Unmount a superblock. */
   struct superblock *sb; struct dentry **iter;
-  if (!(mode&DENTRY_REMOVE_MNT)) { result = -EISDIR; goto end2; }
+  /* NOTE: Must return EBUSY when trying to remove a mounting point as a directory. */
+  if (!(mode&DENTRY_REMOVE_MNT)) { result = mode&DENTRY_REMOVE_DIR ? -EBUSY : -EISDIR; goto end2; }
   atomic_rwlock_write(&self->d_inode_lock);
   if (self->d_inode != del_inode) {
    atomic_rwlock_endwrite(&self->d_inode_lock);
