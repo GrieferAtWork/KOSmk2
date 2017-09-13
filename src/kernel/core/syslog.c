@@ -38,7 +38,11 @@ DECL_BEGIN
 
 PRIVATE u8 const syslog_colors[LOG_PRIMASK+1] = {
    [0 ... LOG_PRIMASK] = TTY_DEFAULT_COLOR,
+#if 1
+   [LOG_EMERG]         = tty_entry_color(TTY_COLOR_WHITE,TTY_COLOR_DARK_GREY),
+#else
    [LOG_EMERG]         = tty_entry_color(TTY_COLOR_RED,TTY_COLOR_BLACK),
+#endif
    [LOG_ALERT]         = tty_entry_color(TTY_COLOR_LIGHT_RED,TTY_COLOR_BLACK),
    [LOG_CRIT]          = tty_entry_color(TTY_COLOR_MAGENTA,TTY_COLOR_BLACK),
    [LOG_ERR]           = tty_entry_color(TTY_COLOR_LIGHT_MAGENTA,TTY_COLOR_BLACK),

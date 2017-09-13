@@ -295,6 +295,103 @@ end:
 #undef fat
 }
 
+
+#ifdef FAT16_ROOT
+PRIVATE REF struct inode *KCALL
+fat16_root_rename(struct inode *__restrict dst_dir, struct dentry *__restrict dst_path,
+                  struct inode *__restrict src_dir, struct dentry *__restrict UNUSED(src_path),
+                  struct inode *__restrict src_node)
+#else
+PRIVATE REF struct inode *KCALL
+fat_rename(struct inode *__restrict dst_dir, struct dentry *__restrict dst_path,
+           struct inode *__restrict src_dir, struct dentry *__restrict UNUSED(src_path),
+           struct inode *__restrict src_node)
+#endif
+{
+#define SRC_NODE container_of(src_node,struct fatnode,f_inode)
+ bool is_new; REF struct fatnode *result_node; errno_t error;
+ /* Lock the source node's attributes and the target directory. */
+ result_node = E_PTR(rwlock_read(&src_node->i_attr_lock));
+ if (E_ISERR(result_node)) goto end;
+ result_node = E_PTR(rwlock_write(&dst_dir->i_data->i_dirlock));
+ if (E_ISERR(result_node)) goto end2;
+ /* Create a new node using the given target name in the dst-directory. */
+#ifdef FAT16_ROOT
+ result_node = fat16_root_mkent_unlocked(dst_dir,dst_path,INODE_ISDIR(src_node)
+                                         ? ATTR_DIRECTORY : 0,&src_node->i_attr_disk,
+                                         0,&is_new);
+#else
+ result_node = fat_mkent_unlocked(dst_dir,dst_path,INODE_ISDIR(src_node)
+                                  ? ATTR_DIRECTORY : 0,&src_node->i_attr_disk,
+                                  0,&is_new);
+#endif
+ if (E_ISERR(result_node)) goto err_unlock_dst;
+ assert(is_new);
+ result_node->f_idata.i_cluster = SRC_NODE->f_idata.i_cluster;
+ /* Copy node attributes one-on-one. */
+ memcpy(&result_node->f_inode.i_attr,&src_node->i_attr,sizeof(struct iattr));
+ memcpy(&result_node->f_inode.i_attr_disk,&src_node->i_attr,sizeof(struct iattr));
+ { struct {
+    filectime_t f_ctime;
+    fileatime_t f_atime;
+    le16        f_clusterhi;
+    filemtime_t f_mtime;
+    le16        f_clusterlo;
+    le32        f_size;
+   } buf;
+   /* Update the target file's on-disk file buffer. */
+   fat_ctime_encode(buf.f_ctime,&src_node->i_attr.ia_ctime);
+   fat_atime_encode(buf.f_atime,&src_node->i_attr.ia_atime);
+   fat_mtime_encode(buf.f_mtime,&src_node->i_attr.ia_mtime);
+   buf.f_clusterhi = BSWAP_H2LE16((u16)((u32)result_node->f_idata.i_cluster >> 16));
+   buf.f_clusterlo = BSWAP_H2LE16((u16)result_node->f_idata.i_cluster);
+   buf.f_size      = BSWAP_H2LE32((u32)result_node->f_inode.i_attr.ia_siz);
+   /* Write the new directory entry. */
+   HOSTMEMORY_BEGIN {
+    error = blkdev_writeall(dst_dir->i_super->sb_blkdev,
+                            result_node->f_idata.i_pos.fp_headpos+
+                            offsetof(file_t,f_ctime),
+                           &buf,sizeof(buf));
+   }
+   HOSTMEMORY_END;
+   if (E_ISERR(error)) goto err_delete_dst;
+ }
+ /* All right. The target directory now contains the new file entry.
+  * >> Now all that's left is to delete the old one from the old directory.
+  * NOTE: At this point we try not to fail anymore as once we unlock
+  *       the new directory, we allow anyone to access the file there.
+  *    >> So with that in mind, try not to be interrupted when we're
+  *       deleting the file's old directory entry. */
+ task_nointr();
+ if (dst_dir != src_dir) {
+  /* Switch locks to acquire write-access to the old directory. */
+  rwlock_endwrite(&dst_dir->i_data->i_dirlock);
+  rwlock_write(&src_dir->i_data->i_dirlock);
+ }
+ /* Remove the source node from its old directory. */
+#ifdef FAT16_ROOT
+ fat16_root_rment_unlocked(src_dir,container_of(src_node,struct fatnode,f_inode));
+#else
+ fat_rment_unlocked(src_dir,container_of(src_node,struct fatnode,f_inode));
+#endif
+ task_endnointr();
+ rwlock_endwrite(&src_dir->i_data->i_dirlock);
+end2: rwlock_endread(&src_node->i_attr_lock);
+end:  return (REF struct inode *)result_node;
+err_delete_dst:
+ task_nointr();
+#ifdef FAT16_ROOT
+ fat16_root_rment_unlocked(dst_dir,result_node);
+#else
+ fat_rment_unlocked(dst_dir,result_node);
+#endif
+ task_endnointr();
+err_unlock_dst:
+ rwlock_endwrite(&dst_dir->i_data->i_dirlock);
+ goto end2;
+}
+
+
 #ifdef FAT16_ROOT
 #undef FAT16_ROOT
 #endif

@@ -307,6 +307,8 @@ struct inodeops {
   * @assume(S_ISDIR(src_dir->i_attr.ia_mode));
   * @assume(S_ISDIR(dst_dir->i_attr.ia_mode));
   * @assume(dst_dir->i_super == src_dir->i_super);
+  * @assume(src_node != src_dir && src_node != dst_dir);
+  * @assume(GET_PARENT_DIRECTORY_NODE(src_node) == src_dir);
   * @return: * :         A reference to the INode now apart of 'dst_dir'
   *                     (If the filesystem supports hardlinks, this is likely to be 'src_node')
   * @return: E_ISERR(*): An error occurred. */

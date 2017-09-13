@@ -145,6 +145,7 @@ PRIVATE REF struct inode *KCALL fat_lookup(struct inode *__restrict dir_node, st
 PRIVATE REF struct inode *KCALL fat_mkreg(struct inode *__restrict dir_node, struct dentry *__restrict path, struct iattr const *__restrict result_attr, iattrset_t mode);
 PRIVATE REF struct inode *KCALL fat_symlink(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, USER char const *target_text, struct iattr const *__restrict result_attr);
 PRIVATE REF struct inode *KCALL fat_mkdir(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, struct iattr const *__restrict result_attr);
+PRIVATE REF struct inode *KCALL fat_rename(struct inode *__restrict dst_dir, struct dentry *__restrict dst_path, struct inode *__restrict src_dir, struct dentry *__restrict src_path, struct inode *__restrict src_node);
 PRIVATE errno_t KCALL fat_remove(struct inode *__restrict dir_node, struct dentry *__restrict file_path, struct inode *__restrict file_node);
 PRIVATE errno_t KCALL fat_stat_dir(struct inode *__restrict ino, struct stat64 *__restrict statbuf);
 
@@ -159,6 +160,7 @@ PRIVATE REF struct inode *KCALL fat16_root_lookup(struct inode *__restrict dir_n
 PRIVATE REF struct inode *KCALL fat16_root_mkreg(struct inode *__restrict dir_node, struct dentry *__restrict path, struct iattr const *__restrict result_attr, iattrset_t mode);
 PRIVATE REF struct inode *KCALL fat16_root_symlink(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, USER char const *target_text, struct iattr const *__restrict result_attr);
 PRIVATE REF struct inode *KCALL fat16_root_mkdir(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, struct iattr const *__restrict result_attr);
+PRIVATE REF struct inode *KCALL fat16_root_rename(struct inode *__restrict dst_dir, struct dentry *__restrict dst_path, struct inode *__restrict src_dir, struct dentry *__restrict src_path, struct inode *__restrict src_node);
 PRIVATE errno_t KCALL fat16_root_remove(struct inode *__restrict dir_node, struct dentry *__restrict file_path, struct inode *__restrict file_node);
 
 
@@ -333,8 +335,8 @@ PRIVATE struct inodeops const fatops_dir = {
     .ino_symlink = &fat_symlink,
     .ino_mkdir   = &fat_mkdir,
     .ino_remove  = &fat_remove,
+    .ino_rename  = &fat_rename,
     .ino_stat    = &fat_stat_dir,
-    /* TODO: rename() */
 };
 PRIVATE struct inodeops const fatops_root_16 = {
     .f_read      = &fat16_root_fread,
@@ -349,8 +351,8 @@ PRIVATE struct inodeops const fatops_root_16 = {
     .ino_symlink = &fat16_root_symlink,
     .ino_mkdir   = &fat16_root_mkdir,
     .ino_remove  = &fat16_root_remove,
+    .ino_rename  = &fat16_root_rename,
     .ino_stat    = &fat_stat_dir,
-    /* TODO: rename() */
 };
 PRIVATE struct inodeops const fatops_root_32 = {
     .f_read      = &fat_fread,
@@ -365,8 +367,8 @@ PRIVATE struct inodeops const fatops_root_32 = {
     .ino_symlink = &fat_symlink,
     .ino_mkdir   = &fat_mkdir,
     .ino_remove  = &fat_remove,
+    .ino_rename  = &fat_rename,
     .ino_stat    = &fat_stat_dir,
-    /* TODO: rename() */
 };
 PRIVATE struct superblockops const fatops_super = {
     .sb_sync = &fat_fssync,
@@ -2194,7 +2196,6 @@ err:
  rwlock_endwrite(&dir_node->i_data->i_dirlock);
  return E_PTR(temp);
 }
-
 
 PRIVATE errno_t KCALL
 fat_fssync(struct superblock *__restrict sb) {

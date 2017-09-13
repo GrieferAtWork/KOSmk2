@@ -83,15 +83,25 @@ struct PACKED bd_13h48h_buffer {
                         *  which may be used for subsequent interrupt 13h Extension calls (if supported). */
 };
 
+#if 1
+#include <sched/cpu.h>
+#define LOG_ACCESS(self,block,buf,n_blocks,write) \
+{ if (write) { \
+      syslog(LOG_FS|LOG_DEBUG,"BIOS_WRITE(%I64u,%p,%Iu)\n",block,buf,n_blocks); \
+      /*__asm__("int $3"); PREEMPTION_FREEZE();*/ \
+  } \
+}
+#else
+#define LOG_ACCESS(self,block,buf,n_blocks,write) { }
+#endif
+
 PRIVATE ssize_t KCALL
 bd_access_chs(bd_t *__restrict self, blkaddr_t block,
               USER void *__restrict buf, size_t n_blocks, bool write) {
  ssize_t result;
  CHECK_HOST_DOBJ(self);
  if unlikely(!n_blocks) return 0;
-#if 1
- if (write) syslog(LOG_FS|LOG_DEBUG,"BIOS_WRITE(%I64u,%p,%Iu)\n",block,buf,n_blocks);
-#endif
+ LOG_ACCESS(self,block,buf,n_blocks,write);
  result = (ssize_t)rwlock_write(&bios_lock);
  if (E_ISERR(result)) goto end;
  result = 0;
@@ -162,9 +172,7 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
  PHYS void *data_buffer_p;
  CHECK_HOST_DOBJ(self);
  if unlikely(!n_blocks) return 0;
-#if 1
- if (write) syslog(LOG_FS|LOG_DEBUG,"BIOS_WRITE(%I64u,%p,%Iu)\n",block,buf,n_blocks);
-#endif
+ LOG_ACCESS(self,block,buf,n_blocks,write);
  result = (ssize_t)rwlock_write(&bios_lock);
  if (E_ISERR(result)) goto end;
  result      = 0;

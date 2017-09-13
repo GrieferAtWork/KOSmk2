@@ -81,7 +81,7 @@ __assertion_print(char const *data, size_t datalen,
                   void *UNUSED(ignored_closure)) {
 #if defined(__KERNEL__) && 1
  ssize_t result;
- TTY_PUSHCOLOR(vtty_entry_color(VTTY_COLOR_LIGHT_RED,
+ TTY_PUSHCOLOR(vtty_entry_color(VTTY_COLOR_WHITE,
                                 VTTY_COLOR_DARK_GREY));
  result = tty_printer(data,datalen,NULL);
  TTY_POPCOLOR();

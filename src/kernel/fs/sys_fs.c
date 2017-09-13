@@ -958,7 +958,7 @@ scan_again:
    if (part_i&mask) mode |= POLLIN|POLLPRI;
    if (part_o&mask) mode |= POLLOUT;
    if (part_e&mask) mode |= POLLERR;
-   assert(mode);
+   if (!mode) continue;
    fp = fdman_get_file(fdm,fd_no);
    if (E_ISERR(fp)) { result = E_GTERR(fp); goto done; }
    mode = file_poll(fp,mode);

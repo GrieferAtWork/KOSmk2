@@ -218,9 +218,9 @@ public:
 #define __HOST         /* Annotation for kernel-space memory (default within kernel). */
 #define __VIRT         /* Annotation for virtual memory (default). */
 #define __PHYS         /* Annotation for physical memory. */
-#define __CRIT         /* Annotation for function that require 'TASK_ISSAFE()' (When called from within the kernel). */
-#define __SAFE         /* Annotation for function that require 'TASK_ISSAFE()' (When called from within the kernel). */
-#define __NOMP         /* Annotation for function that are not thread-safe and require caller-synchronization. */
+#define __CRIT         /* Annotation for functions that require 'TASK_ISCRIT()' (When called from within the kernel). */
+#define __SAFE         /* Annotation for functions that require 'TASK_ISSAFE()' (When called from within the kernel). */
+#define __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */
 #define __PERCPU       /* Annotation for variables that must be accessed using the per-cpu API. */
 #define __ASMCALL      /* Annotation for functions that are implemented in assembly and require a custom calling convention. */
 
