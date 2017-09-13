@@ -185,8 +185,10 @@ FUNDEF void KCALL blkdev_fini(struct blkdev *__restrict self);
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: -EFAULT:    A faulty buffer pointer was provided.
  * @return: E_ISERR(*): Failed to read/write data for some reason. */
-LOCAL ssize_t KCALL blkdev_raw_read(struct blkdev *__restrict self, blkaddr_t block, USER void *buf, size_t n_blocks);
-LOCAL ssize_t KCALL blkdev_raw_write(struct blkdev *__restrict self, blkaddr_t block, USER void const *buf, size_t n_blocks);
+LOCAL ssize_t KCALL blkdev_raw_read(struct blkdev *__restrict self, blkaddr_t block,
+                                    USER void *buf, size_t n_blocks);
+LOCAL ssize_t KCALL blkdev_raw_write(struct blkdev *__restrict self, blkaddr_t block,
+                                     USER void const *buf, size_t n_blocks);
 
 /* Read/write low-level data to/from a block device.
  * NOTE: Unlike 'blkdev_raw_(read|write)', these functions control byte-wise,
@@ -196,7 +198,6 @@ LOCAL ssize_t KCALL blkdev_raw_write(struct blkdev *__restrict self, blkaddr_t b
  * @return: -EFAULT:    A faulty buffer pointer was provided.
  * @return: E_ISERR(*): Failed to read/write data for some reason. */
 FUNDEF ssize_t KCALL blkdev_read(struct blkdev *__restrict self, pos_t offset, USER void *buf, size_t bufsize);
-FUNDEF ssize_t KCALL blkdev_read2(struct blkdev *__restrict self, pos_t offset, USER void *buf, size_t bufsize);
 FUNDEF ssize_t KCALL blkdev_write(struct blkdev *__restrict self, pos_t offset, USER void const *buf, size_t bufsize);
 LOCAL errno_t KCALL blkdev_readall(struct blkdev *__restrict self, pos_t offset, USER void *buf, size_t bufsize);
 LOCAL errno_t KCALL blkdev_writeall(struct blkdev *__restrict self, pos_t offset, USER void const *buf, size_t bufsize);

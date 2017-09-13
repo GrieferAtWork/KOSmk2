@@ -325,7 +325,10 @@ blkdev_flush(struct blkdev *__restrict self) {
     if (E_ISERR(error)) break;
     has_hwlock = true;
    }
-   error = (*self->bd_write)(self,iter->bb_id,iter->bb_data,1);
+   HOSTMEMORY_BEGIN {
+    error = (*self->bd_write)(self,iter->bb_id,iter->bb_data,1);
+   }
+   HOSTMEMORY_END;
    if unlikely(!error) error = -ENOSPC;
    if (E_ISERR(error)) break;
    iter->bb_flag &= ~(BLOCKBUF_FLAG_CHNG);

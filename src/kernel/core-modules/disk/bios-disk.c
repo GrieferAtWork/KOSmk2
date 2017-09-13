@@ -43,8 +43,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/mman.h>
-
-#define READONLY 0 /* Ignore attempts of writing to disk. */
+#include <hybrid/minmax.h>
 
 DECL_BEGIN
 
@@ -89,9 +88,6 @@ bd_access_chs(bd_t *__restrict self, blkaddr_t block,
               USER void *__restrict buf, size_t n_blocks, bool write) {
  ssize_t result;
  CHECK_HOST_DOBJ(self);
-#if READONLY
- if (write) return n_blocks;
-#endif
  if unlikely(!n_blocks) return 0;
 #if 1
  if (write) syslog(LOG_FS|LOG_DEBUG,"BIOS_WRITE(%I64u,%p,%Iu)\n",block,buf,n_blocks);
@@ -165,9 +161,6 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
  VIRT void *data_buffer;
  PHYS void *data_buffer_p;
  CHECK_HOST_DOBJ(self);
-#if READONLY
- if (write) return n_blocks;
-#endif
  if unlikely(!n_blocks) return 0;
 #if 1
  if (write) syslog(LOG_FS|LOG_DEBUG,"BIOS_WRITE(%I64u,%p,%Iu)\n",block,buf,n_blocks);
@@ -219,14 +212,16 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
    break;
   }
   if (!buffer->b_seccnt) break; /* Stop if nothing was read/written. */
+  if (max_sectors > buffer->b_seccnt)
+      max_sectors = buffer->b_seccnt;
 
   /* Copy data to the user-buffer. */
-  copy_size = buffer->b_seccnt*self->b_device.bd_blocksize;
+  copy_size = max_sectors*self->b_device.bd_blocksize;
   if (!write && copy_to_user(buf,data_buffer,copy_size))
   { result = -EFAULT; break; }
-  n_blocks           -= buffer->b_seccnt;
-  result             += buffer->b_seccnt;
-  block              += buffer->b_seccnt;
+  n_blocks           -= max_sectors;
+  result             += max_sectors;
+  block              += max_sectors;
   *(uintptr_t *)&buf += copy_size;
  }
  rwlock_endwrite(&bios_lock);

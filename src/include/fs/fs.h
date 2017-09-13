@@ -37,6 +37,23 @@ struct dentry_walker;
 struct device;
 struct inode;
 
+/* Kernel option 'autoflush=0/1': When enabled (!= 0), automatically
+ * flush filesystems and block-devices after write-operations have
+ * been performed (such as creating/deleting a file/dir/link, or
+ * closing a file after some data has been written to it).
+ * >> While this increases latency, as well as the amount ot data
+ *    written to some storage device over time, it does greatly
+ *    reduce the risk of data corruption or loss due to a system
+ *    power outage, or simply unplugging some removable device
+ *    without properly unmounting/flushing it.
+ * NOTE: This option is enabled by default.
+ * NOTE: Implementers of filesystems may ignore this flag. - The
+ *       filesystem core API will automatically determine when
+ *       changes (may) have been performed and will instigate
+ *       flush operations when it deems them necessary. */
+DATDEF __BOOL fs_autoflush;
+
+
 /* Opens a file, given its relative path name.
  * @return: * :         A new reference to a 'file' object.
  * @return: -ENOENT:    The file itself (when 'O_CREAT' isn't set), or a part of the file path doesn't exists.

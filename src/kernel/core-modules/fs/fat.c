@@ -183,7 +183,9 @@ fat16_root_rment_unlocked(struct inode *__restrict dir_node,
                           struct fatnode *__restrict file_node);
 
 /* Check if a given directory 'node' is empty.
- * Return ONE(1) if it is, ZERO(0) if it isn't, or E_ISERR(*) on error. */
+ * @return: -EOK:       The directory is empty.
+ * @return: -ENOTEMPTY: The directory isn't empty.
+ * @return: E_ISERR(*): The check failed for some reason. */
 PRIVATE errno_t KCALL fat_is_empty_directory(fat_t *__restrict fs, struct fatnode *__restrict node);
 
 /* Truncate (clear) a given FAT INode, as is done when 'O_TRUNC' is passed to 'open()'. */
@@ -254,7 +256,7 @@ PRIVATE void KCALL trimspecstring(char *__restrict buf, size_t size);
 /* Support cygwin-style symbolic links as an extension, thus kind-of
  * cheating the system a bit by getting symlinks without a filesystem
  * actually designed to support them... */
-PRIVATE bool support_cygwin_symlinks = 1;
+PRIVATE bool support_cygwin_symlinks = true;
 DEFINE_EARLY_SETUP_VAR("fat-cygwin-symlinks",support_cygwin_symlinks);
 PRIVATE byte_t const symlnk_magic[] = {'!','<','s','y','m','l','i','n','k','>',0xff,0xfe};
 
@@ -1655,6 +1657,7 @@ PRIVATE u8 KCALL fat_LFNchksum(char const *short_name) {
  for (; iter != end; ++iter) result = ((result & 1) << 7) + (result >> 1) + *iter;
  return result;
 }
+
 /* To-be used in conjunction with 'fat_make8dot3()', fill in
  * 'f' as the 'number'th' LFN entry for the given filename 'name'.
  * WARNING: The caller must not call this function when 'fat_make8dot3()'
@@ -1706,7 +1709,9 @@ fat_rment_unlocked(struct inode *__restrict dir_node,
  fat_t *fs = container_of(dir_node->i_super,fat_t,f_super);
  assert(rwlock_writing(&dir_node->i_data->i_dirlock));
  memset(&empty_file,0,sizeof(file_t));
+#if MARKER_UNUSED != 0
  empty_file.f_marker = MARKER_UNUSED;
+#endif
  HOSTMEMORY_BEGIN {
 load_cluster_end:
   assert(name_cluster < fs->f_cluster_eof);
@@ -1737,6 +1742,10 @@ fat16_root_rment_unlocked(struct inode *__restrict dir_node,
  file_t empty_file; errno_t temp = -EOK;
  fat_t *fs = container_of(dir_node,fat_t,f_super.sb_root);
  pos_t iter,last;
+ memset(&empty_file,0,sizeof(file_t));
+#if MARKER_UNUSED != 0
+ empty_file.f_marker = MARKER_UNUSED;
+#endif
  /* Very simple: All we have to do, is to mark the directory entry as unused. */
  assert(rwlock_writing(&dir_node->i_data->i_dirlock));
  iter = file_node->f_idata.i_pos.fp_namepos;
@@ -1746,7 +1755,7 @@ fat16_root_rment_unlocked(struct inode *__restrict dir_node,
    temp = blkdev_writeall(fs->f_super.sb_blkdev,iter,
                           &empty_file,sizeof(file_t));
    if (E_ISERR(temp)) break;
-  } while ((iter += sizeof(file_t)) < last);
+  } while ((iter += sizeof(file_t)) <= last);
  }
  HOSTMEMORY_END;
  return temp;
@@ -1785,36 +1794,57 @@ fat_is_empty_directory(fat_t *__restrict fs,
       memcmp(fp.f_nameext,fat_newdir_template[1].f_nameext,sizeof(fp.f_nameext)) == 0))
       continue;
   /* Not empty! */
-  return 0;
+  return -ENOTEMPTY;
  }
- return 1;
+ return -EOK;
 }
 
 PRIVATE errno_t KCALL
 fat_remove(struct inode *__restrict dir_node,
            struct dentry *__restrict file_path,
            struct inode *__restrict file_node) {
+ errno_t error;
+ error = rwlock_write(&dir_node->i_data->i_dirlock);
+ if (E_ISERR(error)) return error;
  if (INODE_ISDIR(file_node)) {
-  errno_t temp; /* Make sure that a directory is empty before removing it. */
-  temp = fat_is_empty_directory(container_of(dir_node->i_super,fat_t,f_super),
-                                container_of(file_node,struct fatnode,f_inode));
-  if (E_ISERR(temp)) return temp;
-  if (temp == 0) return -ENOTEMPTY;
+  /* Make sure that a directory is empty before removing it. */
+  error = rwlock_write(&container_of(file_node,struct fatnode,f_inode)->f_idata.i_dirlock);
+  if (E_ISERR(error)) goto end;
+  error = fat_is_empty_directory(container_of(dir_node->i_super,fat_t,f_super),
+                                 container_of(file_node,struct fatnode,f_inode));
+  if (E_ISOK(error))
+      error = fat_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
+  rwlock_endwrite(&container_of(file_node,struct fatnode,f_inode)->f_idata.i_dirlock);
+ } else {
+  error = fat_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
  }
- return fat_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
+end:
+ rwlock_endwrite(&dir_node->i_data->i_dirlock);
+ return error;
 }
 PRIVATE errno_t KCALL
 fat16_root_remove(struct inode *__restrict dir_node,
-                  struct dentry *__restrict UNUSED(file_path),
+                  struct dentry *__restrict /*UNUSED*/(file_path),
                   struct inode *__restrict file_node) {
+ errno_t error;
+ assert(INODE_ISSUPERBLOCK(dir_node));
+ error = rwlock_write(&container_of(dir_node,fat_t,f_super.sb_root)->f_idata.i_dirlock);
+ if (E_ISERR(error)) return error;
  if (INODE_ISDIR(file_node)) {
-  errno_t temp; /* Make sure that a directory is empty before removing it. */
-  temp = fat_is_empty_directory(container_of(dir_node->i_super,fat_t,f_super),
-                                container_of(file_node,struct fatnode,f_inode));
-  if (E_ISERR(temp)) return temp;
-  if (temp == 0) return -ENOTEMPTY;
+  /* Make sure that a directory is empty before removing it. */
+  error = rwlock_write(&container_of(file_node,struct fatnode,f_inode)->f_idata.i_dirlock);
+  if (E_ISERR(error)) goto end;
+  error = fat_is_empty_directory(container_of(dir_node,fat_t,f_super.sb_root),
+                                 container_of(file_node,struct fatnode,f_inode));
+  if (E_ISOK(error))
+      error = fat16_root_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
+  rwlock_endwrite(&container_of(file_node,struct fatnode,f_inode)->f_idata.i_dirlock);
+ } else {
+  error = fat16_root_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
  }
- return fat16_root_rment_unlocked(dir_node,container_of(file_node,struct fatnode,f_inode));
+end:
+ rwlock_endwrite(&container_of(dir_node,fat_t,f_super.sb_root)->f_idata.i_dirlock);
+ return error;
 }
 
 

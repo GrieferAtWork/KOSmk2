@@ -83,10 +83,8 @@ file_setup(struct file *__restrict self,
  atomic_rwlock_endwrite(&node->i_file.i_files_lock);
 }
 
-/* Flush the associated INode and superblock
- * when closing a file that was written to. */
-PRIVATE int opt_flush_fs_on_close = 1;
-DEFINE_EARLY_SETUP_VAR("flush-fs-on-close",opt_flush_fs_on_close);
+INTDEF void KCALL
+superblock_autoflush(struct superblock *__restrict self);
 
 PUBLIC void KCALL
 file_destroy(struct file *__restrict self) {
@@ -102,13 +100,9 @@ file_destroy(struct file *__restrict self) {
  if (ino->i_ops->ino_fclose)
    (*ino->i_ops->ino_fclose)(ino,self);
 
- if (self->f_flag&FILE_FLAG_DIDWRITE &&
-     opt_flush_fs_on_close) {
-  /* Flush the file's INode and superblock. */
-  inode_flushattr(self->f_node);
-  /* XXX: Maybe not flush everything? */
-  superblock_flush(self->f_node->i_super);
- }
+ /* XXX: Maybe not flush everything? */
+ if (fs_autoflush && self->f_flag&FILE_FLAG_DIDWRITE)
+     superblock_autoflush(self->f_node->i_super);
 
  /* Remove the file from the list of open files. */
  atomic_rwlock_write(&ino->i_file.i_files_lock);

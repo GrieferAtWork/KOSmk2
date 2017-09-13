@@ -167,7 +167,7 @@ PUBLIC int (LIBCCALL symlinkat)(char const *from, int tofd, char const *to) { re
 PUBLIC int (LIBCCALL unlinkat)(int fd, char const *name, int flag) { return FORWARD_SYSTEM_ERROR(sys_unlinkat(fd,name,flag)); }
 PUBLIC int (LIBCCALL renameat)(int oldfd, char const *old, int newfd, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_renameat(oldfd,old,newfd,new_)); }
 PUBLIC ssize_t (LIBCCALL readlinkat)(int fd, char const *__restrict path, char *__restrict buf, size_t len) { return FORWARD_SYSTEM_VALUE(sys_readlinkat(fd,path,buf,len)); }
-PUBLIC int (LIBCCALL removeat)(int fd, char const *filename) { return unlinkat(fd,filename,AT_SYMLINK_FOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
+PUBLIC int (LIBCCALL removeat)(int fd, char const *filename) { return unlinkat(fd,filename,AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
 PUBLIC int (LIBCCALL remove)(char const *filename) { return removeat(AT_FDCWD,filename); }
 PUBLIC int (LIBCCALL rename)(char const *old, char const *new_) { return renameat(AT_FDCWD,old,AT_FDCWD,new_); }
 PUBLIC pid_t (LIBCCALL fork)(void) { return FORWARD_SYSTEM_VALUE(sys_fork()); }
@@ -343,8 +343,8 @@ PUBLIC int (LIBCCALL execvp)(char const *file, char *const argv[]) { return exec
 PUBLIC int (LIBCCALL link)(char const *from, char const *to) { return linkat(AT_FDCWD,from,AT_FDCWD,to,AT_SYMLINK_FOLLOW); }
 PUBLIC int (LIBCCALL symlink)(char const *from, char const *to) { return symlinkat(from,AT_FDCWD,to); }
 PUBLIC ssize_t (LIBCCALL readlink)(char const *__restrict path, char *__restrict buf, size_t len) { return readlinkat(AT_FDCWD,path,buf,len); }
-PUBLIC int (LIBCCALL unlink)(char const *name) { return unlinkat(AT_FDCWD,name,AT_REMOVEREG); }
-PUBLIC int (LIBCCALL rmdir)(char const *path) { return unlinkat(AT_FDCWD,path,AT_REMOVEDIR); }
+PUBLIC int (LIBCCALL unlink)(char const *name) { return unlinkat(AT_FDCWD,name,AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
+PUBLIC int (LIBCCALL rmdir)(char const *path) { return unlinkat(AT_FDCWD,path,AT_SYMLINK_FOLLOW|AT_REMOVEDIR); }
 PUBLIC int (LIBCCALL eaccess)(char const *name, int type) { return faccessat(AT_FDCWD,name,type,AT_EACCESS); }
 DEFINE_PUBLIC_ALIAS(eaccess,euidaccess);
 PUBLIC int (LIBCCALL mkdir)(char const *path, mode_t mode) { return mkdirat(AT_FDCWD,path,mode); }

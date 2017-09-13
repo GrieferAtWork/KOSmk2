@@ -85,6 +85,20 @@ LOCAL REF struct dentry *KCALL dentry_addsub_unlocked(struct dentry *__restrict 
 PRIVATE REF struct dentry *KCALL dentry_walklnk(struct dentry *__restrict link_dir, struct dentry_walker *__restrict walker, struct inode *__restrict link_node);
 
 
+/* Enable this feature by default. */
+PUBLIC bool fs_autoflush = true;
+DEFINE_EARLY_SETUP_VAR("autoflush",fs_autoflush);
+INTERN void KCALL
+superblock_autoflush(struct superblock *__restrict self) {
+ errno_t error = superblock_flush(self);
+ if (E_ISERR(error)) {
+  syslog(LOG_FS|LOG_ERROR,
+         "[FS] Failed to auto-flush superblock: %[errno]\n",
+         -error);
+ }
+}
+
+
 INTERN ATTR_FREETEXT
 void KCALL mount_root_filesystem(void) {
  struct superblock *rootfs;
@@ -466,6 +480,7 @@ inode_mirror_diskattr_unlocked(struct inode *__restrict self,
    * within the associated superblock. */
   LIST_UNBIND(self,i_attr_chng);
   atomic_rwlock_endwrite(&sb->sb_achng_lock);
+  if (fs_autoflush) superblock_autoflush(sb);
  }
 end:
  return error;
@@ -959,6 +974,7 @@ dentry_open(struct dentry *__restrict dir_ent,
  REF struct inode *ino,*res_ino;
  struct dentry *res_entry;
  bool has_write_lock = false;
+ bool must_flush = false;
  CHECK_HOST_DOBJ(dir_ent);
  CHECK_HOST_TOBJ(ent_name);
  CHECK_HOST_TOBJ(walker);
@@ -1033,6 +1049,7 @@ def_name:default:
     if (!(oflags&O_EXCL)) attr_mode |= IATTR_EXISTS;
     if (oflags&O_TRUNC)   attr_mode |= IATTR_TRUNC;
     res_ino = (*ino->i_ops->ino_mkreg)(ino,res_entry,attr,attr_mode);
+    must_flush = true;
     assert(res_ino);
    }
   } else {
@@ -1074,6 +1091,8 @@ drop_inode:
 got_res_ino:
  CHECK_HOST_DOBJ(res_entry);
  CHECK_HOST_DOBJ(res_ino);
+ if (must_flush && fs_autoflush)
+     superblock_autoflush(res_ino->i_super);
  /* Check for proper permissions in the result INode. */
  if (INODE_ISCLOSING(res_ino))
   result = E_PTR(-EBUSY);
@@ -1271,6 +1290,8 @@ wend:
   assert(!result->d_inode);
   result->d_inode = res_ino;
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
+  if (fs_autoflush)
+      superblock_autoflush(ino->i_super);
  } else {
   /* Delete the miss-leading directory entry. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1399,6 +1420,8 @@ wend:
   result->d_inode = res_ino; /* Inherit reference. */
   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
+  if (fs_autoflush)
+      superblock_autoflush(ino->i_super);
  } else {
   /* Delete the directory entry after the operator failed. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1475,7 +1498,7 @@ dentry_setattr(struct dentry *__restrict dir_ent,
  else {
   result = inode_mayaccess(ino,access,R_OK);
   if (E_ISOK(result))
-     result = inode_setattr(ino,attr,valid);
+      result = inode_setattr(ino,attr,valid);
   INODE_DECREF(ino);
  }
  return result;
@@ -1556,6 +1579,8 @@ wend:
   result->d_inode = dst_node;
   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,dst_node);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
+  if (fs_autoflush)
+      superblock_autoflush(ino->i_super);
  } else {
   /* Delete the miss-leading directory entry. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1625,6 +1650,8 @@ wend:
   result->d_inode = res_ino; /* Inherit reference. */
   DENTRY_ADDSUB_FINALIZE(dir_ent,ino,result,res_ino);
   atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
+  if (fs_autoflush)
+      superblock_autoflush(ino->i_super);
  } else {
   /* Delete the miss-leading directory entry. */
   dentry_delsub_unlocked(dir_ent,result);
@@ -1715,6 +1742,8 @@ samedir_wend:
    atomic_rwlock_endwrite(&existing_ent->d_inode_lock);
    /* Drop the reference created above. */
    DENTRY_DECREF(existing_ent);
+   if (fs_autoflush)
+       superblock_autoflush(dstdir_ino->i_super);
   } else {
    /* Delete the miss-leading directory entry. */
    dentry_delsub_unlocked(dst_dir,result);
@@ -1790,6 +1819,8 @@ diffdir_wend2:
    atomic_rwlock_endwrite(&existing_ent->d_inode_lock);
    /* Drop the reference created above. */
    DENTRY_DECREF(existing_ent);
+   if (fs_autoflush)
+       superblock_autoflush(dstdir_ino->i_super);
   } else {
    /* Delete the miss-leading directory entry. */
    dentry_delsub_unlocked(dst_dir,result);
@@ -1949,6 +1980,8 @@ remove_parent:
   } else {
    atomic_rwlock_endwrite(&self->d_inode_lock);
   }
+  if (parent_node && fs_autoflush)
+      superblock_autoflush(parent_node->i_super);
  }
 end3: if (parent_node) INODE_DECREF(parent_node);
 end2: atomic_rwlock_endread(&self->d_subs_lock);
