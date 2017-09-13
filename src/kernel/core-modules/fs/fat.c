@@ -53,6 +53,9 @@
 
 DECL_BEGIN
 
+#define FAT_ISSPACE(c) __isctype((c),(_ISspace|_ISblank|_IScntrl))
+#define LFN_ISTRAIL    FAT_ISSPACE
+
 #if defined(CONFIG_DEBUG) && 0
 #   define FAT_DEBUG(x) x
 #else
@@ -106,12 +109,18 @@ LOCAL void   KCALL filetime_encodetime(filetime_t *__restrict self, time_t tmt);
 #define fat_ctime_decode(t,val) ((val)->tv_sec  = filedate_decodetime((t).fc_date), \
                                  (val)->tv_sec += filetime_decodetime((t).fc_time), \
                                  (val)->tv_nsec = (long)(t).fc_sectenth*(1000000000l/200l))
+#if 0
+#define fat_atime_encode(t,val)  (void)memset(&(t),0,sizeof(t));
+#define fat_mtime_encode(t,val)  (void)memset(&(t),0,sizeof(t));
+#define fat_ctime_encode(t,val)  (void)memset(&(t),0,sizeof(t));
+#else
 #define fat_atime_encode(t,val)   filedate_encodetime(&(t),(val)->tv_sec)
 #define fat_mtime_encode(t,val)  (filedate_encodetime(&(t).fc_date,(val)->tv_sec), \
                                   filetime_encodetime(&(t).fc_time,(val)->tv_sec))
 #define fat_ctime_encode(t,val)  (filedate_encodetime(&(t).fc_date,(val)->tv_sec), \
                                   filetime_encodetime(&(t).fc_time,(val)->tv_sec), \
                                  (t).fc_sectenth = (u8)(((val)->tv_nsec % 1000000000l)/(1000000000l/200l)))
+#endif
 
 /* The fat get/set implementation for different table sizes. */
 PRIVATE sector_t KCALL fat_sec12(fat_t const *__restrict self, fatid_t id);
@@ -268,15 +277,15 @@ PRIVATE ssize_t KCALL fat_readlink(struct inode *__restrict ino, USER char *__re
 
 PRIVATE file_t const fat_newdir_template[3] = {
     [0] = { /* '.' */
-        .f_name    = {[0 ... FAT_NAMEMAX-1] = ' ' },
-        .f_ext     = {[1 ... FAT_EXTMAX-1] = ' ' },
+        .f_name    = {'.', [1 ... FAT_NAMEMAX-1] = ' ' },
+        .f_ext     = {[0 ... FAT_EXTMAX-1] = ' ' },
         .f_attr    = ATTR_DIRECTORY,
         .f_ntflags = NTFLAG_NONE,
         .f_size    = 0,
     },
     [1] = { /* '..' */
-        .f_name    = {'.', [1 ... FAT_NAMEMAX-1] = ' ' },
-        .f_ext     = {[1 ... FAT_EXTMAX-1] = ' ' },
+        .f_name    = {'.','.', [2 ... FAT_NAMEMAX-1] = ' ' },
+        .f_ext     = {[0 ... FAT_EXTMAX-1] = ' ' },
         .f_attr    = ATTR_DIRECTORY,
         .f_ntflags = NTFLAG_NONE,
         .f_size    = 0,
@@ -575,7 +584,7 @@ fat_lookup_memory(struct lookupdata *__restrict data,
    char *filenameiter,filename[FAT_NAMEMAX+1+FAT_EXTMAX];
    memcpy(filename,iter->f_name,FAT_NAMEMAX*sizeof(char));
    filenameiter = filename+FAT_NAMEMAX;
-   while (filenameiter != filename && isspace(filenameiter[-1])) --filenameiter;
+   while (filenameiter != filename && FAT_ISSPACE(filenameiter[-1])) --filenameiter;
    if (iter->f_ntflags&NTFLAG_LOWBASE) {
     char *tempiter;
     for (tempiter = filename; tempiter != filenameiter;
@@ -584,7 +593,7 @@ fat_lookup_memory(struct lookupdata *__restrict data,
    *filenameiter++ = '.';
    memcpy(filenameiter,iter->f_ext,FAT_EXTMAX*sizeof(char));
    filenameiter += FAT_EXTMAX;
-   while (filenameiter != filename && isspace(filenameiter[-1])) --filenameiter;
+   while (filenameiter != filename && FAT_ISSPACE(filenameiter[-1])) --filenameiter;
    if (iter->f_ntflags&NTFLAG_LOWEXT) {
     char *tempiter = filenameiter;
     while (tempiter[-1] != '.') {
@@ -669,7 +678,7 @@ filedate_encodetime(filedate_t *__restrict self, time_t tmt) {
  year = DAYS2YEARS(tmt);
  monthvec = __time_monthstart_yday[ISLEAPYEAR(year)];
  tmt -= YEARS2DAYS(year);
- self->fd_year = year-1980;
+ self->fd_year = year > 1980 ? year-1980 : 0;
  /* Find the appropriate month. */
  for (i = 1; i < 12; ++i) if (monthvec[i] >= tmt) break;
  self->fd_month = i;
@@ -1232,17 +1241,17 @@ fat16_root_fopen(struct inode *__restrict ino,
                  struct dentry *__restrict node_ent,
                  oflag_t oflags) {
 #define FAT   ((fat_t *)ino)
- struct fatfile_root16 *result;
+ REF struct fatfile_root16 *result;
  assert(INODE_ISSUPERBLOCK(ino));
- result = (struct fatfile_root16 *)file_new(sizeof(struct fatfile_root16));
+ result = (REF struct fatfile_root16 *)file_new(sizeof(struct fatfile_root16));
  if unlikely(!result) return E_PTR(-ENOMEM);
  /* Setup the start/end pointers according to FAT specifications. */
  result->f_begin = FAT_SECTORADDR(FAT,FAT->f_idata.i_fat16_root);
  result->f_pos   = result->f_begin;
  result->f_end   = result->f_begin+FAT->f_fat16_rootmax*sizeof(file_t);
  /* Setup the file itself. */
- file_setup((struct file *)result,ino,node_ent,oflags);
- return (struct file *)result;
+ file_setup(&result->f_file,ino,node_ent,oflags);
+ return &result->f_file;
 #undef FAT
 }
 PRIVATE ssize_t KCALL
@@ -1272,20 +1281,20 @@ fat16_root_fread(struct file *__restrict fp,
 PRIVATE ssize_t KCALL
 fat16_root_fwrite(struct file *__restrict fp,
                   USER void const *buf, size_t bufsize) {
- pos_t max_read; ssize_t result; fat_t *fat;
+ pos_t max_write; ssize_t result; fat_t *fat;
  assert(FILE->f_begin <= FILE->f_end);
  if (FILE->f_pos >= FILE->f_end) return 0;
  assert(FILE->f_pos >= FILE->f_begin);
  assert(FILE->f_pos <= FILE->f_end);
  assert(INODE_ISSUPERBLOCK(fp->f_node));
- max_read = FILE->f_end-FILE->f_pos;
- if (max_read > bufsize)
-     max_read = bufsize;
+ max_write = FILE->f_end-FILE->f_pos;
+ if (max_write > bufsize)
+     max_write = bufsize;
  fat = container_of(INODE_TOSUPERBLOCK(fp->f_node),fat_t,f_super);
  result = (ssize_t)rwlock_write(&fat->f_idata.i_dirlock);
  if (E_ISERR(result)) return result;
  result = blkdev_write(fat->f_super.sb_blkdev,
-                       FILE->f_pos,buf,(size_t)max_read);
+                       FILE->f_pos,buf,(size_t)max_write);
  rwlock_endwrite(&fat->f_idata.i_dirlock);
  if (E_ISOK(result)) {
   FILE->f_pos += result;
@@ -1329,7 +1338,7 @@ fat16_root_fpread(struct file *__restrict fp,
  result = (ssize_t)rwlock_read(&fat->f_idata.i_dirlock);
  if (E_ISERR(result)) return result;
  result = blkdev_read(fat->f_super.sb_blkdev,
-                      start_offset,buf,bufsize);
+                      start_offset,buf,max_read);
  rwlock_endread(&fat->f_idata.i_dirlock);
  return result;
 }
@@ -1337,7 +1346,7 @@ PRIVATE ssize_t KCALL
 fat16_root_fpwrite(struct file *__restrict fp,
                    USER void const *buf, size_t bufsize,
                    pos_t pos) {
- pos_t start_offset,max_read;
+ pos_t start_offset,max_write;
  fat_t *fat; ssize_t result;
  assert(FILE->f_begin <= FILE->f_end);
  assert(INODE_ISSUPERBLOCK(fp->f_node));
@@ -1345,14 +1354,14 @@ fat16_root_fpwrite(struct file *__restrict fp,
  if (start_offset < FILE->f_begin ||
      start_offset >= FILE->f_end)
      return 0;
- max_read = (pos_t)(FILE->f_end-start_offset);
- if (max_read > bufsize)
-     max_read = bufsize;
+ max_write = (pos_t)(FILE->f_end-start_offset);
+ if (max_write > bufsize)
+     max_write = bufsize;
  fat = container_of(INODE_TOSUPERBLOCK(fp->f_node),fat_t,f_super);
  result = (ssize_t)rwlock_write(&fat->f_idata.i_dirlock);
  if (E_ISERR(result)) return result;
  result = blkdev_write(fat->f_super.sb_blkdev,
-                       start_offset,buf,bufsize);
+                       start_offset,buf,max_write);
  rwlock_endwrite(&fat->f_idata.i_dirlock);
  return result;
 }
@@ -1545,8 +1554,8 @@ PRIVATE size_t KCALL fat_make8dot3(file_t *__restrict f,
  f->f_ntflags = NTFLAG_NONE;
  name = dname->dn_name,namesize = dname->dn_size;
  /* Strip leading+terminating dots & space. */
- while (namesize && (isspace(*name) || *name == '.')) ++name,--namesize;
- while (namesize && (isspace(name[namesize-1]))) --namesize;
+ while (namesize && (FAT_ISSPACE(*name) || *name == '.')) ++name,--namesize;
+ while (namesize && (FAT_ISSPACE(name[namesize-1]))) --namesize;
  extstart = name+namesize;
  while (extstart != name && (extstart[-1] != '.')) --extstart;
  if (extstart == name) {
@@ -1558,6 +1567,10 @@ PRIVATE size_t KCALL fat_make8dot3(file_t *__restrict f,
   extsize  = (namesize-basesize)-1;
  }
  memset(f->f_nameext,' ',sizeof(f->f_nameext));
+
+ /* Strip space characters before the extension and after the name. */
+ while (namesize && FAT_ISSPACE(name[namesize-1])) ++name,--namesize;
+ while (extsize && FAT_ISSPACE(*extstart)) ++extstart,--extsize;
 
  /* Generate the extension */
  if (extsize) {
@@ -1580,8 +1593,10 @@ PRIVATE size_t KCALL fat_make8dot3(file_t *__restrict f,
   }
  }
 
- if (basesize <= FAT_NAMEMAX &&
-     extsize <= FAT_EXTMAX) {
+ /* Confirm that the name and extension fit DOS8.3 */
+ if (basesize <= FAT_NAMEMAX && extsize <= FAT_EXTMAX &&
+     name == dname->dn_name && name+basesize == extstart-!!extsize &&
+     extstart+extsize == dname->dn_name+dname->dn_size) {
   /* We can generate a (possibly mixed-case) 8.3-compatible filename */
   end = (iter = name)+basesize,dst = f->f_name;
   f->f_ntflags |= NTFLAG_LOWBASE;
@@ -1600,11 +1615,12 @@ PRIVATE size_t KCALL fat_make8dot3(file_t *__restrict f,
    *dst++ = ch;
   }
   /* Fix 0xE5 --> 0x05 (srsly, dos?) */
-  if (((__u8 *)f->f_name)[0] == 0xE5) ((__u8 *)f->f_name)[0] = 0x05;
+  if (((u8 *)f->f_name)[0] == 0xE5) ((u8 *)f->f_name)[0] = 0x05;
   if (has_mixed_case) goto need_lfn;
   result = 0;
  } else {
 need_lfn:
+  f->f_ntflags = NTFLAG_NONE;
   /* Must __MUST__ generate a long filename, also
    * taking the value of 'retry' into consideration.
    * Now for the hard part: The filename itself... */
@@ -1668,11 +1684,15 @@ PRIVATE u8 KCALL fat_LFNchksum(char const *short_name) {
 PRIVATE void KCALL fat_makeLFN(file_t *__restrict f,
                                struct dentryname *__restrict dname,
                                size_t number, u8 chksum) {
- char part[LFN_NAME]; size_t partsize;
+ char part[LFN_NAME]; size_t partsize,offset;
  assertf(number < CEILDIV(dname->dn_size,LFN_NAME),"Invalid LFN index");
- partsize = MIN(dname->dn_size,LFN_NAME);
- memcpy(part,dname->dn_name,partsize*sizeof(char));
- memset(part+partsize,LFN_TRAIL,(LFN_NAME-partsize)*sizeof(char));
+ offset = number*LFN_NAME;
+ partsize = MIN(dname->dn_size-offset,LFN_NAME);
+ memcpy(part,dname->dn_name+offset,partsize*sizeof(char));
+ /* XXX: This is technically flawed: FAT only wants one
+  *      ZERO-character, followed by the rest being 0xffff.
+  *      But putting that aside: WHO CARES! */
+ memset(part+partsize,'\0',(LFN_NAME-partsize)*sizeof(char));
  /* Fill in the LFN name entry. */
  f->lfn_seqnum    = LFN_SEQNUM_MIN+number;
  f->lfn_type      = 0;
@@ -1792,29 +1812,29 @@ fat_is_empty_directory(fat_t *__restrict fs,
   if (fp.f_attr&ATTR_VOLUMEID) continue;
   /* Special case: Ignore '.' and '..' entries. */
   if (fp.f_attr&ATTR_DIRECTORY) {
-   if (isspace(fp.f_ext[0])) {
-    if (isspace(fp.f_name[0])) continue;
+   if (FAT_ISSPACE(fp.f_ext[0])) {
+    if (FAT_ISSPACE(fp.f_name[0])) continue;
     if (fp.f_name[0] == '.') {
-     if (isspace(fp.f_name[1])) continue; /* '.' */
+     if (FAT_ISSPACE(fp.f_name[1])) continue; /* '.' */
      if (fp.f_name[1] == '.' &&
-         isspace(fp.f_name[2])) continue; /* '..' */
+         FAT_ISSPACE(fp.f_name[2])) continue; /* '..' */
     }
    } else if (fp.f_ext[0] == '.') {
-    if (isspace(fp.f_ext[1])) {
-     if (isspace(fp.f_name[0])) continue; /* '.' */
+    if (FAT_ISSPACE(fp.f_ext[1])) {
+     if (FAT_ISSPACE(fp.f_name[0])) continue; /* '.' */
      if (fp.f_name[0] == '.' &&
-         isspace(fp.f_name[1])) continue; /* '..' */
+         FAT_ISSPACE(fp.f_name[1])) continue; /* '..' */
     } else {
-     if (isspace(fp.f_ext[2]) &&
-         isspace(fp.f_name[0])) continue; /* '..' */
+     if (FAT_ISSPACE(fp.f_ext[2]) &&
+         FAT_ISSPACE(fp.f_name[0])) continue; /* '..' */
     }
    }
   }
 
   /* XXX: Can there be invisible, broken entries that manage to get here? */
   /* Not empty! */
-  syslog(LOG_DEBUG,"Directory not empty (still contains %$q)\n",
-         sizeof(fp.f_nameext),fp.f_nameext);
+  /*FAT_DEBUG*/(syslog(LOG_DEBUG,"Directory not empty (still contains %.2I8X - %$q)\n",
+                   fp.f_attr,sizeof(fp.f_nameext),fp.f_nameext));
   return -ENOTEMPTY;
  }
  return -EOK;
@@ -2480,8 +2500,8 @@ fat_delall(fat_t *__restrict self, fatid_t start) {
 
 
 PRIVATE void KCALL trimspecstring(char *__restrict buf, size_t size) {
- while (size && isspace(*buf)) { memmove(buf,buf+1,--size); buf[size] = '\0'; }
- while (size && isspace(buf[size-1])) buf[--size] = '\0';
+ while (size && FAT_ISSPACE(*buf)) { memmove(buf,buf+1,--size); buf[size] = '\0'; }
+ while (size && FAT_ISSPACE(buf[size-1])) buf[--size] = '\0';
 }
 
 

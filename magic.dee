@@ -1236,8 +1236,8 @@ function run_qemu() {
 		(run_mode_remote ? ["-s","-S"] : [])...,
 		(run_mode_usb ? ["-hda","\\\\.\\PhysicalDrive2"]
 		              : ["-kernel",run_kernel_binary,
-		                 "-drive","file="+config_disk_image+",format=raw,index=0,media=disk"/*,
-		                 "-drive","file=disk/kos.img2,format=raw,index=1,media=disk"*/])...,
+		                 "-drive","file="+config_disk_image+",format=raw,index=0,media=disk",
+		                 "-drive","file=disk/kos.img2,format=raw,index=1,media=disk"])...,
 		"-device","isa-debug-exit,iobase=0xf4,iosize=0x04",
 		"-display","gtk",
 		//"-vga","std",

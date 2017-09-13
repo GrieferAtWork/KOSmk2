@@ -115,12 +115,6 @@ union PACKED {struct PACKED {union PACKED {
  le16                  f_clusterlo; /*< Lower 2 bytes of the file's cluster. */
  le32                  f_size;      /*< File size. */
 };struct PACKED { /* Long filename entry. */
-#define LFN_TRAIL            '\xff' /* Trailing character used to fill unused LFN space. */
-#if 1 /* Work around some broken file system interfaces? */
-#   define LFN_ISTRAIL(x) ((x) == LFN_TRAIL || (x) == '\0')
-#else
-#   define LFN_ISTRAIL(x) ((x) == LFN_TRAIL)
-#endif
 #define LFN_SEQNUM_MIN        0x01
 #define LFN_SEQNUM_MAX        0x14
 #define LFN_SEQNUM_MAXCOUNT ((LFN_SEQNUM_MAX-LFN_SEQNUM_MIN)+1)

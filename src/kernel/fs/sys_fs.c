@@ -1306,6 +1306,8 @@ SYSCALL_DEFINE5(mount,USER char const *,dev_name,USER char const *,dir_name,
  }
 
 end: task_endcrit();
+ syslog(LOG_DEBUG,"sys_mount(%q,%q,%q,%I32x,%p) -> %[errno]\n",
+        dev_name,dir_name,type,flags,data,-result);
  return result;
 }
 
