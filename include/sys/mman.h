@@ -266,7 +266,6 @@ __LIBC void *(__LIBCCALL mmap)(void *__addr, size_t __len, int __prot, int __fla
 #ifdef __USE_LARGEFILE64
 __LIBC void *(__LIBCCALL mmap64)(void *__addr, size_t __len, int __prot, int __flags, int __fd, __off64_t __offset);
 #endif
-
 __LIBC int (__LIBCCALL munmap)(void *__addr, size_t __len);
 __LIBC int (__LIBCCALL mprotect)(void *__addr, size_t __len, int __prot);
 __LIBC int (__LIBCCALL msync)(void *__addr, size_t __len, int __flags);

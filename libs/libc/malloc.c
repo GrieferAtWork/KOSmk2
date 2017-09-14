@@ -19,10 +19,6 @@
 #ifndef GUARD_LIBS_LIBC_MALLOC_C
 #define GUARD_LIBS_LIBC_MALLOC_C 1
 
-#define CRTDBG_INIT_MALLOC  0xcc
-#define CRTDBG_INIT_ALLOCA  0xcd
-#define CRTDBG_INIT_ALLOCA4 0xcdcdcdcd
-
 /* NOTE: Dispite all the __KERNEL__ ifdefs, this file isn't actually used by the kernel.
  *       It was used in early private builds, but this was dropped in favor of a dedicated
  *       heap manager capable of so much more functionality, such as 'realign()', and most
@@ -37,6 +33,7 @@
 #undef CONFIG_DEBUG_MALLOC
 #define CONFIG_DEBUG_MALLOC 1
 
+#include "libc.h"
 #include <assert.h>
 #include <stdio.h>
 #include <format-printer.h>

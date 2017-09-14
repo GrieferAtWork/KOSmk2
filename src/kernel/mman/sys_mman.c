@@ -481,6 +481,7 @@ maybe_remap:
   else if (mman_inuse_unlocked(mm,(ppage_t)((uintptr_t)addr+old_len),diff)) {
    /* Check if the memory immediately after is currently in use. */
    if (!(flags&MREMAP_MAYMOVE)) { result = E_PTR(-ENOMEM); goto end2; }
+   /* Find a new suiltable location where we can map memory. */
    result = mman_findspace_unlocked(mm,(ppage_t)((uintptr_t)result+old_len),new_len,
                                     PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
    if unlikely(result == PAGE_ERROR ||
@@ -612,13 +613,22 @@ end: task_endcrit();
  return (syscall_slong_t)result;
 }
 
+SYSCALL_DEFINE3(mprotect,USER void *,start,size_t,len,u32,prot) {
+ struct mman *mm = THIS_MMAN; ssize_t error;
+ if unlikely(!IS_ALIGNED((uintptr_t)start,PAGESIZE))
+    return -EINVAL;
+ len = CEIL_ALIGN(len,PAGESIZE);
+ if unlikely((uintptr_t)start+len < (uintptr_t)start)
+    return -ENOMEM; /* Linux does this too... */
+ task_crit();
+ error = mman_mprotect(mm,(ppage_t)start,len,0,prot & PROT_MASK);
+ task_endcrit();
+ if (E_ISOK(error)) error = -EOK;
+ return error;
+}
+
+
 /*
-#define __NR_swapon 224
-__SYSCALL(__NR_swapon, sys_swapon)
-#define __NR_swapoff 225
-__SYSCALL(__NR_swapoff, sys_swapoff)
-#define __NR_mprotect 226
-__SYSCALL(__NR_mprotect, sys_mprotect)
 #define __NR_msync 227
 __SYSCALL(__NR_msync, sys_msync)
 #define __NR_mlock 228
@@ -631,6 +641,11 @@ __SYSCALL(__NR_mlockall, sys_mlockall)
 __SYSCALL(__NR_munlockall, sys_munlockall)
 #define __NR_mincore 232
 __SYSCALL(__NR_mincore, sys_mincore)
+
+#define __NR_swapon 224
+__SYSCALL(__NR_swapon, sys_swapon)
+#define __NR_swapoff 225
+__SYSCALL(__NR_swapoff, sys_swapoff)
 #define __NR_madvise 233
 __SYSCALL(__NR_madvise, sys_madvise)
 #define __NR_remap_file_pages 234

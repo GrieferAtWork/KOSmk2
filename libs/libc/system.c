@@ -140,6 +140,10 @@ PUBLIC void *(ATTR_CDECL mremap)(void *addr, size_t old_len,
  return result;
 }
 
+PUBLIC int (LIBCCALL mprotect)(void *addr, size_t len, int prot) {
+ return FORWARD_SYSTEM_ERROR(sys_mprotect(addr,len,prot));
+}
+
 
 DECL_END
 
