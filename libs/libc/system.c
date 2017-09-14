@@ -123,6 +123,23 @@ PUBLIC void *(LIBCCALL mmap64)(void *addr, size_t len, int prot,
 #endif
 }
 
+PUBLIC void *(ATTR_CDECL mremap)(void *addr, size_t old_len,
+                                 size_t new_len, int flags, ...) {
+ va_list args; void *result,*newaddr;
+ va_start(args,flags);
+ newaddr = va_arg(args,void *);
+ result  = sys_mremap(addr,old_len,new_len,flags,newaddr);
+ va_end(args);
+ if (E_ISERR(result)) {
+  __set_errno(-E_GTERR(result));
+  result = MAP_FAILED;
+ }
+ TRACE(("mremap(%p,%Iu,%Iu,%x,%p) -> %p\n",
+        addr,old_len,new_len,flags,
+        flags&MAP_FIXED ? newaddr : NULL,result));
+ return result;
+}
+
 
 DECL_END
 

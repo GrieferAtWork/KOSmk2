@@ -1,3 +1,4 @@
+#define _GNU_SOURCE 1
 
 #include <__stdinc.h>
 #include <assert.h>
@@ -41,7 +42,7 @@
  * Instead, dlmalloc is initialized explicitly at the same time that
  * libc and raw, low-level RAM are. */
 #ifndef DLMALLOC_USE_ONETIME_INIT
-#if 1
+#if 0
 #elif defined(__KERNEL__)
 #define DLMALLOC_USE_ONETIME_INIT kernel_initialize_dlmalloc
 #elif 1 /* Use one-time initialization in userland as well. */
@@ -66,7 +67,7 @@
 #ifdef __KERNEL__
 #define HAVE_MREMAP             1
 #else
-#define HAVE_MREMAP             0
+#define HAVE_MREMAP             1
 #endif
 /* NON-STANDARD DLMALLOC SWITCH: Added to increase speed & reduce overhead of dlmalloc. */
 #define NO_FOOTPRINT_LIMIT      1
@@ -3220,8 +3221,8 @@ static void DLCALL post_fork_child(void)  { INITIAL_LOCK(&(gm)->mutex); }
 #ifndef DLMALLOC_USE_ONETIME_INIT
 static int DLCALL init_mparams(void)
 #else
-extern int DLCALL DLMALLOC_USE_ONETIME_INIT(void);
-int DLCALL DLMALLOC_USE_ONETIME_INIT(void)
+INTDEF int DLCALL DLMALLOC_USE_ONETIME_INIT(void);
+INTERN int DLCALL DLMALLOC_USE_ONETIME_INIT(void)
 #endif
 {
 #ifdef NEED_GLOBAL_LOCK_INIT

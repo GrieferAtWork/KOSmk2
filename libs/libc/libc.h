@@ -43,6 +43,14 @@ DECL_BEGIN
 #endif
 #endif
 
+#if defined(CONFIG_DEBUG) && 1
+#include <syslog.h>
+#define __TRACE(...)  syslog(LOG_DEBUG,"[TRACE] " __VA_ARGS__)
+#define TRACE(x)      __TRACE x
+#else
+#define TRACE(x) (void)0
+#endif
+
 
 DECL_END
 

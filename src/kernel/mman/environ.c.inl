@@ -105,7 +105,9 @@ mman_setenviron_unlocked(struct mman *__restrict self,
   * >> If they do (which is the case most often), we can simply inherit the old one. */
  old_environ     = self->m_environ;
  old_total_pages = self->m_envsize;
- has_env         = mman_valid_unlocked(self,old_environ,old_total_pages,PROT_READ|PROT_WRITE);
+ has_env         = mman_valid_unlocked(self,old_environ,old_total_pages,
+                                       PROT_READ|PROT_WRITE,
+                                       PROT_READ|PROT_WRITE);
  if (!has_env) old_total_pages = 0;
 #if 1
  /* Linux also allows NULL for keeping the old environment block (but doing so is an extension). */

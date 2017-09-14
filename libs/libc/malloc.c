@@ -30,6 +30,7 @@
  * HINT: At the time of this being written, there are actually 5 different kernel heaps (Wow...) */
 
 #ifndef __KERNEL__
+#define _GNU_SOURCE 1
 #define _KOS_SOURCE 1
 #define __ptbwalker     ptbwalker
 

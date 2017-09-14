@@ -26,6 +26,9 @@ BEGIN LIBRARY("libc")
 	DEFINE("_TIME64_SOURCE")
 	DEFINE("_FILE_OFFSET_BITS=32")
 	DEFINE("_TIME_T_BITS=32")
+	if (config_debug) {
+		DEFINE("CONFIG_DEBUG=1")
+	}
 
 	/* Linking with -Bsymbolic further speeds up linking,
 	 * because no GOT needs to be used meaning that the 

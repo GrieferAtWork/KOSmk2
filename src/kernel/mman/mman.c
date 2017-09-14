@@ -204,7 +204,7 @@ fail:
 }
 
 PUBLIC struct mregion *KCALL
-mregion_init(struct mregion *self) {
+mregion_cinit(struct mregion *self) {
  if (self) {
   assert(self->mr_refcnt                  == 0);
   assert(self->mr_type                    == MREGION_TYPE_MEM);
@@ -1088,7 +1088,8 @@ mman_inuse_unlocked(struct mman const *__restrict self,
 }
 PUBLIC bool KCALL
 mman_valid_unlocked(struct mman const *__restrict self,
-                    VIRT void *start, size_t n_bytes, u32 prot) {
+                    VIRT void *start, size_t n_bytes,
+                    u32 mask, u32 prot) {
  struct mbranch *iter,*next;
  uintptr_t valid_end;
  CHECK_HOST_DOBJ(self);
@@ -1102,7 +1103,7 @@ mman_valid_unlocked(struct mman const *__restrict self,
  iter = mman_getbranch_unlocked(self,start);
  for (;;) {
   if (!iter) return false;
-  if ((iter->mb_prot&prot) != prot) return false;
+  if ((iter->mb_prot&mask) != prot) return false;
   if (MBRANCH_MAX(iter) >= valid_end) break;
   /* Check for continuous mappings. */
   next = iter->mb_order.le_next;
@@ -1473,11 +1474,9 @@ mman_munmap_unlocked(struct mman *__restrict self,
                      u32 mode, void *tag) {
  errno_t error;
  CHECK_HOST_DOBJ(self);
-#if 1
  assertf((uintptr_t)addr+n_bytes >= (uintptr_t)addr,
          "Overflow in address range %p...%p",
          addr,(uintptr_t)addr+n_bytes-1);
-#endif
  if unlikely(!n_bytes) return 0;
  n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
  if ((error = mman_split_branch_unlocked(self,(VIRT uintptr_t)addr),E_ISERR(error)) ||

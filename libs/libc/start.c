@@ -34,12 +34,15 @@ __LIBC ATTR_NORETURN void (FCALL __entry)(struct envdata *__restrict env, pmain 
 #undef environ
 DEFINE_PUBLIC_ALIAS(__environ,environ);
 
+INTDEF int LIBCCALL user_initialize_dlmalloc(void);
+
 PUBLIC char **environ = NULL;
 PUBLIC struct envdata *appenv;
 PUBLIC ATTR_NORETURN
 void (FCALL __entry)(struct envdata *__restrict env, pmain main) {
  appenv  = env;
  environ = env->e_envp;
+ user_initialize_dlmalloc();
  exit((*main)(env->e_argc,env->e_argv,environ));
 }
 

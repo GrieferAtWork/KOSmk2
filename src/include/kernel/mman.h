@@ -57,7 +57,7 @@ struct mregion_part;
 struct mscatter;
 struct stack;
 struct task;
-union  mregion_init;
+union  mregion_cinit;
 
 ATTR_ALIGNED(ATOMIC_RWPTR_ALIGN)
 struct mfutex {
@@ -244,7 +244,7 @@ typedef errno_t (KCALL *mregion_initfun)(u32 mode, void *closure,
                                      *  The main purpose for this notification is to implement reference
                                      *  counting within using a custom structure allocated in 'closure'. */
 
-union mregion_init {struct{
+union mregion_cinit {struct{
  mregion_initfun                mri_ufunc; /*< [const][1..1][valid_if(MREGION_INIT_ISUSER(:mr_init))] User-defined memory initialization callback. */
  void                          *mri_uclosure; /*< [const][?..?] Closure parameter used when calling 'mri_ufunc' */
  byte_t                         mri_udata[((sizeof(u32)+sizeof(pos_t)+sizeof(size_t))-
@@ -287,7 +287,7 @@ struct mregion {
                                             *  (if set) 'mb_notify' of the associated branch is executed
                                             *   with 'MNOTIFY_GUARD_END'
                                             *   NOTE: Set to 'MREGION_GFUNDS_INFINITE' to provide infinite funding. */
- union mregion_init             mr_setup;  /*< Setup/teardown special-handling information. */
+ union mregion_cinit             mr_setup;  /*< Setup/teardown special-handling information. */
  PAGE_ALIGNED size_t            mr_size;   /*< [const] The size of this region (in bytes). */
  atomic_rwptr_t                 mr_futex;  /*< [TYPE(struct mfutex)] Known futex objects within this region. */
  rwlock_t                       mr_plock;  /*< Lock used for accessing region parts. */
@@ -321,24 +321,24 @@ FUNDEF REF struct mregion *KCALL mregion_new_anon(gfp_t region_gfp, PAGE_ALIGNED
  * NOTE: For the pre-initialization ensured by this, look at 'mregion_setup()'
  * @return: * :   The initial reference to a newly allocated region.
  * @return: NULL: Not enough available memory. */
-#define mregion_new(gfp) mregion_init((struct mregion *)kcalloc(sizeof(struct mregion),gfp))
-FUNDEF struct mregion *KCALL mregion_init(struct mregion *self);
+#define mregion_new(gfp) mregion_cinit((struct mregion *)kcalloc(sizeof(struct mregion),gfp))
+FUNDEF struct mregion *KCALL mregion_cinit(struct mregion *self);
 
 /* Perform final setup on the given memory region,
  * publishing it to the global list of regions and
  * thereby enabling swap control.
  * WARNING: 'Preset' relies on the fact that the pointer passed
- *          to 'mregion_init()' is already zero-initialized.
+ *          to 'mregion_cinit()' is already zero-initialized.
  * The caller must initialize:
- *  - mr_refcnt   (Preset to ONE(1) by mregion_init)
- *  - mr_type     (Preset by 'MREGION_TYPE_MEM' by mregion_init)
- *  - mr_init     (Preset to 'MREGION_INIT_RAND' by mregion_init)
- *  - mr_gfunds   (Preset to ZERO(0) by mregion_init)
- *  - mr_setup    (Preset to all ZEROes by mregion_init)
+ *  - mr_refcnt   (Preset to ONE(1) by mregion_cinit)
+ *  - mr_type     (Preset by 'MREGION_TYPE_MEM' by mregion_cinit)
+ *  - mr_init     (Preset to 'MREGION_INIT_RAND' by mregion_cinit)
+ *  - mr_gfunds   (Preset to ZERO(0) by mregion_cinit)
+ *  - mr_setup    (Preset to all ZEROes by mregion_cinit)
  *  - mr_size
- *  - mr_futex    (Initialized by mregion_init)
- *  - mr_plock    (Initialized by mregion_init)
- *  - mr_parts    (Initialized by mregion_init) */
+ *  - mr_futex    (Initialized by mregion_cinit)
+ *  - mr_plock    (Initialized by mregion_cinit)
+ *  - mr_parts    (Initialized by mregion_cinit) */
 FUNDEF void KCALL mregion_setup(struct mregion *__restrict self);
 
 
@@ -953,10 +953,11 @@ FUNDEF VIRT ppage_t KCALL mman_findspace_unlocked(struct mman *__restrict self,
 FUNDEF WUNUSED bool KCALL mman_inuse_unlocked(struct mman const *__restrict self,
                                               VIRT void *start, size_t n_bytes);
 /* Similar to 'mman_inuse_unlocked()', but only return true
- * when _ALL_ full pages part of the given range are mapped and carry all flags given by 'prot'.
+ * when _ALL_ full pages part of the given range are mapped and carry all flags given by 'prot' and masked by 'mask'.
  * NOTE: Returns false when 'n_bytes' is ZERO(0) or overflows when added to 'start'. */
 FUNDEF WUNUSED bool KCALL mman_valid_unlocked(struct mman const *__restrict self,
-                                              VIRT void *start, size_t n_bytes, u32 prot);
+                                              VIRT void *start, size_t n_bytes,
+                                              u32 mask, u32 prot);
 
 /* Remaps all pages from 'old_addr...+=n_bytes' to 'new_addr'
  * Any existing mappings at 'new_addr' are deleted.

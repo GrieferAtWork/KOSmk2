@@ -253,6 +253,12 @@ union{
 #endif
 
 
+/* Flags for 'mremap'. */
+#ifdef __USE_GNU
+#   define MREMAP_MAYMOVE 1
+#   define MREMAP_FIXED   2
+#endif
+
 
 #ifndef __KERNEL__
 #define MAP_FAILED   ((void *)-1)
@@ -278,7 +284,7 @@ __LIBC int (__LIBCCALL munlockall)(void);
 __LIBC int (__LIBCCALL mincore)(void *__start, size_t __len, unsigned char *__vec);
 #endif
 #ifdef __USE_GNU
-__LIBC void *(__LIBCCALL mremap)(void *__addr, size_t __old_len, size_t __new_len, int __flags, ...);
+__LIBC void *(__ATTR_CDECL mremap)(void *__addr, size_t __old_len, size_t __new_len, int __flags, ...);
 __LIBC int (__LIBCCALL remap_file_pages)(void *__start, size_t __size, int __prot, size_t __pgoff, int __flags);
 #endif
 __LIBC int (__LIBCCALL shm_open)(char const *__name, int __oflag, mode_t __mode);

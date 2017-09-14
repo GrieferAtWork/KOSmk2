@@ -99,7 +99,7 @@ LOCAL SYSCALL1(__errno_t,close,(int,fd));
 LOCAL SYSCALL1(void,exit,(int,exitcode));
 LOCAL SYSCALL1(__errno_t,unshare,(int,flags));
 LOCAL SYSCALL2(ssize_t,munmap,(void *,addr,size_t,len));
-LOCAL SYSCALL5(void *,mremap,(void *,addr,size_t,old_len,size_t,new_len,int,flags,size_t,new_addr));
+LOCAL SYSCALL5(void *,mremap,(VIRT void *,addr,size_t,old_len,size_t,new_len,int,flags,VIRT void *,new_addr));
 LOCAL SYSCALL6(void *,mmap,(void *,addr,size_t,len,int,prot,int,flags,int,fd,syscall_ulong_t,off));
 LOCAL SYSCALL3(ssize_t,read,(int,fd,USER void *,buf,size_t,bufsize));
 LOCAL SYSCALL3(ssize_t,write,(int,fd,USER void const *,buf,size_t,bufsize));

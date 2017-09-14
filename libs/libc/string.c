@@ -903,11 +903,6 @@ PUBLIC dosch_t *(LIBCCALL wcsupr_l)(dosch_t *str, locale_t lc) { NOT_IMPLEMENTED
 #endif /* !CONFIG_LIBC_NO_DOS_EXTENSIONS */
 #endif /* !__KERNEL__ */
 
-
 DECL_END
-
-//#ifndef __INTELLISENSE__
-//#include "strerror.c.inl"
-//#endif
 
 #endif /* !GUARD_LIBS_LIBC_STRING_C */
