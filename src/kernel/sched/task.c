@@ -383,12 +383,8 @@ task_is_terminating(struct task *__restrict t) {
  struct task *leader,*parent;
 
 #ifndef CONFIG_NO_FPU
- if (CPU(fpu_current) == t) {
-  assert(!PREEMPTION_ENABLED());
-  assert(CPU(fpu_current) == t);
-  assert(t->t_mode != TASKMODE_NOTSTARTED);
-  CPU(fpu_current) = NULL;
- }
+ /* Use atomics so as not to disable interrupts. */
+ ATOMIC_CMPXCH(CPU(fpu_current),t,NULL);
  /* Free saved FPU registers. */
  if (t->t_arch.at_fpu != FPUSTATE_NULL)
      FPUSTATE_FREE(t->t_arch.at_fpu);

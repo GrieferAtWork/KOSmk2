@@ -74,6 +74,22 @@ fpu_irq_nm(struct cpustate *__restrict info) {
   CPU(fpu_current) = new_task;
   /* Continue execution normally. */
   return;
+ } else {
+  /* If the task-switched flag is set, unset it because it
+   * is possible that the calling task is the only actually
+   * using the FPU right now. */
+  register u32 temp;
+  __asm__ __volatile__("movl %%cr0, %0\n"
+                       : "=r" (temp)
+                       :
+                       : "memory");
+  if (temp&CR0_TS) {
+   __asm__ __volatile__("movl %0, %%cr0\n"
+                        :
+                        : "r" (temp&~CR0_TS)
+                        : "memory");
+   return;
+  }
  }
 
  /* Fallback: This is something else... */

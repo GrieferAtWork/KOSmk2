@@ -40,10 +40,6 @@ PUBLIC char **environ = NULL;
 PUBLIC struct envdata *appenv;
 PUBLIC ATTR_NORETURN
 void (FCALL __entry)(struct envdata *__restrict env, pmain main) {
- volatile double x = 1.0;
- volatile double y = 2.0;
- volatile double z = x / y;
-
  appenv  = env;
  environ = env->e_envp;
  user_initialize_dlmalloc();
