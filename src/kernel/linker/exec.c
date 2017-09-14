@@ -357,6 +357,40 @@ end:
  return result;
 }
 
+SYSCALL_DEFINE3(xfexecve,int,fd,
+                USER char const *const USER *,argv,
+                USER char const *const USER *,envp) {
+ /* Execute a module from a given file descriptor. */
+ struct dentry *module_dentry;
+ errno_t result; struct module *mod;
+ assert(!task_iscrit());
+ task_crit();
+ module_dentry = fdman_get_dentry(THIS_FDMAN,fd);
+ if (E_ISERR(module_dentry)) {
+  result = E_GTERR(module_dentry);
+  /* Translate the not-a-directory error of 'fdman_get_dentry' to
+   * something that makes more sense (ENOEXEC: You can't execute this one). */
+  if (result == -ENOTDIR)
+      result =  -ENOEXEC;
+  goto end;
+ }
+ mod = module_open_d(module_dentry);
+ DENTRY_DECREF(module_dentry);
+ if (E_ISERR(mod)) { result = E_GTERR(mod); goto end; }
+
+ /* We've got the module. - Time to execute it! */
+ result = user_execve(mod,argv,envp);
+
+ /* At this point, something must have went wrong... */
+ MODULE_DECREF(mod);
+end:
+ task_endcrit();
+ assert(!task_iscrit());
+#if 1
+ syslog(LOG_EXEC|LOG_DEBUG,"[EXEC] exec failed: %[errno]\n",-result);
+#endif
+ return result;
+}
 
 
 DECL_END

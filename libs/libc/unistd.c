@@ -172,6 +172,7 @@ PUBLIC int (LIBCCALL remove)(char const *filename) { return removeat(AT_FDCWD,fi
 PUBLIC int (LIBCCALL rename)(char const *old, char const *new_) { return renameat(AT_FDCWD,old,AT_FDCWD,new_); }
 PUBLIC pid_t (LIBCCALL fork)(void) { return FORWARD_SYSTEM_VALUE(sys_fork()); }
 PUBLIC int (LIBCCALL execve)(char const *path, char *const argv[], char *const envp[]) { return SET_SYSTEM_ERROR(sys_execve(path,(char const *const *)argv,(char const *const *)envp)); }
+PUBLIC int (LIBCCALL fexecve)(int fd, char *const argv[], char *const envp[]) { return SET_SYSTEM_ERROR(sys_xfexecve(fd,(char const *const *)argv,(char const *const *)envp)); }
 
 #if defined(__i386__) && 0 /* TODO: Doesn't seem to work? */
 GLOBAL_ASM(
@@ -245,6 +246,42 @@ L(    ret                                                     )
 L(SYM_END(execlpe)                                            )
 L(.previous                                                   )
 );
+
+GLOBAL_ASM(
+L(.section .text                                              )
+L(PUBLIC_ENTRY(fexecl)                                        )
+L(    leal  8(%esp), %eax                                     )
+L(    pushl %eax     /* argv */                               )
+L(    pushl -4(%eax) /* fd */                                 )
+L(    call  PLT_SYM(fexecv)                                   )
+L(    addl  $8, %esp                                          )
+L(    ret                                                     )
+L(SYM_END(fexecl)                                             )
+L(.previous                                                   )
+);
+
+GLOBAL_ASM(
+L(.section .text                                              )
+L(PUBLIC_ENTRY(fexecle)                                       )
+L(    leal   8(%esp), %eax                                    )
+L(    /* Scan ahead until the first NULL-pointer */           )
+L(1:  addl  $4,       %eax                                    )
+L(    testl $-1,   -4(%eax)                                   )
+L(    jnz 1b                                                  )
+L(    /* The value after the first NULL-pointer is envp */    )
+L(    pushl   (%eax) /* envp */                               )
+L(    leal   8(%esp), %eax                                    )
+L(    pushl    %eax  /* argv */                               )
+L(    pushl 12(%esp) /* fd */                                 )
+L(    call PLT_SYM(fexecve)                                   )
+#ifndef __KERNEL__ /* #if LIBCCALL != ATTR_STDCALL */
+L(    addl $12, %esp                                          )
+#endif
+L(    ret                                                     )
+L(SYM_END(fexecle)                                            )
+L(.previous                                                   )
+);
+
 #else
 
 /* Generic C implementation. */
@@ -301,13 +338,27 @@ PUBLIC int (ATTR_CDECL execlpe)(char const *file, char const *arg, ...) {
  free(argv);
  return result;
 }
+PUBLIC int (ATTR_CDECL fexecl)(int fd, char const *arg, ...) {
+ va_list args; char **argv; int result;
+ va_start(args,arg);
+ argv = generic_capture_argv((char *)arg,&args);
+ va_end(args);
+ result = fexecv(fd,argv);
+ free(argv);
+ return result;
+}
+PUBLIC int (ATTR_CDECL fexecle)(int fd, char const *arg, ...) {
+ va_list args; char **argv; int result;
+ va_start(args,arg);
+ argv = generic_capture_argv((char *)arg,&args);
+ va_end(args);
+ result = fexecve(fd,argv,va_arg(args,char **));
+ free(argv);
+ return result;
+}
 #endif
 
-PUBLIC int (ATTR_CDECL fexecl)(int fd, char const *arg, ...);
-PUBLIC int (ATTR_CDECL fexecle)(int fd, char const *arg, ...);
-PUBLIC int (LIBCCALL fexecve)(int fd, char *const argv[], char *const envp[]);
-PUBLIC int (LIBCCALL fexecv)(int fd, char *const argv[]);
-
+PUBLIC int (LIBCCALL fexecv)(int fd, char *const argv[]) { return fexecve(fd,argv,environ); }
 PRIVATE void (LIBCCALL execvpe_inside)(char const *path, char const *file,
                                        char *const argv[], char *const envp[]) {
  char *buf;
@@ -358,6 +409,9 @@ PUBLIC pid_t (LIBCCALL wait4)(pid_t pid, __WAIT_STATUS stat_loc, int options, st
 PUBLIC int (LIBCCALL getgroups)(int size, gid_t list[]) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL setuid)(uid_t uid) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL setgid)(gid_t gid) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC int (LIBCCALL umount)(char const *special_file) { return umount2(special_file,0); }
+PUBLIC int (LIBCCALL mount)(char const *special_file, char const *dir, char const *fstype, unsigned long int rwflag, void const *data) { return FORWARD_SYSTEM_ERROR(sys_mount(special_file,dir,fstype,rwflag,data)); }
+PUBLIC int (LIBCCALL umount2)(char const *special_file, int flags) { return FORWARD_SYSTEM_ERROR(sys_umount2(special_file,flags)); }
 
 PUBLIC int (LIBCCALL pipe)(int pipedes[2]) { return pipe2(pipedes,0); }
 PUBLIC int (LIBCCALL pipe2)(int pipedes[2], int flags) {
@@ -381,15 +435,20 @@ PUBLIC int (LIBCCALL pipe2)(int pipedes[2], int flags) {
  return 0;
 #endif
 }
-PUBLIC mode_t (LIBCCALL umask)(mode_t mask) { return sys_umask(mask); }
-PUBLIC mode_t (LIBCCALL getumask)(void) { /* TODO? */ return 0022; }
-
+PUBLIC mode_t (LIBCCALL umask)(mode_t mask) {
+ return sys_umask(mask);
+}
+PUBLIC mode_t (LIBCCALL getumask)(void) { 
+ mode_t result = umask(0);
+ return (umask(result),result);
+}
 DEFINE_PUBLIC_ALIAS(__getpgid,getpgid);
 PUBLIC pid_t (LIBCCALL getpid)(void) { return sys_getpid(); }
 PUBLIC pid_t (LIBCCALL getppid)(void) { return sys_getppid(); }
 PUBLIC pid_t (LIBCCALL getpgid)(pid_t pid) { return FORWARD_SYSTEM_VALUE(sys_getpgid(pid)); }
 PUBLIC pid_t (LIBCCALL getpgrp)(void) { return getpgid(0); }
 PUBLIC int (LIBCCALL setpgid)(pid_t pid, pid_t pgid) { return FORWARD_SYSTEM_ERROR(sys_setpgid(pid,pgid)); }
+
 PUBLIC pid_t (LIBCCALL getsid)(pid_t pid) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC pid_t (LIBCCALL setsid)(void) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC uid_t (LIBCCALL getuid)(void) { NOT_IMPLEMENTED(); return -1; }
@@ -490,9 +549,6 @@ PUBLIC int (LIBCCALL getpriority)(__priority_which_t which, id_t who) { NOT_IMPL
 PUBLIC int (LIBCCALL setpriority)(__priority_which_t which, id_t who, int prio) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL prlimit)(pid_t pid, enum __rlimit_resource resource, struct rlimit const *new_limit, struct rlimit *old_limit) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL prlimit64)(pid_t pid, enum __rlimit_resource resource, struct rlimit64 const *new_limit, struct rlimit64 *old_limit) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL umount)(char const *special_file) { return umount2(special_file,0); }
-PUBLIC int (LIBCCALL mount)(char const *special_file, char const *dir, char const *fstype, unsigned long int rwflag, void const *data) { return FORWARD_SYSTEM_ERROR(sys_mount(special_file,dir,fstype,rwflag,data)); }
-PUBLIC int (LIBCCALL umount2)(char const *special_file, int flags) { return FORWARD_SYSTEM_ERROR(sys_umount2(special_file,flags)); }
 PUBLIC int (LIBCCALL getrusage)(__rusage_who_t who, struct rusage *usage) { memset(usage,0,sizeof(struct rusage)); return 0; } /* xxx? */
 
 
