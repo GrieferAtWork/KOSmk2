@@ -201,8 +201,8 @@ __SYSCALL(__NR_munmap,sys_munmap)
 #define __NR_mremap       216
 __SYSCALL(__NR_mremap,sys_mremap)
 
-//#define __NR_clone 220
-//__SYSCALL(__NR_clone, sys_clone)
+//#define __NR_clone        220
+//__SYSCALL(__NR_clone,sys_clone)
 #define __SC_ATTRIB_CLOBB_221 C("memory")
 #define __NR_execve       221
 __SYSCALL(__NR_execve,sys_execve)

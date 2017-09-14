@@ -24,10 +24,15 @@
 #ifndef CONFIG_NO_LDT
 #include <hybrid/typecore.h>
 #include <hybrid/types.h>
+#include <hybrid/list/list.h>
+#include <hybrid/sync/atomic-rwlock.h>
 #include <kernel/arch/idt_pointer.h>
 #include <kernel/arch/gdt.h>
 #include <bits/sched.h>
 #endif /* !CONFIG_NO_LDT */
+#ifndef CONFIG_NO_FPU
+#include <kernel/arch/fpu.h>
+#endif /* !CONFIG_NO_FPU */
 
 DECL_BEGIN
 
@@ -103,24 +108,43 @@ DATDEF struct ldt ldt_empty;  /*< The default, empty LDT descriptor table. - Use
 DATDEF struct ldt ldt_kernel; /*< The LDT controller used by the kernel (Currently an alias for 'ldt_empty') */
 
 #endif /* __CC__ */
+#endif /* !CONFIG_NO_LDT */
 
 
-#define ARCHTASK_OFFSETOF_LDT_TASKS    0
-#define ARCHTASK_OFFSETOF_LDT_GDT   (2*__SIZEOF_POINTER__)
-#define ARCHTASK_OFFSETOF_LDT_TLS   (2*__SIZEOF_POINTER__+2)
-#define ARCHTASK_SIZE               (2*__SIZEOF_POINTER__+4)
+#if !defined(CONFIG_NO_LDT) || !defined(CONFIG_NO_FPU)
+#ifndef CONFIG_NO_LDT
+#   define ARCHTASK_OFFSETOF_LDT_TASKS  0
+#   define ARCHTASK_OFFSETOF_LDT_GDT   (2*__SIZEOF_POINTER__)
+#   define ARCHTASK_OFFSETOF_LDT_TLS   (2*__SIZEOF_POINTER__+2)
+#   define __ARCHTASK_OFFSETAFTER_LDT  (2*__SIZEOF_POINTER__+4)
+#else
+#   define __ARCHTASK_OFFSETAFTER_LDT   0
+#endif
+#ifndef CONFIG_NO_FPU
+#   define ARCHTASK_OFFSETOF_FPU        __ARCHTASK_OFFSETAFTER_LDT
+#   define __ARCHTASK_OFFSETAFTER_FPU  (__ARCHTASK_OFFSETAFTER_LDT+__SIZEOF_POINTER__)
+#else
+#   define __ARCHTASK_OFFSETAFTER_FPU   __ARCHTASK_OFFSETAFTER_LDT
+#endif
+#   define ARCHTASK_SIZE                __ARCHTASK_OFFSETAFTER_FPU
 
 #ifdef __CC__
 struct archtask {
+#ifndef CONFIG_NO_LDT
  WEAK LIST_NODE(struct task) at_ldt_tasks; /*< [0..1][lock(:t_mman->m_ldt->l_lock)] Linked list of tasks using the associated LDT descriptor. */
  WEAK segid_t                at_ldt_gdt;   /*< [== :t_mman->m_ldt->l_gdt][valid_if(:t_mode != TASKMODE_NOTSTARTED)] Local copy of this task's LDT index. */
  ldt_t                       at_ldt_tls;   /*< [PRIVATE(THIS_TASK)][valid_if(!= LDT_ERROR)]
                                             *   LDT entry in ':t_mman->m_ldt' used for addressing user-space thread-local storage.
                                             *   NOTE: When not 'LDT_ERROR', this local descriptor ID is free'd during task destruction. */
-};
-
-#endif /* __CC__ */
 #endif /* !CONFIG_NO_LDT */
+#ifndef CONFIG_NO_FPU
+ struct fpustate            *at_fpu;       /*< [lock(PRIVATE(THIS_TASK))][0..1][owned]
+                                            *   Stored FPU state after this task executed FPU
+                                            *   instructions, followed by another task doing the same. */
+#endif /* !CONFIG_NO_FPU */
+};
+#endif /* __CC__ */
+#endif /* CONFIG_NO_LDT || CONFIG_NO_FPU */
 
 DECL_END
 

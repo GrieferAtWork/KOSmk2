@@ -40,8 +40,13 @@ DECL_BEGIN
                           : \
                           : "g" ((new)->t_arch.at_ldt_gdt) \
                           : "memory"); \
-    } \
+    }
+#endif
 
+#ifdef CONFIG_NO_FPU
+#define __TASK_SWITCH_FPU(old,new)
+#else
+#define __TASK_SWITCH_FPU(old,new) FPUSTATE_DISABLE();
 #endif
 
 
@@ -55,8 +60,12 @@ do{ struct mman *const new_mm = (new)->t_mman; \
                           : \
                           : "r" (new_mm->m_ppdir) \
                           : "memory"); \
-     /* Switch LDT descriptors. (NOTE: Must always be equal within the same page-directory) */ \
+     /* Switch LDT descriptors. (NOTE: Must always \
+      * be equal within the same page-directory) */ \
      __TASK_SWITCH_LDT(old,new) \
+     /* Disable the FPU to cause lazy register save/ \
+      * restore the next time operations are performed. */ \
+     __TASK_SWITCH_FPU(old,new) \
     } \
 }while(0)
 

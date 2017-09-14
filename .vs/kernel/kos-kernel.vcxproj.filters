@@ -381,6 +381,9 @@
     <ClCompile Include="..\..\src\modules\fs\proc\pidnode.c">
       <Filter>modules\fs\proc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\fpu.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -613,6 +616,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\modules\fs\proc\procfs.h">
       <Filter>modules\fs\proc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\fpu.h">
+      <Filter>include\kernel\arch</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -58,16 +58,15 @@ DECL_BEGIN
 //#undef CONFIG_SMP
 
 STATIC_ASSERT(IS_ALIGNED(offsetof(struct task,t_signals.ts_first),TASKSIGSLOT_ALIGN));
-STATIC_ASSERT(sizeof(struct tasksigslot)         == TASKSIGSLOT_SIZE);
-STATIC_ASSERT(offsetof(struct tasksig,ts_first)  == TASKSIG_OFFSETOF_FIRST);
-STATIC_ASSERT(sizeof(struct tasksig)             == TASKSIG_SIZE);
-STATIC_ASSERT(offsetof(struct task,t_affinity)   == TASK_OFFSETOF_AFFINITY);
-STATIC_ASSERT(offsetof(struct task,t_flags)      == TASK_OFFSETOF_FLAGS);
-STATIC_ASSERT(offsetof(struct task,t_priority)   == TASK_OFFSETOF_PRIORITY);
-STATIC_ASSERT(offsetof(struct task,t_prioscore)  == TASK_OFFSETOF_PRIOSCORE);
-STATIC_ASSERT(offsetof(struct task,t_timeout)    == TASK_OFFSETOF_TIMEOUT);
-STATIC_ASSERT(offsetof(struct task,t_signals)    == TASK_OFFSETOF_SIGNALS);
-
+STATIC_ASSERT(sizeof(struct tasksigslot)           == TASKSIGSLOT_SIZE);
+STATIC_ASSERT(offsetof(struct tasksig,ts_first)    == TASKSIG_OFFSETOF_FIRST);
+STATIC_ASSERT(sizeof(struct tasksig)               == TASKSIG_SIZE);
+STATIC_ASSERT(offsetof(struct task,t_affinity)     == TASK_OFFSETOF_AFFINITY);
+STATIC_ASSERT(offsetof(struct task,t_flags)        == TASK_OFFSETOF_FLAGS);
+STATIC_ASSERT(offsetof(struct task,t_priority)     == TASK_OFFSETOF_PRIORITY);
+STATIC_ASSERT(offsetof(struct task,t_prioscore)    == TASK_OFFSETOF_PRIOSCORE);
+STATIC_ASSERT(offsetof(struct task,t_timeout)      == TASK_OFFSETOF_TIMEOUT);
+STATIC_ASSERT(offsetof(struct task,t_signals)      == TASK_OFFSETOF_SIGNALS);
 STATIC_ASSERT(offsetof(struct task,t_exitcode)     == TASK_OFFSETOF_EXITCODE);
 STATIC_ASSERT(offsetof(struct task,t_ic)           == TASK_OFFSETOF_IC);
 STATIC_ASSERT(offsetof(struct task,t_addrlimit)    == TASK_OFFSETOF_ADDRLIMIT);
@@ -83,9 +82,23 @@ STATIC_ASSERT(offsetof(struct task,t_sigpend)      == TASK_OFFSETOF_SIGPEND);
 STATIC_ASSERT(offsetof(struct task,t_sigshare)     == TASK_OFFSETOF_SIGSHARE);
 STATIC_ASSERT(offsetof(struct sigenter,se_eip)     == SIGENTER_OFFSETOF_EIP);
 
-STATIC_ASSERT(sizeof(sigset_t)                   == __SIZEOF_SIGSET_T__);
-STATIC_ASSERT(offsetof(struct cpu,c_idle)        == CPU_OFFSETOF_IDLE);
-STATIC_ASSERT(sizeof(struct task)                == TASK_SIZE);
+#ifdef ARCHTASK_SIZE
+STATIC_ASSERT(offsetof(struct task,t_arch) == TASK_OFFSETOF_ARCH);
+#ifndef CONFIG_NO_FPU
+STATIC_ASSERT(offsetof(struct archtask,at_fpu) == ARCHTASK_OFFSETOF_FPU);
+#endif /* !CONFIG_NO_FPU */
+#ifndef CONFIG_NO_LDT
+STATIC_ASSERT(offsetof(struct archtask,at_ldt_tasks) == ARCHTASK_OFFSETOF_LDT_TASKS);
+STATIC_ASSERT(offsetof(struct archtask,at_ldt_gdt)   == ARCHTASK_OFFSETOF_LDT_GDT);
+STATIC_ASSERT(offsetof(struct archtask,at_ldt_tls)   == ARCHTASK_OFFSETOF_LDT_TLS);
+#endif /* !CONFIG_NO_LDT */
+#endif /* ARCHTASK_SIZE */
+
+STATIC_ASSERT(sizeof(sigset_t)            == __SIZEOF_SIGSET_T__);
+STATIC_ASSERT(offsetof(struct cpu,c_idle) == CPU_OFFSETOF_IDLE);
+STATIC_ASSERT(sizeof(struct task)         == TASK_SIZE);
+STATIC_ASSERT(offsetof(struct cpu,c_idle) == CPU_OFFSETOF_IDLE);
+STATIC_ASSERT(IS_ALIGNED(offsetof(struct cpu,c_idle),TASK_ALIGN));
 
 STATIC_ASSERT(sizeof(struct cpu)                 == CPU_SIZE);
 STATIC_ASSERT(sizeof(atomic_rwptr_t)             == __SIZEOF_POINTER__);
@@ -368,6 +381,18 @@ task_weak_destroy(struct task *__restrict t) {
 PRIVATE SAFE void KCALL
 task_is_terminating(struct task *__restrict t) {
  struct task *leader,*parent;
+
+#ifndef CONFIG_NO_FPU
+ if (CPU(fpu_current) == t) {
+  assert(!PREEMPTION_ENABLED());
+  assert(CPU(fpu_current) == t);
+  assert(t->t_mode != TASKMODE_NOTSTARTED);
+  CPU(fpu_current) = NULL;
+ }
+ /* Free saved FPU registers. */
+ if (t->t_arch.at_fpu != FPUSTATE_NULL)
+     FPUSTATE_FREE(t->t_arch.at_fpu);
+#endif
 
  /* If this task is a process group leader,
   * kill all threads apart of that group. */
@@ -700,10 +725,20 @@ L(    cmpl  %ebx, (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%ecx)        )
 L(    je    1f /* No change required */                                       )
 L(    /* Load the new LDT table. */                                           )
 L(    lldt (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%ecx)               )
-L(1:  popl  %ebx                                                              )
+L(1:                                                                          )
 #endif
-L(    /* TODO: Switch FPU */                                                  )
-L(                                                                            )
+#ifndef CONFIG_NO_FPU
+#ifdef CONFIG_NO_LDT
+L(    pushl %ebx                                                              )
+#endif /* CONFIG_NO_LDT */
+L(    /* Disable the FPU for lazy context switching */                        )
+L(    movl  %cr0, %ebx                                                        )
+L(    orl   $(CR0_TS), %ebx                                                   )
+L(    movl  %ebx, %cr0                                                        )
+#endif /* !CONFIG_NO_FPU */
+#if !defined(CONFIG_NO_LDT) || !defined(CONFIG_NO_FPU)
+L(    popl  %ebx                                                              )
+#endif
 L(    movl TASK_OFFSETOF_MMAN(%eax),  %eax                                    )
 L(    movl TASK_OFFSETOF_MMAN(%ecx),  %ecx                                    )
 L(    cmpl %eax, %ecx /* Check if memory managers (and thereby page directories) changed. */)
@@ -1344,6 +1379,22 @@ has_old_lock:
  if (old_cpu == THIS_CPU) {
   bool was_running;
   result = old_cpu;
+
+#ifndef CONFIG_NO_FPU
+  if (CPU(fpu_current) == t) {
+   /* Store the FPU context before switching CPUs. */
+   if unlikely(t->t_arch.at_fpu == FPUSTATE_NULL &&
+              (t->t_arch.at_fpu = FPUSTATE_ALLOC()) == FPUSTATE_NULL) {
+    syslog(LOG_ERR,"[FPU] Failed to allocate FPU state (gpid %d): %[errno]\n",
+           t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,ENOMEM);
+   } else {
+    FPUSTATE_ENABLE();
+    FPUSTATE_SAVE(t->t_arch.at_fpu);
+   }
+   FPUSTATE_DISABLE();
+   CPU(fpu_current) = NULL;
+  }
+#endif
 
   assert(!PREEMPTION_ENABLED());
   assert(TASK_CPU(t) == THIS_CPU);

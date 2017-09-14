@@ -37,6 +37,7 @@
     <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\linker\elf.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\boot.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\fpu.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\gdt.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\irq.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\realmode.c" />
@@ -128,6 +129,7 @@
     <ClInclude Include="..\..\src\include\kernel\arch\cpu.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\cpufeatures.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\cpustate.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\fpu.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\gdt.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\mp.h" />

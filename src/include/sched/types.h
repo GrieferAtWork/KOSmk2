@@ -636,8 +636,13 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #define TASK_OFFSETOF_SIGSHARE     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
 #define TASK_OFFSETOF_SIGENTER     (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
 #ifdef ARCHTASK_SIZE
+#if 1
+#define TASK_OFFSETOF_ARCH         (TASK_OFFSETOF_FLAGS+28+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+28+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE+ARCHTASK_SIZE)
+#else
 #define TASK_OFFSETOF_ARCH         (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
 #define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE+ARCHTASK_SIZE)
+#endif
 #else
 #define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
 #endif
@@ -718,6 +723,7 @@ struct task {
  REF struct sigshare     *t_sigshare;  /*< [1..1] Controller for shared signal data (Including the shared pending-signal list). */
  struct sigenter          t_sigenter;  /*< Signal enter controller. */
 #ifdef ARCHTASK_SIZE
+ u32                      t_padding3;  /*< ... */
  struct archtask          t_arch;      /*< Arch-specific task information controller. */
 #endif
 };
@@ -753,13 +759,13 @@ LOCAL SAFE pid_t KCALL thread_pid_getppid(struct thread_pid *__restrict self, pi
 #define CPU_OFFSETOF_LOCK        (3*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2)
 #define CPU_OFFSETOF_SUSPENDED   (3*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE)
 #define CPU_OFFSETOF_SLEEPING    (4*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE)
-#define CPU_OFFSETOF_IDLE        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE)
-#define CPU_OFFSETOF_ARCH        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
-#define CPU_OFFSETOF_N_RUN       (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE)
-#define CPU_OFFSETOF_N_IDLE      (__SIZEOF_SIZE_T__+5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE)
-#define CPU_OFFSETOF_N_SUSP      (2*__SIZEOF_SIZE_T__+5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE)
-#define CPU_OFFSETOF_N_SLEEP     (3*__SIZEOF_SIZE_T__+5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE)
-#define CPU_SIZE                 (4*__SIZEOF_SIZE_T__+5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE)
+#define CPU_OFFSETOF_IDLE        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE)
+#define CPU_OFFSETOF_ARCH        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
+#define CPU_OFFSETOF_N_RUN       (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE)
+#define CPU_OFFSETOF_N_IDLE      (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE+__SIZEOF_SIZE_T__)
+#define CPU_OFFSETOF_N_SUSP      (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE+2*__SIZEOF_SIZE_T__)
+#define CPU_OFFSETOF_N_SLEEP     (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE+3*__SIZEOF_SIZE_T__)
+#define CPU_SIZE                 (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE+4*__SIZEOF_SIZE_T__)
 
 #ifdef __CC__
 struct cpu {
@@ -787,6 +793,7 @@ struct cpu {
                                           *   NOTE: This first part of this chain contains all tasks in 'TASKMODE_WAKEUP'-mode, sorted by associated 't_mman'.
                                           *         The second part contains all tasks in 'TASKMODE_SLEEPING'-mode, first sorted by timeout, then by 't_mman'.
                                           *   Chain of wakeup/sleeping tasks. */
+ u32                        c_padding;   /*< ... */
  struct task                c_idle;      /*< A small, lightweight IDLE task for this CPU.
                                           *  HINT: This task is also (ab-)used when booting up a cpu. */
  struct archcpu             c_arch;      /*< Arch-specific per-cpu information. */
