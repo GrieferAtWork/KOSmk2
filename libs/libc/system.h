@@ -157,9 +157,9 @@ LOCAL SYSCALL2(__errno_t,pipe2,(USER int *,pfd,int,flags));
 LOCAL SYSCALL1(s64,xpipe,(int,flags));
 LOCAL SYSCALL5(__errno_t,mount,(USER char const *,dev_name,USER char const *,dir_name,USER char const *,type,unsigned long,flags,USER void const *,data));
 LOCAL SYSCALL2(__errno_t,umount2,(USER char const *,name,int,flags));
-
 LOCAL SYSCALL2(__errno_t,gettimeofday,(USER struct kernel_timeval *,tv,USER struct timezone *,tz));
 LOCAL SYSCALL2(__errno_t,settimeofday,(USER struct kernel_timeval const *,tv,USER struct timezone const *,tz));
+LOCAL SYSCALL2(__errno_t,nanosleep,(USER struct kernel_timespec const *,rqtp,USER struct kernel_timespec *,rmtp));
 
 /* KOS system-call extensions. */
 LOCAL SYSCALL3(ssize_t,xsysprint,(int,type,char const *,p,size_t,len));

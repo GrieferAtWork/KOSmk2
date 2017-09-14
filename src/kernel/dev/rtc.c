@@ -320,6 +320,44 @@ SYSCALL_DEFINE2(settimeofday,USER struct timeval const *,tv,
  return -EOK;
 }
 
+SYSCALL_DEFINE2(nanosleep,USER struct timespec const *,rqtp,
+                          USER struct timespec *,rmtp) {
+ struct timespec req,now; struct sig *error;
+ if (copy_from_user(&req,rqtp,sizeof(struct timespec)))
+     return -EFAULT;
+ task_crit();
+ sysrtc_get(&now);
+ TIMESPEC_ADD(req,now);
+ error = task_waitfor(&req);
+ sysrtc_get(&now);
+ if (E_ISOK(error)) error = E_PTR(-EOK);
+ if (error == E_PTR(-ETIMEDOUT)) {
+  /* Return EOK when the timeout expired. */
+  error = E_PTR(-EOK);
+  /* If the timeout expired, fill in 'rmtp' with all ZEROes. */
+  if (rmtp) {
+no_remainder:
+   if (memset_user(rmtp,0,sizeof(struct timespec)))
+       error = E_PTR(-EFAULT);
+  }
+ } else if (rmtp) {
+  /* Assume that an interrupt occurred and
+   * write the time we didn't wait to 'rmtp' */
+  sysrtc_get(&now);
+  /* If the current point in time still lies
+   * past the requested, return all ZEROes. */
+  if (TIMESPEC_GREATER_EQUAL(now,req))
+      goto no_remainder;
+  /* Subtract NOW from the requested time. */
+  TIMESPEC_SUB(req,now);
+  /* And copy it back to user-space. */
+  if (copy_to_user(rmtp,&req,sizeof(struct timespec)))
+      error = E_PTR(-EFAULT);
+ }
+ task_endcrit();
+ return E_GTERR(error);
+}
+
 
 DECL_END
 

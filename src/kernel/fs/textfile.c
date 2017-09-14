@@ -153,9 +153,12 @@ textfile_printer(char const *__restrict data,
   new_size = TEXTFILE_BUFALLOC(TF);
   if (!new_size) new_size = 2;
   while (new_size < min_size) new_size *= 2;
+do_reloc:
   new_buffer = trealloc(char,TF->tf_buffer,new_size);
-  if unlikely(!new_buffer)
-     new_buffer = trealloc(char,TF->tf_buffer,min_size);
+  if unlikely(!new_buffer && new_size != min_size) {
+   new_size = min_size;
+   goto do_reloc;
+  }
   if unlikely(!new_buffer)
      return -ENOMEM;
   /* Update the textfile using the newly (re-)allocated buffer. */

@@ -160,7 +160,7 @@ mman_irq_pf(struct cpustate_irq_c *__restrict info) {
    if (info->host.exc_code&PF_U) req_attr |= PDIR_ATTR_USER;
 #endif
    /* Sadly, this lookup must be performed in the context of the kernel page directory! */
-
+   /* XXX: Not really. - We could use page-directory self-mappings here... */
    if (user_mman != &mman_kernel) __asm__ __volatile__("movl %0, %%cr3\n" : : "r" (&pdir_kernel.pd_directory) : "memory");
    if (!pdir_maccess_addr(&user_mman->m_pdir,(void *)fault_page,req_attr)) {
 #if 0

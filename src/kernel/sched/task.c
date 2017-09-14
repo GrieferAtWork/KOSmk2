@@ -1148,7 +1148,7 @@ pit_exc(struct cpustate *__restrict state) {
   if ((wake = THIS_CPU->c_sleeping) != NULL) {
    struct timespec now; sysrtc_get(&now);
    for (;;) {
-    if (TIMESPEC_LOWER(wake->t_timeout,now)) break;
+    if (TIMESPEC_LOWER(now,wake->t_timeout)) break;
     assert(wake->t_mode == TASKMODE_SLEEPING ||
            wake->t_mode == TASKMODE_WAKEUP);
     /* Mark the task as having timed out. */

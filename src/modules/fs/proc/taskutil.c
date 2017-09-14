@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <sched/cpu.h>
 #include <sched/smp.h>
+#include <kernel/mman.h>
 
 DECL_BEGIN
 
@@ -57,6 +58,17 @@ task_getfdman(WEAK struct task *__restrict tsk) {
  }
  PREEMPTION_POP(was);
  TASK_DECREF(tsk);
+ return result;
+}
+
+INTERN REF struct mman *KCALL
+task_getmman(WEAK struct task *__restrict t) {
+ REF struct mman *result;
+ if (!TASK_TRYINCREF(t)) return E_PTR(-ESRCH);
+ result = t->t_real_mman;
+ if (!result) result = E_PTR(-ESRCH);
+ else MMAN_INCREF(result);
+ TASK_DECREF(t);
  return result;
 }
 

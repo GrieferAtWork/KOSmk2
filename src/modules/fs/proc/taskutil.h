@@ -24,12 +24,14 @@
 DECL_BEGIN
 
 struct fdman;
+struct mman;
 struct task;
 
 /* General purpose utilities to safely load various parts of a given
  * task, that would otherwise be considered 'PRIVATE(THIS_TASK)'.
  * NOTE: These functions all return E_ISERR(*) upon error; NULL is never returned. */
 INTDEF REF struct fdman *KCALL task_getfdman(WEAK struct task *__restrict t);
+INTDEF REF struct mman *KCALL task_getmman(WEAK struct task *__restrict t);
 
 
 DECL_END

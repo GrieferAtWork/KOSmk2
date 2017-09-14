@@ -39,6 +39,7 @@
 #include <signal.h>
 #include <sys/poll.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 DECL_BEGIN
 
@@ -256,17 +257,17 @@ PUBLIC int (LIBCCALL A(stime))(atime_t const *when) {
 }
 PUBLIC int (LIBCCALL A(gettimeofday))(struct atimeval *__restrict tv, __timezone_ptr_t tz) { return FORWARD_SYSTEM_ERROR(sys_gettimeofday(tv,tz)); }
 PUBLIC int (LIBCCALL A(settimeofday))(struct atimeval const *tv, struct timezone const *tz) { return FORWARD_SYSTEM_ERROR(sys_settimeofday(tv,tz)); }
+PUBLIC int (LIBCCALL A(nanosleep))(struct atimespec const *requested_time, struct atimespec *remaining) { return FORWARD_SYSTEM_ERROR(sys_nanosleep(requested_time,remaining)); }
 PUBLIC atime_t (LIBCCALL A(timelocal))(struct tm *tp) { return mktime(tp); /* XXX: Timezones */ }
 PUBLIC int (LIBCCALL A(adjtime))(struct atimeval const *delta, struct atimeval *olddelta) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL A(getitimer))(__itimer_which_t which, struct aitimerval *value) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL A(setitimer))(__itimer_which_t which, const struct aitimerval *__restrict new_, struct aitimerval *__restrict old) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(nanosleep))(struct atimespec const *requested_time, struct atimespec *remaining) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL A(clock_getres))(clockid_t clock_id, struct atimespec *res) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL A(clock_gettime))(clockid_t clock_id, struct atimespec *tp) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL A(clock_settime))(clockid_t clock_id, struct atimespec const *tp) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL A(timer_settime))(timer_t timerid, int flags, struct aitimerspec const *__restrict value, struct aitimerspec *__restrict ovalue) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL A(timer_gettime))(timer_t timerid, struct aitimerspec *value) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(clock_nanosleep))(clockid_t clock_id, int flags, struct atimespec const *req, struct atimespec *rem) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC int (LIBCCALL A(clock_nanosleep))(clockid_t clock_id, int flags, struct atimespec const *req, struct atimespec *rem) { NOT_IMPLEMENTED(); return A(nanosleep)(req,rem); }
 
 PUBLIC btime_t (LIBCCALL B(timelocal))(struct tm *tp) { return (btime_t)A(timelocal)(tp); }
 PUBLIC btime_t (LIBCCALL B(time))(btime_t *timer) { btime_t result = (btime_t)A(time)(NULL); if (timer) *timer = result; return result; }
@@ -517,10 +518,26 @@ PUBLIC int (LIBCCALL B(futimesat))(int fd, char const *file, struct btimeval con
 
 PUBLIC int (LIBCCALL poll)(struct pollfd *fds, nfds_t nfds, int timeout) {
  struct atimespec tmo;
- if (!timeout) return ppoll(fds,nfds,NULL,NULL);
+ /* NOTE: A negative value means infinite timeout! */
+ if (timeout < 0) return ppoll(fds,nfds,NULL,NULL);
  tmo.tv_sec  = timeout/MSEC_PER_SEC;
  tmo.tv_nsec = NSEC_PER_MSEC*(timeout%MSEC_PER_SEC);
  return A(ppoll)(fds,nfds,&tmo,NULL);
+}
+PUBLIC unsigned int (LIBCCALL sleep)(unsigned int seconds) {
+ struct atimespec req,rem;
+ req.tv_sec  = seconds;
+ req.tv_nsec = 0;
+ A(nanosleep)(&req,&rem);
+ return rem.tv_sec;
+}
+PUBLIC int (LIBCCALL usleep)(useconds_t useconds) {
+ struct atimespec req,rem; int error;
+ req.tv_sec  =  useconds/USEC_PER_SEC;
+ req.tv_nsec = (useconds%USEC_PER_SEC)*NSEC_PER_USEC;
+ while ((error = A(nanosleep)(&req,&rem)) != 0 &&
+         errno == EINTR) req = rem;
+ return error;
 }
 
 

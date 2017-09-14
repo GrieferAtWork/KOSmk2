@@ -1070,6 +1070,8 @@ scan_again:
   if (E_ISOK(error))
       goto scan_again;
   result = E_GTERR(error);
+  /* NOTE: ppoll() must return ZERO(0) on timeout! */
+  if (result == -ETIMEDOUT) result = 0;
  }
 done:
  task_clrwait();

@@ -32,18 +32,21 @@
 #include <fs/fs.h>
 #include <fs/inode.h>
 #include <fs/superblock.h>
+#include <fs/textfile.h>
 #include <fs/vfs.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <kernel/export.h>
+#include <kernel/mman.h>
 #include <kernel/user.h>
-#include <sys/syslog.h>
 #include <malloc.h>
 #include <sched/cpu.h>
 #include <sched/task.h>
 #include <sched/types.h>
 #include <stdlib.h>
+#include <sys/syslog.h>
+#include <sched/paging.h>
 
 DECL_BEGIN
 
@@ -81,12 +84,47 @@ pid_root_readlink(struct inode *__restrict ino,
  return pid_fd_readlink(SELF,buf,bufsize,AT_FDROOT);
 }
 #undef SELF
+PRIVATE REF struct file *KCALL
+maps_fopen(struct inode *__restrict ino,
+           struct dentry *__restrict node_ent,
+           oflag_t oflags) {
+ REF struct textfile *result;
+ REF struct mman *mm; errno_t error;
+ result = textfile_new();
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ mm = task_getmman(((struct pidnode *)ino)->p_task);
+ if (E_ISERR(mm)) { error = E_GTERR(mm); goto err; }
+ error = mman_read(mm);
+ if (E_ISERR(error)) goto err2;
+ if (mm == &mman_kernel) {
+  struct mman *omm;
+  TASK_PDIR_KERNEL_BEGIN(omm);
+  error = mman_print_unlocked(mm,&textfile_printer,result);
+  TASK_PDIR_KERNEL_END(omm);
+ } else {
+  error = mman_print_unlocked(mm,&textfile_printer,result);
+ }
+ if (E_ISERR(error)) goto err3;
+ mman_endread(mm);
+ MMAN_DECREF(mm);
+ textfile_truncate(result);
+ file_setup(&result->tf_file,ino,node_ent,oflags);
+ return &result->tf_file;
+err3: rwlock_endread(&fstype_lock);
+err2: MMAN_DECREF(mm);
+err:  textfile_delete(result);
+ return E_PTR(error);
+}
+
 INTERN struct procnode const pid_content[] = {
  {0,S_IFLNK|0444,/*[[[deemon DNAM("cwd"); ]]]*/{"cwd",3,H(6584163u,6584163llu)}/*[[[end]]]*/,
  { .ino_readlink = &pid_cwd_readlink,
  }},
- {0,S_IFLNK|0444,/*[[[deemon DNAM("root"); ]]]*/{"root",4,H(401271554u,1953460082llu)}/*[[[end]]]*/,
+ {1,S_IFLNK|0444,/*[[[deemon DNAM("root"); ]]]*/{"root",4,H(401271554u,1953460082llu)}/*[[[end]]]*/,
  { .ino_readlink = &pid_root_readlink,
+ }},
+ {2,S_IFREG|0444,/*[[[deemon DNAM("maps"); ]]]*/{"maps",4,H(250834133u,1936744813llu)}/*[[[end]]]*/,
+ { .ino_fopen = &maps_fopen, TEXTFILE_OPS_INIT
  }},
 };
 

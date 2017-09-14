@@ -147,6 +147,9 @@ __SYSCALL(__NR_waitid,sys_waitid)
 #define __NR_unshare      97
 __SYSCALL(__NR_unshare,sys_unshare)
 
+#define __NR_nanosleep    101
+__SYSCALL(__NR_nanosleep,sys_nanosleep)
+
 #define __SC_ATTRIB_CLOBB_124 C("memory")
 #define __NR_sched_yield  124
 __SYSCALL_ASM(__NR_sched_yield,sys_sched_yield)

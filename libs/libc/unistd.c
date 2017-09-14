@@ -398,7 +398,6 @@ PUBLIC uid_t (LIBCCALL geteuid)(void) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC gid_t (LIBCCALL getegid)(void) { NOT_IMPLEMENTED(); return -1; }
 
 PUBLIC unsigned int (LIBCCALL alarm)(unsigned int seconds) { NOT_IMPLEMENTED(); return seconds; }
-PUBLIC unsigned int (LIBCCALL sleep)(unsigned int seconds) { NOT_IMPLEMENTED(); return seconds; }
 PUBLIC int (LIBCCALL pause)(void) { NOT_IMPLEMENTED(); return -1; }
 
 PUBLIC long int (LIBCCALL pathconf)(char const *path, int name) { NOT_IMPLEMENTED(); return -1; }
@@ -414,7 +413,6 @@ PUBLIC int (LIBCCALL setreuid)(uid_t ruid, uid_t euid) { NOT_IMPLEMENTED(); retu
 PUBLIC int (LIBCCALL setregid)(gid_t rgid, gid_t egid) { NOT_IMPLEMENTED(); return -1; }
 
 PUBLIC useconds_t (LIBCCALL ualarm)(useconds_t value, useconds_t interval) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL usleep)(useconds_t useconds) { /*NOT_IMPLEMENTED();*/ return -1; }
 PUBLIC pid_t (LIBCCALL vfork)(void) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL nice)(int inc) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC size_t (LIBCCALL confstr)(int name, char *buf, size_t len) { NOT_IMPLEMENTED(); return -1; }
@@ -709,21 +707,18 @@ PRIORITY IMPLEMENTATION (Hard)
          getrlimit
          gettimeofday
          getuid
-         nanosleep
          pipe
          sched_getaffinity
          setpriority
          setrlimit
          setsid
          sigsuspend
-         sleep
          stime
          strsignal
          sysconf
          time
          times
          umask
-         usleep
          vfork
 */
 
