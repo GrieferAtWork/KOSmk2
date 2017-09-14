@@ -177,6 +177,9 @@ __SYSCALL(__NR_setpgid,sys_setpgid)
 #define __NR_getpgid      155
 __SYSCALL(__NR_getpgid,sys_getpgid)
 
+#define __NR_umask        166
+__SYSCALL(__NR_umask,sys_umask)
+
 #define __NR_gettimeofday 169
 __SYSCALL(__NR_gettimeofday,sys_gettimeofday)
 #define __SC_ATTRIB_CLOBB_170 C("memory")

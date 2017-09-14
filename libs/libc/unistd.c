@@ -381,8 +381,8 @@ PUBLIC int (LIBCCALL pipe2)(int pipedes[2], int flags) {
  return 0;
 #endif
 }
-PUBLIC mode_t (LIBCCALL umask)(mode_t mask) { /* TODO */ return 0022; }
-PUBLIC mode_t (LIBCCALL getumask)(void) { /* TODO */ return 0022; }
+PUBLIC mode_t (LIBCCALL umask)(mode_t mask) { return sys_umask(mask); }
+PUBLIC mode_t (LIBCCALL getumask)(void) { /* TODO? */ return 0022; }
 
 DEFINE_PUBLIC_ALIAS(__getpgid,getpgid);
 PUBLIC pid_t (LIBCCALL getpid)(void) { return sys_getpid(); }
@@ -397,9 +397,6 @@ PUBLIC gid_t (LIBCCALL getgid)(void) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC uid_t (LIBCCALL geteuid)(void) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC gid_t (LIBCCALL getegid)(void) { NOT_IMPLEMENTED(); return -1; }
 
-PUBLIC unsigned int (LIBCCALL alarm)(unsigned int seconds) { NOT_IMPLEMENTED(); return seconds; }
-PUBLIC int (LIBCCALL pause)(void) { NOT_IMPLEMENTED(); return -1; }
-
 PUBLIC long int (LIBCCALL pathconf)(char const *path, int name) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC long int (LIBCCALL fpathconf)(int fd, int name) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC char *(LIBCCALL getlogin)(void) { NOT_IMPLEMENTED(); return NULL; }
@@ -412,7 +409,6 @@ PUBLIC int (LIBCCALL setresgid)(gid_t rgid, gid_t egid, gid_t sgid) { NOT_IMPLEM
 PUBLIC int (LIBCCALL setreuid)(uid_t ruid, uid_t euid) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL setregid)(gid_t rgid, gid_t egid) { NOT_IMPLEMENTED(); return -1; }
 
-PUBLIC useconds_t (LIBCCALL ualarm)(useconds_t value, useconds_t interval) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC pid_t (LIBCCALL vfork)(void) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL nice)(int inc) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC size_t (LIBCCALL confstr)(int name, char *buf, size_t len) { NOT_IMPLEMENTED(); return -1; }

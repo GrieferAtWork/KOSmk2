@@ -1047,7 +1047,7 @@ def_name:default:
    } else {
     iattrset_t attr_mode = attr_valid;
     if (!(oflags&O_EXCL)) attr_mode |= IATTR_EXISTS;
-    if (oflags&O_TRUNC)   attr_mode |= IATTR_TRUNC;
+    if (oflags&O_TRUNC) attr_mode |= IATTR_TRUNC;
     res_ino = (*ino->i_ops->ino_mkreg)(ino,res_entry,attr,attr_mode);
     must_sync = fs_autosync;
     assert(res_ino);

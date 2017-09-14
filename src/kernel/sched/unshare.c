@@ -413,8 +413,9 @@ fdman_duplicate_table_unlocked(struct fdman *__restrict dst,
  DENTRY_INCREF(src->fm_root);
 
  /* Any finally: Copy hint and limits. */
- dst->fm_hint = src->fm_hint;
- dst->fm_vecm = src->fm_vecm;
+ dst->fm_umask = ATOMIC_READ(src->fm_umask);
+ dst->fm_hint  = src->fm_hint;
+ dst->fm_vecm  = src->fm_vecm;
  return -EOK;
 }
 

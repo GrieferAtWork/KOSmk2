@@ -555,7 +555,7 @@ check_result_entry:
  } else if (S_ISREG(mode) || (mode&__S_IFMT) == 0) {
   struct iattr file_attr;
   sysrtc_get(&file_attr.ia_ctime);
-  file_attr.ia_mode  = (mode&0777);
+  file_attr.ia_mode  = (mode&~THIS_UMASK);
   file_attr.ia_uid   = walker.dw_access.fa_uid;
   file_attr.ia_gid   = walker.dw_access.fa_gid;
   file_attr.ia_siz   = 0; /* Create an empty file. */
@@ -597,7 +597,7 @@ SYSCALL_DEFINE3(mkdirat,int,dfd,USER char const *,pathname,mode_t,mode) {
  /* Setup file attributes. */
  assert(result == -EOK);
  sysrtc_get(&file_attr.ia_ctime);
- file_attr.ia_mode  = (mode&0777);
+ file_attr.ia_mode  = (mode&~THIS_UMASK);
  file_attr.ia_uid   = walker.dw_access.fa_uid;
  file_attr.ia_gid   = walker.dw_access.fa_gid;
  file_attr.ia_atime = file_attr.ia_ctime;
@@ -669,7 +669,7 @@ SYSCALL_DEFINE3(symlinkat,USER char const *,oldname,int,newdfd,USER char const *
  /* Setup file attributes. */
  assert(result == -EOK);
  sysrtc_get(&file_attr.ia_ctime);
- file_attr.ia_mode  = 0777;
+ file_attr.ia_mode  = ~THIS_UMASK;
  file_attr.ia_uid   = walker.dw_access.fa_uid;
  file_attr.ia_gid   = walker.dw_access.fa_gid;
  file_attr.ia_atime = file_attr.ia_ctime;
@@ -871,7 +871,7 @@ SYSCALL_DEFINE4(openat,int,dfd,USER char const *,filename,oflag_t,flags,mode_t,m
  fdman_endread(fdm);
 
  /* Setup file attributes. */
- file_attr.ia_mode = (mode&0777);
+ file_attr.ia_mode = (mode&~THIS_UMASK);
  file_attr.ia_uid  = walker.dw_access.fa_uid;
  file_attr.ia_gid  = walker.dw_access.fa_gid;
 

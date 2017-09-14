@@ -513,6 +513,9 @@ PUBLIC int (LIBCCALL B(utimes))(char const *file, struct btimeval const tvp[2]) 
 PUBLIC int (LIBCCALL B(lutimes))(char const *file, struct btimeval const tvp[2]) { return B(libc_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_NOFOLLOW); }
 PUBLIC int (LIBCCALL B(futimesat))(int fd, char const *file, struct btimeval const tvp[2]) { return B(libc_futimesat)(fd,file,tvp,AT_SYMLINK_FOLLOW); }
 
+PUBLIC useconds_t (LIBCCALL ualarm)(useconds_t value, useconds_t interval) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC unsigned int (LIBCCALL alarm)(unsigned int seconds) { NOT_IMPLEMENTED(); return seconds; }
+PUBLIC int (LIBCCALL pause)(void) { return select(0,NULL,NULL,NULL,NULL); }
 
 
 
@@ -520,8 +523,14 @@ PUBLIC int (LIBCCALL poll)(struct pollfd *fds, nfds_t nfds, int timeout) {
  struct atimespec tmo;
  /* NOTE: A negative value means infinite timeout! */
  if (timeout < 0) return ppoll(fds,nfds,NULL,NULL);
- tmo.tv_sec  = timeout/MSEC_PER_SEC;
- tmo.tv_nsec = NSEC_PER_MSEC*(timeout%MSEC_PER_SEC);
+ /* NOTE: A timeout of ZERO(0) means try once; stop immediately. */
+ if (!timeout) {
+  tmo.tv_sec  = 0;
+  tmo.tv_nsec = 0;
+ } else {
+  tmo.tv_sec  = timeout/MSEC_PER_SEC;
+  tmo.tv_nsec = NSEC_PER_MSEC*(timeout%MSEC_PER_SEC);
+ }
  return A(ppoll)(fds,nfds,&tmo,NULL);
 }
 PUBLIC unsigned int (LIBCCALL sleep)(unsigned int seconds) {

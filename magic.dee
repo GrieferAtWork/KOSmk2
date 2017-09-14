@@ -53,7 +53,7 @@ local run_kernel_binary = "bin/kos.bin"; /* Output name of the kernel binary. */
  /* Executable used for '#!$addr2line' formating of serial emulator output. */
 local run_addr2line_exe = run_kernel_binary;
 //local run_addr2line_exe = "bin/libs/libc.so";
-local run_addr2line_exe = "apps/private/build-busybox-1.27.2/busybox_unstripped";
+//local run_addr2line_exe = "apps/private/build-busybox-1.27.2/busybox_unstripped";
 
 /* Default executable names. */
 local const default_mtools    = "mtools";

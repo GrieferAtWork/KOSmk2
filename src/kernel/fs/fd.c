@@ -48,6 +48,7 @@
 #include <sched/paging.h>
 #include <sched/task.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 
 DECL_BEGIN
 
@@ -150,6 +151,7 @@ PUBLIC struct fdman fdman_kernel = {
 #endif
     .fm_cwd    = &fs_root,
     .fm_root   = &fs_root,
+    .fm_umask  = 0022,
     .fm_hint   = 0,
     .fm_veca   = 0,
     .fm_vecc   = 0,
@@ -175,6 +177,7 @@ PUBLIC struct fdman *KCALL fdman_init(struct fdman *self) {
   self->fm_vecc = 0;
   self->fm_vecm = FDMAN_DEFAULT_VECM;
   self->fm_vecv = NULL;
+  self->fm_umask = 0022;
  }
  return self;
 }
@@ -1039,10 +1042,10 @@ SYSCALL_DEFINE2(getcwd,USER char *,buf,size_t,bufsize) {
  return SYSC_xfdname(AT_FDCWD,FDNAME_PATH,buf,bufsize);
 }
 
-#define __NR_getcwd 17
-//__SYSCALL(__NR_getcwd, sys_getcwd)
-
-// ssize_t (KCALL *fd_readdir)(void *__restrict o, USER struct dirent *buf, size_t bufsize, rdmode_t mode);
+SYSCALL_DEFINE1(umask,mode_t,mask) {
+ /* Simply exchange the UMASK of the calling thread. */
+ return ATOMIC_XCH(THIS_UMASK,mask & S_IRWXUGO);
+}
 
 
 DECL_END

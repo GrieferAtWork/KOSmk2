@@ -44,8 +44,11 @@
 DECL_BEGIN
 
 PUBLIC struct inodeops const rtc_ops = {
- /* TODO */
+    /* TODO: There are some ioctl()s we should implement here... */
+    .ino_fopen = &inode_fopen_default,
 };
+
+
 PUBLIC struct rtc *KCALL rtc_cinit(struct rtc *self) {
  if (self) {
   chrdev_cinit(&self->r_dev);

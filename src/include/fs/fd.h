@@ -118,6 +118,10 @@ DATDEF struct fd const fd_invalid;
 #define FDMAN_DEFAULT_VECM 0xffff
 
 struct fdman {
+ /* NOTE: Linux splits cwd, root and umask into its own per-thread data structure.
+  *       Yet with the design choice of treating AT_FD* special descriptor numbers
+  *       as regular descriptors, we can't really do that because the FD-manager
+  *       needs to know both CWD and ROOT. */
  ATOMIC_DATA ref_t  fm_refcnt; /*< [!0] Reference counter. */
  rwlock_t           fm_lock;   /*< R/W-lock for accessing this file descriptor manager. */
  REF struct dentry *fm_cwd;    /*< [lock(fm_lock)][1..1] Current working directory. */
@@ -127,6 +131,7 @@ struct fdman {
  unsigned int       fm_vecc;   /*< [lock(fm_lock)][<= fm_veca] Amount of descriptors currently in use (NOTE: Not necessarily continuous). */
  unsigned int       fm_vecm;   /*< [lock(fm_lock)][<= INT_MAX] Max amount of allowed descriptor numbers (Defaults to 'FDMAN_DEFAULT_VECM'). */
  struct fd         *fm_vecv;   /*< [lock(fm_lock)][0..fm_veca][owned] File descriptor vector. */
+ ATOMIC_DATA mode_t fm_umask;  /*< File mode creation mask. */
 };
 #define fdman_reading(x)     rwlock_reading(&(x)->fm_lock)
 #define fdman_writing(x)     rwlock_writing(&(x)->fm_lock)
@@ -152,6 +157,7 @@ DATDEF struct fdman fdman_kernel;
 /* The effect fd-manager of the current thread. */
 #define THIS_FDMAN (THIS_TASK->t_fdman)
 
+#define THIS_UMASK (THIS_TASK->t_fdman->fm_umask)
 
 
 #define FDMAN_INCREF(self) (void)(ATOMIC_FETCHINC((self)->fm_refcnt))

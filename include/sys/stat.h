@@ -153,12 +153,22 @@ typedef __blksize_t blksize_t;
 #define S_IXOTH (S_IXGRP >> 3) /* Execute by others. */
 #define S_IRWXO (S_IRWXG >> 3)
 
+
+#ifdef __USE_KOS
+/* As also seen in the linux kernel headers. */
+#   define S_IRWXUGO (S_IRWXU|S_IRWXG|S_IRWXO)
+#   define S_IALLUGO (S_ISUID|S_ISGID|S_ISVTX|S_IRWXUGO)
+#   define S_IRUGO   (S_IRUSR|S_IRGRP|S_IROTH)
+#   define S_IWUGO   (S_IWUSR|S_IWGRP|S_IWOTH)
+#   define S_IXUGO   (S_IXUSR|S_IXGRP|S_IXOTH)
+#endif /* __USE_KOS */
+
 #ifdef __USE_MISC
 #   define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO) /* 0777 */
 #   define ALLPERMS    (S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)/* 07777 */
 #   define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)/* 0666*/
 #   define S_BLKSIZE    512 /* Block size for `st_blocks'. */
-#endif
+#endif /* __USE_MISC */
 
 #ifndef __KERNEL__
 /* NOTE: Since KOS uses a different 'stat' buffer than glibc, but still wants to

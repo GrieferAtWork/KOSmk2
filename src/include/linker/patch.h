@@ -56,13 +56,13 @@ struct modpatch {
  PAGE_ALIGNED size_t   p_mapgap;  /*< Set to specify the size of memory gaps between modules. */
  /* [1..1] Lookup a symbol within the context of patching
   *        a module, given the symbol's name and hash.
-  * @param: search_current: Search the current module ('p_inst') for a suitable symbol.
+  * @param: search_current: Also search the current module ('p_inst') for a suitable symbol.
   * @return: * :   The symbol's absolute load address.
   * @return: NULL: Failed to find the given symbol.
   * HINT: Custom module drivers may hijack this function
   *       to add custom symbol relocations using secret
   *       names, similar to what the kernel already does
-  *       for driver and their '__this_instance' relocation!
+  *       for driver and the '__this_instance' symbol!
   */
  void *(KCALL *p_dlsym)(struct modpatch *__restrict patcher,
                         char const *__restrict name, u32 hash,
@@ -130,7 +130,7 @@ FUNDEF void *KCALL modpatch_user_dlsym(struct modpatch *__restrict patcher, char
  * @return: -EOK:       Successfully patched the given module.
  * @return: -EFAULT:    An illegal pointer was encountered during relocations,
                         or a relocation attempted to modify a read-only text segment.
- * @return: -ENOREL:    Failed to lookup a symbol ('self->p_dlsym' returned '0').
+ * @return: -ENOREL:    Failed to lookup a symbol ('self->p_dlsym' returned 'NULL').
  * @return: E_ISERR(*): Failed to patch the module for some reason. */
 FUNDEF errno_t KCALL modpatch_patch(struct modpatch *__restrict self);
 

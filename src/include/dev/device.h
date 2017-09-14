@@ -50,7 +50,18 @@ struct device {
                                           *        strong ones. */
  u32                           d_flags;  /*< [const] Set of 'DEVICE_FLAG_*' */
  ATOMIC_DATA dev_t             d_id;     /*< [const][valid_if(WAS_REGISTERED(self))] Device ID. */
- /* [0..1][const] Implemented by IRQ-driven devices: Check if an interrupt was lost. */
+ /* [0..1][const] Implemented by IRQ-driven devices: Check if an interrupt was lost.
+  *  NOTE: Since KOS core drivers uses BIOS interrupts to implement a fundamental
+  *        driver environment that is at least capable of loading additional drivers,
+  *        depending on whether or not it manages to find suitable replacements for
+  *        those drivers, there is a chance that they will remain in use even once
+  *        user-space applications being executing.
+  *        At this point, it is possible that interrupts such as keyboard key presses
+  *        get swallowed while execution resides within the BIOS, leaving the system
+  *        open to soft-locking due to loss of said interrupts.
+  *        For that reason, any driver required to handle interrupts (such as PS/2)
+  *        should implement this function to quickly check if there are pending
+  *        interrupts that could not be handled (See PS/2 for an example of this). */
  void                  (KCALL *d_irq_lost)(struct device *__restrict self);
 };
 #define DEVICE_TRYINCREF(self)  INODE_TRYINCREF(&(self)->d_node)
