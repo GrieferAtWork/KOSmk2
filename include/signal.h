@@ -53,7 +53,10 @@ __DECL_BEGIN
    possibility of a signal arriving in the middle of the operation.  */
 #ifndef __sig_atomic_t_defined
 #define __sig_atomic_t_defined 1
+__NAMESPACE_STD_BEGIN
 typedef __sig_atomic_t sig_atomic_t;
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(sig_atomic_t)
 #endif
 
 #ifndef __sigset_t_defined
@@ -88,13 +91,17 @@ typedef __size_t size_t;
 
 
 #ifndef __KERNEL__
+__NAMESPACE_STD_BEGIN
 __LIBC int (__LIBCCALL raise)(int __sig);
+__NAMESPACE_STD_END
 __LIBC __sighandler_t (__LIBCCALL __sysv_signal)(int __sig, __sighandler_t __handler) __ASMNAME("sysv_signal");
 #ifdef __USE_GNU
 __LIBC __sighandler_t (__LIBCCALL sysv_signal)(int __sig, __sighandler_t __handler);
 #endif /* __USE_GNU */
 #ifdef __USE_MISC
+__NAMESPACE_STD_BEGIN
 __LIBC __sighandler_t (__LIBCCALL signal)(int __sig, __sighandler_t __handler);
+__NAMESPACE_STD_END
 __LIBC __sighandler_t (__LIBCCALL ssignal)(int __sig, __sighandler_t __handler);
 __LIBC int (__LIBCCALL gsignal)(int __sig);
 #define sigmask(sig)    __sigmask(sig)
@@ -107,7 +114,9 @@ __LIBC char const *const (_sys_siglist)[_NSIG] __ASMNAME("sys_siglist");
 __LIBC char const *const (sys_siglist)[_NSIG];
 __LIBC __ATTR_NORETURN void (__LIBCCALL sigreturn)(struct sigcontext const *__scp);
 #else /* __USE_MISC */
+__NAMESPACE_STD_BEGIN
 __LIBC __sighandler_t (__LIBCCALL signal)(int __sig, __sighandler_t __handler) __ASMNAME("sysv_signal");
+__NAMESPACE_STD_END
 #endif /* !__USE_MISC */
 #ifdef __USE_XOPEN
 __LIBC __sighandler_t (__LIBCCALL bsd_signal)(int __sig, __sighandler_t __handler);
@@ -159,6 +168,9 @@ __LIBC __sighandler_t (__LIBCCALL sigset)(int __sig, __sighandler_t __disp);
 #endif /* __USE_XOPEN_EXTENDED */
 __LIBC int (__LIBCCALL __libc_current_sigrtmin)(void);
 __LIBC int (__LIBCCALL __libc_current_sigrtmax)(void);
+
+__NAMESPACE_STD_USING(raise)
+__NAMESPACE_STD_USING(signal)
 #else /* !__KERNEL__ */
 #define sigismember(set,sig) __sigismember(set,sig)
 #define sigaddset(set,sig)   __sigaddset(set,sig)

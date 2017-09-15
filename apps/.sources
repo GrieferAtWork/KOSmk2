@@ -18,6 +18,7 @@
  */
 
 BEGIN APPLICATION("init")
+	SET_COMPILER("i686-kos-cxx")
 	SET_OUTPUT("/bin/apps/init")
 	SET_DISKFILE("/bin/init")
 	SOURCE("init/*.c")

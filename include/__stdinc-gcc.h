@@ -180,6 +180,7 @@
 #define __ATTR_WARNING(text)     __attribute__((__warning__(text)))
 #define __ATTR_ERROR(text)       __attribute__((__error__(text)))
 #define __ATTR_SECTION(name)     __attribute__((__section__(name)))
+#define __ATTR_NOTHROW           __attribute__((__nothrow__))
 #define __ATTR_RETNONNULL        __attribute__((__returns_nonnull__))
 #define __ATTR_PACKED            __attribute__((__packed__))
 #define __ATTR_ALIAS(name)       __attribute__((__alias__(name)))
@@ -221,7 +222,7 @@
 #elif defined(__clang__)
 #   define __COMPILER_ALIGNOF    __alignof
 #elif defined(__cplusplus)
-template<class T> struct __compiler_alignof { char __x; T __y; };
+extern "C++" { template<class T> struct __compiler_alignof { char __x; T __y; }; }
 #   define __COMPILER_ALIGNOF(T) (sizeof(__compiler_alignof< T >)-sizeof(T))
 #else
 #   define __COMPILER_ALIGNOF(T) ((__SIZE_TYPE__)&((struct{ char __x; T __y; } *)0)->__y)

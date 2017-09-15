@@ -62,24 +62,36 @@ __DECL_BEGIN
 #define __MATHDECLX(type,function,suffix,args,attrib) __MATHDECL_1(type,function,suffix,args) __attribute__(attrib); __MATHDECL_1(type,__PP_CAT2(__,function),suffix,args) __attribute__(attrib)
 #define __MATHDECL_1(type,function,suffix,args)       __LIBC type (__LIBCCALL __MATH_PRECNAME(function,suffix)) args /*__THROW*/
 #define _Mdouble_                double
-#define __MATH_PRECNAME(name,r)  __PP_CAT2(name,r)
+#define __MATH_PRECNAME(name,r)  name##r
 #define __MATH_DECLARING_DOUBLE  1
+#define __MATHNS_BEGIN           __NAMESPACE_STD_END
+#define __MATHNS_END             __NAMESPACE_STD_END
+#define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##r)
 #include <bits/mathcalls.h>
 #undef  _Mdouble_
 #undef  __MATH_PRECNAME
 #undef  __MATH_DECLARING_DOUBLE
+#undef  __MATHNS_BEGIN
+#undef  __MATHNS_END
+#undef  __MATHNS_USING
 
 #ifdef __USE_ISOC99
 #ifndef _Mfloat_
-#define _Mfloat_      float
+#define _Mfloat_                 float
 #endif
-#define _Mdouble_        _Mfloat_
-#define __MATH_PRECNAME(name,r) name##f##r
+#define _Mdouble_                _Mfloat_
+#define __MATH_PRECNAME(name,r)  name##f##r
 #define __MATH_DECLARING_DOUBLE  0
+#define __MATHNS_BEGIN           __NAMESPACE_STD_END
+#define __MATHNS_END             __NAMESPACE_STD_END
+#define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##f##r)
 #include <bits/mathcalls.h>
 #undef  _Mdouble_
 #undef  __MATH_PRECNAME
 #undef  __MATH_DECLARING_DOUBLE
+#undef  __MATHNS_BEGIN
+#undef  __MATHNS_END
+#undef  __MATHNS_USING
 #ifdef __COMPILER_HAVE_LONGDOUBLE
 #ifndef _Mlong_double_
 #define _Mlong_double_  long double
@@ -88,10 +100,16 @@ __DECL_BEGIN
 #define __MATH_PRECNAME(name,r) name##l##r
 #define __MATH_DECLARING_DOUBLE  0
 #define __MATH_DECLARE_LDOUBLE   1
+#define __MATHNS_BEGIN           __NAMESPACE_STD_END
+#define __MATHNS_END             __NAMESPACE_STD_END
+#define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##l##r)
 #include <bits/mathcalls.h>
 #undef  _Mdouble_
 #undef  __MATH_PRECNAME
 #undef  __MATH_DECLARING_DOUBLE
+#undef  __MATHNS_BEGIN
+#undef  __MATHNS_END
+#undef  __MATHNS_USING
 #endif /* __COMPILER_HAVE_LONGDOUBLE */
 #endif /* __USE_ISOC99 */
 #undef  __MATHDECL_1
@@ -266,9 +284,9 @@ struct exception
 
 #ifndef __KERNEL__
 #ifdef __cplusplus
-__LIBC int (__LIBCCALL matherr)(struct __exception *__exc) throw();
+__LIBC int __NOTHROW((__LIBCCALL matherr)(struct __exception *__exc));
 #else
-__LIBC int (__LIBCCALL matherr)(struct exception *__exc);
+__LIBC int __NOTHROW((__LIBCCALL matherr)(struct exception *__exc));
 #endif
 #endif /* !__KERNEL__ */
 

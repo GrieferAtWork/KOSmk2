@@ -27,10 +27,25 @@
 
 __DECL_BEGIN
 
+#ifdef __NAMESPACE_STD_EXISTS
+#ifndef __std_size_t_defined
+#define __std_size_t_defined 1
+__NAMESPACE_STD_BEGIN
+typedef __SIZE_TYPE__ size_t;
+__NAMESPACE_STD_END
+#endif /* !__std_size_t_defined */
+#ifndef __CXX_SYSTEM_HEADER
+#ifndef __size_t_defined
+#define __size_t_defined 1
+__NAMESPACE_STD_USING(size_t)
+#endif /* !__size_t_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
+#else /* __NAMESPACE_STD_EXISTS */
 #ifndef __size_t_defined
 #define __size_t_defined 1
 typedef __SIZE_TYPE__ size_t;
-#endif
+#endif /* !__size_t_defined */
+#endif /* !__NAMESPACE_STD_EXISTS */
 
 #ifndef NULL
 #ifdef __INTELLISENSE__
@@ -58,10 +73,23 @@ typedef __ssize_t ssize_t;
 #endif
 #endif /* __USE_XOPEN2K8 */
 
+#ifdef __NAMESPACE_STD_EXISTS
+#ifndef __std_fpos_t_defined
+#define __std_fpos_t_defined 1
+__NAMESPACE_STD_BEGIN
+typedef __FS_TYPE(pos) fpos_t;
+__NAMESPACE_STD_END
+#endif /* !__std_fpos_t_defined */
+#ifndef __fpos_t_defined
+#define __fpos_t_defined 1
+__NAMESPACE_STD_USING(fpos_t)
+#endif /* !__fpos_t_defined */
+#else
 #ifndef __fpos_t_defined
 #define __fpos_t_defined 1
 typedef __FS_TYPE(pos) fpos_t;
 #endif /* !__fpos_t_defined */
+#endif
 
 #ifdef __USE_LARGEFILE64
 #ifndef __fpos64_t_defined
@@ -97,11 +125,24 @@ typedef __pos64_t      fpos64_t;
 #endif
 
 #ifndef __KERNEL__
+#ifdef __NAMESPACE_STD_EXISTS
+#ifndef __std_FILE_defined
+#define __std_FILE_defined 1
+__NAMESPACE_STD_BEGIN
+typedef __FILE FILE;
+__NAMESPACE_STD_END
+#endif /* !__std_FILE_defined */
+#ifndef __FILE_defined
+#define __FILE_defined 1
+__NAMESPACE_STD_USING(FILE)
+#endif /* !__FILE_defined */
+#else /* __NAMESPACE_STD_EXISTS */
 #ifndef __FILE_defined
 #define __FILE_defined 1
 typedef __FILE FILE;
-#endif
-#endif
+#endif /* !__FILE_defined */
+#endif /* !__NAMESPACE_STD_EXISTS */
+#endif /* !__KERNEL__ */
 
 
 #ifndef __KERNEL__
@@ -117,6 +158,7 @@ __LIBC __FILE *(stderr);
 #define stdout stdout
 #define stderr stderr
 
+__NAMESPACE_STD_BEGIN
 __LIBC int (__LIBCCALL remove)(char const *__filename);
 __LIBC int (__LIBCCALL rename)(char const *__old, char const *__new);
 __LIBC __WUNUSED char *(__LIBCCALL tmpnam)(char *__s);
@@ -130,21 +172,21 @@ __LIBC int (__LIBCCALL getchar)(void);
 __LIBC int (__LIBCCALL fputc)(int __c, __FILE *__stream);
 __LIBC int (__LIBCCALL putc)(int __c, __FILE *__stream);
 __LIBC int (__LIBCCALL putchar)(int __c);
+
 #ifdef __USE_KOS
-__LIBC int (__LIBCCALL removeat)(int __fd, char const *__filename);
-#if __SIZEOF_SIZE_T__ == __SIZEOF_SIZE_T__
+#if __SIZEOF_SIZE_T__ == __SIZEOF_INT__
 __LIBC __WUNUSED char *(__LIBCCALL fgets)(char *__restrict __s, size_t __n, __FILE *__restrict __stream);
-#else
+#else /* __SIZEOF_SIZE_T__ == __SIZEOF_INT__ */
 __LIBC __WUNUSED char *(__LIBCCALL fgets)(char *__restrict __s, size_t __n, __FILE *__restrict __stream) __ASMNAME("fgets_sz");
-#endif
+#endif /* __SIZEOF_SIZE_T__ != __SIZEOF_INT__ */
 __LIBC __ssize_t (__LIBCCALL fputs)(char const *__restrict __s, __FILE *__restrict __stream);
 __LIBC __ssize_t (__LIBCCALL puts)(char const *__s);
-#else
+#else /* __USE_KOS */
 __LIBC __WUNUSED char *(__LIBCCALL fgets)(char *__restrict __s, int __n, __FILE *__restrict __stream);
 __LIBC int (__LIBCCALL fputs)(char const *__restrict __s, __FILE *__restrict __stream);
 __LIBC int (__LIBCCALL puts)(char const *__s);
-#endif
-__LIBC int (__LIBCCALL ungetc) (int __c, __FILE *__stream);
+#endif /* !__USE_KOS */
+__LIBC int (__LIBCCALL ungetc)(int __c, __FILE *__stream);
 __LIBC __WUNUSED size_t (__LIBCCALL fread)(void *__restrict __ptr, size_t __size, size_t __n, __FILE *__restrict __stream);
 __LIBC size_t (__LIBCCALL fwrite)(void const *__restrict __ptr, size_t __size, size_t __n, __FILE *__restrict __stream);
 __LIBC int (__LIBCCALL fseek)(__FILE *__stream, long int __off, int __whence);
@@ -154,10 +196,6 @@ __LIBC void (__LIBCCALL clearerr)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL feof)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL ferror)(__FILE *__stream);
 __LIBC void (__LIBCCALL perror)(char const *__s);
-
-#ifdef __USE_ATFILE
-__LIBC int (__LIBCCALL renameat)(int __oldfd, char const *__old, int __newfd, char const *__new);
-#endif
 #ifndef __USE_FILE_OFFSET64
 __LIBC __WUNUSED __FILE *(__LIBCCALL tmpfile)(void);
 __LIBC __WUNUSED __FILE *(__LIBCCALL fopen)(char const *__restrict __filename, char const *__restrict __modes);
@@ -170,6 +208,97 @@ __LIBC __WUNUSED __FILE *(__LIBCCALL fopen)(char const *__restrict __filename, c
 __LIBC __WUNUSED __FILE *(__LIBCCALL freopen)(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream) __ASMNAME("freopen64");
 __LIBC int (__LIBCCALL fgetpos)(__FILE *__restrict __stream, fpos_t *__restrict __pos) __ASMNAME("fgetpos64");
 __LIBC int (__LIBCCALL fsetpos)(__FILE *__stream, fpos_t const *__pos) __ASMNAME("fsetpos64");
+#endif
+#ifdef __USE_KOS
+__LIBC __ssize_t (__ATTR_CDECL printf)(char const *__restrict __format, ...);
+__LIBC __ssize_t (__ATTR_CDECL fprintf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
+__LIBC __ssize_t (__LIBCCALL vprintf)(char const *__restrict __format, __VA_LIST __args);
+__LIBC __ssize_t (__LIBCCALL vfprintf)(__FILE *__restrict __stream, char const *__restrict __format, __VA_LIST __args);
+__LIBC __WUNUSED __ssize_t (__ATTR_CDECL fscanf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
+__LIBC __WUNUSED __ssize_t (__ATTR_CDECL scanf)(char const *__restrict __format, ...);
+#ifdef __USE_ISOC99
+__LIBC __WUNUSED __ssize_t (__LIBCCALL vfscanf)(__FILE *__restrict __stream, char const *__restrict __format, __VA_LIST __args);
+__LIBC __WUNUSED __ssize_t (__LIBCCALL vscanf)(char const *__restrict __format, __VA_LIST __args);
+#endif /* __USE_ISOC99 */
+#else /* __USE_KOS */
+__LIBC int (__ATTR_CDECL printf)(char const *__restrict __format, ...);
+__LIBC int (__ATTR_CDECL fprintf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
+__LIBC int (__LIBCCALL vprintf)(char const *__restrict __format, __VA_LIST __args);
+__LIBC int (__LIBCCALL vfprintf)(__FILE *__restrict __stream, char const *__restrict __format, __VA_LIST __args);
+__LIBC __WUNUSED int (__ATTR_CDECL fscanf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
+__LIBC __WUNUSED int (__ATTR_CDECL scanf)(char const *__restrict __format, ...);
+#ifdef __USE_ISOC99
+__LIBC __WUNUSED int (__LIBCCALL vfscanf)(__FILE *__restrict __stream, char const *__restrict __format, __VA_LIST __args);
+__LIBC __WUNUSED int (__LIBCCALL vscanf)(char const *__restrict __format, __VA_LIST __args);
+#endif /* __USE_ISOC99 */
+#endif /* !__USE_KOS */
+#if !defined(__USE_ISOC11) || \
+    (defined(__cplusplus) && __cplusplus <= 201103L)
+__LIBC __WUNUSED __ATTR_DEPRECATED("No buffer size checks") char *(__LIBCCALL gets)(char *__s);
+#endif
+__NAMESPACE_STD_END
+
+__NAMESPACE_STD_USING(remove)
+__NAMESPACE_STD_USING(rename)
+__NAMESPACE_STD_USING(tmpnam)
+__NAMESPACE_STD_USING(fclose)
+__NAMESPACE_STD_USING(fflush)
+__NAMESPACE_STD_USING(setbuf)
+__NAMESPACE_STD_USING(setvbuf)
+__NAMESPACE_STD_USING(fgetc)
+__NAMESPACE_STD_USING(getc)
+__NAMESPACE_STD_USING(getchar)
+__NAMESPACE_STD_USING(fputc)
+__NAMESPACE_STD_USING(putc)
+__NAMESPACE_STD_USING(putchar)
+__NAMESPACE_STD_USING(fgets)
+__NAMESPACE_STD_USING(fputs)
+__NAMESPACE_STD_USING(puts)
+__NAMESPACE_STD_USING(ungetc)
+__NAMESPACE_STD_USING(fread)
+__NAMESPACE_STD_USING(fwrite)
+__NAMESPACE_STD_USING(fseek)
+__NAMESPACE_STD_USING(ftell)
+__NAMESPACE_STD_USING(rewind)
+__NAMESPACE_STD_USING(clearerr)
+__NAMESPACE_STD_USING(feof)
+__NAMESPACE_STD_USING(ferror)
+__NAMESPACE_STD_USING(perror)
+__NAMESPACE_STD_USING(tmpfile)
+__NAMESPACE_STD_USING(fopen)
+__NAMESPACE_STD_USING(freopen)
+__NAMESPACE_STD_USING(fgetpos)
+__NAMESPACE_STD_USING(fsetpos)
+__NAMESPACE_STD_USING(printf)
+__NAMESPACE_STD_USING(fprintf)
+__NAMESPACE_STD_USING(vprintf)
+__NAMESPACE_STD_USING(vfprintf)
+__NAMESPACE_STD_USING(fscanf)
+__NAMESPACE_STD_USING(scanf)
+#ifdef __USE_ISOC99
+__NAMESPACE_STD_USING(vfscanf)
+__NAMESPACE_STD_USING(vscanf)
+#endif /* __USE_ISOC99 */
+#if !defined(__USE_ISOC11) || \
+    (defined(__cplusplus) && __cplusplus <= 201103L)
+__NAMESPACE_STD_USING(gets)
+#endif
+
+#ifdef __USE_XOPEN2K8
+#ifdef __USE_KOS
+__LIBC __ssize_t (__LIBCCALL vdprintf)(int __fd, char const *__restrict __format, __VA_LIST __args);
+__LIBC __ssize_t (__ATTR_CDECL dprintf)(int __fd, char const *__restrict __format, ...);
+#else /* __USE_KOS */
+__LIBC int (__LIBCCALL vdprintf)(int __fd, char const *__restrict __format, __VA_LIST __args);
+__LIBC int (__ATTR_CDECL dprintf)(int __fd, char const *__restrict __format, ...);
+#endif /* !__USE_KOS */
+#endif /* __USE_XOPEN2K8 */
+
+#ifdef __USE_KOS
+__LIBC int (__LIBCCALL removeat)(int __fd, char const *__filename);
+#endif
+#ifdef __USE_ATFILE
+__LIBC int (__LIBCCALL renameat)(int __oldfd, char const *__old, int __newfd, char const *__new);
 #endif
 #ifdef __USE_LARGEFILE64
 __LIBC __WUNUSED __FILE *(__LIBCCALL tmpfile64)(void);
@@ -207,37 +336,6 @@ __LIBC __WUNUSED __FILE *(__LIBCCALL open_memstream)(char **__bufloc, size_t *__
 __LIBC __WUNUSED __ssize_t (__LIBCCALL __getdelim)(char **__restrict __lineptr, size_t *__restrict __n, int __delimiter, __FILE *__restrict __stream) __ASMNAME("getdelim");
 __LIBC __WUNUSED __ssize_t (__LIBCCALL getdelim)(char **__restrict __lineptr, size_t *__restrict __n, int __delimiter, __FILE *__restrict __stream);
 __LIBC __WUNUSED __ssize_t (__LIBCCALL getline)(char **__restrict __lineptr, size_t *__restrict __n, __FILE *__restrict __stream);
-#endif
-#ifdef __USE_KOS
-__LIBC __ssize_t (__ATTR_CDECL printf)(char const *__restrict __format, ...);
-__LIBC __ssize_t (__ATTR_CDECL fprintf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
-__LIBC __ssize_t (__LIBCCALL vprintf)(char const *__restrict __format, __VA_LIST __args);
-__LIBC __ssize_t (__LIBCCALL vfprintf)(__FILE *__restrict __stream, char const *__restrict __format, __VA_LIST __args);
-__LIBC __WUNUSED __ssize_t (__ATTR_CDECL fscanf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
-__LIBC __WUNUSED __ssize_t (__ATTR_CDECL scanf)(char const *__restrict __format, ...);
-#ifdef __USE_ISOC99
-__LIBC __WUNUSED __ssize_t (__LIBCCALL vfscanf)(__FILE *__restrict __stream, char const *__restrict __format, __VA_LIST __args);
-__LIBC __WUNUSED __ssize_t (__LIBCCALL vscanf)(char const *__restrict __format, __VA_LIST __args);
-#endif
-#ifdef __USE_XOPEN2K8
-__LIBC __ssize_t (__LIBCCALL vdprintf)(int __fd, char const *__restrict __format, __VA_LIST __args);
-__LIBC __ssize_t (__ATTR_CDECL dprintf)(int __fd, char const *__restrict __format, ...);
-#endif
-#else
-__LIBC int (__ATTR_CDECL printf)(char const *__restrict __format, ...);
-__LIBC int (__ATTR_CDECL fprintf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
-__LIBC int (__LIBCCALL vprintf)(char const *__restrict __format, __VA_LIST __args);
-__LIBC int (__LIBCCALL vfprintf)(__FILE *__restrict __stream, char const *__restrict __format, __VA_LIST __args);
-__LIBC __WUNUSED int (__ATTR_CDECL fscanf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
-__LIBC __WUNUSED int (__ATTR_CDECL scanf)(char const *__restrict __format, ...);
-#ifdef __USE_ISOC99
-__LIBC __WUNUSED int (__LIBCCALL vfscanf)(__FILE *__restrict __stream, char const *__restrict __format, __VA_LIST __args);
-__LIBC __WUNUSED int (__LIBCCALL vscanf)(char const *__restrict __format, __VA_LIST __args);
-#endif
-#ifdef __USE_XOPEN2K8
-__LIBC int (__LIBCCALL vdprintf)(int __fd, char const *__restrict __format, __VA_LIST __args);
-__LIBC int (__ATTR_CDECL dprintf)(int __fd, char const *__restrict __format, ...);
-#endif
 #endif
 #ifdef __USE_POSIX
 __LIBC int (__LIBCCALL getc_unlocked)(__FILE *__stream);
@@ -280,10 +378,6 @@ struct obstack;
 __LIBC int (__LIBCCALL obstack_printf)(struct obstack *__restrict __obstack, char const *__restrict __format, ...);
 __LIBC int (__LIBCCALL obstack_vprintf)(struct obstack *__restrict __obstack, char const *__restrict __format, __VA_LIST __args);
 #endif /* __USE_GNU */
-#if !defined(__USE_ISOC11) || \
-    (defined(__cplusplus) && __cplusplus <= 201103L)
-__LIBC __WUNUSED __ATTR_DEPRECATED("No buffer size checks") char *(__LIBCCALL gets)(char *__s);
-#endif
 #if defined(__USE_LARGEFILE) || defined(__USE_XOPEN2K)
 __LIBC int (__LIBCCALL fseeko)(__FILE *__stream, __FS_TYPE(off) __off, int __whence) __FS_FUNC(fseeko);
 __LIBC __WUNUSED __FS_TYPE(off) (__LIBCCALL ftello)(__FILE *__stream) __FS_FUNC(ftello);
@@ -300,31 +394,42 @@ __LIBC __ssize_t (__LIBCCALL file_printer)(char const *__restrict __data,
 #endif /* !__KERNEL__ */
 
 
-
-
+__NAMESPACE_STD_BEGIN
 #ifdef __USE_KOS
 __LIBC size_t (__ATTR_CDECL sprintf)(char *__restrict __s, char const *__restrict __format, ...);
 __LIBC size_t (__LIBCCALL vsprintf)(char *__restrict __s, char const *__restrict __format, __VA_LIST __args);
+__LIBC size_t (__ATTR_CDECL sscanf)(char const *__restrict __s, char const *__restrict __format, ...);
 #if defined(__USE_ISOC99) || defined(__USE_UNIX98)
 __LIBC size_t (__ATTR_CDECL snprintf)(char *__restrict __s, size_t __maxlen, char const *__restrict __format, ...);
 __LIBC size_t (__LIBCCALL vsnprintf)(char *__restrict __s, size_t __maxlen, char const *__restrict __format, __VA_LIST __args);
 #endif /* __USE_ISOC99 || __USE_UNIX98 */
-__LIBC size_t (__ATTR_CDECL sscanf)(char const *__restrict __s, char const *__restrict __format, ...);
 #ifdef __USE_ISOC99
 __LIBC size_t (__LIBCCALL vsscanf)(char const *__restrict __s, char const *__restrict __format, __VA_LIST __args);
 #endif /* __USE_ISOC99 */
 #else /* __USE_KOS */
 __LIBC int (__ATTR_CDECL sprintf)(char *__restrict __s, char const *__restrict __format, ...);
 __LIBC int (__LIBCCALL vsprintf)(char *__restrict __s, char const *__restrict __format, __VA_LIST __args);
+__LIBC int (__ATTR_CDECL sscanf)(char const *__restrict __s, char const *__restrict __format, ...);
 #if defined(__USE_ISOC99) || defined(__USE_UNIX98)
 __LIBC int (__ATTR_CDECL snprintf)(char *__restrict __s, size_t __maxlen, char const *__restrict __format, ...);
 __LIBC int (__LIBCCALL vsnprintf)(char *__restrict __s, size_t __maxlen, char const *__restrict __format, __VA_LIST __args);
 #endif /* __USE_ISOC99 || __USE_UNIX98 */
-__LIBC int (__ATTR_CDECL sscanf)(char const *__restrict __s, char const *__restrict __format, ...);
 #ifdef __USE_ISOC99
 __LIBC int (__LIBCCALL vsscanf)(char const *__restrict __s, char const *__restrict __format, __VA_LIST __args);
 #endif /* __USE_ISOC99 */
 #endif /* !__USE_KOS */
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(sprintf)
+__NAMESPACE_STD_USING(vsprintf)
+__NAMESPACE_STD_USING(sscanf)
+#if defined(__USE_ISOC99) || defined(__USE_UNIX98)
+__NAMESPACE_STD_USING(snprintf)
+__NAMESPACE_STD_USING(vsnprintf)
+#endif /* __USE_ISOC99 || __USE_UNIX98 */
+#ifdef __USE_ISOC99
+__NAMESPACE_STD_USING(vsscanf)
+#endif /* __USE_ISOC99 */
+
 
 #ifdef __USE_GNU
 #ifndef __KERNEL__

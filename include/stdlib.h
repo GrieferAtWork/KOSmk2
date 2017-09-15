@@ -34,10 +34,25 @@
 
 __DECL_BEGIN
 
+#ifdef __NAMESPACE_STD_EXISTS
+#ifndef __std_size_t_defined
+#define __std_size_t_defined 1
+__NAMESPACE_STD_BEGIN
+typedef __SIZE_TYPE__ size_t;
+__NAMESPACE_STD_END
+#endif /* !__std_size_t_defined */
+#ifndef __CXX_SYSTEM_HEADER
+#ifndef __size_t_defined
+#define __size_t_defined 1
+__NAMESPACE_STD_USING(size_t)
+#endif /* !__size_t_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
+#else /* __NAMESPACE_STD_EXISTS */
 #ifndef __size_t_defined
 #define __size_t_defined 1
 typedef __SIZE_TYPE__ size_t;
-#endif
+#endif /* !__size_t_defined */
+#endif /* !__NAMESPACE_STD_EXISTS */
 
 #ifndef __wchar_t_defined
 #define __wchar_t_defined 1
@@ -95,6 +110,40 @@ typedef union {
 #endif /* !__WAIT_MACROS_DEFINED */
 #endif /* __USE_XOPEN || __USE_XOPEN2K8 */
 
+#ifdef __NAMESPACE_STD_EXISTS
+__NAMESPACE_STD_BEGIN
+#ifndef __std_div_t_defined
+#define __std_div_t_defined 1
+typedef struct { int quot,rem; } div_t;
+#endif /* !__std_div_t_defined */
+#ifndef __std_ldiv_t_defined
+#define __std_ldiv_t_defined 1
+typedef struct { long quot,rem; } ldiv_t;
+#endif /* !__std_ldiv_t_defined */
+#ifdef __USE_ISOC99
+#ifndef __std_lldiv_t_defined
+#define __std_lldiv_t_defined 1
+typedef struct { __LONGLONG quot,rem; } lldiv_t;
+#endif /* !__std_lldiv_t_defined */
+#endif /* __USE_ISOC99 */
+__NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
+#ifndef __div_t_defined
+#define __div_t_defined 1
+__NAMESPACE_STD_USING(div_t)
+#endif /* !__div_t_defined */
+#ifndef __ldiv_t_defined
+#define __ldiv_t_defined 1
+__NAMESPACE_STD_USING(ldiv_t)
+#endif /* !__ldiv_t_defined */
+#ifdef __USE_ISOC99
+#ifndef __lldiv_t_defined
+#define __lldiv_t_defined 1
+__NAMESPACE_STD_USING(lldiv_t)
+#endif /* !__lldiv_t_defined */
+#endif /* __USE_ISOC99 */
+#endif /* !__CXX_SYSTEM_HEADER */
+#else /* __NAMESPACE_STD_EXISTS */
 #ifndef __div_t_defined
 #define __div_t_defined 1
 typedef struct { int quot,rem; } div_t;
@@ -103,6 +152,14 @@ typedef struct { int quot,rem; } div_t;
 #define __ldiv_t_defined 1
 typedef struct { long quot,rem; } ldiv_t;
 #endif /* !__ldiv_t_defined */
+#ifdef __USE_ISOC99
+#ifndef __lldiv_t_defined
+#define __lldiv_t_defined 1
+typedef struct { __LONGLONG quot,rem; } lldiv_t;
+#endif /* !__lldiv_t_defined */
+#endif /* __USE_ISOC99 */
+#endif /* !__NAMESPACE_STD_EXISTS */
+
 
 #ifdef __KERNEL__
 #define RAND_MAX 0xffffffffu
@@ -122,40 +179,55 @@ typedef __compar_fn_t comparison_fn_t;
 #endif /* __USE_GNU */
 #endif /* __COMPAR_FN_T */
 
-__LIBC __NONNULL((1,2,5)) __WUNUSED void *(__LIBCCALL bsearch)(void const *__key, void const *__base, size_t __nmemb, size_t __size, __compar_fn_t __compar);
-__LIBC __NONNULL((1,4)) void (__LIBCCALL qsort)(void *__base, size_t __nmemb, size_t __size, __compar_fn_t __compar);
 #ifdef __USE_GNU
 typedef int (__LIBCCALL *__compar_d_fn_t)(void const *__a, void const *__b, void *__arg);
 __LIBC __NONNULL((1,4)) void (__LIBCCALL qsort_r)(void *__base, size_t __nmemb, size_t __size, __compar_d_fn_t __compar, void *__arg);
 #endif /* __USE_GNU */
 
+__NAMESPACE_STD_BEGIN
+__LIBC __NONNULL((1,2,5)) __WUNUSED void *(__LIBCCALL bsearch)(void const *__key, void const *__base, size_t __nmemb, size_t __size, __compar_fn_t __compar);
+__LIBC __NONNULL((1,4)) void (__LIBCCALL qsort)(void *__base, size_t __nmemb, size_t __size, __compar_fn_t __compar);
 #ifdef __KERNEL__
 __LOCAL __ATTR_CONST __WUNUSED int (__LIBCCALL abs)(int __x) { return __x < 0 ? -__x : __x; }
 __LOCAL __ATTR_CONST __WUNUSED long (__LIBCCALL labs)(long __x) { return __x < 0 ? -__x : __x; }
+#ifdef __USE_ISOC99
+__LOCAL __ATTR_CONST __WUNUSED __LONGLONG (__LIBCCALL llabs)(__LONGLONG __x) { return __x < 0 ? -__x : __x; }
+#endif /* __USE_ISOC99 */
+
+#ifdef __GNUC__
 __LOCAL __ATTR_CONST __WUNUSED div_t (__LIBCCALL div)(int __numer, int __denom) { return (div_t){ __numer/__denom,__numer%__denom }; }
 __LOCAL __ATTR_CONST __WUNUSED ldiv_t (__LIBCCALL ldiv)(long __numer, long __denom) { return (ldiv_t){ __numer/__denom,__numer%__denom }; }
 #ifdef __USE_ISOC99
-#ifndef __lldiv_t_defined
-#define __lldiv_t_defined 1
-typedef struct { __LONGLONG quot,rem; } lldiv_t;
-#endif /* !__lldiv_t_defined */
-__LOCAL __ATTR_CONST __WUNUSED __LONGLONG (__LIBCCALL llabs)(__LONGLONG __x) { return __x < 0 ? -__x : __x; }
 __LOCAL __ATTR_CONST __WUNUSED lldiv_t (__LIBCCALL lldiv)(long long __numer, long long __denom) { return (lldiv_t){ __numer/__denom,__numer%__denom }; }
 #endif /* __USE_ISOC99 */
 #else
+__LOCAL __ATTR_CONST __WUNUSED div_t (__LIBCCALL div)(int __numer, int __denom) { div_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
+__LOCAL __ATTR_CONST __WUNUSED ldiv_t (__LIBCCALL ldiv)(long __numer, long __denom) { ldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
+#ifdef __USE_ISOC99
+__LOCAL __ATTR_CONST __WUNUSED lldiv_t (__LIBCCALL lldiv)(long long __numer, long long __denom) { lldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
+#endif /* __USE_ISOC99 */
+#endif
+#else /* __KERNEL__ */
 __LIBC __ATTR_CONST __WUNUSED int (__LIBCCALL abs)(int __x);
 __LIBC __ATTR_CONST __WUNUSED long (__LIBCCALL labs)(long __x);
 __LIBC __ATTR_CONST __WUNUSED div_t (__LIBCCALL div)(int __numer, int __denom);
 __LIBC __ATTR_CONST __WUNUSED ldiv_t (__LIBCCALL ldiv)(long __numer, long __denom);
 #ifdef __USE_ISOC99
-#ifndef __lldiv_t_defined
-#define __lldiv_t_defined 1
-typedef struct { __LONGLONG quot,rem; } lldiv_t;
-#endif /* !__lldiv_t_defined */
 __LIBC __ATTR_CONST __WUNUSED __LONGLONG (__LIBCCALL llabs)(__LONGLONG __x);
 __LIBC __ATTR_CONST __WUNUSED lldiv_t (__LIBCCALL lldiv)(long long __numer, long long __denom);
 #endif /* __USE_ISOC99 */
-#endif
+#endif /* !__KERNEL__ */
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(bsearch)
+__NAMESPACE_STD_USING(qsort)
+__NAMESPACE_STD_USING(abs)
+__NAMESPACE_STD_USING(labs)
+__NAMESPACE_STD_USING(div)
+__NAMESPACE_STD_USING(ldiv)
+#ifdef __USE_ISOC99
+__NAMESPACE_STD_USING(llabs)
+__NAMESPACE_STD_USING(lldiv)
+#endif /* __USE_ISOC99 */
 
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN_EXTENDED) && !defined(__USE_XOPEN2K8))
@@ -172,7 +244,7 @@ __LIBC __NONNULL((1)) __LONGLONG (__LIBCCALL strtoq)(char const *__restrict __np
 __LIBC __NONNULL((1)) __ULONGLONG (__LIBCCALL strtouq)(char const *__restrict __nptr, char **__restrict __endptr, int __base) __ASMNAME("strtoull");
 #endif /* __USE_MISC */
 
-
+__NAMESPACE_STD_BEGIN
 __LIBC __ATTR_PURE __WUNUSED __NONNULL((1)) double (__LIBCCALL atof)(char const *__restrict __nptr);
 __LIBC __ATTR_PURE __WUNUSED __NONNULL((1)) int (__LIBCCALL atoi)(char const *__restrict __nptr);
 #if __SIZEOF_LONG__ == __SIZEOF_INT__
@@ -202,22 +274,62 @@ __LIBC __NONNULL((1)) __ULONGLONG (__LIBCCALL strtoull)(char const *__restrict _
 #endif
 ;
 #endif /* __USE_ISOC99 */
-
 #ifdef __KERNEL__
 __LIBC __UINT32_TYPE__ (__LIBCCALL rand)(void);
 __LIBC void (__LIBCCALL srand)(__UINT32_TYPE__ __seed);
-#ifdef __USE_POSIX
-__LIBC __NONNULL((1)) __UINT32_TYPE__ (__LIBCCALL rand_r)(__UINT32_TYPE__ *__restrict __seed);
-#endif /* __USE_POSIX */
 #else /* __KERNEL__ */
 __LIBC int (__LIBCCALL rand)(void);
 __LIBC void (__LIBCCALL srand)(long __seed);
-#ifdef __USE_POSIX
-__LIBC __NONNULL((1)) int rand_r (unsigned int *__restrict __seed);
-#endif /* __USE_POSIX */
 #endif /* !__KERNEL__ */
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(atof)
+__NAMESPACE_STD_USING(atoi)
+__NAMESPACE_STD_USING(atol)
+__NAMESPACE_STD_USING(strtod)
+__NAMESPACE_STD_USING(strtol)
+__NAMESPACE_STD_USING(strtoul)
+__NAMESPACE_STD_USING(rand)
+__NAMESPACE_STD_USING(srand)
+#ifdef __USE_ISOC99
+__NAMESPACE_STD_USING(atoll)
+__NAMESPACE_STD_USING(strtof)
+__NAMESPACE_STD_USING(strtold)
+__NAMESPACE_STD_USING(strtoll)
+__NAMESPACE_STD_USING(strtoull)
+#endif /* __USE_ISOC99 */
 
+#ifdef __USE_POSIX
+#ifdef __KERNEL__
+__LIBC __NONNULL((1)) __UINT32_TYPE__ (__LIBCCALL rand_r)(__UINT32_TYPE__ *__restrict __seed);
+#else /* __KERNEL__ */
+__LIBC __NONNULL((1)) int rand_r (unsigned int *__restrict __seed);
+#endif /* !__KERNEL__ */
+#endif /* __USE_POSIX */
 
+#ifdef __NAMESPACE_STD_EXISTS
+#ifndef __std_malloc_calloc_defined
+#define __std_malloc_calloc_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC void *(__LIBCCALL malloc)(size_t __n_bytes);
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_MALLOC void *(__LIBCCALL calloc)(size_t __count, size_t __n_bytes);
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL realloc)(void *__restrict __mallptr, size_t __n_bytes);
+#ifdef __KERNEL__
+__LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr) __ASMNAME("kfree");
+#else
+__LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr);
+#endif
+__NAMESPACE_STD_END
+#endif /* !__malloc_calloc_defined */
+#ifndef __CXX_SYSTEM_HEADER
+#ifndef __malloc_calloc_defined
+#define __malloc_calloc_defined 1
+__NAMESPACE_STD_USING(malloc)
+__NAMESPACE_STD_USING(calloc)
+__NAMESPACE_STD_USING(realloc)
+__NAMESPACE_STD_USING(free)
+#endif /* !__malloc_calloc_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
+#else /* __NAMESPACE_STD_EXISTS */
 #ifndef __malloc_calloc_defined
 #define __malloc_calloc_defined 1
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC void *(__LIBCCALL malloc)(size_t __n_bytes);
@@ -229,6 +341,8 @@ __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr) __ASMNAME("kfre
 __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr);
 #endif
 #endif /* !__malloc_calloc_defined */
+#endif /* !__NAMESPACE_STD_EXISTS */
+
 
 #ifdef __USE_MISC
 #ifndef __cfree_defined
@@ -268,6 +382,42 @@ void *(__LIBCCALL aligned_alloc)(size_t __alignment, size_t __n_bytes) __ASMNAME
 /* Debug hooks for malloc() and friends. */
 #ifdef __USE_DEBUG
 #if __USE_DEBUG != 0
+#ifdef __NAMESPACE_STD_EXISTS
+#ifndef __std_malloc_calloc_d_defined
+#define __std_malloc_calloc_d_defined 1
+/* Must also define these within the std:: namespace to allow the debug macro overrides to work:
+ * >> namespace std {
+ * >>    void *malloc(size_t);
+ * >>    void *_malloc_d(size_t, __DEBUGINFO);
+ * >> }
+ * >> using std::malloc;
+ * >> using std::_malloc_d;
+ * >> 
+ * >> #define malloc(s) _malloc_d(s,__DEBUGINFO_GEN)
+ * >>
+ * >> void *p = std::malloc(42); // Expands to 'std::_malloc_d(42,...)'
+ */
+__NAMESPACE_STD_BEGIN
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC void *(__LIBCCALL _malloc_d)(size_t __n_bytes, __DEBUGINFO);
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_MALLOC void *(__LIBCCALL _calloc_d)(size_t __count, size_t __n_bytes, __DEBUGINFO);
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL _realloc_d)(void *__restrict __mallptr, size_t __n_bytes, __DEBUGINFO);
+#ifdef __KERNEL__
+__LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_kfree_d");
+#else /* __KERNEL__ */
+__LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO);
+#endif /* !__KERNEL__ */
+__NAMESPACE_STD_END
+#endif /* !__std_malloc_calloc_d_defined */
+#ifndef __CXX_SYSTEM_HEADER
+#ifndef __malloc_calloc_d_defined
+#define __malloc_calloc_d_defined 1
+__NAMESPACE_STD_USING(_malloc_d)
+__NAMESPACE_STD_USING(_calloc_d)
+__NAMESPACE_STD_USING(_realloc_d)
+__NAMESPACE_STD_USING(_free_d)
+#endif /* !__malloc_calloc_d_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
+#else /* __NAMESPACE_STD_EXISTS */
 #ifndef __malloc_calloc_d_defined
 #define __malloc_calloc_d_defined 1
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC void *(__LIBCCALL _malloc_d)(size_t __n_bytes, __DEBUGINFO);
@@ -279,6 +429,7 @@ __LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO)
 __LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO);
 #endif /* !__KERNEL__ */
 #endif /* !__malloc_calloc_d_defined */
+#endif /* !__NAMESPACE_STD_EXISTS */
 
 #ifdef __USE_MISC
 #ifndef __cfree_d_defined
@@ -383,8 +534,11 @@ __LIBC void (__LIBCCALL srandom)(unsigned int __seed) __ASMNAME("srand");
 #endif /* __USE_MISC || __USE_XOPEN_EXTENDED  */
 
 #else /* __KERNEL__ */
-#define MB_CUR_MAX (__ctype_get_mb_cur_max())
+
+#define MB_CUR_MAX                 (__ctype_get_mb_cur_max())
 __LIBC __WUNUSED size_t (__LIBCCALL __ctype_get_mb_cur_max)(void);
+
+__NAMESPACE_STD_BEGIN
 __LIBC int (__LIBCCALL system)(char const *__command);
 __LIBC __WUNUSED __NONNULL((1)) char *(__LIBCCALL getenv)(char const *__name);
 __LIBC int (__LIBCCALL mblen)(char const *__s, size_t __n);
@@ -392,6 +546,38 @@ __LIBC int (__LIBCCALL mbtowc)(wchar_t *__restrict __pwc, char const *__restrict
 __LIBC int (__LIBCCALL wctomb)(char *__s, wchar_t __wchar);
 __LIBC size_t (__LIBCCALL mbstowcs)(wchar_t *__restrict __pwcs, char const *__restrict __s, size_t __n);
 __LIBC size_t (__LIBCCALL wcstombs)(char *__restrict __s, const wchar_t *__restrict __pwcs, size_t __n);
+__LIBC __ATTR_NORETURN void (__LIBCCALL abort)(void);
+__LIBC __ATTR_NORETURN void (__LIBCCALL exit)(int __status);
+__LIBC int (__LIBCCALL atexit)(void (*__LIBCCALL __func)(void));
+#if defined(__USE_ISOC11) || defined(__USE_ISOCXX11)
+__LIBC __ATTR_NORETURN void (__LIBCCALL quick_exit)(int __status);
+#ifdef __cplusplus
+extern "C++" { __LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func) (void)) __ASMNAME("at_quick_exit"); }
+#else /* __cplusplus */
+__LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func) (void));
+#endif /* !__cplusplus */
+#endif /* __USE_ISOC11 || __USE_ISOCXX11 */
+#ifdef __USE_ISOC99
+__LIBC __ATTR_NORETURN void (__LIBCCALL _Exit)(int __status) __ASMNAME("_exit");
+#endif /* __USE_ISOC99 */
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(system)
+__NAMESPACE_STD_USING(getenv)
+__NAMESPACE_STD_USING(mblen)
+__NAMESPACE_STD_USING(mbtowc)
+__NAMESPACE_STD_USING(wctomb)
+__NAMESPACE_STD_USING(mbstowcs)
+__NAMESPACE_STD_USING(wcstombs)
+__NAMESPACE_STD_USING(abort)
+__NAMESPACE_STD_USING(exit)
+__NAMESPACE_STD_USING(atexit)
+#if defined(__USE_ISOC11) || defined(__USE_ISOCXX11)
+__NAMESPACE_STD_USING(quick_exit)
+__NAMESPACE_STD_USING(at_quick_exit)
+#endif /* __USE_ISOC11 || __USE_ISOCXX11 */
+#ifdef __USE_ISOC99
+__NAMESPACE_STD_USING(_Exit)
+#endif /* __USE_ISOC99 */
 
 #if defined(__USE_MISC) || defined(__USE_XOPEN)
 __LIBC double (__LIBCCALL drand48)(void);
@@ -481,22 +667,6 @@ __LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL mkostemp64)(char *__template, in
 __LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL mkostemps64)(char *__template, int __suffixlen, int __flags);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_GNU */
-
-__LIBC __ATTR_NORETURN void (__LIBCCALL abort)(void);
-__LIBC __ATTR_NORETURN void (__LIBCCALL exit)(int __status);
-__LIBC int (__LIBCCALL atexit)(void (*__LIBCCALL __func)(void));
-#if defined(__USE_ISOC11) || defined(__USE_ISOCXX11)
-__LIBC __ATTR_NORETURN void (__LIBCCALL quick_exit)(int __status);
-#ifdef __cplusplus
-extern "C++" { __LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func) (void)) __ASMNAME("at_quick_exit"); }
-#else /* __cplusplus */
-__LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func) (void));
-#endif /* !__cplusplus */
-#endif /* __USE_ISOC11 || __USE_ISOCXX11 */
-
-#ifdef __USE_ISOC99
-__LIBC __ATTR_NORETURN void (__LIBCCALL _Exit)(int __status) __ASMNAME("_exit");
-#endif /* __USE_ISOC99 */
 
 #ifdef __USE_XOPEN2K
 __LIBC __NONNULL((2)) int (__LIBCCALL setenv)(char const *__name, char const *__value, int __replace);

@@ -82,6 +82,32 @@
 #   include "__stdinc-generic.h"
 #endif
 
+#ifdef __cplusplus
+#   define __NOTHROW(prot) prot throw()
+#elif defined(__NO_ATTR_NOTHROW)
+#   define __NOTHROW(prot) prot
+#elif defined(__NO_ATTR_NOTHROW_SUFFIX)
+#   define __NOTHROW(prot) __ATTR_NOTHROW prot
+#else
+#   define __NOTHROW(prot) prot __ATTR_NOTHROW
+#endif
+
+#ifdef __cplusplus
+#   define __NAMESPACE_STD_EXISTS     1
+#   define __NAMESPACE_STD_BEGIN      namespace std {
+#   define __NAMESPACE_STD_END        }
+#   define __NAMESPACE_STD_USING_(x)
+#   define __NAMESPACE_STD_USING_1(x)
+#   define __NAMESPACE_STD_USING___CXX_SYSTEM_HEADER(x) using std::x;
+#   define __NAMESPACE_STD_USINGX2(d) __NAMESPACE_STD_USING_##d
+#   define __NAMESPACE_STD_USINGX1(d) __NAMESPACE_STD_USINGX2(d)
+#   define __NAMESPACE_STD_USING(x)   __NAMESPACE_STD_USINGX1(__CXX_SYSTEM_HEADER)(x)
+#else
+#   define __NAMESPACE_STD_BEGIN    /* nothing */
+#   define __NAMESPACE_STD_END      /* nothing */
+#   define __NAMESPACE_STD_USING(x) /* nothing */
+#endif
+
 #define __FCALL                  __ATTR_FASTCALL
 #define __KCALL                  __ATTR_STDCALL
 
@@ -165,12 +191,14 @@
 #endif
 
 #ifdef __cplusplus
+extern "C++" {
 class __any_ptr {
  void *__p;
 public:
  constexpr inline __any_ptr(void *__p) throw(): __p(__p) {}
  template<class T> constexpr inline operator T *(void) throw() { return (T *)this->__p; }
 };
+}
 #   define __COMPILER_UNIPOINTER(p) __any_ptr((void *)(__UINTPTR_TYPE__)(p))
 #elif defined(__CC__)
 #   define __COMPILER_UNIPOINTER(p)          ((void *)(__UINTPTR_TYPE__)(p))

@@ -194,6 +194,8 @@ __DECL_BEGIN
 #define SCNuPTR        __PRIPTR_PREFIX "u"
 #define SCNxPTR        __PRIPTR_PREFIX "x"
 
+__NAMESPACE_STD_BEGIN
+
 typedef struct {
  __INTMAX_TYPE__ quot; /*< Quotient. */
  __INTMAX_TYPE__ rem;  /*< Remainder. */
@@ -208,6 +210,18 @@ __LIBC __INTMAX_TYPE__ (__LIBCCALL wcstoimax)(const __gwchar_t *__restrict __npt
 __LIBC __UINTMAX_TYPE__ (__LIBCCALL wcstoumax)(const __gwchar_t *__restrict __nptr, __gwchar_t ** __restrict __endptr, int __base);
 #endif /* !__KERNEL__ */
 
+__NAMESPACE_STD_END
+
+__NAMESPACE_STD_USING(imaxdiv_t)
+#ifndef __KERNEL__
+__NAMESPACE_STD_USING(imaxabs)
+__NAMESPACE_STD_USING(imaxdiv)
+__NAMESPACE_STD_USING(strtoimax)
+__NAMESPACE_STD_USING(strtoumax)
+__NAMESPACE_STD_USING(wcstoimax)
+__NAMESPACE_STD_USING(wcstoumax)
+#endif /* !__KERNEL__ */
+
 __DECL_END
 
-#endif /* inttypes.h */
+#endif /* !_INTTYPES_H */

@@ -244,6 +244,12 @@
 #   define __NO_ATTR_TSECTION    1
 #   define __ATTR_SECTION(name)  /* Nothing */
 #endif
+#if __has_attribute(__nothrow__)
+#   define __ATTR_NOTHROW        __attribute__((__nothrow__))
+#else
+#   define __NO_ATTR_NOTHROW     1
+#   define __ATTR_NOTHROW        /* Nothing */
+#endif
 #if __has_attribute(__returns_nonnull__)
 #   define __ATTR_RETNONNULL     __attribute__((__returns_nonnull__))
 #else

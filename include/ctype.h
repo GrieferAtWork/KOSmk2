@@ -48,9 +48,19 @@ __DECL_BEGIN
 #define	__isascii(c) (!((c)&0x80)) /* If C is a 7 bit value. */
 #define	__toascii(c)   ((c)&0x7f)  /* Mask off high bits. */
 
+#ifdef __cplusplus
+__NAMESPACE_STD_BEGIN
 __LIBC __UINT16_TYPE__ const __chattr[256];
-
+__FORCELOCAL bool __isctype(char __c, __UINT16_TYPE__ __type) {
+ return __chattr[(__UINT8_TYPE__)__c] & __type;
+}
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(__chattr)
+__NAMESPACE_STD_USING(__isctype)
+#else
+__LIBC __UINT16_TYPE__ const __chattr[256];
 #define __isctype(c,type) (__chattr[(__UINT8_TYPE__)(c)]&(__UINT16_TYPE__)type)
+#endif
 
 #define isalnum(c)  __isctype((c),_ISalnum)
 #define isalpha(c)  __isctype((c),_ISalpha)
@@ -67,7 +77,7 @@ __LIBC __UINT16_TYPE__ const __chattr[256];
 #define isblank(c)  __isctype((c),_ISblank)
 #endif
 
-
+__NAMESPACE_STD_BEGIN
 __LIBC __WUNUSED int (__LIBCCALL isalpha)(int __c);
 __LIBC __WUNUSED int (__LIBCCALL isupper)(int __c);
 __LIBC __WUNUSED int (__LIBCCALL islower)(int __c);
@@ -81,15 +91,35 @@ __LIBC __WUNUSED int (__LIBCCALL isgraph)(int __c);
 __LIBC __WUNUSED int (__LIBCCALL iscntrl)(int __c);
 __LIBC __WUNUSED int (__LIBCCALL toupper)(int __c);
 __LIBC __WUNUSED int (__LIBCCALL tolower)(int __c);
-
-#ifdef __USE_GNU
-__LIBC __WUNUSED int (__LIBCCALL isctype)(int __c, int __mask);
-#define isctype(c,mask) __isctype((c),(mask))
-#endif
-
 #ifdef __USE_ISOC99
 __LIBC __WUNUSED int (__LIBCCALL isblank)(int __c);
 #endif
+__NAMESPACE_STD_END
+
+__NAMESPACE_STD_USING(isalpha)
+__NAMESPACE_STD_USING(isupper)
+__NAMESPACE_STD_USING(islower)
+__NAMESPACE_STD_USING(isdigit)
+__NAMESPACE_STD_USING(isxdigit)
+__NAMESPACE_STD_USING(isspace)
+__NAMESPACE_STD_USING(ispunct)
+__NAMESPACE_STD_USING(isalnum)
+__NAMESPACE_STD_USING(isprint)
+__NAMESPACE_STD_USING(isgraph)
+__NAMESPACE_STD_USING(iscntrl)
+__NAMESPACE_STD_USING(toupper)
+__NAMESPACE_STD_USING(tolower)
+#ifdef __USE_ISOC99
+__NAMESPACE_STD_USING(isblank)
+#endif
+
+#ifdef __USE_GNU
+__LIBC __WUNUSED int (__LIBCCALL isctype)(int __c, int __mask);
+#ifndef __CXX_SYSTEM_HEADER
+#define isctype(c,mask) __isctype((c),(mask))
+#endif /* !__CXX_SYSTEM_HEADER */
+#endif
+
 
 __DECL_END
 

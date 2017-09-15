@@ -33,6 +33,8 @@ struct __jmp_buf {
  __UINTPTR_TYPE__ __padding[2];
 };
 #define __JMP_BUF_STATIC_INIT  {{0,0,0,0,0,0,0,0}}
+
+__NAMESPACE_STD_BEGIN
 typedef struct __jmp_buf jmp_buf[1];
 
 #if defined(__GNUC__) || __has_attribute(__returns_twice__)
@@ -51,6 +53,10 @@ __LOCAL __ATTR_NORETURN void (__LIBCCALL longjmp)(jmp_buf __buf, int __sig) {
 #else
 __LIBC __ATTR_NORETURN void (__LIBCCALL longjmp)(jmp_buf __buf, int __sig);
 #endif
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(jmp_buf)
+__NAMESPACE_STD_USING(setjmp)
+__NAMESPACE_STD_USING(longjmp)
 
 #ifdef __USE_POSIX
 struct __sigjmp_buf {

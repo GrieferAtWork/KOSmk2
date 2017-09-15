@@ -1,0 +1,10 @@
+#ifndef __CXX_CSETJMP
+#define __CXX_CSETJMP 1
+#ifdef __CXX_SYSTEM_HEADER
+#include "setjmp.h"
+#else /* __CXX_SYSTEM_HEADER */
+#define __CXX_SYSTEM_HEADER
+#include "setjmp.h"
+#undef __CXX_SYSTEM_HEADER
+#endif /* !__CXX_SYSTEM_HEADER */
+#endif /* !__CXX_SETJMP */

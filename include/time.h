@@ -32,10 +32,64 @@
 
 __DECL_BEGIN
 
+#ifdef __NAMESPACE_STD_EXISTS
+
+__NAMESPACE_STD_BEGIN
+
+#ifndef __std_size_t_defined
+#define __std_size_t_defined 1
+typedef __SIZE_TYPE__ size_t;
+#endif /* !__std_size_t_defined */
+
+#ifndef __std_clock_t_defined
+#define __std_clock_t_defined 1
+typedef __clock_t clock_t;
+#endif /* !__std_clock_t_defined */
+
+#ifndef __std_time_t_defined
+#define __std_time_t_defined 1
+typedef __TM_TYPE(time) time_t;
+#endif /* !__std_time_t_defined */
+
+__NAMESPACE_STD_END
+
+#ifndef __CXX_SYSTEM_HEADER
+
+#ifndef __size_t_defined
+#define __size_t_defined 1
+__NAMESPACE_STD_USING(size_t)
+#endif /* !__size_t_defined */
+
+#ifndef __clock_t_defined
+#define __clock_t_defined 1
+__NAMESPACE_STD_USING(clock_t)
+#endif /* !__clock_t_defined */
+
+#ifndef __time_t_defined
+#define __time_t_defined 1
+__NAMESPACE_STD_USING(time_t)
+#endif /* !__time_t_defined */
+
+#endif /* !__CXX_SYSTEM_HEADER */
+
+#else /* __NAMESPACE_STD_EXISTS */
+
 #ifndef __size_t_defined
 #define __size_t_defined 1
 typedef __SIZE_TYPE__ size_t;
-#endif
+#endif /* !__size_t_defined */
+
+#ifndef __clock_t_defined
+#define __clock_t_defined 1
+typedef __clock_t clock_t;
+#endif /* !__clock_t_defined */
+
+#ifndef __time_t_defined
+#define __time_t_defined 1
+typedef __TM_TYPE(time) time_t;
+#endif /* !__time_t_defined */
+
+#endif /* !__NAMESPACE_STD_EXISTS */
 
 #ifndef NULL
 #ifdef __INTELLISENSE__
@@ -60,16 +114,6 @@ typedef __pid_t pid_t;
 #endif
 #endif
 
-#ifndef __clock_t_defined
-#define __clock_t_defined 1
-typedef __clock_t clock_t;
-#endif /* !__clock_t_defined */
-
-#ifndef __time_t_defined
-#define __time_t_defined 1
-typedef __TM_TYPE(time) time_t;
-#endif /* !__time_t_defined */
-
 #ifdef __USE_TIME64
 #ifndef __time64_t_defined
 #define __time64_t_defined 1
@@ -89,6 +133,7 @@ typedef __timer_t timer_t;
 #endif /* __USE_POSIX199309 */
 
 /* Used by other time functions.  */
+__NAMESPACE_STD_BEGIN
 struct tm {
     int         tm_sec;      /*< seconds [0,61]. */
     int         tm_min;      /*< minutes [0,59]. */
@@ -107,6 +152,8 @@ struct tm {
     char const *__tm_zone;   /* Timezone abbreviation.  */
 #endif
 };
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(tm)
 
 #ifdef __USE_POSIX199309
 struct itimerspec {
@@ -150,6 +197,7 @@ struct itimerspec64 {
 #endif
 
 #ifndef __KERNEL__
+__NAMESPACE_STD_BEGIN
 __LIBC clock_t (__LIBCCALL clock)(void);
 __LIBC time_t (__LIBCCALL time)(time_t *__timer) __TM_FUNC(time);
 __LIBC __ATTR_CONST double (__LIBCCALL difftime)(time_t __time1, time_t __time0) __TM_FUNC(difftime);
@@ -157,13 +205,28 @@ __LIBC time_t (__LIBCCALL mktime)(struct tm *__tp) __TM_FUNC(mktime);
 __LIBC size_t (__LIBCCALL strftime)(char *__restrict __s, size_t __maxsize, char const *__restrict __format, struct tm const *__restrict __tp);
 __LIBC char *(__LIBCCALL asctime)(struct tm const *__tp);
 __LIBC char *(__LIBCCALL ctime)(time_t const *__timer) __TM_FUNC(ctime);
-
 #ifdef __USE_TIME64
 __LIBC time64_t (__LIBCCALL time64)(time64_t *__timer);
 __LIBC __ATTR_CONST double (__LIBCCALL difftime64)(time64_t __time1, time64_t __time0);
 __LIBC time64_t (__LIBCCALL mktime64)(struct tm *__tp);
 __LIBC char *(__LIBCCALL ctime64)(time64_t const *__timer);
 #endif /* __USE_TIME64 */
+__NAMESPACE_STD_END
+
+__NAMESPACE_STD_USING(clock)
+__NAMESPACE_STD_USING(time)
+__NAMESPACE_STD_USING(difftime)
+__NAMESPACE_STD_USING(mktime)
+__NAMESPACE_STD_USING(strftime)
+__NAMESPACE_STD_USING(asctime)
+__NAMESPACE_STD_USING(ctime)
+#ifdef __USE_TIME64
+__NAMESPACE_STD_USING(time64)
+__NAMESPACE_STD_USING(difftime64)
+__NAMESPACE_STD_USING(mktime64)
+__NAMESPACE_STD_USING(ctime64)
+#endif /* __USE_TIME64 */
+
 
 #undef __tzname
 #undef __daylight
@@ -186,18 +249,29 @@ __LIBC char *(__LIBCCALL strptime_l)(char const *__restrict __s, char const *__r
 __LIBC int (__LIBCCALL getdate_r)(char const *__restrict __string, struct tm *__restrict __resbufp);
 #endif /* __USE_GNU */
 
+__NAMESPACE_STD_BEGIN
+__LIBC struct tm *(__LIBCCALL gmtime)(time_t const *__timer) __TM_FUNC(gmtime);
+__LIBC struct tm *(__LIBCCALL localtime)(time_t const *__timer) __TM_FUNC(localtime);
+#ifdef __USE_TIME64
+__LIBC struct tm *(__LIBCCALL gmtime64)(time64_t const *__timer);
+__LIBC struct tm *(__LIBCCALL localtime64)(time64_t const *__timer);
+#endif /* __USE_TIME64 */
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(gmtime)
+__NAMESPACE_STD_USING(localtime)
+#ifdef __USE_TIME64
+__NAMESPACE_STD_USING(gmtime64)
+__NAMESPACE_STD_USING(localtime64)
+#endif /* __USE_TIME64 */
+
 #ifdef __USE_POSIX
 __LIBC struct tm *(__LIBCCALL gmtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) __TM_FUNC_R(gmtime);
 __LIBC struct tm *(__LIBCCALL localtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) __TM_FUNC_R(localtime);
-__LIBC struct tm *(__LIBCCALL gmtime)(time_t const *__timer) __TM_FUNC(gmtime);
-__LIBC struct tm *(__LIBCCALL localtime)(time_t const *__timer) __TM_FUNC(localtime);
 __LIBC char *(__LIBCCALL ctime_r)(time_t const *__restrict __timer, char *__restrict __buf) __TM_FUNC_R(ctime);
 __LIBC char *(__LIBCCALL asctime_r)(struct tm const *__restrict __tp, char *__restrict __buf);
 #ifdef __USE_TIME64
 __LIBC struct tm *(__LIBCCALL gmtime64_r)(time64_t const *__restrict __timer, struct tm *__restrict __tp);
 __LIBC struct tm *(__LIBCCALL localtime64_r)(time64_t const *__restrict __timer, struct tm *__restrict __tp);
-__LIBC struct tm *(__LIBCCALL gmtime64)(time64_t const *__timer);
-__LIBC struct tm *(__LIBCCALL localtime64)(time64_t const *__timer);
 __LIBC char *(__LIBCCALL ctime64_r)(time64_t const *__restrict __timer, char *__restrict __buf);
 #endif /* __USE_TIME64 */
 

@@ -16,23 +16,55 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _STDARG_H
-#define _STDARG_H 1
+ 
+#include <file>
+#include <fs>
 
-#include "__stdinc.h"
+fs::chdir(fs::path::head(__FILE__));
 
-__DECL_BEGIN
+const text = "\
+#ifndef __CXX_C{name.upper()}\n\
+#define __CXX_C{name.upper()} 1\n\
+#ifdef __CXX_SYSTEM_HEADER\n\
+#include \"{name}.h\"\n\
+#else /* __CXX_SYSTEM_HEADER */\n\
+#define __CXX_SYSTEM_HEADER\n\
+#include \"{name}.h\"\n\
+#undef __CXX_SYSTEM_HEADER\n\
+#endif /* !__CXX_SYSTEM_HEADER */\n\
+#endif /* !__CXX_{name.upper()} */\n";
 
-__NAMESPACE_STD_BEGIN
-typedef __VA_LIST va_list;
-__NAMESPACE_STD_END
-__NAMESPACE_STD_USING(va_list)
+function header(name) {
+	local fp = file.open("../include/c"+name,"w");
+	fp.write(text.format({ .name = name }));
+	fp.close();
+}
 
-#define va_start  __builtin_va_start
-#define va_copy   __builtin_va_copy
-#define va_end    __builtin_va_end
-#define va_arg    __builtin_va_arg
+header("assert");
+header("ctype");
+// header("fenv");
+// header("float");
+header("inttypes");
+header("iso646");
+header("limits");
+// header("locale");
+header("math");
+header("setjmp");
+header("signal");
+header("stdarg");
+header("stdbool");
+header("stddef");
+header("stdint");
+header("stdio");
+header("stdlib");
+header("string");
+// header("tgmath");
+header("time");
+// header("uchar");
+// header("wchar");
+// header("wctype");
 
-__DECL_END
 
-#endif /* !_STDARG_H */
+
+
+

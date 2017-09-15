@@ -65,6 +65,7 @@
 
 
 /* Trigonometric functions. */
+__MATHNS_BEGIN
 __MATHCALL(acos,,(_Mdouble_ __x)); /* Arc cosine of X. */
 __MATHCALL(asin,,(_Mdouble_ __x)); /* Arc sine of X. */
 __MATHCALL(atan,,(_Mdouble_ __x)); /* Arc tangent of X. */
@@ -77,6 +78,18 @@ __MATHCALL(tan,,(_Mdouble_ __x)); /* Tangent of X. */
 __MATHCALL(cosh,,(_Mdouble_ __x)); /* Hyperbolic cosine of X. */
 __MATHCALL(sinh,,(_Mdouble_ __x)); /* Hyperbolic sine of X. */
 __MATHCALL(tanh,,(_Mdouble_ __x)); /* Hyperbolic tangent of X. */
+__MATHNS_END
+
+__MATHNS_USING(acos,)
+__MATHNS_USING(asin,)
+__MATHNS_USING(atan,)
+__MATHNS_USING(atan2,)
+__MATHNS_USING(cos,)
+__MATHNS_USING(sin,)
+__MATHNS_USING(tan,)
+__MATHNS_USING(cosh,)
+__MATHNS_USING(sinh,)
+__MATHNS_USING(tanh,)
 
 #ifdef __USE_GNU
 /* Cosine and sine of X. */
@@ -84,11 +97,17 @@ __MATHDECL_VEC(void,sincos,,(_Mdouble_ __x, _Mdouble_ *__sinx, _Mdouble_ *__cosx
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_ISOC99)
+__MATHNS_BEGIN
 __MATHCALL(acosh,,(_Mdouble_ __x)); /* Hyperbolic arc cosine of X. */
 __MATHCALL(asinh,,(_Mdouble_ __x)); /* Hyperbolic arc sine of X. */
 __MATHCALL(atanh,,(_Mdouble_ __x)); /* Hyperbolic arc tangent of X. */
+__MATHNS_END
+__MATHNS_USING(acosh,)
+__MATHNS_USING(asinh,)
+__MATHNS_USING(atanh,)
 #endif
 
+__MATHNS_BEGIN
 /* Exponential and logarithmic functions. */
 __MATHCALL_VEC(exp,,(_Mdouble_ __x)); /* Exponential function of X. */
 __MATHCALL(frexp,,(_Mdouble_ __x,int *__exponent)); /* Break VALUE into a normalized fraction and an integral power of 2. */
@@ -96,6 +115,13 @@ __MATHCALL(ldexp,,(_Mdouble_ __x,int __exponent)); /* X times (two to the EXP po
 __MATHCALL_VEC(log,,(_Mdouble_ __x)); /* Natural logarithm of X. */
 __MATHCALL(log10,,(_Mdouble_ __x)); /* Base-ten logarithm of X. */
 __NONNULL((2)) __MATHCALL(modf,,(_Mdouble_ __x,_Mdouble_ *__iptr)); /* Break VALUE into integral and fractional parts. */
+__MATHNS_END
+__MATHNS_USING(exp,)
+__MATHNS_USING(frexp,)
+__MATHNS_USING(ldexp,)
+__MATHNS_USING(log,)
+__MATHNS_USING(log10,)
+__MATHNS_USING(modf,)
 
 #ifdef __USE_GNU
 __MATHCALL(exp10,,(_Mdouble_ __x)); /* A function missing in all standards: compute exponent to base ten. */
@@ -103,35 +129,62 @@ __MATHCALL(pow10,,(_Mdouble_ __x)); /* Another name occasionally used. */
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_ISOC99)
+__MATHNS_BEGIN
 __MATHCALL(expm1,,(_Mdouble_ __x)); /* Return exp(X) - 1. */
 __MATHCALL(log1p,,(_Mdouble_ __x)); /* Return log(1 + X). */
 __MATHCALL(logb,,(_Mdouble_ __x)); /* Return the base 2 signed integral exponent of X. */
+__MATHNS_END
+__MATHNS_USING(expm1,)
+__MATHNS_USING(log1p,)
+__MATHNS_USING(logb,)
 #endif
 
 #ifdef __USE_ISOC99
+__MATHNS_BEGIN
 __MATHCALL(exp2,,(_Mdouble_ __x)); /* Compute base-2 exponential of X. */
 __MATHCALL(log2,,(_Mdouble_ __x)); /* Compute base-2 logarithm of X. */
+__MATHNS_END
+__MATHNS_USING(exp2,)
+__MATHNS_USING(log2,)
 #endif
 
 /* Power functions. */
+__MATHNS_BEGIN
 __MATHCALL_VEC(pow,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return X to the Y power. */
 __MATHCALL(sqrt,,(_Mdouble_ __x)); /* Return the square root of X. */
+__MATHNS_END
+__MATHNS_USING(pow,)
+__MATHNS_USING(sqrt,)
 
 #if defined(__USE_XOPEN) || defined(__USE_ISOC99)
+__MATHNS_BEGIN
 __MATHCALL(hypot,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return `sqrt(X*X + Y*Y)'. */
+__MATHNS_END
+__MATHNS_USING(hypot,)
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_ISOC99)
+__MATHNS_BEGIN
 __MATHCALL(cbrt,,(_Mdouble_ __x)); /* Return the cube root of X. */
+__MATHNS_END
+__MATHNS_USING(cbrt,)
 #endif
 
 /* Nearest integer, absolute value, and remainder functions. */
+__MATHNS_BEGIN
 __MATHCALLX(ceil,,(_Mdouble_ __x),(__const__)); /* Smallest integral value not less than X. */
 __MATHCALLX(fabs,,(_Mdouble_ __x),(__const__)); /* Absolute value of X. */
 __MATHCALLX(floor,,(_Mdouble_ __x),(__const__)); /* Largest integer not greater than X. */
 __MATHCALL(fmod,,(_Mdouble_ __x,_Mdouble_ __y)); /* Floating-point modulo remainder of X/Y. */
 __MATHDECL_1(int,__isinf,,(_Mdouble_ __value)) __ATTR_CONST; /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
 __MATHDECL_1(int,__finite,,(_Mdouble_ __value)) __ATTR_CONST; /* Return nonzero if VALUE is finite and not NaN. */
+__MATHNS_END
+__MATHNS_USING(ceil,)
+__MATHNS_USING(fabs,)
+__MATHNS_USING(floor,)
+__MATHNS_USING(fmod,)
+__MATHNS_USING(__isinf,)
+__MATHNS_USING(__finite,)
 
 #ifdef __USE_MISC
 #if (!defined(__cplusplus) || __cplusplus < 201103L /* isinf conflicts with C++11. */ \
@@ -142,9 +195,14 @@ __MATHDECL_1(int,finite,,(_Mdouble_ __value)) __ATTR_CONST; /* Return nonzero if
 __MATHCALL(drem,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return the remainder of X/Y. */
 __MATHCALL(significand,,(_Mdouble_ __x)); /* Return the fractional part of X after dividing out `ilogb (X)'. */
 #endif /* __USE_MISC */
+
 #ifdef __USE_ISOC99
+__MATHNS_BEGIN
 __MATHCALLX(copysign,,(_Mdouble_ __x,_Mdouble_ __y),(__const__)); /* Return X with its signed changed to Y's. */
 __MATHCALLX(nan,,(char const *__tagb),(__const__)); /* Return representation of qNaN for double type. */
+__MATHNS_END
+__MATHNS_USING(copysign,)
+__MATHNS_USING(nan,)
 #endif /* __USE_ISOC99 */
 
 __MATHDECL_1(int,__isnan,,(_Mdouble_ __value)) __ATTR_CONST; /* Return nonzero if VALUE is not a number. */
@@ -167,12 +225,20 @@ __MATHCALL(yn,,(int,_Mdouble_));
 
 #if defined(__USE_XOPEN) || defined(__USE_ISOC99)
 /* Error and gamma functions. */
+__MATHNS_BEGIN
 __MATHCALL(erf,,(_Mdouble_));
 __MATHCALL(erfc,,(_Mdouble_));
 __MATHCALL(lgamma,,(_Mdouble_));
+__MATHNS_END
+__MATHNS_USING(erf,)
+__MATHNS_USING(erfc,)
+__MATHNS_USING(lgamma,)
 #endif
 #ifdef __USE_ISOC99
+__MATHNS_BEGIN
 __MATHCALL(tgamma,,(_Mdouble_)); /* True gamma function. */
+__MATHNS_END
+__MATHNS_USING(tgamma,)
 #endif
 #if defined(__USE_MISC) || (defined(__USE_XOPEN) && !defined(__USE_XOPEN2K))
 __MATHCALL(gamma,,(_Mdouble_)); /* Obsolete alias for `lgamma'. */
@@ -185,6 +251,7 @@ __MATHCALL(lgamma,_r,(_Mdouble_, int *__signgamp));
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_ISOC99)
+__MATHNS_BEGIN
 __MATHCALL(rint,,(_Mdouble_ __x)); /* Return the integer nearest X in the direction of the prevailing rounding mode. */
 __MATHCALLX(nextafter,,(_Mdouble_ __x, _Mdouble_ __y),(__const__)); /* Return X + epsilon if X < Y, X - epsilon if X > Y. */
 __MATHCALL(remainder,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return the remainder of integer divison X / Y with infinite precision. */
@@ -193,9 +260,19 @@ __MATHDECL(int,ilogb,,(_Mdouble_ __x)); /* Return the binary exponent of X, whic
 __MATHCALLX(nexttoward,,(_Mdouble_ __x, long double __y),(__const__));
 __MATHCALL(scalbn,,(_Mdouble_ __x, int __n)); /* Return X times (2 to the Nth power). */
 #endif /* __USE_ISOC99 */
+__MATHNS_END
+__MATHNS_USING(rint,)
+__MATHNS_USING(nextafter,)
+__MATHNS_USING(remainder,)
+__MATHNS_USING(ilogb,)
+#ifdef __USE_ISOC99
+__MATHNS_USING(nexttoward,)
+__MATHNS_USING(scalbn,)
+#endif /* __USE_ISOC99 */
 #endif /* __USE_XOPEN_EXTENDED || __USE_ISOC99 */
 
 #ifdef __USE_ISOC99
+__MATHNS_BEGIN
 __MATHCALL(scalbln,,(_Mdouble_ __x, long int __n)); /* Return X times (2 to the Nth power). */
 __MATHCALL(nearbyint,,(_Mdouble_ __x)); /* Round X to integral value in floating-point format using current rounding direction, but do not raise inexact exception. */
 __MATHCALLX(round,,(_Mdouble_ __x),(__const__)); /* Round X to nearest integral value, rounding halfway cases away from zero. */
@@ -213,7 +290,24 @@ __MATHCALLX(fmin,,(_Mdouble_ __x, _Mdouble_ __y),(__const__)); /* Return minimum
 __MATHDECL_1(int,__fpclassify,,(_Mdouble_ __value)) __ATTR_CONST; /* Classify given number. */
 __MATHDECL_1(int,__signbit,,(_Mdouble_ __value)) __ATTR_CONST; /* Test for negative number. */
 __MATHCALL(fma,,(_Mdouble_ __x,_Mdouble_ __y,_Mdouble_ __z)); /* Multiply-add function computed as a ternary operation. */
+__MATHNS_END
+__MATHNS_USING(scalbln,)
+__MATHNS_USING(nearbyint,)
+__MATHNS_USING(round,)
+__MATHNS_USING(trunc,)
+__MATHNS_USING(remquo,)
+__MATHNS_USING(lrint,)
+__MATHNS_USING(llrint,)
+__MATHNS_USING(lround,)
+__MATHNS_USING(llround,)
+__MATHNS_USING(fdim,)
+__MATHNS_USING(fmax,)
+__MATHNS_USING(fmin,)
+__MATHNS_USING(__fpclassify,)
+__MATHNS_USING(__signbit,)
+__MATHNS_USING(fma,)
 #endif /* __USE_ISOC99 */
+
 #ifdef __USE_GNU
 __MATHDECL_1(int,__issignaling,,(_Mdouble_ __value)) __ATTR_CONST;
 #endif /* __USE_GNU */

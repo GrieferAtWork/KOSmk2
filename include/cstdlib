@@ -1,0 +1,10 @@
+#ifndef __CXX_CSTDLIB
+#define __CXX_CSTDLIB 1
+#ifdef __CXX_SYSTEM_HEADER
+#include "stdlib.h"
+#else /* __CXX_SYSTEM_HEADER */
+#define __CXX_SYSTEM_HEADER
+#include "stdlib.h"
+#undef __CXX_SYSTEM_HEADER
+#endif /* !__CXX_SYSTEM_HEADER */
+#endif /* !__CXX_STDLIB */

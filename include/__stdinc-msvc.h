@@ -94,6 +94,8 @@
 #define __ATTR_ERROR(text)       /* Nothing */
 #define __NO_ATTR_TSECTION       1
 #define __ATTR_SECTION(name)     /* Nothing */
+#define __ATTR_NOTHROW           __declspec(nothrow)
+#define __NO_ATTR_NOTHROW_SUFFIX 1
 #define __NO_ATTR_RETNONNULL     1
 #define __ATTR_RETNONNULL        /* Nothing */
 #define __NO_ATTR_PACKED         1
