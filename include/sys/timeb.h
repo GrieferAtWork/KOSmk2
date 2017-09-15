@@ -53,8 +53,25 @@ struct timeb {
  short int          dstflag;  /*< Nonzero if Daylight Savings Time used. */
 };
 
+#ifdef __USE_TIME64
+#ifndef __time64_t_defined
+#define __time64_t_defined 1
+typedef __time64_t time64_t;
+#endif /* !__time64_t_defined */
+
+struct timeb64 {
+ time64_t           time;     /*< Seconds since epoch, as from 'time'. */
+ unsigned short int millitm;  /*< Additional milliseconds. */
+ short int          timezone; /*< Minutes west of GMT. */
+ short int          dstflag;  /*< Nonzero if Daylight Savings Time used. */
+};
+#endif
+
 #ifndef __KERNEL__
-__LIBC int (__LIBCCALL ftime)(struct timeb *__timebuf);
+__LIBC int (__LIBCCALL ftime)(struct timeb *__timebuf) __TM_FUNC(ftime);
+#ifdef __USE_TIME64
+__LIBC int (__LIBCCALL ftime64)(struct timeb64 *__timebuf);
+#endif /* __USE_TIME64 */
 #endif /* !__KERNEL__ */
 
 __DECL_END

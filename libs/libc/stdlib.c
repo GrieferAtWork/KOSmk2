@@ -37,6 +37,8 @@
 #include <malloc.h>
 #include <hybrid/section.h>
 #include <hybrid/atomic.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 DECL_BEGIN
 
@@ -470,8 +472,24 @@ PUBLIC div_t (LIBCCALL div)(int numer, int denom) { return (div_t){ numer/denom,
 PUBLIC ldiv_t (LIBCCALL ldiv)(long numer, long denom) { return (ldiv_t){ numer/denom,numer%denom }; }
 PUBLIC lldiv_t (LIBCCALL lldiv)(long long numer, long long denom) { return (lldiv_t){ numer/denom,numer%denom }; }
 
+PUBLIC int (LIBCCALL system)(char const *command) {
+ pid_t child,error; int status;
+ if ((child = fork()) < 0) return -1;
+ if (child == 0) {
+  execl("/bin/sh","-c",command,NULL);
+  execl("/bin/busybox","sh","-c",command,NULL);
+  /* NOTE: system() must return ZERO(0) if no command processor is available. */
+  _exit(command ? 127 : 0);
+ }
+ for (;;) {
+  error = waitpid(child,&status,WEXITED);
+  if (error == child) break;
+  if (error >= 0) continue;
+  if (errno != EINTR) return -1;
+ }
+ return status;
+}
 PUBLIC size_t (LIBCCALL __ctype_get_mb_cur_max)(void) { NOT_IMPLEMENTED(); return 5; }
-PUBLIC int (LIBCCALL system)(char const *command) { NOT_IMPLEMENTED(); return 5; }
 PUBLIC int (LIBCCALL mblen)(char const *s, size_t n) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL mbtowc)(wchar_t *__restrict pwc, char const *__restrict s, size_t n) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL wctomb)(char *s, wchar_t wchar) { NOT_IMPLEMENTED(); return 0; }

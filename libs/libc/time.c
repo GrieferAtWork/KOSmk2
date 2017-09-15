@@ -550,12 +550,22 @@ PUBLIC int (LIBCCALL usleep)(useconds_t useconds) {
  return error;
 }
 
-PUBLIC int (LIBCCALL ftime)(struct timeb *timebuf) {
- struct atimeval tv;
- struct timezone tz;
+PUBLIC int (LIBCCALL A(ftime))(struct A(timeb) *timebuf) {
+ struct atimeval tv; struct timezone tz;
  int result = A(gettimeofday)(&tv,&tz);
  if (!result) {
   timebuf->time     = tv.tv_sec;
+  timebuf->millitm  = tv.tv_usec / USEC_PER_MSEC;
+  timebuf->timezone = tz.tz_minuteswest;
+  timebuf->dstflag  = tz.tz_dsttime;
+ }
+ return result;
+}
+PUBLIC int (LIBCCALL B(ftime))(struct B(timeb) *timebuf) {
+ struct atimeval tv; struct timezone tz;
+ int result = A(gettimeofday)(&tv,&tz);
+ if (!result) {
+  timebuf->time     = (btime_t)tv.tv_sec;
   timebuf->millitm  = tv.tv_usec / USEC_PER_MSEC;
   timebuf->timezone = tz.tz_minuteswest;
   timebuf->dstflag  = tz.tz_dsttime;
