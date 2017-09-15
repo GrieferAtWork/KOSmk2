@@ -462,6 +462,12 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/vga-tty");
  kinsmod("/mod/procfs");
 
+ /* TODO: Port curses. */
+ /* TODO: Add <locale.h>. */
+ /* TODO: Add <langinfo.h>. */
+ /* TODO: Actual locale support? */
+ /* TODO: C++ headers? */
+
  PREEMPTION_ENABLE();
 #ifdef CONFIG_DEBUG
  { INTDEF bool interrupts_enabled_initial;

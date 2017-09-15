@@ -190,16 +190,16 @@ PRIVATE ATTR_FREEDATA ATTR_ALIGNED(16) struct PACKED {
 } __bootidlestack = {
     .s_boot = {
 #ifdef __i386__
-        .gs     = SEG(SEG_KERNEL_DATA),
+        .gs     = SEG(SEG_HOST_DATA),
         .fs     = SEG(SEG_CPUSELF),
 #else
         .gs     = SEG(SEG_CPUSELF),
-        .fs     = SEG(SEG_KERNEL_DATA),
+        .fs     = SEG(SEG_HOST_DATA),
 #endif
-        .es     = SEG(SEG_KERNEL_DATA),
-        .ds     = SEG(SEG_KERNEL_DATA),
+        .es     = SEG(SEG_HOST_DATA),
+        .ds     = SEG(SEG_HOST_DATA),
         .eip    = (uintptr_t)&cpu_idle,
-        .cs     = SEG(SEG_KERNEL_CODE),
+        .cs     = SEG(SEG_HOST_CODE),
         /* All other flags don't matter, but 'IF' (interrupt flag) must be set.
          * If it wasn't, the idle task would otherwise block forever! */
         .eflags = EFLAGS_IF|EFLAGS_IOPL(0),
@@ -342,7 +342,7 @@ PUBLIC struct cpu __bootcpu = {
         .ac_tss = {
             /* Define initial boot-cpu TSS data. */
             .esp0       = (uintptr_t)(BOOTSTACK_ADDR+BOOTSTACK_SIZE),
-            .ss0        = SEG(SEG_KERNEL_DATA),
+            .ss0        = SEG(SEG_HOST_DATA),
             .iomap_base = sizeof(struct tss),
             .eflags     = EFLAGS_IF,
         },

@@ -385,7 +385,7 @@ __LIBC void (__LIBCCALL srandom)(unsigned int __seed) __ASMNAME("srand");
 #else /* __KERNEL__ */
 #define MB_CUR_MAX (__ctype_get_mb_cur_max())
 __LIBC __WUNUSED size_t (__LIBCCALL __ctype_get_mb_cur_max)(void);
-__LIBC __WUNUSED int (__LIBCCALL system)(char const *__command);
+__LIBC int (__LIBCCALL system)(char const *__command);
 __LIBC __WUNUSED __NONNULL((1)) char *(__LIBCCALL getenv)(char const *__name);
 __LIBC int (__LIBCCALL mblen)(char const *__s, size_t __n);
 __LIBC int (__LIBCCALL mbtowc)(wchar_t *__restrict __pwc, char const *__restrict __s, size_t __n);

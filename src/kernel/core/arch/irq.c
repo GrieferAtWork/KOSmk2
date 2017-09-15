@@ -803,7 +803,7 @@ irq_setup(struct cpu *__restrict self) {
  for (; iter != end; ++iter,++hiter) {
   isr_fun_t handler = *hiter;
   iter->ie_off1  = (u16)((uintptr_t)handler);
-  iter->ie_sel   = SEG(SEG_KERNEL_CODE);
+  iter->ie_sel   = SEG(SEG_HOST_CODE);
   iter->ie_zero  = 0;
   iter->ie_flags = (IDTFLAG_PRESENT|
                     IDTTYPE_80386_32_INTERRUPT_GATE);
@@ -956,7 +956,6 @@ PUBLIC SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
       ! INSTANCE_INCREF(used_handler.i_owner))
        return false;
  }
- used_handler.i_flags |= IDTFLAG_DPL(3); /* TODO: Remove me */
 
 #if 0
  syslog(LOG_IRQ|LOG_INFO,"[IRQ] Set interrupt %#.2I8x handler at %p\n",
@@ -979,12 +978,12 @@ PUBLIC SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
   old_handler->i_owner = old_owner;
   old_owner            = NULL;
  }
- idt_slot->ie_sel   = SEG(SEG_KERNEL_CODE);
+ idt_slot->ie_sel   = SEG(SEG_HOST_CODE);
  idt_slot->ie_zero  = 0;
  idt_slot->ie_flags = used_handler.i_flags;
  idt_slot->ie_off1  = (u16)((uintptr_t)used_handler.i_func);
  idt_slot->ie_off2  = (u16)((uintptr_t)used_handler.i_func >> 16);
- assert(idt_slot->ie_sel  == SEG(SEG_KERNEL_CODE));
+ assert(idt_slot->ie_sel  == SEG(SEG_HOST_CODE));
  assert(idt_slot->ie_zero == 0);
 
  if (mode&IRQ_SET_RELOAD) {

@@ -271,7 +271,7 @@ L(.previous                                      )
 GLOBAL_ASM(
 L(.section .text.hot                             )
 L(.align CACHELINE                               )
-L(PRIVATE_ENTRY(syscall_irq)                     )
+L(INTERN_ENTRY(syscall_irq)                      )
 L(    SYS_ENTER                                  )
 #if __NR_syscall_min != 0
 L(    cmpl  $(__NR_syscall_min), %eax            )
@@ -410,8 +410,15 @@ L(.previous                                      )
 );
 #undef PAUSE
 
-PRIVATE ATTR_FREERODATA isr_t const syscall_isr = ISR_DEFAULT(SYSCALL_INT,&syscall_irq);
-PRIVATE MODULE_INIT void syscall_init(void) { irq_set(&syscall_isr,NULL,IRQ_SET_RELOAD); }
+PRIVATE ATTR_FREERODATA isr_t const syscall_isr = {
+    .i_num   = SYSCALL_INT,
+    .i_flags = IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(3),
+    .i_func  = &syscall_irq,
+    .i_owner = THIS_INSTANCE
+};
+PRIVATE MODULE_INIT void syscall_init(void) {
+ irq_set(&syscall_isr,NULL,IRQ_SET_RELOAD);
+}
 
 
 DECL_END

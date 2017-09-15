@@ -84,6 +84,8 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strcasecmp)(char c
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strncasecmp)(char const *__s1, char const *__s2, size_t __n);
 #endif /* !__strcasecmp_defined */
 
+#endif /* __USE_MISC || !__USE_XOPEN2K8 */
+
 __DECL_END
 
 #ifdef __USE_XOPEN2K8

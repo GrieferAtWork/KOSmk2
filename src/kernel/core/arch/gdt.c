@@ -108,20 +108,16 @@ INTDEF byte_t __kernel_seg_cpuself_lo[];
 INTDEF byte_t __kernel_seg_cpuself_hi[];
   
 INTERN CPU_DATA struct segment cpu_gdt[SEG_BUILTIN] = {
-    [SEG_NULL]           = SEGMENT_INIT(0,0,0), /* NULL segment */
-    [SEG_KERNEL_CODE]    = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL0), /* Kernel code segment */
-    [SEG_KERNEL_DATA]    = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0), /* Kernel data segment */
-    [SEG_KERNEL_CODE_16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL0_16), /* 16-bit kernel code segment. */
-    [SEG_KERNEL_DATA_16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0_16), /* 16-bit kernel data segment. */
-    [SEG_KERNEL_LDT]      = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
-    [SEG_CPUTSS]         = {{{(u32)__kernel_seg_cputss_lo,(u32)__kernel_seg_cputss_hi}}}, /* CPU TSS */
-    [SEG_CPUSELF]        = {{{(u32)__kernel_seg_cpuself_lo,(u32)__kernel_seg_cpuself_hi}}}, /* CPU-self */
-#ifdef SEG_USER_CODE
-    [SEG_USER_CODE]      = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL3), /* User code */
-#endif
-#ifdef SEG_USER_DATA
-    [SEG_USER_DATA]      = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL3), /* User data */
-#endif
+    [SEG_NULL]        = SEGMENT_INIT(0,0,0), /* NULL segment */
+    [SEG_HOST_CODE]   = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL0), /* Kernel code segment */
+    [SEG_HOST_DATA]   = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0), /* Kernel data segment */
+    [SEG_USER_CODE]   = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL3), /* User code */
+    [SEG_USER_DATA]   = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL3), /* User data */
+    [SEG_HOST_CODE16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL0_16), /* 16-bit kernel code segment. */
+    [SEG_HOST_DATA16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0_16), /* 16-bit kernel data segment. */
+    [SEG_KERNEL_LDT]  = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
+    [SEG_CPUTSS]      = {{{(u32)__kernel_seg_cputss_lo,(u32)__kernel_seg_cputss_hi}}}, /* CPU TSS */
+    [SEG_CPUSELF]     = {{{(u32)__kernel_seg_cpuself_lo,(u32)__kernel_seg_cpuself_hi}}}, /* CPU-self */
 };
 
 DECL_END

@@ -620,5 +620,8 @@
     <ClInclude Include="..\..\src\include\kernel\arch\fpu.h">
       <Filter>include\kernel\arch</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\include\sched\cred.h">
+      <Filter>include\sched</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

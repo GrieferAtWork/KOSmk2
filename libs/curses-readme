@@ -1,0 +1,86 @@
+#!/bin/bash --only-for-syntax-highlighting-dont-actually-execute
+# === How to compile curses for KOS ===
+
+# All paths are absolute to the base of your KOS root path.
+# Before staring to follow these instructions, replace all
+# occurances of "${PREFIX}" with your KOS source root path.
+# NOTE: This file is _NOT_ a bash scrict.
+#       It is only written like one to improve readability,
+#       but it should not be executed as such!
+
+# Download ncurses 5.9 from here: http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.9.tar.gz
+# Other versions should work just as well, but this is the one I'm using
+# Extract the archive so that the following file would exist:
+# ${PREFIX}/libs/private/ncurses-5.9/configure
+
+# Create build and installation directories.
+mkdir ${PREFIX}/libs/private/build-ncurses-5.9
+mkdir ${PREFIX}/libs/private/install-ncurses-5.9
+
+# Find the line stating "# First accept the basic system types."
+# and add kos at the end of the list, which should then look like
+# this: "... | -drops* | -es* | -kos*)"
+echo " | -kos*"
+vi ${PREFIX}/libs/private/ncurses-5.9/config.sub
+
+# Find a line 'linux*|gnu*|k*bsd*-gnu)' around line #5665.
+# Within the case, a variable 'LOCAL_LDFLAGS' should be set.
+# Prefix the following at its start, which should then look like
+# this: "kos*|linux*|gnu*|k*bsd*-gnu)"
+echo " kos*|"
+vi ${PREFIX}/libs/private/ncurses-5.9/configure
+
+# Those are all the required changes done. (For now...)
+
+# Setup environment variables for configure
+export TARGETMACH=i686-kos
+export BUILDMACH=$(gcc -dumpmachine)
+export CROSS=${PREFIX}/binutils/build-binutils-i686-kos/bin/i686-kos-
+export CC=${CROSS}gcc
+export LD=${CROSS}ld
+export AS=${CROSS}as
+
+# Run the configure script for ncurses
+cd ${PREFIX}/libs/private/build-ncurses-5.9
+../ncurses-5.9/configure --host=$TARGETMACH --prefix=${PREFIX}/libs/private/install-ncurses-5.9 --with-shared --without-debug --without-ada --enable-overwrite
+
+# Must fix a broken source file (I don't even think this its KOS's fault,
+# as it breaks due to a macro ncurses defines itself unconditionally...)
+# At the very bottom, a C function "mouse_trafo" is defined, but ncurses
+# defines a macro with that same name in a header included from that file.
+# To fix this, write the following line before the definition,
+# in my case before a line "# 835 "_6428.c" 3 4"
+echo "#undef mouse_trafo"
+vi ${PREFIX}/libs/private/build-ncurses-5.9/ncurses/lib_gen.c
+
+# Disable the c++ demo makefile of ncurses (KOS doesn't provide c++ headers yet)
+# Find the line "all ::		demo$x" and comment it out:
+echo "#all ::		demo$x"
+vi ${PREFIX}/libs/private/build-ncurses-5.9/c++/Makefile
+
+# This part may not apply to you, but I think I did something wrong
+# when building my toolchain.
+# Whenever I invoke GCC with the '-shared' option, I get the error message
+# "gcc: error: unrecognized command line option '-shared'; did you mean '-shared'?"
+# Yes. - It doesn't recognize an option '-shared', but
+# suggests I use that _VERY_ _SAME_ _OPTION_ instead.
+# As a workaround, make periodically attempted to use '-shared', leading
+# me to simply fail at the individual places, edit the 'Makefile' responsible,
+# and simply replace '-shared' with '-Wl,-shared'
+# >> So if the following 'make' command fails for you, try the above...
+cd ${PREFIX}/libs/private/build-ncurses-5.9
+make
+
+# Make install will populate "${PREFIX}/libs/private/install-ncurses-5.9"
+# with all the binaries and headers required for curses.
+make install
+
+# Copy all the files for ncurses to their 
+
+
+
+
+
+
+
+

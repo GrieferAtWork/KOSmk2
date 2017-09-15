@@ -204,7 +204,7 @@ PUBLIC int (LIBCCALL fflush_unlocked)(FILE *stream) { NOT_IMPLEMENTED(); return 
 PUBLIC void (LIBCCALL setbuffer)(FILE *__restrict stream, char *__restrict buf, size_t size) { NOT_IMPLEMENTED(); }
 PUBLIC void (LIBCCALL setlinebuf)(FILE *stream) { NOT_IMPLEMENTED(); }
 PUBLIC int (LIBCCALL feof_unlocked)(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL ferror_unlocked)(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC int (LIBCCALL ferror_unlocked)(FILE *stream) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC FILE *(LIBCCALL fdopen)(int fd, char const *modes) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC FILE *(LIBCCALL fmemopen)(void *s, size_t len, char const *modes) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC FILE *(LIBCCALL open_memstream)(char **bufloc, size_t *sizeloc) { NOT_IMPLEMENTED(); return NULL; }

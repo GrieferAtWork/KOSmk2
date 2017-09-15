@@ -1232,7 +1232,7 @@ function run_bochs() {
 function run_qemu() {
 	local qemu = process(executables[run_qemu_binary],[
 		(run_mode_hosted ? ["-no-reboot","-no-shutdown"] : [])...,
-		"-serial","stdio","-d","debug",//"-smp","2",
+		"-serial","stdio","-d","debug","-smp","2",
 		(run_mode_remote ? ["-s","-S"] : [])...,
 		(run_mode_usb ? ["-hda","\\\\.\\PhysicalDrive2"]
 		              : ["-kernel",run_kernel_binary,

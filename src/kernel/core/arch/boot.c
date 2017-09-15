@@ -579,7 +579,7 @@ L(    lgdt (%esp)                              )
 L(    addl  $6, %esp                           )
 
 /* Load segment registers now configured via the GDT. */
-L(    movw  $(SEG(SEG_KERNEL_DATA)), %SX       )
+L(    movw  $(SEG(SEG_HOST_DATA)), %SX       )
 L(    movw  $(SEG(SEG_CPUSELF)), %TX           )
 L(    movw  %SX, %ds                           )
 L(    movw  %SX, %es                           )
@@ -591,7 +591,7 @@ L(    movw  %SX, %fs                           )
 L(    movw  %TX, %gs                           )
 #endif
 L(    movw  %SX, %ss                           )
-L(    ljmp  $(SEG(SEG_KERNEL_CODE)), $1f       )
+L(    ljmp  $(SEG(SEG_HOST_CODE)), $1f       )
 L(1:                                           )
 /* Load our custom boot TSS. */
 L(    movw  $(SEG(SEG_CPUTSS)|3), %SX          ) /* TODO: Check if this |3 is really required. */

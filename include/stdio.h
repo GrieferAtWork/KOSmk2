@@ -70,6 +70,16 @@ typedef __pos64_t      fpos64_t;
 #endif /* !__fpos64_t_defined */
 #endif
 
+/* The possibilities for the third argument to 'setvbuf()'. */
+#define _IOFBF 0 /*< Fully buffered. */
+#define _IOLBF 1 /*< Line buffered. */
+#define _IONBF 2 /*< No buffering. */
+
+/* Default buffer size.  */
+#ifndef BUFSIZ
+#define BUFSIZ 8192
+#endif
+
 #ifndef EOF
 #define EOF (-1)
 #endif

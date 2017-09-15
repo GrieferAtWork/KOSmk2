@@ -554,8 +554,8 @@ PRIVATE struct term_operations const term_ops = {
 PRIVATE struct winsize const winsize = {
     .ws_row    = VTTY_HEIGHT,
     .ws_col    = VTTY_WIDTH,
-    .ws_xpixel = VTTY_WIDTH,
-    .ws_ypixel = VTTY_HEIGHT,
+    .ws_xpixel = 1,
+    .ws_ypixel = 1,
 };
 
 PRIVATE ATTR_NORETURN void

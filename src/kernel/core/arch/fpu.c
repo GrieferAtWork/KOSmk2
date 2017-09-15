@@ -42,6 +42,8 @@ STATIC_ASSERT(sizeof(struct fpustate) == FPUSTATE_SIZE);
 PUBLIC CPU_BSS struct task *fpu_current;
 
 PRIVATE ATTR_USED void FCALL fpu_irq_nm(struct cpustate *__restrict info);
+__asm__(".global fpu_asm_nm\n"
+        ".hidden fpu_asm_nm\n");
 INTERN DEFINE_EXC_HANDLER(fpu_asm_nm,fpu_irq_nm);
 PRIVATE ATTR_FREERODATA isr_t const fpu_switch = ISR_DEFAULT(IRQ_EXC_NM,&fpu_asm_nm);
 

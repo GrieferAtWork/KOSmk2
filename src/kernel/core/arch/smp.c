@@ -23,33 +23,36 @@
 
 #ifdef CONFIG_SMP
 #include <assert.h>
+#include <dev/rtc.h>
 #include <errno.h>
+#include <fs/fd.h>
 #include <hybrid/align.h>
 #include <hybrid/arch/eflags.h>
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/critical.h>
+#include <hybrid/section.h>
 #include <kernel/arch/apic.h>
 #include <kernel/arch/apicdef.h>
 #include <kernel/arch/gdt.h>
 #include <kernel/arch/idt_pointer.h>
 #include <kernel/arch/mp.h>
 #include <kernel/arch/realmode.h>
+#include <kernel/export.h>
+#include <kernel/irq.h>
 #include <kernel/paging.h>
-#include <dev/rtc.h>
-#include <sched/smp.h>
-#include <sys/syslog.h>
+#include <kernel/syscall.h>
+#include <kernel/user.h>
 #include <sched/cpu.h>
 #include <sched/percpu.h>
+#include <sched/signal.h>
+#include <sched/smp.h>
 #include <sched/task.h>
 #include <sched/types.h>
 #include <string.h>
 #include <sys/io.h>
-#include <kernel/irq.h>
-#include <kernel/export.h>
-#include <kernel/user.h>
-#include <hybrid/section.h>
+#include <sys/syslog.h>
 
 DECL_BEGIN
 
@@ -124,7 +127,7 @@ L(    movw  $0x1, %ax                                   )
 L(    lmsw  %ax                                         )
 L(                                                      )
 L(    /* Escape from real-mode */                       )
-L(    ljmpl $(SEG(SEG_KERNEL_CODE)), $cpu_bootstrap_32  )
+L(    ljmpl $(SEG(SEG_HOST_CODE)), $cpu_bootstrap_32  )
 L(DEFINE_BSS(cpu_bootstrap_gdt,6)                       )
 L(RM_END                                                )
 );
@@ -138,7 +141,7 @@ GLOBAL_ASM(
 L(.section .text.phys                                   )
 L(cpu_bootstrap_32:                                     )
 L(    /* Load proper segment registers */               )
-L(    movw  $(SEG(SEG_KERNEL_DATA)), %ax                )
+L(    movw  $(SEG(SEG_HOST_DATA)), %ax                )
 L(    movw  $(SEG(SEG_CPUSELF)), %bx                    )
 L(    movw  %ax, %ds                                    )
 L(    movw  %ax, %es                                    )
@@ -579,7 +582,6 @@ L(.previous                                             )
 INTERN ATTR_FREETEXT void KCALL
 smp_init_cpu(struct cpu *__restrict vcpu) {
  CHECK_HOST_DOBJ(vcpu);
-
  vcpu->c_idle.t_cpu                       = vcpu;
  vcpu->c_idle.t_sched.sd_running.re_prev  = &vcpu->c_idle;
  vcpu->c_idle.t_sched.sd_running.re_next  = &vcpu->c_idle;
@@ -588,9 +590,10 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
 #else
  vcpu->c_idle.t_refcnt                    = 0x80000001;
 #endif
+ vcpu->c_idle.t_weakcnt                   = 1;
  vcpu->c_idle.t_flags                     = TASKFLAG_NOTALEADER;
- vcpu->c_idle.t_mode                      = TASKMODE_RUNNING;
- vcpu->c_idle.t_prioscore                 = 
+ ATOMIC_WRITE(vcpu->c_idle.t_mode,TASKMODE_NOTSTARTED);
+ vcpu->c_idle.t_prioscore                 =
  vcpu->c_idle.t_priority                  = ATOMIC_READ(__bootcpu.c_idle.t_priority);
  vcpu->c_idle.t_signals.ts_slotc          = 0;
  vcpu->c_idle.t_signals.ts_slota          = 0;
@@ -605,7 +608,54 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_idle.t_suspend[0]                = 0;
  vcpu->c_idle.t_suspend[1]                = 0;
  vcpu->c_idle.t_ustack                    = NULL;
+ atomic_rwlock_init(&vcpu->c_idle.t_pid.tp_parlock);
+ atomic_rwlock_init(&vcpu->c_idle.t_pid.tp_leadlock);
+ atomic_rwlock_init(&vcpu->c_idle.t_pid.tp_childlock);
+ atomic_rwlock_init(&vcpu->c_idle.t_pid.tp_grouplock);
+ memset(&vcpu->c_idle.t_pid.tp_ids,0,sizeof(vcpu->c_idle.t_pid.tp_ids));
+ vcpu->c_idle.t_pid.tp_parent             = &vcpu->c_idle;
+ vcpu->c_idle.t_pid.tp_leader             = &vcpu->c_idle;
+ vcpu->c_idle.t_pid.tp_children           = &vcpu->c_idle;
+ vcpu->c_idle.t_pid.tp_group              = &vcpu->c_idle;
+ vcpu->c_idle.t_pid.tp_siblings.le_pself  = &vcpu->c_idle.t_pid.tp_children;
+ vcpu->c_idle.t_pid.tp_siblings.le_next   = NULL;
+ vcpu->c_idle.t_pid.tp_grplink.le_pself   = &vcpu->c_idle.t_pid.tp_group;
+ vcpu->c_idle.t_pid.tp_grplink.le_next    = NULL;
+ vcpu->c_idle.t_fdman = &fdman_kernel;
+ FDMAN_INCREF(&fdman_kernel);
+ vcpu->c_idle.t_sighand = &sighand_kernel;
+ SIGHAND_INCREF(&sighand_kernel);
  sig_init(&vcpu->c_idle.t_event);
+ memset(&vcpu->c_idle.t_sigblock,0,sizeof(sigset_t));
+ sigpending_init(&vcpu->c_idle.t_sigpend);
+ vcpu->c_idle.t_sigshare = &sigshare_kernel;
+ SIGSHARE_INCREF(&sigshare_kernel);
+ vcpu->c_idle.t_sigenter.se_count = 0;
+#ifndef CONFIG_NO_LDT
+ vcpu->c_idle.t_arch.at_ldt_gdt = SEG(SEG_KERNEL_LDT);
+ vcpu->c_idle.t_arch.at_ldt_tls = LDT_ERROR;
+#endif /* !CONFIG_NO_LDT */
+#ifndef CONFIG_NO_FPU
+ vcpu->c_idle.t_arch.at_fpu = NULL;
+#endif
+
+ /* Setup the affinity of the IDLE task. */
+ atomic_rwlock_init(&vcpu->c_idle.t_affinity_lock);
+ CPU_ZERO(&vcpu->c_idle.t_affinity);
+ CPU_SET(vcpu->c_id,&vcpu->c_idle.t_affinity);
+
+#ifndef CONFIG_NO_LDT
+ ldt_write(&ldt_kernel);
+ LIST_INSERT(ldt_kernel.l_tasks,&vcpu->c_idle,t_arch.at_ldt_tasks);
+ ldt_endwrite(&ldt_kernel);
+#endif /* !CONFIG_NO_LDT */
+
+ /* NOTE: 'task_set_id()' only fails if there are no more IDs to hand out.
+  *        But this function should only be called during early boot when
+  *        it should be impossible for all PIDs to already be used up,
+  *        meaning we are safe to assert that this always succeeds. */
+ asserte(E_ISOK(task_set_id(&vcpu->c_idle,&pid_global)));
+ asserte(E_ISOK(task_set_id(&vcpu->c_idle,&pid_init)));
 
  vcpu->c_self      = vcpu;
  vcpu->c_running   = &vcpu->c_idle;
@@ -615,16 +665,16 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_prio_min  = vcpu->c_idle.t_priority;
  vcpu->c_prio_max  = vcpu->c_idle.t_priority;
  atomic_rwlock_init(&vcpu->c_lock);
-
- /* Setup the affinity of the IDLE task. */
- CPU_ZERO(&vcpu->c_idle.t_affinity);
- CPU_SET(vcpu->c_id,&vcpu->c_idle.t_affinity);
+ COMPILER_WRITE_BARRIER();
+ /* The CPU's IDLE task is not fully initialized.
+  * We can therefor mark it as running. */
+ ATOMIC_WRITE(vcpu->c_idle.t_mode,TASKMODE_RUNNING);
 
  /* Setup initial TSS information. */
  sig_init(&vcpu->c_arch.ac_sigonoff);
  vcpu->c_arch.ac_mode           = CPUMODE_OFFLINE;
  vcpu->c_arch.ac_tss.esp0       = (uintptr_t)vcpu->c_idle.t_hstack.hs_end;
- vcpu->c_arch.ac_tss.ss0        = SEG(SEG_KERNEL_DATA);
+ vcpu->c_arch.ac_tss.ss0        = SEG(SEG_HOST_DATA);
  vcpu->c_arch.ac_tss.iomap_base = sizeof(struct tss);
 
  /* Finally, initialize per-cpu memory. */
@@ -649,12 +699,49 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  if (vcpu->c_arch.ac_flags&CPUFLAG_LAPIC) {
   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+IRQ_LAPIC_SPURIOUS;
   idt->ie_off1  = (u16)((uintptr_t)&lapic_spurious_irq_handler);
-  idt->ie_sel   = SEG(SEG_KERNEL_CODE);
+  idt->ie_sel   = SEG(SEG_HOST_CODE);
   idt->ie_zero  = 0;
   idt->ie_flags = (IDTFLAG_PRESENT|
                    IDTTYPE_80386_32_INTERRUPT_GATE);
   idt->ie_off2  = (u16)((uintptr_t)&lapic_spurious_irq_handler >> 16);
  }
+
+ /* Install the page-fault handler. */
+ { INTDEF void ASMCALL mman_asm_pf(void);
+   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+EXC_PAGE_FAULT;
+   idt->ie_off1 = (u16)((uintptr_t)&mman_asm_pf);
+   idt->ie_sel   = SEG(SEG_HOST_CODE);
+   idt->ie_zero  = 0;
+   idt->ie_flags = (IDTFLAG_PRESENT|
+                    IDTTYPE_80386_32_INTERRUPT_GATE);
+   idt->ie_off2 = (u16)((uintptr_t)&mman_asm_pf >> 16);
+ }
+
+ /* Install the system-call interrupt handler. */
+ { INTDEF void ASMCALL syscall_irq(void);
+   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+SYSCALL_INT;
+   idt->ie_off1 = (u16)((uintptr_t)&syscall_irq);
+   idt->ie_sel   = SEG(SEG_HOST_CODE);
+   idt->ie_zero  = 0;
+   idt->ie_flags = (IDTFLAG_PRESENT|
+                    IDTTYPE_80386_32_INTERRUPT_GATE|
+                    IDTFLAG_DPL(3));
+   idt->ie_off2 = (u16)((uintptr_t)&syscall_irq >> 16);
+ }
+
+#ifndef CONFIG_NO_FPU
+ /* Install the FPU context switch handler. */
+ { INTDEF void (ASMCALL fpu_asm_nm)(void);
+   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+IRQ_EXC_NM;
+   idt->ie_off1 = (u16)((uintptr_t)&fpu_asm_nm);
+   idt->ie_sel   = SEG(SEG_HOST_CODE);
+   idt->ie_zero  = 0;
+   idt->ie_flags = (IDTFLAG_PRESENT|
+                    IDTTYPE_80386_32_INTERRUPT_GATE);
+   idt->ie_off2 = (u16)((uintptr_t)&fpu_asm_nm >> 16);
+ }
+#endif /* !CONFIG_NO_FPU */
+
 }
 
 
@@ -694,7 +781,6 @@ INTERN void KCALL smp_initialize_lapic(void) {
  apic_write(APIC_SPIV,IRQ_LAPIC_SPURIOUS|
             APIC_SPIV_DIRECTED_EOI|
             APIC_SPIV_APIC_ENABLED);
-
 }
 
 

@@ -262,7 +262,7 @@ union PACKED {
  u64 ie_data;
 struct PACKED {
  u16 ie_off1;  /*< Lower 16 bits of an 'irq_handler' pointer. */
- u16 ie_sel;   /*< Kernel code segment (always 'SEG(SEG_KERNEL_CODE)') */
+ u16 ie_sel;   /*< Kernel code segment (always 'SEG(SEG_HOST_CODE)') */
  u8  ie_zero;  /*< Always ZERO(0). */
  u8  ie_flags; /*< Set of 'IDTFLAG_*|IDTTYPE_*' */
  u16 ie_off2;  /*< Upper 16 bits of an 'irq_handler' pointer. */

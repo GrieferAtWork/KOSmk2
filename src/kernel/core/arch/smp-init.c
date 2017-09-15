@@ -506,8 +506,10 @@ done:
   /* Setup all IDLE tasks to use the kernel's internal memory manager. */
   atomic_rwlock_write(&mman_kernel.m_tasks_lock);
   for (; iter != end; ++iter) {
-   vcpu                = *iter;
-   vcpu->c_idle.t_mman = &mman_kernel;
+   vcpu                     = *iter;
+   vcpu->c_idle.t_mman      = &mman_kernel;
+   vcpu->c_idle.t_real_mman = &mman_kernel;
+   MMAN_INCREF(&mman_kernel);
    LIST_INSERT(mman_kernel.m_tasks,&vcpu->c_idle,t_mman_tasks);
   }
   atomic_rwlock_endwrite(&mman_kernel.m_tasks_lock);

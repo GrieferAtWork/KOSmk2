@@ -200,25 +200,19 @@ typedef u16 segid_t;
 #define SEG_ISGDT(seg) (((seg)&0x4)==0)
 
 /* Hard-coded, special segments ids. */
-#define SEG_NULL           0 /*< [0x00] NULL Segment. */
-#define SEG_KERNEL_CODE    1 /*< [0x08] Ring #0 code segment. */
-#define SEG_KERNEL_DATA    2 /*< [0x10] Ring #0 data segment. */
-#define SEG_KERNEL_CODE_16 3 /*< [0x18] Ring #0 16-bit code segment. */
-#define SEG_KERNEL_DATA_16 4 /*< [0x20] Ring #0 16-bit data segment. */
-#define SEG_KERNEL_LDT     5 /*< [0x28] Symbolic kernel LDT (Usually empty). */
-#define SEG_CPUTSS         6 /*< [0x30] TSS segment of the current CPU. */
-#define SEG_CPUSELF        7 /*< [0x38] CPU-self segment (stored in %fs/%gs while in kernel-space). */
-#define SEG_USER_CODE      8 /*< [0x40] Ring #3 code segment. */         
-#define SEG_USER_DATA      9 /*< [0x48] Ring #3 data segment. */
+#define SEG_NULL        0 /*< [0x00] NULL Segment. */
+#define SEG_HOST_CODE   1 /*< [0x08] Ring #0 code segment. */
+#define SEG_HOST_DATA   2 /*< [0x10] Ring #0 data segment. */
+#define SEG_USER_CODE   3 /*< [0x18] Ring #3 code segment. */         
+#define SEG_USER_DATA   4 /*< [0x20] Ring #3 data segment. */
+#define SEG_HOST_CODE16 5 /*< [0x28] Ring #0 16-bit code segment. */
+#define SEG_HOST_DATA16 6 /*< [0x30] Ring #0 16-bit data segment. */
+#define SEG_KERNEL_LDT  7 /*< [0x38] Symbolic kernel LDT (Usually empty). */
+#define SEG_CPUTSS      8 /*< [0x40] TSS segment of the current CPU. */
+#define SEG_CPUSELF     9 /*< [0x48] CPU-self segment (stored in %fs/%gs while in kernel-space). */
 
-#ifdef SEG_USER_DATA
-#   define SEG_BUILTIN     10
-#elif defined(SEG_USER_CODE)
-#   define SEG_BUILTIN     9
-#else
-#   define SEG_BUILTIN     8
-#endif
-#define SEG_MAX              0xffff
+#define SEG_BUILTIN        10
+#define SEG_MAX            0xffff
 #define SEG_ISBUILTIN(seg) ((seg) < SEG(SEG_BUILTIN))
 
 #ifdef __CC__

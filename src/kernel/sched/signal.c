@@ -632,7 +632,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
          ss_descr->eip,&sigenter);
 #endif
   ss_descr->eip    = (u32)&sigenter;
-  ss_descr->cs     = SEG(SEG_KERNEL_CODE);
+  ss_descr->cs     = SEG(SEG_HOST_CODE);
   ss_descr->eflags = EFLAGS_IF|EFLAGS_IOPL(3);
   /* TODO: Use sigaltstack() here, if it was ever set! */
   user_info = ((USER struct sigenter_info *)ss_descr->useresp)-1;
