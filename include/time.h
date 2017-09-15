@@ -66,13 +66,13 @@ typedef __clock_t clock_t;
 #endif /* !__clock_t_defined */
 
 #ifndef __time_t_defined
-#define __time_t_defined  1
+#define __time_t_defined 1
 typedef __TM_TYPE(time) time_t;
 #endif /* !__time_t_defined */
 
 #ifdef __USE_TIME64
 #ifndef __time64_t_defined
-#define __time64_t_defined  1
+#define __time64_t_defined 1
 typedef __time64_t time64_t;
 #endif /* !__time64_t_defined */
 #endif /* __USE_TIME64 */

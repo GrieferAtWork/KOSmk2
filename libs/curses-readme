@@ -83,11 +83,10 @@ cp ${PREFIX}/libs/private/install-ncurses-5.9/lib/*      ${PREFIX}/bin/libs/
 # NOTE: You may need to run 'deemon magic.dee -fdisk' to force re-build the QEMU disk image.
 # Add to (and create if missing) "${PREFIX}/libs/private/.sources"
 echo <<EOF
-DISK_SYNC("install-ncurses-5.9/lib/libncurses.so.5.9","/usr/lib/libcurses.so")
-DISK_SYNC("install-ncurses-5.9/lib/libncurses.so.5.9","/usr/lib/libncurses.so")
-DISK_SYNC("install-ncurses-5.9/lib/libpanel.so.5.9","/usr/lib/libpanel.so")
-DISK_SYNC("install-ncurses-5.9/lib/libmenu.so.5.9","/usr/lib/libmenu.so")
-DISK_SYNC("install-ncurses-5.9/lib/libform.so.5.9","/usr/lib/libform.so")
+DISK_SYNC("install-ncurses-5.9/lib/libncurses.so.5.9","/usr/lib/libncurses.so.5")
+DISK_SYNC("install-ncurses-5.9/lib/libpanel.so.5.9","/usr/lib/libpanel.so.5")
+DISK_SYNC("install-ncurses-5.9/lib/libmenu.so.5.9","/usr/lib/libmenu.so.5")
+DISK_SYNC("install-ncurses-5.9/lib/libform.so.5.9","/usr/lib/libform.so.5")
 EOF
 
 # If you're using a development USB stick, you can simply copy

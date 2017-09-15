@@ -39,6 +39,7 @@
 #include <signal.h>
 #include <sys/poll.h>
 #include <sys/stat.h>
+#include <sys/timeb.h>
 #include <unistd.h>
 
 DECL_BEGIN
@@ -549,6 +550,18 @@ PUBLIC int (LIBCCALL usleep)(useconds_t useconds) {
  return error;
 }
 
+PUBLIC int (LIBCCALL ftime)(struct timeb *timebuf) {
+ struct atimeval tv;
+ struct timezone tz;
+ int result = A(gettimeofday)(&tv,&tz);
+ if (!result) {
+  timebuf->time     = tv.tv_sec;
+  timebuf->millitm  = tv.tv_usec / USEC_PER_MSEC;
+  timebuf->timezone = tz.tz_minuteswest;
+  timebuf->dstflag  = tz.tz_dsttime;
+ }
+ return result;
+}
 
 
 DEFINE_PUBLIC_ALIAS(timegm,mktime); /* ??? */

@@ -320,7 +320,7 @@ function disk_force_mkdir(path) {
 	path = fs::path::exctrail(path);
 	local head = fs::path::head(path);
 	local tail = fs::path::tail(path);
-	if (head != "/") disk_fast_mkdir(head);
+	if (head != "/") disk_force_mkdir(head);
 	try disk_fast_mkdir(path); catch (...);
 }
 
