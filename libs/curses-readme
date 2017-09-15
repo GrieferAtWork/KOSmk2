@@ -75,12 +75,22 @@ make
 # with all the binaries and headers required for curses.
 make install
 
-# Copy all the files for ncurses to their 
+# Copy all the files for ncurses to their respective locations.
+cp ${PREFIX}/libs/private/install-ncurses-5.9/include/*  ${PREFIX}/include/
+cp ${PREFIX}/libs/private/install-ncurses-5.9/lib/*      ${PREFIX}/bin/libs/
 
+# Allow magic to auto-sync curses files
+# NOTE: You may need to run 'deemon magic.dee -fdisk' to force re-build the QEMU disk image.
+# Add to (and create if missing) "${PREFIX}/libs/private/.sources"
+echo <<EOF
+DISK_SYNC("install-ncurses-5.9/lib/libncurses.so.5.9","/usr/lib/libcurses.so")
+DISK_SYNC("install-ncurses-5.9/lib/libncurses.so.5.9","/usr/lib/libncurses.so")
+DISK_SYNC("install-ncurses-5.9/lib/libpanel.so.5.9","/usr/lib/libpanel.so")
+DISK_SYNC("install-ncurses-5.9/lib/libmenu.so.5.9","/usr/lib/libmenu.so")
+DISK_SYNC("install-ncurses-5.9/lib/libform.so.5.9","/usr/lib/libform.so")
+EOF
 
-
-
-
-
-
+# If you're using a development USB stick, you can simply copy
+# the entirety of "${PREFIX}/libs/private/install-ncurses-5.9"
+# to the "/usr" directory of the stick.
 
