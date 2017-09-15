@@ -651,7 +651,11 @@ FUNDEF SAFE void KCALL mman_assert_unlocked(struct mman *__restrict self);
 /* Create/Update the environment parameter block.
  * NOTE: The caller is responsible to ensure that
  *      'self' is the active memory manager.
- * NOTE: The caller must be holding a write-lock on 
+ * NOTE: The caller must be holding a write-lock to on 'self'
+ * NOTE: To better support linker extensions such as SHEBANG,
+ *       the caller may specify two vectors of kernel-strings
+ *       that should either be pre-pended, or appended to the
+ *       actual user-space argument vector.
  * @return: * :      A pointer to the new allocated environment block.
  *             NOTE: The caller should then fill in additional information such as 'e_root'
  * @return: -EFAULT: A faulty pointer was given.
@@ -659,7 +663,9 @@ FUNDEF SAFE void KCALL mman_assert_unlocked(struct mman *__restrict self);
 FUNDEF SAFE VIRT struct envdata *KCALL
 mman_setenviron_unlocked(struct mman *__restrict self,
                          VIRT char *VIRT *argv,
-                         VIRT char *VIRT *envp);
+                         VIRT char *VIRT *envp,
+                         HOST char **head_argv, size_t head_argc,
+                         HOST char **tail_argv, size_t tail_argc);
 
 
 #define THIS_MMAN   THIS_TASK->t_mman

@@ -47,12 +47,75 @@ DECL_BEGIN
 
 #define TERMINATE_ON_EXEC_CODE ((void *)-1)
 
+struct moduleset {
+ size_t              ms_modc; /*< Amount of modules in the set. */
+ size_t              ms_moda; /*< Allocated amount of module slots. */
+ REF struct module **ms_modv; /*< [1..1][0..ms_modc|alloc(ms_moda)][owned] Vector of modules. */
+};
+
+#define MODULESET_INIT   {0,0,NULL}
+
+LOCAL void KCALL
+moduleset_fini(struct moduleset *__restrict self) {
+ REF struct module **iter,**end;
+ end = (iter = self->ms_modv)+self->ms_modc;
+ for (; iter != end; ++iter) MODULE_DECREF(*iter);
+ free(self->ms_modv);
+}
+
+/* Check if the given module is apart of the specified module set. */
+LOCAL bool KCALL
+moduleset_contains(struct moduleset *__restrict self,
+                   struct module *__restrict mod) {
+ REF struct module **iter,**end;
+ end = (iter = self->ms_modv)+self->ms_modc;
+ for (; iter != end; ++iter) {
+  if (*iter == mod) return true;
+ }
+ return false;
+}
+
+/* Insert the given module into this module set, inheriting a reference upon success.
+ * @return: -EOK:    The module was added successfully.
+ * @return: -ENOMEM: Not enough available memory. */
+LOCAL errno_t KCALL
+moduleset_insert(struct moduleset *__restrict self,
+             REF struct module *__restrict mod) {
+ if (self->ms_modc == self->ms_moda) {
+  size_t new_arga = self->ms_moda;
+  REF struct module **new_argv;
+  if (!new_arga) new_arga = 1;
+  else new_arga *= 2;
+reloc_again:
+  new_argv = trealloc(struct module *,
+                      self->ms_modv,
+                      new_arga);
+  if unlikely(!new_argv) {
+   if (new_arga == self->ms_modc+1)
+       return -ENOMEM;
+   new_arga = self->ms_modc+1;
+   goto reloc_again;
+  }
+  self->ms_moda = new_arga;
+  self->ms_modv = new_argv;
+ }
+ self->ms_modv[self->ms_modc++] = mod; /* Inherit reference. */
+ return -EOK;
+}
+
+
+
+
+
 /* NOTE: Upon success, this function does not
  *       return and will inherit a reference to 'mod'. */
 PRIVATE SAFE errno_t KCALL
-user_execve(REF struct module *__restrict mod,
-            USER char const *const USER *argv,
-            USER char const *const USER *envp) {
+user_do_execve(REF struct module *__restrict mod,
+               USER char const *const USER *argv,
+               USER char const *const USER *envp,
+               struct argvlist const *__restrict head_args,
+               struct argvlist const *__restrict tail_args,
+               REF struct moduleset *__restrict free_modules) {
  errno_t error; struct modpatch patch;
  struct task *exec_task = THIS_TASK;
  struct mman *mm = exec_task->t_mman;
@@ -61,6 +124,7 @@ user_execve(REF struct module *__restrict mod,
  struct mman_maps env_maps = {NULL};
  CHECK_HOST_DOBJ(mod);
  syslog(LOG_DEBUG,"Begin exec: '%[file]'\n",mod->m_file);
+ assertf(!(mod->m_flag&MODFLAG_NOTABIN),"This isn't a binary...");
  assertf(mm != &mman_kernel,"You can't exec() with the kernel memory manager set!");
 
  /* Make sure the module is really an executable. */
@@ -147,11 +211,14 @@ relock_tasks_again:
 #endif
  atomic_rwlock_endwrite(&mm->m_tasks_lock);
 
+ assert(mm == THIS_MMAN);
  error = mman_write(mm);
  if (E_ISERR(error)) goto end;
 
  /* Generate the new environment table. */
- environ = mman_setenviron_unlocked(mm,(char **)argv,(char **)envp);
+ environ = mman_setenviron_unlocked(mm,(char **)argv,(char **)envp,
+                                   (char **)head_args->al_argv,head_args->al_argc,
+                                   (char **)tail_args->al_argv,tail_args->al_argc);
  if (E_ISERR(environ)) { error = E_GTERR(environ); goto endwrite; }
  assert(environ == mm->m_environ);
 
@@ -284,6 +351,7 @@ endwrite:
           mod->m_file,state.host.eip);
 
    /* Last phase: actually switch to the new task! */
+   moduleset_fini(free_modules);
    MODULE_DECREF(mod);
    task_endcrit(); /* End the last remaining critical block. */
 
@@ -309,6 +377,73 @@ end_too_late:
  task_terminate(exec_task,(void *)(uintptr_t)__W_STOPCODE(SIGSEGV));
 end:
  return error;
+}
+
+
+
+/* Execute the given module and _ALWAYS_ inherit a refernece to it.
+ * NOTE: Upon success, this function does not return. */
+PRIVATE SAFE errno_t KCALL
+user_execve(REF struct module *__restrict mod,
+            USER char const *const USER *argv,
+            USER char const *const USER *envp) {
+ errno_t result; REF struct module *real_module;
+ struct moduleset symb_mods = MODULESET_INIT;
+ struct argvlist head = ARGVLIST_INIT;
+ struct argvlist tail = ARGVLIST_INIT;
+
+ /* Transform environment and locate the effective module. */
+ for (;;) {
+
+  /* Load environment transformations. */
+  if (mod->m_ops->o_transform_environ) {
+   result = (*mod->m_ops->o_transform_environ)(mod,&head,&tail,
+                                              (char **)argv,
+                                              (char **)envp);
+   if (E_ISERR(result)) goto end;
+  }
+
+  /* Check if this module shouldn't be executed directly. */
+  if (!mod->m_ops->o_real_module) break;
+  /* Load the real module. */
+  real_module = (*mod->m_ops->o_real_module)(mod);
+  assert(real_module);
+  if (E_ISERR(real_module)) {
+   result = E_GTERR(real_module);
+   if (!(mod->m_flag&MODFLAG_NOTABIN) &&
+        (result == -ENOENT || result == -ENOEXEC)) {
+    /* The last module wasn't able to load the ~real~ module, but still
+     * is a binary itself. - Therefor we'll be executing _IT_ instead. */
+    goto do_exec;
+   }
+   goto end;
+  }
+  /* Check if this module is already apart of
+   * the current set of symbolic modules. */
+  if (moduleset_contains(&symb_mods,real_module)) {
+   result = -ELIBMAX;
+err_realmod:
+   MODULE_DECREF(real_module);
+   goto end;
+  }
+  result = moduleset_insert(&symb_mods,mod);
+  if (E_ISERR(result)) goto err_realmod;
+  /* Continue working with the ~real~ module. */
+  mod = real_module;
+ }
+
+ /* Make sure the this last module can be used as a binary. */
+ if (mod->m_flag&MODFLAG_NOTABIN)
+  result = -ENOEXEC;
+ else {
+do_exec:
+  result = user_do_execve(mod,argv,envp,&head,&tail,&symb_mods);
+ }
+end:
+ moduleset_fini(&symb_mods);
+ /* At this point, something must have went wrong... */
+ MODULE_DECREF(mod);
+ return result;
 }
 
 
@@ -345,9 +480,6 @@ SYSCALL_DEFINE3(execve,USER char const *,filename,
 
  /* We've got the module. - Time to execute it! */
  result = user_execve(mod,argv,envp);
-
- /* At this point, something must have went wrong... */
- MODULE_DECREF(mod);
 end:
  task_endcrit();
  assert(!task_iscrit());

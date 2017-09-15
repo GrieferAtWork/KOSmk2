@@ -153,7 +153,7 @@ run_init(char const *__restrict filename) {
        NULL
      };
      HOSTMEMORY_BEGIN {
-      penviron = mman_setenviron_unlocked(mm,argv,envp);
+      penviron = mman_setenviron_unlocked(mm,argv,envp,NULL,0,NULL,0);
      }
      HOSTMEMORY_END;
      assertf(E_ISOK(penviron),"%[errno]",-E_GTERR(penviron));

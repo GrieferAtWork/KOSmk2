@@ -40,7 +40,7 @@ PRIVATE int syslog_options = 0;
 PRIVATE int syslog_facility = 0;
 PRIVATE int syslog_mask = -1;
 PUBLIC void (LIBCCALL closelog)(void) {}
-PUBLIC void (LIBCCALL openlog)(const char *UNUSED(ident), int option, int facility) {
+PUBLIC void (LIBCCALL openlog)(char const *UNUSED(ident), int option, int facility) {
  syslog_options  = option;
  syslog_facility = facility;
 }

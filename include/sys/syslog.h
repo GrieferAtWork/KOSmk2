@@ -194,13 +194,13 @@ CODE facilitynames[] = {
 
 #ifndef __KERNEL__
 __LIBC void (__LIBCCALL closelog)(void);
-__LIBC void (__LIBCCALL openlog)(const char *__ident, int __option, int __facility);
+__LIBC void (__LIBCCALL openlog)(char const *__ident, int __option, int __facility);
 __LIBC int (__LIBCCALL setlogmask)(int __mask);
 #endif /* !__KERNEL__ */
 
-__LIBC void (__ATTR_CDECL syslog)(int __pri, const char *__fmt, ...);
+__LIBC void (__ATTR_CDECL syslog)(int __pri, char const *__fmt, ...);
 #ifdef __USE_MISC
-__LIBC void (__LIBCCALL vsyslog)(int __pri, const char *__fmt, __VA_LIST __ap);
+__LIBC void (__LIBCCALL vsyslog)(int __pri, char const *__fmt, __VA_LIST __ap);
 #endif /* __USE_MISC */
 
 #ifdef __USE_KOS

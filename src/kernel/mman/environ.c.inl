@@ -89,7 +89,9 @@ L(SYM_END(count_pointers)                                 )
 FUNDEF SAFE VIRT struct envdata *KCALL
 mman_setenviron_unlocked(struct mman *__restrict self,
                          USER char *USER *argv,
-                         USER char *USER *envp) {
+                         USER char *USER *envp,
+                         HOST char **head_argv, size_t head_argc,
+                         HOST char **tail_argv, size_t tail_argc) {
  bool has_env,keep_environ;
  VIRT struct envdata *old_environ;
  VIRT struct envdata *new_environ,*result;
@@ -120,6 +122,11 @@ mman_setenviron_unlocked(struct mman *__restrict self,
  argc            = (size_t)count_pointers(argv);
  if (E_ISERR(argc)) return E_PTR(E_GTERR(argc));
  arg_text = 0;
+ end = (iter = head_argv)+head_argc;
+ for (; iter != end; ++iter) {
+  if unlikely(__builtin_add_overflow(arg_text,strlen(*iter)+1,&arg_text))
+     goto enomem;
+ }
  end = (iter = argv)+argc;
  for (; iter != end; ++iter) {
   char *str = ATOMIC_READ(*iter);
@@ -130,6 +137,11 @@ mman_setenviron_unlocked(struct mman *__restrict self,
          str,str_end,(size_t)((str_end-str)+1));
 #endif
   if unlikely(__builtin_add_overflow(arg_text,(size_t)((str_end-str)+1),&arg_text))
+     goto enomem;
+ }
+ end = (iter = tail_argv)+tail_argc;
+ for (; iter != end; ++iter) {
+  if unlikely(__builtin_add_overflow(arg_text,strlen(*iter)+1,&arg_text))
      goto enomem;
  }
  if (keep_environ) {
@@ -211,7 +223,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
 got_environ:
  penvp_text   = (char *)(ENVDATA_ENVV(*new_environ)+(envc+1));
  pargv_vector = (char **)((uintptr_t)penvp_text+env_text);
- pargv_text   = (char *)(pargv_vector+(argc+1));
+ pargv_text   = (char *)(pargv_vector+(argc+head_argc+tail_argc+1));
 
  if (!keep_environ) {
   /* Copy the new environment text. */
@@ -233,13 +245,24 @@ got_environ:
  }
 
  /* Copy the new argument text. */
- text_end = pargv_text+arg_text;
- end = (iter = argv)+argc;
- vector_dst = pargv_vector;
- for (; iter != end; ++iter,++vector_dst) {
+ text_end = pargv_text+arg_text,vector_dst = pargv_vector;
+ for (end = (iter = head_argv)+head_argc;
+      iter != end; ++iter,++vector_dst) {
+  *vector_dst = pargv_text;
+  pargv_text = stpncpy(pargv_text,*iter,text_end-pargv_text);
+  ++pargv_text; /* Keep the NUL-character. */
+ }
+ for (end = (iter = argv)+argc;
+      iter != end; ++iter,++vector_dst) {
   *vector_dst = pargv_text;
   pargv_text = stpncpy_from_user(pargv_text,*iter,text_end-pargv_text);
   if unlikely(!pargv_text) { result = E_PTR(-EFAULT); goto done; }
+  ++pargv_text; /* Keep the NUL-character. */
+ }
+ for (end = (iter = tail_argv)+tail_argc;
+      iter != end; ++iter,++vector_dst) {
+  *vector_dst = pargv_text;
+  pargv_text = stpncpy(pargv_text,*iter,text_end-pargv_text);
   ++pargv_text; /* Keep the NUL-character. */
  }
  *vector_dst = NULL; /* Terminate the argument list with a NULL-entry. */

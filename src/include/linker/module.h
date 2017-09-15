@@ -65,13 +65,15 @@ struct modseg {
 };
 
 
-#define MODULEOPS_OFFSETOF_FINI         0
-#define MODULEOPS_OFFSETOF_SYMADDR      __SIZEOF_POINTER__
-#define MODULEOPS_OFFSETOF_PATCH     (2*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_MODFUN    (3*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_EXEC_INIT (4*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_EXEC_FINI (5*__SIZEOF_POINTER__)
-#define MODULEOPS_SIZE               (6*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_FINI                 0
+#define MODULEOPS_OFFSETOF_SYMADDR              __SIZEOF_POINTER__
+#define MODULEOPS_OFFSETOF_PATCH             (2*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_MODFUN            (3*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_EXEC_INIT         (4*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_EXEC_FINI         (5*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_REAL_MODULE       (6*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_TRANSFORM_ENVIRON (7*__SIZEOF_POINTER__)
+#define MODULEOPS_SIZE                       (8*__SIZEOF_POINTER__)
 
 struct modsym {
  void     *ms_addr; /*< [?..?] Symbol address. */
@@ -94,6 +96,7 @@ typedef u8 modfun_t; /*< Set of 'MODFUN_*' */
 /* Module function enumeration callback. (NOTE: 'single_type' is _ONE_ of 'MODFUN_*') */
 typedef ssize_t (KCALL *penummodfun)(VIRT void *pfun, modfun_t single_type, void *closure);
 
+struct argvlist;
 struct moduleops {
  /* NOTE: All operations may optionally be set to NULL when not implemented. */
  /* Additional user-defined destruction.
@@ -133,6 +136,44 @@ struct moduleops {
  /* TODO: Remove these & switch to the new o_modfun-system. */
  void (KCALL *o_exec_init)(struct module *__restrict self, VIRT ppage_t load_addr);
  void (KCALL *o_exec_fini)(struct module *__restrict self, VIRT ppage_t load_addr);
+ /* An optional operator that returns the pointed-to (real)
+  * module, such as when executing shebang scripts.
+  * NOTE: This operator may return '-ENOENT' or '-ENOEXEC' to indicate
+  *       that the associated module 'self' itself should be executed
+  *       when the ~real~ module could not be found, or is invalid.
+  *    >> This behavior allows the implementation of weakly
+  *       choosing binary to execute based on what actually exists,
+  *       allowing for a theoretical module type that executes another
+  *       binary if that file exists (NOTE: No such module type exists
+  *       as of right now, but drivers are able to implement one)
+  *    >> This behavior is internally triggered only when 'self'
+  *       does not have the 'MODFLAG_NOTABIN' flag set.
+  * @return: * :         A new reference to the real module.
+  * @return: -ENOENT:    The real module does not exist.
+  * @return: -ENOEXEC:   The real module isn't an executable.
+  * @return: E_ISERR(*): Failed to load the real module for some reason. */
+ REF struct module *(KCALL *o_real_module)(struct module *__restrict self);
+ /* Transform execution environment before the environment block is initialized.
+  * HINT: This operator should call 'argvlist_insert()' / 'argvlist_append()'
+  *       to add additional arguments either to the given 'head_args' list,
+  *       and/or to the 'tail_args' list, both of which will be prepended/appended
+  *       to the user-space argument vector 'user_args' when the caller will
+  *       eventually update the environment block.
+  *    >> The simplest use of this operator is to implement a shebang
+  *       driver that will simply insert a set of previously parsed
+  *       arguments at the front of 'head_args'.
+  * WARNING: 'argvlist' objects do not copy passed argument strings,
+  *           meaning that a module implementing this operator must
+  *           keep track of any string added to either list.
+  * @return: -EOK:       Successfully transformed the environment, or did nothing
+  *                     (which is the same as not implementing this operator)
+  * @return: -ENOMEM:    Not enough available memory.
+  * @return: E_ISERR(*): Failed to transform the environment for some reason. */
+ errno_t (KCALL *o_transform_environ)(struct module *__restrict self,
+                                      struct argvlist *__restrict head_args,
+                                      struct argvlist *__restrict tail_args,
+                                      USER char *USER *user_args,
+                                      USER char *USER *user_envp);
 };
 
 /* Returns the name hash for a given symbol name.
@@ -141,6 +182,21 @@ FUNDEF u32 KCALL sym_hashname(char const *__restrict name);
 
 
 
+/* Argument list helper structure, as used */
+struct argvlist {
+ size_t       al_argc; /*< Amount of arguments in use. */
+ size_t       al_arga; /*< Allocated amount of arguments. */
+ char const **al_argv; /*< [1..1][0..al_argc|ALLOC(al_arga)][owned] Vector of arguments. */
+};
+#define ARGVLIST_INIT       {0,0,NULL}
+#define argvlist_init(self) (void)memset(self,0,sizeof(struct argvlist))
+#define argvlist_fini(self) (free((self)->al_argv))
+
+/* Insert(front) or append(back) a given argument to the specified argument list.
+ * @return: -EOK:    The argument was added successfully.
+ * @return: -ENOMEM: Not enough available memory. */
+FUNDEF errno_t KCALL argvlist_insert(struct argvlist *__restrict self, char const *__restrict argument);
+FUNDEF errno_t KCALL argvlist_append(struct argvlist *__restrict self, char const *__restrict argument);
 
 
 #define MODFLAG_NONE    0x00000000
@@ -149,6 +205,8 @@ FUNDEF u32 KCALL sym_hashname(char const *__restrict name);
                                     *  When this flag is set, 'm_entry' is used as entry point. */
 #define MODFLAG_TEXTREL 0x00000004 /*< Executing relocations requires all segments to be mapped as writable. */
 #define MODFLAG_PREFERR 0x00000008 /*< When set, prefer loading the module at 'm_load' (Implied with consequences upon failure when 'MODFLAG_RELO' isn't set). */
+#define MODFLAG_NOTABIN 0x80000000 /*< Not a binary. - When set, the module cannot be loaded directly, but may implement
+                                    * 'o_real_module' and 'o_transform_environ' to proxy another module instead. */
 
 #define MODULE_OFFSETOF_REFCNT   0
 #define MODULE_OFFSETOF_OPS      __SIZEOF_REF_T__

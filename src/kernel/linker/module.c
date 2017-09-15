@@ -18,7 +18,7 @@
  */
 #ifndef GUARD_KERNEL_LINKER_MODULE_C
 #define GUARD_KERNEL_LINKER_MODULE_C 1
-#define _KOS_SOURCE 1
+#define _KOS_SOURCE 2
 
 #include <assert.h>
 #include <fcntl.h>
@@ -56,6 +56,58 @@ STATIC_ASSERT(offsetof(struct module,m_align)    == MODULE_OFFSETOF_ALIGN);
 STATIC_ASSERT(sizeof(struct module)              == MODULE_SIZE);
 STATIC_ASSERT(offsetof(struct instance,i_module) == INSTANCE_OFFSETOF_MODULE);
 STATIC_ASSERT(sizeof(struct instance)            == INSTANCE_SIZE);
+
+PRIVATE errno_t KCALL
+argvlist_mkspc(struct argvlist *__restrict self) {
+ if (self->al_argc == self->al_arga) {
+  size_t new_arga = self->al_arga;
+  char const **new_argv;
+  if (!new_arga) new_arga = 1;
+  else new_arga *= 2;
+reloc_again:
+  new_argv = trealloc(char const *,
+                      self->al_argv,
+                      new_arga);
+  if unlikely(!new_argv) {
+   if (new_arga == self->al_argc+1)
+       return -ENOMEM;
+   new_arga = self->al_argc+1;
+   goto reloc_again;
+  }
+  self->al_arga = new_arga;
+  self->al_argv = new_argv;
+ }
+ return -EOK;
+}
+
+FUNDEF errno_t KCALL
+argvlist_insert(struct argvlist *__restrict self,
+                char const *__restrict argument) {
+ errno_t error;
+ CHECK_HOST_DOBJ(self);
+ assert(strlen(argument) || 1);
+ assert(self->al_argc < self->al_arga);
+ error = argvlist_mkspc(self);
+ if (E_ISOK(error)) {
+  memmove(self->al_argv+1,self->al_argv,
+          self->al_argc*sizeof(char *));
+  self->al_argv[0] = argument;
+  ++self->al_argc;
+ }
+ return error;
+}
+FUNDEF errno_t KCALL
+argvlist_append(struct argvlist *__restrict self,
+                char const *__restrict argument) {
+ errno_t error;
+ CHECK_HOST_DOBJ(self);
+ assert(strlen(argument) || 1);
+ assert(self->al_argc < self->al_arga);
+ error = argvlist_mkspc(self);
+ if (E_ISOK(error))
+     self->al_argv[self->al_argc++] = argument;
+ return error;
+}
 
 
 PUBLIC u32 KCALL
