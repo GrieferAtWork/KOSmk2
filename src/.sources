@@ -191,14 +191,14 @@ BEGIN
 		SET_DISKFILE("/mod/" name ".so")
 #define USING(name) PROJ_DEP(name) LIB(name.lsstrip("lib"))
 
-	BEGIN BASIC_MODULE("ps2")       SOURCE("modules/input/ps2.c")   END
-	BEGIN BASIC_MODULE("devfs")     SOURCE("modules/fs/devfs.c")    END
-	BEGIN BASIC_MODULE("memdev")    SOURCE("modules/char/memdev.c") END
-	BEGIN BASIC_MODULE("ata")       SOURCE("modules/block/ata.c")   END
-	BEGIN BASIC_MODULE("procfs")    SOURCE("modules/fs/proc/*.c")   END
-	BEGIN DEFAULT_MODULE("vga-tty")
-		SOURCE("modules/video/vga-tty.c")
-	END
+	BEGIN BASIC_MODULE("ps2")     SOURCE("modules/input/ps2.c")      END
+	BEGIN BASIC_MODULE("devfs")   SOURCE("modules/fs/devfs.c")       END
+	BEGIN BASIC_MODULE("memdev")  SOURCE("modules/char/memdev.c")    END
+	BEGIN BASIC_MODULE("ata")     SOURCE("modules/block/ata.c")      END
+	BEGIN BASIC_MODULE("procfs")  SOURCE("modules/fs/proc/*.c")      END
+	BEGIN BASIC_MODULE("vga-tty") SOURCE("modules/video/vga-tty.c")  END
+	BEGIN BASIC_MODULE("pe")      SOURCE("modules/linker/pe.c")      END
+	BEGIN BASIC_MODULE("shebang") SOURCE("modules/linker/shebang.c") END
 
 END
 

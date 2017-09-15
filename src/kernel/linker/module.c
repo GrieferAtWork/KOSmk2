@@ -58,20 +58,20 @@ STATIC_ASSERT(offsetof(struct instance,i_module) == INSTANCE_OFFSETOF_MODULE);
 STATIC_ASSERT(sizeof(struct instance)            == INSTANCE_SIZE);
 
 PRIVATE errno_t KCALL
-argvlist_mkspc(struct argvlist *__restrict self) {
- if (self->al_argc == self->al_arga) {
+argvlist_mkspc(struct argvlist *__restrict self, size_t n) {
+ if (self->al_argc+n > self->al_arga) {
   size_t new_arga = self->al_arga;
   char const **new_argv;
-  if (!new_arga) new_arga = 1;
-  else new_arga *= 2;
+  if (!new_arga) assert(!self->al_argc),new_arga = n;
+  else while (new_arga < self->al_argc+n) new_arga *= 2;
 reloc_again:
   new_argv = trealloc(char const *,
                       self->al_argv,
                       new_arga);
   if unlikely(!new_argv) {
-   if (new_arga == self->al_argc+1)
+   if (new_arga == self->al_argc+n)
        return -ENOMEM;
-   new_arga = self->al_argc+1;
+   new_arga = self->al_argc+n;
    goto reloc_again;
   }
   self->al_arga = new_arga;
@@ -86,8 +86,8 @@ argvlist_insert(struct argvlist *__restrict self,
  errno_t error;
  CHECK_HOST_DOBJ(self);
  assert(strlen(argument) || 1);
- assert(self->al_argc < self->al_arga);
- error = argvlist_mkspc(self);
+ assert(self->al_argc <= self->al_arga);
+ error = argvlist_mkspc(self,1);
  if (E_ISOK(error)) {
   memmove(self->al_argv+1,self->al_argv,
           self->al_argc*sizeof(char *));
@@ -102,10 +102,44 @@ argvlist_append(struct argvlist *__restrict self,
  errno_t error;
  CHECK_HOST_DOBJ(self);
  assert(strlen(argument) || 1);
- assert(self->al_argc < self->al_arga);
- error = argvlist_mkspc(self);
+ assert(self->al_argc <= self->al_arga);
+ error = argvlist_mkspc(self,1);
  if (E_ISOK(error))
      self->al_argv[self->al_argc++] = argument;
+ return error;
+}
+
+PUBLIC errno_t KCALL
+argvlist_insertv(struct argvlist *__restrict self,
+                 char const *const *__restrict argv, size_t argc) {
+ errno_t error;
+ CHECK_HOST_DOBJ(self);
+ CHECK_HOST_DATA(argv,argc*sizeof(char const *));
+ assert(self->al_argc <= self->al_arga);
+ error = argvlist_mkspc(self,argc);
+ if (E_ISOK(error)) {
+  assert(self->al_argc+argc <= self->al_arga);
+  memmove(self->al_argv+argc,self->al_argv,
+          self->al_argc*sizeof(char *));
+  memcpy(self->al_argv,argv,argc*sizeof(char const *));
+  self->al_argc += argc;
+ }
+ return error;
+}
+PUBLIC errno_t KCALL
+argvlist_appendv(struct argvlist *__restrict self,
+                 char const *const *__restrict argv, size_t argc) {
+ errno_t error;
+ CHECK_HOST_DOBJ(self);
+ CHECK_HOST_DATA(argv,argc*sizeof(char const *));
+ assert(self->al_argc <= self->al_arga);
+ error = argvlist_mkspc(self,argc);
+ if (E_ISOK(error)) {
+  assert(self->al_argc+argc <= self->al_arga);
+  memcpy(self->al_argv+self->al_argc,
+         argv,argc*sizeof(char const *));
+  self->al_argc += argc;
+ }
  return error;
 }
 
@@ -127,7 +161,8 @@ sym_hashname(char const *__restrict name) {
 PUBLIC SAFE void KCALL
 module_setup(struct module *__restrict self,
              struct file *__restrict fp,
-             struct moduleops const *__restrict ops) {
+             struct moduleops const *__restrict ops,
+             struct instance *__restrict owner) {
  struct modseg *iter,*end;
  maddr_t addr_min = (maddr_t)-1;
  maddr_t addr_max = 0;
@@ -135,6 +170,7 @@ module_setup(struct module *__restrict self,
  CHECK_HOST_DOBJ(fp);
  CHECK_HOST_DOBJ(fp->f_dent);
  CHECK_HOST_DOBJ(ops);
+ CHECK_HOST_DOBJ(owner);
  end = (iter = self->m_segv)+self->m_segc;
  for (; iter != end; ++iter) {
   if (addr_min > iter->ms_paddr)
@@ -152,6 +188,8 @@ module_setup(struct module *__restrict self,
  self->m_begin  = addr_min;
  self->m_end    = addr_max;
  self->m_size   = addr_max-addr_min;
+ self->m_owner  = owner;
+ INSTANCE_WEAK_INCREF(owner);
  atomic_rwlock_init(&self->m_rlock);
  /*syslog(LOG_DEBUG,"addr_min = %p\n",addr_min);*/
  /*syslog(LOG_DEBUG,"addr_max = %p\n",addr_max);*/
@@ -163,8 +201,21 @@ PUBLIC SAFE void KCALL
 module_destroy(struct module *__restrict self) {
  struct inode *node;
  CHECK_HOST_DOBJ(self);
+ CHECK_HOST_DOBJ(self->m_owner);
  assert(self != &__this_module);
  assert(!self->m_refcnt);
+ /* TODO: Only call this operator if we can acquire a
+  *       reference to the associated owner-instance. */
+ /* TODO: When an linker-driver instance dies, we must call the fini() operator
+  *       on all modules it created. - We are allowed to do this because fini()
+  *       may only touch hidden members added by the specific implementation.
+  *       The instance itself can remain in a consistent state. - Only operators
+  *       stored in 'self->m_ops' can no longer be accessed.
+  * NOTE: Also replace 'm_ops', with an empty set of operators, 'm_owner' with
+  *       the kernel core instance, and call realloc_in_place(<MODULE>,sizeof(struct module)),
+  *       thus essentially transforming the module into an untyped, core module
+  *       that can no longer the used for 'dlsym()', but could still be mapped,
+  *       and executed when linked statically. */
  if (self->m_ops->o_fini)
    (*self->m_ops->o_fini)(self);
 
@@ -186,6 +237,8 @@ module_destroy(struct module *__restrict self) {
    }
    free(self->m_segv);
  }
+ /* Drop a reference from the owner instance. */
+ INSTANCE_WEAK_DECREF(self->m_owner);
  free(self);
 }
 

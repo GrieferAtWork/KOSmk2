@@ -101,6 +101,7 @@
     <ClCompile Include="..\..\src\modules\fs\proc\taskutil.c" />
     <ClCompile Include="..\..\src\modules\input\ps2.c" />
     <ClCompile Include="..\..\src\modules\linker\pe.c" />
+    <ClCompile Include="..\..\src\modules\linker\shebang.c" />
     <ClCompile Include="..\..\src\modules\video\vga-tty.c" />
   </ItemGroup>
   <ItemGroup>

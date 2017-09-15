@@ -461,6 +461,7 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/memdev");
  kinsmod("/mod/vga-tty");
  kinsmod("/mod/procfs");
+ kinsmod("/mod/shebang");
 
  /* TODO: Port curses. */
  /* TODO: Add <locale.h>. */

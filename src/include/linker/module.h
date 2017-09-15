@@ -197,6 +197,8 @@ struct argvlist {
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF errno_t KCALL argvlist_insert(struct argvlist *__restrict self, char const *__restrict argument);
 FUNDEF errno_t KCALL argvlist_append(struct argvlist *__restrict self, char const *__restrict argument);
+FUNDEF errno_t KCALL argvlist_insertv(struct argvlist *__restrict self, char const *const *__restrict argv, size_t argc);
+FUNDEF errno_t KCALL argvlist_appendv(struct argvlist *__restrict self, char const *const *__restrict argv, size_t argc);
 
 
 #define MODFLAG_NONE    0x00000000
@@ -213,17 +215,18 @@ FUNDEF errno_t KCALL argvlist_append(struct argvlist *__restrict self, char cons
 #define MODULE_OFFSETOF_FILE    (__SIZEOF_REF_T__+__SIZEOF_POINTER__)
 #define MODULE_OFFSETOF_NAME    (__SIZEOF_REF_T__+2*__SIZEOF_POINTER__)
 #define MODULE_OFFSETOF_NAMEBUF (__SIZEOF_REF_T__+3*__SIZEOF_POINTER__)
-#define MODULE_OFFSETOF_FLAG    (__SIZEOF_REF_T__+3*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
-#define MODULE_OFFSETOF_LOAD    (__SIZEOF_REF_T__+3*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
-#define MODULE_OFFSETOF_BEGIN   (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
-#define MODULE_OFFSETOF_END     (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_SIZE    (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+2*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_ALIGN   (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_ENTRY   (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_SEGC    (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_OFFSETOF_SEGV    (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_OFFSETOF_RLOCK   (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_SIZE             (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
+#define MODULE_OFFSETOF_OWNER   (__SIZEOF_REF_T__+3*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
+#define MODULE_OFFSETOF_FLAG    (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
+#define MODULE_OFFSETOF_LOAD    (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
+#define MODULE_OFFSETOF_BEGIN   (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
+#define MODULE_OFFSETOF_END     (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_SIZE    (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+2*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_ALIGN   (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_ENTRY   (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_SEGC    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_OFFSETOF_SEGV    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_OFFSETOF_RLOCK   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_SIZE             (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
 
 struct module {
  ATOMIC_DATA ref_t       m_refcnt; /*< Module reference counter. */
@@ -235,6 +238,10 @@ struct module {
                                     *   WARNING: The kernel's core-module has this field set to NULL! */
  struct dentryname      *m_name;   /*< [const][1..1] The effective name of the module (Defaults to '&m_file->f_dent->d_name'; may be set to '&m_namebuf') */
  struct dentryname       m_namebuf;/*< [const][owned] Per-module inline-allocated name buffer. */
+ WEAK REF struct instance *m_owner;/*< [const][1..1] Weak reference to the owner driver of this module.
+                                    *   NOTE: The linker will attempt to acquire a real reference to this instance
+                                    *         whenever an operation from 'm_ops' must be executed, thus ensuring that
+                                    *         the associated driver is still loaded and able to serve such requests. */
  u32                     m_flag;   /*< [const] Module flags (Set of 'MODFLAG_*'). */
  uintptr_t               m_load;   /*< [const] The default load address for which default relocations are optimized.
                                     *   NOTE: In ELF binaries, this is always ZERO(0).
@@ -265,6 +272,8 @@ struct module {
 #define MODULE_DECREF(self)    (void)(ATOMIC_DECFETCH((self)->m_refcnt) || (module_destroy(self),0))
 FUNDEF SAFE void KCALL module_destroy(struct module *__restrict self);
 
+#define module_new(type_size) ((struct module *)kmalloc(type_size,GFP_SHARED|GFP_CALLOC))
+
 /* Perform final initialization of 'self' using 'fp'
  * NOTE: This function should be called before a 'modloader_callback' returns.
  * During this phase, the following members are initialized:
@@ -276,10 +285,12 @@ FUNDEF SAFE void KCALL module_destroy(struct module *__restrict self);
  *  - m_end
  *  - m_size
  *  - m_rlock
+ *  - m_owner
  */
 FUNDEF SAFE void KCALL module_setup(struct module *__restrict self,
                                     struct file *__restrict fp,
-                                    struct moduleops const *__restrict ops);
+                                    struct moduleops const *__restrict ops,
+                                    struct instance *__restrict owner);
 
 
 /* Load a module from the given file.

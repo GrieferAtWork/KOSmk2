@@ -980,7 +980,8 @@ elf_loader(struct file *__restrict fp) {
    goto enoexec;
   }
   /* Allocate the result module object. */
-  if unlikely((result = ocalloc(struct elf_module)) == NULL) goto enomem;
+  result = (REF struct elf_module *)module_new(sizeof(struct elf_module));
+  if unlikely(!result) goto enomem;
   result->e_module.m_segv = tcalloc(struct modseg,n_load_hdr);
   if unlikely(!result->e_module.m_segv) goto enomem;
   result->e_module.m_segc = n_load_hdr;
@@ -1143,10 +1144,12 @@ elf_loader(struct file *__restrict fp) {
  /* Setup the resulting module. */
  if (result->e_dynamic.d_flags&(ELF_DYNAMIC_HAS_REL|ELF_DYNAMIC_HAS_JMPREL
 #if ELF_USING_RELA
+     |ELF_DYNAMIC_HAS_RELA
 #endif
      )) result->e_module.m_flag |= MODFLAG_RELO; /* Indicate that the module can be relocated. */
 
- module_setup(&result->e_module,fp,&elf_modops);
+ module_setup(&result->e_module,fp,
+              &elf_modops,THIS_INSTANCE);
 
 #if 0
  { struct modseg *iter,*end;
