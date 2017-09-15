@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_LIBS_LIBC_STDLIB_C
 #define GUARD_LIBS_LIBC_STDLIB_C 1
+#define _KOS_SOURCE 2
 #define _GNU_SOURCE 1
 
 #include "libc.h"
@@ -31,23 +32,61 @@
 #include <stdlib.h>
 #include <hybrid/traceback.h>
 #include <hybrid/minmax.h>
+#include <hybrid/list/list.h>
+#include <hybrid/sync/atomic-rwptr.h>
+#include <malloc.h>
+#include <hybrid/section.h>
+#include <hybrid/atomic.h>
 
 DECL_BEGIN
 
 #ifndef __KERNEL__
+typedef void (LIBCCALL *exitfunc)(int status, void *arg);
+struct exitcall {
+ SLIST_NODE(struct exitcall) ec_next; /*< [0..1] Next callback to-be executed. */
+ exitfunc                    ec_func; /*< [1..1] Function to call on exit. */
+ void                       *ec_arg;  /*< [?..?] Argument passed to 'ec_func'. */
+};
+PRIVATE ATTR_COLDBSS atomic_rwptr_t onexit_n = ATOMIC_RWPTR_INIT(NULL);
+PRIVATE ATTR_COLDBSS atomic_rwptr_t onexit_q = ATOMIC_RWPTR_INIT(NULL);
+
+PRIVATE void LIBCCALL
+run_onexit(struct exitcall *chain, int status) {
+ for (; chain; chain = chain->ec_next.le_next)
+     (*chain->ec_func)(status,chain->ec_arg);
+}
+PRIVATE int LIBCCALL
+add_onexit(atomic_rwptr_t *pchain, exitfunc func, void *arg) {
+ struct exitcall *entry;
+ entry = (struct exitcall *)memalign(ATOMIC_RWPTR_ALIGN,
+                                     sizeof(struct exitcall));
+ if unlikely(!entry) return -1;
+ entry->ec_func = func;
+ entry->ec_arg  = arg;
+ _mall_untrack(entry);
+ atomic_rwptr_write(pchain);
+ entry->ec_next.le_next = (struct exitcall *)ATOMIC_RWPTR_GET(*pchain);
+ ATOMIC_WRITE(pchain->ap_ptr,entry);
+ return 0;
+}
+
 DEFINE_PUBLIC_ALIAS(_Exit,_exit);
 PUBLIC ATTR_NORETURN void (LIBCCALL _exit)(int status) { sys_exit(status); }
 PUBLIC ATTR_NORETURN void (LIBCCALL abort)(void) { _exit(EXIT_FAILURE); }
 PUBLIC ATTR_NORETURN void (LIBCCALL exit)(int status) {
- /* TODO: Run atexit() */
+ atomic_rwptr_read(&onexit_n);
+ run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_n),status);
  _exit(status);
 }
 PUBLIC ATTR_NORETURN void (LIBCCALL quick_exit)(int status) {
- /* TODO: Run at_quick_exit() */
+ atomic_rwptr_read(&onexit_q);
+ run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_q),status);
  _exit(status);
 }
-PUBLIC int (LIBCCALL atexit)(void (LIBCCALL *func)(void)) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL at_quick_exit)(void (LIBCCALL *func)(void)) { NOT_IMPLEMENTED(); return 0; }
+PRIVATE void LIBCCALL callarg(int status, void *arg) { (*(void(LIBCCALL *)(void))arg)(); }
+PUBLIC int (LIBCCALL on_exit)(void (LIBCCALL *func)(int status, void *arg), void *arg) { return add_onexit(&onexit_n,func,arg); }
+PUBLIC int (LIBCCALL atexit)(void (LIBCCALL *func)(void)) { return add_onexit(&onexit_n,&callarg,(void *)func); }
+PUBLIC int (LIBCCALL at_quick_exit)(void (LIBCCALL *func)(void)) { return add_onexit(&onexit_q,&callarg,(void *)func); }
 #endif
 
 #ifdef __KERNEL__
@@ -465,7 +504,6 @@ PUBLIC int (LIBCCALL random_r)(struct random_data *__restrict buf, s32 *__restri
 PUBLIC int (LIBCCALL srandom_r)(unsigned int seed, struct random_data *buf) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL initstate_r)(unsigned int seed, char *__restrict statebuf, size_t statelen, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL setstate_r)(char *__restrict statebuf, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL on_exit)(void (LIBCCALL *func)(int status, void *arg), void *arg) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL mkstemps)(char *template_, int suffixlen) { NOT_IMPLEMENTED(); return 0; }
 PUBLIC int (LIBCCALL rpmatch)(char const *response) { NOT_IMPLEMENTED(); return 0; }
 #define FLOAT_BUFFER_SIZE 64

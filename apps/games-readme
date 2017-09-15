@@ -1,0 +1,37 @@
+#!/bin/bash --only-for-syntax-highlighting-dont-actually-execute
+# === How to compile some SICK-A$$ games for KOS ===
+
+TETRIS: http://www.victornils.net/tetris/
+
+
+# BUILDING (general approach):
+#1: Extract
+#2: $ cd <EXTRACTED_PATH>
+#3: $ bash ${PREFIX}/shell.sh make # Will execute 'make' using the KOS toolchain.
+#3.1: Didn't work? Look at the error message:
+#	3.1.1: ~~~ Missing system header ~~~
+#		Too bad. You'll have to add it yourself, or ask me to
+#	3.1.2: ~~~  Missing c++ system header ~~~
+#		KOS doesn't provide c++ headers (yet)
+#	3.1.3: ~~~ Can't execute test binary/test binary crashed ~~~
+#		Well obviously. - Your <test> binary was build for KOS.
+#		It's (likely) not going to run (correctly) on your host.
+#		3.1.3.1: The project supports cross-compiling
+#			Look at some INSTALL readme to see how to use the cross-compiler functionality.
+#			As target prefix, use "${PREFIX}/binutils/build-binutils-i686-kos/bin/i686-kos-"
+#			As target triplet, use "i686-kos"
+#		3.1.3.2: The project doesn't supports cross-compiling
+#			Try do uncomment whatever created the binary, or disable
+#			whatever was trying to run it and see where that goes.
+#	3.1.4: ~~~ Missing library dependency ~~~
+#		The go find and build that library first.
+#	3.1.?: Dunno. - You're on your own buddy.
+#4: Look for the binary/binaries it created
+#5: Use a DISK_SYNC() directive in a .sources file to transfer the binary to the image
+
+# HINT: You will use step #3 a lot, so I suggest you do this:
+chmod +x ${PREFIX}/shell.sh
+ln -s ${PREFIX}/shell.sh /usr/bin/kos
+# Now you can simply build using the KOS toolchain by typing <...> in step #3
+kos make
+
