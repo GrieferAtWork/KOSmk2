@@ -29,6 +29,7 @@
 #include <fs/file.h>
 #include <fs/fs.h>
 #include <fs/inode.h>
+#include <fs/superblock.h>
 #include <hybrid/align.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
@@ -245,7 +246,7 @@ module_destroy(struct module *__restrict self) {
 
 
 PUBLIC SAFE REF struct module *KCALL
-module_open_d(struct dentry *__restrict dent) {
+module_open_d(struct dentry *__restrict dent, bool require_exec) {
  struct iattr attr;
  struct file *module_stream;
  struct inode *node;
@@ -256,7 +257,14 @@ module_open_d(struct dentry *__restrict dent) {
  FSACCESS_SETUSER(access);
  /* Check if the user is allowed to access this node. */
  result = E_PTR(inode_mayaccess(node,&access,R_OK));
- if (E_ISERR(result)) { INODE_DECREF(node); return E_PTR(-EACCES); }
+ if (E_ISERR(result)) {err_node: INODE_DECREF(node); return E_PTR(result); }
+
+ if (require_exec) {
+  /* Make sure the INode can be executed. */
+  if (INODE_ISNOEXEC(node)) result = E_PTR(-EPERM);
+  else result = E_PTR(inode_mayaccess(node,&access,X_OK));
+  if (E_ISERR(result)) goto err_node;
+ }
 
  /* Check the file node's module cache entry. */
  atomic_rwlock_read(&node->i_file.i_files_lock);
@@ -345,7 +353,7 @@ module_open_in_path(HOST char const *__restrict path, size_t pathlen,
  DENTRY_DECREF(walker.dw_root);
  if (E_ISERR(module_file)) { result = E_PTR(E_GTERR(module_file)); goto end; }
 
- result = module_open_d(module_file);
+ result = module_open_d(module_file,false);
  DENTRY_DECREF(module_file);
 
  /* Fix no-exec errors to no-ent. */

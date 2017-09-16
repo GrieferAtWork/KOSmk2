@@ -1270,9 +1270,9 @@ automount:
     (!ft || !(ft->f_flags&FSTYPE_SINGLETON))) {
   /* Apply some of the flags we've been given to the superblock. */
   if (flags&MS_RDONLY) result->sb_root.i_state |= INODE_STATE_READONLY;
-  /* TODO: MS_NOSUID      0x00000002 */ /*< Ignore suid and sgid bits. */
+  if (flags&MS_NOSUID) result->sb_root.i_state |= INODE_STATE_NOSUID;
+  if (flags&MS_NOEXEC) result->sb_root.i_state |= INODE_STATE_NOEXEC;
   /* TODO: MS_NODEV       0x00000004 */ /*< Disallow access to device special files. */
-  /* TODO: MS_NOEXEC      0x00000008 */ /*< Disallow program execution. */
   /* TODO: MS_SYNCHRONOUS 0x00000010 */ /*< Writes are synced at once. */
   /* TODO: MS_DIRSYNC     0x00000080 */ /*< Directory modifications are synchronous. */
   /* TODO: MS_NOATIME     0x00000400 */ /*< Do not update access times. */

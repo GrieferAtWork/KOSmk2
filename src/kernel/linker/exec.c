@@ -489,7 +489,7 @@ SYSCALL_DEFINE3(execve,USER char const *,filename,
  DENTRY_DECREF(walker.dw_root);
  DENTRY_DECREF(cwd);
  if (E_ISERR(module_dentry)) { result = E_GTERR(module_dentry); goto end; }
- mod = module_open_d(module_dentry);
+ mod = module_open_d(module_dentry,true);
  DENTRY_DECREF(module_dentry);
  if (E_ISERR(mod)) { result = E_GTERR(mod); goto end; }
 
@@ -521,7 +521,7 @@ SYSCALL_DEFINE3(xfexecve,int,fd,
       result =  -ENOEXEC;
   goto end;
  }
- mod = module_open_d(module_dentry);
+ mod = module_open_d(module_dentry,true);
  DENTRY_DECREF(module_dentry);
  if (E_ISERR(mod)) { result = E_GTERR(mod); goto end; }
 

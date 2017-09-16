@@ -297,13 +297,15 @@ FUNDEF SAFE void KCALL module_setup(struct module *__restrict self,
 /* Load a module from the given file.
  * NOTE: If possible, load the module from cache.
  * NOTE: The caller is responsible passing a file with its offset set to ZERO(0).
- * @return: * :         A new reference to the loaded module.
- * @return: -ELOOP:     The same module is currently being loaded.
- * @return: -ENOEXEC:   Unknown executable format.
- * @return: -ENOENT:   [module_open_d] The directory entry doesn't point to an INode.
- * @return: E_ISERR(*): Failed to load the module for some reason. */
+ * @param: require_exec: When true, test for execute permission before loading a module.
+ * @return: * :          A new reference to the loaded module.
+ * @return: -ELOOP:      The same module is currently being loaded.
+ * @return: -ENOEXEC:    Unknown executable format.
+ * @return: -EPERM:     [module_open_d] The INode associated with 'dent' is not executable, but 'require_exec' was true.
+ * @return: -ENOENT:    [module_open_d] The directory entry doesn't point to an INode.
+ * @return: E_ISERR(*):  Failed to load the module for some reason. */
 FUNDEF SAFE REF struct module *KCALL module_open(struct file *__restrict fp);
-FUNDEF SAFE REF struct module *KCALL module_open_d(struct dentry *__restrict dent);
+FUNDEF SAFE REF struct module *KCALL module_open_d(struct dentry *__restrict dent, bool require_exec);
 
 /* Same as 'module_open', but don't consult the module cache. */
 FUNDEF SAFE REF struct module *KCALL module_open_new(struct file *__restrict fp);

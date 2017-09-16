@@ -82,8 +82,10 @@ sb_real_module(struct module *__restrict self) {
  DENTRY_DECREF(cwd);
  if (E_ISERR(open_entry)) return E_PTR(E_GTERR(open_entry));
 
- /* Open the module using the directory entry we've just acquired. */
- result = module_open_d(open_entry);
+ /* Open the module using the directory entry we've just acquired.
+  * NOTE: Due to shebang's simplicitly, we do actually require
+  *       that the pointed-to module be executable as well! */
+ result = module_open_d(open_entry,true);
  DENTRY_DECREF(open_entry);
  return result;
 }

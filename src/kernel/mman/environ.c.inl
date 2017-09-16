@@ -132,7 +132,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
   char *str = ATOMIC_READ(*iter);
   char *str_end = strend_user(str);
   if (!str_end) goto efault;
-#if 1
+#if 0
   syslog(LOG_DEBUG,"Add argument: %p...%p (%Iu bytes)\n",
          str,str_end,(size_t)((str_end-str)+1));
 #endif

@@ -350,6 +350,8 @@ typedef u32 istate_t; /*< INode state flags (Set of 'INODE_STATE_*'). */
 #define INODE_STATE_READONLY  0x00000001 /*< Any attempt at performing a write-operation on the INode will fail with '-EROFS'. */
 #define INODE_STATE_CLOSING   0x00000002 /*< The inode is being closed. - No new streams may be opened. */
 #define INODE_STATE_DONTCACHE 0x00000004 /*< Don't cache the INode (Required to prevent weak devices from being kept alive through caches). */
+#define INODE_STATE_NOSUID    0x00004000 /*< Ignore SUID bits (Don't allow root acquisition). */
+#define INODE_STATE_NOEXEC    0x00008000 /*< Ignore execute permissions (Don't allow execute). */
 #define INODE_STATE_SUPERMASK 0xffffffff /*< Mask of Inode state flags that propagate from an associated superblock. */
 /* Additional INode state flags only applicable to superblocks. */
 /*      INODE_STATE_SB_XXX    0x00010000 */
@@ -543,6 +545,8 @@ FUNDEF void KCALL inode_destroy(struct inode *__restrict self);
 #define INODE_GTSTATE(self)                   (ATOMIC_READ((self)->i_state)|ATOMIC_READ((self)->i_super->sb_root.i_state))
 #endif
 #define INODE_ISREADONLY(self)               (INODE_GTSTATE(self)&INODE_STATE_READONLY)
+#define INODE_ISNOSUID(self)                 (INODE_GTSTATE(self)&INODE_STATE_NOSUID)
+#define INODE_ISNOEXEC(self)                 (INODE_GTSTATE(self)&INODE_STATE_NOEXEC)
 #define INODE_ISCLOSING(self)                (INODE_GTSTATE(self)&INODE_STATE_CLOSING)
 #define INODE_ISREADONLY_OR_CLOSING(self)    (INODE_GTSTATE(self)&(INODE_STATE_READONLY|INODE_STATE_CLOSING))
 
