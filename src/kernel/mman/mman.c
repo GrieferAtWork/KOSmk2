@@ -2029,7 +2029,7 @@ mman_split_branch_unlocked(struct mman *__restrict self,
 }
 
 
-INTERN void KCALL
+INTERN bool KCALL
 mman_merge_branch_unlocked(struct mman *__restrict self,
                            PAGE_ALIGNED VIRT uintptr_t start) {
  struct mbranch **plo_branch,*lo_branch;
@@ -2040,12 +2040,12 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
  ATREE_LEVEL_T hi_branch_level = ATREE_LEVEL0(VIRT uintptr_t);
  /* Scan for two different branches at 'start' and 'start-1' */
  plo_branch = mbranch_tree_plocate_at(&self->m_map,start-1,&lo_branch_semi,&lo_branch_level);
- if (!plo_branch) return;
+ if (!plo_branch) return false;
  lo_branch = *plo_branch;
  CHECK_HOST_DOBJ(lo_branch);
- if (lo_branch->mb_node.a_vmax != start-1) return;
+ if (lo_branch->mb_node.a_vmax != start-1) return false;
  phi_branch = mbranch_tree_plocate_at(&self->m_map,start,&hi_branch_semi,&hi_branch_level);
- if (!phi_branch) return;
+ if (!phi_branch) return false;
  hi_branch = *phi_branch;
  CHECK_HOST_DOBJ(hi_branch);
  assert(lo_branch                   != hi_branch);
@@ -2053,15 +2053,19 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
  /* Check if basic branch settings such as protection and callbacks match. */
  if (lo_branch->mb_prot    != hi_branch->mb_prot ||
      lo_branch->mb_notify  != hi_branch->mb_notify ||
-     lo_branch->mb_closure != hi_branch->mb_closure) return;
+     lo_branch->mb_closure != hi_branch->mb_closure)
+     return false;
  if (lo_branch->mb_region  == hi_branch->mb_region) {
   /* Merge the two branches into one. */
   if (lo_branch->mb_start+MBRANCH_SIZE(lo_branch) !=
-      hi_branch->mb_start) return;
+      hi_branch->mb_start)
+      return false;
   /* TODO */
-  return;
+  return false;
  }
  /* TODO: Check if the two regions are adjacent */
+
+ return false;
 }
 
 DECL_END

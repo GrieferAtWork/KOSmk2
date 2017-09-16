@@ -389,6 +389,7 @@ error_init:
    goto err;
   }
   /* Now simply install the new scatter. */
+  assert(self->mr_type == MREGION_TYPE_MEM);
   iter->mt_state  = MPART_STATE_INCORE;
   iter->mt_memory = load_scatter;
 
@@ -427,10 +428,6 @@ mbranch_mcore(struct mbranch *__restrict self,
  region = self->mb_region;
  CHECK_HOST_DOBJ(region);
 
- /* Simple check: Ignore guard regions. */
- if (MREGION_TYPE_ISGUARD(region->mr_type) &&
-    (mode&MMAN_MCORE_NOGUARD)) return 0;
-
  /* Figure out the in-region core address. */
  assert(region_begin             >= self->mb_start);
  assert(region_begin+region_size <= self->mb_start+MBRANCH_SIZE(self));
@@ -438,10 +435,172 @@ mbranch_mcore(struct mbranch *__restrict self,
  assert(region_begin+region_size  > region_begin);
  assert(region_begin+region_size <= region->mr_size);
 
+lock_again:
+ assert(region == self->mb_region);
  load_bytes = (ssize_t)rwlock_write(&region->mr_plock);
  if (E_ISERR(load_bytes)) return load_bytes;
 
- /* TODO: Handle guard regions! */
+ /* Handle guard regions! */
+ if (MREGION_TYPE_ISGUARD(region->mr_type)) {
+  REF struct mregion *mapregion;
+  ppage_t remap_location,merge_location;
+  bool must_relock_guard_region = false;
+  size_t guard_size = MBRANCH_SIZE(self);
+  assert(!holds_region_ref);
+  assert(region->mr_parts);
+  assert(region->mr_parts->mt_state == MPART_STATE_MISSING);
+
+  /* Simple check: Ignore guard regions. */
+  if (mode&MMAN_MCORE_NOGUARD) { load_bytes = 0; goto end; }
+  if unlikely(region->mr_gfunds == 0) {
+   /* No more funds. - The guard page can no longer be extended. */
+   rwlock_endwrite(&region->mr_plock);
+   /* Call the notifier to signal that the guard region has run out of funds. */
+   if (self->mb_notify)
+     (*self->mb_notify)(MNOTIFY_GUARD_END,self->mb_closure,mspace,
+                       (ppage_t)MBRANCH_BEGIN(self),guard_size);
+   load_bytes = 0;
+   goto end2;
+  }
+
+  /* Figure out where the region should be remapped. */
+  assert(self->mb_start+guard_size <= region->mr_size);
+  if (region->mr_type == MREGION_TYPE_LOGUARD) {
+   merge_location = (ppage_t)MBRANCH_BEGIN(self);
+   remap_location = (ppage_t)((uintptr_t)merge_location-guard_size);
+  } else {
+   merge_location = (ppage_t)MBRANCH_END(self);
+   remap_location = merge_location;
+  }
+
+  /* Allocate the region that will replace the guard in this context. */
+  mapregion = mregion_new(GFP_NOFREQ|MMAN_DATAGFP(mspace));
+  if unlikely(!mapregion) { load_bytes = -ENOMEM; goto end; }
+  /* Copy size and initialization properties from the guard region. */
+  assert(mapregion->mr_type == MREGION_TYPE_MEM);
+  mapregion->mr_size = region->mr_size;
+  mapregion->mr_init = region->mr_init;
+  memcpy(&mapregion->mr_setup,&region->mr_setup,
+         sizeof(union mregion_cinit));
+  if (MREGION_INIT_ISFILE(mapregion->mr_init))
+      FILE_INCREF(mapregion->mr_setup.mri_file);
+  /* Consume guard funds from the existing region. */
+  if (region->mr_gfunds != MREGION_GFUNDS_INFINITE) --region->mr_gfunds;
+  syslog(LOG_DEBUG|LOG_MEM,
+         "[MEM] Allocating GUARD region %p...%p (%Iu bytes; %I16u remaining funds)\n",
+         MBRANCH_MIN(self),MBRANCH_MAX(self),guard_size,region->mr_gfunds);
+
+  assert(region->mr_parts->mt_state == MPART_STATE_MISSING);
+  assert(mapregion->mr_parts == &mapregion->mr_part0);
+  assert(mapregion->mr_part0.mt_refcnt == 0);
+  assert(mapregion->mr_refcnt == 1);
+  mregion_setup(mapregion);
+
+  /* Create the mapped reference held by the branch itself. */
+  load_bytes = rwlock_trywrite(&mapregion->mr_plock);
+  if (E_ISERR(load_bytes)) {
+   if unlikely(load_bytes == -EAGAIN) {
+    /* If we could acquire both locks at once, release the
+     * lock to the old (guard) region and re-acquire it later.
+     * >> This is required to prevent a potential deadlock
+     *    when holding two region locks at the same time. */
+    rwlock_endwrite(&region->mr_plock);
+    must_relock_guard_region = true;
+    load_bytes = rwlock_write(&mapregion->mr_plock);
+   } else {
+    goto err_mapregion;
+   }
+  }
+  if (!mregion_part_incref(mapregion,self->mb_start,guard_size)) {
+   load_bytes = -ENOMEM;
+   rwlock_endwrite(&mapregion->mr_plock);
+err_mapregion:
+   MREGION_DECREF(mapregion);
+   goto end;
+  }
+  rwlock_endwrite(&mapregion->mr_plock);
+  /* At this point we've acquired new sub-region references within the guard region copy.
+   * >> This had to be done before dropping references from the guard region,
+   *    as the case of the incref() failing would otherwise leave us in an
+   *    impossible-to-recover state where we'd no longer be holding any references. */
+
+  /* Drop the map references from the real guard
+   * (new references will be created when it is re-mapped) */
+  if (must_relock_guard_region) {
+   load_bytes = rwlock_write(&region->mr_plock);
+   if (E_ISERR(load_bytes)) {
+    task_nointr();
+    rwlock_write(&mapregion->mr_plock);
+    mregion_part_decref(mapregion,self->mb_start,guard_size);
+    rwlock_endwrite(&mapregion->mr_plock);
+    task_endnointr();
+    goto err_mapregion;
+   }
+  }
+  mregion_part_decref(region,self->mb_start,guard_size);
+  rwlock_endwrite(&region->mr_plock);
+
+  /* Simply replace the  */
+  assert(region == self->mb_region);
+  /* Inherit old reference into 'region' (dropped below) */
+  /* Inherit new reference from 'mapregion' (Kept valid due to caller-held lock to 'mspace->m_lock') */
+  self->mb_region = mapregion;
+
+
+  /* NOTE: Since the guard region must not have any parts associated with
+   *       it, we can assume that no page-directory mapping exists within.
+   *       So with that in mind, alongside the fact that the guard replacement
+   *      'mapregion' is also empty (as we've yet to allocate its contents
+   *       through use of ALOA semantics), nothing was mapped, and will be
+   *       mapped for the time being.
+   *       Actual memory will be assigned later, once 'mregion_load_core()' gets called.
+   * HINT: These facts are asserted above.
+   */
+  /* mbranch_remap_unlocked(...); */
+
+  /* Emit a notification to inform the system that a guard region was allocated. */
+  if (self->mb_notify)
+    (*self->mb_notify)(MNOTIFY_GUARD_ALLOCATE,self->mb_closure,mspace,
+                      (ppage_t)MBRANCH_BEGIN(self),guard_size);
+
+  /* Check if we'll be re-mapping the guard region, or dropping it. */
+  if (!mman_inuse_unlocked(mspace,remap_location,guard_size)) {
+   /* Re-map the guard region at a lower address. */
+   load_bytes = (ssize_t)mman_mmap_unlocked(mspace,remap_location,guard_size,0,region,
+                                            self->mb_prot,self->mb_notify,self->mb_closure);
+   if (E_ISERR(load_bytes)) { MREGION_DECREF(region); goto end2; }
+   /* Notify the caller that we did a remap. */
+   *did_remap = true;
+  } else {
+   /* Notify the branch callback that the we couldn't remap the guard region. */
+   if (self->mb_notify)
+     (*self->mb_notify)(MNOTIFY_GUARD_INUSE,self->mb_closure,mspace,
+                       (ppage_t)MBRANCH_BEGIN(self),guard_size);
+  }
+
+  /* Continue working with the newly mapped
+   * region, allocating data within it instead. */
+  MREGION_DECREF(region);
+  region = mapregion;
+  assert(self->mb_region == mapregion);
+
+  /* Now that we're no longer dealing with a
+   * guard-region, re-lock the newly mapped region. */
+  assert(!MREGION_TYPE_ISGUARD(region->mr_type));
+  assert(!holds_region_ref);
+
+  /* Try to merge the mapped guard region with neighbor. */
+  if (mman_merge_branch_unlocked(mspace,(uintptr_t)merge_location)) {
+   /* The branch layout has changed. and 'self' may no longer be valid.
+    * >> Instead, we must opt out and tell the caller that the memory layout has
+    *    changed, which will cause them to reload data before calling us again. */
+   *did_remap = true;
+   load_bytes = 0;
+   goto end2;
+  }
+
+  goto lock_again;
+ }
 
  /* First: Make sure that all parts are loaded. */
  load_bytes = mregion_load_core(region,region_begin,region_size,

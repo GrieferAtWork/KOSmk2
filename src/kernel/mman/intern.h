@@ -87,7 +87,7 @@ INTDEF errno_t KCALL mman_split_branch_unlocked(struct mman *__restrict self, PA
  * Try to merge two branches at 'start' and 'start-1', so-long as
  * they reference the same region, or both contain unique regions.
  * >> that is regions not mapped anywhere else when 'mr_refcnt == 1'. */
-INTDEF void KCALL mman_merge_branch_unlocked(struct mman *__restrict self, PAGE_ALIGNED VIRT uintptr_t start);
+INTDEF bool KCALL mman_merge_branch_unlocked(struct mman *__restrict self, PAGE_ALIGNED VIRT uintptr_t start);
 
 /* Load the given address range found within 'self' into the memory core.
  * @param: mode:        A set of 'MMAN_MCORE_*'

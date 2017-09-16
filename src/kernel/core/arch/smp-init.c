@@ -51,7 +51,6 @@
 
 DECL_BEGIN
 
-INTDEF struct segment cpu_gdt[SEG_BUILTIN];
 PUBLIC VIRT uintptr_t __apic_base_rw   __ASMNAME("apic_base") = 0;
 PUBLIC PHYS uintptr_t __apic_base_p_rw __ASMNAME("apic_base_p") = 0;
 #if defined(CONFIG_RESERVE_NULL_PAGE) && \
@@ -315,7 +314,7 @@ nomem:
 INTDEF byte_t cpu_bootstrap_begin[];
 INTDEF byte_t cpu_bootstrap_end[];
 
-INTDEF void KCALL smp_init_cpu(struct cpu *__restrict vcpu);
+INTDEF errno_t KCALL smp_init_cpu(struct cpu *__restrict vcpu);
 
 INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
  struct cpu *const *iter,*const *end;
@@ -430,7 +429,8 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
 
   /* Fill in in-cpu pointers using its virtual address. */
   vcpu->c_id = (cpuid_t)(dst_iter-newvec)-1;
-  smp_init_cpu(vcpu);
+  error = smp_init_cpu(vcpu);
+  if (E_ISERR(error)) goto err; /* TODO: Memory leaks? */
 
  } while (iter != end);
 done_cpu:

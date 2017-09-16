@@ -106,6 +106,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hybrid", "hybrid", "{17E7DC
 		..\include\hybrid\alloca.h = ..\include\hybrid\alloca.h
 		..\include\hybrid\asm.h = ..\include\hybrid\asm.h
 		..\include\hybrid\atomic.h = ..\include\hybrid\atomic.h
+		..\include\hybrid\bitset.h = ..\include\hybrid\bitset.h
 		..\include\hybrid\byteorder.h = ..\include\hybrid\byteorder.h
 		..\include\hybrid\byteswap.h = ..\include\hybrid\byteswap.h
 		..\include\hybrid\check.h = ..\include\hybrid\check.h

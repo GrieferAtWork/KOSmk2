@@ -337,8 +337,6 @@ elf_load_dyn(struct elf_module *__restrict self,
  return error;
 }
 
-
-
 PRIVATE errno_t KCALL
 elf_load_dynamic(struct elf_module *__restrict self,
                  struct file *__restrict fp,
@@ -366,6 +364,11 @@ elf_load_dynamic(struct elf_module *__restrict self,
   assert((size_t)dyn_size <= part_size);
   end = (iter = buffer)+(dyn_size/sizeof(Elf(Dyn)));
   for (; iter != end; ++iter) {
+   assert(iter < end);
+#if 0
+   syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Module %[file] tag: %.8x (%d)\n",
+          fp,iter->d_tag,iter->d_tag);
+#endif
    if (iter->d_tag == DT_NULL) goto done;
    error = elf_load_dyn(self,fp,iter);
    if (E_ISERR(error)) goto done;

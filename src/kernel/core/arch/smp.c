@@ -53,6 +53,7 @@
 #include <string.h>
 #include <sys/io.h>
 #include <sys/syslog.h>
+#include <malloc.h>
 
 DECL_BEGIN
 
@@ -173,8 +174,6 @@ L(    jmp cpu_bootstrap_c                               )
 L(.size cpu_bootstrap_32, . - cpu_bootstrap_32          )
 L(.previous                                             )
 );
-
-INTDEF struct segment cpu_gdt[SEG_BUILTIN];
 
 INTERN ATTR_NORETURN void cpu_bootstrap_c(void) {
  /* Acknowledge the CPU boot sequence. */
@@ -308,8 +307,8 @@ cpu_do_activate_endwrite(struct cpu *__restrict self) {
 
  /* Fill in the target CPU's GDT (Used to allow for self-identification; s.a.: 'SEG_CPUSELF') */
  gdt = (struct idt_pointer *)REALMODE_SYM(cpu_bootstrap_gdt);
- gdt->ip_limit = sizeof(cpu_gdt);
- gdt->ip_gdt   = VCPU(self,cpu_gdt);
+ gdt->ip_limit = sizeof(gdt_builtin)-1;
+ gdt->ip_gdt   = VCPU(self,cpu_gdt).ip_gdt;
  gdt->ip_gdt   = (struct segment *)PDIR_TRANSLATE(&pdir_kernel_v,gdt->ip_gdt);
  syslog(LOG_SCHED|LOG_DEBUG,"[SMP] Booting CPU #%d at %p\n",self->c_id,start_ip);
 
@@ -579,7 +578,7 @@ L(.previous                                             )
  *        - c_idle.t_mman
  *        - c_idle.t_mman_tasks
  */
-INTERN ATTR_FREETEXT void KCALL
+INTERN ATTR_FREETEXT errno_t KCALL
 smp_init_cpu(struct cpu *__restrict vcpu) {
  CHECK_HOST_DOBJ(vcpu);
  vcpu->c_idle.t_cpu                       = vcpu;
@@ -685,11 +684,13 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
 
  /* Encode TSS & CPU-SELF segments in the new CPU's address space.
   * NOTE: This is what the CPU will later use to identify itself! */
- { struct segment *gdt = VCPU(vcpu,cpu_gdt);
-   gdt[SEG_CPUTSS].ul32  = __SEG_ENCODELO((uintptr_t)&vcpu->c_arch.ac_tss,sizeof(struct tss),SEG_TSS);
-   gdt[SEG_CPUTSS].uh32  = __SEG_ENCODEHI((uintptr_t)&vcpu->c_arch.ac_tss,sizeof(struct tss),SEG_TSS);
-   gdt[SEG_CPUSELF].ul32 = __SEG_ENCODELO((uintptr_t)vcpu,sizeof(struct cpu),SEG_DATA_PL3);
-   gdt[SEG_CPUSELF].uh32 = __SEG_ENCODEHI((uintptr_t)vcpu,sizeof(struct cpu),SEG_DATA_PL3);
+ { struct idt_pointer *gdt = &VCPU(vcpu,cpu_gdt);
+   gdt->ip_gdt = (struct segment *)memdup(gdt_builtin,sizeof(gdt_builtin));
+   if unlikely(!gdt->ip_gdt) return -ENOMEM;
+   gdt->ip_gdt[SEG_CPUTSS].ul32  = __SEG_ENCODELO((uintptr_t)&vcpu->c_arch.ac_tss,sizeof(struct tss),SEG_TSS);
+   gdt->ip_gdt[SEG_CPUTSS].uh32  = __SEG_ENCODEHI((uintptr_t)&vcpu->c_arch.ac_tss,sizeof(struct tss),SEG_TSS);
+   gdt->ip_gdt[SEG_CPUSELF].ul32 = __SEG_ENCODELO((uintptr_t)vcpu,sizeof(struct cpu),SEG_DATA_PL3);
+   gdt->ip_gdt[SEG_CPUSELF].uh32 = __SEG_ENCODEHI((uintptr_t)vcpu,sizeof(struct cpu),SEG_DATA_PL3);
  }
 
  /* Initialize the CPU's Interrupt Descriptor Table (IDT) */
@@ -742,6 +743,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  }
 #endif /* !CONFIG_NO_FPU */
 
+ return -EOK;
 }
 
 

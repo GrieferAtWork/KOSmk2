@@ -174,12 +174,13 @@ mman_setenviron_unlocked(struct mman *__restrict self,
  assert(IS_ALIGNED(old_total_pages,PAGESIZE));
  assert(IS_ALIGNED(new_total_pages,PAGESIZE));
 
-#if 0
- syslog(LOG_DEBUG,"Update environ: %Iu -> %Iu (%Iu + %Iu)\n",
+#if 1
+ syslog(LOG_DEBUG,"[ENV] Update environ: %Iu -> %Iu (%Iu + %Iu)\n",
         old_total_pages,new_total_pages,arg_text,env_text);
 #endif
  if (new_total_pages < old_total_pages) {
   /* Reduce the size of the environment block. */
+  /* TODO: Must do this unmap() later. - What if new user-pointers are inside? */
   mman_munmap_unlocked(self,
                       (ppage_t)((uintptr_t)old_environ+new_total_pages),
                        old_total_pages-new_total_pages,MMAN_MUNMAP_TAG,
@@ -230,6 +231,10 @@ got_environ:
   text_end = penvp_text+env_text;
   end = (iter = envp)+envc;
   vector_dst = ENVDATA_ENVV(*new_environ);
+  /* TODO: This breaks if the new environment block overlaps
+   *       with the user-given arguments/environment, which
+   *       can easily happen if old argument strings are
+   *       re-used. */
   for (; iter != end; ++iter,++vector_dst) {
    *vector_dst = penvp_text;
    penvp_text = stpncpy_from_user(penvp_text,*iter,text_end-penvp_text);

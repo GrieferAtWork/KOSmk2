@@ -86,8 +86,8 @@ FUNDEF SAFE REF struct mfutex *KCALL mfutexptr_new(atomic_rwptr_t *__restrict se
 
 
 
-#define MPART_STATE_MISSING 0 /*< Memory hasn't been allocated/initialized. */
-#define MPART_STATE_INCORE  1 /*< Memory is loaded into the core. */
+#define MPART_STATE_MISSING 0 /*< Memory hasn't been allocated/initialized (NOTE: Mandatory for guard regions). */
+#define MPART_STATE_INCORE  1 /*< Memory is loaded into the core (NOTE: Mandatory for physical regions). */
 #define MPART_STATE_INSWAP  2 /*< Memory has been off-loaded into swap. */
 #define MPART_STATE_UNKNOWN 3 /*< The memory state isn't managed by the mman, or not relevant (usually used alongside 'MREGION_TYPE_RESERVED').
                                *  WARNING: This state may be overwritten when a region type other than 'MREGION_TYPE_RESERVED' is used! */
@@ -280,14 +280,14 @@ struct mregion {
                                             *  NOTE: No part reference counter may be larger that this! */
  u8                             mr_type;   /*< [const] The type of region (One of 'MREGION_TYPE_*') */
  u8                             mr_init;   /*< [const] The type of initialization (One of 'MREGION_INIT_**') */
- u16                            mr_gfunds; /*< [const][valid_if(MREGION_TYPE_ISGUARD(mr_type))] Guard funding.
-                                            *   Whenever a guard region is created, the new region is created
+ u16                            mr_gfunds; /*< [lock(mr_plock)][valid_if(MREGION_TYPE_ISGUARD(mr_type))] Guard funding.
+                                            *   Whenever a guard region is replaced, the old region is updated
                                             *   with 'mr_gfunds = mr_gfunds-1'. When 'mr_gfunds == 0' prior to
                                             *   creation of a new region, the new region isn't created, and
                                             *  (if set) 'mb_notify' of the associated branch is executed
                                             *   with 'MNOTIFY_GUARD_END'
                                             *   NOTE: Set to 'MREGION_GFUNDS_INFINITE' to provide infinite funding. */
- union mregion_cinit             mr_setup;  /*< Setup/teardown special-handling information. */
+ union mregion_cinit            mr_setup;  /*< Setup/teardown special-handling information. */
  PAGE_ALIGNED size_t            mr_size;   /*< [const] The size of this region (in bytes). */
  atomic_rwptr_t                 mr_futex;  /*< [TYPE(struct mfutex)] Known futex objects within this region. */
  rwlock_t                       mr_plock;  /*< Lock used for accessing region parts. */

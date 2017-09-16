@@ -150,6 +150,9 @@ run_init(char const *__restrict filename) {
        "PATH=/bin:/usr/bin:/usr/sbin",
        "SHELL=/bin/sh",
        "USER=root",
+       "NCURSES_TRACE=8191", /* 0x1fff */
+       "TERM=xterm", /* ... maybe? */
+       "TERMINFO=/usr/share/terminfo",
        NULL
      };
      HOSTMEMORY_BEGIN {
@@ -463,7 +466,6 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/procfs");
  kinsmod("/mod/shebang");
 
- /* TODO: Port curses. */
  /* TODO: Add <locale.h>. */
  /* TODO: Add <langinfo.h>. */
  /* TODO: Actual locale support? */

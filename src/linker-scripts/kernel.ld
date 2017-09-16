@@ -191,7 +191,7 @@ SECTIONS {
 		. += __percpu_allsize;
 		DEFINE_HERE(__bootcpu_end);
 	} P_BOOTCPU
-	DEFINE(__bootcpu_segments  = ABSOLUTE(__bootcpu + cpu_gdt));
+	DEFINE(__bootcpu_gdt       = ABSOLUTE(__bootcpu + cpu_gdt));
 	DEFINE(__percpu_dat_dwords = ABSOLUTE(__percpu_datsize / 4));
 	DEFINE(__percpu_bss_dwords = ABSOLUTE(__percpu_bsssize / 4));
 	DEFINE(__percpu_all_dwords = ABSOLUTE(__percpu_allsize / 4));

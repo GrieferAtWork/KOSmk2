@@ -30,25 +30,62 @@
 #include <assert.h>
 #include <stdint.h>
 #include <sched/smp.h>
+#include <kernel/arch/idt_pointer.h>
+#include <stdlib.h>
+#include <kernel/malloc.h>
+#include <string.h>
+#include <malloc.h>
+#include <hybrid/section.h>
+#include <hybrid/bitset.h>
 
 DECL_BEGIN
-
-#ifndef __INTELLISENSE__
 STATIC_ASSERT(sizeof(struct segment) == 8);
-#endif
+
+/* Bitset of allocated GDT segments. (ZERO-bits indicate free).
+ * NOTE: Despite looking excessive, this entire vector is only
+ *       1024 bytes large, making it quite feasible for use here. */
+PRIVATE ATTR_COLDBSS u8 gdt_allocated[((SEG_MAX+1)/sizeof(struct segment))/8];
 
 /* Allocate/Free/Update a (new) descriptor index within global descriptor table.
  * These are mainly used to implement the higher-level LDT table and its functions.
  * @return: SEG_NULL: Failed to allocate a new segment. */
 PUBLIC SAFE segid_t KCALL gdt_new(void) {
- /* TODO */
+ segid_t result; u8 *iter,content,new_content;
+alloc_again:
+ for (iter  = gdt_allocated;
+      iter != COMPILER_ENDOF(gdt_allocated); ++iter) {
+  do {
+   content = ATOMIC_READ(*iter);
+   if (content == 0xff) goto next_byte;
+   result = (iter-gdt_allocated)*8;
+   new_content = 1;
+   /* Find the first unused bit. */
+   while (content&new_content)
+    new_content <<= 1,++result;
+   /* Combine the two masks. */
+   new_content |= content;
+   /* Store the new mask if the allocated bitset. */
+  } while (!ATOMIC_CMPXCH_WEAK(*iter,content,new_content));
+  /* Don't allow builtin GDT slots to be allocated here. */
+  if unlikely(result < SEG_BUILTIN)
+     goto alloc_again;
+  return result;
+next_byte:;
+ }
  return SEG_NULL;
 }
 PUBLIC SAFE void KCALL gdt_del(segid_t id) {
  assert(id >= SEG_BUILTIN);
- /* TODO */
+#if SEG_MAX != 0xffff
+ assert(id <= SEG_MAX);
+#endif
+ /* Clear the bit, thus marking it as free. */
+ assertef(BIT_ATOMIC_CL(gdt_allocated,id),
+          "GDT slot %d wasn't allocated",id);
 }
 
+#define GDT                CPU(cpu_gdt)
+#define GDT_SEGMENT(id) (*(struct segment *)((uintptr_t)GDT.ip_gdt+(id)))
 
 PUBLIC SAFE struct segment KCALL
 gdt_get(segid_t id) {
@@ -56,18 +93,61 @@ gdt_get(segid_t id) {
  assertf(SMP_COUNT <= 1 || !PREEMPTION_ENABLED(),
          "What if your CPU suddenly changes?");
 #endif
- /* TODO */
- return make_segment(0,0,0);
+ assert((id%8) == 0);
+ assert(((GDT.ip_limit+1) % 8) == 0);
+ /* Return an empty segment for an out-of-bounds index. */
+ if (id >= GDT.ip_limit+1)
+     return make_segment(0,0,0);
+ return GDT_SEGMENT(id);
 }
+
 PUBLIC SAFE errno_t KCALL
 gdt_set(segid_t id, struct segment seg,
         struct segment *oldseg) {
+ pflag_t was;
 #ifdef CONFIG_SMP
  assertf(SMP_COUNT <= 1 || !PREEMPTION_ENABLED(),
          "What if your CPU suddenly changes?");
 #endif
- /* TODO */
- if (oldseg) *oldseg = make_segment(0,0,0);
+ assert((id%8) == 0);
+ assert(((GDT.ip_limit+1) % 8) == 0);
+ was = PREEMPTION_PUSH();
+ if (oldseg) {
+  *oldseg = id < GDT.ip_limit+1
+          ? GDT_SEGMENT(id)
+          : make_segment(0,0,0);
+ }
+ if (id >= GDT.ip_limit+1) {
+  struct segment *new_vector;
+  /* Must relocate the GDT vector. */
+  if (was&EFLAGS_IF) PREEMPTION_ENABLE();
+  new_vector = (struct segment *)kmalloc(id+sizeof(struct segment),GFP_SHARED);
+  if unlikely(!new_vector) return -ENOMEM;
+  if (was&EFLAGS_IF) PREEMPTION_DISABLE();
+  COMPILER_READ_BARRIER();
+  if (id >= GDT.ip_limit+1) {
+   _mall_untrack(new_vector);
+   memcpy(new_vector,
+          GDT.ip_gdt,
+          GDT.ip_limit+1);
+   /* If the existing GDT isn't the builtin one, free id. */
+   if (GDT.ip_gdt != gdt_builtin)
+       free(GDT.ip_gdt);
+   /* Override the GDT-pointer (will be reloaded below). */
+   GDT.ip_gdt   = new_vector;
+   GDT.ip_limit = id+sizeof(struct segment)-1;
+  } else {
+   free(new_vector);
+  }
+ }
+
+ GDT_SEGMENT(id) = seg;
+ /* Reload the GDT table, thus forcing changes to become effective. */
+ __asm__ __volatile__("lgdt %0\n"
+                      :
+                      : "g" (GDT)
+                      : "memory");
+ PREEMPTION_POP(was);
  return -EOK;
 }
 
@@ -106,8 +186,8 @@ INTDEF byte_t __kernel_seg_cputss_lo[];
 INTDEF byte_t __kernel_seg_cputss_hi[];
 INTDEF byte_t __kernel_seg_cpuself_lo[];
 INTDEF byte_t __kernel_seg_cpuself_hi[];
-  
-INTERN CPU_DATA struct segment cpu_gdt[SEG_BUILTIN] = {
+
+PUBLIC struct segment gdt_builtin[SEG_BUILTIN] = {
     [SEG_NULL]        = SEGMENT_INIT(0,0,0), /* NULL segment */
     [SEG_HOST_CODE]   = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL0), /* Kernel code segment */
     [SEG_HOST_DATA]   = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0), /* Kernel data segment */
@@ -115,9 +195,14 @@ INTERN CPU_DATA struct segment cpu_gdt[SEG_BUILTIN] = {
     [SEG_USER_DATA]   = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL3), /* User data */
     [SEG_HOST_CODE16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL0_16), /* 16-bit kernel code segment. */
     [SEG_HOST_DATA16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0_16), /* 16-bit kernel data segment. */
-    [SEG_KERNEL_LDT]  = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
-    [SEG_CPUTSS]      = {{{(u32)__kernel_seg_cputss_lo,(u32)__kernel_seg_cputss_hi}}}, /* CPU TSS */
     [SEG_CPUSELF]     = {{{(u32)__kernel_seg_cpuself_lo,(u32)__kernel_seg_cpuself_hi}}}, /* CPU-self */
+    [SEG_CPUTSS]      = {{{(u32)__kernel_seg_cputss_lo,(u32)__kernel_seg_cputss_hi}}}, /* CPU TSS */
+    [SEG_KERNEL_LDT]  = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
+};
+PUBLIC CPU_DATA struct idt_pointer cpu_gdt = {
+    /* Use the builtin GDT vector by default. */
+    .ip_limit = sizeof(gdt_builtin)-1,
+    .ip_gdt   = gdt_builtin,
 };
 
 DECL_END

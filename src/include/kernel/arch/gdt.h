@@ -160,7 +160,7 @@ struct PACKED {
 #define SEGMENT_GTSIZE(seg) (((seg).ul32 & 0xffff) | ((seg).uh32&0x000f0000))
 
 #define SEGMENT_INIT(base,size,config) \
- {{{ __SEG_ENCODELO(base,size,config),  \
+ {{{ __SEG_ENCODELO(base,size,config), \
      __SEG_ENCODEHI(base,size,config) }}}
 
 LOCAL struct segment KCALL
@@ -174,7 +174,7 @@ make_segment(u32 base, u32 size, u32 config) {
 
 #ifndef __segid_t_defined
 #define __segid_t_defined 1
-typedef u16 segid_t;
+typedef u16 segid_t; /* == Segment index*8 */
 #endif /* !__segid_t_defined */
 
 #else /* __CC__ */
@@ -207,15 +207,18 @@ typedef u16 segid_t;
 #define SEG_USER_DATA   4 /*< [0x20] Ring #3 data segment. */
 #define SEG_HOST_CODE16 5 /*< [0x28] Ring #0 16-bit code segment. */
 #define SEG_HOST_DATA16 6 /*< [0x30] Ring #0 16-bit data segment. */
-#define SEG_KERNEL_LDT  7 /*< [0x38] Symbolic kernel LDT (Usually empty). */
+#define SEG_CPUSELF     7 /*< [0x38] CPU-self segment (stored in %fs/%gs while in kernel-space). */
 #define SEG_CPUTSS      8 /*< [0x40] TSS segment of the current CPU. */
-#define SEG_CPUSELF     9 /*< [0x48] CPU-self segment (stored in %fs/%gs while in kernel-space). */
+#define SEG_KERNEL_LDT  9 /*< [0x48] Symbolic kernel LDT (Usually empty). */
 
 #define SEG_BUILTIN        10
 #define SEG_MAX            0xffff
 #define SEG_ISBUILTIN(seg) ((seg) < SEG(SEG_BUILTIN))
 
 #ifdef __CC__
+DATDEF PERCPU struct idt_pointer cpu_gdt;
+DATDEF struct segment gdt_builtin[SEG_BUILTIN];
+
 /* Allocate/Free/Update a (new) descriptor index within global descriptor table.
  * These are mainly used to implement the higher-level LDT table and its functions.
  * @return: SEG_NULL: Failed to allocate a new segment. */

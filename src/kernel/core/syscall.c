@@ -138,18 +138,6 @@ PRIVATE ATTR_USED void FCALL syscall_leave(void) {
   syslog(LOG_DEBUG,"CS = %p; EBP = %p;\n",
          THIS_SYSCALL_CS,THIS_SYSCALL_EBP);
   { struct idt_pointer p;
-    INTDEF struct segment cpu_gdt[SEG_BUILTIN];
-    p.ip_limit = sizeof(cpu_gdt);
-    p.ip_gdt   = CPU(cpu_gdt);
-    __asm__("lgdt %0" : : "m" (p) : "memory");
-  }
-  INTDEF struct segment cpu_gdt[SEG_BUILTIN];
-  CPU(cpu_gdt)[SEG_CPUTSS].rw = 0;
-  __asm__ __volatile__("ltr %%bx\n"
-                       :
-                       : "b" (SEG(SEG_CPUTSS))
-                       : "memory");
-  { struct idt_pointer p;
     p.ip_idt   = CPU(cpu_idt).i_vector;
     p.ip_limit = sizeof(cpu_idt.i_vector);
     __asm__ __volatile__("lidt %0\n"

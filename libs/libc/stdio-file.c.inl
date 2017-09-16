@@ -18,7 +18,7 @@
  */
 #ifndef GUARD_LIBS_LIBC_STDIO_FILE_C_INL
 #define GUARD_LIBS_LIBC_STDIO_FILE_C_INL 1
-#define _KOS_SOURCE 1
+#define _KOS_SOURCE 2
 #define _GNU_SOURCE 1
 
 #include "libc.h"
@@ -28,9 +28,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <format-printer.h>
+#include <malloc.h>
 #include <unistd.h>
 #include <assert.h>
 #include <hybrid/atomic.h>
+#include <fcntl.h>
 
 DECL_BEGIN
 
@@ -198,7 +200,19 @@ PUBLIC int (LIBCCALL setvbuf)(FILE *__restrict stream, char *__restrict buf, int
 PUBLIC int (LIBCCALL ungetc)(int c, FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC FILE *(LIBCCALL tmpfile64)(void) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC FILE *(LIBCCALL tmpfile)(void) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC FILE *(LIBCCALL fopen)(char const *__restrict filename, char const *__restrict modes) { NOT_IMPLEMENTED(); return NULL; }
+PUBLIC FILE *(LIBCCALL fopen)(char const *__restrict filename, char const *__restrict modes) {
+#if 1
+ /* Temporary hack to pipe curses trace logging into the system log. */
+ //syslog(LOG_DEBUG,"LIBC: fopen(%q,%q)\n",filename,modes);
+ if (!strcmp(filename,"//trace")) {
+  FILE *result = omalloc(FILE);
+  if (result) result->f_fd = open("/dev/kmsg",O_WRONLY);
+  return result;
+ }
+#endif
+ NOT_IMPLEMENTED();
+ return NULL;
+}
 PUBLIC FILE *(LIBCCALL freopen)(char const *__restrict filename, char const *__restrict modes, FILE *__restrict stream) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC int (LIBCCALL fflush_unlocked)(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC void (LIBCCALL setbuffer)(FILE *__restrict stream, char *__restrict buf, size_t size) { NOT_IMPLEMENTED(); }

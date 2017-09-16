@@ -548,38 +548,11 @@ L(    movl  %ebx, %edx                         ) /* mb_mbt */
 #define TH   ah
 #define SH   bh
 
-#if 0
-#define BOOT_CPU      __bootcpu
-#define BOOT_TSS     (__bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS)
-#define TSS_SEGMENT  (__bootcpu_segments+SEG_CPUTSS*8)
-#define CPU_SEGMENT  (__bootcpu_segments+SEG_CPUSELF*8)
-/* Fix missing GDT relocations. */
-L(    movl  $(BOOT_TSS), %ETX                  )
-L(    movw  %TX, (TSS_SEGMENT+2)               )
-L(    shrl  $16, %ETX                          )
-L(    movb  %TL, (TSS_SEGMENT+4)               )
-L(    movb  %TH, (TSS_SEGMENT+7)               )
-
-L(    movl  $(BOOT_CPU), %ETX                  )
-L(    movw  %TX, (CPU_SEGMENT+2)               )
-L(    shrl  $16, %ETX                          )
-L(    movb  %TL, (CPU_SEGMENT+4)               )
-L(    movb  %TH, (CPU_SEGMENT+7)               )
-#undef CPU_SEGMENT
-#undef TSS_SEGMENT
-#undef BOOT_TSS
-#undef BOOT_CPU
-#endif
-
 #if 1
 /* Load our custom boot GDT. */
-L(    pushl $(__bootcpu_segments)              ) /* ip_base */
-L(    pushw $(8*SEG_BUILTIN)                   ) /* ip_limit */
-L(    lgdt (%esp)                              )
-L(    addl  $6, %esp                           )
-
+L(    lgdt __bootcpu_gdt                       )
 /* Load segment registers now configured via the GDT. */
-L(    movw  $(SEG(SEG_HOST_DATA)), %SX       )
+L(    movw  $(SEG(SEG_HOST_DATA)), %SX         )
 L(    movw  $(SEG(SEG_CPUSELF)), %TX           )
 L(    movw  %SX, %ds                           )
 L(    movw  %SX, %es                           )
@@ -591,7 +564,7 @@ L(    movw  %SX, %fs                           )
 L(    movw  %TX, %gs                           )
 #endif
 L(    movw  %SX, %ss                           )
-L(    ljmp  $(SEG(SEG_HOST_CODE)), $1f       )
+L(    ljmp  $(SEG(SEG_HOST_CODE)), $1f         )
 L(1:                                           )
 /* Load our custom boot TSS. */
 L(    movw  $(SEG(SEG_CPUTSS)|3), %SX          ) /* TODO: Check if this |3 is really required. */

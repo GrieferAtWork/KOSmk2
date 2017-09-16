@@ -849,6 +849,7 @@ sel_this:
  assert(self->fd_cls_act == self->fd_cls_sel);
  return 1;
 }
+
 PRIVATE ssize_t KCALL
 filedata_read(struct filedata *__restrict self, fat_t *__restrict fs,
               struct inode *__restrict node, USER void *buf, size_t bufsize) {
@@ -861,7 +862,7 @@ filedata_read(struct filedata *__restrict self, fat_t *__restrict fs,
   assert(self->fd_pos >= self->fd_begin);
   assert(self->fd_pos <= self->fd_max);
   max_read = (size_t)(self->fd_max-self->fd_pos);
-  if (!max_read) break;
+  if (!max_read) goto next_cluster;
   if (max_read > bufsize)
       max_read = bufsize;
   temp = blkdev_read(fs->f_super.sb_blkdev,
@@ -876,6 +877,7 @@ filedata_read(struct filedata *__restrict self, fat_t *__restrict fs,
   assert(self->fd_pos <= self->fd_max);
   assert(self->fd_max <= self->fd_end);
   if (self->fd_pos == self->fd_max) {
+next_cluster:
    if (self->fd_max != self->fd_end) {
     pos_t file_pos;
     pos_t file_size;
