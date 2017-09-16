@@ -173,6 +173,17 @@ pid_environ_fopen(struct inode *__restrict ino,
  MMAN_DECREF(mm);
  return result;
 }
+FUNDEF REF struct file *KCALL
+pid_mem_fopen(struct inode *__restrict ino,
+              struct dentry *__restrict dent,
+              oflag_t oflags) {
+ REF struct mman *mm = task_getmman(SELF->p_task);
+ REF struct file *result;
+ if unlikely(E_ISERR(mm)) return E_PTR(E_GTERR(mm));
+ result = make_memfile(ino,dent,oflags,mm,0,(uintptr_t)-1);
+ MMAN_DECREF(mm);
+ return result;
+}
 #undef SELF
 
 #define SELF container_of(fp,struct taskfile,tf_file)
@@ -301,6 +312,9 @@ INTERN struct procnode const pid_content[] = {
  }},
  {MKINO,S_IFREG|0444,/*[[[deemon DNAM("environ"); ]]]*/{"environ",7,H(3046658303u,31084784624496229llu)}/*[[[end]]]*/,
  { .ino_fopen = &pid_environ_fopen, MEMFILE_OPS_INIT
+ }},
+ {MKINO,S_IFREG|0600,/*[[[deemon DNAM("mem"); ]]]*/{"mem",3,H(7169389u,7169389llu)}/*[[[end]]]*/,
+ { .ino_fopen = &pid_mem_fopen, MEMFILE_OPS_INIT
  }},
  {MKINO,S_IFDIR|0555,/*[[[deemon DNAM("task"); ]]]*/{"task",4,H(3339611412u,1802723700llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .f_readdir = &pid_task_readdir,

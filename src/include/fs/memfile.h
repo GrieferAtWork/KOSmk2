@@ -36,9 +36,9 @@ struct memfile {
   * >> This type of file is used to implement a lot of different things in the filesystem:
   *  - /dev/kmem
   *  - /proc/kcore
-  *  - /proc/cmdline
   *  - /proc/PID/mem
   *  - /proc/PID/cmdline
+  *  - /proc/PID/environ
   * NOTE: Attempting to read from/write to unmapped memory is a
   *       no-op, returning ZERO(0) and thus indicating that no
   *       memory can be accessed. */

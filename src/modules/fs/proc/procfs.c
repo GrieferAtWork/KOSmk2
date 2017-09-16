@@ -118,21 +118,25 @@ kcore_fopen(struct inode *__restrict node,
 }
 
 
+enum{__PROC_FIRST_INO=(__COUNTER__+1)};
+#define MKINO  (__COUNTER__-__PROC_FIRST_INO)
+
 /* Misc. contents of the /proc root directory. */
 INTERN struct procnode const root_content[] = {
- {0,S_IFLNK|0444,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
+ {MKINO,S_IFLNK|0444,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
  { .ino_readlink = &self_readlink,
  }},
- {1,S_IFREG|0444,/*[[[deemon DNAM("filesystems"); ]]]*/{"filesystems",11,H(802163638u,1733680310429884923llu)}/*[[[end]]]*/,
+ {MKINO,S_IFREG|0444,/*[[[deemon DNAM("filesystems"); ]]]*/{"filesystems",11,H(802163638u,1733680310429884923llu)}/*[[[end]]]*/,
  { .ino_fopen = &filesystems_fopen, TEXTFILE_OPS_INIT
  }},
- {2,S_IFREG|0444,/*[[[deemon DNAM("cmdline"); ]]]*/{"cmdline",7,H(3488433892u,28550371716918627llu)}/*[[[end]]]*/,
+ {MKINO,S_IFREG|0444,/*[[[deemon DNAM("cmdline"); ]]]*/{"cmdline",7,H(3488433892u,28550371716918627llu)}/*[[[end]]]*/,
  { .ino_fopen = &cmdline_fopen, TEXTFILE_OPS_INIT
  }},
- {3,S_IFREG|0400,/*[[[deemon DNAM("kcore"); ]]]*/{"kcore",5,H(99254056u,435711599467llu)}/*[[[end]]]*/,
+ {MKINO,S_IFREG|0400,/*[[[deemon DNAM("kcore"); ]]]*/{"kcore",5,H(99254056u,435711599467llu)}/*[[[end]]]*/,
  { .ino_fopen = &kcore_fopen, MEMFILE_OPS_INIT
  }},
 };
+#undef MKINO
 
 STATIC_ASSERT(COMPILER_LENOF(root_content) <= PROC_ROOT_NUMNODES);
 
