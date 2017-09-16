@@ -546,7 +546,6 @@ err_mapregion:
   /* Inherit new reference from 'mapregion' (Kept valid due to caller-held lock to 'mspace->m_lock') */
   self->mb_region = mapregion;
 
-
   /* NOTE: Since the guard region must not have any parts associated with
    *       it, we can assume that no page-directory mapping exists within.
    *       So with that in mind, alongside the fact that the guard replacement
@@ -634,6 +633,7 @@ err_mapregion:
  }
 
 #if 1
+ /* Copy-on-write handling. */
  if (mode&MMAN_MCORE_WRITE) {
   load_bytes = 0;
   if (!(self->mb_prot&PROT_WRITE));
@@ -763,7 +763,8 @@ copy_part:
       }
      }
      *did_remap = true;
-     /* XXX: Below code may not be fully tested? (TODO: Remove me) */
+     /* XXX: Below code may not be fully tested? */
+     /* XXX (much later): It seems to work just fine. */
 
      /* Create a new branch for the copied region. */
      copy_branch = (struct mbranch *)kmalloc(sizeof(struct mbranch),

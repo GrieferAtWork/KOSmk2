@@ -48,6 +48,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <sys/mman.h>
+#include "../../mman/intern.h"
 
 DECL_BEGIN
 
@@ -407,7 +408,12 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
    MREGION_DECREF(region);
    kfree(branch);
    goto err;
+  } else {
+   /* Try to merge adjacent leafs. */
+   mman_merge_branch_unlocked(&mman_kernel,(uintptr_t)vcpu);
+   mman_merge_branch_unlocked(&mman_kernel,(uintptr_t)vcpu+region->mr_size);
   }
+
   /* Save the used per-cpu base address. */
   *dst_iter++ = vcpu,++iter;
   /* Now that the CPU has been mapped, we can safely

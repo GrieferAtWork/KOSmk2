@@ -600,6 +600,9 @@ err_insbranch:
     goto end2;
    }
   }
+  /* Try to merge adjacent leafs at the end of the new mapping. */
+  mman_merge_branch_unlocked(mm,(uintptr_t)result+new_len);
+
  } else {
   /* Check if we must remap to a fixed address, or simply return the old one. */
   goto maybe_remap;

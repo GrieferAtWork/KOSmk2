@@ -806,7 +806,7 @@ again:
 PUBLIC ssize_t KCALL
 mman_mprotect_unlocked(struct mman *__restrict self, VIRT ppage_t addr,
                        size_t n_bytes, u32 prot_amask, u32 prot_omask) {
- errno_t error;
+ errno_t error; ssize_t result;
  CHECK_HOST_DOBJ(self);
  if unlikely(!n_bytes) return 0;
  n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
@@ -815,12 +815,18 @@ mman_mprotect_unlocked(struct mman *__restrict self, VIRT ppage_t addr,
       return error;
  if (!self->m_map) return 0;
  /* Recursively update protection mappings. */
- return mman_mprotect_impl(self,self->m_map,
-                          (VIRT uintptr_t)addr,
-                          (VIRT uintptr_t)addr+n_bytes-1,
-                           ATREE_SEMI0(VIRT uintptr_t),
-                           ATREE_LEVEL0(VIRT uintptr_t),
-                           prot_amask,prot_omask);
+ result = mman_mprotect_impl(self,self->m_map,
+                            (VIRT uintptr_t)addr,
+                            (VIRT uintptr_t)addr+n_bytes-1,
+                             ATREE_SEMI0(VIRT uintptr_t),
+                             ATREE_LEVEL0(VIRT uintptr_t),
+                             prot_amask,prot_omask);
+ if (E_ISOK(result)) {
+  /* Try to merge adjacent leafs. */
+  mman_merge_branch_unlocked(self,(uintptr_t)addr);
+  mman_merge_branch_unlocked(self,(uintptr_t)addr+n_bytes);
+ }
+ return result;
 }
 
 
@@ -1027,6 +1033,9 @@ mman_mmap_unlocked(struct mman *__restrict self, VIRT ppage_t addr,
  if (E_ISERR(error)) goto err3;
  /* Insert the new leaf. */
  mman_insbranch_unlocked(self,newleaf);
+ /* Try to merge adjacent leafs. */
+ mman_merge_branch_unlocked(self,(uintptr_t)addr);
+ mman_merge_branch_unlocked(self,(uintptr_t)addr+n_bytes);
  return error;
 err3: if (notify) (*notify)(MNOTIFY_DECREF,closure,NULL,0,0);
 err2: mregion_decref(region,start,n_bytes);
@@ -1307,6 +1316,11 @@ mman_do_mrestore(struct mman *__restrict self,
   mman_munmap_unlocked(self,(ppage_t)MBRANCH_BEGIN(branch),
                                      MBRANCH_SIZE(branch),
                        MMAN_MUNMAP_ALL,NULL);
+ } else {
+  uintptr_t merge1 = MBRANCH_BEGIN(branch);
+  uintptr_t merge2 = MBRANCH_END(branch);
+  mman_merge_branch_unlocked(self,merge1);
+  mman_merge_branch_unlocked(self,merge2);
  }
  return error;
 err:
@@ -2038,6 +2052,8 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
  ATREE_SEMI_T(VIRT uintptr_t) hi_branch_semi = ATREE_SEMI0(VIRT uintptr_t);
  ATREE_LEVEL_T lo_branch_level = ATREE_LEVEL0(VIRT uintptr_t);
  ATREE_LEVEL_T hi_branch_level = ATREE_LEVEL0(VIRT uintptr_t);
+ assert(IS_ALIGNED(start,PAGESIZE));
+
  /* Scan for two different branches at 'start' and 'start-1' */
  plo_branch = mbranch_tree_plocate_at(&self->m_map,start-1,&lo_branch_semi,&lo_branch_level);
  if (!plo_branch) return false;
@@ -2055,15 +2071,14 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
      lo_branch->mb_notify  != hi_branch->mb_notify ||
      lo_branch->mb_closure != hi_branch->mb_closure)
      return false;
- if (lo_branch->mb_region  == hi_branch->mb_region) {
+ if (lo_branch->mb_region == hi_branch->mb_region) {
   /* Merge the two branches into one. */
   if (lo_branch->mb_start+MBRANCH_SIZE(lo_branch) !=
-      hi_branch->mb_start)
-      return false;
+      hi_branch->mb_start) return false;
   /* TODO */
   return false;
  }
- /* TODO: Check if the two regions are adjacent */
+ /* TODO: Check if the two adjacent regions can be merged into one. */
 
  return false;
 }
