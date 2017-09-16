@@ -45,6 +45,11 @@ INTDEF WEAK REF struct task *KCALL file_getchild_pid(WEAK struct task *__restric
 /* Unambiguously parse the given string as a PID, as seen in /proc.
  * @return: -1: The given string isn't a PID. */
 INTDEF pid_t KCALL pid_from_string(char const *__restrict str, size_t str_len);
+#if __SIZEOF_PID_T__ >= __SIZEOF_INT__
+#define fd_from_string  pid_from_string
+#else
+#error FIXME
+#endif
 
 #define INO_FROM_PID(pid) (PROC_ROOT_NUMNODES+(pid)*PROC_PID_NUMNODES)
 

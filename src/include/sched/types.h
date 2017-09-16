@@ -428,10 +428,15 @@ struct thread_pid {
 LOCAL pid_t KCALL thread_pid_getpgid(struct thread_pid *__restrict self, pidtype_t type);
 LOCAL pid_t KCALL thread_pid_getppid(struct thread_pid *__restrict self, pidtype_t type);
 
-#define GET_THIS_UID()             0 /* TODO */
-#define GET_THIS_GID()             0 /* TODO */
-#define GET_THIS_EUID()            0 /* TODO */
-#define GET_THIS_EGID()            0 /* TODO */
+#define GET_THIS_UID()    TASK_GETUID(THIS_TASK)
+#define GET_THIS_GID()    TASK_GETGID(THIS_TASK)
+#define GET_THIS_EUID()   TASK_GETEUID(THIS_TASK)
+#define GET_THIS_EGID()   TASK_GETEGID(THIS_TASK)
+
+#define TASK_GETUID(self)   0 /* TODO */
+#define TASK_GETGID(self)   0 /* TODO */
+#define TASK_GETEUID(self)  0 /* TODO */
+#define TASK_GETEGID(self)  0 /* TODO */
 
 #define TASK_GETTID(self)   THREAD_PID_GETTID(&(self)->t_pid)
 #define TASK_GETTGID(self)  THREAD_PID_GETTGID(&(self)->t_pid)

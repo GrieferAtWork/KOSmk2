@@ -25,6 +25,7 @@
 #include <fs/inode.h>
 #include <fs/dentry.h>
 #include <fs/file.h>
+#include <fs/fd.h>
 
 DECL_BEGIN
 
@@ -124,6 +125,14 @@ struct taskfile {
  size_t                tf_grpidx; /*< [lock(rf_file->f_lock)] Current index within the task's group-chain. */
 };
 
+struct pidfdfile {
+ /* Open file descriptor within the /proc/PID/task and /proc/PID/children directory. */
+ struct file           ff_file;  /*< Underlying file descriptor. */
+ WEAK REF struct task *ff_task;  /*< [1..1] The task who's FD manager is being enumerated. */
+ unsigned int          ff_fdidx; /*< [lock(rf_file->f_lock)] The current descriptor index that is being enumerated. */
+};
+
+
 struct rootfile {
  /* Open file descriptor within the /proc root directory. */
  struct file               rf_file;   /*< Underlying file descriptor. */
@@ -134,6 +143,17 @@ struct rootfile {
  size_t                    rf_pidcnt; /*< [const] == rf_proc->pn_mapc (When the file was opened initially)
                                        *   HINT: When 'rf_diridx >= rf_pidcnt', read from 'root_content' */
 };
+
+struct fdnode {
+     struct inode fn_node; /*< Underlying INode. */
+ REF struct fd    fn_fd;   /*< [const] The referred-to INode. */
+};
+INTDEF struct inodeops const fdnode_ops;
+INTDEF REF struct fdnode *KCALL
+fdnode_new_inherited(struct superblock *__restrict procfs,
+                     WEAK struct task *__restrict owner,
+                     REF struct fd node_fd);
+
 
 INTDEF struct inodeops const rootops;
 INTDEF struct superblockops const sb_rootops;

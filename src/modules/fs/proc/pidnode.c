@@ -50,6 +50,7 @@
 #include <linker/module.h>
 #include <fs/memfile.h>
 #include <kos/environ.h>
+#include <kernel/stack.h>
 
 DECL_BEGIN
 PRIVATE void KCALL pidnode_fini(struct inode *__restrict ino);
@@ -201,7 +202,8 @@ taskfile_readdir(struct file *__restrict fp,
  atomic_rwlock_read(read_children ? &leader->t_pid.tp_grouplock
                                   : &leader->t_pid.tp_childlock);
  member = read_children ? leader->t_pid.tp_children : leader->t_pid.tp_group;
- while (name_avail-- && member) {
+ /* Prevent infinite recursion in recursive directory listings. */
+ while (member && (member == leader || name_avail--)) {
   member = read_children ? member->t_pid.tp_siblings.le_next
                          : member->t_pid.tp_grplink.le_next;
  }
@@ -293,6 +295,198 @@ pid_child_lookup(struct inode *__restrict dir_node,
 #undef SELF
 
 
+#define SELF container_of(ino,struct pidnode,p_node)
+FUNDEF REF struct file *KCALL
+pid_fd_fopen(struct inode *__restrict ino,
+             struct dentry *__restrict dent,
+             oflag_t oflags) {
+ REF struct pidfdfile *result;
+ result = (REF struct pidfdfile *)file_new(sizeof(struct pidfdfile));
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ assert(result->ff_fdidx == 0);
+ /* Set the FD-file's associated task. */
+ result->ff_task = SELF->p_task;
+ TASK_WEAK_INCREF(result->ff_task);
+ file_setup(&result->ff_file,ino,dent,oflags);
+ return &result->ff_file;
+}
+#undef SELF
+
+#define SELF container_of(fp,struct pidfdfile,ff_file)
+PRIVATE void KCALL
+pid_fd_fclose(struct inode *__restrict ino,
+              struct file *__restrict fp) {
+ /* Drop the weak reference from the task. */
+ TASK_WEAK_DECREF(SELF->ff_task);
+}
+PRIVATE ssize_t KCALL
+pid_fd_readdir(struct file *__restrict fp,
+               USER struct dirent *buf,
+               size_t bufsize, rdmode_t mode) {
+ struct dirent header; bool is_eod;
+ size_t name_avail; ssize_t result;
+ REF struct fdman *fdm = task_getfdman(SELF->ff_task);
+ if (E_ISERR(fdm)) return E_GTERR(fdm);
+ result = fdman_read(fdm);
+ if (E_ISERR(result)) goto end;
+ /* Skip empty descriptors. */
+ while (SELF->ff_fdidx < fdm->fm_veca &&
+        FD_SAFE_ISNULL(fdm->fm_vecv[SELF->ff_fdidx]))
+        ++SELF->ff_fdidx;
+ is_eod = SELF->ff_fdidx >= fdm->fm_veca;
+ fdman_endread(fdm);
+ FDMAN_DECREF(fdm);
+ if (is_eod) return 0;
+ header.d_ino  = 0; /* ??? */
+ header.d_type = DT_LNK;
+ name_avail    = 0;
+ if (bufsize >= offsetof(struct dirent,d_name))
+     name_avail = bufsize-offsetof(struct dirent,d_name);
+ /* Copy data to user-space. */
+ result = snprintf_user(buf->d_name,name_avail,"%u",SELF->ff_fdidx)*sizeof(char);
+ if (bufsize >= offsetof(struct dirent,d_name)) {
+  header.d_namlen = result-1;
+  if (copy_to_user(buf,&header,offsetof(struct dirent,d_name)))
+  { result = -EFAULT; goto end; }
+ }
+ result += offsetof(struct dirent,d_name);
+end:
+ if (FILE_READDIR_SHOULDINC(mode,bufsize,result))
+     ++SELF->ff_fdidx;
+ return result;
+}
+#undef SELF
+#define SELF container_of(dir_node,struct pidnode,p_node)
+PRIVATE REF struct inode *KCALL
+pid_fd_lookup(struct inode *__restrict dir_node,
+              struct dentry *__restrict result_path) {
+ int fdno = fd_from_string(result_path->d_name.dn_name,
+                           result_path->d_name.dn_size);
+ if (fdno >= 0) {
+  struct fd node_fd; REF struct fdman *fdm;
+  fdm = task_getfdman(SELF->p_task);
+  if (E_ISERR(fdm)) return E_PTR(E_GTERR(fdm));
+  node_fd = fdman_get(fdm,fdno);
+  FDMAN_DECREF(fdm);
+  if (FD_ISNULL(node_fd)) goto noent;
+  return (REF struct inode *)fdnode_new_inherited(dir_node->i_super,
+                                                  SELF->p_task,
+                                                  node_fd);
+ }
+noent:
+ return E_PTR(-ENOENT);
+}
+#undef SELF
+
+
+#define SELF container_of(ino,struct fdnode,fn_node)
+PRIVATE void KCALL fdnode_fini(struct inode *__restrict ino) {
+ FD_DECREF(SELF->fn_fd);
+}
+PRIVATE char const fdnull_text[] = "null";
+PRIVATE char const vmnull_text[] = "vm:[?]";
+PRIVATE char const vmkern_text[] = "vm:[KERNEL]";
+
+PRIVATE ssize_t KCALL
+fdnode_readlink(struct inode *__restrict ino,
+                USER char *__restrict buf, size_t bufsize) {
+#define FD  SELF->fn_fd
+ switch (FD_TYPE(FD)) {
+
+ case FD_TYPE_NULL:
+  if (copy_to_user(buf,fdnull_text,MIN(bufsize,sizeof(fdnull_text))))
+      return -EFAULT;
+  return sizeof(fdnull_text);
+
+ case FD_TYPE_FILE:
+  return snprintf_user(buf,bufsize,"%[file]",FD.fo_obj.fo_file);
+
+ case FD_TYPE_DENTRY:
+  return snprintf_user(buf,bufsize,"%[dentry]",FD.fo_obj.fo_dentry);
+
+ {
+  struct superblock *super;
+ case FD_TYPE_INODE:
+  super = FD.fo_obj.fo_inode->i_super;
+  return snprintf_user(buf,bufsize,"anon_inode:[%[dev_t],%I64u]",
+                       super->sb_blkdev ? super->sb_blkdev->bd_device.d_id : 0,
+                       FD.fo_obj.fo_inode->i_ino);
+ } break;
+
+ case FD_TYPE_TASK:
+  return snprintf_user(buf,bufsize,"task:[" PID_FMT "]",
+                       FD.fo_obj.fo_task->t_pid.tp_ids[PIDTYPE_PID].tl_ns == THIS_NAMESPACE
+                     ? FD.fo_obj.fo_task->t_pid.tp_ids[PIDTYPE_PID].tl_pid : 0);
+
+ {
+  REF struct instance *vm_exe;
+  ssize_t result;
+ case FD_TYPE_MMAN:
+  vm_exe = mman_getexe(FD.fo_obj.fo_mman);
+  if (E_ISERR(vm_exe)) {
+   if (copy_to_user(buf,vmnull_text,MIN(bufsize,sizeof(vmnull_text))))
+       return -EFAULT;
+   return sizeof(vmnull_text);
+  }
+  if (vm_exe == &kernel_instance) {
+   if (copy_to_user(buf,vmkern_text,MIN(bufsize,sizeof(vmkern_text))))
+       return -EFAULT;
+   result = sizeof(vmkern_text);
+  } else {
+   result = snprintf_user(buf,bufsize,"vm:[%[file]]",
+                          vm_exe->i_module->m_file);
+  }
+  INSTANCE_DECREF(vm_exe);
+  return result;
+ } break;
+
+ case FD_TYPE_STACK:
+  return snprintf_user(buf,bufsize,"stack:[%p,%p]",
+                      (uintptr_t)ATOMIC_READ(FD.fo_obj.fo_stack->s_begin),
+                      (uintptr_t)ATOMIC_READ(FD.fo_obj.fo_stack->s_end)-1);
+
+ default: break;
+ }
+#ifdef CONFIG_DEBUG
+ return snprintf_user(buf,bufsize,"fd:[UNKNOWN,%d,%p]",FD_TYPE(FD),FD.fo_ptr);
+#else
+ return snprintf_user(buf,bufsize,"fd:[UNKNOWN,%d]",FD_TYPE(FD));
+#endif
+#undef FD
+}
+#undef SELF
+
+INTERN struct inodeops const fdnode_ops = {
+   .ino_fini     = &fdnode_fini,
+   .ino_readlink = &fdnode_readlink,
+};
+
+
+INTERN REF struct fdnode *KCALL
+fdnode_new_inherited(struct superblock *__restrict procfs,
+                     WEAK struct task *__restrict owner,
+                     REF struct fd node_fd) {
+ REF struct fdnode *result; errno_t error;
+ result = (REF struct fdnode *)inode_new(sizeof(struct fdnode));
+ if unlikely(!result) { result = E_PTR(-ENOMEM); goto err; }
+ result->fn_fd                  = node_fd; /* Inherit reference. */
+ result->fn_node.i_ops          = &fdnode_ops;
+ result->fn_node.__i_nlink      = 1;
+ result->fn_node.i_attr.ia_mode = 0700|S_IFLNK;
+ result->fn_node.i_attr.ia_uid  = TASK_GETEUID(owner);
+ result->fn_node.i_attr.ia_gid  = TASK_GETEGID(owner);
+ memcpy(&result->fn_node.i_attr_disk,
+        &result->fn_node.i_attr,
+         sizeof(struct iattr));
+ error = inode_setup(&result->fn_node,procfs,THIS_INSTANCE);
+ if (E_ISERR(error)) { free(result); result = E_PTR(error); goto err; }
+ return result;
+err:
+ FD_DECREF(node_fd);
+ return result;
+}
+
+
 
 enum{__PID_FIRST_INO=(__COUNTER__+1)};
 #define MKINO  (__COUNTER__-__PID_FIRST_INO)
@@ -308,23 +502,28 @@ INTERN struct procnode const pid_content[] = {
  { .ino_fini = &pidnode_fini, .ino_readlink = &pid_exe_readlink,
  }},
  {MKINO,S_IFREG|0444,/*[[[deemon DNAM("cmdline"); ]]]*/{"cmdline",7,H(3488433892u,28550371716918627llu)}/*[[[end]]]*/,
- { .ino_fopen = &pid_cmdline_fopen, MEMFILE_OPS_INIT
+ { .ino_fini = &pidnode_fini, .ino_fopen = &pid_cmdline_fopen, MEMFILE_OPS_INIT
  }},
  {MKINO,S_IFREG|0444,/*[[[deemon DNAM("environ"); ]]]*/{"environ",7,H(3046658303u,31084784624496229llu)}/*[[[end]]]*/,
- { .ino_fopen = &pid_environ_fopen, MEMFILE_OPS_INIT
+ { .ino_fini = &pidnode_fini, .ino_fopen = &pid_environ_fopen, MEMFILE_OPS_INIT
  }},
  {MKINO,S_IFREG|0600,/*[[[deemon DNAM("mem"); ]]]*/{"mem",3,H(7169389u,7169389llu)}/*[[[end]]]*/,
- { .ino_fopen = &pid_mem_fopen, MEMFILE_OPS_INIT
+ { .ino_fini = &pidnode_fini, .ino_fopen = &pid_mem_fopen, MEMFILE_OPS_INIT
+ }},
+ {MKINO,S_IFDIR|0500,/*[[[deemon DNAM("fd"); ]]]*/{"fd",2,H(25702u,25702llu)}/*[[[end]]]*/,
+ { .ino_fini = &pidnode_fini, .f_readdir = &pid_fd_readdir,
+   .ino_fopen = &pid_fd_fopen, .ino_fclose = &pid_fd_fclose,
+   .ino_lookup = &pid_fd_lookup, /* TODO: f_seek */
  }},
  {MKINO,S_IFDIR|0555,/*[[[deemon DNAM("task"); ]]]*/{"task",4,H(3339611412u,1802723700llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .f_readdir = &pid_task_readdir,
    .ino_fopen = &taskfile_fopen, .ino_fclose = &taskfile_fclose,
-   .ino_lookup = &pid_task_lookup,
+   .ino_lookup = &pid_task_lookup, /* TODO: f_seek */
  }},
  {MKINO,S_IFDIR|0555,/*[[[deemon DNAM("children"); ]]]*/{"children",8,H(787156183u,16253778611020278651llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .f_readdir = &pid_children_readdir,
    .ino_fopen = &taskfile_fopen, .ino_fclose = &taskfile_fclose,
-   .ino_lookup = &pid_child_lookup,
+   .ino_lookup = &pid_child_lookup, /* TODO: f_seek */
  }},
  {MKINO,S_IFREG|0444,/*[[[deemon DNAM("maps"); ]]]*/{"maps",4,H(250834133u,1936744813llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .ino_fopen = &maps_fopen, TEXTFILE_OPS_INIT
