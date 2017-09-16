@@ -28,6 +28,7 @@
 #include <sched/smp.h>
 #include <kernel/mman.h>
 #include <linker/module.h>
+#include <stdlib.h>
 
 DECL_BEGIN
 
@@ -94,6 +95,44 @@ mman_getexe(struct mman *__restrict mm) {
  }
  if (!result) result = E_PTR(-ENOEXEC);
  return result;
+}
+
+INTERN WEAK REF struct task *KCALL
+file_gettask_pid(WEAK struct task *__restrict leader, pid_t pid) {
+ WEAK REF struct task *result;
+ result = pid_namespace_lookup_weak(THIS_NAMESPACE,pid);
+ if (!result) noproc: result = E_PTR(-ESRCH);
+ else if (ATOMIC_READ(result->t_pid.tp_leader) != leader)
+ { TASK_WEAK_DECREF(result); goto noproc; }
+ return result;
+}
+INTERN WEAK REF struct task *KCALL
+file_getchild_pid(WEAK struct task *__restrict parent, pid_t pid) {
+ WEAK REF struct task *result;
+ result = pid_namespace_lookup_weak(THIS_NAMESPACE,pid);
+ if (!result) noproc: result = E_PTR(-ESRCH);
+ else if (ATOMIC_READ(result->t_pid.tp_parent) != parent)
+ { TASK_WEAK_DECREF(result); goto noproc; }
+ return result;
+}
+
+INTERN pid_t KCALL
+pid_from_string(char const *__restrict str, size_t str_len) {
+ if (str_len >= 1) {
+   pid_t result; char *textpos;
+#if __SIZEOF_PID_T__ <= __SIZEOF_LONG__
+   result = (pid_t)strtoul(str,&textpos,10);
+#else
+   result = (pid_t)strtoull(str,&textpos,10);
+#endif
+   /* Make sure entire entry name was parsed as a PID (this can't be
+    * left ambiguous, as that would break coherency in dentry caches). */
+   if (textpos == str+str_len) {
+    /* All right. - This is a PID. */
+    return result;
+   }
+ }
+ return -1;
 }
 
 

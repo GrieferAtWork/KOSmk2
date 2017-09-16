@@ -121,6 +121,9 @@ INTERN struct procnode const root_content[] = {
  }},
 };
 
+STATIC_ASSERT(COMPILER_LENOF(root_content) <= PROC_ROOT_NUMNODES);
+
+
 PRIVATE REF struct file *KCALL
 root_fopen(struct inode *__restrict ino,
            struct dentry *__restrict node_ent,
@@ -259,7 +262,7 @@ got_task:
   atomic_rwlock_endread(&ns->pn_lock);
   { struct dirent header; size_t name_avail;
     /* All right! */
-    header.d_ino  = taskpid; /* TODO: (COUNT_OF_CONTENT_NODES + taskpid*MAX_COUNT_OF_PER_PID_NODES) */
+    header.d_ino  = INO_FROM_PID(taskpid);
     header.d_type = DT_DIR;
     name_avail = 0;
     if (bufsize >= offsetof(struct dirent,d_name))
@@ -283,7 +286,7 @@ PRIVATE REF struct inode *KCALL
 root_lookup(struct inode *__restrict dir_node,
             struct dentry *__restrict result_path) {
  struct procnode const *iter; errno_t error;
- REF struct inode *result;
+ REF struct inode *result; pid_t refpid;
  for (iter = root_content;
       iter != COMPILER_ENDOF(root_content); ++iter) {
 #ifdef CONFIG_DEBUG
@@ -313,22 +316,11 @@ root_lookup(struct inode *__restrict dir_node,
   }
  }
  /* Decode a decimals PID. */
- if (result_path->d_name.dn_size >= 1) {
-   pid_t refpid; char *textpos = result_path->d_name.dn_name;
-#if __SIZEOF_PID_T__ <= __SIZEOF_LONG__
-   refpid = (pid_t)strtoul(textpos,&textpos,10);
-#else
-   refpid = (pid_t)strtoull(textpos,&textpos,10);
-#endif
-   /* Make sure entire entry name was parsed as a PID (this can't be
-    * left ambiguous, as that would break coherency in dentry caches). */
-   if (textpos == result_path->d_name.dn_name+
-                  result_path->d_name.dn_size) {
-    WEAK REF struct task *tsk;
-    /* All right. - This is a PID. */
-    tsk = pid_namespace_lookup_weak(THIS_NAMESPACE,refpid);
-    if (tsk) return (struct inode *)pidnode_new_inherited(dir_node->i_super,tsk);
-   }
+ refpid = pid_from_string(result_path->d_name.dn_name,
+                          result_path->d_name.dn_size);
+ if (refpid >= 0) {
+  WEAK REF struct task *tsk = pid_namespace_lookup_weak(THIS_NAMESPACE,refpid);
+  if (tsk) return (struct inode *)pidnode_new_inherited(dir_node->i_super,tsk);
  }
  return E_PTR(-ENOENT);
 }

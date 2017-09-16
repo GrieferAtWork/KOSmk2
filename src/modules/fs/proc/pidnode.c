@@ -50,9 +50,9 @@
 #include <linker/module.h>
 
 DECL_BEGIN
+PRIVATE void KCALL pidnode_fini(struct inode *__restrict ino);
 
 #define SELF container_of(ino,struct pidnode,p_node)
-
 PRIVATE SAFE ssize_t KCALL
 pid_fd_readlink(struct pidnode *__restrict self,
                 USER char *__restrict buf,
@@ -141,20 +141,141 @@ err:  textfile_delete(result);
  return E_PTR(error);
 }
 
+#define SELF container_of(fp,struct taskfile,tf_file)
+PRIVATE ssize_t KCALL
+taskfile_readdir(struct file *__restrict fp,
+                 USER struct dirent *buf,
+                 size_t bufsize, rdmode_t mode,
+                 bool read_children) {
+ struct dirent header; size_t name_avail;
+ ssize_t result; REF struct task *leader,*member;
+ pid_t taskpid;
+ leader = SELF->tf_leader;
+ if unlikely(!TASK_TRYINCREF(leader)) return 0;
+ name_avail = SELF->tf_grpidx;
+ atomic_rwlock_read(read_children ? &leader->t_pid.tp_grouplock
+                                  : &leader->t_pid.tp_childlock);
+ member = read_children ? leader->t_pid.tp_children : leader->t_pid.tp_group;
+ while (name_avail-- && member) {
+  member = read_children ? member->t_pid.tp_siblings.le_next
+                         : member->t_pid.tp_grplink.le_next;
+ }
+ if (member) {
+  taskpid = member->t_pid.tp_ids[PIDTYPE_PID].tl_ns == THIS_NAMESPACE
+          ? member->t_pid.tp_ids[PIDTYPE_PID].tl_pid : 0;
+ }
+ atomic_rwlock_endread(read_children ? &leader->t_pid.tp_grouplock
+                                     : &leader->t_pid.tp_childlock);
+ TASK_DECREF(leader);
+ if (!member) return 0;
+ header.d_ino  = INO_FROM_PID(taskpid);
+ header.d_type = DT_DIR;
+ name_avail    = 0;
+ if (bufsize >= offsetof(struct dirent,d_name))
+     name_avail = bufsize-offsetof(struct dirent,d_name);
+ result = snprintf_user(buf->d_name,name_avail,PID_FMT,taskpid)*sizeof(char);
+ if (bufsize >= offsetof(struct dirent,d_name)) {
+  header.d_namlen = result-1;
+  if (copy_to_user(buf,&header,offsetof(struct dirent,d_name)))
+      return -EFAULT;
+ }
+ result += offsetof(struct dirent,d_name);
+ if (FILE_READDIR_SHOULDINC(mode,bufsize,result))
+   ++SELF->tf_grpidx;
+ return result;
+}
+PRIVATE void KCALL
+taskfile_fclose(struct inode *__restrict ino,
+                struct file *__restrict fp) {
+ /* Drop the weak reference from the task. */
+ TASK_WEAK_DECREF(SELF->tf_leader);
+}
+#undef SELF
+
+#define SELF container_of(ino,struct pidnode,p_node)
+PRIVATE REF struct file *KCALL
+taskfile_fopen(struct inode *__restrict ino,
+               struct dentry *__restrict node_ent,
+               oflag_t oflags) {
+ /* Create a new file descriptor for /proc/PID/task or /proc/PID/children */
+ REF struct taskfile *result;
+ result = (REF struct taskfile *)file_new(sizeof(struct taskfile));
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ /* Store a weak reference to the task being enumerated. */
+ result->tf_leader = SELF->p_task;
+ TASK_WEAK_INCREF(result->tf_leader);
+ file_setup(&result->tf_file,ino,node_ent,oflags);
+ return &result->tf_file;
+}
+#undef SELF
+
+PRIVATE ssize_t KCALL
+pid_task_readdir(struct file *__restrict fp,
+                 USER struct dirent *buf,
+                 size_t bufsize, rdmode_t mode) {
+ return taskfile_readdir(fp,buf,bufsize,mode,false);
+}
+PRIVATE ssize_t KCALL
+pid_children_readdir(struct file *__restrict fp,
+                     USER struct dirent *buf,
+                     size_t bufsize, rdmode_t mode) {
+ return taskfile_readdir(fp,buf,bufsize,mode,true);
+}
+
+#define SELF container_of(dir_node,struct pidnode,p_node)
+PRIVATE REF struct inode *KCALL
+pid_task_lookup(struct inode *__restrict dir_node,
+                struct dentry *__restrict result_path) {
+ pid_t refpid = pid_from_string(result_path->d_name.dn_name,
+                                result_path->d_name.dn_size);
+ if (refpid >= 0) {
+  WEAK REF struct task *tsk = file_gettask_pid(SELF->p_task,refpid);
+  if (tsk) return (struct inode *)pidnode_new_inherited(dir_node->i_super,tsk);
+ }
+ return E_PTR(-ENOENT);
+}
+PRIVATE REF struct inode *KCALL
+pid_child_lookup(struct inode *__restrict dir_node,
+                 struct dentry *__restrict result_path) {
+ pid_t refpid = pid_from_string(result_path->d_name.dn_name,
+                                result_path->d_name.dn_size);
+ if (refpid >= 0) {
+  WEAK REF struct task *tsk = file_getchild_pid(SELF->p_task,refpid);
+  if (tsk) return (struct inode *)pidnode_new_inherited(dir_node->i_super,tsk);
+ }
+ return E_PTR(-ENOENT);
+}
+#undef SELF
+
+
+
+
 INTERN struct procnode const pid_content[] = {
  {0,S_IFLNK|0444,/*[[[deemon DNAM("cwd"); ]]]*/{"cwd",3,H(6584163u,6584163llu)}/*[[[end]]]*/,
- { .ino_readlink = &pid_cwd_readlink,
+ { .ino_fini = &pidnode_fini, .ino_readlink = &pid_cwd_readlink,
  }},
  {1,S_IFLNK|0444,/*[[[deemon DNAM("root"); ]]]*/{"root",4,H(401271554u,1953460082llu)}/*[[[end]]]*/,
- { .ino_readlink = &pid_root_readlink,
+ { .ino_fini = &pidnode_fini, .ino_readlink = &pid_root_readlink,
  }},
  {2,S_IFLNK|0444,/*[[[deemon DNAM("exe"); ]]]*/{"exe",3,H(6649957u,6649957llu)}/*[[[end]]]*/,
- { .ino_readlink = &pid_exe_readlink,
+ { .ino_fini = &pidnode_fini, .ino_readlink = &pid_exe_readlink,
  }},
- {3,S_IFREG|0444,/*[[[deemon DNAM("maps"); ]]]*/{"maps",4,H(250834133u,1936744813llu)}/*[[[end]]]*/,
- { .ino_fopen = &maps_fopen, TEXTFILE_OPS_INIT
+ {3,S_IFDIR|0555,/*[[[deemon DNAM("task"); ]]]*/{"task",4,H(3339611412u,1802723700llu)}/*[[[end]]]*/,
+ { .ino_fini = &pidnode_fini, .f_readdir = &pid_task_readdir,
+   .ino_fopen = &taskfile_fopen, .ino_fclose = &taskfile_fclose,
+   .ino_lookup = &pid_task_lookup,
+ }},
+ {4,S_IFDIR|0555,/*[[[deemon DNAM("children"); ]]]*/{"children",8,H(787156183u,16253778611020278651llu)}/*[[[end]]]*/,
+ { .ino_fini = &pidnode_fini, .f_readdir = &pid_children_readdir,
+   .ino_fopen = &taskfile_fopen, .ino_fclose = &taskfile_fclose,
+   .ino_lookup = &pid_child_lookup,
+ }},
+ {5,S_IFREG|0444,/*[[[deemon DNAM("maps"); ]]]*/{"maps",4,H(250834133u,1936744813llu)}/*[[[end]]]*/,
+ { .ino_fini = &pidnode_fini, .ino_fopen = &maps_fopen, TEXTFILE_OPS_INIT
  }},
 };
+STATIC_ASSERT(COMPILER_LENOF(pid_content) <= PROC_ROOT_NUMNODES);
+
 
 PRIVATE REF struct file *KCALL
 pidnode_fopen(struct inode *__restrict ino,
@@ -178,7 +299,11 @@ pidnode_readdir(struct file *__restrict fp,
  if (SELF->p_dirx >= COMPILER_LENOF(pid_content))
      return 0; /* End of directory */
  node = &pid_content[SELF->p_dirx];
- header.d_ino    = node->n_ino; /* TODO: + pid*MAX_COUNT_OF_PER_PID_NODES; */
+ { WEAK struct task *t = container_of(fp->f_node,struct pidnode,p_node)->p_task;
+   pid_t pid = t->t_pid.tp_ids[PIDTYPE_PID].tl_ns == THIS_NAMESPACE
+             ? t->t_pid.tp_ids[PIDTYPE_PID].tl_pid : 0;
+   header.d_ino = node->n_ino+pid*PROC_PID_NUMNODES;
+ }
  header.d_namlen = node->n_name.dn_size;
  header.d_type   = IFTODT(node->n_mode);
  result = offsetof(struct dirent,d_name)+(1+node->n_name.dn_size)*sizeof(char);
@@ -227,7 +352,11 @@ pidnode_lookup(struct inode *__restrict dir_node,
    result->p_task = SELF->p_task;
    CHECK_HOST_DOBJ(result->p_task);
    TASK_WEAK_INCREF(result->p_task);
-   result->p_node.i_ino = iter->n_ino;
+   { WEAK struct task *t = result->p_task;
+     pid_t pid = t->t_pid.tp_ids[PIDTYPE_PID].tl_ns == THIS_NAMESPACE
+               ? t->t_pid.tp_ids[PIDTYPE_PID].tl_pid : 0;
+     result->p_node.i_ino = iter->n_ino+pid*PROC_PID_NUMNODES;
+   }
    result->p_node.i_ops = &iter->n_ops;
    result->p_node.i_attr.ia_mode = iter->n_mode;
    result->p_node.i_attr_disk.ia_mode = iter->n_mode;
@@ -263,6 +392,8 @@ pidnode_new_inherited(struct superblock *__restrict procfs,
  result = (REF struct pidnode *)inode_new(sizeof(struct pidnode));
  if unlikely(!result) { result = E_PTR(-ENOMEM); goto err; }
  /* Initialize basic node members. */
+ result->p_node.i_ino  = INO_FROM_PID(t->t_pid.tp_ids[PIDTYPE_PID].tl_ns == THIS_NAMESPACE
+                                    ? t->t_pid.tp_ids[PIDTYPE_PID].tl_pid : 0);
  result->p_node.__i_nlink           = 1;
  result->p_node.i_ops               = &pidops;
  result->p_node.i_attr.ia_mode      = S_IFDIR|0555;

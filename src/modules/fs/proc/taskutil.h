@@ -20,6 +20,7 @@
 #define GUARD_MODULES_FS_PROC_TASKUTIL_H 1
 
 #include <hybrid/compiler.h>
+#include <hybrid/types.h>
 
 DECL_BEGIN
 
@@ -27,12 +28,25 @@ struct fdman;
 struct mman;
 struct task;
 
+#define PROC_ROOT_NUMNODES 256 /* Max amount of misc. nodes under /proc */
+#define PROC_PID_NUMNODES  256 /* Max amount of nodes under /proc/PID */
+
 /* General purpose utilities to safely load various parts of a given
  * task, that would otherwise be considered 'PRIVATE(THIS_TASK)'.
  * NOTE: These functions all return E_ISERR(*) upon error; NULL is never returned. */
 INTDEF REF struct fdman *KCALL task_getfdman(WEAK struct task *__restrict t);
 INTDEF REF struct mman *KCALL task_getmman(WEAK struct task *__restrict t);
 INTDEF REF struct instance *KCALL mman_getexe(struct mman *__restrict mm);
+
+/* Get a child/group member of a given task, given its PID. */
+INTDEF WEAK REF struct task *KCALL file_gettask_pid(WEAK struct task *__restrict leader, pid_t pid);
+INTDEF WEAK REF struct task *KCALL file_getchild_pid(WEAK struct task *__restrict parent, pid_t pid);
+
+/* Unambiguously parse the given string as a PID, as seen in /proc.
+ * @return: -1: The given string isn't a PID. */
+INTDEF pid_t KCALL pid_from_string(char const *__restrict str, size_t str_len);
+
+#define INO_FROM_PID(pid) (PROC_ROOT_NUMNODES+(pid)*PROC_PID_NUMNODES)
 
 
 DECL_END

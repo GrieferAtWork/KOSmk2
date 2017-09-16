@@ -117,6 +117,12 @@ pidnode_new_inherited(struct superblock *__restrict procfs,
 
 
 
+struct taskfile {
+ /* Open file descriptor within the /proc/PID/task and /proc/PID/children directory. */
+ struct file           tf_file;   /*< Underlying file descriptor. */
+ WEAK REF struct task *tf_leader; /*< [1..1] Leader task that is being enumerated. */
+ size_t                tf_grpidx; /*< [lock(rf_file->f_lock)] Current index within the task's group-chain. */
+};
 
 struct rootfile {
  /* Open file descriptor within the /proc root directory. */
