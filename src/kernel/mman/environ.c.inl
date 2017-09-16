@@ -132,7 +132,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
   char *str = ATOMIC_READ(*iter);
   char *str_end = strend_user(str);
   if (!str_end) goto efault;
-#if 0
+#if 1
   syslog(LOG_DEBUG,"Add argument: %p...%p (%Iu bytes)\n",
          str,str_end,(size_t)((str_end-str)+1));
 #endif
@@ -298,8 +298,10 @@ done:
  
  /* Update environment tracking variables. */
  self->m_envsize = new_total_pages;
+ self->m_envargc = head_argc+argc+tail_argc;
  self->m_envenvc = envc;
  self->m_envetxt = env_text;
+ self->m_envatxt = arg_text;
  return result;
 efault: return E_PTR(-EFAULT);
 enomem: return E_PTR(-ENOMEM);

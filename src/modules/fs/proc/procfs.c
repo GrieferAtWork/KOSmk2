@@ -46,6 +46,8 @@
 #include <stdlib.h>
 #include <fs/textfile.h>
 #include <kernel/boot.h>
+#include <fs/memfile.h>
+#include <kernel/mman.h>
 
 DECL_BEGIN
 
@@ -108,6 +110,14 @@ cmdline_fopen(struct inode *__restrict ino,
                                               kernel_commandline.cl_size);
 }
 
+FUNDEF REF struct file *KCALL
+kcore_fopen(struct inode *__restrict node,
+            struct dentry *__restrict dent, oflag_t oflags) {
+ return make_memfile(node,dent,oflags,&mman_kernel,
+                    (uintptr_t)0,(uintptr_t)-1);
+}
+
+
 /* Misc. contents of the /proc root directory. */
 INTERN struct procnode const root_content[] = {
  {0,S_IFLNK|0444,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
@@ -118,6 +128,9 @@ INTERN struct procnode const root_content[] = {
  }},
  {2,S_IFREG|0444,/*[[[deemon DNAM("cmdline"); ]]]*/{"cmdline",7,H(3488433892u,28550371716918627llu)}/*[[[end]]]*/,
  { .ino_fopen = &cmdline_fopen, TEXTFILE_OPS_INIT
+ }},
+ {3,S_IFREG|0400,/*[[[deemon DNAM("kcore"); ]]]*/{"kcore",5,H(99254056u,435711599467llu)}/*[[[end]]]*/,
+ { .ino_fopen = &kcore_fopen, MEMFILE_OPS_INIT
  }},
 };
 

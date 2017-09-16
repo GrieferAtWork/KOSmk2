@@ -48,6 +48,8 @@
 #include <sys/syslog.h>
 #include <sched/paging.h>
 #include <linker/module.h>
+#include <fs/memfile.h>
+#include <kos/environ.h>
 
 DECL_BEGIN
 PRIVATE void KCALL pidnode_fini(struct inode *__restrict ino);
@@ -107,7 +109,6 @@ pid_exe_readlink(struct inode *__restrict ino,
  INSTANCE_DECREF(inst);
  return result;
 }
-#undef SELF
 PRIVATE REF struct file *KCALL
 maps_fopen(struct inode *__restrict ino,
            struct dentry *__restrict node_ent,
@@ -116,7 +117,7 @@ maps_fopen(struct inode *__restrict ino,
  REF struct mman *mm; errno_t error;
  result = textfile_new();
  if unlikely(!result) return E_PTR(-ENOMEM);
- mm = task_getmman(((struct pidnode *)ino)->p_task);
+ mm = task_getmman(SELF->p_task);
  if (E_ISERR(mm)) { error = E_GTERR(mm); goto err; }
  /* NOTE: Must acquire a write-lock because this code may not be locked in-core. */
  error = mman_write(mm);
@@ -140,6 +141,39 @@ err2: MMAN_DECREF(mm);
 err:  textfile_delete(result);
  return E_PTR(error);
 }
+FUNDEF REF struct file *KCALL
+pid_cmdline_fopen(struct inode *__restrict ino,
+                  struct dentry *__restrict dent,
+                  oflag_t oflags) {
+ REF struct mman *mm = task_getmman(SELF->p_task);
+ REF struct file *result; USER char *argtxt; size_t argsiz;
+ if unlikely(E_ISERR(mm)) return E_PTR(E_GTERR(mm));
+ argtxt = MMAN_ENVIRON_ARGTXT(mm);
+ argsiz = MMAN_ENVIRON_ARGSIZ(mm);
+ if (!argsiz) argtxt = (USER char *)1;
+ result = make_memfile(ino,dent,oflags,mm,
+                      (uintptr_t)argtxt,
+                      (uintptr_t)argtxt+(argsiz-1));
+ MMAN_DECREF(mm);
+ return result;
+}
+FUNDEF REF struct file *KCALL
+pid_environ_fopen(struct inode *__restrict ino,
+                  struct dentry *__restrict dent,
+                  oflag_t oflags) {
+ REF struct mman *mm = task_getmman(SELF->p_task);
+ REF struct file *result; USER char *envtxt; size_t envsiz;
+ if unlikely(E_ISERR(mm)) return E_PTR(E_GTERR(mm));
+ envtxt = MMAN_ENVIRON_ENVTXT(mm);
+ envsiz = MMAN_ENVIRON_ENVSIZ(mm);
+ if (!envsiz) envtxt = (USER char *)1;
+ result = make_memfile(ino,dent,oflags,mm,
+                      (uintptr_t)envtxt,
+                      (uintptr_t)envtxt+(envsiz-1));
+ MMAN_DECREF(mm);
+ return result;
+}
+#undef SELF
 
 #define SELF container_of(fp,struct taskfile,tf_file)
 PRIVATE ssize_t KCALL
@@ -249,31 +283,41 @@ pid_child_lookup(struct inode *__restrict dir_node,
 
 
 
+enum{__PID_FIRST_INO=(__COUNTER__+1)};
+#define MKINO  (__COUNTER__-__PID_FIRST_INO)
 
 INTERN struct procnode const pid_content[] = {
- {0,S_IFLNK|0444,/*[[[deemon DNAM("cwd"); ]]]*/{"cwd",3,H(6584163u,6584163llu)}/*[[[end]]]*/,
+ {MKINO,S_IFLNK|0444,/*[[[deemon DNAM("cwd"); ]]]*/{"cwd",3,H(6584163u,6584163llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .ino_readlink = &pid_cwd_readlink,
  }},
- {1,S_IFLNK|0444,/*[[[deemon DNAM("root"); ]]]*/{"root",4,H(401271554u,1953460082llu)}/*[[[end]]]*/,
+ {MKINO,S_IFLNK|0444,/*[[[deemon DNAM("root"); ]]]*/{"root",4,H(401271554u,1953460082llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .ino_readlink = &pid_root_readlink,
  }},
- {2,S_IFLNK|0444,/*[[[deemon DNAM("exe"); ]]]*/{"exe",3,H(6649957u,6649957llu)}/*[[[end]]]*/,
+ {MKINO,S_IFLNK|0444,/*[[[deemon DNAM("exe"); ]]]*/{"exe",3,H(6649957u,6649957llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .ino_readlink = &pid_exe_readlink,
  }},
- {3,S_IFDIR|0555,/*[[[deemon DNAM("task"); ]]]*/{"task",4,H(3339611412u,1802723700llu)}/*[[[end]]]*/,
+ {MKINO,S_IFREG|0444,/*[[[deemon DNAM("cmdline"); ]]]*/{"cmdline",7,H(3488433892u,28550371716918627llu)}/*[[[end]]]*/,
+ { .ino_fopen = &pid_cmdline_fopen, MEMFILE_OPS_INIT
+ }},
+ {MKINO,S_IFREG|0444,/*[[[deemon DNAM("environ"); ]]]*/{"environ",7,H(3046658303u,31084784624496229llu)}/*[[[end]]]*/,
+ { .ino_fopen = &pid_environ_fopen, MEMFILE_OPS_INIT
+ }},
+ {MKINO,S_IFDIR|0555,/*[[[deemon DNAM("task"); ]]]*/{"task",4,H(3339611412u,1802723700llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .f_readdir = &pid_task_readdir,
    .ino_fopen = &taskfile_fopen, .ino_fclose = &taskfile_fclose,
    .ino_lookup = &pid_task_lookup,
  }},
- {4,S_IFDIR|0555,/*[[[deemon DNAM("children"); ]]]*/{"children",8,H(787156183u,16253778611020278651llu)}/*[[[end]]]*/,
+ {MKINO,S_IFDIR|0555,/*[[[deemon DNAM("children"); ]]]*/{"children",8,H(787156183u,16253778611020278651llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .f_readdir = &pid_children_readdir,
    .ino_fopen = &taskfile_fopen, .ino_fclose = &taskfile_fclose,
    .ino_lookup = &pid_child_lookup,
  }},
- {5,S_IFREG|0444,/*[[[deemon DNAM("maps"); ]]]*/{"maps",4,H(250834133u,1936744813llu)}/*[[[end]]]*/,
+ {MKINO,S_IFREG|0444,/*[[[deemon DNAM("maps"); ]]]*/{"maps",4,H(250834133u,1936744813llu)}/*[[[end]]]*/,
  { .ino_fini = &pidnode_fini, .ino_fopen = &maps_fopen, TEXTFILE_OPS_INIT
  }},
 };
+#undef MKINO
+
 STATIC_ASSERT(COMPILER_LENOF(pid_content) <= PROC_ROOT_NUMNODES);
 
 

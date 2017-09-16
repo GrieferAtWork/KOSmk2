@@ -177,4 +177,8 @@ do_reloc:
 
 DECL_END
 
+#ifndef __INTELLISENSE__
+#include "memfile.c.inl"
+#endif
+
 #endif /* !GUARD_KERNEL_FS_TEXTFILE_C */

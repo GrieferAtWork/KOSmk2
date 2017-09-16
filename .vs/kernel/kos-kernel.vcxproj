@@ -17,6 +17,7 @@
     <None Include="..\..\src\kernel\core-modules\fs\fat-readdir.c.inl" />
     <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\canonbuffer.c.inl" />
+    <None Include="..\..\src\kernel\fs\memfile.c.inl" />
     <None Include="..\..\src\kernel\linker\ksym.S" />
     <None Include="..\..\src\kernel\memory\malloc-realign.c.inl" />
     <None Include="..\..\src\kernel\memory\memory-free.c.inl" />
@@ -119,6 +120,7 @@
     <ClInclude Include="..\..\src\include\fs\fs.h" />
     <ClInclude Include="..\..\src\include\fs\inode.h" />
     <ClInclude Include="..\..\src\include\fs\iobuffer.h" />
+    <ClInclude Include="..\..\src\include\fs\memfile.h" />
     <ClInclude Include="..\..\src\include\fs\pipe.h" />
     <ClInclude Include="..\..\src\include\fs\pty.h" />
     <ClInclude Include="..\..\src\include\fs\superblock.h" />

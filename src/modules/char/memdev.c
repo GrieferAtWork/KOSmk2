@@ -35,6 +35,8 @@
 #include <sys/io.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <kernel/mman.h>
+#include <fs/memfile.h>
 
 /* Miscellaneous character devices, such as /dev/null, /dev/random, etc. */
 
@@ -123,17 +125,20 @@ err:
 |*                                  *|
 +************************************/
 
-/* Read/Write, seekable memory devices. */
-struct memfile {
- struct file f_file; /*< Underlying file stream. */
- uintptr_t   f_addr; /*< Current seek position (aka. next read/write address). */
-};
-
 INTERN struct inodeops const md_mem = {
     /* TODO */
 };
+
+FUNDEF REF struct file *KCALL
+kmem_fopen(struct inode *__restrict node,
+           struct dentry *__restrict dent, oflag_t oflags) {
+ return make_memfile(node,dent,oflags,&mman_kernel,
+                    (uintptr_t)0,(uintptr_t)-1);
+}
+
 INTERN struct inodeops const md_kmem = {
-    /* TODO */
+    .ino_fopen = &kmem_fopen,
+    MEMFILE_OPS_INIT
 };
 
 

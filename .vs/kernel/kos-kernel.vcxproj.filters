@@ -53,6 +53,9 @@
     <None Include="..\..\src\kernel\core-modules\fs\fat-mkent.c.inl">
       <Filter>kernel\core-modules\fs</Filter>
     </None>
+    <None Include="..\..\src\kernel\fs\memfile.c.inl">
+      <Filter>kernel\fs</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -625,6 +628,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\sched\cred.h">
       <Filter>include\sched</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\memfile.h">
+      <Filter>include\fs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

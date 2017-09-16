@@ -488,14 +488,34 @@ struct mman {
  PAGE_ALIGNED
  VIRT struct envdata *m_environ; /*< [lock(m_lock)][?..?] Address at which environment data was mapped by the kernel. */
  PAGE_ALIGNED size_t  m_envsize; /*< [lock(m_lock)] Size of the environment mapping. (When non-zero, an environment block exists) */
- size_t               m_envenvc; /*< [lock(m_lock)][WEAK(== m_environ->e_envc)] Size of the environment vector (in bytes). */
+ size_t               m_envargc; /*< [lock(m_lock)][WEAK(== m_environ->e_argc)] Size of the argument vector (in elements). */
+ size_t               m_envenvc; /*< [lock(m_lock)][WEAK(== m_environ->e_envc)] Size of the environment vector (in elements). */
  size_t               m_envetxt; /*< [lock(m_lock)][WEAK(== ((uintptr_t)m_environ->e_argv -
                                   *                          (uintptr_t)m_environ->e_envp)-self->m_envenvc)]
                                   *   Total size of the environment text (in bytes). */
+ size_t               m_envatxt; /*< [lock(m_lock)][WEAK(== offsetafter(m_environ,__e_targ) -
+                                  *                            offsetof(m_environ,__e_targ))]
+                                  *   Total size of the argument vector text (in bytes). */
  /* XXX: Tracking information about the total number of mapped bytes? */
 };
 #define MMAN_UHEAP_DEFAULT_ADDR  ((ppage_t)0x40000000) /* Initial value for 'm_uheap' */
 #define MMAN_USTCK_DEFAULT_ADDR  ((ppage_t)0x80000000) /* Initial value for 'm_ustck' */
+
+/* Access to user-space environment argument vectors/text buffers. */
+#define MMAN_ENVIRON_ARGC(self) ((self)->m_envargc)
+#define MMAN_ENVIRON_ARGP(self) ((USER char **)((uintptr_t)(self)->m_environ->__e_envv+ \
+                                     (sizeof(USER char *)*((self)->m_envenvc+1))+ \
+                                                           (self)->m_envetxt))
+#define MMAN_ENVIRON_ENVC(self) ((self)->m_envenvc)
+#define MMAN_ENVIRON_ENVP(self) ((self)->m_environ->__e_envv)
+#define MMAN_ENVIRON_ARGSIZ(self) ((self)->m_envatxt)
+#define MMAN_ENVIRON_ARGTXT(self) ((USER char *)((uintptr_t)(self)->m_environ->__e_envv+ \
+                                      (sizeof(USER char *)*((self)->m_envenvc+1))+ \
+                                      (sizeof(USER char *)*((self)->m_envargc+1))+ \
+                                                            (self)->m_envetxt))
+#define MMAN_ENVIRON_ENVSIZ(self) ((self)->m_envetxt)
+#define MMAN_ENVIRON_ENVTXT(self) ((USER char *)((uintptr_t)(self)->m_environ->__e_envv+ \
+                                      (sizeof(USER char *)*((self)->m_envenvc+1))))
 
 
 #define mman_reading(self)              owner_rwlock_reading(&(self)->m_lock)
