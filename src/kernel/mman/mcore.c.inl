@@ -442,6 +442,7 @@ lock_again:
 
  /* Handle guard regions! */
  if (MREGION_TYPE_ISGUARD(region->mr_type)) {
+#if 1
   REF struct mregion *mapregion;
   ppage_t remap_location,merge_location;
   bool must_relock_guard_region = false;
@@ -599,6 +600,10 @@ err_mapregion:
   }
 
   goto lock_again;
+#else
+  load_bytes = 0;
+  goto end;
+#endif
  }
 
  /* First: Make sure that all parts are loaded. */

@@ -238,6 +238,21 @@ relock_tasks_again:
                                    ? PROT_CLEAN|PROT_WRITE
                                    : PROT_CLEAN);
 endwrite:
+#ifndef CONFIG_NO_VM_EXE
+ if (E_ISOK(error)) {
+  struct instance *old_exe;
+  /* Override the core instance.
+   * NOTE: Keeping a real reference to the instance is OK,
+   *       as it doesn't interfere with munmap() to dlclose().
+   * ALSO: Only driver instances must never be indirectly stored
+   *       as real references, yet this one isn't a driver.
+   */
+  old_exe   = mm->m_exe;
+  mm->m_exe = inst;
+  INSTANCE_INCREF(inst);
+  if (old_exe) INSTANCE_DECREF(old_exe);
+ }
+#endif /* !CONFIG_NO_VM_EXE */
  mman_endwrite(mm);
 
  if (E_ISERR(error)) goto end_too_late;

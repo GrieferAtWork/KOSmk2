@@ -447,7 +447,7 @@ vnode_symlink(struct inode *__restrict dir_node,
 #if VDATA_DYNAMIC != 0
  link->v_data.v_common.v_flag = VDATA_DYNAMIC;
 #endif
- link->v_data.v_size = target_text_size;
+ link->v_data.v_size = target_text_size+1;
  assert((link->v_data.v_text != NULL) ==
         (link->v_data.v_size != 0));
  /* Clone the link name from user-space. */

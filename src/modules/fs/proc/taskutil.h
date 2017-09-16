@@ -32,6 +32,7 @@ struct task;
  * NOTE: These functions all return E_ISERR(*) upon error; NULL is never returned. */
 INTDEF REF struct fdman *KCALL task_getfdman(WEAK struct task *__restrict t);
 INTDEF REF struct mman *KCALL task_getmman(WEAK struct task *__restrict t);
+INTDEF REF struct instance *KCALL mman_getexe(struct mman *__restrict mm);
 
 
 DECL_END

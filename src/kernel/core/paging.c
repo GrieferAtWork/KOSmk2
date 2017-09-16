@@ -883,6 +883,9 @@ PHYS struct mman __mman_kernel_p = {
 #endif
     .m_uheap  = MMAN_UHEAP_DEFAULT_ADDR,
     .m_ustck  = MMAN_USTCK_DEFAULT_ADDR,
+#ifndef CONFIG_NO_VM_EXE
+    .m_exe    = THIS_INSTANCE, /* The kernel is its own executable. - mind=blown; */
+#endif /* !CONFIG_NO_VM_EXE */
 };
 
 GLOBAL_ASM(

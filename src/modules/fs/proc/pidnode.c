@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include <sys/syslog.h>
 #include <sched/paging.h>
+#include <linker/module.h>
 
 DECL_BEGIN
 
@@ -83,6 +84,29 @@ pid_root_readlink(struct inode *__restrict ino,
                   USER char *__restrict buf, size_t bufsize) {
  return pid_fd_readlink(SELF,buf,bufsize,AT_FDROOT);
 }
+PRIVATE SAFE ssize_t KCALL
+pid_exe_readlink(struct inode *__restrict ino,
+                 USER char *__restrict buf, size_t bufsize) {
+ REF struct mman *mm; ssize_t result;
+ REF struct instance *inst;
+ mm = task_getmman(SELF->p_task);
+ if (E_ISERR(mm)) return E_GTERR(mm);
+ inst = mman_getexe(mm);
+ MMAN_DECREF(mm);
+ if (E_ISERR(inst)) return E_GTERR(inst);
+ if (inst == &kernel_instance) {
+  PRIVATE char const kernel_exe[] = "[KERNEL]";
+  /* Special case: The kernel core has no executable. */
+  result = sizeof(kernel_exe);
+  if (copy_to_user(buf,kernel_exe,MIN(bufsize,sizeof(kernel_exe))))
+      result = -EFAULT;
+ } else {
+  /* Simply print the filename of the underlying executable. */
+  result = snprintf_user(buf,bufsize,"%[file]",inst->i_module->m_file);
+ }
+ INSTANCE_DECREF(inst);
+ return result;
+}
 #undef SELF
 PRIVATE REF struct file *KCALL
 maps_fopen(struct inode *__restrict ino,
@@ -94,7 +118,8 @@ maps_fopen(struct inode *__restrict ino,
  if unlikely(!result) return E_PTR(-ENOMEM);
  mm = task_getmman(((struct pidnode *)ino)->p_task);
  if (E_ISERR(mm)) { error = E_GTERR(mm); goto err; }
- error = mman_read(mm);
+ /* NOTE: Must acquire a write-lock because this code may not be locked in-core. */
+ error = mman_write(mm);
  if (E_ISERR(error)) goto err2;
  if (mm == &mman_kernel) {
   struct mman *omm;
@@ -105,7 +130,7 @@ maps_fopen(struct inode *__restrict ino,
   error = mman_print_unlocked(mm,&textfile_printer,result);
  }
  if (E_ISERR(error)) goto err3;
- mman_endread(mm);
+ mman_endwrite(mm);
  MMAN_DECREF(mm);
  textfile_truncate(result);
  file_setup(&result->tf_file,ino,node_ent,oflags);
@@ -123,7 +148,10 @@ INTERN struct procnode const pid_content[] = {
  {1,S_IFLNK|0444,/*[[[deemon DNAM("root"); ]]]*/{"root",4,H(401271554u,1953460082llu)}/*[[[end]]]*/,
  { .ino_readlink = &pid_root_readlink,
  }},
- {2,S_IFREG|0444,/*[[[deemon DNAM("maps"); ]]]*/{"maps",4,H(250834133u,1936744813llu)}/*[[[end]]]*/,
+ {2,S_IFLNK|0444,/*[[[deemon DNAM("exe"); ]]]*/{"exe",3,H(6649957u,6649957llu)}/*[[[end]]]*/,
+ { .ino_readlink = &pid_exe_readlink,
+ }},
+ {3,S_IFREG|0444,/*[[[deemon DNAM("maps"); ]]]*/{"maps",4,H(250834133u,1936744813llu)}/*[[[end]]]*/,
  { .ino_fopen = &maps_fopen, TEXTFILE_OPS_INIT
  }},
 };

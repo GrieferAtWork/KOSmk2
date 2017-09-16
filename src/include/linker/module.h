@@ -583,7 +583,6 @@ DATDEF struct module   __this_module;
 #define THIS_MODULE  (&__this_module)
 
 
-
 /* Load a given module as a new instance in kernel-space,
  * as well as execute module initialization, given
  * additional command line options from 'cmdline'
@@ -696,6 +695,10 @@ FUNDEF SAFE ssize_t KCALL kernel_delmod_m(struct module *__restrict mod, u32 mod
  * >> Called during regular system shutdown to allow
  *    modules to be terminated safely. */
 FUNDEF SAFE void KCALL kernel_unload_all_modules(void);
+
+/* The symbolic module and instance for the kernel core itself. */
+DATDEF struct module   kernel_module;
+DATDEF struct instance kernel_instance;
 
 DECL_END
 

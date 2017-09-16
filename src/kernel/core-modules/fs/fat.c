@@ -478,8 +478,12 @@ fat_readlink(struct inode *__restrict ino,
       goto err_fault;
   read_ok += read_chars;
  }
- /* Make sure to exclude the terminating \0-character. */
- if (read_total) --read_total;
+ if unlikely(!read_total) {
+  /* Make sure never to return ZERO(0). */
+  read_total = sizeof(char);
+  if (bufsize && copy_to_user(buf,"",sizeof(char)))
+      read_total = (size_t)-EFAULT;
+ }
 end: afree(temp);
  return (ssize_t)read_total;
 err_inval: read_total = (size_t)-EINVAL; goto end;

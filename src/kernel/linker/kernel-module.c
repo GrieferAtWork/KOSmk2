@@ -142,6 +142,10 @@ INTERN struct instance __this_instance = {
         .le_pself = &mman_kernel.m_inst,
     },
     .i_branch  = COMPILER_LENOF(__core_segments),
+    /* Reference counter explanation:
+     *  - __this_instance
+     *  - mman_kernel.m_exe
+     */
 #ifdef CONFIG_DEBUG
     .i_weakcnt = 1,
     .i_refcnt  = 2,
@@ -161,6 +165,12 @@ INTERN struct instance __this_instance = {
 #endif
     },
 };
+
+/* Alias the public kernel module/instance symbols with <this>
+ * module/instance (we're currently within the kernel core.) */
+DEFINE_PUBLIC_ALIAS(kernel_module,__this_module);
+DEFINE_PUBLIC_ALIAS(kernel_instance,__this_instance);
+
 
 DECL_END
 

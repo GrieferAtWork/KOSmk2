@@ -2048,10 +2048,13 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
                            PAGE_ALIGNED VIRT uintptr_t start) {
  struct mbranch **plo_branch,*lo_branch;
  struct mbranch **phi_branch,*hi_branch;
+ struct mregion *lo_region,*hi_region;
  ATREE_SEMI_T(VIRT uintptr_t) lo_branch_semi = ATREE_SEMI0(VIRT uintptr_t);
  ATREE_SEMI_T(VIRT uintptr_t) hi_branch_semi = ATREE_SEMI0(VIRT uintptr_t);
  ATREE_LEVEL_T lo_branch_level = ATREE_LEVEL0(VIRT uintptr_t);
  ATREE_LEVEL_T hi_branch_level = ATREE_LEVEL0(VIRT uintptr_t);
+ CHECK_HOST_DOBJ(self);
+ assert(mman_writing(self));
  assert(IS_ALIGNED(start,PAGESIZE));
 
  /* Scan for two different branches at 'start' and 'start-1' */
@@ -2064,22 +2067,82 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
  if (!phi_branch) return false;
  hi_branch = *phi_branch;
  CHECK_HOST_DOBJ(hi_branch);
- assert(lo_branch                   != hi_branch);
- assert(lo_branch->mb_node.a_vmax+1 == hi_branch->mb_node.a_vmin);
- /* Check if basic branch settings such as protection and callbacks match. */
- if (lo_branch->mb_prot    != hi_branch->mb_prot ||
-     lo_branch->mb_notify  != hi_branch->mb_notify ||
+ assert(lo_branch != hi_branch);
+ assert(MBRANCH_END(lo_branch) == MBRANCH_BEGIN(hi_branch));
+ /* Check if basic branch settings such as protection and callbacks match.
+  * HINT: 'mb_closure' is the memory tag, meaning that this also checks for matching tags. */
+ if (lo_branch->mb_prot != hi_branch->mb_prot ||
+     lo_branch->mb_notify != hi_branch->mb_notify ||
      lo_branch->mb_closure != hi_branch->mb_closure)
      return false;
- if (lo_branch->mb_region == hi_branch->mb_region) {
+ lo_region = lo_branch->mb_region;
+ hi_region = lo_branch->mb_region;
+ if (lo_region == hi_region) {
   /* Merge the two branches into one. */
   if (lo_branch->mb_start+MBRANCH_SIZE(lo_branch) !=
       hi_branch->mb_start) return false;
-  /* TODO */
+  /* Simple case: Both branches use the same region.
+   * To accomplish this, we simply delete the hi-branch and extend the lower one. */
+  mbranch_tree_pop_at(phi_branch,hi_branch_semi,hi_branch_level);
+  mbranch_tree_pop_at(plo_branch,lo_branch_semi,lo_branch_level);
+
+  /* Simply update the lo-branch max-pointer to end where the hi-branch used to stop.
+   * NOTE: In doing this, the lo-branch also inherits all parts references from the hi-branch. */
+  lo_branch->mb_node.a_vmax = hi_branch->mb_node.a_vmax;
+
+  syslog(LOG_MEM|LOG_DEBUG,
+         "[MEM] Merging shared region of leafs at %p...%p and %p...%p\n",
+         MBRANCH_MIN(lo_branch),MBRANCH_MAX(lo_branch),
+         MBRANCH_MIN(hi_branch),MBRANCH_MAX(hi_branch));
+
+  /* Unlink and delete the higher-order branch. */
+  LIST_REMOVE(hi_branch,mb_order);
+  kffree(hi_branch,GFP_NOFREQ);
+
+  /* Since now only one branch exists that holds all the part-references,
+   * drop the region-reference previously held by the hi-branch.
+   * NOTE: This can never actually destroy the region, because the
+   *       lo-branch must also be holding a reference. */
+  assert(hi_region->mr_refcnt >= 2);
+  asserte(ATOMIC_DECFETCH(hi_region->mr_refcnt) >= 1);
+
+  /* NOTE: No need to re-map, or update the order list.
+   *    >> The mapped data remains the same, and the
+   *       lo-branch remains at the same location. */
+  mbranch_tree_insert(&self->m_map,lo_branch);
+
   return false;
  }
- /* TODO: Check if the two adjacent regions can be merged into one. */
+ /* Check if the two adjacent regions can be merged into one. */
 
+ /* Branches cannot be merged if the associated region
+  * is special in that it is shared with another VM.
+  * If it is, we must continue to use the old region, whether we like it or not,
+  * as doing another else would break shared memory semantics.
+  * >> Basically, we're going to create a new region that
+  *    encompasses the parts of both the low and high regions,
+  *    meaning that we're going to inherit data from either.
+  * WARNING: This check, while required, introduces a race condition
+  *          that occurs when this VM was sharing memory with another
+  *          process at one point, causing this check to fail, but later
+  *          then that other process died, leaving the first with two
+  *          memory branches that could theoretically be merged, but
+  *          weren't before due to data being shared.
+  *       >> This may sound bad, but you've got to realize that
+  *          merging memory branches in itself is completely optional
+  *          and only serves to optimize performance, lookup time, as
+  *          well as overhead.
+  * The only thing it can affect, is the output of '/proc/PID/maps' */
+ if (lo_region->mr_refcnt > 1 || hi_region->mr_refcnt > 1)
+     return false;
+ /* Make sure both regions are of the same type. */
+ if (lo_region->mr_type != hi_region->mr_type)
+     return false;
+ /* TODO: Check matching initializers only if both regions
+  *       contain unallocated portions within their respective
+  *       mapped parts. */
+
+ /* TODO */
  return false;
 }
 

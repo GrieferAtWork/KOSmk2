@@ -225,7 +225,14 @@ struct inodeops {
   * NOTE: This operator must NOT actually change the contents of 'ino->i_attr_disk'.
   *       Doing so is instead the responsibility of the caller. */
  errno_t (KCALL *ino_setattr)(struct inode *__restrict ino, iattrset_t changed);
- /* @assume(S_ISLNK(inode->i_attr.ia_mode)); */
+ /* Copy the text of a symlink to the given user-space
+  * buffer 'buf', including a terminating \0-character.
+  * >> Upon success, and given a buffer of sufficient size,
+  *    the caller can assume that "buf[return/sizeof(char)-1] == '\0'".
+  * @assume(return != 0);
+  * @assume(S_ISLNK(inode->i_attr.ia_mode));
+  * @return: * :         The amount of required characters (including the terminating \0-character)
+  * @return: E_ISERR(*): Failed to read the link for some reason. */
  ssize_t (KCALL *ino_readlink)(struct inode *__restrict ino,
                                USER char *__restrict buf, size_t bufsize);
  /* An optional operator to generate dynamica stat() information, such as a context-dependent INode size.

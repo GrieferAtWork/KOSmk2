@@ -423,7 +423,7 @@ struct mbranch {
                                  *   NOTE: This pointer holds a reference to '->mr_refcnt', as well as a ranged
                                  *         reference to all parts between 'mb_start...+=MBRANCH_SIZE(self)'. */
  REF mbranch_notity  mb_notify; /*< [const][0..1] When non-NULL, a user-defined function executed upon special events. */
- void               *mb_closure;/*< [const][?..?] The closure argument passed to 'mb_notify' */
+ void               *mb_closure;/*< [const][?..?] The closure argument passed to 'mb_notify' / Memory ~tag~ available in user-space. */
 };
 #define MBRANCH_MIN(self)          ((self)->mb_node.a_vmin)
 #define MBRANCH_MAX(self)          ((self)->mb_node.a_vmax)
@@ -482,6 +482,9 @@ struct mman {
 #endif
  VIRT ppage_t      m_uheap;  /*< [lock(m_lock)] End address of the user-space heap (Used as hint when auto-allocating user-space heap memory). */
  VIRT ppage_t      m_ustck;  /*< [lock(m_lock)] Start address of the user-space heap (Used as hint when auto-allocating user-space stack memory). */
+#ifndef CONFIG_NO_VM_EXE
+ REF struct instance *m_exe; /*< [lock(m_lock)][0..1] The main executable within this VM (aka. the first instance ever mapped; used by '/proc/PID/exe') */
+#endif /* !CONFIG_NO_VM_EXE */
  PAGE_ALIGNED
  VIRT struct envdata *m_environ; /*< [lock(m_lock)][?..?] Address at which environment data was mapped by the kernel. */
  PAGE_ALIGNED size_t  m_envsize; /*< [lock(m_lock)] Size of the environment mapping. (When non-zero, an environment block exists) */

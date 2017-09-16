@@ -241,6 +241,9 @@ enum_content:
 #if 0 /* Only enumerate leaders. */
     if (iter->t_pid.tp_leader == iter)
 #endif
+#if 1 /* Don't enumerate zombies. */
+    if (iter->t_refcnt != 0)
+#endif
     {
      if (!position) goto got_task;
      --position;

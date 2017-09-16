@@ -166,7 +166,12 @@ PUBLIC int (LIBCCALL linkat)(int fromfd, char const *from, int tofd, char const 
 PUBLIC int (LIBCCALL symlinkat)(char const *from, int tofd, char const *to) { return FORWARD_SYSTEM_ERROR(sys_symlinkat(from,tofd,to)); }
 PUBLIC int (LIBCCALL unlinkat)(int fd, char const *name, int flag) { return FORWARD_SYSTEM_ERROR(sys_unlinkat(fd,name,flag)); }
 PUBLIC int (LIBCCALL renameat)(int oldfd, char const *old, int newfd, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_renameat(oldfd,old,newfd,new_)); }
-PUBLIC ssize_t (LIBCCALL readlinkat)(int fd, char const *__restrict path, char *__restrict buf, size_t len) { return FORWARD_SYSTEM_VALUE(sys_readlinkat(fd,path,buf,len)); }
+PUBLIC ssize_t (LIBCCALL readlinkat)(int fd, char const *__restrict path, char *__restrict buf, size_t len) {
+ /* XXX: KOS has different (admittedly better) semantics for readlink().
+  *   >> POSIX readlink() does not append a \0-character.
+  *   >> POSIX readlink() does not return the amount of required bytes, but the amount written. */
+ return FORWARD_SYSTEM_VALUE(sys_readlinkat(fd,path,buf,len));
+}
 PUBLIC int (LIBCCALL removeat)(int fd, char const *filename) { return unlinkat(fd,filename,AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
 PUBLIC int (LIBCCALL remove)(char const *filename) { return removeat(AT_FDCWD,filename); }
 PUBLIC int (LIBCCALL rename)(char const *old, char const *new_) { return renameat(AT_FDCWD,old,AT_FDCWD,new_); }

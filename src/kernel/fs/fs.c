@@ -774,6 +774,7 @@ again:
   buflen = (*link_node->i_ops->ino_readlink)(link_node,mbuf,buflen);
  }
  HOSTMEMORY_END;
+ assert(buflen != 0);
  if (E_ISERR(buflen)) { result = E_PTR(buflen); goto end; }
  if ((size_t)buflen > sizeof(buf)) {
   newbuf = mbuf == buf ? tmalloc(char,buflen) : trealloc(char,mbuf,buflen);
@@ -781,7 +782,11 @@ again:
   mbuf = newbuf;
   goto again;
  }
- result = dentry_xwalk_internal(link_dir,walker,mbuf,(size_t)buflen);
+ assertf(mbuf[buflen/sizeof(char)-1] == '\0',
+         "Broken symlink operator in node within '%[dentry]'",
+         link_dir);
+ result = dentry_xwalk_internal(link_dir,walker,mbuf,
+                               (size_t)(buflen/sizeof(char))-1);
 end:
  if (mbuf != buf) free(mbuf);
  return result;
