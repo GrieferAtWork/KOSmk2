@@ -1176,8 +1176,44 @@ mount_make_superblock(USER char const *dev_name,
                       USER char const *type, u32 flags,
                       USER void const *data) {
  size_t typelen; errno_t error;
- struct fstype *ft = NULL;
  REF struct superblock *result;
+ struct fstype *ft = NULL;
+ if (flags&MS_BIND) {
+  /* Add a secondary mounting point for 'dev_name'. */
+  struct dentry_walker walker;
+  struct dentry *existing_mount;
+  struct dentry *cwd;
+  struct fdman *fdm = THIS_FDMAN;
+
+  FSACCESS_SETUSER(walker.dw_access);
+  walker.dw_nlink    = 0;
+  walker.dw_nofollow = false; /* Erm... Security hole? Linux seems to do the same? */
+
+  result = E_PTR(fdman_read(fdm));
+  if (E_ISERR(result)) return result;
+  cwd            = fdm->fm_cwd;
+  walker.dw_root = fdm->fm_root;
+  DENTRY_INCREF(cwd);
+  DENTRY_INCREF(walker.dw_root);
+  fdman_endread(fdm);
+  existing_mount = dentry_user_xwalk(cwd,&walker,dev_name);
+  DENTRY_DECREF(walker.dw_root);
+  DENTRY_DECREF(cwd);
+  if (E_ISERR(existing_mount))
+      return E_PTR(E_GTERR(existing_mount));
+  result = container_of(dentry_inode(existing_mount),
+                        struct superblock,sb_root);
+  DENTRY_DECREF(existing_mount);
+  if unlikely(!&result->sb_root)
+     return E_PTR(-ENOENT);
+  if unlikely(!INODE_ISSUPERBLOCK(&result->sb_root)) {
+   INODE_DECREF(&result->sb_root);
+   result = E_PTR(-ENODEV); /* Not a superblock. */
+  }
+  /* All right! Let's add a secondary mount for this thing! */
+  return result;
+ }
+
  /* Figure out which filesystem type is requested. */
 
  /* When type is NULL, use automatic filesystem type

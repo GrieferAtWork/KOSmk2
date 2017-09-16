@@ -59,18 +59,17 @@ Chaos|KOS - Even more chaotic that last time.
      - FAT-12/16/32
        - Write support & symlink extension (uses cygwin symlinks)
      - <code>/dev</code>
-     - <code>/proc</code> (Not finished)
+     - <code>/proc</code>
  - Modular kernel design (New features loaded by drivers)
 
 ## Planned (As seen in the old KOS) ##
  - PE binaries/libraries (.exe / .dll)
- - dlopen (Shared libraries)
+ - dlopen (Late loading of shared libraries; exec() is already able to handle them)
  - cmos rtc driver (Currently 'date' uses PIT interrupts and is reset during boot)
  - local exception handling
  - <code>futex()</code>
 
 ## Planned (As not seen in the old KOS) ##
- - <code>/proc</code> (Finished)
  - <code>/sys</code>
  - signal exception handling
  - IP-stack

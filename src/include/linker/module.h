@@ -45,7 +45,7 @@ typedef uintptr_t maddr_t; /* An address relative to 'm_load' */
 
 #define MODSEG_LOAD     0 /* Regular, old segment that should be loaded somewhere. */
 /* TODO: Per-thread segments */
-/* TODO: Per-CPU segments */
+/* TODO: Per-CPU segments? (For drivers?) */
 
 struct mregion;
 struct modseg {
@@ -132,7 +132,8 @@ struct moduleops {
   * @param: closure:      The closure argument forwarded to 'callback'.
   * @return: * :          The sum of all of callback's return values.
   * @return: E_ISERR(*) : The first error code returned by any call to 'callback'. */
- ssize_t (KCALL *o_modfun)(struct instance *__restrict self, modfun_t types, penummodfun callback, void *closure);
+ ssize_t (KCALL *o_modfun)(struct instance *__restrict self, modfun_t types,
+                           penummodfun callback, void *closure);
  /* TODO: Remove these & switch to the new o_modfun-system. */
  void (KCALL *o_exec_init)(struct module *__restrict self, VIRT ppage_t load_addr);
  void (KCALL *o_exec_fini)(struct module *__restrict self, VIRT ppage_t load_addr);
