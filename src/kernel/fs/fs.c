@@ -795,7 +795,8 @@ end:
 PUBLIC REF struct dentry *KCALL
 dentry_walk(struct dentry *__restrict self,
             struct dentry_walker *__restrict walker,
-            struct dentryname const *__restrict name) {
+            struct dentryname const *__restrict name,
+            bool always_follow_links) {
  REF struct dentry *result;
  REF struct inode *ino,*res_ino;
  bool has_write_lock = false;
@@ -855,8 +856,8 @@ reload_subs:
  else atomic_rwlock_endread(&self->d_subs_lock);
  if (E_ISOK(result)) {
   CHECK_HOST_TOBJ(res_ino);
-  if (!walker->dw_nofollow && INODE_ISLNK(res_ino) &&
-       res_ino->i_ops->ino_readlink) {
+  if ((always_follow_links || !walker->dw_nofollow) &&
+       INODE_ISLNK(res_ino) && res_ino->i_ops->ino_readlink) {
    /* Read a symbolic link. */
    struct dentry *link_result;
    dentry_used(result);
@@ -877,7 +878,8 @@ end:
 PUBLIC REF struct dentry *KCALL
 dentry_walk2(struct dentry *__restrict self,
              struct dentry_walker *__restrict walker,
-             struct dentryname const *__restrict name) {
+             struct dentryname const *__restrict name,
+             bool always_follow_links) {
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(walker);
  CHECK_HOST_TOBJ(name);
@@ -905,7 +907,8 @@ return_self:
  syslog(LOG_DEBUG|LOG_FS,"FS::WALK(%$q)\n",
         name->dn_size,name->dn_name);
 #endif
- return dentry_walk(self,walker,name);
+ return dentry_walk(self,walker,name,
+                    always_follow_links);
 }
 
 
@@ -945,7 +948,8 @@ dentry_xwalk_internal(struct dentry *__restrict start,
   if (iter == end || *iter == '/') {
    part.dn_size = (size_t)((char *)iter-part.dn_name);
    dentryname_loadhash(&part);
-   newresult = dentry_walk2(result,walker,&part);
+   /* Always follow links, except within the last path component. */
+   newresult = dentry_walk2(result,walker,&part,iter != end);
    assert(newresult != 0);
    DENTRY_DECREF(result);
    result = newresult;

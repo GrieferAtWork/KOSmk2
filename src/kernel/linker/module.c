@@ -338,7 +338,7 @@ module_open_in_path(HOST char const *__restrict path, size_t pathlen,
    *       like this: '/lib/../../../../hidden/module/file.so'
    *                   ^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    *                SEARCH-PATH   SEARCH-FILE */
-  cwd = dentry_walk(module_file,&walker,filename);
+  cwd = dentry_walk(module_file,&walker,filename,false);
   DENTRY_DECREF(module_file);
   module_file = cwd;
  }
