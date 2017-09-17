@@ -802,7 +802,7 @@ PRIVATE struct fstype tmpfs_type = {
     .f_owner    = THIS_INSTANCE,
     .f_sysid    = BLKSYS_EXPLICIT,
     .f_callback = &tmpfs_callback,
-    .f_flags    = FSTYPE_NODEV|FSTYPE_SINGLETON,
+    .f_flags    = FSTYPE_NODEV,
     .f_closure  = NULL,
     .f_name     = "tmpfs",
 };
