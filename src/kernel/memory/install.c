@@ -41,6 +41,15 @@
 #ifdef CONFIG_NEW_MEMINFO
 DECL_BEGIN
 
+PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
+   [MEMTYPE_RAM   ] = "ram",
+   [MEMTYPE_NVS   ] = "nvs",
+   [MEMTYPE_DEVICE] = "device",
+   [MEMTYPE_KERNEL] = "kernel",
+   [MEMTYPE_KFREE ] = "kfree",
+   [MEMTYPE_BADRAM] = "badram",
+};
+
 
 /* The vector base address and max amount of statically allocated memory info slots. */
 #define STATIC_MEMINFO_VEC (__bootidlestack.s_kerninfo)
@@ -89,17 +98,52 @@ page_addmemory(mzone_t zone, ppage_t start,
 }
 
 
+#define INFOPAGE_MAX  ((PAGESIZE/sizeof(struct meminfo))-1)
+struct infopage {
+ PAGE_ALIGNED
+ struct infopage *ip_next;   /*< [0..1|null(PAGE_ERROR)] Next allocated info page. */
+union{size_t      ip_used;   /*< [<= INFOPAGE_MAX] Amouunt of used meminfo slots. */
+ uintptr_t      __ip_pad0;}; /*< ... */
+ u8             __ip_pad1[sizeof(struct meminfo)-2*sizeof(void *)];
+ struct meminfo   ip_data[INFOPAGE_MAX]; /*< Meminfo slot vector. */
+};
+STATIC_ASSERT(sizeof(struct infopage) <= PAGESIZE);
+
+/* Chain of additional physical memory allocations
+ * used to extend upon memory information slots. */
+PRIVATE ATTR_FREEDATA PAGE_ALIGNED struct infopage *early_extension = PAGE_ERROR;
+
 /* Allocate a new memory information record, for used during early boot. */
 PRIVATE ATTR_FREETEXT
 struct meminfo *KCALL meminfo_early_alloc(void) {
- /* Simple case: Allocate  */
+ /* Simple case: Allocate from the static buffer located
+  * on the IDLE-task stack, which is currently unused. */
  if likely(STATIC_MEMINFO_CNT < STATIC_MEMINFO_MAX)
     return &STATIC_MEMINFO_VEC[STATIC_MEMINFO_CNT++];
- PANIC("TODO: Secondary memory info allocator, using already registered physical memory");
+ if (early_extension == PAGE_ERROR ||
+     early_extension->ip_used >= INFOPAGE_MAX) {
+  struct infopage *newpage;
+  /* Must allocate a new physical data page to extend static meminfo data. */
+  newpage = (struct infopage *)page_malloc(sizeof(struct infopage),
+                                           PAGEATTR_NONE,MZONE_ANY);
+  if unlikely(newpage == PAGE_ERROR)
+     PANIC(FREESTR("Failed to allocate an extend memory information page"));
+  /* Link the new page. */
+  newpage->ip_used = 0;
+  newpage->ip_next = early_extension;
+  early_extension = newpage;
+ }
+ /* Return an entry from the extension buffer. */
+ return &early_extension->ip_data[early_extension->ip_used++];
 }
 
-/*  */
+/* Free all extended memory allocated for early memory info. */
 PRIVATE ATTR_FREETEXT void KCALL meminfo_early_freeall(void) {
+ while unlikely(early_extension != PAGE_ERROR) {
+  struct infopage *next = early_extension->ip_next;
+  page_free((ppage_t)early_extension,sizeof(struct infopage));
+  early_extension = next;
+ }
 }
 
 
@@ -123,9 +167,13 @@ mem_resolve_part_overlap(struct meminfo *__restrict prev,
    next->mi_part_size = next->mi_full_size;
   } else {
    /* Truncate 'prev' */
-   prev->mi_size      = prev->mi_full_size-((uintptr_t)prev->mi_addr-
-                                            (uintptr_t)prev->mi_full_addr);
-   prev->mi_part_size = prev->mi_full_size;
+   assert(prev->mi_size > (uintptr_t)next->mi_part_addr-
+                          (uintptr_t)prev->mi_addr);
+   prev->mi_size = (uintptr_t)next->mi_part_addr-
+                   (uintptr_t)prev->mi_addr;
+   meminfo_load_part_full(prev);
+   assert((uintptr_t)prev->mi_part_addr+prev->mi_part_size <=
+          (uintptr_t)next->mi_part_addr);
   }
  }
  assert((uintptr_t)prev->mi_part_addr+prev->mi_part_size <=
@@ -137,8 +185,8 @@ mem_unusable_address_range(PHYS uintptr_t base,
                            size_t num_bytes,
                            memtype_t type) {
  syslog(LOG_MEM|LOG_WARN,
-        FREESTR("[MEM] Unusable address range %p...%p above 3Gb (TYPE %d)\n"),
-        base,base+num_bytes-1,type);
+        FREESTR("[MEM] Unusable <%s> address range %p...%p above 3Gb\n"),
+        memtype_names[type],base,base+num_bytes-1);
 }
 PRIVATE ATTR_FREETEXT void KCALL
 mem_overlapping_address_range(PHYS uintptr_t base, size_t num_bytes,
@@ -146,8 +194,8 @@ mem_overlapping_address_range(PHYS uintptr_t base, size_t num_bytes,
  /* Don't report overlaps in preserved regions. */
  if (old_type == MEMTYPE_PRESERVE) return;
  syslog(LOG_MEM|LOG_WARN,
-        FREESTR("[MEM] Overlapping address range %p...%p (OLD_TYPE %d; NEW_TYPE %d)\n"),
-        base,base+num_bytes-1,old_type,new_type);
+        FREESTR("[MEM] Overlapping <%s> address range with <%s> at %p...%p\n"),
+        memtype_names[old_type],memtype_names[new_type],base,base+num_bytes-1);
 }
 
 
@@ -220,7 +268,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
    }
 
    /* Make the memory available if it is RAM. */
-   if (type == MEMTYPE_RAM) {
+   if (MEMTYPE_ISUSE(type)) {
     size_t map_size = (uintptr_t)old_full_addr-
                       (uintptr_t)new_full_addr;
     page_addmemory(zone,new_full_addr,map_size);
@@ -249,7 +297,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
   if (prev_end == base && prev->mi_type == type) {
    prev->mi_size += num_bytes;
    meminfo_load_part_full(prev);
-   if (type == MEMTYPE_RAM) {
+   if (MEMTYPE_ISUSE(type)) {
     uintptr_t aligned_base = CEIL_ALIGN(base,PAGESIZE);
     uintptr_t aligned_end  = CEIL_ALIGN(base+num_bytes,PAGESIZE)-aligned_base;
     size_t map_size = aligned_base-aligned_end;
@@ -280,7 +328,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
  }
 
  /* Make the memory available for use by the physical memory allocator. */
- if (type == MEMTYPE_RAM) {
+ if (MEMTYPE_ISUSE(type)) {
   page_addmemory(zone,
                  new_info->mi_full_addr,
                  new_info->mi_full_size);
@@ -347,6 +395,7 @@ PAGE_ALIGNED size_t KCALL mem_unpreserve(void) {
    if (prev != MEMINFO_EARLY_NULL)
        mem_resolve_part_overlap(prev,iter);
    if (iter->mi_type == MEMTYPE_PRESERVE) {
+    STATIC_ASSERT(MEMTYPE_ISUSE(MEMTYPE_RAM));
     /* Make this memory available. */
     page_addmemory(zone,iter->mi_full_addr,iter->mi_full_size);
     result += iter->mi_full_size;
@@ -403,7 +452,9 @@ INTERN ATTR_FREETEXT void KCALL mem_relocate_info(void) {
    piter = (struct meminfo **)&new_info->mi_next;
    ++new_info;
   }
-  /* Terminate the zone chain. */
+  /* Terminate the zone chain.
+   * NOTE: Use NULL this time, as only EARLY meminfo is uses a different NULL-pointer,
+   *       whereas this function is what marks the end of EARLY meminfo! */
   *piter = NULL;
  }
 

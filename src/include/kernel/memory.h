@@ -126,11 +126,17 @@ LOCAL mzone_t KCALL mzone_of(PHYS void *ptr) {
 
 #ifdef CONFIG_NEW_MEMINFO
 #define MEMTYPE_RAM        0 /*< [USE|MAP] Dynamic; aka. RAM memory (mapped and used) */
-#define MEMTYPE_DEVICE     1 /*< [MAP] Device memory (mapped, but not used as RAM) */
-#define MEMTYPE_KERNEL     2 /*< [MAP] Kernel core memory (mapped, not used) */
-#define MEMTYPE_BROKEN     3 /*< Broken memory (Neither mapped, nor used) */
-#define MEMTYPE_KERNELFREE 4 /*< [USE_LATER|MAP] Kernel memory later turned into 'MEMTYPE_RAM' (The '.free' section...) */
+#define MEMTYPE_NVS        1 /*< [MAP] Non-volatile memory (that is: memory that doesn't get wiped after shutdown) */
+#define MEMTYPE_DEVICE     2 /*< [MAP] Device memory (mapped, but not used as RAM) */
+#define MEMTYPE_KERNEL     3 /*< [MAP] Kernel core memory (mapped, not used) */
+#define MEMTYPE_KFREE      4 /*< [USE_LATER|MAP] Kernel memory later turned into 'MEMTYPE_RAM' (The '.free' section...) */
+#define MEMTYPE_BADRAM     5 /*< Broken memory (Neither mapped nor used, but known to be present) */
+#define MEMTYPE_COUNT      6 /*< Amount of known memory types. */
+DATDEF char const memtype_names[MEMTYPE_COUNT][8];
+
+#define MEMTYPE_ISUSE(x) ((x) == MEMTYPE_RAM) /* Should this type of memory be used as generic RAM? */
 #ifdef CONFIG_BUILDING_KERNEL_CORE
+#define MEMTYPE_ISMAP(x) ((x) <= 4 || (x) == 0xffff) /* Should this type of memory be mapped and be accessible. */
 #define MEMTYPE_PRESERVE   0xffff /*< Preserve the original content of this memory until 'mem_unpreserve()' is called,
                                    *  at which point the memory will be transformed into 'MEMTYPE_RAM', and made
                                    *  available to the physical memory allocator. */
@@ -139,36 +145,50 @@ LOCAL mzone_t KCALL mzone_of(PHYS void *ptr) {
  * Afterwards, NULL is used instead. */
 #define MEMINFO_EARLY_NULL ((struct meminfo *)-1)
 #else
-#define MEMINFO_EARLY_NULL   NULL
+/* NOTE: When modules actually see this, all
+ *       'MEMTYPE_PRESERVE' regions have been
+ *       transformed into 'MEMTYPE_RAM'! */
+#define MEMTYPE_ISMAP(x) ((x) <= 4)
 #endif
-#define MEMTYPE_ISUSE(x) ((x) == MEMTYPE_RAM)
-#define MEMTYPE_ISMAP(x) ((x) < 3)
 typedef int memtype_t;
-#endif /* CONFIG_NEW_MEMINFO */
+#else /* CONFIG_NEW_MEMINFO */
+#define MEMINFO_EARLY_NULL   NULL
+#endif /* !CONFIG_NEW_MEMINFO */
 
 struct meminfo {
- PHYS struct meminfo const *mi_next;      /*< [0..1][->mi_addr > mi_addr+mi_size][const] Next info link. */
 #ifdef CONFIG_NEW_MEMINFO
+ /* NOTE: 'mi_part_addr..+=mi_part_size' never overlaps with another info record's range,
+  *        meaning that different info records with sub-page overlapping ranges are truncated. */
+ PHYS struct meminfo const *mi_next;      /*< [0..1][->mi_addr >= mi_addr+mi_size][const] Next info link. */
 union{
  memtype_t                  mi_type;      /*< [const] Memory type (One of 'MEMTYPE_*') */
  uintptr_t                __mi_pad0;      /* ... */
 };
  PHYS void                 *mi_addr;      /*< [const][<= mi_part_addr && >= mi_full_addr] First associated address. */
  size_t                     mi_size;      /*< [const][<= mi_part_size && >= mi_full_size][!0] Amount of bytes part of this region. */
- /* NOTE: 'mi_part_addr..+=mi_part_size' never overlaps with another info record's range,
-  *        meaning that different info records with sub-page overlapping ranges are truncated. */
+ /* Partial, and full page-aligned address ranges of this memory range.
+  * Both serve different roles, in that 'mi_part_*' is the larger range
+  * which refers to what is mapped within the kernel page directory,
+  * whereas 'mi_full_*' refers to what can actually be used by the page
+  * allocator (assuming that the memory region is physical).
+  * >> In addition, the exact ranges, as provided by the bootloader,
+  *    BIOS or the hardware are stored in 'mi_addr...+=mi_size', allowing
+  *    the user to identify the exact address ranges, as would be allowed
+  *    by the actual underlying hardware.
+  */
  PHYS ppage_t               mi_part_addr; /*< [const][== FLOOR_ALIGN(mi_addr,PAGESIZE)][>= mi_full_addr] First partially associated page. */
  PAGE_ALIGNED size_t        mi_part_size; /*< [const][== CEIL_ALIGN(mi_size+(mi_addr-mi_part_addr),PAGESIZE)][>= mi_full_size][!0] Amount of bytes apart of partially, or fully associated pages. */
  PHYS ppage_t               mi_full_addr; /*< [const][== CEIL_ALIGN(mi_addr,PAGESIZE)][<= mi_part_addr] First fully associated page. */
  PAGE_ALIGNED size_t        mi_full_size; /*< [const][== CEIL_ALIGN(mi_addr+mi_size,PAGESIZE)-mi_full_addr][<= mi_part_size][!0] Amount of bytes apart of full pages. */
 #else /* CONFIG_NEW_MEMINFO */
+ PHYS struct meminfo const *mi_next;      /*< [0..1][->mi_addr > mi_addr+mi_size][const] Next info link. */
  ppage_t                    mi_addr;
  size_t                     mi_size;
 #define mi_part_addr        mi_addr
 #define mi_part_size        mi_size
 #define mi_full_addr        mi_addr
 #define mi_full_size        mi_size
-#endif /* CONFIG_NEW_MEMINFO */
+#endif /* !CONFIG_NEW_MEMINFO */
 };
 
 /* [0..1][MZONE_COUNT] Per-zone information about memory available for dynamic allocation.

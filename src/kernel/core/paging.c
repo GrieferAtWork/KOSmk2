@@ -1025,13 +1025,15 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
  PHYS uintptr_t del_begin,del_end;
  del_begin = MZONE_MIN(zone_id);
  iter      = mem_info[zone_id];
- for (;;) {
+ for (;; iter = iter->mi_next) {
   if (iter == MEMINFO_EARLY_NULL)
-      del_end = MZONE_MAX(zone_id)+1;
+   del_end = MZONE_MAX(zone_id)+1;
   else {
-#if 1
-   syslog(LOG_MEM|LOG_DEBUG,FREESTR("[PD] CORE_RANGE(%p...%p) (zone #%d)\n"),
-          iter->mi_part_addr,(uintptr_t)iter->mi_part_addr+iter->mi_part_size-1,zone_id);
+   /* Ignore memory that should not be mapped. */
+   if (!MEMTYPE_ISMAP(iter->mi_type)) continue;
+#if 0
+   syslog(LOG_MEM|LOG_DEBUG,FREESTR("[PD] CORE_RANGE(%p...%p) (type %d, zone #%d)\n"),
+          iter->mi_part_addr,(uintptr_t)iter->mi_part_addr+iter->mi_part_size-1,iter->mi_type,zone_id);
 #endif
    del_end = (uintptr_t)iter->mi_part_addr;
   }
@@ -1047,8 +1049,8 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
    pdir_kernel_unmap(del_begin,del_end-del_begin);
   }
   if (iter == MEMINFO_EARLY_NULL) break;
-  del_begin = (uintptr_t)iter->mi_part_addr+iter->mi_part_size;
-  iter      = iter->mi_next;
+  del_begin = (uintptr_t)iter->mi_part_addr+
+                         iter->mi_part_size;
  }
 }
 

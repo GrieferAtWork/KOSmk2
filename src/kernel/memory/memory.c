@@ -912,8 +912,20 @@ memory_load_mb_mmap(struct mb_mmap_entry *__restrict iter, u32 info_len) {
  mb_memory_map_t *end; size_t result = 0;
  for (end  = (mb_memory_map_t *)((uintptr_t)iter+info_len); iter < end;
       iter = (mb_memory_map_t *)((uintptr_t)&iter->addr+iter->size)) {
+#ifdef CONFIG_NEW_MEMINFO
+  memtype_t type;
+  switch (iter->type) {
+  case MB_MEMORY_AVAILABLE: type = MEMTYPE_RAM; break;
+  case MB_MEMORY_RESERVED:  type = MEMTYPE_DEVICE; break;
+  case MB_MEMORY_NVS:       type = MEMTYPE_NVS; break;
+  case MB_MEMORY_BADRAM:    type = MEMTYPE_BADRAM; break;
+  default: continue; /* Ignore anything we don't recognize. */
+  }
+  result += mem_install64(iter->addr,iter->len,type);
+#else
   if (iter->type != MB_MEMORY_AVAILABLE) continue;
   result += memory_install64(iter->addr,iter->len);
+#endif
  }
  return result;
 }
@@ -925,8 +937,20 @@ memory_load_mb2_mmap(struct mb2_tag_mmap *__restrict info) {
  end  = (mb2_memory_map_t *)((uintptr_t)info+info->size);
  if unlikely(!info->entry_size) goto done;
  for (; iter < end; *(uintptr_t *)&iter += info->entry_size) {
+#ifdef CONFIG_NEW_MEMINFO
+  memtype_t type;
+  switch (iter->type) {
+  case MB2_MEMORY_AVAILABLE: type = MEMTYPE_RAM; break;
+  case MB2_MEMORY_RESERVED:  type = MEMTYPE_DEVICE; break;
+  case MB2_MEMORY_NVS:       type = MEMTYPE_NVS; break;
+  case MB2_MEMORY_BADRAM:    type = MEMTYPE_BADRAM; break;
+  default: continue; /* Ignore anything we don't recognize. */
+  }
+  result += mem_install64(iter->addr,iter->len,type);
+#else
   if (iter->type != MB2_MEMORY_AVAILABLE) continue;
   result += memory_install64(iter->addr,iter->len);
+#endif
  }
 done:
  return result;
