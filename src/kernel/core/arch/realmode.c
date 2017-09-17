@@ -40,6 +40,7 @@
 #include <kernel/mman.h>
 #include <sys/mman.h>
 #include <sched/paging.h>
+#include <sched/cpu.h>
 
 DECL_BEGIN
 
@@ -279,6 +280,12 @@ rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
  do_rm_interrupt(state,intno);
  atomic_rwlock_endwrite(&realmode_intlock);
  device_irq_lost();
+ /* Due to the high chance that a PIT interrupt was
+  * lost, manually preempt if we've allowed to.
+  * >> Prevents soft-locking when the speed of interrupts
+  *    match the speed at which the PIT should be running. */
+ if (PREEMPTION_ENABLED())
+     task_yield();
 }
 
 

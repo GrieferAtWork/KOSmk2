@@ -144,7 +144,7 @@ retry_disambiguation:
 #else
                                                     rw.fd_cluster,
 #endif
-                                                    fat);
+                                                    fat,NULL);
   if (result != NULL) {
    /* Found an existing entry with the same name. */
    if (!(mode&IATTR_EXISTS)) {

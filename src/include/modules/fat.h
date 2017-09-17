@@ -374,16 +374,16 @@ union{
                                      *  [bitset(FAT_METABITS)][const]
                                      *   A bitset used to track the load/change status of 'f_fat_table'.
                                      *   Stored inside this, one can find information about what FAT
-                                     *   sectors have already been loaded, and what have changed.
+                                     *   sectors have already been loaded, and which have changed.
                                      *   NOTE: This bitset contains one entry of 'FAT_METABITS'
                                      *         for each sector within the FAT lookup table.
-                                     *   NOTE: 'f_fat_changed' must be set to 'true' while any changed fat entries exist. */
+                                     *   NOTE: 'f_fat_changed' must be set to 'true' while changed fat entries exist. */
  pgetfat           f_fat_get;       /*< [1..1][const] Read an entry from the FAT table. */
  psetfat           f_fat_set;       /*< [1..1][const] Write an entry to the FAT table. */
  pfatsec           f_fat_sector;    /*< [1..1][const] Return a sector offset from 'f_fat_start' of a given FAT table index.
                                      *               (That is the sector in which that part of the the FAT table is stored on-disk).
                                      *   HINT: The number returned by this may be used to interact with the
-                                     *         'f_fat_meta' bitset-vector, preferably using the 'FAT_META_*' macros. */
+                                     *        'f_fat_meta' bitset-vector, preferably using the 'FAT_META_*' macros. */
 };
 
 

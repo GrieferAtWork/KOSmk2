@@ -487,6 +487,50 @@ end:
 }
 
 PUBLIC errno_t KCALL
+inode_invalidate_data(struct inode *__restrict self,
+                      pos_t start, pos_t size) {
+ struct file *fp; errno_t error = -EOK;
+ size_t delete_later_a = 0;
+ size_t delete_later_c = 0;
+ REF struct file **delete_later_v = NULL;
+ if (!self->i_ops->f_invalidate) return -EOK;
+ atomic_rwlock_read(&self->i_file.i_files_lock);
+ IFILE_FOREACH_OPEN(fp,&self->i_file) {
+  if (FILE_TRYINCREF(fp)) {
+   assert(fp->f_ops == self->i_ops);
+   if (fp->f_flag&FILE_FLAG_LOCKLESS) {
+    (*fp->f_ops->f_invalidate)(fp,start,size);
+   } else {
+    error = rwlock_write(&fp->f_lock);
+    if (E_ISERR(error)) goto end;
+    (*fp->f_ops->f_invalidate)(fp,start,size);
+    rwlock_endwrite(&fp->f_lock);
+   }
+   if unlikely(!ATOMIC_DECFETCH(fp->f_refcnt)) {
+    /* Special handling, because we can't safely delete the file now.
+     * >> Instead, we must track pointers to all files that
+     *    must be deleted, and destroy them later! */
+    if (delete_later_a == delete_later_c) {
+     struct file **temp;
+     if (!delete_later_a) delete_later_a = 1;
+     delete_later_a *= 2;
+     temp = trealloc(struct file *,
+                     delete_later_v,
+                     delete_later_a);
+     if unlikely(!temp) { error = -ENOMEM; goto end; }
+    }
+    delete_later_v[delete_later_c++] = fp;
+   }
+  }
+ }
+end:
+ atomic_rwlock_endread(&self->i_file.i_files_lock);
+ while (delete_later_c) file_destroy(delete_later_v[--delete_later_c]);
+ free(delete_later_v);
+ return error;
+}
+
+PUBLIC errno_t KCALL
 inode_setattr(struct inode *__restrict self,
               struct iattr const *__restrict attr,
               iattrset_t valid) {

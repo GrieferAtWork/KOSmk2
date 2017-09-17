@@ -164,7 +164,10 @@ PUBLIC int (LIBCCALL mkdirat)(int fd, char const *path, mode_t mode) { return FO
 PUBLIC int (LIBCCALL mkfifoat)(int fd, char const *path, mode_t mode) { return mknodat(fd,path,S_IFIFO|mode,0); }
 PUBLIC int (LIBCCALL linkat)(int fromfd, char const *from, int tofd, char const *to, int flags) { return FORWARD_SYSTEM_ERROR(sys_linkat(fromfd,from,tofd,to,flags)); }
 PUBLIC int (LIBCCALL symlinkat)(char const *from, int tofd, char const *to) { return FORWARD_SYSTEM_ERROR(sys_symlinkat(from,tofd,to)); }
-PUBLIC int (LIBCCALL unlinkat)(int fd, char const *name, int flag) { return FORWARD_SYSTEM_ERROR(sys_unlinkat(fd,name,flag)); }
+PUBLIC int (LIBCCALL unlinkat)(int fd, char const *name, int flag) {
+ printf("unlinkat(%d,%q,%x)\n",fd,name,flag);
+ return FORWARD_SYSTEM_ERROR(sys_unlinkat(fd,name,flag));
+}
 PUBLIC int (LIBCCALL renameat)(int oldfd, char const *old, int newfd, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_renameat(oldfd,old,newfd,new_)); }
 PUBLIC ssize_t (LIBCCALL readlinkat)(int fd, char const *__restrict path, char *__restrict buf, size_t len) {
  /* XXX: KOS has different (admittedly better) semantics for readlink().

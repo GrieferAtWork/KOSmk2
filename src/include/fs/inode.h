@@ -192,7 +192,7 @@ struct inodeops {
 
  /* Invalidate cached data within the specified data range, after some other file modified it.
   * NOTE: This function may also be called after a file has been truncated, in order to notify open files of the changes. */
- void (KCALL *f_invalidate)(struct file *__restrict fp, pos_t start, pos_t size);
+ void (KCALL *f_invalidate)(struct file *__restrict fp, pos_t start, pos_t size); /* NOTE: Caller-synchronized:write */
  /* Called just before a given INode is destroyed for the lack of references. */
  void (KCALL *ino_fini)(struct inode *__restrict ino);
  /* Return a reference to the effective INode.
@@ -490,6 +490,13 @@ FUNDEF WUNUSED errno_t KCALL inode_setup(struct inode *__restrict self,
 
 /* Invalidate all caches associated with the given INode. */
 FUNDEF void KCALL inode_invalidate(struct inode *__restrict self);
+
+/* Mark the given file-range as invalid, causing all open file streams to reload it.
+ * @return: -EOK:    Successfully invalidated all open files within the given range.
+ * @return: -ENOMEM: Not enough available memory.
+ * @return: -EINTR:  The calling thread was interrupted. */
+FUNDEF errno_t KCALL inode_invalidate_data(struct inode *__restrict self,
+                                           pos_t start, pos_t size);
 
 struct timespec;
 /* Acquire a read/write locks on a given range within the specified INode.

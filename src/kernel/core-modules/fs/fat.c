@@ -60,7 +60,7 @@ DECL_BEGIN
 #define LFN_ISTRAIL(c) __isctype((c),(_IScntrl))
 #endif
 
-#if defined(CONFIG_DEBUG) && 1
+#if defined(CONFIG_DEBUG) && 0
 #   define FAT_DEBUG(x) x
 #else
 #   define FAT_DEBUG(x) (void)0
@@ -139,6 +139,7 @@ PRIVATE void     KCALL fat_set32(fat_t *__restrict self, fatid_t id, fatid_t val
 
 /* FAT INode/File/Superblock operations. */
 PRIVATE REF struct file *KCALL fat_fopen(struct inode *__restrict ino, struct dentry *__restrict node_ent, oflag_t oflags);
+PRIVATE void KCALL fat_finvalidate(struct file *__restrict fp, pos_t start, pos_t size);
 PRIVATE ssize_t KCALL fat_fread(struct file *__restrict fp, USER void *buf, size_t bufsize);
 PRIVATE ssize_t KCALL fat_fwrite(struct file *__restrict fp, USER void const *buf, size_t bufsize);
 PRIVATE off_t   KCALL fat_fseek(struct file *__restrict fp, off_t off, int whence);
@@ -262,7 +263,7 @@ fat_lookup_memory(struct lookupdata *__restrict lookupdata,
                   struct dentryname const *__restrict name,
                   file_t const *__restrict filev, size_t filec,
                   pos_t filev_pos, cluster_t cluster_id,
-                  fat_t *__restrict fatfs);
+                  fat_t *__restrict fatfs, bool *has_used_entries);
 
 /* Trim whitespace at the front and back of 'buf'. */
 PRIVATE void KCALL trimspecstring(char *__restrict buf, size_t size);
@@ -321,26 +322,28 @@ PRIVATE struct inodeops const fatops_reg = {
     .f_pread      = &fat_fpread,
     .f_pwrite     = &fat_fpwrite,
     .f_seek       = &fat_fseek,
+    .f_invalidate = &fat_finvalidate,
     .ino_fopen    = &fat_fopen,
     .ino_setattr  = &fat_setattr,
     .ino_readlink = &fat_readlink,
 };
 PRIVATE struct inodeops const fatops_dir = {
-    .f_read      = &fat_fread,
-    .f_write     = &fat_fwrite,
-    .f_pread     = &fat_fpread,
-    .f_pwrite    = &fat_fpwrite,
-    .f_seek      = &fat_fseek,
-    .f_readdir   = &fat_freaddir,
-    .ino_fopen   = &fat_fopen,
-    .ino_setattr = &fat_setattr,
-    .ino_lookup  = &fat_lookup,
-    .ino_mkreg   = &fat_mkreg,
-    .ino_symlink = &fat_symlink,
-    .ino_mkdir   = &fat_mkdir,
-    .ino_remove  = &fat_remove,
-    .ino_rename  = &fat_rename,
-    .ino_stat    = &fat_stat_dir,
+    .f_read       = &fat_fread,
+    .f_write      = &fat_fwrite,
+    .f_pread      = &fat_fpread,
+    .f_pwrite     = &fat_fpwrite,
+    .f_seek       = &fat_fseek,
+    .f_readdir    = &fat_freaddir,
+    .f_invalidate = &fat_finvalidate,
+    .ino_fopen    = &fat_fopen,
+    .ino_setattr  = &fat_setattr,
+    .ino_lookup   = &fat_lookup,
+    .ino_mkreg    = &fat_mkreg,
+    .ino_symlink  = &fat_symlink,
+    .ino_mkdir    = &fat_mkdir,
+    .ino_remove   = &fat_remove,
+    .ino_rename   = &fat_rename,
+    .ino_stat     = &fat_stat_dir,
 };
 PRIVATE struct inodeops const fatops_root_16 = {
     .f_read      = &fat16_root_fread,
@@ -359,20 +362,21 @@ PRIVATE struct inodeops const fatops_root_16 = {
     .ino_stat    = &fat_stat_dir,
 };
 PRIVATE struct inodeops const fatops_root_32 = {
-    .f_read      = &fat_fread,
-    .f_write     = &fat_fwrite,
-    .f_pread     = &fat_fpread,
-    .f_pwrite    = &fat_fpwrite,
-    .f_seek      = &fat_fseek,
-    .f_readdir   = &fat_freaddir,
-    .ino_fopen   = &fat_fopen,
-    .ino_lookup  = &fat_lookup,
-    .ino_mkreg   = &fat_mkreg,
-    .ino_symlink = &fat_symlink,
-    .ino_mkdir   = &fat_mkdir,
-    .ino_remove  = &fat_remove,
-    .ino_rename  = &fat_rename,
-    .ino_stat    = &fat_stat_dir,
+    .f_read       = &fat_fread,
+    .f_write      = &fat_fwrite,
+    .f_pread      = &fat_fpread,
+    .f_pwrite     = &fat_fpwrite,
+    .f_seek       = &fat_fseek,
+    .f_readdir    = &fat_freaddir,
+    .f_invalidate = &fat_finvalidate,
+    .ino_fopen    = &fat_fopen,
+    .ino_lookup   = &fat_lookup,
+    .ino_mkreg    = &fat_mkreg,
+    .ino_symlink  = &fat_symlink,
+    .ino_mkdir    = &fat_mkdir,
+    .ino_remove   = &fat_remove,
+    .ino_rename   = &fat_rename,
+    .ino_stat     = &fat_stat_dir,
 };
 PRIVATE struct superblockops const fatops_super = {
     .sb_sync = &fat_fssync,
@@ -567,13 +571,14 @@ fat_lookup_memory(struct lookupdata *__restrict data,
                   struct dentryname const *__restrict name,
                   file_t const *__restrict filev, size_t filec,
                   pos_t filev_pos, cluster_t cluster_id,
-                  fat_t *__restrict fatfs) {
+                  fat_t *__restrict fatfs, bool *has_used_entries) {
  file_t const *iter,*end;
  REF struct fatnode *result;
  end = (iter = filev)+filec;
  for (; iter != end; ++iter) {
   if (iter->f_marker == MARKER_DIREND) return E_PTR(-ENOENT);
   if (iter->f_marker == MARKER_UNUSED) continue;
+  if (has_used_entries) *has_used_entries = true;
   if (iter->f_attr == ATTR_LONGFILENAME) {
    if (!data->ld_entryc) {
     /* Track information about the first entry of an LFN chain. */
@@ -762,8 +767,15 @@ fat_fopen(struct inode *__restrict ino,
  file_setup((struct file *)result,ino,node_ent,oflags);
  return (struct file *)result;
 }
-
 #define FILE ((struct fatfile *)fp)
+PRIVATE void KCALL
+fat_finvalidate(struct file *__restrict fp,
+                pos_t start, pos_t UNUSED(size)) {
+ /* Simply mark the file as invalid. */
+ if (FILE->f_data.fd_pos >= start)
+     FILE->f_data.fd_cls_act = (size_t)-1;
+}
+
 /* Load the correct cluster within the given file when
  * NOTE: In addition, also handles the special case of an empty file
  *       becoming non-empty, when 'fd_cls_act == 0' and 'fd_cluster' is EOF.
@@ -1447,11 +1459,12 @@ PRIVATE REF struct inode *KCALL
 fat_lookup(struct inode *__restrict dir_node,
            struct dentry *__restrict result_path) {
  struct lookupdata data; pos_t begin,end;
- size_t sector_size; byte_t *buffer;
+ size_t sector_size,cluster_num = 0; byte_t *buffer;
  struct dentryname *name = &result_path->d_name;
  REF struct inode *result = NULL;
  fat_t *fat = container_of(dir_node->i_super,fat_t,f_super);
- cluster_t cluster_id;
+ cluster_t cluster_id,next_cluster_id,prev_cluster_id;
+ prev_cluster_id = fat->f_cluster_eof_marker;
  cluster_id  = dir_node->i_data->i_cluster;
  sector_size = fat->f_sectorsize;
  /* Special case: Root-directory references on FAT12/16 filesystems. */
@@ -1465,6 +1478,7 @@ fat_lookup(struct inode *__restrict dir_node,
  result = E_PTR(rwlock_read(&dir_node->i_data->i_dirlock));
  if (E_ISERR(result)) goto done;
  while (cluster_id < fat->f_cluster_eof) {
+  bool has_used_entries = false;
   /* Figure out from where to where this cluster goes. */
   begin  = FAT_SECTORADDR(fat,FAT_CLUSTERSTART(fat,cluster_id));
   end    = begin+fat->f_clustersize;
@@ -1481,14 +1495,73 @@ fat_lookup(struct inode *__restrict dir_node,
        part_size = sector_size;
    result = fat_lookup_memory(&data,name,(file_t *)buffer,
                               part_size/sizeof(file_t),
-                              begin,cluster_id,fat);
+                              begin,cluster_id,fat,
+                             &has_used_entries);
    if (result != NULL) break;
    begin += sector_size;
   }
   if (result != NULL) break;
   /* Go to the next cluster. */
-  result = E_PTR(fat_get(fat,cluster_id,&cluster_id));
+  result = E_PTR(fat_get(fat,cluster_id,&next_cluster_id));
   if (E_ISERR(result)) break;
+  if (!has_used_entries) {
+   errno_t unlink_error;
+   /* Without any used entries, we can unlink this cluster. */
+   if (prev_cluster_id == fat->f_cluster_eof_marker) {
+    dir_node->i_data->i_cluster = next_cluster_id;
+    if (INODE_ISSUPERBLOCK(dir_node)) {
+     /* Save the new root directory starting cluster in the FAT header. */
+     le32 buf = BSWAP_H2LE32(next_cluster_id);
+     assert(fat->f_type == FAT32);
+     HOSTMEMORY_BEGIN {
+      unlink_error = blkdev_writeall(fat->f_super.sb_blkdev,
+                                     0+offsetof(fat32_header_t,f32_root_cluster),
+                                    &buf,sizeof(buf));
+     }
+     HOSTMEMORY_END;
+    } else {
+     /* Save the new directory start in the parent entry. */
+     struct {
+      le16        f_clusterhi;
+      filemtime_t f_mtime;
+      le16        f_clusterlo;
+     } buf;
+     fat_mtime_encode(buf.f_mtime,&dir_node->i_attr_disk.ia_mtime);
+     buf.f_clusterlo = BSWAP_H2LE16((u16)((u32)next_cluster_id >> 16));
+     buf.f_clusterhi = BSWAP_H2LE16((u16)next_cluster_id);
+     HOSTMEMORY_BEGIN {
+      unlink_error = blkdev_writeall(fat->f_super.sb_blkdev,
+                                     dir_node->i_data->i_pos.fp_headpos+
+                                     offsetof(file_t,f_clusterhi),
+                                    &buf,sizeof(buf));
+     }
+     HOSTMEMORY_END;
+    }
+   } else {
+    /* Simply unlink an intermediate cluster
+     * by pointing the previous to the next. */
+    unlink_error = fat_set(fat,prev_cluster_id,next_cluster_id);
+   }
+   /* Now mark the cluster we've just unlinked as unused. */
+   if (E_ISOK(unlink_error)) {
+    /* Invalid the INode to prevent files still pointing at the (now) invalid cluster. */
+    task_nointr();
+    inode_invalidate_data(dir_node,(pos_t)cluster_num*fat->f_clustersize,(pos_t)-1);
+    task_endnointr();
+    unlink_error = fat_set(fat,cluster_id,FAT_CUSTER_UNUSED);
+   }
+   if (E_ISOK(unlink_error))  {
+    syslog(LOG_FS|LOG_INFO,"[FAT] Unlinked unused cluster %I32u\n",cluster_id);
+   } else {
+    syslog(LOG_FS|LOG_ERROR,"[FAT] Failed to unlink unused cluster %I32u: %[errno]\n",
+           cluster_id,-unlink_error);
+   }
+   goto keep_prev_clusterid;
+  }
+  ++cluster_num;
+  prev_cluster_id = cluster_id;
+keep_prev_clusterid:
+  cluster_id = next_cluster_id;
  }
  rwlock_endread(&dir_node->i_data->i_dirlock);
 done:
@@ -1532,7 +1605,7 @@ fat16_root_lookup(struct inode *__restrict dir_node,
       part_size = sector_size;
   result = fat_lookup_memory(&data,name,(file_t *)buffer,
                              part_size/sizeof(file_t),begin,
-                             FAT->f_cluster_eof_marker,FAT);
+                             FAT->f_cluster_eof_marker,FAT,NULL);
   if (result != NULL) break;
   begin += sector_size;
  }
@@ -2789,7 +2862,8 @@ PRIVATE struct fstype fat_fshooks[] = {
 
 PRIVATE MODULE_INIT void KCALL fat_init(void) {
  struct fstype *iter;
- for (iter = fat_fshooks; iter != COMPILER_ENDOF(fat_fshooks); ++iter)
+ for (iter = fat_fshooks;
+      iter != COMPILER_ENDOF(fat_fshooks); ++iter)
       fs_addtype(iter);
 }
 
@@ -2799,7 +2873,6 @@ PRIVATE MODULE_FINI void KCALL fat_fini(void) {
  while (iter-- != fat_fshooks) fs_deltype(iter);
 }
 #endif
-
 
 DECL_END
 
