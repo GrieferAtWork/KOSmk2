@@ -60,7 +60,7 @@ DECL_BEGIN
 #define LFN_ISTRAIL(c) __isctype((c),(_IScntrl))
 #endif
 
-#if defined(CONFIG_DEBUG) && 0
+#if defined(CONFIG_DEBUG) && 1
 #   define FAT_DEBUG(x) x
 #else
 #   define FAT_DEBUG(x) (void)0
@@ -2280,6 +2280,9 @@ fat_savetable_unlocked(fat_t *__restrict self,
  sector_bytes  = (size_t)(n_sectors*self->f_sectorsize);
  sector_start  = self->f_fat_start+fat_sector_index;
  /* Write to all redundant FAT copies. */
+ FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Saving changed meta-sectors %I32u..%I32u of 0..%I32u (%I32u..%I32u)\n",
+                  fat_sector_index,fat_sector_index+n_sectors-1,self->f_sec4fat-1,
+                  sector_start,sector_start+n_sectors-1));
  HOSTMEMORY_BEGIN {
   while (n--) {
    error = blkdev_writeall(self->f_super.sb_blkdev,
@@ -2304,6 +2307,7 @@ fat_synctable(fat_t *__restrict self) {
  }
  error = rwlock_upgrade(&self->f_fat_lock);
  if (error == -ERELOAD) {
+  COMPILER_READ_BARRIER();
   if unlikely(!self->f_fat_changed) {
    rwlock_endwrite(&self->f_fat_lock);
    return -EOK;
@@ -2313,6 +2317,11 @@ fat_synctable(fat_t *__restrict self) {
  if (E_ISERR(error)) return error;
  /* Let's do this! */
  changed_begin = 0;
+#if 0
+ FAT_DEBUG(syslog(LOG_DEBUG,"FAT_META\n%.?[hex]\n",
+                  CEILDIV(self->f_sec4fat,8/FAT_METABITS),
+                  self->f_fat_meta));
+#endif
  for (;;) {
   /* Search for chains for changed FAT entries and save them. */
   while (changed_begin != self->f_sec4fat &&
@@ -2335,7 +2344,6 @@ fat_synctable(fat_t *__restrict self) {
    FAT_META_UTCHNG(self,changed_begin);
    ++changed_begin;
   }
-
  }
  self->f_fat_changed = false;
  rwlock_endwrite(&self->f_fat_lock);
@@ -2671,7 +2679,8 @@ fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
 
  result->f_fat_table = malloc(result->f_fat_size);
  if unlikely(!result->f_fat_table) ERROR(-ENOMEM);
- result->f_fat_meta  = (byte_t *)calloc(1,CEILDIV(result->f_fat_size,result->f_sec4fat*(8/FAT_METABITS)));
+ result->f_fat_meta = (byte_t *)kmalloc(CEILDIV(result->f_sec4fat,8/FAT_METABITS),
+                                        GFP_SHARED|GFP_CALLOC);
  if unlikely(!result->f_fat_meta) { free(result->f_fat_table); ERROR(-ENOMEM); }
 
  /* Register the block-device with the superblock. */

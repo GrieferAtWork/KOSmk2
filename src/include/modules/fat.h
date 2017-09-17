@@ -330,7 +330,7 @@ struct _fat {
  size_t            f_sectorsize;    /*< [const] Size of a sector in bytes. */
  size_t            f_clustersize;   /*< [const][== f_sec4clus*f_sectorsize] Size of a cluster in bytes. */
  sector_t          f_sec4clus;      /*< [const] Amount of sectors per cluster. */
- sector_t          f_sec4fat;       /*< [const] Amount of sectors per FAT tables. */
+ sector_t          f_sec4fat;       /*< [const] Amount of sectors per FAT table. */
  sector_t          f_dat_start;     /*< [const] First data sector. */
  sector_t          f_fat_start;     /*< [const] Sector number of the first FAT. */
  size_t            f_fat_size;      /*< [const][== f_sec4fat*f_sectorsize] Size of a single FAT table. */
@@ -370,7 +370,7 @@ union{
                                      *   NOTE: The amount of entries can be read from 'f_fat_length'.
                                      *   NOTE: The amount of bytes can be read from 'f_fat_size'.
                                      */
- byte_t           *f_fat_meta;      /*< [lock(f_fat_lock)][1..CEILDIV(f_fat_size,f_sec4fat*8/FAT_METABITS)|LOCIAL_LENGTH(f_sec4fat)]
+ byte_t           *f_fat_meta;      /*< [lock(f_fat_lock)][1..CEILDIV(f_sec4fat,8/FAT_METABITS)|LOCIAL_LENGTH(f_sec4fat)]
                                      *  [bitset(FAT_METABITS)][const]
                                      *   A bitset used to track the load/change status of 'f_fat_table'.
                                      *   Stored inside this, one can find information about what FAT

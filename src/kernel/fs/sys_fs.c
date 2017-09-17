@@ -1335,7 +1335,6 @@ SYSCALL_DEFINE5(mount,USER char const *,dev_name,USER char const *,dir_name,
  else {
   /* Mount the new filesystem at this location. */
   // TODO: MS_REMOUNT
-  // TODO: MS_BIND
   // TODO: MS_MOVE
   flags &= ~MS_KERNMOUNT; /* NOPE! */
   result = mount_at(access_dentry,&walker.dw_access,

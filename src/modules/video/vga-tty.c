@@ -43,7 +43,8 @@ STATIC_ASSERT(IS_ALIGNED(VGA_BASEADDR,PAGESIZE));
 
 
 PRIVATE REF struct mregion *KCALL
-vga_mmap(struct file *__restrict fp, pos_t pos, size_t size) {
+vga_mmap(struct file *__restrict UNUSED(fp),
+         pos_t pos, size_t size) {
  /* Allow mapping the VGA display to memory. */
  if (pos != 0 || size != VGA_PAGESIZE)
      return E_PTR(-EINVAL);

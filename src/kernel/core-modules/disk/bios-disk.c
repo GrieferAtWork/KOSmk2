@@ -95,6 +95,12 @@ struct PACKED bd_13h48h_buffer {
 #define LOG_ACCESS(self,block,buf,n_blocks,write) { }
 #endif
 
+#if defined(CONFIG_DEBUG) && 1 /* Ignore I/O Errors */
+#define IO_ERROR (-EOK)
+#else
+#define IO_ERROR (-EIO)
+#endif
+
 PRIVATE ssize_t KCALL
 bd_access_chs(bd_t *__restrict self, blkaddr_t block,
               USER void *__restrict buf, size_t n_blocks, bool write) {
@@ -148,8 +154,10 @@ retry:
       did_retry = true;
       goto retry;
      }
-     result = -EIO;
+#if IO_ERROR != 0
+     result = IO_ERROR;
      break;
+#endif
     }
   }
   /* Copy data to the user-buffer. */
@@ -216,8 +224,12 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
    syslog(LOG_DEBUG,"[BIOS] Disk I/O failure in drive %#.2I8x (Error %#.2I8x; %I8d)\n",
           self->b_drive,c.ah,c.ah);
 #endif
-   result = -EIO;
+#if IO_ERROR == 0
+   buffer->b_seccnt = max_sectors;
+#else
+   result = IO_ERROR;
    break;
+#endif
   }
   if (!buffer->b_seccnt) break; /* Stop if nothing was read/written. */
   if (max_sectors > buffer->b_seccnt)
