@@ -512,8 +512,22 @@ PUBLIC char *(LIBCCALL ctermid)(char *s) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC char *(LIBCCALL cuserid)(char *s) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC int (LIBCCALL lockf)(int fd, int cmd, off32_t len) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL lockf64)(int fd, int cmd, off64_t len) { NOT_IMPLEMENTED(); return -1; }
+#if 0
+PRIVATE struct passwd test = {
+   .pw_name   = "root",
+   //.pw_passwd = "",
+   .pw_uid    = 0,
+   .pw_gid    = 0,
+   //.pw_gecos  = "",
+   .pw_dir    = "/",
+   .pw_shell  = "/bin/sh",
+};
+PUBLIC struct passwd *(LIBCCALL getpwuid)(uid_t uid) { NOT_IMPLEMENTED(); return &test; }
+PUBLIC struct passwd *(LIBCCALL getpwnam)(char const *name) { NOT_IMPLEMENTED(); return &test; }
+#else
 PUBLIC struct passwd *(LIBCCALL getpwuid)(uid_t uid) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC struct passwd *(LIBCCALL getpwnam)(char const *name) { NOT_IMPLEMENTED(); return NULL; }
+#endif
 PUBLIC void (LIBCCALL setpwent)(void) { NOT_IMPLEMENTED(); }
 PUBLIC void (LIBCCALL endpwent)(void) { NOT_IMPLEMENTED(); }
 PUBLIC struct passwd *(LIBCCALL getpwent)(void) { NOT_IMPLEMENTED(); return NULL; }
@@ -541,9 +555,9 @@ PUBLIC int (LIBCCALL initgroups)(char const *user, gid_t group) { NOT_IMPLEMENTE
 PUBLIC FILE *(LIBCCALL setmntent)(char const *file, char const *mode) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC struct mntent *(LIBCCALL getmntent)(FILE *stream) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC struct mntent *(LIBCCALL getmntent_r)(FILE *__restrict stream, struct mntent *__restrict result, char *__restrict buffer, int bufsize) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC int (LIBCCALL addmntent)(FILE *__restrict stream, const struct mntent *__restrict mnt) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC int (LIBCCALL addmntent)(FILE *__restrict stream, struct mntent const *__restrict mnt) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL endmntent)(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC char *(LIBCCALL hasmntopt)(const struct mntent *mnt, char const *opt) { NOT_IMPLEMENTED(); return NULL; }
+PUBLIC char *(LIBCCALL hasmntopt)(struct mntent const *mnt, char const *opt) { NOT_IMPLEMENTED(); return NULL; }
 PUBLIC int (LIBCCALL fnmatch)(char const *pattern, char const *name, int flags) { return FNM_NOSYS; } /* TODO */
 PUBLIC clock_t (LIBCCALL times)(struct tms *buffer) { NOT_IMPLEMENTED(); return -1; }
 PUBLIC int (LIBCCALL getrlimit)(__rlimit_resource_t resource, struct rlimit *rlimits) { return prlimit(getpid(),(enum __rlimit_resource)resource,NULL,rlimits); }

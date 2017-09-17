@@ -52,9 +52,9 @@ typedef __FILE FILE;
 #endif
 __LIBC FILE *(__LIBCCALL setmntent)(char const *__file, char const *__mode);
 __LIBC struct mntent *(__LIBCCALL getmntent)(FILE *__stream);
-__LIBC int (__LIBCCALL addmntent)(FILE *__restrict __stream, const struct mntent *__restrict __mnt);
+__LIBC int (__LIBCCALL addmntent)(FILE *__restrict __stream, struct mntent const *__restrict __mnt);
 __LIBC int (__LIBCCALL endmntent)(FILE *__stream);
-__LIBC char *(__LIBCCALL hasmntopt)(const struct mntent *__mnt, char const *__opt);
+__LIBC char *(__LIBCCALL hasmntopt)(struct mntent const *__mnt, char const *__opt);
 #ifdef __USE_MISC
 __LIBC struct mntent *(__LIBCCALL getmntent_r)(FILE *__restrict __stream, struct mntent *__restrict __result, char *__restrict __buffer, int __bufsize);
 #endif /* __USE_MISC */

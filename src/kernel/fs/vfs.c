@@ -40,6 +40,9 @@
 #include <linker/module.h>
 #include <malloc.h>
 #include <unistd.h>
+#include <dev/blkdev.h>
+#include <kernel/export.h>
+#include <dev/rtc.h>
 
 DECL_BEGIN
 
@@ -379,7 +382,7 @@ vnode_mkreg(struct inode *__restrict dir_node,
             struct dentry *__restrict path,
             struct iattr const *__restrict result_attr,
             iattrset_t mode) {
- /* TODO: Create text files? */
+ /* TODO: Create text files? (Yes: This is something we must also simulate!) */
  if (!(mode&IATTR_EXISTS)) return E_PTR(-EROFS);
  return vnode_lookup(dir_node,path);
 }
@@ -763,6 +766,51 @@ PUBLIC struct superblockops const vsuperblock_ops = {
     .sb_remove_inode = &vfs_remove_inode,
     .sb_umount       = &vfs_umount,
 };
+
+PRIVATE SAFE REF struct superblock *KCALL
+tmpfs_callback(struct blkdev *__restrict UNUSED(dev), u32 UNUSED(flags),
+               char const *UNUSED(devname), USER void *UNUSED(data),
+               void *UNUSED(closure)) {
+ REF struct vsuperblock *result;
+ /* Create a new, empty TMPFS superblock. (That is a virtual, memory-based filesystem) */
+ result = (REF struct vsuperblock *)superblock_new(sizeof(struct vsuperblock));
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ result->v_super.sb_ops                 = &vsuperblock_ops;
+ result->v_super.sb_root.i_data         = &result->v_data.v_common;
+ result->v_super.sb_root.i_ops          = &vdev_ops;
+ result->v_super.sb_root.i_attr.ia_mode = S_IFDIR|0777;
+ /* Use the current time as access/modification/creation timestamp. */
+ sysrtc_get(&result->v_super.sb_root.i_attr.ia_ctime);
+ memcpy(&result->v_super.sb_root.i_attr.ia_mtime,&result->v_super.sb_root.i_attr.ia_ctime,sizeof(struct timespec));
+ memcpy(&result->v_super.sb_root.i_attr.ia_atime,&result->v_super.sb_root.i_attr.ia_ctime,sizeof(struct timespec));
+ memcpy(&result->v_super.sb_root.i_attr_disk,&result->v_super.sb_root.i_attr,sizeof(struct iattr));
+ result->v_lnkmax = VSUPERBLOCK_DEFAULT_LNKMAX;
+ atomic_rwlock_cinit(&result->v_vlock);
+#if VDATA_DYNAMIC != 0
+ result->v_data.v_common.v_flag = VDATA_DYNAMIC;
+#endif
+ assert(result->v_data.v_common.v_flag == VDATA_DYNAMIC);
+ atomic_rwlock_cinit(&result->v_data.v_lock);
+ assert(result->v_data.v_entc == 0);
+ assert(result->v_data.v_entv == NULL);
+ /* Finally, setup the superblock. */
+ asserte(E_ISOK(superblock_setup(&result->v_super,THIS_INSTANCE)));
+ return &result->v_super;
+}
+
+PRIVATE struct fstype tmpfs_type = {
+    .f_owner    = THIS_INSTANCE,
+    .f_sysid    = BLKSYS_EXPLICIT,
+    .f_callback = &tmpfs_callback,
+    .f_flags    = FSTYPE_NODEV|FSTYPE_SINGLETON,
+    .f_closure  = NULL,
+    .f_name     = "tmpfs",
+};
+PRIVATE MODULE_INIT errno_t KCALL tmpfs_init(void) {
+ /* Register the pipe filesystem as a mountable superblock. */
+ fs_addtype(&tmpfs_type);
+ return -EOK;
+}
 
 
 DECL_END
