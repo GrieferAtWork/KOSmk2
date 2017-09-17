@@ -1412,45 +1412,60 @@ fat_setattr(struct inode *__restrict ino, iattrset_t changed) {
    } buf;
    fat_ctime_encode(buf.ctime,&ino->i_attr.ia_ctime);
    fat_atime_encode(buf.atime,&ino->i_attr.ia_atime);
-   error = blkdev_writeall(ino->i_super->sb_blkdev,
-                           NODE->f_idata.i_pos.fp_headpos+
-                           offsetof(file_t,f_ctime),
-                           &buf,sizeof(buf));
+   HOSTMEMORY_BEGIN {
+    error = blkdev_writeall(ino->i_super->sb_blkdev,
+                            NODE->f_idata.i_pos.fp_headpos+
+                            offsetof(file_t,f_ctime),
+                            &buf,sizeof(buf));
+   }
+   HOSTMEMORY_END;
   } else if (changed&IATTR_ATIME) {
    /* Access time changed. */
    fileatime_t atime;
    fat_atime_encode(atime,&ino->i_attr.ia_atime);
-   error = blkdev_writeall(ino->i_super->sb_blkdev,
-                           NODE->f_idata.i_pos.fp_headpos+
-                           offsetof(file_t,f_atime),
-                           &atime,sizeof(atime));
+   HOSTMEMORY_BEGIN {
+    error = blkdev_writeall(ino->i_super->sb_blkdev,
+                            NODE->f_idata.i_pos.fp_headpos+
+                            offsetof(file_t,f_atime),
+                            &atime,sizeof(atime));
+   }
+   HOSTMEMORY_END;
   } else {
    /* Creation time changed. */
    filectime_t ctime;
    fat_ctime_encode(ctime,&ino->i_attr.ia_atime);
-   error = blkdev_writeall(ino->i_super->sb_blkdev,
-                           NODE->f_idata.i_pos.fp_headpos+
-                           offsetof(file_t,f_ctime),
-                           &ctime,sizeof(ctime));
+   HOSTMEMORY_BEGIN {
+    error = blkdev_writeall(ino->i_super->sb_blkdev,
+                            NODE->f_idata.i_pos.fp_headpos+
+                            offsetof(file_t,f_ctime),
+                            &ctime,sizeof(ctime));
+   }
+   HOSTMEMORY_END;
   }
   if (E_ISERR(error)) return error;
  }
  if (changed&IATTR_MTIME) {
   filemtime_t mtime;
   fat_mtime_encode(mtime,&ino->i_attr.ia_mtime);
-  error = blkdev_writeall(ino->i_super->sb_blkdev,
-                          NODE->f_idata.i_pos.fp_headpos+
-                          offsetof(file_t,f_mtime),
-                          &mtime,sizeof(mtime));
+  HOSTMEMORY_BEGIN {
+   error = blkdev_writeall(ino->i_super->sb_blkdev,
+                           NODE->f_idata.i_pos.fp_headpos+
+                           offsetof(file_t,f_mtime),
+                           &mtime,sizeof(mtime));
+  }
+  HOSTMEMORY_END;
   if (E_ISERR(error)) return error;
  }
  if (changed&IATTR_SIZ && !INODE_ISDIR(ino)) {
   le32 size = BSWAP_H2LE32((u32)ino->i_attr.ia_siz);
   /* TODO: Change FAT link length. */
-  error = blkdev_writeall(ino->i_super->sb_blkdev,
-                          NODE->f_idata.i_pos.fp_headpos+
-                          offsetof(file_t,f_size),
-                          &size,sizeof(size));
+  HOSTMEMORY_BEGIN {
+   error = blkdev_writeall(ino->i_super->sb_blkdev,
+                           NODE->f_idata.i_pos.fp_headpos+
+                           offsetof(file_t,f_size),
+                           &size,sizeof(size));
+  }
+  HOSTMEMORY_END;
   if (E_ISERR(error)) return error;
  }
  return -EOK;
