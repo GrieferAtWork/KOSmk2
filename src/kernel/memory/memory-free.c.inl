@@ -61,13 +61,25 @@ page_free_(ppage_t start, size_t n_bytes, pgattr_t attr)
  free_end = (ppage_t)((uintptr_t)start+n_bytes);
  if ((uintptr_t)free_end-1 > MZONE_MAX(zone_id)) {
   /* Split the free requested when it overlaps into a different zone. */
-  size_t zone_offset = (uintptr_t)MZONE_MIN(zone_id+1)-(uintptr_t)start;
+  size_t zone_offset = (uintptr_t)(MZONE_MAX(zone_id)+1)-(uintptr_t)start;
   assertf(zone_offset,MY_FREESTR("But the we've determined the wrong zone above..."));
-  assertf(zone_offset < n_bytes,MY_FREESTR("Zone %d %p...%p\n"),zone_id,start,(uintptr_t)start+n_bytes-1);
+  assertf(zone_offset < n_bytes,
+          MY_FREESTR("Zone %d %p...%p\n"
+                     "zone_offset = %Iu\n"
+                     "n_bytes     = %Iu\n"),
+          zone_id,start,(uintptr_t)start+n_bytes-1,
+          zone_offset,n_bytes);
   assert(IS_ALIGNED(zone_offset,PAGESIZE));
   /* Recursively free memory above the zone limits. */
 #ifdef MMAN_REGISTER
-  memory_register((ppage_t)((uintptr_t)start+zone_offset),n_bytes-zone_offset,without_info);
+  if (addr_isphys((uintptr_t)start+zone_offset)) {
+   memory_register((ppage_t)((uintptr_t)start+zone_offset),
+                    n_bytes-zone_offset,without_info);
+  } else {
+   syslog(LOG_MEM|LOG_WARN,MY_FREESTR("[MEM] Cannot use RAM %p...%p above 3Gb\n"),
+         (uintptr_t)start+zone_offset,
+         (uintptr_t)start+n_bytes-1);
+  }
 #else
   page_free_((ppage_t)((uintptr_t)start+zone_offset),n_bytes-zone_offset,attr);
 #endif

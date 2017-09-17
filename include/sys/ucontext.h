@@ -23,6 +23,7 @@
 #include <features.h>
 #include <bits/sigset.h>
 #include <bits/sigcontext.h>
+#include <bits/sigstack.h>
 
 /* Copyright (C) 2001-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.

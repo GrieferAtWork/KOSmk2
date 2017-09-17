@@ -44,6 +44,7 @@
 #include <sys/io.h>
 #include <kernel/syscall.h>
 #include <dev/rtc.h>
+#include <bits/signum.h>
 
 DECL_BEGIN
 
@@ -497,6 +498,7 @@ irq_default(struct irq_info *__restrict info) {
                    info->intno,&info->com,
                    info->eflags);
  }
+
  if (IRQ_ISPIC(info->intno)) {
   syslog(LOG_IRQ|LOG_WARN,
          "[IRQ] Unmapped PIC interrupt %#.2I8x (%I8d) (%s pin #%d)\n",

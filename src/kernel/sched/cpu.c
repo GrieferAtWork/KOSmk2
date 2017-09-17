@@ -21,6 +21,8 @@
 #define _KOS_SOURCE 1
 #define _GNU_SOURCE 1 /* CPU_* */
 
+#include "../debug-config.h"
+
 #include <assert.h>
 #include <fs/fd.h>
 #include <hybrid/arch/eflags.h>
@@ -45,6 +47,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/io.h>
+#include <kernel/memory.h>
+#include <kernel/export.h>
 
 DECL_BEGIN
 
@@ -181,13 +185,52 @@ L(.previous                                        )
 );
 
 
+INTDEF byte_t __kernel_nofree_size[];
+
 /* Allocate a small stack for the IDLE task of the boot CPU.
  * NOTE: This stack isn't actually require for the task itself,
  *       but for interrupts such as PIT timer, or others. */
-PRIVATE ATTR_FREEDATA ATTR_ALIGNED(16) struct PACKED {
- byte_t               s_data[TASK_HOSTSTACK_IDLESIZE-sizeof(struct host_cpustate)];
+INTERN ATTR_ALIGNED(16) struct PACKED {
+ size_t               s_kernused;
+ struct meminfo       s_kmeminfo[2];
+ byte_t               s_data[TASK_HOSTSTACK_IDLESIZE-
+                            (sizeof(struct host_cpustate)+
+                             sizeof(struct meminfo)*2+
+                             sizeof(size_t))];
  struct host_cpustate s_boot;
 } __bootidlestack = {
+#ifdef CONFIG_NEW_MEMINFO
+    /* Bootstrap kernel memory info.
+     * >> Used to describe the kernel itself in physical memory. */
+    .s_kernused = 2,
+    .s_kmeminfo = {
+        [0] = {
+            .mi_next      = &__bootidlestack.s_kmeminfo[1],
+            .mi_type      = MEMTYPE_KERNEL,
+            .mi_addr      = (void *)((uintptr_t)__kernel_start - KERNEL_BASE),
+            .mi_part_addr = (ppage_t)((uintptr_t)__kernel_start - KERNEL_BASE),
+            .mi_full_addr = (ppage_t)((uintptr_t)__kernel_start - KERNEL_BASE),
+            .mi_size      = (PAGE_ALIGNED size_t)__kernel_nofree_size,
+            .mi_part_size = (PAGE_ALIGNED size_t)__kernel_nofree_size,
+            .mi_full_size = (PAGE_ALIGNED size_t)__kernel_nofree_size,
+        },
+        [1] = {
+            .mi_next      = MEMINFO_EARLY_NULL,
+            .mi_type      = MEMTYPE_KERNEL,
+            .mi_addr      = (void *)((uintptr_t)__kernel_free_start - KERNEL_BASE),
+            .mi_part_addr = (ppage_t)((uintptr_t)__kernel_free_start - KERNEL_BASE),
+            .mi_full_addr = (ppage_t)((uintptr_t)__kernel_free_start - KERNEL_BASE),
+            .mi_size      = (PAGE_ALIGNED size_t)__kernel_free_size,
+            .mi_part_size = (PAGE_ALIGNED size_t)__kernel_free_size,
+            .mi_full_size = (PAGE_ALIGNED size_t)__kernel_free_size,
+        },
+    },
+#endif /* CONFIG_NEW_MEMINFO */
+#ifdef CONFIG_DEBUG
+    .s_data = {
+        [0 ... COMPILER_LENOF(__bootidlestack.s_data)-1] = (KERNEL_DEBUG_MEMPAT_HOSTSTACK & 0xff)
+    },
+#endif /* CONFIG_DEBUG */
     .s_boot = {
 #ifdef __i386__
         .gs     = SEG(SEG_HOST_DATA),

@@ -67,7 +67,7 @@ struct PACKED{
 };
 struct PACKED cpustate {
  struct host_cpustate host; /* host CPU state. */
- u32 useresp; u16 ss,_n2;   /* [valid_if(CPUSTATE_HASUSER(this))]
+ u32 useresp; u16 ss,_n2;   /* [valid_if(CPUSTATE_ISUSER(this))]
                              * iret tail: user-space stack pointer. */
 };
 
@@ -87,11 +87,11 @@ struct PACKED{
 
 struct PACKED cpustate_irq_c {
  struct host_cpustate_irq_c host; /* host CPU state. */
- u32 useresp; u16 ss,_n2;         /* [valid_if(CPUSTATE_HASUSER(this))]
+ u32 useresp; u16 ss,_n2;         /* [valid_if(CPUSTATE_ISUSER(this))]
                                    * iret tail: user-space stack pointer. */
 };
 
-#define CPUSTATE_HASUSER(x) (((x)->host.cs&3) == 3)
+#define CPUSTATE_ISUSER(x) (((x)->host.cs&3) == 3)
 
 #undef __COMMON_32BIT
 #undef __COMMON_REG2

@@ -1963,8 +1963,8 @@ mman_initialize(void) {
  { mzone_t id;
    for (id = 0; id != MZONE_COUNT; ++id) {
     PHYS struct meminfo const *iter = mem_info[id];
-    for (; iter; iter = iter->mi_next)
-           mman_map_dynmem(iter->mi_start,iter->mi_size);
+    for (; iter != MEMINFO_EARLY_NULL; iter = iter->mi_next)
+           mman_map_dynmem(iter->mi_part_addr,iter->mi_part_size);
    }
  }
  assert(mman_kernel.m_map != NULL);

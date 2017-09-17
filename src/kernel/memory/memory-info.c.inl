@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#ifndef CONFIG_NEW_MEMINFO
 DECL_BEGIN
 
 PUBLIC PHYS struct meminfo const *
@@ -104,31 +105,31 @@ memory_register_info(ppage_t start, size_t n_bytes) {
  piter = (struct meminfo **)&_mem_info[zone_id];
  assert(*piter != PAGE_ERROR);
  while ((iter = *piter) != NULL &&
-        (uintptr_t)iter->mi_start+iter->mi_size <=
+        (uintptr_t)iter->mi_full_addr+iter->mi_size <=
         (uintptr_t)start) {
   assert(iter != PAGE_ERROR);
   assert(iter->mi_next != PAGE_ERROR);
-  assert(iter->mi_start < start);
+  assert(iter->mi_full_addr < start);
   piter = (struct meminfo **)&iter->mi_next;
  }
- assertf(iter == NULL || (uintptr_t)iter->mi_start >= (uintptr_t)start+n_bytes,
+ assertf(iter == NULL || (uintptr_t)iter->mi_full_addr >= (uintptr_t)start+n_bytes,
          FREESTR("At least part of address range %p...%p was already marked as free by %p...%p"),
-         start,(uintptr_t)start+n_bytes-1,iter->mi_start,(uintptr_t)iter->mi_start+iter->mi_size-1);
+         start,(uintptr_t)start+n_bytes-1,iter->mi_full_addr,(uintptr_t)iter->mi_full_addr+iter->mi_size-1);
 
  /* Insert after 'piter' / before 'iter' */
  
  /* Check for extending the previous range. */
  if (piter != (struct meminfo **)&_mem_info[zone_id]) {
   struct meminfo *prev_info = container_of(piter,struct meminfo,mi_next);
-  if ((uintptr_t)prev_info->mi_start+prev_info->mi_size ==
+  if ((uintptr_t)prev_info->mi_full_addr+prev_info->mi_size ==
       (uintptr_t)start) {
    /* Extend the previous range. */
    prev_info->mi_size += n_bytes;
    assert(prev_info->mi_next == iter);
-   assert((uintptr_t)prev_info->mi_start+prev_info->mi_size <=
-          (uintptr_t)iter->mi_start);
-   if unlikely((uintptr_t)prev_info->mi_start+prev_info->mi_size ==
-               (uintptr_t)iter->mi_start) {
+   assert((uintptr_t)prev_info->mi_full_addr+prev_info->mi_size <=
+          (uintptr_t)iter->mi_full_addr);
+   if unlikely((uintptr_t)prev_info->mi_full_addr+prev_info->mi_size ==
+               (uintptr_t)iter->mi_full_addr) {
     /* Extending the previous range causes it to touch the next. - Merge the two. */
     assert(iter->mi_next != PAGE_ERROR);
     prev_info->mi_size += iter->mi_size;
@@ -141,15 +142,15 @@ memory_register_info(ppage_t start, size_t n_bytes) {
 
  /* Check for merging with the next range. */
  if (iter != NULL &&
-    (uintptr_t)iter->mi_start == (uintptr_t)start+n_bytes) {
-  *(uintptr_t *)&iter->mi_start -= n_bytes;
+    (uintptr_t)iter->mi_full_addr == (uintptr_t)start+n_bytes) {
+  *(uintptr_t *)&iter->mi_full_addr -= n_bytes;
   iter->mi_size                 += n_bytes;
-  assert(iter->mi_start == start);
+  assert(iter->mi_full_addr == start);
   assert(*piter == iter);
   assert(piter == (struct meminfo **)&_mem_info[zone_id] ||
-        ((uintptr_t)container_of(piter,struct meminfo,mi_next)->mi_start+
+        ((uintptr_t)container_of(piter,struct meminfo,mi_next)->mi_full_addr+
                     container_of(piter,struct meminfo,mi_next)->mi_size) <
-         (uintptr_t)iter->mi_start);
+         (uintptr_t)iter->mi_full_addr);
   goto done;
  }
 
@@ -162,7 +163,7 @@ memory_register_info(ppage_t start, size_t n_bytes) {
   assert(iter  != PAGE_ERROR);
   assert(entry != PAGE_ERROR);
   entry->mi_next  = iter;
-  entry->mi_start = start;
+  entry->mi_full_addr = start;
   entry->mi_size  = n_bytes;
   *piter = entry;
  }
@@ -228,5 +229,6 @@ INTERN ATTR_FREETEXT SAFE KPD void KCALL memory_relocate_info(void) {
 }
 
 DECL_END
+#endif /* !CONFIG_NEW_MEMINFO */
 
 #endif /* !GUARD_KERNEL_MEMORY_MEMORY_INFO_C_INL */

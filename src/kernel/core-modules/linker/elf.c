@@ -989,16 +989,23 @@ elf_loader(struct file *__restrict fp) {
   if unlikely(!result->e_module.m_segv) goto enomem;
   result->e_module.m_segc = n_load_hdr;
   if (ehdr.e_type == ET_EXEC) {
-   result->e_module.m_flag  = MODFLAG_EXEC;
+   result->e_module.m_flag |= MODFLAG_EXEC;
    result->e_module.m_entry = ehdr.e_entry;
   }
   iter     = phdrv;
   seg_iter = result->e_module.m_segv;
   for (; iter != end; ++iter) {
-   if (iter->p_type != PT_LOAD || !iter->p_memsz) continue;
+   if ((iter->p_type != PT_LOAD &&
+        iter->p_type != PT_TLS) ||
+       !iter->p_memsz) continue;
    assert(seg_iter < result->e_module.m_segv+
                      result->e_module.m_segc);
-   seg_iter->ms_type  = MODSEG_LOAD;
+   if (iter->p_type == PT_TLS) {
+    result->e_module.m_flag |= MODFLAG_TLSSEG;
+    seg_iter->ms_type = MODSEG_TLS;
+   } else {
+    seg_iter->ms_type = MODSEG_LOAD;
+   }
    seg_iter->ms_fpos  = (pos_t)iter->p_offset;
    seg_iter->ms_vaddr = iter->p_vaddr;
    seg_iter->ms_paddr = iter->p_paddr;

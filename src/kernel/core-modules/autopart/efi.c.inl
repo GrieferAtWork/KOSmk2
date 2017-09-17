@@ -49,11 +49,10 @@ PRIVATE ATTR_COLDRODATA sysmap_t const efi_sysmap[] = {
     {INITIALIZE_GUID(734E5AFE,F61A,11E6,BC64,92361F002671),BLKSYS_FAT32},
     {INITIALIZE_GUID(c12a7328,f81f,11d2,ba4b,00a0c93ec93b),BLKSYS_FAT32}, /* EFI System partition. */
     {INITIALIZE_GUID(0657FD6D,A4AB,43C4,84E5,0933C84B4F4F),BLKSYS_LINUX_SWAP2},
-    {INITIALIZE_GUID(48616821,4964,6F6E,744E,656564454649),BLKSYS_LINUX_SWAP2},
+    {INITIALIZE_GUID(48616821,4964,6F6E,744E,656564454649),BLKSYS_LINUX_SWAP2}, /* NOPE! This is grub */
     {INITIALIZE_GUID(00000000,0000,0000,0000,000000000000),BLKSYS_EFI_PARTEND},
-    {INITIALIZE_GUID(00000000,0000,0000,0000,000000000000),BLKSYS_EFI_UNUSED},
+//  {INITIALIZE_GUID(00000000,0000,0000,0000,000000000000),BLKSYS_EFI_UNUSED},
 };
-
 
 
 PRIVATE SAFE ssize_t KCALL
@@ -145,7 +144,11 @@ efi_autopart_at(struct blkdev *__restrict self,
 
    dp_sysid = BLKSYS_UNKNOWN;
    /* Figure out the EFI system id. */
-   for (iter = efi_sysmap; iter->sm_sysid != BLKSYS_EFI_UNUSED; ++iter) {
+#if 0
+   syslog(LOG_FS|LOG_WARN,"[EFI] Parition type GUID: {" GUID_PRINTF_FMT "}\n",
+          GUID_PRINTF_ARG(&part.p_type_guid));
+#endif
+   for (iter = efi_sysmap; iter != COMPILER_ENDOF(efi_sysmap); ++iter) {
     if (!memcmp(&iter->sm_guid,&part.p_type_guid,sizeof(guid_t))) {
      dp_sysid = iter->sm_sysid;
      break;

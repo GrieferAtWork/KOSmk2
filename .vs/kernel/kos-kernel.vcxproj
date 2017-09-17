@@ -76,6 +76,7 @@
     <ClCompile Include="..\..\src\kernel\linker\module.c" />
     <ClCompile Include="..\..\src\kernel\linker\patch.c" />
     <ClCompile Include="..\..\src\kernel\memory\detect.c" />
+    <ClCompile Include="..\..\src\kernel\memory\install.c" />
     <ClCompile Include="..\..\src\kernel\memory\malloc.c" />
     <ClCompile Include="..\..\src\kernel\memory\memory.c" />
     <ClCompile Include="..\..\src\kernel\mman\branch.c" />

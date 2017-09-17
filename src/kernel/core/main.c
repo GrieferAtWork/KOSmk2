@@ -310,6 +310,9 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
           mbt_min_size,temp);
   }
   mbt_min_size = temp;
+  syslog(LOG_BOOT|LOG_WARN,
+         FREESTR("[MB2] Parsing parameter block %p...%p\n"),
+        (uintptr_t)info,(uintptr_t)info+mbt_min_size-1);
 
   /* Protect the multiboot information buffer from being overwritten too early. */
   memory_notouch((uintptr_t)info,mbt_min_size);

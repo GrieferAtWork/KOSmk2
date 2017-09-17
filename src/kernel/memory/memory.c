@@ -671,6 +671,7 @@ page_print(mzone_t zone_id,
 
 
 
+#ifndef CONFIG_NEW_MEMINFO
 #define page_free_initial(start,n_bytes,attr) \
  (ATOMIC_FETCHADD(page_inuse,n_bytes),page_free_(start,n_bytes,attr))
 
@@ -794,13 +795,15 @@ memory_install(PHYS uintptr_t start, size_t size) {
  struct memrange *iter; uintptr_t mend,temp;
  /* Fix the given memory range potentially not being page-aligned. */
  temp  = CEIL_ALIGN(start,PAGESIZE);
- size -= temp-start,start = temp;
+ if (__builtin_sub_overflow(size,temp-start,&size))
+     return 0; /* Range is too small. */
+ start = temp;
  size  = FLOOR_ALIGN(size,PAGESIZE);
  mend  = start+size;
  /* Fix overflow. */
  if unlikely(mend < start) {
-#define END_OFFSET 1
-  size = (END_OFFSET-start);
+#define END_OFFSET PAGESIZE
+  size = (((uintptr_t)-END_OFFSET)-start);
   mend = (uintptr_t)-END_OFFSET;
   assert(mend == start+size);
 #undef END_OFFSET
@@ -892,6 +895,9 @@ memory_install64(u64 begin, u64 size) {
 #else
 #define memory_install64   memory_install
 #endif
+#else /* !CONFIG_NEW_MEMINFO */
+#define memory_install64(begin,size) mem_install64(begin,size,MEMTYPE_RAM)
+#endif /* CONFIG_NEW_MEMINFO */
 
 INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
 memory_load_mb_lower_upper(u32 mem_lower, u32 mem_upper) {
@@ -1016,8 +1022,10 @@ memory_load_mbinfo(mb_info_t *__restrict info) {
 DECL_END
 
 #ifndef __INTELLISENSE__
+#ifndef CONFIG_NEW_MEMINFO
 #define MMAN_REGISTER
 #include "memory-free.c.inl"
+#endif /* !CONFIG_NEW_MEMINFO */
 #include "memory-free.c.inl"
 #include "memory-info.c.inl"
 #endif

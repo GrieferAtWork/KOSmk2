@@ -119,24 +119,106 @@ LOCAL mzone_t KCALL mzone_of(PHYS void *ptr) {
 
 
 
-struct meminfo {
- PHYS struct meminfo const *mi_next;  /*< [0..1][->mi_start > mi_start+mi_size][const] Next info link. */
-#ifdef __INTELLISENSE__
-      ppage_t               mi_start; /*< [const] First associated page. */
-              size_t        mi_size;  /*< [const] Amount of bytes part of this region. */
+/* Use the new meminfo system (TODO: Once done and tested,
+ * completely remove the old, including this switch) */
+#define CONFIG_NEW_MEMINFO
+
+
+#ifdef CONFIG_NEW_MEMINFO
+#define MEMTYPE_RAM        0 /*< [USE|MAP] Dynamic; aka. RAM memory (mapped and used) */
+#define MEMTYPE_DEVICE     1 /*< [MAP] Device memory (mapped, but not used as RAM) */
+#define MEMTYPE_KERNEL     2 /*< [MAP] Kernel core memory (mapped, not used) */
+#define MEMTYPE_BROKEN     3 /*< Broken memory (Neither mapped, nor used) */
+#define MEMTYPE_KERNELFREE 4 /*< [USE_LATER|MAP] Kernel memory later turned into 'MEMTYPE_RAM' (The '.free' section...) */
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+#define MEMTYPE_PRESERVE   0xffff /*< Preserve the original content of this memory until 'mem_unpreserve()' is called,
+                                   *  at which point the memory will be transformed into 'MEMTYPE_RAM', and made
+                                   *  available to the physical memory allocator. */
+/* Before 'mem_relocate_info()' is called, this constant
+ * is used as NULL-pointer within memory information.
+ * Afterwards, NULL is used instead. */
+#define MEMINFO_EARLY_NULL ((struct meminfo *)-1)
 #else
- PHYS ppage_t               mi_start; /*< [const] First associated page. */
- PAGE_ALIGNED size_t        mi_size;  /*< [const] Amount of bytes part of this region. */
+#define MEMINFO_EARLY_NULL   NULL
 #endif
+#define MEMTYPE_ISUSE(x) ((x) == MEMTYPE_RAM)
+#define MEMTYPE_ISMAP(x) ((x) < 3)
+typedef int memtype_t;
+#endif /* CONFIG_NEW_MEMINFO */
+
+struct meminfo {
+ PHYS struct meminfo const *mi_next;      /*< [0..1][->mi_addr > mi_addr+mi_size][const] Next info link. */
+#ifdef CONFIG_NEW_MEMINFO
+union{
+ memtype_t                  mi_type;      /*< [const] Memory type (One of 'MEMTYPE_*') */
+ uintptr_t                __mi_pad0;      /* ... */
 };
-/* Per-zone information about memory available for dynamic allocation.
- * NOTE: This information is allocated during bootup and is never modified afterwards.
+ PHYS void                 *mi_addr;      /*< [const][<= mi_part_addr && >= mi_full_addr] First associated address. */
+ size_t                     mi_size;      /*< [const][<= mi_part_size && >= mi_full_size][!0] Amount of bytes part of this region. */
+ /* NOTE: 'mi_part_addr..+=mi_part_size' never overlaps with another info record's range,
+  *        meaning that different info records with sub-page overlapping ranges are truncated. */
+ PHYS ppage_t               mi_part_addr; /*< [const][== FLOOR_ALIGN(mi_addr,PAGESIZE)][>= mi_full_addr] First partially associated page. */
+ PAGE_ALIGNED size_t        mi_part_size; /*< [const][== CEIL_ALIGN(mi_size+(mi_addr-mi_part_addr),PAGESIZE)][>= mi_full_size][!0] Amount of bytes apart of partially, or fully associated pages. */
+ PHYS ppage_t               mi_full_addr; /*< [const][== CEIL_ALIGN(mi_addr,PAGESIZE)][<= mi_part_addr] First fully associated page. */
+ PAGE_ALIGNED size_t        mi_full_size; /*< [const][== CEIL_ALIGN(mi_addr+mi_size,PAGESIZE)-mi_full_addr][<= mi_part_size][!0] Amount of bytes apart of full pages. */
+#else /* CONFIG_NEW_MEMINFO */
+ ppage_t                    mi_addr;
+ size_t                     mi_size;
+#define mi_part_addr        mi_addr
+#define mi_part_size        mi_size
+#define mi_full_addr        mi_addr
+#define mi_full_size        mi_size
+#endif /* CONFIG_NEW_MEMINFO */
+};
+
+/* [0..1][MZONE_COUNT] Per-zone information about memory available for dynamic allocation.
+ * NOTE:    This information is allocated during bootup and is never modified afterwards.
  * WARNING: This structure is allocated in 'MZONE_NOSHARE' using physical
  *          addresses, meaning that access requires the kernel page directory! */
-DATDEF PHYS struct meminfo const *const mem_info[MZONE_COUNT];
+DATDEF struct meminfo const *const mem_info[MZONE_COUNT];
 #define MEMINFO_FOREACH(iter,zone) \
- for ((iter) = mem_info[zone]; \
+ for ((iter)  = mem_info[zone]; \
       (iter) != NULL; (iter) = (iter)->mi_next)
+
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+#ifdef CONFIG_NEW_MEMINFO
+#define MEMINFO_EARLY_FOREACH(iter,zone) \
+ for ((iter)  = mem_info[zone]; \
+      (iter) != MEMINFO_EARLY_NULL; (iter) = (iter)->mi_next)
+
+
+/* Install a new memory range during early boot.
+ * This function will automatically check for overlaps with other regions,
+ * as well as overflows of the given address range, never storing memory
+ * information already received in regions that are typed as 'MEMTYPE_PRESERVE'.
+ * @return: * : The amount of bytes that have become available for use by the physical memory allocator.
+ */
+INTDEF PAGE_ALIGNED size_t KCALL mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type);
+#if __SIZEOF_POINTER__ < 8
+INTDEF PAGE_ALIGNED size_t KCALL mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type);
+#else
+#define mem_install64(base,num_bytes,type) \
+        mem_install((uintptr_t)(base),(size_t)(num_bytes),type)
+#endif
+
+/* Try to install ~real~ memory by probing for valid data within the given address range. */
+INTDEF PAGE_ALIGNED size_t KCALL mem_tryinstall(PHYS uintptr_t base, size_t num_bytes, memtype_t type);
+
+/* Release all memory regions marked as 'MEMTYPE_PRESERVE' and
+ * return the number of actual bytes that became available for use.
+ * HINT: This function can be called multiple times.
+ * This function also fixes overlaps of neighboring 'mi_part_addr'. */
+INTDEF PAGE_ALIGNED size_t KCALL mem_unpreserve(void);
+
+/* Relocate 'mem_info' into permanent storage allocated within swappable, virtual shared memory.
+ * Before a call to this function, memory information is either stored on the stack of the
+ * boot cpu's IDLE task (which only starts getting used once scheduling is initialized),
+ * which happens much later during booting than when this function is called, or in physical
+ * memory marked as 'MEMTYPE_RAM' that was passed to 'mem_install()' at some point. */
+INTDEF void KCALL mem_relocate_info(void);
+
+#endif /* CONFIG_NEW_MEMINFO */
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 
 
@@ -371,6 +453,13 @@ INTDEF SAFE KPD size_t KCALL memory_load_mb2_mmap(struct mb2_tag_mmap *__restric
  *          be called once init memory has been freed. */
 INTDEF SAFE KPD void KCALL memory_load_detect(void);
 
+#ifdef CONFIG_NEW_MEMINFO
+#define memory_install(start,size)      mem_install(start,size,MEMTYPE_RAM)
+#define memory_notouch(start,size)      mem_install(start,size,MEMTYPE_PRESERVE)
+#define memory_done_install()          (mem_unpreserve(),mem_relocate_info())
+#define memory_mirror_freelater_info() (void)0
+#define memory_relocate_info()         (void)0
+#else /* CONFIG_NEW_MEMINFO */
 /* Register physical memory for use by the physical memory allocator
  * NOTE: Physical memory used by the kernel image itself is
  *       ignored, and memory marked using 'memory_notouch()'
@@ -407,6 +496,8 @@ INTDEF SAFE KPD void KCALL memory_mirror_freelater_info(void);
 
 /* If possible, relocate any core information allocated within the 'MZONE_V_1MB' zone. */
 INTDEF SAFE KPD void KCALL memory_relocate_info(void);
+#endif /* !CONFIG_NEW_MEMINFO */
+
 
 #endif
 #endif /* __CC__ */

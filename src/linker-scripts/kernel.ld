@@ -245,6 +245,7 @@ SECTIONS {
 	} P_COLD
 
 	/* Initialization data that may be freed later. */
+	. = ALIGN(PAGESIZE);
 	DEFAULT_SECTION(.free) {
 		DEFINE_HERE(__kernel_free_start);
 
@@ -314,6 +315,7 @@ SECTIONS {
 	DEFINE(__kernel_user_size = ABSOLUTE(__kernel_user_end - __kernel_user_start));
 	DEFINE(__kernel_free_size = ABSOLUTE(__kernel_free_end - __kernel_free_start));
 	DEFINE(__kernel_after_end = ABSOLUTE(KERNEL_GLOBAL_END - __kernel_end));
+	DEFINE(__kernel_nofree_size = ABSOLUTE(__kernel_free_start - __kernel_start));
 
 	DEFINE(__kernel_seg_cputss_lo  = __SEG_ENCODELO(__bootcpu + CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS,TSS_SIZE,SEG_TSS));
 	DEFINE(__kernel_seg_cputss_hi  = __SEG_ENCODEHI(__bootcpu + CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS,TSS_SIZE,SEG_TSS));

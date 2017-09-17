@@ -1026,14 +1026,14 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
  del_begin = MZONE_MIN(zone_id);
  iter      = mem_info[zone_id];
  for (;;) {
-  if (iter == NULL)
+  if (iter == MEMINFO_EARLY_NULL)
       del_end = MZONE_MAX(zone_id)+1;
   else {
-#if 0
+#if 1
    syslog(LOG_MEM|LOG_DEBUG,FREESTR("[PD] CORE_RANGE(%p...%p) (zone #%d)\n"),
-          iter->mi_start,(uintptr_t)iter->mi_start+iter->mi_size-1,zone_id);
+          iter->mi_part_addr,(uintptr_t)iter->mi_part_addr+iter->mi_part_size-1,zone_id);
 #endif
-   del_end = (uintptr_t)iter->mi_start;
+   del_end = (uintptr_t)iter->mi_part_addr;
   }
   assertf(!del_end || del_end >= del_begin,
           FREESTR("del_begin = %p\n"
@@ -1046,8 +1046,8 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
    //}
    pdir_kernel_unmap(del_begin,del_end-del_begin);
   }
-  if (iter == NULL) break;
-  del_begin = (uintptr_t)iter->mi_start+iter->mi_size;
+  if (iter == MEMINFO_EARLY_NULL) break;
+  del_begin = (uintptr_t)iter->mi_part_addr+iter->mi_part_size;
   iter      = iter->mi_next;
  }
 }

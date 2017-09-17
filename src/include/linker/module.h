@@ -44,6 +44,7 @@ typedef uintptr_t maddr_t; /* An address relative to 'm_load' */
 
 
 #define MODSEG_LOAD     0 /* Regular, old segment that should be loaded somewhere. */
+#define MODSEG_TLS      1 /* Thread-local segment (Loaded identical to 'MODSEG_LOAD', containing the TLS template). */
 /* TODO: Per-thread segments */
 /* TODO: Per-CPU segments? (For drivers?) */
 
@@ -208,6 +209,7 @@ FUNDEF errno_t KCALL argvlist_appendv(struct argvlist *__restrict self, char con
                                     *  When this flag is set, 'm_entry' is used as entry point. */
 #define MODFLAG_TEXTREL 0x00000004 /*< Executing relocations requires all segments to be mapped as writable. */
 #define MODFLAG_PREFERR 0x00000008 /*< When set, prefer loading the module at 'm_load' (Implied with consequences upon failure when 'MODFLAG_RELO' isn't set). */
+#define MODFLAG_TLSSEG  0x00000010 /*< When set, the module contains TLS segments. */
 #define MODFLAG_NOTABIN 0x80000000 /*< Not a binary. - When set, the module cannot be loaded directly, but may implement
                                     * 'o_real_module' and 'o_transform_environ' to proxy another module instead. */
 
