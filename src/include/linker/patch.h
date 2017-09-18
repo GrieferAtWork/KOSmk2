@@ -34,19 +34,23 @@ struct dentryname;
 #define MODPATCH_OFFSETOF_ROOT       0
 #define MODPATCH_OFFSETOF_PREV       __SIZEOF_POINTER__
 #define MODPATCH_OFFSETOF_INST    (2*__SIZEOF_POINTER__)
-#define MODPATCH_OFFSETOF_IFLAGS  (3*__SIZEOF_POINTER__)
-#define MODPATCH_OFFSETOF_DEPC    (3*__SIZEOF_POINTER__+4)
-#define MODPATCH_OFFSETOF_DEPA    (3*__SIZEOF_POINTER__+4+__SIZEOF_SIZE_T__)
-#define MODPATCH_OFFSETOF_DEPV    (3*__SIZEOF_POINTER__+4+2*__SIZEOF_SIZE_T__)
-#define MODPATCH_OFFSETOF_DEPHINT (4*__SIZEOF_POINTER__+4+2*__SIZEOF_SIZE_T__)
-#define MODPATCH_OFFSETOF_MAPGAP  (5*__SIZEOF_POINTER__+4+2*__SIZEOF_SIZE_T__)
-#define MODPATCH_OFFSETOF_DLSYM   (5*__SIZEOF_POINTER__+4+3*__SIZEOF_SIZE_T__)
-#define MODPATCH_SIZE             (6*__SIZEOF_POINTER__+4+3*__SIZEOF_SIZE_T__)
+#define MODPATCH_OFFSETOF_PFLAGS  (3*__SIZEOF_POINTER__)
+#define MODPATCH_OFFSETOF_IFLAGS  (3*__SIZEOF_POINTER__+4)
+#define MODPATCH_OFFSETOF_DEPC    (3*__SIZEOF_POINTER__+8)
+#define MODPATCH_OFFSETOF_DEPA    (3*__SIZEOF_POINTER__+8+__SIZEOF_SIZE_T__)
+#define MODPATCH_OFFSETOF_DEPV    (3*__SIZEOF_POINTER__+8+2*__SIZEOF_SIZE_T__)
+#define MODPATCH_OFFSETOF_DEPHINT (4*__SIZEOF_POINTER__+8+2*__SIZEOF_SIZE_T__)
+#define MODPATCH_OFFSETOF_MAPGAP  (5*__SIZEOF_POINTER__+8+2*__SIZEOF_SIZE_T__)
+#define MODPATCH_OFFSETOF_DLSYM   (5*__SIZEOF_POINTER__+8+3*__SIZEOF_SIZE_T__)
+#define MODPATCH_SIZE             (6*__SIZEOF_POINTER__+8+3*__SIZEOF_SIZE_T__)
 
 struct modpatch {
  struct modpatch      *p_root;    /*< [1..1] The root patching controller (self-pointer if this already is the root). */
  struct modpatch      *p_prev;    /*< [0..1] The previous controller (for recursive dependency loading). */
  struct instance      *p_inst;    /*< [0..1] The instance that is being patched (May be null for loading symbolic, fake dependencies). */
+#define MODPATCH_FLAG_NORMAL   0x00000000
+#define MODPATCH_FLAG_DEEPBIND 0x00000008 /*< Patch with deep binding enabled ('p_dlsym' will prefer local symbols over global ones) */
+ u32                   p_pflags;  /*< Additional patching flags (Set of 'MODPATCH_FLAG_*'). */
  u32                   p_iflags;  /*< Flags used to created dependency instances (Set of 'INSTANCE_FLAG_*') */
  size_t                p_depc;    /*< Amount of created dependencies. */
  size_t                p_depa;    /*< Amount of allocated dependency slots. */
@@ -79,6 +83,7 @@ struct modpatch {
       ((self)->p_root    = (self), \
        (self)->p_prev    = NULL, \
        (self)->p_inst    = (inst), \
+       (self)->p_pflags  = MODPATCH_FLAG_NORMAL, \
        (self)->p_iflags  = INSTANCE_FLAG_DRIVER, \
        (self)->p_depc    = 0, \
        (self)->p_depa    = 0, \
@@ -90,6 +95,7 @@ struct modpatch {
       ((self)->p_root    = (self), \
        (self)->p_prev    = NULL, \
        (self)->p_inst    = (inst), \
+       (self)->p_pflags  = MODPATCH_FLAG_NORMAL, \
        (self)->p_iflags  = INSTANCE_FLAG_NORMAL, \
        (self)->p_depc    = 0, \
        (self)->p_depa    = 0, \

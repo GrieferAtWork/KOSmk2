@@ -78,6 +78,20 @@ modpatch_common_dlsym_impl(struct modpatch *__restrict self,
  syslog(LOG_DEBUG,"DLSYM(%q,%I32d)\n",name,hash);
 #endif
 
+ /* Deep binding preferrs the module itself above others. */
+ if (search_current && self->p_inst &&
+    (self->p_pflags&MODPATCH_FLAG_DEEPBIND)) {
+  CHECK_HOST_DOBJ(self->p_inst);
+  CHECK_HOST_DOBJ(self->p_inst->i_module);
+  CHECK_HOST_DOBJ(self->p_inst->i_module->m_ops);
+  CHECK_HOST_TEXT(self->p_inst->i_module->m_ops->o_symaddr,1);
+  new_sym = (*self->p_inst->i_module->m_ops->o_symaddr)(self->p_inst,name,hash);
+  if (new_sym.ms_type != MODSYM_TYPE_INVALID) {
+   if (new_sym.ms_type == MODSYM_TYPE_OK) { *result = new_sym; goto end; }
+   *weak_result = new_sym;
+  }
+ }
+
  /* Search upper modules first. */
  if (self->p_prev) {
   modpatch_common_dlsym_impl(self->p_prev,name,hash,
@@ -100,7 +114,7 @@ modpatch_common_dlsym_impl(struct modpatch *__restrict self,
   }
  }
  /* Search the module being patched itself. */
- if (search_current && self->p_inst) {
+ if (search_current && self->p_inst && !(self->p_pflags&MODPATCH_FLAG_DEEPBIND)) {
   CHECK_HOST_DOBJ(self->p_inst);
   CHECK_HOST_DOBJ(self->p_inst->i_module);
   CHECK_HOST_DOBJ(self->p_inst->i_module->m_ops);

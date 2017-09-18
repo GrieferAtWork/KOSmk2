@@ -46,6 +46,11 @@ do_dlopen(struct module *__restrict mod, int flags) {
  modpatch_init_user(&patch,THIS_MMAN->m_exe);
  /* NOTE: Since 'p_inst' is allowed to be NULL, no
   *       need to handle the case of a missing 'm_exe' */
+#if RTLD_DEEPBIND == MODPATCH_FLAG_DEEPBIND
+ patch.p_pflags |= flags&MODPATCH_FLAG_DEEPBIND;
+#else
+ patch.p_pflags |= flags&RTLD_DEEPBIND ? MODPATCH_FLAG_DEEPBIND : 0;
+#endif
 
  /* We make our lives simple by loading the given
   * module as a dependency of the root executable. */
@@ -59,13 +64,15 @@ do_dlopen(struct module *__restrict mod, int flags) {
   result = E_PTR(E_GTERR(inst));
  }
 
-#if 0 /* TODO: This is exactly what must happen here, but if we did this,
-       *       dlclose() could no longer be used to delete the module,
-       *       as it would then have explicit dependencies... */
  if (flags&RTLD_GLOBAL && THIS_MMAN->m_exe) {
-  instance_add_dependency(THIS_MMAN->m_exe,inst);
+  if (flags&RTLD_NODELETE) {
+   instance_add_dependency(THIS_MMAN->m_exe,inst);
+  } else {
+   /* TODO: This is exactly what must happen here, but if we did this,
+    *       dlclose() could no longer be used to delete the module,
+    *       as it would then have explicit dependencies... */
+  }
  }
-#endif
 
  modpatch_fini(&patch);
 
