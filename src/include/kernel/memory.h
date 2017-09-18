@@ -211,8 +211,7 @@ DATDEF struct meminfo const *const mem_info[MZONE_COUNT];
  * This function will automatically check for overlaps with other regions,
  * as well as overflows of the given address range, never storing memory
  * information already received in regions that are typed as 'MEMTYPE_PRESERVE'.
- * @return: * : The amount of bytes that have become available for use by the physical memory allocator.
- */
+ * @return: * : The amount of bytes that have become available for use by the physical memory allocator. */
 INTDEF PAGE_ALIGNED size_t KCALL mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type);
 #if __SIZEOF_POINTER__ < 8
 INTDEF PAGE_ALIGNED size_t KCALL mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type);
@@ -221,20 +220,18 @@ INTDEF PAGE_ALIGNED size_t KCALL mem_install64(PHYS u64 base, u64 num_bytes, mem
         mem_install((uintptr_t)(base),(size_t)(num_bytes),type)
 #endif
 
-/* Try to install ~real~ memory by probing for valid data within the given address range. */
-INTDEF PAGE_ALIGNED size_t KCALL mem_tryinstall(PHYS uintptr_t base, size_t num_bytes, memtype_t type);
-
 /* Release all memory regions marked as 'MEMTYPE_PRESERVE' and
  * return the number of actual bytes that became available for use.
  * HINT: This function can be called multiple times.
- * This function also fixes overlaps of neighboring 'mi_part_addr'. */
+ *  This function also fixes overlaps of neighboring
+ * 'mi_part_addr' in regions that were preserved before. */
 INTDEF PAGE_ALIGNED size_t KCALL mem_unpreserve(void);
 
 /* Relocate 'mem_info' into permanent storage allocated within swappable, virtual shared memory.
  * Before a call to this function, memory information is either stored on the stack of the
- * boot cpu's IDLE task (which only starts getting used once scheduling is initialized),
- * which happens much later during booting than when this function is called, or in physical
- * memory marked as 'MEMTYPE_RAM' that was passed to 'mem_install()' at some point. */
+ * boot cpu's IDLE task (which only starts getting used once scheduling is initialized, which
+ * happens much later during booting than when this function is called), or in physical
+ * memory marked as 'MEMTYPE_RAM', that was passed to 'mem_install()' at some point. */
 INTDEF void KCALL mem_relocate_info(void);
 
 #endif /* CONFIG_NEW_MEMINFO */

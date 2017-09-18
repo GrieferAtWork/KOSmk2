@@ -430,8 +430,22 @@ mman_instance_at_unlocked(struct mman const *__restrict self,
  branch = mbranch_tree_locate(self->m_map,(uintptr_t)addr);
  return branch && MBRANCH_ISINSTANCE(branch)
       ? MBRANCH_GETINSTANCE(branch) : NULL;
-
 }
+
+PUBLIC struct instance *KCALL
+mman_instance_of_unlocked(struct mman const *__restrict self,
+                          struct module *__restrict mod) {
+ struct instance *inst;
+ CHECK_HOST_DOBJ(self);
+ assert(mman_reading(self));
+ MMAN_FOREACH_INST(inst,self) {
+  if (inst->i_module == mod &&
+      INSTANCE_INCREF(inst))
+      return inst;
+ }
+ return NULL;
+}
+
 
 
 PUBLIC void KCALL

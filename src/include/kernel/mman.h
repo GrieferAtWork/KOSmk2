@@ -708,10 +708,20 @@ mman_insbranch_unlocked(struct mman *__restrict self,
 
 /* Find the instance located at a given address.
  * NOTE: The caller must hold a read-lock on 'self'
- * >> Used for detecting module-specific privileges in user-space. */
+ * >> Used for detecting module-specific privileges in user-space.
+ * NOTE: Returns NULL if no instance exists at the given address. */
 FUNDEF struct instance *KCALL
 mman_instance_at_unlocked(struct mman const *__restrict self,
                           USER void *addr);
+
+/* Find the first instance of the given module
+ * 'mod', or return NULL if it doesn't exist.
+ * NOTE: The caller must hold a read-lock on 'self'
+ * HINT: This function returns a reference, thus ensuing that
+ *       the instance can actually be used and isn't just dead. */
+FUNDEF REF struct instance *KCALL
+mman_instance_of_unlocked(struct mman const *__restrict self,
+                          struct module *__restrict mod);
 
 
 /* Same as 'mman_insbranch_unlocked', but also map

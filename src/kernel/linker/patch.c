@@ -274,7 +274,7 @@ modpatch_find_dep(struct modpatch *__restrict self,
 PUBLIC struct instance *KCALL
 modpatch_dldep(struct modpatch *__restrict self,
                struct module *__restrict dependency) {
- REF struct instance *inst; errno_t error;
+ REF struct instance *inst,*existing_inst; errno_t error;
  size_t new_alloc,min_alloc; bool has_write_lock;
  struct modpatch inst_patcher;
  struct modpatch *existing_check = self;
@@ -285,13 +285,23 @@ modpatch_dldep(struct modpatch *__restrict self,
       if (inst) return inst;
  } while ((existing_check = existing_check->p_prev) != NULL);
 
- /* Create a new instance for the given dependency module. */
- inst = instance_new(dependency,self->p_iflags);
- if unlikely(!inst) return E_PTR(-ENOMEM);
  memcpy(&inst_patcher,self,sizeof(struct modpatch));
  inst_patcher.p_depa = 0;
  inst_patcher.p_depc = 0;
  inst_patcher.p_depv = NULL;
+
+ /* Check if the module is already loaded in the target memory manager. */
+ error = mman_read(target_mman);
+ if (E_ISERR(error)) goto err;
+ inst = mman_instance_of_unlocked(target_mman,dependency);
+ mman_endread(target_mman);
+
+ /* If the instance was already mapped, use the existing version instead. */
+ if (inst) goto done;
+
+ /* Create a new instance for the given dependency module. */
+ inst = instance_new(dependency,self->p_iflags);
+ if unlikely(!inst) return E_PTR(-ENOMEM);
  inst_patcher.p_inst = inst;
  inst_patcher.p_prev = self; /* Link the instance patcher recursion chain. */
 
@@ -302,7 +312,23 @@ modpatch_dldep(struct modpatch *__restrict self,
  has_write_lock = false;
  error = mman_read(target_mman);
  if (E_ISERR(error)) goto err;
+
 find_space:
+ /* After having had the memory manager unlocked, it is possible
+  * that the module got another instance in the mean time.
+  * Therefor, we must scan the manager again to make sure this is still the first instance. */
+ existing_inst = mman_instance_of_unlocked(target_mman,dependency);
+ if unlikely(existing_inst) {
+  /* Highly unlikely: The module somehow got an instance in the mean time. - Use it! */
+  if (has_write_lock)
+       mman_endwrite(target_mman);
+  else mman_endread(target_mman);
+  /* Destroy our temporary instance and replace it with the existing one. */
+  INSTANCE_DECREF(inst);
+  inst = existing_inst;
+  goto done;
+ }
+
  if (!(dependency->m_flag&MODFLAG_RELO) ||
        dependency->m_flag&MODFLAG_PREFERR) {
   /* The dependency module isn't relocatable. */
@@ -334,7 +360,9 @@ find_space:
  if (inst->i_base != PAGE_ERROR) goto got_space;
  /* Failed to find free memory... */
 no_space:
- mman_endread(target_mman);
+ if (has_write_lock)
+      mman_endwrite(target_mman);
+ else mman_endread(target_mman);
  error = -ENOMEM;
  goto err;
 got_space:

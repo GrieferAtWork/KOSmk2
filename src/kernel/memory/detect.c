@@ -100,7 +100,7 @@ bool KCALL try_e820(void) {
   if (entry->sm_type != 1) continue; /* Only use (normal) RAM. */
   if (entry->sm_addr_hi) continue; /* Too large. */
   memory_install_nodata(entry->sm_addr_lo,
-                        entry->sm_size_hi ? (0-entry->sm_size_lo)
+                        entry->sm_size_hi ? (0-entry->sm_addr_lo)
                                           :    entry->sm_size_lo);
  } while (s.ebx);
  return true;

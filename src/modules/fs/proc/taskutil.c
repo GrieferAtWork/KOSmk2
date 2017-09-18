@@ -82,18 +82,23 @@ task_getmman(WEAK struct task *__restrict t) {
 INTDEF REF struct instance *KCALL
 mman_getexe(struct mman *__restrict mm) {
  REF struct instance *result;
+ /* NOTE: We need a write-lock, because code below may need to rely on ALOA. */
+ result = E_PTR(mman_write(mm));
+ if (E_ISERR(result)) return result;
 #ifndef CONFIG_NO_VM_EXE
  result = mm->m_exe;
  if (result != NULL &&
      INSTANCE_INCREF(result))
-     return result;
+     goto end;
 #endif
  /* Scan for the first non-library executable. */
  MMAN_FOREACH_INST(result,mm) {
   if (result->i_module->m_flag&MODFLAG_EXEC &&
-      INSTANCE_INCREF(result)) break;
+      INSTANCE_INCREF(result)) goto end;
  }
- if (!result) result = E_PTR(-ENOEXEC);
+ result = E_PTR(-ENOEXEC);
+end:
+ mman_endwrite(mm);
  return result;
 }
 

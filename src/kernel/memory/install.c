@@ -87,14 +87,98 @@ meminfo_load_part_full(struct meminfo *__restrict self) {
  self->mi_full_size =          CEIL_ALIGN(base+num_bytes,PAGESIZE)-(uintptr_t)self->mi_full_addr;
 }
 
-PRIVATE ATTR_FREETEXT void KCALL
-page_addmemory(mzone_t zone, ppage_t start,
+PRIVATE ATTR_FREETEXT size_t KCALL
+page_addmemory(mzone_t zone_id, ppage_t start,
                PAGE_ALIGNED size_t n_bytes) {
- if unlikely(!n_bytes) return;
+#if 1
+ ppage_t *piter,iter,free_end;
+ struct mzone *zone;
+ if unlikely(!n_bytes) return 0;
  syslog(LOG_DEBUG,"[MEM] Using dynamic memory range %p...%p\n",
        (uintptr_t)start,(uintptr_t)start+n_bytes-1);
- /* TODO: Use a custom function here. */
+ assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
+ assert(IS_ALIGNED((uintptr_t)n_bytes,PAGESIZE));
+ assert(addr_isphys(start));
+ assert(mzone_of((void *)start) == zone_id);
+ assert(mzone_of((void *)((uintptr_t)start+n_bytes-1)) == zone_id);
+ assertf((uintptr_t)start+(n_bytes-1) >= (uintptr_t)start,
+         FREESTR("Pointer overflow while freeing pages: %p + %Id(%Ix) overflows into %p"),
+        (uintptr_t)start,n_bytes,n_bytes,(uintptr_t)start+(n_bytes-1));
+ free_end = (ppage_t)((uintptr_t)start+n_bytes);
+ if (zone_id == MZONE_DEV) {
+  /* Special case: Ignore free requested for the DEV memory zone. */
+  syslog(LOG_MEM|LOG_WARN,
+         FREESTR("[MEM] Ignoring RAM %p..%p apart of the device memory zone\n"),
+        (uintptr_t)start,(uintptr_t)free_end-1);
+  return 0;
+ }
+ /* Load the zone this pointer is apart of. */
+ zone = PAGEZONE(zone_id);
+ piter = &zone->z_root;
+ while ((iter = *piter) != PAGE_ERROR &&
+         PAGE_END(iter) <= start) {
+  assert(iter < start);
+  piter = &iter->p_free.p_next;
+ }
+ assertf(iter == PAGE_ERROR || (uintptr_t)iter >= (uintptr_t)start+n_bytes,
+         FREESTR("At least part of address range %p...%p was already marked as free by %p...%p"),
+         start,(uintptr_t)free_end-1,iter,(uintptr_t)PAGE_END(iter)-1);
+ /* Insert after 'piter' / before 'iter' */
+
+ /* Check for extending the previous range. */
+ if (piter != &zone->z_root) {
+  ppage_t prev_page = container_of(piter,union page,p_free.p_next);
+  if (PAGE_END(prev_page) == start) {
+   /* Extend the previous range. */
+   prev_page->p_free.p_size += n_bytes;
+   prev_page->p_free.p_attr  = PAGEATTR_NONE;
+   assert(prev_page->p_free.p_next == iter);
+   assert(PAGE_END(prev_page) <= iter);
+   if unlikely(PAGE_END(prev_page) == iter) {
+    /* Extending the previous range causes it to touch the next. - Merge the two. */
+    prev_page->p_free.p_attr &= iter->p_free.p_attr;
+    prev_page->p_free.p_size += iter->p_free.p_size;
+    prev_page->p_free.p_next  = iter->p_free.p_next;
+    if (prev_page->p_free.p_next != PAGE_ERROR)
+        prev_page->p_free.p_next->p_free.p_self = &prev_page->p_free.p_next;
+   }
+   goto done;
+  }
+ }
+
+ /* Check for merging with the next range. */
+ if (iter != PAGE_ERROR &&
+    (uintptr_t)iter == (uintptr_t)start+n_bytes) {
+  start->p_free         = iter->p_free;
+  start->p_free.p_size += n_bytes;
+  start->p_free.p_attr &= PAGEATTR_NONE;
+  if (start->p_free.p_next != PAGE_ERROR)
+      start->p_free.p_next->p_free.p_self = &start->p_free.p_next;
+  *start->p_free.p_self = start;
+  goto done;
+ }
+
+ /* Fallback: Create & insert a new free-range. */
+ start->p_free.p_size = n_bytes;
+ start->p_free.p_self = piter;
+ start->p_free.p_next = iter;
+ start->p_free.p_attr = PAGEATTR_NONE;
+ *piter               = start;
+ if (iter != PAGE_ERROR)
+     iter->p_free.p_self = &start->p_free.p_next;
+
+done:
+#ifdef CONFIG_DEBUG
+ PAGE_FOREACH(iter,zone) {}
+#endif
+ zone->z_avail += n_bytes;
+#else
+ if unlikely(!n_bytes) return 0;
+ syslog(LOG_DEBUG,"[MEM] Using dynamic memory range %p...%p\n",
+       (uintptr_t)start,(uintptr_t)start+n_bytes-1);
  page_free(start,n_bytes);
+#endif
+ return n_bytes;
 }
 
 
@@ -269,10 +353,9 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
 
    /* Make the memory available if it is RAM. */
    if (MEMTYPE_ISUSE(type)) {
-    size_t map_size = (uintptr_t)old_full_addr-
-                      (uintptr_t)new_full_addr;
-    page_addmemory(zone,new_full_addr,map_size);
-    result += map_size;
+    result += page_addmemory(zone,new_full_addr,
+                            (uintptr_t)old_full_addr-
+                            (uintptr_t)new_full_addr);
    }
    return result;
   }
@@ -300,9 +383,8 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
    if (MEMTYPE_ISUSE(type)) {
     uintptr_t aligned_base = CEIL_ALIGN(base,PAGESIZE);
     uintptr_t aligned_end  = CEIL_ALIGN(base+num_bytes,PAGESIZE)-aligned_base;
-    size_t map_size = aligned_base-aligned_end;
-    page_addmemory(zone,(ppage_t)aligned_base,map_size);
-    result += map_size;
+    result += page_addmemory(zone,(ppage_t)aligned_base,
+                             aligned_base-aligned_end);
    }
    return result;
   }
@@ -329,10 +411,9 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
 
  /* Make the memory available for use by the physical memory allocator. */
  if (MEMTYPE_ISUSE(type)) {
-  page_addmemory(zone,
-                 new_info->mi_full_addr,
-                 new_info->mi_full_size);
-  result += new_info->mi_full_size;
+  result += page_addmemory(zone,
+                           new_info->mi_full_addr,
+                           new_info->mi_full_size);
  }
 
  return result;
@@ -397,8 +478,7 @@ PAGE_ALIGNED size_t KCALL mem_unpreserve(void) {
    if (iter->mi_type == MEMTYPE_PRESERVE) {
     STATIC_ASSERT(MEMTYPE_ISUSE(MEMTYPE_RAM));
     /* Make this memory available. */
-    page_addmemory(zone,iter->mi_full_addr,iter->mi_full_size);
-    result += iter->mi_full_size;
+    result += page_addmemory(zone,iter->mi_full_addr,iter->mi_full_size);
     iter->mi_type = MEMTYPE_RAM;
     /* Check if we can merge these regions now. */
     if (prev->mi_type == MEMTYPE_RAM &&

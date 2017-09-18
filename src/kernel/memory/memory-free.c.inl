@@ -90,6 +90,7 @@ page_free_(ppage_t start, size_t n_bytes, pgattr_t attr)
  assert((uintptr_t)free_end-1 <= MZONE_MAX(zone_id));
 
  assert(n_bytes);
+#ifdef MMAN_REGISTER
  if (zone_id == MZONE_DEV) {
   /* Special case: Ignore free requested for the DEV memory zone. */
   syslog(LOG_MEM|LOG_INFO,
@@ -97,6 +98,9 @@ page_free_(ppage_t start, size_t n_bytes, pgattr_t attr)
          start,(uintptr_t)start+(n_bytes-1));
   return;
  }
+#else
+ assert(zone_id != MZONE_DEV);
+#endif
 #if LOG_PHYSICAL_ALLOCATIONS
 #ifndef MMAN_REGISTER
  syslog(LOG_MEM|LOG_DEBUG,
