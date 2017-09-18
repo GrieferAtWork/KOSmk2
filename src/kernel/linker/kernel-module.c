@@ -157,6 +157,8 @@ INTERN struct instance __this_instance = {
     .i_base    = (ppage_t)0, /* Allowing the linker to assume that the kernel has a base-address of ZERO(0) allows for various optimizations.
                               * Also: If it wasn't loaded at address ZERO(0), kernel symbol addresses would be incorrect. */
                  /* The kernel itself counts as a driver. */
+    .i_used    = INSTANCESET_INIT,
+    .i_deps    = INSTANCESET_INIT,
     .i_flags   = INSTANCE_FLAG_DRIVER|INSTANCE_FLAG_NOUNLOAD,
     .i_driver  = {
 #ifdef CONFIG_TRACE_LEAKS

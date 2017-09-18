@@ -521,8 +521,8 @@ broken_hash:
                  (uintptr_t)sym_name >= (uintptr_t)string_end) break;
 #if 0
      syslog(LOG_EXEC|LOG_DEBUG,
-            "Checking hashed symbol name %q == %q (chain = %X)\n",
-            name,sym_name,chain);
+            "Checking hashed symbol name %q == %q (chain = %X; value = %p)\n",
+            name,sym_name,chain,symtab_iter->st_value);
 #endif
      if (strcmp(sym_name,name) != 0) goto next_candidate;
      if (symtab_iter->st_shndx == SHN_UNDEF) goto end; /* Symbol not defined by this library. */
@@ -643,6 +643,9 @@ got_module:
             filename.dn_name,-E_GTERR(dep));
      return E_GTERR(dep);
     }
+    /* Add the new instance as one of our dependencies. */
+    if (!instance_add_dependency(inst,dep))
+         return -ENOMEM;
    }
  }
 

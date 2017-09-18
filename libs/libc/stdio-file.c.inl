@@ -36,10 +36,12 @@
 
 DECL_BEGIN
 
+__NAMESPACE_STD_BEGIN
 struct _IO_FILE {
  int f_fd;
  /* TODO */
 };
+__NAMESPACE_STD_END
 
 #undef stdin
 #undef stdout

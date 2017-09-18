@@ -57,6 +57,21 @@ void my_action(int signo, siginfo_t *info, void *ctx) {
  did_trigger = 1;
 }
 
+void module_test(void) {
+ void *sym,*mod;
+ mod = xdlopen("libc.so",0);
+ if (!mod) perror("xdlopen()");
+ else {
+  syslog(LOG_DEBUG,"mod = %p\n",mod);
+  sym = xdlsym(mod,"strlen");
+  if (!sym) perror("xdlsym");
+  else syslog(LOG_DEBUG,"sym = %p\n",sym);
+  if (xdlclose(mod)) perror("xdlclose()");
+  //exit(0);
+ }
+}
+
+
 int main(int argc, char **argv) {
  open2(STDIN_FILENO,"/dev/keyboard",O_RDONLY);
  open2(STDOUT_FILENO,"/dev/kmsg",O_WRONLY);
@@ -75,6 +90,9 @@ int main(int argc, char **argv) {
 
  /* Mount the secondary disk passed to QEMU (TODO: Remove me) */
  mount("/dev/dos_hdb1","/mnt",NULL,0,NULL);
+
+
+ module_test();
 
 #if 0
  printf("appenv         = %p\n",appenv);

@@ -40,6 +40,7 @@ Chaos|KOS - Even more chaotic that last time.
    - <code>open()</code>/<code>read()</code>/<code>write()</code>/<code>lseek()</code>
    - <code>mount()</code>/<code>umount()</code>
    - <code>argc</code>/<code>argv</code>/<code>environ</code>
+   - <code>dlopen()</code>/<code>dlclose()</code>/<code>dlsym()</code>
    - Can run <b>BUSYBOX</b>!
  - PS/2 keyboard input
    - Using a proper driver this time
@@ -64,7 +65,6 @@ Chaos|KOS - Even more chaotic that last time.
 
 ## Planned (As seen in the old KOS) ##
  - PE binaries/libraries (.exe / .dll)
- - dlopen (Late loading of shared libraries; exec() is already able to handle them)
  - cmos rtc driver (Currently 'date' uses PIT interrupts and is reset during boot)
  - local exception handling
  - <code>futex()</code>

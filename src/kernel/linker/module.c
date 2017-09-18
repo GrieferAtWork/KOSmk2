@@ -47,6 +47,7 @@
 #include <sync/rwlock.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <kos/ksym.h>
 
 DECL_BEGIN
 
@@ -691,8 +692,14 @@ instance_new(struct module *__restrict mod, u32 flags) {
  result->i_branch  = 0;
  result->i_refcnt  = 1;
  result->i_weakcnt = 1;
+ result->i_openrec = 0;
  result->i_module  = mod;
  result->i_flags   = flags;
+ /* Initialize used/dependency instance sets. */
+ instanceset_init(&result->i_used);
+ instanceset_init(&result->i_deps);
+ assert(result->i_deps.is_lock.arw_lock == 0);
+
  /* TODO: Set the 'INSTANCE_FLAG_NOREMAP' flag if the
   *       application module 'mod' is allowed to root-fork().
   *    >> Required to prevent tampering (and breaking the dirty-bit-check)
@@ -735,6 +742,139 @@ instance_new(struct module *__restrict mod, u32 flags) {
  MODULE_INCREF(mod);
  return result;
 }
+
+PUBLIC bool KCALL
+instanceset_insert(struct instanceset *__restrict self,
+                   struct instance *__restrict inst) {
+ struct instance **new_vec;
+ CHECK_HOST_DOBJ(self);
+ assert(instanceset_writing(self));
+ assert(!instanceset_contains(self,inst));
+ new_vec = trealloc(struct instance *,
+                    self->is_setv,
+                    self->is_setc+1);
+ if unlikely(!new_vec) return false;
+ self->is_setv = new_vec;
+ new_vec[self->is_setc++] = inst;
+ return true;
+}
+PUBLIC bool KCALL
+instanceset_remove(struct instanceset *__restrict self,
+                   struct instance *__restrict inst) {
+ struct instance **iter,**end;
+ CHECK_HOST_DOBJ(self);
+ assert(instanceset_writing(self));
+ end = (iter = self->is_setv)+self->is_setc;
+ for (; iter != end; ++iter) {
+  if (*iter != inst) continue;
+  /* Delete this instance slot. */
+  memmove(iter+1,iter,((end-iter)-1)*sizeof(struct instance *));
+  --self->is_setc;
+  /* Reallocate to potentially free up unused memory. */
+  if (!self->is_setc) {
+   free(self->is_setv);
+   self->is_setv = NULL;
+  } else {
+   iter = trealloc(struct instance *,self->is_setv,self->is_setc);
+   if (iter) self->is_setv = iter;
+  }
+  assert(!instanceset_contains(self,inst));
+  return true;
+ }
+ return false;
+}
+PUBLIC bool KCALL
+instanceset_contains(struct instanceset *__restrict self,
+                     struct instance *__restrict inst) {
+ struct instance **iter,**end;
+ CHECK_HOST_DOBJ(self);
+ assert(instanceset_reading(self));
+ end = (iter = self->is_setv)+self->is_setc;
+ for (; iter != end; ++iter) {
+  if (*iter == inst) return true;
+ }
+ return false;
+}
+
+INTDEF void *KCALL kernel_symaddr(char const *__restrict name, u32 hash);
+PUBLIC SAFE void *KCALL
+instance_dlsym(struct instance *__restrict self,
+               char const *__restrict name, u32 hash) {
+ struct modsym result,weak_result,new_sym;
+ struct instance **iter,**end;
+ result.ms_type = MODSYM_TYPE_INVALID;
+ weak_result.ms_type = MODSYM_TYPE_INVALID;
+
+ /* Search dependency vector in ascending order. */
+ atomic_rwlock_read(&self->i_deps.is_lock);
+ end = (iter = self->i_deps.is_setv)+self->i_deps.is_setc;
+ for (; iter != end; ++iter) {
+  struct instance *inst = *iter;
+  CHECK_HOST_DOBJ(inst);
+  CHECK_HOST_DOBJ(inst->i_module);
+  CHECK_HOST_DOBJ(inst->i_module->m_ops);
+  CHECK_HOST_TEXT(inst->i_module->m_ops->o_symaddr,1);
+  new_sym = (*inst->i_module->m_ops->o_symaddr)(inst,name,hash);
+  if (new_sym.ms_type != MODSYM_TYPE_INVALID) {
+   if (new_sym.ms_type == MODSYM_TYPE_OK) { result = new_sym; break; }
+   weak_result = new_sym;
+  }
+ }
+ atomic_rwlock_endread(&self->i_deps.is_lock);
+ if (result.ms_type != MODSYM_TYPE_INVALID) return result.ms_addr;
+ /* Search the module being patched itself. */
+ CHECK_HOST_DOBJ(self->i_module);
+ CHECK_HOST_DOBJ(self->i_module->m_ops);
+ CHECK_HOST_TEXT(self->i_module->m_ops->o_symaddr,1);
+ result = (*self->i_module->m_ops->o_symaddr)(self,name,hash);
+ if (result.ms_type != MODSYM_TYPE_INVALID) return result.ms_addr;
+ if (weak_result.ms_type != MODSYM_TYPE_INVALID) return weak_result.ms_addr;
+
+ if (memcmp(name,__KSYM_PREFIX,sizeof(__KSYM_PREFIX)-sizeof(char)) == 0) {
+  name += COMPILER_STRLEN(__KSYM_PREFIX);
+  result.ms_addr = kernel_symaddr(name,sym_hashname(name));
+  /* Make sure to only return symbols from the kernel's user-data section. */
+  if ((uintptr_t)result.ms_addr <  (uintptr_t)__kernel_user_start ||
+      (uintptr_t)result.ms_addr >= (uintptr_t)__kernel_user_end)
+       result.ms_addr = NULL;
+  return result.ms_addr;
+ }
+ return NULL;
+}
+
+PUBLIC SAFE bool KCALL
+instance_add_dependency(struct instance *__restrict self,
+                        struct instance *__restrict dependency) {
+ bool result = true;
+ CHECK_HOST_DOBJ(self);
+ CHECK_HOST_DOBJ(dependency);
+ /* Acquire a lock to both affected instance sets. */
+ for (;;) {
+  instanceset_write(&self->i_deps);
+  if (instanceset_trywrite(&dependency->i_used)) break;
+  if (instanceset_contains(&self->i_deps,dependency)) goto end2;
+  instanceset_endwrite(&self->i_deps);
+  instanceset_write(&dependency->i_used);
+  if (instanceset_trywrite(&self->i_deps)) break;
+  instanceset_endwrite(&dependency->i_used);
+ }
+ assert(instanceset_contains(&self->i_deps,dependency) ==
+        instanceset_contains(&dependency->i_used,self));
+ /* Create a new dependency link if none already exists. */
+ if (!instanceset_contains(&self->i_deps,dependency)) {
+  result = instanceset_insert(&self->i_deps,dependency);
+  if (result) {
+   /* Create the back-link and delete the primary if it fails. */
+   result = instanceset_insert(&dependency->i_used,self);
+   if (!result) asserte(instanceset_remove(&self->i_deps,dependency));
+  }
+ }
+ instanceset_endwrite(&dependency->i_used);
+end2:
+ instanceset_endwrite(&self->i_deps);
+ return result;
+}
+
 
 PUBLIC SAFE void KCALL
 instance_callinit(struct instance *__restrict self) {
@@ -832,6 +972,40 @@ instance_destroy(struct instance *__restrict self) {
  CHECK_HOST_DOBJ(self);
  assert(!self->i_refcnt);
  assert(!self->i_branch);
+ assert(malloc_usable_size(self) != 0);
+
+ /* Clear dependencies. */
+clear_deps:
+ instanceset_write(&self->i_deps);
+ while (self->i_deps.is_setc != 0) {
+  struct instance *user = self->i_deps.is_setv[self->i_deps.is_setc-1];
+  if (user != self && !instanceset_trywrite(&user->i_used)) {
+   instanceset_endwrite(&self->i_deps);
+   task_yield();
+   goto clear_deps;
+  }
+  asserte(instanceset_remove(&user->i_used,self));
+  if (user != self) instanceset_endwrite(&user->i_used);
+  --self->i_deps.is_setc;
+ }
+ instanceset_endwrite(&self->i_deps);
+
+ /* Clear instances using this one. */
+clear_uses:
+ instanceset_write(&self->i_used);
+ while (self->i_used.is_setc != 0) {
+  struct instance *used = self->i_used.is_setv[self->i_used.is_setc-1];
+  if (used != self && !instanceset_trywrite(&used->i_deps)) {
+   instanceset_endwrite(&self->i_used);
+   task_yield();
+   goto clear_uses;
+  }
+  asserte(instanceset_remove(&used->i_deps,self));
+  if (used != self) instanceset_endwrite(&used->i_deps);
+  --self->i_used.is_setc;
+ }
+ instanceset_endwrite(&self->i_used);
+
  /* NOTE: Since instances are tracked through mman branches, the caller
   *       must have already unmapped all branches mapping parts of this
   *       instance. */
@@ -843,6 +1017,8 @@ instance_destroy(struct instance *__restrict self) {
  }
  CHECK_HOST_DOBJ(self->i_module);
  MODULE_DECREF(self->i_module);
+ instanceset_fini(&self->i_used);
+ instanceset_fini(&self->i_deps);
  INSTANCE_WEAK_DECREF(self);
 }
 

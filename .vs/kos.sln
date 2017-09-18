@@ -19,6 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\byteswap.h = ..\include\byteswap.h
 		..\include\ctype.h = ..\include\ctype.h
 		..\include\dirent.h = ..\include\dirent.h
+		..\include\dlfcn.h = ..\include\dlfcn.h
 		..\include\elf.h = ..\include\elf.h
 		..\include\endian.h = ..\include\endian.h
 		..\include\err.h = ..\include\err.h
@@ -136,6 +137,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bits", "bits", "{D8CF57A3-C
 		..\include\bits\byteswap.h = ..\include\bits\byteswap.h
 		..\include\bits\confname.h = ..\include\bits\confname.h
 		..\include\bits\dirent.h = ..\include\bits\dirent.h
+		..\include\bits\dlfcn.h = ..\include\bits\dlfcn.h
 		..\include\bits\endian.h = ..\include\bits\endian.h
 		..\include\bits\fcntl-linux.h = ..\include\bits\fcntl-linux.h
 		..\include\bits\fcntl.h = ..\include\bits\fcntl.h
@@ -295,6 +297,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "terminal-vga", "apps\termin
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "elfimg", "apps\elfimg.vcxproj", "{96A4487E-9772-4936-9E6F-AC9E5791FEEC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdl", "libs\libdl.vcxproj", "{E60C43FC-AA5A-4451-8B2C-5B8CD2A76044}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -325,6 +329,10 @@ Global
 		{96A4487E-9772-4936-9E6F-AC9E5791FEEC}.Debug|Win32.Build.0 = Debug|Win32
 		{96A4487E-9772-4936-9E6F-AC9E5791FEEC}.Release|Win32.ActiveCfg = Release|Win32
 		{96A4487E-9772-4936-9E6F-AC9E5791FEEC}.Release|Win32.Build.0 = Release|Win32
+		{E60C43FC-AA5A-4451-8B2C-5B8CD2A76044}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E60C43FC-AA5A-4451-8B2C-5B8CD2A76044}.Debug|Win32.Build.0 = Debug|Win32
+		{E60C43FC-AA5A-4451-8B2C-5B8CD2A76044}.Release|Win32.ActiveCfg = Release|Win32
+		{E60C43FC-AA5A-4451-8B2C-5B8CD2A76044}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -350,5 +358,6 @@ Global
 		{02CDEABE-15CC-4964-A331-C3B661CF57EF} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
 		{66C8320F-9409-4AB3-9B11-94A38E243ACB} = {2503C059-4B4F-457D-9853-FFA845ED7BF2}
 		{96A4487E-9772-4936-9E6F-AC9E5791FEEC} = {2503C059-4B4F-457D-9853-FFA845ED7BF2}
+		{E60C43FC-AA5A-4451-8B2C-5B8CD2A76044} = {8C9AB07B-15FA-46B5-B7CC-364910789270}
 	EndGlobalSection
 EndGlobal

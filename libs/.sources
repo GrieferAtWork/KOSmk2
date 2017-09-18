@@ -51,6 +51,13 @@ BEGIN LIBRARY("libc")
 	SOURCE("libc/inet/*.c")
 END
 
+BEGIN LIBRARY("dl")
+	SET_OUTPUT("/bin/libs/libdl.so")
+	SET_DISKFILE("/lib/libdl.so")
+	_c_flags.remove("-fstack-protector-strong");
+	SOURCE("libdl/dlfcn.c")
+END
+
 BEGIN ARCHIVE("_start")
 	SET_ARCHIVER("")
 	SET_OUTPUT("/bin/libs/crt0.o")

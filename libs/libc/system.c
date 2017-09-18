@@ -144,6 +144,25 @@ PUBLIC int (LIBCCALL mprotect)(void *addr, size_t len, int prot) {
  return FORWARD_SYSTEM_ERROR(sys_mprotect(addr,len,prot));
 }
 
+PUBLIC void *(LIBCCALL xdlopen)(char const *filename, int flags) {
+ void *result = sys_xdlopen(filename,flags);
+ if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return NULL; }
+ return result;
+}
+PUBLIC void *(LIBCCALL xfdlopen)(int fd, int flags) {
+ void *result = sys_xfdlopen(fd,flags);
+ if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return NULL; }
+ return result;
+}
+PUBLIC void *(LIBCCALL xdlsym)(void *handle, char const *symbol) {
+ void *result = sys_xdlsym(handle,symbol);
+ if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return NULL; }
+ return result;
+}
+PUBLIC int (LIBCCALL xdlclose)(void *handle) {
+ return FORWARD_SYSTEM_ERROR(sys_xdlclose(handle));
+}
+
 
 DECL_END
 

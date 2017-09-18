@@ -265,12 +265,14 @@ __XSYSCALL(__NR_xfexecve,sys_xfexecve)
  *    within one's own memory manager, as instance handles
  *    cannot be shared between different processes (or rather VMs)
  */
-//#define __NR_xdlopen      0x80000004
-//__XSYSCALL(__NR_xdlopen,sys_xdlopen)
-//#define __NR_xdlclose     0x80000005
-//__XSYSCALL(__NR_xdlclose,sys_xdlclose)
-//#define __NR_xdlsym       0x80000006
-//__XSYSCALL(__NR_xdlsym,sys_xdlsym)
+#define __NR_xdlopen      0x80000020
+__XSYSCALL(__NR_xdlopen,sys_xdlopen)
+#define __NR_xfdlopen     0x80000021
+__XSYSCALL(__NR_xfdlopen,sys_xfdlopen)
+#define __NR_xdlclose     0x80000022
+__XSYSCALL(__NR_xdlclose,sys_xdlclose)
+#define __NR_xdlsym       0x80000023
+__XSYSCALL(__NR_xdlsym,sys_xdlsym)
 
 #define __NR_xpaused      0x80000080
 #if !defined(__KERNEL__) || defined(CONFIG_DEBUG)

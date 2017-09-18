@@ -46,7 +46,7 @@ struct dentryname;
 struct modpatch {
  struct modpatch      *p_root;    /*< [1..1] The root patching controller (self-pointer if this already is the root). */
  struct modpatch      *p_prev;    /*< [0..1] The previous controller (for recursive dependency loading). */
- struct instance      *p_inst;    /*< [1..1] The instance that is being patched. */
+ struct instance      *p_inst;    /*< [0..1] The instance that is being patched (May be null for loading symbolic, fake dependencies). */
  u32                   p_iflags;  /*< Flags used to created dependency instances (Set of 'INSTANCE_FLAG_*') */
  size_t                p_depc;    /*< Amount of created dependencies. */
  size_t                p_depa;    /*< Amount of allocated dependency slots. */
@@ -102,6 +102,7 @@ FUNDEF void KCALL modpatch_fini(struct modpatch *__restrict self);
 /* Add a new dependency to 'self', patching it recursively.
  * NOTE: This function will automatically deduce a suitable location for
  *       mapping 'dependency' within the currently active memory manager.
+ * NOTE: Upon success, the instance returned will have its 'i_openrec' counter incremented.
  * @return: * :         A pointer to the added instance hosting 'dependency'
  *                NOTE: In the event that 'dependency' had already been loaded,
  *                      a pointer to the existing instance is returned instead.

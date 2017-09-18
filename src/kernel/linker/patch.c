@@ -100,11 +100,11 @@ modpatch_common_dlsym_impl(struct modpatch *__restrict self,
   }
  }
  /* Search the module being patched itself. */
- CHECK_HOST_DOBJ(self->p_inst);
- CHECK_HOST_DOBJ(self->p_inst->i_module);
- CHECK_HOST_DOBJ(self->p_inst->i_module->m_ops);
- CHECK_HOST_TEXT(self->p_inst->i_module->m_ops->o_symaddr,1);
- if (search_current) {
+ if (search_current && self->p_inst) {
+  CHECK_HOST_DOBJ(self->p_inst);
+  CHECK_HOST_DOBJ(self->p_inst->i_module);
+  CHECK_HOST_DOBJ(self->p_inst->i_module->m_ops);
+  CHECK_HOST_TEXT(self->p_inst->i_module->m_ops->o_symaddr,1);
   new_sym = (*self->p_inst->i_module->m_ops->o_symaddr)(self->p_inst,name,hash);
   if (new_sym.ms_type != MODSYM_TYPE_INVALID) {
    if (new_sym.ms_type == MODSYM_TYPE_OK) { *result = new_sym; goto end; }
@@ -151,7 +151,8 @@ modpatch_host_dlsym(struct modpatch *__restrict self,
     !strcmp(name,NAME_FOR_THIS_INSTANCE))
      return self->p_inst;
  if (hash == HASH_FOR_THIS_MODULE &&
-    !strcmp(name,NAME_FOR_THIS_MODULE))
+    !strcmp(name,NAME_FOR_THIS_MODULE) &&
+     self->p_inst != NULL)
      return self->p_inst->i_module;
 
  return NULL;
@@ -167,16 +168,14 @@ modpatch_user_dlsym(struct modpatch *__restrict self,
 
  /* Check for special kernel symbols. (e.g.: '.kos.keymap') */
  if (memcmp(name,__KSYM_PREFIX,sizeof(__KSYM_PREFIX)-sizeof(char)) == 0) {
-  name += COMPILER_STRLEN(__KSYM_PREFIX);
+  name  += COMPILER_STRLEN(__KSYM_PREFIX);
   result = kernel_symaddr(name,sym_hashname(name));
   /* Make sure to only return symbols from the kernel's user-data section. */
   if ((uintptr_t)result <  (uintptr_t)__kernel_user_start ||
       (uintptr_t)result >= (uintptr_t)__kernel_user_end)
        result = NULL;
-  return result;
  }
-
- return NULL;
+ return result;
 }
 
 
@@ -192,6 +191,8 @@ L(.section .text                                                   )
 L(PUBLIC_ENTRY(modpatch_patch)                                     )
 L(    movl 4(%esp), %edx /* Load 'self' */                         )
 L(    movl MODPATCH_OFFSETOF_INST(%edx),   %eax /* ->p_inst */     )
+L(    testl %eax, %eax                                             )
+L(    jz   3f /* No-op if no instance is set (NOTE: Return -EOK == 0). */)
 L(    movl INSTANCE_OFFSETOF_MODULE(%eax), %eax /* ->i_module */   )
 L(    movl MODULE_OFFSETOF_OPS(%eax),      %eax /* ->m_ops */      )
 L(    movl MODULEOPS_OFFSETOF_PATCH(%eax), %eax /* ->o_patch */    )
@@ -230,7 +231,7 @@ L(    popl %ebp                                                    )
 L(    popl %ebx                                                    )
 L(    popl %esi                                                    )
 L(    popl %edi                                                    )
-L(    ret  $4                                                      )
+L(3:  ret  $4                                                      )
 L(1:  movl $(-EFAULT), %eax /* Simply return -EFAULT */            )
 L(    jmp 2b                                                       )
 L(SYM_END(modpatch_patch)                                          )
@@ -242,6 +243,7 @@ modpatch_patch(struct modpatch *__restrict self) {
  /* NOTE: Must be implemented in assembly to
   *       use local interrupt handlers. */
  CHECK_HOST_DOBJ(self);
+ if (!self->p_inst) return -EOK;
  CHECK_HOST_DOBJ(self->p_inst);
  CHECK_HOST_DOBJ(self->p_inst->i_module);
  CHECK_HOST_DOBJ(self->p_inst->i_module->m_ops);
@@ -256,11 +258,13 @@ modpatch_find_dep(struct modpatch *__restrict self,
                   struct module *__restrict dependency) {
  struct instance **iter,**begin;
  CHECK_HOST_DOBJ(self);
- CHECK_HOST_DOBJ(self->p_inst);
- CHECK_HOST_DOBJ(self->p_inst->i_module);
- /* Check if this patcher _is_ for that same module. */
- if (self->p_inst->i_module == dependency)
-     return self->p_inst;
+ if (self->p_inst) {
+  CHECK_HOST_DOBJ(self->p_inst);
+  CHECK_HOST_DOBJ(self->p_inst->i_module);
+  /* Check if this patcher _is_ for that same module. */
+  if (self->p_inst->i_module == dependency)
+      return self->p_inst;
+ }
  /* Search the dependency vector in reverse order. */
  iter = (begin = self->p_depv)+self->p_depc;
  while (iter-- != begin) {

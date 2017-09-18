@@ -356,6 +356,28 @@ __LIBC __SAFE void (__LIBCCALL cfree)(void *__restrict __mallptr) __ASMNAME("fre
 __LIBC int (__LIBCCALL getloadavg)(double __loadavg[], int __nelem);
 #endif /* __USE_MISC */
 
+#ifdef __USE_KOS
+/* KOS extensions for accessing the kernel linker without needing to link against -ldl.
+ * NOTE: Since KOS integrates the user-space linker in kernel-space, so as to speed up
+ *       load times and especially cache characteristics significantly, there is no need
+ *       for libraries to be loaded by a custom binary that would otherwise always sit
+ *       in user-space, clobbering mapped memory just for the sake of it...
+ *    >> Don't believe me? - Take a look at any dynamic binary's /proc/PID/map_files and
+ *       tell me what you see. I'll tell you: '/lib/i386-linux-gnu/ld-2.23.so'
+ *       That's right! That one's always linked in just to serve dynamic linking.
+ *       Now that's not necessarily a bad thing, but when it comes to KOS, I chose
+ *       to go a different route by hiding general purpose linking from userspace,
+ *       keeping redundancy low and eliminating dependency on a second library probably
+ *       even more important than libc itself.
+ * NOTE: These functions follow usual LIBC semantics, returning -1/NULL and setting errno on error.
+ *    >> the 'dlerror()' function you can find in libdl.so is literally just a swapper
+ *       around 'strerror()' with the error number internally saved by libdl, so as not
+ *       to clobber libc's thread-local 'errno' variable. */
+__LIBC void *(__LIBCCALL xdlopen)(char const *__filename, int __flags);
+__LIBC void *(__LIBCCALL xfdlopen)(int __fd, int __flags);
+__LIBC void *(__LIBCCALL xdlsym)(void *__handle, char const *__symbol);
+__LIBC int (__LIBCCALL xdlclose)(void *__handle);
+#endif
 
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN_EXTENDED) && !defined(__USE_XOPEN2K))

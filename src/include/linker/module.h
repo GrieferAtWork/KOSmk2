@@ -116,6 +116,7 @@ struct moduleops {
   * NOTE: This function must be called within the context of
   *       the page directory that is mapping 'patcher->p_inst'.
   * >> Simply use 'modpatch_patch()' to call this function!
+  * @assume(patcher->p_inst != NULL);
   * @param: patcher:     The patching controller.
   * @return: -EOK:       Successfully patched the given module.
   * @return: -EFAULT:    An illegal pointer was encountered during relocations.
@@ -496,15 +497,73 @@ struct kinstance {
         INSTANCE_FLAG_NOREMAP)
 
 
-#define INSTANCE_OFFSETOF_CHAIN      0
+
+#define INSTANCESET_OFFSETOF_LOCK  0
+#define INSTANCESET_OFFSETOF_SETC  ATOMIC_RWLOCK_SIZE
+#define INSTANCESET_OFFSETOF_SETV (ATOMIC_RWLOCK_SIZE+__SIZEOF_SIZE_T__)
+#define INSTANCESET_SIZE          (ATOMIC_RWLOCK_SIZE+__SIZEOF_SIZE_T__+__SIZEOF_POINTER__)
+struct instanceset {
+ /* Set of instances, used to track dependencies. */
+ atomic_rwlock_t        is_lock; /*< Lock for this instance set. */
+ size_t                 is_setc; /*< [lock(is_lock)] Amount of instances in the vector below. */
+ WEAK struct instance **is_setv; /*< [1..1][0..is_setc][lock(is_lock)] Vector of instances.
+                                  *  (These are all weak aliases; s.a.: documentation in 'struct instance') */
+};
+#define instanceset_reading(x)      atomic_rwlock_reading(&(x)->is_lock)
+#define instanceset_writing(x)      atomic_rwlock_writing(&(x)->is_lock)
+#define instanceset_tryread(x)      atomic_rwlock_tryread(&(x)->is_lock)
+#define instanceset_trywrite(x)     atomic_rwlock_trywrite(&(x)->is_lock)
+#define instanceset_tryupgrade(x)   atomic_rwlock_tryupgrade(&(x)->is_lock)
+#define instanceset_read(x)         atomic_rwlock_read(&(x)->is_lock)
+#define instanceset_write(x)        atomic_rwlock_write(&(x)->is_lock)
+#define instanceset_upgrade(x)      atomic_rwlock_upgrade(&(x)->is_lock)
+#define instanceset_downgrade(x)    atomic_rwlock_downgrade(&(x)->is_lock)
+#define instanceset_endread(x)      atomic_rwlock_endread(&(x)->is_lock)
+#define instanceset_endwrite(x)     atomic_rwlock_endwrite(&(x)->is_lock)
+
+#define INSTANCESET_INIT   {ATOMIC_RWLOCK_INIT,0,NULL}
+#define instanceset_init(self) \
+  (void)(atomic_rwlock_init(&(self)->is_lock), \
+        (self)->is_setc = 0, \
+        (self)->is_setv = NULL)
+#define instanceset_cinit(self) \
+  (atomic_rwlock_cinit(&(self)->is_lock), \
+   assert((self)->is_setc == 0), \
+   assert((self)->is_setv == NULL))
+#define instanceset_fini(self) free((self)->is_setv)
+#define INSTANCESET_FOREACH(inst,self) \
+ for (struct instance **_iter = (self)->is_setv, \
+                      **_end = _iter+(self)->is_setc; \
+      _iter != _end; ++_iter) \
+ if (((inst) = *_iter,0)); else
+
+/* Operate on a given instance set.
+ * NOTE: For all of these, the caller must also be holding the appropriate lock!
+ * NOTE: Instance sets are ordered, in that instances added before others
+ *       are also enumerated by 'INSTANCESET_FOREACH()' before later ones.
+ * NOTE: 'instanceset_insert()' requires the given 'inst' to not be apart of the set.
+ * @assume(!instanceset_contains(self,inst)); [instanceset_insert]
+ * @return: true:   The operation completed successfully.
+ * @return: false: [instanceset_insert] Not enough available memory.
+ * @return: false:  The given instance is not apart of the set. */
+FUNDEF bool KCALL instanceset_insert(struct instanceset *__restrict self, struct instance *__restrict inst);
+FUNDEF bool KCALL instanceset_remove(struct instanceset *__restrict self, struct instance *__restrict inst);
+FUNDEF bool KCALL instanceset_contains(struct instanceset *__restrict self, struct instance *__restrict inst);
+
+
+#define INSTANCE_OFFSETOF_CHAIN    0
 #define INSTANCE_OFFSETOF_BRANCH  (2*__SIZEOF_POINTER__)
 #define INSTANCE_OFFSETOF_WEAKCNT (2*__SIZEOF_POINTER__+__SIZEOF_REF_T__)
 #define INSTANCE_OFFSETOF_REFCNT  (2*__SIZEOF_POINTER__+2*__SIZEOF_REF_T__)
-#define INSTANCE_OFFSETOF_MODULE  (2*__SIZEOF_POINTER__+3*__SIZEOF_REF_T__)
-#define INSTANCE_OFFSETOF_BASE    (3*__SIZEOF_POINTER__+3*__SIZEOF_REF_T__)
-#define INSTANCE_OFFSETOF_FLAGS   (4*__SIZEOF_POINTER__+3*__SIZEOF_REF_T__)
-#define INSTANCE_OFFSETOF_DRIVER  (4*__SIZEOF_POINTER__+3*__SIZEOF_REF_T__+4)
-#define INSTANCE_SIZE             (4*__SIZEOF_POINTER__+3*__SIZEOF_REF_T__+4+KINSTANCE_SIZE)
+#define INSTANCE_OFFSETOF_OPENREC (2*__SIZEOF_POINTER__+3*__SIZEOF_REF_T__)
+#define INSTANCE_OFFSETOF_MODULE  (2*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__)
+#define INSTANCE_OFFSETOF_BASE    (3*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__)
+#define INSTANCE_OFFSETOF_USED    (4*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__)
+#define INSTANCE_OFFSETOF_DEPS    (4*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+INSTANCESET_SIZE)
+#define INSTANCE_OFFSETOF_TEMP    (4*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE)
+#define INSTANCE_OFFSETOF_FLAGS   (5*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE)
+#define INSTANCE_OFFSETOF_DRIVER  (5*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE+4)
+#define INSTANCE_SIZE             (5*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE+4+KINSTANCE_SIZE)
 
 struct instance {
  /* NOTE: When reading the i_pself/i_next linked list of per-mman module instances,
@@ -523,13 +582,24 @@ struct instance {
                                *  NOTE: May no longer be incremented when the 'INSTANCE_FLAG_UNLOAD' flag was set.
                                *  NOTE: While non-zero, keeps this structure as valid,
                                *        as well as a reference to 'i_weakcnt' */
+ ATOMIC_DATA ref_t  i_openrec;/*< User-space recursion for dlopen()/dlclose(). */
  REF struct module *i_module; /*< [const][1..1] Reference to the associated module. */
  VIRT ppage_t       i_base;   /*< [const] Instance base address. (Can be added to any 'maddr_t' - 'm_load' from 'i_module' to create an absolute runtime address)
                                *   NOTE: Unless the instance re-mapped itself, it can be unmapped with
                                *        'mman_munmap(i_base,i_module->m_size)' within the associated mman. */
+ /* Tracking of instance dependencies.
+  * NOTE: All of these are weakly referenced, meaning that
+  *       links are deleted by instances as they are destroyed. */
+ struct instanceset i_used;   /*< The set of instances that uses this one (aka. that this instance is a dependency of).
+                               *  HINT: 'self' is apart of the 'i_deps' set of each of these. */
+ struct instanceset i_deps;   /*< The set of instances that this one depends on (aka. that are used by this instance).
+                               *  HINT: 'self' is apart of the 'i_used' set of each of these. */
+ void              *i_temp;   /*< [lock(:struct mman::m_lock)] Temporary pointer used during fork(). */
  u32                i_flags;  /*< Instance flags. */
  struct kinstance   i_driver; /*< Kernel module data (Only allocated for driver modules). */
 };
+
+
 #define INSTANCE_INKERNEL(self)                               (((self)->i_flags)&INSTANCE_FLAG_KERNEL)
 #define INSTANCE_ISUNLOADING(self)                 (ATOMIC_READ((self)->i_flags)&INSTANCE_FLAG_UNLOAD)
 #define INSTANCE_ISEMPTY(self)                                 ((self)->i_module->m_size == 0)
@@ -545,6 +615,21 @@ FUNDEF SAFE void KCALL instance_destroy_weak(struct instance *__restrict self);
 LOCAL WUNUSED bool KCALL _instance_tryincref(struct instance *__restrict self);
 LOCAL WUNUSED bool KCALL _instance_incref(struct instance *__restrict self);
 
+/* Add the given 'dependency' as a dependency of 'self',
+ * consequently also adding 'self' as a user of 'dependency'.
+ * NOTE: This function is a no-op when 'dependency' already was a dependency of 'self'.
+ * @return: true:  Successfully added both links.
+ * @return: false: Not enough available memory. */
+FUNDEF SAFE bool KCALL
+instance_add_dependency(struct instance *__restrict self,
+                        struct instance *__restrict dependency);
+
+/* Perform a symbol lookup within the given
+ * instance, following ELF symbol resolution order.
+ * HINT: 'dlsym(NULL,...)' calls this function on 'THIS_MMAN->m_exe'
+ * NOTE: The instance itself is also searched by this function!
+ * NOTE: Kernel symbol resolution is performed by this function as well! */
+FUNDEF SAFE USER void *KCALL instance_dlsym(struct instance *__restrict self, char const *__restrict name, u32 hash);
 
 /* Create a new uninitialized instance from the given module.
  * Once done, the caller should ensure that all memory regions from 'mod'

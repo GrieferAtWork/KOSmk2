@@ -160,7 +160,7 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
            iter->i_module->m_file);
    inst_copy = (struct instance *)kmalloc(offsetof(struct instance,i_driver),
                                           MMAN_UNIGFP);
-   if unlikely(!inst_copy) goto err_nomem;
+   if unlikely(!inst_copy) {err_nomem2: *pdst = NULL; goto err_nomem; }
    inst_copy->i_branch = 0; /* Will be fixed later. */
    MMAN_FOREACH(branch,nm) {
     if (branch->mb_notify  == &instance_mnotify &&
@@ -183,11 +183,33 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
      * being dropped during the process of unsharing. */
     kfree(inst_copy);
    } else {
+    iter->i_temp = inst_copy; /* Track the new instance pointers. */
     inst_copy->i_weakcnt = 1;
     inst_copy->i_module  = iter->i_module;
     inst_copy->i_base    = iter->i_base;
     inst_copy->i_refcnt  = 1;
     inst_copy->i_flags   = iter->i_flags;
+    /* NOTE: The sets themself are fixed in later. */
+    atomic_rwlock_init(&inst_copy->i_used.is_lock);
+    atomic_rwlock_init(&inst_copy->i_deps.is_lock);
+    inst_copy->i_used.is_setc = iter->i_used.is_setc;
+    inst_copy->i_deps.is_setc = iter->i_deps.is_setc;
+    if (inst_copy->i_used.is_setc) {
+     inst_copy->i_used.is_setv = (WEAK struct instance **)memdup(iter->i_used.is_setv,
+                                                                 inst_copy->i_used.is_setc*
+                                                                 sizeof(WEAK struct instance *));
+     if unlikely(!inst_copy->i_used.is_setv) { inst_copy->i_deps.is_setv = NULL; goto err_nomem2; }
+    } else {
+     inst_copy->i_used.is_setv = NULL;
+    }
+    if (inst_copy->i_deps.is_setc) {
+     inst_copy->i_deps.is_setv = (WEAK struct instance **)memdup(iter->i_deps.is_setv,
+                                                                 inst_copy->i_deps.is_setc*
+                                                                 sizeof(WEAK struct instance *));
+     if unlikely(!inst_copy->i_deps.is_setv) goto err_nomem2;
+    } else {
+     inst_copy->i_deps.is_setv = NULL;
+    }
 
     MODULE_INCREF(inst_copy->i_module);
     inst_copy->i_chain.le_pself = pdst;
@@ -197,6 +219,20 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
   }
   /* Terminate the chain of module instances associated with this mman. */
   *pdst = NULL;
+
+  /* Fix dependency/used-by instance sets. */
+  MMAN_FOREACH_INST(iter,nm) {
+   struct instance **fix_iter,**fix_end;
+   /* Replace pointers with the new instances. */
+   fix_end = (fix_iter = iter->i_used.is_setv)+iter->i_used.is_setc;
+   for (; fix_iter != fix_end; ++fix_iter) {
+    *fix_iter = (WEAK struct instance *)(*fix_iter)->i_temp;
+   }
+   fix_end = (fix_iter = iter->i_deps.is_setv)+iter->i_deps.is_setc;
+   for (; fix_iter != fix_end; ++fix_iter) {
+    *fix_iter = (WEAK struct instance *)(*fix_iter)->i_temp;
+   }
+  }
  }
 
 #ifndef CONFIG_NO_LDT

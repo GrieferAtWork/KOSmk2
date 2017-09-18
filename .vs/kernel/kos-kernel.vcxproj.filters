@@ -390,6 +390,9 @@
     <ClCompile Include="..\..\src\kernel\memory\install.c">
       <Filter>kernel\memory</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\linker\sys_linker.c">
+      <Filter>kernel\linker</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">

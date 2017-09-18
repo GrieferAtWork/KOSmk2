@@ -176,14 +176,18 @@ mman_irq_pf(struct cpustate_irq_c *__restrict info) {
 #endif
    /* Sadly, this lookup must be performed in the context of the kernel page directory! */
    /* XXX: Not really. - We could use page-directory self-mappings here... */
-   if (user_mman != &mman_kernel) __asm__ __volatile__("movl %0, %%cr3\n" : : "r" (&pdir_kernel.pd_directory) : "memory");
-   if (!pdir_maccess_addr(&user_mman->m_pdir,(void *)fault_page,req_attr)) {
+   {
+    pflag_t was = PREEMPTION_PUSH();
+    if (user_mman != &mman_kernel) __asm__ __volatile__("movl %0, %%cr3\n" : : "r" (&pdir_kernel.pd_directory) : "memory");
+    if (!pdir_maccess_addr(&user_mman->m_pdir,(void *)fault_page,req_attr)) {
 #if 0
-    syslog(LOG_DEBUG,"Faulty address: %p\n",fault_page);
+     syslog(LOG_DEBUG,"Faulty address: %p\n",fault_page);
 #endif
-    error = -EFAULT;
+     error = -EFAULT;
+    }
+    if (user_mman != &mman_kernel) __asm__ __volatile__("movl %0, %%cr3\n" : : "r" (&user_mman->m_ppdir->pd_directory) : "memory");
+    PREEMPTION_POP(was);
    }
-   if (user_mman != &mman_kernel) __asm__ __volatile__("movl %0, %%cr3\n" : : "r" (&user_mman->m_ppdir->pd_directory) : "memory");
   }
   /*mman_print_unlocked(mspace,&tty_printer,NULL);*/
   mman_endwrite(eff_mman);

@@ -170,6 +170,10 @@ LOCAL SYSCALL4(ssize_t,xmunmap,(void *,addr,size_t,len,int,flags,void *,tag));
 LOCAL SYSCALL1(void *,xsharesym,(USER char const *,name));
 LOCAL SYSCALL1(__errno_t,xpaused,(USER char const *,message));
 LOCAL SYSCALL3(__errno_t,xfexecve,(int,fd,char const *const *,argv,char const *const *,envp));
+LOCAL SYSCALL2(void *,xdlopen,(char const *,filename,int,flags));
+LOCAL SYSCALL2(void *,xfdlopen,(int,fd,int,flags));
+LOCAL SYSCALL2(void *,xdlsym,(void *,handle,char const *,symbol));
+LOCAL SYSCALL1(int,xdlclose,(void *,handle));
 
 #ifdef __ARCH_EXTENDED_FS_SYSCALLS
 #undef SYSCALL_NAME
