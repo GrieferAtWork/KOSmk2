@@ -64,16 +64,21 @@ mregion_part_split_lo(struct mregion_part *__restrict part,
   memcpy(&result->mt_refcnt,&part->mt_refcnt,
          offsetafter(struct mregion_part,mt_locked)-
          offsetof(struct mregion_part,mt_refcnt));
-  if (part->mt_state == MPART_STATE_INCORE) {
-   if (!mscatter_split_lo(&result->mt_memory,
-                          &part->mt_memory,
-                           split_addr-part->mt_start))
-        goto fail;
-  } else if (part->mt_state == MPART_STATE_INSWAP) {
-   if (!mswap_ticket_split_lo(&result->mt_stick,
-                              &part->mt_stick,
-                               split_addr-part->mt_start))
-        goto fail;
+  if (part->mt_state == MPART_STATE_INCORE ||
+      part->mt_state == MPART_STATE_INSWAP) {
+   struct mman *omm; bool is_ok;
+   TASK_PDIR_KERNEL_BEGIN(omm);
+   if (part->mt_state == MPART_STATE_INCORE) {
+    is_ok = mscatter_split_lo(&result->mt_memory,
+                              &part->mt_memory,
+                              split_addr-part->mt_start);
+   } else {
+    is_ok = mswap_ticket_split_lo(&result->mt_stick,
+                                  &part->mt_stick,
+                                  split_addr-part->mt_start);
+   }
+   TASK_PDIR_KERNEL_END(omm);
+   if (!is_ok) goto fail;
   }
   result->mt_start = split_addr;
   /* Insert the new part after the previous. */
@@ -94,14 +99,22 @@ mregion_part_merge(struct mregion_part *__restrict part) {
       next->mt_refcnt == part->mt_refcnt &&
       next->mt_state  == part->mt_state &&
       next->mt_flags  == part->mt_flags) {
-  if (part->mt_state == MPART_STATE_INSWAP) {
-   if (!mscatter_cat(&part->mt_memory,&next->mt_memory)) return false;
-  } else {
-   if (!mswap_ticket_cat(&part->mt_stick,&next->mt_stick)) return false;
+  if (part->mt_state == MPART_STATE_INSWAP ||
+      part->mt_state == MPART_STATE_INCORE) {
+   struct mman *omm; bool is_ok;
+   TASK_PDIR_KERNEL_BEGIN(omm);
+   if (part->mt_state == MPART_STATE_INCORE)
+    is_ok = mscatter_cat(&part->mt_memory,&next->mt_memory);
+   else {
+    is_ok = mswap_ticket_cat(&part->mt_stick,&next->mt_stick);
+   }
+   TASK_PDIR_KERNEL_END(omm);
+   if (!is_ok) return false;
   }
-  /* Remove the next-entry from the chain. */
+  /* Remove the next entry from the chain. */
   LIST_REMOVE(next,mt_chain);
   free(next);
+  return true;
  }
  return false;
 }
@@ -153,7 +166,11 @@ again_thisone: {
    /* Both bounds match! - This is great! */
    (*action)(self,part);
    if (mregion_part_merge(part)) recheck_thisone = true;
-   if (HAS_PREV && mregion_part_merge(PREV)) recheck_thisone = true;
+   if (HAS_PREV && mregion_part_merge(PREV)) {
+    /* Much re-check the previous part. */
+    part = PREV,ppart = part->mt_chain.le_pself;
+    recheck_thisone = true;
+   }
   } else {
    struct mregion_part *high_part;
    /* Must split the part half-way. */
@@ -242,13 +259,14 @@ done_write:
    }
   }
   if (region->mr_type == MREGION_TYPE_MEM) {
-   if (self->mt_state == MPART_STATE_INCORE) {
+   if (self->mt_state == MPART_STATE_INCORE ||
+       self->mt_state == MPART_STATE_INSWAP) {
     struct mman *old_mm;
     TASK_PDIR_KERNEL_BEGIN(old_mm);
-    page_free_scatter(&self->mt_memory,memory_attrib);
+    if (self->mt_state == MPART_STATE_INCORE)
+         page_free_scatter(&self->mt_memory,memory_attrib);
+    else mswap_delete(&self->mt_stick);
     TASK_PDIR_KERNEL_END(old_mm);
-   } else if (self->mt_state == MPART_STATE_INSWAP) {
-    mswap_delete(&self->mt_stick);
    }
    /* Fix the part state to mirror what's new. */
    self->mt_state  = MPART_STATE_MISSING;

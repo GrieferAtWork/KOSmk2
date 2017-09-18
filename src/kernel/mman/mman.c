@@ -121,14 +121,14 @@ mregion_destroy(struct mregion *__restrict self) {
     if (self->mr_type == MREGION_TYPE_MEM) {
      /* The part may not be in-core if the region is being destroyed after
       * having been pre-allocated before a call to mmap() fails. */
-     switch (iter->mt_state) {
-     case MPART_STATE_INCORE:
-      page_free_scatter(&iter->mt_memory,PAGEATTR_NONE);
-      break;
-     case MPART_STATE_INSWAP: /* Unlikely, but still allowed! */
-      mswap_delete(&iter->mt_stick);
-      break;
-     default: break;
+     if unlikely(iter->mt_state == MPART_STATE_INCORE ||
+                 iter->mt_state == MPART_STATE_INSWAP) {
+      struct mman *omm;
+      TASK_PDIR_KERNEL_BEGIN(omm);
+      if likely(iter->mt_state == MPART_STATE_INCORE)
+           page_free_scatter(&iter->mt_memory,PAGEATTR_NONE);
+      else mswap_delete(&iter->mt_stick);
+      TASK_PDIR_KERNEL_END(omm);
      }
     } else {
      assertf(self->mr_type == MREGION_TYPE_PHYSICAL ? (iter->mt_state == MPART_STATE_INCORE) :

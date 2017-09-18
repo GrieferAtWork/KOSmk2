@@ -574,10 +574,8 @@ DATDEF VIRT struct mman mman_kernel;
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 /* Allocate kernel control mappings within 'mman_kernel',
  * which in return will describe the bootstrap mappings
- * that can be found within 'pdir_kernel_v' at this point.
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF void KCALL mman_initialize(void);
+ * that can be found within 'pdir_kernel_v' at this point. */
+INTDEF INITCALL void KCALL mman_initialize(void);
 #endif
 
 /* Go through all existing memory regions and transfer

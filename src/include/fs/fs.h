@@ -272,10 +272,8 @@ DATDEF struct dentry fs_root;
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 /* Mount the root filesystem:
- * >> dentry_mount(&fs_root,blkdev_mksuper(get_bootpart()));
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF void KCALL mount_root_filesystem(void);
+ * >> dentry_mount(&fs_root,blkdev_mksuper(get_bootpart())); */
+INTDEF INITCALL void KCALL mount_root_filesystem(void);
 #endif
 
 

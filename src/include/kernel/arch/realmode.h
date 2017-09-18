@@ -58,15 +58,10 @@ FUNDEF SAFE void KCALL rm_interrupt(struct cpustate16 *__restrict state, irq_t i
 #define REALMODE_EARLY_STACK   REALMODE_STARTRELO
 
 /* Same as 'rm_interrupt', but should be used
- * instead before 'realmode_initialize' was called.
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF SAFE void KCALL early_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno);
-
-/* Allocate & relocate realmode code into low memory.
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF void KCALL realmode_initialize(void);
+ * instead before 'realmode_initialize' was called. */
+INTDEF INITCALL SAFE void KCALL early_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno);
+/* Allocate & relocate realmode code into low memory. */
+INTDEF INITCALL void KCALL realmode_initialize(void);
 #endif
 #endif /* __CC__ */
 

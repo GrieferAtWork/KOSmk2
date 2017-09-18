@@ -148,11 +148,8 @@ DATDEF VIRT pdir_t pdir_kernel_v;
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 /* Do some minor initialization of paging utility functions
  * (relocate functions based on what the CPU can do).
- * NOTE: Also sets up read-only kernel pages.
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released!
- */
-INTDEF void KCALL pdir_initialize(void);
+ * NOTE: Also sets up read-only kernel pages. */
+INTDEF INITCALL void KCALL pdir_initialize(void);
 #endif
 #endif /* __CC__ */
 
@@ -266,11 +263,10 @@ FUNDEF errno_t KCALL pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
                                size_t n_bytes, PHYS ppage_t target, pdir_attr_t flags);
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-/* Used for mapping virtual memory during early booting (before paging is initialized).
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF errno_t KCALL pdir_mmap_early(pdir_t *__restrict self, VIRT ppage_t start,
-                                     size_t n_bytes, PHYS ppage_t target, pdir_attr_t flags);
+/* Used for mapping virtual memory during early booting (before paging is initialized). */
+INTDEF INITCALL errno_t KCALL
+pdir_mmap_early(pdir_t *__restrict self, VIRT ppage_t start,
+                size_t n_bytes, PHYS ppage_t target, pdir_attr_t flags);
 #endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 /* Unmap a virtual memory mapping.

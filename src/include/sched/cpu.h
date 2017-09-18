@@ -184,14 +184,12 @@ struct mb_info; /* From '/proprietary/multiboot.h' */
 /* Initialize the scheduler by installing a PIT IRQ
  * handler & enabling PIT interrupts on the boot CPU.
  * In addition, secondary CPUs are scanned for, initialized,
- * and controller structures initialized for them.
- * WARNING: This is an init-call, meaning it can't
- *          be used once free-data has been released. */
-INTDEF void KCALL sched_initialize(void);
+ * and controller structures initialized for them. */
+INTDEF INITCALL void KCALL sched_initialize(void);
 
 /* Kernel main() function, called after __bootstack has been installed.
  * By the time this function is called, nothing has been initialized, yet. */
-INTDEF void ATTR_FASTCALL kernel_boot(u32 mb_magic, struct mb_info *mb_mbt);
+INTDEF INITCALL void ATTR_FASTCALL kernel_boot(u32 mb_magic, struct mb_info *mb_mbt);
 #endif
 
 DECL_END

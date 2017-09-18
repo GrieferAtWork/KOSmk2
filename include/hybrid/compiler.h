@@ -104,7 +104,7 @@
 #define NOMP                __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */
 #define PERCPU              __PERCPU       /* Annotation for variables that must be accessed using the per-cpu API. */
 #define ASMCALL             __ASMCALL      /* Annotation for functions that are implemented in assembly and require a custom calling convention. */
-
+#define INITCALL            __INITCALL     /* Annotation for functions that apart of .free sections, meaning that calling them is illegal after some specific point in time. */
 #ifdef __KERNEL__
 #define KPD                                /* Annotation for functions that may only be called when the active page directory
                                             * maps all dynamic physical memory 1-on-1 (aka. all pointers marked as 'PHYS').

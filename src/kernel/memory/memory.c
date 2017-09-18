@@ -477,22 +477,148 @@ scan_zone:
 PUBLIC SAFE KPD ppage_t KCALL
 page_malloc_part(size_t min_size, size_t max_size,
                  size_t *__restrict res_size,
-                 pgattr_t attr, mzone_t zone) {
- /* TODO: Do this for real! (The specs are all there!) */
- *res_size = min_size;
- return page_malloc(min_size,attr,zone);
+                 pgattr_t attr, mzone_t zone_id) {
+ CHECK_HOST_DOBJ(res_size);
+#if 0
+ /* Stub implementation. */
+ if (max_size <= min_size) {
+  *res_size = min_size;
+  return page_malloc(min_size,attr,zone_id);
+ }
+#else
+ struct mzone *zone;
+ zone = PAGEZONE(zone_id);
+ do {
+  bool has_write_lock = false;
+  ppage_t iter,best_page = PAGE_ERROR;
+  size_t best_size = (size_t)-1;
+  atomic_rwlock_read(&zone->z_lock);
+search_zone:
+  /* Search for the most suitable free range. */
+  PAGE_FOREACH(iter,zone) {
+   assertf(iter->p_free.p_next == PAGE_ERROR ||
+           iter->p_free.p_next >  PAGE_END(iter),
+           "Miss-ordered memory zone: %p...%p overlaps with %p...%p",
+           iter,(uintptr_t)PAGE_END(iter)-1,iter->p_free.p_next,
+          (uintptr_t)PAGE_END(iter->p_free.p_next)-1);
+   if (iter->p_free.p_size < min_size) continue;
+   if (iter->p_free.p_size > best_size) continue;
+   if (iter->p_free.p_size == best_size) {
+    /* Still prefer same-size zones if their attributes match better. */
+    if ((best_page->p_free.p_attr&PAGEATTR_ZERO) ==
+        (attr&PAGEATTR_ZERO)) continue;
+   }
+   best_page = iter;
+   best_size = iter->p_free.p_size;
+  }
+
+  /* Try to allocate from the best fitting page
+   * if we've managed to located any at all. */
+  if (best_page != PAGE_ERROR) {
+   ppage_t result; bool must_clear = false;
+   size_t alloc_size;
+   assert(best_size >= min_size);
+   min_size = CEIL_ALIGN(min_size,PAGESIZE);
+   assert(best_size >= min_size);
+   if (!has_write_lock) {
+    has_write_lock = true;
+    if (!atomic_rwlock_upgrade(&zone->z_lock))
+         goto search_zone;
+   }
+   assert(best_size == best_page->p_free.p_size);
+   alloc_size = MIN(best_size,FLOOR_ALIGN(max_size,PAGESIZE));
+   *res_size = alloc_size;
+   result = (ppage_t)((uintptr_t)best_page+(best_size-alloc_size));
+#if 0
+   syslog(LOG_MEM|LOG_DEBUG,"[MEM] Allocating MAX(%Iu) >= GOT(%Iu) >= MIN(%Iu) bytes at %p...%p\n",
+          FLOOR_ALIGN(max_size,PAGESIZE),alloc_size,min_size,result,(uintptr_t)result+alloc_size-1);
+#endif
+   assert(IS_ALIGNED((uintptr_t)best_page,PAGESIZE));
+   assert(IS_ALIGNED((uintptr_t)result,PAGESIZE));
+   if (result == best_page) {
+    /* Allocate this whole part. */
+    *best_page->p_free.p_self = best_page->p_free.p_next;
+    if (best_page->p_free.p_next != PAGE_ERROR)
+        best_page->p_free.p_next->p_free.p_self = best_page->p_free.p_self;
+   } else {
+    /* Trim the part near its upper end. */
+    best_page->p_free.p_size -= alloc_size;
+   }
+
+   if (attr&PAGEATTR_ZERO) {
+    if (!(best_page->p_free.p_attr&PAGEATTR_ZERO)) {
+     /* Clear the entirety of the generated region. */
+     must_clear = true;
+    } else if (result == best_page) {
+     /* Clear the page controller. */
+     result->p_free.p_next = 0;
+     result->p_free.p_self = 0;
+     result->p_free.p_size = 0;
+     result->p_free.p_attr = 0;
+    }
+   }
+
+   /* Update zone statistics. */
+   zone->z_inuse += alloc_size;
+   zone->z_free  -= alloc_size;
+   ++zone->z_alloc;
+   atomic_rwlock_endwrite(&zone->z_lock);
+
+#if LOG_PHYSICAL_ALLOCATIONS
+   syslog(LOG_MEM|LOG_DEBUG,
+          "[MEM] Allocated memory %p...%p from zone #%d (#%d)\n",
+          result,(uintptr_t)result+(alloc_size-1),
+         (int)(zone-page_zones),zone_id);
+   if (zone_id == 0) __assertion_tbprint(0);
+#endif /* LOG_PHYSICAL_ALLOCATIONS */
+
+   if (must_clear) memsetl(result,0,alloc_size/4);
+   VERIFY_MEMORY_M(result,alloc_size,attr);
+   return result;
+  }
+  if (has_write_lock)
+       atomic_rwlock_endwrite(&zone->z_lock);
+  else atomic_rwlock_endread (&zone->z_lock);
+ } while (zone-- != page_zones);
+ return PAGE_ERROR;
+#endif
 }
 
 
 PUBLIC SAFE KPD bool KCALL
 mscatter_split_lo(struct mscatter *__restrict dst,
                   struct mscatter *__restrict src,
-                  uintptr_t offset_from_src) {
+                  PAGE_ALIGNED uintptr_t offset_from_src) {
+ struct mscatter *split_part;
  assert(PDIR_ISKPD());
  CHECK_HOST_DOBJ(dst);
  CHECK_HOST_DOBJ(src);
- /* TODO */
- return false;
+ assert(IS_ALIGNED(offset_from_src,PAGESIZE));
+ split_part = src;
+ while ((assertf(split_part,"Split offset is out-of-bounds by %Iu(%Ix) bytes",
+                 offset_from_src,offset_from_src),
+         offset_from_src > split_part->m_size)) {
+  offset_from_src -= split_part->m_size;
+  split_part = split_part->m_next;
+ }
+ if (offset_from_src == split_part->m_size) {
+  /* Simple case: The split occurs at the end of 'split_part'. */
+  if (split_part->m_next) {
+   memcpy(dst,split_part->m_next,sizeof(struct mscatter));
+   free(split_part->m_next);
+   split_part->m_next = NULL;
+  } else {
+   memset(dst,0,sizeof(struct mscatter));
+  }
+ } else {
+  /* Split in the middle of the tab. */
+  memcpy(dst,split_part,sizeof(struct mscatter));
+  split_part->m_size           = offset_from_src;
+  split_part->m_next           = NULL;
+  dst->m_size                 -= offset_from_src;
+  *(uintptr_t *)&dst->m_start += offset_from_src;
+ }
+ return true;
 }
 
 PUBLIC KPD void KCALL

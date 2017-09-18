@@ -27,7 +27,7 @@ DECL_BEGIN
 
 INTERN struct mswap mswap_global;
 
-PUBLIC bool KCALL
+PUBLIC KPD bool KCALL
 mswap_ticket_cat(struct mswap_ticket *__restrict dst,
                  struct mswap_ticket const *__restrict src) {
  CHECK_HOST_DOBJ(dst);
@@ -35,7 +35,7 @@ mswap_ticket_cat(struct mswap_ticket *__restrict dst,
  /* TODO */
  return false;
 }
-PUBLIC bool KCALL
+PUBLIC KPD bool KCALL
 mswap_ticket_split_lo(struct mswap_ticket *__restrict dst,
                       struct mswap_ticket *__restrict src,
                       uintptr_t offset_from_src) {
@@ -47,7 +47,7 @@ mswap_ticket_split_lo(struct mswap_ticket *__restrict dst,
 
 
 
-PUBLIC errno_t KCALL
+PUBLIC KPD errno_t KCALL
 mswap_unload(struct mswap_ticket *__restrict ticket,
              struct mscatter const *__restrict scatter) {
  CHECK_HOST_DOBJ(ticket);
@@ -55,7 +55,7 @@ mswap_unload(struct mswap_ticket *__restrict ticket,
  /* TODO */
  return -ENOMEM;
 }
-PUBLIC errno_t KCALL
+PUBLIC KPD errno_t KCALL
 mswap_reload(struct mswap_ticket const *__restrict ticket,
              struct mscatter const *__restrict scatter) {
  CHECK_HOST_DOBJ(ticket);
@@ -63,7 +63,7 @@ mswap_reload(struct mswap_ticket const *__restrict ticket,
  /* TODO */
  return -ENOSYS;
 }
-PUBLIC void KCALL
+PUBLIC KPD void KCALL
 mswap_delete(struct mswap_ticket const *__restrict ticket) {
  CHECK_HOST_DOBJ(ticket);
 }

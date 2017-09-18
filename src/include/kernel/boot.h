@@ -110,17 +110,13 @@ DATDEF struct cmdline const kernel_commandline;
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 #define KERNEL_COMMANDLINE (*(struct cmdline *)&kernel_commandline)
 
-/* WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF void KCALL commandline_initialize_parse(void);
-INTDEF void KCALL commandline_initialize_repage(void);
-
+INTDEF INITCALL void KCALL commandline_initialize_parse(void);
+INTDEF INITCALL void KCALL commandline_initialize_repage(void);
 /* Called after early physical kernel memory has been initialized
  * (no virtual memory exists yet, but 'kmalloc(GFP_MEMORY)' already works) */
-INTDEF void KCALL commandline_initialize_early(void);
-
+INTDEF INITCALL void KCALL commandline_initialize_early(void);
 /* Called after modules, scheduling and the filesystem have been initialized. */
-INTDEF void KCALL commandline_initialize_later(void);
+INTDEF INITCALL void KCALL commandline_initialize_later(void);
 #endif
 
 

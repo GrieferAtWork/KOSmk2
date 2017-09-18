@@ -123,10 +123,8 @@ FUNDEF void KCALL __cpu_shutdown_now_endwrite(void);
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 /* Initialize SMP by searching for available CPUs.
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released!
  * NOTE: This function must be called before paging was initialized! */
-INTDEF void KCALL smp_initialize(void);
+INTDEF INITCALL void KCALL smp_initialize(void);
 
 /* Perform additional initialization once paging has been initialized.
  * NOTE: This function's main purpose is to relocate secondary CPU memory into
@@ -134,15 +132,11 @@ INTDEF void KCALL smp_initialize(void);
  *       would be required when scheduling or accessing per-cpu variables.
  *    -> In addition, this is where IDLE stacks are allocated for the first
  *       time, meaning that SMP CPUs can only be safely initialized _AFTER_
- *       this portion of initialization has been performed.
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF void KCALL smp_initialize_repage(void);
+ *       this portion of initialization has been performed. */
+INTDEF INITCALL void KCALL smp_initialize_repage(void);
 
-/* Initialize LAPIC (if available)
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF void KCALL smp_initialize_lapic(void);
+/* Initialize LAPIC (if available) */
+INTDEF INITCALL void KCALL smp_initialize_lapic(void);
 #endif
 
 #endif /* CONFIG_SMP */

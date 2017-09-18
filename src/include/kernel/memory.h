@@ -212,9 +212,9 @@ DATDEF struct meminfo const *const mem_info[MZONE_COUNT];
  * as well as overflows of the given address range, never storing memory
  * information already received in regions that are typed as 'MEMTYPE_PRESERVE'.
  * @return: * : The amount of bytes that have become available for use by the physical memory allocator. */
-INTDEF PAGE_ALIGNED size_t KCALL mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type);
+INTDEF INITCALL PAGE_ALIGNED size_t KCALL mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type);
 #if __SIZEOF_POINTER__ < 8
-INTDEF PAGE_ALIGNED size_t KCALL mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type);
+INTDEF INITCALL PAGE_ALIGNED size_t KCALL mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type);
 #else
 #define mem_install64(base,num_bytes,type) \
         mem_install((uintptr_t)(base),(size_t)(num_bytes),type)
@@ -225,14 +225,14 @@ INTDEF PAGE_ALIGNED size_t KCALL mem_install64(PHYS u64 base, u64 num_bytes, mem
  * HINT: This function can be called multiple times.
  *  This function also fixes overlaps of neighboring
  * 'mi_part_addr' in regions that were preserved before. */
-INTDEF PAGE_ALIGNED size_t KCALL mem_unpreserve(void);
+INTDEF INITCALL PAGE_ALIGNED size_t KCALL mem_unpreserve(void);
 
 /* Relocate 'mem_info' into permanent storage allocated within swappable, virtual shared memory.
  * Before a call to this function, memory information is either stored on the stack of the
  * boot cpu's IDLE task (which only starts getting used once scheduling is initialized, which
  * happens much later during booting than when this function is called), or in physical
  * memory marked as 'MEMTYPE_RAM', that was passed to 'mem_install()' at some point. */
-INTDEF void KCALL mem_relocate_info(void);
+INTDEF INITCALL void KCALL mem_relocate_info(void);
 
 #endif /* CONFIG_NEW_MEMINFO */
 #endif /* CONFIG_BUILDING_KERNEL_CORE */
@@ -293,7 +293,6 @@ FUNDEF SAFE KPD ppage_t KCALL page_malloc_in(ppage_t min, ppage_t max,
  *       extracting as most 'max_size' bytes that are then returned.
  *       -> So even though this function is allowed to, it will not
  *          blindly allocate 'min_size' bytes at all times.
- * NOTE: Passing ZERO(0) for 'min_size' is rounded up to 'PAGESIZE'
  * NOTE: Passing ZERO(0) for 'max_size' will allocate an empty page
  *      (that is a page that may be aliasing another pointer and
  *       doesn't have to be freed, or can be freed through 'page_free(p,0)')
@@ -328,6 +327,9 @@ struct mscatter {
  * @return: PAGE_ERROR: The given memory scatter is empty. */
 LOCAL SAFE KPD ppage_t KCALL mscatter_takeone(struct mscatter *__restrict self);
 
+/* Return the total amount of bytes described by 'self'. */
+LOCAL SAFE KPD PAGE_ALIGNED size_t KCALL mscatter_size(struct mscatter *__restrict self);
+
 /* Copy all data from scatter allocation 'src' to 'dst'.
  * NOTE: Both scatter chains must have the same length. */
 FUNDEF KPD void KCALL mscatter_memcpy(struct mscatter const *__restrict dst,
@@ -339,7 +341,8 @@ FUNDEF KPD void KCALL mscatter_memcpy(struct mscatter const *__restrict dst,
  * @return: false: Not enough available memory to (re-)allocate control structures. */
 FUNDEF SAFE KPD bool KCALL mscatter_split_lo(struct mscatter *__restrict dst,
                                              struct mscatter *__restrict src,
-                                             uintptr_t offset_from_src);
+                                             PAGE_ALIGNED uintptr_t offset_from_src);
+
 /* Append the given memory scatter 'src' at the end of 'dst'.
  * @return: true:  Successfully appended the scatter chains.
  * @return: false: Not enough available memory to (re-)allocate control structures. */
@@ -384,7 +387,7 @@ LOCAL SAFE KPD void KCALL page_free_scatter(struct mscatter *__restrict scatter,
 
 /* Free the link chain used by scatter lists, but not the contained pages them self.
  * >> Useful when trying to free the scatter list after having used up its contents. */
-LOCAL SAFE KPD void KCALL page_free_scatter_list(struct mscatter *__restrict scatter);
+LOCAL SAFE void KCALL page_free_scatter_list(struct mscatter *__restrict scatter);
 
 
 FUNDEF SAFE KPD void KCALL page_free_(ppage_t start, size_t n_bytes, pgattr_t attr);
@@ -458,17 +461,13 @@ struct mb_mmap_entry;
 struct mb2_tag_mmap;
 struct mb2_tag_basic_meminfo;
 
-/* Initialize the kernel memory manager from multiboot bootloader information.
- * WARNING: This function is an init-call and may not
- *          be called once init memory has been freed. */
-INTDEF SAFE KPD size_t KCALL memory_load_mb_mmap(struct mb_mmap_entry *__restrict info, u32 info_len);
-INTDEF SAFE KPD size_t KCALL memory_load_mb_lower_upper(u32 mem_lower, u32 mem_upper);
-INTDEF SAFE KPD size_t KCALL memory_load_mb2_mmap(struct mb2_tag_mmap *__restrict info);
+/* Initialize the kernel memory manager from multiboot bootloader information. */
+INTDEF INITCALL SAFE KPD size_t KCALL memory_load_mb_mmap(struct mb_mmap_entry *__restrict info, u32 info_len);
+INTDEF INITCALL SAFE KPD size_t KCALL memory_load_mb_lower_upper(u32 mem_lower, u32 mem_upper);
+INTDEF INITCALL SAFE KPD size_t KCALL memory_load_mb2_mmap(struct mb2_tag_mmap *__restrict info);
 
-/* Try various different ways of detecting memory.
- * WARNING: This function is an init-call and may not
- *          be called once init memory has been freed. */
-INTDEF SAFE KPD void KCALL memory_load_detect(void);
+/* Try various different ways of detecting memory. */
+INTDEF INITCALL SAFE KPD void KCALL memory_load_detect(void);
 
 #ifdef CONFIG_NEW_MEMINFO
 #define memory_install(start,size)      mem_install(start,size,MEMTYPE_RAM)
@@ -618,6 +617,13 @@ mscatter_takeone(struct mscatter *__restrict self) {
    kffree(free_next,GFP_NOFREQ);
   }
  }
+ return result;
+}
+LOCAL SAFE KPD PAGE_ALIGNED size_t KCALL
+mscatter_size(struct mscatter *__restrict self) {
+ size_t result = 0;
+ do assert(self),result += self->m_size;
+ while ((self = self->m_next) != NULL);
  return result;
 }
 LOCAL SAFE KPD bool KCALL

@@ -458,10 +458,8 @@ FUNDEF SAFE void KCALL set_bootdev(struct blkdev *__restrict disk,
  *       pass, an attempt is made to create a new device.
  * NOTE: If the kernel can confirm that the boot drive can be accessed
  *       by use of some other driver not dependent on BIOS functions,
- *       that device will be used instead.
- * WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF void KCALL blkdev_bootdisk_initialize(void);
+ *       that device will be used instead. */
+INTDEF INITCALL void KCALL blkdev_bootdisk_initialize(void);
 #endif
 
 #ifndef __INTELLISENSE__

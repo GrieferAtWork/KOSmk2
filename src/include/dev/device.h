@@ -120,9 +120,7 @@ DATDEF struct vsuperblock dev_fs;
 DATDEF REF struct dentry *const devfs_root;
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-/* WARNING: This function is an init-call and must not
- *          be called once free-data has been released! */
-INTDEF void KCALL devfs_mount_initialize(void);
+INTDEF INITCALL void KCALL devfs_mount_initialize(void);
 #ifdef CONFIG_DEBUG
 INTERN void KCALL devfs_mount_finalize(void);
 #endif
