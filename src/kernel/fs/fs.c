@@ -1073,7 +1073,7 @@ def_name:default:
      : !ino->i_ops->ino_lookup)) {
   /* Missing operators. */
   INODE_DECREF(ino);
-  return E_PTR(-ENOTDIR);
+  return ino->i_ops->ino_lookup ? E_PTR(-EROFS) : E_PTR(-ENOTDIR);
  }
  if (!has_write_lock) {
 #if 0
