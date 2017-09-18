@@ -34,6 +34,7 @@ DECL_BEGIN
 struct blkdev;
 struct instance;
 struct file;
+struct inode;
 
 typedef u32 blksys_t; /*< s.a.: 'BLKSYS_*' */
 #define BLKSYS_ACTIVE  0x80000000 /*< Flag: The partition/device was marked as active. */
@@ -120,8 +121,11 @@ struct blkdev {
                                             *  NOTE: This chain is _always_ empty for partition devices themself. */
  REF struct file           *bd_loopback;   /*< [0..1][const] When non-NULL, a file-stream to-be used for unbuffered
                                             *                loop-back I/O. (file_pread/file_pwrite is used for access) */
+union{
+ WEAK LIST_NODE(struct blkdev) bd_loopdevs;/*< [0..1][lock(loopdevs_lock)] Weakly linked list of loopback block devices. */
  /* NOTE: Nothing that follows is valid when 'bd_loopback != NULL' */
  struct blockbuffers        bd_buffer;     /*< Buffer/byte-wise abstractor for this block-device. */
+};
  rwlock_t                   bd_hwlock;     /*< [order(AFTER(:bd_hwlock))] Device lock held when reading/writing. */
  /* Read/write full blocks to/from the device (bufsize is floor-aligned to 'bd_blocksize')
   * NOTE: These functions are caller-synchronized using 'bd_hwlock' (in write-mode).
@@ -151,6 +155,19 @@ diskpart_read(struct blkdev *__restrict self, blkaddr_t block,
               USER void *buf, size_t n_blocks);
 
 
+
+DATDEF atomic_rwlock_t               loopdevs_lock; /*< Lock for the loopback device list. */
+DATDEF WEAK LIST_HEAD(struct blkdev) loopdevs_list; /*< [0..1][lock(loopdevs_lock)] Weakly linked list of existing loopback devices.
+                                                     *   Weak here means that this list may contain block devices with a
+                                                     *   reference counter of ZERO(0), that should be ignored when encountered.
+                                                     *   >> Block devices apart of this list cleanup themself upon destruction.
+                                                     *   HINT: Any loopback device apart of this list _ALWAYS_ has a valid file
+                                                     *         descriptor assigned. This is ensured by only calling FILE_DECREF()
+                                                     *         _AFTER_ a loopback device has removed itself from this list. */
+#define LOOPDEVS_FOREACH(dev) \
+            LIST_FOREACH(dev,loopdevs_list,bd_loopdevs)
+
+
 /* Create a new block device. The caller must fill in:
  *  - bd_device.d_node.i_super (Use 'device_setup')
  *  - bd_read
@@ -174,6 +191,18 @@ FUNDEF struct blkdev *KCALL blkdev_cinit(struct blkdev *self);
  * @return: -EPERM:     The owner instance of the INode opened by 'fp' doesn't allow new references.
  * @return: E_ISERR(*): Failed to create/register the device for some reason. */
 FUNDEF REF struct blkdev *KCALL blkdev_newloop(struct file *__restrict fp);
+/* Same as 'blkdev_newloop', but return a reference to an existing
+ * device if one is known to exist for the the INode of 'fp'.
+ * NOTE: Really, you should always use this function, rather than 'blkdev_newloop()' */
+FUNDEF REF struct blkdev *KCALL blkdev_getloop(struct file *__restrict fp);
+/* Find and return a reference to the first loopback device
+ * bound to the given INode, or NULL if no such device exists.
+ * NOTE: The caller must be holding a read-lock to 'loopdevs_lock'
+ * HINT: If this function fails to acquire a reference to a matching device,
+ *       that device is considered to not match, causing either the next match,
+ *       or NULL to be returned. */
+FUNDEF REF struct blkdev *KCALL blkdev_findloop_unlocked(struct inode *__restrict node);
+LOCAL REF struct blkdev *KCALL blkdev_findloop(struct inode *__restrict node);
 
 /* Destructor that must be called when destructing a block-device.
  * NOTE: This function must be called from 'bd_device.d_node.i_ops->ino_fini'
@@ -522,6 +551,14 @@ blkdev_writeall(struct blkdev *__restrict self,
   offset             += temp;
  }
  return -EOK;
+}
+LOCAL REF struct blkdev *KCALL
+blkdev_findloop(struct inode *__restrict node) {
+ REF struct blkdev *result;
+ atomic_rwlock_read(&loopdevs_lock);
+ result = blkdev_findloop_unlocked(node);
+ atomic_rwlock_endread(&loopdevs_lock);
+ return result;
 }
 #endif
 

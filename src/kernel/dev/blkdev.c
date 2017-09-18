@@ -221,9 +221,11 @@ blkdev_cinit(struct blkdev *self) {
 }
 
 PRIVATE ATOMIC_DATA minor_t next_loopid = 0;
+PUBLIC DEFINE_ATOMIC_RWLOCK(loopdevs_lock);
+PUBLIC WEAK LIST_HEAD(struct blkdev) loopdevs_list = NULL;
 
 PUBLIC REF struct blkdev *KCALL
-blkdev_newloop(struct file *__restrict fp) {
+blkdev_do_newloop(struct file *__restrict fp) {
  REF struct blkdev *result; errno_t temp;
  CHECK_HOST_DOBJ(fp);
  CHECK_HOST_DOBJ(fp->f_node);
@@ -257,7 +259,63 @@ blkdev_newloop(struct file *__restrict fp) {
     result = E_PTR(temp);
    }
  }
+ return result;
+}
 
+PUBLIC REF struct blkdev *KCALL
+blkdev_newloop(struct file *__restrict fp) {
+ REF struct blkdev *result;
+ result = blkdev_do_newloop(fp);
+ if (E_ISERR(result)) return result;
+
+ /* Insert the device into the global list of loopback devices. */
+ atomic_rwlock_write(&loopdevs_lock);
+ LIST_INSERT(loopdevs_list,result,bd_loopdevs);
+ atomic_rwlock_endwrite(&loopdevs_lock);
+ return result;
+}
+
+PUBLIC REF struct blkdev *KCALL
+blkdev_findloop_unlocked(struct inode *__restrict file_node) {
+ struct blkdev *dev;
+ assert(atomic_rwlock_reading(&loopdevs_lock));
+ LOOPDEVS_FOREACH(dev) {
+  if (dev->bd_loopback->f_node == file_node &&
+      BLKDEV_TRYINCREF(dev)) return dev;
+ }
+ return NULL;
+}
+
+PUBLIC REF struct blkdev *KCALL
+blkdev_getloop(struct file *__restrict fp) {
+ REF struct blkdev *result;
+ atomic_rwlock_read(&loopdevs_lock);
+ /* Search for an existing loopback device associated with this file's INode. */
+ result = blkdev_findloop_unlocked(fp->f_node);
+ if (result) {
+end_read:
+  atomic_rwlock_endread(&loopdevs_lock);
+  return result;
+ }
+
+ result = blkdev_do_newloop(fp);
+ if (E_ISERR(result)) goto end_read;
+
+ if (!atomic_rwlock_upgrade(&loopdevs_lock)) {
+  /* After the upgrade failed, we must reload the existing loop device. */
+  REF struct blkdev *other_result;
+  other_result = blkdev_findloop_unlocked(fp->f_node);
+  if unlikely(other_result) {
+   /* We were too slow. - Re-use what someone else already accomplished. */
+   atomic_rwlock_endwrite(&loopdevs_lock);
+   BLKDEV_DECREF(result);
+   return other_result;
+  }
+ }
+
+ /* Insert the device into the global list of loopback devices. */
+ LIST_INSERT(loopdevs_list,result,bd_loopdevs);
+ atomic_rwlock_endwrite(&loopdevs_lock);
  return result;
 }
 
@@ -275,6 +333,18 @@ blkdev_fini(struct blkdev *__restrict self) {
   /* Try to re-use this loop-id immediately if
    * it is still the latest (reduces redundancy). */
   ATOMIC_CMPXCH(next_loopid,id+1,id);
+
+  /* Remove the device from the global list of loopback devices. */
+  atomic_rwlock_write(&loopdevs_lock);
+  LIST_REMOVE(self,bd_loopdevs);
+  atomic_rwlock_endwrite(&loopdevs_lock);
+  COMPILER_WRITE_BARRIER();
+
+  /* Drop a reference from the file descriptor
+   * that was used to implement the device.
+   * NOTE: This is done _AFTER_ the device was unlinked from the global list of
+   *       loopback devices, so-as to ensure that any registered device _ALWAYS_
+   *       has a valid file descriptor assigned. */
   FILE_DECREF(self->bd_loopback);
   goto fini_dev;
  }

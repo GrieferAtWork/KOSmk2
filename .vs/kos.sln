@@ -74,6 +74,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys", "sys", "{E47928E9-383
 		..\include\sys\select.h = ..\include\sys\select.h
 		..\include\sys\socket.h = ..\include\sys\socket.h
 		..\include\sys\stat.h = ..\include\sys\stat.h
+		..\include\sys\swap.h = ..\include\sys\swap.h
 		..\include\sys\syscall.h = ..\include\sys\syscall.h
 		..\include\sys\syslog.h = ..\include\sys\syslog.h
 		..\include\sys\sysmacros.h = ..\include\sys\sysmacros.h

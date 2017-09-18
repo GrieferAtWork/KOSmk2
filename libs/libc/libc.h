@@ -56,7 +56,6 @@ DECL_BEGIN
 #define CRTDBG_INIT_ALLOCA  0xcd
 #define CRTDBG_INIT_ALLOCA4 0xcdcdcdcd
 
-
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_LIBC_H */

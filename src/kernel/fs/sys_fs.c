@@ -51,6 +51,7 @@
 #include <sys/stat.h>
 #include <sys/mount.h>
 #include <linker/module.h>
+#include <fs/vfs.h>
 
 DECL_BEGIN
 
@@ -1091,9 +1092,13 @@ fschain_find_name(struct fstype *start,
                   char const *__restrict name,
                   size_t namelen);
 
+#define LOOPBACK_OK_ALWAYS   0 /*< Loopback devices can always be created. */
+#define LOOPBACK_OK_NEVER    1 /*< Never create loopback devices (but lookup existing ones). */
+#define LOOPBACK_OK_NOTTMPFS 2 /*< Don't create loopback devices for files apart of a tmpfs filesystem (return -EINVAL instead). */
 
-PRIVATE REF struct blkdev *KCALL
-mount_open_device(USER char const *dev_name, u32 flags) {
+INTERN REF struct blkdev *KCALL
+mount_open_device(USER char const *dev_name, int access,
+                  int loopback_mode) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *cwd; errno_t error;
@@ -1126,8 +1131,7 @@ mount_open_device(USER char const *dev_name, u32 flags) {
  if unlikely(!dev_node) { result = E_PTR(-ENOENT); goto end; }
 
  /* Check required permissions on the given INode. */
- error = inode_mayaccess(dev_node,&walker.dw_access,
-                         flags&MS_RDONLY ? R_OK : R_OK|W_OK);
+ error = inode_mayaccess(dev_node,&walker.dw_access,access);
  if (E_ISERR(error)) { result = E_PTR(error); goto end2; }
  /* If the node the user specified already is
   * a block-device, we can simply go ahead! */
@@ -1145,6 +1149,14 @@ mount_open_device(USER char const *dev_name, u32 flags) {
   * or filesystem running there-on).  */
  if (INODE_ISREG(dev_node) &&
      dev_node->i_ops->f_pread) {
+  /* Don't create loopback devices for tmpfs files if not allowed to.
+   * (aka. files apart of a VFS filesystem that resides in memory) */
+  if (loopback_mode == LOOPBACK_OK_NOTTMPFS &&
+      INODE_ISVNODE(dev_node)) {
+   result = E_PTR(-EINVAL);
+   goto end2;
+  }
+
   /* Open a file descriptor for reading/writing
    * and use it to create a loopback block-device.
    * NOTE: For this to work properly, we must add some
@@ -1158,7 +1170,12 @@ mount_open_device(USER char const *dev_name, u32 flags) {
   fp = dentry_open_with_inode(dev_entry,dev_node,&walker.dw_access,
                               &attrib,IATTR_NONE,O_RDWR);
   if (E_ISERR(fp)) { result = E_PTR(E_GTERR(fp)); goto end2; }
-  result = blkdev_newloop(fp);
+  if (loopback_mode == LOOPBACK_OK_NEVER) {
+   /* Only lookup existing loop devices in this mode. */
+   result = blkdev_findloop(fp->f_node);
+  } else {
+   result = blkdev_getloop(fp);
+  }
   FILE_DECREF(fp);
   goto end2;
  }
@@ -1257,7 +1274,8 @@ automount:
    * >> OK. For now I'm going to ignore that ~dummy string~ as POSIX calls
    *    it and simply focus on mounting /dev block devices, or LOOP files. */
 
-  dev = mount_open_device(dev_name,flags);
+  dev = mount_open_device(dev_name,flags&MS_RDONLY ? R_OK : R_OK|W_OK,
+                          LOOPBACK_OK_ALWAYS);
   if (E_ISERR(dev))
    result = E_PTR(E_GTERR(dev));
   else {

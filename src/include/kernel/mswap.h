@@ -24,6 +24,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/list/ring.h>
 #include <kernel/memory.h>
+#include <sync/rwlock.h>
 
 DECL_BEGIN
 
@@ -79,11 +80,12 @@ struct mswap {
  REF struct blkdev             *ms_block;    /*< [1..1][valid_if(self != &mswap_fallback)][const]
                                               *   Underlying block-, or loopback-device used as swap storage. */
  rwlock_t                       ms_lock;     /*< Lock for this swap device. */
+ PAGE_ALIGNED pos_t             ms_used;     /*< [lock(ms_lock)] Total number of bytes currently residing in swap. */
  PAGE_ALIGNED pos_t             ms_size;     /*< [const][== FLOOR_ALIGN(ms_block->bd_blocksize*ms_block->bd_blockcount,PAGESIZE)]
                                               *   Total amount of bytes available for swap storage. */
  LIST_HEAD(struct mswappart)    ms_parts;    /*< [lock(ms_lock)][0..1] Linked list of all swap parts. */
  PAGE_ALIGNED pos_t             ms_hintaddr; /*< [lock(ms_lock)] Lowest known address known to have unused memory. */
- struct mswap_ticket          **ms_hinttick; /*< [lock(ms_lock)][0..1][1..1] Pointer to 'le_next' pointing to NULL, or the first ticket above 'ms_hintaddr'.
+ struct mswappart             **ms_hinttick; /*< [lock(ms_lock)][0..1][1..1] Pointer to 'le_next' pointing to NULL, or the first part above 'ms_hintaddr'.
                                               *   When allocating a new ticket, the amount of available memory at the hint address can
                                               *   be determined by '(*ms_hinttick ? (*ms_hinttick)->mt_start : ms_size) - ms_hintaddr'. */
  LIST_HEAD(struct mswap_ticket) ms_tickets;  /*< [lock(ms_lock)][0..1] Unordered linked list of allocated tickets.
@@ -111,6 +113,23 @@ DATDEF RING_HEAD(struct mswap) mswap_list; /*< [0..1][lock(mswap_lock)][owned] R
 DATDEF struct mswap mswap_fallback;
 
 
+/* Turn swapping using the given block-device 'dev' on/off.
+ * The caller is responsible for holding a write-lock to 'mswap_lock'.
+ * @param: flags:    Set of 'SWAP_FLAG_*' (from <sys/swap.h>; same as for the libc function 'swapon()')
+ * @return: -EOK:    Successfully turned swapping on/off for the given device.
+ * @return: -EBUSY:  [mswapon_unlocked] The given 'dev' is already being used for swap.
+ * @return: -ENOMEM: Not enough available memory to start swapping or, for 'mswapoff_unlocked()',
+ *                   transfer all swap tickets that 'dev' was (and still is) storing.
+ * @return: -EINVAL: [mswapoff_unlocked] The given 'dev' isn't used as a swap device. */
+FUNDEF errno_t KCALL mswapon_unlocked(struct blkdev *__restrict dev, int flags);
+FUNDEF errno_t KCALL mswapoff_unlocked(struct blkdev *__restrict dev);
+
+/* Helper functions that acquire the required lock for the caller. 
+ * @return: -EINTR: The calling thread was interrupted.
+ */
+LOCAL errno_t KCALL mswapon(struct blkdev *__restrict dev, int flags);
+LOCAL errno_t KCALL mswapoff(struct blkdev *__restrict dev);
+
 /* Swap core functionality: Unload/Reload memory described by 'ticket'
  * @return: -EOK:       Successfully (un|re)-loaded memory.
  * @return: -ENOMEM:    [mswap_unload] All swap partitions filled up or none are present.
@@ -124,6 +143,23 @@ FUNDEF KPD errno_t KCALL mswap_reload(struct mswap_ticket const *__restrict tick
  * (Same as 'mswap_reload', but without actually loading data) */
 FUNDEF KPD void KCALL mswap_delete(struct mswap_ticket const *__restrict ticket);
 
+
+#ifndef __INTELLISENSE__
+LOCAL errno_t KCALL mswapon(struct blkdev *__restrict dev, int flags) {
+ errno_t error = rwlock_write(&mswap_lock);
+ if (E_ISERR(error)) return error;
+ error = mswapon_unlocked(dev,flags);
+ rwlock_endwrite(&mswap_lock);
+ return error;
+}
+LOCAL errno_t KCALL mswapoff(struct blkdev *__restrict dev) {
+ errno_t error = rwlock_write(&mswap_lock);
+ if (E_ISERR(error)) return error;
+ error = mswapoff_unlocked(dev);
+ rwlock_endwrite(&mswap_lock);
+ return error;
+}
+#endif /* !__INTELLISENSE__ */
 
 DECL_END
 

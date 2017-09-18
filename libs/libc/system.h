@@ -162,6 +162,8 @@ LOCAL SYSCALL2(__errno_t,settimeofday,(USER struct kernel_timeval const *,tv,USE
 LOCAL SYSCALL2(__errno_t,nanosleep,(USER struct kernel_timespec const *,rqtp,USER struct kernel_timespec *,rmtp));
 LOCAL SYSCALL1(mode_t,umask,(mode_t,mask));
 LOCAL SYSCALL3(__errno_t,mprotect,(USER void *,start,size_t,len,u32,prot));
+LOCAL SYSCALL2(__errno_t,swapon,(char const *,specialfile,int,flags));
+LOCAL SYSCALL1(__errno_t,swapoff,(char const *,specialfile));
 
 /* KOS system-call extensions. */
 LOCAL SYSCALL3(ssize_t,xsysprint,(int,type,char const *,p,size_t,len));

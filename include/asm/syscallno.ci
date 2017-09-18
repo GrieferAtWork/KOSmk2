@@ -211,6 +211,10 @@ __SYSCALL(__NR_execve,sys_execve)
 #define __NR_mmap         222
 __SYSCALL(__NR_mmap,sys_mmap)
 
+#define __NR_swapon       224
+__SYSCALL(__NR_swapon,sys_swapon)
+#define __NR_swapoff      225
+__SYSCALL(__NR_swapoff,sys_swapoff)
 #define __SC_ATTRIB_CLOBB_226 C("memory")
 #define __NR_mprotect     226
 __SYSCALL(__NR_mprotect,sys_mprotect)

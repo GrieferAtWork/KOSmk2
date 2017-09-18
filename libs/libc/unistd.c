@@ -57,6 +57,7 @@
 #include <sys/wait.h>
 #include <sys/mount.h>
 #include <unistd.h>
+#include <hybrid/section.h>
 
 DECL_BEGIN
 
@@ -415,12 +416,13 @@ PUBLIC pid_t (LIBCCALL wait3)(__WAIT_STATUS stat_loc, int options, struct rusage
 PUBLIC int (LIBCCALL waitid)(idtype_t idtype, id_t id, siginfo_t *infop, int options) { return FORWARD_SYSTEM_ERROR(sys_waitid(idtype,id,infop,options,NULL)); }
 PUBLIC pid_t (LIBCCALL wait4)(pid_t pid, __WAIT_STATUS stat_loc, int options, struct rusage *usage) { return FORWARD_SYSTEM_VALUE(sys_wait4(pid,stat_loc,options,usage)); }
 PUBLIC int (LIBCCALL getgroups)(int size, gid_t list[]) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL setuid)(uid_t uid) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL setgid)(gid_t gid) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL umount)(char const *special_file) { return umount2(special_file,0); }
-PUBLIC int (LIBCCALL mount)(char const *special_file, char const *dir, char const *fstype, unsigned long int rwflag, void const *data) { return FORWARD_SYSTEM_ERROR(sys_mount(special_file,dir,fstype,rwflag,data)); }
-PUBLIC int (LIBCCALL umount2)(char const *special_file, int flags) { return FORWARD_SYSTEM_ERROR(sys_umount2(special_file,flags)); }
-
+PUBLIC ATTR_COLDTEXT int (LIBCCALL setuid)(uid_t uid) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC ATTR_COLDTEXT int (LIBCCALL setgid)(gid_t gid) { NOT_IMPLEMENTED(); return -1; }
+PUBLIC ATTR_COLDTEXT int (LIBCCALL umount)(char const *special_file) { return umount2(special_file,0); }
+PUBLIC ATTR_COLDTEXT int (LIBCCALL mount)(char const *special_file, char const *dir, char const *fstype, unsigned long int rwflag, void const *data) { return FORWARD_SYSTEM_ERROR(sys_mount(special_file,dir,fstype,rwflag,data)); }
+PUBLIC ATTR_COLDTEXT int (LIBCCALL umount2)(char const *special_file, int flags) { return FORWARD_SYSTEM_ERROR(sys_umount2(special_file,flags)); }
+PUBLIC ATTR_COLDTEXT int (LIBCCALL swapon)(const char *path, int flags) { return FORWARD_SYSTEM_ERROR(sys_swapon(path,flags)); }
+PUBLIC ATTR_COLDTEXT int (LIBCCALL swapoff)(const char *path) { return FORWARD_SYSTEM_ERROR(sys_swapoff(path)); }
 PUBLIC int (LIBCCALL pipe)(int pipedes[2]) { return pipe2(pipedes,0); }
 PUBLIC int (LIBCCALL pipe2)(int pipedes[2], int flags) {
 #if 0
