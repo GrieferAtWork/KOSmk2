@@ -39,7 +39,7 @@ INTERN ssize_t LIBCCALL
 libc_xreaddir(int fd, struct dirent *buf, size_t bufsize, int mode) {
  ssize_t result = sys_xreaddir(fd,buf,bufsize,mode);
  //sys_xpaused("PAUSE:" __PP_STR(__LINE__));
- if (E_ISERR(result)) { __set_errno(-result); return -1; }
+ if (E_ISERR(result)) { SET_ERRNO(-result); return -1; }
  return result;
 }
 
@@ -64,7 +64,7 @@ INTERN DIR *LIBCCALL libc_opendir(char const *name) {
  return libc_opendirat(AT_FDCWD,name);
 }
 INTERN int LIBCCALL libc_closedir(DIR *dirp) {
- if unlikely(!dirp) { __set_errno(EBADF); return -1; }
+ if unlikely(!dirp) { SET_ERRNO(EBADF); return -1; }
  /* Free an extended directory entry buffer. */
  if (dirp->d_buf != (struct dirent *)dirp->d_inl) free(dirp->d_buf);
  sys_close(dirp->d_fd);
@@ -73,7 +73,7 @@ INTERN int LIBCCALL libc_closedir(DIR *dirp) {
 }
 INTERN struct dirent *LIBCCALL libc_readdir(DIR *dirp) {
  ssize_t error; struct dirent *result;
- if unlikely(!dirp) { __set_errno(EBADF); return NULL; }
+ if unlikely(!dirp) { SET_ERRNO(EBADF); return NULL; }
 read_again:
  error = libc_xreaddir(dirp->d_fd,(result = dirp->d_buf),
                        dirp->d_bufsz,READDIR_DEFAULT);
@@ -129,11 +129,11 @@ INTERN void LIBCCALL libc_seekdir(DIR *dirp, long int pos) {
  if (dirp) sys_lseek(dirp->d_fd,(off64_t)pos,SEEK_SET);
 }
 INTERN long int LIBCCALL libc_telldir(DIR *dirp) {
- if unlikely(!dirp) { __set_errno(EBADF); return -1; }
+ if unlikely(!dirp) { SET_ERRNO(EBADF); return -1; }
  return (long int)lseek(dirp->d_fd,0,SEEK_CUR);
 }
 INTERN int LIBCCALL libc_dirfd(DIR *dirp) {
- if unlikely(!dirp) { __set_errno(EINVAL); return -1; }
+ if unlikely(!dirp) { SET_ERRNO(EINVAL); return -1; }
  return dirp->d_fd;
 }
 

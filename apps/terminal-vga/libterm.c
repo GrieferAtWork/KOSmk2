@@ -186,7 +186,7 @@ term_init(struct term *__restrict self,
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(ops);
  if (!ops || !ops->to_putc) {
-  __set_errno(EINVAL);
+  errno = EINVAL;
   return NULL;
  }
  ansi_size = 128;

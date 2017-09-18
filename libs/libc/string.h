@@ -178,7 +178,7 @@ struct errnotext_data {
 #ifndef __KERNEL__
 INTDEF struct errnotext_data const *p_errnotext;
 #else
-INTDEF struct errnotext_data const errnotext;
+DATDEF struct errnotext_data const errnotext;
 #endif
 INTDEF char const *LIBCCALL strerror_get(uintptr_t kind, int no);
 INTDEF char const *LIBCCALL libc_strerror_s(int errnum);

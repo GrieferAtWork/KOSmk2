@@ -94,7 +94,7 @@ DEFINE_PUBLIC_ALIAS(ssignal,bsd_signal);
 PUBLIC sighandler_t (LIBCCALL sysv_signal)(int sig, sighandler_t handler) {
  struct sigaction act,oact;
  if (handler == SIG_ERR || sig <= 0 ||
-     sig >= NSIG) { __set_errno(EINVAL); return SIG_ERR; }
+     sig >= NSIG) { SET_ERRNO(EINVAL); return SIG_ERR; }
  act.sa_handler = handler;
  __sigemptyset(&act.sa_mask);
  act.sa_flags  = SA_ONESHOT|SA_NOMASK|SA_INTERRUPT;
@@ -106,7 +106,7 @@ PRIVATE sigset_t __sigintr;
 PUBLIC sighandler_t (LIBCCALL bsd_signal)(int sig, sighandler_t handler) {
  struct sigaction act,oact;
  if (handler == SIG_ERR || sig <= 0 ||
-     sig >= NSIG) { __set_errno(EINVAL); return SIG_ERR; }
+     sig >= NSIG) { SET_ERRNO(EINVAL); return SIG_ERR; }
  act.sa_handler = handler;
  __sigemptyset(&act.sa_mask);
  __sigaddset(&act.sa_mask,sig);
@@ -133,7 +133,7 @@ PUBLIC int (LIBCCALL siginterrupt)(int sig, int interrupt) {
 PUBLIC sighandler_t (LIBCCALL sigset)(int sig, sighandler_t disp) {
  struct sigaction act,oact; sigset_t set,oset;
  if (disp == SIG_ERR || sig <= 0 ||
-     sig >= NSIG) { __set_errno (EINVAL); return SIG_ERR; }
+     sig >= NSIG) { SET_ERRNO (EINVAL); return SIG_ERR; }
  __sigemptyset(&set);
  __sigaddset(&set,sig);
  if (disp == SIG_HOLD) {

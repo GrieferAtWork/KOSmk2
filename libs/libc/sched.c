@@ -32,7 +32,7 @@ DECL_BEGIN
 
 PUBLIC int (LIBCCALL unshare)(int flags) {
  int result = sys_unshare(flags);
- if (E_ISERR(result)) { __set_errno(-result); return -1; }
+ if (E_ISERR(result)) { SET_ERRNO(-result); return -1; }
  return 0;
 }
 PUBLIC int (LIBCCALL clone)(int (LIBCCALL *fn)(void *arg),

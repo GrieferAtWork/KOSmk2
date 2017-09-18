@@ -52,6 +52,7 @@
     <ClInclude Include="..\..\libs\libc\ctype.h" />
     <ClInclude Include="..\..\libs\libc\asm.h" />
     <ClInclude Include="..\..\libs\libc\dirent.h" />
+    <ClInclude Include="..\..\libs\libc\errno.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">

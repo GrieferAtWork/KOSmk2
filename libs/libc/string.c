@@ -578,7 +578,7 @@ INTERN int LIBCCALL libc_strncasecmp_l(char const *s1, char const *s2, size_t n,
 #ifndef __KERNEL__
 INTERN struct errnotext_data const *p_errnotext = NULL;
 #else
-INTDEF struct errnotext_data const errnotext;
+DATDEF struct errnotext_data const errnotext;
 #endif
 
 INTERN char const *LIBCCALL strerror_get(uintptr_t kind, int no) {

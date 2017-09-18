@@ -492,7 +492,7 @@ PUBLIC long int (LIBCCALL sysconf)(int name) {
   if (name < _SC_COUNT)
       return sysconf_values[name];
  case _SC_EQUIV_CLASS_MAX:
-  __set_errno(-EINVAL);
+  SET_ERRNO(-EINVAL);
   break;
  }
  return -1;

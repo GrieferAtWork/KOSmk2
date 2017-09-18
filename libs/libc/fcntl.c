@@ -41,7 +41,7 @@ PUBLIC int (ATTR_CDECL ioctl)(int fd, unsigned long int request, ...) {
  result = sys_ioctl(fd,request,va_arg(args,void *));
  va_end(args);
  if (E_ISERR(result)) {
-  __set_errno(-result);
+  SET_ERRNO(-result);
   result = -1;
  }
  return result;
@@ -52,7 +52,7 @@ PUBLIC int (ATTR_CDECL fcntl)(int fd, int cmd, ...) {
  result = sys_fcntl(fd,cmd,va_arg(args,void *));
  va_end(args);
  if (E_ISERR(result)) {
-  __set_errno(-result);
+  SET_ERRNO(-result);
   result = -1;
  }
  return result;
@@ -64,7 +64,7 @@ PUBLIC int (ATTR_CDECL openat)(int fd, char const *file, int oflag, ...) {
  result = sys_openat(fd,file,oflag,va_arg(args,mode_t));
  va_end(args);
  if (E_ISERR(result)) {
-  __set_errno(-result);
+  SET_ERRNO(-result);
   result = -1;
  }
  return result;
@@ -75,7 +75,7 @@ PUBLIC int (ATTR_CDECL open)(char const *file, int oflag, ...) {
  result = sys_openat(AT_FDCWD,file,oflag,va_arg(args,mode_t));
  va_end(args);
  if (E_ISERR(result)) {
-  __set_errno(-result);
+  SET_ERRNO(-result);
   result = -1;
  }
  return result;
@@ -91,7 +91,7 @@ PUBLIC char *(LIBCCALL xfdname)(int fd, int type, char *buf, size_t bufsize) {
  ssize_t reqsize;
  if (!buf && bufsize && (buf = (char *)(malloc)(bufsize)) == NULL) return NULL;
  reqsize = xfdname2(fd,type,buf,bufsize);
- if (E_ISERR(reqsize)) { __set_errno((errno_t)-reqsize); return NULL; }
+ if (E_ISERR(reqsize)) { SET_ERRNO((errno_t)-reqsize); return NULL; }
  if ((size_t)reqsize > bufsize) {
   if (!buf) {
    /* Allocate a new buffer dynamically. */
@@ -103,10 +103,10 @@ PUBLIC char *(LIBCCALL xfdname)(int fd, int type, char *buf, size_t bufsize) {
     buf = new_buf;
    } while ((reqsize = sys_xfdname(fd,type,buf,bufsize),
              E_ISOK(reqsize) && (size_t)reqsize != bufsize));
-   if (E_ISERR(reqsize)) { (free)(buf); __set_errno(-reqsize); return NULL; }
+   if (E_ISERR(reqsize)) { (free)(buf); SET_ERRNO(-reqsize); return NULL; }
    return buf;
   }
-  __set_errno(-ERANGE);
+  SET_ERRNO(-ERANGE);
   return NULL;
  }
  return buf;
@@ -116,7 +116,7 @@ PUBLIC char *(LIBCCALL getcwd)(char *buf, size_t bufsize) {
  ssize_t reqsize;
  if (!buf && bufsize && (buf = (char *)(malloc)(bufsize)) == NULL) return NULL;
  reqsize = sys_getcwd(buf,bufsize);
- if (E_ISERR(reqsize)) { __set_errno((errno_t)-reqsize); return NULL; }
+ if (E_ISERR(reqsize)) { SET_ERRNO((errno_t)-reqsize); return NULL; }
  if ((size_t)reqsize > bufsize) {
   if (!buf) {
    /* Allocate a new buffer dynamically. */
@@ -128,10 +128,10 @@ PUBLIC char *(LIBCCALL getcwd)(char *buf, size_t bufsize) {
     buf = new_buf;
    } while ((reqsize = sys_getcwd(buf,bufsize),
              E_ISOK(reqsize) && (size_t)reqsize != bufsize));
-   if (E_ISERR(reqsize)) { (free)(buf); __set_errno(-reqsize); return NULL; }
+   if (E_ISERR(reqsize)) { (free)(buf); SET_ERRNO(-reqsize); return NULL; }
    return buf;
   }
-  __set_errno(-ERANGE);
+  SET_ERRNO(-ERANGE);
   return NULL;
  }
  return buf;

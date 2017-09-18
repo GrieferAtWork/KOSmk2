@@ -68,26 +68,26 @@ PUBLIC void (ATTR_CDECL syslog)(int level, char const *format, ...) {
 
 PUBLIC int (LIBCCALL munmap)(void *addr, size_t len) {
  ssize_t result = sys_munmap(addr,len);
- if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return -1; }
+ if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return -1; }
  return 0;
 }
 PUBLIC void *(LIBCCALL xmmap1)(struct mmap_info const *data) {
  void *result;
  result = sys_xmmap(MMAP_INFO_CURRENT,data);
- if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return MAP_FAILED; }
+ if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return MAP_FAILED; }
  return result;
 }
 PUBLIC ssize_t (LIBCCALL xmunmap)(void *addr, size_t len, int flags, void *tag) {
  ssize_t result = sys_xmunmap(addr,len,flags,tag);
- if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return -1; }
+ if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return -1; }
  return result;
 }
 
 PUBLIC void *(LIBCCALL xsharesym)(char const *name) {
  void *result = sys_xsharesym(name);
- if (!result) __set_errno(EINVAL);
+ if (!result) SET_ERRNO(EINVAL);
  else if (E_ISERR(result)) {
-  __set_errno(-E_GTERR(result));
+  SET_ERRNO(-E_GTERR(result));
   result = NULL;
  }
  return result;
@@ -95,14 +95,14 @@ PUBLIC void *(LIBCCALL xsharesym)(char const *name) {
 PUBLIC void *(LIBCCALL mmap)(void *addr, size_t len, int prot,
                              int flags, int fd, off_t offset) {
  void *result = sys_mmap(addr,len,prot,flags,fd,offset);
- if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return MAP_FAILED; }
+ if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return MAP_FAILED; }
  return result;
 }
 PUBLIC void *(LIBCCALL mmap64)(void *addr, size_t len, int prot,
                                int flags, int fd, off64_t offset) {
 #if __SIZEOF_SYSCALL_LONG__ >= 8
  void *rresult = sys_mmap(addr,len,prot,flags,fd,offset);
- if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return MAP_FAILED; }
+ if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return MAP_FAILED; }
  return result;
 #else
  struct mmap_info info;
@@ -131,7 +131,7 @@ PUBLIC void *(ATTR_CDECL mremap)(void *addr, size_t old_len,
  result  = sys_mremap(addr,old_len,new_len,flags,newaddr);
  va_end(args);
  if (E_ISERR(result)) {
-  __set_errno(-E_GTERR(result));
+  SET_ERRNO(-E_GTERR(result));
   result = MAP_FAILED;
  }
  TRACE(("mremap(%p,%Iu,%Iu,%x,%p) -> %p\n",
@@ -146,17 +146,17 @@ PUBLIC int (LIBCCALL mprotect)(void *addr, size_t len, int prot) {
 
 PUBLIC void *(LIBCCALL xdlopen)(char const *filename, int flags) {
  void *result = sys_xdlopen(filename,flags);
- if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return NULL; }
+ if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
 PUBLIC void *(LIBCCALL xfdlopen)(int fd, int flags) {
  void *result = sys_xfdlopen(fd,flags);
- if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return NULL; }
+ if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
 PUBLIC void *(LIBCCALL xdlsym)(void *handle, char const *symbol) {
  void *result = sys_xdlsym(handle,symbol);
- if (E_ISERR(result)) { __set_errno(-E_GTERR(result)); return NULL; }
+ if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
 PUBLIC int (LIBCCALL xdlclose)(void *handle) {

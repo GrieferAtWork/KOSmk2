@@ -54,7 +54,7 @@ PUBLIC int (LIBCCALL openpty)(int *amaster, int *aslave, char *name,
 #error FIXME
 #endif
  s64 result = sys_xopenpty(name,termp,winp);
- if (E_ISERR(result)) { __set_errno(-(errno_t)result); return -1; }
+ if (E_ISERR(result)) { SET_ERRNO(-(errno_t)result); return -1; }
  *amaster = (int)(result);
  *aslave  = (int)(result >> 32);
  return 0;
@@ -96,8 +96,8 @@ PRIVATE char const dev[] = "/dev";
 PUBLIC int (LIBCCALL ttyname_r)(int fd, char *buf, size_t buflen) {
  struct stat st; struct dirent *d; DIR *dirstream;
  int safe; dev_t rdev;
- if unlikely(buflen < (COMPILER_STRLEN(dev)+1)*sizeof(char)) { __set_errno(ERANGE); return ERANGE; }
- if unlikely(!isatty(fd)) { __set_errno(ENOTTY); return ENOTTY; }
+ if unlikely(buflen < (COMPILER_STRLEN(dev)+1)*sizeof(char)) { SET_ERRNO(ERANGE); return ERANGE; }
+ if unlikely(!isatty(fd)) { SET_ERRNO(ENOTTY); return ENOTTY; }
  if unlikely(fstat(fd,&st) < 0) return errno;
  if ((dirstream = opendir(dev)) == NULL) return errno;
  memcpy(buf,dev,COMPILER_STRLEN(dev)*sizeof(char));
@@ -113,20 +113,20 @@ PUBLIC int (LIBCCALL ttyname_r)(int fd, char *buf, size_t buflen) {
    size_t needed = _D_EXACT_NAMLEN(d)+1;
    if (needed > buflen) {
     closedir(dirstream);
-    __set_errno(ERANGE);
+    SET_ERRNO(ERANGE);
     return ERANGE;
    }
    memcpy(&buf[sizeof(dev)],d->d_name,(needed+1)*sizeof(char));
    if (stat(buf,&st) == 0 && S_ISCHR(st.st_mode) && st.st_rdev == rdev) {
     /* Found it! */
     closedir(dirstream);
-    __set_errno(safe);
+    SET_ERRNO(safe);
     return 0;
    }
   }
  }
  closedir(dirstream);
- __set_errno(safe);
+ SET_ERRNO(safe);
  return ENOTTY;
 }
 
@@ -153,7 +153,7 @@ PRIVATE int const action[] = {
     [TCSAFLUSH] = TCSETSF,
 };
 PUBLIC int (LIBCCALL tcsetattr)(int fd, int optional_actions, struct termios const *termios_p) {
- if ((unsigned int)optional_actions >= COMPILER_LENOF(action)) { __set_errno(EINVAL); return -1; }
+ if ((unsigned int)optional_actions >= COMPILER_LENOF(action)) { SET_ERRNO(EINVAL); return -1; }
  return ioctl(fd,action[optional_actions],termios_p);
 }
 PUBLIC int (LIBCCALL tcsendbreak)(int fd, int duration) {
@@ -173,7 +173,7 @@ PUBLIC pid_t (LIBCCALL tcgetsid)(int fd) {
   if (ioctl(fd,TIOCGSID,&sid) < 0) {
    if (errno == EINVAL) {
     tiocgsid_does_not_work = 1;
-    __set_errno(serrno);
+    SET_ERRNO(serrno);
    } else return (pid_t)-1;
   } else return (pid_t)sid;
  }
@@ -182,7 +182,7 @@ PUBLIC pid_t (LIBCCALL tcgetsid)(int fd) {
  if (pgrp == -1) return (pid_t)-1;
  sid = getsid(pgrp);
  if (sid == -1 && errno == ESRCH)
-     __set_errno(ENOTTY);
+     SET_ERRNO(ENOTTY);
  return sid;
 }
 PUBLIC void (LIBCCALL cfmakeraw)(struct termios *termios_p) {

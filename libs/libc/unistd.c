@@ -27,9 +27,9 @@
 
 #include "libc.h"
 #include "system.h"
+#include "errno.h"
 
 #include <assert.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
 #include <grp.h>
@@ -155,7 +155,7 @@ PUBLIC int (LIBCCALL lchmod)(char const *file, mode_t mode) { return fchmodat(AT
 PUBLIC int (LIBCCALL fchmod)(int fd, mode_t mode) { return FORWARD_SYSTEM_ERROR(sys_fchmod(fd,mode)); }
 PUBLIC int (LIBCCALL fchownat)(int fd, char const *file, uid_t owner, gid_t group, int flag) { return FORWARD_SYSTEM_ERROR(sys_fchownat(fd,file,owner,group,flag)); }
 PUBLIC int (LIBCCALL fchmodat)(int fd, char const *file, mode_t mode, int flag) {
- if (!(flag&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW))) { __set_errno(EINVAL); return -1; }
+ if (!(flag&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW))) { SET_ERRNO(EINVAL); return -1; }
  return FORWARD_SYSTEM_ERROR(sys_fchmodat(fd,file,mode|((flag&AT_SYMLINK_NOFOLLOW) ? O_NOFOLLOW : 0)));
 }
 
@@ -384,7 +384,7 @@ PRIVATE void (LIBCCALL execvpe_inside)(char const *path, char const *file,
 }
 PUBLIC int (LIBCCALL execvpe)(char const *file, char *const argv[], char *const envp[]) {
  char *iter,*part,*next,*path;
- if unlikely((path = getenv("PATH")) == NULL) { __set_errno(ENOENT); return -1; }
+ if unlikely((path = getenv("PATH")) == NULL) { SET_ERRNO(ENOENT); return -1; }
  if unlikely((path = strdupma(path)) == NULL) return -1;
  part = path;
  for (;;) {
@@ -437,7 +437,7 @@ PUBLIC int (LIBCCALL pipe2)(int pipedes[2], int flags) {
  } pfd;
  pfd.data = sys_xpipe(flags);
  if (E_ISERR(pfd.error)) {
-  __set_errno(-pfd.error);
+  SET_ERRNO(-pfd.error);
   return -1;
  }
  pipedes[0] = pfd.fd_reader;
@@ -663,7 +663,7 @@ PUBLIC int (LIBCCALL glibc_fstatat)(int fd, char const *filename, struct glibc_s
 }
 PUBLIC int (LIBCCALL glibc_stat)(char const *path, struct glibc_stat *statbuf) { return glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_FOLLOW); }
 PUBLIC int (LIBCCALL glibc_lstat)(char const *path, struct glibc_stat *statbuf) { return glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_NOFOLLOW); }
-#define VERCHK { if (ver != 0) { __set_errno(-EINVAL); return -1; } }
+#define VERCHK { if (ver != 0) { SET_ERRNO(-EINVAL); return -1; } }
 PUBLIC int (LIBCCALL __fxstat)(int ver, int fd, struct glibc_stat *statbuf) { VERCHK return glibc_fstat(fd,statbuf); }
 PUBLIC int (LIBCCALL __xstat)(int ver, char const *filename, struct glibc_stat *statbuf) { VERCHK return glibc_stat(filename,statbuf); }
 PUBLIC int (LIBCCALL __lxstat)(int ver, char const *filename, struct glibc_stat *statbuf) { VERCHK return glibc_lstat(filename,statbuf); }
@@ -689,7 +689,7 @@ PUBLIC int (LIBCCALL uname)(struct utsname *name) {
  /* Lazily load uname information from the kernel. */
  if ((data = kernel_utsname) == NULL) {
   data = (struct utsname const *)sys_xsharesym("uname");
-  if unlikely(!data) { __set_errno(ENOSYS); return -1; }
+  if unlikely(!data) { SET_ERRNO(ENOSYS); return -1; }
   ATOMIC_CMPXCH(kernel_utsname,NULL,data);
  }
  memcpy(name,data,sizeof(struct utsname));

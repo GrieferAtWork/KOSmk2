@@ -67,8 +67,8 @@ INTERN u16 const time_monthstart_yday[2][13] = {
 #define ASCTIME_BUFSIZE 26
 PUBLIC char *(LIBCCALL asctime_r)(struct tm const *__restrict tp,
                                   char *__restrict buf) {
- if __unlikely(!tp) { __set_errno(EINVAL); return NULL; }
- if __unlikely(tp->tm_year > INT_MAX-1900) { __set_errno(EOVERFLOW); return NULL; }
+ if __unlikely(!tp) { SET_ERRNO(EINVAL); return NULL; }
+ if __unlikely(tp->tm_year > INT_MAX-1900) { SET_ERRNO(EOVERFLOW); return NULL; }
  sprintf(buf,"%.3s %.3s%3d %.2d:%.2d:%.2d %d\n",
         (tp->tm_wday < 0 || tp->tm_wday >= 7 ? "???" : abbr_wday_names[tp->tm_wday]),
         (tp->tm_mon < 0 || tp->tm_mon >= 12 ? "???" : abbr_month_names[tp->tm_mon]),
@@ -420,7 +420,7 @@ PUBLIC int (LIBCCALL A(pselect))(int nfds, fd_set *__restrict readfds,
  } else {
   error = (int)sys_pselect6(nfds,readfds,writefds,exceptfds,timeout,NULL);
  }
- if (E_ISERR(error)) { __set_errno(-error); return -1; }
+ if (E_ISERR(error)) { SET_ERRNO(-error); return -1; }
  return error;
 }
 

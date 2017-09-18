@@ -69,7 +69,7 @@ PRIVATE DEFINE_ATOMIC_RWLOCK(env_lock);
 #define ENVIRON_FREE_ISNOP 1
 
 
-INTERN char *(LIBCCALL libc_getenv)(char const *name) {
+INTERN char *LIBCCALL libc_getenv(char const *name) {
  size_t namelen; register char *result,**envp;
  if unlikely(!name) return NULL;
  environ_read();
@@ -142,7 +142,7 @@ PRIVATE char **environ_make_writable_unlocked(bool add_one) {
  return result;
 }
 
-INTERN int (LIBCCALL libc_clearenv)(void) {
+INTERN int LIBCCALL libc_clearenv(void) {
  environ_write();
 #if !ENVIRON_FREE_ISNOP
  { char **iter = libc_envp;
@@ -159,11 +159,11 @@ INTERN int (LIBCCALL libc_clearenv)(void) {
  environ_endwrite();
  return 0;
 }
-INTERN int (LIBCCALL libc_setenv)(char const *name, char const *value, int replace) {
+INTERN int LIBCCALL libc_setenv(char const *name, char const *value, int replace) {
  char *env_string,**slot; int result;
  size_t name_len,value_len;
  if (!name || !*name || libc_strchr(name,'='))
- { __set_errno(EINVAL); return -1; }
+ { SET_ERRNO(EINVAL); return -1; }
  name_len  = libc_strlen(name);
  value_len = libc_strlen(value);
  env_string = (char *)ENVIRON_MALLOC((name_len+value_len+2)*sizeof(char));
@@ -202,11 +202,11 @@ no_slot:
 #endif
  return result;
 }
-INTERN int (LIBCCALL libc_unsetenv)(char const *name) {
+INTERN int LIBCCALL libc_unsetenv(char const *name) {
  char **iter,**env_base; size_t name_len;
  if (!name || (name_len = libc_strlen(name)) == 0 ||
       libc_memchr(name,'=',name_len*sizeof(char)) != NULL)
- { __set_errno(EINVAL); return -1; }
+ { SET_ERRNO(EINVAL); return -1; }
  environ_write();
  if (!environ_make_writable_unlocked(false))
  { environ_endwrite(); return -1; }
@@ -232,7 +232,7 @@ INTERN int (LIBCCALL libc_unsetenv)(char const *name) {
  environ_endwrite();
  return 0;
 }
-INTERN int (LIBCCALL libc_putenv)(char *string) {
+INTERN int LIBCCALL libc_putenv(char *string) {
  char **slot,*name_end; int result;
  if ((name_end = libc_strchr(string,'=')) != NULL) {
   size_t name_len = (size_t)(name_end-string);

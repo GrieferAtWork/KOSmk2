@@ -38,14 +38,14 @@
 
 DECL_BEGIN
 
-static int __ERRNO = 0; /* TODO: Thread-local. */
-PUBLIC int *(LIBCCALL __errno)(void) { return &__ERRNO; }
-PUBLIC int (LIBCCALL __get_errno)(void) {
+PRIVATE int __ERRNO = 0; /* TODO: Thread-local. */
+INTERN int *LIBCCALL libc__errno(void) { return &__ERRNO; }
+INTERN int LIBCCALL libc___get_errno(void) {
  return __ERRNO;
 }
-PUBLIC void (LIBCCALL __set_errno)(int err) {
+INTERN void LIBCCALL libc___set_errno(int err) {
 #if 0
- syslog(LOG_DEBUG,"__set_errno(%[errno])\n",err);
+ syslog(LOG_DEBUG,"SET_ERRNO(%[errno])\n",err);
  __asm__("int $3");
 #endif
  __ERRNO = err;
@@ -53,59 +53,58 @@ PUBLIC void (LIBCCALL __set_errno)(int err) {
 
 #define ERROR_EXIT(code) _exit(code)
 
-PUBLIC char *(LIBCCALL __libc_program_invocation_name)(void) {
+INTERN char *LIBCCALL libc___libc_program_invocation_name(void) {
  return appenv->e_argc ? appenv->e_argv[0] : "";
 }
-PUBLIC char *(LIBCCALL __libc_program_invocation_short_name)(void) {
+INTERN char *LIBCCALL libc___libc_program_invocation_short_name(void) {
  return basename(program_invocation_name);
 }
 
-PUBLIC void (LIBCCALL vwarn)(char const *format, va_list args) {
+INTERN void LIBCCALL libc_vwarn(char const *format, va_list args) {
  fprintf(stderr,"%s: ",program_invocation_short_name);
  vfprintf(stderr,format,args);
  fprintf(stderr,": %[errno]",errno);
 }
-PUBLIC void (LIBCCALL vwarnx)(char const *format, va_list args) {
+INTERN void LIBCCALL libc_vwarnx(char const *format, va_list args) {
  fprintf(stderr,"%s: ",program_invocation_short_name);
  vfprintf(stderr,format,args);
 }
-PUBLIC void (LIBCCALL verr)(int status, char const *format, va_list args) {
+INTERN void LIBCCALL libc_verr(int status, char const *format, va_list args) {
  vwarn(format,args);
  ERROR_EXIT(status);
 }
-PUBLIC void (LIBCCALL verrx)(int status, char const *format, va_list args) {
+INTERN void LIBCCALL libc_verrx(int status, char const *format, va_list args) {
  vwarnx(format,args);
  ERROR_EXIT(status);
 }
-PUBLIC void (LIBCCALL warn)(char const *format, ...) {
+INTERN void LIBCCALL libc_warn(char const *format, ...) {
  va_list args;
  va_start(args,format);
  vwarn(format,args);
  va_end(args);
 }
-PUBLIC void (LIBCCALL warnx)(char const *format, ...) {
+INTERN void LIBCCALL libc_warnx(char const *format, ...) {
  va_list args;
  va_start(args,format);
  vwarnx(format,args);
  va_end(args);
 }
-PUBLIC void (LIBCCALL err)(int status, char const *format, ...) {
+INTERN void LIBCCALL libc_err(int status, char const *format, ...) {
  va_list args;
  va_start(args,format);
  verr(status,format,args);
 }
-PUBLIC void (LIBCCALL errx)(int status, char const *format, ...) {
+INTERN void LIBCCALL libc_errx(int status, char const *format, ...) {
  va_list args;
  va_start(args,format);
  verrx(status,format,args);
 }
 
-PUBLIC ATTR_COLDDATA unsigned int error_message_count = 0;
-PUBLIC ATTR_COLDDATA int error_one_per_line = 0;
-PUBLIC ATTR_COLDDATA void (*error_print_progname)(void) = NULL;
-
+INTERN ATTR_COLDDATA unsigned int libc_error_message_count = 0;
+INTERN ATTR_COLDDATA int libc_error_one_per_line = 0;
+INTERN ATTR_COLDDATA void (*libc_error_print_progname)(void) = NULL;
 PRIVATE ATTR_COLDTEXT void LIBCCALL error_prefix(void) {
- void (*print_name)(void) = error_print_progname;
+ void (*print_name)(void) = libc_error_print_progname;
  fflush(stdout);
  if (print_name) (*print_name)();
  else fprintf(stderr,"%s",program_invocation_short_name);
@@ -117,12 +116,12 @@ error_suffix(int status, int errnum) {
 #else
  fprintf(stderr,": %s\n",strerror(errnum));
 #endif
- ++error_message_count;
+ ++libc_error_message_count;
  if (status) ERROR_EXIT(status);
 }
 
-PUBLIC ATTR_COLDTEXT void LIBCCALL
-error(int status, int errnum, char const *format, ...) {
+INTERN ATTR_COLDTEXT void LIBCCALL
+libc_error(int status, int errnum, char const *format, ...) {
  va_list args;
  error_prefix();
  fwrite(": ",sizeof(char),2,stderr);
@@ -131,9 +130,9 @@ error(int status, int errnum, char const *format, ...) {
  va_end(args);
  error_suffix(status,errnum);
 }
-PUBLIC ATTR_COLDTEXT void LIBCCALL
-error_at_line(int status, int errnum, char const *fname,
-              unsigned int lineno, char const *format, ...) {
+INTERN ATTR_COLDTEXT void LIBCCALL
+libc_error_at_line(int status, int errnum, char const *fname,
+                   unsigned int lineno, char const *format, ...) {
  va_list args;
  error_prefix();
  fprintf(stderr,":%s:%d: ",fname,lineno);
@@ -144,6 +143,24 @@ error_at_line(int status, int errnum, char const *fname,
 }
 
 
+DEFINE_PUBLIC_ALIAS(_errno,libc__errno);
+DEFINE_PUBLIC_ALIAS(__get_errno,libc___get_errno);
+DEFINE_PUBLIC_ALIAS(__set_errno,libc___set_errno);
+DEFINE_PUBLIC_ALIAS(__libc_program_invocation_name,libc___libc_program_invocation_name);
+DEFINE_PUBLIC_ALIAS(__libc_program_invocation_short_name,libc___libc_program_invocation_short_name);
+DEFINE_PUBLIC_ALIAS(vwarn,libc_vwarn);
+DEFINE_PUBLIC_ALIAS(vwarnx,libc_vwarnx);
+DEFINE_PUBLIC_ALIAS(verr,libc_verr);
+DEFINE_PUBLIC_ALIAS(verrx,libc_verrx);
+DEFINE_PUBLIC_ALIAS(warn,libc_warn);
+DEFINE_PUBLIC_ALIAS(warnx,libc_warnx);
+DEFINE_PUBLIC_ALIAS(err,libc_err);
+DEFINE_PUBLIC_ALIAS(errx,libc_errx);
+DEFINE_PUBLIC_ALIAS(error_message_count ,libc_error_message_count);
+DEFINE_PUBLIC_ALIAS(error_one_per_line ,libc_error_one_per_line);
+DEFINE_PUBLIC_ALIAS(error_print_progname,libc_error_print_progname);
+DEFINE_PUBLIC_ALIAS(error,libc_error);
+DEFINE_PUBLIC_ALIAS(error_at_line,libc_error_at_line);
 
 DECL_END
 

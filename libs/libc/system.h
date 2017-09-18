@@ -23,7 +23,7 @@
 #include <hybrid/types.h>
 #include <hybrid/timespec.h>
 #include <linux/unistd.h>
-#include <errno.h>
+#include "errno.h"
 #include <stddef.h>
 #include <bits/sigset.h>
 #include <bits/siginfo.h>
@@ -62,13 +62,13 @@ struct timezone;
 
 
 #define SET_SYSTEM_ERROR(expr) \
- XBLOCK({ __set_errno(-(expr)); XRETURN -1; })
+ XBLOCK({ SET_ERRNO(-(expr)); XRETURN -1; })
 #define FORWARD_SYSTEM_ERROR(expr) \
  XBLOCK({ register __errno_t _e = (expr); \
-          XRETURN E_ISERR(_e) ? (__set_errno(-(_e)),-1) : 0; })
+          XRETURN E_ISERR(_e) ? (SET_ERRNO(-(_e)),-1) : 0; })
 #define FORWARD_SYSTEM_VALUE(expr) \
  XBLOCK({ register __typeof__(expr) _e = (expr); \
-          XRETURN E_ISERR(_e) ? (__set_errno((__errno_t)-(_e)),-1) : _e; })
+          XRETURN E_ISERR(_e) ? (SET_ERRNO((__errno_t)-(_e)),-1) : _e; })
 
 
 
