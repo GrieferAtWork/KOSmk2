@@ -68,9 +68,9 @@ do_dlopen(struct module *__restrict mod, int flags) {
   if (flags&RTLD_NODELETE) {
    instance_add_dependency(THIS_MMAN->m_exe,inst);
   } else {
-   /* TODO: This is exactly what must happen here, but if we did this,
-    *       dlclose() could no longer be used to delete the module,
-    *       as it would then have explicit dependencies... */
+   /* TODO: The above is exactly what must happen here, but if we
+    *       did this, dlclose() could no longer be used to delete
+    *       the module, as it would then have explicit dependencies... */
   }
  }
 
@@ -80,17 +80,19 @@ do_dlopen(struct module *__restrict mod, int flags) {
 }
 
 SYSCALL_DEFINE2(xdlopen,USER char *,name,int,flags) {
- struct dentryname dname;
+ struct dentryname dname; int state;
  REF struct module *mod; void *result;
- /* TODO: Copy 'name' from userspace */
- dname.dn_name = name;
- dname.dn_size = strlen(name);
+ task_crit();
+ /* Copy 'name' from userspace */
+ dname.dn_name = ACQUIRE_FS_STRING(name,&dname.dn_size,&state);
+ if (E_ISERR(dname.dn_name)) { result = E_PTR(E_GTERR(dname.dn_name)); goto end; }
  dentryname_loadhash(&dname);
 
- task_crit();
  /* TODO: 'LD_LIBRARY_PATH'? */
  /* TODO: Extended library search paths, as specified by various executables already loaded? */
  mod = module_open_default(&dname,true);
+ RELEASE_STRING(dname.dn_name,state);
+
  if (E_ISERR(mod)) { result = E_PTR(E_GTERR(mod)); goto end; }
 
  /* Now simply open the module. */
@@ -194,7 +196,7 @@ end:  task_endcrit();
 }
 
 SYSCALL_DEFINE2(xdlsym,USER void *,handle,USER char const *,symbol) {
- void *result;
+ void *result; int state; char *name;
  struct mman *mm = THIS_MMAN;
  struct instance *inst;
  task_crit();
@@ -210,10 +212,13 @@ SYSCALL_DEFINE2(xdlsym,USER void *,handle,USER char const *,symbol) {
  }
  if unlikely(!inst) { result = E_PTR(-EFAULT); goto end2; }
 
- /* TODO: Copy the given symbol name from userspace. */
-
  /* Lookup the symbol. */
- result = instance_dlsym(inst,symbol,sym_hashname(symbol));
+ name = ACQUIRE_STRING(symbol,&state);
+ if (E_ISERR(name)) result = E_PTR(E_GTERR(name));
+ else {
+  result = instance_dlsym(inst,name,sym_hashname(name));
+  RELEASE_STRING(name,state);
+ }
 
 end2: mman_endwrite(mm);
 end:  task_endcrit();

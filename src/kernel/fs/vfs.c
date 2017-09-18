@@ -769,7 +769,7 @@ PUBLIC struct superblockops const vsuperblock_ops = {
 
 PRIVATE SAFE REF struct superblock *KCALL
 tmpfs_callback(struct blkdev *__restrict UNUSED(dev), u32 UNUSED(flags),
-               char const *UNUSED(devname), USER void *UNUSED(data),
+               USER char const *UNUSED(devname), USER void *UNUSED(data),
                void *UNUSED(closure)) {
  REF struct vsuperblock *result;
  /* Create a new, empty TMPFS superblock. (That is a virtual, memory-based filesystem) */

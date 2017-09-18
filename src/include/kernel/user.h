@@ -44,8 +44,46 @@ FUNDEF ssize_t (KCALL vsprintf_user)(USER char *dst, char const *format, __VA_LI
 FUNDEF ssize_t (KCALL vsnprintf_user)(USER char *dst, size_t dst_max, char const *format, __VA_LIST args);
 
 
+/* Acquire/release access to a given c-style string 'str'.
+ * There are multiple ways this function can behave, which are
+ * based on the actual length and context of the calling thread:
+ * #1: If the calling thread is the only currently running in the associated VM:
+ *     >> Simply validate and re-use the user-space string.
+ *     REASON: With no other thread around to screw with the string,
+ *             as well as the calling thread currently busy performing
+ *             the system call that requested our held, only the caller
+ *             themself would be capable of deleting the string's memory,
+ *             meaning that they own an implicit SINGLE-USER lock on it.
+ * #2: Safely create an malloc()-ed copy (potentially apart of some cache)
+ *     on the kernel heap when the given string isn't absurdly long.
+ * #3: If the string is absurdly long, suspend all threads using the the
+ *     current VM by the caller and directly re-return the user-space string.
+ *    'release_string()' will then later resume all previously suspended threads.
+ *  >> The system will always attempt to refrain from choosing to do this,
+ *     due to the overhead associated with doing so.
+ *     The string-length threshold that will cause this action to
+ *     be taken depends on the number of threads running in the VM.
+ * @param: opt_pstrlen:   When non-NULL, filled with 'strlen(return)'
+ * @param: pstate:        A mandatory pointer to a integer that is filled with opaque data
+ *                        describing how 'release_string()' should later perform cleanup.
+ * @return: * :      A pointer to some dataset containing the user-string,
+ *                   that is now safe for use by the kernel.
+ * @return: -EINVAL: The given string is longer than 'max_length' (Only enforced for case #2 and #3)
+ * @return: -EINTR:  The calling thread was interrupted.
+ * @return: -ENOMEM: Not enough available memory.
+ * @return: -EFAULT: The given string is faulty. */
+FUNDEF SAFE VIRT char *KCALL acquire_string(USER char const *str, size_t max_length,
+                                            size_t *opt_pstrlen, int *__restrict pstate);
+FUNDEF SAFE void KCALL release_string(VIRT char *__restrict virt_str, int state);
+#define DEFAULT_MAX_STRING_LENGTH    0x80000 /* 4096*128 */
+#define DEFAULT_MAX_FS_STRING_LENGTH 0x80000 /* 4096*128 */
+#define ACQUIRE_STRING(str,pstate)         acquire_string(str,DEFAULT_MAX_STRING_LENGTH,NULL,pstate)
+#define RELEASE_STRING(virt_str,state)     release_string(virt_str,state)
+#define ACQUIRE_FS_STRING(str,plen,pstate) acquire_string(str,DEFAULT_MAX_FS_STRING_LENGTH,plen,pstate)
+
+
 /* Execute 'worker()' and handle illegal user-memory
- * accesses that occurr within by returning -EFAULT.
+ * accesses that occur within by returning -EFAULT.
  * Upon success, the return value of 'worker' is returned.
  * WARNING: The worker is required to user-space, it must
  *          manually validate the user-space pointer's address limit!

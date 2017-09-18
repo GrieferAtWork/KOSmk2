@@ -1093,7 +1093,7 @@ fschain_find_name(struct fstype *start,
 
 
 PRIVATE REF struct blkdev *KCALL
-mount_open_device(char const *dev_name, u32 flags) {
+mount_open_device(USER char const *dev_name, u32 flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *cwd; errno_t error;
@@ -1175,7 +1175,7 @@ PRIVATE REF struct superblock *KCALL
 mount_make_superblock(USER char const *dev_name,
                       USER char const *type, u32 flags,
                       USER void const *data) {
- size_t typelen; errno_t error;
+ errno_t error;
  REF struct superblock *result;
  struct fstype *ft = NULL;
  if (flags&MS_BIND) {
@@ -1220,13 +1220,19 @@ mount_make_superblock(USER char const *dev_name,
   * deduction, as provided as a core concept by KOS. */
  if (!type) goto automount;
 
- /* TODO: Copy 'type' to kernel-space. */
- error = rwlock_read(&fstype_lock);
- if (E_ISERR(error)) return E_PTR(error);
- typelen = strlen(type);
- /* .. */ ft = fschain_find_name(fstype_none,type,typelen);
- if (!ft) ft = fschain_find_name(fstype_auto,type,typelen);
- if (!ft) ft = fschain_find_name(fstype_any,type,typelen);
+ { char *host_type; size_t typelen; int state;
+   /* Copy 'type' to kernel-space. */
+   host_type = ACQUIRE_FS_STRING(type,&typelen,&state);
+   if (E_ISERR(host_type)) return E_PTR(E_GTERR(host_type));
+   error = rwlock_read(&fstype_lock);
+   if (E_ISOK(error)) {
+    /* .. */ ft = fschain_find_name(fstype_none,host_type,typelen);
+    if (!ft) ft = fschain_find_name(fstype_auto,host_type,typelen);
+    if (!ft) ft = fschain_find_name(fstype_any,host_type,typelen);
+   }
+   RELEASE_STRING(host_type,state);
+   if (E_ISERR(error)) return E_PTR(error);
+ }
  /* Handle the case of an unknown filesystem type. */
  if (!ft || !INSTANCE_TRYINCREF(ft->f_owner)) {
   rwlock_endread(&fstype_lock);
@@ -1251,7 +1257,6 @@ automount:
    * >> OK. For now I'm going to ignore that ~dummy string~ as POSIX calls
    *    it and simply focus on mounting /dev block devices, or LOOP files. */
 
-  /* TODO: Copy 'dev_name' from userspace. */
   dev = mount_open_device(dev_name,flags);
   if (E_ISERR(dev))
    result = E_PTR(E_GTERR(dev));

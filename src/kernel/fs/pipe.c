@@ -196,7 +196,7 @@ PUBLIC struct superblock pipe_fs = {
 
 PRIVATE SAFE REF struct superblock *KCALL
 pipefs_callback(struct blkdev *__restrict UNUSED(dev), u32 UNUSED(flags),
-                char const *UNUSED(devname), USER void *UNUSED(data),
+                USER char const *UNUSED(devname), USER void *UNUSED(data),
                 void *UNUSED(closure)) {
  SUPERBLOCK_INCREF(&pipe_fs);
  return &pipe_fs;

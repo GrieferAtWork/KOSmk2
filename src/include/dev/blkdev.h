@@ -394,7 +394,8 @@ blkdev_mksuper(struct blkdev *__restrict self,
  * @return: -ENOMEM:    Not enough available kernel memory.
  * @return: E_ISERR(*): Failed to create the filesystem for some reason. */
 typedef SAFE REF struct superblock *(KCALL *fstype_callback)(struct blkdev *__restrict dev, u32 flags,
-                                                             char const *devname, USER void *data, void *closure);
+                                                             USER char const *devname,
+                                                             USER void *data, void *closure);
 
 struct fstype {
  SLIST_NODE(struct fstype)

@@ -2303,51 +2303,73 @@ PUBLIC REF struct dentry *KCALL
 dentry_user_xwalk(struct dentry *__restrict self,
                   struct dentry_walker *__restrict walker,
                   USER char const *path) {
+ char *host_path; size_t pathlen; int state; REF struct dentry *result;
  if (!path) { DENTRY_INCREF(self); return self; }
- /* TODO: Copy filename from userspace. */
-
- return dentry_xwalk(self,walker,path,strlen(path));
+ host_path = ACQUIRE_FS_STRING(path,&pathlen,&state);
+ if (E_ISERR(host_path)) return E_PTR(E_GTERR(host_path));
+ result = dentry_xwalk(self,walker,host_path,pathlen);
+ RELEASE_STRING(host_path,state);
+ return result;
 }
 PUBLIC REF struct file *KCALL
 fs_user_xopen(struct dentry_walker *__restrict walker,
               struct dentry *__restrict cwd, USER char const *path,
               struct iattr const *__restrict attr,
               iattrset_t attr_valid, oflag_t oflags) {
+ char *host_path; size_t pathlen; int state; REF struct file *result;
  if (!path) return dentry_openthis(cwd,&walker->dw_access,attr,attr_valid,oflags);
- /* TODO: Copy filename from userspace. */
-
- return fs_xopen(walker,cwd,path,strlen(path),attr,attr_valid,oflags);
+ host_path = ACQUIRE_FS_STRING(path,&pathlen,&state);
+ if (E_ISERR(host_path)) return E_PTR(E_GTERR(host_path));
+ result = fs_xopen(walker,cwd,host_path,pathlen,attr,attr_valid,oflags);
+ RELEASE_STRING(host_path,state);
+ return result;
 }
 PUBLIC REF struct dentry *KCALL
 fs_user_xinsnod(struct dentry_walker *__restrict walker,
                 struct dentry *__restrict cwd, USER char const *path,
                 struct device *__restrict dev,
                 REF struct inode **result_inode) {
- /* TODO: Copy filename from userspace. */
- return fs_xinsnod(walker,cwd,path,strlen(path),dev,result_inode);
+ char *host_path; size_t pathlen; int state; REF struct dentry *result;
+ host_path = ACQUIRE_FS_STRING(path,&pathlen,&state);
+ if (E_ISERR(host_path)) return E_PTR(E_GTERR(host_path));
+ result = fs_xinsnod(walker,cwd,host_path,pathlen,dev,result_inode);
+ RELEASE_STRING(host_path,state);
+ return result;
 }
 PUBLIC REF struct dentry *KCALL
 fs_user_xmkreg(struct dentry_walker *__restrict walker,
                struct dentry *__restrict cwd, USER char const *path,
                struct iattr const *__restrict attr,
                REF struct inode **result_inode) {
- /* TODO: Copy filename from userspace. */
- return fs_xmkreg(walker,cwd,path,strlen(path),attr,result_inode);
+ char *host_path; size_t pathlen; int state; REF struct dentry *result;
+ host_path = ACQUIRE_FS_STRING(path,&pathlen,&state);
+ if (E_ISERR(host_path)) return E_PTR(E_GTERR(host_path));
+ result = fs_xmkreg(walker,cwd,host_path,pathlen,attr,result_inode);
+ RELEASE_STRING(host_path,state);
+ return result;
 }
 PUBLIC REF struct dentry *KCALL
 fs_user_xmkdir(struct dentry_walker *__restrict walker,
                struct dentry *__restrict cwd, USER char const *path,
                struct iattr const *__restrict attr,
                REF struct inode **result_inode) {
- /* TODO: Copy filename from userspace. */
- return fs_xmkdir(walker,cwd,path,strlen(path),attr,result_inode);
+ char *host_path; size_t pathlen; int state; REF struct dentry *result;
+ host_path = ACQUIRE_FS_STRING(path,&pathlen,&state);
+ if (E_ISERR(host_path)) return E_PTR(E_GTERR(host_path));
+ result = fs_xmkdir(walker,cwd,host_path,pathlen,attr,result_inode);
+ RELEASE_STRING(host_path,state);
+ return result;
 }
 PUBLIC REF struct dentry *KCALL
 fs_user_xhrdlink(struct dentry_walker *__restrict walker,
                  struct dentry *__restrict cwd, USER char const *path,
                  struct inode *__restrict dst_node) {
- /* TODO: Copy filename from userspace. */
- return fs_xhrdlink(walker,cwd,path,strlen(path),dst_node);
+ char *host_path; size_t pathlen; int state; REF struct dentry *result;
+ host_path = ACQUIRE_FS_STRING(path,&pathlen,&state);
+ if (E_ISERR(host_path)) return E_PTR(E_GTERR(host_path));
+ result = fs_xhrdlink(walker,cwd,host_path,pathlen,dst_node);
+ RELEASE_STRING(host_path,state);
+ return result;
 }
 PUBLIC REF struct dentry *KCALL
 fs_user_xsymlink(struct dentry_walker *__restrict walker,
@@ -2356,18 +2378,26 @@ fs_user_xsymlink(struct dentry_walker *__restrict walker,
                  USER char const *target_text,
                  struct iattr const *__restrict result_attr,
                  REF struct inode **result_inode) {
- /* TODO: Copy filename from userspace. */
- return fs_xsymlink(walker,cwd,path,strlen(path),
-                    target_text,result_attr,result_inode);
+ char *host_path; size_t pathlen; int state; REF struct dentry *result;
+ host_path = ACQUIRE_FS_STRING(path,&pathlen,&state);
+ if (E_ISERR(host_path)) return E_PTR(E_GTERR(host_path));
+ result = fs_xsymlink(walker,cwd,host_path,pathlen,
+                      target_text,result_attr,result_inode);
+ RELEASE_STRING(host_path,state);
+ return result;
 }
 PUBLIC REF struct dentry *KCALL
 fs_user_xrename(struct dentry_walker *__restrict walker,
                 struct dentry *__restrict cwd, USER char const *path,
                 struct dentry *__restrict existing_ent,
                 REF struct inode **result_inode) {
- /* TODO: Copy filename from userspace. */
- return fs_xrename(walker,cwd,path,strlen(path),
-                   existing_ent,result_inode);
+ char *host_path; size_t pathlen; int state; REF struct dentry *result;
+ host_path = ACQUIRE_FS_STRING(path,&pathlen,&state);
+ if (E_ISERR(host_path)) return E_PTR(E_GTERR(host_path));
+ result = fs_xrename(walker,cwd,host_path,pathlen,
+                     existing_ent,result_inode);
+ RELEASE_STRING(host_path,state);
+ return result;
 }
 
 DECL_END

@@ -161,7 +161,7 @@ INTDEF struct procnode const root_content[]; /* Misc. contents of the /proc root
 
 INTERN SAFE REF struct superblock *KCALL
 procfs_make(struct blkdev *__restrict dev, u32 flags,
-            char const *devname, USER void *data, void *closure);
+            USER char const *devname, USER void *data, void *closure);
 
 
 DECL_END

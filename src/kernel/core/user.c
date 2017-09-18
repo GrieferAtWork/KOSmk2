@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_KERNEL_CORE_USER_C
 #define GUARD_KERNEL_CORE_USER_C 1
+#define _KOS_SOURCE 2
 
 #include <assert.h>
 #include <hybrid/asm.h>
@@ -30,6 +31,7 @@
 #include <sched/task.h>
 #include <stdarg.h>
 #include <string.h>
+#include <malloc.h>
 
 DECL_BEGIN
 
@@ -376,6 +378,168 @@ vsnprintf_user(USER char *s, size_t maxlen,
       result = -EFAULT;
  }
  return result;
+}
+
+
+#define STATE_VM_SINGLE  0
+#define STATE_VM_STRDUP  1
+#define STATE_VM_SUSPEND 2
+
+PUBLIC SAFE VIRT char *KCALL
+acquire_string(USER char const *str, size_t max_length,
+               size_t *opt_pstrlen, int *__restrict pstate) {
+ struct mman *mm = THIS_MMAN;
+ char *result = E_PTR(mman_write(mm));
+ char *string_end; size_t string_length;
+ if (E_ISERR(result)) return result;
+ /* Figure out where the string ends, thus validating
+  * it and figuring out its initial length. */
+ string_end = strend_user(str);
+ if unlikely(!string_end) { result = E_PTR(-EFAULT); goto end; }
+ string_length = (size_t)(string_end-str);
+ assert(mm->m_tasks != NULL);
+ if (mm->m_tasks == THIS_TASK &&
+    !THIS_TASK->t_mman_tasks.le_next) {
+  /* Simple case: The calling process is single-threaded, so we've
+   *              got an implicit single-user lock on the VM. */
+  result  = (char *)str;
+  *pstate = STATE_VM_SINGLE;
+  if (opt_pstrlen) *opt_pstrlen = string_length;
+ } else {
+  if unlikely(string_length > max_length) { result = E_PTR(-EINVAL); goto end; }
+#if 0 /* Currently this would have the potential to deadlock.
+       * >> Instead, we must introduce a new system that allows 'ERESTART'
+       *    to be returned by 'task_waitfor()' alongside 'EINTR'.
+       *    Both should have the same meaning, but 'ERESTART' would
+       *    be returned if the task was suspended.
+       * >> Essentially, we can't just randomly suspend a task while it is in kernel-space.
+       *    Well... We could, but doing so introduces the problematic race-condition
+       *    of the task being suspended currently holding some lock that we as the
+       *    task having suspended them attempt to acquire at a later point, yet before
+       *    we're ready to resume them.
+       * >> As already noted, the solution is to introduce a new flag for 'task_suspend'
+       *    that will interrupt a task that is currently in kernel-space using 'ERESTART', as
+       *    well as override its system-call return address similar to how signal handlers work,
+       *    with an internal function that will notify the task attempting the suspend that
+       *    the task should now be considered suspended, before actually switching its scheduler
+       *    to being suspended internally.
+       * >> Later, when the task is resumed, execution will return to user-space,
+       *    at which point either LIBC, or yet another piece of kernel code can
+       *    restart the system call.
+       * #define TASK_SUSP_RESTART 0x80
+       */
+#define SUSPEND_ALL_THRESHOLD (4*PAGESIZE)
+  size_t threshold = 0;
+  struct task *iter;
+#if 1
+  atomic_rwlock_read(&mm->m_tasks_lock);
+#else
+  /* Only try to lock the mman's task chain twice. */
+  if (!atomic_rwlock_read(&mm->m_tasks_lock)) {
+   task_yield();
+   if (!atomic_rwlock_tryread(&mm->m_tasks_lock))
+       goto copy_string;
+  }
+#endif
+  iter = mm->m_tasks;
+  do {
+   assert(iter);
+   threshold += string_length;
+   if (threshold >= SUSPEND_ALL_THRESHOLD) {
+    /*  */
+    iter = mm->m_tasks;
+    do {
+     if (iter != THIS_TASK) {
+      result = E_PTR(task_suspend(iter,TASK_SUSP_REC|TASK_SUSP_HOST|TASK_SUSP_RESTART));
+      if (E_ISERR(result)) {
+       struct task *iter2;
+       /* Something went wrong. - Lets just copy the string instead. */
+       for (iter2 = mm->m_tasks; iter2 != iter;
+            iter2 = iter2->t_mman_tasks.le_next)
+            task_resume(iter2,TASK_SUSP_REC|TASK_SUSP_HOST);
+       atomic_rwlock_endread(&mm->m_tasks_lock);
+       goto copy_string;
+      }
+     }
+    } while ((iter = iter->t_mman_tasks.le_next) != NULL);
+    /* With single-user safety now active, reload the string's ending. */
+    string_end = strend_user(str);
+    if unlikely(!string_end) {
+     /* *sigh*... */
+     iter = mm->m_tasks;
+     do {
+      if (iter != THIS_TASK)
+          task_resume(iter,TASK_SUSP_REC|TASK_SUSP_HOST);
+     } while ((iter = iter->t_mman_tasks.le_next) != NULL);
+     atomic_rwlock_endread(&mm->m_tasks_lock);
+     result = E_PTR(-EFAULT);
+     goto end;
+    }
+    atomic_rwlock_endread(&mm->m_tasks_lock);
+    if (opt_pstrlen) *opt_pstrlen = string_end-str;
+    *pstate = STATE_VM_SUSPEND;
+    result = (char *)str;
+    goto end;
+   }
+  } while ((iter = iter->t_mman_tasks.le_next) != NULL);
+  atomic_rwlock_endread(&mm->m_tasks_lock);
+#endif
+  if unlikely(!string_length) {
+   /* Special case: Empty string */
+   if (opt_pstrlen) *opt_pstrlen = 0;
+   *pstate = STATE_VM_SINGLE;
+   result = (char *)"";
+  } else {
+   char *result_end; size_t new_strlen;
+copy_string: ATTR_UNUSED;
+   result = (char *)kmalloc(string_length,GFP_SHARED);
+   if unlikely(!result) { result = E_PTR(-ENOMEM); goto end; }
+   result_end = stpncpy_from_user(result,str,string_length);
+   /* Shouldn't happen, but checked anyways. */
+   if unlikely(!result_end) { kfree(result); result = E_PTR(-EFAULT); goto end; }
+   new_strlen = result_end-result;
+   assert(new_strlen <= string_length);
+   /* Truncate our string copy if user-space modified the string in the meantime. */
+   if unlikely(new_strlen != string_length) {
+    char *new_result;
+    new_result = trealloc(char,result,new_strlen+1);
+    if (new_result) result = new_result;
+   }
+   if (opt_pstrlen) *opt_pstrlen = new_strlen;
+   *pstate = STATE_VM_STRDUP;
+  }
+ }
+end:
+ mman_endwrite(mm);
+ return result;
+}
+PUBLIC SAFE void KCALL
+release_string(VIRT char *__restrict virt_str, int state) {
+ assert(TASK_ISSAFE());
+ switch (state) {
+ case STATE_VM_SINGLE:
+  break;
+ case STATE_VM_STRDUP:
+  free(virt_str);
+  break;
+
+ {
+  struct mman *mm;
+  struct task *iter;
+ case STATE_VM_SUSPEND:
+  mm = THIS_MMAN;
+  atomic_rwlock_read(&mm->m_tasks_lock);
+  for (iter = mm->m_tasks; iter;
+       iter = iter->t_mman_tasks.le_next) {
+   if (iter != THIS_TASK)
+       task_resume(iter,TASK_SUSP_HOST|TASK_SUSP_REC);
+  }
+  atomic_rwlock_endread(&mm->m_tasks_lock);
+ } break;
+
+ default:
+  assertf(0,"Invalid state: %d(%x)\n",state,state);
+ }
 }
 
 

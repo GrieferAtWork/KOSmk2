@@ -293,11 +293,11 @@ task_start(struct task *__restrict t) {
  COMPILER_WRITE_BARRIER();
  /* Schedule the task for its first time. */
 
+ was = PREEMPTION_PUSH();
  atomic_rwlock_write(&t->t_mman->m_tasks_lock);
  LIST_INSERT(t->t_mman->m_tasks,t,t_mman_tasks);
  atomic_rwlock_endwrite(&t->t_mman->m_tasks_lock);
 
- was = PREEMPTION_PUSH();
 #ifdef CONFIG_SMP
  /* Determine a usable CPU based on affinity. */
  t->t_cpu = cpu_get_suitable(&t->t_affinity);

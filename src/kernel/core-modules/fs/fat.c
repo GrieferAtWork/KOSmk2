@@ -2632,7 +2632,7 @@ PRIVATE void KCALL trimspecstring(char *__restrict buf, size_t size) {
  * @return: E_ISERR(*): Failed to create a FAT superblock for some reason. */
 PRIVATE REF struct superblock *KCALL
 fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
-            char const *UNUSED(devname),
+            USER char const *UNUSED(devname),
             USER void *UNUSED(data), void *UNUSED(closure)) {
  fat_t *result; fat_header_t header;
  errno_t error; fattype_t type;

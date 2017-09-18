@@ -356,7 +356,7 @@ INTERN struct superblockops const sb_rootops = {
 
 INTERN SAFE REF struct superblock *KCALL
 procfs_make(struct blkdev *__restrict UNUSED(dev), u32 flags,
-            char const *UNUSED(devname),
+            USER char const *UNUSED(devname),
             USER void *UNUSED(data), void *UNUSED(closure)) {
  REF struct superblock *result; errno_t error;
  /* Create a new superblock. */
