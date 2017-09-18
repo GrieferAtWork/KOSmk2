@@ -22,6 +22,7 @@
 #define _ATFILE_SOURCE    1
 #define _FILE_OFFSET_BITS 32
 
+#include "libc.h"
 #include "system.h"
 
 #include <errno.h>

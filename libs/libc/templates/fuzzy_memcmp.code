@@ -18,14 +18,14 @@
  */
 
 #ifdef NOCASE
-PUBLIC size_t (LIBCCALL fuzzy_memcasecmp)(void const *a, size_t a_bytes,
-                                          void const *b, size_t b_bytes)
-#define A(i) tolower(((char *)a)[i])
-#define B(i) tolower(((char *)b)[i])
+INTERN size_t (LIBCCALL libc_fuzzy_memcasecmp)(void const *a, size_t a_bytes,
+                                               void const *b, size_t b_bytes)
+#define A(i) libc_tolower(((char *)a)[i])
+#define B(i) libc_tolower(((char *)b)[i])
 #undef NOCASE
 #else
-PUBLIC size_t (LIBCCALL fuzzy_memcmp)(void const *a, size_t a_bytes,
-                                      void const *b, size_t b_bytes)
+INTERN size_t (LIBCCALL libc_fuzzy_memcmp)(void const *a, size_t a_bytes,
+                                           void const *b, size_t b_bytes)
 #define A(i) ((char *)a)[i]
 #define B(i) ((char *)b)[i]
 #endif
@@ -57,7 +57,7 @@ PUBLIC size_t (LIBCCALL fuzzy_memcmp)(void const *a, size_t a_bytes,
    if (cost > temp) cost = temp;
    v1[j+1] = cost;
   }
-  memcpy(v0,v1,b_bytes*sizeof(size_t));
+  libc_memcpy(v0,v1,b_bytes*sizeof(size_t));
  }
  if (is_malloc) free(v1),free(v0);
  return v1[b_bytes];

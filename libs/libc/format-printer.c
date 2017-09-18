@@ -23,6 +23,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 
+#include "libc.h"
+
 #include <alloca.h>
 #include <assert.h>
 #include <ctype.h>

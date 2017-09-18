@@ -47,6 +47,11 @@
   <ItemGroup>
     <ClInclude Include="..\..\libs\libc\system.h" />
     <ClInclude Include="..\..\libs\libc\libc.h" />
+    <ClInclude Include="..\..\libs\libc\environ.h" />
+    <ClInclude Include="..\..\libs\libc\string.h" />
+    <ClInclude Include="..\..\libs\libc\ctype.h" />
+    <ClInclude Include="..\..\libs\libc\asm.h" />
+    <ClInclude Include="..\..\libs\libc\dirent.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">

@@ -20,6 +20,8 @@
 #define GUARD_LIBS_LIBC_ASSERT_C 1
 #define _KOS_SOURCE 2
 
+#include "libc.h"
+
 #include <assert.h>
 #include <format-printer.h>
 #include <hybrid/asm.h>
@@ -51,21 +53,19 @@ DECL_BEGIN
 /* Allow for calls from assembly. */
 GLOBAL_ASM(
 L(.section .text                                    )
-L(PUBLIC_ENTRY(__assertion_tbprint)                 )
+L(INTERN_ENTRY(libc___assertion_tbprint)            )
 L(    pushal /* Preserve registers */               )
 L(    pushl  $0                                     )
 L(    pushl  %ebp                                   )
-L(    call PLT_SYM(__assertion_tbprint2)            )
+L(    call PLT_SYM(libc___assertion_tbprint2)       )
 L(    popal /* Restore registers */                 )
 L(    ret                                           )
-L(SYM_END(__assertion_tbprint)                      )
+L(SYM_END(libc___assertion_tbprint)                 )
 L(.previous                                         )
 );
 
 
-PUBLIC void (LIBCCALL __assertion_tbprintl)(void const *eip,
-                                            void const *frame,
-                                            size_t tb_id) {
+INTERN void (LIBCCALL libc___assertion_tbprintl)(void const *eip, void const *frame, size_t tb_id) {
  if (frame) {
   __assertion_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p : %p'\n",
                     (uintptr_t)eip-1,tb_id,eip,frame);
@@ -76,9 +76,9 @@ PUBLIC void (LIBCCALL __assertion_tbprintl)(void const *eip,
 }
 
 
-PUBLIC ssize_t LIBCCALL
-__assertion_print(char const *data, size_t datalen,
-                  void *UNUSED(ignored_closure)) {
+INTERN ssize_t LIBCCALL
+libc___assertion_print(char const *data, size_t datalen,
+                       void *UNUSED(ignored_closure)) {
 #if defined(__KERNEL__) && 1
  ssize_t result;
  TTY_PUSHCOLOR(vtty_entry_color(VTTY_COLOR_WHITE,
@@ -91,10 +91,10 @@ __assertion_print(char const *data, size_t datalen,
 #endif
 }
 
-PUBLIC void (LIBCCALL __assertion_vprintf)(char const *format, __VA_LIST args) {
- format_vprintf(&__assertion_print,NULL,format,args);
+INTERN void (LIBCCALL libc___assertion_vprintf)(char const *format, __VA_LIST args) {
+ format_vprintf(&libc___assertion_print,NULL,format,args);
 }
-PUBLIC void (__assertion_printf)(char const *format, ...) {
+INTERN void (ATTR_CDECL libc___assertion_printf)(char const *format, ...) {
  va_list args;
  va_start(args,format);
  __assertion_vprintf(format,args);
@@ -125,7 +125,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
      if (iter == THIS_TASK) {
 #undef __assertion_tbprint
-      __assertion_tbprint();
+      libc___assertion_tbprint();
      } else {
       __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
       __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
@@ -139,7 +139,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
      if (iter == THIS_TASK) {
 #undef __assertion_tbprint
-      __assertion_tbprint();
+      libc___assertion_tbprint();
      } else {
       __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
       __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
@@ -204,15 +204,14 @@ struct stackframe {
 };
 #ifdef __KERNEL__
 PRIVATE ATTR_USED
-void (ATTR_STDCALL __assertion_tbprint2_impl)(void const *ebp, size_t n_skip);
+void (ATTR_STDCALL libc___assertion_tbprint2_impl)(void const *ebp, size_t n_skip);
 
 #ifndef __i386__
 #error FIXME
 #endif
 GLOBAL_ASM(
 L(.section .text                                                 )
-L(.global __assertion_tbprint2                                   )
-L(__assertion_tbprint2:                                          )
+L(INTERN_ENTRY(libc___assertion_tbprint2)                        )
 L(    pushl %ebp                                                 )
 L(    movl  %esp, %ebp                                           )
 L(    pushal                                                     )
@@ -224,7 +223,7 @@ L(    movl  %esp, TASK_OFFSETOF_IC(%eax)                         )
 L(                                                               )
 L(    pushl 12(%ebp) /* n_skip */                                )
 L(    pushl 8(%ebp) /* ebp */                                    )
-L(    call  __assertion_tbprint2_impl                            )
+L(    call  libc___assertion_tbprint2_impl                       )
 L(                                                               )
 L(    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %eax                  )
 L(    popl  TASK_OFFSETOF_IC(%eax)                               )
@@ -232,12 +231,12 @@ L(    addl  $8, %esp                                             )
 L(1:  popal                                                      )
 L(    leave                                                      )
 L(    ret $8                                                     )
-L(.size __assertion_tbprint2, . - __assertion_tbprint2           )
+L(SYM_END(libc___assertion_tbprint2)                             )
 L(.previous                                                      )
 );
-PRIVATE void (ATTR_STDCALL __assertion_tbprint2_impl)(void const *ebp, size_t n_skip)
+PRIVATE void (ATTR_STDCALL libc___assertion_tbprint2_impl)(void const *ebp, size_t n_skip)
 #else
-PUBLIC void (LIBCCALL __assertion_tbprint2)(void const *ebp, size_t n_skip)
+INTERN void (LIBCCALL libc___assertion_tbprint2)(void const *ebp, size_t n_skip)
 #endif
 {
  struct stackframe *iter2,*iter;
@@ -270,20 +269,18 @@ PUBLIC void (LIBCCALL __assertion_tbprint2)(void const *ebp, size_t n_skip)
  }
 }
 
-
-
-FUNDEF void (LIBCCALL __assertion_unreachable)(void);
-PUBLIC void (LIBCCALL __assertion_unreachable)(void) {
+INTERN void (LIBCCALL libc___assertion_unreachable)(void) {
  assertion_corefail("__builtin_unreachable()",DEBUGINFO_NUL,NULL,NULL);
 }
 
-PUBLIC ATTR_NORETURN ATTR_NOINLINE
-void (LIBCCALL __assertion_failed)(char const *expr, DEBUGINFO) {
+INTERN ATTR_NORETURN ATTR_NOINLINE
+void (LIBCCALL libc___assertion_failed)(char const *expr, DEBUGINFO) {
  assertion_corefail(expr,DEBUGINFO_FWD,NULL,NULL);
 }
-PUBLIC ATTR_NORETURN ATTR_NOINLINE
-void (__assertion_failedf)(char const *expr, DEBUGINFO,
-                           char const *format, ...) {
+
+INTERN ATTR_NORETURN ATTR_NOINLINE
+void (libc___assertion_failedf)(char const *expr, DEBUGINFO,
+                                char const *format, ...) {
  va_list args;
  va_start(args,format);
  assertion_corefail(expr,DEBUGINFO_FWD,format,args);
@@ -299,8 +296,28 @@ PUBLIC uintptr_t __stack_chk_guard = 0x595e9fbd94fda766;
 PUBLIC ATTR_NORETURN ATTR_NOINLINE void __stack_chk_fail(void) {
  assertion_corefail("STACK VIOLATION",DEBUGINFO_NUL,NULL,NULL);
 }
-INTERN ALIAS_SYMBOL(__stack_chk_fail_local,__stack_chk_fail);
 
+#undef __stack_chk_fail_local
+#undef __assertion_unreachable
+#undef __assertion_print
+#undef __assertion_printf
+#undef __assertion_vprintf
+#undef __assertion_failed
+#undef __assertion_failedf
+#undef __assertion_tbprintl
+#undef __assertion_tbprint2
+#undef __assertion_tbprint
+
+DEFINE_PUBLIC_ALIAS(__stack_chk_fail_local,__stack_chk_fail);
+DEFINE_PUBLIC_ALIAS(__assertion_unreachable,libc___assertion_unreachable);
+DEFINE_PUBLIC_ALIAS(__assertion_print,libc___assertion_print);
+DEFINE_PUBLIC_ALIAS(__assertion_printf,libc___assertion_printf);
+DEFINE_PUBLIC_ALIAS(__assertion_vprintf,libc___assertion_vprintf);
+DEFINE_PUBLIC_ALIAS(__assertion_failed,libc___assertion_failed);
+DEFINE_PUBLIC_ALIAS(__assertion_failedf,libc___assertion_failedf);
+DEFINE_PUBLIC_ALIAS(__assertion_tbprintl,libc___assertion_tbprintl);
+DEFINE_PUBLIC_ALIAS(__assertion_tbprint2,libc___assertion_tbprint2);
+DEFINE_PUBLIC_ALIAS(__assertion_tbprint,libc___assertion_tbprint);
 
 DECL_END
 

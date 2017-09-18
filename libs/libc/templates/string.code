@@ -143,7 +143,7 @@ FORCELOCAL void *(LIBCCALL X(core_memcpy))
 	return dst;
 }
 
-DECL void *(LIBCCALL X(memcpy))
+DECL void *(LIBCCALL X(libc_memcpy))
 (void *__restrict dst, void const *__restrict src, size_t n) {
 	assertf(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
 	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
@@ -153,7 +153,7 @@ DECL void *(LIBCCALL X(memcpy))
 	           dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
 	return X(core_memcpy)(dst,src,n);
 }
-DECL void *(LIBCCALL PP_CAT2(X(_memcpy),_d))
+DECL void *(LIBCCALL PP_CAT2(X(libc__memcpy),_d))
 (void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO) {
 	CHECK_HOST_DATA(dst,n*S);
 	CHECK_HOST_TEXT(src,n*S);
@@ -166,22 +166,22 @@ DECL void *(LIBCCALL PP_CAT2(X(_memcpy),_d))
 	return X(core_memcpy)(dst,src,n);
 }
 
-DECL void *(LIBCCALL X(memset))(void *dst, B h, size_t n) {
+DECL void *(LIBCCALL X(libc_memset))(void *dst, B h, size_t n) {
 	CHECK_HOST_DATA(dst,n*S);
 #if S == 1
 	if (n >= STRING_LARGE_OP_LIMIT) {
 		switch (n & STRING_ALIGNMENT_MASK) {
 		case 0:
 #ifdef CONFIG_64BIT_STRING
-			return memsetq(dst,(u64)0x0101010101010101ull*h,n >> 3);
+			return libc_memsetq(dst,(u64)0x0101010101010101ull*h,n >> 3);
 		case 4:
 #endif
-			return memsetl(dst,(u32)0x01010101u*h,n >> 2);
+			return libc_memsetl(dst,(u32)0x01010101u*h,n >> 2);
 #ifdef CONFIG_64BIT_STRING
 		case 6:
 #endif
 		case 2:
-			return memsetw(dst,(u16)0x0101u*h,n >> 1);
+			return libc_memsetw(dst,(u16)0x0101u*h,n >> 1);
 		default: break;
 		}
 	}
@@ -202,7 +202,7 @@ DECL void *(LIBCCALL X(memset))(void *dst, B h, size_t n) {
  return dst;
 }
 
-DECL sB (LIBCCALL X(memcmp))
+DECL sB (LIBCCALL X(libc_memcmp))
 (void const *a, void const *b, size_t n) {
 #if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
 	sB result = 0;
@@ -230,7 +230,7 @@ DECL sB (LIBCCALL X(memcmp))
 #endif
 }
 
-DECL vB *(LIBCCALL X(memchr))
+DECL vB *(LIBCCALL X(libc_memchr))
 (vB const *__restrict haystack, B needle, size_t n) {
 #if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
 	vB *result;
@@ -272,7 +272,7 @@ DECL vB *(LIBCCALL X(memchr))
 }
 
 
-DECL vB *(LIBCCALL X(memrchr))
+DECL vB *(LIBCCALL X(libc_memrchr))
 (vB const *__restrict haystack, B needle, size_t n) {
 	T *iter = (T *)haystack+n;
 	/* TODO: 'rep scas' */
@@ -290,7 +290,7 @@ DECL vB *(LIBCCALL X(memrchr))
 	return NULL;
 }
 
-DECL vB *(LIBCCALL X(memend))
+DECL vB *(LIBCCALL X(libc_memend))
 (vB const *__restrict haystack, B needle, size_t n) {
 	T *iter,*end;
 	/* TODO: 'rep scas' */
@@ -309,7 +309,7 @@ DECL vB *(LIBCCALL X(memend))
 	return (vB *)iter;
 }
 
-DECL vB *(LIBCCALL X(memrend))
+DECL vB *(LIBCCALL X(libc_memrend))
 (vB const *__restrict haystack, B needle, size_t n) {
 	T *iter = (T *)haystack+n;
 #ifdef CONFIG_DEBUG
@@ -326,18 +326,18 @@ DECL vB *(LIBCCALL X(memrend))
 	return (vB *)iter;
 }
 
-DECL size_t (LIBCCALL X(memlen))
+DECL size_t (LIBCCALL X(libc_memlen))
 (vB const *__restrict haystack, B needle, size_t n) {
-	return (uintptr_t)X(memend)(haystack,needle,n) - (uintptr_t)haystack;
+	return (uintptr_t)X(libc_memend)(haystack,needle,n) - (uintptr_t)haystack;
 }
-DECL size_t (LIBCCALL X(memrlen))
+DECL size_t (LIBCCALL X(libc_memrlen))
 (vB const *__restrict haystack, B needle, size_t n) {
-	return (uintptr_t)X(memrend)(haystack,needle,n) - (uintptr_t)haystack;
+	return (uintptr_t)X(libc_memrend)(haystack,needle,n) - (uintptr_t)haystack;
 }
 
 
 
-DECL vB *(LIBCCALL X(rawmemchr))
+DECL vB *(LIBCCALL X(libc_rawmemchr))
 (vB const *__restrict haystack, B needle) {
 	T *iter = (T *)haystack;
 	/* TODO: 'rep scas' */
@@ -355,7 +355,7 @@ DECL vB *(LIBCCALL X(rawmemchr))
 	return (vB *)iter;
 }
 
-DECL vB *(LIBCCALL X(rawmemrchr))
+DECL vB *(LIBCCALL X(libc_rawmemrchr))
 (vB const *__restrict haystack, B needle) {
 	T *iter = (T *)haystack;
 #ifdef CONFIG_DEBUG
@@ -372,18 +372,18 @@ DECL vB *(LIBCCALL X(rawmemrchr))
 	return (vB *)iter;
 }
 
-DECL size_t (LIBCCALL X(rawmemlen))
+DECL size_t (LIBCCALL X(libc_rawmemlen))
 (vB const *__restrict haystack, B needle) {
-	return (uintptr_t)X(rawmemchr)(haystack,needle) - (uintptr_t)haystack;
+	return (uintptr_t)X(libc_rawmemchr)(haystack,needle) - (uintptr_t)haystack;
 }
-DECL size_t (LIBCCALL X(rawmemrlen))
+DECL size_t (LIBCCALL X(libc_rawmemrlen))
 (vB const *__restrict haystack, B needle) {
-	return (uintptr_t)X(rawmemrchr)(haystack,needle) - (uintptr_t)haystack;
+	return (uintptr_t)X(libc_rawmemrchr)(haystack,needle) - (uintptr_t)haystack;
 }
 
 
 #if S != 1
-DECL void *(LIBCCALL X(mempat))
+DECL void *(LIBCCALL X(libc_mempat))
 (void *__restrict dst, B pattern, size_t n_bytes) {
 	byte_t *iter = (byte_t *)dst;
 #if S == 2
@@ -397,7 +397,7 @@ DECL void *(LIBCCALL X(mempat))
 		++iter,--n_bytes;
 	}
 #endif
-	X(memset)(dst,pattern,n_bytes/S);
+	X(libc_memset)(dst,pattern,n_bytes/S);
 	n_bytes &= (S-1);
 #if S == 2
 	if (n_bytes) *iter = ((u8 *)&pattern)[0];

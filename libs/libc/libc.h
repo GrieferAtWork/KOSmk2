@@ -19,6 +19,16 @@
 #ifndef GUARD_LIBS_LIBC_LIBC_H
 #define GUARD_LIBS_LIBC_LIBC_H 1
 
+#define __assertion_print    libc___assertion_print
+#define __assertion_printf   libc___assertion_printf
+#define __assertion_vprintf  libc___assertion_vprintf
+#define __assertion_failed   libc___assertion_failed
+#define __assertion_failedf  libc___assertion_failedf
+#define __assertion_tbprintl libc___assertion_tbprintl
+#define __assertion_tbprint2 libc___assertion_tbprint2
+#define __assertion_tbprint  libc___assertion_tbprint
+#define __LIBC               extern
+
 #include <assert.h>
 #include <hybrid/compiler.h>
 #include <sys/syslog.h>

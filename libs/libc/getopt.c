@@ -23,6 +23,8 @@
 #ifndef GUARD_LIBS_LIBC_GETOPT_C
 #define GUARD_LIBS_LIBC_GETOPT_C 1
 
+#include "libc.h"
+
 #include <hybrid/compiler.h>
 #include <getopt.h>
 #include <stdlib.h>

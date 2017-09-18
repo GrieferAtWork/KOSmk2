@@ -23,6 +23,7 @@
 
 #include "libc.h"
 #include "system.h"
+#include "dirent.h"
 #include <assert.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -34,32 +35,15 @@
 
 DECL_BEGIN
 
-DEFINE_PUBLIC_ALIAS(readdir64,readdir);
-DEFINE_PUBLIC_ALIAS(alphasort64,alphasort);
-DEFINE_PUBLIC_ALIAS(readdir64_r,readdir_r);
-DEFINE_PUBLIC_ALIAS(scandir64,scandir);
-DEFINE_PUBLIC_ALIAS(scandirat64,scandirat);
-DEFINE_PUBLIC_ALIAS(getdirentries64,getdirentries);
-DEFINE_PUBLIC_ALIAS(versionsort64,versionsort);
-
-
-struct __dirstream {
- int            d_fd;
- struct dirent *d_buf;   /*< [0..1][owned] Allocated directory entry buffer. */
- size_t         d_bufsz; /*< Allocated buffer size for 'd_buf' */
- /* Inline-allocated directory entry buffer (Used as initial buffer). */
- char           d_inl[offsetof(struct dirent,d_name)+(256+1)*sizeof(char)];
-};
-
-PUBLIC ssize_t (LIBCCALL xreaddir)(int fd, struct dirent *buf,
-                                   size_t bufsize, int mode) {
+INTERN ssize_t LIBCCALL
+libc_xreaddir(int fd, struct dirent *buf, size_t bufsize, int mode) {
  ssize_t result = sys_xreaddir(fd,buf,bufsize,mode);
  //sys_xpaused("PAUSE:" __PP_STR(__LINE__));
  if (E_ISERR(result)) { __set_errno(-result); return -1; }
  return result;
 }
 
-PUBLIC DIR *(LIBCCALL fdopendir)(int fd) {
+INTERN DIR *LIBCCALL libc_fdopendir(int fd) {
  DIR *result = omalloc(DIR);
  if (result) {
   result->d_fd    = fd;
@@ -68,18 +52,18 @@ PUBLIC DIR *(LIBCCALL fdopendir)(int fd) {
  }
  return result;
 }
-PUBLIC DIR *(LIBCCALL opendirat)(int dfd, char const *name) {
+INTERN DIR *LIBCCALL libc_opendirat(int dfd, char const *name) {
  DIR *result;
  int fd = openat(dfd,name,O_RDONLY|O_DIRECTORY);
  if (fd < 0) return NULL;
- result = fdopendir(fd);
+ result = libc_fdopendir(fd);
  if unlikely(!result) sys_close(fd);
  return result;
 }
-PUBLIC DIR *(LIBCCALL opendir)(char const *name) {
- return opendirat(AT_FDCWD,name);
+INTERN DIR *LIBCCALL libc_opendir(char const *name) {
+ return libc_opendirat(AT_FDCWD,name);
 }
-PUBLIC int (LIBCCALL closedir)(DIR *dirp) {
+INTERN int LIBCCALL libc_closedir(DIR *dirp) {
  if unlikely(!dirp) { __set_errno(EBADF); return -1; }
  /* Free an extended directory entry buffer. */
  if (dirp->d_buf != (struct dirent *)dirp->d_inl) free(dirp->d_buf);
@@ -87,16 +71,18 @@ PUBLIC int (LIBCCALL closedir)(DIR *dirp) {
  free(dirp);
  return 0;
 }
-PUBLIC struct dirent *(LIBCCALL readdir)(DIR *dirp) {
+INTERN struct dirent *LIBCCALL libc_readdir(DIR *dirp) {
  ssize_t error; struct dirent *result;
  if unlikely(!dirp) { __set_errno(EBADF); return NULL; }
 read_again:
- error = xreaddir(dirp->d_fd,(result = dirp->d_buf),
-                  dirp->d_bufsz,READDIR_DEFAULT);
- //syslog(LOG_CONFIRM,"xreaddir(%d,%p,%Iu,%d) -> %Id\n",
- //       dirp->d_fd,result,dirp->d_bufsz,
- //       READDIR_DEFAULT,error);
- //sys_xpaused("PAUSE");
+ error = libc_xreaddir(dirp->d_fd,(result = dirp->d_buf),
+                       dirp->d_bufsz,READDIR_DEFAULT);
+#if 0
+ syslog(LOG_CONFIRM,"xreaddir(%d,%p,%Iu,%d) -> %Id\n",
+        dirp->d_fd,result,dirp->d_bufsz,
+        READDIR_DEFAULT,error);
+ sys_xpaused("PAUSE");
+#endif
  if (error <= 0) return NULL; /* Error, or end-of-directory. */
  if unlikely((size_t)error > dirp->d_bufsz) {
   /* Must allocate more buffer memory. */
@@ -125,67 +111,92 @@ read_again:
 end:
  return result;
 }
-PUBLIC void (LIBCCALL rewinddir)(DIR *dirp) {
+INTERN void LIBCCALL libc_rewinddir(DIR *dirp) {
  if (dirp) sys_lseek(dirp->d_fd,(off64_t)0,SEEK_SET);
 }
-PUBLIC int (LIBCCALL readdir_r)(DIR *__restrict dirp,
-                                struct dirent *__restrict entry,
-                                struct dirent **__restrict result) {
+INTERN int LIBCCALL libc_readdir_r(DIR *__restrict dirp,
+                                   struct dirent *__restrict entry,
+                                   struct dirent **__restrict result) {
  ssize_t error;
- error = xreaddir(dirp->d_fd,entry,
-                  offsetof(struct dirent,d_name)+
-                 (256+1)*sizeof(char),READDIR_CONTINUE);
+ error = libc_xreaddir(dirp->d_fd,entry,
+                       offsetof(struct dirent,d_name)+
+                      (256+1)*sizeof(char),READDIR_CONTINUE);
  *result = error ? entry : NULL;
  return error < 0 ? error : 0;
 
 }
-PUBLIC void (LIBCCALL seekdir)(DIR *dirp, long int pos) {
+INTERN void LIBCCALL libc_seekdir(DIR *dirp, long int pos) {
  if (dirp) sys_lseek(dirp->d_fd,(off64_t)pos,SEEK_SET);
 }
-PUBLIC long int (LIBCCALL telldir)(DIR *dirp) {
+INTERN long int LIBCCALL libc_telldir(DIR *dirp) {
  if unlikely(!dirp) { __set_errno(EBADF); return -1; }
  return (long int)lseek(dirp->d_fd,0,SEEK_CUR);
 }
-PUBLIC int (LIBCCALL dirfd)(DIR *dirp) {
+INTERN int LIBCCALL libc_dirfd(DIR *dirp) {
  if unlikely(!dirp) { __set_errno(EINVAL); return -1; }
  return dirp->d_fd;
 }
 
 
-PUBLIC int (LIBCCALL scandir)
-      (char const *__restrict dir, struct dirent ***__restrict namelist,
-       int (*selector) (struct dirent const *),
-       int (*cmp) (struct dirent const **, struct dirent const **)) {
+INTERN int LIBCCALL
+libc_scandir(char const *__restrict dir, struct dirent ***__restrict namelist,
+             int (*selector)(struct dirent const *),
+             int (*cmp)(struct dirent const **, struct dirent const **)) {
  /* TODO */
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL alphasort)(struct dirent const **__e1, struct dirent const **__e2) {
+INTERN int LIBCCALL
+libc_alphasort(struct dirent const **e1, struct dirent const **e2) {
  /* TODO */
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL scandirat)
-      (int __dfd, char const *__restrict dir, struct dirent ***__restrict namelist,
-       int (*selector) (struct dirent const *),
-       int (*cmp) (struct dirent const **, struct dirent const **)) {
+INTERN int LIBCCALL
+libc_scandirat(int dfd, char const *__restrict dir, struct dirent ***__restrict namelist,
+               int (*selector)(struct dirent const *),
+               int (*cmp)(struct dirent const **, struct dirent const **)) {
  /* TODO */
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC ssize_t (LIBCCALL getdirentries)
-      (int fd, char *__restrict buf, size_t __nbytes, __FS_TYPE(off) *__restrict __basep) {
+INTERN ssize_t LIBCCALL
+libc_getdirentries(int fd, char *__restrict buf,
+                   size_t nbytes, off_t *__restrict basep) {
  /* TODO */
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL versionsort)
-      (struct dirent const **__e1, struct dirent const **__e2) {
+INTERN int LIBCCALL
+libc_versionsort(struct dirent const **e1, struct dirent const **e2) {
  /* TODO */
  NOT_IMPLEMENTED();
  return 0;
 }
 
+DEFINE_PUBLIC_ALIAS(xreaddir,libc_xreaddir);
+DEFINE_PUBLIC_ALIAS(fdopendir,libc_fdopendir);
+DEFINE_PUBLIC_ALIAS(opendirat,libc_opendirat);
+DEFINE_PUBLIC_ALIAS(opendir,libc_opendir);
+DEFINE_PUBLIC_ALIAS(closedir,libc_closedir);
+DEFINE_PUBLIC_ALIAS(readdir,libc_readdir);
+DEFINE_PUBLIC_ALIAS(rewinddir,libc_rewinddir);
+DEFINE_PUBLIC_ALIAS(readdir_r,libc_readdir_r);
+DEFINE_PUBLIC_ALIAS(seekdir,libc_seekdir);
+DEFINE_PUBLIC_ALIAS(telldir,libc_telldir);
+DEFINE_PUBLIC_ALIAS(dirfd,libc_dirfd);
+DEFINE_PUBLIC_ALIAS(scandir,libc_scandir);
+DEFINE_PUBLIC_ALIAS(alphasort,libc_alphasort);
+DEFINE_PUBLIC_ALIAS(scandirat,libc_scandirat);
+DEFINE_PUBLIC_ALIAS(getdirentries,libc_getdirentries);
+DEFINE_PUBLIC_ALIAS(versionsort,libc_versionsort);
+DEFINE_PUBLIC_ALIAS(readdir64,libc_readdir);
+DEFINE_PUBLIC_ALIAS(alphasort64,libc_alphasort);
+DEFINE_PUBLIC_ALIAS(readdir64_r,libc_readdir_r);
+DEFINE_PUBLIC_ALIAS(scandir64,libc_scandir);
+DEFINE_PUBLIC_ALIAS(scandirat64,libc_scandirat);
+DEFINE_PUBLIC_ALIAS(getdirentries64,libc_getdirentries);
+DEFINE_PUBLIC_ALIAS(versionsort64,libc_versionsort);
 
 DECL_END
 

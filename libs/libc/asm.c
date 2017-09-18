@@ -20,6 +20,7 @@
 #define GUARD_LIBS_LIBC_ASM_C 1
 
 #include "libc.h"
+#include "asm.h"
 #include <alloca.h>
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
@@ -34,8 +35,8 @@ DECL_BEGIN
 
 GLOBAL_ASM(
 L(.section .text                                                              )
-/*PUBLIC int (LIBCCALL setjmp)(jmp_buf buf); */
-L(PUBLIC_ENTRY(setjmp)                                                        )
+/*INTERN int (LIBCCALL libc_setjmp)(jmp_buf buf); */
+L(INTERN_ENTRY(libc_setjmp)                                                   )
 L(    popl   %ecx                                                             )
 L(    movl 0(%esp),                %eax                                       )
 L(    movl   %ebx,               0(%eax)                                      )
@@ -50,14 +51,14 @@ L(    movl   $0,   SAVEMASK_OFFSET(%eax)                                      )
 #endif
 L(    xorl   %eax,                 %eax /* Return ZERO(0) the first time around. */)
 L(    jmpl  *%ecx                                                             )
-L(SYM_END(setjmp)                                                             )
+L(SYM_END(libc_setjmp)                                                        )
 L(.previous                                                                   )
 );
 
 GLOBAL_ASM(
 L(.section .text                                                              )
-/*PUBLIC int (LIBCCALL sigsetjmp)(sigjmp_buf __buf, int __savemask); */
-L(PUBLIC_ENTRY(sigsetjmp)                                                     )
+/*INTERN int (LIBCCALL libc_sigsetjmp)(sigjmp_buf buf, int savemask); */
+L(INTERN_ENTRY(libc_sigsetjmp)                                                )
 L(    popl   %ecx                                                             )
 L(    movl 0(%esp),                  %eax                                     )
 L(    movl 4(%esp),                  %edx                                     )
@@ -83,34 +84,34 @@ L(    xorl   %eax,    %eax  /* Return ZERO(0) the first time around. */       )
 L(    popl   %esi                                                             )
 L(    popl   %ebx                                                             )
 L(1:  jmpl  *%ecx                                                             )
-L(SYM_END(sigsetjmp)                                                          )
+L(SYM_END(libc_sigsetjmp)                                                     )
 L(.previous                                                                   )
 );
 
 GLOBAL_ASM(
 L(.section .text                                                              )
-/*PUBLIC void (LIBCCALL siglongjmp)(sigjmp_buf __buf, int __sig); */
-L(PUBLIC_ENTRY(siglongjmp)                                                    )
+/*INTERN void (LIBCCALL libc_siglongjmp)(sigjmp_buf buf, int sig); */
+L(INTERN_ENTRY(libc_siglongjmp)                                               )
 L(    movl   4(%esp), %eax                                                    )
 L(    testl  $-1,    SAVEMASK_OFFSET(%eax)                                    )
 L(    jz     1f /* If the signal mask wasn't saved, don't restore it. */      )
 L(    movl   $(__NR_sigprocmask),    %eax                                     )
 L(    movl   $(SIG_SETMASK),         %ebx /* how = SIG_SETMASK; */            )
 L(    movl   4(%esp),                %ecx                                     )
-L(    addl   $32,                    %ecx /* set = &__buf->__sig; */          )
+L(    addl   $32,                    %ecx /* set = &buf->__sig; */            )
 L(    movl   $0,                     %edx /* oldset = NULL; */                )
 L(    movl   $(__SIZEOF_SIGSET_T__), %esi /* sigsetsize = sizeof(sigset_t); */)
 L(    int    $0x80                        /* Restore signal mask */           )
-/*PUBLIC ATTR_NORETURN void (LIBCCALL longjmp)(jmp_buf buf, int sig); */
-L(PUBLIC_ENTRY(longjmp)                                                       )
+/*INTERN ATTR_NORETURN void (LIBCCALL libc_longjmp)(jmp_buf buf, int sig); */
+L(INTERN_ENTRY(libc_longjmp)                                                  )
 L(1:  movl   8(%esp), %eax                                                    )
 L(    movl   4(%esp), %esp                                                    )
 L(    testl  %eax, %eax                                                       )
 L(    jnz    1f                                                               )
 L(    incl   %eax /* Return 1 instead! */                                     )
 L(    jmp    1f                                                               )
-/*PUBLIC ATTR_NORETURN void (LIBCCALL __longjmp2)(jmp_buf buf, int sig); */
-L(PUBLIC_ENTRY(__longjmp2)                                                    )
+/*INTERN ATTR_NORETURN void (LIBCCALL libc___longjmp2)(jmp_buf buf, int sig); */
+L(INTERN_ENTRY(libc___longjmp2)                                               )
 L(    movl   8(%esp), %eax                                                    )
 L(    movl   4(%esp), %esp                                                    )
 L(1:  popl   %ebx                                                             )
@@ -121,16 +122,16 @@ L(    popl   %edi                                                             )
 L(    popl   %ecx /* EIP */                                                   )
 L(    movl   %edx, %esp                                                       )
 L(    jmpl  *%ecx                                                             )
-L(SYM_END(__longjmp2)                                                         )
-L(SYM_END(longjmp)                                                            )
-L(SYM_END(siglongjmp)                                                         )
+L(SYM_END(libc___longjmp2)                                                    )
+L(SYM_END(libc_longjmp)                                                       )
+L(SYM_END(libc_siglongjmp)                                                    )
 L(.previous                                                                   )
 );
 
 
 GLOBAL_ASM(
 L(.section .text                                                              )
-L(PUBLIC_ENTRY(alloca)                                                        )
+L(INTERN_ENTRY(libc_alloca)                                                   )
 L(    popl     %edx  /* Return address. */                                    )
 L(    popl     %eax  /* Allocation count. */                                  )
 #ifdef CONFIG_DEBUG
@@ -173,13 +174,24 @@ L(2:  subl     %eax,    %esp                                                  )
 L(    movl     %esp,    %eax                                                  )
 #endif
 L(    jmpl    *%edx                                                           )
-L(SYM_END(alloca)                                                             )
+L(SYM_END(libc_alloca)                                                        )
 L(.previous                                                                   )
 );
 #else
 #error FIXME
 #endif
 
+#undef setjmp
+#undef sigsetjmp
+#undef siglongjmp
+#undef __longjmp2
+#undef alloca
+DEFINE_PUBLIC_ALIAS(setjmp,libc_setjmp);
+DEFINE_PUBLIC_ALIAS(sigsetjmp,libc_sigsetjmp);
+DEFINE_PUBLIC_ALIAS(siglongjmp,libc_siglongjmp);
+DEFINE_PUBLIC_ALIAS(longjmp,libc_longjmp);
+DEFINE_PUBLIC_ALIAS(__longjmp2,libc___longjmp2);
+DEFINE_PUBLIC_ALIAS(alloca,libc_alloca);
 
 DECL_END
 

@@ -20,7 +20,8 @@
 #define GUARD_LIBS_LIBC_CTYPE_C 1
 #define _ISOC99_SOURCE 1
 
-#include <ctype.h>
+#include "libc.h"
+#include "ctype.h"
 #include <hybrid/byteorder.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -67,7 +68,7 @@ DECL_BEGIN
 #define ASCII_TOLOWER(ch)  (ASCII_ISUPPER(ch) ? ((ch)+0x20) : (ch))
 #define ASCII_TOUPPER(ch)  (ASCII_ISLOWER(ch) ? ((ch)-0x20) : (ch))
 
-PUBLIC u16 const __chattr[256] = {
+INTERN u16 const libc___chattr[256] = {
 /*[[[deemon
 function attrof(ch) {
     local result = 0;
@@ -109,22 +110,38 @@ for (local c = 0; c < 256; ++c) {
 //[[[end]]]
 };
 
-PUBLIC int (LIBCCALL isalpha)(int ch)  { return isalpha(ch); }
-PUBLIC int (LIBCCALL isupper)(int ch)  { return isupper(ch); }
-PUBLIC int (LIBCCALL islower)(int ch)  { return islower(ch); }
-PUBLIC int (LIBCCALL isdigit)(int ch)  { return isdigit(ch); }
-PUBLIC int (LIBCCALL isxdigit)(int ch) { return isxdigit(ch); }
-PUBLIC int (LIBCCALL isspace)(int ch)  { return isspace(ch); }
-PUBLIC int (LIBCCALL ispunct)(int ch)  { return ispunct(ch); }
-PUBLIC int (LIBCCALL isalnum)(int ch)  { return isalnum(ch); }
-PUBLIC int (LIBCCALL isprint)(int ch)  { return isprint(ch); }
-PUBLIC int (LIBCCALL isgraph)(int ch)  { return isgraph(ch); }
-PUBLIC int (LIBCCALL iscntrl)(int ch)  { return iscntrl(ch); }
-PUBLIC int (LIBCCALL isblank)(int ch)  { return isblank(ch); }
-PUBLIC int (LIBCCALL toupper)(int ch)  { return ASCII_TOUPPER(ch); }
-PUBLIC int (LIBCCALL tolower)(int ch)  { return ASCII_TOLOWER(ch); }
-PUBLIC int (LIBCCALL isctype)(int ch, int mask) { return __chattr[(uint8_t)ch] & (__UINT16_TYPE__)mask; }
+INTERN int (LIBCCALL libc_isalpha)(int ch)  { return libc_isalpha(ch); }
+INTERN int (LIBCCALL libc_isupper)(int ch)  { return libc_isupper(ch); }
+INTERN int (LIBCCALL libc_islower)(int ch)  { return libc_islower(ch); }
+INTERN int (LIBCCALL libc_isdigit)(int ch)  { return libc_isdigit(ch); }
+INTERN int (LIBCCALL libc_isxdigit)(int ch) { return libc_isxdigit(ch); }
+INTERN int (LIBCCALL libc_isspace)(int ch)  { return libc_isspace(ch); }
+INTERN int (LIBCCALL libc_ispunct)(int ch)  { return libc_ispunct(ch); }
+INTERN int (LIBCCALL libc_isalnum)(int ch)  { return libc_isalnum(ch); }
+INTERN int (LIBCCALL libc_isprint)(int ch)  { return libc_isprint(ch); }
+INTERN int (LIBCCALL libc_isgraph)(int ch)  { return libc_isgraph(ch); }
+INTERN int (LIBCCALL libc_iscntrl)(int ch)  { return libc_iscntrl(ch); }
+INTERN int (LIBCCALL libc_isblank)(int ch)  { return libc_isblank(ch); }
+INTERN int (LIBCCALL libc_toupper)(int ch)  { return ASCII_TOUPPER(ch); }
+INTERN int (LIBCCALL libc_tolower)(int ch)  { return ASCII_TOLOWER(ch); }
+INTERN int (LIBCCALL libc_isctype)(int ch, int mask) { return libc___isctype(ch,mask); }
 
+DEFINE_PUBLIC_ALIAS(__chattr,libc___chattr);
+DEFINE_PUBLIC_ALIAS(isalpha,libc_isalpha);
+DEFINE_PUBLIC_ALIAS(isupper,libc_isupper);
+DEFINE_PUBLIC_ALIAS(islower,libc_islower);
+DEFINE_PUBLIC_ALIAS(isdigit,libc_isdigit);
+DEFINE_PUBLIC_ALIAS(isxdigit,libc_isxdigit);
+DEFINE_PUBLIC_ALIAS(isspace,libc_isspace);
+DEFINE_PUBLIC_ALIAS(ispunct,libc_ispunct);
+DEFINE_PUBLIC_ALIAS(isalnum,libc_isalnum);
+DEFINE_PUBLIC_ALIAS(isprint,libc_isprint);
+DEFINE_PUBLIC_ALIAS(isgraph,libc_isgraph);
+DEFINE_PUBLIC_ALIAS(iscntrl,libc_iscntrl);
+DEFINE_PUBLIC_ALIAS(isblank,libc_isblank);
+DEFINE_PUBLIC_ALIAS(toupper,libc_toupper);
+DEFINE_PUBLIC_ALIAS(tolower,libc_tolower);
+DEFINE_PUBLIC_ALIAS(isctype,libc_isctype);
 
 DECL_END
 

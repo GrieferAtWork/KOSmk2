@@ -23,6 +23,9 @@
 
 #include "libc.h"
 #include "system.h"
+#include "environ.h"
+#include "string.h"
+
 #include <assert.h>
 #include <hybrid/compiler.h>
 #include <hybrid/sync/atomic-rwlock.h>
@@ -30,14 +33,11 @@
 #include <kos/environ.h>
 #include <malloc.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <hybrid/atomic.h>
 
 DECL_BEGIN
-
-DATDEF struct envdata *appenv;
 
 /* Environment table allocated by libc. */
 PRIVATE char **libc_envp = NULL;
@@ -64,21 +64,20 @@ PRIVATE DEFINE_ATOMIC_RWLOCK(env_lock);
  *       'ENVIRON_MALLOC()', instead silently ignoring all
  *        that weren't, or simply ignoring everything.
  */
-#define ENVIRON_MALLOC(s) malloc(s)
+#define ENVIRON_MALLOC(s)  malloc(s)
 #define ENVIRON_FREE(p)   (void)0
 #define ENVIRON_FREE_ISNOP 1
 
 
-DEFINE_PUBLIC_ALIAS(secure_getenv,getenv); /* ??? */
-PUBLIC char *(LIBCCALL getenv)(char const *name) {
+INTERN char *(LIBCCALL libc_getenv)(char const *name) {
  size_t namelen; register char *result,**envp;
  if unlikely(!name) return NULL;
  environ_read();
  envp = environ;
  if unlikely(!envp) result = NULL;
- namelen = strlen(name);
+ namelen = libc_strlen(name);
  for (; (result = *envp) != NULL; ++envp) {
-  if (memcmp(result,name,namelen*sizeof(char)) != 0 ||
+  if (libc_memcmp(result,name,namelen*sizeof(char)) != 0 ||
       result[namelen] != '=') continue;
   result += namelen+1;
   break;
@@ -121,7 +120,7 @@ PRIVATE char **environ_make_writable_unlocked(bool add_one) {
   (_mall_untrack)(new_environ);
 #endif
   /* Copy the existing environment table. */
-  memcpy(new_environ,result,envc*sizeof(char *));
+  libc_memcpy(new_environ,result,envc*sizeof(char *));
   new_environ[new_envc] = NULL;
   ATOMIC_WRITE(environ,new_environ);
   libc_envp = new_environ;
@@ -143,7 +142,7 @@ PRIVATE char **environ_make_writable_unlocked(bool add_one) {
  return result;
 }
 
-PUBLIC int (LIBCCALL clearenv)(void) {
+INTERN int (LIBCCALL libc_clearenv)(void) {
  environ_write();
 #if !ENVIRON_FREE_ISNOP
  { char **iter = libc_envp;
@@ -160,27 +159,25 @@ PUBLIC int (LIBCCALL clearenv)(void) {
  environ_endwrite();
  return 0;
 }
-PUBLIC int (LIBCCALL setenv)(char const *name,
-                             char const *value,
-                             int replace) {
+INTERN int (LIBCCALL libc_setenv)(char const *name, char const *value, int replace) {
  char *env_string,**slot; int result;
  size_t name_len,value_len;
- if (!name || !*name || strchr(name,'='))
+ if (!name || !*name || libc_strchr(name,'='))
  { __set_errno(EINVAL); return -1; }
- name_len  = strlen(name);
- value_len = strlen(value);
+ name_len  = libc_strlen(name);
+ value_len = libc_strlen(value);
  env_string = (char *)ENVIRON_MALLOC((name_len+value_len+2)*sizeof(char));
  if unlikely(!env_string) return -1;
- memcpy(env_string,name,name_len*sizeof(char));
+ libc_memcpy(env_string,name,name_len*sizeof(char));
  env_string[name_len] = '=';
- memcpy(env_string+name_len+1,value,
-       (value_len+1)*sizeof(char));
+ libc_memcpy(env_string+name_len+1,value,
+            (value_len+1)*sizeof(char));
  environ_write();
  if ((slot = ATOMIC_READ(environ)) != NULL) {
   /* Search for an old instance of 'name'. */
   for (; *slot; ++slot) {
-   if (memcmp(*slot,name,name_len*sizeof(char)) &&
-             (*slot)[name_len] == '=') {
+   if (libc_memcmp(*slot,name,name_len*sizeof(char)) &&
+                  (*slot)[name_len] == '=') {
     /* Found an older instance! */
     if (replace) {
      ENVIRON_FREE(*slot);
@@ -205,18 +202,18 @@ no_slot:
 #endif
  return result;
 }
-PUBLIC int (LIBCCALL unsetenv)(char const *name) {
+INTERN int (LIBCCALL libc_unsetenv)(char const *name) {
  char **iter,**env_base; size_t name_len;
- if (!name || (name_len = strlen(name)) == 0 ||
-      memchr(name,'=',name_len*sizeof(char)) != NULL)
+ if (!name || (name_len = libc_strlen(name)) == 0 ||
+      libc_memchr(name,'=',name_len*sizeof(char)) != NULL)
  { __set_errno(EINVAL); return -1; }
  environ_write();
  if (!environ_make_writable_unlocked(false))
  { environ_endwrite(); return -1; }
  env_base = ATOMIC_READ(environ);
  if ((iter = env_base) != NULL) for (; *iter; ++iter) {
-  if (memcmp(*iter,name,name_len*sizeof(char)) == 0 &&
-            (*iter)[name_len] == '=') {
+  if (libc_memcmp(*iter,name,name_len*sizeof(char)) == 0 &&
+                 (*iter)[name_len] == '=') {
    /* Found it! */
    ENVIRON_FREE(iter[0]);
    do iter[0] = iter[1]; while (*++iter);
@@ -235,16 +232,16 @@ PUBLIC int (LIBCCALL unsetenv)(char const *name) {
  environ_endwrite();
  return 0;
 }
-PUBLIC int (LIBCCALL putenv)(char *string) {
+INTERN int (LIBCCALL libc_putenv)(char *string) {
  char **slot,*name_end; int result;
- if ((name_end = strchr(string,'=')) != NULL) {
+ if ((name_end = libc_strchr(string,'=')) != NULL) {
   size_t name_len = (size_t)(name_end-string);
   environ_write();
   if ((slot = ATOMIC_READ(environ)) != NULL) {
    for (; *slot; ++slot) {
     /* XXX: This right here crashes... */
-    if (memcmp(*slot,string,name_len*sizeof(char)) == 0 &&
-              (*slot)[name_len] == '=') {
+    if (libc_memcmp(*slot,string,name_len*sizeof(char)) == 0 &&
+                   (*slot)[name_len] == '=') {
      /* Found an existing slot. */
      ENVIRON_FREE(*slot);
      goto got_slot;
@@ -256,11 +253,20 @@ got_slot:
   result = slot ? (*slot = string,0) : -1;
   environ_endwrite();
  } else {
-  unsetenv(string);
+  libc_unsetenv(string);
   result = 0;
  }
  return result;
 }
+
+
+DEFINE_PUBLIC_ALIAS(secure_getenv,libc_getenv); /* ??? */
+DEFINE_PUBLIC_ALIAS(getenv,libc_getenv);
+DEFINE_PUBLIC_ALIAS(clearenv,libc_clearenv);
+DEFINE_PUBLIC_ALIAS(setenv,libc_setenv);
+DEFINE_PUBLIC_ALIAS(unsetenv,libc_unsetenv);
+DEFINE_PUBLIC_ALIAS(putenv,libc_putenv);
+
 
 DECL_END
 

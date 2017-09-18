@@ -16,37 +16,26 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_LIBS_LIBC_START_C
-#define GUARD_LIBS_LIBC_START_C 1
-#define _GNU_SOURCE 1
+#ifndef GUARD_LIBS_LIBC_ASM_H
+#define GUARD_LIBS_LIBC_ASM_H 1
 
 #include "libc.h"
-#include <hybrid/compiler.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <kos/environ.h>
+#include <alloca.h>
 #include <hybrid/asm.h>
+#include <hybrid/compiler.h>
+#include <setjmp.h>
+#include <unistd.h>
+#include <bits/sigaction.h>
 
 DECL_BEGIN
 
-typedef int (*pmain)(int argc, char **argv, char **envp);
-__LIBC ATTR_NORETURN void (FCALL __entry)(struct envdata *__restrict env, pmain main);
-
-INTDEF int LIBCCALL user_initialize_dlmalloc(void);
-
-#undef environ
-DEFINE_PUBLIC_ALIAS(__environ,environ);
-
-PUBLIC char **environ = NULL;
-PUBLIC struct envdata *appenv;
-PUBLIC ATTR_NORETURN
-void (FCALL __entry)(struct envdata *__restrict env, pmain main) {
- appenv  = env;
- environ = env->e_envp;
- user_initialize_dlmalloc();
- exit((*main)(env->e_argc,env->e_argv,environ));
-}
+INTDEF int LIBCCALL libc_setjmp(jmp_buf buf);
+INTDEF int LIBCCALL libc_sigsetjmp(sigjmp_buf buf, int savemask); 
+INTDEF void LIBCCALL libc_siglongjmp(sigjmp_buf buf, int sig);
+INTDEF ATTR_NORETURN void LIBCCALL libc_longjmp(jmp_buf buf, int sig);
+INTDEF ATTR_NORETURN void LIBCCALL libc___longjmp2(jmp_buf buf, int sig);
+INTDEF void *LIBCCALL libc_alloca(size_t s);
 
 DECL_END
 
-#endif /* !GUARD_LIBS_LIBC_START_C */
+#endif /* !GUARD_LIBS_LIBC_ASM_H */

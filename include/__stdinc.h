@@ -230,10 +230,8 @@ public:
 #endif
 #endif
 
-#ifdef __BUILDING_LIBC
-#   define __LIBC    __EXPDEF
-#else
-#   define __LIBC    __IMPDEF
+#ifndef __LIBC
+#define __LIBC    __IMPDEF
 #endif
 
 /* Annotations */
