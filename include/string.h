@@ -580,8 +580,8 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _
 
 
 #ifdef __USE_DOS
-#ifndef __KERNEL__
 
+#ifndef __KERNEL__
 __LIBC char *(__LIBCCALL _strdup)(char const *__src) __ASMNAME("strdup");
 __LIBC char *(__LIBCCALL _strlwr)(char *__str) __ASMNAME("strlwr");
 __LIBC char *(__LIBCCALL _strlwr_l)(char *__str, __locale_t __lc) __ASMNAME("strlwr_l");
@@ -617,36 +617,27 @@ __LIBC int (__LIBCCALL strnicmp)(char const *__str1, char const *__str, size_t _
 __LIBC size_t (__LIBCCALL _strxfrm_l)(char *__dst, char const *__src, size_t __max_chars, __locale_t __lc) __ASMNAME("strxfrm_l");
 __LIBC void *(__LIBCCALL _memccpy)(void *__dst, void const *__src, int __needle, size_t __max_chars) __ASMNAME("memccpy");
 
-#ifndef __wstring_defined
-#define __wstring_defined 1
 #ifndef __wchar_t_defined
 #define __wchar_t_defined 1
 typedef __WCHAR_TYPE__ wchar_t;
 #endif
+
 __LIBC int (__LIBCCALL _wcscoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __lc) __ASMNAME("wcscoll_l");
-__LIBC int (__LIBCCALL _wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME("wcscasecmp");
-__LIBC int (__LIBCCALL _wcsicmp_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __lc) __ASMNAME("wcscasecmp_l");
-__LIBC int (__LIBCCALL _wcsicoll)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME("wcscasecoll");
-__LIBC int (__LIBCCALL _wcsicoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __lc) __ASMNAME("wcscasecoll_l");
+__LIBC int (__LIBCCALL _wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecmp","wcsicmp");
+__LIBC int (__LIBCCALL _wcsicmp_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __lc) __ASMNAME2("wcscasecmp_l","wcsicmp_l");
+__LIBC int (__LIBCCALL _wcsicoll)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecoll","wcsicoll");
+__LIBC int (__LIBCCALL _wcsicoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __lc) __ASMNAME2("wcscasecoll_l","wcsicoll_l");
 __LIBC int (__LIBCCALL _wcsncoll)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME("wcsncoll");
 __LIBC int (__LIBCCALL _wcsncoll_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __lc) __ASMNAME("wcsncoll_l");
-__LIBC int (__LIBCCALL _wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME("wcsncasecmp");
-__LIBC int (__LIBCCALL _wcsnicmp_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __lc) __ASMNAME("wcsncasecmp_l");
-__LIBC int (__LIBCCALL _wcsnicoll)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME("wcsncasecoll");
-__LIBC int (__LIBCCALL _wcsnicoll_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __lc) __ASMNAME("wcsncasecoll_l");
-__LIBC int (__LIBCCALL wcscmp)(wchar_t const *__str1, wchar_t const *__str2);
-__LIBC int (__LIBCCALL wcscoll)(wchar_t const *__str1, wchar_t const *__str2);
-__LIBC int (__LIBCCALL wcsicmp)(wchar_t const *__str1, wchar_t const *__str2);
-__LIBC int (__LIBCCALL wcsicoll)(wchar_t const *__str1, wchar_t const *__str2);
-__LIBC int (__LIBCCALL wcsncmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars);
-__LIBC int (__LIBCCALL wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars);
+__LIBC int (__LIBCCALL _wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecmp","wcsnicmp");
+__LIBC int (__LIBCCALL _wcsnicmp_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __lc) __ASMNAME2("wcsncasecmp_l","wcsnicmp_l");
+__LIBC int (__LIBCCALL _wcsnicoll)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecoll","wcsnicoll");
+__LIBC int (__LIBCCALL _wcsnicoll_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __lc) __ASMNAME2("wcsncasecoll_l","wcsnicoll_l");
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC wchar_t *(__LIBCCALL _wcsdup)(wchar_t const *__restrict __str) __ASMNAME("wcsdup");
+__LIBC int (__LIBCCALL wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecmp","wcsicmp");
+__LIBC int (__LIBCCALL wcsicoll)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecoll","wcsicoll");
+__LIBC int (__LIBCCALL wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecmp","wcsnicmp");
 __LIBC size_t (__LIBCCALL _wcsxfrm_l)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars, __locale_t __lc) __ASMNAME("wcsxfrm_l");
-__LIBC size_t (__LIBCCALL wcscspn)(wchar_t const *__str, wchar_t const *__reject);
-__LIBC size_t (__LIBCCALL wcslen)(wchar_t const *__str);
-__LIBC size_t (__LIBCCALL wcsnlen)(wchar_t const *__src, size_t __max_chars);
-__LIBC size_t (__LIBCCALL wcsspn)(wchar_t const *__str, wchar_t const *__reject);
-__LIBC size_t (__LIBCCALL wcsxfrm)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
-__LIBC wchar_t *(__LIBCCALL _wcsdup)(wchar_t const *__str) __ASMNAME("wcsdup");
 __LIBC wchar_t *(__LIBCCALL _wcslwr)(wchar_t *__str) __ASMNAME("wcslwr");
 __LIBC wchar_t *(__LIBCCALL _wcslwr_l)(wchar_t *__str, __locale_t __lc) __ASMNAME("wcslwr_l");
 __LIBC wchar_t *(__LIBCCALL _wcsnset)(wchar_t *__str, wchar_t __char, size_t __max_chars) __ASMNAME("wcsnset");
@@ -654,23 +645,125 @@ __LIBC wchar_t *(__LIBCCALL _wcsrev)(wchar_t *__str) __ASMNAME("wcsrev");
 __LIBC wchar_t *(__LIBCCALL _wcsset)(wchar_t *__str, wchar_t __char) __ASMNAME("wcsset");
 __LIBC wchar_t *(__LIBCCALL _wcsupr)(wchar_t *__str) __ASMNAME("wcsupr");
 __LIBC wchar_t *(__LIBCCALL _wcsupr_l)(wchar_t *__str, __locale_t __lc) __ASMNAME("wcsupr_l");
-__LIBC wchar_t *(__LIBCCALL wcschr)(wchar_t const *__str, wchar_t __needle);
-__LIBC wchar_t *(__LIBCCALL wcscpy)(wchar_t *__dst, wchar_t const *__src);
-__LIBC wchar_t *(__LIBCCALL wcscat)(wchar_t *__dst, wchar_t const *__src);
-__LIBC wchar_t *(__LIBCCALL wcsdup)(wchar_t const *__str);
 __LIBC wchar_t *(__LIBCCALL wcslwr)(wchar_t *__str);
-__LIBC wchar_t *(__LIBCCALL wcsncat)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
-__LIBC wchar_t *(__LIBCCALL wcsncpy)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
 __LIBC wchar_t *(__LIBCCALL wcsnset)(wchar_t *__str, wchar_t __needle, size_t __max_chars);
-__LIBC wchar_t *(__LIBCCALL wcspbrk)(wchar_t const *__str, wchar_t const *__reject);
-__LIBC wchar_t *(__LIBCCALL wcsrchr)(wchar_t const *__str, wchar_t __needle);
 __LIBC wchar_t *(__LIBCCALL wcsrev)(wchar_t *__str);
 __LIBC wchar_t *(__LIBCCALL wcsset)(wchar_t *__str, wchar_t __needle);
-__LIBC wchar_t *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle);
-__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__str, wchar_t const *__delim);
 __LIBC wchar_t *(__LIBCCALL wcsupr)(wchar_t *__str);
-__LIBC wchar_t *(__LIBCCALL wcswcs)(wchar_t const *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
-#endif /* !__wstring_defined */
+
+#ifndef __wcscmp_defined
+#define __wcscmp_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC __ATTR_PURE int (__LIBCCALL wcscmp)(wchar_t const *__str1, wchar_t const *__str2);
+__LIBC __ATTR_PURE int (__LIBCCALL wcsncmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars);
+__LIBC int (__LIBCCALL wcscoll)(wchar_t const *__str1, wchar_t const *__str2);
+__LIBC size_t (__LIBCCALL wcsxfrm)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wcscmp)
+__NAMESPACE_STD_USING(wcsncmp)
+__NAMESPACE_STD_USING(wcscoll)
+__NAMESPACE_STD_USING(wcsxfrm)
+#endif /* !__wcscmp_defined */
+
+#ifndef __wcsspn_defined
+#define __wcsspn_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC __ATTR_PURE size_t (__LIBCCALL wcsspn)(wchar_t const *__haystack, wchar_t const *__accept);
+__LIBC __ATTR_PURE size_t (__LIBCCALL wcscspn)(wchar_t const *__haystack, wchar_t const *__reject);
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wcsspn)
+__NAMESPACE_STD_USING(wcscspn)
+#endif /* !__wcsspn_defined */
+
+#ifndef __wcslen_defined
+#define __wcslen_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC size_t (__LIBCCALL wcslen)(wchar_t const *__str);
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wcslen)
+#endif /* !__wcslen_defined */
+
+#ifndef __wcsnlen_defined
+#define __wcsnlen_defined 1
+__LIBC size_t (__LIBCCALL wcsnlen)(wchar_t const *__src, size_t __max_chars);
+#endif /* !__wcsnlen_defined */
+
+#ifndef __wcschr_defined
+#define __wcschr_defined 1
+__NAMESPACE_STD_BEGIN
+#if defined(__cplusplus) && !defined(__NO_ASMNAME)
+extern "C++" {
+__LIBC wchar_t *(__LIBCCALL wcschr)(wchar_t *__str, wchar_t __needle) __ASMNAME("wcschr");
+__LIBC wchar_t *(__LIBCCALL wcsrchr)(wchar_t *__str, wchar_t __needle) __ASMNAME("wcsrchr");
+__LIBC wchar_t const *(__LIBCCALL wcschr)(wchar_t const *__str, wchar_t __needle) __ASMNAME("wcschr");
+__LIBC wchar_t const *(__LIBCCALL wcsrchr)(wchar_t const *__str, wchar_t __needle) __ASMNAME("wcsrchr");
+}
+#else
+__LIBC wchar_t *(__LIBCCALL wcschr)(wchar_t const *__str, wchar_t __needle);
+__LIBC wchar_t *(__LIBCCALL wcsrchr)(wchar_t const *__str, wchar_t __needle);
+#endif
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wcschr)
+__NAMESPACE_STD_USING(wcsrchr)
+#endif /* !__wcschr_defined */
+
+#ifndef __wcscpy_defined
+#define __wcscpy_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC wchar_t *(__LIBCCALL wcscpy)(wchar_t *__dst, wchar_t const *__src);
+__LIBC wchar_t *(__LIBCCALL wcscat)(wchar_t *__dst, wchar_t const *__src);
+__LIBC wchar_t *(__LIBCCALL wcsncat)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
+__LIBC wchar_t *(__LIBCCALL wcsncpy)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wcscpy)
+__NAMESPACE_STD_USING(wcscat)
+__NAMESPACE_STD_USING(wcsncat)
+__NAMESPACE_STD_USING(wcsncpy)
+#endif /* !__wcscpy_defined */
+
+#ifndef __wcsdup_defined
+#define __wcsdup_defined 1
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC wchar_t *(__LIBCCALL wcsdup)(wchar_t const *__restrict __str);
+#endif /* !__wcsdup_defined */
+
+#ifndef __wcsstr_defined
+#define __wcsstr_defined 1
+__NAMESPACE_STD_BEGIN
+#if defined(__cplusplus) && !defined(__NO_ASMNAME)
+extern "C++" {
+__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcspbrk)(wchar_t *__haystack, wchar_t const *__accept) __ASMNAME("wcspbrk");
+__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wcspbrk)(wchar_t const *__haystack, wchar_t const *__accept) __ASMNAME("wcspbrk");
+__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcsstr)(wchar_t *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
+__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
+}
+#else
+__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcspbrk)(wchar_t const *__haystack, wchar_t const *__accept);
+__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle);
+#endif
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wcspbrk)
+__NAMESPACE_STD_USING(wcsstr)
+#endif /* !__wcsstr_defined */
+
+#ifndef __wcswcs_defined
+#define __wcswcs_defined 1
+#if defined(__cplusplus) && !defined(__NO_ASMNAME)
+extern "C++" {
+__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcswcs)(wchar_t *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
+__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wcswcs)(wchar_t const *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
+}
+#else
+__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcswcs)(wchar_t const *__haystack, wchar_t const *__needle);
+#endif
+#endif /* !__wcswcs_defined */
+
+#ifndef __wcstok_defined
+#define __wcstok_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__str, wchar_t const *__delim);
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wcstok)
+#endif /* !__wcstok_defined */
 
 #endif /* !__KERNEL__ */
 #endif /* __USE_DOS */

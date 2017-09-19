@@ -158,6 +158,12 @@
 #define __IFELSE2(x) __IFELSE3(x)
 #define __IFELSE(x)  __IFELSE2(__IFDEF2(x))
 
+#ifdef __PE__
+#   define __ASMNAME2(unix,dos) __ASMNAME(dos)
+#else
+#   define __ASMNAME2(unix,dos) __ASMNAME(unix)
+#endif
+
 #ifndef __VA_LIST
 #define __VA_LIST  char *
 #endif

@@ -65,7 +65,7 @@ libc_fwrite_unlocked(void const *__restrict ptr, size_t size,
                      size_t n, FILE *__restrict stream) {
  /* TODO: proper implementation! */
 #if 0
- syslog(LOG_DEBUG,"FWRITE(%$q)\n",size*n,ptr);
+ libc_syslog(LOG_DEBUG,"FWRITE(%$q)\n",size*n,ptr);
  if (size == 1 && n == 1 && ((char *)ptr)[0] == '\n') {
   __asm__("int $3");
  }
@@ -212,7 +212,7 @@ INTERN int LIBCCALL libc_fclose(FILE *stream) {
 }
 INTERN FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__restrict modes) {
  int fd; FILE *result;
- syslog(LOG_DEBUG,"LIBC: fopen(%q,%q)\n",filename,modes);
+ libc_syslog(LOG_DEBUG,"LIBC: fopen(%q,%q)\n",filename,modes);
 #if 1
  /* Temporary hack to pipe curses trace logging into the system log. */
  if (!libc_strcmp(filename,"//trace")) {
@@ -342,7 +342,6 @@ INTERN ssize_t LIBCCALL libc_puts(char const *s) {
 
 
 
-
 DEFINE_PUBLIC_ALIAS(fread_unlocked,libc_fread_unlocked);
 DEFINE_PUBLIC_ALIAS(fwrite_unlocked,libc_fwrite_unlocked);
 DEFINE_PUBLIC_ALIAS(file_printer,libc_file_printer);
@@ -429,7 +428,6 @@ DEFINE_PUBLIC_ALIAS(rewind,libc_rewind);
 DEFINE_PUBLIC_ALIAS(fileno,libc_fileno);
 DEFINE_PUBLIC_ALIAS(gets,libc_gets);
 DEFINE_PUBLIC_ALIAS(puts,libc_puts);
-
 DEFINE_PUBLIC_ALIAS(fopen64,libc_fopen);
 DEFINE_PUBLIC_ALIAS(freopen64,libc_freopen);
 DEFINE_PUBLIC_ALIAS(fileno_unlocked,libc_fileno); /* Doesn't really matter. - Use an atomic_read for both! */
@@ -438,6 +436,119 @@ DEFINE_PUBLIC_ALIAS(putc,libc_fputc);
 DEFINE_PUBLIC_ALIAS(getc_unlocked,libc_fgetc_unlocked);
 DEFINE_PUBLIC_ALIAS(putc_unlocked,libc_fputc_unlocked);
 DEFINE_PUBLIC_ALIAS(__getdelim,libc_getdelim);
+
+
+/* Wide-string API */
+INTERN wint_t LIBCCALL libc_fgetwc(FILE *stream) {
+ wint_t result;
+ libc_flockfile(stream);
+ result = libc_fgetwc_unlocked(stream);
+ libc_funlockfile(stream);
+ return result;
+}
+INTERN wint_t LIBCCALL libc_fputwc(wchar_t wc, FILE *stream) {
+ wint_t result;
+ libc_flockfile(stream);
+ result = libc_fgetwc_unlocked(stream);
+ libc_funlockfile(stream);
+ return result;
+}
+INTERN wchar_t *LIBCCALL libc_fgetws(wchar_t *__restrict ws, size_t n, FILE *__restrict stream) {
+ wchar_t *result;
+ libc_flockfile(stream);
+ result = libc_fgetws_unlocked(ws,n,stream);
+ libc_funlockfile(stream);
+ return result;
+}
+INTERN ssize_t LIBCCALL libc_fputws(wchar_t const *__restrict ws, FILE *__restrict stream) {
+ ssize_t result;
+ libc_flockfile(stream);
+ result = libc_fputws_unlocked(ws,stream);
+ libc_funlockfile(stream);
+ return result;
+}
+INTERN wint_t LIBCCALL libc_ungetwc(wint_t wc, FILE *stream) { NOT_IMPLEMENTED(); return libc_ungetc((int)wc,stream); }
+INTERN int LIBCCALL libc_fwide(FILE *fp, int mode) { NOT_IMPLEMENTED(); return 0; }
+INTERN ssize_t LIBCCALL libc_vfwprintf(FILE *__restrict s, wchar_t const *__restrict format, va_list args) { NOT_IMPLEMENTED(); return 0; }
+INTERN ssize_t LIBCCALL libc_vfwscanf(FILE *__restrict s, wchar_t const *__restrict format, va_list args) { NOT_IMPLEMENTED(); return 0; }
+INTERN ssize_t LIBCCALL libc_fwprintf(FILE *__restrict stream, wchar_t const *__restrict format, ...) {
+ va_list args; int result; va_start(args,format);
+ result = libc_vfwprintf(stream,format,args);
+ va_end(args);
+ return result;
+}
+INTERN ssize_t LIBCCALL libc_fwscanf(FILE *__restrict stream, wchar_t const *__restrict format, ...) {
+ va_list args; ssize_t result; va_start(args,format);
+ result = libc_vfwscanf(stream,format,args);
+ va_end(args);
+ return result;
+}
+INTERN FILE *LIBCCALL libc_open_wmemstream(wchar_t **bufloc, size_t *sizeloc) {
+ NOT_IMPLEMENTED();
+ return NULL;
+}
+INTERN wint_t LIBCCALL libc_fgetwc_unlocked(FILE *stream) {
+ NOT_IMPLEMENTED();
+ return (wint_t)libc_fgetc_unlocked(stream);
+}
+INTERN wint_t LIBCCALL libc_fputwc_unlocked(wchar_t wc, FILE *stream) {
+ NOT_IMPLEMENTED();
+ return libc_fputc_unlocked((int)wc,stream);
+}
+INTERN wchar_t *LIBCCALL libc_fgetws_unlocked(wchar_t *__restrict ws, size_t n, FILE *__restrict stream) {
+ NOT_IMPLEMENTED();
+ if (n) *ws = '\0';
+ return ws;
+}
+#if __SIZEOF_INT__ != __SIZEOF_SIZE_T__
+INTERN wchar_t *LIBCCALL libc_fgetws_int(wchar_t *__restrict ws, int n, FILE *__restrict stream) { return libc_fgetws(ws,(size_t)n,stream); }
+INTERN wchar_t *LIBCCALL libc_fgetws_unlocked_int(wchar_t *__restrict ws, int n, FILE *__restrict stream) { return libc_fgetws_unlocked(ws,(size_t)n,stream); }
+#endif
+INTERN ssize_t LIBCCALL libc_fputws_unlocked(wchar_t const *__restrict ws, FILE *__restrict stream) {
+ ssize_t result = 0;
+ NOT_IMPLEMENTED();
+ for (; *ws; ++ws,++result) {
+  if (libc_fputc_unlocked((int)*ws,stream) == EOF)
+      break;
+ }
+ return result;
+}
+INTERN wint_t LIBCCALL libc_getwchar(void) { return libc_fgetwc(stdin); }
+INTERN wint_t LIBCCALL libc_putwchar(wchar_t wc) { return libc_fputwc(wc,stdout); }
+INTERN wint_t LIBCCALL libc_getwchar_unlocked(void) { return libc_fgetwc_unlocked(stdin); }
+INTERN wint_t LIBCCALL libc_putwchar_unlocked(wchar_t wc) { return libc_fputwc_unlocked(wc,stdout); }
+
+DEFINE_PUBLIC_ALIAS(fputws,libc_fputws);
+#if __SIZEOF_INT__ != __SIZEOF_SIZE_T__
+DEFINE_PUBLIC_ALIAS(fgetws,libc_fgetws_int);
+DEFINE_PUBLIC_ALIAS(fgetws_unlocked,libc_fgetws_unlocked_int);
+DEFINE_PUBLIC_ALIAS(fgetws_sz,libc_fgetws);
+DEFINE_PUBLIC_ALIAS(fgetws_unlocked_sz,libc_fgetws_unlocked);
+#else
+DEFINE_PUBLIC_ALIAS(fgetws,libc_fgetws);
+DEFINE_PUBLIC_ALIAS(fgetws_unlocked,libc_fgetws_unlocked);
+#endif
+DEFINE_PUBLIC_ALIAS(ungetwc,libc_ungetwc);
+DEFINE_PUBLIC_ALIAS(fwide,libc_fwide);
+DEFINE_PUBLIC_ALIAS(fwprintf,libc_fwprintf);
+DEFINE_PUBLIC_ALIAS(vfwprintf,libc_vfwprintf);
+DEFINE_PUBLIC_ALIAS(fwscanf,libc_fwscanf);
+DEFINE_PUBLIC_ALIAS(vfwscanf,libc_vfwscanf);
+DEFINE_PUBLIC_ALIAS(open_wmemstream,libc_open_wmemstream);
+DEFINE_PUBLIC_ALIAS(fputws_unlocked,libc_fputws_unlocked);
+DEFINE_PUBLIC_ALIAS(getwc,libc_fgetwc);
+DEFINE_PUBLIC_ALIAS(fgetwc,libc_fgetwc);
+DEFINE_PUBLIC_ALIAS(putwc,libc_fputwc);
+DEFINE_PUBLIC_ALIAS(fputwc,libc_fputwc);
+DEFINE_PUBLIC_ALIAS(getwc_unlocked,libc_fgetwc_unlocked);
+DEFINE_PUBLIC_ALIAS(fgetwc_unlocked,libc_fgetwc_unlocked);
+DEFINE_PUBLIC_ALIAS(putwc_unlocked,libc_fputwc_unlocked);
+DEFINE_PUBLIC_ALIAS(fputwc_unlocked,libc_fputwc_unlocked);
+DEFINE_PUBLIC_ALIAS(getwchar,libc_getwchar);
+DEFINE_PUBLIC_ALIAS(putwchar,libc_putwchar);
+DEFINE_PUBLIC_ALIAS(getwchar_unlocked,libc_getwchar_unlocked);
+DEFINE_PUBLIC_ALIAS(putwchar_unlocked,libc_putwchar_unlocked);
+
 
 DECL_END
 

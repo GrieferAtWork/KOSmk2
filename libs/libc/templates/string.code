@@ -104,7 +104,7 @@
 #define CHECK_DF() {}
 #endif
 
-FORCELOCAL void *(LIBCCALL X(core_memcpy))
+FORCELOCAL void *LIBCCALL X(core_memcpy)
 (void *__restrict dst, void const *__restrict src, size_t n) {
 	CHECK_HOST_DATA(dst,n*S);
 	CHECK_HOST_TEXT(src,n*S);
@@ -143,7 +143,7 @@ FORCELOCAL void *(LIBCCALL X(core_memcpy))
 	return dst;
 }
 
-DECL void *(LIBCCALL X(libc_memcpy))
+DECL void *LIBCCALL X(libc_memcpy)
 (void *__restrict dst, void const *__restrict src, size_t n) {
 	assertf(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
 	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
@@ -153,7 +153,7 @@ DECL void *(LIBCCALL X(libc_memcpy))
 	           dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
 	return X(core_memcpy)(dst,src,n);
 }
-DECL void *(LIBCCALL PP_CAT2(X(libc__memcpy),_d))
+DECL void *LIBCCALL PP_CAT2(X(libc__memcpy),_d)
 (void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO) {
 	CHECK_HOST_DATA(dst,n*S);
 	CHECK_HOST_TEXT(src,n*S);
@@ -166,7 +166,7 @@ DECL void *(LIBCCALL PP_CAT2(X(libc__memcpy),_d))
 	return X(core_memcpy)(dst,src,n);
 }
 
-DECL void *(LIBCCALL X(libc_memset))(void *dst, B h, size_t n) {
+DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
 	CHECK_HOST_DATA(dst,n*S);
 #if S == 1
 	if (n >= STRING_LARGE_OP_LIMIT) {
@@ -202,7 +202,7 @@ DECL void *(LIBCCALL X(libc_memset))(void *dst, B h, size_t n) {
  return dst;
 }
 
-DECL sB (LIBCCALL X(libc_memcmp))
+DECL sB LIBCCALL X(libc_memcmp)
 (void const *a, void const *b, size_t n) {
 #if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
 	sB result = 0;
@@ -230,7 +230,7 @@ DECL sB (LIBCCALL X(libc_memcmp))
 #endif
 }
 
-DECL vB *(LIBCCALL X(libc_memchr))
+DECL vB *LIBCCALL X(libc_memchr)
 (vB const *__restrict haystack, B needle, size_t n) {
 #if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
 	vB *result;
@@ -272,7 +272,7 @@ DECL vB *(LIBCCALL X(libc_memchr))
 }
 
 
-DECL vB *(LIBCCALL X(libc_memrchr))
+DECL vB *LIBCCALL X(libc_memrchr)
 (vB const *__restrict haystack, B needle, size_t n) {
 	T *iter = (T *)haystack+n;
 	/* TODO: 'rep scas' */
@@ -290,7 +290,7 @@ DECL vB *(LIBCCALL X(libc_memrchr))
 	return NULL;
 }
 
-DECL vB *(LIBCCALL X(libc_memend))
+DECL vB *LIBCCALL X(libc_memend)
 (vB const *__restrict haystack, B needle, size_t n) {
 	T *iter,*end;
 	/* TODO: 'rep scas' */
@@ -309,7 +309,7 @@ DECL vB *(LIBCCALL X(libc_memend))
 	return (vB *)iter;
 }
 
-DECL vB *(LIBCCALL X(libc_memrend))
+DECL vB *LIBCCALL X(libc_memrend)
 (vB const *__restrict haystack, B needle, size_t n) {
 	T *iter = (T *)haystack+n;
 #ifdef CONFIG_DEBUG
@@ -326,18 +326,18 @@ DECL vB *(LIBCCALL X(libc_memrend))
 	return (vB *)iter;
 }
 
-DECL size_t (LIBCCALL X(libc_memlen))
+DECL size_t LIBCCALL X(libc_memlen)
 (vB const *__restrict haystack, B needle, size_t n) {
 	return (uintptr_t)X(libc_memend)(haystack,needle,n) - (uintptr_t)haystack;
 }
-DECL size_t (LIBCCALL X(libc_memrlen))
+DECL size_t LIBCCALL X(libc_memrlen)
 (vB const *__restrict haystack, B needle, size_t n) {
 	return (uintptr_t)X(libc_memrend)(haystack,needle,n) - (uintptr_t)haystack;
 }
 
 
 
-DECL vB *(LIBCCALL X(libc_rawmemchr))
+DECL vB *LIBCCALL X(libc_rawmemchr)
 (vB const *__restrict haystack, B needle) {
 	T *iter = (T *)haystack;
 	/* TODO: 'rep scas' */
@@ -355,7 +355,7 @@ DECL vB *(LIBCCALL X(libc_rawmemchr))
 	return (vB *)iter;
 }
 
-DECL vB *(LIBCCALL X(libc_rawmemrchr))
+DECL vB *LIBCCALL X(libc_rawmemrchr)
 (vB const *__restrict haystack, B needle) {
 	T *iter = (T *)haystack;
 #ifdef CONFIG_DEBUG
@@ -383,7 +383,7 @@ DECL size_t (LIBCCALL X(libc_rawmemrlen))
 
 
 #if S != 1
-DECL void *(LIBCCALL X(libc_mempat))
+DECL void *LIBCCALL X(libc_mempat)
 (void *__restrict dst, B pattern, size_t n_bytes) {
 	byte_t *iter = (byte_t *)dst;
 #if S == 2
@@ -411,6 +411,21 @@ DECL void *(LIBCCALL X(libc_mempat))
 }
 #endif
 
+INTERN void *LIBCCALL X(libc_memmove)(void *dst, void const *src, size_t n) {
+	T *iter,*end; T const *siter;
+	CHECK_HOST_DATA(dst,n*S);
+	CHECK_HOST_TEXT(src,n*S);
+	if (dst < src) {
+		siter = (T const *)src;
+		end = (iter = (T *)dst)+n;
+		while (iter != end) *iter++ = *siter++;
+	} else {
+		siter = (T const *)src+n;
+		iter = (end = (T *)dst)+n;
+		while (iter != end) *--iter = *--siter;
+	}
+	return dst;
+}
 
 
 #undef STRING_LARGE_OP_LIMIT

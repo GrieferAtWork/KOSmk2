@@ -62,6 +62,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\time.h = ..\include\time.h
 		..\include\unistd.h = ..\include\unistd.h
 		..\include\utime.h = ..\include\utime.h
+		..\include\wchar.h = ..\include\wchar.h
 		..\include\xlocale.h = ..\include\xlocale.h
 	EndProjectSection
 EndProject
@@ -192,6 +193,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bits", "bits", "{D8CF57A3-C
 		..\include\bits\utsname.h = ..\include\bits\utsname.h
 		..\include\bits\waitflags.h = ..\include\bits\waitflags.h
 		..\include\bits\waitstatus.h = ..\include\bits\waitstatus.h
+		..\include\bits\wchar.h = ..\include\bits\wchar.h
 		..\include\bits\wordsize.h = ..\include\bits\wordsize.h
 		..\include\bits\xopen_lim.h = ..\include\bits\xopen_lim.h
 	EndProjectSection

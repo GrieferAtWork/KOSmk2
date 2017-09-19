@@ -75,10 +75,10 @@ struct timezone;
 #if TRACE_SYSTEM_CALLS
 #if 1
 #define TRACE0()   \
- (void)(syslog(LOG_DEBUG,"%s\n",__FUNCTION__))
+ (void)(libc_syslog(LOG_DEBUG,"%s\n",__FUNCTION__))
 #else
 #define TRACE0()   \
- (void)(syslog(LOG_DEBUG,"%s(%d) : %s()\n",__FILE__,__LINE__,__FUNCTION__))
+ (void)(libc_syslog(LOG_DEBUG,"%s(%d) : %s()\n",__FILE__,__LINE__,__FUNCTION__))
 #endif
 #undef __SYSCALL_TRACE
 #define __SYSCALL_TRACE(id) { if (id != __NR_xsysprint) TRACE0(); }

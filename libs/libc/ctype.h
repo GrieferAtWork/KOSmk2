@@ -96,6 +96,24 @@ INTDEF int (LIBCCALL libc_isctype)(int ch, int mask);
 #define libc_isxdigit(c) libc___isctype((c),F_XDIGIT)
 #define libc_isblank(c)  libc___isctype((c),F_BLANK)
 
+/* TODO... */
+#define libc_iswalpha(ch)      libc_isalpha(ch)
+#define libc_iswupper(ch)      libc_isupper(ch)
+#define libc_iswlower(ch)      libc_islower(ch)
+#define libc_iswdigit(ch)      libc_isdigit(ch)
+#define libc_iswxdigit(ch)     libc_isxdigit(ch)
+#define libc_iswspace(ch)      libc_isspace(ch)
+#define libc_iswpunct(ch)      libc_ispunct(ch)
+#define libc_iswalnum(ch)      libc_isalnum(ch)
+#define libc_iswprint(ch)      libc_isprint(ch)
+#define libc_iswgraph(ch)      libc_isgraph(ch)
+#define libc_iswcntrl(ch)      libc_iscntrl(ch)
+#define libc_iswblank(ch)      libc_isblank(ch)
+#define libc_towupper(ch)      libc_toupper(ch)
+#define libc_towlower(ch)      libc_tolower(ch)
+#define libc_iswctype(ch,mask) libc_isctype(ch,mask)
+
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_CTYPE_H */

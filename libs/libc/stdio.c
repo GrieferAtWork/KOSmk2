@@ -191,6 +191,68 @@ DEFINE_PUBLIC_ALIAS(asprintf,libc_asprintf);
 DEFINE_PUBLIC_ALIAS(__asprintf,asprintf);
 #endif /* !__KERNEL__ */
 
+
+#ifndef __KERNEL__
+/* Wide-string API */
+INTERN ssize_t LIBCCALL libc_vwprintf(wchar_t const *__restrict format,
+                                      va_list arg) {
+ NOT_IMPLEMENTED();
+ return 0;
+}
+INTERN ssize_t LIBCCALL libc_vswprintf(wchar_t *__restrict s, size_t n,
+                                       wchar_t const *__restrict format,
+                                       va_list arg) {
+ NOT_IMPLEMENTED();
+ return 0;
+}
+INTERN ssize_t LIBCCALL libc_vwscanf(wchar_t const *__restrict format, va_list arg) {
+ NOT_IMPLEMENTED();
+ return 0;
+}
+INTERN ssize_t LIBCCALL libc_vswscanf(wchar_t const *__restrict s,
+                                      wchar_t const *__restrict format,
+                                      va_list arg) {
+ NOT_IMPLEMENTED();
+ return 0;
+}
+INTERN ssize_t LIBCCALL libc_wprintf(wchar_t const *__restrict format, ...) {
+ va_list args; ssize_t result; va_start(args,format);
+ result = libc_vwprintf(format,args);
+ va_end(args);
+ return result;
+}
+INTERN ssize_t LIBCCALL libc_swprintf(wchar_t *__restrict s, size_t n,
+                                      wchar_t const *__restrict format, ...) {
+ va_list args; ssize_t result; va_start(args,format);
+ result = libc_vswprintf(s,n,format,args);
+ va_end(args);
+ return result;
+}
+INTERN ssize_t LIBCCALL libc_wscanf(wchar_t const *__restrict format, ...) {
+ va_list args; ssize_t result; va_start(args,format);
+ result = libc_vwscanf(format,args);
+ va_end(args);
+ return result;
+}
+INTERN ssize_t LIBCCALL libc_swscanf(wchar_t const *__restrict s,
+                                     wchar_t const *__restrict format, ...) {
+ va_list args; ssize_t result; va_start(args,format);
+ result = libc_vswscanf(s,format,args);
+ va_end(args);
+ return result;
+}
+
+DEFINE_PUBLIC_ALIAS(wprintf,libc_wprintf);
+DEFINE_PUBLIC_ALIAS(swprintf,libc_swprintf);
+DEFINE_PUBLIC_ALIAS(vwprintf,libc_vwprintf);
+DEFINE_PUBLIC_ALIAS(vswprintf,libc_vswprintf);
+DEFINE_PUBLIC_ALIAS(wscanf,libc_wscanf);
+DEFINE_PUBLIC_ALIAS(swscanf,libc_swscanf);
+DEFINE_PUBLIC_ALIAS(vwscanf,libc_vwscanf);
+DEFINE_PUBLIC_ALIAS(vswscanf,libc_vswscanf);
+
+#endif /* !__KERNEL__ */
+
 DECL_END
 
 #ifndef __KERNEL__

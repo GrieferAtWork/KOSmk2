@@ -106,14 +106,11 @@ INTDEF void LIBCCALL libc_clearerr_unlocked(FILE *stream);
 INTDEF int LIBCCALL libc_feof(FILE *stream);
 INTDEF int LIBCCALL libc_ferror(FILE *stream);
 //INTDEF FILE *LIBCCALL libc_fopencookie(void *__restrict magic_cookie, char const *__restrict modes, _IO_cookie_io_functions_t io_funcs);
-#if __SIZEOF_SIZE_T__ == __SIZEOF_SIZE_T__
 INTDEF char *LIBCCALL libc_fgets(char *__restrict s, size_t n, FILE *__restrict stream);
 INTDEF char *LIBCCALL libc_fgets_unlocked(char *__restrict s, size_t n, FILE *__restrict stream);
-#else
+#if __SIZEOF_SIZE_T__ != __SIZEOF_SIZE_T__
 INTDEF char *LIBCCALL libc_fgets_int(char *__restrict s, int n, FILE *__restrict stream);
-INTDEF char *LIBCCALL libc_fgets(char *__restrict s, size_t n, FILE *__restrict stream);
 INTDEF char *LIBCCALL libc_fgets_unlocked_int(char *__restrict s, int n, FILE *__restrict stream);
-INTDEF char *LIBCCALL libc_fgets_unlocked(char *__restrict s, size_t n, FILE *__restrict stream);
 #endif
 INTDEF int LIBCCALL libc_fseeko(FILE *stream, off_t off, int whence);
 INTDEF off_t LIBCCALL libc_ftello(FILE *stream);
@@ -138,6 +135,48 @@ INTDEF void LIBCCALL libc_rewind(FILE *stream);
 INTDEF int LIBCCALL libc_fileno(FILE *stream);
 INTDEF char *LIBCCALL libc_gets(char *s);
 INTDEF ssize_t LIBCCALL libc_puts(char const *s);
+
+#ifndef __wint_t_defined
+#define __wint_t_defined 1
+typedef __WINT_TYPE__ wint_t;
+#endif /* !__wint_t_defined */
+#ifndef __wchar_t_defined
+#define __wchar_t_defined 1
+typedef __WCHAR_TYPE__ wchar_t;
+#endif /* !__wchar_t_defined */
+
+INTDEF ssize_t LIBCCALL libc_wprintf(wchar_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_swprintf(wchar_t *__restrict s, size_t n, wchar_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_vwprintf(wchar_t const *__restrict format, va_list arg);
+INTDEF ssize_t LIBCCALL libc_vswprintf(wchar_t *__restrict s, size_t n, wchar_t const *__restrict format, va_list arg);
+INTDEF ssize_t LIBCCALL libc_wscanf(wchar_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_swscanf(wchar_t const *__restrict s, wchar_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_vwscanf(wchar_t const *__restrict format, va_list arg);
+INTDEF ssize_t LIBCCALL libc_vswscanf(wchar_t const *__restrict s, wchar_t const *__restrict format, va_list arg);
+
+INTDEF wint_t LIBCCALL libc_fgetwc(FILE *stream);
+INTDEF wint_t LIBCCALL libc_fputwc(wchar_t wc, FILE *stream);
+INTDEF ssize_t LIBCCALL libc_fputws(wchar_t const *__restrict ws, FILE *__restrict stream);
+INTDEF wchar_t *LIBCCALL libc_fgetws(wchar_t *__restrict ws, size_t n, FILE *__restrict stream);
+INTDEF wchar_t *LIBCCALL libc_fgetws_unlocked(wchar_t *__restrict ws, size_t n, FILE *__restrict stream);
+#if __SIZEOF_INT__ != __SIZEOF_SIZE_T__
+INTDEF wchar_t *LIBCCALL libc_fgetws_int(wchar_t *__restrict ws, int n, FILE *__restrict stream);
+INTDEF wchar_t *LIBCCALL libc_fgetws_unlocked_int(wchar_t *__restrict ws, int n, FILE *__restrict stream);
+#endif
+INTDEF wint_t LIBCCALL libc_ungetwc(wint_t wc, FILE *stream);
+INTDEF int LIBCCALL libc_fwide(FILE *fp, int mode);
+INTDEF ssize_t LIBCCALL libc_fwprintf(FILE *__restrict stream, wchar_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_vfwprintf(FILE *__restrict s, wchar_t const *__restrict format, va_list arg);
+INTDEF ssize_t LIBCCALL libc_fwscanf(FILE *__restrict stream, wchar_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_vfwscanf(FILE *__restrict s, wchar_t const *__restrict format, va_list arg);
+INTDEF FILE *LIBCCALL libc_open_wmemstream(wchar_t **bufloc, size_t *sizeloc);
+INTDEF wint_t LIBCCALL libc_fgetwc_unlocked(FILE *stream);
+INTDEF wint_t LIBCCALL libc_fputwc_unlocked(wchar_t wc, FILE *stream);
+INTDEF int LIBCCALL libc_fputws_unlocked(wchar_t const *__restrict ws, FILE *__restrict stream);
+INTDEF wint_t LIBCCALL libc_getwchar(void);
+INTDEF wint_t LIBCCALL libc_putwchar(wchar_t wc);
+INTDEF wint_t LIBCCALL libc_getwchar_unlocked(void);
+INTDEF wint_t LIBCCALL libc_putwchar_unlocked(wchar_t wc);
 #endif /* !__KERNEL__ */
 
 DECL_END
