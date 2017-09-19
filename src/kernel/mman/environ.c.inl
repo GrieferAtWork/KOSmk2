@@ -37,6 +37,7 @@
 #include <sched/paging.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <stdlib.h>
 
 DECL_BEGIN
 
@@ -83,6 +84,7 @@ L(SYM_END(count_pointers)                                 )
 #error FIXME
 #endif
 
+#define CONFIG_ENVIRON_USE_TEMPORARY_BUFFER 1
 
 #define ENVIRON_PROT   (PROT_READ|PROT_WRITE)
 
@@ -96,9 +98,15 @@ mman_setenviron_unlocked(struct mman *__restrict self,
  VIRT struct envdata *old_environ;
  VIRT struct envdata *new_environ,*result;
  PAGE_ALIGNED size_t new_total_pages,old_total_pages;
- size_t new_total_size,argc,envc,arg_text,env_text;
+ size_t new_total_size,argc,envc,arg_text,env_text,total_argc;
  USER char **iter,**end,**vector_dst,*text_end;
  USER char **pargv_vector,*pargv_text,*penvp_text;
+#ifdef CONFIG_ENVIRON_USE_TEMPORARY_BUFFER
+ HOST byte_t *temp_buffer = NULL;
+ uintptr_t buffer_displacement;
+#else
+#define buffer_displacement 0
+#endif
  CHECK_HOST_DOBJ(self);
  assert(mman_writing(self));
  assert(self->m_ppdir == PDIR_GTCURR());
@@ -161,8 +169,9 @@ mman_setenviron_unlocked(struct mman *__restrict self,
   }
  }
  /* Test absurd limits just to be safe. */
- if unlikely(argc >= (1 << 24) || envc >= (1 << 24)) goto enomem;
- new_total_size = offsetof(struct envdata,__e_envv)+(envc+argc+2)*sizeof(void *);
+ total_argc = argc+head_argc+tail_argc;
+ if unlikely(total_argc >= (1 << 24) || envc >= (1 << 24)) goto enomem;
+ new_total_size = offsetof(struct envdata,__e_envv)+(envc+total_argc+2)*sizeof(void *);
  if (__builtin_add_overflow(new_total_size,env_text,&new_total_size)) goto enomem;
  if (__builtin_add_overflow(new_total_size,arg_text,&new_total_size)) goto enomem;
  /* All right. - We've figured out the total size of the data structure.
@@ -173,10 +182,16 @@ mman_setenviron_unlocked(struct mman *__restrict self,
  new_total_pages = CEIL_ALIGN(new_total_size,PAGESIZE);
  assert(IS_ALIGNED(old_total_pages,PAGESIZE));
  assert(IS_ALIGNED(new_total_pages,PAGESIZE));
+#ifdef CONFIG_ENVIRON_USE_TEMPORARY_BUFFER
+ temp_buffer = (HOST byte_t *)amalloc(keep_environ
+                                    ? arg_text+(total_argc+1)*sizeof(void *)
+                                    : new_total_size-offsetof(struct envdata,__e_envv));
+ if unlikely(!temp_buffer) goto enomem;
+#endif
 
 #if 1
- syslog(LOG_DEBUG,"[ENV] Update environ: %Iu -> %Iu (%Iu + %Iu)\n",
-        old_total_pages,new_total_pages,arg_text,env_text);
+ syslog(LOG_DEBUG,"[ENV] Update environ (%s): %Iu -> %Iu (%Iu + %Iu)\n",
+        keep_environ ? "keep" : "-",old_total_pages,new_total_pages,arg_text,env_text);
 #endif
  if (new_total_pages < old_total_pages) {
   /* Reduce the size of the environment block. */
@@ -222,21 +237,39 @@ mman_setenviron_unlocked(struct mman *__restrict self,
  }
 
 got_environ:
+#ifdef CONFIG_ENVIRON_USE_TEMPORARY_BUFFER
+ buffer_displacement = ((uintptr_t)ENVDATA_ENVV(*new_environ)-
+                        (uintptr_t)temp_buffer);
+ if (keep_environ) {
+  pargv_vector         = (char **)temp_buffer;
+  buffer_displacement += ((envc+1)*sizeof(char *)+env_text);
+ } else {
+  penvp_text   = (char *)((char **)temp_buffer+(envc+1));
+  pargv_vector = (char **)((uintptr_t)penvp_text+env_text);
+ }
+#else
  penvp_text   = (char *)(ENVDATA_ENVV(*new_environ)+(envc+1));
  pargv_vector = (char **)((uintptr_t)penvp_text+env_text);
- pargv_text   = (char *)(pargv_vector+(argc+head_argc+tail_argc+1));
+#endif
+ pargv_text   = (char *)(pargv_vector+(total_argc+1));
 
  if (!keep_environ) {
   /* Copy the new environment text. */
   text_end = penvp_text+env_text;
   end = (iter = envp)+envc;
+#ifdef CONFIG_ENVIRON_USE_TEMPORARY_BUFFER
+  vector_dst = (USER char **)temp_buffer;
+#else
   vector_dst = ENVDATA_ENVV(*new_environ);
-  /* TODO: This breaks if the new environment block overlaps
+#endif
+  /* NOTE: This would break if the new environment block overlaps
    *       with the user-given arguments/environment, which
    *       can easily happen if old argument strings are
-   *       re-used. */
+   *       re-used.
+   * >> Therefor we need to write everything into a temporary buffer first.
+   */
   for (; iter != end; ++iter,++vector_dst) {
-   *vector_dst = penvp_text;
+   *vector_dst = (USER char *)((uintptr_t)penvp_text+buffer_displacement);
    penvp_text = stpncpy_from_user(penvp_text,*iter,text_end-penvp_text);
    if unlikely(!penvp_text) { result = E_PTR(-EFAULT); goto done; }
    ++penvp_text; /* Keep the NUL-character. */
@@ -253,32 +286,51 @@ got_environ:
  text_end = pargv_text+arg_text,vector_dst = pargv_vector;
  for (end = (iter = head_argv)+head_argc;
       iter != end; ++iter,++vector_dst) {
-  *vector_dst = pargv_text;
+  *vector_dst = (USER char *)((uintptr_t)pargv_text+buffer_displacement);
   pargv_text = stpncpy(pargv_text,*iter,text_end-pargv_text);
   ++pargv_text; /* Keep the NUL-character. */
  }
  for (end = (iter = argv)+argc;
       iter != end; ++iter,++vector_dst) {
-  *vector_dst = pargv_text;
+  *vector_dst = (USER char *)((uintptr_t)pargv_text+buffer_displacement);
+
   pargv_text = stpncpy_from_user(pargv_text,*iter,text_end-pargv_text);
   if unlikely(!pargv_text) { result = E_PTR(-EFAULT); goto done; }
   ++pargv_text; /* Keep the NUL-character. */
  }
  for (end = (iter = tail_argv)+tail_argc;
       iter != end; ++iter,++vector_dst) {
-  *vector_dst = pargv_text;
+  *vector_dst = (USER char *)((uintptr_t)pargv_text+buffer_displacement);
   pargv_text = stpncpy(pargv_text,*iter,text_end-pargv_text);
   ++pargv_text; /* Keep the NUL-character. */
  }
  *vector_dst = NULL; /* Terminate the argument list with a NULL-entry. */
 
+#ifdef CONFIG_ENVIRON_USE_TEMPORARY_BUFFER
+ /* Copy the temporary buffer to user-space.
+  * NOTE: We can use a regular memcpy() here, because we hold
+  *       the lock that prevents anyone from deleting it. */
+ pargv_vector = (char **)((uintptr_t)(ENVDATA_ENVV(*new_environ)+(envc+1))+env_text);
+ if (keep_environ) {
+  /* Only copy argument vector and text. */
+  memcpy(pargv_vector,temp_buffer,
+        ((total_argc+1)*sizeof(void *))+arg_text);
+ } else {
+  /* Copy environment and argument vectors and text. */
+  memcpy(ENVDATA_ENVV(*new_environ),temp_buffer,
+         new_total_size-offsetof(struct envdata,__e_envv));
+ }
+#endif
+
  result = new_environ;
 done:
  new_environ->e_size = new_total_size;
  new_environ->e_envc = envc;
- new_environ->e_argc = argc;
+ new_environ->e_argc = total_argc;
  new_environ->e_argv = pargv_vector;
  if (new_environ != old_environ) {
+  /* Clear out the padding data to prevent information leaking from kernel-space. */
+  memset(new_environ->e_pad,0,sizeof(new_environ->e_pad));
   new_environ->e_envp = ENVDATA_ENVV(*new_environ);
   new_environ->e_self = new_environ;
   COMPILER_WRITE_BARRIER();
@@ -287,6 +339,9 @@ done:
                        MMAN_MUNMAP_TAG,old_environ);
   self->m_environ = new_environ;
  }
+#if 0
+ syslog(LOG_DEBUG,"Environment block:\n%.?[hex]\n",new_total_size,new_environ);
+#endif
 
  /* Unset the dirty bit on all environment pages, thus allowing
   * us to optimize skipping environment re-loading the next time
@@ -298,13 +353,17 @@ done:
  
  /* Update environment tracking variables. */
  self->m_envsize = new_total_pages;
- self->m_envargc = head_argc+argc+tail_argc;
+ self->m_envargc = total_argc;
  self->m_envenvc = envc;
  self->m_envetxt = env_text;
  self->m_envatxt = arg_text;
+end:
+#ifdef CONFIG_ENVIRON_USE_TEMPORARY_BUFFER
+ if (temp_buffer) afree(temp_buffer);
+#endif
  return result;
-efault: return E_PTR(-EFAULT);
-enomem: return E_PTR(-ENOMEM);
+efault: result = E_PTR(-EFAULT); goto end;
+enomem: result = E_PTR(-ENOMEM); goto end;
 }
 
 

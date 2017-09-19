@@ -59,7 +59,7 @@ do_dlopen(struct module *__restrict mod, int flags) {
  if (E_ISOK(inst)) {
   /* Increment the instance's dlopen() recursion counter. */
   ATOMIC_FETCHINC(inst->i_openrec);
-  result = inst->i_base;
+  result = (void *)((uintptr_t)inst->i_base+mod->m_begin);
  } else {
   result = E_PTR(E_GTERR(inst));
  }

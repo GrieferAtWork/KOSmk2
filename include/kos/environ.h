@@ -51,7 +51,7 @@ struct envdata {
  size_t          e_argc;    /*< Amount of entries in the '__e_argv' vector below. */
  char          **e_envp;    /*< A pointer to '__e_envv' below (== ENVDATA_ENVV(*self)). */
  char          **e_argv;    /*< A pointer to '__e_argv' below. */
- void           *e_root;    /*< Base address of the initial instance that created the VM. */
+ void           *e_root;    /*< Base address of the initial instance that created the VM (Usable as a handle in dl* functions like 'dlsym'). */
  void           *e_pad[25]; /*< ... Alignment. */
 
  USER char      *__e_envv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of environment strings (HINT: NULL-terminated). */
@@ -65,7 +65,10 @@ struct envdata {
 #define ENVDATA_ENVC(x)   ((x).e_envc)
 #define ENVDATA_ARGV(x)   ((x).e_argv)
 #define ENVDATA_ENVP(x)   ((x).e_envp)
+#ifdef __KERNEL__
+/* Don't use this in user-space to maintain forward-compatibility. */
 #define ENVDATA_ENVV(x)   ((x).__e_envv)
+#endif
 
 #ifndef __KERNEL__
 /* Exported by libc (used to track the environment information block) */

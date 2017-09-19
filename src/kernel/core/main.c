@@ -150,9 +150,9 @@ run_init(char const *__restrict filename) {
        "PATH=/bin:/usr/bin:/usr/sbin",
        "SHELL=/bin/sh",
        "USER=root",
-       "NCURSES_TRACE=8191", /* 0x1fff */
        "TERM=xterm", /* ... maybe? */
        "TERMINFO=/usr/share/terminfo",
+       //"NCURSES_TRACE=8191", /* 0x1fff */
        NULL
      };
      HOSTMEMORY_BEGIN {

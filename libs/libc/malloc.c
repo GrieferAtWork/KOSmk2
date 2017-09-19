@@ -1268,9 +1268,14 @@ DEFINE_PUBLIC_ALIAS(vstrdupf,libc_vstrdupf);
 DEFINE_PUBLIC_ALIAS(strdupf,libc_strdupf);
 
 /* Define malloc-related function aliases */
+#ifdef CONFIG_DEBUG_MALLOC
 DEFINE_PUBLIC_ALIAS(aligned_alloc,libc_memalign);
-DEFINE_PUBLIC_ALIAS(_aligned_alloc_d,libc__memalign_d);
 DEFINE_PUBLIC_ALIAS(cfree,libc_free);
+#else
+DEFINE_PUBLIC_ALIAS(aligned_alloc,dlmemalign);
+DEFINE_PUBLIC_ALIAS(cfree,dlfree);
+#endif
+DEFINE_PUBLIC_ALIAS(_aligned_alloc_d,libc__memalign_d);
 DEFINE_PUBLIC_ALIAS(_cfree_d,libc__free_d);
 
 /* Export the MALL debug API (either as stubs, or as an

@@ -196,25 +196,43 @@ INTERN void LIBCCALL libc_clearerr(FILE *stream) {
 
 
 
-INTERN int LIBCCALL libc_fclose(FILE *stream) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_fflush(FILE *stream) { /*NOT_IMPLEMENTED();*/ return 0; }
+INTERN int LIBCCALL libc_fflush(FILE *stream) { return stream ? libc_fdatasync(stream->f_fd) : -1; }
 INTERN void LIBCCALL libc_setbuf(FILE *__restrict stream, char *__restrict buf) { NOT_IMPLEMENTED(); }
 INTERN int LIBCCALL libc_setvbuf(FILE *__restrict stream, char *__restrict buf, int modes, size_t n) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_ungetc(int c, FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 INTERN FILE *LIBCCALL libc_tmpfile64(void) { NOT_IMPLEMENTED(); return NULL; }
 INTERN FILE *LIBCCALL libc_tmpfile(void) { NOT_IMPLEMENTED(); return NULL; }
+
+INTERN int LIBCCALL libc_fclose(FILE *stream) {
+ int result;
+ if (!stream) { SET_ERRNO(EINVAL); return -1; }
+ result = libc_close(stream->f_fd);
+ libc_free(stream);
+ return result;
+}
 INTERN FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__restrict modes) {
+ int fd; FILE *result;
+ syslog(LOG_DEBUG,"LIBC: fopen(%q,%q)\n",filename,modes);
 #if 1
  /* Temporary hack to pipe curses trace logging into the system log. */
- //syslog(LOG_DEBUG,"LIBC: fopen(%q,%q)\n",filename,modes);
  if (!libc_strcmp(filename,"//trace")) {
-  FILE *result = (FILE *)libc_malloc(sizeof(FILE));
-  if (result) result->f_fd = libc_open("/dev/kmsg",O_WRONLY);
-  return result;
- }
+  fd = libc_open("/dev/kmsg",O_WRONLY);
+ } else
 #endif
- NOT_IMPLEMENTED();
- return NULL;
+ {
+  int mode = O_RDONLY;
+  if (modes) for (; *modes; ++modes) {
+   if (*modes == 'r') mode = O_RDONLY;
+   if (*modes == 'w') mode = O_WRONLY|O_CREAT|O_TRUNC;
+   if (*modes == '+') mode &= ~(O_TRUNC|O_ACCMODE),mode |= O_RDWR;
+  }
+  fd = libc_open(filename,mode);
+ }
+ if (fd < 0) return NULL;
+ result = (FILE *)libc_malloc(sizeof(FILE));
+ if (!result) sys_close(fd);
+ else result->f_fd = fd;
+ return result;
 }
 INTERN FILE *LIBCCALL libc_freopen(char const *__restrict filename, char const *__restrict modes, FILE *__restrict stream) { NOT_IMPLEMENTED(); return NULL; }
 INTERN int LIBCCALL libc_fflush_unlocked(FILE *stream) { NOT_IMPLEMENTED(); return -1; }

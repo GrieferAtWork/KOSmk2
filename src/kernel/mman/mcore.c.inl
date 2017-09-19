@@ -207,21 +207,22 @@ mregion_load_core(struct mregion *__restrict self,
                   PAGE_ALIGNED rsize_t size, u32 mode,
                   bool *__restrict holds_region_ref,
                   struct mman **__restrict pold_mman) {
- struct mscatter load_scatter;
+ struct mscatter load_scatter; errno_t error;
  struct mregion_part **piter,*iter;
- size_t result = 0; errno_t error;
- size_t part_number = 0;
+ size_t part_number,result = 0;
  CHECK_HOST_DOBJ(self);
  assert(IS_ALIGNED(start,PAGESIZE));
  assert(IS_ALIGNED(size,PAGESIZE));
  assert(start+size >  start);
  assert(start+size <= self->mr_size);
 again:
+ part_number = 0;
  for (piter = &self->mr_parts;
      (iter = *piter) != NULL;
       piter = &iter->mt_chain.le_next,
       ++part_number) {
   raddr_t iter_end; rsize_t load_size;
+  assert(iter->mt_chain.le_next != iter);
   if (iter->mt_state == MPART_STATE_INCORE ||
       iter->mt_state == MPART_STATE_UNKNOWN)
       continue;
@@ -358,7 +359,7 @@ err_load_scatter:
                            : self->mr_size)) goto restart_scatter;
     /* One more thing: Is the part still not loaded? */
     if unlikely(iter->mt_state != MPART_STATE_MISSING) {
-     /* $h1t! - Now we'll have to deal with this. */
+     /* $h1t! - Now we have to deal with this. */
      if (iter->mt_state == MPART_STATE_INCORE) {
       /* Simple enough:
        * > Don't overwrite existing core data and act

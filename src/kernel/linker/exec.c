@@ -499,7 +499,7 @@ end:
  task_endcrit();
  assert(!task_iscrit());
 #if 1
- syslog(LOG_EXEC|LOG_DEBUG,"[EXEC] exec failed: %[errno]\n",-result);
+ syslog(LOG_EXEC|LOG_DEBUG,"[EXEC] exec(%q) failed: %[errno]\n",filename,-result);
 #endif
  return result;
 }

@@ -25,7 +25,7 @@
 #undef CONFIG_DEBUG_MALLOC
 //#define CONFIG_LIBC_ALLOW_EXTERN_MALLOC 1
 #ifdef CONFIG_DEBUG
-#define CONFIG_DEBUG_MALLOC 1
+//#define CONFIG_DEBUG_MALLOC 1
 #endif
 
 #include "libc.h"
@@ -138,18 +138,18 @@ INTDEF SAFE size_t (LIBCCALL libc_malloc_usable_size)(void *__restrict ptr);
 #define __libc_malloc_trim(pad)                          libc_malloc_trim(pad)
 #define __libc_malloc_usable_size(ptr)                   libc_malloc_usable_size(ptr)
 #else /* !CONFIG_DEBUG_MALLOC */
-#define __libc_malloc(n_bytes)                           __core_malloc(n_bytes)
-#define __libc_free(ptr)                                 __core_free(ptr)
-#define __libc_calloc(count,n_bytes)                     __core_calloc(count,n_bytes)
-#define __libc_realloc(ptr,n_bytes)                      __core_realloc(ptr,n_bytes)
-#define __libc_realloc_in_place(ptr,n_bytes)             __core_realloc_in_place(ptr,n_bytes)
-#define __libc_memalign(alignment,n_bytes)               __core_memalign(alignment,n_bytes)
-#define __libc_valloc(n_bytes)                           __core_valloc(n_bytes)
-#define __libc_pvalloc(n_bytes)                          __core_pvalloc(n_bytes)
-#define __libc_posix_memalign(pp,alignment,n_bytes)      __core_posix_memalign(pp,alignment,n_bytes)
-#define __libc_mallopt(parameter_number,parameter_value) __core_mallopt(parameter_number,parameter_value)
-#define __libc_malloc_trim(pad)                          __core_malloc_trim(pad)
-#define __libc_malloc_usable_size(ptr)                   __core_malloc_usable_size(ptr)
+#define __libc_malloc(n_bytes)                           dlmalloc(n_bytes)
+#define __libc_free(ptr)                                 dlfree(ptr)
+#define __libc_calloc(count,n_bytes)                     dlcalloc(count,n_bytes)
+#define __libc_realloc(ptr,n_bytes)                      dlrealloc(ptr,n_bytes)
+#define __libc_realloc_in_place(ptr,n_bytes)             dlrealloc_in_place(ptr,n_bytes)
+#define __libc_memalign(alignment,n_bytes)               dlmemalign(alignment,n_bytes)
+#define __libc_valloc(n_bytes)                           dlvalloc(n_bytes)
+#define __libc_pvalloc(n_bytes)                          dlpvalloc(n_bytes)
+#define __libc_posix_memalign(pp,alignment,n_bytes)      dlposix_memalign(pp,alignment,n_bytes)
+#define __libc_mallopt(parameter_number,parameter_value) dlmallopt(parameter_number,parameter_value)
+#define __libc_malloc_trim(pad)                          dlmalloc_trim(pad)
+#define __libc_malloc_usable_size(ptr)                   dlmalloc_usable_size(ptr)
 #endif /* !CONFIG_DEBUG_MALLOC */
 
 INTDEF SAFE void  *(LIBCCALL libc_memdup)(void const *__restrict ptr, size_t n_bytes);
