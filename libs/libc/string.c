@@ -58,266 +58,31 @@ DECL_BEGIN
 #define DECL INTERN
 #ifdef CONFIG_64BIT_STRING
 #define BITS 64
-#include "templates/string.code"
+#include "templates/memory.code"
 #endif
 #define BITS 32
-#include "templates/string.code"
+#include "templates/memory.code"
 #define BITS 16
-#include "templates/string.code"
+#include "templates/memory.code"
 #define BITS 8
+#include "templates/memory.code"
+
+#define T          char
+#define Ts         signed char
+#define Tu         unsigned char
+#define Tn         int
+#define Xstr(x)    libc_str##x
+#define Xstp(x)    libc_stp##x
+#define TOLOWER(x) libc_tolower(x)
+#define TOUPPER(x) libc_toupper(x)
+#define S          __SIZEOF_CHAR__
 #include "templates/string.code"
 #undef DECL
-
-
-INTERN char *LIBCCALL libc_strend(char const *__restrict str) {
- CHECK_HOST_TEXT(str,1);
- for (;;) {
-  if (!*str) break;
-  ++str;
-#ifdef CONFIG_DEBUG
-  /* Re-validate the first pointer of the next page. */
-  if (!((uintptr_t)str & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(str,1);
-#endif
- }
- return (char *)str;
-}
-INTERN char *LIBCCALL libc_strnend(char const *__restrict str, size_t maxlen) {
- char *end = (char *)str+maxlen;
-#ifdef CONFIG_DEBUG
- if (maxlen) {
-  CHECK_HOST_TEXT(str,1);
-  for (;;) {
-   if (str == end || !*str) break;
-   ++str;
-   /* Re-validate the first pointer of the next page. */
-   if (!((uintptr_t)str & (PAGESIZE-1)))
-          CHECK_HOST_TEXT(str,1);
-  }
- }
-#else
- for (;;) {
-  if (str == end || !*str) break;
-  ++str;
- }
-#endif
- return (char *)str;
-}
-INTERN size_t LIBCCALL libc_strlen(char const *__restrict str) {
- return (size_t)(libc_strend(str)-str);
-}
-INTERN size_t LIBCCALL libc_strnlen(char const *__restrict str, size_t maxlen) {
- return (size_t)(libc_strnend(str,maxlen)-str);
-}
-
-INTERN char *LIBCCALL libc_strchrnul(char const *__restrict haystack, int needle) {
- char *iter = (char *)haystack;
- CHECK_HOST_TEXT(iter,1);
- while (*iter && *iter != needle) {
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return iter;
-}
-INTERN char *LIBCCALL libc_strchr(char const *__restrict haystack, int needle) {
- char *iter = (char *)haystack;
- CHECK_HOST_TEXT(iter,1);
- while (*iter) {
-  if (*iter == needle) return iter;
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return NULL;
-}
-INTERN char *LIBCCALL libc_strrchr(char const *__restrict haystack, int needle) {
- char *iter = (char *)haystack;
- char *result = NULL;
- CHECK_HOST_TEXT(iter,1);
- while (*iter) {
-  if (*iter == needle) result = iter;
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return result;
-}
-INTERN char *LIBCCALL libc_strrchrnul(char const *__restrict haystack, int needle) {
- char *iter = (char *)haystack;
- char *result = NULL;
- CHECK_HOST_TEXT(iter,1);
- while (*iter) {
-  if (*iter == needle) result = iter;
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return result ? result : (char *)haystack-1;
-}
-INTERN char *LIBCCALL libc_strnchr(char const *__restrict haystack,
-                                   int needle, size_t max_chars) {
- char *iter = (char *)haystack;
- char *end = iter+max_chars;
- if (iter != end) CHECK_HOST_TEXT(iter,1);
- while (iter != end && *iter) {
-  if (*iter == needle) return iter;
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return NULL;
-}
-INTERN char *LIBCCALL libc_strnrchr(char const *__restrict haystack,
-                                    int needle, size_t max_chars) {
- char *iter = (char *)haystack;
- char *end = iter+max_chars;
- char *result = NULL;
- if (iter != end) CHECK_HOST_TEXT(iter,1);
- while (iter != end && *iter) {
-  if (*iter == needle) result = iter;
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return result;
-}
-INTERN char *LIBCCALL libc_strnchrnul(char const *__restrict haystack,
-                                      int needle, size_t max_chars) {
- char *iter = (char *)haystack;
- char *end = iter+max_chars;
- if (iter != end) CHECK_HOST_TEXT(iter,1);
- while (iter != end && *iter && *iter != needle) {
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return iter;
-}
-INTERN char *LIBCCALL libc_strnrchrnul(char const *__restrict haystack,
-                                       int needle, size_t max_chars) {
- char *iter = (char *)haystack;
- char *end = iter+max_chars;
- char *result = NULL;
- if (iter != end) CHECK_HOST_TEXT(iter,1);
- while (iter != end && *iter) {
-  if (*iter == needle) result = iter;
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return result ? result : (char *)haystack-1;
-}
-INTERN size_t LIBCCALL libc_stroff(char const *__restrict haystack, int needle) { return libc_strchrnul(haystack,needle)-haystack; }
-INTERN size_t LIBCCALL libc_strroff(char const *__restrict haystack, int needle) { return libc_strrchrnul(haystack,needle)-haystack; }
-INTERN size_t LIBCCALL libc_strnoff(char const *__restrict haystack, int needle, size_t max_chars) { return libc_strnchrnul(haystack,needle,max_chars)-haystack; }
-INTERN size_t LIBCCALL libc_strnroff(char const *__restrict haystack, int needle, size_t max_chars) { return libc_strnrchrnul(haystack,needle,max_chars)-haystack; }
-
-
-INTERN char *LIBCCALL libc_stpcpy(char *__restrict dst,
-                                  char const *__restrict src) {
- size_t len = libc_strlen(src);
- libc_memcpy(dst,src,(len+1)*sizeof(char));
- return dst+len;
-}
-INTERN char *LIBCCALL libc_stpncpy(char *__restrict dst,
-                                   char const *__restrict src, size_t n) {
- size_t len = libc_strnlen(src,n);
- libc_memcpy(dst,src,(len+!src[len])*sizeof(char));
- return dst+len;
-}
-
-INTERN int LIBCCALL libc_strcmp(char const *s1, char const *s2) {
- char a,b; int result;
- do a = *s1++,b = *s2++,
-    result = (int)a-(int)b;
- while (result == 0 && a);
- return result;
-}
-INTERN int LIBCCALL libc_strncmp(char const *s1, char const *s2, size_t n) {
- char a,b,*end = (char *)s1+n; int result;
- if (n) do a = *s1++,b = *s2++,
-           result = (int)a-(int)b;
- while (result == 0 && a && s1 != end);
- return result;
-}
-INTERN int LIBCCALL libc_strcasecmp(char const *s1, char const *s2) {
- char a,b; int result;
- do a = libc_tolower(*s1++),
-    b = libc_tolower(*s2++),
-    result = (int)a-(int)b;
- while (result == 0 && a);
- return result;
-}
-INTERN int LIBCCALL libc_strncasecmp(char const *s1, char const *s2, size_t n) {
- char a,b,*end = (char *)s1+n; int result;
- if (n) do a = libc_tolower(*s1++),
-           b = libc_tolower(*s2++),
-           result = (int)a-(int)b;
- while (result == 0 && a && s1 != end);
- return result;
-}
 
 INTERN void *LIBCCALL libc_mempcpy(void *__restrict dst,
                                    void const *__restrict src, size_t n) {
  return (void *)((uintptr_t)libc_memcpy(dst,src,n)+n);
 }
-INTERN char *LIBCCALL libc_strstr(char const *haystack,
-                                  char const *needle) {
- char *hay_iter,*hay2; char const *ned_iter; char ch,needle_start;
- assert(haystack);
- assert(needle);
- hay_iter = (char *)haystack;
- needle_start = *needle++;
- while ((CHECK_HOST_TEXT(hay_iter,1),ch = *hay_iter++) != '\0') {
-  if (ch == needle_start) {
-   hay2 = hay_iter,ned_iter = needle;
-   while ((CHECK_HOST_TEXT(ned_iter,1),ch = *ned_iter++) != '\0') {
-    if (*hay2++ != ch) goto miss;
-   }
-   return hay_iter-1;
-  }
-miss:;
- }
- return NULL;
-}
-
-INTERN char *LIBCCALL libc_strcasestr(char const *haystack,
-                                      char const *needle) {
- char *hay_iter,*hay2; char const *ned_iter; char ch,needle_start;
- assert(haystack);
- assert(needle);
- hay_iter = (char *)haystack;
- needle_start = *needle++;
- while ((CHECK_HOST_TEXT(hay_iter,1),ch = *hay_iter++) != '\0') {
-  if (ch == needle_start) {
-   hay2 = hay_iter,ned_iter = needle;
-   while ((CHECK_HOST_TEXT(ned_iter,1),ch = *ned_iter++) != '\0') {
-    if (libc_tolower(*hay2++) != libc_tolower(ch)) goto miss;
-   }
-   return hay_iter-1;
-  }
-miss:;
- }
- return NULL;
-}
-
 INTERN void *LIBCCALL libc_memmem(void const *haystack, size_t haystacklen,
                                   void const *needle, size_t needlelen) {
  byte_t *iter,*end;
@@ -376,8 +141,6 @@ INTERN int LIBCCALL libc___ffs64(s64 i) { DO_FFS(i) }
 #ifndef __KERNEL__
 INTERN void LIBCCALL libc_bcopy(void const *src, void *dst, size_t n) { libc_memmove(dst,src,n); }
 INTERN void LIBCCALL libc_bzero(void *s, size_t n) { libc_memset(s,0,n); }
-INTERN char *LIBCCALL libc_strcpy(char *__restrict dst, char const *__restrict src) { return (char *)libc_memcpy(dst,src,(libc_strlen(src)+1)*sizeof(char)); }
-INTERN char *LIBCCALL libc_strncpy(char *__restrict dst, char const *__restrict src, size_t n) { return (char *)libc_memcpy(dst,src,(libc_strnlen(src,n)+1)*sizeof(char)); }
 
 INTERN char *LIBCCALL libc_index(char const *__restrict haystack, int needle) {
  char *iter = (char *)haystack;
@@ -423,18 +186,6 @@ INTERN char *LIBCCALL libc_basename(char const *__restrict path) {
  *iter = '\0'; /* Trim all ending '/'-characters. */
  while (iter != path && iter[-1] != '/') --iter; /* Scan until the previous '/'. */
  return iter; /* Returns string after previous '/'. */
-}
-INTERN char *LIBCCALL libc_strcat(char *__restrict dst, char const *__restrict src) {
- libc_memcpy(libc_strend(dst),src,
-            (libc_strlen(src)+1)*sizeof(char));
- return dst;
-}
-INTERN char *LIBCCALL libc_strncat(char *__restrict dst, char const *__restrict src, size_t n) {
- size_t maxlen = libc_strnlen(src,n);
- char *target = libc_strend(dst);
- libc_memcpy(target,src,maxlen*sizeof(char));
- if (maxlen < n) target[maxlen] = '\0';
- return dst;
 }
 INTERN size_t LIBCCALL libc_strcspn(char const *s, char const *reject) {
  char const *iter = s;
@@ -1082,43 +833,29 @@ INTERN int LIBCCALL libc_wmemcmp(wchar_t const *s1, wchar_t const *s2, size_t n)
 INTERN wchar_t *LIBCCALL libc_wmemchr(wchar_t const *s, wchar_t c, size_t n) { return (wchar_t *)libc_memchr(s,(int)c,n*sizeof(wchar_t)); }
 #endif
 
-INTERN wchar_t *LIBCCALL libc_wcscpy(wchar_t *__restrict dst, wchar_t const *__restrict src) { return libc_wmemcpy(dst,src,(libc_wcslen(src)+1)*sizeof(wchar_t)); }
-INTERN wchar_t *LIBCCALL libc_wcsncpy(wchar_t *__restrict dst, wchar_t const *__restrict src, size_t n) { return libc_wmemcpy(dst,src,(libc_wcsnlen(src,n)+1)*sizeof(wchar_t)); }
-INTERN wchar_t *LIBCCALL libc_wcscat(wchar_t *__restrict dst, wchar_t const *__restrict src) { libc_wmemcpy(libc_wcsend(dst),src,(libc_wcslen(src)+1)*sizeof(wchar_t)); return dst; }
-INTERN wchar_t *LIBCCALL libc_wcsncat(wchar_t *__restrict dst, wchar_t const *__restrict src, size_t n) { libc_wmemcpy(libc_wcsend(dst),src,(libc_wcsnlen(src,n)+1)*sizeof(wchar_t)); return dst; }
-INTERN wchar_t *LIBCCALL libc_wcpcpy(wchar_t *__restrict dst, wchar_t const *__restrict src) { size_t len = libc_wcslen(src); return libc_wmemcpy(dst,src,(len+1)*sizeof(wchar_t))+len; }
-INTERN wchar_t *LIBCCALL libc_wcpncpy(wchar_t *__restrict dst, wchar_t const *__restrict src, size_t n) { size_t len = libc_wcsnlen(src,n); return libc_wmemcpy(dst,src,(len+1)*sizeof(wchar_t))+len; }
+#define T          wchar_t
+#if __SIZEOF_WCHAR_T__ == 4
+#define Ts         s32
+#define Tu         u32
+#elif __SIZEOF_WCHAR_T__ == 2
+#define Ts         s16
+#define Tu         u16
+#else
+#error FIXME
+#endif
+#define Tn         wint_t
+#define Xstr(x)    libc_wcs##x
+#define Xstp(x)    libc_wcp##x
+#define TOLOWER(x) libc_towlower(x)
+#define TOUPPER(x) libc_towupper(x)
+#define S          __SIZEOF_CHAR__
+#define IS_WIDE    1
+#define DECL       INTERN
+#include "templates/string.code"
+#undef DECL
+
+
 INTERN wchar_t *LIBCCALL libc_wmempcpy(wchar_t *__restrict s1, wchar_t const *__restrict s2, size_t n) { return libc_wmemcpy(s1,s2,n)+n; }
-INTERN int LIBCCALL libc_wcscmp(wchar_t const *s1, wchar_t const *s2) {
- wchar_t a,b; int result;
- do a = *s1++,b = *s2++,
-    result = (int)a-(int)b;
- while (result == 0 && a);
- return result;
-}
-INTERN int LIBCCALL libc_wcsncmp(wchar_t const *s1, wchar_t const *s2, size_t n) {
- wchar_t a,b,*end = (wchar_t *)s1+n; int result;
- if (n) do a = *s1++,b = *s2++,
-           result = (int)a-(int)b;
- while (result == 0 && a && s1 != end);
- return result;
-}
-INTERN int LIBCCALL libc_wcscasecmp(wchar_t const *s1, wchar_t const *s2) {
- wchar_t a,b; int result;
- do a = libc_towlower(*s1++),
-    b = libc_towlower(*s2++),
-    result = (int)a-(int)b;
- while (result == 0 && a);
- return result;
-}
-INTERN int LIBCCALL libc_wcsncasecmp(wchar_t const *s1, wchar_t const *s2, size_t n) {
- wchar_t a,b,*end = (wchar_t *)s1+n; int result;
- if (n) do a = libc_towlower(*s1++),
-           b = libc_towlower(*s2++),
-           result = (int)a-(int)b;
- while (result == 0 && a && s1 != end);
- return result;
-}
 INTERN int LIBCCALL libc_wcscasecmp_l(wchar_t const *s1, wchar_t const *s2, locale_t loc) { NOT_IMPLEMENTED(); return libc_wcscasecmp(s1,s2); }
 INTERN int LIBCCALL libc_wcsncasecmp_l(wchar_t const *s1, wchar_t const *s2, size_t n, locale_t loc) { NOT_IMPLEMENTED(); return libc_wcsncasecmp(s1,s2,n); }
 INTERN int LIBCCALL libc_wcscoll(wchar_t const *s1, wchar_t const *s2) { NOT_IMPLEMENTED(); return 0; }
@@ -1138,10 +875,6 @@ INTERN long int LIBCCALL libc_wcstol(wchar_t const *__restrict nptr, wchar_t **_
 INTERN unsigned long int LIBCCALL libc_wcstoul(wchar_t const *__restrict nptr, wchar_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
 INTERN size_t LIBCCALL libc_wcsftime(wchar_t *__restrict s, size_t maxsize, wchar_t const *__restrict format, struct tm const *__restrict tp) { NOT_IMPLEMENTED(); return 0; }
 INTERN wchar_t *LIBCCALL libc_wcstok(wchar_t *__restrict s, wchar_t const *__restrict delim, wchar_t **__restrict ptr) { NOT_IMPLEMENTED(); return 0; }
-INTERN size_t LIBCCALL libc_wcslen(wchar_t const *s) { return (size_t)(libc_wcsend(s)-s); }
-INTERN size_t LIBCCALL libc_wcsnlen(wchar_t const *s, size_t maxlen) { return (size_t)(libc_wcsnend(s,maxlen)-s); }
-INTERN wchar_t *LIBCCALL libc_wcsend(wchar_t const *s) { for (; *s; ++s); return (wchar_t *)s; }
-INTERN wchar_t *LIBCCALL libc_wcsnend(wchar_t const *s, size_t maxlen) { wchar_t const *end = s+maxlen; for (; s != end && *s; ++s); return (wchar_t *)s; }
 INTERN size_t LIBCCALL libc_wcsspn(wchar_t const *haystack, wchar_t const *accept) {
  wchar_t const *iter = haystack;
  while (libc_wcschr(accept,*iter)) ++iter;
@@ -1152,22 +885,6 @@ INTERN size_t LIBCCALL libc_wcscspn(wchar_t const *haystack, wchar_t const *reje
  while (*iter && !libc_wcschr(reject,*iter)) ++iter;
  return (size_t)(iter-haystack);
 }
-INTERN wchar_t *LIBCCALL libc_wcschr(wchar_t const *haystack, wchar_t wc) {
- wchar_t *iter = (wchar_t *)haystack;
- for (; *iter; ++iter) if (*iter == wc) return iter;
- return NULL;
-}
-INTERN wchar_t *LIBCCALL libc_wcsrchr(wchar_t const *haystack, wchar_t wc) {
- wchar_t *iter = (wchar_t *)haystack;
- wchar_t *result = NULL;
- for (; *iter; ++iter) if (*iter == wc) result = iter;
- return result;
-}
-INTERN wchar_t *LIBCCALL libc_wcschrnul(wchar_t const *s, wchar_t wc) {
- wchar_t *iter = (wchar_t *)s;
- while (*iter && *iter != wc) ++iter;
- return iter;
-}
 INTERN wchar_t *LIBCCALL libc_wcspbrk(wchar_t const *haystack, wchar_t const *accept) {
  wchar_t *hay_iter = (wchar_t *)haystack;
  wchar_t const *ned_iter; wchar_t haych,ch;
@@ -1176,26 +893,6 @@ INTERN wchar_t *LIBCCALL libc_wcspbrk(wchar_t const *haystack, wchar_t const *ac
   while ((ch = *ned_iter++) != '\0') {
    if (haych == ch) return hay_iter-1;
   }
- }
- return NULL;
-}
-INTERN wchar_t *LIBCCALL libc_wcsstr(wchar_t const *haystack, wchar_t const *needle) {
- wchar_t *hay_iter,*hay2;
- wchar_t const *ned_iter;
- wchar_t ch,needle_start;
- assert(haystack);
- assert(needle);
- hay_iter = (wchar_t *)haystack;
- needle_start = *needle++;
- while ((ch = *hay_iter++) != '\0') {
-  if (ch == needle_start) {
-   hay2 = hay_iter,ned_iter = needle;
-   while ((ch = *ned_iter++) != '\0') {
-    if (*hay2++ != ch) goto miss;
-   }
-   return hay_iter-1;
-  }
-miss:;
  }
  return NULL;
 }

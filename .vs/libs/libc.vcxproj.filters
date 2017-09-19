@@ -37,13 +37,16 @@
     <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code">
       <Filter>templates</Filter>
     </None>
-    <None Include="..\..\libs\libc\templates\string.code">
-      <Filter>templates</Filter>
-    </None>
     <None Include="..\..\libs\libc\dlmalloc.c.inl" />
     <None Include="..\..\libs\libc\stdio-file.c.inl" />
     <None Include="..\..\libs\libc\strerror.inl" />
     <None Include="..\..\libs\libc\typecore.c.inl" />
+    <None Include="..\..\libs\libc\templates\memory.code">
+      <Filter>templates</Filter>
+    </None>
+    <None Include="..\..\libs\libc\templates\string.code">
+      <Filter>templates</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\libc\system.h" />

@@ -41,6 +41,7 @@
     <None Include="..\..\libs\libc\stdio-file.c.inl" />
     <None Include="..\..\libs\libc\strerror.inl" />
     <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code" />
+    <None Include="..\..\libs\libc\templates\memory.code" />
     <None Include="..\..\libs\libc\templates\string.code" />
     <None Include="..\..\libs\libc\templates\strtouint.code" />
     <None Include="..\..\libs\libc\typecore.c.inl" />

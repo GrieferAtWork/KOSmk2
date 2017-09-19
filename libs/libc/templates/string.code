@@ -18,427 +18,267 @@
  */
 
 /*
- * #define T     ... <Bit-width type>
- * #define X(x)  ... <Function name generator>
- * #define S     ... <Bit-width in bytes>
- * #define w     ... <Assembly nmemonic>
- * #define W     ... <Assembly nmemonic as string>
- * #define WM(x) ... <Translate 'x' into a size value compatible with 'W'>
- * #define B     ... <Parameter list version of 'T' (memset(... int byte); memsetw(... u16 word))>
- * #define sB    ... <Same as 'B', but signed>
- * #define vB    ... <Same as 'B', but void for smallest width>
- * #define n     ... <length name (optional)>
- * #define h     ... <Bit-width name (optional)>
+ * #define T          ... <character type> (e.g.: 'T', 'wchar_t')
+ * #define Ts         ... <signed type> (e.g.: 'signed T', 's32')
+ * #define Tu         ... <unsigned type> (e.g.: 'unsigned T', 'u32')
+ * #define Tn         ... <needle type> (e.g.: 'int', 'wchar_t')
+ * #define Xstr(x)    ... <Symbol name generator> (e.g.: 'libc_str##x', 'libc_wcs##x')
+ * #define Xstp(x)    ... <Symbol name generator> (e.g.: 'libc_stp##x', 'libc_wcp##x')
+ * #define S          ... <Bit-width in bytes> (e.g.: '__SIZEOF_CHAR__', '__SIZEOF_WCHAR_T__')
+ * #define NUL        ... <\0-character; defaults to ZERO(0)>
+ * #define TOLOWER(x) ... <tolower()-function>
+ * #define TOUPPER(x) ... <toupper()-function>
+ * #define IS_WIDE	  ... <defined for the WIDE-API>
  */ 
-
-#if   BITS ==  8
-#	define T  u8
-#	define X(x)x
-#	define S   1
-#	define w   b
-#	define W  "b"
-#	define B  int
-#	define sB int
-#	define vB void
-#	define n   n_bytes
-#	define h   byte
-#elif BITS == 16
-#	define T u16
-#	define X(x)x##w
-#	define S   2
-#	define w   w
-#	define W  "w"
-#	define B  u16
-#	define sB s16
-#	define vB u16
-#	define n   n_words
-#elif BITS == 32
-#	define T u32
-#	define X(x)x##l
-#	define S   4
-#	define w   l
-#	define W  "l"
-#	define B  u32
-#	define sB s32
-#	define vB u32
-#	define n   n_dwords
-#elif BITS == 64
-#	define T u64
-#	define X(x)x##q
-#	define S   8
-#ifdef __x86_64__
-#	define w   q
-#	define W  "q"
-#else
-#	define w   l
-#	define W  "l"
-#	define WM(x) ((x)*2)
-#endif
-#	define B  u64
-#	define sB s64
-#	define vB u64
-#	define n   n_qwords
-#else
-#	error "Invalid BITS"
+#ifndef NUL
+#define NUL 0
 #endif
 
-#ifndef WM
-#	define WM(x) (x)
-#endif
-
-#	define STRING_LARGE_OP_LIMIT 0x200
-#ifdef CONFIG_64BIT_STRING
-#	define STRING_ALIGNMENT_MASK 7
-#else
-#	define STRING_ALIGNMENT_MASK 3
-#endif
-
-
-#ifdef CONFIG_DEBUG
-#define CHECK_DF() \
-{	register u32 temp; \
-	__asm__ __volatile__("pushfl\npopl %0\n" : "=g" (temp) : : "memory"); \
-	assertf(!(temp&EFLAGS_DF),"Direction flag is set (%x)\n",temp); \
-}
-#else
-#define CHECK_DF() {}
-#endif
-
-FORCELOCAL void *LIBCCALL X(core_memcpy)
-(void *__restrict dst, void const *__restrict src, size_t n) {
-	CHECK_HOST_DATA(dst,n*S);
-	CHECK_HOST_TEXT(src,n*S);
-	CHECK_DF();	
 #if S == 1
-	if (n >= STRING_LARGE_OP_LIMIT) {
-		switch (n & STRING_ALIGNMENT_MASK) {
-		case 0:
-#ifdef CONFIG_64BIT_STRING
-			return core_memcpyq(dst,src,n >> 3);
-		case 4:
-#endif
-			return core_memcpyl(dst,src,n >> 2);
-#ifdef CONFIG_64BIT_STRING
-		case 6:
-#endif
-		case 2:
-			return core_memcpyw(dst,src,n >> 1);
-		default: break;
-		}
-	}
-#endif
-#if defined(__i386__) || defined(__x86_64__)
-	__asm__ __volatile__("rep; movs" W "\n"
-	                     :
-	                     : "D" (dst)
-	                     , "S" (src)
-	                     , "c" (WM(n))
-	                     : "memory");
+#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpy(dst,src,n))
+#elif S == 2
+#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpyw(dst,src,n))
+#elif S == 4
+#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpyl(dst,src,n))
+#elif S == 8 && defined(CONFIG_64BIT_STRING)
+#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpyq(dst,src,n))
 #else
-	{	T *_dst = (T *)dst;
-		T *_src = (T *)src;
-		while (n--) *_dst++ = *_src++;
-	}
+#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpyq(dst,src,(n)*S))
 #endif
-	return dst;
-}
 
-DECL void *LIBCCALL X(libc_memcpy)
-(void *__restrict dst, void const *__restrict src, size_t n) {
-	assertf(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
-	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
-	           dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
-	assertf(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
-	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
-	           dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
-	return X(core_memcpy)(dst,src,n);
-}
-DECL void *LIBCCALL PP_CAT2(X(libc__memcpy),_d)
-(void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO) {
-	CHECK_HOST_DATA(dst,n*S);
-	CHECK_HOST_TEXT(src,n*S);
-	assertf_d(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
-	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
-	             dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
-	assertf_d(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
-	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
-	             dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
-	return X(core_memcpy)(dst,src,n);
-}
 
-DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
-	CHECK_HOST_DATA(dst,n*S);
-#if S == 1
-	if (n >= STRING_LARGE_OP_LIMIT) {
-		switch (n & STRING_ALIGNMENT_MASK) {
-		case 0:
-#ifdef CONFIG_64BIT_STRING
-			return libc_memsetq(dst,(u64)0x0101010101010101ull*h,n >> 3);
-		case 4:
-#endif
-			return libc_memsetl(dst,(u32)0x01010101u*h,n >> 2);
-#ifdef CONFIG_64BIT_STRING
-		case 6:
-#endif
-		case 2:
-			return libc_memsetw(dst,(u16)0x0101u*h,n >> 1);
-		default: break;
-		}
-	}
-#endif
-#if defined(__i386__) || defined(__x86_64__)
-	CHECK_DF();
-	__asm__ __volatile__("rep; stos" W "\n"
-	                     :
-	                     : "D" (dst)
-	                     , "a" (h)
-	                     , "c" (WM(n))
-	                     : "memory", "esi");
-#else
-	{	T *iter = (T *)dst;
-		while (n--) *iter++ = (T)h;
-	}
-#endif
- return dst;
-}
-
-DECL sB LIBCCALL X(libc_memcmp)
-(void const *a, void const *b, size_t n) {
-#if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
-	sB result = 0;
-	CHECK_DF();
-	__asm__ __volatile__("    jcxz 1f\n"
-						 "    repe cmps" W "\n"
-						 "    seta %b0\n"
-						 "    jnb 1f\n"
-						 "    mov $-1, %0\n"
-						 "1:\n"
-						 : "+a" (result)
-						 : "D" (a)
-						 , "S" (b)
-						 , "c" (WM(n))
-						 : "memory", "cc");
+DECL int LIBCCALL Xstr(cmp)(T const *s1, T const *s2) {
+	T a,b; int result;
+	do {
+		a = *s1++,b = *s2++,
+		result = (int)a-(int)b;
+	} while (result == 0 && a);
 	return result;
-#else
-	T av,bv; T const *aiter,*biter,*end;
-	av = bv = 0;
-	CHECK_HOST_TEXT(a,n*S);
-	CHECK_HOST_TEXT(b,n*S);
-	end = (aiter = (T const *)a)+n,biter = (T const *)b;
-	while (aiter != end && ((av = *aiter++) == (bv = *biter++)));
-	return (sB)(av-bv);
-#endif
 }
 
-DECL vB *LIBCCALL X(libc_memchr)
-(vB const *__restrict haystack, B needle, size_t n) {
-#if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
-	vB *result;
-	CHECK_DF();
-	__asm__ __volatile__("    jcxz 2f\n"
-	                     "    repne scas" W "\n"
-	                     "    mov %%edi, %0\n"
-	                     "    je 1f\n"
-	                     "2:  xor %0, %0\n"
-#if S == 1
-	                     "    inc %0\n"
-	                     "1:  dec %0\n"
-#else
-	                     "    add $" PP_STR(S) ", %0\n"
-	                     "1:  sub $" PP_STR(S) ", %0\n"
-#endif
-	                     : "=a" (result)
-	                     : "D" (haystack)
-	                     , "a" (needle)
-	                     , "c" (WM(n))
-	                     : "memory", "cc");
-	return result;
-#else
-	T *iter,*end;
-	end = (iter = (T *)haystack)+n;
-#ifdef CONFIG_DEBUG
-	if (n) CHECK_HOST_TEXT(iter,S);
-#endif
-	for (; iter != end; ++iter) {
-		if (*iter == (T)needle) return (vB *)iter;
-#ifdef CONFIG_DEBUG
-		/* Re-validate the first pointer of the next page. */
-		if (!((uintptr_t)iter & (PAGESIZE-1)))
-		    CHECK_HOST_TEXT(iter,S);
-#endif
-	}
+DECL T *LIBCCALL Xstr(end)(T const *__restrict str) {
+	for (; *str; ++str);
+	return (T *)str;
+}
+
+DECL T *LIBCCALL Xstr(nend)
+(T const *__restrict str, size_t maxlen) {
+	T *end = (T *)str+maxlen;
+	for (; str != end && *str; ++str);
+	return (T *)str;
+}
+
+DECL size_t LIBCCALL Xstr(len)
+(T const *__restrict str) {
+	return (size_t)(Xstr(end)(str)-str);
+}
+
+DECL size_t LIBCCALL Xstr(nlen)
+(T const *__restrict str, size_t maxlen) {
+	return (size_t)(Xstr(nend)(str,maxlen)-str);
+}
+
+DECL T *LIBCCALL Xstr(chrnul)
+(T const *__restrict haystack, int needle) {
+	T *iter = (T *)haystack;
+	for (; *iter && *iter != needle; ++iter);
+	return iter;
+}
+
+DECL T *LIBCCALL Xstr(chr)
+(T const *__restrict haystack, int needle) {
+	T *iter = (T *)haystack;
+	for (; *iter; ++iter) if (*iter == needle) return iter;
 	return NULL;
-#endif
 }
 
+DECL T *LIBCCALL Xstr(rchr)
+(T const *__restrict haystack, int needle) {
+	T *result = NULL,*iter = (T *)haystack;
+	for (; *iter; ++iter) if (*iter == needle) result = iter;
+	return result;
+}
 
-DECL vB *LIBCCALL X(libc_memrchr)
-(vB const *__restrict haystack, B needle, size_t n) {
-	T *iter = (T *)haystack+n;
-	/* TODO: 'rep scas' */
-#ifdef CONFIG_DEBUG
-	if (n) CHECK_HOST_TEXT(iter-1,S);
-#endif
-	while (iter != haystack) {
-#ifdef CONFIG_DEBUG
-		/* Re-validate the first pointer of the prev page. */
-		if (!((uintptr_t)iter & (PAGESIZE-1)))
-		    CHECK_HOST_TEXT(iter-1,S);
-#endif
-		if (*--iter == (T)needle) return (vB *)iter;
+#ifndef IS_WIDE
+DECL T *LIBCCALL Xstr(rchrnul)
+(T const *__restrict haystack, int needle) {
+	T *result = NULL,*iter = (T *)haystack;
+	for (; *iter; ++iter) if (*iter == needle) result = iter;
+	return result ? result : (T *)haystack-1;
+}
+
+DECL T *LIBCCALL Xstr(nchr)
+(T const *__restrict haystack, int needle, size_t max_chars) {
+	T *iter = (T *)haystack,*end = iter+max_chars;
+	for (; iter != end && *iter; ++iter) if (*iter == needle) return iter;
+	return NULL;
+}
+
+DECL T *LIBCCALL Xstr(nrchr)
+(T const *__restrict haystack, int needle, size_t max_chars) {
+	T *iter = (T *)haystack,*end = iter+max_chars,*result = NULL;
+	for (; iter != end && *iter; ++iter) if (*iter == needle) result = iter;
+	return result;
+}
+
+DECL T *LIBCCALL Xstr(nchrnul)
+(T const *__restrict haystack, int needle, size_t max_chars) {
+	T *iter = (T *)haystack,*end = iter+max_chars;
+	for (; iter != end && *iter && *iter != needle; ++iter);
+	return iter;
+}
+
+DECL T *LIBCCALL Xstr(nrchrnul)
+(T const *__restrict haystack, int needle, size_t max_chars) {
+	T *iter = (T *)haystack,*end = iter+max_chars,*result = NULL;
+	for (; iter != end && *iter; ++iter) if (*iter == needle) result = iter;
+	return result ? result : (T *)haystack-1;
+}
+
+DECL size_t LIBCCALL Xstr(off)
+(T const *__restrict haystack, int needle) {
+	return Xstr(chrnul)(haystack,needle)-haystack;
+}
+
+DECL size_t LIBCCALL Xstr(roff)
+(T const *__restrict haystack, int needle) {
+	return Xstr(rchrnul)(haystack,needle)-haystack;
+}
+
+DECL size_t LIBCCALL Xstr(noff)
+(T const *__restrict haystack, int needle, size_t max_chars) {
+	return Xstr(nchrnul)(haystack,needle,max_chars)-haystack;
+}
+
+DECL size_t LIBCCALL Xstr(nroff)
+(T const *__restrict haystack, int needle, size_t max_chars) {
+	return Xstr(nrchrnul)(haystack,needle,max_chars)-haystack;
+}
+#endif /* !IS_WIDE */
+
+DECL T *LIBCCALL Xstp(cpy)
+(T *__restrict dst, T const *__restrict src) {
+	size_t len = Xstr(len)(src);
+	STR_MEMCPY(dst,src,len+1);
+	return dst+len;
+}
+
+DECL T *LIBCCALL Xstp(ncpy)
+(T *__restrict dst, T const *__restrict src, size_t n) {
+	size_t len = Xstr(nlen)(src,n);
+	STR_MEMCPY(dst,src,len+!src[len]);
+	return dst+len;
+}
+
+DECL int LIBCCALL Xstr(ncmp)(T const *s1, T const *s2, size_t n) {
+ T a,b,*end = (T *)s1+n; int result;
+ if (n) {
+	do {
+		a = *s1++,b = *s2++,
+		result = (int)a-(int)b;
+	} while (result == 0 && a && s1 != end);
+ }
+ return result;
+}
+
+DECL int LIBCCALL Xstr(casecmp)(T const *s1, T const *s2) {
+	T a,b; int result;
+	do {
+		a = TOLOWER(*s1++),
+		b = TOLOWER(*s2++),
+		result = (int)a-(int)b;
+	} while (result == 0 && a);
+	return result;
+}
+
+DECL int LIBCCALL Xstr(ncasecmp)(T const *s1, T const *s2, size_t n) {
+ T a,b,*end = (T *)s1+n; int result;
+ if (n) {
+	do {
+		a = TOLOWER(*s1++),
+		b = TOLOWER(*s2++),
+		result = (int)a-(int)b;
+	} while (result == 0 && a && s1 != end);
+ }
+ return result;
+}
+
+DECL T *LIBCCALL Xstr(str)
+(T const *haystack, T const *needle) {
+	T *hay_iter = (assert(haystack),(T *)haystack),*hay2;
+	T ch,needle_start = (assert(needle),*needle++);
+	T const *ned_iter;
+	while ((ch = *hay_iter++) != NUL) {
+		if (ch == needle_start) {
+			hay2 = hay_iter,ned_iter = needle;
+			while ((ch = *ned_iter++) != NUL) {
+				if (*hay2++ != ch) goto miss;
+			}
+			return hay_iter-1;
+		}
+miss:;
 	}
 	return NULL;
 }
 
-DECL vB *LIBCCALL X(libc_memend)
-(vB const *__restrict haystack, B needle, size_t n) {
-	T *iter,*end;
-	/* TODO: 'rep scas' */
-	end = (iter = (T *)haystack)+n;
-#ifdef CONFIG_DEBUG
-	if (n) CHECK_HOST_TEXT(iter,S);
-#endif
-	for (; iter != end; ++iter) {
-		if (*iter == (T)needle) break;
-#ifdef CONFIG_DEBUG
-		/* Re-validate the first pointer of the next page. */
-		if (!((uintptr_t)iter & (PAGESIZE-1)))
-		    CHECK_HOST_TEXT(iter,S);
-#endif
+
+#ifndef IS_WIDE
+DECL T *LIBCCALL Xstr(casestr)(T const *haystack, T const *needle) {
+	T *hay_iter = (assert(haystack),(T *)haystack),*hay2;
+	T ch,needle_start = (assert(needle),*needle++);
+	T const *ned_iter;
+	while ((ch = *hay_iter++) != NUL) {
+		if (ch == needle_start) {
+			hay2 = hay_iter,ned_iter = needle;
+			while ((ch = *ned_iter++) != NUL) {
+				if (TOLOWER(*hay2++) != TOLOWER(ch))
+					goto miss;
+			}
+			return hay_iter-1;
+		}
+miss:;
 	}
-	return (vB *)iter;
+	return NULL;
+}
+#endif /* !IS_WIDE */
+
+#ifndef __KERNEL__
+DECL T *LIBCCALL Xstr(cpy)
+(T *__restrict dst, T const *__restrict src) {
+	return STR_MEMCPY(dst,src,Xstr(len)(src)+1);
 }
 
-DECL vB *LIBCCALL X(libc_memrend)
-(vB const *__restrict haystack, B needle, size_t n) {
-	T *iter = (T *)haystack+n;
-#ifdef CONFIG_DEBUG
-	if (n) CHECK_HOST_TEXT(iter-1,S);
-#endif
-	while (iter != haystack) {
-#ifdef CONFIG_DEBUG
-		/* Re-validate the first pointer of the prev page. */
-		if (!((uintptr_t)iter & (PAGESIZE-1)))
-		    CHECK_HOST_TEXT(iter-1,S);
-#endif
-		if (*--iter == (T)needle) break;
-	}
-	return (vB *)iter;
+DECL T *LIBCCALL Xstr(ncpy)
+(T *__restrict dst, T const *__restrict src, size_t n) {
+	return STR_MEMCPY(dst,src,Xstr(nlen)(src,n)+1);
 }
 
-DECL size_t LIBCCALL X(libc_memlen)
-(vB const *__restrict haystack, B needle, size_t n) {
-	return (uintptr_t)X(libc_memend)(haystack,needle,n) - (uintptr_t)haystack;
-}
-DECL size_t LIBCCALL X(libc_memrlen)
-(vB const *__restrict haystack, B needle, size_t n) {
-	return (uintptr_t)X(libc_memrend)(haystack,needle,n) - (uintptr_t)haystack;
-}
-
-
-
-DECL vB *LIBCCALL X(libc_rawmemchr)
-(vB const *__restrict haystack, B needle) {
-	T *iter = (T *)haystack;
-	/* TODO: 'rep scas' */
-#ifdef CONFIG_DEBUG
-	CHECK_HOST_TEXT(iter,S);
-#endif
-	for (;; ++iter) {
-		if (*iter == (T)needle) break;
-#ifdef CONFIG_DEBUG
-		/* Re-validate the first pointer of the next page. */
-		if (!((uintptr_t)iter & (PAGESIZE-1)))
-		    CHECK_HOST_TEXT(iter,S);
-#endif
-	}
-	return (vB *)iter;
-}
-
-DECL vB *LIBCCALL X(libc_rawmemrchr)
-(vB const *__restrict haystack, B needle) {
-	T *iter = (T *)haystack;
-#ifdef CONFIG_DEBUG
-	CHECK_HOST_TEXT(iter-1,S);
-#endif
-	while (iter != haystack) {
-#ifdef CONFIG_DEBUG
-		/* Re-validate the first pointer of the prev page. */
-		if (!((uintptr_t)iter & (PAGESIZE-1)))
-		    CHECK_HOST_TEXT(iter-1,S);
-#endif
-		if (*--iter == (T)needle) break;
-	}
-	return (vB *)iter;
-}
-
-DECL size_t (LIBCCALL X(libc_rawmemlen))
-(vB const *__restrict haystack, B needle) {
-	return (uintptr_t)X(libc_rawmemchr)(haystack,needle) - (uintptr_t)haystack;
-}
-DECL size_t (LIBCCALL X(libc_rawmemrlen))
-(vB const *__restrict haystack, B needle) {
-	return (uintptr_t)X(libc_rawmemrchr)(haystack,needle) - (uintptr_t)haystack;
-}
-
-
-#if S != 1
-DECL void *LIBCCALL X(libc_mempat)
-(void *__restrict dst, B pattern, size_t n_bytes) {
-	byte_t *iter = (byte_t *)dst;
-#if S == 2
-	if (n_bytes && (uintptr_t)iter & (S-1)) {
-		*iter = ((u8 *)&pattern)[1];
-		++iter,--n_bytes;
-	}
-#else
-	while (n_bytes && (uintptr_t)iter & (S-1)) {
-		*iter = ((u8 *)&pattern)[(uintptr_t)iter & (S-1)];
-		++iter,--n_bytes;
-	}
-#endif
-	X(libc_memset)(dst,pattern,n_bytes/S);
-	n_bytes &= (S-1);
-#if S == 2
-	if (n_bytes) *iter = ((u8 *)&pattern)[0];
-#else
-	while (n_bytes) {
-		*iter = ((u8 *)&pattern)[(uintptr_t)iter & (S-1)];
-		++iter,--n_bytes;
-	}
-#endif
-	return dst;
-}
-#endif
-
-INTERN void *LIBCCALL X(libc_memmove)(void *dst, void const *src, size_t n) {
-	T *iter,*end; T const *siter;
-	CHECK_HOST_DATA(dst,n*S);
-	CHECK_HOST_TEXT(src,n*S);
-	if (dst < src) {
-		siter = (T const *)src;
-		end = (iter = (T *)dst)+n;
-		while (iter != end) *iter++ = *siter++;
-	} else {
-		siter = (T const *)src+n;
-		iter = (end = (T *)dst)+n;
-		while (iter != end) *--iter = *--siter;
-	}
+DECL T *LIBCCALL Xstr(cat)(T *__restrict dst, T const *__restrict src) {
+	STR_MEMCPY(Xstr(end)(dst),src,Xstr(len)(src)+1);
 	return dst;
 }
 
+DECL T *LIBCCALL Xstr(ncat)(T *__restrict dst, T const *__restrict src, size_t n) {
+	size_t maxlen = Xstr(nlen)(src,n);
+	T *target = Xstr(end)(dst);
+	STR_MEMCPY(target,src,maxlen);
+	if (maxlen < n) target[maxlen] = '\0';
+	return dst;
+}
+#endif /* !__KERNEL__ */
 
-#undef STRING_LARGE_OP_LIMIT
-#undef STRING_ALIGNMENT_MASK
-#undef CHECK_DF
-#undef h
-#undef n
-#undef vB
-#undef B
-#undef sB
-#undef W
-#undef w
-#undef S
-#undef X
+
+#undef STR_MEMCPY
+#undef NUL
 #undef T
-#undef BITS
+#undef Ts
+#undef Tu
+#undef Tn
+#undef Xstr
+#undef Xstp
+#undef S
+#undef TOLOWER
+#undef TOUPPER
+#ifdef IS_WIDE
+#undef IS_WIDE
+#endif
