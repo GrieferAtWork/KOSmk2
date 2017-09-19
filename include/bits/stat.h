@@ -28,6 +28,60 @@
 
 __DECL_BEGIN
 
+#undef _STATBUF_ST_TIM
+#undef _STATBUF_ST_TIME
+#undef _STATBUF_ST_NSEC
+#undef _STATBUF_ST_TIMESPEC
+#undef _STATBUF_ST_BLKSIZE
+#undef _STATBUF_ST_RDEV
+
+
+/* Optional stat features. */
+#ifdef __USE_XOPEN2K8
+#define _STATBUF_ST_TIM
+#endif
+#define _STATBUF_ST_TIME
+#define _STATBUF_ST_NSEC
+#define _STATBUF_ST_TIMESPEC /* Apple extension? */
+
+/* Fixed stat features */
+#define _STATBUF_ST_BLKSIZE
+#define _STATBUF_ST_RDEV
+
+
+#define __STAT_TIMESPEC32_MEMB(id,suffix) \
+        struct __timespec32 __##id##tim##suffix; \
+        __IFTHEN(_STATBUF_ST_TIM)(struct __timespec32 id##tim##suffix;) \
+        __IFTHEN(_STATBUF_ST_TIMESPEC)(struct __timespec32 id##timespec##suffix;) \
+struct{ __IFELSE(_STATBUF_ST_TIME)(__time32_t __##id##time##suffix;) \
+        __IFTHEN(_STATBUF_ST_TIME)(__time32_t id##time##suffix;) \
+        __IFTHEN(_STATBUF_ST_NSEC)(__syscall_ulong_t id##timensec##suffix;) };
+#define __STAT_TIMESPEC64_MEMB(id,suffix) \
+        struct __timespec64 __##id##tim##suffix; \
+        __IFTHEN(_STATBUF_ST_TIM)(struct __timespec64 id##tim##suffix;) \
+        __IFTHEN(_STATBUF_ST_TIMESPEC)(struct __timespec64 id##timespec##suffix;) \
+struct{ __IFELSE(_STATBUF_ST_TIME)(__time64_t __##id##time##suffix;) \
+        __IFTHEN(_STATBUF_ST_TIME)(__time64_t id##time##suffix;) \
+        __IFTHEN(_STATBUF_ST_NSEC)(__syscall_ulong_t id##timensec##suffix;) };
+
+#ifdef __USE_TIME_BITS64
+#ifdef __USE_KOS
+#   define __STAT_TIMESPEC32(id) union{ __STAT_TIMESPEC32_MEMB(st_##id,32) }
+#   define __STAT_TIMESPEC64(id) union{ __STAT_TIMESPEC64_MEMB(st_##id,) __STAT_TIMESPEC64_MEMB(st_##id,64) }
+#else /* __USE_KOS */
+#   define __STAT_TIMESPEC32(id) struct __timespec32 __st_##id##tim32
+#   define __STAT_TIMESPEC64(id) union{ __STAT_TIMESPEC64_MEMB(st_##id,) }
+#endif /* !__USE_KOS */
+#else /* __USE_TIME_BITS64 */
+#ifdef __USE_KOS
+#   define __STAT_TIMESPEC32(id) union{ __STAT_TIMESPEC32_MEMB(st_##id,) __STAT_TIMESPEC32_MEMB(st_##id,32) }
+#   define __STAT_TIMESPEC64(id) union{ __STAT_TIMESPEC64_MEMB(st_##id,64) }
+#else /* __USE_KOS */
+#   define __STAT_TIMESPEC32(id) union{ __STAT_TIMESPEC32_MEMB(st_##id,) }
+#   define __STAT_TIMESPEC64(id) struct __timespec64 __st_##id##tim64
+#endif /* !__USE_KOS */
+#endif /* !__USE_TIME_BITS64 */
+
 struct stat {
     __dev_t           st_dev;
 union{
@@ -64,138 +118,12 @@ union{
     __blkcnt64_t    __st_blocks64;
 #endif
 };
-#ifdef __USE_XOPEN2K8
-#ifdef __USE_TIME_BITS64
-#ifdef __USE_KOS
-    struct __timespec32   st_atim32;
-    struct __timespec32   st_mtim32;
-    struct __timespec32   st_ctim32;
-#else /* __USE_KOS */
-    struct __timespec32 __st_atim32;
-    struct __timespec32 __st_mtim32;
-    struct __timespec32 __st_ctim32;
-#endif /* !__USE_KOS */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_KOS
-union{struct __timespec32 st_atim;
-      struct __timespec32 st_atim32;};
-union{struct __timespec32 st_mtim;
-      struct __timespec32 st_mtim32;};
-union{struct __timespec32 st_ctim;
-      struct __timespec32 st_ctim32;};
-#else /* __USE_KOS */
-    struct __timespec32 st_atim;
-    struct __timespec32 st_mtim;
-    struct __timespec32 st_ctim;
-#endif /* !__USE_KOS */
-#endif /* !__USE_TIME_BITS64 */
-#else /* __USE_XOPEN2K8 */
-#ifdef __USE_TIME_BITS64
-#ifdef __USE_KOS
-    __time32_t        st_atime32;
-    __syscall_ulong_t st_atimensec32;
-    __time32_t        st_mtime32;
-    __syscall_ulong_t st_mtimensec32;
-    __time32_t        st_ctime32;
-    __syscall_ulong_t st_ctimensec32;
-#else /* __USE_KOS */
-    __time32_t        __st_atime32;
-    __syscall_ulong_t __st_atimensec32;
-    __time32_t        __st_mtime32;
-    __syscall_ulong_t __st_mtimensec32;
-    __time32_t        __st_ctime32;
-    __syscall_ulong_t __st_ctimensec32;
-#endif /* !__USE_KOS */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_KOS
-union{__time32_t      st_atime;
-      __time32_t      st_atime32;};
-union{__syscall_ulong_t st_atimensec;
-      __syscall_ulong_t st_atimensec32;};
-union{__time32_t      st_mtime;
-      __time32_t      st_mtime32;};
-union{__syscall_ulong_t st_mtimensec;
-      __syscall_ulong_t st_mtimensec32;};
-union{__time32_t      st_ctime;
-      __time32_t      st_ctime32;};
-union{__syscall_ulong_t st_ctimensec;
-      __syscall_ulong_t st_ctimensec32;};
-#else
-    __time32_t        st_atime;
-    __syscall_ulong_t st_atimensec;
-    __time32_t        st_mtime;
-    __syscall_ulong_t st_mtimensec;
-    __time32_t        st_ctime;
-    __syscall_ulong_t st_ctimensec;
-#endif
-#endif /* !__USE_TIME_BITS64 */
-#endif /* !__USE_XOPEN2K8 */
-#ifdef __USE_XOPEN2K8
-#ifndef __USE_TIME_BITS64
-#ifdef __USE_KOS
-    struct __timespec64   st_atim64;
-    struct __timespec64   st_mtim64;
-    struct __timespec64   st_ctim64;
-#else /* __USE_KOS */
-    struct __timespec64 __st_atim64;
-    struct __timespec64 __st_mtim64;
-    struct __timespec64 __st_ctim64;
-#endif /* !__USE_KOS */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_KOS
-union{struct __timespec64 st_atim;
-      struct __timespec64 st_atim64;};
-union{struct __timespec64 st_mtim;
-      struct __timespec64 st_mtim64;};
-union{struct __timespec64 st_ctim;
-      struct __timespec64 st_ctim64;};
-#else /* __USE_KOS */
-    struct __timespec64 st_atim;
-    struct __timespec64 st_mtim;
-    struct __timespec64 st_ctim;
-#endif /* !__USE_KOS */
-#endif /* !__USE_TIME_BITS64 */
-#else /* __USE_XOPEN2K8 */
-#ifndef __USE_TIME_BITS64
-#ifdef __USE_KOS
-    __time64_t        st_atime64;
-    __syscall_ulong_t st_atimensec64;
-    __time64_t        st_mtime64;
-    __syscall_ulong_t st_mtimensec64;
-    __time64_t        st_ctime64;
-    __syscall_ulong_t st_ctimensec64;
-#else /* __USE_KOS */
-    __time64_t        __st_atime64;
-    __syscall_ulong_t __st_atimensec64;
-    __time64_t        __st_mtime64;
-    __syscall_ulong_t __st_mtimensec64;
-    __time64_t        __st_ctime64;
-    __syscall_ulong_t __st_ctimensec64;
-#endif /* !__USE_KOS */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_KOS
-union{__time64_t      st_atime;
-      __time64_t      st_atime64;};
-union{__syscall_ulong_t st_atimensec;
-      __syscall_ulong_t st_atimensec64;};
-union{__time64_t      st_mtime;
-      __time64_t      st_mtime64;};
-union{__syscall_ulong_t st_mtimensec;
-      __syscall_ulong_t st_mtimensec64;};
-union{__time64_t      st_ctime;
-      __time64_t      st_ctime64;};
-union{__syscall_ulong_t st_ctimensec;
-      __syscall_ulong_t st_ctimensec64;};
-#else
-    __time64_t        st_atime;
-    __syscall_ulong_t st_atimensec;
-    __time64_t        st_mtime;
-    __syscall_ulong_t st_mtimensec;
-    __time64_t        st_ctime;
-    __syscall_ulong_t st_ctimensec;
-#endif
-#endif /* !__USE_TIME_BITS64 */
-#endif /* !__USE_XOPEN2K8 */
+    __STAT_TIMESPEC32(a);
+    __STAT_TIMESPEC32(m);
+    __STAT_TIMESPEC32(c);
+    __STAT_TIMESPEC64(a);
+    __STAT_TIMESPEC64(m);
+    __STAT_TIMESPEC64(c);
 };
 
 
@@ -236,150 +164,19 @@ union{
 #else
     __blkcnt64_t      st_blocks;
 #endif
-#ifdef __USE_XOPEN2K8
-#ifdef __USE_TIME_BITS64
-#ifdef __USE_KOS
-    struct __timespec32   st_atim32;
-    struct __timespec32   st_mtim32;
-    struct __timespec32   st_ctim32;
-#else /* __USE_KOS */
-    struct __timespec32 __st_atim32;
-    struct __timespec32 __st_mtim32;
-    struct __timespec32 __st_ctim32;
-#endif /* !__USE_KOS */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_KOS
-union{struct __timespec32 st_atim;
-      struct __timespec32 st_atim32;};
-union{struct __timespec32 st_mtim;
-      struct __timespec32 st_mtim32;};
-union{struct __timespec32 st_ctim;
-      struct __timespec32 st_ctim32;};
-#else /* __USE_KOS */
-    struct __timespec32 st_atim;
-    struct __timespec32 st_mtim;
-    struct __timespec32 st_ctim;
-#endif /* !__USE_KOS */
-#endif /* !__USE_TIME_BITS64 */
-#else /* __USE_XOPEN2K8 */
-#ifdef __USE_TIME_BITS64
-#ifdef __USE_KOS
-    __time32_t        st_atime32;
-    __syscall_ulong_t st_atimensec32;
-    __time32_t        st_mtime32;
-    __syscall_ulong_t st_mtimensec32;
-    __time32_t        st_ctime32;
-    __syscall_ulong_t st_ctimensec32;
-#else /* __USE_KOS */
-    __time32_t        __st_atime32;
-    __syscall_ulong_t __st_atimensec32;
-    __time32_t        __st_mtime32;
-    __syscall_ulong_t __st_mtimensec32;
-    __time32_t        __st_ctime32;
-    __syscall_ulong_t __st_ctimensec32;
-#endif /* !__USE_KOS */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_KOS
-union{__time32_t      st_atime;
-      __time32_t      st_atime32;};
-union{__syscall_ulong_t st_atimensec;
-      __syscall_ulong_t st_atimensec32;};
-union{__time32_t      st_mtime;
-      __time32_t      st_mtime32;};
-union{__syscall_ulong_t st_mtimensec;
-      __syscall_ulong_t st_mtimensec32;};
-union{__time32_t      st_ctime;
-      __time32_t      st_ctime32;};
-union{__syscall_ulong_t st_ctimensec;
-      __syscall_ulong_t st_ctimensec32;};
-#else
-    __time32_t        st_atime;
-    __syscall_ulong_t st_atimensec;
-    __time32_t        st_mtime;
-    __syscall_ulong_t st_mtimensec;
-    __time32_t        st_ctime;
-    __syscall_ulong_t st_ctimensec;
-#endif
-#endif /* !__USE_TIME_BITS64 */
-#endif /* !__USE_XOPEN2K8 */
-#ifdef __USE_XOPEN2K8
-#ifndef __USE_TIME_BITS64
-#ifdef __USE_KOS
-    struct __timespec64   st_atim64;
-    struct __timespec64   st_mtim64;
-    struct __timespec64   st_ctim64;
-#else /* __USE_KOS */
-    struct __timespec64 __st_atim64;
-    struct __timespec64 __st_mtim64;
-    struct __timespec64 __st_ctim64;
-#endif /* !__USE_KOS */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_KOS
-union{struct __timespec64 st_atim;
-      struct __timespec64 st_atim64;};
-union{struct __timespec64 st_mtim;
-      struct __timespec64 st_mtim64;};
-union{struct __timespec64 st_ctim;
-      struct __timespec64 st_ctim64;};
-#else /* __USE_KOS */
-    struct __timespec64 st_atim;
-    struct __timespec64 st_mtim;
-    struct __timespec64 st_ctim;
-#endif /* !__USE_KOS */
-#endif /* !__USE_TIME_BITS64 */
-#else /* __USE_XOPEN2K8 */
-#ifndef __USE_TIME_BITS64
-#ifdef __USE_KOS
-    __time64_t        st_atime64;
-    __syscall_ulong_t st_atimensec64;
-    __time64_t        st_mtime64;
-    __syscall_ulong_t st_mtimensec64;
-    __time64_t        st_ctime64;
-    __syscall_ulong_t st_ctimensec64;
-#else /* __USE_KOS */
-    __time64_t        __st_atime64;
-    __syscall_ulong_t __st_atimensec64;
-    __time64_t        __st_mtime64;
-    __syscall_ulong_t __st_mtimensec64;
-    __time64_t        __st_ctime64;
-    __syscall_ulong_t __st_ctimensec64;
-#endif /* !__USE_KOS */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_KOS
-union{__time64_t      st_atime;
-      __time64_t      st_atime64;};
-union{__syscall_ulong_t st_atimensec;
-      __syscall_ulong_t st_atimensec64;};
-union{__time64_t      st_mtime;
-      __time64_t      st_mtime64;};
-union{__syscall_ulong_t st_mtimensec;
-      __syscall_ulong_t st_mtimensec64;};
-union{__time64_t      st_ctime;
-      __time64_t      st_ctime64;};
-union{__syscall_ulong_t st_ctimensec;
-      __syscall_ulong_t st_ctimensec64;};
-#else
-    __time64_t        st_atime;
-    __syscall_ulong_t st_atimensec;
-    __time64_t        st_mtime;
-    __syscall_ulong_t st_mtimensec;
-    __time64_t        st_ctime;
-    __syscall_ulong_t st_ctimensec;
-#endif
-#endif /* !__USE_TIME_BITS64 */
-#endif /* !__USE_XOPEN2K8 */
+    __STAT_TIMESPEC32(a);
+    __STAT_TIMESPEC32(m);
+    __STAT_TIMESPEC32(c);
+    __STAT_TIMESPEC64(a);
+    __STAT_TIMESPEC64(m);
+    __STAT_TIMESPEC64(c);
 };
 #endif
 
-#ifdef __USE_XOPEN2K8
-#   define st_atime   st_atim.tv_sec
-#   define st_mtime   st_mtim.tv_sec
-#   define st_ctime   st_ctim.tv_sec
-#endif /* !__USE_XOPEN2K8 */
-
-#define _STATBUF_ST_BLKSIZE
-#define _STATBUF_ST_RDEV
-#define _STATBUF_ST_NSEC
+#undef __STAT_TIMESPEC32_MEMB
+#undef __STAT_TIMESPEC64_MEMB
+#undef __STAT_TIMESPEC32
+#undef __STAT_TIMESPEC64
 
 #define __S_IFMT           0170000 /*< These bits determine file type. */
 #define __S_IFDIR          0040000 /*< Directory. */

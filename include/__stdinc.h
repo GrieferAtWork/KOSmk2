@@ -141,6 +141,23 @@
            __typeof__(old) new __ATTR_ALIAS(#old)
 #endif
 
+#define __IFDEF_ARG_PLACEHOLDER_     ,
+#define __IFDEF_ARG_PLACEHOLDER_1    ,
+#define __IFDEF_TAKE_SECOND_ARG_IMPL(x,val,...) val
+#define __IFDEF_TAKE_SECOND_ARG(x) __IFDEF_TAKE_SECOND_ARG_IMPL x
+#define __IFDEF3(x) __IFDEF_TAKE_SECOND_ARG((x 1,0))
+#define __IFDEF2(x) __IFDEF3(__IFDEF_ARG_PLACEHOLDER_##x)
+#define __IFTHEN_0(...) /* nothing */
+#define __IFTHEN_1(...) __VA_ARGS__
+#define __IFTHEN3(x) __IFTHEN_##x
+#define __IFTHEN2(x) __IFTHEN3(x)
+#define __IFTHEN(x)  __IFTHEN2(__IFDEF2(x))
+#define __IFELSE_0(...) __VA_ARGS__
+#define __IFELSE_1(...) /* nothing */
+#define __IFELSE3(x) __IFELSE_##x
+#define __IFELSE2(x) __IFELSE3(x)
+#define __IFELSE(x)  __IFELSE2(__IFDEF2(x))
+
 #ifndef __VA_LIST
 #define __VA_LIST  char *
 #endif

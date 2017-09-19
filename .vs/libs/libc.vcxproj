@@ -22,6 +22,7 @@
     <ClCompile Include="..\..\libs\libc\getopt.c" />
     <ClCompile Include="..\..\libs\libc\inet\netdb.c" />
     <ClCompile Include="..\..\libs\libc\inet\socket.c" />
+    <ClCompile Include="..\..\libs\libc\locale.c" />
     <ClCompile Include="..\..\libs\libc\malloc.c" />
     <ClCompile Include="..\..\libs\libc\misc.c" />
     <ClCompile Include="..\..\libs\libc\sched.c" />
@@ -53,6 +54,7 @@
     <ClInclude Include="..\..\libs\libc\fcntl.h" />
     <ClInclude Include="..\..\libs\libc\format-printer.h" />
     <ClInclude Include="..\..\libs\libc\libc.h" />
+    <ClInclude Include="..\..\libs\libc\locale.h" />
     <ClInclude Include="..\..\libs\libc\malloc.h" />
     <ClInclude Include="..\..\libs\libc\misc.h" />
     <ClInclude Include="..\..\libs\libc\sched.h" />

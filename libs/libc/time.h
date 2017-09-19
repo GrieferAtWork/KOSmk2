@@ -45,6 +45,8 @@ struct timeval64;
 struct pollfd;
 struct timeb;
 struct timeb64;
+struct utimbuf;
+struct utimbuf64;
 
 INTDEF void LIBCCALL libc_tzset(void);
 INTDEF char *LIBCCALL libc_asctime_r(struct tm const *__restrict tp, char *__restrict buf);
@@ -103,6 +105,7 @@ INTDEF int LIBCCALL libc_select64(int nfds, fd_set *__restrict readfds, fd_set *
 INTDEF int LIBCCALL libc_pselect64(int nfds, fd_set *__restrict readfds, fd_set *__restrict writefds, fd_set *__restrict exceptfds, struct timespec64 const *__restrict timeout, sigset_t const *__restrict sigmask);
 INTDEF int LIBCCALL libc_futimes64(int fd, struct timeval64 const tvp[2]);
 INTDEF int LIBCCALL libc_futimens64(int fd, struct timespec64 const times[2]);
+INTDEF int LIBCCALL libc_utime64(char const *file, struct utimbuf64 const *file_times);
 INTDEF int LIBCCALL libc_utimes64(char const *file, struct timeval64 const tvp[2]);
 INTDEF int LIBCCALL libc_lutimes64(char const *file, struct timeval64 const tvp[2]);
 INTDEF int LIBCCALL libc_futimesat64(int fd, char const *file, struct timeval64 const tvp[2]);
@@ -130,6 +133,7 @@ INTDEF int LIBCCALL libc_select(int nfds, fd_set *__restrict readfds, fd_set *__
 INTDEF int LIBCCALL libc_pselect(int nfds, fd_set *__restrict readfds, fd_set *__restrict writefds, fd_set *__restrict exceptfds, struct timespec const *__restrict timeout, sigset_t const *__restrict sigmask);
 INTDEF int LIBCCALL libc_futimes(int fd, struct timeval const tvp[2]);
 INTDEF int LIBCCALL libc_futimens(int fd, struct timespec const times[2]);
+INTDEF int LIBCCALL libc_utime(char const *file, struct utimbuf const *file_times);
 INTDEF int LIBCCALL libc_utimes(char const *file, struct timeval const tvp[2]);
 INTDEF int LIBCCALL libc_lutimes(char const *file, struct timeval const tvp[2]);
 INTDEF int LIBCCALL libc_futimesat(int fd, char const *file, struct timeval const tvp[2]);

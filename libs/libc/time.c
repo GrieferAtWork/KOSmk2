@@ -36,6 +36,8 @@
 #include <limits.h>
 #include <bits/fcntl-linux.h>
 #include <sys/timeb.h>
+#include <utime.h>
+#include <bits/stat.h>
 
 DECL_BEGIN
 
@@ -514,6 +516,33 @@ INTERN int LIBCCALL B(libc_utimes)(char const *file, struct btimeval const tvp[2
 INTERN int LIBCCALL B(libc_lutimes)(char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_NOFOLLOW); }
 INTERN int LIBCCALL B(libc_futimesat)(int fd, char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(fd,file,tvp,AT_SYMLINK_FOLLOW); }
 
+INTERN int LIBCCALL A(libc_utime)(char const *file, struct A(utimbuf) const *file_times) {
+ struct atimespec times[2];
+ if (file_times) {
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_nsec = UTIME_NOW;
+ } else {
+  times[0].tv_sec  = (atime_t)file_times->actime;
+  times[1].tv_sec  = (atime_t)file_times->modtime;
+  times[0].tv_nsec = 0;
+  times[1].tv_nsec = 0;
+ }
+ return A(libc_utimensat)(AT_FDCWD,file,times,AT_SYMLINK_FOLLOW);
+}
+INTERN int LIBCCALL B(libc_utime)(char const *file, struct B(utimbuf) const *file_times) {
+ struct atimespec times[2];
+ if (file_times) {
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_nsec = UTIME_NOW;
+ } else {
+  times[0].tv_sec  = (atime_t)file_times->actime;
+  times[1].tv_sec  = (atime_t)file_times->modtime;
+  times[0].tv_nsec = 0;
+  times[1].tv_nsec = 0;
+ }
+ return A(libc_utimensat)(AT_FDCWD,file,times,AT_SYMLINK_FOLLOW);
+}
+
 INTERN useconds_t LIBCCALL libc_ualarm(useconds_t value, useconds_t interval) { NOT_IMPLEMENTED(); return -1; }
 INTERN unsigned int LIBCCALL libc_alarm(unsigned int seconds) { NOT_IMPLEMENTED(); return seconds; }
 INTERN int LIBCCALL libc_pause(void) { return A(libc_select)(0,NULL,NULL,NULL,NULL); }
@@ -638,6 +667,7 @@ DEFINE_PUBLIC_ALIAS(select64,libc_select64);
 DEFINE_PUBLIC_ALIAS(pselect64,libc_pselect64);
 DEFINE_PUBLIC_ALIAS(futimes64,libc_futimes64);
 DEFINE_PUBLIC_ALIAS(futimens64,libc_futimens64);
+DEFINE_PUBLIC_ALIAS(utime64,libc_utime64);
 DEFINE_PUBLIC_ALIAS(utimes64,libc_utimes64);
 DEFINE_PUBLIC_ALIAS(lutimes64,libc_lutimes64);
 DEFINE_PUBLIC_ALIAS(futimesat64,libc_futimesat64);
@@ -664,6 +694,7 @@ DEFINE_PUBLIC_ALIAS(select,libc_select);
 DEFINE_PUBLIC_ALIAS(pselect,libc_pselect);
 DEFINE_PUBLIC_ALIAS(futimes,libc_futimes);
 DEFINE_PUBLIC_ALIAS(futimens,libc_futimens);
+DEFINE_PUBLIC_ALIAS(utime,libc_utime);
 DEFINE_PUBLIC_ALIAS(utimes,libc_utimes);
 DEFINE_PUBLIC_ALIAS(lutimes,libc_lutimes);
 DEFINE_PUBLIC_ALIAS(futimesat,libc_futimesat);

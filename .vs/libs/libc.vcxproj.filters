@@ -28,6 +28,7 @@
     <ClCompile Include="..\..\libs\libc\time.c" />
     <ClCompile Include="..\..\libs\libc\sched.c" />
     <ClCompile Include="..\..\libs\libc\misc.c" />
+    <ClCompile Include="..\..\libs\libc\locale.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\libs\libc\templates\strtouint.code">
@@ -65,6 +66,7 @@
     <ClInclude Include="..\..\libs\libc\misc.h" />
     <ClInclude Include="..\..\libs\libc\termios.h" />
     <ClInclude Include="..\..\libs\libc\time.h" />
+    <ClInclude Include="..\..\libs\libc\locale.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">
