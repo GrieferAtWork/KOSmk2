@@ -23,6 +23,7 @@
 
 #include "libc.h"
 #include "system.h"
+#include "sched.h"
 
 #include <errno.h>
 #include <hybrid/compiler.h>
@@ -30,29 +31,45 @@
 
 DECL_BEGIN
 
-PUBLIC int (LIBCCALL unshare)(int flags) {
+INTERN int LIBCCALL libc_unshare(int flags) {
  int result = sys_unshare(flags);
  if (E_ISERR(result)) { SET_ERRNO(-result); return -1; }
  return 0;
 }
-PUBLIC int (LIBCCALL clone)(int (LIBCCALL *fn)(void *arg),
-                            void *child_stack, int flags,
-                            void *arg, ...) {
+INTERN int LIBCCALL libc_clone(int (LIBCCALL *fn)(void *arg),
+                               void *child_stack, int flags,
+                               void *arg, ...) {
  NOT_IMPLEMENTED();
  return -1;
 }
-PUBLIC int (LIBCCALL sched_yield)(void) { return sys_sched_yield(); }
-PUBLIC int (LIBCCALL sched_getcpu)(void) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL setns)(int fd, int nstype) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_setparam)(pid_t pid, struct sched_param const *param) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_getparam)(pid_t pid, struct sched_param *param) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_setscheduler)(pid_t pid, int policy, struct sched_param const *param) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_getscheduler)(pid_t pid) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_get_priority_max)(int algorithm) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_get_priority_min)(int algorithm) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_rr_get_interval)(pid_t pid, struct timespec *t) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_setaffinity)(pid_t pid, size_t cpusetsize, const cpu_set_t *cpuset) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sched_getaffinity)(pid_t pid, size_t cpusetsize, cpu_set_t *cpuset) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_yield(void) { return sys_sched_yield(); }
+INTERN int LIBCCALL libc_sched_getcpu(void) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_setns(int fd, int nstype) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_setparam(pid_t pid, struct sched_param const *param) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_getparam(pid_t pid, struct sched_param *param) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_setscheduler(pid_t pid, int policy, struct sched_param const *param) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_getscheduler(pid_t pid) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_get_priority_max(int algorithm) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_get_priority_min(int algorithm) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_rr_get_interval(pid_t pid, struct timespec *t) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t const *cpuset) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *cpuset) { NOT_IMPLEMENTED(); return -1; }
+
+#undef sched_yield
+DEFINE_PUBLIC_ALIAS(unshare,libc_unshare);
+DEFINE_PUBLIC_ALIAS(clone,libc_clone);
+DEFINE_PUBLIC_ALIAS(sched_yield,libc_sched_yield);
+DEFINE_PUBLIC_ALIAS(sched_getcpu,libc_sched_getcpu);
+DEFINE_PUBLIC_ALIAS(setns,libc_setns);
+DEFINE_PUBLIC_ALIAS(sched_setparam,libc_sched_setparam);
+DEFINE_PUBLIC_ALIAS(sched_getparam,libc_sched_getparam);
+DEFINE_PUBLIC_ALIAS(sched_setscheduler,libc_sched_setscheduler);
+DEFINE_PUBLIC_ALIAS(sched_getscheduler,libc_sched_getscheduler);
+DEFINE_PUBLIC_ALIAS(sched_get_priority_max,libc_sched_get_priority_max);
+DEFINE_PUBLIC_ALIAS(sched_get_priority_min,libc_sched_get_priority_min);
+DEFINE_PUBLIC_ALIAS(sched_rr_get_interval,libc_sched_rr_get_interval);
+DEFINE_PUBLIC_ALIAS(sched_setaffinity,libc_sched_setaffinity);
+DEFINE_PUBLIC_ALIAS(sched_getaffinity,libc_sched_getaffinity);
 
 DECL_END
 

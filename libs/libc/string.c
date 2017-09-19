@@ -24,6 +24,8 @@
 #include "libc.h"
 #include "string.h"
 #include "ctype.h"
+#include "stdio.h"
+#include "malloc.h"
 
 #include <alloca.h>
 #include <assert.h>
@@ -41,11 +43,9 @@
 #include <hybrid/swap.h>
 #include <hybrid/types.h>
 #include <kos/ksym.h>
-#include <malloc.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <sys/types.h>
 
 #ifndef __KERNEL__
@@ -554,7 +554,7 @@ INTERN ATTR_RARERODATA char const signal_names[][10] = {
 INTERN char *LIBCCALL libc_strsignal(int sig) {
  PRIVATE char buffer[20];
  if (sig < 1 || (unsigned)sig >= COMPILER_LENOF(signal_names))
-  sprintf(buffer,"unknown(%d)",sig);
+  libc_sprintf(buffer,"unknown(%d)",sig);
  else {
   libc_strcpy(buffer,signal_names[sig-1]);
  }
@@ -629,7 +629,7 @@ INTERN char *LIBCCALL libc_strerror(int errnum) {
   strerror_buf[COMPILER_LENOF(strerror_buf)-1] = '\0';
   libc_strncpy(strerror_buf,string,COMPILER_LENOF(strerror_buf)-1);
  } else {
-  sprintf(strerror_buf,"Unknown error %d",errnum);
+  libc_sprintf(strerror_buf,"Unknown error %d",errnum);
  }
  return strerror_buf;
 }
@@ -665,7 +665,7 @@ INTERN char *LIBCCALL libc_strerror_r(int errnum, char *buf, size_t buflen) {
   libc_memcpy(buf,string,msg_len);
  } else {
 again_unknown:
-  if (snprintf(buf,buflen,"Unknown error %d",errnum) >= buflen) {
+  if (libc_snprintf(buf,buflen,"Unknown error %d",errnum) >= buflen) {
    assert(buf != strerror_buf);
    buf    = strerror_buf;
    buflen = sizeof(strerror_buf);
@@ -732,7 +732,7 @@ INTERN dosch_t *LIBCCALL libc_dos_wcsncat(dosch_t *dst, dosch_t const *src, size
  return dst;
 }
 INTERN dosch_t *LIBCCALL libc_dos_wcsncpy(dosch_t *dst, dosch_t const *src, size_t max_chars) { return (dosch_t *)libc_memcpy(dst,src,(libc_dos_wcsnlen(src,max_chars)+1)*sizeof(dosch_t)); }
-INTERN dosch_t *LIBCCALL libc_dos_wcsdup(dosch_t const *str) { return (dosch_t *)memdup(str,libc_dos_wcslen(str)*sizeof(dosch_t)); }
+INTERN dosch_t *LIBCCALL libc_dos_wcsdup(dosch_t const *str) { return (dosch_t *)libc_memdup(str,libc_dos_wcslen(str)*sizeof(dosch_t)); }
 INTERN dosch_t *LIBCCALL libc_dos_wcsnset(dosch_t *str, dosch_t chr, size_t max_chars) { dosch_t *result = str; while (max_chars-- && *str) *str++ = chr; return result; }
 INTERN dosch_t *LIBCCALL libc_dos_wcschr(dosch_t const *str, dosch_t needle) { return (dosch_t *)libc_memchrw(str,needle,libc_dos_wcslen(str)); }
 INTERN dosch_t *LIBCCALL libc_dos_wcsrchr(dosch_t const *str, dosch_t needle) { return (dosch_t *)libc_memrchrw(str,needle,libc_dos_wcslen(str)); }

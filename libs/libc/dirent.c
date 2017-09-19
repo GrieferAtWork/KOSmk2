@@ -24,14 +24,16 @@
 #include "libc.h"
 #include "system.h"
 #include "dirent.h"
+#include "fcntl.h"
+#include "malloc.h"
+#include "string.h"
+#include "unistd.h"
+#include "stdlib.h"
+
+#include <fcntl.h>
 #include <assert.h>
 #include <dirent.h>
-#include <fcntl.h>
 #include <hybrid/compiler.h>
-#include <string.h>
-#include <unistd.h>
-#include <malloc.h>
-#include <stdlib.h>
 
 DECL_BEGIN
 
@@ -44,7 +46,7 @@ libc_xreaddir(int fd, struct dirent *buf, size_t bufsize, int mode) {
 }
 
 INTERN DIR *LIBCCALL libc_fdopendir(int fd) {
- DIR *result = omalloc(DIR);
+ DIR *result = (DIR *)libc_malloc(sizeof(DIR));
  if (result) {
   result->d_fd    = fd;
   result->d_buf   = (struct dirent *)result->d_inl;
@@ -54,7 +56,7 @@ INTERN DIR *LIBCCALL libc_fdopendir(int fd) {
 }
 INTERN DIR *LIBCCALL libc_opendirat(int dfd, char const *name) {
  DIR *result;
- int fd = openat(dfd,name,O_RDONLY|O_DIRECTORY);
+ int fd = libc_openat(dfd,name,O_RDONLY|O_DIRECTORY);
  if (fd < 0) return NULL;
  result = libc_fdopendir(fd);
  if unlikely(!result) sys_close(fd);
@@ -66,9 +68,10 @@ INTERN DIR *LIBCCALL libc_opendir(char const *name) {
 INTERN int LIBCCALL libc_closedir(DIR *dirp) {
  if unlikely(!dirp) { SET_ERRNO(EBADF); return -1; }
  /* Free an extended directory entry buffer. */
- if (dirp->d_buf != (struct dirent *)dirp->d_inl) free(dirp->d_buf);
+ if (dirp->d_buf != (struct dirent *)dirp->d_inl)
+     libc_free(dirp->d_buf);
  sys_close(dirp->d_fd);
- free(dirp);
+ libc_free(dirp);
  return 0;
 }
 INTERN struct dirent *LIBCCALL libc_readdir(DIR *dirp) {
@@ -88,8 +91,8 @@ read_again:
   /* Must allocate more buffer memory. */
   if (dirp->d_buf == (struct dirent *)dirp->d_inl) {
    /* Try to release the inline-allocated buffer. */
-   realloc_in_place(dirp,offsetof(DIR,d_inl));
-   result = (struct dirent *)malloc((size_t)error);
+   libc_realloc_in_place(dirp,offsetof(DIR,d_inl));
+   result = (struct dirent *)libc_malloc((size_t)error);
    if unlikely(!result) {
     /* Prevent another attempt from calling 'realloc_in_place()' again. */
     dirp->d_buf   = NULL;
@@ -97,7 +100,7 @@ read_again:
     goto end;
    }
   } else {
-   result = (struct dirent *)realloc(dirp->d_buf,(size_t)error);
+   result = (struct dirent *)libc_realloc(dirp->d_buf,(size_t)error);
    if unlikely(!result) goto end;
   }
   /* Update the buffer  */
@@ -130,7 +133,7 @@ INTERN void LIBCCALL libc_seekdir(DIR *dirp, long int pos) {
 }
 INTERN long int LIBCCALL libc_telldir(DIR *dirp) {
  if unlikely(!dirp) { SET_ERRNO(EBADF); return -1; }
- return (long int)lseek(dirp->d_fd,0,SEEK_CUR);
+ return (long int)libc_lseek(dirp->d_fd,0,SEEK_CUR);
 }
 INTERN int LIBCCALL libc_dirfd(DIR *dirp) {
  if unlikely(!dirp) { SET_ERRNO(EINVAL); return -1; }

@@ -23,33 +23,36 @@
 
 #include "libc.h"
 #include "system.h"
-#include <errno.h>
-#include <hybrid/compiler.h>
-#include <termios.h>
-#include <stddef.h>
+#include "termios.h"
+#include "errno.h"
+#include "unistd.h"
+#include "fcntl.h"
+#include "stdlib.h"
+#include "dirent.h"
+#include "string.h"
+
 #include <sys/ioctl.h>
+#include <bits/stat.h>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
+
 
 DECL_BEGIN
 
-PUBLIC int (LIBCCALL login_tty)(int fd) {
- setsid();
- if (ioctl(fd,TIOCSCTTY,(char *)NULL) == -1)
+INTERN int LIBCCALL libc_login_tty(int fd) {
+ libc_setsid();
+ if (libc_ioctl(fd,TIOCSCTTY,(char *)NULL) == -1)
      return -1;
- while (dup2(fd,0) == -1 && errno == EBUSY);
- while (dup2(fd,1) == -1 && errno == EBUSY);
- while (dup2(fd,2) == -1 && errno == EBUSY);
- if (fd > 2) close(fd);
+ while (libc_dup2(fd,0) == -1 && GET_ERRNO() == EBUSY);
+ while (libc_dup2(fd,1) == -1 && GET_ERRNO() == EBUSY);
+ while (libc_dup2(fd,2) == -1 && GET_ERRNO() == EBUSY);
+ if (fd > 2) libc_close(fd);
  return 0;
 }
 
-PUBLIC int (LIBCCALL openpty)(int *amaster, int *aslave, char *name,
-                              struct termios const *termp,
-                              struct winsize const *winp) {
+INTERN int LIBCCALL
+libc_openpty(int *amaster, int *aslave, char *name,
+             struct termios const *termp,
+             struct winsize const *winp) {
 #if __SIZEOF_INT__ > 4
 #error FIXME
 #endif
@@ -60,91 +63,90 @@ PUBLIC int (LIBCCALL openpty)(int *amaster, int *aslave, char *name,
  return 0;
 }
 
-PUBLIC int (LIBCCALL forkpty)(int *amaster, char *name,
-                              struct termios const *termp,
-                              struct winsize const *winp) {
+INTERN int LIBCCALL
+libc_forkpty(int *amaster, char *name,
+             struct termios const *termp,
+             struct winsize const *winp) {
  int master,slave,pid;
- if (openpty(&master,&slave,name,termp,winp) == -1)
+ if (libc_openpty(&master,&slave,name,termp,winp) == -1)
      return -1;
- switch (pid = fork()) {
+ switch (pid = libc_fork()) {
  case -1:
-  close(master);
-  close(slave);
+  libc_close(master);
+  libc_close(slave);
   return -1;
  case 0:
   /* Child process. */
-  close(master);
-  if (login_tty(slave)) _exit(1);
+  libc_close(master);
+  if (libc_login_tty(slave))
+      libc__exit(1);
   return 0;
  default:
   /* Parent process.  */
   *amaster = master;
-  close(slave);
+  libc_close(slave);
   return pid;
  }
 }
 
 PRIVATE char ttyname_buffer[32];
-PUBLIC char *(LIBCCALL ttyname)(int fd) {
- return ttyname_r(fd,ttyname_buffer,
-                  sizeof(ttyname_buffer))
-      ? NULL : ttyname_buffer;
+INTERN char *LIBCCALL libc_ttyname(int fd) {
+ return libc_ttyname_r(fd,ttyname_buffer,sizeof(ttyname_buffer)) ? NULL : ttyname_buffer;
 }
 
-
 PRIVATE char const dev[] = "/dev";
-PUBLIC int (LIBCCALL ttyname_r)(int fd, char *buf, size_t buflen) {
- struct stat st; struct dirent *d; DIR *dirstream;
+INTERN int LIBCCALL libc_ttyname_r(int fd, char *buf, size_t buflen) {
+ struct stat64 st; struct dirent *d; DIR *dirstream;
  int safe; dev_t rdev;
  if unlikely(buflen < (COMPILER_STRLEN(dev)+1)*sizeof(char)) { SET_ERRNO(ERANGE); return ERANGE; }
- if unlikely(!isatty(fd)) { SET_ERRNO(ENOTTY); return ENOTTY; }
- if unlikely(fstat(fd,&st) < 0) return errno;
- if ((dirstream = opendir(dev)) == NULL) return errno;
- memcpy(buf,dev,COMPILER_STRLEN(dev)*sizeof(char));
+ if unlikely(!libc_isatty(fd)) { SET_ERRNO(ENOTTY); return ENOTTY; }
+ if unlikely(libc_kfstat64(fd,&st) < 0) return GET_ERRNO();
+ if ((dirstream = libc_opendir(dev)) == NULL) return GET_ERRNO();
+ libc_memcpy(buf,dev,COMPILER_STRLEN(dev)*sizeof(char));
  buf[COMPILER_STRLEN(dev)] = '/';
  buflen -= (COMPILER_STRLEN(dev)+1)*sizeof(char);
- safe = errno;
+ safe = GET_ERRNO();
  rdev = st.st_rdev;
- while ((d = readdir(dirstream)) != NULL) {
+ while ((d = libc_readdir(dirstream)) != NULL) {
   if (d->d_ino64 == st.st_ino64 &&
-      strcmp(d->d_name,"stdin") == 0 &&
-      strcmp(d->d_name,"stdout") == 0 &&
-      strcmp(d->d_name,"stderr") == 0) {
+      libc_strcmp(d->d_name,"stdin") == 0 &&
+      libc_strcmp(d->d_name,"stdout") == 0 &&
+      libc_strcmp(d->d_name,"stderr") == 0) {
    size_t needed = _D_EXACT_NAMLEN(d)+1;
    if (needed > buflen) {
-    closedir(dirstream);
+    libc_closedir(dirstream);
     SET_ERRNO(ERANGE);
     return ERANGE;
    }
-   memcpy(&buf[sizeof(dev)],d->d_name,(needed+1)*sizeof(char));
-   if (stat(buf,&st) == 0 && S_ISCHR(st.st_mode) && st.st_rdev == rdev) {
+   libc_memcpy(&buf[sizeof(dev)],d->d_name,(needed+1)*sizeof(char));
+   if (libc_kstat64(buf,&st) == 0 && S_ISCHR(st.st_mode) && st.st_rdev == rdev) {
     /* Found it! */
-    closedir(dirstream);
+    libc_closedir(dirstream);
     SET_ERRNO(safe);
     return 0;
    }
   }
  }
- closedir(dirstream);
+ libc_closedir(dirstream);
  SET_ERRNO(safe);
  return ENOTTY;
 }
 
-PUBLIC int (LIBCCALL isatty)(int fd) {
+INTERN int LIBCCALL libc_isatty(int fd) {
  struct termios term;
- return tcgetattr(fd,&term) == 0;
+ return libc_tcgetattr(fd,&term) == 0;
 }
-PUBLIC pid_t (LIBCCALL tcgetpgrp)(int fd) {
+INTERN pid_t LIBCCALL libc_tcgetpgrp(int fd) {
  pid_t pgrp;
- return ioctl(fd,TIOCGPGRP,&pgrp) < 0 ? -1 : pgrp;
+ return libc_ioctl(fd,TIOCGPGRP,&pgrp) < 0 ? -1 : pgrp;
 }
-PUBLIC int (LIBCCALL tcsetpgrp)(int fd, pid_t pgrp_id) { return ioctl(fd,TIOCSPGRP,&pgrp_id); }
-PUBLIC speed_t (LIBCCALL cfgetospeed)(struct termios const *termios_p) { return termios_p->c_ospeed; }
-PUBLIC speed_t (LIBCCALL cfgetispeed)(struct termios const *termios_p) { return termios_p->c_ispeed; }
-PUBLIC int (LIBCCALL cfsetospeed)(struct termios *termios_p, speed_t speed) { termios_p->c_ospeed = speed; return 0; }
-PUBLIC int (LIBCCALL cfsetispeed)(struct termios *termios_p, speed_t speed) { termios_p->c_ispeed = speed; return 0; }
-PUBLIC int (LIBCCALL cfsetspeed)(struct termios *termios_p, speed_t speed) { termios_p->c_ospeed = termios_p->c_ispeed = speed; return 0; }
-PUBLIC int (LIBCCALL tcgetattr)(int fd, struct termios *termios_p) { return ioctl(fd,TCGETS,termios_p); }
+INTERN int LIBCCALL libc_tcsetpgrp(int fd, pid_t pgrp_id) { return libc_ioctl(fd,TIOCSPGRP,&pgrp_id); }
+INTERN speed_t LIBCCALL libc_cfgetospeed(struct termios const *termios_p) { return termios_p->c_ospeed; }
+INTERN speed_t LIBCCALL libc_cfgetispeed(struct termios const *termios_p) { return termios_p->c_ispeed; }
+INTERN int LIBCCALL libc_cfsetospeed(struct termios *termios_p, speed_t speed) { termios_p->c_ospeed = speed; return 0; }
+INTERN int LIBCCALL libc_cfsetispeed(struct termios *termios_p, speed_t speed) { termios_p->c_ispeed = speed; return 0; }
+INTERN int LIBCCALL libc_cfsetspeed(struct termios *termios_p, speed_t speed) { termios_p->c_ospeed = termios_p->c_ispeed = speed; return 0; }
+INTERN int LIBCCALL libc_tcgetattr(int fd, struct termios *termios_p) { return libc_ioctl(fd,TCGETS,termios_p); }
 
 
 PRIVATE int const action[] = {
@@ -152,40 +154,44 @@ PRIVATE int const action[] = {
     [TCSADRAIN] = TCSETSW,
     [TCSAFLUSH] = TCSETSF,
 };
-PUBLIC int (LIBCCALL tcsetattr)(int fd, int optional_actions, struct termios const *termios_p) {
+INTERN int LIBCCALL libc_tcsetattr(int fd, int optional_actions, struct termios const *termios_p) {
  if ((unsigned int)optional_actions >= COMPILER_LENOF(action)) { SET_ERRNO(EINVAL); return -1; }
- return ioctl(fd,action[optional_actions],termios_p);
+ return libc_ioctl(fd,action[optional_actions],termios_p);
 }
-PUBLIC int (LIBCCALL tcsendbreak)(int fd, int duration) {
- if (duration <= 0) return ioctl(fd,TCSBRK,0);
- return ioctl(fd,TCSBRKP,(duration+99)/100);
+INTERN int LIBCCALL libc_tcsendbreak(int fd, int duration) {
+ if (duration <= 0) return libc_ioctl(fd,TCSBRK,0);
+ return libc_ioctl(fd,TCSBRKP,(duration+99)/100);
 }
-PUBLIC int (LIBCCALL tcdrain)(int fd) { return ioctl(fd,TCSBRK,1); }
-PUBLIC int (LIBCCALL tcflush)(int fd, int queue_selector) { return ioctl(fd,TCFLSH,queue_selector); }
-PUBLIC int (LIBCCALL tcflow)(int fd, int action) { return ioctl(fd,TCXONC,action); }
-PUBLIC pid_t (LIBCCALL tcgetsid)(int fd) {
+INTERN int LIBCCALL libc_tcdrain(int fd) { return libc_ioctl(fd,TCSBRK,1); }
+INTERN int LIBCCALL libc_tcflush(int fd, int queue_selector) { return libc_ioctl(fd,TCFLSH,queue_selector); }
+INTERN int LIBCCALL libc_tcflow(int fd, int action) { return libc_ioctl(fd,TCXONC,action); }
+INTERN pid_t LIBCCALL libc_tcgetsid(int fd) {
  pid_t pgrp;
  pid_t sid;
 #ifdef TIOCGSID
  static int tiocgsid_does_not_work = 0;
  if (!tiocgsid_does_not_work) {
-  int serrno = errno,sid;
-  if (ioctl(fd,TIOCGSID,&sid) < 0) {
-   if (errno == EINVAL) {
+  int serrno = GET_ERRNO(),sid;
+  if (libc_ioctl(fd,TIOCGSID,&sid) < 0) {
+   if (GET_ERRNO() == EINVAL) {
     tiocgsid_does_not_work = 1;
     SET_ERRNO(serrno);
-   } else return (pid_t)-1;
-  } else return (pid_t)sid;
+   } else {
+    return (pid_t)-1;
+   }
+  } else {
+   return (pid_t)sid;
+  }
  }
 #endif
- pgrp = tcgetpgrp(fd);
+ pgrp = libc_tcgetpgrp(fd);
  if (pgrp == -1) return (pid_t)-1;
- sid = getsid(pgrp);
- if (sid == -1 && errno == ESRCH)
+ sid = libc_getsid(pgrp);
+ if (sid == -1 && GET_ERRNO() == ESRCH)
      SET_ERRNO(ENOTTY);
  return sid;
 }
-PUBLIC void (LIBCCALL cfmakeraw)(struct termios *termios_p) {
+INTERN void LIBCCALL libc_cfmakeraw(struct termios *termios_p) {
  termios_p->c_iflag    &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
  termios_p->c_oflag    &= ~(OPOST);
  termios_p->c_lflag    &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
@@ -195,6 +201,27 @@ PUBLIC void (LIBCCALL cfmakeraw)(struct termios *termios_p) {
  termios_p->c_cc[VTIME] = 0;
 }
 
+DEFINE_PUBLIC_ALIAS(login_tty,libc_login_tty);
+DEFINE_PUBLIC_ALIAS(openpty,libc_openpty);
+DEFINE_PUBLIC_ALIAS(forkpty,libc_forkpty);
+DEFINE_PUBLIC_ALIAS(ttyname,libc_ttyname);
+DEFINE_PUBLIC_ALIAS(ttyname_r,libc_ttyname_r);
+DEFINE_PUBLIC_ALIAS(isatty,libc_isatty);
+DEFINE_PUBLIC_ALIAS(tcgetpgrp,libc_tcgetpgrp);
+DEFINE_PUBLIC_ALIAS(tcsetpgrp,libc_tcsetpgrp);
+DEFINE_PUBLIC_ALIAS(cfgetospeed,libc_cfgetospeed);
+DEFINE_PUBLIC_ALIAS(cfgetispeed,libc_cfgetispeed);
+DEFINE_PUBLIC_ALIAS(cfsetospeed,libc_cfsetospeed);
+DEFINE_PUBLIC_ALIAS(cfsetispeed,libc_cfsetispeed);
+DEFINE_PUBLIC_ALIAS(cfsetspeed,libc_cfsetspeed);
+DEFINE_PUBLIC_ALIAS(tcgetattr,libc_tcgetattr);
+DEFINE_PUBLIC_ALIAS(tcsetattr,libc_tcsetattr);
+DEFINE_PUBLIC_ALIAS(tcsendbreak,libc_tcsendbreak);
+DEFINE_PUBLIC_ALIAS(tcdrain,libc_tcdrain);
+DEFINE_PUBLIC_ALIAS(tcflush,libc_tcflush);
+DEFINE_PUBLIC_ALIAS(tcflow,libc_tcflow);
+DEFINE_PUBLIC_ALIAS(tcgetsid,libc_tcgetsid);
+DEFINE_PUBLIC_ALIAS(cfmakeraw,libc_cfmakeraw);
 
 DECL_END
 

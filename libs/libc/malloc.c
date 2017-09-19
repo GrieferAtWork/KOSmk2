@@ -18,116 +18,122 @@
  */
 #ifndef GUARD_LIBS_LIBC_MALLOC_C
 #define GUARD_LIBS_LIBC_MALLOC_C 1
-
-/* NOTE: Dispite all the __KERNEL__ ifdefs, this file isn't actually used by the kernel.
- *       It was used in early private builds, but this was dropped in favor of a dedicated
- *       heap manager capable of so much more functionality, such as 'realign()', and most
- *       importantly the design change of using multiple heaps for different situations.
- * HINT: At the time of this being written, there are actually 5 different kernel heaps (Wow...) */
-
-#ifndef __KERNEL__
 #define _GNU_SOURCE 1
 #define _KOS_SOURCE 1
 #define __ptbwalker     ptbwalker
 
-#undef CONFIG_DEBUG_MALLOC
-#define CONFIG_DEBUG_MALLOC 1
-
 #include "libc.h"
+#include "errno.h"
+#include "format-printer.h"
+#include "malloc.h"
+#include "misc.h"
+#include "stdio.h"
+#include "string.h"
+#include "string.h"
+#include "sysconf.h"
+#include "system.h"
+
+#include <string.h>
 #include <assert.h>
-#include <stdio.h>
-#include <format-printer.h>
+#include <hybrid/asm.h>
 #include <hybrid/compiler.h>
 #include <hybrid/debuginfo.h>
 #include <hybrid/types.h>
+#include <hybrid/limits.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include <stddef.h>
 #include <stdarg.h>
-#include <string.h>
 
-/* Must include both malloc & stdlib, so we can delete
- * all malloc-macros before dlmalloc is included. */
-#include <malloc.h>
-#include <stdlib.h>
-
-#undef MALLOC_ALIGNMENT
-#define MALLOC_ALIGNMENT   ((size_t)__MALL_MIN_ALIGNMENT)
-
-#ifdef __KERNEL__
-#   define MALL_ALLMODULES   NULL
-#ifdef CONFIG_DEBUG_MALLOC
-#   define MALL_MODULE_ARG   struct module *mod
-#   define _MALL_MODULE_ARG ,struct module *mod
-#   define MALL_MODULE_ARG_  struct module *mod,
-#   define MALL_MODULE_FWD   mod
-#   define _MALL_MODULE_FWD ,mod
-#   define MALL_MODULE_FWD_  mod,
-#else
-#   define MALL_MODULE_ARG   struct module *UNUSED(mod)
-#   define _MALL_MODULE_ARG ,struct module *UNUSED(mod)
-#   define MALL_MODULE_ARG_  struct module *UNUSED(mod),
-#   define MALL_MODULE_FWD   NULL
-#   define _MALL_MODULE_FWD ,NULL
-#   define MALL_MODULE_FWD_  NULL,
-#endif
-#else
-#   define MALL_MODULE_ARG  void
-#   define _MALL_MODULE_ARG
-#   define MALL_MODULE_ARG_
-#   define MALL_MODULE_FWD
-#   define _MALL_MODULE_FWD
-#   define MALL_MODULE_FWD_
+#ifndef __KERNEL__
+#define CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP 1
 #endif
 
-#undef malloc
-#undef calloc
-#undef aligned_alloc
-#undef memalign
-#undef realloc
-#undef realloc_in_place
-#undef pvalloc
-#undef valloc
-#undef posix_memalign
-#undef free
-#undef cfree
-#undef mallopt
-#undef malloc_trim
-#undef malloc_usable_size
-#undef __memdup
-#undef __memcdup
-#undef memdup
-#undef memcdup
-#undef strdup
-#undef strndup
-#undef strdupf
-#undef vstrdupf
+
+/* Force dlmalloc to use libc internal functions. */
+#undef memcpy
+#define memcpy             libc_memcpy
+#define memset             libc_memset
+#define memmove            libc_memmove
+#define sysconf            libc_sysconf
+#define mremap             libc_mremap
+/* Invoke the system call directly; 'free()' must never modify 'errno'! */
+#define munmap(p,s)       (E_ISERR(sys_munmap(p,s)) ? -1 : 0)
+#define mmap               libc_mmap
+#define malloc_getpagesize PAGESIZE
+#define fprintf            libc_fprintf
+#define sched_yield        libc_sched_yield
+#undef MALLOC_FAILURE_ACTION
+#define MALLOC_FAILURE_ACTION SET_ERRNO(ENOMEM);
+
+/* Use dlmalloc to define the low-level malloc API used as default for non-debug functions. */
+#define USE_DL_PREFIX
+#define DLMALLOC_EXPORT  INTDEF
+#include "dlmalloc.c.inl"
+
 
 
 #ifndef CONFIG_DEBUG_MALLOC
-#undef USE_DL_PREFIX
-#define DLMALLOC_EXPORT  __EXPDEF
-#include "dlmalloc.c.inl"
 
 DECL_BEGIN
-PUBLIC SAFE void  *(LIBCCALL _malloc_d)(size_t n_bytes, DEBUGINFO_UNUSED) { return malloc(n_bytes); }
-PUBLIC SAFE void   (LIBCCALL _free_d)(void *__restrict ptr, DEBUGINFO_UNUSED) { return free(ptr); }
-PUBLIC SAFE void  *(LIBCCALL _calloc_d)(size_t count, size_t n_bytes, DEBUGINFO_UNUSED) { return calloc(count,n_bytes); }
-PUBLIC SAFE void  *(LIBCCALL _realloc_d)(void *__restrict ptr, size_t n_bytes, DEBUGINFO_UNUSED) { return realloc(ptr,n_bytes); }
-PUBLIC SAFE void  *(LIBCCALL _realloc_in_place_d)(void *__restrict ptr, size_t n_bytes, DEBUGINFO_UNUSED) { return realloc_in_place(ptr,n_bytes); }
-PUBLIC SAFE void  *(LIBCCALL _memalign_d)(size_t alignment, size_t n_bytes, DEBUGINFO_UNUSED) { return memalign(alignment,n_bytes); }
-PUBLIC SAFE void  *(LIBCCALL _valloc_d)(size_t n_bytes, DEBUGINFO_UNUSED) { return valloc(n_bytes); }
-PUBLIC SAFE void  *(LIBCCALL _pvalloc_d)(size_t n_bytes, DEBUGINFO_UNUSED) { return pvalloc(n_bytes); }
-PUBLIC SAFE int    (LIBCCALL _posix_memalign_d)(void **__restrict pp, size_t alignment, size_t n_bytes, DEBUGINFO_UNUSED) { return posix_memalign(pp,alignment,n_bytes); }
-PUBLIC SAFE int    (LIBCCALL _mallopt_d)(int parameter_number, int parameter_value, DEBUGINFO_UNUSED) { return mallopt(parameter_number,parameter_value); }
-PUBLIC SAFE int    (LIBCCALL _malloc_trim_d)(size_t pad, DEBUGINFO_UNUSED) { return malloc_trim(pad); }
-PUBLIC SAFE size_t (LIBCCALL _malloc_usable_size_d)(void *__restrict ptr, DEBUGINFO_UNUSED) { return malloc_usable_size(ptr); }
-PUBLIC SAFE void  *(LIBCCALL _memdup_d)(void const *__restrict ptr, size_t n_bytes, DEBUGINFO_UNUSED) { return memdup(ptr,n_bytes); }
-#ifndef __KERNEL__
-PUBLIC SAFE char  *(LIBCCALL _strdup_d)(char const *__restrict str, DEBUGINFO_UNUSED) { return strdup(str); }
-PUBLIC SAFE char  *(LIBCCALL _strndup_d)(char const *__restrict str, size_t max_chars, DEBUGINFO_UNUSED) { return strndup(str,max_chars); }
-PUBLIC SAFE char  *(         _strdupf_d)(DEBUGINFO_UNUSED, char const *__restrict format, ...) { char *result; va_list args; va_start(args,format); result = vstrdupf(format,args); va_end(args); return result; }
-PUBLIC SAFE char  *(LIBCCALL _vstrdupf_d)(char const *__restrict format, va_list args, DEBUGINFO_UNUSED) { return vstrdupf(format,args); }
-PUBLIC SAFE void  *(LIBCCALL _memcdup_d)(void const *__restrict ptr, int needle, size_t n_bytes, DEBUGINFO_UNUSED) { return memcdup(ptr,needle,n_bytes); }
-#endif /* !__KERNEL__ */
+
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+/* Directly link against dlmalloc, assuming caller-cleanup of superfluous function arguments. */
+DEFINE_INTERN_ALIAS(libc__malloc_d,dlmalloc);
+DEFINE_INTERN_ALIAS(libc__free_d,dlfree);
+DEFINE_INTERN_ALIAS(libc__calloc_d,dlcalloc);
+DEFINE_INTERN_ALIAS(libc__realloc_d,dlrealloc);
+DEFINE_INTERN_ALIAS(libc__realloc_in_place_d,dlrealloc_in_place);
+DEFINE_INTERN_ALIAS(libc__memalign_d,dlmemalign);
+DEFINE_INTERN_ALIAS(libc__valloc_d,dlvalloc);
+DEFINE_INTERN_ALIAS(libc__pvalloc_d,dlpvalloc);
+DEFINE_INTERN_ALIAS(libc__posix_memalign_d,dlposix_memalign);
+DEFINE_INTERN_ALIAS(libc__mallopt_d,dlmallopt);
+DEFINE_INTERN_ALIAS(libc__malloc_trim_d,dlmalloc_trim);
+DEFINE_INTERN_ALIAS(libc__malloc_usable_size_d,dlmalloc_usable_size);
+#else
+/* Call external malloc functions. */
+INTERN SAFE void  *(LIBCCALL libc__malloc_d)(size_t n_bytes, DEBUGINFO_UNUSED) { return libc_malloc(n_bytes); }
+INTERN SAFE void   (LIBCCALL libc__free_d)(void *__restrict ptr, DEBUGINFO_UNUSED) { return libc_free(ptr); }
+INTERN SAFE void  *(LIBCCALL libc__calloc_d)(size_t count, size_t n_bytes, DEBUGINFO_UNUSED) { return libc_calloc(count,n_bytes); }
+INTERN SAFE void  *(LIBCCALL libc__realloc_d)(void *__restrict ptr, size_t n_bytes, DEBUGINFO_UNUSED) { return libc_realloc(ptr,n_bytes); }
+INTERN SAFE void  *(LIBCCALL libc__realloc_in_place_d)(void *__restrict ptr, size_t n_bytes, DEBUGINFO_UNUSED) { return libc_realloc_in_place(ptr,n_bytes); }
+INTERN SAFE void  *(LIBCCALL libc__memalign_d)(size_t alignment, size_t n_bytes, DEBUGINFO_UNUSED) { return libc_memalign(alignment,n_bytes); }
+INTERN SAFE void  *(LIBCCALL libc__valloc_d)(size_t n_bytes, DEBUGINFO_UNUSED) { return libc_valloc(n_bytes); }
+INTERN SAFE void  *(LIBCCALL libc__pvalloc_d)(size_t n_bytes, DEBUGINFO_UNUSED) { return libc_pvalloc(n_bytes); }
+INTERN SAFE int    (LIBCCALL libc__posix_memalign_d)(void **__restrict pp, size_t alignment, size_t n_bytes, DEBUGINFO_UNUSED) { return libc_posix_memalign(pp,alignment,n_bytes); }
+INTERN SAFE int    (LIBCCALL libc__mallopt_d)(int parameter_number, int parameter_value, DEBUGINFO_UNUSED) { return libc_mallopt(parameter_number,parameter_value); }
+INTERN SAFE int    (LIBCCALL libc__malloc_trim_d)(size_t pad, DEBUGINFO_UNUSED) { return libc_malloc_trim(pad); }
+INTERN SAFE size_t (LIBCCALL libc__malloc_usable_size_d)(void *__restrict ptr, DEBUGINFO_UNUSED) { return libc_malloc_usable_size(ptr); }
+#endif
+
+#undef libc_memdup
+#undef libc_strdup
+#undef libc_strndup
+#undef libc_strdupf
+#undef libc_vstrdupf
+#undef libc_memcdup
+#undef libc__memdup_d
+#undef libc__strdup_d
+#undef libc__strndup_d
+#undef libc__strdupf_d
+#undef libc__vstrdupf_d
+#undef libc__memcdup_d
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_PUBLIC_ALIAS(libc__memdup_d,libc_memdup);
+DEFINE_PUBLIC_ALIAS(libc__strdup_d,libc_strdup);
+DEFINE_PUBLIC_ALIAS(libc__strndup_d,libc_strndup);
+DEFINE_PUBLIC_ALIAS(libc__strdupf_d,libc_strdupf);
+DEFINE_PUBLIC_ALIAS(libc__vstrdupf_d,libc_vstrdupf);
+DEFINE_PUBLIC_ALIAS(libc__memcdup_d,libc_memcdup);
+#else
+INTERN SAFE void  *(LIBCCALL libc__memdup_d)(void const *__restrict ptr, size_t n_bytes, DEBUGINFO_UNUSED) { return libc_memdup(ptr,n_bytes); }
+INTERN SAFE char  *(LIBCCALL libc__strdup_d)(char const *__restrict str, DEBUGINFO_UNUSED) { return libc_strdup(str); }
+INTERN SAFE char  *(LIBCCALL libc__strndup_d)(char const *__restrict str, size_t max_chars, DEBUGINFO_UNUSED) { return libc_strndup(str,max_chars); }
+INTERN SAFE char  *(ATTR_CDECL libc__strdupf_d)(DEBUGINFO_UNUSED, char const *__restrict format, ...) { char *result; va_list args; va_start(args,format); result = libc_vstrdupf(format,args); va_end(args); return result; }
+INTERN SAFE char  *(LIBCCALL libc__vstrdupf_d)(char const *__restrict format, va_list args, DEBUGINFO_UNUSED) { return libc_vstrdupf(format,args); }
+INTERN SAFE void  *(LIBCCALL libc__memcdup_d)(void const *__restrict ptr, int needle, size_t n_bytes, DEBUGINFO_UNUSED) { return libc_memcdup(ptr,needle,n_bytes); }
+#endif
 
 #ifndef __ptbwalker_defined
 #define __ptbwalker_defined 1
@@ -137,58 +143,96 @@ typedef __SSIZE_TYPE__ (__LIBCCALL *__ptbwalker)(void const *__restrict __instru
 #endif
 
 /* MALL Api stubs. */
-PUBLIC void   *(LIBCCALL _mall_getattrib)(void *__restrict UNUSED(ptr), int UNUSED(attrib)) { return NULL; }
-PUBLIC ssize_t (LIBCCALL _mall_traceback)(void *__restrict UNUSED(ptr), ptbwalker UNUSED(callback), void *UNUSED(closure)) { return 0; }
-PUBLIC void    (LIBCCALL _mall_printleaks)(MALL_MODULE_ARG) {}
-PUBLIC void    (LIBCCALL _mall_validate)(MALL_MODULE_ARG) {}
-PUBLIC ssize_t (LIBCCALL _mall_enum)(MALL_MODULE_ARG_ void *UNUSED(checkpoint), ssize_t (*callback)(void *__restrict ptr,void *closure), void *UNUSED(closure)) { (void)callback; return 0; }
-PUBLIC void   *(LIBCCALL _mall_untrack)(void *mallptr) { return mallptr; }
-PUBLIC void   *(LIBCCALL _mall_nofree)(void *mallptr) { return mallptr; }
-PUBLIC void   *(LIBCCALL _mall_getattrib_d)(void *__restrict UNUSED(ptr), int UNUSED(attrib), DEBUGINFO_UNUSED) { return NULL; }
-PUBLIC ssize_t (LIBCCALL _mall_traceback_d)(void *__restrict UNUSED(ptr), ptbwalker UNUSED(callback), void *UNUSED(closure), DEBUGINFO_UNUSED) { return 0; }
-PUBLIC void    (LIBCCALL _mall_printleaks_d)(MALL_MODULE_ARG_ DEBUGINFO_UNUSED) {}
-PUBLIC void    (LIBCCALL _mall_validate_d)(MALL_MODULE_ARG_ DEBUGINFO_UNUSED) {}
-PUBLIC ssize_t (LIBCCALL _mall_enum_d)(MALL_MODULE_ARG_ void *UNUSED(checkpoint), ssize_t (*callback)(void *__restrict ptr,void *closure), void *UNUSED(closure), DEBUGINFO_UNUSED) { (void)callback; return 0; }
-PUBLIC void   *(LIBCCALL _mall_untrack_d)(void *mallptr, DEBUGINFO_UNUSED) { return mallptr; }
-PUBLIC void   *(LIBCCALL _mall_nofree_d)(void *mallptr, DEBUGINFO_UNUSED) { return mallptr; }
+#if defined(CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP) && \
+   (defined(__i386__) || defined(__x86_64__))
+/* Use some assembly magic to reduce the memory footprint even further. */
+GLOBAL_ASM(
+L(INTERN_ENTRY(libc__mall_getattrib)                                                      )
+L(INTERN_ENTRY(libc__mall_traceback)                                                      )
+L(INTERN_ENTRY(libc__mall_enum)                                                           )
+L(INTERN_ENTRY(libc__mall_getattrib_d)                                                    )
+L(INTERN_ENTRY(libc__mall_traceback_d)                                                    )
+L(INTERN_ENTRY(libc__mall_enum_d)                                                         )
+L(    xor %eax, %eax                                                                      )
+L(INTERN_ENTRY(libc__mall_printleaks)                                                     )
+L(INTERN_ENTRY(libc__mall_validate)                                                       )
+L(INTERN_ENTRY(libc__mall_printleaks_d)                                                   )
+L(INTERN_ENTRY(libc__mall_validate_d)                                                     )
+L(    ret                                                                                 )
+L(SYM_END(libc__mall_validate_d)                                                          )
+L(SYM_END(libc__mall_printleaks_d)                                                        )
+L(SYM_END(libc__mall_validate)                                                            )
+L(SYM_END(libc__mall_printleaks)                                                          )
+L(SYM_END(libc__mall_enum_d)                                                              )
+L(SYM_END(libc__mall_traceback_d)                                                         )
+L(SYM_END(libc__mall_getattrib_d)                                                         )
+L(SYM_END(libc__mall_enum)                                                                )
+L(SYM_END(libc__mall_traceback)                                                           )
+L(SYM_END(libc__mall_getattrib)                                                           )
+L(INTERN_ENTRY(libc__mall_untrack)                                                        )
+L(INTERN_ENTRY(libc__mall_nofree)                                                         )
+L(INTERN_ENTRY(libc__mall_untrack_d)                                                      )
+L(INTERN_ENTRY(libc__mall_nofree_d)                                                       )
+L(    movl 4(%esp), %eax                                                                  )
+L(    ret                                                                                 )
+L(SYM_END(libc__mall_nofree_d)                                                            )
+L(SYM_END(libc__mall_untrack_d)                                                           )
+L(SYM_END(libc__mall_nofree)                                                              )
+L(SYM_END(libc__mall_untrack)                                                             )
+);
+#else
+INTERN void   *(LIBCCALL _mall_getattrib)(void *__restrict UNUSED(ptr), int UNUSED(attrib)) { return NULL; }
+INTERN ssize_t (LIBCCALL _mall_traceback)(void *__restrict UNUSED(ptr), ptbwalker UNUSED(callback), void *UNUSED(closure)) { return 0; }
+INTERN void    (LIBCCALL _mall_printleaks)(void) {}
+INTERN void    (LIBCCALL _mall_validate)(void) {}
+INTERN ssize_t (LIBCCALL _mall_enum)(void *UNUSED(checkpoint), ssize_t (*callback)(void *__restrict ptr,void *closure), void *UNUSED(closure)) { (void)callback; return 0; }
+INTERN void   *(LIBCCALL _mall_untrack)(void *mallptr) { return mallptr; }
+INTERN void   *(LIBCCALL _mall_nofree)(void *mallptr) { return mallptr; }
+INTERN void   *(LIBCCALL _mall_getattrib_d)(void *__restrict UNUSED(ptr), int UNUSED(attrib), DEBUGINFO_UNUSED) { return NULL; }
+INTERN ssize_t (LIBCCALL _mall_traceback_d)(void *__restrict UNUSED(ptr), ptbwalker UNUSED(callback), void *UNUSED(closure), DEBUGINFO_UNUSED) { return 0; }
+INTERN void    (LIBCCALL _mall_printleaks_d)(DEBUGINFO_UNUSED) {}
+INTERN void    (LIBCCALL _mall_validate_d)(DEBUGINFO_UNUSED) {}
+INTERN ssize_t (LIBCCALL _mall_enum_d)(void *UNUSED(checkpoint), ssize_t (*callback)(void *__restrict ptr,void *closure), void *UNUSED(closure), DEBUGINFO_UNUSED) { (void)callback; return 0; }
+INTERN void   *(LIBCCALL _mall_untrack_d)(void *mallptr, DEBUGINFO_UNUSED) { return mallptr; }
+INTERN void   *(LIBCCALL _mall_nofree_d)(void *mallptr, DEBUGINFO_UNUSED) { return mallptr; }
+#endif
 
 /* Extended malloc functions. */
-PUBLIC SAFE void *(LIBCCALL memdup)(void const *__restrict ptr, size_t n_bytes) {
- void *result = malloc(n_bytes);
- if (result) memcpy(result,ptr,n_bytes);
+INTERN SAFE void *(LIBCCALL libc_memdup)(void const *__restrict ptr, size_t n_bytes) {
+ void *result = libc_malloc(n_bytes);
+ if (result) libc_memcpy(result,ptr,n_bytes);
  return result;
 }
 
-#ifndef __KERNEL__
-PUBLIC SAFE char *(LIBCCALL strdup)(char const *__restrict str) {
- char *result; size_t len = strlen(str)+1;
- result = (char *)malloc(len*sizeof(char));
- if (result) memcpy(result,str,len*sizeof(char));
+INTERN SAFE char *(LIBCCALL libc_strdup)(char const *__restrict str) {
+ char *result; size_t len = libc_strlen(str)+1;
+ result = (char *)libc_malloc(len*sizeof(char));
+ if (result) libc_memcpy(result,str,len*sizeof(char));
  return result;
 }
-PUBLIC SAFE char *(LIBCCALL strndup)(char const *__restrict str, size_t max_chars) {
+INTERN SAFE char *(LIBCCALL libc_strndup)(char const *__restrict str, size_t max_chars) {
  char *result;
- max_chars = strnlen(str,max_chars);
- result = (char *)malloc((max_chars+1)*sizeof(char));
+ max_chars = libc_strnlen(str,max_chars);
+ result = (char *)libc_malloc((max_chars+1)*sizeof(char));
  if (result) {
-  memcpy(result,str,max_chars*sizeof(char));
+  libc_memcpy(result,str,max_chars*sizeof(char));
   result[max_chars] = '\0';
  }
  return result;
 }
-PUBLIC SAFE void *(LIBCCALL memcdup)(void const *__restrict ptr, int needle, size_t n_bytes) {
+INTERN SAFE void *(LIBCCALL libc_memcdup)(void const *__restrict ptr, int needle, size_t n_bytes) {
  if (n_bytes) {
-  void const *endaddr = memchr(ptr,needle,n_bytes-1);
+  void const *endaddr = libc_memchr(ptr,needle,n_bytes-1);
   if (endaddr) n_bytes = ((uintptr_t)endaddr-(uintptr_t)ptr)+1;
  }
- return memdup(ptr,n_bytes);
+ return libc_memdup(ptr,n_bytes);
 }
 
 
 struct strdup_formatdata { char *start,*iter,*end; };
-static __NONNULL((1,3)) ssize_t
-(LIBCCALL strdupf_printer)(char const *__restrict data, size_t datalen,
-                           struct strdup_formatdata *__restrict fmt) {
+PRIVATE NONNULL((1,3)) ssize_t
+LIBCCALL strdupf_printer(char const *__restrict data, size_t datalen,
+                         struct strdup_formatdata *__restrict fmt) {
  char *newiter;
  newiter = fmt->iter+datalen;
  if (newiter > fmt->end) {
@@ -197,59 +241,58 @@ static __NONNULL((1,3)) ssize_t
   do newsize *= 2;
   while (fmt->start+newsize < newiter);
   /* Realloc the strdup string */
-  newiter = (char *)realloc(fmt->start,(newsize+1)*sizeof(char));
+  newiter = (char *)libc_realloc(fmt->start,(newsize+1)*sizeof(char));
   if unlikely(!newiter) {
    /* If there isn't enough memory, retry
     * with a smaller buffer before giving up. */
    newsize = (fmt->end-fmt->start)+datalen;
-   newiter = (char *)realloc(fmt->start,(newsize+1)*sizeof(char));
+   newiter = (char *)libc_realloc(fmt->start,(newsize+1)*sizeof(char));
    if unlikely(!newiter) return -1; /* Nothing we can do (out of memory...) */
   }
   fmt->iter = newiter+(fmt->iter-fmt->start);
   fmt->start = newiter;
   fmt->end = newiter+newsize;
  }
- memcpy(fmt->iter,data,datalen);
+ libc_memcpy(fmt->iter,data,datalen);
  fmt->iter += datalen;
  return datalen;
 }
 
 
-PUBLIC SAFE char *(LIBCCALL vstrdupf)(char const *__restrict format, va_list args) {
+INTERN SAFE char *(LIBCCALL libc_vstrdupf)(char const *__restrict format, va_list args) {
  struct strdup_formatdata data;
  /* Try to do a (admittedly very bad) prediction on the required size. */
- size_t format_length = (strlen(format)*3)/2;
- data.start = (char *)malloc((format_length+1)*sizeof(char));
+ size_t format_length = (libc_strlen(format)*3)/2;
+ data.start = (char *)libc_malloc((format_length+1)*sizeof(char));
  if unlikely(!data.start) {
   /* Failed to allocate initial buffer (try with a smaller one) */
   format_length = 1;
-  data.start = (char *)malloc(2*sizeof(char));
+  data.start = (char *)libc_malloc(2*sizeof(char));
   if unlikely(!data.start) return NULL;
  }
  data.end = data.start+format_length;
  data.iter = data.start;
- if unlikely(format_vprintf((pformatprinter)&strdupf_printer,
-                            &data,format,args) < 0) {
-  free(data.start); /* Out-of-memory */
+ if unlikely(libc_format_vprintf((pformatprinter)&strdupf_printer,
+                                 &data,format,args) < 0) {
+  libc_free(data.start); /* Out-of-memory */
   return NULL;
  }
  *data.iter = '\0';
  if likely(data.iter != data.end) {
   /* Try to realloc the string one last time to save up on memory */
-  data.end = (char *)realloc(data.start,((data.iter-data.start)+1)*sizeof(char));
+  data.end = (char *)libc_realloc(data.start,((data.iter-data.start)+1)*sizeof(char));
   if likely(data.end) data.start = data.end;
  }
  return data.start;
 }
-PUBLIC SAFE char *(ATTR_CDECL strdupf)(char const *__restrict format, ...) {
+INTERN SAFE char *(ATTR_CDECL libc_strdupf)(char const *__restrict format, ...) {
  char *result;
  va_list args;
  va_start(args,format);
- result = vstrdupf(format,args);
+ result = libc_vstrdupf(format,args);
  va_end(args);
  return result;
 }
-#endif /* !__KERNEL__ */
 
 DECL_END
 #else
@@ -261,17 +304,11 @@ DECL_END
 #include <hybrid/limits.h>
 #include <hybrid/list/list.h>
 #include <hybrid/minmax.h>
-#include <hybrid/traceback.h>
 #include <hybrid/sched/crit.h>
 #include <hybrid/sync/atomic-rwlock.h>
+#include <hybrid/traceback.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-/* Define dlmalloc-functions as internals.
- * >> We'll be using them as basis for MALL. */
-#define USE_DL_PREFIX    1
-#define DLMALLOC_EXPORT  INTDEF
-#include "dlmalloc.c.inl"
 
 DECL_BEGIN
 
@@ -288,7 +325,6 @@ DECL_BEGIN
 #define CORE_MALLOC_TRIM(pad)                          dlmalloc_trim(pad)
 #define CORE_MALLOC_USABLE_SIZE(ptr)                   dlmalloc_usable_size(ptr)
 
-
 #define MALLDECL     PRIVATE __ATTR_NOINLINE
 
 #define MALL_TBMIN        8 /* The min amount of traceback entries to track for any allocation. */
@@ -299,43 +335,26 @@ DECL_BEGIN
 #define MALL_HEADERBYTE(i)   0x65
 #define MALL_FOOTERBYTE(i)   0xB6
 #else
-static byte_t mall_header_seed[4] = {0x65,0xB6,0xBD,0x5A};
-static byte_t mall_footer_seed[4] = {0xCF,0x6A,0xB7,0x97};
+PRIVATE byte_t mall_header_seed[4] = {0x65,0xB6,0xBD,0x5A};
+PRIVATE byte_t mall_footer_seed[4] = {0xCF,0x6A,0xB7,0x97};
 #define MALL_HEADERBYTE(i)   (mall_header_seed[(i) % 4]^(byte_t)((0xff >> (i) % 8)*(i))) /* Returns the i-th control byte for mall-headers. */
 #define MALL_FOOTERBYTE(i)   (mall_footer_seed[(i) % 4]^(byte_t)((0xff >> (i) % 7)*((i)+1))) /* Returns the i-th control byte for mall-footers. */
 #if 0
 /* Put a twist on random number generation, making it impossible for
  * code to intentionally guess the correct sequence twice in a row. */
-#ifdef __KERNEL__
-#define MALL_INITIALIZE() \
- (*(uint32_t *)mall_header_seed ^=  (uint32_t)KERNEL_BOOT_TIME.tv_sec,\
-  *(uint32_t *)mall_footer_seed ^= ~(uint32_t)KERNEL_BOOT_TIME.tv_sec)
-#else
 #define MALL_INITIALIZE() \
  (*(uint32_t *)mall_header_seed ^=  (uint32_t)time(NULL),\
   *(uint32_t *)mall_footer_seed ^= ~(uint32_t)time(NULL))
 #endif
 #endif
-#endif
 
 
-#ifdef __KERNEL__
-#define SIZEOF_DINFO  __SIZEOF_INT__+3*__SIZEOF_POINTER__
-#else
-#define SIZEOF_DINFO  __SIZEOF_INT__+2*__SIZEOF_POINTER__
-#endif
+#define SIZEOF_DINFO  (__SIZEOF_INT__+2*__SIZEOF_POINTER__)
 
 struct dinfo {
-#ifdef __KERNEL__
- char const      *i_file;
- int              i_line;
- char const      *i_func;
- struct instance *i_inst;
-#else /* __KERNEL__ */
- char const      *i_file;
- int              i_line;
- char const      *i_func;
-#endif /* !__KERNEL__ */
+ char const *i_file;
+ int         i_line;
+ char const *i_func;
 };
 
 struct dsetup {
@@ -388,9 +407,9 @@ struct frame {
 MALLDECL u16 LIBCCALL mall_capturetb(struct malltail *__restrict tail, u16 tb_max, size_t skip);
 PRIVATE  u32 LIBCCALL mall_chksum(void const *__restrict p, size_t s, u32 sum);
 MALLDECL struct mallhead *LIBCCALL mall_loadptr(struct dsetup *__restrict setup, void *p);
-MALLDECL __ATTR_NORETURN void LIBCCALL mall_panic(struct dsetup *__restrict setup,
-                                                  struct mallhead *info_header,
-                                                  char const *__restrict format, ...);
+MALLDECL ATTR_NORETURN void LIBCCALL mall_panic(struct dsetup *__restrict setup,
+                                                struct mallhead *info_header,
+                                                char const *__restrict format, ...);
 
 /* MALL Allocation functions. */
 MALLDECL SAFE void   LIBCCALL mall_free(struct dsetup *__restrict setup, void *__restrict ptr);
@@ -411,9 +430,9 @@ MALLDECL void    LIBCCALL mall_scramble(void *__restrict ptr, size_t size);
 MALLDECL void   *LIBCCALL mall_getattrib(struct dsetup *__restrict setup, void *__restrict ptr, int attrib);
 MALLDECL ssize_t LIBCCALL mall_traceback(struct dsetup *__restrict setup, void *__restrict ptr, ptbwalker callback, void *closure);
 MALLDECL void   *LIBCCALL mall_untrack(struct dsetup *__restrict setup, void *__restrict ptr, u8 flags);
-MALLDECL ssize_t LIBCCALL mall_enum(struct dsetup *__restrict setup, MALL_MODULE_ARG_ void *checkpoint, ssize_t (LIBCCALL *callback)(void *__restrict ptr, void *closure), void *closure);
-MALLDECL void    LIBCCALL mall_printleaks(struct dsetup *__restrict setup _MALL_MODULE_ARG);
-MALLDECL void    LIBCCALL mall_validate(struct dsetup *__restrict setup _MALL_MODULE_ARG);
+MALLDECL ssize_t LIBCCALL mall_enum(struct dsetup *__restrict setup,  void *checkpoint, ssize_t (LIBCCALL *callback)(void *__restrict ptr, void *closure), void *closure);
+MALLDECL void    LIBCCALL mall_printleaks(struct dsetup *__restrict setup);
+MALLDECL void    LIBCCALL mall_validate(struct dsetup *__restrict setup);
 
 #define MALL_USE_REALLOC_INPLACE 0x00000001
 #define MALL_NO_SCRABLE_ON_FREE  0x00000002
@@ -422,18 +441,11 @@ PRIVATE ATOMIC_DATA u32            mall_config    = 0;    /*< Generic MALL confi
 PRIVATE u32                        mall_check     = 1024; /*< Next time MALL is checked for inconsistencies. */
 PRIVATE u32                        mall_checkfreq = 1024; /*< MALL consistency check frequency. */
 PRIVATE LIST_HEAD(struct mallhead) mall_top       = NULL; /*< [0..1] Last allocated pointer. */
-
-#ifdef __KERNEL__
-#define MALL_FREQ() (mall_checkfreq && --mall_check ? \
-                    (mall_check = mall_checkfreq,\
-                     ++setup->s_tbskip,mall_validate(setup,__MALL_ALLMODULES),\
-                     --setup->s_tbskip) : (void)0)
-#else
 #define MALL_FREQ() (mall_checkfreq && --mall_check ? \
                     (mall_check = mall_checkfreq,\
                      ++setup->s_tbskip,mall_validate(setup),\
                      --setup->s_tbskip) : (void)0)
-#endif
+
 
 MALLDECL SAFE int LIBCCALL
 mall_mallopt(struct dsetup *__restrict UNUSED(setup),
@@ -489,7 +501,7 @@ mall_chksum(void const *__restrict p, size_t s, u32 sum) {
  for (; iter != end; ++iter) sum += *iter;
  return sum;
 }
-MALLDECL __ATTR_NORETURN void LIBCCALL
+MALLDECL ATTR_NORETURN void LIBCCALL
 mall_panic(struct dsetup *__restrict setup,
            struct mallhead *info_header,
            char const *__restrict format, ...) {
@@ -631,7 +643,7 @@ mall_memalign(struct dsetup *__restrict setup,
                       offsetof(struct mallhead,mh_tbsize),MALL_STARTSUM);
  chksum = mall_chksum(&tail->mt_tb,head->mh_tbsize*sizeof(void *),chksum);
  head->mh_chksum = chksum;
- memset(head+1,cleared ? 0 : CRTDBG_INIT_MALLOC,n_bytes);
+ libc_memset(head+1,cleared ? 0 : CRTDBG_INIT_MALLOC,n_bytes);
  atomic_rwlock_write(&mall_lock);
  LIST_INSERT(mall_top,head,mh_chain);
  atomic_rwlock_endwrite(&mall_lock);
@@ -670,7 +682,7 @@ mall_realloc_in_place(struct dsetup *__restrict setup,
  new_tail      = (struct malltail *)((uintptr_t)(head+1)+n_bytes);
  if (n_bytes < old_usersize) {
   /* Reduce allocated size. */
-  memmove(new_tail,tail,tail_size);
+  libc_memmove(new_tail,tail,tail_size);
   base = CORE_REALLOC_IN_PLACE(head->mh_base,new_hostsize);
   assertf(base == head->mh_base,"Why did a size reduction fail?");
  } else {
@@ -678,9 +690,9 @@ mall_realloc_in_place(struct dsetup *__restrict setup,
   base = CORE_REALLOC_IN_PLACE(head->mh_base,new_hostsize);
   if unlikely(!base) return NULL;
   assert(base == head->mh_base);
-  memmove(new_tail,tail,tail_size);
+  libc_memmove(new_tail,tail,tail_size);
   /* Pre-initialize newly allocated memory with debug values. */
-  memset(tail,CRTDBG_INIT_MALLOC,n_bytes-old_usersize);
+  libc_memset(tail,CRTDBG_INIT_MALLOC,n_bytes-old_usersize);
  }
  head->mh_tail = new_tail;
  /* Re-calculate the checksum. */
@@ -758,7 +770,7 @@ mall_realloc(struct dsetup *__restrict setup,
  result = mall_memalign(setup,MALLOC_ALIGNMENT,n_bytes,false);
  if (result) {
   size_t oldsize = mall_malloc_usable_size(setup,ptr);
-  memcpy(result,ptr,MIN(oldsize,n_bytes));
+  libc_memcpy(result,ptr,MIN(oldsize,n_bytes));
   ++setup->s_tbskip;
   mall_free(setup,ptr);
  }
@@ -795,12 +807,12 @@ MALLDECL char *LIBCCALL
 mall_strdup(struct dsetup *__restrict setup,
             char const *__restrict str) {
  char *result;
- size_t len = strlen(str);
+ size_t len = libc_strlen(str);
  ++setup->s_tbskip;
  result = (char *)mall_memalign(setup,MALLOC_ALIGNMENT,
                                (len+1)*sizeof(char),false);
  if (result) {
-  memcpy(result,str,len*sizeof(char));
+  libc_memcpy(result,str,len*sizeof(char));
   result[len] = '\0';
  }
  return result;
@@ -809,12 +821,12 @@ MALLDECL char *LIBCCALL
 mall_strndup(struct dsetup *__restrict setup,
              char const *__restrict str, size_t max_chars) {
  char *result;
- size_t len = strnlen(str,max_chars);
+ size_t len = libc_strnlen(str,max_chars);
  ++setup->s_tbskip;
  result = (char *)mall_memalign(setup,MALLOC_ALIGNMENT,
                                (len+1)*sizeof(char),false);
  if (result) {
-  memcpy(result,str,len*sizeof(char));
+  libc_memcpy(result,str,len*sizeof(char));
   result[len] = '\0';
  }
  return result;
@@ -826,11 +838,11 @@ mall_vstrdupf(struct dsetup *__restrict setup,
  /* Minimal implementation (Not meant for speed) */
  va_list args_copy; size_t result_size; char *result;
  va_copy(args_copy,args);
- result_size = (vsnprintf(NULL,0,format,args_copy)+1)*sizeof(char);
+ result_size = (libc_vsnprintf(NULL,0,format,args_copy)+1)*sizeof(char);
  va_end(args_copy);
  ++setup->s_tbskip;
  result = (char *)mall_memalign(setup,MALLOC_ALIGNMENT,result_size,false);
- if (result) vsnprintf(result,result_size,format,args);
+ if (result) libc_vsnprintf(result,result_size,format,args);
  return result;
 }
 MALLDECL void *LIBCCALL
@@ -840,14 +852,14 @@ mall_memdup(struct dsetup *__restrict setup,
  ++setup->s_tbskip;
  result = mall_memalign(setup,MALLOC_ALIGNMENT,
                         n_bytes*sizeof(char),false);
- if (result) memcpy(result,ptr,n_bytes);
+ if (result) libc_memcpy(result,ptr,n_bytes);
  return result;
 }
 MALLDECL void *LIBCCALL
 mall_memcdup(struct dsetup *__restrict setup,
              void const *__restrict ptr, int needle, size_t n_bytes) {
  if (n_bytes) {
-  void const *endaddr = memchr(ptr,needle,n_bytes-1);
+  void const *endaddr = libc_memchr(ptr,needle,n_bytes-1);
   if (endaddr) n_bytes = ((uintptr_t)endaddr-(uintptr_t)ptr)+1;
  }
  ++setup->s_tbskip;
@@ -877,9 +889,6 @@ mall_getattrib(struct dsetup *__restrict setup,
  case __MALL_ATTRIB_LINE: result = (void *)(uintptr_t)head->mh_info.i_line; break;
  case __MALL_ATTRIB_FUNC: result = (void *)head->mh_info.i_func; break;
  case __MALL_ATTRIB_SIZE: result = (void *)mall_usablesize(head); break;
-#ifdef __KERNEL__
- case __MALL_ATTRIB_MOD : result = (void *)head->mh_info.i_mod; break;
-#endif
  default                : result = NULL; break;
  }
  return result;
@@ -904,7 +913,7 @@ mall_traceback(struct dsetup *__restrict setup,
  return result;
 }
 MALLDECL ssize_t LIBCCALL
-mall_enum(struct dsetup *__restrict setup, MALL_MODULE_ARG_
+mall_enum(struct dsetup *__restrict setup, 
           void *checkpoint, ssize_t (LIBCCALL *callback)(void *__restrict ptr, void *closure),
           void *closure) {
  struct mallhead *blocks,*iter,*next,*oldtop;
@@ -926,27 +935,21 @@ mall_enum(struct dsetup *__restrict setup, MALL_MODULE_ARG_
   /* Perform a full validation of 'iter'. */
   mall_loadptr(setup,mall_head2user(iter));
   next = iter->mh_chain.le_next;
-#ifdef __KERNEL__
-  if (mod == __MALL_ALLMODULES ||
-      mod == iter->mh_info.i_mod)
-#endif
-  {
-   ++iter->mh_refcnt;
-   atomic_rwlock_endwrite(&mall_lock);
-   /* Run the user-provided callback on the given block. */
-   temp = (*callback)(mall_head2user(iter),closure);
-   atomic_rwlock_write(&mall_lock);
-   if (!--iter->mh_refcnt) {
-    if (iter->mh_chain.le_next != next) break;
-    LIST_REMOVE(iter,mh_chain);
-    mall_scramble(mall_head2user(iter),
-                  mall_usablesize(iter));
-    CORE_FREE(iter->mh_base);
-   }
-   /* Stop iterating if the user's callback returned negative. */
-   if unlikely(temp < 0) { result = temp; break; }
-   result += temp;
+  ++iter->mh_refcnt;
+  atomic_rwlock_endwrite(&mall_lock);
+  /* Run the user-provided callback on the given block. */
+  temp = (*callback)(mall_head2user(iter),closure);
+  atomic_rwlock_write(&mall_lock);
+  if (!--iter->mh_refcnt) {
+   if (iter->mh_chain.le_next != next) break;
+   LIST_REMOVE(iter,mh_chain);
+   mall_scramble(mall_head2user(iter),
+                 mall_usablesize(iter));
+   CORE_FREE(iter->mh_base);
   }
+  /* Stop iterating if the user's callback returned negative. */
+  if unlikely(temp < 0) { result = temp; break; }
+  result += temp;
   iter = next;
  }
  if (oldtop) {
@@ -970,28 +973,21 @@ mall_enum(struct dsetup *__restrict setup, MALL_MODULE_ARG_
 
 
 MALLDECL void LIBCCALL
-mall_validate(struct dsetup *__restrict setup _MALL_MODULE_ARG) {
+mall_validate(struct dsetup *__restrict setup) {
  struct mallhead *iter;
  CRIT_BEGIN();
  atomic_rwlock_read(&mall_lock);
  iter = mall_top;
  while (iter) {
-#ifdef __KERNEL__
-  if (mod == __MALL_ALLMODULES ||
-     !OK_HOST_DATA(iter,sizeof(struct mallhead)) ||
-      mod == iter->mh_info.i_mod)
-#endif
-  {
-   /* Perform a full validation of 'iter'. */
-   mall_loadptr(setup,mall_head2user(iter));
-  }
+  /* Perform a full validation of 'iter'. */
+  mall_loadptr(setup,mall_head2user(iter));
   iter = iter->mh_chain.le_next;
  }
  atomic_rwlock_endread(&mall_lock);
  CRIT_END();
 }
 
-static ssize_t
+PRIVATE ssize_t LIBCCALL
 mall_printleak(struct mallhead const *__restrict head,
                char const *reason) {
  void **iter,**end;
@@ -1009,15 +1005,15 @@ mall_printleak(struct mallhead const *__restrict head,
  }
  return 0;
 }
-static ssize_t
+PRIVATE ssize_t LIBCCALL
 printleaks_callback(void *__restrict ptr,
                     void *UNUSED(closure)) {
  return mall_printleak(mall_user2head(ptr),"Leaked");
 }
 MALLDECL void LIBCCALL
-mall_printleaks(struct dsetup *__restrict setup _MALL_MODULE_ARG) {
+mall_printleaks(struct dsetup *__restrict setup) {
  ++setup->s_tbskip;
- mall_enum(setup, MALL_MODULE_FWD_ NULL,&printleaks_callback,NULL);
+ mall_enum(setup,NULL,&printleaks_callback,NULL);
 }
 
 #ifdef __KERNEL__
@@ -1025,33 +1021,33 @@ mall_printleaks(struct dsetup *__restrict setup _MALL_MODULE_ARG) {
 #else
 #define DEF_SETUP(name) struct dsetup name = {{NULL,0,NULL},1}
 #endif
-PUBLIC void  *(LIBCCALL malloc)(size_t n_bytes)                                                 { DEF_SETUP(setup); return mall_memalign(&setup,MALLOC_ALIGNMENT,n_bytes,false); }
-PUBLIC void   (LIBCCALL free)(void *__restrict ptr)                                             { DEF_SETUP(setup); return mall_free(&setup,ptr); }
-PUBLIC void  *(LIBCCALL calloc)(size_t count, size_t n_bytes)                                   { DEF_SETUP(setup); return mall_memalign(&setup,MALLOC_ALIGNMENT,count*n_bytes,true); }
-PUBLIC void  *(LIBCCALL realloc)(void *__restrict ptr, size_t n_bytes)                          { DEF_SETUP(setup); return mall_realloc(&setup,ptr,n_bytes); }
-PUBLIC void  *(LIBCCALL realloc_in_place)(void *__restrict ptr, size_t n_bytes)                 { DEF_SETUP(setup); return mall_realloc_in_place(&setup,ptr,n_bytes); }
-PUBLIC void  *(LIBCCALL memalign)(size_t alignment, size_t n_bytes)                             { DEF_SETUP(setup); return mall_memalign(&setup,alignment,n_bytes,false); }
-PUBLIC void  *(LIBCCALL valloc)(size_t n_bytes)                                                 { DEF_SETUP(setup); return mall_memalign(&setup,PAGESIZE,n_bytes,false); }
-PUBLIC void  *(LIBCCALL pvalloc)(size_t n_bytes)                                                { DEF_SETUP(setup); return mall_memalign(&setup,PAGESIZE,(n_bytes+PAGESIZE-1)&~(PAGESIZE-1),false); }
-PUBLIC int    (LIBCCALL posix_memalign)(void **__restrict pp, size_t alignment, size_t n_bytes) { DEF_SETUP(setup); return mall_posix_memalign(&setup,pp,alignment,n_bytes); }
-PUBLIC int    (LIBCCALL mallopt)(int parameter_number, int parameter_value)                     { DEF_SETUP(setup); return mall_mallopt(&setup,parameter_number,parameter_value); }
-PUBLIC int    (LIBCCALL malloc_trim)(size_t pad)                                                { DEF_SETUP(setup); return mall_malloc_trim(&setup,pad); }
-PUBLIC size_t (LIBCCALL malloc_usable_size)(void *__restrict ptr)                               { DEF_SETUP(setup); return mall_malloc_usable_size(&setup,ptr); }
-PUBLIC void  *(LIBCCALL memdup)(void const *__restrict ptr, size_t n_bytes)                     { DEF_SETUP(setup); return mall_memdup(&setup,ptr,n_bytes); }
-PUBLIC void  *(LIBCCALL _mall_getattrib)(void *__restrict ptr, int attrib)                      { DEF_SETUP(setup); return mall_getattrib(&setup,ptr,attrib); }
-PUBLIC ssize_t(LIBCCALL _mall_traceback)(void *__restrict ptr, ptbwalker callback, void *closure){DEF_SETUP(setup); return mall_traceback(&setup,ptr,callback,closure); }
-PUBLIC void   (LIBCCALL _mall_printleaks)(MALL_MODULE_ARG)                                      { DEF_SETUP(setup);        mall_printleaks(&setup _MALL_MODULE_FWD); }
-PUBLIC void   (LIBCCALL _mall_validate)(MALL_MODULE_ARG)                                        { DEF_SETUP(setup);        mall_validate(&setup _MALL_MODULE_FWD); }
-PUBLIC ssize_t(LIBCCALL _mall_enum)(MALL_MODULE_ARG_ void *checkpoint, ssize_t(LIBCCALL *callback)(void *__restrict ptr, void *closure),
-                                    void *closure)                                              { DEF_SETUP(setup); return mall_enum(&setup _MALL_MODULE_FWD,checkpoint,callback,closure); }
-PUBLIC void  *(LIBCCALL _mall_untrack)(void *mallptr)                                           { DEF_SETUP(setup); return mall_untrack(&setup,mallptr,MALLFLAG_UNTRACKED); }
-PUBLIC void  *(LIBCCALL _mall_nofree)(void *mallptr)                                            { DEF_SETUP(setup); return mall_untrack(&setup,mallptr,MALLFLAG_UNTRACKED|MALLFLAG_NOFREE); }
+INTERN void  *(LIBCCALL libc_malloc)(size_t n_bytes)                                                 { DEF_SETUP(setup); return mall_memalign(&setup,MALLOC_ALIGNMENT,n_bytes,false); }
+INTERN void   (LIBCCALL libc_free)(void *__restrict ptr)                                             { DEF_SETUP(setup); return mall_free(&setup,ptr); }
+INTERN void  *(LIBCCALL libc_calloc)(size_t count, size_t n_bytes)                                   { DEF_SETUP(setup); return mall_memalign(&setup,MALLOC_ALIGNMENT,count*n_bytes,true); }
+INTERN void  *(LIBCCALL libc_realloc)(void *__restrict ptr, size_t n_bytes)                          { DEF_SETUP(setup); return mall_realloc(&setup,ptr,n_bytes); }
+INTERN void  *(LIBCCALL libc_realloc_in_place)(void *__restrict ptr, size_t n_bytes)                 { DEF_SETUP(setup); return mall_realloc_in_place(&setup,ptr,n_bytes); }
+INTERN void  *(LIBCCALL libc_memalign)(size_t alignment, size_t n_bytes)                             { DEF_SETUP(setup); return mall_memalign(&setup,alignment,n_bytes,false); }
+INTERN void  *(LIBCCALL libc_valloc)(size_t n_bytes)                                                 { DEF_SETUP(setup); return mall_memalign(&setup,PAGESIZE,n_bytes,false); }
+INTERN void  *(LIBCCALL libc_pvalloc)(size_t n_bytes)                                                { DEF_SETUP(setup); return mall_memalign(&setup,PAGESIZE,(n_bytes+PAGESIZE-1)&~(PAGESIZE-1),false); }
+INTERN int    (LIBCCALL libc_posix_memalign)(void **__restrict pp, size_t alignment, size_t n_bytes) { DEF_SETUP(setup); return mall_posix_memalign(&setup,pp,alignment,n_bytes); }
+INTERN int    (LIBCCALL libc_mallopt)(int parameter_number, int parameter_value)                     { DEF_SETUP(setup); return mall_mallopt(&setup,parameter_number,parameter_value); }
+INTERN int    (LIBCCALL libc_malloc_trim)(size_t pad)                                                { DEF_SETUP(setup); return mall_malloc_trim(&setup,pad); }
+INTERN size_t (LIBCCALL libc_malloc_usable_size)(void *__restrict ptr)                               { DEF_SETUP(setup); return mall_malloc_usable_size(&setup,ptr); }
+INTERN void  *(LIBCCALL libc_memdup)(void const *__restrict ptr, size_t n_bytes)                     { DEF_SETUP(setup); return mall_memdup(&setup,ptr,n_bytes); }
+INTERN void  *(LIBCCALL libc__mall_getattrib)(void *__restrict ptr, int attrib)                      { DEF_SETUP(setup); return mall_getattrib(&setup,ptr,attrib); }
+INTERN ssize_t(LIBCCALL libc__mall_traceback)(void *__restrict ptr, ptbwalker callback, void *closure){DEF_SETUP(setup); return mall_traceback(&setup,ptr,callback,closure); }
+INTERN void   (LIBCCALL libc__mall_printleaks)(void)                                                 { DEF_SETUP(setup);        mall_printleaks(&setup); }
+INTERN void   (LIBCCALL libc__mall_validate)(void)                                                   { DEF_SETUP(setup);        mall_validate(&setup); }
+INTERN ssize_t(LIBCCALL libc__mall_enum)(void *checkpoint, ssize_t(LIBCCALL *callback)(void *__restrict ptr, void *closure),
+                                         void *closure)                                              { DEF_SETUP(setup); return mall_enum(&setup ,checkpoint,callback,closure); }
+INTERN void  *(LIBCCALL libc__mall_untrack)(void *mallptr)                                           { DEF_SETUP(setup); return mall_untrack(&setup,mallptr,MALLFLAG_UNTRACKED); }
+INTERN void  *(LIBCCALL libc__mall_nofree)(void *mallptr)                                            { DEF_SETUP(setup); return mall_untrack(&setup,mallptr,MALLFLAG_UNTRACKED|MALLFLAG_NOFREE); }
 #ifndef __KERNEL__
-PUBLIC char  *(LIBCCALL strdup)(char const *__restrict str)                                     { DEF_SETUP(setup); return mall_strdup(&setup,str); }
-PUBLIC char  *(LIBCCALL strndup)(char const *__restrict str, size_t max_chars)                  { DEF_SETUP(setup); return mall_strndup(&setup,str,max_chars); }
-PUBLIC char  *(LIBCCALL vstrdupf)(char const *__restrict format, va_list args)                  { DEF_SETUP(setup); return mall_vstrdupf(&setup,format,args); }
-PUBLIC void  *(LIBCCALL memcdup)(void const *__restrict ptr, int needle, size_t n_bytes)        { DEF_SETUP(setup); return mall_memcdup(&setup,ptr,needle,n_bytes); }
-PUBLIC char  *(ATTR_CDECL strdupf)(char const *__restrict format, ...) {
+INTERN char  *(LIBCCALL libc_strdup)(char const *__restrict str)                                     { DEF_SETUP(setup); return mall_strdup(&setup,str); }
+INTERN char  *(LIBCCALL libc_strndup)(char const *__restrict str, size_t max_chars)                  { DEF_SETUP(setup); return mall_strndup(&setup,str,max_chars); }
+INTERN char  *(LIBCCALL libc_vstrdupf)(char const *__restrict format, va_list args)                  { DEF_SETUP(setup); return mall_vstrdupf(&setup,format,args); }
+INTERN void  *(LIBCCALL libc_memcdup)(void const *__restrict ptr, int needle, size_t n_bytes)        { DEF_SETUP(setup); return mall_memcdup(&setup,ptr,needle,n_bytes); }
+INTERN char  *(ATTR_CDECL libc_strdupf)(char const *__restrict format, ...) {
  char *result;
  va_list args;
  DEF_SETUP(setup);
@@ -1068,33 +1064,33 @@ PUBLIC char  *(ATTR_CDECL strdupf)(char const *__restrict format, ...) {
 #else
 #define DEF_SETUP(name) struct dsetup name = {{__file,__line,__func},1}
 #endif
-PUBLIC void  *(LIBCCALL _malloc_d)(size_t n_bytes, DEBUGINFO)                                                 { DEF_SETUP(setup); return mall_memalign(&setup,MALLOC_ALIGNMENT,n_bytes,false); }
-PUBLIC void   (LIBCCALL _free_d)(void *__restrict ptr, DEBUGINFO)                                             { DEF_SETUP(setup); return mall_free(&setup,ptr); }
-PUBLIC void  *(LIBCCALL _calloc_d)(size_t count, size_t n_bytes, DEBUGINFO)                                   { DEF_SETUP(setup); return mall_memalign(&setup,MALLOC_ALIGNMENT,count*n_bytes,true); }
-PUBLIC void  *(LIBCCALL _realloc_d)(void *__restrict ptr, size_t n_bytes, DEBUGINFO)                          { DEF_SETUP(setup); return mall_realloc(&setup,ptr,n_bytes); }
-PUBLIC void  *(LIBCCALL _realloc_in_place_d)(void *__restrict ptr, size_t n_bytes, DEBUGINFO)                 { DEF_SETUP(setup); return mall_realloc_in_place(&setup,ptr,n_bytes); }
-PUBLIC void  *(LIBCCALL _memalign_d)(size_t alignment, size_t n_bytes, DEBUGINFO)                             { DEF_SETUP(setup); return mall_memalign(&setup,alignment,n_bytes,false); }
-PUBLIC void  *(LIBCCALL _valloc_d)(size_t n_bytes, DEBUGINFO)                                                 { DEF_SETUP(setup); return mall_memalign(&setup,PAGESIZE,n_bytes,false); }
-PUBLIC void  *(LIBCCALL _pvalloc_d)(size_t n_bytes, DEBUGINFO)                                                { DEF_SETUP(setup); return mall_memalign(&setup,PAGESIZE,(n_bytes+PAGESIZE-1)&~(PAGESIZE-1),false); }
-PUBLIC int    (LIBCCALL _posix_memalign_d)(void **__restrict pp, size_t alignment, size_t n_bytes, DEBUGINFO) { DEF_SETUP(setup); return mall_posix_memalign(&setup,pp,alignment,n_bytes); }
-PUBLIC int    (LIBCCALL _mallopt_d)(int parameter_number, int parameter_value, DEBUGINFO)                     { DEF_SETUP(setup); return mall_mallopt(&setup,parameter_number,parameter_value); }
-PUBLIC int    (LIBCCALL _malloc_trim_d)(size_t pad, DEBUGINFO)                                                { DEF_SETUP(setup); return mall_malloc_trim(&setup,pad); }
-PUBLIC size_t (LIBCCALL _malloc_usable_size_d)(void *__restrict ptr, DEBUGINFO)                               { DEF_SETUP(setup); return mall_malloc_usable_size(&setup,ptr); }
-PUBLIC void  *(LIBCCALL _memdup_d)(void const *__restrict ptr, size_t n_bytes, DEBUGINFO)                     { DEF_SETUP(setup); return mall_memdup(&setup,ptr,n_bytes); }
-PUBLIC void  *(LIBCCALL _mall_getattrib_d)(void *__restrict ptr, int attrib, DEBUGINFO)                       { DEF_SETUP(setup); return mall_getattrib(&setup,ptr,attrib); }
-PUBLIC ssize_t(LIBCCALL _mall_traceback_d)(void *__restrict ptr, ptbwalker callback, void *closure, DEBUGINFO){ DEF_SETUP(setup); return mall_traceback(&setup,ptr,callback,closure); }
-PUBLIC void   (LIBCCALL _mall_printleaks_d)(MALL_MODULE_ARG_ DEBUGINFO)                                       { DEF_SETUP(setup);        mall_printleaks(&setup _MALL_MODULE_FWD); }
-PUBLIC void   (LIBCCALL _mall_validate_d)(MALL_MODULE_ARG_ DEBUGINFO)                                         { DEF_SETUP(setup);        mall_validate(&setup _MALL_MODULE_FWD); }
-PUBLIC ssize_t(LIBCCALL _mall_enum_d)(MALL_MODULE_ARG_ void *checkpoint, ssize_t(LIBCCALL *callback)(void *__restrict ptr, void *closure),
-                                      void *closure, DEBUGINFO)                                               { DEF_SETUP(setup); return mall_enum(&setup _MALL_MODULE_FWD,checkpoint,callback,closure); }
-PUBLIC void  *(LIBCCALL _mall_untrack_d)(void *mallptr, DEBUGINFO)                                            { DEF_SETUP(setup); return mall_untrack(&setup,mallptr,MALLFLAG_UNTRACKED); }
-PUBLIC void  *(LIBCCALL _mall_nofree_d)(void *mallptr, DEBUGINFO)                                             { DEF_SETUP(setup); return mall_untrack(&setup,mallptr,MALLFLAG_UNTRACKED|MALLFLAG_NOFREE); }
+INTERN void  *(LIBCCALL libc__malloc_d)(size_t n_bytes, DEBUGINFO)                                                 { DEF_SETUP(setup); return mall_memalign(&setup,MALLOC_ALIGNMENT,n_bytes,false); }
+INTERN void   (LIBCCALL libc__free_d)(void *__restrict ptr, DEBUGINFO)                                             { DEF_SETUP(setup); return mall_free(&setup,ptr); }
+INTERN void  *(LIBCCALL libc__calloc_d)(size_t count, size_t n_bytes, DEBUGINFO)                                   { DEF_SETUP(setup); return mall_memalign(&setup,MALLOC_ALIGNMENT,count*n_bytes,true); }
+INTERN void  *(LIBCCALL libc__realloc_d)(void *__restrict ptr, size_t n_bytes, DEBUGINFO)                          { DEF_SETUP(setup); return mall_realloc(&setup,ptr,n_bytes); }
+INTERN void  *(LIBCCALL libc__realloc_in_place_d)(void *__restrict ptr, size_t n_bytes, DEBUGINFO)                 { DEF_SETUP(setup); return mall_realloc_in_place(&setup,ptr,n_bytes); }
+INTERN void  *(LIBCCALL libc__memalign_d)(size_t alignment, size_t n_bytes, DEBUGINFO)                             { DEF_SETUP(setup); return mall_memalign(&setup,alignment,n_bytes,false); }
+INTERN void  *(LIBCCALL libc__valloc_d)(size_t n_bytes, DEBUGINFO)                                                 { DEF_SETUP(setup); return mall_memalign(&setup,PAGESIZE,n_bytes,false); }
+INTERN void  *(LIBCCALL libc__pvalloc_d)(size_t n_bytes, DEBUGINFO)                                                { DEF_SETUP(setup); return mall_memalign(&setup,PAGESIZE,(n_bytes+PAGESIZE-1)&~(PAGESIZE-1),false); }
+INTERN int    (LIBCCALL libc__posix_memalign_d)(void **__restrict pp, size_t alignment, size_t n_bytes, DEBUGINFO) { DEF_SETUP(setup); return mall_posix_memalign(&setup,pp,alignment,n_bytes); }
+INTERN int    (LIBCCALL libc__mallopt_d)(int parameter_number, int parameter_value, DEBUGINFO)                     { DEF_SETUP(setup); return mall_mallopt(&setup,parameter_number,parameter_value); }
+INTERN int    (LIBCCALL libc__malloc_trim_d)(size_t pad, DEBUGINFO)                                                { DEF_SETUP(setup); return mall_malloc_trim(&setup,pad); }
+INTERN size_t (LIBCCALL libc__malloc_usable_size_d)(void *__restrict ptr, DEBUGINFO)                               { DEF_SETUP(setup); return mall_malloc_usable_size(&setup,ptr); }
+INTERN void  *(LIBCCALL libc__memdup_d)(void const *__restrict ptr, size_t n_bytes, DEBUGINFO)                     { DEF_SETUP(setup); return mall_memdup(&setup,ptr,n_bytes); }
+INTERN void  *(LIBCCALL libc__mall_getattrib_d)(void *__restrict ptr, int attrib, DEBUGINFO)                       { DEF_SETUP(setup); return mall_getattrib(&setup,ptr,attrib); }
+INTERN ssize_t(LIBCCALL libc__mall_traceback_d)(void *__restrict ptr, ptbwalker callback, void *closure, DEBUGINFO){ DEF_SETUP(setup); return mall_traceback(&setup,ptr,callback,closure); }
+INTERN void   (LIBCCALL libc__mall_printleaks_d)(DEBUGINFO)                                                        { DEF_SETUP(setup);        mall_printleaks(&setup); }
+INTERN void   (LIBCCALL libc__mall_validate_d)(DEBUGINFO)                                                          { DEF_SETUP(setup);        mall_validate(&setup); }
+INTERN ssize_t(LIBCCALL libc__mall_enum_d)(void *checkpoint, ssize_t(LIBCCALL *callback)(void *__restrict ptr, void *closure),
+                                           void *closure, DEBUGINFO)                                               { DEF_SETUP(setup); return mall_enum(&setup ,checkpoint,callback,closure); }
+INTERN void  *(LIBCCALL libc__mall_untrack_d)(void *mallptr, DEBUGINFO)                                            { DEF_SETUP(setup); return mall_untrack(&setup,mallptr,MALLFLAG_UNTRACKED); }
+INTERN void  *(LIBCCALL libc__mall_nofree_d)(void *mallptr, DEBUGINFO)                                             { DEF_SETUP(setup); return mall_untrack(&setup,mallptr,MALLFLAG_UNTRACKED|MALLFLAG_NOFREE); }
 #ifndef __KERNEL__
-PUBLIC char  *(LIBCCALL _strdup_d)(char const *__restrict str, DEBUGINFO)                                     { DEF_SETUP(setup); return mall_strdup(&setup,str); }
-PUBLIC char  *(LIBCCALL _strndup_d)(char const *__restrict str, size_t max_chars, DEBUGINFO)                  { DEF_SETUP(setup); return mall_strndup(&setup,str,max_chars); }
-PUBLIC char  *(LIBCCALL _vstrdupf_d)(char const *__restrict format, va_list args, DEBUGINFO)                  { DEF_SETUP(setup); return mall_vstrdupf(&setup,format,args); }
-PUBLIC void  *(LIBCCALL _memcdup_d)(void const *__restrict ptr, int needle, size_t n_bytes, DEBUGINFO)        { DEF_SETUP(setup); return mall_memcdup(&setup,ptr,needle,n_bytes); }
-PUBLIC char *(_strdupf_d)(DEBUGINFO, char const *__restrict format, ...) {
+INTERN char  *(LIBCCALL libc__strdup_d)(char const *__restrict str, DEBUGINFO)                                     { DEF_SETUP(setup); return mall_strdup(&setup,str); }
+INTERN char  *(LIBCCALL libc__strndup_d)(char const *__restrict str, size_t max_chars, DEBUGINFO)                  { DEF_SETUP(setup); return mall_strndup(&setup,str,max_chars); }
+INTERN char  *(LIBCCALL libc__vstrdupf_d)(char const *__restrict format, va_list args, DEBUGINFO)                  { DEF_SETUP(setup); return mall_vstrdupf(&setup,format,args); }
+INTERN void  *(LIBCCALL libc__memcdup_d)(void const *__restrict ptr, int needle, size_t n_bytes, DEBUGINFO)        { DEF_SETUP(setup); return mall_memcdup(&setup,ptr,needle,n_bytes); }
+INTERN char *(ATTR_CDECL libc__strdupf_d)(DEBUGINFO, char const *__restrict format, ...) {
  char *result;
  va_list args;
  DEF_SETUP(setup);
@@ -1108,23 +1104,192 @@ PUBLIC char *(_strdupf_d)(DEBUGINFO, char const *__restrict format, ...) {
 
 DECL_END
 #endif
-#endif /* !__KERNEL__ */
-
-
-#ifndef __KERNEL__
-#include <hybrid/compiler.h>
-#include <hybrid/asm.h>
 
 DECL_BEGIN
 
+/* Delete any remaining macros. */
+#undef _malloc_d
+#undef _free_d
+#undef _calloc_d
+#undef _realloc_d
+#undef _realloc_in_place_d
+#undef _memalign_d
+#undef _valloc_d
+#undef _pvalloc_d
+#undef _posix_memalign_d
+#undef _mallopt_d
+#undef _malloc_trim_d
+#undef _malloc_usable_size_d
+#undef _memdup_d
+#undef _strdup_d
+#undef _strndup_d
+#undef _strdupf_d
+#undef _vstrdupf_d
+#undef _memcdup_d
+#undef libc__malloc_d
+#undef libc__free_d
+#undef libc__calloc_d
+#undef libc__realloc_d
+#undef libc__realloc_in_place_d
+#undef libc__memalign_d
+#undef libc__valloc_d
+#undef libc__pvalloc_d
+#undef libc__posix_memalign_d
+#undef libc__mallopt_d
+#undef libc__malloc_trim_d
+#undef libc__malloc_usable_size_d
+#undef libc__memdup_d
+#undef libc__strdup_d
+#undef libc__strndup_d
+#undef libc__strdupf_d
+#undef libc__vstrdupf_d
+#undef libc__memcdup_d
+
+#undef malloc
+#undef free
+#undef calloc
+#undef realloc
+#undef realloc_in_place
+#undef memalign
+#undef valloc
+#undef pvalloc
+#undef posix_memalign
+#undef mallopt
+#undef malloc_trim
+#undef malloc_usable_size
+#undef memdup
+#undef strdup
+#undef strndup
+#undef memcdup
+#undef vstrdupf
+#undef strdupf
+#undef libc_malloc
+#undef libc_free
+#undef libc_calloc
+#undef libc_realloc
+#undef libc_realloc_in_place
+#undef libc_memalign
+#undef libc_valloc
+#undef libc_pvalloc
+#undef libc_posix_memalign
+#undef libc_mallopt
+#undef libc_malloc_trim
+#undef libc_malloc_usable_size
+#undef libc_memdup
+#undef libc_strdup
+#undef libc_strndup
+#undef libc_memcdup
+#undef libc_vstrdupf
+#undef libc_strdupf
+
+#undef _mall_getattrib
+#undef _mall_traceback
+#undef _mall_printleaks
+#undef _mall_validate
+#undef _mall_enum
+#undef _mall_untrack
+#undef _mall_nofree
+#undef _mall_getattrib_d
+#undef _mall_traceback_d
+#undef _mall_printleaks_d
+#undef _mall_validate_d
+#undef _mall_enum_d
+#undef _mall_untrack_d
+#undef _mall_nofree_d
+#undef libc__mall_getattrib
+#undef libc__mall_traceback
+#undef libc__mall_printleaks
+#undef libc__mall_validate
+#undef libc__mall_enum
+#undef libc__mall_untrack
+#undef libc__mall_nofree
+#undef libc__mall_getattrib_d
+#undef libc__mall_traceback_d
+#undef libc__mall_printleaks_d
+#undef libc__mall_validate_d
+#undef libc__mall_enum_d
+#undef libc__mall_untrack_d
+#undef libc__mall_nofree_d
+
+/* Export the MALL debug API, or stub-links against dlmalloc/an external malloc API. */
+DEFINE_PUBLIC_ALIAS(_malloc_d,libc__malloc_d);
+DEFINE_PUBLIC_ALIAS(_free_d,libc__free_d);
+DEFINE_PUBLIC_ALIAS(_calloc_d,libc__calloc_d);
+DEFINE_PUBLIC_ALIAS(_realloc_d,libc__realloc_d);
+DEFINE_PUBLIC_ALIAS(_realloc_in_place_d,libc__realloc_in_place_d);
+DEFINE_PUBLIC_ALIAS(_memalign_d,libc__memalign_d);
+DEFINE_PUBLIC_ALIAS(_valloc_d,libc__valloc_d);
+DEFINE_PUBLIC_ALIAS(_pvalloc_d,libc__pvalloc_d);
+DEFINE_PUBLIC_ALIAS(_posix_memalign_d,libc__posix_memalign_d);
+DEFINE_PUBLIC_ALIAS(_mallopt_d,libc__mallopt_d);
+DEFINE_PUBLIC_ALIAS(_malloc_trim_d,libc__malloc_trim_d);
+DEFINE_PUBLIC_ALIAS(_malloc_usable_size_d,libc__malloc_usable_size_d);
+DEFINE_PUBLIC_ALIAS(_memdup_d,libc__memdup_d);
+DEFINE_PUBLIC_ALIAS(_strdup_d,libc__strdup_d);
+DEFINE_PUBLIC_ALIAS(_strndup_d,libc__strndup_d);
+DEFINE_PUBLIC_ALIAS(_strdupf_d,libc__strdupf_d);
+DEFINE_PUBLIC_ALIAS(_vstrdupf_d,libc__vstrdupf_d);
+DEFINE_PUBLIC_ALIAS(_memcdup_d,libc__memcdup_d);
+
+/* Export the regular malloc API, either linked against MALL
+ * without debug info, dlmalloc or an external malloc API. */
+#ifdef CONFIG_DEBUG_MALLOC
+DEFINE_PUBLIC_ALIAS(malloc,libc_malloc);
+DEFINE_PUBLIC_ALIAS(free,libc_free);
+DEFINE_PUBLIC_ALIAS(calloc,libc_calloc);
+DEFINE_PUBLIC_ALIAS(realloc,libc_realloc);
+DEFINE_PUBLIC_ALIAS(realloc_in_place,libc_realloc_in_place);
+DEFINE_PUBLIC_ALIAS(memalign,libc_memalign);
+DEFINE_PUBLIC_ALIAS(valloc,libc_valloc);
+DEFINE_PUBLIC_ALIAS(pvalloc,libc_pvalloc);
+DEFINE_PUBLIC_ALIAS(posix_memalign,libc_posix_memalign);
+DEFINE_PUBLIC_ALIAS(mallopt,libc_mallopt);
+DEFINE_PUBLIC_ALIAS(malloc_trim,libc_malloc_trim);
+DEFINE_PUBLIC_ALIAS(malloc_usable_size,libc_malloc_usable_size);
+#else
+DEFINE_PUBLIC_ALIAS(malloc,dlmalloc);
+DEFINE_PUBLIC_ALIAS(free,dlfree);
+DEFINE_PUBLIC_ALIAS(calloc,dlcalloc);
+DEFINE_PUBLIC_ALIAS(realloc,dlrealloc);
+DEFINE_PUBLIC_ALIAS(realloc_in_place,dlrealloc_in_place);
+DEFINE_PUBLIC_ALIAS(memalign,dlmemalign);
+DEFINE_PUBLIC_ALIAS(valloc,dlvalloc);
+DEFINE_PUBLIC_ALIAS(pvalloc,dlpvalloc);
+DEFINE_PUBLIC_ALIAS(posix_memalign,dlposix_memalign);
+DEFINE_PUBLIC_ALIAS(mallopt,dlmallopt);
+DEFINE_PUBLIC_ALIAS(malloc_trim,dlmalloc_trim);
+DEFINE_PUBLIC_ALIAS(malloc_usable_size,dlmalloc_usable_size);
+#endif
+DEFINE_PUBLIC_ALIAS(memdup,libc_memdup);
+DEFINE_PUBLIC_ALIAS(strdup,libc_strdup);
+DEFINE_PUBLIC_ALIAS(strndup,libc_strndup);
+DEFINE_PUBLIC_ALIAS(memcdup,libc_memcdup);
+DEFINE_PUBLIC_ALIAS(vstrdupf,libc_vstrdupf);
+DEFINE_PUBLIC_ALIAS(strdupf,libc_strdupf);
+
 /* Define malloc-related function aliases */
-DEFINE_PUBLIC_ALIAS(aligned_alloc,memalign);
-DEFINE_PUBLIC_ALIAS(_aligned_alloc_d,_memalign_d);
-DEFINE_PUBLIC_ALIAS(cfree,free);
-DEFINE_PUBLIC_ALIAS(_cfree_d,_free_d);
+DEFINE_PUBLIC_ALIAS(aligned_alloc,libc_memalign);
+DEFINE_PUBLIC_ALIAS(_aligned_alloc_d,libc__memalign_d);
+DEFINE_PUBLIC_ALIAS(cfree,libc_free);
+DEFINE_PUBLIC_ALIAS(_cfree_d,libc__free_d);
+
+/* Export the MALL debug API (either as stubs, or as an
+ * implementation built ontop dlmalloc, or an external allocator) */
+DEFINE_PUBLIC_ALIAS(_mall_getattrib,libc__mall_getattrib);
+DEFINE_PUBLIC_ALIAS(_mall_traceback,libc__mall_traceback);
+DEFINE_PUBLIC_ALIAS(_mall_printleaks,libc__mall_printleaks);
+DEFINE_PUBLIC_ALIAS(_mall_validate,libc__mall_validate);
+DEFINE_PUBLIC_ALIAS(_mall_enum,libc__mall_enum);
+DEFINE_PUBLIC_ALIAS(_mall_untrack,libc__mall_untrack);
+DEFINE_PUBLIC_ALIAS(_mall_nofree,libc__mall_nofree);
+DEFINE_PUBLIC_ALIAS(_mall_getattrib_d,libc__mall_getattrib_d);
+DEFINE_PUBLIC_ALIAS(_mall_traceback_d,libc__mall_traceback_d);
+DEFINE_PUBLIC_ALIAS(_mall_printleaks_d,libc__mall_printleaks_d);
+DEFINE_PUBLIC_ALIAS(_mall_validate_d,libc__mall_validate_d);
+DEFINE_PUBLIC_ALIAS(_mall_enum_d,libc__mall_enum_d);
+DEFINE_PUBLIC_ALIAS(_mall_untrack_d,libc__mall_untrack_d);
+DEFINE_PUBLIC_ALIAS(_mall_nofree_d,libc__mall_nofree_d);
 
 DECL_END
-#endif /* !__KERNEL__ */
-
 
 #endif /* !GUARD_LIBS_LIBC_MALLOC_C */

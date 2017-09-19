@@ -24,12 +24,14 @@
 #define GUARD_LIBS_LIBC_GETOPT_C 1
 
 #include "libc.h"
+#include "environ.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "malloc.h"
 
 #include <hybrid/compiler.h>
 #include <getopt.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #undef optarg
 #undef optind
@@ -39,6 +41,14 @@
 #define NO_ARG       no_argument
 #define REQUIRED_ARG required_argument
 #define OPTIONAL_ARG optional_argument
+#define fprintf      libc_fprintf
+#define strncmp      libc_strncmp
+#define strlen       libc_strlen
+#define memset       libc_memset
+#define strchr       libc_strchr
+#define strcmp       libc_strcmp
+#define flockfile    libc_flockfile
+#define funlockfile  libc_funlockfile
 
 DECL_BEGIN
 
@@ -144,7 +154,7 @@ process_long_option(int argc, char **argv, char const *optstring,
       else if (!ambig_set) {
        if (n_options < 512)
         ambig_set = (unsigned char *)alloca(n_options);
-       else if ((ambig_set = (unsigned char *)malloc(n_options)) == NULL)
+       else if ((ambig_set = (unsigned char *)libc_malloc(n_options)) == NULL)
         ambig_fallback = 1;
        else
         ambig_malloced = 1;
@@ -174,7 +184,7 @@ process_long_option(int argc, char **argv, char const *optstring,
      funlockfile(stderr);
     }
    }
-   if (ambig_malloced) free(ambig_set);
+   if (ambig_malloced) libc_free(ambig_set);
    __nextchar += strlen(__nextchar);
    ++optind;
    optopt = 0;
@@ -237,7 +247,7 @@ _getopt_initialize(int UNUSED(argc), char **UNUSED(argv),
  } else if (optstring[0] == '+') {
   __ordering = REQUIRE_ORDER;
   ++optstring;
- } else if (posixly_correct || !!getenv("POSIXLY_CORRECT"))
+ } else if (posixly_correct || !!libc_getenv("POSIXLY_CORRECT"))
   __ordering = REQUIRE_ORDER;
  else
   __ordering = PERMUTE;

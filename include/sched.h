@@ -75,7 +75,7 @@ __LIBC int (__LIBCCALL sched_getscheduler)(__pid_t __pid);
 __LIBC int (__LIBCCALL sched_yield)(void);
 __LIBC int (__LIBCCALL sched_get_priority_max)(int __algorithm);
 __LIBC int (__LIBCCALL sched_get_priority_min)(int __algorithm);
-__LIBC int (__LIBCCALL sched_setaffinity)(__pid_t __pid, __size_t __cpusetsize, const cpu_set_t *__cpuset);
+__LIBC int (__LIBCCALL sched_setaffinity)(__pid_t __pid, __size_t __cpusetsize, cpu_set_t const *__cpuset);
 __LIBC int (__LIBCCALL sched_getaffinity)(__pid_t __pid, __size_t __cpusetsize, cpu_set_t *__cpuset);
 __LIBC int (__LIBCCALL sched_rr_get_interval)(__pid_t __pid, struct timespec *__t) __TM_FUNC(sched_rr_get_interval);
 #ifdef __USE_TIME64

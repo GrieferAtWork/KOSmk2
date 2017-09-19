@@ -9,7 +9,6 @@
     <ClCompile Include="..\..\libs\libc\format-printer.c" />
     <ClCompile Include="..\..\libs\libc\stdio.c" />
     <ClCompile Include="..\..\libs\libc\errno.c" />
-    <ClCompile Include="..\..\libs\libc\system.c" />
     <ClCompile Include="..\..\libs\libc\fcntl.c" />
     <ClCompile Include="..\..\libs\libc\unistd.c" />
     <ClCompile Include="..\..\libs\libc\start.c" />
@@ -28,6 +27,7 @@
     <ClCompile Include="..\..\libs\libc\getopt.c" />
     <ClCompile Include="..\..\libs\libc\time.c" />
     <ClCompile Include="..\..\libs\libc\sched.c" />
+    <ClCompile Include="..\..\libs\libc\misc.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\libs\libc\templates\strtouint.code">
@@ -53,6 +53,18 @@
     <ClInclude Include="..\..\libs\libc\asm.h" />
     <ClInclude Include="..\..\libs\libc\dirent.h" />
     <ClInclude Include="..\..\libs\libc\errno.h" />
+    <ClInclude Include="..\..\libs\libc\fcntl.h" />
+    <ClInclude Include="..\..\libs\libc\format-printer.h" />
+    <ClInclude Include="..\..\libs\libc\sched.h" />
+    <ClInclude Include="..\..\libs\libc\signal.h" />
+    <ClInclude Include="..\..\libs\libc\stdio.h" />
+    <ClInclude Include="..\..\libs\libc\malloc.h" />
+    <ClInclude Include="..\..\libs\libc\stdlib.h" />
+    <ClInclude Include="..\..\libs\libc\unistd.h" />
+    <ClInclude Include="..\..\libs\libc\sysconf.h" />
+    <ClInclude Include="..\..\libs\libc\misc.h" />
+    <ClInclude Include="..\..\libs\libc\termios.h" />
+    <ClInclude Include="..\..\libs\libc\time.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">

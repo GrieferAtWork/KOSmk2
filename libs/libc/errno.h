@@ -41,9 +41,6 @@ INTDEF void LIBCCALL libc_warn(char const *format, ...);
 INTDEF void LIBCCALL libc_warnx(char const *format, ...);
 INTDEF void LIBCCALL libc_err(int status, char const *format, ...);
 INTDEF void LIBCCALL libc_errx(int status, char const *format, ...);
-INTDEF ATTR_COLDDATA unsigned int libc_error_message_count;
-INTDEF ATTR_COLDDATA int libc_error_one_per_line;
-INTDEF ATTR_COLDDATA void (*libc_error_print_progname)(void);
 INTDEF ATTR_COLDTEXT void LIBCCALL libc_error(int status, int errnum, char const *format, ...);
 INTDEF ATTR_COLDTEXT void LIBCCALL libc_error_at_line(int status, int errnum, char const *fname, unsigned int lineno, char const *format, ...);
 

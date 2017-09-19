@@ -24,18 +24,20 @@
 
 #include "libc.h"
 #include "system.h"
+#include "malloc.h"
+#include "errno.h"
+#include "fcntl.h"
+#include "stdlib.h"
 
-#include <errno.h>
-#include <fcntl.h>
 #include <hybrid/compiler.h>
 #include <kos/fcntl.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
+#include <bits/fcntl-linux.h>
 
 DECL_BEGIN
 
-PUBLIC int (ATTR_CDECL ioctl)(int fd, unsigned long int request, ...) {
+INTERN int ATTR_CDECL libc_ioctl(int fd, unsigned long int request, ...) {
  va_list args; int result;
  va_start(args,request);
  result = sys_ioctl(fd,request,va_arg(args,void *));
@@ -46,7 +48,7 @@ PUBLIC int (ATTR_CDECL ioctl)(int fd, unsigned long int request, ...) {
  }
  return result;
 }
-PUBLIC int (ATTR_CDECL fcntl)(int fd, int cmd, ...) {
+INTERN int ATTR_CDECL libc_fcntl(int fd, int cmd, ...) {
  va_list args; int result;
  va_start(args,cmd);
  result = sys_fcntl(fd,cmd,va_arg(args,void *));
@@ -57,8 +59,7 @@ PUBLIC int (ATTR_CDECL fcntl)(int fd, int cmd, ...) {
  }
  return result;
 }
-
-PUBLIC int (ATTR_CDECL openat)(int fd, char const *file, int oflag, ...) {
+INTERN int ATTR_CDECL libc_openat(int fd, char const *file, int oflag, ...) {
  va_list args; int result;
  va_start(args,oflag);
  result = sys_openat(fd,file,oflag,va_arg(args,mode_t));
@@ -69,7 +70,7 @@ PUBLIC int (ATTR_CDECL openat)(int fd, char const *file, int oflag, ...) {
  }
  return result;
 }
-PUBLIC int (ATTR_CDECL open)(char const *file, int oflag, ...) {
+INTERN int ATTR_CDECL libc_open(char const *file, int oflag, ...) {
  va_list args; int result;
  va_start(args,oflag);
  result = sys_openat(AT_FDCWD,file,oflag,va_arg(args,mode_t));
@@ -80,17 +81,16 @@ PUBLIC int (ATTR_CDECL open)(char const *file, int oflag, ...) {
  }
  return result;
 }
-PUBLIC int (LIBCCALL creat)(char const *file, mode_t mode) {
- return open(file,O_CREAT|O_WRONLY|O_TRUNC,mode);
+INTERN int LIBCCALL libc_creat(char const *file, mode_t mode) {
+ return libc_open(file,O_CREAT|O_WRONLY|O_TRUNC,mode);
 }
-
-PUBLIC ssize_t (LIBCCALL xfdname2)(int fd, int type, char *buf, size_t bufsize) {
+INTERN ssize_t LIBCCALL libc_xfdname2(int fd, int type, char *buf, size_t bufsize) {
  return FORWARD_SYSTEM_ERROR(sys_xfdname(fd,type,buf,bufsize));
 }
-PUBLIC char *(LIBCCALL xfdname)(int fd, int type, char *buf, size_t bufsize) {
+INTERN char *LIBCCALL libc_xfdname(int fd, int type, char *buf, size_t bufsize) {
  ssize_t reqsize;
- if (!buf && bufsize && (buf = (char *)(malloc)(bufsize)) == NULL) return NULL;
- reqsize = xfdname2(fd,type,buf,bufsize);
+ if (!buf && bufsize && (buf = (char *)libc_malloc(bufsize)) == NULL) return NULL;
+ reqsize = libc_xfdname2(fd,type,buf,bufsize);
  if (E_ISERR(reqsize)) { SET_ERRNO((errno_t)-reqsize); return NULL; }
  if ((size_t)reqsize > bufsize) {
   if (!buf) {
@@ -98,12 +98,12 @@ PUBLIC char *(LIBCCALL xfdname)(int fd, int type, char *buf, size_t bufsize) {
    do {
     char *new_buf;
     bufsize = (size_t)reqsize;
-    new_buf = (char *)(realloc)(buf,bufsize);
-    if unlikely(!new_buf) { (free)(buf); return NULL; }
+    new_buf = (char *)libc_realloc(buf,bufsize);
+    if unlikely(!new_buf) { libc_free(buf); return NULL; }
     buf = new_buf;
    } while ((reqsize = sys_xfdname(fd,type,buf,bufsize),
              E_ISOK(reqsize) && (size_t)reqsize != bufsize));
-   if (E_ISERR(reqsize)) { (free)(buf); SET_ERRNO(-reqsize); return NULL; }
+   if (E_ISERR(reqsize)) { libc_free(buf); SET_ERRNO(-reqsize); return NULL; }
    return buf;
   }
   SET_ERRNO(-ERANGE);
@@ -111,10 +111,10 @@ PUBLIC char *(LIBCCALL xfdname)(int fd, int type, char *buf, size_t bufsize) {
  }
  return buf;
 }
-PUBLIC char *(LIBCCALL getcwd)(char *buf, size_t bufsize) {
+INTERN char *LIBCCALL libc_getcwd(char *buf, size_t bufsize) {
 #ifndef __OPTIMIZE_SIZE__
  ssize_t reqsize;
- if (!buf && bufsize && (buf = (char *)(malloc)(bufsize)) == NULL) return NULL;
+ if (!buf && bufsize && (buf = (char *)libc_malloc(bufsize)) == NULL) return NULL;
  reqsize = sys_getcwd(buf,bufsize);
  if (E_ISERR(reqsize)) { SET_ERRNO((errno_t)-reqsize); return NULL; }
  if ((size_t)reqsize > bufsize) {
@@ -123,12 +123,12 @@ PUBLIC char *(LIBCCALL getcwd)(char *buf, size_t bufsize) {
    do {
     char *new_buf;
     bufsize = (size_t)reqsize;
-    new_buf = (char *)(realloc)(buf,bufsize);
-    if unlikely(!new_buf) { (free)(buf); return NULL; }
+    new_buf = (char *)libc_realloc(buf,bufsize);
+    if unlikely(!new_buf) { libc_free(buf); return NULL; }
     buf = new_buf;
    } while ((reqsize = sys_getcwd(buf,bufsize),
              E_ISOK(reqsize) && (size_t)reqsize != bufsize));
-   if (E_ISERR(reqsize)) { (free)(buf); SET_ERRNO(-reqsize); return NULL; }
+   if (E_ISERR(reqsize)) { libc_free(buf); SET_ERRNO(-reqsize); return NULL; }
    return buf;
   }
   SET_ERRNO(-ERANGE);
@@ -139,17 +139,28 @@ PUBLIC char *(LIBCCALL getcwd)(char *buf, size_t bufsize) {
  return xfdname(AT_FDCWD,FDNAME_PATH,buf,bufsize);
 #endif
 }
-PUBLIC char *(LIBCCALL get_current_dir_name)(void) { return getcwd(NULL,0); }
-PUBLIC char *(LIBCCALL getwd)(char *buf) { return getcwd(buf,(size_t)-1); }
+INTERN char *LIBCCALL libc_get_current_dir_name(void) { return libc_getcwd(NULL,0); }
+INTERN char *LIBCCALL libc_getwd(char *buf) { return libc_getcwd(buf,(size_t)-1); }
+INTERN int LIBCCALL libc_posix_fadvise(int UNUSED(fd), off_t UNUSED(offset), off_t UNUSED(len), int UNUSED(advise)) { return 0; }
+INTERN int LIBCCALL libc_posix_fallocate(int UNUSED(fd), off_t UNUSED(offset), off_t UNUSED(len)) { return 0; }
 
-PUBLIC int (LIBCCALL posix_fadvise)(int UNUSED(fd), off_t UNUSED(offset), off_t UNUSED(len), int UNUSED(advise)) { return 0; }
-PUBLIC int (LIBCCALL posix_fallocate)(int UNUSED(fd), off_t UNUSED(offset), off_t UNUSED(len)) { return 0; }
-
-DEFINE_PUBLIC_ALIAS(open64,open);
-DEFINE_PUBLIC_ALIAS(creat64,creat);
-DEFINE_PUBLIC_ALIAS(openat64,openat);
-DEFINE_PUBLIC_ALIAS(posix_fadvise64,posix_fadvise);
-DEFINE_PUBLIC_ALIAS(posix_fallocate64,posix_fallocate);
+DEFINE_PUBLIC_ALIAS(ioctl,libc_ioctl);
+DEFINE_PUBLIC_ALIAS(fcntl,libc_fcntl);
+DEFINE_PUBLIC_ALIAS(openat,libc_openat);
+DEFINE_PUBLIC_ALIAS(open,libc_open);
+DEFINE_PUBLIC_ALIAS(creat,libc_creat);
+DEFINE_PUBLIC_ALIAS(xfdname2,libc_xfdname2);
+DEFINE_PUBLIC_ALIAS(xfdname,libc_xfdname);
+DEFINE_PUBLIC_ALIAS(getcwd,libc_getcwd);
+DEFINE_PUBLIC_ALIAS(get_current_dir_name,libc_get_current_dir_name);
+DEFINE_PUBLIC_ALIAS(getwd,libc_getwd);
+DEFINE_PUBLIC_ALIAS(posix_fadvise,libc_posix_fadvise);
+DEFINE_PUBLIC_ALIAS(posix_fallocate,libc_posix_fallocate);
+DEFINE_PUBLIC_ALIAS(open64,libc_open);
+DEFINE_PUBLIC_ALIAS(creat64,libc_creat);
+DEFINE_PUBLIC_ALIAS(openat64,libc_openat);
+DEFINE_PUBLIC_ALIAS(posix_fadvise64,libc_posix_fadvise);
+DEFINE_PUBLIC_ALIAS(posix_fallocate64,libc_posix_fallocate);
 
 DECL_END
 

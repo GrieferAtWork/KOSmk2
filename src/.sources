@@ -43,7 +43,6 @@ BEGIN
 			SET_DISKFILE(none)
 
 			/* LIBK Source files */
-			SOURCE("../libs/libc/malloc.c")
 			SOURCE("../libs/libc/stdlib.c")
 			SOURCE("../libs/libc/string.c")
 			SOURCE("../libs/libc/assert.c")

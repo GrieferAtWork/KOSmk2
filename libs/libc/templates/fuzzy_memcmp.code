@@ -36,10 +36,10 @@ INTERN size_t (LIBCCALL libc_fuzzy_memcmp)(void const *a, size_t a_bytes,
  if unlikely(!b_bytes) return a_bytes;
  if (b_bytes > a_bytes) SWAP(a,b),SWAP(a_bytes,b_bytes);
  if (b_bytes >= 128) {
-  v0 = (size_t *)(malloc)((b_bytes+1)*sizeof(size_t));
+  v0 = (size_t *)libc_malloc((b_bytes+1)*sizeof(size_t));
   if unlikely(!v0) goto use_alloca;
-  v1 = (size_t *)(malloc)((b_bytes+1)*sizeof(size_t));
-  if unlikely(!v1) { (free)(v1); goto use_alloca; }
+  v1 = (size_t *)libc_malloc((b_bytes+1)*sizeof(size_t));
+  if unlikely(!v1) { libc_free(v1); goto use_alloca; }
   is_malloc = true;
  } else use_alloca: {
   v0 = (size_t *)alloca((b_bytes+1)*sizeof(size_t));
@@ -59,7 +59,7 @@ INTERN size_t (LIBCCALL libc_fuzzy_memcmp)(void const *a, size_t a_bytes,
   }
   libc_memcpy(v0,v1,b_bytes*sizeof(size_t));
  }
- if (is_malloc) free(v1),free(v0);
+ if (is_malloc) libc_free(v1),libc_free(v0);
  return v1[b_bytes];
 }
 #undef B

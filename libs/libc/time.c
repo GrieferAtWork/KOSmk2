@@ -24,31 +24,27 @@
 
 #include "libc.h"
 #include "system.h"
+#include "time.h"
+#include "stdio.h"
+#include "string.h"
+#include "format-printer.h"
 
-#include <hybrid/compiler.h>
-#include <sys/time.h>
 #include <time.h>
+#include <hybrid/compiler.h>
 #include <hybrid/types.h>
-#include <string.h>
-#include <format-printer.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdio.h>
 #include <hybrid/section.h>
-#include <signal.h>
-#include <sys/poll.h>
-#include <sys/stat.h>
+#include <limits.h>
+#include <bits/fcntl-linux.h>
 #include <sys/timeb.h>
-#include <unistd.h>
 
 DECL_BEGIN
 
-PUBLIC int getdate_err;
-PUBLIC char *tzname[2];
-PUBLIC int daylight;
+PUBLIC int      getdate_err;
+PUBLIC char    *tzname[2];
+PUBLIC int      daylight;
 PUBLIC long int timezone;
-PUBLIC void (LIBCCALL tzset)(void) {
+
+INTERN void LIBCCALL libc_tzset(void) {
  /* TODO */
  tzname[0] = "foo";
  tzname[1] = "bar";
@@ -65,19 +61,19 @@ INTERN u16 const time_monthstart_yday[2][13] = {
 /* LIBC time-size independent functions. */
 
 #define ASCTIME_BUFSIZE 26
-PUBLIC char *(LIBCCALL asctime_r)(struct tm const *__restrict tp,
-                                  char *__restrict buf) {
- if __unlikely(!tp) { SET_ERRNO(EINVAL); return NULL; }
- if __unlikely(tp->tm_year > INT_MAX-1900) { SET_ERRNO(EOVERFLOW); return NULL; }
- sprintf(buf,"%.3s %.3s%3d %.2d:%.2d:%.2d %d\n",
-        (tp->tm_wday < 0 || tp->tm_wday >= 7 ? "???" : abbr_wday_names[tp->tm_wday]),
-        (tp->tm_mon < 0 || tp->tm_mon >= 12 ? "???" : abbr_month_names[tp->tm_mon]),
-         tp->tm_mday,tp->tm_hour,tp->tm_min,tp->tm_sec,tp->tm_year+1900);
+INTERN char *LIBCCALL libc_asctime_r(struct tm const *__restrict tp,
+                                     char *__restrict buf) {
+ if unlikely(!tp) { SET_ERRNO(EINVAL); return NULL; }
+ if unlikely(tp->tm_year > INT_MAX-1900) { SET_ERRNO(EOVERFLOW); return NULL; }
+ libc_sprintf(buf,"%.3s %.3s%3d %.2d:%.2d:%.2d %d\n",
+             (tp->tm_wday < 0 || tp->tm_wday >= 7 ? "???" : abbr_wday_names[tp->tm_wday]),
+             (tp->tm_mon < 0 || tp->tm_mon >= 12 ? "???" : abbr_month_names[tp->tm_mon]),
+              tp->tm_mday,tp->tm_hour,tp->tm_min,tp->tm_sec,tp->tm_year+1900);
  return buf;
 }
-PUBLIC char *(LIBCCALL asctime)(struct tm const *tp) {
+INTERN char *LIBCCALL libc_asctime(struct tm const *tp) {
  PRIVATE char buf[ASCTIME_BUFSIZE];
- return asctime_r(tp,buf);
+ return libc_asctime_r(tp,buf);
 }
 
 struct ftimebuf { char *iter,*end; };
@@ -85,10 +81,10 @@ PRIVATE ssize_t LIBCCALL
 time_printer(char const *__restrict s, size_t n,
              struct ftimebuf *__restrict data) {
  char *new_iter;
- n = strnlen(s,n);
+ n = libc_strnlen(s,n);
  new_iter = data->iter+n;
  if (new_iter >= data->end) return -1;
- memcpy(data->iter,s,n*sizeof(char));
+ libc_memcpy(data->iter,s,n*sizeof(char));
  data->iter = new_iter;
  return 0;
 }
@@ -97,18 +93,20 @@ time_printer(char const *__restrict s, size_t n,
 #define SECS_PER_DAY          86400
 
 
-PUBLIC size_t (LIBCCALL strftime)(char *__restrict s, size_t maxsize,
-                                  char const *__restrict format,
-                                  struct tm const *__restrict tp) {
+INTERN size_t LIBCCALL
+libc_strftime(char *__restrict s, size_t maxsize,
+              char const *__restrict format,
+              struct tm const *__restrict tp) {
  struct ftimebuf buf; buf.end = (buf.iter = s)+maxsize;
- if (format_strftime((pformatprinter)&time_printer,&buf,format,tp)) return 0;
+ if (libc_format_strftime((pformatprinter)&time_printer,&buf,format,tp)) return 0;
  if (buf.iter == buf.end) return 0;
  *buf.iter = '\0';
  return (size_t)(buf.iter-s);
 }
-PUBLIC char *(LIBCCALL strptime)(char const *__restrict s,
-                                 char const *__restrict format,
-                                 struct tm *tp) {
+INTERN char *LIBCCALL
+libc_strptime(char const *__restrict s,
+              char const *__restrict format,
+              struct tm *tp) {
  NOT_IMPLEMENTED();
  return NULL;
 }
@@ -128,40 +126,42 @@ LOCAL int LIBCCALL tm_calc_isdst(struct tm const *self) {
  return previousSunday <= 0;
 }
 
-PUBLIC int (LIBCCALL dysize)(int year) { return __isleap(year) ? 366 : 365; }
-PUBLIC int (LIBCCALL getdate_r)(char const *__restrict string,
-                                struct tm *__restrict resbufp) {
+INTERN int LIBCCALL libc_dysize(int year) { return __isleap(year) ? 366 : 365; }
+INTERN int LIBCCALL libc_getdate_r(char const *__restrict string,
+                                   struct tm *__restrict resbufp) {
  NOT_IMPLEMENTED();
  return -1;
 }
 PRIVATE ATTR_RAREBSS struct tm getdate_buf;
-PUBLIC struct tm *(LIBCCALL getdate)(char const *string) {
+INTERN struct tm *LIBCCALL libc_getdate(char const *string) {
  struct tm *result = &getdate_buf;
- return getdate_r(string,result) ? NULL : result;
+ return libc_getdate_r(string,result) ? NULL : result;
 }
 
-PUBLIC size_t (LIBCCALL strftime_l)(char *__restrict s, size_t maxsize,
-                                    char const *__restrict format,
-                                    struct tm const *__restrict tp,
-                                    locale_t loc) {
+INTERN size_t LIBCCALL
+libc_strftime_l(char *__restrict s, size_t maxsize,
+                char const *__restrict format,
+                struct tm const *__restrict tp,
+                locale_t loc) {
  NOT_IMPLEMENTED();
- return strftime(s,maxsize,format,tp);
+ return libc_strftime(s,maxsize,format,tp);
 }
-PUBLIC char *(LIBCCALL strptime_l)(char const *__restrict s, char const *__restrict format,
-                                   struct tm *tp, locale_t loc) {
+INTERN char *LIBCCALL
+libc_strptime_l(char const *__restrict s, char const *__restrict format,
+                struct tm *tp, locale_t loc) {
  NOT_IMPLEMENTED();
- return strptime(s,format,tp);
+ return libc_strptime(s,format,tp);
 }
 
 
 /* LIBC proxy/independent time functions */
-PUBLIC char *(LIBCCALL ctime64_r)(time64_t const *__restrict timer, char *__restrict buf) { struct tm ltm; return asctime_r(localtime64_r(timer,&ltm),buf); }
-PUBLIC char *(LIBCCALL ctime_r)(time_t const *__restrict timer, char *__restrict buf) { struct tm ltm; return asctime_r(localtime_r(timer,&ltm),buf); }
+INTERN char *LIBCCALL libc_ctime64_r(time64_t const *__restrict timer, char *__restrict buf) { struct tm ltm; return libc_asctime_r(libc_localtime64_r(timer,&ltm),buf); }
+INTERN char *LIBCCALL libc_ctime_r(time_t const *__restrict timer, char *__restrict buf) { struct tm ltm; return libc_asctime_r(libc_localtime_r(timer,&ltm),buf); }
 PRIVATE char ctime_buf[ASCTIME_BUFSIZE]; 
-PUBLIC char *(LIBCCALL ctime64)(time64_t const *timer) { return ctime64_r(timer,ctime_buf); }
-PUBLIC char *(LIBCCALL ctime)(time_t const *timer) { return ctime_r(timer,ctime_buf); }
+INTERN char *LIBCCALL libc_ctime64(time64_t const *timer) { return libc_ctime64_r(timer,ctime_buf); }
+INTERN char *LIBCCALL libc_ctime(time_t const *timer) { return libc_ctime_r(timer,ctime_buf); }
 
-PUBLIC time64_t (LIBCCALL mktime64)(struct tm *tp) {
+INTERN time64_t LIBCCALL libc_mktime64(struct tm *tp) {
  time64_t result;
  result = __yearstodays(tp->tm_year) -
           __yearstodays(LINUX_TIME_START_YEAR);
@@ -172,8 +172,9 @@ PUBLIC time64_t (LIBCCALL mktime64)(struct tm *tp) {
  result += tp->tm_sec;
  return result;
 }
-PUBLIC struct tm *(LIBCCALL gmtime64_r)
-(time64_t const *__restrict timer, struct tm *__restrict tp) {
+INTERN struct tm *LIBCCALL
+libc_gmtime64_r(time64_t const *__restrict timer,
+                struct tm *__restrict tp) {
  time64_t t; int i; u16 const *monthvec;
  t = *timer;
  tp->tm_sec  = (int)(t % 60);
@@ -194,25 +195,25 @@ PUBLIC struct tm *(LIBCCALL gmtime64_r)
  tp->tm_year -= 1900;
  return tp;
 }
-PUBLIC time_t (LIBCCALL mktime)(struct tm *tp) { return (time_t)mktime64(tp); }
-PUBLIC struct tm *(LIBCCALL gmtime_r)(time_t const *__restrict timer, struct tm *__restrict tp) { time64_t t = (time64_t)*timer; return gmtime64_r(&t,tp); }
+INTERN time_t LIBCCALL libc_mktime(struct tm *tp) { return (time_t)libc_mktime64(tp); }
+INTERN struct tm *LIBCCALL libc_gmtime_r(time_t const *__restrict timer, struct tm *__restrict tp) { time64_t t = (time64_t)*timer; return libc_gmtime64_r(&t,tp); }
 PRIVATE struct tm gmtime_buf,localtime_buf;
-PUBLIC struct tm *(LIBCCALL localtime_r)(time_t const *__restrict timer, struct tm *__restrict tp) { return gmtime_r(timer,tp); /* TODO: Timezones 'n $hit. */ }
-PUBLIC struct tm *(LIBCCALL localtime64_r)(time64_t const *__restrict timer, struct tm *__restrict tp) { return gmtime64_r(timer,tp); /* TODO: Timezones 'n $hit. */ }
-PUBLIC struct tm *(LIBCCALL gmtime)(time_t const *timer) { return gmtime_r(timer,&gmtime_buf); }
-PUBLIC struct tm *(LIBCCALL gmtime64)(time64_t const *timer) { return gmtime64_r(timer,&gmtime_buf); }
-PUBLIC struct tm *(LIBCCALL localtime)(time_t const *timer) { return localtime_r(timer,&localtime_buf); }
-PUBLIC struct tm *(LIBCCALL localtime64)(time64_t const *timer) { return localtime64_r(timer,&localtime_buf); }
-PUBLIC double (LIBCCALL difftime)(time_t time1, time_t time0) { return time1 > time0 ? time1-time0 : time0-time1; }
-PUBLIC double (LIBCCALL difftime64)(time64_t time1, time64_t time0) { return time1 > time0 ? time1-time0 : time0-time1; }
+INTERN struct tm *LIBCCALL libc_localtime_r(time_t const *__restrict timer, struct tm *__restrict tp) { return libc_gmtime_r(timer,tp); /* TODO: Timezones 'n $hit. */ }
+INTERN struct tm *LIBCCALL libc_localtime64_r(time64_t const *__restrict timer, struct tm *__restrict tp) { return libc_gmtime64_r(timer,tp); /* TODO: Timezones 'n $hit. */ }
+INTERN struct tm *LIBCCALL libc_gmtime(time_t const *timer) { return libc_gmtime_r(timer,&gmtime_buf); }
+INTERN struct tm *LIBCCALL libc_gmtime64(time64_t const *timer) { return libc_gmtime64_r(timer,&gmtime_buf); }
+INTERN struct tm *LIBCCALL libc_localtime(time_t const *timer) { return libc_localtime_r(timer,&localtime_buf); }
+INTERN struct tm *LIBCCALL libc_localtime64(time64_t const *timer) { return libc_localtime64_r(timer,&localtime_buf); }
+INTERN double LIBCCALL libc_difftime(time_t time1, time_t time0) { return time1 > time0 ? time1-time0 : time0-time1; }
+INTERN double LIBCCALL libc_difftime64(time64_t time1, time64_t time0) { return time1 > time0 ? time1-time0 : time0-time1; }
 
 /* Kernel-time independent system-call functions */
-PUBLIC clock_t (LIBCCALL clock)(void) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL timer_create)(clockid_t clock_id, struct sigevent *__restrict evp, timer_t *__restrict timerid) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL timer_delete)(timer_t timerid) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL timer_getoverrun)(timer_t timerid) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL clock_getcpuclockid)(pid_t pid, clockid_t *clock_id) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL timespec_get)(struct timespec *ts, int base) { NOT_IMPLEMENTED(); return -1; }
+INTERN clock_t LIBCCALL libc_clock(void) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_timer_create(clockid_t clock_id, struct sigevent *__restrict evp, timer_t *__restrict timerid) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_timer_delete(timer_t timerid) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_timer_getoverrun(timer_t timerid) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_clock_getcpuclockid(pid_t pid, clockid_t *clock_id) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_timespec_get(struct timespec *ts, int base) { NOT_IMPLEMENTED(); return -1; }
 
 
 #ifdef CONFIG_32BIT_TIME
@@ -244,51 +245,50 @@ PUBLIC int (LIBCCALL timespec_get)(struct timespec *ts, int base) { NOT_IMPLEMEN
 
 
 /* Kernel-time dependent system-call functions */
-PUBLIC atime_t (LIBCCALL A(time))(atime_t *timer) {
+INTERN atime_t LIBCCALL A(libc_time)(atime_t *timer) {
  struct atimeval now;
- if (A(gettimeofday)(&now,NULL)) return -1;
+ if (A(libc_gettimeofday)(&now,NULL)) return -1;
  if (timer) *timer = now.tv_sec;
  return now.tv_sec;
 }
-PUBLIC int (LIBCCALL A(stime))(atime_t const *when) {
+INTERN int LIBCCALL A(libc_stime)(atime_t const *when) {
  struct atimeval now;
  now.tv_sec = *when;
  now.tv_usec = 0;
- return A(settimeofday)(&now,NULL);
+ return A(libc_settimeofday)(&now,NULL);
 }
-PUBLIC int (LIBCCALL A(gettimeofday))(struct atimeval *__restrict tv, __timezone_ptr_t tz) { return FORWARD_SYSTEM_ERROR(sys_gettimeofday(tv,tz)); }
-PUBLIC int (LIBCCALL A(settimeofday))(struct atimeval const *tv, struct timezone const *tz) { return FORWARD_SYSTEM_ERROR(sys_settimeofday(tv,tz)); }
-PUBLIC int (LIBCCALL A(nanosleep))(struct atimespec const *requested_time, struct atimespec *remaining) { return FORWARD_SYSTEM_ERROR(sys_nanosleep(requested_time,remaining)); }
-PUBLIC atime_t (LIBCCALL A(timelocal))(struct tm *tp) { return mktime(tp); /* XXX: Timezones */ }
-PUBLIC int (LIBCCALL A(adjtime))(struct atimeval const *delta, struct atimeval *olddelta) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(getitimer))(__itimer_which_t which, struct aitimerval *value) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(setitimer))(__itimer_which_t which, const struct aitimerval *__restrict new_, struct aitimerval *__restrict old) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(clock_getres))(clockid_t clock_id, struct atimespec *res) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(clock_gettime))(clockid_t clock_id, struct atimespec *tp) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(clock_settime))(clockid_t clock_id, struct atimespec const *tp) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(timer_settime))(timer_t timerid, int flags, struct aitimerspec const *__restrict value, struct aitimerspec *__restrict ovalue) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(timer_gettime))(timer_t timerid, struct aitimerspec *value) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL A(clock_nanosleep))(clockid_t clock_id, int flags, struct atimespec const *req, struct atimespec *rem) { NOT_IMPLEMENTED(); return A(nanosleep)(req,rem); }
-
-PUBLIC btime_t (LIBCCALL B(timelocal))(struct tm *tp) { return (btime_t)A(timelocal)(tp); }
-PUBLIC btime_t (LIBCCALL B(time))(btime_t *timer) { btime_t result = (btime_t)A(time)(NULL); if (timer) *timer = result; return result; }
-PUBLIC int (LIBCCALL B(stime))(btime_t const *when) { atime_t awhen = (atime_t)*when; return A(stime)(&awhen); }
-PUBLIC int (LIBCCALL B(gettimeofday))(struct btimeval *__restrict tv, __timezone_ptr_t tz) { struct atimeval atv; int result = A(gettimeofday)(&atv,tz); if (!result) tv->tv_sec = (btime_t)atv.tv_sec,tv->tv_usec = atv.tv_usec; return result; }
-PUBLIC int (LIBCCALL B(settimeofday))(struct btimeval const *tv, struct timezone const *tz) { struct atimeval atv = {(atime_t)tv->tv_sec,tv->tv_usec}; return A(settimeofday)(&atv,tz); }
-PUBLIC int (LIBCCALL B(adjtime))(struct btimeval const *delta, struct btimeval *olddelta) {
+INTERN int LIBCCALL A(libc_gettimeofday)(struct atimeval *__restrict tv, __timezone_ptr_t tz) { return FORWARD_SYSTEM_ERROR(sys_gettimeofday(tv,tz)); }
+INTERN int LIBCCALL A(libc_settimeofday)(struct atimeval const *tv, struct timezone const *tz) { return FORWARD_SYSTEM_ERROR(sys_settimeofday(tv,tz)); }
+INTERN int LIBCCALL A(libc_nanosleep)(struct atimespec const *requested_time, struct atimespec *remaining) { return FORWARD_SYSTEM_ERROR(sys_nanosleep(requested_time,remaining)); }
+INTERN atime_t LIBCCALL A(libc_timelocal)(struct tm *tp) { return A(libc_mktime)(tp); /* XXX: Timezones */ }
+INTERN int LIBCCALL A(libc_adjtime)(struct atimeval const *delta, struct atimeval *olddelta) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL A(libc_getitimer)(__itimer_which_t which, struct aitimerval *value) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL A(libc_setitimer)(__itimer_which_t which, const struct aitimerval *__restrict new_, struct aitimerval *__restrict old) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL A(libc_clock_getres)(clockid_t clock_id, struct atimespec *res) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL A(libc_clock_gettime)(clockid_t clock_id, struct atimespec *tp) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL A(libc_clock_settime)(clockid_t clock_id, struct atimespec const *tp) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL A(libc_timer_settime)(timer_t timerid, int flags, struct aitimerspec const *__restrict value, struct aitimerspec *__restrict ovalue) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL A(libc_timer_gettime)(timer_t timerid, struct aitimerspec *value) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL A(libc_clock_nanosleep)(clockid_t clock_id, int flags, struct atimespec const *req, struct atimespec *rem) { NOT_IMPLEMENTED(); return A(libc_nanosleep)(req,rem); }
+INTERN btime_t LIBCCALL B(libc_timelocal)(struct tm *tp) { return (btime_t)A(libc_timelocal)(tp); }
+INTERN btime_t LIBCCALL B(libc_time)(btime_t *timer) { btime_t result = (btime_t)A(libc_time)(NULL); if (timer) *timer = result; return result; }
+INTERN int LIBCCALL B(libc_stime)(btime_t const *when) { atime_t awhen = (atime_t)*when; return A(libc_stime)(&awhen); }
+INTERN int LIBCCALL B(libc_gettimeofday)(struct btimeval *__restrict tv, __timezone_ptr_t tz) { struct atimeval atv; int result = A(libc_gettimeofday)(&atv,tz); if (!result) tv->tv_sec = (btime_t)atv.tv_sec,tv->tv_usec = atv.tv_usec; return result; }
+INTERN int LIBCCALL B(libc_settimeofday)(struct btimeval const *tv, struct timezone const *tz) { struct atimeval atv = {(atime_t)tv->tv_sec,tv->tv_usec}; return A(libc_settimeofday)(&atv,tz); }
+INTERN int LIBCCALL B(libc_adjtime)(struct btimeval const *delta, struct btimeval *olddelta) {
  struct atimeval atv,oatv; int result;
  if (delta)
      atv.tv_sec  = (atime_t)delta->tv_sec,
      atv.tv_usec = delta->tv_usec;
- result = A(adjtime)(delta ? &atv : NULL,olddelta ? &oatv : NULL);
+ result = A(libc_adjtime)(delta ? &atv : NULL,olddelta ? &oatv : NULL);
  if (!result && olddelta)
      olddelta->tv_sec = (btime_t)oatv.tv_sec,
      olddelta->tv_usec = oatv.tv_usec;
  return result;
 }
-PUBLIC int (LIBCCALL B(getitimer))(__itimer_which_t which, struct bitimerval *value) {
+INTERN int LIBCCALL B(libc_getitimer)(__itimer_which_t which, struct bitimerval *value) {
  struct aitimerval aval; int result;
- result = A(getitimer)(which,&aval);
+ result = A(libc_getitimer)(which,&aval);
  if (!result) {
   value->it_interval.tv_sec  = (btime_t)aval.it_interval.tv_sec;
   value->it_interval.tv_usec = aval.it_interval.tv_usec;
@@ -297,9 +297,9 @@ PUBLIC int (LIBCCALL B(getitimer))(__itimer_which_t which, struct bitimerval *va
  }
  return result;
 }
-PUBLIC int (LIBCCALL B(setitimer))(__itimer_which_t which,
-                                   struct bitimerval const *__restrict new_,
-                                   struct bitimerval *__restrict old) {
+INTERN int LIBCCALL B(libc_setitimer)(__itimer_which_t which,
+                                      struct bitimerval const *__restrict new_,
+                                      struct bitimerval *__restrict old) {
  struct aitimerval anew,aold; int result;
  if (new_) {
   anew.it_interval.tv_sec  = (atime_t)new_->it_interval.tv_sec;
@@ -307,7 +307,7 @@ PUBLIC int (LIBCCALL B(setitimer))(__itimer_which_t which,
   anew.it_value.tv_sec     = (atime_t)new_->it_value.tv_sec;
   anew.it_value.tv_usec    = new_->it_value.tv_usec;
  }
- result = A(setitimer)(which,new_ ? &anew : NULL,old ? &aold : NULL);
+ result = A(libc_setitimer)(which,new_ ? &anew : NULL,old ? &aold : NULL);
  if (!result && old) {
   old->it_interval.tv_sec  = (btime_t)aold.it_interval.tv_sec;
   old->it_interval.tv_usec = aold.it_interval.tv_usec;
@@ -316,45 +316,45 @@ PUBLIC int (LIBCCALL B(setitimer))(__itimer_which_t which,
  }
  return result;
 }
-PUBLIC int (LIBCCALL B(nanosleep))(struct btimespec const *requested_time,
-                                   struct btimespec *remaining) {
+INTERN int LIBCCALL B(libc_nanosleep)(struct btimespec const *requested_time,
+                                      struct btimespec *remaining) {
  struct atimespec areq,arem; int result;
  areq.tv_sec  = (atime_t)requested_time->tv_sec;
  areq.tv_nsec = requested_time->tv_nsec;
- result = A(nanosleep)(&areq,remaining ? &arem : NULL);
+ result = A(libc_nanosleep)(&areq,remaining ? &arem : NULL);
  if (!result && remaining) {
   remaining->tv_sec  = (btime_t)arem.tv_sec;
   remaining->tv_nsec = arem.tv_nsec;
  }
  return result;
 }
-PUBLIC int (LIBCCALL B(clock_getres))(clockid_t clock_id, struct btimespec *res) {
+INTERN int LIBCCALL B(libc_clock_getres)(clockid_t clock_id, struct btimespec *res) {
  struct atimespec ares; int result;
- result = A(clock_getres)(clock_id,&ares);
+ result = A(libc_clock_getres)(clock_id,&ares);
  if (!result) {
   res->tv_sec  = (btime_t)ares.tv_sec;
   res->tv_nsec = ares.tv_nsec;
  }
  return result;
 }
-PUBLIC int (LIBCCALL B(clock_gettime))(clockid_t clock_id, struct btimespec *tp) {
+INTERN int LIBCCALL B(libc_clock_gettime)(clockid_t clock_id, struct btimespec *tp) {
  struct atimespec ares; int result;
- result = A(clock_gettime)(clock_id,&ares);
+ result = A(libc_clock_gettime)(clock_id,&ares);
  if (!result) {
   tp->tv_sec  = (btime_t)ares.tv_sec;
   tp->tv_nsec = ares.tv_nsec;
  }
  return result;
 }
-PUBLIC int (LIBCCALL B(clock_settime))(clockid_t clock_id, struct btimespec const *tp) {
+INTERN int LIBCCALL B(libc_clock_settime)(clockid_t clock_id, struct btimespec const *tp) {
  struct atimespec ares;
  ares.tv_sec  = (btime_t)tp->tv_sec;
  ares.tv_nsec = tp->tv_nsec;
- return A(clock_settime)(clock_id,&ares);
+ return A(libc_clock_settime)(clock_id,&ares);
 }
-PUBLIC int (LIBCCALL B(timer_settime))(timer_t timerid, int flags,
-                                       struct bitimerspec const *__restrict value,
-                                       struct bitimerspec *__restrict ovalue) {
+INTERN int LIBCCALL B(libc_timer_settime)(timer_t timerid, int flags,
+                                          struct bitimerspec const *__restrict value,
+                                          struct bitimerspec *__restrict ovalue) {
  struct aitimerspec anew,aold; int result;
  if (value) {
   anew.it_interval.tv_sec  = (atime_t)value->it_interval.tv_sec;
@@ -362,7 +362,7 @@ PUBLIC int (LIBCCALL B(timer_settime))(timer_t timerid, int flags,
   anew.it_value.tv_sec     = (atime_t)value->it_value.tv_sec;
   anew.it_value.tv_nsec    = value->it_value.tv_nsec;
  }
- result = A(timer_settime)(timerid,flags,value ? &anew : NULL,ovalue ? &aold : NULL);
+ result = A(libc_timer_settime)(timerid,flags,value ? &anew : NULL,ovalue ? &aold : NULL);
  if (!result && ovalue) {
   ovalue->it_interval.tv_sec  = (btime_t)aold.it_interval.tv_sec;
   ovalue->it_interval.tv_nsec = aold.it_interval.tv_nsec;
@@ -371,9 +371,9 @@ PUBLIC int (LIBCCALL B(timer_settime))(timer_t timerid, int flags,
  }
  return result;
 }
-PUBLIC int (LIBCCALL B(timer_gettime))(timer_t timerid, struct bitimerspec *value) {
+INTERN int LIBCCALL B(libc_timer_gettime)(timer_t timerid, struct bitimerspec *value) {
  struct aitimerspec ares; int result;
- result = A(timer_gettime)(timerid,&ares);
+ result = A(libc_timer_gettime)(timerid,&ares);
  if (!result) {
   value->it_interval.tv_sec  = (btime_t)ares.it_interval.tv_sec;
   value->it_interval.tv_nsec = ares.it_interval.tv_nsec;
@@ -382,13 +382,13 @@ PUBLIC int (LIBCCALL B(timer_gettime))(timer_t timerid, struct bitimerspec *valu
  }
  return result;
 }
-PUBLIC int (LIBCCALL B(clock_nanosleep))(clockid_t clock_id, int flags,
-                                         struct btimespec const *req,
-                                         struct btimespec *rem) {
+INTERN int LIBCCALL B(libc_clock_nanosleep)(clockid_t clock_id, int flags,
+                                            struct btimespec const *req,
+                                            struct btimespec *rem) {
  struct atimespec areq,arem; int result;
  areq.tv_sec  = (atime_t)req->tv_sec;
  areq.tv_nsec = req->tv_nsec;
- result = A(nanosleep)(&areq,rem ? &arem : NULL);
+ result = A(libc_nanosleep)(&areq,rem ? &arem : NULL);
  if (!result && rem) {
   rem->tv_sec  = (btime_t)arem.tv_sec;
   rem->tv_nsec = arem.tv_nsec;
@@ -396,23 +396,23 @@ PUBLIC int (LIBCCALL B(clock_nanosleep))(clockid_t clock_id, int flags,
  return result;
 }
 
-PUBLIC int (LIBCCALL A(sigtimedwait))(sigset_t const *__restrict set, siginfo_t *__restrict info, struct atimespec const *timeout) { return FORWARD_SYSTEM_ERROR(sys_sigtimedwait(set,info,timeout,sizeof(siginfo_t))); }
-PUBLIC int (LIBCCALL A(utimensat))(int fd, char const *path, struct atimespec const times[2], int flags) { return FORWARD_SYSTEM_ERROR(sys_utimensat(fd,path,times,flags)); }
-PUBLIC int (LIBCCALL A(ppoll))(struct pollfd *fds, nfds_t nfds, struct atimespec const *timeout, sigset_t const *ss) { return FORWARD_SYSTEM_VALUE((int)sys_ppoll(fds,nfds,timeout,ss,sizeof(sigset_t))); }
-PUBLIC int (LIBCCALL A(select))(int nfds, fd_set *__restrict readfds,
-                                fd_set *__restrict writefds,
-                                fd_set *__restrict exceptfds,
-                                struct atimeval *__restrict timeout) {
+INTERN int LIBCCALL A(libc_sigtimedwait)(sigset_t const *__restrict set, siginfo_t *__restrict info, struct atimespec const *timeout) { return FORWARD_SYSTEM_ERROR(sys_sigtimedwait(set,info,timeout,sizeof(siginfo_t))); }
+INTERN int LIBCCALL A(libc_utimensat)(int fd, char const *path, struct atimespec const times[2], int flags) { return FORWARD_SYSTEM_ERROR(sys_utimensat(fd,path,times,flags)); }
+INTERN int LIBCCALL A(libc_ppoll)(struct pollfd *fds, nfds_t nfds, struct atimespec const *timeout, sigset_t const *ss) { return FORWARD_SYSTEM_VALUE((int)sys_ppoll(fds,nfds,timeout,ss,sizeof(sigset_t))); }
+INTERN int LIBCCALL A(libc_select)(int nfds, fd_set *__restrict readfds,
+                                   fd_set *__restrict writefds,
+                                   fd_set *__restrict exceptfds,
+                                   struct atimeval *__restrict timeout) {
  struct atimespec tmo;
- if (!timeout) return A(pselect)(nfds,readfds,writefds,exceptfds,NULL,NULL);
+ if (!timeout) return A(libc_pselect)(nfds,readfds,writefds,exceptfds,NULL,NULL);
  TIMEVAL_TO_TIMESPEC(timeout,&tmo);
- return A(pselect)(nfds,readfds,writefds,exceptfds,&tmo,NULL);
+ return A(libc_pselect)(nfds,readfds,writefds,exceptfds,&tmo,NULL);
 }
-PUBLIC int (LIBCCALL A(pselect))(int nfds, fd_set *__restrict readfds,
-                                 fd_set *__restrict writefds,
-                                 fd_set *__restrict exceptfds,
-                                 struct atimespec const *__restrict timeout,
-                                 sigset_t const *__restrict sigmask) {
+INTERN int LIBCCALL A(libc_pselect)(int nfds, fd_set *__restrict readfds,
+                                    fd_set *__restrict writefds,
+                                    fd_set *__restrict exceptfds,
+                                    struct atimespec const *__restrict timeout,
+                                    sigset_t const *__restrict sigmask) {
  int error;
  if (sigmask) {
   struct { sigset_t const *p; size_t s; } sgm = {sigmask,sizeof(sigset_t)};
@@ -426,104 +426,103 @@ PUBLIC int (LIBCCALL A(pselect))(int nfds, fd_set *__restrict readfds,
 
 
 
-PUBLIC int (LIBCCALL B(sigtimedwait))(sigset_t const *__restrict set,
-                                      siginfo_t *__restrict info,
-                                      struct btimespec const *timeout) {
+INTERN int LIBCCALL B(libc_sigtimedwait)(sigset_t const *__restrict set,
+                                         siginfo_t *__restrict info,
+                                         struct btimespec const *timeout) {
  struct atimespec tma;
- if (!timeout) return A(sigtimedwait)(set,info,NULL);
+ if (!timeout) return A(libc_sigtimedwait)(set,info,NULL);
  tma.tv_sec  = (time64_t)timeout->tv_sec;
  tma.tv_nsec = timeout->tv_nsec;
- return A(sigtimedwait)(set,info,&tma);
+ return A(libc_sigtimedwait)(set,info,&tma);
 }
-PUBLIC int (LIBCCALL B(utimensat))(int fd, char const *path,
-                                   struct btimespec const times[2],
-                                   int flags) {
+INTERN int LIBCCALL B(libc_utimensat)(int fd, char const *path,
+                                      struct btimespec const times[2],
+                                      int flags) {
  struct atimespec atime[2];
- if (!times) return A(utimensat)(fd,path,NULL,flags);
+ if (!times) return A(libc_utimensat)(fd,path,NULL,flags);
  atime[0].tv_sec  = (atime_t)times[0].tv_sec;
  atime[0].tv_nsec = times[0].tv_nsec;
  atime[1].tv_sec  = (atime_t)times[1].tv_sec;
  atime[1].tv_nsec = times[1].tv_nsec;
- return A(utimensat)(fd,path,atime,flags);
+ return A(libc_utimensat)(fd,path,atime,flags);
 }
-PUBLIC int (LIBCCALL B(ppoll))(struct pollfd *fds, nfds_t nfds,
-                               struct timespec const *timeout,
-                               sigset_t const *ss) {
+INTERN int LIBCCALL B(libc_ppoll)(struct pollfd *fds, nfds_t nfds,
+                                  struct timespec const *timeout,
+                                  sigset_t const *ss) {
  struct atimespec tmo;
- if (!timeout) return A(ppoll)(fds,nfds,NULL,ss);
+ if (!timeout) return A(libc_ppoll)(fds,nfds,NULL,ss);
  tmo.tv_sec  = (atime_t)timeout->tv_sec;
  tmo.tv_nsec = timeout->tv_nsec;
- return A(ppoll)(fds,nfds,&tmo,ss);
+ return A(libc_ppoll)(fds,nfds,&tmo,ss);
 }
-PUBLIC int (LIBCCALL B(select))(int nfds, fd_set *__restrict readfds,
-                                fd_set *__restrict writefds,
-                                fd_set *__restrict exceptfds,
-                                struct btimeval *__restrict timeout) {
+INTERN int LIBCCALL B(libc_select)(int nfds, fd_set *__restrict readfds,
+                                   fd_set *__restrict writefds,
+                                   fd_set *__restrict exceptfds,
+                                   struct btimeval *__restrict timeout) {
  struct atimespec tmo;
- if (!timeout) return A(pselect)(nfds,readfds,writefds,exceptfds,NULL,NULL);
+ if (!timeout) return A(libc_pselect)(nfds,readfds,writefds,exceptfds,NULL,NULL);
  TIMEVAL_TO_TIMESPEC(timeout,&tmo);
- return A(pselect)(nfds,readfds,writefds,exceptfds,&tmo,NULL);
+ return A(libc_pselect)(nfds,readfds,writefds,exceptfds,&tmo,NULL);
 }
 
-PUBLIC int (LIBCCALL B(pselect))(int nfds, fd_set *__restrict readfds,
-                                 fd_set *__restrict writefds,
-                                 fd_set *__restrict exceptfds,
-                                 struct btimespec const *__restrict timeout,
-                                 sigset_t const *__restrict sigmask) {
+INTERN int LIBCCALL B(libc_pselect)(int nfds, fd_set *__restrict readfds,
+                                    fd_set *__restrict writefds,
+                                    fd_set *__restrict exceptfds,
+                                    struct btimespec const *__restrict timeout,
+                                    sigset_t const *__restrict sigmask) {
  struct atimespec tmo;
- if (!timeout) return A(pselect)(nfds,readfds,writefds,exceptfds,NULL,sigmask);
+ if (!timeout) return A(libc_pselect)(nfds,readfds,writefds,exceptfds,NULL,sigmask);
  tmo.tv_sec  = (atime_t)timeout->tv_sec;
  tmo.tv_nsec = timeout->tv_nsec;
- return A(pselect)(nfds,readfds,writefds,exceptfds,&tmo,sigmask);
+ return A(libc_pselect)(nfds,readfds,writefds,exceptfds,&tmo,sigmask);
 }
 
-PRIVATE int (LIBCCALL A(libc_futimesat))(int fd, char const *file,
-                                         struct atimeval const tvp[2],
-                                         int flags) {
+PRIVATE int LIBCCALL A(impl_futimesat)(int fd, char const *file,
+                                       struct atimeval const tvp[2],
+                                       int flags) {
  struct atimespec times[2];
  TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
  TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
- return A(utimensat)(fd,file,times,flags);
+ return A(libc_utimensat)(fd,file,times,flags);
 }
-PRIVATE int (LIBCCALL B(libc_futimesat))(int fd, char const *file,
-                                         struct btimeval const tvp[2],
-                                         int flags) {
+PRIVATE int LIBCCALL B(impl_futimesat)(int fd, char const *file,
+                                       struct btimeval const tvp[2],
+                                       int flags) {
  struct atimespec times[2];
  TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
  TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
- return A(utimensat)(fd,file,times,flags);
+ return A(libc_utimensat)(fd,file,times,flags);
 }
-PUBLIC int (LIBCCALL A(futimes))(int fd, struct atimeval const tvp[2]) {
+INTERN int LIBCCALL A(libc_futimes)(int fd, struct atimeval const tvp[2]) {
  struct atimespec times[2];
  TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
  TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
- return A(futimens)(fd,times);
+ return A(libc_futimens)(fd,times);
 }
-PUBLIC int (LIBCCALL B(futimes))(int fd, struct btimeval const tvp[2]) {
+INTERN int LIBCCALL B(libc_futimes)(int fd, struct btimeval const tvp[2]) {
  struct atimespec times[2];
  TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
  TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
- return A(futimens)(fd,times);
+ return A(libc_futimens)(fd,times);
 }
-PUBLIC int (LIBCCALL A(futimens))(int fd, struct atimespec const times[2]) { return A(utimensat)(fd,NULL,times,0); }
-PUBLIC int (LIBCCALL B(futimens))(int fd, struct btimespec const times[2]) { return B(utimensat)(fd,NULL,times,0); }
-PUBLIC int (LIBCCALL A(utimes))(char const *file, struct atimeval const tvp[2]) { return A(libc_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_FOLLOW); }
-PUBLIC int (LIBCCALL A(lutimes))(char const *file, struct atimeval const tvp[2]) { return A(libc_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_NOFOLLOW); }
-PUBLIC int (LIBCCALL A(futimesat))(int fd, char const *file, struct atimeval const tvp[2]) { return A(libc_futimesat)(fd,file,tvp,AT_SYMLINK_FOLLOW); }
-PUBLIC int (LIBCCALL B(utimes))(char const *file, struct btimeval const tvp[2]) { return B(libc_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_FOLLOW); }
-PUBLIC int (LIBCCALL B(lutimes))(char const *file, struct btimeval const tvp[2]) { return B(libc_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_NOFOLLOW); }
-PUBLIC int (LIBCCALL B(futimesat))(int fd, char const *file, struct btimeval const tvp[2]) { return B(libc_futimesat)(fd,file,tvp,AT_SYMLINK_FOLLOW); }
+INTERN int LIBCCALL A(libc_futimens)(int fd, struct atimespec const times[2]) { return A(libc_utimensat)(fd,NULL,times,0); }
+INTERN int LIBCCALL B(libc_futimens)(int fd, struct btimespec const times[2]) { return B(libc_utimensat)(fd,NULL,times,0); }
+INTERN int LIBCCALL A(libc_utimes)(char const *file, struct atimeval const tvp[2]) { return A(impl_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_FOLLOW); }
+INTERN int LIBCCALL A(libc_lutimes)(char const *file, struct atimeval const tvp[2]) { return A(impl_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_NOFOLLOW); }
+INTERN int LIBCCALL A(libc_futimesat)(int fd, char const *file, struct atimeval const tvp[2]) { return A(impl_futimesat)(fd,file,tvp,AT_SYMLINK_FOLLOW); }
+INTERN int LIBCCALL B(libc_utimes)(char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_FOLLOW); }
+INTERN int LIBCCALL B(libc_lutimes)(char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_NOFOLLOW); }
+INTERN int LIBCCALL B(libc_futimesat)(int fd, char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(fd,file,tvp,AT_SYMLINK_FOLLOW); }
 
-PUBLIC useconds_t (LIBCCALL ualarm)(useconds_t value, useconds_t interval) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC unsigned int (LIBCCALL alarm)(unsigned int seconds) { NOT_IMPLEMENTED(); return seconds; }
-PUBLIC int (LIBCCALL pause)(void) { return select(0,NULL,NULL,NULL,NULL); }
+INTERN useconds_t LIBCCALL libc_ualarm(useconds_t value, useconds_t interval) { NOT_IMPLEMENTED(); return -1; }
+INTERN unsigned int LIBCCALL libc_alarm(unsigned int seconds) { NOT_IMPLEMENTED(); return seconds; }
+INTERN int LIBCCALL libc_pause(void) { return A(libc_select)(0,NULL,NULL,NULL,NULL); }
 
-
-
-PUBLIC int (LIBCCALL poll)(struct pollfd *fds, nfds_t nfds, int timeout) {
+INTERN int LIBCCALL libc_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
  struct atimespec tmo;
  /* NOTE: A negative value means infinite timeout! */
- if (timeout < 0) return ppoll(fds,nfds,NULL,NULL);
+ if (timeout < 0)
+     return A(libc_ppoll)(fds,nfds,NULL,NULL);
  /* NOTE: A timeout of ZERO(0) means try once; stop immediately. */
  if (!timeout) {
   tmo.tv_sec  = 0;
@@ -532,27 +531,38 @@ PUBLIC int (LIBCCALL poll)(struct pollfd *fds, nfds_t nfds, int timeout) {
   tmo.tv_sec  = timeout/MSEC_PER_SEC;
   tmo.tv_nsec = NSEC_PER_MSEC*(timeout%MSEC_PER_SEC);
  }
- return A(ppoll)(fds,nfds,&tmo,NULL);
+ return A(libc_ppoll)(fds,nfds,&tmo,NULL);
 }
-PUBLIC unsigned int (LIBCCALL sleep)(unsigned int seconds) {
+INTERN int LIBCCALL libc_sigwaitinfo(sigset_t const *__restrict set,
+                                     siginfo_t *__restrict info) {
+ return A(libc_sigtimedwait)(set,info,NULL);
+}
+INTERN int LIBCCALL libc_sigwait(sigset_t const *__restrict set,
+                                 int *__restrict sig) {
+ siginfo_t info;
+ int error = A(libc_sigtimedwait)(set,&info,NULL);
+ if (!error) *sig = info.si_signo;
+ return error;
+}
+INTERN unsigned int LIBCCALL libc_sleep(unsigned int seconds) {
  struct atimespec req,rem;
  req.tv_sec  = seconds;
  req.tv_nsec = 0;
- A(nanosleep)(&req,&rem);
+ A(libc_nanosleep)(&req,&rem);
  return rem.tv_sec;
 }
-PUBLIC int (LIBCCALL usleep)(useconds_t useconds) {
+INTERN int LIBCCALL libc_usleep(useconds_t useconds) {
  struct atimespec req,rem; int error;
  req.tv_sec  =  useconds/USEC_PER_SEC;
  req.tv_nsec = (useconds%USEC_PER_SEC)*NSEC_PER_USEC;
- while ((error = A(nanosleep)(&req,&rem)) != 0 &&
-         errno == EINTR) req = rem;
+ while ((error = A(libc_nanosleep)(&req,&rem)) != 0 &&
+         GET_ERRNO() == EINTR) req = rem;
  return error;
 }
 
-PUBLIC int (LIBCCALL A(ftime))(struct A(timeb) *timebuf) {
+INTERN int LIBCCALL A(libc_ftime)(struct A(timeb) *timebuf) {
  struct atimeval tv; struct timezone tz;
- int result = A(gettimeofday)(&tv,&tz);
+ int result = A(libc_gettimeofday)(&tv,&tz);
  if (!result) {
   timebuf->time     = tv.tv_sec;
   timebuf->millitm  = tv.tv_usec / USEC_PER_MSEC;
@@ -561,9 +571,9 @@ PUBLIC int (LIBCCALL A(ftime))(struct A(timeb) *timebuf) {
  }
  return result;
 }
-PUBLIC int (LIBCCALL B(ftime))(struct B(timeb) *timebuf) {
+INTERN int LIBCCALL B(libc_ftime)(struct B(timeb) *timebuf) {
  struct atimeval tv; struct timezone tz;
- int result = A(gettimeofday)(&tv,&tz);
+ int result = A(libc_gettimeofday)(&tv,&tz);
  if (!result) {
   timebuf->time     = (btime_t)tv.tv_sec;
   timebuf->millitm  = tv.tv_usec / USEC_PER_MSEC;
@@ -574,8 +584,100 @@ PUBLIC int (LIBCCALL B(ftime))(struct B(timeb) *timebuf) {
 }
 
 
-DEFINE_PUBLIC_ALIAS(timegm,mktime); /* ??? */
-DEFINE_PUBLIC_ALIAS(timegm64,mktime64); /* ??? */
+DEFINE_PUBLIC_ALIAS(tzset,libc_tzset);
+DEFINE_PUBLIC_ALIAS(asctime_r,libc_asctime_r);
+DEFINE_PUBLIC_ALIAS(asctime,libc_asctime);
+DEFINE_PUBLIC_ALIAS(strftime,libc_strftime);
+DEFINE_PUBLIC_ALIAS(strptime,libc_strptime);
+DEFINE_PUBLIC_ALIAS(dysize,libc_dysize);
+DEFINE_PUBLIC_ALIAS(getdate_r,libc_getdate_r);
+DEFINE_PUBLIC_ALIAS(getdate,libc_getdate);
+DEFINE_PUBLIC_ALIAS(strftime_l,libc_strftime_l);
+DEFINE_PUBLIC_ALIAS(strptime_l,libc_strptime_l);
+DEFINE_PUBLIC_ALIAS(ctime64_r,libc_ctime64_r);
+DEFINE_PUBLIC_ALIAS(ctime_r,libc_ctime_r);
+DEFINE_PUBLIC_ALIAS(ctime64,libc_ctime64);
+DEFINE_PUBLIC_ALIAS(ctime,libc_ctime);
+DEFINE_PUBLIC_ALIAS(mktime64,libc_mktime64);
+DEFINE_PUBLIC_ALIAS(gmtime64_r,libc_gmtime64_r);
+DEFINE_PUBLIC_ALIAS(mktime,libc_mktime);
+DEFINE_PUBLIC_ALIAS(gmtime_r,libc_gmtime_r);
+DEFINE_PUBLIC_ALIAS(localtime_r,libc_localtime_r);
+DEFINE_PUBLIC_ALIAS(localtime64_r,libc_localtime64_r);
+DEFINE_PUBLIC_ALIAS(gmtime,libc_gmtime);
+DEFINE_PUBLIC_ALIAS(gmtime64,libc_gmtime64);
+DEFINE_PUBLIC_ALIAS(localtime,libc_localtime);
+DEFINE_PUBLIC_ALIAS(localtime64,libc_localtime64);
+DEFINE_PUBLIC_ALIAS(difftime,libc_difftime);
+DEFINE_PUBLIC_ALIAS(difftime64,libc_difftime64);
+DEFINE_PUBLIC_ALIAS(clock,libc_clock);
+DEFINE_PUBLIC_ALIAS(timer_create,libc_timer_create);
+DEFINE_PUBLIC_ALIAS(timer_delete,libc_timer_delete);
+DEFINE_PUBLIC_ALIAS(timer_getoverrun,libc_timer_getoverrun);
+DEFINE_PUBLIC_ALIAS(clock_getcpuclockid,libc_clock_getcpuclockid);
+DEFINE_PUBLIC_ALIAS(timespec_get,libc_timespec_get);
+DEFINE_PUBLIC_ALIAS(time64,libc_time64);
+DEFINE_PUBLIC_ALIAS(stime64,libc_stime64);
+DEFINE_PUBLIC_ALIAS(gettimeofday64,libc_gettimeofday64);
+DEFINE_PUBLIC_ALIAS(settimeofday64,libc_settimeofday64);
+DEFINE_PUBLIC_ALIAS(nanosleep64,libc_nanosleep64);
+DEFINE_PUBLIC_ALIAS(timelocal64,libc_timelocal64);
+DEFINE_PUBLIC_ALIAS(adjtime64,libc_adjtime64);
+DEFINE_PUBLIC_ALIAS(getitimer64,libc_getitimer64);
+DEFINE_PUBLIC_ALIAS(setitimer64,libc_setitimer64);
+DEFINE_PUBLIC_ALIAS(clock_getres64,libc_clock_getres64);
+DEFINE_PUBLIC_ALIAS(clock_gettime64,libc_clock_gettime64);
+DEFINE_PUBLIC_ALIAS(clock_settime64,libc_clock_settime64);
+DEFINE_PUBLIC_ALIAS(timer_settime64,libc_timer_settime64);
+DEFINE_PUBLIC_ALIAS(timer_gettime64,libc_timer_gettime64);
+DEFINE_PUBLIC_ALIAS(clock_nanosleep64,libc_clock_nanosleep64);
+DEFINE_PUBLIC_ALIAS(sigtimedwait64,libc_sigtimedwait64);
+DEFINE_PUBLIC_ALIAS(utimensat64,libc_utimensat64);
+DEFINE_PUBLIC_ALIAS(ppoll64,libc_ppoll64);
+DEFINE_PUBLIC_ALIAS(select64,libc_select64);
+DEFINE_PUBLIC_ALIAS(pselect64,libc_pselect64);
+DEFINE_PUBLIC_ALIAS(futimes64,libc_futimes64);
+DEFINE_PUBLIC_ALIAS(futimens64,libc_futimens64);
+DEFINE_PUBLIC_ALIAS(utimes64,libc_utimes64);
+DEFINE_PUBLIC_ALIAS(lutimes64,libc_lutimes64);
+DEFINE_PUBLIC_ALIAS(futimesat64,libc_futimesat64);
+DEFINE_PUBLIC_ALIAS(ftime64,libc_ftime64);
+DEFINE_PUBLIC_ALIAS(timelocal,libc_timelocal);
+DEFINE_PUBLIC_ALIAS(time,libc_time);
+DEFINE_PUBLIC_ALIAS(stime,libc_stime);
+DEFINE_PUBLIC_ALIAS(gettimeofday,libc_gettimeofday);
+DEFINE_PUBLIC_ALIAS(settimeofday,libc_settimeofday);
+DEFINE_PUBLIC_ALIAS(adjtime,libc_adjtime);
+DEFINE_PUBLIC_ALIAS(getitimer,libc_getitimer);
+DEFINE_PUBLIC_ALIAS(setitimer,libc_setitimer);
+DEFINE_PUBLIC_ALIAS(nanosleep,libc_nanosleep);
+DEFINE_PUBLIC_ALIAS(clock_getres,libc_clock_getres);
+DEFINE_PUBLIC_ALIAS(clock_gettime,libc_clock_gettime);
+DEFINE_PUBLIC_ALIAS(clock_settime,libc_clock_settime);
+DEFINE_PUBLIC_ALIAS(timer_settime,libc_timer_settime);
+DEFINE_PUBLIC_ALIAS(timer_gettime,libc_timer_gettime);
+DEFINE_PUBLIC_ALIAS(clock_nanosleep,libc_clock_nanosleep);
+DEFINE_PUBLIC_ALIAS(sigtimedwait,libc_sigtimedwait);
+DEFINE_PUBLIC_ALIAS(utimensat,libc_utimensat);
+DEFINE_PUBLIC_ALIAS(ppoll,libc_ppoll);
+DEFINE_PUBLIC_ALIAS(select,libc_select);
+DEFINE_PUBLIC_ALIAS(pselect,libc_pselect);
+DEFINE_PUBLIC_ALIAS(futimes,libc_futimes);
+DEFINE_PUBLIC_ALIAS(futimens,libc_futimens);
+DEFINE_PUBLIC_ALIAS(utimes,libc_utimes);
+DEFINE_PUBLIC_ALIAS(lutimes,libc_lutimes);
+DEFINE_PUBLIC_ALIAS(futimesat,libc_futimesat);
+DEFINE_PUBLIC_ALIAS(ftime,libc_ftime);
+DEFINE_PUBLIC_ALIAS(ualarm,libc_ualarm);
+DEFINE_PUBLIC_ALIAS(alarm,libc_alarm);
+DEFINE_PUBLIC_ALIAS(pause,libc_pause);
+DEFINE_PUBLIC_ALIAS(poll,libc_poll);
+DEFINE_PUBLIC_ALIAS(sleep,libc_sleep);
+DEFINE_PUBLIC_ALIAS(usleep,libc_usleep);
+
+
+DEFINE_PUBLIC_ALIAS(timegm,libc_mktime); /* ??? */
+DEFINE_PUBLIC_ALIAS(timegm64,libc_mktime64); /* ??? */
 
 DECL_END
 

@@ -48,7 +48,7 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_M
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL realloc)(void *__restrict __mallptr, size_t __n_bytes);
 #endif /* !__malloc_stdlib_defined */
 __LIBC __SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memalign)(size_t __alignment, size_t __n_bytes);
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL realloc_in_place)(void *__restrict __mallptr, size_t __n_bytes);
+__LIBC __SAFE __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL realloc_in_place)(void *__restrict __mallptr, size_t __n_bytes);
 __LIBC __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL pvalloc)(size_t __n_bytes);
 #ifndef __valloc_defined
 #define __valloc_defined 1
@@ -423,7 +423,7 @@ template<class __T> inline __T *__cxx_malloc_global(__T *__mallptr) { return (__
 
 __LIBC __SAFE int (__LIBCCALL _mallopt_d)(int __parameter_number, int __parameter_value, __DEBUGINFO);
 __LIBC __SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL _memalign_d)(size_t __alignment, size_t __n_bytes, __DEBUGINFO);
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL _realloc_in_place_d)(void *__restrict __mallptr, size_t __n_bytes, __DEBUGINFO);
+__LIBC __SAFE __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL _realloc_in_place_d)(void *__restrict __mallptr, size_t __n_bytes, __DEBUGINFO);
 __LIBC __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL _pvalloc_d)(size_t __n_bytes, __DEBUGINFO);
 
 #ifndef __posix_memalign_d_defined

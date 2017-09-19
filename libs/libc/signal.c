@@ -23,6 +23,9 @@
 
 #include "libc.h"
 #include "system.h"
+#include "signal.h"
+#include "unistd.h"
+
 #include <hybrid/compiler.h>
 #include <stddef.h>
 #include <signal.h>
@@ -31,11 +34,10 @@
 
 DECL_BEGIN
 
-DEFINE_PUBLIC_ALIAS(__sysv_signal,sysv_signal);
-
 #if 0 /* TODO: Move this list into shared kernel memory. */
-DEFINE_PUBLIC_ALIAS(_sys_siglist,sys_siglist);
-PUBLIC char const *const (sys_siglist)[_NSIG] = {
+DEFINE_PUBLIC_ALIAS(sys_siglist,libc_sys_siglist);
+DEFINE_PUBLIC_ALIAS(_sys_siglist,libc_sys_siglist);
+INTERN char const *const libc_sys_siglist[_NSIG] = {
     [SIGHUP]    = "HUP",    /* "Hangup" */
     [SIGINT]    = "INT",    /* "Interrupt" */
     [SIGQUIT]   = "QUIT",   /* "Quit" */
@@ -82,147 +84,132 @@ PUBLIC char const *const (sys_siglist)[_NSIG] = {
 #endif
 };
 #endif
-DEFINE_PUBLIC_ALIAS(signal,bsd_signal);
 
-/* We do just as linux and alias these to raise/signal,
- * even though doing so isn't 100% correct. */
-DEFINE_PUBLIC_ALIAS(gsignal,raise);
-DEFINE_PUBLIC_ALIAS(ssignal,bsd_signal);
-
-
-
-PUBLIC sighandler_t (LIBCCALL sysv_signal)(int sig, sighandler_t handler) {
+INTERN sighandler_t LIBCCALL libc_sysv_signal(int sig, sighandler_t handler) {
  struct sigaction act,oact;
  if (handler == SIG_ERR || sig <= 0 ||
      sig >= NSIG) { SET_ERRNO(EINVAL); return SIG_ERR; }
  act.sa_handler = handler;
- __sigemptyset(&act.sa_mask);
+ libc_sigemptyset(&act.sa_mask);
  act.sa_flags  = SA_ONESHOT|SA_NOMASK|SA_INTERRUPT;
  act.sa_flags &= ~SA_RESTART;
- if (sigaction(sig,&act,&oact) < 0) return SIG_ERR;
+ if (libc_sigaction(sig,&act,&oact) < 0) return SIG_ERR;
  return oact.sa_handler;
 }
 PRIVATE sigset_t __sigintr;
-PUBLIC sighandler_t (LIBCCALL bsd_signal)(int sig, sighandler_t handler) {
+INTERN sighandler_t LIBCCALL libc_bsd_signal(int sig, sighandler_t handler) {
  struct sigaction act,oact;
  if (handler == SIG_ERR || sig <= 0 ||
      sig >= NSIG) { SET_ERRNO(EINVAL); return SIG_ERR; }
  act.sa_handler = handler;
- __sigemptyset(&act.sa_mask);
- __sigaddset(&act.sa_mask,sig);
- act.sa_flags = __sigismember(&__sigintr,sig) ? 0 : SA_RESTART;
- if (sigaction(sig,&act,&oact) < 0) return SIG_ERR;
+ libc_sigemptyset(&act.sa_mask);
+ libc_sigaddset(&act.sa_mask,sig);
+ act.sa_flags = libc_sigismember(&__sigintr,sig) ? 0 : SA_RESTART;
+ if (libc_sigaction(sig,&act,&oact) < 0) return SIG_ERR;
  return oact.sa_handler;
 }
-PUBLIC int (LIBCCALL siginterrupt)(int sig, int interrupt) {
+INTERN int LIBCCALL libc_siginterrupt(int sig, int interrupt) {
  struct sigaction action;
- if (sigaction(sig,(struct sigaction *) NULL,&action) < 0) return -1;
+ if (libc_sigaction(sig,(struct sigaction *) NULL,&action) < 0) return -1;
  if (interrupt) {
-  __sigaddset(&__sigintr,sig);
+  libc_sigaddset(&__sigintr,sig);
   action.sa_flags &= ~SA_RESTART;
  } else {
-  __sigdelset(&__sigintr,sig);
+  libc_sigdelset(&__sigintr,sig);
   action.sa_flags |= SA_RESTART;
  }
- if (sigaction(sig,&action,(struct sigaction *) NULL) < 0)
+ if (libc_sigaction(sig,&action,(struct sigaction *) NULL) < 0)
      return -1;
  return 0;
 }
-
-
-PUBLIC sighandler_t (LIBCCALL sigset)(int sig, sighandler_t disp) {
+INTERN sighandler_t LIBCCALL libc_sigset(int sig, sighandler_t disp) {
  struct sigaction act,oact; sigset_t set,oset;
  if (disp == SIG_ERR || sig <= 0 ||
      sig >= NSIG) { SET_ERRNO (EINVAL); return SIG_ERR; }
- __sigemptyset(&set);
- __sigaddset(&set,sig);
+ libc_sigemptyset(&set);
+ libc_sigaddset(&set,sig);
  if (disp == SIG_HOLD) {
-  if (sigprocmask(SIG_BLOCK,&set,&oset) < 0) return SIG_ERR;
-  if (__sigismember(&oset,sig)) return SIG_HOLD;
-  if (sigaction(sig,NULL,&oact) < 0) return SIG_ERR;
+  if (libc_sigprocmask(SIG_BLOCK,&set,&oset) < 0) return SIG_ERR;
+  if (libc_sigismember(&oset,sig)) return SIG_HOLD;
+  if (libc_sigaction(sig,NULL,&oact) < 0) return SIG_ERR;
   return oact.sa_handler;
  }
  act.sa_handler = disp;
- __sigemptyset(&act.sa_mask);
+ libc_sigemptyset(&act.sa_mask);
  act.sa_flags = 0;
- if (sigaction(sig,&act,&oact) < 0) return SIG_ERR;
- if (sigprocmask(SIG_UNBLOCK,&set,&oset) < 0) return SIG_ERR;
- return __sigismember(&oset,sig) ? SIG_HOLD : oact.sa_handler;
+ if (libc_sigaction(sig,&act,&oact) < 0) return SIG_ERR;
+ if (libc_sigprocmask(SIG_UNBLOCK,&set,&oset) < 0) return SIG_ERR;
+ return libc_sigismember(&oset,sig) ? SIG_HOLD : oact.sa_handler;
 }
 
 #define SIGSETFN(name,body,const) \
-PUBLIC int (LIBCCALL name)(sigset_t const *set, int sig) { \
+INTERN int LIBCCALL name(sigset_t const *set, int sig) { \
  unsigned long int mask = __sigmask(sig); \
  unsigned long int word = __sigword(sig); \
  return body; \
 }
-SIGSETFN(sigismember,(set->__val[word] & mask) ? 1 : 0,const)
-SIGSETFN(sigaddset,((set->__val[word] |= mask), 0),)
-SIGSETFN(sigdelset,((set->__val[word] &= ~mask), 0),)
+SIGSETFN(libc_sigismember,(set->__val[word] & mask) ? 1 : 0,const)
+SIGSETFN(libc_sigaddset,((set->__val[word] |= mask), 0),)
+SIGSETFN(libc_sigdelset,((set->__val[word] &= ~mask), 0),)
 #undef SIGSETFN
-DEFINE_PUBLIC_ALIAS(__sigismember,sigismember);
-DEFINE_PUBLIC_ALIAS(__sigaddset,sigaddset);
-DEFINE_PUBLIC_ALIAS(__sigdelset,sigdelset);
-PUBLIC int (LIBCCALL sigemptyset)(sigset_t *set) { return __sigemptyset(set); }
-PUBLIC int (LIBCCALL sigfillset)(sigset_t *set) { return __sigfillset(set); }
-PUBLIC int (LIBCCALL sigisemptyset)(sigset_t const *set) { return __sigisemptyset(set); }
-PUBLIC int (LIBCCALL sigandset)(sigset_t *set, sigset_t const *left, sigset_t const *right) { return __sigandset(set,left,right); }
-PUBLIC int (LIBCCALL sigorset)(sigset_t *set, sigset_t const *left, sigset_t const *right) { return __sigorset(set,left,right); }
-PUBLIC int (LIBCCALL sigaction)(int sig, struct sigaction const *__restrict act, struct sigaction *__restrict oact) { return FORWARD_SYSTEM_ERROR(sys_sigaction(sig,act,oact,sizeof(sigset_t))); }
-PUBLIC int (LIBCCALL sigprocmask)(int how, sigset_t const *__restrict set, sigset_t *__restrict oset) { return FORWARD_SYSTEM_ERROR(sys_sigprocmask(how,set,oset,sizeof(sigset_t))); }
-PUBLIC int (LIBCCALL pthread_sigmask)(int how, sigset_t const *__restrict newmask, sigset_t *__restrict oldmask) { return sigprocmask(how,newmask,oldmask); /* ??? */ }
-PUBLIC int (LIBCCALL sigwaitinfo)(sigset_t const *__restrict set, siginfo_t *__restrict info) { return sigtimedwait(set,info,NULL); }
-PUBLIC int (LIBCCALL sigpending)(sigset_t *set) { return FORWARD_SYSTEM_ERROR(sys_sigpending(set,sizeof(sigset_t))); }
-PUBLIC int (LIBCCALL sigwait)(sigset_t const *__restrict set, int *__restrict sig) { siginfo_t info; int error = sigtimedwait(set,&info,NULL); if (!error) *sig = info.si_signo; return error; }
-PUBLIC int (LIBCCALL kill)(pid_t pid, int sig) { return FORWARD_SYSTEM_ERROR(sys_kill(pid,sig)); }
-PUBLIC int (LIBCCALL killpg)(pid_t pgrp, int sig) { return kill(-pgrp,sig); }
-PUBLIC int (LIBCCALL raise)(int sig) { return kill(getpid(),sig); }
-PUBLIC ATTR_NORETURN void (LIBCCALL sigreturn)(struct sigcontext const *scp) { sys_sigreturn(scp); }
-PUBLIC int (LIBCCALL sigblock)(int mask) { return FORWARD_SYSTEM_ERROR(sys_sigprocmask(SIG_BLOCK,(sigset_t *)&mask,NULL,sizeof(mask))); }
-PUBLIC int (LIBCCALL sigsetmask)(int mask) { return FORWARD_SYSTEM_ERROR(sys_sigprocmask(SIG_SETMASK,(sigset_t *)&mask,NULL,sizeof(mask))); }
-PUBLIC int (LIBCCALL siggetmask)(void) {
+INTERN int LIBCCALL libc_sigemptyset(sigset_t *set) { return __sigemptyset(set); }
+INTERN int LIBCCALL libc_sigfillset(sigset_t *set) { return __sigfillset(set); }
+INTERN int LIBCCALL libc_sigisemptyset(sigset_t const *set) { return __sigisemptyset(set); }
+INTERN int LIBCCALL libc_sigandset(sigset_t *set, sigset_t const *left, sigset_t const *right) { return __sigandset(set,left,right); }
+INTERN int LIBCCALL libc_sigorset(sigset_t *set, sigset_t const *left, sigset_t const *right) { return __sigorset(set,left,right); }
+INTERN int LIBCCALL libc_sigaction(int sig, struct sigaction const *__restrict act, struct sigaction *__restrict oact) { return FORWARD_SYSTEM_ERROR(sys_sigaction(sig,act,oact,sizeof(sigset_t))); }
+INTERN int LIBCCALL libc_sigprocmask(int how, sigset_t const *__restrict set, sigset_t *__restrict oset) { return FORWARD_SYSTEM_ERROR(sys_sigprocmask(how,set,oset,sizeof(sigset_t))); }
+INTERN int LIBCCALL libc_pthread_sigmask(int how, sigset_t const *__restrict newmask, sigset_t *__restrict oldmask) { return libc_sigprocmask(how,newmask,oldmask); /* ??? */ }
+INTERN int LIBCCALL libc_sigpending(sigset_t *set) { return FORWARD_SYSTEM_ERROR(sys_sigpending(set,sizeof(sigset_t))); }
+INTERN int LIBCCALL libc_kill(pid_t pid, int sig) { return FORWARD_SYSTEM_ERROR(sys_kill(pid,sig)); }
+INTERN int LIBCCALL libc_killpg(pid_t pgrp, int sig) { return libc_kill(-pgrp,sig); }
+INTERN int LIBCCALL libc_raise(int sig) { return libc_kill(libc_getpid(),sig); }
+INTERN ATTR_NORETURN void LIBCCALL libc_sigreturn(struct sigcontext const *scp) { sys_sigreturn(scp); }
+INTERN int LIBCCALL libc_sigblock(int mask) { return FORWARD_SYSTEM_ERROR(sys_sigprocmask(SIG_BLOCK,(sigset_t *)&mask,NULL,sizeof(mask))); }
+INTERN int LIBCCALL libc_sigsetmask(int mask) { return FORWARD_SYSTEM_ERROR(sys_sigprocmask(SIG_SETMASK,(sigset_t *)&mask,NULL,sizeof(mask))); }
+INTERN int LIBCCALL libc_siggetmask(void) {
  int value,result = FORWARD_SYSTEM_ERROR(sys_sigprocmask(SIG_SETMASK,NULL,
                                         (sigset_t *)&value,sizeof(value)));
  if (!result) result = value;
  return result;
 }
-PRIVATE int (LIBCCALL set_single_signal_action)(int sig, int how) {
+PRIVATE int LIBCCALL set_single_signal_action(int sig, int how) {
  sigset_t set;
- __sigemptyset(&set);
- __sigaddset(&set,sig);
- return sigprocmask(SIG_BLOCK,&set,NULL);
+ libc_sigemptyset(&set);
+ libc_sigaddset(&set,sig);
+ return libc_sigprocmask(SIG_BLOCK,&set,NULL);
 }
-PUBLIC int (LIBCCALL sighold)(int sig) { return set_single_signal_action(sig,SIG_BLOCK); }
-PUBLIC int (LIBCCALL sigrelse)(int sig) { return set_single_signal_action(sig,SIG_UNBLOCK); }
-PUBLIC int (LIBCCALL sigignore)(int sig) { return signal(sig,SIG_IGN) == SIG_ERR ? -1 : 0; }
-PUBLIC int (LIBCCALL __libc_current_sigrtmin)(void) { return __SIGRTMIN; }
-PUBLIC int (LIBCCALL __libc_current_sigrtmax)(void) { return __SIGRTMAX; }
+INTERN int LIBCCALL libc_sighold(int sig) { return set_single_signal_action(sig,SIG_BLOCK); }
+INTERN int LIBCCALL libc_sigrelse(int sig) { return set_single_signal_action(sig,SIG_UNBLOCK); }
+INTERN int LIBCCALL libc_sigignore(int sig) { return libc_bsd_signal(sig,SIG_IGN) == SIG_ERR ? -1 : 0; }
+INTERN int LIBCCALL libc___libc_current_sigrtmin(void) { return __SIGRTMIN; }
+INTERN int LIBCCALL libc___libc_current_sigrtmax(void) { return __SIGRTMAX; }
 
-PUBLIC int (LIBCCALL sigaltstack)(struct sigaltstack const *__restrict ss,
-                                  struct sigaltstack *__restrict oss) {
+INTERN int LIBCCALL libc_sigaltstack(struct sigaltstack const *__restrict ss,
+                                     struct sigaltstack *__restrict oss) {
  /* TODO */
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL sigsuspend)(sigset_t const *set) {
+INTERN int LIBCCALL libc_sigsuspend(sigset_t const *set) {
  /* TODO */
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL pthread_kill)(pthread_t threadid, int signo) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL pthread_sigqueue)(pthread_t threadid, int signo, union sigval const value) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL __xpg_sigpause)(int sig) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL sigqueue)(pid_t pid, int sig, union sigval const val) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC void (LIBCCALL psignal)(int sig, char const *s) { NOT_IMPLEMENTED(); }
-PUBLIC void (LIBCCALL psiginfo)(siginfo_t const *pinfo, char const *s) { NOT_IMPLEMENTED(); }
-PUBLIC int (LIBCCALL sigstack)(struct sigstack *ss, struct sigstack *oss) {
+INTERN int LIBCCALL libc_pthread_kill(pthread_t threadid, int signo) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_pthread_sigqueue(pthread_t threadid, int signo, union sigval const value) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc___xpg_sigpause(int sig) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_sigqueue(pid_t pid, int sig, union sigval const val) { NOT_IMPLEMENTED(); return 0; }
+INTERN void LIBCCALL libc_psignal(int sig, char const *s) { NOT_IMPLEMENTED(); }
+INTERN void LIBCCALL libc_psiginfo(siginfo_t const *pinfo, char const *s) { NOT_IMPLEMENTED(); }
+INTERN int LIBCCALL libc_sigstack(struct sigstack *ss, struct sigstack *oss) {
  struct sigaltstack ass,aoss; int result;
  if (ss) {
   ass.ss_flags = ss->ss_onstack ? SS_ONSTACK : SS_DISABLE;
   ass.ss_sp    = ss->ss_sp;
   ass.ss_size  = (size_t)-1;
  }
- result = sigaltstack(ss ? &ass : NULL,oss ? &aoss : NULL);
+ result = libc_sigaltstack(ss ? &ass : NULL,oss ? &aoss : NULL);
  if (!result && oss) {
   oss->ss_onstack = !!(aoss.ss_flags&SS_ONSTACK);
   oss->ss_sp      = aoss.ss_sp;
@@ -230,6 +217,58 @@ PUBLIC int (LIBCCALL sigstack)(struct sigstack *ss, struct sigstack *oss) {
  return result;
 }
 
+
+/* Define public signal functions. */
+DEFINE_PUBLIC_ALIAS(sysv_signal,libc_sysv_signal);
+DEFINE_PUBLIC_ALIAS(bsd_signal,libc_bsd_signal);
+DEFINE_PUBLIC_ALIAS(siginterrupt,libc_siginterrupt);
+DEFINE_PUBLIC_ALIAS(sigset,libc_sigset);
+DEFINE_PUBLIC_ALIAS(sigismember,libc_sigismember);
+DEFINE_PUBLIC_ALIAS(sigaddset,libc_sigaddset);
+DEFINE_PUBLIC_ALIAS(sigdelset,libc_sigdelset);
+DEFINE_PUBLIC_ALIAS(sigemptyset,libc_sigemptyset);
+DEFINE_PUBLIC_ALIAS(sigfillset,libc_sigfillset);
+DEFINE_PUBLIC_ALIAS(sigisemptyset,libc_sigisemptyset);
+DEFINE_PUBLIC_ALIAS(sigandset,libc_sigandset);
+DEFINE_PUBLIC_ALIAS(sigorset,libc_sigorset);
+DEFINE_PUBLIC_ALIAS(sigaction,libc_sigaction);
+DEFINE_PUBLIC_ALIAS(sigprocmask,libc_sigprocmask);
+DEFINE_PUBLIC_ALIAS(pthread_sigmask,libc_pthread_sigmask);
+DEFINE_PUBLIC_ALIAS(sigwaitinfo,libc_sigwaitinfo);
+DEFINE_PUBLIC_ALIAS(sigpending,libc_sigpending);
+DEFINE_PUBLIC_ALIAS(sigwait,libc_sigwait);
+DEFINE_PUBLIC_ALIAS(kill,libc_kill);
+DEFINE_PUBLIC_ALIAS(killpg,libc_killpg);
+DEFINE_PUBLIC_ALIAS(raise,libc_raise);
+DEFINE_PUBLIC_ALIAS(sigreturn,libc_sigreturn);
+DEFINE_PUBLIC_ALIAS(sigblock,libc_sigblock);
+DEFINE_PUBLIC_ALIAS(sigsetmask,libc_sigsetmask);
+DEFINE_PUBLIC_ALIAS(siggetmask,libc_siggetmask);
+DEFINE_PUBLIC_ALIAS(sighold,libc_sighold);
+DEFINE_PUBLIC_ALIAS(sigrelse,libc_sigrelse);
+DEFINE_PUBLIC_ALIAS(sigignore,libc_sigignore);
+DEFINE_PUBLIC_ALIAS(__libc_current_sigrtmin,libc___libc_current_sigrtmin);
+DEFINE_PUBLIC_ALIAS(__libc_current_sigrtmax,libc___libc_current_sigrtmax);
+DEFINE_PUBLIC_ALIAS(sigaltstack,libc_sigaltstack);
+DEFINE_PUBLIC_ALIAS(sigsuspend,libc_sigsuspend);
+DEFINE_PUBLIC_ALIAS(pthread_kill,libc_pthread_kill);
+DEFINE_PUBLIC_ALIAS(pthread_sigqueue,libc_pthread_sigqueue);
+DEFINE_PUBLIC_ALIAS(__xpg_sigpause,libc___xpg_sigpause);
+DEFINE_PUBLIC_ALIAS(sigqueue,libc_sigqueue);
+DEFINE_PUBLIC_ALIAS(psignal,libc_psignal);
+DEFINE_PUBLIC_ALIAS(psiginfo,libc_psiginfo);
+DEFINE_PUBLIC_ALIAS(sigstack,libc_sigstack);
+
+DEFINE_PUBLIC_ALIAS(__sysv_signal,libc_sysv_signal);
+DEFINE_PUBLIC_ALIAS(signal,libc_bsd_signal);
+DEFINE_PUBLIC_ALIAS(__sigismember,libc_sigismember);
+DEFINE_PUBLIC_ALIAS(__sigaddset,libc_sigaddset);
+DEFINE_PUBLIC_ALIAS(__sigdelset,libc_sigdelset);
+
+/* We do just as linux and alias these to raise/signal,
+ * even though doing so isn't 100% correct. */
+DEFINE_PUBLIC_ALIAS(gsignal,libc_raise);
+DEFINE_PUBLIC_ALIAS(ssignal,libc_bsd_signal);
 
 DECL_END
 

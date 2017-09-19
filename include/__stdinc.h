@@ -212,7 +212,19 @@ public:
 #   define NDEBUG 1
 #endif
 #elif defined(__KOS__)
+#ifdef __NAMESPACE_STD_EXISTS
+#ifdef __CC__
+__NAMESPACE_STD_BEGIN
+struct _IO_FILE;
+__NAMESPACE_STD_END
+#endif
+#   define __FILE     struct ::std::_IO_FILE
+#else
+#ifdef __CC__
+struct _IO_FILE;
+#endif
 #   define __FILE     struct _IO_FILE
+#endif
 /* NOTE: '__DSYM()' generate an assembly name for a symbol that
  *        the kernel should prefer to link against when the module
  *        being patched was linked using PE, rather than ELF.

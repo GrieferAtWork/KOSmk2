@@ -180,7 +180,10 @@ typedef __compar_fn_t comparison_fn_t;
 #endif /* __COMPAR_FN_T */
 
 #ifdef __USE_GNU
+#ifndef __compar_d_fn_t_defined
+#define __compar_d_fn_t_defined 1
 typedef int (__LIBCCALL *__compar_d_fn_t)(void const *__a, void const *__b, void *__arg);
+#endif /* !__compar_d_fn_t_defined */
 __LIBC __NONNULL((1,4)) void (__LIBCCALL qsort_r)(void *__base, size_t __nmemb, size_t __size, __compar_d_fn_t __compar, void *__arg);
 #endif /* __USE_GNU */
 

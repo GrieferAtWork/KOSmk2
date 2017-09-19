@@ -22,33 +22,27 @@
 #define _GNU_SOURCE 1
 
 #include "libc.h"
+#include "stdlib.h"
+#include "malloc.h"
 #ifndef __KERNEL__
 #include "system.h"
+#include "unistd.h"
 #endif
 #include <assert.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <hybrid/traceback.h>
 #include <hybrid/minmax.h>
 #include <hybrid/list/list.h>
 #include <hybrid/sync/atomic-rwptr.h>
-#include <malloc.h>
 #include <hybrid/section.h>
 #include <hybrid/atomic.h>
-#include <unistd.h>
 #include <sys/wait.h>
 
 DECL_BEGIN
 
 #ifndef __KERNEL__
-typedef void (LIBCCALL *exitfunc)(int status, void *arg);
-struct exitcall {
- SLIST_NODE(struct exitcall) ec_next; /*< [0..1] Next callback to-be executed. */
- exitfunc                    ec_func; /*< [1..1] Function to call on exit. */
- void                       *ec_arg;  /*< [?..?] Argument passed to 'ec_func'. */
-};
 PRIVATE ATTR_COLDBSS atomic_rwptr_t onexit_n = ATOMIC_RWPTR_INIT(NULL);
 PRIVATE ATTR_COLDBSS atomic_rwptr_t onexit_q = ATOMIC_RWPTR_INIT(NULL);
 
@@ -60,35 +54,34 @@ run_onexit(struct exitcall *chain, int status) {
 PRIVATE int LIBCCALL
 add_onexit(atomic_rwptr_t *pchain, exitfunc func, void *arg) {
  struct exitcall *entry;
- entry = (struct exitcall *)memalign(ATOMIC_RWPTR_ALIGN,
-                                     sizeof(struct exitcall));
+ entry = (struct exitcall *)libc_memalign(ATOMIC_RWPTR_ALIGN,
+                                          sizeof(struct exitcall));
  if unlikely(!entry) return -1;
  entry->ec_func = func;
  entry->ec_arg  = arg;
- _mall_untrack(entry);
+ (void)libc__mall_untrack(entry);
  atomic_rwptr_write(pchain);
  entry->ec_next.le_next = (struct exitcall *)ATOMIC_RWPTR_GET(*pchain);
  ATOMIC_WRITE(pchain->ap_ptr,entry);
  return 0;
 }
 
-DEFINE_PUBLIC_ALIAS(_Exit,_exit);
-PUBLIC ATTR_NORETURN void (LIBCCALL _exit)(int status) { sys_exit(status); }
-PUBLIC ATTR_NORETURN void (LIBCCALL abort)(void) { _exit(EXIT_FAILURE); }
-PUBLIC ATTR_NORETURN void (LIBCCALL exit)(int status) {
+INTERN ATTR_NORETURN void LIBCCALL libc__exit(int status) { sys_exit(status); }
+INTERN ATTR_NORETURN void LIBCCALL libc_abort(void) { libc__exit(EXIT_FAILURE); }
+INTERN ATTR_NORETURN void LIBCCALL libc_exit(int status) {
  atomic_rwptr_read(&onexit_n);
  run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_n),status);
- _exit(status);
+ libc__exit(status);
 }
-PUBLIC ATTR_NORETURN void (LIBCCALL quick_exit)(int status) {
+INTERN ATTR_NORETURN void LIBCCALL libc_quick_exit(int status) {
  atomic_rwptr_read(&onexit_q);
  run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_q),status);
- _exit(status);
+ libc__exit(status);
 }
-PRIVATE void LIBCCALL callarg(int status, void *arg) { (*(void(LIBCCALL *)(void))arg)(); }
-PUBLIC int (LIBCCALL on_exit)(void (LIBCCALL *func)(int status, void *arg), void *arg) { return add_onexit(&onexit_n,func,arg); }
-PUBLIC int (LIBCCALL atexit)(void (LIBCCALL *func)(void)) { return add_onexit(&onexit_n,&callarg,(void *)func); }
-PUBLIC int (LIBCCALL at_quick_exit)(void (LIBCCALL *func)(void)) { return add_onexit(&onexit_q,&callarg,(void *)func); }
+PRIVATE void LIBCCALL callarg(int status, void *arg) { (*(void (LIBCCALL *)(void))arg)(); }
+INTERN int LIBCCALL libc_on_exit(void (LIBCCALL *func)(int status, void *arg), void *arg) { return add_onexit(&onexit_n,func,arg); }
+INTERN int LIBCCALL libc_atexit(void (LIBCCALL *func)(void)) { return add_onexit(&onexit_n,&callarg,(void *)func); }
+INTERN int LIBCCALL libc_at_quick_exit(void (LIBCCALL *func)(void)) { return add_onexit(&onexit_q,&callarg,(void *)func); }
 #endif
 
 #ifdef __KERNEL__
@@ -109,30 +102,25 @@ PRIVATE u32 const rand_map[16] = {
     0x1148c0a6,0x07a24139,0x021214a6,0x03221af8,
 };
 
-PUBLIC void (LIBCCALL srand)(RAND_SEED seed) { rand_seed = (u32)seed; }
-#ifndef __KERNEL__
-#if __SIZEOF_LONG__ == __SIZEOF_INT__
-DEFINE_PUBLIC_ALIAS(srandom,srand);
-#else
-PUBLIC void (LIBCCALL srandom)(unsigned int seed) { srand((RAND_SEED)seed); }
-#endif
+INTERN void LIBCCALL libc_srand(RAND_SEED seed) { rand_seed = (u32)seed; }
+#if !defined(__KERNEL__) && __SIZEOF_LONG__ != __SIZEOF_INT__
+INTERN void LIBCCALL libc_srandom(unsigned int seed) { rand_seed = (u32)seed; }
 #endif
 
 
 #ifdef __KERNEL__
 #define LOCAL_RAND_TYPE RAND_TYPE
-PUBLIC LOCAL_RAND_TYPE (LIBCCALL rand)(void)
+INTERN LOCAL_RAND_TYPE LIBCCALL libc_rand(void)
 #else /* __KERNEL__ */
 #if __SIZEOF_LONG__ == __SIZEOF_INT__
 #define LOCAL_RAND_TYPE RAND_TYPE
-DEFINE_PUBLIC_ALIAS(random,rand);
-PUBLIC LOCAL_RAND_TYPE (LIBCCALL rand)(void)
+INTERN LOCAL_RAND_TYPE LIBCCALL libc_rand(void)
 #else
 #define LOCAL_RAND_TYPE long
-PUBLIC RAND_TYPE (LIBCCALL rand)(void) {
- return (RAND_TYPE)random();
+INTERN RAND_TYPE LIBCCALL libc_rand(void) {
+ return (RAND_TYPE)libc_random();
 }
-PUBLIC long (LIBCCALL random)(void)
+INTERN long LIBCCALL libc_random(void)
 #endif
 #endif /* !__KERNEL__ */
 {
@@ -146,7 +134,7 @@ PUBLIC long (LIBCCALL random)(void)
 }
 #undef LOCAL_RAND_TYPE
 
-PUBLIC RAND_TYPE (LIBCCALL rand_r)(RAND_SEED_R *__restrict pseed) {
+INTERN RAND_TYPE LIBCCALL libc_rand_r(RAND_SEED_R *__restrict pseed) {
  RAND_SEED seed = (RAND_SEED)*pseed;
  seed  = (((seed+7) << 1)/3);
  seed ^= rand_map[(seed >> (seed&7)) % 16];
@@ -159,32 +147,28 @@ PUBLIC RAND_TYPE (LIBCCALL rand_r)(RAND_SEED_R *__restrict pseed) {
 }
 
 #if __SIZEOF_LONG__ == 4
-#define STRTOINT_32  strtol
-#define STRTOUINT_32 strtoul
-#define STRTOINT     strtol
-#define STRTOUINT    strtoul
+#define STRTOINT_32  libc_strtol
+#define STRTOUINT_32 libc_strtoul
+#define STRTOINT     libc_strtol
+#define STRTOUINT    libc_strtoul
 #define TYPE         long
 #define UTYPE        unsigned long
-#define DECL         PUBLIC
+#define DECL         INTERN
 #include "templates/strtouint.code"
-#if !defined(__KERNEL__) && __SIZEOF_LONG_LONG__ == 4
-DEFINE_PUBLIC_ALIAS(strtoll,strtol)
-DEFINE_PUBLIC_ALIAS(strtoull,strtoul)
-#endif
 #elif __SIZEOF_LONG_LONG__ == 4
-#define STRTOINT_32  strtoll
-#define STRTOUINT_32 strtoull
-#define STRTOINT     strtoll
-#define STRTOUINT    strtoull
+#define STRTOINT_32  libc_strtoll
+#define STRTOUINT_32 libc_strtoull
+#define STRTOINT     libc_strtoll
+#define STRTOUINT    libc_strtoull
 #define TYPE         __LONGLONG
 #define UTYPE        __ULONGLONG
-#define DECL         PUBLIC
+#define DECL         INTERN
 #include "templates/strtouint.code"
 #else
-#define STRTOINT_32  strtoint_32
-#define STRTOUINT_32 strtouint_32
-#define STRTOINT     strtoint_32
-#define STRTOUINT    strtouint_32
+#define STRTOINT_32  libc_strtoint_32
+#define STRTOUINT_32 libc_strtouint_32
+#define STRTOINT     libc_strtoint_32
+#define STRTOUINT    libc_strtouint_32
 #define TYPE         s64
 #define UTYPE        u64
 #define DECL         LOCAL
@@ -192,39 +176,35 @@ DEFINE_PUBLIC_ALIAS(strtoull,strtoul)
 #endif
 
 #if __SIZEOF_LONG__ == 8
-#define STRTOINT_64  strtol
-#define STRTOUINT_64 strtoul
-#define STRTOINT     strtol
-#define STRTOUINT    strtoul
+#define STRTOINT_64  libc_strtol
+#define STRTOUINT_64 libc_strtoul
+#define STRTOINT     libc_strtol
+#define STRTOUINT    libc_strtoul
 #define TYPE         long
 #define UTYPE        unsigned long
-#define DECL         PUBLIC
+#define DECL         INTERN
 #include "templates/strtouint.code"
-#if !defined(__KERNEL__) && __SIZEOF_LONG_LONG__ == 4
-DEFINE_PUBLIC_ALIAS(strtoll,strtol)
-DEFINE_PUBLIC_ALIAS(strtoull,strtoul)
-#endif
 #elif __SIZEOF_LONG_LONG__ == 8
-#define STRTOINT_64  strtoll
-#define STRTOUINT_64 strtoull
-#define STRTOINT     strtoll
-#define STRTOUINT    strtoull
+#define STRTOINT_64  libc_strtoll
+#define STRTOUINT_64 libc_strtoull
+#define STRTOINT     libc_strtoll
+#define STRTOUINT    libc_strtoull
 #define TYPE         __LONGLONG
 #define UTYPE        __ULONGLONG
-#define DECL         PUBLIC
+#define DECL         INTERN
 #include "templates/strtouint.code"
 #else
-#define STRTOINT_64  strtoint_64
-#define STRTOUINT_64 strtouint_64
-#define STRTOINT     strtoint_64
-#define STRTOUINT    strtouint_64
+#define STRTOINT_64  libc_strtoint_64
+#define STRTOUINT_64 libc_strtouint_64
+#define STRTOINT     libc_strtoint_64
+#define STRTOUINT    libc_strtouint_64
 #define TYPE         s64
 #define UTYPE        u64
 #define DECL         LOCAL
 #include "templates/strtouint.code"
 #endif
 
-PUBLIC int (LIBCCALL atoi)(char const *__restrict nptr) {
+INTERN int LIBCCALL libc_atoi(char const *__restrict nptr) {
 #if __SIZEOF_INT__ == 8
  return (int)STRTOINT_64(nptr,NULL,10);
 #else
@@ -232,33 +212,23 @@ PUBLIC int (LIBCCALL atoi)(char const *__restrict nptr) {
 #endif
 }
 
-#if __SIZEOF_LONG__ == __SIZEOF_INT__
-#ifndef __KERNEL__
-DEFINE_PUBLIC_ALIAS(atol,atoi);
-#endif /* !__KERNEL__ */
-#else
-PUBLIC long (LIBCCALL atol)(char const *__restrict nptr) {
- return strtol(nptr,NULL,10);
+#if __SIZEOF_LONG__ != __SIZEOF_INT__
+INTERN long LIBCCALL libc_atol(char const *__restrict nptr) {
+ return libc_strtol(nptr,NULL,10);
 }
 #endif
 
-#if __SIZEOF_LONG_LONG__ == __SIZEOF_INT__
-#ifndef __KERNEL__
-DEFINE_PUBLIC_ALIAS(atoll,atoi);
-#endif /* !__KERNEL__ */
-#elif __SIZEOF_LONG_LONG__ == __SIZEOF_LONG__
-#ifndef __KERNEL__
-DEFINE_PUBLIC_ALIAS(atoll,atol);
-#endif /* !__KERNEL__ */
-#else
-PUBLIC __LONGLONG (LIBCCALL atoll)(char const *__restrict nptr) {
- return strtoll(nptr,NULL,10);
+#if __SIZEOF_LONG_LONG__ != __SIZEOF_INT__ && \
+    __SIZEOF_LONG_LONG__ != __SIZEOF_LONG__
+INTERN __LONGLONG LIBCCALL libc_atoll(char const *__restrict nptr) {
+ return libc_strtoll(nptr,NULL,10);
 }
 #endif
 
 
-PUBLIC void *(LIBCCALL bsearch)(void const *key, void const *base, size_t nmemb,
-                                size_t size, comparison_fn_t compar) {
+INTERN void *LIBCCALL
+libc_bsearch(void const *key, void const *base, size_t nmemb,
+             size_t size, comparison_fn_t compar) {
  while (nmemb--) {
   if ((*compar)(key,base) == 0) return (void *)base;
   *(uintptr_t *)&base += size;
@@ -266,64 +236,63 @@ PUBLIC void *(LIBCCALL bsearch)(void const *key, void const *base, size_t nmemb,
  return NULL;
 }
 
-PRIVATE int (LIBCCALL call_comp)(void const *a, void const *b, void *arg) {
+PRIVATE int LIBCCALL call_comp(void const *a, void const *b, void *arg) {
  return (*(comparison_fn_t)arg)(a,b);
 }
-PUBLIC void (LIBCCALL qsort)(void *base, size_t nmemb, size_t size,
-                             comparison_fn_t compar) {
- qsort_r(base,nmemb,size,&call_comp,compar);
+INTERN void LIBCCALL
+libc_qsort(void *base, size_t nmemb, size_t size,
+           comparison_fn_t compar) {
+ libc_qsort_r(base,nmemb,size,&call_comp,compar);
 }
 
-PUBLIC char *(LIBCCALL gcvt)(double value, int ndigit, char *buf) {
+INTERN char *LIBCCALL libc_gcvt(double value, int ndigit, char *buf) {
  NOT_IMPLEMENTED();
  return NULL;
 }
-PUBLIC char *(LIBCCALL qgcvt)(long double value, int ndigit, char *buf) {
+INTERN char *LIBCCALL libc_qgcvt(long double value, int ndigit, char *buf) {
  NOT_IMPLEMENTED();
  return NULL;
 }
-PUBLIC int (LIBCCALL ecvt_r)(double value, int ndigit, int *__restrict decpt,
-                             int *__restrict sign, char *__restrict buf, size_t len) {
+INTERN int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decpt,
+                                int *__restrict sign, char *__restrict buf, size_t len) {
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL fcvt_r)(double value, int ndigit, int *__restrict decpt,
-                             int *__restrict sign, char *__restrict buf, size_t len) {
+INTERN int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decpt,
+                                int *__restrict sign, char *__restrict buf, size_t len) {
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL qecvt_r)(long double value, int ndigit, int *__restrict decpt,
-                              int *__restrict sign, char *__restrict buf, size_t len) {
+INTERN int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decpt,
+                                 int *__restrict sign, char *__restrict buf, size_t len) {
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL qfcvt_r)(long double value, int ndigit, int *__restrict decpt,
-                              int *__restrict sign, char *__restrict buf, size_t len) {
+INTERN int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decpt,
+                                 int *__restrict sign, char *__restrict buf, size_t len) {
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC double (LIBCCALL atof)(char const *__restrict nptr) {
+INTERN double LIBCCALL libc_atof(char const *__restrict nptr) {
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC double (LIBCCALL strtod)(char const *__restrict nptr, char **endptr) {
+INTERN double LIBCCALL libc_strtod(char const *__restrict nptr, char **endptr) {
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC float (LIBCCALL strtof)(char const *__restrict nptr, char **__restrict endptr) {
+INTERN float LIBCCALL libc_strtof(char const *__restrict nptr, char **__restrict endptr) {
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC long double (LIBCCALL strtold)(char const *__restrict nptr, char **__restrict endptr) {
+INTERN long double LIBCCALL libc_strtold(char const *__restrict nptr, char **__restrict endptr) {
  NOT_IMPLEMENTED();
  return 0;
 }
-PUBLIC int (LIBCCALL getloadavg)(double loadavg[], int nelem) {
+INTERN int LIBCCALL libc_getloadavg(double loadavg[], int nelem) {
  NOT_IMPLEMENTED();
  return 0;
 }
-
-
 
 
 /* DISCALIMER: The qsort() implementation below has been taken directly
@@ -364,9 +333,9 @@ typedef struct { char *lo,*hi; } stack_node;
 #define POP(low,high)   ((void)(--top,(low = top->lo),(high = top->hi)))
 #define STACK_NOT_EMPTY (stack < top)
 
-PUBLIC void LIBCCALL
-qsort_r(void *pbase, size_t total_elems, size_t size,
-        __compar_d_fn_t cmp, void *arg) {
+INTERN void LIBCCALL
+libc_qsort_r(void *pbase, size_t total_elems, size_t size,
+             __compar_d_fn_t cmp, void *arg) {
  return;
  char *base_ptr = (char *)pbase;
  const size_t max_thresh = MAX_THRESH * size;
@@ -451,107 +420,242 @@ jump_over:
 
 
 #ifndef __KERNEL__
-DEFINE_PUBLIC_ALIAS(strtoq,strtoll);
-DEFINE_PUBLIC_ALIAS(strtouq,strtoull);
-DEFINE_PUBLIC_ALIAS(mkostemp64,mkostemp);
-DEFINE_PUBLIC_ALIAS(mkostemps64,mkostemps);
-DEFINE_PUBLIC_ALIAS(mkstemp64,mkstemp);
-DEFINE_PUBLIC_ALIAS(mkstemps64,mkstemps);
-
-PUBLIC int (LIBCCALL getsubopt)(char **__restrict optionp,
-                                char *const *__restrict tokens,
-                                char **__restrict valuep) {
+INTERN int LIBCCALL
+libc_getsubopt(char **__restrict optionp,
+               char *const *__restrict tokens,
+               char **__restrict valuep) {
  NOT_IMPLEMENTED();
  return 0;
 }
 
-PUBLIC int (LIBCCALL abs)(int x) { return x < 0 ? -x : x; }
-PUBLIC long (LIBCCALL labs)(long x) { return x < 0 ? -x : x; }
-PUBLIC __LONGLONG (LIBCCALL llabs)(__LONGLONG x) { return x < 0 ? -x : x; }
-PUBLIC div_t (LIBCCALL div)(int numer, int denom) { return (div_t){ numer/denom,numer%denom }; }
-PUBLIC ldiv_t (LIBCCALL ldiv)(long numer, long denom) { return (ldiv_t){ numer/denom,numer%denom }; }
-PUBLIC lldiv_t (LIBCCALL lldiv)(long long numer, long long denom) { return (lldiv_t){ numer/denom,numer%denom }; }
-
-PUBLIC int (LIBCCALL system)(char const *command) {
+INTERN int LIBCCALL libc_abs(int x) { return x < 0 ? -x : x; }
+INTERN long LIBCCALL libc_labs(long x) { return x < 0 ? -x : x; }
+INTERN __LONGLONG LIBCCALL libc_llabs(__LONGLONG x) { return x < 0 ? -x : x; }
+INTERN div_t LIBCCALL libc_div(int numer, int denom) { return (div_t){ numer/denom,numer%denom }; }
+INTERN ldiv_t LIBCCALL libc_ldiv(long numer, long denom) { return (ldiv_t){ numer/denom,numer%denom }; }
+INTERN lldiv_t LIBCCALL libc_lldiv(long long numer, long long denom) { return (lldiv_t){ numer/denom,numer%denom }; }
+INTERN int LIBCCALL libc_system(char const *command) {
  pid_t child,error; int status;
- if ((child = fork()) < 0) return -1;
+ if ((child = libc_fork()) < 0) return -1;
  if (child == 0) {
-  execl("/bin/sh","-c",command,NULL);
-  execl("/bin/busybox","sh","-c",command,NULL);
+  libc_execl("/bin/sh","sh","-c",command,NULL);
+  libc_execl("/bin/busybox","sh","-c",command,NULL);
   /* NOTE: system() must return ZERO(0) if no command processor is available. */
-  _exit(command ? 127 : 0);
+  libc__exit(command ? 127 : 0);
  }
  for (;;) {
-  error = waitpid(child,&status,WEXITED);
+  error = libc_waitpid(child,&status,WEXITED);
   if (error == child) break;
   if (error >= 0) continue;
-  if (errno != EINTR) return -1;
+  if (GET_ERRNO() != EINTR) return -1;
  }
  return status;
 }
-PUBLIC size_t (LIBCCALL __ctype_get_mb_cur_max)(void) { NOT_IMPLEMENTED(); return 5; }
-PUBLIC int (LIBCCALL mblen)(char const *s, size_t n) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL mbtowc)(wchar_t *__restrict pwc, char const *__restrict s, size_t n) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL wctomb)(char *s, wchar_t wchar) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC size_t (LIBCCALL mbstowcs)(wchar_t *__restrict pwcs, char const *__restrict s, size_t n) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC size_t (LIBCCALL wcstombs)(char *__restrict s, const wchar_t *__restrict pwcs, size_t n) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC double (LIBCCALL drand48)(void) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC long (LIBCCALL lrand48)(void) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC long (LIBCCALL mrand48)(void) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC double (LIBCCALL erand48)(unsigned short xsubi[3]) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC long (LIBCCALL nrand48)(unsigned short xsubi[3]) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC long (LIBCCALL jrand48)(unsigned short xsubi[3]) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC void (LIBCCALL srand48)(long seedval) { NOT_IMPLEMENTED(); }
-PUBLIC unsigned short *(LIBCCALL seed48)(unsigned short seed16v[3]) { NOT_IMPLEMENTED(); return seed16v; }
-PUBLIC void (LIBCCALL lcong48)(unsigned short param[7]) { NOT_IMPLEMENTED(); }
-PUBLIC char *(LIBCCALL initstate)(unsigned int seed, char *statebuf, size_t statelen) { NOT_IMPLEMENTED(); return statebuf; }
-PUBLIC char *(LIBCCALL setstate)(char *statebuf) { NOT_IMPLEMENTED(); return statebuf; }
-PUBLIC char *(LIBCCALL l64a)(long n) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC long (LIBCCALL a64l)(char const *s) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC char *(LIBCCALL realpath)(char const *__restrict name, char *__restrict resolved) { NOT_IMPLEMENTED(); return resolved; }
-PUBLIC int (LIBCCALL drand48_r)(struct drand48_data *__restrict buffer, double *__restrict result) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL erand48_r)(unsigned short xsubi[3], struct drand48_data *__restrict buffer, double *__restrict result) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL lrand48_r)(struct drand48_data *__restrict buffer, long *__restrict result) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL nrand48_r)(unsigned short xsubi[3], struct drand48_data *__restrict buffer, long *__restrict result) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL mrand48_r)(struct drand48_data *__restrict buffer, long *__restrict result) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL jrand48_r)(unsigned short xsubi[3], struct drand48_data *__restrict buffer, long *__restrict result) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL srand48_r)(long seedval, struct drand48_data *buffer) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL seed48_r)(unsigned short seed16v[3], struct drand48_data *buffer) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL lcong48_r)(unsigned short param[7], struct drand48_data *buffer) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL random_r)(struct random_data *__restrict buf, s32 *__restrict result) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL srandom_r)(unsigned int seed, struct random_data *buf) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL initstate_r)(unsigned int seed, char *__restrict statebuf, size_t statelen, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL setstate_r)(char *__restrict statebuf, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL mkstemps)(char *template_, int suffixlen) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL rpmatch)(char const *response) { NOT_IMPLEMENTED(); return 0; }
+INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { NOT_IMPLEMENTED(); return 5; }
+INTERN int LIBCCALL libc_mblen(char const *s, size_t n) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_mbtowc(wchar_t *__restrict pwc, char const *__restrict s, size_t n) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_wctomb(char *s, wchar_t wchar) { NOT_IMPLEMENTED(); return 0; }
+INTERN size_t LIBCCALL libc_mbstowcs(wchar_t *__restrict pwcs, char const *__restrict s, size_t n) { NOT_IMPLEMENTED(); return 0; }
+INTERN size_t LIBCCALL libc_wcstombs(char *__restrict s, const wchar_t *__restrict pwcs, size_t n) { NOT_IMPLEMENTED(); return 0; }
+INTERN double LIBCCALL libc_drand48(void) { NOT_IMPLEMENTED(); return 0; }
+INTERN long LIBCCALL libc_lrand48(void) { NOT_IMPLEMENTED(); return 0; }
+INTERN long LIBCCALL libc_mrand48(void) { NOT_IMPLEMENTED(); return 0; }
+INTERN double LIBCCALL libc_erand48(unsigned short xsubi[3]) { NOT_IMPLEMENTED(); return 0; }
+INTERN long LIBCCALL libc_nrand48(unsigned short xsubi[3]) { NOT_IMPLEMENTED(); return 0; }
+INTERN long LIBCCALL libc_jrand48(unsigned short xsubi[3]) { NOT_IMPLEMENTED(); return 0; }
+INTERN void LIBCCALL libc_srand48(long seedval) { NOT_IMPLEMENTED(); }
+INTERN unsigned short *LIBCCALL libc_seed48(unsigned short seed16v[3]) { NOT_IMPLEMENTED(); return seed16v; }
+INTERN void LIBCCALL libc_lcong48(unsigned short param[7]) { NOT_IMPLEMENTED(); }
+INTERN char *LIBCCALL libc_initstate(unsigned int seed, char *statebuf, size_t statelen) { NOT_IMPLEMENTED(); return statebuf; }
+INTERN char *LIBCCALL libc_setstate(char *statebuf) { NOT_IMPLEMENTED(); return statebuf; }
+INTERN char *LIBCCALL libc_l64a(long n) { NOT_IMPLEMENTED(); return NULL; }
+INTERN long LIBCCALL libc_a64l(char const *s) { NOT_IMPLEMENTED(); return 0; }
+INTERN char *LIBCCALL libc_realpath(char const *__restrict name, char *__restrict resolved) { NOT_IMPLEMENTED(); return resolved; }
+INTERN int LIBCCALL libc_drand48_r(struct drand48_data *__restrict buffer, double *__restrict result) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_erand48_r(unsigned short xsubi[3], struct drand48_data *__restrict buffer, double *__restrict result) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_lrand48_r(struct drand48_data *__restrict buffer, long *__restrict result) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_nrand48_r(unsigned short xsubi[3], struct drand48_data *__restrict buffer, long *__restrict result) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_mrand48_r(struct drand48_data *__restrict buffer, long *__restrict result) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_jrand48_r(unsigned short xsubi[3], struct drand48_data *__restrict buffer, long *__restrict result) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_srand48_r(long seedval, struct drand48_data *buffer) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_seed48_r(unsigned short seed16v[3], struct drand48_data *buffer) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_lcong48_r(unsigned short param[7], struct drand48_data *buffer) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_random_r(struct random_data *__restrict buf, s32 *__restrict result) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_srandom_r(unsigned int seed, struct random_data *buf) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_initstate_r(unsigned int seed, char *__restrict statebuf, size_t statelen, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_setstate_r(char *__restrict statebuf, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_mkstemps(char *template_, int suffixlen) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_rpmatch(char const *response) { NOT_IMPLEMENTED(); return 0; }
 #define FLOAT_BUFFER_SIZE 64
-PUBLIC char *(LIBCCALL qecvt)(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return qecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-PUBLIC char *(LIBCCALL qfcvt)(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return qfcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-PUBLIC char *(LIBCCALL ecvt)(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return ecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-PUBLIC char *(LIBCCALL fcvt)(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return fcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qfcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_ecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_fcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
 #undef FLOAT_BUFFER_SIZE
-PUBLIC long (LIBCCALL strtol_l)(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return strtol(nptr,endptr,base); }
-PUBLIC unsigned long (LIBCCALL strtoul_l)(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return strtoul(nptr,endptr,base); }
-PUBLIC __LONGLONG (LIBCCALL strtoll_l)(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return strtoll(nptr,endptr,base); }
-PUBLIC __ULONGLONG (LIBCCALL strtoull_l)(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return strtoull(nptr,endptr,base); }
-PUBLIC double (LIBCCALL strtod_l)(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return strtod(nptr,endptr); }
-PUBLIC float (LIBCCALL strtof_l)(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return strtof(nptr,endptr); }
-PUBLIC long double (LIBCCALL strtold_l)(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return strtold(nptr,endptr); }
-PUBLIC char *(LIBCCALL canonicalize_file_name)(char const *name) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC int (LIBCCALL ptsname_r)(int fd, char *buf, size_t buflen) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL getpt)(void) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL mkostemp)(char *template_, int flags) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL mkostemps)(char *template_, int suffixlen, int flags) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC char *(LIBCCALL mktemp)(char *template_) { NOT_IMPLEMENTED(); return template_; }
-PUBLIC int (LIBCCALL mkstemp)(char *template_) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC char *(LIBCCALL mkdtemp)(char *template_) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC void (LIBCCALL setkey)(char const *key) { NOT_IMPLEMENTED(); }
-PUBLIC int (LIBCCALL grantpt)(int fd) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC int (LIBCCALL unlockpt)(int fd) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC char *(LIBCCALL ptsname)(int fd) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC int (LIBCCALL posix_openpt)(int oflag) { NOT_IMPLEMENTED(); return 0; }
+INTERN long LIBCCALL libc_strtol_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return libc_strtol(nptr,endptr,base); }
+INTERN unsigned long LIBCCALL libc_strtoul_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return libc_strtoul(nptr,endptr,base); }
+INTERN __LONGLONG LIBCCALL libc_strtoll_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return libc_strtoll(nptr,endptr,base); }
+INTERN __ULONGLONG LIBCCALL libc_strtoull_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return libc_strtoull(nptr,endptr,base); }
+INTERN double LIBCCALL libc_strtod_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtod(nptr,endptr); }
+INTERN float LIBCCALL libc_strtof_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtof(nptr,endptr); }
+INTERN long double LIBCCALL libc_strtold_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtold(nptr,endptr); }
+INTERN char *LIBCCALL libc_canonicalize_file_name(char const *name) { NOT_IMPLEMENTED(); return NULL; }
+INTERN int LIBCCALL libc_ptsname_r(int fd, char *buf, size_t buflen) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_getpt(void) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_mkostemp(char *template_, int flags) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_mkostemps(char *template_, int suffixlen, int flags) { NOT_IMPLEMENTED(); return 0; }
+INTERN char *LIBCCALL libc_mktemp(char *template_) { NOT_IMPLEMENTED(); return template_; }
+INTERN int LIBCCALL libc_mkstemp(char *template_) { NOT_IMPLEMENTED(); return 0; }
+INTERN char *LIBCCALL libc_mkdtemp(char *template_) { NOT_IMPLEMENTED(); return NULL; }
+INTERN void LIBCCALL libc_setkey(char const *key) { NOT_IMPLEMENTED(); }
+INTERN int LIBCCALL libc_grantpt(int fd) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_unlockpt(int fd) { NOT_IMPLEMENTED(); return 0; }
+INTERN char *LIBCCALL libc_ptsname(int fd) { NOT_IMPLEMENTED(); return NULL; }
+INTERN int LIBCCALL libc_posix_openpt(int oflag) { NOT_IMPLEMENTED(); return 0; }
 #endif /* !__KERNEL__ */
 
+
+
+#ifndef __KERNEL__
+DEFINE_PUBLIC_ALIAS(_exit,libc__exit);
+DEFINE_PUBLIC_ALIAS(abort,libc_abort);
+DEFINE_PUBLIC_ALIAS(exit,libc_exit);
+DEFINE_PUBLIC_ALIAS(quick_exit,libc_quick_exit);
+DEFINE_PUBLIC_ALIAS(on_exit,libc_on_exit);
+DEFINE_PUBLIC_ALIAS(atexit,libc_atexit);
+DEFINE_PUBLIC_ALIAS(at_quick_exit,libc_at_quick_exit);
+#if __SIZEOF_LONG__ != __SIZEOF_INT__
+DEFINE_PUBLIC_ALIAS(srandom,libc_srandom);
+DEFINE_PUBLIC_ALIAS(random,libc_random);
+#endif /* __SIZEOF_LONG__ != __SIZEOF_INT__ */
+#endif /* !__KERNEL__ */
+
+DEFINE_PUBLIC_ALIAS(srand,libc_srand);
+DEFINE_PUBLIC_ALIAS(rand,libc_rand);
+DEFINE_PUBLIC_ALIAS(rand_r,libc_rand_r);
+DEFINE_PUBLIC_ALIAS(strtol,libc_strtol);
+DEFINE_PUBLIC_ALIAS(strtoul,libc_strtoul);
+DEFINE_PUBLIC_ALIAS(strtoll,libc_strtoll);
+DEFINE_PUBLIC_ALIAS(strtoull,libc_strtoull);
+DEFINE_PUBLIC_ALIAS(atoi,libc_atoi);
+#if __SIZEOF_LONG__ != __SIZEOF_INT__
+DEFINE_PUBLIC_ALIAS(atol,libc_atol);
+#endif
+#if __SIZEOF_LONG_LONG__ != __SIZEOF_INT__ && \
+    __SIZEOF_LONG_LONG__ != __SIZEOF_LONG__
+DEFINE_PUBLIC_ALIAS(atoll,libc_atoll);
+#endif
+
+DEFINE_PUBLIC_ALIAS(bsearch,libc_bsearch);
+DEFINE_PUBLIC_ALIAS(qsort,libc_qsort);
+DEFINE_PUBLIC_ALIAS(gcvt,libc_gcvt);
+DEFINE_PUBLIC_ALIAS(qgcvt,libc_qgcvt);
+DEFINE_PUBLIC_ALIAS(ecvt_r,libc_ecvt_r);
+DEFINE_PUBLIC_ALIAS(fcvt_r,libc_fcvt_r);
+DEFINE_PUBLIC_ALIAS(qecvt_r,libc_qecvt_r);
+DEFINE_PUBLIC_ALIAS(qfcvt_r,libc_qfcvt_r);
+DEFINE_PUBLIC_ALIAS(atof,libc_atof);
+DEFINE_PUBLIC_ALIAS(strtod,libc_strtod);
+DEFINE_PUBLIC_ALIAS(strtof,libc_strtof);
+DEFINE_PUBLIC_ALIAS(strtold,libc_strtold);
+DEFINE_PUBLIC_ALIAS(getloadavg,libc_getloadavg);
+DEFINE_PUBLIC_ALIAS(qsort_r,libc_qsort_r);
+#ifndef __KERNEL__
+DEFINE_PUBLIC_ALIAS(getsubopt,libc_getsubopt);
+DEFINE_PUBLIC_ALIAS(abs,libc_abs);
+DEFINE_PUBLIC_ALIAS(labs,libc_labs);
+DEFINE_PUBLIC_ALIAS(llabs,libc_llabs);
+DEFINE_PUBLIC_ALIAS(div,libc_div);
+DEFINE_PUBLIC_ALIAS(ldiv,libc_ldiv);
+DEFINE_PUBLIC_ALIAS(lldiv,libc_lldiv);
+DEFINE_PUBLIC_ALIAS(system,libc_system);
+DEFINE_PUBLIC_ALIAS(__ctype_get_mb_cur_max,libc___ctype_get_mb_cur_max);
+DEFINE_PUBLIC_ALIAS(mblen,libc_mblen);
+DEFINE_PUBLIC_ALIAS(mbtowc,libc_mbtowc);
+DEFINE_PUBLIC_ALIAS(wctomb,libc_wctomb);
+DEFINE_PUBLIC_ALIAS(mbstowcs,libc_mbstowcs);
+DEFINE_PUBLIC_ALIAS(wcstombs,libc_wcstombs);
+DEFINE_PUBLIC_ALIAS(drand48,libc_drand48);
+DEFINE_PUBLIC_ALIAS(lrand48,libc_lrand48);
+DEFINE_PUBLIC_ALIAS(mrand48,libc_mrand48);
+DEFINE_PUBLIC_ALIAS(erand48,libc_erand48);
+DEFINE_PUBLIC_ALIAS(nrand48,libc_nrand48);
+DEFINE_PUBLIC_ALIAS(jrand48,libc_jrand48);
+DEFINE_PUBLIC_ALIAS(srand48,libc_srand48);
+DEFINE_PUBLIC_ALIAS(seed48,libc_seed48);
+DEFINE_PUBLIC_ALIAS(lcong48,libc_lcong48);
+DEFINE_PUBLIC_ALIAS(initstate,libc_initstate);
+DEFINE_PUBLIC_ALIAS(setstate,libc_setstate);
+DEFINE_PUBLIC_ALIAS(l64a,libc_l64a);
+DEFINE_PUBLIC_ALIAS(a64l,libc_a64l);
+DEFINE_PUBLIC_ALIAS(realpath,libc_realpath);
+DEFINE_PUBLIC_ALIAS(drand48_r,libc_drand48_r);
+DEFINE_PUBLIC_ALIAS(erand48_r,libc_erand48_r);
+DEFINE_PUBLIC_ALIAS(lrand48_r,libc_lrand48_r);
+DEFINE_PUBLIC_ALIAS(nrand48_r,libc_nrand48_r);
+DEFINE_PUBLIC_ALIAS(mrand48_r,libc_mrand48_r);
+DEFINE_PUBLIC_ALIAS(jrand48_r,libc_jrand48_r);
+DEFINE_PUBLIC_ALIAS(srand48_r,libc_srand48_r);
+DEFINE_PUBLIC_ALIAS(seed48_r,libc_seed48_r);
+DEFINE_PUBLIC_ALIAS(lcong48_r,libc_lcong48_r);
+DEFINE_PUBLIC_ALIAS(random_r,libc_random_r);
+DEFINE_PUBLIC_ALIAS(srandom_r,libc_srandom_r);
+DEFINE_PUBLIC_ALIAS(initstate_r,libc_initstate_r);
+DEFINE_PUBLIC_ALIAS(setstate_r,libc_setstate_r);
+DEFINE_PUBLIC_ALIAS(mkstemps,libc_mkstemps);
+DEFINE_PUBLIC_ALIAS(rpmatch,libc_rpmatch);
+DEFINE_PUBLIC_ALIAS(qecvt,libc_qecvt);
+DEFINE_PUBLIC_ALIAS(qfcvt,libc_qfcvt);
+DEFINE_PUBLIC_ALIAS(ecvt,libc_ecvt);
+DEFINE_PUBLIC_ALIAS(fcvt,libc_fcvt);
+DEFINE_PUBLIC_ALIAS(strtol_l,libc_strtol_l);
+DEFINE_PUBLIC_ALIAS(strtoul_l,libc_strtoul_l);
+DEFINE_PUBLIC_ALIAS(strtoll_l,libc_strtoll_l);
+DEFINE_PUBLIC_ALIAS(strtoull_l,libc_strtoull_l);
+DEFINE_PUBLIC_ALIAS(strtod_l,libc_strtod_l);
+DEFINE_PUBLIC_ALIAS(strtof_l,libc_strtof_l);
+DEFINE_PUBLIC_ALIAS(strtold_l,libc_strtold_l);
+DEFINE_PUBLIC_ALIAS(canonicalize_file_name,libc_canonicalize_file_name);
+DEFINE_PUBLIC_ALIAS(ptsname_r,libc_ptsname_r);
+DEFINE_PUBLIC_ALIAS(getpt,libc_getpt);
+DEFINE_PUBLIC_ALIAS(mkostemp,libc_mkostemp);
+DEFINE_PUBLIC_ALIAS(mkostemps,libc_mkostemps);
+DEFINE_PUBLIC_ALIAS(mktemp,libc_mktemp);
+DEFINE_PUBLIC_ALIAS(mkstemp,libc_mkstemp);
+DEFINE_PUBLIC_ALIAS(mkdtemp,libc_mkdtemp);
+DEFINE_PUBLIC_ALIAS(setkey,libc_setkey);
+DEFINE_PUBLIC_ALIAS(grantpt,libc_grantpt);
+DEFINE_PUBLIC_ALIAS(unlockpt,libc_unlockpt);
+DEFINE_PUBLIC_ALIAS(ptsname,libc_ptsname);
+DEFINE_PUBLIC_ALIAS(posix_openpt,libc_posix_openpt);
+#endif /* !__KERNEL__ */
+
+#ifndef __KERNEL__
+DEFINE_PUBLIC_ALIAS(_Exit,libc__exit);
+#if __SIZEOF_LONG__ == __SIZEOF_INT__
+DEFINE_PUBLIC_ALIAS(srandom,libc_srand);
+DEFINE_PUBLIC_ALIAS(random,libc_rand);
+#endif
+#if __SIZEOF_LONG__ == __SIZEOF_LONG_LONG__
+DEFINE_PUBLIC_ALIAS(strtoll,libc_strtol)
+DEFINE_PUBLIC_ALIAS(strtoull,libc_strtoul)
+#endif
+#if __SIZEOF_LONG__ == __SIZEOF_INT__
+DEFINE_PUBLIC_ALIAS(atol,libc_atoi);
+#endif
+#if __SIZEOF_LONG_LONG__ == __SIZEOF_INT__
+DEFINE_PUBLIC_ALIAS(atoll,libc_atoi);
+#elif __SIZEOF_LONG_LONG__ == __SIZEOF_LONG__
+DEFINE_PUBLIC_ALIAS(atoll,libc_atol);
+#endif
+DEFINE_PUBLIC_ALIAS(strtoq,libc_strtoll);
+DEFINE_PUBLIC_ALIAS(strtouq,libc_strtoull);
+DEFINE_PUBLIC_ALIAS(mkostemp64,libc_mkostemp);
+DEFINE_PUBLIC_ALIAS(mkostemps64,libc_mkostemps);
+DEFINE_PUBLIC_ALIAS(mkstemp64,libc_mkstemp);
+DEFINE_PUBLIC_ALIAS(mkstemps64,libc_mkstemps);
+
+#endif /* !__KERNEL__ */
 
 DECL_END
 

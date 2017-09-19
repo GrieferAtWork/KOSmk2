@@ -21,9 +21,9 @@
 #define _GNU_SOURCE 1
 
 #include "libc.h"
+#include "unistd.h"
+#include "stdlib.h"
 #include <hybrid/compiler.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <kos/environ.h>
 #include <hybrid/asm.h>
 
@@ -39,12 +39,13 @@ DEFINE_PUBLIC_ALIAS(__environ,environ);
 
 PUBLIC char **environ = NULL;
 PUBLIC struct envdata *appenv;
+
 PUBLIC ATTR_NORETURN
 void (FCALL __entry)(struct envdata *__restrict env, pmain main) {
  appenv  = env;
  environ = env->e_envp;
  user_initialize_dlmalloc();
- exit((*main)(env->e_argc,env->e_argv,environ));
+ libc_exit((*main)(env->e_argc,env->e_argv,environ));
 }
 
 DECL_END

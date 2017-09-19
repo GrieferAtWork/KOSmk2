@@ -29,15 +29,27 @@
 #define __assertion_tbprint  libc___assertion_tbprint
 #define __LIBC               extern
 
+#include <__stdinc.h>
 #include <assert.h>
 #include <hybrid/compiler.h>
 #include <sys/syslog.h>
 
 DECL_BEGIN
 
+#ifndef __libc_sched_yield_defined
+#define __libc_sched_yield_defined 1
+INTDEF int libc_sched_yield(void);
+#endif /* !__libc_sched_yield_defined */
+#define sched_yield   libc_sched_yield
+
+#ifndef __libc_syslog_defined
+#define __libc_syslog_defined 1
+INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
+#endif /* !__libc_syslog_defined */
+
 #if !defined(__KERNEL__) && 1
 #define NOT_IMPLEMENTED() \
-  syslog(LOG_WARNING,"%s(%d) : %s : NOT_IMPLEMENTED()\n",__FILE__,__LINE__,__FUNCTION__)
+  libc_syslog(LOG_WARNING,"%s(%d) : %s : NOT_IMPLEMENTED()\n",__FILE__,__LINE__,__FUNCTION__)
 #else
 #define NOT_IMPLEMENTED() assert(0)
 #endif
@@ -54,8 +66,7 @@ DECL_BEGIN
 #endif
 
 #if defined(CONFIG_DEBUG) && 1
-#include <syslog.h>
-#define __TRACE(...)  syslog(LOG_DEBUG,"[TRACE] " __VA_ARGS__)
+#define __TRACE(...)  libc_syslog(LOG_DEBUG,"[TRACE] " __VA_ARGS__)
 #define TRACE(x)      __TRACE x
 #else
 #define TRACE(x) (void)0

@@ -116,7 +116,9 @@ LOCAL SYSCALL3(int,dup3,(int,newfd,int,oldfd,oflag_t,flags));
 LOCAL SYSCALL3(syscall_slong_t,fcntl,(int,fd,int,cmd,USER void *,arg));
 LOCAL SYSCALL3(syscall_slong_t,ioctl,(int,fd,int,cmd,USER void *,arg));
 LOCAL SYSCALL3(__errno_t,execve,(char const *,filename,char const *const *,argv,char const *const *,envp));
+#undef sched_yield
 LOCAL SYSCALL0(int,sched_yield,(void));
+#define sched_yield libc_sched_yield
 LOCAL SYSCALL0(pid_t,fork,(void));
 LOCAL SYSCALL0(ssize_t,sync,(void));
 LOCAL SYSCALL1(__errno_t,fsync,(int,fd));

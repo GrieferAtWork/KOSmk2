@@ -18,8 +18,6 @@
  */
 #ifndef GUARD_LIBS_LIBC_ENVIRON_H
 #define GUARD_LIBS_LIBC_ENVIRON_H 1
-#define _KOS_SOURCE 1
-#define _GNU_SOURCE 1
 
 #include <hybrid/compiler.h>
 

@@ -21,9 +21,10 @@
 #define _KOS_SOURCE 2
 
 #include "libc.h"
+#include "format-printer.h"
+#include "misc.h"
 
 #include <assert.h>
-#include <format-printer.h>
 #include <hybrid/asm.h>
 #include <hybrid/atomic.h>
 #include <hybrid/compiler.h>
@@ -87,12 +88,12 @@ libc___assertion_print(char const *data, size_t datalen,
  TTY_POPCOLOR();
  return result;
 #else
- return syslog_printer(data,datalen,SYSLOG_PRINTER_CLOSURE(LOG_EMERG));
+ return libc_syslog_printer(data,datalen,SYSLOG_PRINTER_CLOSURE(LOG_EMERG));
 #endif
 }
 
 INTERN void (LIBCCALL libc___assertion_vprintf)(char const *format, __VA_LIST args) {
- format_vprintf(&libc___assertion_print,NULL,format,args);
+ libc_format_vprintf(&libc___assertion_print,NULL,format,args);
 }
 INTERN void (ATTR_CDECL libc___assertion_printf)(char const *format, ...) {
  va_list args;

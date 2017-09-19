@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\libs\libc\inet\netdb.c" />
     <ClCompile Include="..\..\libs\libc\inet\socket.c" />
     <ClCompile Include="..\..\libs\libc\malloc.c" />
+    <ClCompile Include="..\..\libs\libc\misc.c" />
     <ClCompile Include="..\..\libs\libc\sched.c" />
     <ClCompile Include="..\..\libs\libc\signal.c" />
     <ClCompile Include="..\..\libs\libc\start.c" />
@@ -30,7 +31,6 @@
     <ClCompile Include="..\..\libs\libc\stdlib.c" />
     <ClCompile Include="..\..\libs\libc\string.c" />
     <ClCompile Include="..\..\libs\libc\sysconf.c" />
-    <ClCompile Include="..\..\libs\libc\system.c" />
     <ClCompile Include="..\..\libs\libc\termios.c" />
     <ClCompile Include="..\..\libs\libc\time.c" />
     <ClCompile Include="..\..\libs\libc\unistd.c" />
@@ -50,9 +50,21 @@
     <ClInclude Include="..\..\libs\libc\dirent.h" />
     <ClInclude Include="..\..\libs\libc\environ.h" />
     <ClInclude Include="..\..\libs\libc\errno.h" />
+    <ClInclude Include="..\..\libs\libc\fcntl.h" />
+    <ClInclude Include="..\..\libs\libc\format-printer.h" />
     <ClInclude Include="..\..\libs\libc\libc.h" />
+    <ClInclude Include="..\..\libs\libc\malloc.h" />
+    <ClInclude Include="..\..\libs\libc\misc.h" />
+    <ClInclude Include="..\..\libs\libc\sched.h" />
+    <ClInclude Include="..\..\libs\libc\signal.h" />
+    <ClInclude Include="..\..\libs\libc\stdio.h" />
+    <ClInclude Include="..\..\libs\libc\stdlib.h" />
     <ClInclude Include="..\..\libs\libc\string.h" />
+    <ClInclude Include="..\..\libs\libc\sysconf.h" />
     <ClInclude Include="..\..\libs\libc\system.h" />
+    <ClInclude Include="..\..\libs\libc\termios.h" />
+    <ClInclude Include="..\..\libs\libc\time.h" />
+    <ClInclude Include="..\..\libs\libc\unistd.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A2791917-78D5-45B6-89E4-89AE7D4760D4}</ProjectGuid>

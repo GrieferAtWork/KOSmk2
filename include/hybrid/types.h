@@ -225,6 +225,31 @@ typedef __syscall_slong_t syscall_slong_t;
 typedef __syscall_ulong_t syscall_ulong_t;
 #endif /* !__syscall_ulong_t */
 
+#ifndef __id_t_defined
+#define __id_t_defined 1
+typedef __id_t id_t;
+#endif /* !__id_t_defined */
+
+#ifndef __clock_t_defined
+#define __clock_t_defined 1
+typedef __clock_t clock_t;
+#endif /* !__clock_t_defined */
+
+#ifndef __clockid_t_defined
+#define __clockid_t_defined 1
+typedef __clockid_t clockid_t;
+#endif /* !__clockid_t_defined */
+
+#ifndef __timer_t_defined
+#define __timer_t_defined 1
+typedef __timer_t timer_t;
+#endif /* !__timer_t_defined */
+
+#ifndef __useconds_t_defined
+#define __useconds_t_defined 1
+typedef __useconds_t useconds_t;
+#endif /* !__useconds_t_defined */
+
 DECL_END
 #endif /* __CC__ */
 

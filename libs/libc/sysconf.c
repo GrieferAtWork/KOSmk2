@@ -24,6 +24,7 @@
 
 #include "libc.h"
 #include "system.h"
+#include "sysconf.h"
 
 #include <linux/limits.h>
 #include <limits.h>
@@ -478,7 +479,7 @@ opt("_SC_HOST_NAME_MAX","HOST_NAME_MAX");
 };
 #pragma GCC diagnostic pop
 
-PUBLIC long int (LIBCCALL sysconf)(int name) {
+INTERN long int LIBCCALL libc_sysconf(int name) {
  switch (name) {
 
  case _SC_CLK_TCK:          return -1; /* TODO: __getclktck(); */
@@ -497,6 +498,8 @@ PUBLIC long int (LIBCCALL sysconf)(int name) {
  }
  return -1;
 }
+
+DEFINE_PUBLIC_ALIAS(sysconf,libc_sysconf);
 
 DECL_END
 

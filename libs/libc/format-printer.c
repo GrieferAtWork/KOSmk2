@@ -24,6 +24,9 @@
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 
 #include "libc.h"
+#include "format-printer.h"
+#include "string.h"
+#include "fcntl.h"
 
 #include <alloca.h>
 #include <assert.h>
@@ -49,6 +52,7 @@
 #include <fs/dentry.h>
 #else
 #include <kos/fcntl.h>
+#include "malloc.h"
 #endif
 
 DECL_BEGIN
@@ -58,15 +62,15 @@ do{ if ((temp = (*printer)(s,n,closure)) < 0) return temp; \
     result += temp; \
 }while(0)
 #define printf(...) \
-do{ if ((temp = format_printf(printer,closure,__VA_ARGS__)) < 0) return temp; \
+do{ if ((temp = libc_format_printf(printer,closure,__VA_ARGS__)) < 0) return temp; \
     result += temp; \
 }while(0)
 #define quote(s,n,flags) \
-do{ if ((temp = format_quote(printer,closure,s,n,flags)) < 0) return temp; \
+do{ if ((temp = libc_format_quote(printer,closure,s,n,flags)) < 0) return temp; \
     result += temp; \
 }while(0)
 #define hexdump(data,size,linesize,flags) \
-do{ if ((temp = format_hexdump(printer,closure,data,size,linesize,flags)) < 0) return temp; \
+do{ if ((temp = libc_format_hexdump(printer,closure,data,size,linesize,flags)) < 0) return temp; \
     result += temp; \
 }while(0)
 
@@ -187,24 +191,24 @@ PRIVATE struct longprint const ext_printers[] = {
 
 LONG_PRINTER(errno_printer) {
  errno_t error = va_arg(*args,errno_t);
- char const *msg = strerror_s(error);
+ char const *msg = libc_strerror_s(error);
  (void)length,(void)precision,(void)flags;
- if (!msg) return format_printf(printer,closure,"Unknown error %d",error);
- return format_printf(printer,closure,"%s(%s)",strerrorname_s(error),msg);
+ if (!msg) return libc_format_printf(printer,closure,"Unknown error %d",error);
+ return libc_format_printf(printer,closure,"%s(%s)",libc_strerrorname_s(error),msg);
 }
 LONG_PRINTER(dev_t_printer) {
  dev_t dev = va_arg(*args,dev_t);
  (void)length,(void)precision,(void)flags;
- return format_printf(printer,closure,"%.2x:%.2x",
-                      MAJOR(dev),MINOR(dev));
+ return libc_format_printf(printer,closure,"%.2x:%.2x",
+                           MAJOR(dev),MINOR(dev));
 }
 LONG_PRINTER(hex_printer) {
  void *p = va_arg(*args,void *);
  (void)length;
  if (!(flags&PRINTF_FLAG_FIXBUF))
-       precision = strnlen((char *)p,precision);
- return format_hexdump(printer,closure,p,precision,0,
-                       FORMAT_HEXDUMP_FLAG_ADDRESS);
+       precision = libc_strnlen((char *)p,precision);
+ return libc_format_hexdump(printer,closure,p,precision,0,
+                            FORMAT_HEXDUMP_FLAG_ADDRESS);
 }
 #ifdef __KERNEL__
 PRIVATE ssize_t LIBCCALL
@@ -263,11 +267,11 @@ LONG_PRINTER(fdpath_printer) {
  char buf[256],*bufp; ssize_t result;
  int fd = va_arg(*args,int);
  (void)length,(void)precision,(void)flags;
- bufp = xfdname(fd,FDNAME_PATH,buf,sizeof(buf));
- if (!bufp) bufp = xfdname(fd,FDNAME_PATH,NULL,0);
+ bufp = libc_xfdname(fd,FDNAME_PATH,buf,sizeof(buf));
+ if (!bufp) bufp = libc_xfdname(fd,FDNAME_PATH,NULL,0);
  if (!bufp) return -1;
- result = (*printer)(bufp,strlen(bufp),closure);
- if (buf != bufp) (free)(bufp);
+ result = (*printer)(bufp,libc_strlen(bufp),closure);
+ if (buf != bufp) libc_free(bufp);
  return result;
 }
 #endif /* !__KERNEL__ */
@@ -280,15 +284,15 @@ PRIVATE char const decimals[2][17] = {
  {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','X'},
 };
 
-PUBLIC ssize_t LIBCCALL
-format_vprintf(pformatprinter printer, void *closure,
-               char const *__restrict format, va_list args) {
+INTERN ssize_t LIBCCALL
+libc_format_vprintf(pformatprinter printer, void *closure,
+                    char const *__restrict format, va_list args) {
  ssize_t result = 0,temp; char ch;
  char const *flush_start;
  CHECK_HOST_TEXT(printer,1);
 #ifdef CONFIG_DEBUG
  /* Running strlen() on 'format' implicitly performs CHECK_HOST_TEXT-checks. */
- COMPILER_UNUSED(strlen(format));
+ COMPILER_UNUSED(libc_strlen(format));
 #endif
  flush_start = format;
  for (;;) {
@@ -461,7 +465,7 @@ have_precision:
      else if (numsys == 2)  *iter++ = dec[11]; /* B/b */
     }
     if (iter != buf) print(buf,(size_t)(iter-buf));
-    memset(buf,0xcc,sizeof(buf));
+    libc_memset(buf,0xcc,sizeof(buf));
     iter = COMPILER_ENDOF(buf);
     assertf(numsys <= 16,"%d",numsys);
     do *--iter = dec[arg.u_64 % numsys];
@@ -477,7 +481,7 @@ have_precision:
       assert(precbufsize);
       bufsize += precbufsize;
       iter    -= precbufsize;
-      memset(iter,'0',precbufsize);
+      libc_memset(iter,'0',precbufsize);
       assert(precbufsize <= precision);
       precision -= precbufsize;
      }
@@ -529,7 +533,7 @@ have_precision:
       while (iter != end && *iter) ++iter;
       precision = (uintptr_t)iter-(uintptr_t)s;
      } else {
-      precision = strnlen(s,precision);
+      precision = libc_strnlen(s,precision);
      }
     }
 #ifdef PRINTF_FLAG_QUOTE
@@ -586,11 +590,11 @@ quote_string:
     size_t format_len;
     struct longprint const *printers;
    case '[':
-    format_len = stroff(format,']');
+    format_len = libc_stroff(format,']');
     if (format_len <= LONGPRINT_NAMEMAX) {
      for (printers = ext_printers;
           printers->lp_func; ++printers) {
-      if (!memcmp(printers->lp_name,format,format_len)) {
+      if (!libc_memcmp(printers->lp_name,format,format_len)) {
        temp = (*printers->lp_func)(printer,closure,length,
                                    flags,precision,&args);
        if (temp < 0) return temp;
@@ -643,7 +647,7 @@ done_fmt:
      partsize    = print_width;
      if (partsize > COMPILER_LENOF(buf))
          partsize = COMPILER_LENOF(buf);
-     memset(buf,' ',partsize);
+     libc_memset(buf,' ',partsize);
      while (print_width > COMPILER_LENOF(buf)) {
       print(buf,COMPILER_LENOF(buf));
       print_width -= COMPILER_LENOF(buf);
@@ -662,13 +666,13 @@ end:
  return result;
 }
 
-PUBLIC ssize_t ATTR_CDECL 
-format_printf(pformatprinter printer, void *closure,
-              char const *__restrict format, ...) {
+INTERN ssize_t ATTR_CDECL 
+libc_format_printf(pformatprinter printer, void *closure,
+                   char const *__restrict format, ...) {
  ssize_t result;
  va_list args;
  va_start(args,format);
- result = format_vprintf(printer,closure,format,args);
+ result = libc_format_vprintf(printer,closure,format,args);
  va_end(args);
  return result;
 }
@@ -676,10 +680,10 @@ format_printf(pformatprinter printer, void *closure,
 
 
 #define tooct(c) ('0'+(c))
-PUBLIC ssize_t LIBCCALL
-format_quote(pformatprinter printer, void *closure,
-             char const *__restrict text, size_t textlen,
-             u32 flags) {
+INTERN ssize_t LIBCCALL
+libc_format_quote(pformatprinter printer, void *closure,
+                  char const *__restrict text, size_t textlen,
+                  u32 flags) {
  char encoded_text[4];
  size_t encoded_text_size;
  ssize_t result = 0,temp; unsigned char ch;
@@ -698,9 +702,8 @@ format_quote(pformatprinter printer, void *closure,
    if (!ch && !(flags&FORMAT_QUOTE_FLAG_QUOTEALL)) goto done;
 #endif
    /* Flush unprinted text. */
-   if (iter != flush_start) {
-    print(flush_start,(size_t)(iter-flush_start));
-   }
+   if (iter != flush_start)
+       print(flush_start,(size_t)(iter-flush_start));
    flush_start = iter+1;
    if (ch < 32) {
 #if 0
@@ -768,8 +771,10 @@ next:
   ++iter;
  }
 /*done:*/
- if (iter != flush_start) print(flush_start,(size_t)(iter-flush_start));
- if (!(flags&FORMAT_QUOTE_FLAG_PRINTRAW)) print("\"",1);
+ if (iter != flush_start)
+     print(flush_start,(size_t)(iter-flush_start));
+ if (!(flags&FORMAT_QUOTE_FLAG_PRINTRAW))
+     print("\"",1);
  return result;
 }
 
@@ -785,7 +790,7 @@ print_space(pformatprinter printer,
  char *spacebuf; ssize_t result = 0,temp;
  bufsize = MIN(count,MAX_SPACE_SIZE);
  spacebuf = (char *)alloca(bufsize*sizeof(char));
- memset(spacebuf,' ',bufsize*sizeof(char));
+ libc_memset(spacebuf,' ',bufsize*sizeof(char));
  for (;;) {
   used_size = MIN(count,bufsize);
   assert(spacebuf[0] == ' ');
@@ -797,10 +802,10 @@ print_space(pformatprinter printer,
  return result;
 }
 
-PUBLIC ssize_t LIBCCALL
-format_hexdump(pformatprinter printer, void *closure,
-               void const *__restrict data, size_t size,
-               size_t linesize, __u32 flags) {
+INTERN ssize_t LIBCCALL
+libc_format_hexdump(pformatprinter printer, void *closure,
+                    void const *__restrict data, size_t size,
+                    size_t linesize, u32 flags) {
  char hex_buf[3],*ascii_line;
  char const *hex_translate;
  byte_t const *line,*iter,*end; byte_t b;
@@ -856,7 +861,7 @@ format_hexdump(pformatprinter printer, void *closure,
    for (iter = line; iter != end;) {
     char *aiter,*aend;
     size_t textcount = MIN(ascii_size,(size_t)(end-iter));
-    memcpy(ascii_line,iter,textcount);
+    libc_memcpy(ascii_line,iter,textcount);
     /* Filter out non-printable characters, replacing them with '.' */
     aend = (aiter = ascii_line)+textcount;
     for (; aiter != aend; ++aiter) {
@@ -889,23 +894,23 @@ format_hexdump(pformatprinter printer, void *closure,
 
 
 #ifndef __KERNEL__
-PUBLIC ssize_t ATTR_CDECL
-format_scanf(pformatscanner scanner, pformatreturn returnch,
-             void *closure, char const *__restrict format, ...) {
+INTERN ssize_t ATTR_CDECL
+libc_format_scanf(pformatscanner scanner, pformatreturn returnch,
+                  void *closure, char const *__restrict format, ...) {
  va_list args; ssize_t result;
  va_start(args,format);
- result = format_vscanf(scanner,returnch,closure,format,args);
+ result = libc_format_vscanf(scanner,returnch,closure,format,args);
  va_end(args);
  return result;
 }
-PUBLIC ssize_t LIBCCALL
-format_vscanf(pformatscanner scanner, pformatreturn returnch,
-              void *closure, char const *__restrict format, va_list args) {
+INTERN ssize_t LIBCCALL
+libc_format_vscanf(pformatscanner scanner, pformatreturn returnch,
+                   void *closure, char const *__restrict format, va_list args) {
  CHECK_HOST_TEXT(scanner,1);
  CHECK_HOST_TEXT(returnch,1);
 #ifdef CONFIG_DEBUG
  /* Running strlen() on 'format' implicitly performs CHECK_HOST_TEXT-checks. */
- COMPILER_UNUSED(strlen(format));
+ COMPILER_UNUSED(libc_strlen(format));
 #endif
 
  /* TODO */
@@ -960,16 +965,16 @@ PRIVATE struct time_attrib const time_attr[] = {
 };
 PRIVATE char const format_0dot2u[] = "%0.2u";
 
-PUBLIC ssize_t LIBCCALL
-format_strftime(pformatprinter printer, void *closure,
-                char const *__restrict format, struct tm const *tm) {
+INTERN ssize_t LIBCCALL
+libc_format_strftime(pformatprinter printer, void *closure,
+                     char const *__restrict format, struct tm const *tm) {
  char const *format_begin,*iter; char ch;
  ssize_t temp,result = 0;
  CHECK_HOST_TEXT(printer,1);
  CHECK_HOST_DOBJ(tm);
 #ifdef CONFIG_DEBUG
  /* Running strlen() on 'format' implicitly performs CHECK_HOST_TEXT-checks. */
- COMPILER_UNUSED(strlen(format));
+ COMPILER_UNUSED(libc_strlen(format));
 #endif
  iter = format_begin = format;
  for (;;) {
@@ -978,9 +983,8 @@ next:
   switch (ch) {
    case '\0': goto end;
    case '%': {
-    if (format_begin != iter) {
-     print(format_begin,((size_t)(iter-format_begin))-1);
-    }
+    if (format_begin != iter)
+        print(format_begin,((size_t)(iter-format_begin))-1);
 #define safe_elem(arr,i) ((arr)[MIN(i,COMPILER_LENOF(arr)-1)])
 
     switch ((ch = *iter++)) {
@@ -990,20 +994,20 @@ next:
      case 'h':
      case 'b': print(safe_elem(abbr_month_names,tm->tm_mon),(size_t)-1); break;
      case 'B': print(safe_elem(full_month_names,tm->tm_mon),(size_t)-1); break;
-     case 'c': printf("%s %s %0.2u %0.2u:%0.2u:%0.2u %u"
-                     ,abbr_wday_names[tm->tm_wday]
-                     ,abbr_month_names[tm->tm_mon]
-                     ,tm->tm_mday,tm->tm_hour
-                     ,tm->tm_min,tm->tm_sec
-                     ,tm->tm_year+1900);
+     case 'c': printf("%s %s %0.2u %0.2u:%0.2u:%0.2u %u",
+                      abbr_wday_names[tm->tm_wday],
+                      abbr_month_names[tm->tm_mon],
+                      tm->tm_mday,tm->tm_hour,
+                      tm->tm_min,tm->tm_sec,
+                      tm->tm_year+1900);
                break;
-     case 'x': printf("%0.2u/%0.2u/%0.2u"
-                     ,tm->tm_mon+1,tm->tm_mday
-                     ,tm->tm_year+1900);
+     case 'x': printf("%0.2u/%0.2u/%0.2u",
+                      tm->tm_mon+1,tm->tm_mday,
+                      tm->tm_year+1900);
                break;
-     case 'X': printf("%0.2u:%0.2u:%0.2u"
-                     ,tm->tm_hour,tm->tm_min
-                     ,tm->tm_sec);
+     case 'X': printf("%0.2u:%0.2u:%0.2u",
+                      tm->tm_hour,tm->tm_min,
+                      tm->tm_sec);
                break;
      case 'z': break; /* TODO: ISO 8601 offset from UTC in timezone (1 minute=1, 1 hour=100) | If timezone cannot be determined, no characters	+100 */
      case 'Z': break; /* TODO: Timezone name or abbreviation * | If timezone cannot be determined, no characters	CDT */
@@ -1078,7 +1082,7 @@ next:
       attribnam_len = (size_t)(tag_end-tag_begin);
       for (attrib = time_attr;; ++attrib) {
        if (!attrib->name[0]) goto format_end;
-       if (memcmp(attrib->name,tag_begin,attribnam_len*sizeof(char)) == 0 &&
+       if (libc_memcmp(attrib->name,tag_begin,attribnam_len*sizeof(char)) == 0 &&
            attrib->name[attribnam_len] == '\0') break;
       }
       attribval = *(unsigned int *)((byte_t *)tm+attrib->offset);
@@ -1135,29 +1139,29 @@ end:
 
 
 
-PUBLIC int LIBCCALL
-stringprinter_init(struct stringprinter *__restrict self,
-                   size_t hint) {
+INTERN int LIBCCALL
+libc_stringprinter_init(struct stringprinter *__restrict self,
+                        size_t hint) {
  CHECK_HOST_DOBJ(self);
  if (!hint) hint = 4*sizeof(void *);
- self->sp_buffer = (char *)malloc((hint+1)*sizeof(char));
- if __unlikely(!self->sp_buffer) return -1;
+ self->sp_buffer = (char *)libc_malloc((hint+1)*sizeof(char));
+ if unlikely(!self->sp_buffer) return -1;
  self->sp_bufpos = self->sp_buffer;
  self->sp_bufend = self->sp_buffer+hint;
  self->sp_bufend[0] = '\0';
  return 0;
 }
-PUBLIC char *LIBCCALL
-stringprinter_pack(struct stringprinter *__restrict self,
-                   size_t *length) {
+INTERN char *LIBCCALL
+libc_stringprinter_pack(struct stringprinter *__restrict self,
+                        size_t *length) {
  char *result; size_t result_size;
  CHECK_HOST_DOBJ(self);
  assert(self->sp_bufpos >= self->sp_buffer);
  assert(self->sp_bufpos <= self->sp_bufend);
  result_size = (size_t)(self->sp_bufpos-self->sp_buffer);
  if (self->sp_bufpos != self->sp_bufend) {
-  result = (char *)realloc(self->sp_buffer,(result_size+1)*sizeof(char));
-  if __unlikely(!result) result = self->sp_buffer;
+  result = (char *)libc_realloc(self->sp_buffer,(result_size+1)*sizeof(char));
+  if unlikely(!result) result = self->sp_buffer;
  } else {
   result = self->sp_buffer;
  }
@@ -1166,14 +1170,14 @@ stringprinter_pack(struct stringprinter *__restrict self,
  if (length) *length = result_size;
  return result;
 }
-PUBLIC void LIBCCALL
-stringprinter_fini(struct stringprinter *__restrict self) {
+INTERN void LIBCCALL
+libc_stringprinter_fini(struct stringprinter *__restrict self) {
  CHECK_HOST_DOBJ(self);
- free(self->sp_buffer);
+ libc_free(self->sp_buffer);
 }
-PUBLIC ssize_t LIBCCALL
-stringprinter_print(char const *__restrict data,
-                    size_t datalen, void *closure) {
+INTERN ssize_t LIBCCALL
+libc_stringprinter_print(char const *__restrict data,
+                         size_t datalen, void *closure) {
  struct stringprinter *self = (struct stringprinter *)closure;
  size_t size_avail,newsize,reqsize;
  char *new_buffer;
@@ -1181,7 +1185,7 @@ stringprinter_print(char const *__restrict data,
  assert(self->sp_bufpos >= self->sp_buffer);
  assert(self->sp_bufpos <= self->sp_bufend);
  size_avail = (size_t)(self->sp_bufend-self->sp_bufpos);
- if __unlikely(size_avail < datalen) {
+ if unlikely(size_avail < datalen) {
   /* Must allocate more memory. */
   newsize = (size_t)(self->sp_bufend-self->sp_buffer);
   assert(newsize);
@@ -1189,17 +1193,31 @@ stringprinter_print(char const *__restrict data,
   /* Double the buffer size until it is of sufficient length. */
   do newsize *= 2; while (newsize < reqsize);
   /* Reallocate the buffer (But include 1 character for the terminating '\0') */
-  new_buffer = (char *)realloc(self->sp_buffer,(newsize+1)*sizeof(char));
-  if __unlikely(!new_buffer) return -1;
+  new_buffer = (char *)libc_realloc(self->sp_buffer,(newsize+1)*sizeof(char));
+  if unlikely(!new_buffer) return -1;
   self->sp_bufpos = new_buffer+(self->sp_bufpos-self->sp_buffer);
   self->sp_bufend = new_buffer+newsize;
   self->sp_buffer = new_buffer;
  }
- memcpy(self->sp_bufpos,data,datalen);
+ libc_memcpy(self->sp_bufpos,data,datalen);
  self->sp_bufpos += datalen;
  assert(self->sp_bufpos <= self->sp_bufend);
  return 0;
 }
+#endif /* !__KERNEL__ */
+
+DEFINE_PUBLIC_ALIAS(format_vprintf,libc_format_vprintf);
+DEFINE_PUBLIC_ALIAS(format_printf,libc_format_printf);
+DEFINE_PUBLIC_ALIAS(format_quote,libc_format_quote);
+DEFINE_PUBLIC_ALIAS(format_hexdump,libc_format_hexdump);
+#ifndef __KERNEL__
+DEFINE_PUBLIC_ALIAS(format_scanf,libc_format_scanf);
+DEFINE_PUBLIC_ALIAS(format_vscanf,libc_format_vscanf);
+DEFINE_PUBLIC_ALIAS(format_strftime,libc_format_strftime);
+DEFINE_PUBLIC_ALIAS(stringprinter_init,libc_stringprinter_init);
+DEFINE_PUBLIC_ALIAS(stringprinter_pack,libc_stringprinter_pack);
+DEFINE_PUBLIC_ALIAS(stringprinter_fini,libc_stringprinter_fini);
+DEFINE_PUBLIC_ALIAS(stringprinter_print,libc_stringprinter_print);
 #endif /* !__KERNEL__ */
 
 DECL_END

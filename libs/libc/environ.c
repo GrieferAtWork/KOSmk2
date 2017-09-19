@@ -25,15 +25,15 @@
 #include "system.h"
 #include "environ.h"
 #include "string.h"
+#include "malloc.h"
+#include "stdlib.h"
+#include "unistd.h"
 
 #include <assert.h>
 #include <hybrid/compiler.h>
 #include <hybrid/sync/atomic-rwlock.h>
 #include <hybrid/types.h>
 #include <kos/environ.h>
-#include <malloc.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <stdbool.h>
 #include <hybrid/atomic.h>
 
@@ -64,10 +64,11 @@ PRIVATE DEFINE_ATOMIC_RWLOCK(env_lock);
  *       'ENVIRON_MALLOC()', instead silently ignoring all
  *        that weren't, or simply ignoring everything.
  */
-#define ENVIRON_MALLOC(s)  malloc(s)
+#define ENVIRON_MALLOC(s)  libc__mall_untrack(libc_malloc(s))
 #define ENVIRON_FREE(p)   (void)0
 #define ENVIRON_FREE_ISNOP 1
 
+DATDEF char **environ;
 
 INTERN char *LIBCCALL libc_getenv(char const *name) {
  size_t namelen; register char *result,**envp;
@@ -112,13 +113,10 @@ PRIVATE char **environ_make_writable_unlocked(bool add_one) {
   }
 #endif
   new_envc = envc+!!add_one;
-  new_environ = (char **)(realloc)(libc_envp,
-                                  (new_envc+1)*
-                                   sizeof(char *));
+  new_environ = (char **)libc_realloc(libc_envp,
+                                     (new_envc+1)*sizeof(char *));
   if unlikely(!new_environ) return NULL;
-#ifdef CONFIG_DEBUG_MALLOC
-  (_mall_untrack)(new_environ);
-#endif
+  (void)libc__mall_untrack(new_environ);
   /* Copy the existing environment table. */
   libc_memcpy(new_environ,result,envc*sizeof(char *));
   new_environ[new_envc] = NULL;
@@ -130,9 +128,8 @@ PRIVATE char **environ_make_writable_unlocked(bool add_one) {
  } else if (add_one) {
   char **new_environ;
   /* Regular alloc of an additional entry. */
-  new_environ = (char **)(realloc)(libc_envp,
-                                  (libc_envc+2)*
-                                   sizeof(char *));
+  new_environ = (char **)libc_realloc(libc_envp,
+                                     (libc_envc+2)*sizeof(char *));
   if unlikely(!new_environ) return NULL;
   new_environ[libc_envc+1] = NULL;
   libc_envp = new_environ;
@@ -152,7 +149,7 @@ INTERN int LIBCCALL libc_clearenv(void) {
    }
  }
 #endif
- free(libc_envp);
+ libc_free(libc_envp);
  libc_envp = NULL;
  libc_envc = 0;
  ATOMIC_WRITE(environ,NULL);
@@ -196,7 +193,7 @@ got_slot:
 no_slot:
  environ_endwrite();
 #if ENVIRON_FREE_ISNOP
- if (!slot) free(env_string);
+ if (!slot) libc_free(env_string);
 #else
  if (!slot) ENVIRON_FREE(env_string);
 #endif
@@ -219,7 +216,7 @@ INTERN int LIBCCALL libc_unsetenv(char const *name) {
    do iter[0] = iter[1]; while (*++iter);
    if (env_base == libc_envp) {
     size_t new_envc = (size_t)(iter-libc_envp);
-    iter = (char **)(realloc)(libc_envp,new_envc*sizeof(char *));
+    iter = (char **)libc_realloc(libc_envp,new_envc*sizeof(char *));
     if likely(iter) {
      libc_envc = new_envc;
      libc_envp = iter;

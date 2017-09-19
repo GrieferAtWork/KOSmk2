@@ -18,8 +18,6 @@
  */
 #ifndef GUARD_LIBS_LIBC_DIRENT_H
 #define GUARD_LIBS_LIBC_DIRENT_H 1
-#define _KOS_SOURCE 2
-#define _GNU_SOURCE 1
 
 #include "libc.h"
 #include "system.h"

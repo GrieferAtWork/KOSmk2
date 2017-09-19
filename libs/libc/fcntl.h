@@ -16,53 +16,28 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
+#ifndef GUARD_LIBS_LIBC_FCNTL_H
+#define GUARD_LIBS_LIBC_FCNTL_H 1
 
-DECL UTYPE (LIBCCALL STRTOUINT)(char const *__restrict nptr, char **endptr, int base)
-#ifdef INTERFACE_ONLY
-;
-#else
-{
- UTYPE result,temp;
- if (!base) {
-  if (*nptr == '0') {
-   ++nptr;
-        if (*nptr == 'x' || *nptr == 'X') ++nptr,base = 16;
-   else if (*nptr == 'b' || *nptr == 'B') ++nptr,base = 2;
-   else base = 8;
-  } else base = 10;
- }
- result = 0;
- for (;;) {
-  char ch = *nptr;
-       if (ch >= '0' && ch <= '9') temp = (UTYPE)(ch-'0');
-  else if (ch >= 'a' && ch <= 'z') temp = (UTYPE)(10+(ch-'a'));
-  else if (ch >= 'A' && ch <= 'Z') temp = (UTYPE)(10+(ch-'A'));
-  else break;
-  if (temp >= (UTYPE)base) break;
-  ++nptr;
-  result *= base;
-  result += temp;
- }
- if (endptr) *endptr = (char *)nptr;
- return result;
-}
-#endif
+#include "libc.h"
+#include <hybrid/compiler.h>
+#include <hybrid/types.h>
 
-DECL TYPE (LIBCCALL STRTOINT)(char const *__restrict nptr, char **endptr, int base)
-#ifdef INTERFACE_ONLY
-;
-#else
-{
- bool is_neg = false; TYPE result;
- while (*nptr == '-') { is_neg ^= 1; ++nptr; }
- result = (TYPE)STRTOUINT(nptr,endptr,base);
- if (is_neg) result = -result;
- return result;
-}
-#endif
+DECL_BEGIN
 
-#undef STRTOUINT
-#undef STRTOINT
-#undef UTYPE
-#undef TYPE
-#undef DECL
+INTDEF int ATTR_CDECL libc_ioctl(int fd, unsigned long int request, ...);
+INTDEF int ATTR_CDECL libc_fcntl(int fd, int cmd, ...);
+INTDEF int ATTR_CDECL libc_openat(int fd, char const *file, int oflag, ...);
+INTDEF int ATTR_CDECL libc_open(char const *file, int oflag, ...);
+INTDEF int LIBCCALL libc_creat(char const *file, mode_t mode);
+INTDEF ssize_t LIBCCALL libc_xfdname2(int fd, int type, char *buf, size_t bufsize);
+INTDEF char *LIBCCALL libc_xfdname(int fd, int type, char *buf, size_t bufsize);
+INTDEF char *LIBCCALL libc_getcwd(char *buf, size_t bufsize);
+INTDEF char *LIBCCALL libc_get_current_dir_name(void);
+INTDEF char *LIBCCALL libc_getwd(char *buf);
+INTDEF int LIBCCALL libc_posix_fadvise(int fd, off_t offset, off_t len, int advise);
+INTDEF int LIBCCALL libc_posix_fallocate(int fd, off_t offset, off_t len);
+
+DECL_END
+
+#endif /* !GUARD_LIBS_LIBC_FCNTL_H */
