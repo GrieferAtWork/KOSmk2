@@ -168,7 +168,7 @@ INTERN pid_t LIBCCALL libc_fork(void) { return FORWARD_SYSTEM_VALUE(sys_fork());
 INTERN int LIBCCALL libc_execve(char const *path, char *const argv[], char *const envp[]) { return SET_SYSTEM_ERROR(sys_execve(path,(char const *const *)argv,(char const *const *)envp)); }
 INTERN int LIBCCALL libc_fexecve(int fd, char *const argv[], char *const envp[]) { return SET_SYSTEM_ERROR(sys_xfexecve(fd,(char const *const *)argv,(char const *const *)envp)); }
 
-#if defined(__i386__) && 0 /* TODO: Doesn't seem to work? */
+#if defined(__i386__)
 GLOBAL_ASM(
 L(.section .text                                              )
 L(INTERN_ENTRY(libc_execl)                                    )
@@ -357,7 +357,7 @@ INTERN int ATTR_CDECL libc_fexecle(int fd, char const *arg, ...) {
 DATDEF char **environ;
 INTERN int LIBCCALL libc_fexecv(int fd, char *const argv[]) { return libc_fexecve(fd,argv,environ); }
 PRIVATE void LIBCCALL execvpe_inside(char const *path, char const *file,
-                                       char *const argv[], char *const envp[]) {
+                                     char *const argv[], char *const envp[]) {
  char *buf; bool use_malloc;
  size_t pathlen = libc_strlen(path);
  size_t filelen = libc_strlen(file);
@@ -691,13 +691,8 @@ PRIORITY IMPLEMENTATION (Easy)
 
          sscanf
 
-         strcspn
-         strftime
-         strpbrk
          strptime
          strsep
-         strspn
-         strtok
          strverscmp
 
 PRIORITY IMPLEMENTATION (Hard)

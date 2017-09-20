@@ -1987,7 +1987,8 @@ not_empty:
      (*sb->sb_ops->sb_umount)(sb);
   } else {
    memmove(iter,iter+1,sb->sb_root.__i_nlink-
-          (size_t)(iter-sb->sb_mount.sm_mountv));
+          (size_t)(iter-sb->sb_mount.sm_mountv)*
+           sizeof(struct dentry *));
    iter = trealloc(struct dentry *,
                    sb->sb_mount.sm_mountv,
                    sb->sb_root.__i_nlink);

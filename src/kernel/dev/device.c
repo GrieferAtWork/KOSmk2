@@ -426,7 +426,7 @@ devns_alloc_major(struct devns *__restrict self, major_t id_major) {
    devns_major_pop(presult);
    new_vec = trealloc(struct device *,result->ma_bvec,DEVNS_MAJOR_CNT(result)+1);
    if unlikely(!new_vec) return NULL;
-   memmove(new_vec+1,new_vec,DEVNS_MAJOR_CNT(result));
+   memmove(new_vec+1,new_vec,DEVNS_MAJOR_CNT(result)*sizeof(struct device *));
    --result->ma_node.a_vmin;
    result->ma_bvec = new_vec;
    new_vec[0]      = NULL; /* Pre-initialize the major slot to NULL. */

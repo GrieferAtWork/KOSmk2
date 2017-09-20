@@ -187,44 +187,6 @@ INTERN char *LIBCCALL libc_basename(char const *__restrict path) {
  while (iter != path && iter[-1] != '/') --iter; /* Scan until the previous '/'. */
  return iter; /* Returns string after previous '/'. */
 }
-INTERN size_t LIBCCALL libc_strcspn(char const *s, char const *reject) {
- char const *iter = s;
- while (*iter && !libc_strchr(reject,*iter)) ++iter;
- return (size_t)(iter-s);
-}
-INTERN char *LIBCCALL libc_strpbrk(char const *s, char const *accept) {
- char *hay_iter = (char *)s;
- char const *ned_iter; char haych,ch;
- while ((haych = *hay_iter++) != '\0') {
-  ned_iter = accept;
-  while ((ch = *ned_iter++) != '\0') {
-   if (haych == ch) return hay_iter-1;
-  }
- }
- return NULL;
-}
-INTERN char *LIBCCALL libc_strtok_r(char *__restrict s, char const *__restrict delim,
-                                    char **__restrict save_ptr) {
- char *end;
- if (!s) s = *save_ptr;
- if (!*s) { *save_ptr = s; return NULL; }
- s += libc_strspn(s,delim);
- if (!*s) { *save_ptr = s; return NULL; }
- end = s+libc_strcspn(s,delim);
- if (!*end) { *save_ptr = end; return s; }
- *end = '\0';
- *save_ptr = end+1;
- return s;
-}
-INTERN char *LIBCCALL libc_strtok(char *__restrict s, char const *__restrict delim) {
- PRIVATE char *safe = NULL;
- return libc_strtok_r(s,delim,&safe);
-}
-INTERN size_t LIBCCALL libc_strspn(char const *s, char const *accept) {
- char const *iter = s;
- while (libc_strchr(accept,*iter)) ++iter;
- return (size_t)(iter-s);
-}
 INTERN void *LIBCCALL libc_memccpy(void *__restrict dst,
                                    void const *__restrict src,
                                    int c, size_t n) {
@@ -497,6 +459,7 @@ INTERN dosch_t *LIBCCALL libc_dos_wcsupr_l(dosch_t *str, locale_t lc) { NOT_IMPL
 #undef memcpy
 DEFINE_PUBLIC_ALIAS(memcpy,libc_memcpy);
 DEFINE_PUBLIC_ALIAS(_memcpy_d,libc__memcpy_d);
+DEFINE_PUBLIC_ALIAS(memmove,libc_memmove);
 DEFINE_PUBLIC_ALIAS(memset,libc_memset);
 DEFINE_PUBLIC_ALIAS(memcmp,libc_memcmp);
 DEFINE_PUBLIC_ALIAS(memchr,libc_memchr);
@@ -512,6 +475,7 @@ DEFINE_PUBLIC_ALIAS(rawmemrlen,libc_rawmemrlen);
 #undef memcpyw
 DEFINE_PUBLIC_ALIAS(memcpyw,libc_memcpyw);
 DEFINE_PUBLIC_ALIAS(_memcpyw_d,libc__memcpyw_d);
+DEFINE_PUBLIC_ALIAS(memmovew,libc_memmovew);
 DEFINE_PUBLIC_ALIAS(memsetw,libc_memsetw);
 DEFINE_PUBLIC_ALIAS(memcmpw,libc_memcmpw);
 DEFINE_PUBLIC_ALIAS(memchrw,libc_memchrw);
@@ -527,6 +491,7 @@ DEFINE_PUBLIC_ALIAS(rawmemrlenw,libc_rawmemrlenw);
 #undef memcpyl
 DEFINE_PUBLIC_ALIAS(memcpyl,libc_memcpyl);
 DEFINE_PUBLIC_ALIAS(_memcpyl_d,libc__memcpyl_d);
+DEFINE_PUBLIC_ALIAS(memmovel,libc_memmovel);
 DEFINE_PUBLIC_ALIAS(memsetl,libc_memsetl);
 DEFINE_PUBLIC_ALIAS(memcmpl,libc_memcmpl);
 DEFINE_PUBLIC_ALIAS(memchrl,libc_memchrl);
@@ -542,6 +507,7 @@ DEFINE_PUBLIC_ALIAS(rawmemrlenl,libc_rawmemrlenl);
 #ifdef CONFIG_64BIT_STRING
 DEFINE_PUBLIC_ALIAS(memcpyq,libc_memcpyq);
 DEFINE_PUBLIC_ALIAS(_memcpyq_d,libc__memcpyq_d);
+DEFINE_PUBLIC_ALIAS(memmoveq,libc_memmoveq);
 DEFINE_PUBLIC_ALIAS(memsetq,libc_memsetq);
 DEFINE_PUBLIC_ALIAS(memcmpq,libc_memcmpq);
 DEFINE_PUBLIC_ALIAS(memchrq,libc_memchrq);
@@ -557,7 +523,6 @@ DEFINE_PUBLIC_ALIAS(rawmemrlenq,libc_rawmemrlenq);
 #endif /* CONFIG_64BIT_STRING */
 DEFINE_PUBLIC_ALIAS(mempatw,libc_mempatw);
 DEFINE_PUBLIC_ALIAS(mempatl,libc_mempatl);
-DEFINE_PUBLIC_ALIAS(memmove,libc_memmove);
 DEFINE_PUBLIC_ALIAS(strend,libc_strend);
 DEFINE_PUBLIC_ALIAS(strnend,libc_strnend);
 DEFINE_PUBLIC_ALIAS(strlen,libc_strlen);
@@ -874,28 +839,6 @@ INTERN double LIBCCALL libc_wcstod(wchar_t const *__restrict nptr, wchar_t **__r
 INTERN long int LIBCCALL libc_wcstol(wchar_t const *__restrict nptr, wchar_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
 INTERN unsigned long int LIBCCALL libc_wcstoul(wchar_t const *__restrict nptr, wchar_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
 INTERN size_t LIBCCALL libc_wcsftime(wchar_t *__restrict s, size_t maxsize, wchar_t const *__restrict format, struct tm const *__restrict tp) { NOT_IMPLEMENTED(); return 0; }
-INTERN wchar_t *LIBCCALL libc_wcstok(wchar_t *__restrict s, wchar_t const *__restrict delim, wchar_t **__restrict ptr) { NOT_IMPLEMENTED(); return 0; }
-INTERN size_t LIBCCALL libc_wcsspn(wchar_t const *haystack, wchar_t const *accept) {
- wchar_t const *iter = haystack;
- while (libc_wcschr(accept,*iter)) ++iter;
- return (size_t)(iter-haystack);
-}
-INTERN size_t LIBCCALL libc_wcscspn(wchar_t const *haystack, wchar_t const *reject) {
- wchar_t const *iter = haystack;
- while (*iter && !libc_wcschr(reject,*iter)) ++iter;
- return (size_t)(iter-haystack);
-}
-INTERN wchar_t *LIBCCALL libc_wcspbrk(wchar_t const *haystack, wchar_t const *accept) {
- wchar_t *hay_iter = (wchar_t *)haystack;
- wchar_t const *ned_iter; wchar_t haych,ch;
- while ((haych = *hay_iter++) != '\0') {
-  ned_iter = accept;
-  while ((ch = *ned_iter++) != '\0') {
-   if (haych == ch) return hay_iter-1;
-  }
- }
- return NULL;
-}
 INTERN float LIBCCALL libc_wcstof(wchar_t const *__restrict nptr, wchar_t **__restrict endptr) { NOT_IMPLEMENTED(); return 0; }
 INTERN long double LIBCCALL libc_wcstold(wchar_t const *__restrict nptr, wchar_t **__restrict endptr) { NOT_IMPLEMENTED(); return 0; }
 INTERN __LONGLONG LIBCCALL libc_wcstoll(wchar_t const *__restrict nptr, wchar_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }

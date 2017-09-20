@@ -262,9 +262,55 @@ DECL T *LIBCCALL Xstr(ncat)(T *__restrict dst, T const *__restrict src, size_t n
 	size_t maxlen = Xstr(nlen)(src,n);
 	T *target = Xstr(end)(dst);
 	STR_MEMCPY(target,src,maxlen);
-	if (maxlen < n) target[maxlen] = '\0';
+	if (maxlen < n) target[maxlen] = NUL;
 	return dst;
 }
+DECL size_t LIBCCALL Xstr(cspn)(T const *s, T const *reject) {
+	T const *iter = s;
+	while (*iter && !Xstr(chr)(reject,*iter)) ++iter;
+	return (size_t)(iter-s);
+}
+DECL size_t LIBCCALL Xstr(spn)(T const *s, T const *accept) {
+	T const *iter = s;
+	while (Xstr(chr)(accept,*iter)) ++iter;
+	return (size_t)(iter-s);
+}
+DECL T *LIBCCALL Xstr(pbrk)(T const *s, T const *accept) {
+	T *hay_iter = (T *)s,haych,ch;
+	T const *ned_iter;
+	while ((haych = *hay_iter++) != NUL) {
+		ned_iter = accept;
+		while ((ch = *ned_iter++) != NUL) {
+			if (haych == ch) return hay_iter-1;
+		}
+	}
+	return NULL;
+}
+
+#ifdef IS_WIDE
+DECL T *LIBCCALL Xstr(tok)
+#else
+DECL T *LIBCCALL Xstr(tok_r)
+#endif
+(T *__restrict s, T const *__restrict delim, T **__restrict save_ptr) {
+	T *end;
+	if (!s) s = *save_ptr;
+	if (!*s) { *save_ptr = s; return NULL; }
+	s += Xstr(spn)(s,delim);
+	if (!*s) { *save_ptr = s; return NULL; }
+	end = s+Xstr(cspn)(s,delim);
+	if (!*end) { *save_ptr = end; return s; }
+	*end = NUL;
+	*save_ptr = end+1;
+	return s;
+}
+#ifndef IS_WIDE
+DECL T *LIBCCALL Xstr(tok)(T *__restrict s, T const *__restrict delim) {
+	PRIVATE T *safe = NULL;
+	return Xstr(tok_r)(s,delim,&safe);
+}
+#endif /* !IS_WIDE */
+
 #endif /* !__KERNEL__ */
 
 
