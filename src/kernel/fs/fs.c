@@ -725,14 +725,22 @@ dentry_getsub_unlocked(struct dentry const *__restrict self,
   while (result) {
    if (result->d_name.dn_size == name->dn_size &&
       !memcmp(result->d_name.dn_name,name->dn_name,name->dn_size)) {
-#if 1
-    syslog(LOG_DEBUG|LOG_FS,"[FS] Found cached file entry '%[dentry]'\n",result);
-#endif
     break;
    }
    result = result->d_next;
   }
  }
+#if 1
+ if (result) {
+  syslog(LOG_DEBUG|LOG_FS,"[FS] Found cached file entry '%[dentry]'\n",result);
+ }
+#if 0
+ else {
+  syslog(LOG_DEBUG|LOG_FS,"[FS] No cached file entry %$q in '%[dentry]'\n",
+         name->dn_size,name->dn_name,self);
+ }
+#endif
+#endif
  return result;
 }
 
@@ -866,7 +874,7 @@ reload_subs:
  } else {
   if (!has_write_lock) {
    has_write_lock = true;
-   if (atomic_rwlock_upgrade(&self->d_subs_lock))
+   if (!atomic_rwlock_upgrade(&self->d_subs_lock))
        goto reload_subs;
   }
   if unlikely((result = dentry_addsub_unlocked(self,name)) == NULL)
@@ -1083,7 +1091,7 @@ def_name:default:
   }
 #endif
   has_write_lock = true;
-  if (atomic_rwlock_upgrade(&dir_ent->d_subs_lock))
+  if (!atomic_rwlock_upgrade(&dir_ent->d_subs_lock))
       goto reload_subs;
  }
  res_entry = dentry_addsub_unlocked(dir_ent,ent_name);

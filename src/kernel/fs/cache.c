@@ -33,7 +33,7 @@
 
 DECL_BEGIN
 
-#define DENTRY_CACHE_DEFAULT_MAXSIZE 16
+#define DENTRY_CACHE_DEFAULT_MAXSIZE 128
 
 /* Directory entry cache chain. */
 PRIVATE DEFINE_ATOMIC_RWLOCK(dentry_cache_lock);
@@ -43,9 +43,9 @@ PRIVATE WEAK size_t dentry_cache_max = DENTRY_CACHE_DEFAULT_MAXSIZE; /*< Max cac
 DEFINE_EARLY_SETUP_VAR("fscache",dentry_cache_max);
 
 
-#define DENTRY_INCACHE(self) LIST_ISUNBOUND(self,d_cache)
-#define DENTRY_MKCACHE(self) LIST_INSERT(self,dentry_cache,d_cache)
-#define DENTRY_RMCACHE(self) LIST_REMOVE(self,d_cache)
+#define DENTRY_INCACHE(self) (!LIST_ISUNBOUND(self,d_cache))
+#define DENTRY_MKCACHE(self)   LIST_INSERT(dentry_cache,self,d_cache)
+#define DENTRY_RMCACHE(self)   LIST_REMOVE(self,d_cache)
 
 
 PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
@@ -68,9 +68,6 @@ PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
   return;
  }
  atomic_rwlock_endread(&self->d_inode_lock);
-#if 0
- syslog(LOG_DEBUG,"[FS] CACHE: %[dentry]\n",self);
-#endif
 
  /* Now to cache this entry!
   * NOTE: Due to the field behavior of 'd_inode', we can assume
@@ -80,6 +77,9 @@ PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
   *       to cache a directory entry that has become dead. */
  has_write_lock = false;
  atomic_rwlock_read(&dentry_cache_lock);
+#if 1
+ syslog(LOG_DEBUG,"[FS] CACHE: %[dentry] (%s)\n",self,DENTRY_INCACHE(self) ? "existing" : "new");
+#endif
 scan_again:
  /* Check if the entry has already been cached. */
  if (DENTRY_INCACHE(self)) {
