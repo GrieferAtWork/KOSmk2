@@ -720,9 +720,7 @@ PRIORITY IMPLEMENTATION (Hard)
          getpwnam
          getpwuid
          getrlimit
-         gettimeofday
          getuid
-         pipe
          sched_getaffinity
          setpriority
          setrlimit

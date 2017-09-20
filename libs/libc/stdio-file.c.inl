@@ -196,12 +196,37 @@ INTERN void LIBCCALL libc_clearerr(FILE *stream) {
 
 
 
-INTERN int LIBCCALL libc_fflush(FILE *stream) { return stream ? libc_fdatasync(stream->f_fd) : -1; }
-INTERN void LIBCCALL libc_setbuf(FILE *__restrict stream, char *__restrict buf) { NOT_IMPLEMENTED(); }
-INTERN int LIBCCALL libc_setvbuf(FILE *__restrict stream, char *__restrict buf, int modes, size_t n) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_ungetc(int c, FILE *stream) { NOT_IMPLEMENTED(); return -1; }
-INTERN FILE *LIBCCALL libc_tmpfile64(void) { NOT_IMPLEMENTED(); return NULL; }
-INTERN FILE *LIBCCALL libc_tmpfile(void) { NOT_IMPLEMENTED(); return NULL; }
+INTERN int LIBCCALL libc_fflush(FILE *stream) {
+ int result;
+ flockfile(stream);
+ result = libc_fflush_unlocked(stream);;
+ funlockfile(stream);
+ return result;
+}
+INTERN void LIBCCALL
+libc_setbuf(FILE *__restrict stream,
+            char *__restrict buf) {
+ libc_setbuffer(stream,buf,BUFSIZ);
+}
+INTERN int LIBCCALL
+libc_setvbuf(FILE *__restrict stream,
+             char *__restrict buf,
+             int modes, size_t n) {
+ NOT_IMPLEMENTED();
+ return -1;
+}
+INTERN void LIBCCALL
+libc_setbuffer(FILE *__restrict stream,
+               char *__restrict buf, size_t size) {
+ NOT_IMPLEMENTED();
+}
+INTERN void LIBCCALL libc_setlinebuf(FILE *stream) {
+ NOT_IMPLEMENTED();
+}
+INTERN int LIBCCALL libc_ungetc(int c, FILE *stream) {
+ NOT_IMPLEMENTED();
+ return -1;
+}
 
 INTERN int LIBCCALL libc_fclose(FILE *stream) {
  int result;
@@ -210,6 +235,17 @@ INTERN int LIBCCALL libc_fclose(FILE *stream) {
  libc_free(stream);
  return result;
 }
+PRIVATE int LIBCCALL parse_open_modes(char const *__restrict modes) {
+ int mode = O_RDONLY;
+ if (modes) for (; *modes; ++modes) {
+  if (*modes == 'r') mode = O_RDONLY;
+  if (*modes == 'w') mode = O_WRONLY|O_CREAT|O_TRUNC;
+  if (*modes == '+') mode &= ~(O_TRUNC|O_ACCMODE),mode |= O_RDWR;
+ }
+ return mode;
+}
+INTERN FILE *LIBCCALL libc_tmpfile64(void) { NOT_IMPLEMENTED(); return NULL; }
+INTERN FILE *LIBCCALL libc_tmpfile(void) { NOT_IMPLEMENTED(); return NULL; }
 INTERN FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__restrict modes) {
  int fd; FILE *result;
  libc_syslog(LOG_DEBUG,"LIBC: fopen(%q,%q)\n",filename,modes);
@@ -220,13 +256,7 @@ INTERN FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__
  } else
 #endif
  {
-  int mode = O_RDONLY;
-  if (modes) for (; *modes; ++modes) {
-   if (*modes == 'r') mode = O_RDONLY;
-   if (*modes == 'w') mode = O_WRONLY|O_CREAT|O_TRUNC;
-   if (*modes == '+') mode &= ~(O_TRUNC|O_ACCMODE),mode |= O_RDWR;
-  }
-  fd = libc_open(filename,mode);
+  fd = libc_open(filename,parse_open_modes(modes),0644);
  }
  if (fd < 0) return NULL;
  result = (FILE *)libc_malloc(sizeof(FILE));
@@ -234,13 +264,27 @@ INTERN FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__
  else result->f_fd = fd;
  return result;
 }
-INTERN FILE *LIBCCALL libc_freopen(char const *__restrict filename, char const *__restrict modes, FILE *__restrict stream) { NOT_IMPLEMENTED(); return NULL; }
-INTERN int LIBCCALL libc_fflush_unlocked(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
-INTERN void LIBCCALL libc_setbuffer(FILE *__restrict stream, char *__restrict buf, size_t size) { NOT_IMPLEMENTED(); }
-INTERN void LIBCCALL libc_setlinebuf(FILE *stream) { NOT_IMPLEMENTED(); }
+INTERN FILE *LIBCCALL libc_freopen(char const *__restrict filename,
+                                   char const *__restrict modes,
+                                   FILE *__restrict stream) {
+ if (stream) {
+  int fd = libc_open(filename,parse_open_modes(modes),0644);
+  if (fd < 0) return NULL;
+  dup2(fd,stream->f_fd);
+  close(fd);
+ }
+ return stream;
+}
+INTERN int LIBCCALL libc_fflush_unlocked(FILE *stream) {
+ return stream ? libc_fdatasync(stream->f_fd) : -1;
+}
 INTERN int LIBCCALL libc_feof_unlocked(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_ferror_unlocked(FILE *stream) { NOT_IMPLEMENTED(); return 0; }
-INTERN FILE *LIBCCALL libc_fdopen(int fd, char const *modes) { NOT_IMPLEMENTED(); return NULL; }
+INTERN FILE *LIBCCALL libc_fdopen(int fd, char const *modes) {
+ FILE *result = (FILE *)libc_malloc(sizeof(FILE));
+ if (result) result->f_fd = fd;
+ return result;
+}
 INTERN FILE *LIBCCALL libc_fmemopen(void *s, size_t len, char const *modes) { NOT_IMPLEMENTED(); return NULL; }
 INTERN FILE *LIBCCALL libc_open_memstream(char **bufloc, size_t *sizeloc) { NOT_IMPLEMENTED(); return NULL; }
 INTERN ssize_t LIBCCALL libc_getdelim(char **__restrict lineptr, size_t *__restrict n, int delimiter, FILE *__restrict stream) { NOT_IMPLEMENTED(); return -1; }
@@ -248,8 +292,8 @@ INTERN ssize_t LIBCCALL libc_getline(char **__restrict lineptr, size_t *__restri
 INTERN FILE *LIBCCALL libc_popen(char const *command, char const *modes) { NOT_IMPLEMENTED(); return NULL; }
 INTERN int LIBCCALL libc_pclose(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_fcloseall(void) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_fseeko64(FILE *stream, off64_t off, int whence) { NOT_IMPLEMENTED(); return -1; }
-INTERN off64_t LIBCCALL libc_ftello64(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_fseeko64(FILE *stream, off64_t off, int whence) { return stream ? lseek64(stream->f_fd,off,whence) >= 0 : -1; }
+INTERN off64_t LIBCCALL libc_ftello64(FILE *stream) { return stream ? lseek64(stream->f_fd,0,SEEK_CUR) : -1; }
 INTERN void LIBCCALL libc_clearerr_unlocked(FILE *stream) { NOT_IMPLEMENTED(); }
 INTERN int LIBCCALL libc_feof(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_ferror(FILE *stream) { NOT_IMPLEMENTED(); return -1; }

@@ -1494,12 +1494,44 @@ SYSCALL_DEFINE2(tkill,pid_t,pid,int,sig) {
  return do_tkill(0,pid,sig);
 }
 
+SYSCALL_DEFINE2(sigsuspend,USER sigset_t const *,unewset,size_t,sigsetsize) {
+ sigset_t newset,oldset; errno_t result,temp;
+ struct task *t = THIS_TASK;
+ if (sigsetsize > sizeof(sigset_t))
+     return -EINVAL;
+ if (copy_from_user(&newset,unewset,sigsetsize))
+     return -EFAULT;
+ memset((byte_t *)&newset+sigsetsize,0,
+         sizeof(sigset_t)-sigsetsize);
+ memcpy(&oldset,&t->t_sigblock,sizeof(sigset_t));
+ /* Make sure never to block these two... */
+ sigdelset(&newset,SIGKILL);
+ sigdelset(&newset,SIGSTOP);
+
+ /* Time to do this! */
+ task_crit();
+
+ /* Set the new signal mask. */
+ result = task_set_sigblock(&newset);
+ if (E_ISERR(result)) goto end;
+
+ /* Wait until we're sent a signal we can handle. */
+ { struct sig *s = task_waitfor(NULL); /* XXX: Timeout? */
+   assert(E_ISERR(s));
+   result = E_GTERR(s);
+ }
+
+ /* Restore the old signal mask. */
+ temp = task_set_sigblock(&oldset);
+ if (E_ISOK(result)) result = temp;
+end:
+ task_endcrit();
+ return result;
+}
 
 /*
 #define __NR_sigaltstack  132
 __SYSCALL(__NR_sigaltstack,sys_sigaltstack)
-#define __NR_sigsuspend   133
-__SYSCALL(__NR_sigsuspend,sys_sigsuspend)
 #define __NR_sigqueueinfo 138
 __SYSCALL(__NR_sigqueueinfo,sys_sigqueueinfo)
 */

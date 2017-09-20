@@ -146,6 +146,7 @@ LOCAL SYSCALL4(__errno_t,sigaction,(int,sig,USER struct sigaction const *,act,US
 LOCAL SYSCALL4(__errno_t,sigprocmask,(int,how,USER __sigset_t const *,set,USER __sigset_t *,oldset,size_t,sigsetsize));
 LOCAL SYSCALL4(__errno_t,sigtimedwait,(USER __sigset_t const *,uthese,USER siginfo_t *,uinfo,USER struct kernel_timespec const *,uts,size_t,sigsetsize));
 LOCAL SYSCALL2(__errno_t,sigpending,(USER __sigset_t *,uset,size_t,sigsetsize));
+LOCAL SYSCALL2(__errno_t,sigsuspend,(USER __sigset_t const *,unewset,size_t,sigsetsize));
 LOCAL SYSCALL2(__errno_t,kill,(pid_t,pid,int,sig));
 LOCAL SYSCALL2(__errno_t,tkill,(pid_t,pid,int,sig));
 LOCAL SYSCALL3(__errno_t,tgkill,(pid_t,tgid,pid_t,pid,int,sig));
