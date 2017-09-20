@@ -1137,7 +1137,7 @@ update_size_again:
     if (!INODE_ISDIR(node)) {
      /* Write the new size to the FAT directory table. */
      le32 ent_size = BSWAP_H2LE32((u32)new_size);
-     syslog(LOG_DEBUG,"[FAT] Extending file %p to %I32u bytes\n",node,(u32)new_size);
+     FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Extending file %p to %I32u bytes\n",node,(u32)new_size));
      HOSTMEMORY_BEGIN {
       temp = blkdev_writeall(fs->f_super.sb_blkdev,node->i_data->i_pos.fp_headpos+
                              offsetof(file_t,f_size),&ent_size,sizeof(ent_size));
@@ -2011,7 +2011,7 @@ fatnode_truncate_for_open(struct fatnode *__restrict open_node,
  fat_t *fat = container_of(open_node->f_inode.i_super,fat_t,f_super);
  assert(open_node->f_inode.i_data == &open_node->f_idata);
  /* Truncate the file. */
- syslog(LOG_DEBUG,"[FAT] Truncate INode for open\n");
+ FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Truncate INode for open\n"));
  /* Try not to get interrupted while we do this. */
  error = rwlock_write(&open_node->f_inode.i_attr_lock);
  if (E_ISERR(error)) return error;

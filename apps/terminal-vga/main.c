@@ -656,6 +656,7 @@ rescan:
   case KEY_HOME  : iter = stpcpy(text,TERM_ESCAPE_S "OH"); break;
   case KEY_END   : iter = stpcpy(text,TERM_ESCAPE_S "OF"); break;
   case KEY_DELETE: iter = stpcpy(text,TERM_ESCAPE_S "[3~"); break;
+  case KEY_ENTER:  iter = stpcpy(text,"\r"); break; /* Apparently this is a thing... */
 
   case KEY_LALT:
   case KEY_RALT:

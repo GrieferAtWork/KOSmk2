@@ -57,16 +57,6 @@ void my_action(int signo, siginfo_t *info, void *ctx) {
  did_trigger = 1;
 }
 
-void module_test(void) {
- int fd = open("/test_file",O_RDWR|O_TRUNC|O_CREAT);
- if (fd < 0) perror("open()");
- else {
-  ssize_t num = dprintf(fd,"Hello test!\n");
-  printf("num = %Id\n",num);
-  close(fd);
- }
-}
-
 
 int main(int argc, char **argv) {
  open2(STDIN_FILENO,"/dev/keyboard",O_RDONLY);
@@ -86,9 +76,6 @@ int main(int argc, char **argv) {
 
  /* Mount the secondary disk passed to QEMU (TODO: Remove me) */
  mount("/dev/dos_hdb1","/mnt",NULL,0,NULL);
-
-
- module_test();
 
 #if 0
  printf("appenv         = %p\n",appenv);
