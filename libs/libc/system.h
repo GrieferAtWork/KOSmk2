@@ -32,10 +32,7 @@
 #include <stdlib.h>
 
 
-#define TRACE_SYSTEM_CALLS 0
-#if TRACE_SYSTEM_CALLS
-#include <sys/syslog.h>
-#endif
+#define TRACE_SYSTEM_CALLS 1
 
 
 DECL_BEGIN
