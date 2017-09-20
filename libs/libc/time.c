@@ -38,6 +38,7 @@
 #include <sys/timeb.h>
 #include <utime.h>
 #include <bits/stat.h>
+#include <sys/times.h>
 
 DECL_BEGIN
 
@@ -210,7 +211,6 @@ INTERN double LIBCCALL libc_difftime(time_t time1, time_t time0) { return time1 
 INTERN double LIBCCALL libc_difftime64(time64_t time1, time64_t time0) { return time1 > time0 ? time1-time0 : time0-time1; }
 
 /* Kernel-time independent system-call functions */
-INTERN clock_t LIBCCALL libc_clock(void) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_timer_create(clockid_t clock_id, struct sigevent *__restrict evp, timer_t *__restrict timerid) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_timer_delete(timer_t timerid) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_timer_getoverrun(timer_t timerid) { NOT_IMPLEMENTED(); return -1; }
@@ -612,6 +612,26 @@ INTERN int LIBCCALL B(libc_ftime)(struct B(timeb) *timebuf) {
  return result;
 }
 
+PRIVATE clock_t clock_start = -1;
+INTERN clock_t LIBCCALL libc_clock(void) {
+ struct atimeval now; clock_t result;
+ /* Really hacky implementation... */
+ if (A(libc_gettimeofday)(&now,NULL)) return -1;
+ result = (now.tv_usec*(CLOCKS_PER_SEC/USEC_PER_SEC)+
+           now.tv_sec*CLOCKS_PER_SEC);
+ if (clock_start < 0) clock_start = result;
+ return result-clock_start;
+}
+INTERN clock_t LIBCCALL libc_times(struct tms *buffer) {
+ /* This isn't right either... */
+ clock_t clock_now = libc_clock();
+ buffer->tms_stime = clock_now/2;
+ buffer->tms_utime = clock_now/2;
+ buffer->tms_cutime = 0;
+ buffer->tms_cstime = 0;
+ return clock_now;
+}
+
 
 DEFINE_PUBLIC_ALIAS(tzset,libc_tzset);
 DEFINE_PUBLIC_ALIAS(asctime_r,libc_asctime_r);
@@ -705,6 +725,7 @@ DEFINE_PUBLIC_ALIAS(pause,libc_pause);
 DEFINE_PUBLIC_ALIAS(poll,libc_poll);
 DEFINE_PUBLIC_ALIAS(sleep,libc_sleep);
 DEFINE_PUBLIC_ALIAS(usleep,libc_usleep);
+DEFINE_PUBLIC_ALIAS(times,libc_times);
 
 
 DEFINE_PUBLIC_ALIAS(timegm,libc_mktime); /* ??? */

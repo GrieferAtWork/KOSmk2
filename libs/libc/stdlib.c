@@ -451,7 +451,7 @@ INTERN int LIBCCALL libc_system(char const *command) {
  }
  return status;
 }
-INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { NOT_IMPLEMENTED(); return 5; }
+INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { /*NOT_IMPLEMENTED();*/ return 5; }
 INTERN int LIBCCALL libc_mblen(char const *s, size_t n) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_mbtowc(wchar_t *__restrict pwc, char const *__restrict s, size_t n) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_wctomb(char *s, wchar_t wchar) { NOT_IMPLEMENTED(); return 0; }

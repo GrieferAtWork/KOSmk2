@@ -1863,9 +1863,10 @@ task_waitfor(struct timespec const *abstime) {
    PREEMPTION_DISABLE();
    assert(THIS_CPU->c_running == &THIS_CPU->c_idle);
    /* Try to switch to another task. */
-   if (THIS_CPU->c_idle.t_sched.sd_running.re_next != THIS_CPU->c_running)
-       task_yield();
-   else {
+   if (THIS_CPU->c_idle.t_sched.sd_running.re_next != THIS_CPU->c_running) {
+    PREEMPTION_ENABLE();
+    task_yield();
+   } else {
 #ifdef CONFIG_SMP
     if (SMP_ONLINE <= 1)
 #endif

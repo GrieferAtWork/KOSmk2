@@ -1133,14 +1133,14 @@ update_size_again:
      }
     }
     assert(node->i_attr_disk.ia_siz < new_size);
-    node->i_attr.ia_siz      = new_size;
-    node->i_attr_disk.ia_siz = new_size;
+    node->i_attr.ia_siz = new_size;
     if (!INODE_ISDIR(node)) {
      /* Write the new size to the FAT directory table. */
      le32 ent_size = BSWAP_H2LE32((u32)new_size);
+     syslog(LOG_DEBUG,"[FAT] Extending file %p to %I32u bytes\n",node,(u32)new_size);
      HOSTMEMORY_BEGIN {
       temp = blkdev_writeall(fs->f_super.sb_blkdev,node->i_data->i_pos.fp_headpos+
-                             offsetof(file_t,f_size),&ent_size,4);
+                             offsetof(file_t,f_size),&ent_size,sizeof(ent_size));
      }
      HOSTMEMORY_END;
     }
@@ -2011,7 +2011,10 @@ fatnode_truncate_for_open(struct fatnode *__restrict open_node,
  fat_t *fat = container_of(open_node->f_inode.i_super,fat_t,f_super);
  assert(open_node->f_inode.i_data == &open_node->f_idata);
  /* Truncate the file. */
+ syslog(LOG_DEBUG,"[FAT] Truncate INode for open\n");
  /* Try not to get interrupted while we do this. */
+ error = rwlock_write(&open_node->f_inode.i_attr_lock);
+ if (E_ISERR(error)) return error;
  task_nointr();
  error = fat_delall(fat,open_node->f_idata.i_cluster);
  if (E_ISERR(error)) goto err;
@@ -2021,17 +2024,18 @@ fatnode_truncate_for_open(struct fatnode *__restrict open_node,
    le16        f_clusterhi;
    filemtime_t f_mtime;
    le16        f_clusterlo;
+   le32        f_size;
   } buf;
   /* Mirror the deletion within the directory itself. */
   open_node->f_idata.i_cluster = fat->f_cluster_eof_marker;
   buf.f_clusterhi = BSWAP_H2LE16((u16)((u32)open_node->f_idata.i_cluster >> 16));
   buf.f_clusterlo = BSWAP_H2LE16((u16)open_node->f_idata.i_cluster);
+  buf.f_size      = (le32)0;
   /* Also encode the file's modification time. */
   fat_mtime_encode(buf.f_mtime,mode&IATTR_MTIME
                    ? &result_attr->ia_mtime
                    : &open_node->f_inode.i_attr_disk.ia_mtime);
   /* Try to prevent us from being interrupted here. */
-  task_nointr();
   HOSTMEMORY_BEGIN {
    error = blkdev_writeall(fat->f_super.sb_blkdev,
                            open_node->f_idata.i_pos.fp_headpos+
@@ -2039,9 +2043,15 @@ fatnode_truncate_for_open(struct fatnode *__restrict open_node,
                            &buf,sizeof(buf));
   }
   HOSTMEMORY_END;
+  if (E_ISOK(error)) {
+   /* Mirror the truncation within the file itself. */
+   open_node->f_inode.i_attr.ia_siz      = 0;
+   open_node->f_inode.i_attr_disk.ia_siz = 0;
+  }
  }
 err:
  task_endnointr();
+ rwlock_endwrite(&open_node->f_inode.i_attr_lock);
  return (errno_t)error;
 }
 

@@ -47,6 +47,7 @@ struct timeb;
 struct timeb64;
 struct utimbuf;
 struct utimbuf64;
+struct tms;
 
 INTDEF void LIBCCALL libc_tzset(void);
 INTDEF char *LIBCCALL libc_asctime_r(struct tm const *__restrict tp, char *__restrict buf);
@@ -145,6 +146,7 @@ INTDEF int LIBCCALL libc_pause(void);
 INTDEF int LIBCCALL libc_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 INTDEF unsigned int LIBCCALL libc_sleep(unsigned int seconds);
 INTDEF int LIBCCALL libc_usleep(useconds_t useconds);
+INTDEF clock_t LIBCCALL libc_times(struct tms *buffer);
 
 DECL_END
 

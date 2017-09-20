@@ -30,7 +30,6 @@
 
 DECL_BEGIN
 
-struct tms;
 struct utsname;
 
 INTDEF long int ATTR_CDECL libc_syscall(long int sysno, ...);
@@ -211,7 +210,6 @@ INTDEF int LIBCCALL libc_addmntent(__FILE *__restrict stream, struct mntent cons
 INTDEF int LIBCCALL libc_endmntent(__FILE *stream);
 INTDEF char *LIBCCALL libc_hasmntopt(struct mntent const *mnt, char const *opt);
 INTDEF int LIBCCALL libc_fnmatch(char const *pattern, char const *name, int flags);
-INTDEF clock_t LIBCCALL libc_times(struct tms *buffer);
 INTDEF int LIBCCALL libc_getrlimit(__rlimit_resource_t resource, struct rlimit *rlimits);
 INTDEF int LIBCCALL libc_setrlimit(__rlimit_resource_t resource, struct rlimit const *rlimits);
 INTDEF int LIBCCALL libc_getrlimit64(__rlimit_resource_t resource, struct rlimit64 *rlimits);

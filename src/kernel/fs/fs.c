@@ -618,7 +618,6 @@ rend: rwlock_endread(&self->i_attr_lock); goto end;
 
 PUBLIC errno_t KCALL
 inode_syncattr(struct inode *__restrict self) {
- struct superblock *sb;
  errno_t error;
  bool has_write_lock = false;
  iattrset_t changes;
@@ -651,11 +650,6 @@ again:
 #endif
   goto wend;
  }
- sb = self->i_super;
- atomic_rwlock_write(&sb->sb_achng_lock);
- LIST_REMOVE(self,i_attr_chng);
- LIST_MKUNBOUND(self,i_attr_chng);
- atomic_rwlock_endwrite(&sb->sb_achng_lock);
 wend: rwlock_endwrite(&self->i_attr_lock); goto end;
 end: return error;
 rend: rwlock_endread(&self->i_attr_lock); goto end;
@@ -730,8 +724,12 @@ dentry_getsub_unlocked(struct dentry const *__restrict self,
   result = self->d_subs.ht_tabv[name->dn_hash % self->d_subs.ht_taba];
   while (result) {
    if (result->d_name.dn_size == name->dn_size &&
-      !memcmp(result->d_name.dn_name,name->dn_name,name->dn_size))
-       break;
+      !memcmp(result->d_name.dn_name,name->dn_name,name->dn_size)) {
+#if 1
+    syslog(LOG_DEBUG|LOG_FS,"[FS] Found cached file entry '%[dentry]'\n",result);
+#endif
+    break;
+   }
    result = result->d_next;
   }
  }

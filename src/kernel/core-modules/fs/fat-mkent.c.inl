@@ -83,7 +83,7 @@ retry_disambiguation:
  fat_atime_encode(short_entry.f_atime,&result_attr->ia_atime);
  fat_ctime_encode(short_entry.f_ctime,&result_attr->ia_ctime);
  fat_mtime_encode(short_entry.f_mtime,&result_attr->ia_mtime);
- short_entry.f_size      = 0;
+ short_entry.f_size      = (le32)0;
  short_entry.f_attr      = ent_attr;
  short_entry.f_clusterhi = BSWAP_H2LE16((u16)((u32)fat->f_cluster_eof_marker >> 16));
  short_entry.f_clusterlo = BSWAP_H2LE16((u16)fat->f_cluster_eof_marker);
@@ -115,7 +115,7 @@ retry_disambiguation:
 #ifndef FAT16_ROOT
     target_cluster = rw.fd_cluster;
 #endif
-    target_pos     = RW_POS-sizeof(file_t);
+    target_pos = RW_POS-sizeof(file_t);
     assert(target_pos >= RW_BEGIN);
     assert(target_pos <= RW_END);
    }
@@ -138,7 +138,7 @@ retry_disambiguation:
    break;
   }
   result = (REF struct fatnode *)fat_lookup_memory(&lookup_data,&path->d_name,
-                                                   &dirent,1,RW_BEGIN,
+                                                   &dirent,1,RW_POS-sizeof(file_t),
 #ifdef FAT16_ROOT
                                                     fat->f_cluster_eof_marker,
 #else

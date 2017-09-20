@@ -171,7 +171,20 @@ INTERN char *LIBCCALL libc_rindex(char const *__restrict haystack, int needle) {
  return result;
 }
 
-/* TODO */INTERN char *LIBCCALL libc_dirname(char *path) { NOT_IMPLEMENTED(); return NULL; }
+INTERN char *LIBCCALL libc_dirname(char *path) {
+ char *iter;
+ if (!path || !*path) ret_cwd: return ".";
+ iter = strend(path)-1;
+ while (*iter == '/') {
+  if (iter == path) { iter[1] = '\0'; return path; }
+  --iter;
+ }
+ while (iter >= path && *iter != '/') --iter;
+ if (iter < path) goto ret_cwd;
+ if (iter == path) ++iter;
+ *iter = '\0';
+ return path;
+}
 /* TODO */INTERN char *LIBCCALL libc___xpg_basename(char *path) { NOT_IMPLEMENTED(); return NULL; }
 INTERN char *LIBCCALL libc_basename(char const *__restrict path) {
  char ch,*iter = (char *)path,*result = NULL;
@@ -831,8 +844,8 @@ INTERN size_t LIBCCALL libc_wcsxfrm(wchar_t *__restrict s1, wchar_t const *__res
 INTERN wint_t LIBCCALL libc_btowc(int c) { /*NOT_IMPLEMENTED();*/ return (wint_t)c; }
 INTERN int LIBCCALL libc_wctob(wint_t c) { /*NOT_IMPLEMENTED();*/ return (int)c; }
 INTERN int LIBCCALL libc_mbsinit(struct __mbstate const *ps) { NOT_IMPLEMENTED(); return -1; }
-INTERN size_t LIBCCALL libc_mbrtowc(wchar_t *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict p) { NOT_IMPLEMENTED(); if (!n) return 0; *pwc = (wchar_t)*s; return 1; }
-INTERN size_t LIBCCALL libc_wcrtomb(char *__restrict s, wchar_t wc, struct __mbstate *__restrict ps) { NOT_IMPLEMENTED(); *s = wc; return 1; }
+INTERN size_t LIBCCALL libc_mbrtowc(wchar_t *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict p) { /*NOT_IMPLEMENTED();*/ if (!n || !s) return 0; if (pwc) *pwc = (wchar_t)*s; return *s ? 1 : 0; }
+INTERN size_t LIBCCALL libc_wcrtomb(char *__restrict s, wchar_t wc, struct __mbstate *__restrict ps) { /*NOT_IMPLEMENTED();*/ if (s) *s = wc; return 1; }
 INTERN size_t LIBCCALL libc_mbrlen(char const *__restrict s, size_t n, struct __mbstate *__restrict ps) { NOT_IMPLEMENTED(); return n; }
 INTERN size_t LIBCCALL libc_mbsrtowcs(wchar_t *__restrict dst, char const **__restrict src, size_t len, struct __mbstate *__restrict ps) { return libc_mbsnrtowcs(dst,src,(size_t)-1,len,ps); }
 INTERN size_t LIBCCALL libc_wcsrtombs(char *__restrict dst, wchar_t const **__restrict src, size_t len, struct __mbstate *__restrict ps) { return libc_wcsnrtombs(dst,src,(size_t)-1,len,ps); }

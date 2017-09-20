@@ -568,7 +568,6 @@ INTERN int LIBCCALL libc_addmntent(FILE *__restrict stream, struct mntent const 
 INTERN int LIBCCALL libc_endmntent(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 INTERN char *LIBCCALL libc_hasmntopt(struct mntent const *mnt, char const *opt) { NOT_IMPLEMENTED(); return NULL; }
 INTERN int LIBCCALL libc_fnmatch(char const *pattern, char const *name, int flags) { return FNM_NOSYS; } /* TODO */
-INTERN clock_t LIBCCALL libc_times(struct tms *buffer) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_getrlimit(__rlimit_resource_t resource, struct rlimit *rlimits) { return libc_prlimit(libc_getpid(),(enum __rlimit_resource)resource,NULL,rlimits); }
 INTERN int LIBCCALL libc_setrlimit(__rlimit_resource_t resource, struct rlimit const *rlimits) { return libc_prlimit(libc_getpid(),(enum __rlimit_resource)resource,rlimits,NULL); }
 INTERN int LIBCCALL libc_getrlimit64(__rlimit_resource_t resource, struct rlimit64 *rlimits) { return libc_prlimit64(libc_getpid(),(enum __rlimit_resource)resource,NULL,rlimits); }
@@ -913,7 +912,6 @@ DEFINE_PUBLIC_ALIAS(addmntent,libc_addmntent);
 DEFINE_PUBLIC_ALIAS(endmntent,libc_endmntent);
 DEFINE_PUBLIC_ALIAS(hasmntopt,libc_hasmntopt);
 DEFINE_PUBLIC_ALIAS(fnmatch,libc_fnmatch);
-DEFINE_PUBLIC_ALIAS(times,libc_times);
 DEFINE_PUBLIC_ALIAS(getrlimit,libc_getrlimit);
 DEFINE_PUBLIC_ALIAS(setrlimit,libc_setrlimit);
 DEFINE_PUBLIC_ALIAS(getrlimit64,libc_getrlimit64);

@@ -58,16 +58,12 @@ void my_action(int signo, siginfo_t *info, void *ctx) {
 }
 
 void module_test(void) {
- void *sym,*mod;
- mod = xdlopen("libc.so",0);
- if (!mod) perror("xdlopen()");
+ int fd = open("/test_file",O_RDWR|O_TRUNC|O_CREAT);
+ if (fd < 0) perror("open()");
  else {
-  syslog(LOG_DEBUG,"mod = %p\n",mod);
-  sym = xdlsym(mod,"strlen");
-  if (!sym) perror("xdlsym");
-  else syslog(LOG_DEBUG,"sym = %p\n",sym);
-  if (xdlclose(mod)) perror("xdlclose()");
-  //exit(0);
+  ssize_t num = dprintf(fd,"Hello test!\n");
+  printf("num = %Id\n",num);
+  close(fd);
  }
 }
 

@@ -22,6 +22,7 @@
 #include "libc.h"
 #include "locale.h"
 #include <locale.h>
+#include <langinfo.h>
 #include <hybrid/compiler.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -48,7 +49,9 @@ PRIVATE bool is_initialized;
 
 INTERN char *LIBCCALL
 libc_setlocale(int category, char const *locale) {
- NOT_IMPLEMENTED(); return (char *)locale;
+ libc_syslog(LOG_DEBUG,"LIBC: Set locale: %q\n",locale);
+ /*NOT_IMPLEMENTED();*/
+ return (char *)locale;
 }
 INTERN struct lconv *LIBCCALL libc_localeconv(void) {
  if (!is_initialized) {
@@ -84,12 +87,17 @@ INTERN locale_t LIBCCALL libc_uselocale(locale_t dataset) {
  return dataset;
 }
 INTERN char *LIBCCALL libc_nl_langinfo(nl_item item) {
- NOT_IMPLEMENTED();
+ libc_syslog(LOG_DEBUG,"LIBC: Lookup langinfo: %x (%d)\n",item,item);
+ switch (item) {
+ case CODESET: return "UTF-8";
+ default: break;
+ }
+ /*NOT_IMPLEMENTED();*/
  return (char *)"";
 }
 INTERN char *LIBCCALL libc_nl_langinfo_l(nl_item item, locale_t l) {
  NOT_IMPLEMENTED();
- return (char *)"";
+ return libc_nl_langinfo(item);
 }
 
 
