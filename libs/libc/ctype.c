@@ -22,51 +22,14 @@
 
 #include "libc.h"
 #include "ctype.h"
-#include <hybrid/byteorder.h>
+#include "string.h"
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <stdint.h>
+#include <xlocale.h>
+#include <wctype.h>
 
 DECL_BEGIN
-
-#if __BYTE_ORDER == __BIG_ENDIAN
-#   define F_SLOT(x)    x
-#else
-#   define F_SLOT(x)   (u16)(x << 8|x >> 8)
-#endif
-
-#define F_UPPER  0x0001 /*< UPPERCASE. */
-#define F_LOWER  0x0002 /*< lowercase. */
-#define F_ALPHA  0x0004 /*< Alphabetic. */
-#define F_DIGIT  0x0008 /*< Numeric. */
-#define F_XDIGIT 0x0010 /*< Hexadecimal numeric. */
-#define F_SPACE  0x0020 /*< Whitespace. */
-#define F_PRINT  0x0040 /*< Printing. */
-#define F_GRAPH  0x0080 /*< Graphical. */
-#define F_BLANK  0x0100 /*< Blank (usually SPC and TAB). */
-#define F_CNTRL  0x0200 /*< Control character. */
-#define F_PUNCT  0x0400 /*< Punctuation. */
-#define F_ALNUM  0x0800 /*< Alphanumeric. */
-
-#define ASCII_ISCNTRL(ch)  ((ch) <= 0x1f || (ch) == 0x7f)
-#define ASCII_ISBLANK(ch)  ((ch) == 0x09 || (ch) == 0x20)
-#define ASCII_ISSPACE(ch)  (((ch) >= 0x09 && (ch) <= 0x0d) || (ch) == 0x20)
-#define ASCII_ISUPPER(ch)  ((ch) >= 0x41 && (ch) <= 0x5a)
-#define ASCII_ISLOWER(ch)  ((ch) >= 0x61 && (ch) <= 0x7a)
-#define ASCII_ISALPHA(ch)  (ASCII_ISUPPER(ch) || ASCII_ISLOWER(ch))
-#define ASCII_ISDIGIT(ch)  ((ch) >= 0x30 && (ch) <= 0x39)
-#define ASCII_ISXDIGIT(ch) (ASCII_ISDIGIT(ch) || \
-                           ((ch) >= 0x41 && (ch) <= 0x46) || \
-                           ((ch) >= 0x61 && (ch) <= 0x66))
-#define ASCII_ISALNUM(ch)  (ASCII_ISUPPER(ch) || ASCII_ISLOWER(ch) || ASCII_ISDIGIT(ch))
-#define ASCII_ISPUNCT(ch)  (((ch) >= 0x21 && (ch) <= 0x2f) || \
-                            ((ch) >= 0x3a && (ch) <= 0x40) || \
-                            ((ch) >= 0x5b && (ch) <= 0x60) || \
-                            ((ch) >= 0x7b && (ch) <= 0x7e))
-#define ASCII_ISGRAPH(ch)  ((ch) >= 0x21 && (ch) <= 0x7e)
-#define ASCII_ISPRINT(ch)  ((ch) >= 0x20 && (ch) <= 0x7e)
-#define ASCII_TOLOWER(ch)  (ASCII_ISUPPER(ch) ? ((ch)+0x20) : (ch))
-#define ASCII_TOUPPER(ch)  (ASCII_ISLOWER(ch) ? ((ch)-0x20) : (ch))
 
 INTERN u16 const libc___chattr[256] = {
 /*[[[deemon
@@ -126,6 +89,110 @@ INTERN int (LIBCCALL libc_toupper)(int ch)  { return ASCII_TOUPPER(ch); }
 INTERN int (LIBCCALL libc_tolower)(int ch)  { return ASCII_TOLOWER(ch); }
 INTERN int (LIBCCALL libc_isctype)(int ch, int mask) { return libc___isctype(ch,mask); }
 
+/* Wide-string API */
+#ifndef __KERNEL__
+/* TODO: Locales */
+INTDEF int LIBCCALL libc_iswalnum(wint_t wc) { return libc_isalnum((int)wc); }
+INTDEF int LIBCCALL libc_iswalpha(wint_t wc) { return libc_isalpha((int)wc); }
+INTDEF int LIBCCALL libc_iswcntrl(wint_t wc) { return libc_iscntrl((int)wc); }
+INTDEF int LIBCCALL libc_iswdigit(wint_t wc) { return libc_isdigit((int)wc); }
+INTDEF int LIBCCALL libc_iswgraph(wint_t wc) { return libc_isgraph((int)wc); }
+INTDEF int LIBCCALL libc_iswlower(wint_t wc) { return libc_islower((int)wc); }
+INTDEF int LIBCCALL libc_iswprint(wint_t wc) { return libc_isprint((int)wc); }
+INTDEF int LIBCCALL libc_iswpunct(wint_t wc) { return libc_ispunct((int)wc); }
+INTDEF int LIBCCALL libc_iswspace(wint_t wc) { return libc_isspace((int)wc); }
+INTDEF int LIBCCALL libc_iswupper(wint_t wc) { return libc_isupper((int)wc); }
+INTDEF int LIBCCALL libc_iswxdigit(wint_t wc) { return libc_isxdigit((int)wc); }
+INTDEF int LIBCCALL libc_iswblank(wint_t wc) { return libc_isblank((int)wc); }
+INTDEF wint_t LIBCCALL libc_towlower(wint_t wc) { return wc < 256 ? (wint_t)libc_tolower((int)wc) : wc; }
+INTDEF wint_t LIBCCALL libc_towupper(wint_t wc) { return wc < 256 ? (wint_t)libc_toupper((int)wc) : wc; }
+
+struct prop { char name[8]; };
+PRIVATE struct prop const prop_names[12] = {
+    [__ISwupper ] = { .name = "upper"  }, /*< UPPERCASE. */
+    [__ISwlower ] = { .name = "lower"  }, /*< lowercase. */
+    [__ISwalpha ] = { .name = "alpha"  }, /*< Alphabetic. */
+    [__ISwdigit ] = { .name = "digit"  }, /*< Numeric. */
+    [__ISwxdigit] = { .name = "xdigit" }, /*< Hexadecimal numeric. */
+    [__ISwspace ] = { .name = "space"  }, /*< Whitespace. */
+    [__ISwprint ] = { .name = "print"  }, /*< Printing. */
+    [__ISwgraph ] = { .name = "graph"  }, /*< Graphical. */
+    [__ISwblank ] = { .name = "blank"  }, /*< Blank (usually SPC and TAB). */
+    [__ISwcntrl ] = { .name = "cntrl"  }, /*< Control character. */
+    [__ISwpunct ] = { .name = "punct"  }, /*< Punctuation. */
+    [__ISwalnum ] = { .name = "alnum"  }, /*< Alphanumeric. */
+};
+INTDEF wctype_t LIBCCALL libc_wctype(char const *prop) {
+ struct prop const *iter = prop_names;
+ for (; iter != COMPILER_ENDOF(prop_names); ++iter) {
+  if (!libc_strcmp(iter->name,prop)) {
+   int bit = (int)(iter-prop_names);
+   return (wctype_t)_ISwbit(bit);
+  }
+ }
+ return 0;
+}
+INTDEF int LIBCCALL libc_iswctype(wint_t wc, wctype_t desc) {
+ return wc < 256 && (libc___chattr[(u8)wc] & (u16)desc);
+}
+
+struct trans { char name[8]; };
+#define TRANS_LOWER 0
+#define TRANS_UPPER 1
+PRIVATE struct trans const trans_names[2] = {
+    [TRANS_LOWER] = { .name = "tolower"  },
+    [TRANS_UPPER] = { .name = "toupper"  },
+};
+INTDEF wctrans_t LIBCCALL libc_wctrans(char const *prop) {
+ struct trans const *iter = trans_names;
+ for (; iter != COMPILER_ENDOF(trans_names); ++iter) {
+  if (!libc_strcmp(iter->name,prop)) {
+   return (wctrans_t)((uintptr_t)(iter-trans_names));
+  }
+ }
+ return 0;
+}
+INTDEF wint_t LIBCCALL libc_towctrans(wint_t wc, wctrans_t desc) {
+ switch ((uintptr_t)desc) {
+ case TRANS_LOWER: return libc_towlower(wc);
+ case TRANS_UPPER: return libc_towupper(wc);
+ default: break;
+ }
+ return wc;
+}
+
+INTDEF int LIBCCALL libc_iswalnum_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswalnum(wc); }
+INTDEF int LIBCCALL libc_iswalpha_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswalpha(wc); }
+INTDEF int LIBCCALL libc_iswcntrl_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswcntrl(wc); }
+INTDEF int LIBCCALL libc_iswdigit_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswdigit(wc); }
+INTDEF int LIBCCALL libc_iswgraph_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswgraph(wc); }
+INTDEF int LIBCCALL libc_iswlower_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswlower(wc); }
+INTDEF int LIBCCALL libc_iswprint_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswprint(wc); }
+INTDEF int LIBCCALL libc_iswpunct_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswpunct(wc); }
+INTDEF int LIBCCALL libc_iswspace_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswspace(wc); }
+INTDEF int LIBCCALL libc_iswupper_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswupper(wc); }
+INTDEF int LIBCCALL libc_iswxdigit_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswxdigit(wc); }
+INTDEF int LIBCCALL libc_iswblank_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswblank(wc); }
+INTDEF wctype_t LIBCCALL libc_wctype_l(char const *prop, locale_t locale) { NOT_IMPLEMENTED(); return libc_wctype(prop); }
+INTDEF int LIBCCALL libc_iswctype_l(wint_t wc, wctype_t desc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswctype(wc,desc); }
+INTDEF wint_t LIBCCALL libc_towlower_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_towlower(wc); }
+INTDEF wint_t LIBCCALL libc_towupper_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_towupper(wc); }
+INTDEF wctrans_t LIBCCALL libc_wctrans_l(char const *prop, locale_t locale) { NOT_IMPLEMENTED(); return libc_wctrans(prop); }
+INTDEF wint_t LIBCCALL libc_towctrans_l(wint_t wc, wctrans_t desc, locale_t locale) { NOT_IMPLEMENTED(); return libc_towctrans(wc,desc); }
+#endif /* !__KERNEL__ */
+
+#undef libc_isalpha
+#undef libc_isupper
+#undef libc_islower
+#undef libc_isdigit
+#undef libc_isxdigit
+#undef libc_isspace
+#undef libc_ispunct
+#undef libc_isalnum
+#undef libc_isprint
+#undef libc_isgraph
+#undef libc_iscntrl
+#undef libc_isblank
 DEFINE_PUBLIC_ALIAS(__chattr,libc___chattr);
 DEFINE_PUBLIC_ALIAS(isalpha,libc_isalpha);
 DEFINE_PUBLIC_ALIAS(isupper,libc_isupper);

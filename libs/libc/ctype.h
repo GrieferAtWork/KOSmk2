@@ -23,6 +23,7 @@
 #include <hybrid/byteorder.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <xlocale.h>
 
 DECL_BEGIN
 
@@ -96,23 +97,62 @@ INTDEF int (LIBCCALL libc_isctype)(int ch, int mask);
 #define libc_isxdigit(c) libc___isctype((c),F_XDIGIT)
 #define libc_isblank(c)  libc___isctype((c),F_BLANK)
 
-/* TODO... */
-#define libc_iswalpha(ch)      libc_isalpha(ch)
-#define libc_iswupper(ch)      libc_isupper(ch)
-#define libc_iswlower(ch)      libc_islower(ch)
-#define libc_iswdigit(ch)      libc_isdigit(ch)
-#define libc_iswxdigit(ch)     libc_isxdigit(ch)
-#define libc_iswspace(ch)      libc_isspace(ch)
-#define libc_iswpunct(ch)      libc_ispunct(ch)
-#define libc_iswalnum(ch)      libc_isalnum(ch)
-#define libc_iswprint(ch)      libc_isprint(ch)
-#define libc_iswgraph(ch)      libc_isgraph(ch)
-#define libc_iswcntrl(ch)      libc_iscntrl(ch)
-#define libc_iswblank(ch)      libc_isblank(ch)
-#define libc_towupper(ch)      libc_toupper(ch)
-#define libc_towlower(ch)      libc_tolower(ch)
-#define libc_iswctype(ch,mask) libc_isctype(ch,mask)
+#ifndef __KERNEL__
+#ifndef __wint_t_defined
+#define __wint_t_defined 1
+typedef __WINT_TYPE__ wint_t;
+#endif /* !__wint_t_defined */
 
+#ifndef __wctype_t_defined
+#define __wctype_t_defined 1
+__NAMESPACE_STD_BEGIN
+typedef unsigned long int wctype_t;
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wctype_t)
+#endif /* !__wctype_t_defined */
+
+#ifndef __wctrans_t_defined
+#define __wctrans_t_defined 1
+typedef __int32_t const *wctrans_t;
+#endif /* !__wctrans_t_defined */
+
+INTDEF int LIBCCALL libc_iswalnum(wint_t wc);
+INTDEF int LIBCCALL libc_iswalpha(wint_t wc);
+INTDEF int LIBCCALL libc_iswcntrl(wint_t wc);
+INTDEF int LIBCCALL libc_iswdigit(wint_t wc);
+INTDEF int LIBCCALL libc_iswgraph(wint_t wc);
+INTDEF int LIBCCALL libc_iswlower(wint_t wc);
+INTDEF int LIBCCALL libc_iswprint(wint_t wc);
+INTDEF int LIBCCALL libc_iswpunct(wint_t wc);
+INTDEF int LIBCCALL libc_iswspace(wint_t wc);
+INTDEF int LIBCCALL libc_iswupper(wint_t wc);
+INTDEF int LIBCCALL libc_iswxdigit(wint_t wc);
+INTDEF int LIBCCALL libc_iswblank(wint_t wc);
+INTDEF wint_t LIBCCALL libc_towlower(wint_t wc);
+INTDEF wint_t LIBCCALL libc_towupper(wint_t wc);
+INTDEF wctype_t LIBCCALL libc_wctype(char const *prop);
+INTDEF int LIBCCALL libc_iswctype(wint_t wc, wctype_t desc);
+INTDEF wctrans_t LIBCCALL libc_wctrans(char const *prop);
+INTDEF wint_t LIBCCALL libc_towctrans(wint_t wc, wctrans_t desc);
+INTDEF int LIBCCALL libc_iswalnum_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswalpha_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswcntrl_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswdigit_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswgraph_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswlower_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswprint_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswpunct_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswspace_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswupper_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswxdigit_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswblank_l(wint_t wc, locale_t locale);
+INTDEF wctype_t LIBCCALL libc_wctype_l(char const *prop, locale_t locale);
+INTDEF int LIBCCALL libc_iswctype_l(wint_t wc, wctype_t desc, locale_t locale);
+INTDEF wint_t LIBCCALL libc_towlower_l(wint_t wc, locale_t locale);
+INTDEF wint_t LIBCCALL libc_towupper_l(wint_t wc, locale_t locale);
+INTDEF wctrans_t LIBCCALL libc_wctrans_l(char const *prop, locale_t locale);
+INTDEF wint_t LIBCCALL libc_towctrans_l(wint_t wc, wctrans_t desc, locale_t locale);
+#endif /* !__KERNEL__ */
 
 DECL_END
 

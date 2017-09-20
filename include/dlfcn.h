@@ -75,9 +75,9 @@ typedef long int Lmid_t;
 #endif
 
 #ifndef __KERNEL__
-extern void *(dlopen)(const char *__file, int __mode);
+extern void *(dlopen)(char const *__file, int __mode);
 extern __NONNULL((1)) int (dlclose)(void *__handle);
-extern __NONNULL((2)) void *(dlsym)(void *__restrict __handle, const char *__restrict __name);
+extern __NONNULL((2)) void *(dlsym)(void *__restrict __handle, char const *__restrict __name);
 extern char *(dlerror)(void);
 #ifdef __USE_KOS
 extern void *(fdlopen)(int __fd, int __mode);
@@ -87,9 +87,9 @@ extern void *(fdlopen)(int __fd, int __mode);
 #ifdef __USE_GNU
 
 typedef struct {
-  const char *dli_fname; /*< File name of defining object. */
+  char const *dli_fname; /*< File name of defining object. */
   void       *dli_fbase; /*< Load address of that object. */
-  const char *dli_sname; /*< Name of nearest symbol. */
+  char const *dli_sname; /*< Name of nearest symbol. */
   void       *dli_saddr; /*< Exact value of nearest symbol. */
 } Dl_info;
 
@@ -123,8 +123,8 @@ typedef struct {
 } Dl_serinfo;
 
 #ifndef __KERNEL__
-extern void *(dlmopen)(Lmid_t __nsid, const char *__file, int __mode);
-extern __NONNULL((2,3)) void *(dlvsym)(void *__restrict __handle, const char *__restrict __name, const char *__restrict __version);
+extern void *(dlmopen)(Lmid_t __nsid, char const *__file, int __mode);
+extern __NONNULL((2,3)) void *(dlvsym)(void *__restrict __handle, char const *__restrict __name, char const *__restrict __version);
 extern __NONNULL((2)) int (dladdr)(const void *__address, Dl_info *__info);
 extern __NONNULL((2)) int (dladdr1)(const void *__address, Dl_info *__info, void **__extra_info, int __flags);
 extern __NONNULL((1,3)) int (dlinfo)(void *__restrict __handle, int __request, void *__restrict __arg);

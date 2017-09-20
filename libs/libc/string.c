@@ -830,12 +830,12 @@ INTERN size_t LIBCCALL libc_wcsxfrm(wchar_t *__restrict s1, wchar_t const *__res
 INTERN wint_t LIBCCALL libc_btowc(int c) { NOT_IMPLEMENTED(); return (wint_t)c; }
 INTERN int LIBCCALL libc_wctob(wint_t c) { NOT_IMPLEMENTED(); return (int)c; }
 INTERN int LIBCCALL libc_mbsinit(struct __mbstate const *ps) { NOT_IMPLEMENTED(); return -1; }
-INTERN size_t LIBCCALL libc_mbrtowc(wchar_t *__restrict pwc, const char *__restrict s, size_t n, struct __mbstate *__restrict p) { NOT_IMPLEMENTED(); if (!n) return 0; *pwc = (wchar_t)*s; return 1; }
+INTERN size_t LIBCCALL libc_mbrtowc(wchar_t *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict p) { NOT_IMPLEMENTED(); if (!n) return 0; *pwc = (wchar_t)*s; return 1; }
 INTERN size_t LIBCCALL libc_wcrtomb(char *__restrict s, wchar_t wc, struct __mbstate *__restrict ps) { NOT_IMPLEMENTED(); *s = wc; return 1; }
-INTERN size_t LIBCCALL libc_mbrlen(const char *__restrict s, size_t n, struct __mbstate *__restrict ps) { NOT_IMPLEMENTED(); return n; }
-INTERN size_t LIBCCALL libc_mbsrtowcs(wchar_t *__restrict dst, const char **__restrict src, size_t len, struct __mbstate *__restrict ps) { return libc_mbsnrtowcs(dst,src,(size_t)-1,len,ps); }
+INTERN size_t LIBCCALL libc_mbrlen(char const *__restrict s, size_t n, struct __mbstate *__restrict ps) { NOT_IMPLEMENTED(); return n; }
+INTERN size_t LIBCCALL libc_mbsrtowcs(wchar_t *__restrict dst, char const **__restrict src, size_t len, struct __mbstate *__restrict ps) { return libc_mbsnrtowcs(dst,src,(size_t)-1,len,ps); }
 INTERN size_t LIBCCALL libc_wcsrtombs(char *__restrict dst, wchar_t const **__restrict src, size_t len, struct __mbstate *__restrict ps) { return libc_wcsnrtombs(dst,src,(size_t)-1,len,ps); }
-INTERN size_t LIBCCALL libc_mbsnrtowcs(wchar_t *__restrict dst, const char **__restrict src, size_t nmc, size_t len, struct __mbstate *__restrict ps) { size_t result = 0; NOT_IMPLEMENTED(); while (len-- && nmc--) ++result,*dst++ = (wchar_t)*(*src++); return result; }
+INTERN size_t LIBCCALL libc_mbsnrtowcs(wchar_t *__restrict dst, char const **__restrict src, size_t nmc, size_t len, struct __mbstate *__restrict ps) { size_t result = 0; NOT_IMPLEMENTED(); while (len-- && nmc--) ++result,*dst++ = (wchar_t)*(*src++); return result; }
 INTERN size_t LIBCCALL libc_wcsnrtombs(char *__restrict dst, wchar_t const **__restrict src, size_t nwc, size_t len, struct __mbstate *__restrict ps) { size_t result = 0; NOT_IMPLEMENTED(); while (len-- && nwc--) ++result,*dst++ = (char)*(*src++); return result; }
 INTERN double LIBCCALL libc_wcstod(wchar_t const *__restrict nptr, wchar_t **__restrict endptr) { NOT_IMPLEMENTED(); return 0; }
 INTERN long int LIBCCALL libc_wcstol(wchar_t const *__restrict nptr, wchar_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }

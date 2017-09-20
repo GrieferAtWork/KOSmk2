@@ -26,9 +26,9 @@
 
 DECL_BEGIN
 
-INTERN char *LIBCCALL libc_setlocale(int category, const char *locale);
+INTERN char *LIBCCALL libc_setlocale(int category, char const *locale);
 INTERN struct lconv *LIBCCALL libc_localeconv(void);
-INTERN locale_t LIBCCALL libc_newlocale(int category_mask, const char *locale, locale_t base);
+INTERN locale_t LIBCCALL libc_newlocale(int category_mask, char const *locale, locale_t base);
 INTERN locale_t LIBCCALL libc_duplocale(locale_t dataset);
 INTERN void LIBCCALL libc_freelocale(locale_t dataset);
 INTERN locale_t LIBCCALL libc_uselocale(locale_t dataset);

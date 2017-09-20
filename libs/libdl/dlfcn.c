@@ -47,7 +47,7 @@ LOCAL SYSCALL1(int,xdlclose,(void *,handle));
 #define DECL PRIVATE ATTR_USED
 
 PRIVATE errno_t dl_error = -EOK;
-DECL void *dl_dlopen(const char *file, int mode) {
+DECL void *dl_dlopen(char const *file, int mode) {
  void *result = sys_xdlopen(file,mode);
  dl_error = E_GTERR(result);
  if (E_ISERR(result)) result = NULL;
@@ -64,7 +64,7 @@ DECL int dl_dlclose(void *handle) {
  return E_ISOK(dl_error) ? 0 : -1;
 }
 DECL void *dl_dlsym(void *__restrict handle,
-                    const char *__restrict name) {
+                    char const *__restrict name) {
  void *result = sys_xdlsym(handle,name);
  dl_error = E_GTERR(result);
  if (E_ISERR(result)) result = NULL;
@@ -104,8 +104,8 @@ DECL int dl_dladdr1(const void *UNUSED(address), Dl_info *UNUSED(info),
  dl_error = -ENOSYS;
  return -1;
 }
-DECL void *dl_dlmopen(Lmid_t UNUSED(nsid), const char *file, int mode) { return dl_dlopen(file,mode); }
-DECL void *dl_dlvsym(void *__restrict handle, const char *__restrict name, const char *__restrict UNUSED(version)) { return dl_dlsym(handle,name); }
+DECL void *dl_dlmopen(Lmid_t UNUSED(nsid), char const *file, int mode) { return dl_dlopen(file,mode); }
+DECL void *dl_dlvsym(void *__restrict handle, char const *__restrict name, char const *__restrict UNUSED(version)) { return dl_dlsym(handle,name); }
 DECL int dl_dladdr(const void *address, Dl_info *info) { return dl_dladdr1(address,info,NULL,0); }
 DECL int dl_dlinfo(void *__restrict handle, int request, void *__restrict arg) { dl_error = -ENOSYS; return -1; }
 

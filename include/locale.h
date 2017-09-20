@@ -128,7 +128,7 @@ struct lconv {
 #endif
 };
 
-__LIBC char *(__LIBCCALL setlocale)(int __category, const char *__locale);
+__LIBC char *(__LIBCCALL setlocale)(int __category, char const *__locale);
 __LIBC struct lconv *(__LIBCCALL localeconv)(void);
 
 __NAMESPACE_STD_END
@@ -140,7 +140,7 @@ __NAMESPACE_STD_USING(localeconv)
 #ifdef __USE_XOPEN2K8
 #include <xlocale.h>
 
-__LIBC __locale_t (__LIBCCALL newlocale)(int __category_mask, const char *__locale, __locale_t __base);
+__LIBC __locale_t (__LIBCCALL newlocale)(int __category_mask, char const *__locale, __locale_t __base);
 
 /* These are the bits that can be set in the CATEGORY_MASK argument to
  * `newlocale'.  In the GNU implementation, LC_FOO_MASK has the value

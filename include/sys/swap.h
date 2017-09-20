@@ -49,8 +49,8 @@
 
 __DECL_BEGIN
 
-__LIBC int (__LIBCCALL swapon)(const char *__path, int __flags);
-__LIBC int (__LIBCCALL swapoff)(const char *__path);
+__LIBC int (__LIBCCALL swapon)(char const *__path, int __flags);
+__LIBC int (__LIBCCALL swapoff)(char const *__path);
 
 __DECL_END
 

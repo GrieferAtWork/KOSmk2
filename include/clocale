@@ -1,0 +1,10 @@
+#ifndef __CXX_CLOCALE
+#define __CXX_CLOCALE 1
+#ifdef __CXX_SYSTEM_HEADER
+#include "locale.h"
+#else /* __CXX_SYSTEM_HEADER */
+#define __CXX_SYSTEM_HEADER
+#include "locale.h"
+#undef __CXX_SYSTEM_HEADER
+#endif /* !__CXX_SYSTEM_HEADER */
+#endif /* !__CXX_LOCALE */

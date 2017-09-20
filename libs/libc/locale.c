@@ -47,7 +47,7 @@ PRIVATE struct lconv current_conv = {
 PRIVATE bool is_initialized;
 
 INTERN char *LIBCCALL
-libc_setlocale(int category, const char *locale) {
+libc_setlocale(int category, char const *locale) {
  NOT_IMPLEMENTED(); return (char *)locale;
 }
 INTERN struct lconv *LIBCCALL libc_localeconv(void) {
@@ -68,7 +68,7 @@ INTERN struct lconv *LIBCCALL libc_localeconv(void) {
  return &current_conv;
 }
 INTERN locale_t LIBCCALL
-libc_newlocale(int category_mask, const char *locale, locale_t base) {
+libc_newlocale(int category_mask, char const *locale, locale_t base) {
  NOT_IMPLEMENTED();
  return base;
 }

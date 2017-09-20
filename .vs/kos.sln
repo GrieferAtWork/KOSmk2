@@ -63,6 +63,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\unistd.h = ..\include\unistd.h
 		..\include\utime.h = ..\include\utime.h
 		..\include\wchar.h = ..\include\wchar.h
+		..\include\wctype.h = ..\include\wctype.h
 		..\include\xlocale.h = ..\include\xlocale.h
 	EndProjectSection
 EndProject

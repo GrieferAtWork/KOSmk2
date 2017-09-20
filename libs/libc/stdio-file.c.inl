@@ -198,9 +198,9 @@ INTERN void LIBCCALL libc_clearerr(FILE *stream) {
 
 INTERN int LIBCCALL libc_fflush(FILE *stream) {
  int result;
- flockfile(stream);
+ libc_flockfile(stream);
  result = libc_fflush_unlocked(stream);;
- funlockfile(stream);
+ libc_funlockfile(stream);
  return result;
 }
 INTERN void LIBCCALL
@@ -270,8 +270,8 @@ INTERN FILE *LIBCCALL libc_freopen(char const *__restrict filename,
  if (stream) {
   int fd = libc_open(filename,parse_open_modes(modes),0644);
   if (fd < 0) return NULL;
-  dup2(fd,stream->f_fd);
-  close(fd);
+  libc_dup2(fd,stream->f_fd);
+  libc_close(fd);
  }
  return stream;
 }
@@ -292,8 +292,8 @@ INTERN ssize_t LIBCCALL libc_getline(char **__restrict lineptr, size_t *__restri
 INTERN FILE *LIBCCALL libc_popen(char const *command, char const *modes) { NOT_IMPLEMENTED(); return NULL; }
 INTERN int LIBCCALL libc_pclose(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_fcloseall(void) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_fseeko64(FILE *stream, off64_t off, int whence) { return stream ? lseek64(stream->f_fd,off,whence) >= 0 : -1; }
-INTERN off64_t LIBCCALL libc_ftello64(FILE *stream) { return stream ? lseek64(stream->f_fd,0,SEEK_CUR) : -1; }
+INTERN int LIBCCALL libc_fseeko64(FILE *stream, off64_t off, int whence) { return stream ? libc_lseek64(stream->f_fd,off,whence) >= 0 : -1; }
+INTERN off64_t LIBCCALL libc_ftello64(FILE *stream) { return stream ? libc_lseek64(stream->f_fd,0,SEEK_CUR) : -1; }
 INTERN void LIBCCALL libc_clearerr_unlocked(FILE *stream) { NOT_IMPLEMENTED(); }
 INTERN int LIBCCALL libc_feof(FILE *stream) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_ferror(FILE *stream) { NOT_IMPLEMENTED(); return -1; }

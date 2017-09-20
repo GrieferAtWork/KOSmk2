@@ -34,8 +34,104 @@
 #if defined(__USE_XOPEN) && !defined(__USE_UNIX98)
 #   include <wctype.h>
 #elif defined(__USE_UNIX98) && !defined(__USE_GNU)
-#   define __need_iswxxx
-#   include <wctype.h>
+#ifndef __wisxxx_defined
+#define __wisxxx_defined 1
+__DECL_BEGIN
+
+#ifndef __wctype_t_defined
+#define __wctype_t_defined 1
+__NAMESPACE_STD_BEGIN
+typedef unsigned long int wctype_t;
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wctype_t)
+#endif /* !__wctype_t_defined */
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#   define _ISwbit(bit) (1 << (bit))
+#else /* __BYTE_ORDER == __BIG_ENDIAN */
+#   define _ISwbit(bit) \
+    ((bit) < 8  ? (int)((1UL << (bit)) << 24) : \
+    ((bit) < 16 ? (int)((1UL << (bit)) << 8) : \
+    ((bit) < 24 ? (int)((1UL << (bit)) >> 8) : \
+                  (int)((1UL << (bit)) >> 24))))
+#endif /* __BYTE_ORDER != __BIG_ENDIAN */
+
+#define __ISwupper  0  /*< UPPERCASE. */
+#define __ISwlower  1  /*< lowercase. */
+#define __ISwalpha  2  /*< Alphabetic. */
+#define __ISwdigit  3  /*< Numeric. */
+#define __ISwxdigit 4  /*< Hexadecimal numeric. */
+#define __ISwspace  5  /*< Whitespace. */
+#define __ISwprint  6  /*< Printing. */
+#define __ISwgraph  7  /*< Graphical. */
+#define __ISwblank  8  /*< Blank (usually SPC and TAB). */
+#define __ISwcntrl  9  /*< Control character. */
+#define __ISwpunct  10 /*< Punctuation. */
+#define __ISwalnum  11 /*< Alphanumeric. */
+#define _ISwupper   _ISwbit(__ISwupper)  /*< UPPERCASE. */
+#define _ISwlower   _ISwbit(__ISwlower)  /*< lowercase. */
+#define _ISwalpha   _ISwbit(__ISwalpha)  /*< Alphabetic. */
+#define _ISwdigit   _ISwbit(__ISwdigit)  /*< Numeric. */
+#define _ISwxdigit  _ISwbit(__ISwxdigit) /*< Hexadecimal numeric. */
+#define _ISwspace   _ISwbit(__ISwspace)  /*< Whitespace. */
+#define _ISwprint   _ISwbit(__ISwprint)  /*< Printing. */
+#define _ISwgraph   _ISwbit(__ISwgraph)  /*< Graphical. */
+#define _ISwblank   _ISwbit(__ISwblank)  /*< Blank (usually SPC and TAB). */
+#define _ISwcntrl   _ISwbit(__ISwcntrl)  /*< Control character. */
+#define _ISwpunct   _ISwbit(__ISwpunct)  /*< Punctuation. */
+#define _ISwalnum   _ISwbit(__ISwalnum)  /*< Alphanumeric. */
+
+
+__NAMESPACE_STD_BEGIN
+__LIBC int __NOTHROW((__LIBCCALL iswalnum)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswalpha)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswcntrl)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswdigit)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswgraph)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswlower)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswprint)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswpunct)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswspace)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswupper)(wint_t __wc));
+__LIBC int __NOTHROW((__LIBCCALL iswxdigit)(wint_t __wc));
+__LIBC wctype_t __NOTHROW((__LIBCCALL wctype)(char const *__property));
+__LIBC int __NOTHROW((__LIBCCALL iswctype)(wint_t __wc, wctype_t __desc));
+#ifdef __USE_ISOC99
+__LIBC int __NOTHROW((__LIBCCALL iswblank)(wint_t __wc));
+#endif /* __USE_ISOC99 */
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(iswalnum)
+__NAMESPACE_STD_USING(iswalpha)
+__NAMESPACE_STD_USING(iswcntrl)
+__NAMESPACE_STD_USING(iswdigit)
+__NAMESPACE_STD_USING(iswgraph)
+__NAMESPACE_STD_USING(iswlower)
+__NAMESPACE_STD_USING(iswprint)
+__NAMESPACE_STD_USING(iswpunct)
+__NAMESPACE_STD_USING(iswspace)
+__NAMESPACE_STD_USING(iswupper)
+__NAMESPACE_STD_USING(iswxdigit)
+__NAMESPACE_STD_USING(wctype)
+__NAMESPACE_STD_USING(iswctype)
+#ifdef __USE_ISOC99
+__NAMESPACE_STD_USING(iswblank)
+#endif /* __USE_ISOC99 */
+
+__NAMESPACE_STD_BEGIN
+#if defined(__USE_ISOC99) || defined(__USE_GNU)
+typedef const __int32_t *wctrans_t;
+#endif /* __USE_ISOC99 || __USE_GNU */
+__LIBC wint_t __NOTHROW((__LIBCCALL towlower)(wint_t __wc));
+__LIBC wint_t __NOTHROW((__LIBCCALL towupper)(wint_t __wc));
+__NAMESPACE_STD_END
+#if defined(__USE_ISOC99) || defined(__USE_GNU)
+__NAMESPACE_STD_USING(wctrans_t)
+#endif /* __USE_ISOC99 || __USE_GNU */
+__NAMESPACE_STD_USING(towlower)
+__NAMESPACE_STD_USING(towupper)
+
+__DECL_END
+#endif /* !__wisxxx_defined */
 #endif
 
 __DECL_BEGIN
@@ -156,11 +252,11 @@ __LIBC size_t (__LIBCCALL wcsxfrm)(wchar_t *__restrict __s1, wchar_t const *__re
 __LIBC wint_t (__LIBCCALL btowc)(int __c);
 __LIBC int (__LIBCCALL wctob)(wint_t __c);
 __LIBC __ATTR_PURE int (__LIBCCALL mbsinit)(mbstate_t const *__ps);
-__LIBC size_t (__LIBCCALL mbrtowc)(wchar_t *__restrict __pwc, const char *__restrict __s, size_t __n, mbstate_t *__restrict __p);
+__LIBC size_t (__LIBCCALL mbrtowc)(wchar_t *__restrict __pwc, char const *__restrict __s, size_t __n, mbstate_t *__restrict __p);
 __LIBC size_t (__LIBCCALL wcrtomb)(char *__restrict __s, wchar_t __wc, mbstate_t *__restrict __ps);
-__LIBC size_t (__LIBCCALL __mbrlen)(const char *__restrict __s, size_t __n, mbstate_t *__restrict __ps);
-__LIBC size_t (__LIBCCALL mbrlen)(const char *__restrict __s, size_t __n, mbstate_t *__restrict __ps);
-__LIBC size_t (__LIBCCALL mbsrtowcs)(wchar_t *__restrict __dst, const char **__restrict __src, size_t __len, mbstate_t *__restrict __ps);
+__LIBC size_t (__LIBCCALL __mbrlen)(char const *__restrict __s, size_t __n, mbstate_t *__restrict __ps);
+__LIBC size_t (__LIBCCALL mbrlen)(char const *__restrict __s, size_t __n, mbstate_t *__restrict __ps);
+__LIBC size_t (__LIBCCALL mbsrtowcs)(wchar_t *__restrict __dst, char const **__restrict __src, size_t __len, mbstate_t *__restrict __ps);
 __LIBC size_t (__LIBCCALL wcsrtombs)(char *__restrict __dst, wchar_t const **__restrict __src, size_t __len, mbstate_t *__restrict __ps);
 __LIBC double (__LIBCCALL wcstod)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr);
 __LIBC long int (__LIBCCALL wcstol)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base);
@@ -368,7 +464,7 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC wchar_t *(__LIBCCAL
 #define __wcsnlen_defined 1
 __LIBC __ATTR_PURE size_t (__LIBCCALL wcsnlen)(wchar_t const *__s, size_t __maxlen);
 #endif /* !__wcsnlen_defined */
-__LIBC size_t (__LIBCCALL mbsnrtowcs)(wchar_t *__restrict __dst, const char **__restrict __src, size_t __nmc, size_t __len, mbstate_t *__restrict __ps);
+__LIBC size_t (__LIBCCALL mbsnrtowcs)(wchar_t *__restrict __dst, char const **__restrict __src, size_t __nmc, size_t __len, mbstate_t *__restrict __ps);
 __LIBC size_t (__LIBCCALL wcsnrtombs)(char *__restrict __dst, wchar_t const **__restrict __src, size_t __nwc, size_t __len, mbstate_t *__restrict __ps);
 __LIBC wchar_t *(__LIBCCALL wcpcpy)(wchar_t *__restrict __dst, wchar_t const *__restrict __src);
 __LIBC wchar_t *(__LIBCCALL wcpncpy)(wchar_t *__restrict __dst, wchar_t const *__restrict __src, size_t __n);

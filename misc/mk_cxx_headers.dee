@@ -47,7 +47,7 @@ header("ctype");
 header("inttypes");
 header("iso646");
 header("limits");
-// header("locale");
+header("locale");
 header("math");
 header("setjmp");
 header("signal");
@@ -61,8 +61,8 @@ header("string");
 // header("tgmath");
 header("time");
 // header("uchar");
-// header("wchar");
-// header("wctype");
+header("wchar");
+header("wctype");
 
 
 

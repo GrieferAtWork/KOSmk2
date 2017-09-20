@@ -48,8 +48,8 @@ typedef void *nl_catd; /*< Message catalog descriptor type. */
 typedef int   nl_item; /*< Type used by `nl_langinfo'. */
 
 #ifndef __KERNEL__
-__LIBC __NONNULL((1)) nl_catd (__LIBCCALL catopen)(const char *__cat_name, int __flag);
-__LIBC __NONNULL((1)) char *(__LIBCCALL catgets)(nl_catd __catalog, int __set, int __number, const char *__string);
+__LIBC __NONNULL((1)) nl_catd (__LIBCCALL catopen)(char const *__cat_name, int __flag);
+__LIBC __NONNULL((1)) char *(__LIBCCALL catgets)(nl_catd __catalog, int __set, int __number, char const *__string);
 __LIBC __NONNULL((1)) int (__LIBCCALL catclose)(nl_catd __catalog);
 #endif /* !__KERNEL__ */
 

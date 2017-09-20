@@ -1,0 +1,10 @@
+#ifndef __CXX_CWCTYPE
+#define __CXX_CWCTYPE 1
+#ifdef __CXX_SYSTEM_HEADER
+#include "wctype.h"
+#else /* __CXX_SYSTEM_HEADER */
+#define __CXX_SYSTEM_HEADER
+#include "wctype.h"
+#undef __CXX_SYSTEM_HEADER
+#endif /* !__CXX_SYSTEM_HEADER */
+#endif /* !__CXX_WCTYPE */

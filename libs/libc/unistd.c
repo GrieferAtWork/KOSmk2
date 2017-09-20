@@ -426,8 +426,8 @@ INTERN ATTR_COLDTEXT int LIBCCALL libc_setgid(gid_t gid) { NOT_IMPLEMENTED(); re
 INTERN ATTR_COLDTEXT int LIBCCALL libc_umount(char const *special_file) { return libc_umount2(special_file,0); }
 INTERN ATTR_COLDTEXT int LIBCCALL libc_mount(char const *special_file, char const *dir, char const *fstype, unsigned long int rwflag, void const *data) { return FORWARD_SYSTEM_ERROR(sys_mount(special_file,dir,fstype,rwflag,data)); }
 INTERN ATTR_COLDTEXT int LIBCCALL libc_umount2(char const *special_file, int flags) { return FORWARD_SYSTEM_ERROR(sys_umount2(special_file,flags)); }
-INTERN ATTR_COLDTEXT int LIBCCALL libc_swapon(const char *path, int flags) { return FORWARD_SYSTEM_ERROR(sys_swapon(path,flags)); }
-INTERN ATTR_COLDTEXT int LIBCCALL libc_swapoff(const char *path) { return FORWARD_SYSTEM_ERROR(sys_swapoff(path)); }
+INTERN ATTR_COLDTEXT int LIBCCALL libc_swapon(char const *path, int flags) { return FORWARD_SYSTEM_ERROR(sys_swapon(path,flags)); }
+INTERN ATTR_COLDTEXT int LIBCCALL libc_swapoff(char const *path) { return FORWARD_SYSTEM_ERROR(sys_swapoff(path)); }
 INTERN int LIBCCALL libc_pipe(int pipedes[2]) { return libc_pipe2(pipedes,0); }
 INTERN int LIBCCALL libc_pipe2(int pipedes[2], int flags) {
 #if 0

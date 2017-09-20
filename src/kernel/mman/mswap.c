@@ -125,7 +125,7 @@ INTERN REF struct blkdev *KCALL
 mount_open_device(USER char const *dev_name, int access,
                   int loopback_mode);
 
-SYSCALL_DEFINE2(swapon,USER const char *,specialfile,int,swap_flags) {
+SYSCALL_DEFINE2(swapon,USER char const *,specialfile,int,swap_flags) {
  REF struct blkdev *dev;
  errno_t result;
  /* Check permissions. */
@@ -148,7 +148,7 @@ end:
  return result;
 }
 
-SYSCALL_DEFINE1(swapoff,USER const char *,specialfile) {
+SYSCALL_DEFINE1(swapoff,USER char const *,specialfile) {
  REF struct blkdev *dev;
  errno_t result;
  /* Check permissions. */
