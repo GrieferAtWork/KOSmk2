@@ -38,6 +38,10 @@
 #include <sys/syslog.h>
 #include <malloc.h>
 #include <string.h>
+#include <sched/cpu.h>
+#include <kernel/user.h>
+#include <sched/paging.h>
+#include <kernel/mman.h>
 
 DECL_BEGIN
 
@@ -316,6 +320,15 @@ load_keymap_file(struct file *__restrict fp, bool log_errors) {
 #endif
  }
 
+#if 1
+ { pflag_t was = PREEMPTION_PUSH(); struct mman *omm;
+   TASK_PDIR_KERNEL_BEGIN(omm);
+   memcpy((void *)&USERSHARE_WRITABLE(active_keymap),
+           buffer,sizeof(struct keymap));
+   TASK_PDIR_KERNEL_END(omm);
+   PREEMPTION_POP(was);
+ }
+#else
  /* Now it gets ugly.
   * >> Because 'active_keymap' is mapped as read-only in user-space,
   *    it had to be mapped the same way in kernel-space, too.
@@ -352,7 +365,8 @@ load_keymap_file(struct file *__restrict fp, bool log_errors) {
                         : "memory");
  }
 #endif
- syslog(LOG_IO|LOG_INFO,"[KEYMAP] Loading new keymap from '%[file]'\n",fp);
+#endif
+ syslog(LOG_IO|LOG_INFO,"[KEYMAP] Loaded new keymap from '%[file]'\n",fp);
 
  /* Cleanup... */
  free(buffer);

@@ -32,7 +32,7 @@
 #include <stdlib.h>
 
 
-#define TRACE_SYSTEM_CALLS 1
+#define TRACE_SYSTEM_CALLS 0
 
 
 DECL_BEGIN

@@ -66,8 +66,9 @@ PHDRS {
 #define P_COLD    /* Nothing (Determine automatically) */
 #define P_FREE    /* Nothing (Determine automatically) */
 #endif
-#define DEFINE         PROVIDE_HIDDEN
-#define DEFINE_HERE(x) PROVIDE_HIDDEN(x = ABSOLUTE(.))
+#define DEFINE                PROVIDE_HIDDEN
+#define DEFINE_HERE(x)        PROVIDE_HIDDEN(x = ABSOLUTE(.))
+#define DEFINE_PUBLIC_HERE(x) PROVIDE(x = ABSOLUTE(.))
 
 
 ENTRY(_start)
@@ -201,12 +202,14 @@ SECTIONS {
 	 * NOTE: Try to keep anything you put in here position-independent,
 	 *       because plans are to eventually map this at a random address
 	 *       in order to prevent return-from-libc attacks. */
+	. = ALIGN(PAGESIZE);
 	DEFAULT_SECTION(.user) {
-		DEFINE_HERE(__kernel_user_start);
+		DEFINE_PUBLIC_HERE(__kernel_user_start);
 		*(.text.user)
 		*(.rodata.user)
 		*(.data.user)
 		*(.bss.user)
+		. = ALIGN(PAGESIZE);
 		DEFINE_HERE(__kernel_user_end);
 	} P_USER
 

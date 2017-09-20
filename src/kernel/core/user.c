@@ -21,17 +21,23 @@
 #define _KOS_SOURCE 2
 
 #include <assert.h>
+#include <hybrid/align.h>
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
+#include <hybrid/panic.h>
+#include <hybrid/section.h>
+#include <kernel/export.h>
 #include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
 #include <kernel/user.h>
+#include <malloc.h>
 #include <sched/task.h>
 #include <stdarg.h>
 #include <string.h>
-#include <malloc.h>
+#include <sys/mman.h>
+#include <syslog.h>
 
 DECL_BEGIN
 
@@ -293,7 +299,7 @@ L(.previous                                                      )
 
 
 
-INTDEF byte_t __kernel_user_start[];
+DATDEF byte_t __kernel_user_start[];
 INTDEF byte_t __kernel_user_end[];
 
 PUBLIC bool (KCALL addr_isuser)(void const *addr, size_t len) {
@@ -541,6 +547,86 @@ release_string(VIRT char *__restrict virt_str, int state) {
   assertf(0,"Invalid state: %d(%x)\n",state,state);
  }
 }
+
+
+
+
+PUBLIC HOST byte_t *usershare_writable;
+DATDEF byte_t __kernel_user_start[];
+INTDEF byte_t __kernel_user_end[];
+INTDEF byte_t __kernel_user_size[];
+
+PRIVATE struct mregion usershare_region = {
+#ifdef CONFIG_DEBUG
+    .mr_refcnt = 1,
+#else
+    .mr_refcnt = 0x80000001,
+#endif
+    .mr_type   = MREGION_TYPE_PHYSICAL,
+    .mr_init   = MREGION_INIT_RAND, /* Actually 'MREGION_INIT_FILE', but we don't have the file... */
+    .mr_size   = (size_t)__kernel_user_size,
+    .mr_futex  = {{0}},
+    .mr_plock  = RWLOCK_INIT,
+    .mr_parts  = &usershare_region.mr_part0,
+    .mr_part0  = {
+        .mt_chain = {
+            .le_pself = &usershare_region.mr_parts,
+            .le_next  = NULL,
+        },
+        .mt_start  = 0,
+        .mt_refcnt = 1,
+        .mt_state  = MPART_STATE_INCORE,
+        .mt_flags  = MPART_FLAG_NONE,
+        .mt_locked = 1,
+        .mt_memory = {
+            .m_next  = NULL,
+            .m_start = (ppage_t)virt_to_phys(__kernel_user_start),
+            .m_size  = (size_t)__kernel_user_size,
+        },
+    },
+    .mr_global = {NULL,NULL},
+};
+
+PRIVATE MODULE_INIT void KCALL
+usershare_writable_initialize(void) {
+ ppage_t map_address; errno_t error;
+ assert(IS_ALIGNED((uintptr_t)__kernel_user_start,PAGESIZE));
+ assert(IS_ALIGNED((uintptr_t)__kernel_user_end,PAGESIZE));
+ assert(IS_ALIGNED((uintptr_t)__kernel_user_size,PAGESIZE));
+ assert(THIS_MMAN == &mman_kernel);
+ task_nointr();
+ mman_write(&mman_kernel);
+ map_address = mman_findspace_unlocked(&mman_kernel,
+                                      (ppage_t)(KERNEL_BASE-(uintptr_t)__kernel_user_size),
+                                      (uintptr_t)__kernel_user_size,PAGESIZE,0,
+                                       MMAN_FINDSPACE_BELOW);
+ if unlikely(map_address == PAGE_ERROR) {
+  map_address = mman_findspace_unlocked(&mman_kernel,(ppage_t)KERNEL_BASE,
+                                       (uintptr_t)__kernel_user_size,PAGESIZE,0,
+                                        MMAN_FINDSPACE_ABOVE);
+  if unlikely(map_address == PAGE_ERROR) {
+   error = -ENOMEM;
+err:
+   PANIC(FREESTR("Failed to find suitable location for writable user-share segment: %[errno]"),-error);
+  }
+ }
+ error = mman_mmap_unlocked(&mman_kernel,map_address,
+                           (uintptr_t)__kernel_user_size,0,
+                            &usershare_region,
+                            PROT_READ|PROT_WRITE|PROT_SHARED,
+                            NULL,NULL);
+ if (E_ISERR(error)) goto err;
+ usershare_writable = (HOST byte_t *)map_address;
+ syslog(LOG_BOOT|LOG_INFO,
+        "[USER] Mapped writable user-share segment to %p...%p (KPD)\n",
+        map_address,(uintptr_t)map_address+(uintptr_t)__kernel_user_size-1);
+ COMPILER_WRITE_BARRIER();
+ mman_endwrite(&mman_kernel);
+ task_endnointr();
+}
+
+
+
 
 
 DECL_END

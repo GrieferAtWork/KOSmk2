@@ -36,7 +36,7 @@ INTDEF byte_t (PAGE_ALIGNED VIRT __kernel_end)[];
 INTDEF byte_t (PAGE_ALIGNED PHYS __kernel_phys_start)[];
 INTDEF byte_t (PAGE_ALIGNED PHYS __kernel_phys_end)[];
 
-INTDEF byte_t (PAGE_ALIGNED PHYS __kernel_user_start)[];
+DATDEF byte_t (PAGE_ALIGNED PHYS __kernel_user_start)[];
 INTDEF byte_t (PAGE_ALIGNED PHYS __kernel_user_end)[];
 
 INTDEF byte_t (PAGE_ALIGNED VIRT __kernel_free_start)[];

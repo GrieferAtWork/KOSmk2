@@ -3,7 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerCommand>"E:\c\deemon\deemon\deemon.exe"</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>$(SolutionDir)..\magic.dee --run-only --hosted</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>$(SolutionDir)..\magic.dee --run-only --hosted keymap=/lib/keymap/de_DE.map</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..\</LocalDebuggerWorkingDirectory>
     <LocalDebuggerAttach>false</LocalDebuggerAttach>
   </PropertyGroup>

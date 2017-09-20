@@ -764,6 +764,10 @@ int main(int argc, char *argv[]) {
   /* Set the child process as TTY foreground app. */
   tcsetpgrp(STDIN_FILENO,getpid());
 
+  putenv("TERM=xterm");
+  putenv("TERMINFO=/usr/share/terminfo");
+  //putenv("NCURSES_TRACE=8191"); /* 0x1fff */
+
   /* Exec the given process */
   execv(argv[1],argv+1);
   perror("Failed to exec given process");

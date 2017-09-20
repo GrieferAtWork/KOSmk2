@@ -44,6 +44,19 @@ FUNDEF ssize_t (KCALL vsprintf_user)(USER char *dst, char const *format, __VA_LI
 FUNDEF ssize_t (KCALL vsnprintf_user)(USER char *dst, size_t dst_max, char const *format, __VA_LIST args);
 
 
+/* Base address of a secondary, writable mapping for user-share segment.
+ * NOTE: The kernel will attempt to map this below 3Gb, meaning accessing
+ *       memory through this address should only be done when the kernel
+ *       page-directory is set. */
+DATDEF HOST byte_t *usershare_writable;
+DATDEF byte_t __kernel_user_start[];
+
+/* Return a writable point to the given symbol,
+ * which should be apart of the user-share segment. */
+#define /*KPD*/ USERSHARE_WRITABLE(sym) \
+     (*(__typeof__(&(sym)))(usershare_writable+((uintptr_t)&(sym)-(uintptr_t)__kernel_user_start)))
+
+
 /* Acquire/release access to a given c-style string 'str'.
  * There are multiple ways this function can behave, which are
  * based on the actual length and context of the calling thread:

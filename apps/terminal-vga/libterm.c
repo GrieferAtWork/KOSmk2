@@ -28,11 +28,12 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>
+#include <syslog.h>
 #include <malloc.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 DECL_BEGIN
 
@@ -290,6 +291,7 @@ PRIVATE char const escape_preface[][3] =
 };
 
 
+/* Very helpful: https://www.xfree86.org/4.8.0/ctlseqs.html */
 PUBLIC void TAPI term_outc(struct term *self, char ch) {
  char **iter,**end;
  assert(self);
@@ -315,6 +317,7 @@ enter_escape_mode:
   case ANSI_BRACKET_RIGHT: self->tr_escape = MODE_RBRACKET; return;
   case ANSI_OPEN_PAREN:    self->tr_escape = MODE_LPAREN; return;
   case 'T':                self->tr_escape = MODE_IMGINFO; return;
+  case '>': case '=':      break; /* Keyboard models? */
   default: /* Not actually escaping... */ goto dump_buffer;
   }
   break;
@@ -682,6 +685,10 @@ dump_buffer:
      self->tr_escape != MODE_BOX) {
   char *buf_iter,*buf_end;
   char const *preface;
+  syslog(LOG_DEBUG,"Unknown escape sequence: \"%#q" "%#$q" "%#:1q\"\n",
+        (char *)escape_preface[self->tr_escape],
+         self->tr_bufpos-self->tr_buffer,self->tr_buffer,&ch);
+
   /* Repeat the original preface. */
   preface = escape_preface[self->tr_escape];
   for (; *preface; ++preface) PUTC(*preface);

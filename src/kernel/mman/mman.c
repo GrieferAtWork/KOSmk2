@@ -1789,7 +1789,7 @@ PRIVATE ATTR_FREERODATA struct addrpair const kernel_core_ranges[] = {
 PRIVATE ATTR_COLDDATA struct mregion kernel_core_regions[] = {
     [CORE_RANGE_ROTEXT] = {
 #ifdef CONFIG_DEBUG
-        .mr_refcnt = 2,
+        .mr_refcnt = 1,
 #else
         .mr_refcnt = 0x80000001,
 #endif
@@ -1819,7 +1819,7 @@ PRIVATE ATTR_COLDDATA struct mregion kernel_core_regions[] = {
     },
     [CORE_RANGE_RWDATA] = {
 #ifdef CONFIG_DEBUG
-        .mr_refcnt = 2,
+        .mr_refcnt = 1,
 #else
         .mr_refcnt = 0x80000001,
 #endif
@@ -1850,7 +1850,7 @@ PRIVATE ATTR_COLDDATA struct mregion kernel_core_regions[] = {
 #ifdef CONFIG_PDIR_SELFMAP
     [CORE_RANGE_THIS_PDIR] = {
 #ifdef CONFIG_DEBUG
-        .mr_refcnt = 2,
+        .mr_refcnt = 1,
 #else
         .mr_refcnt = 0x80000001,
 #endif
