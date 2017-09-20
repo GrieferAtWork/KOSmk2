@@ -828,8 +828,8 @@ INTERN int LIBCCALL libc_wcscasecmp_l(wchar_t const *s1, wchar_t const *s2, loca
 INTERN int LIBCCALL libc_wcsncasecmp_l(wchar_t const *s1, wchar_t const *s2, size_t n, locale_t loc) { NOT_IMPLEMENTED(); return libc_wcsncasecmp(s1,s2,n); }
 INTERN int LIBCCALL libc_wcscoll(wchar_t const *s1, wchar_t const *s2) { NOT_IMPLEMENTED(); return 0; }
 INTERN size_t LIBCCALL libc_wcsxfrm(wchar_t *__restrict s1, wchar_t const *__restrict s2, size_t n) { NOT_IMPLEMENTED(); return 0; }
-INTERN wint_t LIBCCALL libc_btowc(int c) { NOT_IMPLEMENTED(); return (wint_t)c; }
-INTERN int LIBCCALL libc_wctob(wint_t c) { NOT_IMPLEMENTED(); return (int)c; }
+INTERN wint_t LIBCCALL libc_btowc(int c) { /*NOT_IMPLEMENTED();*/ return (wint_t)c; }
+INTERN int LIBCCALL libc_wctob(wint_t c) { /*NOT_IMPLEMENTED();*/ return (int)c; }
 INTERN int LIBCCALL libc_mbsinit(struct __mbstate const *ps) { NOT_IMPLEMENTED(); return -1; }
 INTERN size_t LIBCCALL libc_mbrtowc(wchar_t *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict p) { NOT_IMPLEMENTED(); if (!n) return 0; *pwc = (wchar_t)*s; return 1; }
 INTERN size_t LIBCCALL libc_wcrtomb(char *__restrict s, wchar_t wc, struct __mbstate *__restrict ps) { NOT_IMPLEMENTED(); *s = wc; return 1; }
