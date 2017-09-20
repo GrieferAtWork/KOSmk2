@@ -1,0 +1,112 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+#ifndef _WINAPI___WINSTD_H
+#define _WINAPI___WINSTD_H 1
+
+/*  Custom windows interface header
+ * (Used to patch some symbols and get
+ *  the windows headers to compile...) */
+
+#include <__stdinc.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <hybrid/typecore.h>
+#include <hybrid/host.h>
+#include <hybrid/types.h>
+
+#undef __cdecl
+#undef _X86_
+#undef WIN32
+#define __MINGW_EXTENSION __extension__
+#if !defined(_MSC_VER) && !defined(__INTELLISENSE__)
+
+#define __int8        char
+#define __int16       short
+#define __int32       int
+#define __int64       long long
+#define __stdcall     __ATTR_STDCALL
+#define __cdecl       __ATTR_CDECL
+#define __declspec(x) __attribute__((x))
+#define __unaligned   __ATTR_PACKED
+#define __fastcall    __ATTR_FASTCALL
+
+#define __MSVCRT__ 1
+#undef _MSVCRT_
+#define __MINGW_IMPORT extern __declspec(dllimport)
+#define __MINGW_ATTRIB_NORETURN
+#define __MINGW_ATTRIB_CONST
+#define __MINGW_ATTRIB_DEPRECATED
+#define __MINGW_ATTRIB_MALLOC
+#define __MINGW_ATTRIB_PURE
+#define __MINGW_ATTRIB_NONNULL(arg)
+#define __MINGW_NOTHROW
+#define __GNUC_VA_LIST
+#define _CRTIMP           extern
+#define __CRT_INLINE      extern __inline__
+#define _CRT_ALIGN(x)     __ATTR_ALIGNED(x)
+#define DECLSPEC_ALIGN(x) __ATTR_ALIGNED(x)
+#define _CRT_PACKING      8
+#define __CRT_UNALIGNED
+#define _CONST_RETURN
+#define __CRT_STRINGIZE(_Value) #_Value
+#define _CRT_STRINGIZE(_Value)  __CRT_STRINGIZE(_Value)
+#define __CRT_WIDE(_String)     L ## _String
+#define _CRT_WIDE(_String)      __CRT_WIDE(_String)
+
+#define WIN32       1
+#define _WIN32      1
+#ifdef __x86_64__
+#   define _AMD64_  1
+#   undef  __x86_64
+#   define __x86_64 1
+#   define WIN64    1
+#   define _WIN64   1
+#else
+#   define _X86_    1
+#endif
+
+#define _SIZE_T_DEFINED
+#define _SSIZE_T_DEFINED
+#define _PTRDIFF_T_DEFINED
+#define _WCHAR_T_DEFINED
+#define _UINTPTR_T_DEFINED
+#define _INTPTR_T_DEFINED
+
+#define _INTEGRAL_MAX_BITS 64
+
+#define _ANONYMOUS_UNION
+#define _ANONYMOUS_STRUCT
+#define DECLSPEC_NORETURN
+#define DECLARE_STDCALL_P(type) __stdcall type
+#define NOCRYPT 1
+#define NOSERVICE 1
+#define NOMCX 1
+#define NOIME 1
+#undef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#ifndef WINVER
+#define WINVER 0x0502
+#endif
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x502
+#endif
+
+#endif
+
+#endif /* !_WINAPI___WINSTD_H */

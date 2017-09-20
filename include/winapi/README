@@ -1,0 +1,9 @@
+Files were taken from the public domain mingw-w64 repo, using this commit:
+https://sourceforge.net/p/mingw-w64/mingw-w64/ci/8c37fd672134ee479cb3f60e63e7d3c80febd419/tree/mingw-w64-headers/include/
+
+Following that, files were changed to allow for better integration within the KOS source tree.
+
+Unless otherwise state (such as in "__winstd.h"):
+	ALL FILES WITHIN THIS DIRECTORY ARE EXCLUDED FROM KOS'S LICENSE AGREEMENT.
+
+The presense of these headers is required for KOS drivers, such as the PE loader found under '/src/modules/linker'

@@ -875,6 +875,10 @@ INTERN float LIBCCALL libc_wcstof_l(wchar_t const *__restrict nptr, wchar_t **__
 INTERN long double LIBCCALL libc_wcstold_l(wchar_t const *__restrict nptr, wchar_t **__restrict endptr, locale_t loc) { NOT_IMPLEMENTED(); return libc_wcstold(nptr,endptr); }
 INTERN size_t LIBCCALL libc_wcsftime_l(wchar_t *__restrict s, size_t maxsize, wchar_t const *__restrict format, struct tm const *__restrict tp, locale_t loc) { NOT_IMPLEMENTED(); return libc_wcsftime(s,maxsize,format,tp); }
 
+INTERN size_t LIBCCALL libc_mbrtoc16(char16_t *__restrict pc16, const char *__restrict s, size_t n, struct __mbstate *__restrict p) { /*NOT_IMPLEMENTED();*/ if (!n || !s) return 0; if (pc16) *pc16 = (char16_t)*s; return *s ? 1 : 0; }
+INTERN size_t LIBCCALL libc_mbrtoc32(char32_t *__restrict pc32, const char *__restrict s, size_t n, struct __mbstate *__restrict p) { /*NOT_IMPLEMENTED();*/ if (!n || !s) return 0; if (pc32) *pc32 = (char32_t)*s; return *s ? 1 : 0; }
+INTERN size_t LIBCCALL libc_c16rtomb(char *__restrict s, char16_t c16, struct __mbstate *__restrict ps) { /*NOT_IMPLEMENTED();*/ if (s) *s = c16; return 1; }
+INTERN size_t LIBCCALL libc_c32rtomb(char *__restrict s, char32_t c32, struct __mbstate *__restrict ps) { /*NOT_IMPLEMENTED();*/ if (s) *s = c32; return 1; }
 
 DEFINE_PUBLIC_ALIAS(wcscpy,libc_wcscpy);
 DEFINE_PUBLIC_ALIAS(wcsncpy,libc_wcsncpy);
@@ -944,6 +948,11 @@ DEFINE_PUBLIC_ALIAS(wcsftime_l,libc_wcsftime_l);
 
 DEFINE_PUBLIC_ALIAS(__mbrlen,libc_mbrlen);
 DEFINE_PUBLIC_ALIAS(wcswcs,libc_wcsstr);
+
+DEFINE_PUBLIC_ALIAS(mbrtoc16,libc_mbrtoc16);
+DEFINE_PUBLIC_ALIAS(mbrtoc32,libc_mbrtoc32);
+DEFINE_PUBLIC_ALIAS(c16rtomb,libc_c16rtomb);
+DEFINE_PUBLIC_ALIAS(c32rtomb,libc_c32rtomb);
 #endif /* !__KERNEL__ */
 
 DECL_END

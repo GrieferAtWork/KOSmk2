@@ -25,19 +25,42 @@
 #include <kernel/export.h>
 #include <hybrid/check.h>
 #include <fs/file.h>
+#include <unistd.h>
+#include <winapi/windows.h>
 
 /* PE runtime linker (for running .exe and .dll files natively). */
 
 DECL_BEGIN
 
-
 PRIVATE REF struct module *KCALL
 pe_loader(struct file *__restrict fp) {
+ IMAGE_DOS_HEADER dos_header;
+ IMAGE_NT_HEADERS nt_header;
+ errno_t error;
  CHECK_HOST_DOBJ(fp);
+ error = file_kreadall(fp,&dos_header,sizeof(dos_header));
+ if (E_ISERR(error)) return E_PTR(error);
+ /* Validate header magic. */
+ if (dos_header.e_magic != IMAGE_DOS_SIGNATURE) goto enoexec;
+ /* Seek to the NT header location. */
+ error = (errno_t)file_seek(fp,dos_header.e_lfanew,SEEK_SET);
+ if (E_ISERR(error)) return E_PTR(error);
+ /* Read the NT header. */
+ error = file_kreadall(fp,&nt_header,offsetof(IMAGE_NT_HEADERS,OptionalHeader));
+ if (E_ISERR(error)) return E_PTR(error);
+ /* Check signature and matchine type id. */
+ if (nt_header.Signature != IMAGE_NT_SIGNATURE) goto enoexec;
+#ifdef __i386__
+ if (nt_header.FileHeader.Machine != IMAGE_FILE_MACHINE_I386) goto enoexec;
+#elif defined(__x86_64__)
+ if (nt_header.FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64) goto enoexec;
+#else
+#error FIXME
+#endif
 
- /* TODO: The old KOS could execute PE binaries, and the new
-  *       linker was designed modular this is very reason! */
+ /* TODO: Load a PE binary. */
 
+enoexec:
  return E_PTR(-ENOEXEC);
 }
 
@@ -45,7 +68,8 @@ PRIVATE struct modloader pe_linker = {
     .ml_owner  = THIS_INSTANCE,
     .ml_loader = &pe_loader,
     .ml_magsz  = 2,
-    .ml_magic  = {0x4d,0x5a},
+    .ml_magic  = {(IMAGE_DOS_SIGNATURE&0x00ff),
+                  (IMAGE_DOS_SIGNATURE&0xff00) >> 8},
 };
 
 PRIVATE void MODULE_INIT KCALL pe_init(void) {

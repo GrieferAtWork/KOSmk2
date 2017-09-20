@@ -761,6 +761,12 @@
 #   define __WINT_TYPE__  __TYPEFOR_INTIB(__SIZEOF_WINT_T__)
 #endif
 #endif
+#ifndef __CHAR16_TYPE__
+#define __CHAR16_TYPE__ __UINT16_TYPE__
+#endif
+#ifndef __CHAR32_TYPE__
+#define __CHAR32_TYPE__ __UINT32_TYPE__
+#endif
 
 
 #endif /* !GUARD_HYBRID_TYPECORE_H */

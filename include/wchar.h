@@ -215,15 +215,18 @@ typedef struct __mbstate {
 } __mbstate_t;
 #endif /* !____mbstate_t_defined */
 
-#ifndef __mbstate_t_defined
-#define __mbstate_t_defined 1
+#ifndef __std_mbstate_t_defined
+#define __std_mbstate_t_defined 1
 __NAMESPACE_STD_BEGIN
 typedef __mbstate_t mbstate_t;
 __NAMESPACE_STD_END
-#endif
+#endif /* !__std_mbstate_t_defined */
 
 #if defined(__USE_GNU) || defined(__USE_XOPEN2K8)
+#ifndef __mbstate_t_defined
+#define __mbstate_t_defined 1
 __NAMESPACE_STD_USING(mbstate_t)
+#endif /* !__mbstate_t_defined */
 #endif
 
 #ifndef WCHAR_MIN

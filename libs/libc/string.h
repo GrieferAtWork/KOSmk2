@@ -23,8 +23,12 @@
 #include <hybrid/types.h>
 #include <hybrid/debuginfo.h>
 #include <hybrid/typecore.h>
-#include <xlocale.h>
 #include <stdarg.h>
+
+#ifndef __KERNEL__
+#include <xlocale.h>
+#include <uchar.h>
+#endif /* !__KERNEL__ */
 
 DECL_BEGIN
 
@@ -289,6 +293,10 @@ INTDEF double LIBCCALL libc_wcstod_l(wchar_t const *__restrict nptr, wchar_t **_
 INTDEF float LIBCCALL libc_wcstof_l(wchar_t const *__restrict nptr, wchar_t **__restrict endptr, locale_t loc);
 INTDEF long double LIBCCALL libc_wcstold_l(wchar_t const *__restrict nptr, wchar_t **__restrict endptr, locale_t loc);
 INTDEF size_t LIBCCALL libc_wcsftime_l(wchar_t *__restrict s, size_t maxsize, wchar_t const *__restrict format, struct tm const *__restrict tp, locale_t loc);
+INTDEF size_t LIBCCALL libc_mbrtoc16(char16_t *__restrict pc16, const char *__restrict s, size_t n, struct __mbstate *__restrict p);
+INTDEF size_t LIBCCALL libc_mbrtoc32(char32_t *__restrict pc32, const char *__restrict s, size_t n, struct __mbstate *__restrict p);
+INTDEF size_t LIBCCALL libc_c16rtomb(char *__restrict s, char16_t c16, struct __mbstate *__restrict ps);
+INTDEF size_t LIBCCALL libc_c32rtomb(char *__restrict s, char32_t c32, struct __mbstate *__restrict ps);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #ifndef __dosch_t_defined
