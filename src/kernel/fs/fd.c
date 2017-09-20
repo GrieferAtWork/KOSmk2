@@ -760,6 +760,7 @@ SYSCALL_DEFINE3(dup3,int,oldfd,int,newfd,oflag_t,flags) {
   FD_SAFE_DECREF(f);
  }
  task_endcrit();
+ if (E_ISOK(result)) result = newfd;
  return result;
 }
 SYSCALL_DEFINE1(dup,int,fd) {

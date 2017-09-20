@@ -48,6 +48,9 @@ DEFINE_EARLY_SETUP_VAR("fscache",dentry_cache_max);
 #define DENTRY_RMCACHE(self)   LIST_REMOVE(self,d_cache)
 
 
+PUBLIC void KCALL dentry_unused(struct dentry *__restrict self) {
+ /* TODO: Remove a given dentry from the cache. */
+}
 PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
  bool has_write_lock;
  struct dentry *iter;
@@ -119,6 +122,8 @@ scan_again:
     if (!atomic_rwlock_upgrade(&dentry_cache_lock))
          goto scan_again;
    }
+   /* Create the reference that will override the parent. */
+   DENTRY_INCREF(self);
    /* Overwrite the parent entry. */
    LIST_INSERT_REPLACE(iter,self,d_cache);
    LIST_MKUNBOUND(iter,d_cache);

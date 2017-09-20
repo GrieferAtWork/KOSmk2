@@ -86,6 +86,8 @@ FUNDEF void KCALL dentry_destroy(struct dentry *__restrict self);
  * NOTE: This function should only be called for top-level directories.
  *       Calling it on something like "/" is just a waste of resources. */
 FUNDEF void KCALL dentry_used(struct dentry *__restrict self);
+/* The reverse of 'dentry_used()'; called when the directory entry is removed. */
+FUNDEF void KCALL dentry_unused(struct dentry *__restrict self);
 
 /* Clear the global cache of directory entries. */
 FUNDEF size_t KCALL dentry_clearcache(void); /* Return number of removed cache slots. */

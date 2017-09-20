@@ -249,6 +249,9 @@ PUBLIC void KCALL
 dentry_destroy(struct dentry *__restrict self) {
  struct dentry *parent;
  CHECK_HOST_DOBJ(self);
+#if 0
+ syslog(LOG_DEBUG,"Destroying dentry: %[dentry]\n",self);
+#endif
  parent = self->d_parent;
  assertf(parent,
          "Only the root node may be missing a parent, "
@@ -257,6 +260,10 @@ dentry_destroy(struct dentry *__restrict self) {
  CHECK_HOST_DATA(self->d_name.dn_name,
                  self->d_name.dn_size);
  assert(!self->d_subs.ht_tabc);
+ assertf(!self->d_cache.le_pself,
+         "The directory still resides in cache, but is being destroyed? (%p)",
+         self->d_cache.le_pself);
+
  /* Remove this directory entry from its parent's hash-table. */
  atomic_rwlock_write(&parent->d_subs_lock);
  dentry_delsub_unlocked(parent,self);
@@ -2060,6 +2067,7 @@ remove_parent:
 end3: if (parent_node) INODE_DECREF(parent_node);
 end2: atomic_rwlock_endread(&self->d_subs_lock);
 end:  INODE_DECREF(del_inode);
+ if (E_ISOK(result)) dentry_unused(self);
  return result;
 }
 

@@ -709,8 +709,7 @@ send_nothing:;
 
 
 int main(int argc, char *argv[]) {
- int result;
- pid_t child_proc;
+ pid_t child_proc; int result;
  /* TODO: Re-write to support multiple pages allocated in a ring-buffer
   *       were appending a new line only requires shifting of some
   *       base-pointer, as well as duplication into VGA memory. */

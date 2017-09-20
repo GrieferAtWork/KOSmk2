@@ -118,7 +118,7 @@ INTERN int LIBCCALL libc_chdir(char const *path) { return FORWARD_SYSTEM_ERROR(s
 INTERN int LIBCCALL libc_fchdir(int fd) { return FORWARD_SYSTEM_ERROR(sys_fchdir(fd)); }
 INTERN int LIBCCALL libc_dup(int fd) { return FORWARD_SYSTEM_VALUE(sys_dup(fd)); }
 INTERN int LIBCCALL libc_dup3(int fd, int fd2, int flags) { return FORWARD_SYSTEM_VALUE(sys_dup3(fd,fd2,flags)); }
-INTERN int LIBCCALL libc_dup2(int fd, int fd2) { return fd == fd2 ? 0 : libc_dup3(fd,fd2,0); }
+INTERN int LIBCCALL libc_dup2(int fd, int fd2) { return fd == fd2 ? fd2 : libc_dup3(fd,fd2,0); }
 
 /* NOTE: xstat64 has binary compatibility with regular xstat().
  *    >> All 32-bit fields will still be filled, while 64-bit fields are all located at the end.
