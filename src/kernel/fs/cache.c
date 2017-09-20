@@ -45,12 +45,24 @@ DEFINE_EARLY_SETUP_VAR("fscache",dentry_cache_max);
 
 #define DENTRY_INCACHE(self) (!LIST_ISUNBOUND(self,d_cache))
 #define DENTRY_MKCACHE(self)   LIST_INSERT(dentry_cache,self,d_cache)
-#define DENTRY_RMCACHE(self)   LIST_REMOVE(self,d_cache)
+#define DENTRY_RMCACHE(self)  (LIST_REMOVE(self,d_cache),LIST_MKUNBOUND(self,d_cache))
 
 
 PUBLIC void KCALL dentry_unused(struct dentry *__restrict self) {
- /* TODO: Remove a given dentry from the cache. */
+ CHECK_HOST_DOBJ(self);
+ /* Check if the given entry is even cached to begin with. */
+ if (!ATOMIC_READ(self->d_cache.le_pself)) return;
+ /* Remove a given dentry from the cache. */
+ atomic_rwlock_write(&dentry_cache_lock);
+ COMPILER_READ_BARRIER();
+ if (self->d_cache.le_pself) {
+  DENTRY_RMCACHE(self);
+  assertef(ATOMIC_DECFETCH(self->d_refcnt) >= 1,
+           "But that would mean the caller isn't holding a reference...");
+ }
+ atomic_rwlock_endwrite(&dentry_cache_lock);
 }
+
 PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
  bool has_write_lock;
  struct dentry *iter;
@@ -80,7 +92,7 @@ PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
   *       to cache a directory entry that has become dead. */
  has_write_lock = false;
  atomic_rwlock_read(&dentry_cache_lock);
-#if 1
+#if 0
  syslog(LOG_DEBUG,"[FS] CACHE: %[dentry] (%s)\n",self,DENTRY_INCACHE(self) ? "existing" : "new");
 #endif
 scan_again:
