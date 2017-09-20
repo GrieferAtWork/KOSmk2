@@ -576,6 +576,7 @@ DEFINE_PUBLIC_ALIAS(index,libc_index);
 DEFINE_PUBLIC_ALIAS(rindex,libc_rindex);
 DEFINE_PUBLIC_ALIAS(dirname,libc_dirname);
 DEFINE_PUBLIC_ALIAS(__xpg_basename,libc___xpg_basename);
+#undef basename
 DEFINE_PUBLIC_ALIAS(basename,libc_basename);
 DEFINE_PUBLIC_ALIAS(strcat,libc_strcat);
 DEFINE_PUBLIC_ALIAS(strncat,libc_strncat);

@@ -194,14 +194,18 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void *__r
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void const *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memrchr");
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchrnul)(char *__restrict __haystack, int __needle) __ASMNAME("strchrnul");
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL strchrnul)(char const *__restrict __haystack, int __needle) __ASMNAME("strchrnul");
+#ifndef basename
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL basename)(char *__restrict __filename) __ASMNAME("basename");
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL basename)(char const *__restrict __filename) __ASMNAME("basename");
+#endif /* !basename */
 }
 #else
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL rawmemchr)(void const *__restrict __haystack, int __needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchrnul)(char const *__restrict __haystack, int __needle);
+#ifndef basename
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL basename)(char const *__restrict __filename);
+#endif /* !basename */
 #endif
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strcasestr)(char const *__haystack, char const *__needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,3)) void *(__LIBCCALL memmem)(void const *__haystack, size_t __haystacklen, void const *__needle, size_t __needlelen);

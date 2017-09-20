@@ -179,6 +179,44 @@ INTDEF wint_t LIBCCALL libc_towlower_l(wint_t wc, locale_t locale) { NOT_IMPLEME
 INTDEF wint_t LIBCCALL libc_towupper_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_towupper(wc); }
 INTDEF wctrans_t LIBCCALL libc_wctrans_l(char const *prop, locale_t locale) { NOT_IMPLEMENTED(); return libc_wctrans(prop); }
 INTDEF wint_t LIBCCALL libc_towctrans_l(wint_t wc, wctrans_t desc, locale_t locale) { NOT_IMPLEMENTED(); return libc_towctrans(wc,desc); }
+
+DEFINE_PUBLIC_ALIAS(iswalnum,libc_iswalnum);
+DEFINE_PUBLIC_ALIAS(iswalpha,libc_iswalpha);
+DEFINE_PUBLIC_ALIAS(iswcntrl,libc_iswcntrl);
+DEFINE_PUBLIC_ALIAS(iswdigit,libc_iswdigit);
+DEFINE_PUBLIC_ALIAS(iswgraph,libc_iswgraph);
+DEFINE_PUBLIC_ALIAS(iswlower,libc_iswlower);
+DEFINE_PUBLIC_ALIAS(iswprint,libc_iswprint);
+DEFINE_PUBLIC_ALIAS(iswpunct,libc_iswpunct);
+DEFINE_PUBLIC_ALIAS(iswspace,libc_iswspace);
+DEFINE_PUBLIC_ALIAS(iswupper,libc_iswupper);
+DEFINE_PUBLIC_ALIAS(iswxdigit,libc_iswxdigit);
+DEFINE_PUBLIC_ALIAS(iswblank,libc_iswblank);
+DEFINE_PUBLIC_ALIAS(towlower,libc_towlower);
+DEFINE_PUBLIC_ALIAS(towupper,libc_towupper);
+DEFINE_PUBLIC_ALIAS(wctype,libc_wctype);
+DEFINE_PUBLIC_ALIAS(iswctype,libc_iswctype);
+DEFINE_PUBLIC_ALIAS(wctrans,libc_wctrans);
+DEFINE_PUBLIC_ALIAS(towctrans,libc_towctrans);
+DEFINE_PUBLIC_ALIAS(iswalnum_l,libc_iswalnum_l);
+DEFINE_PUBLIC_ALIAS(iswalpha_l,libc_iswalpha_l);
+DEFINE_PUBLIC_ALIAS(iswcntrl_l,libc_iswcntrl_l);
+DEFINE_PUBLIC_ALIAS(iswdigit_l,libc_iswdigit_l);
+DEFINE_PUBLIC_ALIAS(iswgraph_l,libc_iswgraph_l);
+DEFINE_PUBLIC_ALIAS(iswlower_l,libc_iswlower_l);
+DEFINE_PUBLIC_ALIAS(iswprint_l,libc_iswprint_l);
+DEFINE_PUBLIC_ALIAS(iswpunct_l,libc_iswpunct_l);
+DEFINE_PUBLIC_ALIAS(iswspace_l,libc_iswspace_l);
+DEFINE_PUBLIC_ALIAS(iswupper_l,libc_iswupper_l);
+DEFINE_PUBLIC_ALIAS(iswxdigit_l,libc_iswxdigit_l);
+DEFINE_PUBLIC_ALIAS(iswblank_l,libc_iswblank_l);
+DEFINE_PUBLIC_ALIAS(wctype_l,libc_wctype_l);
+DEFINE_PUBLIC_ALIAS(iswctype_l,libc_iswctype_l);
+DEFINE_PUBLIC_ALIAS(towlower_l,libc_towlower_l);
+DEFINE_PUBLIC_ALIAS(towupper_l,libc_towupper_l);
+DEFINE_PUBLIC_ALIAS(wctrans_l,libc_wctrans_l);
+DEFINE_PUBLIC_ALIAS(towctrans_l,libc_towctrans_l);
+
 #endif /* !__KERNEL__ */
 
 #undef libc_isalpha
