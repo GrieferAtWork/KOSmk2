@@ -259,6 +259,7 @@ intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
                  struct ccpustate const *__restrict cstate, u32 eflags) {
  struct intchain *iter;
  CHECK_HOST_DOBJ(pchain);
+check_again:
  iter = *pchain;
  for (; iter; iter = iter->ic_prev) {
   if ((iter->ic_irq == irq) ||
@@ -326,6 +327,39 @@ intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
                         : "memory");
    __builtin_unreachable();
   }
+ }
+
+ /* A lot of code assumes that it is enough to handle page-faults
+  * in order to safely access a potentially faulty pointer, such
+  * as may be given to the kernel from userspace, or when creating
+  * a traceback, or when relocating a module.
+  * Yet there exists a small problem with this idea:
+  *     X86 has segmentation, and attempting to access memory that
+  *     lies outside the associated segment (usually '%ds'), causes
+  *     a protection fault to be raised.
+  * Now you might say that shouldn't affect anything, since the KOS
+  * kernel uses a flat memory model, but as it turns out (and this is
+  * another one of those things that only happen on real hardware),
+  * attempting to access member above 4Gb will (rightfully so) raise
+  * a general protection fault.
+  * How does one access memory in that range?
+  * This is how it can easily happen:
+  * >> movl $0xffffffff, %esi // Pointer is given from user-space
+  * >> movl 0(%esi),     %eax // Load data (This instruction would be guarded by 'EXC_PAGE_FAULT')
+  * On real hardware, this will (apparently) try to read memory
+  * from above 4Gb, rather than overflowing back to ZERO(0).
+  * >> READ: 0xffffffff  --> OK (Part of the page-directory self mapping)
+  * >> READ: 0x100000000 --> ERROR (Outside the %DS segment that ends after '0xffffffff')
+  * >> READ: 0x100000001 --> ERROR (...)
+  * >> READ: 0x100000002 --> ERROR (...)
+  * So with that in mind, if a protection fault error occurs and there
+  * is no local exception handler specifically for this purpose, also try to
+  * handle it as a pagefault error.
+  * NOTE: Only affect kernel-level local exception handlers.
+  */
+ if (irq == EXC_PROTECTION_FAULT) {
+  irq = EXC_PAGE_FAULT;
+  goto check_again;
  }
 }
 

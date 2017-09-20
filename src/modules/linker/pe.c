@@ -23,8 +23,10 @@
 #include <hybrid/compiler.h>
 #include <linker/module.h>
 #include <kernel/export.h>
+#include <kernel/malloc.h>
 #include <hybrid/check.h>
 #include <fs/file.h>
+#include <malloc.h>
 #include <unistd.h>
 #include <winapi/windows.h>
 
@@ -32,23 +34,51 @@
 
 DECL_BEGIN
 
+typedef struct pe_module pe_t;
+
+struct pe_module {
+ struct module p_module; /*< Underlying module. */
+};
+
+
+PRIVATE struct modsym KCALL
+pe_symaddr(struct instance *__restrict self,
+           char const *__restrict name, u32 hash) {
+ struct modsym result;
+ result.ms_type = MODSYM_TYPE_INVALID;
+ /* TODO */
+ return result;
+}
+
+PRIVATE errno_t KCALL
+pe_patch(struct modpatch *__restrict patcher) {
+}
+
+
+PRIVATE struct moduleops pe_ops = {
+    .o_symaddr = &pe_symaddr,
+    .o_patch   = &pe_patch,
+};
+
+
+
 PRIVATE REF struct module *KCALL
 pe_loader(struct file *__restrict fp) {
  IMAGE_DOS_HEADER dos_header;
  IMAGE_NT_HEADERS nt_header;
- errno_t error;
+ errno_t error; REF pe_t *result;
  CHECK_HOST_DOBJ(fp);
  error = file_kreadall(fp,&dos_header,sizeof(dos_header));
- if (E_ISERR(error)) return E_PTR(error);
+ if (E_ISERR(error)) goto err;
  /* Validate header magic. */
  if (dos_header.e_magic != IMAGE_DOS_SIGNATURE) goto enoexec;
  /* Seek to the NT header location. */
  error = (errno_t)file_seek(fp,dos_header.e_lfanew,SEEK_SET);
- if (E_ISERR(error)) return E_PTR(error);
+ if (E_ISERR(error)) goto err;
  /* Read the NT header. */
  error = file_kreadall(fp,&nt_header,offsetof(IMAGE_NT_HEADERS,OptionalHeader));
- if (E_ISERR(error)) return E_PTR(error);
- /* Check signature and matchine type id. */
+ if (E_ISERR(error)) goto err;
+ /* Check another magic field and the machine type id. */
  if (nt_header.Signature != IMAGE_NT_SIGNATURE) goto enoexec;
 #ifdef __i386__
  if (nt_header.FileHeader.Machine != IMAGE_FILE_MACHINE_I386) goto enoexec;
@@ -58,10 +88,31 @@ pe_loader(struct file *__restrict fp) {
 #error FIXME
 #endif
 
+ /* Read data for the optional headers. */
+ if (nt_header.FileHeader.SizeOfOptionalHeader) {
+  if (nt_header.FileHeader.SizeOfOptionalHeader > sizeof(nt_header.OptionalHeader))
+      nt_header.FileHeader.SizeOfOptionalHeader = sizeof(nt_header.OptionalHeader);
+  error = file_kreadall(fp,&nt_header.OptionalHeader,
+                        nt_header.FileHeader.SizeOfOptionalHeader);
+  if unlikely(E_ISERR(error)) goto err;
+ }
+#define HAS_OPTION(opt) \
+  (nt_header.FileHeader.SizeOfOptionalHeader >= \
+   offsetafter(IMAGE_OPTIONAL_HEADER,opt))
+
+ result = (REF pe_t *)module_new(sizeof(pe_t));
+ if unlikely(!result) return E_PTR(-ENOMEM);
+
  /* TODO: Load a PE binary. */
 
+
+ /* Finally, setup the module for use. */
+ module_setup(&result->p_module,fp,&pe_ops,THIS_INSTANCE);
+ return &result->p_module;
 enoexec:
  return E_PTR(-ENOEXEC);
+err:
+ return E_PTR(error);
 }
 
 PRIVATE struct modloader pe_linker = {

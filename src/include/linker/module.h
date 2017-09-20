@@ -99,16 +99,17 @@ typedef ssize_t (KCALL *penummodfun)(VIRT void *pfun, modfun_t single_type, void
 
 struct argvlist;
 struct moduleops {
- /* NOTE: All operations may optionally be set to NULL when not implemented. */
- /* Additional user-defined destruction.
+ /* [0..1] Additional user-defined destruction.
   * WARNING: May only be used to destroy custom module data! */
  void (KCALL *o_fini)(struct module *__restrict self);
- /* [1..1] Load the module address of a given symbol.
+ /* [1..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
+  * Load the module address of a given symbol.
   * @return: * :   The absolute address of the named symbol.
   * @return: NULL: Unknown symbol. */
  struct modsym (KCALL *o_symaddr)(struct instance *__restrict self,
                                   char const *__restrict name, u32 hash);
- /* Patch relocations after the module was loaded into memory.
+ /* [1..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
+  * Patch relocations after the module was loaded into memory.
   * NOTE: This operator may invoke a PAGEFAULT that the caller should
   *       interpret the same way as a '-EFAULT' return value.
   *    >> A pagefault may only occurr when an invalid relocation
@@ -123,7 +124,8 @@ struct moduleops {
   * @return: -ENOREL:    Failed to lookup a symbol ('patcher->p_dlsym' returned '0').
   * @return: E_ISERR(*): Failed to patch the module for some reason. */
  errno_t (KCALL *o_patch)(struct modpatch *__restrict patcher);
- /* Enumerate special module functions matching those described by 'types'.
+ /* [0..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
+  * Enumerate special module functions matching those described by 'types'.
   * NOTE: This function must be called within the context of
   *       the page directory that is mapping 'patcher->p_inst'.
   * WARNING: For safety concerns, the caller should validate that any given
@@ -136,10 +138,11 @@ struct moduleops {
   * @return: E_ISERR(*) : The first error code returned by any call to 'callback'. */
  ssize_t (KCALL *o_modfun)(struct instance *__restrict self, modfun_t types,
                            penummodfun callback, void *closure);
- /* TODO: Remove these & switch to the new o_modfun-system. */
+ /* [0..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
+  * TODO: Remove these & switch to the new o_modfun-system. */
  void (KCALL *o_exec_init)(struct module *__restrict self, VIRT ppage_t load_addr);
  void (KCALL *o_exec_fini)(struct module *__restrict self, VIRT ppage_t load_addr);
- /* An optional operator that returns the pointed-to (real)
+ /* [0..1] An optional operator that returns the pointed-to (real)
   * module, such as when executing shebang scripts.
   * NOTE: This operator may return '-ENOENT' or '-ENOEXEC' to indicate
   *       that the associated module 'self' itself should be executed
@@ -156,7 +159,7 @@ struct moduleops {
   * @return: -ENOEXEC:   The real module isn't an executable.
   * @return: E_ISERR(*): Failed to load the real module for some reason. */
  REF struct module *(KCALL *o_real_module)(struct module *__restrict self);
- /* Transform execution environment before the environment block is initialized.
+ /* [0..1] Transform execution environment before the environment block is initialized.
   * HINT: This operator should call 'argvlist_insert()' / 'argvlist_append()'
   *       to add additional arguments either to the given 'head_args' list,
   *       and/or to the 'tail_args' list, both of which will be prepended/appended
@@ -247,7 +250,7 @@ struct module {
                                     *         whenever an operation from 'm_ops' must be executed, thus ensuring that
                                     *         the associated driver is still loaded and able to serve such requests. */
  u32                     m_flag;   /*< [const] Module flags (Set of 'MODFLAG_*'). */
- uintptr_t               m_load;   /*< [const] The default load address for which default relocations are optimized.
+ VIRT uintptr_t          m_load;   /*< [const] The default load address for which relocations are optimized.
                                     *   NOTE: In ELF binaries, this is always ZERO(0).
                                     *   NOTE: This value is important, as it describes the effective
                                     *         base address with which offsets can be calculated that
@@ -257,9 +260,8 @@ struct module {
                                     *         not relocatable (aka. when 'MODFLAG_RELO' isn't set) */
  size_t                  m_begin;  /*< [const] Start of first segment. */
  size_t                  m_end;    /*< [const] End of last segment. */
- size_t                  m_size;   /*< [const] The minimum amount of consecutive bytes required to load this module.
-                                    *   NOTE: Equal to the difference between the virtual start of
-                                    *         the lowest segment and the end of the greatest. */
+ size_t                  m_size;   /*< [const][== m_end-m_begin] The minimum amount of
+                                    *   consecutive bytes required to load this module. */
  uintptr_t               m_align;  /*< [const] Minimum alignment required for the base address when loading the module (Usually == PAGESIZE).
                                     *   WARNING: This value must be non-zero, and power-of-2! */
  maddr_t                 m_entry;  /*< [const][valid_if(MODFLAG_EXEC)] Module entry point. */

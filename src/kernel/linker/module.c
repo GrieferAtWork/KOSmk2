@@ -173,6 +173,7 @@ module_setup(struct module *__restrict self,
  CHECK_HOST_DOBJ(fp->f_dent);
  CHECK_HOST_DOBJ(ops);
  CHECK_HOST_DOBJ(owner);
+ assertf(self->m_align != 0,"Forgot to initialize 'm_align'");
  end = (iter = self->m_segv)+self->m_segc;
  for (; iter != end; ++iter) {
   if (addr_min > iter->ms_paddr)
