@@ -524,6 +524,7 @@ DEFINE_PUBLIC_ALIAS(quick_exit,libc_quick_exit);
 DEFINE_PUBLIC_ALIAS(on_exit,libc_on_exit);
 DEFINE_PUBLIC_ALIAS(atexit,libc_atexit);
 DEFINE_PUBLIC_ALIAS(at_quick_exit,libc_at_quick_exit);
+DEFINE_PUBLIC_ALIAS(__cxa_atexit,libc_atexit);
 #if __SIZEOF_LONG__ != __SIZEOF_INT__
 DEFINE_PUBLIC_ALIAS(srandom,libc_srandom);
 DEFINE_PUBLIC_ALIAS(random,libc_random);

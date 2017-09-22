@@ -172,14 +172,18 @@ pe_patch(struct modpatch *__restrict patcher) {
  CHECK_HOST_DOBJ(self);
  assert(self->p_module.m_ops == &pe_ops);
  base = (uintptr_t)inst->i_base;
- address_max = base+self->p_module.m_end;
+ address_max = base+self->p_module.m_size;
 
  if (self->p_import.Size >= sizeof(IMAGE_IMPORT_DESCRIPTOR)) {
   IMAGE_IMPORT_DESCRIPTOR *iter,*end;
   /* Patch module imports. */
   iter = (IMAGE_IMPORT_DESCRIPTOR *)(base+self->p_import.VirtualAddress);
   end = iter+self->p_import.Size/sizeof(IMAGE_IMPORT_DESCRIPTOR);
-  assert((uintptr_t)end <= address_max);
+  assertf((uintptr_t)end <= address_max,
+          "iter        = %p\n"
+          "end         = %p\n"
+          "address_max = %p\n",
+          iter,end,address_max);
   do {
    struct dentryname filename;
    /* The import is terminated by a ZERO-entry.
@@ -477,7 +481,7 @@ pe_loader(struct file *__restrict fp) {
 #endif
     /* NOTE: 'VirtualAddress' is an RVA (relative), not an LVA (logical).
      *        >> So we need to add the image base to it. */
-    dst->ms_paddr = (maddr_t)(result->p_module.m_load+iter->VirtualAddress);
+    dst->ms_paddr = (maddr_t)iter->VirtualAddress;
     dst->ms_vaddr = (maddr_t)dst->ms_paddr; /* PE doesn't differentiate these... */
     dst->ms_msize = (size_t)iter->Misc.VirtualSize;
     dst->ms_fsize = (size_t)iter->SizeOfRawData;

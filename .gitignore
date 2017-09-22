@@ -2,6 +2,7 @@
 bin/*
 build/*
 disk/*
+*.stackdump
 
 # Curses headers.
 include/curses.h

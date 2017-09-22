@@ -221,7 +221,7 @@ echo <<EOF
     builtin_define ("__kos__");       \
     builtin_define ("__KOS__");       \
     builtin_define ("__unix__");      \
-    builtin_assert ("system=myos");   \
+    builtin_assert ("system=kos");   \
     builtin_assert ("system=unix");   \
     builtin_assert ("system=posix");  \
   } while(0);

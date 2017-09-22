@@ -115,6 +115,7 @@ ALIAS_MODE("i386-pe","pe")
 DEFINE("__KOS__")
 DEFINE("__ELF__")
 INCLUDE("/include")
+INCLUDE("/include/i386-kos")
 C_FLAGS("-nostdlib")
 P_FLAGS("-nostdlib")
 

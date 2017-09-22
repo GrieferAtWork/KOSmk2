@@ -8,16 +8,18 @@ export PATH="$PREFIX/bin:$PATH"
 
 cd "$PREFIX"
 
-# ../src/binutils-2.27/configure \
-# 	--target=$TARGET \
-# 	--prefix="$PREFIX" \
-# 	--with-sysroot=/opt/kos \
-# 	--with-headers=/opt/kos/usr/include \
-# 	--disable-nls \
-# 	--disable-werror \
-# 	--enable-64-bit-bfd \
-# 	--enable-multilib \
-# || exit $?
+if ! [ -f "Makefile" ]; then
+	../src/binutils-2.27/configure \
+		--target=$TARGET \
+		--enable-64-bit-bfd \
+		--prefix="$PREFIX" \
+		--with-sysroot=/opt/kos \
+		--with-headers=/opt/kos/usr/include \
+		--disable-nls \
+		--disable-werror \
+		--enable-multilib \
+	|| exit $?
+fi
 
-# make || exit $?
-# make install || exit $?
+make -j 8 || exit $?
+make -j 8 install || exit $?
