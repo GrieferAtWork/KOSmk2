@@ -92,6 +92,8 @@ PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
   *       to cache a directory entry that has become dead. */
  has_write_lock = false;
  atomic_rwlock_read(&dentry_cache_lock);
+ assert(!dentry_cache || dentry_cache->d_cache.le_pself == &dentry_cache);
+
 #if 0
  syslog(LOG_DEBUG,"[FS] CACHE: %[dentry] (%s)\n",self,DENTRY_INCACHE(self) ? "existing" : "new");
 #endif
@@ -158,6 +160,7 @@ scan_again:
  } else {
   /* Replace the first cache entry with ourself. */
   iter = dentry_cache;
+  assert(dentry_cache->d_cache.le_pself == &dentry_cache);
   LIST_INSERT_REPLACE(dentry_cache,self,d_cache);
   LIST_MKUNBOUND(iter,d_cache);
   atomic_rwlock_endwrite(&dentry_cache_lock);

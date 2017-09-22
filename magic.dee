@@ -30,6 +30,7 @@ local config_debug                    = true; /* Enable compiling with debug inf
 local config_optimize                 = none; /* Otherwise: A string "0", "1", etc... */
 local config_max_compilers            = 8; /* Max amount of compilers to run in parallel */
 local config_build_path               = "build/i386-elf";
+//local config_build_path               = "build/x86-64-elf";
 local config_usbdisk                  = <"H:\\">; /* If non-existant or older, mirror the KOS disk contents here. */
 //local config_usbdisk = <none>; /* Uncomment this if you have an H: drive, or simply don't wish to use a USB stick for testing on real hardware. */
 
@@ -300,6 +301,12 @@ function do_start_process(proc) {
 		print "PROCESS:",proc.exe," ".join(proc.argv);
 	}
 	proc.start();
+}
+function get_exe(name) {
+	if (name.startswith("/")) {
+		return root_folder+name;
+	}
+	return executables[name];
 }
 function mtools(fun,args) {
 	local proc = process(executables[default_mtools],[
@@ -604,7 +611,7 @@ class Source {
 			compiler_args.append("-c");
 		}
 		compiler_args.append(this._file);
-		local proc = process(executables[proj._exe_c],compiler_args);
+		local proc = process(get_exe(proj._exe_c),compiler_args);
 		start_process(proc,proj);
 		this.unset_changes(proj);
 	}
@@ -618,7 +625,7 @@ class Source {
 		if (used_pp is none) used_pp = proj._exe_cpp;
 		pp_args.extend(this._p_flags);
 		pp_args.append(this._file);
-		local proc = process(executables[used_pp],pp_args);
+		local proc = process(get_exe(used_pp),pp_args);
 		start_process(proc,proj);
 		this.unset_changes(proj);
 	}
@@ -628,7 +635,7 @@ class Source {
 		local nm_args = ["-g",this._file];
 		force_mkdir(fs::path::head(nmfile));
 		nm_args.extend(this._p_flags);
-		local proc = process(executables[this._exe_p],nm_args);
+		local proc = process(get_exe(this._exe_p),nm_args);
 		start_io_process(proc,[](process_pipe){
 			local output = file.open(nmfile,"w");
 			for (local line: process_pipe) {
@@ -813,7 +820,7 @@ class Project {
 				archive_flags.extend(this._l_flags);
 				archive_flags.append("rcs",this._outfile);
 				archive_flags.extend(source_objects);
-				local proc = process(executables[this._exe_a],archive_flags);
+				local proc = process(get_exe(this._exe_a),archive_flags);
 				start_process(proc,this);
 			}
 		} else {
@@ -843,7 +850,7 @@ class Project {
 			for (local lib: this._l_deps)
 				linker_flags.append("-l"+lib);
 			//print repr linker_flags;
-			local proc = process(executables[this._exe_l],linker_flags);
+			local proc = process(get_exe(this._exe_l),linker_flags);
 			if (this._cus_link !is none) {
 				SYNC(start_process(proc,this));
 				if (this._cus_link is string) {

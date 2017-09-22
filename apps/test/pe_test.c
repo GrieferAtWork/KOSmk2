@@ -16,18 +16,19 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-
-
+ 
 #include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <sys/mount.h>
 
-int main(int argc, char *argv[]) {
+#define print(level,s,n) \
+	__asm__("int $0x80" : : "a" (__NR_xsyslog), "b" (level), "c" (s), "d" (n))
+#define exit(i) \
+	__asm__("int $0x80" : : "a" (__NR_exit), "b" (i))
 
-	if (mount("proc","/proc","proc",0,NULL))
-		perror("mount");
+int _start(void) {
 
+	print(0,"Hello PE world\n",15);
+
+	exit(0);
 	return 0;
 }
 

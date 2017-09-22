@@ -28,11 +28,6 @@ BEGIN APPLICATION("terminal-vga")
 	SET_DISKFILE("/bin/terminal-vga")
 	SOURCE("terminal-vga/*.c")
 END
-BEGIN APPLICATION("mountproc")
-	SET_OUTPUT("/bin/apps/mountproc")
-	SET_DISKFILE("/bin/mountproc")
-	SOURCE("test/mountproc.c")
-END
 BEGIN_NEW PROJECT("elfimg")
 	SET_COMPILER("host-c")
 	SET_LINKER("host-c")
@@ -44,3 +39,12 @@ END
 #if __has_include("private/.sources")
 #include "private/.sources"
 #endif
+
+BEGIN PROJECT("pe_test")
+	SET_OUTPUT("/bin/apps/pe_test")
+	SET_DISKFILE("/opt/pe_test")
+	SET_LINKER("/binutils/build-binutils-i686-kos/ld/ld-new.exe")
+	L_FLAGS("--oformat=pei-i386")
+	SOURCE("test/pe_test.c")
+END
+

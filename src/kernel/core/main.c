@@ -465,6 +465,7 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/vga-tty");
  kinsmod("/mod/procfs");
  kinsmod("/mod/shebang");
+ kinsmod("/mod/pe");
 
  /* TODO: Add <locale.h>. */
  /* TODO: Add <langinfo.h>. */

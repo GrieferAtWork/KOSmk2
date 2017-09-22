@@ -127,6 +127,7 @@ C_FLAGS("-Wno-comment")
 C_FLAGS("-Wno-strict-aliasing")
 C_FLAGS("-Wno-format")
 C_FLAGS("-Wno-unused-parameter") /* TODO: Remove me */
+//C_FLAGS("-m64")
 if (config_debug) {
 	C_FLAGS("-fstack-protector-strong")
 	C_FLAGS("-g")

@@ -397,8 +397,8 @@ __LIBC int (__LIBCCALL inet6_rth_segments)(void const *__bp);
 __LIBC struct in6_addr *(__LIBCCALL inet6_rth_getaddr)(void const *__bp, int __index);
 __LIBC int (__LIBCCALL getipv4sourcefilter)(int __s, struct in_addr __interface_addr, struct in_addr __group, uint32_t *__fmode, uint32_t *__numsrc, struct in_addr *__slist);
 __LIBC int (__LIBCCALL setipv4sourcefilter)(int __s, struct in_addr __interface_addr, struct in_addr __group, uint32_t __fmode, uint32_t __numsrc, const struct in_addr *__slist);
-__LIBC int (__LIBCCALL getsourcefilter)(int __s, uint32_t __interface_addr, const struct sockaddr *__group, socklen_t __grouplen, uint32_t *__fmode, uint32_t *__numsrc, struct sockaddr_storage *__slist);
-__LIBC int (__LIBCCALL setsourcefilter)(int __s, uint32_t __interface_addr, const struct sockaddr *__group, socklen_t __grouplen, uint32_t __fmode, uint32_t __numsrc, const struct sockaddr_storage *__slist);
+__LIBC int (__LIBCCALL getsourcefilter)(int __s, uint32_t __interface_addr, struct sockaddr const *__group, socklen_t __grouplen, uint32_t *__fmode, uint32_t *__numsrc, struct sockaddr_storage *__slist);
+__LIBC int (__LIBCCALL setsourcefilter)(int __s, uint32_t __interface_addr, struct sockaddr const *__group, socklen_t __grouplen, uint32_t __fmode, uint32_t __numsrc, const struct sockaddr_storage *__slist);
 #endif /* !__KERNEL__ */
 #endif /* __USE_GNU */
 

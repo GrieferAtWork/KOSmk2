@@ -51,11 +51,11 @@ __DECL_BEGIN
 #ifndef __size_t_defined
 #define __size_t_defined 1
 typedef __SIZE_TYPE__ size_t;
-#endif
+#endif /* !__size_t_defined */
 #ifndef __socklen_t_defined
 #define __socklen_t_defined 1
 typedef __socklen_t socklen_t;
-#endif
+#endif /* !__socklen_t_defined */
 
 /* Protocol families. */
 #define PF_UNSPEC       0  /*< Unspecified. */
@@ -273,7 +273,7 @@ enum {
  SCM_RIGHTS      = 0x01, /*< Transfer file descriptors. */
 #ifdef __USE_GNU
  SCM_CREDENTIALS = 0x02  /*< Credentials passing. */
-#endif
+#endif /* __USE_GNU */
 };
 
 #define SCM_RIGHTS      SCM_RIGHTS

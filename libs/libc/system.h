@@ -78,7 +78,7 @@ struct timezone;
  (void)(libc_syslog(LOG_DEBUG,"%s(%d) : %s()\n",__FILE__,__LINE__,__FUNCTION__))
 #endif
 #undef __SYSCALL_TRACE
-#define __SYSCALL_TRACE(id) { if (id != __NR_xsysprint) TRACE0(); }
+#define __SYSCALL_TRACE(id) { if (id != __NR_xsyslog) TRACE0(); }
 #endif /* TRACE_SYSTEM_CALLS */
 
 #define SYSCALL0(type,name,decl) __SYSCALL_FUN(0,LIBCCALL,,type,__NR_##name,SYSCALL_NAME(name),decl)
@@ -166,7 +166,7 @@ LOCAL SYSCALL2(__errno_t,swapon,(char const *,specialfile,int,flags));
 LOCAL SYSCALL1(__errno_t,swapoff,(char const *,specialfile));
 
 /* KOS system-call extensions. */
-LOCAL SYSCALL3(ssize_t,xsysprint,(int,type,char const *,p,size_t,len));
+LOCAL SYSCALL3(ssize_t,xsyslog,(int,type,char const *,p,size_t,len));
 LOCAL SYSCALL2(void *,xmmap,(int,version,struct mmap_info const *,data));
 LOCAL SYSCALL4(ssize_t,xmunmap,(void *,addr,size_t,len,int,flags,void *,tag));
 LOCAL SYSCALL1(void *,xsharesym,(USER char const *,name));

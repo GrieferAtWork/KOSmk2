@@ -201,7 +201,7 @@ struct addrinfo {
 struct gaicb {
   char const            *ar_name;    /*< Name to look up. */
   char const            *ar_service; /*< Service name. */
-  const struct addrinfo *ar_request; /*< Additional request specification. */
+  struct addrinfo const *ar_request; /*< Additional request specification. */
   struct addrinfo       *ar_result;  /*< Pointer to result. */
   int __return;
   int __glibc_reserved[5];
@@ -262,19 +262,19 @@ struct gaicb {
 #endif
 
 #ifndef __KERNEL__
-__LIBC int (__LIBCCALL getaddrinfo)(char const *__restrict __name, char const *__restrict __service, const struct addrinfo *__restrict __req, struct addrinfo **__restrict __pai);
+__LIBC int (__LIBCCALL getaddrinfo)(char const *__restrict __name, char const *__restrict __service, struct addrinfo const *__restrict __req, struct addrinfo **__restrict __pai);
 __LIBC void (__LIBCCALL freeaddrinfo)(struct addrinfo *__ai);
 __LIBC char const *(__LIBCCALL gai_strerror)(int __ecode);
-__LIBC int (__LIBCCALL getnameinfo)(const struct sockaddr *__restrict __sa, socklen_t __salen, char *__restrict __host, socklen_t __hostlen, char *__restrict __serv, socklen_t __servlen, int __flags);
+__LIBC int (__LIBCCALL getnameinfo)(struct sockaddr const *__restrict __sa, socklen_t __salen, char *__restrict __host, socklen_t __hostlen, char *__restrict __serv, socklen_t __servlen, int __flags);
 #endif /* !__KERNEL__ */
 #endif /* __USE_XOPEN2K */
 
 #ifndef __KERNEL__
 #ifdef __USE_GNU
 __LIBC int (__LIBCCALL getaddrinfo_a)(int __mode, struct gaicb *__list[__restrict_arr], int __ent, struct sigevent *__restrict __sig);
-__LIBC int (__LIBCCALL gai_suspend)(const struct gaicb *const __list[], int __ent, struct timespec const *__timeout) __TM_FUNC(gai_suspend);
+__LIBC int (__LIBCCALL gai_suspend)(struct gaicb const *const __list[], int __ent, struct timespec const *__timeout) __TM_FUNC(gai_suspend);
 #ifdef __USE_TIME64
-__LIBC int (__LIBCCALL gai_suspend64)(const struct gaicb *const __list[], int __ent, struct __timespec64 const *__timeout);
+__LIBC int (__LIBCCALL gai_suspend64)(struct gaicb const *const __list[], int __ent, struct __timespec64 const *__timeout);
 #endif /* __USE_TIME64 */
 __LIBC int (__LIBCCALL gai_error)(struct gaicb *__req);
 __LIBC int (__LIBCCALL gai_cancel)(struct gaicb *__gaicbp);

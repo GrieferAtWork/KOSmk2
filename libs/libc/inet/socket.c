@@ -21,6 +21,7 @@
 #define _GNU_SOURCE 1
 
 #include "../libc.h"
+#include "socket.h"
 #include <hybrid/compiler.h>
 #include <stddef.h>
 #include <arpa/inet.h>
@@ -31,58 +32,67 @@
 DECL_BEGIN
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-PUBLIC uint32_t (LIBCCALL ntohl)(uint32_t netlong) { return netlong; }
-PUBLIC uint16_t (LIBCCALL ntohs)(uint16_t netshort) { return netshort; }
-DEFINE_PUBLIC_ALIAS(htonl,ntohl);
-DEFINE_PUBLIC_ALIAS(htons,ntohs);
+INTERN uint32_t LIBCCALL libc_ntohl(uint32_t netlong) { return netlong; }
+INTERN uint16_t LIBCCALL libc_ntohs(uint16_t netshort) { return netshort; }
+DEFINE_INTERN_ALIAS(libc_htonl,libc_ntohl);
+DEFINE_INTERN_ALIAS(libc_htons,libc_ntohs);
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
-PUBLIC uint32_t (LIBCCALL ntohl)(uint32_t netlong) { return __bswap_32(netlong); }
-PUBLIC uint16_t (LIBCCALL ntohs)(uint16_t netshort) { return __bswap_16(netshort); }
-DEFINE_PUBLIC_ALIAS(htonl,ntohl);
-DEFINE_PUBLIC_ALIAS(htons,ntohs);
+INTERN uint32_t LIBCCALL libc_ntohl(uint32_t netlong) { return __bswap_32(netlong); }
+INTERN uint16_t LIBCCALL libc_ntohs(uint16_t netshort) { return __bswap_16(netshort); }
+DEFINE_INTERN_ALIAS(libc_htonl,libc_ntohl);
+DEFINE_INTERN_ALIAS(libc_htons,libc_ntohs);
 #else
 #error FIXME
 #endif
-PUBLIC int (LIBCCALL socket)(int domain, int type, int protocol) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL socketpair)(int domain, int type, int protocol, int fds[2]) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL bind)(int fd, __CONST_SOCKADDR_ARG addr, socklen_t len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL getsockname)(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL connect)(int fd, __CONST_SOCKADDR_ARG addr, socklen_t len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL getpeername)(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC ssize_t (LIBCCALL send)(int fd, void const *buf, size_t n, int flags) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC ssize_t (LIBCCALL recv)(int fd, void *buf, size_t n, int flags) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC ssize_t (LIBCCALL sendto)(int fd, void const *buf, size_t n, int flags, __CONST_SOCKADDR_ARG addr, socklen_t addr_len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC ssize_t (LIBCCALL recvfrom)(int fd, void *__restrict buf, size_t n, int flags, __SOCKADDR_ARG addr, socklen_t *__restrict addr_len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC ssize_t (LIBCCALL sendmsg)(int fd, const struct msghdr *message, int flags) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC ssize_t (LIBCCALL recvmsg)(int fd, struct msghdr *message, int flags) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL getsockopt)(int fd, int level, int optname, void *__restrict optval, socklen_t *__restrict optlen) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL setsockopt)(int fd, int level, int optname, void const *optval, socklen_t optlen) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL listen)(int fd, int n) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL accept)(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict addr_len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL shutdown)(int fd, int how) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sendmmsg)(int fd, struct mmsghdr *vmessages, unsigned int vlen, int flags) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL recvmmsg)(int fd, struct mmsghdr *vmessages, unsigned int vlen, int flags, struct timespec *tmo) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL accept4)(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict addr_len, int flags) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL sockatmark)(int fd) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC int (LIBCCALL isfdtype)(int fd, int fdtype) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC in_addr_t (LIBCCALL inet_addr)(char const *cp) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC in_addr_t (LIBCCALL inet_lnaof)(struct in_addr in) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC struct in_addr (LIBCCALL inet_makeaddr)(in_addr_t net, in_addr_t host) { NOT_IMPLEMENTED(); return (struct in_addr){ -1 }; }
-PUBLIC in_addr_t (LIBCCALL inet_netof)(struct in_addr in) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC in_addr_t (LIBCCALL inet_network)(char const *cp) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC char *(LIBCCALL inet_ntoa)(struct in_addr in) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC int (LIBCCALL inet_pton)(int af, char const *__restrict cp, void *__restrict buf) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC char const *(LIBCCALL inet_ntop)(int af, void const *__restrict cp, char *__restrict buf, socklen_t len) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC int (LIBCCALL inet_aton)(char const *cp, struct in_addr *inp) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC char *(LIBCCALL inet_neta)(in_addr_t net, char *buf, size_t len) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC char *(LIBCCALL inet_net_ntop)(int af, void const *cp, int bits, char *buf, size_t len) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC int (LIBCCALL inet_net_pton)(int af, char const *cp, void *buf, size_t len) { NOT_IMPLEMENTED(); return -1; }
-PUBLIC unsigned int (LIBCCALL inet_nsap_addr)(char const *cp, unsigned char *buf, int len) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC char *(LIBCCALL inet_nsap_ntoa)(int len, const unsigned char *cp, char *buf) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC unsigned int (LIBCCALL if_nametoindex)(char const *ifname) { NOT_IMPLEMENTED(); return 0; }
-PUBLIC char *(LIBCCALL if_indextoname)(unsigned int ifindex, char *ifname) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC struct if_nameindex *(LIBCCALL if_nameindex)(void) { NOT_IMPLEMENTED(); return NULL; }
-PUBLIC void (LIBCCALL if_freenameindex)(struct if_nameindex *ptr) { NOT_IMPLEMENTED(); }
+INTERN int LIBCCALL libc_socket(int domain, int type, int protocol) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_socketpair(int domain, int type, int protocol, int fds[2]) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_bind(int fd, __CONST_SOCKADDR_ARG addr, socklen_t len) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_getsockname(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict len) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_connect(int fd, __CONST_SOCKADDR_ARG addr, socklen_t len) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_getpeername(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict len) { NOT_IMPLEMENTED(); return -1; }
+INTERN ssize_t LIBCCALL libc_send(int fd, void const *buf, size_t n, int flags) { NOT_IMPLEMENTED(); return -1; }
+INTERN ssize_t LIBCCALL libc_recv(int fd, void *buf, size_t n, int flags) { NOT_IMPLEMENTED(); return -1; }
+INTERN ssize_t LIBCCALL libc_sendto(int fd, void const *buf, size_t n, int flags, __CONST_SOCKADDR_ARG addr, socklen_t addr_len) { NOT_IMPLEMENTED(); return -1; }
+INTERN ssize_t LIBCCALL libc_recvfrom(int fd, void *__restrict buf, size_t n, int flags, __SOCKADDR_ARG addr, socklen_t *__restrict addr_len) { NOT_IMPLEMENTED(); return -1; }
+INTERN ssize_t LIBCCALL libc_sendmsg(int fd, const struct msghdr *message, int flags) { NOT_IMPLEMENTED(); return -1; }
+INTERN ssize_t LIBCCALL libc_recvmsg(int fd, struct msghdr *message, int flags) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_getsockopt(int fd, int level, int optname, void *__restrict optval, socklen_t *__restrict optlen) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_setsockopt(int fd, int level, int optname, void const *optval, socklen_t optlen) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_listen(int fd, int n) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_accept(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict addr_len) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_shutdown(int fd, int how) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sendmmsg(int fd, struct mmsghdr *vmessages, unsigned int vlen, int flags) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_recvmmsg(int fd, struct mmsghdr *vmessages, unsigned int vlen, int flags, struct timespec *tmo) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_accept4(int fd, __SOCKADDR_ARG addr, socklen_t *__restrict addr_len, int flags) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_sockatmark(int fd) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_isfdtype(int fd, int fdtype) { NOT_IMPLEMENTED(); return -1; }
+
+DEFINE_PUBLIC_ALIAS(ntohl,libc_ntohl);
+DEFINE_PUBLIC_ALIAS(ntohs,libc_ntohs);
+DEFINE_PUBLIC_ALIAS(htonl,libc_htonl);
+DEFINE_PUBLIC_ALIAS(htons,libc_htons);
+DEFINE_PUBLIC_ALIAS(socket,libc_socket);
+DEFINE_PUBLIC_ALIAS(socketpair,libc_socketpair);
+DEFINE_PUBLIC_ALIAS(bind,libc_bind);
+DEFINE_PUBLIC_ALIAS(getsockname,libc_getsockname);
+DEFINE_PUBLIC_ALIAS(connect,libc_connect);
+DEFINE_PUBLIC_ALIAS(getpeername,libc_getpeername);
+DEFINE_PUBLIC_ALIAS(send,libc_send);
+DEFINE_PUBLIC_ALIAS(recv,libc_recv);
+DEFINE_PUBLIC_ALIAS(sendto,libc_sendto);
+DEFINE_PUBLIC_ALIAS(recvfrom,libc_recvfrom);
+DEFINE_PUBLIC_ALIAS(sendmsg,libc_sendmsg);
+DEFINE_PUBLIC_ALIAS(recvmsg,libc_recvmsg);
+DEFINE_PUBLIC_ALIAS(getsockopt,libc_getsockopt);
+DEFINE_PUBLIC_ALIAS(setsockopt,libc_setsockopt);
+DEFINE_PUBLIC_ALIAS(listen,libc_listen);
+DEFINE_PUBLIC_ALIAS(accept,libc_accept);
+DEFINE_PUBLIC_ALIAS(shutdown,libc_shutdown);
+DEFINE_PUBLIC_ALIAS(sendmmsg,libc_sendmmsg);
+DEFINE_PUBLIC_ALIAS(recvmmsg,libc_recvmmsg);
+DEFINE_PUBLIC_ALIAS(accept4,libc_accept4);
+DEFINE_PUBLIC_ALIAS(sockatmark,libc_sockatmark);
+DEFINE_PUBLIC_ALIAS(isfdtype,libc_isfdtype);
 
 DECL_END
 

@@ -25,11 +25,11 @@
 __DECL_BEGIN
 
 #ifndef __KERNEL__
-__LIBC char *(__LIBCCALL ether_ntoa)(const struct ether_addr *__addr);
-__LIBC char *(__LIBCCALL ether_ntoa_r)(const struct ether_addr *__addr, char *__buf);
+__LIBC char *(__LIBCCALL ether_ntoa)(struct ether_addr const *__addr);
+__LIBC char *(__LIBCCALL ether_ntoa_r)(struct ether_addr const *__addr, char *__buf);
 __LIBC struct ether_addr *(__LIBCCALL ether_aton)(char const *__asc);
 __LIBC struct ether_addr *(__LIBCCALL ether_aton_r)(char const *__asc, struct ether_addr *__addr);
-__LIBC int (__LIBCCALL ether_ntohost)(char *__hostname, const struct ether_addr *__addr);
+__LIBC int (__LIBCCALL ether_ntohost)(char *__hostname, struct ether_addr const *__addr);
 __LIBC int (__LIBCCALL ether_hostton)(char const *__hostname, struct ether_addr *__addr);
 __LIBC int (__LIBCCALL ether_line)(char const *__line, struct ether_addr *__addr, char *__hostname);
 #endif /* !__KERNEL__ */

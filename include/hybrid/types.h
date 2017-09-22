@@ -250,6 +250,11 @@ typedef __timer_t timer_t;
 typedef __useconds_t useconds_t;
 #endif /* !__useconds_t_defined */
 
+#ifndef __socklen_t_defined
+#define __socklen_t_defined 1
+typedef __socklen_t socklen_t;
+#endif /* !__socklen_t_defined */
+
 DECL_END
 #endif /* __CC__ */
 

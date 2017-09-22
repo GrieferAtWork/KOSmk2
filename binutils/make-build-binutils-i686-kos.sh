@@ -8,16 +8,16 @@ export PATH="$PREFIX/bin:$PATH"
 
 cd "$PREFIX"
 
-../src/binutils-2.27/configure \
-	--target=$TARGET \
-	--prefix="$PREFIX" \
-	--with-sysroot=/opt/kos \
-	--disable-nls \
-	--disable-werror \
-	--enable-64-bit-bfd \
-|| exit $?
+# ../src/binutils-2.27/configure \
+# 	--target=$TARGET \
+# 	--prefix="$PREFIX" \
+# 	--with-sysroot=/opt/kos \
+# 	--with-headers=/opt/kos/usr/include \
+# 	--disable-nls \
+# 	--disable-werror \
+# 	--enable-64-bit-bfd \
+# 	--enable-multilib \
+# || exit $?
 
-# HINT: When something goes wrong here, try starting
-#       over by clearing "build-binutils-i686-kos"
-make || exit $?
-make install || exit $?
+# make || exit $?
+# make install || exit $?

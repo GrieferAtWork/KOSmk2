@@ -239,8 +239,8 @@ __SYSCALL(__NR_fork,sys_fork)
 
 /* Extended system calls (added by KOS). */
 #define __NR_xsyscall_min 0x80000000
-#define __NR_xsysprint    0x80000000
-__XSYSCALL(__NR_xsysprint,sys_xsysprint)
+#define __NR_xsyslog      0x80000000
+__XSYSCALL(__NR_xsyslog,sys_xsyslog)
 #define __SC_ATTRIB_CLOBB_0x80000001 C("memory")
 #define __NR_xmmap        0x80000001
 __XSYSCALL(__NR_xmmap,sys_xmmap)

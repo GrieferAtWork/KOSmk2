@@ -100,7 +100,7 @@ for (local line: fp) {
 #define SYS_wait4 __NR_wait4
 #define SYS_syncfs __NR_syncfs
 #define SYS_fork __NR_fork
-#define SYS_xsysprint __NR_xsysprint
+#define SYS_xsyslog __NR_xsyslog
 #define SYS_xmmap __NR_xmmap
 #define SYS_xmunmap __NR_xmunmap
 #define SYS_xsharesym __NR_xsharesym

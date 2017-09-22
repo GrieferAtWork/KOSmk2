@@ -626,7 +626,8 @@ mman_mmap_instance_unlocked(struct mman *__restrict self,
 #ifdef CONFIG_DEBUG
  --inst->i_branch;
 #endif
- assertf(inst->i_branch == mod->m_segc,
+ /* NOTE: There may be less branches if some mapping were overlapping. */
+ assertf(inst->i_branch <= mod->m_segc,
          "inst->i_branch = %Iu\n"
          "mod->m_segc    = %Iu\n",
          inst->i_branch,mod->m_segc);

@@ -161,7 +161,7 @@ typedef __intptr_t intptr_t;
 #ifndef __socklen_t_defined
 #define __socklen_t_defined 1
 typedef __socklen_t socklen_t;
-#endif
+#endif /* !__socklen_t_defined */
 #endif
 
 #define F_OK 0 /* Test for existence.  */

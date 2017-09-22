@@ -70,6 +70,12 @@
     <ClInclude Include="..\..\libs\libc\termios.h" />
     <ClInclude Include="..\..\libs\libc\time.h" />
     <ClInclude Include="..\..\libs\libc\locale.h" />
+    <ClInclude Include="..\..\libs\libc\inet\socket.h">
+      <Filter>inet</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libs\libc\inet\netdb.h">
+      <Filter>inet</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">

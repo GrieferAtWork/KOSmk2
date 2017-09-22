@@ -13,12 +13,30 @@ which -- $TARGET-as || { echo $TARGET-as is not in the PATH; exit 1; }
 cd "$ROOT/$GCCBUILDFOLDER"
 
 ../src/gcc-6.2.0/configure \
-	--target="$TARGET" \
+	--target=$TARGET \
 	--prefix="$PREFIX" \
 	--with-sysroot=/opt/kos \
+	--with-include-dir=/opt/kos/usr/include/i686-kos \
+	--with-gxx-include-dir=/opt/kos/usr/include/c++/6.2 \
+	--with-tune=generic \
+	--enable-gnu-unique-object \
+	--disable-vtable-verify \
+	--enable-threads=posix \
+	--enable-targets=all \
+	--enable-multiarch \
 	--enable-languages=c,c++ \
 	--enable-64-bit-bfd \
+	--enable-multilib \
+	--enable-initfini-array \
 || exit $?
+
+#	--with-cpu-32=i686 \
+#	--with-arch-32=i686 \
+#	--with-tune-32=i686 \
+#	--with-cpu-64=x86-64 \
+#	--with-arch-64=x86-64 \
+#	--with-tune-64=x86-64 \
+
 
 # HINT: When something goes wrong here, try starting
 #       over by clearing "build-gcc-i686-kos"

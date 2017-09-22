@@ -72,7 +72,7 @@ enum {
 
 #if defined(__cplusplus) || !__GCC_VERSION(2,7,0) || !defined(__USE_GNU)
 #   define __SOCKADDR_ARG       struct sockaddr *__restrict
-#   define __CONST_SOCKADDR_ARG const struct sockaddr *
+#   define __CONST_SOCKADDR_ARG struct sockaddr const *
 #else
 # define __SOCKADDR_ALLTYPES \
   __SOCKADDR_ONETYPE(sockaddr) \

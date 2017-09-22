@@ -132,7 +132,7 @@ SYSCALL_DEFINE1(xpaused,USER char const *,message) {
 }
 #endif
 
-SYSCALL_DEFINE3(xsysprint,int,type,char const *,bufp,size_t,len) {
+SYSCALL_DEFINE3(xsyslog,int,type,char const *,bufp,size_t,len) {
  char buf[64];
  ssize_t result = 0,temp;
  while (len > 0) {

@@ -34,6 +34,7 @@
 #undef _X86_
 #undef WIN32
 #define __MINGW_EXTENSION __extension__
+#define DUMMYUNIONNAME /* nothing */
 #if !defined(_MSC_VER) && !defined(__INTELLISENSE__)
 
 #define __int8        char
@@ -58,7 +59,8 @@
 #define __MINGW_NOTHROW
 #define __GNUC_VA_LIST
 #define _CRTIMP           extern
-#define __CRT_INLINE      extern __inline__
+#define __CRT_INLINE      __FORCELOCAL
+#define __CRT__NO_INLINE  1
 #define _CRT_ALIGN(x)     __ATTR_ALIGNED(x)
 #define DECLSPEC_ALIGN(x) __ATTR_ALIGNED(x)
 #define _CRT_PACKING      8

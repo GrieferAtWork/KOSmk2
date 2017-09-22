@@ -52,7 +52,7 @@ INTDEF ssize_t LIBCCALL libc_syslog_printer(char const *__restrict data,
  /* Also log to stderr if requested to. */
  if (syslog_options&LOG_PERROR)
      libc_fwrite(data,sizeof(char),datalen,stderr);
- return sys_xsysprint((int)(uintptr_t)closure,data,datalen);
+ return sys_xsyslog((int)(uintptr_t)closure,data,datalen);
 }
 INTDEF void LIBCCALL libc_vsyslog(int level, char const *format, va_list args) {
  libc_format_vprintf(&libc_syslog_printer,

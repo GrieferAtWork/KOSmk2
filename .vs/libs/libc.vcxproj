@@ -54,6 +54,8 @@
     <ClInclude Include="..\..\libs\libc\errno.h" />
     <ClInclude Include="..\..\libs\libc\fcntl.h" />
     <ClInclude Include="..\..\libs\libc\format-printer.h" />
+    <ClInclude Include="..\..\libs\libc\inet\netdb.h" />
+    <ClInclude Include="..\..\libs\libc\inet\socket.h" />
     <ClInclude Include="..\..\libs\libc\libc.h" />
     <ClInclude Include="..\..\libs\libc\locale.h" />
     <ClInclude Include="..\..\libs\libc\malloc.h" />

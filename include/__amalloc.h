@@ -47,7 +47,7 @@
 #ifdef assert
 #   define __AMALLOC_MUSTFREE(p) \
    (assert(__AMALLOC_GETKEY(p) == __AMALLOC_KEY_ALLOCA || \
-           __AMALLOC_GETKEY(p) == __AMALLOC_KEY_ALLOCA), \
+           __AMALLOC_GETKEY(p) == __AMALLOC_KEY_MALLOC), \
            __AMALLOC_GETKEY(p) == __AMALLOC_KEY_MALLOC)
 #else
 #   define __AMALLOC_MUSTFREE(p) \
@@ -77,7 +77,7 @@ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
              __res += __AMALLOC_ALIGN; \
              __AMALLOC_SKEW_ALLOCA(__res,__s-__AMALLOC_ALIGN); \
            } \
-           XRETURN (void *)__res;\
+           XRETURN (void *)__res; \
 })
 #define __acalloc(s) \
 __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
@@ -99,7 +99,7 @@ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
 #define __afree(p) \
 __XBLOCK({ void *const __p = (p); \
            if (__AMALLOC_MUSTFREE(__p)) \
-               __hybrid_free(__p); \
+               __hybrid_free((void *)((__UINT8_TYPE__ *)__p-__AMALLOC_ALIGN)); \
            (void)0; \
 })
 

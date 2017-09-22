@@ -28,7 +28,7 @@ __DECL_BEGIN
 #ifndef __socklen_t_defined
 #define __socklen_t_defined 1
 typedef __socklen_t socklen_t;
-#endif
+#endif /* !__socklen_t_defined */
 
 #ifndef __KERNEL__
 __LIBC in_addr_t (__LIBCCALL inet_addr)(char const *__cp);
