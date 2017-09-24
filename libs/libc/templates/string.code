@@ -317,22 +317,25 @@ DECL T *LIBCCALL Xstr(tok)(T *__restrict s, T const *__restrict delim) {
 #endif /* !__KERNEL__ */
 
 
+/* Wide-string UTF conversion functions. */
+#if S == 4
+#define UTFXTO8  libc_utf32to8
+#define UTF8TOX  libc_utf8to32
+#elif S == 2
+#define UTFXTO8  libc_utf16to8
+#define UTF8TOX  libc_utf8to16
+#endif
+
+
+
 #ifdef WANT_MBLEN
 #undef WANT_MBLEN
 DECL size_t LIBCCALL Xmb(rlen)
 (char const *__restrict s, size_t n, struct __mbstate *__restrict ps) {
 	if (!s) { mbstate_reset(ps); return 0; }
-#if S == 2
-	return (ssize_t)libc_utf8to16(s,n,NULL,0,ps,
-	                              UNICODE_F_STOPONNUL|
-	                              UNICODE_F_NOZEROTERM);
-#elif S == 4
-	return (ssize_t)libc_utf8to32(s,n,NULL,0,ps,
-	                              UNICODE_F_STOPONNUL|
-	                              UNICODE_F_NOZEROTERM);
-#else
-#error "Invalid character size"
-#endif
+	return (ssize_t)UTF8TOX(s,n,NULL,0,ps,
+	                        UNICODE_F_STOPONNUL|
+	                        UNICODE_F_NOZEROTERM);
 }
 
 #ifndef __mblen_state_defined
@@ -353,17 +356,9 @@ DECL size_t LIBCCALL Xmb(rtowc)
 (T *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict ps) {
 	size_t result; char const *start = s;
 	if (!s) { mbstate_reset(ps); return 0; }
-#if S == 2
-	result = libc_utf8to16((char const *)&s,(size_t)&n,pwc,pwc ? 1 : 0,ps,
-	                        UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
-	                        UNICODE_F_UTF16HALF|UNICODE_F_DOSINGLE);
-#elif S == 4
-	result = libc_utf8to32((char const *)&s,(size_t)&n,pwc,pwc ? 1 : 0,ps,
-	                        UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
-	                        UNICODE_F_DOSINGLE);
-#else
-#error "Invalid character size"
-#endif
+	result = UTF8TOX((char const *)&s,(size_t)&n,pwc,pwc ? 1 : 0,ps,
+	                  UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
+	                  UNICODE_F_UTF16HALF|UNICODE_F_DOSINGLE);
 	if (result == UNICODE_ERROR) return -1;
 	return (ssize_t)(s-start);
 }
@@ -381,17 +376,9 @@ DECL size_t LIBCCALL Xmb(snrtowcs)
 (char32_t *__restrict dst, char const **__restrict src,
  size_t nmc, size_t len, struct __mbstate *__restrict ps) {
 	size_t result;
-#if S == 4
-	result = libc_utf8to32((char const *)src,(size_t)&nmc,dst,len,ps,
-	                       UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
-	                       UNICODE_F_UPDATESRC);
-#elif S == 2
-	result = libc_utf8to16((char const *)src,(size_t)&nmc,dst,len,ps,
-	                       UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
-	                       UNICODE_F_UPDATESRC);
-#else
-#error "Invalid character size"
-#endif
+	result = UTF8TOX((char const *)src,(size_t)&nmc,dst,len,ps,
+	                  UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
+	                  UNICODE_F_UPDATESRC);
 	if (result != UNICODE_ERROR) --result;
 	return result;
 }
@@ -413,17 +400,9 @@ DECL size_t LIBCCALL Xmb(stowcs)
 #undef WANT_WCTOMB
 DECL size_t LIBCCALL Xwc(rtomb)(char *__restrict s, T wc, struct __mbstate *__restrict ps) {
 	if (!s) { mbstate_reset(ps); return UNICODE_IS_STATEDEPENDENT; }
-#if S == 2
-	return libc_utf16to8(&wc,1,s,UNICODE_MB_MAX,ps,
-	                     UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
-	                     UNICODE_F_DOSINGLE);
-#elif S == 4
-	return libc_utf32to8(&wc,1,s,UNICODE_MB_MAX,ps,
-	                     UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
-	                     UNICODE_F_DOSINGLE);
-#else
-#error "Invalid character size"
-#endif
+	return UTFXTO8(&wc,1,s,UNICODE_MB_MAX,ps,
+	               UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
+	               UNICODE_F_DOSINGLE);
 }
 
 #ifndef __wctomb_state_defined
@@ -439,17 +418,9 @@ DECL size_t LIBCCALL Xwc(snrtombs)
 (char *__restrict dst, T const **__restrict src,
  size_t nwc, size_t len, struct __mbstate *__restrict ps) {
 	size_t result;
-#if S == 4
-	result = libc_utf32to8((T const *)src,(size_t)&nwc,dst,len,ps,
-	                       UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
-	                       UNICODE_F_UPDATESRC);
-#elif S == 2
-	result = libc_utf16to8((T const *)src,(size_t)&nwc,dst,len,ps,
-	                       UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
-	                       UNICODE_F_UPDATESRC);
-#else
-#error "Invalid character size"
-#endif
+	result = UTFXTO8((T const *)src,(size_t)&nwc,dst,len,ps,
+	                  UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
+	                  UNICODE_F_UPDATESRC);
 	if (result != UNICODE_ERROR) --result;
 	return result;
 }
@@ -463,9 +434,22 @@ DECL size_t LIBCCALL Xwc(stombs)
 	return Xwc(srtombs)(dst,(T const **)&pwcs,n,&wctomb_state);
 }
 
-#endif /* !WANT_WCTOMB */
+#endif /* WANT_WCTOMB */
+
+#ifdef WANT_WCWIDTH
+#undef WANT_WCWIDTH
+DECL size_t LIBCCALL Xwc(swidth)(T const *s, size_t n) {
+	mbstate_t state = MBSTATE_INIT;
+	return UTFXTO8(s,n,NULL,0,&state,UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL);
+}
+INTERN size_t LIBCCALL Xwc(width)(T c) {
+	return Xwc(swidth)(&c,1);
+}
+#endif /* WANT_WCWIDTH */
 
 
+#undef UTFXTO8
+#undef UTF8TOX
 #undef STR_MEMCPY
 #undef NUL
 #undef T

@@ -155,8 +155,6 @@ DECL void *LIBCCALL X(libc_memcpy)
 }
 DECL void *LIBCCALL PP_CAT2(X(libc__memcpy),_d)
 (void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO) {
-	CHECK_HOST_DATA(dst,n*S);
-	CHECK_HOST_TEXT(src,n*S);
 	assertf_d(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
 	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
 	             dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
@@ -165,6 +163,27 @@ DECL void *LIBCCALL PP_CAT2(X(libc__memcpy),_d)
 	             dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
 	return X(core_memcpy)(dst,src,n);
 }
+DECL void *LIBCCALL X(libc_mempcpy)
+(void *__restrict dst, void const *__restrict src, size_t n) {
+	assertf(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
+	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
+	           dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
+	assertf(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
+	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
+	           dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
+	return (void *)((uintptr_t)X(core_memcpy)(dst,src,n)+n);
+}
+DECL void *LIBCCALL PP_CAT2(X(libc__mempcpy),_d)
+(void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO) {
+	assertf_d(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
+	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
+	             dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
+	assertf_d(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
+	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
+	             dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
+	return (void *)((uintptr_t)X(core_memcpy)(dst,src,n)+n);
+}
+
 
 DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
 	CHECK_HOST_DATA(dst,n*S);
@@ -411,7 +430,7 @@ DECL void *LIBCCALL X(libc_mempat)
 }
 #endif
 
-INTERN void *LIBCCALL X(libc_memmove)(void *dst, void const *src, size_t n) {
+DECL void *LIBCCALL X(libc_memmove)(void *dst, void const *src, size_t n) {
 	T *iter,*end; T const *siter;
 	CHECK_HOST_DATA(dst,n*S);
 	CHECK_HOST_TEXT(src,n*S);

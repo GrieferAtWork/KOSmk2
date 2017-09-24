@@ -81,10 +81,6 @@ DECL_BEGIN
 #include "templates/string.code"
 #undef DECL
 
-INTERN void *LIBCCALL libc_mempcpy(void *__restrict dst,
-                                   void const *__restrict src, size_t n) {
- return (void *)((uintptr_t)libc_memcpy(dst,src,n)+n);
-}
 INTERN void *LIBCCALL libc_memmem(void const *haystack, size_t haystacklen,
                                   void const *needle, size_t needlelen) {
  byte_t *iter,*end;
@@ -472,8 +468,11 @@ INTERN char16_t *LIBCCALL libc_16wcsupr_l(char16_t *str, locale_t lc) { NOT_IMPL
 
 /* Define public string functions */
 #undef memcpy
+#undef mempcpy
 DEFINE_PUBLIC_ALIAS(memcpy,libc_memcpy);
 DEFINE_PUBLIC_ALIAS(_memcpy_d,libc__memcpy_d);
+DEFINE_PUBLIC_ALIAS(mempcpy,libc_mempcpy);
+DEFINE_PUBLIC_ALIAS(_mempcpy_d,libc__mempcpy_d);
 DEFINE_PUBLIC_ALIAS(memmove,libc_memmove);
 DEFINE_PUBLIC_ALIAS(memset,libc_memset);
 DEFINE_PUBLIC_ALIAS(memcmp,libc_memcmp);
@@ -488,8 +487,11 @@ DEFINE_PUBLIC_ALIAS(rawmemrchr,libc_rawmemrchr);
 DEFINE_PUBLIC_ALIAS(rawmemlen,libc_rawmemlen);
 DEFINE_PUBLIC_ALIAS(rawmemrlen,libc_rawmemrlen);
 #undef memcpyw
+#undef mempcpyw
 DEFINE_PUBLIC_ALIAS(memcpyw,libc_memcpyw);
 DEFINE_PUBLIC_ALIAS(_memcpyw_d,libc__memcpyw_d);
+DEFINE_PUBLIC_ALIAS(mempcpyw,libc_mempcpyw);
+DEFINE_PUBLIC_ALIAS(_mempcpyw_d,libc__mempcpyw_d);
 DEFINE_PUBLIC_ALIAS(memmovew,libc_memmovew);
 DEFINE_PUBLIC_ALIAS(memsetw,libc_memsetw);
 DEFINE_PUBLIC_ALIAS(memcmpw,libc_memcmpw);
@@ -504,8 +506,11 @@ DEFINE_PUBLIC_ALIAS(rawmemrchrw,libc_rawmemrchrw);
 DEFINE_PUBLIC_ALIAS(rawmemlenw,libc_rawmemlenw);
 DEFINE_PUBLIC_ALIAS(rawmemrlenw,libc_rawmemrlenw);
 #undef memcpyl
+#undef mempcpyl
 DEFINE_PUBLIC_ALIAS(memcpyl,libc_memcpyl);
 DEFINE_PUBLIC_ALIAS(_memcpyl_d,libc__memcpyl_d);
+DEFINE_PUBLIC_ALIAS(mempcpyl,libc_mempcpyl);
+DEFINE_PUBLIC_ALIAS(_mempcpyl_d,libc__mempcpyl_d);
 DEFINE_PUBLIC_ALIAS(memmovel,libc_memmovel);
 DEFINE_PUBLIC_ALIAS(memsetl,libc_memsetl);
 DEFINE_PUBLIC_ALIAS(memcmpl,libc_memcmpl);
@@ -520,8 +525,12 @@ DEFINE_PUBLIC_ALIAS(rawmemrchrl,libc_rawmemrchrl);
 DEFINE_PUBLIC_ALIAS(rawmemlenl,libc_rawmemlenl);
 DEFINE_PUBLIC_ALIAS(rawmemrlenl,libc_rawmemrlenl);
 #ifdef CONFIG_64BIT_STRING
+#undef memcpyq
+#undef mempcpyq
 DEFINE_PUBLIC_ALIAS(memcpyq,libc_memcpyq);
 DEFINE_PUBLIC_ALIAS(_memcpyq_d,libc__memcpyq_d);
+DEFINE_PUBLIC_ALIAS(mempcpyq,libc_mempcpyq);
+DEFINE_PUBLIC_ALIAS(_mempcpyq_d,libc__mempcpyq_d);
 DEFINE_PUBLIC_ALIAS(memmoveq,libc_memmoveq);
 DEFINE_PUBLIC_ALIAS(memsetq,libc_memsetq);
 DEFINE_PUBLIC_ALIAS(memcmpq,libc_memcmpq);
@@ -560,7 +569,6 @@ DEFINE_PUBLIC_ALIAS(strcmp,libc_strcmp);
 DEFINE_PUBLIC_ALIAS(strncmp,libc_strncmp);
 DEFINE_PUBLIC_ALIAS(strcasecmp,libc_strcasecmp);
 DEFINE_PUBLIC_ALIAS(strncasecmp,libc_strncasecmp);
-DEFINE_PUBLIC_ALIAS(mempcpy,libc_mempcpy);
 DEFINE_PUBLIC_ALIAS(strstr,libc_strstr);
 DEFINE_PUBLIC_ALIAS(strcasestr,libc_strcasestr);
 DEFINE_PUBLIC_ALIAS(memmem,libc_memmem);
@@ -791,16 +799,17 @@ DEFINE_PUBLIC_ALIAS(__DSYM(wcswcs),libc_16wcsstr);
 /* Wide-string API */
 #ifndef __KERNEL__
 DEFINE_INTERN_ALIAS(libc_32wmemcpy,libc_memcpyl);
+DEFINE_INTERN_ALIAS(libc_32wmempcpy,libc_mempcpyl);
 DEFINE_INTERN_ALIAS(libc_32wmemset,libc_memsetl);
 DEFINE_INTERN_ALIAS(libc_32wmemmove,libc_memmovel);
 DEFINE_INTERN_ALIAS(libc_32wmemcmp,libc_memcmpl);
 DEFINE_INTERN_ALIAS(libc_32wmemchr,libc_memchrl);
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-DEFINE_INTERN_ALIAS(libc_16wmemcpy,libc_memcpyl);
-DEFINE_INTERN_ALIAS(libc_16wmemset,libc_memsetl);
-DEFINE_INTERN_ALIAS(libc_16wmemmove,libc_memmovel);
-DEFINE_INTERN_ALIAS(libc_16wmemcmp,libc_memcmpl);
-DEFINE_INTERN_ALIAS(libc_16wmemchr,libc_memchrl);
+DEFINE_INTERN_ALIAS(libc_16wmemcpy,libc_memcpyw);
+DEFINE_INTERN_ALIAS(libc_16wmemset,libc_memsetw);
+DEFINE_INTERN_ALIAS(libc_16wmemmove,libc_memmovew);
+DEFINE_INTERN_ALIAS(libc_16wmemcmp,libc_memcmpw);
+DEFINE_INTERN_ALIAS(libc_16wmemchr,libc_memchrw);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 #define T          char32_t
@@ -819,9 +828,10 @@ DEFINE_INTERN_ALIAS(libc_16wmemchr,libc_memchrl);
 #define DECL       INTERN
 
 /* Select optional functions. */
-#define WANT_MBLEN  /* mblen(), mbrlen() */
-#define WANT_MBTOWC /* mbtowc(), mbrtowc(), mbsnrtowcs(), mbsrtowcs(), mbstowcs() */
-#define WANT_WCTOMB /* wctomb(), wcrtomb(), wcsnrtombs(), wcsrtombs(), wcstombs() */
+#define WANT_MBLEN   /* mblen(), mbrlen() */
+#define WANT_MBTOWC  /* mbtowc(), mbrtowc(), mbsnrtowcs(), mbsrtowcs(), mbstowcs() */
+#define WANT_WCTOMB  /* wctomb(), wcrtomb(), wcsnrtombs(), wcsrtombs(), wcstombs() */
+#define WANT_WCWIDTH /* wcwidth(), wcswidth() */
 
 #include "templates/string.code"
 #undef DECL
@@ -830,7 +840,6 @@ DEFINE_INTERN_ALIAS(libc_16wmemchr,libc_memchrl);
 INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { return UNICODE_MB_MAX; }
 INTERN wint_t LIBCCALL libc_btowc(int c) { return c < 192 ? (wint_t)c : (wint_t)EOF; }
 INTERN int LIBCCALL libc_wctob(wint_t c) { return c < 192 ? (int)c : (int)WEOF; }
-INTERN char32_t *LIBCCALL libc_32wmempcpy(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n) { return libc_32wmemcpy(s1,s2,n)+n; }
 INTERN int LIBCCALL libc_32wcscasecmp_l(char32_t const *s1, char32_t const *s2, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcscasecmp(s1,s2); }
 INTERN int LIBCCALL libc_32wcsncasecmp_l(char32_t const *s1, char32_t const *s2, size_t n, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsncasecmp(s1,s2,n); }
 INTERN int LIBCCALL libc_32wcscoll(char32_t const *s1, char32_t const *s2) { NOT_IMPLEMENTED(); return 0; }
@@ -849,8 +858,6 @@ INTERN __ULONGLONG LIBCCALL libc_32wcstouq(char32_t const *__restrict nptr, char
 INTERN int LIBCCALL libc_32wcscoll_l(char32_t const *s1, char32_t const *s2, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcscoll(s1,s2); }
 INTERN size_t LIBCCALL libc_32wcsxfrm_l(char32_t *s1, char32_t const *s2, size_t n, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsxfrm(s1,s2,n); }
 INTERN char32_t *LIBCCALL libc_32wcsdup(char32_t const *__restrict str) { return (char32_t *)libc_memdup(str,(libc_32wcslen(str)+1)*sizeof(char32_t)); }
-INTERN ssize_t LIBCCALL libc_32wcwidth(char32_t c) { NOT_IMPLEMENTED(); return 1; }
-INTERN ssize_t LIBCCALL libc_32wcswidth(char32_t const *s, size_t n) { NOT_IMPLEMENTED(); return (ssize_t)n; }
 INTERN long int LIBCCALL libc_32wcstol_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstol(nptr,endptr,base); }
 INTERN unsigned long int LIBCCALL libc_32wcstoul_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstoul(nptr,endptr,base); }
 INTERN __LONGLONG LIBCCALL libc_32wcstoll_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstoll(nptr,endptr,base); }
@@ -992,6 +999,7 @@ DEFINE_PUBLIC_ALIAS(wcsftime_l,WC(wcsftime_l));
 
 DEFINE_PUBLIC_ALIAS(__mbrlen,WC(mbrlen));
 DEFINE_PUBLIC_ALIAS(wcswcs,WC(wcsstr));
+#undef WC
 
 DEFINE_PUBLIC_ALIAS(mbrtoc16,libc_mbrtoc16);
 DEFINE_PUBLIC_ALIAS(mbrtoc32,libc_mbrtoc32);

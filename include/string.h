@@ -350,6 +350,11 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) __INT32_TYPE__ (__LIBCCALL memcmpl
 __LIBC __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memmoveb)(void *__dst, void const *__src, size_t __n_bytes) __ASMNAME("memmove");
 __LIBC __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memmovew)(void *__dst, void const *__src, size_t __n_words);
 __LIBC __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memmovel)(void *__dst, void const *__src, size_t __n_dwords);
+#ifdef __USE_GNU
+__LIBC __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL mempcpyb)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes) __ASMNAME("mempcpy");
+__LIBC __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL mempcpyw)(void *__restrict __dst, void const *__restrict __src, size_t __n_words);
+__LIBC __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL mempcpyl)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords);
+#endif /* __USE_GNU */
 
 
 /* Similar to memset(), but fill memory using the given pattern:
@@ -527,6 +532,9 @@ __LIBC __WUNUSED __ATTR_MALLOC char *(__LIBCCALL vstrdupaf)(char const *__restri
 #include <hybrid/debuginfo.h>
 #if __USE_DEBUG != 0
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _memcpy_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO);
+#ifdef __USE_GNU
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpy_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO);
+#endif /* __USE_GNU */
 #ifndef __KERNEL__
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _strdup_d)(char const *__restrict __str, __DEBUGINFO);
@@ -539,6 +547,11 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _memcpyb_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO) __ASMNAME("_memcpy_d");
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _memcpyw_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_words, __DEBUGINFO);
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _memcpyl_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords, __DEBUGINFO);
+#ifdef __USE_GNU
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyb_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO) __ASMNAME("_mempcpy_d");
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyw_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_words, __DEBUGINFO);
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyl_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords, __DEBUGINFO);
+#endif /* __USE_GNU */
 #ifndef __KERNEL__
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__ATTR_CDECL _strdupf_d)(__DEBUGINFO, char const *__restrict __format, ...);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _vstrdupf_d)(char const *__restrict __format, __VA_LIST __args, __DEBUGINFO);
@@ -546,6 +559,9 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _
 #endif /* __USE_KOS */
 #else /* __USE_DEBUG != 0 */
 #   define _memcpy_d(dst,src,n_bytes,...) memcpy(dst,src,n_bytes)
+#ifdef __USE_GNU
+#   define _mempcpy_d(dst,src,n_bytes,...) mempcpy(dst,src,n_bytes)
+#endif /* __USE_GNU */
 #ifndef __KERNEL__
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
 #   define _strdup_d(str,...)             strdup(str)
@@ -558,6 +574,11 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _
 #   define _memcpyb_d(dst,src,n_bytes,...)  memcpyb(dst,src,n_bytes)
 #   define _memcpyw_d(dst,src,n_words,...)  memcpyw(dst,src,n_words)
 #   define _memcpyl_d(dst,src,n_dwords,...) memcpyl(dst,src,n_dwords)
+#ifdef __USE_GNU
+#   define _mempcpyb_d(dst,src,n_bytes,...)  mempcpyb(dst,src,n_bytes)
+#   define _mempcpyw_d(dst,src,n_words,...)  mempcpyw(dst,src,n_words)
+#   define _mempcpyl_d(dst,src,n_dwords,...) mempcpyl(dst,src,n_dwords)
+#endif /* __USE_GNU */
 #ifndef __KERNEL__
 #   define _strdupf_d(...,...)              strdupf(__VA_ARGS__)
 #   define _vstrdupf_d(format,args,...)     vstrdupf(format,args)
@@ -566,6 +587,9 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _
 #endif /* __USE_DEBUG == 0 */
 #ifdef __USE_DEBUG_HOOK
 #   define memcpy(dst,src,n_bytes) _memcpy_d(dst,src,n_bytes,__DEBUGINFO_GEN)
+#ifdef __USE_GNU
+#   define mempcpy(dst,src,n_bytes) _mempcpy_d(dst,src,n_bytes,__DEBUGINFO_GEN)
+#endif /* __USE_GNU */
 #ifndef __KERNEL__
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
 #   define strdup(str)             _strdup_d(str,__DEBUGINFO_GEN)
@@ -578,6 +602,11 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _
 #   define memcpyb(dst,src,n_bytes)  _memcpyb_d(dst,src,n_bytes,__DEBUGINFO_GEN)
 #   define memcpyw(dst,src,n_words)  _memcpyw_d(dst,src,n_words,__DEBUGINFO_GEN)
 #   define memcpyl(dst,src,n_dwords) _memcpyl_d(dst,src,n_dwords,__DEBUGINFO_GEN)
+#ifdef __USE_GNU
+#   define mempcpyb(dst,src,n_bytes)  _mempcpyb_d(dst,src,n_bytes,__DEBUGINFO_GEN)
+#   define mempcpyw(dst,src,n_words)  _mempcpyw_d(dst,src,n_words,__DEBUGINFO_GEN)
+#   define mempcpyl(dst,src,n_dwords) _mempcpyl_d(dst,src,n_dwords,__DEBUGINFO_GEN)
+#endif /* __USE_GNU */
 #ifndef __KERNEL__
 #   define strdupf(...)              _strdupf_d(__DEBUGINFO_GEN,__VA_ARGS__)
 #   define vstrdupf(format,args)     _vstrdupf_d(format,args,__DEBUGINFO_GEN)
