@@ -210,8 +210,10 @@ __LIBC __NONNULL((1,2)) int (__LIBCCALL lstat64)(char const *__restrict __file, 
 
 
 
-
-__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path, __mode_t __mode);
+#ifndef __mkdir_defined
+#define __mkdir_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path, __mode_t __mode) __UNIXNAME("mkdir");
+#endif /* !__mkdir_defined */
 __LIBC __NONNULL((1)) int (__LIBCCALL chmod)(char const *__file, __mode_t __mode);
 __LIBC __mode_t (__LIBCCALL umask)(__mode_t __mask);
 __LIBC __NONNULL((1)) int (__LIBCCALL mkfifo)(char const *__path, __mode_t __mode);

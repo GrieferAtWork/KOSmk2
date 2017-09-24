@@ -11,71 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libs\libc\asm.c" />
-    <ClCompile Include="..\..\libs\libc\assert.c" />
-    <ClCompile Include="..\..\libs\libc\ctype.c" />
-    <ClCompile Include="..\..\libs\libc\dirent.c" />
-    <ClCompile Include="..\..\libs\libc\environ.c" />
-    <ClCompile Include="..\..\libs\libc\errno.c" />
-    <ClCompile Include="..\..\libs\libc\fcntl.c" />
-    <ClCompile Include="..\..\libs\libc\format-printer.c" />
-    <ClCompile Include="..\..\libs\libc\getopt.c" />
-    <ClCompile Include="..\..\libs\libc\inet\netdb.c" />
-    <ClCompile Include="..\..\libs\libc\inet\socket.c" />
-    <ClCompile Include="..\..\libs\libc\locale.c" />
-    <ClCompile Include="..\..\libs\libc\malloc.c" />
-    <ClCompile Include="..\..\libs\libc\misc.c" />
-    <ClCompile Include="..\..\libs\libc\sched.c" />
-    <ClCompile Include="..\..\libs\libc\signal.c" />
-    <ClCompile Include="..\..\libs\libc\start.c" />
-    <ClCompile Include="..\..\libs\libc\stdio.c" />
-    <ClCompile Include="..\..\libs\libc\stdlib.c" />
-    <ClCompile Include="..\..\libs\libc\string.c" />
-    <ClCompile Include="..\..\libs\libc\sysconf.c" />
-    <ClCompile Include="..\..\libs\libc\termios.c" />
-    <ClCompile Include="..\..\libs\libc\time.c" />
-    <ClCompile Include="..\..\libs\libc\unicode.c" />
-    <ClCompile Include="..\..\libs\libc\unistd.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\libs\libc\dlmalloc.c.inl" />
-    <None Include="..\..\libs\libc\stdio-file.c.inl" />
-    <None Include="..\..\libs\libc\strerror.inl" />
-    <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code" />
-    <None Include="..\..\libs\libc\templates\memory.code" />
-    <None Include="..\..\libs\libc\templates\string.code" />
-    <None Include="..\..\libs\libc\templates\strtouint.code" />
-    <None Include="..\..\libs\libc\typecore.c.inl" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\libs\libc\asm.h" />
-    <ClInclude Include="..\..\libs\libc\ctype.h" />
-    <ClInclude Include="..\..\libs\libc\dirent.h" />
-    <ClInclude Include="..\..\libs\libc\environ.h" />
-    <ClInclude Include="..\..\libs\libc\errno.h" />
-    <ClInclude Include="..\..\libs\libc\fcntl.h" />
-    <ClInclude Include="..\..\libs\libc\format-printer.h" />
-    <ClInclude Include="..\..\libs\libc\inet\netdb.h" />
-    <ClInclude Include="..\..\libs\libc\inet\socket.h" />
-    <ClInclude Include="..\..\libs\libc\libc.h" />
-    <ClInclude Include="..\..\libs\libc\locale.h" />
-    <ClInclude Include="..\..\libs\libc\malloc.h" />
-    <ClInclude Include="..\..\libs\libc\misc.h" />
-    <ClInclude Include="..\..\libs\libc\sched.h" />
-    <ClInclude Include="..\..\libs\libc\signal.h" />
-    <ClInclude Include="..\..\libs\libc\stdio.h" />
-    <ClInclude Include="..\..\libs\libc\stdlib.h" />
-    <ClInclude Include="..\..\libs\libc\string.h" />
-    <ClInclude Include="..\..\libs\libc\sysconf.h" />
-    <ClInclude Include="..\..\libs\libc\system.h" />
-    <ClInclude Include="..\..\libs\libc\termios.h" />
-    <ClInclude Include="..\..\libs\libc\time.h" />
-    <ClInclude Include="..\..\libs\libc\unicode.h" />
-    <ClInclude Include="..\..\libs\libc\unistd.h" />
+    <ClCompile Include="..\..\apps\elf2lib\main.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A2791917-78D5-45B6-89E4-89AE7D4760D4}</ProjectGuid>
-    <RootNamespace>libc</RootNamespace>
+    <ProjectGuid>{9790111D-8875-451F-858D-16EC89619D82}</ProjectGuid>
+    <RootNamespace>elfimg</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -123,7 +63,8 @@
     </NMakeCleanCommandLine>
     <NMakeForcedIncludes>$(SolutionDir)..\include\__stdinc-syntax.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__BUILDING_LIBC=1;CONFIG_DEBUG=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>
+    </NMakePreprocessorDefinitions>
     <NMakeOutput>
     </NMakeOutput>
     <NMakeIncludeSearchPath>
@@ -149,7 +90,8 @@
     </NMakeCleanCommandLine>
     <NMakeForcedIncludes>$(SolutionDir)..\include\__stdinc-syntax.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__BUILDING_LIBC=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>
+    </NMakePreprocessorDefinitions>
     <NMakeOutput>
     </NMakeOutput>
     <NMakeIncludeSearchPath>

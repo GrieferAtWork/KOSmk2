@@ -104,6 +104,14 @@ INTDEF int LIBCCALL libc_unlink(char const *name);
 INTDEF int LIBCCALL libc_rmdir(char const *path);
 INTDEF int LIBCCALL libc_eaccess(char const *name, int type);
 INTDEF int LIBCCALL libc_mkdir(char const *path, mode_t mode);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+struct _diskfree_t;
+INTDEF int LIBCCALL libc_dos_mkdir(char const *path);
+INTDEF int LIBCCALL libc_chdrive(int drive);
+INTDEF int LIBCCALL libc_getdrive(void);
+INTDEF unsigned long LIBCCALL libc_getdrives(void);
+INTDEF unsigned LIBCCALL libc_getdiskfree(unsigned drive, struct _diskfree_t *diskfree);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTDEF int LIBCCALL libc_mkfifo(char const *path, mode_t mode);
 INTDEF int LIBCCALL libc_mknod(char const *path, mode_t mode, dev_t dev);
 INTDEF pid_t LIBCCALL libc_wait(__WAIT_STATUS stat_loc);

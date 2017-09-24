@@ -94,7 +94,7 @@ typedef __MAX_ALIGN_TYPE__ max_align_t;
 #ifndef __wchar_t_defined
 #define __wchar_t_defined 1
 typedef __WCHAR_TYPE__ wchar_t;
-#endif
+#endif /* !__wchar_t_defined */
 #endif /* __CC__ */
 
 #define offsetof(s,m) __COMPILER_OFFSETOF(s,m)

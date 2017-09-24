@@ -35,11 +35,19 @@ BEGIN_NEW PROJECT("elfimg")
 	SET_DISKFILE(none)
 	SOURCE("elfimg/*.c")
 END
+BEGIN_NEW PROJECT("elf2lib")
+	SET_COMPILER("host-c")
+	SET_LINKER("host-c")
+	SET_OUTPUT("/bin/apps/elf2lib")
+	SET_DISKFILE(none)
+	SOURCE("elf2lib/*.c")
+END
 
 #if __has_include("private/.sources")
 #include "private/.sources"
 #endif
 
+//BEGIN APPLICATION("pe_test")
 BEGIN PROJECT("pe_test")
 	SET_OUTPUT("/bin/apps/pe_test")
 	SET_DISKFILE("/opt/pe_test")

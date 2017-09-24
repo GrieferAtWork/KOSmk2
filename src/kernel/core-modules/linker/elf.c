@@ -477,7 +477,6 @@ elf_symaddr(struct instance *__restrict inst,
  uintptr_t load_addr = (uintptr_t)inst->i_base;
  struct modsym result;
  result.ms_type = MODSYM_TYPE_INVALID;
- assert(hash == sym_hashname(name));
  if (DYNAMIC.d_flags&(ELF_DYNAMIC_HAS_STRTAB|ELF_DYNAMIC_HAS_SYMTAB)) {
   Elf(Sym) *symtab_begin,*symtab_end,*symtab_iter;
   char *string_table = (char *)DATAADDR(DYNAMIC.d_strtab);

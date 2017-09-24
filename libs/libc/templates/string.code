@@ -18,12 +18,15 @@
  */
 
 /*
- * #define T          ... <character type> (e.g.: 'T', 'wchar_t')
- * #define Ts         ... <signed type> (e.g.: 'signed T', 's32')
- * #define Tu         ... <unsigned type> (e.g.: 'unsigned T', 'u32')
- * #define Tn         ... <needle type> (e.g.: 'int', 'wchar_t')
- * #define Xstr(x)    ... <Symbol name generator> (e.g.: 'libc_str##x', 'libc_wcs##x')
- * #define Xstp(x)    ... <Symbol name generator> (e.g.: 'libc_stp##x', 'libc_wcp##x')
+ * #define T          ... <character type> (e.g.: 'char', 'char32_t')
+ * #define Tneedle    ... <needle type> (e.g.: 'int', 'char32_t')
+ * #define Ts         ... <signed type> (e.g.: 'signed char', 's32')
+ * #define Tu         ... <unsigned type> (e.g.: 'unsigned char', 'u32')
+ * #define Tn         ... <needle type> (e.g.: 'int', 'char32_t')
+ * #define Xstr(x)    ... <Symbol name generator> (e.g.: 'libc_str##x', 'libc_32wcs##x')
+ * #define Xstp(x)    ... <Symbol name generator> (e.g.: 'libc_stp##x', 'libc_32wcp##x')
+ * #define Xmb(x)     ... <Symbol name generator> (e.g.: 'libc_32mb##x') [OPTIONAL]
+ * #define Xwc(x)     ... <Symbol name generator> (e.g.: 'libc_32wc##x') [OPTIONAL]
  * #define S          ... <Bit-width in bytes> (e.g.: '__SIZEOF_CHAR__', '__SIZEOF_WCHAR_T__')
  * #define NUL        ... <\0-character; defaults to ZERO(0)>
  * #define TOLOWER(x) ... <tolower()-function>
@@ -79,79 +82,79 @@ DECL size_t LIBCCALL Xstr(nlen)
 }
 
 DECL T *LIBCCALL Xstr(chrnul)
-(T const *__restrict haystack, int needle) {
+(T const *__restrict haystack, Tneedle needle) {
 	T *iter = (T *)haystack;
-	for (; *iter && *iter != needle; ++iter);
+	for (; *iter && *iter != (T)needle; ++iter);
 	return iter;
 }
 
 DECL T *LIBCCALL Xstr(chr)
-(T const *__restrict haystack, int needle) {
+(T const *__restrict haystack, Tneedle needle) {
 	T *iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == needle) return iter;
+	for (; *iter; ++iter) if (*iter == (T)needle) return iter;
 	return NULL;
 }
 
 DECL T *LIBCCALL Xstr(rchr)
-(T const *__restrict haystack, int needle) {
+(T const *__restrict haystack, Tneedle needle) {
 	T *result = NULL,*iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == needle) result = iter;
+	for (; *iter; ++iter) if (*iter == (T)needle) result = iter;
 	return result;
 }
 
 #ifndef IS_WIDE
 DECL T *LIBCCALL Xstr(rchrnul)
-(T const *__restrict haystack, int needle) {
+(T const *__restrict haystack, Tneedle needle) {
 	T *result = NULL,*iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == needle) result = iter;
+	for (; *iter; ++iter) if (*iter == (T)needle) result = iter;
 	return result ? result : (T *)haystack-1;
 }
 
 DECL T *LIBCCALL Xstr(nchr)
-(T const *__restrict haystack, int needle, size_t max_chars) {
+(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
 	T *iter = (T *)haystack,*end = iter+max_chars;
-	for (; iter != end && *iter; ++iter) if (*iter == needle) return iter;
+	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) return iter;
 	return NULL;
 }
 
 DECL T *LIBCCALL Xstr(nrchr)
-(T const *__restrict haystack, int needle, size_t max_chars) {
+(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
 	T *iter = (T *)haystack,*end = iter+max_chars,*result = NULL;
-	for (; iter != end && *iter; ++iter) if (*iter == needle) result = iter;
+	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) result = iter;
 	return result;
 }
 
 DECL T *LIBCCALL Xstr(nchrnul)
-(T const *__restrict haystack, int needle, size_t max_chars) {
+(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
 	T *iter = (T *)haystack,*end = iter+max_chars;
-	for (; iter != end && *iter && *iter != needle; ++iter);
+	for (; iter != end && *iter && *iter != (T)needle; ++iter);
 	return iter;
 }
 
 DECL T *LIBCCALL Xstr(nrchrnul)
-(T const *__restrict haystack, int needle, size_t max_chars) {
+(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
 	T *iter = (T *)haystack,*end = iter+max_chars,*result = NULL;
-	for (; iter != end && *iter; ++iter) if (*iter == needle) result = iter;
+	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) result = iter;
 	return result ? result : (T *)haystack-1;
 }
 
 DECL size_t LIBCCALL Xstr(off)
-(T const *__restrict haystack, int needle) {
+(T const *__restrict haystack, Tneedle needle) {
 	return Xstr(chrnul)(haystack,needle)-haystack;
 }
 
 DECL size_t LIBCCALL Xstr(roff)
-(T const *__restrict haystack, int needle) {
+(T const *__restrict haystack, Tneedle needle) {
 	return Xstr(rchrnul)(haystack,needle)-haystack;
 }
 
 DECL size_t LIBCCALL Xstr(noff)
-(T const *__restrict haystack, int needle, size_t max_chars) {
+(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
 	return Xstr(nchrnul)(haystack,needle,max_chars)-haystack;
 }
 
 DECL size_t LIBCCALL Xstr(nroff)
-(T const *__restrict haystack, int needle, size_t max_chars) {
+(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
 	return Xstr(nrchrnul)(haystack,needle,max_chars)-haystack;
 }
 #endif /* !IS_WIDE */
@@ -314,14 +317,170 @@ DECL T *LIBCCALL Xstr(tok)(T *__restrict s, T const *__restrict delim) {
 #endif /* !__KERNEL__ */
 
 
+#ifdef WANT_MBLEN
+#undef WANT_MBLEN
+DECL size_t LIBCCALL Xmb(rlen)
+(char const *__restrict s, size_t n, struct __mbstate *__restrict ps) {
+	if (!s) { mbstate_reset(ps); return 0; }
+#if S == 2
+	return (ssize_t)libc_utf8to16(s,n,NULL,0,ps,
+	                              UNICODE_F_STOPONNUL|
+	                              UNICODE_F_NOZEROTERM);
+#elif S == 4
+	return (ssize_t)libc_utf8to32(s,n,NULL,0,ps,
+	                              UNICODE_F_STOPONNUL|
+	                              UNICODE_F_NOZEROTERM);
+#else
+#error "Invalid character size"
+#endif
+}
+
+#ifndef __mblen_state_defined
+#define __mblen_state_defined 1
+PRIVATE mbstate_t mblen_state = MBSTATE_INIT;
+#endif /* !__mblen_state_defined */
+
+DECL size_t LIBCCALL Xmb(len)(char const *s, size_t n) {
+	return Xmb(rlen)(s,n,&mblen_state);
+}
+#endif /* WANT_MBLEN */
+
+
+
+#ifdef WANT_MBTOWC
+#undef WANT_MBTOWC
+DECL size_t LIBCCALL Xmb(rtowc)
+(T *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict ps) {
+	size_t result; char const *start = s;
+	if (!s) { mbstate_reset(ps); return 0; }
+#if S == 2
+	result = libc_utf8to16((char const *)&s,(size_t)&n,pwc,pwc ? 1 : 0,ps,
+	                        UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
+	                        UNICODE_F_UTF16HALF|UNICODE_F_DOSINGLE);
+#elif S == 4
+	result = libc_utf8to32((char const *)&s,(size_t)&n,pwc,pwc ? 1 : 0,ps,
+	                        UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
+	                        UNICODE_F_DOSINGLE);
+#else
+#error "Invalid character size"
+#endif
+	if (result == UNICODE_ERROR) return -1;
+	return (ssize_t)(s-start);
+}
+
+#ifndef __mbtowc_state_defined
+#define __mbtowc_state_defined 1
+PRIVATE mbstate_t mbtowc_state = MBSTATE_INIT;
+#endif /* !__mbtowc_state_defined */
+
+DECL size_t LIBCCALL Xmb(towc)(T *__restrict pwc, char const *__restrict s, size_t n) {
+	return Xmb(rtowc)(pwc,s,n,&mbtowc_state);
+}
+
+DECL size_t LIBCCALL Xmb(snrtowcs)
+(char32_t *__restrict dst, char const **__restrict src,
+ size_t nmc, size_t len, struct __mbstate *__restrict ps) {
+	size_t result;
+#if S == 4
+	result = libc_utf8to32((char const *)src,(size_t)&nmc,dst,len,ps,
+	                       UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
+	                       UNICODE_F_UPDATESRC);
+#elif S == 2
+	result = libc_utf8to16((char const *)src,(size_t)&nmc,dst,len,ps,
+	                       UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
+	                       UNICODE_F_UPDATESRC);
+#else
+#error "Invalid character size"
+#endif
+	if (result != UNICODE_ERROR) --result;
+	return result;
+}
+
+DECL size_t LIBCCALL Xmb(srtowcs)
+(T *__restrict dst, char const **__restrict src,
+ size_t len, struct __mbstate *__restrict ps) {
+	return Xmb(snrtowcs)(dst,src,(size_t)-1,len,ps);
+}
+DECL size_t LIBCCALL Xmb(stowcs)
+(T *__restrict pwcs, char const *__restrict s, size_t n) {
+	return Xmb(srtowcs)(pwcs,(char const **)&s,n,&mbtowc_state);
+}
+
+#endif /* WANT_MBTOWC */
+
+
+#ifdef WANT_WCTOMB
+#undef WANT_WCTOMB
+DECL size_t LIBCCALL Xwc(rtomb)(char *__restrict s, T wc, struct __mbstate *__restrict ps) {
+	if (!s) { mbstate_reset(ps); return UNICODE_IS_STATEDEPENDENT; }
+#if S == 2
+	return libc_utf16to8(&wc,1,s,UNICODE_MB_MAX,ps,
+	                     UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
+	                     UNICODE_F_DOSINGLE);
+#elif S == 4
+	return libc_utf32to8(&wc,1,s,UNICODE_MB_MAX,ps,
+	                     UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
+	                     UNICODE_F_DOSINGLE);
+#else
+#error "Invalid character size"
+#endif
+}
+
+#ifndef __wctomb_state_defined
+#define __wctomb_state_defined 1
+PRIVATE mbstate_t wctomb_state = MBSTATE_INIT;
+#endif /* !__wctomb_state_defined */
+
+DECL size_t LIBCCALL Xwc(tomb)(char *s, T wc) {
+	return Xwc(rtomb)(s,wc,&wctomb_state);
+}
+
+DECL size_t LIBCCALL Xwc(snrtombs)
+(char *__restrict dst, T const **__restrict src,
+ size_t nwc, size_t len, struct __mbstate *__restrict ps) {
+	size_t result;
+#if S == 4
+	result = libc_utf32to8((T const *)src,(size_t)&nwc,dst,len,ps,
+	                       UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
+	                       UNICODE_F_UPDATESRC);
+#elif S == 2
+	result = libc_utf16to8((T const *)src,(size_t)&nwc,dst,len,ps,
+	                       UNICODE_F_ALWAYSZEROTERM|UNICODE_F_STOPONNUL|
+	                       UNICODE_F_UPDATESRC);
+#else
+#error "Invalid character size"
+#endif
+	if (result != UNICODE_ERROR) --result;
+	return result;
+}
+DECL size_t LIBCCALL Xwc(srtombs)
+(char *__restrict dst, T const **__restrict src,
+ size_t len, struct __mbstate *__restrict ps) {
+	return Xwc(snrtombs)(dst,src,(size_t)-1,len,ps);
+}
+DECL size_t LIBCCALL Xwc(stombs)
+(char *__restrict dst, T const *__restrict pwcs, size_t n) {
+	return Xwc(srtombs)(dst,(T const **)&pwcs,n,&wctomb_state);
+}
+
+#endif /* !WANT_WCTOMB */
+
+
 #undef STR_MEMCPY
 #undef NUL
 #undef T
+#undef Tneedle
 #undef Ts
 #undef Tu
 #undef Tn
 #undef Xstr
 #undef Xstp
+#ifdef Xmb
+#undef Xmb
+#endif
+#ifdef Xwc
+#undef Xwc
+#endif
 #undef S
 #undef TOLOWER
 #undef TOUPPER

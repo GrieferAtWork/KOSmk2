@@ -104,6 +104,8 @@ struct moduleops {
  void (KCALL *o_fini)(struct module *__restrict self);
  /* [1..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
   * Load the module address of a given symbol.
+  * WARNING: This function may be called from a user-helper callback.
+  * WARNING: The given 'hash' may not necessarily be correct.
   * @return: * :   The absolute address of the named symbol.
   * @return: NULL: Unknown symbol. */
  struct modsym (KCALL *o_symaddr)(struct instance *__restrict self,

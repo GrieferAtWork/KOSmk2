@@ -49,7 +49,7 @@ typedef __SIZE_TYPE__ size_t;
 #define ____mbstate_t_defined 1
 typedef struct __mbstate {
  int                   __count;
- union { __WINT_TYPE__ __wch; char   __wchb[4]; } __value;
+ union { __WINT_TYPE__ __wch; char __wchb[4]; } __value;
 } __mbstate_t;
 #endif /* !____mbstate_t_defined */
 
@@ -78,6 +78,10 @@ __NAMESPACE_STD_USING(mbstate_t)
 typedef __CHAR16_TYPE__ char16_t;
 typedef __CHAR32_TYPE__ char32_t;
 #endif
+
+/* Libc uses utf16/utf32 to encode/decode char16_t and char32_t */
+#define __STD_UTF_16__ 1
+#define __STD_UTF_32__ 1
 
 #ifndef __KERNEL__
 __LIBC size_t __NOTHROW((__LIBCCALL mbrtoc16)(char16_t *__restrict __pc16, const char *__restrict __s, size_t __n, mbstate_t *__restrict __p));

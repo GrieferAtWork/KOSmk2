@@ -27,6 +27,7 @@
 #ifndef __KERNEL__
 #include "system.h"
 #include "unistd.h"
+#include "unicode.h"
 #endif
 #include <assert.h>
 #include <hybrid/compiler.h>
@@ -451,12 +452,7 @@ INTERN int LIBCCALL libc_system(char const *command) {
  }
  return status;
 }
-INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { /*NOT_IMPLEMENTED();*/ return 5; }
-INTERN int LIBCCALL libc_mblen(char const *s, size_t n) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_mbtowc(wchar_t *__restrict pwc, char const *__restrict s, size_t n) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_wctomb(char *s, wchar_t wchar) { NOT_IMPLEMENTED(); return 0; }
-INTERN size_t LIBCCALL libc_mbstowcs(wchar_t *__restrict pwcs, char const *__restrict s, size_t n) { NOT_IMPLEMENTED(); return 0; }
-INTERN size_t LIBCCALL libc_wcstombs(char *__restrict s, const wchar_t *__restrict pwcs, size_t n) { NOT_IMPLEMENTED(); return 0; }
+
 INTERN double LIBCCALL libc_drand48(void) { NOT_IMPLEMENTED(); return 0; }
 INTERN long LIBCCALL libc_lrand48(void) { NOT_IMPLEMENTED(); return 0; }
 INTERN long LIBCCALL libc_mrand48(void) { NOT_IMPLEMENTED(); return 0; }
@@ -570,12 +566,6 @@ DEFINE_PUBLIC_ALIAS(div,libc_div);
 DEFINE_PUBLIC_ALIAS(ldiv,libc_ldiv);
 DEFINE_PUBLIC_ALIAS(lldiv,libc_lldiv);
 DEFINE_PUBLIC_ALIAS(system,libc_system);
-DEFINE_PUBLIC_ALIAS(__ctype_get_mb_cur_max,libc___ctype_get_mb_cur_max);
-DEFINE_PUBLIC_ALIAS(mblen,libc_mblen);
-DEFINE_PUBLIC_ALIAS(mbtowc,libc_mbtowc);
-DEFINE_PUBLIC_ALIAS(wctomb,libc_wctomb);
-DEFINE_PUBLIC_ALIAS(mbstowcs,libc_mbstowcs);
-DEFINE_PUBLIC_ALIAS(wcstombs,libc_wcstombs);
 DEFINE_PUBLIC_ALIAS(drand48,libc_drand48);
 DEFINE_PUBLIC_ALIAS(lrand48,libc_lrand48);
 DEFINE_PUBLIC_ALIAS(mrand48,libc_mrand48);

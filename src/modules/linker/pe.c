@@ -139,15 +139,21 @@ pe_import_symbol(struct instance *__restrict inst,
   */
  name_length = strnlen((char *)entry->Name,512);
  if (!entry->Name[name_length]) {
-  /* NOTE: We _MUST_ use alloca(), because accessing the name again may SEGFAULT,
-   *       so we can't use malloc()-ated buffers here. */
-  char *buffer = (char *)alloca((name_length+6)*sizeof(char));
-  memcpy(buffer,".dos.",5*sizeof(char));
-  memcpy(buffer+5,entry->Name,name_length*sizeof(char));
-  buffer[name_length+5] = '\0';
-  /* Lookup the symbol with the prefix. */
-  sym = (*inst->i_module->m_ops->o_symaddr)(inst,buffer,sym_hashname(buffer));
-  if (sym.ms_type != MODSYM_TYPE_INVALID) return sym.ms_addr;
+  if (name_length > 6 && !memcmp(entry->Name,".unix.",6*sizeof(char))) {
+   sym = (*inst->i_module->m_ops->o_symaddr)(inst,(char *)entry->Name+6,
+                                             sym_hashname((char *)entry->Name+6));
+   if (sym.ms_type != MODSYM_TYPE_INVALID) return sym.ms_addr;
+  } else {
+   /* NOTE: We _MUST_ use alloca(), because accessing the name again may SEGFAULT,
+    *       so we can't use malloc()-ated buffers here. */
+   char *buffer = (char *)alloca((name_length+6)*sizeof(char));
+   memcpy(buffer,".dos.",5*sizeof(char));
+   memcpy(buffer+5,entry->Name,name_length*sizeof(char));
+   buffer[name_length+5] = '\0';
+   /* Lookup the symbol with the prefix. */
+   sym = (*inst->i_module->m_ops->o_symaddr)(inst,buffer,sym_hashname(buffer));
+   if (sym.ms_type != MODSYM_TYPE_INVALID) return sym.ms_addr;
+  }
  }
  /* Must do a regular lookup. */
  sym = (*inst->i_module->m_ops->o_symaddr)(inst,(char *)entry->Name,
@@ -172,7 +178,7 @@ pe_patch(struct modpatch *__restrict patcher) {
  CHECK_HOST_DOBJ(self);
  assert(self->p_module.m_ops == &pe_ops);
  base = (uintptr_t)inst->i_base;
- address_max = base+self->p_module.m_size;
+ address_max = base+self->p_module.m_end;
 
  if (self->p_import.Size >= sizeof(IMAGE_IMPORT_DESCRIPTOR)) {
   IMAGE_IMPORT_DESCRIPTOR *iter,*end;
@@ -455,8 +461,9 @@ pe_loader(struct file *__restrict fp) {
   result->p_module.m_flag &= ~MODFLAG_EXEC;
  }
 #define USE_HEADER(x) \
-      ((x)->Misc.VirtualSize && \
-     !((x)->Characteristics&(IMAGE_SCN_LNK_INFO|IMAGE_SCN_LNK_REMOVE)))
+      (((x)->VirtualAddress+(x)->Misc.VirtualSize) > (x)->VirtualAddress && \
+      !((x)->Characteristics&(IMAGE_SCN_LNK_INFO|IMAGE_SCN_LNK_REMOVE)) && \
+       ((x)->VirtualAddress+(x)->Misc.VirtualSize) <= KERNEL_BASE)
  { IMAGE_SECTION_HEADER *iter,*end;
    struct modseg *dst; size_t section_count = 0;
    end = (iter = section_headers)+nt_header.FileHeader.NumberOfSections;

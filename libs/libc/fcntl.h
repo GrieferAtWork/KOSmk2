@@ -22,6 +22,7 @@
 #include "libc.h"
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <uchar.h>
 
 DECL_BEGIN
 
@@ -35,6 +36,13 @@ INTDEF char *LIBCCALL libc_xfdname(int fd, int type, char *buf, size_t bufsize);
 INTDEF char *LIBCCALL libc_getcwd(char *buf, size_t bufsize);
 INTDEF char *LIBCCALL libc_get_current_dir_name(void);
 INTDEF char *LIBCCALL libc_getwd(char *buf);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF char *LIBCCALL libc_getdcwd(int drive, char *buf, size_t size);
+INTDEF char16_t *LIBCCALL libc_16getcwd(char16_t *dstbuf, int elemcount);
+INTDEF char32_t *LIBCCALL libc_32getcwd(char32_t *dstbuf, int elemcount);
+INTDEF char16_t *LIBCCALL libc_16getdcwd(int drive, char16_t *dstbuf, int elemcount);
+INTDEF char32_t *LIBCCALL libc_32getdcwd(int drive, char32_t *dstbuf, int elemcount);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTDEF int LIBCCALL libc_posix_fadvise(int fd, off_t offset, off_t len, int advise);
 INTDEF int LIBCCALL libc_posix_fallocate(int fd, off_t offset, off_t len);
 

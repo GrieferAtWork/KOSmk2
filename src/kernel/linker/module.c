@@ -769,7 +769,7 @@ instanceset_remove(struct instanceset *__restrict self,
  for (; iter != end; ++iter) {
   if (*iter != inst) continue;
   /* Delete this instance slot. */
-  memmove(iter+1,iter,((end-iter)-1)*sizeof(struct instance *));
+  memmove(iter,iter+1,((end-iter)-1)*sizeof(struct instance *));
   --self->is_setc;
   /* Reallocate to potentially free up unused memory. */
   if (!self->is_setc) {

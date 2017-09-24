@@ -48,6 +48,10 @@
 #include <sys/utsname.h>
 #include <hybrid/align.h>
 #include <sys/mman.h>
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <direct.h>
+#include <stdlib.h>
+#endif
 
 DECL_BEGIN
 
@@ -413,6 +417,20 @@ INTERN int LIBCCALL libc_unlink(char const *name) { return libc_unlinkat(AT_FDCW
 INTERN int LIBCCALL libc_rmdir(char const *path) { return libc_unlinkat(AT_FDCWD,path,AT_SYMLINK_FOLLOW|AT_REMOVEDIR); }
 INTERN int LIBCCALL libc_eaccess(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_EACCESS); }
 INTERN int LIBCCALL libc_mkdir(char const *path, mode_t mode) { return libc_mkdirat(AT_FDCWD,path,mode); }
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN int LIBCCALL libc_dos_mkdir(char const *path) { return libc_mkdir(path,0755); }
+INTERN int LIBCCALL libc_chdrive(int UNUSED(drive)) { return 0; }
+INTERN int LIBCCALL libc_getdrive(void) { return 0; }
+INTERN unsigned long LIBCCALL libc_getdrives(void) { return 1; }
+INTERN unsigned LIBCCALL libc_getdiskfree(unsigned drive, struct _diskfree_t *diskfree) {
+ /* Fill in something reasonable. (KOS doesn't track this stuff right now) */
+ diskfree->total_clusters      = 64*1024;
+ diskfree->avail_clusters      = 48*1024;
+ diskfree->sectors_per_cluster = 4;
+ diskfree->bytes_per_sector    = 512;
+ return 0;
+}
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTERN int LIBCCALL libc_mkfifo(char const *path, mode_t mode) { return libc_mkfifoat(AT_FDCWD,path,mode); }
 INTERN int LIBCCALL libc_mknod(char const *path, mode_t mode, dev_t dev) { return libc_mknodat(AT_FDCWD,path,mode,dev); }
 INTERN pid_t LIBCCALL libc_wait(__WAIT_STATUS stat_loc) { return libc_wait4(-1,stat_loc,0,NULL); }
@@ -806,6 +824,15 @@ DEFINE_PUBLIC_ALIAS(unlink,libc_unlink);
 DEFINE_PUBLIC_ALIAS(rmdir,libc_rmdir);
 DEFINE_PUBLIC_ALIAS(eaccess,libc_eaccess);
 DEFINE_PUBLIC_ALIAS(mkdir,libc_mkdir);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_chdir,libc_chdir);
+DEFINE_PUBLIC_ALIAS(_rmdir,libc_rmdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(mkdir),libc_dos_mkdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_mkdir),libc_dos_mkdir);
+DEFINE_PUBLIC_ALIAS(_chdrive,libc_chdrive);
+DEFINE_PUBLIC_ALIAS(_getdrive,libc_getdrive);
+DEFINE_PUBLIC_ALIAS(_getdrives,libc_getdrives);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 DEFINE_PUBLIC_ALIAS(mkfifo,libc_mkfifo);
 DEFINE_PUBLIC_ALIAS(mknod,libc_mknod);
 DEFINE_PUBLIC_ALIAS(wait,libc_wait);

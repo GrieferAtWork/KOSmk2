@@ -221,8 +221,14 @@ __LIBC unsigned int (__LIBCCALL alarm)(unsigned int __seconds);
 __LIBC unsigned int (__LIBCCALL sleep)(unsigned int __seconds);
 __LIBC int (__LIBCCALL pause)(void);
 __LIBC __NONNULL((1)) int (__LIBCCALL chown)(char const *__file, __uid_t __owner, __gid_t __group);
+#ifndef __chdir_defined
+#define __chdir_defined 1
 __LIBC __NONNULL((1)) int (__LIBCCALL chdir)(char const *__path);
+#endif /* !__chdir_defined */
+#ifndef __getcwd_defined
+#define __getcwd_defined 1
 __LIBC char *(__LIBCCALL getcwd)(char *__buf, size_t __size);
+#endif /* !__getcwd_defined */
 __LIBC __WUNUSED int (__LIBCCALL dup)(int __fd);
 __LIBC int (__LIBCCALL dup2)(int __fd, int __fd2);
 __LIBC __ATTR_NORETURN void (__LIBCCALL _exit)(int __status);

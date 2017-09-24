@@ -23,12 +23,14 @@
  * (Used to patch some symbols and get
  *  the windows headers to compile...) */
 
-#include <__stdinc.h>
+#include "../__stdinc.h"
 #include <stddef.h>
 #include <stdarg.h>
+#ifdef __KOS__
 #include <hybrid/typecore.h>
 #include <hybrid/host.h>
 #include <hybrid/types.h>
+#endif
 
 #undef __cdecl
 #undef _X86_
@@ -37,6 +39,15 @@
 #define DUMMYUNIONNAME /* nothing */
 #if !defined(_MSC_VER) && !defined(__INTELLISENSE__)
 
+#undef __int8
+#undef __int16
+#undef __int32
+#undef __int64
+#undef __stdcall
+#undef __cdecl
+#undef __declspec
+#undef __unaligned
+#undef __fastcall
 #define __int8        char
 #define __int16       short
 #define __int32       int

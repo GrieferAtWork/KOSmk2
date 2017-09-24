@@ -160,8 +160,12 @@
 
 #ifdef __PE__
 #   define __ASMNAME2(unix,dos) __ASMNAME(dos)
+#   define __DOSNAME(x)         __ASMNAME(x)
+#   define __UNIXNAME(x)        __ASMNAME(".unix." x)
 #else
 #   define __ASMNAME2(unix,dos) __ASMNAME(unix)
+#   define __DOSNAME(x)         __ASMNAME(".dos." x)
+#   define __UNIXNAME(x)        __ASMNAME(x)
 #endif
 
 #ifndef __VA_LIST

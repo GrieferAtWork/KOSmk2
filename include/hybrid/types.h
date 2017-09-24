@@ -255,6 +255,11 @@ typedef __useconds_t useconds_t;
 typedef __socklen_t socklen_t;
 #endif /* !__socklen_t_defined */
 
+#ifndef __wchar_t_defined
+#define __wchar_t_defined 1
+typedef __WCHAR_TYPE__ wchar_t;
+#endif /* !__wchar_t_defined */
+
 DECL_END
 #endif /* __CC__ */
 

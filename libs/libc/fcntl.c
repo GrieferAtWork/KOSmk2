@@ -28,6 +28,8 @@
 #include "errno.h"
 #include "fcntl.h"
 #include "stdlib.h"
+#include "string.h"
+#include "unicode.h"
 
 #include <hybrid/compiler.h>
 #include <kos/fcntl.h>
@@ -143,6 +145,25 @@ INTERN char *LIBCCALL libc_get_current_dir_name(void) { return libc_getcwd(NULL,
 INTERN char *LIBCCALL libc_getwd(char *buf) { return libc_getcwd(buf,(size_t)-1); }
 INTERN int LIBCCALL libc_posix_fadvise(int UNUSED(fd), off_t UNUSED(offset), off_t UNUSED(len), int UNUSED(advise)) { return 0; }
 INTERN int LIBCCALL libc_posix_fallocate(int UNUSED(fd), off_t UNUSED(offset), off_t UNUSED(len)) { return 0; }
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN char *LIBCCALL libc_getdcwd(int UNUSED(drive), char *buf, size_t size) { return libc_getcwd(buf,size); }
+INTERN char16_t *LIBCCALL libc_16getdcwd(int UNUSED(drive), char16_t *dstbuf, int elemcount) { return libc_16getcwd(dstbuf,elemcount); }
+INTERN char32_t *LIBCCALL libc_32getdcwd(int UNUSED(drive), char32_t *dstbuf, int elemcount) { return libc_32getcwd(dstbuf,elemcount); }
+INTERN char16_t *LIBCCALL libc_16getcwd(char16_t *dstbuf, int elemcount) {
+ char *result;
+ if (!elemcount) { SET_ERRNO(ERANGE); return NULL; }
+ result = libc_getcwd((char *)dstbuf,(size_t)elemcount*2);
+ if (!result) return NULL;
+ return libc_api_utf8to16(dstbuf,(size_t)elemcount,result,libc_strlen(result));
+}
+INTERN char32_t *LIBCCALL libc_32getcwd(char32_t *dstbuf, int elemcount) {
+ char *result;
+ if (!elemcount) { SET_ERRNO(ERANGE); return NULL; }
+ result = libc_getcwd((char *)dstbuf,(size_t)elemcount*2);
+ if (!result) return NULL;
+ return libc_api_utf8to32(dstbuf,(size_t)elemcount,result,libc_strlen(result));
+}
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DEFINE_PUBLIC_ALIAS(ioctl,libc_ioctl);
 DEFINE_PUBLIC_ALIAS(fcntl,libc_fcntl);
@@ -154,6 +175,14 @@ DEFINE_PUBLIC_ALIAS(xfdname,libc_xfdname);
 DEFINE_PUBLIC_ALIAS(getcwd,libc_getcwd);
 DEFINE_PUBLIC_ALIAS(get_current_dir_name,libc_get_current_dir_name);
 DEFINE_PUBLIC_ALIAS(getwd,libc_getwd);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_getdcwd,libc_getdcwd);
+DEFINE_PUBLIC_ALIAS(getdcwd,libc_getdcwd);
+DEFINE_PUBLIC_ALIAS(wgetdcwd,libc_32getdcwd);
+DEFINE_PUBLIC_ALIAS(wgetcwd,libc_32getcwd);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wgetdcwd),libc_16getdcwd);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wgetcwd),libc_16getcwd);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 DEFINE_PUBLIC_ALIAS(posix_fadvise,libc_posix_fadvise);
 DEFINE_PUBLIC_ALIAS(posix_fallocate,libc_posix_fallocate);
 DEFINE_PUBLIC_ALIAS(open64,libc_open);
