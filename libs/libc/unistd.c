@@ -35,6 +35,7 @@
 #include "sysconf.h"
 #include "misc.h"
 #include "environ.h"
+#include "unicode.h"
 
 #include <hybrid/asm.h>
 #include <hybrid/section.h>
@@ -980,6 +981,34 @@ DEFINE_PUBLIC_ALIAS(stat64,libc_glibc_stat);
 DEFINE_PUBLIC_ALIAS(lstat64,libc_glibc_lstat);
 DEFINE_PUBLIC_ALIAS(fstat64,libc_glibc_fstat);
 DEFINE_PUBLIC_ALIAS(fstatat64,libc_glibc_fstatat);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+/* Unicode pathname support. */
+#define WRAPPER(n,base) \
+{ int result = -1; char *epath; \
+  if ((epath = libc_utf##n##to8m(path,libc_##n##wcslen(path))) != NULL) { \
+   result = base(epath); \
+   free(epath); \
+  } \
+  return result; \
+}
+INTERN int LIBCCALL libc_16wchdir(char16_t const *path) WRAPPER(16,libc_chdir)
+INTERN int LIBCCALL libc_32wchdir(char32_t const *path) WRAPPER(32,libc_chdir)
+INTERN int LIBCCALL libc_16wmkdir(char16_t const *path) WRAPPER(16,libc_dos_mkdir)
+INTERN int LIBCCALL libc_32wmkdir(char32_t const *path) WRAPPER(32,libc_dos_mkdir)
+INTERN int LIBCCALL libc_16wrmdir(char16_t const *path) WRAPPER(16,libc_rmdir)
+INTERN int LIBCCALL libc_32wrmdir(char32_t const *path) WRAPPER(32,libc_rmdir)
+#undef WRAPPER
+
+DEFINE_PUBLIC_ALIAS(_wchdir,libc_32wchdir);
+DEFINE_PUBLIC_ALIAS(_wmkdir,libc_32wmkdir);
+DEFINE_PUBLIC_ALIAS(_wrmdir,libc_32wrmdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wchdir),libc_16wchdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wmkdir),libc_16wmkdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wrmdir),libc_16wrmdir);
+
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 
 DECL_END
 

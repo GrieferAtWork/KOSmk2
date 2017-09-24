@@ -53,21 +53,29 @@ __LIBC unsigned (__LIBCCALL _getdiskfree)(unsigned __drive, struct _diskfree_t *
 __LIBC wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__dstbuf, int __sizeinwchars) __ASMNAME2("wgetcwd","_wgetcwd");
 __LIBC wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __sizeinwchars) __ASMNAME2("wgetdcwd","_wgetdcwd");
 #define _wgetdcwd_nolock    _wgetdcwd
+__LIBC int (__LIBCCALL _wchdir)(wchar_t const *__path) __ASMNAME2("wchdir","_wchdir");
+__LIBC int (__LIBCCALL _wmkdir)(wchar_t const *__path) __ASMNAME2("wmkdir","_wmkdir");
+__LIBC int (__LIBCCALL _wrmdir)(wchar_t const *__path) __ASMNAME2("wrmdir","_wrmdir");
 #endif /* __USE_DOS */
 
-
+/* A small hand full of functions defined in '<direct.h>' */
 #ifndef __getcwd_defined
 #define __getcwd_defined 1
 __LIBC char *(__LIBCCALL getcwd)(char *__buf, size_t __size);
 #endif /* !__getcwd_defined */
-#ifndef __mkdir_defined
-#define __mkdir_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) __DOSNAME("mkdir");
-#endif /* !__mkdir_defined */
 #ifndef __chdir_defined
 #define __chdir_defined 1
 __LIBC __NONNULL((1)) int (__LIBCCALL chdir)(char const *__path);
 #endif /* !__chdir_defined */
+#ifndef __mkdir_defined
+#define __mkdir_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) __DOSNAME("mkdir");
+#endif /* !__mkdir_defined */
+#ifndef __rmdir_defined
+#define __rmdir_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL rmdir)(char const *__path);
+#endif /* !__rmdir_defined */
+
 #endif /* !__KERNEL__ */
 
 __DECL_END

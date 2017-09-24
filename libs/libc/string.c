@@ -840,11 +840,12 @@ DEFINE_INTERN_ALIAS(libc_16wmemchr,libc_memchrw);
 INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { return UNICODE_MB_MAX; }
 INTERN wint_t LIBCCALL libc_btowc(int c) { return c < 192 ? (wint_t)c : (wint_t)EOF; }
 INTERN int LIBCCALL libc_wctob(wint_t c) { return c < 192 ? (int)c : (int)WEOF; }
+INTERN int LIBCCALL libc_mbsinit(struct __mbstate const *ps) { return (!ps || !libc_memchr(ps,0,sizeof(mbstate_t))); }
+
 INTERN int LIBCCALL libc_32wcscasecmp_l(char32_t const *s1, char32_t const *s2, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcscasecmp(s1,s2); }
 INTERN int LIBCCALL libc_32wcsncasecmp_l(char32_t const *s1, char32_t const *s2, size_t n, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsncasecmp(s1,s2,n); }
 INTERN int LIBCCALL libc_32wcscoll(char32_t const *s1, char32_t const *s2) { NOT_IMPLEMENTED(); return 0; }
 INTERN size_t LIBCCALL libc_32wcsxfrm(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_32mbsinit(struct __mbstate const *ps) { return (!ps || !libc_memchr(ps,0,sizeof(mbstate_t))); }
 INTERN double LIBCCALL libc_32wcstod(char32_t const *__restrict nptr, char32_t **__restrict endptr) { NOT_IMPLEMENTED(); return 0; }
 INTERN long int LIBCCALL libc_32wcstol(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
 INTERN unsigned long int LIBCCALL libc_32wcstoul(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
@@ -925,8 +926,9 @@ INTERN size_t LIBCCALL libc_c32rtomb(char *__restrict s, char32_t c32,
 DEFINE_PUBLIC_ALIAS(__ctype_get_mb_cur_max,libc___ctype_get_mb_cur_max);
 DEFINE_PUBLIC_ALIAS(btowc,libc_btowc);
 DEFINE_PUBLIC_ALIAS(wctob,libc_wctob);
-#define WC(x) libc_32##x
+DEFINE_PUBLIC_ALIAS(mbsinit,libc_mbsinit);
 
+#define WC(x) libc_32##x
 DEFINE_PUBLIC_ALIAS(mblen,WC(mblen));
 DEFINE_PUBLIC_ALIAS(mbtowc,WC(mbtowc));
 DEFINE_PUBLIC_ALIAS(wctomb,WC(wctomb));
@@ -943,7 +945,6 @@ DEFINE_PUBLIC_ALIAS(wcscmp,WC(wcscmp));
 DEFINE_PUBLIC_ALIAS(wcsncmp,WC(wcsncmp));
 DEFINE_PUBLIC_ALIAS(wcscoll,WC(wcscoll));
 DEFINE_PUBLIC_ALIAS(wcsxfrm,WC(wcsxfrm));
-DEFINE_PUBLIC_ALIAS(mbsinit,WC(mbsinit));
 DEFINE_PUBLIC_ALIAS(mbrtowc,WC(mbrtowc));
 DEFINE_PUBLIC_ALIAS(wcrtomb,WC(wcrtomb));
 DEFINE_PUBLIC_ALIAS(mbrlen,WC(mbrlen));

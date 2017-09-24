@@ -30,6 +30,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "unicode.h"
+#include "unistd.h"
 
 #include <hybrid/compiler.h>
 #include <kos/fcntl.h>
@@ -182,6 +183,7 @@ DEFINE_PUBLIC_ALIAS(wgetdcwd,libc_32getdcwd);
 DEFINE_PUBLIC_ALIAS(wgetcwd,libc_32getcwd);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wgetdcwd),libc_16getdcwd);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wgetcwd),libc_16getcwd);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wchdir),libc_16wchdir);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 DEFINE_PUBLIC_ALIAS(posix_fadvise,libc_posix_fadvise);
 DEFINE_PUBLIC_ALIAS(posix_fallocate,libc_posix_fallocate);

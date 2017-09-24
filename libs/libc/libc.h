@@ -19,6 +19,10 @@
 #ifndef GUARD_LIBS_LIBC_LIBC_H
 #define GUARD_LIBS_LIBC_LIBC_H 1
 
+#ifdef __KERNEL__
+#define CONFIG_LIBC_NO_DOS_LIBC 1
+#endif
+
 #define __assertion_print    libc___assertion_print
 #define __assertion_printf   libc___assertion_printf
 #define __assertion_vprintf  libc___assertion_vprintf

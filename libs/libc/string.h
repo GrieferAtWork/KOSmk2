@@ -235,9 +235,12 @@ INTDEF int LIBCCALL libc_strncasecoll_l(char const *str1, char const *str2, size
 INTDEF int LIBCCALL libc_memcasecmp(void const *s1, void const *s2, size_t n_bytes);
 INTDEF int LIBCCALL libc_memcasecmp_l(void const *a, void const *b, size_t n_bytes, locale_t lc);
 
+/* General-purpose wide-string API functions. */
 INTDEF size_t LIBCCALL libc___ctype_get_mb_cur_max(void);
 INTDEF wint_t LIBCCALL libc_btowc(int c);
 INTDEF int LIBCCALL libc_wctob(wint_t c);
+INTDEF int LIBCCALL libc_mbsinit(struct __mbstate const *ps);
+
 INTDEF size_t LIBCCALL libc_32mblen(char const *s, size_t n);
 INTDEF size_t LIBCCALL libc_32mbtowc(char32_t *__restrict pwc, char const *__restrict s, size_t n);
 INTDEF size_t LIBCCALL libc_32wctomb(char *s, char32_t wchar);
@@ -253,7 +256,6 @@ INTDEF int LIBCCALL libc_32wcscmp(char32_t const *s1, char32_t const *s2);
 INTDEF int LIBCCALL libc_32wcsncmp(char32_t const *s1, char32_t const *s2, size_t n);
 INTDEF int LIBCCALL libc_32wcscoll(char32_t const *s1, char32_t const *s2);
 INTDEF size_t LIBCCALL libc_32wcsxfrm(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n);
-INTDEF int LIBCCALL libc_32mbsinit(struct __mbstate const *ps);
 INTDEF size_t LIBCCALL libc_32mbrtowc(char32_t *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict p);
 INTDEF size_t LIBCCALL libc_32wcrtomb(char *__restrict s, char32_t wc, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_32mbrlen(char const *__restrict s, size_t n, struct __mbstate *__restrict ps);

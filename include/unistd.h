@@ -239,7 +239,10 @@ __LIBC __NONNULL((2)) int (__LIBCCALL ttyname_r)(int __fd, char *__buf, size_t _
 __LIBC __WUNUSED int (__LIBCCALL isatty)(int __fd);
 __LIBC __NONNULL((1,2)) int (__LIBCCALL link)(char const *__from, char const *__to);
 __LIBC __NONNULL((1)) int (__LIBCCALL unlink)(char const *__name);
+#ifndef __rmdir_defined
+#define __rmdir_defined 1
 __LIBC __NONNULL((1)) int (__LIBCCALL rmdir)(char const *__path);
+#endif /* !__rmdir_defined */
 __LIBC __pid_t (__LIBCCALL tcgetpgrp)(int __fd);
 __LIBC int (__LIBCCALL tcsetpgrp)(int __fd, __pid_t __pgrp_id);
 __LIBC __WUNUSED char *(__LIBCCALL getlogin)(void);

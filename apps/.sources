@@ -52,8 +52,8 @@ BEGIN PROJECT("pe_test")
 	SET_OUTPUT("/bin/apps/pe_test")
 	SET_DISKFILE("/opt/pe_test")
 	//SET_LINKER("/binutils/build-binutils-i686-kos/ld/ld-new.exe")
-	C_FLAGS("-pe")
-	L_FLAGS("-m","i386pe")
+	//C_FLAGS("-pe")
+	//L_FLAGS("-m","i386pe")
 	SOURCE("test/pe_test.c")
 END
 

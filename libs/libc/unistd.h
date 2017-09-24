@@ -27,10 +27,12 @@
 #include <hybrid/types.h>
 #include <hybrid/kdev_t.h>
 #include <sys/resource.h>
+#include <uchar.h>
 
 DECL_BEGIN
 
 struct utsname;
+struct rlimit64;
 
 INTDEF long int ATTR_CDECL libc_syscall(long int sysno, ...);
 INTDEF major_t LIBCCALL libc_gnu_dev_major(dev_t dev);
@@ -283,6 +285,15 @@ INTDEF int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struc
 INTDEF int LIBCCALL libc_uname(struct utsname *name);
 INTDEF int LIBCCALL libc_brk(void *addr);
 INTDEF void *LIBCCALL libc_sbrk(intptr_t increment);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF int LIBCCALL libc_16wchdir(char16_t const *path);
+INTDEF int LIBCCALL libc_16wmkdir(char16_t const *path);
+INTDEF int LIBCCALL libc_16wrmdir(char16_t const *path);
+INTDEF int LIBCCALL libc_32wchdir(char32_t const *path);
+INTDEF int LIBCCALL libc_32wmkdir(char32_t const *path);
+INTDEF int LIBCCALL libc_32wrmdir(char32_t const *path);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 
