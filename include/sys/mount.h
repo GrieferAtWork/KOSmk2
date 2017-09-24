@@ -19,6 +19,7 @@
 #ifndef _SYS_MOUNT_H
 #define _SYS_MOUNT_H 1
 
+#include <__stdinc.h>
 #include <features.h>
 #include <sys/ioctl.h>
 
@@ -106,11 +107,11 @@ __DECL_BEGIN
 
 #ifndef __KERNEL__
 /* Mount a filesystem. */
-__LIBC int (__LIBCCALL mount)(char const *__special_file, char const *__dir,
-                              char const *__fstype, unsigned long int __rwflag,
-                              void const *__data);
-__LIBC int (__LIBCCALL umount)(char const *__special_file);
-__LIBC int (__LIBCCALL umount2)(char const *__special_file, int __flags);
+__LIBC __WARN_NODOSFS int (__LIBCCALL mount)(char const *__special_file, char const *__dir,
+                                             char const *__fstype, unsigned long int __rwflag,
+                                             void const *__data);
+__LIBC __WARN_NODOSFS int (__LIBCCALL umount)(char const *__special_file);
+__LIBC __WARN_NODOSFS int (__LIBCCALL umount2)(char const *__special_file, int __flags);
 #endif /* !__KERNEL__ */
 
 __DECL_END

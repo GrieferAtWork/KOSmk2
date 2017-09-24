@@ -421,7 +421,7 @@ __LIBC int (__LIBCCALL sethostid)(long int __id);
 __LIBC __NONNULL((1)) int (__LIBCCALL getdomainname)(char *__name, size_t __len);
 __LIBC __NONNULL((1)) int (__LIBCCALL setdomainname)(char const *__name, size_t __len);
 __LIBC int (__LIBCCALL vhangup)(void);
-__LIBC __NONNULL((1)) int (__LIBCCALL revoke)(char const *__file);
+__LIBC __NONNULL((1)) int (__LIBCCALL revoke)(char const *__file) __UFS_FUNC(revoke);
 __LIBC __NONNULL((1)) int (__LIBCCALL profil)(unsigned short int *__sample_buffer, size_t __size, size_t __offset, unsigned int __scale);
 __LIBC int (__LIBCCALL acct)(char const *__name) __UFS_FUNC(acct);
 __LIBC char *(__LIBCCALL getusershell)(void);

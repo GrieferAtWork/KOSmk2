@@ -46,11 +46,25 @@ struct mntent {
 };
 
 #ifndef __KERNEL__
+#ifdef __NAMESPACE_STD_EXISTS
+#ifndef __std_FILE_defined
+#define __std_FILE_defined 1
+__NAMESPACE_STD_BEGIN
+typedef __FILE FILE;
+__NAMESPACE_STD_END
+#endif /* !__std_FILE_defined */
+#ifndef __FILE_defined
+#define __FILE_defined 1
+__NAMESPACE_STD_USING(FILE)
+#endif /* !__FILE_defined */
+#else /* __NAMESPACE_STD_EXISTS */
 #ifndef __FILE_defined
 #define __FILE_defined 1
 typedef __FILE FILE;
-#endif
-__LIBC FILE *(__LIBCCALL setmntent)(char const *__file, char const *__mode);
+#endif /* !__FILE_defined */
+#endif /* !__NAMESPACE_STD_EXISTS */
+
+__LIBC FILE *(__LIBCCALL setmntent)(char const *__file, char const *__mode) __UFS_FUNC(setmntent);
 __LIBC struct mntent *(__LIBCCALL getmntent)(FILE *__stream);
 __LIBC int (__LIBCCALL addmntent)(FILE *__restrict __stream, struct mntent const *__restrict __mnt);
 __LIBC int (__LIBCCALL endmntent)(FILE *__stream);

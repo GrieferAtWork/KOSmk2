@@ -706,12 +706,14 @@ end:
  task_endcrit();
  return result;
 }
-SYSCALL_DEFINE3(symlinkat,USER char const *,oldname,int,newdfd,USER char const *,newname) {
+SYSCALL_DEFINE4(xsymlinkat,USER char const *,oldname,int,newdfd,
+                USER char const *,newname,int,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct iattr file_attr;
  REF struct dentry *cwd; errno_t result;
  REF struct dentry *result_entry;
+ /* TODO: 'flags&AT_DOSPATH' */
  FSACCESS_SETUSER(walker.dw_access);
  walker.dw_nlink    = 0;
  walker.dw_nofollow = false;
@@ -742,6 +744,10 @@ SYSCALL_DEFINE3(symlinkat,USER char const *,oldname,int,newdfd,USER char const *
 end: task_endcrit();
  return result;
 }
+SYSCALL_DEFINE3(symlinkat,USER char const *,oldname,int,newdfd,USER char const *,newname) {
+ return SYSC_xsymlinkat(oldname,newdfd,newname,0);
+}
+
 SYSCALL_DEFINE5(linkat,int,olddfd,USER char const *,oldname,
                        int,newdfd,USER char const *,newname,int,flags) {
  struct fdman *fdm = THIS_FDMAN;

@@ -28,6 +28,7 @@
 #include <hybrid/kdev_t.h>
 #include <sys/resource.h>
 #include <uchar.h>
+#include <stdbool.h>
 
 DECL_BEGIN
 
@@ -63,25 +64,26 @@ INTDEF int LIBCCALL libc_dup(int fd);
 INTDEF int LIBCCALL libc_dup3(int fd, int fd2, int flags);
 INTDEF int LIBCCALL libc_dup2(int fd, int fd2);
 INTDEF int LIBCCALL libc_kfstat64(int fd, struct stat64 *buf);
-INTDEF int LIBCCALL libc_kfstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flag);
+INTDEF int LIBCCALL libc_kfstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flags);
 INTDEF int LIBCCALL libc_kstat64(char const *__restrict file, struct stat64 *__restrict buf);
 INTDEF int LIBCCALL libc_klstat64(char const *__restrict file, struct stat64 *__restrict buf);
 INTDEF int LIBCCALL libc_access(char const *name, int type);
-INTDEF int LIBCCALL libc_faccessat(int fd, char const *file, int type, int flag);
+INTDEF int LIBCCALL libc_eaccess(char const *name, int type);
+INTDEF int LIBCCALL libc_faccessat(int fd, char const *file, int type, int flags);
 INTDEF int LIBCCALL libc_chown(char const *file, uid_t owner, gid_t group);
 INTDEF int LIBCCALL libc_lchown(char const *file, uid_t owner, gid_t group);
 INTDEF int LIBCCALL libc_fchown(int fd, uid_t owner, gid_t group);
+INTDEF int LIBCCALL libc_fchownat(int fd, char const *file, uid_t owner, gid_t group, int flags);
 INTDEF int LIBCCALL libc_chmod(char const *file, mode_t mode);
 INTDEF int LIBCCALL libc_lchmod(char const *file, mode_t mode);
 INTDEF int LIBCCALL libc_fchmod(int fd, mode_t mode);
-INTDEF int LIBCCALL libc_fchownat(int fd, char const *file, uid_t owner, gid_t group, int flag);
-INTDEF int LIBCCALL libc_fchmodat(int fd, char const *file, mode_t mode, int flag);
+INTDEF int LIBCCALL libc_fchmodat(int fd, char const *file, mode_t mode, int flags);
 INTDEF int LIBCCALL libc_mknodat(int fd, char const *path, mode_t mode, dev_t dev);
 INTDEF int LIBCCALL libc_mkdirat(int fd, char const *path, mode_t mode);
 INTDEF int LIBCCALL libc_mkfifoat(int fd, char const *path, mode_t mode);
 INTDEF int LIBCCALL libc_linkat(int fromfd, char const *from, int tofd, char const *to, int flags);
 INTDEF int LIBCCALL libc_symlinkat(char const *from, int tofd, char const *to);
-INTDEF int LIBCCALL libc_unlinkat(int fd, char const *name, int flag);
+INTDEF int LIBCCALL libc_unlinkat(int fd, char const *name, int flags);
 INTDEF int LIBCCALL libc_renameat(int oldfd, char const *old, int newfd, char const *new_);
 INTDEF ssize_t LIBCCALL libc_readlinkat(int fd, char const *__restrict path, char *__restrict buf, size_t len);
 INTDEF int LIBCCALL libc_removeat(int fd, char const *filename);
@@ -105,7 +107,6 @@ INTDEF int LIBCCALL libc_symlink(char const *from, char const *to);
 INTDEF ssize_t LIBCCALL libc_readlink(char const *__restrict path, char *__restrict buf, size_t len);
 INTDEF int LIBCCALL libc_unlink(char const *name);
 INTDEF int LIBCCALL libc_rmdir(char const *path);
-INTDEF int LIBCCALL libc_eaccess(char const *name, int type);
 INTDEF int LIBCCALL libc_mkdir(char const *path, mode_t mode);
 INTDEF int LIBCCALL libc_mkfifo(char const *path, mode_t mode);
 INTDEF int LIBCCALL libc_mknod(char const *path, mode_t mode, dev_t dev);
@@ -270,11 +271,11 @@ struct glibc_stat {
 INTDEF int LIBCCALL libc_glibc_stat(char const *path, struct glibc_stat *statbuf);
 INTDEF int LIBCCALL libc_glibc_lstat(char const *path, struct glibc_stat *statbuf);
 INTDEF int LIBCCALL libc_glibc_fstat(int fd, struct glibc_stat *statbuf);
-INTDEF int LIBCCALL libc_glibc_fstatat(int fd, char const *filename, struct glibc_stat *statbuf, int flag);
+INTDEF int LIBCCALL libc_glibc_fstatat(int fd, char const *filename, struct glibc_stat *statbuf, int flags);
 INTDEF int LIBCCALL libc___fxstat(int ver, int fd, struct glibc_stat *statbuf);
 INTDEF int LIBCCALL libc___xstat(int ver, char const *filename, struct glibc_stat *statbuf);
 INTDEF int LIBCCALL libc___lxstat(int ver, char const *filename, struct glibc_stat *statbuf);
-INTDEF int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struct glibc_stat *statbuf, int flag);
+INTDEF int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struct glibc_stat *statbuf, int flags);
 INTDEF int LIBCCALL libc_uname(struct utsname *name);
 INTDEF int LIBCCALL libc_brk(void *addr);
 INTDEF void *LIBCCALL libc_sbrk(intptr_t increment);
@@ -286,19 +287,75 @@ INTDEF int LIBCCALL libc_getdrive(void);
 INTDEF unsigned long LIBCCALL libc_getdrives(void);
 INTDEF unsigned LIBCCALL libc_getdiskfree(unsigned drive, struct _diskfree_t *diskfree);
 
-INTDEF int LIBCCALL libc_16wmkdir(char16_t const *path, mode_t mode);
-INTDEF int LIBCCALL libc_32wmkdir(char32_t const *path, mode_t mode);
+INTDEF int LIBCCALL libc_dos_truncate(char const *file, off32_t length);
+INTDEF int LIBCCALL libc_dos_truncate64(char const *file, off64_t length);
+INTDEF int LIBCCALL libc_dos_chroot(char const *path);
+INTDEF int LIBCCALL libc_dos_chdir(char const *path);
+INTDEF int LIBCCALL libc_dos_fchdirat(int dfd, char const *path, int flags);
+INTDEF int LIBCCALL libc_dos_kfstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flags);
+INTDEF int LIBCCALL libc_dos_kstat64(char const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_klstat64(char const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_access(char const *name, int type);
+INTDEF int LIBCCALL libc_dos_eaccess(char const *name, int type);
+INTDEF int LIBCCALL libc_dos_faccessat(int fd, char const *file, int type, int flags);
+INTDEF int LIBCCALL libc_dos_chown(char const *file, uid_t owner, gid_t group);
+INTDEF int LIBCCALL libc_dos_lchown(char const *file, uid_t owner, gid_t group);
+INTDEF int LIBCCALL libc_dos_fchownat(int fd, char const *file, uid_t owner, gid_t group, int flags);
+INTDEF int LIBCCALL libc_dos_chmod(char const *file, mode_t mode);
+INTDEF int LIBCCALL libc_dos_lchmod(char const *file, mode_t mode);
+INTDEF int LIBCCALL libc_dos_fchmodat(int fd, char const *file, mode_t mode, int flags);
+INTDEF int LIBCCALL libc_dos_mknodat(int fd, char const *path, mode_t mode, dev_t dev);
+INTDEF int LIBCCALL libc_dos_mkdirat(int fd, char const *path, mode_t mode);
+INTDEF int LIBCCALL libc_dos_mkfifoat(int fd, char const *path, mode_t mode);
+INTDEF int LIBCCALL libc_dos_linkat(int fromfd, char const *from, int tofd, char const *to, int flags);
+INTDEF int LIBCCALL libc_dos_symlinkat(char const *from, int tofd, char const *to);
+INTDEF int LIBCCALL libc_dos_unlinkat(int fd, char const *name, int flags);
+INTDEF int LIBCCALL libc_dos_renameat(int oldfd, char const *old, int newfd, char const *new_);
+INTDEF int LIBCCALL libc_dos_removeat(int fd, char const *filename);
+INTDEF int LIBCCALL libc_dos_remove(char const *filename);
+INTDEF int LIBCCALL libc_dos_rename(char const *old, char const *new_);
+INTDEF int LIBCCALL libc_dos_execve(char const *path, char *const argv[], char *const envp[]);
+INTDEF int ATTR_CDECL libc_dos_execl(char const *path, char const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_execle(char const *path, char const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_execlp(char const *file, char const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_execlpe(char const *file, char const *arg, ...);
+INTDEF int LIBCCALL libc_dos_execvpe(char const *file, char *const argv[], char *const envp[]);
+INTDEF int LIBCCALL libc_dos_execv(char const *path, char *const argv[]);
+INTDEF int LIBCCALL libc_dos_execvp(char const *file, char *const argv[]);
+INTDEF int LIBCCALL libc_dos_link(char const *from, char const *to);
+INTDEF int LIBCCALL libc_dos_symlink(char const *from, char const *to);
+INTDEF int LIBCCALL libc_dos_unlink(char const *name);
+INTDEF int LIBCCALL libc_dos_rmdir(char const *path);
 INTDEF int LIBCCALL libc_dos_mkdir(char const *path, mode_t mode);
-INTDEF int LIBCCALL libc_dos_16wmkdir(char16_t const *path, mode_t mode);
-INTDEF int LIBCCALL libc_dos_32wmkdir(char32_t const *path, mode_t mode);
-INTDEF int LIBCCALL libc_dos_mkdir2(char const *path);
-INTDEF int LIBCCALL libc_dos_16wmkdir2(char16_t const *path);
-INTDEF int LIBCCALL libc_dos_32wmkdir2(char32_t const *path);
+INTDEF int LIBCCALL libc_dos_mkfifo(char const *path, mode_t mode);
+INTDEF int LIBCCALL libc_dos_mknod(char const *path, mode_t mode, dev_t dev);
+INTDEF long int LIBCCALL libc_dos_pathconf(char const *path, int name);
+INTDEF int LIBCCALL libc_dos_revoke(char const *file);
+INTDEF int LIBCCALL libc_dos_acct(char const *name);
+INTDEF __FILE *LIBCCALL libc_dos_setmntent(char const *file, char const *mode);
+INTERN int LIBCCALL libc_execvpe_impl(char const *file, char *const argv[], char *const envp[], bool dosmode);
+
+/* Functions that are not supported in dos-fs mode. */
+// INTDEF int LIBCCALL libc_dos_umount(char const *special_file);
+// INTDEF int LIBCCALL libc_dos_mount(char const *special_file, char const *dir, char const *fstype, unsigned long int rwflag, void const *data);
+// INTDEF int LIBCCALL libc_dos_umount2(char const *special_file, int flags);
+// INTDEF int LIBCCALL libc_dos_swapon(char const *path, int flags);
+// INTDEF int LIBCCALL libc_dos_swapoff(char const *path);
+
 
 INTDEF int LIBCCALL libc_16wchdir(char16_t const *path);
 INTDEF int LIBCCALL libc_16wrmdir(char16_t const *path);
+INTDEF int LIBCCALL libc_16wmkdir(char16_t const *path, mode_t mode);
 INTDEF int LIBCCALL libc_32wchdir(char32_t const *path);
 INTDEF int LIBCCALL libc_32wrmdir(char32_t const *path);
+INTDEF int LIBCCALL libc_32wmkdir(char32_t const *path, mode_t mode);
+INTDEF int LIBCCALL libc_dos_mkdir(char const *path, mode_t mode);
+INTDEF int LIBCCALL libc_dos_mkdir2(char const *path);
+INTDEF int LIBCCALL libc_dos_16wmkdir(char16_t const *path, mode_t mode);
+INTDEF int LIBCCALL libc_dos_32wmkdir(char32_t const *path, mode_t mode);
+INTDEF int LIBCCALL libc_dos_16wmkdir2(char16_t const *path);
+INTDEF int LIBCCALL libc_dos_32wmkdir2(char32_t const *path);
+
 INTERN int LIBCCALL libc_dos_rename(char const *old, char const *new_);
 INTDEF int LIBCCALL libc_dos_chdir(char const *path);
 INTDEF int LIBCCALL libc_dos_rmdir(char const *path);
@@ -308,7 +365,6 @@ INTDEF int LIBCCALL libc_dos_16wchdir(char16_t const *path);
 INTDEF int LIBCCALL libc_dos_16wrmdir(char16_t const *path);
 INTDEF int LIBCCALL libc_dos_32wchdir(char32_t const *path);
 INTDEF int LIBCCALL libc_dos_32wrmdir(char32_t const *path);
-INTDEF int LIBCCALL libc_dos_eaccess(char const *name, int type);
 INTERN int LIBCCALL libc_dos_chmod(char const *file, mode_t mode);
 INTDEF int LIBCCALL libc_eof(int fd);
 INTDEF off32_t LIBCCALL libc_fsize(int fd);

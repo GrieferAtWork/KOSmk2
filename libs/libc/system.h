@@ -178,6 +178,7 @@ LOCAL SYSCALL2(void *,xdlopen,(char const *,filename,int,flags));
 LOCAL SYSCALL2(void *,xfdlopen,(int,fd,int,flags));
 LOCAL SYSCALL2(void *,xdlsym,(void *,handle,char const *,symbol));
 LOCAL SYSCALL1(int,xdlclose,(void *,handle));
+LOCAL SYSCALL4(__errno_t,xsymlinkat,(USER char const *,oldname,int,newdfd,USER char const *,newname,int,flags));
 
 #ifdef __ARCH_EXTENDED_FS_SYSCALLS
 #undef SYSCALL_NAME

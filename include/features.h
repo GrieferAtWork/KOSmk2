@@ -481,6 +481,12 @@
 #endif /* !__USE_DOSFS */
 #endif /* !__USE_TIME_BITS64 */
 
+#ifdef __USE_DOSFS
+#   define __WARN_NODOSFS __ATTR_DEPRECATED("This function does not support dos filesystem semantics. Try building with '-D_DOSFS_SOURCE=0'")
+#else
+#   define __WARN_NODOSFS /* nothing */
+#endif
+
 #ifdef __USE_TIME_BITS64
 #   define __TM_FUNC(x)     __ASMNAME(#x "64")
 #   define __TM_FUNC_R(x)   __ASMNAME(#x "64_r")

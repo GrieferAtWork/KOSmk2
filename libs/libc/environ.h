@@ -25,11 +25,17 @@ DECL_BEGIN
 
 struct envdata;
 
-INTDEF char *(LIBCCALL libc_getenv)(char const *name);
-INTDEF int (LIBCCALL libc_clearenv)(void);
-INTDEF int (LIBCCALL libc_setenv)(char const *name, char const *value, int replace);
-INTDEF int (LIBCCALL libc_unsetenv)(char const *name);
-INTDEF int (LIBCCALL libc_putenv)(char *string);
+INTDEF char *LIBCCALL libc_getenv(char const *name);
+INTDEF int LIBCCALL libc_clearenv(void);
+INTDEF int LIBCCALL libc_setenv(char const *name, char const *value, int replace);
+INTDEF int LIBCCALL libc_unsetenv(char const *name);
+INTDEF int LIBCCALL libc_putenv(char *string);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+/* Same as 'libc_getenv()', but automatically transform
+ * paths and separators in variables such as 'PATH' or 'HOME' */
+INTDEF char *LIBCCALL libc_dos_getenv(char const *name);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

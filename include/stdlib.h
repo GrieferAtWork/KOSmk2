@@ -565,7 +565,7 @@ __LIBC __WUNUSED size_t (__LIBCCALL __ctype_get_mb_cur_max)(void);
 
 __NAMESPACE_STD_BEGIN
 __LIBC int (__LIBCCALL system)(char const *__command);
-__LIBC __WUNUSED __NONNULL((1)) char *(__LIBCCALL getenv)(char const *__name);
+__LIBC __WUNUSED __NONNULL((1)) char *(__LIBCCALL getenv)(char const *__name) __UFS_FUNC(getenv);
 __LIBC int (__LIBCCALL mblen)(char const *__s, size_t __n);
 __LIBC int (__LIBCCALL mbtowc)(wchar_t *__restrict __pwc, char const *__restrict __s, size_t __n);
 __LIBC int (__LIBCCALL wctomb)(char *__s, wchar_t __wchar);

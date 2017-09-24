@@ -256,6 +256,17 @@ got_slot:
  return result;
 }
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF char *LIBCCALL libc_dos_getenv(char const *name) {
+ char *result = libc_getenv(name);
+ if (result) {
+  /* TODO: Fix 'PATH': if (name == "PATH") return result.replace(":",";"); */
+ }
+ return result;
+}
+DEFINE_PUBLIC_ALIAS(__DSYM(getenv),libc_dos_getenv);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 
 DEFINE_PUBLIC_ALIAS(secure_getenv,libc_getenv); /* ??? */
 DEFINE_PUBLIC_ALIAS(getenv,libc_getenv);

@@ -123,7 +123,7 @@ INTERN int LIBCCALL libc_close(int fd) { return FORWARD_SYSTEM_ERROR(sys_close(f
 INTERN int LIBCCALL libc_chroot(char const *path) { return FORWARD_SYSTEM_ERROR(sys_chroot(path)); }
 INTERN int LIBCCALL libc_chdir(char const *path) { return FORWARD_SYSTEM_ERROR(sys_chdir(path)); }
 INTERN int LIBCCALL libc_fchdir(int fd) { return FORWARD_SYSTEM_ERROR(sys_fchdir(fd)); }
-INTDEF int LIBCCALL libc_fchdirat(int dfd, char const *path, int flags) { return FORWARD_SYSTEM_ERROR(sys_xfchdirat(dfd,path,flags)); }
+INTERN int LIBCCALL libc_fchdirat(int dfd, char const *path, int flags) { return FORWARD_SYSTEM_ERROR(sys_xfchdirat(dfd,path,flags)); }
 INTERN int LIBCCALL libc_dup(int fd) { return FORWARD_SYSTEM_VALUE(sys_dup(fd)); }
 INTERN int LIBCCALL libc_dup3(int fd, int fd2, int flags) { return FORWARD_SYSTEM_VALUE(sys_dup3(fd,fd2,flags)); }
 INTERN int LIBCCALL libc_dup2(int fd, int fd2) { return fd == fd2 ? fd2 : libc_dup3(fd,fd2,0); }
@@ -135,21 +135,22 @@ INTERN int LIBCCALL libc_dup2(int fd, int fd2) { return fd == fd2 ? fd2 : libc_d
  *       though only one is available at any time (when in fact both always are). */
 STATIC_ASSERT(sizeof(struct stat) == sizeof(struct stat64));
 INTERN int LIBCCALL libc_kfstat64(int fd, struct stat64 *buf) { return FORWARD_SYSTEM_ERROR(sys_fstat64(fd,buf)); }
-INTERN int LIBCCALL libc_kfstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flag) { return FORWARD_SYSTEM_ERROR(sys_fstatat64(fd,file,buf,flag)); }
+INTERN int LIBCCALL libc_kfstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flags) { return FORWARD_SYSTEM_ERROR(sys_fstatat64(fd,file,buf,flags)); }
 INTERN int LIBCCALL libc_kstat64(char const *__restrict file, struct stat64 *__restrict buf) { return libc_kfstatat64(AT_FDCWD,file,buf,AT_SYMLINK_FOLLOW); }
 INTERN int LIBCCALL libc_klstat64(char const *__restrict file, struct stat64 *__restrict buf) { return libc_kfstatat64(AT_FDCWD,file,buf,AT_SYMLINK_NOFOLLOW); }
 INTERN int LIBCCALL libc_access(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_SYMLINK_FOLLOW); }
-INTERN int LIBCCALL libc_faccessat(int fd, char const *file, int type, int flag) { return FORWARD_SYSTEM_ERROR(sys_faccessat(fd,file,type,flag)); }
+INTERN int LIBCCALL libc_eaccess(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_EACCESS|AT_SYMLINK_NOFOLLOW); }
+INTERN int LIBCCALL libc_faccessat(int fd, char const *file, int type, int flags) { return FORWARD_SYSTEM_ERROR(sys_faccessat(fd,file,type,flags)); }
 INTERN int LIBCCALL libc_chown(char const *file, uid_t owner, gid_t group) { return libc_fchownat(AT_FDCWD,file,owner,group,AT_SYMLINK_FOLLOW); }
 INTERN int LIBCCALL libc_lchown(char const *file, uid_t owner, gid_t group) { return libc_fchownat(AT_FDCWD,file,owner,group,AT_SYMLINK_NOFOLLOW); }
 INTERN int LIBCCALL libc_fchown(int fd, uid_t owner, gid_t group) { return FORWARD_SYSTEM_ERROR(sys_fchown(fd,owner,group)); }
 INTERN int LIBCCALL libc_chmod(char const *file, mode_t mode) { return libc_fchmodat(AT_FDCWD,file,mode,AT_SYMLINK_FOLLOW); }
 INTERN int LIBCCALL libc_lchmod(char const *file, mode_t mode) { return libc_fchmodat(AT_FDCWD,file,mode,AT_SYMLINK_NOFOLLOW); }
 INTERN int LIBCCALL libc_fchmod(int fd, mode_t mode) { return FORWARD_SYSTEM_ERROR(sys_fchmod(fd,mode)); }
-INTERN int LIBCCALL libc_fchownat(int fd, char const *file, uid_t owner, gid_t group, int flag) { return FORWARD_SYSTEM_ERROR(sys_fchownat(fd,file,owner,group,flag)); }
-INTERN int LIBCCALL libc_fchmodat(int fd, char const *file, mode_t mode, int flag) {
- if (!(flag&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW))) { SET_ERRNO(EINVAL); return -1; }
- return FORWARD_SYSTEM_ERROR(sys_fchmodat(fd,file,mode|((flag&AT_SYMLINK_NOFOLLOW) ? O_NOFOLLOW : 0)));
+INTERN int LIBCCALL libc_fchownat(int fd, char const *file, uid_t owner, gid_t group, int flags) { return FORWARD_SYSTEM_ERROR(sys_fchownat(fd,file,owner,group,flags)); }
+INTERN int LIBCCALL libc_fchmodat(int fd, char const *file, mode_t mode, int flags) {
+ if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW))) { SET_ERRNO(EINVAL); return -1; }
+ return FORWARD_SYSTEM_ERROR(sys_fchmodat(fd,file,mode|((flags&AT_SYMLINK_NOFOLLOW) ? O_NOFOLLOW : 0)));
 }
 
 
@@ -158,9 +159,9 @@ INTERN int LIBCCALL libc_mkdirat(int fd, char const *path, mode_t mode) { return
 INTERN int LIBCCALL libc_mkfifoat(int fd, char const *path, mode_t mode) { return libc_mknodat(fd,path,S_IFIFO|mode,0); }
 INTERN int LIBCCALL libc_linkat(int fromfd, char const *from, int tofd, char const *to, int flags) { return FORWARD_SYSTEM_ERROR(sys_linkat(fromfd,from,tofd,to,flags)); }
 INTERN int LIBCCALL libc_symlinkat(char const *from, int tofd, char const *to) { return FORWARD_SYSTEM_ERROR(sys_symlinkat(from,tofd,to)); }
-INTERN int LIBCCALL libc_unlinkat(int fd, char const *name, int flag) {
- libc_printf("unlinkat(%d,%q,%x)\n",fd,name,flag);
- return FORWARD_SYSTEM_ERROR(sys_unlinkat(fd,name,flag));
+INTERN int LIBCCALL libc_unlinkat(int fd, char const *name, int flags) {
+ libc_printf("unlinkat(%d,%q,%x)\n",fd,name,flags);
+ return FORWARD_SYSTEM_ERROR(sys_unlinkat(fd,name,flags));
 }
 INTERN int LIBCCALL libc_renameat(int oldfd, char const *old, int newfd, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_renameat(oldfd,old,newfd,new_)); }
 INTERN ssize_t LIBCCALL libc_readlinkat(int fd, char const *__restrict path, char *__restrict buf, size_t len) {
@@ -284,6 +285,81 @@ L(SYM_END(libc_fexecle)                                       )
 L(.previous                                                   )
 );
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+GLOBAL_ASM(
+L(.section .text.dos                                          )
+L(INTERN_ENTRY(libc_dos_execl)                                )
+L(    leal  8(%esp), %eax                                     )
+L(    pushl %eax     /* argv */                               )
+L(    pushl -4(%eax) /* path */                               )
+L(    call  libc_dos_execv                                    )
+L(    addl  $8, %esp                                          )
+L(    ret                                                     )
+L(SYM_END(libc_dos_execl)                                     )
+L(.previous                                                   )
+);
+
+GLOBAL_ASM(
+L(.section .text.dos                                          )
+L(INTERN_ENTRY(libc_dos_execlp)                               )
+L(    leal 8(%esp), %eax                                      )
+L(    pushl %eax     /* argv */                               )
+L(    pushl -4(%esp) /* path */                               )
+L(    call libc_dos_execvp                                    )
+#ifndef __KERNEL__ /* #if LIBCCALL != ATTR_STDCALL */
+L(    addl $8, %esp                                           )
+#endif
+L(    ret                                                     )
+L(SYM_END(libc_dos_execlp)                                    )
+L(.previous                                                   )
+);
+
+GLOBAL_ASM(
+L(.section .text.dos                                          )
+L(INTERN_ENTRY(libc_dos_execle)                               )
+L(    leal   8(%esp), %eax                                    )
+L(    /* Scan ahead until the first NULL-pointer */           )
+L(1:  addl  $4,       %eax                                    )
+L(    testl $-1,   -4(%eax)                                   )
+L(    jnz 1b                                                  )
+L(    /* The value after the first NULL-pointer is envp */    )
+L(    pushl   (%eax) /* envp */                               )
+L(    leal   8(%esp), %eax                                    )
+L(    pushl    %eax  /* argv */                               )
+L(    pushl 12(%esp) /* path */                               )
+L(    call libc_dos_execve                                    )
+#ifndef __KERNEL__ /* #if LIBCCALL != ATTR_STDCALL */
+L(    addl $12, %esp                                          )
+#endif
+L(    ret                                                     )
+L(SYM_END(libc_dos_execle)                                    )
+L(.previous                                                   )
+);
+
+GLOBAL_ASM(
+L(.section .text.dos                                          )
+L(INTERN_ENTRY(libc_dos_execlpe)                              )
+L(    leal   8(%esp), %eax                                    )
+L(    /* Scan ahead until the first NULL-pointer */           )
+L(1:  addl  $4,       %eax                                    )
+L(    testl $-1,   -4(%eax)                                   )
+L(    jnz 1b                                                  )
+L(    /* The value after the first NULL-pointer is envp */    )
+L(    pushl   (%eax) /* envp */                               )
+L(    leal   8(%esp), %eax                                    )
+L(    pushl    %eax  /* argv */                               )
+L(    pushl 12(%esp) /* path */                               )
+L(    call libc_dos_execvpe                                   )
+#ifndef __KERNEL__ /* #if LIBCCALL != ATTR_STDCALL */
+L(    addl $12, %esp                                          )
+#endif
+L(    ret                                                     )
+L(SYM_END(libc_dos_execlpe)                                   )
+L(.previous                                                   )
+);
+
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 #else
 
 /* Generic C implementation. */
@@ -360,12 +436,58 @@ INTERN int ATTR_CDECL libc_fexecle(int fd, char const *arg, ...) {
  libc_free(argv);
  return result;
 }
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN int ATTR_CDECL libc_dos_execl(char const *path, char const *arg, ...) {
+ va_list args; char **argv; int result;
+ va_start(args,arg);
+ argv = generic_capture_argv((char *)arg,&args);
+ va_end(args);
+ result = libc_dos_execv(path,argv);
+ libc_free(argv);
+ return result;
+}
+INTERN int ATTR_CDECL libc_dos_execle(char const *path, char const *arg, ...) {
+ va_list args; char **argv; int result;
+ va_start(args,arg);
+ argv = generic_capture_argv((char *)arg,&args);
+ va_end(args);
+ result = libc_dos_execve(path,argv,va_arg(args,char **));
+ libc_free(argv);
+ return result;
+}
+INTERN int ATTR_CDECL libc_dos_execlp(char const *file, char const *arg, ...) {
+ va_list args; char **argv; int result;
+ va_start(args,arg);
+ argv = generic_capture_argv((char *)arg,&args);
+ va_end(args);
+ result = libc_dos_execvp(file,argv);
+ libc_free(argv);
+ return result;
+}
+INTERN int ATTR_CDECL libc_dos_execlpe(char const *file, char const *arg, ...) {
+ va_list args; char **argv; int result;
+ va_start(args,arg);
+ argv = generic_capture_argv((char *)arg,&args);
+ va_end(args);
+ result = libc_dos_execvpe(file,argv,va_arg(args,char **));
+ libc_free(argv);
+ return result;
+}
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 #endif
 
 DATDEF char **environ;
 INTERN int LIBCCALL libc_fexecv(int fd, char *const argv[]) { return libc_fexecve(fd,argv,environ); }
+#ifdef CONFIG_LIBC_NO_DOS_LIBC
 PRIVATE void LIBCCALL execvpe_inside(char const *path, char const *file,
-                                     char *const argv[], char *const envp[]) {
+                                     char *const argv[], char *const envp[])
+#else
+PRIVATE void LIBCCALL execvpe_inside(char const *path, char const *file,
+                                     char *const argv[], char *const envp[],
+                                     bool dosmode)
+#endif
+{
  char *buf; bool use_malloc;
  size_t pathlen = libc_strlen(path);
  size_t filelen = libc_strlen(file);
@@ -382,10 +504,28 @@ PRIVATE void LIBCCALL execvpe_inside(char const *path, char const *file,
  libc_memcpy(buf+pathlen+1,file,filelen*sizeof(char));
  buf[pathlen+1+filelen] = '\0';
  /* Try to execute the joined path. */
- libc_execve(buf,argv,envp);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+ if (dosmode) {
+  libc_dos_execve(buf,argv,envp);
+ } else
+#endif
+ {
+  libc_execve(buf,argv,envp);
+ }
+
  if (use_malloc) libc_free(buf);
 }
-INTERN int LIBCCALL libc_execvpe(char const *file, char *const argv[], char *const envp[]) {
+#ifdef CONFIG_LIBC_NO_DOS_LIBC
+INTERN int LIBCCALL libc_execvpe(char const *file, char *const argv[], char *const envp[])
+#else
+INTERN int LIBCCALL libc_execvpe_impl(char const *file, char *const argv[],
+                                      char *const envp[], bool dosmode);
+INTERN int LIBCCALL libc_execvpe(char const *file, char *const argv[], char *const envp[]) { return libc_execvpe_impl(file,argv,envp,false); }
+INTERN int LIBCCALL libc_dos_execvpe(char const *file, char *const argv[], char *const envp[]) { return libc_execvpe_impl(file,argv,envp,true); }
+INTERN int LIBCCALL libc_execvpe_impl(char const *file, char *const argv[],
+                                      char *const envp[], bool dosmode)
+#endif
+{
  char *iter,*part,*next,*path;
  bool use_malloc; size_t path_size;
  if unlikely((path = libc_getenv("PATH")) == NULL) { SET_ERRNO(ENOENT); return -1; }
@@ -405,7 +545,11 @@ INTERN int LIBCCALL libc_execvpe(char const *file, char *const argv[], char *con
   bool last = *(next = libc_strchrnul(part,':')) != '\0';
   for (iter = next; iter[-1] == '/'; --iter);
   *iter = '\0';
+#ifdef CONFIG_LIBC_NO_DOS_LIBC
   execvpe_inside(part,file,argv,envp);
+#else
+  execvpe_inside(part,file,argv,envp,dosmode);
+#endif
   if (last) break;
   part = next+1;
  }
@@ -419,7 +563,6 @@ INTERN int LIBCCALL libc_symlink(char const *from, char const *to) { return libc
 INTERN ssize_t LIBCCALL libc_readlink(char const *__restrict path, char *__restrict buf, size_t len) { return libc_readlinkat(AT_FDCWD,path,buf,len); }
 INTERN int LIBCCALL libc_unlink(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
 INTERN int LIBCCALL libc_rmdir(char const *path) { return libc_unlinkat(AT_FDCWD,path,AT_SYMLINK_FOLLOW|AT_REMOVEDIR); }
-INTERN int LIBCCALL libc_eaccess(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_EACCESS); }
 INTERN int LIBCCALL libc_mkdir(char const *path, mode_t mode) { return libc_mkdirat(AT_FDCWD,path,mode); }
 INTERN int LIBCCALL libc_mkfifo(char const *path, mode_t mode) { return libc_mkfifoat(AT_FDCWD,path,mode); }
 INTERN int LIBCCALL libc_mknod(char const *path, mode_t mode, dev_t dev) { return libc_mknodat(AT_FDCWD,path,mode,dev); }
@@ -616,9 +759,9 @@ INTERN int LIBCCALL libc_glibc_fstat(int fd, struct glibc_stat *statbuf) {
  if (!result) glibc_load_stat_buffer(statbuf,&buf);
  return result;
 }
-INTERN int LIBCCALL libc_glibc_fstatat(int fd, char const *filename, struct glibc_stat *statbuf, int flag) {
+INTERN int LIBCCALL libc_glibc_fstatat(int fd, char const *filename, struct glibc_stat *statbuf, int flags) {
  struct stat64 buf; int result;
- result = libc_kfstatat64(fd,filename,&buf,flag);
+ result = libc_kfstatat64(fd,filename,&buf,flags);
  if (!result) glibc_load_stat_buffer(statbuf,&buf);
  return result;
 }
@@ -628,7 +771,7 @@ INTERN int LIBCCALL libc_glibc_lstat(char const *path, struct glibc_stat *statbu
 INTERN int LIBCCALL libc___fxstat(int ver, int fd, struct glibc_stat *statbuf) { VERCHK return libc_glibc_fstat(fd,statbuf); }
 INTERN int LIBCCALL libc___xstat(int ver, char const *filename, struct glibc_stat *statbuf) { VERCHK return libc_glibc_stat(filename,statbuf); }
 INTERN int LIBCCALL libc___lxstat(int ver, char const *filename, struct glibc_stat *statbuf) { VERCHK return libc_glibc_lstat(filename,statbuf); }
-INTERN int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struct glibc_stat *statbuf, int flag) { VERCHK return libc_glibc_fstatat(fd,filename,statbuf,flag); }
+INTERN int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struct glibc_stat *statbuf, int flags) { VERCHK return libc_glibc_fstatat(fd,filename,statbuf,flags); }
 #undef VERCHK
 
 
@@ -774,6 +917,8 @@ DEFINE_PUBLIC_ALIAS(kfstatat64,libc_kfstatat64);
 DEFINE_PUBLIC_ALIAS(kstat64,libc_kstat64);
 DEFINE_PUBLIC_ALIAS(klstat64,libc_klstat64);
 DEFINE_PUBLIC_ALIAS(access,libc_access);
+DEFINE_PUBLIC_ALIAS(eaccess,libc_eaccess);
+DEFINE_PUBLIC_ALIAS(euidaccess,libc_eaccess);
 DEFINE_PUBLIC_ALIAS(faccessat,libc_faccessat);
 DEFINE_PUBLIC_ALIAS(chown,libc_chown);
 DEFINE_PUBLIC_ALIAS(lchown,libc_lchown);
@@ -812,7 +957,6 @@ DEFINE_PUBLIC_ALIAS(symlink,libc_symlink);
 DEFINE_PUBLIC_ALIAS(readlink,libc_readlink);
 DEFINE_PUBLIC_ALIAS(unlink,libc_unlink);
 DEFINE_PUBLIC_ALIAS(rmdir,libc_rmdir);
-DEFINE_PUBLIC_ALIAS(eaccess,libc_eaccess);
 DEFINE_PUBLIC_ALIAS(mkdir,libc_mkdir);
 DEFINE_PUBLIC_ALIAS(mkfifo,libc_mkfifo);
 DEFINE_PUBLIC_ALIAS(mknod,libc_mknod);
@@ -943,8 +1087,6 @@ DEFINE_PUBLIC_ALIAS(kstat,libc_kstat64);
 DEFINE_PUBLIC_ALIAS(klstat,libc_klstat64);
 DEFINE_PUBLIC_ALIAS(kfstat,libc_kfstat64);
 DEFINE_PUBLIC_ALIAS(kfstatat,libc_kfstatat64);
-DEFINE_PUBLIC_ALIAS(eaccess,libc_eaccess);
-DEFINE_PUBLIC_ALIAS(euidaccess,libc_eaccess);
 DEFINE_PUBLIC_ALIAS(__getpgid,libc_getpgid);
 
 /* GLIBC does the same trick where the 32-bit stat
@@ -963,6 +1105,175 @@ DEFINE_PUBLIC_ALIAS(fstat64,libc_glibc_fstat);
 DEFINE_PUBLIC_ALIAS(fstatat64,libc_glibc_fstatat);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+
+#ifdef CONFIG_32BIT_FILESYSTEM
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate(char const *file, off32_t length) {
+ int result = -1,fd = libc_dos_open(file,O_RDWR);
+ if (fd > 0) result = libc_ftruncate(fd,length),sys_close(fd);
+ return result;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate64(char const *file, off64_t length) {
+ return libc_dos_truncate(file,(off32_t)length);
+}
+#else /* CONFIG_32BIT_FILESYSTEM */
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate(char const *file, off32_t length) {
+ return libc_dos_truncate64(file,(off64_t)length);
+}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate64(char const *file, off64_t length) {
+ int result = -1,fd = libc_dos_open(file,O_RDWR);
+ if (fd > 0) result = libc_ftruncate64(fd,length),sys_close(fd);
+ return result;
+}
+#endif /* !CONFIG_32BIT_FILESYSTEM */
+
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_chroot(char const *path) {
+ int result = -1,fd = libc_dos_open(path,O_RDONLY|O_DIRECTORY);
+ if (fd > 0) result = libc_dup2(fd,AT_FDROOT),sys_close(fd);
+ return result;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_chdir(char const *path) { return libc_fchdirat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_fchdirat(int dfd, char const *path, int flags) { return libc_fchdirat(dfd,path,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_kfstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flags) { return libc_kfstatat64(fd,file,buf,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_kstat64(char const *__restrict file, struct stat64 *__restrict buf) { return libc_dos_kfstatat64(AT_FDCWD,file,buf,AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_klstat64(char const *__restrict file, struct stat64 *__restrict buf) { return libc_dos_kfstatat64(AT_FDCWD,file,buf,AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_access(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_eaccess(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_DOSPATH|AT_EACCESS|AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_faccessat(int fd, char const *file, int type, int flags) { return libc_faccessat(fd,file,type,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_chown(char const *file, uid_t owner, gid_t group) { return libc_fchownat(AT_FDCWD,file,owner,group,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_lchown(char const *file, uid_t owner, gid_t group) { return libc_fchownat(AT_FDCWD,file,owner,group,AT_DOSPATH|AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_fchownat(int fd, char const *file, uid_t owner, gid_t group, int flags) { return libc_fchownat(fd,file,owner,group,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_chmod(char const *file, mode_t mode) { return libc_fchmodat(AT_FDCWD,file,mode,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_lchmod(char const *file, mode_t mode) { return libc_fchmodat(AT_FDCWD,file,mode,AT_DOSPATH|AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_fchmodat(int fd, char const *file, mode_t mode, int flags) { return libc_fchmodat(fd,file,mode,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mknodat(int fd, char const *path, mode_t mode, dev_t dev) { return libc_mknodat(fd,path,O_DOSPATH|mode,dev); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkdirat(int fd, char const *path, mode_t mode) { return libc_mkdirat(fd,path,O_DOSPATH|mode); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkfifoat(int fd, char const *path, mode_t mode) { return libc_mkfifoat(fd,path,O_DOSPATH|mode); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_linkat(int fromfd, char const *from, int tofd, char const *to, int flags) { return libc_linkat(fromfd,from,tofd,to,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_symlinkat(char const *from, int tofd, char const *to) { return FORWARD_SYSTEM_ERROR(sys_xsymlinkat(from,tofd,to,AT_DOSPATH)); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_unlinkat(int fd, char const *name, int flags) { return libc_unlinkat(fd,name,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_renameat(int oldfd, char const *old, int newfd, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_xrenameat(oldfd,old,newfd,new_,AT_DOSPATH|AT_SYMLINK_NOFOLLOW)); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_removeat(int fd, char const *filename) { return libc_unlinkat(fd,filename,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_remove(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rename(char const *old, char const *new_) { return libc_dos_renameat(AT_FDCWD,old,AT_FDCWD,new_); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execv(char const *path, char *const argv[]) { return libc_dos_execve(path,argv,environ); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execvp(char const *file, char *const argv[]) { return libc_dos_execvpe(file,argv,environ); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_link(char const *from, char const *to) { return libc_linkat(AT_FDCWD,from,AT_FDCWD,to,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_symlink(char const *from, char const *to) { return libc_dos_symlinkat(from,AT_FDCWD,to); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_unlink(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rmdir(char const *path) { return libc_unlinkat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_FOLLOW|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkdir(char const *path, mode_t mode) { return libc_mkdir(path,O_DOSPATH|mode); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkfifo(char const *path, mode_t mode) { return libc_mkfifo(path,O_DOSPATH|mode); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mknod(char const *path, mode_t mode, dev_t dev) { return libc_mknod(path,O_DOSPATH|mode,dev); }
+INTERN ATTR_DOSTEXT long int LIBCCALL libc_dos_pathconf(char const *path, int name) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_revoke(char const *file) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_acct(char const *name) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT FILE *LIBCCALL libc_dos_setmntent(char const *file, char const *mode) { NOT_IMPLEMENTED(); return NULL; }
+
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_ext_execve(char const *path, size_t pathlen,
+                char const *ext, size_t extlen,
+                char *const argv[], char *const envp[]) {
+ char *fullpath; size_t fullsize;
+ /* Concat the given path and extension. */
+ fullsize = (pathlen+extlen+1)*sizeof(char);
+ if (fullsize >= __AMALLOC_MAX) {
+  fullpath = (char *)libc_malloc(fullsize);
+  if unlikely(!fullpath) return -1;
+ } else {
+  fullpath = (char *)alloca(fullsize);
+ }
+ libc_memcpy(fullpath,path,pathlen*sizeof(char));
+ libc_memcpy(fullpath+pathlen,ext,extlen*sizeof(char));
+ fullpath[pathlen+extlen] = '\0';
+
+ /* Try to execute the path. */
+ libc_execve(fullpath,argv,envp);
+
+ if (fullsize >= __AMALLOC_MAX)
+     libc_free(fullpath);
+ return -1;
+}
+
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execve(char const *path, char *const argv[], char *const envp[]) {
+ PRIVATE ATTR_DOSRODATA char const default_pathext[] = ".EXE;.CMD;.BAT;.COM";
+ char *pathext,*temp,*ext,*next;
+ size_t path_size1,path_size2;
+ /* HINT: Remember that a successful call to execve() never returns. */
+ libc_execve(path,argv,envp); /* Try the given path as-is. */
+ /* Windows allows for various path-extensions, such as '.exe' or '.cmd'.
+  * Those extensions are usually stored in an environment variable 'PATHEXT'. */
+ pathext = libc_getenv(DOSSTR("PATHEXT"));
+ if (!pathext) pathext = (char *)default_pathext;
+ path_size2 = path_size1 = libc_strlen(path);
+ next = (char *)libc_memrchr(path,'/',path_size2);
+ temp = (char *)libc_memrchr(path,'\\',path_size2);
+ if (temp > next) next = temp;
+ temp = (char *)libc_memrchr(path,'.',path_size2);
+ if (temp > next) next = temp;
+ if (next) path_size1 = (size_t)(next-path); /* Override old extension. */
+
+ for (ext = pathext;;) {
+  bool last = *(next = libc_strchrnul(ext,':')) != '\0';
+  size_t extlen = (size_t)(next-ext);
+  /* Try when overriding the extension, and when appending it. */
+  if (path_size1 != path_size2)
+      libc_ext_execve(path,path_size1,ext,extlen,argv,envp);
+  libc_ext_execve(path,path_size2,ext,extlen,argv,envp);
+  if (last) break;
+  ext = next+1;
+ }
+ return -1;
+}
+
+
+DEFINE_PUBLIC_ALIAS(__DSYM(truncate),libc_dos_truncate);
+DEFINE_PUBLIC_ALIAS(__DSYM(truncate64),libc_dos_truncate64);
+DEFINE_PUBLIC_ALIAS(__DSYM(chroot),libc_dos_chroot);
+DEFINE_PUBLIC_ALIAS(__DSYM(chdir),libc_dos_chdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(fchdirat),libc_dos_fchdirat);
+DEFINE_PUBLIC_ALIAS(__DSYM(kfstatat64),libc_dos_kfstatat64);
+DEFINE_PUBLIC_ALIAS(__DSYM(kstat64),libc_dos_kstat64);
+DEFINE_PUBLIC_ALIAS(__DSYM(klstat64),libc_dos_klstat64);
+DEFINE_PUBLIC_ALIAS(__DSYM(access),libc_dos_access);
+DEFINE_PUBLIC_ALIAS(__DSYM(eaccess),libc_dos_eaccess);
+DEFINE_PUBLIC_ALIAS(__DSYM(faccessat),libc_dos_faccessat);
+DEFINE_PUBLIC_ALIAS(__DSYM(chown),libc_dos_chown);
+DEFINE_PUBLIC_ALIAS(__DSYM(lchown),libc_dos_lchown);
+DEFINE_PUBLIC_ALIAS(__DSYM(fchownat),libc_dos_fchownat);
+DEFINE_PUBLIC_ALIAS(__DSYM(chmod),libc_dos_chmod);
+DEFINE_PUBLIC_ALIAS(__DSYM(lchmod),libc_dos_lchmod);
+DEFINE_PUBLIC_ALIAS(__DSYM(fchmodat),libc_dos_fchmodat);
+DEFINE_PUBLIC_ALIAS(__DSYM(mknodat),libc_dos_mknodat);
+DEFINE_PUBLIC_ALIAS(__DSYM(mkdirat),libc_dos_mkdirat);
+DEFINE_PUBLIC_ALIAS(__DSYM(mkfifoat),libc_dos_mkfifoat);
+DEFINE_PUBLIC_ALIAS(__DSYM(linkat),libc_dos_linkat);
+DEFINE_PUBLIC_ALIAS(__DSYM(symlinkat),libc_dos_symlinkat);
+DEFINE_PUBLIC_ALIAS(__DSYM(unlinkat),libc_dos_unlinkat);
+DEFINE_PUBLIC_ALIAS(__DSYM(renameat),libc_dos_renameat);
+DEFINE_PUBLIC_ALIAS(__DSYM(removeat),libc_dos_removeat);
+DEFINE_PUBLIC_ALIAS(__DSYM(remove),libc_dos_remove);
+DEFINE_PUBLIC_ALIAS(__DSYM(rename),libc_dos_rename);
+DEFINE_PUBLIC_ALIAS(__DSYM(execve),libc_dos_execve);
+DEFINE_PUBLIC_ALIAS(__DSYM(execl),libc_dos_execl);
+DEFINE_PUBLIC_ALIAS(__DSYM(execle),libc_dos_execle);
+DEFINE_PUBLIC_ALIAS(__DSYM(execlp),libc_dos_execlp);
+DEFINE_PUBLIC_ALIAS(__DSYM(execlpe),libc_dos_execlpe);
+DEFINE_PUBLIC_ALIAS(__DSYM(execvpe),libc_dos_execvpe);
+DEFINE_PUBLIC_ALIAS(__DSYM(execv),libc_dos_execv);
+DEFINE_PUBLIC_ALIAS(__DSYM(execvp),libc_dos_execvp);
+DEFINE_PUBLIC_ALIAS(__DSYM(link),libc_dos_link);
+DEFINE_PUBLIC_ALIAS(__DSYM(symlink),libc_dos_symlink);
+DEFINE_PUBLIC_ALIAS(__DSYM(unlink),libc_dos_unlink);
+DEFINE_PUBLIC_ALIAS(__DSYM(rmdir),libc_dos_rmdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(mkdir),libc_dos_mkdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(mkfifo),libc_dos_mkfifo);
+DEFINE_PUBLIC_ALIAS(__DSYM(mknod),libc_dos_mknod);
+DEFINE_PUBLIC_ALIAS(__DSYM(pathconf),libc_dos_pathconf);
+DEFINE_PUBLIC_ALIAS(__DSYM(revoke),libc_dos_revoke);
+DEFINE_PUBLIC_ALIAS(__DSYM(acct),libc_dos_acct);
+DEFINE_PUBLIC_ALIAS(__DSYM(setmntent),libc_dos_setmntent);
+
+
 /* Unicode pathname support. */
 #define WRAPPER(n,base) \
 { int result = -1; char *epath; \
@@ -998,9 +1309,6 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc_32wmkdir(char32_t const *path, mode_t mode
 #undef libc_mkdir_temp
 #undef WRAPPER
 
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_chdir(char const *path) { return libc_fchdirat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rmdir(char const *path) { return libc_unlinkat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_FOLLOW|AT_REMOVEDIR); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkdir(char const *path, mode_t mode) { return libc_mkdir(path,O_DOSPATH|mode); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkdir2(char const *path) { return libc_dos_mkdir(path,0755); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_chdrive(int UNUSED(drive)) { return 0; }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_getdrive(void) { return 0; }
@@ -1052,11 +1360,6 @@ libc_umask_s(mode_t new_mode, mode_t *old_mode) {
  if (old_mode) *old_mode = (mode_t)error;
  return -EOK;
 }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rename(char const *old, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_xrenameat(AT_FDCWD,old,AT_FDCWD,new_,AT_DOSPATH|AT_SYMLINK_NOFOLLOW)); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_unlink(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_remove(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_eaccess(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_DOSPATH|AT_EACCESS); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_chmod(char const *file, mode_t mode) { return libc_chmod(file,mode|O_DOSPATH); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc__lock_fhandle(int UNUSED(fd)) { return 0; }
 INTERN ATTR_DOSTEXT void LIBCCALL libc_unlock_fhandle(int UNUSED(fd)) { }
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_get_osfhandle(int fd) { return (intptr_t)fd; }
@@ -1069,18 +1372,11 @@ DEFINE_PUBLIC_ALIAS(__KSYMw32(wchdir),libc_32wchdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir),libc_32wmkdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(wrmdir),libc_32wrmdir);
 
-DEFINE_PUBLIC_ALIAS(__DSYM(rename),libc_dos_rename);
-DEFINE_PUBLIC_ALIAS(__DSYM(chdir),libc_dos_chdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(rmdir),libc_dos_rmdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(mkdir),libc_dos_mkdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(access),libc_dos_eaccess);
-DEFINE_PUBLIC_ALIAS(__DSYM(unlink),libc_dos_unlink);
-DEFINE_PUBLIC_ALIAS(__DSYM(chmod),libc_dos_chmod);
 DEFINE_PUBLIC_ALIAS(__DSYM(_chdir),libc_dos_chdir);
 DEFINE_PUBLIC_ALIAS(__DSYM(_rmdir),libc_dos_rmdir);
 DEFINE_PUBLIC_ALIAS(__DSYM(_mkdir),libc_dos_mkdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(_access),libc_dos_eaccess);
-DEFINE_PUBLIC_ALIAS(__DSYM(_access_s),libc_dos_eaccess);
+DEFINE_PUBLIC_ALIAS(__DSYM(_access),libc_dos_access);
+DEFINE_PUBLIC_ALIAS(__DSYM(_access_s),libc_dos_access);
 DEFINE_PUBLIC_ALIAS(__DSYM(_unlink),libc_dos_unlink);
 DEFINE_PUBLIC_ALIAS(__DSYM(_chmod),libc_dos_chmod);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(wchdir),libc_dos_16wchdir);

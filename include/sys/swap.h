@@ -20,6 +20,7 @@
 #define _SYS_SWAP_H 1
 
 #include <__stdinc.h>
+#include <features.h>
 
 /* Calls to enable and disable swapping on specified locations.  Linux version.
    Copyright (C) 1996-2016 Free Software Foundation, Inc.
@@ -49,8 +50,10 @@
 
 __DECL_BEGIN
 
-__LIBC int (__LIBCCALL swapon)(char const *__path, int __flags);
-__LIBC int (__LIBCCALL swapoff)(char const *__path);
+#ifndef __KERNEL__
+__LIBC __WARN_NODOSFS int (__LIBCCALL swapon)(char const *__path, int __flags);
+__LIBC __WARN_NODOSFS int (__LIBCCALL swapoff)(char const *__path);
+#endif /* !__KERNEL__ */
 
 __DECL_END
 
