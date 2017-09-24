@@ -50,6 +50,24 @@ INTDEF int LIBCCALL libc_dos_creat(char const *file, mode_t mode);
 INTDEF int ATTR_CDECL libc_dos_open(char const *file, int oflag, ...);
 INTDEF int ATTR_CDECL libc_dos_sopen(char const *file, int oflag, int sflag, ...);
 INTDEF __errno_t LIBCCALL libc_dos_sopen_s(int *fd, char const *file, int oflag, int sflag, int pmode);
+
+INTDEF int LIBCCALL libc_16wcreat(char16_t const *file, mode_t mode);
+INTDEF int LIBCCALL libc_32wcreat(char32_t const *file, mode_t mode);
+INTDEF int ATTR_CDECL libc_16wopen(char16_t const *file, int oflag, ...);
+INTDEF int ATTR_CDECL libc_32wopen(char32_t const *file, int oflag, ...);
+INTDEF int ATTR_CDECL libc_16wsopen(char16_t const *file, int oflag, int sflag, ...);
+INTDEF int ATTR_CDECL libc_32wsopen(char32_t const *file, int oflag, int sflag, ...);
+INTDEF int LIBCCALL libc_16wsopen_s(int *fd, char16_t const *file, int oflag, int sflag, mode_t cmode);
+INTDEF int LIBCCALL libc_32wsopen_s(int *fd, char32_t const *file, int oflag, int sflag, mode_t cmode);
+INTDEF int LIBCCALL libc_dos_16wcreat(char16_t const *file, mode_t mode);
+INTDEF int LIBCCALL libc_dos_32wcreat(char32_t const *file, mode_t mode);
+INTDEF int ATTR_CDECL libc_dos_16wopen(char16_t const *file, int oflag, ...);
+INTDEF int ATTR_CDECL libc_dos_32wopen(char32_t const *file, int oflag, ...);
+INTDEF int ATTR_CDECL libc_dos_16wsopen(char16_t const *file, int oflag, int sflag, ...);
+INTDEF int ATTR_CDECL libc_dos_32wsopen(char32_t const *file, int oflag, int sflag, ...);
+INTDEF int LIBCCALL libc_dos_16wsopen_s(int *fd, char16_t const *file, int oflag, int sflag, mode_t cmode);
+INTDEF int LIBCCALL libc_dos_32wsopen_s(int *fd, char32_t const *file, int oflag, int sflag, mode_t cmode);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

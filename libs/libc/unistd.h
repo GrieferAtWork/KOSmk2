@@ -85,6 +85,7 @@ INTDEF int LIBCCALL libc_linkat(int fromfd, char const *from, int tofd, char con
 INTDEF int LIBCCALL libc_symlinkat(char const *from, int tofd, char const *to);
 INTDEF int LIBCCALL libc_unlinkat(int fd, char const *name, int flags);
 INTDEF int LIBCCALL libc_renameat(int oldfd, char const *old, int newfd, char const *new_);
+INTDEF int LIBCCALL libc_frenameat(int oldfd, char const *old, int newfd, char const *new_, int flags);
 INTDEF ssize_t LIBCCALL libc_readlinkat(int fd, char const *__restrict path, char *__restrict buf, size_t len);
 INTDEF int LIBCCALL libc_removeat(int fd, char const *filename);
 INTDEF int LIBCCALL libc_remove(char const *filename);
@@ -333,7 +334,7 @@ INTDEF long int LIBCCALL libc_dos_pathconf(char const *path, int name);
 INTDEF int LIBCCALL libc_dos_revoke(char const *file);
 INTDEF int LIBCCALL libc_dos_acct(char const *name);
 INTDEF __FILE *LIBCCALL libc_dos_setmntent(char const *file, char const *mode);
-INTERN int LIBCCALL libc_execvpe_impl(char const *file, char *const argv[], char *const envp[], bool dosmode);
+INTDEF int LIBCCALL libc_execvpe_impl(char const *file, char *const argv[], char *const envp[], bool dosmode);
 
 /* Functions that are not supported in dos-fs mode. */
 // INTDEF int LIBCCALL libc_dos_umount(char const *special_file);
@@ -356,16 +357,48 @@ INTDEF int LIBCCALL libc_dos_32wmkdir(char32_t const *path, mode_t mode);
 INTDEF int LIBCCALL libc_dos_16wmkdir2(char16_t const *path);
 INTDEF int LIBCCALL libc_dos_32wmkdir2(char32_t const *path);
 
-INTERN int LIBCCALL libc_dos_rename(char const *old, char const *new_);
+INTDEF int LIBCCALL libc_16wfaccessat(int dfd, char16_t const *file, int type, int flags);
+INTDEF int LIBCCALL libc_32wfaccessat(int dfd, char32_t const *file, int type, int flags);
+INTDEF int LIBCCALL libc_16wfchmodat(int dfd, char16_t const *file, mode_t mode, int flags);
+INTDEF int LIBCCALL libc_32wfchmodat(int dfd, char32_t const *file, mode_t mode, int flags);
+INTDEF int LIBCCALL libc_16wunlinkat(int dfd, char16_t const *file, int flags);
+INTDEF int LIBCCALL libc_32wunlinkat(int dfd, char32_t const *file, int flags);
+INTDEF int LIBCCALL libc_16wfrenameat(int oldfd, char16_t const *oldname, int newfd, char16_t const *newname, int flags);
+INTDEF int LIBCCALL libc_32wfrenameat(int oldfd, char32_t const *oldname, int newfd, char32_t const *newname, int flags);
+
+INTDEF int LIBCCALL libc_16waccess(char16_t const *file, int type);
+INTDEF int LIBCCALL libc_32waccess(char32_t const *file, int type);
+INTDEF int LIBCCALL libc_dos_16waccess(char16_t const *file, int type);
+INTDEF int LIBCCALL libc_dos_32waccess(char32_t const *file, int type);
+INTDEF __errno_t LIBCCALL libc_16waccess_s(char16_t const *file, int type);
+INTDEF __errno_t LIBCCALL libc_32waccess_s(char32_t const *file, int type);
+INTDEF __errno_t LIBCCALL libc_dos_16waccess_s(char16_t const *file, int type);
+INTDEF __errno_t LIBCCALL libc_dos_32waccess_s(char32_t const *file, int type);
+INTDEF int LIBCCALL libc_16wchmod(char16_t const *file, mode_t mode);
+INTDEF int LIBCCALL libc_32wchmod(char32_t const *file, mode_t mode);
+INTDEF int LIBCCALL libc_16wunlink(char16_t const *file);
+INTDEF int LIBCCALL libc_32wunlink(char32_t const *file);
+INTDEF int LIBCCALL libc_16wrename(char16_t const *oldname, char16_t const *newname);
+INTDEF int LIBCCALL libc_32wrename(char32_t const *oldname, char32_t const *newname);
+INTDEF int LIBCCALL libc_dos_16wchmod(char16_t const *file, mode_t mode);
+INTDEF int LIBCCALL libc_dos_32wchmod(char32_t const *file, mode_t mode);
+INTDEF int LIBCCALL libc_dos_16wunlink(char16_t const *file);
+INTDEF int LIBCCALL libc_dos_32wunlink(char32_t const *file);
+INTDEF int LIBCCALL libc_dos_16wrename(char16_t const *oldname, char16_t const *newname);
+INTDEF int LIBCCALL libc_dos_32wrename(char32_t const *oldname, char32_t const *newname);
+
+INTDEF __errno_t LIBCCALL libc_access_s(char const *file, int type);
+INTDEF __errno_t LIBCCALL libc_dos_access_s(char const *file, int type);
+INTDEF int LIBCCALL libc_dos_rename(char const *old, char const *new_);
 INTDEF int LIBCCALL libc_dos_chdir(char const *path);
 INTDEF int LIBCCALL libc_dos_rmdir(char const *path);
 INTDEF int LIBCCALL libc_dos_unlink(char const *name);
-INTERN int LIBCCALL libc_dos_remove(char const *name);
+INTDEF int LIBCCALL libc_dos_remove(char const *name);
 INTDEF int LIBCCALL libc_dos_16wchdir(char16_t const *path);
 INTDEF int LIBCCALL libc_dos_16wrmdir(char16_t const *path);
 INTDEF int LIBCCALL libc_dos_32wchdir(char32_t const *path);
 INTDEF int LIBCCALL libc_dos_32wrmdir(char32_t const *path);
-INTERN int LIBCCALL libc_dos_chmod(char const *file, mode_t mode);
+INTDEF int LIBCCALL libc_dos_chmod(char const *file, mode_t mode);
 INTDEF int LIBCCALL libc_eof(int fd);
 INTDEF off32_t LIBCCALL libc_fsize(int fd);
 INTDEF off64_t LIBCCALL libc_fsize64(int fd);

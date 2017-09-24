@@ -31,6 +31,7 @@
 #define __assertion_tbprintl libc___assertion_tbprintl
 #define __assertion_tbprint2 libc___assertion_tbprint2
 #define __assertion_tbprint  libc___assertion_tbprint
+#define __chattr             libc___chattr
 #define __LIBC               extern
 
 #include <__stdinc.h>

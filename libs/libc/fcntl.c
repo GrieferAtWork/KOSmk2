@@ -224,6 +224,50 @@ libc_dos_sopen_s(int *fd, char const *file,
 }
 
 
+PRIVATE int LIBCCALL libc_16wopen_impl(char16_t const *file, int oflag, mode_t cmode) {
+ int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ if (utf8file) result = libc_open(utf8file,oflag,cmode),libc_free(utf8file);
+ return result;
+}
+PRIVATE int LIBCCALL libc_32wopen_impl(char32_t const *file, int oflag, mode_t cmode) {
+ int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ if (utf8file) result = libc_open(utf8file,oflag,cmode),libc_free(utf8file);
+ return result;
+}
+INTERN int LIBCCALL libc_16wcreat(char16_t const *file, mode_t mode) { return libc_16wopen_impl(file,O_CREAT|O_WRONLY|O_TRUNC,mode); }
+INTERN int LIBCCALL libc_32wcreat(char32_t const *file, mode_t mode) { return libc_32wopen_impl(file,O_CREAT|O_WRONLY|O_TRUNC,mode); }
+INTERN int LIBCCALL libc_dos_16wcreat(char16_t const *file, mode_t mode) { return libc_16wopen_impl(file,O_DOSPATH|O_CREAT|O_WRONLY|O_TRUNC,mode); }
+INTERN int LIBCCALL libc_dos_32wcreat(char32_t const *file, mode_t mode) { return libc_32wopen_impl(file,O_DOSPATH|O_CREAT|O_WRONLY|O_TRUNC,mode); }
+INTERN int ATTR_CDECL libc_16wopen(char16_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_16wopen_impl(file,oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_32wopen(char32_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_32wopen_impl(file,oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_dos_16wopen(char16_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_16wopen_impl(file,O_DOSPATH|oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_dos_32wopen(char32_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_32wopen_impl(file,O_DOSPATH|oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_16wsopen(char16_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_16wopen_impl(file,oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_32wsopen(char32_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_32wopen_impl(file,oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_dos_16wsopen(char16_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_16wopen_impl(file,O_DOSPATH|oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_dos_32wsopen(char32_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_32wopen_impl(file,O_DOSPATH|oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int LIBCCALL libc_16wsopen_s(int *fd, char16_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_16wopen_impl(file,oflag,cmode)) >= 0; }
+INTERN int LIBCCALL libc_32wsopen_s(int *fd, char32_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_32wopen_impl(file,oflag,cmode)) >= 0; }
+INTERN int LIBCCALL libc_dos_16wsopen_s(int *fd, char16_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_16wopen_impl(file,O_DOSPATH|oflag,cmode)) >= 0; }
+INTERN int LIBCCALL libc_dos_32wsopen_s(int *fd, char32_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_32wopen_impl(file,O_DOSPATH|oflag,cmode)) >= 0; }
+
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wcreat),libc_16wcreat);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wopen),libc_16wopen);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wsopen),libc_16wsopen);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wsopen_s),libc_16wsopen_s);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wcreat),libc_32wcreat);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wopen),libc_32wopen);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wsopen),libc_32wsopen);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wsopen_s),libc_32wsopen_s);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wcreat),libc_dos_16wcreat);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wopen),libc_dos_16wopen);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wsopen),libc_dos_16wsopen);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wsopen_s),libc_dos_16wsopen_s);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wcreat),libc_dos_32wcreat);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wopen),libc_dos_32wopen);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wsopen),libc_dos_32wsopen);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wsopen_s),libc_dos_32wsopen_s);
+
 DEFINE_PUBLIC_ALIAS(_getdcwd,libc_getdcwd);
 DEFINE_PUBLIC_ALIAS(getdcwd,libc_getdcwd);
 DEFINE_PUBLIC_ALIAS(wgetdcwd,libc_32getdcwd);

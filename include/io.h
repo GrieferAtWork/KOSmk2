@@ -147,10 +147,10 @@ __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL write)(int __fd, void const *__
 #endif /* !__write_defined */
 
 
-__LIBC __NONNULL((1)) int (__LIBCCALL _access)(char const *__file, int __accessmode) __UFS_FUNC_(access);
+__LIBC __NONNULL((1)) int (__LIBCCALL _access)(char const *__file, int __type) __UFS_FUNC_(access);
 __LIBC __NONNULL((1)) int (__LIBCCALL _creat)(char const *__file, int __pmode) __UFS_FUNC_(creat);
 __LIBC __NONNULL((1)) int (__LIBCCALL _chmod)(char const *__file, int __mode) __UFS_FUNC_(chmod);
-__LIBC __NONNULL((1)) errno_t (__LIBCCALL _access_s)(char const *__file, int __accessmode) __UFS_FUNC_(access);
+__LIBC __NONNULL((1)) errno_t (__LIBCCALL _access_s)(char const *__file, int __type) __UFS_FUNC_(access_s);
 __LIBC int (__LIBCCALL _chsize)(int __fd, __INT32_TYPE__ __size) __UFS_FUNC_(ftruncate);
 __LIBC errno_t (__LIBCCALL _chsize_s)(int __fd, __INT64_TYPE__ __size) __UFS_FUNC_(ftruncate64);
 __LIBC __NONNULL((1)) int (__LIBCCALL _unlink)(char const *__file) __UFS_FUNC_(unlink);
@@ -224,14 +224,14 @@ struct _wfinddata64i32_t;
 __LIBC int (__LIBCCALL _wcreat)(wchar_t const *__file, int __pmode) __WFS_FUNC(_wcreat);
 __LIBC int (__ATTR_CDECL _wopen)(wchar_t const *__file, int __oflag, ...) __WFS_FUNC(_wopen);
 __LIBC int (__ATTR_CDECL _wsopen)(wchar_t const *__file, int __oflag, int __sflag, ...) __WFS_FUNC(_wsopen);
-__LIBC errno_t (__LIBCCALL _wsopen_s)(int *__fd, wchar_t const *__file, int __oflag, int __sflag, int __permissionflag) __WFS_FUNC(_wsopen_s);
+__LIBC errno_t (__LIBCCALL _wsopen_s)(int *__fd, wchar_t const *__file, int __oflag, int __sflag, int __pflags) __WFS_FUNC(_wsopen_s);
 
-__LIBC int (__LIBCCALL _waccess)(wchar_t const *__file, int __accessmode) __WFS_FUNC(_waccess);
-__LIBC errno_t (__LIBCCALL _waccess_s)(wchar_t const *__file, int __accessmode) __WFS_FUNC(_waccess);
+__LIBC int (__LIBCCALL _waccess)(wchar_t const *__file, int __type) __WFS_FUNC(_waccess);
+__LIBC errno_t (__LIBCCALL _waccess_s)(wchar_t const *__file, int __type) __WFS_FUNC(_waccess);
 
 __LIBC int (__LIBCCALL _wchmod)(wchar_t const *__file, int __mode) __WFS_FUNC(_wchmod);
 __LIBC int (__LIBCCALL _wunlink)(wchar_t const *__file) __WFS_FUNC(_wunlink);
-__LIBC int (__LIBCCALL _wrename)(wchar_t const *__oldfilename, wchar_t const *__newfilename) __WFS_FUNC(_wrename);
+__LIBC int (__LIBCCALL _wrename)(wchar_t const *__oldname, wchar_t const *__newname) __WFS_FUNC(_wrename);
 __LIBC errno_t (__LIBCCALL _wmktemp_s)(wchar_t *__templatename, size_t __sizeinwords);
 
 __LIBC intptr_t (__LIBCCALL _wfindfirst32)(wchar_t const *__file, struct _wfinddata32_t *__finddata) __WFS_FUNC(_wfindfirst32);

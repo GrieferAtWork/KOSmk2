@@ -32,8 +32,15 @@ INTDEF int LIBCCALL libc_unsetenv(char const *name);
 INTDEF int LIBCCALL libc_putenv(char *string);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-/* Same as 'libc_getenv()', but automatically transform
- * paths and separators in variables such as 'PATH' or 'HOME' */
+/* Same as 'libc_getenv()', but automatically
+ * transforms separators in variables such as 'PATH':
+ * >> if (name == "PATH")
+ * >>     return getenv("PATH").replace(":",";");
+ * >>
+ * >> [...]
+ * >>
+ * >> return getenv("PATH");
+ */
 INTDEF char *LIBCCALL libc_dos_getenv(char const *name);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

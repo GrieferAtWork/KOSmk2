@@ -303,6 +303,9 @@ __LIBC int (__LIBCCALL removeat)(int __fd, char const *__filename) __UFS_FUNC(re
 #endif /* __USE_KOS */
 #ifdef __USE_ATFILE
 __LIBC int (__LIBCCALL renameat)(int __oldfd, char const *__old, int __newfd, char const *__new) __UFS_FUNC(renameat);
+#ifdef __USE_KOS
+__LIBC int (__LIBCCALL frenameat)(int __oldfd, char const *__old, int __newfd, char const *__new, int __flags) __UFS_FUNC(frenameat);
+#endif /* __USE_KOS */
 #endif /* __USE_ATFILE */
 #ifdef __USE_LARGEFILE64
 __LIBC __WUNUSED __FILE *(__LIBCCALL tmpfile64)(void);

@@ -164,6 +164,7 @@ INTERN int LIBCCALL libc_unlinkat(int fd, char const *name, int flags) {
  return FORWARD_SYSTEM_ERROR(sys_unlinkat(fd,name,flags));
 }
 INTERN int LIBCCALL libc_renameat(int oldfd, char const *old, int newfd, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_renameat(oldfd,old,newfd,new_)); }
+INTERN int LIBCCALL libc_frenameat(int oldfd, char const *old, int newfd, char const *new_, int flags) { return FORWARD_SYSTEM_ERROR(sys_xrenameat(oldfd,old,newfd,new_,flags)); }
 INTERN ssize_t LIBCCALL libc_readlinkat(int fd, char const *__restrict path, char *__restrict buf, size_t len) {
  /* XXX: KOS has different (admittedly better) semantics for readlink().
   *   >> POSIX readlink() does not append a \0-character.
@@ -935,6 +936,7 @@ DEFINE_PUBLIC_ALIAS(linkat,libc_linkat);
 DEFINE_PUBLIC_ALIAS(symlinkat,libc_symlinkat);
 DEFINE_PUBLIC_ALIAS(unlinkat,libc_unlinkat);
 DEFINE_PUBLIC_ALIAS(renameat,libc_renameat);
+DEFINE_PUBLIC_ALIAS(frenameat,libc_frenameat);
 DEFINE_PUBLIC_ALIAS(readlinkat,libc_readlinkat);
 DEFINE_PUBLIC_ALIAS(removeat,libc_removeat);
 DEFINE_PUBLIC_ALIAS(remove,libc_remove);
@@ -1288,13 +1290,9 @@ DEFINE_PUBLIC_ALIAS(__DSYM(setmntent),libc_dos_setmntent);
 #define libc_dos_mkdir_temp(name)  libc_dos_mkdir(name,mode)
 #define libc_dos_mkdir_temp2(name) libc_dos_mkdir(name,0755)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wchdir(char16_t const *path) WRAPPER(16,libc_dos_chdir)
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wrmdir(char16_t const *path) WRAPPER(16,libc_dos_rmdir)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wchdir(char32_t const *path) WRAPPER(32,libc_dos_chdir)
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wrmdir(char32_t const *path) WRAPPER(32,libc_dos_rmdir)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_16wchdir(char16_t const *path) WRAPPER(16,libc_chdir)
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wrmdir(char16_t const *path) WRAPPER(16,libc_rmdir)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_32wchdir(char32_t const *path) WRAPPER(32,libc_chdir)
-INTERN ATTR_DOSTEXT int LIBCCALL libc_32wrmdir(char32_t const *path) WRAPPER(32,libc_rmdir)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wmkdir(char16_t const *path, mode_t mode) WRAPPER(16,libc_dos_mkdir_temp)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wmkdir(char32_t const *path, mode_t mode) WRAPPER(32,libc_dos_mkdir_temp)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wmkdir2(char16_t const *path) WRAPPER(16,libc_dos_mkdir_temp2)
@@ -1364,6 +1362,128 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc__lock_fhandle(int UNUSED(fd)) { return 0; 
 INTERN ATTR_DOSTEXT void LIBCCALL libc_unlock_fhandle(int UNUSED(fd)) { }
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_get_osfhandle(int fd) { return (intptr_t)fd; }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_open_osfhandle(intptr_t osfd, int flags) { return flags&O_CLOEXEC ? libc_fcntl((int)osfd,F_DUPFD_CLOEXEC) : libc_dup(flags); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_access_s(char const *file, int type) { return -sys_faccessat(AT_FDCWD,file,type,AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_dos_access_s(char const *file, int type) { return -sys_faccessat(AT_FDCWD,file,type,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_16wfaccessat(int dfd, char16_t const *file, int type, int flags) {
+ int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ if (utf8file) result = libc_faccessat(dfd,utf8file,type,flags),libc_free(utf8file);
+ return result;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_32wfaccessat(int dfd, char32_t const *file, int type, int flags) {
+ int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ if (utf8file) result = libc_faccessat(dfd,utf8file,type,flags),libc_free(utf8file);
+ return result;
+}
+
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16waccess(char16_t const *file, int type) { return libc_16wfaccessat(AT_FDCWD,file,type,AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32waccess(char32_t const *file, int type) { return libc_32wfaccessat(AT_FDCWD,file,type,AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16waccess(char16_t const *file, int type) { return libc_16wfaccessat(AT_FDCWD,file,type,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32waccess(char32_t const *file, int type) { return libc_32wfaccessat(AT_FDCWD,file,type,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT __errno_t LIBCCALL libc_16waccess_s(char16_t const *file, int type) { return libc_16waccess(file,type) ? GET_ERRNO() : EOK; }
+INTERN ATTR_DOSTEXT __errno_t LIBCCALL libc_32waccess_s(char32_t const *file, int type) { return libc_32waccess(file,type) ? GET_ERRNO() : EOK; }
+INTERN ATTR_DOSTEXT __errno_t LIBCCALL libc_dos_16waccess_s(char16_t const *file, int type) { return libc_dos_16waccess(file,type) ? GET_ERRNO() : EOK; }
+INTERN ATTR_DOSTEXT __errno_t LIBCCALL libc_dos_32waccess_s(char32_t const *file, int type) { return libc_dos_32waccess(file,type) ? GET_ERRNO() : EOK; }
+
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wfchmodat(int dfd, char16_t const *file, mode_t mode, int flags) {
+ int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ if (utf8file) result = libc_fchmodat(dfd,utf8file,mode,flags),libc_free(utf8file);
+ return result;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wfchmodat(int dfd, char32_t const *file, mode_t mode, int flags) {
+ int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ if (utf8file) result = libc_fchmodat(dfd,utf8file,mode,flags),libc_free(utf8file);
+ return result;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wunlinkat(int dfd, char16_t const *file, int flags) {
+ int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ if (utf8file) result = libc_unlinkat(dfd,utf8file,flags),libc_free(utf8file);
+ return result;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wunlinkat(int dfd, char32_t const *file, int flags) {
+ int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ if (utf8file) result = libc_unlinkat(dfd,utf8file,flags),libc_free(utf8file);
+ return result;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_16wfrenameat(int oldfd, char16_t const *oldname,
+                  int newfd, char16_t const *newname, int flags) {
+ int result = -1;
+ char *utf8oldname = libc_utf16to8m(oldname,libc_16wcslen(oldname));
+ char *utf8newname = libc_utf16to8m(newname,libc_16wcslen(newname));
+ if (utf8oldname && utf8newname)
+     result = libc_frenameat(oldfd,utf8oldname,newfd,utf8newname,flags);
+ libc_free(utf8newname);
+ libc_free(utf8oldname);
+ return result;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_32wfrenameat(int oldfd, char32_t const *oldname,
+                  int newfd, char32_t const *newname, int flags) {
+ int result = -1;
+ char *utf8oldname = libc_utf32to8m(oldname,libc_32wcslen(oldname));
+ char *utf8newname = libc_utf32to8m(newname,libc_32wcslen(newname));
+ if (utf8oldname && utf8newname)
+     result = libc_frenameat(oldfd,utf8oldname,newfd,utf8newname,flags);
+ libc_free(utf8newname);
+ libc_free(utf8oldname);
+ return result;
+}
+
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wchmod(char16_t const *file, mode_t mode) { return libc_16wfchmodat(AT_FDCWD,file,mode,AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wchmod(char32_t const *file, mode_t mode) { return libc_32wfchmodat(AT_FDCWD,file,mode,AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wchmod(char16_t const *file, mode_t mode) { return libc_16wfchmodat(AT_FDCWD,file,mode,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wchmod(char32_t const *file, mode_t mode) { return libc_32wfchmodat(AT_FDCWD,file,mode,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wunlink(char16_t const *file) { return libc_16wunlinkat(AT_FDCWD,file,AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wunlink(char32_t const *file) { return libc_32wunlinkat(AT_FDCWD,file,AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wunlink(char16_t const *file) { return libc_16wunlinkat(AT_FDCWD,file,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wunlink(char32_t const *file) { return libc_32wunlinkat(AT_FDCWD,file,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wrmdir(char16_t const *path) { return libc_16wunlinkat(AT_FDCWD,path,AT_SYMLINK_NOFOLLOW|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wrmdir(char32_t const *path) { return libc_32wunlinkat(AT_FDCWD,path,AT_SYMLINK_NOFOLLOW|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wrmdir(char16_t const *path) { return libc_16wunlinkat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wrmdir(char32_t const *path) { return libc_32wunlinkat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wrename(char16_t const *oldname, char16_t const *newname) { return libc_16wfrenameat(AT_FDCWD,oldname,AT_FDCWD,newname,AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wrename(char32_t const *oldname, char32_t const *newname) { return libc_32wfrenameat(AT_FDCWD,oldname,AT_FDCWD,newname,AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wrename(char16_t const *oldname, char16_t const *newname) { return libc_16wfrenameat(AT_FDCWD,oldname,AT_FDCWD,newname,AT_DOSPATH|AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wrename(char32_t const *oldname, char32_t const *newname) { return libc_32wfrenameat(AT_FDCWD,oldname,AT_FDCWD,newname,AT_DOSPATH|AT_SYMLINK_NOFOLLOW); }
+
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_waccess),libc_16waccess);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_waccess),libc_32waccess);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_waccess_s),libc_16waccess_s);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_waccess_s),libc_32waccess_s);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wchmod),libc_16wchmod);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wchmod),libc_32wchmod);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wunlink),libc_16wunlink);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wunlink),libc_32wunlink);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wrename),libc_16wrename);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wrename),libc_32wrename);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_waccess),libc_dos_16waccess);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_waccess),libc_dos_32waccess);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_waccess_s),libc_dos_16waccess_s);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_waccess_s),libc_dos_32waccess_s);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wchmod),libc_dos_16wchmod);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wchmod),libc_dos_32wchmod);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wunlink),libc_dos_16wunlink);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wunlink),libc_dos_32wunlink);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wrename),libc_dos_16wrename);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wrename),libc_dos_32wrename);
+
+DEFINE_PUBLIC_ALIAS(_chdir,libc_chdir);
+DEFINE_PUBLIC_ALIAS(_rmdir,libc_rmdir);
+DEFINE_PUBLIC_ALIAS(_mkdir,libc_mkdir);
+DEFINE_PUBLIC_ALIAS(_access,libc_access);
+DEFINE_PUBLIC_ALIAS(_access_s,libc_access_s);
+DEFINE_PUBLIC_ALIAS(_unlink,libc_unlink);
+DEFINE_PUBLIC_ALIAS(_chmod,libc_chmod);
+DEFINE_PUBLIC_ALIAS(__DSYM(_chdir),libc_dos_chdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_rmdir),libc_dos_rmdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_mkdir),libc_dos_mkdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_access),libc_dos_access);
+DEFINE_PUBLIC_ALIAS(__DSYM(_access_s),libc_dos_access_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(_unlink),libc_dos_unlink);
+DEFINE_PUBLIC_ALIAS(__DSYM(_chmod),libc_dos_chmod);
 
 DEFINE_PUBLIC_ALIAS(__KSYMw16(wchdir),libc_16wchdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(wmkdir),libc_16wmkdir);
@@ -1371,14 +1491,6 @@ DEFINE_PUBLIC_ALIAS(__KSYMw16(wrmdir),libc_16wrmdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(wchdir),libc_32wchdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir),libc_32wmkdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(wrmdir),libc_32wrmdir);
-
-DEFINE_PUBLIC_ALIAS(__DSYM(_chdir),libc_dos_chdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(_rmdir),libc_dos_rmdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(_mkdir),libc_dos_mkdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(_access),libc_dos_access);
-DEFINE_PUBLIC_ALIAS(__DSYM(_access_s),libc_dos_access);
-DEFINE_PUBLIC_ALIAS(__DSYM(_unlink),libc_dos_unlink);
-DEFINE_PUBLIC_ALIAS(__DSYM(_chmod),libc_dos_chmod);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(wchdir),libc_dos_16wchdir);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(wrmdir),libc_dos_16wrmdir);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wchdir),libc_dos_16wchdir);
@@ -1398,9 +1510,13 @@ DEFINE_PUBLIC_ALIAS(__DSYMw32(wmkdir_m),libc_dos_32wmkdir);
 #if 1
 DEFINE_PUBLIC_ALIAS(__KSYMw16(wmkdir),libc_16wmkdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir),libc_32wmkdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wmkdir),libc_16wmkdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wmkdir),libc_32wmkdir);
 #else
 DEFINE_PUBLIC_ALIAS(__KSYMw16(wmkdir),libc_16wmkdir2);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir),libc_32wmkdir2);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wmkdir),libc_16wmkdir2);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wmkdir),libc_32wmkdir2);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(wmkdir_m),libc_16wmkdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir_m),libc_32wmkdir);
 #endif
@@ -1446,9 +1562,12 @@ INTERN s32 (__LIBCCALL libc_dos_read)(int fd, void *buf, u32 bufsize) { return (
 INTERN s32 (__LIBCCALL libc_dos_write)(int fd, void const *buf, u32 bufsize) { return (s32)libc_write(fd,buf,(size_t)bufsize); }
 DEFINE_PUBLIC_ALIAS(__DSYM(read),libc_dos_read);
 DEFINE_PUBLIC_ALIAS(__DSYM(write),libc_dos_write);
-DEFINE_PUBLIC_ALIAS(__DSYM(_read),libc_dos_read);
-DEFINE_PUBLIC_ALIAS(__DSYM(_write),libc_dos_write);
-#endif /* __SIZEOF_SIZE_T__ != 4 */
+DEFINE_PUBLIC_ALIAS(_read,libc_dos_read);
+DEFINE_PUBLIC_ALIAS(_write,libc_dos_write);
+#else /* __SIZEOF_SIZE_T__ != 4 */
+DEFINE_PUBLIC_ALIAS(_read,libc_read);
+DEFINE_PUBLIC_ALIAS(_write,libc_write);
+#endif /* __SIZEOF_SIZE_T__ == 4 */
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

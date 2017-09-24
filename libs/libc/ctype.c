@@ -219,6 +219,7 @@ DEFINE_PUBLIC_ALIAS(towctrans_l,libc_towctrans_l);
 
 #endif /* !__KERNEL__ */
 
+#undef __chattr
 #undef libc_isalpha
 #undef libc_isupper
 #undef libc_islower

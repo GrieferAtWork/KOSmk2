@@ -20,6 +20,7 @@
 #define GUARD_LIBS_LIBC_CTYPE_H 1
 #define _ISOC99_SOURCE 1
 
+#include "libc.h"
 #include <hybrid/byteorder.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>

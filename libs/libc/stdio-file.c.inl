@@ -86,7 +86,7 @@ INTERN ssize_t LIBCCALL
 libc_vfprintf(FILE *__restrict stream,
               char const *__restrict format,
               va_list args) {
- return libc_format_vprintf(&file_printer,stream,format,args);
+ return libc_format_vprintf(&libc_file_printer,stream,format,args);
 }
 INTERN ssize_t ATTR_CDECL
 libc_printf(char const *__restrict format, ...) {
@@ -119,8 +119,8 @@ PRIVATE ssize_t LIBCCALL vfscanf_return(unsigned int c, FILE *stream) { return l
 #endif
 INTERN ssize_t LIBCCALL
 libc_vfscanf(FILE *__restrict stream, char const *__restrict format, va_list args) {
- return libc_format_vscanf((pformatscanner)&getc,
-                           (pformatreturn)&ungetc,
+ return libc_format_vscanf((pformatscanner)&libc_fgetc,
+                           (pformatreturn)&libc_ungetc,
                             stream,format,args);
 }
 INTERN ssize_t LIBCCALL
