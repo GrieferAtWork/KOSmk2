@@ -21,16 +21,20 @@
 
 #include <__stdinc.h>
 #include <features.h>
-
 #include <bits/ioctls.h>
+#include <bits/types.h>
 #include <bits/ioctl-types.h>
 #include <sys/ttydefaults.h>
 
 __DECL_BEGIN
 
 #ifndef __KERNEL__
+#ifdef __USE_KOS
+__LIBC __ssize_t (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
+#else /* __USE_KOS */
 __LIBC int (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
-#endif
+#endif /* !__USE_KOS */
+#endif /* !__KERNEL__ */
 
 __DECL_END
 

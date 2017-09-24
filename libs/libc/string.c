@@ -419,49 +419,49 @@ INTERN int LIBCCALL libc_memcasecmp_l(void const *a, void const *b,
 }
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTERN int LIBCCALL libc_16wcscasecmp(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_16wcscasecoll(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_16wcscoll(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_16wcsncasecmp(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_16wcsncasecoll(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_16wcscmp(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_16wcsncmp(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_16wcsncoll(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
-INTERN size_t LIBCCALL libc_16wcscspn(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return 0; }
-INTERN size_t LIBCCALL libc_16wcslen(char16_t const *str) { char16_t const *end = str; while (*end) ++end; return (size_t)(end-str); }
-INTERN size_t LIBCCALL libc_16wcsnlen(char16_t const *src, size_t max_chars) { char16_t const *end = src; while (max_chars-- && *end) ++end; return (size_t)(end-src); }
-INTERN size_t LIBCCALL libc_16wcsspn(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return 0; }
-INTERN size_t LIBCCALL libc_16wcsxfrm(char16_t *dst, char16_t const *src, size_t max_chars) { NOT_IMPLEMENTED(); return 0; }
-INTERN char16_t *LIBCCALL libc_16wcscpy(char16_t *dst, char16_t const *src) { libc_memcpy(dst,src,(libc_16wcslen(src)+1)*sizeof(char16_t)); return dst; }
-INTERN char16_t *LIBCCALL libc_16wcscat(char16_t *dst, char16_t const *src) { libc_memcpy(dst+libc_16wcslen(dst),src,(libc_16wcslen(src)+1)*sizeof(char16_t)); return dst; }
-INTERN char16_t *LIBCCALL libc_16wcsncat(char16_t *dst, char16_t const *src, size_t max_chars) {
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscasecmp(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscasecoll(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscoll(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncasecmp(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncasecoll(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscmp(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncmp(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncoll(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcscspn(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return 0; }
+INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcslen(char16_t const *str) { char16_t const *end = str; while (*end) ++end; return (size_t)(end-str); }
+INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcsnlen(char16_t const *src, size_t max_chars) { char16_t const *end = src; while (max_chars-- && *end) ++end; return (size_t)(end-src); }
+INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcsspn(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return 0; }
+INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcsxfrm(char16_t *dst, char16_t const *src, size_t max_chars) { NOT_IMPLEMENTED(); return 0; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcscpy(char16_t *dst, char16_t const *src) { libc_memcpy(dst,src,(libc_16wcslen(src)+1)*sizeof(char16_t)); return dst; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcscat(char16_t *dst, char16_t const *src) { libc_memcpy(dst+libc_16wcslen(dst),src,(libc_16wcslen(src)+1)*sizeof(char16_t)); return dst; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsncat(char16_t *dst, char16_t const *src, size_t max_chars) {
  size_t maxlen = libc_16wcsnlen(src,max_chars);
  char16_t *target = dst+libc_16wcslen(dst);
  libc_memcpy(target,src,maxlen*sizeof(char16_t));
  if (maxlen < max_chars) target[maxlen] = 0;
  return dst;
 }
-INTERN char16_t *LIBCCALL libc_16wcsncpy(char16_t *dst, char16_t const *src, size_t max_chars) { return (char16_t *)libc_memcpy(dst,src,(libc_16wcsnlen(src,max_chars)+1)*sizeof(char16_t)); }
-INTERN char16_t *LIBCCALL libc_16wcsdup(char16_t const *str) { return (char16_t *)libc_memdup(str,libc_16wcslen(str)*sizeof(char16_t)); }
-INTERN char16_t *LIBCCALL libc_16wcsnset(char16_t *str, char16_t chr, size_t max_chars) { char16_t *result = str; while (max_chars-- && *str) *str++ = chr; return result; }
-INTERN char16_t *LIBCCALL libc_16wcschr(char16_t const *str, char16_t needle) { return (char16_t *)libc_memchrw(str,needle,libc_16wcslen(str)); }
-INTERN char16_t *LIBCCALL libc_16wcsrchr(char16_t const *str, char16_t needle) { return (char16_t *)libc_memrchrw(str,needle,libc_16wcslen(str)); }
-INTERN char16_t *LIBCCALL libc_16wcslwr(char16_t *str) { NOT_IMPLEMENTED(); return str; }
-INTERN char16_t *LIBCCALL libc_16wcspbrk(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return (char16_t *)str; }
-INTERN char16_t *LIBCCALL libc_16wcsrev(char16_t *str) { NOT_IMPLEMENTED(); return str; }
-INTERN char16_t *LIBCCALL libc_16wcsset(char16_t *str, char16_t chr) { NOT_IMPLEMENTED(); return str; }
-INTERN char16_t *LIBCCALL libc_16wcsstr(char16_t const *haystack, char16_t const *needle) { NOT_IMPLEMENTED(); return NULL; }
-INTERN char16_t *LIBCCALL libc_16wcstok(char16_t *str, char16_t const *delim) { NOT_IMPLEMENTED(); return str; }
-INTERN char16_t *LIBCCALL libc_16wcsupr(char16_t *str) { NOT_IMPLEMENTED(); return str; }
-INTERN int LIBCCALL libc_16wcscasecmp_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscasecmp(str1,str2); }
-INTERN int LIBCCALL libc_16wcscasecoll_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscasecoll(str1,str2); }
-INTERN int LIBCCALL libc_16wcscoll_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscoll(str1,str2); }
-INTERN int LIBCCALL libc_16wcsncasecmp_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncasecmp(str1,str2,max_chars); }
-INTERN int LIBCCALL libc_16wcsncasecoll_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncasecoll(str1,str2,max_chars); }
-INTERN int LIBCCALL libc_16wcsncoll_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncoll(str1,str2,max_chars); }
-INTERN size_t LIBCCALL libc_16wcsxfrm_l(char16_t *dst, char16_t const *src, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsxfrm(dst,src,max_chars); }
-INTERN char16_t *LIBCCALL libc_16wcslwr_l(char16_t *str, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcslwr(str); }
-INTERN char16_t *LIBCCALL libc_16wcsupr_l(char16_t *str, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsupr(str); }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsncpy(char16_t *dst, char16_t const *src, size_t max_chars) { return (char16_t *)libc_memcpy(dst,src,(libc_16wcsnlen(src,max_chars)+1)*sizeof(char16_t)); }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsdup(char16_t const *str) { return (char16_t *)libc_memdup(str,libc_16wcslen(str)*sizeof(char16_t)); }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsnset(char16_t *str, char16_t chr, size_t max_chars) { char16_t *result = str; while (max_chars-- && *str) *str++ = chr; return result; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcschr(char16_t const *str, char16_t needle) { return (char16_t *)libc_memchrw(str,needle,libc_16wcslen(str)); }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsrchr(char16_t const *str, char16_t needle) { return (char16_t *)libc_memrchrw(str,needle,libc_16wcslen(str)); }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcslwr(char16_t *str) { NOT_IMPLEMENTED(); return str; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcspbrk(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return (char16_t *)str; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsrev(char16_t *str) { NOT_IMPLEMENTED(); return str; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsset(char16_t *str, char16_t chr) { NOT_IMPLEMENTED(); return str; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsstr(char16_t const *haystack, char16_t const *needle) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcstok(char16_t *str, char16_t const *delim) { NOT_IMPLEMENTED(); return str; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsupr(char16_t *str) { NOT_IMPLEMENTED(); return str; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscasecmp_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscasecmp(str1,str2); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscasecoll_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscasecoll(str1,str2); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscoll_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscoll(str1,str2); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncasecmp_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncasecmp(str1,str2,max_chars); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncasecoll_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncasecoll(str1,str2,max_chars); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncoll_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncoll(str1,str2,max_chars); }
+INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcsxfrm_l(char16_t *dst, char16_t const *src, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsxfrm(dst,src,max_chars); }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcslwr_l(char16_t *str, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcslwr(str); }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsupr_l(char16_t *str, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsupr(str); }
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 

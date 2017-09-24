@@ -23,11 +23,12 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <uchar.h>
+#include <errno.h>
 
 DECL_BEGIN
 
-INTDEF int ATTR_CDECL libc_ioctl(int fd, unsigned long int request, ...);
-INTDEF int ATTR_CDECL libc_fcntl(int fd, int cmd, ...);
+INTDEF ssize_t ATTR_CDECL libc_ioctl(int fd, unsigned long int request, ...);
+INTDEF ssize_t ATTR_CDECL libc_fcntl(int fd, int cmd, ...);
 INTDEF int ATTR_CDECL libc_openat(int fd, char const *file, int oflag, ...);
 INTDEF int ATTR_CDECL libc_open(char const *file, int oflag, ...);
 INTDEF int LIBCCALL libc_creat(char const *file, mode_t mode);
@@ -36,15 +37,20 @@ INTDEF char *LIBCCALL libc_xfdname(int fd, int type, char *buf, size_t bufsize);
 INTDEF char *LIBCCALL libc_getcwd(char *buf, size_t bufsize);
 INTDEF char *LIBCCALL libc_get_current_dir_name(void);
 INTDEF char *LIBCCALL libc_getwd(char *buf);
+INTDEF int LIBCCALL libc_posix_fadvise(int fd, off_t offset, off_t len, int advise);
+INTDEF int LIBCCALL libc_posix_fallocate(int fd, off_t offset, off_t len);
+
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTDEF char *LIBCCALL libc_getdcwd(int drive, char *buf, size_t size);
 INTDEF char16_t *LIBCCALL libc_16getcwd(char16_t *dstbuf, int elemcount);
 INTDEF char32_t *LIBCCALL libc_32getcwd(char32_t *dstbuf, int elemcount);
 INTDEF char16_t *LIBCCALL libc_16getdcwd(int drive, char16_t *dstbuf, int elemcount);
 INTDEF char32_t *LIBCCALL libc_32getdcwd(int drive, char32_t *dstbuf, int elemcount);
+INTDEF int LIBCCALL libc_dos_creat(char const *file, mode_t mode);
+INTDEF int ATTR_CDECL libc_dos_open(char const *file, int oflag, ...);
+INTDEF int ATTR_CDECL libc_dos_sopen(char const *file, int oflag, int sflag, ...);
+INTDEF __errno_t LIBCCALL libc_dos_sopen_s(int *fd, char const *file, int oflag, int sflag, int pmode);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
-INTDEF int LIBCCALL libc_posix_fadvise(int fd, off_t offset, off_t len, int advise);
-INTDEF int LIBCCALL libc_posix_fallocate(int fd, off_t offset, off_t len);
 
 DECL_END
 

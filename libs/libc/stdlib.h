@@ -20,6 +20,7 @@
 #define GUARD_LIBS_LIBC_STDLIB_H 1
 
 #include "libc.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -215,6 +216,9 @@ INTDEF int LIBCCALL libc_grantpt(int fd);
 INTDEF int LIBCCALL libc_unlockpt(int fd);
 INTDEF char *LIBCCALL libc_ptsname(int fd);
 INTDEF int LIBCCALL libc_posix_openpt(int oflag);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF __errno_t LIBCCALL libc_mktemp_s(char *templatename, size_t size);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 
 DECL_END

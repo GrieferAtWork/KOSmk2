@@ -22,6 +22,7 @@
 #include "__stdinc.h"
 #include "features.h"
 #include <bits/fcntl.h>
+#include <bits/types.h>
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K8)
 #include <hybrid/timespec.h>
 #include <bits/stat.h>
@@ -107,18 +108,28 @@ typedef __pid_t pid_t;
 #endif
 
 #ifndef __KERNEL__
+#ifdef __USE_KOS
+__LIBC __ssize_t (__ATTR_CDECL fcntl)(int __fd, int __cmd, ...);
+#else /* __USE_KOS */
 __LIBC int (__ATTR_CDECL fcntl)(int __fd, int __cmd, ...);
-__LIBC __NONNULL((1)) int (__ATTR_CDECL open)(char const *__file, int __oflag, ...) __FS_FUNC(open);
-__LIBC __NONNULL((1)) int (__LIBCCALL creat)(char const *__file, mode_t __mode) __FS_FUNC(creat);
+#endif /* !__USE_KOS */
+#ifndef __open_defined
+#define __open_defined 1
+__LIBC __NONNULL((1)) int (__ATTR_CDECL open)(char const *__file, int __oflag, ...) __UFS_FUNCn(open);
+#endif /* !__open_defined */
+#ifndef __creat_defined
+#define __creat_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL creat)(char const *__file, mode_t __mode) __UFS_FUNCn(creat);
+#endif /* !__creat_defined */
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...);
-__LIBC __NONNULL((1)) int (__LIBCCALL creat64)(char const *__file, mode_t __mode);
-#endif
+__LIBC __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC(open64);
+__LIBC __NONNULL((1)) int (__LIBCCALL creat64)(char const *__file, mode_t __mode) __UFS_FUNC(creat64);
+#endif /* __USE_LARGEFILE64 */
 
 #ifdef __USE_ATFILE
-__LIBC __NONNULL((2)) int (__ATTR_CDECL openat)(int __fd, char const *__file, int __oflag, ...) __FS_FUNC(openat);
+__LIBC __NONNULL((2)) int (__ATTR_CDECL openat)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNCn(openat);
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((2)) int (__ATTR_CDECL openat64)(int __fd, char const *__file, int __oflag, ...);
+__LIBC __NONNULL((2)) int (__ATTR_CDECL openat64)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNC(openat64);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_ATFILE */
 
@@ -128,8 +139,8 @@ __LIBC int (__LIBCCALL posix_fallocate)(int __fd, __FS_TYPE(off) __offset, __FS_
 #ifdef __USE_LARGEFILE64
 __LIBC int (__LIBCCALL posix_fadvise64)(int __fd, __off64_t __offset, __off64_t __len, int __advise);
 __LIBC int (__LIBCCALL posix_fallocate64)(int __fd, __off64_t __offset, __off64_t __len);
-#endif
-#endif
+#endif /* __USE_LARGEFILE64 */
+#endif /* __USE_XOPEN2K */
 
 #endif /* !__KERNEL__ */
 

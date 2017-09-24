@@ -223,6 +223,10 @@ DEFINE_PUBLIC_ALIAS(tcflow,libc_tcflow);
 DEFINE_PUBLIC_ALIAS(tcgetsid,libc_tcgetsid);
 DEFINE_PUBLIC_ALIAS(cfmakeraw,libc_cfmakeraw);
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_isatty,libc_isatty);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_TERMIOS_C */

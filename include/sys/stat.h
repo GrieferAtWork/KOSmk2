@@ -176,60 +176,55 @@ typedef __blksize_t blksize_t;
  *       accepts a glibc-compatible stat buffer, while the functions making use
  *       of what we (and the kernel) defines as its stat()-buffer are actually
  *       named 'kstat()' */
-#ifdef __USE_FILE_OFFSET64
-__LIBC __NONNULL((1,2)) int (__LIBCCALL stat)(char const *__restrict __file, struct stat *__restrict __buf) __ASMNAME("kstat64");
-__LIBC __NONNULL((2)) int (__LIBCCALL fstat)(int __fd, struct stat *__buf) __ASMNAME("kfstat64");
-#else
-__LIBC __NONNULL((1,2)) int (__LIBCCALL stat)(char const *__restrict __file, struct stat *__restrict __buf) __ASMNAME("kstat");
-__LIBC __NONNULL((2)) int (__LIBCCALL fstat)(int __fd, struct stat *__buf) __ASMNAME("kfstat");
-#endif
+__LIBC __NONNULL((1,2)) int (__LIBCCALL stat)(char const *__restrict __file, struct stat *__restrict __buf) __UFS_FUNCn_(kstat);
+__LIBC __NONNULL((2)) int (__LIBCCALL fstat)(int __fd, struct stat *__buf) __UFS_FUNCn_(kfstat);
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((1,2)) int (__LIBCCALL stat64)(char const *__restrict __file, struct stat64 *__restrict __buf) __ASMNAME("kstat64");
-__LIBC __NONNULL((2)) int (__LIBCCALL fstat64)(int __fd, struct stat64 *__buf) __ASMNAME("kfstat64");
+__LIBC __NONNULL((1,2)) int (__LIBCCALL stat64)(char const *__restrict __file, struct stat64 *__restrict __buf) __UFS_FUNC_(kstat64);
+__LIBC __NONNULL((2)) int (__LIBCCALL fstat64)(int __fd, struct stat64 *__buf) __UFS_FUNC_(kfstat64);
 #endif /* __USE_LARGEFILE64 */
 #ifdef __USE_ATFILE
-#ifdef __USE_FILE_OFFSET64
-__LIBC __NONNULL((2,3)) int (__LIBCCALL fstatat)(int __fd, char const *__restrict __file, struct stat *__restrict __buf, int __flag) __ASMNAME("kfstatat");
-#else
-__LIBC __NONNULL((2,3)) int (__LIBCCALL fstatat)(int __fd, char const *__restrict __file, struct stat *__restrict __buf, int __flag) __ASMNAME("kfstatat64");
-#endif
+__LIBC __NONNULL((2,3)) int (__LIBCCALL fstatat)(int __fd, char const *__restrict __file, struct stat *__restrict __buf, int __flag) __UFS_FUNCn_(kfstatat);
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((2,3)) int (__LIBCCALL fstatat64)(int __fd, char const *__restrict __file, struct stat64 *__restrict __buf, int __flag) __ASMNAME("kfstatat64");
+__LIBC __NONNULL((2,3)) int (__LIBCCALL fstatat64)(int __fd, char const *__restrict __file, struct stat64 *__restrict __buf, int __flag) __UFS_FUNC_(kfstatat64);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_ATFILE */
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K)
-#ifdef __USE_FILE_OFFSET64
-__LIBC __NONNULL((1,2)) int (__LIBCCALL lstat)(char const *__restrict __file, struct stat *__restrict __buf) __ASMNAME("klstat");
-#else
-__LIBC __NONNULL((1,2)) int (__LIBCCALL lstat)(char const *__restrict __file, struct stat *__restrict __buf) __ASMNAME("klstat64");
-#endif
+__LIBC __NONNULL((1,2)) int (__LIBCCALL lstat)(char const *__restrict __file, struct stat *__restrict __buf) __UFS_FUNCn_(klstat);
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((1,2)) int (__LIBCCALL lstat64)(char const *__restrict __file, struct stat64 *__restrict __buf) __ASMNAME("klstat64");
+__LIBC __NONNULL((1,2)) int (__LIBCCALL lstat64)(char const *__restrict __file, struct stat64 *__restrict __buf) __UFS_FUNC_(klstat64);
 #endif /* __USE_LARGEFILE64*/
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K */
 
-
-
 #ifndef __mkdir_defined
 #define __mkdir_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path, __mode_t __mode) __UNIXNAME("mkdir");
+#ifdef __USE_DOSFS
+/* NOTE: 'mkdir()' with 1 argument is defined in <direct.h> */
+__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path, __mode_t __mode) __UFS_FUNC_(mkdir_m);
+#else /* __PE__ */
+__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path, __mode_t __mode) __UFS_FUNC_(mkdir);
+#endif /* !__PE__ */
 #endif /* !__mkdir_defined */
-__LIBC __NONNULL((1)) int (__LIBCCALL chmod)(char const *__file, __mode_t __mode);
+#ifndef __chmod_defined
+#define __chmod_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL chmod)(char const *__file, __mode_t __mode) __UFS_FUNC(chmod);
+#endif /* !__chmod_defined */
+#ifndef __umask_defined
+#define __umask_defined 1
 __LIBC __mode_t (__LIBCCALL umask)(__mode_t __mask);
-__LIBC __NONNULL((1)) int (__LIBCCALL mkfifo)(char const *__path, __mode_t __mode);
+#endif /* !__umask_defined */
+__LIBC __NONNULL((1)) int (__LIBCCALL mkfifo)(char const *__path, __mode_t __mode) __UFS_FUNC(mkfifo);
 #ifdef __USE_ATFILE
-__LIBC __NONNULL((2)) int (__LIBCCALL mknodat)(int __fd, char const *__path, __mode_t __mode, __dev_t __dev);
-__LIBC __NONNULL((2)) int (__LIBCCALL fchmodat)(int __fd, char const *__file, __mode_t __mode, int __flag);
-__LIBC __NONNULL((2)) int (__LIBCCALL mkdirat)(int __fd, char const *__path, __mode_t __mode);
-__LIBC __NONNULL((2)) int (__LIBCCALL mkfifoat)(int __fd, char const *__path, __mode_t __mode);
-__LIBC __NONNULL((2)) int (__LIBCCALL utimensat)(int __fd, char const *__path, struct timespec const __times[2], int __flags) __TM_FUNC(utimensat);
+__LIBC __NONNULL((2)) int (__LIBCCALL mknodat)(int __fd, char const *__path, __mode_t __mode, __dev_t __dev) __UFS_FUNC(mknodat);
+__LIBC __NONNULL((2)) int (__LIBCCALL fchmodat)(int __fd, char const *__file, __mode_t __mode, int __flag) __UFS_FUNC(fchmodat);
+__LIBC __NONNULL((2)) int (__LIBCCALL mkdirat)(int __fd, char const *__path, __mode_t __mode) __UFS_FUNC(mkdirat);
+__LIBC __NONNULL((2)) int (__LIBCCALL mkfifoat)(int __fd, char const *__path, __mode_t __mode) __UFS_FUNC(mkfifoat);
+__LIBC __NONNULL((2)) int (__LIBCCALL utimensat)(int __fd, char const *__path, struct timespec const __times[2], int __flags) __UFS_FUNCt(utimensat);
 #ifdef __USE_TIME64
-__LIBC __NONNULL((2)) int (__LIBCCALL utimensat64)(int __fd, char const *__path, struct __timespec64 const __times[2], int __flags);
+__LIBC __NONNULL((2)) int (__LIBCCALL utimensat64)(int __fd, char const *__path, struct __timespec64 const __times[2], int __flags) __UFS_FUNC(utimensat64);
 #endif /* __USE_TIME64 */
 #endif /* __USE_ATFILE */
 #ifdef __USE_MISC
-__LIBC __NONNULL((1)) int (__LIBCCALL lchmod)(char const *__file, __mode_t __mode);
-__LIBC __NONNULL((1)) int (__LIBCCALL mknod)(char const *__path, __mode_t __mode, __dev_t __dev);
+__LIBC __NONNULL((1)) int (__LIBCCALL lchmod)(char const *__file, __mode_t __mode) __UFS_FUNC(lchmod);
 #endif /* __USE_MISC */
 #ifdef __USE_POSIX
 __LIBC int (__LIBCCALL fchmod)(int __fd, __mode_t __mode);
@@ -238,9 +233,9 @@ __LIBC int (__LIBCCALL fchmod)(int __fd, __mode_t __mode);
 __LIBC __WUNUSED __mode_t (__LIBCCALL getumask)(void);
 #endif /* __USE_GNU */
 #if defined(__USE_MISC) || defined(__USE_XOPEN_EXTENDED)
-__LIBC __NONNULL((1)) int (__LIBCCALL mknod)(char const *__path, __mode_t __mode, __dev_t __dev);
+__LIBC __NONNULL((1)) int (__LIBCCALL mknod)(char const *__path, __mode_t __mode, __dev_t __dev) __UFS_FUNC(mknod);
 #ifdef __USE_ATFILE
-__LIBC __NONNULL((2)) int (__LIBCCALL mknodat)(int __fd, char const *__path, __mode_t __mode, __dev_t __dev);
+__LIBC __NONNULL((2)) int (__LIBCCALL mknodat)(int __fd, char const *__path, __mode_t __mode, __dev_t __dev) __UFS_FUNC(mknod);
 #endif /* __USE_ATFILE */
 #endif /* __USE_MISC || __USE_XOPEN_EXTENDED */
 #ifdef __USE_XOPEN2K8

@@ -28,7 +28,10 @@ typedef int __errno_t;
 
 #if defined(__KERNEL__) || defined(__USE_KOS)
 #ifdef __CC__
-typedef __errno_t errno_t;
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
 #endif /* __CC__ */
 #define EOK          0 /* Operation completed successfully */
 #endif

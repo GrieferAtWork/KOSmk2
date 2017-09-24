@@ -76,10 +76,34 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 #define TRACE(x) (void)0
 #endif
 
-
 #define CRTDBG_INIT_MALLOC  0xcc
 #define CRTDBG_INIT_ALLOCA  0xcd
 #define CRTDBG_INIT_ALLOCA4 0xcdcdcdcd
+
+
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+/* Group dos-data together, because most programs won't be using it. */
+#define ATTR_DOSTEXT    ATTR_SECTION(".text.dos")
+#define ATTR_DOSRODATA  ATTR_SECTION(".rodata.dos")
+#define ATTR_DOSDATA    ATTR_SECTION(".data.dos")
+#define ATTR_DOSBSS     ATTR_SECTION(".bss.dos")
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
+
+/* NOTE: '__DSYM()' generate an assembly name for a symbol that
+ *        the kernel should prefer to link against when the module
+ *        being patched was linked using PE, rather than ELF.
+ *     >> Used to provide special symbols for use by windows
+ *        emulation to work around stuff like 'wchar_t' being
+ *        16 bits on kos-pe, but 32 bits on kos-elf. */
+#define __DSYM(x)    .dos.x
+#define __DSYMw16(x) .dos.x
+#define __DSYMw32(x) .dos.U##x
+#define __KSYM(x)    x
+#define __KSYMw16(x) u##x
+#define __KSYMw32(x) x
+
 
 DECL_END
 

@@ -191,12 +191,11 @@ typedef __socklen_t socklen_t;
 
 #undef __environ
 __LIBC char **__environ __ASMNAME("environ");
-__LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL access)(char const *__name, int __type);
-__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__path, char const *__args, ...);
-__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execle)(char const *__path, char const *__args, ...);
+__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__path, char const *__args, ...) __UFS_FUNC(execl);
+__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execle)(char const *__path, char const *__args, ...) __UFS_FUNC(execle);
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execlp)(char const *__file, char const *__args, ...);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execv)(char const *__path, char *const __argv[]);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execve)(char const *__path, char *const __argv[], char *const __envp[]);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execv)(char const *__path, char *const __argv[]) __UFS_FUNC(execv);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execve)(char const *__path, char *const __argv[], char *const __envp[]) __UFS_FUNC(execve);
 __LIBC __NONNULL((1,2)) int (__LIBCCALL execvp)(char const *__file, char *const __argv[]);
 __LIBC __pid_t (__LIBCCALL getpid)(void);
 __LIBC __pid_t (__LIBCCALL getppid)(void);
@@ -212,58 +211,91 @@ __LIBC int (__LIBCCALL getgroups)(int __size, __gid_t __list[]);
 __LIBC int (__LIBCCALL setuid)(__uid_t __uid);
 __LIBC int (__LIBCCALL setgid)(__gid_t __gid);
 __LIBC __pid_t (__LIBCCALL fork)(void);
-__LIBC __FS_TYPE(off) (__LIBCCALL lseek)(int __fd, __FS_TYPE(off) __offset, int __whence) __FS_FUNC(lseek);
-__LIBC int (__LIBCCALL close)(int __fd);
-__LIBC ssize_t (__LIBCCALL read)(int __fd, void *__buf, size_t __n_bytes);
-__LIBC ssize_t (__LIBCCALL write)(int __fd, void const *__buf, size_t __n_bytes);
 __LIBC int (__LIBCCALL pipe)(int __pipedes[2]);
 __LIBC unsigned int (__LIBCCALL alarm)(unsigned int __seconds);
 __LIBC unsigned int (__LIBCCALL sleep)(unsigned int __seconds);
 __LIBC int (__LIBCCALL pause)(void);
-__LIBC __NONNULL((1)) int (__LIBCCALL chown)(char const *__file, __uid_t __owner, __gid_t __group);
-#ifndef __chdir_defined
-#define __chdir_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL chdir)(char const *__path);
-#endif /* !__chdir_defined */
-#ifndef __getcwd_defined
-#define __getcwd_defined 1
-__LIBC char *(__LIBCCALL getcwd)(char *__buf, size_t __size);
-#endif /* !__getcwd_defined */
-__LIBC __WUNUSED int (__LIBCCALL dup)(int __fd);
-__LIBC int (__LIBCCALL dup2)(int __fd, int __fd2);
+__LIBC __NONNULL((1)) int (__LIBCCALL chown)(char const *__file, __uid_t __owner, __gid_t __group) __UFS_FUNC(chown);
 __LIBC __ATTR_NORETURN void (__LIBCCALL _exit)(int __status);
-__LIBC __NONNULL((1)) long int (__LIBCCALL pathconf)(char const *__path, int __name);
+__LIBC __NONNULL((1)) long int (__LIBCCALL pathconf)(char const *__path, int __name) __UFS_FUNC(pathconf);
 __LIBC long int (__LIBCCALL fpathconf)(int __fd, int __name);
 __LIBC __WUNUSED char *(__LIBCCALL ttyname)(int __fd);
 __LIBC __NONNULL((2)) int (__LIBCCALL ttyname_r)(int __fd, char *__buf, size_t __buflen);
-__LIBC __WUNUSED int (__LIBCCALL isatty)(int __fd);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL link)(char const *__from, char const *__to);
-__LIBC __NONNULL((1)) int (__LIBCCALL unlink)(char const *__name);
-#ifndef __rmdir_defined
-#define __rmdir_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL rmdir)(char const *__path);
-#endif /* !__rmdir_defined */
+__LIBC __NONNULL((1,2)) int (__LIBCCALL link)(char const *__from, char const *__to) __UFS_FUNC(link);
 __LIBC __pid_t (__LIBCCALL tcgetpgrp)(int __fd);
 __LIBC int (__LIBCCALL tcsetpgrp)(int __fd, __pid_t __pgrp_id);
 __LIBC __WUNUSED char *(__LIBCCALL getlogin)(void);
 __LIBC int (__LIBCCALL fsync)(int __fd);
 
+#ifndef __read_defined
+#define __read_defined 1
+__LIBC ssize_t (__LIBCCALL read)(int __fd, void *__buf, size_t __n_bytes);
+#endif /* !__read_defined */
+#ifndef __write_defined
+#define __write_defined 1
+__LIBC ssize_t (__LIBCCALL write)(int __fd, void const *__buf, size_t __n_bytes);
+#endif /* !__write_defined */
+#ifndef __lseek_defined
+#define __lseek_defined 1
+__LIBC __FS_TYPE(off) (__LIBCCALL lseek)(int __fd, __FS_TYPE(off) __offset, int __whence) __FS_FUNC(lseek);
+#endif /* !__lseek_defined */
+#ifndef __isatty_defined
+#define __isatty_defined 1
+__LIBC __WUNUSED int (__LIBCCALL isatty)(int __fd);
+#endif /* !__isatty_defined */
+#ifndef __dup2_defined
+#define __dup2_defined 1
+__LIBC int (__LIBCCALL dup2)(int __ofd, int __nfd);
+#endif /* !__dup2_defined */
+#ifndef __dup_defined
+#define __dup_defined 1
+__LIBC __WUNUSED int (__LIBCCALL dup)(int __fd);
+#endif /* !__dup_defined */
+#ifndef __close_defined
+#define __close_defined 1
+__LIBC int (__LIBCCALL close)(int __fd);
+#endif /* !__close_defined */
+#ifndef __access_defined
+#define __access_defined 1
+__LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL access)(char const *__name, int __type) __UFS_FUNC(access);
+#endif /* !__access_defined */
+#ifndef __chdir_defined
+#define __chdir_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL chdir)(char const *__path) __UFS_FUNC(chdir);
+#endif /* !__chdir_defined */
+#ifndef __getcwd_defined
+#define __getcwd_defined 1
+__LIBC char *(__LIBCCALL getcwd)(char *__buf, size_t __size);
+#endif /* !__getcwd_defined */
+#ifndef __unlink_defined
+#define __unlink_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL unlink)(char const *__name) __UFS_FUNC(unlink);
+#endif /* !__unlink_defined */
+#ifndef __rmdir_defined
+#define __rmdir_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL rmdir)(char const *__path) __UFS_FUNC(rmdir);
+#endif /* !__rmdir_defined */
+
+#ifdef __USE_KOS
+__LIBC __NONNULL((2)) int (__LIBCCALL fchdirat)(int __dfd, char const *__path, int __flags) __UFS_FUNC(fchdirat);
+#endif /* __USE_KOS */
+
 #ifdef __USE_GNU
-__LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL euidaccess)(char const *__name, int __type);
-__LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL eaccess)(char const *__name, int __type) __ASMNAME("euidaccess");
+__LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL euidaccess)(char const *__name, int __type) __UFS_FUNC_(eaccess);
+__LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL eaccess)(char const *__name, int __type) __UFS_FUNC(eaccess);
 #endif /* __USE_GNU */
 
 #ifdef __USE_ATFILE
-__LIBC __NONNULL((2)) int (__LIBCCALL faccessat)(int __fd, char const *__file, int __type, int __flag);
-__LIBC __NONNULL((2)) int (__LIBCCALL fchownat)(int __fd, char const *__file, __uid_t __owner, __gid_t __group, int __flag);
-__LIBC __NONNULL((2,4)) int (__LIBCCALL linkat)(int __fromfd, char const *__from, int __tofd, char const *__to, int __flags);
-__LIBC __NONNULL((1,3)) int (__LIBCCALL symlinkat)(char const *__from, int __tofd, char const *__to);
-__LIBC __NONNULL((2,3)) ssize_t (__LIBCCALL readlinkat)(int __fd, char const *__restrict __path, char *__restrict __buf, size_t __len);
-__LIBC __NONNULL((2)) int (__LIBCCALL unlinkat)(int __fd, char const *__name, int __flag);
+__LIBC __NONNULL((2)) int (__LIBCCALL faccessat)(int __fd, char const *__file, int __type, int __flag) __UFS_FUNC(faccessat);
+__LIBC __NONNULL((2)) int (__LIBCCALL fchownat)(int __fd, char const *__file, __uid_t __owner, __gid_t __group, int __flag) __UFS_FUNC(fchownat);
+__LIBC __NONNULL((2,4)) int (__LIBCCALL linkat)(int __fromfd, char const *__from, int __tofd, char const *__to, int __flags) __UFS_FUNC(linkat);
+__LIBC __NONNULL((1,3)) int (__LIBCCALL symlinkat)(char const *__from, int __tofd, char const *__to) __UFS_FUNC(symlinkat);
+__LIBC __NONNULL((2,3)) ssize_t (__LIBCCALL readlinkat)(int __fd, char const *__restrict __path, char *__restrict __buf, size_t __len) __UFS_FUNC(readlinkat);
+__LIBC __NONNULL((2)) int (__LIBCCALL unlinkat)(int __fd, char const *__name, int __flag) __UFS_FUNC(unlinkat);
 #endif /* __USE_ATFILE */
 
 #ifdef __USE_LARGEFILE64
-__LIBC __off64_t (__LIBCCALL lseek64)(int __fd, __off64_t __offset, int __whence);
+__LIBC __off64_t (__LIBCCALL lseek64)(int __fd, __off64_t __offset, int __whence) __UFS_FUNC(lseek64);
 #endif /* __USE_LARGEFILE64 */
 
 #if defined(__USE_UNIX98) || defined(__USE_XOPEN2K8)
@@ -300,13 +332,13 @@ __LIBC __pid_t (__LIBCCALL vfork)(void);
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
 __LIBC int (__LIBCCALL fchown)(int __fd, __uid_t __owner, __gid_t __group);
-__LIBC __NONNULL((1)) int (__LIBCCALL lchown)(char const *__file, __uid_t __owner, __gid_t __group);
+__LIBC __NONNULL((1)) int (__LIBCCALL lchown)(char const *__file, __uid_t __owner, __gid_t __group) __UFS_FUNC(lchown);
 __LIBC int (__LIBCCALL fchdir)(int __fd);
 __LIBC __pid_t (__LIBCCALL getpgid)(__pid_t __pid);
 __LIBC __pid_t (__LIBCCALL getsid)(__pid_t __pid);
-__LIBC __NONNULL((1)) int (__LIBCCALL truncate)(char const *__file, __FS_TYPE(off) __length) __FS_FUNC(truncate);
+__LIBC __NONNULL((1)) int (__LIBCCALL truncate)(char const *__file, __FS_TYPE(off) __length) __UFS_FUNCn(truncate);
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((1)) int (__LIBCCALL truncate64)(char const *__file, __off64_t __length);
+__LIBC __NONNULL((1)) int (__LIBCCALL truncate64)(char const *__file, __off64_t __length) __UFS_FUNC(truncate64);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
 
@@ -370,8 +402,8 @@ __LIBC int (__LIBCCALL ttyslot)(void);
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K)
-__LIBC __NONNULL((1,2)) int (__LIBCCALL symlink)(char const *__from, char const *__to);
-__LIBC __NONNULL((1,2)) ssize_t (__LIBCCALL readlink)(char const *__restrict __path, char *__restrict __buf, size_t __len);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL symlink)(char const *__from, char const *__to) __UFS_FUNC(symlink);
+__LIBC __NONNULL((1,2)) ssize_t (__LIBCCALL readlink)(char const *__restrict __path, char *__restrict __buf, size_t __len) __UFS_FUNC(readlink);
 #endif
 
 #if defined(__USE_REENTRANT) || defined(__USE_POSIX199506)
@@ -391,7 +423,7 @@ __LIBC __NONNULL((1)) int (__LIBCCALL setdomainname)(char const *__name, size_t 
 __LIBC int (__LIBCCALL vhangup)(void);
 __LIBC __NONNULL((1)) int (__LIBCCALL revoke)(char const *__file);
 __LIBC __NONNULL((1)) int (__LIBCCALL profil)(unsigned short int *__sample_buffer, size_t __size, size_t __offset, unsigned int __scale);
-__LIBC int (__LIBCCALL acct)(char const *__name);
+__LIBC int (__LIBCCALL acct)(char const *__name) __UFS_FUNC(acct);
 __LIBC char *(__LIBCCALL getusershell)(void);
 __LIBC void (__LIBCCALL endusershell)(void);
 __LIBC void (__LIBCCALL setusershell)(void);
@@ -404,7 +436,7 @@ __LIBC long long int (__ATTR_CDECL lsyscall)(long int __sysno, ...) __ASMNAME("s
 
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN) && !defined(__USE_XOPEN2K))
-__LIBC __NONNULL((1)) int (__LIBCCALL chroot)(char const *__path);
+__LIBC __NONNULL((1)) int (__LIBCCALL chroot)(char const *__path) __UFS_FUNC(chroot);
 __LIBC __NONNULL((1)) char *(__LIBCCALL getpass)(char const *__prompt);
 #endif
 

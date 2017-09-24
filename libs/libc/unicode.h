@@ -83,6 +83,7 @@ INTDEF size_t LIBCCALL libc_utf16to8(char16_t const *__restrict utf16, size_t ut
 #define UNICODE_IS_STATEDEPENDENT 1 /* ??? (I think...) */
 
 /* Unicode mode flags. */
+#define UNICODE_F_NORMAL         0x0000 /*< Regular string conversion. */
 #define UNICODE_F_NOZEROTERM     0x0001 /*< Don't terminate with a NUL-character that is included in the return value. */
 #define UNICODE_F_ALWAYSZEROTERM 0x0002 /*< Always zero-terminate, even when an incomplete sequence is passed. */
 #define UNICODE_F_STOPONNUL      0x0004 /*< Stop if a NUL-character is encountered in the input string. */

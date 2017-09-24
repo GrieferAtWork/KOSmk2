@@ -33,6 +33,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\getopt.h = ..\include\getopt.h
 		..\include\grp.h = ..\include\grp.h
 		..\include\inttypes.h = ..\include\inttypes.h
+		..\include\io.h = ..\include\io.h
 		..\include\langinfo.h = ..\include\langinfo.h
 		..\include\libgen.h = ..\include\libgen.h
 		..\include\limits.h = ..\include\limits.h

@@ -159,8 +159,14 @@ __LIBC __FILE *(stderr);
 #define stderr stderr
 
 __NAMESPACE_STD_BEGIN
-__LIBC int (__LIBCCALL remove)(char const *__filename);
-__LIBC int (__LIBCCALL rename)(char const *__old, char const *__new);
+#ifndef __std_remove_defined
+#define __std_remove_defined 1
+__LIBC __NONNULL((1)) int (__LIBCCALL remove)(char const *__file) __UFS_FUNC(remove);
+#endif /* !__std_remove_defined */
+#ifndef __std_rename_defined
+#define __std_rename_defined 1
+__LIBC int (__LIBCCALL rename)(char const *__old, char const *__new) __UFS_FUNC(rename);
+#endif /* !__std_rename_defined */
 __LIBC __WUNUSED char *(__LIBCCALL tmpnam)(char *__s);
 __LIBC int (__LIBCCALL fclose)(__FILE *__stream);
 __LIBC int (__LIBCCALL fflush)(__FILE *__stream);
@@ -196,19 +202,11 @@ __LIBC void (__LIBCCALL clearerr)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL feof)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL ferror)(__FILE *__stream);
 __LIBC void (__LIBCCALL perror)(char const *__s);
-#ifndef __USE_FILE_OFFSET64
-__LIBC __WUNUSED __FILE *(__LIBCCALL tmpfile)(void);
-__LIBC __WUNUSED __FILE *(__LIBCCALL fopen)(char const *__restrict __filename, char const *__restrict __modes);
-__LIBC __WUNUSED __FILE *(__LIBCCALL freopen)(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream);
-__LIBC int (__LIBCCALL fgetpos)(__FILE *__restrict __stream, fpos_t *__restrict __pos);
-__LIBC int (__LIBCCALL fsetpos)(__FILE *__stream, fpos_t const *__pos);
-#else
-__LIBC __WUNUSED __FILE *(__LIBCCALL tmpfile)(void) __ASMNAME("tmpfile64");
-__LIBC __WUNUSED __FILE *(__LIBCCALL fopen)(char const *__restrict __filename, char const *__restrict __modes) __ASMNAME("fopen64");
-__LIBC __WUNUSED __FILE *(__LIBCCALL freopen)(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream) __ASMNAME("freopen64");
-__LIBC int (__LIBCCALL fgetpos)(__FILE *__restrict __stream, fpos_t *__restrict __pos) __ASMNAME("fgetpos64");
-__LIBC int (__LIBCCALL fsetpos)(__FILE *__stream, fpos_t const *__pos) __ASMNAME("fsetpos64");
-#endif
+__LIBC __WUNUSED __FILE *(__LIBCCALL tmpfile)(void) __FS_FUNC(tmpfile);
+__LIBC __WUNUSED __FILE *(__LIBCCALL fopen)(char const *__restrict __filename, char const *__restrict __modes) __UFS_FUNCn(fopen);
+__LIBC __WUNUSED __FILE *(__LIBCCALL freopen)(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream) __UFS_FUNCn(freopen);
+__LIBC int (__LIBCCALL fgetpos)(__FILE *__restrict __stream, fpos_t *__restrict __pos) __FS_FUNC(fgetpos);
+__LIBC int (__LIBCCALL fsetpos)(__FILE *__stream, fpos_t const *__pos) __FS_FUNC(fsetpos);
 #ifdef __USE_KOS
 __LIBC __ssize_t (__ATTR_CDECL printf)(char const *__restrict __format, ...);
 __LIBC __ssize_t (__ATTR_CDECL fprintf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
@@ -238,8 +236,14 @@ __LIBC __WUNUSED __ATTR_DEPRECATED("No buffer size checks") char *(__LIBCCALL ge
 #endif
 __NAMESPACE_STD_END
 
+#ifndef __remove_defined
+#define __remove_defined 1
 __NAMESPACE_STD_USING(remove)
+#endif /* !__remove_defined */
+#ifndef __rename_defined
+#define __rename_defined 1
 __NAMESPACE_STD_USING(rename)
+#endif /* !__rename_defined */
 __NAMESPACE_STD_USING(tmpnam)
 __NAMESPACE_STD_USING(fclose)
 __NAMESPACE_STD_USING(fflush)
@@ -295,20 +299,20 @@ __LIBC int (__ATTR_CDECL dprintf)(int __fd, char const *__restrict __format, ...
 #endif /* __USE_XOPEN2K8 */
 
 #ifdef __USE_KOS
-__LIBC int (__LIBCCALL removeat)(int __fd, char const *__filename);
-#endif
+__LIBC int (__LIBCCALL removeat)(int __fd, char const *__filename) __UFS_FUNC(removeat);
+#endif /* __USE_KOS */
 #ifdef __USE_ATFILE
-__LIBC int (__LIBCCALL renameat)(int __oldfd, char const *__old, int __newfd, char const *__new);
-#endif
+__LIBC int (__LIBCCALL renameat)(int __oldfd, char const *__old, int __newfd, char const *__new) __UFS_FUNC(renameat);
+#endif /* __USE_ATFILE */
 #ifdef __USE_LARGEFILE64
 __LIBC __WUNUSED __FILE *(__LIBCCALL tmpfile64)(void);
-__LIBC __WUNUSED __FILE *(__LIBCCALL fopen64)(char const *__restrict __filename, char const *__restrict __modes);
-__LIBC __WUNUSED __FILE *(__LIBCCALL freopen64)(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream);
+__LIBC __WUNUSED __FILE *(__LIBCCALL fopen64)(char const *__restrict __filename, char const *__restrict __modes) __UFS_FUNC(fopen64);
+__LIBC __WUNUSED __FILE *(__LIBCCALL freopen64)(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream) __UFS_FUNC(freopen64);
 __LIBC int (__LIBCCALL fseeko64)(__FILE *__stream, __off64_t __off, int __whence);
 __LIBC __WUNUSED __off64_t (__LIBCCALL ftello64)(__FILE *__stream);
 __LIBC int (__LIBCCALL fgetpos64)(__FILE *__restrict __stream, fpos64_t *__restrict __pos);
 __LIBC int (__LIBCCALL fsetpos64)(__FILE *__stream, fpos64_t const *__pos);
-#endif
+#endif /* __USE_LARGEFILE64 */
 #ifdef __USE_MISC
 __LIBC __WUNUSED char *(__LIBCCALL tmpnam_r)(char *__s);
 __LIBC int (__LIBCCALL fflush_unlocked)(__FILE *__stream);
@@ -322,10 +326,10 @@ __LIBC void (__LIBCCALL clearerr_unlocked)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL feof_unlocked)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL ferror_unlocked)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL fileno_unlocked)(__FILE *__stream);
-#endif
+#endif /* __USE_MISC */
 #if defined(__USE_MISC) || defined(__USE_XOPEN)
 __LIBC __ATTR_MALLOC __WUNUSED char *(__LIBCCALL tempnam)(char const *__dir, char const *__pfx);
-#endif
+#endif /* __USE_MISC || __USE_XOPEN */
 #ifdef __USE_POSIX
 __LIBC __WUNUSED __FILE *(__LIBCCALL fdopen)(int __fd, char const *__modes);
 __LIBC __WUNUSED int (__LIBCCALL fileno)(__FILE *__stream);

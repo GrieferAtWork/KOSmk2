@@ -239,11 +239,11 @@ user_chfd(int fd, USER char const *path) {
  else {
   /* Make sure it's actually a directory. */
   struct inode *path_inode;
-  result = -EOK;
   path_inode = dentry_inode(new_path);
   if (!path_inode) result = -ENOENT;
   else {
    if (!INODE_ISDIR(path_inode)) result = -ENOTDIR;
+   else result = inode_mayaccess(path_inode,&walker.dw_access,R_OK);
    INODE_DECREF(path_inode);
   }
   if (E_ISOK(result)) {
@@ -276,6 +276,62 @@ SYSCALL_DEFINE1(chdir,USER char const *,path) {
 }
 SYSCALL_DEFINE1(chroot,USER char const *,path) {
  return user_chfd(AT_FDROOT,path);
+}
+SYSCALL_DEFINE3(xfchdirat,int,dfd,USER char const *,path,int,flags) {
+ struct fdman *fdm = THIS_FDMAN;
+ struct dentry_walker walker;
+ struct dentry *pwd_dentry;
+ struct dentry *cwd; errno_t result;
+ if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) && path)
+       return -EINVAL;
+ FSACCESS_SETUSER(walker.dw_access);
+ walker.dw_nlink    = 0;
+ walker.dw_nofollow = !!(flags&AT_SYMLINK_NOFOLLOW);
+ task_crit();
+
+ cwd = fdman_get_dentry(fdm,dfd);
+ if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
+ result = fdman_read(fdm);
+ if (E_ISERR(result)) { DENTRY_DECREF(cwd); goto end; }
+ walker.dw_root = fdm->fm_root;
+ DENTRY_INCREF(walker.dw_root);
+ fdman_endread(fdm);
+
+ pwd_dentry = dentry_user_xwalk(cwd,&walker,path);
+ DENTRY_DECREF(walker.dw_root);
+ DENTRY_DECREF(cwd);
+
+ if (E_ISERR(pwd_dentry))
+  result = E_GTERR(pwd_dentry);
+ else {
+  /* Make sure it's actually a directory. */
+  struct inode *path_inode;
+  path_inode = dentry_inode(pwd_dentry);
+  if (!path_inode) result = -ENOENT;
+  else {
+   if (!INODE_ISDIR(path_inode)) result = -ENOTDIR;
+   else result = inode_mayaccess(path_inode,&walker.dw_access,R_OK);
+   INODE_DECREF(path_inode);
+  }
+  if (E_ISOK(result)) {
+   struct dentry *old_path;
+   /* Override the directory! */
+   result = fdman_write(fdm);
+   if (E_ISERR(result)) goto drop_new_path;
+   CHECK_HOST_DOBJ(pwd_dentry);
+   old_path = fdm->fm_cwd;
+   fdm->fm_cwd = pwd_dentry;
+   fdman_endwrite(fdm);
+   CHECK_HOST_DOBJ(old_path);
+   DENTRY_DECREF(old_path);
+  } else {
+drop_new_path:
+   DENTRY_DECREF(pwd_dentry);
+  }
+ }
+
+end: task_endcrit();
+ return result;
 }
 
 SYSCALL_DEFINE1(fchdir,int,fd) {
@@ -622,7 +678,7 @@ SYSCALL_DEFINE3(unlinkat,int,dfd,USER char const *,pathname,int,flag) {
  struct dentry *unlink_file;
  if (!(flag&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) &&
        pathname) return -EINVAL;
- if (!(flag&(AT_REMOVEDIR|AT_REMOVEREG|AT_REMOVEMNT)))
+ if (!(flag&(AT_REMOVEDIR|AT_REMOVEREG)))
        flag |= AT_REMOVEREG; /* Default: Unlink regular files. */
  FSACCESS_SETUSER(walker.dw_access);
  walker.dw_nlink    = 0;
@@ -643,7 +699,7 @@ SYSCALL_DEFINE3(unlinkat,int,dfd,USER char const *,pathname,int,flag) {
  else {
   /* Unlink this directory entry. */
   result = dentry_remove(unlink_file,&walker.dw_access,
-                         flag&(AT_REMOVEDIR|AT_REMOVEREG|AT_REMOVEMNT));
+                         flag&(AT_REMOVEDIR|AT_REMOVEREG));
   DENTRY_DECREF(unlink_file);
  }
 end:
@@ -738,16 +794,18 @@ end:
  task_endcrit();
  return result;
 }
-SYSCALL_DEFINE4(renameat,int,olddfd,USER char const *,oldname,
-                         int,newdfd,USER char const *,newname) {
+SYSCALL_DEFINE5(xrenameat,int,olddfd,USER char const *,oldname,
+                          int,newdfd,USER char const *,newname,
+                          int,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  REF struct dentry *oldcwd,*newcwd;
  REF struct dentry *rename_file,*result_entry;
  errno_t result;
+ if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW))) return -EINVAL;
  FSACCESS_SETUSER(walker.dw_access);
  walker.dw_nlink    = 0;
- walker.dw_nofollow = true;
+ walker.dw_nofollow = !!(flags&AT_SYMLINK_NOFOLLOW);
  task_crit();
  oldcwd = fdman_get_dentry(fdm,olddfd);
  if (E_ISERR(oldcwd)) { result = E_GTERR(oldcwd); goto end; }
@@ -781,6 +839,10 @@ SYSCALL_DEFINE4(renameat,int,olddfd,USER char const *,oldname,
 end:
  task_endcrit();
  return result;
+}
+SYSCALL_DEFINE4(renameat,int,olddfd,USER char const *,oldname,
+                         int,newdfd,USER char const *,newname) {
+ return SYSC_xrenameat(olddfd,oldname,newdfd,newname,AT_SYMLINK_NOFOLLOW);
 }
 
 SYSCALL_DEFINE4(utimensat,int,dfd,USER char const *,filename,

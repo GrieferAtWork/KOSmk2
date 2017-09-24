@@ -27,17 +27,17 @@ __DECL_BEGIN
 #ifndef __size_t_defined
 #define __size_t_defined 1
 typedef __size_t size_t;
-#endif
+#endif /* !__size_t_defined */
 
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K)
 #ifndef __gid_t_defined
 #define __gid_t_defined 1
 typedef __gid_t gid_t;
-#endif
+#endif /* !__gid_t_defined */
 #ifndef __uid_t_defined
 #define __uid_t_defined 1
 typedef __uid_t uid_t;
-#endif
+#endif /* !__uid_t_defined */
 #endif /* __USE_XOPEN || __USE_XOPEN2K */
 
 struct passwd {

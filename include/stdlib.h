@@ -700,7 +700,10 @@ __LIBC __NONNULL((1)) int (__LIBCCALL unsetenv)(char const *__name);
 
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN_EXTENDED) && !defined(__USE_XOPEN2K8))
+#ifndef __mktemp_defined
+#define __mktemp_defined 1
 __LIBC __NONNULL((1)) char *(__LIBCCALL mktemp)(char *__template);
+#endif /* !__mktemp_defined */
 __LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL ecvt)(double __value, int __ndigit, int *__restrict __decpt, int *__restrict __sign);
 __LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL fcvt)(double __value, int __ndigit, int *__restrict __decpt, int *__restrict __sign);
 #endif

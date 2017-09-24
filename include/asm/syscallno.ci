@@ -262,6 +262,10 @@ __XSYSCALL(__NR_xpipe,sys_xpipe) /* Returns reader fd in EAX; writer fd in EDX *
 #define __SC_ATTRIB_CLOBB_0x80000008 C("memory")
 #define __NR_xfexecve     0x80000008
 __XSYSCALL(__NR_xfexecve,sys_xfexecve)
+#define __NR_xfchdirat    0x80000009
+__XSYSCALL(__NR_xfchdirat,sys_xfchdirat)
+#define __NR_xrenameat    0x8000000a
+__XSYSCALL(__NR_xrenameat,sys_xrenameat)
 
 /* Dynamic linker system calls.
  * NOTE: Library handles and simply the instance base pointer,

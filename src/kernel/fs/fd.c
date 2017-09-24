@@ -698,6 +698,7 @@ SYSCALL_DEFINE3(fcntl,int,fd,int,cmd,USER void *,arg) {
   REF struct file *fp;
  case F_GETFL:
  case F_SETFL:
+ case F_SETFL_XCH:
   fp = fdman_get_file(fdm,fd);
   if (E_ISERR(fp)) { result = E_GTERR(fp); goto end; }
   if (cmd == F_GETFL) result = ATOMIC_READ(fp->f_mode);
@@ -706,7 +707,7 @@ SYSCALL_DEFINE3(fcntl,int,fd,int,cmd,USER void *,arg) {
    do old_mode = ATOMIC_READ(fp->f_mode),
       new_mode = (old_mode&~(F_SETFL_MASK)) | ((oflag_t)arg & F_SETFL_MASK);
    while (!ATOMIC_CMPXCH_WEAK(fp->f_mode,old_mode,new_mode));
-   result = -EOK;
+   result = cmd == F_SETFL_XCH ? old_mode : -EOK;
   }
   FILE_DECREF(fp);
  } break;

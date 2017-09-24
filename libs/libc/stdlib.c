@@ -646,6 +646,14 @@ DEFINE_PUBLIC_ALIAS(mkostemps64,libc_mkostemps);
 DEFINE_PUBLIC_ALIAS(mkstemp64,libc_mkstemp);
 DEFINE_PUBLIC_ALIAS(mkstemps64,libc_mkstemps);
 
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_mktemp_s,libc_mktemp_s);
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_mktemp_s(char *templatename, size_t size) {
+ return templatename && size && libc_mktemp(templatename) ? EOK : EINVAL;
+}
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 #endif /* !__KERNEL__ */
 
 DECL_END

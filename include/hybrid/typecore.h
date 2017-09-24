@@ -531,11 +531,7 @@
 #endif
 #endif /* __WCHAR_MAX__ */
 #ifndef __SIZEOF_WCHAR_T__
-#if defined(_WIN16) || defined(WIN16) || \
-    defined(_WIN32) || defined(WIN32) || \
-    defined(_WIN64) || defined(WIN64) || \
-    defined(__WIN32__) || defined(__TOS_WIN__) || \
-    defined(_WIN32_WCE) || defined(WIN32_WCE)
+#if defined(__PE__)
 #   define __SIZEOF_WCHAR_T__ 2
 #else
 #   define __SIZEOF_WCHAR_T__ 4

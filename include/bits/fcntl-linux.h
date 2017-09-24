@@ -47,15 +47,18 @@ __DECL_BEGIN
 #define O_NDELAY      O_NONBLOCK
 #define O_FSYNC       O_SYNC
 
-#define __O_DIRECT    000040000
-#define __O_LARGEFILE 000100000
-#define __O_DIRECTORY 000200000
-#define __O_NOFOLLOW  000400000
-#define __O_NOATIME   001000000
-#define __O_CLOEXEC   002000000
-#define __O_CLOFORK   004000000
-#define __O_PATH      010000000
-#define __O_TMPFILE  (020000000|__O_DIRECTORY)
+#define __O_DIRECT     000040000
+#define __O_LARGEFILE  000100000
+#define __O_DIRECTORY  000200000
+#define __O_NOFOLLOW   000400000
+#define __O_NOATIME    001000000
+#define __O_CLOEXEC    002000000
+#define __O_CLOFORK    004000000
+#define __O_PATH       010000000
+#define __O_TMPFILE   (020000000|__O_DIRECTORY)
+#ifndef __USE_DOS
+#define __O_DOSPATH   0400000000 /* Interpret '\\' as '/', and ignore casing during path resolution. */
+#endif /* !__USE_DOS */
 
 #ifndef __USE_FILE_OFFSET64
 #   define F_GETLK     5 /*< Get record locking info. */
@@ -88,6 +91,7 @@ __DECL_BEGIN
 #endif
 #ifdef __USE_KOS
 #   define O_CLOFORK    __O_CLOFORK
+#   define O_DOSPATH    __O_DOSPATH
 #endif
 
 #ifdef __USE_GNU
@@ -143,6 +147,9 @@ __DECL_BEGIN
 #endif
 #ifdef __USE_XOPEN2K8
 #   define F_DUPFD_CLOEXEC 1030 /*< Duplicate file descriptor with close-on-exit set. */
+#endif
+#ifdef __USE_KOS
+#   define F_SETFL_XCH  5163 /*< Same as 'F_SETFL', but return the old set of flags instead of '-EOK' upon success. */
 #endif
 
 #define FD_CLOEXEC   0x01 /*< FLAG: Close the descriptor on 'exec()'. */
@@ -254,7 +261,10 @@ struct file_handle {
 #   define AT_EACCESS           0x0200 /* Test access permitted for effective IDs, not real IDs. */
 #ifdef __USE_KOS
 #   define AT_REMOVEREG         0x40000 /* Explicitly allow removing anything that unlink() removes. (Default; Set in addition to 'AT_REMOVEDIR' to implement 'remove()' semantics). */
-#   define AT_REMOVEMNT         0x80000 /* Explicitly allow unmounting of mounting points. */
+#ifdef __KERNEL__
+#   define AT_REMOVEMNT         0x80000 /* Used internally by the kernel: Delete a mounting point. (Userspace must use 'unmount()') */
+#endif /* __KERNEL__ */
+#   define AT_DOSPATH          0x100000 /* Interpret '\\' as '/', and ignore casing during path resolution. */
 #endif
 
 #ifdef __USE_KOS

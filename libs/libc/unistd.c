@@ -36,12 +36,14 @@
 #include "misc.h"
 #include "environ.h"
 #include "unicode.h"
+#include "fcntl.h"
 
 #include <hybrid/asm.h>
 #include <hybrid/section.h>
 #include <bits/stat.h>
 #include <bits/confname.h>
 #include <bits/fcntl-linux.h>
+#include <io.h>
 #include <fcntl.h>
 #include <fnmatch.h>
 #include <hybrid/atomic.h>
@@ -121,6 +123,7 @@ INTERN int LIBCCALL libc_close(int fd) { return FORWARD_SYSTEM_ERROR(sys_close(f
 INTERN int LIBCCALL libc_chroot(char const *path) { return FORWARD_SYSTEM_ERROR(sys_chroot(path)); }
 INTERN int LIBCCALL libc_chdir(char const *path) { return FORWARD_SYSTEM_ERROR(sys_chdir(path)); }
 INTERN int LIBCCALL libc_fchdir(int fd) { return FORWARD_SYSTEM_ERROR(sys_fchdir(fd)); }
+INTDEF int LIBCCALL libc_fchdirat(int dfd, char const *path, int flags) { return FORWARD_SYSTEM_ERROR(sys_xfchdirat(dfd,path,flags)); }
 INTERN int LIBCCALL libc_dup(int fd) { return FORWARD_SYSTEM_VALUE(sys_dup(fd)); }
 INTERN int LIBCCALL libc_dup3(int fd, int fd2, int flags) { return FORWARD_SYSTEM_VALUE(sys_dup3(fd,fd2,flags)); }
 INTERN int LIBCCALL libc_dup2(int fd, int fd2) { return fd == fd2 ? fd2 : libc_dup3(fd,fd2,0); }
@@ -418,20 +421,6 @@ INTERN int LIBCCALL libc_unlink(char const *name) { return libc_unlinkat(AT_FDCW
 INTERN int LIBCCALL libc_rmdir(char const *path) { return libc_unlinkat(AT_FDCWD,path,AT_SYMLINK_FOLLOW|AT_REMOVEDIR); }
 INTERN int LIBCCALL libc_eaccess(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_EACCESS); }
 INTERN int LIBCCALL libc_mkdir(char const *path, mode_t mode) { return libc_mkdirat(AT_FDCWD,path,mode); }
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTERN int LIBCCALL libc_dos_mkdir(char const *path) { return libc_mkdir(path,0755); }
-INTERN int LIBCCALL libc_chdrive(int UNUSED(drive)) { return 0; }
-INTERN int LIBCCALL libc_getdrive(void) { return 0; }
-INTERN unsigned long LIBCCALL libc_getdrives(void) { return 1; }
-INTERN unsigned LIBCCALL libc_getdiskfree(unsigned drive, struct _diskfree_t *diskfree) {
- /* Fill in something reasonable. (KOS doesn't track this stuff right now) */
- diskfree->total_clusters      = 64*1024;
- diskfree->avail_clusters      = 48*1024;
- diskfree->sectors_per_cluster = 4;
- diskfree->bytes_per_sector    = 512;
- return 0;
-}
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTERN int LIBCCALL libc_mkfifo(char const *path, mode_t mode) { return libc_mkfifoat(AT_FDCWD,path,mode); }
 INTERN int LIBCCALL libc_mknod(char const *path, mode_t mode, dev_t dev) { return libc_mknodat(AT_FDCWD,path,mode,dev); }
 INTERN pid_t LIBCCALL libc_wait(__WAIT_STATUS stat_loc) { return libc_wait4(-1,stat_loc,0,NULL); }
@@ -825,15 +814,6 @@ DEFINE_PUBLIC_ALIAS(unlink,libc_unlink);
 DEFINE_PUBLIC_ALIAS(rmdir,libc_rmdir);
 DEFINE_PUBLIC_ALIAS(eaccess,libc_eaccess);
 DEFINE_PUBLIC_ALIAS(mkdir,libc_mkdir);
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-DEFINE_PUBLIC_ALIAS(_chdir,libc_chdir);
-DEFINE_PUBLIC_ALIAS(_rmdir,libc_rmdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(mkdir),libc_dos_mkdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(_mkdir),libc_dos_mkdir);
-DEFINE_PUBLIC_ALIAS(_chdrive,libc_chdrive);
-DEFINE_PUBLIC_ALIAS(_getdrive,libc_getdrive);
-DEFINE_PUBLIC_ALIAS(_getdrives,libc_getdrives);
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 DEFINE_PUBLIC_ALIAS(mkfifo,libc_mkfifo);
 DEFINE_PUBLIC_ALIAS(mknod,libc_mknod);
 DEFINE_PUBLIC_ALIAS(wait,libc_wait);
@@ -988,24 +968,191 @@ DEFINE_PUBLIC_ALIAS(fstatat64,libc_glibc_fstatat);
 { int result = -1; char *epath; \
   if ((epath = libc_utf##n##to8m(path,libc_##n##wcslen(path))) != NULL) { \
    result = base(epath); \
-   free(epath); \
+   libc_free(epath); \
   } \
   return result; \
 }
-INTERN int LIBCCALL libc_16wchdir(char16_t const *path) WRAPPER(16,libc_chdir)
-INTERN int LIBCCALL libc_32wchdir(char32_t const *path) WRAPPER(32,libc_chdir)
-INTERN int LIBCCALL libc_16wmkdir(char16_t const *path) WRAPPER(16,libc_dos_mkdir)
-INTERN int LIBCCALL libc_32wmkdir(char32_t const *path) WRAPPER(32,libc_dos_mkdir)
-INTERN int LIBCCALL libc_16wrmdir(char16_t const *path) WRAPPER(16,libc_rmdir)
-INTERN int LIBCCALL libc_32wrmdir(char32_t const *path) WRAPPER(32,libc_rmdir)
+#define libc_mkdir_temp(name)      libc_mkdir(name,mode)
+#define libc_mkdir_temp2(name)     libc_mkdir(name,0755)
+#define libc_dos_mkdir_temp(name)  libc_dos_mkdir(name,mode)
+#define libc_dos_mkdir_temp2(name) libc_dos_mkdir(name,0755)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wchdir(char16_t const *path) WRAPPER(16,libc_dos_chdir)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wrmdir(char16_t const *path) WRAPPER(16,libc_dos_rmdir)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wchdir(char32_t const *path) WRAPPER(32,libc_dos_chdir)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wrmdir(char32_t const *path) WRAPPER(32,libc_dos_rmdir)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wchdir(char16_t const *path) WRAPPER(16,libc_chdir)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wrmdir(char16_t const *path) WRAPPER(16,libc_rmdir)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wchdir(char32_t const *path) WRAPPER(32,libc_chdir)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wrmdir(char32_t const *path) WRAPPER(32,libc_rmdir)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wmkdir(char16_t const *path, mode_t mode) WRAPPER(16,libc_dos_mkdir_temp)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wmkdir(char32_t const *path, mode_t mode) WRAPPER(32,libc_dos_mkdir_temp)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_16wmkdir2(char16_t const *path) WRAPPER(16,libc_dos_mkdir_temp2)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_32wmkdir2(char32_t const *path) WRAPPER(32,libc_dos_mkdir_temp2)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wmkdir(char16_t const *path, mode_t mode) WRAPPER(16,libc_mkdir_temp)
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wmkdir(char32_t const *path, mode_t mode) WRAPPER(32,libc_mkdir_temp)
+//INTERN ATTR_DOSTEXT int LIBCCALL libc_16wmkdir2(char16_t const *path) WRAPPER(16,libc_mkdir_temp2)
+//INTERN ATTR_DOSTEXT int LIBCCALL libc_32wmkdir2(char32_t const *path) WRAPPER(32,libc_mkdir_temp2)
+#undef libc_dos_mkdir_temp2
+#undef libc_dos_mkdir_temp
+#undef libc_mkdir_temp2
+#undef libc_mkdir_temp
 #undef WRAPPER
 
-DEFINE_PUBLIC_ALIAS(_wchdir,libc_32wchdir);
-DEFINE_PUBLIC_ALIAS(_wmkdir,libc_32wmkdir);
-DEFINE_PUBLIC_ALIAS(_wrmdir,libc_32wrmdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wchdir),libc_16wchdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wmkdir),libc_16wmkdir);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wrmdir),libc_16wrmdir);
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_chdir(char const *path) { return libc_fchdirat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rmdir(char const *path) { return libc_unlinkat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_FOLLOW|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkdir(char const *path, mode_t mode) { return libc_mkdir(path,O_DOSPATH|mode); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkdir2(char const *path) { return libc_dos_mkdir(path,0755); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_chdrive(int UNUSED(drive)) { return 0; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_getdrive(void) { return 0; }
+INTERN ATTR_DOSTEXT unsigned long LIBCCALL libc_getdrives(void) { return 1; }
+INTERN ATTR_DOSTEXT unsigned LIBCCALL libc_getdiskfree(unsigned drive, struct _diskfree_t *diskfree) {
+ /* Fill in something reasonable. (KOS doesn't track this stuff right now) */
+ diskfree->total_clusters      = 64*1024;
+ diskfree->avail_clusters      = 48*1024;
+ diskfree->sectors_per_cluster = 4;
+ diskfree->bytes_per_sector    = 512;
+ return 0;
+}
+
+INTERN ATTR_DOSTEXT int LIBCCALL libc_eof(int fd) {
+ off64_t oldpos,endpos;
+ /* TODO: Add a system-call for this, that is can assure atomicity. */
+ if ((oldpos = libc_lseek64(fd,0,SEEK_CUR)) < 0) return -1;
+ if ((endpos = libc_lseek64(fd,0,SEEK_END)) < 0) return -1;
+ libc_lseek64(fd,oldpos,SEEK_SET);
+ return oldpos == endpos;
+}
+
+DEFINE_INTERN_ALIAS(libc_fsize,libc_fsize64);
+INTERN ATTR_DOSTEXT off64_t LIBCCALL libc_fsize64(int fd) {
+ off64_t oldpos,endpos;
+ /* TODO: Add a system-call for this, that is can assure atomicity. */
+ if ((oldpos = libc_lseek64(fd,0,SEEK_CUR)) < 0) return -1;
+ if ((endpos = libc_lseek64(fd,0,SEEK_END)) < 0) return -1;
+ libc_lseek64(fd,oldpos,SEEK_SET);
+ return endpos;
+}
+DEFINE_INTERN_ALIAS(libc_ftell,libc_ftell64);
+INTERN ATTR_DOSTEXT off64_t LIBCCALL libc_ftell64(int fd) {
+ return libc_lseek64(fd,0,SEEK_CUR);
+}
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_dos_pipe(int pipedes[2], u32 pipesize, int textmode) {
+ int result = libc_pipe2(pipedes,textmode);
+ if (result > 0) libc_fcntl(result,F_SETPIPE_SZ,(size_t)pipesize);
+ return result;
+}
+INTERN ATTR_DOSTEXT mode_t LIBCCALL libc_setmode(int fd, mode_t mode) {
+ return libc_fcntl(fd,F_SETFL_XCH,mode);
+}
+INTERN ATTR_DOSTEXT errno_t LIBCCALL
+libc_umask_s(mode_t new_mode, mode_t *old_mode) {
+ errno_t error = sys_umask(new_mode);
+ if (E_ISERR(error)) return -error;
+ if (old_mode) *old_mode = (mode_t)error;
+ return -EOK;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rename(char const *old, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_xrenameat(AT_FDCWD,old,AT_FDCWD,new_,AT_DOSPATH|AT_SYMLINK_NOFOLLOW)); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_unlink(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_remove(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_eaccess(char const *name, int type) { return libc_faccessat(AT_FDCWD,name,type,AT_DOSPATH|AT_EACCESS); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_chmod(char const *file, mode_t mode) { return libc_chmod(file,mode|O_DOSPATH); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc__lock_fhandle(int UNUSED(fd)) { return 0; }
+INTERN ATTR_DOSTEXT void LIBCCALL libc_unlock_fhandle(int UNUSED(fd)) { }
+INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_get_osfhandle(int fd) { return (intptr_t)fd; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_open_osfhandle(intptr_t osfd, int flags) { return flags&O_CLOEXEC ? libc_fcntl((int)osfd,F_DUPFD_CLOEXEC) : libc_dup(flags); }
+
+DEFINE_PUBLIC_ALIAS(__KSYMw16(wchdir),libc_16wchdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(wmkdir),libc_16wmkdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(wrmdir),libc_16wrmdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(wchdir),libc_32wchdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir),libc_32wmkdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(wrmdir),libc_32wrmdir);
+
+DEFINE_PUBLIC_ALIAS(__DSYM(rename),libc_dos_rename);
+DEFINE_PUBLIC_ALIAS(__DSYM(chdir),libc_dos_chdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(rmdir),libc_dos_rmdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(mkdir),libc_dos_mkdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(access),libc_dos_eaccess);
+DEFINE_PUBLIC_ALIAS(__DSYM(unlink),libc_dos_unlink);
+DEFINE_PUBLIC_ALIAS(__DSYM(chmod),libc_dos_chmod);
+DEFINE_PUBLIC_ALIAS(__DSYM(_chdir),libc_dos_chdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_rmdir),libc_dos_rmdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_mkdir),libc_dos_mkdir);
+DEFINE_PUBLIC_ALIAS(__DSYM(_access),libc_dos_eaccess);
+DEFINE_PUBLIC_ALIAS(__DSYM(_access_s),libc_dos_eaccess);
+DEFINE_PUBLIC_ALIAS(__DSYM(_unlink),libc_dos_unlink);
+DEFINE_PUBLIC_ALIAS(__DSYM(_chmod),libc_dos_chmod);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(wchdir),libc_dos_16wchdir);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(wrmdir),libc_dos_16wrmdir);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wchdir),libc_dos_16wchdir);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wrmdir),libc_dos_16wrmdir);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(wchdir),libc_dos_32wchdir);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(wrmdir),libc_dos_32wrmdir);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wchdir),libc_dos_32wchdir);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wrmdir),libc_dos_32wrmdir);
+
+/* Link the version without mode-argument by default in PE-mode. */
+DEFINE_PUBLIC_ALIAS(__DSYMw16(wmkdir),libc_dos_16wmkdir2);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(wmkdir),libc_dos_32wmkdir2);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wmkdir),libc_dos_16wmkdir2);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wmkdir),libc_dos_32wmkdir2);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(wmkdir_m),libc_dos_16wmkdir);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(wmkdir_m),libc_dos_32wmkdir);
+#if 1
+DEFINE_PUBLIC_ALIAS(__KSYMw16(wmkdir),libc_16wmkdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir),libc_32wmkdir);
+#else
+DEFINE_PUBLIC_ALIAS(__KSYMw16(wmkdir),libc_16wmkdir2);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir),libc_32wmkdir2);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(wmkdir_m),libc_16wmkdir);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(wmkdir_m),libc_32wmkdir);
+#endif
+
+DEFINE_PUBLIC_ALIAS(__lock_fhandle,libc__lock_fhandle);
+DEFINE_PUBLIC_ALIAS(_unlock_fhandle,libc_unlock_fhandle);
+DEFINE_PUBLIC_ALIAS(_chdrive,libc_chdrive);
+DEFINE_PUBLIC_ALIAS(_getdrive,libc_getdrive);
+DEFINE_PUBLIC_ALIAS(_getdrives,libc_getdrives);
+DEFINE_PUBLIC_ALIAS(chsize,libc_ftruncate);
+DEFINE_PUBLIC_ALIAS(_chsize,libc_ftruncate);
+DEFINE_PUBLIC_ALIAS(_chsize_s,libc_ftruncate64);
+DEFINE_PUBLIC_ALIAS(_close,libc_close);
+DEFINE_PUBLIC_ALIAS(_commit,libc_fdatasync);
+DEFINE_PUBLIC_ALIAS(_dup,libc_dup);
+DEFINE_PUBLIC_ALIAS(_dup2,libc_dup2);
+DEFINE_PUBLIC_ALIAS(eof,libc_eof);
+DEFINE_PUBLIC_ALIAS(_eof,libc_eof);
+DEFINE_PUBLIC_ALIAS(filelength,libc_fsize);
+DEFINE_PUBLIC_ALIAS(_filelength,libc_fsize);
+DEFINE_PUBLIC_ALIAS(_filelengthi64,libc_fsize64);
+DEFINE_PUBLIC_ALIAS(locking,libc_lockf);
+DEFINE_PUBLIC_ALIAS(_locking,libc_lockf);
+DEFINE_PUBLIC_ALIAS(_pipe,libc_dos_pipe);
+DEFINE_PUBLIC_ALIAS(_lseek,libc_lseek);
+DEFINE_PUBLIC_ALIAS(_lseeki64,libc_lseek64);
+DEFINE_PUBLIC_ALIAS(tell,libc_ftell);
+DEFINE_PUBLIC_ALIAS(_tell,libc_ftell);
+DEFINE_PUBLIC_ALIAS(_telli64,libc_ftell64);
+DEFINE_PUBLIC_ALIAS(setmode,libc_setmode);
+DEFINE_PUBLIC_ALIAS(_setmode,libc_setmode);
+DEFINE_PUBLIC_ALIAS(_umask,libc_umask);
+DEFINE_PUBLIC_ALIAS(_umask_s,libc_umask_s);
+DEFINE_PUBLIC_ALIAS(_get_osfhandle,libc_get_osfhandle);
+DEFINE_PUBLIC_ALIAS(_open_osfhandle,libc_open_osfhandle);
+
+#if __SIZEOF_SIZE_T__ != 4
+/* Who knew NT is also the world leading in SCREWING UP SIMPLE FU$%#ING A$$ LOGIC?
+ * And don't give me that backwards-compatibility bull$h1t, because it doesn't
+ * apply to a new architecture that would have a different 'sizeof(size_t) == 8'.
+ * Because at that point, what are you trying to be backwards-compatible towards? */
+INTERN s32 (__LIBCCALL libc_dos_read)(int fd, void *buf, u32 bufsize) { return (s32)libc_read(fd,buf,(size_t)bufsize); }
+INTERN s32 (__LIBCCALL libc_dos_write)(int fd, void const *buf, u32 bufsize) { return (s32)libc_write(fd,buf,(size_t)bufsize); }
+DEFINE_PUBLIC_ALIAS(__DSYM(read),libc_dos_read);
+DEFINE_PUBLIC_ALIAS(__DSYM(write),libc_dos_write);
+DEFINE_PUBLIC_ALIAS(__DSYM(_read),libc_dos_read);
+DEFINE_PUBLIC_ALIAS(__DSYM(_write),libc_dos_write);
+#endif /* __SIZEOF_SIZE_T__ != 4 */
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

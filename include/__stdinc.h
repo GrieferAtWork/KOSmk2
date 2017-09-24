@@ -158,6 +158,22 @@
 #define __IFELSE2(x) __IFELSE3(x)
 #define __IFELSE(x)  __IFELSE2(__IFDEF2(x))
 
+#if !defined(__PE__) && !defined(__ELF__)
+/* Try to determine current binary format using other platform
+ * identifiers. (When KOS headers are used on other systems) */
+#if defined(__linux__) || defined(__linux) || defined(linux)
+#   define __ELF__ 1
+#elif defined(__CYGWIN__) || defined(__MINGW32__) || defined(__WINDOWS__) || \
+      defined(_WIN16) || defined(WIN16) || defined(_WIN32) || defined(WIN32) || \
+      defined(_WIN64) || defined(WIN64) || defined(__WIN32__) || defined(__TOS_WIN__) || \
+      defined(_WIN32_WCE) || defined(WIN32_WCE)
+#   define __PE__  1
+#else
+#   warning "Target binary format not defined. - Assuming '__ELF__'"
+#   define __ELF__ 1
+#endif
+#endif
+
 #ifdef __PE__
 #   define __ASMNAME2(unix,dos) __ASMNAME(dos)
 #   define __DOSNAME(x)         __ASMNAME(x)
@@ -252,13 +268,6 @@ struct _IO_FILE;
 #endif
 #   define __FILE     struct _IO_FILE
 #endif
-/* NOTE: '__DSYM()' generate an assembly name for a symbol that
- *        the kernel should prefer to link against when the module
- *        being patched was linked using PE, rather than ELF.
- *     >> Used to provide special symbols for use by windows
- *        emulation to work around stuff like 'wchar_t' being
- *        16 bits on kos-pe, but 32 bits on kos-elf. */
-#   define __DSYM(x) .dos.x
 #endif
 
 #ifndef __LIBCCALL
