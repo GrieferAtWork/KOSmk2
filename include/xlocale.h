@@ -23,8 +23,12 @@
 
 __DECL_BEGIN
 
+typedef void *__locale_t;
 #ifndef __KERNEL__
-typedef void *__locale_t,*locale_t;
+typedef __locale_t locale_t;
+#ifdef __USE_DOS
+typedef __locale_t _locale_t;
+#endif /* __USE_DOS */
 #endif /* !__KERNEL__ */
 
 __DECL_END

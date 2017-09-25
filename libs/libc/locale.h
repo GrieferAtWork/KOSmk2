@@ -23,17 +23,29 @@
 #include <hybrid/compiler.h>
 #include <xlocale.h>
 #include <langinfo.h>
+#include <uchar.h>
 
 DECL_BEGIN
 
-INTERN char *LIBCCALL libc_setlocale(int category, char const *locale);
-INTERN struct lconv *LIBCCALL libc_localeconv(void);
-INTERN locale_t LIBCCALL libc_newlocale(int category_mask, char const *locale, locale_t base);
-INTERN locale_t LIBCCALL libc_duplocale(locale_t dataset);
-INTERN void LIBCCALL libc_freelocale(locale_t dataset);
-INTERN locale_t LIBCCALL libc_uselocale(locale_t dataset);
-INTERN char *LIBCCALL libc_nl_langinfo(nl_item item);
-INTERN char *LIBCCALL libc_nl_langinfo_l(nl_item item, locale_t l);
+INTDEF char *LIBCCALL libc_setlocale(int category, char const *locale);
+INTDEF struct lconv *LIBCCALL libc_localeconv(void);
+INTDEF locale_t LIBCCALL libc_newlocale(int category_mask, char const *locale, locale_t base);
+INTDEF locale_t LIBCCALL libc_duplocale(locale_t dataset);
+INTDEF void LIBCCALL libc_freelocale(locale_t dataset);
+INTDEF locale_t LIBCCALL libc_uselocale(locale_t dataset);
+INTDEF char *LIBCCALL libc_nl_langinfo(nl_item item);
+INTDEF char *LIBCCALL libc_nl_langinfo_l(nl_item item, locale_t l);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF struct lconv *LIBCCALL libc_dos_localeconv(void);
+INTDEF char16_t *LIBCCALL libc_dos_16wsetlocale(int dos_category, char16_t const *locale);
+INTDEF char32_t *LIBCCALL libc_dos_32wsetlocale(int dos_category, char32_t const *locale);
+INTDEF locale_t LIBCCALL libc_dos_16wcreate_locale(int dos_category, char16_t const *locale);
+INTDEF locale_t LIBCCALL libc_dos_32wcreate_locale(int dos_category, char32_t const *locale);
+INTDEF int LIBCCALL libc_dos_configthreadlocale(int flag);
+INTDEF locale_t LIBCCALL libc_dos_get_current_locale(void);
+INTDEF locale_t LIBCCALL libc_dos_create_locale(int dos_category, char const *locale);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

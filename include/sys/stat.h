@@ -36,36 +36,38 @@ __DECL_BEGIN
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K)
 #ifndef __dev_t_defined
 #define __dev_t_defined 1
-typedef __dev_t dev_t;
-#endif
+typedef __typedef_dev_t dev_t;
+#endif /* __dev_t_defined */
+
 #ifndef __gid_t_defined
 #define __gid_t_defined 1
 typedef __gid_t gid_t;
-#endif
+#endif /* __gid_t_defined */
+
 #ifndef __ino_t_defined
 #define __ino_t_defined 1
-typedef __FS_TYPE(ino) ino_t;
-#endif
+typedef __typedef_ino_t ino_t;
+#endif /* __ino_t_defined */
 
 #ifndef __mode_t_defined
 #define __mode_t_defined 1
 typedef __mode_t mode_t;
-#endif
+#endif /* __mode_t_defined */
 
 #ifndef __nlink_t_defined
 #define __nlink_t_defined 1
 typedef __nlink_t nlink_t;
-#endif
+#endif /* __nlink_t_defined */
 
 #ifndef __off_t_defined
 #define __off_t_defined 1
-typedef __FS_TYPE(off)   off_t;
-#endif
+typedef __typedef_off_t off_t;
+#endif /* __off_t_defined */
 
 #ifndef __uid_t_defined
 #define __uid_t_defined 1
 typedef __uid_t uid_t;
-#endif
+#endif /* __uid_t_defined */
 #endif /* __USE_XOPEN || __USE_XOPEN2K */
 
 #ifdef __USE_UNIX98
@@ -73,6 +75,7 @@ typedef __uid_t uid_t;
 #define __blkcnt_t_defined 1
 typedef __FS_TYPE(blkcnt)   blkcnt_t;
 #endif /* __blkcnt_t_defined */
+
 #ifndef __blksize_t_defined
 #define __blksize_t_defined 1
 typedef __blksize_t blksize_t;
@@ -156,32 +159,77 @@ typedef __blksize_t blksize_t;
 
 #ifdef __USE_KOS
 /* As also seen in the linux kernel headers. */
-#   define S_IRWXUGO (S_IRWXU|S_IRWXG|S_IRWXO)
-#   define S_IALLUGO (S_ISUID|S_ISGID|S_ISVTX|S_IRWXUGO)
-#   define S_IRUGO   (S_IRUSR|S_IRGRP|S_IROTH)
-#   define S_IWUGO   (S_IWUSR|S_IWGRP|S_IWOTH)
-#   define S_IXUGO   (S_IXUSR|S_IXGRP|S_IXOTH)
+#define S_IRWXUGO (S_IRWXU|S_IRWXG|S_IRWXO)
+#define S_IALLUGO (S_ISUID|S_ISGID|S_ISVTX|S_IRWXUGO)
+#define S_IRUGO   (S_IRUSR|S_IRGRP|S_IROTH)
+#define S_IWUGO   (S_IWUSR|S_IWGRP|S_IWOTH)
+#define S_IXUGO   (S_IXUSR|S_IXGRP|S_IXOTH)
 #endif /* __USE_KOS */
 
 #ifdef __USE_MISC
-#   define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO) /* 0777 */
-#   define ALLPERMS    (S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)/* 07777 */
-#   define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)/* 0666*/
-#   define S_BLKSIZE    512 /* Block size for `st_blocks'. */
+#define ACCESSPERMS (S_IRWXU|S_IRWXG|S_IRWXO) /* 0777 */
+#define ALLPERMS    (S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)/* 07777 */
+#define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)/* 0666*/
+#define S_BLKSIZE    512 /* Block size for `st_blocks'. */
 #endif /* __USE_MISC */
 
+#ifdef __USE_DOS
+#define _S_IFMT   __S_IFMT
+#define _S_IFDIR  __S_IFDIR
+#define _S_IFCHR  __S_IFCHR
+#define _S_IFIFO  __S_IFIFO
+#define _S_IFREG  __S_IFREG
+#define _S_IREAD  __S_IREAD
+#define _S_IWRITE __S_IWRITE
+#define _S_IEXEC  __S_IEXEC
+#endif /* __USE_DOS */
+
 #ifndef __KERNEL__
+
 /* NOTE: Since KOS uses a different 'stat' buffer than glibc, but still wants to
  *       maintain binary compatibility, the 'stat()' function provided internally
  *       accepts a glibc-compatible stat buffer, while the functions making use
  *       of what we (and the kernel) defines as its stat()-buffer are actually
  *       named 'kstat()' */
+#ifdef __USE_DOS
+#ifdef __PE__
+/* Link stat functions with binary compatibility to DOS's stat buffer types. */
+__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat32)(char const *__restrict __file, struct _stat32 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat64)(char const *__restrict __file, struct _stat64 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat32i64)(char const *__restrict __file, struct _stat32i64 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat64i32)(char const *__restrict __file, struct _stat64i32 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((2)) int (__LIBCCALL _fstat32)(int __fd, struct _stat32 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((2)) int (__LIBCCALL _fstat64)(int __fd, struct _stat64 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((2)) int (__LIBCCALL _fstat32i64)(int __fd, struct _stat32i64 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((2)) int (__LIBCCALL _fstat64i32)(int __fd, struct _stat64i32 *__restrict __buf);
+#else /* __PE__ */
+__LIBC __NONNULL((1,2)) int (__LIBCCALL _stat32)(char const *__restrict __file, struct _stat32 *__restrict __buf) __UFS_FUNCn_(kstat);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL _stat64)(char const *__restrict __file, struct _stat64 *__restrict __buf) __UFS_FUNCn_(kstat64);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL _stat32i64)(char const *__restrict __file, struct _stat32i64 *__restrict __buf) __UFS_FUNCn_(kstat64);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL _stat64i32)(char const *__restrict __file, struct _stat64i32 *__restrict __buf) __UFS_FUNCn_(kstat64);
+__LIBC __NONNULL((2)) int (__LIBCCALL _fstat32)(int __fd, struct _stat32 *__restrict __buf) __ASMNAME("kfstat");
+__LIBC __NONNULL((2)) int (__LIBCCALL _fstat64)(int __fd, struct _stat64 *__restrict __buf) __ASMNAME("kfstat64");
+__LIBC __NONNULL((2)) int (__LIBCCALL _fstat32i64)(int __fd, struct _stat32i64 *__restrict __buf) __ASMNAME("kfstat64");
+__LIBC __NONNULL((2)) int (__LIBCCALL _fstat64i32)(int __fd, struct _stat64i32 *__restrict __buf) __ASMNAME("kfstat64");
+#endif /* __PE__ */
+
+#undef stat64
+#undef fstat64
+/* The stat64 type was defined as 'struct _stat64'.
+ * Make sure that 'struct stat64' refers to it from now on. */
+#define stat64  _stat64
+#define fstat64 _fstat64
+
+#else /* __USE_DOS */
+/* Provide the regular, old KOS stat functions. */
 __LIBC __NONNULL((1,2)) int (__LIBCCALL stat)(char const *__restrict __file, struct stat *__restrict __buf) __UFS_FUNCn_(kstat);
-__LIBC __NONNULL((2)) int (__LIBCCALL fstat)(int __fd, struct stat *__buf) __UFS_FUNCn_(kfstat);
+__LIBC __NONNULL((2)) int (__LIBCCALL fstat)(int __fd, struct stat *__buf) __ASMNAME("kfstat");
 #ifdef __USE_LARGEFILE64
 __LIBC __NONNULL((1,2)) int (__LIBCCALL stat64)(char const *__restrict __file, struct stat64 *__restrict __buf) __UFS_FUNC_(kstat64);
-__LIBC __NONNULL((2)) int (__LIBCCALL fstat64)(int __fd, struct stat64 *__buf) __UFS_FUNC_(kfstat64);
+__LIBC __NONNULL((2)) int (__LIBCCALL fstat64)(int __fd, struct stat64 *__buf) __ASMNAME("kfstat64");
 #endif /* __USE_LARGEFILE64 */
+#endif /* !__USE_DOS */
+
 #ifdef __USE_ATFILE
 __LIBC __NONNULL((2,3)) int (__LIBCCALL fstatat)(int __fd, char const *__restrict __file, struct stat *__restrict __buf, int __flag) __UFS_FUNCn_(kfstatat);
 #ifdef __USE_LARGEFILE64
@@ -204,10 +252,12 @@ __LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path, __mode_t __mode
 __LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path, __mode_t __mode) __UFS_FUNC_(mkdir);
 #endif /* !__PE__ */
 #endif /* !__mkdir_defined */
+
 #ifndef __chmod_defined
 #define __chmod_defined 1
 __LIBC __NONNULL((1)) int (__LIBCCALL chmod)(char const *__file, __mode_t __mode) __UFS_FUNC(chmod);
 #endif /* !__chmod_defined */
+
 #ifndef __umask_defined
 #define __umask_defined 1
 __LIBC __mode_t (__LIBCCALL umask)(__mode_t __mask);

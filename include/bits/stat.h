@@ -28,6 +28,18 @@
 
 __DECL_BEGIN
 
+#if defined(__PE__) && defined(__USE_DOS)
+/* DOS-filesystem mode while hosting a PE binary.
+ * >> Where, we must maintain binary compatibility with DOS. */
+
+/* Rename all the DOS stat-buffers below to their proper names. */
+#define __dos_stat       stat
+#define __dos_stat32     _stat32
+#define __dos_stat32i64  _stat32i64
+#define __dos_stat64i32  _stat64i32
+#define __dos_stat64     _stat64
+#else /* __PE__ && __USE_DOS */
+
 #undef _STATBUF_ST_TIM
 #undef _STATBUF_ST_TIME
 #undef _STATBUF_ST_NSEC
@@ -43,11 +55,16 @@ __DECL_BEGIN
 #define _STATBUF_ST_TIME
 #define _STATBUF_ST_NSEC
 #define _STATBUF_ST_TIMESPEC /* Apple extension? */
-
-/* Fixed stat features */
 #define _STATBUF_ST_BLKSIZE
 #define _STATBUF_ST_RDEV
 
+#ifdef __USE_DOS
+/* DOS doesn't have these. */
+#undef _STATBUF_ST_BLKSIZE
+#undef _STATBUF_ST_NSEC
+#undef _STATBUF_ST_TIM
+#undef _STATBUF_ST_TIMESPEC
+#endif
 
 #define __STAT_TIMESPEC32_MEMB(id,suffix) \
         struct __timespec32 __##id##tim##suffix; \
@@ -82,7 +99,12 @@ struct{ __IFELSE(_STATBUF_ST_TIME)(__time64_t __##id##time##suffix;) \
 #endif /* !__USE_KOS */
 #endif /* !__USE_TIME_BITS64 */
 
-struct stat {
+#ifdef __USE_DOS
+struct __kos_stat
+#else
+struct stat
+#endif
+{
     __dev_t           st_dev;
 union{
     __FS_TYPE(ino)    st_ino;
@@ -97,7 +119,11 @@ union{
     __nlink_t         st_nlink;
     __uid_t           st_uid;
     __gid_t           st_gid;
+#ifdef _STATBUF_ST_RDEV
     __dev_t           st_rdev;
+#else
+    __dev_t         __st_rdev;
+#endif
 union{
 #ifdef __USE_KOS
     __FS_TYPE(pos)    st_size;
@@ -108,7 +134,11 @@ union{
     __pos64_t       __st_size64;
 #endif
 };
+#ifdef _STATBUF_ST_BLKSIZE
     __blksize_t       st_blksize;
+#else
+    __blksize_t     __st_blksize;
+#endif
 union{
     __FS_TYPE(blkcnt) st_blocks;
 #ifdef __USE_KOS
@@ -129,7 +159,12 @@ union{
 
 
 #ifdef __USE_LARGEFILE64
-struct stat64 {
+#ifdef __USE_DOS
+struct __kos_stat64
+#else
+struct stat64
+#endif
+{
     __dev_t           st_dev;
 #ifdef __USE_KOS
 union{
@@ -144,7 +179,11 @@ union{
     __nlink_t         st_nlink;
     __uid_t           st_uid;
     __gid_t           st_gid;
+#ifdef _STATBUF_ST_RDEV
     __dev_t           st_rdev;
+#else
+    __dev_t         __st_rdev;
+#endif
 #ifdef __USE_KOS
 union{
     __pos64_t         st_size;
@@ -154,7 +193,11 @@ union{
 #else
     __off64_t         st_size;
 #endif
+#ifdef _STATBUF_ST_BLKSIZE
     __blksize_t       st_blksize;
+#else
+    __blksize_t     __st_blksize;
+#endif
 #ifdef __USE_KOS
 union{
     __blkcnt64_t      st_blocks;
@@ -171,7 +214,7 @@ union{
     __STAT_TIMESPEC64(m);
     __STAT_TIMESPEC64(c);
 };
-#endif
+#endif /* __USE_LARGEFILE64 */
 
 #undef __STAT_TIMESPEC32_MEMB
 #undef __STAT_TIMESPEC64_MEMB
@@ -211,6 +254,214 @@ union{
 #   define UTIME_NOW   ((1l << 30) - 1l)
 #   define UTIME_OMIT  ((1l << 30) - 2l)
 #endif
+
+#ifdef __USE_DOS
+#ifndef _STAT_DEFINED
+#define _STAT_DEFINED 1
+
+/* DOS-syntax-compatible stat structures, following KOS data layout.
+ * >> These are used in ELF-hosted DOS-mode, when it is clear that
+ *    the application was compiled for KOS, meaning that binary
+ *    compatibility with DOS is not mandatory. */
+
+struct stat {
+union{__typedef_dev_t st_dev;   __dev_t __st_dev; };
+union{__typedef_ino_t st_ino;   __ino64_t __st_ino; };
+union{__uint16_t      st_mode;  __mode_t __st_mode; };
+union{__int16_t       st_nlink; __nlink_t __st_nlink;};
+union{__int16_t       st_uid;   __uid_t __st_uid;};
+union{__int16_t       st_gid;   __gid_t __st_gid;};
+union{__typedef_dev_t st_rdev;  __dev_t __st_rdev;};
+union{__typedef_off_t st_size;  __pos64_t __st_size;};
+    __blksize_t     __st_blksize;
+    __blkcnt64_t    __st_blocks;
+#ifdef __USE_TIME_BITS64
+    struct __timespec32 __st_atim32;
+    struct __timespec32 __st_mtim32;
+    struct __timespec32 __st_ctim32;
+union{__time64_t      st_atime; struct __timespec64 __st_atim64;};
+union{__time64_t      st_mtime; struct __timespec64 __st_mtim64;};
+union{__time64_t      st_ctime; struct __timespec64 __st_ctim64;};
+#else /* __USE_TIME_BITS64 */
+union{__time32_t      st_atime; struct __timespec32 __st_atim32;};
+union{__time32_t      st_mtime; struct __timespec32 __st_mtim32;};
+union{__time32_t      st_ctime; struct __timespec32 __st_ctim32;};
+    struct __timespec64 __st_atim64;
+    struct __timespec64 __st_mtim64;
+    struct __timespec64 __st_ctim64;
+#endif /* !__USE_TIME_BITS64 */
+};
+
+struct _stat32 {
+union{__typedef_dev_t st_dev;   __dev_t __st_dev; };
+union{__typedef_ino_t st_ino;   __ino64_t __st_ino; };
+union{__uint16_t      st_mode;  __mode_t __st_mode; };
+union{__int16_t       st_nlink; __nlink_t __st_nlink;};
+union{__int16_t       st_uid;   __uid_t __st_uid;};
+union{__int16_t       st_gid;   __gid_t __st_gid;};
+union{__typedef_dev_t st_rdev;  __dev_t __st_rdev;};
+union{__typedef_off_t st_size;  __pos64_t __st_size;};
+    __blksize_t     __st_blksize;
+    __blkcnt64_t    __st_blocks;
+union{__time32_t      st_atime; struct __timespec32 __st_atim32;};
+union{__time32_t      st_mtime; struct __timespec32 __st_mtim32;};
+union{__time32_t      st_ctime; struct __timespec32 __st_ctim32;};
+    struct __timespec64 __st_atim64;
+    struct __timespec64 __st_mtim64;
+    struct __timespec64 __st_ctim64;
+};
+
+struct _stat32i64 {
+union{__typedef_dev_t st_dev;   __dev_t __st_dev; };
+union{__typedef_ino_t st_ino;   __ino64_t __st_ino; };
+union{__uint16_t      st_mode;  __mode_t __st_mode; };
+union{__int16_t       st_nlink; __nlink_t __st_nlink;};
+union{__int16_t       st_uid;   __uid_t __st_uid;};
+union{__int16_t       st_gid;   __gid_t __st_gid;};
+union{__typedef_dev_t st_rdev;  __dev_t __st_rdev;};
+union{__INT64_TYPE__  st_size;  __pos64_t __st_size;};
+    __blksize_t     __st_blksize;
+    __blkcnt64_t    __st_blocks;
+union{__time32_t      st_atime; struct __timespec32 __st_atim32;};
+union{__time32_t      st_mtime; struct __timespec32 __st_mtim32;};
+union{__time32_t      st_ctime; struct __timespec32 __st_ctim32;};
+    struct __timespec64 __st_atim64;
+    struct __timespec64 __st_mtim64;
+    struct __timespec64 __st_ctim64;
+};
+
+struct _stat64i32 {
+union{__typedef_dev_t st_dev;   __dev_t __st_dev; };
+union{__typedef_ino_t st_ino;   __ino64_t __st_ino; };
+union{__uint16_t      st_mode;  __mode_t __st_mode; };
+union{__int16_t       st_nlink; __nlink_t __st_nlink;};
+union{__int16_t       st_uid;   __uid_t __st_uid;};
+union{__int16_t       st_gid;   __gid_t __st_gid;};
+union{__typedef_dev_t st_rdev;  __dev_t __st_rdev;};
+union{__typedef_off_t st_size;  __pos64_t __st_size;};
+    __blksize_t     __st_blksize;
+    __blkcnt64_t    __st_blocks;
+    struct __timespec32 __st_atim32;
+    struct __timespec32 __st_mtim32;
+    struct __timespec32 __st_ctim32;
+union{__time64_t      st_atime; struct __timespec64 __st_atim64;};
+union{__time64_t      st_mtime; struct __timespec64 __st_mtim64;};
+union{__time64_t      st_ctime; struct __timespec64 __st_ctim64;};
+};
+
+struct _stat64 {
+union{__typedef_dev_t st_dev;   __dev_t __st_dev; };
+union{__typedef_ino_t st_ino;   __ino64_t __st_ino; };
+union{__uint16_t      st_mode;  __mode_t __st_mode; };
+union{__int16_t       st_nlink; __nlink_t __st_nlink;};
+union{__int16_t       st_uid;   __uid_t __st_uid;};
+union{__int16_t       st_gid;   __gid_t __st_gid;};
+union{__typedef_dev_t st_rdev;  __dev_t __st_rdev;};
+union{__INT64_TYPE__  st_size;  __pos64_t __st_size;};
+    __blksize_t     __st_blksize;
+    __blkcnt64_t    __st_blocks;
+    struct __timespec32 __st_atim32;
+    struct __timespec32 __st_mtim32;
+    struct __timespec32 __st_ctim32;
+union{__time64_t      st_atime; struct __timespec64 __st_atim64;};
+union{__time64_t      st_mtime; struct __timespec64 __st_mtim64;};
+union{__time64_t      st_ctime; struct __timespec64 __st_ctim64;};
+};
+#endif /* !_STAT_DEFINED */
+#endif /* __USE_DOS */
+#endif /* !__PE__ || !__USE_DOS */
+
+#if defined(__USE_DOS) || defined(__BUILDING_LIBC)
+#if defined(__PE__) || defined(__BUILDING_LIBC)
+/* Define the binary layout of DOS's stat buffers. */
+struct __dos_stat {
+ __dos_dev_t    st_dev;
+ __dos_ino_t    st_ino;
+ __uint16_t     st_mode;
+ __int16_t      st_nlink;
+ __int16_t      st_uid;
+ __int16_t      st_gid;
+ __dos_dev_t    st_rdev;
+ __dos_off_t    st_size;
+ __TM_TYPE(time) st_atime;
+ __TM_TYPE(time) st_mtime;
+ __TM_TYPE(time) st_ctime;
+};
+struct __dos_stat32 {
+ __dos_dev_t    st_dev;
+ __dos_ino_t    st_ino;
+ __uint16_t     st_mode;
+ __int16_t      st_nlink;
+ __int16_t      st_uid;
+ __int16_t      st_gid;
+ __dos_dev_t    st_rdev;
+ __dos_off_t    st_size;
+ __time32_t     st_atime;
+ __time32_t     st_mtime;
+ __time32_t     st_ctime;
+};
+struct __dos_stat32i64 {
+ __dos_dev_t    st_dev;
+ __dos_ino_t    st_ino;
+ __uint16_t     st_mode;
+ __int16_t      st_nlink;
+ __int16_t      st_uid;
+ __int16_t      st_gid;
+ __dos_dev_t    st_rdev;
+ __INT64_TYPE__ st_size;
+ __time32_t     st_atime;
+ __time32_t     st_mtime;
+ __time32_t     st_ctime;
+};
+struct __dos_stat64i32 {
+ __dos_dev_t    st_dev;
+ __dos_ino_t    st_ino;
+ __uint16_t     st_mode;
+ __int16_t      st_nlink;
+ __int16_t      st_uid;
+ __int16_t      st_gid;
+ __dos_dev_t    st_rdev;
+ __dos_off_t    st_size;
+ __time64_t     st_atime;
+ __time64_t     st_mtime;
+ __time64_t     st_ctime;
+};
+struct __dos_stat64 {
+ __dos_dev_t    st_dev;
+ __dos_ino_t    st_ino;
+ __uint16_t     st_mode;
+ __int16_t      st_nlink;
+ __int16_t      st_uid;
+ __int16_t      st_gid;
+ __dos_dev_t    st_rdev;
+ __INT64_TYPE__ st_size;
+ __time64_t     st_atime;
+ __time64_t     st_mtime;
+ __time64_t     st_ctime;
+};
+#endif /* __PE__ || __BUILDING_LIBC */
+
+#ifndef __BUILDING_LIBC
+/* Define alias macros. */
+#define __stat64    _stat64
+#ifdef __USE_TIME_BITS64
+#define _fstat      _fstat64i32
+#define _fstati64   _fstat64
+#define _stat       _stat64i32
+#define _stati64    _stat64
+#define _wstat      _wstat64i32
+#define _wstati64   _wstat64
+#else /* __USE_TIME_BITS64 */
+#define _fstat      _fstat32
+#define _fstati64   _fstat32i64
+#define _stat       _stat32
+#define _stati64    _stat32i64
+#define _wstat      _wstat32
+#define _wstati64   _wstat32i64
+#endif /* !__USE_TIME_BITS64 */
+#endif /* !__BUILDING_LIBC */
+
+#endif /* __USE_DOS */
 
 __DECL_END
 

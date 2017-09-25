@@ -84,8 +84,8 @@ typedef __CHAR32_TYPE__ char32_t;
 #define __STD_UTF_32__ 1
 
 #ifndef __KERNEL__
-__LIBC size_t __NOTHROW((__LIBCCALL mbrtoc16)(char16_t *__restrict __pc16, const char *__restrict __s, size_t __n, mbstate_t *__restrict __p));
-__LIBC size_t __NOTHROW((__LIBCCALL mbrtoc32)(char32_t *__restrict __pc32, const char *__restrict __s, size_t __n, mbstate_t *__restrict __p));
+__LIBC size_t __NOTHROW((__LIBCCALL mbrtoc16)(char16_t *__restrict __pc16, char const *__restrict __s, size_t __n, mbstate_t *__restrict __p));
+__LIBC size_t __NOTHROW((__LIBCCALL mbrtoc32)(char32_t *__restrict __pc32, char const *__restrict __s, size_t __n, mbstate_t *__restrict __p));
 __LIBC size_t __NOTHROW((__LIBCCALL c16rtomb)(char *__restrict __s, char16_t __c16, mbstate_t *__restrict __ps));
 __LIBC size_t __NOTHROW((__LIBCCALL c32rtomb)(char *__restrict __s, char32_t __c32, mbstate_t *__restrict __ps));
 #endif /* !__KERNEL__ */

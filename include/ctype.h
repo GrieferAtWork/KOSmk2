@@ -22,6 +22,7 @@
 #include "__stdinc.h"
 #include <features.h>
 #include <hybrid/byteorder.h>
+#include <hybrid/typecore.h>
 
 __DECL_BEGIN
 
@@ -62,21 +63,6 @@ __LIBC __UINT16_TYPE__ const __chattr[256];
 #define __isctype(c,type) (__chattr[(__UINT8_TYPE__)(c)]&(__UINT16_TYPE__)type)
 #endif
 
-#define isalnum(c)  __isctype((c),_ISalnum)
-#define isalpha(c)  __isctype((c),_ISalpha)
-#define iscntrl(c)  __isctype((c),_IScntrl)
-#define isdigit(c)  __isctype((c),_ISdigit)
-#define islower(c)  __isctype((c),_ISlower)
-#define isgraph(c)  __isctype((c),_ISgraph)
-#define isprint(c)  __isctype((c),_ISprint)
-#define ispunct(c)  __isctype((c),_ISpunct)
-#define isspace(c)  __isctype((c),_ISspace)
-#define isupper(c)  __isctype((c),_ISupper)
-#define isxdigit(c) __isctype((c),_ISxdigit)
-#ifdef __USE_ISOC99
-#define isblank(c)  __isctype((c),_ISblank)
-#endif
-
 __NAMESPACE_STD_BEGIN
 __LIBC __WUNUSED int (__LIBCCALL isalpha)(int __c);
 __LIBC __WUNUSED int (__LIBCCALL isupper)(int __c);
@@ -93,7 +79,7 @@ __LIBC __WUNUSED int (__LIBCCALL toupper)(int __c);
 __LIBC __WUNUSED int (__LIBCCALL tolower)(int __c);
 #ifdef __USE_ISOC99
 __LIBC __WUNUSED int (__LIBCCALL isblank)(int __c);
-#endif
+#endif /* __USE_ISOC99 */
 __NAMESPACE_STD_END
 
 __NAMESPACE_STD_USING(isalpha)
@@ -111,14 +97,35 @@ __NAMESPACE_STD_USING(toupper)
 __NAMESPACE_STD_USING(tolower)
 #ifdef __USE_ISOC99
 __NAMESPACE_STD_USING(isblank)
-#endif
+#endif /* __USE_ISOC99 */
+#if defined(__USE_KOS) || defined(__USE_DOS)
+__LIBC int __NOTHROW((__LIBCCALL isascii)(int __c));
+#endif /* __USE_KOS || __USE_DOS */
+
+#define isalnum(c)  __isctype((c),_ISalnum)
+#define isalpha(c)  __isctype((c),_ISalpha)
+#define iscntrl(c)  __isctype((c),_IScntrl)
+#define isdigit(c)  __isctype((c),_ISdigit)
+#define islower(c)  __isctype((c),_ISlower)
+#define isgraph(c)  __isctype((c),_ISgraph)
+#define isprint(c)  __isctype((c),_ISprint)
+#define ispunct(c)  __isctype((c),_ISpunct)
+#define isspace(c)  __isctype((c),_ISspace)
+#define isupper(c)  __isctype((c),_ISupper)
+#define isxdigit(c) __isctype((c),_ISxdigit)
+#ifdef __USE_ISOC99
+#define isblank(c)  __isctype((c),_ISblank)
+#endif /* __USE_ISOC99 */
+#if defined(__USE_KOS) || defined(__USE_DOS)
+#define isascii(c)  ((__UINT8_TYPE__)(c) <= 0x7f)
+#endif /* __USE_KOS || __USE_DOS */
 
 #ifdef __USE_GNU
 __LIBC __WUNUSED int (__LIBCCALL isctype)(int __c, int __mask);
 #ifndef __CXX_SYSTEM_HEADER
 #define isctype(c,mask) __isctype((c),(mask))
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif
+#endif /* __USE_GNU */
 
 
 __DECL_END

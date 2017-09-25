@@ -26,7 +26,7 @@ DECL_BEGIN
 
 #ifndef __dev_t_defined
 #define __dev_t_defined 1
-typedef __dev_t     dev_t;
+typedef __typedef_dev_t dev_t;
 #endif /* !__dev_t_defined */
 
 #ifndef __major_t_defined

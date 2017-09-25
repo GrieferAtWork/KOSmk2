@@ -399,7 +399,6 @@ INTERN int LIBCCALL B(libc_clock_nanosleep)(clockid_t clock_id, int flags,
 }
 
 INTERN int LIBCCALL A(libc_sigtimedwait)(sigset_t const *__restrict set, siginfo_t *__restrict info, struct atimespec const *timeout) { return FORWARD_SYSTEM_ERROR(sys_sigtimedwait(set,info,timeout,sizeof(siginfo_t))); }
-INTERN int LIBCCALL A(libc_utimensat)(int fd, char const *path, struct atimespec const times[2], int flags) { return FORWARD_SYSTEM_ERROR(sys_utimensat(fd,path,times,flags)); }
 INTERN int LIBCCALL A(libc_ppoll)(struct pollfd *fds, nfds_t nfds, struct atimespec const *timeout, sigset_t const *ss) { return FORWARD_SYSTEM_VALUE((int)sys_ppoll(fds,nfds,timeout,ss,sizeof(sigset_t))); }
 INTERN int LIBCCALL A(libc_select)(int nfds, fd_set *__restrict readfds,
                                    fd_set *__restrict writefds,
@@ -437,6 +436,11 @@ INTERN int LIBCCALL B(libc_sigtimedwait)(sigset_t const *__restrict set,
  tma.tv_nsec = timeout->tv_nsec;
  return A(libc_sigtimedwait)(set,info,&tma);
 }
+INTERN int LIBCCALL A(libc_utimensat)(int fd, char const *path,
+                                      struct atimespec const times[2],
+                                      int flags) {
+ return FORWARD_SYSTEM_ERROR(sys_utimensat(fd,path,times,flags));
+}
 INTERN int LIBCCALL B(libc_utimensat)(int fd, char const *path,
                                       struct btimespec const times[2],
                                       int flags) {
@@ -448,6 +452,7 @@ INTERN int LIBCCALL B(libc_utimensat)(int fd, char const *path,
  atime[1].tv_nsec = times[1].tv_nsec;
  return A(libc_utimensat)(fd,path,atime,flags);
 }
+
 INTERN int LIBCCALL B(libc_ppoll)(struct pollfd *fds, nfds_t nfds,
                                   struct timespec const *timeout,
                                   sigset_t const *ss) {
@@ -516,7 +521,7 @@ INTERN int LIBCCALL B(libc_utimes)(char const *file, struct btimeval const tvp[2
 INTERN int LIBCCALL B(libc_lutimes)(char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(AT_FDCWD,file,tvp,AT_SYMLINK_NOFOLLOW); }
 INTERN int LIBCCALL B(libc_futimesat)(int fd, char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(fd,file,tvp,AT_SYMLINK_FOLLOW); }
 
-INTERN int LIBCCALL A(libc_utime)(char const *file, struct A(utimbuf) const *file_times) {
+INTERN int LIBCCALL A(libc_futimeat)(int dfd, char const *file, struct A(utimbuf) const *file_times, int flags) {
  struct atimespec times[2];
  if (file_times) {
   times[0].tv_nsec = UTIME_NOW;
@@ -527,9 +532,9 @@ INTERN int LIBCCALL A(libc_utime)(char const *file, struct A(utimbuf) const *fil
   times[0].tv_nsec = 0;
   times[1].tv_nsec = 0;
  }
- return A(libc_utimensat)(AT_FDCWD,file,times,AT_SYMLINK_FOLLOW);
+ return A(libc_utimensat)(dfd,file,times,flags);
 }
-INTERN int LIBCCALL B(libc_utime)(char const *file, struct B(utimbuf) const *file_times) {
+INTERN int LIBCCALL B(libc_futimeat)(int dfd, char const *file, struct B(utimbuf) const *file_times, int flags) {
  struct atimespec times[2];
  if (file_times) {
   times[0].tv_nsec = UTIME_NOW;
@@ -540,9 +545,11 @@ INTERN int LIBCCALL B(libc_utime)(char const *file, struct B(utimbuf) const *fil
   times[0].tv_nsec = 0;
   times[1].tv_nsec = 0;
  }
- return A(libc_utimensat)(AT_FDCWD,file,times,AT_SYMLINK_FOLLOW);
+ return A(libc_utimensat)(dfd,file,times,flags);
 }
 
+INTERN int LIBCCALL A(libc_utime)(char const *file, struct A(utimbuf) const *file_times) { return A(libc_futimeat)(AT_FDCWD,file,file_times,AT_SYMLINK_FOLLOW); }
+INTERN int LIBCCALL B(libc_utime)(char const *file, struct B(utimbuf) const *file_times) { return B(libc_futimeat)(AT_FDCWD,file,file_times,AT_SYMLINK_FOLLOW); }
 INTERN useconds_t LIBCCALL libc_ualarm(useconds_t value, useconds_t interval) { NOT_IMPLEMENTED(); return -1; }
 INTERN unsigned int LIBCCALL libc_alarm(unsigned int seconds) { NOT_IMPLEMENTED(); return seconds; }
 INTERN int LIBCCALL libc_pause(void) { return A(libc_select)(0,NULL,NULL,NULL,NULL); }
@@ -727,9 +734,35 @@ DEFINE_PUBLIC_ALIAS(sleep,libc_sleep);
 DEFINE_PUBLIC_ALIAS(usleep,libc_usleep);
 DEFINE_PUBLIC_ALIAS(times,libc_times);
 
-
 DEFINE_PUBLIC_ALIAS(timegm,libc_mktime); /* ??? */
 DEFINE_PUBLIC_ALIAS(timegm64,libc_mktime64); /* ??? */
+
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+/* Define DOS-mode time functions. */
+INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_utimensat)(int fd, char const *path, struct atimespec const times[2], int flags) { return A(libc_utimensat)(fd,path,times,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL B(libc_dos_utimensat)(int fd, char const *path, struct btimespec const times[2], int flags) { return B(libc_utimensat)(fd,path,times,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_utimes)(char const *file, struct atimeval const tvp[2]) { return A(impl_futimesat)(AT_FDCWD,file,tvp,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL B(libc_dos_utimes)(char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(AT_FDCWD,file,tvp,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_lutimes)(char const *file, struct atimeval const tvp[2]) { return A(impl_futimesat)(AT_FDCWD,file,tvp,AT_DOSPATH|AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL B(libc_dos_lutimes)(char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(AT_FDCWD,file,tvp,AT_DOSPATH|AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_futimesat)(int fd, char const *file, struct atimeval const tvp[2]) { return A(impl_futimesat)(fd,file,tvp,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL B(libc_dos_futimesat)(int fd, char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(fd,file,tvp,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_utime)(char const *file, struct A(utimbuf) const *file_times) { return A(libc_futimeat)(AT_FDCWD,file,file_times,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL B(libc_dos_utime)(char const *file, struct B(utimbuf) const *file_times) { return B(libc_futimeat)(AT_FDCWD,file,file_times,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
+
+DEFINE_PUBLIC_ALIAS(__DSYM(utimensat),libc_dos_utimensat);
+DEFINE_PUBLIC_ALIAS(__DSYM(utimensat64),libc_dos_utimensat64);
+DEFINE_PUBLIC_ALIAS(__DSYM(utimes),libc_dos_utimes);
+DEFINE_PUBLIC_ALIAS(__DSYM(utimes64),libc_dos_utimes64);
+DEFINE_PUBLIC_ALIAS(__DSYM(lutimes),libc_dos_lutimes);
+DEFINE_PUBLIC_ALIAS(__DSYM(lutimes64),libc_dos_lutimes64);
+DEFINE_PUBLIC_ALIAS(__DSYM(futimesat),libc_dos_futimesat);
+DEFINE_PUBLIC_ALIAS(__DSYM(futimesat64),libc_dos_futimesat64);
+DEFINE_PUBLIC_ALIAS(__DSYM(utime),libc_dos_utime);
+DEFINE_PUBLIC_ALIAS(__DSYM(utime64),libc_dos_utime64);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 
 DECL_END
 

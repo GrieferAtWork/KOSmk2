@@ -570,7 +570,7 @@ __LIBC int (__LIBCCALL mblen)(char const *__s, size_t __n);
 __LIBC int (__LIBCCALL mbtowc)(wchar_t *__restrict __pwc, char const *__restrict __s, size_t __n);
 __LIBC int (__LIBCCALL wctomb)(char *__s, wchar_t __wchar);
 __LIBC size_t (__LIBCCALL mbstowcs)(wchar_t *__restrict __pwcs, char const *__restrict __s, size_t __n);
-__LIBC size_t (__LIBCCALL wcstombs)(char *__restrict __s, const wchar_t *__restrict __pwcs, size_t __n);
+__LIBC size_t (__LIBCCALL wcstombs)(char *__restrict __s, wchar_t const *__restrict __pwcs, size_t __n);
 __LIBC __ATTR_NORETURN void (__LIBCCALL abort)(void);
 __LIBC __ATTR_NORETURN void (__LIBCCALL exit)(int __status);
 __LIBC int (__LIBCCALL atexit)(void (*__LIBCCALL __func)(void));

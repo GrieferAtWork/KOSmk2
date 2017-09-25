@@ -311,7 +311,7 @@ libc_findread(struct findfd *__restrict fd,
 #endif
 
  /* Stat the read file. */
- if (libc_kfstatat64(fd->f_dir.d_fd,result->d_name,st,
+ if (libc_fstatat64(fd->f_dir.d_fd,result->d_name,st,
                      AT_SYMLINK_NOFOLLOW))
      libc_memset(st,0,sizeof(struct stat64));
  return result;

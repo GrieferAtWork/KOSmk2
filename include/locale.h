@@ -52,19 +52,39 @@ __DECL_BEGIN
 #endif
 #endif
 
-#define LC_CTYPE          __LC_CTYPE
-#define LC_NUMERIC        __LC_NUMERIC
-#define LC_TIME           __LC_TIME
-#define LC_COLLATE        __LC_COLLATE
-#define LC_MONETARY       __LC_MONETARY
-#define LC_MESSAGES       __LC_MESSAGES
-#define LC_ALL            __LC_ALL
-#define LC_PAPER          __LC_PAPER
-#define LC_NAME           __LC_NAME
-#define LC_ADDRESS        __LC_ADDRESS
-#define LC_TELEPHONE      __LC_TELEPHONE
-#define LC_MEASUREMENT    __LC_MEASUREMENT
-#define LC_IDENTIFICATION __LC_IDENTIFICATION
+#define __DOS_LC_ALL      0
+#define __DOS_LC_COLLATE  1
+#define __DOS_LC_CTYPE    2
+#define __DOS_LC_MONETARY 3
+#define __DOS_LC_NUMERIC  4
+#define __DOS_LC_TIME     5
+#define __DOS_LC_MIN      0
+#define __DOS_LC_MAX      5
+
+#ifdef __USE_DOS
+#   define LC_ALL            __DOS_LC_ALL
+#   define LC_COLLATE        __DOS_LC_COLLATE
+#   define LC_CTYPE          __DOS_LC_CTYPE
+#   define LC_MONETARY       __DOS_LC_MONETARY
+#   define LC_NUMERIC        __DOS_LC_NUMERIC
+#   define LC_TIME           __DOS_LC_TIME
+#   define LC_MIN            __DOS_LC_MIN
+#   define LC_MAX            __DOS_LC_MAX
+#else /* __USE_DOS */
+#   define LC_CTYPE          __LC_CTYPE
+#   define LC_NUMERIC        __LC_NUMERIC
+#   define LC_TIME           __LC_TIME
+#   define LC_COLLATE        __LC_COLLATE
+#   define LC_MONETARY       __LC_MONETARY
+#   define LC_MESSAGES       __LC_MESSAGES
+#   define LC_ALL            __LC_ALL
+#   define LC_PAPER          __LC_PAPER
+#   define LC_NAME           __LC_NAME
+#   define LC_ADDRESS        __LC_ADDRESS
+#   define LC_TELEPHONE      __LC_TELEPHONE
+#   define LC_MEASUREMENT    __LC_MEASUREMENT
+#   define LC_IDENTIFICATION __LC_IDENTIFICATION
+#endif /* !__USE_DOS */
 
 __NAMESPACE_STD_BEGIN
 
@@ -105,7 +125,16 @@ struct lconv {
    * 4 The sign string immediately follows the currency_symbol. */
   char p_sign_posn;
   char n_sign_posn;
-#ifdef __USE_ISOC99
+#if defined(__PE__) && defined(__USE_DOS)
+  wchar_t *_W_decimal_point;
+  wchar_t *_W_thousands_sep;
+  wchar_t *_W_int_curr_symbol;
+  wchar_t *_W_currency_symbol;
+  wchar_t *_W_mon_decimal_point;
+  wchar_t *_W_mon_thousands_sep;
+  wchar_t *_W_positive_sign;
+  wchar_t *_W_negative_sign;
+#elif defined(__USE_ISOC99)
   char int_p_cs_precedes;  /* 1 if int_curr_symbol precedes a positive value, 0 if succeeds. */
   char int_p_sep_by_space; /* 1 iff a space separates int_curr_symbol from a positive value. */
   char int_n_cs_precedes;  /* 1 if int_curr_symbol precedes a negative value, 0 if succeeds. */
@@ -126,10 +155,24 @@ struct lconv {
   char __int_p_sign_posn;
   char __int_n_sign_posn;
 #endif
+#if defined(__USE_DOS) && !defined(__PE__)
+  wchar_t *_W_decimal_point;
+  wchar_t *_W_thousands_sep;
+  wchar_t *_W_int_curr_symbol;
+  wchar_t *_W_currency_symbol;
+  wchar_t *_W_mon_decimal_point;
+  wchar_t *_W_mon_thousands_sep;
+  wchar_t *_W_positive_sign;
+  wchar_t *_W_negative_sign;
+#endif
 };
 
-__LIBC char *(__LIBCCALL setlocale)(int __category, char const *__locale);
+__LIBC char *(__LIBCCALL setlocale)(int __category, char const *__locale)  __DOS_FUNC(setlocale);
+#if defined(__PE__) && !defined(__USE_DOS)
+__LIBC struct lconv *(__LIBCCALL localeconv)(void) __ASMNAME(".kos.localeconv");
+#else
 __LIBC struct lconv *(__LIBCCALL localeconv)(void);
+#endif
 
 __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(lconv)
@@ -142,22 +185,22 @@ __NAMESPACE_STD_USING(localeconv)
 
 __LIBC __locale_t (__LIBCCALL newlocale)(int __category_mask, char const *__locale, __locale_t __base);
 
-/* These are the bits that can be set in the CATEGORY_MASK argument to
- * `newlocale'.  In the GNU implementation, LC_FOO_MASK has the value
- * of (1 << LC_FOO), but this is not a part of the interface that
- * callers can assume will be true. */
-#define LC_CTYPE_MASK        (1 << __LC_CTYPE)
-#define LC_NUMERIC_MASK    (1 << __LC_NUMERIC)
-#define LC_TIME_MASK        (1 << __LC_TIME)
-#define LC_COLLATE_MASK    (1 << __LC_COLLATE)
-#define LC_MONETARY_MASK    (1 << __LC_MONETARY)
-#define LC_MESSAGES_MASK    (1 << __LC_MESSAGES)
-#define LC_PAPER_MASK        (1 << __LC_PAPER)
-#define LC_NAME_MASK        (1 << __LC_NAME)
-#define LC_ADDRESS_MASK    (1 << __LC_ADDRESS)
-#define LC_TELEPHONE_MASK    (1 << __LC_TELEPHONE)
+/* These are the bits that can be set in the CATEGORY_MASK
+ * argument to `newlocale'. In the GNU implementation, LC_FOO_MASK
+ * has the value of (1 << LC_FOO), but this is not a part
+ * of the interface that callers can assume will be true. */
+#define LC_CTYPE_MASK          (1 << __LC_CTYPE)
+#define LC_NUMERIC_MASK        (1 << __LC_NUMERIC)
+#define LC_TIME_MASK           (1 << __LC_TIME)
+#define LC_COLLATE_MASK        (1 << __LC_COLLATE)
+#define LC_MONETARY_MASK       (1 << __LC_MONETARY)
+#define LC_MESSAGES_MASK       (1 << __LC_MESSAGES)
+#define LC_PAPER_MASK          (1 << __LC_PAPER)
+#define LC_NAME_MASK           (1 << __LC_NAME)
+#define LC_ADDRESS_MASK        (1 << __LC_ADDRESS)
+#define LC_TELEPHONE_MASK      (1 << __LC_TELEPHONE)
 #define LC_MEASUREMENT_MASK    (1 << __LC_MEASUREMENT)
-#define LC_IDENTIFICATION_MASK    (1 << __LC_IDENTIFICATION)
+#define LC_IDENTIFICATION_MASK (1 << __LC_IDENTIFICATION)
 #define LC_ALL_MASK            (LC_CTYPE_MASK|LC_NUMERIC_MASK|LC_TIME_MASK|LC_COLLATE_MASK \
                                |LC_MONETARY_MASK|LC_MESSAGES_MASK|LC_PAPER_MASK|LC_NAME_MASK \
                                |LC_ADDRESS_MASK|LC_TELEPHONE_MASK|LC_MEASUREMENT_MASK \
@@ -167,8 +210,33 @@ __LIBC __locale_t (__LIBCCALL duplocale)(__locale_t __dataset);
 __LIBC void (__LIBCCALL freelocale)(__locale_t __dataset);
 __LIBC __locale_t (__LIBCCALL uselocale)(__locale_t __dataset);
 #define LC_GLOBAL_LOCALE    ((__locale_t)-1L)
-
 #endif /* __USE_XOPEN2K8 */
+
+#ifdef __USE_DOS
+#ifndef _CONFIG_LOCALE_SWT
+#define _CONFIG_LOCALE_SWT 1
+#define _ENABLE_PER_THREAD_LOCALE         0x001
+#define _DISABLE_PER_THREAD_LOCALE        0x002
+#define _ENABLE_PER_THREAD_LOCALE_GLOBAL  0x010
+#define _DISABLE_PER_THREAD_LOCALE_GLOBAL 0x020
+#define _ENABLE_PER_THREAD_LOCALE_NEW     0x100
+#define _DISABLE_PER_THREAD_LOCALE_NEW    0x200
+#endif /* !_CONFIG_LOCALE_SWT */
+
+__LIBC int (__LIBCCALL _configthreadlocale)(int __flag);
+__LIBC __locale_t (__LIBCCALL _get_current_locale)(void);
+__LIBC __locale_t (__LIBCCALL __get_current_locale)(void) __ASMNAME("_get_current_locale");
+__LIBC __locale_t (__LIBCCALL _create_locale)(int __dos_category, char const *__locale);
+__LIBC __locale_t (__LIBCCALL __create_locale)(int __dos_category, char const *__locale) __ASMNAME("_create_locale");
+__LIBC void (__LIBCCALL __free_locale)(__locale_t __locale) __ASMNAME("_create_locale");
+__LIBC void (__LIBCCALL _free_locale)(__locale_t __locale) __ASMNAME("freelocale");
+
+#ifndef _WLOCALE_DEFINED
+#define _WLOCALE_DEFINED 1
+__LIBC wchar_t *(__LIBCCALL _wsetlocale)(int __category, wchar_t const *__locale);
+__LIBC __locale_t (__LIBCCALL _wcreate_locale)(int __category, wchar_t const *__locale);
+#endif /* !_WLOCALE_DEFINED */
+#endif /* __USE_DOS */
 
 __DECL_END
 

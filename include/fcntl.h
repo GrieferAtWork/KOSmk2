@@ -42,7 +42,7 @@ typedef __mode_t mode_t;
 #endif /* !__mode_t_defined */
 #ifndef __off_t_defined
 #define __off_t_defined 1
-typedef __FS_TYPE(off) off_t;
+typedef __typedef_off_t off_t;
 #endif /* !__off_t_defined */
 #ifdef __USE_LARGEFILE64
 #ifndef __off64_t_defined

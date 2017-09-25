@@ -62,11 +62,11 @@ typedef unsigned int       uint;
 #ifndef __loff_t_defined
 #define __loff_t_defined 1
 typedef __loff_t    loff_t;
-#endif /* !__off_t_defined */
+#endif /* !__loff_t_defined */
 
 #ifndef __ino_t_defined
 #define __ino_t_defined 1
-typedef __FS_TYPE(ino) ino_t;
+typedef __typedef_ino_t ino_t;
 #endif /* !__ino_t_defined */
 
 #ifdef __USE_LARGEFILE64
@@ -82,7 +82,7 @@ typedef __off64_t off64_t;
 
 #ifndef __dev_t_defined
 #define __dev_t_defined 1
-typedef __dev_t dev_t;
+typedef __typedef_dev_t dev_t;
 #endif /* !__dev_t_defined */
 
 #ifndef __gid_t_defined
@@ -107,7 +107,7 @@ typedef __uid_t uid_t;
 
 #ifndef __off_t_defined
 #define __off_t_defined 1
-typedef __FS_TYPE(off) off_t;
+typedef __typedef_off_t off_t;
 #endif /* !__off_t_defined */
 
 #ifndef __pid_t_defined
@@ -120,11 +120,12 @@ typedef __pid_t pid_t;
 #define __id_t_defined 1
 typedef __id_t id_t;
 #endif /* !__id_t_defined */
+
 #ifndef __clock_t_defined
 #define __clock_t_defined 1
 typedef __clock_t clock_t;
 #endif /* !__clock_t_defined */
-#endif
+#endif /* __USE_XOPEN || __USE_XOPEN2K8 */
 
 #ifndef __ssize_t_defined
 #define __ssize_t_defined 1
@@ -136,7 +137,7 @@ typedef __ssize_t ssize_t;
 #define __key_t_defined 1
 typedef __key_t key_t;
 #endif /* !__key_t_defined */
-#endif
+#endif /* __USE_MISC || __USE_XOPEN */
 
 #ifndef __time_t_defined
 #define __time_t_defined  1
@@ -158,6 +159,7 @@ typedef __timer_t timer_t;
 #define __useconds_t_defined 1
 typedef __useconds_t useconds_t;
 #endif /* !__useconds_t_defined */
+
 #ifndef __suseconds_t_defined
 #define __suseconds_t_defined 1
 typedef __suseconds_t suseconds_t;
@@ -232,6 +234,22 @@ typedef __fsblkcnt64_t fsblkcnt64_t;
 typedef __fsfilcnt64_t fsfilcnt64_t;
 #endif /* !__fsfilcnt64_t_defined */
 #endif /* !__USE_LARGEFILE64 */
+
+#ifdef __USE_DOS
+/* Define ~~"aliases"~~ used by DOS. */
+#ifndef _INO_T_DEFINED
+#define _INO_T_DEFINED 1
+typedef __typedef_ino_t _ino_t;
+#endif /* !_INO_T_DEFINED */
+#ifndef _DEV_T_DEFINED
+#define _DEV_T_DEFINED 1
+typedef __typedef_dev_t _dev_t;
+#endif /* !_DEV_T_DEFINED */
+#ifndef _OFF_T_DEFINED
+#define _OFF_T_DEFINED 1
+typedef __typedef_off_t _off_t;
+#endif /* !_OFF_T_DEFINED */
+#endif /* __USE_DOS */
 
 __DECL_END
 

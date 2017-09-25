@@ -493,7 +493,7 @@ pe_loader(struct file *__restrict fp) {
     dst->ms_msize = (size_t)iter->Misc.VirtualSize;
     dst->ms_fsize = (size_t)iter->SizeOfRawData;
     dst->ms_fpos  = (pos_t)iter->PointerToRawData;
-    syslog(LOG_EXEC|LOG_WARN,"[PE] Segment %.8q at %p...%p (%p)\n",
+    syslog(LOG_EXEC|LOG_WARN,"[PE] Segment %.8q at %p...%p (%.8I32X)\n",
            iter->Name,dst->ms_paddr,dst->ms_paddr+dst->ms_msize-1,
            iter->Characteristics);
     /* Figure the effective memory protection flags. */

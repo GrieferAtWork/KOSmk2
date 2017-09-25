@@ -60,17 +60,20 @@ typedef __SIZE_TYPE__ size_t;
 #ifdef __USE_XOPEN2K8
 #ifndef __off_t_defined
 #define __off_t_defined 1
-typedef __FS_TYPE(off) off_t;
-#endif
+typedef __typedef_off_t off_t;
+#endif /* !__off_t_defined */
 
-#if defined(__USE_LARGEFILE64) && !defined(__off64_t_defined)
-#define __off64_t_defined 1
-typedef __off64_t off64_t;
-#endif
 #ifndef __ssize_t_defined
 #define __ssize_t_defined 1
 typedef __ssize_t ssize_t;
-#endif
+#endif /* !__ssize_t_defined */
+
+#ifdef __USE_LARGEFILE64
+#ifndef __off64_t_defined
+#define __off64_t_defined 1
+typedef __off64_t off64_t;
+#endif /* !__off64_t_defined */
+#endif /* __USE_LARGEFILE64 */
 #endif /* __USE_XOPEN2K8 */
 
 #ifdef __NAMESPACE_STD_EXISTS
@@ -148,6 +151,8 @@ typedef __FILE FILE;
 #ifndef __KERNEL__
 
 /* Standard streams. */
+#ifndef __stdstreams_defined
+#define __stdstreams_defined 1
 #undef stdin
 #undef stdout
 #undef stderr
@@ -157,6 +162,7 @@ __LIBC __FILE *(stderr);
 #define stdin  stdin
 #define stdout stdout
 #define stderr stderr
+#endif /* !__stdstreams_defined */
 
 __NAMESPACE_STD_BEGIN
 #ifndef __std_remove_defined
@@ -455,6 +461,15 @@ __LIBC __WUNUSED int (__LIBCCALL vasprintf)(char **__restrict __ptr, char const 
 #if defined(__USE_XOPEN) && !defined(__USE_XOPEN2K) && !defined(__USE_GNU)
 #include <getopt.h>
 #endif
+
+
+#ifdef __USE_DOS
+/* DOS Extensions */
+#ifndef _iobuf
+#define _iobuf   _IO_FILE
+#endif /* !_iobuf */
+
+#endif /* __USE_DOS */
 
 __DECL_END
 

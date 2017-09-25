@@ -27,20 +27,18 @@ __DECL_BEGIN
 
 #ifndef __off_t_defined
 #define __off_t_defined 1
-typedef __FS_TYPE(off) off_t;
-#endif
+typedef __typedef_off_t off_t;
+#endif /* !__off_t_defined */
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
 typedef __size_t size_t;
-#endif
+#endif /* !__size_t_defined */
 
 #ifndef __mode_t_defined
 #define __mode_t_defined 1
 typedef __mode_t mode_t;
-#endif
-
-
+#endif /* !__mode_t_defined */
 
 #define PROT_NONE     0x00 /*< Data cannot be accessed. */
 #define PROT_EXEC     0x01 /*< Data can be executed. */
@@ -162,7 +160,8 @@ struct mmap_virt {
   * X: Initialized using 'mv_fill' */
  __uintptr_t mv_begin; /*< [valid_if(!MAP_ANONYMOUS)] The address within the region where the file mapping starts. */
 union{
- off_t      mv_off;   /*< [valid_if(!MAP_ANONYMOUS)] Offset into 'mv_file' where mapping starts. */
+ __FS_TYPE(off)
+            mv_off;   /*< [valid_if(!MAP_ANONYMOUS)] Offset into 'mv_file' where mapping starts. */
 #ifdef __USE_LARGEFILE64
  __off64_t  mv_off64; /*< [valid_if(!MAP_ANONYMOUS)] Offset into 'mv_file' where mapping starts (64-bit field). */
 #endif

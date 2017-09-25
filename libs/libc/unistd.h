@@ -63,10 +63,10 @@ INTDEF int LIBCCALL libc_fchdirat(int dfd, char const *path, int flags);
 INTDEF int LIBCCALL libc_dup(int fd);
 INTDEF int LIBCCALL libc_dup3(int fd, int fd2, int flags);
 INTDEF int LIBCCALL libc_dup2(int fd, int fd2);
-INTDEF int LIBCCALL libc_kfstat64(int fd, struct stat64 *buf);
-INTDEF int LIBCCALL libc_kfstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flags);
-INTDEF int LIBCCALL libc_kstat64(char const *__restrict file, struct stat64 *__restrict buf);
-INTDEF int LIBCCALL libc_klstat64(char const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_fstat64(int fd, struct stat64 *buf);
+INTDEF int LIBCCALL libc_fstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flags);
+INTDEF int LIBCCALL libc_stat64(char const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_lstat64(char const *__restrict file, struct stat64 *__restrict buf);
 INTDEF int LIBCCALL libc_access(char const *name, int type);
 INTDEF int LIBCCALL libc_eaccess(char const *name, int type);
 INTDEF int LIBCCALL libc_faccessat(int fd, char const *file, int type, int flags);
@@ -293,9 +293,9 @@ INTDEF int LIBCCALL libc_dos_truncate64(char const *file, off64_t length);
 INTDEF int LIBCCALL libc_dos_chroot(char const *path);
 INTDEF int LIBCCALL libc_dos_chdir(char const *path);
 INTDEF int LIBCCALL libc_dos_fchdirat(int dfd, char const *path, int flags);
-INTDEF int LIBCCALL libc_dos_kfstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flags);
-INTDEF int LIBCCALL libc_dos_kstat64(char const *__restrict file, struct stat64 *__restrict buf);
-INTDEF int LIBCCALL libc_dos_klstat64(char const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_fstatat64(int fd, char const *__restrict file, struct stat64 *__restrict buf, int flags);
+INTDEF int LIBCCALL libc_dos_stat64(char const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_lstat64(char const *__restrict file, struct stat64 *__restrict buf);
 INTDEF int LIBCCALL libc_dos_access(char const *name, int type);
 INTDEF int LIBCCALL libc_dos_eaccess(char const *name, int type);
 INTDEF int LIBCCALL libc_dos_faccessat(int fd, char const *file, int type, int flags);
@@ -411,6 +411,110 @@ INTDEF int  LIBCCALL libc__lock_fhandle(int fd);
 INTDEF void LIBCCALL libc_unlock_fhandle(int fd);
 INTDEF intptr_t LIBCCALL libc_get_osfhandle(int fd);
 INTDEF int LIBCCALL libc_open_osfhandle(intptr_t osfd, int flags);
+
+#define WEXEC_F_NORMAL  0x0
+#define WEXEC_F_DOSMODE 0x1
+#define WEXEC_F_PATH    0x2
+
+INTDEF int LIBCCALL libc_impl_16wexecve(int mode, char16_t const *path, char16_t const *const *argv, char16_t const *const *envp);
+INTDEF int LIBCCALL libc_impl_32wexecve(int mode, char32_t const *path, char32_t const *const *argv, char32_t const *const *envp);
+INTDEF int LIBCCALL libc_16wexecv(char16_t const *path, char16_t const *const *argv);
+INTDEF int LIBCCALL libc_16wexecve(char16_t const *path, char16_t const *const *argv, char16_t const *const *envp);
+INTDEF int LIBCCALL libc_16wexecvp(char16_t const *file, char16_t const *const *argv);
+INTDEF int LIBCCALL libc_16wexecvpe(char16_t const *file, char16_t const *const *argv, char16_t const *const *envp);
+INTDEF int LIBCCALL libc_32wexecv(char32_t const *path, char32_t const *const *argv);
+INTDEF int LIBCCALL libc_32wexecve(char32_t const *path, char32_t const *const *argv, char32_t const *const *envp);
+INTDEF int LIBCCALL libc_32wexecvp(char32_t const *file, char32_t const *const *argv);
+INTDEF int LIBCCALL libc_32wexecvpe(char32_t const *file, char32_t const *const *argv, char32_t const *const *envp);
+INTDEF int LIBCCALL libc_dos_16wexecv(char16_t const *path, char16_t const *const *argv);
+INTDEF int LIBCCALL libc_dos_16wexecve(char16_t const *path, char16_t const *const *argv, char16_t const *const *envp);
+INTDEF int LIBCCALL libc_dos_16wexecvp(char16_t const *file, char16_t const *const *argv);
+INTDEF int LIBCCALL libc_dos_16wexecvpe(char16_t const *file, char16_t const *const *argv, char16_t const *const *envp);
+INTDEF int LIBCCALL libc_dos_32wexecv(char32_t const *path, char32_t const *const *argv);
+INTDEF int LIBCCALL libc_dos_32wexecve(char32_t const *path, char32_t const *const *argv, char32_t const *const *envp);
+INTDEF int LIBCCALL libc_dos_32wexecvp(char32_t const *file, char32_t const *const *argv);
+INTDEF int LIBCCALL libc_dos_32wexecvpe(char32_t const *file, char32_t const *const *argv, char32_t const *const *envp);
+INTDEF int ATTR_CDECL libc_16wexecl(char16_t const *path, char16_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_16wexecle(char16_t const *path, char16_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_16wexeclp(char16_t const *file, char16_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_16wexeclpe(char16_t const *file, char16_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_32wexecl(char32_t const *path, char32_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_32wexecle(char32_t const *path, char32_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_32wexeclp(char32_t const *file, char32_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_32wexeclpe(char32_t const *file, char32_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_dos_16wexecl(char16_t const *path, char16_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_dos_16wexecle(char16_t const *path, char16_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_dos_16wexeclp(char16_t const *file, char16_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_dos_16wexeclpe(char16_t const *file, char16_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_dos_32wexecl(char32_t const *path, char32_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_dos_32wexecle(char32_t const *path, char32_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_dos_32wexeclp(char32_t const *file, char32_t const *argv, ...);
+INTDEF int ATTR_CDECL libc_dos_32wexeclpe(char32_t const *file, char32_t const *argv, ...);
+
+
+/* Unicode lstat() and fstatat() are currently not used in header files.
+ * >> Don't export them until they actually appear somewhere. */
+#undef CONFIG_LIBC_HAVE_UNICODE_LSTAT
+#undef CONFIG_LIBC_HAVE_UNICODE_FSTATAT
+//#define CONFIG_LIBC_HAVE_UNICODE_LSTAT
+//#define CONFIG_LIBC_HAVE_UNICODE_FSTATAT
+
+/* KOS stat functions for different character encodings. */
+INTDEF int LIBCCALL libc_w16stat64(char16_t const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_w32stat64(char32_t const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_w16stat64(char16_t const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_w32stat64(char32_t const *__restrict file, struct stat64 *__restrict buf);
+#ifdef CONFIG_LIBC_HAVE_UNICODE_FSTATAT
+INTDEF int LIBCCALL libc_w16fstatat64(int fd, char16_t const *__restrict file, struct stat64 *__restrict buf, int flags);
+INTDEF int LIBCCALL libc_w32fstatat64(int fd, char32_t const *__restrict file, struct stat64 *__restrict buf, int flags);
+INTDEF int LIBCCALL libc_dos_w16fstatat64(int fd, char16_t const *__restrict file, struct stat64 *__restrict buf, int flags);
+INTDEF int LIBCCALL libc_dos_w32fstatat64(int fd, char32_t const *__restrict file, struct stat64 *__restrict buf, int flags);
+#endif
+#ifdef CONFIG_LIBC_HAVE_UNICODE_LSTAT
+INTDEF int LIBCCALL libc_w16lstat64(char16_t const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_w32lstat64(char32_t const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_w16lstat64(char16_t const *__restrict file, struct stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_w32lstat64(char32_t const *__restrict file, struct stat64 *__restrict buf);
+#endif /* CONFIG_LIBC_HAVE_UNICODE_LSTAT */
+
+struct __dos_stat32;
+struct __dos_stat32i64;
+struct __dos_stat64i32;
+struct __dos_stat64;
+
+/* DOS-FS mode + DOS-binary-compatible stat functions.
+ * NOTE: These are only used when user-apps are configures as '__PE__' + '__USE_DOS'.
+ *       Otherwise, KOS's stat buffer data layout is used instead.  */
+INTDEF void LIBCCALL libc_fill_dos_stat32(struct stat64 const *__restrict src, struct __dos_stat32 *__restrict buf);
+INTDEF void LIBCCALL libc_fill_dos_stat64(struct stat64 const *__restrict src, struct __dos_stat64 *__restrict buf);
+INTDEF void LIBCCALL libc_fill_dos_stat32i64(struct stat64 const *__restrict src, struct __dos_stat32i64 *__restrict buf);
+INTDEF void LIBCCALL libc_fill_dos_stat64i32(struct stat64 const *__restrict src, struct __dos_stat64i32 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_stat32(char const *__restrict file, struct __dos_stat32 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_stat64(char const *__restrict file, struct __dos_stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_stat32i64(char const *__restrict file, struct __dos_stat32i64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_stat64i32(char const *__restrict file, struct __dos_stat64i32 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_fstat32(int fd, struct __dos_stat32 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_fstat64(int fd, struct __dos_stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_fstat32i64(int fd, struct __dos_stat32i64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_fstat64i32(int fd, struct __dos_stat64i32 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_16wstat32(char16_t const *__restrict file, struct __dos_stat32 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_16wstat64(char16_t const *__restrict file, struct __dos_stat64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_16wstat32i64(char16_t const *__restrict file, struct __dos_stat32i64 *__restrict buf);
+INTDEF int LIBCCALL libc_dos_local_16wstat64i32(char16_t const *__restrict file, struct __dos_stat64i32 *__restrict buf);
+/* NOTE: There are no 'libc_dos_32wstat32' functions, because PE only has 16-bit wide
+ *       characters, and the functions above are only ever used when building in PE-mode. */
+
+
+/* TODO: Spawn functions. */
+// __LIBC intptr_t (ATTR_CDECL _wspawnl)(int __mode, wchar_t const *__path, wchar_t const *__argv, ...) __UFS_FUNC(_wspawnl);
+// __LIBC intptr_t (ATTR_CDECL _wspawnle)(int __mode, wchar_t const *__path, wchar_t const *__argv, ...) __UFS_FUNC(_wspawnle);
+// __LIBC intptr_t (ATTR_CDECL _wspawnlp)(int __mode, wchar_t const *__file, wchar_t const *__argv, ...) __UFS_FUNC(_wspawnlp);
+// __LIBC intptr_t (ATTR_CDECL _wspawnlpe)(int __mode, wchar_t const *__file, wchar_t const *__argv, ...) __UFS_FUNC(_wspawnlpe);
+// __LIBC intptr_t (__LIBCCALL _wspawnv)(int __mode, wchar_t const *__path, wchar_t const *const *__argv) __UFS_FUNC(_wspawnv);
+// __LIBC intptr_t (__LIBCCALL _wspawnve)(int __mode, wchar_t const *__path, wchar_t const *const *__argv, wchar_t const *const *__envp) __UFS_FUNC(_wspawnve);
+// __LIBC intptr_t (__LIBCCALL _wspawnvp)(int __mode, wchar_t const *__file, wchar_t const *const *__argv) __UFS_FUNC(_wspawnvp);
+// __LIBC intptr_t (__LIBCCALL _wspawnvpe)(int __mode, wchar_t const *__file, wchar_t const *const *__argv, wchar_t const *const *__envp) __UFS_FUNC(_wspawnvpe);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

@@ -78,8 +78,12 @@ typedef __UINT_FAST64_TYPE__ uint_fast64_t;
 #ifndef __std_intptr_t_defined
 #define __std_intptr_t_defined 1
 typedef __INTPTR_TYPE__       intptr_t;
-typedef __UINTPTR_TYPE__      uintptr_t;
 #endif /* !__std_intptr_t_defined */
+
+#ifndef __std_uintptr_t_defined
+#define __std_uintptr_t_defined 1
+typedef __UINTPTR_TYPE__      uintptr_t;
+#endif /* !__std_uintptr_t_defined */
 
 __NAMESPACE_STD_END
 
@@ -133,8 +137,11 @@ __NAMESPACE_STD_USING(uint_fast64_t)
 #ifndef __intptr_t_defined
 #define __intptr_t_defined 1
 __NAMESPACE_STD_USING(intptr_t)
-__NAMESPACE_STD_USING(uintptr_t)
 #endif /* !__intptr_t_defined */
+#ifndef __uintptr_t_defined
+#define __uintptr_t_defined 1
+__NAMESPACE_STD_USING(uintptr_t)
+#endif /* !__uintptr_t_defined */
 #endif /* !__CXX_SYSTEM_HEADER */
 
 #else /* __NAMESPACE_STD_EXISTS */

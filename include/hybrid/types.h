@@ -132,7 +132,7 @@ typedef __FS_TYPE(pos) pos_t; /* File position. */
 
 #ifndef __off_t_defined
 #define __off_t_defined 1
-typedef __FS_TYPE(off) off_t;
+typedef __typedef_off_t off_t;
 #endif /* !__off_t_defined */
 
 #ifndef __pos32_t_defined
@@ -158,16 +158,16 @@ typedef __off64_t   off64_t;
 #ifndef __lpos_t_defined
 #define __lpos_t_defined 1
 typedef __lpos_t    lpos_t;
-#endif /* !__off_t_defined */
+#endif /* !__lpos_t_defined */
 
 #ifndef __loff_t_defined
 #define __loff_t_defined 1
 typedef __loff_t    loff_t;
-#endif /* !__off_t_defined */
+#endif /* !__loff_t_defined */
 
 #ifndef __dev_t_defined
 #define __dev_t_defined 1
-typedef __dev_t     dev_t;
+typedef __typedef_dev_t dev_t;
 #endif /* !__dev_t_defined */
 
 #ifndef __pid_t_defined
@@ -177,7 +177,7 @@ typedef __pid_t     pid_t;
 
 #ifndef __ino_t_defined
 #define __ino_t_defined 1
-typedef __FS_TYPE(ino) ino_t;
+typedef __typedef_ino_t ino_t;
 #endif /* !__ino_t_defined */
 
 #ifndef __blkcnt_t_defined

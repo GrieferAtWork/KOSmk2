@@ -38,7 +38,7 @@ typedef __size_t size_t;
 
 #ifndef __intptr_t_defined
 #define __intptr_t_defined 1
-typedef __intptr_t size_t;
+typedef __intptr_t intptr_t;
 #endif /* !__intptr_t_defined */
 
 #ifndef _FSIZE_T_DEFINED
@@ -212,7 +212,6 @@ __LIBC int (__LIBCCALL setmode)(int __fd, int __mode); /* F_SETFL */
 __LIBC __INT32_TYPE__ (__LIBCCALL tell)(int __fd); /* lseek(fd,SEEK_CUR,0) */
 __LIBC int (__LIBCCALL eof)(int __fd); /* lseek(fd,SEEK_CUR,0) == lseek(fd,SEEK_END,0) */
 
-
 #ifndef _WIO_DEFINED
 #define _WIO_DEFINED 1
 struct _wfinddata32_t;
@@ -220,7 +219,6 @@ struct _wfinddata64_t;
 struct _wfinddata32i64_t;
 struct _wfinddata64i32_t;
 
-/* TODO: On Dos/NT, these also exist in <wchar.h> */
 __LIBC int (__LIBCCALL _wcreat)(wchar_t const *__file, int __pmode) __WFS_FUNC(_wcreat);
 __LIBC int (__ATTR_CDECL _wopen)(wchar_t const *__file, int __oflag, ...) __WFS_FUNC(_wopen);
 __LIBC int (__ATTR_CDECL _wsopen)(wchar_t const *__file, int __oflag, int __sflag, ...) __WFS_FUNC(_wsopen);
@@ -242,7 +240,7 @@ __LIBC int (__LIBCCALL _wfindnext32)(intptr_t __findfd, struct _wfinddata32_t *_
 __LIBC int (__LIBCCALL _wfindnext64)(intptr_t __findfd, struct _wfinddata64_t *__finddata);
 __LIBC int (__LIBCCALL _wfindnext32i64)(intptr_t __findfd, struct _wfinddata32i64_t *__finddata);
 __LIBC int (__LIBCCALL _wfindnext64i32)(intptr_t __findfd, struct _wfinddata64i32_t *__finddata);
-#endif  /* _WIO_DEFINED */
+#endif /* !_WIO_DEFINED */
 
 #endif /* !__KERNEL__ */
 
@@ -292,22 +290,22 @@ struct __finddata64_t {
  char            name[260];
 };
 
-#ifdef _USE_32BIT_TIME_T
-#define _finddata_t     _finddata32_t
-#define _finddatai64_t  _finddata32i64_t
-#define _findfirst      _findfirst32
-#define _findnext       _findnext32
-#define _findfirsti64   _findfirst32i64
-#define _findnexti64    _findnext32i64
-#else  /* _USE_32BIT_TIME_T */
+#ifdef __USE_TIME_BITS64
 #define _finddata_t     _finddata64i32_t
 #define _finddatai64_t  __finddata64_t
 #define _findfirst      _findfirst64i32
 #define _findnext       _findnext64i32
 #define _findfirsti64   _findfirst64
 #define _findnexti64    _findnext64
-#endif  /* _USE_32BIT_TIME_T */
-#endif  /* _FINDDATA_T_DEFINED */
+#else /* __USE_TIME_BITS64 */
+#define _finddata_t     _finddata32_t
+#define _finddatai64_t  _finddata32i64_t
+#define _findfirst      _findfirst32
+#define _findnext       _findnext32
+#define _findfirsti64   _findfirst32i64
+#define _findnexti64    _findnext32i64
+#endif /* !__USE_TIME_BITS64 */
+#endif /* !_FINDDATA_T_DEFINED */
 
 #ifndef _WFINDDATA_T_DEFINED
 #define _WFINDDATA_T_DEFINED 1
@@ -356,21 +354,21 @@ struct _wfinddata64_t {
 };
 
 #ifdef __USE_TIME_BITS64
+#define _wfinddata_t    _wfinddata64i32_t
+#define _wfindfirst     _wfindfirst64i32
+#define _wfindnext      _wfindnext64i32
+#define _wfinddatai64_t _wfinddata64_t
+#define _wfindfirsti64  _wfindfirst64
+#define _wfindnexti64   _wfindnext64
+#else /* __USE_TIME_BITS64 */
 #define _wfinddata_t    _wfinddata32_t
 #define _wfinddatai64_t _wfinddata32i64_t
 #define _wfindfirst     _wfindfirst32
 #define _wfindnext      _wfindnext32
 #define _wfindfirsti64  _wfindfirst32i64
 #define _wfindnexti64   _wfindnext32i64
-#else /* __USE_TIME_BITS64 */
-#define _wfinddata_t    _wfinddata64i32_t
-#define _wfinddatai64_t _wfinddata64_t
-#define _wfindfirst     _wfindfirst64i32
-#define _wfindnext      _wfindnext64i32
-#define _wfindfirsti64  _wfindfirst64
-#define _wfindnexti64   _wfindnext64
 #endif /* !__USE_TIME_BITS64 */
-#endif  /* _WFINDDATA_T_DEFINED */
+#endif /* !_WFINDDATA_T_DEFINED */
 
 
 __DECL_END

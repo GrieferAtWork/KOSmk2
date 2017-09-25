@@ -21,9 +21,15 @@
 
 #include "libc.h"
 #include "locale.h"
+#include "errno.h"
+#include "unicode.h"
+#include "string.h"
+#include "malloc.h"
+
 #include <locale.h>
 #include <langinfo.h>
 #include <hybrid/compiler.h>
+#include <hybrid/types.h>
 #include <limits.h>
 #include <stdbool.h>
 
@@ -100,7 +106,6 @@ INTERN char *LIBCCALL libc_nl_langinfo_l(nl_item item, locale_t l) {
  return libc_nl_langinfo(item);
 }
 
-
 DEFINE_PUBLIC_ALIAS(setlocale,libc_setlocale);
 DEFINE_PUBLIC_ALIAS(localeconv,libc_localeconv);
 DEFINE_PUBLIC_ALIAS(newlocale,libc_newlocale);
@@ -109,6 +114,84 @@ DEFINE_PUBLIC_ALIAS(freelocale,libc_freelocale);
 DEFINE_PUBLIC_ALIAS(uselocale,libc_uselocale);
 DEFINE_PUBLIC_ALIAS(nl_langinfo,libc_nl_langinfo);
 DEFINE_PUBLIC_ALIAS(nl_langinfo_l,libc_nl_langinfo_l);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+PRIVATE ATTR_DOSRODATA u8 const dos_localcategory[] = {
+    [__DOS_LC_ALL]      = __LC_ALL,
+    [__DOS_LC_COLLATE]  = __LC_COLLATE,
+    [__DOS_LC_CTYPE]    = __LC_CTYPE,
+    [__DOS_LC_MONETARY] = __LC_MONETARY,
+    [__DOS_LC_NUMERIC]  = __LC_NUMERIC,
+    [__DOS_LC_TIME]     = __LC_TIME,
+};
+PRIVATE ATTR_DOSRODATA int const dos_localmask[] = {
+    [__DOS_LC_ALL]      = LC_ALL_MASK,
+    [__DOS_LC_COLLATE]  = LC_COLLATE_MASK,
+    [__DOS_LC_CTYPE]    = LC_CTYPE_MASK,
+    [__DOS_LC_MONETARY] = LC_MONETARY_MASK,
+    [__DOS_LC_NUMERIC]  = LC_NUMERIC_MASK,
+    [__DOS_LC_TIME]     = LC_TIME_MASK,
+};
+INTDEF struct lconv *LIBCCALL libc_dos_localeconv(void) {
+ /* TODO: The binary layout of 'struct lconv' is different in DOS. */
+ return libc_localeconv();
+}
+
+INTERN char16_t *LIBCCALL libc_dos_16wsetlocale(int dos_category, char16_t const *locale) {
+ char *locale_name; char16_t *result = (char16_t *)locale;
+ if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localcategory)) { SET_ERRNO(EINVAL); return NULL; }
+ locale_name = libc_utf16to8m(locale,libc_16wcslen(locale));
+ if unlikely(!locale_name) return NULL;
+ if (!libc_setlocale(dos_localcategory[dos_category],locale_name))
+      result = NULL;
+ libc_free(locale_name);
+ return result;
+}
+INTERN char32_t *LIBCCALL libc_dos_32wsetlocale(int dos_category, char32_t const *locale) {
+ char *locale_name; char32_t *result = (char32_t *)locale;
+ if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localcategory)) { SET_ERRNO(EINVAL); return NULL; }
+ locale_name = libc_utf32to8m(locale,libc_32wcslen(locale));
+ if unlikely(!locale_name) return NULL;
+ if (!libc_setlocale(dos_localcategory[dos_category],locale_name))
+      result = NULL;
+ libc_free(locale_name);
+ return result;
+}
+INTDEF locale_t LIBCCALL libc_dos_create_locale(int dos_category, char const *locale) {
+ if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localmask)) { SET_ERRNO(EINVAL); return NULL; }
+ return libc_newlocale(dos_localmask[dos_category],locale,NULL);
+}
+INTERN locale_t LIBCCALL libc_dos_16wcreate_locale(int dos_category, char16_t const *locale) {
+ locale_t result; char *locale_name;
+ if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localmask)) { SET_ERRNO(EINVAL); return NULL; }
+ locale_name = libc_utf16to8m(locale,libc_16wcslen(locale));
+ if unlikely(!locale_name) return NULL;
+ result = libc_newlocale(dos_localmask[dos_category],locale_name,NULL);
+ libc_free(locale_name);
+ return result;
+}
+INTERN locale_t LIBCCALL libc_dos_32wcreate_locale(int dos_category, char32_t const *locale) {
+ locale_t result; char *locale_name;
+ if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localmask)) { SET_ERRNO(EINVAL); return NULL; }
+ locale_name = libc_utf32to8m(locale,libc_32wcslen(locale));
+ if unlikely(!locale_name) return NULL;
+ result = libc_newlocale(dos_localmask[dos_category],locale_name,NULL);
+ libc_free(locale_name);
+ return result;
+}
+INTDEF int LIBCCALL libc_dos_configthreadlocale(int flag) { NOT_IMPLEMENTED(); return 0; }
+INTDEF locale_t LIBCCALL libc_dos_get_current_locale(void) { NOT_IMPLEMENTED(); return NULL; }
+
+DEFINE_PUBLIC_ALIAS(_wsetlocale,libc_dos_32wsetlocale);
+DEFINE_PUBLIC_ALIAS(_wcreate_locale,libc_dos_32wcreate_locale);
+DEFINE_PUBLIC_ALIAS(__DSYM(localeconv),libc_dos_localeconv);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wsetlocale),libc_dos_16wsetlocale);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcreate_locale),libc_dos_16wcreate_locale);
+DEFINE_PUBLIC_ALIAS(_configthreadlocale,libc_dos_configthreadlocale);
+DEFINE_PUBLIC_ALIAS(_get_current_locale,libc_dos_get_current_locale);
+DEFINE_PUBLIC_ALIAS(_create_locale,libc_dos_create_locale);
+
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

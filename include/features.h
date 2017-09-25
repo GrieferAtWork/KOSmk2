@@ -481,10 +481,39 @@
 #endif /* !__USE_DOSFS */
 #endif /* !__USE_TIME_BITS64 */
 
+
+/* Link the dos-default version when DOS-mode is enabled.
+ * >> Used for functions available in both DOS and KOS mode, but
+ *    with incompatible prototypes or associated data objects. */
+#ifdef __USE_DOS
+#ifdef __PE__
+#   define __DOS_FUNC(x) /* nothing (linked by default) */
+#else
+#   define __DOS_FUNC(x) __ASMNAME(".dos." #x)
+#endif
+#else /* __USE_DOS */
+#ifdef __PE__
+#   define __DOS_FUNC(x) __ASMNAME(".kos." #x)
+#else
+#   define __DOS_FUNC(x) /* nothing (linked by default) */
+#endif
+#endif /* !__USE_DOS */
+
+/* Strictly link against the KOS version of a given function. */
+#ifdef __PE__
+#   define __KOS_FUNC(x)  __ASMNAME(".kos." #x)
+#   define __KOS_FUNC_(x) __ASMNAME(".kos." #x)
+#else
+#   define __KOS_FUNC(x)  /* nothing */
+#   define __KOS_FUNC_(x) __ASMNAME(#x)
+#endif
+
 #ifdef __USE_DOSFS
-#   define __WARN_NODOSFS __ATTR_DEPRECATED("This function does not support dos filesystem semantics. Try building with '-D_DOSFS_SOURCE=0'")
+#   define __WARN_NODOSFS __ATTR_DEPRECATED("This function does not support DOS filesystem semantics. Try building with '-D_DOSFS_SOURCE=0'")
+#   define __WARN_NOKOSFS /* nothing */
 #else
 #   define __WARN_NODOSFS /* nothing */
+#   define __WARN_NOKOSFS __ATTR_DEPRECATED("This function does not support KOS filesystem semantics. Try building with '-D_DOSFS_SOURCE=1'")
 #endif
 
 #ifdef __USE_TIME_BITS64

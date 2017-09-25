@@ -45,9 +45,9 @@ struct utimbuf64 {
 #endif
 
 #ifndef __KERNEL__
-__LIBC __NONNULL((1)) int (__LIBCCALL utime)(char const *__file, struct utimbuf const *__file_times) __TM_FUNC(utime);
+__LIBC __NONNULL((1)) int (__LIBCCALL utime)(char const *__file, struct utimbuf const *__file_times) __UFS_FUNCt(utime);
 #ifdef __USE_TIME64
-__LIBC __NONNULL((1)) int (__LIBCCALL utime64)(char const *__file, struct utimbuf64 const *__file_times);
+__LIBC __NONNULL((1)) int (__LIBCCALL utime64)(char const *__file, struct utimbuf64 const *__file_times) __UFS_FUNC(utime64);
 #endif /* __USE_TIME64 */
 #endif /* !__KERNEL__ */
 

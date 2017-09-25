@@ -868,9 +868,9 @@ INTERN float LIBCCALL libc_32wcstof_l(char32_t const *__restrict nptr, char32_t 
 INTERN long double LIBCCALL libc_32wcstold_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstold(nptr,endptr); }
 INTERN size_t LIBCCALL libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsftime(s,maxsize,format,tp); }
 
-INTERN size_t LIBCCALL libc_mbrtoc16(char16_t *__restrict pc16, const char *__restrict s,
+INTERN size_t LIBCCALL libc_mbrtoc16(char16_t *__restrict pc16, char const *__restrict s,
                                      size_t n, struct __mbstate *__restrict p) {
- size_t result; const char *start = s;
+ size_t result; char const *start = s;
  if (!s) { mbstate_reset(p); return 0; }
  result = libc_utf8to16((char const *)&s,(size_t)&n,pc16,pc16 ? 1 : 0,p,
                          UNICODE_F_STOPONNUL|UNICODE_F_DOSINGLE|
@@ -887,9 +887,9 @@ INTERN size_t LIBCCALL libc_mbrtoc16(char16_t *__restrict pc16, const char *__re
  /* Otherwise, return the amount of used source-characters. */
  return (size_t)(s-start);
 }
-INTERN size_t LIBCCALL libc_mbrtoc32(char32_t *__restrict pc32, const char *__restrict s,
+INTERN size_t LIBCCALL libc_mbrtoc32(char32_t *__restrict pc32, char const *__restrict s,
                                      size_t n, struct __mbstate *__restrict p) {
- size_t result; const char *start = s;
+ size_t result; char const *start = s;
  if (!s) { mbstate_reset(p); return 0; }
  result = libc_utf8to32((char const *)&s,(size_t)&n,pc32,UNICODE_MB_MAX,p,
                          UNICODE_F_STOPONNUL|UNICODE_F_DOSINGLE|

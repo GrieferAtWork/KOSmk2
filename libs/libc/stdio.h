@@ -29,7 +29,7 @@ DECL_BEGIN
 
 #ifndef __fpos64_t_defined
 #define __fpos64_t_defined 1
-typedef __pos64_t      fpos64_t;
+typedef __pos64_t   fpos64_t;
 #endif /* !__fpos64_t_defined */
 
 INTDEF size_t LIBCCALL libc_vsprintf(char *__restrict s, char const *__restrict format, va_list args);
@@ -178,6 +178,12 @@ INTDEF wint_t LIBCCALL libc_putwchar(wchar_t wc);
 INTDEF wint_t LIBCCALL libc_getwchar_unlocked(void);
 INTDEF wint_t LIBCCALL libc_putwchar_unlocked(wchar_t wc);
 #endif /* !__KERNEL__ */
+
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF FILE *(LIBCCALL libc___iob_func)(void);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 
 DECL_END
 

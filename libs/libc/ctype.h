@@ -97,6 +97,7 @@ INTDEF int (LIBCCALL libc_isctype)(int ch, int mask);
 #define libc_isupper(c)  libc___isctype((c),F_UPPER)
 #define libc_isxdigit(c) libc___isctype((c),F_XDIGIT)
 #define libc_isblank(c)  libc___isctype((c),F_BLANK)
+#define libc_isascii(c)  ((unsigned int)(c) <= 0x7f)
 
 #ifndef __KERNEL__
 #ifndef __wint_t_defined
@@ -129,6 +130,7 @@ INTDEF int LIBCCALL libc_iswspace(wint_t wc);
 INTDEF int LIBCCALL libc_iswupper(wint_t wc);
 INTDEF int LIBCCALL libc_iswxdigit(wint_t wc);
 INTDEF int LIBCCALL libc_iswblank(wint_t wc);
+INTDEF int LIBCCALL libc_iswascii(wint_t wc);
 INTDEF wint_t LIBCCALL libc_towlower(wint_t wc);
 INTDEF wint_t LIBCCALL libc_towupper(wint_t wc);
 INTDEF wctype_t LIBCCALL libc_wctype(char const *prop);
@@ -153,6 +155,16 @@ INTDEF wint_t LIBCCALL libc_towlower_l(wint_t wc, locale_t locale);
 INTDEF wint_t LIBCCALL libc_towupper_l(wint_t wc, locale_t locale);
 INTDEF wctrans_t LIBCCALL libc_wctrans_l(char const *prop, locale_t locale);
 INTDEF wint_t LIBCCALL libc_towctrans_l(wint_t wc, wctrans_t desc, locale_t locale);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF int LIBCCALL libc_isleadbyte(int wc);
+INTDEF int LIBCCALL libc_isleadbyte_l(int wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswcsym(wint_t wc);
+INTDEF int LIBCCALL libc_iswcsymf(wint_t wc);
+INTDEF int LIBCCALL libc_iswcsym_l(wint_t wc, locale_t locale);
+INTDEF int LIBCCALL libc_iswcsymf_l(wint_t wc, locale_t locale);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 #endif /* !__KERNEL__ */
 
 DECL_END

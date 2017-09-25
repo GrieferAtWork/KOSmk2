@@ -394,13 +394,14 @@ typedef __time64_t           __time_t;
 #undef __FS_SLONG_TYPE
 #undef __FS_ULONG_TYPE
 
-#define __SIZEOF_DEV_T__   __SIZEOF_KERNEL_DEV_T__
-#define __SIZEOF_IRQ_T__   __SIZEOF_KERNEL_IRQ_T__
-#define __SIZEOF_MAJOR_T__ __SIZEOF_KERNEL_MAJOR_T__
-#define __SIZEOF_MINOR_T__ __SIZEOF_KERNEL_MINOR_T__
-#define __SIZEOF_OFLAG_T__ __SIZEOF_KERNEL_OFLAG_T__
-#define __SIZEOF_REF_T__   __SIZEOF_KERNEL_REF_T__
-#define __SIZEOF_SYSNO_T__ __SIZEOF_KERNEL_SYSNO_T__
+#define __SIZEOF_DEV_T__      __SIZEOF_KERNEL_DEV_T__
+#define __SIZEOF_IRQ_T__      __SIZEOF_KERNEL_IRQ_T__
+#define __SIZEOF_MAJOR_T__    __SIZEOF_KERNEL_MAJOR_T__
+#define __SIZEOF_MINOR_T__    __SIZEOF_KERNEL_MINOR_T__
+#define __SIZEOF_OFLAG_T__    __SIZEOF_KERNEL_OFLAG_T__
+#define __SIZEOF_REF_T__      __SIZEOF_KERNEL_REF_T__
+#define __SIZEOF_SYSNO_T__    __SIZEOF_KERNEL_SYSNO_T__
+#define __SIZEOF_REAL_DEV_T__ __SIZEOF_KERNEL_DEV_T__
 
 
 #ifndef __KERNEL__
@@ -416,6 +417,8 @@ typedef __time64_t           __time_t;
 #   define __SIZEOF_INO_T__      __SIZEOF_INO64_T__
 #   define __SIZEOF_OFF_T__      __SIZEOF_OFF64_T__
 #   define __SIZEOF_POS_T__      __SIZEOF_POS64_T__
+#   define __SIZEOF_REAL_INO_T__ __SIZEOF_INO64_T__
+#   define __SIZEOF_REAL_OFF_T__ __SIZEOF_OFF64_T__
 #else
 #   define __SIZEOF_BLKCNT_T__   __SIZEOF_BLKCNT32_T__
 #   define __SIZEOF_BLKADDR_T__  __SIZEOF_BLKADDR32_T__
@@ -427,6 +430,8 @@ typedef __time64_t           __time_t;
 #   define __SIZEOF_INO_T__      __SIZEOF_INO32_T__
 #   define __SIZEOF_OFF_T__      __SIZEOF_OFF32_T__
 #   define __SIZEOF_POS_T__      __SIZEOF_POS32_T__
+#   define __SIZEOF_REAL_INO_T__ __SIZEOF_INO32_T__
+#   define __SIZEOF_REAL_OFF_T__ __SIZEOF_OFF32_T__
 #endif
 #ifdef __USE_TIME_BITS64
 #   define __SIZEOF_TIME_T__     __SIZEOF_TIME64_T__
@@ -445,8 +450,9 @@ typedef __time64_t           __time_t;
 #   define __SIZEOF_OFF_T__      __SIZEOF_KERNEL_OFF_T__
 #   define __SIZEOF_POS_T__      __SIZEOF_KERNEL_POS_T__
 #   define __SIZEOF_TIME_T__     __SIZEOF_KERNEL_TIME_T__
+#   define __SIZEOF_REAL_INO_T__ __SIZEOF_KERNEL_INO_T__
+#   define __SIZEOF_REAL_OFF_T__ __SIZEOF_KERNEL_OFF_T__
 #endif
-
 #endif /* Additional types... */
 
 #undef __SYSCALL_SLONG_TYPE
@@ -476,6 +482,32 @@ __DECL_END
 #   define __TM_TYPE(x)   __##x##_t
 #   define __TM_SIZEOF(x) __SIZEOF_##x##_T__
 #endif
+
+#define __dos_dev_t          __uint32_t
+#define __dos_ino_t          __uint16_t
+#define __dos_off_t          __int32_t
+#define __SIZEOF_DOS_DEV_T__ 4
+#define __SIZEOF_DOS_INO_T__ 2
+#define __SIZEOF_DOS_OFF_T__ 4
+
+#ifdef __USE_DOSFS
+/* DOS filesystem headers contain different types for these... */
+#define __typedef_dev_t          __dos_dev_t
+#define __typedef_ino_t          __dos_ino_t
+#define __typedef_off_t          __dos_off_t
+#define __SIZEOF_TYPEDEF_DEV_T__ __SIZEOF_DOS_DEV_T__
+#define __SIZEOF_TYPEDEF_INO_T__ __SIZEOF_DOS_INO_T__
+#define __SIZEOF_TYPEDEF_OFF_T__ __SIZEOF_DOS_OFF_T__
+#else
+#define __typedef_dev_t          __dev_t
+#define __typedef_ino_t          __FS_TYPE(ino)
+#define __typedef_off_t          __FS_TYPE(off)
+#define __SIZEOF_TYPEDEF_DEV_T__ __SIZEOF_DEV_T__
+#define __SIZEOF_TYPEDEF_INO_T__ __SIZEOF_INO_T__
+#define __SIZEOF_TYPEDEF_OFF_T__ __SIZEOF_OFF_T__
+#endif
+
+
 
 /* === File-system related type, function and assembly names explained ===
  *   - __off32_t:            32-bit filesystem type

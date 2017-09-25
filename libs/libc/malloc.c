@@ -45,9 +45,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-#ifndef __KERNEL__
-#define CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP 1
-#endif
 
 
 /* Force dlmalloc to use libc internal functions. */

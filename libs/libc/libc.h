@@ -84,7 +84,7 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-/* Group dos-data together, because most programs won't be using it. */
+/* Group dos-data together, because most programs won't be using them. */
 #define ATTR_DOSTEXT    ATTR_SECTION(".text.dos")
 #define ATTR_DOSRODATA  ATTR_SECTION(".rodata.dos")
 #define ATTR_DOSDATA    ATTR_SECTION(".data.dos")
@@ -105,6 +105,11 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 #define __KSYM(x)    x
 #define __KSYMw16(x) u##x
 #define __KSYMw32(x) x
+
+
+#ifndef __KERNEL__
+#define CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP 1
+#endif
 
 
 DECL_END

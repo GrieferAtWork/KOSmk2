@@ -124,29 +124,29 @@ typedef __SIZE_TYPE__ size_t;
 #ifndef __gid_t_defined
 #define __gid_t_defined 1
 typedef __gid_t gid_t;
-#endif
+#endif /* !__gid_t_defined */
 #ifndef __uid_t_defined
 #define __uid_t_defined 1
 typedef __uid_t uid_t;
-#endif
+#endif /* !__uid_t_defined */
 #ifndef __off_t_defined
 #define __off_t_defined
-typedef __FS_TYPE(off) off_t;
-#endif
+typedef __typedef_off_t off_t;
+#endif /* !__off_t_defined */
+#ifndef __useconds_t_defined
+#define __useconds_t_defined 1
+typedef __useconds_t useconds_t;
+#endif /* !__useconds_t_defined */
+#ifndef __pid_t_defined
+#define __pid_t_defined 1
+typedef __pid_t pid_t;
+#endif /* !__pid_t_defined */
 #ifdef __USE_LARGEFILE64
 #ifndef __off64_t_defined
 #define __off64_t_defined 1
 typedef __off64_t off64_t;
 #endif /* !__off64_t_defined */
-#endif
-#ifndef __useconds_t_defined
-#define __useconds_t_defined 1
-typedef __useconds_t useconds_t;
-#endif
-#ifndef __pid_t_defined
-#define __pid_t_defined 1
-typedef __pid_t pid_t;
-#endif
+#endif /* __USE_LARGEFILE64 */
 #endif /* __USE_XOPEN || __USE_XOPEN2K */
 
 #if defined(__USE_XOPEN_EXTENDED) || \
@@ -154,7 +154,7 @@ typedef __pid_t pid_t;
 #ifndef __intptr_t_defined
 #define __intptr_t_defined 1
 typedef __intptr_t intptr_t;
-#endif
+#endif /* !__intptr_t_defined */
 #endif
 
 #if defined(__USE_MISC) || defined(__USE_XOPEN)

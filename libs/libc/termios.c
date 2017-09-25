@@ -100,7 +100,7 @@ INTERN int LIBCCALL libc_ttyname_r(int fd, char *buf, size_t buflen) {
  int safe; dev_t rdev;
  if unlikely(buflen < (COMPILER_STRLEN(dev)+1)*sizeof(char)) { SET_ERRNO(ERANGE); return ERANGE; }
  if unlikely(!libc_isatty(fd)) { SET_ERRNO(ENOTTY); return ENOTTY; }
- if unlikely(libc_kfstat64(fd,&st) < 0) return GET_ERRNO();
+ if unlikely(libc_fstat64(fd,&st) < 0) return GET_ERRNO();
  if ((dirstream = libc_opendir(dev)) == NULL) return GET_ERRNO();
  libc_memcpy(buf,dev,COMPILER_STRLEN(dev)*sizeof(char));
  buf[COMPILER_STRLEN(dev)] = '/';
@@ -119,7 +119,7 @@ INTERN int LIBCCALL libc_ttyname_r(int fd, char *buf, size_t buflen) {
     return ERANGE;
    }
    libc_memcpy(&buf[sizeof(dev)],d->d_name,(needed+1)*sizeof(char));
-   if (libc_kstat64(buf,&st) == 0 && S_ISCHR(st.st_mode) && st.st_rdev == rdev) {
+   if (libc_stat64(buf,&st) == 0 && S_ISCHR(st.st_mode) && st.st_rdev == rdev) {
     /* Found it! */
     libc_closedir(dirstream);
     SET_ERRNO(safe);

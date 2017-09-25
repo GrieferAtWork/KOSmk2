@@ -309,8 +309,8 @@ INTDEF float LIBCCALL libc_32wcstof_l(char32_t const *__restrict nptr, char32_t 
 INTDEF long double LIBCCALL libc_32wcstold_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc);
 INTDEF size_t LIBCCALL libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp, locale_t loc);
 
-INTDEF size_t LIBCCALL libc_mbrtoc16(char16_t *__restrict pc16, const char *__restrict s, size_t n, struct __mbstate *__restrict p);
-INTDEF size_t LIBCCALL libc_mbrtoc32(char32_t *__restrict pc32, const char *__restrict s, size_t n, struct __mbstate *__restrict p);
+INTDEF size_t LIBCCALL libc_mbrtoc16(char16_t *__restrict pc16, char const *__restrict s, size_t n, struct __mbstate *__restrict p);
+INTDEF size_t LIBCCALL libc_mbrtoc32(char32_t *__restrict pc32, char const *__restrict s, size_t n, struct __mbstate *__restrict p);
 INTDEF size_t LIBCCALL libc_c16rtomb(char *__restrict s, char16_t c16, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_c32rtomb(char *__restrict s, char32_t c32, struct __mbstate *__restrict ps);
 
