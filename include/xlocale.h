@@ -23,7 +23,11 @@
 
 __DECL_BEGIN
 
+#if 1
 typedef void *__locale_t;
+#else
+typedef void *__locale_t;
+#endif
 #ifndef __KERNEL__
 typedef __locale_t locale_t;
 #ifdef __USE_DOS

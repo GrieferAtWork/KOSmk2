@@ -23,10 +23,13 @@
 
 __DECL_BEGIN
 
+#ifndef __va_list_defined
+#define __va_list_defined 1
 __NAMESPACE_STD_BEGIN
 typedef __VA_LIST va_list;
 __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(va_list)
+#endif /* !__va_list_defined */
 
 #define va_start  __builtin_va_start
 #define va_copy   __builtin_va_copy

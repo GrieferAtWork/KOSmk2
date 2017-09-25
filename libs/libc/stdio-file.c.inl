@@ -595,9 +595,13 @@ DEFINE_PUBLIC_ALIAS(putwchar_unlocked,libc_putwchar_unlocked);
 
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-/* msvcrt defines this one... */
-INTERN FILE *(LIBCCALL libc___iob_func)(void) { return libc_std_files; }
+/* DOS defines this one... */
+INTERN FILE *LIBCCALL libc___iob_func(void) { return libc_std_files; }
 DEFINE_PUBLIC_ALIAS(__iob_func,libc___iob_func);
+
+INTERN wint_t LIBCCALL libc_single_ungetwch(wint_t wc);
+INTERN wint_t LIBCCALL libc_single_ungetwch_nolock(wint_t wc);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 

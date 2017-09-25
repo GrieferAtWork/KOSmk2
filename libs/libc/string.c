@@ -42,11 +42,13 @@
 #include <hybrid/limits.h>
 #include <hybrid/swap.h>
 #include <hybrid/types.h>
+#include <hybrid/minmax.h>
 #include <kos/ksym.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #ifndef __KERNEL__
 #include "system.h"
@@ -67,19 +69,105 @@ DECL_BEGIN
 #include "templates/memory.code"
 #define BITS 8
 #include "templates/memory.code"
-
-#define T          char
-#define Tneedle    int
-#define Ts         signed char
-#define Tu         unsigned char
-#define Tn         int
-#define Xstr(x)    libc_str##x
-#define Xstp(x)    libc_stp##x
-#define TOLOWER(x) libc_tolower(x)
-#define TOUPPER(x) libc_toupper(x)
-#define S          __SIZEOF_CHAR__
-#include "templates/string.code"
 #undef DECL
+
+#define T            char
+#define Tneedle      int
+#define Ts           signed char
+#define Tu           unsigned char
+#define Tn           int
+#define Xstr(x)      libc_str##x
+#define Xstp(x)      libc_stp##x
+#define TOLOWER(x)   libc_tolower(x)
+#define TOUPPER(x)   libc_toupper(x)
+#define S            __SIZEOF_CHAR__
+#define DECL         INTERN
+#define DEFINE_ALIAS DEFINE_INTERN_ALIAS
+
+/* Select optional functions. */
+#  define WANT_STREND         /* strend() */
+#  define WANT_STRNEND        /* strnend() */
+#  define WANT_STRLEN         /* strlen() */
+#  define WANT_STRNLEN        /* strnlen() */
+#  define WANT_STRCHRNUL      /* strchrnul() */
+#  define WANT_STRCHR         /* strchr() */
+#  define WANT_STRRCHR        /* strrchr() */
+#  define WANT_STRRCHRNUL     /* strrchrnul() */
+#  define WANT_STRNCHR        /* strnchr() */
+#  define WANT_STRNRCHR       /* strnrchr() */
+#  define WANT_STRNCHRNUL     /* strnchrnul() */
+#  define WANT_STRNRCHRNUL    /* strnrchrnul() */
+#  define WANT_STROFF         /* stroff() */
+#  define WANT_STRROFF        /* strroff() */
+#  define WANT_STRNOFF        /* strnoff() */
+#  define WANT_STRNROFF       /* strnroff() */
+#  define WANT_STPCPY         /* stpcpy() */
+#  define WANT_STPNCPY        /* stpncpy() */
+#  define WANT_STRCMP         /* strcmp() */
+#  define WANT_STRNCMP        /* strncmp() */
+#  define WANT_STRCASECMP     /* strcasecmp() */
+#  define WANT_STRNCASECMP    /* strncasecmp() */
+#  define WANT_STRSTR         /* strstr() */
+#  define WANT_STRCASESTR     /* strcasestr() */
+#  define WANT_STRCPY         /* strcpy() */
+#  define WANT_STRNCPY        /* strncpy() */
+#  define WANT_STRCAT         /* strcat() */
+#  define WANT_STRNCAT        /* strncat() */
+#  define WANT_STRCSPN        /* strcspn() */
+#  define WANT_STRSPN         /* strspn() */
+#  define WANT_STRPBRK        /* strpbrk() */
+#ifndef __KERNEL__
+#  define WANT_STRTOK_R       /* strtok_r() */
+#  define WANT_STRTOK         /* strtok() */
+#  define WANT_STRFRY         /* strfry() */
+#  define WANT_STRLWR         /* strlwr() */
+#  define WANT_STRLWR_L       /* strlwr_l() */
+#  define WANT_STRUPR         /* strupr() */
+#  define WANT_STRUPR_L       /* strupr_l() */
+//#define WANT_STRNLWR        /* strnlwr() */
+//#define WANT_STRNLWR_L      /* strnlwr_l() */
+//#define WANT_STRNUPR        /* strnupr() */
+//#define WANT_STRNUPR_L      /* strnupr_l() */
+#  define WANT_STRSET         /* strset() */
+#  define WANT_STRNSET        /* strnset() */
+#  define WANT_STRREV         /* strrev() */
+//#define WANT_STRNREV        /* strnrev() */
+#  define WANT_STRCOLL        /* strcoll() */
+#  define WANT_STRCOLL_L      /* strcoll_l() */
+#  define WANT_STRNCOLL       /* strncoll() */
+#  define WANT_STRNCOLL_L     /* strncoll_l() */
+#  define WANT_STRCASECOLL    /* strcasecoll() */
+#  define WANT_STRCASECOLL_L  /* strcasecoll_l() */
+#  define WANT_STRNCASECOLL   /* strncasecoll() */
+#  define WANT_STRNCASECOLL_L /* strncasecoll_l() */
+#  define WANT_STRXFRM        /* strxfrm       () */
+#  define WANT_STRXFRM_L      /* strxfrm_l() */
+#  define WANT_STRCASECMP     /* strcasecmp() */
+#  define WANT_STRCASECMP_L   /* strcasecmp_l() */
+#  define WANT_STRNCASECMP    /* strncasecmp() */
+#  define WANT_STRNCASECMP_L  /* strncasecmp_l() */
+//#define WANT_STRDUP         /* strdup() */
+//#define WANT_STRNDUP        /* strndup() */
+//#define WANT_STRCAT_S       /* strcat_s() */
+//#define WANT_STRCPY_S       /* strcpy_s() */
+//#define WANT_STRLWR_S       /* strlwr_s() */
+//#define WANT_STRLWR_S_L     /* strlwr_s_l() */
+//#define WANT_STRUPR_S       /* strupr_s() */
+//#define WANT_STRUPR_S_L     /* strupr_s_l() */
+//#define WANT_STRNCAT_S      /* strncat_s() */
+//#define WANT_STRNCPY_S      /* strncpy_s() */
+//#define WANT_STRSET_S       /* strset_s() */
+//#define WANT_STRNSET_S      /* strnset_s() */
+//#define WANT_MBLEN          /* ... */
+//#define WANT_MBTOWC         /* ... */
+//#define WANT_WCTOMB         /* ... */
+//#define WANT_WCWIDTH        /* ... */
+//#define WANT_MBSRTOWCS_S    /* ... */
+//#define WANT_WCSRTOMBS_S    /* ... */
+//#define WANT_WCRTOMB_S      /* ... */
+#endif /* !__KERNEL__ */
+
+#include "templates/string.code"
 
 INTERN void *LIBCCALL libc_memmem(void const *haystack, size_t haystacklen,
                                   void const *needle, size_t needlelen) {
@@ -271,15 +359,8 @@ INTERN char *LIBCCALL libc_strsignal(int sig) {
 }
 
 
-/* TODO */INTERN int LIBCCALL libc_strcoll(char const *s1, char const *s2) { NOT_IMPLEMENTED(); return 0; }
-/* TODO */INTERN size_t LIBCCALL libc_strxfrm(char *__restrict dst, char const *__restrict src, size_t n) { NOT_IMPLEMENTED(); return 0; }
-/* TODO */INTERN char *LIBCCALL libc_strfry(char *string) { NOT_IMPLEMENTED(); return NULL; }
 /* TODO */INTERN void *LIBCCALL libc_memfrob(void *s, size_t n) { NOT_IMPLEMENTED(); return NULL; }
-INTERN int LIBCCALL libc_strcoll_l(char const *s1, char const *s2, locale_t l) { NOT_IMPLEMENTED(); return libc_strcoll(s1,s2); }
-INTERN size_t LIBCCALL libc_strxfrm_l(char *dst, char const *src, size_t n, locale_t l) { NOT_IMPLEMENTED(); return libc_strxfrm(dst,src,n); }
 INTERN char *LIBCCALL libc_strerror_l(int errnum, locale_t l) { NOT_IMPLEMENTED(); return libc_strerror(errnum); }
-INTERN int LIBCCALL libc_strcasecmp_l(char const *s1, char const *s2, locale_t loc) { NOT_IMPLEMENTED(); return libc_strcasecmp(s1,s2); }
-INTERN int LIBCCALL libc_strncasecmp_l(char const *s1, char const *s2, size_t n, locale_t loc) { NOT_IMPLEMENTED(); return libc_strncasecmp(s1,s2,n); }
 /* TODO */INTERN char *ATTR_CDECL libc_strdupaf(char const *__restrict format, ...) { NOT_IMPLEMENTED(); return NULL; }
 /* TODO */INTERN char *LIBCCALL libc_vstrdupaf(char const *__restrict format, va_list args) { NOT_IMPLEMENTED(); return NULL; }
 #endif /* !__KERNEL__ */
@@ -324,7 +405,6 @@ unknown:
 
 INTERN char const *LIBCCALL libc_strerror_s(int errnum) { return strerror_get(ERRNOSTR_TEXT,errnum); }
 INTERN char const *LIBCCALL libc_strerrorname_s(int errnum) { return strerror_get(ERRNOSTR_NAME,errnum); }
-
 
 #ifdef __KERNEL__
 GLOBAL_ASM(
@@ -385,22 +465,6 @@ again_unknown:
  return buf;
 }
 
-
-
-INTERN char *LIBCCALL libc_strlwr(char *str) { char *result = str; for (; *str; ++str) *str = libc_tolower(*str); return result; }
-INTERN char *LIBCCALL libc_strupr(char *str) { char *result = str; for (; *str; ++str) *str = libc_toupper(*str); return result; }
-INTERN char *LIBCCALL libc_strset(char *str, int chr) { char *result = str; while (*str) *str++ = (char)chr; return result; }
-INTERN char *LIBCCALL libc_strnset(char *str, int chr, size_t max_chars) { char *result = str,*end = str+max_chars; while (str != end && *str) *str++ = (char)chr; return result; }
-INTERN char *LIBCCALL libc_strrev(char *str) { NOT_IMPLEMENTED(); return str; }
-INTERN int LIBCCALL libc_strcasecoll(char const *str1, char const *str2) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_strncoll(char const *str1, char const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_strncasecoll(char const *str1, char const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return 0; }
-INTERN char *LIBCCALL libc_strlwr_l(char *str, locale_t lc) { NOT_IMPLEMENTED(); return libc_strlwr(str); }
-INTERN char *LIBCCALL libc_strupr_l(char *str, locale_t lc) { NOT_IMPLEMENTED(); return libc_strupr(str); }
-INTERN int LIBCCALL libc_strcasecoll_l(char const *str1, char const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_strcasecoll(str1,str2); }
-INTERN int LIBCCALL libc_strncoll_l(char const *str1, char const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_strncoll(str1,str2,max_chars); }
-INTERN int LIBCCALL libc_strncasecoll_l(char const *str1, char const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_strncasecoll(str1,str2,max_chars); }
-
 INTERN int LIBCCALL libc_memcasecmp(void const *s1, void const *s2, size_t n_bytes) {
  char a,b; int result;
  char *p1 = (char *)s1,*p2 = (char *)s2;
@@ -417,52 +481,6 @@ INTERN int LIBCCALL libc_memcasecmp_l(void const *a, void const *b,
  NOT_IMPLEMENTED();
  return libc_memcasecmp(a,b,n_bytes);
 }
-
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscasecmp(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscasecoll(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscoll(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncasecmp(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncasecoll(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscmp(char16_t const *str1, char16_t const *str2) { NOT_IMPLEMENTED(); return -1; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncmp(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncoll(char16_t const *str1, char16_t const *str2, size_t max_chars) { NOT_IMPLEMENTED(); return -1; }
-INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcscspn(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return 0; }
-INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcslen(char16_t const *str) { char16_t const *end = str; while (*end) ++end; return (size_t)(end-str); }
-INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcsnlen(char16_t const *src, size_t max_chars) { char16_t const *end = src; while (max_chars-- && *end) ++end; return (size_t)(end-src); }
-INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcsspn(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return 0; }
-INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcsxfrm(char16_t *dst, char16_t const *src, size_t max_chars) { NOT_IMPLEMENTED(); return 0; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcscpy(char16_t *dst, char16_t const *src) { libc_memcpy(dst,src,(libc_16wcslen(src)+1)*sizeof(char16_t)); return dst; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcscat(char16_t *dst, char16_t const *src) { libc_memcpy(dst+libc_16wcslen(dst),src,(libc_16wcslen(src)+1)*sizeof(char16_t)); return dst; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsncat(char16_t *dst, char16_t const *src, size_t max_chars) {
- size_t maxlen = libc_16wcsnlen(src,max_chars);
- char16_t *target = dst+libc_16wcslen(dst);
- libc_memcpy(target,src,maxlen*sizeof(char16_t));
- if (maxlen < max_chars) target[maxlen] = 0;
- return dst;
-}
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsncpy(char16_t *dst, char16_t const *src, size_t max_chars) { return (char16_t *)libc_memcpy(dst,src,(libc_16wcsnlen(src,max_chars)+1)*sizeof(char16_t)); }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsdup(char16_t const *str) { return (char16_t *)libc_memdup(str,libc_16wcslen(str)*sizeof(char16_t)); }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsnset(char16_t *str, char16_t chr, size_t max_chars) { char16_t *result = str; while (max_chars-- && *str) *str++ = chr; return result; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcschr(char16_t const *str, char16_t needle) { return (char16_t *)libc_memchrw(str,needle,libc_16wcslen(str)); }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsrchr(char16_t const *str, char16_t needle) { return (char16_t *)libc_memrchrw(str,needle,libc_16wcslen(str)); }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcslwr(char16_t *str) { NOT_IMPLEMENTED(); return str; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcspbrk(char16_t const *str, char16_t const *reject) { NOT_IMPLEMENTED(); return (char16_t *)str; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsrev(char16_t *str) { NOT_IMPLEMENTED(); return str; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsset(char16_t *str, char16_t chr) { NOT_IMPLEMENTED(); return str; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsstr(char16_t const *haystack, char16_t const *needle) { NOT_IMPLEMENTED(); return NULL; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcstok(char16_t *str, char16_t const *delim) { NOT_IMPLEMENTED(); return str; }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsupr(char16_t *str) { NOT_IMPLEMENTED(); return str; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscasecmp_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscasecmp(str1,str2); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscasecoll_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscasecoll(str1,str2); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcscoll_l(char16_t const *str1, char16_t const *str2, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcscoll(str1,str2); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncasecmp_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncasecmp(str1,str2,max_chars); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncasecoll_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncasecoll(str1,str2,max_chars); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16wcsncoll_l(char16_t const *str1, char16_t const *str2, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsncoll(str1,str2,max_chars); }
-INTERN ATTR_DOSTEXT size_t LIBCCALL libc_16wcsxfrm_l(char16_t *dst, char16_t const *src, size_t max_chars, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsxfrm(dst,src,max_chars); }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcslwr_l(char16_t *str, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcslwr(str); }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wcsupr_l(char16_t *str, locale_t lc) { NOT_IMPLEMENTED(); return libc_16wcsupr(str); }
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 
 
@@ -666,9 +684,190 @@ DEFINE_PUBLIC_ALIAS(strncasecoll_l,libc_strncasecoll_l);
 DEFINE_PUBLIC_ALIAS(memcasecmp,libc_memcasecmp);
 DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 
+
+/* Define 32-bit wide string libc functions. */
+#define T            char32_t
+#define Ts           s32
+#define Tu           u32
+#define Tn           wint_t
+#define Tneedle      T
+#define Xstr(x)      libc_32wcs##x
+#define Xstp(x)      libc_32wcp##x
+#define Xmb(x)       libc_32mb##x
+#define Xwc(x)       libc_32wc##x
+#define TOLOWER(x)   libc_towlower(x)
+#define TOUPPER(x)   libc_towupper(x)
+#define S            4
+#define DECL         INTERN ATTR_RARETEXT
+#define DEFINE_ALIAS DEFINE_INTERN_ALIAS
+
+/* Select API-set for 32-bit strings. */
+#  define WANT_STREND         /* wcsend() */
+#  define WANT_STRNEND        /* wcsnend() */
+#  define WANT_STRLEN         /* wcslen() */
+#  define WANT_STRNLEN        /* wcsnlen() */
+#  define WANT_STRCHRNUL      /* wcschrnul() */
+#  define WANT_STRCHR         /* wcschr() */
+#  define WANT_STRRCHR        /* wcsrchr() */
+//#define WANT_STRRCHRNUL     /* wcsrchrnul() */
+//#define WANT_STRNCHR        /* wcsnchr() */
+//#define WANT_STRNRCHR       /* wcsnrchr() */
+//#define WANT_STRNCHRNUL     /* wcsnchrnul() */
+//#define WANT_STRNRCHRNUL    /* wcsnrchrnul() */
+//#define WANT_STROFF         /* wcsoff() */
+//#define WANT_STRROFF        /* wcsroff() */
+//#define WANT_STRNOFF        /* wcsnoff() */
+//#define WANT_STRNROFF       /* wcsnroff() */
+#  define WANT_STPCPY         /* wcpcpy() */
+#  define WANT_STPNCPY        /* wcpncpy() */
+#  define WANT_STRCMP         /* wcscmp() */
+#  define WANT_STRNCMP        /* wcsncmp() */
+#  define WANT_STRCASECMP     /* wcscasecmp() */
+#  define WANT_STRNCASECMP    /* wcsncasecmp() */
+#  define WANT_STRSTR         /* wcsstr() */
+//#define WANT_STRCASESTR     /* wcscasestr() */
+#  define WANT_STRCPY         /* wcscpy() */
+#  define WANT_STRNCPY        /* wcsncpy() */
+#  define WANT_STRCAT         /* wcscat() */
+#  define WANT_STRNCAT        /* wcsncat() */
+#  define WANT_STRCSPN        /* wcscspn() */
+#  define WANT_STRSPN         /* wcsspn() */
+#  define WANT_STRPBRK        /* wcspbrk() */
+#  define WANT_STRTOK_R       /* wcstok_r() */
+//#define WANT_STRTOK         /* wcstok() */
+//#define WANT_STRFRY         /* wcsfry() */
+#  define WANT_STRLWR         /* wcslwr() */
+#  define WANT_STRLWR_L       /* wcslwr_l() */
+#  define WANT_STRUPR         /* wcsupr() */
+#  define WANT_STRUPR_L       /* wcsupr_l() */
+//#define WANT_STRNLWR        /* wcsnlwr() */
+//#define WANT_STRNLWR_L      /* wcsnlwr_l() */
+//#define WANT_STRNUPR        /* wcsnupr() */
+//#define WANT_STRNUPR_L      /* wcsnupr_l() */
+#  define WANT_STRSET         /* wcsset() */
+#  define WANT_STRNSET        /* wcsnset() */
+#  define WANT_STRREV         /* wcsrev() */
+//#define WANT_STRNREV        /* wcsnrev() */
+#  define WANT_STRCOLL        /* wcscoll() */
+#  define WANT_STRCOLL_L      /* wcscoll_l() */
+#  define WANT_STRNCOLL       /* wcsncoll() */
+#  define WANT_STRNCOLL_L     /* wcsncoll_l() */
+#  define WANT_STRCASECOLL    /* wcscasecoll() */
+#  define WANT_STRCASECOLL_L  /* wcscasecoll_l() */
+#  define WANT_STRNCASECOLL   /* wcsncasecoll() */
+#  define WANT_STRNCASECOLL_L /* wcsncasecoll_l() */
+#  define WANT_STRXFRM        /* wcsxfrm       () */
+#  define WANT_STRXFRM_L      /* wcsxfrm_l() */
+#  define WANT_STRCASECMP     /* wcscasecmp() */
+#  define WANT_STRCASECMP_L   /* wcscasecmp_l() */
+#  define WANT_STRNCASECMP    /* wcsncasecmp() */
+#  define WANT_STRNCASECMP_L  /* wcsncasecmp_l() */
+#  define WANT_STRDUP         /* wcsdup() */
+//#define WANT_STRNDUP        /* wcsndup() */
+#  define WANT_STRCAT_S       /* wcscat_s() */
+#  define WANT_STRCPY_S       /* wcscpy_s() */
+#  define WANT_STRLWR_S       /* wcslwr_s() */
+#  define WANT_STRLWR_S_L     /* wcslwr_s_l() */
+#  define WANT_STRUPR_S       /* wcsupr_s() */
+#  define WANT_STRUPR_S_L     /* wcsupr_s_l() */
+#  define WANT_STRNCAT_S      /* wcsncat_s() */
+#  define WANT_STRNCPY_S      /* wcsncpy_s() */
+#  define WANT_STRSET_S       /* wcsset_s() */
+#  define WANT_STRNSET_S      /* wcsnset_s() */
+#  define WANT_MBLEN          /* mblen(), mbrlen() */
+#  define WANT_MBTOWC         /* mbtowc(), mbrtowc(), mbsnrtowcs(), mbsrtowcs(), mbstowcs() */
+#  define WANT_WCTOMB         /* wctomb(), wcrtomb(), wcsnrtombs(), wcsrtombs(), wcstombs() */
+#  define WANT_WCWIDTH        /* wcwidth(), wcswidth() */
+#  define WANT_MBSRTOWCS_S    /* mbsrtowcs_s() */
+#  define WANT_WCSRTOMBS_S    /* wcsrtombs_s() */
+#  define WANT_WCRTOMB_S      /* wcrtomb_s() */
+
+
+/* Disable API functions only used in DOS mode.
+ * s.a.: 'Additional DOS 32-bit string functions' in '/libs/libc/string.h' */
+#ifdef CONFIG_LIBC_NO_DOS_LIBC
+#undef WANT_STRLWR
+#undef WANT_STRLWR_L
+#undef WANT_STRNSET
+#undef WANT_STRREV
+#undef WANT_STRSET
+#undef WANT_STRUPR
+#undef WANT_STRUPR_L
+#undef WANT_STRCASECOLL
+#undef WANT_STRCASECOLL_L
+#undef WANT_STRNCASECOLL
+#undef WANT_STRNCASECOLL_L
+#undef WANT_STRNCOLL
+#undef WANT_STRNCOLL_L
+#undef WANT_MBSRTOWCS_S
+#undef WANT_WCSRTOMBS_S
+#undef WANT_WCRTOMB_S
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
+
+DEFINE_INTERN_ALIAS(libc_32wmemcpy,libc_memcpyl);
+DEFINE_INTERN_ALIAS(libc_32wmempcpy,libc_mempcpyl);
+DEFINE_INTERN_ALIAS(libc_32wmemset,libc_memsetl);
+DEFINE_INTERN_ALIAS(libc_32wmemmove,libc_memmovel);
+DEFINE_INTERN_ALIAS(libc_32wmemcmp,libc_memcmpl);
+DEFINE_INTERN_ALIAS(libc_32wmemchr,libc_memchrl);
+#include "templates/string.code"
+
+DEFINE_PUBLIC_ALIAS(wcstok,libc_32wcstok_r);
+DEFINE_PUBLIC_ALIAS(__mbrlen,libc_32mbrlen);
+DEFINE_PUBLIC_ALIAS(mbrlen,libc_32mbrlen);
+DEFINE_PUBLIC_ALIAS(mblen,libc_32mblen);
+DEFINE_PUBLIC_ALIAS(mbrtowc,libc_32mbrtowc);
+DEFINE_PUBLIC_ALIAS(mbsnrtowcs,libc_32mbsnrtowcs);
+DEFINE_PUBLIC_ALIAS(mbsrtowcs,libc_32mbsrtowcs);
+DEFINE_PUBLIC_ALIAS(mbstowcs,libc_32mbstowcs);
+DEFINE_PUBLIC_ALIAS(mbtowc,libc_32mbtowc);
+DEFINE_PUBLIC_ALIAS(wcpcpy,libc_32wcpcpy);
+DEFINE_PUBLIC_ALIAS(wcpncpy,libc_32wcpncpy);
+DEFINE_PUBLIC_ALIAS(wcrtomb,libc_32wcrtomb);
+DEFINE_PUBLIC_ALIAS(wcscasecmp,libc_32wcscasecmp);
+DEFINE_PUBLIC_ALIAS(wcscasecmp_l,libc_32wcscasecmp_l);
+DEFINE_PUBLIC_ALIAS(wcscat,libc_32wcscat);
+DEFINE_PUBLIC_ALIAS(wcschr,libc_32wcschr);
+DEFINE_PUBLIC_ALIAS(wcschrnul,libc_32wcschrnul);
+DEFINE_PUBLIC_ALIAS(wcscmp,libc_32wcscmp);
+DEFINE_PUBLIC_ALIAS(wcscoll,libc_32wcscoll);
+DEFINE_PUBLIC_ALIAS(wcscoll_l,libc_32wcscoll_l);
+DEFINE_PUBLIC_ALIAS(wcscpy,libc_32wcscpy);
+DEFINE_PUBLIC_ALIAS(wcscspn,libc_32wcscspn);
+DEFINE_PUBLIC_ALIAS(wcsdup,libc_32wcsdup);
+DEFINE_PUBLIC_ALIAS(wcsend,libc_32wcsend);
+DEFINE_PUBLIC_ALIAS(wcslen,libc_32wcslen);
+DEFINE_PUBLIC_ALIAS(wcsncasecmp,libc_32wcsncasecmp);
+DEFINE_PUBLIC_ALIAS(wcsncasecmp_l,libc_32wcsncasecmp_l);
+DEFINE_PUBLIC_ALIAS(wcsncat,libc_32wcsncat);
+DEFINE_PUBLIC_ALIAS(wcsncmp,libc_32wcsncmp);
+DEFINE_PUBLIC_ALIAS(wcsncpy,libc_32wcsncpy);
+DEFINE_PUBLIC_ALIAS(wcsnend,libc_32wcsnend);
+DEFINE_PUBLIC_ALIAS(wcsnlen,libc_32wcsnlen);
+DEFINE_PUBLIC_ALIAS(wcsnrtombs,libc_32wcsnrtombs);
+DEFINE_PUBLIC_ALIAS(wcspbrk,libc_32wcspbrk);
+DEFINE_PUBLIC_ALIAS(wcsrchr,libc_32wcsrchr);
+DEFINE_PUBLIC_ALIAS(wcsrtombs,libc_32wcsrtombs);
+DEFINE_PUBLIC_ALIAS(wcsspn,libc_32wcsspn);
+DEFINE_PUBLIC_ALIAS(wcsstr,libc_32wcsstr);
+DEFINE_PUBLIC_ALIAS(wcswcs,libc_32wcsstr);
+DEFINE_PUBLIC_ALIAS(wcstombs,libc_32wcstombs);
+DEFINE_PUBLIC_ALIAS(wcwidth,libc_32wcwidth);
+DEFINE_PUBLIC_ALIAS(wcswidth,libc_32wcswidth);
+DEFINE_PUBLIC_ALIAS(wcsxfrm,libc_32wcsxfrm);
+DEFINE_PUBLIC_ALIAS(wcsxfrm_l,libc_32wcsxfrm_l);
+DEFINE_PUBLIC_ALIAS(wctomb,libc_32wctomb);
+DEFINE_PUBLIC_ALIAS(wmemchr,libc_32wmemchr);
+DEFINE_PUBLIC_ALIAS(wmemcmp,libc_32wmemcmp);
+DEFINE_PUBLIC_ALIAS(wmemcpy,libc_32wmemcpy);
+DEFINE_PUBLIC_ALIAS(wmemmove,libc_32wmemmove);
+DEFINE_PUBLIC_ALIAS(wmempcpy,libc_32wmempcpy);
+DEFINE_PUBLIC_ALIAS(wmemset,libc_32wmemset);
+
 /* DOS libc functions. */
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #undef libc_strdup
+/* Define DOS-mode string function aliases. */
 DEFINE_PUBLIC_ALIAS(_strdup,libc_strdup);
 DEFINE_PUBLIC_ALIAS(_strlwr,libc_strlwr);
 DEFINE_PUBLIC_ALIAS(_strlwr_l,libc_strlwr_l);
@@ -697,155 +896,258 @@ DEFINE_PUBLIC_ALIAS(stricmp,libc_strcasecmp);
 DEFINE_PUBLIC_ALIAS(strnicmp,libc_strncasecmp);
 DEFINE_PUBLIC_ALIAS(_strxfrm_l,libc_strxfrm_l);
 DEFINE_PUBLIC_ALIAS(_memccpy,libc_memccpy);
+
+/* Define 16-bit wide string libc functions. */
+#define T            char16_t
+#define Ts           s16
+#define Tu           u16
+#define Tn           wint_t
+#define Tneedle      T
+#define Xstr(x)      libc_16wcs##x
+#define Xstp(x)      libc_16wcp##x
+#define Xmb(x)       libc_16mb##x
+#define Xwc(x)       libc_16wc##x
+#define TOLOWER(x)   libc_towlower(x)
+#define TOUPPER(x)   libc_towupper(x)
+#define S            2
+#define DECL         INTERN ATTR_DOSTEXT
+#define DEFINE_ALIAS DEFINE_INTERN_ALIAS
+
+/* Select API-set for 16-bit strings. */
+#  define WANT_STREND         /* wcsend() */
+#  define WANT_STRNEND        /* wcsnend() */
+#  define WANT_STRLEN         /* wcslen() */
+#  define WANT_STRNLEN        /* wcsnlen() */
+#  define WANT_STRCHRNUL      /* wcschrnul() */
+#  define WANT_STRCHR         /* wcschr() */
+#  define WANT_STRRCHR        /* wcsrchr() */
+//#define WANT_STRRCHRNUL     /* wcsrchrnul() */
+//#define WANT_STRNCHR        /* wcsnchr() */
+//#define WANT_STRNRCHR       /* wcsnrchr() */
+//#define WANT_STRNCHRNUL     /* wcsnchrnul() */
+//#define WANT_STRNRCHRNUL    /* wcsnrchrnul() */
+//#define WANT_STROFF         /* wcsoff() */
+//#define WANT_STRROFF        /* wcsroff() */
+//#define WANT_STRNOFF        /* wcsnoff() */
+//#define WANT_STRNROFF       /* wcsnroff() */
+#  define WANT_STPCPY         /* wcpcpy() */
+#  define WANT_STPNCPY        /* wcpncpy() */
+#  define WANT_STRCMP         /* wcscmp() */
+#  define WANT_STRNCMP        /* wcsncmp() */
+#  define WANT_STRCASECMP     /* wcscasecmp() */
+#  define WANT_STRNCASECMP    /* wcsncasecmp() */
+#  define WANT_STRSTR         /* strstr() */
+//#define WANT_STRCASESTR     /* strcasestr() */
+#  define WANT_STRCPY         /* wcscpy() */
+#  define WANT_STRNCPY        /* wcsncpy() */
+#  define WANT_STRCAT         /* wcscat() */
+#  define WANT_STRNCAT        /* wcsncat() */
+#  define WANT_STRCSPN        /* wcscspn() */
+#  define WANT_STRSPN         /* wcsspn() */
+#  define WANT_STRPBRK        /* wcspbrk() */
+#  define WANT_STRTOK_R       /* wcstok_r() */
+#  define WANT_STRTOK         /* wcstok() */
+//#define WANT_STRFRY         /* wcsfry() */
+#  define WANT_STRLWR         /* wcslwr() */
+#  define WANT_STRLWR_L       /* wcslwr_l() */
+#  define WANT_STRUPR         /* wcsupr() */
+#  define WANT_STRUPR_L       /* wcsupr_l() */
+//#define WANT_STRNLWR        /* wcsnlwr() */
+//#define WANT_STRNLWR_L      /* wcsnlwr_l() */
+//#define WANT_STRNUPR        /* wcsnupr() */
+//#define WANT_STRNUPR_L      /* wcsnupr_l() */
+#  define WANT_STRSET         /* wcsset() */
+#  define WANT_STRNSET        /* wcsnset() */
+#  define WANT_STRREV         /* wcsrev() */
+#  define WANT_STRNREV        /* wcsnrev() */
+#  define WANT_STRCOLL        /* wcscoll() */
+#  define WANT_STRCOLL_L      /* wcscoll_l() */
+#  define WANT_STRNCOLL       /* wcsncoll() */
+#  define WANT_STRNCOLL_L     /* wcsncoll_l() */
+#  define WANT_STRCASECOLL    /* wcscasecoll() */
+#  define WANT_STRCASECOLL_L  /* wcscasecoll_l() */
+#  define WANT_STRNCASECOLL   /* wcsncasecoll() */
+#  define WANT_STRNCASECOLL_L /* wcsncasecoll_l() */
+#  define WANT_STRXFRM        /* wcsxfrm       () */
+#  define WANT_STRXFRM_L      /* wcsxfrm_l() */
+#  define WANT_STRCASECMP     /* wcscasecmp() */
+#  define WANT_STRCASECMP_L   /* wcscasecmp_l() */
+#  define WANT_STRNCASECMP    /* wcsncasecmp() */
+#  define WANT_STRNCASECMP_L  /* wcsncasecmp_l() */
+#  define WANT_STRDUP         /* wcsdup() */
+//#define WANT_STRNDUP        /* wcsndup() */
+#  define WANT_STRCAT_S       /* wcscat_s() */
+#  define WANT_STRCPY_S       /* wcscpy_s() */
+#  define WANT_STRLWR_S       /* wcslwr_s() */
+#  define WANT_STRLWR_S_L     /* wcslwr_s_l() */
+#  define WANT_STRUPR_S       /* wcsupr_s() */
+#  define WANT_STRUPR_S_L     /* wcsupr_s_l() */
+#  define WANT_STRNCAT_S      /* wcsncat_s() */
+#  define WANT_STRNCPY_S      /* wcsncpy_s() */
+#  define WANT_STRSET_S       /* wcsset_s() */
+#  define WANT_STRNSET_S      /* wcsnset_s() */
+#  define WANT_MBLEN          /* mblen(), mbrlen() */
+#  define WANT_MBTOWC         /* mbtowc(), mbrtowc(), mbsnrtowcs(), mbsrtowcs(), mbstowcs() */
+#  define WANT_WCTOMB         /* wctomb(), wcrtomb(), wcsnrtombs(), wcsrtombs(), wcstombs() */
+#  define WANT_WCWIDTH        /* wcwidth(), wcswidth() */
+#  define WANT_MBSRTOWCS_S    /* mbsrtowcs_s() */
+#  define WANT_WCSRTOMBS_S    /* wcsrtombs_s() */
+#  define WANT_WCRTOMB_S      /* wcrtomb_s() */
+
+DEFINE_INTERN_ALIAS(libc_16wmemcpy,libc_memcpyw);
+DEFINE_INTERN_ALIAS(libc_16wmempcpy,libc_mempcpyw);
+DEFINE_INTERN_ALIAS(libc_16wmemset,libc_memsetw);
+DEFINE_INTERN_ALIAS(libc_16wmemmove,libc_memmovew);
+DEFINE_INTERN_ALIAS(libc_16wmemcmp,libc_memcmpw);
+DEFINE_INTERN_ALIAS(libc_16wmemchr,libc_memchrw);
+#include "templates/string.code"
+
+DEFINE_PUBLIC_ALIAS(wcstok_s,libc_32wcstok_r);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstok),libc_16wcstok); /* This one's a workaround for a bug in DOS. */
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstok_s),libc_16wcstok_r);
+DEFINE_PUBLIC_ALIAS(__DSYM(mbrlen),libc_16mbrlen);
+
+DEFINE_PUBLIC_ALIAS(__DSYM(mblen),libc_16mblen);
+DEFINE_PUBLIC_ALIAS(__DSYM(mbrtowc),libc_16mbrtowc);
+DEFINE_PUBLIC_ALIAS(__DSYM(mbsnrtowcs),libc_16mbsnrtowcs);
+DEFINE_PUBLIC_ALIAS(__DSYM(mbsrtowcs),libc_16mbsrtowcs);
+DEFINE_PUBLIC_ALIAS(__DSYM(mbstowcs),libc_16mbstowcs);
+DEFINE_PUBLIC_ALIAS(__DSYM(mbtowc),libc_16mbtowc);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcpcpy),libc_16wcpcpy);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcpncpy),libc_16wcpncpy);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcrtomb),libc_16wcrtomb);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsicmp),libc_16wcscasecmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicoll),libc_16wcscasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscoll),libc_16wcscoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicmp),libc_16wcsncasecmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicoll),libc_16wcsncasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscmp),libc_16wcscmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncmp),libc_16wcsncmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncoll),libc_16wcsncoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscspn),libc_16wcscspn);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcslen),libc_16wcslen);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnlen),libc_16wcsnlen);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsspn),libc_16wcsspn);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsxfrm),libc_16wcsxfrm);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscpy),libc_16wcscpy);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscat),libc_16wcscat);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncat),libc_16wcsncat);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncpy),libc_16wcsncpy);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsdup),libc_16wcsdup);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnset),libc_16wcsnset);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcschr),libc_16wcschr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsrchr),libc_16wcsrchr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcslwr),libc_16wcslwr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcspbrk),libc_16wcspbrk);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsrev),libc_16wcsrev);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsset),libc_16wcsset);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsstr),libc_16wcsstr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcstok),libc_16wcstok);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsupr),libc_16wcsupr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicmp_l),libc_16wcscasecmp_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicoll_l),libc_16wcscasecoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscoll_l),libc_16wcscoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicmp_l),libc_16wcsncasecmp_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicoll_l),libc_16wcsncasecoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncoll_l),libc_16wcsncoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsxfrm_l),libc_16wcsxfrm_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcslwr_l),libc_16wcslwr_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsupr_l),libc_16wcsupr_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicmp),libc_16wcscasecmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicoll),libc_16wcscasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscoll),libc_16wcscoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicmp),libc_16wcsncasecmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicoll),libc_16wcsncasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscmp),libc_16wcscmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncmp),libc_16wcsncmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncoll),libc_16wcsncoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscspn),libc_16wcscspn);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcslen),libc_16wcslen);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnlen),libc_16wcsnlen);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsspn),libc_16wcsspn);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsxfrm),libc_16wcsxfrm);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscpy),libc_16wcscpy);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscat),libc_16wcscat);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncat),libc_16wcsncat);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncpy),libc_16wcsncpy);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsdup),libc_16wcsdup);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnset),libc_16wcsnset);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsupr_l),libc_16wcsupr_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcschr),libc_16wcschr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsrchr),libc_16wcsrchr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcslwr),libc_16wcslwr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcspbrk),libc_16wcspbrk);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsrev),libc_16wcsrev);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsset),libc_16wcsset);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsstr),libc_16wcsstr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcstok),libc_16wcstok);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsupr),libc_16wcsupr);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicmp_l),libc_16wcscasecmp_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicoll_l),libc_16wcscasecoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcscoll_l),libc_16wcscoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicmp_l),libc_16wcsncasecmp_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicoll_l),libc_16wcsncasecoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsncoll_l),libc_16wcsncoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsxfrm_l),libc_16wcsxfrm_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcslwr_l),libc_16wcslwr_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcscoll_l),libc_16wcscoll_l);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicmp),libc_16wcscasecmp);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicmp_l),libc_16wcscasecmp_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicoll),libc_16wcscasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicoll_l),libc_16wcscasecoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsncoll),libc_16wcsncoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsncoll_l),libc_16wcsncoll_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcscat),libc_16wcscat);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcschr),libc_16wcschr);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcschrnul),libc_16wcschrnul);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcscmp),libc_16wcscmp);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcscoll),libc_16wcscoll);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcscoll_l),libc_16wcscoll_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcscpy),libc_16wcscpy);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcscspn),libc_16wcscspn);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsdup),libc_16wcsdup);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsdup),libc_16wcsdup);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsend),libc_16wcsend);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcslen),libc_16wcslen);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicmp),libc_16wcsncasecmp);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicmp),libc_16wcsncasecmp);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicmp_l),libc_16wcsncasecmp_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicoll),libc_16wcsncasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicoll_l),libc_16wcsncasecoll_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsncat),libc_16wcsncat);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsncmp),libc_16wcsncmp);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsncpy),libc_16wcsncpy);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsnend),libc_16wcsnend);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsnlen),libc_16wcsnlen);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsnrtombs),libc_16wcsnrtombs);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcspbrk),libc_16wcspbrk);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsrchr),libc_16wcsrchr);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsrtombs),libc_16wcsrtombs);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsspn),libc_16wcsspn);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsstr),libc_16wcsstr);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcswcs),libc_16wcsstr);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstombs),libc_16wcstombs);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcwidth),libc_16wcwidth);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcswidth),libc_16wcswidth);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsxfrm),libc_16wcsxfrm);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcsxfrm_l),libc_16wcsxfrm_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsdup),libc_16wcsdup);
+DEFINE_PUBLIC_ALIAS(__DSYM(wctomb),libc_16wctomb);
+DEFINE_PUBLIC_ALIAS(__DSYM(wmemchr),libc_16wmemchr);
+DEFINE_PUBLIC_ALIAS(__DSYM(wmemcmp),libc_16wmemcmp);
+DEFINE_PUBLIC_ALIAS(__DSYM(wmemcpy),libc_16wmemcpy);
+DEFINE_PUBLIC_ALIAS(__DSYM(wmemmove),libc_16wmemmove);
+DEFINE_PUBLIC_ALIAS(__DSYM(wmempcpy),libc_16wmempcpy);
+DEFINE_PUBLIC_ALIAS(__DSYM(wmemset),libc_16wmemset);
+
+DEFINE_PUBLIC_ALIAS(wcslwr,libc_32wcslwr);
+DEFINE_PUBLIC_ALIAS(_wcslwr,libc_32wcslwr);
+DEFINE_PUBLIC_ALIAS(_wcslwr_l,libc_32wcslwr_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcslwr),libc_16wcslwr);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcslwr),libc_16wcslwr);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcslwr_l),libc_16wcslwr_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnset),libc_16wcsnset);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsrev),libc_16wcsrev);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsset),libc_16wcsset);
+
+DEFINE_PUBLIC_ALIAS(wcsupr,libc_32wcsupr);
+DEFINE_PUBLIC_ALIAS(_wcsupr,libc_32wcsupr);
+DEFINE_PUBLIC_ALIAS(_wcsupr_l,libc_32wcsupr_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsupr),libc_16wcsupr);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcsupr),libc_16wcsupr);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wcsupr_l),libc_16wcsupr_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcswcs),libc_16wcsstr);
+
+DEFINE_PUBLIC_ALIAS(wcsset,libc_32wcsset);
+DEFINE_PUBLIC_ALIAS(wcsnset,libc_32wcsnset);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsset),libc_16wcsset);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsnset),libc_16wcsnset);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsset),libc_16wcsset);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnset),libc_16wcsnset);
+
+DEFINE_PUBLIC_ALIAS(wcsrev,libc_32wcsrev);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsrev),libc_16wcsrev);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsrev),libc_16wcsrev);
+
+DEFINE_PUBLIC_ALIAS(wcsicoll,libc_32wcscasecoll);
+DEFINE_PUBLIC_ALIAS(_wcsicoll_l,libc_32wcscasecoll_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsicoll),libc_16wcscasecoll);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicoll),libc_16wcscasecoll);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicoll_l),libc_16wcscasecoll_l);
+
+DEFINE_PUBLIC_ALIAS(_wcsncoll,libc_32wcsncoll);
+DEFINE_PUBLIC_ALIAS(_wcsncoll_l,libc_32wcsncoll_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsncoll),libc_16wcsncoll);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsncoll_l),libc_16wcsncoll_l);
+
+DEFINE_PUBLIC_ALIAS(_wcsnicoll,libc_32wcsncasecoll);
+DEFINE_PUBLIC_ALIAS(_wcsnicoll_l,libc_32wcsncasecoll_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicoll),libc_16wcsncasecoll);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicoll_l),libc_16wcsncasecoll_l);
+
+/* DOS SLib functions. */
+DEFINE_PUBLIC_ALIAS(mbsrtowcs_s,libc_32mbsrtowcs_s);
+DEFINE_PUBLIC_ALIAS(wcsrtombs_s,libc_32wcsrtombs_s);
+DEFINE_PUBLIC_ALIAS(_wcsset_s,libc_32wcsset_s);
+DEFINE_PUBLIC_ALIAS(_wcsnset_s,libc_32wcsnset_s);
+DEFINE_PUBLIC_ALIAS(_wcslwr_s,libc_32wcslwr_s);
+DEFINE_PUBLIC_ALIAS(_wcsupr_s,libc_32wcsupr_s);
+DEFINE_PUBLIC_ALIAS(_wcslwr_s_l,libc_32wcslwr_s_l);
+DEFINE_PUBLIC_ALIAS(_wcsupr_s_l,libc_32wcsupr_s_l);
+DEFINE_PUBLIC_ALIAS(wcscat_s,libc_32wcscat_s);
+DEFINE_PUBLIC_ALIAS(wcscpy_s,libc_32wcscpy_s);
+DEFINE_PUBLIC_ALIAS(wcsncat_s,libc_32wcsncat_s);
+DEFINE_PUBLIC_ALIAS(wcsncpy_s,libc_32wcsncpy_s);
+DEFINE_PUBLIC_ALIAS(wcrtomb_s,libc_32wcrtomb_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(mbsrtowcs_s),libc_16mbsrtowcs_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsrtombs_s),libc_16wcsrtombs_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsset_s),libc_16wcsset_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnset_s),libc_16wcsnset_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcslwr_s),libc_16wcslwr_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsupr_s),libc_16wcsupr_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcslwr_s_l),libc_16wcslwr_s_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcsupr_s_l),libc_16wcsupr_s_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcscat_s),libc_16wcscat_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcscpy_s),libc_16wcscpy_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsncat_s),libc_16wcsncat_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcsncpy_s),libc_16wcsncpy_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcrtomb_s),libc_16wcrtomb_s);
+
+INTERN errno_t LIBCCALL libc_memcpy_s(void *__restrict dst, size_t dstsize, void const *__restrict src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_memcpy(dst,src,srcsize); return EOK; }
+INTERN errno_t LIBCCALL libc_memmove_s(void *dst, size_t dstsize, void const *src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_memmove(dst,src,srcsize); return EOK; }
+INTERN errno_t LIBCCALL libc_16wmemcpy_s(char16_t *__restrict dst, size_t dstsize, char16_t const *__restrict src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_16wmemcpy(dst,src,srcsize); return EOK; }
+INTERN errno_t LIBCCALL libc_16wmemmove_s(char16_t *dst, size_t dstsize, char16_t const *src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_16wmemmove(dst,src,srcsize); return EOK; }
+INTERN errno_t LIBCCALL libc_32wmemcpy_s(char32_t *__restrict dst, size_t dstsize, char32_t const *__restrict src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_32wmemcpy(dst,src,srcsize); return EOK; }
+INTERN errno_t LIBCCALL libc_32wmemmove_s(char32_t *dst, size_t dstsize, char32_t const *src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_32wmemmove(dst,src,srcsize); return EOK; }
+DEFINE_PUBLIC_ALIAS(memcpy_s,libc_memcpy_s);
+DEFINE_PUBLIC_ALIAS(memmove_s,libc_memmove_s);
+DEFINE_PUBLIC_ALIAS(wmemcpy_s,libc_32wmemcpy_s);
+DEFINE_PUBLIC_ALIAS(wmemmove_s,libc_32wmemmove_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(wmemcpy_s),libc_16wmemcpy_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(wmemmove_s),libc_16wmemmove_s);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 
 
 /* Wide-string API */
 #ifndef __KERNEL__
-DEFINE_INTERN_ALIAS(libc_32wmemcpy,libc_memcpyl);
-DEFINE_INTERN_ALIAS(libc_32wmempcpy,libc_mempcpyl);
-DEFINE_INTERN_ALIAS(libc_32wmemset,libc_memsetl);
-DEFINE_INTERN_ALIAS(libc_32wmemmove,libc_memmovel);
-DEFINE_INTERN_ALIAS(libc_32wmemcmp,libc_memcmpl);
-DEFINE_INTERN_ALIAS(libc_32wmemchr,libc_memchrl);
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-DEFINE_INTERN_ALIAS(libc_16wmemcpy,libc_memcpyw);
-DEFINE_INTERN_ALIAS(libc_16wmemset,libc_memsetw);
-DEFINE_INTERN_ALIAS(libc_16wmemmove,libc_memmovew);
-DEFINE_INTERN_ALIAS(libc_16wmemcmp,libc_memcmpw);
-DEFINE_INTERN_ALIAS(libc_16wmemchr,libc_memchrw);
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
-#define T          char32_t
-#define Ts         s32
-#define Tu         u32
-#define Tn         wint_t
-#define Tneedle    T
-#define Xstr(x)    libc_32wcs##x
-#define Xstp(x)    libc_32wcp##x
-#define Xmb(x)     libc_32mb##x
-#define Xwc(x)     libc_32wc##x
-#define TOLOWER(x) libc_towlower(x)
-#define TOUPPER(x) libc_towupper(x)
-#define S          __SIZEOF_WCHAR_T__
-#define IS_WIDE    1
-#define DECL       INTERN
-
-/* Select optional functions. */
-#define WANT_MBLEN   /* mblen(), mbrlen() */
-#define WANT_MBTOWC  /* mbtowc(), mbrtowc(), mbsnrtowcs(), mbsrtowcs(), mbstowcs() */
-#define WANT_WCTOMB  /* wctomb(), wcrtomb(), wcsnrtombs(), wcsrtombs(), wcstombs() */
-#define WANT_WCWIDTH /* wcwidth(), wcswidth() */
-
-#include "templates/string.code"
-#undef DECL
-
-
-INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { return UNICODE_MB_MAX; }
-INTERN wint_t LIBCCALL libc_btowc(int c) { return c < 192 ? (wint_t)c : (wint_t)EOF; }
-INTERN int LIBCCALL libc_wctob(wint_t c) { return c < 192 ? (int)c : (int)WEOF; }
-INTERN int LIBCCALL libc_mbsinit(struct __mbstate const *ps) { return (!ps || !libc_memchr(ps,0,sizeof(mbstate_t))); }
-
-INTERN int LIBCCALL libc_32wcscasecmp_l(char32_t const *s1, char32_t const *s2, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcscasecmp(s1,s2); }
-INTERN int LIBCCALL libc_32wcsncasecmp_l(char32_t const *s1, char32_t const *s2, size_t n, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsncasecmp(s1,s2,n); }
-INTERN int LIBCCALL libc_32wcscoll(char32_t const *s1, char32_t const *s2) { NOT_IMPLEMENTED(); return 0; }
-INTERN size_t LIBCCALL libc_32wcsxfrm(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n) { NOT_IMPLEMENTED(); return 0; }
 INTERN double LIBCCALL libc_32wcstod(char32_t const *__restrict nptr, char32_t **__restrict endptr) { NOT_IMPLEMENTED(); return 0; }
 INTERN long int LIBCCALL libc_32wcstol(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
 INTERN unsigned long int LIBCCALL libc_32wcstoul(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
@@ -856,9 +1158,6 @@ INTERN __LONGLONG LIBCCALL libc_32wcstoll(char32_t const *__restrict nptr, char3
 INTERN __ULONGLONG LIBCCALL libc_32wcstoull(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
 INTERN __LONGLONG LIBCCALL libc_32wcstoq(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
 INTERN __ULONGLONG LIBCCALL libc_32wcstouq(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_32wcscoll_l(char32_t const *s1, char32_t const *s2, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcscoll(s1,s2); }
-INTERN size_t LIBCCALL libc_32wcsxfrm_l(char32_t *s1, char32_t const *s2, size_t n, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsxfrm(s1,s2,n); }
-INTERN char32_t *LIBCCALL libc_32wcsdup(char32_t const *__restrict str) { return (char32_t *)libc_memdup(str,(libc_32wcslen(str)+1)*sizeof(char32_t)); }
 INTERN long int LIBCCALL libc_32wcstol_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstol(nptr,endptr,base); }
 INTERN unsigned long int LIBCCALL libc_32wcstoul_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstoul(nptr,endptr,base); }
 INTERN __LONGLONG LIBCCALL libc_32wcstoll_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstoll(nptr,endptr,base); }
@@ -867,6 +1166,37 @@ INTERN double LIBCCALL libc_32wcstod_l(char32_t const *__restrict nptr, char32_t
 INTERN float LIBCCALL libc_32wcstof_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstof(nptr,endptr); }
 INTERN long double LIBCCALL libc_32wcstold_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstold(nptr,endptr); }
 INTERN size_t LIBCCALL libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsftime(s,maxsize,format,tp); }
+DEFINE_PUBLIC_ALIAS(wcstod,libc_32wcstod);
+DEFINE_PUBLIC_ALIAS(wcstod_l,libc_32wcstod_l);
+DEFINE_PUBLIC_ALIAS(wcstof,libc_32wcstof);
+DEFINE_PUBLIC_ALIAS(wcstof_l,libc_32wcstof_l);
+DEFINE_PUBLIC_ALIAS(wcstol,libc_32wcstol);
+DEFINE_PUBLIC_ALIAS(wcstol_l,libc_32wcstol_l);
+DEFINE_PUBLIC_ALIAS(wcstold,libc_32wcstold);
+DEFINE_PUBLIC_ALIAS(wcstold_l,libc_32wcstold_l);
+DEFINE_PUBLIC_ALIAS(wcstoll,libc_32wcstoll);
+DEFINE_PUBLIC_ALIAS(wcstoll_l,libc_32wcstoll_l);
+DEFINE_PUBLIC_ALIAS(wcstoq,libc_32wcstoq);
+DEFINE_PUBLIC_ALIAS(wcstoul,libc_32wcstoul);
+DEFINE_PUBLIC_ALIAS(wcstoul_l,libc_32wcstoul_l);
+DEFINE_PUBLIC_ALIAS(wcstoull,libc_32wcstoull);
+DEFINE_PUBLIC_ALIAS(wcstoull_l,libc_32wcstoull_l);
+DEFINE_PUBLIC_ALIAS(wcstouq,libc_32wcstouq);
+DEFINE_PUBLIC_ALIAS(wcsftime,libc_32wcsftime);
+DEFINE_PUBLIC_ALIAS(wcsftime_l,libc_32wcsftime_l);
+
+
+
+
+
+INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { return UNICODE_MB_MAX; }
+INTERN wint_t LIBCCALL libc_btowc(int c) { return c < 192 ? (wint_t)c : (wint_t)EOF; }
+INTERN int LIBCCALL libc_wctob(wint_t c) { return c < 192 ? (int)c : (int)WEOF; }
+INTERN int LIBCCALL libc_mbsinit(struct __mbstate const *ps) { return (!ps || !libc_memchr(ps,0,sizeof(mbstate_t))); }
+DEFINE_PUBLIC_ALIAS(__ctype_get_mb_cur_max,libc___ctype_get_mb_cur_max);
+DEFINE_PUBLIC_ALIAS(btowc,libc_btowc);
+DEFINE_PUBLIC_ALIAS(wctob,libc_wctob);
+DEFINE_PUBLIC_ALIAS(mbsinit,libc_mbsinit);
 
 INTERN size_t LIBCCALL libc_mbrtoc16(char16_t *__restrict pc16, char const *__restrict s,
                                      size_t n, struct __mbstate *__restrict p) {
@@ -922,90 +1252,11 @@ INTERN size_t LIBCCALL libc_c32rtomb(char *__restrict s, char32_t c32,
                       UNICODE_F_SETERRNO|UNICODE_F_STOPONNUL|
                       UNICODE_F_NOZEROTERM);
 }
-
-DEFINE_PUBLIC_ALIAS(__ctype_get_mb_cur_max,libc___ctype_get_mb_cur_max);
-DEFINE_PUBLIC_ALIAS(btowc,libc_btowc);
-DEFINE_PUBLIC_ALIAS(wctob,libc_wctob);
-DEFINE_PUBLIC_ALIAS(mbsinit,libc_mbsinit);
-
-#define WC(x) libc_32##x
-DEFINE_PUBLIC_ALIAS(mblen,WC(mblen));
-DEFINE_PUBLIC_ALIAS(mbtowc,WC(mbtowc));
-DEFINE_PUBLIC_ALIAS(wctomb,WC(wctomb));
-DEFINE_PUBLIC_ALIAS(mbstowcs,WC(mbstowcs));
-DEFINE_PUBLIC_ALIAS(wcstombs,WC(wcstombs));
-
-DEFINE_PUBLIC_ALIAS(wcscpy,WC(wcscpy));
-DEFINE_PUBLIC_ALIAS(wcsncpy,WC(wcsncpy));
-DEFINE_PUBLIC_ALIAS(wcscat,WC(wcscat));
-DEFINE_PUBLIC_ALIAS(wcsncat,WC(wcsncat));
-DEFINE_PUBLIC_ALIAS(wcpcpy,WC(wcpcpy));
-DEFINE_PUBLIC_ALIAS(wcpncpy,WC(wcpncpy));
-DEFINE_PUBLIC_ALIAS(wcscmp,WC(wcscmp));
-DEFINE_PUBLIC_ALIAS(wcsncmp,WC(wcsncmp));
-DEFINE_PUBLIC_ALIAS(wcscoll,WC(wcscoll));
-DEFINE_PUBLIC_ALIAS(wcsxfrm,WC(wcsxfrm));
-DEFINE_PUBLIC_ALIAS(mbrtowc,WC(mbrtowc));
-DEFINE_PUBLIC_ALIAS(wcrtomb,WC(wcrtomb));
-DEFINE_PUBLIC_ALIAS(mbrlen,WC(mbrlen));
-DEFINE_PUBLIC_ALIAS(mbsrtowcs,WC(mbsrtowcs));
-DEFINE_PUBLIC_ALIAS(wcsrtombs,WC(wcsrtombs));
-DEFINE_PUBLIC_ALIAS(wcstod,WC(wcstod));
-DEFINE_PUBLIC_ALIAS(wcstol,WC(wcstol));
-DEFINE_PUBLIC_ALIAS(wcstoul,WC(wcstoul));
-DEFINE_PUBLIC_ALIAS(wcsftime,WC(wcsftime));
-DEFINE_PUBLIC_ALIAS(wcstok,WC(wcstok));
-DEFINE_PUBLIC_ALIAS(wcslen,WC(wcslen));
-DEFINE_PUBLIC_ALIAS(wcsnlen,WC(wcsnlen));
-DEFINE_PUBLIC_ALIAS(wcsend,WC(wcsend));
-DEFINE_PUBLIC_ALIAS(wcsnend,WC(wcsnend));
-DEFINE_PUBLIC_ALIAS(wcsspn,WC(wcsspn));
-DEFINE_PUBLIC_ALIAS(wcscspn,WC(wcscspn));
-DEFINE_PUBLIC_ALIAS(wmemcmp,WC(wmemcmp));
-DEFINE_PUBLIC_ALIAS(wmemcpy,WC(wmemcpy));
-DEFINE_PUBLIC_ALIAS(wmemmove,WC(wmemmove));
-DEFINE_PUBLIC_ALIAS(wmemset,WC(wmemset));
-DEFINE_PUBLIC_ALIAS(wcschr,WC(wcschr));
-DEFINE_PUBLIC_ALIAS(wcsrchr,WC(wcsrchr));
-DEFINE_PUBLIC_ALIAS(wcspbrk,WC(wcspbrk));
-DEFINE_PUBLIC_ALIAS(wcsstr,WC(wcsstr));
-DEFINE_PUBLIC_ALIAS(wmemchr,WC(wmemchr));
-DEFINE_PUBLIC_ALIAS(wcstof,WC(wcstof));
-DEFINE_PUBLIC_ALIAS(wcstold,WC(wcstold));
-DEFINE_PUBLIC_ALIAS(wcstoll,WC(wcstoll));
-DEFINE_PUBLIC_ALIAS(wcstoull,WC(wcstoull));
-DEFINE_PUBLIC_ALIAS(wcscasecmp,WC(wcscasecmp));
-DEFINE_PUBLIC_ALIAS(wcsncasecmp,WC(wcsncasecmp));
-DEFINE_PUBLIC_ALIAS(wcscasecmp_l,WC(wcscasecmp_l));
-DEFINE_PUBLIC_ALIAS(wcsncasecmp_l,WC(wcsncasecmp_l));
-DEFINE_PUBLIC_ALIAS(wcscoll_l,WC(wcscoll_l));
-DEFINE_PUBLIC_ALIAS(wcsxfrm_l,WC(wcsxfrm_l));
-DEFINE_PUBLIC_ALIAS(wcsdup,WC(wcsdup));
-DEFINE_PUBLIC_ALIAS(mbsnrtowcs,WC(mbsnrtowcs));
-DEFINE_PUBLIC_ALIAS(wcsnrtombs,WC(wcsnrtombs));
-DEFINE_PUBLIC_ALIAS(wcwidth,WC(wcwidth));
-DEFINE_PUBLIC_ALIAS(wcswidth,WC(wcswidth));
-DEFINE_PUBLIC_ALIAS(wcschrnul,WC(wcschrnul));
-DEFINE_PUBLIC_ALIAS(wmempcpy,WC(wmempcpy));
-DEFINE_PUBLIC_ALIAS(wcstoq,WC(wcstoq));
-DEFINE_PUBLIC_ALIAS(wcstouq,WC(wcstouq));
-DEFINE_PUBLIC_ALIAS(wcstol_l,WC(wcstol_l));
-DEFINE_PUBLIC_ALIAS(wcstoul_l,WC(wcstoul_l));
-DEFINE_PUBLIC_ALIAS(wcstoll_l,WC(wcstoll_l));
-DEFINE_PUBLIC_ALIAS(wcstoull_l,WC(wcstoull_l));
-DEFINE_PUBLIC_ALIAS(wcstod_l,WC(wcstod_l));
-DEFINE_PUBLIC_ALIAS(wcstof_l,WC(wcstof_l));
-DEFINE_PUBLIC_ALIAS(wcstold_l,WC(wcstold_l));
-DEFINE_PUBLIC_ALIAS(wcsftime_l,WC(wcsftime_l));
-
-DEFINE_PUBLIC_ALIAS(__mbrlen,WC(mbrlen));
-DEFINE_PUBLIC_ALIAS(wcswcs,WC(wcsstr));
-#undef WC
-
 DEFINE_PUBLIC_ALIAS(mbrtoc16,libc_mbrtoc16);
 DEFINE_PUBLIC_ALIAS(mbrtoc32,libc_mbrtoc32);
 DEFINE_PUBLIC_ALIAS(c16rtomb,libc_c16rtomb);
 DEFINE_PUBLIC_ALIAS(c32rtomb,libc_c32rtomb);
+
 #endif /* !__KERNEL__ */
 
 DECL_END

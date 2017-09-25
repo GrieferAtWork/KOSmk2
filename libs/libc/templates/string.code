@@ -18,38 +18,299 @@
  */
 
 /*
- * #define T          ... <character type> (e.g.: 'char', 'char32_t')
- * #define Tneedle    ... <needle type> (e.g.: 'int', 'char32_t')
- * #define Ts         ... <signed type> (e.g.: 'signed char', 's32')
- * #define Tu         ... <unsigned type> (e.g.: 'unsigned char', 'u32')
- * #define Tn         ... <needle type> (e.g.: 'int', 'char32_t')
- * #define Xstr(x)    ... <Symbol name generator> (e.g.: 'libc_str##x', 'libc_32wcs##x')
- * #define Xstp(x)    ... <Symbol name generator> (e.g.: 'libc_stp##x', 'libc_32wcp##x')
- * #define Xmb(x)     ... <Symbol name generator> (e.g.: 'libc_32mb##x') [OPTIONAL]
- * #define Xwc(x)     ... <Symbol name generator> (e.g.: 'libc_32wc##x') [OPTIONAL]
- * #define S          ... <Bit-width in bytes> (e.g.: '__SIZEOF_CHAR__', '__SIZEOF_WCHAR_T__')
- * #define NUL        ... <\0-character; defaults to ZERO(0)>
- * #define TOLOWER(x) ... <tolower()-function>
- * #define TOUPPER(x) ... <toupper()-function>
- * #define IS_WIDE	  ... <defined for the WIDE-API>
+ * #define T                     ... <character type> (e.g.: 'char', 'char32_t')
+ * #define Tneedle               ... <needle type> (e.g.: 'int', 'char32_t')
+ * #define Ts                    ... <signed type> (e.g.: 'signed char', 's32')
+ * #define Tu                    ... <unsigned type> (e.g.: 'unsigned char', 'u32')
+ * #define Tn                    ... <needle type> (e.g.: 'int', 'char32_t')
+ * #define Xstr(x)               ... <Symbol name generator> (e.g.: 'libc_str##x', 'libc_32wcs##x')
+ * #define Xstp(x)               ... <Symbol name generator> (e.g.: 'libc_stp##x', 'libc_32wcp##x')
+ * #define Xmb(x)                ... <Symbol name generator> (e.g.: 'libc_32mb##x') [OPTIONAL]
+ * #define Xwc(x)                ... <Symbol name generator> (e.g.: 'libc_32wc##x') [OPTIONAL]
+ * #define S                     ... <Bit-width in bytes> (e.g.: '__SIZEOF_CHAR__', '__SIZEOF_WCHAR_T__')
+ * #define NUL                   ... <\0-character; defaults to ZERO(0)>
+ * #define TOLOWER(x)            ... <tolower()-function>
+ * #define TOUPPER(x)            ... <toupper()-function>
+ * #define TOLOWER_L(x,lc)       ... <locale-dependent tolower()-function>
+ * #define TOUPPER_L(x,lc)       ... <locale-dependent toupper()-function>
+ * #define DEFINE_ALIAS(new,old) ... <define 'new' as an alias of 'old'>
  */ 
+
+/* OPTIONS:
+ * WANT_STREND
+ * WANT_STRNEND
+ * WANT_STRLEN
+ * WANT_STRNLEN
+ * WANT_STRCHRNUL
+ * WANT_STRCHR
+ * WANT_STRRCHR
+ * WANT_STRRCHRNUL
+ * WANT_STRNCHR
+ * WANT_STRNRCHR
+ * WANT_STRNCHRNUL
+ * WANT_STRNRCHRNUL
+ * WANT_STROFF
+ * WANT_STRROFF
+ * WANT_STRNOFF
+ * WANT_STRNROFF
+ * WANT_STPCPY
+ * WANT_STPNCPY
+ * WANT_STRCMP
+ * WANT_STRNCMP
+ * WANT_STRSTR
+ * WANT_STRCASESTR
+ * WANT_STRCPY
+ * WANT_STRNCPY
+ * WANT_STRCAT
+ * WANT_STRNCAT
+ * WANT_STRCSPN
+ * WANT_STRSPN
+ * WANT_STRPBRK
+ * WANT_STRTOK_R
+ * WANT_STRTOK
+ * WANT_STRFRY
+ * WANT_STRLWR
+ * WANT_STRLWR_L
+ * WANT_STRUPR
+ * WANT_STRUPR_L
+ * WANT_STRNLWR
+ * WANT_STRNLWR_L
+ * WANT_STRNUPR
+ * WANT_STRNUPR_L
+ * WANT_STRSET
+ * WANT_STRNSET
+ * WANT_STRREV
+ * WANT_STRNREV
+ * WANT_STRCOLL
+ * WANT_STRCOLL_L
+ * WANT_STRNCOLL
+ * WANT_STRNCOLL_L
+ * WANT_STRCASECOLL
+ * WANT_STRCASECOLL_L
+ * WANT_STRNCASECOLL
+ * WANT_STRNCASECOLL_L
+ * WANT_STRXFRM
+ * WANT_STRXFRM_L
+ * WANT_STRCASECMP
+ * WANT_STRCASECMP_L
+ * WANT_STRNCASECMP
+ * WANT_STRNCASECMP_L
+ * WANT_STRDUP
+ * WANT_STRNDUP
+ * WANT_STRCAT_S
+ * WANT_STRCPY_S
+ * WANT_STRLWR_S
+ * WANT_STRLWR_S_L
+ * WANT_STRUPR_S
+ * WANT_STRUPR_S_L
+ * WANT_STRNCAT_S
+ * WANT_STRNCPY_S
+ * WANT_STRSET_S
+ * WANT_STRNSET_S
+ * WANT_MBLEN
+ * WANT_MBTOWC
+ * WANT_WCTOMB
+ * WANT_WCWIDTH
+ * WANT_MBSRTOWCS_S
+ * WANT_WCSRTOMBS_S
+ * WANT_WCRTOMB_S
+ */
 #ifndef NUL
 #define NUL 0
 #endif
 
-#if S == 1
-#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpy(dst,src,n))
-#elif S == 2
-#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpyw(dst,src,n))
-#elif S == 4
-#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpyl(dst,src,n))
-#elif S == 8 && defined(CONFIG_64BIT_STRING)
-#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpyq(dst,src,n))
-#else
-#define STR_MEMCPY(dst,src,n) ((T *)libc_memcpyq(dst,src,(n)*S))
+#ifndef TOLOWER_L
+#define NO_CASELOCALE
+#define TOLOWER_L(x,lc) TOLOWER(x)
+#define TOUPPER_L(x,lc) TOUPPER(x)
 #endif
 
 
+#if S == 1
+#define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpy(dst,src,n))
+#define STR_MEMSET(dst,fill,n) ((T *)libc_memset(dst,fill,n))
+#elif S == 2
+#define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpyw(dst,src,n))
+#define STR_MEMSET(dst,fill,n) ((T *)libc_memsetw(dst,fill,n))
+#elif S == 4
+#define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpyl(dst,src,n))
+#define STR_MEMSET(dst,fill,n) ((T *)libc_memsetl(dst,fill,n))
+#elif S == 8 && defined(CONFIG_64BIT_STRING)
+#define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpyq(dst,src,n))
+#define STR_MEMSET(dst,fill,n) ((T *)libc_memsetq(dst,fill,n))
+#else
+#define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpy(dst,src,(n)*S))
+#define STR_MEMSET(dst,fill,n) ((T *)libc_memset(dst,(fill) & 0xff,(n)*S))
+#endif
+
+#ifdef WANT_STREND
+#undef WANT_STREND
+DECL T *LIBCCALL Xstr(end)(T const *__restrict str) {
+	for (; *str; ++str);
+	return (T *)str;
+}
+#endif /* WANT_STREND */
+
+#ifdef WANT_STRNEND
+#undef WANT_STRNEND
+DECL T *LIBCCALL Xstr(nend)
+(T const *__restrict str, size_t maxlen) {
+	T *end = (T *)str+maxlen;
+	for (; str != end && *str; ++str);
+	return (T *)str;
+}
+#endif /* WANT_STRNEND */
+
+#ifdef WANT_STRLEN
+#undef WANT_STRLEN
+DECL size_t LIBCCALL Xstr(len)
+(T const *__restrict str) {
+	return (size_t)(Xstr(end)(str)-str);
+}
+#endif /* WANT_STRLEN */
+
+#ifdef WANT_STRNLEN
+#undef WANT_STRNLEN
+DECL size_t LIBCCALL Xstr(nlen)
+(T const *__restrict str, size_t maxlen) {
+	return (size_t)(Xstr(nend)(str,maxlen)-str);
+}
+#endif /* WANT_STRNLEN */
+
+#ifdef WANT_STRCHRNUL
+#undef WANT_STRCHRNUL
+DECL T *LIBCCALL Xstr(chrnul)
+(T const *__restrict haystack, Tneedle needle) {
+	T *iter = (T *)haystack;
+	for (; *iter && *iter != (T)needle; ++iter);
+	return iter;
+}
+#endif /* WANT_STRCHRNUL */
+
+#ifdef WANT_STRCHR
+#undef WANT_STRCHR
+DECL T *LIBCCALL Xstr(chr)
+(T const *__restrict haystack, Tneedle needle) {
+	T *iter = (T *)haystack;
+	for (; *iter; ++iter) if (*iter == (T)needle) return iter;
+	return NULL;
+}
+#endif /* WANT_STRCHR */
+
+#ifdef WANT_STRRCHR
+#undef WANT_STRRCHR
+DECL T *LIBCCALL Xstr(rchr)
+(T const *__restrict haystack, Tneedle needle) {
+	T *result = NULL,*iter = (T *)haystack;
+	for (; *iter; ++iter) if (*iter == (T)needle) result = iter;
+	return result;
+}
+#endif /* WANT_STRRCHR */
+
+#ifdef WANT_STRRCHRNUL
+#undef WANT_STRRCHRNUL
+DECL T *LIBCCALL Xstr(rchrnul)
+(T const *__restrict haystack, Tneedle needle) {
+	T *result = NULL,*iter = (T *)haystack;
+	for (; *iter; ++iter) if (*iter == (T)needle) result = iter;
+	return result ? result : (T *)haystack-1;
+}
+#endif /* WANT_STRRCHRNUL */
+
+#ifdef WANT_STRNCHR
+#undef WANT_STRNCHR
+DECL T *LIBCCALL Xstr(nchr)
+(T const *__restrict haystack, Tneedle needle, size_t maxlen) {
+	T *iter = (T *)haystack,*end = iter+maxlen;
+	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) return iter;
+	return NULL;
+}
+#endif /* WANT_STRNCHR */
+
+#ifdef WANT_STRNRCHR
+#undef WANT_STRNRCHR
+DECL T *LIBCCALL Xstr(nrchr)
+(T const *__restrict haystack, Tneedle needle, size_t maxlen) {
+	T *iter = (T *)haystack,*end = iter+maxlen,*result = NULL;
+	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) result = iter;
+	return result;
+}
+#endif /* WANT_STRNRCHR */
+
+#ifdef WANT_STRNCHRNUL
+#undef WANT_STRNCHRNUL
+DECL T *LIBCCALL Xstr(nchrnul)
+(T const *__restrict haystack, Tneedle needle, size_t maxlen) {
+	T *iter = (T *)haystack,*end = iter+maxlen;
+	for (; iter != end && *iter && *iter != (T)needle; ++iter);
+	return iter;
+}
+#endif /* WANT_STRNCHRNUL */
+
+#ifdef WANT_STRNRCHRNUL
+#undef WANT_STRNRCHRNUL
+DECL T *LIBCCALL Xstr(nrchrnul)
+(T const *__restrict haystack, Tneedle needle, size_t maxlen) {
+	T *iter = (T *)haystack,*end = iter+maxlen,*result = NULL;
+	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) result = iter;
+	return result ? result : (T *)haystack-1;
+}
+#endif /* WANT_STRNRCHRNUL */
+
+#ifdef WANT_STROFF
+#undef WANT_STROFF
+DECL size_t LIBCCALL Xstr(off)
+(T const *__restrict haystack, Tneedle needle) {
+	return Xstr(chrnul)(haystack,needle)-haystack;
+}
+#endif /* WANT_STROFF */
+
+#ifdef WANT_STRROFF
+#undef WANT_STRROFF
+DECL size_t LIBCCALL Xstr(roff)
+(T const *__restrict haystack, Tneedle needle) {
+	return Xstr(rchrnul)(haystack,needle)-haystack;
+}
+#endif /* WANT_STRROFF */
+
+#ifdef WANT_STRNOFF
+#undef WANT_STRNOFF
+DECL size_t LIBCCALL Xstr(noff)
+(T const *__restrict haystack, Tneedle needle, size_t maxlen) {
+	return Xstr(nchrnul)(haystack,needle,maxlen)-haystack;
+}
+#endif /* WANT_STRNOFF */
+
+#ifdef WANT_STRNROFF
+#undef WANT_STRNROFF
+DECL size_t LIBCCALL Xstr(nroff)
+(T const *__restrict haystack, Tneedle needle, size_t maxlen) {
+	return Xstr(nrchrnul)(haystack,needle,maxlen)-haystack;
+}
+#endif /* WANT_STRNROFF */
+
+#ifdef WANT_STPCPY
+#undef WANT_STPCPY
+DECL T *LIBCCALL Xstp(cpy)
+(T *__restrict dst, T const *__restrict src) {
+	size_t len = Xstr(len)(src);
+	STR_MEMCPY(dst,src,len+1);
+	return dst+len;
+}
+#endif /* WANT_STPCPY */
+
+#ifdef WANT_STPNCPY
+#undef WANT_STPNCPY
+DECL T *LIBCCALL Xstp(ncpy)
+(T *__restrict dst, T const *__restrict src, size_t n) {
+	size_t len = Xstr(nlen)(src,n);
+	STR_MEMCPY(dst,src,len+!src[len]);
+	return dst+len;
+}
+#endif /* WANT_STPNCPY */
+
+#ifdef WANT_STRCMP
+#undef WANT_STRCMP
 DECL int LIBCCALL Xstr(cmp)(T const *s1, T const *s2) {
 	T a,b; int result;
 	do {
@@ -58,121 +319,10 @@ DECL int LIBCCALL Xstr(cmp)(T const *s1, T const *s2) {
 	} while (result == 0 && a);
 	return result;
 }
+#endif /* WANT_STRCMP */
 
-DECL T *LIBCCALL Xstr(end)(T const *__restrict str) {
-	for (; *str; ++str);
-	return (T *)str;
-}
-
-DECL T *LIBCCALL Xstr(nend)
-(T const *__restrict str, size_t maxlen) {
-	T *end = (T *)str+maxlen;
-	for (; str != end && *str; ++str);
-	return (T *)str;
-}
-
-DECL size_t LIBCCALL Xstr(len)
-(T const *__restrict str) {
-	return (size_t)(Xstr(end)(str)-str);
-}
-
-DECL size_t LIBCCALL Xstr(nlen)
-(T const *__restrict str, size_t maxlen) {
-	return (size_t)(Xstr(nend)(str,maxlen)-str);
-}
-
-DECL T *LIBCCALL Xstr(chrnul)
-(T const *__restrict haystack, Tneedle needle) {
-	T *iter = (T *)haystack;
-	for (; *iter && *iter != (T)needle; ++iter);
-	return iter;
-}
-
-DECL T *LIBCCALL Xstr(chr)
-(T const *__restrict haystack, Tneedle needle) {
-	T *iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == (T)needle) return iter;
-	return NULL;
-}
-
-DECL T *LIBCCALL Xstr(rchr)
-(T const *__restrict haystack, Tneedle needle) {
-	T *result = NULL,*iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == (T)needle) result = iter;
-	return result;
-}
-
-#ifndef IS_WIDE
-DECL T *LIBCCALL Xstr(rchrnul)
-(T const *__restrict haystack, Tneedle needle) {
-	T *result = NULL,*iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == (T)needle) result = iter;
-	return result ? result : (T *)haystack-1;
-}
-
-DECL T *LIBCCALL Xstr(nchr)
-(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
-	T *iter = (T *)haystack,*end = iter+max_chars;
-	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) return iter;
-	return NULL;
-}
-
-DECL T *LIBCCALL Xstr(nrchr)
-(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
-	T *iter = (T *)haystack,*end = iter+max_chars,*result = NULL;
-	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) result = iter;
-	return result;
-}
-
-DECL T *LIBCCALL Xstr(nchrnul)
-(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
-	T *iter = (T *)haystack,*end = iter+max_chars;
-	for (; iter != end && *iter && *iter != (T)needle; ++iter);
-	return iter;
-}
-
-DECL T *LIBCCALL Xstr(nrchrnul)
-(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
-	T *iter = (T *)haystack,*end = iter+max_chars,*result = NULL;
-	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) result = iter;
-	return result ? result : (T *)haystack-1;
-}
-
-DECL size_t LIBCCALL Xstr(off)
-(T const *__restrict haystack, Tneedle needle) {
-	return Xstr(chrnul)(haystack,needle)-haystack;
-}
-
-DECL size_t LIBCCALL Xstr(roff)
-(T const *__restrict haystack, Tneedle needle) {
-	return Xstr(rchrnul)(haystack,needle)-haystack;
-}
-
-DECL size_t LIBCCALL Xstr(noff)
-(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
-	return Xstr(nchrnul)(haystack,needle,max_chars)-haystack;
-}
-
-DECL size_t LIBCCALL Xstr(nroff)
-(T const *__restrict haystack, Tneedle needle, size_t max_chars) {
-	return Xstr(nrchrnul)(haystack,needle,max_chars)-haystack;
-}
-#endif /* !IS_WIDE */
-
-DECL T *LIBCCALL Xstp(cpy)
-(T *__restrict dst, T const *__restrict src) {
-	size_t len = Xstr(len)(src);
-	STR_MEMCPY(dst,src,len+1);
-	return dst+len;
-}
-
-DECL T *LIBCCALL Xstp(ncpy)
-(T *__restrict dst, T const *__restrict src, size_t n) {
-	size_t len = Xstr(nlen)(src,n);
-	STR_MEMCPY(dst,src,len+!src[len]);
-	return dst+len;
-}
-
+#ifdef WANT_STRNCMP
+#undef WANT_STRNCMP
 DECL int LIBCCALL Xstr(ncmp)(T const *s1, T const *s2, size_t n) {
  T a,b,*end = (T *)s1+n; int result;
  if (n) {
@@ -183,29 +333,10 @@ DECL int LIBCCALL Xstr(ncmp)(T const *s1, T const *s2, size_t n) {
  }
  return result;
 }
+#endif /* WANT_STRNCMP */
 
-DECL int LIBCCALL Xstr(casecmp)(T const *s1, T const *s2) {
-	T a,b; int result;
-	do {
-		a = TOLOWER(*s1++),
-		b = TOLOWER(*s2++),
-		result = (int)a-(int)b;
-	} while (result == 0 && a);
-	return result;
-}
-
-DECL int LIBCCALL Xstr(ncasecmp)(T const *s1, T const *s2, size_t n) {
- T a,b,*end = (T *)s1+n; int result;
- if (n) {
-	do {
-		a = TOLOWER(*s1++),
-		b = TOLOWER(*s2++),
-		result = (int)a-(int)b;
-	} while (result == 0 && a && s1 != end);
- }
- return result;
-}
-
+#ifdef WANT_STRSTR
+#undef WANT_STRSTR
 DECL T *LIBCCALL Xstr(str)
 (T const *haystack, T const *needle) {
 	T *hay_iter = (assert(haystack),(T *)haystack),*hay2;
@@ -223,9 +354,11 @@ miss:;
 	}
 	return NULL;
 }
+#endif /* WANT_STRSTR */
 
 
-#ifndef IS_WIDE
+#ifdef WANT_STRCASESTR
+#undef WANT_STRCASESTR
 DECL T *LIBCCALL Xstr(casestr)(T const *haystack, T const *needle) {
 	T *hay_iter = (assert(haystack),(T *)haystack),*hay2;
 	T ch,needle_start = (assert(needle),*needle++);
@@ -243,24 +376,35 @@ miss:;
 	}
 	return NULL;
 }
-#endif /* !IS_WIDE */
+#endif /* WANT_STRCASESTR */
 
-#ifndef __KERNEL__
+
+#ifdef WANT_STRCPY
+#undef WANT_STRCPY
 DECL T *LIBCCALL Xstr(cpy)
 (T *__restrict dst, T const *__restrict src) {
 	return STR_MEMCPY(dst,src,Xstr(len)(src)+1);
 }
+#endif /* WANT_STRCPY */
 
+#ifdef WANT_STRNCPY
+#undef WANT_STRNCPY
 DECL T *LIBCCALL Xstr(ncpy)
 (T *__restrict dst, T const *__restrict src, size_t n) {
 	return STR_MEMCPY(dst,src,Xstr(nlen)(src,n)+1);
 }
+#endif /* WANT_STRNCPY */
 
+#ifdef WANT_STRCAT
+#undef WANT_STRCAT
 DECL T *LIBCCALL Xstr(cat)(T *__restrict dst, T const *__restrict src) {
 	STR_MEMCPY(Xstr(end)(dst),src,Xstr(len)(src)+1);
 	return dst;
 }
+#endif /* WANT_STRCAT */
 
+#ifdef WANT_STRNCAT
+#undef WANT_STRNCAT
 DECL T *LIBCCALL Xstr(ncat)(T *__restrict dst, T const *__restrict src, size_t n) {
 	size_t maxlen = Xstr(nlen)(src,n);
 	T *target = Xstr(end)(dst);
@@ -268,16 +412,28 @@ DECL T *LIBCCALL Xstr(ncat)(T *__restrict dst, T const *__restrict src, size_t n
 	if (maxlen < n) target[maxlen] = NUL;
 	return dst;
 }
+#endif /* WANT_STRNCAT */
+
+#ifdef WANT_STRCSPN
+#undef WANT_STRCSPN
 DECL size_t LIBCCALL Xstr(cspn)(T const *s, T const *reject) {
 	T const *iter = s;
 	while (*iter && !Xstr(chr)(reject,*iter)) ++iter;
 	return (size_t)(iter-s);
 }
+#endif /* WANT_STRCSPN */
+
+#ifdef WANT_STRSPN
+#undef WANT_STRSPN
 DECL size_t LIBCCALL Xstr(spn)(T const *s, T const *accept) {
 	T const *iter = s;
 	while (Xstr(chr)(accept,*iter)) ++iter;
 	return (size_t)(iter-s);
 }
+#endif /* WANT_STRSPN */
+
+#ifdef WANT_STRPBRK
+#undef WANT_STRPBRK
 DECL T *LIBCCALL Xstr(pbrk)(T const *s, T const *accept) {
 	T *hay_iter = (T *)s,haych,ch;
 	T const *ned_iter;
@@ -289,12 +445,11 @@ DECL T *LIBCCALL Xstr(pbrk)(T const *s, T const *accept) {
 	}
 	return NULL;
 }
+#endif /* WANT_STRPBRK */
 
-#ifdef IS_WIDE
-DECL T *LIBCCALL Xstr(tok)
-#else
+#ifdef WANT_STRTOK_R
+#undef WANT_STRTOK_R
 DECL T *LIBCCALL Xstr(tok_r)
-#endif
 (T *__restrict s, T const *__restrict delim, T **__restrict save_ptr) {
 	T *end;
 	if (!s) s = *save_ptr;
@@ -307,14 +462,457 @@ DECL T *LIBCCALL Xstr(tok_r)
 	*save_ptr = end+1;
 	return s;
 }
-#ifndef IS_WIDE
-DECL T *LIBCCALL Xstr(tok)(T *__restrict s, T const *__restrict delim) {
-	PRIVATE T *safe = NULL;
-	return Xstr(tok_r)(s,delim,&safe);
-}
-#endif /* !IS_WIDE */
+#endif /* WANT_STRTOK_R */
 
-#endif /* !__KERNEL__ */
+#ifdef WANT_STRTOK
+#undef WANT_STRTOK
+#ifndef __strtok_safe_defined
+#define __strtok_safe_defined 1
+PRIVATE void *strtok_safe = NULL;
+#endif /* !__strtok_safe_defined */
+DECL T *LIBCCALL Xstr(tok)(T *__restrict s, T const *__restrict delim) {
+	return Xstr(tok_r)(s,delim,(T **)&strtok_safe);
+}
+#endif /* WANT_STRTOK */
+
+
+#ifdef WANT_STRFRY
+#undef WANT_STRFRY
+DECL T *LIBCCALL Xstr(fry)(T *string) {
+	NOT_IMPLEMENTED();
+	return string;
+}
+#endif /* WANT_STRFRY */
+
+
+#ifdef WANT_STRLWR
+#undef WANT_STRLWR
+DECL T *LIBCCALL Xstr(lwr)(T *str) {
+	T *result = str;
+	for (; *str; ++str)
+		*str = TOLOWER(*str);
+	return result;
+}
+#endif /* WANT_STRLWR */
+#ifdef WANT_STRLWR_L
+#undef WANT_STRLWR_L
+#ifdef NO_CASELOCALE
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(lwr_l),Xstr(lwr));
+#else
+DECL T *LIBCCALL Xstr(lwr_l)(T *str, locale_t UNUSED(lc)) { return Xstr(lwr)(str); }
+#endif
+#else /* NO_CASELOCALE */
+DECL T *LIBCCALL Xstr(lwr_l)(T *str, locale_t lc) {
+	T *result = str;
+	for (; *str; ++str)
+		*str = TOLOWER_L(*str,lc);
+	return result;
+}
+#endif /* !NO_CASELOCALE */
+#endif /* WANT_STRLWR_L */
+
+
+#ifdef WANT_STRUPR
+#undef WANT_STRUPR
+DECL T *LIBCCALL Xstr(upr)(T *str) {
+	T *result = str;
+	for (; *str; ++str)
+		*str = TOUPPER(*str);
+	return result;
+}
+#endif /* WANT_STRUPR */
+#ifdef WANT_STRUPR_L
+#undef WANT_STRUPR_L
+#ifdef NO_CASELOCALE
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(upr_l),Xstr(upr));
+#else
+DECL T *LIBCCALL Xstr(upr_l)(T *str, locale_t UNUSED(lc)) { return Xstr(upr)(str); }
+#endif
+#else /* NO_CASELOCALE */
+DECL T *LIBCCALL Xstr(upr_l)(T *str, locale_t lc) {
+	T *result = str;
+	for (; *str; ++str)
+		*str = TOUPPER_L(*str,lc);
+	return result;
+}
+#endif /* !NO_CASELOCALE */
+#endif /* WANT_STRUPR_L */
+
+
+#ifdef WANT_STRNLWR
+#undef WANT_STRNLWR
+DECL T *LIBCCALL Xstr(nlwr)(T *str, size_t maxlen) {
+	T *result = str,*end = str+maxlen;
+	for (; str != end && *str; ++str)
+		*str = TOLOWER(*str);
+	return result;
+}
+#endif /* WANT_STRNLWR */
+#ifdef WANT_STRNLWR_L
+#undef WANT_STRNLWR_L
+#ifdef NO_CASELOCALE
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(nlwr_l),Xstr(nlwr));
+#else
+DECL T *LIBCCALL Xstr(nlwr_l)(T *str, size_t maxlen, locale_t UNUSED(lc)) { return Xstr(nlwr)(str,maxlen); }
+#endif
+#else /* NO_CASELOCALE */
+DECL T *LIBCCALL Xstr(nlwr_l)(T *str, size_t maxlen, locale_t lc) {
+	T *result = str,*end = str+maxlen;
+	for (; str != end && *str; ++str)
+		*str = TOLOWER_L(*str,lc);
+	return result;
+}
+#endif /* !NO_CASELOCALE */
+#endif /* WANT_STRNLWR_L */
+
+
+#ifdef WANT_STRNUPR
+#undef WANT_STRNUPR
+DECL T *LIBCCALL Xstr(nupr)(T *str, size_t maxlen) {
+	T *result = str,*end = str+maxlen;
+	for (; str != end && *str; ++str)
+		*str = TOUPPER(*str);
+	return result;
+}
+#endif /* WANT_STRNUPR */
+#ifdef WANT_STRNUPR_L
+#undef WANT_STRNUPR_L
+#ifdef NO_CASELOCALE
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(nupr_l),Xstr(nupr));
+#else
+DECL T *LIBCCALL Xstr(nupr_l)(T *str, size_t maxlen, locale_t UNUSED(lc)) { return Xstr(nupr)(str,maxlen); }
+#endif
+#else /* NO_CASELOCALE */
+DECL T *LIBCCALL Xstr(nupr_l)(T *str, size_t maxlen, locale_t lc) {
+	T *result = str,*end = str+maxlen;
+	for (; str != end && *str; ++str)
+		*str = TOUPPER_L(*str,lc);
+	return result;
+}
+#endif /* !NO_CASELOCALE */
+#endif /* WANT_STRNUPR_L */
+
+
+#ifdef WANT_STRSET
+#undef WANT_STRSET
+DECL T *LIBCCALL Xstr(set)(T *str, Tneedle chr) {
+	T *result = str;
+	while (*str) *str++ = (T)chr;
+	return result;
+}
+#endif /* WANT_STRSET */
+#ifdef WANT_STRNSET
+#undef WANT_STRNSET
+DECL T *LIBCCALL Xstr(nset)(T *str, Tneedle chr, size_t maxlen) {
+	T *result = str,*end = str+maxlen;
+	while (str != end && *str) *str++ = (T)chr;
+	return result;
+}
+#endif /* WANT_STRNSET */
+
+
+#ifdef WANT_STRREV
+#undef WANT_STRREV
+DECL T *LIBCCALL Xstr(rev)(T *str) {
+	NOT_IMPLEMENTED();
+	return str;
+}
+#endif /* WANT_STRREV */
+#ifdef WANT_STRNREV
+#undef WANT_STRNREV
+DECL T *LIBCCALL Xstr(nrev)(T *str, size_t maxlen) {
+	NOT_IMPLEMENTED();
+	return str;
+}
+#endif /* WANT_STRNREV */
+
+
+#ifdef WANT_STRCOLL
+#undef WANT_STRCOLL
+DECL int LIBCCALL Xstr(coll)(T const *s1, T const *s2) {
+	NOT_IMPLEMENTED();
+	return 0;
+}
+#endif /* WANT_STRCOLL */
+#ifdef WANT_STRCOLL_L
+#undef WANT_STRCOLL_L
+DECL int LIBCCALL Xstr(coll_l)(T const *s1, T const *s2, locale_t l) {
+	NOT_IMPLEMENTED();
+	return Xstr(coll)(s1,s2);
+}
+#endif /* WANT_STRCOLL_L */
+
+
+#ifdef WANT_STRNCOLL
+#undef WANT_STRNCOLL
+DECL int LIBCCALL Xstr(ncoll)(T const *str1, T const *str2, size_t maxlen) {
+	NOT_IMPLEMENTED();
+	return 0;
+}
+#endif /* WANT_STRNCOLL */
+#ifdef WANT_STRNCOLL_L
+#undef WANT_STRNCOLL_L
+DECL int LIBCCALL Xstr(ncoll_l)(T const *str1, T const *str2, size_t maxlen, locale_t lc) {
+	NOT_IMPLEMENTED();
+	return Xstr(ncoll)(str1,str2,maxlen);
+}
+#endif /* WANT_STRNCOLL_L */
+
+
+#ifdef WANT_STRCASECOLL
+#undef WANT_STRCASECOLL
+DECL int LIBCCALL Xstr(casecoll)(T const *str1, T const *str2) {
+	NOT_IMPLEMENTED();
+	return 0;
+}
+#endif /* WANT_STRCASECOLL */
+#ifdef WANT_STRCASECOLL_L
+#undef WANT_STRCASECOLL_L
+DECL int LIBCCALL Xstr(casecoll_l)(T const *str1, T const *str2, locale_t lc) {
+	NOT_IMPLEMENTED();
+	return Xstr(casecoll)(str1,str2);
+}
+#endif /* WANT_STRCASECOLL_L */
+
+
+#ifdef WANT_STRNCASECOLL
+#undef WANT_STRNCASECOLL
+DECL int LIBCCALL Xstr(ncasecoll)(T const *str1, T const *str2, size_t maxlen) {
+	NOT_IMPLEMENTED();
+	return 0;
+}
+#endif /* WANT_STRNCASECOLL */
+#ifdef WANT_STRNCASECOLL_L
+#undef WANT_STRNCASECOLL_L
+DECL int LIBCCALL Xstr(ncasecoll_l)(T const *str1, T const *str2, size_t maxlen, locale_t lc) {
+	NOT_IMPLEMENTED();
+	return Xstr(ncasecoll)(str1,str2,maxlen);
+}
+#endif /* WANT_STRNCASECOLL_L */
+
+
+#ifdef WANT_STRXFRM
+#undef WANT_STRXFRM
+DECL size_t LIBCCALL Xstr(xfrm)(T *__restrict dst, T const *__restrict src, size_t n) {
+	NOT_IMPLEMENTED();
+	return 0;
+}
+#endif /* WANT_STRXFRM */
+#ifdef WANT_STRXFRM_L
+#undef WANT_STRXFRM_L
+DECL size_t LIBCCALL Xstr(xfrm_l)(T *dst, T const *src, size_t n, locale_t l) {
+	NOT_IMPLEMENTED();
+	return Xstr(xfrm)(dst,src,n);
+}
+#endif /* WANT_STRXFRM_L */
+
+
+#ifdef WANT_STRCASECMP
+#undef WANT_STRCASECMP
+DECL int LIBCCALL Xstr(casecmp)(T const *s1, T const *s2) {
+	T a,b; int result;
+	do {
+		a = TOLOWER(*s1++);
+		b = TOLOWER(*s2++);
+		result = (int)a-(int)b;
+	} while (result == 0 && a);
+	return result;
+}
+#endif /* WANT_STRCASECMP */
+#ifdef WANT_STRCASECMP_L
+#undef WANT_STRCASECMP_L
+#ifdef NO_CASELOCALE
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(casecmp_l),Xstr(casecmp));
+#else
+DECL int LIBCCALL Xstr(casecmp_l)(T const *s1, T const *s2, locale_t UNUSED(loc)) { return Xstr(casecmp)(s1,s2); }
+#endif
+#else /* NO_CASELOCALE */
+DECL int LIBCCALL Xstr(casecmp_l)(T const *s1, T const *s2, locale_t loc) {
+	T a,b; int result;
+	do {
+		a = TOLOWER_L(*s1++,loc);
+		b = TOLOWER_L(*s2++,loc);
+		result = (int)a-(int)b;
+	} while (result == 0 && a);
+	return result;
+}
+#endif /* !NO_CASELOCALE */
+#endif /* WANT_STRCASECMP_L */
+
+
+#ifdef WANT_STRNCASECMP
+#undef WANT_STRNCASECMP
+DECL int LIBCCALL Xstr(ncasecmp)(T const *s1, T const *s2, size_t n) {
+	T a,b,*end = (T *)s1+n; int result;
+	if (n) {
+		do {
+			a = TOLOWER(*s1++);
+			b = TOLOWER(*s2++);
+			result = (int)a-(int)b;
+		} while (result == 0 && a && s1 != end);
+	}
+	return result;
+}
+#endif /* WANT_STRNCASECMP */
+#ifdef WANT_STRNCASECMP_L
+#undef WANT_STRNCASECMP_L
+#ifdef NO_CASELOCALE
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(ncasecmp_l),Xstr(ncasecmp));
+#else
+DECL int LIBCCALL Xstr(ncasecmp_l)(T const *s1, T const *s2, size_t n, locale_t UNUSED(loc)) { return Xstr(ncasecmp)(s1,s2,n); }
+#endif
+#else /* NO_CASELOCALE */
+DECL int LIBCCALL Xstr(ncasecmp_l)(T const *s1, T const *s2, size_t n, locale_t loc) {
+	T a,b,*end = (T *)s1+n; int result;
+	if (n) {
+		do {
+			a = TOLOWER_L(*s1++,loc);
+			b = TOLOWER_L(*s2++,loc);
+			result = (int)a-(int)b;
+		} while (result == 0 && a && s1 != end);
+	}
+	return result;
+}
+#endif /* !NO_CASELOCALE */
+#endif /* WANT_STRNCASECMP_L */
+
+
+#ifdef WANT_STRDUP
+#undef WANT_STRDUP
+DECL T *LIBCCALL Xstr(dup)(T const *__restrict str) {
+	return (T *)libc_memdup(str,Xstr(len)(str)*S);
+}
+#endif /* WANT_STRDUP */
+#ifdef WANT_STRNDUP
+#undef WANT_STRNDUP
+DECL T *LIBCCALL Xstr(ndup)(T const *__restrict str, size_t maxlen) {
+	return (T *)libc_memdup(str,Xstr(nlen)(str,maxlen)*S);
+}
+#endif /* WANT_STRNDUP */
+
+
+
+
+/* DOS-SLIB functions. */
+#ifdef WANT_STRCAT_S
+#undef WANT_STRCAT_S
+DECL errno_t LIBCCALL Xstr(cat_s)(T *__restrict dst, size_t dstsize, T const *__restrict src) {
+	T *dstend = Xstr(nend)(dst,dstsize);
+	size_t srclen = Xstr(len)(src);
+	dstsize -= (size_t)(dstend-dst);
+	if (srclen+1 > dstsize) return ERANGE;
+	STR_MEMCPY(dstend,src,srclen+1);
+	return EOK;
+}
+#endif /* WANT_STRCAT_S */
+
+#ifdef WANT_STRCPY_S
+#undef WANT_STRCPY_S
+DECL errno_t LIBCCALL Xstr(cpy_s)(T *__restrict dst, size_t dstsize, T const *__restrict src) {
+	size_t srclen = Xstr(len)(src);
+	if (srclen+1 > dstsize) return ERANGE;
+	STR_MEMCPY(dst,src,srclen+1);
+	return EOK;
+}
+#endif /* WANT_STRCPY_S */
+
+#ifdef WANT_STRLWR_S
+#undef WANT_STRLWR_S
+DECL errno_t LIBCCALL Xstr(lwr_s)(T *__restrict str, size_t buflen) {
+	if (Xstr(nlen)(str,buflen) == buflen)
+		return ERANGE;
+	Xstr(lwr)(str);
+	return EOK;
+}
+#endif /* WANT_STRLWR_S */
+
+#ifdef WANT_STRLWR_S_L
+#undef WANT_STRLWR_S_L
+DECL errno_t LIBCCALL Xstr(lwr_s_l)(T *__restrict str, size_t buflen, locale_t locale) {
+	if (Xstr(nlen)(str,buflen) == buflen)
+		return ERANGE;
+	Xstr(lwr_l)(str,locale);
+	return EOK;
+}
+#endif /* WANT_STRLWR_S_L */
+
+#ifdef WANT_STRUPR_S
+#undef WANT_STRUPR_S
+DECL errno_t LIBCCALL Xstr(upr_s)(T *__restrict str, size_t buflen) {
+	if (Xstr(nlen)(str,buflen) == buflen)
+		return ERANGE;
+	Xstr(upr)(str);
+	return EOK;
+}
+#endif /* WANT_STRUPR_S */
+
+#ifdef WANT_STRUPR_S_L
+#undef WANT_STRUPR_S_L
+DECL errno_t LIBCCALL Xstr(upr_s_l)(T *__restrict str, size_t buflen, locale_t locale) {
+	if (Xstr(nlen)(str,buflen) == buflen)
+		return ERANGE;
+	Xstr(upr_l)(str,locale);
+	return EOK;
+}
+#endif /* WANT_STRUPR_S_L */
+
+#ifdef WANT_STRNCAT_S
+#undef WANT_STRNCAT_S
+DECL errno_t LIBCCALL Xstr(ncat_s)(T *__restrict dst, size_t dstsize, T const *__restrict src, size_t maxlen) {
+	T *dstend = Xstr(nend)(dst,dstsize);
+	size_t srclen = Xstr(nlen)(src,maxlen);
+	dstsize -= (size_t)(dstend-dst);
+	if (srclen+1 > dstsize) return ERANGE;
+	STR_MEMCPY(dstend,src,srclen);
+	dstend[srclen] = NUL;
+	return EOK;
+}
+#endif /* WANT_STRNCAT_S */
+
+#ifdef WANT_STRNCPY_S
+#undef WANT_STRNCPY_S
+DECL errno_t LIBCCALL Xstr(ncpy_s)(T *__restrict dst, size_t dstsize, T const *__restrict src, size_t maxlen) {
+	size_t srclen = Xstr(nlen)(src,maxlen);
+	if (srclen+1 > dstsize) return ERANGE;
+	STR_MEMCPY(dst,src,srclen);
+	dst[srclen] = NUL;
+	return EOK;
+}
+#endif /* WANT_STRNCPY_S */
+
+#ifdef WANT_STRSET_S
+#undef WANT_STRSET_S
+DECL errno_t LIBCCALL Xstr(set_s)(T *__restrict str, size_t buflen, T val) {
+	if (Xstr(nlen)(str,buflen) == buflen)
+		return ERANGE;
+	Xstr(set)(str,val);
+	return EOK;
+}
+#endif /* WANT_STRSET_S */
+
+#ifdef WANT_STRNSET_S
+#undef WANT_STRNSET_S
+DECL errno_t LIBCCALL Xstr(nset_s)(T *__restrict str, size_t buflen, T val, size_t maxlen) {
+	/* XXX: How is this supposed to fail? */
+	STR_MEMSET(str,NUL,Xstr(nlen)(str,MIN(buflen,maxlen)));
+	return EOK;
+}
+#endif /* WANT_STRNSET_S */
+
+
+
+
+
+
+
+
+
 
 
 /* Wide-string UTF conversion functions. */
@@ -325,8 +923,6 @@ DECL T *LIBCCALL Xstr(tok)(T *__restrict s, T const *__restrict delim) {
 #define UTFXTO8  libc_utf16to8
 #define UTF8TOX  libc_utf8to16
 #endif
-
-
 
 #ifdef WANT_MBLEN
 #undef WANT_MBLEN
@@ -373,7 +969,7 @@ DECL size_t LIBCCALL Xmb(towc)(T *__restrict pwc, char const *__restrict s, size
 }
 
 DECL size_t LIBCCALL Xmb(snrtowcs)
-(char32_t *__restrict dst, char const **__restrict src,
+(T *__restrict dst, char const **__restrict src,
  size_t nmc, size_t len, struct __mbstate *__restrict ps) {
 	size_t result;
 	result = UTF8TOX((char const *)src,(size_t)&nmc,dst,len,ps,
@@ -442,15 +1038,58 @@ DECL size_t LIBCCALL Xwc(swidth)(T const *s, size_t n) {
 	mbstate_t state = MBSTATE_INIT;
 	return UTFXTO8(s,n,NULL,0,&state,UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL);
 }
-INTERN size_t LIBCCALL Xwc(width)(T c) {
+DECL size_t LIBCCALL Xwc(width)(T c) {
 	return Xwc(swidth)(&c,1);
 }
 #endif /* WANT_WCWIDTH */
 
+#ifdef WANT_MBSRTOWCS_S
+#undef WANT_MBSRTOWCS_S
+DECL errno_t LIBCCALL Xmb(srtowcs_s)
+(size_t *result, T *__restrict buf, size_t buflen,
+ char const **__restrict psrc, size_t srcsize,
+ mbstate_t *__restrict ps) {
+	size_t res = Xmb(snrtowcs)(buf,psrc,srcsize,buflen,ps);
+	if (result) *result = res;
+	return res != (size_t)-1 ? EOK : EILSEQ;
+}
+#endif /* WANT_MBSRTOWCS_S */
 
+#ifdef WANT_WCSRTOMBS_S
+#undef WANT_WCSRTOMBS_S
+DECL errno_t LIBCCALL Xwc(srtombs_s)
+(size_t *result, char *__restrict buf, size_t buflen,
+ T const **__restrict psrc, size_t srcsize, mbstate_t *__restrict ps) {
+	return Xwc(snrtombs)(buf,psrc,srcsize,buflen,ps);
+}
+#endif /* WANT_WCSRTOMBS_S */
+
+#ifdef WANT_WCRTOMB_S
+#undef WANT_WCRTOMB_S
+DECL errno_t LIBCCALL Xwc(rtomb_s)
+(size_t *result, char *__restrict buf,
+ size_t buflen, T wc, mbstate_t *__restrict ps) {
+	size_t res;
+	if (!buf) {
+		mbstate_reset(ps);
+		res = UNICODE_IS_STATEDEPENDENT;
+	} else {
+		res = UTFXTO8(&wc,1,buf,buflen,ps,
+		              UNICODE_F_NOZEROTERM|UNICODE_F_STOPONNUL|
+		              UNICODE_F_DOSINGLE);
+	}
+	if (result) *result = res;
+	return res != (size_t)-1 ? EOK : EILSEQ;
+}
+#endif /* WANT_WCRTOMB_S */
+
+
+#undef DEFINE_ALIAS
+#undef DECL
 #undef UTFXTO8
 #undef UTF8TOX
 #undef STR_MEMCPY
+#undef STR_MEMSET
 #undef NUL
 #undef T
 #undef Tneedle
@@ -468,6 +1107,6 @@ INTERN size_t LIBCCALL Xwc(width)(T c) {
 #undef S
 #undef TOLOWER
 #undef TOUPPER
-#ifdef IS_WIDE
-#undef IS_WIDE
-#endif
+#undef NO_CASELOCALE
+#undef TOLOWER_L
+#undef TOUPPER_L

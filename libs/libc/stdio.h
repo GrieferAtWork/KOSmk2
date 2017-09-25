@@ -181,7 +181,10 @@ INTDEF wint_t LIBCCALL libc_putwchar_unlocked(wchar_t wc);
 
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTDEF FILE *(LIBCCALL libc___iob_func)(void);
+INTDEF FILE *LIBCCALL libc___iob_func(void);
+
+INTDEF wint_t LIBCCALL libc_single_ungetwch(wint_t __wc);
+INTDEF wint_t LIBCCALL libc_single_ungetwch_nolock(wint_t __wc);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 

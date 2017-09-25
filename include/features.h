@@ -68,6 +68,7 @@
 #undef __USE_KXS         /* '#if _KOS_SOURCE >= 2'   Minor extended functionality that is likely to collide with existing programs. */
 #undef __USE_DOS         /* '#ifdef _DOS_SOURCE'     Functions usually only found in DOS: spawn, strlwr, etc. */
 #undef __USE_DOSFS       /* '#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). */
+#undef __USE_DOS_SLIB    /* '#if __STDC_WANT_SECURE_LIB__' Enable prototypes for the so-called ~secure~ DOS library. (It's just meant to do some additional checks on arguments and such...) */
 #undef __USE_TIME64      /* '#ifdef _TIME64_SOURCE'  Provide 64-bit time functions (e.g.: 'time64()'). */
 #undef __USE_TIME_BITS64 /* '#if _TIME_T_BITS == 64' Use a 64-bit interger for 'time_t'. */
 
@@ -487,15 +488,19 @@
  *    with incompatible prototypes or associated data objects. */
 #ifdef __USE_DOS
 #ifdef __PE__
-#   define __DOS_FUNC(x) /* nothing (linked by default) */
+#   define __DOS_FUNC(x)  /* nothing (linked by default) */
+#   define __DOS_FUNC_(x) __ASMNAME(#x)
 #else
-#   define __DOS_FUNC(x) __ASMNAME(".dos." #x)
+#   define __DOS_FUNC(x)  __ASMNAME(".dos." #x)
+#   define __DOS_FUNC_(x) __ASMNAME(".dos." #x)
 #endif
 #else /* __USE_DOS */
 #ifdef __PE__
-#   define __DOS_FUNC(x) __ASMNAME(".kos." #x)
+#   define __DOS_FUNC(x)  __ASMNAME(".kos." #x)
+#   define __DOS_FUNC_(x) __ASMNAME(".kos." #x)
 #else
-#   define __DOS_FUNC(x) /* nothing (linked by default) */
+#   define __DOS_FUNC(x)  /* nothing (linked by default) */
+#   define __DOS_FUNC_(x) __ASMNAME(#x)
 #endif
 #endif /* !__USE_DOS */
 
@@ -503,9 +508,13 @@
 #ifdef __PE__
 #   define __KOS_FUNC(x)  __ASMNAME(".kos." #x)
 #   define __KOS_FUNC_(x) __ASMNAME(".kos." #x)
+#   define __PE_FUNC(x)   /* nothing */
+#   define __PE_FUNC_(x)  __ASMNAME(#x)
 #else
 #   define __KOS_FUNC(x)  /* nothing */
 #   define __KOS_FUNC_(x) __ASMNAME(#x)
+#   define __PE_FUNC(x)   __ASMNAME(".dos." #x)
+#   define __PE_FUNC_(x)  __ASMNAME(".dos." #x)
 #endif
 
 #ifdef __USE_DOSFS
@@ -522,6 +531,13 @@
 #else
 #   define __TM_FUNC(x)     /* nothing */
 #   define __TM_FUNC_R(x)   /* nothing */
+#endif
+
+#ifdef __USE_DOS
+#if defined(__STDC_WANT_SECURE_LIB__) && \
+           (__STDC_WANT_SECURE_LIB__+0) != 0
+#define __USE_DOS_SLIB 1
+#endif
 #endif
 
 #undef __USE_DEBUG
