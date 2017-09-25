@@ -150,10 +150,13 @@ again_thisone: {
   part_size   = part_end-part_begin;
   update_size = MIN(part_end,start+n_bytes)-part_begin;
   assert(update_size <= part_size);
-  assert(update_size <= n_bytes);
+  assertf(update_size <= n_bytes || start != part_begin,
+          "update_size = %Iu\n"
+          "n_bytes     = %Iu\n",
+          update_size,n_bytes);
   /* Check again to ensure that the given range is inside this part. */
   assert(start             >= part_begin);
-  assert(start+update_size <= part_end);
+  assert(start+update_size <= part_end || start != part_begin);
   if (start != part_begin) {
    /* Split the part near its base. */
    if (!mregion_part_split_lo(part,start)) goto fail;
