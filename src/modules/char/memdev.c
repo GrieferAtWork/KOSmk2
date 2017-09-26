@@ -82,7 +82,7 @@ PRIVATE void MODULE_INIT KCALL memdev_init(void) {
  for (iter = mdev; iter->ms_ops; ++iter)
       memdev_mkdev(iter);
 }
-PRIVATE void MODULE_INIT KCALL memdev_fini(void) {
+PRIVATE void MODULE_FINI KCALL memdev_fini(void) {
  struct mdev_setup const *iter;
  /* Delete all memory devices again. */
  for (iter = mdev; iter->ms_ops; ++iter)
