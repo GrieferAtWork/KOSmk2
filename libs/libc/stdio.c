@@ -28,6 +28,7 @@
 #include "stdio.h"
 #include "string.h"
 #ifndef __KERNEL__
+#include "file.h"
 #include "unistd.h"
 #endif /* !__KERNEL__ */
 
@@ -144,7 +145,7 @@ vdprintf_callback(char const *__restrict data, size_t datalen, void *fd) {
  return libc_write((int)(uintptr_t)fd,data,datalen);
 }
 INTERN ssize_t LIBCCALL libc_vdprintf(int fd, char const *__restrict format, va_list args) {
- return libc_format_vprintf(&vdprintf_callback,(void *)(uintptr_t)fd,format,args);
+ return libc_format_vbprintf(&vdprintf_callback,(void *)(uintptr_t)fd,format,args);
 }
 INTERN ssize_t ATTR_CDECL libc_dprintf(int fd, char const *__restrict format, ...) {
  ssize_t result; va_list args;
@@ -194,71 +195,44 @@ DEFINE_PUBLIC_ALIAS(__asprintf,asprintf);
 
 #ifndef __KERNEL__
 /* Wide-string API */
-INTERN ssize_t LIBCCALL libc_vwprintf(wchar_t const *__restrict format,
-                                      va_list arg) {
+INTERN ssize_t LIBCCALL
+libc_32vswprintf(char32_t *__restrict s, size_t n,
+                 char32_t const *__restrict format,
+                 va_list arg) {
  NOT_IMPLEMENTED();
  return 0;
 }
-INTERN ssize_t LIBCCALL libc_vswprintf(wchar_t *__restrict s, size_t n,
-                                       wchar_t const *__restrict format,
-                                       va_list arg) {
+INTERN ssize_t LIBCCALL
+libc_32vswscanf(char32_t const *__restrict s,
+                char32_t const *__restrict format,
+                va_list arg) {
  NOT_IMPLEMENTED();
  return 0;
 }
-INTERN ssize_t LIBCCALL libc_vwscanf(wchar_t const *__restrict format, va_list arg) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN ssize_t LIBCCALL libc_vswscanf(wchar_t const *__restrict s,
-                                      wchar_t const *__restrict format,
-                                      va_list arg) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN ssize_t LIBCCALL libc_wprintf(wchar_t const *__restrict format, ...) {
+INTERN ssize_t LIBCCALL
+libc_32swprintf(char32_t *__restrict s, size_t n,
+                char32_t const *__restrict format, ...) {
  va_list args; ssize_t result; va_start(args,format);
- result = libc_vwprintf(format,args);
+ result = libc_32vswprintf(s,n,format,args);
  va_end(args);
  return result;
 }
-INTERN ssize_t LIBCCALL libc_swprintf(wchar_t *__restrict s, size_t n,
-                                      wchar_t const *__restrict format, ...) {
+INTERN ssize_t LIBCCALL
+libc_32swscanf(char32_t const *__restrict s,
+               char32_t const *__restrict format, ...) {
  va_list args; ssize_t result; va_start(args,format);
- result = libc_vswprintf(s,n,format,args);
- va_end(args);
- return result;
-}
-INTERN ssize_t LIBCCALL libc_wscanf(wchar_t const *__restrict format, ...) {
- va_list args; ssize_t result; va_start(args,format);
- result = libc_vwscanf(format,args);
- va_end(args);
- return result;
-}
-INTERN ssize_t LIBCCALL libc_swscanf(wchar_t const *__restrict s,
-                                     wchar_t const *__restrict format, ...) {
- va_list args; ssize_t result; va_start(args,format);
- result = libc_vswscanf(s,format,args);
+ result = libc_32vswscanf(s,format,args);
  va_end(args);
  return result;
 }
 
-DEFINE_PUBLIC_ALIAS(wprintf,libc_wprintf);
-DEFINE_PUBLIC_ALIAS(swprintf,libc_swprintf);
-DEFINE_PUBLIC_ALIAS(vwprintf,libc_vwprintf);
-DEFINE_PUBLIC_ALIAS(vswprintf,libc_vswprintf);
-DEFINE_PUBLIC_ALIAS(wscanf,libc_wscanf);
-DEFINE_PUBLIC_ALIAS(swscanf,libc_swscanf);
-DEFINE_PUBLIC_ALIAS(vwscanf,libc_vwscanf);
-DEFINE_PUBLIC_ALIAS(vswscanf,libc_vswscanf);
+DEFINE_PUBLIC_ALIAS(swprintf,libc_32swprintf);
+DEFINE_PUBLIC_ALIAS(vswprintf,libc_32vswprintf);
+DEFINE_PUBLIC_ALIAS(swscanf,libc_32swscanf);
+DEFINE_PUBLIC_ALIAS(vswscanf,libc_32vswscanf);
 
 #endif /* !__KERNEL__ */
 
 DECL_END
-
-#ifndef __KERNEL__
-#ifndef __INTELLISENSE__
-#include "stdio-file.c.inl"
-#endif
-#endif /* !__KERNEL__ */
 
 #endif /* !GUARD_LIBS_LIBC_STDIO_C */

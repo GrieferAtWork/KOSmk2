@@ -30,16 +30,13 @@
     <ClCompile Include="..\..\libs\libc\misc.c" />
     <ClCompile Include="..\..\libs\libc\locale.c" />
     <ClCompile Include="..\..\libs\libc\unicode.c" />
+    <ClCompile Include="..\..\libs\libc\file.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\libs\libc\templates\strtouint.code">
-      <Filter>templates</Filter>
-    </None>
     <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code">
       <Filter>templates</Filter>
     </None>
     <None Include="..\..\libs\libc\dlmalloc.c.inl" />
-    <None Include="..\..\libs\libc\stdio-file.c.inl" />
     <None Include="..\..\libs\libc\strerror.inl" />
     <None Include="..\..\libs\libc\typecore.c.inl" />
     <None Include="..\..\libs\libc\templates\memory.code">
@@ -78,6 +75,7 @@
       <Filter>inet</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libs\libc\unicode.h" />
+    <ClInclude Include="..\..\libs\libc\file.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">

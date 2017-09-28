@@ -88,70 +88,8 @@ INTDEF long LIBCCALL libc_random(void);
 #undef LOCAL_RAND_TYPE
 
 INTDEF RAND_TYPE LIBCCALL libc_rand_r(RAND_SEED_R *__restrict pseed);
-
-#define INTERFACE_ONLY
-#if __SIZEOF_LONG__ == 4
-#define STRTOINT_32  libc_strtol
-#define STRTOUINT_32 libc_strtoul
-#define STRTOINT     libc_strtol
-#define STRTOUINT    libc_strtoul
-#define TYPE         long
-#define UTYPE        unsigned long
-#define DECL         INTDEF
-#include "templates/strtouint.code"
-#elif __SIZEOF_LONG_LONG__ == 4
-#define STRTOINT_32  libc_strtoll
-#define STRTOUINT_32 libc_strtoull
-#define STRTOINT     libc_strtoll
-#define STRTOUINT    libc_strtoull
-#define TYPE         __LONGLONG
-#define UTYPE        __ULONGLONG
-#define DECL         INTDEF
-#include "templates/strtouint.code"
-#endif
-
-#if __SIZEOF_LONG__ == 8
-#define STRTOINT_64  libc_strtol
-#define STRTOUINT_64 libc_strtoul
-#define STRTOINT     libc_strtol
-#define STRTOUINT    libc_strtoul
-#define TYPE         long
-#define UTYPE        unsigned long
-#define DECL         INTDEF
-#include "templates/strtouint.code"
-#elif __SIZEOF_LONG_LONG__ == 8
-#define STRTOINT_64  libc_strtoll
-#define STRTOUINT_64 libc_strtoull
-#define STRTOINT     libc_strtoll
-#define STRTOUINT    libc_strtoull
-#define TYPE         __LONGLONG
-#define UTYPE        __ULONGLONG
-#define DECL         INTDEF
-#include "templates/strtouint.code"
-#endif
-#undef INTERFACE_ONLY
-
-INTDEF int LIBCCALL libc_atoi(char const *__restrict nptr);
-#if __SIZEOF_LONG__ != __SIZEOF_INT__
-INTDEF long LIBCCALL libc_atol(char const *__restrict nptr);
-#endif
-#if __SIZEOF_LONG_LONG__ != __SIZEOF_INT__ && \
-    __SIZEOF_LONG_LONG__ != __SIZEOF_LONG__
-INTDEF __LONGLONG LIBCCALL libc_atoll(char const *__restrict nptr);
-#endif
-
 INTDEF void *LIBCCALL libc_bsearch(void const *key, void const *base, size_t nmemb, size_t size, __compar_fn_t compar);
 INTDEF void LIBCCALL libc_qsort(void *base, size_t nmemb, size_t size, __compar_fn_t compar);
-INTDEF char *LIBCCALL libc_gcvt(double value, int ndigit, char *buf);
-INTDEF char *LIBCCALL libc_qgcvt(long double value, int ndigit, char *buf);
-INTDEF int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
-INTDEF int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
-INTDEF int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
-INTDEF int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
-INTDEF double LIBCCALL libc_atof(char const *__restrict nptr);
-INTDEF double LIBCCALL libc_strtod(char const *__restrict nptr, char **endptr);
-INTDEF float LIBCCALL libc_strtof(char const *__restrict nptr, char **__restrict endptr);
-INTDEF long double LIBCCALL libc_strtold(char const *__restrict nptr, char **__restrict endptr);
 INTDEF int LIBCCALL libc_getloadavg(double loadavg[], int nelem);
 INTDEF void LIBCCALL libc_qsort_r(void *pbase, size_t total_elems, size_t size, __compar_d_fn_t cmp, void *arg);
 #ifndef __KERNEL__
@@ -192,17 +130,6 @@ INTDEF int LIBCCALL libc_initstate_r(unsigned int seed, char *__restrict statebu
 INTDEF int LIBCCALL libc_setstate_r(char *__restrict statebuf, struct random_data *__restrict buf);
 INTDEF int LIBCCALL libc_mkstemps(char *template_, int suffixlen);
 INTDEF int LIBCCALL libc_rpmatch(char const *response);
-INTDEF char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign);
-INTDEF char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign);
-INTDEF char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign);
-INTDEF char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign);
-INTDEF long LIBCCALL libc_strtol_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
-INTDEF unsigned long LIBCCALL libc_strtoul_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
-INTDEF __LONGLONG LIBCCALL libc_strtoll_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
-INTDEF __ULONGLONG LIBCCALL libc_strtoull_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
-INTDEF double LIBCCALL libc_strtod_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
-INTDEF float LIBCCALL libc_strtof_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
-INTDEF long double LIBCCALL libc_strtold_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
 INTDEF char *LIBCCALL libc_canonicalize_file_name(char const *name);
 INTDEF int LIBCCALL libc_ptsname_r(int fd, char *buf, size_t buflen);
 INTDEF int LIBCCALL libc_getpt(void);

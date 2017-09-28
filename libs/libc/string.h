@@ -51,7 +51,7 @@ INTDEF void *LIBCCALL libc__memcpy_d(void *__restrict dst, void const *__restric
 INTDEF void *LIBCCALL libc_mempcpy(void *__restrict dst, void const *__restrict src, size_t n);
 INTDEF void *LIBCCALL libc__mempcpy_d(void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO);
 INTDEF void *LIBCCALL libc_memmove(void *dst, void const *src, size_t n_bytes);
-INTDEF void *LIBCCALL libc_memset(void *dst, int byte, size_t n);
+INTDEF void *LIBCCALL libc_memset(void *__restrict dst, int byte, size_t n);
 INTDEF int LIBCCALL libc_memcmp(void const *a, void const *b, size_t n);
 INTDEF void *LIBCCALL libc_memchr(void const *__restrict haystack, int needle, size_t n);
 INTDEF void *LIBCCALL libc_memrchr(void const *__restrict haystack, int needle, size_t n);
@@ -69,7 +69,7 @@ INTDEF void *LIBCCALL libc__memcpyw_d(void *__restrict dst, void const *__restri
 INTDEF void *LIBCCALL libc_mempcpyw(void *__restrict dst, void const *__restrict src, size_t n_words);
 INTDEF void *LIBCCALL libc__mempcpyw_d(void *__restrict dst, void const *__restrict src, size_t n_words, DEBUGINFO);
 INTDEF void *LIBCCALL libc_memmovew(void *dst, void const *src, size_t n_words);
-INTDEF void *LIBCCALL libc_memsetw(void *dst, u16 word, size_t n_words);
+INTDEF void *LIBCCALL libc_memsetw(void *__restrict dst, u16 word, size_t n_words);
 INTDEF s16 LIBCCALL libc_memcmpw(void const *a, void const *b, size_t n_words);
 INTDEF u16 *LIBCCALL libc_memchrw(u16 const *__restrict haystack, u16 needle, size_t n_words);
 INTDEF u16 *LIBCCALL libc_memrchrw(u16 const *__restrict haystack, u16 needle, size_t n_words);
@@ -87,7 +87,7 @@ INTDEF void *LIBCCALL libc__memcpyl_d(void *__restrict dst, void const *__restri
 INTDEF void *LIBCCALL libc_mempcpyl(void *__restrict dst, void const *__restrict src, size_t n_dwords);
 INTDEF void *LIBCCALL libc__mempcpyl_d(void *__restrict dst, void const *__restrict src, size_t n_dwords, DEBUGINFO);
 INTDEF void *LIBCCALL libc_memmovel(void *dst, void const *src, size_t n_dwords);
-INTDEF void *LIBCCALL libc_memsetl(void *dst, u32 dword, size_t n_dwords);
+INTDEF void *LIBCCALL libc_memsetl(void *__restrict dst, u32 dword, size_t n_dwords);
 INTDEF s32 LIBCCALL libc_memcmpl(void const *a, void const *b, size_t n_dwords);
 INTDEF u32 *LIBCCALL libc_memchrl(u32 const *__restrict haystack, u32 needle, size_t n_dwords);
 INTDEF u32 *LIBCCALL libc_memrchrl(u32 const *__restrict haystack, u32 needle, size_t n_dwords);
@@ -106,7 +106,7 @@ INTDEF void *LIBCCALL libc__memcpyq_d(void *__restrict dst, void const *__restri
 INTDEF void *LIBCCALL libc_mempcpyq(void *__restrict dst, void const *__restrict src, size_t n_qwords);
 INTDEF void *LIBCCALL libc__mempcpyq_d(void *__restrict dst, void const *__restrict src, size_t n_qwords, DEBUGINFO);
 INTDEF void *LIBCCALL libc_memmoveq(void *dst, void const *src, size_t n_dwords);
-INTDEF void *LIBCCALL libc_memsetq(void *dst, u64 qword, size_t n_qwords);
+INTDEF void *LIBCCALL libc_memsetq(void *__restrict dst, u64 qword, size_t n_qwords);
 INTDEF s64 LIBCCALL libc_memcmpq(void const *a, void const *b, size_t n_qwords);
 INTDEF u64 *LIBCCALL libc_memchrq(u64 const *__restrict haystack, u64 needle, size_t n_qwords);
 INTDEF u64 *LIBCCALL libc_memrchrq(u64 const *__restrict haystack, u64 needle, size_t n_qwords);
@@ -162,13 +162,13 @@ INTDEF int LIBCCALL libc_strverscmp(char const *s1, char const *s2);
 INTDEF char *LIBCCALL libc_strsep(char **__restrict stringp, char const *__restrict delim);
 #ifndef __KERNEL__
 INTDEF void LIBCCALL libc_bcopy(void const *src, void *dst, size_t n);
-INTDEF void LIBCCALL libc_bzero(void *s, size_t n);
+INTDEF void LIBCCALL libc_bzero(void *__restrict s, size_t n);
 INTDEF char *LIBCCALL libc_strcpy(char *__restrict dst, char const *__restrict src);
 INTDEF char *LIBCCALL libc_strncpy(char *__restrict dst, char const *__restrict src, size_t n);
 INTDEF char *LIBCCALL libc_index(char const *__restrict haystack, int needle);
 INTDEF char *LIBCCALL libc_rindex(char const *__restrict haystack, int needle);
-INTDEF char *LIBCCALL libc_dirname(char *path);
-INTDEF char *LIBCCALL libc___xpg_basename(char *path);
+INTDEF char *LIBCCALL libc_dirname(char *__restrict path);
+INTDEF char *LIBCCALL libc___xpg_basename(char *__restrict path);
 INTDEF char *LIBCCALL libc_basename(char const *__restrict path);
 INTDEF char *LIBCCALL libc_strcat(char *__restrict dst, char const *__restrict src);
 INTDEF char *LIBCCALL libc_strncat(char *__restrict dst, char const *__restrict src, size_t n);
@@ -182,16 +182,48 @@ INTDEF char const signal_names[][10];
 INTDEF char *LIBCCALL libc_strsignal(int sig);
 INTDEF int LIBCCALL libc_strcoll(char const *s1, char const *s2);
 INTDEF size_t LIBCCALL libc_strxfrm(char *__restrict dst, char const *__restrict src, size_t n);
-INTDEF char *LIBCCALL libc_strfry(char *string);
-INTDEF void *LIBCCALL libc_memfrob(void *s, size_t n);
+INTDEF char *LIBCCALL libc_strfry(char *__restrict string);
+INTDEF void *LIBCCALL libc_memfrob(void *__restrict s, size_t n);
 INTDEF int LIBCCALL libc_strcoll_l(char const *s1, char const *s2, locale_t l);
-INTDEF size_t LIBCCALL libc_strxfrm_l(char *dst, char const *src, size_t n, locale_t l);
+INTDEF size_t LIBCCALL libc_strxfrm_l(char *__restrict dst, char const *__restrict src, size_t n, locale_t l);
 INTDEF char *LIBCCALL libc_strerror_l(int errnum, locale_t l);
 INTDEF int LIBCCALL libc_strcasecmp_l(char const *s1, char const *s2, locale_t loc);
 INTDEF int LIBCCALL libc_strncasecmp_l(char const *s1, char const *s2, size_t n, locale_t loc);
 INTDEF char *ATTR_CDECL libc_strdupaf(char const *__restrict format, ...);
 INTDEF char *LIBCCALL libc_vstrdupaf(char const *__restrict format, va_list args);
 #endif /* !__KERNEL__ */
+
+INTDEF char *LIBCCALL libc_gcvt(double value, int ndigit, char *buf);
+INTDEF char *LIBCCALL libc_qgcvt(long double value, int ndigit, char *buf);
+INTDEF int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
+INTDEF int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
+INTDEF int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
+INTDEF int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
+INTDEF float LIBCCALL libc_strtof(char const *__restrict nptr, char **__restrict endptr);
+INTDEF double LIBCCALL libc_strtod(char const *__restrict nptr, char **__restrict endptr);
+INTDEF long double LIBCCALL libc_strtold(char const *__restrict nptr, char **__restrict endptr);
+INTDEF s32 LIBCCALL libc_strto32(char const *__restrict nptr, char **__restrict endptr, int base);
+INTDEF u32 LIBCCALL libc_strtou32(char const *__restrict nptr, char **__restrict endptr, int base);
+INTDEF s64 LIBCCALL libc_strto64(char const *__restrict nptr, char **__restrict endptr, int base);
+INTDEF u64 LIBCCALL libc_strtou64(char const *__restrict nptr, char **__restrict endptr, int base);
+#ifndef __KERNEL__
+INTDEF char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign);
+INTDEF char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign);
+INTDEF char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign);
+INTDEF char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign);
+INTDEF float LIBCCALL libc_strtof_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
+INTDEF double LIBCCALL libc_strtod_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
+INTDEF long double LIBCCALL libc_strtold_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
+INTDEF double LIBCCALL libc_atof(char const *__restrict nptr);
+INTERN s32 LIBCCALL libc_ato32(char const *__restrict nptr);
+INTERN s64 LIBCCALL libc_ato64(char const *__restrict nptr);
+INTDEF s32 LIBCCALL libc_strto32_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
+INTDEF u32 LIBCCALL libc_strtou32_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
+INTDEF s64 LIBCCALL libc_strto64_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
+INTDEF u64 LIBCCALL libc_strtou64_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
+#endif /* !__KERNEL__ */
+
+
 
 #define STRERROR_VERSION 0
 #define ERRNOSTR_NAME   offsetof(struct errnotext_entry,ete_name)
@@ -228,16 +260,16 @@ typedef __WINT_TYPE__ wint_t;
 #endif /* !__wint_t_defined */
 struct __mbstate;
                   
-INTDEF char *LIBCCALL libc_strlwr(char *str);
-INTDEF char *LIBCCALL libc_strupr(char *str);
-INTDEF char *LIBCCALL libc_strset(char *str, int chr);
-INTDEF char *LIBCCALL libc_strnset(char *str, int chr, size_t maxlen);
-INTDEF char *LIBCCALL libc_strrev(char *str);
+INTDEF char *LIBCCALL libc_strlwr(char *__restrict str);
+INTDEF char *LIBCCALL libc_strupr(char *__restrict str);
+INTDEF char *LIBCCALL libc_strset(char *__restrict str, int chr);
+INTDEF char *LIBCCALL libc_strnset(char *__restrict str, int chr, size_t maxlen);
+INTDEF char *LIBCCALL libc_strrev(char *__restrict str);
 INTDEF int LIBCCALL libc_strcasecoll(char const *str1, char const *str2);
 INTDEF int LIBCCALL libc_strncoll(char const *str1, char const *str2, size_t maxlen);
 INTDEF int LIBCCALL libc_strncasecoll(char const *str1, char const *str2, size_t maxlen);
-INTDEF char *LIBCCALL libc_strlwr_l(char *str, locale_t lc);
-INTDEF char *LIBCCALL libc_strupr_l(char *str, locale_t lc);
+INTDEF char *LIBCCALL libc_strlwr_l(char *__restrict str, locale_t lc);
+INTDEF char *LIBCCALL libc_strupr_l(char *__restrict str, locale_t lc);
 INTDEF int LIBCCALL libc_strcasecoll_l(char const *str1, char const *str2, locale_t lc);
 INTDEF int LIBCCALL libc_strncoll_l(char const *str1, char const *str2, size_t maxlen, locale_t lc);
 INTDEF int LIBCCALL libc_strncasecoll_l(char const *str1, char const *str2, size_t maxlen, locale_t lc);
@@ -259,24 +291,24 @@ INTDEF size_t LIBCCALL libc_c32rtomb(char *__restrict s, char32_t c32, struct __
 INTDEF char32_t *LIBCCALL libc_32wcpcpy(char32_t *__restrict dst, char32_t const *__restrict src);
 INTDEF char32_t *LIBCCALL libc_32wcpncpy(char32_t *__restrict dst, char32_t const *__restrict src, size_t n);
 INTDEF char32_t *LIBCCALL libc_32wcscat(char32_t *__restrict dst, char32_t const *__restrict src);
-INTDEF char32_t *LIBCCALL libc_32wcschr(char32_t const *haystack, char32_t wc);
-INTDEF char32_t *LIBCCALL libc_32wcschrnul(char32_t const *s, char32_t wc);
+INTDEF char32_t *LIBCCALL libc_32wcschr(char32_t const *__restrict haystack, char32_t wc);
+INTDEF char32_t *LIBCCALL libc_32wcschrnul(char32_t const *__restrict s, char32_t wc);
 INTDEF char32_t *LIBCCALL libc_32wcscpy(char32_t *__restrict dst, char32_t const *__restrict src);
 INTDEF char32_t *LIBCCALL libc_32wcsdup(char32_t const *__restrict str);
-INTDEF char32_t *LIBCCALL libc_32wcsend(char32_t const *s);
+INTDEF char32_t *LIBCCALL libc_32wcsend(char32_t const *__restrict s);
 INTDEF char32_t *LIBCCALL libc_32wcsncat(char32_t *__restrict dst, char32_t const *__restrict src, size_t n);
 INTDEF char32_t *LIBCCALL libc_32wcsncpy(char32_t *__restrict dst, char32_t const *__restrict src, size_t n);
-INTDEF char32_t *LIBCCALL libc_32wcsnend(char32_t const *s, size_t maxlen);
+INTDEF char32_t *LIBCCALL libc_32wcsnend(char32_t const *__restrict s, size_t maxlen);
 INTDEF char32_t *LIBCCALL libc_32wcspbrk(char32_t const *haystack, char32_t const *accept);
-INTDEF char32_t *LIBCCALL libc_32wcsrchr(char32_t const *haystack, char32_t wc);
+INTDEF char32_t *LIBCCALL libc_32wcsrchr(char32_t const *__restrict haystack, char32_t wc);
 INTDEF char32_t *LIBCCALL libc_32wcsstr(char32_t const *haystack, char32_t const *needle);
 //INTDEF char32_t *LIBCCALL libc_32wcstok(char32_t *__restrict s, char32_t const *__restrict delim);
 INTDEF char32_t *LIBCCALL libc_32wcstok_r(char32_t *__restrict s, char32_t const *__restrict delim, char32_t **__restrict ptr);
-INTDEF char32_t *LIBCCALL libc_32wmemchr(char32_t const *s, char32_t c, size_t n);
+INTDEF char32_t *LIBCCALL libc_32wmemchr(char32_t const *__restrict s, char32_t c, size_t n);
 INTDEF char32_t *LIBCCALL libc_32wmemcpy(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n);
 INTDEF char32_t *LIBCCALL libc_32wmemmove(char32_t *s1, char32_t const *s2, size_t n);
 INTDEF char32_t *LIBCCALL libc_32wmempcpy(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n);
-INTDEF char32_t *LIBCCALL libc_32wmemset(char32_t *s, char32_t c, size_t n);
+INTDEF char32_t *LIBCCALL libc_32wmemset(char32_t *__restrict s, char32_t c, size_t n);
 INTDEF int LIBCCALL libc_32wcscasecmp(char32_t const *s1, char32_t const *s2);
 INTDEF int LIBCCALL libc_32wcscasecmp_l(char32_t const *s1, char32_t const *s2, locale_t loc);
 INTDEF int LIBCCALL libc_32wcscmp(char32_t const *s1, char32_t const *s2);
@@ -286,7 +318,7 @@ INTDEF int LIBCCALL libc_32wcsncasecmp(char32_t const *s1, char32_t const *s2, s
 INTDEF int LIBCCALL libc_32wcsncasecmp_l(char32_t const *s1, char32_t const *s2, size_t n, locale_t loc);
 INTDEF int LIBCCALL libc_32wcsncmp(char32_t const *s1, char32_t const *s2, size_t n);
 INTDEF int LIBCCALL libc_32wmemcmp(char32_t const *s1, char32_t const *s2, size_t n);
-INTDEF size_t LIBCCALL libc_32mblen(char const *s, size_t n);
+INTDEF size_t LIBCCALL libc_32mblen(char const *__restrict s, size_t n);
 INTDEF size_t LIBCCALL libc_32mbrlen(char const *__restrict s, size_t n, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_32mbrtowc(char32_t *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict p);
 INTDEF size_t LIBCCALL libc_32mbsnrtowcs(char32_t *__restrict dst, char const **__restrict src, size_t nmc, size_t len, struct __mbstate *__restrict ps);
@@ -295,36 +327,33 @@ INTDEF size_t LIBCCALL libc_32mbstowcs(char32_t *__restrict pwcs, char const *__
 INTDEF size_t LIBCCALL libc_32mbtowc(char32_t *__restrict pwc, char const *__restrict s, size_t n);
 INTDEF size_t LIBCCALL libc_32wcrtomb(char *__restrict s, char32_t wc, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_32wcscspn(char32_t const *haystack, char32_t const *reject);
-INTDEF size_t LIBCCALL libc_32wcslen(char32_t const *s);
-INTDEF size_t LIBCCALL libc_32wcsnlen(char32_t const *s, size_t maxlen);
+INTDEF size_t LIBCCALL libc_32wcslen(char32_t const *__restrict s);
+INTDEF size_t LIBCCALL libc_32wcsnlen(char32_t const *__restrict s, size_t maxlen);
 INTDEF size_t LIBCCALL libc_32wcsnrtombs(char *__restrict dst, char32_t const **__restrict src, size_t nwc, size_t len, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_32wcsrtombs(char *__restrict dst, char32_t const **__restrict src, size_t len, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_32wcsspn(char32_t const *haystack, char32_t const *accept);
 INTDEF size_t LIBCCALL libc_32wcstombs(char *__restrict dst, char32_t const *__restrict pwcs, size_t n);
-INTDEF size_t LIBCCALL libc_32wcswidth(char32_t const *s, size_t n);
+INTDEF size_t LIBCCALL libc_32wcswidth(char32_t const *__restrict s, size_t n);
 INTDEF size_t LIBCCALL libc_32wcsxfrm(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n);
-INTDEF size_t LIBCCALL libc_32wcsxfrm_l(char32_t *s1, char32_t const *s2, size_t n, locale_t loc);
-INTDEF size_t LIBCCALL libc_32wctomb(char *s, char32_t wchar);
+INTDEF size_t LIBCCALL libc_32wcsxfrm_l(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n, locale_t loc);
+INTDEF size_t LIBCCALL libc_32wctomb(char *__restrict s, char32_t wchar);
 INTDEF size_t LIBCCALL libc_32wcwidth(char32_t c);
 
-INTDEF __LONGLONG LIBCCALL libc_32wcstoll(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
-INTDEF __LONGLONG LIBCCALL libc_32wcstoll_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc);
-INTDEF __LONGLONG LIBCCALL libc_32wcstoq(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
-INTDEF __ULONGLONG LIBCCALL libc_32wcstoull(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
-INTDEF __ULONGLONG LIBCCALL libc_32wcstoull_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc);
-INTDEF __ULONGLONG LIBCCALL libc_32wcstouq(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
-INTDEF double LIBCCALL libc_32wcstod(char32_t const *__restrict nptr, char32_t **__restrict endptr);
-INTDEF double LIBCCALL libc_32wcstod_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc);
+INTDEF s32 LIBCCALL libc_32wcsto32(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
+INTDEF s32 LIBCCALL libc_32wcsto32_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc);
+INTDEF u32 LIBCCALL libc_32wcstou32(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
+INTDEF u32 LIBCCALL libc_32wcstou32_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc);
+INTDEF s64 LIBCCALL libc_32wcsto64(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
+INTDEF s64 LIBCCALL libc_32wcsto64_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc);
+INTDEF u64 LIBCCALL libc_32wcstou64(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
+INTDEF u64 LIBCCALL libc_32wcstou64_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc);
+
 INTDEF float LIBCCALL libc_32wcstof(char32_t const *__restrict nptr, char32_t **__restrict endptr);
 INTDEF float LIBCCALL libc_32wcstof_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc);
+INTDEF double LIBCCALL libc_32wcstod(char32_t const *__restrict nptr, char32_t **__restrict endptr);
+INTDEF double LIBCCALL libc_32wcstod_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc);
 INTDEF long double LIBCCALL libc_32wcstold(char32_t const *__restrict nptr, char32_t **__restrict endptr);
 INTDEF long double LIBCCALL libc_32wcstold_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc);
-INTDEF long int LIBCCALL libc_32wcstol(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
-INTDEF long int LIBCCALL libc_32wcstol_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc);
-INTDEF size_t LIBCCALL libc_32wcsftime(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp);
-INTDEF size_t LIBCCALL libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp, locale_t loc);
-INTDEF unsigned long int LIBCCALL libc_32wcstoul(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base);
-INTDEF unsigned long int LIBCCALL libc_32wcstoul_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 /* Additional DOS 32-bit string functions */
@@ -346,17 +375,17 @@ INTDEF char16_t *LIBCCALL libc_16wcpcpy(char16_t *__restrict dst, char16_t const
 INTDEF char16_t *LIBCCALL libc_16wcpncpy(char16_t *__restrict dst, char16_t const *__restrict src, size_t n);
 INTDEF char16_t *LIBCCALL libc_16wcscat(char16_t *__restrict dst, char16_t const *__restrict src);
 INTDEF char16_t *LIBCCALL libc_16wcschr(char16_t const *__restrict str, char16_t needle);
-INTDEF char16_t *LIBCCALL libc_16wcschrnul(char16_t const *s, char16_t wc);
+INTDEF char16_t *LIBCCALL libc_16wcschrnul(char16_t const *__restrict s, char16_t wc);
 INTDEF char16_t *LIBCCALL libc_16wcscpy(char16_t *__restrict dst, char16_t const *__restrict src);
 INTDEF char16_t *LIBCCALL libc_16wcsdup(char16_t const *__restrict str);
-INTDEF char16_t *LIBCCALL libc_16wcsend(char16_t const *s);
+INTDEF char16_t *LIBCCALL libc_16wcsend(char16_t const *__restrict s);
 INTDEF char16_t *LIBCCALL libc_16wcslwr(char16_t *__restrict str);
 INTDEF char16_t *LIBCCALL libc_16wcslwr_l(char16_t *__restrict str, locale_t locale);
 INTDEF char16_t *LIBCCALL libc_16wcsncat(char16_t *__restrict dst, char16_t const *__restrict src, size_t maxlen);
 INTDEF char16_t *LIBCCALL libc_16wcsncpy(char16_t *__restrict dst, char16_t const *__restrict src, size_t maxlen);
-INTDEF char16_t *LIBCCALL libc_16wcsnend(char16_t const *s, size_t maxlen);
+INTDEF char16_t *LIBCCALL libc_16wcsnend(char16_t const *__restrict s, size_t maxlen);
 INTDEF char16_t *LIBCCALL libc_16wcsnset(char16_t *__restrict str, char16_t needle, size_t maxlen);
-INTDEF char16_t *LIBCCALL libc_16wcspbrk(char16_t const *str, char16_t const *reject);
+INTDEF char16_t *LIBCCALL libc_16wcspbrk(char16_t const *__restrict str, char16_t const *reject);
 INTDEF char16_t *LIBCCALL libc_16wcsrchr(char16_t const *__restrict str, char16_t needle);
 INTDEF char16_t *LIBCCALL libc_16wcsrev(char16_t *__restrict str);
 INTDEF char16_t *LIBCCALL libc_16wcsset(char16_t *__restrict str, char16_t needle);
@@ -365,11 +394,11 @@ INTDEF char16_t *LIBCCALL libc_16wcstok(char16_t *__restrict str, char16_t const
 INTDEF char16_t *LIBCCALL libc_16wcstok_r(char16_t *__restrict str, char16_t const *__restrict delim, char16_t **__restrict ptr);
 INTDEF char16_t *LIBCCALL libc_16wcsupr(char16_t *__restrict str);
 INTDEF char16_t *LIBCCALL libc_16wcsupr_l(char16_t *__restrict str, locale_t locale);
-INTDEF char16_t *LIBCCALL libc_16wmemchr(char16_t const *s, char16_t c, size_t n);
+INTDEF char16_t *LIBCCALL libc_16wmemchr(char16_t const *__restrict s, char16_t c, size_t n);
 INTDEF char16_t *LIBCCALL libc_16wmemcpy(char16_t *__restrict s1, char16_t const *__restrict s2, size_t n);
 INTDEF char16_t *LIBCCALL libc_16wmemmove(char16_t *s1, char16_t const *s2, size_t n);
 INTDEF char16_t *LIBCCALL libc_16wmempcpy(char16_t *__restrict s1, char16_t const *__restrict s2, size_t n);
-INTDEF char16_t *LIBCCALL libc_16wmemset(char16_t *s, char16_t c, size_t n);
+INTDEF char16_t *LIBCCALL libc_16wmemset(char16_t *__restrict s, char16_t c, size_t n);
 INTDEF int LIBCCALL libc_16wcscasecmp(char16_t const *str1, char16_t const *str2);
 INTDEF int LIBCCALL libc_16wcscasecmp_l(char16_t const *str1, char16_t const *str2, locale_t lc);
 INTDEF int LIBCCALL libc_16wcscasecoll(char16_t const *str1, char16_t const *str2);
@@ -385,7 +414,7 @@ INTDEF int LIBCCALL libc_16wcsncmp(char16_t const *str1, char16_t const *str2, s
 INTDEF int LIBCCALL libc_16wcsncoll(char16_t const *str1, char16_t const *str2, size_t maxlen);
 INTDEF int LIBCCALL libc_16wcsncoll_l(char16_t const *str1, char16_t const *str2, size_t maxlen, locale_t locale);
 INTDEF int LIBCCALL libc_16wmemcmp(char16_t const *s1, char16_t const *s2, size_t n);
-INTDEF size_t LIBCCALL libc_16mblen(char const *s, size_t n);
+INTDEF size_t LIBCCALL libc_16mblen(char const *__restrict s, size_t n);
 INTDEF size_t LIBCCALL libc_16mbrlen(char const *__restrict s, size_t n, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_16mbrtowc(char16_t *__restrict pwc, char const *__restrict s, size_t n, struct __mbstate *__restrict p);
 INTDEF size_t LIBCCALL libc_16mbsnrtowcs(char16_t *__restrict dst, char const **__restrict src, size_t nmc, size_t len, struct __mbstate *__restrict ps);
@@ -394,16 +423,16 @@ INTDEF size_t LIBCCALL libc_16mbstowcs(char16_t *__restrict pwcs, char const *__
 INTDEF size_t LIBCCALL libc_16mbtowc(char16_t *__restrict pwc, char const *__restrict s, size_t n);
 INTDEF size_t LIBCCALL libc_16wcrtomb(char *__restrict s, char16_t wc, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_16wcscspn(char16_t const *str, char16_t const *reject);
-INTDEF size_t LIBCCALL libc_16wcslen(char16_t const *str);
-INTDEF size_t LIBCCALL libc_16wcsnlen(char16_t const *src, size_t maxlen);
+INTDEF size_t LIBCCALL libc_16wcslen(char16_t const *__restrict str);
+INTDEF size_t LIBCCALL libc_16wcsnlen(char16_t const *__restrict src, size_t maxlen);
 INTDEF size_t LIBCCALL libc_16wcsnrtombs(char *__restrict dst, char16_t const **__restrict src, size_t nwc, size_t len, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_16wcsrtombs(char *__restrict dst, char16_t const **__restrict src, size_t len, struct __mbstate *__restrict ps);
 INTDEF size_t LIBCCALL libc_16wcsspn(char16_t const *str, char16_t const *reject);
 INTDEF size_t LIBCCALL libc_16wcstombs(char *__restrict dst, char16_t const *__restrict pwcs, size_t n);
-INTDEF size_t LIBCCALL libc_16wcswidth(char16_t const *s, size_t n);
+INTDEF size_t LIBCCALL libc_16wcswidth(char16_t const *__restrict s, size_t n);
 INTDEF size_t LIBCCALL libc_16wcsxfrm(char16_t *__restrict dst, char16_t const *__restrict src, size_t maxlen);
 INTDEF size_t LIBCCALL libc_16wcsxfrm_l(char16_t *__restrict dst, char16_t const *__restrict src, size_t maxlen, locale_t locale);
-INTDEF size_t LIBCCALL libc_16wctomb(char *s, char16_t wchar);
+INTDEF size_t LIBCCALL libc_16wctomb(char *__restrict s, char16_t wchar);
 INTDEF size_t LIBCCALL libc_16wcwidth(char16_t c);
 
 /* DOS-SLIB functions. */
@@ -442,26 +471,30 @@ INTDEF errno_t LIBCCALL libc_32wcsset_s(char32_t *__restrict str, size_t buflen,
 INTDEF errno_t LIBCCALL libc_32wmemcpy_s(char32_t *__restrict dst, size_t dstsize, char32_t const *__restrict src, size_t srcsize);
 INTDEF errno_t LIBCCALL libc_32wmemmove_s(char32_t *dst, size_t dstsize, char32_t const *src, size_t srcsize);
 
-#if 0 /* TODO */
+INTDEF s32 LIBCCALL libc_32wto32(char32_t const *__restrict nptr);
+INTDEF s32 LIBCCALL libc_32wto32_l(char32_t const *__restrict nptr, locale_t locale);
+INTDEF s64 LIBCCALL libc_32wto64(char32_t const *__restrict nptr);
+INTDEF s64 LIBCCALL libc_32wto64_l(char32_t const *__restrict nptr, locale_t locale);
+INTDEF s32 LIBCCALL libc_16wto32(char16_t const *__restrict nptr);
+INTDEF s32 LIBCCALL libc_16wto32_l(char16_t const *__restrict nptr, locale_t locale);
+INTDEF s64 LIBCCALL libc_16wto64(char16_t const *__restrict nptr);
+INTDEF s64 LIBCCALL libc_16wto64_l(char16_t const *__restrict nptr, locale_t locale);
+
+INTDEF s32 LIBCCALL libc_16wcsto32(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
+INTDEF s32 LIBCCALL libc_16wcsto32_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base, locale_t loc);
+INTDEF u32 LIBCCALL libc_16wcstou32(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
+INTDEF u32 LIBCCALL libc_16wcstou32_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base, locale_t loc);
+INTDEF s64 LIBCCALL libc_16wcsto64(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
+INTDEF s64 LIBCCALL libc_16wcsto64_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base, locale_t loc);
+INTDEF u64 LIBCCALL libc_16wcstou64(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
+INTDEF u64 LIBCCALL libc_16wcstou64_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base, locale_t loc);
 INTDEF double LIBCCALL libc_16wcstod(char16_t const *__restrict nptr, char16_t **__restrict endptr);
-INTDEF long int LIBCCALL libc_16wcstol(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
-INTDEF unsigned long int LIBCCALL libc_16wcstoul(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
-INTDEF size_t LIBCCALL libc_16wcsftime(char16_t *__restrict s, size_t maxsize, char16_t const *__restrict format, struct tm const *__restrict tp);
-INTDEF float LIBCCALL libc_16wcstof(char16_t const *__restrict nptr, char16_t **__restrict endptr);
-INTDEF long double LIBCCALL libc_16wcstold(char16_t const *__restrict nptr, char16_t **__restrict endptr);
-INTDEF __LONGLONG LIBCCALL libc_16wcstoll(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
-INTDEF __ULONGLONG LIBCCALL libc_16wcstoull(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
-INTDEF __LONGLONG LIBCCALL libc_16wcstoq(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
-INTDEF __ULONGLONG LIBCCALL libc_16wcstouq(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base);
-INTDEF long int LIBCCALL libc_16wcstol_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base, locale_t loc);
-INTDEF unsigned long int LIBCCALL libc_16wcstoul_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base, locale_t loc);
-INTDEF __LONGLONG LIBCCALL libc_16wcstoll_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base, locale_t loc);
-INTDEF __ULONGLONG LIBCCALL libc_16wcstoull_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, int base, locale_t loc);
 INTDEF double LIBCCALL libc_16wcstod_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, locale_t loc);
+INTDEF float LIBCCALL libc_16wcstof(char16_t const *__restrict nptr, char16_t **__restrict endptr);
 INTDEF float LIBCCALL libc_16wcstof_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, locale_t loc);
+INTDEF long double LIBCCALL libc_16wcstold(char16_t const *__restrict nptr, char16_t **__restrict endptr);
 INTDEF long double LIBCCALL libc_16wcstold_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, locale_t loc);
-INTDEF size_t LIBCCALL libc_16wcsftime_l(char16_t *__restrict s, size_t maxsize, char16_t const *__restrict format, struct tm const *__restrict tp, locale_t loc);
-#endif 
+
 
 #if 0 /* TODO */
 __LIBC wint_t (__LIBCCALL libc_16fgetwc)(__FILE *__stream);
@@ -470,8 +503,8 @@ __LIBC wint_t (__LIBCCALL libc_16getwchar)(void);
 __LIBC wint_t (__LIBCCALL libc_16fputwc)(wchar_t wc, __FILE *__stream);
 __LIBC wint_t (__LIBCCALL libc_16putwc)(wchar_t wc, __FILE *__stream);
 __LIBC wint_t (__LIBCCALL libc_16putwchar)(wchar_t wc);
-__LIBC wchar_t *(__LIBCCALL libc_16fgetws)(wchar_t *__restrict __ws, int __n, __FILE *__restrict __stream);
-__LIBC int (__LIBCCALL libc_16fputws)(wchar_t const *__restrict __ws, __FILE *__restrict __stream);
+__LIBC wchar_t *(__LIBCCALL libc_16fgetws)(wchar_t *__restrict ws, int __n, __FILE *__restrict __stream);
+__LIBC int (__LIBCCALL libc_16fputws)(wchar_t const *__restrict ws, __FILE *__restrict __stream);
 __LIBC wint_t (__LIBCCALL libc_16ungetwc)(wint_t wc, __FILE *__stream);
 __LIBC int (__LIBCCALL libc_16fwide)(__FILE *__fp, int __mode);
 __LIBC ssize_t (__LIBCCALL libc_16fwprintf)(__FILE *__restrict __stream, wchar_t const *__restrict __format, ...);
@@ -493,8 +526,8 @@ __LIBC wint_t (__LIBCCALL libc_16fgetwc_unlocked)(__FILE *__stream);
 __LIBC wint_t (__LIBCCALL libc_16fputwc_unlocked)(wchar_t wc, __FILE *__stream);
 __LIBC wint_t (__LIBCCALL libc_16putwc_unlocked)(wchar_t wc, __FILE *__stream);
 __LIBC wint_t (__LIBCCALL libc_16putwchar_unlocked)(wchar_t wc);
-__LIBC wchar_t *(__LIBCCALL libc_16fgetws_unlocked)(wchar_t *__restrict __ws, int __n, __FILE *__restrict __stream);
-__LIBC int (__LIBCCALL libc_16fputws_unlocked)(wchar_t const *__restrict __ws, __FILE *__restrict __stream);
+__LIBC wchar_t *(__LIBCCALL libc_16fgetws_unlocked)(wchar_t *__restrict ws, int __n, __FILE *__restrict __stream);
+__LIBC int (__LIBCCALL libc_16fputws_unlocked)(wchar_t const *__restrict ws, __FILE *__restrict __stream);
 #endif
 
 #if 0 /* TODO */
@@ -640,35 +673,15 @@ __LIBC errno_t LIBCCALL _i64tow_s(__INT64_TYPE__ val, wchar_t *__restrict dst, s
 __LIBC errno_t LIBCCALL _ui64tow_s(__UINT64_TYPE__ val, wchar_t *__restrict dst, size_t maxlen, int __radix);
 __LIBC double LIBCCALL _wtof(wchar_t const *__restrict __s);
 __LIBC double LIBCCALL _wtof_l(wchar_t const *__restrict __s, locale_t locale);
-__LIBC int LIBCCALL _wtoi(wchar_t const *__restrict __s);
-__LIBC int LIBCCALL _wtoi_l(wchar_t const *__restrict __s, locale_t locale);
-__LIBC __LONGLONG LIBCCALL _wtoll(wchar_t const *__restrict __s);
-__LIBC __LONGLONG LIBCCALL _wtoll_l(wchar_t const *__restrict __s, locale_t locale);
-__LIBC long int LIBCCALL _wtol(wchar_t const *__restrict __s) __ASMNAME("_wtoi");
-__LIBC long int LIBCCALL _wtol_l(wchar_t const *__restrict __s, locale_t locale) __ASMNAME("_wtoi_l");
 __LIBC wchar_t *LIBCCALL _ltow(long val, wchar_t *__restrict dst, int __radix) __ASMNAME("_itow");
 __LIBC errno_t LIBCCALL _ltow_s(long val, wchar_t *__restrict dst, size_t maxlen, int __radix) __ASMNAME("_itow_s");
-__LIBC long int LIBCCALL _wcstol_l(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, locale_t locale) __ASMNAME("wcstol_l");
-__LIBC unsigned long int LIBCCALL _wcstoul_l(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, locale_t locale) __ASMNAME("wcstoul_l");
-__LIBC __LONGLONG LIBCCALL _wcstoll_l(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, locale_t locale) __ASMNAME("wcstoll_l");
-__LIBC __ULONGLONG LIBCCALL _wcstoull_l(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, locale_t locale) __ASMNAME("wcstoull_l");
 __LIBC float LIBCCALL _wcstof_l(wchar_t const *__restrict __s, wchar_t **__restrict __pend, locale_t locale) __ASMNAME("wcstof_l");
 __LIBC double LIBCCALL _wcstod_l(wchar_t const *__restrict __s, wchar_t **__pend, locale_t locale) __ASMNAME("wcstod_l");
 __LIBC long double LIBCCALL _wcstold_l(wchar_t const *__restrict __s, wchar_t **__pend, locale_t locale) __ASMNAME("wcstold_l");
 __LIBC wchar_t *LIBCCALL _wgetenv(wchar_t const *__restrict __varname);
 __LIBC errno_t LIBCCALL _wgetenv_s(size_t *__restrict __psize, wchar_t *__restrict buf, size_t buflen, wchar_t const *__restrict __varname);
 __LIBC errno_t LIBCCALL _wdupenv_s(wchar_t **__restrict __pbuf, size_t *__restrict __pbuflen, wchar_t const *__restrict __varname);
-__LIBC __INT64_TYPE__ LIBCCALL _wcstoi64(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __ASMNAME("wcstoll");
-__LIBC __INT64_TYPE__ LIBCCALL _wcstoi64_l(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, locale_t locale) __ASMNAME("wcstoll_l");
-__LIBC __UINT64_TYPE__ LIBCCALL _wcstoui64(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __ASMNAME("wcstoull");
-__LIBC __UINT64_TYPE__ LIBCCALL _wcstoui64_l(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, locale_t locale) __ASMNAME("wcstoull_l");
-__LIBC __INT64_TYPE__ LIBCCALL _wtoi64(wchar_t const *__restrict __s) __ASMNAME("_wtoll");
-__LIBC __INT64_TYPE__ LIBCCALL _wtoi64_l(wchar_t const *__restrict __s, locale_t locale) __ASMNAME("_wtoll_l");
 __LIBC int LIBCCALL _wsystem(wchar_t const *__restrict __cmd);
-__LIBC long int LIBCCALL wcstol(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__LIBC unsigned long int LIBCCALL wcstoul(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__LIBC __LONGLONG LIBCCALL wcstoll(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__LIBC __ULONGLONG LIBCCALL wcstoull(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
 __LIBC double LIBCCALL wcstod(wchar_t const *__restrict __s, wchar_t **__pend);
 __LIBC float LIBCCALL wcstof(wchar_t const *__restrict __s, wchar_t **__pend);
 __LIBC long double LIBCCALL wcstold(wchar_t const *__restrict __s, wchar_t **__pend);
@@ -689,8 +702,6 @@ __LIBC errno_t LIBCCALL __wcserror_s(wchar_t *__restrict buf, size_t maxlen, wch
 __LIBC errno_t LIBCCALL _wasctime_s(wchar_t buf[26], size_t maxlen, struct tm const *__restrict __ptm);
 __LIBC errno_t LIBCCALL _wstrdate_s(wchar_t buf[9], size_t maxlen);
 __LIBC errno_t LIBCCALL _wstrtime_s(wchar_t buf[9], size_t maxlen);
-__LIBC size_t LIBCCALL _wcsftime_l(wchar_t *__restrict buf, size_t maxlen, wchar_t const *__restrict __format, struct tm const *__restrict __ptm, locale_t locale);
-__LIBC size_t LIBCCALL wcsftime(wchar_t *__restrict buf, size_t maxlen, wchar_t const *__restrict __format,  struct tm const *__restrict __ptm);
 __LIBC wchar_t *LIBCCALL _wasctime(struct tm const *__restrict __ptm);
 __LIBC wchar_t *LIBCCALL _wstrdate(wchar_t *__restrict buf);
 __LIBC wchar_t *LIBCCALL _wstrtime(wchar_t *__restrict buf);

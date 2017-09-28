@@ -95,17 +95,6 @@ time_printer(char const *__restrict s, size_t n,
 #define LINUX_TIME_START_YEAR 1970
 #define SECS_PER_DAY          86400
 
-
-INTERN size_t LIBCCALL
-libc_strftime(char *__restrict s, size_t maxsize,
-              char const *__restrict format,
-              struct tm const *__restrict tp) {
- struct ftimebuf buf; buf.end = (buf.iter = s)+maxsize;
- if (libc_format_strftime((pformatprinter)&time_printer,&buf,format,tp)) return 0;
- if (buf.iter == buf.end) return 0;
- *buf.iter = '\0';
- return (size_t)(buf.iter-s);
-}
 INTERN char *LIBCCALL
 libc_strptime(char const *__restrict s,
               char const *__restrict format,
@@ -139,15 +128,6 @@ PRIVATE ATTR_RAREBSS struct tm getdate_buf;
 INTERN struct tm *LIBCCALL libc_getdate(char const *string) {
  struct tm *result = &getdate_buf;
  return libc_getdate_r(string,result) ? NULL : result;
-}
-
-INTERN size_t LIBCCALL
-libc_strftime_l(char *__restrict s, size_t maxsize,
-                char const *__restrict format,
-                struct tm const *__restrict tp,
-                locale_t loc) {
- NOT_IMPLEMENTED();
- return libc_strftime(s,maxsize,format,tp);
 }
 INTERN char *LIBCCALL
 libc_strptime_l(char const *__restrict s, char const *__restrict format,
@@ -761,6 +741,63 @@ DEFINE_PUBLIC_ALIAS(__DSYM(futimesat),libc_dos_futimesat);
 DEFINE_PUBLIC_ALIAS(__DSYM(futimesat64),libc_dos_futimesat64);
 DEFINE_PUBLIC_ALIAS(__DSYM(utime),libc_dos_utime);
 DEFINE_PUBLIC_ALIAS(__DSYM(utime64),libc_dos_utime64);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
+INTERN size_t LIBCCALL
+libc_strftime(char *__restrict s, size_t maxsize,
+              char const *__restrict format,
+              struct tm const *__restrict tp) {
+ struct ftimebuf buf; buf.end = (buf.iter = s)+maxsize;
+ if (libc_format_strftime((pformatprinter)&time_printer,&buf,format,tp)) return 0;
+ if (buf.iter == buf.end) return 0;
+ *buf.iter = '\0';
+ return (size_t)(buf.iter-s);
+}
+INTERN size_t LIBCCALL
+libc_32wcsftime(char32_t *__restrict s, size_t maxsize,
+                char32_t const *__restrict format,
+                struct tm const *__restrict tp) {
+ NOT_IMPLEMENTED(); /* TODO */
+ return 0;
+}
+
+DEFINE_PUBLIC_ALIAS(wcsftime,libc_32wcsftime);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(wcsftime_l,libc_32wcsftime_l);
+INTERN size_t LIBCCALL
+libc_16wcsftime(char16_t *__restrict s, size_t maxsize,
+                char16_t const *__restrict format,
+                struct tm const *__restrict tp) {
+ NOT_IMPLEMENTED(); /* TODO */
+ return 0;
+}
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
+
+
+INTERN size_t LIBCCALL
+libc_strftime_l(char *__restrict s, size_t maxsize,
+                char const *__restrict format,
+                struct tm const *__restrict tp,
+                locale_t UNUSED(loc)) {
+ return libc_strftime(s,maxsize,format,tp);
+}
+INTERN size_t LIBCCALL
+libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize,
+                  char32_t const *__restrict format,
+                  struct tm const *__restrict tp,
+                  locale_t UNUSED(loc)) {
+ return libc_32wcsftime(s,maxsize,format,tp);
+}
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN size_t LIBCCALL
+libc_16wcsftime_l(char16_t *__restrict s, size_t maxsize,
+                  char16_t const *__restrict format,
+                  struct tm const *__restrict tp,
+                  locale_t UNUSED(loc)) {
+ return libc_16wcsftime(s,maxsize,format,tp);
+}
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 

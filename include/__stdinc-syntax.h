@@ -217,8 +217,8 @@
 #define __INTMAX_C(c)  c##i64
 #define __UINTMAX_C(c) c##ui64
 
-#define __CHAR16_TYPE__     unsigned __int16
-#define __CHAR32_TYPE__     unsigned __int32
+#define __CHAR16_TYPE__     ____INTELLISENSE_char16_t
+#define __CHAR32_TYPE__     ____INTELLISENSE_char32_t
 #define __WCHAR_TYPE__      wchar_t
 #define __WINT_TYPE__       unsigned int
 #define __SIZEOF_WCHAR_T__  2 /* Psht... */
@@ -839,14 +839,14 @@ template<class type> type __sync_lock_test_and_set(type *ptr, type value, ...);
 template<class type> void __sync_lock_release(type *ptr, ...);
 
 
-class char16_t {
+class ____INTELLISENSE_char16_t {
  unsigned __int16 __v;
 public:
  operator unsigned __int16 & (void) throw();
  operator unsigned __int16 const & (void) const throw();
  char16_t(unsigned __int16);
 };
-class char32_t {
+class ____INTELLISENSE_char32_t {
  unsigned __int32 __v;
 public:
  operator unsigned __int32 & (void) throw();

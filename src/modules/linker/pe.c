@@ -139,7 +139,7 @@ pe_import_symbol(struct instance *__restrict inst,
   */
  name_length = strnlen((char *)entry->Name,512);
  if (!entry->Name[name_length]) {
-  if (name_length > 6 && !memcmp(entry->Name,".unix.",6*sizeof(char))) {
+  if (name_length > 6 && !memcmp(entry->Name,".kos.",6*sizeof(char))) {
    sym = (*inst->i_module->m_ops->o_symaddr)(inst,(char *)entry->Name+6,
                                              sym_hashname((char *)entry->Name+6));
    if (sym.ms_type != MODSYM_TYPE_INVALID) return sym.ms_addr;

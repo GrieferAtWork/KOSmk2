@@ -25,7 +25,7 @@
 
 #include "libc.h"
 #include "environ.h"
-#include "stdio.h"
+#include "file.h"
 #include "stdlib.h"
 #include "string.h"
 #include "malloc.h"

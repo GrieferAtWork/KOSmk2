@@ -31,6 +31,7 @@
 #include <alloca.h>
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <errno.h>
 #include <format-printer.h>
 #include <hybrid/align.h>
@@ -108,16 +109,28 @@ enum printf_length {
  len_I64  = 1,
  len_I16  = len_I32,
  len_I8   = len_I32,
+#define __len_is64(x) ((x) == len_I64)
+#define len_is64 __len_is64
 #elif VA_SIZE == 2
  len_I16  = 0,
  len_I32  = 1,
  len_I64  = 2,
  len_I8   = len_I16,
+#define __len_is64(x) ((x) == len_I64)
+#define __len_is32(x) ((x) == len_I32)
+#define len_is64 __len_is64
+#define len_is32 __len_is32
 #elif VA_SIZE == 1
  len_I8   = 0,
  len_I16  = 1,
  len_I32  = 2,
  len_I64  = 3,
+#define __len_is64(x) ((x) == len_I64)
+#define __len_is32(x) ((x) == len_I32)
+#define __len_is16(x) ((x) == len_I16)
+#define len_is64 __len_is64
+#define len_is32 __len_is32
+#define len_is16 __len_is16
 #else
 #   error FIXME
 #endif
@@ -125,10 +138,38 @@ enum printf_length {
  len_I    = PP_CAT2(len_I,PP_MUL8(__SIZEOF_POINTER__)),
  len_hh   = PP_CAT2(len_I,PP_MUL8(__SIZEOF_CHAR__)),
  len_h    = PP_CAT2(len_I,PP_MUL8(__SIZEOF_SHORT__)),
+#ifdef __KERNEL__
  len_l    = PP_CAT2(len_I,PP_MUL8(__SIZEOF_LONG__)),
+#else
+ /* Need to separate 'l' for wide-string support. */
+ len_l    = 'l',
+#endif
  len_ll   = PP_CAT2(len_I,PP_MUL8(__SIZEOF_LONG_LONG__)),
  len_j    = len_I64, /* intmax_t */
 };
+#ifndef __KERNEL__
+#if __SIZEOF_LONG__ == 1
+#ifdef __len_is8
+#   undef len_is8
+#   define len_is8(x)  (__len_is8(x) || (x) == len_l)
+#endif
+#elif __SIZEOF_LONG__ == 2
+#ifdef __len_is16
+#   undef len_is16
+#   define len_is16(x) (__len_is16(x) || (x) == len_l)
+#endif
+#elif __SIZEOF_LONG__ == 4
+#ifdef __len_is32
+#   undef len_is32
+#   define len_is32(x) (__len_is32(x) || (x) == len_l)
+#endif
+#elif __SIZEOF_LONG__ == 8
+#ifdef __len_is64
+#   undef len_is64
+#   define len_is64(x) (__len_is64(x) || (x) == len_l)
+#endif
+#endif
+#endif /* !__KERNEL__ */
 
 #define PRINTF_FLAG_NONE     0x0000
 #define PRINTF_FLAG_PREFIX   0x0001 /*< '%#'. */
@@ -284,9 +325,33 @@ PRIVATE char const decimals[2][17] = {
  {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','X'},
 };
 
+#if defined(CONFIG_LIBC_NO_DOS_LIBC) || defined(__KERNEL__)
 INTERN ssize_t LIBCCALL
 libc_format_vprintf(pformatprinter printer, void *closure,
-                    char const *__restrict format, va_list args) {
+                    char const *__restrict format, va_list args)
+#else /* CONFIG_LIBC_NO_DOS_LIBC || __KERNEL__ */
+INTERN ssize_t ATTR_CDECL
+libc_nt_format_printf(pformatprinter printer, void *closure,
+                      char const *__restrict format, ...) {
+ va_list args; ssize_t result;
+ va_start(args,format);
+ result = libc_xformat_vprintf(true,printer,closure,format,args);
+ va_end(args);
+ return result;
+}
+INTERN ssize_t LIBCCALL libc_nt_format_vprintf(pformatprinter printer, void *closure,
+                                               char const *__restrict format, va_list args) {
+ return libc_xformat_vprintf(true,printer,closure,format,args);
+}
+INTERN ssize_t LIBCCALL libc_format_vprintf(pformatprinter printer, void *closure,
+                                            char const *__restrict format, va_list args) {
+ return libc_xformat_vprintf(false,printer,closure,format,args);
+}
+INTERN ssize_t LIBCCALL
+libc_xformat_vprintf(bool wch16, pformatprinter printer, void *closure,
+                     char const *__restrict format, va_list args)
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC && !__KERNEL__ */
+{
  ssize_t result = 0,temp; char ch;
  char const *flush_start;
  CHECK_HOST_TEXT(printer,1);
@@ -437,16 +502,16 @@ have_precision:
 #if VA_SIZE == 8
     arg.u_64 = va_arg(args,u64);
 #elif VA_SIZE == 4
-    if (length == len_I64) arg.u_64 = va_arg(args,u64);
+    if (len_is64(length)) arg.u_64 = va_arg(args,u64);
     else { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; }
 #elif VA_SIZE == 2
-         if (length == len_I64) arg.u_64 = va_arg(args,u64);
-    else if (length == len_I32) { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; }
+         if (len_is64(length)) arg.u_64 = va_arg(args,u64);
+    else if (len_is32(length)) { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; }
     else { arg.u_16 = va_arg(args,u16); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_16; }
 #else
-         if (length == len_I64) arg.u_64 = va_arg(args,u64);
-    else if (length == len_I32) { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; }
-    else if (length == len_I16) { arg.u_16 = va_arg(args,u16); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_16; }
+         if (len_is64(length)) arg.u_64 = va_arg(args,u64);
+    else if (len_is32(length)) { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; }
+    else if (len_is16(length)) { arg.u_16 = va_arg(args,u16); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_16; }
     else { arg.u_8 = va_arg(args,u8); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_8; }
 #endif
     iter = buf;
@@ -527,12 +592,17 @@ have_precision:
     if (!(flags&PRINTF_FLAG_FIXBUF))
 #endif /* PRINTF_FLAG_FIXBUF */
     {
-     if (length == len_L) {
-      u16 *end,*iter = (u16 *)s;
-      end = (u16 *)((uintptr_t)s+(precision & ~1));
-      while (iter != end && *iter) ++iter;
-      precision = (uintptr_t)iter-(uintptr_t)s;
-     } else {
+#ifndef __KERNEL__
+     if (length == len_l) {
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+      precision = unlikely(wch16) ? libc_16wcsnlen((char16_t *)s,precision)
+                                  : libc_32wcsnlen((char32_t *)s,precision);
+#else
+      precision = libc_32wcsnlen((char32_t *)s,precision);
+#endif
+     } else
+#endif
+     {
       precision = libc_strnlen(s,precision);
      }
     }
@@ -568,12 +638,16 @@ quote_string:
     } else
 #endif /* Quote... */
     {
-     if (length == len_L) {
-      char const *s_end = s+(precision&~1);
-      for (; s != s_end; s += 2) print(s,1);
-     } else {
-      print(s,precision);
-     }
+#ifndef __KERNEL__
+     if (length == len_l) {
+      mbstate_t state = MBSTATE_INIT;
+      temp = unlikely(wch16) ? libc_format_16wsztomb(printer,closure,(char16_t *)s,precision,&state)
+                             : libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state);
+      if (temp < 0) return temp;
+      result += temp;
+     } else
+#endif
+     { print(s,precision); }
     }
    } break;
 
@@ -1204,6 +1278,182 @@ libc_stringprinter_print(char const *__restrict data,
  assert(self->sp_bufpos <= self->sp_bufend);
  return 0;
 }
+
+
+#define BUFFER_FLUSHTRUNC 256
+#define BUFFER_PRINTLIMIT 4096
+#define BUFFER_SIZEALIGN  64
+
+#define BUFFER_USED(x)   (size_t)((x)->b_bufpos-(x)->b_buffer)
+#define BUFFER_SIZE(x)   (size_t)((x)->b_bufend-(x)->b_buffer)
+#define BUFFER_UNUSED(x) (size_t)((x)->b_bufend-(x)->b_bufpos)
+#define BUFFER_REMAIN(x) (size_t)(BUFFER_PRINTLIMIT-BUFFER_SIZE(x))
+
+/* Process a given printer return value into the state of the given buffer. */
+#define BUFFER_ADDSTATE(x,y) \
+  (unlikely((y) < 0) ? (x)->b_state = (y) : \
+   unlikely(__builtin_add_overflow((x)->b_state,(y),&(x)->b_state)) \
+ ? (x)->b_state = SSIZE_MAX : 0)
+
+INTERN void LIBCCALL
+libc_buffer_init(struct buffer *__restrict self,
+                 pformatprinter printer, void *closure) {
+ self->b_printer = printer;
+ self->b_closure = closure;
+ self->b_state   = 0;
+ self->b_buffer  = NULL;
+ self->b_bufpos  = NULL;
+ self->b_bufend  = NULL;
+}
+INTERN ssize_t LIBCCALL
+libc_buffer_fini(struct buffer *__restrict buf) {
+ ssize_t result = BUFFER_USED(buf);
+ /* print remaining data if there is some and no error occurred. */
+ if (result && buf->b_state >= 0) {
+  result = (*buf->b_printer)(buf->b_buffer,(size_t)result,
+                             buf->b_closure);
+  if likely(result >= 0) result += buf->b_state;
+ }
+ /* Free the allocate data buffer. */
+ libc_free(buf->b_buffer);
+ return result;
+}
+INTERN ssize_t LIBCCALL
+libc_buffer_flush(struct buffer *__restrict buf) {
+ ssize_t result;
+ /* Check for an error. */
+ if (buf->b_state < 0)
+     return buf->b_state;
+ /* Check if unprinted data is available. */
+ result = BUFFER_USED(buf);
+ if (result) {
+  result = (*buf->b_printer)(buf->b_buffer,(size_t)result,
+                             buf->b_closure);
+  BUFFER_ADDSTATE(buf,result);
+ }
+ /* Reset the buffer position. */
+ buf->b_bufpos = buf->b_buffer;
+ /* If the buffer was quite large, delete it.
+  * Otherwise, keep it around so it can be re-used the next time print is called.
+  * >> This way, we keep a small memory footprint, and optimize ourself
+  *    for the intended use-case of the user printing large amounts of
+  *    data through small chunks. */
+ if (BUFFER_SIZE(buf) > BUFFER_FLUSHTRUNC) {
+  libc_free(buf->b_buffer);
+  buf->b_buffer = NULL;
+  buf->b_bufpos = NULL;
+  buf->b_bufend = NULL;
+ }
+ return result;
+}
+
+INTERN ssize_t LIBCCALL
+libc_buffer_print(char const *__restrict data,
+                  size_t datalen, void *closure) {
+ /* The heart of the buffer: Its printer callback. */
+ struct buffer *buf = (struct buffer *)closure;
+ ssize_t result,temp; size_t copy_size;
+ assert(buf);
+ assert(buf->b_bufpos >= buf->b_buffer);
+ assert(buf->b_bufpos <= buf->b_bufend);
+ assert(buf->b_buffer <= buf->b_bufend);
+ CHECK_HOST_TEXT(data,datalen);
+ /* Return the number of written bytes by default. */
+ result = (ssize_t)datalen;
+ /* Unlikely: Handle large amounts of data. */
+ if unlikely(datalen >= BUFFER_PRINTLIMIT) {
+  /* Make sure to flush existing data to preserve print order. */
+  temp = libc_buffer_flush(buf);
+  if unlikely(temp < 0) return temp;
+  /* Now print this huge block of data. */
+  temp = (*buf->b_printer)(data,datalen,buf->b_closure);
+  /* Add the state to what has already been printed. */
+  BUFFER_ADDSTATE(buf,temp);
+  if (temp < 0) return temp;
+  goto end;
+ }
+
+again:
+ /* Fill unused data. */
+ copy_size = MIN(BUFFER_UNUSED(buf),datalen);
+ /*if (copy_size)*/
+ {
+  memcpy(buf->b_bufpos,data,copy_size*sizeof(char));
+  data          += copy_size;
+  datalen       -= copy_size;
+  buf->b_bufpos += copy_size;
+ }
+
+ /* Allocate more memory. */
+ copy_size = MIN(BUFFER_REMAIN(buf),datalen);
+ if (copy_size) {
+  size_t new_size; char *new_buffer;
+  new_size = BUFFER_SIZE(buf)+copy_size;
+  assert(new_size <= BUFFER_PRINTLIMIT);
+  new_size = CEIL_ALIGN(new_size,BUFFER_SIZEALIGN);
+  assert(new_size <= BUFFER_PRINTLIMIT);
+  new_buffer = (char *)libc_realloc(buf->b_buffer,new_size*sizeof(char));
+  if unlikely(!new_buffer) {
+   /* Special case: Flush the existing buffer to get more unused data. */
+   temp = libc_buffer_flush(buf);
+   if (temp < 0) return temp;
+   assert(buf->b_bufpos == buf->b_buffer);
+   if (datalen < BUFFER_UNUSED(buf)) {
+    /* Simple case: We can copy the remainder into the currently empty buffer. */
+    memcpy(buf->b_bufpos,data,datalen*sizeof(char));
+    buf->b_bufpos += datalen;
+    goto end;
+   }
+   goto again;
+  }
+  buf->b_bufpos = new_buffer+(buf->b_bufpos-buf->b_buffer);
+  buf->b_bufend = new_buffer+new_size;
+  buf->b_buffer = new_buffer;
+  /* Copy the data we've just allocated memory for. */
+  memcpy(buf->b_bufpos,data,copy_size*sizeof(char));
+  data          += copy_size;
+  datalen       -= copy_size;
+  buf->b_bufpos += copy_size;
+ }
+
+ /* At this point, we know that we're either done, or that the buffer is full. */
+ assert(datalen < BUFFER_PRINTLIMIT); /* Already assured at the start. */
+ if (datalen) {
+  /* NOTE: Before calling the printer, make sure we're not in an error state. */
+  if (buf->b_state < 0) return buf->b_state;
+  assert(BUFFER_USED(buf) == BUFFER_PRINTLIMIT);
+  assert(BUFFER_SIZE(buf) == BUFFER_PRINTLIMIT);
+  /* If the buffer is full, print it. */
+  temp = (*buf->b_printer)(buf->b_buffer,BUFFER_PRINTLIMIT,
+                           buf->b_closure);
+  BUFFER_ADDSTATE(buf,temp);
+  if (temp < 0) return temp;
+  /* Copy all the unprinted data into the (now) empty buffer. */
+  memcpy(buf->b_buffer,data,datalen*sizeof(char));
+  buf->b_bufpos = buf->b_bufpos+datalen;
+ }
+end:
+ return result;
+}
+
+INTERN ssize_t LIBCCALL
+libc_format_vbprintf(pformatprinter printer, void *closure,
+                     char const *__restrict format, va_list args) {
+ struct buffer buf;
+ libc_buffer_init(&buf,printer,closure);
+ libc_format_vprintf(&libc_buffer_print,&buf,format,args);
+ return libc_buffer_fini(&buf);
+}
+INTERN ssize_t ATTR_CDECL
+libc_format_bprintf(pformatprinter printer, void *closure,
+                    char const *__restrict format, ...) {
+ va_list args; ssize_t result;
+ va_start(args,format);
+ result = libc_format_vbprintf(printer,closure,format,args);
+ va_end(args);
+ return result;
+}
+
 #endif /* !__KERNEL__ */
 
 DEFINE_PUBLIC_ALIAS(format_vprintf,libc_format_vprintf);
@@ -1218,6 +1468,23 @@ DEFINE_PUBLIC_ALIAS(stringprinter_init,libc_stringprinter_init);
 DEFINE_PUBLIC_ALIAS(stringprinter_pack,libc_stringprinter_pack);
 DEFINE_PUBLIC_ALIAS(stringprinter_fini,libc_stringprinter_fini);
 DEFINE_PUBLIC_ALIAS(stringprinter_print,libc_stringprinter_print);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(__DSYM(format_printf),libc_nt_format_printf);
+DEFINE_PUBLIC_ALIAS(__DSYM(format_vprintf),libc_nt_format_vprintf);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+DEFINE_PUBLIC_ALIAS(buffer_init,libc_buffer_init);
+DEFINE_PUBLIC_ALIAS(buffer_fini,libc_buffer_fini);
+DEFINE_PUBLIC_ALIAS(buffer_flush,libc_buffer_flush);
+DEFINE_PUBLIC_ALIAS(buffer_print,libc_buffer_print);
+#endif /* !__KERNEL__ */
+
+#ifndef __KERNEL__
+DEFINE_PUBLIC_ALIAS(format_bprintf,libc_format_bprintf);
+DEFINE_PUBLIC_ALIAS(format_vbprintf,libc_format_vbprintf);
+DEFINE_PUBLIC_ALIAS(format_wcsztomb,libc_format_32wsztomb);
+DEFINE_PUBLIC_ALIAS(format_wcsntomb,libc_format_32wsntomb);
+DEFINE_PUBLIC_ALIAS(__DSYM(format_wcsztomb),libc_format_16wsztomb);
+DEFINE_PUBLIC_ALIAS(__DSYM(format_wcsntomb),libc_format_16wsntomb);
 #endif /* !__KERNEL__ */
 
 DECL_END

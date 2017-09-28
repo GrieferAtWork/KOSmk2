@@ -30,6 +30,7 @@
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <bits/siginfo.h>
+#include <uchar.h>
 
 DECL_BEGIN
 
@@ -52,12 +53,10 @@ struct tms;
 INTDEF void LIBCCALL libc_tzset(void);
 INTDEF char *LIBCCALL libc_asctime_r(struct tm const *__restrict tp, char *__restrict buf);
 INTDEF char *LIBCCALL libc_asctime(struct tm const *tp);
-INTDEF size_t LIBCCALL libc_strftime(char *__restrict s, size_t maxsize, char const *__restrict format, struct tm const *__restrict tp);
 INTDEF char *LIBCCALL libc_strptime(char const *__restrict s, char const *__restrict format, struct tm *tp);
 INTDEF int LIBCCALL libc_dysize(int year);
 INTDEF int LIBCCALL libc_getdate_r(char const *__restrict string, struct tm *__restrict resbufp);
 INTDEF struct tm *LIBCCALL libc_getdate(char const *string);
-INTDEF size_t LIBCCALL libc_strftime_l(char *__restrict s, size_t maxsize, char const *__restrict format, struct tm const *__restrict tp, locale_t loc);
 INTDEF char *LIBCCALL libc_strptime_l(char const *__restrict s, char const *__restrict format, struct tm *tp, locale_t loc);
 INTDEF char *LIBCCALL libc_ctime64_r(time64_t const *__restrict timer, char *__restrict buf);
 INTDEF char *LIBCCALL libc_ctime_r(time_t const *__restrict timer, char *__restrict buf);
@@ -162,6 +161,15 @@ INTDEF int LIBCCALL libc_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 INTDEF unsigned int LIBCCALL libc_sleep(unsigned int seconds);
 INTDEF int LIBCCALL libc_usleep(useconds_t useconds);
 INTDEF clock_t LIBCCALL libc_times(struct tms *buffer);
+
+INTDEF size_t LIBCCALL libc_strftime(char *__restrict s, size_t maxsize, char const *__restrict format, struct tm const *__restrict tp);
+INTDEF size_t LIBCCALL libc_strftime_l(char *__restrict s, size_t maxsize, char const *__restrict format, struct tm const *__restrict tp, locale_t loc);
+INTDEF size_t LIBCCALL libc_32wcsftime(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp);
+INTDEF size_t LIBCCALL libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp, locale_t loc);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF size_t LIBCCALL libc_16wcsftime(char16_t *__restrict s, size_t maxsize, char16_t const *__restrict format, struct tm const *__restrict tp);
+INTDEF size_t LIBCCALL libc_16wcsftime_l(char16_t *__restrict s, size_t maxsize, char16_t const *__restrict format, struct tm const *__restrict tp, locale_t loc);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

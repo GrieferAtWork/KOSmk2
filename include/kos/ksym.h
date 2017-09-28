@@ -22,14 +22,14 @@
 #include <__stdinc.h>
 #include <features.h>
 
-#define __KSYM_PREFIX  ".kos."
+#define __KSYM_PREFIX  ".kern."
 
 #ifdef __KERNEL__
 #   define __KSYM(name) __ASMNAME(#name)
 #elif defined(__INTELLISENSE__)
 #   define __KSYM(name) /* Nothing */
 #else
-#   define __KSYM(name) __ASMNAME(".kos." #name) __ATTR_WEAK
+#   define __KSYM(name) __ASMNAME(".kern." #name) __ATTR_WEAK
 #endif
 
 

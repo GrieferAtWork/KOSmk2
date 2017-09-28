@@ -380,7 +380,7 @@ __LIBC void *(__LIBCCALL xdlopen)(char const *__filename, int __flags);
 __LIBC void *(__LIBCCALL xfdlopen)(int __fd, int __flags);
 __LIBC void *(__LIBCCALL xdlsym)(void *__handle, char const *__symbol);
 __LIBC int (__LIBCCALL xdlclose)(void *__handle);
-#endif
+#endif /* __USE_KOS */
 
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN_EXTENDED) && !defined(__USE_XOPEN2K))

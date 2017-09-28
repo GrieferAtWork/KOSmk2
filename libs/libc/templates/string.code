@@ -27,6 +27,7 @@
  * #define Xstp(x)               ... <Symbol name generator> (e.g.: 'libc_stp##x', 'libc_32wcp##x')
  * #define Xmb(x)                ... <Symbol name generator> (e.g.: 'libc_32mb##x') [OPTIONAL]
  * #define Xwc(x)                ... <Symbol name generator> (e.g.: 'libc_32wc##x') [OPTIONAL]
+ * #define Xa(x)                 ... <Symbol name generator> (e.g.: 'libc_a##x', 'libc_32w##x') [OPTIONAL] (Used for 'libc_ato32', etc.)
  * #define S                     ... <Bit-width in bytes> (e.g.: '__SIZEOF_CHAR__', '__SIZEOF_WCHAR_T__')
  * #define NUL                   ... <\0-character; defaults to ZERO(0)>
  * #define TOLOWER(x)            ... <tolower()-function>
@@ -114,6 +115,24 @@
  * WANT_MBSRTOWCS_S
  * WANT_WCSRTOMBS_S
  * WANT_WCRTOMB_S
+ * WANT_STRTOU32
+ * WANT_STRTOU64
+ * WANT_STRTO32
+ * WANT_STRTO64
+ * WANT_STRTOU32_L
+ * WANT_STRTOU64_L
+ * WANT_STRTO32_L
+ * WANT_STRTO64_L
+ * WANT_ATO32
+ * WANT_ATO64
+ * WANT_ATO32_L
+ * WANT_ATO64_L
+ * WANT_STRTOLD
+ * WANT_STRTOF
+ * WANT_STRTOD
+ * WANT_STRTOLD_L
+ * WANT_STRTOF_L
+ * WANT_STRTOD_L
  */
 #ifndef NUL
 #define NUL 0
@@ -1084,6 +1103,322 @@ DECL errno_t LIBCCALL Xwc(rtomb_s)
 #endif /* WANT_WCRTOMB_S */
 
 
+/* String -> integer parsing. */
+#ifdef WANT_STRTOU32
+#undef WANT_STRTOU32
+DECL u32 LIBCCALL
+Xstr(tou32)(T const *__restrict nptr, T **endptr, int base) {
+	u32 result,temp;
+	if (!base) {
+		if (*nptr == '0') {
+			++nptr;
+			if (*nptr == 'x' || *nptr == 'X') ++nptr,base = 16;
+			else if (*nptr == 'b' || *nptr == 'B') ++nptr,base = 2;
+			else base = 8;
+		} else base = 10;
+	}
+	result = 0;
+	for (;;) {
+		T ch = *nptr;
+		if (ch >= '0' && ch <= '9') temp = (u32)(ch-'0');
+		else if (ch >= 'a' && ch <= 'z') temp = (u32)(10+(ch-'a'));
+		else if (ch >= 'A' && ch <= 'Z') temp = (u32)(10+(ch-'A'));
+		else break;
+		if (temp >= (u32)base) break;
+		++nptr;
+		result *= base;
+		result += temp;
+	}
+	if (endptr) *endptr = (T *)nptr;
+	return result;
+}
+#endif /* WANT_STRTOU32 */
+
+#ifdef WANT_STRTOU64
+#undef WANT_STRTOU64
+DECL u64 LIBCCALL
+Xstr(tou64)(T const *__restrict nptr, T **endptr, int base) {
+	u64 result,temp;
+	if (!base) {
+		if (*nptr == '0') {
+			++nptr;
+			if (*nptr == 'x' || *nptr == 'X') ++nptr,base = 16;
+			else if (*nptr == 'b' || *nptr == 'B') ++nptr,base = 2;
+			else base = 8;
+		} else base = 10;
+	}
+	result = 0;
+	for (;;) {
+		T ch = *nptr;
+		if (ch >= '0' && ch <= '9') temp = (u64)(ch-'0');
+		else if (ch >= 'a' && ch <= 'z') temp = (u64)(10+(ch-'a'));
+		else if (ch >= 'A' && ch <= 'Z') temp = (u64)(10+(ch-'A'));
+		else break;
+		if (temp >= (u64)base) break;
+		++nptr;
+		result *= base;
+		result += temp;
+	}
+	if (endptr) *endptr = (T *)nptr;
+	return result;
+}
+#endif /* WANT_STRTOU64 */
+
+#ifdef WANT_STRTO32
+#undef WANT_STRTO32
+DECL s32 LIBCCALL Xstr(to32)(T const *__restrict nptr, T **endptr, int base) {
+	bool is_neg = false; s32 result;
+	while (*nptr == '-') { is_neg ^= 1; ++nptr; }
+	result = (s32)Xstr(tou32)(nptr,endptr,base);
+	if (is_neg) result = -result;
+	return result;
+}
+#endif /* WANT_STRTO64 */
+
+#ifdef WANT_STRTO64
+#undef WANT_STRTO64
+DECL s64 LIBCCALL Xstr(to64)(T const *__restrict nptr, T **endptr, int base) {
+	bool is_neg = false; s64 result;
+	while (*nptr == '-') { is_neg ^= 1; ++nptr; }
+	result = (s64)Xstr(tou64)(nptr,endptr,base);
+	if (is_neg) result = -result;
+	return result;
+}
+#endif /* WANT_STRTO64 */
+
+#ifdef WANT_STRTOU32_L
+#undef WANT_STRTOU32_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(tou32_l),Xstr(tou32));
+#else
+DECL u32 LIBCCALL
+Xstr(tou32_l)(T const *__restrict nptr, T **endptr, int base, locale_t UNUSED(locale)) {
+	return Xstr(tou32)(nptr,endptr,base);
+}
+#endif
+#endif /* WANT_STRTOU32_L */
+
+#ifdef WANT_STRTOU64_L
+#undef WANT_STRTOU64_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(tou64_l),Xstr(tou64));
+#else
+DECL u64 LIBCCALL
+Xstr(tou64_l)(T const *__restrict nptr, T **endptr, int base, locale_t UNUSED(locale)) {
+	return Xstr(tou64)(nptr,endptr,base);
+}
+#endif
+#endif /* WANT_STRTOU64_L */
+
+#ifdef WANT_STRTO32_L
+#undef WANT_STRTO32_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(to32_l),Xstr(to32));
+#else
+DECL s32 LIBCCALL
+Xstr(to32_l)(T const *__restrict nptr, T **endptr, int base, locale_t UNUSED(locale)) {
+	return Xstr(to32)(nptr,endptr,base);
+}
+#endif
+#endif /* WANT_STRTO32_L */
+
+#ifdef WANT_STRTO64_L
+#undef WANT_STRTO64_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(to64_l),Xstr(to64));
+#else
+DECL s32 LIBCCALL
+Xstr(to64_l)(T const *__restrict nptr, T **endptr, int base, locale_t UNUSED(locale)) {
+	return Xstr(to64)(nptr,endptr,base);
+}
+#endif
+#endif /* WANT_STRTO64_L */
+
+#ifdef WANT_ATO32
+#undef WANT_ATO32
+DECL s32 LIBCCALL
+Xa(to32)(T const *__restrict nptr) {
+	return Xstr(to32)(nptr,NULL,10);
+}
+#endif /* WANT_ATO32 */
+
+#ifdef WANT_ATO64
+#undef WANT_ATO64
+DECL s64 LIBCCALL
+Xa(to64)(T const *__restrict nptr) {
+	return Xstr(to64)(nptr,NULL,10);
+}
+#endif /* WANT_ATO32 */
+
+#ifdef WANT_ATO32_L
+#undef WANT_ATO32_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xa(to32_l),Xa(to32));
+#else
+DECL s32 LIBCCALL
+Xa(to32_l)(T const *__restrict nptr, locale_t UNUSED(locale)) {
+	return Xa(to32)(nptr);
+}
+#endif
+#endif /* WANT_ATO32 */
+
+#ifdef WANT_ATO64_L
+#undef WANT_ATO64_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xa(to64_l),Xa(to64));
+#else
+DECL s64 LIBCCALL
+Xa(to64_l)(T const *__restrict nptr, locale_t UNUSED(locale)) {
+	return Xa(to64)(nptr);
+}
+#endif
+#endif /* WANT_ATO32 */
+
+
+#ifdef WANT_STRTOLD
+#undef WANT_STRTOLD
+INTERN long double LIBCCALL
+Xstr(told)(T const *__restrict nptr, T **__restrict endptr) {
+	long double result = 0.0L; T ch;
+	long double float_extension_mult = 0.0L;
+	int numsys,more;
+	if (*nptr == '0') {
+		if (!*++nptr) return 0.0L;
+		if (*nptr == 'x' || *nptr == 'X') {
+			if unlikely(!*++nptr) goto err;
+			numsys = 16;
+		} else if (*nptr == 'b' || *nptr == 'B') {
+			if unlikely(!*++nptr) goto err;
+			numsys = 2;
+		} else if (*nptr == '.') {
+			numsys = 10;
+		} else {
+			numsys = 8;
+		}
+	} else {
+		numsys = 10;
+	}
+	float_extension_mult = 0;
+	for (;;) {
+next:
+		switch ((ch = *nptr++)) {
+		case '.': float_extension_mult = (long double)numsys; goto next;
+		case 'p': case 'P': goto flt_ext;
+		case 'e': case 'E': if (numsys < (10+'e'-'a')) goto flt_ext; /* fallthrough */
+		default:
+			if (ch >= '0' && ch <= '9') { more = ch-'0'; break; }
+			if (ch >= 'a' && ch <= 'f') { more = 10+ch-'a'; break; }
+			if (ch >= 'A' && ch <= 'F') { more = 10+ch-'A'; break; }
+			--nptr;
+			goto done;
+		}
+		if (unlikely(more >= numsys)) goto err;
+		if (float_extension_mult != 0.0L) {
+			result += ((long double)more)/float_extension_mult;
+			float_extension_mult *= numsys;
+		} else {
+			result = result*numsys+more;
+		}
+	}
+done:
+	if (endptr) *endptr = (T *)nptr;
+	return result;
+flt_ext:
+#define float_extension_pos numsys
+#define float_extension_off more
+	/* Read the Float extension: E[+/-][int] */
+	float_extension_pos = 1;
+	float_extension_off = 0;
+	if (!*nptr) goto err;
+	ch = *nptr++;
+	if (ch == '-' || ch == '+') {
+		float_extension_pos = (ch == '+');
+		if (!*nptr) goto err;
+		ch = *nptr++;
+	}
+	while (ch >= '0' && ch <= '9') {
+		float_extension_off = float_extension_off*10+(ch-'0');
+		if ((ch = *nptr) == NUL) break;
+		++nptr;
+	}
+	float_extension_mult = 1;
+	while (float_extension_off != 0) {
+		float_extension_mult *= 10;
+		--float_extension_off;
+	}
+	if (float_extension_pos) {
+		result *= float_extension_mult;
+	} else {
+		result /= float_extension_mult;
+	}
+	goto done;
+#undef float_extension_pos
+#undef float_extension_off
+err:
+#if 1 /* This is what STDC wants... */
+	result = 0.0L;
+#else /* This is what I'd like to do... */
+	SET_ERRNO(EINVAL);
+	result = -1.0L;
+#endif
+	goto done;
+}
+#endif /* WANT_STRTOLD */
+
+#ifdef WANT_STRTOF
+#undef WANT_STRTOF
+INTERN float LIBCCALL
+Xstr(tof)(T const *__restrict nptr, T **__restrict endptr) {
+	return (float)Xstr(told)(nptr,endptr);
+}
+#endif /* WANT_STRTOF */
+
+#ifdef WANT_STRTOD
+#undef WANT_STRTOD
+INTERN double LIBCCALL
+Xstr(tod)(T const *__restrict nptr, T **__restrict endptr) {
+	return (double)Xstr(told)(nptr,endptr);
+}
+#endif /* WANT_STRTOD */
+
+#ifdef WANT_STRTOLD_L
+#undef WANT_STRTOLD_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(told_l),Xstr(told));
+#else
+DECL long double LIBCCALL
+Xa(told_l)(T const *__restrict nptr, T **__restrict endptr, locale_t UNUSED(locale)) {
+	return Xstr(told)(nptr,endptr);
+}
+#endif
+#endif /* WANT_STRTOLD_L */
+
+#ifdef WANT_STRTOD_L
+#undef WANT_STRTOD_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(tod_l),Xstr(tod));
+#else
+DECL double LIBCCALL
+Xa(tod_l)(T const *__restrict nptr, T **__restrict endptr, locale_t UNUSED(locale)) {
+	return Xstr(tod)(nptr,endptr);
+}
+#endif
+#endif /* WANT_STRTOD_L */
+
+#ifdef WANT_STRTOF_L
+#undef WANT_STRTOF_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xstr(tof_l),Xstr(tof));
+#else
+DECL float LIBCCALL
+Xa(tof_l)(T const *__restrict nptr, T **__restrict endptr, locale_t UNUSED(locale)) {
+	return Xstr(tof)(nptr,endptr);
+}
+#endif
+#endif /* WANT_STRTOF_L */
+
+
+
 #undef DEFINE_ALIAS
 #undef DECL
 #undef UTFXTO8
@@ -1100,6 +1435,9 @@ DECL errno_t LIBCCALL Xwc(rtomb_s)
 #undef Xstp
 #ifdef Xmb
 #undef Xmb
+#endif
+#ifdef Xa
+#undef Xa
 #endif
 #ifdef Xwc
 #undef Xwc

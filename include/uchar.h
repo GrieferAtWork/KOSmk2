@@ -19,6 +19,7 @@
 #ifndef _UCHAR_H
 #define _UCHAR_H 1
 
+#include <__stdinc.h>
 #include <features.h>
 #include <hybrid/typecore.h>
 
@@ -26,12 +27,12 @@ __DECL_BEGIN
 
 /* Define 'size_t' */
 #ifdef __NAMESPACE_STD_EXISTS
-__NAMESPACE_STD_BEGIN
 #ifndef __std_size_t_defined
 #define __std_size_t_defined 1
+__NAMESPACE_STD_BEGIN
 typedef __SIZE_TYPE__ size_t;
-#endif /* !__std_size_t_defined */
 __NAMESPACE_STD_END
+#endif /* !__std_size_t_defined */
 #ifndef __CXX_SYSTEM_HEADER
 #ifndef __size_t_defined
 #define __size_t_defined 1
@@ -65,19 +66,18 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(mbstate_t)
 #endif /* !__mbstate_t_defined */
 
-#if defined(_NATIVE_CHAR16_T_DEFINED) || \
-   (defined(__cpp_unicode_characters) && __cpp_unicode_characters >= 200704) || \
-   (defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && (_HAS_CHAR16_T_LANGUAGE_SUPPORT-0)) || \
-   (defined(__cplusplus) && ((defined(_MSC_VER) && _MSC_VER >= 1900) || \
-   (defined(__clang__) && !defined(_MSC_VER) && (defined(__GXX_EXPERIMENTAL_CXX0X__) || __cplusplus >= 201103L)) || \
-   (defined(COMPILER_VERSION_GCC_CXX11) && (COMPILER_VERSION_GCC >= 40400)) || \
-   (defined(__BORLANDC__) && defined(COMPILER_VERSION_CODEGEAR_0X_SUPPORT) && __BORLANDC__ >= 0x610) || \
-   (defined(__IBMCPP_UTF_LITERAL__) && __IBMCPP_UTF_LITERAL__)))
-/* The compiler is pre-defining the 'char16_t' / 'char32_t' types. */
-#else
+#ifndef __char16_t_defined
+#define __char16_t_defined 1
 typedef __CHAR16_TYPE__ char16_t;
 typedef __CHAR32_TYPE__ char32_t;
-#endif
+#endif /* !__char16_t_defined */
+
+#ifdef __USE_KOS
+#ifndef MBSTATE_INIT
+#define MBSTATE_INIT     {0,{0}}
+#endif /* !MBSTATE_INIT */
+#endif /* __USE_KOS */
+
 
 /* Libc uses utf16/utf32 to encode/decode char16_t and char32_t */
 #define __STD_UTF_16__ 1

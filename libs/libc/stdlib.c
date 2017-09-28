@@ -147,85 +147,6 @@ INTERN RAND_TYPE LIBCCALL libc_rand_r(RAND_SEED_R *__restrict pseed) {
 #endif
 }
 
-#if __SIZEOF_LONG__ == 4
-#define STRTOINT_32  libc_strtol
-#define STRTOUINT_32 libc_strtoul
-#define STRTOINT     libc_strtol
-#define STRTOUINT    libc_strtoul
-#define TYPE         long
-#define UTYPE        unsigned long
-#define DECL         INTERN
-#include "templates/strtouint.code"
-#elif __SIZEOF_LONG_LONG__ == 4
-#define STRTOINT_32  libc_strtoll
-#define STRTOUINT_32 libc_strtoull
-#define STRTOINT     libc_strtoll
-#define STRTOUINT    libc_strtoull
-#define TYPE         __LONGLONG
-#define UTYPE        __ULONGLONG
-#define DECL         INTERN
-#include "templates/strtouint.code"
-#else
-#define STRTOINT_32  libc_strtoint_32
-#define STRTOUINT_32 libc_strtouint_32
-#define STRTOINT     libc_strtoint_32
-#define STRTOUINT    libc_strtouint_32
-#define TYPE         s64
-#define UTYPE        u64
-#define DECL         LOCAL
-#include "templates/strtouint.code"
-#endif
-
-#if __SIZEOF_LONG__ == 8
-#define STRTOINT_64  libc_strtol
-#define STRTOUINT_64 libc_strtoul
-#define STRTOINT     libc_strtol
-#define STRTOUINT    libc_strtoul
-#define TYPE         long
-#define UTYPE        unsigned long
-#define DECL         INTERN
-#include "templates/strtouint.code"
-#elif __SIZEOF_LONG_LONG__ == 8
-#define STRTOINT_64  libc_strtoll
-#define STRTOUINT_64 libc_strtoull
-#define STRTOINT     libc_strtoll
-#define STRTOUINT    libc_strtoull
-#define TYPE         __LONGLONG
-#define UTYPE        __ULONGLONG
-#define DECL         INTERN
-#include "templates/strtouint.code"
-#else
-#define STRTOINT_64  libc_strtoint_64
-#define STRTOUINT_64 libc_strtouint_64
-#define STRTOINT     libc_strtoint_64
-#define STRTOUINT    libc_strtouint_64
-#define TYPE         s64
-#define UTYPE        u64
-#define DECL         LOCAL
-#include "templates/strtouint.code"
-#endif
-
-INTERN int LIBCCALL libc_atoi(char const *__restrict nptr) {
-#if __SIZEOF_INT__ == 8
- return (int)STRTOINT_64(nptr,NULL,10);
-#else
- return (int)STRTOINT_32(nptr,NULL,10);
-#endif
-}
-
-#if __SIZEOF_LONG__ != __SIZEOF_INT__
-INTERN long LIBCCALL libc_atol(char const *__restrict nptr) {
- return libc_strtol(nptr,NULL,10);
-}
-#endif
-
-#if __SIZEOF_LONG_LONG__ != __SIZEOF_INT__ && \
-    __SIZEOF_LONG_LONG__ != __SIZEOF_LONG__
-INTERN __LONGLONG LIBCCALL libc_atoll(char const *__restrict nptr) {
- return libc_strtoll(nptr,NULL,10);
-}
-#endif
-
 
 INTERN void *LIBCCALL
 libc_bsearch(void const *key, void const *base, size_t nmemb,
@@ -237,59 +158,6 @@ libc_bsearch(void const *key, void const *base, size_t nmemb,
  return NULL;
 }
 
-PRIVATE int LIBCCALL call_comp(void const *a, void const *b, void *arg) {
- return (*(comparison_fn_t)arg)(a,b);
-}
-INTERN void LIBCCALL
-libc_qsort(void *base, size_t nmemb, size_t size,
-           comparison_fn_t compar) {
- libc_qsort_r(base,nmemb,size,&call_comp,compar);
-}
-
-INTERN char *LIBCCALL libc_gcvt(double value, int ndigit, char *buf) {
- NOT_IMPLEMENTED();
- return NULL;
-}
-INTERN char *LIBCCALL libc_qgcvt(long double value, int ndigit, char *buf) {
- NOT_IMPLEMENTED();
- return NULL;
-}
-INTERN int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decpt,
-                                int *__restrict sign, char *__restrict buf, size_t len) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decpt,
-                                int *__restrict sign, char *__restrict buf, size_t len) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decpt,
-                                 int *__restrict sign, char *__restrict buf, size_t len) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decpt,
-                                 int *__restrict sign, char *__restrict buf, size_t len) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN double LIBCCALL libc_atof(char const *__restrict nptr) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN double LIBCCALL libc_strtod(char const *__restrict nptr, char **endptr) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN float LIBCCALL libc_strtof(char const *__restrict nptr, char **__restrict endptr) {
- NOT_IMPLEMENTED();
- return 0;
-}
-INTERN long double LIBCCALL libc_strtold(char const *__restrict nptr, char **__restrict endptr) {
- NOT_IMPLEMENTED();
- return 0;
-}
 INTERN int LIBCCALL libc_getloadavg(double loadavg[], int nelem) {
  NOT_IMPLEMENTED();
  return 0;
@@ -417,6 +285,19 @@ jump_over:
  }
 }
 
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_INTERN_ALIAS(libc_qsort,libc_qsort_r);
+#else
+PRIVATE int LIBCCALL
+call_comp(void const *a, void const *b, void *arg) {
+ return (*(comparison_fn_t)arg)(a,b);
+}
+INTERN void LIBCCALL
+libc_qsort(void *base, size_t nmemb, size_t size,
+           comparison_fn_t compar) {
+ libc_qsort_r(base,nmemb,size,&call_comp,compar);
+}
+#endif
 
 
 
@@ -435,7 +316,7 @@ INTERN __LONGLONG LIBCCALL libc_llabs(__LONGLONG x) { return x < 0 ? -x : x; }
 INTERN div_t LIBCCALL libc_div(int numer, int denom) { return (div_t){ numer/denom,numer%denom }; }
 INTERN ldiv_t LIBCCALL libc_ldiv(long numer, long denom) { return (ldiv_t){ numer/denom,numer%denom }; }
 INTERN lldiv_t LIBCCALL libc_lldiv(long long numer, long long denom) { return (lldiv_t){ numer/denom,numer%denom }; }
-INTERN int LIBCCALL libc_system(char const *command) {
+INTERN int LIBCCALL libc_system(char const *__restrict command) {
  pid_t child,error; int status;
  if ((child = libc_fork()) < 0) return -1;
  if (child == 0) {
@@ -482,19 +363,6 @@ INTERN int LIBCCALL libc_initstate_r(unsigned int seed, char *__restrict statebu
 INTERN int LIBCCALL libc_setstate_r(char *__restrict statebuf, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_mkstemps(char *template_, int suffixlen) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_rpmatch(char const *response) { NOT_IMPLEMENTED(); return 0; }
-#define FLOAT_BUFFER_SIZE 64
-INTERN char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-INTERN char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qfcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-INTERN char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_ecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-INTERN char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_fcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-#undef FLOAT_BUFFER_SIZE
-INTERN long LIBCCALL libc_strtol_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return libc_strtol(nptr,endptr,base); }
-INTERN unsigned long LIBCCALL libc_strtoul_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return libc_strtoul(nptr,endptr,base); }
-INTERN __LONGLONG LIBCCALL libc_strtoll_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return libc_strtoll(nptr,endptr,base); }
-INTERN __ULONGLONG LIBCCALL libc_strtoull_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t UNUSED(loc)) { return libc_strtoull(nptr,endptr,base); }
-INTERN double LIBCCALL libc_strtod_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtod(nptr,endptr); }
-INTERN float LIBCCALL libc_strtof_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtof(nptr,endptr); }
-INTERN long double LIBCCALL libc_strtold_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtold(nptr,endptr); }
 INTERN char *LIBCCALL libc_canonicalize_file_name(char const *name) { NOT_IMPLEMENTED(); return NULL; }
 INTERN int LIBCCALL libc_ptsname_r(int fd, char *buf, size_t buflen) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_getpt(void) { NOT_IMPLEMENTED(); return 0; }
@@ -530,31 +398,8 @@ DEFINE_PUBLIC_ALIAS(random,libc_random);
 DEFINE_PUBLIC_ALIAS(srand,libc_srand);
 DEFINE_PUBLIC_ALIAS(rand,libc_rand);
 DEFINE_PUBLIC_ALIAS(rand_r,libc_rand_r);
-DEFINE_PUBLIC_ALIAS(strtol,libc_strtol);
-DEFINE_PUBLIC_ALIAS(strtoul,libc_strtoul);
-DEFINE_PUBLIC_ALIAS(strtoll,libc_strtoll);
-DEFINE_PUBLIC_ALIAS(strtoull,libc_strtoull);
-DEFINE_PUBLIC_ALIAS(atoi,libc_atoi);
-#if __SIZEOF_LONG__ != __SIZEOF_INT__
-DEFINE_PUBLIC_ALIAS(atol,libc_atol);
-#endif
-#if __SIZEOF_LONG_LONG__ != __SIZEOF_INT__ && \
-    __SIZEOF_LONG_LONG__ != __SIZEOF_LONG__
-DEFINE_PUBLIC_ALIAS(atoll,libc_atoll);
-#endif
-
 DEFINE_PUBLIC_ALIAS(bsearch,libc_bsearch);
 DEFINE_PUBLIC_ALIAS(qsort,libc_qsort);
-DEFINE_PUBLIC_ALIAS(gcvt,libc_gcvt);
-DEFINE_PUBLIC_ALIAS(qgcvt,libc_qgcvt);
-DEFINE_PUBLIC_ALIAS(ecvt_r,libc_ecvt_r);
-DEFINE_PUBLIC_ALIAS(fcvt_r,libc_fcvt_r);
-DEFINE_PUBLIC_ALIAS(qecvt_r,libc_qecvt_r);
-DEFINE_PUBLIC_ALIAS(qfcvt_r,libc_qfcvt_r);
-DEFINE_PUBLIC_ALIAS(atof,libc_atof);
-DEFINE_PUBLIC_ALIAS(strtod,libc_strtod);
-DEFINE_PUBLIC_ALIAS(strtof,libc_strtof);
-DEFINE_PUBLIC_ALIAS(strtold,libc_strtold);
 DEFINE_PUBLIC_ALIAS(getloadavg,libc_getloadavg);
 DEFINE_PUBLIC_ALIAS(qsort_r,libc_qsort_r);
 #ifndef __KERNEL__
@@ -595,17 +440,6 @@ DEFINE_PUBLIC_ALIAS(initstate_r,libc_initstate_r);
 DEFINE_PUBLIC_ALIAS(setstate_r,libc_setstate_r);
 DEFINE_PUBLIC_ALIAS(mkstemps,libc_mkstemps);
 DEFINE_PUBLIC_ALIAS(rpmatch,libc_rpmatch);
-DEFINE_PUBLIC_ALIAS(qecvt,libc_qecvt);
-DEFINE_PUBLIC_ALIAS(qfcvt,libc_qfcvt);
-DEFINE_PUBLIC_ALIAS(ecvt,libc_ecvt);
-DEFINE_PUBLIC_ALIAS(fcvt,libc_fcvt);
-DEFINE_PUBLIC_ALIAS(strtol_l,libc_strtol_l);
-DEFINE_PUBLIC_ALIAS(strtoul_l,libc_strtoul_l);
-DEFINE_PUBLIC_ALIAS(strtoll_l,libc_strtoll_l);
-DEFINE_PUBLIC_ALIAS(strtoull_l,libc_strtoull_l);
-DEFINE_PUBLIC_ALIAS(strtod_l,libc_strtod_l);
-DEFINE_PUBLIC_ALIAS(strtof_l,libc_strtof_l);
-DEFINE_PUBLIC_ALIAS(strtold_l,libc_strtold_l);
 DEFINE_PUBLIC_ALIAS(canonicalize_file_name,libc_canonicalize_file_name);
 DEFINE_PUBLIC_ALIAS(ptsname_r,libc_ptsname_r);
 DEFINE_PUBLIC_ALIAS(getpt,libc_getpt);
@@ -631,21 +465,10 @@ DEFINE_PUBLIC_ALIAS(random,libc_rand);
 DEFINE_PUBLIC_ALIAS(strtoll,libc_strtol)
 DEFINE_PUBLIC_ALIAS(strtoull,libc_strtoul)
 #endif
-#if __SIZEOF_LONG__ == __SIZEOF_INT__
-DEFINE_PUBLIC_ALIAS(atol,libc_atoi);
-#endif
-#if __SIZEOF_LONG_LONG__ == __SIZEOF_INT__
-DEFINE_PUBLIC_ALIAS(atoll,libc_atoi);
-#elif __SIZEOF_LONG_LONG__ == __SIZEOF_LONG__
-DEFINE_PUBLIC_ALIAS(atoll,libc_atol);
-#endif
-DEFINE_PUBLIC_ALIAS(strtoq,libc_strtoll);
-DEFINE_PUBLIC_ALIAS(strtouq,libc_strtoull);
 DEFINE_PUBLIC_ALIAS(mkostemp64,libc_mkostemp);
 DEFINE_PUBLIC_ALIAS(mkostemps64,libc_mkostemps);
 DEFINE_PUBLIC_ALIAS(mkstemp64,libc_mkstemp);
 DEFINE_PUBLIC_ALIAS(mkstemps64,libc_mkstemps);
-
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 DEFINE_PUBLIC_ALIAS(_mktemp_s,libc_mktemp_s);

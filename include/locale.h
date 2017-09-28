@@ -22,6 +22,9 @@
 #include <__stdinc.h>
 #include <features.h>
 #include <bits/locale.h>
+#ifdef __USE_XOPEN2K8
+#include <xlocale.h>
+#endif /* __USE_XOPEN2K8 */
 
 /* Copyright (C) 1991-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -181,7 +184,6 @@ __NAMESPACE_STD_USING(localeconv)
 
 
 #ifdef __USE_XOPEN2K8
-#include <xlocale.h>
 
 __LIBC __locale_t (__LIBCCALL newlocale)(int __category_mask, char const *__locale, __locale_t __base);
 

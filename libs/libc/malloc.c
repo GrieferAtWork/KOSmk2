@@ -27,6 +27,7 @@
 #include "format-printer.h"
 #include "malloc.h"
 #include "misc.h"
+#include "file.h"
 #include "stdio.h"
 #include "string.h"
 #include "string.h"

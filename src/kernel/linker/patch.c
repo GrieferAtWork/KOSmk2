@@ -180,7 +180,7 @@ modpatch_user_dlsym(struct modpatch *__restrict self,
  result = modpatch_common_dlsym(self,name,hash,search_current);
  if (result) return result;
 
- /* Check for special kernel symbols. (e.g.: '.kos.keymap') */
+ /* Check for special kernel symbols. (e.g.: '.kern.keymap') */
  if (memcmp(name,__KSYM_PREFIX,sizeof(__KSYM_PREFIX)-sizeof(char)) == 0) {
   name  += COMPILER_STRLEN(__KSYM_PREFIX);
   result = kernel_symaddr(name,sym_hashname(name));

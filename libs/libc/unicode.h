@@ -48,7 +48,9 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(mbstate_t)
 #endif /* !__mbstate_t_defined */
 
+#ifndef MBSTATE_INIT
 #define MBSTATE_INIT     {0,{0}}
+#endif /* !MBSTATE_INIT */
 #define mbstate_reset(p)  libc_memset(p,0,sizeof(mbstate_t))
 
 #define UNICODE_MB_MAX 6

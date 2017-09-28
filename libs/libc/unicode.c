@@ -23,6 +23,8 @@
 #include "unicode.h"
 #include "malloc.h"
 #include "errno.h"
+#include "string.h"
+#include "format-printer.h"
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <uchar.h>
@@ -417,6 +419,124 @@ err:
      SET_ERRNO(EILSEQ);
  return UNICODE_ERROR;
 }
+
+
+INTDEF ssize_t LIBCCALL
+libc_format_16wsztomb(pformatprinter printer, void *closure,
+                      char16_t const *__restrict c16, size_t c16len,
+                      mbstate_t *__restrict ps) {
+ char *iter,buf[4];
+ u16 const *end = (u16 const *)c16+c16len;
+ u32 ch; size_t dst_size;
+ ssize_t result = 0,temp;
+ if (ps->__count) {
+  /* Load an old mb-state. */
+  if unlikely(c16 == end) goto done;
+  ps->__count = 0;
+  ch = (u32)ps->__value.__wch;
+  goto second_char;
+ }
+ while (c16 != end) {
+  ch = (u32)(u16)*c16++;
+  /* Convert surrogate pair to Utf32 */
+  if unlikely(ch < UNI_SURROGATE_HIGH_BEGIN ||
+              ch > UNI_SURROGATE_HIGH_END)
+     goto err;
+  if likely(c16 < end) {
+   u16 ch2;
+second_char:
+   ch2 = (u16)*c16;
+   if unlikely(ch2 < UNI_SURROGATE_LOW_BEGIN ||
+               ch2 > UNI_SURROGATE_LOW_END)
+      goto err;
+   ch = ((u32)(ch-UNI_SURROGATE_HIGH_BEGIN) << UNI_HALF_SHIFT)+
+         (u32)(ch2-UNI_SURROGATE_LOW_BEGIN)+UNI_HALF_BASE;
+   ++c16;
+  } else {
+   /* Partial input string (store last character in mb-state). */
+   ps->__count = 2;
+   ps->__value.__wch = ch;
+   goto done;
+  }
+  if likely(ch < (u32)0x80) dst_size = 1;
+  else if (ch < (u32)0x800) dst_size = 2;
+  else if (ch < (u32)0x10000) dst_size = 3;
+  else if likely(ch < (u32)0x110000) dst_size = 4;
+  else goto err;
+  iter = (buf+dst_size);
+  switch (dst_size) {
+   case 4: *--iter = (char)(u8)((ch|0x80)&0xBF); ch >>= 6;
+   case 3: *--iter = (char)(u8)((ch|0x80)&0xBF); ch >>= 6;
+   case 2: *--iter = (char)(u8)((ch|0x80)&0xBF); ch >>= 6;
+   case 1: *--iter = (char)(u8)(ch|uni_bytemarks[dst_size]); break;
+  }
+  /* XXX: Maybe not print each character individually? */
+  temp = (*printer)(iter,(size_t)(COMPILER_ENDOF(buf)-iter),closure);
+  if (temp < 0) return temp;
+  result += temp;
+ }
+done:
+ return result;
+err:
+ SET_ERRNO(EILSEQ);
+ return -1;
+}
+
+INTDEF ssize_t LIBCCALL
+libc_format_32wsztomb(pformatprinter printer, void *closure,
+                      char32_t const *__restrict c32, size_t c32len,
+                      mbstate_t *__restrict ps) {
+ char *iter,buf[4];
+ u32 const *end = (u32 *)c32+c32len;
+ u32 ch; size_t dst_size;
+ ssize_t result = 0,temp;
+ while (c32 != end) {
+  ch = *c32++;
+  if unlikely(ch >= UNI_SURROGATE_HIGH_BEGIN &&
+              ch <= UNI_SURROGATE_LOW_END)
+     goto err;
+  if likely(ch < (u32)0x80) dst_size = 1;
+  else if (ch < (u32)0x800) dst_size = 2;
+  else if (ch < (u32)0x10000) dst_size = 3;
+  else if likely(ch <= UNI_MAX_LEGAL_UTF32) dst_size = 4;
+  else goto err;
+  iter = buf;
+  switch (dst_size) {
+  case 4: *iter++ = (char)((ch|0x80)&0xBF); ch >>= 6;
+  case 3: *iter++ = (char)((ch|0x80)&0xBF); ch >>= 6;
+  case 2: *iter++ = (char)((ch|0x80)&0xBF); ch >>= 6;
+  case 1: *iter++ = (char)((ch|uni_bytemarks[dst_size])); break;
+  }
+  /* XXX: Maybe not print each character individually? */
+  temp = (*printer)(iter,COMPILER_ENDOF(buf)-iter,closure);
+  if (temp < 0) return temp;
+  result += temp;
+ }
+ return result;
+err:
+ SET_ERRNO(EILSEQ);
+ return -1;
+}
+
+INTDEF ssize_t LIBCCALL
+libc_format_16wsntomb(pformatprinter printer, void *closure,
+                      char16_t const *__restrict c16, size_t c16max,
+                      mbstate_t *__restrict ps) {
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+ return libc_format_16wsztomb(printer,closure,c16,libc_16wcsnlen(c16,c16max),ps);
+#else
+ char16_t const *iter = c16,*end = c16+c16max;
+ for (; iter != end && *iter; ++iter);
+ return libc_format_16wsztomb(printer,closure,c16,(size_t)(iter-c16),ps);
+#endif
+}
+INTDEF ssize_t LIBCCALL
+libc_format_32wsntomb(pformatprinter printer, void *closure,
+                      char32_t const *__restrict c32, size_t c32max,
+                      mbstate_t *__restrict ps) {
+ return libc_format_32wsztomb(printer,closure,c32,libc_32wcsnlen(c32,c32max),ps);
+}
+
 
 
 

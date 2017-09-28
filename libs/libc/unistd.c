@@ -37,6 +37,7 @@
 #include "environ.h"
 #include "unicode.h"
 #include "fcntl.h"
+#include "file.h"
 
 #include <hybrid/asm.h>
 #include <hybrid/section.h>

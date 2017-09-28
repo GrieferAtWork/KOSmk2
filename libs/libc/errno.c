@@ -22,7 +22,7 @@
 #define _GNU_SOURCE 1
 
 #include "libc.h"
-#include "stdio.h"
+#include "file.h"
 #include "errno.h"
 #include "string.h"
 #include "stdlib.h"

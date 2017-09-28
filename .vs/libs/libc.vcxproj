@@ -18,6 +18,7 @@
     <ClCompile Include="..\..\libs\libc\environ.c" />
     <ClCompile Include="..\..\libs\libc\errno.c" />
     <ClCompile Include="..\..\libs\libc\fcntl.c" />
+    <ClCompile Include="..\..\libs\libc\file.c" />
     <ClCompile Include="..\..\libs\libc\format-printer.c" />
     <ClCompile Include="..\..\libs\libc\getopt.c" />
     <ClCompile Include="..\..\libs\libc\inet\netdb.c" />
@@ -39,12 +40,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\libs\libc\dlmalloc.c.inl" />
-    <None Include="..\..\libs\libc\stdio-file.c.inl" />
     <None Include="..\..\libs\libc\strerror.inl" />
     <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code" />
     <None Include="..\..\libs\libc\templates\memory.code" />
     <None Include="..\..\libs\libc\templates\string.code" />
-    <None Include="..\..\libs\libc\templates\strtouint.code" />
     <None Include="..\..\libs\libc\typecore.c.inl" />
   </ItemGroup>
   <ItemGroup>
@@ -54,6 +53,7 @@
     <ClInclude Include="..\..\libs\libc\environ.h" />
     <ClInclude Include="..\..\libs\libc\errno.h" />
     <ClInclude Include="..\..\libs\libc\fcntl.h" />
+    <ClInclude Include="..\..\libs\libc\file.h" />
     <ClInclude Include="..\..\libs\libc\format-printer.h" />
     <ClInclude Include="..\..\libs\libc\inet\netdb.h" />
     <ClInclude Include="..\..\libs\libc\inet\socket.h" />

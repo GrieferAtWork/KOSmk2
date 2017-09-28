@@ -21,6 +21,8 @@
 
 #include "__stdinc.h"
 #include <bits/types.h>
+#include <hybrid/typecore.h>
+#include <features.h>
 
 __DECL_BEGIN
 
@@ -28,13 +30,22 @@ __DECL_BEGIN
 #ifndef __pformatprinter_defined
 #define __pformatprinter_defined 1
 /* Callback functions prototypes provided to format functions.
- * NOTE: 'pformatprinter' usually returns the number of characters printed, but isn't required to. */
+ * NOTE: 'pformatprinter' usually returns the number of characters printed, but isn't required to.
+ * @param: DATA:    The base address of a DATALEN bytes long character vector that should be printed.
+ * @param: DATALEN: The amount of characters that should be printed, starting at 'data'.
+ *                  Note that this is an exact value, meaning that a NUL-character appearing
+ *                  before then should not terminate printing prematurely, but be printed as well.
+ * @param: CLOSURE: The user-defined closure parameter passed alongside this function pointer.
+ * @return: < 0:    An error occurred and the calling function shall return with this same value.
+ * @return: >= 0:   The print was successful.
+ *                  Usually, the return value is added to a sum of values which is then
+ *                  returned by the calling function upon success, also meaning that the
+ *                  usual return value used to indicate success in 'DATALEN'. */
 typedef __ssize_t (__LIBCCALL *pformatprinter)(char const *__restrict __data,
                                                __size_t __datalen, void *__closure);
 typedef __ssize_t (__LIBCCALL *pformatscanner)(void *__closure);
 typedef __ssize_t (__LIBCCALL *pformatreturn)(unsigned int __ch, void *__closure);
-#endif
-
+#endif /* !__pformatprinter_defined */
 
 /* Generic printf implementation
  * Taking a regular printf-style format string and arguments, these
@@ -103,7 +114,6 @@ __LIBC __NONNULL((1,4)) __ssize_t (__ATTR_CDECL format_scanf)(pformatscanner __s
 __LIBC __NONNULL((1,4)) __ssize_t (__LIBCCALL format_vscanf)(pformatscanner __scanner, pformatreturn __returnch,
                                                              void *__closure, char const *__restrict __format,
                                                              __VA_LIST __args);
-
 
 #ifndef __KERNEL__
 struct tm;
@@ -227,8 +237,137 @@ __LIBC __NONNULL((1)) int  (__LIBCCALL stringprinter_init)(struct stringprinter 
 __LIBC __NONNULL((1)) void (__LIBCCALL stringprinter_fini)(struct stringprinter *__restrict __self);
 __LIBC __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL stringprinter_pack)(struct stringprinter *__restrict __self, __size_t *__length);
 __LIBC __ssize_t (__LIBCCALL stringprinter_print)(char const *__restrict __data, __size_t __datalen, void *__closure);
+
+
+#ifndef ____mbstate_t_defined
+#define ____mbstate_t_defined 1
+typedef struct __mbstate {
+ int                   __count;
+ union { __WINT_TYPE__ __wch; char   __wchb[4]; } __value;
+} __mbstate_t;
+#define __MBSTATE_INIT {0,{0}}
+#endif /* !____mbstate_t_defined */
+
+#ifndef __std_mbstate_t_defined
+#define __std_mbstate_t_defined 1
+__NAMESPACE_STD_BEGIN
+typedef __mbstate_t mbstate_t;
+__NAMESPACE_STD_END
+#endif /* !__std_mbstate_t_defined */
+
+#ifndef __mbstate_t_defined
+#define __mbstate_t_defined 1
+__NAMESPACE_STD_USING(mbstate_t)
+#endif /* !__mbstate_t_defined */
+
+#ifdef __USE_KOS
+#ifndef MBSTATE_INIT
+#define MBSTATE_INIT     {0,{0}}
+#endif /* !MBSTATE_INIT */
+#endif /* __USE_KOS */
+
+#ifndef __wchar_t_defined
+#define __wchar_t_defined 1
+typedef __WCHAR_TYPE__ wchar_t;
+#endif /* !__wchar_t_defined */
+
+#ifndef __char16_t_defined
+#define __char16_t_defined 1
+typedef __CHAR16_TYPE__ char16_t;
+typedef __CHAR32_TYPE__ char32_t;
+#endif /* !__char16_t_defined */
+
+/* Generic unicode/wide-string to utf8 conversion, using a format-printer as target.
+ * NOTE: The given '(C(16|32)|WCS)LEN' is the absolute amount of encoded characters,
+ *       meaning that any NUL-characters before then are printed as well.
+ *       To use strnlen-style semantics, use 'format_*sntomb' instead.
+ * NOTE: Upon encoding error, errno is set to 'EILSEQ' and '-1' is returned.
+ * HINT: These functions are also used to implement '%ls'. */
+__LIBC __ssize_t (__LIBCCALL format_c16sztomb)(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16len, mbstate_t *__restrict __ps) __PE_FUNC_(format_wcsztomb);
+__LIBC __ssize_t (__LIBCCALL format_c32sztomb)(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32len, mbstate_t *__restrict __ps) __KOS_FUNC_(format_wcsztomb);
+__LIBC __ssize_t (__LIBCCALL format_c16sntomb)(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16max, mbstate_t *__restrict __ps) __PE_FUNC_(format_wcsntomb);
+__LIBC __ssize_t (__LIBCCALL format_c32sntomb)(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32max, mbstate_t *__restrict __ps) __KOS_FUNC_(format_wcsntomb);
+__LIBC __ssize_t (__LIBCCALL format_wcsztomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcslen, mbstate_t *__restrict __ps);
+__LIBC __ssize_t (__LIBCCALL format_wcsntomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcsmax, mbstate_t *__restrict __ps);
+
+/* Buffered format printing.
+ * >> Since format printing is used quite often thoughout the user-space and the kernel,
+ *    many less-than optimized print generators are often chained together with fairly
+ *    slow print receivers.
+ *    To speed up performance by bunching together a whole lot of data, a buffer
+ *    can be used to automatically collect data until it is flushed, or deleted:
+ * HINT: If the buffer fails to allocate memory, it will try to flush itself and
+ *       attempt to allocate memory again. If this still fails, print commands
+ *       are passed through directly, meaning that the buffer is still going to
+ *       generated the desired output, be it with less efficient throughput.
+ *
+ * >> struct buffer *log_buffer;
+ * >> log_buffer = buffer_new(&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_WARNING));
+ * >> // 'format_printf' is unbuffered, meaning that normally each component would call
+ * >> // 'syslog_printer()', resulting in a total to 7 calls: "a" "foo" ",b" "bar" ",c" "foobar" "\n"
+ * >> // Using a buffer, this function returning.
+ * >> format_printf(&buffer_print,log_buffer,"a%s,b%s,c%s\n","foo","bar","foobar");
+ * 
+ * WARNING: Buffers are themself not thread-safe. They are intended for local
+ *          use, or require the caller to perform their own synchronization.
+ */
+struct buffer {
+ pformatprinter b_printer; /*< [1..1] The underlying printer. */
+ void          *b_closure; /*< [?..?] The closure argument passed to 'b_printer' */
+union{
+ __uintptr_t  __b_align0;  /*< ... */
+ __ssize_t      b_state;   /*< The current printer state (< 0: Last error code returned by 'b_printer'; >= 0: Sum of 'b_printer' callbacks). */
+};
+ char          *b_buffer;  /*< [0..1][owned] Base-pointer of the allocated buffer. */
+ char          *b_bufpos;  /*< [0..1][>= b_buffer && <= b_bufend] The current buffer position (Pointer to the buffer byte written to next). */
+ char          *b_bufend;  /*< [0..1] End of the allocated buffer (first byte no longer apart of the buffer). */
+ void          *__padding; /*< ... (Forward-compatibility & align to '8*sizeof(void *)', which is quite the pretty number) */
+};
+
+/* Static initializer for buffers. */
+#define BUFFER_INIT(printer,closure) {printer,closure,0,NULL,NULL,NULL,NULL}
+
+/* Initialize the given buffer using the provided PRINTER and CLOSURE.
+ * NOTE: Even though possible, it is unwise to chain
+ *       multiple buffers, or a buffer and a 'stringprinter' */
+__LIBC void (__LIBCCALL buffer_init)(struct buffer *__restrict self,
+                                     pformatprinter __printer, void *__closure);
+
+/* NOTE: 'buffer_fini()' will automatically flush the buffer one last time,
+ *        and return the total sum of return values from all calls to PRINTER,
+ *        or the first error-code generated.
+ * NOTE:  This function _MUST_ be called to prevent memory leaks.
+ * HINT:  With that in mind and the fact that 'buffer_print' is a no-op after an
+ *        error occurred, printer return values can always be ignored safely,
+ *        centralizing error handling to this call. */
+__LIBC __ssize_t (__LIBCCALL buffer_fini)(struct buffer *__restrict __buf);
+
+/* Flush will write any unwritten data and return the sum of PRINTER
+ * return values that were required to perform the flush.
+ * NOTE: When the buffer is in a error state, return the PRINTER error code
+ *       that caused the error state and don't change the buffer's actual state.
+ * WARNING: Make sure to flush data before assuming that is has been printed.
+ *          Else, the same corner-cases as possible with fflush() could arise.
+ * @return: <  0 : ERROR: The current PRINTER error code.
+ * @return: >= 0 : The sum of PRINTER return values called when flushing data. */
+__LIBC __ssize_t (__LIBCCALL buffer_flush)(struct buffer *__restrict __buf);
+
+/* The main printer callback used for printing to a buffer.
+ * Pass a pointer to the buffer for 'CLOSURE' */
+__LIBC __ssize_t (__LIBCCALL buffer_print)(char const *__restrict __data,
+                                           __size_t __datalen, void *__closure);
+
+
+/* Same as the original functions above, but use a temporary
+ * buffer in-between to reduce potential printer overhead. */
+__LIBC __NONNULL((1,3)) __ssize_t (__ATTR_CDECL format_bprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, ...);
+__LIBC __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vbprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, __VA_LIST __args);
+
 #endif /* !__KERNEL__ */
+
+
 #endif /* __CC__ */
+
 
 __DECL_END
 

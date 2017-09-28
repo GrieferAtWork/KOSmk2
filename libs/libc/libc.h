@@ -59,17 +59,6 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 #define NOT_IMPLEMENTED() assert(0)
 #endif
 
-#if 0
-#ifdef __KERNEL__
-#define F(return,name) PUBLIC return (LIBCCALL name)
-#define I(name)                       LIBCCALL name
-#else
-#define F(return,name) __asm__(".global " #name "\n" #name " = __priv_" #name "\n"); \
-                       INTERN return (LIBCCALL __priv_##name)
-#define I(name)      (*XBLOCK({ extern __typeof__(name) __priv_##name; XRETURN &__priv_##name; }))
-#endif
-#endif
-
 #if defined(CONFIG_DEBUG) && 1
 #define __TRACE(...)  libc_syslog(LOG_DEBUG,"[TRACE] " __VA_ARGS__)
 #define TRACE(x)      __TRACE x

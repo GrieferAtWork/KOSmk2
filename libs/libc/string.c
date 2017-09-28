@@ -78,6 +78,7 @@ DECL_BEGIN
 #define Tn           int
 #define Xstr(x)      libc_str##x
 #define Xstp(x)      libc_stp##x
+#define Xa(x)        libc_a##x
 #define TOLOWER(x)   libc_tolower(x)
 #define TOUPPER(x)   libc_toupper(x)
 #define S            __SIZEOF_CHAR__
@@ -165,6 +166,28 @@ DECL_BEGIN
 //#define WANT_MBSRTOWCS_S    /* ... */
 //#define WANT_WCSRTOMBS_S    /* ... */
 //#define WANT_WCRTOMB_S      /* ... */
+#endif /* !__KERNEL__ */
+#  define WANT_STRTOU32       /* strtou32() */
+#  define WANT_STRTOU64       /* strtou64() */
+#  define WANT_STRTO32        /* strto32() */
+#  define WANT_STRTO64        /* strto64() */
+#ifndef __KERNEL__
+#  define WANT_STRTOU32_L     /* strtou32_l() */
+#  define WANT_STRTOU64_L     /* strtou64_l() */
+#  define WANT_STRTO32_L      /* strto32_l() */
+#  define WANT_STRTO64_L      /* strto64_l() */
+#endif /* !__KERNEL__ */
+#  define WANT_ATO32          /* ato32() */
+#  define WANT_ATO64          /* ato64() */
+//#define WANT_ATO32_L        /* ato32_l() */
+//#define WANT_ATO64_L        /* ato64_l() */
+#  define WANT_STRTOLD        /* strtold() */
+#  define WANT_STRTOF         /* strtof() */
+#  define WANT_STRTOD         /* strtod() */
+#ifndef __KERNEL__
+#  define WANT_STRTOLD_L      /* strtold_l() */
+#  define WANT_STRTOF_L       /* strtof_l() */
+#  define WANT_STRTOD_L       /* strtod_l() */
 #endif /* !__KERNEL__ */
 
 #include "templates/string.code"
@@ -299,6 +322,26 @@ INTERN void *LIBCCALL libc_memccpy(void *__restrict dst,
  }
  return NULL;
 }
+
+INTERN char *LIBCCALL libc_gcvt(double value, int ndigit, char *buf) { NOT_IMPLEMENTED(); return NULL; }
+INTERN char *LIBCCALL libc_qgcvt(long double value, int ndigit, char *buf) { NOT_IMPLEMENTED(); return NULL; }
+INTERN int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
+
+#ifndef __KERNEL__
+#define FLOAT_BUFFER_SIZE 64
+INTERN char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qfcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_ecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_fcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+#undef FLOAT_BUFFER_SIZE
+INTERN double LIBCCALL libc_atof(char const *__restrict nptr) { return libc_strtod(nptr,NULL); }
+INTERN float LIBCCALL libc_strtof_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtof(nptr,endptr); }
+INTERN double LIBCCALL libc_strtod_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtod(nptr,endptr); }
+INTERN long double LIBCCALL libc_strtold_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtold(nptr,endptr); }
+#endif /* !__KERNEL__ */
 
 /* TODO: Kernel-share data? */
 INTERN ATTR_RARERODATA char const signal_names[][10] = {
@@ -608,6 +651,71 @@ DEFINE_PUBLIC_ALIAS(strerror,libc_strerror);
 DEFINE_PUBLIC_ALIAS(__xpg_strerror_r,libc___xpg_strerror_r);
 DEFINE_PUBLIC_ALIAS(strerror_r,libc_strerror_r);
 
+#if __SIZEOF_INT__ == 4
+#define __INTFUN(x)   x##32
+#define __INTFUN_L(x) x##32##_l
+#elif __SIZEOF_INT__ == 8
+#define __INTFUN(x)   x##64
+#define __INTFUN_L(x) x##64##_l
+#else
+#error FIXME
+#endif
+
+#if __SIZEOF_LONG__ == 4
+#define __LONGFUN(x)   x##32
+#define __LONGFUN_L(x) x##32##_l
+#elif __SIZEOF_LONG__ == 8
+#define __LONGFUN(x)   x##64
+#define __LONGFUN_L(x) x##64##_l
+#else
+#error FIXME
+#endif
+
+#if __SIZEOF_LONG_LONG__ == 4
+#define __LONGLONGFUN(x)   x##32
+#define __LONGLONGFUN_L(x) x##32##_l
+#elif __SIZEOF_LONG_LONG__ == 8
+#define __LONGLONGFUN(x)   x##64
+#define __LONGLONGFUN_L(x) x##64##_l
+#else
+#error FIXME
+#endif
+
+/* Export string --> integer converters. */
+DEFINE_PUBLIC_ALIAS(gcvt,libc_gcvt);
+DEFINE_PUBLIC_ALIAS(qgcvt,libc_qgcvt);
+DEFINE_PUBLIC_ALIAS(ecvt_r,libc_ecvt_r);
+DEFINE_PUBLIC_ALIAS(fcvt_r,libc_fcvt_r);
+DEFINE_PUBLIC_ALIAS(qecvt_r,libc_qecvt_r);
+DEFINE_PUBLIC_ALIAS(qfcvt_r,libc_qfcvt_r);
+DEFINE_PUBLIC_ALIAS(atof,libc_atof);
+DEFINE_PUBLIC_ALIAS(strtod,libc_strtod);
+DEFINE_PUBLIC_ALIAS(strtof,libc_strtof);
+DEFINE_PUBLIC_ALIAS(strtold,libc_strtold);
+DEFINE_PUBLIC_ALIAS(strtol,__LONGFUN(libc_strto));
+DEFINE_PUBLIC_ALIAS(strtoul,__LONGFUN(libc_strtou));
+DEFINE_PUBLIC_ALIAS(strtoll,__LONGLONGFUN(libc_strto));
+DEFINE_PUBLIC_ALIAS(strtoull,__LONGLONGFUN(libc_strtou));
+DEFINE_PUBLIC_ALIAS(atoi,__INTFUN(libc_ato));
+DEFINE_PUBLIC_ALIAS(atol,__LONGFUN(libc_ato));
+DEFINE_PUBLIC_ALIAS(atoll,__LONGLONGFUN(libc_ato));
+#ifndef __KERNEL__
+DEFINE_PUBLIC_ALIAS(qecvt,libc_qecvt);
+DEFINE_PUBLIC_ALIAS(qfcvt,libc_qfcvt);
+DEFINE_PUBLIC_ALIAS(ecvt,libc_ecvt);
+DEFINE_PUBLIC_ALIAS(fcvt,libc_fcvt);
+DEFINE_PUBLIC_ALIAS(strtod_l,libc_strtod_l);
+DEFINE_PUBLIC_ALIAS(strtof_l,libc_strtof_l);
+DEFINE_PUBLIC_ALIAS(strtold_l,libc_strtold_l);
+DEFINE_PUBLIC_ALIAS(strtol_l,__LONGFUN_L(libc_strto));
+DEFINE_PUBLIC_ALIAS(strtoul_l,__LONGFUN_L(libc_strtou));
+DEFINE_PUBLIC_ALIAS(strtoll_l,__LONGLONGFUN_L(libc_strto));
+DEFINE_PUBLIC_ALIAS(strtoull_l,__LONGLONGFUN_L(libc_strtou));
+/* Don't export this alias within the kernel. */
+DEFINE_PUBLIC_ALIAS(strtoq,__LONGLONGFUN(libc_strto));
+DEFINE_PUBLIC_ALIAS(strtouq,__LONGLONGFUN(libc_strtou));
+#endif /* !__KERNEL__ */
+
 #ifndef __KERNEL__
 DEFINE_PUBLIC_ALIAS(bcopy,libc_bcopy);
 DEFINE_PUBLIC_ALIAS(bzero,libc_bzero);
@@ -695,6 +803,7 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #define Xstp(x)      libc_32wcp##x
 #define Xmb(x)       libc_32mb##x
 #define Xwc(x)       libc_32wc##x
+#define Xa(x)        libc_32w##x
 #define TOLOWER(x)   libc_towlower(x)
 #define TOUPPER(x)   libc_towupper(x)
 #define S            4
@@ -781,6 +890,24 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #  define WANT_MBSRTOWCS_S    /* mbsrtowcs_s() */
 #  define WANT_WCSRTOMBS_S    /* wcsrtombs_s() */
 #  define WANT_WCRTOMB_S      /* wcrtomb_s() */
+#  define WANT_STRTOU32       /* wcstou32() */
+#  define WANT_STRTOU64       /* wcstou64() */
+#  define WANT_STRTO32        /* wcsto32() */
+#  define WANT_STRTO64        /* wcsto64() */
+#  define WANT_STRTOU32_L     /* wcstou32_l() */
+#  define WANT_STRTOU64_L     /* wcstou64_l() */
+#  define WANT_STRTO32_L      /* wcsto32_l() */
+#  define WANT_STRTO64_L      /* wcsto64_l() */
+#  define WANT_ATO32          /* wto32() */
+#  define WANT_ATO64          /* wto64() */
+#  define WANT_ATO32_L        /* wto32_l() */
+#  define WANT_ATO64_L        /* wto64_l() */
+#  define WANT_STRTOLD        /* wcstold() */
+#  define WANT_STRTOF         /* wcstof() */
+#  define WANT_STRTOD         /* wcstod() */
+#  define WANT_STRTOLD_L      /* wcstold_l() */
+#  define WANT_STRTOF_L       /* wcstof_l() */
+#  define WANT_STRTOD_L       /* wcstod_l() */
 
 
 /* Disable API functions only used in DOS mode.
@@ -802,6 +929,10 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #undef WANT_MBSRTOWCS_S
 #undef WANT_WCSRTOMBS_S
 #undef WANT_WCRTOMB_S
+#undef WANT_ATO32
+#undef WANT_ATO64
+#undef WANT_ATO32_L
+#undef WANT_ATO64_L
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */
 
 DEFINE_INTERN_ALIAS(libc_32wmemcpy,libc_memcpyl);
@@ -864,6 +995,23 @@ DEFINE_PUBLIC_ALIAS(wmemmove,libc_32wmemmove);
 DEFINE_PUBLIC_ALIAS(wmempcpy,libc_32wmempcpy);
 DEFINE_PUBLIC_ALIAS(wmemset,libc_32wmemset);
 
+DEFINE_PUBLIC_ALIAS(wcstol,__LONGFUN(libc_32wcsto));
+DEFINE_PUBLIC_ALIAS(wcstoul,__LONGFUN(libc_32wcstou));
+DEFINE_PUBLIC_ALIAS(wcstoll,__LONGLONGFUN(libc_32wcsto));
+DEFINE_PUBLIC_ALIAS(wcstoull,__LONGLONGFUN(libc_32wcstou));
+DEFINE_PUBLIC_ALIAS(wcstol_l,__LONGFUN_L(libc_32wcsto));
+DEFINE_PUBLIC_ALIAS(wcstoul_l,__LONGFUN_L(libc_32wcstou));
+DEFINE_PUBLIC_ALIAS(wcstoll_l,__LONGLONGFUN_L(libc_32wcsto));
+DEFINE_PUBLIC_ALIAS(wcstoull_l,__LONGLONGFUN_L(libc_32wcstou));
+
+DEFINE_PUBLIC_ALIAS(wcstof,libc_32wcstof);
+DEFINE_PUBLIC_ALIAS(wcstod,libc_32wcstod);
+DEFINE_PUBLIC_ALIAS(wcstold,libc_32wcstold);
+DEFINE_PUBLIC_ALIAS(wcstof_l,libc_32wcstof_l);
+DEFINE_PUBLIC_ALIAS(wcstod_l,libc_32wcstod_l);
+DEFINE_PUBLIC_ALIAS(wcstold_l,libc_32wcstold_l);
+
+
 /* DOS libc functions. */
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #undef libc_strdup
@@ -907,6 +1055,7 @@ DEFINE_PUBLIC_ALIAS(_memccpy,libc_memccpy);
 #define Xstp(x)      libc_16wcp##x
 #define Xmb(x)       libc_16mb##x
 #define Xwc(x)       libc_16wc##x
+#define Xa(x)        libc_16w##x
 #define TOLOWER(x)   libc_towlower(x)
 #define TOUPPER(x)   libc_towupper(x)
 #define S            2
@@ -993,6 +1142,24 @@ DEFINE_PUBLIC_ALIAS(_memccpy,libc_memccpy);
 #  define WANT_MBSRTOWCS_S    /* mbsrtowcs_s() */
 #  define WANT_WCSRTOMBS_S    /* wcsrtombs_s() */
 #  define WANT_WCRTOMB_S      /* wcrtomb_s() */
+#  define WANT_STRTOU32       /* wcstou32() */
+#  define WANT_STRTOU64       /* wcstou64() */
+#  define WANT_STRTO32        /* wcsto32() */
+#  define WANT_STRTO64        /* wcsto64() */
+#  define WANT_STRTOU32_L     /* wcstou32_l() */
+#  define WANT_STRTOU64_L     /* wcstou64_l() */
+#  define WANT_STRTO32_L      /* wcsto32_l() */
+#  define WANT_STRTO64_L      /* wcsto64_l() */
+#  define WANT_ATO32          /* wto32() */
+#  define WANT_ATO64          /* wto64() */
+#  define WANT_ATO32_L        /* wto32_l() */
+#  define WANT_ATO64_L        /* wto64_l() */
+#  define WANT_STRTOLD        /* wcstold() */
+#  define WANT_STRTOF         /* wcstof() */
+#  define WANT_STRTOD         /* wcstod() */
+#  define WANT_STRTOLD_L      /* wcstold_l() */
+#  define WANT_STRTOF_L       /* wcstof_l() */
+#  define WANT_STRTOD_L       /* wcstod_l() */
 
 DEFINE_INTERN_ALIAS(libc_16wmemcpy,libc_memcpyw);
 DEFINE_INTERN_ALIAS(libc_16wmempcpy,libc_mempcpyw);
@@ -1128,6 +1295,49 @@ DEFINE_PUBLIC_ALIAS(__DSYM(wcsncat_s),libc_16wcsncat_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsncpy_s),libc_16wcsncpy_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcrtomb_s),libc_16wcrtomb_s);
 
+DEFINE_PUBLIC_ALIAS(_wtoi,__INTFUN(libc_32wto));
+DEFINE_PUBLIC_ALIAS(_wtol,__LONGFUN(libc_32wto));
+DEFINE_PUBLIC_ALIAS(_wtoll,__LONGLONGFUN(libc_32wto));
+DEFINE_PUBLIC_ALIAS(_wtoi_l,__INTFUN_L(libc_32wto));
+DEFINE_PUBLIC_ALIAS(_wtol_l,__LONGFUN_L(libc_32wto));
+DEFINE_PUBLIC_ALIAS(_wtoll_l,__LONGLONGFUN_L(libc_32wto));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wtoi),__INTFUN(libc_16wto));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wtol),__LONGFUN(libc_16wto));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wtoll),__LONGLONGFUN(libc_16wto));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wtoi_l),__INTFUN_L(libc_16wto));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wtol_l),__LONGFUN_L(libc_16wto));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wtoll_l),__LONGLONGFUN_L(libc_16wto));
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstol),__LONGFUN(libc_16wcsto));
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstoul),__LONGFUN(libc_16wcstou));
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstoll),__LONGLONGFUN(libc_16wcsto));
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstoull),__LONGLONGFUN(libc_16wcstou));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstol_l),__LONGFUN_L(libc_16wcsto));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoul_l),__LONGFUN_L(libc_16wcstou));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoll_l),__LONGLONGFUN_L(libc_16wcsto));
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoull_l),__LONGLONGFUN_L(libc_16wcstou));
+
+/* Define fixed-length 64-bit aliases used in PE-mode. */
+DEFINE_PUBLIC_ALIAS(_wtoi64,libc_32wto64);
+DEFINE_PUBLIC_ALIAS(_wcstoi64,libc_32wcsto64);
+DEFINE_PUBLIC_ALIAS(_wcstoui64,libc_32wcstou64);
+DEFINE_PUBLIC_ALIAS(_wtoi64_l,libc_32wto64_l);
+DEFINE_PUBLIC_ALIAS(_wcstoi64_l,libc_32wcsto64_l);
+DEFINE_PUBLIC_ALIAS(_wcstoui64_l,libc_32wcstou64_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wtoi64),libc_16wto64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoi64),libc_16wcsto64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoui64),libc_16wcstou64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wtoi64_l),libc_16wto64_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoi64_l),libc_16wcsto64_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoui64_l),libc_16wcstou64_l);
+
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstof),libc_16wcstof);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstod),libc_16wcstod);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstold),libc_16wcstold);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstof_l),libc_16wcstof_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstod_l),libc_16wcstod_l);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wcstold_l),libc_16wcstold_l);
+
+
 INTERN errno_t LIBCCALL libc_memcpy_s(void *__restrict dst, size_t dstsize, void const *__restrict src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_memcpy(dst,src,srcsize); return EOK; }
 INTERN errno_t LIBCCALL libc_memmove_s(void *dst, size_t dstsize, void const *src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_memmove(dst,src,srcsize); return EOK; }
 INTERN errno_t LIBCCALL libc_16wmemcpy_s(char16_t *__restrict dst, size_t dstsize, char16_t const *__restrict src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_16wmemcpy(dst,src,srcsize); return EOK; }
@@ -1147,47 +1357,10 @@ DEFINE_PUBLIC_ALIAS(__DSYM(wmemmove_s),libc_16wmemmove_s);
 
 /* Wide-string API */
 #ifndef __KERNEL__
-
-INTERN double LIBCCALL libc_32wcstod(char32_t const *__restrict nptr, char32_t **__restrict endptr) { NOT_IMPLEMENTED(); return 0; }
-INTERN long int LIBCCALL libc_32wcstol(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
-INTERN unsigned long int LIBCCALL libc_32wcstoul(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
-INTERN size_t LIBCCALL libc_32wcsftime(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp) { NOT_IMPLEMENTED(); return 0; }
-INTERN float LIBCCALL libc_32wcstof(char32_t const *__restrict nptr, char32_t **__restrict endptr) { NOT_IMPLEMENTED(); return 0; }
-INTERN long double LIBCCALL libc_32wcstold(char32_t const *__restrict nptr, char32_t **__restrict endptr) { NOT_IMPLEMENTED(); return 0; }
-INTERN __LONGLONG LIBCCALL libc_32wcstoll(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
-INTERN __ULONGLONG LIBCCALL libc_32wcstoull(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
-INTERN __LONGLONG LIBCCALL libc_32wcstoq(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
-INTERN __ULONGLONG LIBCCALL libc_32wcstouq(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base) { NOT_IMPLEMENTED(); return 0; }
-INTERN long int LIBCCALL libc_32wcstol_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstol(nptr,endptr,base); }
-INTERN unsigned long int LIBCCALL libc_32wcstoul_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstoul(nptr,endptr,base); }
-INTERN __LONGLONG LIBCCALL libc_32wcstoll_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstoll(nptr,endptr,base); }
-INTERN __ULONGLONG LIBCCALL libc_32wcstoull_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, int base, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstoull(nptr,endptr,base); }
-INTERN double LIBCCALL libc_32wcstod_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstod(nptr,endptr); }
-INTERN float LIBCCALL libc_32wcstof_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstof(nptr,endptr); }
-INTERN long double LIBCCALL libc_32wcstold_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcstold(nptr,endptr); }
-INTERN size_t LIBCCALL libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsftime(s,maxsize,format,tp); }
-DEFINE_PUBLIC_ALIAS(wcstod,libc_32wcstod);
-DEFINE_PUBLIC_ALIAS(wcstod_l,libc_32wcstod_l);
-DEFINE_PUBLIC_ALIAS(wcstof,libc_32wcstof);
-DEFINE_PUBLIC_ALIAS(wcstof_l,libc_32wcstof_l);
-DEFINE_PUBLIC_ALIAS(wcstol,libc_32wcstol);
-DEFINE_PUBLIC_ALIAS(wcstol_l,libc_32wcstol_l);
-DEFINE_PUBLIC_ALIAS(wcstold,libc_32wcstold);
-DEFINE_PUBLIC_ALIAS(wcstold_l,libc_32wcstold_l);
-DEFINE_PUBLIC_ALIAS(wcstoll,libc_32wcstoll);
-DEFINE_PUBLIC_ALIAS(wcstoll_l,libc_32wcstoll_l);
-DEFINE_PUBLIC_ALIAS(wcstoq,libc_32wcstoq);
-DEFINE_PUBLIC_ALIAS(wcstoul,libc_32wcstoul);
-DEFINE_PUBLIC_ALIAS(wcstoul_l,libc_32wcstoul_l);
-DEFINE_PUBLIC_ALIAS(wcstoull,libc_32wcstoull);
-DEFINE_PUBLIC_ALIAS(wcstoull_l,libc_32wcstoull_l);
-DEFINE_PUBLIC_ALIAS(wcstouq,libc_32wcstouq);
-DEFINE_PUBLIC_ALIAS(wcsftime,libc_32wcsftime);
-DEFINE_PUBLIC_ALIAS(wcsftime_l,libc_32wcsftime_l);
-
-
-
-
+//INTERN size_t LIBCCALL libc_32wcsftime(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp) { NOT_IMPLEMENTED(); return 0; }
+//INTERN size_t LIBCCALL libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp, locale_t loc) { NOT_IMPLEMENTED(); return libc_32wcsftime(s,maxsize,format,tp); }
+//DEFINE_PUBLIC_ALIAS(wcsftime,libc_32wcsftime);
+//DEFINE_PUBLIC_ALIAS(wcsftime_l,libc_32wcsftime_l);
 
 INTERN size_t LIBCCALL libc___ctype_get_mb_cur_max(void) { return UNICODE_MB_MAX; }
 INTERN wint_t LIBCCALL libc_btowc(int c) { return c < 192 ? (wint_t)c : (wint_t)EOF; }

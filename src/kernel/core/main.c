@@ -481,7 +481,7 @@ kernel_boot(u32        mb_magic,
 
 #if 1
  run_init("/bin/init");
- //for (;;) run_init("/bin/init");
+ for (;;) run_init("/bin/init");
 #endif
 
 end: ATTR_UNUSED;

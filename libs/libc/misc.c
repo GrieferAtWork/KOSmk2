@@ -23,6 +23,7 @@
 
 #include "libc.h"
 #include "system.h"
+#include "file.h"
 #include "misc.h"
 #include "format-printer.h"
 #include "errno.h"
@@ -44,8 +45,9 @@ INTDEF void LIBCCALL libc_openlog(char const *UNUSED(ident), int option, int fac
  syslog_facility = facility;
 }
 INTDEF int LIBCCALL libc_setlogmask(int mask) { return ATOMIC_XCH(syslog_mask,mask); }
-INTDEF ssize_t LIBCCALL libc_syslog_printer(char const *__restrict data,
-                                            size_t datalen, void *closure) {
+INTDEF ssize_t LIBCCALL
+libc_syslog_printer(char const *__restrict data,
+                    size_t datalen, void *closure) {
  /* Check if the specified priority should be ignored. */
  if (!(syslog_mask&LOG_MASK(LOG_FAC((int)(uintptr_t)closure))))
      return 0;
@@ -55,9 +57,18 @@ INTDEF ssize_t LIBCCALL libc_syslog_printer(char const *__restrict data,
  return sys_xsyslog((int)(uintptr_t)closure,data,datalen);
 }
 INTDEF void LIBCCALL libc_vsyslog(int level, char const *format, va_list args) {
+#if 1
+ /* NOTE: Print the given message unbuffered to prevent syslog calls from
+  *       other functions that may either cause a deadlock, or an infinite
+  *       loop being called recursively. */
  libc_format_vprintf(&libc_syslog_printer,
                       SYSLOG_PRINTER_CLOSURE(level),
                       format,args);
+#else
+ libc_format_vbprintf(&libc_syslog_printer,
+                       SYSLOG_PRINTER_CLOSURE(level),
+                       format,args);
+#endif
 }
 INTDEF void ATTR_CDECL
 libc_syslog(int level, char const *format, ...) {
@@ -139,9 +150,6 @@ INTDEF void *ATTR_CDECL libc_mremap(void *addr, size_t old_len,
   SET_ERRNO(-E_GTERR(result));
   result = MAP_FAILED;
  }
- TRACE(("mremap(%p,%Iu,%Iu,%x,%p) -> %p\n",
-        addr,old_len,new_len,flags,
-        flags&MAP_FIXED ? newaddr : NULL,result));
  return result;
 }
 

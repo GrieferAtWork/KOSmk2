@@ -16,25 +16,24 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_LIBS_LIBC_STDIO_FILE_C_INL
-#define GUARD_LIBS_LIBC_STDIO_FILE_C_INL 1
+#ifndef GUARD_LIBS_LIBC_STDIO_FILE_C
+#define GUARD_LIBS_LIBC_STDIO_FILE_C 1
 #define _KOS_SOURCE 2
 #define _GNU_SOURCE 1
 
 #include "libc.h"
-#include "stdio.h"
+#include "file.h"
 #include "format-printer.h"
 #include "string.h"
 #include "fcntl.h"
 #include "malloc.h"
 #include "unistd.h"
-#include <unistd.h>
-#include <fcntl.h>
-
-#include <hybrid/compiler.h>
-#include <hybrid/types.h>
 #include <stdarg.h>
 #include <assert.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <hybrid/compiler.h>
+#include <hybrid/types.h>
 #include <hybrid/atomic.h>
 
 DECL_BEGIN
@@ -43,7 +42,7 @@ DECL_BEGIN
 #undef stdout
 #undef stderr
 
-PRIVATE FILE libc_std_files[3] = {
+INTERN FILE libc_std_files[3] = {
  [0] = { STDIN_FILENO },
  [1] = { STDOUT_FILENO },
  [2] = { STDERR_FILENO },
@@ -86,7 +85,7 @@ INTERN ssize_t LIBCCALL
 libc_vfprintf(FILE *__restrict stream,
               char const *__restrict format,
               va_list args) {
- return libc_format_vprintf(&libc_file_printer,stream,format,args);
+ return libc_format_vbprintf(&libc_file_printer,stream,format,args);
 }
 INTERN ssize_t ATTR_CDECL
 libc_printf(char const *__restrict format, ...) {
@@ -264,9 +263,10 @@ INTERN FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__
  else result->f_fd = fd;
  return result;
 }
-INTERN FILE *LIBCCALL libc_freopen(char const *__restrict filename,
-                                   char const *__restrict modes,
-                                   FILE *__restrict stream) {
+INTERN FILE *LIBCCALL
+libc_freopen(char const *__restrict filename,
+             char const *__restrict modes,
+             FILE *__restrict stream) {
  if (stream) {
   int fd = libc_open(filename,parse_open_modes(modes),0644);
   if (fd < 0) return NULL;
@@ -483,72 +483,81 @@ DEFINE_PUBLIC_ALIAS(__getdelim,libc_getdelim);
 
 
 /* Wide-string API */
-INTERN wint_t LIBCCALL libc_fgetwc(FILE *stream) {
+INTERN wint_t LIBCCALL libc_32fgetwc(FILE *stream) {
  wint_t result;
  libc_flockfile(stream);
- result = libc_fgetwc_unlocked(stream);
+ result = libc_32fgetwc_unlocked(stream);
  libc_funlockfile(stream);
  return result;
 }
-INTERN wint_t LIBCCALL libc_fputwc(wchar_t wc, FILE *stream) {
+INTERN wint_t LIBCCALL
+libc_32fputwc(char32_t wc, FILE *stream) {
  wint_t result;
  libc_flockfile(stream);
- result = libc_fgetwc_unlocked(stream);
+ result = libc_32fgetwc_unlocked(stream);
  libc_funlockfile(stream);
  return result;
 }
-INTERN wchar_t *LIBCCALL libc_fgetws(wchar_t *__restrict ws, size_t n, FILE *__restrict stream) {
- wchar_t *result;
+INTERN char32_t *LIBCCALL
+libc_32fgetws(char32_t *__restrict ws, size_t n, FILE *__restrict stream) {
+ char32_t *result;
  libc_flockfile(stream);
- result = libc_fgetws_unlocked(ws,n,stream);
+ result = libc_32fgetws_unlocked(ws,n,stream);
  libc_funlockfile(stream);
  return result;
 }
-INTERN ssize_t LIBCCALL libc_fputws(wchar_t const *__restrict ws, FILE *__restrict stream) {
+INTERN ssize_t LIBCCALL
+libc_32fputws(char32_t const *__restrict ws, FILE *__restrict stream) {
  ssize_t result;
  libc_flockfile(stream);
- result = libc_fputws_unlocked(ws,stream);
+ result = libc_32fputws_unlocked(ws,stream);
  libc_funlockfile(stream);
  return result;
 }
-INTERN wint_t LIBCCALL libc_ungetwc(wint_t wc, FILE *stream) { NOT_IMPLEMENTED(); return libc_ungetc((int)wc,stream); }
-INTERN int LIBCCALL libc_fwide(FILE *fp, int mode) { NOT_IMPLEMENTED(); return 0; }
-INTERN ssize_t LIBCCALL libc_vfwprintf(FILE *__restrict s, wchar_t const *__restrict format, va_list args) { NOT_IMPLEMENTED(); return 0; }
-INTERN ssize_t LIBCCALL libc_vfwscanf(FILE *__restrict s, wchar_t const *__restrict format, va_list args) { NOT_IMPLEMENTED(); return 0; }
-INTERN ssize_t LIBCCALL libc_fwprintf(FILE *__restrict stream, wchar_t const *__restrict format, ...) {
+INTERN wint_t LIBCCALL libc_32ungetwc(wint_t wc, FILE *stream) { NOT_IMPLEMENTED(); return libc_ungetc((int)wc,stream); }
+INTERN int LIBCCALL libc_32fwide(FILE *fp, int mode) { NOT_IMPLEMENTED(); return 0; }
+INTERN ssize_t LIBCCALL libc_32vfwprintf(FILE *__restrict s, char32_t const *__restrict format, va_list args) { NOT_IMPLEMENTED(); return 0; }
+INTERN ssize_t LIBCCALL libc_32vfwscanf(FILE *__restrict s, char32_t const *__restrict format, va_list args) { NOT_IMPLEMENTED(); return 0; }
+INTERN ssize_t LIBCCALL libc_32fwprintf(FILE *__restrict stream, char32_t const *__restrict format, ...) {
  va_list args; int result; va_start(args,format);
- result = libc_vfwprintf(stream,format,args);
+ result = libc_32vfwprintf(stream,format,args);
  va_end(args);
  return result;
 }
-INTERN ssize_t LIBCCALL libc_fwscanf(FILE *__restrict stream, wchar_t const *__restrict format, ...) {
+INTERN ssize_t LIBCCALL
+libc_32fwscanf(FILE *__restrict stream, char32_t const *__restrict format, ...) {
  va_list args; ssize_t result; va_start(args,format);
- result = libc_vfwscanf(stream,format,args);
+ result = libc_32vfwscanf(stream,format,args);
  va_end(args);
  return result;
 }
-INTERN FILE *LIBCCALL libc_open_wmemstream(wchar_t **bufloc, size_t *sizeloc) {
+INTERN FILE *LIBCCALL
+libc_32open_wmemstream(char32_t **bufloc, size_t *sizeloc) {
  NOT_IMPLEMENTED();
  return NULL;
 }
-INTERN wint_t LIBCCALL libc_fgetwc_unlocked(FILE *stream) {
+INTERN wint_t LIBCCALL
+libc_32fgetwc_unlocked(FILE *stream) {
  NOT_IMPLEMENTED();
  return (wint_t)libc_fgetc_unlocked(stream);
 }
-INTERN wint_t LIBCCALL libc_fputwc_unlocked(wchar_t wc, FILE *stream) {
+INTERN wint_t LIBCCALL
+libc_32fputwc_unlocked(char32_t wc, FILE *stream) {
  NOT_IMPLEMENTED();
  return libc_fputc_unlocked((int)wc,stream);
 }
-INTERN wchar_t *LIBCCALL libc_fgetws_unlocked(wchar_t *__restrict ws, size_t n, FILE *__restrict stream) {
+INTERN char32_t *LIBCCALL
+libc_32fgetws_unlocked(char32_t *__restrict ws, size_t n, FILE *__restrict stream) {
  NOT_IMPLEMENTED();
  if (n) *ws = '\0';
  return ws;
 }
 #if __SIZEOF_INT__ != __SIZEOF_SIZE_T__
-INTERN wchar_t *LIBCCALL libc_fgetws_int(wchar_t *__restrict ws, int n, FILE *__restrict stream) { return libc_fgetws(ws,(size_t)n,stream); }
-INTERN wchar_t *LIBCCALL libc_fgetws_unlocked_int(wchar_t *__restrict ws, int n, FILE *__restrict stream) { return libc_fgetws_unlocked(ws,(size_t)n,stream); }
+INTERN char32_t *LIBCCALL libc_32fgetws_int(char32_t *__restrict ws, int n, FILE *__restrict stream) { return libc_32fgetws(ws,(size_t)n,stream); }
+INTERN char32_t *LIBCCALL libc_32fgetws_unlocked_int(char32_t *__restrict ws, int n, FILE *__restrict stream) { return libc_32fgetws_unlocked(ws,(size_t)n,stream); }
 #endif
-INTERN ssize_t LIBCCALL libc_fputws_unlocked(wchar_t const *__restrict ws, FILE *__restrict stream) {
+INTERN ssize_t LIBCCALL
+libc_32fputws_unlocked(char32_t const *__restrict ws, FILE *__restrict stream) {
  ssize_t result = 0;
  NOT_IMPLEMENTED();
  for (; *ws; ++ws,++result) {
@@ -557,41 +566,60 @@ INTERN ssize_t LIBCCALL libc_fputws_unlocked(wchar_t const *__restrict ws, FILE 
  }
  return result;
 }
-INTERN wint_t LIBCCALL libc_getwchar(void) { return libc_fgetwc(stdin); }
-INTERN wint_t LIBCCALL libc_putwchar(wchar_t wc) { return libc_fputwc(wc,stdout); }
-INTERN wint_t LIBCCALL libc_getwchar_unlocked(void) { return libc_fgetwc_unlocked(stdin); }
-INTERN wint_t LIBCCALL libc_putwchar_unlocked(wchar_t wc) { return libc_fputwc_unlocked(wc,stdout); }
+INTERN wint_t LIBCCALL libc_32getwchar(void) { return libc_32fgetwc(stdin); }
+INTERN wint_t LIBCCALL libc_32putwchar(char32_t wc) { return libc_32fputwc(wc,stdout); }
+INTERN wint_t LIBCCALL libc_32getwchar_unlocked(void) { return libc_32fgetwc_unlocked(stdin); }
+INTERN wint_t LIBCCALL libc_32putwchar_unlocked(char32_t wc) { return libc_32fputwc_unlocked(wc,stdout); }
+INTERN ssize_t LIBCCALL libc_32vwprintf(char32_t const *__restrict format, va_list arg) { NOT_IMPLEMENTED(); return 0; }
+INTERN ssize_t LIBCCALL libc_32vwscanf(char32_t const *__restrict format, va_list arg) { NOT_IMPLEMENTED(); return 0; }
+INTERN ssize_t LIBCCALL libc_32wprintf(char32_t const *__restrict format, ...) {
+ va_list args; ssize_t result; va_start(args,format);
+ result = libc_32vwprintf(format,args);
+ va_end(args);
+ return result;
+}
+INTERN ssize_t LIBCCALL libc_32wscanf(char32_t const *__restrict format, ...) {
+ va_list args; ssize_t result; va_start(args,format);
+ result = libc_32vwscanf(format,args);
+ va_end(args);
+ return result;
+}
 
-DEFINE_PUBLIC_ALIAS(fputws,libc_fputws);
+
+DEFINE_PUBLIC_ALIAS(fputws,libc_32fputws);
 #if __SIZEOF_INT__ != __SIZEOF_SIZE_T__
-DEFINE_PUBLIC_ALIAS(fgetws,libc_fgetws_int);
-DEFINE_PUBLIC_ALIAS(fgetws_unlocked,libc_fgetws_unlocked_int);
-DEFINE_PUBLIC_ALIAS(fgetws_sz,libc_fgetws);
-DEFINE_PUBLIC_ALIAS(fgetws_unlocked_sz,libc_fgetws_unlocked);
+DEFINE_PUBLIC_ALIAS(fgetws,libc_32fgetws_int);
+DEFINE_PUBLIC_ALIAS(fgetws_unlocked,libc_32fgetws_unlocked_int);
+DEFINE_PUBLIC_ALIAS(fgetws_sz,libc_32fgetws);
+DEFINE_PUBLIC_ALIAS(fgetws_unlocked_sz,libc_32fgetws_unlocked);
 #else
-DEFINE_PUBLIC_ALIAS(fgetws,libc_fgetws);
-DEFINE_PUBLIC_ALIAS(fgetws_unlocked,libc_fgetws_unlocked);
+DEFINE_PUBLIC_ALIAS(fgetws,libc_32fgetws);
+DEFINE_PUBLIC_ALIAS(fgetws_unlocked,libc_32fgetws_unlocked);
 #endif
-DEFINE_PUBLIC_ALIAS(ungetwc,libc_ungetwc);
-DEFINE_PUBLIC_ALIAS(fwide,libc_fwide);
-DEFINE_PUBLIC_ALIAS(fwprintf,libc_fwprintf);
-DEFINE_PUBLIC_ALIAS(vfwprintf,libc_vfwprintf);
-DEFINE_PUBLIC_ALIAS(fwscanf,libc_fwscanf);
-DEFINE_PUBLIC_ALIAS(vfwscanf,libc_vfwscanf);
-DEFINE_PUBLIC_ALIAS(open_wmemstream,libc_open_wmemstream);
-DEFINE_PUBLIC_ALIAS(fputws_unlocked,libc_fputws_unlocked);
-DEFINE_PUBLIC_ALIAS(getwc,libc_fgetwc);
-DEFINE_PUBLIC_ALIAS(fgetwc,libc_fgetwc);
-DEFINE_PUBLIC_ALIAS(putwc,libc_fputwc);
-DEFINE_PUBLIC_ALIAS(fputwc,libc_fputwc);
-DEFINE_PUBLIC_ALIAS(getwc_unlocked,libc_fgetwc_unlocked);
-DEFINE_PUBLIC_ALIAS(fgetwc_unlocked,libc_fgetwc_unlocked);
-DEFINE_PUBLIC_ALIAS(putwc_unlocked,libc_fputwc_unlocked);
-DEFINE_PUBLIC_ALIAS(fputwc_unlocked,libc_fputwc_unlocked);
-DEFINE_PUBLIC_ALIAS(getwchar,libc_getwchar);
-DEFINE_PUBLIC_ALIAS(putwchar,libc_putwchar);
-DEFINE_PUBLIC_ALIAS(getwchar_unlocked,libc_getwchar_unlocked);
-DEFINE_PUBLIC_ALIAS(putwchar_unlocked,libc_putwchar_unlocked);
+DEFINE_PUBLIC_ALIAS(ungetwc,libc_32ungetwc);
+DEFINE_PUBLIC_ALIAS(fwide,libc_32fwide);
+DEFINE_PUBLIC_ALIAS(fwprintf,libc_32fwprintf);
+DEFINE_PUBLIC_ALIAS(vfwprintf,libc_32vfwprintf);
+DEFINE_PUBLIC_ALIAS(fwscanf,libc_32fwscanf);
+DEFINE_PUBLIC_ALIAS(vfwscanf,libc_32vfwscanf);
+DEFINE_PUBLIC_ALIAS(open_wmemstream,libc_32open_wmemstream);
+DEFINE_PUBLIC_ALIAS(fputws_unlocked,libc_32fputws_unlocked);
+DEFINE_PUBLIC_ALIAS(getwc,libc_32fgetwc);
+DEFINE_PUBLIC_ALIAS(fgetwc,libc_32fgetwc);
+DEFINE_PUBLIC_ALIAS(putwc,libc_32fputwc);
+DEFINE_PUBLIC_ALIAS(fputwc,libc_32fputwc);
+DEFINE_PUBLIC_ALIAS(getwc_unlocked,libc_32fgetwc_unlocked);
+DEFINE_PUBLIC_ALIAS(fgetwc_unlocked,libc_32fgetwc_unlocked);
+DEFINE_PUBLIC_ALIAS(putwc_unlocked,libc_32fputwc_unlocked);
+DEFINE_PUBLIC_ALIAS(fputwc_unlocked,libc_32fputwc_unlocked);
+DEFINE_PUBLIC_ALIAS(getwchar,libc_32getwchar);
+DEFINE_PUBLIC_ALIAS(putwchar,libc_32putwchar);
+DEFINE_PUBLIC_ALIAS(getwchar_unlocked,libc_32getwchar_unlocked);
+DEFINE_PUBLIC_ALIAS(putwchar_unlocked,libc_32putwchar_unlocked);
+DEFINE_PUBLIC_ALIAS(wprintf,libc_32wprintf);
+DEFINE_PUBLIC_ALIAS(vwprintf,libc_32vwprintf);
+DEFINE_PUBLIC_ALIAS(wscanf,libc_32wscanf);
+DEFINE_PUBLIC_ALIAS(vwscanf,libc_32vwscanf);
 
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
@@ -599,13 +627,17 @@ DEFINE_PUBLIC_ALIAS(putwchar_unlocked,libc_putwchar_unlocked);
 INTERN FILE *LIBCCALL libc___iob_func(void) { return libc_std_files; }
 DEFINE_PUBLIC_ALIAS(__iob_func,libc___iob_func);
 
-INTERN wint_t LIBCCALL libc_single_ungetwch(wint_t wc);
-INTERN wint_t LIBCCALL libc_single_ungetwch_nolock(wint_t wc);
 
+INTERN wint_t LIBCCALL libc_16single_ungetwch(wint_t wc) { NOT_IMPLEMENTED(); return wc; }
+INTERN wint_t LIBCCALL libc_32single_ungetwch(wint_t wc) { NOT_IMPLEMENTED(); return wc; }
+INTERN wint_t LIBCCALL libc_16single_ungetwch_nolock(wint_t wc) { NOT_IMPLEMENTED(); return wc; }
+INTERN wint_t LIBCCALL libc_32single_ungetwch_nolock(wint_t wc) { NOT_IMPLEMENTED(); return wc; }
+DEFINE_PUBLIC_ALIAS(_ungetwch,libc_32single_ungetwch);
+DEFINE_PUBLIC_ALIAS(_ungetwch_nolock,libc_32single_ungetwch_nolock);
+DEFINE_PUBLIC_ALIAS(__DSYM(_ungetwch),libc_16single_ungetwch);
+DEFINE_PUBLIC_ALIAS(__DSYM(_ungetwch_nolock),libc_16single_ungetwch_nolock);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
-
-
 
 DECL_END
 
-#endif /* !GUARD_LIBS_LIBC_STDIO_FILE_C_INL */
+#endif /* !GUARD_LIBS_LIBC_STDIO_FILE_C */
