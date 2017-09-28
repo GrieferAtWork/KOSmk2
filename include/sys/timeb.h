@@ -67,11 +67,74 @@ struct timeb64 {
 };
 #endif
 
+#ifdef __USE_DOS
+#ifndef _TIMEB_DEFINED
+#define _TIMEB_DEFINED 1
+struct __timeb32 {
+ __time32_t         time;     /*< Seconds since epoch, as from 'time'. */
+ unsigned short int millitm;  /*< Additional milliseconds. */
+ short int          timezone; /*< Minutes west of GMT. */
+ short int          dstflag;  /*< Nonzero if Daylight Savings Time used. */
+};
+
+struct __timeb64 {
+ __time64_t         time;     /*< Seconds since epoch, as from 'time'. */
+ unsigned short int millitm;  /*< Additional milliseconds. */
+ short int          timezone; /*< Minutes west of GMT. */
+ short int          dstflag;  /*< Nonzero if Daylight Savings Time used. */
+};
+
+#ifdef __USE_TIME_BITS64
+#define _timeb      __timeb32
+#define _ftime      _ftime32
+#define _ftime_s    _ftime32_s
+#else /* __USE_TIME_BITS64 */
+#define _timeb      __timeb64
+#define _ftime      _ftime64
+#define _ftime_s    _ftime64_s
+#endif /* !__USE_TIME_BITS64 */
+
+#endif /* !_TIMEB_DEFINED */
+#endif /* __USE_DOS */
+
 #ifndef __KERNEL__
+/* NOTE: This switch is only here to reduce binary dependency. */
+#ifdef __PE__
+__LIBC int (__LIBCCALL ftime)(struct timeb *__timebuf)
+#ifdef __USE_TIME_BITS64
+    __ASMNAME("_ftime64");
+#else
+    __ASMNAME("_ftime32");
+#endif
+#ifdef __USE_TIME64
+__LIBC int (__LIBCCALL ftime64)(struct timeb64 *__timebuf) __ASMNAME("_ftime64");
+#endif /* __USE_TIME64 */
+#else /* __PE__ */
 __LIBC int (__LIBCCALL ftime)(struct timeb *__timebuf) __TM_FUNC(ftime);
 #ifdef __USE_TIME64
 __LIBC int (__LIBCCALL ftime64)(struct timeb64 *__timebuf);
 #endif /* __USE_TIME64 */
+#endif /* !__PE__ */
+
+#ifdef __USE_DOS
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
+#ifdef __PE__
+__LIBC void (__LIBCCALL _ftime32)(struct __timeb32 *__timebuf);
+__LIBC void (__LIBCCALL _ftime64)(struct __timeb64 *__timebuf);
+__LIBC errno_t (__LIBCCALL _ftime32_s)(struct __timeb32 *__timebuf) __ASMNAME("_ftime32");
+__LIBC errno_t (__LIBCCALL _ftime64_s)(struct __timeb64 *__timebuf) __ASMNAME("_ftime64");
+#else /* __PE__ */
+__LIBC void (__LIBCCALL _ftime32)(struct __timeb32 *__timebuf) __ASMNAME("ftime");
+__LIBC void (__LIBCCALL _ftime64)(struct __timeb64 *__timebuf) __ASMNAME("ftime64");
+__LIBC errno_t (__LIBCCALL _ftime32_s)(struct __timeb32 *__timebuf) __ASMNAME("ftime");
+__LIBC errno_t (__LIBCCALL _ftime64_s)(struct __timeb64 *__timebuf) __ASMNAME("ftime64");
+#endif /* !__PE__ */
+#endif /* __USE_DOS */
+
 #endif /* !__KERNEL__ */
 
 __DECL_END

@@ -717,6 +717,12 @@ DEFINE_PUBLIC_ALIAS(poll,libc_poll);
 DEFINE_PUBLIC_ALIAS(sleep,libc_sleep);
 DEFINE_PUBLIC_ALIAS(usleep,libc_usleep);
 DEFINE_PUBLIC_ALIAS(times,libc_times);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_ftime32,libc_ftime);
+DEFINE_PUBLIC_ALIAS(_ftime64,libc_ftime64);
+DEFINE_PUBLIC_ALIAS(_ftime32_s,libc_ftime);
+DEFINE_PUBLIC_ALIAS(_ftime64_s,libc_ftime64);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DEFINE_PUBLIC_ALIAS(timegm,libc_mktime); /* ??? */
 DEFINE_PUBLIC_ALIAS(timegm64,libc_mktime64); /* ??? */
