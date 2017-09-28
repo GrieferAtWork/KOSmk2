@@ -316,7 +316,10 @@ DATDEF char **environ;
 
 /* Kernel extension also supported by linux: NULL -> leave environ unchanged. */
 #undef KERNEL_HAVE_EXEC_ENVPNULL_IS_CURRENT
-#define KERNEL_HAVE_EXEC_ENVPNULL_IS_CURRENT 1
+
+/* That's not how this works! Passing NULL re-uses the original
+ * environ, meaning that changes made by the user would be lost! */
+//#define KERNEL_HAVE_EXEC_ENVPNULL_IS_CURRENT 1
 
 #ifdef KERNEL_HAVE_EXEC_ENVPNULL_IS_CURRENT
 #define EXEC_CURRENT_ENVIRON NULL
