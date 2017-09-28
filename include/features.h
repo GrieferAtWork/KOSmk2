@@ -447,37 +447,53 @@
 #ifdef __USE_TIME_BITS64
 #ifdef __USE_DOSFS
 #ifdef __PE__
-#   define __UFS_FUNCt(x)   __ASMNAME(#x "64")
-#   define __UFS_FUNCt_R(x) __ASMNAME(#x "64_r")
+#   define __UFS_FUNCt(x)    __ASMNAME(#x "64")
+#   define __UFS_FUNCt_(x)   __ASMNAME(#x "64")
+#   define __UFS_FUNCt_R(x)  __ASMNAME(#x "64_r")
+#   define __UFS_FUNCt_R_(x) __ASMNAME(#x "64_r")
 #else
-#   define __UFS_FUNCt(x)   __ASMNAME(".dos." #x "64")
-#   define __UFS_FUNCt_R(x) __ASMNAME(".dos." #x "64_r")
+#   define __UFS_FUNCt(x)    __ASMNAME(".dos." #x "64")
+#   define __UFS_FUNCt_(x)   __ASMNAME(".dos." #x "64")
+#   define __UFS_FUNCt_R(x)  __ASMNAME(".dos." #x "64_r")
+#   define __UFS_FUNCt_R_(x) __ASMNAME(".dos." #x "64_r")
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
-#   define __UFS_FUNCt(x)   __ASMNAME(".kos." #x "64")
-#   define __UFS_FUNCt_R(x) __ASMNAME(".kos." #x "64_r")
+#   define __UFS_FUNCt(x)    __ASMNAME(".kos." #x "64")
+#   define __UFS_FUNCt_(x)   __ASMNAME(".kos." #x "64")
+#   define __UFS_FUNCt_R(x)  __ASMNAME(".kos." #x "64_r")
+#   define __UFS_FUNCt_R_(x) __ASMNAME(".kos." #x "64_r")
 #else
-#   define __UFS_FUNCt(x)   __ASMNAME(#x "64")
-#   define __UFS_FUNCt_R(x) __ASMNAME(#x "64_r")
+#   define __UFS_FUNCt(x)    __ASMNAME(#x "64")
+#   define __UFS_FUNCt_(x)   __ASMNAME(#x "64")
+#   define __UFS_FUNCt_R(x)  __ASMNAME(#x "64_r")
+#   define __UFS_FUNCt_R_(x) __ASMNAME(#x "64_r")
 #endif
 #endif /* !__USE_DOSFS */
 #else /* __USE_TIME_BITS64 */
 #ifdef __USE_DOSFS
 #ifdef __PE__
-#   define __UFS_FUNCt(x)   /* nothing */
-#   define __UFS_FUNCt_R(x) /* nothing */
+#   define __UFS_FUNCt(x)    /* nothing */
+#   define __UFS_FUNCt_(x)   __ASMNAME(#x)
+#   define __UFS_FUNCt_R(x)  /* nothing */
+#   define __UFS_FUNCt_R_(x) __ASMNAME(#x "_r")
 #else
-#   define __UFS_FUNCt(x)   __ASMNAME(".dos." #x)
-#   define __UFS_FUNCt_R(x) __ASMNAME(".dos." #x "_r")
+#   define __UFS_FUNCt(x)    __ASMNAME(".dos." #x)
+#   define __UFS_FUNCt_(x)   __ASMNAME(".dos." #x)
+#   define __UFS_FUNCt_R(x)  __ASMNAME(".dos." #x "_r")
+#   define __UFS_FUNCt_R_(x) __ASMNAME(".dos." #x "_r")
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
-#   define __UFS_FUNCt(x)   __ASMNAME(".kos." #x)
-#   define __UFS_FUNCt_R(x) __ASMNAME(".kos." #x "_r")
+#   define __UFS_FUNCt(x)    __ASMNAME(".kos." #x)
+#   define __UFS_FUNCt_R(x)  __ASMNAME(".kos." #x "_r")
+#   define __UFS_FUNCt_(x)   __ASMNAME(".kos." #x)
+#   define __UFS_FUNCt_R_(x) __ASMNAME(".kos." #x "_r")
 #else
-#   define __UFS_FUNCt(x)   /* nothing */
-#   define __UFS_FUNCt_R(x) /* nothing */
+#   define __UFS_FUNCt(x)    /* nothing */
+#   define __UFS_FUNCt_R(x)  /* nothing */
+#   define __UFS_FUNCt_(x)   __ASMNAME(#x)
+#   define __UFS_FUNCt_R_(x) __ASMNAME(#x "_r")
 #endif
 #endif /* !__USE_DOSFS */
 #endif /* !__USE_TIME_BITS64 */
