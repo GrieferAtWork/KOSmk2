@@ -72,12 +72,15 @@ typedef __CHAR16_TYPE__ char16_t;
 typedef __CHAR32_TYPE__ char32_t;
 #endif /* !__char16_t_defined */
 
+#ifndef __MBSTATE_INIT
+#define __MBSTATE_INIT     {0,{0}}
+#endif /* !__MBSTATE_INIT */
+
 #ifdef __USE_KOS
 #ifndef MBSTATE_INIT
-#define MBSTATE_INIT     {0,{0}}
+#define MBSTATE_INIT     __MBSTATE_INIT
 #endif /* !MBSTATE_INIT */
 #endif /* __USE_KOS */
-
 
 /* Libc uses utf16/utf32 to encode/decode char16_t and char32_t */
 #define __STD_UTF_16__ 1

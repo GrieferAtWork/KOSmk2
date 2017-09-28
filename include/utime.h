@@ -25,7 +25,8 @@
 
 __DECL_BEGIN
 
-#if defined(__USE_XOPEN) || defined(__USE_XOPEN2K)
+#if defined(__USE_XOPEN) || defined(__USE_XOPEN2K) || \
+    defined(__USE_DOS)
 #ifndef __time_t_defined
 #define __time_t_defined 1
 typedef __TM_TYPE(time) time_t;
@@ -42,13 +43,107 @@ struct utimbuf64 {
  __time64_t      actime;  /*< Access time. */
  __time64_t      modtime; /*< Modification time. */
 };
-#endif
+#endif /* __USE_TIME64 */
+
+#ifdef __USE_DOS
+#ifndef _UTIMBUF_DEFINED
+#define _UTIMBUF_DEFINED 1
+struct _utimbuf {
+ __TM_TYPE(time) actime;  /*< Access time. */
+ __TM_TYPE(time) modtime; /*< Modification time. */
+};
+struct __utimbuf32 {
+ __time32_t      actime;  /*< Access time. */
+ __time32_t      modtime; /*< Modification time. */
+};
+
+struct __utimbuf64 {
+ __time64_t      actime;  /*< Access time. */
+ __time64_t      modtime; /*< Modification time. */
+};
+
+struct utimbuf32 {
+ __time32_t      actime;  /*< Access time. */
+ __time32_t      modtime; /*< Modification time. */
+};
+#endif  /* _UTIMBUF_DEFINED */
+#endif /* __USE_DOS */
+
+/* Used assembly names (Required for binary compatibility):
+ *          KOS        DOS
+ * 32-BIT   utime     .dos._utime32
+ * 64-BIT   utime64   .dos._utime64
+ * 32-BIT  _wutime32  .dos.U_wutime32
+ * 64-BIT  _wutime64  .dos.U_wutime64
+ * 32-BIT  u_wutime32 .dos._wutime32
+ * 64-BIT  u_wutime64 .dos._wutime64
+ * 32-BIT  _futime32  <inherited>
+ * 64-BIT  _futime64  <inherited>
+ */
 
 #ifndef __KERNEL__
-__LIBC __NONNULL((1)) int (__LIBCCALL utime)(char const *__file, struct utimbuf const *__file_times) __UFS_FUNCt(utime);
+__LIBC __NONNULL((1)) int (__LIBCCALL utime)(char const *__file, struct utimbuf const *__file_times)
+#ifdef __USE_DOSFS
+#ifdef __USE_TIME_BITS64
+    __PE_FUNC_(_utime64)
+#else
+    __PE_FUNC_(_utime32)
+#endif
+#else
+    __UFS_FUNCt(utime)
+#endif
+;
 #ifdef __USE_TIME64
-__LIBC __NONNULL((1)) int (__LIBCCALL utime64)(char const *__file, struct utimbuf64 const *__file_times) __UFS_FUNC(utime64);
+__LIBC __NONNULL((1)) int (__LIBCCALL utime64)(char const *__file, struct utimbuf64 const *__file_times)
+#ifdef __USE_DOSFS
+    __UFS_FUNC(_utime64)
+#else
+    __UFS_FUNC(utime64)
+#endif
+;
 #endif /* __USE_TIME64 */
+
+#ifdef __USE_KOS
+__LIBC int (__LIBCCALL futime)(int __fd, struct utimbuf const *__file_times)
+#ifdef __USE_TIME_BITS64
+    __ASMNAME("_futime64")
+#else
+    __ASMNAME("_futime32")
+#endif
+;
+#ifdef __USE_TIME64
+__LIBC int (__LIBCCALL futime64)(int __fd, struct utimbuf const *__file_times) __ASMNAME("_futime64");
+#endif /* __USE_TIME64 */
+#endif /* __USE_KOS */
+
+#if defined(__USE_DOS)
+#ifndef __wchar_t_defined
+#define __wchar_t_defined 1
+typedef __WCHAR_TYPE__ wchar_t;
+#endif /* !__wchar_t_defined */
+
+#ifdef __USE_KOS
+/* Fix the const'ness of arguments as a KOS extension. (*sigh*) */
+#define __FIXED_CONST const
+#else
+#define __FIXED_CONST
+#endif
+
+__LIBC int (__LIBCCALL _futime32)(int __fd, struct __utimbuf32 __FIXED_CONST *__file_times);
+__LIBC int (__LIBCCALL _futime64)(int __fd, struct __utimbuf64 __FIXED_CONST *__file_times);
+#ifdef __USE_DOSFS
+__LIBC int (__LIBCCALL _utime32)(char const *__file, struct __utimbuf32 __FIXED_CONST *__file_times) __UFS_FUNC(_utime32);
+__LIBC int (__LIBCCALL _utime64)(char const *__file, struct __utimbuf64 __FIXED_CONST *__file_times) __UFS_FUNC(_utime64);
+#else /* __USE_DOSFS */
+__LIBC int (__LIBCCALL _utime32)(char const *__file, struct __utimbuf32 __FIXED_CONST *__file_times) __UFS_FUNC_(utime);
+__LIBC int (__LIBCCALL _utime64)(char const *__file, struct __utimbuf64 __FIXED_CONST *__file_times) __UFS_FUNC_(utime64);
+#endif /* !__USE_DOSFS */
+
+__LIBC int (__LIBCCALL _wutime32)(wchar_t const *__file, struct __utimbuf32 __FIXED_CONST *__file_times) __WFS_FUNC(_wutime32);
+__LIBC int (__LIBCCALL _wutime64)(wchar_t const *__file, struct __utimbuf64 __FIXED_CONST *__file_times) __WFS_FUNC(_wutime64);
+#undef __FIXED_CONST
+#endif /* __USE_DOS */
+
 #endif /* !__KERNEL__ */
 
 __DECL_END

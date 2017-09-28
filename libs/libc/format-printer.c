@@ -52,8 +52,9 @@
 #include <fs/file.h>
 #include <fs/dentry.h>
 #else
-#include <kos/fcntl.h>
 #include "malloc.h"
+#include "unicode.h"
+#include <kos/fcntl.h>
 #endif
 
 DECL_BEGIN
@@ -1454,7 +1455,117 @@ libc_format_bprintf(pformatprinter printer, void *closure,
  return result;
 }
 
+
+INTERN void LIBCCALL
+libc_16wprinter_fini(struct c16printer *__restrict wp) {
+ libc_free(wp->p_buffer);
+}
+INTERN void LIBCCALL
+libc_16wprinter_init(struct c16printer *__restrict wp,
+                     pc16formatprinter printer, void *closure) {
+ wp->p_printer = printer;
+ wp->p_closure = closure;
+ wp->p_buffer  = NULL;
+ wp->p_buflen  = 0;
+ mbstate_reset(&wp->p_mbstate);
+}
+#if 1
+DEFINE_INTERN_ALIAS(libc_32wprinter_fini,libc_16wprinter_fini);
+DEFINE_INTERN_ALIAS(libc_32wprinter_init,libc_16wprinter_init);
+#else
+INTERN void LIBCCALL
+libc_32wprinter_fini(struct c32printer *__restrict wp) {
+ libc_free(wp->p_buffer);
+}
+INTERN void LIBCCALL
+libc_32wprinter_init(struct c32printer *__restrict wp,
+                     pc32formatprinter printer, void *closure) {
+ wp->p_printer = printer;
+ wp->p_closure = closure;
+ wp->p_buffer  = NULL;
+ wp->p_buflen  = 0;
+ mbstate_reset(&wp->p_mbstate);
+}
+#endif
+
+#define PRINTER_MAXBUF16  (4096/2)
+#define PRINTER_MAXBUF32  (4096/4)
+
+INTERN ssize_t LIBCCALL
+libc_16wprinter_print(char const *__restrict data,
+                      size_t datalen, void *closure) {
+ char16_t minbuf[1]; ssize_t result = 0,temp;
+ struct c16printer *wp = (struct c16printer *)closure;
+ char16_t *buf = wp->p_buffer;
+ for (;;) {
+  temp = MIN(datalen,PRINTER_MAXBUF16);
+  if (!temp) break;
+  /* Allocate a buffer that should always be of sufficient size. */
+  if ((size_t)temp > wp->p_buflen) {
+   char16_t *new_buffer; size_t newsize = CEIL_ALIGN((size_t)temp,16);
+   new_buffer = (char16_t *)libc_realloc(wp->p_buffer,newsize*sizeof(char16_t));
+   if unlikely(!new_buffer) {
+    buf  = minbuf;
+    temp = COMPILER_LENOF(minbuf);
+   } else {
+    wp->p_buffer = buf = new_buffer;
+    wp->p_buflen = newsize;
+   }
+  }
+  assert(datalen);
+  /* Convert text to utf16. */
+  temp = (ssize_t)libc_utf8to16((char const *)&data,(size_t)&datalen,
+                                 buf,wp->p_buflen,&wp->p_mbstate,
+                                 UNICODE_F_NOZEROTERM|UNICODE_F_UPDATESRC|
+                                 UNICODE_F_SETERRNO);
+  if unlikely((size_t)temp == UNICODE_ERROR) return temp;
+  /* Call the underlying pointer. */
+  temp = (*wp->p_printer)(buf,(size_t)temp,wp->p_closure);
+  /* Forward print errors. */
+  if unlikely(temp < 0) return temp;
+  result += temp;
+ }
+ return result;
+}
+INTERN ssize_t LIBCCALL
+libc_32wprinter_print(char const *__restrict data,
+                      size_t datalen, void *closure) {
+ char32_t minbuf[1]; ssize_t result = 0,temp;
+ struct c32printer *wp = (struct c32printer *)closure;
+ char32_t *buf = wp->p_buffer;
+
+ for (;;) {
+  temp = MIN(datalen,PRINTER_MAXBUF32);
+  if (!temp) break;
+  /* Allocate a buffer that should always be of sufficient size. */
+  if ((size_t)temp > wp->p_buflen) {
+   char32_t *new_buffer; size_t newsize = CEIL_ALIGN((size_t)temp,16);
+   new_buffer = (char32_t *)libc_realloc(wp->p_buffer,newsize*sizeof(char32_t));
+   if unlikely(!new_buffer) {
+    buf  = minbuf;
+    temp = COMPILER_LENOF(minbuf);
+   } else {
+    wp->p_buffer = buf = new_buffer;
+    wp->p_buflen = newsize;
+   }
+  }
+  assert(datalen);
+  /* Convert text to utf16. */
+  temp = (ssize_t)libc_utf8to32((char const *)&data,(size_t)&datalen,
+                                 buf,wp->p_buflen,&wp->p_mbstate,
+                                 UNICODE_F_NOZEROTERM|UNICODE_F_UPDATESRC|
+                                 UNICODE_F_SETERRNO);
+  if unlikely((size_t)temp == UNICODE_ERROR) return temp;
+  /* Call the underlying pointer. */
+  temp = (*wp->p_printer)(buf,(size_t)temp,wp->p_closure);
+  /* Forward print errors. */
+  if unlikely(temp < 0) return temp;
+  result += temp;
+ }
+ return result;
+}
 #endif /* !__KERNEL__ */
+
 
 DEFINE_PUBLIC_ALIAS(format_vprintf,libc_format_vprintf);
 DEFINE_PUBLIC_ALIAS(format_printf,libc_format_printf);

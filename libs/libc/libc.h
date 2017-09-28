@@ -98,8 +98,14 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 
 #ifndef __KERNEL__
 #define CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP 1
+/* A function returning a 64-bit integer can safely be called as though
+ * it only returned a 32-bit integer, causing the aparent return value
+ * to simply equal the truncated 64-bit value. */
 #endif
 
+#if defined(__i386__) || defined(__x86_64__)
+#define CONFIG_LIBCCALL_HAS_RETURN_64_IS_32 1
+#endif
 
 DECL_END
 

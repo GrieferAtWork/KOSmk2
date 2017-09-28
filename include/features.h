@@ -506,16 +506,24 @@
 
 /* Strictly link against the KOS version of a given function. */
 #ifdef __PE__
-#   define __KOS_FUNC(x)  __ASMNAME(".kos." #x)
-#   define __KOS_FUNC_(x) __ASMNAME(".kos." #x)
-#   define __PE_FUNC(x)   /* nothing */
-#   define __PE_FUNC_(x)  __ASMNAME(#x)
+#   define __KOS_FUNC(x)        __ASMNAME(".kos." #x)
+#   define __KOS_FUNC_(x)       __ASMNAME(".kos." #x)
+#   define __DOS_ASMNAME(x)     __ASMNAME(x)
+#   define __KOS_ASMNAME(x)     /* nothing */
+#   define __PE_FUNC(x)         /* nothing */
+#   define __PE_FUNC_(x)        __ASMNAME(#x)
+#   define __ASMNAME2(unix,dos) __ASMNAME(dos)
 #else
-#   define __KOS_FUNC(x)  /* nothing */
-#   define __KOS_FUNC_(x) __ASMNAME(#x)
-#   define __PE_FUNC(x)   __ASMNAME(".dos." #x)
-#   define __PE_FUNC_(x)  __ASMNAME(".dos." #x)
+#   define __KOS_FUNC(x)        /* nothing */
+#   define __KOS_FUNC_(x)       __ASMNAME(#x)
+#   define __DOS_ASMNAME(x)     /* nothing */
+#   define __KOS_ASMNAME(x)     __ASMNAME(x)
+#   define __PE_FUNC(x)         __ASMNAME(".dos." #x)
+#   define __PE_FUNC_(x)        __ASMNAME(".dos." #x)
+#   define __ASMNAME2(unix,dos) __ASMNAME(unix)
 #endif
+
+
 
 #ifdef __USE_DOSFS
 #   define __WARN_NODOSFS __ATTR_DEPRECATED("This function does not support DOS filesystem semantics. Try building with '-D_DOSFS_SOURCE=0'")
@@ -527,10 +535,14 @@
 
 #ifdef __USE_TIME_BITS64
 #   define __TM_FUNC(x)     __ASMNAME(#x "64")
+#   define __TM_FUNC_(x)    __ASMNAME(#x "64")
 #   define __TM_FUNC_R(x)   __ASMNAME(#x "64_r")
+#   define __TM_FUNC_R_(x)  __ASMNAME(#x "64_r")
 #else
 #   define __TM_FUNC(x)     /* nothing */
+#   define __TM_FUNC_(x)    __ASMNAME(#x)
 #   define __TM_FUNC_R(x)   /* nothing */
+#   define __TM_FUNC_R_(x)  __ASMNAME(#x "_r")
 #endif
 
 #ifdef __USE_DOS

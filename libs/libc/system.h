@@ -150,7 +150,7 @@ LOCAL SYSCALL3(__errno_t,tgkill,(pid_t,tgid,pid_t,pid,int,sig));
 LOCAL SYSCALL4(ssize_t,xfdname,(int,fd,int,type,USER char *,buf,size_t,bufsize));
 LOCAL SYSCALL2(ssize_t,getcwd,(USER char *,buf,size_t,bufsize));
 LOCAL SYSCALL5(int,waitid,(int,which,pid_t,upid,USER siginfo_t *,infop,int,options,USER struct rusage *,ru));
-LOCAL SYSCALL4(pid_t,wait4,(pid_t,upid,USER __WAIT_STATUS,stat_addr,int,options,USER struct rusage *,ru));
+LOCAL SYSCALL4(pid_t,wait4,(pid_t,upid,USER int *,stat_addr,int,options,USER struct rusage *,ru));
 LOCAL SYSCALL6(ssize_t,pselect6,(size_t,n,USER fd_set *,inp,USER fd_set *,outp,USER fd_set *,exp,USER struct kernel_timespec const *,tsp,USER void *,sig));
 LOCAL SYSCALL5(ssize_t,ppoll,(USER struct pollfd *,ufds,size_t,nfds,USER struct kernel_timespec const *,tsp,USER sigset_t const *,sigmask,size_t,sigsetsize));
 LOCAL SYSCALL2(__errno_t,pipe2,(USER int *,pfd,int,flags));

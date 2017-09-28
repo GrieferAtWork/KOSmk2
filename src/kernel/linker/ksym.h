@@ -931,7 +931,7 @@ BUCKET_BEGIN
 	SYM(5643,44871060,diskpart_read,0xc0112f1a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(254,261649396,__linker_dynsym_bucket_end,0xc01c8c80)
+	SYM(254,261649396,__linker_dynsym_bucket_end,0xc01c8d00)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
@@ -1233,7 +1233,7 @@ BUCKET_BEGIN
 BUCKET_END
 BUCKET_BEGIN
 	SYM(6428,48428229,mswap_delete,0xc0156be7)
-	SYM(5587,101513301,kernel_module,0xc01ce400)
+	SYM(5587,101513301,kernel_module,0xc01ce480)
 BUCKET_END
 BUCKET_BEGIN
 	SYM(6939,204580455,rawmemrlenw,0xc01909ce)
@@ -1819,7 +1819,7 @@ BUCKET_BEGIN
 	SYM(2912,267639899,dentry_user_xwalk,0xc0125e5c)
 	SYM(2390,40797012,mman_mmap_unlocked,0xc014e4f8)
 	SYM(1039,7186885,atomic_iobuffer_kwrite,0xc0129810)
-	SYM(281,226618275,kernel_unload_all_modules,0xc01c7bd8)
+	SYM(281,226618275,kernel_unload_all_modules,0xc01c7c54)
 BUCKET_END
 BUCKET_BEGIN
 	SYM(8103,106930229,smp_hwcpu,0xc01b77b0)

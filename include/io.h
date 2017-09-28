@@ -134,7 +134,7 @@ __LIBC int (__LIBCCALL umask)(int __mode);
 #if __SIZEOF_SIZE_T__ == 4
 __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL read)(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize) __ASMNAME("read");
 #else /* __SIZEOF_SIZE_T__ == 4 */
-__LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL read)(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize) __DOSNAME("read");
+__LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL read)(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize) __PE_FUNC(read);
 #endif /* __SIZEOF_SIZE_T__ != 4 */
 #endif /* !__read_defined */
 #ifndef __write_defined
@@ -142,7 +142,7 @@ __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL read)(int __fd, void *__dstbuf,
 #if __SIZEOF_SIZE_T__ == 4
 __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL write)(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize) __ASMNAME("write");
 #else /* __SIZEOF_SIZE_T__ == 4 */
-__LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL write)(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize) __DOSNAME("write");
+__LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL write)(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize) __PE_FUNC(write);
 #endif /* __SIZEOF_SIZE_T__ != 4 */
 #endif /* !__write_defined */
 
@@ -172,8 +172,8 @@ __LIBC __INT64_TYPE__ (__LIBCCALL _lseeki64)(int __fd, __INT64_TYPE__ __offset, 
 __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _read)(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize) __ASMNAME("read");
 __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _write)(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize) __ASMNAME("write");
 #else /* __SIZEOF_SIZE_T__ == 4 */
-__LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _read)(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize) __DOSNAME("read");
-__LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _write)(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize) __DOSNAME("write");
+__LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _read)(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize) __PE_FUNC_(read);
+__LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _write)(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize) __PE_FUNC_(write);
 #endif /* __SIZEOF_SIZE_T__ != 4 */
 
 __LIBC __INT32_TYPE__ (__LIBCCALL _tell)(int __fd) __ASMNAME("tell");

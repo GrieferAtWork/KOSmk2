@@ -334,7 +334,7 @@ __LIBC size_t (__LIBCCALL fwrite_unlocked)(void const *__restrict __ptr, size_t 
 __LIBC void (__LIBCCALL clearerr_unlocked)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL feof_unlocked)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL ferror_unlocked)(__FILE *__stream);
-__LIBC __WUNUSED int (__LIBCCALL fileno_unlocked)(__FILE *__stream);
+__LIBC __WUNUSED int (__LIBCCALL fileno_unlocked)(__FILE *__stream) __ASMNAME("fileno");
 #endif /* __USE_MISC */
 #if defined(__USE_MISC) || defined(__USE_XOPEN)
 __LIBC __ATTR_MALLOC __WUNUSED char *(__LIBCCALL tempnam)(char const *__dir, char const *__pfx);
@@ -342,14 +342,14 @@ __LIBC __ATTR_MALLOC __WUNUSED char *(__LIBCCALL tempnam)(char const *__dir, cha
 #ifdef __USE_POSIX
 __LIBC __WUNUSED __FILE *(__LIBCCALL fdopen)(int __fd, char const *__modes);
 __LIBC __WUNUSED int (__LIBCCALL fileno)(__FILE *__stream);
-#endif
+#endif /* __USE_POSIX */
 #ifdef __USE_XOPEN2K8
 __LIBC __WUNUSED __FILE *(__LIBCCALL fmemopen)(void *__s, size_t __len, char const *__modes);
 __LIBC __WUNUSED __FILE *(__LIBCCALL open_memstream)(char **__bufloc, size_t *__sizeloc);
 __LIBC __WUNUSED __ssize_t (__LIBCCALL __getdelim)(char **__restrict __lineptr, size_t *__restrict __n, int __delimiter, __FILE *__restrict __stream) __ASMNAME("getdelim");
 __LIBC __WUNUSED __ssize_t (__LIBCCALL getdelim)(char **__restrict __lineptr, size_t *__restrict __n, int __delimiter, __FILE *__restrict __stream);
 __LIBC __WUNUSED __ssize_t (__LIBCCALL getline)(char **__restrict __lineptr, size_t *__restrict __n, __FILE *__restrict __stream);
-#endif
+#endif /* __USE_XOPEN2K8 */
 #ifdef __USE_POSIX
 __LIBC int (__LIBCCALL getc_unlocked)(__FILE *__stream);
 __LIBC int (__LIBCCALL getchar_unlocked)(void);
@@ -362,7 +362,7 @@ __LIBC char *(__LIBCCALL ctermid)(char *__s);
 __LIBC void (__LIBCCALL flockfile)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL ftrylockfile)(__FILE *__stream);
 __LIBC void (__LIBCCALL funlockfile)(__FILE *__stream);
-#endif
+#endif /* __USE_POSIX */
 #ifdef __USE_POSIX2
 __LIBC __WUNUSED __FILE *(__LIBCCALL popen)(char const *__command, char const *__modes);
 __LIBC int (__LIBCCALL pclose)(__FILE *__stream);
@@ -382,10 +382,10 @@ __LIBC __WUNUSED char *(__LIBCCALL fgets_unlocked)(char *__restrict __s, size_t 
 __LIBC __WUNUSED char *(__LIBCCALL fgets_unlocked)(char *__restrict __s, size_t __n, __FILE *__restrict __stream) __ASMNAME("fgets_unlocked_sz");
 #endif
 __LIBC __ssize_t (__LIBCCALL fputs_unlocked)(char const *__restrict __s, __FILE *__restrict __stream);
-#else
+#else /* __USE_KOS */
 __LIBC __WUNUSED char *(__LIBCCALL fgets_unlocked)(char *__restrict __s, int __n, __FILE *__restrict __stream);
 __LIBC int (__LIBCCALL fputs_unlocked)(char const *__restrict __s, __FILE *__restrict __stream);
-#endif
+#endif /* !__USE_KOS */
 
 struct obstack;
 __LIBC int (__LIBCCALL obstack_printf)(struct obstack *__restrict __obstack, char const *__restrict __format, ...);

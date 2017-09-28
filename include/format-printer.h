@@ -260,9 +260,13 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(mbstate_t)
 #endif /* !__mbstate_t_defined */
 
+#ifndef __MBSTATE_INIT
+#define __MBSTATE_INIT     {0,{0}}
+#endif /* !__MBSTATE_INIT */
+
 #ifdef __USE_KOS
 #ifndef MBSTATE_INIT
-#define MBSTATE_INIT     {0,{0}}
+#define MBSTATE_INIT     __MBSTATE_INIT
 #endif /* !MBSTATE_INIT */
 #endif /* __USE_KOS */
 
@@ -289,6 +293,52 @@ __LIBC __ssize_t (__LIBCCALL format_c16sntomb)(pformatprinter __printer, void *_
 __LIBC __ssize_t (__LIBCCALL format_c32sntomb)(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32max, mbstate_t *__restrict __ps) __KOS_FUNC_(format_wcsntomb);
 __LIBC __ssize_t (__LIBCCALL format_wcsztomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcslen, mbstate_t *__restrict __ps);
 __LIBC __ssize_t (__LIBCCALL format_wcsntomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcsmax, mbstate_t *__restrict __ps);
+
+
+
+/* Printer-style multi-byte string to utf16/32 or wide-char conversion.
+ * >> ssize_t LIBCCALL
+ * >> my_wprinter(wchar_t const *__restrict data,
+ * >>             size_t datalen, void *closure) {
+ * >>     return printf("{WSTR:%$ls}",datalen,data);
+ * >> }
+ * >> 
+ * >> void foo(void) {
+ * >>     struct wprinter p;
+ * >>     wprinter_init(&p,&my_wprinter,NULL);
+ * >>     format_printf(&wprinter_print,&p,"This string %s\n",
+ * >>                   "is converted to wide encoding");
+ * >>     wprinter_fini(&p);
+ * >> }
+ */
+typedef __ssize_t (__LIBCCALL *pwformatprinter)(wchar_t const *__restrict __data, __size_t __datalen, void *__closure);
+typedef __ssize_t (__LIBCCALL *pc16formatprinter)(char16_t const *__restrict __data, __size_t __datalen, void *__closure);
+typedef __ssize_t (__LIBCCALL *pc32formatprinter)(char32_t const *__restrict __data, __size_t __datalen, void *__closure);
+#ifdef __BUILDING_LIBC
+#define __DEFINE_PRINTER(T,Tpfp) { Tpfp p_printer; void *p_closure; T *p_buffer; __size_t p_buflen; mbstate_t p_mbstate; void *p_padding; }
+#else
+#define __DEFINE_PRINTER(T,Tpfp) { Tpfp __p_printer; void *__p_closure; T *__p_buffer; __size_t __p_buflen; mbstate_t __p_mbstate; void *__p_padding; }
+#endif
+struct wprinter   __DEFINE_PRINTER(wchar_t,pwformatprinter);
+struct c16printer __DEFINE_PRINTER(char16_t,pc16formatprinter);
+struct c32printer __DEFINE_PRINTER(char32_t,pc32formatprinter);
+#undef __DEFINE_PRINTER
+#define WPRINTER_INIT(printer,closure)   {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
+#define C16PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
+#define C32PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
+__LIBC void (__LIBCCALL wprinter_init)(struct wprinter *__restrict wp, pwformatprinter printer, void *__closure);
+__LIBC void (__LIBCCALL c16printer_init)(struct c16printer *__restrict wp, pc16formatprinter printer, void *__closure) __PE_FUNC_(wprinter_init);
+__LIBC void (__LIBCCALL c32printer_init)(struct c32printer *__restrict wp, pc32formatprinter printer, void *__closure) __KOS_FUNC_(wprinter_init);
+__LIBC void (__LIBCCALL wprinter_fini)(struct wprinter *__restrict wp);
+__LIBC void (__LIBCCALL c16printer_fini)(struct c16printer *__restrict wp) __PE_FUNC_(wprinter_fini);
+__LIBC void (__LIBCCALL c32printer_fini)(struct c32printer *__restrict wp) __KOS_FUNC_(wprinter_fini);
+/* NOTE: Wide-character printers forward the return value of the underlying printer,
+ *       or -1 if a format error occurred, alongside setting errno to EILSEQ. */
+__LIBC __ssize_t (__LIBCCALL wprinter_print)(char const *__restrict __data, __size_t __datalen, void *__closure);
+__LIBC __ssize_t (__LIBCCALL c16printer_print)(char const *__restrict __data, __size_t __datalen, void *__closure) __PE_FUNC_(wprinter_print);
+__LIBC __ssize_t (__LIBCCALL c32printer_print)(char const *__restrict __data, __size_t __datalen, void *__closure) __KOS_FUNC_(wprinter_print);
+
+
 
 /* Buffered format printing.
  * >> Since format printing is used quite often thoughout the user-space and the kernel,

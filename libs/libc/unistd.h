@@ -47,6 +47,15 @@ INTDEF ssize_t LIBCCALL libc_pread(int fd, void *buf, size_t n_bytes, off32_t of
 INTDEF ssize_t LIBCCALL libc_pwrite(int fd, void const *buf, size_t n_bytes, off32_t offset);
 INTDEF ssize_t LIBCCALL libc_pread64(int fd, void *buf, size_t n_bytes, off64_t offset);
 INTDEF ssize_t LIBCCALL libc_pwrite64(int fd, void const *buf, size_t n_bytes, off64_t offset);
+#if __SIZEOF_POINTER__ == 8
+#define libc_lseekI  libc_lseek64
+#define libc_preadI  libc_pread64
+#define libc_pwriteI libc_pwrite64
+#else
+#define libc_lseekI  libc_lseek
+#define libc_preadI  libc_pread
+#define libc_pwriteI libc_pwrite
+#endif
 INTDEF int LIBCCALL libc_truncate(char const *file, off32_t length);
 INTDEF int LIBCCALL libc_truncate64(char const *file, off64_t length);
 INTDEF int LIBCCALL libc_ftruncate(int fd, off32_t length);
@@ -111,11 +120,11 @@ INTDEF int LIBCCALL libc_rmdir(char const *path);
 INTDEF int LIBCCALL libc_mkdir(char const *path, mode_t mode);
 INTDEF int LIBCCALL libc_mkfifo(char const *path, mode_t mode);
 INTDEF int LIBCCALL libc_mknod(char const *path, mode_t mode, dev_t dev);
-INTDEF pid_t LIBCCALL libc_wait(__WAIT_STATUS stat_loc);
-INTDEF pid_t LIBCCALL libc_waitpid(pid_t pid, __WAIT_STATUS stat_loc, int options);
-INTDEF pid_t LIBCCALL libc_wait3(__WAIT_STATUS stat_loc, int options, struct rusage *usage);
+INTDEF pid_t LIBCCALL libc_wait(int *stat_loc);
+INTDEF pid_t LIBCCALL libc_waitpid(pid_t pid, int *stat_loc, int options);
+INTDEF pid_t LIBCCALL libc_wait3(int *stat_loc, int options, struct rusage *usage);
 INTDEF int LIBCCALL libc_waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
-INTDEF pid_t LIBCCALL libc_wait4(pid_t pid, __WAIT_STATUS stat_loc, int options, struct rusage *usage);
+INTDEF pid_t LIBCCALL libc_wait4(pid_t pid, int *stat_loc, int options, struct rusage *usage);
 INTDEF int LIBCCALL libc_getgroups(int size, gid_t list[]);
 INTDEF int LIBCCALL libc_setuid(uid_t uid);
 INTDEF int LIBCCALL libc_setgid(gid_t gid);
@@ -129,6 +138,7 @@ INTDEF int LIBCCALL libc_pipe2(int pipedes[2], int flags);
 INTDEF mode_t LIBCCALL libc_umask(mode_t mask);
 INTDEF mode_t LIBCCALL libc_getumask(void);
 INTDEF pid_t LIBCCALL libc_getpid(void);
+INTDEF pid_t LIBCCALL libc_gettid(void);
 INTDEF pid_t LIBCCALL libc_getppid(void);
 INTDEF pid_t LIBCCALL libc_getpgid(pid_t pid);
 INTDEF pid_t LIBCCALL libc_getpgrp(void);
@@ -400,10 +410,10 @@ INTDEF int LIBCCALL libc_dos_32wchdir(char32_t const *path);
 INTDEF int LIBCCALL libc_dos_32wrmdir(char32_t const *path);
 INTDEF int LIBCCALL libc_dos_chmod(char const *file, mode_t mode);
 INTDEF int LIBCCALL libc_eof(int fd);
-INTDEF off32_t LIBCCALL libc_fsize(int fd);
-INTDEF off64_t LIBCCALL libc_fsize64(int fd);
-INTDEF off32_t LIBCCALL libc_ftell(int fd);
-INTDEF off64_t LIBCCALL libc_ftell64(int fd);
+INTDEF off_t LIBCCALL libc_fdsize(int fd);
+INTDEF off_t LIBCCALL libc_fdtell(int fd);
+INTDEF off64_t LIBCCALL libc_fdsize64(int fd);
+INTDEF off64_t LIBCCALL libc_fdtell64(int fd);
 INTDEF int LIBCCALL libc_dos_pipe(int pipedes[2], u32 pipesize, int textmode);
 INTDEF mode_t LIBCCALL libc_setmode(int fd, mode_t mode);
 INTDEF __errno_t LIBCCALL libc_umask_s(mode_t new_mode, mode_t *old_mode);

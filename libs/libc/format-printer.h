@@ -62,6 +62,15 @@ INTDEF ssize_t LIBCCALL libc_buffer_print(char const *__restrict data, size_t da
 
 INTDEF ssize_t ATTR_CDECL libc_format_bprintf(pformatprinter printer, void *closure, char const *__restrict format, ...);
 INTDEF ssize_t LIBCCALL libc_format_vbprintf(pformatprinter printer, void *closure, char const *__restrict format, va_list args);
+
+
+INTDEF void LIBCCALL libc_16wprinter_fini(struct c16printer *__restrict wp);
+INTDEF void LIBCCALL libc_32wprinter_fini(struct c32printer *__restrict wp);
+INTDEF void LIBCCALL libc_16wprinter_init(struct c16printer *__restrict wp, pc16formatprinter printer, void *closure);
+INTDEF void LIBCCALL libc_32wprinter_init(struct c32printer *__restrict wp, pc32formatprinter printer, void *closure);
+INTDEF ssize_t LIBCCALL libc_16wprinter_print(char const *__restrict data, size_t datalen, void *closure);
+INTDEF ssize_t LIBCCALL libc_32wprinter_print(char const *__restrict data, size_t datalen, void *closure);
+
 #else /* !__KERNEL__ */
 #define libc_format_bprintf(printer,closure,...)          libc_format_printf(printer,closure,...)
 #define libc_format_vbprintf(printer,closure,format,args) libc_format_vprintf(printer,closure,format,args)

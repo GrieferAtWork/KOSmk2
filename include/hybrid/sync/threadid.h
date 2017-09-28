@@ -35,8 +35,20 @@ typedef struct task *threadid_t;
 DECL_END
 
 #else
+#include <hybrid/types.h>
 DECL_BEGIN
-#error TODO
+
+__LIBC pid_t (__LIBCCALL __gettid)(void);
+
+typedef pid_t threadid_t;
+#if 0
+#define THREADID_INVALID       (-1)
+#else
+#define THREADID_INVALID_IS_ZERO 1 /* Not always, but good enough? */
+#define THREADID_INVALID         0
+#endif
+#define THREADID_SELF()        __gettid()
+
 DECL_END
 #endif
 

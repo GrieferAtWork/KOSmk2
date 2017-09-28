@@ -131,12 +131,14 @@ INTDEF int LIBCCALL libc_ftime(struct timeb *timebuf);
 INTDEF int LIBCCALL libc_futimeat64(int dfd, char const *file, struct utimbuf64 const *file_times, int flags);
 INTDEF int LIBCCALL libc_utimensat64(int fd, char const *path, struct timespec64 const times[2], int flags);
 INTDEF int LIBCCALL libc_utime64(char const *file, struct utimbuf64 const *file_times);
+INTDEF int LIBCCALL libc_futime64(int fd, struct utimbuf64 const *file_times);
 INTDEF int LIBCCALL libc_utimes64(char const *file, struct timeval64 const tvp[2]);
 INTDEF int LIBCCALL libc_lutimes64(char const *file, struct timeval64 const tvp[2]);
 INTDEF int LIBCCALL libc_futimesat64(int fd, char const *file, struct timeval64 const tvp[2]);
 INTDEF int LIBCCALL libc_futimeat(int dfd, char const *file, struct utimbuf const *file_times, int flags);
 INTDEF int LIBCCALL libc_utimensat(int fd, char const *path, struct timespec const times[2], int flags);
 INTDEF int LIBCCALL libc_utime(char const *file, struct utimbuf const *file_times);
+INTDEF int LIBCCALL libc_futime(int fd, struct utimbuf const *file_times);
 INTDEF int LIBCCALL libc_utimes(char const *file, struct timeval const tvp[2]);
 INTDEF int LIBCCALL libc_lutimes(char const *file, struct timeval const tvp[2]);
 INTDEF int LIBCCALL libc_futimesat(int fd, char const *file, struct timeval const tvp[2]);
@@ -152,6 +154,19 @@ INTDEF int LIBCCALL libc_dos_utime(char const *file, struct utimbuf const *file_
 INTDEF int LIBCCALL libc_dos_utimes(char const *file, struct timeval const tvp[2]);
 INTDEF int LIBCCALL libc_dos_lutimes(char const *file, struct timeval const tvp[2]);
 INTDEF int LIBCCALL libc_dos_futimesat(int fd, char const *file, struct timeval const tvp[2]);
+
+INTERN int LIBCCALL libc_w16futimeat(int dfd, char16_t const *file, struct utimbuf const *file_times, int flags);
+INTERN int LIBCCALL libc_w32futimeat(int dfd, char32_t const *file, struct utimbuf const *file_times, int flags);
+INTERN int LIBCCALL libc_w16futimeat64(int dfd, char16_t const *file, struct utimbuf64 const *file_times, int flags);
+INTERN int LIBCCALL libc_w32futimeat64(int dfd, char32_t const *file, struct utimbuf64 const *file_times, int flags);
+INTDEF int LIBCCALL libc_16wutime(char16_t const *file, struct utimbuf const *file_times);
+INTDEF int LIBCCALL libc_32wutime(char32_t const *file, struct utimbuf const *file_times);
+INTDEF int LIBCCALL libc_dos_16wutime(char16_t const *file, struct utimbuf const *file_times);
+INTDEF int LIBCCALL libc_dos_32wutime(char32_t const *file, struct utimbuf const *file_times);
+INTDEF int LIBCCALL libc_16wutime64(char16_t const *file, struct utimbuf64 const *file_times);
+INTDEF int LIBCCALL libc_32wutime64(char32_t const *file, struct utimbuf64 const *file_times);
+INTDEF int LIBCCALL libc_dos_16wutime64(char16_t const *file, struct utimbuf64 const *file_times);
+INTDEF int LIBCCALL libc_dos_32wutime64(char32_t const *file, struct utimbuf64 const *file_times);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 INTDEF useconds_t LIBCCALL libc_ualarm(useconds_t value, useconds_t interval);

@@ -307,12 +307,15 @@ __NAMESPACE_STD_USING(mbstate_t)
 #endif /* !__mbstate_t_defined */
 #endif
 
+#ifndef __MBSTATE_INIT
+#define __MBSTATE_INIT     {0,{0}}
+#endif /* !__MBSTATE_INIT */
+
 #ifdef __USE_KOS
 #ifndef MBSTATE_INIT
-#define MBSTATE_INIT     {0,{0}}
+#define MBSTATE_INIT     __MBSTATE_INIT
 #endif /* !MBSTATE_INIT */
 #endif /* __USE_KOS */
-
 
 #ifndef WCHAR_MIN
 #define WCHAR_MIN __WCHAR_MIN__
@@ -569,12 +572,12 @@ __NAMESPACE_STD_USING(vswscanf)
 
 #ifndef __KERNEL__
 #ifdef __USE_XOPEN2K8
-__LIBC int (__LIBCCALL wcscasecmp)(wchar_t const *__s1, wchar_t const *__s2) __ASMNAME2("wcscasecmp","wcsicmp");
-__LIBC int (__LIBCCALL wcsncasecmp)(wchar_t const *__s1, wchar_t const *__s2, size_t __n) __ASMNAME2("wcsncasecmp","wcsnicmp");
-__LIBC int (__LIBCCALL wcscasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __ASMNAME2("wcscasecmp_l","_wcsicmp_l");
-__LIBC int (__LIBCCALL wcsncasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __ASMNAME2("wcsncasecmp_l","_wcsnicmp_l");
-__LIBC int (__LIBCCALL wcscoll_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __ASMNAME2("wcscoll_l","_wcscoll_l");
-__LIBC size_t (__LIBCCALL wcsxfrm_l)(wchar_t *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __ASMNAME2("wcsxfrm_l","_wcsxfrm_l");
+__LIBC int (__LIBCCALL wcscasecmp)(wchar_t const *__s1, wchar_t const *__s2) __DOS_ASMNAME("wcscasecmp");
+__LIBC int (__LIBCCALL wcsncasecmp)(wchar_t const *__s1, wchar_t const *__s2, size_t __n) __DOS_ASMNAME("wcsncasecmp");
+__LIBC int (__LIBCCALL wcscasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __DOS_ASMNAME("_wcsicmp_l");
+__LIBC int (__LIBCCALL wcsncasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __DOS_ASMNAME("_wcsnicmp_l");
+__LIBC int (__LIBCCALL wcscoll_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __DOS_ASMNAME("_wcscoll_l");
+__LIBC size_t (__LIBCCALL wcsxfrm_l)(wchar_t *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __DOS_ASMNAME("_wcsxfrm_l");
 __LIBC size_t (__LIBCCALL mbsnrtowcs)(wchar_t *__restrict __dst, char const **__restrict __src, size_t __nmc, size_t __len, mbstate_t *__restrict __ps);
 __LIBC size_t (__LIBCCALL wcsnrtombs)(char *__restrict __dst, wchar_t const **__restrict __src, size_t __nwc, size_t __len, mbstate_t *__restrict __ps);
 __LIBC wchar_t *(__LIBCCALL wcpcpy)(wchar_t *__restrict __dst, wchar_t const *__restrict __src);
@@ -623,13 +626,13 @@ __LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcschrnul)(wchar_t const *__s, wchar_t _
 __LIBC wchar_t *(__LIBCCALL wmempcpy)(wchar_t *__restrict __s1, wchar_t const *__restrict __s2, size_t __n);
 __LIBC __LONGLONG (__LIBCCALL wcstoq)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME("wcstoll");
 __LIBC __ULONGLONG (__LIBCCALL wcstouq)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME("wcstoull");
-__LIBC long int (__LIBCCALL wcstol_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME2("wcstol_l","_wcstol_l");
-__LIBC unsigned long int (__LIBCCALL wcstoul_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME2("wcstoul_l","_wcstoul_l");
-__LIBC __LONGLONG (__LIBCCALL wcstoll_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME2("wcstoll_l","_wcstoll_l");
-__LIBC __ULONGLONG (__LIBCCALL wcstoull_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME2("wcstoull_l","_wcstoull_l");
-__LIBC double (__LIBCCALL wcstod_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __ASMNAME2("wcstod_l","_wcstod_l");
-__LIBC float (__LIBCCALL wcstof_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __ASMNAME2("wcstof_l","_wcstof_l");
-__LIBC long double (__LIBCCALL wcstold_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __ASMNAME2("wcstold_l","_wcstold_l");
+__LIBC long int (__LIBCCALL wcstol_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __DOS_ASMNAME("_wcstol_l");
+__LIBC unsigned long int (__LIBCCALL wcstoul_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __DOS_ASMNAME("_wcstoul_l");
+__LIBC __LONGLONG (__LIBCCALL wcstoll_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __DOS_ASMNAME("_wcstoll_l");
+__LIBC __ULONGLONG (__LIBCCALL wcstoull_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __DOS_ASMNAME("_wcstoull_l");
+__LIBC double (__LIBCCALL wcstod_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __DOS_ASMNAME("_wcstod_l");
+__LIBC float (__LIBCCALL wcstof_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __DOS_ASMNAME("_wcstof_l");
+__LIBC long double (__LIBCCALL wcstold_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __DOS_ASMNAME("_wcstold_l");
 __LIBC wint_t (__LIBCCALL getwc_unlocked)(__FILE *__stream);
 __LIBC wint_t (__LIBCCALL getwchar_unlocked)(void);
 __LIBC wint_t (__LIBCCALL fgetwc_unlocked)(__FILE *__stream);
@@ -1113,13 +1116,13 @@ __LIBC wchar_t *(__LIBCCALL _ltow)(long __val, wchar_t *__restrict __dst, int __
 __LIBC errno_t (__LIBCCALL _ltow_s)(long __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix);
 #endif /* __SIZEOF_INT__ != __SIZEOF_LONG__ */
 
-__LIBC long int (__LIBCCALL _wcstol_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstol_l","_wcstol_l");
-__LIBC unsigned long int (__LIBCCALL _wcstoul_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstoul_l","_wcstoul_l");
-__LIBC __LONGLONG (__LIBCCALL _wcstoll_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstoll_l","_wcstoll_l");
-__LIBC __ULONGLONG (__LIBCCALL _wcstoull_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstoull_l","_wcstoull_l");
-__LIBC float (__LIBCCALL _wcstof_l)(wchar_t const *__restrict __s, wchar_t **__restrict __pend, __locale_t __locale) __ASMNAME2("wcstof_l","_wcstof_l");
-__LIBC double (__LIBCCALL _wcstod_l)(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale) __ASMNAME2("wcstod_l","_wcstod_l");
-__LIBC long double (__LIBCCALL _wcstold_l)(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale) __ASMNAME2("wcstold_l","_wcstold_l");
+__LIBC long int (__LIBCCALL _wcstol_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_NAME("wcstol_l");
+__LIBC unsigned long int (__LIBCCALL _wcstoul_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_NAME("wcstoul_l");
+__LIBC __LONGLONG (__LIBCCALL _wcstoll_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_NAME("wcstoll_l");
+__LIBC __ULONGLONG (__LIBCCALL _wcstoull_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_NAME("wcstoull_l");
+__LIBC float (__LIBCCALL _wcstof_l)(wchar_t const *__restrict __s, wchar_t **__restrict __pend, __locale_t __locale) __KOS_NAME("wcstof_l");
+__LIBC double (__LIBCCALL _wcstod_l)(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale) __KOS_NAME("wcstod_l");
+__LIBC long double (__LIBCCALL _wcstold_l)(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale) __KOS_NAME("wcstold_l");
 
 __LIBC wchar_t *(__LIBCCALL _wgetenv)(wchar_t const *__restrict __varname);
 __LIBC errno_t (__LIBCCALL _wgetenv_s)(size_t *__restrict __psize, wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __varname);
@@ -1242,9 +1245,9 @@ __LIBC errno_t (__LIBCCALL _wcsupr_s_l)(wchar_t *__restrict __str, size_t __maxl
 
 #ifndef ___wcsicmp_defined
 #define ___wcsicmp_defined 1
-__LIBC int (__LIBCCALL wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecmp","wcsicmp");
+__LIBC int (__LIBCCALL wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __KOS_NAME("wcscasecmp");
 __LIBC int (__LIBCCALL _wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecmp","wcsicmp");
-__LIBC int (__LIBCCALL wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecmp","wcsnicmp");
+__LIBC int (__LIBCCALL wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __KOS_NAME("wcsncasecmp");
 __LIBC int (__LIBCCALL _wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecmp","wcsnicmp");
 __LIBC int (__LIBCCALL _wcsicmp_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __ASMNAME2("wcscasecmp_l","_wcsicmp_l");
 __LIBC int (__LIBCCALL _wcsnicmp_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale) __ASMNAME2("wcsncasecmp_l","_wcsnicmp_l");
@@ -1268,7 +1271,7 @@ __LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsupr_l)(wchar_t 
 
 #ifndef __wcsicoll_defined
 #define __wcsicoll_defined 1
-__LIBC int (__LIBCCALL _wcscoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __ASMNAME2("wcscoll_l","_wcscoll_l");
+__LIBC int (__LIBCCALL _wcscoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __KOS_NAME("wcscoll_l");
 __LIBC int (__LIBCCALL wcsicoll)(wchar_t const *__str1, wchar_t const *__str2);
 __LIBC int (__LIBCCALL _wcsicoll)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME("wcsicoll");
 __LIBC int (__LIBCCALL _wcsicoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale);

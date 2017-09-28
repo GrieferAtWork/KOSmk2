@@ -673,9 +673,9 @@ typedef __WCHAR_TYPE__ wchar_t;
 
 #ifndef ___wcsicmp_defined
 #define ___wcsicmp_defined 1
-__LIBC int (__LIBCCALL wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecmp","wcsicmp");
+__LIBC int (__LIBCCALL wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __KOS_ASMNAME("wcscasecmp");
 __LIBC int (__LIBCCALL _wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecmp","wcsicmp");
-__LIBC int (__LIBCCALL wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecmp","wcsnicmp");
+__LIBC int (__LIBCCALL wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __KOS_ASMNAME("wcsncasecmp");
 __LIBC int (__LIBCCALL _wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecmp","wcsnicmp");
 __LIBC int (__LIBCCALL _wcsicmp_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __ASMNAME2("wcscasecmp_l","_wcsicmp_l");
 __LIBC int (__LIBCCALL _wcsnicmp_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale) __ASMNAME2("wcsncasecmp_l","_wcsnicmp_l");

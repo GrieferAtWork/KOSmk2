@@ -40,7 +40,7 @@ __LIBC char *(__LIBCCALL _getcwd)(char *__buf, size_t __size) __ASMNAME("getcwd"
 __LIBC char *(__LIBCCALL _getdcwd)(int __drive, char *__buf, size_t __size) __ASMNAME("getdcwd");
 #define _getdcwd_nolock  _getdcwd
 __LIBC __NONNULL((1)) int (__LIBCCALL _chdir)(char const *__path) __ASMNAME("chdir");
-__LIBC __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path) __DOSNAME("mkdir");
+__LIBC __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path) __PE_FUNC(mkdir);
 __LIBC __NONNULL((1)) int (__LIBCCALL _rmdir)(char const *__path) __ASMNAME("rmdir");
 __LIBC int (__LIBCCALL _chdrive)(int __drive);
 __LIBC int (__LIBCCALL _getdrive)(void);

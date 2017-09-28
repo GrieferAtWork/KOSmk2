@@ -844,6 +844,8 @@ class ____INTELLISENSE_char16_t {
 public:
  operator unsigned __int16 & (void) throw();
  operator unsigned __int16 const & (void) const throw();
+ char16_t();
+ char32_t(char16_t const &);
  char16_t(unsigned __int16);
 };
 class ____INTELLISENSE_char32_t {
@@ -851,6 +853,8 @@ class ____INTELLISENSE_char32_t {
 public:
  operator unsigned __int32 & (void) throw();
  operator unsigned __int32 const & (void) const throw();
+ char32_t();
+ char32_t(char32_t const &);
  char32_t(unsigned __int32);
 };
 

@@ -435,11 +435,11 @@ INTERN int LIBCCALL libc_rmdir(char const *path) { return libc_unlinkat(AT_FDCWD
 INTERN int LIBCCALL libc_mkdir(char const *path, mode_t mode) { return libc_mkdirat(AT_FDCWD,path,mode); }
 INTERN int LIBCCALL libc_mkfifo(char const *path, mode_t mode) { return libc_mkfifoat(AT_FDCWD,path,mode); }
 INTERN int LIBCCALL libc_mknod(char const *path, mode_t mode, dev_t dev) { return libc_mknodat(AT_FDCWD,path,mode,dev); }
-INTERN pid_t LIBCCALL libc_wait(__WAIT_STATUS stat_loc) { return libc_wait4(-1,stat_loc,0,NULL); }
-INTERN pid_t LIBCCALL libc_waitpid(pid_t pid, __WAIT_STATUS stat_loc, int options) { return libc_wait4(pid,stat_loc,options,NULL); }
-INTERN pid_t LIBCCALL libc_wait3(__WAIT_STATUS stat_loc, int options, struct rusage *usage) { return libc_wait4(-1,stat_loc,options,usage); }
+INTERN pid_t LIBCCALL libc_wait(int *stat_loc) { return libc_wait4(-1,stat_loc,0,NULL); }
+INTERN pid_t LIBCCALL libc_waitpid(pid_t pid, int *stat_loc, int options) { return libc_wait4(pid,stat_loc,options,NULL); }
+INTERN pid_t LIBCCALL libc_wait3(int *stat_loc, int options, struct rusage *usage) { return libc_wait4(-1,stat_loc,options,usage); }
 INTERN int LIBCCALL libc_waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) { return FORWARD_SYSTEM_ERROR(sys_waitid(idtype,id,infop,options,NULL)); }
-INTERN pid_t LIBCCALL libc_wait4(pid_t pid, __WAIT_STATUS stat_loc, int options, struct rusage *usage) { return FORWARD_SYSTEM_VALUE(sys_wait4(pid,stat_loc,options,usage)); }
+INTERN pid_t LIBCCALL libc_wait4(pid_t pid, int *stat_loc, int options, struct rusage *usage) { return FORWARD_SYSTEM_VALUE(sys_wait4(pid,stat_loc,options,usage)); }
 INTERN int LIBCCALL libc_getgroups(int size, gid_t list[]) { NOT_IMPLEMENTED(); return -1; }
 INTERN ATTR_COLDTEXT int LIBCCALL libc_setuid(uid_t uid) { NOT_IMPLEMENTED(); return -1; }
 INTERN ATTR_COLDTEXT int LIBCCALL libc_setgid(gid_t gid) { NOT_IMPLEMENTED(); return -1; }
@@ -478,6 +478,7 @@ INTERN mode_t LIBCCALL libc_getumask(void) {
  return (libc_umask(result),result);
 }
 INTERN pid_t LIBCCALL libc_getpid(void) { return sys_getpid(); }
+INTERN pid_t LIBCCALL libc_gettid(void) { return sys_gettid(); }
 INTERN pid_t LIBCCALL libc_getppid(void) { return sys_getppid(); }
 INTERN pid_t LIBCCALL libc_getpgid(pid_t pid) { return FORWARD_SYSTEM_VALUE(sys_getpgid(pid)); }
 INTERN pid_t LIBCCALL libc_getpgrp(void) { return libc_getpgid(0); }
@@ -847,6 +848,7 @@ DEFINE_PUBLIC_ALIAS(pipe,libc_pipe);
 DEFINE_PUBLIC_ALIAS(pipe2,libc_pipe2);
 DEFINE_PUBLIC_ALIAS(umask,libc_umask);
 DEFINE_PUBLIC_ALIAS(getumask,libc_getumask);
+DEFINE_PUBLIC_ALIAS(__gettid,libc_gettid);
 DEFINE_PUBLIC_ALIAS(getpid,libc_getpid);
 DEFINE_PUBLIC_ALIAS(getppid,libc_getppid);
 DEFINE_PUBLIC_ALIAS(getpgid,libc_getpgid);
@@ -1197,8 +1199,15 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc_eof(int fd) {
  return oldpos == endpos;
 }
 
-DEFINE_INTERN_ALIAS(libc_fsize,libc_fsize64);
-INTERN ATTR_DOSTEXT off64_t LIBCCALL libc_fsize64(int fd) {
+#ifdef CONFIG_LIBCCALL_HAS_RETURN_64_IS_32
+DEFINE_INTERN_ALIAS(libc_fdsize,libc_fdsize64);
+DEFINE_INTERN_ALIAS(libc_fdtell,libc_fdtell64);
+#else
+INTERN ATTR_DOSTEXT off_t LIBCCALL libc_fdsize(int fd) { return (off_t)libc_fdsize64(fd); }
+INTERN ATTR_DOSTEXT off_t LIBCCALL libc_fdtell(int fd) { return (off_t)libc_fdtell64(fd); }
+#endif
+
+INTERN ATTR_DOSTEXT off64_t LIBCCALL libc_fdsize64(int fd) {
  off64_t oldpos,endpos;
  /* TODO: Add a system-call for this, that is can assure atomicity. */
  if ((oldpos = libc_lseek64(fd,0,SEEK_CUR)) < 0) return -1;
@@ -1206,8 +1215,7 @@ INTERN ATTR_DOSTEXT off64_t LIBCCALL libc_fsize64(int fd) {
  libc_lseek64(fd,oldpos,SEEK_SET);
  return endpos;
 }
-DEFINE_INTERN_ALIAS(libc_ftell,libc_ftell64);
-INTERN ATTR_DOSTEXT off64_t LIBCCALL libc_ftell64(int fd) {
+INTERN ATTR_DOSTEXT off64_t LIBCCALL libc_fdtell64(int fd) {
  return libc_lseek64(fd,0,SEEK_CUR);
 }
 INTERN ATTR_DOSTEXT int LIBCCALL
@@ -1403,17 +1411,17 @@ DEFINE_PUBLIC_ALIAS(_dup,libc_dup);
 DEFINE_PUBLIC_ALIAS(_dup2,libc_dup2);
 DEFINE_PUBLIC_ALIAS(eof,libc_eof);
 DEFINE_PUBLIC_ALIAS(_eof,libc_eof);
-DEFINE_PUBLIC_ALIAS(filelength,libc_fsize);
-DEFINE_PUBLIC_ALIAS(_filelength,libc_fsize);
-DEFINE_PUBLIC_ALIAS(_filelengthi64,libc_fsize64);
 DEFINE_PUBLIC_ALIAS(locking,libc_lockf);
 DEFINE_PUBLIC_ALIAS(_locking,libc_lockf);
 DEFINE_PUBLIC_ALIAS(_pipe,libc_dos_pipe);
 DEFINE_PUBLIC_ALIAS(_lseek,libc_lseek);
 DEFINE_PUBLIC_ALIAS(_lseeki64,libc_lseek64);
-DEFINE_PUBLIC_ALIAS(tell,libc_ftell);
-DEFINE_PUBLIC_ALIAS(_tell,libc_ftell);
-DEFINE_PUBLIC_ALIAS(_telli64,libc_ftell64);
+DEFINE_PUBLIC_ALIAS(filelength,libc_fdsize);
+DEFINE_PUBLIC_ALIAS(_filelength,libc_fdsize);
+DEFINE_PUBLIC_ALIAS(_filelengthi64,libc_fdsize64);
+DEFINE_PUBLIC_ALIAS(tell,libc_fdtell);
+DEFINE_PUBLIC_ALIAS(_tell,libc_fdtell);
+DEFINE_PUBLIC_ALIAS(_telli64,libc_fdtell64);
 DEFINE_PUBLIC_ALIAS(setmode,libc_setmode);
 DEFINE_PUBLIC_ALIAS(_setmode,libc_setmode);
 DEFINE_PUBLIC_ALIAS(_umask,libc_umask);
