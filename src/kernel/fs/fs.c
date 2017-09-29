@@ -824,7 +824,9 @@ dentry_walklnk(struct dentry *__restrict link_dir,
  REF struct dentry *result;
  assert(INODE_ISLNK(link_node));
  assert(link_node->i_ops->ino_readlink);
- if (++walker->dw_nlink >= fs_maxlink) return E_PTR(-ELOOP);
+ /* Error out with 'EMLINK' if there are too many links. */
+ if (++walker->dw_nlink >= fs_maxlink)
+     return E_PTR(-EMLINK);
  buflen = sizeof(buf);
 again:
  HOSTMEMORY_BEGIN {
