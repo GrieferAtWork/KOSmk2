@@ -82,7 +82,7 @@ __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr);
 __LIBC __SAFE void (__LIBCCALL cfree)(void *__restrict __mallptr) __ASMNAME("free");
 #endif /* !__cfree_defined */
 __LIBC __SAFE __WUNUSED int    (__LIBCCALL malloc_trim)(size_t __pad);
-__LIBC __SAFE __WUNUSED size_t (__LIBCCALL malloc_usable_size)(void *__restrict __mallptr);
+__LIBC __SAFE __WUNUSED size_t (__LIBCCALL malloc_usable_size)(void *__restrict __mallptr) __PE_ASMNAME("_msize");
 #define M_MMAP_THRESHOLD     (-3)
 #endif
 
@@ -557,6 +557,14 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL _
 #endif /* __USE_KOS */
 #endif /* __USE_DEBUG_HOOK */
 #endif /* __USE_DEBUG */
+
+#ifdef __USE_DOS
+#ifdef __KERNEL__
+__LIBC __SAFE __WUNUSED size_t (__LIBCCALL _msize)(void *__restrict __mallptr) __ASMNAME("kmalloc_usable_size");
+#else /* __KERNEL__ */
+__LIBC __SAFE __WUNUSED size_t (__LIBCCALL _msize)(void *__restrict __mallptr) __KOS_ASMNAME("malloc_usable_size");
+#endif /* !__KERNEL__ */
+#endif /* __USE_DOS */
 
 __DECL_END
 

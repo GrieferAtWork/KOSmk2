@@ -169,16 +169,16 @@ DEFINE_PUBLIC_ALIAS(posix_fallocate64,libc_posix_fallocate);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTERN ATTR_DOSTEXT char *LIBCCALL libc_getdcwd(int UNUSED(drive), char *buf, size_t size) { return libc_getcwd(buf,size); }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16getdcwd(int UNUSED(drive), char16_t *dstbuf, int elemcount) { return libc_16getcwd(dstbuf,elemcount); }
-INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32getdcwd(int UNUSED(drive), char32_t *dstbuf, int elemcount) { return libc_32getcwd(dstbuf,elemcount); }
-INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16getcwd(char16_t *dstbuf, int elemcount) {
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wgetdcwd(int UNUSED(drive), char16_t *dstbuf, int elemcount) { return libc_16wgetcwd(dstbuf,elemcount); }
+INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32wgetdcwd(int UNUSED(drive), char32_t *dstbuf, int elemcount) { return libc_32wgetcwd(dstbuf,elemcount); }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wgetcwd(char16_t *dstbuf, int elemcount) {
  char *result;
  if (!elemcount) { SET_ERRNO(ERANGE); return NULL; }
  result = libc_getcwd((char *)dstbuf,(size_t)elemcount*2);
  if (!result) return NULL;
  return libc_api_utf8to16(dstbuf,(size_t)elemcount,result,libc_strlen(result));
 }
-INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32getcwd(char32_t *dstbuf, int elemcount) {
+INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32wgetcwd(char32_t *dstbuf, int elemcount) {
  char *result;
  if (!elemcount) { SET_ERRNO(ERANGE); return NULL; }
  result = libc_getcwd((char *)dstbuf,(size_t)elemcount*2);
@@ -269,10 +269,10 @@ DEFINE_PUBLIC_ALIAS(__DSYMw32(_wsopen),libc_dos_32wsopen);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wsopen_s),libc_dos_32wsopen_s);
 
 DEFINE_PUBLIC_ALIAS(_getdcwd,libc_getdcwd);
-DEFINE_PUBLIC_ALIAS(_wgetcwd,libc_32getcwd);
-DEFINE_PUBLIC_ALIAS(_wgetdcwd,libc_32getdcwd);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wgetdcwd),libc_16getdcwd);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wgetcwd),libc_16getcwd);
+DEFINE_PUBLIC_ALIAS(_wgetcwd,libc_32wgetcwd);
+DEFINE_PUBLIC_ALIAS(_wgetdcwd,libc_32wgetdcwd);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wgetdcwd),libc_16wgetdcwd);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wgetcwd),libc_16wgetcwd);
 DEFINE_PUBLIC_ALIAS(_open,libc_dos_open);
 DEFINE_PUBLIC_ALIAS(_creat,libc_dos_creat);
 DEFINE_PUBLIC_ALIAS(_sopen,libc_dos_sopen);

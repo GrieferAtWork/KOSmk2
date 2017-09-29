@@ -1039,8 +1039,10 @@ DEFINE_PUBLIC_ALIAS(wcstoumax,libc_32wcstou32);
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 /* DOS does some trickery to not have to export these.
  * >> So we don't need to export them. */
-//DEFINE_PUBLIC_ALIAS(__DSYM(wcstoimax),libc_16wcsto64);
-//DEFINE_PUBLIC_ALIAS(__DSYM(wcstoumax),libc_16wcstou64);
+//DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoimax),libc_16wcsto64);
+//DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoumax),libc_16wcstou64);
+//DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoimax_l),libc_16wcsto64_l);
+//DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoumax_l),libc_16wcstou64_l);
 #endif
 
 

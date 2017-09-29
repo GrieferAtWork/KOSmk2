@@ -216,7 +216,7 @@ __LIBC int (__LIBCCALL pipe)(int __pipedes[2]);
 __LIBC unsigned int (__LIBCCALL alarm)(unsigned int __seconds);
 #ifndef __sleep_defined
 #define __sleep_defined 1
-__LIBC unsigned int (__LIBCCALL sleep)(unsigned int __seconds);
+__LIBC unsigned int (__LIBCCALL sleep)(unsigned int __seconds) __PE_ASMNAME("_sleep");
 #endif /* !__sleep_defined */
 __LIBC int (__LIBCCALL pause)(void);
 __LIBC __NONNULL((1)) int (__LIBCCALL chown)(char const *__file, __uid_t __owner, __gid_t __group) __UFS_FUNC(chown);

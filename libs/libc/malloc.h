@@ -40,6 +40,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <uchar.h>
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 DECL_BEGIN
 
 #undef MALLOC_ALIGNMENT
@@ -313,6 +317,54 @@ INTDEF void   *(LIBCCALL libc__mall_nofree_d)(void *mallptr, DEBUGINFO);
 #   define libc_strdupf(...)                              libc_strdupf(__VA_ARGS__)
 #endif
 #endif
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
+INTERN size_t LIBCCALL libc_dos_msize(void *mptr);
+INTERN void *LIBCCALL libc_dos_expand(void *mptr, size_t size);
+INTERN size_t LIBCCALL libc_dos_aligned_msize(void *mptr, size_t align, size_t off);
+INTERN void *LIBCCALL libc_dos_aligned_malloc(size_t size, size_t align);
+INTERN void *LIBCCALL libc_dos_aligned_realloc(void *mptr, size_t size, size_t align);
+INTERN void *LIBCCALL libc_dos_aligned_recalloc(void *mptr, size_t count, size_t size, size_t align);
+INTERN void *LIBCCALL libc_dos_aligned_offset_malloc(size_t size, size_t align, size_t off);
+INTERN void *LIBCCALL libc_dos_aligned_offset_realloc(void *mptr, size_t size, size_t align, size_t off);
+INTERN void *LIBCCALL libc_dos_aligned_offset_recalloc(void *mptr, size_t count, size_t size, size_t align, size_t off);
+INTERN void LIBCCALL libc_dos_aligned_free(void *mptr);
+
+INTERN void *LIBCCALL libc_dos_malloc_dbg(size_t size, int btype, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_calloc_dbg(size_t count, size_t size, int btype, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_realloc_dbg(void *mptr, size_t size, int btype, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_recalloc_dbg(void *mptr, size_t count, size_t size, int btype, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_expand_dbg(void *mptr, size_t size, int btype, char const *file, int lno);
+INTERN void LIBCCALL libc_dos_free_dbg(void *mptr, int btype);
+INTERN size_t LIBCCALL libc_dos_msize_dbg(void *mptr, int btype);
+INTERN size_t LIBCCALL libc_dos_aligned_msize_dbg(void *mptr, size_t align, size_t off);
+INTERN void *LIBCCALL libc_dos_aligned_malloc_dbg(size_t size, size_t align, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_aligned_realloc_dbg(void *mptr, size_t size, size_t align, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_aligned_recalloc_dbg(void *mptr, size_t count, size_t size, size_t align, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_aligned_offset_malloc_dbg(size_t size, size_t align, size_t off, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_aligned_offset_realloc_dbg(void *mptr, size_t size, size_t align, size_t off, char const *file, int lno);
+INTERN void *LIBCCALL libc_dos_aligned_offset_recalloc_dbg(void *mptr, size_t count, size_t size, size_t align, size_t off, char const *file, int lno);
+INTERN void LIBCCALL libc_dos_aligned_free_dbg(void *mptr);
+INTERN char *LIBCCALL libc_dos_strdup_dbg(char const *str, int btype, char const *file, int lno);
+INTERN char *LIBCCALL libc_dos_tempnam_dbg(char const *dnam, char const *prefix, int btype, char const *file, int lno);
+INTERN char *LIBCCALL libc_dos_fullpath_dbg(char *abspath, char const *path, size_t buflen, int btype, char const *file, int lno);
+INTERN char *LIBCCALL libc_dos_getcwd_dbg(char *buf, int buflen, int btype, char const *file, int lno);
+INTERN char *LIBCCALL libc_dos_getdcwd_dbg(int drive, char *buf, int buflen, int btype, char const *file, int lno);
+INTERN char *LIBCCALL libc_dos_getdcwd_lk_dbg(int drive, char *buf, int buflen, int btype, char const *file, int lno);
+INTERN errno_t LIBCCALL libc_dos_dupenv_s_dbg(char **pbuf, size_t *pbuflen, char const *varname, int btype, char const *file, int lno);
+INTERN errno_t LIBCCALL libc_dos_wdupenv_s_dbg(char16_t **pbuf, size_t *pbuflen, char16_t const *varname, int btype, char const *file, int lno);
+INTERN char16_t *LIBCCALL libc_dos_wcsdup_dbg(char16_t const *str, int btype, char const *file, int lno);
+INTERN char16_t *LIBCCALL libc_dos_wtempnam_dbg(char16_t const *dnam, char16_t const *prefix, int btype, char const *file, int lno);
+INTERN char16_t *LIBCCALL libc_dos_wfullpath_dbg(char16_t *abspath, char16_t const *path, size_t buflen, int btype, char const *file, int lno);
+INTERN char16_t *LIBCCALL libc_dos_wgetcwd_dbg(char16_t *buf, int buflen, int btype, char const *file, int lno);
+INTERN char16_t *LIBCCALL libc_dos_wgetdcwd_dbg(int drive, char16_t *buf, int buflen, int btype, char const *file, int lno);
+INTERN char16_t *LIBCCALL libc_dos_wgetdcwd_lk_dbg(int drive, char16_t *buf, int buflen, int btype, char const *file, int lno);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 #else /* !__KERNEL__ */

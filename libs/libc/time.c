@@ -746,6 +746,9 @@ DEFINE_PUBLIC_ALIAS(timegm,libc_mktime); /* ??? */
 DEFINE_PUBLIC_ALIAS(timegm64,libc_mktime64); /* ??? */
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_mktime32,libc_mktime);
+DEFINE_PUBLIC_ALIAS(_mktime64,libc_mktime64);
+DEFINE_PUBLIC_ALIAS(_sleep,libc_sleep);
 DEFINE_PUBLIC_ALIAS(_time32,libc_time);
 DEFINE_PUBLIC_ALIAS(_time64,libc_time64);
 DEFINE_PUBLIC_ALIAS(__DSYM(clock),libc_dos_clock);

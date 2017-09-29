@@ -37,6 +37,7 @@ __PUBDEF struct instance __this_instance;
 #endif /* !THIS_INSTANCE */
 #   define __DEBUGINFO         char const *__file, int __line, char const *__func, struct instance *__inst
 #   define __DEBUGINFO_GEN     __FILE__,__LINE__,__FUNCTION__,THIS_INSTANCE
+#   define __DEBUGINFO_MK(file,line,func) file,line,func,THIS_INSTANCE
 #   define __DEBUGINFO_MUNUSED char const *__file, int __line, char const *__func, struct instance *__UNUSED(__inst)
 #   define __DEBUGINFO_UNUSED  char const *__UNUSED(__file), int __UNUSED(__line), char const *__UNUSED(__func), struct instance *__UNUSED(__inst)
 #   define __DEBUGINFO_FWD     __file,__line,__func,__inst
@@ -44,6 +45,7 @@ __PUBDEF struct instance __this_instance;
 #else /* __KERNEL__ */
 #   define __DEBUGINFO         char const *__file, int __line, char const *__func
 #   define __DEBUGINFO_GEN     __FILE__,__LINE__,__FUNCTION__
+#   define __DEBUGINFO_MK(file,line,func) file,line,func
 #   define __DEBUGINFO_MUNUSED char const *__file, int __line, char const *__func
 #   define __DEBUGINFO_UNUSED  char const *__UNUSED(__file), int __UNUSED(__line), char const *__UNUSED(__func)
 #   define __DEBUGINFO_FWD     __file,__line,__func
@@ -52,6 +54,7 @@ __PUBDEF struct instance __this_instance;
 
 #ifdef GUARD_HYBRID_COMPILER_H
 #   define DEBUGINFO         __DEBUGINFO
+#   define DEBUGINFO_MK(file,line,func) __DEBUGINFO_MK(file,line,func)
 #   define DEBUGINFO_GEN     __DEBUGINFO_GEN
 #   define DEBUGINFO_MUNUSED __DEBUGINFO_MUNUSED
 #   define DEBUGINFO_UNUSED  __DEBUGINFO_UNUSED

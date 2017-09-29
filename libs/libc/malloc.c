@@ -1103,7 +1103,45 @@ INTERN char *(ATTR_CDECL libc__strdupf_d)(DEBUGINFO, char const *__restrict form
 DECL_END
 #endif
 
+#include <uchar.h>
+
 DECL_BEGIN
+
+/* Export the regular malloc API, either linked against MALL
+ * without debug info, dlmalloc or an external malloc API. */
+#ifdef CONFIG_DEBUG_MALLOC
+#define EXPORT_MALLOC             libc_malloc
+#define EXPORT_FREE               libc_free
+#define EXPORT_CALLOC             libc_calloc
+#define EXPORT_REALLOC            libc_realloc
+#define EXPORT_REALLOC_IN_PLACE   libc_realloc_in_place
+#define EXPORT_MEMALIGN           libc_memalign
+#define EXPORT_VALLOC             libc_valloc
+#define EXPORT_PVALLOC            libc_pvalloc
+#define EXPORT_POSIX_MEMALIGN     libc_posix_memalign
+#define EXPORT_MALLOPT            libc_mallopt
+#define EXPORT_MALLOC_TRIM        libc_malloc_trim
+#define EXPORT_MALLOC_USABLE_SIZE libc_malloc_usable_size
+#else
+#define EXPORT_MALLOC             dlmalloc
+#define EXPORT_FREE               dlfree
+#define EXPORT_CALLOC             dlcalloc
+#define EXPORT_REALLOC            dlrealloc
+#define EXPORT_REALLOC_IN_PLACE   dlrealloc_in_place
+#define EXPORT_MEMALIGN           dlmemalign
+#define EXPORT_VALLOC             dlvalloc
+#define EXPORT_PVALLOC            dlpvalloc
+#define EXPORT_POSIX_MEMALIGN     dlposix_memalign
+#define EXPORT_MALLOPT            dlmallopt
+#define EXPORT_MALLOC_TRIM        dlmalloc_trim
+#define EXPORT_MALLOC_USABLE_SIZE dlmalloc_usable_size
+#endif
+
+#ifndef __INTELLISENSE__
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include "malloc-dos.c.inl"
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+#endif
 
 /* Delete any remaining macros. */
 #undef _malloc_d
@@ -1229,35 +1267,19 @@ DEFINE_PUBLIC_ALIAS(_strdupf_d,libc__strdupf_d);
 DEFINE_PUBLIC_ALIAS(_vstrdupf_d,libc__vstrdupf_d);
 DEFINE_PUBLIC_ALIAS(_memcdup_d,libc__memcdup_d);
 
-/* Export the regular malloc API, either linked against MALL
- * without debug info, dlmalloc or an external malloc API. */
-#ifdef CONFIG_DEBUG_MALLOC
-DEFINE_PUBLIC_ALIAS(malloc,libc_malloc);
-DEFINE_PUBLIC_ALIAS(free,libc_free);
-DEFINE_PUBLIC_ALIAS(calloc,libc_calloc);
-DEFINE_PUBLIC_ALIAS(realloc,libc_realloc);
-DEFINE_PUBLIC_ALIAS(realloc_in_place,libc_realloc_in_place);
-DEFINE_PUBLIC_ALIAS(memalign,libc_memalign);
-DEFINE_PUBLIC_ALIAS(valloc,libc_valloc);
-DEFINE_PUBLIC_ALIAS(pvalloc,libc_pvalloc);
-DEFINE_PUBLIC_ALIAS(posix_memalign,libc_posix_memalign);
-DEFINE_PUBLIC_ALIAS(mallopt,libc_mallopt);
-DEFINE_PUBLIC_ALIAS(malloc_trim,libc_malloc_trim);
-DEFINE_PUBLIC_ALIAS(malloc_usable_size,libc_malloc_usable_size);
-#else
-DEFINE_PUBLIC_ALIAS(malloc,dlmalloc);
-DEFINE_PUBLIC_ALIAS(free,dlfree);
-DEFINE_PUBLIC_ALIAS(calloc,dlcalloc);
-DEFINE_PUBLIC_ALIAS(realloc,dlrealloc);
-DEFINE_PUBLIC_ALIAS(realloc_in_place,dlrealloc_in_place);
-DEFINE_PUBLIC_ALIAS(memalign,dlmemalign);
-DEFINE_PUBLIC_ALIAS(valloc,dlvalloc);
-DEFINE_PUBLIC_ALIAS(pvalloc,dlpvalloc);
-DEFINE_PUBLIC_ALIAS(posix_memalign,dlposix_memalign);
-DEFINE_PUBLIC_ALIAS(mallopt,dlmallopt);
-DEFINE_PUBLIC_ALIAS(malloc_trim,dlmalloc_trim);
-DEFINE_PUBLIC_ALIAS(malloc_usable_size,dlmalloc_usable_size);
-#endif
+DEFINE_PUBLIC_ALIAS(malloc,EXPORT_MALLOC);
+DEFINE_PUBLIC_ALIAS(free,EXPORT_FREE);
+DEFINE_PUBLIC_ALIAS(calloc,EXPORT_CALLOC);
+DEFINE_PUBLIC_ALIAS(realloc,EXPORT_REALLOC);
+DEFINE_PUBLIC_ALIAS(realloc_in_place,EXPORT_REALLOC_IN_PLACE);
+DEFINE_PUBLIC_ALIAS(memalign,EXPORT_MEMALIGN);
+DEFINE_PUBLIC_ALIAS(valloc,EXPORT_VALLOC);
+DEFINE_PUBLIC_ALIAS(pvalloc,EXPORT_PVALLOC);
+DEFINE_PUBLIC_ALIAS(posix_memalign,EXPORT_POSIX_MEMALIGN);
+DEFINE_PUBLIC_ALIAS(mallopt,EXPORT_MALLOPT);
+DEFINE_PUBLIC_ALIAS(malloc_trim,EXPORT_MALLOC_TRIM);
+DEFINE_PUBLIC_ALIAS(malloc_usable_size,EXPORT_MALLOC_USABLE_SIZE);
+
 DEFINE_PUBLIC_ALIAS(memdup,libc_memdup);
 DEFINE_PUBLIC_ALIAS(strdup,libc_strdup);
 DEFINE_PUBLIC_ALIAS(strndup,libc_strndup);
@@ -1266,13 +1288,8 @@ DEFINE_PUBLIC_ALIAS(vstrdupf,libc_vstrdupf);
 DEFINE_PUBLIC_ALIAS(strdupf,libc_strdupf);
 
 /* Define malloc-related function aliases */
-#ifdef CONFIG_DEBUG_MALLOC
-DEFINE_PUBLIC_ALIAS(aligned_alloc,libc_memalign);
-DEFINE_PUBLIC_ALIAS(cfree,libc_free);
-#else
-DEFINE_PUBLIC_ALIAS(aligned_alloc,dlmemalign);
-DEFINE_PUBLIC_ALIAS(cfree,dlfree);
-#endif
+DEFINE_PUBLIC_ALIAS(aligned_alloc,EXPORT_MEMALIGN);
+DEFINE_PUBLIC_ALIAS(cfree,EXPORT_FREE);
 DEFINE_PUBLIC_ALIAS(_aligned_alloc_d,libc__memalign_d);
 DEFINE_PUBLIC_ALIAS(_cfree_d,libc__free_d);
 
@@ -1292,10 +1309,6 @@ DEFINE_PUBLIC_ALIAS(_mall_validate_d,libc__mall_validate_d);
 DEFINE_PUBLIC_ALIAS(_mall_enum_d,libc__mall_enum_d);
 DEFINE_PUBLIC_ALIAS(_mall_untrack_d,libc__mall_untrack_d);
 DEFINE_PUBLIC_ALIAS(_mall_nofree_d,libc__mall_nofree_d);
-
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-DEFINE_PUBLIC_ALIAS(_CrtCheckMemory,libc__mall_validate);
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

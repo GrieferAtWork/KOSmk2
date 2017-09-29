@@ -42,10 +42,10 @@ INTDEF int LIBCCALL libc_posix_fallocate(int fd, off_t offset, off_t len);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTDEF char *LIBCCALL libc_getdcwd(int drive, char *buf, size_t size);
-INTDEF char16_t *LIBCCALL libc_16getcwd(char16_t *dstbuf, int elemcount);
-INTDEF char32_t *LIBCCALL libc_32getcwd(char32_t *dstbuf, int elemcount);
-INTDEF char16_t *LIBCCALL libc_16getdcwd(int drive, char16_t *dstbuf, int elemcount);
-INTDEF char32_t *LIBCCALL libc_32getdcwd(int drive, char32_t *dstbuf, int elemcount);
+INTDEF char16_t *LIBCCALL libc_16wgetcwd(char16_t *dstbuf, int elemcount);
+INTDEF char32_t *LIBCCALL libc_32wgetcwd(char32_t *dstbuf, int elemcount);
+INTDEF char16_t *LIBCCALL libc_16wgetdcwd(int drive, char16_t *dstbuf, int elemcount);
+INTDEF char32_t *LIBCCALL libc_32wgetdcwd(int drive, char32_t *dstbuf, int elemcount);
 INTDEF int LIBCCALL libc_dos_creat(char const *file, mode_t mode);
 INTDEF int ATTR_CDECL libc_dos_open(char const *file, int oflag, ...);
 INTDEF int ATTR_CDECL libc_dos_sopen(char const *file, int oflag, int sflag, ...);

@@ -172,6 +172,7 @@
 #   define DEBUGINFO_UNUSED  __DEBUGINFO_UNUSED
 #   define DEBUGINFO_FWD     __DEBUGINFO_FWD
 #   define DEBUGINFO_NUL     __DEBUGINFO_NUL
+#   define DEBUGINFO_MK(file,line,func) __DEBUGINFO_MK(file,line,func)
 #endif /* GUARD_HYBRID_DEBUGINFO_H */
 #ifdef GUARD_HYBRID_CHECK_H
 #   define OK_USER_TEXT     __OK_USER_TEXT

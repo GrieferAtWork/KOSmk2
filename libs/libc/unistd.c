@@ -1137,8 +1137,6 @@ DEFINE_PUBLIC_ALIAS(_execv,libc_dos_execv);
 DEFINE_PUBLIC_ALIAS(_execvp,libc_dos_execvp);
 DEFINE_PUBLIC_ALIAS(__DSYM(link),libc_dos_link);
 DEFINE_PUBLIC_ALIAS(__DSYM(symlink),libc_dos_symlink);
-DEFINE_PUBLIC_ALIAS(_unlink,libc_dos_unlink);
-DEFINE_PUBLIC_ALIAS(_rmdir,libc_dos_rmdir);
 DEFINE_PUBLIC_ALIAS(__DSYM(mkdir),libc_dos_mkdir);
 DEFINE_PUBLIC_ALIAS(__DSYM(mkfifo),libc_dos_mkfifo);
 DEFINE_PUBLIC_ALIAS(__DSYM(mknod),libc_dos_mknod);
@@ -1146,6 +1144,15 @@ DEFINE_PUBLIC_ALIAS(__DSYM(pathconf),libc_dos_pathconf);
 DEFINE_PUBLIC_ALIAS(__DSYM(revoke),libc_dos_revoke);
 DEFINE_PUBLIC_ALIAS(__DSYM(acct),libc_dos_acct);
 DEFINE_PUBLIC_ALIAS(__DSYM(setmntent),libc_dos_setmntent);
+DEFINE_PUBLIC_ALIAS(_access,libc_dos_access);
+DEFINE_PUBLIC_ALIAS(access_s,libc_access_s);
+DEFINE_PUBLIC_ALIAS(_access_s,libc_dos_access_s);
+DEFINE_PUBLIC_ALIAS(_chdir,libc_dos_chdir);
+DEFINE_PUBLIC_ALIAS(_chmod,libc_dos_chmod);
+DEFINE_PUBLIC_ALIAS(_mkdir,libc_dos_mkdir2);
+DEFINE_PUBLIC_ALIAS(_rmdir,libc_dos_rmdir);
+DEFINE_PUBLIC_ALIAS(_unlink,libc_dos_unlink);
+
 
 
 /* Unicode pathname support. */
@@ -1355,15 +1362,6 @@ DEFINE_PUBLIC_ALIAS(__DSYMw16(_wremove),libc_dos_16wunlink);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wremove),libc_dos_32wunlink);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wrename),libc_dos_16wrename);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wrename),libc_dos_32wrename);
-
-DEFINE_PUBLIC_ALIAS(access_s,libc_access_s);
-DEFINE_PUBLIC_ALIAS(_access_s,libc_dos_access_s);
-DEFINE_PUBLIC_ALIAS(_chdir,libc_dos_chdir);
-DEFINE_PUBLIC_ALIAS(_rmdir,libc_dos_rmdir);
-DEFINE_PUBLIC_ALIAS(_mkdir,libc_dos_mkdir2);
-DEFINE_PUBLIC_ALIAS(_access,libc_dos_access);
-DEFINE_PUBLIC_ALIAS(_unlink,libc_dos_unlink);
-DEFINE_PUBLIC_ALIAS(_chmod,libc_dos_chmod);
 
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wchdir),libc_16wchdir);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wchdir),libc_32wchdir);
