@@ -303,7 +303,7 @@ INTDEF char32_t *LIBCCALL libc_32wcsnend(char32_t const *__restrict s, size_t ma
 INTDEF char32_t *LIBCCALL libc_32wcspbrk(char32_t const *haystack, char32_t const *accept);
 INTDEF char32_t *LIBCCALL libc_32wcsrchr(char32_t const *__restrict haystack, char32_t wc);
 INTDEF char32_t *LIBCCALL libc_32wcsstr(char32_t const *haystack, char32_t const *needle);
-//INTDEF char32_t *LIBCCALL libc_32wcstok(char32_t *__restrict s, char32_t const *__restrict delim);
+INTDEF char32_t *LIBCCALL libc_32wcstok(char32_t *__restrict s, char32_t const *__restrict delim);
 INTDEF char32_t *LIBCCALL libc_32wcstok_r(char32_t *__restrict s, char32_t const *__restrict delim, char32_t **__restrict ptr);
 INTDEF char32_t *LIBCCALL libc_32wmemchr(char32_t const *__restrict s, char32_t c, size_t n);
 INTDEF char32_t *LIBCCALL libc_32wmemcpy(char32_t *__restrict s1, char32_t const *__restrict s2, size_t n);

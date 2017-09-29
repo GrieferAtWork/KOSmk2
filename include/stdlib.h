@@ -820,13 +820,33 @@ __LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
 __LIBC wchar_t ***(__LIBCCALL __p___wargv)(void) __KOS_ASMNAME("wgetargv");
 __LIBC wchar_t ***(__LIBCCALL __p__wenviron)(void) __KOS_ASMNAME("wgetenviron");
 __LIBC wchar_t **(__LIBCCALL __p__wpgmptr)(void) __KOS_ASMNAME("wgetpgmptr");
-#define __argc    (*__p___argc())
-#define __argv    (*__p___argv())
+#define __argc  (*__p___argc())
+#define __argv  (*__p___argv())
 #define __wargv   (*__p___wargv())
 #define _wenviron (*__p__wenviron())
 #define _pgmptr   (*__p__pgmptr())
 #define _wpgmptr  (*__p__wpgmptr())
 
+#ifdef __USE_KOS
+/* Access to the initial environment block. */
+__LIBC char ***(__LIBCCALL __p___initenv)(void);
+__LIBC wchar_t ***(__LIBCCALL __p___winitenv)(void) __KOS_ASMNAME("wgetinitenv");
+#define _initenv  (*__p___initenv())
+#define _winitenv (*__p___winitenv())
+#endif /* __USE_KOS */
+
+#ifdef __USE_UTF
+#ifndef __char16_t_defined
+#define __char16_t_defined 1
+typedef __CHAR16_TYPE__ char16_t;
+typedef __CHAR32_TYPE__ char32_t;
+#endif /* !__char16_t_defined */
+
+__LIBC char16_t ***(__LIBCCALL __p___uinitenv)(void) __ASMNAME("__p___winitenv");
+__LIBC char32_t ***(__LIBCCALL __p___Uinitenv)(void) __ASMNAME("wgetinitenv");
+#define _uinitenv  (*__p___uinitenv())
+#define _Uinitenv  (*__p___Uinitenv())
+#endif /* __USE_UTF */
 
 #endif /* __USE_DOS */
 

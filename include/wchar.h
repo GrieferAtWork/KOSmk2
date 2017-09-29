@@ -402,7 +402,7 @@ __LIBC wint_t (__LIBCCALL ungetwc)(wint_t __wc, __FILE *__stream);
 __LIBC size_t (__LIBCCALL wcsftime)(wchar_t *__restrict __s, size_t __maxsize, wchar_t const *__restrict __format, struct tm const *__restrict __tp);
 #ifndef __wcstok_defined
 #ifdef __USE_DOS
-__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim) __PE_FUNC(wcstok);
+__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim) __KOS_ASMNAME("__wcstok_f");
 #else /* __USE_DOS */
 __LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr) __KOS_FUNC(wcstok);
 #endif /* !__USE_DOS */
@@ -593,8 +593,8 @@ __NAMESPACE_STD_USING(vswscanf)
 
 #ifndef __KERNEL__
 #ifdef __USE_XOPEN2K8
-__LIBC int (__LIBCCALL wcscasecmp)(wchar_t const *__s1, wchar_t const *__s2) __PE_ASMNAME("wcscasecmp");
-__LIBC int (__LIBCCALL wcsncasecmp)(wchar_t const *__s1, wchar_t const *__s2, size_t __n) __PE_ASMNAME("wcsncasecmp");
+__LIBC int (__LIBCCALL wcscasecmp)(wchar_t const *__s1, wchar_t const *__s2) __PE_ASMNAME("_wcsicmp");
+__LIBC int (__LIBCCALL wcsncasecmp)(wchar_t const *__s1, wchar_t const *__s2, size_t __n) __PE_ASMNAME("_wcsnicmp");
 __LIBC int (__LIBCCALL wcscasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __PE_ASMNAME("_wcsicmp_l");
 __LIBC int (__LIBCCALL wcsncasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __PE_ASMNAME("_wcsnicmp_l");
 __LIBC int (__LIBCCALL wcscoll_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __PE_ASMNAME("_wcscoll_l");
@@ -606,7 +606,6 @@ __LIBC wchar_t *(__LIBCCALL wcpncpy)(wchar_t *__restrict __dst, wchar_t const *_
 __LIBC __FILE *(__LIBCCALL open_wmemstream)(wchar_t **__bufloc, size_t *__sizeloc);
 #endif /* __USE_XOPEN2K8 */
 
-
 #if defined(__USE_XOPEN2K8) || defined(__USE_DOS)
 #ifndef __wcsnlen_defined
 #define __wcsnlen_defined 1
@@ -614,7 +613,7 @@ __LIBC __ATTR_PURE size_t (__LIBCCALL wcsnlen)(wchar_t const *__s, size_t __maxl
 #endif /* !__wcsnlen_defined */
 #ifndef __wcsdup_defined
 #define __wcsdup_defined 1
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC wchar_t *(__LIBCCALL wcsdup)(wchar_t const *__restrict __s);
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC wchar_t *(__LIBCCALL wcsdup)(wchar_t const *__restrict __s) __PE_ASMNAME("_wcsdup");
 #endif /* !__wcsdup_defined */
 #endif /* __USE_XOPEN2K8 || __USE_DOS */
 
@@ -649,8 +648,8 @@ __LIBC __LONGLONG (__LIBCCALL wcstoq)(wchar_t const *__restrict __nptr, wchar_t 
 __LIBC __ULONGLONG (__LIBCCALL wcstouq)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME_WCSTOULL_;
 __LIBC long int (__LIBCCALL wcstol_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __PE_ASMNAME("_wcstol_l");
 __LIBC unsigned long int (__LIBCCALL wcstoul_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __PE_ASMNAME("_wcstoul_l");
-__LIBC __LONGLONG (__LIBCCALL wcstoll_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME_WCSTOLL;
-__LIBC __ULONGLONG (__LIBCCALL wcstoull_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME_WCSTOULL;
+__LIBC __LONGLONG (__LIBCCALL wcstoll_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME_WCSTOLL_L;
+__LIBC __ULONGLONG (__LIBCCALL wcstoull_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME_WCSTOULL_L;
 __LIBC double (__LIBCCALL wcstod_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __PE_ASMNAME("_wcstod_l");
 __LIBC float (__LIBCCALL wcstof_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __PE_ASMNAME("_wcstof_l");
 __LIBC long double (__LIBCCALL wcstold_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __PE_ASMNAME("_wcstold_l");
@@ -1165,15 +1164,13 @@ __LIBC errno_t (__LIBCCALL _itow_s)(int __val, wchar_t *__restrict __dst, size_t
 
 __LIBC double (__LIBCCALL _wtof)(wchar_t const *__restrict __s) __KOS_ASMNAME("wtof");
 __LIBC double (__LIBCCALL _wtof_l)(wchar_t const *__restrict __s, __locale_t __locale) __KOS_ASMNAME("wtof_l");
-
 __LIBC long int (__LIBCCALL _wcstol_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstol_l");
 __LIBC unsigned long int (__LIBCCALL _wcstoul_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstoul_l");
-__LIBC __LONGLONG (__LIBCCALL _wcstoll_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstoll_l");
-__LIBC __ULONGLONG (__LIBCCALL _wcstoull_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstoull_l");
+__LIBC __LONGLONG (__LIBCCALL _wcstoll_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME_WCSTOLL_L;
+__LIBC __ULONGLONG (__LIBCCALL _wcstoull_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME_WCSTOULL_L;
 __LIBC float (__LIBCCALL _wcstof_l)(wchar_t const *__restrict __s, wchar_t **__restrict __pend, __locale_t __locale) __KOS_ASMNAME("wcstof_l");
 __LIBC double (__LIBCCALL _wcstod_l)(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale) __KOS_ASMNAME("wcstod_l");
 __LIBC long double (__LIBCCALL _wcstold_l)(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale) __KOS_ASMNAME("wcstold_l");
-
 __LIBC wchar_t *(__LIBCCALL _wgetenv)(wchar_t const *__restrict __varname) __KOS_ASMNAME("wgetenv");
 __LIBC errno_t (__LIBCCALL _wgetenv_s)(size_t *__restrict __psize, wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __varname) __KOS_ASMNAME("wgetenv_s");
 __LIBC errno_t (__LIBCCALL _wdupenv_s)(wchar_t **__restrict __pbuf, size_t *__restrict __pbuflen, wchar_t const *__restrict __varname) __KOS_ASMNAME("wdupenv_s");
@@ -1185,7 +1182,7 @@ __LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64)(wchar_t const *__restrict __s, wc
 __LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64_l)(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstoul_l","_wcstoul_l");
 __LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) __ASMNAME("_wtol");
 __LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) __ASMNAME("_wtol_l");
-#elif __SIZEOF_LONG_LONG__ == 8
+#elif __SIZEOF_LONG_LONG__ == 8 && !defined(__PE__)
 __LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __KOS_ASMNAME("wcstoll");
 __LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstoll_l");
 __LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __KOS_ASMNAME("wcstoull");
@@ -1269,11 +1266,11 @@ __LIBC void (__LIBCCALL _wperror)(wchar_t const *__restrict __errmsg);
 #define _WSTRING_DEFINED 1
 #ifndef ___wcsdup_defined
 #define ___wcsdup_defined 1
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC wchar_t *(__LIBCCALL _wcsdup)(wchar_t const *__restrict __str) __ASMNAME("wcsdup");
+__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC wchar_t *(__LIBCCALL _wcsdup)(wchar_t const *__restrict __str) __KOS_ASMNAME("wcsdup");
 #endif /* !___wcsdup_defined */
 #ifndef __wcstok_s_defined
 #define __wcstok_s_defined 1
-__LIBC wchar_t *(__LIBCCALL wcstok_s)(wchar_t *__restrict __str, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr) __KOS_FUNC_("wcstok");
+__LIBC wchar_t *(__LIBCCALL wcstok_s)(wchar_t *__restrict __str, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr) __KOS_ASMNAME("wcstok");
 #endif /* !__wcstok_s_defined */
 #ifndef __wcserror_defined
 #define __wcserror_defined 1

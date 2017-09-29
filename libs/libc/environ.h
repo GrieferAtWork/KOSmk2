@@ -63,6 +63,10 @@ INTDEF char16_t **LIBCCALL libc_p_16wpgmptr(void);
 INTDEF char32_t ***LIBCCALL libc_p_32wargv(void);
 INTDEF char32_t ***LIBCCALL libc_p_32wenviron(void);
 INTDEF char32_t **LIBCCALL libc_p_32wpgmptr(void);
+INTDEF char ***LIBCCALL libc_p_initenviron(void);
+INTDEF char16_t ***LIBCCALL libc_p_16winitenviron(void);
+INTDEF char32_t ***LIBCCALL libc_p_32winitenviron(void);
+
 #else /* !CONFIG_LIBC_NO_DOS_LIBC */
 #define libc_environ_changed() (void)0
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */

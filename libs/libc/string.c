@@ -848,7 +848,7 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #  define WANT_STRSPN         /* wcsspn() */
 #  define WANT_STRPBRK        /* wcspbrk() */
 #  define WANT_STRTOK_R       /* wcstok_r() */
-//#define WANT_STRTOK         /* wcstok() */
+#  define WANT_STRTOK         /* wcstok() */
 //#define WANT_STRFRY         /* wcsfry() */
 #  define WANT_STRLWR         /* wcslwr() */
 #  define WANT_STRLWR_L       /* wcslwr_l() */
@@ -955,6 +955,7 @@ DEFINE_INTERN_ALIAS(libc_32wmemchr,libc_memchrl);
 #include "templates/string.code"
 
 DEFINE_PUBLIC_ALIAS(wcstok,libc_32wcstok_r);
+DEFINE_PUBLIC_ALIAS(__wcstok_f,libc_32wcstok_r);
 DEFINE_PUBLIC_ALIAS(__mbrlen,libc_32mbrlen);
 DEFINE_PUBLIC_ALIAS(mbrlen,libc_32mbrlen);
 DEFINE_PUBLIC_ALIAS(mblen,libc_32mblen);
@@ -1203,9 +1204,8 @@ DEFINE_INTERN_ALIAS(libc_16wmemcmp,libc_memcmpw);
 DEFINE_INTERN_ALIAS(libc_16wmemchr,libc_memchrw);
 #include "templates/string.code"
 
-DEFINE_PUBLIC_ALIAS(wcstok_s,libc_32wcstok_r);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstok),libc_16wcstok); /* This one's a workaround for a bug in DOS. */
-DEFINE_PUBLIC_ALIAS(__DSYM(wcstok_s),libc_16wcstok_r);
+DEFINE_PUBLIC_ALIAS(wcstok_s,libc_16wcstok_r);
 DEFINE_PUBLIC_ALIAS(__DSYM(mbrlen),libc_16mbrlen);
 
 DEFINE_PUBLIC_ALIAS(_strtod_l,libc_strtod_l);
@@ -1356,8 +1356,8 @@ DEFINE_PUBLIC_ALIAS(_wtol_l,__LONGFUN_L(libc_16wto));
 DEFINE_PUBLIC_ALIAS(_wtoll_l,__LONGLONGFUN_L(libc_16wto));
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstol),__LONGFUN(libc_16wcsto));
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstoul),__LONGFUN(libc_16wcstou));
-DEFINE_PUBLIC_ALIAS(__DSYM(wcstoll),__LONGLONGFUN(libc_16wcsto));
-DEFINE_PUBLIC_ALIAS(__DSYM(wcstoull),__LONGLONGFUN(libc_16wcstou));
+//DEFINE_PUBLIC_ALIAS(__DSYM(wcstoll),__LONGLONGFUN(libc_16wcsto));
+//DEFINE_PUBLIC_ALIAS(__DSYM(wcstoull),__LONGLONGFUN(libc_16wcstou));
 DEFINE_PUBLIC_ALIAS(_wcstol_l,__LONGFUN_L(libc_16wcsto));
 DEFINE_PUBLIC_ALIAS(_wcstoul_l,__LONGFUN_L(libc_16wcstou));
 DEFINE_PUBLIC_ALIAS(_wcstoll_l,__LONGLONGFUN_L(libc_16wcsto));

@@ -827,7 +827,7 @@ __LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcswcs)(wchar_t const *__haystack, wchar
 #ifndef __wcstok_defined
 #define __wcstok_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__str, wchar_t const *__delim);
+__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__str, wchar_t const *__delim) __KOS_ASMNAME("__wcstok_f");
 __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(wcstok)
 #endif /* !__wcstok_defined */
@@ -836,7 +836,7 @@ __NAMESPACE_STD_USING(wcstok)
 #define _WSTRING_DEFINED 1
 #ifndef __wcstok_s_defined
 #define __wcstok_s_defined 1
-__LIBC wchar_t *(__LIBCCALL wcstok_s)(wchar_t *__restrict __str, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr) __KOS_FUNC_(wcstok);
+__LIBC wchar_t *(__LIBCCALL wcstok_s)(wchar_t *__restrict __str, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr) __KOS_ASMNAME("wcstok");
 #endif /* !__wcstok_s_defined */
 
 #ifndef __wcserror_defined

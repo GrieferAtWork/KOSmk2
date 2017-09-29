@@ -65,6 +65,7 @@
 #undef __USE_FORTIFY_LEVEL
 #undef __KERNEL_STRICT_NAMES
 #undef __USE_KOS         /* '#ifdef _KOS_SOURCE'     Additional & changes added by KOS */
+#undef __USE_UTF         /* '#ifdef _UTF_SOURCE'     Enable additional string functions that accept char16_t and char32_t. (Referred to as 'c16/u' and 'c32/U') */
 #undef __USE_KXS         /* '#if _KOS_SOURCE >= 2'   Minor extended functionality that is likely to collide with existing programs. */
 #undef __USE_DOS         /* '#ifdef _DOS_SOURCE'     Functions usually only found in DOS: spawn, strlwr, etc. */
 #undef __USE_DOSFS       /* '#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). */
@@ -266,9 +267,18 @@
 
 #ifdef _KOS_SOURCE
 #   define __USE_KOS 1
+#if 1
+#   define __USE_UTF 1
+#endif
 #if (_KOS_SOURCE+0) >= 2
 #   define __USE_KXS 1
 #endif
+#endif
+
+/* Enable additional utf16/32 functions in system headers. */
+#ifdef _UTF_SOURCE
+#   undef __USE_UTF
+#   define __USE_UTF 1
 #endif
 
 #ifdef __PE__
@@ -356,7 +366,6 @@
  * >> extern int _execv(char const *file, char **argv) __UFS_FUNC_OLDPEB(execv);
  * Assembly names: 'execv' (KOS), '_execv' (DOS-FS mode)
  */
-
 #ifdef __USE_DOSFS
 #   define __UFS_FUNC_OLDPEA(x)  __ASMNAME("_" #x)
 #   define __UFS_FUNC_OLDPEB(x)  /* nothing (linked by default) */
@@ -386,33 +395,23 @@
 #   define __W16FS_FUNC(x)       /* nothing (linked by default) */
 #   define __W16FS_FUNC_(x)      __ASMNAME(#x)
 #   define __W32FS_FUNC(x)       __ASMNAME("U" #x)
-#   define __W32FS_FUNC_(x)      __ASMNAME("U" #x)
 #   define __UFS_FUNC(x)         /* nothing (linked by default) */
 #   define __UFS_FUNC_(x)        __ASMNAME(#x)
 #   define __UFS_FUNC2(unix,dos) __ASMNAME(#dos)
 #else
 #   define __W16FS_FUNC(x)       __ASMNAME(".dos." #x)
-#   define __W16FS_FUNC_(x)      __ASMNAME(".dos." #x)
 #   define __W32FS_FUNC(x)       __ASMNAME(".dos.U" #x)
-#   define __W32FS_FUNC_(x)      __ASMNAME(".dos.U" #x)
 #   define __UFS_FUNC(x)         __ASMNAME(".dos." #x)
-#   define __UFS_FUNC_(x)        __ASMNAME(".dos." #x)
-#   define __UFS_FUNCo(x)        __ASMNAME(".dos._" #x)
-#   define __UFS_FUNCo_(x)       __ASMNAME(".dos._" #x)
 #   define __UFS_FUNC2(unix,dos) __ASMNAME(".dos." #dos)
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __W16FS_FUNC(x)       __ASMNAME(".kos.u" #x)
-#   define __W16FS_FUNC_(x)      __ASMNAME(".kos.u" #x)
 #   define __W32FS_FUNC(x)       __ASMNAME(".kos." #x)
-#   define __W32FS_FUNC_(x)      __ASMNAME(".kos." #x)
 #   define __UFS_FUNC(x)         __ASMNAME(".kos." #x)
-#   define __UFS_FUNC_(x)        __ASMNAME(".kos." #x)
 #   define __UFS_FUNC2(unix,dos) __ASMNAME(".kos." #unix)
 #else
 #   define __W16FS_FUNC(x)       __ASMNAME("u" #x)
-#   define __W16FS_FUNC_(x)      __ASMNAME("u" #x)
 #   define __W32FS_FUNC(x)       /* nothing (linked by default) */
 #   define __W32FS_FUNC_(x)      __ASMNAME(#x)
 #   define __UFS_FUNC(x)         /* nothing (linked by default) */
@@ -420,6 +419,15 @@
 #   define __UFS_FUNC2(unix,dos) __ASMNAME(#unix)
 #endif
 #endif /* !__USE_DOSFS */
+#ifndef __W16FS_FUNC_
+#define __W16FS_FUNC_ __W16FS_FUNC
+#endif
+#ifndef __W32FS_FUNC_
+#define __W32FS_FUNC_ __W32FS_FUNC
+#endif
+#ifndef __UFS_FUNC_
+#define __UFS_FUNC_   __UFS_FUNC
+#endif
 
 #if __SIZEOF_WCHAR_T__ == 2
 #   define __WFS_FUNC  __W16FS_FUNC
@@ -431,83 +439,93 @@
 #   error "Unsupport wide-character width"
 #endif
 
+#ifdef __PE__
+#   define __C16_DECL(x)     __ASMNAME(#x)
+#   define __C32_DECL(x)     __ASMNAME(".kos." #x)
+#   define __C16_FUNC(x)     __ASMNAME("wcs" #x)
+#   define __C32_FUNC(x)     __ASMNAME(".kos.wcs" #x)
+#   define __C16_FUNC_ALT(x) __ASMNAME("_wcs" #x)
+#   define __C32_FUNC_ALT(x) __ASMNAME(".kos.wcs" #x)
+#else
+#   define __C16_DECL(x)     __ASMNAME(".dos." #x)
+#   define __C32_DECL(x)     __ASMNAME(#x)
+#   define __C16_FUNC(x)     __ASMNAME(".dos.wcs" #x)
+#   define __C32_FUNC(x)     __ASMNAME("wcs" #x)
+#   define __C16_FUNC_ALT(x) __ASMNAME(".dos._wcs" #x)
+#   define __C32_FUNC_ALT(x) __ASMNAME("wcs" #x)
+#endif
+
 
 #ifdef __USE_FILE_OFFSET64
-#   define __FS_FUNC(x)     __ASMNAME(#x "64")
-#   define __FS_FUNC_(x)    __ASMNAME(#x "64")
-#   define __FS_FUNC_R(x)   __ASMNAME(#x "64_r")
+#   define __FS_FUNC(x)      __ASMNAME(#x "64")
+#   define __FS_FUNC_R(x)    __ASMNAME(#x "64_r")
 #ifdef __USE_DOSFS
 #ifdef __PE__
-#   define __UFS_FUNCn(x)   __ASMNAME(#x "64")
-#   define __UFS_FUNCn_(x)  __ASMNAME(#x "64")
-#   define __UFS_FUNCn_R(x) __ASMNAME(#x "64_r")
+#   define __UFS_FUNCn(x)    __ASMNAME(#x "64")
+#   define __UFS_FUNCn_R(x)  __ASMNAME(#x "64_r")
 #else
-#   define __UFS_FUNCn(x)   __ASMNAME(".dos." #x "64")
-#   define __UFS_FUNCn_(x)  __ASMNAME(".dos." #x "64")
-#   define __UFS_FUNCn_R(x) __ASMNAME(".dos." #x "64_r")
+#   define __UFS_FUNCn(x)    __ASMNAME(".dos." #x "64")
+#   define __UFS_FUNCn_R(x)  __ASMNAME(".dos." #x "64_r")
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
-#   define __UFS_FUNCn(x)   __ASMNAME(".kos." #x "64")
-#   define __UFS_FUNCn_(x)  __ASMNAME(".kos." #x "64")
-#   define __UFS_FUNCn_R(x) __ASMNAME(".kos." #x "64_r")
+#   define __UFS_FUNCn(x)    __ASMNAME(".kos." #x "64")
+#   define __UFS_FUNCn_R(x)  __ASMNAME(".kos." #x "64_r")
 #else
-#   define __UFS_FUNCn(x)   __ASMNAME(#x "64")
-#   define __UFS_FUNCn_(x)  __ASMNAME(#x "64")
-#   define __UFS_FUNCn_R(x) __ASMNAME(#x "64_r")
+#   define __UFS_FUNCn(x)    __ASMNAME(#x "64")
+#   define __UFS_FUNCn_R(x)  __ASMNAME(#x "64_r")
 #endif
 #endif /* !__USE_DOSFS */
 #else /* __USE_FILE_OFFSET64 */
-#   define __FS_FUNC(x)     /* nothing */
-#   define __FS_FUNC_(x)    /* nothing */
-#   define __FS_FUNC_R(x)   /* nothing */
+#   define __FS_FUNC(x)      /* nothing */
+#   define __FS_FUNC_(x)     __ASMNAME(#x)
+#   define __FS_FUNC_R(x)    /* nothing */
+#   define __FS_FUNC_R_(x)   __ASMNAME(#x "_r")
 #ifdef __USE_DOSFS
 #ifdef __PE__
-#   define __UFS_FUNCn(x)   /* nothing */
-#   define __UFS_FUNCn_(x)  /* nothing */
-#   define __UFS_FUNCn_R(x) /* nothing */
+#   define __UFS_FUNCn(x)    /* nothing */
+#   define __UFS_FUNCn_(x)   __ASMNAME(#x)
+#   define __UFS_FUNCn_R(x)  /* nothing */
+#   define __UFS_FUNCn_R_(x) __ASMNAME(#x "_r")
 #else
-#   define __UFS_FUNCn(x)   __ASMNAME(".dos." #x)
-#   define __UFS_FUNCn_(x)  __ASMNAME(".dos." #x)
-#   define __UFS_FUNCn_R(x) __ASMNAME(".dos." #x "_r")
+#   define __UFS_FUNCn(x)    __ASMNAME(".dos." #x)
+#   define __UFS_FUNCn_R(x)  __ASMNAME(".dos." #x "_r")
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
-#   define __UFS_FUNCn(x)   __ASMNAME(".kos." #x)
-#   define __UFS_FUNCn_(x)  __ASMNAME(".kos." #x)
-#   define __UFS_FUNCn_R(x) __ASMNAME(".kos." #x "_r")
+#   define __UFS_FUNCn(x)    __ASMNAME(".kos." #x)
+#   define __UFS_FUNCn_R(x)  __ASMNAME(".kos." #x "_r")
 #else
-#   define __UFS_FUNCn(x)   /* nothing */
-#   define __UFS_FUNCn_(x)  /* nothing */
-#   define __UFS_FUNCn_R(x) /* nothing */
+#   define __UFS_FUNCn(x)    /* nothing */
+#   define __UFS_FUNCn_(x)   __ASMNAME(#x)
+#   define __UFS_FUNCn_R(x)  /* nothing */
+#   define __UFS_FUNCn_R_(x) __ASMNAME(#x "_r")
 #endif
 #endif /* !__USE_DOSFS */
 #endif /* !__USE_FILE_OFFSET64 */
+#ifndef __UFS_FUNCn_
+#define __UFS_FUNCn_ __UFS_FUNCn
+#endif
+#ifndef __UFS_FUNCn_R_
+#define __UFS_FUNCn_R_ __UFS_FUNCn_R
+#endif
 
 #ifdef __USE_TIME_BITS64
 #ifdef __USE_DOSFS
 #ifdef __PE__
 #   define __UFS_FUNCt(x)    __ASMNAME(#x "64")
-#   define __UFS_FUNCt_(x)   __ASMNAME(#x "64")
 #   define __UFS_FUNCt_R(x)  __ASMNAME(#x "64_r")
-#   define __UFS_FUNCt_R_(x) __ASMNAME(#x "64_r")
 #else
 #   define __UFS_FUNCt(x)    __ASMNAME(".dos." #x "64")
-#   define __UFS_FUNCt_(x)   __ASMNAME(".dos." #x "64")
 #   define __UFS_FUNCt_R(x)  __ASMNAME(".dos." #x "64_r")
-#   define __UFS_FUNCt_R_(x) __ASMNAME(".dos." #x "64_r")
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __UFS_FUNCt(x)    __ASMNAME(".kos." #x "64")
-#   define __UFS_FUNCt_(x)   __ASMNAME(".kos." #x "64")
 #   define __UFS_FUNCt_R(x)  __ASMNAME(".kos." #x "64_r")
-#   define __UFS_FUNCt_R_(x) __ASMNAME(".kos." #x "64_r")
 #else
 #   define __UFS_FUNCt(x)    __ASMNAME(#x "64")
-#   define __UFS_FUNCt_(x)   __ASMNAME(#x "64")
 #   define __UFS_FUNCt_R(x)  __ASMNAME(#x "64_r")
-#   define __UFS_FUNCt_R_(x) __ASMNAME(#x "64_r")
 #endif
 #endif /* !__USE_DOSFS */
 #else /* __USE_TIME_BITS64 */
@@ -519,24 +537,26 @@
 #   define __UFS_FUNCt_R_(x) __ASMNAME(#x "_r")
 #else
 #   define __UFS_FUNCt(x)    __ASMNAME(".dos." #x)
-#   define __UFS_FUNCt_(x)   __ASMNAME(".dos." #x)
 #   define __UFS_FUNCt_R(x)  __ASMNAME(".dos." #x "_r")
-#   define __UFS_FUNCt_R_(x) __ASMNAME(".dos." #x "_r")
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __UFS_FUNCt(x)    __ASMNAME(".kos." #x)
 #   define __UFS_FUNCt_R(x)  __ASMNAME(".kos." #x "_r")
-#   define __UFS_FUNCt_(x)   __ASMNAME(".kos." #x)
-#   define __UFS_FUNCt_R_(x) __ASMNAME(".kos." #x "_r")
 #else
 #   define __UFS_FUNCt(x)    /* nothing */
-#   define __UFS_FUNCt_R(x)  /* nothing */
 #   define __UFS_FUNCt_(x)   __ASMNAME(#x)
+#   define __UFS_FUNCt_R(x)  /* nothing */
 #   define __UFS_FUNCt_R_(x) __ASMNAME(#x "_r")
 #endif
 #endif /* !__USE_DOSFS */
 #endif /* !__USE_TIME_BITS64 */
+#ifndef __UFS_FUNCt_
+#define __UFS_FUNCt_ __UFS_FUNCt
+#endif
+#ifndef __UFS_FUNCt_R_
+#define __UFS_FUNCt_R_ __UFS_FUNCt_R
+#endif
 
 
 /* Link the dos-default version when DOS-mode is enabled.
@@ -548,22 +568,22 @@
 #   define __DOS_FUNC_(x) __ASMNAME(#x)
 #else
 #   define __DOS_FUNC(x)  __ASMNAME(".dos." #x)
-#   define __DOS_FUNC_(x) __ASMNAME(".dos." #x)
 #endif
 #else /* __USE_DOS */
 #ifdef __PE__
 #   define __DOS_FUNC(x)  __ASMNAME(".kos." #x)
-#   define __DOS_FUNC_(x) __ASMNAME(".kos." #x)
 #else
 #   define __DOS_FUNC(x)  /* nothing (linked by default) */
 #   define __DOS_FUNC_(x) __ASMNAME(#x)
 #endif
 #endif /* !__USE_DOS */
+#ifndef __DOS_FUNC_
+#define __DOS_FUNC_ __DOS_FUNC
+#endif
 
 /* Strictly link against the KOS version of a given function. */
 #ifdef __PE__
 #   define __KOS_FUNC(x)        __ASMNAME(".kos." #x)
-#   define __KOS_FUNC_(x)       __ASMNAME(".kos." #x)
 #   define __PE_ASMNAME(x)      __ASMNAME(x)
 #   define __KOS_ASMNAME(x)     /* nothing */
 #   define __PE_FUNC(x)         /* nothing */
@@ -575,10 +595,14 @@
 #   define __PE_ASMNAME(x)      /* nothing */
 #   define __KOS_ASMNAME(x)     __ASMNAME(x)
 #   define __PE_FUNC(x)         __ASMNAME(".dos." #x)
-#   define __PE_FUNC_(x)        __ASMNAME(".dos." #x)
 #   define __ASMNAME2(unix,dos) __ASMNAME(unix)
 #endif
-
+#ifndef __KOS_FUNC_
+#define __KOS_FUNC_ __KOS_FUNC
+#endif
+#ifndef __PE_FUNC_
+#define __PE_FUNC_  __PE_FUNC
+#endif
 
 
 #ifdef __USE_DOSFS
@@ -591,14 +615,18 @@
 
 #ifdef __USE_TIME_BITS64
 #   define __TM_FUNC(x)     __ASMNAME(#x "64")
-#   define __TM_FUNC_(x)    __ASMNAME(#x "64")
 #   define __TM_FUNC_R(x)   __ASMNAME(#x "64_r")
-#   define __TM_FUNC_R_(x)  __ASMNAME(#x "64_r")
 #else
 #   define __TM_FUNC(x)     /* nothing */
 #   define __TM_FUNC_(x)    __ASMNAME(#x)
 #   define __TM_FUNC_R(x)   /* nothing */
 #   define __TM_FUNC_R_(x)  __ASMNAME(#x "_r")
+#endif
+#ifndef __TM_FUNC_
+#define __TM_FUNC_ __TM_FUNC
+#endif
+#ifndef __TM_FUNC_R_
+#define __TM_FUNC_R_ __TM_FUNC_R
 #endif
 
 #ifdef __USE_DOS

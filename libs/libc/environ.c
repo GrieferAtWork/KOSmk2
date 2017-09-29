@@ -282,8 +282,10 @@ DEFINE_PUBLIC_ALIAS(__DSYM(getenv),libc_dos_getenv);
 
 PRIVATE char16_t **libc_16wargv = NULL;
 PRIVATE char16_t **libc_16wenviron = NULL;
+PRIVATE char16_t **libc_16winitenviron = NULL;
 PRIVATE char32_t **libc_32wargv = NULL;
 PRIVATE char32_t **libc_32wenviron = NULL;
+PRIVATE char32_t **libc_32winitenviron = NULL;
 INTDEF void LIBCCALL libc_argvfree(void **argv);
 
 INTERN ATTR_DOSTEXT void LIBCCALL
@@ -334,8 +336,11 @@ INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16wargv(void) { if (!libc_16warg
 INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32wargv(void) { if (!libc_32wargv) libc_32wargv = libc_argv8to32_ex(appenv->e_argc,appenv->e_argv); return &libc_32wargv; }
 INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16wenviron(void) { if (!libc_16wenviron) libc_16wenviron = libc_argv8to16(environ); return &libc_16wenviron; }
 INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32wenviron(void) { if (!libc_32wenviron) libc_32wenviron = libc_argv8to32(environ); return &libc_32wenviron; }
-INTERN ATTR_DOSTEXT char16_t  **LIBCCALL libc_p_16wpgmptr(void) { return &(*libc_p_16wargv())[0]; }
-INTERN ATTR_DOSTEXT char32_t  **LIBCCALL libc_p_32wpgmptr(void) { return &(*libc_p_32wargv())[0]; }
+INTERN ATTR_DOSTEXT char     ***LIBCCALL libc_p_initenviron(void) { return &appenv->e_envp; }
+INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16winitenviron(void) { if (!libc_16winitenviron) libc_16winitenviron = libc_argv8to16(environ); return &libc_16winitenviron; }
+INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32winitenviron(void) { if (!libc_32winitenviron) libc_32winitenviron = libc_argv8to32(environ); return &libc_32winitenviron; }
+INTERN ATTR_DOSTEXT char16_t **LIBCCALL libc_p_16wpgmptr(void) { return &(*libc_p_16wargv())[0]; }
+INTERN ATTR_DOSTEXT char32_t **LIBCCALL libc_p_32wpgmptr(void) { return &(*libc_p_32wargv())[0]; }
 
 DEFINE_PUBLIC_ALIAS(__p___argc,libc_p_argc);
 DEFINE_PUBLIC_ALIAS(__p___argv,libc_p_argv);
@@ -344,6 +349,11 @@ DEFINE_PUBLIC_ALIAS(__p__pgmptr,libc_p_pgmptr);
 DEFINE_PUBLIC_ALIAS(__p___wargv,libc_p_16wargv);
 DEFINE_PUBLIC_ALIAS(__p__wenviron,libc_p_16wenviron);
 DEFINE_PUBLIC_ALIAS(__p__wpgmptr,libc_p_16wpgmptr);
+
+/* Export access to the initial environment. */
+DEFINE_PUBLIC_ALIAS(__p___initenv,libc_p_initenviron);
+DEFINE_PUBLIC_ALIAS(__p___winitenv,libc_p_16winitenviron);
+DEFINE_PUBLIC_ALIAS(wgetinitenv,libc_p_32winitenviron);
 
 /* KOS API names for 32-bit strings. */
 DEFINE_PUBLIC_ALIAS(wgetargv,libc_p_32wargv);
