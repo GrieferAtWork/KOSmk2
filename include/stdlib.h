@@ -797,6 +797,35 @@ __LIBC __UINT32_TYPE__ *__NOTHROW((__LIBCCALL __doserrno)(void));
 __LIBC errno_t __NOTHROW((__LIBCCALL _get_doserrno)(__UINT32_TYPE__ *__perr));
 __LIBC errno_t __NOTHROW((__LIBCCALL _set_doserrno)(__UINT32_TYPE__ __err));
 
+__LIBC char **__NOTHROW((__LIBCCALL __sys_errlist)(void));
+__LIBC int *__NOTHROW((__LIBCCALL __sys_nerr)(void));
+#define _sys_errlist (__sys_errlist())
+#define _sys_nerr    (*__sys_nerr())
+
+#ifdef __PE__
+__LIBC char ***__NOTHROW((__LIBCCALL __p__environ)(void));
+#define _environ  (*__p__environ())
+#else /* __PE__ */
+#ifndef ____environ_defined
+#define ____environ_defined 1
+#undef __environ
+__LIBC char **__environ __ASMNAME2("environ","_environ");
+#endif /* !____environ_defined */
+#define _environ    __environ
+#endif /* !__PE__ */
+
+__LIBC int *__NOTHROW((__LIBCCALL __p___argc)(void));
+__LIBC char ***__NOTHROW((__LIBCCALL __p___argv)(void));
+__LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
+__LIBC wchar_t ***(__LIBCCALL __p___wargv)(void) __KOS_ASMNAME("wgetargv");
+__LIBC wchar_t ***(__LIBCCALL __p__wenviron)(void) __KOS_ASMNAME("wgetenviron");
+__LIBC wchar_t **(__LIBCCALL __p__wpgmptr)(void) __KOS_ASMNAME("wgetpgmptr");
+#define __argc    (*__p___argc())
+#define __argv    (*__p___argv())
+#define __wargv   (*__p___wargv())
+#define _wenviron (*__p__wenviron())
+#define _pgmptr   (*__p__pgmptr())
+#define _wpgmptr  (*__p__wpgmptr())
 
 
 #endif /* __USE_DOS */

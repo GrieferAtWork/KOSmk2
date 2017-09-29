@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_SECTION_H
-#define GUARD_HYBRID_SECTION_H 1
+#ifndef __GUARD_HYBRID_SECTION_H
+#define __GUARD_HYBRID_SECTION_H 1
 
 #include <hybrid/compiler.h>
 
@@ -76,4 +76,4 @@
 #define COLDSTR(s)       SECTION_STRING(".rodata.cold",s)
 
 
-#endif /* !GUARD_HYBRID_SECTION_H */
+#endif /* !__GUARD_HYBRID_SECTION_H */

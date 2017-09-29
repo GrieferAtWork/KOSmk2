@@ -16,25 +16,29 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef __GUARD_HYBRID_HOST_H
-#define __GUARD_HYBRID_HOST_H 1
+#define _DOS_SOURCE 1
+ 
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <wchar.h>
+#include <stdio.h>
 
-#include <__stdinc.h>
 
-#if !defined(__x86_64__) && \
-    (defined(__amd64__) || defined(__amd64) || \
-     defined(__x86_64) || defined(_M_X64) || \
-     defined(_M_AMD64) || defined(_WIN64) || \
-     defined(WIN64))
-#define __x86_64__ 1
-#endif
+int main(int argc, char **argv) {
+	wchar_t **iter = _wenviron;
+	while (*iter) {
+		printf("ENV: %ls\n",*iter);
+		++iter;
+	}
+	iter = __wargv;
+	while (*iter) {
+		printf("ARG: %ls\n",*iter);
+		++iter;
+	}
+	printf("APP: %ls\n",_wpgmptr);
+	return 0;
+}
 
-#if !defined(__i386__) && \
-    (defined(__i386) || defined(i386) || \
-     defined(__I86__) || defined(_M_IX86) || \
-     defined(__X86__) || defined(_X86_) || \
-     defined(__THW_INTEL__) || defined(__INTEL__))
-#define __i386__   1
-#endif
 
-#endif /* !__GUARD_HYBRID_HOST_H */
+

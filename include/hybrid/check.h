@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_CHECK_H
-#define GUARD_HYBRID_CHECK_H 1
+#ifndef __GUARD_HYBRID_CHECK_H
+#define __GUARD_HYBRID_CHECK_H 1
 
 #include <__stdinc.h>
 
@@ -68,7 +68,7 @@ __DECL_BEGIN
 
 __DECL_END
 
-#ifdef GUARD_HYBRID_COMPILER_H
+#ifdef __GUARD_HYBRID_COMPILER_H
 #   define OK_USER_TEXT    __OK_USER_TEXT
 #   define OK_HOST_TEXT    __OK_HOST_TEXT
 #   define OK_USER_DATA    __OK_USER_DATA
@@ -83,4 +83,4 @@ __DECL_END
 #   define CHECK_HOST_DOBJ __CHECK_HOST_DOBJ
 #endif
 
-#endif /* !GUARD_HYBRID_CHECK_H */
+#endif /* !__GUARD_HYBRID_CHECK_H */

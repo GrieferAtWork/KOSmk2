@@ -37,8 +37,8 @@ INTDEF ssize_t LIBCCALL libc_format_hexdump(pformatprinter printer, void *closur
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTDEF ssize_t LIBCCALL libc_xformat_vprintf(bool wch16, pformatprinter printer, void *closure, char const *__restrict format, va_list args);
-INTDEF ssize_t LIBCCALL libc_nt_format_vprintf(pformatprinter printer, void *closure, char const *__restrict format, va_list args);
-INTDEF ssize_t ATTR_CDECL libc_nt_format_printf(pformatprinter printer, void *closure, char const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_dos_format_vprintf(pformatprinter printer, void *closure, char const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_dos_format_printf(pformatprinter printer, void *closure, char const *__restrict format, ...);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 /* NOTE: There 4 are implemented in "/libs/libc/unicode.c" */

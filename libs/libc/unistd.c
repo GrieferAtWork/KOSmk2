@@ -1418,7 +1418,7 @@ DEFINE_PUBLIC_ALIAS(_read,libc_read);
 DEFINE_PUBLIC_ALIAS(_write,libc_write);
 #endif /* __SIZEOF_SIZE_T__ == 4 */
 
-PRIVATE ATTR_DOSTEXT size_t LIBCCALL
+INTERN ATTR_DOSTEXT size_t LIBCCALL
 libc_countpointer(void **pvec) {
  void **iter = pvec;
 #if 1 /* Extension: support for NULL=0 arguments. */
@@ -1460,9 +1460,9 @@ err:
 retnull:
  return NULL;
 }
-PRIVATE ATTR_DOSTEXT void LIBCCALL
-libc_argv8free(char **argv) {
- char **iter = argv;
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_argvfree(void **argv) {
+ void **iter = argv;
  if unlikely(!argv) return;
  for (; *iter; ++iter) libc_free(*iter);
  libc_free(argv);
@@ -1483,8 +1483,8 @@ libc_impl_16wexecve(int mode, char16_t const *path,
  case WEXEC_F_DOSMODE: libc_dos_execve(utf8path,utf8argv,utf8envp); break;
  default: libc_execvpe_impl(utf8path,utf8argv,utf8envp,mode&WEXEC_F_DOSMODE); break;
  }
- if (envp) libc_argv8free(utf8envp);
-end2: libc_argv8free(utf8argv);
+ if (envp) libc_argvfree((void **)utf8envp);
+end2: libc_argvfree((void **)utf8argv);
 end1: libc_free(utf8path);
 end0: return -1;
 }
@@ -1502,8 +1502,8 @@ libc_impl_32wexecve(int mode, char32_t const *path,
  case WEXEC_F_DOSMODE: libc_dos_execve(utf8path,utf8argv,utf8envp); break;
  default: libc_execvpe_impl(utf8path,utf8argv,utf8envp,mode&WEXEC_F_DOSMODE); break;
  }
- if (envp) libc_argv8free(utf8envp);
-end2: libc_argv8free(utf8argv);
+ if (envp) libc_argvfree((void **)utf8envp);
+end2: libc_argvfree((void **)utf8argv);
 end1: libc_free(utf8path);
 end0: return -1;
 }

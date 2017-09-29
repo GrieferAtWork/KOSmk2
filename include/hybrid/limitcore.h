@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_LIMITCORE_H
-#define GUARD_HYBRID_LIMITCORE_H 1
+#ifndef __GUARD_HYBRID_LIMITCORE_H
+#define __GUARD_HYBRID_LIMITCORE_H 1
 
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
@@ -274,4 +274,4 @@
 #endif /* !__WINT_MAX__ */
 
 
-#endif /* !GUARD_HYBRID_LIMITCORE_H */
+#endif /* !__GUARD_HYBRID_LIMITCORE_H */

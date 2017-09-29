@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_TIMESPEC_H
-#define GUARD_HYBRID_TIMESPEC_H 1
+#ifndef __GUARD_HYBRID_TIMESPEC_H
+#define __GUARD_HYBRID_TIMESPEC_H 1
 
 #include <__stdinc.h>
 #include <bits/types.h>
@@ -95,7 +95,7 @@ struct __timespec32 {
 #define __TIMESPEC_GREATER_EQUAL(x,y) ((x).tv_sec >  (y).tv_sec || \
                                       ((x).tv_sec == (y).tv_sec && (x).tv_nsec >= (y).tv_nsec))
 
-#ifdef GUARD_HYBRID_COMPILER_H
+#ifdef __GUARD_HYBRID_COMPILER_H
 #   define TIMESPEC_ADD           __TIMESPEC_ADD
 #   define TIMESPEC_SUB           __TIMESPEC_SUB
 #   define TIMESPEC_LOWER         __TIMESPEC_LOWER
@@ -109,4 +109,4 @@ struct __timespec32 {
 
 __DECL_END
 
-#endif /* !GUARD_HYBRID_TIMESPEC_H */
+#endif /* !__GUARD_HYBRID_TIMESPEC_H */

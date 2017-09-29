@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_DEBUGINFO_H
-#define GUARD_HYBRID_DEBUGINFO_H 1
+#ifndef __GUARD_HYBRID_DEBUGINFO_H
+#define __GUARD_HYBRID_DEBUGINFO_H 1
 
 #include <__stdinc.h>
 
@@ -52,7 +52,7 @@ __PUBDEF struct instance __this_instance;
 #   define __DEBUGINFO_NUL     NULL,0,NULL
 #endif /* !__KERNEL__ */
 
-#ifdef GUARD_HYBRID_COMPILER_H
+#ifdef __GUARD_HYBRID_COMPILER_H
 #   define DEBUGINFO         __DEBUGINFO
 #   define DEBUGINFO_MK(file,line,func) __DEBUGINFO_MK(file,line,func)
 #   define DEBUGINFO_GEN     __DEBUGINFO_GEN
@@ -64,4 +64,4 @@ __PUBDEF struct instance __this_instance;
 
 __DECL_END
 
-#endif /* !GUARD_HYBRID_DEBUGINFO_H */
+#endif /* !__GUARD_HYBRID_DEBUGINFO_H */

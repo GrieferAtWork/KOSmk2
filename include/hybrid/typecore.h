@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_TYPECORE_H
-#define GUARD_HYBRID_TYPECORE_H 1
+#ifndef __GUARD_HYBRID_TYPECORE_H
+#define __GUARD_HYBRID_TYPECORE_H 1
 
 #include <__stdinc.h>
 
@@ -782,4 +782,4 @@
 #endif
 
 
-#endif /* !GUARD_HYBRID_TYPECORE_H */
+#endif /* !__GUARD_HYBRID_TYPECORE_H */

@@ -332,16 +332,16 @@ libc_format_vprintf(pformatprinter printer, void *closure,
                     char const *__restrict format, va_list args)
 #else /* CONFIG_LIBC_NO_DOS_LIBC || __KERNEL__ */
 INTERN ssize_t ATTR_CDECL
-libc_nt_format_printf(pformatprinter printer, void *closure,
-                      char const *__restrict format, ...) {
+libc_dos_format_printf(pformatprinter printer, void *closure,
+                       char const *__restrict format, ...) {
  va_list args; ssize_t result;
  va_start(args,format);
  result = libc_xformat_vprintf(true,printer,closure,format,args);
  va_end(args);
  return result;
 }
-INTERN ssize_t LIBCCALL libc_nt_format_vprintf(pformatprinter printer, void *closure,
-                                               char const *__restrict format, va_list args) {
+INTERN ssize_t LIBCCALL libc_dos_format_vprintf(pformatprinter printer, void *closure,
+                                                char const *__restrict format, va_list args) {
  return libc_xformat_vprintf(true,printer,closure,format,args);
 }
 INTERN ssize_t LIBCCALL libc_format_vprintf(pformatprinter printer, void *closure,
@@ -1580,8 +1580,8 @@ DEFINE_PUBLIC_ALIAS(stringprinter_pack,libc_stringprinter_pack);
 DEFINE_PUBLIC_ALIAS(stringprinter_fini,libc_stringprinter_fini);
 DEFINE_PUBLIC_ALIAS(stringprinter_print,libc_stringprinter_print);
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-DEFINE_PUBLIC_ALIAS(__DSYM(format_printf),libc_nt_format_printf);
-DEFINE_PUBLIC_ALIAS(__DSYM(format_vprintf),libc_nt_format_vprintf);
+DEFINE_PUBLIC_ALIAS(__DSYM(format_printf),libc_dos_format_printf);
+DEFINE_PUBLIC_ALIAS(__DSYM(format_vprintf),libc_dos_format_vprintf);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 DEFINE_PUBLIC_ALIAS(buffer_init,libc_buffer_init);
 DEFINE_PUBLIC_ALIAS(buffer_fini,libc_buffer_fini);

@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_KDEV_T_H
-#define GUARD_HYBRID_KDEV_T_H 1
+#ifndef __GUARD_HYBRID_KDEV_T_H
+#define __GUARD_HYBRID_KDEV_T_H 1
 
 #include <hybrid/compiler.h>
 #include <bits/types.h>
@@ -56,4 +56,4 @@ typedef __minor_t   minor_t;
 
 DECL_END
 
-#endif /* !GUARD_HYBRID_KDEV_T_H */
+#endif /* !__GUARD_HYBRID_KDEV_T_H */

@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_TYPES_H
-#define GUARD_HYBRID_TYPES_H 1
+#ifndef __GUARD_HYBRID_TYPES_H
+#define __GUARD_HYBRID_TYPES_H 1
 
 #include "compiler.h"
 #include "typecore.h"
@@ -263,4 +263,4 @@ typedef __WCHAR_TYPE__ wchar_t;
 DECL_END
 #endif /* __CC__ */
 
-#endif /* !GUARD_HYBRID_TYPES_H */
+#endif /* !__GUARD_HYBRID_TYPES_H */

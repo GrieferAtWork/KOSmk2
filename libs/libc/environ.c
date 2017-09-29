@@ -22,11 +22,12 @@
 #define _GNU_SOURCE 1
 
 #include "libc.h"
-#include "system.h"
 #include "environ.h"
-#include "string.h"
 #include "malloc.h"
 #include "stdlib.h"
+#include "string.h"
+#include "system.h"
+#include "unicode.h"
 #include "unistd.h"
 
 #include <assert.h>
@@ -36,6 +37,7 @@
 #include <kos/environ.h>
 #include <stdbool.h>
 #include <hybrid/atomic.h>
+#include <hybrid/xch.h>
 
 DECL_BEGIN
 
@@ -153,6 +155,7 @@ INTERN int LIBCCALL libc_clearenv(void) {
  libc_envp = NULL;
  libc_envc = 0;
  ATOMIC_WRITE(environ,NULL);
+ libc_environ_changed();
  environ_endwrite();
  return 0;
 }
@@ -190,6 +193,7 @@ INTERN int LIBCCALL libc_setenv(char const *name, char const *value, int replace
  slot = environ_make_writable_unlocked(true);
 got_slot:
  result = slot ? (*slot = env_string,0) : -1;
+ libc_environ_changed();
 no_slot:
  environ_endwrite();
 #if ENVIRON_FREE_ISNOP
@@ -223,6 +227,7 @@ INTERN int LIBCCALL libc_unsetenv(char const *name) {
      ATOMIC_CMPXCH(environ,env_base,iter);
     }
    }
+   libc_environ_changed();
    break;
   }
  }
@@ -248,6 +253,7 @@ INTERN int LIBCCALL libc_putenv(char *string) {
   slot = environ_make_writable_unlocked(true);
 got_slot:
   result = slot ? (*slot = string,0) : -1;
+  libc_environ_changed();
   environ_endwrite();
  } else {
   libc_unsetenv(string);
@@ -255,6 +261,13 @@ got_slot:
  }
  return result;
 }
+
+DEFINE_PUBLIC_ALIAS(secure_getenv,libc_getenv); /* ??? */
+DEFINE_PUBLIC_ALIAS(getenv,libc_getenv);
+DEFINE_PUBLIC_ALIAS(clearenv,libc_clearenv);
+DEFINE_PUBLIC_ALIAS(setenv,libc_setenv);
+DEFINE_PUBLIC_ALIAS(unsetenv,libc_unsetenv);
+DEFINE_PUBLIC_ALIAS(putenv,libc_putenv);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTDEF char *LIBCCALL libc_dos_getenv(char const *name) {
@@ -265,15 +278,79 @@ INTDEF char *LIBCCALL libc_dos_getenv(char const *name) {
  return result;
 }
 DEFINE_PUBLIC_ALIAS(__DSYM(getenv),libc_dos_getenv);
+
+
+PRIVATE char16_t **libc_16wargv = NULL;
+PRIVATE char16_t **libc_16wenviron = NULL;
+PRIVATE char32_t **libc_32wargv = NULL;
+PRIVATE char32_t **libc_32wenviron = NULL;
+INTDEF void LIBCCALL libc_argvfree(void **argv);
+
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_environ_changed(void) {
+ libc_argvfree((void **)XCH(libc_16wenviron,NULL));
+ libc_argvfree((void **)XCH(libc_32wenviron,NULL));
+}
+INTERN ATTR_DOSTEXT char16_t **LIBCCALL
+libc_argv8to16_ex(size_t argc, char **__restrict argv) {
+ char16_t **result,**iter,**end;
+ result = (char16_t **)libc__mall_untrack(libc_malloc((argc+1)*sizeof(char16_t *)));
+ if (!result) return NULL;
+ end = (iter = result)+argc;
+ for (; iter != end; ++iter,++argv) {
+  *iter = libc__mall_untrack(libc_utf8to16m(*argv,libc_strlen(*argv)));
+  if unlikely(!*iter) {
+   while (iter-- != result) libc_free(*iter);
+   libc_free(result);
+   return NULL;
+  }
+ }
+ return result;
+}
+INTERN ATTR_DOSTEXT char32_t **LIBCCALL
+libc_argv8to32_ex(size_t argc, char **__restrict argv) {
+ char32_t **result,**iter,**end;
+ result = (char32_t **)libc__mall_untrack(libc_malloc((argc+1)*sizeof(char32_t *)));
+ if (!result) return NULL;
+ end = (iter = result)+argc;
+ for (; iter != end; ++iter,++argv) {
+  *iter = libc__mall_untrack(libc_utf8to32m(*argv,libc_strlen(*argv)));
+  if unlikely(!*iter) {
+   while (iter-- != result) libc_free(*iter);
+   libc_free(result);
+   return NULL;
+  }
+ }
+ return result;
+}
+INTERN ATTR_DOSTEXT char16_t **LIBCCALL libc_argv8to16(char **__restrict argv) { return libc_argv8to16_ex(libc_countpointer((void **)argv),argv); }
+INTERN ATTR_DOSTEXT char32_t **LIBCCALL libc_argv8to32(char **__restrict argv) { return libc_argv8to32_ex(libc_countpointer((void **)argv),argv); }
+
+INTERN ATTR_DOSTEXT int        *LIBCCALL libc_p_argc(void) { return (int *)&appenv->e_argc; }
+INTERN ATTR_DOSTEXT char     ***LIBCCALL libc_p_argv(void) { return &appenv->e_argv; }
+INTERN ATTR_DOSTEXT char     ***LIBCCALL libc_p_environ(void) { return &environ; }
+INTERN ATTR_DOSTEXT char      **LIBCCALL libc_p_pgmptr(void) { return &appenv->e_argv[0]; }
+INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16wargv(void) { if (!libc_16wargv) libc_16wargv = libc_argv8to16_ex(appenv->e_argc,appenv->e_argv); return &libc_16wargv; }
+INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32wargv(void) { if (!libc_32wargv) libc_32wargv = libc_argv8to32_ex(appenv->e_argc,appenv->e_argv); return &libc_32wargv; }
+INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16wenviron(void) { if (!libc_16wenviron) libc_16wenviron = libc_argv8to16(environ); return &libc_16wenviron; }
+INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32wenviron(void) { if (!libc_32wenviron) libc_32wenviron = libc_argv8to32(environ); return &libc_32wenviron; }
+INTERN ATTR_DOSTEXT char16_t  **LIBCCALL libc_p_16wpgmptr(void) { return &(*libc_p_16wargv())[0]; }
+INTERN ATTR_DOSTEXT char32_t  **LIBCCALL libc_p_32wpgmptr(void) { return &(*libc_p_32wargv())[0]; }
+
+DEFINE_PUBLIC_ALIAS(__p___argc,libc_p_argc);
+DEFINE_PUBLIC_ALIAS(__p___argv,libc_p_argv);
+DEFINE_PUBLIC_ALIAS(__p__environ,libc_p_environ);
+DEFINE_PUBLIC_ALIAS(__p__pgmptr,libc_p_pgmptr);
+DEFINE_PUBLIC_ALIAS(__p___wargv,libc_p_16wargv);
+DEFINE_PUBLIC_ALIAS(__p__wenviron,libc_p_16wenviron);
+DEFINE_PUBLIC_ALIAS(__p__wpgmptr,libc_p_16wpgmptr);
+
+/* KOS API names for 32-bit strings. */
+DEFINE_PUBLIC_ALIAS(wgetargv,libc_p_32wargv);
+DEFINE_PUBLIC_ALIAS(wgetenviron,libc_p_32wenviron);
+DEFINE_PUBLIC_ALIAS(wgetpgmptr,libc_p_32wpgmptr);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
-
-
-DEFINE_PUBLIC_ALIAS(secure_getenv,libc_getenv); /* ??? */
-DEFINE_PUBLIC_ALIAS(getenv,libc_getenv);
-DEFINE_PUBLIC_ALIAS(clearenv,libc_clearenv);
-DEFINE_PUBLIC_ALIAS(setenv,libc_setenv);
-DEFINE_PUBLIC_ALIAS(unsetenv,libc_unsetenv);
-DEFINE_PUBLIC_ALIAS(putenv,libc_putenv);
 
 
 DECL_END

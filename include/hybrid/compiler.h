@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_COMPILER_H
-#define GUARD_HYBRID_COMPILER_H 1
+#ifndef __GUARD_HYBRID_COMPILER_H
+#define __GUARD_HYBRID_COMPILER_H 1
 
 #include "../__stdinc.h"
 
@@ -157,15 +157,15 @@
 #endif
 
 
-#ifdef GUARD_HYBRID_LIMITS_H
+#ifdef __GUARD_HYBRID_LIMITS_H
 #ifndef PAGESIZE
 #   define PAGESIZE         __PAGESIZE
 #endif /* !PAGESIZE */
 #   define CACHELINE        __CACHELINE
 #   define CACHELINE_ALIGNED ATTR_ALIGNED(CACHELINE)
-#endif /* GUARD_HYBRID_LIMITS_H */
+#endif /* __GUARD_HYBRID_LIMITS_H */
 #ifdef __CC__
-#ifdef GUARD_HYBRID_DEBUGINFO_H
+#ifdef __GUARD_HYBRID_DEBUGINFO_H
 #   define DEBUGINFO         __DEBUGINFO
 #   define DEBUGINFO_GEN     __DEBUGINFO_GEN
 #   define DEBUGINFO_MUNUSED __DEBUGINFO_MUNUSED
@@ -173,8 +173,8 @@
 #   define DEBUGINFO_FWD     __DEBUGINFO_FWD
 #   define DEBUGINFO_NUL     __DEBUGINFO_NUL
 #   define DEBUGINFO_MK(file,line,func) __DEBUGINFO_MK(file,line,func)
-#endif /* GUARD_HYBRID_DEBUGINFO_H */
-#ifdef GUARD_HYBRID_CHECK_H
+#endif /* __GUARD_HYBRID_DEBUGINFO_H */
+#ifdef __GUARD_HYBRID_CHECK_H
 #   define OK_USER_TEXT     __OK_USER_TEXT
 #   define OK_HOST_TEXT     __OK_HOST_TEXT
 #   define OK_USER_DATA     __OK_USER_DATA
@@ -187,8 +187,8 @@
 #   define CHECK_HOST_TOBJ  __CHECK_HOST_TOBJ
 #   define CHECK_USER_DOBJ  __CHECK_USER_DOBJ
 #   define CHECK_HOST_DOBJ  __CHECK_HOST_DOBJ
-#endif /* GUARD_HYBRID_CHECK_H */
-#ifdef GUARD_HYBRID_TIMESPEC_H
+#endif /* __GUARD_HYBRID_CHECK_H */
+#ifdef __GUARD_HYBRID_TIMESPEC_H
 #   define TIMESPEC_ADD     __TIMESPEC_ADD
 #   define TIMESPEC_SUB     __TIMESPEC_SUB
 #   define TIMESPEC_LO   __TIMESPEC_LOWER
@@ -197,7 +197,7 @@
 #   define TIMESPEC_NE   __TIMESPEC_NOT_EQUAL
 #   define TIMESPEC_GR   __TIMESPEC_GREATER
 #   define TIMESPEC_GE   __TIMESPEC_GREATER_EQUAL
-#endif /* GUARD_HYBRID_TIMESPEC_H */
+#endif /* __GUARD_HYBRID_TIMESPEC_H */
 #endif /* __CC__ */
 
-#endif /* !GUARD_HYBRID_COMPILER_H */
+#endif /* !__GUARD_HYBRID_COMPILER_H */

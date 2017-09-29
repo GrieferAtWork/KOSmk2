@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_SYNC_ATOMIC_OWNER_RWLOCK_H
-#define GUARD_HYBRID_SYNC_ATOMIC_OWNER_RWLOCK_H 1
+#ifndef __GUARD_HYBRID_SYNC_ATOMIC_OWNER_RWLOCK_H
+#define __GUARD_HYBRID_SYNC_ATOMIC_OWNER_RWLOCK_H 1
 
 #include <hybrid/compiler.h>
 #include <stdbool.h>
@@ -226,4 +226,4 @@ LOCAL SAFE void KCALL atomic_owner_rwlock_downgrade(atomic_owner_rwlock_t *__res
 
 DECL_END
 
-#endif /* !GUARD_HYBRID_SYNC_ATOMIC_OWNER_RWLOCK_H */
+#endif /* !__GUARD_HYBRID_SYNC_ATOMIC_OWNER_RWLOCK_H */

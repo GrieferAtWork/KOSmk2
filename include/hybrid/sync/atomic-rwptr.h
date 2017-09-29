@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_SYNC_ATOMIC_RWPTR_H
-#define GUARD_HYBRID_SYNC_ATOMIC_RWPTR_H 1
+#ifndef __GUARD_HYBRID_SYNC_ATOMIC_RWPTR_H
+#define __GUARD_HYBRID_SYNC_ATOMIC_RWPTR_H 1
 
 #include <hybrid/compiler.h>
 #include <stdbool.h>
@@ -225,4 +225,4 @@ atomic_rwptr_downgrade(atomic_rwptr_t *__restrict self) {
 
 DECL_END
 
-#endif /* !GUARD_HYBRID_SYNC_ATOMIC_RWPTR_H */
+#endif /* !__GUARD_HYBRID_SYNC_ATOMIC_RWPTR_H */

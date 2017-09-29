@@ -189,8 +189,11 @@ typedef __socklen_t socklen_t;
 
 #ifndef __KERNEL__
 
+#ifndef ____environ_defined
+#define ____environ_defined 1
 #undef __environ
 __LIBC char **__environ __ASMNAME2("environ","_environ");
+#endif /* !____environ_defined */
 
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execl);
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execle)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execle);

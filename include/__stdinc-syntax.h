@@ -845,7 +845,7 @@ public:
  operator unsigned __int16 & (void) throw();
  operator unsigned __int16 const & (void) const throw();
  char16_t();
- char32_t(char16_t const &);
+ char16_t(char16_t const &);
  char16_t(unsigned __int16);
 };
 class ____INTELLISENSE_char32_t {

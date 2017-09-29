@@ -223,15 +223,15 @@ INTDEF void   *(LIBCCALL libc__mall_nofree_d)(void *mallptr, DEBUGINFO);
 #define libc__mall_printleaks()                            ((void)0)
 #define libc__mall_validate()                              ((void)0)
 #define libc__mall_enum(checkpoint,callback,closure)       ((ssize_t)0)
-#define libc__mall_untrack(mallptr)                        ((void *)(mallptr))
-#define libc__mall_nofree(mallptr)                         ((void *)(mallptr))
+#define libc__mall_untrack(mallptr)                         (mallptr)
+#define libc__mall_nofree(mallptr)                          (mallptr)
 #define libc__mall_getattrib_d(ptr,attrib,...)             ((void *)0)
 #define libc__mall_traceback_d(ptr,callback,closure,...)   ((ssize_t)0)
 #define libc__mall_printleaks_d(...)                       ((void)0)
 #define libc__mall_validate_d(...)                         ((void)0)
 #define libc__mall_enum_d(checkpoint,callback,closure,...) ((ssize_t)0)
-#define libc__mall_untrack_d(mallptr,...)                  ((void *)(mallptr))
-#define libc__mall_nofree_d(mallptr,...)                   ((void *)(mallptr))
+#define libc__mall_untrack_d(mallptr,...)                   (mallptr)
+#define libc__mall_nofree_d(mallptr,...)                    (mallptr)
 #endif
 
 

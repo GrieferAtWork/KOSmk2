@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_SCHED_YIELD_H
-#define GUARD_HYBRID_SCHED_YIELD_H 1
+#ifndef __GUARD_HYBRID_SCHED_YIELD_H
+#define __GUARD_HYBRID_SCHED_YIELD_H 1
 
 #include <hybrid/compiler.h>
 
@@ -37,4 +37,4 @@ __LIBC int (LIBCCALL sched_yield)(void);
 
 DECL_END
 
-#endif /* !GUARD_HYBRID_SCHED_YIELD_H */
+#endif /* !__GUARD_HYBRID_SCHED_YIELD_H */

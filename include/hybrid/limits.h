@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_LIMITS_H
-#define GUARD_HYBRID_LIMITS_H 1
+#ifndef __GUARD_HYBRID_LIMITS_H
+#define __GUARD_HYBRID_LIMITS_H 1
 
 #include <hybrid/host.h>
 
@@ -32,7 +32,7 @@
 #   define __CACHELINE       64 /* Just guess... */
 #endif
 
-#ifdef GUARD_HYBRID_COMPILER_H
+#ifdef __GUARD_HYBRID_COMPILER_H
 #ifndef PAGESIZE
 #   define PAGESIZE          __PAGESIZE
 #endif /* !PAGESIZE */
@@ -40,4 +40,4 @@
 #   define CACHELINE_ALIGNED ATTR_ALIGNED(CACHELINE)
 #endif
 
-#endif /* !GUARD_HYBRID_LIMITS_H */
+#endif /* !__GUARD_HYBRID_LIMITS_H */

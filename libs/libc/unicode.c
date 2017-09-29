@@ -172,7 +172,7 @@ done:
   *(char const **)utf8 = iter;
   *(size_t *)utf8len = (size_t)(end-iter);
  }
- return (size_t)(dst-utf32);
+ return (size_t)(dst-(u32 *)utf32);
 err:
  if (mode&UNICODE_F_SETERRNO)
      SET_ERRNO(EILSEQ);
@@ -253,9 +253,9 @@ got_char:
    goto err;
   } else { /* Range: 0xFFFF - 0x10FFFF. */
    ch -= UNI_HALF_BASE;
-   if (dst < dst_end) *dst = (char16_t)(u16)((ch >> UNI_HALF_SHIFT)+UNI_SURROGATE_HIGH_BEGIN);
+   if (dst < dst_end) *dst = (char16_t)((u16)((ch >> UNI_HALF_SHIFT)+UNI_SURROGATE_HIGH_BEGIN));
    ++dst;
-   if (dst < dst_end) *dst = (char16_t)(u16)((ch & UNI_HALF_MASK)+UNI_SURROGATE_LOW_BEGIN);
+   if (dst < dst_end) *dst = (char16_t)((u16)((ch & UNI_HALF_MASK)+UNI_SURROGATE_LOW_BEGIN));
    else if (mode&UNICODE_F_UTF16HALF) {
     /* Use the shift state. */
     ch = ((ch & UNI_HALF_MASK)+UNI_HALF_BASE)+utf8_offsets[src_size];
@@ -285,7 +285,7 @@ done:
   *(char const **)utf8 = iter;
   *(size_t *)utf8len = (size_t)(end-iter);
  }
- return (size_t)(dst-utf16);
+ return (size_t)(dst-(u16 *)utf16);
 err:
  if (mode&UNICODE_F_SETERRNO)
      SET_ERRNO(EILSEQ);
@@ -431,18 +431,18 @@ libc_format_16wsztomb(pformatprinter printer, void *closure,
  ssize_t result = 0,temp;
  if (ps->__count) {
   /* Load an old mb-state. */
-  if unlikely(c16 == end) goto done;
+  if unlikely((u16 *)c16 == end) goto done;
   ps->__count = 0;
   ch = (u32)ps->__value.__wch;
   goto second_char;
  }
- while (c16 != end) {
+ while ((u16 *)c16 != end) {
   ch = (u32)(u16)*c16++;
   /* Convert surrogate pair to Utf32 */
   if unlikely(ch < UNI_SURROGATE_HIGH_BEGIN ||
               ch > UNI_SURROGATE_HIGH_END)
      goto err;
-  if likely(c16 < end) {
+  if likely((u16 *)c16 < end) {
    u16 ch2;
 second_char:
    ch2 = (u16)*c16;
@@ -471,7 +471,7 @@ second_char:
    case 1: *--iter = (char)(u8)(ch|uni_bytemarks[dst_size]); break;
   }
   /* XXX: Maybe not print each character individually? */
-  temp = (*printer)(iter,(size_t)(COMPILER_ENDOF(buf)-iter),closure);
+  temp = (*printer)(buf,(size_t)(iter-buf),closure);
   if (temp < 0) return temp;
   result += temp;
  }
@@ -490,8 +490,8 @@ libc_format_32wsztomb(pformatprinter printer, void *closure,
  u32 const *end = (u32 *)c32+c32len;
  u32 ch; size_t dst_size;
  ssize_t result = 0,temp;
- while (c32 != end) {
-  ch = *c32++;
+ while ((u32 *)c32 != end) {
+  ch = (u32)*c32++;
   if unlikely(ch >= UNI_SURROGATE_HIGH_BEGIN &&
               ch <= UNI_SURROGATE_LOW_END)
      goto err;
@@ -508,7 +508,7 @@ libc_format_32wsztomb(pformatprinter printer, void *closure,
   case 1: *iter++ = (char)((ch|uni_bytemarks[dst_size])); break;
   }
   /* XXX: Maybe not print each character individually? */
-  temp = (*printer)(iter,COMPILER_ENDOF(buf)-iter,closure);
+  temp = (*printer)(buf,iter-buf,closure);
   if (temp < 0) return temp;
   result += temp;
  }

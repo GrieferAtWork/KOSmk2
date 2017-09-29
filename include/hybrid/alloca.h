@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_ALLOCA_H
-#define GUARD_HYBRID_ALLOCA_H 1
+#ifndef __GUARD_HYBRID_ALLOCA_H
+#define __GUARD_HYBRID_ALLOCA_H 1
 
 #include <__stdinc.h>
 #include <features.h>
@@ -33,4 +33,4 @@ __DECL_END
 #   define __ALLOCA(s)  __builtin_alloca((s))
 #endif /* !__USE_DEBUG_HOOK */
 
-#endif /* !GUARD_HYBRID_ALLOCA_H */
+#endif /* !__GUARD_HYBRID_ALLOCA_H */

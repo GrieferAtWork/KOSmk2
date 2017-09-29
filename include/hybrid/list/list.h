@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_LIST_LIST_H
-#define GUARD_HYBRID_LIST_LIST_H 1
+#ifndef __GUARD_HYBRID_LIST_LIST_H
+#define __GUARD_HYBRID_LIST_LIST_H 1
 
 #include <hybrid/compiler.h>
 #include <stddef.h>
@@ -123,4 +123,4 @@ do{ __typeof__(*(list)) *_iter = (list),*_next;\
 
 DECL_END
 
-#endif /* !GUARD_HYBRID_LIST_LIST_H */
+#endif /* !__GUARD_HYBRID_LIST_LIST_H */

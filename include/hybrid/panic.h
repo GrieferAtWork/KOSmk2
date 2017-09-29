@@ -16,12 +16,12 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_PANIC_H
-#define GUARD_HYBRID_PANIC_H 1
+#ifndef __GUARD_HYBRID_PANIC_H
+#define __GUARD_HYBRID_PANIC_H 1
 
 #include <assert.h>
 #include <__stdinc.h>
 
 #define PANIC(...) __assertion_failedf("PANIC",__DEBUGINFO_GEN,__VA_ARGS__)
 
-#endif /* !GUARD_HYBRID_PANIC_H */
+#endif /* !__GUARD_HYBRID_PANIC_H */

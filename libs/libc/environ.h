@@ -19,7 +19,9 @@
 #ifndef GUARD_LIBS_LIBC_ENVIRON_H
 #define GUARD_LIBS_LIBC_ENVIRON_H 1
 
+#include "libc.h"
 #include <hybrid/compiler.h>
+#include <uchar.h>
 
 DECL_BEGIN
 
@@ -42,7 +44,28 @@ INTDEF int LIBCCALL libc_putenv(char *string);
  * >> return getenv("PATH");
  */
 INTDEF char *LIBCCALL libc_dos_getenv(char const *name);
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
+
+INTDEF int *LIBCCALL libc_p_argc(void);
+INTDEF char ***LIBCCALL libc_p_argv(void);
+INTDEF char ***LIBCCALL libc_p_environ(void);
+INTDEF char **LIBCCALL libc_p_pgmptr(void);
+INTDEF void LIBCCALL libc_argvfree(void **argv);
+INTDEF void LIBCCALL libc_environ_changed(void);
+INTDEF size_t LIBCCALL libc_countpointer(void **pvec);
+INTDEF char16_t **LIBCCALL libc_argv8to16_ex(size_t argc, char **__restrict argv);
+INTDEF char32_t **LIBCCALL libc_argv8to32_ex(size_t argc, char **__restrict argv);
+INTDEF char16_t **LIBCCALL libc_argv8to16(char **__restrict argv);
+INTDEF char32_t **LIBCCALL libc_argv8to32(char **__restrict argv);
+INTDEF char16_t ***LIBCCALL libc_p_16wargv(void);
+INTDEF char16_t ***LIBCCALL libc_p_16wenviron(void);
+INTDEF char16_t **LIBCCALL libc_p_16wpgmptr(void);
+INTDEF char32_t ***LIBCCALL libc_p_32wargv(void);
+INTDEF char32_t ***LIBCCALL libc_p_32wenviron(void);
+INTDEF char32_t **LIBCCALL libc_p_32wpgmptr(void);
+#else /* !CONFIG_LIBC_NO_DOS_LIBC */
+#define libc_environ_changed() (void)0
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

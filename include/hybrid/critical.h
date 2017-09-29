@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_CRITICAL_H
-#define GUARD_HYBRID_CRITICAL_H 1
+#ifndef __GUARD_HYBRID_CRITICAL_H
+#define __GUARD_HYBRID_CRITICAL_H 1
 
 #include <__stdinc.h>
 
@@ -40,4 +40,4 @@ __DECL_END
 #endif
 
 
-#endif /* !GUARD_HYBRID_CRITICAL_H */
+#endif /* !__GUARD_HYBRID_CRITICAL_H */

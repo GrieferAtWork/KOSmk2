@@ -247,16 +247,24 @@ DEFINE_PUBLIC_ALIAS(errno_dos2kos,libc_errno_dos2kos);
 DEFINE_PUBLIC_ALIAS(errno_kos2dos,libc_errno_kos2dos);
 
 
-PRIVATE errno_t libc_doserrno_last = EOK;
-PRIVATE u32 libc_doserrno = ERROR_SUCCESS; /* TODO: Thread-local. */
-INTERN u32 *LIBCCALL libc_dos___doserrno(void) {
+#if EOK != 0
+PRIVATE ATTR_DOSDATA errno_t libc_doserrno_last = EOK; /* TODO: Thread-local. */
+#else
+PRIVATE ATTR_DOSBSS errno_t libc_doserrno_last = EOK; /* TODO: Thread-local. */
+#endif
+#if ERROR_SUCCESS != 0
+PRIVATE ATTR_DOSDATA u32 libc_doserrno = ERROR_SUCCESS; /* TODO: Thread-local. */
+#else
+PRIVATE ATTR_DOSBSS u32 libc_doserrno = ERROR_SUCCESS; /* TODO: Thread-local. */
+#endif
+INTERN ATTR_DOSTEXT u32 *LIBCCALL libc_dos___doserrno(void) {
  if (libc_doserrno_last != libc_errno) {
   libc_doserrno_last = libc_errno_isdos ? libc_errno_dos2kos(libc_errno) : libc_errno;
   libc_doserrno = libc_errno_kos2nt(libc_doserrno_last);
  }
  return &libc_doserrno;
 }
-INTERN errno_t LIBCCALL libc_dos___get_doserrno(u32 *__restrict perr) {
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_dos___get_doserrno(u32 *__restrict perr) {
  if (libc_errno_isdos) {
   libc_errno = libc_errno_dos2kos(libc_errno);
   libc_errno_isdos = false;
@@ -268,7 +276,7 @@ INTERN errno_t LIBCCALL libc_dos___get_doserrno(u32 *__restrict perr) {
  *perr = libc_doserrno;
  return EOK;
 }
-INTERN errno_t LIBCCALL libc_dos___set_doserrno(u32 err) {
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_dos___set_doserrno(u32 err) {
  if (libc_errno_isdos) {
   libc_errno = libc_errno_dos2kos(libc_errno);
   libc_errno_isdos = false;
@@ -282,6 +290,12 @@ DEFINE_PUBLIC_ALIAS(__doserrno,libc_dos___doserrno);
 DEFINE_PUBLIC_ALIAS(_get_doserrno,libc_dos___get_doserrno);
 DEFINE_PUBLIC_ALIAS(_set_doserrno,libc_dos___set_doserrno);
 
+PRIVATE ATTR_DOSRODATA char const *const empty_errlist[] = {NULL};
+PRIVATE ATTR_DOSRODATA int const empty_errlist_sz = 0;
+INTERN ATTR_DOSTEXT char **LIBCCALL libc_sys_errlist(void) { return (char **)empty_errlist; }
+INTERN ATTR_DOSTEXT int *LIBCCALL libc_sys_nerr(void) { return (int *)&empty_errlist_sz; }
+DEFINE_PUBLIC_ALIAS(__sys_errlist,libc_sys_errlist);
+DEFINE_PUBLIC_ALIAS(__sys_nerr,libc_sys_nerr);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

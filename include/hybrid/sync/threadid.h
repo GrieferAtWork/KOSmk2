@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_HYBRID_SYNC_THREADID_H
-#define GUARD_HYBRID_SYNC_THREADID_H 1
+#ifndef __GUARD_HYBRID_SYNC_THREADID_H
+#define __GUARD_HYBRID_SYNC_THREADID_H 1
 
 #include <hybrid/compiler.h>
 
@@ -58,4 +58,4 @@ DECL_END
 #endif
 
 
-#endif /* !GUARD_HYBRID_SYNC_THREADID_H */
+#endif /* !__GUARD_HYBRID_SYNC_THREADID_H */
