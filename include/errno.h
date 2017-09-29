@@ -220,17 +220,21 @@ typedef int errno_t;
 
 #ifdef __CC__
 #ifndef __KERNEL__
-__LIBC int *__NOTHROW((__LIBCCALL __errno)(void)) __DOS_FUNC_(_errno);
-__LIBC int  __NOTHROW((__LIBCCALL __get_errno)(void)) __DOS_FUNC_(_get_errno);
-__LIBC void __NOTHROW((__LIBCCALL __set_errno)(int __err)) __DOS_FUNC_(_set_errno);
-#define errno         (*__errno())
+#ifndef _CRT_ERRNO_DEFINED
+#define _CRT_ERRNO_DEFINED 1
+__LIBC __errno_t *__NOTHROW((__LIBCCALL __errno)(void)) __DOS_FUNC_(_errno);
+__LIBC __errno_t  __NOTHROW((__LIBCCALL __get_errno)(void)) __DOS_FUNC_(_get_errno);
+__LIBC __errno_t  __NOTHROW((__LIBCCALL __set_errno)(__errno_t __err)) __DOS_FUNC_(_set_errno);
+#define errno                         (*__errno())
+#endif /* !_CRT_ERRNO_DEFINED */
+
 #ifdef __USE_GNU
 #define program_invocation_name       __libc_program_invocation_name()
 #define program_invocation_short_name __libc_program_invocation_short_name()
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_name)(void));
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_short_name)(void));
 #endif /* __USE_GNU */
-#endif
+#endif /* !__KERNEL__ */
 #endif /* __CC__ */
 
 #ifdef __USE_KOS

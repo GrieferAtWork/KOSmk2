@@ -185,9 +185,19 @@ INTDEF size_t LIBCCALL libc_strftime(char *__restrict s, size_t maxsize, char co
 INTDEF size_t LIBCCALL libc_strftime_l(char *__restrict s, size_t maxsize, char const *__restrict format, struct tm const *__restrict tp, locale_t loc);
 INTDEF size_t LIBCCALL libc_32wcsftime(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp);
 INTDEF size_t LIBCCALL libc_32wcsftime_l(char32_t *__restrict s, size_t maxsize, char32_t const *__restrict format, struct tm const *__restrict tp, locale_t loc);
+
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
 INTDEF size_t LIBCCALL libc_16wcsftime(char16_t *__restrict s, size_t maxsize, char16_t const *__restrict format, struct tm const *__restrict tp);
 INTDEF size_t LIBCCALL libc_16wcsftime_l(char16_t *__restrict s, size_t maxsize, char16_t const *__restrict format, struct tm const *__restrict tp, locale_t loc);
+INTDEF errno_t LIBCCALL libc_gmtime_s(struct tm *__restrict tp, time_t const *__restrict timer);
+INTDEF errno_t LIBCCALL libc_gmtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer);
+INTDEF errno_t LIBCCALL libc_localtime_s(struct tm *__restrict tp, time_t const *__restrict timer);
+INTDEF errno_t LIBCCALL libc_localtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

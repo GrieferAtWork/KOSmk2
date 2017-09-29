@@ -33,45 +33,48 @@
 #include <stdarg.h>
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #include <bits/dos-errno.h>
+#include <winapi/winerror.h>
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_BEGIN
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 PRIVATE bool libc_errno_isdos = false;
-PRIVATE int libc_errno = 0; /* TODO: Thread-local. */
-INTERN int *LIBCCALL libc___errno(void) {
+PRIVATE errno_t libc_errno = EOK; /* TODO: Thread-local. */
+INTERN errno_t *LIBCCALL libc___errno(void) {
  if (libc_errno_isdos) {
   libc_errno = libc_errno_dos2kos(libc_errno);
   libc_errno_isdos = false;
  }
  return &libc_errno;
 }
-INTERN int LIBCCALL libc___get_errno(void) {
+INTERN errno_t LIBCCALL libc___get_errno(void) {
  if (libc_errno_isdos) {
   libc_errno = libc_errno_dos2kos(libc_errno);
   libc_errno_isdos = false;
  }
  return libc_errno;
 }
-INTERN void LIBCCALL libc___set_errno(int err) {
+INTERN errno_t LIBCCALL libc___set_errno(errno_t err) {
 #if 0
  syslog(LOG_DEBUG,"SET_ERRNO(%[errno])\n",err);
  __asm__("int $3");
 #endif
  libc_errno = err;
  libc_errno_isdos = false;
+ return EOK;
 }
 #else
-PRIVATE int libc_errno = 0; /* TODO: Thread-local. */
-INTERN int *LIBCCALL libc___errno(void) { return &libc_errno; }
-INTERN int LIBCCALL libc___get_errno(void) { return libc_errno; }
-INTERN void LIBCCALL libc___set_errno(int err) {
+PRIVATE errno_t libc_errno = 0; /* TODO: Thread-local. */
+INTERN errno_t *LIBCCALL libc___errno(void) { return &libc_errno; }
+INTERN errno_t LIBCCALL libc___get_errno(void) { return libc_errno; }
+INTERN errno_t LIBCCALL libc___set_errno(errno_t err) {
 #if 0
  syslog(LOG_DEBUG,"SET_ERRNO(%[errno])\n",err);
  __asm__("int $3");
 #endif
  libc_errno = err;
+ return EOK;
 }
 #endif
 
@@ -145,7 +148,7 @@ error_suffix(int status, int errnum) {
 }
 
 INTERN ATTR_COLDTEXT void LIBCCALL
-libc_error(int status, int errnum, char const *format, ...) {
+libc_error(int status, errno_t errnum, char const *format, ...) {
  va_list args;
  error_prefix();
  libc_fwrite(": ",sizeof(char),2,stderr);
@@ -155,7 +158,7 @@ libc_error(int status, int errnum, char const *format, ...) {
  error_suffix(status,errnum);
 }
 INTERN ATTR_COLDTEXT void LIBCCALL
-libc_error_at_line(int status, int errnum, char const *fname,
+libc_error_at_line(int status, errno_t errnum, char const *fname,
                    unsigned int lineno, char const *format, ...) {
  va_list args;
  error_prefix();
@@ -189,15 +192,21 @@ DEFINE_PUBLIC_ALIAS(error_at_line,libc_error_at_line);
 
 #define DOS_ERRNO_NOT_SUPPORTED __DOS_ENOTSUP
 #define KOS_ERRNO_NOT_SUPPORTED EINVAL
+#define NT_ERRNO_NOT_SUPPORTED  ERROR_FUNCTION_FAILED
 
 PRIVATE ATTR_DOSRODATA u8 const vec_errno_dos2kos[__DOS_EMAX+1] = {
     [0 ... __DOS_EMAX] = KOS_ERRNO_NOT_SUPPORTED,
-#define PAIR(kos,dos) [dos] = kos,
+#define PAIR(kos,dos,dos2) [dos] = kos,
 #include "templates/errno-dospair.code"
 };
 PRIVATE ATTR_DOSRODATA u8 const vec_errno_kos2dos[__EBASEMAX+1] = {
     [0 ... __EBASEMAX] = DOS_ERRNO_NOT_SUPPORTED,
-#define PAIR(kos,dos) [kos] = dos,
+#define PAIR(kos,dos,dos2) [kos] = dos,
+#include "templates/errno-dospair.code"
+};
+PRIVATE ATTR_DOSRODATA u16 const vec_errno_kos2nt[__EBASEMAX+1] = {
+    [0 ... __EBASEMAX] = NT_ERRNO_NOT_SUPPORTED,
+#define PAIR(kos,dos,dos2) [kos] = dos2,
 #include "templates/errno-dospair.code"
 };
 
@@ -206,24 +215,29 @@ PRIVATE ATTR_DOSRODATA u8 const vec_errno_kos2dos[__EBASEMAX+1] = {
 
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_dos2kos(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_dos2kos) ? vec_errno_dos2kos[eno] : KOS_ERRNO_NOT_SUPPORTED; }
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_kos2dos(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_kos2dos) ? vec_errno_kos2dos[eno] : DOS_ERRNO_NOT_SUPPORTED; }
+INTERN ATTR_DOSTEXT u32 LIBCCALL libc_errno_kos2nt(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_kos2nt) ? vec_errno_kos2nt[eno] : NT_ERRNO_NOT_SUPPORTED; }
 
-INTERN ATTR_DOSTEXT int *LIBCCALL libc_dos___errno(void) {
+INTERN ATTR_DOSTEXT
+errno_t *LIBCCALL libc_dos___errno(void) {
  if (!libc_errno_isdos) {
   libc_errno = libc_errno_kos2dos(libc_errno);
   libc_errno_isdos = true;
  }
  return &libc_errno;
 }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos___get_errno(void) {
+INTERN ATTR_DOSTEXT
+errno_t LIBCCALL libc_dos___get_errno(void) {
  if (!libc_errno_isdos) {
   libc_errno = libc_errno_kos2dos(libc_errno);
   libc_errno_isdos = true;
  }
  return libc_errno;
 }
-INTERN ATTR_DOSTEXT void LIBCCALL libc_dos___set_errno(int err) {
+INTERN ATTR_DOSTEXT
+errno_t LIBCCALL libc_dos___set_errno(errno_t err) {
  libc_errno = err;
  libc_errno_isdos = true;
+ return EOK;
 }
 
 DEFINE_PUBLIC_ALIAS(__DSYM(_errno),libc_dos___errno);
@@ -231,6 +245,44 @@ DEFINE_PUBLIC_ALIAS(__DSYM(_get_errno),libc_dos___get_errno);
 DEFINE_PUBLIC_ALIAS(__DSYM(_set_errno),libc_dos___set_errno);
 DEFINE_PUBLIC_ALIAS(errno_dos2kos,libc_errno_dos2kos);
 DEFINE_PUBLIC_ALIAS(errno_kos2dos,libc_errno_kos2dos);
+
+
+PRIVATE errno_t libc_doserrno_last = EOK;
+PRIVATE u32 libc_doserrno = ERROR_SUCCESS; /* TODO: Thread-local. */
+INTERN u32 *LIBCCALL libc_dos___doserrno(void) {
+ if (libc_doserrno_last != libc_errno) {
+  libc_doserrno_last = libc_errno_isdos ? libc_errno_dos2kos(libc_errno) : libc_errno;
+  libc_doserrno = libc_errno_kos2nt(libc_doserrno_last);
+ }
+ return &libc_doserrno;
+}
+INTERN errno_t LIBCCALL libc_dos___get_doserrno(u32 *__restrict perr) {
+ if (libc_errno_isdos) {
+  libc_errno = libc_errno_dos2kos(libc_errno);
+  libc_errno_isdos = false;
+ }
+ if (libc_doserrno_last != libc_errno) {
+  libc_doserrno_last = libc_errno;
+  libc_doserrno = libc_errno_kos2nt(libc_doserrno_last);
+ }
+ *perr = libc_doserrno;
+ return EOK;
+}
+INTERN errno_t LIBCCALL libc_dos___set_doserrno(u32 err) {
+ if (libc_errno_isdos) {
+  libc_errno = libc_errno_dos2kos(libc_errno);
+  libc_errno_isdos = false;
+ }
+ libc_doserrno = err;
+ libc_doserrno_last = libc_errno;
+ return EOK;
+}
+
+DEFINE_PUBLIC_ALIAS(__doserrno,libc_dos___doserrno);
+DEFINE_PUBLIC_ALIAS(_get_doserrno,libc_dos___get_doserrno);
+DEFINE_PUBLIC_ALIAS(_set_doserrno,libc_dos___set_doserrno);
+
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

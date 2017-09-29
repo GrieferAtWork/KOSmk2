@@ -285,13 +285,32 @@ __NAMESPACE_STD_USING(localtime64)
 #endif /* __USE_TIME64 */
 
 #ifdef __USE_POSIX
+#if defined(__PE__) && !defined(__LAZY_DOS_COMPAT__)
+#ifdef __USE_TIME_BITS64
+__LIBC int (__LIBCCALL __dos_gmtime_s)(struct tm *__restrict __tp, time_t const *__restrict __timer) __ASMNAME("_gmtime64_s");
+__LIBC int (__LIBCCALL __dos_localtime_s)(struct tm *__restrict __tp, time_t const *__restrict __timer) __ASMNAME("_localtime64_s");
+#else /* __USE_TIME_BITS64 */
+__LIBC int (__LIBCCALL __dos_gmtime_s)(struct tm *__restrict __tp, time_t const *__restrict __timer) __ASMNAME("_gmtime32_s");
+__LIBC int (__LIBCCALL __dos_localtime_s)(struct tm *__restrict __tp, time_t const *__restrict __timer) __ASMNAME("_localtime32_s");
+#endif /* !__USE_TIME_BITS64 */
+__LOCAL struct tm *(__LIBCCALL gmtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) { return __dos_gmtime_s(__tp,__timer) ? NULL : __tp; }
+__LOCAL struct tm *(__LIBCCALL localtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) { return __dos_localtime_s(__tp,__timer) ? NULL : __tp; }
+#else /* Dos workaround... */
 __LIBC struct tm *(__LIBCCALL gmtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) __TM_FUNC_R(gmtime);
 __LIBC struct tm *(__LIBCCALL localtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) __TM_FUNC_R(localtime);
+#endif /* !Dos workaround... */
 __LIBC char *(__LIBCCALL ctime_r)(time_t const *__restrict __timer, char *__restrict __buf) __TM_FUNC_R(ctime);
 __LIBC char *(__LIBCCALL asctime_r)(struct tm const *__restrict __tp, char *__restrict __buf);
 #ifdef __USE_TIME64
+#if defined(__PE__) && !defined(__LAZY_DOS_COMPAT__)
+__LIBC int (__LIBCCALL __dos_gmtime64_s)(struct tm *__restrict __tp, time64_t const *__restrict __timer) __ASMNAME("_gmtime64_s");
+__LIBC int (__LIBCCALL __dos_localtime64_s)(struct tm *__restrict __tp, time64_t const *__restrict __timer) __ASMNAME("_localtime64_s");
+__LOCAL struct tm *(__LIBCCALL gmtime64_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) { return __dos_gmtime64_s(__tp,__timer) ? NULL : __tp; }
+__LOCAL struct tm *(__LIBCCALL localtime64_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) { return __dos_localtime64_s(__tp,__timer) ? NULL : __tp; }
+#else /* Dos workaround... */
 __LIBC struct tm *(__LIBCCALL gmtime64_r)(time64_t const *__restrict __timer, struct tm *__restrict __tp);
 __LIBC struct tm *(__LIBCCALL localtime64_r)(time64_t const *__restrict __timer, struct tm *__restrict __tp);
+#endif /* !Dos workaround... */
 __LIBC char *(__LIBCCALL ctime64_r)(time64_t const *__restrict __timer, char *__restrict __buf);
 #endif /* __USE_TIME64 */
 

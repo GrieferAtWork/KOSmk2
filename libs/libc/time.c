@@ -746,6 +746,20 @@ DEFINE_PUBLIC_ALIAS(timegm,libc_mktime); /* ??? */
 DEFINE_PUBLIC_ALIAS(timegm64,libc_mktime64); /* ??? */
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_gmtime_s(struct tm *__restrict tp, time_t const *__restrict timer) { return libc_gmtime_r(timer,tp) ? EOK : GET_DOS_ERRNO(); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_gmtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer) { return libc_gmtime64_r(timer,tp) ? EOK : GET_DOS_ERRNO(); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_localtime_s(struct tm *__restrict tp, time_t const *__restrict timer) { return libc_localtime_r(timer,tp) ? EOK : GET_DOS_ERRNO(); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_localtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer) { return libc_localtime64_r(timer,tp) ? EOK : GET_DOS_ERRNO(); }
+
+DEFINE_PUBLIC_ALIAS(_gmtime32,libc_gmtime);
+DEFINE_PUBLIC_ALIAS(_gmtime64,libc_gmtime64);
+DEFINE_PUBLIC_ALIAS(_gmtime32_s,libc_gmtime_s);
+DEFINE_PUBLIC_ALIAS(_gmtime64_s,libc_gmtime64_s);
+DEFINE_PUBLIC_ALIAS(_localtime32,libc_localtime);
+DEFINE_PUBLIC_ALIAS(_localtime64,libc_localtime64);
+DEFINE_PUBLIC_ALIAS(_localtime32_s,libc_localtime_s);
+DEFINE_PUBLIC_ALIAS(_localtime64_s,libc_localtime64_s);
+
 DEFINE_PUBLIC_ALIAS(_mktime32,libc_mktime);
 DEFINE_PUBLIC_ALIAS(_mktime64,libc_mktime64);
 DEFINE_PUBLIC_ALIAS(_sleep,libc_sleep);
@@ -770,15 +784,6 @@ INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_futimesat)(int fd, char const *file,
 INTERN ATTR_DOSTEXT int LIBCCALL B(libc_dos_futimesat)(int fd, char const *file, struct btimeval const tvp[2]) { return B(impl_futimesat)(fd,file,tvp,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
 INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_utime)(char const *file, struct A(utimbuf) const *file_times) { return A(libc_futimeat)(AT_FDCWD,file,file_times,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
 INTERN ATTR_DOSTEXT int LIBCCALL B(libc_dos_utime)(char const *file, struct B(utimbuf) const *file_times) { return B(libc_futimeat)(AT_FDCWD,file,file_times,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
-
-INTERN int LIBCCALL libc_16wutime(char16_t const *file, struct utimbuf const *file_times);
-INTERN int LIBCCALL libc_32wutime(char32_t const *file, struct utimbuf const *file_times);
-INTERN int LIBCCALL libc_dos_16wutime(char16_t const *file, struct utimbuf const *file_times);
-INTERN int LIBCCALL libc_dos_32wutime(char32_t const *file, struct utimbuf const *file_times);
-INTERN int LIBCCALL libc_16wutime64(char16_t const *file, struct utimbuf64 const *file_times);
-INTERN int LIBCCALL libc_32wutime64(char32_t const *file, struct utimbuf64 const *file_times);
-INTERN int LIBCCALL libc_dos_16wutime64(char16_t const *file, struct utimbuf64 const *file_times);
-INTERN int LIBCCALL libc_dos_32wutime64(char32_t const *file, struct utimbuf64 const *file_times);
 
 DEFINE_PUBLIC_ALIAS(__DSYM(utimensat),libc_dos_utimensat);
 DEFINE_PUBLIC_ALIAS(__DSYM(utimensat64),libc_dos_utimensat64);

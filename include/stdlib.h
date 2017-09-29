@@ -746,7 +746,58 @@ __LIBC __WUNUSED char *(__LIBCCALL ptsname)(int __fd);
 __LIBC __WUNUSED int (__LIBCCALL posix_openpt)(int __oflag);
 #endif /* __USE_XOPEN2KXSI */
 
+/* DOS Extensions. */
 #ifdef __USE_DOS
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
+#ifndef _ONEXIT_T_DEFINED
+#define _ONEXIT_T_DEFINED 1
+typedef int (__LIBCCALL *_onexit_t)(void);
+#define onexit_t         _onexit_t
+#endif  /* _ONEXIT_T_DEFINED */
+
+#if defined(__DCC_VERSION__) || \
+   (__has_builtin(__builtin_min) && __has_builtin(__builtin_max))
+#   define __min(a,b) __builtin_min(a,b)
+#   define __max(a,b) __builtin_max(a,b)
+#elif defined(__COMPILER_HAVE_TYPEOF) && !defined(__NO_XBLOCK)
+#   define __min(a,b) __XBLOCK({ __typeof__(a) _a = (a),_b = (b); __XRETURN _a < _b ? _a : _b; })
+#   define __max(a,b) __XBLOCK({ __typeof__(a) _a = (a),_b = (b); __XRETURN _b < _a ? _a : _b; })
+#else
+#   define __min(a,b) ((a) < (b) ? (a) : (b))
+#   define __max(a,b) ((b) < (a) ? (a) : (b))
+#endif
+
+#define _MAX_PATH         260
+#define _MAX_DRIVE        3
+#define _MAX_DIR          256
+#define _MAX_FNAME        256
+#define _MAX_EXT          256
+#define _OUT_TO_DEFAULT   0
+#define _OUT_TO_STDERR    1
+#define _OUT_TO_MSGBOX    2
+#define _REPORT_ERRMODE   3
+#define _WRITE_ABORT_MSG  0x1
+#define _CALL_REPORTFAULT 0x2
+#define _MAX_ENV          0x7fff
+
+#ifndef _CRT_ERRNO_DEFINED
+#define _CRT_ERRNO_DEFINED 1
+__LIBC int    *__NOTHROW((__LIBCCALL __errno)(void)) __DOS_FUNC_(_errno);
+__LIBC errno_t __NOTHROW((__LIBCCALL __get_errno)(void)) __DOS_FUNC_(_get_errno);
+__LIBC errno_t __NOTHROW((__LIBCCALL __set_errno)(errno_t __err)) __DOS_FUNC_(_set_errno);
+#define errno         (*__errno())
+#endif /* !_CRT_ERRNO_DEFINED */
+
+#define _doserrno    (*__doserrno())
+__LIBC __UINT32_TYPE__ *__NOTHROW((__LIBCCALL __doserrno)(void));
+__LIBC errno_t __NOTHROW((__LIBCCALL _get_doserrno)(__UINT32_TYPE__ *__perr));
+__LIBC errno_t __NOTHROW((__LIBCCALL _set_doserrno)(__UINT32_TYPE__ __err));
+
+
 
 #endif /* __USE_DOS */
 

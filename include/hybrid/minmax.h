@@ -23,10 +23,11 @@
 
 __DECL_BEGIN
 
-#ifdef __DCC_VERSION__
+#if defined(__DCC_VERSION__) || \
+   (__has_builtin(__builtin_min) && __has_builtin(__builtin_max))
 #   define MIN(a,b) __builtin_min(a,b)
 #   define MAX(a,b) __builtin_max(a,b)
-#elif defined(__COMPILER_HAVE_TYPEOF)
+#elif defined(__COMPILER_HAVE_TYPEOF) && !defined(__NO_XBLOCK)
 #   define MIN(a,b) __XBLOCK({ __typeof__(a) _a = (a),_b = (b); __XRETURN _a < _b ? _a : _b; })
 #   define MAX(a,b) __XBLOCK({ __typeof__(a) _a = (a),_b = (b); __XRETURN _b < _a ? _a : _b; })
 #else

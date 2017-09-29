@@ -2716,7 +2716,7 @@ extern "C" {
   WINBASEAPI WINBOOL WINAPI VerifyVersionInfoA(LPOSVERSIONINFOEXA lpVersionInformation,DWORD dwTypeMask,DWORDLONG dwlConditionMask);
   WINBASEAPI WINBOOL WINAPI VerifyVersionInfoW(LPOSVERSIONINFOEXW lpVersionInformation,DWORD dwTypeMask,DWORDLONG dwlConditionMask);
 
-//#include "winerror.h"
+#include "winerror.h"
 
 #define TC_NORMAL 0
 #define TC_HARDERR 1
