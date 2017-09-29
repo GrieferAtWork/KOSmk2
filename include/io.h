@@ -51,12 +51,14 @@ struct __finddata64_t; /* I guess something else already using the more obvious 
 struct _finddata32i64_t;
 struct _finddata64i32_t;
 
+#ifndef _A_NORMAL
 #define _A_NORMAL 0x00
 #define _A_RDONLY 0x01
 #define _A_HIDDEN 0x02
 #define _A_SYSTEM 0x04
 #define _A_SUBDIR 0x10
 #define _A_ARCH   0x20
+#endif /* !_A_NORMAL */
 
 #ifndef __KERNEL__
 

@@ -68,6 +68,7 @@
 #undef __USE_KXS         /* '#if _KOS_SOURCE >= 2'   Minor extended functionality that is likely to collide with existing programs. */
 #undef __USE_DOS         /* '#ifdef _DOS_SOURCE'     Functions usually only found in DOS: spawn, strlwr, etc. */
 #undef __USE_DOSFS       /* '#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). */
+#undef __USE_OLD_DOS     /* '#if _DOS_SOURCE >= 2'   Make some old, long deprecated DOS APIs (namely in <dos.h>) available. */
 #undef __USE_DOS_SLIB    /* '#if __STDC_WANT_SECURE_LIB__' Enable prototypes for the so-called ~secure~ DOS library. (It's just meant to do some additional checks on arguments and such...) */
 #undef __USE_TIME64      /* '#ifdef _TIME64_SOURCE'  Provide 64-bit time functions (e.g.: 'time64()'). */
 #undef __USE_TIME_BITS64 /* '#if _TIME_T_BITS == 64' Use a 64-bit interger for 'time_t'. */
@@ -276,15 +277,18 @@
 #   define __USE_DOSFS 1
 #endif
 
-/* HINT: You can forcably disable DOS extensions in PE-mode by
+/* HINT: You can forceably disable DOS extensions in PE-mode by
  *       defining '_DOS_SOURCE' as an empty macro, or as a
  *       value equal to ZERO(0). */
 #ifdef _DOS_SOURCE
 #undef __USE_DOS
 #if (_DOS_SOURCE+0) == 0
-#undef __USE_DOSFS /* Also disable DOS-FS */
+#   undef __USE_DOSFS /* Also disable DOS-FS */
 #else
 #   define __USE_DOS   1
+#endif
+#if (_DOS_SOURCE+0) >= 2
+#   define __USE_OLD_DOS 1
 #endif
 #endif
 

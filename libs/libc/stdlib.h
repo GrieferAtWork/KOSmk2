@@ -26,6 +26,7 @@
 #include <hybrid/types.h>
 #include <hybrid/list/list.h>
 #include <uchar.h>
+#include <inttypes.h>
 #include <xlocale.h>
 
 DECL_BEGIN
@@ -98,9 +99,11 @@ INTDEF int LIBCCALL libc_getsubopt(char **__restrict optionp, char *const *__res
 INTDEF int LIBCCALL libc_abs(int x);
 INTDEF long LIBCCALL libc_labs(long x);
 INTDEF __LONGLONG LIBCCALL libc_llabs(__LONGLONG x);
+INTDEF intmax_t LIBCCALL libc_imaxabs(intmax_t x);
 INTDEF div_t LIBCCALL libc_div(int numer, int denom);
 INTDEF ldiv_t LIBCCALL libc_ldiv(long numer, long denom);
 INTDEF lldiv_t LIBCCALL libc_lldiv(long long numer, long long denom);
+INTDEF imaxdiv_t LIBCCALL libc_imaxdiv(intmax_t numer, intmax_t denom);
 INTDEF int LIBCCALL libc_system(char const *command);
 INTDEF double LIBCCALL libc_drand48(void);
 INTDEF long LIBCCALL libc_lrand48(void);

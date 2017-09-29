@@ -56,9 +56,7 @@ __DECL_BEGIN
 #define __O_CLOFORK    004000000
 #define __O_PATH       010000000
 #define __O_TMPFILE   (020000000|__O_DIRECTORY)
-#ifndef __USE_DOS
 #define __O_DOSPATH   0400000000 /* Interpret '\\' as '/', and ignore casing during path resolution. */
-#endif /* !__USE_DOS */
 
 #ifndef __USE_FILE_OFFSET64
 #   define F_GETLK     5 /*< Get record locking info. */

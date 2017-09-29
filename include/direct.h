@@ -56,7 +56,11 @@ __LIBC int (__LIBCCALL _getdrive)(void);
 __LIBC unsigned long (__LIBCCALL _getdrives)(void);
 #ifndef _GETDISKFREE_DEFINED
 #define _GETDISKFREE_DEFINED 1
-__LIBC unsigned (__LIBCCALL _getdiskfree)(unsigned __drive, struct _diskfree_t *__diskfree);
+#ifdef __USE_KOS
+__LIBC unsigned int (__LIBCCALL _getdiskfree)(int __drive, struct _diskfree_t *__restrict __diskfree);
+#else /* __USE_KOS */
+__LIBC unsigned int (__LIBCCALL _getdiskfree)(unsigned int __drive, struct _diskfree_t *__diskfree);
+#endif /* !__USE_KOS */
 #endif /* !_GETDISKFREE_DEFINED */
 
 /* A small hand full of functions defined in '<direct.h>' */

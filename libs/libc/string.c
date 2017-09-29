@@ -1022,6 +1022,27 @@ DEFINE_PUBLIC_ALIAS(wcstof_l,libc_32wcstof_l);
 DEFINE_PUBLIC_ALIAS(wcstod_l,libc_32wcstod_l);
 DEFINE_PUBLIC_ALIAS(wcstold_l,libc_32wcstold_l);
 
+#if __SIZEOF_INTMAX_T__ == 8
+DEFINE_PUBLIC_ALIAS(strtoimax,libc_strto64);
+DEFINE_PUBLIC_ALIAS(strtoumax,libc_strtou64);
+DEFINE_PUBLIC_ALIAS(wcstoimax,libc_32wcsto64);
+DEFINE_PUBLIC_ALIAS(wcstoumax,libc_32wcstou64);
+#elif __SIZEOF_INTMAX_T__ == 4
+DEFINE_PUBLIC_ALIAS(strtoimax,libc_strto32);
+DEFINE_PUBLIC_ALIAS(strtoumax,libc_strtou32);
+DEFINE_PUBLIC_ALIAS(wcstoimax,libc_32wcsto32);
+DEFINE_PUBLIC_ALIAS(wcstoumax,libc_32wcstou32);
+#else
+#error FIXME
+#endif
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+/* DOS does some trickery to not have to export these.
+ * >> So we don't need to export them. */
+//DEFINE_PUBLIC_ALIAS(__DSYM(wcstoimax),libc_16wcsto64);
+//DEFINE_PUBLIC_ALIAS(__DSYM(wcstoumax),libc_16wcstou64);
+#endif
+
 
 
 /* DOS libc functions. */
@@ -1343,8 +1364,6 @@ DEFINE_PUBLIC_ALIAS(wtof,libc_32wtof);
 DEFINE_PUBLIC_ALIAS(wtof_l,libc_32wtof_l);
 DEFINE_PUBLIC_ALIAS(_wtof,libc_16wtof);
 DEFINE_PUBLIC_ALIAS(_wtof_l,libc_16wtof_l);
-
-
 
 /* Define fixed-length 64-bit aliases used in PE-mode. */
 DEFINE_PUBLIC_ALIAS(wtoi64,libc_32wto64);

@@ -312,11 +312,45 @@ libc_getsubopt(char **__restrict optionp,
 }
 
 INTERN int LIBCCALL libc_abs(int x) { return x < 0 ? -x : x; }
+INTERN div_t LIBCCALL libc_div(int numer, int denom) {
+ return (div_t){ numer/denom, numer%denom };
+}
+#if __SIZEOF_LONG__ == __SIZEOF_INT__
+DEFINE_INTERN_ALIAS(libc_ldiv,libc_div);
+DEFINE_INTERN_ALIAS(libc_labs,libc_abs);
+#else
 INTERN long LIBCCALL libc_labs(long x) { return x < 0 ? -x : x; }
+INTERN ldiv_t LIBCCALL libc_ldiv(long numer, long denom) {
+ return (ldiv_t){ numer/denom, numer%denom };
+}
+#endif
+#if __SIZEOF_LONG_LONG__ == __SIZEOF_INT__
+DEFINE_INTERN_ALIAS(libc_lldiv,libc_div);
+DEFINE_INTERN_ALIAS(libc_llabs,libc_abs);
+#elif __SIZEOF_LONG_LONG__ == __SIZEOF_LONG__
+DEFINE_INTERN_ALIAS(libc_lldiv,libc_ldiv);
+DEFINE_INTERN_ALIAS(libc_llabs,libc_labs);
+#else
 INTERN __LONGLONG LIBCCALL libc_llabs(__LONGLONG x) { return x < 0 ? -x : x; }
-INTERN div_t LIBCCALL libc_div(int numer, int denom) { return (div_t){ numer/denom,numer%denom }; }
-INTERN ldiv_t LIBCCALL libc_ldiv(long numer, long denom) { return (ldiv_t){ numer/denom,numer%denom }; }
-INTERN lldiv_t LIBCCALL libc_lldiv(long long numer, long long denom) { return (lldiv_t){ numer/denom,numer%denom }; }
+INTERN lldiv_t LIBCCALL libc_lldiv(long long numer, long long denom) {
+ return (lldiv_t){ numer/denom, numer%denom };
+}
+#endif
+#if __SIZEOF_INTMAX_T__ == __SIZEOF_INT__
+DEFINE_INTERN_ALIAS(libc_imaxdiv,libc_div);
+DEFINE_INTERN_ALIAS(libc_imaxabs,libc_abs);
+#elif __SIZEOF_INTMAX_T__ == __SIZEOF_LONG__
+DEFINE_INTERN_ALIAS(libc_imaxdiv,libc_ldiv);
+DEFINE_INTERN_ALIAS(libc_imaxabs,libc_labs);
+#elif __SIZEOF_INTMAX_T__ == __SIZEOF_LONG_LONG__
+DEFINE_INTERN_ALIAS(libc_imaxdiv,libc_lldiv);
+DEFINE_INTERN_ALIAS(libc_imaxabs,libc_llabs);
+#else
+INTERN intmax_t LIBCCALL libc_imaxabs(intmax_t x) { return x < 0 ? -x : x; }
+INTERN imaxdiv_t LIBCCALL libc_imaxdiv(intmax_t numer, intmax_t denom) {
+ return (imaxdiv_t){ numer/denom, numer%denom };
+}
+#endif
 INTERN int LIBCCALL libc_system(char const *__restrict command) {
  pid_t child,error; int status;
  if ((child = libc_fork()) < 0) return -1;
@@ -408,9 +442,11 @@ DEFINE_PUBLIC_ALIAS(getsubopt,libc_getsubopt);
 DEFINE_PUBLIC_ALIAS(abs,libc_abs);
 DEFINE_PUBLIC_ALIAS(labs,libc_labs);
 DEFINE_PUBLIC_ALIAS(llabs,libc_llabs);
+DEFINE_PUBLIC_ALIAS(imaxabs,libc_imaxabs);
 DEFINE_PUBLIC_ALIAS(div,libc_div);
 DEFINE_PUBLIC_ALIAS(ldiv,libc_ldiv);
 DEFINE_PUBLIC_ALIAS(lldiv,libc_lldiv);
+DEFINE_PUBLIC_ALIAS(imaxdiv,libc_imaxdiv);
 DEFINE_PUBLIC_ALIAS(system,libc_system);
 DEFINE_PUBLIC_ALIAS(drand48,libc_drand48);
 DEFINE_PUBLIC_ALIAS(lrand48,libc_lrand48);

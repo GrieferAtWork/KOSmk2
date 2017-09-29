@@ -22,6 +22,9 @@
 #include <features.h>
 #include <stdint.h>
 #include <hybrid/typecore.h>
+#ifdef __USE_DOS
+#include <xlocale.h>
+#endif /* __USE_DOS */
 
 __DECL_BEGIN
 
@@ -201,13 +204,41 @@ typedef struct {
  __INTMAX_TYPE__ rem;  /*< Remainder. */
 } imaxdiv_t;
 
-#ifndef __KERNEL__
+#ifdef __KERNEL__
+__LOCAL __ATTR_CONST __INTMAX_TYPE__ (__LIBCCALL imaxabs)(__INTMAX_TYPE__ __n) { return __n < 0 ? -__n : __n; }
+__LOCAL __ATTR_CONST imaxdiv_t (__LIBCCALL imaxdiv)(__INTMAX_TYPE__ __numer, __INTMAX_TYPE__ __denom) {
+#ifdef __GNUC__
+ return (imaxdiv_t){ __numer/__denom, __numer%__denom };
+#else
+ imaxdiv_t __res;
+ __res.quot = __numer/__denom;
+ __res.rem  = __numer%__denom;
+ return __res;
+#endif
+}
+#else
+#if __SIZEOF_INTMAX_T__ == __SIZEOF_LONG__
+__LIBC __ATTR_CONST __INTMAX_TYPE__ (__LIBCCALL imaxabs)(__INTMAX_TYPE__ __n) __ASMNAME("labs");
+__LIBC __ATTR_CONST imaxdiv_t (__LIBCCALL imaxdiv)(__INTMAX_TYPE__ __numer, __INTMAX_TYPE__ __denom) __ASMNAME("ldiv");
+__LIBC __INTMAX_TYPE__ (__LIBCCALL strtoimax)(char const *__restrict __nptr, char **__restrict __endptr, int __base) __ASMNAME("strtol");
+__LIBC __UINTMAX_TYPE__ (__LIBCCALL strtoumax)(char const *__restrict __nptr, char ** __restrict __endptr, int __base) __ASMNAME("strtoul");
+__LIBC __INTMAX_TYPE__ (__LIBCCALL wcstoimax)(__gwchar_t const *__restrict __nptr, __gwchar_t **__restrict __endptr, int __base) __ASMNAME2("wcstol","_wcstol");
+__LIBC __UINTMAX_TYPE__ (__LIBCCALL wcstoumax)(__gwchar_t const *__restrict __nptr, __gwchar_t ** __restrict __endptr, int __base) __ASMNAME2("wcstoul","_wcstoul");
+#elif __SIZEOF_INTMAX_T__ == __SIZEOF_LONG_LONG__
+__LIBC __ATTR_CONST __INTMAX_TYPE__ (__LIBCCALL imaxabs)(__INTMAX_TYPE__ __n) __ASMNAME("llabs");
+__LIBC __ATTR_CONST imaxdiv_t (__LIBCCALL imaxdiv)(__INTMAX_TYPE__ __numer, __INTMAX_TYPE__ __denom) __ASMNAME("lldiv");
+__LIBC __INTMAX_TYPE__ (__LIBCCALL strtoimax)(char const *__restrict __nptr, char **__restrict __endptr, int __base) __ASMNAME("strtoll");
+__LIBC __UINTMAX_TYPE__ (__LIBCCALL strtoumax)(char const *__restrict __nptr, char ** __restrict __endptr, int __base) __ASMNAME("strtoull");
+__LIBC __INTMAX_TYPE__ (__LIBCCALL wcstoimax)(__gwchar_t const *__restrict __nptr, __gwchar_t **__restrict __endptr, int __base) __ASMNAME2("wcstoll","_wcstoll");
+__LIBC __UINTMAX_TYPE__ (__LIBCCALL wcstoumax)(__gwchar_t const *__restrict __nptr, __gwchar_t ** __restrict __endptr, int __base) __ASMNAME2("wcstoull","_wcstoull");
+#else
 __LIBC __ATTR_CONST __INTMAX_TYPE__ (__LIBCCALL imaxabs)(__INTMAX_TYPE__ __n);
 __LIBC __ATTR_CONST imaxdiv_t (__LIBCCALL imaxdiv)(__INTMAX_TYPE__ __numer, __INTMAX_TYPE__ __denom);
 __LIBC __INTMAX_TYPE__ (__LIBCCALL strtoimax)(char const *__restrict __nptr, char **__restrict __endptr, int __base);
 __LIBC __UINTMAX_TYPE__ (__LIBCCALL strtoumax)(char const *__restrict __nptr, char ** __restrict __endptr, int __base);
-__LIBC __INTMAX_TYPE__ (__LIBCCALL wcstoimax)(const __gwchar_t *__restrict __nptr, __gwchar_t **__restrict __endptr, int __base);
-__LIBC __UINTMAX_TYPE__ (__LIBCCALL wcstoumax)(const __gwchar_t *__restrict __nptr, __gwchar_t ** __restrict __endptr, int __base);
+__LIBC __INTMAX_TYPE__ (__LIBCCALL wcstoimax)(__gwchar_t const *__restrict __nptr, __gwchar_t **__restrict __endptr, int __base);
+__LIBC __UINTMAX_TYPE__ (__LIBCCALL wcstoumax)(__gwchar_t const *__restrict __nptr, __gwchar_t ** __restrict __endptr, int __base);
+#endif
 #endif /* !__KERNEL__ */
 
 __NAMESPACE_STD_END
@@ -220,6 +251,22 @@ __NAMESPACE_STD_USING(strtoimax)
 __NAMESPACE_STD_USING(strtoumax)
 __NAMESPACE_STD_USING(wcstoimax)
 __NAMESPACE_STD_USING(wcstoumax)
+
+#ifdef __USE_DOS
+#if __SIZEOF_INTMAX_T__ == __SIZEOF_LONG__
+__LIBC intmax_t (__LIBCCALL _strtoimax_l)(char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t) __ASMNAME2("strtoll_l","_strtoi64_l");
+__LIBC uintmax_t (__LIBCCALL _strtoumax_l)(char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t) __ASMNAME2("strtoull_l","_strtoui64_l");
+__LIBC intmax_t (__LIBCCALL _wcstoimax_l)(__gwchar_t const *__restrict __nptr, __gwchar_t **__restrict __endptr, int __radix, _locale_t) __ASMNAME2("wcstoll_l","_wcstoi64_l");
+__LIBC uintmax_t (__LIBCCALL _wcstoumax_l)(__gwchar_t const *__restrict __nptr, __gwchar_t **__restrict __endptr, int __radix, _locale_t) __ASMNAME2("wcstoull_l","_wcstoui64_l");
+#elif __SIZEOF_INTMAX_T__ == __SIZEOF_LONG_LONG__
+__LIBC intmax_t (__LIBCCALL _strtoimax_l)(char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t) __ASMNAME2("strtol_l","_strtol_l");
+__LIBC uintmax_t (__LIBCCALL _strtoumax_l)(char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t) __ASMNAME2("strtoul_l","_strtoul_l");
+__LIBC intmax_t (__LIBCCALL _wcstoimax_l)(__gwchar_t const *__restrict __nptr, __gwchar_t **__restrict __endptr, int __radix, _locale_t) __ASMNAME2("wcstol_l","_wcstol_l");
+__LIBC uintmax_t (__LIBCCALL _wcstoumax_l)(__gwchar_t const *__restrict __nptr, __gwchar_t **__restrict __endptr, int __radix, _locale_t) __ASMNAME2("wcstoul_l","_wcstoul_l");
+#else
+#error "ERROR: Unsupported 'sizeof(intmax_t)'"
+#endif
+#endif /* __USE_DOS */
 #endif /* !__KERNEL__ */
 
 __DECL_END

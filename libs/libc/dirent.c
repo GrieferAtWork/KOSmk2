@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 
