@@ -163,6 +163,7 @@ INTDEF char *LIBCCALL libc_strsep(char **__restrict stringp, char const *__restr
 #ifndef __KERNEL__
 INTDEF void LIBCCALL libc_bcopy(void const *src, void *dst, size_t n);
 INTDEF void LIBCCALL libc_bzero(void *__restrict s, size_t n);
+INTDEF void LIBCCALL libc_swab(void const *__restrict from, void *__restrict to, size_t n_bytes);
 INTDEF char *LIBCCALL libc_strcpy(char *__restrict dst, char const *__restrict src);
 INTDEF char *LIBCCALL libc_strncpy(char *__restrict dst, char const *__restrict src, size_t n);
 INTDEF char *LIBCCALL libc_index(char const *__restrict haystack, int needle);
@@ -435,6 +436,10 @@ INTDEF size_t LIBCCALL libc_16wcsxfrm_l(char16_t *__restrict dst, char16_t const
 INTDEF size_t LIBCCALL libc_16wctomb(char *__restrict s, char16_t wchar);
 INTDEF size_t LIBCCALL libc_16wcwidth(char16_t c);
 
+INTDEF size_t LIBCCALL libc_32mblen_l(char const *__restrict s, size_t n, locale_t loc);
+INTDEF size_t LIBCCALL libc_16mblen_l(char const *__restrict s, size_t n, locale_t loc);
+
+
 /* DOS-SLIB functions. */
 INTDEF errno_t LIBCCALL libc_16mbsrtowcs_s(size_t *result, char16_t *__restrict buf, size_t buflen, char const **__restrict psrc, size_t srcsize, mbstate_t *__restrict ps);
 INTDEF errno_t LIBCCALL libc_16memcpy_s(void *__restrict dst, size_t dstsize, void const *__restrict src, size_t srcsize);
@@ -494,6 +499,10 @@ INTDEF float LIBCCALL libc_16wcstof(char16_t const *__restrict nptr, char16_t **
 INTDEF float LIBCCALL libc_16wcstof_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, locale_t loc);
 INTDEF long double LIBCCALL libc_16wcstold(char16_t const *__restrict nptr, char16_t **__restrict endptr);
 INTDEF long double LIBCCALL libc_16wcstold_l(char16_t const *__restrict nptr, char16_t **__restrict endptr, locale_t loc);
+INTDEF double LIBCCALL libc_16wtof(char16_t const *__restrict s);
+INTDEF double LIBCCALL libc_32wtof(char32_t const *__restrict s);
+INTDEF double LIBCCALL libc_16wtof_l(char16_t const *__restrict s, locale_t locale);
+INTDEF double LIBCCALL libc_32wtof_l(char32_t const *__restrict s, locale_t locale);
 
 
 #if 0 /* TODO */

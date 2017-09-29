@@ -196,6 +196,20 @@ DEFINE_PUBLIC_ALIAS(xfdlopen,libc_xfdlopen);
 DEFINE_PUBLIC_ALIAS(xdlsym,libc_xdlsym);
 DEFINE_PUBLIC_ALIAS(xdlclose,libc_xdlclose);
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_INTERN_ALIAS(libc_getdllprocaddr,libc_xdlsym);
+#else
+INTERN void *LIBCCALL
+libc_getdllprocaddr(intptr_t hnd, char *symname, intptr_t UNUSED(ord)) {
+ return libc_xdlsym((void *)hnd,symname);
+}
+#endif
+DEFINE_PUBLIC_ALIAS(_loaddll,libc_xdlopen);
+DEFINE_PUBLIC_ALIAS(_unloaddll,libc_xdlclose);
+DEFINE_PUBLIC_ALIAS(_getdllprocaddr,libc_getdllprocaddr);
+#endif
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_SYSTEM_C */

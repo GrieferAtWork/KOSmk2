@@ -36,11 +36,20 @@ struct _diskfree_t {
 #endif /* !_DISKFREE_T_DEFINED */
 
 #ifndef __KERNEL__
-__LIBC char *(__LIBCCALL _getcwd)(char *__buf, size_t __size) __ASMNAME("getcwd");
-__LIBC char *(__LIBCCALL _getdcwd)(int __drive, char *__buf, size_t __size) __ASMNAME("getdcwd");
+
+#ifndef __USE_DOSFS
+__LIBC __NONNULL((1)) int (__LIBCCALL __kos_mkdir)(char const *__path, int __mode) __UFS_FUNC_(mkdir);
+#endif /* !__USE_DOSFS */
+
+__LIBC char *(__LIBCCALL _getcwd)(char *__buf, size_t __size) __KOS_ASMNAME("getcwd");
+__LIBC char *(__LIBCCALL _getdcwd)(int __drive, char *__buf, size_t __size);
 #define _getdcwd_nolock  _getdcwd
-__LIBC __NONNULL((1)) int (__LIBCCALL _chdir)(char const *__path) __ASMNAME("chdir");
-__LIBC __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path) __PE_FUNC(mkdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL _chdir)(char const *__path) __UFS_FUNC_OLDPEB(chdir);
+#ifdef __USE_DOSFS
+__LIBC __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path);
+#else /* __USE_DOSFS */
+__LOCAL __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path) { return __kos_mkdir(__path,0755); }
+#endif /* !__USE_DOSFS */
 __LIBC __NONNULL((1)) int (__LIBCCALL _rmdir)(char const *__path) __ASMNAME("rmdir");
 __LIBC int (__LIBCCALL _chdrive)(int __drive);
 __LIBC int (__LIBCCALL _getdrive)(void);
@@ -53,20 +62,19 @@ __LIBC unsigned (__LIBCCALL _getdiskfree)(unsigned __drive, struct _diskfree_t *
 /* A small hand full of functions defined in '<direct.h>' */
 #ifndef __getcwd_defined
 #define __getcwd_defined 1
-__LIBC char *(__LIBCCALL getcwd)(char *__buf, size_t __size) __UFS_FUNC(getcwd);
+__LIBC char *(__LIBCCALL getcwd)(char *__buf, size_t __size) __PE_ASMNAME("_getcwd");
 #endif /* !__getcwd_defined */
 #ifndef __chdir_defined
 #define __chdir_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL chdir)(char const *__path) __UFS_FUNC(chdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL chdir)(char const *__path) __UFS_FUNC_OLDPEA(chdir);
 #endif /* !__chdir_defined */
 #ifndef __mkdir_defined
 #define __mkdir_defined 1
 #ifdef __USE_DOSFS
 /* NOTE: 'mkdir()' with 2 arguments is defined in <sys/stat.h> */
-__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) __UFS_FUNC(mkdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) __ASMNAME("_mkdir");
 #else /* __USE_DOSFS */
-__LIBC __NONNULL((1)) int (__LIBCCALL __kos_mkdir)(char const *__path, int __mode) __UFS_FUNC_(mkdir);
-__LOCAL __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) { return __kos_mkdir(__path,0644); }
+__LOCAL __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) { return __kos_mkdir(__path,0755); }
 #endif /* !__USE_DOSFS */
 #endif /* !__mkdir_defined */
 #ifndef __rmdir_defined
@@ -77,12 +85,17 @@ __LIBC __NONNULL((1)) int (__LIBCCALL rmdir)(char const *__path) __UFS_FUNC(rmdi
 #ifdef __USE_DOS
 #ifndef _WDIRECT_DEFINED
 #define _WDIRECT_DEFINED 1
-__LIBC __NONNULL((1)) wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__dstbuf, int __sizeinwchars);
-__LIBC __NONNULL((1)) wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __sizeinwchars);
+__LIBC __NONNULL((1)) wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__dstbuf, int __dstlen);
+__LIBC __NONNULL((1)) wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __dstlen);
 #define _wgetdcwd_nolock    _wgetdcwd
-__LIBC __NONNULL((1)) int (__LIBCCALL _wchdir)(wchar_t const *__path) __WFS_FUNC_(wchdir);
-__LIBC __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__path) __WFS_FUNC_(wmkdir);
-__LIBC __NONNULL((1)) int (__LIBCCALL _wrmdir)(wchar_t const *__path) __WFS_FUNC_(wrmdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL _wchdir)(wchar_t const *__path) __WFS_FUNC(_wchdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL _wrmdir)(wchar_t const *__path) __WFS_FUNC(_wrmdir);
+#ifdef __USE_DOSFS
+__LIBC __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__path) __WFS_FUNC(_wmkdir);
+#else /* __USE_DOSFS */
+__LIBC __NONNULL((1)) int (__LIBCCALL __libc_wmkdir)(wchar_t const *__path, int __mode) __WFS_FUNC_(_wmkdir);
+__LOCAL __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__path) { return __libc_wmkdir(__path,0755); }
+#endif /* !__USE_DOSFS */
 #endif /* !_WDIRECT_DEFINED */
 #endif /* __USE_DOS */
 

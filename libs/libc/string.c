@@ -250,6 +250,10 @@ INTERN int LIBCCALL libc___ffs64(s64 i) { DO_FFS(i) }
 #ifndef __KERNEL__
 INTERN void LIBCCALL libc_bcopy(void const *src, void *dst, size_t n) { libc_memmove(dst,src,n); }
 INTERN void LIBCCALL libc_bzero(void *s, size_t n) { libc_memset(s,0,n); }
+INTERN void LIBCCALL
+libc_swab(void const *__restrict from, void *__restrict to, size_t n_bytes) {
+ NOT_IMPLEMENTED();
+}
 
 INTERN char *LIBCCALL libc_index(char const *__restrict haystack, int needle) {
  char *iter = (char *)haystack;
@@ -719,6 +723,7 @@ DEFINE_PUBLIC_ALIAS(strtouq,__LONGLONGFUN(libc_strtou));
 #ifndef __KERNEL__
 DEFINE_PUBLIC_ALIAS(bcopy,libc_bcopy);
 DEFINE_PUBLIC_ALIAS(bzero,libc_bzero);
+DEFINE_PUBLIC_ALIAS(swab,libc_swab);
 DEFINE_PUBLIC_ALIAS(strcpy,libc_strcpy);
 DEFINE_PUBLIC_ALIAS(strncpy,libc_strncpy);
 DEFINE_PUBLIC_ALIAS(index,libc_index);
@@ -884,6 +889,7 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #  define WANT_STRSET_S       /* wcsset_s() */
 #  define WANT_STRNSET_S      /* wcsnset_s() */
 #  define WANT_MBLEN          /* mblen(), mbrlen() */
+#  define WANT_MBLEN_L        /* mblen_l() */
 #  define WANT_MBTOWC         /* mbtowc(), mbrtowc(), mbsnrtowcs(), mbsrtowcs(), mbstowcs() */
 #  define WANT_WCTOMB         /* wctomb(), wcrtomb(), wcsnrtombs(), wcsrtombs(), wcstombs() */
 #  define WANT_WCWIDTH        /* wcwidth(), wcswidth() */
@@ -898,8 +904,10 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #  define WANT_STRTOU64_L     /* wcstou64_l() */
 #  define WANT_STRTO32_L      /* wcsto32_l() */
 #  define WANT_STRTO64_L      /* wcsto64_l() */
+#  define WANT_ATOF           /* wtof() */
 #  define WANT_ATO32          /* wto32() */
 #  define WANT_ATO64          /* wto64() */
+#  define WANT_ATOF_L         /* wtof_l() */
 #  define WANT_ATO32_L        /* wto32_l() */
 #  define WANT_ATO64_L        /* wto64_l() */
 #  define WANT_STRTOLD        /* wcstold() */
@@ -926,11 +934,14 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #undef WANT_STRNCASECOLL_L
 #undef WANT_STRNCOLL
 #undef WANT_STRNCOLL_L
+#undef WANT_MBLEN_L
 #undef WANT_MBSRTOWCS_S
 #undef WANT_WCSRTOMBS_S
 #undef WANT_WCRTOMB_S
+#undef WANT_ATOF
 #undef WANT_ATO32
 #undef WANT_ATO64
+#undef WANT_ATOF_L
 #undef WANT_ATO32_L
 #undef WANT_ATO64_L
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */
@@ -1012,6 +1023,7 @@ DEFINE_PUBLIC_ALIAS(wcstod_l,libc_32wcstod_l);
 DEFINE_PUBLIC_ALIAS(wcstold_l,libc_32wcstold_l);
 
 
+
 /* DOS libc functions. */
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #undef libc_strdup
@@ -1038,10 +1050,6 @@ DEFINE_PUBLIC_ALIAS(_strnicmp,libc_strncasecmp);
 DEFINE_PUBLIC_ALIAS(_strnicmp_l,libc_strncasecmp_l);
 DEFINE_PUBLIC_ALIAS(_strnicoll,libc_strncasecoll);
 DEFINE_PUBLIC_ALIAS(_strnicoll_l,libc_strncasecoll_l);
-DEFINE_PUBLIC_ALIAS(memicmp,libc_memcasecmp);
-DEFINE_PUBLIC_ALIAS(strcmpi,libc_strcasecmp);
-DEFINE_PUBLIC_ALIAS(stricmp,libc_strcasecmp);
-DEFINE_PUBLIC_ALIAS(strnicmp,libc_strncasecmp);
 DEFINE_PUBLIC_ALIAS(_strxfrm_l,libc_strxfrm_l);
 DEFINE_PUBLIC_ALIAS(_memccpy,libc_memccpy);
 
@@ -1136,6 +1144,7 @@ DEFINE_PUBLIC_ALIAS(_memccpy,libc_memccpy);
 #  define WANT_STRSET_S       /* wcsset_s() */
 #  define WANT_STRNSET_S      /* wcsnset_s() */
 #  define WANT_MBLEN          /* mblen(), mbrlen() */
+#  define WANT_MBLEN_L        /* mblen_l() */
 #  define WANT_MBTOWC         /* mbtowc(), mbrtowc(), mbsnrtowcs(), mbsrtowcs(), mbstowcs() */
 #  define WANT_WCTOMB         /* wctomb(), wcrtomb(), wcsnrtombs(), wcsrtombs(), wcstombs() */
 #  define WANT_WCWIDTH        /* wcwidth(), wcswidth() */
@@ -1150,8 +1159,10 @@ DEFINE_PUBLIC_ALIAS(_memccpy,libc_memccpy);
 #  define WANT_STRTOU64_L     /* wcstou64_l() */
 #  define WANT_STRTO32_L      /* wcsto32_l() */
 #  define WANT_STRTO64_L      /* wcsto64_l() */
+#  define WANT_ATOF           /* wtof() */
 #  define WANT_ATO32          /* wto32() */
 #  define WANT_ATO64          /* wto64() */
+#  define WANT_ATOF_L         /* wtof_l() */
 #  define WANT_ATO32_L        /* wto32_l() */
 #  define WANT_ATO64_L        /* wto64_l() */
 #  define WANT_STRTOLD        /* wcstold() */
@@ -1174,6 +1185,15 @@ DEFINE_PUBLIC_ALIAS(__DSYM(wcstok),libc_16wcstok); /* This one's a workaround fo
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstok_s),libc_16wcstok_r);
 DEFINE_PUBLIC_ALIAS(__DSYM(mbrlen),libc_16mbrlen);
 
+DEFINE_PUBLIC_ALIAS(_strtod_l,libc_strtod_l);
+DEFINE_PUBLIC_ALIAS(_strtoi64,libc_strto64);
+DEFINE_PUBLIC_ALIAS(_strtoi64_l,libc_strto64_l);
+DEFINE_PUBLIC_ALIAS(_strtol_l,__LONGFUN_L(libc_strto));
+DEFINE_PUBLIC_ALIAS(_strtoui64,libc_strtou64);
+DEFINE_PUBLIC_ALIAS(_strtoui64_l,libc_strtou64_l);
+DEFINE_PUBLIC_ALIAS(_strtoul_l,__LONGFUN_L(libc_strtou));
+DEFINE_PUBLIC_ALIAS(_swab,libc_swab);
+
 DEFINE_PUBLIC_ALIAS(__DSYM(mblen),libc_16mblen);
 DEFINE_PUBLIC_ALIAS(__DSYM(mbrtowc),libc_16mbrtowc);
 DEFINE_PUBLIC_ALIAS(__DSYM(mbsnrtowcs),libc_16mbsnrtowcs);
@@ -1183,24 +1203,21 @@ DEFINE_PUBLIC_ALIAS(__DSYM(mbtowc),libc_16mbtowc);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcpcpy),libc_16wcpcpy);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcpncpy),libc_16wcpncpy);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcrtomb),libc_16wcrtomb);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicmp),libc_16wcscasecmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicmp),libc_16wcscasecmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicmp_l),libc_16wcscasecmp_l);
+DEFINE_PUBLIC_ALIAS(_wcsicmp,libc_16wcscasecmp);
+DEFINE_PUBLIC_ALIAS(_wcsicmp_l,libc_16wcscasecmp_l);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcscat),libc_16wcscat);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcschr),libc_16wcschr);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcschrnul),libc_16wcschrnul);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcscmp),libc_16wcscmp);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcscoll),libc_16wcscoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcscoll_l),libc_16wcscoll_l);
+DEFINE_PUBLIC_ALIAS(_wcscoll_l,libc_16wcscoll_l);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcscpy),libc_16wcscpy);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcscspn),libc_16wcscspn);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsdup),libc_16wcsdup);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsdup),libc_16wcsdup);
+DEFINE_PUBLIC_ALIAS(_wcsdup,libc_16wcsdup);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsend),libc_16wcsend);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcslen),libc_16wcslen);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnicmp),libc_16wcsncasecmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicmp),libc_16wcsncasecmp);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicmp_l),libc_16wcsncasecmp_l);
+DEFINE_PUBLIC_ALIAS(_wcsnicmp,libc_16wcsncasecmp);
+DEFINE_PUBLIC_ALIAS(_wcsnicmp_l,libc_16wcsncasecmp_l);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsncat),libc_16wcsncat);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsncmp),libc_16wcsncmp);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsncpy),libc_16wcsncpy);
@@ -1217,7 +1234,7 @@ DEFINE_PUBLIC_ALIAS(__DSYM(wcstombs),libc_16wcstombs);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcwidth),libc_16wcwidth);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcswidth),libc_16wcswidth);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsxfrm),libc_16wcsxfrm);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsxfrm_l),libc_16wcsxfrm_l);
+DEFINE_PUBLIC_ALIAS(_wcsxfrm_l,libc_16wcsxfrm_l);
 DEFINE_PUBLIC_ALIAS(__DSYM(wctomb),libc_16wctomb);
 DEFINE_PUBLIC_ALIAS(__DSYM(wmemchr),libc_16wmemchr);
 DEFINE_PUBLIC_ALIAS(__DSYM(wmemcmp),libc_16wmemcmp);
@@ -1226,116 +1243,129 @@ DEFINE_PUBLIC_ALIAS(__DSYM(wmemmove),libc_16wmemmove);
 DEFINE_PUBLIC_ALIAS(__DSYM(wmempcpy),libc_16wmempcpy);
 DEFINE_PUBLIC_ALIAS(__DSYM(wmemset),libc_16wmemset);
 
+DEFINE_PUBLIC_ALIAS(mblen_l,libc_32mblen_l);
+DEFINE_PUBLIC_ALIAS(_mblen_l,libc_16mblen_l);
+
 DEFINE_PUBLIC_ALIAS(wcslwr,libc_32wcslwr);
-DEFINE_PUBLIC_ALIAS(_wcslwr,libc_32wcslwr);
-DEFINE_PUBLIC_ALIAS(_wcslwr_l,libc_32wcslwr_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcslwr),libc_16wcslwr);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcslwr),libc_16wcslwr);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcslwr_l),libc_16wcslwr_l);
+DEFINE_PUBLIC_ALIAS(wcslwr_l,libc_32wcslwr_l);
+DEFINE_PUBLIC_ALIAS(_wcslwr,libc_16wcslwr);
+DEFINE_PUBLIC_ALIAS(_wcslwr_l,libc_16wcslwr_l);
 
 DEFINE_PUBLIC_ALIAS(wcsupr,libc_32wcsupr);
-DEFINE_PUBLIC_ALIAS(_wcsupr,libc_32wcsupr);
-DEFINE_PUBLIC_ALIAS(_wcsupr_l,libc_32wcsupr_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsupr),libc_16wcsupr);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsupr),libc_16wcsupr);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsupr_l),libc_16wcsupr_l);
+DEFINE_PUBLIC_ALIAS(wcsupr_l,libc_32wcsupr_l);
+DEFINE_PUBLIC_ALIAS(_wcsupr,libc_16wcsupr);
+DEFINE_PUBLIC_ALIAS(_wcsupr_l,libc_16wcsupr_l);
 
 DEFINE_PUBLIC_ALIAS(wcsset,libc_32wcsset);
 DEFINE_PUBLIC_ALIAS(wcsnset,libc_32wcsnset);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsset),libc_16wcsset);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsnset),libc_16wcsnset);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsset),libc_16wcsset);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnset),libc_16wcsnset);
+DEFINE_PUBLIC_ALIAS(_wcsset,libc_16wcsset);
+DEFINE_PUBLIC_ALIAS(_wcsnset,libc_16wcsnset);
 
 DEFINE_PUBLIC_ALIAS(wcsrev,libc_32wcsrev);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsrev),libc_16wcsrev);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsrev),libc_16wcsrev);
+DEFINE_PUBLIC_ALIAS(_wcsrev,libc_16wcsrev);
 
-DEFINE_PUBLIC_ALIAS(wcsicoll,libc_32wcscasecoll);
-DEFINE_PUBLIC_ALIAS(_wcsicoll_l,libc_32wcscasecoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcsicoll),libc_16wcscasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicoll),libc_16wcscasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsicoll_l),libc_16wcscasecoll_l);
+DEFINE_PUBLIC_ALIAS(wcscasecoll,libc_32wcscasecoll);
+DEFINE_PUBLIC_ALIAS(wcscasecoll_l,libc_32wcscasecoll_l);
+DEFINE_PUBLIC_ALIAS(_wcsicoll,libc_16wcscasecoll);
+DEFINE_PUBLIC_ALIAS(_wcsicoll_l,libc_16wcscasecoll_l);
 
-DEFINE_PUBLIC_ALIAS(_wcsncoll,libc_32wcsncoll);
-DEFINE_PUBLIC_ALIAS(_wcsncoll_l,libc_32wcsncoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsncoll),libc_16wcsncoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsncoll_l),libc_16wcsncoll_l);
+DEFINE_PUBLIC_ALIAS(wcsncoll,libc_32wcsncoll);
+DEFINE_PUBLIC_ALIAS(wcsncoll_l,libc_32wcsncoll_l);
+DEFINE_PUBLIC_ALIAS(_wcsncoll,libc_16wcsncoll);
+DEFINE_PUBLIC_ALIAS(_wcsncoll_l,libc_16wcsncoll_l);
 
-DEFINE_PUBLIC_ALIAS(_wcsnicoll,libc_32wcsncasecoll);
-DEFINE_PUBLIC_ALIAS(_wcsnicoll_l,libc_32wcsncasecoll_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicoll),libc_16wcsncasecoll);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnicoll_l),libc_16wcsncasecoll_l);
+DEFINE_PUBLIC_ALIAS(wcsnicoll,libc_32wcsncasecoll);
+DEFINE_PUBLIC_ALIAS(wcsnicoll_l,libc_32wcsncasecoll_l);
+DEFINE_PUBLIC_ALIAS(_wcsnicoll,libc_16wcsncasecoll);
+DEFINE_PUBLIC_ALIAS(_wcsnicoll_l,libc_16wcsncasecoll_l);
 
 /* DOS SLib functions. */
 DEFINE_PUBLIC_ALIAS(mbsrtowcs_s,libc_32mbsrtowcs_s);
-DEFINE_PUBLIC_ALIAS(wcsrtombs_s,libc_32wcsrtombs_s);
-DEFINE_PUBLIC_ALIAS(_wcsset_s,libc_32wcsset_s);
-DEFINE_PUBLIC_ALIAS(_wcsnset_s,libc_32wcsnset_s);
-DEFINE_PUBLIC_ALIAS(_wcslwr_s,libc_32wcslwr_s);
-DEFINE_PUBLIC_ALIAS(_wcsupr_s,libc_32wcsupr_s);
-DEFINE_PUBLIC_ALIAS(_wcslwr_s_l,libc_32wcslwr_s_l);
-DEFINE_PUBLIC_ALIAS(_wcsupr_s_l,libc_32wcsupr_s_l);
-DEFINE_PUBLIC_ALIAS(wcscat_s,libc_32wcscat_s);
-DEFINE_PUBLIC_ALIAS(wcscpy_s,libc_32wcscpy_s);
-DEFINE_PUBLIC_ALIAS(wcsncat_s,libc_32wcsncat_s);
-DEFINE_PUBLIC_ALIAS(wcsncpy_s,libc_32wcsncpy_s);
-DEFINE_PUBLIC_ALIAS(wcrtomb_s,libc_32wcrtomb_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(mbsrtowcs_s),libc_16mbsrtowcs_s);
+
+DEFINE_PUBLIC_ALIAS(wcsrtombs_s,libc_32wcsrtombs_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsrtombs_s),libc_16wcsrtombs_s);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsset_s),libc_16wcsset_s);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsnset_s),libc_16wcsnset_s);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcslwr_s),libc_16wcslwr_s);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsupr_s),libc_16wcsupr_s);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcslwr_s_l),libc_16wcslwr_s_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcsupr_s_l),libc_16wcsupr_s_l);
+
+DEFINE_PUBLIC_ALIAS(wcsset_s,libc_32wcsset_s);
+DEFINE_PUBLIC_ALIAS(_wcsset_s,libc_16wcsset_s);
+
+DEFINE_PUBLIC_ALIAS(wcsnset_s,libc_32wcsnset_s);
+DEFINE_PUBLIC_ALIAS(_wcsnset_s,libc_16wcsnset_s);
+
+DEFINE_PUBLIC_ALIAS(wcslwr_s,libc_32wcslwr_s);
+DEFINE_PUBLIC_ALIAS(_wcslwr_s,libc_16wcslwr_s);
+
+DEFINE_PUBLIC_ALIAS(wcsupr_s,libc_32wcsupr_s);
+DEFINE_PUBLIC_ALIAS(_wcsupr_s,libc_16wcsupr_s);
+
+DEFINE_PUBLIC_ALIAS(wcslwr_s_l,libc_32wcslwr_s_l);
+DEFINE_PUBLIC_ALIAS(_wcslwr_s_l,libc_16wcslwr_s_l);
+
+DEFINE_PUBLIC_ALIAS(wcsupr_s_l,libc_32wcsupr_s_l);
+DEFINE_PUBLIC_ALIAS(_wcsupr_s_l,libc_16wcsupr_s_l);
+
+DEFINE_PUBLIC_ALIAS(wcscat_s,libc_32wcscat_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcscat_s),libc_16wcscat_s);
+
+DEFINE_PUBLIC_ALIAS(wcscpy_s,libc_32wcscpy_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcscpy_s),libc_16wcscpy_s);
+
+DEFINE_PUBLIC_ALIAS(wcsncat_s,libc_32wcsncat_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsncat_s),libc_16wcsncat_s);
+
+DEFINE_PUBLIC_ALIAS(wcsncpy_s,libc_32wcsncpy_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsncpy_s),libc_16wcsncpy_s);
+
+DEFINE_PUBLIC_ALIAS(wcrtomb_s,libc_32wcrtomb_s);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcrtomb_s),libc_16wcrtomb_s);
 
-DEFINE_PUBLIC_ALIAS(_wtoi,__INTFUN(libc_32wto));
-DEFINE_PUBLIC_ALIAS(_wtol,__LONGFUN(libc_32wto));
-DEFINE_PUBLIC_ALIAS(_wtoll,__LONGLONGFUN(libc_32wto));
-DEFINE_PUBLIC_ALIAS(_wtoi_l,__INTFUN_L(libc_32wto));
-DEFINE_PUBLIC_ALIAS(_wtol_l,__LONGFUN_L(libc_32wto));
-DEFINE_PUBLIC_ALIAS(_wtoll_l,__LONGLONGFUN_L(libc_32wto));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wtoi),__INTFUN(libc_16wto));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wtol),__LONGFUN(libc_16wto));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wtoll),__LONGLONGFUN(libc_16wto));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wtoi_l),__INTFUN_L(libc_16wto));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wtol_l),__LONGFUN_L(libc_16wto));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wtoll_l),__LONGLONGFUN_L(libc_16wto));
+DEFINE_PUBLIC_ALIAS(wtoi,__INTFUN(libc_32wto));
+DEFINE_PUBLIC_ALIAS(wtol,__LONGFUN(libc_32wto));
+DEFINE_PUBLIC_ALIAS(wtoll,__LONGLONGFUN(libc_32wto));
+DEFINE_PUBLIC_ALIAS(wtoi_l,__INTFUN_L(libc_32wto));
+DEFINE_PUBLIC_ALIAS(wtol_l,__LONGFUN_L(libc_32wto));
+DEFINE_PUBLIC_ALIAS(wtoll_l,__LONGLONGFUN_L(libc_32wto));
+DEFINE_PUBLIC_ALIAS(_wtoi,__INTFUN(libc_16wto));
+DEFINE_PUBLIC_ALIAS(_wtol,__LONGFUN(libc_16wto));
+DEFINE_PUBLIC_ALIAS(_wtoll,__LONGLONGFUN(libc_16wto));
+DEFINE_PUBLIC_ALIAS(_wtoi_l,__INTFUN_L(libc_16wto));
+DEFINE_PUBLIC_ALIAS(_wtol_l,__LONGFUN_L(libc_16wto));
+DEFINE_PUBLIC_ALIAS(_wtoll_l,__LONGLONGFUN_L(libc_16wto));
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstol),__LONGFUN(libc_16wcsto));
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstoul),__LONGFUN(libc_16wcstou));
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstoll),__LONGLONGFUN(libc_16wcsto));
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstoull),__LONGLONGFUN(libc_16wcstou));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstol_l),__LONGFUN_L(libc_16wcsto));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoul_l),__LONGFUN_L(libc_16wcstou));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoll_l),__LONGLONGFUN_L(libc_16wcsto));
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoull_l),__LONGLONGFUN_L(libc_16wcstou));
+DEFINE_PUBLIC_ALIAS(_wcstol_l,__LONGFUN_L(libc_16wcsto));
+DEFINE_PUBLIC_ALIAS(_wcstoul_l,__LONGFUN_L(libc_16wcstou));
+DEFINE_PUBLIC_ALIAS(_wcstoll_l,__LONGLONGFUN_L(libc_16wcsto));
+DEFINE_PUBLIC_ALIAS(_wcstoull_l,__LONGLONGFUN_L(libc_16wcstou));
+DEFINE_PUBLIC_ALIAS(wtof,libc_32wtof);
+DEFINE_PUBLIC_ALIAS(wtof_l,libc_32wtof_l);
+DEFINE_PUBLIC_ALIAS(_wtof,libc_16wtof);
+DEFINE_PUBLIC_ALIAS(_wtof_l,libc_16wtof_l);
+
+
 
 /* Define fixed-length 64-bit aliases used in PE-mode. */
-DEFINE_PUBLIC_ALIAS(_wtoi64,libc_32wto64);
-DEFINE_PUBLIC_ALIAS(_wcstoi64,libc_32wcsto64);
-DEFINE_PUBLIC_ALIAS(_wcstoui64,libc_32wcstou64);
-DEFINE_PUBLIC_ALIAS(_wtoi64_l,libc_32wto64_l);
-DEFINE_PUBLIC_ALIAS(_wcstoi64_l,libc_32wcsto64_l);
-DEFINE_PUBLIC_ALIAS(_wcstoui64_l,libc_32wcstou64_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wtoi64),libc_16wto64);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoi64),libc_16wcsto64);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoui64),libc_16wcstou64);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wtoi64_l),libc_16wto64_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoi64_l),libc_16wcsto64_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstoui64_l),libc_16wcstou64_l);
+DEFINE_PUBLIC_ALIAS(wtoi64,libc_32wto64);
+DEFINE_PUBLIC_ALIAS(wcstoi64,libc_32wcsto64);
+DEFINE_PUBLIC_ALIAS(wcstoui64,libc_32wcstou64);
+DEFINE_PUBLIC_ALIAS(wtoi64_l,libc_32wto64_l);
+DEFINE_PUBLIC_ALIAS(wcstoi64_l,libc_32wcsto64_l);
+DEFINE_PUBLIC_ALIAS(wcstoui64_l,libc_32wcstou64_l);
+DEFINE_PUBLIC_ALIAS(_wtoi64,libc_16wto64);
+DEFINE_PUBLIC_ALIAS(_wcstoi64,libc_16wcsto64);
+DEFINE_PUBLIC_ALIAS(_wcstoui64,libc_16wcstou64);
+DEFINE_PUBLIC_ALIAS(_wtoi64_l,libc_16wto64_l);
+DEFINE_PUBLIC_ALIAS(_wcstoi64_l,libc_16wcsto64_l);
+DEFINE_PUBLIC_ALIAS(_wcstoui64_l,libc_16wcstou64_l);
 
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstof),libc_16wcstof);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstod),libc_16wcstod);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstold),libc_16wcstold);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstof_l),libc_16wcstof_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstod_l),libc_16wcstod_l);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wcstold_l),libc_16wcstold_l);
+DEFINE_PUBLIC_ALIAS(_wcstof_l,libc_16wcstof_l);
+DEFINE_PUBLIC_ALIAS(_wcstod_l,libc_16wcstod_l);
+DEFINE_PUBLIC_ALIAS(_wcstold_l,libc_16wcstold_l);
 
 
 INTERN errno_t LIBCCALL libc_memcpy_s(void *__restrict dst, size_t dstsize, void const *__restrict src, size_t srcsize) { if (dstsize < srcsize) return ERANGE; libc_memcpy(dst,src,srcsize); return EOK; }

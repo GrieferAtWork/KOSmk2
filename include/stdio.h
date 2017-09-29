@@ -147,7 +147,6 @@ typedef __FILE FILE;
 #endif /* !__NAMESPACE_STD_EXISTS */
 #endif /* !__KERNEL__ */
 
-
 #ifndef __KERNEL__
 
 /* Standard streams. */
@@ -156,23 +155,28 @@ typedef __FILE FILE;
 #undef stdin
 #undef stdout
 #undef stderr
+#ifdef __PE__
+__LIBC FILE *(__LIBCCALL __iob_func)(void);
+#define stdin  (__iob_func()+0)
+#define stdout (__iob_func()+1)
+#define stderr (__iob_func()+2)
+#else /* __PE__ */
 __LIBC __FILE *(stdin);
 __LIBC __FILE *(stdout);
 __LIBC __FILE *(stderr);
-#define stdin  stdin
-#define stdout stdout
-#define stderr stderr
+#define stdin   stdin
+#define stdout  stdout
+#define stderr  stderr
+#endif /* !__PE__ */
 #endif /* !__stdstreams_defined */
 
 __NAMESPACE_STD_BEGIN
-#ifndef __std_remove_defined
-#define __std_remove_defined 1
+#ifndef __remove_defined
 __LIBC __NONNULL((1)) int (__LIBCCALL remove)(char const *__file) __UFS_FUNC(remove);
-#endif /* !__std_remove_defined */
-#ifndef __std_rename_defined
-#define __std_rename_defined 1
+#endif /* !__remove_defined */
+#ifndef __rename_defined
 __LIBC int (__LIBCCALL rename)(char const *__old, char const *__new) __UFS_FUNC(rename);
-#endif /* !__std_rename_defined */
+#endif /* !__rename_defined */
 __LIBC __WUNUSED char *(__LIBCCALL tmpnam)(char *__s);
 __LIBC int (__LIBCCALL fclose)(__FILE *__stream);
 __LIBC int (__LIBCCALL fflush)(__FILE *__stream);

@@ -91,7 +91,14 @@ struct __timeval64 {
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#define CLOCKS_PER_SEC  ((clock_t) 1000000)
+#define __DOS_CLOCKS_PER_SEC  ((clock_t)1000)
+#define __KOS_CLOCKS_PER_SEC  ((clock_t)1000000)
+#ifdef __USE_DOS
+#define CLOCKS_PER_SEC  __DOS_CLOCKS_PER_SEC
+#else /* __USE_DOS */
+#define CLOCKS_PER_SEC  __KOS_CLOCKS_PER_SEC
+#endif /* !__USE_DOS */
+
 #ifndef __KERNEL__
 #if (!defined(__STRICT_ANSI__) || defined(__USE_POSIX)) && \
      !defined(__USE_XOPEN2K)

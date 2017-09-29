@@ -190,14 +190,15 @@ typedef __socklen_t socklen_t;
 #ifndef __KERNEL__
 
 #undef __environ
-__LIBC char **__environ __ASMNAME("environ");
-__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__path, char const *__args, ...) __UFS_FUNC(execl);
-__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execle)(char const *__path, char const *__args, ...) __UFS_FUNC(execle);
-__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execlp)(char const *__file, char const *__args, ...);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execv)(char const *__path, char *const __argv[]) __UFS_FUNC(execv);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execve)(char const *__path, char *const __argv[], char *const __envp[]) __UFS_FUNC(execve);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execvp)(char const *__file, char *const __argv[]);
-__LIBC __pid_t (__LIBCCALL getpid)(void);
+__LIBC char **__environ __ASMNAME2("environ","_environ");
+
+__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execl);
+__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execle)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execle);
+__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execlp)(char const *__file, char const *__args, ...) __PE_FUNC_OLDPEA(execlp);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execv)(char const *__path, char *const __argv[]) __UFS_FUNC_OLDPEA(execv);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execve)(char const *__path, char *const __argv[], char *const __envp[]) __UFS_FUNC_OLDPEA(execve);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execvp)(char const *__file, char *const __argv[]) __PE_FUNC_OLDPEA(execvp);
+__LIBC __pid_t (__LIBCCALL getpid)(void) __PE_FUNC_OLDPEA(getpid);
 __LIBC __pid_t (__LIBCCALL getppid)(void);
 __LIBC __pid_t (__LIBCCALL getpgrp)(void);
 __LIBC __pid_t (__LIBCCALL __getpgid)(__pid_t __pid);
@@ -216,7 +217,6 @@ __LIBC unsigned int (__LIBCCALL alarm)(unsigned int __seconds);
 __LIBC unsigned int (__LIBCCALL sleep)(unsigned int __seconds);
 __LIBC int (__LIBCCALL pause)(void);
 __LIBC __NONNULL((1)) int (__LIBCCALL chown)(char const *__file, __uid_t __owner, __gid_t __group) __UFS_FUNC(chown);
-__LIBC __ATTR_NORETURN void (__LIBCCALL _exit)(int __status);
 __LIBC __NONNULL((1)) long int (__LIBCCALL pathconf)(char const *__path, int __name) __UFS_FUNC(pathconf);
 __LIBC long int (__LIBCCALL fpathconf)(int __fd, int __name);
 __LIBC __WUNUSED char *(__LIBCCALL ttyname)(int __fd);
@@ -227,53 +227,73 @@ __LIBC int (__LIBCCALL tcsetpgrp)(int __fd, __pid_t __pgrp_id);
 __LIBC __WUNUSED char *(__LIBCCALL getlogin)(void);
 __LIBC int (__LIBCCALL fsync)(int __fd);
 
+#ifndef ___exit_defined
+#define ___exit_defined 1
+__LIBC __ATTR_NORETURN void (__LIBCCALL _exit)(int __status);
+#endif /* !___exit_defined */
 #ifndef __read_defined
 #define __read_defined 1
+#if defined(__PE__) && __SIZEOF_SIZE_T__ == 4
+__LIBC ssize_t (__LIBCCALL read)(int __fd, void *__buf, size_t __n_bytes) __ASMNAME("_read");
+#else
 __LIBC ssize_t (__LIBCCALL read)(int __fd, void *__buf, size_t __n_bytes);
+#endif
 #endif /* !__read_defined */
 #ifndef __write_defined
 #define __write_defined 1
+#if defined(__PE__) && __SIZEOF_SIZE_T__ == 4
+__LIBC ssize_t (__LIBCCALL write)(int __fd, void const *__buf, size_t __n_bytes) __ASMNAME("_write");
+#else
 __LIBC ssize_t (__LIBCCALL write)(int __fd, void const *__buf, size_t __n_bytes);
+#endif
 #endif /* !__write_defined */
 #ifndef __lseek_defined
 #define __lseek_defined 1
+#ifdef __PE__
+#ifdef __USE_FILE_OFFSET64
+__LIBC __FS_TYPE(off) (__LIBCCALL lseek)(int __fd, __FS_TYPE(off) __offset, int __whence) __ASMNAME("_lseeki64");
+#else /* __USE_FILE_OFFSET64 */
+__LIBC __FS_TYPE(off) (__LIBCCALL lseek)(int __fd, __FS_TYPE(off) __offset, int __whence) __ASMNAME("_lseek");
+#endif /* !__USE_FILE_OFFSET64 */
+#else /* __PE__ */
 __LIBC __FS_TYPE(off) (__LIBCCALL lseek)(int __fd, __FS_TYPE(off) __offset, int __whence) __FS_FUNC(lseek);
+#endif /* !__PE__ */
 #endif /* !__lseek_defined */
 #ifndef __isatty_defined
 #define __isatty_defined 1
-__LIBC __WUNUSED int (__LIBCCALL isatty)(int __fd);
+__LIBC __WUNUSED int (__LIBCCALL isatty)(int __fd) __PE_FUNC_OLDPEA(isatty);
 #endif /* !__isatty_defined */
 #ifndef __dup2_defined
 #define __dup2_defined 1
-__LIBC int (__LIBCCALL dup2)(int __ofd, int __nfd);
+__LIBC int (__LIBCCALL dup2)(int __ofd, int __nfd) __PE_FUNC_OLDPEA(dup2);
 #endif /* !__dup2_defined */
 #ifndef __dup_defined
 #define __dup_defined 1
-__LIBC __WUNUSED int (__LIBCCALL dup)(int __fd);
+__LIBC __WUNUSED int (__LIBCCALL dup)(int __fd) __PE_FUNC_OLDPEA(dup);
 #endif /* !__dup_defined */
 #ifndef __close_defined
 #define __close_defined 1
-__LIBC int (__LIBCCALL close)(int __fd);
+__LIBC int (__LIBCCALL close)(int __fd) __PE_FUNC_OLDPEA(close);
 #endif /* !__close_defined */
 #ifndef __access_defined
 #define __access_defined 1
-__LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL access)(char const *__name, int __type) __UFS_FUNC(access);
+__LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL access)(char const *__name, int __type) __UFS_FUNC_OLDPEA(access);
 #endif /* !__access_defined */
 #ifndef __chdir_defined
 #define __chdir_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL chdir)(char const *__path) __UFS_FUNC(chdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL chdir)(char const *__path) __UFS_FUNC_OLDPEA(chdir);
 #endif /* !__chdir_defined */
 #ifndef __getcwd_defined
 #define __getcwd_defined 1
-__LIBC char *(__LIBCCALL getcwd)(char *__buf, size_t __size);
+__LIBC char *(__LIBCCALL getcwd)(char *__buf, size_t __size) __PE_FUNC_OLDPEA(getcwd);
 #endif /* !__getcwd_defined */
 #ifndef __unlink_defined
 #define __unlink_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL unlink)(char const *__name) __UFS_FUNC(unlink);
+__LIBC __NONNULL((1)) int (__LIBCCALL unlink)(char const *__name) __UFS_FUNC_OLDPEA(unlink);
 #endif /* !__unlink_defined */
 #ifndef __rmdir_defined
 #define __rmdir_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL rmdir)(char const *__path) __UFS_FUNC(rmdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL rmdir)(char const *__path) __UFS_FUNC_OLDPEA(rmdir);
 #endif /* !__rmdir_defined */
 
 #ifdef __USE_KOS
@@ -295,7 +315,7 @@ __LIBC __NONNULL((2)) int (__LIBCCALL unlinkat)(int __fd, char const *__name, in
 #endif /* __USE_ATFILE */
 
 #ifdef __USE_LARGEFILE64
-__LIBC __off64_t (__LIBCCALL lseek64)(int __fd, __off64_t __offset, int __whence) __UFS_FUNC(lseek64);
+__LIBC __off64_t (__LIBCCALL lseek64)(int __fd, __off64_t __offset, int __whence) __PE_ASMNAME("_lseeki64");
 #endif /* __USE_LARGEFILE64 */
 
 #if defined(__USE_UNIX98) || defined(__USE_XOPEN2K8)
@@ -309,8 +329,8 @@ __LIBC __WUNUSED ssize_t (__LIBCCALL pwrite64)(int __fd, void const *__buf, size
 
 #ifdef __USE_GNU
 #undef environ
-__LIBC char **environ;
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execvpe)(char const *__file, char *const __argv[], char *const __envp[]);
+__LIBC char **environ __PE_ASMNAME("_environ");
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execvpe)(char const *__file, char *const __argv[], char *const __envp[]) __UFS_FUNC_OLDPEA(execvpe);
 __LIBC int (__LIBCCALL pipe2)(int __pipedes[2], int __flags);
 __LIBC __WUNUSED char *(__LIBCCALL get_current_dir_name)(void);
 __LIBC int (__LIBCCALL dup3)(int __fd, int __fd2, int __flags);
@@ -441,9 +461,17 @@ __LIBC __NONNULL((1)) char *(__LIBCCALL getpass)(char const *__prompt);
 #endif
 
 #if defined(__USE_POSIX199309) || defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K)
+#ifdef __PE__
+#ifdef __USE_FILE_OFFSET64
+__LIBC int (__LIBCCALL ftruncate)(int __fd, __FS_TYPE(off) __length) __ASMNAME("_chsize_s");
+#else /* __USE_FILE_OFFSET64 */
+__LIBC int (__LIBCCALL ftruncate)(int __fd, __FS_TYPE(off) __length) __ASMNAME("_chsize");
+#endif /* !__USE_FILE_OFFSET64 */
+#else /* __PE__ */
 __LIBC int (__LIBCCALL ftruncate)(int __fd, __FS_TYPE(off) __length) __FS_FUNC(ftruncate);
+#endif /* !__PE__ */
 #ifdef __USE_LARGEFILE64
-__LIBC int (__LIBCCALL ftruncate64)(int __fd, __off64_t __length);
+__LIBC int (__LIBCCALL ftruncate64)(int __fd, __off64_t __length) __PE_ASMNAME("_chsize_s");
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_POSIX199309 || __USE_XOPEN_EXTENDED || __USE_XOPEN2K */
 
@@ -454,7 +482,7 @@ __LIBC __WUNUSED void *(__LIBCCALL sbrk)(intptr_t __delta);
 #endif
 
 #if defined(__USE_POSIX199309) || defined(__USE_UNIX98)
-__LIBC int (__LIBCCALL fdatasync)(int __fildes);
+__LIBC int (__LIBCCALL fdatasync)(int __fildes) __PE_ASMNAME("_commit");
 #endif /* __USE_POSIX199309 || __USE_UNIX98 */
 
 #ifdef __USE_XOPEN

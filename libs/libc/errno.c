@@ -31,21 +31,49 @@
 #include <hybrid/section.h>
 #include <kos/environ.h>
 #include <stdarg.h>
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <bits/dos-errno.h>
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_BEGIN
 
-PRIVATE int __ERRNO = 0; /* TODO: Thread-local. */
-INTERN int *LIBCCALL libc__errno(void) { return &__ERRNO; }
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+PRIVATE bool libc_errno_isdos = false;
+PRIVATE int libc_errno = 0; /* TODO: Thread-local. */
+INTERN int *LIBCCALL libc___errno(void) {
+ if (libc_errno_isdos) {
+  libc_errno = libc_errno_dos2kos(libc_errno);
+  libc_errno_isdos = false;
+ }
+ return &libc_errno;
+}
 INTERN int LIBCCALL libc___get_errno(void) {
- return __ERRNO;
+ if (libc_errno_isdos) {
+  libc_errno = libc_errno_dos2kos(libc_errno);
+  libc_errno_isdos = false;
+ }
+ return libc_errno;
 }
 INTERN void LIBCCALL libc___set_errno(int err) {
 #if 0
  syslog(LOG_DEBUG,"SET_ERRNO(%[errno])\n",err);
  __asm__("int $3");
 #endif
- __ERRNO = err;
+ libc_errno = err;
+ libc_errno_isdos = false;
 }
+#else
+PRIVATE int libc_errno = 0; /* TODO: Thread-local. */
+INTERN int *LIBCCALL libc___errno(void) { return &libc_errno; }
+INTERN int LIBCCALL libc___get_errno(void) { return libc_errno; }
+INTERN void LIBCCALL libc___set_errno(int err) {
+#if 0
+ syslog(LOG_DEBUG,"SET_ERRNO(%[errno])\n",err);
+ __asm__("int $3");
+#endif
+ libc_errno = err;
+}
+#endif
 
 #define ERROR_EXIT(code) libc__exit(code)
 
@@ -139,9 +167,9 @@ libc_error_at_line(int status, int errnum, char const *fname,
 }
 
 
-DEFINE_PUBLIC_ALIAS(_errno,libc__errno);
-DEFINE_PUBLIC_ALIAS(__get_errno,libc___get_errno);
-DEFINE_PUBLIC_ALIAS(__set_errno,libc___set_errno);
+DEFINE_PUBLIC_ALIAS(_errno,libc___errno);
+DEFINE_PUBLIC_ALIAS(_get_errno,libc___get_errno);
+DEFINE_PUBLIC_ALIAS(_set_errno,libc___set_errno);
 DEFINE_PUBLIC_ALIAS(__libc_program_invocation_name,libc___libc_program_invocation_name);
 DEFINE_PUBLIC_ALIAS(__libc_program_invocation_short_name,libc___libc_program_invocation_short_name);
 DEFINE_PUBLIC_ALIAS(vwarn,libc_vwarn);
@@ -154,6 +182,56 @@ DEFINE_PUBLIC_ALIAS(err,libc_err);
 DEFINE_PUBLIC_ALIAS(errx,libc_errx);
 DEFINE_PUBLIC_ALIAS(error,libc_error);
 DEFINE_PUBLIC_ALIAS(error_at_line,libc_error_at_line);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverride-init"
+
+#define DOS_ERRNO_NOT_SUPPORTED __DOS_ENOTSUP
+#define KOS_ERRNO_NOT_SUPPORTED EINVAL
+
+PRIVATE ATTR_DOSRODATA u8 const vec_errno_dos2kos[__DOS_EMAX+1] = {
+    [0 ... __DOS_EMAX] = KOS_ERRNO_NOT_SUPPORTED,
+#define PAIR(kos,dos) [dos] = kos,
+#include "templates/errno-dospair.code"
+};
+PRIVATE ATTR_DOSRODATA u8 const vec_errno_kos2dos[__EBASEMAX+1] = {
+    [0 ... __EBASEMAX] = DOS_ERRNO_NOT_SUPPORTED,
+#define PAIR(kos,dos) [kos] = dos,
+#include "templates/errno-dospair.code"
+};
+
+#pragma GCC diagnostic pop
+
+
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_dos2kos(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_dos2kos) ? vec_errno_dos2kos[eno] : KOS_ERRNO_NOT_SUPPORTED; }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_kos2dos(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_kos2dos) ? vec_errno_kos2dos[eno] : DOS_ERRNO_NOT_SUPPORTED; }
+
+INTERN ATTR_DOSTEXT int *LIBCCALL libc_dos___errno(void) {
+ if (!libc_errno_isdos) {
+  libc_errno = libc_errno_kos2dos(libc_errno);
+  libc_errno_isdos = true;
+ }
+ return &libc_errno;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos___get_errno(void) {
+ if (!libc_errno_isdos) {
+  libc_errno = libc_errno_kos2dos(libc_errno);
+  libc_errno_isdos = true;
+ }
+ return libc_errno;
+}
+INTERN ATTR_DOSTEXT void LIBCCALL libc_dos___set_errno(int err) {
+ libc_errno = err;
+ libc_errno_isdos = true;
+}
+
+DEFINE_PUBLIC_ALIAS(__DSYM(_errno),libc_dos___errno);
+DEFINE_PUBLIC_ALIAS(__DSYM(_get_errno),libc_dos___get_errno);
+DEFINE_PUBLIC_ALIAS(__DSYM(_set_errno),libc_dos___set_errno);
+DEFINE_PUBLIC_ALIAS(errno_dos2kos,libc_errno_dos2kos);
+DEFINE_PUBLIC_ALIAS(errno_kos2dos,libc_errno_kos2dos);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

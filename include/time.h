@@ -206,15 +206,27 @@ struct itimerspec64 {
 
 #ifndef __KERNEL__
 __NAMESPACE_STD_BEGIN
-__LIBC clock_t (__LIBCCALL clock)(void);
+__LIBC clock_t (__LIBCCALL clock)(void) __DOS_FUNC(clock);
+#ifdef __PE__
+#ifdef __USE_TIME_BITS64
+__LIBC time_t (__LIBCCALL time)(time_t *__timer) __ASMNAME("_time64");
+#else /* __USE_TIME_BITS64 */
+__LIBC time_t (__LIBCCALL time)(time_t *__timer) __ASMNAME("_time32");
+#endif  /* !__USE_TIME_BITS64 */
+#else /* __PE__ */
 __LIBC time_t (__LIBCCALL time)(time_t *__timer) __TM_FUNC(time);
+#endif /* !__PE__ */
 __LIBC __ATTR_CONST double (__LIBCCALL difftime)(time_t __time1, time_t __time0) __TM_FUNC(difftime);
 __LIBC time_t (__LIBCCALL mktime)(struct tm *__tp) __TM_FUNC(mktime);
 __LIBC size_t (__LIBCCALL strftime)(char *__restrict __s, size_t __maxsize, char const *__restrict __format, struct tm const *__restrict __tp);
 __LIBC char *(__LIBCCALL asctime)(struct tm const *__tp);
 __LIBC char *(__LIBCCALL ctime)(time_t const *__timer) __TM_FUNC(ctime);
 #ifdef __USE_TIME64
+#ifdef __PE__
+__LIBC time64_t (__LIBCCALL time64)(time64_t *__timer) __ASMNAME("_time64");
+#else /* __PE__ */
 __LIBC time64_t (__LIBCCALL time64)(time64_t *__timer);
+#endif /* !__PE__ */
 __LIBC __ATTR_CONST double (__LIBCCALL difftime64)(time64_t __time1, time64_t __time0);
 __LIBC time64_t (__LIBCCALL mktime64)(struct tm *__tp);
 __LIBC char *(__LIBCCALL ctime64)(time64_t const *__timer);

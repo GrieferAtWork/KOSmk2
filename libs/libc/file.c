@@ -685,6 +685,8 @@ DEFINE_PUBLIC_ALIAS(vwscanf,libc_32vwscanf);
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 /* DOS defines this one... */
 INTERN FILE *LIBCCALL libc___iob_func(void) { return libc_std_files; }
+DEFINE_PUBLIC_ALIAS(_iob,libc_std_files);
+DEFINE_PUBLIC_ALIAS(__p__iob,libc___iob_func);
 DEFINE_PUBLIC_ALIAS(__iob_func,libc___iob_func);
 
 

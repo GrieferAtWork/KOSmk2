@@ -264,6 +264,32 @@ INTERN wctrans_t LIBCCALL libc_wctrans_l(char const *prop, locale_t locale) { NO
 INTERN wint_t LIBCCALL libc_towctrans_l(wint_t wc, wctrans_t desc, locale_t locale) { NOT_IMPLEMENTED(); return libc_towctrans(wc,desc); }
 #endif
 
+#undef iswalnum
+#undef iswalpha
+#undef iswcntrl
+#undef iswdigit
+#undef iswgraph
+#undef iswlower
+#undef iswprint
+#undef iswpunct
+#undef iswspace
+#undef iswupper
+#undef iswxdigit
+#undef iswblank
+#undef iswascii
+#undef iswalnum_l
+#undef iswalpha_l
+#undef iswcntrl_l
+#undef iswdigit_l
+#undef iswgraph_l
+#undef iswlower_l
+#undef iswprint_l
+#undef iswpunct_l
+#undef iswspace_l
+#undef iswupper_l
+#undef iswxdigit_l
+#undef iswblank_l
+
 DEFINE_PUBLIC_ALIAS(iswalnum,libc_iswalnum);
 DEFINE_PUBLIC_ALIAS(iswalpha,libc_iswalpha);
 DEFINE_PUBLIC_ALIAS(iswcntrl,libc_iswcntrl);
@@ -336,15 +362,22 @@ DEFINE_PUBLIC_ALIAS(isprint,libc_isprint);
 DEFINE_PUBLIC_ALIAS(isgraph,libc_isgraph);
 DEFINE_PUBLIC_ALIAS(iscntrl,libc_iscntrl);
 DEFINE_PUBLIC_ALIAS(isblank,libc_isblank);
-DEFINE_PUBLIC_ALIAS(isascii,libc_isascii);
 DEFINE_PUBLIC_ALIAS(toupper,libc_toupper);
 DEFINE_PUBLIC_ALIAS(tolower,libc_tolower);
 DEFINE_PUBLIC_ALIAS(isctype,libc_isctype);
+DEFINE_PUBLIC_ALIAS(__isascii,libc_isascii);
+
+#ifndef __KERNEL__
+INTERN int (LIBCCALL libc__tolower)(int ch) { return ch+0x20; }
+INTERN int (LIBCCALL libc__toupper)(int ch) { return ch-0x20; }
+DEFINE_PUBLIC_ALIAS(_tolower,libc__tolower);
+DEFINE_PUBLIC_ALIAS(_toupper,libc__toupper);
+#endif /* !__KERNEL__ */
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTERN int LIBCCALL libc_isleadbyte(int wc) { return wc >= 192 && wc <= 255; }
-INTERN int LIBCCALL libc_iswcsym(wint_t wc) { return libc___isctype(wc,(F_ALPHA|F_DIGIT)) || wc == '_'; }
-INTERN int LIBCCALL libc_iswcsymf(wint_t wc) { return libc___isctype(wc,(F_ALPHA)) || wc == '_'; }
+INTERN int LIBCCALL libc_iswcsym(wint_t wc) { return libc___isctype(wc,F_SLOT(F_ALPHA|F_DIGIT)) || wc == '_'; }
+INTERN int LIBCCALL libc_iswcsymf(wint_t wc) { return libc___isctype(wc,F_SLOT(F_ALPHA)) || wc == '_'; }
 INTERN int LIBCCALL libc_isleadbyte_l(int wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_isleadbyte(wc); }
 INTERN int LIBCCALL libc_iswcsym_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswcsym(wc); }
 INTERN int LIBCCALL libc_iswcsymf_l(wint_t wc, locale_t locale) { NOT_IMPLEMENTED(); return libc_iswcsymf(wc); }
@@ -359,6 +392,73 @@ DEFINE_PUBLIC_ALIAS(__iswcsymf,libc_iswcsymf);
 DEFINE_PUBLIC_ALIAS(__iswcsym,libc_iswcsym);
 DEFINE_PUBLIC_ALIAS(_iswcsymf_l,libc_iswcsymf_l);
 DEFINE_PUBLIC_ALIAS(_iswcsym_l,libc_iswcsym_l);
+
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_INTERN_ALIAS(libc_isalpha_l,libc_isalpha);
+DEFINE_INTERN_ALIAS(libc_isupper_l,libc_isupper);
+DEFINE_INTERN_ALIAS(libc_islower_l,libc_islower);
+DEFINE_INTERN_ALIAS(libc_isdigit_l,libc_isdigit);
+DEFINE_INTERN_ALIAS(libc_isxdigit_l,libc_isxdigit);
+DEFINE_INTERN_ALIAS(libc_isspace_l,libc_isspace);
+DEFINE_INTERN_ALIAS(libc_isalnum_l,libc_isalnum);
+DEFINE_INTERN_ALIAS(libc_isprint_l,libc_isprint);
+DEFINE_INTERN_ALIAS(libc_isgraph_l,libc_isgraph);
+DEFINE_INTERN_ALIAS(libc_iscntrl_l,libc_iscntrl);
+DEFINE_INTERN_ALIAS(libc_toupper_l,libc_toupper);
+DEFINE_INTERN_ALIAS(libc_tolower_l,libc_tolower);
+DEFINE_INTERN_ALIAS(libc_isctype_l,libc_isctype);
+#else /* CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP */
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isalpha_l)(int ch, locale_t UNUSED(loc))  { return libc_isalpha(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isupper_l)(int ch, locale_t UNUSED(loc))  { return libc_isupper(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_islower_l)(int ch, locale_t UNUSED(loc))  { return libc_islower(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isdigit_l)(int ch, locale_t UNUSED(loc))  { return libc_isdigit(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isxdigit_l)(int ch, locale_t UNUSED(loc)) { return libc_isxdigit(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isspace_l)(int ch, locale_t UNUSED(loc))  { return libc_isspace(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isalnum_l)(int ch, locale_t UNUSED(loc))  { return libc_isalnum(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isprint_l)(int ch, locale_t UNUSED(loc))  { return libc_isprint(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isgraph_l)(int ch, locale_t UNUSED(loc))  { return libc_isgraph(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_iscntrl_l)(int ch, locale_t UNUSED(loc))  { return libc_iscntrl(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_toupper_l)(int ch, locale_t UNUSED(loc))  { return libc_toupper(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_tolower_l)(int ch, locale_t UNUSED(loc))  { return libc_tolower(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isctype_l)(int ch, int mask, locale_t UNUSED(loc)) { return libc_isctype(ch,mask); }
+#endif /* !CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP */
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_isctype(int ch, int mask) {
+ int check_mask = 0,result;
+ if (mask&__DOS_UPPER) check_mask |= F_SLOT(F_UPPER);
+ if (mask&__DOS_LOWER) check_mask |= F_SLOT(F_LOWER);
+ if (mask&__DOS_DIGIT) check_mask |= F_SLOT(F_DIGIT);
+ if (mask&__DOS_SPACE) check_mask |= F_SLOT(F_SPACE);
+ if (mask&__DOS_PUNCT) check_mask |= F_SLOT(F_PUNCT);
+ if (mask&__DOS_CONTROL) check_mask |= F_SLOT(F_CNTRL);
+ if (mask&__DOS_BLANK) check_mask |= F_SLOT(F_BLANK);
+ if (mask&__DOS_HEX) check_mask |= F_SLOT(F_XDIGIT);
+ if (mask&__DOS_ALPHA) check_mask |= F_SLOT(F_XDIGIT);
+ result = libc_isctype(ch,check_mask);
+ if (mask&__DOS_LEADBYTE) result |= libc_isleadbyte(ch);
+ return result;
+}
+INTDEF ATTR_DOSTEXT int LIBCCALL libc_toascii(int ch) { return ch&0x7f; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_iscsym(int ch) { return libc___isctype(ch,F_SLOT(F_ALPHA|F_DIGIT)) || ch == '_'; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_iscsymf(int ch) { return libc___isctype(ch,F_SLOT(F_ALPHA)) || ch == '_'; }
+
+DEFINE_PUBLIC_ALIAS(_isalpha_l,libc_isalpha_l);
+DEFINE_PUBLIC_ALIAS(_isupper_l,libc_isupper_l);
+DEFINE_PUBLIC_ALIAS(_islower_l,libc_islower_l);
+DEFINE_PUBLIC_ALIAS(_isdigit_l,libc_isdigit_l);
+DEFINE_PUBLIC_ALIAS(_isxdigit_l,libc_isxdigit_l);
+DEFINE_PUBLIC_ALIAS(_isspace_l,libc_isspace_l);
+DEFINE_PUBLIC_ALIAS(_isalnum_l,libc_isalnum_l);
+DEFINE_PUBLIC_ALIAS(_isprint_l,libc_isprint_l);
+DEFINE_PUBLIC_ALIAS(_isgraph_l,libc_isgraph_l);
+DEFINE_PUBLIC_ALIAS(_iscntrl_l,libc_iscntrl_l);
+DEFINE_PUBLIC_ALIAS(_toupper_l,libc_toupper_l);
+DEFINE_PUBLIC_ALIAS(_tolower_l,libc_tolower_l);
+DEFINE_PUBLIC_ALIAS(_isctype_l,libc_isctype_l);
+DEFINE_PUBLIC_ALIAS(_isctype,libc_dos_isctype);
+DEFINE_PUBLIC_ALIAS(__toascii,libc_toascii);
+DEFINE_PUBLIC_ALIAS(__iscsym,libc_iscsym);
+DEFINE_PUBLIC_ALIAS(__iscsymf,libc_iscsymf);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

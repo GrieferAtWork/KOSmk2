@@ -564,15 +564,21 @@ __LIBC void (__LIBCCALL srandom)(unsigned int __seed) __ASMNAME("srand");
 __LIBC __WUNUSED size_t (__LIBCCALL __ctype_get_mb_cur_max)(void);
 
 __NAMESPACE_STD_BEGIN
-__LIBC int (__LIBCCALL system)(char const *__command);
 __LIBC __WUNUSED __NONNULL((1)) char *(__LIBCCALL getenv)(char const *__name) __UFS_FUNC(getenv);
 __LIBC int (__LIBCCALL mblen)(char const *__s, size_t __n);
 __LIBC int (__LIBCCALL mbtowc)(wchar_t *__restrict __pwc, char const *__restrict __s, size_t __n);
 __LIBC int (__LIBCCALL wctomb)(char *__s, wchar_t __wchar);
 __LIBC size_t (__LIBCCALL mbstowcs)(wchar_t *__restrict __pwcs, char const *__restrict __s, size_t __n);
 __LIBC size_t (__LIBCCALL wcstombs)(char *__restrict __s, wchar_t const *__restrict __pwcs, size_t __n);
+#ifndef __system_defined
+__LIBC int (__LIBCCALL system)(char const *__command);
+#endif /* !__system_defined */
+#ifndef __abort_defined
 __LIBC __ATTR_NORETURN void (__LIBCCALL abort)(void);
+#endif /* !__abort_defined */
+#ifndef __exit_defined
 __LIBC __ATTR_NORETURN void (__LIBCCALL exit)(int __status);
+#endif /* !__exit_defined */
 __LIBC int (__LIBCCALL atexit)(void (*__LIBCCALL __func)(void));
 #if defined(__USE_ISOC11) || defined(__USE_ISOCXX11)
 __LIBC __ATTR_NORETURN void (__LIBCCALL quick_exit)(int __status);
@@ -586,15 +592,24 @@ __LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func) (
 __LIBC __ATTR_NORETURN void (__LIBCCALL _Exit)(int __status) __ASMNAME("_exit");
 #endif /* __USE_ISOC99 */
 __NAMESPACE_STD_END
-__NAMESPACE_STD_USING(system)
 __NAMESPACE_STD_USING(getenv)
 __NAMESPACE_STD_USING(mblen)
 __NAMESPACE_STD_USING(mbtowc)
 __NAMESPACE_STD_USING(wctomb)
 __NAMESPACE_STD_USING(mbstowcs)
 __NAMESPACE_STD_USING(wcstombs)
+#ifndef __system_defined
+#define __system_defined 1
+__NAMESPACE_STD_USING(system)
+#endif /* !__system_defined */
+#ifndef __abort_defined
+#define __abort_defined 1
 __NAMESPACE_STD_USING(abort)
+#endif /* !__abort_defined */
+#ifndef __exit_defined
+#define __exit_defined 1
 __NAMESPACE_STD_USING(exit)
+#endif /* !__exit_defined */
 __NAMESPACE_STD_USING(atexit)
 #if defined(__USE_ISOC11) || defined(__USE_ISOCXX11)
 __NAMESPACE_STD_USING(quick_exit)
@@ -677,7 +692,7 @@ __LIBC __NONNULL((1,4)) long (__LIBCCALL strtol_l)(char const *__restrict __nptr
 __LIBC __NONNULL((1,4)) unsigned long (__LIBCCALL strtoul_l)(char const *__restrict __nptr, char **__restrict __endptr, int __base, __locale_t __loc);
 __LIBC __NONNULL((1,4)) __LONGLONG (__LIBCCALL strtoll_l)(char const *__restrict __nptr, char **__restrict __endptr, int __base, __locale_t __loc);
 __LIBC __NONNULL((1,4)) __ULONGLONG (__LIBCCALL strtoull_l)(char const *__restrict __nptr, char **__restrict __endptr, int __base, __locale_t __loc);
-__LIBC __NONNULL((1,3)) double (__LIBCCALL strtod_l)(char const *__restrict __nptr, char **__restrict __endptr, __locale_t __loc);
+__LIBC __NONNULL((1,3)) double (__LIBCCALL strtod_l)(char const *__restrict __nptr, char **__restrict __endptr, __locale_t __loc) __PE_ASMNAME("_strtod_l");
 __LIBC __NONNULL((1,3)) float (__LIBCCALL strtof_l)(char const *__restrict __nptr, char **__restrict __endptr, __locale_t __loc);
 __LIBC __NONNULL((1,3)) long double (__LIBCCALL strtold_l)(char const *__restrict __nptr, char **__restrict __endptr, __locale_t __loc);
 __LIBC __WUNUSED __NONNULL((1)) char *(__LIBCCALL secure_getenv)(char const *__name);
@@ -702,7 +717,7 @@ __LIBC __NONNULL((1)) int (__LIBCCALL unsetenv)(char const *__name);
    (defined(__USE_XOPEN_EXTENDED) && !defined(__USE_XOPEN2K8))
 #ifndef __mktemp_defined
 #define __mktemp_defined 1
-__LIBC __NONNULL((1)) char *(__LIBCCALL mktemp)(char *__template);
+__LIBC __NONNULL((1)) char *(__LIBCCALL mktemp)(char *__template) __PE_FUNC_OLDPEA(mktemp);
 #endif /* !__mktemp_defined */
 __LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL ecvt)(double __value, int __ndigit, int *__restrict __decpt, int *__restrict __sign);
 __LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL fcvt)(double __value, int __ndigit, int *__restrict __decpt, int *__restrict __sign);
@@ -730,6 +745,10 @@ __LIBC __WUNUSED char *(__LIBCCALL ptsname)(int __fd);
 #ifdef __USE_XOPEN2KXSI
 __LIBC __WUNUSED int (__LIBCCALL posix_openpt)(int __oflag);
 #endif /* __USE_XOPEN2KXSI */
+
+#ifdef __USE_DOS
+
+#endif /* __USE_DOS */
 
 #endif /* !__KERNEL__ */
 

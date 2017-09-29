@@ -1379,7 +1379,7 @@ again:
  copy_size = MIN(BUFFER_UNUSED(buf),datalen);
  /*if (copy_size)*/
  {
-  memcpy(buf->b_bufpos,data,copy_size*sizeof(char));
+  libc_memcpy(buf->b_bufpos,data,copy_size*sizeof(char));
   data          += copy_size;
   datalen       -= copy_size;
   buf->b_bufpos += copy_size;
@@ -1401,7 +1401,7 @@ again:
    assert(buf->b_bufpos == buf->b_buffer);
    if (datalen < BUFFER_UNUSED(buf)) {
     /* Simple case: We can copy the remainder into the currently empty buffer. */
-    memcpy(buf->b_bufpos,data,datalen*sizeof(char));
+    libc_memcpy(buf->b_bufpos,data,datalen*sizeof(char));
     buf->b_bufpos += datalen;
     goto end;
    }
@@ -1411,7 +1411,7 @@ again:
   buf->b_bufend = new_buffer+new_size;
   buf->b_buffer = new_buffer;
   /* Copy the data we've just allocated memory for. */
-  memcpy(buf->b_bufpos,data,copy_size*sizeof(char));
+  libc_memcpy(buf->b_bufpos,data,copy_size*sizeof(char));
   data          += copy_size;
   datalen       -= copy_size;
   buf->b_bufpos += copy_size;
@@ -1430,7 +1430,7 @@ again:
   BUFFER_ADDSTATE(buf,temp);
   if (temp < 0) return temp;
   /* Copy all the unprinted data into the (now) empty buffer. */
-  memcpy(buf->b_buffer,data,datalen*sizeof(char));
+  libc_memcpy(buf->b_buffer,data,datalen*sizeof(char));
   buf->b_bufpos = buf->b_bufpos+datalen;
  }
 end:

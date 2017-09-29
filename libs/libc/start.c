@@ -36,6 +36,9 @@ INTDEF int LIBCCALL user_initialize_dlmalloc(void);
 
 #undef environ
 DEFINE_PUBLIC_ALIAS(__environ,environ);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_environ,environ);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 PUBLIC char **environ = NULL;
 PUBLIC struct envdata *appenv;

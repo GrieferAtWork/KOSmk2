@@ -269,23 +269,15 @@ DEFINE_PUBLIC_ALIAS(__DSYMw32(_wsopen),libc_dos_32wsopen);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wsopen_s),libc_dos_32wsopen_s);
 
 DEFINE_PUBLIC_ALIAS(_getdcwd,libc_getdcwd);
-DEFINE_PUBLIC_ALIAS(getdcwd,libc_getdcwd);
-DEFINE_PUBLIC_ALIAS(wgetdcwd,libc_32getdcwd);
-DEFINE_PUBLIC_ALIAS(wgetcwd,libc_32getcwd);
-#if 0
-DEFINE_PUBLIC_ALIAS(__DSYM(wgetdcwd),libc_16getdcwd);
-DEFINE_PUBLIC_ALIAS(__DSYM(wgetcwd),libc_16getcwd);
-#endif
+DEFINE_PUBLIC_ALIAS(_wgetcwd,libc_32getcwd);
+DEFINE_PUBLIC_ALIAS(_wgetdcwd,libc_32getdcwd);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wgetdcwd),libc_16getdcwd);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wgetcwd),libc_16getcwd);
-DEFINE_PUBLIC_ALIAS(__DSYM(open),libc_dos_open);
-DEFINE_PUBLIC_ALIAS(__DSYM(_open),libc_dos_open);
-DEFINE_PUBLIC_ALIAS(__DSYM(creat),libc_dos_creat);
-DEFINE_PUBLIC_ALIAS(__DSYM(_creat),libc_dos_creat);
-DEFINE_PUBLIC_ALIAS(__DSYM(sopen),libc_dos_sopen);
-DEFINE_PUBLIC_ALIAS(__DSYM(_sopen),libc_dos_sopen);
-DEFINE_PUBLIC_ALIAS(__DSYM(_sopen_s),libc_dos_sopen_s);
-DEFINE_PUBLIC_ALIAS(__DSYM(_sopen_s_nolock),libc_dos_sopen_s);
+DEFINE_PUBLIC_ALIAS(_open,libc_dos_open);
+DEFINE_PUBLIC_ALIAS(_creat,libc_dos_creat);
+DEFINE_PUBLIC_ALIAS(_sopen,libc_dos_sopen);
+DEFINE_PUBLIC_ALIAS(_sopen_s,libc_dos_sopen_s);
+DEFINE_PUBLIC_ALIAS(_sopen_s_nolock,libc_dos_sopen_s);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 

@@ -329,27 +329,27 @@ libc_findread(struct findfd *__restrict fd,
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_findfirst32(char const *file, struct _finddata32_t *finddata) FINDFIRST(libc_findopen,libc_findnext32,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_findfirst64(char const *file, struct __finddata64_t *finddata) FINDFIRST(libc_findopen,libc_findnext64,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_findfirst32i64(char const *file, struct _finddata32i64_t *finddata) FINDFIRST(libc_findopen,libc_findnext32i64,false)
-INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_findfirst64i32(char const *file, struct _finddata64i32_t *finddata) FINDFIRST(libc_findopen,libc_findnext64i32,false)
+//INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_findfirst64i32(char const *file, struct _finddata64i32_t *finddata) FINDFIRST(libc_findopen,libc_findnext64i32,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_16findfirst32(char16_t const *file, struct _wfinddata32_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext32,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_16findfirst64(char16_t const *file, struct _wfinddata64_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext64,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_16findfirst32i64(char16_t const *file, struct _wfinddata32i64_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext32i64,false)
-INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_16findfirst64i32(char16_t const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext64i32,false)
+//INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_16findfirst64i32(char16_t const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext64i32,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_32findfirst32(char32_t const *file, struct _wfinddata32_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext32,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_32findfirst64(char32_t const *file, struct _wfinddata64_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext64,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_32findfirst32i64(char32_t const *file, struct _wfinddata32i64_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext32i64,false)
-INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_32findfirst64i32(char32_t const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext64i32,false)
+//INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_32findfirst64i32(char32_t const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext64i32,false)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_findfirst32(char const *file, struct _wfinddata32_t *finddata) FINDFIRST(libc_findopen,libc_16findnext32,true)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_findfirst64(char const *file, struct _wfinddata64_t *finddata) FINDFIRST(libc_findopen,libc_16findnext64,true)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_findfirst32i64(char const *file, struct _wfinddata32i64_t *finddata) FINDFIRST(libc_findopen,libc_16findnext32i64,true)
-INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_findfirst64i32(char const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_findopen,libc_16findnext64i32,true)
+//INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_findfirst64i32(char const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_findopen,libc_16findnext64i32,true)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_16findfirst32(char16_t const *file, struct _wfinddata32_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext32,true)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_16findfirst64(char16_t const *file, struct _wfinddata64_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext64,true)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_16findfirst32i64(char16_t const *file, struct _wfinddata32i64_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext32i64,true)
-INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_16findfirst64i32(char16_t const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext64i32,true)
+//INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_16findfirst64i32(char16_t const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_16findopen,libc_16findnext64i32,true)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_32findfirst32(char32_t const *file, struct _wfinddata32_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext32,true)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_32findfirst64(char32_t const *file, struct _wfinddata64_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext64,true)
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_32findfirst32i64(char32_t const *file, struct _wfinddata32i64_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext32i64,true)
-INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_32findfirst64i32(char32_t const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext64i32,true)
+//INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_32findfirst64i32(char32_t const *file, struct _wfinddata64i32_t *finddata) FINDFIRST(libc_32findopen,libc_32findnext64i32,true)
 #undef FINDFIRST
 
 
@@ -374,7 +374,7 @@ INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_32findfirst64i32(char32_t const *
 INTERN ATTR_DOSTEXT int LIBCCALL libc_findnext32(intptr_t hdn, struct _finddata32_t *finddata) FINDNEXT(32,32,MEMCPY_NAME)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_findnext64(intptr_t hdn, struct __finddata64_t *finddata) FINDNEXT(64,64,MEMCPY_NAME)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_findnext32i64(intptr_t hdn, struct _finddata32i64_t *finddata) FINDNEXT(32,64,MEMCPY_NAME)
-INTERN ATTR_DOSTEXT int LIBCCALL libc_findnext64i32(intptr_t hdn, struct _finddata64i32_t *finddata) FINDNEXT(64,32,MEMCPY_NAME)
+//INTERN ATTR_DOSTEXT int LIBCCALL libc_findnext64i32(intptr_t hdn, struct _finddata64i32_t *finddata) FINDNEXT(64,32,MEMCPY_NAME)
 #undef MEMCPY_NAME
 #define UTF8TO16_NAME(dst,dst_elem,src,src_len) \
  { mbstate_t state = MBSTATE_INIT; \
@@ -383,7 +383,7 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc_findnext64i32(intptr_t hdn, struct _findda
 INTERN ATTR_DOSTEXT int LIBCCALL libc_16findnext32(intptr_t hdn, struct _wfinddata32_t *finddata) FINDNEXT(32,32,UTF8TO16_NAME)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_16findnext64(intptr_t hdn, struct _wfinddata64_t *finddata) FINDNEXT(64,64,UTF8TO16_NAME)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_16findnext32i64(intptr_t hdn, struct _wfinddata32i64_t *finddata) FINDNEXT(32,64,UTF8TO16_NAME)
-INTERN ATTR_DOSTEXT int LIBCCALL libc_16findnext64i32(intptr_t hdn, struct _wfinddata64i32_t *finddata) FINDNEXT(64,32,UTF8TO16_NAME)
+//INTERN ATTR_DOSTEXT int LIBCCALL libc_16findnext64i32(intptr_t hdn, struct _wfinddata64i32_t *finddata) FINDNEXT(64,32,UTF8TO16_NAME)
 #undef UTF8TO32_NAME
 #define UTF8TO32_NAME(dst,dst_elem,src,src_len) \
  { mbstate_t state = MBSTATE_INIT; \
@@ -392,51 +392,67 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc_16findnext64i32(intptr_t hdn, struct _wfin
 INTERN ATTR_DOSTEXT int LIBCCALL libc_32findnext32(intptr_t hdn, struct _wfinddata32_t *finddata) FINDNEXT(32,32,UTF8TO32_NAME)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_32findnext64(intptr_t hdn, struct _wfinddata64_t *finddata) FINDNEXT(64,64,UTF8TO32_NAME)
 INTERN ATTR_DOSTEXT int LIBCCALL libc_32findnext32i64(intptr_t hdn, struct _wfinddata32i64_t *finddata) FINDNEXT(32,64,UTF8TO32_NAME)
-INTERN ATTR_DOSTEXT int LIBCCALL libc_32findnext64i32(intptr_t hdn, struct _wfinddata64i32_t *finddata) FINDNEXT(64,32,UTF8TO32_NAME)
+//INTERN ATTR_DOSTEXT int LIBCCALL libc_32findnext64i32(intptr_t hdn, struct _wfinddata64i32_t *finddata) FINDNEXT(64,32,UTF8TO32_NAME)
 #undef UTF8TO32_NAME
 
 
+
+#undef _finddata_t
+#undef _finddatai64_t
+#undef _findfirst
+#undef _findnext
+#undef _findfirsti64
+#undef _findnexti64
+#undef _wfinddata_t
+#undef _wfinddatai64_t
+#undef _wfindfirst
+#undef _wfindnext
+#undef _wfindfirsti64
+#undef _wfindnexti64
+
 DEFINE_PUBLIC_ALIAS(_findclose,libc_findclose);
-
-DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst32),libc_findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst),libc_findfirst32);
 DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst64),libc_findfirst64);
-DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst32i64),libc_findfirst32i64);
-DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst64i32),libc_findfirst64i32);
-DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst32),libc_dos_findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYM(_findfirsti64),libc_findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst),libc_dos_findfirst32);
 DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst64),libc_dos_findfirst64);
-DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst32i64),libc_dos_findfirst32i64);
-DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst64i32),libc_dos_findfirst64i32);
+DEFINE_PUBLIC_ALIAS(__DSYM(_findfirsti64),libc_dos_findfirst32i64);
 
-DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst32),libc_16findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst),libc_16findfirst32);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst64),libc_16findfirst64);
-DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst32i64),libc_16findfirst32i64);
-DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst64i32),libc_16findfirst64i32);
-DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst32),libc_dos_16findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirsti64),libc_16findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst),libc_dos_16findfirst32);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst64),libc_dos_16findfirst64);
-DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst32i64),libc_dos_16findfirst32i64);
-DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst64i32),libc_dos_16findfirst64i32);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirsti64),libc_dos_16findfirst32i64);
 
-DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst32),libc_32findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst),libc_32findfirst32);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst64),libc_32findfirst64);
-DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst32i64),libc_32findfirst32i64);
-DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst64i32),libc_32findfirst64i32);
-DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst32),libc_dos_32findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirsti64),libc_32findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst),libc_dos_32findfirst32);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst64),libc_dos_32findfirst64);
-DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst32i64),libc_dos_32findfirst32i64);
-DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst64i32),libc_dos_32findfirst64i32);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirsti64),libc_dos_32findfirst32i64);
 
-DEFINE_PUBLIC_ALIAS(_findnext32,libc_findnext32);
+DEFINE_PUBLIC_ALIAS(_findnext,libc_findnext32);
 DEFINE_PUBLIC_ALIAS(_findnext64,libc_findnext64);
-DEFINE_PUBLIC_ALIAS(_findnext32i64,libc_findnext32i64);
-DEFINE_PUBLIC_ALIAS(_findnext64i32,libc_findnext64i32);
-DEFINE_PUBLIC_ALIAS(_wfindnext32,libc_32findnext32);
+DEFINE_PUBLIC_ALIAS(_findnexti64,libc_findnext32i64);
+DEFINE_PUBLIC_ALIAS(_wfindnext,libc_32findnext32);
 DEFINE_PUBLIC_ALIAS(_wfindnext64,libc_32findnext64);
-DEFINE_PUBLIC_ALIAS(_wfindnext32i64,libc_32findnext32i64);
-DEFINE_PUBLIC_ALIAS(_wfindnext64i32,libc_32findnext64i32);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext32),libc_16findnext32);
+DEFINE_PUBLIC_ALIAS(_wfindnexti64,libc_32findnext32i64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext),libc_16findnext32);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext64),libc_16findnext64);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext32i64),libc_16findnext32i64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnexti64),libc_16findnext32i64);
+
+#if 0
+DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst64i32),libc_findfirst64i32);
+DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst64i32),libc_dos_findfirst64i32);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst64i32),libc_16findfirst64i32);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst64i32),libc_dos_16findfirst64i32);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst64i32),libc_32findfirst64i32);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst64i32),libc_dos_32findfirst64i32);
+DEFINE_PUBLIC_ALIAS(_findnext64i32,libc_findnext64i32);
+DEFINE_PUBLIC_ALIAS(_wfindnext64i32,libc_32findnext64i32);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext64i32),libc_16findnext64i32);
+#endif
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

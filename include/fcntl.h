@@ -115,15 +115,20 @@ __LIBC int (__ATTR_CDECL fcntl)(int __fd, int __cmd, ...);
 #endif /* !__USE_KOS */
 #ifndef __open_defined
 #define __open_defined 1
-__LIBC __NONNULL((1)) int (__ATTR_CDECL open)(char const *__file, int __oflag, ...) __UFS_FUNCn(open);
+__LIBC __NONNULL((1)) int (__ATTR_CDECL open)(char const *__file, int __oflag, ...) __UFS_FUNCn_OLDPEA(open);
 #endif /* !__open_defined */
 #ifndef __creat_defined
 #define __creat_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL creat)(char const *__file, mode_t __mode) __UFS_FUNCn(creat);
+__LIBC __NONNULL((1)) int (__LIBCCALL creat)(char const *__file, mode_t __mode) __UFS_FUNCn_OLDPEA(creat);
 #endif /* !__creat_defined */
 #ifdef __USE_LARGEFILE64
+#ifdef __PE__
+__LIBC __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC_(_open);
+__LIBC __NONNULL((1)) int (__LIBCCALL creat64)(char const *__file, mode_t __mode) __UFS_FUNC_(_creat);
+#else
 __LIBC __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC(open64);
 __LIBC __NONNULL((1)) int (__LIBCCALL creat64)(char const *__file, mode_t __mode) __UFS_FUNC(creat64);
+#endif
 #endif /* __USE_LARGEFILE64 */
 
 #ifdef __USE_ATFILE
@@ -151,10 +156,14 @@ __LIBC int (__LIBCCALL posix_fallocate64)(int __fd, __off64_t __offset, __off64_
 #   define F_TLOCK 2 /*< Test and lock a region for exclusive use. */
 #   define F_TEST  3 /*< Test a region for other processes locks. */
 #ifndef __KERNEL__
+#if defined(__PE__) && !defined(__USE_FILE_OFFSET64)
+__LIBC int (__LIBCCALL lockf)(int __fd, int __cmd, __FS_TYPE(off) __len) __ASMNAME("_locking");
+#else /* __PE__ */
 __LIBC int (__LIBCCALL lockf)(int __fd, int __cmd, __FS_TYPE(off) __len) __FS_FUNC(lockf);
+#endif /* !__PE__ */
 #ifdef __USE_LARGEFILE64
 __LIBC int (__LIBCCALL lockf64)(int __fd, int __cmd, __off64_t __len);
-#endif
+#endif /* __USE_LARGEFILE64 */
 #endif /* !__KERNEL__ */
 #endif
 

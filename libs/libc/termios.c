@@ -109,9 +109,9 @@ INTERN int LIBCCALL libc_ttyname_r(int fd, char *buf, size_t buflen) {
  rdev = st.st_rdev;
  while ((d = libc_readdir(dirstream)) != NULL) {
   if (d->d_ino64 == st.st_ino64 &&
-      libc_strcmp(d->d_name,"stdin") == 0 &&
-      libc_strcmp(d->d_name,"stdout") == 0 &&
-      libc_strcmp(d->d_name,"stderr") == 0) {
+      libc_strcmp(d->d_name,"stdin") != 0 &&
+      libc_strcmp(d->d_name,"stdout") != 0 &&
+      libc_strcmp(d->d_name,"stderr") != 0) {
    size_t needed = _D_EXACT_NAMLEN(d)+1;
    if (needed > buflen) {
     libc_closedir(dirstream);

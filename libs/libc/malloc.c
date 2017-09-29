@@ -1293,6 +1293,10 @@ DEFINE_PUBLIC_ALIAS(_mall_enum_d,libc__mall_enum_d);
 DEFINE_PUBLIC_ALIAS(_mall_untrack_d,libc__mall_untrack_d);
 DEFINE_PUBLIC_ALIAS(_mall_nofree_d,libc__mall_nofree_d);
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_CrtCheckMemory,libc__mall_validate);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_MALLOC_C */

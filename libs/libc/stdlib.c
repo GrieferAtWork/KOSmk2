@@ -28,6 +28,7 @@
 #include "system.h"
 #include "unistd.h"
 #include "unicode.h"
+#include "string.h"
 #endif
 #include <assert.h>
 #include <hybrid/compiler.h>
@@ -343,10 +344,10 @@ INTERN long LIBCCALL libc_jrand48(unsigned short xsubi[3]) { NOT_IMPLEMENTED(); 
 INTERN void LIBCCALL libc_srand48(long seedval) { NOT_IMPLEMENTED(); }
 INTERN unsigned short *LIBCCALL libc_seed48(unsigned short seed16v[3]) { NOT_IMPLEMENTED(); return seed16v; }
 INTERN void LIBCCALL libc_lcong48(unsigned short param[7]) { NOT_IMPLEMENTED(); }
-INTERN char *LIBCCALL libc_initstate(unsigned int seed, char *statebuf, size_t statelen) { NOT_IMPLEMENTED(); return statebuf; }
-INTERN char *LIBCCALL libc_setstate(char *statebuf) { NOT_IMPLEMENTED(); return statebuf; }
+INTERN char *LIBCCALL libc_initstate(unsigned int seed, char *__restrict statebuf, size_t statelen) { NOT_IMPLEMENTED(); return statebuf; }
+INTERN char *LIBCCALL libc_setstate(char *__restrict statebuf) { NOT_IMPLEMENTED(); return statebuf; }
 INTERN char *LIBCCALL libc_l64a(long n) { NOT_IMPLEMENTED(); return NULL; }
-INTERN long LIBCCALL libc_a64l(char const *s) { NOT_IMPLEMENTED(); return 0; }
+INTERN long LIBCCALL libc_a64l(char const *__restrict s) { NOT_IMPLEMENTED(); return 0; }
 INTERN char *LIBCCALL libc_realpath(char const *__restrict name, char *__restrict resolved) { NOT_IMPLEMENTED(); return resolved; }
 INTERN int LIBCCALL libc_drand48_r(struct drand48_data *__restrict buffer, double *__restrict result) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_erand48_r(unsigned short xsubi[3], struct drand48_data *__restrict buffer, double *__restrict result) { NOT_IMPLEMENTED(); return 0; }
@@ -361,17 +362,17 @@ INTERN int LIBCCALL libc_random_r(struct random_data *__restrict buf, s32 *__res
 INTERN int LIBCCALL libc_srandom_r(unsigned int seed, struct random_data *buf) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_initstate_r(unsigned int seed, char *__restrict statebuf, size_t statelen, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_setstate_r(char *__restrict statebuf, struct random_data *__restrict buf) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_mkstemps(char *template_, int suffixlen) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_rpmatch(char const *response) { NOT_IMPLEMENTED(); return 0; }
-INTERN char *LIBCCALL libc_canonicalize_file_name(char const *name) { NOT_IMPLEMENTED(); return NULL; }
-INTERN int LIBCCALL libc_ptsname_r(int fd, char *buf, size_t buflen) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_mkstemps(char *__restrict template_, int suffixlen) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_rpmatch(char const *__restrict response) { NOT_IMPLEMENTED(); return 0; }
+INTERN char *LIBCCALL libc_canonicalize_file_name(char const *__restrict name) { NOT_IMPLEMENTED(); return NULL; }
+INTERN int LIBCCALL libc_ptsname_r(int fd, char *__restrict buf, size_t buflen) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_getpt(void) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_mkostemp(char *template_, int flags) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_mkostemps(char *template_, int suffixlen, int flags) { NOT_IMPLEMENTED(); return 0; }
-INTERN char *LIBCCALL libc_mktemp(char *template_) { NOT_IMPLEMENTED(); return template_; }
-INTERN int LIBCCALL libc_mkstemp(char *template_) { NOT_IMPLEMENTED(); return 0; }
-INTERN char *LIBCCALL libc_mkdtemp(char *template_) { NOT_IMPLEMENTED(); return NULL; }
-INTERN void LIBCCALL libc_setkey(char const *key) { NOT_IMPLEMENTED(); }
+INTERN int LIBCCALL libc_mkostemp(char *__restrict template_, int flags) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_mkostemps(char *__restrict template_, int suffixlen, int flags) { NOT_IMPLEMENTED(); return 0; }
+INTERN char *LIBCCALL libc_mktemp(char *__restrict template_) { NOT_IMPLEMENTED(); return template_; }
+INTERN int LIBCCALL libc_mkstemp(char *__restrict template_) { NOT_IMPLEMENTED(); return 0; }
+INTERN char *LIBCCALL libc_mkdtemp(char *__restrict template_) { NOT_IMPLEMENTED(); return NULL; }
+INTERN void LIBCCALL libc_setkey(char const *__restrict key) { NOT_IMPLEMENTED(); }
 INTERN int LIBCCALL libc_grantpt(int fd) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_unlockpt(int fd) { NOT_IMPLEMENTED(); return 0; }
 INTERN char *LIBCCALL libc_ptsname(int fd) { NOT_IMPLEMENTED(); return NULL; }
@@ -453,6 +454,9 @@ DEFINE_PUBLIC_ALIAS(grantpt,libc_grantpt);
 DEFINE_PUBLIC_ALIAS(unlockpt,libc_unlockpt);
 DEFINE_PUBLIC_ALIAS(ptsname,libc_ptsname);
 DEFINE_PUBLIC_ALIAS(posix_openpt,libc_posix_openpt);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_mktemp,libc_mktemp);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 
 #ifndef __KERNEL__
@@ -474,6 +478,19 @@ DEFINE_PUBLIC_ALIAS(mkstemps64,libc_mkstemps);
 DEFINE_PUBLIC_ALIAS(_mktemp_s,libc_mktemp_s);
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_mktemp_s(char *templatename, size_t size) {
  return templatename && size && libc_mktemp(templatename) ? EOK : EINVAL;
+}
+
+DEFINE_PUBLIC_ALIAS(_wsystem,libc_32wsystem);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wsystem),libc_16wsystem);
+INTERN int LIBCCALL libc_16wsystem(char16_t const *__restrict command) {
+ int result = -1; char *utf8_command = libc_utf16to8m(command,libc_16wcslen(command));
+ if (utf8_command) result = libc_system(utf8_command),libc_free(utf8_command);
+ return result;
+}
+INTERN int LIBCCALL libc_32wsystem(char32_t const *__restrict command) {
+ int result = -1; char *utf8_command = libc_utf32to8m(command,libc_32wcslen(command));
+ if (utf8_command) result = libc_system(utf8_command),libc_free(utf8_command);
+ return result;
 }
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

@@ -109,6 +109,7 @@
  * WANT_STRSET_S
  * WANT_STRNSET_S
  * WANT_MBLEN
+ * WANT_MBLEN_L
  * WANT_MBTOWC
  * WANT_WCTOMB
  * WANT_WCWIDTH
@@ -123,8 +124,10 @@
  * WANT_STRTOU64_L
  * WANT_STRTO32_L
  * WANT_STRTO64_L
+ * WANT_ATOF
  * WANT_ATO32
  * WANT_ATO64
+ * WANT_ATOF_L
  * WANT_ATO32_L
  * WANT_ATO64_L
  * WANT_STRTOLD
@@ -963,6 +966,18 @@ DECL size_t LIBCCALL Xmb(len)(char const *s, size_t n) {
 }
 #endif /* WANT_MBLEN */
 
+#ifdef WANT_MBLEN_L
+#undef WANT_MBLEN_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xmb(len_l),Xmb(len));
+#else
+DECL size_t LIBCCALL Xmb(len_l)
+(char const *__restrict s, size_t n, locale_t UNUSED(locale)) {
+	return Xmb(len)(s,n);
+}
+#endif
+#endif /* WANT_MBLEN */
+
 
 
 #ifdef WANT_MBTOWC
@@ -1416,6 +1431,26 @@ Xa(tof_l)(T const *__restrict nptr, T **__restrict endptr, locale_t UNUSED(local
 }
 #endif
 #endif /* WANT_STRTOF_L */
+
+#ifdef WANT_ATOF
+#undef WANT_ATOF
+DECL double LIBCCALL
+Xa(tof)(T const *__restrict nptr) {
+	return Xstr(tod)(nptr,NULL);
+}
+#endif /* WANT_ATO32 */
+
+#ifdef WANT_ATOF_L
+#undef WANT_ATOF_L
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_ALIAS(Xa(tof_l),Xa(tof));
+#else
+DECL double LIBCCALL
+Xa(tof_l)(T const *__restrict nptr, locale_t UNUSED(locale)) {
+	return Xa(tof)(nptr);
+}
+#endif
+#endif /* WANT_ATO32_L */
 
 
 

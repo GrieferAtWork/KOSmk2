@@ -194,10 +194,10 @@ typedef __blksize_t blksize_t;
 #ifdef __USE_DOS
 #ifdef __PE__
 /* Link stat functions with binary compatibility to DOS's stat buffer types. */
-__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat32)(char const *__restrict __file, struct _stat32 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat32)(char const *__restrict __file, struct _stat32 *__restrict __buf) __ASMNAME("_stat");
 __LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat64)(char const *__restrict __file, struct _stat64 *__restrict __buf);
 __LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat32i64)(char const *__restrict __file, struct _stat32i64 *__restrict __buf);
-__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat64i32)(char const *__restrict __file, struct _stat64i32 *__restrict __buf);
+__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat64i32)(char const *__restrict __file, struct _stat64i32 *__restrict __buf) __ASMNAME("_stat64");
 __LIBC __WARN_NOKOSFS __NONNULL((2)) int (__LIBCCALL _fstat32)(int __fd, struct _stat32 *__restrict __buf);
 __LIBC __WARN_NOKOSFS __NONNULL((2)) int (__LIBCCALL _fstat64)(int __fd, struct _stat64 *__restrict __buf);
 __LIBC __WARN_NOKOSFS __NONNULL((2)) int (__LIBCCALL _fstat32i64)(int __fd, struct _stat32i64 *__restrict __buf);

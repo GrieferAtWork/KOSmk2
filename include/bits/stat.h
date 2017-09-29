@@ -421,7 +421,10 @@ struct __dos_stat64i32 {
  __int16_t      st_uid;
  __int16_t      st_gid;
  __dos_dev_t    st_rdev;
+union{
  __dos_off_t    st_size;
+ __INT64_TYPE__ __st_pad; /* I think this is correct? */
+};
  __time64_t     st_atime;
  __time64_t     st_mtime;
  __time64_t     st_ctime;

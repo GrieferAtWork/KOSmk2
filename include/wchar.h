@@ -38,8 +38,6 @@
        defined(__USE_DOS)
 #ifndef __wisxxx_defined
 #define __wisxxx_defined 1
-#ifndef _WCTYPE_DEFINED
-#define _WCTYPE_DEFINED 1
 __DECL_BEGIN
 
 #ifndef __wctype_t_defined
@@ -50,6 +48,8 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(wctype_t)
 #endif /* !__wctype_t_defined */
 
+/* Dos character type bits. */
+#ifndef __DOS_UPPER
 #define __DOS_UPPER    0x0001
 #define __DOS_LOWER    0x0002
 #define __DOS_DIGIT    0x0004
@@ -73,6 +73,7 @@ __NAMESPACE_STD_USING(wctype_t)
 #   define _LEADBYTE __DOS_LEADBYTE
 #   define _ALPHA    __DOS_ALPHA
 #endif /* __USE_DOS */
+#endif /* !__DOS_UPPER */
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 #   define _ISwbit(bit) (1 << (bit))
@@ -108,6 +109,8 @@ __NAMESPACE_STD_USING(wctype_t)
 #define _ISwpunct   _ISwbit(__ISwpunct)  /*< Punctuation. */
 #define _ISwalnum   _ISwbit(__ISwalnum)  /*< Alphanumeric. */
 
+#ifndef _WCTYPE_DEFINED
+#define _WCTYPE_DEFINED 1
 #ifndef __KERNEL__
 __NAMESPACE_STD_BEGIN
 __LIBC int __NOTHROW((__LIBCCALL iswalnum)(wint_t __wc));
@@ -147,23 +150,23 @@ __NAMESPACE_STD_USING(iswblank)
 __LIBC int __NOTHROW((__LIBCCALL iswascii)(wint_t __wc));
 #endif /* __USE_KOS || __USE_DOS */
 #ifdef __USE_DOS
-__LIBC int __NOTHROW((__LIBCCALL _iswalpha_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswalpha_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswupper_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswupper_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswlower_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswlower_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswdigit_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswdigit_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswxdigit_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswxdigit_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswspace_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswspace_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswpunct_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswpunct_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswblank_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswblank_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswalnum_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswalnum_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswprint_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswprint_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswgraph_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswgraph_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswcntrl_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("iswcntrl_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswalpha_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswalpha_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswupper_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswupper_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswlower_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswlower_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswdigit_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswdigit_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswxdigit_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswxdigit_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswspace_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswspace_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswpunct_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswpunct_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswblank_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswblank_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswalnum_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswalnum_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswprint_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswprint_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswgraph_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswgraph_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswcntrl_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("iswcntrl_l");
 __LIBC int __NOTHROW((__LIBCCALL isleadbyte)(int __wc));
 __LIBC int __NOTHROW((__LIBCCALL _isleadbyte_l)(int __wc, __locale_t __locale));
-__LIBC wint_t __NOTHROW((__LIBCCALL _towupper_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("towupper_l");
-__LIBC wint_t __NOTHROW((__LIBCCALL _towlower_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("towlower_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswctype_l)(wint_t __wc, wctype_t __type, __locale_t __locale)) __ASMNAME("iswctype_l");
+__LIBC wint_t __NOTHROW((__LIBCCALL _towupper_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("towupper_l");
+__LIBC wint_t __NOTHROW((__LIBCCALL _towlower_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("towlower_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswctype_l)(wint_t __wc, wctype_t __type, __locale_t __locale)) __KOS_ASMNAME("iswctype_l");
 __LIBC int __NOTHROW((__LIBCCALL is_wctype)(wint_t __wc, wctype_t __desc)) __ASMNAME("iswctype");
 __LIBC int __NOTHROW((__LIBCCALL __iswcsymf)(wint_t __wc));
 __LIBC int __NOTHROW((__LIBCCALL __iswcsym)(wint_t __wc));
@@ -172,37 +175,29 @@ __LIBC int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t __locale));
 #endif /* __USE_DOS */
 #endif /* !__KERNEL__ */
 
-__NAMESPACE_STD_BEGIN
-#if defined(__USE_ISOC99) || defined(__USE_GNU)
-typedef const __int32_t *wctrans_t;
-#endif /* __USE_ISOC99 || __USE_GNU */
 #ifndef __KERNEL__
+__NAMESPACE_STD_BEGIN
 __LIBC wint_t __NOTHROW((__LIBCCALL towlower)(wint_t __wc));
 __LIBC wint_t __NOTHROW((__LIBCCALL towupper)(wint_t __wc));
-#endif /* !__KERNEL__ */
 __NAMESPACE_STD_END
-#if defined(__USE_ISOC99) || defined(__USE_GNU)
-__NAMESPACE_STD_USING(wctrans_t)
-#endif /* __USE_ISOC99 || __USE_GNU */
-#ifndef __KERNEL__
 __NAMESPACE_STD_USING(towlower)
 __NAMESPACE_STD_USING(towupper)
-#endif /* !__KERNEL__ */
 #ifdef __USE_DOS
 __LIBC int __NOTHROW((__LIBCCALL isleadbyte)(int __wc));
 __LIBC int __NOTHROW((__LIBCCALL _isleadbyte_l)(int __wc, __locale_t __locale));
-__LIBC wint_t __NOTHROW((__LIBCCALL _towupper_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("towupper_l");
-__LIBC wint_t __NOTHROW((__LIBCCALL _towlower_l)(wint_t __wc, __locale_t __locale)) __ASMNAME("towlower_l");
-__LIBC int __NOTHROW((__LIBCCALL _iswctype_l)(wint_t __wc, wctype_t __type, __locale_t __locale)) __ASMNAME("iswctype_l");
+__LIBC wint_t __NOTHROW((__LIBCCALL _towupper_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("towupper_l");
+__LIBC wint_t __NOTHROW((__LIBCCALL _towlower_l)(wint_t __wc, __locale_t __locale)) __KOS_ASMNAME("towlower_l");
+__LIBC int __NOTHROW((__LIBCCALL _iswctype_l)(wint_t __wc, wctype_t __type, __locale_t __locale)) __KOS_ASMNAME("iswctype_l");
 __LIBC int __NOTHROW((__LIBCCALL is_wctype)(wint_t __wc, wctype_t __desc)) __ASMNAME("iswctype");
 __LIBC int __NOTHROW((__LIBCCALL __iswcsymf)(wint_t __wc));
 __LIBC int __NOTHROW((__LIBCCALL __iswcsym)(wint_t __wc));
 __LIBC int __NOTHROW((__LIBCCALL _iswcsymf_l)(wint_t __wc, __locale_t __locale));
 __LIBC int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t __locale));
 #endif /* __USE_DOS */
+#endif /* !__KERNEL__ */
+#endif /* !_WCTYPE_DEFINED */
 
 __DECL_END
-#endif /* !_WCTYPE_DEFINED */
 #endif /* !__wisxxx_defined */
 #endif
 
@@ -330,6 +325,26 @@ __NAMESPACE_STD_USING(mbstate_t)
 #endif
 #endif
 
+#if defined(__PE__) && __SIZEOF_LONG_LONG__ == 8
+#define __ASMNAME_WCSTOLL     __ASMNAME("_wcstoi64")
+#define __ASMNAME_WCSTOULL    __ASMNAME("_wcstoui64")
+#define __ASMNAME_WCSTOLL_L   __ASMNAME("_wcstoi64_l")
+#define __ASMNAME_WCSTOULL_L  __ASMNAME("_wcstoui64_l")
+#define __ASMNAME_WCSTOLL_    __ASMNAME("_wcstoi64")
+#define __ASMNAME_WCSTOULL_   __ASMNAME("_wcstoui64")
+#define __ASMNAME_WCSTOLL_L_  __ASMNAME("_wcstoi64_l")
+#define __ASMNAME_WCSTOULL_L_ __ASMNAME("_wcstoui64_l")
+#else
+#define __ASMNAME_WCSTOLL     /* nothing */
+#define __ASMNAME_WCSTOULL    /* nothing */
+#define __ASMNAME_WCSTOLL_L   /* nothing */
+#define __ASMNAME_WCSTOULL_L  /* nothing */
+#define __ASMNAME_WCSTOLL_    __ASMNAME("wcstoll")
+#define __ASMNAME_WCSTOULL_   __ASMNAME("wcstoull")
+#define __ASMNAME_WCSTOLL_L_  __ASMNAME("wcstoll_l")
+#define __ASMNAME_WCSTOULL_L_ __ASMNAME("wcstoull_l")
+#endif
+
 __NAMESPACE_STD_BEGIN
 struct tm;
 #ifndef __KERNEL__
@@ -381,9 +396,9 @@ __LIBC wint_t (__LIBCCALL ungetwc)(wint_t __wc, __FILE *__stream);
 __LIBC size_t (__LIBCCALL wcsftime)(wchar_t *__restrict __s, size_t __maxsize, wchar_t const *__restrict __format, struct tm const *__restrict __tp);
 #ifndef __wcstok_defined
 #ifdef __USE_DOS
-__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim) __PE_FUNC("wcstok");
+__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim) __PE_FUNC(wcstok);
 #else /* __USE_DOS */
-__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr) __KOS_FUNC("wcstok");
+__LIBC wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr) __KOS_FUNC(wcstok);
 #endif /* !__USE_DOS */
 #endif /* !__wcstok_defined */
 #ifndef __wcslen_defined
@@ -454,8 +469,8 @@ __LIBC int (__LIBCCALL swscanf)(wchar_t const *__restrict __s, wchar_t const *__
 __LIBC float (__LIBCCALL wcstof)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr);
 __LIBC long double (__LIBCCALL wcstold)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr);
 #endif /* !__wcstof_defined */
-__LIBC __LONGLONG (__LIBCCALL wcstoll)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base);
-__LIBC __ULONGLONG (__LIBCCALL wcstoull)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base);
+__LIBC __LONGLONG (__LIBCCALL wcstoll)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME_WCSTOLL;
+__LIBC __ULONGLONG (__LIBCCALL wcstoull)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME_WCSTOULL;
 #ifdef __USE_KOS
 __LIBC ssize_t (__LIBCCALL vfwscanf)(__FILE *__restrict __s, wchar_t const *__restrict __format, __VA_LIST __arg);
 __LIBC ssize_t (__LIBCCALL vwscanf)(wchar_t const *__restrict __format, __VA_LIST __arg);
@@ -572,12 +587,12 @@ __NAMESPACE_STD_USING(vswscanf)
 
 #ifndef __KERNEL__
 #ifdef __USE_XOPEN2K8
-__LIBC int (__LIBCCALL wcscasecmp)(wchar_t const *__s1, wchar_t const *__s2) __DOS_ASMNAME("wcscasecmp");
-__LIBC int (__LIBCCALL wcsncasecmp)(wchar_t const *__s1, wchar_t const *__s2, size_t __n) __DOS_ASMNAME("wcsncasecmp");
-__LIBC int (__LIBCCALL wcscasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __DOS_ASMNAME("_wcsicmp_l");
-__LIBC int (__LIBCCALL wcsncasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __DOS_ASMNAME("_wcsnicmp_l");
-__LIBC int (__LIBCCALL wcscoll_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __DOS_ASMNAME("_wcscoll_l");
-__LIBC size_t (__LIBCCALL wcsxfrm_l)(wchar_t *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __DOS_ASMNAME("_wcsxfrm_l");
+__LIBC int (__LIBCCALL wcscasecmp)(wchar_t const *__s1, wchar_t const *__s2) __PE_ASMNAME("wcscasecmp");
+__LIBC int (__LIBCCALL wcsncasecmp)(wchar_t const *__s1, wchar_t const *__s2, size_t __n) __PE_ASMNAME("wcsncasecmp");
+__LIBC int (__LIBCCALL wcscasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __PE_ASMNAME("_wcsicmp_l");
+__LIBC int (__LIBCCALL wcsncasecmp_l)(wchar_t const *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __PE_ASMNAME("_wcsnicmp_l");
+__LIBC int (__LIBCCALL wcscoll_l)(wchar_t const *__s1, wchar_t const *__s2, __locale_t __loc) __PE_ASMNAME("_wcscoll_l");
+__LIBC size_t (__LIBCCALL wcsxfrm_l)(wchar_t *__s1, wchar_t const *__s2, size_t __n, __locale_t __loc) __PE_ASMNAME("_wcsxfrm_l");
 __LIBC size_t (__LIBCCALL mbsnrtowcs)(wchar_t *__restrict __dst, char const **__restrict __src, size_t __nmc, size_t __len, mbstate_t *__restrict __ps);
 __LIBC size_t (__LIBCCALL wcsnrtombs)(char *__restrict __dst, wchar_t const **__restrict __src, size_t __nwc, size_t __len, mbstate_t *__restrict __ps);
 __LIBC wchar_t *(__LIBCCALL wcpcpy)(wchar_t *__restrict __dst, wchar_t const *__restrict __src);
@@ -624,15 +639,15 @@ __LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcswcs)(wchar_t const *__haystack, wchar
 #ifdef __USE_GNU
 __LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcschrnul)(wchar_t const *__s, wchar_t __wc);
 __LIBC wchar_t *(__LIBCCALL wmempcpy)(wchar_t *__restrict __s1, wchar_t const *__restrict __s2, size_t __n);
-__LIBC __LONGLONG (__LIBCCALL wcstoq)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME("wcstoll");
-__LIBC __ULONGLONG (__LIBCCALL wcstouq)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME("wcstoull");
-__LIBC long int (__LIBCCALL wcstol_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __DOS_ASMNAME("_wcstol_l");
-__LIBC unsigned long int (__LIBCCALL wcstoul_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __DOS_ASMNAME("_wcstoul_l");
-__LIBC __LONGLONG (__LIBCCALL wcstoll_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __DOS_ASMNAME("_wcstoll_l");
-__LIBC __ULONGLONG (__LIBCCALL wcstoull_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __DOS_ASMNAME("_wcstoull_l");
-__LIBC double (__LIBCCALL wcstod_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __DOS_ASMNAME("_wcstod_l");
-__LIBC float (__LIBCCALL wcstof_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __DOS_ASMNAME("_wcstof_l");
-__LIBC long double (__LIBCCALL wcstold_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __DOS_ASMNAME("_wcstold_l");
+__LIBC __LONGLONG (__LIBCCALL wcstoq)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME_WCSTOLL_;
+__LIBC __ULONGLONG (__LIBCCALL wcstouq)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base) __ASMNAME_WCSTOULL_;
+__LIBC long int (__LIBCCALL wcstol_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __PE_ASMNAME("_wcstol_l");
+__LIBC unsigned long int (__LIBCCALL wcstoul_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __PE_ASMNAME("_wcstoul_l");
+__LIBC __LONGLONG (__LIBCCALL wcstoll_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME_WCSTOLL;
+__LIBC __ULONGLONG (__LIBCCALL wcstoull_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME_WCSTOULL;
+__LIBC double (__LIBCCALL wcstod_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __PE_ASMNAME("_wcstod_l");
+__LIBC float (__LIBCCALL wcstof_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __PE_ASMNAME("_wcstof_l");
+__LIBC long double (__LIBCCALL wcstold_l)(wchar_t const *__restrict __nptr, wchar_t **__restrict __endptr, __locale_t __loc) __PE_ASMNAME("_wcstold_l");
 __LIBC wint_t (__LIBCCALL getwc_unlocked)(__FILE *__stream);
 __LIBC wint_t (__LIBCCALL getwchar_unlocked)(void);
 __LIBC wint_t (__LIBCCALL fgetwc_unlocked)(__FILE *__stream);
@@ -734,12 +749,19 @@ typedef wchar_t _Wint_t;
 #undef stdin
 #undef stdout
 #undef stderr
-__LIBC FILE *(stdin);
-__LIBC FILE *(stdout);
-__LIBC FILE *(stderr);
-#define stdin  stdin
-#define stdout stdout
-#define stderr stderr
+#ifdef __PE__
+__LIBC FILE *(__LIBCCALL __iob_func)(void);
+#define stdin  (__iob_func()+0)
+#define stdout (__iob_func()+1)
+#define stderr (__iob_func()+2)
+#else /* __PE__ */
+__LIBC __FILE *(stdin);
+__LIBC __FILE *(stdout);
+__LIBC __FILE *(stderr);
+#define stdin   stdin
+#define stdout  stdout
+#define stderr  stderr
+#endif /* !__PE__ */
 #endif /* !__stdstreams_defined */
 
 #ifndef _FSIZE_T_DEFINED
@@ -815,9 +837,14 @@ struct _wfinddata64_t {
 __LIBC __NONNULL((1)) wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__dstbuf, int __dstlen);
 __LIBC __NONNULL((1)) wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __dstlen);
 #define _wgetdcwd_nolock    _wgetdcwd
-__LIBC __NONNULL((1)) int (__LIBCCALL _wchdir)(wchar_t const *__path) __WFS_FUNC_(wchdir);
-__LIBC __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__path) __WFS_FUNC_(wmkdir);
-__LIBC __NONNULL((1)) int (__LIBCCALL _wrmdir)(wchar_t const *__path) __WFS_FUNC_(wrmdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL _wchdir)(wchar_t const *__path) __WFS_FUNC(_wchdir);
+__LIBC __NONNULL((1)) int (__LIBCCALL _wrmdir)(wchar_t const *__path) __WFS_FUNC(_wrmdir);
+#ifdef __USE_DOSFS
+__LIBC __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__path) __WFS_FUNC(_wmkdir);
+#else /* __USE_DOSFS */
+__LIBC __NONNULL((1)) int (__LIBCCALL __libc_wmkdir)(wchar_t const *__path, int __mode) __WFS_FUNC_(_wmkdir);
+__LOCAL __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__path) { return __libc_wmkdir(__path,0755); }
+#endif /* !__USE_DOSFS */
 #endif /* !_WDIRECT_DEFINED */
 
 #ifndef _WIO_DEFINED
@@ -873,12 +900,18 @@ __LIBC intptr_t (__LIBCCALL _wspawnvpe)(int __mode, wchar_t const *__file, wchar
 
 #ifndef _CRT_WSYSTEM_DEFINED
 #define _CRT_WSYSTEM_DEFINED 1
-/* TODO: Should also appear in <process.h> */
 __LIBC int (__LIBCCALL _wsystem)(wchar_t const *__cmd);
 #endif /* !_CRT_WSYSTEM_DEFINED */
 
 #ifndef _WCTYPE_INLINE_DEFINED
 #define _WCTYPE_INLINE_DEFINED 1
+#ifndef ____kos_iswctype_defined
+#define ____kos_iswctype_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC int __NOTHROW((__LIBCCALL __kos_iswctype)(wint_t __wc, wctype_t __desc)) __ASMNAME("iswctype");
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(__kos_iswctype)
+#endif /* !____kos_iswctype_defined */
 #define iswalnum(wc)  __kos_iswctype((wc),_ISwalnum)
 #define iswalpha(wc)  __kos_iswctype((wc),_ISwalpha)
 #define iswcntrl(wc)  __kos_iswctype((wc),_ISwcntrl)
@@ -914,11 +947,11 @@ __LIBC int (__LIBCCALL _wsystem)(wchar_t const *__cmd);
 
 #ifndef _WSTAT_DEFINED
 #define _WSTAT_DEFINED 1
-#if defined(__PE__) && defined(__USE_DOS)
-__LIBC __WARN_NOKOSFS int (__LIBCCALL _wstat32)(wchar_t const *__name, struct _stat32 *__buf);
+#ifdef __PE__ /* && __USE_DOS */
+__LIBC __WARN_NOKOSFS int (__LIBCCALL _wstat32)(wchar_t const *__name, struct _stat32 *__buf) __ASMNAME("_wstat");
 __LIBC __WARN_NOKOSFS int (__LIBCCALL _wstat64)(wchar_t const *__name, struct _stat64 *__buf);
 __LIBC __WARN_NOKOSFS int (__LIBCCALL _wstat32i64)(wchar_t const *__name, struct _stat32i64 *__buf);
-__LIBC __WARN_NOKOSFS int (__LIBCCALL _wstat64i32)(wchar_t const *__name, struct _stat64i32 *__buf);
+__LIBC __WARN_NOKOSFS int (__LIBCCALL _wstat64i32)(wchar_t const *__name, struct _stat64i32 *__buf) __ASMNAME("_wstat64");
 #else /* __PE__ && __USE_DOS */
 __LIBC int (__LIBCCALL _wstat32)(wchar_t const *__name, struct _stat32 *__buf) __WFS_FUNC_(wstat);
 __LIBC int (__LIBCCALL _wstat64)(wchar_t const *__name, struct _stat64 *__buf) __WFS_FUNC_(wstat);
@@ -1090,31 +1123,42 @@ __LIBC void (__LIBCCALL _wperror)(wchar_t const *__restrict __errmsg);
 
 #ifndef _WSTDLIB_DEFINED
 #define _WSTDLIB_DEFINED 1
-__LIBC wchar_t *(__LIBCCALL _itow)(int __val, wchar_t *__restrict __dst, int __radix);
-__LIBC wchar_t *(__LIBCCALL _ultow)(unsigned long __val,  wchar_t *__restrict __dst, int __radix);
-__LIBC wchar_t *(__LIBCCALL _i64tow)(__INT64_TYPE__ __val, wchar_t *__restrict __dst, int __radix);
-__LIBC wchar_t *(__LIBCCALL _ui64tow)(__UINT64_TYPE__ __val, wchar_t *__restrict __dst, int __radix);
-__LIBC errno_t (__LIBCCALL _itow_s)(int __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix);
-__LIBC errno_t (__LIBCCALL _ultow_s)(unsigned long __val, wchar_t *__dst, size_t __maxlen, int __radix);
-__LIBC errno_t (__LIBCCALL _i64tow_s)(__INT64_TYPE__ __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix);
-__LIBC errno_t (__LIBCCALL _ui64tow_s)(__UINT64_TYPE__ __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix);
-__LIBC double (__LIBCCALL _wtof)(wchar_t const *__restrict __s);
-__LIBC double (__LIBCCALL _wtof_l)(wchar_t const *__restrict __s, __locale_t __locale);
-__LIBC int (__LIBCCALL _wtoi)(wchar_t const *__restrict __s);
-__LIBC int (__LIBCCALL _wtoi_l)(wchar_t const *__restrict __s, __locale_t __locale);
-__LIBC __LONGLONG (__LIBCCALL _wtoll)(wchar_t const *__restrict __s);
-__LIBC __LONGLONG (__LIBCCALL _wtoll_l)(wchar_t const *__restrict __s, __locale_t __locale);
+__LIBC wchar_t *(__LIBCCALL _i64tow)(__INT64_TYPE__ __val, wchar_t *__restrict __dst, int __radix) __KOS_ASMNAME("i64tow");
+__LIBC wchar_t *(__LIBCCALL _ui64tow)(__UINT64_TYPE__ __val, wchar_t *__restrict __dst, int __radix) __KOS_ASMNAME("ui64tow");
+__LIBC errno_t (__LIBCCALL _i64tow_s)(__INT64_TYPE__ __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix) __KOS_ASMNAME("i64tow_s");
+__LIBC errno_t (__LIBCCALL _ui64tow_s)(__UINT64_TYPE__ __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix) __KOS_ASMNAME("ui64tow_s");
+
+#if __SIZEOF_LONG__ == 8
+__LIBC wchar_t *(__LIBCCALL _ultow)(unsigned long __val,  wchar_t *__restrict __dst, int __radix) __ASMNAME2("ui64tow","_ui64tow");
+__LIBC wchar_t *(__LIBCCALL _ltow)(long __val, wchar_t *__restrict __dst, int __radix) __ASMNAME2("i64tow","_i64tow");
+__LIBC errno_t (__LIBCCALL _ultow_s)(unsigned long __val, wchar_t *__dst, size_t __maxlen, int __radix) __ASMNAME2("ui64tow_s","_ui64tow_s");
+__LIBC errno_t (__LIBCCALL _ltow_s)(long __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix) __ASMNAME2("i64tow_s","_i64tow_s");
+#else /* __SIZEOF_LONG__ == 8 */
+__LIBC wchar_t *(__LIBCCALL _ultow)(unsigned long __val,  wchar_t *__restrict __dst, int __radix) __KOS_ASMNAME("ultow");
+__LIBC wchar_t *(__LIBCCALL _ltow)(long __val, wchar_t *__restrict __dst, int __radix) __KOS_ASMNAME("ltow");
+__LIBC errno_t (__LIBCCALL _ultow_s)(unsigned long __val, wchar_t *__dst, size_t __maxlen, int __radix) __KOS_ASMNAME("ultow_s");
+__LIBC errno_t (__LIBCCALL _ltow_s)(long __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix) __KOS_ASMNAME("ltow_s");
+#endif /* __SIZEOF_LONG__ != 8 */
+
+__LIBC long int (__LIBCCALL _wtol)(wchar_t const *__restrict __s) __KOS_ASMNAME("wtol");
+__LIBC long int (__LIBCCALL _wtol_l)(wchar_t const *__restrict __s, __locale_t __locale) __KOS_ASMNAME("wtol_l");
+__LIBC __LONGLONG (__LIBCCALL _wtoll)(wchar_t const *__restrict __s) __KOS_ASMNAME("wtoll");
+__LIBC __LONGLONG (__LIBCCALL _wtoll_l)(wchar_t const *__restrict __s, __locale_t __locale) __KOS_ASMNAME("wtoll_l");
+
 #if __SIZEOF_INT__ == __SIZEOF_LONG__
-__LIBC long int (__LIBCCALL _wtol)(wchar_t const *__restrict __s) __ASMNAME("_wtoi");
-__LIBC long int (__LIBCCALL _wtol_l)(wchar_t const *__restrict __s, __locale_t __locale) __ASMNAME("_wtoi_l");
-__LIBC wchar_t *(__LIBCCALL _ltow)(long __val, wchar_t *__restrict __dst, int __radix) __ASMNAME("_itow");
-__LIBC errno_t (__LIBCCALL _ltow_s)(long __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix) __ASMNAME("_itow_s");
+__LIBC int (__LIBCCALL _wtoi)(wchar_t const *__restrict __s) __ASMNAME2("wtol","_wtol");
+__LIBC int (__LIBCCALL _wtoi_l)(wchar_t const *__restrict __s, __locale_t __locale) __ASMNAME2("wtol_l","_wtol_l");
+__LIBC wchar_t *(__LIBCCALL _itow)(int __val, wchar_t *__restrict __dst, int __radix) __ASMNAME2("ltow","_ltow");
+__LIBC errno_t (__LIBCCALL _itow_s)(int __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix) __ASMNAME2("ltow_s","_ltow_s");
 #else /* __SIZEOF_INT__ == __SIZEOF_LONG__ */
-__LIBC long int (__LIBCCALL _wtol)(wchar_t const *__restrict __s);
-__LIBC long int (__LIBCCALL _wtol_l)(wchar_t const *__restrict __s, __locale_t __locale);
-__LIBC wchar_t *(__LIBCCALL _ltow)(long __val, wchar_t *__restrict __dst, int __radix);
-__LIBC errno_t (__LIBCCALL _ltow_s)(long __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix);
+__LIBC int (__LIBCCALL _wtoi)(wchar_t const *__restrict __s) __KOS_ASMNAME("wtoi");
+__LIBC int (__LIBCCALL _wtoi_l)(wchar_t const *__restrict __s, __locale_t __locale) __KOS_ASMNAME("wtoi_l");
+__LIBC wchar_t *(__LIBCCALL _itow)(int __val, wchar_t *__restrict __dst, int __radix) __KOS_ASMNAME("itow");
+__LIBC errno_t (__LIBCCALL _itow_s)(int __val, wchar_t *__restrict __dst, size_t __maxlen, int __radix) __KOS_ASMNAME("itow_s");
 #endif /* __SIZEOF_INT__ != __SIZEOF_LONG__ */
+
+__LIBC double (__LIBCCALL _wtof)(wchar_t const *__restrict __s) __KOS_ASMNAME("wtof");
+__LIBC double (__LIBCCALL _wtof_l)(wchar_t const *__restrict __s, __locale_t __locale) __KOS_ASMNAME("wtof_l");
 
 __LIBC long int (__LIBCCALL _wcstol_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_NAME("wcstol_l");
 __LIBC unsigned long int (__LIBCCALL _wcstoul_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_NAME("wcstoul_l");
@@ -1124,31 +1168,31 @@ __LIBC float (__LIBCCALL _wcstof_l)(wchar_t const *__restrict __s, wchar_t **__r
 __LIBC double (__LIBCCALL _wcstod_l)(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale) __KOS_NAME("wcstod_l");
 __LIBC long double (__LIBCCALL _wcstold_l)(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale) __KOS_NAME("wcstold_l");
 
-__LIBC wchar_t *(__LIBCCALL _wgetenv)(wchar_t const *__restrict __varname);
-__LIBC errno_t (__LIBCCALL _wgetenv_s)(size_t *__restrict __psize, wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __varname);
-__LIBC errno_t (__LIBCCALL _wdupenv_s)(wchar_t **__restrict __pbuf, size_t *__restrict __pbuflen, wchar_t const *__restrict __varname);
+__LIBC wchar_t *(__LIBCCALL _wgetenv)(wchar_t const *__restrict __varname) __KOS_NAME("wgetenv");
+__LIBC errno_t (__LIBCCALL _wgetenv_s)(size_t *__restrict __psize, wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __varname) __KOS_NAME("wgetenv_s");
+__LIBC errno_t (__LIBCCALL _wdupenv_s)(wchar_t **__restrict __pbuf, size_t *__restrict __pbuflen, wchar_t const *__restrict __varname) __KOS_NAME("wdupenv_s");
 
-#if __SIZEOF_LONG_LONG__ == 8
-__LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __ASMNAME("wcstoll");
-__LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstoll_l","_wcstoll_l");
-__LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __ASMNAME("wcstoull");
-__LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64_l)(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstoull_l","_wcstoull_l");
-__LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) __ASMNAME("_wtoll");
-__LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) __ASMNAME("_wtoll_l");
-#elif __SIZEOF_LONG__ == 8
+#if __SIZEOF_LONG__ == 8
 __LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __ASMNAME("wcstol");
 __LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstol_l","_wcstol_l");
 __LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __ASMNAME("wcstoul");
 __LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64_l)(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale) __ASMNAME2("wcstoul_l","_wcstoul_l");
 __LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) __ASMNAME("_wtol");
 __LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) __ASMNAME("_wtol_l");
+#elif __SIZEOF_LONG_LONG__ == 8
+__LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __KOS_ASMNAME("wcstoll");
+__LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstoll_l");
+__LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __KOS_ASMNAME("wcstoull");
+__LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64_l)(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstoull_l");
+__LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) __KOS_ASMNAME("wtoll");
+__LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) __KOS_ASMNAME("wtoll_l");
 #else
-__LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale);
-__LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64_l)(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale);
-__LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s);
-__LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale);
+__LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __KOS_ASMNAME("wcstoi64");
+__LIBC __INT64_TYPE__ (__LIBCCALL _wcstoi64_l)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstoi64_l");
+__LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix) __KOS_ASMNAME("wcstoui64");
+__LIBC __UINT64_TYPE__ (__LIBCCALL _wcstoui64_l)(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale) __KOS_ASMNAME("wcstoui64_l");
+__LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) __KOS_ASMNAME("wtoi64");
+__LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) __KOS_ASMNAME("wtoi64_l");
 #endif
 
 #if 1 /* TODO: Should only appear in <stdlib.h> */
@@ -1235,55 +1279,55 @@ __LIBC errno_t (__LIBCCALL __wcserror_s)(wchar_t *__restrict __buf, size_t __max
 
 #ifndef ___wcsset_s_defined
 #define ___wcsset_s_defined 1
-__LIBC errno_t (__LIBCCALL _wcsset_s)(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val);
-__LIBC errno_t (__LIBCCALL _wcsnset_s)(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen);
-__LIBC errno_t (__LIBCCALL _wcslwr_s)(wchar_t *__restrict __str, size_t __maxlen);
-__LIBC errno_t (__LIBCCALL _wcsupr_s)(wchar_t *__restrict __str, size_t __maxlen);
-__LIBC errno_t (__LIBCCALL _wcslwr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale);
-__LIBC errno_t (__LIBCCALL _wcsupr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale);
+__LIBC errno_t (__LIBCCALL _wcsset_s)(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val) __KOS_ASMNAME("wcsset_s");
+__LIBC errno_t (__LIBCCALL _wcsnset_s)(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen) __KOS_ASMNAME("wcsnset_s");
+__LIBC errno_t (__LIBCCALL _wcslwr_s)(wchar_t *__restrict __str, size_t __maxlen) __KOS_ASMNAME("wcslwr_s");
+__LIBC errno_t (__LIBCCALL _wcsupr_s)(wchar_t *__restrict __str, size_t __maxlen) __KOS_ASMNAME("wcsupr_s");
+__LIBC errno_t (__LIBCCALL _wcslwr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale) __KOS_ASMNAME("wcslwr_s_l");
+__LIBC errno_t (__LIBCCALL _wcsupr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale) __KOS_ASMNAME("wcsupr_s_l");
 #endif /* !___wcsset_s_defined */
 
 #ifndef ___wcsicmp_defined
 #define ___wcsicmp_defined 1
-__LIBC int (__LIBCCALL wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __KOS_NAME("wcscasecmp");
-__LIBC int (__LIBCCALL _wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecmp","wcsicmp");
-__LIBC int (__LIBCCALL wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __KOS_NAME("wcsncasecmp");
-__LIBC int (__LIBCCALL _wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecmp","wcsnicmp");
-__LIBC int (__LIBCCALL _wcsicmp_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __ASMNAME2("wcscasecmp_l","_wcsicmp_l");
-__LIBC int (__LIBCCALL _wcsnicmp_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale) __ASMNAME2("wcsncasecmp_l","_wcsnicmp_l");
+__LIBC int (__LIBCCALL wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecmp","_wcsicmp");
+__LIBC int (__LIBCCALL _wcsicmp)(wchar_t const *__str1, wchar_t const *__str2) __KOS_ASMNAME("wcscasecmp");
+__LIBC int (__LIBCCALL wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __ASMNAME2("wcsncasecmp","_wcsnicmp");
+__LIBC int (__LIBCCALL _wcsnicmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __KOS_ASMNAME("wcsncasecmp");
+__LIBC int (__LIBCCALL _wcsicmp_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __KOS_ASMNAME("wcscasecmp_l");
+__LIBC int (__LIBCCALL _wcsnicmp_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale) __KOS_ASMNAME("wcsncasecmp_l");
 #endif /* !___wcsicmp_defined */
 
 #ifndef __wcsrev_defined
 #define __wcsrev_defined 1
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcsrev)(wchar_t *__restrict __str);
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsrev)(wchar_t *__restrict __str) __ASMNAME("wcsrev");
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcsset)(wchar_t *__restrict __str, wchar_t __needle);
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcsnset)(wchar_t *__restrict __str, wchar_t __needle, size_t __max_chars);
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsset)(wchar_t *__restrict __str, wchar_t __char) __ASMNAME("wcsset");
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsnset)(wchar_t *__restrict __str, wchar_t __char, size_t __max_chars) __ASMNAME("wcsnset");
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcslwr)(wchar_t *__restrict __str);
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcslwr)(wchar_t *__restrict __str) __ASMNAME("wcslwr");
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcslwr_l)(wchar_t *__restrict __str, __locale_t __locale);
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcsupr)(wchar_t *__restrict __str);
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsupr)(wchar_t *__restrict __str) __ASMNAME("wcsupr");
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsupr_l)(wchar_t *__restrict __str, __locale_t __locale);
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcsrev)(wchar_t *__restrict __str) __PE_ASMNAME("_wcsrev");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcsset)(wchar_t *__restrict __str, wchar_t __needle) __PE_ASMNAME("_wcsset");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcsnset)(wchar_t *__restrict __str, wchar_t __needle, size_t __max_chars) __PE_ASMNAME("_wcsnset");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcslwr)(wchar_t *__restrict __str) __PE_ASMNAME("_wcslwr");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL wcsupr)(wchar_t *__restrict __str) __PE_ASMNAME("_wcsupr");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsrev)(wchar_t *__restrict __str) __KOS_ASMNAME("wcsrev");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsset)(wchar_t *__restrict __str, wchar_t __char) __KOS_ASMNAME("wcsset");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsnset)(wchar_t *__restrict __str, wchar_t __char, size_t __max_chars) __KOS_ASMNAME("wcsnset");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcslwr)(wchar_t *__restrict __str) __KOS_ASMNAME("wcslwr");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcslwr_l)(wchar_t *__restrict __str, __locale_t __locale) __KOS_ASMNAME("wcslwr_l");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsupr)(wchar_t *__restrict __str) __KOS_ASMNAME("wcsupr");
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) wchar_t *(__LIBCCALL _wcsupr_l)(wchar_t *__restrict __str, __locale_t __locale) __KOS_ASMNAME("wcsupr_l");
 #endif /* !__wcsrev_defined */
 
 #ifndef __wcsicoll_defined
 #define __wcsicoll_defined 1
-__LIBC int (__LIBCCALL _wcscoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __KOS_NAME("wcscoll_l");
-__LIBC int (__LIBCCALL wcsicoll)(wchar_t const *__str1, wchar_t const *__str2);
-__LIBC int (__LIBCCALL _wcsicoll)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME("wcsicoll");
-__LIBC int (__LIBCCALL _wcsicoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale);
-__LIBC int (__LIBCCALL _wcsncoll)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars);
-__LIBC int (__LIBCCALL _wcsncoll_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale);
-__LIBC int (__LIBCCALL _wcsnicoll)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars);
-__LIBC int (__LIBCCALL _wcsnicoll_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale);
+__LIBC int (__LIBCCALL _wcscoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __KOS_ASMNAME("wcscoll_l");
+__LIBC int (__LIBCCALL wcsicoll)(wchar_t const *__str1, wchar_t const *__str2) __ASMNAME2("wcscasecoll","_wcsicoll");
+__LIBC int (__LIBCCALL _wcsicoll)(wchar_t const *__str1, wchar_t const *__str2) __KOS_ASMNAME("wcscasecoll");
+__LIBC int (__LIBCCALL _wcsicoll_l)(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale) __KOS_ASMNAME("wcscasecoll_l");
+__LIBC int (__LIBCCALL _wcsncoll)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __KOS_ASMNAME("wcsncoll");
+__LIBC int (__LIBCCALL _wcsncoll_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale) __KOS_ASMNAME("wcsncoll_l");
+__LIBC int (__LIBCCALL _wcsnicoll)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars) __KOS_ASMNAME("wcsncasecoll");
+__LIBC int (__LIBCCALL _wcsnicoll_l)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale) __KOS_ASMNAME("wcsncasecoll_l");
 #endif /* !__wcsicoll_defined */
 
 #ifndef ___wcsxfrm_l_defined
 #define ___wcsxfrm_l_defined 1
-__LIBC size_t (__LIBCCALL _wcsxfrm_l)(wchar_t *__restrict __dst, wchar_t const *__restrict __src, size_t __max_chars, __locale_t __locale) __ASMNAME("wcsxfrm_l");
+__LIBC size_t (__LIBCCALL _wcsxfrm_l)(wchar_t *__restrict __dst, wchar_t const *__restrict __src, size_t __max_chars, __locale_t __locale) __KOS_ASMNAME("wcsxfrm_l");
 #endif /* !___wcsxfrm_l_defined */
 
 #ifdef __USE_DOS_SLIB

@@ -22,6 +22,12 @@
 #include "__stdinc.h"
 #include <features.h>
 
+#ifdef __USE_DOS
+#include <bits/dos-errno.h>
+#endif /* __USE_DOS */
+
+__DECL_BEGIN
+
 #ifdef __CC__
 typedef int __errno_t;
 #endif /* __CC__ */
@@ -35,6 +41,9 @@ typedef int errno_t;
 #endif /* __CC__ */
 #define EOK          0 /* Operation completed successfully */
 #endif
+
+
+#ifndef __USE_DOS
 
 /* NOTE: Linux error codes are taken from comments
  *      in /usr/include/asm-generic/errno.h
@@ -205,21 +214,29 @@ typedef int errno_t;
 #define ERFKILL         132 /* Operation not possible due to RF-kill */
 
 #define EHWPOISON       133 /* Memory page has hardware error */
+#define __EBASEMAX      133
+#endif /* !__USE_DOS */
+
 
 #ifdef __CC__
 #ifndef __KERNEL__
-__LIBC int *(__LIBCCALL __errno)(void) __ASMNAME("_errno");
-__LIBC int  (__LIBCCALL __get_errno)(void);
-__LIBC void (__LIBCCALL __set_errno)(int __err);
+__LIBC int *__NOTHROW((__LIBCCALL __errno)(void)) __DOS_FUNC_(_errno);
+__LIBC int  __NOTHROW((__LIBCCALL __get_errno)(void)) __DOS_FUNC_(_get_errno);
+__LIBC void __NOTHROW((__LIBCCALL __set_errno)(int __err)) __DOS_FUNC_(_set_errno);
 #define errno         (*__errno())
 #ifdef __USE_GNU
 #define program_invocation_name       __libc_program_invocation_name()
 #define program_invocation_short_name __libc_program_invocation_short_name()
-__LIBC __ATTR_CONST char *(__LIBCCALL __libc_program_invocation_name)(void);
-__LIBC __ATTR_CONST char *(__LIBCCALL __libc_program_invocation_short_name)(void);
+__LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_name)(void));
+__LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_short_name)(void));
 #endif /* __USE_GNU */
 #endif
 #endif /* __CC__ */
+
+#ifdef __USE_KOS
+__LIBC errno_t __NOTHROW((__LIBCCALL errno_dos2kos)(errno_t __eno));
+__LIBC errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
+#endif /* __USE_KOS */
 
 #ifdef __KERNEL__
 #define ERELOAD         500 /* Resource must be reloaded (after a lock was temporarily lost). */
@@ -256,6 +273,10 @@ __LIBC __ATTR_CONST char *(__LIBCCALL __libc_program_invocation_short_name)(void
 #   define E_GTERR(x)  (int)(x)
 #   define E_ISERR(x)  __unlikely(((unsigned int)(x)) >= __ERRNO_THRESHOLD)
 #   define E_ISOK(x)     __likely(((unsigned int)(x)) < __ERRNO_THRESHOLD)
+#elif __SIZEOF_POINTER__ <= 4
+#   define E_GTERR(x)  (int)(__INTPTR_TYPE__)(__UINTPTR_TYPE__)(x)
+#   define E_ISERR(x)  __unlikely(((__UINTPTR_TYPE__)(x)) >= __ERRNO_THRESHOLD)
+#   define E_ISOK(x)     __likely(((__UINTPTR_TYPE__)(x)) < __ERRNO_THRESHOLD)
 #else
 #   define E_GTERR(x)  (int)(__INTPTR_TYPE__)(__UINTPTR_TYPE__)(x)
 #   define E_ISERR(x)  __unlikely(((__UINTPTR_TYPE__)(x)) >= __ERRNO_THRESHOLD64)
@@ -263,5 +284,6 @@ __LIBC __ATTR_CONST char *(__LIBCCALL __libc_program_invocation_short_name)(void
 #endif
 #endif
 
+__DECL_END
 
 #endif /* !_ERRNO_H */

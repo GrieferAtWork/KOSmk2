@@ -25,6 +25,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <hybrid/list/list.h>
+#include <uchar.h>
 #include <xlocale.h>
 
 DECL_BEGIN
@@ -110,10 +111,10 @@ INTDEF long LIBCCALL libc_jrand48(unsigned short xsubi[3]);
 INTDEF void LIBCCALL libc_srand48(long seedval);
 INTDEF unsigned short *LIBCCALL libc_seed48(unsigned short seed16v[3]);
 INTDEF void LIBCCALL libc_lcong48(unsigned short param[7]);
-INTDEF char *LIBCCALL libc_initstate(unsigned int seed, char *statebuf, size_t statelen);
-INTDEF char *LIBCCALL libc_setstate(char *statebuf);
+INTDEF char *LIBCCALL libc_initstate(unsigned int seed, char *__restrict statebuf, size_t statelen);
+INTDEF char *LIBCCALL libc_setstate(char *__restrict statebuf);
 INTDEF char *LIBCCALL libc_l64a(long n);
-INTDEF long LIBCCALL libc_a64l(char const *s);
+INTDEF long LIBCCALL libc_a64l(char const *__restrict s);
 INTDEF char *LIBCCALL libc_realpath(char const *__restrict name, char *__restrict resolved);
 INTDEF int LIBCCALL libc_drand48_r(struct drand48_data *__restrict buffer, double *__restrict result);
 INTDEF int LIBCCALL libc_erand48_r(unsigned short xsubi[3], struct drand48_data *__restrict buffer, double *__restrict result);
@@ -128,23 +129,27 @@ INTDEF int LIBCCALL libc_random_r(struct random_data *__restrict buf, s32 *__res
 INTDEF int LIBCCALL libc_srandom_r(unsigned int seed, struct random_data *buf);
 INTDEF int LIBCCALL libc_initstate_r(unsigned int seed, char *__restrict statebuf, size_t statelen, struct random_data *__restrict buf);
 INTDEF int LIBCCALL libc_setstate_r(char *__restrict statebuf, struct random_data *__restrict buf);
-INTDEF int LIBCCALL libc_mkstemps(char *template_, int suffixlen);
-INTDEF int LIBCCALL libc_rpmatch(char const *response);
-INTDEF char *LIBCCALL libc_canonicalize_file_name(char const *name);
-INTDEF int LIBCCALL libc_ptsname_r(int fd, char *buf, size_t buflen);
+INTDEF int LIBCCALL libc_mkstemps(char *__restrict template_, int suffixlen);
+INTDEF int LIBCCALL libc_rpmatch(char const *__restrict response);
+INTDEF char *LIBCCALL libc_canonicalize_file_name(char const *__restrict name);
+INTDEF int LIBCCALL libc_ptsname_r(int fd, char *__restrict buf, size_t buflen);
 INTDEF int LIBCCALL libc_getpt(void);
-INTDEF int LIBCCALL libc_mkostemp(char *template_, int flags);
-INTDEF int LIBCCALL libc_mkostemps(char *template_, int suffixlen, int flags);
-INTDEF char *LIBCCALL libc_mktemp(char *template_);
-INTDEF int LIBCCALL libc_mkstemp(char *template_);
-INTDEF char *LIBCCALL libc_mkdtemp(char *template_);
-INTDEF void LIBCCALL libc_setkey(char const *key);
+INTDEF int LIBCCALL libc_mkostemp(char *__restrict template_, int flags);
+INTDEF int LIBCCALL libc_mkostemps(char *__restrict template_, int suffixlen, int flags);
+INTDEF char *LIBCCALL libc_mktemp(char *__restrict template_);
+INTDEF int LIBCCALL libc_mkstemp(char *__restrict template_);
+INTDEF char *LIBCCALL libc_mkdtemp(char *__restrict template_);
+INTDEF void LIBCCALL libc_setkey(char const *__restrict key);
 INTDEF int LIBCCALL libc_grantpt(int fd);
 INTDEF int LIBCCALL libc_unlockpt(int fd);
 INTDEF char *LIBCCALL libc_ptsname(int fd);
 INTDEF int LIBCCALL libc_posix_openpt(int oflag);
+
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTDEF __errno_t LIBCCALL libc_mktemp_s(char *templatename, size_t size);
+INTDEF __errno_t LIBCCALL libc_mktemp_s(char *__restrict templatename, size_t size);
+INTDEF int LIBCCALL libc_16wsystem(char16_t const *__restrict command);
+INTDEF int LIBCCALL libc_32wsystem(char32_t const *__restrict command);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 

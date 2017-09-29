@@ -84,19 +84,24 @@ INTDEF int (LIBCCALL libc_toupper)(int ch);
 INTDEF int (LIBCCALL libc_tolower)(int ch);
 INTDEF int (LIBCCALL libc_isctype)(int ch, int mask);
 
+#ifndef __KERNEL__
+INTDEF int (LIBCCALL libc__toupper)(int ch);
+INTDEF int (LIBCCALL libc__tolower)(int ch);
+#endif /* !__KERNEL__ */
+
 #define libc___isctype(c,type) (libc___chattr[(__UINT8_TYPE__)(c)]&(__UINT16_TYPE__)type)
-#define libc_isalnum(c)  libc___isctype((c),F_ALNUM)
-#define libc_isalpha(c)  libc___isctype((c),F_ALPHA)
-#define libc_iscntrl(c)  libc___isctype((c),F_CNTRL)
-#define libc_isdigit(c)  libc___isctype((c),F_DIGIT)
-#define libc_islower(c)  libc___isctype((c),F_LOWER)
-#define libc_isgraph(c)  libc___isctype((c),F_GRAPH)
-#define libc_isprint(c)  libc___isctype((c),F_PRINT)
-#define libc_ispunct(c)  libc___isctype((c),F_PUNCT)
-#define libc_isspace(c)  libc___isctype((c),F_SPACE)
-#define libc_isupper(c)  libc___isctype((c),F_UPPER)
-#define libc_isxdigit(c) libc___isctype((c),F_XDIGIT)
-#define libc_isblank(c)  libc___isctype((c),F_BLANK)
+#define libc_isalnum(c)  libc___isctype((c),F_SLOT(F_ALNUM))
+#define libc_isalpha(c)  libc___isctype((c),F_SLOT(F_ALPHA))
+#define libc_iscntrl(c)  libc___isctype((c),F_SLOT(F_CNTRL))
+#define libc_isdigit(c)  libc___isctype((c),F_SLOT(F_DIGIT))
+#define libc_islower(c)  libc___isctype((c),F_SLOT(F_LOWER))
+#define libc_isgraph(c)  libc___isctype((c),F_SLOT(F_GRAPH))
+#define libc_isprint(c)  libc___isctype((c),F_SLOT(F_PRINT))
+#define libc_ispunct(c)  libc___isctype((c),F_SLOT(F_PUNCT))
+#define libc_isspace(c)  libc___isctype((c),F_SLOT(F_SPACE))
+#define libc_isupper(c)  libc___isctype((c),F_SLOT(F_UPPER))
+#define libc_isxdigit(c) libc___isctype((c),F_SLOT(F_XDIGIT))
+#define libc_isblank(c)  libc___isctype((c),F_SLOT(F_BLANK))
 #define libc_isascii(c)  ((unsigned int)(c) <= 0x7f)
 
 #ifndef __KERNEL__
@@ -163,6 +168,24 @@ INTDEF int LIBCCALL libc_iswcsym(wint_t wc);
 INTDEF int LIBCCALL libc_iswcsymf(wint_t wc);
 INTDEF int LIBCCALL libc_iswcsym_l(wint_t wc, locale_t locale);
 INTDEF int LIBCCALL libc_iswcsymf_l(wint_t wc, locale_t locale);
+
+INTDEF int LIBCCALL libc_isalpha_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_isupper_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_islower_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_isdigit_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_isxdigit_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_isspace_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_isalnum_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_isprint_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_isgraph_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_iscntrl_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_toupper_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_tolower_l(int ch, locale_t locale);
+INTDEF int LIBCCALL libc_isctype_l(int ch, int mask, locale_t locale);
+INTDEF int LIBCCALL libc_dos_isctype(int ch, int mask);
+INTDEF int LIBCCALL libc_toascii(int ch);
+INTERN int LIBCCALL libc_iscsym(int ch);
+INTERN int LIBCCALL libc_iscsymf(int ch);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 #endif /* !__KERNEL__ */

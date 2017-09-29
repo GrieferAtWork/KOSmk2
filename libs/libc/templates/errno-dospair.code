@@ -1,0 +1,104 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+#ifndef PAIR
+#error "Must '#define PAIR(kos,dos) ...' before including this file"
+#endif
+
+PAIR(EPERM           ,__DOS_EPERM)
+PAIR(ENOENT          ,__DOS_ENOENT)
+PAIR(ESRCH           ,__DOS_ESRCH)
+PAIR(EINTR           ,__DOS_EINTR)
+PAIR(EIO             ,__DOS_EIO)
+PAIR(ENXIO           ,__DOS_ENXIO)
+PAIR(E2BIG           ,__DOS_E2BIG)
+PAIR(ENOEXEC         ,__DOS_ENOEXEC)
+PAIR(EBADF           ,__DOS_EBADF)
+PAIR(ECHILD          ,__DOS_ECHILD)
+PAIR(EAGAIN          ,__DOS_EAGAIN)
+PAIR(ENOMEM          ,__DOS_ENOMEM)
+PAIR(EACCES          ,__DOS_EACCES)
+PAIR(EFAULT          ,__DOS_EFAULT)
+PAIR(EBUSY           ,__DOS_EBUSY)
+PAIR(EEXIST          ,__DOS_EEXIST)
+PAIR(EXDEV           ,__DOS_EXDEV)
+PAIR(ENODEV          ,__DOS_ENODEV)
+PAIR(ENOTDIR         ,__DOS_ENOTDIR)
+PAIR(EISDIR          ,__DOS_EISDIR)
+PAIR(ENFILE          ,__DOS_ENFILE)
+PAIR(EMFILE          ,__DOS_EMFILE)
+PAIR(ENOTTY          ,__DOS_ENOTTY)
+PAIR(EFBIG           ,__DOS_EFBIG)
+PAIR(ENOSPC          ,__DOS_ENOSPC)
+PAIR(ESPIPE          ,__DOS_ESPIPE)
+PAIR(EROFS           ,__DOS_EROFS)
+PAIR(EMLINK          ,__DOS_EMLINK)
+PAIR(EPIPE           ,__DOS_EPIPE)
+PAIR(EDOM            ,__DOS_EDOM)
+PAIR(EDEADLK         ,__DOS_EDEADLK)
+PAIR(ENAMETOOLONG    ,__DOS_ENAMETOOLONG)
+PAIR(ENOLCK          ,__DOS_ENOLCK)
+PAIR(ENOSYS          ,__DOS_ENOSYS)
+PAIR(ENOTEMPTY       ,__DOS_ENOTEMPTY)
+PAIR(EINVAL          ,__DOS_EINVAL)
+PAIR(ERANGE          ,__DOS_ERANGE)
+PAIR(EILSEQ          ,__DOS_EILSEQ)
+//PAIR(STRUNCATE     ,__DOS_STRUNCATE)
+PAIR(EADDRINUSE      ,__DOS_EADDRINUSE)
+PAIR(EADDRNOTAVAIL   ,__DOS_EADDRNOTAVAIL)
+PAIR(EAFNOSUPPORT    ,__DOS_EAFNOSUPPORT)
+PAIR(EALREADY        ,__DOS_EALREADY)
+PAIR(EBADMSG         ,__DOS_EBADMSG)
+PAIR(ECANCELED       ,__DOS_ECANCELED)
+PAIR(ECONNABORTED    ,__DOS_ECONNABORTED)
+PAIR(ECONNREFUSED    ,__DOS_ECONNREFUSED)
+PAIR(ECONNRESET      ,__DOS_ECONNRESET)
+PAIR(EDESTADDRREQ    ,__DOS_EDESTADDRREQ)
+PAIR(EHOSTUNREACH    ,__DOS_EHOSTUNREACH)
+PAIR(EIDRM           ,__DOS_EIDRM)
+PAIR(EINPROGRESS     ,__DOS_EINPROGRESS)
+PAIR(EISCONN         ,__DOS_EISCONN)
+PAIR(ELOOP           ,__DOS_ELOOP)
+PAIR(EMSGSIZE        ,__DOS_EMSGSIZE)
+PAIR(ENETDOWN        ,__DOS_ENETDOWN)
+PAIR(ENETRESET       ,__DOS_ENETRESET)
+PAIR(ENETUNREACH     ,__DOS_ENETUNREACH)
+PAIR(ENOBUFS         ,__DOS_ENOBUFS)
+PAIR(ENODATA         ,__DOS_ENODATA)
+PAIR(ENOLINK         ,__DOS_ENOLINK)
+PAIR(ENOMSG          ,__DOS_ENOMSG)
+PAIR(ENOPROTOOPT     ,__DOS_ENOPROTOOPT)
+PAIR(ENOSR           ,__DOS_ENOSR)
+PAIR(ENOSTR          ,__DOS_ENOSTR)
+PAIR(ENOTCONN        ,__DOS_ENOTCONN)
+PAIR(ENOTRECOVERABLE ,__DOS_ENOTRECOVERABLE)
+PAIR(ENOTSOCK        ,__DOS_ENOTSOCK)
+PAIR(ENOSYS          ,__DOS_ENOTSUP)
+PAIR(EOPNOTSUPP      ,__DOS_EOPNOTSUPP)
+//PAIR(EOTHER        ,__DOS_EOTHER)
+PAIR(EOVERFLOW       ,__DOS_EOVERFLOW)
+PAIR(EOWNERDEAD      ,__DOS_EOWNERDEAD)
+PAIR(EPROTO          ,__DOS_EPROTO)
+PAIR(EPROTONOSUPPORT ,__DOS_EPROTONOSUPPORT)
+PAIR(EPROTOTYPE      ,__DOS_EPROTOTYPE)
+PAIR(ETIME           ,__DOS_ETIME)
+PAIR(ETIMEDOUT       ,__DOS_ETIMEDOUT)
+PAIR(ETXTBSY         ,__DOS_ETXTBSY)
+PAIR(EWOULDBLOCK     ,__DOS_EWOULDBLOCK)
+
+#undef PAIR

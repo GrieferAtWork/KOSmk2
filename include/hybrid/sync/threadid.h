@@ -38,7 +38,13 @@ DECL_END
 #include <hybrid/types.h>
 DECL_BEGIN
 
+#ifdef __BUILDING_LIBC
+__INTDEF pid_t (__LIBCCALL libc_gettid)(void);
+#define THREADID_SELF()        libc_gettid()
+#else /* __BUILDING_LIBC */
 __LIBC pid_t (__LIBCCALL __gettid)(void);
+#define THREADID_SELF()        __gettid()
+#endif /* !__BUILDING_LIBC */
 
 typedef pid_t threadid_t;
 #if 0
@@ -47,7 +53,6 @@ typedef pid_t threadid_t;
 #define THREADID_INVALID_IS_ZERO 1 /* Not always, but good enough? */
 #define THREADID_INVALID         0
 #endif
-#define THREADID_SELF()        __gettid()
 
 DECL_END
 #endif

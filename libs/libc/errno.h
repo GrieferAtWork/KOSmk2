@@ -28,7 +28,12 @@
 
 DECL_BEGIN
 
-INTDEF int *LIBCCALL libc__errno(void);
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
+INTDEF int *LIBCCALL libc___errno(void);
 INTDEF int LIBCCALL libc___get_errno(void);
 INTDEF void LIBCCALL libc___set_errno(int err);
 INTDEF char *LIBCCALL libc___libc_program_invocation_name(void);
@@ -46,6 +51,14 @@ INTDEF ATTR_COLDTEXT void LIBCCALL libc_error_at_line(int status, int errnum, ch
 
 #define GET_ERRNO()    libc___get_errno()
 #define SET_ERRNO(err) libc___set_errno(err)
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF int *LIBCCALL libc_dos___errno(void);
+INTDEF int LIBCCALL libc_dos___get_errno(void);
+INTDEF void LIBCCALL libc_dos___set_errno(int err);
+INTDEF errno_t LIBCCALL libc_errno_dos2kos(errno_t eno);
+INTDEF errno_t LIBCCALL libc_errno_kos2dos(errno_t eno);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

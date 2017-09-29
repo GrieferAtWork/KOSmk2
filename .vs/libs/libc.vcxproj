@@ -41,6 +41,7 @@
   <ItemGroup>
     <None Include="..\..\libs\libc\dlmalloc.c.inl" />
     <None Include="..\..\libs\libc\strerror.inl" />
+    <None Include="..\..\libs\libc\templates\errno-dospair.code" />
     <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code" />
     <None Include="..\..\libs\libc\templates\memory.code" />
     <None Include="..\..\libs\libc\templates\string.code" />

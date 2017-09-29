@@ -89,13 +89,14 @@
 #elif defined(__NO_ATTR_NOTHROW_SUFFIX)
 #   define __NOTHROW(prot) __ATTR_NOTHROW prot
 #else
-#   define __NOTHROW(prot) prot __ATTR_NOTHROW
+#   define __NOTHROW(prot) __ATTR_NOTHROW prot
 #endif
 
 #ifdef __cplusplus
 #   define __NAMESPACE_STD_EXISTS     1
 #   define __NAMESPACE_STD_BEGIN      namespace std {
 #   define __NAMESPACE_STD_END        }
+#   define __NAMESPACE_STD_SYM        ::std::
 #   define __NAMESPACE_STD_USING_(x)
 #   define __NAMESPACE_STD_USING_1(x)
 #   define __NAMESPACE_STD_USING___CXX_SYSTEM_HEADER(x) using std::x;
@@ -105,6 +106,7 @@
 #else
 #   define __NAMESPACE_STD_BEGIN    /* nothing */
 #   define __NAMESPACE_STD_END      /* nothing */
+#   define __NAMESPACE_STD_SYM      /* nothing */
 #   define __NAMESPACE_STD_USING(x) /* nothing */
 #endif
 

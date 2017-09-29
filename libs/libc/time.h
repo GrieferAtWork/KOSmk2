@@ -175,7 +175,11 @@ INTDEF int LIBCCALL libc_pause(void);
 INTDEF int LIBCCALL libc_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 INTDEF unsigned int LIBCCALL libc_sleep(unsigned int seconds);
 INTDEF int LIBCCALL libc_usleep(useconds_t useconds);
-INTDEF clock_t LIBCCALL libc_times(struct tms *buffer);
+INTDEF clock_t LIBCCALL libc_times(struct tms *__restrict buffer);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF clock_t LIBCCALL libc_dos_clock(void);
+INTDEF clock_t LIBCCALL libc_dos_times(struct tms *__restrict buffer);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 INTDEF size_t LIBCCALL libc_strftime(char *__restrict s, size_t maxsize, char const *__restrict format, struct tm const *__restrict tp);
 INTDEF size_t LIBCCALL libc_strftime_l(char *__restrict s, size_t maxsize, char const *__restrict format, struct tm const *__restrict tp, locale_t loc);

@@ -44,6 +44,14 @@
 
 DECL_BEGIN
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_tzname,tzname);
+DEFINE_PUBLIC_ALIAS(_timezone,timezone);
+DEFINE_PUBLIC_ALIAS(_tzset,libc_tzset);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+DEFINE_PUBLIC_ALIAS(__tzname,tzname);
+DEFINE_PUBLIC_ALIAS(__daylight,daylight);
+DEFINE_PUBLIC_ALIAS(__timezone,timezone);
 PUBLIC int      getdate_err;
 PUBLIC char    *tzname[2];
 PUBLIC int      daylight;
@@ -71,8 +79,8 @@ INTERN char *LIBCCALL libc_asctime_r(struct tm const *__restrict tp,
  if unlikely(!tp) { SET_ERRNO(EINVAL); return NULL; }
  if unlikely(tp->tm_year > INT_MAX-1900) { SET_ERRNO(EOVERFLOW); return NULL; }
  libc_sprintf(buf,"%.3s %.3s%3d %.2d:%.2d:%.2d %d\n",
-             (tp->tm_wday < 0 || tp->tm_wday >= 7 ? "???" : abbr_wday_names[tp->tm_wday]),
-             (tp->tm_mon < 0 || tp->tm_mon >= 12 ? "???" : abbr_month_names[tp->tm_mon]),
+             ((unsigned int)tp->tm_wday >= 7 ? "???" : abbr_wday_names[tp->tm_wday]),
+             ((unsigned int)tp->tm_mon >= 12 ? "???" : abbr_month_names[tp->tm_mon]),
               tp->tm_mday,tp->tm_hour,tp->tm_min,tp->tm_sec,tp->tm_year+1900);
  return buf;
 }
@@ -613,7 +621,8 @@ INTERN clock_t LIBCCALL libc_clock(void) {
  if (clock_start < 0) clock_start = result;
  return result-clock_start;
 }
-INTERN clock_t LIBCCALL libc_times(struct tms *buffer) {
+INTERN clock_t LIBCCALL
+libc_times(struct tms *__restrict buffer) {
  /* This isn't right either... */
  clock_t clock_now = libc_clock();
  buffer->tms_stime = clock_now/2;
@@ -622,6 +631,21 @@ INTERN clock_t LIBCCALL libc_times(struct tms *buffer) {
  buffer->tms_cstime = 0;
  return clock_now;
 }
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN clock_t LIBCCALL libc_dos_clock(void) {
+ return libc_clock()/(CLOCKS_PER_SEC/__DOS_CLOCKS_PER_SEC);
+}
+INTERN clock_t LIBCCALL
+libc_dos_times(struct tms *__restrict buffer) {
+ /* This isn't right either... */
+ clock_t clock_now = libc_dos_clock();
+ buffer->tms_stime = clock_now/2;
+ buffer->tms_utime = clock_now/2;
+ buffer->tms_cutime = 0;
+ buffer->tms_cstime = 0;
+ return clock_now;
+}
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 
 DEFINE_PUBLIC_ALIAS(tzset,libc_tzset);
@@ -717,21 +741,21 @@ DEFINE_PUBLIC_ALIAS(poll,libc_poll);
 DEFINE_PUBLIC_ALIAS(sleep,libc_sleep);
 DEFINE_PUBLIC_ALIAS(usleep,libc_usleep);
 DEFINE_PUBLIC_ALIAS(times,libc_times);
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-DEFINE_PUBLIC_ALIAS(_ftime32,libc_ftime);
-DEFINE_PUBLIC_ALIAS(_ftime64,libc_ftime64);
-DEFINE_PUBLIC_ALIAS(_ftime32_s,libc_ftime);
-DEFINE_PUBLIC_ALIAS(_ftime64_s,libc_ftime64);
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DEFINE_PUBLIC_ALIAS(timegm,libc_mktime); /* ??? */
 DEFINE_PUBLIC_ALIAS(timegm64,libc_mktime64); /* ??? */
 
-/* NOTE: These are named weirdly thanks to DOS */
-DEFINE_PUBLIC_ALIAS(_futime32,libc_futime);
-DEFINE_PUBLIC_ALIAS(_futime64,libc_futime64);
-
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_time32,libc_time);
+DEFINE_PUBLIC_ALIAS(_time64,libc_time64);
+DEFINE_PUBLIC_ALIAS(__DSYM(clock),libc_dos_clock);
+DEFINE_PUBLIC_ALIAS(__DSYM(times),libc_dos_times);
+DEFINE_PUBLIC_ALIAS(_ftime,libc_ftime); /* This is not an error. - DOS defines this name, too. */
+DEFINE_PUBLIC_ALIAS(_ftime32,libc_ftime);
+DEFINE_PUBLIC_ALIAS(_ftime64,libc_ftime64);
+DEFINE_PUBLIC_ALIAS(_ftime32_s,libc_ftime);
+DEFINE_PUBLIC_ALIAS(_ftime64_s,libc_ftime64);
+
 /* Define DOS-mode time functions. */
 INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_utimensat)(int fd, char const *path, struct atimespec const times[2], int flags) { return A(libc_utimensat)(fd,path,times,AT_DOSPATH|flags); }
 INTERN ATTR_DOSTEXT int LIBCCALL B(libc_dos_utimensat)(int fd, char const *path, struct btimespec const times[2], int flags) { return B(libc_utimensat)(fd,path,times,AT_DOSPATH|flags); }
@@ -761,10 +785,14 @@ DEFINE_PUBLIC_ALIAS(__DSYM(lutimes),libc_dos_lutimes);
 DEFINE_PUBLIC_ALIAS(__DSYM(lutimes64),libc_dos_lutimes64);
 DEFINE_PUBLIC_ALIAS(__DSYM(futimesat),libc_dos_futimesat);
 DEFINE_PUBLIC_ALIAS(__DSYM(futimesat64),libc_dos_futimesat64);
-//DEFINE_PUBLIC_ALIAS(__DSYM(utime),libc_dos_utime);
-//DEFINE_PUBLIC_ALIAS(__DSYM(utime64),libc_dos_utime64);
-DEFINE_PUBLIC_ALIAS(__DSYM(_utime32),libc_dos_utime);
-DEFINE_PUBLIC_ALIAS(__DSYM(_utime64),libc_dos_utime64);
+
+/* NOTE: These are named weirdly thanks to DOS */
+DEFINE_PUBLIC_ALIAS(_futime,libc_futime); /* This is not an error. - DOS defines this name, too. */
+DEFINE_PUBLIC_ALIAS(_futime32,libc_futime);
+DEFINE_PUBLIC_ALIAS(_futime64,libc_futime64);
+DEFINE_PUBLIC_ALIAS(_utime,libc_dos_utime); /* This is not an error. - DOS defines this name, too. */
+DEFINE_PUBLIC_ALIAS(_utime32,libc_dos_utime);
+DEFINE_PUBLIC_ALIAS(_utime64,libc_dos_utime64);
 
 /* Wide-character version of utime(). */
 INTERN int LIBCCALL
@@ -826,6 +854,7 @@ INTERN int LIBCCALL libc_dos_16wutime64(char16_t const *file, struct utimbuf64 c
 INTERN int LIBCCALL libc_dos_32wutime(char32_t const *file, struct utimbuf const *file_times) { return libc_w32futimeat(AT_FDCWD,file,file_times,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
 INTERN int LIBCCALL libc_dos_32wutime64(char32_t const *file, struct utimbuf64 const *file_times) { return libc_w32futimeat64(AT_FDCWD,file,file_times,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
 
+DEFINE_PUBLIC_ALIAS(_wutime,libc_dos_16wutime); /* Alias also defined by DOS. */
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wutime32),libc_16wutime);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wutime32),libc_32wutime);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wutime32),libc_dos_16wutime);
