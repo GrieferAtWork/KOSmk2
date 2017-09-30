@@ -1,0 +1,488 @@
+  NT(AcceptConnectPort,                                                           6
+  NT(AccessCheck,                                                           8
+  NT(AccessCheckAndAuditAlarm,                                                           11
+  NT(AccessCheckByType,                                                           11
+  NT(AccessCheckByTypeAndAuditAlarm,                                                           16
+  NT(AccessCheckByTypeResultList,                                                           11
+  NT(AccessCheckByTypeResultListAndAuditAlarm,                                                           16
+  NT(AccessCheckByTypeResultListAndAuditAlarmByHandle,                                                           17
+//NT(AcquireCMFViewOwnership,                                                          ?
+//NT(AcquireProcessActivityReference,                                                          ?
+  NT(AddAtom,                                                           3
+//NT(AddAtomEx,                                                          ?
+  NT(AddBootEntry,                                                           2
+  NT(AddDriverEntry,                                                           2
+  NT(AdjustGroupsToken,                                                           6
+  NT(AdjustPrivilegesToken,                                                           8
+//NT(AdjustTokenClaimsAndDeviceGroups,                                                          ?
+  NT(AlertResumeThread,                                                           2
+  NT(AlertThread,                                                           1
+//NT(AlertThreadByThreadId,                                                          ?
+  NT(AllocateLocallyUniqueId,                                                           1
+//NT(AllocateReserveObject,                                                          ?
+  NT(AllocateUserPhysicalPages,                                                           3
+  NT(AllocateUuids,                                                           4
+  NT(AllocateVirtualMemory,                                                           6
+//NT(AlpcAcceptConnectPort,                                                          ?
+//NT(AlpcCancelMessage,                                                          ?
+//NT(AlpcConnectPort,                                                          ?
+//NT(AlpcConnectPortEx,                                                          ?
+//NT(AlpcCreatePort,                                                          ?
+//NT(AlpcCreatePortSection,                                                          ?
+//NT(AlpcCreateResourceReserve,                                                          ?
+//NT(AlpcCreateSectionView,                                                          ?
+//NT(AlpcCreateSecurityContext,                                                          ?
+//NT(AlpcDeletePortSection,                                                          ?
+//NT(AlpcDeleteResourceReserve,                                                          ?
+//NT(AlpcDeleteSectionView,                                                          ?
+//NT(AlpcDeleteSecurityContext,                                                          ?
+//NT(AlpcDisconnectPort,                                                          ?
+//NT(AlpcImpersonateClientContainerOfPort,                                                          ?
+//NT(AlpcImpersonateClientOfPort,                                                          ?
+//NT(AlpcOpenSenderProcess,                                                          ?
+//NT(AlpcOpenSenderThread,                                                          ?
+//NT(AlpcQueryInformation,                                                          ?
+//NT(AlpcQueryInformationMessage,                                                          ?
+//NT(AlpcRevokeSecurityContext,                                                          ?
+//NT(AlpcSendWaitReceivePort,                                                          ?
+//NT(AlpcSetInformation,                                                          ?
+  NT(ApphelpCacheControl,                                                           2
+  NT(AreMappedFilesTheSame,                                                           2
+  NT(AssignProcessToJobObject,                                                           2
+//NT(AssociateWaitCompletionPacket,                                                          ?
+  NT(CallbackReturn,                                                           3
+  NT(CancelDeviceWakeupRequest,                                                           1
+  NT(CancelIoFile,                                                           2
+//NT(CancelIoFileEx,                                                          ?
+//NT(CancelSynchronousIoFile,                                                          ?
+  NT(CancelTimer,                                                           2
+//NT(CancelTimer2,                                                          ?
+//NT(CancelWaitCompletionPacket,                                                          ?
+//NT(ClearAllSavepointsTransaction,                                                          ?
+  NT(ClearEvent,                                                           1
+//NT(ClearSavepointTransaction,                                                          ?
+  NT(Close,                                                           1
+  NT(CloseObjectAuditAlarm,                                                           3
+//NT(CommitComplete,                                                          ?
+//NT(CommitEnlistment,                                                          ?
+//NT(CommitRegistryTransaction,                                                          ?
+//NT(CommitTransaction,                                                          ?
+  NT(CompactKeys,                                                           2
+//NT(CompareObjects,                                                          ?
+//NT(CompareSigningLevels,                                                          ?
+  NT(CompareTokens,                                                           3
+  NT(CompleteConnectPort,                                                           1
+  NT(CompressKey,                                                           1
+  NT(ConnectPort,                                                           8
+  NT(Continue,                                                           2
+//NT(ConvertBetweenAuxiliaryCounterAndPerformanceCounter,                                                          ?
+//NT(CreateChannel,                                                          ?
+  NT(CreateDebugObject,                                                           4
+  NT(CreateDirectoryObject,                                                           3
+//NT(CreateDirectoryObjectEx,                                                          ?
+//NT(CreateEnclave,                                                          ?
+//NT(CreateEnlistment,                                                          ?
+  NT(CreateEvent,                                                           5
+  NT(CreateEventPair,                                                           3
+  NT(CreateFile,                                                           11
+//NT(CreateIRTimer,                                                          ?
+  NT(CreateIoCompletion,                                                           4
+  NT(CreateJobObject,                                                           3
+  NT(CreateJobSet,                                                           3
+  NT(CreateKey,                                                           7
+//NT(CreateKeyTransacted,                                                          ?
+  NT(CreateKeyedEvent,                                                           4
+//NT(CreateLowBoxToken,                                                          ?
+  NT(CreateMailslotFile,                                                           8
+  NT(CreateMutant,                                                           4
+  NT(CreateNamedPipeFile,                                                           14
+  NT(CreatePagingFile,                                                           4
+//NT(CreatePartition,                                                          ?
+  NT(CreatePort,                                                           5
+//NT(CreatePrivateNamespace,                                                          ?
+  NT(CreateProcess,                                                           8
+  NT(CreateProcessEx,                                                           9
+  NT(CreateProfile,                                                           9
+//NT(CreateProfileEx,                                                          ?
+//NT(CreateRegistryTransaction,                                                          ?
+//NT(CreateResourceManager,                                                          ?
+  NT(CreateSection,                                                           7
+  NT(CreateSemaphore,                                                           5
+  NT(CreateSymbolicLinkObject,                                                           4
+  NT(CreateThread,                                                           8
+//NT(CreateThreadEx,                                                          ?
+  NT(CreateTimer,                                                           4
+//NT(CreateTimer2,                                                          ?
+  NT(CreateToken,                                                           13
+//NT(CreateTokenEx,                                                          ?
+//NT(CreateTransaction,                                                          ?
+//NT(CreateTransactionManager,                                                          ?
+//NT(CreateUserProcess,                                                          ?
+//NT(CreateWaitCompletionPacket,                                                          ?
+  NT(CreateWaitablePort,                                                           5
+//NT(CreateWinStation,                                                          ?
+//NT(CreateWnfStateName,                                                          ?
+//NT(CreateWorkerFactory,                                                          ?
+  NT(DebugActiveProcess,                                                           2
+  NT(DebugContinue,                                                           3
+  NT(DelayExecution,                                                           2
+  NT(DeleteAtom,                                                           1
+  NT(DeleteBootEntry,                                                           1
+  NT(DeleteDriverEntry,                                                           1
+  NT(DeleteFile,                                                           1
+  NT(DeleteKey,                                                           1
+  NT(DeleteObjectAuditAlarm,                                                           3
+//NT(DeletePrivateNamespace,                                                          ?
+  NT(DeleteValueKey,                                                           2
+//NT(DeleteWnfStateData,                                                          ?
+//NT(DeleteWnfStateName,                                                          ?
+  NT(DeviceIoControlFile,                                                           10
+//NT(DisableLastKnownGood,                                                          ?
+  NT(DisplayString,                                                           1
+//NT(DrawText,                                                          ?
+  NT(DuplicateObject,                                                           7
+  NT(DuplicateToken,                                                           6
+//NT(EnableLastKnownGood,                                                          ?
+  NT(EnumerateBootEntries,                                                           2
+  NT(EnumerateDriverEntries,                                                           2
+  NT(EnumerateKey,                                                           6
+  NT(EnumerateSystemEnvironmentValuesEx,                                                           3
+//NT(EnumerateTransactionObject,                                                          ?
+  NT(EnumerateValueKey,                                                           6
+  NT(ExtendSection,                                                           2
+//NT(FilterBootOption,                                                          ?
+  NT(FilterToken,                                                           6
+//NT(FilterTokenEx,                                                          ?
+  NT(FindAtom,                                                           3
+  NT(FlushBuffersFile,                                                           2
+//NT(FlushBuffersFileEx,                                                          ?
+//NT(FlushInstallUILanguage,                                                          ?
+  NT(FlushInstructionCache,                                                           3
+  NT(FlushKey,                                                           1
+//NT(FlushProcessWriteBuffers,                                                          ?
+  NT(FlushVirtualMemory,                                                           4
+  NT(FlushWriteBuffer,                                                           1
+  NT(FreeUserPhysicalPages,                                                           3
+  NT(FreeVirtualMemory,                                                           4
+//NT(FreezeRegistry,                                                          ?
+//NT(FreezeTransactions,                                                          ?
+  NT(FsControlFile,                                                           10
+//NT(GetCachedSigningLevel,                                                          ?
+//NT(GetCompleteWnfStateSubscription,                                                          ?
+  NT(GetContextThread,                                                           2
+  NT(GetCurrentProcessorNumber,                                                           1
+//NT(GetCurrentProcessorNumberEx,                                                          ?
+  NT(GetDevicePowerState,                                                           2
+//NT(GetMUIRegistryInfo,                                                          ?
+//NT(GetNextProcess,                                                          ?
+//NT(GetNextThread,                                                          ?
+//NT(GetNlsSectionPtr,                                                          ?
+//NT(GetNotificationResourceManager,                                                          ?
+  NT(GetPlugPlayEvent,                                                           4
+  NT(GetTickCount,                                                           1
+  NT(GetWriteWatch,                                                           7
+  NT(ImpersonateAnonymousToken,                                                           1
+  NT(ImpersonateClientOfPort,                                                           2
+  NT(ImpersonateThread,                                                           3
+//NT(InitializeEnclave,                                                          ?
+//NT(InitializeNlsFiles,                                                          ?
+  NT(InitializeRegistry,                                                           1
+  NT(InitiatePowerAction,                                                           4
+  NT(IsProcessInJob,                                                           2
+  NT(IsSystemResumeAutomatic,                                                           1
+//NT(IsUILanguageComitted,                                                          ?
+//NT(ListTransactions,                                                          ?
+//NT(ListenChannel,                                                          ?
+  NT(ListenPort,                                                           2
+  NT(LoadDriver,                                                           1
+//NT(LoadEnclaveData,                                                          ?
+//NT(LoadHotPatch,                                                          ?
+  NT(LoadKey,                                                           2
+  NT(LoadKey2,                                                           3
+  NT(LoadKeyEx,                                                           4
+  NT(LockFile,                                                           10
+  NT(LockProductActivationKeys,                                                           2
+  NT(LockRegistryKey,                                                           1
+  NT(LockVirtualMemory,                                                           4
+  NT(MakePermanentObject,                                                           1
+  NT(MakeTemporaryObject,                                                           1
+//NT(ManagePartition,                                                          ?
+//NT(MapCMFModule,                                                          ?
+  NT(MapUserPhysicalPages,                                                           3
+  NT(MapUserPhysicalPagesScatter,                                                           3
+  NT(MapViewOfSection,                                                           10
+//NT(MarshallTransaction,                                                          ?
+  NT(ModifyBootEntry,                                                           1
+  NT(ModifyDriverEntry,                                                           1
+  NT(NotifyChangeDirectoryFile,                                                           9
+  NT(NotifyChangeKey,                                                           10
+  NT(NotifyChangeMultipleKeys,                                                           12
+//NT(NotifyChangeSession,                                                          ?
+//NT(OpenChannel,                                                          ?
+  NT(OpenDirectoryObject,                                                           3
+//NT(OpenEnlistment,                                                          ?
+  NT(OpenEvent,                                                           3
+  NT(OpenEventPair,                                                           3
+  NT(OpenFile,                                                           6
+  NT(OpenIoCompletion,                                                           3
+  NT(OpenJobObject,                                                           3
+  NT(OpenKey,                                                           3
+//NT(OpenKeyEx,                                                          ?
+//NT(OpenKeyTransacted,                                                          ?
+//NT(OpenKeyTransactedEx,                                                          ?
+  NT(OpenKeyedEvent,                                                           3
+  NT(OpenMutant,                                                           3
+  NT(OpenObjectAuditAlarm,                                                           12
+//NT(OpenPartition,                                                          ?
+//NT(OpenPrivateNamespace,                                                          ?
+  NT(OpenProcess,                                                           4
+  NT(OpenProcessToken,                                                           3
+  NT(OpenProcessTokenEx,                                                           4
+//NT(OpenRegistryTransaction,                                                          ?
+//NT(OpenResourceManager,                                                          ?
+  NT(OpenSection,                                                           3
+  NT(OpenSemaphore,                                                           3
+//NT(OpenSession,                                                          ?
+  NT(OpenSymbolicLinkObject,                                                           3
+  NT(OpenThread,                                                           4
+  NT(OpenThreadToken,                                                           4
+  NT(OpenThreadTokenEx,                                                           5
+  NT(OpenTimer,                                                           3
+//NT(OpenTransaction,                                                          ?
+//NT(OpenTransactionManager,                                                          ?
+//NT(OpenWinStation,                                                          ?
+  NT(PlugPlayControl,                                                           3
+  NT(PowerInformation,                                                           5
+//NT(PrePrepareComplete,                                                          ?
+//NT(PrePrepareEnlistment,                                                          ?
+//NT(PrepareComplete,                                                          ?
+//NT(PrepareEnlistment,                                                          ?
+  NT(PrivilegeCheck,                                                           3
+  NT(PrivilegeObjectAuditAlarm,                                                           6
+  NT(PrivilegedServiceAuditAlarm,                                                           5
+//NT(PropagationComplete,                                                          ?
+//NT(PropagationFailed,                                                          ?
+  NT(ProtectVirtualMemory,                                                           5
+//NT(PullTransaction,                                                          ?
+  NT(PulseEvent,                                                           2
+  NT(QueryAttributesFile,                                                           2
+//NT(QueryAuxiliaryCounterFrequency,                                                          ?
+  NT(QueryBootEntryOrder,                                                           2
+  NT(QueryBootOptions,                                                           2
+  NT(QueryDebugFilterState,                                                           2
+  NT(QueryDefaultLocale,                                                           2
+  NT(QueryDefaultUILanguage,                                                           1
+  NT(QueryDirectoryFile,                                                           11
+  NT(QueryDirectoryObject,                                                           7
+  NT(QueryDriverEntryOrder,                                                           2
+  NT(QueryEaFile,                                                           9
+  NT(QueryEvent,                                                           5
+  NT(QueryFullAttributesFile,                                                           2
+  NT(QueryInformationAtom,                                                           5
+//NT(QueryInformationByName,                                                          ?
+//NT(QueryInformationEnlistment,                                                          ?
+  NT(QueryInformationFile,                                                           5
+  NT(QueryInformationJobObject,                                                           5
+  NT(QueryInformationPort,                                                           5
+  NT(QueryInformationProcess,                                                           5
+//NT(QueryInformationResourceManager,                                                          ?
+  NT(QueryInformationThread,                                                           5
+  NT(QueryInformationToken,                                                           5
+//NT(QueryInformationTransaction,                                                          ?
+//NT(QueryInformationTransactionManager,                                                          ?
+//NT(QueryInformationWorkerFactory,                                                          ?
+  NT(QueryInstallUILanguage,                                                           1
+  NT(QueryIntervalProfile,                                                           2
+  NT(QueryIoCompletion,                                                           5
+  NT(QueryKey,                                                           5
+//NT(QueryLicenseValue,                                                          ?
+  NT(QueryMultipleValueKey,                                                           6
+  NT(QueryMutant,                                                           5
+  NT(QueryObject,                                                           5
+//NT(QueryOleDirectoryFile,                                                          ?
+  NT(QueryOpenSubKeys,                                                           2
+  NT(QueryOpenSubKeysEx,                                                           4
+  NT(QueryPerformanceCounter,                                                           2
+  NT(QueryPortInformationProcess,                                                           1
+  NT(QueryQuotaInformationFile,                                                           9
+  NT(QuerySection,                                                           5
+//NT(QuerySecurityAttributesToken,                                                          ?
+  NT(QuerySecurityObject,                                                           5
+//NT(QuerySecurityPolicy,                                                          ?
+  NT(QuerySemaphore,                                                           5
+  NT(QuerySymbolicLinkObject,                                                           3
+  NT(QuerySystemEnvironmentValue,                                                           4
+  NT(QuerySystemEnvironmentValueEx,                                                           5
+  NT(QuerySystemInformation,                                                           4
+//NT(QuerySystemInformationEx,                                                          ?
+  NT(QuerySystemTime,                                                           1
+  NT(QueryTimer,                                                           5
+  NT(QueryTimerResolution,                                                           3
+  NT(QueryValueKey,                                                           6
+  NT(QueryVirtualMemory,                                                           6
+  NT(QueryVolumeInformationFile,                                                           5
+//NT(QueryWinStationInformation,                                                          ?
+//NT(QueryWnfStateData,                                                          ?
+//NT(QueryWnfStateNameInformation,                                                          ?
+  NT(QueueApcThread,                                                           5
+//NT(QueueApcThreadEx,                                                          ?
+  NT(RaiseException,                                                           3
+  NT(RaiseHardError,                                                           6
+  NT(ReadFile,                                                           9
+  NT(ReadFileScatter,                                                           9
+//NT(ReadOnlyEnlistment,                                                          ?
+  NT(ReadRequestData,                                                           6
+  NT(ReadVirtualMemory,                                                           5
+//NT(RecoverEnlistment,                                                          ?
+//NT(RecoverResourceManager,                                                          ?
+//NT(RecoverTransactionManager,                                                          ?
+//NT(RegisterProtocolAddressInformation,                                                          ?
+  NT(RegisterThreadTerminatePort,                                                           1
+//NT(ReleaseCMFViewOwnership,                                                          ?
+  NT(ReleaseKeyedEvent,                                                           4
+  NT(ReleaseMutant,                                                           2
+  NT(ReleaseSemaphore,                                                           3
+//NT(ReleaseWorkerFactoryWorker,                                                          ?
+  NT(RemoveIoCompletion,                                                           5
+//NT(RemoveIoCompletionEx,                                                          ?
+  NT(RemoveProcessDebug,                                                           2
+  NT(RenameKey,                                                           2
+//NT(RenameTransactionManager,                                                          ?
+  NT(ReplaceKey,                                                           3
+//NT(ReplacePartitionUnit,                                                          ?
+  NT(ReplyPort,                                                           2
+  NT(ReplyWaitReceivePort,                                                           4
+  NT(ReplyWaitReceivePortEx,                                                           5
+  NT(ReplyWaitReplyPort,                                                           2
+//NT(ReplyWaitSendChannel,                                                          ?
+  NT(RequestDeviceWakeup,                                                           1
+  NT(RequestPort,                                                           2
+  NT(RequestWaitReplyPort,                                                           3
+  NT(RequestWakeupLatency,                                                           1
+  NT(ResetEvent,                                                           2
+  NT(ResetWriteWatch,                                                           3
+  NT(RestoreKey,                                                           3
+  NT(ResumeProcess,                                                           1
+  NT(ResumeThread,                                                           2
+//NT(RevertContainerImpersonation,                                                          ?
+//NT(RollbackComplete,                                                          ?
+//NT(RollbackEnlistment,                                                          ?
+//NT(RollbackRegistryTransaction,                                                          ?
+//NT(RollbackSavepointTransaction,                                                          ?
+//NT(RollbackTransaction,                                                          ?
+//NT(RollforwardTransactionManager,                                                          ?
+  NT(SaveKey,                                                           2
+  NT(SaveKeyEx,                                                           3
+  NT(SaveMergedKeys,                                                           3
+//NT(SavepointComplete,                                                          ?
+//NT(SavepointTransaction,                                                          ?
+  NT(SecureConnectPort,                                                           9
+//NT(SendWaitReplyChannel,                                                          ?
+//NT(SerializeBoot,                                                          ?
+  NT(SetBootEntryOrder,                                                           2
+  NT(SetBootOptions,                                                           2
+//NT(SetCachedSigningLevel,                                                          ?
+//NT(SetCachedSigningLevel2,                                                          ?
+//NT(SetContextChannel,                                                          ?
+  NT(SetContextThread,                                                           2
+  NT(SetDebugFilterState,                                                           3
+  NT(SetDefaultHardErrorPort,                                                           1
+  NT(SetDefaultLocale,                                                           2
+  NT(SetDefaultUILanguage,                                                           1
+  NT(SetDriverEntryOrder,                                                           2
+  NT(SetEaFile,                                                           4
+  NT(SetEvent,                                                           2
+  NT(SetEventBoostPriority,                                                           1
+  NT(SetHighEventPair,                                                           1
+  NT(SetHighWaitLowEventPair,                                                           1
+//NT(SetHighWaitLowThread,                                                          ?
+//NT(SetIRTimer,                                                          ?
+  NT(SetInformationDebugObject,                                                           5
+//NT(SetInformationEnlistment,                                                          ?
+  NT(SetInformationFile,                                                           5
+  NT(SetInformationJobObject,                                                           4
+  NT(SetInformationKey,                                                           4
+  NT(SetInformationObject,                                                           4
+  NT(SetInformationProcess,                                                           4
+//NT(SetInformationResourceManager,                                                          ?
+//NT(SetInformationSymbolicLink,                                                          ?
+  NT(SetInformationThread,                                                           4
+  NT(SetInformationToken,                                                           4
+//NT(SetInformationTransaction,                                                          ?
+//NT(SetInformationTransactionManager,                                                          ?
+//NT(SetInformationVirtualMemory,                                                          ?
+//NT(SetInformationWorkerFactory,                                                          ?
+  NT(SetIntervalProfile,                                                           2
+  NT(SetIoCompletion,                                                           5
+//NT(SetIoCompletionEx,                                                          ?
+  NT(SetLdtEntries,                                                           4
+  NT(SetLowEventPair,                                                           1
+  NT(SetLowWaitHighEventPair,                                                           1
+//NT(SetLowWaitHighThread,                                                          ?
+  NT(SetQuotaInformationFile,                                                           4
+  NT(SetSecurityObject,                                                           3
+  NT(SetSystemEnvironmentValue,                                                           2
+  NT(SetSystemEnvironmentValueEx,                                                           5
+  NT(SetSystemInformation,                                                           3
+  NT(SetSystemPowerState,                                                           3
+  NT(SetSystemTime,                                                           2
+  NT(SetThreadExecutionState,                                                           2
+  NT(SetTimer,                                                           7
+//NT(SetTimer2,                                                          ?
+//NT(SetTimerEx,                                                          ?
+  NT(SetTimerResolution,                                                           3
+  NT(SetUuidSeed,                                                           1
+  NT(SetValueKey,                                                           6
+  NT(SetVolumeInformationFile,                                                           5
+//NT(SetWinStationInformation,                                                          ?
+//NT(SetWnfProcessNotificationEvent,                                                          ?
+  NT(ShutdownSystem,                                                           1
+//NT(ShutdownWorkerFactory,                                                          ?
+  NT(SignalAndWaitForSingleObject,                                                           4
+//NT(SinglePhaseReject,                                                          ?
+  NT(StartProfile,                                                           1
+//NT(StartTm,                                                          ?
+  NT(StopProfile,                                                           1
+//NT(SubscribeWnfStateChange,                                                          ?
+  NT(SuspendProcess,                                                           1
+  NT(SuspendThread,                                                           2
+  NT(SystemDebugControl,                                                           6
+  NT(TerminateJobObject,                                                           2
+  NT(TerminateProcess,                                                           2
+  NT(TerminateThread,                                                           2
+  NT(TestAlert,                                                           1
+//NT(ThawRegistry,                                                          ?
+//NT(ThawTransactions,                                                          ?
+//NT(TraceControl,                                                          ?
+  NT(TraceEvent,                                                           4
+  NT(TranslateFilePath,                                                           4
+//NT(UmsThreadYield,                                                          ?
+  NT(UnloadDriver,                                                           1
+  NT(UnloadKey,                                                           1
+  NT(UnloadKey2,                                                           2
+  NT(UnloadKeyEx,                                                           2
+  NT(UnlockFile,                                                           5
+  NT(UnlockVirtualMemory,                                                           4
+  NT(UnmapViewOfSection,                                                           2
+//NT(UnmapViewOfSectionEx,                                                          ?
+//NT(UnsubscribeWnfStateChange,                                                          ?
+//NT(UpdateWnfStateData,                                                          ?
+  NT(VdmControl,                                                           2
+//NT(W32Call,                                                          ?
+//NT(WaitForAlertByThreadId,                                                          ?
+  NT(WaitForDebugEvent,                                                           4
+  NT(WaitForKeyedEvent,                                                           4
+  NT(WaitForMultipleObjects,                                                           5
+  NT(WaitForMultipleObjects32,                                                           5
+  NT(WaitForSingleObject,                                                           3
+//NT(WaitForWnfNotifications,                                                          ?
+//NT(WaitForWorkViaWorkerFactory,                                                          ?
+  NT(WaitHighEventPair,                                                           1
+  NT(WaitLowEventPair,                                                           1
+//NT(WorkerFactoryWorkerReady,                                                          ?
+//NT(WriteErrorLogEntry,                                                          ?
+  NT(WriteFile,                                                           9
+  NT(WriteFileGather,                                                           9
+  NT(WriteRequestData,                                                           6
+  NT(WriteVirtualMemory,                                                           5
+  NT(YieldExecution,                                                           1

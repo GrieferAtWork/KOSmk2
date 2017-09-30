@@ -69,6 +69,38 @@ STATIC_ASSERT(sizeof(struct nt_flavor) == NT_FLAVOR_SIZE);
 #define NT_F29(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET2 i8] = (nt_syscall)&Nt##name,
 #define NT_F30(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET3 i8] = (nt_syscall)&Nt##name,
 
+#define NT_C0(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET0 i0] = argc,
+#define NT_C1(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET1 i0] = argc,
+#define NT_C2(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET2 i0] = argc,
+#define NT_C3(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET3 i0] = argc,
+#define NT_C4(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET0 i1] = argc,
+#define NT_C5(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET1 i1] = argc,
+#define NT_C6(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET2 i1] = argc,
+#define NT_C7(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET3 i1] = argc,
+#define NT_C8(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET4 i1] = argc,
+#define NT_C9(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8)  [ARRAY_GET0 i2] = argc,
+#define NT_C10(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET1 i2] = argc,
+#define NT_C11(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET2 i2] = argc,
+#define NT_C12(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET3 i2] = argc,
+#define NT_C13(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET0 i3] = argc,
+#define NT_C14(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET1 i3] = argc,
+#define NT_C15(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET2 i3] = argc,
+#define NT_C16(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET3 i3] = argc,
+#define NT_C17(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET3 i3] = argc,
+#define NT_C18(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET0 i4] = argc,
+#define NT_C19(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET1 i4] = argc,
+#define NT_C20(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET2 i4] = argc,
+#define NT_C21(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET0 i5] = argc,
+#define NT_C22(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET1 i5] = argc,
+#define NT_C23(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET0 i6] = argc,
+#define NT_C24(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET1 i6] = argc,
+#define NT_C25(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET0 i7] = argc,
+#define NT_C26(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET1 i7] = argc,
+#define NT_C27(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET0 i8] = argc,
+#define NT_C28(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET1 i8] = argc,
+#define NT_C29(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET2 i8] = argc,
+#define NT_C30(name,argc,i0,i1,i2,i3,i4,i5,i6,i7,i8) [ARRAY_GET3 i8] = argc,
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverride-init"
 
@@ -97,22 +129,37 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
     print "#define NT NT_F"+i;
     print "#include \"flavor-link.inl\"";
     print "       },";
+    print "       .nf_argc = {";
+    print "           [0 ... NT_SYSCALL_COUNT] = 0,";
+    print "#define NT NT_C"+i;
+    print "#include \"flavor-link.inl\"";
+    print "       },";
     print "       .nf_name = "+repr(name.lower().replace("_","-").lsstrip("windows-"))+",";
     print "   },";
 }
 ]]]*/
-   [NT_FLAVOR_WINDOWS_NT_SP3] = {
+   [NT_FLAVOR_OFFSETOF_NAME] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F0
 #include "flavor-link.inl"
        },
-       .nf_name = "nt-sp3",
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C0
+#include "flavor-link.inl"
+       },
+       .nf_name = "offsetof-name",
    },
    [NT_FLAVOR_WINDOWS_NT_SP4] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F1
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C1
 #include "flavor-link.inl"
        },
        .nf_name = "nt-sp4",
@@ -123,12 +170,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F2
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C2
+#include "flavor-link.inl"
+       },
        .nf_name = "nt-sp5",
    },
    [NT_FLAVOR_WINDOWS_NT_SP6] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F3
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C3
 #include "flavor-link.inl"
        },
        .nf_name = "nt-sp6",
@@ -139,12 +196,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F4
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C4
+#include "flavor-link.inl"
+       },
        .nf_name = "2000-sp0",
    },
    [NT_FLAVOR_WINDOWS_2000_SP1] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F5
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C5
 #include "flavor-link.inl"
        },
        .nf_name = "2000-sp1",
@@ -155,12 +222,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F6
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C6
+#include "flavor-link.inl"
+       },
        .nf_name = "2000-sp2",
    },
    [NT_FLAVOR_WINDOWS_2000_SP3] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F7
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C7
 #include "flavor-link.inl"
        },
        .nf_name = "2000-sp3",
@@ -171,12 +248,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F8
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C8
+#include "flavor-link.inl"
+       },
        .nf_name = "2000-sp4",
    },
    [NT_FLAVOR_WINDOWS_XP_SP0] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F9
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C9
 #include "flavor-link.inl"
        },
        .nf_name = "xp-sp0",
@@ -187,12 +274,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F10
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C10
+#include "flavor-link.inl"
+       },
        .nf_name = "xp-sp1",
    },
    [NT_FLAVOR_WINDOWS_XP_SP2] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F11
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C11
 #include "flavor-link.inl"
        },
        .nf_name = "xp-sp2",
@@ -203,12 +300,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F12
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C12
+#include "flavor-link.inl"
+       },
        .nf_name = "xp-sp3",
    },
    [NT_FLAVOR_WINDOWS_SERVER_2003_SP0] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F13
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C13
 #include "flavor-link.inl"
        },
        .nf_name = "server-2003-sp0",
@@ -219,12 +326,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F14
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C14
+#include "flavor-link.inl"
+       },
        .nf_name = "server-2003-sp1",
    },
    [NT_FLAVOR_WINDOWS_SERVER_2003_SP2] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F15
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C15
 #include "flavor-link.inl"
        },
        .nf_name = "server-2003-sp2",
@@ -235,12 +352,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F16
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C16
+#include "flavor-link.inl"
+       },
        .nf_name = "server-2003-r2",
    },
    [NT_FLAVOR_WINDOWS_SERVER_2003_R2_SP2] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F17
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C17
 #include "flavor-link.inl"
        },
        .nf_name = "server-2003-r2-sp2",
@@ -251,12 +378,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F18
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C18
+#include "flavor-link.inl"
+       },
        .nf_name = "vista-sp0",
    },
    [NT_FLAVOR_WINDOWS_VISTA_SP1] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F19
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C19
 #include "flavor-link.inl"
        },
        .nf_name = "vista-sp1",
@@ -267,12 +404,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F20
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C20
+#include "flavor-link.inl"
+       },
        .nf_name = "vista-sp2",
    },
    [NT_FLAVOR_WINDOWS_SERVER_2008_SP0] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F21
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C21
 #include "flavor-link.inl"
        },
        .nf_name = "server-2008-sp0",
@@ -283,6 +430,11 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F22
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C22
+#include "flavor-link.inl"
+       },
        .nf_name = "server-2008-sp2",
    },
    [NT_FLAVOR_WINDOWS_7_SP0] = {
@@ -291,20 +443,35 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F23
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C23
+#include "flavor-link.inl"
+       },
        .nf_name = "7-sp0",
    },
-   [NT_FLAVOR_WINDOWS_7_SP1] = {
+   [NT_FLAVOR_OFFSETOF_CALL] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F24
 #include "flavor-link.inl"
        },
-       .nf_name = "7-sp1",
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C24
+#include "flavor-link.inl"
+       },
+       .nf_name = "offsetof-call",
    },
    [NT_FLAVOR_WINDOWS_8_0] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F25
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C25
 #include "flavor-link.inl"
        },
        .nf_name = "8-0",
@@ -315,12 +482,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F26
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C26
+#include "flavor-link.inl"
+       },
        .nf_name = "8-1",
    },
    [NT_FLAVOR_WINDOWS_10_1507] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F27
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C27
 #include "flavor-link.inl"
        },
        .nf_name = "10-1507",
@@ -331,6 +508,11 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F28
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C28
+#include "flavor-link.inl"
+       },
        .nf_name = "10-1511",
    },
    [NT_FLAVOR_WINDOWS_10_1607] = {
@@ -339,12 +521,22 @@ for (local i: util::range(NT_FLAVOR_COUNT)) {
 #define NT NT_F29
 #include "flavor-link.inl"
        },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C29
+#include "flavor-link.inl"
+       },
        .nf_name = "10-1607",
    },
    [NT_FLAVOR_WINDOWS_10_1703] = {
        .nf_call = {
            [0 ... NT_SYSCALL_COUNT] = (nt_syscall)&NtBadSysCall,
 #define NT NT_F30
+#include "flavor-link.inl"
+       },
+       .nf_argc = {
+           [0 ... NT_SYSCALL_COUNT] = 0,
+#define NT NT_C30
 #include "flavor-link.inl"
        },
        .nf_name = "10-1703",
