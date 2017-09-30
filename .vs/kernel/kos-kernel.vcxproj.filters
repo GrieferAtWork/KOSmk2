@@ -56,6 +56,9 @@
     <None Include="..\..\src\kernel\fs\memfile.c.inl">
       <Filter>kernel\fs</Filter>
     </None>
+    <None Include="..\..\src\modules\nt\flavor-link.inl">
+      <Filter>modules\nt</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -168,6 +171,9 @@
     </Filter>
     <Filter Include="modules\fs\proc">
       <UniqueIdentifier>{df502986-ada3-4049-9c22-d9462234d91e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\nt">
+      <UniqueIdentifier>{357385a4-dbb0-414c-a3b1-28e4a9fe87e0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -392,6 +398,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\linker\sys_linker.c">
       <Filter>kernel\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\nt\nt.c">
+      <Filter>modules\nt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\nt\flavor.c">
+      <Filter>modules\nt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\nt\api.c">
+      <Filter>modules\nt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -634,6 +649,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\fs\memfile.h">
       <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\nt\flavor.h">
+      <Filter>modules\nt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\nt\api.h">
+      <Filter>modules\nt</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

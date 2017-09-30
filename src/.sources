@@ -198,6 +198,7 @@ BEGIN
 	BEGIN BASIC_MODULE("vga-tty") SOURCE("modules/video/vga-tty.c")  END
 	BEGIN BASIC_MODULE("pe")      SOURCE("modules/linker/pe.c")      END
 	BEGIN BASIC_MODULE("shebang") SOURCE("modules/linker/shebang.c") END
+	BEGIN BASIC_MODULE("nt")      SOURCE("modules/nt/*.c")           END
 
 END
 

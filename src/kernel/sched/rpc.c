@@ -139,6 +139,7 @@ cpu_rpc_send(struct cpu *__restrict self,
   goto end;
  }
 
+#if 0
  /* Lock LAPIC. */
  result = rwlock_write(&apic_lock);
  if (E_ISERR(result)) goto end;
@@ -153,6 +154,9 @@ cpu_rpc_send(struct cpu *__restrict self,
   result = sig_vrecv_endwrite(&RPC.c_done,&return_value,sizeof(return_value));
  }
  HOSTMEMORY_END;
+#else
+ sig_endwrite(&RPC.c_done);
+#endif
  if (E_ISOK(result)) result = return_value;
  goto end2;
 end:  sig_endwrite(&RPC.c_done);

@@ -26,6 +26,7 @@
 
 DECL_BEGIN
 
+struct cpu;
 typedef u32 cpu_rpc_t;
 
 #define CPU_RPC_FLAG_ASYNC         0x80000000 /*< Execute the RPC asynchronously. */

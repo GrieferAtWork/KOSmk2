@@ -30,6 +30,7 @@
     <None Include="..\..\src\linker-scripts\kernel.ld" />
     <None Include="..\..\src\linker-scripts\module.ld" />
     <None Include="..\..\src\modules\block\ata-pio.c.inl" />
+    <None Include="..\..\src\modules\nt\flavor-link.inl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core-modules\autopart\mbr.c" />
@@ -105,6 +106,9 @@
     <ClCompile Include="..\..\src\modules\input\ps2.c" />
     <ClCompile Include="..\..\src\modules\linker\pe.c" />
     <ClCompile Include="..\..\src\modules\linker\shebang.c" />
+    <ClCompile Include="..\..\src\modules\nt\api.c" />
+    <ClCompile Include="..\..\src\modules\nt\flavor.c" />
+    <ClCompile Include="..\..\src\modules\nt\nt.c" />
     <ClCompile Include="..\..\src\modules\video\vga-tty.c" />
   </ItemGroup>
   <ItemGroup>
@@ -188,6 +192,8 @@
     <ClInclude Include="..\..\src\modules\fs\proc\procfs.h" />
     <ClInclude Include="..\..\src\modules\fs\proc\taskutil.h" />
     <ClInclude Include="..\..\src\modules\input\ps2_keymaps.h" />
+    <ClInclude Include="..\..\src\modules\nt\api.h" />
+    <ClInclude Include="..\..\src\modules\nt\flavor.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{86D226C5-EF62-4562-AC06-E6A753DFA7CF}</ProjectGuid>

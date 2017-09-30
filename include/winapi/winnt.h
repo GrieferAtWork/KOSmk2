@@ -299,6 +299,8 @@ typedef DWORD LCID;
 
   typedef LONGLONG USN;
 
+#ifndef __LARGE_INTEGER_DEFINED
+#define __LARGE_INTEGER_DEFINED 1
   typedef union _LARGE_INTEGER {
     __MINGW_EXTENSION struct {
       DWORD LowPart;
@@ -326,11 +328,15 @@ typedef DWORD LCID;
   } ULARGE_INTEGER;
 
   typedef ULARGE_INTEGER *PULARGE_INTEGER;
+#endif /* !__LARGE_INTEGER_DEFINED */
 
+#ifndef __LUID_DEFINED
+#define __LUID_DEFINED 1
   typedef struct _LUID {
     DWORD LowPart;
     LONG HighPart;
   } LUID,*PLUID;
+#endif /* !__LUID_DEFINED */
 
 #define _DWORDLONG_
   typedef ULONGLONG DWORDLONG;
@@ -409,6 +415,8 @@ typedef DWORD LCID;
 #endif
   typedef BOOLEAN *PBOOLEAN;
 
+#ifndef __LIST_ENTRY_DEFINED
+#define __LIST_ENTRY_DEFINED 1
   typedef struct _LIST_ENTRY {
     struct _LIST_ENTRY *Flink;
     struct _LIST_ENTRY *Blink;
@@ -429,6 +437,7 @@ typedef DWORD LCID;
     ULONGLONG Blink;
   } LIST_ENTRY64;
   typedef LIST_ENTRY64 *PLIST_ENTRY64;
+#endif /* !__LIST_ENTRY_DEFINED */
 
 #include "guiddef.h"
 

@@ -463,14 +463,14 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/ps2");
  kinsmod("/mod/memdev");
  kinsmod("/mod/vga-tty");
+ /* --- SPLIT: Modules below are mostly optional. */
+ /* TODO: These shouldn't be loaded here... */
  kinsmod("/mod/procfs");
  kinsmod("/mod/shebang");
  kinsmod("/mod/pe");
+ kinsmod("/mod/nt");
 
- /* TODO: Add <locale.h>. */
- /* TODO: Add <langinfo.h>. */
  /* TODO: Actual locale support? */
- /* TODO: C++ headers? */
 
  PREEMPTION_ENABLE();
 #ifdef CONFIG_DEBUG

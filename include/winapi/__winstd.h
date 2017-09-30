@@ -37,6 +37,19 @@
 #undef WIN32
 #define __MINGW_EXTENSION __extension__
 #define DUMMYUNIONNAME /* nothing */
+
+#define WIN32       1
+#define _WIN32      1
+#ifdef __x86_64__
+#   define _AMD64_  1
+#   undef  __x86_64
+#   define __x86_64 1
+#   define WIN64    1
+#   define _WIN64   1
+#else
+#   define _X86_    1
+#endif
+
 #if !defined(_MSC_VER) && !defined(__INTELLISENSE__)
 
 #undef __int8
@@ -81,18 +94,6 @@
 #define _CRT_STRINGIZE(_Value)  __CRT_STRINGIZE(_Value)
 #define __CRT_WIDE(_String)     L ## _String
 #define _CRT_WIDE(_String)      __CRT_WIDE(_String)
-
-#define WIN32       1
-#define _WIN32      1
-#ifdef __x86_64__
-#   define _AMD64_  1
-#   undef  __x86_64
-#   define __x86_64 1
-#   define WIN64    1
-#   define _WIN64   1
-#else
-#   define _X86_    1
-#endif
 
 #define _SIZE_T_DEFINED
 #define _SSIZE_T_DEFINED
