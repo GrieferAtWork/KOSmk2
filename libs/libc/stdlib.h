@@ -149,9 +149,17 @@ INTDEF char *LIBCCALL libc_ptsname(int fd);
 INTDEF int LIBCCALL libc_posix_openpt(int oflag);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTDEF __errno_t LIBCCALL libc_mktemp_s(char *__restrict templatename, size_t size);
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
+INTDEF void *LIBCCALL libc_bsearch_s(void const *key, void const *base, size_t nmemb, size_t size, int (LIBCCALL *compar)(void *arg, const void *a, const void *b), void *arg);
+INTDEF void LIBCCALL libc_qsort_s(void *base, size_t nmemb, size_t size, int (LIBCCALL *compar)(void *arg, const void *a, const void *b), void *arg);
+INTDEF errno_t LIBCCALL libc_mktemp_s(char *__restrict templatename, size_t size);
 INTDEF int LIBCCALL libc_16wsystem(char16_t const *__restrict command);
 INTDEF int LIBCCALL libc_32wsystem(char32_t const *__restrict command);
+INTDEF errno_t LIBCCALL libc_rand_s(unsigned int *__restrict randval);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */

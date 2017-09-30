@@ -211,7 +211,9 @@ __LIBC void (__LIBCCALL rewind)(__FILE *__stream);
 __LIBC void (__LIBCCALL clearerr)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL feof)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL ferror)(__FILE *__stream);
+#ifndef __perror_defined
 __LIBC void (__LIBCCALL perror)(char const *__s);
+#endif /* !__perror_defined */
 __LIBC __WUNUSED __FILE *(__LIBCCALL tmpfile)(void) __FS_FUNC(tmpfile);
 __LIBC __WUNUSED __FILE *(__LIBCCALL fopen)(char const *__restrict __filename, char const *__restrict __modes) __UFS_FUNCn(fopen);
 __LIBC __WUNUSED __FILE *(__LIBCCALL freopen)(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream) __UFS_FUNCn(freopen);
@@ -277,7 +279,10 @@ __NAMESPACE_STD_USING(rewind)
 __NAMESPACE_STD_USING(clearerr)
 __NAMESPACE_STD_USING(feof)
 __NAMESPACE_STD_USING(ferror)
+#ifndef __perror_defined
+#define __perror_defined 1
 __NAMESPACE_STD_USING(perror)
+#endif /* !__perror_defined */
 __NAMESPACE_STD_USING(tmpfile)
 __NAMESPACE_STD_USING(fopen)
 __NAMESPACE_STD_USING(freopen)

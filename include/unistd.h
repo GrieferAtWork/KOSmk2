@@ -198,9 +198,9 @@ __LIBC char **__environ __ASMNAME2("environ","_environ");
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execl);
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execle)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execle);
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execlp)(char const *__file, char const *__args, ...) __PE_FUNC_OLDPEA(execlp);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execv)(char const *__path, char *const __argv[]) __UFS_FUNC_OLDPEA(execv);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execve)(char const *__path, char *const __argv[], char *const __envp[]) __UFS_FUNC_OLDPEA(execve);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execvp)(char const *__file, char *const __argv[]) __PE_FUNC_OLDPEA(execvp);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execv)(char const *__path, char *const ___argv[]) __UFS_FUNC_OLDPEA(execv);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execve)(char const *__path, char *const ___argv[], char *const ___envp[]) __UFS_FUNC_OLDPEA(execve);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execvp)(char const *__file, char *const ___argv[]) __PE_FUNC_OLDPEA(execvp);
 __LIBC __pid_t (__LIBCCALL getpid)(void) __PE_FUNC_OLDPEA(getpid);
 __LIBC __pid_t (__LIBCCALL getppid)(void);
 __LIBC __pid_t (__LIBCCALL getpgrp)(void);
@@ -219,7 +219,7 @@ __LIBC int (__LIBCCALL pipe)(int __pipedes[2]);
 __LIBC unsigned int (__LIBCCALL alarm)(unsigned int __seconds);
 #ifndef __sleep_defined
 #define __sleep_defined 1
-__LIBC unsigned int (__LIBCCALL sleep)(unsigned int __seconds) __PE_ASMNAME("_sleep");
+__LIBC unsigned int (__LIBCCALL sleep)(unsigned int __seconds);
 #endif /* !__sleep_defined */
 __LIBC int (__LIBCCALL pause)(void);
 __LIBC __NONNULL((1)) int (__LIBCCALL chown)(char const *__file, __uid_t __owner, __gid_t __group) __UFS_FUNC(chown);
@@ -334,9 +334,24 @@ __LIBC __WUNUSED ssize_t (__LIBCCALL pwrite64)(int __fd, void const *__buf, size
 #endif /* __USE_UNIX98 || __USE_XOPEN2K8 */
 
 #ifdef __USE_GNU
+#ifndef __environ_defined
+#define __environ_defined 1
 #undef environ
+#if defined(__PE__) && !defined(__LAZY_DOS_COMPAT__)
+/* Try to maintain binary compatibility with DOS.
+ * Note though, that LIBC exports 'environ' and '__p__environ' in DOS and KOS mode. */
+__LIBC char ***__NOTHROW((__LIBCCALL __p__environ)(void));
+#define environ  (*__p__environ())
+#else /* __PE__ && !__LAZY_DOS_COMPAT__ */
 __LIBC char **environ __PE_ASMNAME("_environ");
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execvpe)(char const *__file, char *const __argv[], char *const __envp[]) __UFS_FUNC_OLDPEA(execvpe);
+#if defined(__PE__) || defined(__USE_KOS)
+/* Always defining 'environ' as a macro is a KOS extension.
+ * Otherwise, we mimic PE behavior which always defines 'environ' as a macro. */
+#define environ  environ
+#endif /* __PE__ || __USE_KOS */
+#endif /* !__PE__ || __LAZY_DOS_COMPAT__ */
+#endif /* !__environ_defined */
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execvpe)(char const *__file, char *const ___argv[], char *const ___envp[]) __UFS_FUNC_OLDPEA(execvpe);
 __LIBC int (__LIBCCALL pipe2)(int __pipedes[2], int __flags);
 __LIBC __WUNUSED char *(__LIBCCALL get_current_dir_name)(void);
 __LIBC int (__LIBCCALL dup3)(int __fd, int __fd2, int __flags);
@@ -369,14 +384,14 @@ __LIBC __NONNULL((1)) int (__LIBCCALL truncate64)(char const *__file, __off64_t 
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
 
 #ifdef __USE_XOPEN2K8
-__LIBC __NONNULL((2)) int (__LIBCCALL fexecve)(int __fd, char *const __argv[], char *const __envp[]);
+__LIBC __NONNULL((2)) int (__LIBCCALL fexecve)(int __fd, char *const ___argv[], char *const ___envp[]);
 #endif /* __USE_XOPEN2K8 */
 
 #ifdef __USE_KOS
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execlpe)(char const *__file, char const *__args, ...);
 __LIBC __NONNULL((2)) __ATTR_SENTINEL int (__ATTR_CDECL fexecl)(int __fd, char const *__args, ...);
 __LIBC __NONNULL((2)) __ATTR_SENTINEL int (__ATTR_CDECL fexecle)(int __fd, char const *__args, ...);
-__LIBC __NONNULL((2)) int (__LIBCCALL fexecv)(int __fd, char *const __argv[]);
+__LIBC __NONNULL((2)) int (__LIBCCALL fexecv)(int __fd, char *const ___argv[]);
 #endif /* __USE_KOS */
 
 #if defined(__USE_MISC) || defined(__USE_XOPEN)
@@ -494,15 +509,22 @@ __LIBC int (__LIBCCALL fdatasync)(int __fildes) __PE_ASMNAME("_commit");
 #ifdef __USE_XOPEN
 __LIBC __NONNULL((1,2)) char *(__LIBCCALL crypt)(char const *__key, char const *__salt);
 __LIBC __NONNULL((1)) void (__LIBCCALL encrypt)(char *__glibc_block, int __edflag);
+#ifndef __swab_defined
+#define __swab_defined 1
+#if __SIZEOF_INT__ == __SIZEOF_SIZE_T__ && defined(__PE__)
+__LIBC __NONNULL((1,2)) void (__LIBCCALL swab)(void const *__restrict __from, void *__restrict __to, ssize_t __n_bytes) __ASMNAME("_swab");
+#else /* __SIZEOF_INT__ == __SIZEOF_SIZE_T__ && __PE__ */
 __LIBC __NONNULL((1,2)) void (__LIBCCALL swab)(void const *__restrict __from, void *__restrict __to, ssize_t __n_bytes);
-#endif
+#endif /* __SIZEOF_INT__ != __SIZEOF_SIZE_T__ || !__PE__ */
+#endif /* !__swab_defined */
+#endif /* __USE_XOPEN */
 
 #if defined(__USE_XOPEN) && !defined(__USE_XOPEN2K)
 #ifndef __ctermid_defined
 #define __ctermid_defined 1
 __LIBC char *(__LIBCCALL ctermid)(char *__s);
 #endif /* !__ctermid_defined */
-#endif
+#endif /* __USE_XOPEN && !__USE_XOPEN2K */
 
 __LIBC long int (__LIBCCALL sysconf)(int __name);
 #endif /* !__KERNEL__ */

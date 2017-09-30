@@ -28,6 +28,8 @@
  * #define Xmb(x)                ... <Symbol name generator> (e.g.: 'libc_32mb##x') [OPTIONAL]
  * #define Xwc(x)                ... <Symbol name generator> (e.g.: 'libc_32wc##x') [OPTIONAL]
  * #define Xa(x)                 ... <Symbol name generator> (e.g.: 'libc_a##x', 'libc_32w##x') [OPTIONAL] (Used for 'libc_ato32', etc.)
+ * #define Xxa(x)                ... <Symbol name generator> (e.g.: 'libc_##x##a', 'libc_32##x##w') [OPTIONAL] (Used for 'libc_s32toa', etc.)
+ * #define Xxa_s(x)              ... <Symbol name generator> (e.g.: 'libc_##x##a_s', 'libc_32##x##w_s') [OPTIONAL] (Used for 'libc_s32toa_s', etc.)
  * #define S                     ... <Bit-width in bytes> (e.g.: '__SIZEOF_CHAR__', '__SIZEOF_WCHAR_T__')
  * #define NUL                   ... <\0-character; defaults to ZERO(0)>
  * #define TOLOWER(x)            ... <tolower()-function>
@@ -136,6 +138,14 @@
  * WANT_STRTOLD_L
  * WANT_STRTOF_L
  * WANT_STRTOD_L
+ * WANT_U32TOA_S
+ * WANT_U64TOA_S
+ * WANT_S32TOA_S
+ * WANT_S64TOA_S
+ * WANT_U32TOA
+ * WANT_U64TOA
+ * WANT_S32TOA
+ * WANT_S64TOA
  */
 #ifndef NUL
 #define NUL 0
@@ -1292,7 +1302,7 @@ Xa(to64_l)(T const *__restrict nptr, locale_t UNUSED(locale)) {
 
 #ifdef WANT_STRTOLD
 #undef WANT_STRTOLD
-INTERN long double LIBCCALL
+DECL long double LIBCCALL
 Xstr(told)(T const *__restrict nptr, T **__restrict endptr) {
 	long double result = 0.0L; T ch;
 	long double float_extension_mult = 0.0L;
@@ -1382,7 +1392,7 @@ err:
 
 #ifdef WANT_STRTOF
 #undef WANT_STRTOF
-INTERN float LIBCCALL
+DECL float LIBCCALL
 Xstr(tof)(T const *__restrict nptr, T **__restrict endptr) {
 	return (float)Xstr(told)(nptr,endptr);
 }
@@ -1390,7 +1400,7 @@ Xstr(tof)(T const *__restrict nptr, T **__restrict endptr) {
 
 #ifdef WANT_STRTOD
 #undef WANT_STRTOD
-INTERN double LIBCCALL
+DECL double LIBCCALL
 Xstr(tod)(T const *__restrict nptr, T **__restrict endptr) {
 	return (double)Xstr(told)(nptr,endptr);
 }
@@ -1453,6 +1463,70 @@ Xa(tof_l)(T const *__restrict nptr, locale_t UNUSED(locale)) {
 #endif /* WANT_ATO32_L */
 
 
+#ifdef WANT_U32TOA_S
+#undef WANT_U32TOA_S
+DECL errno_t LIBCCALL
+Xxa_s(u32to)(u32 val, T *dst, size_t bufsize, int radix) {
+	NOT_IMPLEMENTED();
+	return __DOS_ENOSYS;
+}
+#endif /* WANT_U64TOA_S */
+
+#ifdef WANT_U64TOA_S
+#undef WANT_U64TOA_S
+DECL errno_t LIBCCALL
+Xxa_s(u64to)(u64 val, T *dst, size_t bufsize, int radix) {
+	NOT_IMPLEMENTED();
+	return __DOS_ENOSYS;
+}
+#endif /* WANT_U64TOA_S */
+
+#ifdef WANT_S32TOA_S
+#undef WANT_S32TOA_S
+DECL errno_t LIBCCALL
+Xxa_s(s32to)(s32 val, T *dst, size_t bufsize, int radix) {
+	NOT_IMPLEMENTED();
+	return __DOS_ENOSYS;
+}
+#endif /* WANT_S32TOA_S */
+
+#ifdef WANT_S64TOA_S
+#undef WANT_S64TOA_S
+DECL errno_t LIBCCALL
+Xxa_s(s64to)(s64 val, T *dst, size_t bufsize, int radix) {
+	NOT_IMPLEMENTED();
+	return __DOS_ENOSYS;
+}
+#endif /* WANT_S64TOA_S */
+
+#ifdef WANT_U32TOA
+#undef WANT_U32TOA
+DECL T *LIBCCALL Xxa(u32to)(u32 val, T *dst, int radix) {
+	return Xxa_s(u32to)(val,dst,(size_t)-1,radix) ? NULL : dst;
+}
+#endif /* WANT_U64TOA */
+
+#ifdef WANT_U64TOA
+#undef WANT_U64TOA
+DECL T *LIBCCALL Xxa(u64to)(u64 val, T *dst, int radix) {
+	return Xxa_s(u64to)(val,dst,(size_t)-1,radix) ? NULL : dst;
+}
+#endif /* WANT_U64TOA */
+
+#ifdef WANT_S32TOA
+#undef WANT_S32TOA
+DECL T *LIBCCALL Xxa(s32to)(s32 val, T *dst, int radix) {
+	return Xxa_s(s32to)(val,dst,(size_t)-1,radix) ? NULL : dst;
+}
+#endif /* WANT_S32TOA */
+
+#ifdef WANT_S64TOA
+#undef WANT_S64TOA
+DECL T *LIBCCALL Xxa(s64to)(s64 val, T *dst, int radix) {
+	return Xxa_s(s64to)(val,dst,(size_t)-1,radix) ? NULL : dst;
+}
+#endif /* WANT_S64TOA */
+
 
 #undef DEFINE_ALIAS
 #undef DECL
@@ -1473,6 +1547,12 @@ Xa(tof_l)(T const *__restrict nptr, locale_t UNUSED(locale)) {
 #endif
 #ifdef Xa
 #undef Xa
+#endif
+#ifdef Xxa
+#undef Xxa
+#endif
+#ifdef Xxa_s
+#undef Xxa_s
 #endif
 #ifdef Xwc
 #undef Xwc

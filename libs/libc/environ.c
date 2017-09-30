@@ -34,11 +34,17 @@
 #include <hybrid/compiler.h>
 #include <hybrid/sync/atomic-rwlock.h>
 #include <hybrid/types.h>
+#include <hybrid/minmax.h>
 #include <kos/environ.h>
 #include <stdbool.h>
 #include <hybrid/atomic.h>
 #include <hybrid/xch.h>
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <bits/dos-errno.h>
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
+#undef environ
 DECL_BEGIN
 
 /* Environment table allocated by libc. */
@@ -270,14 +276,23 @@ DEFINE_PUBLIC_ALIAS(unsetenv,libc_unsetenv);
 DEFINE_PUBLIC_ALIAS(putenv,libc_putenv);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTDEF char *LIBCCALL libc_dos_getenv(char const *name) {
+INTERN ATTR_DOSTEXT char *LIBCCALL
+libc_dos_getenv(char const *name) {
  char *result = libc_getenv(name);
  if (result) {
   /* TODO: Fix 'PATH': if (name == "PATH") return result.replace(":",";"); */
  }
  return result;
 }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL
+libc_dos_putenv_s(char const *name, char const *value) {
+ return libc_setenv(name,value,1) ? GET_DOS_ERRNO() : EOK;
+}
+
+
 DEFINE_PUBLIC_ALIAS(__DSYM(getenv),libc_dos_getenv);
+DEFINE_PUBLIC_ALIAS(_putenv,libc_putenv);
+DEFINE_PUBLIC_ALIAS(_putenv_s,libc_dos_putenv_s);
 
 
 PRIVATE char16_t **libc_16wargv = NULL;
@@ -286,7 +301,7 @@ PRIVATE char16_t **libc_16winitenviron = NULL;
 PRIVATE char32_t **libc_32wargv = NULL;
 PRIVATE char32_t **libc_32wenviron = NULL;
 PRIVATE char32_t **libc_32winitenviron = NULL;
-INTDEF void LIBCCALL libc_argvfree(void **argv);
+INTERN void LIBCCALL libc_argvfree(void **argv);
 
 INTERN ATTR_DOSTEXT void LIBCCALL
 libc_environ_changed(void) {
@@ -342,6 +357,33 @@ INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32winitenviron(void) { if (!libc
 INTERN ATTR_DOSTEXT char16_t **LIBCCALL libc_p_16wpgmptr(void) { return &(*libc_p_16wargv())[0]; }
 INTERN ATTR_DOSTEXT char32_t **LIBCCALL libc_p_32wpgmptr(void) { return &(*libc_p_32wargv())[0]; }
 
+INTERN ATTR_DOSTEXT errno_t LIBCCALL
+libc_dos_getenv_s(size_t *psize, char *buf,
+                  size_t bufsize, char const *name) {
+ char *val = libc_dos_getenv(name); size_t envlen;
+ if (!val) { if (psize) *psize = 0; return EOK; }
+ envlen = libc_strlen(val)+1;
+ if (psize) *psize = envlen;
+ if (envlen > bufsize) return __DOS_ERANGE;
+ libc_memcpy(buf,val,envlen*sizeof(char));
+ return EOK;
+}
+INTERN ATTR_DOSTEXT errno_t LIBCCALL
+libc_dos_dupenv_s(char **__restrict pbuf, size_t *pbuflen, char const *name) {
+ char *result,*val = libc_dos_getenv(name); size_t envlen;
+ if (!pbuf || !name) { SET_ERRNO(EINVAL); return __DOS_EINVAL; }
+ *pbuf = NULL;
+ if (pbuflen) *pbuflen = 0;
+ if (!val) return EOK;
+ envlen = libc_strlen(val)+1;
+ result = (char *)libc_malloc(envlen*sizeof(char));
+ if (!result) { SET_ERRNO(ENOMEM); return __DOS_ENOMEM; }
+ libc_memcpy(result,val,envlen*sizeof(char));
+ if (pbuflen) *pbuflen = envlen;
+ *pbuf = result;
+ return EOK;
+}
+
 DEFINE_PUBLIC_ALIAS(__p___argc,libc_p_argc);
 DEFINE_PUBLIC_ALIAS(__p___argv,libc_p_argv);
 DEFINE_PUBLIC_ALIAS(__p__environ,libc_p_environ);
@@ -359,6 +401,8 @@ DEFINE_PUBLIC_ALIAS(wgetinitenv,libc_p_32winitenviron);
 DEFINE_PUBLIC_ALIAS(wgetargv,libc_p_32wargv);
 DEFINE_PUBLIC_ALIAS(wgetenviron,libc_p_32wenviron);
 DEFINE_PUBLIC_ALIAS(wgetpgmptr,libc_p_32wpgmptr);
+DEFINE_PUBLIC_ALIAS(getenv_s,libc_dos_getenv_s);
+DEFINE_PUBLIC_ALIAS(_dupenv_s,libc_dos_dupenv_s);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

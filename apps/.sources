@@ -47,8 +47,8 @@ END
 #include "private/.sources"
 #endif
 
-BEGIN APPLICATION("test")
-	SET_OUTPUT("/bin/apps/test")
+BEGIN APPLICATION("my_test")
+	SET_OUTPUT("/bin/apps/my_test")
 	SET_DISKFILE("/opt/test")
 	SOURCE("test/my_test.c")
 END

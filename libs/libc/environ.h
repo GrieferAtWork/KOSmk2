@@ -45,6 +45,10 @@ INTDEF int LIBCCALL libc_putenv(char *string);
  */
 INTDEF char *LIBCCALL libc_dos_getenv(char const *name);
 
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
 
 INTDEF int *LIBCCALL libc_p_argc(void);
 INTDEF char ***LIBCCALL libc_p_argv(void);
@@ -66,6 +70,9 @@ INTDEF char32_t **LIBCCALL libc_p_32wpgmptr(void);
 INTDEF char ***LIBCCALL libc_p_initenviron(void);
 INTDEF char16_t ***LIBCCALL libc_p_16winitenviron(void);
 INTDEF char32_t ***LIBCCALL libc_p_32winitenviron(void);
+INTDEF errno_t LIBCCALL libc_dos_getenv_s(size_t *psize, char *buf, size_t bufsize, char const *name);
+INTDEF errno_t LIBCCALL libc_dos_dupenv_s(char **pbuf, size_t *pbuflen, char const *name);
+INTDEF errno_t LIBCCALL libc_dos_putenv_s(char const *name, char const *value);
 
 #else /* !CONFIG_LIBC_NO_DOS_LIBC */
 #define libc_environ_changed() (void)0

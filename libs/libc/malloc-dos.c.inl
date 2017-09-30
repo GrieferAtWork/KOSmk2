@@ -79,6 +79,15 @@ INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_recalloc_dbg(void *mptr, size_t coun
  if (result && size > oldsize) libc_memset((byte_t *)result+oldsize,0,size-oldsize);
  return result;
 }
+INTERN ATTR_DOSTEXT void *LIBCCALL
+libc_dos_recalloc(void *mptr, size_t count, size_t size) {
+ size_t oldsize = EXPORT_MALLOC_USABLE_SIZE(mptr);
+ void *result = (size *= count,EXPORT_REALLOC(mptr,size));
+ if (result && size > oldsize) libc_memset((byte_t *)result+oldsize,0,size-oldsize);
+ return result;
+}
+
+
 DEFINE_INTERN_ALIAS(libc_dos_msize,EXPORT_MALLOC_USABLE_SIZE);
 #ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
 DEFINE_INTERN_ALIAS(libc_dos_free_dbg,EXPORT_FREE);
@@ -319,6 +328,7 @@ DEFINE_INTERN_ALIAS(libc_dos_wgetdcwd_lk_dbg,libc_dos_wgetdcwd_dbg);
 
 
 DEFINE_PUBLIC_ALIAS(_CrtCheckMemory,libc__mall_validate);
+DEFINE_PUBLIC_ALIAS(_recalloc,libc_dos_recalloc);
 DEFINE_PUBLIC_ALIAS(_msize,libc_dos_msize);
 DEFINE_PUBLIC_ALIAS(_aligned_msize,libc_dos_aligned_msize);
 DEFINE_PUBLIC_ALIAS(_aligned_malloc,libc_dos_aligned_malloc);

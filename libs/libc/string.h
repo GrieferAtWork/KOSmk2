@@ -216,8 +216,8 @@ INTDEF float LIBCCALL libc_strtof_l(char const *__restrict nptr, char **__restri
 INTDEF double LIBCCALL libc_strtod_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
 INTDEF long double LIBCCALL libc_strtold_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
 INTDEF double LIBCCALL libc_atof(char const *__restrict nptr);
-INTERN s32 LIBCCALL libc_ato32(char const *__restrict nptr);
-INTERN s64 LIBCCALL libc_ato64(char const *__restrict nptr);
+INTDEF s32 LIBCCALL libc_ato32(char const *__restrict nptr);
+INTDEF s64 LIBCCALL libc_ato64(char const *__restrict nptr);
 INTDEF s32 LIBCCALL libc_strto32_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
 INTDEF u32 LIBCCALL libc_strtou32_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
 INTDEF s64 LIBCCALL libc_strto64_l(char const *__restrict nptr, char **__restrict endptr, int base, locale_t loc);
@@ -357,6 +357,67 @@ INTDEF long double LIBCCALL libc_32wcstold(char32_t const *__restrict nptr, char
 INTDEF long double LIBCCALL libc_32wcstold_l(char32_t const *__restrict nptr, char32_t **__restrict endptr, locale_t loc);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+
+/* Define misc. functions found in DOS's <stdlib.h> header. */
+INTDEF size_t LIBCCALL libc_mbstrlen(char const *str);
+INTDEF size_t LIBCCALL libc_mbstrnlen(char const *str, size_t maxlen);
+INTDEF size_t LIBCCALL libc_mbstrlen_l(char const *str, locale_t locale);
+INTDEF size_t LIBCCALL libc_mbstrnlen_l(char const *str, size_t maxlen, locale_t locale);
+INTDEF size_t LIBCCALL libc_16mbtowc_l(char16_t *dst, char const *src, size_t srclen, locale_t locale);
+INTDEF errno_t LIBCCALL libc_16mbstowcs_s(size_t *presult, char16_t *buf, size_t buflen, char const *src, size_t maxlen);
+INTDEF errno_t LIBCCALL libc_16mbstowcs_s_l(size_t *presult, char16_t *buf, size_t buflen, char const *src, size_t maxlen, locale_t locale);
+INTDEF size_t LIBCCALL libc_16mbstowcs_l(char16_t *buf, char const *src, size_t maxlen, locale_t locale);
+INTDEF size_t LIBCCALL libc_32mbtowc_l(char32_t *dst, char const *src, size_t srclen, locale_t locale);
+INTDEF errno_t LIBCCALL libc_32mbstowcs_s(size_t *presult, char32_t * buf, size_t buflen, char const *src, size_t maxlen);
+INTDEF errno_t LIBCCALL libc_32mbstowcs_s_l(size_t *presult, char32_t *buf, size_t buflen, char const *src, size_t maxlen, locale_t locale);
+INTDEF size_t LIBCCALL libc_32mbstowcs_l(char32_t *buf, char const *src, size_t maxlen, locale_t locale);
+
+/* ... */
+INTDEF size_t LIBCCALL libc_16wctomb_l(char *buf, char16_t wc, locale_t locale);
+INTDEF errno_t LIBCCALL libc_16wctomb_s(int *presult, char *buf, size_t buflen, char16_t wc);
+INTDEF errno_t LIBCCALL libc_16wctomb_s_l(int *presult, char *buf, size_t buflen, char16_t wc, locale_t locale);
+INTDEF errno_t LIBCCALL libc_16wcstombs_s(size_t *presult, char *buf, size_t buflen, char16_t const *src, size_t maxlen);
+INTDEF errno_t LIBCCALL libc_16wcstombs_s_l(size_t *presult, char *buf, size_t buflen, char16_t const *src, size_t maxlen, locale_t locale);
+INTDEF size_t LIBCCALL libc_16wcstombs_l(char *dst, char16_t const *src, size_t maxlen, locale_t locale);
+INTDEF size_t LIBCCALL libc_32wctomb_l(char *buf, char32_t wc, locale_t locale);
+INTDEF errno_t LIBCCALL libc_32wctomb_s(int *presult, char *buf, size_t buflen, char32_t wc);
+INTDEF errno_t LIBCCALL libc_32wctomb_s_l(int *presult, char *buf, size_t buflen, char32_t wc, locale_t locale);
+INTDEF errno_t LIBCCALL libc_32wcstombs_s(size_t *presult, char *buf, size_t buflen, char32_t const *src, size_t maxlen);
+INTDEF errno_t LIBCCALL libc_32wcstombs_s_l(size_t *presult, char *buf, size_t buflen, char32_t const *src, size_t maxlen, locale_t locale);
+INTDEF size_t LIBCCALL libc_32wcstombs_l(char *dst, char32_t const *src, size_t maxlen, locale_t locale);
+
+INTDEF double LIBCCALL libc_atof_l(const char *__restrict nptr, locale_t locale);
+INTDEF s32 LIBCCALL libc_ato32_l(const char *__restrict nptr, locale_t locale);
+INTDEF s64 LIBCCALL libc_ato64_l(const char *__restrict nptr, locale_t locale);
+
+/* DOS takes an integer as argument to 'swab()' */
+INTDEF void LIBCCALL libc_swab_int(void const *__restrict from, void *__restrict to, int n_bytes);
+
+INTDEF char *LIBCCALL libc_s32toa(s32 val, char *dst, int radix);
+INTDEF char *LIBCCALL libc_s64toa(s64 val, char *dst, int radix);
+INTDEF char *LIBCCALL libc_u32toa(u32 val, char *dst, int radix);
+INTDEF char *LIBCCALL libc_u64toa(u64 val, char *dst, int radix);
+INTDEF errno_t LIBCCALL libc_s32toa_s(s32 val, char *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_s64toa_s(s64 val, char *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_u32toa_s(u32 val, char *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_u64toa_s(u64 val, char *dst, size_t bufsize, int radix);
+INTDEF char16_t *LIBCCALL libc_16s32tow(s32 val, char16_t *dst, int radix);
+INTDEF char16_t *LIBCCALL libc_16s64tow(s64 val, char16_t *dst, int radix);
+INTDEF char16_t *LIBCCALL libc_16u32tow(u32 val, char16_t *dst, int radix);
+INTDEF char16_t *LIBCCALL libc_16u64tow(u64 val, char16_t *dst, int radix);
+INTDEF errno_t LIBCCALL libc_16s32tow_s(s32 val, char16_t *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_16s64tow_s(s64 val, char16_t *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_16u32tow_s(u32 val, char16_t *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_16u64tow_s(u64 val, char16_t *dst, size_t bufsize, int radix);
+INTDEF char32_t *LIBCCALL libc_32s32tow(s32 val, char32_t *dst, int radix);
+INTDEF char32_t *LIBCCALL libc_32s64tow(s64 val, char32_t *dst, int radix);
+INTDEF char32_t *LIBCCALL libc_32u32tow(u32 val, char32_t *dst, int radix);
+INTDEF char32_t *LIBCCALL libc_32u64tow(u64 val, char32_t *dst, int radix);
+INTDEF errno_t LIBCCALL libc_32s32tow_s(s32 val, char32_t *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_32s64tow_s(s64 val, char32_t *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_32u32tow_s(u32 val, char32_t *dst, size_t bufsize, int radix);
+INTDEF errno_t LIBCCALL libc_32u64tow_s(u64 val, char32_t *dst, size_t bufsize, int radix);
+
 /* Additional DOS 32-bit string functions */
 INTDEF char32_t *LIBCCALL libc_32wcslwr(char32_t *__restrict str);
 INTDEF char32_t *LIBCCALL libc_32wcslwr_l(char32_t *__restrict str, locale_t locale);
@@ -696,13 +757,21 @@ __LIBC float LIBCCALL wcstof(wchar_t const *__restrict __s, wchar_t **__pend);
 __LIBC long double LIBCCALL wcstold(wchar_t const *__restrict __s, wchar_t **__pend);
 __LIBC wchar_t *LIBCCALL _wfullpath(wchar_t *__abspath, wchar_t const *__path, size_t maxlen);
 __LIBC int LIBCCALL _wputenv(wchar_t const *__envstr);
+__LIBC errno_t LIBCCALL _wputenv_s(wchar_t const *__restrict __name, wchar_t const *__restrict val);
+
+__LIBC void (__LIBCCALL _makepath)(char *__buf, const char *__drive, const char *__dir, const char *__file, const char *__ext);
+__LIBC void (__LIBCCALL _searchenv)(const char *__file, const char *__envvar, char *__resultpath);
+__LIBC void (__LIBCCALL _splitpath)(const char *__abspath, char *__drive, char *__dir, char *__file, char *__ext);
+__LIBC errno_t (__LIBCCALL _makepath_s)(char *__buf, size_t __buflen, const char *__drive, const char *__dir, const char *__file, const char *__ext);
+__LIBC errno_t (__LIBCCALL _searchenv_s)(const char *__file, const char *__envvar, char *__resultpath, size_t __buflen);
+__LIBC errno_t (__LIBCCALL _splitpath_s)(const char *__abspath, char *__drive, size_t __drivelen, char *__dir, size_t __dirlen, char *__file, size_t __filelen, char *__ext, size_t __extlen);
 __LIBC void LIBCCALL _wmakepath(wchar_t *__restrict dst, wchar_t const *__restrict __drive, wchar_t const *__restrict __dir, wchar_t const *__restrict __file, wchar_t const *__restrict __ext);
 __LIBC void LIBCCALL _wsearchenv(wchar_t const *__restrict __file, wchar_t const *__restrict __varname,  wchar_t *__restrict dst);
 __LIBC void LIBCCALL _wsplitpath(wchar_t const *__restrict __abspath, wchar_t *__restrict __drive, wchar_t *__restrict __dir, wchar_t *__restrict __file, wchar_t *__restrict __ext);
 __LIBC errno_t LIBCCALL _wmakepath_s(wchar_t *__restrict dst, size_t maxlen, wchar_t const *__drive, wchar_t const *__restrict __dir, wchar_t const *__restrict __file, wchar_t const *__restrict __ext);
-__LIBC errno_t LIBCCALL _wputenv_s(wchar_t const *__restrict __name, wchar_t const *__restrict val);
 __LIBC errno_t LIBCCALL _wsearchenv_s(wchar_t const *__restrict __file, wchar_t const *__restrict __varname, wchar_t *__restrict dst, size_t maxlen);
 __LIBC errno_t LIBCCALL _wsplitpath_s(wchar_t const *__restrict __abspath, wchar_t *__restrict __drive, size_t __drivelen, wchar_t *__restrict __dir, size_t __dirlen, wchar_t *__restrict __file, size_t __filelen, wchar_t *__restrict __ext, size_t __extlen);
+
 __LIBC void LIBCCALL _wperror(wchar_t const *__restrict __errmsg);
 __LIBC wchar_t *LIBCCALL _wcserror(int __errnum);
 __LIBC wchar_t *LIBCCALL __wcserror(wchar_t const *__restrict str);

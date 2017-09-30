@@ -81,7 +81,11 @@ __LOCAL void (__LIBCCALL delay)(unsigned __mill) { __libc_usleep((__useconds_t)_
 __LIBC unsigned (__LIBCCALL _dos_getdiskfree)(int __dr, struct diskfree_t *__restrict __d) __ASMNAME("_getdiskfree");
 #ifndef __sleep_defined
 #define __sleep_defined 1
+#if __SIZEOF_INT__ == 4
+__LIBC void (__LIBCCALL sleep)(unsigned int __seconds) __PE_ASMNAME("_sleep");
+#else
 __LIBC void (__LIBCCALL sleep)(unsigned int __seconds);
+#endif
 #endif /* !__sleep_defined */
 #ifndef __unlink_defined
 #define __unlink_defined 1

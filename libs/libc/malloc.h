@@ -326,6 +326,7 @@ typedef int errno_t;
 
 INTERN size_t LIBCCALL libc_dos_msize(void *mptr);
 INTERN void *LIBCCALL libc_dos_expand(void *mptr, size_t size);
+INTERN void *LIBCCALL libc_dos_recalloc(void *mptr, size_t count, size_t size);
 INTERN size_t LIBCCALL libc_dos_aligned_msize(void *mptr, size_t align, size_t off);
 INTERN void *LIBCCALL libc_dos_aligned_malloc(size_t size, size_t align);
 INTERN void *LIBCCALL libc_dos_aligned_realloc(void *mptr, size_t size, size_t align);

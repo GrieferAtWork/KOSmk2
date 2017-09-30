@@ -979,6 +979,8 @@ DEFINE_PUBLIC_ALIAS(fstat64,libc_glibc_fstat);
 DEFINE_PUBLIC_ALIAS(fstatat64,libc_glibc_fstatat);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(__threadid,libc_gettid);
+DEFINE_PUBLIC_ALIAS(__threadhandle,libc_gettid); /* XXX: Maybe someday return a handle? */
 
 #ifdef CONFIG_32BIT_FILESYSTEM
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate(char const *file, off32_t length) {

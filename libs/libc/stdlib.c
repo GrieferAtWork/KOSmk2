@@ -29,7 +29,10 @@
 #include "unistd.h"
 #include "unicode.h"
 #include "string.h"
-#endif
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <bits/dos-errno.h>
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+#endif /* !__KERNEL__ */
 #include <assert.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -492,6 +495,7 @@ DEFINE_PUBLIC_ALIAS(ptsname,libc_ptsname);
 DEFINE_PUBLIC_ALIAS(posix_openpt,libc_posix_openpt);
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 DEFINE_PUBLIC_ALIAS(_mktemp,libc_mktemp);
+DEFINE_PUBLIC_ALIAS(_onexit,libc_atexit);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 
@@ -511,23 +515,73 @@ DEFINE_PUBLIC_ALIAS(mkstemp64,libc_mkstemp);
 DEFINE_PUBLIC_ALIAS(mkstemps64,libc_mkstemps);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-DEFINE_PUBLIC_ALIAS(_mktemp_s,libc_mktemp_s);
+#if __SIZEOF_LONG_LONG__ == 8
+DEFINE_PUBLIC_ALIAS(_abs64,libc_llabs);
+#elif __SIZEOF_LONG__ == 8
+DEFINE_PUBLIC_ALIAS(_abs64,libc_labs);
+#elif __SIZEOF_INTMAX_T__ == 8
+DEFINE_PUBLIC_ALIAS(_abs64,libc_imaxabs);
+#else
+#error FIXME
+#endif
+
+INTERN ATTR_DOSTEXT void *LIBCCALL
+libc_bsearch_s(void const *key, void const *base, size_t nmemb, size_t size,
+               int (LIBCCALL *compar)(void *arg, const void *a, const void *b),
+               void *arg) {
+ while (nmemb--) {
+  if ((*compar)(arg,key,base) == 0) return (void *)base;
+  *(uintptr_t *)&base += size;
+ }
+ return NULL;
+}
+struct dos_qsort_compar_d {
+ int (LIBCCALL *cmp)(void *arg, const void *a, const void *b);
+ void          *arg;
+};
+PRIVATE ATTR_DOSTEXT int LIBCCALL
+dos_qsort_compar_f(void const *a, void const *b, void *arg) {
+ return (*((struct dos_qsort_compar_d *)arg)->cmp)
+        ( ((struct dos_qsort_compar_d *)arg)->arg,a,b);
+}
+
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_qsort_s(void *base, size_t nmemb, size_t size,
+             int (LIBCCALL *compar)(void *arg, const void *a, const void *b),
+             void *arg) {
+ struct dos_qsort_compar_d d;
+ d.cmp = compar,d.arg = arg;
+ libc_qsort_r(base,nmemb,size,&dos_qsort_compar_f,&d);
+}
+
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_mktemp_s(char *templatename, size_t size) {
  return templatename && size && libc_mktemp(templatename) ? EOK : EINVAL;
 }
 
-DEFINE_PUBLIC_ALIAS(_wsystem,libc_32wsystem);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wsystem),libc_16wsystem);
-INTERN int LIBCCALL libc_16wsystem(char16_t const *__restrict command) {
+INTERN ATTR_DOSTEXT int LIBCCALL libc_16wsystem(char16_t const *__restrict command) {
  int result = -1; char *utf8_command = libc_utf16to8m(command,libc_16wcslen(command));
  if (utf8_command) result = libc_system(utf8_command),libc_free(utf8_command);
  return result;
 }
-INTERN int LIBCCALL libc_32wsystem(char32_t const *__restrict command) {
+INTERN ATTR_DOSTEXT int LIBCCALL libc_32wsystem(char32_t const *__restrict command) {
  int result = -1; char *utf8_command = libc_utf32to8m(command,libc_32wcslen(command));
  if (utf8_command) result = libc_system(utf8_command),libc_free(utf8_command);
  return result;
 }
+INTDEF ATTR_DOSTEXT errno_t LIBCCALL
+libc_rand_s(unsigned int *__restrict randval) {
+ if (!randval) return __DOS_EINVAL;
+ *randval = libc_rand();
+ return EOK;
+}
+
+DEFINE_PUBLIC_ALIAS(bsearch_s,libc_bsearch_s);
+DEFINE_PUBLIC_ALIAS(qsort_s,libc_qsort_s);
+DEFINE_PUBLIC_ALIAS(_mktemp_s,libc_mktemp_s);
+DEFINE_PUBLIC_ALIAS(_wsystem,libc_32wsystem);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wsystem),libc_16wsystem);
+DEFINE_PUBLIC_ALIAS(rand_s,libc_rand_s);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 #endif /* !__KERNEL__ */
