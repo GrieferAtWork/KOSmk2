@@ -65,13 +65,17 @@ struct tib {
  u32               ti_fiber;        /*< ??? */
  u32               ti_abdata;       /*< ??? */
  struct tib       *ti_self;         /*< [1..1][== self] Self pointer. */
-
-
-// FS:[0x1C] 	4 	NT 	Environment Pointer
-// FS:[0x20] 	4 	NT 	Process ID (in some windows distributions this field is used as 'DebugContext')
-// FS:[0x24] 	4 	NT 	Current thread ID
-// FS:[0x28] 	4 	NT 	Active RPC Handle
-// FS:[0x2C] 	4 	Win9x and NT 	Linear address of the thread-local storage array
+ /* ---- End of NT subsystem independent part ---- */
+ void             *ti_envp;         /*< ??? */
+#if __SIZEOF_PID_T__ == 4
+ pid_t             ti_pid;          /*< Only updated on exec()! (Multi-threaded applications should use 'getpid()' instead) */
+ pid_t             ti_tid;          /*< Only updated on exec()! (Multi-threaded applications should use 'gettid()' instead) */
+#else
+ s32               ti_pid;          /*< Only updated on exec()! (Multi-threaded applications should use 'getpid()' instead) */
+ s32               ti_tid;          /*< Only updated on exec()! (Multi-threaded applications should use 'gettid()' instead) */
+#endif
+ void             *it_rtc;          /*< ??? */
+ void             *it_tls;          /*< ??? */
 // FS:[0x30] 	4 	NT 	Linear address of Process Environment Block (PEB)
 // FS:[0x34] 	4 	NT 	Last error number
 // FS:[0x38] 	4 	NT 	Count of owned critical sections

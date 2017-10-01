@@ -469,7 +469,7 @@ print_segment_register(char const *__restrict name, u16 value) {
  if (value&4) __asm__ __volatile__("sldt %0" : : "m" (idt) : "memory");
  else         __asm__ __volatile__("sgdt %0" : : "m" (idt) : "memory");
  entry_id = (value&~7) >> 3;
- __assertion_printf("%s %.4X (%s:%d RPL#%d - ",
+ __assertion_printf("%s %.4X (%s:%.2d RPL#%d - ",
                     name,value,(value&4) ? "LDT" : "GDT",
                     entry_id,value&3);
  entry_count = (idt.ip_limit+1)/8;

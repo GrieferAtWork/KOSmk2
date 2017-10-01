@@ -580,6 +580,56 @@ union{
 #define MHEAP_INTERNAL_VALIDATE()  (void)0
 #endif
 
+
+/* Memory heaps must always use recursive locks to prevent deadlocks such as the following:
+../src/kernel/sched/task.c(650) : task_yield : [0] : C0169AD3
+../include/hybrid/sync/atomic-rwlock.h(138) : atomic_rwlock_write : [0] : C01387DB : EFFFB898
+../src/kernel/memory/malloc.c(1612) : mheap_free : [1] : C013DDF5 : EFFFB8A8
+../src/kernel/memory/malloc.c(2256) : debug_free : [2] : C014032B : EFFFB8E8
+../src/kernel/memory/malloc.c(3087) : _kfree_d : [3] : C01435EC : EFFFB938
+../src/kernel/memory/memory.c(608) : mscatter_split_lo : [4] : C0146245 : EFFFB988
+../src/kernel/mman/part.c(73) : mregion_part_split_lo : [5] : C0158ABB : EFFFB9C8
+../src/kernel/mman/part.c(162) : mregion_part_action : [6] : C0159077 : EFFFB9F8
+../src/kernel/mman/part.c(317) : mregion_part_decref : [7] : C0159692 : EFFFBA48
+../src/kernel/mman/part.c(389) : mregion_decref : [8] : C01599D2 : EFFFBA78
+../src/kernel/mman/mman.c(1473) : mman_munmap_impl : [9] : C0150297 : EFFFBAA8
+../src/kernel/mman/mman.c(1532) : mman_munmap_unlocked : [a] : C01505AE : EFFFBAD8
+../src/kernel/memory/malloc.c(786) : kernel_munmap : [b] : C013AC07 : EFFFBB18
+../src/kernel/memory/malloc.c(970) : core_page_free : [c] : C013B7BC : EFFFBB48
+../src/kernel/memory/malloc.c(1448) : mheap_unmapfree : [d] : C013D41F : EFFFBB88
+../src/kernel/memory/malloc.c(1383) : mheap_release : [e] : C013D04A : EFFFBBD8
+../src/kernel/memory/malloc.c(1613) : mheap_free : [f] : C013DE0B : EFFFBC38
+../src/kernel/memory/malloc.c(2256) : debug_free : [10] : C014032B : EFFFBC78
+../src/kernel/memory/malloc.c(3087) : _kfree_d : [11] : C01435EC : EFFFBCC8
+../src/kernel/mman/mman.c(370) : mman_destroy : [12] : C014CA94 : EFFFBD18
+../src/kernel/sched/task.c(633) : task_destroy : [13] : C0169819 : EFFFBD58
+../src/kernel/sched/task.c(1982) : __task_destroy2 : [14] : C016D98F : EFFFBD88
+../src/kernel/sched/task.c(2073) : task_terminate_self_unlock_cpu : [15] : C016DDBD : EFFFBDA8
+../src/kernel/sched/task-util.c(594) : sig_vtimedrecv_endwrite : [16] : C01661DE : EFFFBE40
+../src/kernel/sched/task-util.c(575) : sig_timedrecv_endwrite : [17] : C0166147 : EFFFBE70
+../src/kernel/fs/iobuffer.c(222) : iobuffer_read : [18] : C0127D87 : EFFFBE90
+../src/kernel/fs/pty.c(409) : master_read : [19] : C012CAD9 : EFFFBF20
+../src/kernel/fs/file.c(148) : file_read : [1a] : C011DD7C : EFFFBF50
+../src/kernel/fs/fd.c(815) : SYSC_read : [1b] : C0119577 : EFFFBF80
+../syscall.c() : sys_ccall : [1c] : C01010D9 : EFFFBFC0
+../??(0) : ?? : [1d] : 0000001B : EFFFBFDC
+
+>> Basically: 'free()' might call 'munmap()', which could call another 'free()'
+               of the same magnitude when the kernel memory manager inherited
+               a region, or a region part allocated as 'MMAN_UNIGFP', or for
+               another manager, meaning that free()-ing that branch as the
+               result of unmapping unused memory will in turn call free() again.
+TODO:  This change also worsens the problems created by the task_terminate_self
+       hi-jacking other threads to clean up itself, as with recursive heap
+       operations now being allowed any running heap operation may become
+       corrupted when its thread is hi-jacked.
+AGAIN: The error here lies in the fact that hi-jacking tasks must be made illegal!
+
+*/
+#undef MHEAP_RECURSIVE_LOCK
+#define MHEAP_RECURSIVE_LOCK        1
+
+
 struct mheap {
 #if MHEAP_RECURSIVE_LOCK
  atomic_owner_rwlock_t    mh_lock;      /*< Lock for this heap. */
@@ -624,12 +674,12 @@ struct mheap {
 #ifdef MALLOC_DEBUG_API
 PRIVATE SAFE MALIGNED bool KCALL mheap_isfree_l(struct mheap *__restrict self, void *p);
 #endif /* MALLOC_DEBUG_API */
-PRIVATE SAFE MALIGNED void *KCALL mheap_acquire(struct mheap *__restrict self, MALIGNED size_t n_bytes, MALIGNED size_t *__restrict alloc_bytes, gfp_t flags);
-PRIVATE SAFE MALIGNED void *KCALL mheap_acquire_al(struct mheap *__restrict self, MALIGNED size_t alignment, size_t offset, MALIGNED size_t n_bytes, MALIGNED size_t *__restrict alloc_bytes, gfp_t flags);
+PRIVATE SAFE MALIGNED void *KCALL mheap_acquire(struct mheap *__restrict self, MALIGNED size_t n_bytes, MALIGNED size_t *__restrict alloc_bytes, gfp_t flags, bool unlock_heap);
+PRIVATE SAFE MALIGNED void *KCALL mheap_acquire_al(struct mheap *__restrict self, MALIGNED size_t alignment, size_t offset, MALIGNED size_t n_bytes, MALIGNED size_t *__restrict alloc_bytes, gfp_t flags, bool unlock_heap);
 PRIVATE SAFE MALIGNED void *KCALL mheap_acquire_at(struct mheap *__restrict self, MALIGNED void *p, MALIGNED size_t n_bytes, MALIGNED size_t *__restrict alloc_bytes, gfp_t flags);
-PRIVATE SAFE bool KCALL mheap_release(struct mheap *__restrict self, MALIGNED void *p, MALIGNED size_t n_bytes, gfp_t flags);
+PRIVATE SAFE bool KCALL mheap_release(struct mheap *__restrict self, MALIGNED void *p, MALIGNED size_t n_bytes, gfp_t flags, bool unlock_heap);
 PRIVATE SAFE void KCALL mheap_release_nomerge(struct mheap *__restrict self, MALIGNED void *p, MALIGNED size_t n_bytes, gfp_t flags);
-PRIVATE SAFE void KCALL mheap_unmapfree(struct mheap *__restrict self, struct mfree **__restrict pslot, ATREE_SEMI_T(uintptr_t) addr_semi, ATREE_LEVEL_T addr_level, gfp_t flags);
+PRIVATE SAFE void KCALL mheap_unmapfree(struct mheap *__restrict self, struct mfree **__restrict pslot, ATREE_SEMI_T(uintptr_t) addr_semi, ATREE_LEVEL_T addr_level, gfp_t flags, bool unlock_heap);
 #ifdef CONFIG_DEBUG_HEAP
 PRIVATE SAFE void KCALL mheap_validate(struct dsetup *setup, struct mheap *__restrict self);
 #endif
@@ -1012,7 +1062,8 @@ mheap_isfree_l(struct mheap *__restrict self, void *p) {
 
 PRIVATE MALIGNED void *KCALL
 mheap_acquire(struct mheap *__restrict self, MALIGNED size_t n_bytes,
-              MALIGNED size_t *__restrict alloc_bytes, gfp_t flags) {
+              MALIGNED size_t *__restrict alloc_bytes, gfp_t flags,
+              bool unlock_heap) {
  MALIGNED void *result = PAGE_ERROR;
  MALIGNED struct mfree **iter,**end;
  MALIGNED struct mfree *chain;
@@ -1089,8 +1140,9 @@ core_again:
  if (page_bytes != n_bytes) {
   /* Release all unused memory. */
   if (!mheap_release(self,(void *)((uintptr_t)result+n_bytes),
-                     page_bytes-n_bytes,flags))
+                     page_bytes-n_bytes,flags,unlock_heap))
        n_bytes = page_bytes;
+  unlock_heap = false;
  }
  *alloc_bytes = n_bytes;
 end:
@@ -1100,6 +1152,8 @@ end:
          result,(uintptr_t)result+*alloc_bytes-1,*alloc_bytes,n_bytes);
  }
 #endif
+ if (unlock_heap)
+     mheap_endwrite(self);
  return result;
 }
 PRIVATE MALIGNED void *KCALL
@@ -1194,7 +1248,7 @@ mheap_acquire_at(struct mheap *__restrict self, MALIGNED void *p,
                        &slot_before_alloc,slot_flags) == PAGE_ERROR) {
     asserte(mheap_release(self,slot,slot_avail+
                         ((uintptr_t)p-MFREE_BEGIN(slot)),
-                          slot_flags));
+                          slot_flags,false));
     return PAGE_ERROR;
    }
    /* Got some memory before the slot! */
@@ -1216,7 +1270,7 @@ mheap_acquire_at(struct mheap *__restrict self, MALIGNED void *p,
   /* Try to release high memory. */
   if (unused_size && mheap_release(self,
                                   (void *)((uintptr_t)p+n_bytes),
-                                   unused_size,slot_flags))
+                                   unused_size,slot_flags,false))
       slot_avail -= unused_size;
  }
  /* Do final initialization of memory. */
@@ -1262,7 +1316,8 @@ mheap_release_nomerge(struct mheap *__restrict self, MALIGNED void *p,
 }
 PRIVATE bool KCALL
 mheap_release(struct mheap *__restrict self, MALIGNED void *p,
-              MALIGNED size_t n_bytes, gfp_t flags) {
+              MALIGNED size_t n_bytes, gfp_t flags,
+              bool unlock_heap) {
  struct mfree **pslot,*slot,*iter,*next;
  struct mfree *free_slot;
  ATREE_SEMI_T(uintptr_t) addr_semi;
@@ -1271,7 +1326,10 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
  assert(mheap_writing(self));
  assert(IS_ALIGNED((uintptr_t)p,HEAP_ALIGNMENT));
  assert(IS_ALIGNED(n_bytes,HEAP_ALIGNMENT));
- if unlikely(!n_bytes) return true;
+ if unlikely(!n_bytes) {
+  if (unlock_heap) mheap_endwrite(self);
+  return true;
+ }
 #ifndef MFREE_HAVE_ATTR
  assert(!(GFP_GTPAGEATTR(flags)&MFREE_SIZEMASK));
 #endif
@@ -1317,7 +1375,7 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
    /* Re-insert the slot. */
    LIST_INSERT_AFTER_EX(iter,slot,mf_lsize,PAGE_ERROR);
   }
-  mheap_unmapfree(self,pslot,addr_semi,addr_level,flags);
+  mheap_unmapfree(self,pslot,addr_semi,addr_level,flags,unlock_heap);
   MHEAP_INTERNAL_VALIDATE();
   return true;
  }
@@ -1380,23 +1438,31 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
    /* Re-insert the slot. */
    LIST_INSERT_AFTER_EX(iter,free_slot,mf_lsize,PAGE_ERROR);
   }
-  mheap_unmapfree(self,pslot,addr_semi,addr_level,flags);
+  mheap_unmapfree(self,pslot,addr_semi,
+                  addr_level,flags,unlock_heap);
   MHEAP_INTERNAL_VALIDATE();
   return true;
  }
  MHEAP_INTERNAL_VALIDATE();
- if (n_bytes < HEAP_MIN_MALLOC) return false;
+ /* Make sure the heap part wouldn't shrink too small. */
+ if (n_bytes < HEAP_MIN_MALLOC) goto too_small;
  mheap_release_nomerge(self,p,n_bytes,flags);
+ if (unlock_heap) mheap_endwrite(self);
  MHEAP_INTERNAL_VALIDATE();
  return true;
+too_small:
+ if (unlock_heap) mheap_endwrite(self);
+ return false;
 }
 
 PRIVATE void KCALL
 mheap_unmapfree(struct mheap *__restrict self,
                 struct mfree **__restrict pslot,
                 ATREE_SEMI_T(uintptr_t) addr_semi,
-                ATREE_LEVEL_T addr_level, gfp_t flags) {
+                ATREE_LEVEL_T addr_level, gfp_t flags,
+                bool unlock_heap) {
  struct mfree *slot;
+ assert(mheap_writing(self));
  CHECK_HOST_DOBJ(pslot);
  slot = *pslot;
  CHECK_HOST_DOBJ(slot);
@@ -1421,13 +1487,13 @@ mheap_unmapfree(struct mheap *__restrict self,
    if (lo_size && lo_size < HEAP_MIN_MALLOC) {
     lo_size += PAGESIZE;
     *(uintptr_t *)&page_begin += PAGESIZE;
-    if (page_begin == page_end) return;
+    if (page_begin == page_end) goto end;
    }
    if (hi_size && hi_size < HEAP_MIN_MALLOC) {
     hi_size += PAGESIZE;
     *(uintptr_t *)&page_end -= PAGESIZE;
     *(uintptr_t *)&hi_slot -= PAGESIZE;
-    if (page_begin == page_end) return;
+    if (page_begin == page_end) goto end;
    }
    assert(page_begin <= page_end);
    page_flags = GFP_STPAGEATTR(MFREE_ATTR(slot))|(flags&~GFP_CALLOC);
@@ -1444,18 +1510,24 @@ mheap_unmapfree(struct mheap *__restrict self,
    if (lo_size) mheap_release_nomerge(self,slot,lo_size,page_flags);
    if (hi_size) mheap_release_nomerge(self,hi_slot,hi_size,page_flags);
 
+   if (unlock_heap) mheap_endwrite(self);
+
    /* Release heap data back to the system. */
    core_page_free(page_begin,
                  (PAGE_ALIGNED uintptr_t)page_end-
                  (PAGE_ALIGNED uintptr_t)page_begin,
                   page_flags);
+   return;
   }
  }
+end:
+ if (unlock_heap)
+     mheap_endwrite(self);
 }
 PRIVATE MALIGNED void *KCALL
 mheap_acquire_al(struct mheap *__restrict self,
                  MALIGNED size_t alignment, size_t offset, MALIGNED size_t n_bytes,
-                 MALIGNED size_t *__restrict alloc_bytes, gfp_t flags) {
+                 MALIGNED size_t *__restrict alloc_bytes, gfp_t flags, bool unlock_heap) {
  void *alloc_base; void *result;
  size_t alloc_size,nouse_size;
  assert(alignment != 0);
@@ -1466,8 +1538,11 @@ mheap_acquire_al(struct mheap *__restrict self,
              n_bytes = HEAP_MIN_MALLOC;
  /* Must overallocate by at least 'HEAP_MIN_MALLOC',
   * so we can _always_ free unused lower memory. */
- alloc_base = mheap_acquire(self,n_bytes+alignment+HEAP_MIN_MALLOC,&alloc_size,flags);
- if unlikely(alloc_base == PAGE_ERROR) return PAGE_ERROR;
+ alloc_base = mheap_acquire(self,n_bytes+alignment+HEAP_MIN_MALLOC,&alloc_size,flags,false);
+ if unlikely(alloc_base == PAGE_ERROR) {
+  if (unlock_heap) mheap_endwrite(self);
+  return PAGE_ERROR;
+ }
  assert(alloc_size >= n_bytes+alignment+HEAP_MIN_MALLOC);
  result = (void *)(CEIL_ALIGN((uintptr_t)alloc_base+HEAP_MIN_MALLOC+offset,alignment)-offset);
  assert((uintptr_t)result+n_bytes <=
@@ -1476,13 +1551,13 @@ mheap_acquire_al(struct mheap *__restrict self,
  assert(nouse_size+n_bytes <= alloc_size);
  assertf(nouse_size >= HEAP_MIN_MALLOC,"nouse_size = %Iu",nouse_size);
  /* Release lower memory. */
- asserte(mheap_release(self,alloc_base,nouse_size,flags));
+ asserte(mheap_release(self,alloc_base,nouse_size,flags,false));
  alloc_size -= nouse_size;
 
  /* Try to release upper memory. */
  assert(alloc_size >= n_bytes);
  nouse_size = alloc_size-n_bytes;
- if (mheap_release(self,(void *)((uintptr_t)result+n_bytes),nouse_size,flags))
+ if (mheap_release(self,(void *)((uintptr_t)result+n_bytes),nouse_size,flags,unlock_heap))
      alloc_size -= nouse_size;
  assert(alloc_size >= n_bytes);
  *alloc_bytes = alloc_size;
@@ -1567,8 +1642,8 @@ mheap_malloc(struct mheap *__restrict self, size_t size, gfp_t flags) {
  MALIGNED size_t alloc_size;
  mheap_write(self);
  result = (struct mptr *)mheap_acquire(self,CEIL_ALIGN(MPTR_SIZEOF(size),HEAP_ALIGNMENT),
-                                      &alloc_size,flags);
- mheap_endwrite(self);
+                                      &alloc_size,flags,true);
+ /*mheap_endwrite(self);*/
  if unlikely(result == PAGE_ERROR) return MPTR_OF(NULL);
  assert(alloc_size >= size);
  MPTR_SETUP(result,flags&GFP_MASK_MPTR,alloc_size);
@@ -1584,8 +1659,8 @@ mheap_memalign(struct mheap *__restrict self,
  mheap_write(self);
  result = (struct mptr *)mheap_acquire_al(self,alignment,sizeof(struct mptr),
                                           CEIL_ALIGN(MPTR_SIZEOF(size),HEAP_ALIGNMENT),
-                                         &alloc_size,flags);
- mheap_endwrite(self);
+                                         &alloc_size,flags,true);
+ /*mheap_endwrite(self);*/
  if (result == PAGE_ERROR) return MPTR_OF(NULL);
  assert(IS_ALIGNED((uintptr_t)result+sizeof(struct mptr),alignment));
  MPTR_SETUP(result,flags&GFP_MASK_MPTR,alloc_size);
@@ -1610,8 +1685,8 @@ mheap_free(struct mheap *__restrict self, struct mptr *ptr, gfp_t flags) {
  }
 #endif
  mheap_write(self);
- asserte(mheap_release(self,ptr,alloc_size,flags));
- mheap_endwrite(self);
+ asserte(mheap_release(self,ptr,alloc_size,flags,true));
+ /*mheap_endwrite(self);*/
 }
 
 #ifndef __INTELLISENSE__

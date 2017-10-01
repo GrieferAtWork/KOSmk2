@@ -165,6 +165,9 @@ FUNDEF void KCALL task_filltlb(struct task *__restrict self);
 
 #endif /* !CONFIG_NO_TLB */
 
+#define TASK_NOTIFY_PID_CHANGED(self) (void)0
+
+
 /* Set the leader/parent of a given task before being started with 'task_start()'
  * NOTE: Both of these functions must be called _exactly_ ONCE before 'task_start()'.
  * HINT: The bootstrap task is its own parent/leader.

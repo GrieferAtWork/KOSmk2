@@ -114,13 +114,13 @@ mheap_realloc(struct mheap *__restrict self, struct mptr *ptr,
 #endif
    /* Allocate totally new block. */
 #ifdef HEAP_REALIGN
-   new_ptr = (struct mptr *)mheap_acquire_al(self,alignment,sizeof(struct mptr),
-                                             new_size,&alloc_size,flags&~GFP_CALLOC);
+   new_ptr = (struct mptr *)mheap_acquire_al(self,alignment,sizeof(struct mptr),new_size,
+                                            &alloc_size,flags&~GFP_CALLOC,true);
 #else
    new_ptr = (struct mptr *)mheap_acquire(self,new_size,&alloc_size,
-                                          flags&~GFP_CALLOC);
+                                          flags&~GFP_CALLOC,true);
 #endif
-   mheap_endwrite(self);
+   /*mheap_endwrite(self);*/
    if (new_ptr == PAGE_ERROR) return MPTR_OF(NULL);
    assert(alloc_size >= new_size);
    /* Setup the new pointer, and reset the old. */
@@ -147,8 +147,8 @@ mheap_realloc(struct mheap *__restrict self, struct mptr *ptr,
    mheap_resetdebug(ptr,old_size,flags&~GFP_CALLOC);
    /* Free the old pointer. */
    mheap_write(self);
-   asserte(mheap_release(self,ptr,old_size,flags&~GFP_CALLOC));
-   mheap_endwrite(self);
+   asserte(mheap_release(self,ptr,old_size,flags&~GFP_CALLOC,true));
+   /*mheap_endwrite(self);*/
 #ifndef MALLOC_DEBUG_API
 #ifndef MPTR_HAVE_TYPE
    MPTR_SETUP(new_ptr,flags&GFP_MASK_MPTR,alloc_size);
@@ -183,8 +183,9 @@ mheap_realloc(struct mheap *__restrict self, struct mptr *ptr,
     assert(IS_ALIGNED(free_begin,HEAP_ALIGNMENT));
     assert(IS_ALIGNED(free_size,HEAP_ALIGNMENT));
     free_ok = mheap_release(self,(void *)free_begin,
-                            free_size,flags&~GFP_CALLOC);
-    mheap_endwrite(self);
+                            free_size,flags&~GFP_CALLOC,
+                            true);
+    /*mheap_endwrite(self);*/
 
     if (!free_ok) {
      ptr->m_size += free_size;
