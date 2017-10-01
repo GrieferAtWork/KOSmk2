@@ -1277,6 +1277,14 @@ mman_do_mrestore(struct mman *__restrict self,
  assert(IS_ALIGNED((uintptr_t)addr,PAGESIZE));
  /* NOTE: Use teardown recursion to keep the branch
   *       tree in a consistent state after each step. */
+#if 1
+ if (branch->mb_order.le_next) {
+  error = mman_do_mrestore(self,branch->mb_order.le_next,
+                           addr,reuse_branches);
+  if (E_ISERR(error)) return error;
+  branch->mb_order.le_next = NULL;
+ }
+#else
  if (branch->mb_node.a_min) {
   error = mman_do_mrestore(self,branch->mb_node.a_min,addr,reuse_branches);
   if (E_ISERR(error)) return error;
@@ -1287,6 +1295,7 @@ mman_do_mrestore(struct mman *__restrict self,
   if (E_ISERR(error)) return error;
   branch->mb_node.a_max = NULL;
  }
+#endif
  /* Copy the branch if we're not supposed to reuse it. */
  if (!reuse_branches) {
   struct mbranch *branch_copy;

@@ -29,6 +29,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <kos/environ.h>
+#include <kos/thread.h>
 #include <sys/syslog.h>
 #include <sched.h>
 #include <stddef.h>

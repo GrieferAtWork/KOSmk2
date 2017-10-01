@@ -142,7 +142,6 @@ ATTR_FREEDATA struct task inittask = {
             .le_next  = &__bootcpu.c_idle,
         },
         .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
-        .at_ldt_tls = LDT_ERROR,
     },
 #endif
 };
@@ -376,7 +375,6 @@ PUBLIC struct cpu __bootcpu = {
                 .le_next  = NULL,
             },
             .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
-            .at_ldt_tls = LDT_ERROR,
         },
 #endif
     },

@@ -126,7 +126,7 @@ L(    movw  %dx, %fs                                                          )
 #endif
 L(                                                                            )
 L(    movl  %esp, %ecx                                                        )
-__DEBUG_CODE(L(pushl 48(%esp)                                                ))
+__DEBUG_CODE(L(pushl 56(%esp)                                                ))
 __DEBUG_CODE(L(pushl %ebp                                                    ))
 __DEBUG_CODE(L(movl %esp, %ebp                                               ))
 L(    call  irq_default                                                       )

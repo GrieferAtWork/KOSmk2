@@ -336,8 +336,8 @@ endwrite:
   * >> The last thing remaining now, is to actually start execution of the module! */
  { struct cpustate state;
    memset(&state,0,sizeof(struct cpustate));
-   state.host.gs     = __USER_DS;
-   state.host.fs     = __USER_DS;
+   state.host.gs     = __USER_GS;
+   state.host.fs     = __USER_FS;
    state.host.es     = __USER_DS;
    state.host.ds     = __USER_DS;
    state.host.cs     = __USER_CS;

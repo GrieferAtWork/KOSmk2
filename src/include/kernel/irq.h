@@ -422,7 +422,7 @@ void (ASMCALL h_irq)(void); __asm__( \
 "" PP_STR(h_irq) ":\n" \
 __INT_ENTER \
 "    movl  %esp, %ecx\n" \
-__DEBUG_CODE("pushl 32(%esp)\n") \
+__DEBUG_CODE("pushl 40(%esp)\n") \
 __DEBUG_CODE("pushl %ebp\n") \
 __DEBUG_CODE("movl %esp, %ebp\n") \
 "    call " PP_STR(h_int) "\n" \

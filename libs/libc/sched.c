@@ -42,7 +42,10 @@ INTERN int LIBCCALL libc_clone(int (LIBCCALL *fn)(void *arg),
  NOT_IMPLEMENTED();
  return -1;
 }
-INTERN int LIBCCALL libc_sched_yield(void) { return sys_sched_yield(); }
+INTERN int LIBCCALL libc_sched_yield(void) {
+ __asm__("int $3\n");
+ return sys_sched_yield();
+}
 INTERN int LIBCCALL libc_sched_getcpu(void) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_setns(int fd, int nstype) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_sched_setparam(pid_t pid, struct sched_param const *param) { NOT_IMPLEMENTED(); return -1; }

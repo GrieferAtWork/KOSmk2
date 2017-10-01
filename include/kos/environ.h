@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_KERNEL_ENVIRON_H
-#define GUARD_INCLUDE_KERNEL_ENVIRON_H 1
+#ifndef _KOS_ENVIRON_H
+#define _KOS_ENVIRON_H 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/limits.h>
@@ -76,7 +76,6 @@ struct envdata {
 __LIBC struct envdata *(appenv);
 #endif
 
-
 DECL_END
 
-#endif /* !GUARD_INCLUDE_KERNEL_ENVIRON_H */
+#endif /* !_KOS_ENVIRON_H */

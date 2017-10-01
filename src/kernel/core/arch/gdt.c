@@ -198,6 +198,8 @@ PUBLIC struct segment gdt_builtin[SEG_BUILTIN] = {
     [SEG_CPUSELF]     = {{{(u32)__kernel_seg_cpuself_lo,(u32)__kernel_seg_cpuself_hi}}}, /* CPU-self */
     [SEG_CPUTSS]      = {{{(u32)__kernel_seg_cputss_lo,(u32)__kernel_seg_cputss_hi}}}, /* CPU TSS */
     [SEG_KERNEL_LDT]  = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
+    [SEG_USER_TLB]    = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL3),
+    [SEG_USER_TIB]    = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL3),
 };
 
 PUBLIC CPU_DATA struct idt_pointer cpu_gdt = {

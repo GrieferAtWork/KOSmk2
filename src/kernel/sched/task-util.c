@@ -46,6 +46,9 @@
 #include <string.h>
 #include <sync/sig.h>
 #include <sys/mman.h>
+#ifndef CONFIG_NO_TLB
+#include <kos/thread.h>
+#endif /* !CONFIG_NO_TLB */
 
 DECL_BEGIN
 
@@ -108,6 +111,97 @@ task_set_affinity(struct task *__restrict self,
  return error;
 }
 
+
+#ifndef CONFIG_NO_TLB
+
+PUBLIC SAFE errno_t KCALL
+task_mktlb(struct task *__restrict self) {
+ size_t tlb_size; errno_t error;
+ struct mman *mm; bool has_write_lock = false;
+ USER ppage_t tlb_address; struct mregion *tlb_region;
+ CHECK_HOST_DOBJ(self);
+ assert(self->t_mode == TASKMODE_NOTSTARTED);
+ assert(self->t_tlb == PAGE_ERROR);
+ assert(self->t_mman != NULL);
+ mm = self->t_mman;
+ tlb_size   = CEIL_ALIGN(sizeof(struct tlb),PAGESIZE);
+again_findspace:
+ error = mman_read(mm);
+ tlb_address = mman_findspace_unlocked(mm,(ppage_t)(TASK_USERTLB_ADDRHINT-tlb_size),
+                                       tlb_size,MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
+                                       128*PAGESIZE,MMAN_FINDSPACE_BELOW);
+ if (tlb_address != PAGE_ERROR &&
+    (uintptr_t)tlb_address+tlb_size < KERNEL_BASE) goto got_space;
+ /* Try without a gap. */
+ tlb_address = mman_findspace_unlocked(mm,(ppage_t)(TASK_USERSTACK_ADDRHINT-tlb_size),
+                                       tlb_size,MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
+                                       0,MMAN_FINDSPACE_BELOW);
+ if (tlb_address != PAGE_ERROR &&
+    (uintptr_t)tlb_address+tlb_size < KERNEL_BASE) goto got_space;
+ tlb_address = mman_findspace_unlocked(mm,(ppage_t)0,tlb_size,
+                                       MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
+                                       0,MMAN_FINDSPACE_ABOVE);
+ if (tlb_address != PAGE_ERROR &&
+    (uintptr_t)tlb_address+tlb_size < KERNEL_BASE) goto got_space;
+ /* Failed to find sufficient space. */
+ mman_endread(mm);
+ error = -ENOMEM;
+err:
+ return error;
+got_space:
+ if (!has_write_lock) {
+  error = mman_upgrade(mm);
+  if (E_ISERR(error)) {
+   if (error != -ERELOAD) goto err;
+   has_write_lock = true;
+   goto again_findspace;
+  }
+ }
+ assert(tlb_address != PAGE_ERROR);
+
+ /* Allocate the region controller for the TLB region. */
+ tlb_region = mregion_new(MMAN_DATAGFP(mm));
+ if unlikely(!tlb_region) { mman_endwrite(mm); return -ENOMEM; }
+ tlb_region->mr_size = tlb_size;
+ tlb_region->mr_init = MREGION_INIT_ZERO; /* Use ZERO-initialization. */
+
+ /* Finalize the region setup. */
+ mregion_setup(tlb_region);
+
+#if 1
+ /* Now try to map it in the associated address space.
+  * NOTE: We pass a custom notifier to track the region even when it has moved. */
+ error = mman_mmap_unlocked(mm,tlb_address,tlb_size,0,
+                            tlb_region,PROT_READ|PROT_WRITE,
+                            NULL,self);
+ if (E_ISOK(error)) self->t_tlb = (PAGE_ALIGNED USER struct tlb *)tlb_address;
+ /* NOTE: The TLB region will be initialized once the thread is started. */
+#endif
+
+ mman_endwrite(mm);
+ MREGION_DECREF(tlb_region);
+ return error;
+}
+PUBLIC ssize_t KCALL
+task_tlb_mnotify(unsigned int type, void *__restrict closure,
+                 struct mman *mm, ppage_t addr, size_t size) {
+ struct task *self = (struct task *)closure;
+ CHECK_HOST_DOBJ(self);
+ assert(ATOMIC_READ(self->t_refcnt) >= 1);
+
+ switch (type) {
+  /* Reference counting is implemented through weak references. */
+ case MNOTIFY_INCREF: TASK_WEAK_INCREF(self); break;
+ case MNOTIFY_DECREF: TASK_WEAK_DECREF(self); break;
+
+
+ default: break;
+ }
+ return -EOK;
+}
+
+
+#endif /* !CONFIG_NO_TLB */
 
 
 #ifdef CONFIG_DEBUG
@@ -211,7 +305,7 @@ task_mkustack(struct task *__restrict self,
  if unlikely(!ustack) return -ENOMEM;
 again_findspace:
  error = mman_read(mm);
- ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(TASK_USERSTACK_ADDRHINT-(n_bytes+gap_size)),
+ ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(TASK_USERSTACK_ADDRHINT-n_bytes),
                                            n_bytes+guard_size,MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
                                            gap_size,MMAN_FINDSPACE_BELOW);
  if (ustack->s_begin != PAGE_ERROR &&

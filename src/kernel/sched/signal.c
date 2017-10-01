@@ -445,10 +445,10 @@ L(    movw  46(%esp), %fs                                                       
 L(    movw  48(%esp), %es                                                        )
 L(    movw  50(%esp), %ds                                                        )
 L(                                                                               )
-      /* Now just jump back to user-space. */
+L(    /* Now just jump back to user-space. */                                    )
 L(    iret                                                                       )
 L(                                                                               )
-      /* Handle illegal-user-stack errors. */
+L(    /* Handle illegal-user-stack errors. */                                    )
 L(9:  movl %ebx, TASK_OFFSETOF_LASTCR2(%eax)                                     )
 L(    call sigfault                                                              )
 L(10: movl %edi, TASK_OFFSETOF_LASTCR2(%eax)                                     )
@@ -1116,7 +1116,7 @@ L(SYM_END(sys_sigreturn)                                                        
 L(.previous                                                                      )
 );
 
-#define IGNORE_SEGMENT_REGISTERS 1
+#define IGNORE_SEGMENT_REGISTERS 0
 
 INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
  ucontext_t ctx; size_t context_indirection;
@@ -1125,12 +1125,19 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
      sigfault();
  /* TODO: Accept TLS segments. */
 #if !IGNORE_SEGMENT_REGISTERS
+#if 1
+#define CHECK_SEGMENT(id,name,value) \
+ if ((ctx.uc_mcontext.gregs[id]&3) != 3) \
+     sigill("%%%s (Illegal RPL privilege level)", \
+            name,ctx.uc_mcontext.gregs[id])
+#else
 #define CHECK_SEGMENT(id,name,value) \
  if (ctx.uc_mcontext.gregs[id] != (value)) \
      sigill("%%" name " (%.4I16x != %.4I16x)", \
             ctx.uc_mcontext.gregs[id],value)
- CHECK_SEGMENT(REG_GS,"gs",__USER_DS);
- CHECK_SEGMENT(REG_FS,"fs",__USER_DS);
+#endif
+ CHECK_SEGMENT(REG_GS,"gs",__USER_GS);
+ CHECK_SEGMENT(REG_FS,"fs",__USER_FS);
  CHECK_SEGMENT(REG_ES,"es",__USER_DS);
  CHECK_SEGMENT(REG_DS,"ds",__USER_DS);
  CHECK_SEGMENT(REG_CS,"cs",__USER_CS);
@@ -1150,8 +1157,8 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
   * NOTE: We don't jump directly, because that would break execution of
   *       additional signals that may have been unblocked by 'task_set_sigblock()'. */
 #if IGNORE_SEGMENT_REGISTERS
- cs->host.gs     = __USER_DS;
- cs->host.fs     = __USER_DS;
+ cs->host.gs     = __USER_GS;
+ cs->host.fs     = __USER_FS;
  cs->host.es     = __USER_DS;
  cs->host.ds     = __USER_DS;
  ctx.uc_mcontext.gregs[REG_CS] = __USER_CS;
@@ -1303,7 +1310,7 @@ scan_again_shared:
     *       any number of signals consecutively and have 'task_waitfor()'
     *       return a pointer to the pending set to which a new signal was
     *       added.
-    * >> This what we're currently doing by locking both sets
+    * >> Thus what we're currently doing by locking both sets
     *    at the same time is both wasteful and unnecessary! */
    sig_endwrite(&t->t_sigpend.sp_newsig);
    sig_endwrite(&t->t_sigshare->ss_pending.sp_newsig);

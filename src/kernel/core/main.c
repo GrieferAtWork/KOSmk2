@@ -191,10 +191,15 @@ run_init(char const *__restrict filename) {
  /* Allocate the user-stack. */
  alloc_user_stack(thrd,mm,0x4000);
 
+#ifndef CONFIG_NO_TLB
+ /* Allocate the thread local block. */
+ asserte(E_ISOK(task_mktlb(thrd)));
+#endif /* !CONFIG_NO_TLB */
+
  state->host.ds     = __USER_DS;
  state->host.es     = __USER_DS;
- state->host.fs     = __USER_DS;
- state->host.gs     = __USER_DS;
+ state->host.fs     = __USER_FS;
+ state->host.gs     = __USER_GS;
  state->host.cs     = __USER_CS;
  state->host.ecx    = (uintptr_t)penviron; /* Pass the environment block through ECX. */
  state->host._n1    = 0;

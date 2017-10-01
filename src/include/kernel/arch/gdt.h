@@ -21,6 +21,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 #include <assert.h>
 #include <errno.h>
 
@@ -28,6 +29,9 @@ DECL_BEGIN
 
 #ifdef __CC__
 struct cpu;
+
+#define SEGMENT_OFFSETOF_BASELO 2
+#define SEGMENT_OFFSETOF_BASEHI 7
 
 /* Segment Descriptor / GDT (Global Descriptor Table) Entry
  * NOTE: Another valid name of this would be 'gdtentry' or 'ldtentry' */
@@ -157,8 +161,12 @@ struct PACKED {
    ((u32)(config)&0x00f0ff00)|      /* 0x00f0ff00 */\
    ((u32)(size)&0x000f0000)|        /* 0x000f0000 */\
    ((u32)(base)&0xff000000)         /* 0xff000000 */)
-#define SEGMENT_GTBASE(seg) ((seg).ul32 >> 16 | ((seg).uh32&0xff000000) | ((seg).uh32&0xff) << 16)
-#define SEGMENT_GTSIZE(seg) (((seg).ul32 & 0xffff) | ((seg).uh32&0x000f0000))
+#define SEGMENT_GTBASE(seg)      ((seg).ul32 >> 16 | ((seg).uh32&0xff000000) | ((seg).uh32&0xff) << 16)
+#define SEGMENT_GTSIZE(seg)      (((seg).ul32 & 0xffff) | ((seg).uh32&0x000f0000))
+#define SEGMENT_STBASE(seg,addr) \
+ (*(u32 *)(&(seg).sizelow+1) &=                    0xff000000, \
+  *(u32 *)(&(seg).sizelow+1) |=  (uintptr_t)(addr)&0x00ffffff, \
+            (seg).basehigh    = ((uintptr_t)(addr)&0xff000000) >> 24)
 
 #define SEGMENT_INIT(base,size,config) \
  {{{ __SEG_ENCODELO(base,size,config), \
@@ -201,18 +209,20 @@ typedef u16 segid_t; /* == Segment index*8 */
 #define SEG_ISGDT(seg) (((seg)&0x4)==0)
 
 /* Hard-coded, special segments ids. */
-#define SEG_NULL        0 /*< [0x00] NULL Segment. */
-#define SEG_HOST_CODE   1 /*< [0x08] Ring #0 code segment. */
-#define SEG_HOST_DATA   2 /*< [0x10] Ring #0 data segment. */
-#define SEG_USER_CODE   3 /*< [0x18] Ring #3 code segment. */         
-#define SEG_USER_DATA   4 /*< [0x20] Ring #3 data segment. */
-#define SEG_HOST_CODE16 5 /*< [0x28] Ring #0 16-bit code segment. */
-#define SEG_HOST_DATA16 6 /*< [0x30] Ring #0 16-bit data segment. */
-#define SEG_CPUSELF     7 /*< [0x38] CPU-self segment (stored in %fs/%gs while in kernel-space). */
-#define SEG_CPUTSS      8 /*< [0x40] TSS segment of the current CPU. */
-#define SEG_KERNEL_LDT  9 /*< [0x48] Symbolic kernel LDT (Usually empty). */
+#define SEG_NULL         0 /*< [0x00] NULL Segment. */
+#define SEG_HOST_CODE    1 /*< [0x08] Ring #0 code segment. */
+#define SEG_HOST_DATA    2 /*< [0x10] Ring #0 data segment. */
+#define SEG_USER_CODE    3 /*< [0x18] Ring #3 code segment. */         
+#define SEG_USER_DATA    4 /*< [0x20] Ring #3 data segment. */
+#define SEG_HOST_CODE16  5 /*< [0x28] Ring #0 16-bit code segment. */
+#define SEG_HOST_DATA16  6 /*< [0x30] Ring #0 16-bit data segment. */
+#define SEG_CPUSELF      7 /*< [0x38] CPU-self segment (stored in %fs/%gs while in kernel-space). */
+#define SEG_CPUTSS       8 /*< [0x40] TSS segment of the current CPU. */
+#define SEG_KERNEL_LDT   9 /*< [0x48] Symbolic kernel LDT (Usually empty). */
+#define SEG_USER_TLB    10 /*< [0x50] Ring #3 thread-local block. */
+#define SEG_USER_TIB    11 /*< [0x58] Ring #3 thread-information block. */
 
-#define SEG_BUILTIN        10
+#define SEG_BUILTIN        12
 #define SEG_MAX            0xffff
 #define SEG_ISBUILTIN(seg) ((seg) < SEG(SEG_BUILTIN))
 
@@ -221,6 +231,15 @@ typedef u16 segid_t; /* == Segment index*8 */
 #define __KERNEL_PERCPU  SEG(SEG_CPUSELF)
 #define __USER_DS       (SEG(SEG_USER_DATA)|3)
 #define __USER_CS       (SEG(SEG_USER_CODE)|3)
+#define __USER_TLB      (SEG(SEG_USER_TLB)|3)
+#define __USER_TIB      (SEG(SEG_USER_TIB)|3)
+#ifdef __x86_64__
+#define __USER_FS        __USER_TLB
+#define __USER_GS        __USER_TIB
+#else
+#define __USER_FS        __USER_TIB
+#define __USER_GS        __USER_TLB
+#endif
 
 
 #ifdef __CC__

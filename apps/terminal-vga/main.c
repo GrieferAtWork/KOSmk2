@@ -751,6 +751,8 @@ int main(int argc, char *argv[]) {
      err(EXIT_FAILURE,"Failed to create PTY device");
  fcntl(amaster,F_SETFL,FD_CLOEXEC);
 
+ __asm__("int $3\n");
+
 #if 1
  if ((child_proc = fork()) == 0) {
   /* === Child process */

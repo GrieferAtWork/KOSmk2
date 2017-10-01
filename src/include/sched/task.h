@@ -44,9 +44,20 @@ DECL_BEGIN
 #endif
 
 #ifdef CONFIG_NO_FPU
-#define __TASK_SWITCH_FPU(old,new)
+#define __TASK_SWITCH_FPU(old,new) /* nothing */
 #else
 #define __TASK_SWITCH_FPU(old,new) FPUSTATE_DISABLE();
+#endif
+
+#ifdef CONFIG_NO_TLB
+#define __TASK_SWITCH_TLB(old,new) /* nothing */
+#else
+/* Update the TLB pointers in the current cpu's GDT. */
+#define __TASK_SWITCH_TLB(old,new) \
+    { struct segment *seg = &CPU(cpu_gdt).ip_gdt[SEG_USER_TLB]; \
+      SEGMENT_STBASE(seg[SEG_USER_TLB-SEG_USER_TLB],(new)->t_tlb); \
+      SEGMENT_STBASE(seg[SEG_USER_TIB-SEG_USER_TLB],&(new)->t_tlb->tl_tib); \
+    }
 #endif
 
 
@@ -63,10 +74,12 @@ do{ struct mman *const new_mm = (new)->t_mman; \
      /* Switch LDT descriptors. (NOTE: Must always \
       * be equal within the same page-directory) */ \
      __TASK_SWITCH_LDT(old,new) \
-     /* Disable the FPU to cause lazy register save/ \
-      * restore the next time operations are performed. */ \
-     __TASK_SWITCH_FPU(old,new) \
     } \
+    /* Disable the FPU to cause lazy register save/ \
+     * restore the next time operations are performed. */ \
+    __TASK_SWITCH_FPU(old,new) \
+    /* Load the new task's TLB and TIB. */ \
+    __TASK_SWITCH_TLB(old,new) \
 }while(0)
 
 
@@ -82,12 +95,12 @@ struct task;
  *                    within 'mman_kernel', and the address of the 'task' itself must
  *                    be used as argument for 'closure' in 'mman_mmap_unlocked',
  *                    while 'notify' must remain NULL!
+ *  - t_tlb (Optional; Use 'task_mktlb()'; pre-initialized to 'PAGE_ERROR')
  *  - t_mman (As a real reference)
  *  - t_fdman (As a real reference)
  *  - t_sighand (As a real reference; Set to 'sighand_kernel' for kernel threads)
  *  - t_sigshare (As a real reference; Set to 'sigshare_kernel' for kernel threads')
  *  - t_priority (Optional; pre-initialized to 'TASKPRIO_DEFAULT')
- *  - t_arch->at_ldt_tls (Optional; Pre-initialized to 'LDT_ERROR')
  * @return: * :   A reference to the newly allocated task.
  * @return: NULL: Not enough available memory. */
 #define task_new() task_cinit((struct task *)kmemalign(TASK_ALIGN,sizeof(struct task), \
@@ -118,12 +131,29 @@ FUNDEF SAFE errno_t KCALL task_mkhstack(struct task *__restrict self, size_t n_b
 
 /* Similar to 'task_mkhstack()', but the stack is allocated lazily for user-space. */
 FUNDEF SAFE errno_t KCALL task_mkustack(struct task *__restrict self, size_t n_bytes, size_t guard_size, u16 funds);
-#define TASK_USERSTACK_ADDRHINT    0x10000000 /*< Search for suitable memory below this address,
-                                               *  but if no space is found, search above as well. */
-#define TASK_USERSTACK_DEFAULTSIZE 0x4000   /*< Default, generic size for user stacks. */
-#define TASK_USERSTACK_FUNDS       8        /*< Default amount of funding for guard-pages in user-space stacks. */
-#define TASK_USERSTACK_ALIGN       16       /*< Alignment hint that should be respected by all user-stack allocators. */
-#define TASK_USERSTACK_GUARDSIZE   PAGESIZE /*< Default user-space stack guard size. */
+#define TASK_USERSTACK_ADDRHINT    0x10000000 /*< Search for suitable memory below this address, but if no space is found, search above as well. */
+#define TASK_USERSTACK_DEFAULTSIZE 0x4000     /*< Default, generic size for user stacks. */
+#define TASK_USERSTACK_FUNDS       8          /*< Default amount of funding for guard-pages in user-space stacks. */
+#define TASK_USERSTACK_ALIGN       16         /*< Alignment hint that should be respected by all user-stack allocators. */
+#define TASK_USERSTACK_GUARDSIZE   PAGESIZE   /*< Default user-space stack guard size. */
+#define TASK_USERTLB_ADDRHINT      0xa0000000 /*< Search for suitable memory below this address, but if no space is found, search above as well. */
+
+
+FUNDEF SAFE errno_t KCALL task_mktlb(struct task *__restrict self);
+
+#ifndef CONFIG_NO_TLB
+/* Allocate the Thread local block for the given task.
+ * TODO: Add an API for ELF TLS memory relocations.
+ * @return: -EOK:    Successfully created and mapped the TLB block.
+ * @return: -ENOMEM: Not enough available memory. */
+FUNDEF SAFE errno_t KCALL task_mktlb(struct task *__restrict self);
+
+/* mman notification used for tracking TLB mappings.
+ * @param: closure: The 'struct task' associated with the TLB block. */
+FUNDEF ssize_t KCALL task_tlb_mnotify(unsigned int type, void *__restrict closure,
+                                      struct mman *mm, ppage_t addr, size_t size);
+
+#endif /* !CONFIG_NO_TLB */
 
 /* Set the leader/parent of a given task before being started with 'task_start()'
  * NOTE: Both of these functions must be called _exactly_ ONCE before 'task_start()'.

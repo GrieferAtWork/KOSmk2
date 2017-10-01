@@ -80,7 +80,10 @@ extern "C" {
   * The type of function that is expected as an exception handler to be
   * installed with __try1.
   */
+#ifndef __PEXCEPTION_HANDLER_DEFINED
+#define __PEXCEPTION_HANDLER_DEFINED 1
   typedef EXCEPTION_DISPOSITION (*PEXCEPTION_HANDLER)(struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
+#endif
 
 #ifndef HAVE_NO_SEH
   /*

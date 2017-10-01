@@ -71,7 +71,7 @@ struct _IO_FILE {
 #define FILE_ISERR(self)    ((self)->f_flags&FILE_ERROR)
 #define FILE_CLERR(self)    ((self)->f_flags &= ~FILE_ERROR)
 #define FILE_ISEOF(self)    ((self)->f_bufmax != (self)->f_bufend)
-#ifdef CONFIG_STDIO_FILE_RECURSIVE_LOCK
+#if defined(CONFIG_STDIO_FILE_RECURSIVE_LOCK)
 #define FILE_INIT(fd,flags) {ATOMIC_OWNER_RWLOCK_INIT,fd,flags,NULL,NULL,NULL,NULL,NULL,0}
 #define file_reading(x)     atomic_owner_rwlock_reading(&(x)->f_lock)
 #define file_writing(x)     atomic_owner_rwlock_writing(&(x)->f_lock)
@@ -99,6 +99,32 @@ struct _IO_FILE {
 #define file_endwrite(x)    atomic_rwlock_endwrite(&(x)->f_lock)
 #endif
 
+
+#if 1
+/* Lockless */
+#undef file_reading
+#undef file_writing
+#undef file_tryread
+#undef file_trywrite
+#undef file_tryupgrade
+#undef file_read
+#undef file_write
+#undef file_upgrade
+#undef file_downgrade
+#undef file_endread
+#undef file_endwrite
+#define file_reading(x)           1
+#define file_writing(x)           1
+#define file_tryread(x)           1
+#define file_trywrite(x)          1
+#define file_tryupgrade(x)        1
+#define file_read(x)        (void)0
+#define file_write(x)       (void)0
+#define file_upgrade(x)     (void)0
+#define file_downgrade(x)   (void)0
+#define file_endread(x)     (void)0
+#define file_endwrite(x)    (void)0
+#endif
 
 /* The default buffer limit that should not be surpassed by dynamically allocated buffers.
  * WARNING: Due to user-specified buffers, a file's buffer may surpass this length. */

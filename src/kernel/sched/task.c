@@ -51,6 +51,10 @@
 #include <stdalign.h>
 #include <string.h>
 #include <sys/io.h>
+#ifndef CONFIG_NO_TLB
+#include <kernel/arch/gdt.h>
+#include <kos/thread.h>
+#endif /* !CONFIG_NO_TLB */
 
 DECL_BEGIN
 
@@ -80,6 +84,7 @@ STATIC_ASSERT(offsetof(struct task,t_ustack)       == TASK_OFFSETOF_USTACK);
 STATIC_ASSERT(offsetof(struct task,t_sigblock)     == TASK_OFFSETOF_SIGBLOCK);
 STATIC_ASSERT(offsetof(struct task,t_sigpend)      == TASK_OFFSETOF_SIGPEND);
 STATIC_ASSERT(offsetof(struct task,t_sigshare)     == TASK_OFFSETOF_SIGSHARE);
+STATIC_ASSERT(offsetof(struct task,t_tlb)          == TASK_OFFSETOF_TLB);
 STATIC_ASSERT(offsetof(struct sigenter,se_eip)     == SIGENTER_OFFSETOF_EIP);
 
 #ifdef ARCHTASK_SIZE
@@ -90,7 +95,6 @@ STATIC_ASSERT(offsetof(struct archtask,at_fpu) == ARCHTASK_OFFSETOF_FPU);
 #ifndef CONFIG_NO_LDT
 STATIC_ASSERT(offsetof(struct archtask,at_ldt_tasks) == ARCHTASK_OFFSETOF_LDT_TASKS);
 STATIC_ASSERT(offsetof(struct archtask,at_ldt_gdt)   == ARCHTASK_OFFSETOF_LDT_GDT);
-STATIC_ASSERT(offsetof(struct archtask,at_ldt_tls)   == ARCHTASK_OFFSETOF_LDT_TLS);
 #endif /* !CONFIG_NO_LDT */
 #endif /* ARCHTASK_SIZE */
 
@@ -146,10 +150,10 @@ task_cinit(struct task *t) {
   t->t_refcnt    = 1;
 
   assert(t->t_arch.at_ldt_gdt == 0);
-  assert(t->t_arch.at_ldt_tls == 0);
   assert(t->t_arch.at_ldt_tasks.le_pself == NULL);
   assert(t->t_arch.at_ldt_tasks.le_next == NULL);
-  t->t_arch.at_ldt_tls = LDT_ERROR;
+  assert(t->t_tlb == NULL);
+  t->t_tlb = PAGE_ERROR;
 
   COMPILER_WRITE_BARRIER();
  }
@@ -265,7 +269,6 @@ scan_again:
  return -EOK;
 }
 
-
 PUBLIC errno_t KCALL
 task_start(struct task *__restrict t) {
  pflag_t was; errno_t error = -EOK;
@@ -287,6 +290,7 @@ task_start(struct task *__restrict t) {
  assert(t->t_sighand != NULL);
  assert(t->t_sigshare != NULL);
  assert(t->t_cstate != NULL);
+ assert(t->t_tlb != NULL);
  assert((uintptr_t)t->t_cstate >= (uintptr_t)t->t_hstack.hs_begin &&
         (uintptr_t)t->t_cstate <= (uintptr_t)t->t_hstack.hs_end);
  assertf((t->t_cstate->host.cs&3) != 3 ||
@@ -296,12 +300,31 @@ task_start(struct task *__restrict t) {
  t->t_real_mman = t->t_mman;
  t->t_addrlimit = KERNEL_BASE;
  COMPILER_WRITE_BARRIER();
- /* Schedule the task for its first time. */
 
+ /* Schedule the task for its first time. */
  was = PREEMPTION_PUSH();
  atomic_rwlock_write(&t->t_mman->m_tasks_lock);
  LIST_INSERT(t->t_mman->m_tasks,t,t_mman_tasks);
  atomic_rwlock_endwrite(&t->t_mman->m_tasks_lock);
+
+#ifndef CONFIG_NO_TLB
+ /* Fill in initial TIB information. */
+ if (t->t_tlb != PAGE_ERROR) {
+  struct mman *omm;
+  TASK_PDIR_BEGIN(omm,t->t_mman);
+  t->t_tlb->tl_self           = t->t_tlb;
+  t->t_tlb->tl_tib.ti_seh     = SEH_FRAME_NULL;
+  if likely(t->t_ustack) {
+   t->t_tlb->tl_tib.ti_stackhi = t->t_ustack->s_end;
+   t->t_tlb->tl_tib.ti_stacklo = t->t_ustack->s_begin;
+  } else {
+   t->t_tlb->tl_tib.ti_stackhi = NULL;
+   t->t_tlb->tl_tib.ti_stacklo = NULL;
+  }
+  /* TODO: Fill in the rest. */
+  TASK_PDIR_END(omm,t->t_mman);
+ }
+#endif /* !CONFIG_NO_TLB */
 
 #ifdef CONFIG_SMP
  /* Determine a usable CPU based on affinity. */
@@ -595,6 +618,12 @@ task_destroy(struct task *__restrict t) {
   /* Unmap a potential user-stack. */
   if (t->t_ustack)
       mman_munmap_stack_unlocked(t->t_mman,t->t_ustack);
+  /* Unmap a potential thread local block. */
+  if (t->t_tlb != PAGE_ERROR) {
+   mman_munmap_unlocked(t->t_mman,(ppage_t)t->t_tlb,
+                        CEIL_ALIGN(sizeof(struct tlb),PAGESIZE),
+                        MMAN_MUNMAP_TAG,t);
+  }
 
 #ifndef CONFIG_NO_LDT
   if (t->t_arch.at_ldt_tasks.le_pself) {
@@ -604,9 +633,6 @@ task_destroy(struct task *__restrict t) {
        LIST_REMOVE(t,t_arch.at_ldt_tasks);
    ldt_endwrite(t->t_mman->m_ldt);
   }
-  /* Delete an LDT entry. */
-  if (t->t_arch.at_ldt_tls != LDT_ERROR)
-      mman_delldt_unlocked(t->t_mman,t->t_arch.at_ldt_tls);
 #endif
 
   /* XXX: Unmap thread-local data? */
@@ -718,26 +744,55 @@ L(    pushl %eax                                                              )
 L(    pushl %ecx                                                              )
 L(    movl 8(%esp),                   %eax                                    )
 L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING),%ecx                                 )
+#if !defined(CONFIG_NO_LDT) || !defined(CONFIG_NO_FPU) || !defined(CONFIG_NO_TLB)
+L(    pushl %ebx                                                              )
+#endif
 #ifndef CONFIG_NO_LDT
 L(    /* Switch the LDT if it changed */                                      )
-L(    pushl %ebx                                                              )
 L(    movl (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%eax), %ebx         )
 L(    cmpl  %ebx, (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%ecx)        )
 L(    je    1f /* No change required */                                       )
 L(    /* Load the new LDT table. */                                           )
 L(    lldt (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%ecx)               )
 L(1:                                                                          )
-#endif
+#endif /* !CONFIG_NO_LDT */
 #ifndef CONFIG_NO_FPU
-#ifdef CONFIG_NO_LDT
-L(    pushl %ebx                                                              )
-#endif /* CONFIG_NO_LDT */
 L(    /* Disable the FPU for lazy context switching */                        )
 L(    movl  %cr0, %ebx                                                        )
 L(    orl   $(CR0_TS), %ebx                                                   )
 L(    movl  %ebx, %cr0                                                        )
 #endif /* !CONFIG_NO_FPU */
-#if !defined(CONFIG_NO_LDT) || !defined(CONFIG_NO_FPU)
+#ifndef CONFIG_NO_TLB
+L(    /* Switch TIB/TLB pointers */                                           )
+L(    pushl %edx                                                              )
+L(    pushl %esi                                                              )
+L(    movl  ASM_CPU(cpu_gdt+IDT_POINTER_OFFSETOF_GDT), %ebx                   )
+L(    movl  TASK_OFFSETOF_TLB(%eax),                   %esi                   )
+#define TLB(off) ((off)+SEG_USER_TLB*8)(%ebx)
+#define TIB(off) ((off)+SEG_USER_TIB*8)(%ebx)
+L(                                                                            )
+L(    /* Update the TLB pointer */                                            )
+L(    movl  %esi,        %edx                                                 )
+L(    shrl  $24,         %edx                                                 )
+L(    movb  %dl,         TLB(SEGMENT_OFFSETOF_BASEHI)                         )
+L(    andl  $0xff000000, TLB(SEGMENT_OFFSETOF_BASELO)                         )
+L(    movl  %esi,        %edx                                                 )
+L(    andl  $0x00ffffff, %edx                                                 )
+L(    orl   %edx,        TLB(SEGMENT_OFFSETOF_BASELO)                         )
+L(                                                                            )
+L(    /* Update the TIB pointer */                                            )
+L(    movl  %esi,        %edx                                                 )
+L(    shrl  $24,         %edx                                                 )
+L(    movb  %dl,         TLB(SEGMENT_OFFSETOF_BASEHI)                         )
+L(    andl  $0xff000000, TLB(SEGMENT_OFFSETOF_BASELO)                         )
+L(    andl  $0x00ffffff, %esi                                                 )
+L(    orl   %esi,        TLB(SEGMENT_OFFSETOF_BASELO)                         )
+#undef TIB
+#undef TLB
+L(    popl  %esi                                                              )
+L(    popl  %edx                                                              )
+#endif /* !CONFIG_NO_TLB */
+#if !defined(CONFIG_NO_LDT) || !defined(CONFIG_NO_FPU) || !defined(CONFIG_NO_TLB)
 L(    popl  %ebx                                                              )
 #endif
 L(    movl TASK_OFFSETOF_MMAN(%eax),  %eax                                    )

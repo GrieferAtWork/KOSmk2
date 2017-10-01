@@ -632,7 +632,6 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_idle.t_sigenter.se_count = 0;
 #ifndef CONFIG_NO_LDT
  vcpu->c_idle.t_arch.at_ldt_gdt = SEG(SEG_KERNEL_LDT);
- vcpu->c_idle.t_arch.at_ldt_tls = LDT_ERROR;
 #endif /* !CONFIG_NO_LDT */
 #ifndef CONFIG_NO_FPU
  vcpu->c_idle.t_arch.at_fpu = NULL;
