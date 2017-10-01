@@ -45,12 +45,15 @@
 #include <sched/types.h>
 #include <string.h>
 #include <alloca.h>
+#include <kernel/irq.h>
 
 DECL_BEGIN
 
 GLOBAL_ASM(
 L(.section .text                         )
 L(INTERN_ENTRY(sys_exit)                 )
+L(    /* Load segment registers */       )
+L(    __ASM_LOAD_SEGMENTS(%dx)           )
 L(    pushl %ebx                         )
 L(    pushl ASM_CPU(CPU_OFFSETOF_RUNNING))
 L(    call task_terminate                )
@@ -65,7 +68,11 @@ L(.previous                              )
 GLOBAL_ASM(
 L(.section .text                         )
 L(INTERN_ENTRY(sys_sched_yield)          )
+L(    /* Safe & load segment registers */)
+L(    __ASM_PUSH_SEGMENTS                )
+L(    __ASM_LOAD_SEGMENTS(%ax)           )
 L(    call task_yield                    )
+L(    __ASM_POP_SEGMENTS                 )
 L(    xorl %eax, %eax                    )
 L(    iret                               )
 L(SYM_END(sys_sched_yield)               )

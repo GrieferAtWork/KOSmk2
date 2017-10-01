@@ -191,23 +191,15 @@ run_init(char const *__restrict filename) {
  /* Allocate the user-stack. */
  alloc_user_stack(thrd,mm,0x4000);
 
-#if 0
- state->host.gs     = SEG(SEG_USER_DATA)|3;
- state->host.fs     = SEG(SEG_USER_DATA)|3;
-#elif defined(__i386__)
- state->host.gs     = SEG(SEG_USER_DATA)|3;
- state->host.fs     = SEG(SEG_CPUSELF);
-#else
- state->host.gs     = SEG(SEG_CPUSELF);
- state->host.fs     = SEG(SEG_USER_DATA)|3;
-#endif
- state->host.es     = SEG(SEG_USER_DATA)|3;
- state->host.ds     = SEG(SEG_USER_DATA)|3;
- state->host.cs     = SEG(SEG_USER_CODE)|3;
+ state->host.ds     = __USER_DS;
+ state->host.es     = __USER_DS;
+ state->host.fs     = __USER_DS;
+ state->host.gs     = __USER_DS;
+ state->host.cs     = __USER_CS;
  state->host.ecx    = (uintptr_t)penviron; /* Pass the environment block through ECX. */
  state->host._n1    = 0;
  state->useresp     = (uintptr_t)thrd->t_ustack->s_end;
- state->ss          = SEG(SEG_USER_DATA)|3;
+ state->ss          = __USER_DS;
  state->_n2         = 0;
  state->host.eip    = (uintptr_t)inst->i_base+mod->m_entry;
 #ifdef CONFIG_ALLOW_USER_IO
@@ -426,7 +418,7 @@ kernel_boot(u32        mb_magic,
  smp_initialize_lapic();
 
 #ifdef M_MALL_CHECK_FREQUENCY
- /* Valid memory every 4 allocations (For now this is still acceptable)
+ /* Validate memory every 4 allocations (For now this is still acceptable)
   * NOTE: If you're wondering why KOS might be lagging, this option is why.
   *       Like really: Comment out both of these lines and it'll run more
   *       that 100x faster, because millions upon millions of checks will

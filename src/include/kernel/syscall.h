@@ -60,65 +60,60 @@ typedef syscall_ulong_t (ASMCALL *syscall_t)(void);
 #define __STACKBASE_TASK     THIS_TASK
 struct syscall_descr {
  u32 ebx,ecx,edx,esi,edi,ebp;
-#ifdef CONFIG_SYSCALL_CHECK_SEGMENTS
- /* Debug helpers for tracking changes to critical segments.
-  * >> After honestly spending 2 days wasting my time to
-  *    track down an allegedly bios-related error that caused
-  *    a triple fault on the next system call after the first
-  *    that somehow performed disk-access, I swore do do
-  *    everything I could to make sure that whatever caused
-  *    this problem could never happen again.
-  *   (Apparently, not all segment registers were properly
-  *    restored after a realmode bios-interrupt was executed?)
-  * >> To do this, we now check the contents of segment registers
-  *    before returning to user-space and match them against what
-  *    we've stored as being ~correct~ when userspace executed
-  *    the system-call.
-  */
- u32 rt_eip; /* Must be adjacent to 'ebp' to allow for cross-segment tracebacks. */
- u16 rt_ds,rt_es,rt_fs,rt_gs;
-#endif /* CONFIG_SYSCALL_CHECK_SEGMENTS */
+#ifdef CONFIG_DEBUG
+ u32 __initial_eip;
+#endif /* CONFIG_DEBUG */
+ u16 gs,fs,es,ds;
  u32 eip; u16 cs,__n0; u32 eflags;
 #if 1 /* Only for system-calls originating from user-space. */
  u32 useresp; u16 ss,__n1;
 #endif
 };
-#if 1
-#define __STACKBASE_VALUE(type,off) (*(type *)((uintptr_t)__STACKBASE_TASK->t_hstack.hs_end+((off)-8)))
-#define THIS_SYSCALL_SS      __STACKBASE_VALUE(u16,4)
-#define THIS_SYSCALL_USERESP __STACKBASE_VALUE(u32,0)
-#else
-#define __STACKBASE_VALUE(type,off) (*(type *)((uintptr_t)__STACKBASE_TASK->t_hstack.hs_end+(off)))
-#endif
-#define THIS_SYSCALL_EFLAGS  __STACKBASE_VALUE(u32,-4)
-#define THIS_SYSCALL_CS      __STACKBASE_VALUE(u16,-8)
+
+#define __STACKBASE_VALUE(type,off) \
+     (*(type *)((uintptr_t)__STACKBASE_TASK->t_hstack.hs_end+(off)))
+
+#define THIS_SYSCALL_SS      __STACKBASE_VALUE(u16,-4)
+#define THIS_SYSCALL_USERESP __STACKBASE_VALUE(u32,-8)
+#define THIS_SYSCALL_EFLAGS  __STACKBASE_VALUE(u32,-12)
+#define THIS_SYSCALL_CS      __STACKBASE_VALUE(u16,-16)
 /* NOTE: 'THIS_SYSCALL_EIP' */
-#define THIS_SYSCALL_EIP     __STACKBASE_VALUE(void *,-12)
-/* WARNING: The following don't reliably work for assembly system calls. */
-#ifdef CONFIG_SYSCALL_CHECK_SEGMENTS
-#define THIS_SYSCALL_RT_EIP  __STACKBASE_VALUE(u16,-16)
-#define THIS_SYSCALL_RT_GS   __STACKBASE_VALUE(u16,-20)
-#define THIS_SYSCALL_RT_FS   __STACKBASE_VALUE(u16,-22)
-#define THIS_SYSCALL_RT_ES   __STACKBASE_VALUE(u16,-24)
-#define THIS_SYSCALL_RT_DS   __STACKBASE_VALUE(u16,-26)
-#define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-28)
-#define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-32)
-#define THIS_SYSCALL_ESI     __STACKBASE_VALUE(u32,-36)
-#define THIS_SYSCALL_EDX     __STACKBASE_VALUE(u32,-40)
-#define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-44)
-#define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-48)
-#else /* CONFIG_SYSCALL_CHECK_SEGMENTS */
-#define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-16)
-#define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-20)
-#define THIS_SYSCALL_ESI     __STACKBASE_VALUE(u32,-24)
-#define THIS_SYSCALL_EDX     __STACKBASE_VALUE(u32,-28)
-#define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-32)
-#define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-36)
-#endif /* !CONFIG_SYSCALL_CHECK_SEGMENTS */
+#define THIS_SYSCALL_EIP     __STACKBASE_VALUE(void *,-20)
+/* WARNING: Everything that follows doesn't reliably work in assembly system calls. */
+#define THIS_SYSCALL_GS      __STACKBASE_VALUE(u16,-22)
+#define THIS_SYSCALL_FS      __STACKBASE_VALUE(u16,-24)
+#define THIS_SYSCALL_ES      __STACKBASE_VALUE(u16,-26)
+#define THIS_SYSCALL_DS      __STACKBASE_VALUE(u16,-28)
+#ifdef CONFIG_DEBUG
+#define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-36)
+#define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-40)
+#define THIS_SYSCALL_ESI     __STACKBASE_VALUE(u32,-44)
+#define THIS_SYSCALL_EDX     __STACKBASE_VALUE(u32,-48)
+#define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-52)
+#define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-56)
+#else /* CONFIG_DEBUG */
+#define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-32)
+#define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-36)
+#define THIS_SYSCALL_ESI     __STACKBASE_VALUE(u32,-40)
+#define THIS_SYSCALL_EDX     __STACKBASE_VALUE(u32,-44)
+#define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-48)
+#define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-52)
+#endif /* !CONFIG_DEBUG */
 #else
 #error "FIXME: Need at least 'THIS_SYSCALL_EIP'"
 #endif
 
+
+
+#if defined(CONFIG_SYSCALL_CHECK_SEGMENTS) && 0
+/* Check that the segment register state is correct before a sysreturn is performed. */
+FUNDEF void ASMCALL sysreturn_check_segments(void);
+#define SYSRETURN_CHECK_SEGMENTS()    sysreturn_check_segments()
+#define ASM_SYSRETURN_CHECK_SEGMENTS  call sysreturn_check_segments
+#else
+#define SYSRETURN_CHECK_SEGMENTS()    (void)0
+#define ASM_SYSRETURN_CHECK_SEGMENTS  ; /* nothing */
+#endif
 
 
 #define __VA_ARGS(...) __VA_ARGS__

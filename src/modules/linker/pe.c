@@ -77,9 +77,13 @@ pe_lookup_symbol(pe_t *__restrict self, uintptr_t base,
  IMAGE_EXPORT_DIRECTORY *iter,*end;
  uintptr_t address_max;
 #define CHECK_POINTER(p,s) \
-  { if ((uintptr_t)(p) >= address_max || \
-        (uintptr_t)(p)+(s) >= address_max) \
-         return NULL; }
+  { uintptr_t addr_end; \
+    if ((uintptr_t)(p) >= address_max || \
+         __builtin_add_overflow((uintptr_t)(p),(s),&addr_end) || \
+         addr_end >= address_max) \
+  { PE_DEBUG(syslog(LOG_EXEC|LOG_DEBUG,"%s(%d) : Invalid range %p...%p\n",\
+                    __FILE__,__LINE__,p,(uintptr_t)(p)+(s)-1)); \
+    return NULL; } }
  if (self->p_export.Size >= sizeof(IMAGE_EXPORT_DIRECTORY)) {
   address_max = base+self->p_module.m_end;
   assert(address_max >= base);
@@ -93,14 +97,14 @@ pe_lookup_symbol(pe_t *__restrict self, uintptr_t base,
    CHECK_POINTER(namep,num_symbols);
    for (i = num_symbols; i; --i,++hint) {
     size_t maxlen,index = hint % num_symbols;
-    char *symname = namep[index];
+    char *symname = (char *)(base+(uintptr_t)namep[index]);
     if unlikely((uintptr_t)symname >= address_max) return NULL;
     maxlen = address_max-(uintptr_t)symname;
-    PE_DEBUG(syslog(LOG_DEBUG,"[PE] SYMBOL: %.*q at %p\n",
-                   (unsigned int)maxlen,symname,base+(ssize_t)funcp[index]));
+    PE_DEBUG(syslog(LOG_EXEC|LOG_DEBUG,"[PE] SYMBOL: %.*q at %p (Looking for %q)\n",
+                   (unsigned int)maxlen,symname,base+(intptr_t)funcp[index],name));
     /* Check if this is the requested symbol. */
     if (!strncmp(symname,name,maxlen))
-         return (void *)(base+(ssize_t)funcp[index]);
+         return (void *)(base+(intptr_t)funcp[index]);
    }
   } while (++iter != end);
  }
@@ -165,9 +169,13 @@ pe_import_symbol(struct instance *__restrict inst,
 PRIVATE errno_t KCALL
 pe_patch(struct modpatch *__restrict patcher) {
 #define CHECK_POINTER(p,s) \
-  { if ((uintptr_t)(p) >= address_max || \
-        (uintptr_t)(p)+(s) >= address_max) \
-         return -EFAULT; }
+  { uintptr_t addr_end; \
+    if ((uintptr_t)(p) >= address_max || \
+         __builtin_add_overflow((uintptr_t)(p),(s),&addr_end) || \
+         addr_end >= address_max) \
+  { PE_DEBUG(syslog(LOG_EXEC|LOG_DEBUG,"%s(%d) : Invalid range %p...%p\n",\
+                    __FILE__,__LINE__,p,(uintptr_t)(p)+(s)-1)); \
+    return -EFAULT; } }
  struct instance *inst,*dep;
  REF struct module *mod; pe_t *self;
  uintptr_t base,address_max;
@@ -202,7 +210,7 @@ pe_patch(struct modpatch *__restrict patcher) {
       return -EFAULT;
    filename.dn_size = strnlen(filename.dn_name,address_max-(uintptr_t)filename.dn_name);
    dentryname_loadhash(&filename);
-   PE_DEBUG(syslog(LOG_DEBUG,"[PE] Module '%[file]' needs dependency %$q\n",
+   PE_DEBUG(syslog(LOG_EXEC|LOG_DEBUG,"[PE] Module '%[file]' needs dependency %$q\n",
                    self->p_module.m_file,filename.dn_size,filename.dn_name));
 
    /* TODO: PE module resolution order (search places like the directory of 'mod->p_module.m_file') */
@@ -231,14 +239,14 @@ pe_patch(struct modpatch *__restrict patcher) {
 
    /* Load the THUNK associated with this dependency. */
    { IMAGE_THUNK_DATA *thunk_iter,*rt_thunk;
-     rt_thunk   = (IMAGE_THUNK_DATA *)(base+iter->OriginalFirstThunk ? iter->OriginalFirstThunk : iter->FirstThunk);
-     thunk_iter = (IMAGE_THUNK_DATA *)(base+iter->FirstThunk ? iter->FirstThunk : iter->OriginalFirstThunk);
-     for (;;) {
+     rt_thunk   = (IMAGE_THUNK_DATA *)(base+(iter->OriginalFirstThunk ? iter->OriginalFirstThunk : iter->FirstThunk));
+     thunk_iter = (IMAGE_THUNK_DATA *)(base+(iter->FirstThunk ? iter->FirstThunk : iter->OriginalFirstThunk));
+     for (;; ++rt_thunk,++thunk_iter) {
       IMAGE_IMPORT_BY_NAME *import_entry; void *import_address;
       CHECK_POINTER(thunk_iter,sizeof(IMAGE_THUNK_DATA));
       if (!thunk_iter->u1.AddressOfData) break; /* ZERO-Terminated. */
       CHECK_POINTER(rt_thunk,sizeof(IMAGE_THUNK_DATA));
-      import_entry = (IMAGE_IMPORT_BY_NAME *)base+thunk_iter->u1.AddressOfData;
+      import_entry = (IMAGE_IMPORT_BY_NAME *)(base+thunk_iter->u1.AddressOfData);
       CHECK_POINTER(import_entry,sizeof(IMAGE_IMPORT_BY_NAME));
       /* NOTE: Since we're also being called as a protected
        *       user-helper-function, we can directly invoke 'pe_import_symbol()' */
@@ -250,6 +258,9 @@ pe_patch(struct modpatch *__restrict patcher) {
               dep->i_module->m_name->dn_size,dep->i_module->m_name->dn_name);
        return -ENOREL;
       }
+      PE_DEBUG(syslog(LOG_EXEC|LOG_DEBUG,"[PE] Got symbol %.*q at %p\n",
+                     (unsigned int)(address_max-(uintptr_t)import_entry->Name),
+                      import_entry->Name,import_address));
       /* All right! we've got the symbol address! */
       rt_thunk->u1.AddressOfData = (uintptr_t)import_address;
      }
@@ -263,7 +274,7 @@ pe_patch(struct modpatch *__restrict patcher) {
  }
 
  /* Do regular relocations only if the module
-  * wasn't loaded at the preferred address. */
+  * wasn't loaded at its preferred address. */
  if (self->p_relocs.Size >= sizeof(IMAGE_BASE_RELOCATION) &&
      self->p_module.m_load != base) {
   IMAGE_BASE_RELOCATION *iter,*end;

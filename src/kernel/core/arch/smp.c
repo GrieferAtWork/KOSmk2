@@ -128,7 +128,7 @@ L(    movw  $0x1, %ax                                   )
 L(    lmsw  %ax                                         )
 L(                                                      )
 L(    /* Escape from real-mode */                       )
-L(    ljmpl $(SEG(SEG_HOST_CODE)), $cpu_bootstrap_32  )
+L(    ljmpl $(__KERNEL_CS), $cpu_bootstrap_32           )
 L(DEFINE_BSS(cpu_bootstrap_gdt,6)                       )
 L(RM_END                                                )
 );
@@ -673,7 +673,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  sig_init(&vcpu->c_arch.ac_sigonoff);
  vcpu->c_arch.ac_mode           = CPUMODE_OFFLINE;
  vcpu->c_arch.ac_tss.esp0       = (uintptr_t)vcpu->c_idle.t_hstack.hs_end;
- vcpu->c_arch.ac_tss.ss0        = SEG(SEG_HOST_DATA);
+ vcpu->c_arch.ac_tss.ss0        = __KERNEL_DS;
  vcpu->c_arch.ac_tss.iomap_base = sizeof(struct tss);
 
  /* Finally, initialize per-cpu memory. */
@@ -689,8 +689,13 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
    if unlikely(!gdt->ip_gdt) return -ENOMEM;
    gdt->ip_gdt[SEG_CPUTSS].ul32  = __SEG_ENCODELO((uintptr_t)&vcpu->c_arch.ac_tss,sizeof(struct tss),SEG_TSS);
    gdt->ip_gdt[SEG_CPUTSS].uh32  = __SEG_ENCODEHI((uintptr_t)&vcpu->c_arch.ac_tss,sizeof(struct tss),SEG_TSS);
+#if 1
+   gdt->ip_gdt[SEG_CPUSELF].ul32 = __SEG_ENCODELO((uintptr_t)vcpu,sizeof(struct cpu),SEG_DATA_PL0);
+   gdt->ip_gdt[SEG_CPUSELF].uh32 = __SEG_ENCODEHI((uintptr_t)vcpu,sizeof(struct cpu),SEG_DATA_PL0);
+#else
    gdt->ip_gdt[SEG_CPUSELF].ul32 = __SEG_ENCODELO((uintptr_t)vcpu,sizeof(struct cpu),SEG_DATA_PL3);
    gdt->ip_gdt[SEG_CPUSELF].uh32 = __SEG_ENCODEHI((uintptr_t)vcpu,sizeof(struct cpu),SEG_DATA_PL3);
+#endif
  }
 
  /* Initialize the CPU's Interrupt Descriptor Table (IDT) */
@@ -700,7 +705,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  if (vcpu->c_arch.ac_flags&CPUFLAG_LAPIC) {
   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+IRQ_LAPIC_SPURIOUS;
   idt->ie_off1  = (u16)((uintptr_t)&lapic_spurious_irq_handler);
-  idt->ie_sel   = SEG(SEG_HOST_CODE);
+  idt->ie_sel   = __KERNEL_CS;
   idt->ie_zero  = 0;
   idt->ie_flags = (IDTFLAG_PRESENT|
                    IDTTYPE_80386_32_INTERRUPT_GATE);
@@ -711,7 +716,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  { INTDEF void ASMCALL mman_asm_pf(void);
    struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+EXC_PAGE_FAULT;
    idt->ie_off1 = (u16)((uintptr_t)&mman_asm_pf);
-   idt->ie_sel   = SEG(SEG_HOST_CODE);
+   idt->ie_sel   = __KERNEL_CS;
    idt->ie_zero  = 0;
    idt->ie_flags = (IDTFLAG_PRESENT|
                     IDTTYPE_80386_32_INTERRUPT_GATE);
@@ -722,7 +727,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  { INTDEF void ASMCALL syscall_irq(void);
    struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+SYSCALL_INT;
    idt->ie_off1 = (u16)((uintptr_t)&syscall_irq);
-   idt->ie_sel   = SEG(SEG_HOST_CODE);
+   idt->ie_sel   = __KERNEL_CS;
    idt->ie_zero  = 0;
    idt->ie_flags = (IDTFLAG_PRESENT|
                     IDTTYPE_80386_32_INTERRUPT_GATE|
@@ -735,7 +740,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  { INTDEF void (ASMCALL fpu_asm_nm)(void);
    struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+IRQ_EXC_NM;
    idt->ie_off1 = (u16)((uintptr_t)&fpu_asm_nm);
-   idt->ie_sel   = SEG(SEG_HOST_CODE);
+   idt->ie_sel   = __KERNEL_CS;
    idt->ie_zero  = 0;
    idt->ie_flags = (IDTFLAG_PRESENT|
                     IDTTYPE_80386_32_INTERRUPT_GATE);

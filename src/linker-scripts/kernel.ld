@@ -322,8 +322,13 @@ SECTIONS {
 
 	DEFINE(__kernel_seg_cputss_lo  = __SEG_ENCODELO(__bootcpu + CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS,TSS_SIZE,SEG_TSS));
 	DEFINE(__kernel_seg_cputss_hi  = __SEG_ENCODEHI(__bootcpu + CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS,TSS_SIZE,SEG_TSS));
+#if 1
+	DEFINE(__kernel_seg_cpuself_lo = __SEG_ENCODELO(__bootcpu,CPU_SIZE,SEG_DATA_PL0));
+	DEFINE(__kernel_seg_cpuself_hi = __SEG_ENCODEHI(__bootcpu,CPU_SIZE,SEG_DATA_PL0));
+#else
 	DEFINE(__kernel_seg_cpuself_lo = __SEG_ENCODELO(__bootcpu,CPU_SIZE,SEG_DATA_PL3));
 	DEFINE(__kernel_seg_cpuself_hi = __SEG_ENCODEHI(__bootcpu,CPU_SIZE,SEG_DATA_PL3));
+#endif
 
 #ifndef CONFIG_NO_BOOTLOADER
 	DEFINE(__xboot_num_bytes  = __kernel_data_end - __kernel_start);

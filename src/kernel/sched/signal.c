@@ -343,9 +343,22 @@ L(PUBLIC_ENTRY(sigenter)                                                        
        * we're still in kernel-space and that accessing per-cpu data will be OK.
        * In addition, all main registers have been restored to what they're ought
        * to be once we enventually do return to user-space. */
+L(    pushw %ds                                                                  )
+L(    pushw %es                                                                  )
+L(    pushw %fs                                                                  )
+L(    pushw %gs                                                                  )
 L(    pushl %eax                                                                 )
 L(    pushl %ebx                                                                 )
 L(    pushl %ecx                                                                 )
+L(                                                                               )
+L(    /* Re-load kernel segment registers */                                     )
+L(    movw  $(__USER_DS), %ax                                                    )
+L(    movw  %ax, %ds                                                             )
+L(    movw  %ax, %es                                                             )
+L(    movw  %ax, %gs                                                             )
+L(    movw  $(__KERNEL_PERCPU), %ax                                              )
+L(    movw  %ax, %fs                                                             )
+L(                                                                               )
 L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING), %eax                                   )
 L(                                                                               )
       /* Load the address of the user-space stack containing the signal-enter
@@ -380,10 +393,14 @@ L(    jo    9f                                                                  
 L(    cmpl  $(KERNEL_BASE), %edi                                                 )
 L(    ja    10f                                                                  )
 L(    popl  %edi                                                                 )
-L(    movw  %gs,  REG(REG_GS)                                                    )
-L(    movw  %fs,  REG(REG_FS)                                                    )
-L(    movw  %es,  REG(REG_ES)                                                    )
-L(    movw  %ds,  REG(REG_DS)                                                    )
+L(    movw  24(%esp), %dx     /* GS */                                           )
+L(    movw  %dx,  REG(REG_GS)                                                    )
+L(    movw  26(%esp), %dx     /* FS */                                           )
+L(    movw  %dx,  REG(REG_FS)                                                    )
+L(    movw  28(%esp), %dx     /* ES */                                           )
+L(    movw  %dx,  REG(REG_ES)                                                    )
+L(    movw  30(%esp), %dx     /* DS */                                           )
+L(    movw  %dx,  REG(REG_DS)                                                    )
 L(    movl  %edi, REG(REG_EDI)                                                   )
 L(    movl  %esi, REG(REG_ESI)                                                   )
 L(    movl  %ebp, REG(REG_EBP)                                                   )
@@ -420,9 +437,13 @@ L(    pushl SIGENTER(SIGENTER_OFFSETOF_EIP)                                     
        * Also: Store a pointer to 'ei_old_ebp' in EBP to fix user-space tracebacks. */
 L(    movl  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERESP)(%eax), %ebx       )
 L(    leal  SIGENTER_INFO_OFFSETOF_OLD_EBP(%ebx), %ebp                           )
-L(    movl  40(%esp), %eax                                                       )
-L(    movl  36(%esp), %ebx                                                       )
 L(    movl  32(%esp), %ecx                                                       )
+L(    movl  36(%esp), %ebx                                                       )
+L(    movl  40(%esp), %eax                                                       )
+L(    movw  44(%esp), %gs                                                        )
+L(    movw  46(%esp), %fs                                                        )
+L(    movw  48(%esp), %es                                                        )
+L(    movw  50(%esp), %ds                                                        )
 L(                                                                               )
       /* Now just jump back to user-space. */
 L(    iret                                                                       )
@@ -632,7 +653,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
          ss_descr->eip,&sigenter);
 #endif
   ss_descr->eip    = (u32)&sigenter;
-  ss_descr->cs     = SEG(SEG_HOST_CODE);
+  ss_descr->cs     = __KERNEL_CS;
   ss_descr->eflags = EFLAGS_IF|EFLAGS_IOPL(3);
   /* TODO: Use sigaltstack() here, if it was ever set! */
   user_info = ((USER struct sigenter_info *)ss_descr->useresp)-1;
@@ -1083,18 +1104,13 @@ L(.previous                                                                     
 GLOBAL_ASM(
 L(.section .text                                                                 )
 L(PUBLIC_ENTRY(sys_sigreturn)                                                    )
-L(    pushw %ds                                                                  )
-L(    pushw %es                                                                  )
-L(    pushw %fs                                                                  )
-L(    pushw %gs                                                                  )
-L(    pushal                                                                     )
+L(    __ASM_PUSH_SEGMENTS                                                        )
+L(    __ASM_PUSH_REGISTERS                                                       )
+L(    __ASM_LOAD_SEGMENTS(%dx)                                                   )
 L(    movl  %esp, %ecx                                                           )
 L(    call  SYSC_sigreturn                                                       )
-L(    popal                                                                      )
-L(    popw %gs                                                                   )
-L(    popw %fs                                                                   )
-L(    popw %es                                                                   )
-L(    popw %ds                                                                   )
+L(    __ASM_POP_REGISTERS                                                        )
+L(    __ASM_POP_SEGMENTS                                                         )
 L(    iret                                                                       )
 L(SYM_END(sys_sigreturn)                                                         )
 L(.previous                                                                      )
@@ -1113,17 +1129,12 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
  if (ctx.uc_mcontext.gregs[id] != (value)) \
      sigill("%%" name " (%.4I16x != %.4I16x)", \
             ctx.uc_mcontext.gregs[id],value)
-#ifdef __i386__
- CHECK_SEGMENT(REG_GS,"gs",SEG(SEG_USER_DATA)|3);
- CHECK_SEGMENT(REG_FS,"fs",SEG(SEG_CPUSELF));
-#else
- CHECK_SEGMENT(REG_GS,"gs",SEG(SEG_CPUSELF));
- CHECK_SEGMENT(REG_FS,"fs",SEG(SEG_USER_DATA)|3);
-#endif
- CHECK_SEGMENT(REG_ES,"es",SEG(SEG_USER_DATA)|3);
- CHECK_SEGMENT(REG_DS,"ds",SEG(SEG_USER_DATA)|3);
- CHECK_SEGMENT(REG_CS,"cs",SEG(SEG_USER_CODE)|3);
- CHECK_SEGMENT(REG_SS,"ss",SEG(SEG_USER_DATA)|3);
+ CHECK_SEGMENT(REG_GS,"gs",__USER_DS);
+ CHECK_SEGMENT(REG_FS,"fs",__USER_DS);
+ CHECK_SEGMENT(REG_ES,"es",__USER_DS);
+ CHECK_SEGMENT(REG_DS,"ds",__USER_DS);
+ CHECK_SEGMENT(REG_CS,"cs",__USER_CS);
+ CHECK_SEGMENT(REG_SS,"ss",__USER_DS);
 #undef CHECK_SEGMENT
 #endif /* !IGNORE_SEGMENT_REGISTERS */
  if (!(ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IF))
@@ -1139,17 +1150,12 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
   * NOTE: We don't jump directly, because that would break execution of
   *       additional signals that may have been unblocked by 'task_set_sigblock()'. */
 #if IGNORE_SEGMENT_REGISTERS
-#ifdef __i386__
- cs->host.gs     = SEG(SEG_USER_DATA)|3;
- cs->host.fs     = SEG(SEG_CPUSELF);
-#else
- cs->host.gs     = SEG(SEG_CPUSELF);
- cs->host.fs     = SEG(SEG_USER_DATA)|3;
-#endif
- cs->host.es     = SEG(SEG_USER_DATA)|3;
- cs->host.ds     = SEG(SEG_USER_DATA)|3;
- ctx.uc_mcontext.gregs[REG_CS] = SEG(SEG_USER_CODE)|3;
- ctx.uc_mcontext.gregs[REG_SS] = SEG(SEG_USER_DATA)|3;
+ cs->host.gs     = __USER_DS;
+ cs->host.fs     = __USER_DS;
+ cs->host.es     = __USER_DS;
+ cs->host.ds     = __USER_DS;
+ ctx.uc_mcontext.gregs[REG_CS] = __USER_CS;
+ ctx.uc_mcontext.gregs[REG_SS] = __USER_DS;
 #else /* IGNORE_SEGMENT_REGISTERS */
  cs->host.gs     = (u16)ctx.uc_mcontext.gregs[REG_GS];
  cs->host.fs     = (u16)ctx.uc_mcontext.gregs[REG_FS];

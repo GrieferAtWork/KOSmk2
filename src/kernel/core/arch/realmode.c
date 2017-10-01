@@ -132,8 +132,8 @@ L(                                                )
 /* No need to temporarily switch to 16-bit protected mode.
  * >> We can just jump ahead into 32-bit. */
 #if 0
-L(    RM_LJMPW(SEG(SEG_HOST_CODE16),1f)        )
-L(1:  movw $(SEG(SEG_HOST_DATA16)), %bx        )
+L(    RM_LJMPW(SEG(SEG_HOST_CODE16),1f)           )
+L(1:  movw $(SEG(SEG_HOST_DATA16)), %bx           )
 L(    movw %bx, %ds                               )
 L(    movw %bx, %es                               )
 L(    movw %bx, %fs                               )
@@ -141,7 +141,7 @@ L(    movw %bx, %gs                               )
 L(    movw %bx, %ss                               )
 #endif
 L(                                                )
-L(    ljmpl $(SEG(SEG_HOST_CODE)), $rm_bios_int_exit)
+L(    ljmpl $(__KERNEL_CS), $rm_bios_int_exit     )
 L(rm_bios_int_end:                                )
 L(.size rm_bios_int, . - rm_bios_int              )
 L(.size rm_bios_int_end, 0                        )

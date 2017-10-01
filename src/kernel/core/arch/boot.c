@@ -552,8 +552,8 @@ L(    movl  %ebx, %edx                         ) /* mb_mbt */
 /* Load our custom boot GDT. */
 L(    lgdt __bootcpu_gdt                       )
 /* Load segment registers now configured via the GDT. */
-L(    movw  $(SEG(SEG_HOST_DATA)), %SX         )
-L(    movw  $(SEG(SEG_CPUSELF)), %TX           )
+L(    movw  $(__KERNEL_DS),     %SX            )
+L(    movw  $(__KERNEL_PERCPU), %TX            )
 L(    movw  %SX, %ds                           )
 L(    movw  %SX, %es                           )
 #ifdef __i386__
@@ -564,14 +564,14 @@ L(    movw  %SX, %fs                           )
 L(    movw  %TX, %gs                           )
 #endif
 L(    movw  %SX, %ss                           )
-L(    ljmp  $(SEG(SEG_HOST_CODE)), $1f         )
+L(    ljmp  $(__KERNEL_CS), $1f                )
 L(1:                                           )
 /* Load our custom boot TSS. */
 L(    movw  $(SEG(SEG_CPUTSS)|3), %SX          ) /* TODO: Check if this |3 is really required. */
 L(    ltr   %SX                                )
 #endif
 #ifndef CONFIG_NO_LDT
-L(    movw  $(SEG(SEG_KERNEL_LDT)), %SX         )
+L(    movw  $(SEG(SEG_KERNEL_LDT)), %SX        )
 L(    lldt  %SX                                )
 #endif /* !CONFIG_NO_LDT */
 #ifdef CONFIG_DEBUG

@@ -349,11 +349,27 @@ find_space:
 
  if (!(dependency->m_flag&MODFLAG_RELO) ||
        dependency->m_flag&MODFLAG_PREFERR) {
+  struct modseg *iter,*end;
   /* The dependency module isn't relocatable. */
   /* TODO: Go through all of the dependencies segments
    *       and ensure that all of them are unused. */
-  syslog(LOG_DEBUG,"TODO: Load module without relocations\n");
+  if (!IS_ALIGNED(dependency->m_load,PAGESIZE))
+      goto need_custom_base;
+  end = (iter = dependency->m_segv)+dependency->m_segc;
+  for (; iter != end; ++iter) {
+   if (mman_inuse_unlocked(target_mman,(void *)(dependency->m_load+iter->ms_paddr),
+                           iter->ms_msize))
+       goto need_custom_base;
+  }
+  syslog(LOG_DEBUG,"[PATCH] Preferred range %p...%p of module '%[file]' can be used\n",
+         dependency->m_load+dependency->m_begin,
+         dependency->m_load+dependency->m_end-1,
+         dependency->m_file);
+  /* The preferred base can be used. - Go ahead and load the module there. */
+  inst->i_base = (ppage_t)dependency->m_load;
+  goto got_space;
 
+need_custom_base:
   /* If the default segment mappings are already in use, fail. */
   if (!(dependency->m_flag&MODFLAG_RELO))
         goto no_space;
@@ -406,7 +422,7 @@ got_space:
 
  /* Update the instance patcher dependency hint to point after the newly added instance. */
  inst_patcher.p_dephint = (ppage_t)((uintptr_t)inst->i_base+inst_patcher.p_mapgap+
-                                     CEIL_ALIGN(dependency->m_size,PAGESIZE));
+                                     CEIL_ALIGN(dependency->m_end,PAGESIZE));
 
  /* If the dependency module doesn't include relocations, we're already done! */
  if (!(dependency->m_flag&MODFLAG_RELO)) goto done;

@@ -155,6 +155,7 @@ cpu_rpc_send(struct cpu *__restrict self,
  }
  HOSTMEMORY_END;
 #else
+ return_value = 0;
  sig_endwrite(&RPC.c_done);
 #endif
  if (E_ISOK(result)) result = return_value;

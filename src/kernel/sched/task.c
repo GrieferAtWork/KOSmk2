@@ -104,6 +104,11 @@ STATIC_ASSERT(sizeof(struct cpu)                 == CPU_SIZE);
 STATIC_ASSERT(sizeof(atomic_rwptr_t)             == __SIZEOF_POINTER__);
 STATIC_ASSERT(offsetof(struct cpustate,useresp)  == 52);
 
+//enum{
+// x = CPU_OFFSETOF_IDLE+TASK_OFFSETOF_PID,
+// y = 0x000000C0,
+//};
+
 PUBLIC struct task *KCALL
 task_cinit(struct task *t) {
  if (t) {
@@ -2044,15 +2049,11 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
      L(    popl %%edx                                   )
      L(    popl %%ecx                                   )
      L(    popl %%eax                                   )
-     L(    popw %%gs                                    )
-     L(    popw %%fs                                    )
-     L(    popw %%es                                    )
-     L(    popw %%ds                                    )
      /* At this point we've reached the IRET tail.
       * NOTE: Because interrupts are still enabled, all registers
       *       we've just popped are still saved on-stack, meaning we're
       *       save to look back and copy EBX for later consumption. */
-     L(    pushl -24(%%esp) /* Push the proper EBX */   )
+     L(    pushl -16(%%esp) /* Push the proper EBX */   )
      /* At this point, we've essentially hacked our way into
       * the new task's execution stack and finally managed
       * to fix up the stack in such a way that could essentially
@@ -2106,6 +2107,10 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
      L(    popl %%ecx                                   )
      L(    popl %%eax                                   )
      L(    popl %%ebx                                   )
+     L(    popw %%gs                                    )
+     L(    popw %%fs                                    )
+     L(    popw %%es                                    )
+     L(    popw %%ds                                    )
      L(    iret                                         )
      :
      : "b" (t)

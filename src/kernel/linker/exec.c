@@ -336,23 +336,15 @@ endwrite:
   * >> The last thing remaining now, is to actually start execution of the module! */
  { struct cpustate state;
    memset(&state,0,sizeof(struct cpustate));
-#if 0
-   state.host.gs     = SEG(SEG_USER_DATA)|3;
-   state.host.fs     = SEG(SEG_USER_DATA)|3;
-#elif defined(__i386__)
-   state.host.gs     = SEG(SEG_USER_DATA)|3;
-   state.host.fs     = SEG(SEG_CPUSELF);
-#else
-   state.host.gs     = SEG(SEG_CPUSELF);
-   state.host.fs     = SEG(SEG_USER_DATA)|3;
-#endif
-   state.host.es     = SEG(SEG_USER_DATA)|3;
-   state.host.ds     = SEG(SEG_USER_DATA)|3;
-   state.host.cs     = SEG(SEG_USER_CODE)|3;
+   state.host.gs     = __USER_DS;
+   state.host.fs     = __USER_DS;
+   state.host.es     = __USER_DS;
+   state.host.ds     = __USER_DS;
+   state.host.cs     = __USER_CS;
    state.host.ecx    = (uintptr_t)environ; /* Pass the environment block through ECX. */
    state.host._n1    = 0;
    state.useresp     = (uintptr_t)exec_task->t_ustack->s_end;
-   state.ss          = SEG(SEG_USER_DATA)|3;
+   state.ss          = __USER_DS;
    state._n2         = 0;
    state.host.eip    = (uintptr_t)inst->i_base+mod->m_entry;
 #ifdef CONFIG_ALLOW_USER_IO

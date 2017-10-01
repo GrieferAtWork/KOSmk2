@@ -24,6 +24,11 @@
 
 /* NOTE: IDs are taken from 'http://j00ru.vexillium.org/syscalls/nt/32/' */
 
+/* XXX: Some argument counts are too high due to prototypes including code like this:
+ *     'PTOKEN_PRIVILEGES PreviousState, _When_(PreviousState!=NULL, _Out_) PULONG ReturnLength'
+ *                                     ^OK                         ^WRONG (was counted before)
+ */
+
 /*   Name                                               Argc Windows NT                    Windows 2000                         Windows XP                    Windows Server 2003                  Windows Vista          Server 2008     Windows 7       Windows 8       Windows 10 */
   NT(AcceptConnectPort,                                   6,(0x0000,0x0000,0x0000,0x0000),(0x0000,0x0000,0x0000,0x0000,0x0000),(0x0000,0x0000,0x0000,0x0000),(0x0000,0x0000,0x0000,0x0000,0x0000),(0x0000,0x0000,0x0000),(0x0000,0x0000),(0x0000,0x0000),(0x01ac,0x0001),(0x0002,0x0002,0x0002,0x0002))
   NT(AccessCheck,                                         8,(0x0001,0x0001,0x0001,0x0001),(0x0001,0x0001,0x0001,0x0001,0x0001),(0x0001,0x0001,0x0001,0x0001),(0x0001,0x0001,0x0001,0x0001,0x0001),(0x0001,0x0001,0x0001),(0x0001,0x0001),(0x0001,0x0001),(0x01ab,0x01b0),(0x0000,0x0000,0x0000,0x0000))

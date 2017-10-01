@@ -147,6 +147,7 @@ struct PACKED {
 
 #define SEG_LIMIT_MAX  0x000fffff
 
+
 #ifdef __CC__
 #define __SEG_ENCODELO(base,size,config) \
  (((u32)((size)&0xffff))|      /* 0x0000ffff */\
@@ -214,6 +215,13 @@ typedef u16 segid_t; /* == Segment index*8 */
 #define SEG_BUILTIN        10
 #define SEG_MAX            0xffff
 #define SEG_ISBUILTIN(seg) ((seg) < SEG(SEG_BUILTIN))
+
+#define __KERNEL_DS      SEG(SEG_HOST_DATA)
+#define __KERNEL_CS      SEG(SEG_HOST_CODE)
+#define __KERNEL_PERCPU  SEG(SEG_CPUSELF)
+#define __USER_DS       (SEG(SEG_USER_DATA)|3)
+#define __USER_CS       (SEG(SEG_USER_CODE)|3)
+
 
 #ifdef __CC__
 DATDEF PERCPU struct idt_pointer cpu_gdt;

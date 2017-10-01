@@ -199,6 +199,7 @@ PUBLIC struct segment gdt_builtin[SEG_BUILTIN] = {
     [SEG_CPUTSS]      = {{{(u32)__kernel_seg_cputss_lo,(u32)__kernel_seg_cputss_hi}}}, /* CPU TSS */
     [SEG_KERNEL_LDT]  = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
 };
+
 PUBLIC CPU_DATA struct idt_pointer cpu_gdt = {
     /* Use the builtin GDT vector by default. */
     .ip_limit = sizeof(gdt_builtin)-1,

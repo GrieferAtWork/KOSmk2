@@ -23,6 +23,7 @@
 #include <hybrid/types.h>
 #include <hybrid/types.h>
 #include <stdbool.h>
+#include <kernel/arch/gdt.h>
 
 DECL_BEGIN
 
@@ -222,7 +223,8 @@ typedef struct {
  REF struct instance *i_owner;   /*< [1..1] Function owner. */
 } isr_t;
 
-#define ISR_DEFAULT(id,func) {id,IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE,0,func,THIS_INSTANCE}
+#define ISR_DEFAULT(id,func)      {id,IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE,0,func,THIS_INSTANCE}
+#define ISR_DEFAULT_DPL3(id,func) {id,IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(3),0,func,THIS_INSTANCE}
 
 /* Fill on 'i_flags' and 'i_func' using 'num'.
  * WARNING: The caller inherits a reference to 'handler->i_owner' */
@@ -262,7 +264,7 @@ union PACKED {
  u64 ie_data;
 struct PACKED {
  u16 ie_off1;  /*< Lower 16 bits of an 'irq_handler' pointer. */
- u16 ie_sel;   /*< Kernel code segment (always 'SEG(SEG_HOST_CODE)') */
+ u16 ie_sel;   /*< Kernel code segment (always '__KERNEL_CS') */
  u8  ie_zero;  /*< Always ZERO(0). */
  u8  ie_flags; /*< Set of 'IDTFLAG_*|IDTTYPE_*' */
  u16 ie_off2;  /*< Upper 16 bits of an 'irq_handler' pointer. */
@@ -323,10 +325,88 @@ INTDEF PERCPU struct IDT cpu_idt;
 
 
 #ifdef CONFIG_DEBUG
-#define __DEBUG_CODE(x) x
+#define __DEBUG_CODE(...) __VA_ARGS__
 #else
-#define __DEBUG_CODE(x) 
+#define __DEBUG_CODE(...) 
 #endif
+
+
+#define __ASM_PUSH_SEGMENTS \
+    pushw %ds; \
+    pushw %es; \
+    pushw %fs; \
+    pushw %gs;
+#define __ASM_POP_SEGMENTS \
+    popw  %gs; \
+    popw  %fs; \
+    popw  %es; \
+    popw  %ds;
+#define __PUSH_SEGMENTS \
+    "pushw %ds\n" \
+    "pushw %es\n" \
+    "pushw %fs\n" \
+    "pushw %gs\n"
+#define __POP_SEGMENTS \
+    "popw  %gs\n" \
+    "popw  %fs\n" \
+    "popw  %es\n" \
+    "popw  %ds\n"
+#define __ASM_PUSH_REGISTERS pushal;
+#define __ASM_POP_REGISTERS  popal;
+#define __PUSH_REGISTERS "pushal\n"
+#define __POP_REGISTERS  "popal\n"
+
+#ifdef __x86_64__
+#define __ASM_LOAD_SEGMENTS(temp) \
+    /* Load the proper kernel segment registers */ \
+    movw  $(__USER_DS), temp; \
+    movw  temp, %ds; \
+    movw  temp, %es; \
+    movw  temp, %fs; \
+    movw  $(__KERNEL_PERCPU), temp; \
+    movw  temp, %gs;
+#define __LOAD_SEGMENTS(temp) \
+    /* Load the proper kernel segment registers */ \
+    "movw  $(" __PP_STR(__USER_DS) "), " temp "\n" \
+    "movw  " temp ", %ds\n" \
+    "movw  " temp ", %es\n" \
+    "movw  " temp ", %fs\n" \
+    "movw  $(" __PP_STR(__KERNEL_PERCPU) "), " temp "\n" \
+    "movw  " temp ", %gs\n"
+#else
+#define __ASM_LOAD_SEGMENTS(temp) \
+    /* Load the proper kernel segment registers */ \
+    movw  $(__USER_DS), temp; \
+    movw  temp, %ds; \
+    movw  temp, %es; \
+    movw  temp, %gs; \
+    movw  $(__KERNEL_PERCPU), temp; \
+    movw  temp, %fs;
+#define __LOAD_SEGMENTS(temp) \
+    /* Load the proper kernel segment registers */ \
+    "movw  $(" __PP_STR(__USER_DS) "), " temp "\n" \
+    "movw  " temp ", %ds\n" \
+    "movw  " temp ", %es\n" \
+    "movw  " temp ", %gs\n" \
+    "movw  $(" __PP_STR(__KERNEL_PERCPU) "), " temp "\n" \
+    "movw  " temp ", %fs\n"
+#endif
+
+#define __INT_ENTER \
+   __PUSH_SEGMENTS \
+   __PUSH_REGISTERS \
+   __LOAD_SEGMENTS("%dx") \
+   "movl 16(%esp), %edx\n"
+#define __INT_LEAVE \
+   __POP_REGISTERS \
+   __POP_SEGMENTS \
+   "iret\n"
+#define __INT_LEAVE_E \
+   __POP_REGISTERS \
+   __POP_SEGMENTS \
+   "addl $4, %esp\n" /* Error code */ \
+   "iret\n"
+
 
 
 
@@ -340,15 +420,14 @@ typedef void int_handler(void);
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
 "" PP_STR(h_irq) ":\n" \
-"    pushal\n" \
+__INT_ENTER \
 "    movl  %esp, %ecx\n" \
 __DEBUG_CODE("pushl 32(%esp)\n") \
 __DEBUG_CODE("pushl %ebp\n") \
 __DEBUG_CODE("movl %esp, %ebp\n") \
 "    call " PP_STR(h_int) "\n" \
 __DEBUG_CODE("addl $8, %esp\n") \
-"    popal\n" \
-"    iret\n" \
+__INT_LEAVE \
 ".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
 ".previous\n" \
 )
@@ -367,23 +446,14 @@ typedef void FCALL exc_handler(struct cpustate *__restrict state);
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
 "" PP_STR(h_irq) ":\n" \
-"    pushw %ds\n" \
-"    pushw %es\n" \
-"    pushw %fs\n" \
-"    pushw %gs\n" \
-"    pushal\n" \
+__INT_ENTER \
 "    movl  %esp, %ecx\n" \
 __DEBUG_CODE("pushl 40(%esp)\n") \
 __DEBUG_CODE("pushl %ebp\n") \
 __DEBUG_CODE("movl %esp, %ebp\n") \
 "    call " PP_STR(h_exc) "\n" \
 __DEBUG_CODE("addl $8, %esp\n") \
-"    popal\n" \
-"    popw  %gs\n" \
-"    popw  %fs\n" \
-"    popw  %es\n" \
-"    popw  %ds\n" \
-"    iret\n" \
+__INT_LEAVE \
 ".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
 ".previous\n" \
 )
@@ -401,11 +471,7 @@ task_handler(struct cpustate *__restrict old_state);
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
 "" PP_STR(h_irq) ":\n" \
-"    pushw %ds\n" \
-"    pushw %es\n" \
-"    pushw %fs\n" \
-"    pushw %gs\n" \
-"    pushal\n" \
+__INT_ENTER \
 "    movl  %esp, %ecx\n" \
 __DEBUG_CODE("pushl 40(%esp)\n") \
 __DEBUG_CODE("pushl %ebp\n") \
@@ -413,12 +479,7 @@ __DEBUG_CODE("movl %esp, %ebp\n") \
 "    call " PP_STR(h_task) "\n" \
 /*__DEBUG_CODE("addl $8, %esp\n")*/ \
 "    movl  %eax, %esp\n" \
-"    popal\n" \
-"    popw  %gs\n" \
-"    popw  %fs\n" \
-"    popw  %es\n" \
-"    popw  %ds\n" \
-"    iret\n" \
+__INT_LEAVE \
 ".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
 ".previous\n" \
 )
@@ -442,24 +503,14 @@ typedef void FCALL code_handler(struct cpustate_irq_c *__restrict info);
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
 "" PP_STR(h_irq) ":\n" \
-"    pushw %ds\n" \
-"    pushw %es\n" \
-"    pushw %fs\n" \
-"    pushw %gs\n" \
-"    pushal\n" \
+__INT_ENTER \
 "    movl  %esp, %ecx\n" \
 __DEBUG_CODE("pushl 44(%esp)\n") \
 __DEBUG_CODE("pushl %ebp\n") \
 __DEBUG_CODE("movl %esp, %ebp\n") \
 "    call " PP_STR(h_code) "\n" \
 __DEBUG_CODE("addl $8, %esp\n") \
-"    popal\n" \
-"    popw  %gs\n" \
-"    popw  %fs\n" \
-"    popw  %es\n" \
-"    popw  %ds\n" \
-"    addl  $4, %esp\n" \
-"    iret\n" \
+__INT_LEAVE_E \
 ".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
 ".previous\n" \
 )

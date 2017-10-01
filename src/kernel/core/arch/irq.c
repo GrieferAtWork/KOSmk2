@@ -93,34 +93,54 @@ INTDEF void FCALL
 irq_default(struct irq_info *__restrict info);
 
 GLOBAL_ASM(
-L(.text                                )
-L(dirq_ncode:                          )
+L(.section .text                                                              )
+L(INTERN_ENTRY(dirq_ncode)                                                    )
 //L(1:  jmp 1b)
-L(    popl  -8(%esp)                   ) /* Hacky way of shifting 'exc_code' into 'intno32' without polluting any registers. */
-L(    pushl $0                         ) /* Fill 'exc_code' with '0' by default. */
-L(    subl  $4, %esp                   )
-L(dirq_ycode:                          )
-L(    pushw %ds                        )
-L(    pushw %es                        )
-L(    pushw %fs                        )
-L(    pushw %gs                        )
-L(    pushal                           )
-L(    movl  %esp, %ecx                 )
-__DEBUG_CODE(L(pushl 48(%esp)         ))
-__DEBUG_CODE(L(pushl %ebp             ))
-__DEBUG_CODE(L(movl %esp, %ebp        ))
-L(    call  irq_default                )
-__DEBUG_CODE(L(addl $8, %esp          ))
-L(    popal                            )
-L(    popw  %gs                        )
-L(    popw  %fs                        )
-L(    popw  %es                        )
-L(    popw  %ds                        )
-L(    add $8, %esp                     )
-L(    iret                             )
-L(.size dirq_ycode, . - dirq_ycode     )
-L(.size dirq_ncode, . - dirq_ncode     )
-L(.previous                            )
+L(    popl  -8(%esp)  /* Hacky way of shifting 'exc_code' into 'intno32' without polluting any registers. */)
+L(    pushl $0         /* Fill 'exc_code' with '0' by default. */             )
+L(    subl  $4, %esp                                                          )
+L(INTERN_ENTRY(dirq_ycode)                                                    )
+L(                                                                            )
+L(    pushw %ds                                                               )
+L(    pushw %es                                                               )
+L(    pushw %fs                                                               )
+L(    pushw %gs                                                               )
+L(    pushal                                                                  )
+L(                                                                            )
+#ifdef __x86_64__
+L(    /* Load the proper kernel segment registers */                          )
+L(    movw  $(__USER_DS), %dx                                                 )
+L(    movw  %dx, %ds                                                          )
+L(    movw  %dx, %es                                                          )
+L(    movw  %dx, %fs                                                          )
+L(    movw  $(__KERNEL_PERCPU), %dx                                           )
+L(    movw  %dx, %gs                                                          )
+#else
+L(    /* Load the proper kernel segment registers */                          )
+L(    movw  $(__USER_DS), %dx                                                 )
+L(    movw  %dx, %ds                                                          )
+L(    movw  %dx, %es                                                          )
+L(    movw  %dx, %gs                                                          )
+L(    movw  $(__KERNEL_PERCPU), %dx                                           )
+L(    movw  %dx, %fs                                                          )
+#endif
+L(                                                                            )
+L(    movl  %esp, %ecx                                                        )
+__DEBUG_CODE(L(pushl 48(%esp)                                                ))
+__DEBUG_CODE(L(pushl %ebp                                                    ))
+__DEBUG_CODE(L(movl %esp, %ebp                                               ))
+L(    call  irq_default                                                       )
+__DEBUG_CODE(L(addl $8, %esp                                                 ))
+L(    popal                                                                   )
+L(    popw  %gs                                                               )
+L(    popw  %fs                                                               )
+L(    popw  %es                                                               )
+L(    popw  %ds                                                               )
+L(    add $8, %esp                                                            )
+L(    iret                                                                    )
+L(SYM_END(dirq_ycode)                                                         )
+L(SYM_END(dirq_ncode)                                                         )
+L(.previous                                                                   )
 );
 
 INTDEF void
@@ -471,7 +491,7 @@ print_segment_register(char const *__restrict name, u16 value) {
  }
 }
 
-#define IRQPANIC_DISP_SEGMENTS  0
+#define IRQPANIC_DISP_SEGMENTS  1
 #define IRQPANIC_DISP_CRX       1
 #define IRQPANIC_DISP_DRX       0
 #define IRQPANIC_DISP_TRACEBACK 1
@@ -805,7 +825,7 @@ irq_setup(struct cpu *__restrict self) {
  for (; iter != end; ++iter,++hiter) {
   isr_fun_t handler = *hiter;
   iter->ie_off1  = (u16)((uintptr_t)handler);
-  iter->ie_sel   = SEG(SEG_HOST_CODE);
+  iter->ie_sel   = __KERNEL_CS;
   iter->ie_zero  = 0;
   iter->ie_flags = (IDTFLAG_PRESENT|
                     IDTTYPE_80386_32_INTERRUPT_GATE);
@@ -980,12 +1000,12 @@ PUBLIC SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
   old_handler->i_owner = old_owner;
   old_owner            = NULL;
  }
- idt_slot->ie_sel   = SEG(SEG_HOST_CODE);
+ idt_slot->ie_sel   = __KERNEL_CS;
  idt_slot->ie_zero  = 0;
  idt_slot->ie_flags = used_handler.i_flags;
  idt_slot->ie_off1  = (u16)((uintptr_t)used_handler.i_func);
  idt_slot->ie_off2  = (u16)((uintptr_t)used_handler.i_func >> 16);
- assert(idt_slot->ie_sel  == SEG(SEG_HOST_CODE));
+ assert(idt_slot->ie_sel  == __KERNEL_CS);
  assert(idt_slot->ie_zero == 0);
 
  if (mode&IRQ_SET_RELOAD) {

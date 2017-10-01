@@ -232,17 +232,17 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
     },
 #endif /* CONFIG_DEBUG */
     .s_boot = {
-#ifdef __i386__
-        .gs     = SEG(SEG_HOST_DATA),
-        .fs     = SEG(SEG_CPUSELF),
+#ifdef __x86_64__
+        .gs     = __KERNEL_PERCPU,
+        .fs     = __KERNEL_DS,
 #else
-        .gs     = SEG(SEG_CPUSELF),
-        .fs     = SEG(SEG_HOST_DATA),
+        .gs     = __KERNEL_DS,
+        .fs     = __KERNEL_PERCPU,
 #endif
-        .es     = SEG(SEG_HOST_DATA),
-        .ds     = SEG(SEG_HOST_DATA),
+        .es     = __KERNEL_DS,
+        .ds     = __KERNEL_DS,
         .eip    = (uintptr_t)&cpu_idle,
-        .cs     = SEG(SEG_HOST_CODE),
+        .cs     = __KERNEL_CS,
         /* All other flags don't matter, but 'IF' (interrupt flag) must be set.
          * If it wasn't, the idle task would otherwise block forever! */
         .eflags = EFLAGS_IF|EFLAGS_IOPL(0),
@@ -385,7 +385,7 @@ PUBLIC struct cpu __bootcpu = {
         .ac_tss = {
             /* Define initial boot-cpu TSS data. */
             .esp0       = (uintptr_t)(BOOTSTACK_ADDR+BOOTSTACK_SIZE),
-            .ss0        = SEG(SEG_HOST_DATA),
+            .ss0        = __KERNEL_DS,
             .iomap_base = sizeof(struct tss),
             .eflags     = EFLAGS_IF,
         },

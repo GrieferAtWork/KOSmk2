@@ -55,6 +55,8 @@ local run_kernel_binary = "bin/kos.bin"; /* Output name of the kernel binary. */
 local run_addr2line_exe = run_kernel_binary;
 local run_addr2line_base = 0;
 
+//local run_addr2line_exe = "bin/mod/pe";
+//local run_addr2line_base = 0xe001f000;
 //local run_addr2line_exe = "bin/libs/libc.so";
 //local run_addr2line_base = 0x20000000;
 //local run_addr2line_exe = "apps/private/build-busybox-1.27.2/busybox_unstripped";
@@ -306,6 +308,12 @@ function do_start_process(proc) {
 function get_exe(name) {
 	if (name.startswith("/")) {
 		return root_folder+name;
+	}
+	if ("/" in name || "\\" in name) {
+		return name;
+	}
+	if (name.startswith("PATH:")) {
+		return name[#"PATH:":];
 	}
 	return executables[name];
 }
