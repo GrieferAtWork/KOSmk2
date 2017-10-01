@@ -64,15 +64,18 @@
 #undef __USE_REENTRANT
 #undef __USE_FORTIFY_LEVEL
 #undef __KERNEL_STRICT_NAMES
-#undef __USE_KOS         /* '#ifdef _KOS_SOURCE'     Additional & changes added by KOS */
-#undef __USE_UTF         /* '#ifdef _UTF_SOURCE'     Enable additional string functions that accept char16_t and char32_t. (Referred to as 'c16/u' and 'c32/U') */
+#undef __USE_KOS         /* '#ifdef _KOS_SOURCE'     Additions & changes added by KOS */
 #undef __USE_KXS         /* '#if _KOS_SOURCE >= 2'   Minor extended functionality that is likely to collide with existing programs. */
+#undef __USE_UTF         /* '#ifdef _UTF_SOURCE'     Enable additional string functions that accept char16_t and char32_t. (Referred to as 'c16/u' and 'c32/U') */
 #undef __USE_DOS         /* '#ifdef _DOS_SOURCE'     Functions usually only found in DOS: spawn, strlwr, etc. */
-#undef __USE_DOSFS       /* '#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). */
 #undef __USE_OLD_DOS     /* '#if _DOS_SOURCE >= 2'   Make some old, long deprecated DOS APIs (namely in <dos.h>) available. */
-#undef __USE_DOS_SLIB    /* '#if __STDC_WANT_SECURE_LIB__' Enable prototypes for the so-called ~secure~ DOS library. (It's just meant to do some additional checks on arguments and such...) */
+#undef __USE_DOSFS       /* '#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). */
+#undef __USE_DOS_SLIB    /* '#if _DOS_SOURCE && __STDC_WANT_SECURE_LIB__' Enable prototypes for the so-called ~secure~ DOS library. (It's just meant to do some additional checks on arguments and such...) */
 #undef __USE_TIME64      /* '#ifdef _TIME64_SOURCE'  Provide 64-bit time functions (e.g.: 'time64()'). */
 #undef __USE_TIME_BITS64 /* '#if _TIME_T_BITS == 64' Use a 64-bit interger for 'time_t'. */
+#undef __USE_DEBUG       /* '#ifdef _DEBUG_SOURCE'   Enable debug function prototypes, either as real debug functions ('_DEBUG_SOURCE' defined as non-zero), or as stubs/aliases for non-debug version ('_DEBUG_SOURCE' defined as zero) */
+#undef __USE_DEBUG_HOOK  /* '#ifndef NDEBUG'         Implies '_DEBUG_SOURCE=1', redirecting functions such as 'malloc()' to their debug counterparts. */
+
 
 #ifndef _LOOSE_KERNEL_NAMES
 # define __KERNEL_STRICT_NAMES
@@ -635,9 +638,6 @@
 #define __USE_DOS_SLIB 1
 #endif
 #endif
-
-#undef __USE_DEBUG
-#undef __USE_DEBUG_HOOK
 
 #ifdef _DEBUG_SOURCE
 #if (_DEBUG_SOURCE+0) == 0

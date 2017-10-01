@@ -21,9 +21,7 @@
 
 #include <__stdinc.h>
 #include <bits/types.h>
-#ifdef __USE_XOPEN2K8
 #include <hybrid/timespec.h>
-#endif
 
 
 __DECL_BEGIN

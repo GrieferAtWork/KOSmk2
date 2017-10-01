@@ -18,9 +18,14 @@
  */
 #ifndef GUARD_KERNEL_CORE_ARCH_IRQ_C
 #define GUARD_KERNEL_CORE_ARCH_IRQ_C 1
-#define _KOS_SOURCE 2
+#define _KOS_SOURCE            2
+#define _XOPEN_SOURCE          700
+#define _XOPEN_SOURCE_EXTENDED 1
 
 #include <assert.h>
+#include <bits/siginfo.h>
+#include <bits/signum.h>
+#include <dev/rtc.h>
 #include <hybrid/arch/eflags.h>
 #include <hybrid/asm.h>
 #include <hybrid/atomic.h>
@@ -34,17 +39,16 @@
 #include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>
-#include <sys/syslog.h>
+#include <kernel/syscall.h>
 #include <linker/module.h>
 #include <sched/cpu.h>
 #include <sched/paging.h>
 #include <sched/percpu.h>
+#include <sched/signal.h>
 #include <stddef.h>
 #include <string.h>
 #include <sys/io.h>
-#include <kernel/syscall.h>
-#include <dev/rtc.h>
-#include <bits/signum.h>
+#include <sys/syslog.h>
 
 DECL_BEGIN
 
@@ -517,7 +521,84 @@ irq_default(struct irq_info *__restrict info) {
   intchain_trigger(&this_task->t_ic,
                    info->intno,&info->com,
                    info->eflags);
+ } else
+#if !defined(CONFIG_DEBUG) || 0
+ {
+  /* Handle exceptions in user-space by raising a signal. */
+  siginfo_t si;
+  memset(&si,0,sizeof(siginfo_t));
+  si.si_addr = (void *)info->eip;
+  switch (info->intno) {
+
+  case IRQ_EXC_DE: /*< Divide-by-zero. */
+   si.si_signo = SIGFPE;
+   si.si_code  = FPE_INTDIV;
+   goto kill_task;
+
+  case IRQ_EXC_DB: /*< Debug. */
+  case IRQ_EXC_BP: /*< Breakpoint. */
+   si.si_signo = SIGTRAP;
+   si.si_code  = TRAP_BRKPT;
+   goto kill_task;
+
+  case IRQ_EXC_OF: /*< Overflow. */
+   si.si_signo = SIGFPE;
+   si.si_code  = FPE_INTOVF;
+   goto kill_task;
+
+  case IRQ_EXC_BR: /*< Bound Range Exceeded. */
+   /* XXX: Find out what we must really do here... */
+   si.si_signo = SIGSEGV;
+   goto kill_task;
+
+  case IRQ_EXC_UD: /*< Invalid Opcode. */
+   si.si_signo = SIGILL;
+   si.si_code = ILL_ILLOPN;
+   goto kill_task;
+
+  case IRQ_EXC_NP: /*< Segment Not Present. */
+  case IRQ_EXC_SS: /*< Stack-Segment Fault. */
+   si.si_signo = SIGBUS;
+   goto kill_task;
+
+  case IRQ_EXC_TS: /*< Invalid TSS. */
+  case IRQ_EXC_GP: /*< General Protection Fault. */
+   si.si_signo = SIGSEGV;
+   goto kill_task;
+
+  case IRQ_EXC_PF: /*< Page Fault. */
+   si.si_signo = SIGSEGV;
+   si.si_lower = THIS_TASK->t_lastcr2;
+   si.si_upper = THIS_TASK->t_lastcr2;
+   goto kill_task;
+
+  case IRQ_EXC_AC: /*< Alignment Check. */
+   si.si_signo = SIGBUS;
+   si.si_code  = BUS_ADRALN;
+   goto kill_task;
+
+  case IRQ_EXC_MF: /*< x87 Floating-Point Exception. */
+  case IRQ_EXC_XF: /*< SIMD Floating-Point Exception. */
+   si.si_signo = SIGFPE;
+   si.si_code  = FPE_FLTINV; /* TODO: Must be based on FPU state registers. */
+   goto kill_task;
+
+/* XXX: Can any of the following be caused by usercode? */
+//case IRQ_EXC_NMI: /*< Non-maskable Interrupt. */
+//case IRQ_EXC_NM:  /*< Device Not Available. */
+//case IRQ_EXC_DF:  /*< Double Fault. */
+//case IRQ_EXC_MC:  /*< Machine Check. */
+//case IRQ_EXC_VE:  /*< Virtualization Exception. */
+//case IRQ_EXC_SX:  /*< Security Exception. */
+
+kill_task:
+   task_kill2(THIS_TASK,&si,info->intno,info->exc_code);
+   return;
+  default: break;
+  }
+
  }
+#endif
 
  if (IRQ_ISPIC(info->intno)) {
   syslog(LOG_IRQ|LOG_WARN,
@@ -833,6 +914,7 @@ irq_setup(struct cpu *__restrict self) {
  }
  end = (iter = begin)+32;
  /* Enable ring#3 access to all exception interrupts by default. */
+ /* TODO: Not all of these should be enabled... */
  for (; iter != end; ++iter)
         iter->ie_flags |= IDTFLAG_DPL(3);
 }
@@ -938,6 +1020,7 @@ PRIVATE void KCALL irq_get_default(isr_t *__restrict handler) {
                      IDTTYPE_80386_32_INTERRUPT_GATE);
  handler->i_func  = dirq[handler->i_num];
  handler->i_owner = THIS_INSTANCE;
+ /* TODO: Not all of these should be enabled... */
  if (handler->i_num < 32) handler->i_flags |= IDTFLAG_DPL(3);
 }
 PUBLIC void KCALL irq_get(irq_t num, isr_t *__restrict handler) {

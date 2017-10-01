@@ -1650,7 +1650,7 @@ DEFINE_PUBLIC_ALIAS(__DSYMw32(wfstatat64),libc_dos_w32fstatat64);
 
 /* DOS-FS mode + DOS-binary-compatible stat functions.
  * NOTE: These are only used when user-apps are configures as '__PE__' + '__USE_DOS'.
- *       Otherwise, KOS's stat buffer data layout is used instead.  */
+ *       Otherwise, KOS's kernel stat buffer data layout is used to maximize performance.  */
 PRIVATE ATTR_DOSTEXT void LIBCCALL
 libc_fill_dos_stat_common(struct stat64 const *__restrict src,
                           struct __dos_stat32 *__restrict buf) {

@@ -161,16 +161,18 @@ while (kernel_args && kernel_args.front().startswith("-")) {
 	case "--build-only":
 		::config_build_only = true;
 		break;
-	case "--format-error-messages":
-		::config_format_compiler_messages = true;
-		break;
 	case "-E":
 	case "--gen-pp":
 		::config_generate_preprocessor = true;
+		::config_build_only = true;
 		break;
 	case "-S":
 	case "--asm":
 		::config_generate_assembly = true;
+		::config_build_only = true;
+		break;
+	case "--format-error-messages":
+		::config_format_compiler_messages = true;
 		break;
 	case "--remote":
 		::run_mode_remote = true;
@@ -811,68 +813,70 @@ class Project {
 	}
 
 	relink() {
-		local source_objects = [];
-		for (local s: this._sources) {
-			source_objects.append(s.get_obj_file(this));
-		}
-		source_objects.extend(this._l_objs);
-		force_mkdir(fs::path::head(this._outfile));
-		if (this._exe_a !is none) {
-			SYNC_PRINT("["+this.logname()+"] Archiving",repr this._outfile);
-			if (this._exe_a == "" && #source_objects == 1) {
-				try fs::unlink(this._outfile);
-				catch (...);
-				fs::copy_(fs::path::abs(source_objects[0],root_folder),
-				          fs::path::abs(this._outfile,root_folder));
-			} else {
-				local archive_flags = [];
-				archive_flags.extend(this._l_flags);
-				archive_flags.append("rcs",this._outfile);
-				archive_flags.extend(source_objects);
-				local proc = process(get_exe(this._exe_a),archive_flags);
-				start_process(proc,this);
+		if (!::config_generate_preprocessor) {
+			local source_objects = [];
+			for (local s: this._sources) {
+				source_objects.append(s.get_obj_file(this));
 			}
-		} else {
-			SYNC_PRINT("["+this.logname()+"] Linking",repr this._outfile);
-			local linker_flags = ["-o",this._outfile];
-			if (config_optimize !is none) {
-				linker_flags.append("-O"+config_optimize);
-			}
-			for (local src: this._l_jstsym) {
-				if (src._changed) {
-					SYNC(src.justsym(this));
-				}
-			}
-			for (local script: this._l_jstsym) {
-				linker_flags.append("--just-symbols="+script.get_sym_file(this));
-			}
-			for (local script: this._l_script) {
-				linker_flags.append("-T",script.get_pp_file(this));
-			}
-			linker_flags.extend(this._l_flags);
-			linker_flags.extend(source_objects);
-			/* Make sure that '-lgcc' goes at the end. */
-			if ("gcc" in this._l_deps) {
-				this._l_deps.remove("gcc");
-				this._l_deps.append("gcc");
-			}
-			for (local lib: this._l_deps)
-				linker_flags.append("-l"+lib);
-			//print repr linker_flags;
-			local proc = process(get_exe(this._exe_l),linker_flags);
-			if (this._cus_link !is none) {
-				SYNC(start_process(proc,this));
-				if (this._cus_link is string) {
-					local custom_proc = process(this._cus_link.format({
-						.input = this._outfile,
-						.root  = root_folder,
-					}));
-					start_process(custom_proc,this);
+			source_objects.extend(this._l_objs);
+			force_mkdir(fs::path::head(this._outfile));
+			if (this._exe_a !is none) {
+				SYNC_PRINT("["+this.logname()+"] Archiving",repr this._outfile);
+				if (this._exe_a == "" && #source_objects == 1) {
+					try fs::unlink(this._outfile);
+					catch (...);
+					fs::copy_(fs::path::abs(source_objects[0],root_folder),
+							  fs::path::abs(this._outfile,root_folder));
 				} else {
-					this._cus_link(this._outfile);
+					local archive_flags = [];
+					archive_flags.extend(this._l_flags);
+					archive_flags.append("rcs",this._outfile);
+					archive_flags.extend(source_objects);
+					local proc = process(get_exe(this._exe_a),archive_flags);
+					start_process(proc,this);
 				}
 			} else {
-				start_process(proc,this);
+				SYNC_PRINT("["+this.logname()+"] Linking",repr this._outfile);
+				local linker_flags = ["-o",this._outfile];
+				if (config_optimize !is none) {
+					linker_flags.append("-O"+config_optimize);
+				}
+				for (local src: this._l_jstsym) {
+					if (src._changed) {
+						SYNC(src.justsym(this));
+					}
+				}
+				for (local script: this._l_jstsym) {
+					linker_flags.append("--just-symbols="+script.get_sym_file(this));
+				}
+				for (local script: this._l_script) {
+					linker_flags.append("-T",script.get_pp_file(this));
+				}
+				linker_flags.extend(this._l_flags);
+				linker_flags.extend(source_objects);
+				/* Make sure that '-lgcc' goes at the end. */
+				if ("gcc" in this._l_deps) {
+					this._l_deps.remove("gcc");
+					this._l_deps.append("gcc");
+				}
+				for (local lib: this._l_deps)
+					linker_flags.append("-l"+lib);
+				//print repr linker_flags;
+				local proc = process(get_exe(this._exe_l),linker_flags);
+				if (this._cus_link !is none) {
+					SYNC(start_process(proc,this));
+					if (this._cus_link is string) {
+						local custom_proc = process(this._cus_link.format({
+							.input = this._outfile,
+							.root  = root_folder,
+						}));
+						start_process(custom_proc,this);
+					} else {
+						this._cus_link(this._outfile);
+					}
+				} else {
+					start_process(proc,this);
+				}
 			}
 		}
 		this._created = true;
@@ -907,12 +911,14 @@ class Project {
 		return false;
 	}
 	update_disk() {
+		if (::config_generate_preprocessor) return;
 		local output_file = this._dskfile;
 		SYNC_PRINT("["+this.logname()+"] Updating disk",repr output_file);
 		disk_force_mkdir(fs::path::head(output_file));
 		mtools("mcopy",["-D","o",this._outfile,"::"+output_file]);
 	}
 	update_usb() {
+		if (::config_generate_preprocessor) return;
 		local output_file = this.usb_outfile();
 		SYNC_PRINT("["+this.logname()+"] Updating USB",repr output_file);
 		force_mkdir(fs::path::head(output_file));
@@ -931,6 +937,7 @@ function must_update_flat_kernel() {
 	return false;
 }
 function update_flat_kernel() {
+	if (::config_generate_preprocessor) return;
 	if (must_update_flat_kernel()) {
 		print "Updating flat kernel image";
 		local update = process("bin/apps/elfimg");
@@ -944,6 +951,7 @@ function update_flat_kernel() {
 
 local disk_ops = [];
 function disk_do_sync_file(src,dst) {
+	if (::config_generate_preprocessor) return;
 	disk_ops.append([]{
 		try {
 			local src_mtime = fast_getmtime(src);

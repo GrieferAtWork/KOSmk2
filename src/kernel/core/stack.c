@@ -95,10 +95,10 @@ stack_mnotify(unsigned int type, void *__restrict closure,
   if (owner) {
    /* Signal a stack overflow. */
    siginfo_t info;
+   memset(&info,0,sizeof(siginfo_t));
    info.si_signo    = SIGSEGV;
    info.si_code     = SEGV_MAPERR;
    info.si_addr     = THIS_SYSCALL_REAL_EIP;
-   info.si_addr_lsb = 0;
    info.si_lower    = STACK->s_begin;
    info.si_upper    = STACK->s_end;
    task_kill2(owner,&info,0,0);
