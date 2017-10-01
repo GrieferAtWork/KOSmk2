@@ -127,12 +127,6 @@ PRIVATE REF struct task *KCALL task_do_fork(void) {
  if ((error = task_set_id(result,&pid_global),E_ISERR(error))) goto err1;
  if ((error = task_set_id(result,THIS_NAMESPACE),E_ISERR(error))) goto err1;
 
-#ifndef CONFIG_NO_TLB
- /* Allocate a new TLB for this task. */
- if (caller->t_tlb != PAGE_ERROR &&
-    (error = task_mktlb(result),E_ISERR(error))) goto err1;
-#endif /* !CONFIG_NO_TLB */
-
  assertf(om != &mman_kernel,"No... You can't fork() the kernel itself...");
  if (E_ISERR(error = mman_write(om))) goto err1;
  if (E_ISERR(error = mman_write(nm))) { mman_endwrite(om); goto err1; }
@@ -144,6 +138,12 @@ PRIVATE REF struct task *KCALL task_do_fork(void) {
   * HINT: This function also handle duplication of module instances. */
  error = mman_init_copy_unlocked(nm,om);
  if (E_ISERR(error)) goto end_double_lock;
+
+#ifndef CONFIG_NO_TLB
+ /* Since the TLB would have been copied during
+  * 'mman_init_copy_unlocked()', its address stayed the same. */
+ result->t_tlb = caller->t_tlb;
+#endif /* !CONFIG_NO_TLB */
 
  //pdir_print(&om->m_pdir,&syslog_printer,SYSLOG_PRINTER_CLOSURE(0));
 
@@ -178,6 +178,19 @@ end_double_lock:
   ustack->s_refcnt = 1; /* The reference owned by 'result->t_ustack' */
   ustack->s_branch = 0;
   MMAN_FOREACH(branch,nm) {
+#ifndef CONFIG_NO_TLB
+   /* Also relocate the TLB. */
+   if (branch->mb_notify  == &task_tlb_mnotify &&
+       branch->mb_closure == caller->t_tlb) {
+    asserte(ATOMIC_DECFETCH(caller->t_weakcnt) >= 1);
+    branch->mb_closure = result;
+    /* NOTE: No need to use atomic operations here, because we're
+     *       still holding a lock to the new memory manager, which
+     *       is currently the only path anyone else could take to
+     *       access our newly created task. */
+    ++result->t_weakcnt;
+   }
+#endif /* !CONFIG_NO_TLB */
    if (branch->mb_notify  != &stack_mnotify ||
        branch->mb_closure != caller->t_ustack) continue;
    asserte(ATOMIC_DECFETCH(caller->t_ustack->s_branch) >= 1);
@@ -200,8 +213,6 @@ end_double_lock:
   * >> Now to create a new kernel-stack for 'result'. */
  error = task_mkhstack(result,TASK_HOSTSTACK_DEFAULTSIZE);
  if (E_ISERR(error)) goto err1;
-
- /* XXX: Assign a new PID? */
 
  /* NOTE: From this point onwards, all remaining setup operation are noexcept! */
 

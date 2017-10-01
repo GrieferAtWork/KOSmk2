@@ -42,6 +42,9 @@
 #include <sys/mman.h>
 #include <sched/signal.h>
 #include <bits/waitstatus.h>
+#ifndef CONFIG_NO_TLB
+#include <kos/thread.h>
+#endif /* !CONFIG_NO_TLB */
 
 DECL_BEGIN
 
@@ -253,6 +256,18 @@ endwrite:
   if (old_exe) INSTANCE_DECREF(old_exe);
  }
 #endif /* !CONFIG_NO_VM_EXE */
+#ifndef CONFIG_NO_TLB
+ /* Allocate a new TLB for the calling task. */
+ if (E_ISOK(error)) {
+  error = task_mktlb_unlocked(exec_task);
+  if (E_ISOK(error)) {
+   pflag_t was = PREEMPTION_PUSH();
+   /* Must also update the current CPU's GDT pointers. */
+   __TASK_SWITCH_TLB(,exec_task);
+   PREEMPTION_POP(was);
+  }
+ }
+#endif /* !CONFIG_NO_TLB */
  mman_endwrite(mm);
 
  if (E_ISERR(error)) goto end_too_late;
@@ -320,6 +335,19 @@ endwrite:
                        TASK_USERSTACK_GUARDSIZE,
                        TASK_USERSTACK_FUNDS);
  if (E_ISERR(error)) goto end_too_late_patch;
+
+#ifndef CONFIG_NO_TLB
+ /* Fill in TLB information for the task.
+  * NOTE: We can use 'task_filltlb()' instead of 'task_ldtlb()' here,
+  *       because we know that we're the only task using this VM,
+  *       also meaning that there should be no way the TLB was
+  *       deleted before we got here. */
+#if 1
+ task_filltlb(exec_task);
+#else
+ task_ldtlb(exec_task);
+#endif
+#endif /* !CONFIG_NO_TLB */
 
  /* Reset signal handlers. */
  sighand_reset(exec_task->t_sighand);

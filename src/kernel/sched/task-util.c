@@ -114,19 +114,26 @@ task_set_affinity(struct task *__restrict self,
 
 #ifndef CONFIG_NO_TLB
 
-PUBLIC SAFE errno_t KCALL
-task_mktlb(struct task *__restrict self) {
+LOCAL SAFE errno_t KCALL
+task_mktlb_impl(struct task *__restrict self, bool caller_locked) {
  size_t tlb_size; errno_t error;
  struct mman *mm; bool has_write_lock = false;
  USER ppage_t tlb_address; struct mregion *tlb_region;
  CHECK_HOST_DOBJ(self);
- assert(self->t_mode == TASKMODE_NOTSTARTED);
- assert(self->t_tlb == PAGE_ERROR);
+ /* NOTE: This function is also called to allocate a new TLB during exec(),
+  *       meaning that the following two assertions cannot be made! */
+ //assert(self->t_mode == TASKMODE_NOTSTARTED);
+ //assert(self->t_tlb == PAGE_ERROR);
  assert(self->t_mman != NULL);
  mm = self->t_mman;
- tlb_size   = CEIL_ALIGN(sizeof(struct tlb),PAGESIZE);
+ assert(!caller_locked || mman_writing(mm));
+
+ tlb_size = CEIL_ALIGN(sizeof(struct tlb),PAGESIZE);
+ if (!caller_locked) {
 again_findspace:
- error = mman_read(mm);
+  error = mman_read(mm);
+  if (E_ISERR(error)) return error;
+ }
  tlb_address = mman_findspace_unlocked(mm,(ppage_t)(TASK_USERTLB_ADDRHINT-tlb_size),
                                        tlb_size,MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
                                        128*PAGESIZE,MMAN_FINDSPACE_BELOW);
@@ -144,12 +151,12 @@ again_findspace:
  if (tlb_address != PAGE_ERROR &&
     (uintptr_t)tlb_address+tlb_size < KERNEL_BASE) goto got_space;
  /* Failed to find sufficient space. */
- mman_endread(mm);
+ if (!caller_locked) mman_endread(mm);
  error = -ENOMEM;
 err:
  return error;
 got_space:
- if (!has_write_lock) {
+ if (!caller_locked && !has_write_lock) {
   error = mman_upgrade(mm);
   if (E_ISERR(error)) {
    if (error != -ERELOAD) goto err;
@@ -161,14 +168,16 @@ got_space:
 
  /* Allocate the region controller for the TLB region. */
  tlb_region = mregion_new(MMAN_DATAGFP(mm));
- if unlikely(!tlb_region) { mman_endwrite(mm); return -ENOMEM; }
+ if unlikely(!tlb_region) {
+  if (!caller_locked) mman_endwrite(mm);
+  return -ENOMEM;
+ }
  tlb_region->mr_size = tlb_size;
  tlb_region->mr_init = MREGION_INIT_ZERO; /* Use ZERO-initialization. */
 
  /* Finalize the region setup. */
  mregion_setup(tlb_region);
 
-#if 1
  /* Now try to map it in the associated address space.
   * NOTE: We pass a custom notifier to track the region even when it has moved. */
  error = mman_mmap_unlocked(mm,tlb_address,tlb_size,0,
@@ -176,12 +185,22 @@ got_space:
                             NULL,self);
  if (E_ISOK(error)) self->t_tlb = (PAGE_ALIGNED USER struct tlb *)tlb_address;
  /* NOTE: The TLB region will be initialized once the thread is started. */
-#endif
 
- mman_endwrite(mm);
+ if (!caller_locked) mman_endwrite(mm);
  MREGION_DECREF(tlb_region);
  return error;
 }
+
+PUBLIC SAFE errno_t KCALL
+task_mktlb(struct task *__restrict self) {
+ return task_mktlb_impl(self,false);
+}
+PUBLIC SAFE errno_t KCALL
+task_mktlb_unlocked(struct task *__restrict self) {
+ return task_mktlb_impl(self,true);
+}
+
+
 PUBLIC ssize_t KCALL
 task_tlb_mnotify(unsigned int type, void *__restrict closure,
                  struct mman *mm, ppage_t addr, size_t size) {
@@ -194,12 +213,44 @@ task_tlb_mnotify(unsigned int type, void *__restrict closure,
  case MNOTIFY_INCREF: TASK_WEAK_INCREF(self); break;
  case MNOTIFY_DECREF: TASK_WEAK_DECREF(self); break;
 
+ case MNOTIFY_UNSHARE_DROP:
+  /* Drop all stack mappings, but that of the
+   * calling thread during un-sharing (aka. fork()). */
+  if (self != THIS_TASK)
+      return 1;
+  break;
 
  default: break;
  }
  return -EOK;
 }
 
+PUBLIC void KCALL
+task_ldtlb(struct task *__restrict self) {
+ struct mman *omm;
+ if (self->t_tlb == PAGE_ERROR) return;
+ TASK_PDIR_BEGIN(omm,self->t_mman);
+ call_user_worker(&task_filltlb,1,self);
+ TASK_PDIR_END(omm,self->t_mman);
+}
+
+/* '0x18' is a hard-coded number used by various DOS compilers. */
+STATIC_ASSERT(offsetof(struct tib,ti_self) == 0x18);
+
+PUBLIC void KCALL
+task_filltlb(struct task *__restrict self) {
+ USER struct tlb *info = self->t_tlb;
+ /* Fill in TLB information. */
+ assert((uintptr_t)info+CEIL_ALIGN(sizeof(struct tlb),PAGESIZE) <= KERNEL_BASE);
+ assert(THIS_TASK->t_mman == self->t_mman);
+ info->tl_self            = info;
+ info->tl_tib.ti_self     = &info->tl_tib;
+ info->tl_tib.ti_seh      = SEH_FRAME_NULL;
+ if likely(self->t_ustack) {
+  info->tl_tib.ti_stackhi = self->t_ustack->s_end;
+  info->tl_tib.ti_stacklo = self->t_ustack->s_begin;
+ }
+}
 
 #endif /* !CONFIG_NO_TLB */
 

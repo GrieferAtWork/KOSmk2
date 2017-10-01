@@ -1205,9 +1205,17 @@ mman_mextract_unlocked(struct mman *__restrict self,
    if (E_ISERR(error)) { err2: kffree(branch_copy,GFP_NOFREQ); goto err; }
    if (branch_copy->mb_notify) {
     /* ............ */ error = (errno_t)(*branch_copy->mb_notify)(MNOTIFY_INCREF,branch_copy->mb_closure,self,0,0);
-    if (E_ISOK(error)) error = (errno_t)(*branch_copy->mb_notify)(MNOTIFY_CLONE,branch_copy->mb_closure,self,
-                                                                 (ppage_t)((uintptr_t)branch_copy->mb_node.a_vmin-(uintptr_t)addr),
-                                                                  MBRANCH_SIZE(branch_copy));
+    if (E_ISOK(error)) {
+     error = (errno_t)(*branch_copy->mb_notify)(MNOTIFY_CLONE,branch_copy->mb_closure,self,
+                                               (ppage_t)((uintptr_t)branch_copy->mb_node.a_vmin-(uintptr_t)addr),
+                                                MBRANCH_SIZE(branch_copy));
+     if (error == (errno_t)MNOTIFY_CLONE_WITHOUT_CALLBACK) {
+      /* Delete the notification callback, but keep the close as a tag. */
+      (*branch_copy->mb_notify)(MNOTIFY_DECREF,branch_copy->mb_closure,self,0,0);
+      branch_copy->mb_notify = NULL;
+      error = -EOK;
+     }
+    }
     if (E_ISERR(error)) {
      task_nointr();
      mregion_decref(branch_copy->mb_region,

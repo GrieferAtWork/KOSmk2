@@ -194,6 +194,7 @@ run_init(char const *__restrict filename) {
 #ifndef CONFIG_NO_TLB
  /* Allocate the thread local block. */
  asserte(E_ISOK(task_mktlb(thrd)));
+ task_ldtlb(thrd);
 #endif /* !CONFIG_NO_TLB */
 
  state->host.ds     = __USER_DS;

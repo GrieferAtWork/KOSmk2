@@ -391,7 +391,8 @@ typedef ssize_t (KCALL *mbranch_notity)(unsigned int type, void *__restrict clos
  *          that the following events may be called multiple times for non-overlapping
  *          parts of the same original address range, or out-of-order! */
 #define MNOTIFY_EXTRACT        0030 /*< [M][A][E] The branch was extracted from 'addr...+=size' using 'mman_mextract_unlocked'. (Eventually followed by 'MNOTIFY_RESTORE' or 'MNOTIFY_DELETE') */
-#define MNOTIFY_CLONE          0031 /*< [M][A][E] Signaled instead of 'MNOTIFY_EXTRACT' when 'mman_mextract_unlocked' was instructed to copy branches. */
+#define MNOTIFY_CLONE          0031 /*< [M][A][E] Signaled instead of 'MNOTIFY_EXTRACT' when 'mman_mextract_unlocked' was instructed to copy branches.
+                                     *   NOTE: This callback can instruct the memory manager to exclude a notifier from the copy by returning 'MNOTIFY_CLONE_WITHOUT_CALLBACK'. */
 #define MNOTIFY_RESTORE        0032 /*< [M][A][E] Following an 'MNOTIFY_EXTRACT'-event, the branch was re-inserted at 'addr...+=size' */
 #define MNOTIFY_DELETE         0033 /*<    [A] Following an 'MNOTIFY_EXTRACT'-event, the branch was deleted when 'mman_maps_fini' was called. */
 #define MNOTIFY_UNMAP          0034 /*< [M][A][E] Called when the branch is unmapped by normal means of 'munmap()' */
@@ -408,6 +409,13 @@ typedef ssize_t (KCALL *mbranch_notity)(unsigned int type, void *__restrict clos
 
 #define MBRANCH_INCREF(self,mm) ((self)->mb_notify ? (*(self)->mb_notify)(MNOTIFY_INCREF,(self)->mb_closure,mm,0,0) : -EOK)
 #define MBRANCH_DECREF(self)    ((self)->mb_notify ? (*(self)->mb_notify)(MNOTIFY_DECREF,(self)->mb_closure,NULL,0,0) : -EOK)
+
+/* Special return value of 'MNOTIFY_CLONE'. When returned, still clone
+ * the mapping, but do so without the notifier, essentially disconnecting
+ * it from the memory block.
+ * NOTE: The associated closure is still kept as memory tag though,
+ *       meaning that a cloned mapping can still be addressed by that tag. */
+#define MNOTIFY_CLONE_WITHOUT_CALLBACK 0xf000CA11
 
 
 struct mbranch {

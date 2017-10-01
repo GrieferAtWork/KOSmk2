@@ -49,7 +49,7 @@ END
 
 BEGIN APPLICATION("my_test")
 	SET_OUTPUT("/bin/apps/my_test")
-	SET_DISKFILE("/opt/test")
+	SET_DISKFILE("/opt/my_test")
 	SOURCE("test/my_test.c")
 END
 

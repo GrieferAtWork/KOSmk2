@@ -16,6 +16,18 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
+
+#if 1
+#include <kos/thread.h>
+#include <stdio.h>
+
+int main(int argc, char **argv) {
+	printf("tib             = %p\n",THIS_TIB->ti_self);
+	printf("tib->ti_stacklo = %p\n",THIS_TIB->ti_stacklo);
+	printf("tib->ti_stackhi = %p\n",THIS_TIB->ti_stackhi);
+	return 0;
+}
+#else
 #define _DOS_SOURCE 1
  
 #include <unistd.h>
@@ -23,7 +35,6 @@
 #include <string.h>
 #include <wchar.h>
 #include <stdio.h>
-
 
 int main(int argc, char **argv) {
 	wchar_t **iter = _wenviron;
@@ -39,6 +50,6 @@ int main(int argc, char **argv) {
 	printf("APP: %ls\n",_wpgmptr);
 	return 0;
 }
-
+#endif
 
 

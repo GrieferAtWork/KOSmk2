@@ -139,19 +139,29 @@ FUNDEF SAFE errno_t KCALL task_mkustack(struct task *__restrict self, size_t n_b
 #define TASK_USERTLB_ADDRHINT      0xa0000000 /*< Search for suitable memory below this address, but if no space is found, search above as well. */
 
 
-FUNDEF SAFE errno_t KCALL task_mktlb(struct task *__restrict self);
-
 #ifndef CONFIG_NO_TLB
 /* Allocate the Thread local block for the given task.
  * TODO: Add an API for ELF TLS memory relocations.
  * @return: -EOK:    Successfully created and mapped the TLB block.
- * @return: -ENOMEM: Not enough available memory. */
+ * @return: -ENOMEM: Not enough available memory.
+ * @return: -EINTR:  The calling thread was interrupted. */
 FUNDEF SAFE errno_t KCALL task_mktlb(struct task *__restrict self);
+/* Same as 'task_mktlb()', but the caller must be holding a write-lock on 'self->t_mman' */
+FUNDEF SAFE errno_t KCALL task_mktlb_unlocked(struct task *__restrict self);
 
 /* mman notification used for tracking TLB mappings.
  * @param: closure: The 'struct task' associated with the TLB block. */
 FUNDEF ssize_t KCALL task_tlb_mnotify(unsigned int type, void *__restrict closure,
                                       struct mman *mm, ppage_t addr, size_t size);
+
+/* A safe wrapper around 'task_filltlb()' */
+FUNDEF void KCALL task_ldtlb(struct task *__restrict self);
+
+/* Fill in the TLB information block of the given task.
+ * WARNING: This function may cause a PAGEFAULT, meaning that it must be
+ *          called in a protected context, or as a user helper function.
+ * WARNING: Additionally, the caller must switch to the page directory of 'self'. */
+FUNDEF void KCALL task_filltlb(struct task *__restrict self);
 
 #endif /* !CONFIG_NO_TLB */
 

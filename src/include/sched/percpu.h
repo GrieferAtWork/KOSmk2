@@ -61,8 +61,6 @@ extern byte_t __bootcpu_end[];
 
 
 #define PERCPU_ALIGNMENT 16
-
-
 #define ALIGNED_CPUSIZE  ((CPU_SIZE+(PERCPU_ALIGNMENT-1)) & ~(PERCPU_ALIGNMENT-1))
 #if ALIGNED_CPUSIZE == 272
 #   undef ALIGNED_CPUSIZE

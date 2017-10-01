@@ -41,7 +41,6 @@ typedef EXCEPTION_DISPOSITION (*PEXCEPTION_HANDLER)(struct _EXCEPTION_RECORD *Ex
                                                     void *DispatcherContext);
 #endif /* !__PEXCEPTION_HANDLER_DEFINED */
 
-
 #define SEH_FRAME_NULL ((struct seh_frame *)-1)
 
 struct seh_frame {
@@ -57,13 +56,14 @@ struct tib {
   * x86-64: SEGMENT_BASE(%GS) == self
   * >> https://en.wikipedia.org/wiki/Win32_Thread_Information_Block
   */
- struct seh_frame *ti_seh;     /*< [0..1|null(SEH_FRAME_NULL)] Structured exception handlers. */
- void             *ti_stackhi; /*< Stack base address (greatest address) */
- void             *ti_stacklo; /*< Stack end address (lowest address) */
+ struct seh_frame *ti_seh;          /*< [0..1|null(SEH_FRAME_NULL)] Structured exception handlers. */
+ void             *ti_stackhi;      /*< [0..1][>= ti_stacklo] Stack base address (greatest address) */
+ void             *ti_stacklo;      /*< [0..1][<= ti_stackhi] Stack end address (lowest address) */
+ u32               ti_subsystemtib; /*< ??? */
+ u32               ti_fiber;        /*< ??? */
+ u32               ti_abdata;       /*< ??? */
+ struct tib       *ti_self;
 
-// FS:[0x0C] 	4 	NT 	SubSystemTib
-// FS:[0x10] 	4 	NT 	Fiber data
-// FS:[0x14] 	4 	Win9x and NT 	Arbitrary data slot
 // FS:[0x18] 	4 	Win9x and NT 	Linear address of TEB
 // ---- End of NT subsystem independent part ----
 // FS:[0x1C] 	4 	NT 	Environment Pointer
@@ -120,18 +120,122 @@ struct tlb {
 };
 
 #ifdef __x86_64__
-#define TIB_SEGMENT     %gs
-#define TLB_SEGMENT     %fs
-#define TIB_SEGMENT_S  "%gs"
-#define TLB_SEGMENT_S  "%fs"
+#define __TLB_SEGMENT      fs
+#define __TLB_SEGMENT_S   "fs"
+#ifdef __SEG_FS
+#define __seg_tlb       __seg_fs
+#endif /* __SEG_FS */
+#define __TIB_SEGMENT      gs
+#define __TIB_SEGMENT_S   "gs"
+#ifdef __SEG_GS
+#define __seg_tib       __seg_gs
+#endif /* __SEG_GS */
+#else /* __x86_64__ */
+#define __TLB_SEGMENT      gs
+#define __TLB_SEGMENT_S   "gs"
+#ifdef __SEG_GS
+#define __seg_tlb       __seg_gs
+#endif /* __SEG_GS */
+#define __TIB_SEGMENT      fs
+#define __TIB_SEGMENT_S   "fs"
+#ifdef __SEG_FS
+#define __seg_tib       __seg_fs
+#endif /* __SEG_FS */
+#endif /* !__x86_64__ */
+
+#ifdef __seg_tlb
+#define __TLB_PEEK(T,s,off)           (*(T __seg_tlb *)(off))
+#define __TLB_POKE(T,s,off,val) (void)(*(T __seg_tlb *)(off) = (val))
 #else
-#define TIB_SEGMENT     %fs
-#define TLB_SEGMENT     %gs
-#define TIB_SEGMENT_S  "%fs"
-#define TLB_SEGMENT_S  "%gs"
+#define __TLB_PEEK(T,s,off) \
+ XBLOCK({ register T __res; \
+          __asm__ __volatile__("mov" s " {%%" __TLB_SEGMENT_S ":%c1, %0|%0, " __TLB_SEGMENT_S ":%c1}\n" \
+                               : "=g" (__res) : "ir" (off)); \
+          XRETURN __res; \
+ })
+#define __TLB_POKE(T,s,off,val) \
+ XBLOCK({ __asm__ __volatile__("mov" s " {%0, %%" __TLB_SEGMENT_S ":%c1|" __TLB_SEGMENT_S ":%c1, %0}\n" \
+                               : : "g" (val), "ir" (off)); \
+          (void)0; \
+ })
 #endif
 
-#define THIS_TIB
+#ifdef __seg_tib
+#define __TIB_PEEK(T,s,off)           (*(T __seg_tib *)(off))
+#define __TIB_POKE(T,s,off,val) (void)(*(T __seg_tib *)(off) = (val))
+#else
+#define __TIB_PEEK(T,s,off) \
+ XBLOCK({ register T __res; \
+          __asm__ __volatile__("mov" s " {%%" __TIB_SEGMENT_S ":%c1, %0|%0, " __TIB_SEGMENT_S ":%c1}\n" \
+                               : "=g" (__res) : "ir" (off)); \
+          XRETURN __res; \
+ })
+#define __TIB_POKE(T,s,off,val) \
+ XBLOCK({ __asm__ __volatile__("mov" s " {%0, %%" __TIB_SEGMENT_S ":%c1|" __TIB_SEGMENT_S ":%c1, %0}\n" \
+                               : : "g" (val), "ir" (off)); \
+          (void)0; \
+ })
+#endif
+
+
+#define TLB_T_PEEKB(T,off)     __TLB_PEEK(T,"b",off)
+#define TLB_T_PEEKW(T,off)     __TLB_PEEK(T,"w",off)
+#define TLB_T_PEEKL(T,off)     __TLB_PEEK(T,"l",off)
+#define TLB_T_POKEB(T,off,val) __TLB_POKE(T,"b",off,val)
+#define TLB_T_POKEW(T,off,val) __TLB_POKE(T,"w",off,val)
+#define TLB_T_POKEL(T,off,val) __TLB_POKE(T,"l",off,val)
+#define TIB_T_PEEKB(T,off)     __TIB_PEEK(T,"b",off)
+#define TIB_T_PEEKW(T,off)     __TIB_PEEK(T,"w",off)
+#define TIB_T_PEEKL(T,off)     __TIB_PEEK(T,"l",off)
+#define TIB_T_POKEB(T,off,val) __TIB_POKE(T,"b",off,val)
+#define TIB_T_POKEW(T,off,val) __TIB_POKE(T,"w",off,val)
+#define TIB_T_POKEL(T,off,val) __TIB_POKE(T,"l",off,val)
+#ifdef __x86_64__
+#define TLB_T_PEEKQ(T,off)     __TLB_PEEK(T,"q",off)
+#define TLB_T_POKEQ(T,off,val) __TLB_POKE(T,"q",off,val)
+#define TIB_T_PEEKQ(T,off)     __TIB_PEEK(T,"q",off)
+#define TIB_T_POKEQ(T,off,val) __TIB_POKE(T,"q",off,val)
+#endif /* __x86_64__ */
+
+#if __SIZEOF_POINTER__ == 4
+#   define TLB_T_PEEKI TLB_T_PEEKL
+#   define TLB_T_POKEI TLB_T_POKEL
+#   define TIB_T_PEEKI TIB_T_PEEKL
+#   define TIB_T_POKEI TIB_T_POKEL
+#elif __SIZEOF_POINTER__ == 8
+#   define TLB_T_PEEKI TLB_T_PEEKQ
+#   define TLB_T_POKEI TLB_T_POKEQ
+#   define TIB_T_PEEKI TIB_T_PEEKQ
+#   define TIB_T_POKEI TIB_T_POKEQ
+#else
+#   error "Unsupported 'sizeof(void *)'"
+#endif
+
+#define TLB_PEEKB(off) TLB_T_PEEKB(u8,off)
+#define TLB_PEEKW(off) TLB_T_PEEKW(u16,off)
+#define TLB_PEEKL(off) TLB_T_PEEKL(u32,off)
+#define TLB_PEEKI(off) TLB_T_PEEKI(uintptr_t,off)
+#define TIB_PEEKB(off) TIB_T_PEEKB(u8,off)
+#define TIB_PEEKW(off) TIB_T_PEEKW(u16,off)
+#define TIB_PEEKL(off) TIB_T_PEEKL(u32,off)
+#define TIB_PEEKI(off) TIB_T_PEEKI(uintptr_t,off)
+#ifdef TLB_T_PEEKQ
+#define TLB_PEEKQ(off) TLB_T_PEEKQ(u64,off)
+#define TIB_PEEKQ(off) TIB_T_PEEKQ(u64,off)
+#endif
+
+#ifdef __seg_tlb
+#define THIS_TLB ((struct tlb __seg_tlb *)0)
+#else
+#define THIS_TLB ((struct tlb *)TLB_PEEKI(0))
+#endif
+
+#ifdef __seg_tib
+#define THIS_TIB ((struct tib __seg_tib *)0)
+#else
+#define THIS_TIB ((struct tib *)TIB_PEEKI(0x18))
+#endif
+
 
 
 

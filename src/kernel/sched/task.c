@@ -307,25 +307,6 @@ task_start(struct task *__restrict t) {
  LIST_INSERT(t->t_mman->m_tasks,t,t_mman_tasks);
  atomic_rwlock_endwrite(&t->t_mman->m_tasks_lock);
 
-#ifndef CONFIG_NO_TLB
- /* Fill in initial TIB information. */
- if (t->t_tlb != PAGE_ERROR) {
-  struct mman *omm;
-  TASK_PDIR_BEGIN(omm,t->t_mman);
-  t->t_tlb->tl_self           = t->t_tlb;
-  t->t_tlb->tl_tib.ti_seh     = SEH_FRAME_NULL;
-  if likely(t->t_ustack) {
-   t->t_tlb->tl_tib.ti_stackhi = t->t_ustack->s_end;
-   t->t_tlb->tl_tib.ti_stacklo = t->t_ustack->s_begin;
-  } else {
-   t->t_tlb->tl_tib.ti_stackhi = NULL;
-   t->t_tlb->tl_tib.ti_stacklo = NULL;
-  }
-  /* TODO: Fill in the rest. */
-  TASK_PDIR_END(omm,t->t_mman);
- }
-#endif /* !CONFIG_NO_TLB */
-
 #ifdef CONFIG_SMP
  /* Determine a usable CPU based on affinity. */
  t->t_cpu = cpu_get_suitable(&t->t_affinity);
