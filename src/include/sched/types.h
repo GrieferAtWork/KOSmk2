@@ -546,11 +546,11 @@ struct sigenter {
  size_t     se_count; /*< Amount of Signals that need handling. */
  /* Return register values (These were overwritten near the kernel stack base).
   * NOTE: Basically, this is the original iret tail that was used when the kernel was entered. */
- u32        se_eip;
+ void      *se_eip;
  u16        se_cs,__n0;
  u32        se_eflags;
 union{
- u32        se_useresp;
+ USER void *se_useresp;
  /* NOTE: 'useresp' has been manipulated to point to
   *        the kernel-generated signal information, compatible
   *        with a user-level call to a sigaction handler. */

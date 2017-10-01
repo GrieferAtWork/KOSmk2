@@ -25,6 +25,11 @@
 #include <kernel/mman.h>
 #include <kernel/stack.h>
 #include <sched/percpu.h>
+#include <kernel/user.h>
+#include <sched/signal.h>
+#include <bits/signum.h>
+#include <kernel/syscall.h>
+#include <kos/thread.h>
 
 DECL_BEGIN
 
@@ -52,6 +57,10 @@ stack_mnotify(unsigned int type, void *__restrict closure,
   }
   break;
 
+ {
+#ifndef CONFIG_NO_TLB
+  REF struct task *t;
+#endif /* !CONFIG_NO_TLB */
  case MNOTIFY_GUARD_ALLOCATE:
   /* Update the stack begin/end */
   if (STACK->s_begin > addr)
@@ -59,7 +68,24 @@ stack_mnotify(unsigned int type, void *__restrict closure,
   *(uintptr_t *)&addr += size;
   if (STACK->s_end < addr)
       STACK->s_end = addr;
-  break;
+
+#ifndef CONFIG_NO_TLB
+  if ((t = stack_task(STACK)) != NULL) {
+   struct {
+    void *hi,*lo;
+   } stck;
+   /* Update the user-space thread information block. */
+   if (t->t_tlb != PAGE_ERROR) {
+    stck.hi = STACK->s_end;
+    stck.lo = STACK->s_begin;
+    copy_to_user(&t->t_tlb->tl_tib.ti_stackhi,
+                 &stck,2*sizeof(void *));
+   }
+   TASK_DECREF(t);
+  }
+#endif /* !CONFIG_NO_TLB */
+
+ } break;
 
  {
   REF struct task *owner;
@@ -67,8 +93,15 @@ stack_mnotify(unsigned int type, void *__restrict closure,
  case MNOTIFY_GUARD_END:
   owner = stack_task(STACK);
   if (owner) {
-   /* TODO: Signal a stack overflow */
-   //task_kill(owner,SIGSEGV);
+   /* Signal a stack overflow. */
+   siginfo_t info;
+   info.si_signo    = SIGSEGV;
+   info.si_code     = SEGV_MAPERR;
+   info.si_addr     = THIS_SYSCALL_REAL_EIP;
+   info.si_addr_lsb = 0;
+   info.si_lower    = STACK->s_begin;
+   info.si_upper    = STACK->s_end;
+   task_kill2(owner,&info,0,0);
    TASK_DECREF(owner);
   }
  } break;

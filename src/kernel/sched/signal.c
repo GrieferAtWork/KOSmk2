@@ -692,11 +692,11 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
  info.ei_ctx.uc_mcontext.gregs[REG_ECX] = /* Filled later... */;
  info.ei_ctx.uc_mcontext.gregs[REG_EAX] = /* Filled later... */;
 #endif
- info.ei_ctx.uc_mcontext.gregs[REG_ESP]    = t->t_sigenter.se_useresp;
- info.ei_ctx.uc_mcontext.gregs[REG_EIP]    = t->t_sigenter.se_eip;
+ info.ei_ctx.uc_mcontext.gregs[REG_ESP]    = (greg_t)t->t_sigenter.se_useresp;
+ info.ei_ctx.uc_mcontext.gregs[REG_EIP]    = (greg_t)t->t_sigenter.se_eip;
  info.ei_ctx.uc_mcontext.gregs[REG_CS]     = t->t_sigenter.se_cs;
  info.ei_ctx.uc_mcontext.gregs[REG_EFL]    = t->t_sigenter.se_eflags;
- info.ei_ctx.uc_mcontext.gregs[REG_UESP]   = t->t_sigenter.se_useresp;
+ info.ei_ctx.uc_mcontext.gregs[REG_UESP]   = (greg_t)t->t_sigenter.se_useresp;
  info.ei_ctx.uc_mcontext.gregs[REG_SS]     = t->t_sigenter.se_ss;
  info.ei_ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
  info.ei_ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
@@ -706,8 +706,8 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
  memcpy(&info.ei_ctx.uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
 
  /* Fixup execution of the signal handler itself. */
- t->t_sigenter.se_useresp = (u32)user_info;
- t->t_sigenter.se_eip     = (u32)action->sa_handler;
+ t->t_sigenter.se_useresp = (void *)user_info;
+ t->t_sigenter.se_eip     = (void *)action->sa_handler;
 
 #else
 #error FIXME

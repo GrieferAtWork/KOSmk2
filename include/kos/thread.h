@@ -58,14 +58,15 @@ struct tib {
   */
  struct seh_frame *ti_seh;          /*< [0..1|null(SEH_FRAME_NULL)] Structured exception handlers. */
  void             *ti_stackhi;      /*< [0..1][>= ti_stacklo] Stack base address (greatest address) */
- void             *ti_stacklo;      /*< [0..1][<= ti_stackhi] Stack end address (lowest address) */
+ void             *ti_stacklo;      /*< [0..1][<= ti_stackhi] Stack end address (lowest address)
+                                     *   NOTE: 'ti_stackhi' and this pointer are updated by
+                                     *          the kernel when a guard-page is allocated. */
  u32               ti_subsystemtib; /*< ??? */
  u32               ti_fiber;        /*< ??? */
  u32               ti_abdata;       /*< ??? */
- struct tib       *ti_self;
+ struct tib       *ti_self;         /*< [1..1][== self] Self pointer. */
 
-// FS:[0x18] 	4 	Win9x and NT 	Linear address of TEB
-// ---- End of NT subsystem independent part ----
+
 // FS:[0x1C] 	4 	NT 	Environment Pointer
 // FS:[0x20] 	4 	NT 	Process ID (in some windows distributions this field is used as 'DebugContext')
 // FS:[0x24] 	4 	NT 	Current thread ID
@@ -114,7 +115,7 @@ struct tlb {
  /* TLB (Thread Local Block) (ELF-compatible & access to thread-specific data)
   * i386:   SEGMENT_BASE(%GS) == self
   * x86-64: SEGMENT_BASE(%FS) == self */
- struct tlb *tl_self; /*< [1..1] Self pointer (Required by ELF) */
+ struct tlb *tl_self; /*< [1..1][== self] Self pointer (Required by ELF) */
  /* Everything else in here is KOS-specific. */
  struct tib  tl_tib;  /*< The TIB block. */
 };

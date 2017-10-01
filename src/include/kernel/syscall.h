@@ -99,6 +99,16 @@ struct syscall_descr {
 #define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-48)
 #define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-52)
 #endif /* !CONFIG_DEBUG */
+
+/* ~Real~ system call return values.
+ * >> Still point into user-space after a signal
+ *    handler overwrote the return address. */
+#define THIS_SYSCALL_REAL_EIP     (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_eip : THIS_SYSCALL_EIP)
+#define THIS_SYSCALL_REAL_CS      (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_cs : THIS_SYSCALL_CS)
+#define THIS_SYSCALL_REAL_EFLAGS  (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_eflags : THIS_SYSCALL_EFLAGS)
+#define THIS_SYSCALL_REAL_USERESP (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_useresp : THIS_SYSCALL_USERESP)
+#define THIS_SYSCALL_REAL_SS      (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_ss : THIS_SYSCALL_SS)
+
 #else
 #error "FIXME: Need at least 'THIS_SYSCALL_EIP'"
 #endif
