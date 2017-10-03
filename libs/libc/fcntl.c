@@ -225,12 +225,12 @@ libc_dos_sopen_s(int *fd, char const *file,
 
 
 PRIVATE int LIBCCALL libc_16wopen_impl(char16_t const *file, int oflag, mode_t cmode) {
- int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ int result = -1; char *utf8file = libc_utf16to8m(file);
  if (utf8file) result = libc_open(utf8file,oflag,cmode),libc_free(utf8file);
  return result;
 }
 PRIVATE int LIBCCALL libc_32wopen_impl(char32_t const *file, int oflag, mode_t cmode) {
- int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ int result = -1; char *utf8file = libc_utf32to8m(file);
  if (utf8file) result = libc_open(utf8file,oflag,cmode),libc_free(utf8file);
  return result;
 }

@@ -764,6 +764,22 @@
 #define __CHAR32_TYPE__ __UINT32_TYPE__
 #endif
 
+#if __SIZEOF_LONG__ == 4
+#define __LONG32_TYPE__  long int
+#define __ULONG32_TYPE__ unsigned long int
+#else
+#define __LONG32_TYPE__  __INT32_TYPE__
+#define __ULONG32_TYPE__ __UINT32_TYPE__
+#endif
+
+#if __SIZEOF_LONG__ == 8
+#define __LONG64_TYPE__  long int
+#define __ULONG64_TYPE__ unsigned long int
+#else
+#define __LONG64_TYPE__  __INT64_TYPE__
+#define __ULONG64_TYPE__ __UINT64_TYPE__
+#endif
+
 #if defined(_NATIVE_CHAR16_T_DEFINED) || \
    (defined(__cpp_unicode_characters) && __cpp_unicode_characters >= 200704) || \
    (defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && (_HAS_CHAR16_T_LANGUAGE_SUPPORT-0)) || \

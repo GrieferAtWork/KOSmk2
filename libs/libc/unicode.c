@@ -32,8 +32,8 @@
 
 DECL_BEGIN
 
-PRIVATE u8 const uni_bytemarks[7] = {0x00,0x00,0xC0,0xE0,0xF0,0xF8,0xFC};
-PRIVATE u8 const utf8_trailing_bytes[256] = {
+PRIVATE ATTR_UNIRODATA u8 const uni_bytemarks[7] = {0x00,0x00,0xC0,0xE0,0xF0,0xF8,0xFC};
+PRIVATE ATTR_UNIRODATA u8 const utf8_trailing_bytes[256] = {
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -42,8 +42,8 @@ PRIVATE u8 const utf8_trailing_bytes[256] = {
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,5,5,5,5};
-PRIVATE u32 const utf8_offsets[6] = {0x00000000,0x00003080,0x000E2080,
-                                     0x03C82080,0xFA082080,0x82082080};
+PRIVATE ATTR_UNIRODATA u32 const utf8_offsets[6] = {0x00000000,0x00003080,0x000E2080,
+                                                    0x03C82080,0xFA082080,0x82082080};
 #define UNI_HALF_BASE            0x0010000
 #define UNI_HALF_MASK            0x3FF
 #define UNI_HALF_SHIFT           10
@@ -56,7 +56,7 @@ PRIVATE u32 const utf8_offsets[6] = {0x00000000,0x00003080,0x000E2080,
 #define UNI_SURROGATE_LOW_END    0xDFFF
 #define UNI_SURROGATE_LOW_BEGIN  0xDC00
 
-LOCAL bool LIBCCALL
+LOCAL ATTR_UNITEXT bool LIBCCALL
 libc_utf8_check(char const *__restrict utf8, size_t utf8chars) {
  u8 ch; char const *end = utf8+utf8chars;
  switch (utf8chars) {
@@ -91,7 +91,7 @@ libc_utf8_check(char const *__restrict utf8, size_t utf8chars) {
 
 #define GOTO_DONE() do{ if ((mode&(UNICODE_F_ALWAYSZEROTERM|UNICODE_F_NOZEROTERM)) == UNICODE_F_ALWAYSZEROTERM) goto done2; else goto done; }while(0)
 
-INTERN size_t LIBCCALL
+INTERN ATTR_UNITEXT size_t LIBCCALL
 libc_utf8to32(char const *__restrict utf8, size_t utf8len,
               char32_t *__restrict utf32, size_t buflen32,
               mbstate_t *__restrict state, u32 mode) {
@@ -180,8 +180,7 @@ err:
 }
 
 
-
-INTERN size_t LIBCCALL
+INTERN ATTR_UNITEXT size_t LIBCCALL
 libc_utf8to16(char const *__restrict utf8, size_t utf8len,
               char16_t *__restrict utf16, size_t buflen16,
               mbstate_t *__restrict state, u32 mode) {
@@ -294,7 +293,7 @@ err:
 
 
 
-INTERN size_t LIBCCALL
+INTERN ATTR_UNITEXT size_t LIBCCALL
 libc_utf32to8(char32_t const *__restrict utf32, size_t utf32len,
               char *__restrict utf8, size_t buflen8,
               mbstate_t *__restrict UNUSED(state), u32 mode) {
@@ -344,7 +343,9 @@ err:
  return UNICODE_ERROR;
 }
 
-INTERN size_t LIBCCALL
+
+
+INTERN ATTR_UNITEXT size_t LIBCCALL
 libc_utf16to8(char16_t const *__restrict utf16, size_t utf16len,
               char *__restrict utf8, size_t buflen8,
               mbstate_t *__restrict state, u32 mode) {
@@ -421,7 +422,8 @@ err:
 }
 
 
-INTDEF ssize_t LIBCCALL
+
+INTDEF ATTR_UNITEXT ssize_t LIBCCALL
 libc_format_16wsztomb(pformatprinter printer, void *closure,
                       char16_t const *__restrict c16, size_t c16len,
                       mbstate_t *__restrict ps) {
@@ -482,7 +484,9 @@ err:
  return -1;
 }
 
-INTDEF ssize_t LIBCCALL
+
+
+INTDEF ATTR_UNITEXT ssize_t LIBCCALL
 libc_format_32wsztomb(pformatprinter printer, void *closure,
                       char32_t const *__restrict c32, size_t c32len,
                       mbstate_t *__restrict ps) {
@@ -540,7 +544,7 @@ libc_format_32wsntomb(pformatprinter printer, void *closure,
 
 
 
-INTERN char16_t *LIBCCALL libc_utf8to16m(char const *__restrict utf8, size_t utf8len) {
+INTERN ATTR_UNITEXT char16_t *LIBCCALL libc_utf8to16ms(char const *__restrict utf8, size_t utf8len) {
  size_t reqlen,buflen = (utf8len+(utf8len/3)+1);
  char16_t *result = (char16_t *)libc_malloc(buflen*sizeof(char16_t));
  if unlikely(!result) return NULL;
@@ -557,7 +561,7 @@ again:
  }
  return result;
 }
-INTERN char32_t *LIBCCALL libc_utf8to32m(char const *__restrict utf8, size_t utf8len) {
+INTERN ATTR_UNITEXT char32_t *LIBCCALL libc_utf8to32ms(char const *__restrict utf8, size_t utf8len) {
  size_t reqlen,buflen = (utf8len+(utf8len/3)+1);
  char32_t *result = (char32_t *)libc_malloc(buflen*sizeof(char32_t));
  if unlikely(!result) return NULL;
@@ -574,7 +578,7 @@ again:
  }
  return result;
 }
-INTERN char *LIBCCALL libc_utf16to8m(char16_t const *__restrict utf16, size_t utf16len) {
+INTERN ATTR_UNITEXT char *LIBCCALL libc_utf16to8ms(char16_t const *__restrict utf16, size_t utf16len) {
  size_t reqlen,buflen = (utf16len+1);
  char *result = (char *)libc_malloc(buflen*sizeof(char));
  if unlikely(!result) return NULL;
@@ -591,7 +595,7 @@ again:
  }
  return result;
 }
-INTERN char *LIBCCALL libc_utf32to8m(char32_t const *__restrict utf32, size_t utf32len) {
+INTERN ATTR_UNITEXT char *LIBCCALL libc_utf32to8ms(char32_t const *__restrict utf32, size_t utf32len) {
  size_t reqlen,buflen = (utf32len+1);
  char *result = (char *)libc_malloc(buflen*sizeof(char));
  if unlikely(!result) return NULL;
@@ -609,6 +613,10 @@ again:
  return result;
 }
 
+INTERN ATTR_UNITEXT char16_t *LIBCCALL libc_utf8to16m(char const *__restrict utf8) { return libc_utf8to16ms(utf8,libc_strlen(utf8)); }
+INTERN ATTR_UNITEXT char32_t *LIBCCALL libc_utf8to32m(char const *__restrict utf8) { return libc_utf8to32ms(utf8,libc_strlen(utf8)); }
+INTERN ATTR_UNITEXT char *LIBCCALL libc_utf16to8m(char16_t const *__restrict utf16) { return libc_utf16to8ms(utf16,libc_16wcslen(utf16)); }
+INTERN ATTR_UNITEXT char *LIBCCALL libc_utf32to8m(char32_t const *__restrict utf32) { return libc_utf32to8ms(utf32,libc_32wcslen(utf32)); }
 
 DECL_END
 

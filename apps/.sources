@@ -28,20 +28,20 @@ BEGIN APPLICATION("terminal-vga")
 	SET_DISKFILE("/bin/terminal-vga")
 	SOURCE("terminal-vga/*.c")
 END
-BEGIN_NEW PROJECT("elfimg")
-	SET_COMPILER("host-c")
-	SET_LINKER("host-c")
-	SET_OUTPUT("/bin/apps/elfimg")
-	SET_DISKFILE(none)
-	SOURCE("elfimg/*.c")
-END
-BEGIN_NEW PROJECT("elf2lib")
-	SET_COMPILER("host-c")
-	SET_LINKER("host-c")
-	SET_OUTPUT("/bin/apps/elf2lib")
-	SET_DISKFILE(none)
-	SOURCE("elf2lib/*.c")
-END
+//BEGIN_NEW PROJECT("elfimg")
+//	SET_COMPILER("host-c")
+//	SET_LINKER("host-c")
+//	SET_OUTPUT("/bin/apps/elfimg")
+//	SET_DISKFILE(none)
+//	SOURCE("elfimg/*.c")
+//END
+//BEGIN_NEW PROJECT("elf2lib")
+//	SET_COMPILER("host-c")
+//	SET_LINKER("host-c")
+//	SET_OUTPUT("/bin/apps/elf2lib")
+//	SET_DISKFILE(none)
+//	SOURCE("elf2lib/*.c")
+//END
 
 #if __has_include("private/.sources")
 #include "private/.sources"

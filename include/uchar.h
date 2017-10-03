@@ -158,8 +158,8 @@ __LIBC wint_t (__LIBCCALL putc32char)(char32_t __wc) __C32_DECL(putwchar);
 __LIBC char16_t *(__LIBCCALL fgetc16s)(char16_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __C16_DECL(fgetws);
 __LIBC char32_t *(__LIBCCALL fgetc32s)(char32_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __C32_DECL(fgetws);
 #else /* __SIZEOF_INT__ == __SIZEOF_SIZE_T__ */
-__LIBC char16_t *(__LIBCCALL fgetc16s)(char16_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __C16_DECL(fgetws_sz);
-__LIBC char32_t *(__LIBCCALL fgetc32s)(char32_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __C32_DECL(fgetws_sz);
+__LIBC char16_t *(__LIBCCALL fgetc16s)(char16_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __ASMNAME("_fgetws_sz");
+__LIBC char32_t *(__LIBCCALL fgetc32s)(char32_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __ASMNAME("fgetws_sz");
 #endif /* __SIZEOF_INT__ != __SIZEOF_SIZE_T__ */
 #else /* __USE_KOS */
 __LIBC char16_t *(__LIBCCALL fgetc16s)(char16_t *__restrict __ws, int __n, __FILE *__restrict __stream) __C16_DECL(fgetws);
@@ -226,39 +226,39 @@ __LIBC ssize_t (__LIBCCALL fuprintf)(__FILE *__restrict __stream, char16_t const
 __LIBC ssize_t (__LIBCCALL fUprintf)(__FILE *__restrict __stream, char32_t const *__restrict __format, ...) __C32_DECL(fwprintf);
 __LIBC ssize_t (__LIBCCALL uprintf)(char16_t const *__restrict __format, ...) __C16_DECL(wprintf);
 __LIBC ssize_t (__LIBCCALL Uprintf)(char32_t const *__restrict __format, ...) __C32_DECL(wprintf);
-__LIBC ssize_t (__LIBCCALL suprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, ...) __ASMNAME("_swprintf");
+__LIBC ssize_t (__LIBCCALL suprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, ...) __ASMNAME("_swprintf_c");
 __LIBC ssize_t (__LIBCCALL sUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, ...) __ASMNAME("swprintf");
 __LIBC ssize_t (__LIBCCALL vfuprintf)(__FILE *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vfwprintf);
 __LIBC ssize_t (__LIBCCALL vfUprintf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwprintf);
 __LIBC ssize_t (__LIBCCALL vuprintf)(char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vwprintf);
 __LIBC ssize_t (__LIBCCALL vUprintf)(char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vwprintf);
-__LIBC ssize_t (__LIBCCALL vsuprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("_vswprintf");
+__LIBC ssize_t (__LIBCCALL vsuprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("_vswprintf_c");
 __LIBC ssize_t (__LIBCCALL vsUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("vswprintf");
 __LIBC ssize_t (__LIBCCALL fuscanf)(__FILE *__restrict __stream, char16_t const *__restrict __format, ...) __C16_DECL(fwscanf);
 __LIBC ssize_t (__LIBCCALL fUscanf)(__FILE *__restrict __stream, char32_t const *__restrict __format, ...) __C32_DECL(fwscanf);
 __LIBC ssize_t (__LIBCCALL uscanf)(char16_t const *__restrict __format, ...) __C16_DECL(wscanf);
 __LIBC ssize_t (__LIBCCALL Uscanf)(char32_t const *__restrict __format, ...) __C32_DECL(wscanf);
-__LIBC ssize_t (__LIBCCALL suscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, ...) __ASMNAME("_swscanf");
-__LIBC ssize_t (__LIBCCALL sUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, ...) __ASMNAME("swscanf");
+__LIBC ssize_t (__LIBCCALL suscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, ...) __C16_DECL(swscanf);
+__LIBC ssize_t (__LIBCCALL sUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, ...) __C32_DECL(swscanf);
 #else /* __USE_KOS */
 __LIBC int (__LIBCCALL fuprintf)(__FILE *__restrict __stream, char16_t const *__restrict __format, ...) __C16_DECL(fwprintf);
 __LIBC int (__LIBCCALL fUprintf)(__FILE *__restrict __stream, char32_t const *__restrict __format, ...) __C32_DECL(fwprintf);
 __LIBC int (__LIBCCALL uprintf)(char16_t const *__restrict __format, ...) __C16_DECL(wprintf);
 __LIBC int (__LIBCCALL Uprintf)(char32_t const *__restrict __format, ...) __C32_DECL(wprintf);
-__LIBC int (__LIBCCALL suprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, ...) __ASMNAME("_swprintf");
+__LIBC int (__LIBCCALL suprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, ...) __ASMNAME("_swprintf_c");
 __LIBC int (__LIBCCALL sUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, ...) __ASMNAME("swprintf");
 __LIBC int (__LIBCCALL vfuprintf)(__FILE *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vfwprintf);
 __LIBC int (__LIBCCALL vfUprintf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwprintf);
 __LIBC int (__LIBCCALL vuprintf)(char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vwprintf);
 __LIBC int (__LIBCCALL vUprintf)(char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vwprintf);
-__LIBC int (__LIBCCALL vsuprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("_vswprintf");
+__LIBC int (__LIBCCALL vsuprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("_vswprintf_c");
 __LIBC int (__LIBCCALL vsUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("vswprintf");
 __LIBC int (__LIBCCALL fuscanf)(__FILE *__restrict __stream, char16_t const *__restrict __format, ...) __C16_DECL(fwscanf);
 __LIBC int (__LIBCCALL fUscanf)(__FILE *__restrict __stream, char32_t const *__restrict __format, ...) __C32_DECL(fwscanf);
 __LIBC int (__LIBCCALL uscanf)(char16_t const *__restrict __format, ...) __C16_DECL(wscanf);
 __LIBC int (__LIBCCALL Uscanf)(char32_t const *__restrict __format, ...) __C32_DECL(wscanf);
-__LIBC int (__LIBCCALL suscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, ...) __ASMNAME("_swscanf");
-__LIBC int (__LIBCCALL sUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, ...) __ASMNAME("swscanf");
+__LIBC int (__LIBCCALL suscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, ...) __C16_DECL(swscanf);
+__LIBC int (__LIBCCALL sUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, ...) __C32_DECL(swscanf);
 #endif /* !__USE_KOS */
 #endif /* __USE_ISOC95 || __USE_UNIX98 */
 #ifdef __USE_ISOC99
@@ -278,15 +278,15 @@ __LIBC ssize_t (__LIBCCALL vfuscanf)(__FILE *__restrict __s, char16_t const *__r
 __LIBC ssize_t (__LIBCCALL vfUscanf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwscanf);
 __LIBC ssize_t (__LIBCCALL vuscanf)(char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vwscanf);
 __LIBC ssize_t (__LIBCCALL vUscanf)(char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vwscanf);
-__LIBC ssize_t (__LIBCCALL vsuscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("_vswscanf");
-__LIBC ssize_t (__LIBCCALL vsUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("vswscanf");
+__LIBC ssize_t (__LIBCCALL vsuscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vswscanf);
+__LIBC ssize_t (__LIBCCALL vsUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vswscanf);
 #else /* __USE_KOS */
 __LIBC int (__LIBCCALL vfuscanf)(__FILE *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vfwscanf);
 __LIBC int (__LIBCCALL vfUscanf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwscanf);
 __LIBC int (__LIBCCALL vuscanf)(char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vwscanf);
 __LIBC int (__LIBCCALL vUscanf)(char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vwscanf);
-__LIBC int (__LIBCCALL vsuscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("_vswscanf");
-__LIBC int (__LIBCCALL vsUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("vswscanf");
+__LIBC int (__LIBCCALL vsuscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vswscanf);
+__LIBC int (__LIBCCALL vsUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vswscanf);
 #endif /* !__USE_KOS */
 #endif /* __USE_ISOC99 */
 
@@ -311,8 +311,8 @@ __LIBC char16_t *(__LIBCCALL c16pcpy)(char16_t *__restrict __dst, char16_t const
 __LIBC char32_t *(__LIBCCALL c32pcpy)(char32_t *__restrict __dst, char32_t const *__restrict __src) __C32_DECL(wcpcpy);
 __LIBC char16_t *(__LIBCCALL c16pncpy)(char16_t *__restrict __dst, char16_t const *__restrict __src, size_t __n) __C16_DECL(wcpncpy);
 __LIBC char32_t *(__LIBCCALL c32pncpy)(char32_t *__restrict __dst, char32_t const *__restrict __src, size_t __n) __C32_DECL(wcpncpy);
-__LIBC __FILE *(__LIBCCALL open_umemstream)(char16_t **__bufloc, size_t *__sizeloc) __C16_DECL(open_wmemstream);
-__LIBC __FILE *(__LIBCCALL open_Umemstream)(char32_t **__bufloc, size_t *__sizeloc) __C32_DECL(open_wmemstream);
+__LIBC __FILE *(__LIBCCALL open_umemstream)(char16_t **__bufloc, size_t *__sizeloc) __ASMNAME("_open_wmemstream");
+__LIBC __FILE *(__LIBCCALL open_Umemstream)(char32_t **__bufloc, size_t *__sizeloc) __ASMNAME("open_wmemstream");
 #endif /* __USE_XOPEN2K8 */
 
 #if defined(__USE_XOPEN2K8) || defined(__USE_DOS)
@@ -374,34 +374,34 @@ __LIBC float (__LIBCCALL c16tof_l)(char16_t const *__restrict __nptr, char16_t *
 __LIBC float (__LIBCCALL c32tof_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, __locale_t __loc) __ASMNAME("wcstof_l");
 __LIBC long double (__LIBCCALL c16told_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, __locale_t __loc) __ASMNAME("_wcstold_l");
 __LIBC long double (__LIBCCALL c32told_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, __locale_t __loc) __ASMNAME("wcstold_l");
-__LIBC wint_t (__LIBCCALL getc16_unlocked)(__FILE *__stream) __C16_DECL(getwc_unlocked);
-__LIBC wint_t (__LIBCCALL getc32_unlocked)(__FILE *__stream) __C32_DECL(getwc_unlocked);
-__LIBC wint_t (__LIBCCALL getc16char_unlocked)(void) __C16_DECL(getwchar_unlocked);
-__LIBC wint_t (__LIBCCALL getc32char_unlocked)(void) __C32_DECL(getwchar_unlocked);
-__LIBC wint_t (__LIBCCALL fgetc16_unlocked)(__FILE *__stream) __C16_DECL(fgetwc_unlocked);
-__LIBC wint_t (__LIBCCALL fgetc32_unlocked)(__FILE *__stream) __C32_DECL(fgetwc_unlocked);
-__LIBC wint_t (__LIBCCALL fputc16_unlocked)(char16_t __wc, __FILE *__stream) __C16_DECL(fputwc_unlocked);
-__LIBC wint_t (__LIBCCALL fputc32_unlocked)(char32_t __wc, __FILE *__stream) __C32_DECL(fputwc_unlocked);
-__LIBC wint_t (__LIBCCALL putc16_unlocked)(char16_t __wc, __FILE *__stream) __C16_DECL(putwc_unlocked);
-__LIBC wint_t (__LIBCCALL putc32_unlocked)(char32_t __wc, __FILE *__stream) __C32_DECL(putwc_unlocked);
-__LIBC wint_t (__LIBCCALL putc16char_unlocked)(char16_t __wc) __C16_DECL(putwchar_unlocked);
-__LIBC wint_t (__LIBCCALL putc32char_unlocked)(char32_t __wc) __C32_DECL(putwchar_unlocked);
+__LIBC wint_t (__LIBCCALL getc16_unlocked)(__FILE *__stream) __ASMNAME("_fgetwc_nolock");
+__LIBC wint_t (__LIBCCALL getc32_unlocked)(__FILE *__stream) __ASMNAME("fgetwc_unlocked");
+__LIBC wint_t (__LIBCCALL fgetc16_unlocked)(__FILE *__stream) __ASMNAME("_fgetwc_nolock");
+__LIBC wint_t (__LIBCCALL fgetc32_unlocked)(__FILE *__stream) __ASMNAME("fgetwc_unlocked");
+__LIBC wint_t (__LIBCCALL getc16char_unlocked)(void) __ASMNAME("_getwchar_nolock");
+__LIBC wint_t (__LIBCCALL getc32char_unlocked)(void) __ASMNAME("getwchar_unlocked");
+__LIBC wint_t (__LIBCCALL putc16_unlocked)(char16_t __wc, __FILE *__stream) __ASMNAME("_fputwc_nolock");
+__LIBC wint_t (__LIBCCALL putc32_unlocked)(char32_t __wc, __FILE *__stream) __ASMNAME("fputwc_unlocked");
+__LIBC wint_t (__LIBCCALL fputc16_unlocked)(char16_t __wc, __FILE *__stream) __ASMNAME("_fputwc_nolock");
+__LIBC wint_t (__LIBCCALL fputc32_unlocked)(char32_t __wc, __FILE *__stream) __ASMNAME("fputwc_unlocked");
+__LIBC wint_t (__LIBCCALL putc16char_unlocked)(char16_t __wc) __ASMNAME("_putwchar_nolock");
+__LIBC wint_t (__LIBCCALL putc32char_unlocked)(char32_t __wc) __ASMNAME("putwchar_unlocked");
 #ifdef __USE_KOS
 #if __SIZEOF_INT__ == __SIZEOF_SIZE_T__
-__LIBC char16_t *(__LIBCCALL fgetc16s_unlocked)(char16_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __C16_DECL(fgetws_unlocked);
-__LIBC char32_t *(__LIBCCALL fgetc32s_unlocked)(char32_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __C32_DECL(fgetws_unlocked);
+__LIBC char16_t *(__LIBCCALL fgetc16s_unlocked)(char16_t *__restrict __buf, size_t __n, __FILE *__restrict __stream) __ASMNAME("_fgetws_nolock");
+__LIBC char32_t *(__LIBCCALL fgetc32s_unlocked)(char32_t *__restrict __buf, size_t __n, __FILE *__restrict __stream) __ASMNAME("fgetws_unlocked");
 #else /* __SIZEOF_INT__ == __SIZEOF_SIZE_T__ */
-__LIBC char16_t *(__LIBCCALL fgetc16s_unlocked)(char16_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __C16_DECL(fgetws_unlocked_sz);
-__LIBC char32_t *(__LIBCCALL fgetc32s_unlocked)(char32_t *__restrict __ws, size_t __n, __FILE *__restrict __stream) __C32_DECL(fgetws_unlocked_sz);
+__LIBC char16_t *(__LIBCCALL fgetc16s_unlocked)(char16_t *__restrict __buf, size_t __n, __FILE *__restrict __stream) __ASMNAME("_fgetws_nolock_sz");
+__LIBC char32_t *(__LIBCCALL fgetc32s_unlocked)(char32_t *__restrict __buf, size_t __n, __FILE *__restrict __stream) __ASMNAME("fgetws_unlocked_sz");
 #endif /* __SIZEOF_INT__ != __SIZEOF_SIZE_T__ */
 #else /* __USE_KOS */
-__LIBC char16_t *(__LIBCCALL fgetc16s_unlocked)(char16_t *__restrict __ws, int __n, __FILE *__restrict __stream) __C16_DECL(fgetws_unlocked);
-__LIBC char32_t *(__LIBCCALL fgetc32s_unlocked)(char32_t *__restrict __ws, int __n, __FILE *__restrict __stream) __C32_DECL(fgetws_unlocked);
+__LIBC char16_t *(__LIBCCALL fgetc16s_unlocked)(char16_t *__restrict __buf, int __n, __FILE *__restrict __stream) __ASMNAME("_fgetws_nolock");
+__LIBC char32_t *(__LIBCCALL fgetc32s_unlocked)(char32_t *__restrict __buf, int __n, __FILE *__restrict __stream) __ASMNAME("fgetws_unlocked");
 #endif /* !__USE_KOS */
-__LIBC int (__LIBCCALL fputc16s_unlocked)(char16_t const *__restrict __ws, __FILE *__restrict __stream) __C16_DECL(fputws_unlocked);
-__LIBC int (__LIBCCALL fputc32s_unlocked)(char32_t const *__restrict __ws, __FILE *__restrict __stream) __C32_DECL(fputws_unlocked);
-__LIBC size_t (__LIBCCALL c16ftime_l)(char16_t *__restrict __s, size_t __maxsize, char16_t const *__restrict __format, struct tm const *__restrict __tp, __locale_t __loc) __C16_FUNC(ftime_l);
-__LIBC size_t (__LIBCCALL c32ftime_l)(char32_t *__restrict __s, size_t __maxsize, char32_t const *__restrict __format, struct tm const *__restrict __tp, __locale_t __loc) __C32_FUNC(ftime_l);
+__LIBC int (__LIBCCALL fputc16s_unlocked)(char16_t const *__restrict __str, __FILE *__restrict __stream) __ASMNAME("_fputws_nolock");
+__LIBC int (__LIBCCALL fputc32s_unlocked)(char32_t const *__restrict __str, __FILE *__restrict __stream) __ASMNAME("fputws_unlocked");
+__LIBC size_t (__LIBCCALL c16ftime_l)(char16_t *__restrict __buf, size_t __maxsize, char16_t const *__restrict __format, struct tm const *__restrict __tp, __locale_t __loc) __C16_FUNC(ftime_l);
+__LIBC size_t (__LIBCCALL c32ftime_l)(char32_t *__restrict __buf, size_t __maxsize, char32_t const *__restrict __format, struct tm const *__restrict __tp, __locale_t __loc) __C32_FUNC(ftime_l);
 #endif /* __USE_GNU */
 
 #ifdef __USE_KOS

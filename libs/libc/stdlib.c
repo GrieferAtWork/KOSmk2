@@ -586,12 +586,12 @@ INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_mktemp_s(char *templatename, size_t si
 }
 
 INTERN ATTR_DOSTEXT int LIBCCALL libc_16wsystem(char16_t const *__restrict command) {
- int result = -1; char *utf8_command = libc_utf16to8m(command,libc_16wcslen(command));
+ int result = -1; char *utf8_command = libc_utf16to8m(command);
  if (utf8_command) result = libc_system(utf8_command),libc_free(utf8_command);
  return result;
 }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_32wsystem(char32_t const *__restrict command) {
- int result = -1; char *utf8_command = libc_utf32to8m(command,libc_32wcslen(command));
+ int result = -1; char *utf8_command = libc_utf32to8m(command);
  if (utf8_command) result = libc_system(utf8_command),libc_free(utf8_command);
  return result;
 }

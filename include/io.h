@@ -115,7 +115,7 @@ __LIBC __WUNUSED int (__LIBCCALL isatty)(int __fd) __PE_FUNC_OLDPEA(isatty);
 #endif /* !__isatty_defined */
 #ifndef __lseek_defined
 #define __lseek_defined 1
-__LIBC __INT32_TYPE__ (__LIBCCALL lseek)(int __fd, __INT32_TYPE__ __offset, int __whence) __PE_FUNC_OLDPEA(lseek);
+__LIBC __LONG32_TYPE__ (__LIBCCALL lseek)(int __fd, __LONG32_TYPE__ __offset, int __whence) __PE_FUNC_OLDPEA(lseek);
 #endif /* !__lseek_defined */
 #ifndef __mktemp_defined
 #define __mktemp_defined 1
@@ -147,21 +147,24 @@ __LIBC __NONNULL((1)) int (__LIBCCALL _access)(char const *__file, int __type) _
 __LIBC __NONNULL((1)) int (__LIBCCALL _creat)(char const *__file, int __pmode) __UFS_FUNC_OLDPEB(creat);
 __LIBC __NONNULL((1)) int (__LIBCCALL _chmod)(char const *__file, int __mode) __UFS_FUNC_OLDPEB(chmod);
 __LIBC __NONNULL((1)) errno_t (__LIBCCALL _access_s)(char const *__file, int __type) __UFS_FUNC_OLDPEB(access_s);
-__LIBC int (__LIBCCALL _chsize)(int __fd, __INT32_TYPE__ __size) __KOS_ASMNAME("ftruncate");
+__LIBC int (__LIBCCALL _chsize)(int __fd, __LONG32_TYPE__ __size) __KOS_ASMNAME("ftruncate");
 __LIBC errno_t (__LIBCCALL _chsize_s)(int __fd, __INT64_TYPE__ __size) __KOS_ASMNAME("ftruncate64");
+#ifndef ___unlink_defined
+#define ___unlink_defined 1
 __LIBC __NONNULL((1)) int (__LIBCCALL _unlink)(char const *__file) __UFS_FUNC_OLDPEB(unlink);
+#endif /* !___unlink_defined */
 __LIBC int (__LIBCCALL _close)(int __fd) __PE_FUNC_OLDPEB(close);
 __LIBC int (__LIBCCALL _commit)(int __fd) __KOS_ASMNAME("fdatasync");
 __LIBC int (__LIBCCALL _dup)(int __fd) __PE_FUNC_OLDPEB(dup);
 __LIBC int (__LIBCCALL _dup2)(int __filehandlesrc, int __filehandledst) __PE_FUNC_OLDPEB(dup2);
 __LIBC int (__LIBCCALL _eof)(int __fd);
-__LIBC __INT32_TYPE__ (__LIBCCALL _filelength)(int __fd);
+__LIBC __LONG32_TYPE__ (__LIBCCALL _filelength)(int __fd);
 __LIBC __INT64_TYPE__ (__LIBCCALL _filelengthi64)(int __fd);
 __LIBC int (__LIBCCALL _isatty)(int __fd) __PE_FUNC_OLDPEB(isatty);
-__LIBC int (__LIBCCALL _locking)(int __fd, int __lockmode, __INT32_TYPE__ __numofbytes) __KOS_ASMNAME("lockf");
+__LIBC int (__LIBCCALL _locking)(int __fd, int __lockmode, __LONG32_TYPE__ __numofbytes) __KOS_ASMNAME("lockf");
 __LIBC __NONNULL((1)) errno_t (__LIBCCALL _mktemp_s)(char *__templatename, size_t __size);
 __LIBC __NONNULL((1)) int (__LIBCCALL _pipe)(int __pipedes[2], __UINT32_TYPE__ __pipesize, int __textmode);
-__LIBC __INT32_TYPE__ (__LIBCCALL _lseek)(int __fd, __INT32_TYPE__ __offset, int __whence) __KOS_ASMNAME("lseek");
+__LIBC __LONG32_TYPE__ (__LIBCCALL _lseek)(int __fd, __LONG32_TYPE__ __offset, int __whence) __KOS_ASMNAME("lseek");
 __LIBC __INT64_TYPE__ (__LIBCCALL _lseeki64)(int __fd, __INT64_TYPE__ __offset, int __whence) __KOS_ASMNAME("lseek64");
 #if __SIZEOF_SIZE_T__ == 4
 __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _read)(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize) __PE_FUNC_OLDPEB(read);
@@ -171,7 +174,7 @@ __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _read)(int __fd, void *__dstbuf
 __LIBC __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _write)(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize);
 #endif /* __SIZEOF_SIZE_T__ != 4 */
 
-__LIBC __INT32_TYPE__ (__LIBCCALL _tell)(int __fd);
+__LIBC __LONG32_TYPE__ (__LIBCCALL _tell)(int __fd);
 __LIBC __INT64_TYPE__ (__LIBCCALL _telli64)(int __fd);
 __LIBC int (__LIBCCALL _setmode)(int __fd, int __mode) __PE_FUNC_OLDPEB(setmode);
 __LIBC int (__LIBCCALL _umask)(int __mode) __PE_FUNC_OLDPEB(umask);
@@ -198,12 +201,12 @@ __LIBC intptr_t (__LIBCCALL _get_osfhandle)(int __fd); /* return __fd */
 __LIBC int (__LIBCCALL _open_osfhandle)(intptr_t __osfd, int __flags); /* dup() */
 
 /* Weird, new functions not apart of any standard. */
-__LIBC __INT32_TYPE__ (__LIBCCALL filelength)(int __fd) __ASMNAME("_filelength"); /* lseek(fd,SEEK_END,0) */
-__LIBC int (__LIBCCALL chsize)(int __fd, __INT32_TYPE__ __size) __ASMNAME2("ftruncate","_chsize");
-__LIBC int (__LIBCCALL locking)(int __fd, int __lockmode, __INT32_TYPE__ __numofbytes) __ASMNAME2("lockf","_locking");
+__LIBC __LONG32_TYPE__ (__LIBCCALL filelength)(int __fd) __ASMNAME("_filelength"); /* lseek(fd,SEEK_END,0) */
+__LIBC int (__LIBCCALL chsize)(int __fd, __LONG32_TYPE__ __size) __ASMNAME2("ftruncate","_chsize");
+__LIBC int (__LIBCCALL locking)(int __fd, int __lockmode, __LONG32_TYPE__ __numofbytes) __ASMNAME2("lockf","_locking");
 __LIBC int (__ATTR_CDECL sopen)(char const *__file, int __oflag, int __sflag, ...) __UFS_FUNC_OLDPEA(sopen);
 __LIBC int (__LIBCCALL setmode)(int __fd, int __mode) __PE_FUNC_OLDPEA(setmode); /* F_SETFL */
-__LIBC __INT32_TYPE__ (__LIBCCALL tell)(int __fd) __ASMNAME("_tell"); /* lseek(fd,SEEK_CUR,0) */
+__LIBC __LONG32_TYPE__ (__LIBCCALL tell)(int __fd) __ASMNAME("_tell"); /* lseek(fd,SEEK_CUR,0) */
 __LIBC int (__LIBCCALL eof)(int __fd) __ASMNAME("_eof"); /* lseek(fd,SEEK_CUR,0) == lseek(fd,SEEK_END,0) */
 
 #ifndef _WIO_DEFINED

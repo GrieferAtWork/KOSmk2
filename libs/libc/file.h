@@ -28,6 +28,7 @@
 #include <hybrid/types.h>
 #include <stdarg.h>
 #include <uchar.h>
+#include <xlocale.h>
 
 
 /* Config: call 'datasync()' on the underlying file
@@ -36,6 +37,11 @@
 //#define CONFIG_FILE_DATASYNC_DURING_FLUSH
 
 DECL_BEGIN
+
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
 
 #ifndef __fpos_t_defined
 #define __fpos_t_defined 1
@@ -46,6 +52,12 @@ typedef __FS_TYPE(pos) fpos_t;
 #define __fpos64_t_defined 1
 typedef __pos64_t   fpos64_t;
 #endif /* !__fpos64_t_defined */
+
+#ifndef __char16_t_defined
+#define __char16_t_defined 1
+typedef __CHAR16_TYPE__ char16_t;
+typedef __CHAR32_TYPE__ char32_t;
+#endif /* !__char16_t_defined */
 
 #ifndef __std_FILE_defined
 #define __std_FILE_defined 1
@@ -161,7 +173,7 @@ INTDEF int LIBCCALL libc_fdoflush(FILE *__restrict self);
 INTDEF __pos_t LIBCCALL libc_fdotell(FILE *__restrict self);
 INTDEF int LIBCCALL libc_fdoseek(FILE *__restrict self, __off_t off, int whence);
 INTDEF int LIBCCALL libc_dosetvbuf(FILE *__restrict self, char *__restrict buf, int modes, size_t n);
-INTDEF int LIBCCALL libc_doungetc(int ch, FILE *__restrict self);
+INTDEF int LIBCCALL libc_doungetc(int c, FILE *__restrict self);
 /* Try to fill unused buffer memory with new data, allocating a new buffer if none was available before. */
 INTDEF int LIBCCALL libc_doffill(FILE *__restrict self);
 
@@ -193,52 +205,76 @@ INTDEF int LIBCCALL libc_fseeko64(FILE *self, off64_t off, int whence);
 INTDEF long int LIBCCALL libc_ftell(FILE *self);
 INTDEF off_t LIBCCALL libc_ftello(FILE *self);
 INTDEF off64_t LIBCCALL libc_ftello64(FILE *self);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF int LIBCCALL libc_fseeko_unlocked(FILE *self, off_t off, int whence);
+INTDEF int LIBCCALL libc_fseeko64_unlocked(FILE *self, off64_t off, int whence);
+INTDEF off_t LIBCCALL libc_ftello_unlocked(FILE *self);
+INTDEF off64_t LIBCCALL libc_ftello64_unlocked(FILE *self);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTDEF int LIBCCALL libc_fgetpos(FILE *__restrict self, fpos_t *__restrict pos);
 INTDEF int LIBCCALL libc_fsetpos(FILE *self, fpos_t const *pos);
 INTDEF int LIBCCALL libc_fgetpos64(FILE *__restrict self, fpos64_t *__restrict pos);
 INTDEF int LIBCCALL libc_fsetpos64(FILE *self, fpos64_t const *pos);
 
+INTDEF FILE *LIBCCALL libc_tmpfile64(void);
+INTDEF FILE *LIBCCALL libc_tmpfile(void);
+INTDEF FILE *LIBCCALL libc_fdopen(int fd, char const *__restrict modes);
+INTDEF FILE *LIBCCALL libc_fdreopen(int fd, char const *__restrict modes, FILE *__restrict self, int mode);
+INTDEF FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__restrict modes);
+INTDEF FILE *LIBCCALL libc_fopen64(char const *__restrict filename, char const *__restrict modes);
+INTDEF FILE *LIBCCALL libc_freopen(char const *__restrict filename, char const *__restrict modes, FILE *__restrict self);
+INTDEF FILE *LIBCCALL libc_freopen64(char const *__restrict filename, char const *__restrict modes, FILE *__restrict self);
+INTDEF FILE *LIBCCALL libc_fmemopen(void *s, size_t len, char const *modes);
+INTDEF FILE *LIBCCALL libc_open_memstream(char **bufloc, size_t *sizeloc);
+INTDEF FILE *LIBCCALL libc_popen(char const *command, char const *modes);
 
-INTDEF ssize_t LIBCCALL libc_vfprintf(FILE *__restrict self, char const *__restrict format, va_list args);
-INTDEF ssize_t ATTR_CDECL libc_printf(char const *__restrict format, ...);
+INTDEF int LIBCCALL libc_fclose(FILE *self);
+INTDEF int LIBCCALL libc_pclose(FILE *self);
+INTDEF int LIBCCALL libc_fcloseall(void);
+
+INTDEF ssize_t LIBCCALL   libc_vfprintf(FILE *__restrict self, char const *__restrict format, va_list args);
 INTDEF ssize_t ATTR_CDECL libc_fprintf(FILE *__restrict self, char const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_vprintf(char const *__restrict format, va_list args);
+INTDEF ssize_t LIBCCALL   libc_vprintf(char const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_printf(char const *__restrict format, ...);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF ssize_t LIBCCALL   libc_dos_vfprintf(FILE *__restrict self, char const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_dos_fprintf(FILE *__restrict self, char const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL   libc_dos_vprintf(char const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_dos_printf(char const *__restrict format, ...);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 INTDEF ssize_t LIBCCALL libc_vfscanf(FILE *__restrict self, char const *__restrict format, va_list args);
 INTDEF ssize_t LIBCCALL libc_vscanf(char const *__restrict format, va_list args);
 INTDEF ssize_t ATTR_CDECL libc_fscanf(FILE *__restrict self, char const *__restrict format, ...);
 INTDEF ssize_t ATTR_CDECL libc_scanf(char const *__restrict format, ...);
+INTDEF int LIBCCALL libc_getc(FILE *self);
+INTDEF int LIBCCALL libc_fgetc(FILE *self);
+INTDEF int LIBCCALL libc_getc_unlocked(FILE *self);
 INTDEF int LIBCCALL libc_fgetc_unlocked(FILE *self);
+INTDEF int LIBCCALL libc_putc(int c, FILE *self);
+INTDEF int LIBCCALL libc_fputc(int c, FILE *self);
+INTDEF int LIBCCALL libc_putc_unlocked(int c, FILE *self);
 INTDEF int LIBCCALL libc_fputc_unlocked(int c, FILE *self);
 INTDEF int LIBCCALL libc_getw(FILE *self);
 INTDEF int LIBCCALL libc_putw(int w, FILE *self);
-INTDEF int LIBCCALL libc_fgetc(FILE *self);
-INTDEF int LIBCCALL libc_fputc(int c, FILE *self);
 INTDEF ssize_t LIBCCALL libc_fputs(char const *__restrict s, FILE *__restrict self);
 INTDEF ssize_t LIBCCALL libc_fputs_unlocked(char const *__restrict s, FILE *__restrict self);
 INTDEF void LIBCCALL libc_clearerr(FILE *self);
-INTDEF int LIBCCALL libc_fclose(FILE *self);
 INTDEF int LIBCCALL libc_fflush(FILE *self);
 INTDEF void LIBCCALL libc_setbuf(FILE *__restrict self, char *__restrict buf);
 INTDEF int LIBCCALL libc_setvbuf(FILE *__restrict self, char *__restrict buf, int modes, size_t n);
 INTDEF int LIBCCALL libc_ungetc(int c, FILE *self);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTDEF int LIBCCALL libc_ungetc_unlocked(int c, FILE *self);
-INTDEF FILE *LIBCCALL libc_tmpfile64(void);
-INTDEF FILE *LIBCCALL libc_tmpfile(void);
-INTDEF FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__restrict modes);
-INTDEF FILE *LIBCCALL libc_freopen(char const *__restrict filename, char const *__restrict modes, FILE *__restrict self);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTDEF int LIBCCALL libc_fflush_unlocked(FILE *self);
 INTDEF void LIBCCALL libc_setbuffer(FILE *__restrict self, char *__restrict buf, size_t size);
 INTDEF void LIBCCALL libc_setlinebuf(FILE *self);
 INTDEF int LIBCCALL libc_feof_unlocked(FILE *self);
 INTDEF int LIBCCALL libc_ferror_unlocked(FILE *self);
-INTDEF FILE *LIBCCALL libc_fdopen(int fd, char const *modes);
-INTDEF FILE *LIBCCALL libc_fmemopen(void *s, size_t len, char const *modes);
-INTDEF FILE *LIBCCALL libc_open_memstream(char **bufloc, size_t *sizeloc);
 INTDEF ssize_t LIBCCALL libc_getdelim(char **__restrict lineptr, size_t *__restrict n, int delimiter, FILE *__restrict self);
 INTDEF ssize_t LIBCCALL libc_getline(char **__restrict lineptr, size_t *__restrict n, FILE *__restrict self);
-INTDEF FILE *LIBCCALL libc_popen(char const *command, char const *modes);
-INTDEF int LIBCCALL libc_pclose(FILE *self);
-INTDEF int LIBCCALL libc_fcloseall(void);
 INTDEF void LIBCCALL libc_clearerr_unlocked(FILE *self);
 INTDEF int LIBCCALL libc_feof(FILE *self);
 INTDEF int LIBCCALL libc_ferror(FILE *self);
@@ -256,73 +292,304 @@ INTDEF int LIBCCALL libc_fileno(FILE *self);
 INTDEF int LIBCCALL libc_fileno_unlocked(FILE *self);
 INTDEF char *LIBCCALL libc_gets(char *s);
 INTDEF ssize_t LIBCCALL libc_puts(char const *s);
+INTDEF int LIBCCALL libc_fwide(FILE *file, int mode);
 
 #ifndef __wint_t_defined
 #define __wint_t_defined 1
 typedef __WINT_TYPE__ wint_t;
 #endif /* !__wint_t_defined */
 
-INTDEF ssize_t LIBCCALL libc_32wprintf(char32_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_32vwprintf(char32_t const *__restrict format, va_list arg);
-INTDEF ssize_t LIBCCALL libc_32wscanf(char32_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_32vwscanf(char32_t const *__restrict format, va_list arg);
+/* UTF32 string functions. */
+INTDEF wint_t LIBCCALL libc_32getwchar(void);
 INTDEF wint_t LIBCCALL libc_32fgetwc(FILE *self);
+INTDEF wint_t LIBCCALL libc_32getwc(FILE *self);
+INTDEF wint_t LIBCCALL libc_32putwchar(char32_t wc);
 INTDEF wint_t LIBCCALL libc_32fputwc(char32_t wc, FILE *self);
-INTDEF ssize_t LIBCCALL libc_32fputws(char32_t const *__restrict ws, FILE *__restrict self);
-INTDEF char32_t *LIBCCALL libc_32fgetws(char32_t *__restrict ws, size_t n, FILE *__restrict self);
-INTDEF char32_t *LIBCCALL libc_32fgetws_unlocked(char32_t *__restrict ws, size_t n, FILE *__restrict self);
-INTDEF char32_t *LIBCCALL libc_32fgetws_int(char32_t *__restrict ws, int n, FILE *__restrict self);
-INTDEF char32_t *LIBCCALL libc_32fgetws_unlocked_int(char32_t *__restrict ws, int n, FILE *__restrict self);
+INTDEF wint_t LIBCCALL libc_32putwc(char32_t wc, FILE *self);
+INTDEF char32_t *LIBCCALL libc_32fgetws(char32_t *__restrict buf, size_t n, FILE *__restrict self);
+INTDEF char32_t *LIBCCALL libc_32fgetws_int(char32_t *__restrict buf, int n, FILE *__restrict self);
+INTDEF int LIBCCALL libc_32fputws(char32_t const *__restrict str, FILE *__restrict self);
 INTDEF wint_t LIBCCALL libc_32ungetwc(wint_t wc, FILE *self);
-INTDEF int LIBCCALL libc_32fwide(FILE *fp, int mode);
-INTDEF ssize_t LIBCCALL libc_32fwprintf(FILE *__restrict self, char32_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_32vfwprintf(FILE *__restrict s, char32_t const *__restrict format, va_list arg);
-INTDEF ssize_t LIBCCALL libc_32fwscanf(FILE *__restrict self, char32_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_32vfwscanf(FILE *__restrict s, char32_t const *__restrict format, va_list arg);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF wint_t LIBCCALL libc_32ungetwc_unlocked(wint_t wc, FILE *self);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+INTDEF ssize_t LIBCCALL libc_32vfwprintf(FILE *__restrict self, char32_t const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_32fwprintf(FILE *__restrict self, char32_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_32vwprintf(char32_t const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_32wprintf(char32_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_32vfwscanf(FILE *__restrict self, char32_t const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_32fwscanf(FILE *__restrict self, char32_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_32vwscanf(char32_t const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_32wscanf(char32_t const *__restrict format, ...);
 INTDEF FILE *LIBCCALL libc_32open_wmemstream(char32_t **bufloc, size_t *sizeloc);
+INTDEF wint_t LIBCCALL libc_32getwc_unlocked(FILE *self);
+INTDEF wint_t LIBCCALL libc_32getwchar_unlocked(void);
 INTDEF wint_t LIBCCALL libc_32fgetwc_unlocked(FILE *self);
 INTDEF wint_t LIBCCALL libc_32fputwc_unlocked(char32_t wc, FILE *self);
-INTDEF int LIBCCALL libc_32fputws_unlocked(char32_t const *__restrict ws, FILE *__restrict self);
-INTDEF wint_t LIBCCALL libc_32getwchar(void);
-INTDEF wint_t LIBCCALL libc_32putwchar(char32_t wc);
-INTDEF wint_t LIBCCALL libc_32getwchar_unlocked(void);
+INTDEF wint_t LIBCCALL libc_32putwc_unlocked(char32_t wc, FILE *self);
 INTDEF wint_t LIBCCALL libc_32putwchar_unlocked(char32_t wc);
+INTDEF char32_t *LIBCCALL libc_32fgetws_unlocked(char32_t *__restrict wstr, size_t n, FILE *__restrict self);
+INTDEF char32_t *LIBCCALL libc_32fgetws_unlocked_int(char32_t *__restrict wstr, int n, FILE *__restrict self);
+INTDEF int LIBCCALL libc_32fputws_unlocked(char32_t const *__restrict wstr, FILE *__restrict self);
+
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTDEF ssize_t LIBCCALL libc_16wprintf(char16_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_16vwprintf(char16_t const *__restrict format, va_list arg);
-INTDEF ssize_t LIBCCALL libc_16wscanf(char16_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_16vwscanf(char16_t const *__restrict format, va_list arg);
+INTDEF FILE *LIBCCALL libc_dos_fopen(char const *__restrict filename, char const *__restrict modes);
+INTDEF FILE *LIBCCALL libc_dos_freopen(char const *__restrict filename, char const *__restrict modes, FILE *__restrict self);
+INTDEF FILE *LIBCCALL libc_dos_fopen64(char const *__restrict filename, char const *__restrict modes);
+INTDEF FILE *LIBCCALL libc_dos_freopen64(char const *__restrict filename, char const *__restrict modes, FILE *__restrict self);
+
+INTDEF wint_t LIBCCALL libc_16getwchar(void);
 INTDEF wint_t LIBCCALL libc_16fgetwc(FILE *self);
+INTDEF wint_t LIBCCALL libc_16getwc(FILE *self);
+INTDEF wint_t LIBCCALL libc_16putwchar(char16_t wc);
 INTDEF wint_t LIBCCALL libc_16fputwc(char16_t wc, FILE *self);
-INTDEF ssize_t LIBCCALL libc_16fputws(char16_t const *__restrict ws, FILE *__restrict self);
-INTDEF char16_t *LIBCCALL libc_16fgetws(char16_t *__restrict ws, size_t n, FILE *__restrict self);
-INTDEF char16_t *LIBCCALL libc_16fgetws_unlocked(char16_t *__restrict ws, size_t n, FILE *__restrict self);
-INTDEF char16_t *LIBCCALL libc_16fgetws_int(char16_t *__restrict ws, int n, FILE *__restrict self);
-INTDEF char16_t *LIBCCALL libc_16fgetws_unlocked_int(char16_t *__restrict ws, int n, FILE *__restrict self);
+INTDEF wint_t LIBCCALL libc_16putwc(char16_t wc, FILE *self);
+INTDEF char16_t *LIBCCALL libc_16fgetws(char16_t *__restrict buf, size_t n, FILE *__restrict self);
+INTDEF char16_t *LIBCCALL libc_16fgetws_int(char16_t *__restrict buf, int n, FILE *__restrict self);
+INTDEF int LIBCCALL libc_16fputws(char16_t const *__restrict str, FILE *__restrict self);
 INTDEF wint_t LIBCCALL libc_16ungetwc(wint_t wc, FILE *self);
-INTDEF int LIBCCALL libc_16fwide(FILE *fp, int mode);
-INTDEF ssize_t LIBCCALL libc_16fwprintf(FILE *__restrict self, char16_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_16vfwprintf(FILE *__restrict s, char16_t const *__restrict format, va_list arg);
-INTDEF ssize_t LIBCCALL libc_16fwscanf(FILE *__restrict self, char16_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_16vfwscanf(FILE *__restrict s, char16_t const *__restrict format, va_list arg);
+INTDEF wint_t LIBCCALL libc_16ungetwc_unlocked(wint_t wc, FILE *self);
+INTDEF ssize_t LIBCCALL libc_16vfwprintf(FILE *__restrict self, char16_t const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_16fwprintf(FILE *__restrict self, char16_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vwprintf(char16_t const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_16wprintf(char16_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vfwscanf(FILE *__restrict self, char16_t const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_16fwscanf(FILE *__restrict self, char16_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vwscanf(char16_t const *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_16wscanf(char16_t const *__restrict format, ...);
 INTDEF FILE *LIBCCALL libc_16open_wmemstream(char16_t **bufloc, size_t *sizeloc);
+INTDEF wint_t LIBCCALL libc_16getwc_unlocked(FILE *self);
+INTDEF wint_t LIBCCALL libc_16getwchar_unlocked(void);
 INTDEF wint_t LIBCCALL libc_16fgetwc_unlocked(FILE *self);
 INTDEF wint_t LIBCCALL libc_16fputwc_unlocked(char16_t wc, FILE *self);
-INTDEF int LIBCCALL libc_16fputws_unlocked(char16_t const *__restrict ws, FILE *__restrict self);
-INTDEF wint_t LIBCCALL libc_16getwchar(void);
-INTDEF wint_t LIBCCALL libc_16putwchar(char16_t wc);
-INTDEF wint_t LIBCCALL libc_16getwchar_unlocked(void);
+INTDEF wint_t LIBCCALL libc_16putwc_unlocked(char16_t wc, FILE *self);
 INTDEF wint_t LIBCCALL libc_16putwchar_unlocked(char16_t wc);
+INTDEF char16_t *LIBCCALL libc_16fgetws_unlocked(char16_t *__restrict wbuf, size_t n, FILE *__restrict self);
+INTDEF char16_t *LIBCCALL libc_16fgetws_unlocked_int(char16_t *__restrict wbuf, int n, FILE *__restrict self);
+INTDEF int LIBCCALL libc_16fputws_unlocked(char16_t const *__restrict wstr, FILE *__restrict self);
 
-INTDEF FILE *LIBCCALL libc___iob_func(void);
-INTDEF int LIBCCALL libc_single_ungetwch(int ch);
-INTDEF int LIBCCALL libc_single_ungetwch_unlocked(int ch);
-INTDEF wint_t LIBCCALL libc_16single_ungetwch(wint_t wc);
-INTDEF wint_t LIBCCALL libc_16single_ungetwch_unlocked(wint_t wc);
-INTDEF wint_t LIBCCALL libc_32single_ungetwch(wint_t wc);
-INTDEF wint_t LIBCCALL libc_32single_ungetwch_unlocked(wint_t wc);
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+INTDEF FILE *LIBCCALL libc_dos_fsopen(char const *filename, char const *mode, int shflag);
+INTDEF int LIBCCALL libc_rmtmp(void);
+INTDEF int LIBCCALL libc_filbuf(FILE *__restrict self);
+INTDEF int LIBCCALL libc_flsbuf(int ch, FILE *__restrict self);
+INTDEF size_t LIBCCALL libc_fread_s(void *__restrict buf, size_t bufsize, size_t elemsize, size_t elemcount, FILE *__restrict self);
+INTDEF size_t LIBCCALL libc_fread_unlocked_s(void *__restrict buf, size_t bufsize, size_t elemsize, size_t elemcount, FILE *__restrict self);
+
+INTDEF int LIBCCALL libc_getmaxstdio(void);
+INTDEF int LIBCCALL libc_setmaxstdio(int val);
+INTDEF int LIBCCALL libc_get_printf_count_output(void);
+INTDEF int LIBCCALL libc_set_printf_count_output(int val);
+INTDEF u32 LIBCCALL libc_get_output_format(void);
+INTDEF u32 LIBCCALL libc_set_output_format(u32 format);
+
+INTDEF int ATTR_CDECL libc_fscanf_l(FILE *__restrict self, char const *__restrict format, locale_t locale, ...);
+INTDEF int ATTR_CDECL libc_fscanf_s_l(FILE *__restrict self, char const *__restrict format, locale_t locale, ...);
+INTDEF int ATTR_CDECL libc_scanf_l(char const *__restrict format, locale_t locale, ...);
+INTDEF int ATTR_CDECL libc_scanf_s_l(char const *__restrict format, locale_t locale, ...);
+
+INTDEF int ATTR_CDECL libc_dos_printf_p(char const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_dos_vprintf_p(char const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_dos_printf_l(char const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_dos_vprintf_l(char const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_dos_printf_p_l(char const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_dos_vprintf_p_l(char const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_dos_printf_s_l(char const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_dos_vprintf_s_l(char const *__restrict format, locale_t locale, va_list args);
+
+INTDEF int ATTR_CDECL libc_dos_fprintf_p(FILE *__restrict self, char const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_dos_vfprintf_p(FILE *__restrict self, char const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_dos_fprintf_l(FILE *__restrict self, char const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_dos_vfprintf_l(FILE *__restrict self, char const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_dos_fprintf_p_l(FILE *__restrict self, char const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_dos_vfprintf_p_l(FILE *__restrict self, char const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_dos_fprintf_s_l(FILE *__restrict self, char const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_dos_vfprintf_s_l(FILE *__restrict self, char const *__restrict format, locale_t locale, va_list args);
+
+INTDEF errno_t LIBCCALL libc_fopen_s(FILE **pfile, char const *filename, char const *mode);
+INTDEF errno_t LIBCCALL libc_clearerr_s(FILE *__restrict self);
+INTDEF errno_t LIBCCALL libc_freopen_s(FILE **pfile, char const *filename, char const *mode, FILE *oldfile);
+INTDEF char *LIBCCALL libc_gets_s(char *__restrict buf, size_t bufsize);
+INTDEF errno_t LIBCCALL libc_tmpfile_s(FILE **pfile);
+INTDEF errno_t LIBCCALL libc_dos_fopen_s(FILE **pfile, char const *filename, char const *mode);
+INTDEF errno_t LIBCCALL libc_dos_freopen_s(FILE **pfile, char const *filename, char const *mode, FILE *oldfile);
+INTDEF errno_t LIBCCALL libc_dos_tmpfile_s(FILE **pfile);
+
+INTDEF int ATTR_CDECL libc_dos_printf_s(char const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_dos_vprintf_s(char const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_dos_fprintf_s(FILE *__restrict self, char const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_dos_vfprintf_s(FILE *__restrict self, char const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_fscanf_s(FILE *__restrict self, char const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_vfscanf_s(FILE *__restrict self, char const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_scanf_s(char const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_vscanf_s(char const *__restrict format, va_list args);
+
+/* DOS Widechar extension API. */
+INTDEF FILE *LIBCCALL libc_16wfsopen(char16_t const *filename, char16_t const *mode, int shflag);
+INTDEF FILE *LIBCCALL libc_16wfopen(char16_t const *filename, char16_t const *mode);
+INTDEF FILE *LIBCCALL libc_16wfreopen(char16_t const *filename, char16_t const *mode, FILE *oldfile);
+INTDEF FILE *LIBCCALL libc_32wfsopen(char32_t const *filename, char32_t const *mode, int shflag);
+INTDEF FILE *LIBCCALL libc_32wfopen(char32_t const *filename, char32_t const *mode);
+INTDEF FILE *LIBCCALL libc_32wfreopen(char32_t const *filename, char32_t const *mode, FILE *oldfile);
+INTDEF errno_t LIBCCALL libc_16wfopen_s(FILE **pfile, char16_t const *filename, char16_t const *mode);
+INTDEF errno_t LIBCCALL libc_16wfreopen_s(FILE **pfile, char16_t const *filename, char16_t const *mode, FILE *oldfile);
+INTDEF errno_t LIBCCALL libc_32wfopen_s(FILE **pfile, char32_t const *filename, char32_t const *mode);
+INTDEF errno_t LIBCCALL libc_32wfreopen_s(FILE **pfile, char32_t const *filename, char32_t const *mode, FILE *oldfile);
+INTDEF FILE *LIBCCALL libc_dos_16wfsopen(char16_t const *filename, char16_t const *mode, int shflag);
+INTDEF FILE *LIBCCALL libc_dos_16wfopen(char16_t const *filename, char16_t const *mode);
+INTDEF FILE *LIBCCALL libc_dos_16wfreopen(char16_t const *filename, char16_t const *mode, FILE *oldfile);
+INTDEF FILE *LIBCCALL libc_dos_32wfsopen(char32_t const *filename, char32_t const *mode, int shflag);
+INTDEF FILE *LIBCCALL libc_dos_32wfopen(char32_t const *filename, char32_t const *mode);
+INTDEF FILE *LIBCCALL libc_dos_32wfreopen(char32_t const *filename, char32_t const *mode, FILE *oldfile);
+INTDEF errno_t LIBCCALL libc_dos_16wfopen_s(FILE **pfile, char16_t const *filename, char16_t const *mode);
+INTDEF errno_t LIBCCALL libc_dos_16wfreopen_s(FILE **pfile, char16_t const *filename, char16_t const *mode, FILE *oldfile);
+INTDEF errno_t LIBCCALL libc_dos_32wfopen_s(FILE **pfile, char32_t const *filename, char32_t const *mode);
+INTDEF errno_t LIBCCALL libc_dos_32wfreopen_s(FILE **pfile, char32_t const *filename, char32_t const *mode, FILE *oldfile);
+INTDEF FILE *LIBCCALL libc_16wpopen(char16_t const *command, char16_t const *mode);
+INTDEF FILE *LIBCCALL libc_32wpopen(char32_t const *command, char32_t const *mode);
+INTDEF FILE *LIBCCALL libc_16wfdopen(int fd, char16_t const *mode);
+INTDEF FILE *LIBCCALL libc_32wfdopen(int fd, char32_t const *mode);
+
+/* Get wide character functions */
+INTDEF wint_t LIBCCALL libc_16fgetwchar(void);
+INTDEF wint_t LIBCCALL libc_32fgetwchar(void);
+
+/* Put wide character functions */
+INTDEF wint_t LIBCCALL libc_16fputwchar(char16_t ch);
+INTDEF wint_t LIBCCALL libc_32fputwchar(char32_t ch);
+
+/* Get wide string functions */
+INTDEF char16_t *LIBCCALL libc_16getws(char16_t *__restrict buf);
+INTDEF char32_t *LIBCCALL libc_32getws(char32_t *__restrict buf);
+INTDEF char16_t *LIBCCALL libc_16getws_s(char16_t *__restrict buf, size_t buflen);
+INTDEF char32_t *LIBCCALL libc_32getws_s(char32_t *__restrict buf, size_t buflen);
+
+/* Put wide string functions */
+INTDEF int LIBCCALL libc_16putws(char16_t const *__restrict str);
+INTDEF int LIBCCALL libc_32putws(char32_t const *__restrict str);
+
+INTDEF int ATTR_CDECL libc_16wprintf_p(char16_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_16vwprintf_p(char16_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_16wprintf_l(char16_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_16vwprintf_l(char16_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_16wprintf_p_l(char16_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_16vwprintf_p_l(char16_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_16wprintf_s_l(char16_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_16vwprintf_s_l(char16_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_16fwprintf_p(FILE *__restrict self, char16_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_16vfwprintf_p(FILE *__restrict self, char16_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_16fwprintf_l(FILE *__restrict self, char16_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_16vfwprintf_l(FILE *__restrict self, char16_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_16fwprintf_p_l(FILE *__restrict self, char16_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_16vfwprintf_p_l(FILE *__restrict self, char16_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_16fwprintf_s_l(FILE *__restrict self, char16_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_16vfwprintf_s_l(FILE *__restrict self, char16_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_32wprintf_p(char32_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_32vwprintf_p(char32_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_32wprintf_l(char32_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_32vwprintf_l(char32_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_32wprintf_p_l(char32_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_32vwprintf_p_l(char32_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_32wprintf_s_l(char32_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_32vwprintf_s_l(char32_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_32fwprintf_p(FILE *__restrict self, char32_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_32vfwprintf_p(FILE *__restrict self, char32_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_32fwprintf_l(FILE *__restrict self, char32_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_32vfwprintf_l(FILE *__restrict self, char32_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_32fwprintf_p_l(FILE *__restrict self, char32_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_32vfwprintf_p_l(FILE *__restrict self, char32_t const *__restrict format, locale_t locale, va_list args);
+INTDEF int ATTR_CDECL libc_32fwprintf_s_l(FILE *__restrict self, char32_t const *__restrict format, locale_t locale, ...);
+INTDEF int LIBCCALL   libc_32vfwprintf_s_l(FILE *__restrict self, char32_t const *__restrict format, locale_t locale, va_list args);
+
+/* NOTE: ~safe~ functions are re-directed to the regular versions. (For the reason, see below) */
+INTDEF int ATTR_CDECL libc_16fwscanf_l(FILE *__restrict self, char16_t const *__restrict format, locale_t locale, ...); /* No varargs version. */
+INTDEF int ATTR_CDECL libc_16fwscanf_s_l(FILE *__restrict self, char16_t const *__restrict format, locale_t locale, ...); /* No varargs version. */
+INTDEF int ATTR_CDECL libc_16wscanf_l(char16_t const *__restrict format, locale_t locale, ...); /* No varargs version. */
+INTDEF int ATTR_CDECL libc_16wscanf_s_l(char16_t const *__restrict format, locale_t locale, ...); /* No varargs version. */
+INTDEF int ATTR_CDECL libc_32fwscanf_l(FILE *__restrict self, char32_t const *__restrict format, locale_t locale, ...); /* No varargs version. */
+INTDEF int ATTR_CDECL libc_32fwscanf_s_l(FILE *__restrict self, char32_t const *__restrict format, locale_t locale, ...); /* No varargs version. */
+INTDEF int ATTR_CDECL libc_32wscanf_l(char32_t const *__restrict format, locale_t locale, ...); /* No varargs version. */
+INTDEF int ATTR_CDECL libc_32wscanf_s_l(char32_t const *__restrict format, locale_t locale, ...); /* No varargs version. */
+
+/* Simply redirect these so-called ~safe~ functions to the regular version.
+ * In KOS, they're already ~safe~ to begin with, because unknown format strings are always handled.
+ * NOTE: For binary compatibility, assembly names such as 'fwprintf_s' are exported as alias,
+ *       but should never be used by newly compiled applications. */
+INTDEF int ATTR_CDECL libc_16fwprintf_s(FILE *__restrict self, char16_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_16vfwprintf_s(FILE *__restrict self, char16_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_16wprintf_s(char16_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_16vwprintf_s(char16_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_16fwscanf_s(FILE *__restrict self, char16_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_16vfwscanf_s(FILE *__restrict self, char16_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_16wscanf_s(char16_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_16vwscanf_s(char16_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_16swprintf_s(char16_t *__restrict buf, size_t buflen, char16_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_16vswprintf_s(char16_t *__restrict buf, size_t buflen, char16_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_16swscanf_s(char16_t const *__restrict src, char16_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_16vswscanf_s(char16_t const *__restrict src, char16_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_32fwprintf_s(FILE *__restrict self, char32_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_32vfwprintf_s(FILE *__restrict self, char32_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_32wprintf_s(char32_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_32vwprintf_s(char32_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_32fwscanf_s(FILE *__restrict self, char32_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_32vfwscanf_s(FILE *__restrict self, char32_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_32wscanf_s(char32_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_32vwscanf_s(char32_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_32swprintf_s(char32_t *__restrict buf, size_t buflen, char32_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_32vswprintf_s(char32_t *__restrict buf, size_t buflen, char32_t const *__restrict format, va_list args);
+INTDEF int ATTR_CDECL libc_32swscanf_s(char32_t const *__restrict src, char32_t const *__restrict format, ...);
+INTDEF int LIBCCALL   libc_32vswscanf_s(char32_t const *__restrict src, char32_t const *__restrict format, va_list args);
+//DEFINE_PUBLIC_ALIAS(swprintf_s,libc_16swprintf_s);
+//DEFINE_PUBLIC_ALIAS(vswprintf_s,libc_16vswprintf_s);
+//DEFINE_PUBLIC_ALIAS(swscanf_s,libc_16swscanf_s);
+//DEFINE_PUBLIC_ALIAS(vswscanf_s,libc_16vswscanf_s);
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* FILE-unrelated stdio functions. */
+struct obstack;
+INTDEF char *LIBCCALL tmpnam(char *__s);
+INTDEF char *LIBCCALL tmpnam_r(char *__s);
+INTDEF void LIBCCALL perror(char const *__s);
+INTDEF char *LIBCCALL ctermid(char *__s);
+INTDEF int LIBCCALL obstack_printf(struct obstack *__restrict __obstack, char const *__restrict format, ...);
+INTDEF int LIBCCALL obstack_vprintf(struct obstack *__restrict __obstack, char const *__restrict format, va_list args);
+INTDEF char *LIBCCALL cuserid(char *__s);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF __ATTR_MALLOC char *LIBCCALL tempnam(char const *dir, char const *pfx) __PE_ASMNAME("_tempnam");
+INTDEF errno_t LIBCCALL tmpnam_s(char *__restrict buf, size_t bufsize);
+INTDEF char *LIBCCALL _tempnam(char const *dir, char const *pfx) __KOS_ASMNAME("tempnam");
+INTDEF char16_t *LIBCCALL _wtmpnam(char16_t *__restrict buf) __KOS_ASMNAME("wtmpnam");
+INTDEF errno_t LIBCCALL _wtmpnam_s(char16_t *__restrict buf, size_t buflen) __KOS_ASMNAME("wtmpnam_s");
+INTDEF char16_t *LIBCCALL _wtempnam(char16_t const *dir, char16_t const *pfx) __KOS_ASMNAME("wtempnam");
+
+INTDEF void LIBCCALL _wperror(wchar_t const *__restrict errmsg) __KOS_ASMNAME("wperror");
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
+
 
 DECL_END
 

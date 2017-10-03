@@ -17,7 +17,7 @@
  * 3. This notice may not be removed or altered from any source distribution. *
  */
 
-#if 1
+#if 0
 #include <kos/thread.h>
 #include <stdio.h>
 

@@ -33,37 +33,15 @@ DECL_BEGIN
 typedef __pos64_t   fpos64_t;
 #endif /* !__fpos64_t_defined */
 
-INTDEF size_t LIBCCALL libc_vsprintf(char *__restrict s, char const *__restrict format, va_list args);
-INTDEF size_t LIBCCALL libc_vsnprintf(char *__restrict s, size_t maxlen, char const *__restrict format, va_list args);
-INTDEF size_t ATTR_CDECL libc_sprintf(char *__restrict s, char const *__restrict format, ...);
-INTDEF size_t ATTR_CDECL libc_snprintf(char *__restrict s, size_t maxlen, char const *__restrict format, ...);
-
 #ifndef __KERNEL__
 struct obstack;
-INTDEF size_t LIBCCALL libc_vsscanf(char const *__restrict s, char const *__restrict format, va_list args);
-INTDEF size_t ATTR_CDECL libc_sscanf(char const *__restrict s, char const *__restrict format, ...);
 INTDEF char *LIBCCALL libc_tmpnam(char *s);
 INTDEF char *LIBCCALL libc_tmpnam_r(char *s);
 INTDEF char *LIBCCALL libc_tempnam(char const *dir, char const *pfx);
 INTDEF int LIBCCALL libc_obstack_vprintf(struct obstack *__restrict obstack, char const *__restrict format, va_list args);
 INTDEF int LIBCCALL libc_obstack_printf(struct obstack *__restrict obstack, char const *__restrict format, ...);
 INTDEF void LIBCCALL libc_perror(char const *s);
-INTDEF ssize_t LIBCCALL libc_vdprintf(int fd, char const *__restrict format, va_list args);
-INTDEF ssize_t ATTR_CDECL libc_dprintf(int fd, char const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_vasprintf(char **__restrict ptr, char const *__restrict format, va_list args);
-INTDEF ssize_t ATTR_CDECL libc_asprintf(char **__restrict ptr, char const *__restrict format, ...);
-
-INTDEF ssize_t LIBCCALL libc_16swprintf(char32_t *__restrict s, size_t n, char32_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_16vswprintf(char32_t *__restrict s, size_t n, char32_t const *__restrict format, va_list arg);
-INTDEF ssize_t LIBCCALL libc_16swscanf(char32_t const *__restrict s, char32_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_16vswscanf(char32_t const *__restrict s, char32_t const *__restrict format, va_list arg);
-INTDEF ssize_t LIBCCALL libc_32swprintf(char32_t *__restrict s, size_t n, char32_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_32vswprintf(char32_t *__restrict s, size_t n, char32_t const *__restrict format, va_list arg);
-INTDEF ssize_t LIBCCALL libc_32swscanf(char32_t const *__restrict s, char32_t const *__restrict format, ...);
-INTDEF ssize_t LIBCCALL libc_32vswscanf(char32_t const *__restrict s, char32_t const *__restrict format, va_list arg);
 #endif /* !__KERNEL__ */
-
-
 
 
 DECL_END

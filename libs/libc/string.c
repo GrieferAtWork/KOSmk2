@@ -54,11 +54,12 @@
 #ifndef __KERNEL__
 #include "system.h"
 #include "unicode.h"
+#include "format-printer.h"
 #include <wchar.h>
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #include <bits/dos-errno.h>
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
-#endif
+#endif /* !__KERNEL__ */
 
 DECL_BEGIN
 

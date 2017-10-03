@@ -1161,7 +1161,7 @@ DEFINE_PUBLIC_ALIAS(_unlink,libc_dos_unlink);
 /* Unicode pathname support. */
 #define WRAPPER(n,base) \
 { int result = -1; char *epath; \
-  if ((epath = libc_utf##n##to8m(path,libc_##n##wcslen(path))) != NULL) { \
+  if ((epath = libc_utf##n##to8m(path)) != NULL) { \
    result = base(epath); \
    libc_free(epath); \
   } \
@@ -1255,13 +1255,13 @@ INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_dos_access_s(char const *file, int typ
 
 INTERN ATTR_DOSTEXT int LIBCCALL
 libc_16wfaccessat(int dfd, char16_t const *file, int type, int flags) {
- int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ int result = -1; char *utf8file = libc_utf16to8m(file);
  if (utf8file) result = libc_faccessat(dfd,utf8file,type,flags),libc_free(utf8file);
  return result;
 }
 INTERN ATTR_DOSTEXT int LIBCCALL
 libc_32wfaccessat(int dfd, char32_t const *file, int type, int flags) {
- int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ int result = -1; char *utf8file = libc_utf32to8m(file);
  if (utf8file) result = libc_faccessat(dfd,utf8file,type,flags),libc_free(utf8file);
  return result;
 }
@@ -1276,22 +1276,22 @@ INTERN ATTR_DOSTEXT __errno_t LIBCCALL libc_dos_16waccess_s(char16_t const *file
 INTERN ATTR_DOSTEXT __errno_t LIBCCALL libc_dos_32waccess_s(char32_t const *file, int type) { return libc_dos_32waccess(file,type) ? GET_ERRNO() : EOK; }
 
 INTERN ATTR_DOSTEXT int LIBCCALL libc_16wfchmodat(int dfd, char16_t const *file, mode_t mode, int flags) {
- int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ int result = -1; char *utf8file = libc_utf16to8m(file);
  if (utf8file) result = libc_fchmodat(dfd,utf8file,mode,flags),libc_free(utf8file);
  return result;
 }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_32wfchmodat(int dfd, char32_t const *file, mode_t mode, int flags) {
- int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ int result = -1; char *utf8file = libc_utf32to8m(file);
  if (utf8file) result = libc_fchmodat(dfd,utf8file,mode,flags),libc_free(utf8file);
  return result;
 }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_16wunlinkat(int dfd, char16_t const *file, int flags) {
- int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ int result = -1; char *utf8file = libc_utf16to8m(file);
  if (utf8file) result = libc_unlinkat(dfd,utf8file,flags),libc_free(utf8file);
  return result;
 }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_32wunlinkat(int dfd, char32_t const *file, int flags) {
- int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ int result = -1; char *utf8file = libc_utf32to8m(file);
  if (utf8file) result = libc_unlinkat(dfd,utf8file,flags),libc_free(utf8file);
  return result;
 }
@@ -1299,8 +1299,8 @@ INTERN ATTR_DOSTEXT int LIBCCALL
 libc_16wfrenameat(int oldfd, char16_t const *oldname,
                   int newfd, char16_t const *newname, int flags) {
  int result = -1;
- char *utf8oldname = libc_utf16to8m(oldname,libc_16wcslen(oldname));
- char *utf8newname = libc_utf16to8m(newname,libc_16wcslen(newname));
+ char *utf8oldname = libc_utf16to8m(oldname);
+ char *utf8newname = libc_utf16to8m(newname);
  if (utf8oldname && utf8newname)
      result = libc_frenameat(oldfd,utf8oldname,newfd,utf8newname,flags);
  libc_free(utf8newname);
@@ -1311,8 +1311,8 @@ INTERN ATTR_DOSTEXT int LIBCCALL
 libc_32wfrenameat(int oldfd, char32_t const *oldname,
                   int newfd, char32_t const *newname, int flags) {
  int result = -1;
- char *utf8oldname = libc_utf32to8m(oldname,libc_32wcslen(oldname));
- char *utf8newname = libc_utf32to8m(newname,libc_32wcslen(newname));
+ char *utf8oldname = libc_utf32to8m(oldname);
+ char *utf8newname = libc_utf32to8m(newname);
  if (utf8oldname && utf8newname)
      result = libc_frenameat(oldfd,utf8oldname,newfd,utf8newname,flags);
  libc_free(utf8newname);
@@ -1439,7 +1439,7 @@ libc_argv16to8(char16_t const *const *argv) {
  char **dst; char16_t **src,*str;
  if unlikely(!result) goto retnull;
  for (dst = result,src = (char16_t **)argv; argc; --argc)
-     if ((*dst = (str = *src,libc_utf16to8m(str,libc_16wcslen(str)))) == NULL) goto err;
+     if ((*dst = (str = *src,libc_utf16to8m(str))) == NULL) goto err;
  *dst = NULL;
  return result;
 err:
@@ -1455,7 +1455,7 @@ libc_argv32to8(char32_t const *const *argv) {
  char **dst; char32_t **src,*str;
  if unlikely(!result) goto retnull;
  for (dst = result,src = (char32_t **)argv; argc; --argc)
-     if ((*dst = (str = *src,libc_utf32to8m(str,libc_32wcslen(str)))) == NULL) goto err;
+     if ((*dst = (str = *src,libc_utf32to8m(str))) == NULL) goto err;
  *dst = NULL;
  return result;
 err:
@@ -1478,7 +1478,7 @@ libc_impl_16wexecve(int mode, char16_t const *path,
                     char16_t const *const *argv,
                     char16_t const *const *envp) {
  char *utf8path,**utf8argv,**utf8envp;
- if unlikely((utf8path = libc_utf16to8m(path,libc_16wcslen(path))) == NULL) goto end0;
+ if unlikely((utf8path = libc_utf16to8m(path)) == NULL) goto end0;
  if unlikely((utf8argv = libc_argv16to8(argv)) == NULL) goto end1;
  if (!envp) utf8envp = EXEC_CURRENT_ENVIRON;
  else if unlikely((utf8envp = libc_argv16to8(envp)) == NULL) goto end2;
@@ -1497,7 +1497,7 @@ libc_impl_32wexecve(int mode, char32_t const *path,
                     char32_t const *const *argv,
                     char32_t const *const *envp) {
  char *utf8path,**utf8argv,**utf8envp;
- if unlikely((utf8path = libc_utf32to8m(path,libc_32wcslen(path))) == NULL) goto end0;
+ if unlikely((utf8path = libc_utf32to8m(path)) == NULL) goto end0;
  if unlikely((utf8argv = libc_argv32to8(argv)) == NULL) goto end1;
  if (!envp) utf8envp = EXEC_CURRENT_ENVIRON;
  else if unlikely((utf8envp = libc_argv32to8(envp)) == NULL) goto end2;
@@ -1592,14 +1592,14 @@ DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexeclpe),libc_dos_32wexeclpe);
 FSTATAT_DECL int LIBCCALL
 libc_w16fstatat64(int fd, char16_t const *__restrict file,
                   struct stat64 *__restrict buf, int flags) {
- int result = -1; char *utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+ int result = -1; char *utf8file = libc_utf16to8m(file);
  if (utf8file) result = libc_fstatat64(fd,utf8file,buf,flags),libc_free(utf8file);
  return result;
 }
 FSTATAT_DECL int LIBCCALL
 libc_w32fstatat64(int fd, char32_t const *__restrict file,
                   struct stat64 *__restrict buf, int flags) {
- int result = -1; char *utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+ int result = -1; char *utf8file = libc_utf32to8m(file);
  if (utf8file) result = libc_fstatat64(fd,utf8file,buf,flags),libc_free(utf8file);
  return result;
 }

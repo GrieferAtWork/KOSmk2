@@ -140,7 +140,7 @@ INTDEF struct lconv *LIBCCALL libc_dos_localeconv(void) {
 INTERN char16_t *LIBCCALL libc_dos_16wsetlocale(int dos_category, char16_t const *locale) {
  char *locale_name; char16_t *result = (char16_t *)locale;
  if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localcategory)) { SET_ERRNO(EINVAL); return NULL; }
- locale_name = libc_utf16to8m(locale,libc_16wcslen(locale));
+ locale_name = libc_utf16to8m(locale);
  if unlikely(!locale_name) return NULL;
  if (!libc_setlocale(dos_localcategory[dos_category],locale_name))
       result = NULL;
@@ -150,7 +150,7 @@ INTERN char16_t *LIBCCALL libc_dos_16wsetlocale(int dos_category, char16_t const
 INTERN char32_t *LIBCCALL libc_dos_32wsetlocale(int dos_category, char32_t const *locale) {
  char *locale_name; char32_t *result = (char32_t *)locale;
  if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localcategory)) { SET_ERRNO(EINVAL); return NULL; }
- locale_name = libc_utf32to8m(locale,libc_32wcslen(locale));
+ locale_name = libc_utf32to8m(locale);
  if unlikely(!locale_name) return NULL;
  if (!libc_setlocale(dos_localcategory[dos_category],locale_name))
       result = NULL;
@@ -164,7 +164,7 @@ INTDEF locale_t LIBCCALL libc_dos_create_locale(int dos_category, char const *lo
 INTERN locale_t LIBCCALL libc_dos_16wcreate_locale(int dos_category, char16_t const *locale) {
  locale_t result; char *locale_name;
  if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localmask)) { SET_ERRNO(EINVAL); return NULL; }
- locale_name = libc_utf16to8m(locale,libc_16wcslen(locale));
+ locale_name = libc_utf16to8m(locale);
  if unlikely(!locale_name) return NULL;
  result = libc_newlocale(dos_localmask[dos_category],locale_name,NULL);
  libc_free(locale_name);
@@ -173,7 +173,7 @@ INTERN locale_t LIBCCALL libc_dos_16wcreate_locale(int dos_category, char16_t co
 INTERN locale_t LIBCCALL libc_dos_32wcreate_locale(int dos_category, char32_t const *locale) {
  locale_t result; char *locale_name;
  if unlikely((unsigned int)dos_category >= COMPILER_LENOF(dos_localmask)) { SET_ERRNO(EINVAL); return NULL; }
- locale_name = libc_utf32to8m(locale,libc_32wcslen(locale));
+ locale_name = libc_utf32to8m(locale);
  if unlikely(!locale_name) return NULL;
  result = libc_newlocale(dos_localmask[dos_category],locale_name,NULL);
  libc_free(locale_name);

@@ -42,6 +42,7 @@
 #include <hybrid/typecore.h>
 #include <hybrid/types.h>
 #include <hybrid/types.h>
+#include <hybrid/section.h>
 #include <malloc.h>
 #include <stdarg.h>
 #include <string.h>
@@ -52,6 +53,7 @@
 #include <fs/file.h>
 #include <fs/dentry.h>
 #else
+#include "unistd.h"
 #include "malloc.h"
 #include "unicode.h"
 #include <kos/fcntl.h>
@@ -1005,19 +1007,19 @@ libc_format_hexdump(pformatprinter printer, void *closure,
 
 #ifndef __KERNEL__
 INTERN ssize_t ATTR_CDECL
-libc_format_scanf(pformatscanner scanner, pformatreturn returnch,
+libc_format_scanf(pformatgetc pgetc, pformatungetc pungetc,
                   void *closure, char const *__restrict format, ...) {
  va_list args; ssize_t result;
  va_start(args,format);
- result = libc_format_vscanf(scanner,returnch,closure,format,args);
+ result = libc_format_vscanf(pgetc,pungetc,closure,format,args);
  va_end(args);
  return result;
 }
 INTERN ssize_t LIBCCALL
-libc_format_vscanf(pformatscanner scanner, pformatreturn returnch,
+libc_format_vscanf(pformatgetc pgetc, pformatungetc pungetc,
                    void *closure, char const *__restrict format, va_list args) {
- CHECK_HOST_TEXT(scanner,1);
- CHECK_HOST_TEXT(returnch,1);
+ CHECK_HOST_TEXT(pgetc,1);
+ CHECK_HOST_TEXT(pungetc,1);
 #ifdef CONFIG_DEBUG
  /* Running strlen() on 'format' implicitly performs CHECK_HOST_TEXT-checks. */
  COMPILER_UNUSED(libc_strlen(format));
@@ -1631,6 +1633,322 @@ DEFINE_PUBLIC_ALIAS(format_wcsztomb,libc_format_32wsztomb);
 DEFINE_PUBLIC_ALIAS(format_wcsntomb,libc_format_32wsntomb);
 DEFINE_PUBLIC_ALIAS(__DSYM(format_wcsztomb),libc_format_16wsztomb);
 DEFINE_PUBLIC_ALIAS(__DSYM(format_wcsntomb),libc_format_16wsntomb);
+#endif
+
+
+
+PRIVATE ssize_t LIBCCALL
+libc_sprintf_callback(char const *__restrict data, size_t datalen,
+                      void *buffer) {
+ libc_memcpy(*(char **)buffer,data,datalen*sizeof(char));
+ *(char **)buffer += datalen;
+ return datalen;
+}
+
+INTERN size_t LIBCCALL
+libc_vsprintf(char *__restrict s, char const *__restrict format, va_list args) {
+ size_t result = (size_t)libc_format_vprintf(&libc_sprintf_callback,
+                                             (void *)&s,format,args);
+ /* Random fact: Forgetting to terminate the string here
+  *              breaks tab-completion in busybox's ash... */
+ return (*s = '\0',result);
+}
+
+
+struct snprintf_data { char *bufpos,*bufend; };
+PRIVATE ssize_t LIBCCALL
+snprintf_callback(char const *__restrict data, size_t datalen, void *closure) {
+#define BUFFER ((struct snprintf_data *)closure)
+ /* Don't exceed the buffer end */
+ if (BUFFER->bufpos < BUFFER->bufend) {
+  size_t maxwrite = (size_t)(BUFFER->bufend-BUFFER->bufpos);
+  libc_memcpy(BUFFER->bufpos,data,
+              MIN(maxwrite,datalen)*sizeof(char));
+ }
+ /* Still seek past the end, as to
+  * calculate the required buffersize. */
+ BUFFER->bufpos += datalen;
+ return datalen;
+#undef BUFFER
+}
+
+INTERN size_t LIBCCALL
+libc_vsnprintf(char *__restrict s, size_t maxlen,
+               char const *__restrict format, va_list args) {
+ struct snprintf_data data; data.bufpos = s;
+ if (__builtin_add_overflow((uintptr_t)s,maxlen,(uintptr_t *)&data.bufend))
+     data.bufend = (char *)(uintptr_t)-1;
+ libc_format_vprintf(&snprintf_callback,&data,format,args);
+ if likely(data.bufpos < data.bufend) *data.bufpos = '\0';
+ return (size_t)(data.bufpos-s);
+}
+
+INTERN size_t ATTR_CDECL
+libc_sprintf(char *__restrict s, char const *__restrict format, ...) {
+ va_list args; size_t result;
+ va_start(args,format);
+ result = libc_vsprintf(s,format,args);
+ va_end(args);
+ return result;
+}
+INTERN size_t ATTR_CDECL
+libc_snprintf(char *__restrict s, size_t maxlen, char const *__restrict format, ...) {
+ va_list args; size_t result;
+ va_start(args,format);
+ result = libc_vsnprintf(s,maxlen,format,args);
+ va_end(args);
+ return result;
+}
+
+/* Always export this set of printer functions (meaning they're also available within the kernel) */
+DEFINE_PUBLIC_ALIAS(vsprintf,libc_vsprintf);
+DEFINE_PUBLIC_ALIAS(vsnprintf,libc_vsnprintf);
+DEFINE_PUBLIC_ALIAS(sprintf,libc_sprintf);
+DEFINE_PUBLIC_ALIAS(snprintf,libc_snprintf);
+
+
+#ifndef __KERNEL__
+PRIVATE ssize_t LIBCCALL libc_sscanf_scanner(void *data) { return *(*(char **)data)++; }
+PRIVATE ssize_t LIBCCALL libc_sscanf_return(int UNUSED(c), void *data) { --*(char **)data; return 0; }
+INTERN size_t LIBCCALL
+libc_vsscanf(char const *__restrict src,
+             char const *__restrict format,
+             va_list args) {
+ return libc_format_vscanf(&libc_sscanf_scanner,
+                           &libc_sscanf_return,
+                          (void *)&src,format,args);
+}
+INTERN size_t ATTR_CDECL
+libc_sscanf(char const *__restrict src, char const *__restrict format, ...) {
+ va_list args; size_t result;
+ va_start(args,format);
+ result = libc_vsscanf(src,format,args);
+ va_end(args);
+ return result;
+}
+
+PRIVATE ssize_t LIBCCALL
+vdprintf_callback(char const *__restrict data, size_t datalen, void *fd) {
+ return libc_write((int)(uintptr_t)fd,data,datalen);
+}
+INTERN ssize_t LIBCCALL libc_vdprintf(int fd, char const *__restrict format, va_list args) {
+ return libc_format_vbprintf(&vdprintf_callback,(void *)(uintptr_t)fd,format,args);
+}
+INTERN ssize_t ATTR_CDECL libc_dprintf(int fd, char const *__restrict format, ...) {
+ ssize_t result; va_list args;
+ va_start(args,format);
+ result = libc_vdprintf(fd,format,args);
+ va_end(args);
+ return result;
+}
+INTERN ATTR_RARETEXT ssize_t
+LIBCCALL libc_vasprintf(char **__restrict ptr,
+                        char const *__restrict format,
+                        va_list args) {
+ *ptr = libc_vstrdupf(format,args);
+ return *ptr ? (ssize_t)libc_strlen(*ptr) : (ssize_t)-1;
+}
+INTERN ATTR_RARETEXT ssize_t ATTR_CDECL
+libc_asprintf(char **__restrict ptr, char const *__restrict format, ...) {
+ va_list args; ssize_t result;
+ va_start(args,format);
+ result = libc_vasprintf(ptr,format,args);
+ va_end(args);
+ return result;
+}
+
+DEFINE_PUBLIC_ALIAS(vsscanf,libc_vsscanf);
+DEFINE_PUBLIC_ALIAS(sscanf,libc_sscanf);
+DEFINE_PUBLIC_ALIAS(vdprintf,libc_vdprintf);
+DEFINE_PUBLIC_ALIAS(dprintf,libc_dprintf);
+DEFINE_PUBLIC_ALIAS(vasprintf,libc_vasprintf);
+DEFINE_PUBLIC_ALIAS(asprintf,libc_asprintf);
+DEFINE_PUBLIC_ALIAS(__asprintf,libc_asprintf);
+
+
+/* UTF-32 Wide string printing/scanning */
+struct sw32printf_data { char32_t *bufpos,*bufend; };
+PRIVATE ssize_t LIBCCALL
+libc_sw32printf_callback(char32_t const *__restrict data,
+                         size_t datalen, void *closure) {
+#define BUFFER ((struct sw32printf_data *)closure)
+ /* Don't exceed the buffer end */
+ if (BUFFER->bufpos < BUFFER->bufend) {
+  size_t maxwrite = (size_t)(BUFFER->bufend-BUFFER->bufpos);
+  libc_memcpy(BUFFER->bufpos,data,MIN(maxwrite,datalen)*sizeof(char32_t));
+ }
+ /* Still seek past the end, as to
+  * calculate the required buffersize. */
+ BUFFER->bufpos += datalen;
+ return datalen;
+#undef BUFFER
+}
+
+INTERN ATTR_RARETEXT ssize_t LIBCCALL
+libc_32vswprintf(char32_t *__restrict buf, size_t buflen,
+                 char32_t const *__restrict format, va_list args) {
+ ssize_t result = -1; char *utf8_format;
+ /* Convert 'format' to utf8. */
+ utf8_format = libc_utf32to8m(format);
+ if likely(utf8_format) {
+  struct c32printer printer;
+  struct sw32printf_data data; data.bufpos = buf;
+  if (__builtin_add_overflow((uintptr_t)buf,buflen,(uintptr_t *)&data.bufend))
+      data.bufend = (char32_t *)(uintptr_t)-1;
+  /* Use a 'c32printer' to convert format_printf() output to utf-32. */
+  libc_32wprinter_init(&printer,&libc_sw32printf_callback,&data);
+  /* Invoke the printer chain we're just created. */
+  result = libc_format_vprintf(&libc_32wprinter_print,&printer,utf8_format,args);
+  libc_32wprinter_fini(&printer);
+  /* Ensure ZERO-termination. */
+  if (result >= 0) {
+   if likely(data.bufpos < data.bufend)
+            *data.bufpos = (char32_t)'\0';
+   result = (ssize_t)(data.bufpos-buf);
+  }
+  libc_free(utf8_format);
+ }
+ return result;
+}
+
+PRIVATE ssize_t LIBCCALL libc_32sscanf_scanner(void *data) { return (char)*(*(char32_t **)data)++; }
+PRIVATE ssize_t LIBCCALL libc_32sscanf_return(int UNUSED(c), void *data) { --*(char32_t **)data; return 0; }
+INTERN ATTR_RARETEXT ssize_t LIBCCALL
+libc_32vswscanf(char32_t const *__restrict src,
+                char32_t const *__restrict format, va_list args) {
+ ssize_t result = -1; char *utf8_format;
+ if ((utf8_format = libc_utf32to8m(format)) != NULL) {
+  result = libc_format_vscanf(&libc_32sscanf_scanner,
+                              &libc_32sscanf_return,
+                             (void *)&src,utf8_format,args);
+  libc_free(utf8_format);
+ }
+ return result;
+}
+INTERN ATTR_RARETEXT ssize_t ATTR_CDECL
+libc_32swprintf(char32_t *__restrict buf, size_t buflen,
+                char32_t const *__restrict format, ...) {
+ ssize_t result; va_list args; va_start(args,format);
+ result = libc_32vswprintf(buf,buflen,format,args);
+ va_end(args);
+ return result;
+}
+INTERN ATTR_RARETEXT ssize_t ATTR_CDECL
+libc_32swscanf(char32_t const *__restrict src,
+               char32_t const *__restrict format, ...) {
+ ssize_t result; va_list args; va_start(args,format);
+ result = libc_32vswscanf(src,format,args);
+ va_end(args);
+ return result;
+}
+
+DEFINE_PUBLIC_ALIAS(vswprintf,libc_32vswprintf);
+DEFINE_PUBLIC_ALIAS(swprintf,libc_32swprintf);
+DEFINE_PUBLIC_ALIAS(vswscanf,libc_32vswscanf);
+DEFINE_PUBLIC_ALIAS(swscanf,libc_32swscanf);
+
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+/* UTF-16 Wide string printing/scanning */
+struct sw16printf_data { char16_t *bufpos,*bufend; };
+PRIVATE ssize_t LIBCCALL
+libc_sw16printf_callback(char16_t const *__restrict data,
+                         size_t datalen, void *closure) {
+#define BUFFER ((struct sw16printf_data *)closure)
+ /* Don't exceed the buffer end */
+ if (BUFFER->bufpos < BUFFER->bufend) {
+  size_t maxwrite = (size_t)(BUFFER->bufend-BUFFER->bufpos);
+  libc_memcpy(BUFFER->bufpos,data,MIN(maxwrite,datalen)*sizeof(char16_t));
+ }
+ /* Still seek past the end, as to
+  * calculate the required buffersize. */
+ BUFFER->bufpos += datalen;
+ return datalen;
+#undef BUFFER
+}
+
+INTERN ATTR_RARETEXT ssize_t LIBCCALL
+libc_16vswprintf(char16_t *__restrict buf, size_t buflen,
+                 char16_t const *__restrict format, va_list args) {
+ ssize_t result = -1; char *utf8_format;
+ /* Convert 'format' to utf8. */
+ utf8_format = libc_utf16to8m(format);
+ if likely(utf8_format) {
+  struct c16printer printer;
+  struct sw16printf_data data; data.bufpos = buf;
+  if (__builtin_add_overflow((uintptr_t)buf,buflen,(uintptr_t *)&data.bufend))
+      data.bufend = (char16_t *)(uintptr_t)-1;
+  /* Use a 'c16printer' to convert format_printf() output to utf-16. */
+  libc_16wprinter_init(&printer,&libc_sw16printf_callback,&data);
+  /* Invoke the printer chain we're just created. */
+  result = libc_format_vprintf(&libc_16wprinter_print,&printer,utf8_format,args);
+  libc_16wprinter_fini(&printer);
+  /* Ensure ZERO-termination. */
+  if (result >= 0) {
+   if likely(data.bufpos < data.bufend)
+            *data.bufpos = (char16_t)'\0';
+   result = (ssize_t)(data.bufpos-buf);
+  }
+  libc_free(utf8_format);
+ }
+ return result;
+}
+
+PRIVATE ssize_t LIBCCALL libc_16sscanf_scanner(void *data) { return (char)*(*(char16_t **)data)++; }
+PRIVATE ssize_t LIBCCALL libc_16sscanf_return(int UNUSED(c), void *data) { --*(char16_t **)data; return 0; }
+INTERN ATTR_RARETEXT ssize_t LIBCCALL
+libc_16vswscanf(char16_t const *__restrict src,
+                char16_t const *__restrict format, va_list args) {
+ ssize_t result = -1; char *utf8_format;
+ if ((utf8_format = libc_utf16to8m(format)) != NULL) {
+  result = libc_format_vscanf(&libc_16sscanf_scanner,
+                              &libc_16sscanf_return,
+                             (void *)&src,utf8_format,args);
+  libc_free(utf8_format);
+ }
+ return result;
+}
+INTERN ATTR_RARETEXT ssize_t ATTR_CDECL
+libc_16swprintf(char16_t *__restrict buf, size_t buflen,
+                char16_t const *__restrict format, ...) {
+ ssize_t result; va_list args; va_start(args,format);
+ result = libc_16vswprintf(buf,buflen,format,args);
+ va_end(args);
+ return result;
+}
+INTERN ATTR_RARETEXT ssize_t ATTR_CDECL
+libc_16swscanf(char16_t const *__restrict src,
+               char16_t const *__restrict format, ...) {
+ ssize_t result; va_list args; va_start(args,format);
+ result = libc_16vswscanf(src,format,args);
+ va_end(args);
+ return result;
+}
+
+DEFINE_PUBLIC_ALIAS(_vswprintf_c,libc_16vswprintf);
+DEFINE_PUBLIC_ALIAS(_swprintf_c,libc_16swprintf);
+DEFINE_PUBLIC_ALIAS(__DSYM(vswscanf),libc_16vswscanf);
+DEFINE_PUBLIC_ALIAS(__DSYM(swscanf),libc_16swscanf);
+
+INTERN ATTR_DOSTEXT ssize_t LIBCCALL
+libc_16vswprintf_unlimited(char16_t *__restrict buf,
+                           char16_t const *__restrict format,
+                           va_list args) {
+ return libc_16vswprintf(buf,(size_t)-1,format,args);
+}
+INTERN ATTR_DOSTEXT ssize_t ATTR_CDECL
+libc_16swprintf_unlimited(char16_t *__restrict buf, char16_t const *__restrict format, ...) {
+ va_list args; ssize_t result; va_start(args,format);
+ result = libc_16vswprintf_unlimited(buf,format,args);
+ va_end(args);
+ return result;
+}
+/* We only export these two symbols for binary compatibility with DOS. */
+DEFINE_PUBLIC_ALIAS(_vswprintf,libc_16vswprintf_unlimited);
+DEFINE_PUBLIC_ALIAS(_swprintf,libc_16swprintf_unlimited);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
+
 #endif /* !__KERNEL__ */
 
 DECL_END

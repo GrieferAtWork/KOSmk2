@@ -319,7 +319,7 @@ libc_argv8to16_ex(size_t argc, char **__restrict argv) {
  if (!result) return NULL;
  end = (iter = result)+argc;
  for (; iter != end; ++iter,++argv) {
-  *iter = libc__mall_untrack(libc_utf8to16m(*argv,libc_strlen(*argv)));
+  *iter = libc__mall_untrack(libc_utf8to16m(*argv));
   if unlikely(!*iter) {
    while (iter-- != result) libc_free(*iter);
    libc_free(result);
@@ -335,7 +335,7 @@ libc_argv8to32_ex(size_t argc, char **__restrict argv) {
  if (!result) return NULL;
  end = (iter = result)+argc;
  for (; iter != end; ++iter,++argv) {
-  *iter = libc__mall_untrack(libc_utf8to32m(*argv,libc_strlen(*argv)));
+  *iter = libc__mall_untrack(libc_utf8to32m(*argv));
   if unlikely(!*iter) {
    while (iter-- != result) libc_free(*iter);
    libc_free(result);

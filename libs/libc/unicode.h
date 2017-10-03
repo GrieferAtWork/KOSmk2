@@ -23,9 +23,15 @@
 #include <hybrid/compiler.h>
 #ifndef __KERNEL__
 #include <hybrid/types.h>
+#include <hybrid/section.h>
 #include <uchar.h>
 
 DECL_BEGIN
+
+#define ATTR_UNITEXT   ATTR_RARETEXT
+#define ATTR_UNIRODATA ATTR_RARERODATA
+#define ATTR_UNIDATA   ATTR_RAREDATA
+#define ATTR_UNIBSS    ATTR_RAREBSS
 
 #ifndef ____mbstate_t_defined
 #define ____mbstate_t_defined 1
@@ -102,10 +108,14 @@ INTDEF size_t LIBCCALL libc_utf16to8(char16_t const *__restrict utf16, size_t ut
 
 
 /* Helper functions that return a libc_malloc'ed string, or NULL upon error. */
-INTDEF char16_t *LIBCCALL libc_utf8to16m(char const *__restrict utf8, size_t utf8chars);
-INTDEF char32_t *LIBCCALL libc_utf8to32m(char const *__restrict utf8, size_t utf8chars);
-INTDEF char *LIBCCALL libc_utf16to8m(char16_t const *__restrict utf16, size_t utf16chars);
-INTDEF char *LIBCCALL libc_utf32to8m(char32_t const *__restrict utf32, size_t utf32chars);
+INTDEF char16_t *LIBCCALL libc_utf8to16m(char const *__restrict utf8);
+INTDEF char32_t *LIBCCALL libc_utf8to32m(char const *__restrict utf8);
+INTDEF char *LIBCCALL libc_utf16to8m(char16_t const *__restrict utf16);
+INTDEF char *LIBCCALL libc_utf32to8m(char32_t const *__restrict utf32);
+INTDEF char16_t *LIBCCALL libc_utf8to16ms(char const *__restrict utf8, size_t utf8chars);
+INTDEF char32_t *LIBCCALL libc_utf8to32ms(char const *__restrict utf8, size_t utf8chars);
+INTDEF char *LIBCCALL libc_utf16to8ms(char16_t const *__restrict utf16, size_t utf16chars);
+INTDEF char *LIBCCALL libc_utf32to8ms(char32_t const *__restrict utf32, size_t utf32chars);
 
 
 #define libc_api_utf8to16(dst,dstlen,src,srclen) \

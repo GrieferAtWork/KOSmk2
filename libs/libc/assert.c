@@ -332,9 +332,9 @@ void LIBCCALL libc_assert(char const *msg, char const *file, u32 line) {
 }
 INTERN ATTR_DOSTEXT ATTR_NORETURN ATTR_NOINLINE
 void LIBCCALL libc_16wassert(char16_t const *msg, char16_t const *file, u32 line) {
- char *utf8_msg = libc_utf16to8m(msg,libc_16wcslen(msg));
- char *utf8_file = libc_utf16to8m(file,libc_16wcslen(file));
- assertion_corefail(utf8_msg,utf8_file,(int)line,NULL,NULL,NULL);
+ assertion_corefail(libc_utf16to8m(msg),
+                    libc_utf16to8m(file),
+                   (int)line,NULL,NULL,NULL);
 }
 
 /* NOTE: We're only exporting 16-bit '_wassert', because

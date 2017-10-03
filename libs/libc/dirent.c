@@ -265,7 +265,7 @@ err:
 }
 INTERN ATTR_DOSTEXT struct findfd *LIBCCALL
 libc_16findopen(char16_t const *query, bool dosmode) {
- char *utf8_query = libc_utf16to8m(query,libc_16wcslen(query));
+ char *utf8_query = libc_utf16to8m(query);
  struct findfd *result = NULL;
  if (utf8_query) {
   result = libc_findopen(utf8_query,dosmode);
@@ -275,7 +275,7 @@ libc_16findopen(char16_t const *query, bool dosmode) {
 }
 INTERN ATTR_DOSTEXT struct findfd *LIBCCALL
 libc_32findopen(char32_t const *query, bool dosmode) {
- char *utf8_query = libc_utf32to8m(query,libc_32wcslen(query));
+ char *utf8_query = libc_utf32to8m(query);
  struct findfd *result = NULL;
  if (utf8_query) {
   result = libc_findopen(utf8_query,dosmode);

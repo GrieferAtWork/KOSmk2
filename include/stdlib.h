@@ -1207,7 +1207,7 @@ __LIBC errno_t (__LIBCCALL _wsearchenv_s)(wchar_t const *__restrict __file, wcha
 __LIBC errno_t (__LIBCCALL _wsplitpath_s)(wchar_t const *__restrict __abspath, wchar_t *__restrict __drive, size_t __drivelen, wchar_t *__restrict __dir, size_t __dirlen, wchar_t *__restrict __file, size_t __filelen, wchar_t *__restrict __ext, size_t __extlen);
 #ifndef _CRT_WPERROR_DEFINED
 #define _CRT_WPERROR_DEFINED 1
-__LIBC void (__LIBCCALL _wperror)(wchar_t const *__restrict __errmsg);
+__LIBC void (__LIBCCALL _wperror)(wchar_t const *__restrict __errmsg) __KOS_ASMNAME("wperror");
 #endif /* !_CRT_WPERROR_DEFINED */
 #endif /* !_WSTDLIBP_DEFINED */
 

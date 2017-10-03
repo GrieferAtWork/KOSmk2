@@ -858,7 +858,7 @@ A(libc_w16futimeat)(int dfd, char16_t const *file,
   result = A(libc_futimeat)(dfd,NULL,file_times,flags);
  else {
   result = -1;
-  utf8file = libc_utf16to8m(file,libc_16wcslen(file));
+  utf8file = libc_utf16to8m(file);
   if (utf8file) result = A(libc_futimeat)(dfd,NULL,file_times,flags),
                 libc_free(utf8file);
  }
@@ -872,7 +872,7 @@ A(libc_w32futimeat)(int dfd, char32_t const *file,
   result = A(libc_futimeat)(dfd,NULL,file_times,flags);
  else {
   result = -1;
-  utf8file = libc_utf32to8m(file,libc_32wcslen(file));
+  utf8file = libc_utf32to8m(file);
   if (utf8file) result = A(libc_futimeat)(dfd,NULL,file_times,flags),
                 libc_free(utf8file);
  }
