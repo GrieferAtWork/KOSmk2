@@ -19,85 +19,97 @@
 #ifndef GUARD_LIBS_LIBC_STDIO_FILE_H
 #define GUARD_LIBS_LIBC_STDIO_FILE_H 1
 
-#define CONFIG_STDIO_FILE_RECURSIVE_LOCK 1
-
 #include "libc.h"
-#include "stdio.h"
+#include <bits/io-file.h>
+#include <hybrid/list/list.h>
 #include <hybrid/compiler.h>
-#include <hybrid/types.h>
-#ifdef CONFIG_STDIO_FILE_RECURSIVE_LOCK
-#include <hybrid/sync/atomic-owner-rwlock.h>
-#else
 #include <hybrid/sync/atomic-rwlock.h>
-#endif
+#include <hybrid/sync/atomic-owner-rwlock.h>
+#include <hybrid/types.h>
+#include <stdarg.h>
 #include <uchar.h>
+
+
+/* Config: call 'datasync()' on the underlying file
+ *         descriptor after fflush() was used to write data. */
+#undef CONFIG_FILE_DATASYNC_DURING_FLUSH
+//#define CONFIG_FILE_DATASYNC_DURING_FLUSH
 
 DECL_BEGIN
 
+#ifndef __fpos_t_defined
+#define __fpos_t_defined 1
+typedef __FS_TYPE(pos) fpos_t;
+#endif /* !__fpos_t_defined */
+
+#ifndef __fpos64_t_defined
+#define __fpos64_t_defined 1
+typedef __pos64_t   fpos64_t;
+#endif /* !__fpos64_t_defined */
+
+#ifndef __std_FILE_defined
+#define __std_FILE_defined 1
 __NAMESPACE_STD_BEGIN
-struct _IO_FILE {
-#ifdef CONFIG_STDIO_FILE_RECURSIVE_LOCK
- atomic_owner_rwlock_t
-                   f_lock;   /*< Lock used to synchronize access to this file. */
-#else
- atomic_rwlock_t   f_lock;   /*< Lock used to synchronize access to this file. */
-#endif
- int               f_fd;     /*< [lock(f_lock)] The underlying system file descriptor.
-                              *   NOTE: The R/W pointer of this descriptor is assumed to point
-                              *         after the currently loaded buffer when 'FILE_BUFLOD',
-                              *         or to point at its start when 'FILE_BUFLOD' isn't set. */
-#define FILE_ERROR   0x0001  /*< The file is in an error state. */
-#define FILE_BUFCNG  0x0002  /*< The current contents of 'f_buffer' have changed since being loaded. */
-#define FILE_BUFLOD  0x0004  /*< The current contents of 'f_buffer' have been loaded from disk. */
-/*                   0x07f8   */
-#define FILE_NOBUF   0x0200  /*< The file isn't buffered. (Always use direct I/O)
-                              *  NOTE: When set, 'f_bufpos == f_bufmax == f_buffer' */
-#define FILE_LNBUFIT 0x0200  /*< The file is line-buffered if it refers to a tty device. (Deleted the first time the file is written to) */
-#define FILE_LNBUF   0x0400  /*< The file is line-buffered. (Flush after a '\n' character is written) */
-#define FILE_USERBUF 0x0800  /*< The current buffer is user-allocated and may not be replaced, or free()'d. */
-#define FILE_READOK  0x1000  /*< The file was opened for reading ('r' / 'w+'). */
-#define FILE_WRITEOK 0x2000  /*< The file was opened for writing ('w' / 'r+'). */
-#define FILE_APPEND  0x4000  /*< The file was opened in append mode ('a'). */
-#define FILE_BINARY  0x8000  /*< The file was opened in binary mode ('b'). */
- unsigned int      f_flags;  /*< [lock(f_lock)] Set of 'FILE_*', describing the file's state. */
- byte_t           *f_buffer; /*< [lock(f_lock)][0..1][owned_if(!FILE_USERBUF)] Base address of the allocated buffer. */
- byte_t           *f_bufpos; /*< [lock(f_lock)][0..1] Current buffer position. */
- byte_t           *f_bufend; /*< [lock(f_lock)][0..1] End of the currently loaded (valid) buffer. */
- byte_t           *f_bufmax; /*< [lock(f_lock)][0..1] End of the currently allocated buffer, or
-                              *   the first address no longer apart of a user-specified buffer. */
- byte_t           *f_bufptr; /*< [lock(f_lock)][0..1] Pointer offset from 'f_buffer', describing the current . */
- __pos_t           f_bfaddr; /*< [lock(f_lock)] In-file address of 'f_buffer'. */
+typedef __FILE FILE;
+__NAMESPACE_STD_END
+#endif /* !__std_FILE_defined */
+#ifndef __FILE_defined
+#define __FILE_defined 1
+__NAMESPACE_STD_USING(FILE)
+#endif /* !__FILE_defined */
+
+
+
+
+struct iofile_data {
+ uintptr_t             io_zero; /*< Always ZERO(0). - Required for binary compatibility with DOS. */
+ atomic_owner_rwlock_t io_lock; /*< Lock for the file. */
+ __pos_t               io_pos;  /*< The current in-file position of 'if_fd' */
+ size_t                io_read; /*< The amount of bytes within the currently loaded buffer that were read from disk.
+                                 *  When 'IO_R' is set, 'io_pos' is located within the buffer at 'if_base+io_read' */
+ LIST_NODE(FILE)       io_link; /*< [lock(libc_ffiles_lock)][0..1] Entry in the global chain of open files. (Used by 'fcloseall()', as well as flushing all open files during 'exit()') */
+ LIST_NODE(FILE)       io_lnch; /*< [lock(libc_flnchg_lock)][0..1] Chain of line-buffered file that have changed and must be flushed before another line-buffered file is read.
+                                 *   NOTE: The standard streams stdin, stdout and stderr are not apart of this list! */
+ //mbstate_t           io_mbs;  /*< MB State used for translating unicode data. */
 };
-#define FILE_ISERR(self)    ((self)->f_flags&FILE_ERROR)
-#define FILE_CLERR(self)    ((self)->f_flags &= ~FILE_ERROR)
-#define FILE_ISEOF(self)    ((self)->f_bufmax != (self)->f_bufend)
-#if defined(CONFIG_STDIO_FILE_RECURSIVE_LOCK)
-#define FILE_INIT(fd,flags) {ATOMIC_OWNER_RWLOCK_INIT,fd,flags,NULL,NULL,NULL,NULL,NULL,0}
-#define file_reading(x)     atomic_owner_rwlock_reading(&(x)->f_lock)
-#define file_writing(x)     atomic_owner_rwlock_writing(&(x)->f_lock)
-#define file_tryread(x)     atomic_owner_rwlock_tryread(&(x)->f_lock)
-#define file_trywrite(x)    atomic_owner_rwlock_trywrite(&(x)->f_lock)
-#define file_tryupgrade(x)  atomic_owner_rwlock_tryupgrade(&(x)->f_lock)
-#define file_read(x)        atomic_owner_rwlock_read(&(x)->f_lock)
-#define file_write(x)       atomic_owner_rwlock_write(&(x)->f_lock)
-#define file_upgrade(x)     atomic_owner_rwlock_upgrade(&(x)->f_lock)
-#define file_downgrade(x)   atomic_owner_rwlock_downgrade(&(x)->f_lock)
-#define file_endread(x)     atomic_owner_rwlock_endread(&(x)->f_lock)
-#define file_endwrite(x)    atomic_owner_rwlock_endwrite(&(x)->f_lock)
-#else
-#define FILE_INIT(fd,flags) {ATOMIC_RWLOCK_INIT,fd,flags,NULL,NULL,NULL,NULL,NULL,0}
-#define file_reading(x)     atomic_rwlock_reading(&(x)->f_lock)
-#define file_writing(x)     atomic_rwlock_writing(&(x)->f_lock)
-#define file_tryread(x)     atomic_rwlock_tryread(&(x)->f_lock)
-#define file_trywrite(x)    atomic_rwlock_trywrite(&(x)->f_lock)
-#define file_tryupgrade(x)  atomic_rwlock_tryupgrade(&(x)->f_lock)
-#define file_read(x)        atomic_rwlock_read(&(x)->f_lock)
-#define file_write(x)       atomic_rwlock_write(&(x)->f_lock)
-#define file_upgrade(x)     atomic_rwlock_upgrade(&(x)->f_lock)
-#define file_downgrade(x)   atomic_rwlock_downgrade(&(x)->f_lock)
-#define file_endread(x)     atomic_rwlock_endread(&(x)->f_lock)
-#define file_endwrite(x)    atomic_rwlock_endwrite(&(x)->f_lock)
-#endif
+
+INTDEF atomic_rwlock_t libc_ffiles_lock; /* [LOCK_ORDER(AFTER(io_lock))] */
+INTDEF atomic_rwlock_t libc_flnchg_lock; /* [LOCK_ORDER(BEFORE(io_lock))] */
+INTDEF LIST_HEAD(FILE) libc_ffiles;
+INTDEF LIST_HEAD(FILE) libc_flnchg;
+
+#define IO_R       __IO_FILE_IOR /*< The current buffer was read from disk (Undefined when 'if_cnt == 0'). */
+#define IO_W       __IO_FILE_IOW /*< The current buffer has changed since being read. */
+#define IO_NBF     __IO_FILE_IONBF     /*< ??? */
+#define IO_MALLBUF __IO_FILE_IOMALLBUF /*< The buffer was allocated internally. */
+#define IO_EOF     __IO_FILE_IOEOF     /*< Set when the file pointed to by 'if_fd' has been exhausted. */
+#define IO_ERR     __IO_FILE_IOERR     /*< Set when an I/O error occurred. */
+#define IO_NOFD    __IO_FILE_IONOFD    /*< The file acts as output to buffer only. - 'if_fd' is not valid. (Currently ignored when loading/flushing data) */
+#define IO_RW      __IO_FILE_IORW      /*< The file was opened for read+write permissions ('+' flag) */
+#define IO_USERBUF __IO_FILE_IOUSERBUF /*< The buffer was given by the user. */
+#define IO_LNBUF   __IO_FILE_IOLNBUF   /*< NOT DEFINED BY DOS: Use line-buffer mode. */
+#define IO_LNIFTYY __IO_FILE_IOLNIFTYY /*< NOT ORIGINALLY DEFINED IN DOS: Determine 'isatty()' on first access and set '__IO_FILE_IOLNBUF' accordingly. */
+
+#define FEOF(self)      ((self)->if_flag&IO_EOF)
+#define FERROR(self)    ((self)->if_flag&IO_ERR)
+#define FCLEARERR(self) ((self)->if_flag&=~IO_ERR)
+
+#define IOBUF_MAX                8192
+#define IOBUF_MIN                512
+#define IOBUF_RELOCATE_THRESHOLD 2048 /* When >= this amount of bytes are unused in the buffer, free them. */
+
+
+#define file_reading(x)     atomic_owner_rwlock_reading(&(x)->if_exdata->f_lock)
+#define file_writing(x)     atomic_owner_rwlock_writing(&(x)->if_exdata->f_lock)
+#define file_tryread(x)     atomic_owner_rwlock_tryread(&(x)->if_exdata->f_lock)
+#define file_trywrite(x)    atomic_owner_rwlock_trywrite(&(x)->if_exdata->f_lock)
+#define file_tryupgrade(x)  atomic_owner_rwlock_tryupgrade(&(x)->if_exdata->f_lock)
+#define file_read(x)        atomic_owner_rwlock_read(&(x)->if_exdata->f_lock)
+#define file_write(x)       atomic_owner_rwlock_write(&(x)->if_exdata->f_lock)
+#define file_upgrade(x)     atomic_owner_rwlock_upgrade(&(x)->if_exdata->f_lock)
+#define file_downgrade(x)   atomic_owner_rwlock_downgrade(&(x)->if_exdata->f_lock)
+#define file_endread(x)     atomic_owner_rwlock_endread(&(x)->if_exdata->f_lock)
+#define file_endwrite(x)    atomic_owner_rwlock_endwrite(&(x)->if_exdata->f_lock)
 
 
 #if 1
@@ -134,17 +146,6 @@ struct _IO_FILE {
 
 
 
-#ifndef __std_FILE_defined
-#define __std_FILE_defined 1
-typedef __FILE FILE;
-#endif /* !__std_FILE_defined */
-__NAMESPACE_STD_END
-#ifndef __FILE_defined
-#define __FILE_defined 1
-__NAMESPACE_STD_USING(FILE)
-#endif /* !__FILE_defined */
-
-
 #undef stdin
 #undef stdout
 #undef stderr
@@ -154,87 +155,105 @@ DATDEF FILE *stdout;
 DATDEF FILE *stderr;
 
 /* Low-level read/write/seek/tell implementation. */
-INTDEF NONNULL((3)) size_t LIBCCALL libc_fread_impl(void *__restrict ptr, size_t size, FILE *__restrict stream);
-INTDEF NONNULL((3)) size_t LIBCCALL libc_fwrite_impl(void const *__restrict ptr, size_t size, FILE *__restrict stream);
-INTDEF NONNULL((1)) __off_t LIBCCALL libc_ftell_impl(FILE *__restrict self);
-INTDEF NONNULL((1)) int LIBCCALL libc_fseek_impl(FILE *__restrict self, __off_t off, int whence);
+INTDEF size_t LIBCCALL libc_fdoread(void *__restrict buf, size_t size, FILE *__restrict self);
+INTDEF size_t LIBCCALL libc_fdowrite(void const *__restrict buf, size_t size, FILE *__restrict self);
+INTDEF int LIBCCALL libc_fdoflush(FILE *__restrict self);
+INTDEF __pos_t LIBCCALL libc_fdotell(FILE *__restrict self);
+INTDEF int LIBCCALL libc_fdoseek(FILE *__restrict self, __off_t off, int whence);
+INTDEF int LIBCCALL libc_dosetvbuf(FILE *__restrict self, char *__restrict buf, int modes, size_t n);
+INTDEF int LIBCCALL libc_doungetc(int ch, FILE *__restrict self);
+/* Try to fill unused buffer memory with new data, allocating a new buffer if none was available before. */
+INTDEF int LIBCCALL libc_doffill(FILE *__restrict self);
 
-INTDEF size_t LIBCCALL libc_fread_unlocked(void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
-INTDEF size_t LIBCCALL libc_fwrite_unlocked(void const *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
-INTDEF size_t LIBCCALL libc_fread(void *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
-INTDEF size_t LIBCCALL libc_fwrite(void const *__restrict ptr, size_t size, size_t n, FILE *__restrict stream);
+/* Flush all line-buffered file streams that have changed.
+ * This function is called before data is read from a
+ * line-buffered source 'sender' that is already write-locked. */
+INTDEF void LIBCCALL libc_flush_changed_lnbuf_files(FILE *__restrict sender);
+
+/* All all user-defined input streams, not including stdin, stdout or stderr.
+ * NOTE: Errors that may occur during this act are ignored, so-as to
+ *       ensure that attempts at flushing later files are always made. */
+INTDEF void LIBCCALL libc_flushall_nostd(void);
+/* Same as 'libc_flushall_nostd', but also flush standard streams. */
+INTDEF void LIBCCALL libc_flushall(void);
+
+INTDEF size_t LIBCCALL libc_fread_unlocked(void *__restrict buf, size_t size, size_t n, FILE *__restrict self);
+INTDEF size_t LIBCCALL libc_fwrite_unlocked(void const *__restrict buf, size_t size, size_t n, FILE *__restrict self);
+INTDEF size_t LIBCCALL libc_fread(void *__restrict buf, size_t size, size_t n, FILE *__restrict self);
+INTDEF size_t LIBCCALL libc_fwrite(void const *__restrict buf, size_t size, size_t n, FILE *__restrict self);
 INTDEF ssize_t LIBCCALL libc_file_printer(char const *__restrict data, size_t datalen, void *closure);
 
-INTDEF void LIBCCALL libc_flockfile(FILE *stream);
-INTDEF int LIBCCALL libc_ftrylockfile(FILE *stream);
-INTDEF void LIBCCALL libc_funlockfile(FILE *stream);
+INTDEF void LIBCCALL libc_flockfile(FILE *self);
+INTDEF int LIBCCALL libc_ftrylockfile(FILE *self);
+INTDEF void LIBCCALL libc_funlockfile(FILE *self);
 
-INTDEF int LIBCCALL libc_fseek(FILE *stream, long int off, int whence);
-INTDEF int LIBCCALL libc_fseeko(FILE *stream, off_t off, int whence);
-INTDEF int LIBCCALL libc_fseeko64(FILE *stream, off64_t off, int whence);
-INTDEF long int LIBCCALL libc_ftell(FILE *stream);
-INTDEF off_t LIBCCALL libc_ftello(FILE *stream);
-INTDEF off64_t LIBCCALL libc_ftello64(FILE *stream);
-INTDEF int LIBCCALL libc_fgetpos(FILE *__restrict stream, fpos_t *__restrict pos);
-INTDEF int LIBCCALL libc_fsetpos(FILE *stream, fpos_t const *pos);
-INTDEF int LIBCCALL libc_fgetpos64(FILE *__restrict stream, fpos64_t *__restrict pos);
-INTDEF int LIBCCALL libc_fsetpos64(FILE *stream, fpos64_t const *pos);
+INTDEF int LIBCCALL libc_fseek(FILE *self, long int off, int whence);
+INTDEF int LIBCCALL libc_fseeko(FILE *self, off_t off, int whence);
+INTDEF int LIBCCALL libc_fseeko64(FILE *self, off64_t off, int whence);
+INTDEF long int LIBCCALL libc_ftell(FILE *self);
+INTDEF off_t LIBCCALL libc_ftello(FILE *self);
+INTDEF off64_t LIBCCALL libc_ftello64(FILE *self);
+INTDEF int LIBCCALL libc_fgetpos(FILE *__restrict self, fpos_t *__restrict pos);
+INTDEF int LIBCCALL libc_fsetpos(FILE *self, fpos_t const *pos);
+INTDEF int LIBCCALL libc_fgetpos64(FILE *__restrict self, fpos64_t *__restrict pos);
+INTDEF int LIBCCALL libc_fsetpos64(FILE *self, fpos64_t const *pos);
 
 
-INTDEF ssize_t LIBCCALL libc_vfprintf(FILE *__restrict stream, char const *__restrict format, va_list args);
+INTDEF ssize_t LIBCCALL libc_vfprintf(FILE *__restrict self, char const *__restrict format, va_list args);
 INTDEF ssize_t ATTR_CDECL libc_printf(char const *__restrict format, ...);
-INTDEF ssize_t ATTR_CDECL libc_fprintf(FILE *__restrict stream, char const *__restrict format, ...);
+INTDEF ssize_t ATTR_CDECL libc_fprintf(FILE *__restrict self, char const *__restrict format, ...);
 INTDEF ssize_t LIBCCALL libc_vprintf(char const *__restrict format, va_list args);
-INTDEF ssize_t LIBCCALL libc_vfscanf(FILE *__restrict stream, char const *__restrict format, va_list args);
+INTDEF ssize_t LIBCCALL libc_vfscanf(FILE *__restrict self, char const *__restrict format, va_list args);
 INTDEF ssize_t LIBCCALL libc_vscanf(char const *__restrict format, va_list args);
-INTDEF ssize_t ATTR_CDECL libc_fscanf(FILE *__restrict stream, char const *__restrict format, ...);
+INTDEF ssize_t ATTR_CDECL libc_fscanf(FILE *__restrict self, char const *__restrict format, ...);
 INTDEF ssize_t ATTR_CDECL libc_scanf(char const *__restrict format, ...);
-INTDEF int LIBCCALL libc_fgetc_unlocked(FILE *stream);
-INTDEF int LIBCCALL libc_fputc_unlocked(int c, FILE *stream);
-INTDEF int LIBCCALL libc_getw(FILE *stream);
-INTDEF int LIBCCALL libc_putw(int w, FILE *stream);
-INTDEF int LIBCCALL libc_fgetc(FILE *stream);
-INTDEF int LIBCCALL libc_fputc(int c, FILE *stream);
-INTDEF ssize_t LIBCCALL libc_fputs(char const *__restrict s, FILE *__restrict stream);
-INTDEF ssize_t LIBCCALL libc_fputs_unlocked(char const *__restrict s, FILE *__restrict stream);
-INTDEF void LIBCCALL libc_clearerr(FILE *stream);
-INTDEF int LIBCCALL libc_fclose(FILE *stream);
-INTDEF int LIBCCALL libc_fflush(FILE *stream);
-INTDEF void LIBCCALL libc_setbuf(FILE *__restrict stream, char *__restrict buf);
-INTDEF int LIBCCALL libc_setvbuf(FILE *__restrict stream, char *__restrict buf, int modes, size_t n);
-INTDEF int LIBCCALL libc_ungetc(int c, FILE *stream);
+INTDEF int LIBCCALL libc_fgetc_unlocked(FILE *self);
+INTDEF int LIBCCALL libc_fputc_unlocked(int c, FILE *self);
+INTDEF int LIBCCALL libc_getw(FILE *self);
+INTDEF int LIBCCALL libc_putw(int w, FILE *self);
+INTDEF int LIBCCALL libc_fgetc(FILE *self);
+INTDEF int LIBCCALL libc_fputc(int c, FILE *self);
+INTDEF ssize_t LIBCCALL libc_fputs(char const *__restrict s, FILE *__restrict self);
+INTDEF ssize_t LIBCCALL libc_fputs_unlocked(char const *__restrict s, FILE *__restrict self);
+INTDEF void LIBCCALL libc_clearerr(FILE *self);
+INTDEF int LIBCCALL libc_fclose(FILE *self);
+INTDEF int LIBCCALL libc_fflush(FILE *self);
+INTDEF void LIBCCALL libc_setbuf(FILE *__restrict self, char *__restrict buf);
+INTDEF int LIBCCALL libc_setvbuf(FILE *__restrict self, char *__restrict buf, int modes, size_t n);
+INTDEF int LIBCCALL libc_ungetc(int c, FILE *self);
+INTDEF int LIBCCALL libc_ungetc_unlocked(int c, FILE *self);
 INTDEF FILE *LIBCCALL libc_tmpfile64(void);
 INTDEF FILE *LIBCCALL libc_tmpfile(void);
 INTDEF FILE *LIBCCALL libc_fopen(char const *__restrict filename, char const *__restrict modes);
-INTDEF FILE *LIBCCALL libc_freopen(char const *__restrict filename, char const *__restrict modes, FILE *__restrict stream);
-INTDEF int LIBCCALL libc_fflush_unlocked(FILE *stream);
-INTDEF void LIBCCALL libc_setbuffer(FILE *__restrict stream, char *__restrict buf, size_t size);
-INTDEF void LIBCCALL libc_setlinebuf(FILE *stream);
-INTDEF int LIBCCALL libc_feof_unlocked(FILE *stream);
-INTDEF int LIBCCALL libc_ferror_unlocked(FILE *stream);
+INTDEF FILE *LIBCCALL libc_freopen(char const *__restrict filename, char const *__restrict modes, FILE *__restrict self);
+INTDEF int LIBCCALL libc_fflush_unlocked(FILE *self);
+INTDEF void LIBCCALL libc_setbuffer(FILE *__restrict self, char *__restrict buf, size_t size);
+INTDEF void LIBCCALL libc_setlinebuf(FILE *self);
+INTDEF int LIBCCALL libc_feof_unlocked(FILE *self);
+INTDEF int LIBCCALL libc_ferror_unlocked(FILE *self);
 INTDEF FILE *LIBCCALL libc_fdopen(int fd, char const *modes);
 INTDEF FILE *LIBCCALL libc_fmemopen(void *s, size_t len, char const *modes);
 INTDEF FILE *LIBCCALL libc_open_memstream(char **bufloc, size_t *sizeloc);
-INTDEF ssize_t LIBCCALL libc_getdelim(char **__restrict lineptr, size_t *__restrict n, int delimiter, FILE *__restrict stream);
-INTDEF ssize_t LIBCCALL libc_getline(char **__restrict lineptr, size_t *__restrict n, FILE *__restrict stream);
+INTDEF ssize_t LIBCCALL libc_getdelim(char **__restrict lineptr, size_t *__restrict n, int delimiter, FILE *__restrict self);
+INTDEF ssize_t LIBCCALL libc_getline(char **__restrict lineptr, size_t *__restrict n, FILE *__restrict self);
 INTDEF FILE *LIBCCALL libc_popen(char const *command, char const *modes);
-INTDEF int LIBCCALL libc_pclose(FILE *stream);
+INTDEF int LIBCCALL libc_pclose(FILE *self);
 INTDEF int LIBCCALL libc_fcloseall(void);
-INTDEF void LIBCCALL libc_clearerr_unlocked(FILE *stream);
-INTDEF int LIBCCALL libc_feof(FILE *stream);
-INTDEF int LIBCCALL libc_ferror(FILE *stream);
+INTDEF void LIBCCALL libc_clearerr_unlocked(FILE *self);
+INTDEF int LIBCCALL libc_feof(FILE *self);
+INTDEF int LIBCCALL libc_ferror(FILE *self);
 //INTDEF FILE *LIBCCALL libc_fopencookie(void *__restrict magic_cookie, char const *__restrict modes, _IO_cookie_io_functions_t io_funcs);
-INTDEF char *LIBCCALL libc_fgets(char *__restrict s, size_t n, FILE *__restrict stream);
-INTDEF char *LIBCCALL libc_fgets_unlocked(char *__restrict s, size_t n, FILE *__restrict stream);
-INTDEF char *LIBCCALL libc_fgets_int(char *__restrict s, int n, FILE *__restrict stream);
-INTDEF char *LIBCCALL libc_fgets_unlocked_int(char *__restrict s, int n, FILE *__restrict stream);
+INTDEF char *LIBCCALL libc_fgets(char *__restrict s, size_t n, FILE *__restrict self);
+INTDEF char *LIBCCALL libc_fgets_unlocked(char *__restrict s, size_t n, FILE *__restrict self);
+INTDEF char *LIBCCALL libc_fgets_int(char *__restrict s, int n, FILE *__restrict self);
+INTDEF char *LIBCCALL libc_fgets_unlocked_int(char *__restrict s, int n, FILE *__restrict self);
 INTDEF int LIBCCALL libc_getchar(void);
 INTDEF int LIBCCALL libc_putchar(int c);
 INTDEF int LIBCCALL libc_getchar_unlocked(void);
 INTDEF int LIBCCALL libc_putchar_unlocked(int c);
-INTDEF void LIBCCALL libc_rewind(FILE *stream);
-INTDEF int LIBCCALL libc_fileno(FILE *stream);
-INTDEF int LIBCCALL libc_fileno_unlocked(FILE *stream);
+INTDEF void LIBCCALL libc_rewind(FILE *self);
+INTDEF int LIBCCALL libc_fileno(FILE *self);
+INTDEF int LIBCCALL libc_fileno_unlocked(FILE *self);
 INTDEF char *LIBCCALL libc_gets(char *s);
 INTDEF ssize_t LIBCCALL libc_puts(char const *s);
 
@@ -247,34 +266,62 @@ INTDEF ssize_t LIBCCALL libc_32wprintf(char32_t const *__restrict format, ...);
 INTDEF ssize_t LIBCCALL libc_32vwprintf(char32_t const *__restrict format, va_list arg);
 INTDEF ssize_t LIBCCALL libc_32wscanf(char32_t const *__restrict format, ...);
 INTDEF ssize_t LIBCCALL libc_32vwscanf(char32_t const *__restrict format, va_list arg);
-INTDEF wint_t LIBCCALL libc_32fgetwc(FILE *stream);
-INTDEF wint_t LIBCCALL libc_32fputwc(char32_t wc, FILE *stream);
-INTDEF ssize_t LIBCCALL libc_32fputws(char32_t const *__restrict ws, FILE *__restrict stream);
-INTDEF char32_t *LIBCCALL libc_32fgetws(char32_t *__restrict ws, size_t n, FILE *__restrict stream);
-INTDEF char32_t *LIBCCALL libc_32fgetws_unlocked(char32_t *__restrict ws, size_t n, FILE *__restrict stream);
-INTDEF char32_t *LIBCCALL libc_32fgetws_int(char32_t *__restrict ws, int n, FILE *__restrict stream);
-INTDEF char32_t *LIBCCALL libc_32fgetws_unlocked_int(char32_t *__restrict ws, int n, FILE *__restrict stream);
-INTDEF wint_t LIBCCALL libc_32ungetwc(wint_t wc, FILE *stream);
+INTDEF wint_t LIBCCALL libc_32fgetwc(FILE *self);
+INTDEF wint_t LIBCCALL libc_32fputwc(char32_t wc, FILE *self);
+INTDEF ssize_t LIBCCALL libc_32fputws(char32_t const *__restrict ws, FILE *__restrict self);
+INTDEF char32_t *LIBCCALL libc_32fgetws(char32_t *__restrict ws, size_t n, FILE *__restrict self);
+INTDEF char32_t *LIBCCALL libc_32fgetws_unlocked(char32_t *__restrict ws, size_t n, FILE *__restrict self);
+INTDEF char32_t *LIBCCALL libc_32fgetws_int(char32_t *__restrict ws, int n, FILE *__restrict self);
+INTDEF char32_t *LIBCCALL libc_32fgetws_unlocked_int(char32_t *__restrict ws, int n, FILE *__restrict self);
+INTDEF wint_t LIBCCALL libc_32ungetwc(wint_t wc, FILE *self);
 INTDEF int LIBCCALL libc_32fwide(FILE *fp, int mode);
-INTDEF ssize_t LIBCCALL libc_32fwprintf(FILE *__restrict stream, char32_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_32fwprintf(FILE *__restrict self, char32_t const *__restrict format, ...);
 INTDEF ssize_t LIBCCALL libc_32vfwprintf(FILE *__restrict s, char32_t const *__restrict format, va_list arg);
-INTDEF ssize_t LIBCCALL libc_32fwscanf(FILE *__restrict stream, char32_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_32fwscanf(FILE *__restrict self, char32_t const *__restrict format, ...);
 INTDEF ssize_t LIBCCALL libc_32vfwscanf(FILE *__restrict s, char32_t const *__restrict format, va_list arg);
 INTDEF FILE *LIBCCALL libc_32open_wmemstream(char32_t **bufloc, size_t *sizeloc);
-INTDEF wint_t LIBCCALL libc_32fgetwc_unlocked(FILE *stream);
-INTDEF wint_t LIBCCALL libc_32fputwc_unlocked(char32_t wc, FILE *stream);
-INTDEF int LIBCCALL libc_32fputws_unlocked(char32_t const *__restrict ws, FILE *__restrict stream);
+INTDEF wint_t LIBCCALL libc_32fgetwc_unlocked(FILE *self);
+INTDEF wint_t LIBCCALL libc_32fputwc_unlocked(char32_t wc, FILE *self);
+INTDEF int LIBCCALL libc_32fputws_unlocked(char32_t const *__restrict ws, FILE *__restrict self);
 INTDEF wint_t LIBCCALL libc_32getwchar(void);
 INTDEF wint_t LIBCCALL libc_32putwchar(char32_t wc);
 INTDEF wint_t LIBCCALL libc_32getwchar_unlocked(void);
 INTDEF wint_t LIBCCALL libc_32putwchar_unlocked(char32_t wc);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF ssize_t LIBCCALL libc_16wprintf(char16_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vwprintf(char16_t const *__restrict format, va_list arg);
+INTDEF ssize_t LIBCCALL libc_16wscanf(char16_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vwscanf(char16_t const *__restrict format, va_list arg);
+INTDEF wint_t LIBCCALL libc_16fgetwc(FILE *self);
+INTDEF wint_t LIBCCALL libc_16fputwc(char16_t wc, FILE *self);
+INTDEF ssize_t LIBCCALL libc_16fputws(char16_t const *__restrict ws, FILE *__restrict self);
+INTDEF char16_t *LIBCCALL libc_16fgetws(char16_t *__restrict ws, size_t n, FILE *__restrict self);
+INTDEF char16_t *LIBCCALL libc_16fgetws_unlocked(char16_t *__restrict ws, size_t n, FILE *__restrict self);
+INTDEF char16_t *LIBCCALL libc_16fgetws_int(char16_t *__restrict ws, int n, FILE *__restrict self);
+INTDEF char16_t *LIBCCALL libc_16fgetws_unlocked_int(char16_t *__restrict ws, int n, FILE *__restrict self);
+INTDEF wint_t LIBCCALL libc_16ungetwc(wint_t wc, FILE *self);
+INTDEF int LIBCCALL libc_16fwide(FILE *fp, int mode);
+INTDEF ssize_t LIBCCALL libc_16fwprintf(FILE *__restrict self, char16_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vfwprintf(FILE *__restrict s, char16_t const *__restrict format, va_list arg);
+INTDEF ssize_t LIBCCALL libc_16fwscanf(FILE *__restrict self, char16_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vfwscanf(FILE *__restrict s, char16_t const *__restrict format, va_list arg);
+INTDEF FILE *LIBCCALL libc_16open_wmemstream(char16_t **bufloc, size_t *sizeloc);
+INTDEF wint_t LIBCCALL libc_16fgetwc_unlocked(FILE *self);
+INTDEF wint_t LIBCCALL libc_16fputwc_unlocked(char16_t wc, FILE *self);
+INTDEF int LIBCCALL libc_16fputws_unlocked(char16_t const *__restrict ws, FILE *__restrict self);
+INTDEF wint_t LIBCCALL libc_16getwchar(void);
+INTDEF wint_t LIBCCALL libc_16putwchar(char16_t wc);
+INTDEF wint_t LIBCCALL libc_16getwchar_unlocked(void);
+INTDEF wint_t LIBCCALL libc_16putwchar_unlocked(char16_t wc);
+
 INTDEF FILE *LIBCCALL libc___iob_func(void);
-INTDEF wint_t LIBCCALL libc_16single_ungetwch(wint_t __wc);
-INTDEF wint_t LIBCCALL libc_16single_ungetwch_nolock(wint_t __wc);
-INTDEF wint_t LIBCCALL libc_32single_ungetwch(wint_t __wc);
-INTDEF wint_t LIBCCALL libc_32single_ungetwch_nolock(wint_t __wc);
+INTDEF int LIBCCALL libc_single_ungetwch(int ch);
+INTDEF int LIBCCALL libc_single_ungetwch_unlocked(int ch);
+INTDEF wint_t LIBCCALL libc_16single_ungetwch(wint_t wc);
+INTDEF wint_t LIBCCALL libc_16single_ungetwch_unlocked(wint_t wc);
+INTDEF wint_t LIBCCALL libc_32single_ungetwch(wint_t wc);
+INTDEF wint_t LIBCCALL libc_32single_ungetwch_unlocked(wint_t wc);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

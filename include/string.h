@@ -471,6 +471,7 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL fuzzy_strcasecm
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,3)) size_t (__LIBCCALL fuzzy_memcasecmp)(void const *__a, size_t __a_bytes, void const *__b, size_t __b_bytes);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,3)) size_t (__LIBCCALL fuzzy_strncasecmp)(char const *__a, size_t __max_a_chars, char const *__b, size_t __max_b_chars);
 
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcasecmp)(void const *__a, void const *__b, size_t __n_bytes) __PE_ASMNAME("_memicmp");
 
 #ifndef __KERNEL__
 /* >> char *strdupaf(char const *__restrict format, ...);

@@ -26,26 +26,26 @@
 
 #ifdef __USE_POSIX199309
 #include <hybrid/timespec.h>
-#endif
-#if defined __USE_POSIX199309 || defined __USE_XOPEN_EXTENDED
+#endif /* __USE_POSIX199309 */
+#if defined(__USE_POSIX199309) || defined(__USE_XOPEN_EXTENDED)
 #include <bits/siginfo.h>
-#endif
+#endif /* __USE_POSIX199309 || __USE_XOPEN_EXTENDED */
 #ifdef __USE_POSIX
 #include <bits/sigaction.h>
-#endif
+#endif /* __USE_POSIX */
 #ifdef __USE_MISC
 #include <bits/sigcontext.h>
-#endif
+#endif /* __USE_MISC */
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
 #include <bits/sigstack.h>
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K8)
 #include <sys/ucontext.h>
-#endif
-#endif
-#if defined __USE_POSIX199506 || defined __USE_UNIX98
+#endif /* __USE_XOPEN || __USE_XOPEN2K8 */
+#endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
+#if defined(__USE_POSIX199506) || defined(__USE_UNIX98)
 #include <bits/pthreadtypes.h>
 #include <bits/sigthread.h>
-#endif
+#endif /* __USE_POSIX199506 || __USE_UNIX98 */
 
 __DECL_BEGIN
 
@@ -76,7 +76,10 @@ typedef __uid_t uid_t;
 #endif /* __USE_XOPEN || __USE_XOPEN2K */
 
 #ifdef __USE_GNU
+#ifndef __sighandler_t_defined
+#define __sighandler_t_defined 1
 typedef __sighandler_t sighandler_t;
+#endif /* !__sighandler_t_defined */
 #endif /* __USE_GNU */
 #ifdef __USE_MISC
 #define NSIG    _NSIG

@@ -124,10 +124,12 @@ pe_symaddr(struct instance *__restrict self,
  return result;
 }
 
+#define PE_MAX_SYMBOL_NAME 512
+
 /* NOTE: Must be called as a user-helper-function */
 PRIVATE void *KCALL
-pe_import_symbol(struct instance *__restrict inst,
-                 IMAGE_IMPORT_BY_NAME const *__restrict entry) {
+pe_import_symbol_impl(struct instance *__restrict inst,
+                      IMAGE_IMPORT_BY_NAME const *__restrict entry) {
  struct modsym sym; size_t name_length;
  if (inst->i_module->m_ops == &pe_ops) {
   /* Lookup within another PE instance. - we can actually use 'hint'! */
@@ -141,7 +143,7 @@ pe_import_symbol(struct instance *__restrict inst,
   *    with the same name, that would normally collide due to different type
   *    sizes such as apparent with 'wchar_t'.
   */
- name_length = strnlen((char *)entry->Name,512);
+ name_length = strnlen((char *)entry->Name,PE_MAX_SYMBOL_NAME);
  if (!entry->Name[name_length]) {
   if (name_length > 6 && !memcmp(entry->Name,".kos.",6*sizeof(char))) {
    sym = (*inst->i_module->m_ops->o_symaddr)(inst,(char *)entry->Name+6,
@@ -163,6 +165,28 @@ pe_import_symbol(struct instance *__restrict inst,
  sym = (*inst->i_module->m_ops->o_symaddr)(inst,(char *)entry->Name,
                                            sym_hashname((char *)entry->Name));
  return sym.ms_type != MODSYM_TYPE_INVALID ? sym.ms_addr : NULL;
+}
+
+PRIVATE void *KCALL
+pe_import_symbol(struct instance *__restrict inst,
+                 IMAGE_IMPORT_BY_NAME const *__restrict entry) {
+ void *result; bool found_at = false; char *iter,*end;
+ result = pe_import_symbol_impl(inst,entry);
+ if (result) return result;
+ /* Replace '@' with '%' in symbol names, then try again.
+  * >> This must be done because DOS uses '@' for c++ name mangling,
+  *    whereas ELF doesn't allow that character to be used in
+  *    symbol names (well... It can't be used normally)
+  * TODO: Eventually, we should implement a c++ name demangler + remangler
+  *       here, so we can convert DOS c++ names to ELF (gcc).
+  */
+ end = (iter = (char *)entry->Name)+PE_MAX_SYMBOL_NAME;
+ for (; iter != end && *iter; ++iter) {
+  if (*iter == '@') found_at = true,*iter = '%';
+ }
+ if (found_at) /* Try again. */
+     result = pe_import_symbol_impl(inst,entry);
+ return result;
 }
 
 
@@ -215,6 +239,16 @@ pe_patch(struct modpatch *__restrict patcher) {
 
    /* TODO: PE module resolution order (search places like the directory of 'mod->p_module.m_file') */
    mod = modpatch_dlopen(patcher,&filename);
+   if (E_ISERR(mod)) {
+    /* Substitute msvcr* libraries with libc. */
+    if (filename.dn_size >= 5 &&
+       !memcasecmp(filename.dn_name,"msvcr",5*sizeof(char))) {
+     filename.dn_name = "libc.so";
+     filename.dn_size = 7;
+     dentryname_loadhash(&filename);
+     mod = modpatch_dlopen(patcher,&filename);
+    }
+   }
 
    if (E_ISERR(mod)) {
     syslog(LOG_EXEC|LOG_ERROR,

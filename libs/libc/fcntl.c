@@ -278,6 +278,7 @@ DEFINE_PUBLIC_ALIAS(_creat,libc_dos_creat);
 DEFINE_PUBLIC_ALIAS(_sopen,libc_dos_sopen);
 DEFINE_PUBLIC_ALIAS(_sopen_s,libc_dos_sopen_s);
 DEFINE_PUBLIC_ALIAS(_sopen_s_nolock,libc_dos_sopen_s);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 

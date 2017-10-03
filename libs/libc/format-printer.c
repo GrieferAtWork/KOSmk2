@@ -88,6 +88,7 @@ do{ if ((temp = libc_format_hexdump(printer,closure,data,size,linesize,flags)) <
 #define PRINTF_EXTENSION_VIRTUALPTR  1        /*< Allow '%~' to describe virtual pointers. */
 #define PRINTF_EXTENSION_LONGDESCR   1        /*< Allow '%[...]' for a set of special printf descriptors. */
 #define PRINTF_EXTENSION_ERRORMSG    1        /*< Emit error messages for illegal printf() formats. */
+#define PRINTF_EXTENSION_UNICODE     1        /*< Add 'U16' and 'U32' length modifiers for utf16/32 respectively. */
 #ifndef CONFIG_DEBUG
 #undef PRINTF_EXTENSION_ERRORMSG
 #define PRINTF_EXTENSION_ERRORMSG    0
@@ -96,6 +97,9 @@ do{ if ((temp = libc_format_hexdump(printer,closure,data,size,linesize,flags)) <
 #ifndef __KERNEL__
 #undef PRINTF_EXTENSION_VIRTUALPTR
 #define PRINTF_EXTENSION_VIRTUALPTR  0
+#else
+#undef PRINTF_EXTENSION_UNICODE
+#define PRINTF_EXTENSION_UNICODE     0
 #endif
 
 
@@ -139,6 +143,10 @@ enum printf_length {
  len_I    = PP_CAT2(len_I,PP_MUL8(__SIZEOF_POINTER__)),
  len_hh   = PP_CAT2(len_I,PP_MUL8(__SIZEOF_CHAR__)),
  len_h    = PP_CAT2(len_I,PP_MUL8(__SIZEOF_SHORT__)),
+#if PRINTF_EXTENSION_UNICODE
+ len_U16  = 'u',
+ len_U32  = 'U',
+#endif
 #ifdef __KERNEL__
  len_l    = PP_CAT2(len_I,PP_MUL8(__SIZEOF_LONG__)),
 #else
@@ -461,12 +469,21 @@ have_precision:
    case 'z': case 't': case 'L':
     length = (enum printf_length)ch;
     goto nextmod;
+#if PRINTF_EXTENSION_UNICODE
+   case 'U':
+    ch = *format++;
+    /* */if (ch == '1' && *format == '6') ++format,length = len_U16;
+    else if (ch == '3' && *format == '2') ++format,length = len_U32;
+    else { --format; goto broken_format; }
+    goto nextmod;
+#endif
+
 
 #if PRINTF_EXTENSION_POINTERSIZE || PRINTF_EXTENSION_FIXLENGTH
    case 'I':
 #if PRINTF_EXTENSION_FIXLENGTH
     ch = *format++;
-    if (ch == '8') length = len_I8;
+    /* */if (ch == '8') length = len_I8;
     else if (ch == '1' && *format == '6') ++format,length = len_I16;
     else if (ch == '3' && *format == '2') ++format,length = len_I32;
     else if (ch == '6' && *format == '4') ++format,length = len_I64;
@@ -586,6 +603,7 @@ have_precision:
    case 's':
     s = va_arg(args,char *);
 #ifdef PRINTF_EXTENSION_NULLSTRING
+    /* XXX: This is wrong for different encodings... */
     if (!s) s = PRINTF_EXTENSION_NULLSTRING;
 #endif
     if (!(flags&PRINTF_FLAG_HASPREC)) precision = (size_t)-1;
@@ -603,7 +621,15 @@ have_precision:
 #endif
      } else
 #endif
+#if PRINTF_EXTENSION_UNICODE
+     if (length == len_U16)
+      precision = libc_16wcsnlen((char16_t *)s,precision);
+     else if (length == len_U32)
+      precision = libc_32wcsnlen((char32_t *)s,precision);
+     else
+#endif
      {
+      
       precision = libc_strnlen(s,precision);
      }
     }
@@ -644,11 +670,20 @@ quote_string:
       mbstate_t state = MBSTATE_INIT;
       temp = unlikely(wch16) ? libc_format_16wsztomb(printer,closure,(char16_t *)s,precision,&state)
                              : libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state);
-      if (temp < 0) return temp;
-      result += temp;
      } else
 #endif
-     { print(s,precision); }
+#if PRINTF_EXTENSION_UNICODE
+     if (length == len_U16) {
+      mbstate_t state = MBSTATE_INIT;
+      temp = libc_format_16wsztomb(printer,closure,(char16_t *)s,precision,&state);
+     } else if (length == len_U32) {
+      mbstate_t state = MBSTATE_INIT;
+      temp = libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state);
+     } else
+#endif
+     { temp = (*printer)(s,precision,closure); }
+     if (temp < 0) return temp;
+     result += temp;
     }
    } break;
 

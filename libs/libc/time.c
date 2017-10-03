@@ -793,6 +793,8 @@ libc_dos_times(struct tms *__restrict buffer) {
  return clock_now;
 }
 
+DEFINE_PUBLIC_ALIAS(_ctime32,libc_ctime);
+DEFINE_PUBLIC_ALIAS(_ctime64,libc_ctime64);
 DEFINE_PUBLIC_ALIAS(_gmtime32,libc_gmtime);
 DEFINE_PUBLIC_ALIAS(_gmtime64,libc_gmtime64);
 DEFINE_PUBLIC_ALIAS(_gmtime32_s,libc_gmtime_s);

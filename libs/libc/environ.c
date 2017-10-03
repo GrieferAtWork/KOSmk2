@@ -44,6 +44,10 @@
 #include <bits/dos-errno.h>
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
+#if 1
+#include <float.h>
+#endif
+
 #undef environ
 DECL_BEGIN
 
@@ -354,8 +358,8 @@ INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32wenviron(void) { if (!libc_32w
 INTERN ATTR_DOSTEXT char     ***LIBCCALL libc_p_initenviron(void) { return &appenv->e_envp; }
 INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16winitenviron(void) { if (!libc_16winitenviron) libc_16winitenviron = libc_argv8to16(environ); return &libc_16winitenviron; }
 INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32winitenviron(void) { if (!libc_32winitenviron) libc_32winitenviron = libc_argv8to32(environ); return &libc_32winitenviron; }
-INTERN ATTR_DOSTEXT char16_t **LIBCCALL libc_p_16wpgmptr(void) { return &(*libc_p_16wargv())[0]; }
-INTERN ATTR_DOSTEXT char32_t **LIBCCALL libc_p_32wpgmptr(void) { return &(*libc_p_32wargv())[0]; }
+INTERN ATTR_DOSTEXT char16_t  **LIBCCALL libc_p_16wpgmptr(void) { return &(*libc_p_16wargv())[0]; }
+INTERN ATTR_DOSTEXT char32_t  **LIBCCALL libc_p_32wpgmptr(void) { return &(*libc_p_32wargv())[0]; }
 
 INTERN ATTR_DOSTEXT errno_t LIBCCALL
 libc_dos_getenv_s(size_t *psize, char *buf,

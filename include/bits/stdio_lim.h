@@ -19,9 +19,17 @@
 #ifndef _BITS_STDIO_LIM_H
 #define _BITS_STDIO_LIM_H 1
 
+#include <features.h>
+
+#ifdef __USE_DOS
+#define L_tmpnam     14
+#define FILENAME_MAX 260
+#define TMP_MAX      32767
+#else
 #define L_tmpnam     20
-#define TMP_MAX      238328
 #define FILENAME_MAX 4096
+#define TMP_MAX      238328
+#endif
 
 #ifdef __USE_POSIX
 #   define L_ctermid 9
@@ -30,7 +38,11 @@
 #endif
 #endif
 #undef  FOPEN_MAX
+#ifdef __USE_DOS
+#define FOPEN_MAX 20
+#else
 #define FOPEN_MAX 16
+#endif
 #ifndef IOV_MAX
 #define IOV_MAX   1024
 #endif

@@ -25,6 +25,7 @@
 #include "stdlib.h"
 #include "malloc.h"
 #ifndef __KERNEL__
+#include "file.h"
 #include "system.h"
 #include "unistd.h"
 #include "unicode.h"
@@ -71,23 +72,47 @@ add_onexit(atomic_rwptr_t *pchain, exitfunc func, void *arg) {
  return 0;
 }
 
-INTERN ATTR_NORETURN void LIBCCALL libc__exit(int status) { sys_exit(status); }
-INTERN ATTR_NORETURN void LIBCCALL libc_abort(void) { libc__exit(EXIT_FAILURE); }
-INTERN ATTR_NORETURN void LIBCCALL libc_exit(int status) {
+PRIVATE ATTR_COLDTEXT
+void LIBCCALL libc_run_common_atexit(void) {
+ /* Flush all file streams. */
+ libc_flushall();
+}
+INTERN ATTR_COLDTEXT void LIBCCALL libc_run_atexit(void) {
+ atomic_rwptr_read(&onexit_n);
+ run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_n),0);
+ atomic_rwptr_endread(&onexit_n);
+ libc_run_common_atexit();
+}
+INTERN ATTR_COLDTEXT void LIBCCALL libc_run_at_quick_exit(void) {
+ atomic_rwptr_read(&onexit_q);
+ run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_q),0);
+ atomic_rwptr_endread(&onexit_q);
+ libc_run_common_atexit();
+}
+INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc__exit(int status) { sys_exit(status); }
+INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_abort(void) { libc__exit(EXIT_FAILURE); }
+INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_exit(int status) {
  atomic_rwptr_read(&onexit_n);
  run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_n),status);
  libc__exit(status);
 }
-INTERN ATTR_NORETURN void LIBCCALL libc_quick_exit(int status) {
+INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_quick_exit(int status) {
  atomic_rwptr_read(&onexit_q);
  run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_q),status);
  libc__exit(status);
 }
+
 PRIVATE void LIBCCALL callarg(int status, void *arg) { (*(void (LIBCCALL *)(void))arg)(); }
 INTERN int LIBCCALL libc_on_exit(void (LIBCCALL *func)(int status, void *arg), void *arg) { return add_onexit(&onexit_n,func,arg); }
 INTERN int LIBCCALL libc_atexit(void (LIBCCALL *func)(void)) { return add_onexit(&onexit_n,&callarg,(void *)func); }
 INTERN int LIBCCALL libc_at_quick_exit(void (LIBCCALL *func)(void)) { return add_onexit(&onexit_q,&callarg,(void *)func); }
-#endif
+
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_cexit,libc_run_atexit);
+DEFINE_PUBLIC_ALIAS(_c_exit,libc_run_at_quick_exit);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+#endif /* !__KERNEL__ */
 
 #ifdef __KERNEL__
 #define RAND_TYPE   __UINT32_TYPE__
@@ -494,8 +519,10 @@ DEFINE_PUBLIC_ALIAS(unlockpt,libc_unlockpt);
 DEFINE_PUBLIC_ALIAS(ptsname,libc_ptsname);
 DEFINE_PUBLIC_ALIAS(posix_openpt,libc_posix_openpt);
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS("?terminate%%YAXXZ",libc_abort);
 DEFINE_PUBLIC_ALIAS(_mktemp,libc_mktemp);
 DEFINE_PUBLIC_ALIAS(_onexit,libc_atexit);
+DEFINE_PUBLIC_ALIAS(__dllonexit,libc_atexit);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 

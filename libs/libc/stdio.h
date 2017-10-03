@@ -53,6 +53,10 @@ INTDEF ssize_t ATTR_CDECL libc_dprintf(int fd, char const *__restrict format, ..
 INTDEF ssize_t LIBCCALL libc_vasprintf(char **__restrict ptr, char const *__restrict format, va_list args);
 INTDEF ssize_t ATTR_CDECL libc_asprintf(char **__restrict ptr, char const *__restrict format, ...);
 
+INTDEF ssize_t LIBCCALL libc_16swprintf(char32_t *__restrict s, size_t n, char32_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vswprintf(char32_t *__restrict s, size_t n, char32_t const *__restrict format, va_list arg);
+INTDEF ssize_t LIBCCALL libc_16swscanf(char32_t const *__restrict s, char32_t const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL libc_16vswscanf(char32_t const *__restrict s, char32_t const *__restrict format, va_list arg);
 INTDEF ssize_t LIBCCALL libc_32swprintf(char32_t *__restrict s, size_t n, char32_t const *__restrict format, ...);
 INTDEF ssize_t LIBCCALL libc_32vswprintf(char32_t *__restrict s, size_t n, char32_t const *__restrict format, va_list arg);
 INTDEF ssize_t LIBCCALL libc_32swscanf(char32_t const *__restrict s, char32_t const *__restrict format, ...);

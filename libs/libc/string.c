@@ -43,6 +43,7 @@
 #include <hybrid/swap.h>
 #include <hybrid/types.h>
 #include <hybrid/minmax.h>
+#include <hybrid/byteswap.h>
 #include <kos/ksym.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -156,14 +157,18 @@ DECL_BEGIN
 //#define WANT_STRNDUP        /* strndup() */
 //#define WANT_STRCAT_S       /* strcat_s() */
 //#define WANT_STRCPY_S       /* strcpy_s() */
-//#define WANT_STRLWR_S       /* strlwr_s() */
-//#define WANT_STRLWR_S_L     /* strlwr_s_l() */
-//#define WANT_STRUPR_S       /* strupr_s() */
-//#define WANT_STRUPR_S_L     /* strupr_s_l() */
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#  define WANT_STRLWR_S       /* strlwr_s() */
+#  define WANT_STRLWR_S_L     /* strlwr_s_l() */
+#  define WANT_STRUPR_S       /* strupr_s() */
+#  define WANT_STRUPR_S_L     /* strupr_s_l() */
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 //#define WANT_STRNCAT_S      /* strncat_s() */
 //#define WANT_STRNCPY_S      /* strncpy_s() */
-//#define WANT_STRSET_S       /* strset_s() */
-//#define WANT_STRNSET_S      /* strnset_s() */
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#  define WANT_STRSET_S       /* strset_s() */
+#  define WANT_STRNSET_S      /* strnset_s() */
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 //#define WANT_MBLEN          /* ... */
 //#define WANT_MBTOWC         /* ... */
 //#define WANT_WCTOMB         /* ... */
@@ -263,6 +268,18 @@ INTERN int LIBCCALL libc___ffs64(s64 i) { DO_FFS(i) }
 
 /* TODO */INTERN int LIBCCALL libc_strverscmp(char const *s1, char const *s2) { NOT_IMPLEMENTED(); return 0; }
 /* TODO */INTERN char *LIBCCALL libc_strsep(char **__restrict stringp, char const *__restrict delim) { NOT_IMPLEMENTED(); return NULL; }
+
+INTERN int LIBCCALL libc_memcasecmp(void const *s1, void const *s2, size_t n_bytes) {
+ char a,b; int result;
+ char *p1 = (char *)s1,*p2 = (char *)s2;
+ char *end = p1+n_bytes;
+ if (!n_bytes) return 0;
+ do a = libc_tolower(*p1++),
+    b = libc_tolower(*p2++),
+    result = (int)a-(int)b;
+ while (result == 0 && p1 != end);
+ return result;
+}
 
 
 /* String functions deemed to unimportant to include in the kernel core. (libk) */
@@ -530,18 +547,6 @@ again_unknown:
  }
  return buf;
 }
-
-INTERN int LIBCCALL libc_memcasecmp(void const *s1, void const *s2, size_t n_bytes) {
- char a,b; int result;
- char *p1 = (char *)s1,*p2 = (char *)s2;
- char *end = p1+n_bytes;
- if (!n_bytes) return 0;
- do a = libc_tolower(*p1++),
-    b = libc_tolower(*p2++),
-    result = (int)a-(int)b;
- while (result == 0 && p1 != end);
- return result;
-}
 INTERN int LIBCCALL libc_memcasecmp_l(void const *a, void const *b,
                                       size_t n_bytes, locale_t lc) {
  NOT_IMPLEMENTED();
@@ -673,6 +678,7 @@ DEFINE_PUBLIC_ALIAS(strerrorname_s,libc_strerrorname_s);
 DEFINE_PUBLIC_ALIAS(strerror,libc_strerror);
 DEFINE_PUBLIC_ALIAS(__xpg_strerror_r,libc___xpg_strerror_r);
 DEFINE_PUBLIC_ALIAS(strerror_r,libc_strerror_r);
+DEFINE_PUBLIC_ALIAS(memcasecmp,libc_memcasecmp);
 
 #if __SIZEOF_INT__ == 4
 #define __INTFUN(x)   x##32
@@ -815,7 +821,6 @@ DEFINE_PUBLIC_ALIAS(strupr_l,libc_strupr_l);
 DEFINE_PUBLIC_ALIAS(strcasecoll_l,libc_strcasecoll_l);
 DEFINE_PUBLIC_ALIAS(strncoll_l,libc_strncoll_l);
 DEFINE_PUBLIC_ALIAS(strncasecoll_l,libc_strncasecoll_l);
-DEFINE_PUBLIC_ALIAS(memcasecmp,libc_memcasecmp);
 DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 
 /* Define 32-bit wide string libc functions. */
@@ -1115,6 +1120,16 @@ DEFINE_PUBLIC_ALIAS(_strnicoll_l,libc_strncasecoll_l);
 DEFINE_PUBLIC_ALIAS(_strxfrm_l,libc_strxfrm_l);
 DEFINE_PUBLIC_ALIAS(_memccpy,libc_memccpy);
 DEFINE_PUBLIC_ALIAS(__strncnt,libc_strnlen);
+DEFINE_PUBLIC_ALIAS(_gcvt,libc_gcvt);
+DEFINE_PUBLIC_ALIAS(_ecvt,libc_ecvt);
+DEFINE_PUBLIC_ALIAS(_fcvt,libc_fcvt);
+DEFINE_PUBLIC_ALIAS(_strlwr_s,libc_strlwr_s);
+DEFINE_PUBLIC_ALIAS(_strlwr_s_l,libc_strlwr_s_l);
+DEFINE_PUBLIC_ALIAS(_strupr_s,libc_strupr_s);
+DEFINE_PUBLIC_ALIAS(_strupr_s_l,libc_strupr_s_l);
+DEFINE_PUBLIC_ALIAS(_strset_s,libc_strset_s);
+DEFINE_PUBLIC_ALIAS(_strnset_s,libc_strnset_s);
+
 
 /* Define 16-bit wide string libc functions. */
 #define T            char16_t
@@ -1612,6 +1627,222 @@ DEFINE_PUBLIC_ALIAS(_wcstombs_s_l,libc_16wcstombs_s_l);
 DEFINE_PUBLIC_ALIAS(wcstombs_l,libc_32wcstombs_l);
 DEFINE_PUBLIC_ALIAS(_wcstombs_l,libc_16wcstombs_l);
 
+#if 1
+INTDEF char const dos_str0[];
+INTDEF char16_t const dos_16wstr0[];
+INTDEF char32_t const dos_32wstr0[];
+INTDEF char const dos_str_col[];
+INTDEF char16_t const dos_16wstr_col[];
+INTDEF char32_t const dos_32wstr_col[];
+INTDEF char const dos_str_slash[];
+INTDEF char16_t const dos_16wstr_slash[];
+INTDEF char32_t const dos_32wstr_slash[];
+INTDEF char const dos_str_dot[];
+INTDEF char16_t const dos_16wstr_dot[];
+INTDEF char32_t const dos_32wstr_dot[];
+GLOBAL_ASM(
+L(.section .rodata.dos                                                        )
+#if BYTE_ORDER == LITTLE_ENDIAN_ORDER
+L(INTERN_ENTRY(dos_str_slash)                                                 )
+L(INTERN_ENTRY(dos_16wstr_slash)                                              )
+L(INTERN_ENTRY(dos_32wstr_slash)                                              )
+L(    .byte '\\'                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_str_slash)                                                      )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_16wstr_slash)                                                   )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_32wstr_slash)                                                   )
+#else
+L(INTERN_ENTRY(dos_32wstr_slash)                                              )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(INTERN_ENTRY(dos_16wstr_slash)                                              )
+L(    .byte 0x00                                                              )
+L(INTERN_ENTRY(dos_str_slash)                                                 )
+L(    .byte '\\'                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_str_slash)                                                      )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_16wstr_slash)                                                   )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_32wstr_slash)                                                   )
+#endif
+L(.previous                                                                   )
+);
+
+GLOBAL_ASM(
+L(.section .rodata.dos                                                        )
+#if BYTE_ORDER == LITTLE_ENDIAN_ORDER
+L(INTERN_ENTRY(dos_str_dot)                                                   )
+L(INTERN_ENTRY(dos_16wstr_dot)                                                )
+L(INTERN_ENTRY(dos_32wstr_dot)                                                )
+L(    .byte '.'                                                               )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_str_dot)                                                        )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_16wstr_dot)                                                     )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_32wstr_dot)                                                     )
+#else
+L(INTERN_ENTRY(dos_32wstr_dot)                                                )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(INTERN_ENTRY(dos_16wstr_dot)                                                )
+L(    .byte 0x00                                                              )
+L(INTERN_ENTRY(dos_str_dot)                                                   )
+L(    .byte '.'                                                               )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_str_dot)                                                        )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_16wstr_dot)                                                     )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_32wstr_dot)                                                     )
+#endif
+L(.previous                                                                   )
+);
+
+GLOBAL_ASM(
+L(.section .rodata.dos                                                        )
+#if BYTE_ORDER == LITTLE_ENDIAN_ORDER
+L(INTERN_ENTRY(dos_str_col)                                                   )
+L(INTERN_ENTRY(dos_16wstr_col)                                                )
+L(INTERN_ENTRY(dos_32wstr_col)                                                )
+L(    .byte ':'                                                               )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_str_col)                                                        )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_16wstr_col)                                                     )
+#else
+L(INTERN_ENTRY(dos_32wstr_col)                                                )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(INTERN_ENTRY(dos_16wstr_col)                                                )
+L(    .byte 0x00                                                              )
+L(INTERN_ENTRY(dos_str_col)                                                   )
+L(    .byte ':'                                                               )
+#endif
+L(INTERN_ENTRY(dos_str0)                                                      )
+L(INTERN_ENTRY(dos_16wstr0)                                                   )
+L(INTERN_ENTRY(dos_32wstr0)                                                   )
+L(    .byte 0x00                                                              )
+#if BYTE_ORDER != LITTLE_ENDIAN_ORDER
+L(SYM_END(dos_str_col)                                                        )
+#endif
+L(SYM_END(dos_str0)                                                           )
+L(    .byte 0x00                                                              )
+#if BYTE_ORDER != LITTLE_ENDIAN_ORDER
+L(SYM_END(dos_16wstr_col)                                                     )
+#endif
+L(SYM_END(dos_16wstr0)                                                        )
+L(    .byte 0x00                                                              )
+L(    .byte 0x00                                                              )
+L(SYM_END(dos_32wstr0)                                                        )
+L(SYM_END(dos_32wstr_col)                                                     )
+L(.previous                                                                   )
+);
+#else
+INTERN ATTR_DOSRODATA char const dos_str0[] = {0};
+INTERN ATTR_DOSRODATA char16_t const dos_16wstr0[] = {0};
+INTERN ATTR_DOSRODATA char32_t const dos_32wstr0[] = {0};
+INTERN ATTR_DOSRODATA char const dos_str_col[] = {':',0};
+INTERN ATTR_DOSRODATA char16_t const dos_16wstr_col[] = {':',0};
+INTERN ATTR_DOSRODATA char32_t const dos_32wstr_col[] = {':',0};
+INTERN ATTR_DOSRODATA char const dos_str_slash[] = {'\\',0};
+INTERN ATTR_DOSRODATA char16_t const dos_16wstr_slash[] = {'\\',0};
+INTERN ATTR_DOSRODATA char32_t const dos_32wstr_slash[] = {'\\',0};
+INTERN ATTR_DOSRODATA char const dos_str_dot[] = {'.',0};
+INTERN ATTR_DOSRODATA char16_t const dos_16wstr_dot[] = {'.',0};
+INTERN ATTR_DOSRODATA char32_t const dos_32wstr_dot[] = {'.',0};
+#endif
+
+INTERN ATTR_DOSRODATA char const dos_makepath_format[] = {'%','s','%','s','%','s','%','s','%','s','%','s','%','s',0};
+INTERN ATTR_DOSRODATA char16_t const dos_16wmakepath_format[] = {'%','s','%','s','%','s','%','s','%','s','%','s','%','s',0};
+INTERN ATTR_DOSRODATA char32_t const dos_32wmakepath_format[] = {'%','s','%','s','%','s','%','s','%','s','%','s','%','s',0};
+
+
+INTDEF errno_t LIBCCALL
+libc_makepath_s(char *buf, size_t buflen, const char *drive,
+                const char *dir, const char *file, const char *ext) {
+ char const *dir_end; size_t reqsize;
+ if (!drive) dir = dos_str0;
+ if (!dir) dir = dos_str0;
+ if (!file) file = dos_str0;
+ if (!ext) ext = dos_str0;
+ while (*ext == '.') ++ext;
+ dir_end = libc_strend(dir);
+ reqsize = libc_snprintf(buf,buflen,dos_makepath_format,drive,*drive ? dos_str_col : dos_str0,dir,
+                         dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_str0 :
+                         dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
+ return reqsize >= buflen ? __DOS_ERANGE : EOK;
+}
+#if 0
+INTDEF errno_t LIBCCALL
+libc16_wmakepath_s(char16_t *__restrict buf, size_t maxlen, char16_t const *drive,
+                   char16_t const *__restrict dir, char16_t const *__restrict file,
+                   char16_t const *__restrict ext) {
+ char const *dir_end; size_t reqsize;
+ if (!drive) dir = dos_16wstr0;
+ if (!dir) dir = dos_16wstr0;
+ if (!file) file = dos_16wstr0;
+ if (!ext) ext = dos_16wstr0;
+ while (*ext == '.') ++ext;
+ dir_end = libc_wcsend(dir);
+ reqsize = libc_snprintf(buf,buflen,dos_makepath_format,drive,*drive ? dos_str_col : dos_str0,dir,
+                         dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_str0 :
+                         dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
+ return reqsize >= buflen ? __DOS_ERANGE : EOK;
+}
+INTDEF errno_t LIBCCALL
+libc32_wmakepath_s(char32_t *__restrict buf, size_t maxlen, char32_t const *drive,
+                   char32_t const *__restrict dir, char32_t const *__restrict file,
+                   char32_t const *__restrict ext);
+
+INTDEF void LIBCCALL
+libc_makepath(char *buf, const char *drive,
+              const char *dir, const char *file,
+              const char *ext) {
+ char const *dir_end;
+ if (!drive) dir = dos_str0;
+ if (!dir) dir = dos_str0;
+ if (!file) file = dos_str0;
+ if (!ext) ext = dos_str0;
+ while (*ext == '.') ++ext;
+ dir_end = libc_strend(dir);
+ libc_sprintf(buf,"%s%s%s%s%s%s%s",drive,*drive ? dos_str_col : dos_str0,dir,
+              dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_str0 :
+              dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
+}
+INTDEF void LIBCCALL
+libc16_wmakepath(char16_t *__restrict buf, char16_t const *__restrict drive,
+                 char16_t const *__restrict dir, char16_t const *__restrict file,
+                 char16_t const *__restrict ext) {
+ char16_t const *dir_end;
+ if (!drive) dir = dos_16wstr0;
+ if (!dir) dir = dos_16wstr0;
+ if (!file) file = dos_16wstr0;
+ if (!ext) ext = dos_16wstr0;
+ while (*ext == '.') ++ext;
+ dir_end = libc_16wcsend(dir);
+ libc_sprintf(buf,"%s%s%s%s%s%s%s",drive,*drive ? dos_str_col : dos_str0,dir,
+              dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_str0 :
+              dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
+}
+INTDEF void LIBCCALL libc32_wmakepath(char32_t *__restrict dst, char32_t const *__restrict drive, char32_t const *__restrict dir, char32_t const *__restrict file, char32_t const *__restrict ext);
+#endif
+
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 
@@ -1630,7 +1861,8 @@ DEFINE_PUBLIC_ALIAS(mbsinit,libc_mbsinit);
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 PRIVATE ATTR_DOSDATA int dos_mb_cur_max = UNICODE_MB_MAX;
 INTERN ATTR_DOSTEXT int *LIBCCALL libc_p_mb_cur_max(void) { return &dos_mb_cur_max; }
-DEFINE_PUBLIC_ALIAS(__mb_cur_max,libc___ctype_get_mb_cur_max);
+DEFINE_PUBLIC_ALIAS(__mb_cur_max,dos_mb_cur_max);
+DEFINE_PUBLIC_ALIAS(___mb_cur_max_func,libc___ctype_get_mb_cur_max);
 DEFINE_PUBLIC_ALIAS(__p___mb_cur_max,libc_p_mb_cur_max);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

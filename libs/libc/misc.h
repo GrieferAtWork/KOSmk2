@@ -26,6 +26,7 @@
 
 DECL_BEGIN
 
+#ifndef __KERNEL__
 INTDEF void LIBCCALL libc_closelog(void);
 INTDEF void LIBCCALL libc_openlog(char const *ident, int option, int facility);
 INTDEF int LIBCCALL libc_setlogmask(int mask);
@@ -47,6 +48,24 @@ INTDEF void *LIBCCALL libc_xdlopen(char const *filename, int flags);
 INTDEF void *LIBCCALL libc_xfdlopen(int fd, int flags);
 INTDEF void *LIBCCALL libc_xdlsym(void *handle, char const *symbol);
 INTDEF int LIBCCALL libc_xdlclose(void *handle);
+
+/* Aborts the application in a way that produces a coredump
+ * before writing an error message hinting the user to look
+ * at system logs for further details. */
+INTDEF ATTR_NORETURN void LIBCCALL libc_internal_failure(void);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN u32 LIBCCALL libc_clearfp(void);
+INTERN u32 LIBCCALL libc_controlfp(u32 newval, u32 mask);
+INTERN errno_t LIBCCALL libc_controlfp_s(u32 *pcurrent, u32 newval, u32 mask);
+INTERN void LIBCCALL libc_set_controlfp(u32 newval, u32 mask);
+INTERN u32 LIBCCALL libc_statusfp(void);
+INTERN void LIBCCALL libc_fpreset(void);
+INTERN u32 LIBCCALL libc_control87(u32 newval, u32 mask);
+INTERN int *LIBCCALL libc_fpecode(void);
+
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+#endif /* !__KERNEL__ */
 
 DECL_END
 

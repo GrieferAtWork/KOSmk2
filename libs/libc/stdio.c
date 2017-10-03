@@ -230,6 +230,14 @@ DEFINE_PUBLIC_ALIAS(swprintf,libc_32swprintf);
 DEFINE_PUBLIC_ALIAS(vswprintf,libc_32vswprintf);
 DEFINE_PUBLIC_ALIAS(swscanf,libc_32swscanf);
 DEFINE_PUBLIC_ALIAS(vswscanf,libc_32vswscanf);
+DEFINE_PUBLIC_ALIAS(_swprintf,libc_16swprintf);
+DEFINE_PUBLIC_ALIAS(_vswprintf,libc_16vswprintf);
+DEFINE_PUBLIC_ALIAS(_swscanf,libc_16swscanf);
+DEFINE_PUBLIC_ALIAS(_vswscanf,libc_16vswscanf);
+DEFINE_PUBLIC_ALIAS(__DSYM(swprintf),libc_16swprintf);
+DEFINE_PUBLIC_ALIAS(__DSYM(vswprintf),libc_16vswprintf);
+DEFINE_PUBLIC_ALIAS(__DSYM(swscanf),libc_16swscanf);
+DEFINE_PUBLIC_ALIAS(__DSYM(vswscanf),libc_16vswscanf);
 
 #endif /* !__KERNEL__ */
 

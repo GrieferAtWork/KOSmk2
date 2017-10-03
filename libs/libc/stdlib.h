@@ -55,6 +55,8 @@ INTDEF ATTR_NORETURN void LIBCCALL libc_quick_exit(int status);
 INTDEF int LIBCCALL libc_on_exit(void (LIBCCALL *func)(int status, void *arg), void *arg);
 INTDEF int LIBCCALL libc_atexit(void (LIBCCALL *func)(void));
 INTDEF int LIBCCALL libc_at_quick_exit(void (LIBCCALL *func)(void));
+INTDEF void LIBCCALL libc_run_atexit(void);
+INTDEF void LIBCCALL libc_run_at_quick_exit(void);
 #endif
 
 #ifdef __KERNEL__

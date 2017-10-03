@@ -39,6 +39,12 @@
 #ifndef __has_cpp_attribute
 #define __has_cpp_attribute(x) 0
 #endif
+#ifndef __has_include
+#define __has_include(x) 0
+#endif
+#ifndef __has_include_next
+#define __has_include_next(x) 0
+#endif
 
 #ifdef __cplusplus
 #   define __DECL_BEGIN extern "C" {
@@ -125,9 +131,9 @@
 #define __COMPILER_CONTAINER_OF(ptr,type,member) \
   ((type *)((__UINTPTR_TYPE__)(ptr)-__COMPILER_OFFSETOF(type,member)))
 #   define __DEFINE_ALIAS_STR(x) #x
-#   define __DEFINE_PRIVATE_ALIAS(new,old) __asm__(".local " __DEFINE_ALIAS_STR(new) "\n" __DEFINE_ALIAS_STR(new) " = " __DEFINE_ALIAS_STR(old) "\n")
-#   define __DEFINE_PUBLIC_ALIAS(new,old)  __asm__(".global " __DEFINE_ALIAS_STR(new) "\n" __DEFINE_ALIAS_STR(new) " = " __DEFINE_ALIAS_STR(old) "\n")
-#   define __DEFINE_INTERN_ALIAS(new,old)  __asm__(".global " __DEFINE_ALIAS_STR(new) "\n.hidden " __DEFINE_ALIAS_STR(new) "\n" __DEFINE_ALIAS_STR(new) " = " __DEFINE_ALIAS_STR(old) "\n")
+#   define __DEFINE_PRIVATE_ALIAS(new,old) __asm__(".local " __DEFINE_ALIAS_STR(new) "\n.set " __DEFINE_ALIAS_STR(new) "," __DEFINE_ALIAS_STR(old) "\n")
+#   define __DEFINE_PUBLIC_ALIAS(new,old)  __asm__(".global " __DEFINE_ALIAS_STR(new) "\n.set " __DEFINE_ALIAS_STR(new) "," __DEFINE_ALIAS_STR(old) "\n")
+#   define __DEFINE_INTERN_ALIAS(new,old)  __asm__(".global " __DEFINE_ALIAS_STR(new) "\n.hidden " __DEFINE_ALIAS_STR(new) "\n.set " __DEFINE_ALIAS_STR(new) "," __DEFINE_ALIAS_STR(old) "\n")
 #ifdef __NO_ATTR_ALIAS
 #   define __ALIAS_IMPL(old,args) { return old args; }
 #   define __ALIAS_FUNC(decl_new,new,decl_old,old,param,args) \

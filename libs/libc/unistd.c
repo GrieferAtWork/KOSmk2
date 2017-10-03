@@ -44,6 +44,7 @@
 #include <bits/stat.h>
 #include <bits/confname.h>
 #include <bits/fcntl-linux.h>
+#include <grp.h>
 #include <io.h>
 #include <fcntl.h>
 #include <fnmatch.h>
@@ -543,7 +544,7 @@ INTERN char *LIBCCALL libc_crypt(char const *key, char const *salt) { NOT_IMPLEM
 INTERN void LIBCCALL libc_encrypt(char *glibc_block, int edflag) { NOT_IMPLEMENTED(); }
 INTERN char *LIBCCALL libc_ctermid(char *s) { NOT_IMPLEMENTED(); return NULL; }
 INTERN char *LIBCCALL libc_cuserid(char *s) { NOT_IMPLEMENTED(); return NULL; }
-INTERN int LIBCCALL libc_lockf(int fd, int cmd, off32_t len) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_lockf(int fd, int cmd, off_t len) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_lockf64(int fd, int cmd, off64_t len) { NOT_IMPLEMENTED(); return -1; }
 #if 0
 PRIVATE struct passwd test = {
@@ -983,16 +984,16 @@ DEFINE_PUBLIC_ALIAS(__threadid,libc_gettid);
 DEFINE_PUBLIC_ALIAS(__threadhandle,libc_gettid); /* XXX: Maybe someday return a handle? */
 
 #ifdef CONFIG_32BIT_FILESYSTEM
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate(char const *file, off32_t length) {
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate(char const *file, off_t length) {
  int result = -1,fd = libc_dos_open(file,O_RDWR);
  if (fd > 0) result = libc_ftruncate(fd,length),sys_close(fd);
  return result;
 }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate64(char const *file, off64_t length) {
- return libc_dos_truncate(file,(off32_t)length);
+ return libc_dos_truncate(file,(off_t)length);
 }
 #else /* CONFIG_32BIT_FILESYSTEM */
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate(char const *file, off32_t length) {
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate(char const *file, off_t length) {
  return libc_dos_truncate64(file,(off64_t)length);
 }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_truncate64(char const *file, off64_t length) {
@@ -1405,6 +1406,7 @@ DEFINE_PUBLIC_ALIAS(_umask,libc_umask);
 DEFINE_PUBLIC_ALIAS(_umask_s,libc_umask_s);
 DEFINE_PUBLIC_ALIAS(_get_osfhandle,libc_get_osfhandle);
 DEFINE_PUBLIC_ALIAS(_open_osfhandle,libc_open_osfhandle);
+DEFINE_PUBLIC_ALIAS(_getpid,libc_getpid);
 
 #if __SIZEOF_SIZE_T__ != 4
 /* Who knew NT is also the world leading in SCREWING UP SIMPLE FU$%#ING A$$ LOGIC?
@@ -1549,30 +1551,31 @@ DEFINE_PUBLIC_ALIAS(__KSYMw16(_wexecv),libc_16wexecv);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wexecve),libc_16wexecve);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wexecvp),libc_16wexecvp);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wexecvpe),libc_16wexecvpe);
-DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecv),libc_32wexecv);
-DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecve),libc_32wexecve);
-DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecvp),libc_32wexecvp);
-DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecvpe),libc_32wexecvpe);
-DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecv),libc_dos_16wexecv);
-DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecve),libc_dos_16wexecve);
-DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecvp),libc_dos_16wexecvp);
-DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecvpe),libc_dos_16wexecvpe);
-DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecv),libc_dos_32wexecv);
-DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecve),libc_dos_32wexecve);
-DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecvp),libc_dos_32wexecvp);
-DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecvpe),libc_dos_32wexecvpe);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wexecl),libc_16wexecl);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wexecle),libc_16wexecle);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wexeclp),libc_16wexeclp);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wexeclpe),libc_16wexeclpe);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecv),libc_32wexecv);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecve),libc_32wexecve);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecvp),libc_32wexecvp);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecvpe),libc_32wexecvpe);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecl),libc_32wexecl);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexecle),libc_32wexecle);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexeclp),libc_32wexeclp);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wexeclpe),libc_32wexeclpe);
+
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecv),libc_dos_16wexecv);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecve),libc_dos_16wexecve);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecvp),libc_dos_16wexecvp);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecvpe),libc_dos_16wexecvpe);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecl),libc_dos_16wexecl);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexecle),libc_dos_16wexecle);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexeclp),libc_dos_16wexeclp);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wexeclpe),libc_dos_16wexeclpe);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecv),libc_dos_32wexecv);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecve),libc_dos_32wexecve);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecvp),libc_dos_32wexecvp);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecvpe),libc_dos_32wexecvpe);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecl),libc_dos_32wexecl);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexecle),libc_dos_32wexecle);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wexeclp),libc_dos_32wexeclp);
@@ -1712,7 +1715,6 @@ INTDEF ATTR_DOSTEXT int LIBCCALL libc_dos_local_16wstat64(char16_t const *__rest
 INTDEF ATTR_DOSTEXT int LIBCCALL libc_dos_local_16wstat32i64(char16_t const *__restrict file, struct __dos_stat32i64 *__restrict buf) { struct stat64 temp; int result = libc_dos_w16stat64(file,&temp); if (!result) libc_fill_dos_stat32i64(&temp,buf); return result; }
 //INTDEF ATTR_DOSTEXT int LIBCCALL libc_dos_local_16wstat64i32(char16_t const *__restrict file, struct __dos_stat64i32 *__restrict buf) { struct stat64 temp; int result = libc_dos_w16stat64(file,&temp); if (!result) libc_fill_dos_stat64i32(&temp,buf); return result; }
 
-#if 1
 DEFINE_PUBLIC_ALIAS(_stat,libc_dos_local_stat32);
 DEFINE_PUBLIC_ALIAS(_stat64,libc_dos_local_stat64);
 DEFINE_PUBLIC_ALIAS(_stati64,libc_dos_local_stat32i64);
@@ -1722,21 +1724,6 @@ DEFINE_PUBLIC_ALIAS(_fstati64,libc_dos_local_fstat32i64);
 DEFINE_PUBLIC_ALIAS(_wstat,libc_dos_local_16wstat32);
 DEFINE_PUBLIC_ALIAS(_wstat64,libc_dos_local_16wstat64);
 DEFINE_PUBLIC_ALIAS(_wstati64,libc_dos_local_16wstat32i64);
-#else
-DEFINE_PUBLIC_ALIAS(_stat32,libc_dos_local_stat32);
-DEFINE_PUBLIC_ALIAS(_stat64,libc_dos_local_stat64);
-DEFINE_PUBLIC_ALIAS(_stat32i64,libc_dos_local_stat32i64);
-DEFINE_PUBLIC_ALIAS(_stat64i32,libc_dos_local_stat64i32);
-DEFINE_PUBLIC_ALIAS(_fstat32,libc_dos_local_fstat32);
-DEFINE_PUBLIC_ALIAS(_fstat64,libc_dos_local_fstat64);
-DEFINE_PUBLIC_ALIAS(_fstat32i64,libc_dos_local_fstat32i64);
-DEFINE_PUBLIC_ALIAS(_fstat64i32,libc_dos_local_fstat64i32);
-DEFINE_PUBLIC_ALIAS(_wstat32,libc_dos_local_16wstat32);
-DEFINE_PUBLIC_ALIAS(_wstat64,libc_dos_local_16wstat64);
-DEFINE_PUBLIC_ALIAS(_wstat32i64,libc_dos_local_16wstat32i64);
-DEFINE_PUBLIC_ALIAS(_wstat64i32,libc_dos_local_16wstat64i32);
-#endif
-
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

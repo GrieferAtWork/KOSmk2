@@ -24,6 +24,9 @@
 #include <hybrid/typecore.h>
 #include <bits/types.h>
 #include <bits/stdio_lim.h>
+#if defined(__USE_DOS) || defined(__BUILDING_LIBC)
+#include <bits/io-file.h>
+#endif /* __USE_DOS || __BUILDING_LIBC */
 
 __DECL_BEGIN
 
@@ -108,7 +111,11 @@ typedef __pos64_t      fpos64_t;
 
 /* Default buffer size.  */
 #ifndef BUFSIZ
+#ifdef __USE_DOS
+#define BUFSIZ 512
+#else
 #define BUFSIZ 8192
+#endif
 #endif
 
 #ifndef EOF
@@ -378,8 +385,8 @@ __LIBC int (__LIBCCALL pclose)(__FILE *__stream);
 #endif /* __USE_POSIX2 */
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN) && !defined(__USE_XOPEN2K))
-__LIBC int (__LIBCCALL getw)(__FILE *__stream);
-__LIBC int (__LIBCCALL putw)(int __w, __FILE *__stream);
+__LIBC int (__LIBCCALL getw)(__FILE *__stream) __PE_ASMNAME("_getw");
+__LIBC int (__LIBCCALL putw)(int __w, __FILE *__stream) __PE_ASMNAME("_putw");
 #endif
 #ifdef __USE_GNU
 __LIBC int (__LIBCCALL fcloseall)(void);
@@ -412,7 +419,6 @@ __LIBC char *(__LIBCCALL cuserid)(char *__s);
 __LIBC __ssize_t (__LIBCCALL file_printer)(char const *__restrict __data,
                                            __size_t __datalen, void *__closure);
 #endif /* __USE_KOS */
-
 #endif /* !__KERNEL__ */
 
 
@@ -471,12 +477,41 @@ __LIBC __WUNUSED int (__LIBCCALL vasprintf)(char **__restrict __ptr, char const 
 #include <getopt.h>
 #endif
 
-
-#ifdef __USE_DOS
 /* DOS Extensions */
+#ifdef __USE_DOS
 #ifndef _iobuf
 #define _iobuf   _IO_FILE
 #endif /* !_iobuf */
+
+#define _NFILE        512
+#define _NSTREAM_     512
+#define _IOB_ENTRIES  20
+#define _P_tmpdir     "\\"
+#define _wP_tmpdir   L"\\"
+#define _SYS_OPEN     20
+#ifdef __USE_DOS_SLIB
+#define L_tmpnam_s    18
+#define TMP_MAX_S     2147483647
+#define _TMP_MAX_S    2147483647
+#endif /* __USE_DOS_SLIB */
+
+#ifndef _FPOS_T_DEFINED
+#define _FPOS_T_DEFINED 1
+#endif /* !_FPOS_T_DEFINED */
+#ifndef _STDSTREAM_DEFINED
+#define _STDSTREAM_DEFINED 1
+#endif /* !_STDSTREAM_DEFINED */
+#ifndef _FILE_DEFINED
+#define _FILE_DEFINED 1
+#endif /* !_FILE_DEFINED */
+
+#define __IO_FILE_IOREAD  __IO_FILE_IOREAD
+#define __IO_FILE_IOWRT   __IO_FILE_IOWRT
+#define __IO_FILE_IOMYBUF __IO_FILE_IOMYBUF
+#define __IO_FILE_IOEOF   __IO_FILE_IOEOF
+#define __IO_FILE_IOERR   __IO_FILE_IOERR
+#define __IO_FILE_IOSTRG  __IO_FILE_IOSTRG
+#define __IO_FILE_IORW    __IO_FILE_IORW
 
 #endif /* __USE_DOS */
 

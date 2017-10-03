@@ -45,9 +45,13 @@
 #include <kernel/mman.h>
 #include <linker/module.h>
 #include <kernel/arch/cpustate.h>
-#else
+#else /* __KERNEL__ */
 #include "system.h"
-#endif
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include "string.h"
+#include "unicode.h"
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+#endif /* !__KERNEL__ */
 
 DECL_BEGIN
 
@@ -319,6 +323,27 @@ DEFINE_PUBLIC_ALIAS(__assertion_failedf,libc___assertion_failedf);
 DEFINE_PUBLIC_ALIAS(__assertion_tbprintl,libc___assertion_tbprintl);
 DEFINE_PUBLIC_ALIAS(__assertion_tbprint2,libc___assertion_tbprint2);
 DEFINE_PUBLIC_ALIAS(__assertion_tbprint,libc___assertion_tbprint);
+
+#ifndef __KERNEL__
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN ATTR_DOSTEXT ATTR_NORETURN ATTR_NOINLINE
+void LIBCCALL libc_assert(char const *msg, char const *file, u32 line) {
+ assertion_corefail(msg,file,(int)line,NULL,NULL,NULL);
+}
+INTERN ATTR_DOSTEXT ATTR_NORETURN ATTR_NOINLINE
+void LIBCCALL libc_16wassert(char16_t const *msg, char16_t const *file, u32 line) {
+ char *utf8_msg = libc_utf16to8m(msg,libc_16wcslen(msg));
+ char *utf8_file = libc_utf16to8m(file,libc_16wcslen(file));
+ assertion_corefail(utf8_msg,utf8_file,(int)line,NULL,NULL,NULL);
+}
+
+/* NOTE: We're only exporting 16-bit '_wassert', because
+ *       this is only for binary compatibility with DOS. */
+DEFINE_PUBLIC_ALIAS(_assert,libc_assert);
+DEFINE_PUBLIC_ALIAS(_wassert,libc_16wassert);
+
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+#endif /* !__KERNEL__ */
 
 DECL_END
 

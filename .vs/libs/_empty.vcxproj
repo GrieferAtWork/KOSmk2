@@ -43,7 +43,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
     <OutDir>$(SolutionDir)..\</OutDir>
-    <IncludePath>$(SolutionDir)..\include;$(SolutionDir)..\include\i386-kos</IncludePath>
+    <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include</IncludePath>
     <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
     <NMakeReBuildCommandLine>rundll32</NMakeReBuildCommandLine>
     <NMakeBuildCommandLine>rundll32</NMakeBuildCommandLine>
@@ -70,7 +70,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
     <OutDir>$(SolutionDir)..\</OutDir>
-    <IncludePath>$(SolutionDir)..\include;$(SolutionDir)..\include\i386-kos</IncludePath>
+    <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include</IncludePath>
     <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
     <NMakeReBuildCommandLine>rundll32</NMakeReBuildCommandLine>
     <NMakeBuildCommandLine>rundll32</NMakeBuildCommandLine>

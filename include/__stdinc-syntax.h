@@ -117,10 +117,10 @@
 #define __SIZEOF_LONG__        __SIZEOF_POINTER__
 #define __SIZEOF_LONG_LONG__   8
 #define __SIZEOF_SIZE_T__      __SIZEOF_POINTER__
-#define __SIZEOF_DOUBLE__      8
 #define __SIZEOF_FLOAT128__    16
 #define __SIZEOF_FLOAT80__     12
 #define __SIZEOF_FLOAT__       4
+#define __SIZEOF_DOUBLE__      8
 #define __SIZEOF_LONG_DOUBLE__ 12
 
 

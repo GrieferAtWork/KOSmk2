@@ -2129,6 +2129,10 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
          MBRANCH_MIN(lo_branch),MBRANCH_MAX(lo_branch),
          MBRANCH_MIN(hi_branch),MBRANCH_MAX(hi_branch));
 
+  /* Drop a reference from the high branch. */
+  if (hi_branch->mb_notify)
+    (*hi_branch->mb_notify)(MNOTIFY_DECREF,hi_branch->mb_closure,NULL,0,0);
+
   /* Unlink and delete the higher-order branch. */
   LIST_REMOVE(hi_branch,mb_order);
   kffree(hi_branch,GFP_NOFREQ);
