@@ -609,11 +609,19 @@
 
 
 #ifdef __USE_DOSFS
-#   define __WARN_NODOSFS __ATTR_DEPRECATED("This function does not support DOS filesystem semantics. Try building with '-D_DOSFS_SOURCE=0'")
+#   define __WARN_NODOSFS __ATTR_DEPRECATED("This function does not support DOS filesystem semantics. Try building with `-D_DOSFS_SOURCE=0'")
 #   define __WARN_NOKOSFS /* nothing */
 #else
 #   define __WARN_NODOSFS /* nothing */
-#   define __WARN_NOKOSFS __ATTR_DEPRECATED("This function does not support KOS filesystem semantics. Try building with '-D_DOSFS_SOURCE=1'")
+#   define __WARN_NOKOSFS __ATTR_DEPRECATED("This function does not support KOS filesystem semantics. Try building with `-D_DOSFS_SOURCE=1'")
+#endif
+
+#ifndef __NO_NONSTD_WARNINGS
+#define __WARN_NONSTD(alt) \
+   __ATTR_DEPRECATED("This function does not behave according to the STD-C standard. " \
+                     "Consider using compliant function `" #alt "' instead")
+#else
+#define __WARN_NONSTD(alt) /* nothing */
 #endif
 
 #ifdef __USE_TIME_BITS64

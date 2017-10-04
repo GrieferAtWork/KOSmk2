@@ -93,11 +93,11 @@ __LIBC __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __p
  * functions will call the given 'SCANNER' function which in
  * return should successively yield a character at a time from
  * some kind of input source.
- *  - If 'SCANNER' returns non-zero, scanning aborts and that value is returned.
+ *  - If 'SCANNER' returns < 0, scanning aborts and that value is returned.
  *    Otherwise, the function returns the amount of successfully parsed arguments.
  *  - The user may use 'SCANNER' to track the last read character to get
  *    additional information about what character caused the scan to fail.
- *  - The given 'SCANNER' should indicate EOF by setting '*ch' to a negative value
+ *  - The given 'SCANNER' should also indicate EOF by returning 'NUL'
  *  - This implementation supports the following extensions:
  *    - '%[A-Z]'   -- Character ranges in scan patterns
  *    - '%[^abc]'  -- Inversion of a scan pattern
@@ -320,24 +320,29 @@ typedef __ssize_t (__LIBCCALL *pc32formatprinter)(char32_t const *__restrict __d
 #define __DEFINE_PRINTER(T,Tpfp) { Tpfp __p_printer; void *__p_closure; T *__p_buffer; __size_t __p_buflen; mbstate_t __p_mbstate; void *__p_padding; }
 #endif
 struct wprinter   __DEFINE_PRINTER(wchar_t,pwformatprinter);
+#ifdef __USE_UTF
 struct c16printer __DEFINE_PRINTER(char16_t,pc16formatprinter);
 struct c32printer __DEFINE_PRINTER(char32_t,pc32formatprinter);
+#endif /* __USE_UTF */
 #undef __DEFINE_PRINTER
 
 #define WPRINTER_INIT(printer,closure)   {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
-#define C16PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
-#define C32PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
 __LIBC void (__LIBCCALL wprinter_init)(struct wprinter *__restrict wp, pwformatprinter printer, void *__closure);
-__LIBC void (__LIBCCALL c16printer_init)(struct c16printer *__restrict wp, pc16formatprinter printer, void *__closure) __PE_FUNC_(wprinter_init);
-__LIBC void (__LIBCCALL c32printer_init)(struct c32printer *__restrict wp, pc32formatprinter printer, void *__closure) __KOS_FUNC_(wprinter_init);
 __LIBC void (__LIBCCALL wprinter_fini)(struct wprinter *__restrict wp);
-__LIBC void (__LIBCCALL c16printer_fini)(struct c16printer *__restrict wp) __PE_FUNC_(wprinter_fini);
-__LIBC void (__LIBCCALL c32printer_fini)(struct c32printer *__restrict wp) __KOS_FUNC_(wprinter_fini);
 /* NOTE: Wide-character printers forward the return value of the underlying printer,
  *       or -1 if a format error occurred, alongside setting errno to EILSEQ. */
 __LIBC __ssize_t (__LIBCCALL wprinter_print)(char const *__restrict __data, __size_t __datalen, void *__closure);
+
+#ifdef __USE_UTF
+#define C16PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
+#define C32PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
+__LIBC void (__LIBCCALL c16printer_init)(struct c16printer *__restrict wp, pc16formatprinter printer, void *__closure) __PE_FUNC_(wprinter_init);
+__LIBC void (__LIBCCALL c32printer_init)(struct c32printer *__restrict wp, pc32formatprinter printer, void *__closure) __KOS_FUNC_(wprinter_init);
+__LIBC void (__LIBCCALL c16printer_fini)(struct c16printer *__restrict wp) __PE_FUNC_(wprinter_fini);
+__LIBC void (__LIBCCALL c32printer_fini)(struct c32printer *__restrict wp) __KOS_FUNC_(wprinter_fini);
 __LIBC __ssize_t (__LIBCCALL c16printer_print)(char const *__restrict __data, __size_t __datalen, void *__closure) __PE_FUNC_(wprinter_print);
 __LIBC __ssize_t (__LIBCCALL c32printer_print)(char const *__restrict __data, __size_t __datalen, void *__closure) __KOS_FUNC_(wprinter_print);
+#endif /* __USE_UTF */
 
 
 

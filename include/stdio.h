@@ -648,11 +648,11 @@ __LIBC int (__ATTR_CDECL _snscanf_l)(char const *__restrict __src, size_t __bufl
 __LIBC int (__ATTR_CDECL _snscanf_s_l)(char const *__restrict __src, size_t __buflen, char const *__restrict __format, __locale_t __locale, ...) __ASMNAME("_snscanf_l");
 
 __LIBC int (__ATTR_CDECL _sprintf_l)(char *__restrict __buf, char const *__restrict __format, __locale_t __locale, ...);
-__LIBC int (__LIBCCALL _vsprintf_l)(char *__restrict __buf, char const *__restrict __format, __locale_t, __VA_LIST __args);
+__LIBC int (__LIBCCALL _vsprintf_l)(char *__restrict __buf, char const *__restrict __format, __locale_t __locale, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _sprintf_p)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...);
 __LIBC int (__LIBCCALL _vsprintf_p)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _sprintf_p_l)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __locale_t __locale, ...);
-__LIBC int (__LIBCCALL _vsprintf_p_l)(char *__restrict __buf, size_t __buflen, char const*__fmt, __locale_t __locale,  __VA_LIST __args);
+__LIBC int (__LIBCCALL _vsprintf_p_l)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __locale_t __locale,  __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _sprintf_s_l)(char *__restrict __buf, size_t __bufsize, char const *__restrict __format, __locale_t __locale, ...);
 __LIBC int (__LIBCCALL _vsprintf_s_l)(char *__restrict __buf, size_t __bufsize, char const *__restrict __format, __locale_t __locale, __VA_LIST __args);
 
@@ -673,11 +673,11 @@ __LIBC int (__LIBCCALL _vsnprintf_c)(char *__restrict __buf, size_t __buflen, ch
 __LIBC int (__ATTR_CDECL _snprintf_l)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __locale_t __locale, ...);
 __LIBC int (__LIBCCALL _vsnprintf_l)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __locale_t __locale, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _snprintf_c_l)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __locale_t __locale, ...);
-__LIBC int (__LIBCCALL _vsnprintf_c_l)(char *__restrict __buf, size_t __buflen, char const *, __locale_t __locale, __VA_LIST __args);
+__LIBC int (__LIBCCALL _vsnprintf_c_l)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __locale_t __locale, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _snprintf_s)(char *__restrict __buf, size_t __bufsize, size_t __buflen, char const *__restrict __format, ...);
 __LIBC int (__LIBCCALL _vsnprintf_s)(char *__restrict __buf, size_t __bufsize, size_t __buflen, char const *__restrict __format, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _snprintf_s_l)(char *__restrict __buf, size_t __bufsize, size_t __buflen, char const *__restrict __format, __locale_t __locale, ...);
-__LIBC int (__LIBCCALL _vsnprintf_s_l)(char *__restrict __buf, size_t __bufsize, size_t __buflen, char const*__fmt, __locale_t __locale, __VA_LIST __args);
+__LIBC int (__LIBCCALL _vsnprintf_s_l)(char *__restrict __buf, size_t __bufsize, size_t __buflen, char const *__restrict __format, __locale_t __locale, __VA_LIST __args);
 
 __LIBC int (__ATTR_CDECL _printf_p)(char const *__restrict __format, ...) __ASMNAME("printf");
 __LIBC int (__LIBCCALL _vprintf_p)(char const *__restrict __format, __VA_LIST __args) __ASMNAME("vprintf");
@@ -712,7 +712,7 @@ __LIBC int (__LIBCCALL vprintf_s)(char const *__restrict __format, __VA_LIST __a
 __LIBC int (__ATTR_CDECL fprintf_s)(__FILE *__restrict __file, char const *__restrict __format, ...) __ASMNAME("fprintf");
 __LIBC int (__LIBCCALL vfprintf_s)(__FILE *__restrict __file, char const *__restrict __format, __VA_LIST __args) __ASMNAME("vfprintf");
 __LIBC int (__ATTR_CDECL sprintf_s)(char *__restrict __buf, size_t __bufsize, char const *__restrict __format, ...) __ASMNAME("snprintf");
-__LIBC int (__LIBCCALL vsprintf_s)(char *__restrict __buf, size_t __bufsize, char const *__restrict __format, __VA_LIST __args);
+__LIBC int (__LIBCCALL vsprintf_s)(char *__restrict __buf, size_t __bufsize, char const *__restrict __format, __VA_LIST __args) __ASMNAME("vsnprintf");
 __LIBC int (__LIBCCALL vsnprintf_s)(char *__restrict __buf, size_t __bufsize, size_t __buflen, char const *__restrict __format, __VA_LIST __args);
 
 __LIBC int (__ATTR_CDECL fscanf_s)(__FILE *__restrict __file, char const *__restrict __format, ...) __ASMNAME("fscanf");
@@ -884,23 +884,18 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(fputws)
 #endif /* !__fputws_defined */
 
-__LIBC int (__ATTR_CDECL _scwprintf)(wchar_t const *__restrict __format, ...);
-__LIBC int (__LIBCCALL _vscwprintf)(wchar_t const *__restrict __format, __VA_LIST __args);
+__LIBC int (__ATTR_CDECL _scwprintf)(wchar_t const *__restrict __format, ...) __KOS_ASMNAME("scwprintf");
+__LIBC int (__LIBCCALL _vscwprintf)(wchar_t const *__restrict __format, __VA_LIST __args) __KOS_ASMNAME("vscwprintf");
 __LIBC int (__ATTR_CDECL _swprintf_c)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, ...) __KOS_ASMNAME("swprintf");
 __LIBC int (__LIBCCALL _vswprintf_c)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __VA_LIST __args) __KOS_ASMNAME("vswprintf");
-__LIBC int (__ATTR_CDECL _snwprintf_s)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, ...) __KOS_ASMNAME("snwprintf_s");
-__LIBC int (__LIBCCALL _vsnwprintf_s)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __VA_LIST __args) __KOS_ASMNAME("vsnwprintf_s");
-/* The following 2 return an error, rather than the required size when the buffer is too small */
-__LIBC int (__ATTR_CDECL _snwprintf)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, ...);
-__LIBC int (__LIBCCALL _vsnwprintf)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _fwprintf_p)(FILE *__restrict __file, wchar_t const *__restrict __format, ...) __ASMNAME("fwprintf");
 __LIBC int (__LIBCCALL _vfwprintf_p)(FILE *__restrict __file, wchar_t const *__restrict __format, __VA_LIST __args) __ASMNAME("vfwprintf");
 __LIBC int (__ATTR_CDECL _wprintf_p)(wchar_t const *__restrict __format, ...) __ASMNAME("wprintf");
 __LIBC int (__LIBCCALL _vwprintf_p)(wchar_t const *__restrict __format, __VA_LIST __args) __ASMNAME("vwprintf");
 __LIBC int (__ATTR_CDECL _swprintf_p)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, ...) __ASMNAME2("swprintf","_swprintf_c");
 __LIBC int (__LIBCCALL _vswprintf_p)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __VA_LIST __args) __ASMNAME2("vswprintf","_vswprintf_c");
-__LIBC int (__ATTR_CDECL _scwprintf_p)(wchar_t const *__restrict __format, ...) __ASMNAME("_scwprintf");
-__LIBC int (__LIBCCALL _vscwprintf_p)(wchar_t const *__restrict __format, __VA_LIST __args) __ASMNAME("_vscwprintf");
+__LIBC int (__ATTR_CDECL _scwprintf_p)(wchar_t const *__restrict __format, ...) __ASMNAME2("scwprintf","_scwprintf");
+__LIBC int (__LIBCCALL _vscwprintf_p)(wchar_t const *__restrict __format, __VA_LIST __args) __ASMNAME2("vscwprintf","_vscwprintf");
 __LIBC int (__ATTR_CDECL _wprintf_l)(wchar_t const *__restrict __format, __locale_t __locale, ...) __KOS_ASMNAME("wprintf_l");
 __LIBC int (__LIBCCALL _vwprintf_l)(wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args) __KOS_ASMNAME("vwprintf_l");
 __LIBC int (__ATTR_CDECL _wprintf_p_l)(wchar_t const *__restrict __format, __locale_t __locale, ...) __ASMNAME2("wprintf_l","_wprintf_l");
@@ -923,10 +918,29 @@ __LIBC int (__ATTR_CDECL _scwprintf_l)(wchar_t const *__restrict __format, __loc
 __LIBC int (__LIBCCALL _vscwprintf_l)(wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args) __KOS_ASMNAME("vscwprintf_l");
 __LIBC int (__ATTR_CDECL _scwprintf_p_l)(wchar_t const *__restrict __format, __locale_t __locale, ...) __ASMNAME2("scwprintf_l","_scwprintf_l");
 __LIBC int (__LIBCCALL _vscwprintf_p_l)(wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args) __ASMNAME2("vscwprintf_l","_vscwprintf_l");
-__LIBC int (__ATTR_CDECL _snwprintf_l)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __locale_t __locale, ...) __KOS_ASMNAME("snwprintf_l");
-__LIBC int (__LIBCCALL _vsnwprintf_l)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args) __KOS_ASMNAME("vsnwprintf_l");
-__LIBC int (__ATTR_CDECL _snwprintf_s_l)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __locale_t __locale, ...) __KOS_ASMNAME("snwprintf_s_l");
-__LIBC int (__LIBCCALL _vsnwprintf_s_l)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args) __KOS_ASMNAME("snwvprintf_s_l");
+#ifdef __PE__
+/* The following return an error, rather than the required size when the buffer is too small */
+__LIBC __WARN_NONSTD(snwprintf) int (__ATTR_CDECL _snwprintf)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, ...);
+__LIBC __WARN_NONSTD(vsnwprintf) int (__LIBCCALL _vsnwprintf)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __VA_LIST __args);
+__LIBC __WARN_NONSTD(snwprintf) int (__ATTR_CDECL _snwprintf_l)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __locale_t __locale, ...);
+__LIBC __WARN_NONSTD(vsnwprintf) int (__LIBCCALL _vsnwprintf_l)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args);
+__LIBC __WARN_NONSTD(snwprintf) int (__ATTR_CDECL _snwprintf_s)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, ...);
+__LIBC __WARN_NONSTD(vsnwprintf) int (__LIBCCALL _vsnwprintf_s)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __VA_LIST __args);
+__LIBC __WARN_NONSTD(snwprintf) int (__ATTR_CDECL _snwprintf_s_l)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __locale_t __locale, ...);
+__LIBC __WARN_NONSTD(vsnwprintf) int (__LIBCCALL _vsnwprintf_s_l)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args);
+#else /* __PE__ */
+/* Outside of DOS-mode, libc doesn't export DOS's broken wide-string printer functions, so we emulate them here. */
+__LIBC size_t (__LIBCCALL __working_vswprintf)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __VA_LIST __args) __ASMNAME("vswprintf");
+__LOCAL __WARN_NONSTD(vsnwprintf) int (__LIBCCALL _vsnwprintf)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __VA_LIST __args) { size_t __result = __working_vswprintf(__buf,__buflen,__format,__args); return __result < __buflen ? (int)__result : -1; }
+__LOCAL __WARN_NONSTD(vsnwprintf) int (__LIBCCALL _vsnwprintf_l)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __locale_t __UNUSED(__locale), __VA_LIST __args) { return _vsnwprintf(__buf,__buflen,__format,__args); }
+__LOCAL __WARN_NONSTD(vsnwprintf) int (__LIBCCALL _vsnwprintf_s)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __VA_LIST __args) { return _vsnwprintf(__buf,__buflen < __maxlen ? __buflen : __maxlen,__format,__args); }
+__LOCAL __WARN_NONSTD(vsnwprintf) int (__LIBCCALL _vsnwprintf_s_l)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __locale_t __UNUSED(__locale), __VA_LIST __args) { return _vsnwprintf_s(__buf,__buflen,__maxlen,__format,__args); }
+__LOCAL __WARN_NONSTD(snwprintf) int (__ATTR_CDECL _snwprintf)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, ...) { int __result; __VA_LIST __args; __builtin_va_start(__args,__format); __result = _vsnwprintf(__buf,__buflen,__format,__args); __builtin_va_end(__args); return __result; }
+__LOCAL __WARN_NONSTD(snwprintf) int (__ATTR_CDECL _snwprintf_l)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __locale_t __locale, ...) { int __result; __VA_LIST __args; __builtin_va_start(__args,__locale); __result = _vsnwprintf(__buf,__buflen,__format,__args); __builtin_va_end(__args); return __result; }
+__LOCAL __WARN_NONSTD(snwprintf) int (__ATTR_CDECL _snwprintf_s)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, ...) { int __result; __VA_LIST __args; __builtin_va_start(__args,__format); __result = _vsnwprintf_s(__buf,__buflen,__maxlen,__format,__args); __builtin_va_end(__args); return __result; }
+__LOCAL __WARN_NONSTD(snwprintf) int (__ATTR_CDECL _snwprintf_s_l)(wchar_t *__restrict __buf, size_t __buflen, size_t __maxlen, wchar_t const *__restrict __format, __locale_t __locale, ...) { int __result; __VA_LIST __args; __builtin_va_start(__args,__locale); __result = _vsnwprintf_s(__buf,__buflen,__maxlen,__format,__args); __builtin_va_end(__args); return __result; }
+#endif /* !__PE__ */
+
 
 /* NOTE: ~safe~ functions are re-directed to the regular versions. (For the reason, see below) */
 __LIBC int (__ATTR_CDECL _fwscanf_l)(FILE *__restrict __file, wchar_t const *__restrict __format, __locale_t __locale, ...) __KOS_ASMNAME("fwscanf_l"); /* No varargs version. */
@@ -979,8 +993,13 @@ __LOCAL int (__LIBCCALL _vswprintf)(wchar_t *__restrict __buf, wchar_t const *__
 __LOCAL int (__ATTR_CDECL _swprintf)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, ...) { __VA_LIST __args; int __result; __builtin_va_start(__args,__format); __result = _vswprintf(__buf,__format,__args); __builtin_va_end(__args); return __result; }
 #endif /* !__PE__ */
 
-__LIBC int (__LIBCCALL __vswprintf_l)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args) __ASMNAME2("vswprintf_l","_vswprintf_l");
-__LIBC int (__ATTR_CDECL __swprintf_l)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, __locale_t __locale, ...) __ASMNAME2("swprintf_l","__swprintf_l");
+#ifdef __PE__ /* Unlimited locale wide-string printers (Only defined for DOS mode) */
+__LIBC int (__LIBCCALL __vswprintf_l)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, __locale_t __locale, __VA_LIST __args);
+__LIBC int (__ATTR_CDECL __swprintf_l)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, __locale_t __locale, ...);
+#else /* In KOS mode, we emulate these. */
+__LOCAL int (__LIBCCALL __vswprintf_l)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, __locale_t __UNUSED(__locale), __VA_LIST __args) { return _vswprintf(__buf,__format,__args); }
+__LOCAL int (__ATTR_CDECL __swprintf_l)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, __locale_t __locale, ...) { int __result; __VA_LIST __args; __builtin_va_start(__args,__locale); __result = _vswprintf(__buf,__format,__args); __builtin_va_end(__args); return __result; }
+#endif
 
 #ifndef __NO_ASMNAME
 __LIBC int (__ATTR_CDECL _swprintf_l)(wchar_t *__restrict __buf, size_t __buflen, wchar_t const *__restrict __format, __locale_t __locale, ...) __ASMNAME2("swprintf_c_l","_swprintf_c_l");
