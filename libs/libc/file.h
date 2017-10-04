@@ -334,6 +334,8 @@ INTDEF int LIBCCALL libc_32fputws_unlocked(char32_t const *__restrict wstr, FILE
 
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF FILE *LIBCCALL libc_p_iob(void);
+
 INTDEF FILE *LIBCCALL libc_dos_fopen(char const *__restrict filename, char const *__restrict modes);
 INTDEF FILE *LIBCCALL libc_dos_freopen(char const *__restrict filename, char const *__restrict modes, FILE *__restrict self);
 INTDEF FILE *LIBCCALL libc_dos_fopen64(char const *__restrict filename, char const *__restrict modes);

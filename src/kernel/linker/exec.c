@@ -323,7 +323,7 @@ endwrite:
  if (E_ISERR(error)) goto end;
 
  /* Setup the root address of the core binary.
-  * >> Return a pointer to the start of the first core instance's first segment. */
+  * >> Return a pointer to the start of the core instance's first segment. */
  environ->e_root = (void *)((uintptr_t)inst->i_base+mod->m_begin);
 
  /* At this point, the entire execute has been loaded.

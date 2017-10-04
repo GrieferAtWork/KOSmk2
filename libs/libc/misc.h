@@ -23,6 +23,7 @@
 #include "system.h"
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 
 DECL_BEGIN
 
@@ -55,14 +56,82 @@ INTDEF int LIBCCALL libc_xdlclose(void *handle);
 INTDEF ATTR_NORETURN void LIBCCALL libc_internal_failure(void);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTERN u32 LIBCCALL libc_clearfp(void);
-INTERN u32 LIBCCALL libc_controlfp(u32 newval, u32 mask);
-INTERN errno_t LIBCCALL libc_controlfp_s(u32 *pcurrent, u32 newval, u32 mask);
-INTERN void LIBCCALL libc_set_controlfp(u32 newval, u32 mask);
-INTERN u32 LIBCCALL libc_statusfp(void);
-INTERN void LIBCCALL libc_fpreset(void);
-INTERN u32 LIBCCALL libc_control87(u32 newval, u32 mask);
-INTERN int *LIBCCALL libc_fpecode(void);
+INTDEF u32 LIBCCALL libc_clearfp(void);
+INTDEF u32 LIBCCALL libc_controlfp(u32 newval, u32 mask);
+INTDEF errno_t LIBCCALL libc_controlfp_s(u32 *pcurrent, u32 newval, u32 mask);
+INTDEF void LIBCCALL libc_set_controlfp(u32 newval, u32 mask);
+INTDEF u32 LIBCCALL libc_statusfp(void);
+INTDEF void LIBCCALL libc_fpreset(void);
+INTDEF u32 LIBCCALL libc_control87(u32 newval, u32 mask);
+INTDEF int *LIBCCALL libc_fpecode(void);
+
+INTDEF ATTR_DOSTEXT void LIBCCALL libc_crt_debugger_hook(int code);
+#if defined(__i386__) || defined(__x86_64__) || defined(__ia64__)
+struct _EXCEPTION_POINTERS;
+INTDEF u32 LIBCCALL libc_crt_unhandled_exception(struct _EXCEPTION_POINTERS *exception_info);
+INTDEF ATTR_NORETURN void LIBCCALL libc_crt_terminate_process(unsigned int exit_code); /* Defined in "stdlib.c" */
+#endif
+INTDEF void LIBCCALL libc_crt_set_unhandled_exception_filter(/*LPTOP_LEVEL_EXCEPTION_FILTER*/void *exceptionFilter);
+
+INTDEF int libc_commode; /* ??? */
+
+INTDEF int libc_fmode; /* ??? What is this? */
+INTERN int *LIBCCALL libc_p_fmode(void);
+INTDEF errno_t LIBCCALL libc_set_fmode(int mode);
+INTDEF errno_t LIBCCALL libc_get_fmode(int *pmode);
+
+typedef void (ATTR_CDECL *term_func)(void);
+typedef int  (ATTR_CDECL *term_func_e)(void);
+INTDEF void LIBCCALL libc_initterm(term_func *pfbegin, term_func *pfend);
+INTDEF int LIBCCALL libc_initterm_e(term_func_e *pfbegin, term_func_e *pfend);
+
+struct exception;
+INTDEF ATTR_DOSTEXT void LIBCCALL libc_setusermatherr(int (ATTR_CDECL *pf)(struct exception *));;
+
+INTDEF s32 libc_dos_crt_dbg_flag;
+INTDEF s32 LIBCCALL libc_dos_crt_set_dbg_flag(s32 val);
+INTDEF s32 *LIBCCALL libc_dos_p_crt_dbg_flag(void);
+INTDEF s32 libc_dos_crt_break_alloc;
+INTDEF s32 LIBCCALL libc_dos_crt_set_break_alloc(s32 val);
+INTDEF s32 *LIBCCALL libc_dos_p_crt_break_alloc(void);
+INTDEF s32 libc_dos_crt_debug_check_count;
+INTDEF s32 LIBCCALL libc_dos_crt_get_check_count(void);
+INTDEF s32 LIBCCALL libc_dos_crt_set_check_count(s32 val);
+INTDEF size_t libc_dos_crt_debug_fill_threshold;
+INTDEF size_t LIBCCALL libc_dos_crt_set_debug_fill_threshold(size_t val);
+INTDEF void *LIBCCALL libc_dos_crt_set_alloc_hook(void *val);
+INTDEF void *LIBCCALL libc_dos_crt_get_alloc_hook(void);
+INTDEF void *LIBCCALL libc_dos_crt_set_dump_client(void *val);
+INTDEF void *LIBCCALL libc_dos_crt_get_dump_client(void);
+INTDEF s32 LIBCCALL libc_dos_crt_is_valid_pointer(void const *ptr, u32 n_bytes, s32 writable);
+INTDEF s32 LIBCCALL libc_dos_crt_is_valid_heap_pointer(void const *ptr);
+INTDEF s32 LIBCCALL libc_dos_crt_is_memory_block(void const *ptr, u32 n_bytes, s32 *preqnum, char **pfile, s32 *pline);
+INTDEF void LIBCCALL libc_dos_crt_set_dbg_block_type(void *ptr, int type);
+INTDEF s32  LIBCCALL libc_dos_crt_report_block_type(void const *ptr);
+INTDEF void LIBCCALL libc_dos_crt_mem_checkpoint(void *state);
+INTDEF s32  LIBCCALL libc_dos_crt_mem_difference(void *diff, void *old_state, void *new_state);
+INTDEF void LIBCCALL libc_dos_crt_mem_dump_all_objects_since(void const *state);
+INTDEF s32  LIBCCALL libc_dos_crt_dump_memory_leaks(void);
+INTDEF void LIBCCALL libc_dos_crt_mem_dump_statistics(void const *state);
+
+INTDEF void LIBCCALL libc_dos_crt_dbg_break(void); /* int $3 */
+INTDEF int LIBCCALL libc_dos_crt_set_report_mode(int type, int mode);
+INTDEF /*fd*/void *LIBCCALL libc_dos_crt_set_report_file(int nRptType, /*fd*/void *hFile);
+
+INTDEF void *LIBCCALL libc_dos_crt_get_report_hook(void);
+INTDEF void *LIBCCALL libc_dos_crt_set_report_hook(void *val);
+INTDEF int LIBCCALL libc_dos_vcrt_dbg_reporta(int type, void *addr, char const *file, int line, char const *mod, char const *format, va_list args);
+INTDEF int LIBCCALL libc_dos_vcrt_dbg_reportw(int type, void *addr, char16_t const *file, int line, char16_t const *mod, char16_t const *format, va_list args);
+INTDEF int ATTR_CDECL libc_dos_crt_dbg_reportw(int type, char16_t const *file, int line, char16_t const *mod, char16_t const *format, ...);
+
+INTDEF int LIBCCALL libc_set_error_mode(int mode);
+INTDEF void LIBCCALL libc_set_app_type(int type);
+
+struct _EXCEPTION_POINTERS;
+INTDEF int LIBCCALL libc_dos_xcptfilter(u32 xno, struct _EXCEPTION_POINTERS *infp_ptrs);
+
+INTDEF void *LIBCCALL libc_dos_crt_rtc_init(void *r0, void **r1, s32 r2, s32 r3, s32 r4);
+INTDEF void *LIBCCALL libc_dos_crt_rtc_initw(void *r0, void **r1, s32 r2, s32 r3, s32 r4);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */

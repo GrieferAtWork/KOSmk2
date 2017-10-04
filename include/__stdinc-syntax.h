@@ -720,6 +720,7 @@ char const *__builtin_FUNCTION(void);
 char const *__builtin_FILE(void);
 int __builtin_LINE(void);
 void __builtin_prefetch(void const *addr, ...);
+void *__builtin_return_address(int level);
 
 int __builtin_setjmp(void *);
 __declspec(noreturn) void __builtin_longjmp(void *, int);

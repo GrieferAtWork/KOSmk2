@@ -70,9 +70,34 @@ INTDEF char32_t **LIBCCALL libc_p_32wpgmptr(void);
 INTDEF char ***LIBCCALL libc_p_initenviron(void);
 INTDEF char16_t ***LIBCCALL libc_p_16winitenviron(void);
 INTDEF char32_t ***LIBCCALL libc_p_32winitenviron(void);
+INTDEF errno_t LIBCCALL libc_get_pgmptr(char **pres);
+INTDEF errno_t LIBCCALL libc_get_wpgmptr(char16_t **pres);
 INTDEF errno_t LIBCCALL libc_dos_getenv_s(size_t *psize, char *buf, size_t bufsize, char const *name);
 INTDEF errno_t LIBCCALL libc_dos_dupenv_s(char **pbuf, size_t *pbuflen, char const *name);
 INTDEF errno_t LIBCCALL libc_dos_putenv_s(char const *name, char const *value);
+
+
+INTDEF char16_t **libc_16wargv;    /* Internal storage for lazily allocated UTF-16 copy of argv from 'appenv'. */
+INTDEF char32_t **libc_32wargv;    /* Internal storage for lazily allocated UTF-32 copy of argv from 'appenv'. */
+INTDEF char16_t **libc_16wenviron; /* Internal storage for lazily allocated & updated UTF-16 copy of 'environ'. */
+INTDEF char32_t **libc_32wenviron; /* Internal storage for lazily allocated & updated UTF-32 copy of 'environ'. */
+INTDEF char16_t **libc_16winitenv; /* Internal storage for lazily allocated UTF-16 copy of env from 'appenv'. */
+INTDEF char32_t **libc_32winitenv; /* Internal storage for lazily allocated UTF-32 copy of env from 'appenv'. */
+
+INTDEF char     **libc_initenv;    /* Unused in KOS/ELF-mode (For DOS compatibility only; use 'appenv' instead) */
+INTDEF char      *libc_pgmptr;     /* Unused in KOS/ELF-mode (For DOS compatibility only; use 'appenv' instead) */
+INTDEF char16_t  *libc_16wpgmptr;  /* Unused in KOS/ELF-mode (For DOS compatibility only; use '*libc_p_16wpgmptr()' instead) */
+INTDEF int        libc_argc;       /* Unused in KOS/ELF-mode (For DOS compatibility only; use 'appenv' instead) */
+INTDEF char     **libc_argv;       /* Unused in KOS/ELF-mode (For DOS compatibility only; use 'appenv' instead) */
+
+
+typedef struct { int newmode; } dos_startupinfo_t;
+/* These are implemented kind-of as the LIBC initializers for DOS-mode.
+ * In addition to doing what '_entry' would, they also
+ * initialize variables marked as 'Unused in KOS' above.
+ * NOTE: I have no idea what 'do_wildcard' is about, so it's just ignored. */
+INTDEF int LIBCCALL libc_getmainargs(int *pargc, char ***pargv, char ***penvp, int do_wildcard, dos_startupinfo_t *info);
+INTDEF int LIBCCALL libc_16wgetmainargs(int *pargc, char16_t ***pargv, char16_t ***penvp, int do_wildcard, dos_startupinfo_t *info);
 
 #else /* !CONFIG_LIBC_NO_DOS_LIBC */
 #define libc_environ_changed() (void)0

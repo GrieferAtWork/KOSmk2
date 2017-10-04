@@ -36,6 +36,7 @@
 #include <hybrid/types.h>
 #include <hybrid/minmax.h>
 #include <kos/environ.h>
+#include <kos/thread.h>
 #include <stdbool.h>
 #include <hybrid/atomic.h>
 #include <hybrid/xch.h>
@@ -43,10 +44,6 @@
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #include <bits/dos-errno.h>
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
-
-#if 1
-#include <float.h>
-#endif
 
 #undef environ
 DECL_BEGIN
@@ -299,12 +296,13 @@ DEFINE_PUBLIC_ALIAS(_putenv,libc_putenv);
 DEFINE_PUBLIC_ALIAS(_putenv_s,libc_dos_putenv_s);
 
 
-PRIVATE char16_t **libc_16wargv = NULL;
-PRIVATE char16_t **libc_16wenviron = NULL;
-PRIVATE char16_t **libc_16winitenviron = NULL;
-PRIVATE char32_t **libc_32wargv = NULL;
-PRIVATE char32_t **libc_32wenviron = NULL;
-PRIVATE char32_t **libc_32winitenviron = NULL;
+INTERN char16_t **libc_16wargv    = NULL;
+INTERN char16_t **libc_16wenviron = NULL;
+INTERN char16_t **libc_16winitenv = NULL;
+INTERN char32_t **libc_32wargv    = NULL;
+INTERN char32_t **libc_32wenviron = NULL;
+INTERN char32_t **libc_32winitenv = NULL;
+
 INTERN void LIBCCALL libc_argvfree(void **argv);
 
 INTERN ATTR_DOSTEXT void LIBCCALL
@@ -356,10 +354,12 @@ INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32wargv(void) { if (!libc_32warg
 INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16wenviron(void) { if (!libc_16wenviron) libc_16wenviron = libc_argv8to16(environ); return &libc_16wenviron; }
 INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32wenviron(void) { if (!libc_32wenviron) libc_32wenviron = libc_argv8to32(environ); return &libc_32wenviron; }
 INTERN ATTR_DOSTEXT char     ***LIBCCALL libc_p_initenviron(void) { return &appenv->e_envp; }
-INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16winitenviron(void) { if (!libc_16winitenviron) libc_16winitenviron = libc_argv8to16(environ); return &libc_16winitenviron; }
-INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32winitenviron(void) { if (!libc_32winitenviron) libc_32winitenviron = libc_argv8to32(environ); return &libc_32winitenviron; }
+INTERN ATTR_DOSTEXT char16_t ***LIBCCALL libc_p_16winitenviron(void) { if (!libc_16winitenv) libc_16winitenv = libc_argv8to16(environ); return &libc_16winitenv; }
+INTERN ATTR_DOSTEXT char32_t ***LIBCCALL libc_p_32winitenviron(void) { if (!libc_32winitenv) libc_32winitenv = libc_argv8to32(environ); return &libc_32winitenv; }
 INTERN ATTR_DOSTEXT char16_t  **LIBCCALL libc_p_16wpgmptr(void) { return &(*libc_p_16wargv())[0]; }
 INTERN ATTR_DOSTEXT char32_t  **LIBCCALL libc_p_32wpgmptr(void) { return &(*libc_p_32wargv())[0]; }
+INTERN ATTR_DOSTEXT errno_t     LIBCCALL libc_get_pgmptr(char **pres) { if unlikely(!pres) return __DOS_EINVAL; *pres = (*libc_p_argv())[0]; return EOK; }
+INTERN ATTR_DOSTEXT errno_t     LIBCCALL libc_get_wpgmptr(char16_t **pres) { if unlikely(!pres) return __DOS_EINVAL; *pres = (*libc_p_16wargv())[0]; return EOK; }
 
 INTERN ATTR_DOSTEXT errno_t LIBCCALL
 libc_dos_getenv_s(size_t *psize, char *buf,
@@ -389,12 +389,17 @@ libc_dos_dupenv_s(char **__restrict pbuf, size_t *pbuflen, char const *name) {
 }
 
 DEFINE_PUBLIC_ALIAS(__p___argc,libc_p_argc);
+
 DEFINE_PUBLIC_ALIAS(__p___argv,libc_p_argv);
-DEFINE_PUBLIC_ALIAS(__p__environ,libc_p_environ);
-DEFINE_PUBLIC_ALIAS(__p__pgmptr,libc_p_pgmptr);
 DEFINE_PUBLIC_ALIAS(__p___wargv,libc_p_16wargv);
+
+DEFINE_PUBLIC_ALIAS(__p__environ,libc_p_environ);
 DEFINE_PUBLIC_ALIAS(__p__wenviron,libc_p_16wenviron);
+
+DEFINE_PUBLIC_ALIAS(__p__pgmptr,libc_p_pgmptr);
 DEFINE_PUBLIC_ALIAS(__p__wpgmptr,libc_p_16wpgmptr);
+DEFINE_PUBLIC_ALIAS(_get_pgmptr,libc_get_pgmptr);
+DEFINE_PUBLIC_ALIAS(_get_wpgmptr,libc_get_wpgmptr);
 
 /* Export access to the initial environment. */
 DEFINE_PUBLIC_ALIAS(__p___initenv,libc_p_initenviron);
@@ -407,6 +412,72 @@ DEFINE_PUBLIC_ALIAS(wgetenviron,libc_p_32wenviron);
 DEFINE_PUBLIC_ALIAS(wgetpgmptr,libc_p_32wpgmptr);
 DEFINE_PUBLIC_ALIAS(getenv_s,libc_dos_getenv_s);
 DEFINE_PUBLIC_ALIAS(_dupenv_s,libc_dos_dupenv_s);
+
+/* Stub global variables (only here for binary compatibility)
+ * NOTE: A regular application linked for DOS will initialize
+ *       this variable itself, so this is even correct!
+ * HINT: The real initenv is filled in by the kernel and apart of 'appenv' */
+INTERN char    **libc_initenv   = NULL;
+INTERN char     *libc_pgmptr    = NULL;
+INTERN char16_t *libc_16wpgmptr = NULL;
+INTERN int       libc_argc      = 0;
+INTERN char    **libc_argv      = NULL;
+
+DEFINE_PUBLIC_ALIAS(__initenv,libc_initenv);
+DEFINE_PUBLIC_ALIAS(_pgmptr,libc_pgmptr);
+DEFINE_PUBLIC_ALIAS(_wpgmptr,libc_16wpgmptr);
+DEFINE_PUBLIC_ALIAS(__argc,libc_argc);
+DEFINE_PUBLIC_ALIAS(__argv,libc_argv);
+DEFINE_PUBLIC_ALIAS(_wenviron,libc_16wenviron);
+DEFINE_PUBLIC_ALIAS(__wargv,libc_16wargv);
+DEFINE_PUBLIC_ALIAS(__winitenv,libc_16winitenv);
+
+
+PRIVATE ATTR_DOSTEXT void LIBCCALL libc_dos_init(void) {
+ /* Initialize global variables, filling argc/argv and environ from appenv. */
+ struct envdata *env;
+ /* NOTE: Since we have no control over when this function is called,
+  *       we cannot rely on the fact that the kernel will have filled
+  *       in '%ECX' with the environment block upon application start.
+  *       Luckily though, there is another way by going though the TLD
+  *      (ThreadLocalBlock), which when initialized contains a pointer
+  *       to the environment block, which we assume to still be there. */
+ env = appenv = THIS_TLB->tl_env;
+ if unlikely(!env) return; /* Shouldn't happen, but might if the kernel did something wrong. */
+ libc_argc    = env->e_argc;
+ libc_argv    = env->e_argv;
+ environ      = env->e_envp;
+ libc_initenv = env->e_envp;
+ if (env->e_argc)
+     libc_pgmptr = env->e_argv[0];
+}
+
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_getmainargs(int *pargc, char ***pargv, char ***penvp,
+                 int do_wildcard, dos_startupinfo_t *info) {
+ libc_dos_init();
+ if (pargc) *pargc = libc_argc;
+ if (pargv) *pargv = libc_argv;
+ if (penvp) *pargv = environ;
+ return 0;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_16wgetmainargs(int *pargc, char16_t ***pargv, char16_t ***penvp,
+                    int do_wildcard, dos_startupinfo_t *info) {
+ libc_dos_init();
+ if (pargc) *pargc = libc_argc;
+ if (pargv) *pargv = *libc_p_16wargv();
+ if (penvp) *pargv = *libc_p_16wenviron();
+ /* Also initialize this one, which in turn will force-setup '__wargv'.
+  * NOTE: We only do this in wide-mode to improve startup times.
+  * NOTE: Also, when filling in 'pargv', '__wargv' should have already been initialized. */
+ libc_16wpgmptr = *libc_p_16wpgmptr();
+ return 0;
+}
+
+DEFINE_PUBLIC_ALIAS(__getmainargs,libc_getmainargs);
+DEFINE_PUBLIC_ALIAS(__wgetmainargs,libc_16wgetmainargs);
+
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

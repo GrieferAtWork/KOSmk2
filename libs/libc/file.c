@@ -1324,6 +1324,11 @@ DEFINE_PUBLIC_ALIAS(fputws_unlocked,libc_32fputws_unlocked);
 
 /* DOS Extensions. */
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN ATTR_DOSTEXT FILE *LIBCCALL libc_p_iob(void) { return libc_std_files; }
+DEFINE_PUBLIC_ALIAS(_iob,libc_std_files);
+DEFINE_PUBLIC_ALIAS(__p__iob,libc_p_iob);
+DEFINE_PUBLIC_ALIAS(__iob_func,libc_p_iob);
+
 DEFINE_INTERN_ALIAS(libc_dos_fopen64,libc_dos_fopen);
 INTERN ATTR_DOSTEXT FILE *LIBCCALL
 libc_dos_fopen(char const *__restrict filename,

@@ -335,6 +335,8 @@ INTERN void *LIBCCALL libc_dos_aligned_offset_malloc(size_t size, size_t align, 
 INTERN void *LIBCCALL libc_dos_aligned_offset_realloc(void *mptr, size_t size, size_t align, size_t off);
 INTERN void *LIBCCALL libc_dos_aligned_offset_recalloc(void *mptr, size_t count, size_t size, size_t align, size_t off);
 INTERN void LIBCCALL libc_dos_aligned_free(void *mptr);
+INTERN int LIBCCALL libc_dos_mall_validate(void); /* '_CrtCheckMemory' */
+INTERN void LIBCCALL libc_dos_mall_enum(void (ATTR_CDECL *callback)(void *ptr, void *closure), void *closure); /* '_CrtDoForAllClientObjects' */
 
 INTERN void *LIBCCALL libc_dos_malloc_dbg(size_t size, int btype, char const *file, int lno);
 INTERN void *LIBCCALL libc_dos_calloc_dbg(size_t count, size_t size, int btype, char const *file, int lno);

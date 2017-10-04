@@ -115,13 +115,31 @@ struct tib {
 
 #define TLB_OFFSETOF_TIB  __SIZEOF_POINTER__
 
+struct envdata;
 struct tlb {
  /* TLB (Thread Local Block) (ELF-compatible & access to thread-specific data)
   * i386:   SEGMENT_BASE(%GS) == self
   * x86-64: SEGMENT_BASE(%FS) == self */
- struct tlb *tl_self; /*< [1..1][== self] Self pointer (Required by ELF) */
+ struct tlb     *tl_self; /*< [1..1][== self] Self pointer (Required by ELF) */
  /* Everything else in here is KOS-specific. */
- struct tib  tl_tib;  /*< The TIB block. */
+ struct envdata *tl_env;  /*< [0..1] Pointer to the process environment block (containing argc/argv and the initial environ) */
+ /* NOTE: Don't access the TIB block though the TLB.
+  *       It's base-offset may change at any time, breaking your code in the process.
+  *       For binary compatibility with DOS, KOS sets up both FS and GS registers
+  *       before passing control to a user-space application, one of which points
+  *       to the TLB, while the other points at 'TLB+offsetof(struct tlb,tl_tib)'.
+  *    >> So you should simply use that other segment register to access the TIB,
+  *       not only generating smaller and faster code by doing so, but also allowing
+  *       the kernel to move the TIB anywhere else within the TLB block, potentially
+  *       even disconnecting it entirely at some point in the future.
+  *    >> Or in other words: _DONT_ do this: 'THIS_TLB->__tl_tib.<...>',
+  *                     and instead do this: 'THIS_TIB-><...>'
+  */
+#ifdef __KERNEL__
+ struct tib      tl_tib;  /*< The TIB block. */
+#else
+ struct tib    __tl_tib;  /*< The TIB block. */
+#endif
 };
 
 #ifdef __x86_64__

@@ -251,6 +251,11 @@ pe_patch(struct modpatch *__restrict patcher) {
    }
 
    if (E_ISERR(mod)) {
+    /* STOP THIS REDICULOUS DEPENDENCY TREE! */
+    if (filename.dn_size >= 8 &&
+       !memcasecmp(filename.dn_name,"kernel32",8*sizeof(char)))
+        goto next_dependency;
+
     syslog(LOG_EXEC|LOG_ERROR,
            "[PE] Failed to open module %$q dependency %q: %[errno]\n",
            self->p_module.m_name->dn_size,
@@ -304,6 +309,7 @@ pe_patch(struct modpatch *__restrict patcher) {
    if (!instance_add_dependency(inst,dep))
         return -ENOMEM;
 
+next_dependency:;
   } while (++iter != end);
  }
 

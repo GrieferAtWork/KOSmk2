@@ -244,6 +244,7 @@ task_filltlb(struct task *__restrict self) {
  assert((uintptr_t)info+CEIL_ALIGN(sizeof(struct tlb),PAGESIZE) <= KERNEL_BASE);
  assert(THIS_TASK->t_mman == self->t_mman);
  info->tl_self        = info;
+ info->tl_env         = self->t_mman->m_environ;
  info->tl_tib.ti_self = &info->tl_tib;
  info->tl_tib.ti_seh  = SEH_FRAME_NULL;
  info->tl_tib.ti_pid  = THREAD_PID_GETPID(&self->t_pid);

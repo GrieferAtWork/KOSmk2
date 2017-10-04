@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_LIBS_LIBC_SYSTEM_C
-#define GUARD_LIBS_LIBC_SYSTEM_C 1
+#ifndef GUARD_LIBS_LIBC_MISC_C
+#define GUARD_LIBS_LIBC_MISC_C 1
 #define _KOS_SOURCE         1
 #define _LARGEFILE64_SOURCE 1
 
@@ -30,12 +30,21 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "signal.h"
+#include "malloc.h"
+#include "unicode.h"
 
 #include <hybrid/compiler.h>
 #include <hybrid/atomic.h>
 #include <hybrid/asm.h>
+#include <hybrid/xch.h>
 #include <sys/syslog.h>
 #include <sys/mman.h>
+#include <bits/dos-errno.h>
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <winapi/windows.h>
+#include <winapi/excpt.h>
+#include <winapi/ntdef.h>
+#endif
 
 DECL_BEGIN
 
@@ -513,8 +522,231 @@ DEFINE_PUBLIC_ALIAS(_fpreset,libc_fpreset);
 DEFINE_PUBLIC_ALIAS(_control87,libc_control87);
 DEFINE_PUBLIC_ALIAS(__fpecode,libc_fpecode);
 
+INTERN ATTR_DOSTEXT void LIBCCALL libc_crt_debugger_hook(int UNUSED(code)) { /* This literally does nothing... */ }
+#if defined(__i386__) || defined(__x86_64__)
+DEFINE_PUBLIC_ALIAS(_crt_debugger_hook,libc_crt_debugger_hook);
+#else
+DEFINE_PUBLIC_ALIAS(__crt_debugger_hook,libc_crt_debugger_hook);
+#endif
+
+#if defined(__i386__) || defined(__x86_64__) || defined(__ia64__)
+struct _EXCEPTION_POINTERS;
+INTERN ATTR_DOSTEXT u32 LIBCCALL
+libc_crt_unhandled_exception(struct _EXCEPTION_POINTERS *exceptionInfo) {
+ /* TODO: raise() an exception that cannot be caught. */
+ NOT_IMPLEMENTED();
+ return 0;
+}
+DEFINE_PUBLIC_ALIAS(__crtUnhandledException,libc_crt_unhandled_exception);
+#endif
+
+
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_crt_set_unhandled_exception_filter(/*LPTOP_LEVEL_EXCEPTION_FILTER*/void *exceptionFilter) {
+ /* TODO: SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)exceptionFilter); */
+}
+DEFINE_PUBLIC_ALIAS(__crtSetUnhandledExceptionFilter,libc_crt_set_unhandled_exception_filter);
+
+
+INTERN ATTR_DOSDATA int libc_commode = 0x4000; /* _IOCOMMIT; ??? */
+DEFINE_PUBLIC_ALIAS(_commode,libc_commode);
+
+
+INTERN ATTR_DOSBSS int libc_fmode = 0; /* ??? What is this? */
+INTERN ATTR_DOSTEXT int *LIBCCALL libc_p_fmode(void) { return &libc_fmode; }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_set_fmode(int mode) { ATOMIC_WRITE(libc_fmode,mode); return EOK; }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_get_fmode(int *pmode) { if (!pmode) return __DOS_EINVAL; *pmode = ATOMIC_READ(libc_fmode); return EOK; }
+DEFINE_PUBLIC_ALIAS(_fmode,libc_fmode);
+DEFINE_PUBLIC_ALIAS(__p__fmode,libc_p_fmode);
+DEFINE_PUBLIC_ALIAS(_set_fmode,libc_set_fmode);
+DEFINE_PUBLIC_ALIAS(_get_fmode,libc_get_fmode);
+
+/* Function used by DOS to call global constructors. */
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_initterm(term_func *pfbegin, term_func *pfend) {
+ for (; pfbegin < pfend; ++pfbegin)
+   if (*pfbegin) (**pfbegin)();
+}
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_initterm_e(term_func_e *pfbegin, term_func_e *pfend) {
+ int result = 0;
+ for (; pfbegin < pfend; ++pfbegin)
+   if (*pfbegin && (result = (**pfbegin)()) != 0)
+       break;
+ return result;
+}
+DEFINE_PUBLIC_ALIAS(_initterm,libc_initterm);
+DEFINE_PUBLIC_ALIAS(_initterm_e,libc_initterm_e);
+
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_setusermatherr(int (ATTR_CDECL *pf)(struct exception *)) {
+ NOT_IMPLEMENTED(); /* ??? */
+}
+DEFINE_PUBLIC_ALIAS(__setusermatherr,libc_setusermatherr);
+
+INTERN ATTR_DOSDATA s32 libc_dos_crt_dbg_flag = 0x01;
+INTERN ATTR_DOSTEXT s32 LIBCCALL libc_dos_crt_set_dbg_flag(s32 val) { return XCH(libc_dos_crt_dbg_flag,val); }
+INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_dos_p_crt_dbg_flag(void) { return &libc_dos_crt_dbg_flag; }
+
+INTERN ATTR_DOSDATA s32 libc_dos_crt_break_alloc = -1;
+INTERN ATTR_DOSTEXT s32 LIBCCALL libc_dos_crt_set_break_alloc(s32 val) { return XCH(libc_dos_crt_break_alloc,val); }
+INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_dos_p_crt_break_alloc(void) { return &libc_dos_crt_break_alloc; }
+
+INTERN ATTR_DOSDATA s32 libc_dos_crt_debug_check_count = 0;
+INTERN ATTR_DOSTEXT s32 LIBCCALL libc_dos_crt_get_check_count(void) { return libc_dos_crt_debug_check_count; }
+INTERN ATTR_DOSTEXT s32 LIBCCALL libc_dos_crt_set_check_count(s32 val) { return XCH(libc_dos_crt_debug_check_count,val); }
+
+INTERN ATTR_DOSDATA size_t libc_dos_crt_debug_fill_threshold = SIZE_MAX;
+INTERN ATTR_DOSTEXT size_t LIBCCALL libc_dos_crt_set_debug_fill_threshold(size_t val) { return XCH(libc_dos_crt_debug_fill_threshold,val); }
+
+PRIVATE ATTR_DOSBSS void *libc_dos_pfn_alloc_hook = NULL;
+INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_crt_set_alloc_hook(void *val) { return XCH(libc_dos_pfn_alloc_hook,val); }
+INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_crt_get_alloc_hook(void) { return libc_dos_pfn_alloc_hook; }
+
+PRIVATE ATTR_DOSBSS void *libc_dos_pfn_dump_client = NULL;
+INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_crt_set_dump_client(void *val) { return XCH(libc_dos_pfn_dump_client,val); }
+INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_crt_get_dump_client(void) { return libc_dos_pfn_dump_client; }
+
+INTERN ATTR_DOSTEXT s32 LIBCCALL libc_dos_crt_is_valid_pointer(void const *ptr, u32 UNUSED(n_bytes), s32 UNUSED(writable)) { return (ptr != NULL); } /* Not ~really~ implemented (But DOS doesn't do anything else either...) */
+INTERN ATTR_DOSTEXT s32 LIBCCALL libc_dos_crt_is_valid_heap_pointer(void const *ptr) { return ptr && libc__mall_getattrib(ptr,__MALL_ATTRIB_SIZE) != 0; }
+INTERN ATTR_DOSTEXT s32 LIBCCALL libc_dos_crt_is_memory_block(void const *ptr, u32 n_bytes, s32 *preqnum, char **pfile, s32 *pline) {
+ if (preqnum) *preqnum = 0;
+ if (pfile) *pfile = NULL;
+ if (pline) *pline = 0;
+ if (!libc_dos_crt_is_valid_heap_pointer(ptr)) return 0;
+ if (preqnum) *preqnum = 42; /* mall has no such concept */
+ if (pfile) *pfile = (char *)libc__mall_getattrib(ptr,__MALL_ATTRIB_FILE);
+ if (pline) *pline = (s32)(uintptr_t)libc__mall_getattrib(ptr,__MALL_ATTRIB_LINE);
+ return 1;
+}
+INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_crt_set_dbg_block_type(void *UNUSED(ptr), int UNUSED(type)) { NOT_IMPLEMENTED(); }
+INTERN ATTR_DOSTEXT s32  LIBCCALL libc_dos_crt_report_block_type(void const *ptr) { return libc_dos_crt_is_valid_heap_pointer(ptr) ? 1 : -1; }
+INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_crt_mem_checkpoint(void *UNUSED(state)) {}
+INTERN ATTR_DOSTEXT s32  LIBCCALL libc_dos_crt_mem_difference(void *UNUSED(diff), void *UNUSED(old_state), void *UNUSED(new_state)) { return 0; }
+INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_crt_mem_dump_all_objects_since(void const *UNUSED(state)) {}
+INTERN ATTR_DOSTEXT s32  LIBCCALL libc_dos_crt_dump_memory_leaks(void) { libc__mall_printleaks(); return 0; }
+INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_crt_mem_dump_statistics(void const *state) {}
+
+DEFINE_PUBLIC_ALIAS(_CrtDumpMemoryLeaks,libc_dos_crt_dump_memory_leaks);
+DEFINE_PUBLIC_ALIAS(_CrtGetAllocHook,libc_dos_crt_get_alloc_hook);
+DEFINE_PUBLIC_ALIAS(_CrtGetCheckCount,libc_dos_crt_get_check_count);
+DEFINE_PUBLIC_ALIAS(_CrtGetDumpClient,libc_dos_crt_get_dump_client);
+DEFINE_PUBLIC_ALIAS(_CrtIsMemoryBlock,libc_dos_crt_is_memory_block);
+DEFINE_PUBLIC_ALIAS(_CrtIsValidHeapPointer,libc_dos_crt_is_valid_heap_pointer);
+DEFINE_PUBLIC_ALIAS(_CrtIsValidPointer,libc_dos_crt_is_valid_pointer);
+DEFINE_PUBLIC_ALIAS(_CrtMemCheckpoint,libc_dos_crt_mem_checkpoint);
+DEFINE_PUBLIC_ALIAS(_CrtMemDifference,libc_dos_crt_mem_difference);
+DEFINE_PUBLIC_ALIAS(_CrtMemDumpAllObjectsSince,libc_dos_crt_mem_dump_all_objects_since);
+DEFINE_PUBLIC_ALIAS(_CrtMemDumpStatistics,libc_dos_crt_mem_dump_statistics);
+DEFINE_PUBLIC_ALIAS(_CrtReportBlockType,libc_dos_crt_report_block_type);
+DEFINE_PUBLIC_ALIAS(_CrtSetAllocHook,libc_dos_crt_set_alloc_hook);
+DEFINE_PUBLIC_ALIAS(_CrtSetBreakAlloc,libc_dos_crt_set_break_alloc);
+DEFINE_PUBLIC_ALIAS(_CrtSetCheckCount,libc_dos_crt_set_check_count);
+DEFINE_PUBLIC_ALIAS(_CrtSetDbgBlockType,libc_dos_crt_set_dbg_block_type);
+DEFINE_PUBLIC_ALIAS(_CrtSetDbgFlag,libc_dos_crt_set_dbg_flag);
+DEFINE_PUBLIC_ALIAS(_CrtSetDebugFillThreshold,libc_dos_crt_set_debug_fill_threshold);
+DEFINE_PUBLIC_ALIAS(_CrtSetDumpClient,libc_dos_crt_set_dump_client);
+DEFINE_PUBLIC_ALIAS(__crtDebugCheckCount,libc_dos_crt_debug_check_count);
+DEFINE_PUBLIC_ALIAS(__crtDebugFillThreshold,libc_dos_crt_debug_fill_threshold);
+DEFINE_PUBLIC_ALIAS(__p__crtBreakAlloc,libc_dos_p_crt_break_alloc);
+DEFINE_PUBLIC_ALIAS(__p__crtDbgFlag,libc_dos_p_crt_dbg_flag);
+DEFINE_PUBLIC_ALIAS(_crtBreakAlloc,libc_dos_crt_break_alloc);
+DEFINE_PUBLIC_ALIAS(_crtDbgFlag,libc_dos_crt_dbg_flag);
+
+INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_crt_dbg_break(void) {
+ __asm__ __volatile__("int $3" : : : "memory");
+}
+DEFINE_PUBLIC_ALIAS(_CrtDbgBreak,libc_dos_crt_dbg_break);
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_crt_set_report_mode(int type, int mode) { NOT_IMPLEMENTED(); return 0; }
+DEFINE_PUBLIC_ALIAS(_CrtSetReportMode,libc_dos_crt_set_report_mode);
+INTERN ATTR_DOSTEXT /*fd*/void *LIBCCALL libc_dos_crt_set_report_file(int type, /*fd*/void *hfile) { NOT_IMPLEMENTED(); return 0; }
+DEFINE_PUBLIC_ALIAS(_CrtSetReportFile,libc_dos_crt_set_report_file);
+
+PRIVATE ATTR_DOSBSS void *libc_dos_report_hook = NULL;
+INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_crt_get_report_hook(void) { return libc_dos_report_hook; }
+INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_crt_set_report_hook(void *val) { return XCH(libc_dos_report_hook,val); }
+DEFINE_PUBLIC_ALIAS(_CrtGetReportHook,libc_dos_crt_get_report_hook);
+DEFINE_PUBLIC_ALIAS(_CrtSetReportHook,libc_dos_crt_set_report_hook);
+
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_dos_vcrt_dbg_reporta(int type, void *addr, char const *file,
+                          int line, char const *mod,
+                          char const *format, va_list args) {
+ libc_syslog(LOG_WARN,DOSSTR("%s(%d) : [DOS(%q)] report %d at %p%s"),
+             file,line,mod,type,addr,format ? DOSSTR(" : ") : DOSSTR(""));
+ if (format) libc_vsyslog(LOG_WARN,format,args);
+ libc_syslog(LOG_WARN,DOSSTR("\n"));
+ return 0;
+}
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_dos_vcrt_dbg_reportw(int type, void *addr, char16_t const *file,
+                          int line, char16_t const *mod,
+                          char16_t const *format, va_list args) {
+ int result;
+ char *utf8_file   = file   ? libc_utf16to8m(file) : NULL;
+ char *utf8_mod    = mod    ? libc_utf16to8m(mod) : NULL;
+ char *utf8_format = format ? libc_utf16to8m(format) : NULL;
+ result = libc_dos_vcrt_dbg_reporta(type,addr,utf8_file,line,utf8_mod,utf8_format,args);
+ libc_free(utf8_format);
+ libc_free(utf8_mod);
+ libc_free(utf8_file);
+ return result;
+}
+DEFINE_PUBLIC_ALIAS(_VCrtDbgReportA,libc_dos_vcrt_dbg_reporta);
+DEFINE_PUBLIC_ALIAS(_VCrtDbgReportW,libc_dos_vcrt_dbg_reportw);
+
+INTERN ATTR_DOSTEXT int ATTR_CDECL
+libc_dos_crt_dbg_reportw(int type, char16_t const *file, int line,
+                         char16_t const *mod, char16_t const *format, ...) {
+ int result; va_list args; va_start(args,format);
+ result = libc_dos_vcrt_dbg_reportw(type,__builtin_return_address(0),
+                                    file,line,mod,format,args);
+ va_end(args);
+ return result;
+}
+DEFINE_PUBLIC_ALIAS(_CrtDbgReportW,libc_dos_crt_dbg_reportw);
+DEFINE_PUBLIC_ALIAS("?_CrtDbgReportW%%YAHHPEBGH00ZZ",libc_dos_crt_dbg_reportw);
+
+INTERN ATTR_DOSTEXT int LIBCCALL libc_set_error_mode(int UNUSED(mode)) { return 0; } /* Unused */
+INTERN ATTR_DOSTEXT void LIBCCALL libc_set_app_type(int UNUSED(type)) { } /* Unused */
+DEFINE_PUBLIC_ALIAS(_set_error_mode,libc_set_error_mode);
+DEFINE_PUBLIC_ALIAS(__set_app_type,libc_set_app_type);
+
+struct _EXCEPTION_POINTERS;
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_dos_xcptfilter(u32 xno, struct _EXCEPTION_POINTERS *infp_ptrs) {
+ NOT_IMPLEMENTED();
+ return 0;
+}
+DEFINE_PUBLIC_ALIAS(_XcptFilter,libc_dos_xcptfilter);
+
+INTDEF void *LIBCCALL
+libc_dos_crt_rtc_init(void *UNUSED(r0), void **UNUSED(r1),
+                      s32 UNUSED(r2), s32 UNUSED(r3), s32 UNUSED(r4)) {
+ return NULL;
+}
+DEFINE_INTERN_ALIAS(libc_dos_crt_rtc_initw,libc_dos_crt_rtc_init);
+DEFINE_PUBLIC_ALIAS(_CRT_RTC_INIT,libc_dos_crt_rtc_init);
+DEFINE_PUBLIC_ALIAS(_CRT_RTC_INITW,libc_dos_crt_rtc_initw);
+
+
+INTERN EXCEPTION_DISPOSITION LIBCCALL
+libc_except_handler4(IN struct _EXCEPTION_RECORD *ExceptionRecord,
+                     IN PVOID EstablisherFrame,
+                     IN OUT struct _CONTEXT *ContextRecord,
+                     IN OUT PVOID DispatcherContext) {
+ /* ??? What's this supposed to do? */
+ return EXCEPTION_CONTINUE_SEARCH;
+}
+
+DEFINE_PUBLIC_ALIAS(_except_handler2,libc_except_handler4); /* XXX: Are all the others OK? */
+DEFINE_PUBLIC_ALIAS(_except_handler_3,libc_except_handler4);
+DEFINE_PUBLIC_ALIAS(_except_handler4,libc_except_handler4);
+DEFINE_PUBLIC_ALIAS(_except_handler4_common,libc_except_handler4);
+
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 
-#endif /* !GUARD_LIBS_LIBC_SYSTEM_C */
+#endif /* !GUARD_LIBS_LIBC_MISC_C */

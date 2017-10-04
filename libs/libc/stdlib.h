@@ -162,6 +162,7 @@ INTDEF errno_t LIBCCALL libc_mktemp_s(char *__restrict templatename, size_t size
 INTDEF int LIBCCALL libc_16wsystem(char16_t const *__restrict command);
 INTDEF int LIBCCALL libc_32wsystem(char32_t const *__restrict command);
 INTDEF errno_t LIBCCALL libc_rand_s(unsigned int *__restrict randval);
+INTDEF ATTR_NORETURN void LIBCCALL libc_amsg_exit(int errnum);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */

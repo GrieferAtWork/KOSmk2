@@ -25,6 +25,7 @@
 #include "stdlib.h"
 #include "malloc.h"
 #ifndef __KERNEL__
+#include "stdio.h"
 #include "file.h"
 #include "system.h"
 #include "unistd.h"
@@ -40,6 +41,7 @@
 #include <stdbool.h>
 #include <hybrid/traceback.h>
 #include <hybrid/minmax.h>
+#include <hybrid/host.h>
 #include <hybrid/list/list.h>
 #include <hybrid/sync/atomic-rwptr.h>
 #include <hybrid/section.h>
@@ -109,8 +111,21 @@ INTERN int LIBCCALL libc_at_quick_exit(void (LIBCCALL *func)(void)) { return add
 
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+#if defined(__i386__) || defined(__x86_64__) || defined(__ia64__)
+DEFINE_INTERN_ALIAS(libc_crt_terminate_process,libc__exit);
+DEFINE_PUBLIC_ALIAS(__crtTerminateProcess,libc_crt_terminate_process);
+#endif
 DEFINE_PUBLIC_ALIAS(_cexit,libc_run_atexit);
 DEFINE_PUBLIC_ALIAS(_c_exit,libc_run_at_quick_exit);
+
+DEFINE_PUBLIC_ALIAS(_amsg_exit,libc_amsg_exit);
+INTERN ATTR_NORETURN ATTR_DOSTEXT
+void LIBCCALL libc_amsg_exit(int errnum) {
+ SET_ERRNO(errnum);
+ libc_perror(DOSSTR("_amsg_exit() called"));
+ libc__exit(255);
+}
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 

@@ -326,8 +326,34 @@ libc_dos_wgetdcwd_dbg(int drive, char16_t *buf, int buflen,
 }
 DEFINE_INTERN_ALIAS(libc_dos_wgetdcwd_lk_dbg,libc_dos_wgetdcwd_dbg);
 
-
-DEFINE_PUBLIC_ALIAS(_CrtCheckMemory,libc__mall_validate);
+#ifdef CONFIG_DEBUG_MALLOC
+struct callback_data { void (ATTR_CDECL *callback)(void *ptr, void *closure); void *closure; };
+PRIVATE ssize_t LIBCCALL callback_func(void *__restrict ptr, void *closure) {
+ (*((struct callback_data *)closure)->callback)(ptr,
+   ((struct callback_data *)closure)->closure);
+ return 0;
+}
+INTERN void LIBCCALL
+libc_dos_mall_enum(void (ATTR_CDECL *callback)(void *ptr, void *closure),
+                   void *closure) {
+ struct callback_data data;
+ data.callback = callback;
+ data.closure  = closure;
+ libc__mall_enum(NULL,&callback_func,&data);
+}
+#else
+INTERN void LIBCCALL
+libc_dos_mall_enum(void (ATTR_CDECL *callback)(void *ptr, void *closure),
+                   void *UNUSED(closure)) {
+ (void)callback;
+}
+#endif
+INTERN int LIBCCALL libc_dos_mall_validate(void) {
+ libc__mall_validate();
+ return 0;
+}
+DEFINE_PUBLIC_ALIAS(_CrtCheckMemory,libc_dos_mall_validate);
+DEFINE_PUBLIC_ALIAS(_CrtDoForAllClientObjects,libc_dos_mall_enum);
 DEFINE_PUBLIC_ALIAS(_recalloc,libc_dos_recalloc);
 DEFINE_PUBLIC_ALIAS(_strdup,libc_strdup);
 DEFINE_PUBLIC_ALIAS(_msize,libc_dos_msize);
