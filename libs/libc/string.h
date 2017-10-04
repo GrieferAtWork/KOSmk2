@@ -578,11 +578,11 @@ INTDEF double LIBCCALL libc_16wtof_l(char16_t const *__restrict s, locale_t loca
 INTDEF double LIBCCALL libc_32wtof_l(char32_t const *__restrict s, locale_t locale);
 
 INTDEF void LIBCCALL libc_makepath(char *buf, const char *drive, const char *dir, const char *file, const char *ext);
-INTDEF void LIBCCALL libc16_wmakepath(char16_t *__restrict buf, char16_t const *__restrict drive, char16_t const *__restrict dir, char16_t const *__restrict file, char16_t const *__restrict ext);
-INTDEF void LIBCCALL libc32_wmakepath(char32_t *__restrict buf, char32_t const *__restrict drive, char32_t const *__restrict dir, char32_t const *__restrict file, char32_t const *__restrict ext);
+INTDEF void LIBCCALL libc_16wmakepath(char16_t *__restrict buf, char16_t const *__restrict drive, char16_t const *__restrict dir, char16_t const *__restrict file, char16_t const *__restrict ext);
+INTDEF void LIBCCALL libc_32wmakepath(char32_t *__restrict buf, char32_t const *__restrict drive, char32_t const *__restrict dir, char32_t const *__restrict file, char32_t const *__restrict ext);
 INTDEF errno_t LIBCCALL libc_makepath_s(char *buf, size_t buflen, const char *drive, const char *dir, const char *file, const char *ext);
-INTDEF errno_t LIBCCALL libc16_wmakepath_s(char16_t *__restrict buf, size_t maxlen, char16_t const *drive, char16_t const *__restrict dir, char16_t const *__restrict file, char16_t const *__restrict ext);
-INTDEF errno_t LIBCCALL libc32_wmakepath_s(char32_t *__restrict buf, size_t maxlen, char32_t const *drive, char32_t const *__restrict dir, char32_t const *__restrict file, char32_t const *__restrict ext);
+INTDEF errno_t LIBCCALL libc_16wmakepath_s(char16_t *__restrict buf, size_t maxlen, char16_t const *drive, char16_t const *__restrict dir, char16_t const *__restrict file, char16_t const *__restrict ext);
+INTDEF errno_t LIBCCALL libc_32wmakepath_s(char32_t *__restrict buf, size_t maxlen, char32_t const *drive, char32_t const *__restrict dir, char32_t const *__restrict file, char32_t const *__restrict ext);
 
 INTDEF void LIBCCALL _searchenv(const char *file, const char *__envvar, char *__resultpath);
 INTDEF void LIBCCALL _splitpath(const char *__abspath, char *drive, char *dir, char *file, char *ext);

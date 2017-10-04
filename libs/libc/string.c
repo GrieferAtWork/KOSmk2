@@ -1789,8 +1789,8 @@ INTERN ATTR_DOSRODATA char32_t const dos_32wstr_dot[] = {'.',0};
 #endif
 
 INTERN ATTR_DOSRODATA char const dos_makepath_format[] = {'%','s','%','s','%','s','%','s','%','s','%','s','%','s',0};
-INTERN ATTR_DOSRODATA char16_t const dos_16wmakepath_format[] = {'%','s','%','s','%','s','%','s','%','s','%','s','%','s',0};
-INTERN ATTR_DOSRODATA char32_t const dos_32wmakepath_format[] = {'%','s','%','s','%','s','%','s','%','s','%','s','%','s',0};
+INTERN ATTR_DOSRODATA char16_t const dos_16wmakepath_format[] = {'%','l','s','%','l','s','%','l','s','%','l','s','%','l','s','%','l','s','%','l','s',0};
+INTERN ATTR_DOSRODATA char32_t const dos_32wmakepath_format[] = {'%','l','s','%','l','s','%','l','s','%','l','s','%','l','s','%','l','s','%','l','s',0};
 
 
 INTDEF errno_t LIBCCALL
@@ -1808,61 +1808,64 @@ libc_makepath_s(char *buf, size_t buflen, const char *drive,
                          dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
  return reqsize >= buflen ? __DOS_ERANGE : EOK;
 }
-#if 0
 INTDEF errno_t LIBCCALL
-libc16_wmakepath_s(char16_t *__restrict buf, size_t maxlen, char16_t const *drive,
+libc_16wmakepath_s(char16_t *__restrict buf, size_t buflen, char16_t const *drive,
                    char16_t const *__restrict dir, char16_t const *__restrict file,
                    char16_t const *__restrict ext) {
- char const *dir_end; size_t reqsize;
- if (!drive) dir = dos_16wstr0;
- if (!dir) dir = dos_16wstr0;
- if (!file) file = dos_16wstr0;
- if (!ext) ext = dos_16wstr0;
- while (*ext == '.') ++ext;
- dir_end = libc_wcsend(dir);
- reqsize = libc_snprintf(buf,buflen,dos_makepath_format,drive,*drive ? dos_str_col : dos_str0,dir,
-                         dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_str0 :
-                         dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
- return reqsize >= buflen ? __DOS_ERANGE : EOK;
-}
-INTDEF errno_t LIBCCALL
-libc32_wmakepath_s(char32_t *__restrict buf, size_t maxlen, char32_t const *drive,
-                   char32_t const *__restrict dir, char32_t const *__restrict file,
-                   char32_t const *__restrict ext);
-
-INTDEF void LIBCCALL
-libc_makepath(char *buf, const char *drive,
-              const char *dir, const char *file,
-              const char *ext) {
- char const *dir_end;
- if (!drive) dir = dos_str0;
- if (!dir) dir = dos_str0;
- if (!file) file = dos_str0;
- if (!ext) ext = dos_str0;
- while (*ext == '.') ++ext;
- dir_end = libc_strend(dir);
- libc_sprintf(buf,"%s%s%s%s%s%s%s",drive,*drive ? dos_str_col : dos_str0,dir,
-              dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_str0 :
-              dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
-}
-INTDEF void LIBCCALL
-libc16_wmakepath(char16_t *__restrict buf, char16_t const *__restrict drive,
-                 char16_t const *__restrict dir, char16_t const *__restrict file,
-                 char16_t const *__restrict ext) {
- char16_t const *dir_end;
+ char16_t const *dir_end; size_t reqsize;
  if (!drive) dir = dos_16wstr0;
  if (!dir) dir = dos_16wstr0;
  if (!file) file = dos_16wstr0;
  if (!ext) ext = dos_16wstr0;
  while (*ext == '.') ++ext;
  dir_end = libc_16wcsend(dir);
- libc_sprintf(buf,"%s%s%s%s%s%s%s",drive,*drive ? dos_str_col : dos_str0,dir,
-              dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_str0 :
-              dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
+ reqsize = libc_dos_16swprintf(buf,buflen,dos_16wmakepath_format,drive,*drive ? dos_16wstr_col : dos_16wstr0,dir,
+                               dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_16wstr0 :
+                               dos_16wstr_slash,file,*ext ? dos_16wstr_dot : dos_16wstr0,ext);
+ return reqsize >= buflen ? __DOS_ERANGE : EOK;
 }
-INTDEF void LIBCCALL libc32_wmakepath(char32_t *__restrict dst, char32_t const *__restrict drive, char32_t const *__restrict dir, char32_t const *__restrict file, char32_t const *__restrict ext);
-#endif
+INTDEF errno_t LIBCCALL
+libc_32wmakepath_s(char32_t *__restrict buf, size_t buflen, char32_t const *drive,
+                   char32_t const *__restrict dir, char32_t const *__restrict file,
+                   char32_t const *__restrict ext) {
+ char32_t const *dir_end; size_t reqsize;
+ if (!drive) dir = dos_32wstr0;
+ if (!dir) dir = dos_32wstr0;
+ if (!file) file = dos_32wstr0;
+ if (!ext) ext = dos_32wstr0;
+ while (*ext == '.') ++ext;
+ dir_end = libc_32wcsend(dir);
+ reqsize = libc_32swprintf(buf,buflen,dos_32wmakepath_format,drive,*drive ? dos_32wstr_col : dos_32wstr0,dir,
+                           dir_end[-1] == '/' || dir_end[-1] == '\\' ? dos_32wstr0 :
+                           dos_32wstr_slash,file,*ext ? dos_32wstr_dot : dos_32wstr0,ext);
+ return reqsize >= buflen ? __DOS_ERANGE : EOK;
+}
 
+INTDEF void LIBCCALL
+libc_makepath(char *buf, const char *drive,
+              const char *dir, const char *file,
+              const char *ext) {
+ libc_makepath_s(buf,260,drive,dir,file,ext);
+}
+INTDEF void LIBCCALL
+libc_16wmakepath(char16_t *__restrict buf, char16_t const *__restrict drive,
+                 char16_t const *__restrict dir, char16_t const *__restrict file,
+                 char16_t const *__restrict ext) {
+ libc_16wmakepath_s(buf,260,drive,dir,file,ext);
+}
+INTDEF void LIBCCALL
+libc_32wmakepath(char32_t *__restrict buf, char32_t const *__restrict drive,
+                 char32_t const *__restrict dir, char32_t const *__restrict file,
+                 char32_t const *__restrict ext) {
+ libc_32wmakepath_s(buf,260,drive,dir,file,ext);
+}
+
+DEFINE_PUBLIC_ALIAS(_makepath,libc_makepath);
+DEFINE_PUBLIC_ALIAS(_makepath_s,libc_makepath_s);
+DEFINE_PUBLIC_ALIAS(_wmakepath,libc_16wmakepath);
+DEFINE_PUBLIC_ALIAS(wmakepath,libc_32wmakepath);
+DEFINE_PUBLIC_ALIAS(_wmakepath_s,libc_16wmakepath_s);
+DEFINE_PUBLIC_ALIAS(wmakepath_s,libc_32wmakepath_s);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
