@@ -301,7 +301,8 @@ pe_patch(struct modpatch *__restrict patcher) {
                      (unsigned int)(address_max-(uintptr_t)import_entry->Name),
                       import_entry->Name,import_address));
       /* All right! we've got the symbol address! */
-      rt_thunk->u1.AddressOfData = (uintptr_t)import_address;
+      rt_thunk->u1.AddressOfData   = (uintptr_t)import_address;
+      thunk_iter->u1.AddressOfData = (uintptr_t)import_address;
      }
    }
 

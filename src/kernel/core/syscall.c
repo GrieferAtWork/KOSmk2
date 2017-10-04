@@ -186,7 +186,14 @@ L(    iret                                                                    )
 L(SYM_END(dbg_sysleave)                                                       )
 L(.previous                                                                   )
 );
+#if 0
+PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
+ syslog(LOG_DEBUG,"SYSCALL:%Iu\n",sysno);
+}
+#define SYS_ENTER pushal; pushl %eax; call syscall_enter; addl $4, %esp; popal;
+#else
 #define SYS_ENTER /* nothing */
+#endif
 #define SYS_LEAVE jmp dbg_sysleave
 #else /* CONFIG_DEBUG */
 #define SYS_ENTER /* nothing */

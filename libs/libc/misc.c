@@ -740,6 +740,7 @@ libc_except_handler4(IN struct _EXCEPTION_RECORD *ExceptionRecord,
 }
 
 DEFINE_PUBLIC_ALIAS(_except_handler2,libc_except_handler4); /* XXX: Are all the others OK? */
+DEFINE_PUBLIC_ALIAS(_except_handler3,libc_except_handler4);
 DEFINE_PUBLIC_ALIAS(_except_handler_3,libc_except_handler4);
 DEFINE_PUBLIC_ALIAS(_except_handler4,libc_except_handler4);
 DEFINE_PUBLIC_ALIAS(_except_handler4_common,libc_except_handler4);
