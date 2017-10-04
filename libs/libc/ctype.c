@@ -400,10 +400,12 @@ DEFINE_INTERN_ALIAS(libc_islower_l,libc_islower);
 DEFINE_INTERN_ALIAS(libc_isdigit_l,libc_isdigit);
 DEFINE_INTERN_ALIAS(libc_isxdigit_l,libc_isxdigit);
 DEFINE_INTERN_ALIAS(libc_isspace_l,libc_isspace);
+DEFINE_INTERN_ALIAS(libc_ispunct_l,libc_ispunct);
 DEFINE_INTERN_ALIAS(libc_isalnum_l,libc_isalnum);
 DEFINE_INTERN_ALIAS(libc_isprint_l,libc_isprint);
 DEFINE_INTERN_ALIAS(libc_isgraph_l,libc_isgraph);
 DEFINE_INTERN_ALIAS(libc_iscntrl_l,libc_iscntrl);
+DEFINE_INTERN_ALIAS(libc_isblank_l,libc_isblank);
 DEFINE_INTERN_ALIAS(libc_toupper_l,libc_toupper);
 DEFINE_INTERN_ALIAS(libc_tolower_l,libc_tolower);
 DEFINE_INTERN_ALIAS(libc_isctype_l,libc_isctype);
@@ -414,10 +416,12 @@ INTERN ATTR_DOSTEXT int (LIBCCALL libc_islower_l)(int ch, locale_t UNUSED(loc)) 
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_isdigit_l)(int ch, locale_t UNUSED(loc))  { return libc_isdigit(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_isxdigit_l)(int ch, locale_t UNUSED(loc)) { return libc_isxdigit(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_isspace_l)(int ch, locale_t UNUSED(loc))  { return libc_isspace(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_ispunct_l)(int ch, locale_t UNUSED(loc))  { return libc_ispunct(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_isalnum_l)(int ch, locale_t UNUSED(loc))  { return libc_isalnum(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_isprint_l)(int ch, locale_t UNUSED(loc))  { return libc_isprint(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_isgraph_l)(int ch, locale_t UNUSED(loc))  { return libc_isgraph(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_iscntrl_l)(int ch, locale_t UNUSED(loc))  { return libc_iscntrl(ch); }
+INTERN ATTR_DOSTEXT int (LIBCCALL libc_isblank_l)(int ch, locale_t UNUSED(loc))  { return libc_isblank(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_toupper_l)(int ch, locale_t UNUSED(loc))  { return libc_toupper(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_tolower_l)(int ch, locale_t UNUSED(loc))  { return libc_tolower(ch); }
 INTERN ATTR_DOSTEXT int (LIBCCALL libc_isctype_l)(int ch, int mask, locale_t UNUSED(loc)) { return libc_isctype(ch,mask); }
@@ -447,10 +451,12 @@ DEFINE_PUBLIC_ALIAS(_islower_l,libc_islower_l);
 DEFINE_PUBLIC_ALIAS(_isdigit_l,libc_isdigit_l);
 DEFINE_PUBLIC_ALIAS(_isxdigit_l,libc_isxdigit_l);
 DEFINE_PUBLIC_ALIAS(_isspace_l,libc_isspace_l);
+DEFINE_PUBLIC_ALIAS(_ispunct_l,libc_ispunct_l);
 DEFINE_PUBLIC_ALIAS(_isalnum_l,libc_isalnum_l);
 DEFINE_PUBLIC_ALIAS(_isprint_l,libc_isprint_l);
 DEFINE_PUBLIC_ALIAS(_isgraph_l,libc_isgraph_l);
 DEFINE_PUBLIC_ALIAS(_iscntrl_l,libc_iscntrl_l);
+DEFINE_PUBLIC_ALIAS(_isblank_l,libc_isblank_l);
 DEFINE_PUBLIC_ALIAS(_toupper_l,libc_toupper_l);
 DEFINE_PUBLIC_ALIAS(_tolower_l,libc_tolower_l);
 DEFINE_PUBLIC_ALIAS(_isctype_l,libc_isctype_l);

@@ -31,6 +31,10 @@
 #define __PRIVATE_MIN_U(s)  __PRIVATE_MIN2_U(s)
 #define __PRIVATE_MAX_U(s)  __PRIVATE_MAX2_U(s)
 
+#ifdef _CHAR_UNSIGNED
+#undef __CHAR_UNSIGNED__
+#define __CHAR_UNSIGNED__ 1
+#endif
 
 #ifndef __CHAR_BIT__
 #define __CHAR_BIT__ 8
@@ -236,6 +240,19 @@
 #ifndef __PTRDIFF_MAX__
 #define __PTRDIFF_MAX__      __PRIVATE_MAX_S(__SIZEOF_PTRDIFF_T__)
 #endif /* !__PTRDIFF_MAX__ */
+
+#ifdef __PRIVATE_MIN_S16
+#ifndef __INT128_MIN__
+#define __INT128_MIN__       __PRIVATE_MIN_S16
+#endif /* !__INT128_MIN__ */
+#ifndef __INT128_MAX__
+#define __INT128_MAX__       __PRIVATE_MAX_S16
+#endif /* !__INT128_MAX__ */
+#ifndef __UINT128_MAX__
+#define __UINT128_MAX__      __PRIVATE_MAX_U16
+#endif /* !__UINT128_MAX__ */
+#endif /* __PRIVATE_MIN_S16 */
+
 
 #ifndef __SIG_ATOMIC_MIN__
 #ifdef __SIG_ATOMIC_UNSIGNED__

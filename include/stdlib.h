@@ -254,10 +254,10 @@ __LIBC __WUNUSED __NONNULL((3)) char *(__LIBCCALL gcvt)(double __val, int __ndig
 
 #ifdef __USE_MISC
 __LIBC __WUNUSED __NONNULL((3)) char *(__LIBCCALL qgcvt)(long double __val, int __ndigit, char *__buf);
-__LIBC __NONNULL((3,4,5)) int (__LIBCCALL ecvt_r)(double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign, char *__restrict __buf, size_t __len);
-__LIBC __NONNULL((3,4,5)) int (__LIBCCALL fcvt_r)(double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign, char *__restrict __buf, size_t __len);
-__LIBC __NONNULL((3,4,5)) int (__LIBCCALL qecvt_r)(long double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign, char *__restrict __buf, size_t __len);
-__LIBC __NONNULL((3,4,5)) int (__LIBCCALL qfcvt_r)(long double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign, char *__restrict __buf, size_t __len);
+__LIBC __NONNULL((3,4,5)) int (__LIBCCALL ecvt_r)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len);
+__LIBC __NONNULL((3,4,5)) int (__LIBCCALL fcvt_r)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len);
+__LIBC __NONNULL((3,4,5)) int (__LIBCCALL qecvt_r)(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len);
+__LIBC __NONNULL((3,4,5)) int (__LIBCCALL qfcvt_r)(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len);
 __LIBC __NONNULL((1)) __LONGLONG (__LIBCCALL strtoq)(char const *__restrict __nptr, char **__restrict __endptr, int __base) __ASMNAME("strtoll");
 __LIBC __NONNULL((1)) __ULONGLONG (__LIBCCALL strtouq)(char const *__restrict __nptr, char **__restrict __endptr, int __base) __ASMNAME("strtoull");
 #endif /* __USE_MISC */
@@ -700,8 +700,8 @@ __LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL mkstemps)(char *__template, int 
 __LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL mkstemps64)(char *__template, int __suffixlen);
 #endif /* __USE_LARGEFILE64 */
 __LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL rpmatch)(char const *__response);
-__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL qecvt)(long double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign);
-__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL qfcvt)(long double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign);
+__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL qecvt)(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign);
+__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL qfcvt)(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign);
 #endif /* __USE_MISC */
 
 #ifdef __USE_GNU
@@ -754,8 +754,8 @@ __LIBC __NONNULL((1)) char *(__LIBCCALL mktemp)(char *__template) __PE_FUNC_OLDP
 
 #if defined(__USE_MISC) || defined(__USE_DOS) || \
    (defined(__USE_XOPEN_EXTENDED) && !defined(__USE_XOPEN2K8))
-__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL ecvt)(double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign) __PE_ASMNAME("_ecvt");
-__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL fcvt)(double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign) __PE_ASMNAME("_fcvt");
+__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL ecvt)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign) __PE_ASMNAME("_ecvt");
+__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL fcvt)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign) __PE_ASMNAME("_fcvt");
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
@@ -1145,11 +1145,11 @@ __NAMESPACE_STD_USING(wcstold)
 
 #define _CVTBUFSIZE   349
 __LIBC char *(__LIBCCALL _fullpath)(char *__buf, char const *__path, size_t __buflen);
-__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL _ecvt)(double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign) __KOS_ASMNAME("ecvt");
-__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL _fcvt)(double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign) __KOS_ASMNAME("fcvt");
+__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL _ecvt)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign) __KOS_ASMNAME("ecvt");
+__LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL _fcvt)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign) __KOS_ASMNAME("fcvt");
 __LIBC __WUNUSED __NONNULL((3)) char *(__LIBCCALL _gcvt)(double __val, int __ndigit, char *__buf) __KOS_ASMNAME("gcvt");
-__LIBC errno_t (__LIBCCALL _ecvt_s)(char *__buf, size_t __buflen, double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign);
-__LIBC errno_t (__LIBCCALL _fcvt_s)(char *__buf, size_t __buflen, double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign);
+__LIBC errno_t (__LIBCCALL _ecvt_s)(char *__buf, size_t __buflen, double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign);
+__LIBC errno_t (__LIBCCALL _fcvt_s)(char *__buf, size_t __buflen, double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign);
 __LIBC errno_t (__LIBCCALL _gcvt_s)(char *__buf, size_t __buflen, double __val, int __ndigit);
 
 #ifdef __USE_KOS

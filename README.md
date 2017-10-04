@@ -58,7 +58,8 @@ Chaos|KOS - Even more chaotic that last time.
  - ELF binaries/libraries (<i>no extension</i> / <b>.so</b>)
  - PE binaries/libraries (<b>.exe</b> / <b>.dll</b>)
    - <b>TRUE</b> cross-platform native execution of executables.
-   - Natively run executables originally compiled for windows. (s.a.: "apps/hybrid_demo/main.exe")
+   - Putting the <i>Portable</i> back in <b>PE</b> (Which stands for PortableExecutable)
+     - Natively run executables originally compiled for windows. (s.a.: "apps/hybrid_demo/main.exe")
  - Disk I/O
    - Builtin driver for BIOS-disk support allows for access to boot USB stick
    - Partition tables

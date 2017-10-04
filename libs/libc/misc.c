@@ -312,8 +312,6 @@ INTERN ATTR_DOSTEXT Treturn (LIBCCALL libc_name) param { \
  DEFINE_INTERN_LIBM_ALIAS(libc_name,libm_name,Treturn,param,args); \
  DEFINE_PUBLIC_ALIAS(public_name,libc_name)
 
-#define __PE_LDOUBLE_IS_DOUBLE
-
 /* DOS exports math functions from its libc, but since
  * we follow unix guidelines, we export them from libm.
  * For binary compatibility though, we must alias  */
@@ -420,7 +418,7 @@ REDIRECT_LIBM(asinh,libc_asinh,asinh,double,(double x),(x));
 REDIRECT_LIBM(asinhf,libc_asinhf,asinhf,float,(float x),(x));
 REDIRECT_LIBM(acosh,libc_acosh,acosh,double,(double x),(x));
 REDIRECT_LIBM(acoshf,libc_acoshf,acoshf,float,(float x),(x));
-#ifdef __PE_LDOUBLE_IS_DOUBLE
+#ifdef CONFIG_PE_LDOUBLE_IS_DOUBLE
 DEFINE_PUBLIC_ALIAS(truncl,libc_trunc);
 DEFINE_PUBLIC_ALIAS(tgammal,libc_tgamma);
 DEFINE_PUBLIC_ALIAS(lgammal,libc_lgamma);
@@ -488,11 +486,16 @@ REDIRECT_LIBM(acoshl,libc_acoshl,acoshl,long double,(long double x),(x));
 DEFINE_PUBLIC_ALIAS(_logb,libc_logb);
 DEFINE_PUBLIC_ALIAS(_copysign,libc_copysign);
 REDIRECT_LIBM(_finite,libc_finite,finite,int,(double x),(x));
+REDIRECT_LIBM(_finitef,libc_finitef,finitef,int,(float x),(x));
 REDIRECT_LIBM(_isnan,libc_isnan,isnan,int,(double x),(x));
-REDIRECT_LIBM(_fpclass,libc_fpclassifyd,__fpclassifyd,int,(double x),(x));
+REDIRECT_LIBM(_isnanf,libc_isnanf,isnanf,int,(float x),(x));
+REDIRECT_LIBM(_fpclass,libc_fpclassifyd,__fpclassifyd,int,(double x),(x)); /* XXX: binary compatibility of type bits? */
 REDIRECT_LIBM(_nextafter,libc_nextafter,nextafter,double,(double x, double y),(x,y));
+REDIRECT_LIBM(_nextafterf,libc_nextafterf,nextafterf,float,(float x, float y),(x,y));
 REDIRECT_LIBM(_scalb,libc_scalb,scalb,double,(double x, double n),(x,n));
+REDIRECT_LIBM(_scalbf,libc_scalbf,scalbf,float,(float x, float n),(x,n));
 REDIRECT_LIBM(_hypot,libc_hypot,hypot,double,(double x, double y),(x,y));
+REDIRECT_LIBM(_hypotf,libc_hypotf,hypotf,float,(float x, float y),(x,y));
 REDIRECT_LIBM(_j0,libc_j0,j0,double,(double x),(x));
 REDIRECT_LIBM(_j1,libc_j1,j1,double,(double x),(x));
 REDIRECT_LIBM(_jn,libc_jn,jn,double,(int n, double x),(n,x));
@@ -549,7 +552,9 @@ DEFINE_PUBLIC_ALIAS(__crtSetUnhandledExceptionFilter,libc_crt_set_unhandled_exce
 
 
 INTERN ATTR_DOSDATA int libc_commode = 0x4000; /* _IOCOMMIT; ??? */
+INTERN ATTR_DOSTEXT int *LIBCCALL libc_p_commode(void) { return &libc_commode; }
 DEFINE_PUBLIC_ALIAS(_commode,libc_commode);
+DEFINE_PUBLIC_ALIAS(__p__commode,libc_p_commode);
 
 
 INTERN ATTR_DOSBSS int libc_fmode = 0; /* ??? What is this? */
@@ -709,6 +714,7 @@ DEFINE_PUBLIC_ALIAS("?_CrtDbgReportW%%YAHHPEBGH00ZZ",libc_dos_crt_dbg_reportw);
 
 INTERN ATTR_DOSTEXT int LIBCCALL libc_set_error_mode(int UNUSED(mode)) { return 0; } /* Unused */
 INTERN ATTR_DOSTEXT void LIBCCALL libc_set_app_type(int UNUSED(type)) { } /* Unused */
+DEFINE_PUBLIC_ALIAS(_seterrormode,libc_set_error_mode);
 DEFINE_PUBLIC_ALIAS(_set_error_mode,libc_set_error_mode);
 DEFINE_PUBLIC_ALIAS(__set_app_type,libc_set_app_type);
 
@@ -739,10 +745,10 @@ libc_except_handler4(IN struct _EXCEPTION_RECORD *ExceptionRecord,
  return EXCEPTION_CONTINUE_SEARCH;
 }
 
-DEFINE_PUBLIC_ALIAS(_except_handler2,libc_except_handler4); /* XXX: Are all the others OK? */
+DEFINE_PUBLIC_ALIAS(_except_handler2,libc_except_handler4);
 DEFINE_PUBLIC_ALIAS(_except_handler3,libc_except_handler4);
 DEFINE_PUBLIC_ALIAS(_except_handler_3,libc_except_handler4);
-DEFINE_PUBLIC_ALIAS(_except_handler4,libc_except_handler4);
+DEFINE_PUBLIC_ALIAS(_except_handler4,libc_except_handler4); /* XXX: Are all the others OK? */
 DEFINE_PUBLIC_ALIAS(_except_handler4_common,libc_except_handler4);
 
 

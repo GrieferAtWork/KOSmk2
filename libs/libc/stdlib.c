@@ -118,6 +118,10 @@ DEFINE_PUBLIC_ALIAS(__crtTerminateProcess,libc_crt_terminate_process);
 DEFINE_PUBLIC_ALIAS(_cexit,libc_run_atexit);
 DEFINE_PUBLIC_ALIAS(_c_exit,libc_run_at_quick_exit);
 
+INTDEF ATTR_DOSTEXT void (LIBCCALL *LIBCCALL libc_get_terminate(void))(void) { return &libc_abort; }
+DEFINE_PUBLIC_ALIAS(_get_terminate,libc_get_terminate); /* I think??? */
+DEFINE_PUBLIC_ALIAS(_get_unexpected,libc_get_terminate); /* I think??? */
+
 DEFINE_PUBLIC_ALIAS(_amsg_exit,libc_amsg_exit);
 INTERN ATTR_NORETURN ATTR_DOSTEXT
 void LIBCCALL libc_amsg_exit(int errnum) {

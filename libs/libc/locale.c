@@ -182,6 +182,9 @@ INTERN locale_t LIBCCALL libc_dos_32wcreate_locale(int dos_category, char32_t co
 INTDEF int LIBCCALL libc_dos_configthreadlocale(int flag) { NOT_IMPLEMENTED(); return 0; }
 INTDEF locale_t LIBCCALL libc_dos_get_current_locale(void) { NOT_IMPLEMENTED(); return NULL; }
 
+DEFINE_PUBLIC_ALIAS(__free_locale,libc_freelocale);
+DEFINE_PUBLIC_ALIAS(_free_locale,libc_freelocale);
+
 DEFINE_PUBLIC_ALIAS(_wsetlocale,libc_dos_32wsetlocale);
 DEFINE_PUBLIC_ALIAS(_wcreate_locale,libc_dos_32wcreate_locale);
 DEFINE_PUBLIC_ALIAS(__DSYM(localeconv),libc_dos_localeconv);

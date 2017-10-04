@@ -197,10 +197,10 @@ INTDEF char *LIBCCALL libc_vstrdupaf(char const *__restrict format, va_list args
 
 INTDEF char *LIBCCALL libc_gcvt(double value, int ndigit, char *buf);
 INTDEF char *LIBCCALL libc_qgcvt(long double value, int ndigit, char *buf);
-INTDEF int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
-INTDEF int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
-INTDEF int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
-INTDEF int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len);
+INTDEF int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len);
+INTDEF int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len);
+INTDEF int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len);
+INTDEF int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len);
 INTDEF float LIBCCALL libc_strtof(char const *__restrict nptr, char **__restrict endptr);
 INTDEF double LIBCCALL libc_strtod(char const *__restrict nptr, char **__restrict endptr);
 INTDEF long double LIBCCALL libc_strtold(char const *__restrict nptr, char **__restrict endptr);
@@ -209,10 +209,10 @@ INTDEF u32 LIBCCALL libc_strtou32(char const *__restrict nptr, char **__restrict
 INTDEF s64 LIBCCALL libc_strto64(char const *__restrict nptr, char **__restrict endptr, int base);
 INTDEF u64 LIBCCALL libc_strtou64(char const *__restrict nptr, char **__restrict endptr, int base);
 #ifndef __KERNEL__
-INTDEF char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign);
-INTDEF char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign);
-INTDEF char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign);
-INTDEF char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign);
+INTDEF char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decptr, int *__restrict sign);
+INTDEF char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decptr, int *__restrict sign);
+INTDEF char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decptr, int *__restrict sign);
+INTDEF char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decptr, int *__restrict sign);
 INTDEF float LIBCCALL libc_strtof_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
 INTDEF double LIBCCALL libc_strtod_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
 INTDEF long double LIBCCALL libc_strtold_l(char const *__restrict nptr, char **__restrict endptr, locale_t loc);
@@ -362,6 +362,9 @@ INTDEF errno_t LIBCCALL libc_strcat_s(char *__restrict dst, size_t dstsize, char
 INTDEF errno_t LIBCCALL libc_strcpy_s(char *__restrict dst, size_t dstsize, char const *__restrict src);
 INTDEF errno_t LIBCCALL libc_strncat_s(char *__restrict dst, size_t dstsize, char const *__restrict src, size_t maxlen);
 INTDEF errno_t LIBCCALL libc_strncpy_s(char *__restrict dst, size_t dstsize, char const *__restrict src, size_t maxlen);
+INTDEF errno_t LIBCCALL libc_ecvt_s(char *buf, size_t buflen, double val, int ndigit, int *__restrict decptr, int *__restrict sign);
+INTDEF errno_t LIBCCALL libc_fcvt_s(char *buf, size_t buflen, double val, int ndigit, int *__restrict decptr, int *__restrict sign);
+INTDEF errno_t LIBCCALL libc_gcvt_s(char *buf, size_t buflen, double val, int ndigit);
 
 /* Define misc. functions found in DOS's <stdlib.h> header. */
 INTDEF size_t LIBCCALL libc_mbstrlen(char const *str);
@@ -590,6 +593,15 @@ INTDEF void LIBCCALL libc_32wsplitpath(char32_t const *__restrict abspath, char3
 INTDEF errno_t LIBCCALL libc_splitpath_s(char const *__restrict abspath, char *drive, size_t drivelen, char *dir, size_t dirlen, char *file, size_t filelen, char *ext, size_t extlen);
 INTDEF errno_t LIBCCALL libc_16wsplitpath_s(char16_t const *__restrict abspath, char16_t *drive, size_t drivelen, char16_t *dir, size_t dirlen, char16_t *file, size_t filelen, char16_t *ext, size_t extlen);
 INTDEF errno_t LIBCCALL libc_32wsplitpath_s(char32_t const *__restrict abspath, char32_t *drive, size_t drivelen, char32_t *dir, size_t dirlen, char32_t *file, size_t filelen, char32_t *ext, size_t extlen);
+
+
+INTDEF int LIBCCALL libc_atoflt(float *__restrict result, char const *__restrict nptr);
+INTDEF int LIBCCALL libc_atodbl(double *__restrict result, char const *__restrict nptr);
+INTDEF int LIBCCALL libc_atoldbl(long double *__restrict result, char const *__restrict nptr);
+INTDEF int LIBCCALL libc_atoflt_l(float *__restrict result, char const *__restrict nptr, locale_t locale);
+INTDEF int LIBCCALL libc_atodbl_l(double *__restrict result, char const *__restrict nptr, locale_t locale);
+INTDEF int LIBCCALL libc_atoldbl_l(long double *__restrict result, char const *__restrict nptr, locale_t locale);
+
 
 INTDEF void LIBCCALL _searchenv(char const *file, char const *envvar, char *resultpath);
 INTDEF void LIBCCALL _wsearchenv(char16_t const *__restrict file, char16_t const *__restrict varname,  char16_t *__restrict dst);

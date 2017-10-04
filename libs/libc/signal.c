@@ -85,7 +85,29 @@ INTERN char const *const libc_sys_siglist[_NSIG] = {
 };
 #endif
 
-INTERN sighandler_t LIBCCALL libc_sysv_signal(int sig, sighandler_t handler) {
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN sighandler_t LIBCCALL
+libc_dos_signal(int sig, sighandler_t handler) {
+ sighandler_t result;
+ /* DOS-specific signal handler:
+  * Don't actually set, just return the current. */
+ if (handler == __DOS_SIG_GET) {
+  struct sigaction oact;
+  if (libc_sigaction(sig,NULL,&oact) < 0)
+      return SIG_ERR;
+  return oact.sa_handler;
+ }
+ /* Translate extended DOS signal handlers. */
+ if (handler == __DOS_SIG_SGE) handler = SIG_IGN; /* ??? */
+ else if (handler == __DOS_SIG_ACK) handler = SIG_IGN; /* ??? */
+ else if (handler == __DOS_SIG_HOLD) handler = SIG_HOLD;
+ result = libc_sysv_signal(sig,handler);
+ return result;
+}
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
+INTERN sighandler_t LIBCCALL
+libc_sysv_signal(int sig, sighandler_t handler) {
  struct sigaction act,oact;
  if (handler == SIG_ERR || sig <= 0 ||
      sig >= NSIG) { SET_ERRNO(EINVAL); return SIG_ERR; }
@@ -257,6 +279,9 @@ DEFINE_PUBLIC_ALIAS(psignal,libc_psignal);
 DEFINE_PUBLIC_ALIAS(psiginfo,libc_psiginfo);
 DEFINE_PUBLIC_ALIAS(sigstack,libc_sigstack);
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(__DSYM(signal),libc_dos_signal);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 DEFINE_PUBLIC_ALIAS(__sysv_signal,libc_sysv_signal);
 DEFINE_PUBLIC_ALIAS(signal,libc_bsd_signal);
 DEFINE_PUBLIC_ALIAS(__sigismember,libc_sigismember);

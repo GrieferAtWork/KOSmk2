@@ -25,7 +25,14 @@
 
 __DECL_BEGIN
 
+
+/* You should really just always using 'MB_CUR_MAX'... */
+#ifdef __USE_DOS
+#define MB_LEN_MAX   5
+#else
 #define MB_LEN_MAX	16
+#endif
+
 #define CHAR_BIT    __CHAR_BIT__
 #define SCHAR_MIN   __SCHAR_MIN__
 #define SCHAR_MAX   __SCHAR_MAX__
@@ -46,6 +53,38 @@ __DECL_BEGIN
 #define LLONG_MAX   __LONG_LONG_MAX__
 #define ULLONG_MAX  __ULONG_LONG_MAX__
 #endif /* __USE_ISOC99 */
+
+#ifdef __USE_DOS
+#define _I8_MIN     __PRIVATE_MIN_S1
+#define _I8_MAX     __PRIVATE_MAX_S1
+#define _UI8_MAX    __PRIVATE_MIN_U1
+#define _I16_MIN    __PRIVATE_MIN_S2
+#define _I16_MAX    __PRIVATE_MAX_S2
+#define _UI16_MAX   __PRIVATE_MIN_U2
+#define _I32_MIN    __PRIVATE_MIN_S4
+#define _I32_MAX    __PRIVATE_MAX_S4
+#define _UI32_MAX   __PRIVATE_MIN_U4
+#define _I64_MIN    __PRIVATE_MIN_S8
+#define _I64_MAX    __PRIVATE_MAX_S8
+#define _UI64_MAX   __PRIVATE_MIN_U8
+#ifdef __PRIVATE_MIN_S16
+#define _I128_MIN   __PRIVATE_MIN_S16
+#define _I128_MAX   __PRIVATE_MAX_S16
+#define _UI128_MAX  __PRIVATE_MAX_U16
+#endif /* __PRIVATE_MIN_S16 */
+
+/* """Extension""" Define something that belongs in <stdint.h> */
+#ifndef SIZE_MAX
+#define SIZE_MAX    __SIZE_MAX__
+#endif  /* SIZE_MAX */
+
+#ifdef __USE_DOS_SLIB
+#ifndef RSIZE_MAX
+#define RSIZE_MAX  (__SIZE_MAX__ >> 1)
+#endif /* RSIZE_MAX */
+#endif /* __USE_DOS_SLIB */
+
+#endif /* __USE_DOS */
 
 __DECL_END
 

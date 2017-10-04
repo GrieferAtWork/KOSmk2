@@ -247,7 +247,9 @@ __DECL_END
 #define INTPTR_MAX        __INTPTR_MAX__
 #define UINTPTR_MAX       __UINTPTR_MAX__
 
+#ifndef SIZE_MAX
 #define SIZE_MAX          __SIZE_MAX__
+#endif /* !SIZE_MAX */
 #define PTRDIFF_MIN       __PTRDIFF_MIN__
 #define PTRDIFF_MAX       __PTRDIFF_MAX__
 #define SIG_ATOMIC_MIN    __SIG_ATOMIC_MIN__

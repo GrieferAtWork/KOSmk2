@@ -352,6 +352,31 @@ INTERN int LIBCCALL libc_dos_mall_validate(void) {
  libc__mall_validate();
  return 0;
 }
+
+#if defined(__i386__) || defined(__x86_64__)
+#   define FREEA_MARKER_SIZE   8
+#elif defined(__ia64__)
+#   define FREEA_MARKER_SIZE   16
+#elif defined(__arm__)
+#   define FREEA_MARKER_SIZE   8
+#endif
+#define FREEA_HEAP_MARKER      0xDDDD
+
+#ifdef FREEA_MARKER_SIZE
+INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_freea(void *ptr) {
+ /* Runtime support for something DOS does that's
+  * similar to our 'amalloc()'/'afree()' functions. */
+ if (!ptr) return;
+ *(uintptr_t *)&ptr -= FREEA_MARKER_SIZE;
+ /* Free the pointer if the memory's been tagged as heap data. */
+ if (*(u32 *)ptr == FREEA_HEAP_MARKER)
+     libc_free(ptr);
+}
+DEFINE_PUBLIC_ALIAS(_freea,libc_dos_freea);
+DEFINE_PUBLIC_ALIAS(_freea_s,libc_dos_freea); /* ??? (Probably correct) */
+#endif
+
+
 DEFINE_PUBLIC_ALIAS(_CrtCheckMemory,libc_dos_mall_validate);
 DEFINE_PUBLIC_ALIAS(_CrtDoForAllClientObjects,libc_dos_mall_enum);
 DEFINE_PUBLIC_ALIAS(_recalloc,libc_dos_recalloc);
@@ -373,8 +398,8 @@ DEFINE_PUBLIC_ALIAS(_realloc_dbg,libc_dos_realloc_dbg);
 DEFINE_PUBLIC_ALIAS(_recalloc_dbg,libc_dos_recalloc_dbg);
 DEFINE_PUBLIC_ALIAS(_expand_dbg,libc_dos_expand_dbg);
 DEFINE_PUBLIC_ALIAS(_free_dbg,libc_dos_free_dbg);
-//DEFINE_PUBLIC_ALIAS(_msize_dbg,libc_dos_msize_dbg);
-DEFINE_PUBLIC_ALIAS(_msize_debug,libc_dos_msize_dbg); /* For some reason, this is the real name... */
+DEFINE_PUBLIC_ALIAS(_msize_dbg,libc_dos_msize_dbg);
+DEFINE_PUBLIC_ALIAS(_msize_debug,libc_dos_msize_dbg); /* Alias found in some DOS distributions? */
 DEFINE_PUBLIC_ALIAS(_aligned_msize_dbg,libc_dos_aligned_msize_dbg);
 DEFINE_PUBLIC_ALIAS(_aligned_malloc_dbg,libc_dos_aligned_malloc_dbg);
 DEFINE_PUBLIC_ALIAS(_aligned_realloc_dbg,libc_dos_aligned_realloc_dbg);

@@ -37,6 +37,7 @@
 #include <hybrid/section.h>
 #include <limits.h>
 #include <bits/fcntl-linux.h>
+#include <bits/dos-errno.h>
 #include <sys/timeb.h>
 #include <utime.h>
 #include <bits/stat.h>
@@ -47,16 +48,52 @@ DECL_BEGIN
 PUBLIC int      getdate_err = 0;
 PUBLIC char    *tzname[2] = {NULL,NULL};
 PUBLIC int      daylight = 0;
-PUBLIC long int timezone = 0;
+PUBLIC long int timezone = 0; /* Seconds West of UTC (Universal time); aka.: gmtime()+timezone == localtime(). */
+/* XXX: '_dstbias' (Defined by DOS): Offset for daylight saving time? */
+
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_p_timezone(void) { return (s32 *)&timezone; }
+INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_daylight(void) { return &daylight; }
+DEFINE_INTERN_ALIAS(libc_timezone,libc_p_timezone);
+INTERN ATTR_DOSTEXT char **LIBCCALL libc_tzname(void) { return tzname; }
+DEFINE_PUBLIC_ALIAS(__daylight,libc_daylight);
+DEFINE_PUBLIC_ALIAS(__timezone,libc_timezone);
+DEFINE_PUBLIC_ALIAS(__tzname,libc_tzname);
+
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_get_daylight(s32 *pres) { return pres ? (*pres = (s32)daylight,EOK) : __DOS_EINVAL; }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_get_timezone(s32 *pres) { return pres ? (*pres = (s32)timezone,EOK) : __DOS_EINVAL; }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL
+libc_get_tzname(size_t *pres, char *buf, size_t buflen, int idx) {
+ size_t reslen;
+ /* My god... - Nobody asked for it, but here it is:
+  * The most useless function and probably funniest way to ruin portability.
+  * It mean really? DOS even allows you direct access to the 'tzname' vector,
+  *                 but somebody still decided that this kind of encapsulation
+  *                 would be the future?
+  *                 Doing something like this is some kernel-level $h1t,
+  *                 but not anything you'd ever want to put in user-space,
+  *                 because all it does here is cause redundancy, as well
+  *                 as degradation of overall performance.
+  * But I guess I'm disproving at least one part of that statement:
+  *  - Your application can still be ported to KOS,
+  *    since this is where KOS implements that function...
+  */
+ if ((unsigned int)idx >= 2) return __DOS_EINVAL;
+ reslen = libc_strlen(tzname[idx])+1;
+ if (pres) *pres = reslen;
+ if (reslen > buflen) return __DOS_ERANGE;
+ libc_memcpy(buf,tzname[idx],reslen*sizeof(char));
+ return EOK;
+}
+DEFINE_PUBLIC_ALIAS(__p__timezone,libc_p_timezone);
+DEFINE_PUBLIC_ALIAS(_get_daylight,libc_get_daylight);
+DEFINE_PUBLIC_ALIAS(_get_timezone,libc_get_timezone);
+DEFINE_PUBLIC_ALIAS(_get_tzname,libc_get_tzname);
 DEFINE_PUBLIC_ALIAS(_tzname,tzname);
 DEFINE_PUBLIC_ALIAS(_timezone,timezone);
 DEFINE_PUBLIC_ALIAS(_tzset,libc_tzset);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
-DEFINE_PUBLIC_ALIAS(__tzname,tzname);
-DEFINE_PUBLIC_ALIAS(__daylight,daylight);
-DEFINE_PUBLIC_ALIAS(__timezone,timezone);
 
 INTERN void LIBCCALL libc_tzset(void) {
  /* TODO */
@@ -149,7 +186,8 @@ PRIVATE char ctime_buf[ASCTIME_BUFSIZE];
 INTERN char *LIBCCALL libc_ctime64(time64_t const *timer) { return libc_ctime64_r(timer,ctime_buf); }
 INTERN char *LIBCCALL libc_ctime(time_t const *timer) { return libc_ctime_r(timer,ctime_buf); }
 
-INTERN time64_t LIBCCALL libc_mktime64(struct tm *tp) {
+INTERN time64_t LIBCCALL
+libc_mktime64(struct tm const *__restrict tp) {
  time64_t result;
  result = __yearstodays(tp->tm_year) -
           __yearstodays(LINUX_TIME_START_YEAR);
@@ -183,7 +221,7 @@ libc_gmtime64_r(time64_t const *__restrict timer,
  tp->tm_year -= 1900;
  return tp;
 }
-INTERN time_t LIBCCALL libc_mktime(struct tm *tp) { return (time_t)libc_mktime64(tp); }
+INTERN time_t LIBCCALL libc_mktime(struct tm const *__restrict tp) { return (time_t)libc_mktime64(tp); }
 INTERN struct tm *LIBCCALL libc_gmtime_r(time_t const *__restrict timer, struct tm *__restrict tp) { time64_t t = (time64_t)*timer; return libc_gmtime64_r(&t,tp); }
 PRIVATE struct tm gmtime_buf,localtime_buf;
 INTERN struct tm *LIBCCALL libc_localtime_r(time_t const *__restrict timer, struct tm *__restrict tp) { return libc_gmtime_r(timer,tp); /* TODO: Timezones 'n $hit. */ }
@@ -804,6 +842,8 @@ DEFINE_PUBLIC_ALIAS(_localtime32,libc_localtime);
 DEFINE_PUBLIC_ALIAS(_localtime64,libc_localtime64);
 DEFINE_PUBLIC_ALIAS(_localtime32_s,libc_localtime_s);
 DEFINE_PUBLIC_ALIAS(_localtime64_s,libc_localtime64_s);
+DEFINE_PUBLIC_ALIAS(_difftime32,libc_difftime);
+DEFINE_PUBLIC_ALIAS(_difftime64,libc_difftime64);
 
 DEFINE_PUBLIC_ALIAS(_mktime32,libc_mktime);
 DEFINE_PUBLIC_ALIAS(_mktime64,libc_mktime64);
@@ -936,6 +976,28 @@ DEFINE_PUBLIC_ALIAS(__DSYMw16(_wutime64),libc_dos_16wutime64);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wutime64),libc_dos_32wutime64);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsftime),libc_16wcsftime);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcsftime_l),libc_16wcsftime_l);
+
+INTERN ATTR_DOSTEXT u32 LIBCCALL
+libc_getsystime(struct tm *__restrict tp) {
+ struct A(timeval) now;
+ if (A(libc_gettimeofday)(&now,NULL))
+     memset(&now,0,sizeof(struct A(timeval)));
+ A_R(libc_gmtime)(&now.tv_sec,tp);
+ /* NOTE: Returns Milliseconds. */
+ return now.tv_usec/USEC_PER_MSEC;
+}
+INTERN ATTR_DOSTEXT u32 LIBCCALL
+libc_setsystime(struct tm const *__restrict tp, u32 msec) {
+ struct A(timeval) now;
+ now.tv_sec = A(libc_mktime)(tp);
+ now.tv_usec = msec*USEC_PER_MSEC;
+ /* Returns an NT error code, or ZERO on success. */
+ return A(libc_settimeofday)(&now,NULL) ?
+        libc_errno_kos2nt(GET_ERRNO()) : 0;
+}
+DEFINE_PUBLIC_ALIAS(_getsystime,libc_getsystime);
+DEFINE_PUBLIC_ALIAS(_setsystime,libc_setsystime);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

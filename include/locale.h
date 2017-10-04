@@ -230,7 +230,7 @@ __LIBC __locale_t (__LIBCCALL _get_current_locale)(void);
 __LIBC __locale_t (__LIBCCALL __get_current_locale)(void) __ASMNAME("_get_current_locale");
 __LIBC __locale_t (__LIBCCALL _create_locale)(int __dos_category, char const *__locale);
 __LIBC __locale_t (__LIBCCALL __create_locale)(int __dos_category, char const *__locale) __ASMNAME("_create_locale");
-__LIBC void (__LIBCCALL __free_locale)(__locale_t __locale) __ASMNAME("_create_locale");
+__LIBC void (__LIBCCALL __free_locale)(__locale_t __locale) __ASMNAME("freelocale");
 __LIBC void (__LIBCCALL _free_locale)(__locale_t __locale) __ASMNAME("freelocale");
 
 #ifndef _WLOCALE_DEFINED

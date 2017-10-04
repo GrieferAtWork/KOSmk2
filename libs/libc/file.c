@@ -1470,6 +1470,7 @@ DEFINE_PUBLIC_ALIAS(_get_printf_count_output,libc_get_printf_count_output);
 DEFINE_PUBLIC_ALIAS(_set_printf_count_output,libc_set_printf_count_output);
 DEFINE_PUBLIC_ALIAS(_get_output_format,libc_get_output_format);
 DEFINE_PUBLIC_ALIAS(_set_output_format,libc_set_output_format);
+DEFINE_PUBLIC_ALIAS(_rmtmp,libc_rmtmp);
 DEFINE_PUBLIC_ALIAS(fread_s,libc_fread_s);
 DEFINE_PUBLIC_ALIAS(_fread_nolock_s,libc_fread_unlocked_s);
 

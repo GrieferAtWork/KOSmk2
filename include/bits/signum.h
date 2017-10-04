@@ -20,6 +20,7 @@
 #define _BITS_SIGNUM_H 1
 
 #include <__stdinc.h>
+#include <features.h>
 
 __DECL_BEGIN
 
@@ -45,9 +46,24 @@ __DECL_BEGIN
 #define SIG_ERR   ((__sighandler_t)-1) /*< Error return. */
 #define SIG_DFL   ((__sighandler_t)0)  /*< Default action. */
 #define SIG_IGN   ((__sighandler_t)1)  /*< Ignore signal. */
+
+#define __DOS_SIG_GET  ((__sighandler_t)2)  /*< Return current value. */
+#define __DOS_SIG_SGE  ((__sighandler_t)3)  /*< Signal gets error. */
+#define __DOS_SIG_ACK  ((__sighandler_t)4)  /*< Acknowledge. */
+#define __DOS_SIG_HOLD ((__sighandler_t)99) /*< Add signal to hold mask. (Needs a different value due to collision with '__DOS_SIG_GET') */
+
+#ifdef __USE_DOS
+#define SIG_GET   __DOS_SIG_GET
+#define SIG_SGE   __DOS_SIG_SGE
+#define SIG_ACK   __DOS_SIG_ACK
+#ifdef __USE_UNIX98
+#define SIG_HOLD  __DOS_SIG_HOLD
+#endif /* __USE_UNIX98 */
+#else /* __USE_DOS */
 #ifdef __USE_UNIX98
 #define SIG_HOLD  ((__sighandler_t)2)  /*< Add signal to hold mask. */
-#endif
+#endif /* __USE_UNIX98 */
+#endif /* !__USE_DOS */
 
 /* Signals. */
 #define SIGHUP    1     /*< Hangup (POSIX). */
@@ -87,11 +103,25 @@ __DECL_BEGIN
 #define SIGUNUSED 31
 #define _NSIG     65    /*< Biggest signal number + 1 (including real-time signals). */
 
-#define SIGRTMIN   (__libc_current_sigrtmin ())
-#define SIGRTMAX   (__libc_current_sigrtmax ())
-/* These are the hard limits of the kernel.  These values should not be used directly at user level. */
+#define SIGRTMIN   (__libc_current_sigrtmin())
+#define SIGRTMAX   (__libc_current_sigrtmax())
+
+/* These are the hard limits of the kernel.
+ * These values should not be used directly at user level. */
 #define __SIGRTMIN  32
 #define __SIGRTMAX (_NSIG - 1)
+
+#ifdef __USE_DOS
+/* Define DOS's signal name aliases. */
+#define SIGBREAK        21 /*< Background read from tty (POSIX). */
+#define SIGABRT_COMPAT  6  /*< Abort (ANSI). */
+/* Wow! Except for this oddity, DOS's signal codes are actually quite compatible. */
+#ifndef __KERNEL__
+#undef SIGABRT
+#define SIGABRT         22 /*< Background write to tty (POSIX). */
+#endif /* !__KERNEL__ */
+#endif
+
 
 __DECL_END
 

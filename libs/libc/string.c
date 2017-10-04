@@ -373,17 +373,17 @@ INTERN void *LIBCCALL libc_memccpy(void *__restrict dst,
 
 INTERN char *LIBCCALL libc_gcvt(double value, int ndigit, char *buf) { NOT_IMPLEMENTED(); return NULL; }
 INTERN char *LIBCCALL libc_qgcvt(long double value, int ndigit, char *buf) { NOT_IMPLEMENTED(); return NULL; }
-INTERN int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decpt, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_fcvt_r(double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_qecvt_r(long double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len) { NOT_IMPLEMENTED(); return 0; }
 
 #ifndef __KERNEL__
 #define FLOAT_BUFFER_SIZE 64
-INTERN char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-INTERN char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qfcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-INTERN char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_ecvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
-INTERN char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decpt, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_fcvt_r(value,ndigit,decpt,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decptr, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qecvt_r(value,ndigit,decptr,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decptr, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_qfcvt_r(value,ndigit,decptr,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decptr, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_ecvt_r(value,ndigit,decptr,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
+INTERN char *LIBCCALL libc_fcvt(double value, int ndigit, int *__restrict decptr, int *__restrict sign) { PRIVATE char buffer[FLOAT_BUFFER_SIZE]; return libc_fcvt_r(value,ndigit,decptr,sign,buffer,sizeof(buffer)) ? NULL : buffer; }
 #undef FLOAT_BUFFER_SIZE
 INTERN double LIBCCALL libc_atof(char const *__restrict nptr) { return libc_strtod(nptr,NULL); }
 INTERN float LIBCCALL libc_strtof_l(char const *__restrict nptr, char **__restrict endptr, locale_t UNUSED(loc)) { return libc_strtof(nptr,endptr); }
@@ -1155,6 +1155,12 @@ DEFINE_PUBLIC_ALIAS(_strtoll_l,libc_strto64_l);
 DEFINE_PUBLIC_ALIAS(_strtoull_l,libc_strtou64_l);
 DEFINE_PUBLIC_ALIAS(_strtoumax_l,libc_strtou64_l);
 
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_ecvt_s(char *buf, size_t buflen, double val, int ndigit, int *__restrict decptr, int *__restrict sign) { NOT_IMPLEMENTED(); return libc_ecvt_r(val,ndigit,decptr,sign,buf,buflen) ? EOK : GET_DOS_ERRNO(); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_fcvt_s(char *buf, size_t buflen, double val, int ndigit, int *__restrict decptr, int *__restrict sign) { NOT_IMPLEMENTED(); return libc_fcvt_r(val,ndigit,decptr,sign,buf,buflen) ? EOK : GET_DOS_ERRNO(); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_gcvt_s(char *buf, size_t buflen, double val, int ndigit) { NOT_IMPLEMENTED(); return libc_gcvt(val,ndigit,buf) ? EOK : GET_DOS_ERRNO(); }
+DEFINE_PUBLIC_ALIAS(_ecvt_s,libc_ecvt_s);
+DEFINE_PUBLIC_ALIAS(_fcvt_s,libc_fcvt_s);
+DEFINE_PUBLIC_ALIAS(_gcvt_s,libc_gcvt_s);
 
 /* Define 16-bit wide string libc functions. */
 #define T            char16_t
@@ -1303,6 +1309,7 @@ DEFINE_PUBLIC_ALIAS(__DSYM(mbrlen),libc_16mbrlen);
 DEFINE_PUBLIC_ALIAS(_atof_l,libc_atof_l);
 DEFINE_PUBLIC_ALIAS(_atoi_l,__INTFUN_L(libc_ato));
 DEFINE_PUBLIC_ALIAS(_atol_l,__DOS_LONGFUN_L(libc_ato));
+DEFINE_PUBLIC_ALIAS(_atoll_l,__LONGLONGFUN_L(libc_ato));
 DEFINE_PUBLIC_ALIAS(_atoi64,libc_ato64);
 DEFINE_PUBLIC_ALIAS(_atoi64_l,libc_ato64_l);
 DEFINE_PUBLIC_ALIAS(_strtod_l,libc_strtod_l);
@@ -1889,6 +1896,28 @@ DEFINE_PUBLIC_ALIAS(_splitpath_s,libc_splitpath_s);
 DEFINE_PUBLIC_ALIAS(_wsplitpath_s,libc_16wsplitpath_s);
 DEFINE_PUBLIC_ALIAS(wsplitpath_s,libc_32wsplitpath_s);
 
+INTERN ATTR_DOSTEXT int LIBCCALL libc_atoflt(float *__restrict result, char const *__restrict nptr) { *result = libc_strtof(nptr,NULL); return 0; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_atodbl(double *__restrict result, char const *__restrict nptr) { *result = libc_atof(nptr); return 0; }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_atoldbl(long double *__restrict result, char const *__restrict nptr) { *result = libc_strtold(nptr,NULL); return 0; }
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_INTERN_ALIAS(libc_atoflt_l,libc_atoflt);
+DEFINE_INTERN_ALIAS(libc_atodbl_l,libc_atodbl);
+DEFINE_INTERN_ALIAS(libc_atoldbl_l,libc_atoldbl);
+#else
+INTERN ATTR_DOSTEXT int LIBCCALL libc_atoflt_l(float *__restrict result, char const *__restrict nptr, locale_t UNUSED(locale)) { return libc_atoflt(result,nptr); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_atodbl_l(double *__restrict result, char const *__restrict nptr, locale_t UNUSED(locale)) { return libc_atodbl(result,nptr); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_atoldbl_l(long double *__restrict result, char const *__restrict nptr, locale_t UNUSED(locale)) { return libc_atoldbl(result,nptr); }
+#endif
+DEFINE_PUBLIC_ALIAS(_atoflt,libc_atoflt);
+DEFINE_PUBLIC_ALIAS(_atodbl,libc_atodbl);
+DEFINE_PUBLIC_ALIAS(_atoflt_l,libc_atoflt_l);
+DEFINE_PUBLIC_ALIAS(_atodbl_l,libc_atodbl_l);
+DEFINE_PUBLIC_ALIAS(_atoldbl,libc_atoldbl);
+DEFINE_PUBLIC_ALIAS(_atoldbl_l,libc_atoldbl_l);
+#ifdef CONFIG_PE_LDOUBLE_IS_DOUBLE
+DEFINE_PUBLIC_ALIAS(__DSYM(_atoldbl),libc_atodbl);
+DEFINE_PUBLIC_ALIAS(__DSYM(_atoldbl_l),libc_atodbl_l);
+#endif /* CONFIG_PE_LDOUBLE_IS_DOUBLE */
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */

@@ -21,9 +21,6 @@
 
 #include <__stdinc.h>
 
-#ifdef __DCC__
-#endif
-
 /* Autocomplete gcc-style compiler intrinsic predefined macros. */
 #ifndef __SIZEOF_CHAR__
 #define __SIZEOF_CHAR__  1
@@ -51,6 +48,38 @@
 #endif
 #endif
 
+#ifndef __INT8_C
+#if defined(_MSC_VER) || __has_extension(tpp_msvc_integer_suffix)
+#   define __INT8_C(c)    c##i8
+#   define __INT16_C(c)   c##i16
+#   define __INT32_C(c)   c##i32
+#   define __INT64_C(c)   c##i64
+#   define __UINT8_C(c)   c##ui8
+#   define __UINT16_C(c)  c##ui16
+#   define __UINT32_C(c)  c##ui32
+#   define __UINT64_C(c)  c##ui64
+#if defined(_INTEGRAL_MAX_BITS) && _INTEGRAL_MAX_BITS >= 128
+#   define __INT128_C(c)  c##i128
+#   define __UINT128_C(c) c##ui128
+#endif
+#else /* _MSC_VER */
+#   define __INT8_C(c)    c
+#   define __INT16_C(c)   c
+#if __SIZEOF_INT__ >= 4
+#   define __INT32_C(c)   c
+#elif __SIZEOF_LONG__ >= 4
+#   define __INT32_C(c)   c##l
+#else
+#   error FIXME
+#endif
+#   define __INT64_C(c)   c##ll
+#   define __UINT8_C(c)   c##u
+#   define __UINT16_C(c)  c##u
+#   define __UINT32_C(c)  c##u
+#   define __UINT64_C(c)  c##ull
+#endif /* ... */
+#endif /* !__INT8_C */
+
 #define __PRIVATE_MIN_S1  (-__INT8_C(127)-__INT8_C(1))
 #define __PRIVATE_MAX_S1    __INT8_C(127)
 #define __PRIVATE_MIN_U1    __UINT8_C(0)
@@ -67,34 +96,12 @@
 #define __PRIVATE_MAX_S8    __INT64_C(9223372036854775807)
 #define __PRIVATE_MIN_U8    __UINT64_C(0)
 #define __PRIVATE_MAX_U8    __UINT64_C(0xffffffffffffffff)
-
-#ifndef __INT8_C
-#if defined(_MSC_VER) || __has_extension(tpp_msvc_integer_suffix)
-#   define __INT8_C(c)    c##i8
-#   define __INT16_C(c)   c##i16
-#   define __INT32_C(c)   c##i32
-#   define __INT64_C(c)   c##i64
-#   define __UINT8_C(c)   c##ui8
-#   define __UINT16_C(c)  c##ui16
-#   define __UINT32_C(c)  c##ui32
-#   define __UINT64_C(c)  c##ui64
-#else
-#   define __INT8_C(c)    c
-#   define __INT16_C(c)   c
-#if __SIZEOF_INT__ >= 4
-#   define __INT32_C(c)   c
-#elif __SIZEOF_LONG__ >= 4
-#   define __INT32_C(c)   c##l
-#else
-#   error FIXME
+#ifdef __INT128_C
+#define __PRIVATE_MIN_S16 (-__INT128_C(170141183460469231731687303715884105727)-__INT128_C(1))
+#define __PRIVATE_MAX_S16   __INT128_C(170141183460469231731687303715884105727)
+#define __PRIVATE_MIN_U16   __UINT128_C(0)
+#define __PRIVATE_MAX_U16   __UINT128_C(0xffffffffffffffffffffffffffffffff)
 #endif
-#   define __INT64_C(c)   c##ll
-#   define __UINT8_C(c)   c##u
-#   define __UINT16_C(c)  c##u
-#   define __UINT32_C(c)  c##u
-#   define __UINT64_C(c)  c##ull
-#endif
-#endif /* !__INT8_C */
 
 #ifndef __INTMAX_C
 #define __INTMAX_C(c)  __INT64_C(c)

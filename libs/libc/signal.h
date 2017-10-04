@@ -33,6 +33,9 @@ DECL_BEGIN
 typedef __sighandler_t sighandler_t;
 #endif /* !__sighandler_t_defined */
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF sighandler_t LIBCCALL libc_dos_signal(int sig, sighandler_t handler);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTDEF sighandler_t LIBCCALL libc_sysv_signal(int sig, sighandler_t handler);
 INTDEF sighandler_t LIBCCALL libc_bsd_signal(int sig, sighandler_t handler);
 INTDEF int LIBCCALL libc_siginterrupt(int sig, int interrupt);

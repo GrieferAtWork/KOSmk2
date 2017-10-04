@@ -96,16 +96,21 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 #define __KSYMw32(x) x
 
 
+#undef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
 #ifndef __KERNEL__
 #define CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP 1
 #endif
 
+#undef CONFIG_LIBCCALL_HAS_RETURN_64_IS_32
 #if defined(__i386__) || defined(__x86_64__)
 /* A function returning a 64-bit integer can safely be called as though
  * it only returned a 32-bit integer, causing the aparent return value
  * to simply equal the truncated 64-bit value. */
 #define CONFIG_LIBCCALL_HAS_RETURN_64_IS_32 1
 #endif
+
+#undef CONFIG_PE_LDOUBLE_IS_DOUBLE
+#define CONFIG_PE_LDOUBLE_IS_DOUBLE 1
 
 DECL_END
 

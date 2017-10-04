@@ -62,9 +62,9 @@ INTDEF char *LIBCCALL libc_ctime64_r(time64_t const *__restrict timer, char *__r
 INTDEF char *LIBCCALL libc_ctime_r(time_t const *__restrict timer, char *__restrict buf);
 INTDEF char *LIBCCALL libc_ctime64(time64_t const *timer);
 INTDEF char *LIBCCALL libc_ctime(time_t const *timer);
-INTDEF time64_t LIBCCALL libc_mktime64(struct tm *tp);
+INTDEF time64_t LIBCCALL libc_mktime64(struct tm const *__restrict tp);
 INTDEF struct tm *LIBCCALL libc_gmtime64_r(time64_t const *__restrict timer, struct tm *__restrict tp);
-INTDEF time_t LIBCCALL libc_mktime(struct tm *tp);
+INTDEF time_t LIBCCALL libc_mktime(struct tm const *__restrict tp);
 INTDEF struct tm *LIBCCALL libc_gmtime_r(time_t const *__restrict timer, struct tm *__restrict tp);
 INTDEF struct tm *LIBCCALL libc_localtime_r(time_t const *__restrict timer, struct tm *__restrict tp);
 INTDEF struct tm *LIBCCALL libc_localtime64_r(time64_t const *__restrict timer, struct tm *__restrict tp);
@@ -198,6 +198,18 @@ INTDEF errno_t LIBCCALL libc_gmtime_s(struct tm *__restrict tp, time_t const *__
 INTDEF errno_t LIBCCALL libc_gmtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer);
 INTDEF errno_t LIBCCALL libc_localtime_s(struct tm *__restrict tp, time_t const *__restrict timer);
 INTDEF errno_t LIBCCALL libc_localtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer);
+
+INTDEF u32 LIBCCALL libc_getsystime(struct tm *__restrict tp);
+INTDEF u32 LIBCCALL libc_setsystime(struct tm const *__restrict tp, u32 msec);
+
+
+INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_p_timezone(void);
+INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_daylight(void);
+INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_timezone(void);
+INTERN ATTR_DOSTEXT char **LIBCCALL libc_tzname(void);
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_get_daylight(s32 *pres);
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_get_timezone(s32 *pres);
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_get_tzname(size_t *pres, char *buf, size_t buflen, int idx);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
