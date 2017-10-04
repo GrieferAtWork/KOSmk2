@@ -48,7 +48,6 @@ BEGIN
 			SOURCE("../libs/libc/assert.c")
 			SOURCE("../libs/libc/ctype.c")
 			SOURCE("../libs/libc/format-printer.c")
-			SOURCE("../libs/libc/stdio.c")
 		END
 
 

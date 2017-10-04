@@ -1716,14 +1716,25 @@ INTDEF ATTR_DOSTEXT int LIBCCALL libc_dos_local_16wstat32i64(char16_t const *__r
 //INTDEF ATTR_DOSTEXT int LIBCCALL libc_dos_local_16wstat64i32(char16_t const *__restrict file, struct __dos_stat64i32 *__restrict buf) { struct stat64 temp; int result = libc_dos_w16stat64(file,&temp); if (!result) libc_fill_dos_stat64i32(&temp,buf); return result; }
 
 DEFINE_PUBLIC_ALIAS(_stat,libc_dos_local_stat32);
+DEFINE_PUBLIC_ALIAS(_stat32,libc_dos_local_stat32);
 DEFINE_PUBLIC_ALIAS(_stat64,libc_dos_local_stat64);
 DEFINE_PUBLIC_ALIAS(_stati64,libc_dos_local_stat32i64);
+DEFINE_PUBLIC_ALIAS(_stat32i64,libc_dos_local_stat32i64);
+DEFINE_PUBLIC_ALIAS(_stat64i32,libc_dos_local_stat64);
+
 DEFINE_PUBLIC_ALIAS(_fstat,libc_dos_local_fstat32);
+DEFINE_PUBLIC_ALIAS(_fstat32,libc_dos_local_fstat32);
 DEFINE_PUBLIC_ALIAS(_fstat64,libc_dos_local_fstat64);
 DEFINE_PUBLIC_ALIAS(_fstati64,libc_dos_local_fstat32i64);
+DEFINE_PUBLIC_ALIAS(_fstat32i64,libc_dos_local_fstat32i64);
+DEFINE_PUBLIC_ALIAS(_fstat64i32,libc_dos_local_fstat64);
+
 DEFINE_PUBLIC_ALIAS(_wstat,libc_dos_local_16wstat32);
+DEFINE_PUBLIC_ALIAS(_wstat32,libc_dos_local_16wstat32);
 DEFINE_PUBLIC_ALIAS(_wstat64,libc_dos_local_16wstat64);
 DEFINE_PUBLIC_ALIAS(_wstati64,libc_dos_local_16wstat32i64);
+DEFINE_PUBLIC_ALIAS(_wstat32i64,libc_dos_local_16wstat32i64);
+DEFINE_PUBLIC_ALIAS(_wstat64i32,libc_dos_local_16wstat64);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

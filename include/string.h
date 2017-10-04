@@ -129,9 +129,9 @@ __NAMESPACE_STD_USING(strtok)
 
 
 __LIBC __NONNULL((1)) void (__LIBCCALL __bzero)(void *__s, size_t __n) __ASMNAME("bzero");
-__LIBC __NONNULL((1,2,3)) char *(__LIBCCALL __strtok_r)(char *__restrict __s, char const *__restrict __delim, char **__restrict __save_ptr) __ASMNAME("strtok_r");
+__LIBC __NONNULL((1,2,3)) char *(__LIBCCALL __strtok_r)(char *__restrict __s, char const *__restrict __delim, char **__restrict __save_ptr) __ASMNAME2("strtok_r","strtok_s");
 #ifdef __USE_POSIX
-__LIBC __NONNULL((2,3)) char *(__LIBCCALL strtok_r)(char *__restrict __s, char const *__restrict __delim, char **__restrict __save_ptr);
+__LIBC __NONNULL((2,3)) char *(__LIBCCALL strtok_r)(char *__restrict __s, char const *__restrict __delim, char **__restrict __save_ptr) __PE_ASMNAME("strtok_s");
 #endif /* __USE_POSIX */
 #ifdef __USE_XOPEN2K
 #ifndef __USE_GNU

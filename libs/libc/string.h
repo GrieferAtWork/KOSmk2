@@ -358,6 +358,11 @@ INTDEF long double LIBCCALL libc_32wcstold_l(char32_t const *__restrict nptr, ch
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 
+INTDEF errno_t LIBCCALL libc_strcat_s(char *__restrict dst, size_t dstsize, char const *__restrict src);
+INTDEF errno_t LIBCCALL libc_strcpy_s(char *__restrict dst, size_t dstsize, char const *__restrict src);
+INTDEF errno_t LIBCCALL libc_strncat_s(char *__restrict dst, size_t dstsize, char const *__restrict src, size_t maxlen);
+INTDEF errno_t LIBCCALL libc_strncpy_s(char *__restrict dst, size_t dstsize, char const *__restrict src, size_t maxlen);
+
 /* Define misc. functions found in DOS's <stdlib.h> header. */
 INTDEF size_t LIBCCALL libc_mbstrlen(char const *str);
 INTDEF size_t LIBCCALL libc_mbstrnlen(char const *str, size_t maxlen);

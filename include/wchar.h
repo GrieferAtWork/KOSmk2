@@ -1188,9 +1188,9 @@ __LIBC int (__ATTR_CDECL swscanf_s)(wchar_t const *__restrict __src, wchar_t con
 __LIBC int (__LIBCCALL vswscanf_s)(wchar_t const *__restrict __src, wchar_t const *__restrict __format, __VA_LIST __args) __ASMNAME("vswscanf");
 #endif /* __USE_DOS_SLIB */
 
-__LIBC wchar_t *(__LIBCCALL _wtmpnam)(wchar_t *__restrict __buf) __KOS_ASMNAME("wtmpnam");
-__LIBC errno_t (__LIBCCALL _wtmpnam_s)(wchar_t *__restrict __buf, size_t __buflen) __KOS_ASMNAME("wtmpnam_s");
-__LIBC wchar_t *(__LIBCCALL _wtempnam)(wchar_t const *__dir, wchar_t const *__pfx) __KOS_ASMNAME("wtempnam");
+__LIBC wchar_t *(__LIBCCALL _wtmpnam)(wchar_t *__restrict __buf) __WFS_FUNC(_wtmpnam);
+__LIBC errno_t (__LIBCCALL _wtmpnam_s)(wchar_t *__restrict __buf, size_t __buflen) __WFS_FUNC(_wtmpnam_s);
+__LIBC wchar_t *(__LIBCCALL _wtempnam)(wchar_t const *__dir, wchar_t const *__pfx) __WFS_FUNC(_wtempnam);
 __LIBC int (__LIBCCALL _wremove)(wchar_t const *__restrict __file) __WFS_FUNC(_wremove);
 
 #ifdef __PE__

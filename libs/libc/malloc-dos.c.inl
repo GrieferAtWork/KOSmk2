@@ -329,6 +329,7 @@ DEFINE_INTERN_ALIAS(libc_dos_wgetdcwd_lk_dbg,libc_dos_wgetdcwd_dbg);
 
 DEFINE_PUBLIC_ALIAS(_CrtCheckMemory,libc__mall_validate);
 DEFINE_PUBLIC_ALIAS(_recalloc,libc_dos_recalloc);
+DEFINE_PUBLIC_ALIAS(_strdup,libc_strdup);
 DEFINE_PUBLIC_ALIAS(_msize,libc_dos_msize);
 DEFINE_PUBLIC_ALIAS(_aligned_msize,libc_dos_aligned_msize);
 DEFINE_PUBLIC_ALIAS(_aligned_malloc,libc_dos_aligned_malloc);

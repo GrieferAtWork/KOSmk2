@@ -27,10 +27,9 @@
 #include "malloc.h"
 #include "stdio.h"
 #include "string.h"
-#ifndef __KERNEL__
 #include "file.h"
 #include "unistd.h"
-#endif /* !__KERNEL__ */
+#include "unicode.h"
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -41,23 +40,30 @@
 
 DECL_BEGIN
 
-#ifndef __KERNEL__
-INTERN char *LIBCCALL libc_tmpnam(char *s) { NOT_IMPLEMENTED(); return NULL; }
-INTERN char *LIBCCALL libc_tmpnam_r(char *s) { NOT_IMPLEMENTED(); return NULL; }
+INTERN char *LIBCCALL libc_tmpnam(char *__restrict buf) { NOT_IMPLEMENTED(); return NULL; }
+INTERN char *LIBCCALL libc_tmpnam_r(char *buf) { return buf ? libc_tmpnam(buf) : NULL; }
 INTERN char *LIBCCALL libc_tempnam(char const *dir, char const *pfx) { NOT_IMPLEMENTED(); return NULL; }
 
 struct obstack;
-INTERN int LIBCCALL libc_obstack_vprintf(struct obstack *__restrict obstack, char const *__restrict format, va_list args) { NOT_IMPLEMENTED(); return 0; }
-INTERN int LIBCCALL libc_obstack_printf(struct obstack *__restrict obstack,
-                                        char const *__restrict format, ...) {
+INTERN int LIBCCALL
+libc_obstack_vprintf(struct obstack *__restrict obstack,
+                     char const *__restrict format, va_list args) {
+ NOT_IMPLEMENTED();
+ return 0;
+}
+INTERN int LIBCCALL
+libc_obstack_printf(struct obstack *__restrict obstack,
+                    char const *__restrict format, ...) {
  int result; va_list args;
  va_start(args,format);
  result = libc_obstack_vprintf(obstack,format,args);
  va_end(args);
  return result;
 }
-INTERN ATTR_COLDTEXT void LIBCCALL libc_perror(char const *s) {
- libc_fprintf(stderr,COLDSTR("%s: %[errno]\n"),s,GET_ERRNO());
+INTERN ATTR_COLDTEXT void LIBCCALL
+libc_perror(char const *__restrict message) {
+ libc_fprintf(stderr,COLDSTR("%s: %[errno]\n"),
+              message,GET_ERRNO());
 }
 
 DEFINE_PUBLIC_ALIAS(tmpnam,libc_tmpnam);
@@ -66,7 +72,68 @@ DEFINE_PUBLIC_ALIAS(tempnam,libc_tempnam);
 DEFINE_PUBLIC_ALIAS(obstack_vprintf,libc_obstack_vprintf);
 DEFINE_PUBLIC_ALIAS(obstack_printf,libc_obstack_printf);
 DEFINE_PUBLIC_ALIAS(perror,libc_perror);
-#endif /* !__KERNEL__ */
+
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTERN ATTR_DOSTEXT char *LIBCCALL libc_dos_tmpnam(char *__restrict buf) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char *LIBCCALL libc_dos_tmpnam_r(char *buf) { return buf ? libc_tmpnam(buf) : NULL; }
+INTERN ATTR_DOSTEXT char *LIBCCALL libc_dos_tempnam(char const *dir, char const *pfx) { NOT_IMPLEMENTED(); return NULL; }
+INTDEF ATTR_DOSTEXT char *LIBCCALL libc_tmpnam_s(char *buf, size_t bufsize) { NOT_IMPLEMENTED(); return NULL; }
+INTDEF ATTR_DOSTEXT char *LIBCCALL libc_dos_tmpnam_s(char *buf, size_t bufsize) { NOT_IMPLEMENTED(); return NULL; }
+
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wtmpnam(char16_t *__restrict buf) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32wtmpnam(char32_t *__restrict buf) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_dos_16wtmpnam(char16_t *__restrict buf) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_dos_32wtmpnam(char32_t *__restrict buf) { NOT_IMPLEMENTED(); return NULL; }
+
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wtmpnam_s(char16_t *__restrict buf, size_t buflen) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32wtmpnam_s(char32_t *__restrict buf, size_t buflen) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_dos_16wtmpnam_s(char16_t *__restrict buf, size_t buflen) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_dos_32wtmpnam_s(char32_t *__restrict buf, size_t buflen) { NOT_IMPLEMENTED(); return NULL; }
+
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wtempnam(char16_t const *dir, char16_t const *pfx) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32wtempnam(char32_t const *dir, char32_t const *pfx) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_dos_16wtempnam(char16_t const *dir, char16_t const *pfx) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_dos_32wtempnam(char32_t const *dir, char32_t const *pfx) { NOT_IMPLEMENTED(); return NULL; }
+
+INTERN void LIBCCALL libc_16wperror(char16_t const *__restrict errmsg) {
+ errno_t e = GET_ERRNO();
+ char *utf8_errmsg = libc_utf16to8m(errmsg);
+ SET_ERRNO(e),libc_perror(utf8_errmsg);
+ libc_free(utf8_errmsg);
+}
+INTERN void LIBCCALL libc_32wperror(char32_t const *__restrict errmsg) {
+ errno_t e = GET_ERRNO();
+ char *utf8_errmsg = libc_utf32to8m(errmsg);
+ SET_ERRNO(e),libc_perror(utf8_errmsg);
+ libc_free(utf8_errmsg);
+}
+
+DEFINE_PUBLIC_ALIAS(__DSYM(tmpnam),libc_dos_tmpnam);
+DEFINE_PUBLIC_ALIAS(__DSYM(tmpnam_r),libc_dos_tmpnam_r);
+DEFINE_PUBLIC_ALIAS(_tempnam,libc_dos_tempnam);
+
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wtmpnam),libc_16wtmpnam);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wtmpnam),libc_32wtmpnam);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wtmpnam),libc_dos_16wtmpnam);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wtmpnam),libc_dos_32wtmpnam);
+
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wtempnam),libc_16wtempnam);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wtempnam),libc_32wtempnam);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wtempnam),libc_dos_16wtempnam);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wtempnam),libc_dos_32wtempnam);
+
+DEFINE_PUBLIC_ALIAS(tmpnam_s,libc_tmpnam_s);
+DEFINE_PUBLIC_ALIAS(__DSYM(tmpnam_s),libc_dos_tmpnam_s);
+
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wtmpnam_s),libc_16wtmpnam_s);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wtmpnam_s),libc_32wtmpnam_s);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wtmpnam_s),libc_dos_16wtmpnam_s);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wtmpnam_s),libc_dos_32wtmpnam_s);
+
+DEFINE_PUBLIC_ALIAS(wperror,libc_32wperror);
+DEFINE_PUBLIC_ALIAS(_wperror,libc_16wperror);
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
 
 
 DECL_END

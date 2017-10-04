@@ -263,7 +263,14 @@ __LIBC int (__LIBCCALL sUscanf)(char32_t const *__restrict __s, char32_t const *
 #endif /* __USE_ISOC95 || __USE_UNIX98 */
 #ifdef __USE_ISOC99
 __LIBC float (__LIBCCALL c16tof)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __C16_FUNC(tof);
-__LIBC long double (__LIBCCALL c16told)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __C16_FUNC(told);
+__LIBC float (__LIBCCALL c32tof)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr) __C32_FUNC(tof);
+#ifdef __PE__
+__LIBC long double (__LIBCCALL c16told)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __ASMNAME("wcstod");
+__LIBC long double (__LIBCCALL c32told)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr) __ASMNAME(".kos.wcstod");
+#else /* __PE__ */
+__LIBC long double (__LIBCCALL c16told)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __ASMNAME(".dos.wcstold96");
+__LIBC long double (__LIBCCALL c32told)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr) __ASMNAME("wcstold");
+#endif /* !__PE__ */
 #if __SIZEOF_LONG_LONG__ == 8
 __LIBC __LONGLONG (__LIBCCALL c16toll)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __ASMNAME("_wcstoi64");
 __LIBC __ULONGLONG (__LIBCCALL c16toull)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __ASMNAME("_wcstoui64");
@@ -372,8 +379,13 @@ __LIBC double (__LIBCCALL c16tod_l)(char16_t const *__restrict __nptr, char16_t 
 __LIBC double (__LIBCCALL c32tod_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, __locale_t __loc) __ASMNAME("wcstod_l");
 __LIBC float (__LIBCCALL c16tof_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, __locale_t __loc) __ASMNAME("_wcstof_l");
 __LIBC float (__LIBCCALL c32tof_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, __locale_t __loc) __ASMNAME("wcstof_l");
-__LIBC long double (__LIBCCALL c16told_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, __locale_t __loc) __ASMNAME("_wcstold_l");
+#ifdef __PE__
+__LIBC long double (__LIBCCALL c16told_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, __locale_t __loc) __ASMNAME("_wcstod_l");
+__LIBC long double (__LIBCCALL c32told_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, __locale_t __loc) __ASMNAME("wcstod_l");
+#else /* __PE__ */
+__LIBC long double (__LIBCCALL c16told_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, __locale_t __loc) __ASMNAME("_wcstold96_l");
 __LIBC long double (__LIBCCALL c32told_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, __locale_t __loc) __ASMNAME("wcstold_l");
+#endif /* !__PE__ */
 __LIBC wint_t (__LIBCCALL getc16_unlocked)(__FILE *__stream) __ASMNAME("_fgetwc_nolock");
 __LIBC wint_t (__LIBCCALL getc32_unlocked)(__FILE *__stream) __ASMNAME("fgetwc_unlocked");
 __LIBC wint_t (__LIBCCALL fgetc16_unlocked)(__FILE *__stream) __ASMNAME("_fgetwc_nolock");

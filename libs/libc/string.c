@@ -156,16 +156,16 @@ DECL_BEGIN
 #  define WANT_STRNCASECMP_L  /* strncasecmp_l() */
 //#define WANT_STRDUP         /* strdup() */
 //#define WANT_STRNDUP        /* strndup() */
-//#define WANT_STRCAT_S       /* strcat_s() */
-//#define WANT_STRCPY_S       /* strcpy_s() */
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+#  define WANT_STRCAT_S       /* strcat_s() */
+#  define WANT_STRCPY_S       /* strcpy_s() */
 #  define WANT_STRLWR_S       /* strlwr_s() */
 #  define WANT_STRLWR_S_L     /* strlwr_s_l() */
 #  define WANT_STRUPR_S       /* strupr_s() */
 #  define WANT_STRUPR_S_L     /* strupr_s_l() */
+#  define WANT_STRNCAT_S      /* strncat_s() */
+#  define WANT_STRNCPY_S      /* strncpy_s() */
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
-//#define WANT_STRNCAT_S      /* strncat_s() */
-//#define WANT_STRNCPY_S      /* strncpy_s() */
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #  define WANT_STRSET_S       /* strset_s() */
 #  define WANT_STRNSET_S      /* strnset_s() */
@@ -737,8 +737,8 @@ DEFINE_PUBLIC_ALIAS(qecvt,libc_qecvt);
 DEFINE_PUBLIC_ALIAS(qfcvt,libc_qfcvt);
 DEFINE_PUBLIC_ALIAS(ecvt,libc_ecvt);
 DEFINE_PUBLIC_ALIAS(fcvt,libc_fcvt);
-DEFINE_PUBLIC_ALIAS(strtod_l,libc_strtod_l);
 DEFINE_PUBLIC_ALIAS(strtof_l,libc_strtof_l);
+DEFINE_PUBLIC_ALIAS(strtod_l,libc_strtod_l);
 DEFINE_PUBLIC_ALIAS(strtold_l,libc_strtold_l);
 DEFINE_PUBLIC_ALIAS(strtol_l,__LONGFUN_L(libc_strto));
 DEFINE_PUBLIC_ALIAS(strtoul_l,__LONGFUN_L(libc_strtou));
@@ -1130,6 +1130,18 @@ DEFINE_PUBLIC_ALIAS(_strupr_s,libc_strupr_s);
 DEFINE_PUBLIC_ALIAS(_strupr_s_l,libc_strupr_s_l);
 DEFINE_PUBLIC_ALIAS(_strset_s,libc_strset_s);
 DEFINE_PUBLIC_ALIAS(_strnset_s,libc_strnset_s);
+DEFINE_PUBLIC_ALIAS(strcat_s,libc_strcat_s);
+DEFINE_PUBLIC_ALIAS(strcpy_s,libc_strcpy_s);
+DEFINE_PUBLIC_ALIAS(strncat_s,libc_strncat_s);
+DEFINE_PUBLIC_ALIAS(strncpy_s,libc_strncpy_s);
+DEFINE_PUBLIC_ALIAS(strtok_s,libc_strtok_r);
+DEFINE_PUBLIC_ALIAS(__DSYM(strtold_l),libc_strtod_l);
+DEFINE_PUBLIC_ALIAS(_strtof_l,libc_strtof_l);
+DEFINE_PUBLIC_ALIAS(_strtoimax_l,libc_strto64_l);
+DEFINE_PUBLIC_ALIAS(_strtold_l,libc_strtod_l);
+DEFINE_PUBLIC_ALIAS(_strtoll_l,libc_strto64_l);
+DEFINE_PUBLIC_ALIAS(_strtoull_l,libc_strtou64_l);
+DEFINE_PUBLIC_ALIAS(_strtoumax_l,libc_strtou64_l);
 
 
 /* Define 16-bit wide string libc functions. */
@@ -1479,19 +1491,27 @@ DEFINE_PUBLIC_ALIAS(wcstoui64,libc_32wcstou64);
 DEFINE_PUBLIC_ALIAS(wtoi64_l,libc_32wto64_l);
 DEFINE_PUBLIC_ALIAS(wcstoi64_l,libc_32wcsto64_l);
 DEFINE_PUBLIC_ALIAS(wcstoui64_l,libc_32wcstou64_l);
+DEFINE_PUBLIC_ALIAS(_wtoll,libc_16wto64);
 DEFINE_PUBLIC_ALIAS(_wtoi64,libc_16wto64);
 DEFINE_PUBLIC_ALIAS(_wcstoi64,libc_16wcsto64);
 DEFINE_PUBLIC_ALIAS(_wcstoui64,libc_16wcstou64);
+DEFINE_PUBLIC_ALIAS(_wtoll_l,libc_16wto64_l);
 DEFINE_PUBLIC_ALIAS(_wtoi64_l,libc_16wto64_l);
+DEFINE_PUBLIC_ALIAS(_wcstoll_l,libc_16wcsto64_l);
 DEFINE_PUBLIC_ALIAS(_wcstoi64_l,libc_16wcsto64_l);
+DEFINE_PUBLIC_ALIAS(_wcstoimax_l,libc_16wcsto64_l);
+DEFINE_PUBLIC_ALIAS(_wcstoull_l,libc_16wcstou64_l);
 DEFINE_PUBLIC_ALIAS(_wcstoui64_l,libc_16wcstou64_l);
+DEFINE_PUBLIC_ALIAS(_wcstoumax_l,libc_16wcstou64_l);
 
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstof),libc_16wcstof);
 DEFINE_PUBLIC_ALIAS(__DSYM(wcstod),libc_16wcstod);
-DEFINE_PUBLIC_ALIAS(__DSYM(wcstold),libc_16wcstold);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstold),libc_16wcstod);
+DEFINE_PUBLIC_ALIAS(__DSYM(wcstold96),libc_16wcstold);
 DEFINE_PUBLIC_ALIAS(_wcstof_l,libc_16wcstof_l);
 DEFINE_PUBLIC_ALIAS(_wcstod_l,libc_16wcstod_l);
-DEFINE_PUBLIC_ALIAS(_wcstold_l,libc_16wcstold_l);
+DEFINE_PUBLIC_ALIAS(_wcstold_l,libc_16wcstod_l);
+DEFINE_PUBLIC_ALIAS(_wcstold96_l,libc_16wcstold_l);
 
 
 #if __SIZEOF_INT__ == __SIZEOF_SIZE_T__

@@ -412,48 +412,68 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc_32findnext32i64(intptr_t hdn, struct _wfin
 #undef _wfindnexti64
 
 DEFINE_PUBLIC_ALIAS(_findclose,libc_findclose);
+
 DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst),libc_findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst32),libc_findfirst32);
 DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst64),libc_findfirst64);
 DEFINE_PUBLIC_ALIAS(__KSYM(_findfirsti64),libc_findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst32i64),libc_findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst64i32),libc_findfirst64);
+
 DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst),libc_dos_findfirst32);
+DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst32),libc_dos_findfirst32);
 DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst64),libc_dos_findfirst64);
 DEFINE_PUBLIC_ALIAS(__DSYM(_findfirsti64),libc_dos_findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst32i64),libc_dos_findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst64i32),libc_dos_findfirst64);
 
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst),libc_16findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst32),libc_16findfirst32);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst64),libc_16findfirst64);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirsti64),libc_16findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst32i64),libc_16findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst64i32),libc_16findfirst64);
+
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst),libc_dos_16findfirst32);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst32),libc_dos_16findfirst32);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst64),libc_dos_16findfirst64);
 DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirsti64),libc_dos_16findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst32i64),libc_dos_16findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst64i32),libc_dos_16findfirst64);
 
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst),libc_32findfirst32);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst32),libc_32findfirst32);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst64),libc_32findfirst64);
 DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirsti64),libc_32findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst32i64),libc_32findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst64i32),libc_32findfirst64);
+
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst),libc_dos_32findfirst32);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst64),libc_dos_32findfirst64);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirsti64),libc_dos_32findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst32i64),libc_dos_32findfirst32i64);
+DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst64i32),libc_dos_32findfirst64);
 
 DEFINE_PUBLIC_ALIAS(_findnext,libc_findnext32);
+DEFINE_PUBLIC_ALIAS(_findnext32,libc_findnext32);
 DEFINE_PUBLIC_ALIAS(_findnext64,libc_findnext64);
 DEFINE_PUBLIC_ALIAS(_findnexti64,libc_findnext32i64);
+DEFINE_PUBLIC_ALIAS(_findnext32i64,libc_findnext32i64);
+DEFINE_PUBLIC_ALIAS(_findnext64i32,libc_findnext64);
+
 DEFINE_PUBLIC_ALIAS(_wfindnext,libc_32findnext32);
+DEFINE_PUBLIC_ALIAS(_wfindnext32,libc_32findnext32);
 DEFINE_PUBLIC_ALIAS(_wfindnext64,libc_32findnext64);
 DEFINE_PUBLIC_ALIAS(_wfindnexti64,libc_32findnext32i64);
+DEFINE_PUBLIC_ALIAS(_wfindnext32i64,libc_32findnext32i64);
+DEFINE_PUBLIC_ALIAS(_wfindnext64i32,libc_32findnext64);
+
 DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext),libc_16findnext32);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext32),libc_16findnext32);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext64),libc_16findnext64);
 DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnexti64),libc_16findnext32i64);
-
-#if 0
-DEFINE_PUBLIC_ALIAS(__KSYM(_findfirst64i32),libc_findfirst64i32);
-DEFINE_PUBLIC_ALIAS(__DSYM(_findfirst64i32),libc_dos_findfirst64i32);
-DEFINE_PUBLIC_ALIAS(__KSYMw16(_wfindfirst64i32),libc_16findfirst64i32);
-DEFINE_PUBLIC_ALIAS(__DSYMw16(_wfindfirst64i32),libc_dos_16findfirst64i32);
-DEFINE_PUBLIC_ALIAS(__KSYMw32(_wfindfirst64i32),libc_32findfirst64i32);
-DEFINE_PUBLIC_ALIAS(__DSYMw32(_wfindfirst64i32),libc_dos_32findfirst64i32);
-DEFINE_PUBLIC_ALIAS(_findnext64i32,libc_findnext64i32);
-DEFINE_PUBLIC_ALIAS(_wfindnext64i32,libc_32findnext64i32);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext64i32),libc_16findnext64i32);
-#endif
+DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext32i64),libc_16findnext32i64);
+DEFINE_PUBLIC_ALIAS(__DSYM(_wfindnext64i32),libc_16findnext64);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

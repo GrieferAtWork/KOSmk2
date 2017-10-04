@@ -2243,6 +2243,22 @@ DEFINE_PUBLIC_ALIAS(vscwprintf_l,libc_32vscwprintf_l);
 DEFINE_PUBLIC_ALIAS(swprintf_c_l,libc_32swprintf_c_l);
 DEFINE_PUBLIC_ALIAS(vswprintf_c_l,libc_32vswprintf_c_l);
 
+DEFINE_INTERN_ALIAS(libc_dos_16swprintf_s,libc_dos_16swprintf);
+DEFINE_INTERN_ALIAS(libc_dos_16vswprintf_s,libc_dos_16vswprintf);
+DEFINE_INTERN_ALIAS(libc_16swscanf_s,libc_16swscanf);
+DEFINE_INTERN_ALIAS(libc_16vswscanf_s,libc_16vswscanf);
+DEFINE_INTERN_ALIAS(libc_32swprintf_s,libc_32swprintf);
+DEFINE_INTERN_ALIAS(libc_32vswprintf_s,libc_32vswprintf);
+DEFINE_INTERN_ALIAS(libc_32swscanf_s,libc_32swscanf);
+DEFINE_INTERN_ALIAS(libc_32vswscanf_s,libc_32vswscanf);
+/* NOTE: Only exported for DOS-mode. */
+DEFINE_PUBLIC_ALIAS(swprintf_s,libc_dos_16swprintf_s);
+DEFINE_PUBLIC_ALIAS(vswprintf_s,libc_dos_16vswprintf_s);
+DEFINE_PUBLIC_ALIAS(swscanf_s,libc_16swscanf_s);
+DEFINE_PUBLIC_ALIAS(vswscanf_s,libc_16vswscanf_s);
+
+
+
 DEFINE_INTERN_ALIAS(libc_dos_16scwprintf_p,libc_dos_16scwprintf);
 DEFINE_INTERN_ALIAS(libc_dos_16vscwprintf_p,libc_dos_16vscwprintf);
 DEFINE_INTERN_ALIAS(libc_dos_16scwprintf_p_l,libc_dos_16scwprintf_l);

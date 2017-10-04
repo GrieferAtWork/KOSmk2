@@ -44,6 +44,11 @@
 
 DECL_BEGIN
 
+PUBLIC int      getdate_err = 0;
+PUBLIC char    *tzname[2] = {NULL,NULL};
+PUBLIC int      daylight = 0;
+PUBLIC long int timezone = 0;
+
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 DEFINE_PUBLIC_ALIAS(_tzname,tzname);
 DEFINE_PUBLIC_ALIAS(_timezone,timezone);
@@ -52,10 +57,6 @@ DEFINE_PUBLIC_ALIAS(_tzset,libc_tzset);
 DEFINE_PUBLIC_ALIAS(__tzname,tzname);
 DEFINE_PUBLIC_ALIAS(__daylight,daylight);
 DEFINE_PUBLIC_ALIAS(__timezone,timezone);
-PUBLIC int      getdate_err;
-PUBLIC char    *tzname[2];
-PUBLIC int      daylight;
-PUBLIC long int timezone;
 
 INTERN void LIBCCALL libc_tzset(void) {
  /* TODO */

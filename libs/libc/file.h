@@ -523,10 +523,6 @@ INTDEF int ATTR_CDECL libc_16fwscanf_s(FILE *__restrict self, char16_t const *__
 INTDEF int LIBCCALL   libc_16vfwscanf_s(FILE *__restrict self, char16_t const *__restrict format, va_list args);
 INTDEF int ATTR_CDECL libc_16wscanf_s(char16_t const *__restrict format, ...);
 INTDEF int LIBCCALL   libc_16vwscanf_s(char16_t const *__restrict format, va_list args);
-INTDEF int ATTR_CDECL libc_16swprintf_s(char16_t *__restrict buf, size_t buflen, char16_t const *__restrict format, ...);
-INTDEF int LIBCCALL   libc_16vswprintf_s(char16_t *__restrict buf, size_t buflen, char16_t const *__restrict format, va_list args);
-INTDEF int ATTR_CDECL libc_16swscanf_s(char16_t const *__restrict src, char16_t const *__restrict format, ...);
-INTDEF int LIBCCALL   libc_16vswscanf_s(char16_t const *__restrict src, char16_t const *__restrict format, va_list args);
 INTDEF int ATTR_CDECL libc_32fwprintf_s(FILE *__restrict self, char32_t const *__restrict format, ...);
 INTDEF int LIBCCALL   libc_32vfwprintf_s(FILE *__restrict self, char32_t const *__restrict format, va_list args);
 INTDEF int ATTR_CDECL libc_32wprintf_s(char32_t const *__restrict format, ...);
@@ -535,35 +531,12 @@ INTDEF int ATTR_CDECL libc_32fwscanf_s(FILE *__restrict self, char32_t const *__
 INTDEF int LIBCCALL   libc_32vfwscanf_s(FILE *__restrict self, char32_t const *__restrict format, va_list args);
 INTDEF int ATTR_CDECL libc_32wscanf_s(char32_t const *__restrict format, ...);
 INTDEF int LIBCCALL   libc_32vwscanf_s(char32_t const *__restrict format, va_list args);
-INTDEF int ATTR_CDECL libc_32swprintf_s(char32_t *__restrict buf, size_t buflen, char32_t const *__restrict format, ...);
-INTDEF int LIBCCALL   libc_32vswprintf_s(char32_t *__restrict buf, size_t buflen, char32_t const *__restrict format, va_list args);
-INTDEF int ATTR_CDECL libc_32swscanf_s(char32_t const *__restrict src, char32_t const *__restrict format, ...);
-INTDEF int LIBCCALL   libc_32vswscanf_s(char32_t const *__restrict src, char32_t const *__restrict format, va_list args);
-//DEFINE_PUBLIC_ALIAS(swprintf_s,libc_16swprintf_s);
-//DEFINE_PUBLIC_ALIAS(vswprintf_s,libc_16vswprintf_s);
-//DEFINE_PUBLIC_ALIAS(swscanf_s,libc_16swscanf_s);
-//DEFINE_PUBLIC_ALIAS(vswscanf_s,libc_16vswscanf_s);
+
+
+/* DOS Console I/O function aliases. */
+/* TODO: Add <conio.h> */
+
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -572,23 +545,11 @@ INTDEF int LIBCCALL   libc_32vswscanf_s(char32_t const *__restrict src, char32_t
 
 /* FILE-unrelated stdio functions. */
 struct obstack;
-INTDEF char *LIBCCALL tmpnam(char *__s);
-INTDEF char *LIBCCALL tmpnam_r(char *__s);
 INTDEF void LIBCCALL perror(char const *__s);
 INTDEF char *LIBCCALL ctermid(char *__s);
 INTDEF int LIBCCALL obstack_printf(struct obstack *__restrict __obstack, char const *__restrict format, ...);
 INTDEF int LIBCCALL obstack_vprintf(struct obstack *__restrict __obstack, char const *__restrict format, va_list args);
 INTDEF char *LIBCCALL cuserid(char *__s);
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTDEF __ATTR_MALLOC char *LIBCCALL tempnam(char const *dir, char const *pfx) __PE_ASMNAME("_tempnam");
-INTDEF errno_t LIBCCALL tmpnam_s(char *__restrict buf, size_t bufsize);
-INTDEF char *LIBCCALL _tempnam(char const *dir, char const *pfx) __KOS_ASMNAME("tempnam");
-INTDEF char16_t *LIBCCALL _wtmpnam(char16_t *__restrict buf) __KOS_ASMNAME("wtmpnam");
-INTDEF errno_t LIBCCALL _wtmpnam_s(char16_t *__restrict buf, size_t buflen) __KOS_ASMNAME("wtmpnam_s");
-INTDEF char16_t *LIBCCALL _wtempnam(char16_t const *dir, char16_t const *pfx) __KOS_ASMNAME("wtempnam");
-
-INTDEF void LIBCCALL _wperror(wchar_t const *__restrict errmsg) __KOS_ASMNAME("wperror");
-#endif /* CONFIG_LIBC_NO_DOS_LIBC */
 
 
 DECL_END

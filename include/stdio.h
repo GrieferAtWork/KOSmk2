@@ -202,10 +202,10 @@ __LIBC __NONNULL((1)) int (__LIBCCALL remove)(char const *__file) __UFS_FUNC(rem
 __LIBC int (__LIBCCALL rename)(char const *__old, char const *__new) __UFS_FUNC(rename);
 #endif /* !__rename_defined */
 #ifdef __USE_KOS
-__LIBC __WUNUSED char *(__LIBCCALL tmpnam)(char __buf[L_tmpnam]);
-#else
-__LIBC __WUNUSED char *(__LIBCCALL tmpnam)(char *__buf);
-#endif
+__LIBC __WUNUSED char *(__LIBCCALL tmpnam)(char __buf[L_tmpnam]) __UFS_FUNC(tmpnam);
+#else /* __USE_KOS */
+__LIBC __WUNUSED char *(__LIBCCALL tmpnam)(char *__buf) __UFS_FUNC(tmpnam);
+#endif /* !__USE_KOS */
 __LIBC int (__LIBCCALL fclose)(__FILE *__stream);
 __LIBC int (__LIBCCALL fflush)(__FILE *__stream);
 __LIBC void (__LIBCCALL setbuf)(__FILE *__restrict __stream, char *__restrict __buf);
@@ -372,7 +372,7 @@ __LIBC int (__LIBCCALL fgetpos64)(__FILE *__restrict __stream, fpos64_t *__restr
 __LIBC int (__LIBCCALL fsetpos64)(__FILE *__stream, fpos64_t const *__pos);
 #endif /* __USE_LARGEFILE64 */
 #ifdef __USE_MISC
-__LIBC __WUNUSED char *(__LIBCCALL tmpnam_r)(char *__buf);
+__LIBC __WUNUSED char *(__LIBCCALL tmpnam_r)(char *__buf) __UFS_FUNC(tmpnam_r);
 __LIBC int (__LIBCCALL fflush_unlocked)(__FILE *__stream) __PE_ASMNAME("_fflush_nolock");
 __LIBC void (__LIBCCALL setbuffer)(__FILE *__restrict __stream, char *__restrict __buf, size_t __size);
 __LIBC void (__LIBCCALL setlinebuf)(__FILE *__stream);
@@ -386,7 +386,11 @@ __LIBC __WUNUSED int (__LIBCCALL ferror_unlocked)(__FILE *__stream);
 __LIBC __WUNUSED int (__LIBCCALL fileno_unlocked)(__FILE *__stream) __ASMNAME2("fileno","_fileno");
 #endif /* __USE_MISC */
 #if defined(__USE_MISC) || defined(__USE_XOPEN) || defined(__USE_DOS)
-__LIBC __ATTR_MALLOC __WUNUSED char *(__LIBCCALL tempnam)(char const *__dir, char const *__pfx) __PE_ASMNAME("_tempnam");
+#ifdef __USE_DOSFS
+__LIBC __ATTR_MALLOC __WUNUSED char *(__LIBCCALL tempnam)(char const *__dir, char const *__pfx) __ASMNAME("_tempnam");
+#else /* __USE_DOSFS */
+__LIBC __ATTR_MALLOC __WUNUSED char *(__LIBCCALL tempnam)(char const *__dir, char const *__pfx);
+#endif /* !__USE_DOSFS */
 #endif /* __USE_MISC || __USE_XOPEN || __USE_DOS */
 #if defined(__USE_POSIX) || defined(__USE_DOS)
 __LIBC __WUNUSED __FILE *(__LIBCCALL fdopen)(int __fd, char const *__restrict __modes) __PE_ASMNAME("_fdopen");
@@ -625,7 +629,11 @@ __LIBC int (__LIBCCALL _fgetchar)(void) __ASMNAME("getchar");
 __LIBC int (__LIBCCALL _fputchar)(int __ch) __ASMNAME("putchar");
 __LIBC int (__LIBCCALL _getw)(__FILE *__restrict __file) __KOS_ASMNAME("getw");
 __LIBC int (__LIBCCALL _putw)(int __w, __FILE *__restrict __file) __KOS_ASMNAME("putw");
-__LIBC char *(__LIBCCALL _tempnam)(char const *__dir, char const *__pfx) __KOS_ASMNAME("tempnam");
+#ifdef __USE_DOSFS
+__LIBC __ATTR_MALLOC char *(__LIBCCALL _tempnam)(char const *__dir, char const *__pfx);
+#else /* __USE_DOSFS */
+__LIBC __ATTR_MALLOC char *(__LIBCCALL _tempnam)(char const *__dir, char const *__pfx) __ASMNAME("tempnam");
+#endif /* !__USE_DOSFS */
 __LIBC int (__LIBCCALL _fseeki64)(__FILE *__restrict __file, __INT64_TYPE__ __off, int __whence) __KOS_ASMNAME("fseeko64");
 __LIBC __INT64_TYPE__ (__LIBCCALL _ftelli64)(__FILE *__restrict __file) __KOS_ASMNAME("ftello64");
 
@@ -705,7 +713,7 @@ __LIBC errno_t (__LIBCCALL clearerr_s)(__FILE *__restrict __file);
 __LIBC size_t (__LIBCCALL fread_s)(void *__buf, size_t __bufsize, size_t __elemsize, size_t __elemcount, __FILE *__restrict __file);
 __LIBC char *(__LIBCCALL gets_s)(char *__restrict __buf, rsize_t __bufsize);
 __LIBC errno_t (__LIBCCALL tmpfile_s)(__FILE **__pfile);
-__LIBC errno_t (__LIBCCALL tmpnam_s)(char *__restrict __buf, rsize_t __bufsize);
+__LIBC errno_t (__LIBCCALL tmpnam_s)(char *__restrict __buf, rsize_t __bufsize) __UFS_FUNC(tmpnam_s);
 
 __LIBC int (__ATTR_CDECL printf_s)(char const *__restrict __format, ...) __ASMNAME("printf");
 __LIBC int (__LIBCCALL vprintf_s)(char const *__restrict __format, __VA_LIST __args) __ASMNAME("vprintf");
@@ -973,9 +981,9 @@ __LIBC int (__ATTR_CDECL swscanf_s)(wchar_t const *__restrict __src, wchar_t con
 __LIBC int (__LIBCCALL vswscanf_s)(wchar_t const *__restrict __src, wchar_t const *__restrict __format, __VA_LIST __args) __ASMNAME("vswscanf");
 #endif /* __USE_DOS_SLIB */
 
-__LIBC wchar_t *(__LIBCCALL _wtmpnam)(wchar_t *__restrict __buf) __KOS_ASMNAME("wtmpnam");
-__LIBC errno_t (__LIBCCALL _wtmpnam_s)(wchar_t *__restrict __buf, size_t __buflen) __KOS_ASMNAME("wtmpnam_s");
-__LIBC wchar_t *(__LIBCCALL _wtempnam)(wchar_t const *__dir, wchar_t const *__pfx) __KOS_ASMNAME("wtempnam");
+__LIBC wchar_t *(__LIBCCALL _wtmpnam)(wchar_t *__restrict __buf) __WFS_FUNC(_wtmpnam);
+__LIBC errno_t (__LIBCCALL _wtmpnam_s)(wchar_t *__restrict __buf, size_t __buflen) __WFS_FUNC(_wtmpnam_s);
+__LIBC wchar_t *(__LIBCCALL _wtempnam)(wchar_t const *__dir, wchar_t const *__pfx) __WFS_FUNC(_wtempnam);
 __LIBC int (__LIBCCALL _wremove)(wchar_t const *__restrict __file) __WFS_FUNC(_wremove);
 
 #ifdef __PE__

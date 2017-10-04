@@ -1324,7 +1324,6 @@ DEFINE_PUBLIC_ALIAS(fputws_unlocked,libc_32fputws_unlocked);
 
 /* DOS Extensions. */
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-
 DEFINE_INTERN_ALIAS(libc_dos_fopen64,libc_dos_fopen);
 INTERN ATTR_DOSTEXT FILE *LIBCCALL
 libc_dos_fopen(char const *__restrict filename,
@@ -1991,7 +1990,7 @@ DEFINE_INTERN_ALIAS(libc_32wscanf_s,libc_32wscanf);
 DEFINE_INTERN_ALIAS(libc_32vwscanf_s,libc_32vwscanf);
 
 /* NOTE: Only export 16-bit versions, as they're always redirected in any case. */
-DEFINE_PUBLIC_ALIAS(wprintf_s,libc_16fwprintf_s);
+DEFINE_PUBLIC_ALIAS(fwprintf_s,libc_16fwprintf_s);
 DEFINE_PUBLIC_ALIAS(vfwprintf_s,libc_16vfwprintf_s);
 DEFINE_PUBLIC_ALIAS(wprintf_s,libc_16wprintf_s);
 DEFINE_PUBLIC_ALIAS(vwprintf_s,libc_16vwprintf_s);
@@ -1999,6 +1998,7 @@ DEFINE_PUBLIC_ALIAS(fwscanf_s,libc_16fwscanf_s);
 DEFINE_PUBLIC_ALIAS(vfwscanf_s,libc_16vfwscanf_s);
 DEFINE_PUBLIC_ALIAS(wscanf_s,libc_16wscanf_s);
 DEFINE_PUBLIC_ALIAS(vwscanf_s,libc_16vwscanf_s);
+
 
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */
 
