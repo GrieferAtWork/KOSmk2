@@ -14,6 +14,8 @@ Many of the core ideas of the old KOS remain, such as signal-based synchronizati
 
 But don't take my word for it. - You can actually <b>run BUSYBOX</b> and <b>NCURSES</b> on the thing!
 
+And if you think that's pretty awesome, wait until you realize that this kernel can run and link <i>.exe</i> and <i>.dll</i> files <b>compiled for Windows</b>!
+
 Like everything, this is another <b>one-person project</b>, with development (of this rendition) having started on <b>5.7.2017</b>.
 
 Chaos|KOS - Even more chaotic that last time.
@@ -53,7 +55,10 @@ Chaos|KOS - Even more chaotic that last time.
    - The only thing that what you call a process must have in common is a secondary, shared signal pool that is per-thread-group
    - SMP support
    - low-cpu/true idle (Using per-cpu IDLE threads)
- - ELF binaries/libraries (<i>no extension</i> / .so)
+ - ELF binaries/libraries (<i>no extension</i> / <b>.so</b>)
+ - PE binaries/libraries (<b>.exe</b> / <b>.dll</b>)
+   - <b>TRUE</b> cross-platform native execution of executables.
+   - Natively run executables originally compiled for windows. (s.a.: "apps/hybrid_demo/main.exe")
  - Disk I/O
    - Builtin driver for BIOS-disk support allows for access to boot USB stick
    - Partition tables

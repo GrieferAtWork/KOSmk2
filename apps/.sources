@@ -53,3 +53,6 @@ BEGIN APPLICATION("my_test")
 	SOURCE("test/my_test.c")
 END
 
+DISK_SYNC("hybrid_demo/main.exe","/bin/hybrid-demo.exe")
+
+
