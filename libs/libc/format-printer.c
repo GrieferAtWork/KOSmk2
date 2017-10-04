@@ -2093,12 +2093,12 @@ DEFINE_INTERN_ALIAS(libc_dos_snprintf_c_l,libc_dos_sprintf_p_l);
 DEFINE_INTERN_ALIAS(libc_dos_vsnprintf_c_l,libc_dos_vsprintf_p_l);
 INTERN ATTR_DOSTEXT ssize_t LIBCCALL
 libc_dos_vsnprintf_broken(char *__restrict buf, size_t buflen,
-                          const char *__restrict format, va_list args) {
+                          char const *__restrict format, va_list args) {
  size_t result = libc_dos_vsnprintf(buf,buflen,format,args);
  return result < buflen ? (ssize_t)result : -1;
 }
 INTERN ATTR_DOSTEXT ssize_t ATTR_CDECL
-libc_dos_snprintf_broken(char *__restrict buf, size_t buflen, const char *__restrict format, ...) {
+libc_dos_snprintf_broken(char *__restrict buf, size_t buflen, char const *__restrict format, ...) {
  ssize_t result; va_list args; va_start(args,format);
  result = libc_dos_vsnprintf_broken(buf,buflen,format,args);
  va_end(args);

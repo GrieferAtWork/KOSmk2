@@ -18,11 +18,15 @@
  */
 
 /*
+ * #define DECL                  ... <declaration visibility/storage>
+ * #define DOS_DECL              ... <declaration visibility/storage for dos extension functions>
+ * #define DEFINE_ALIAS(new,old) ... <Define 'new' as an alias for 'old'>
  * #define T                     ... <character type> (e.g.: 'char', 'char32_t')
  * #define Tneedle               ... <needle type> (e.g.: 'int', 'char32_t')
  * #define Ts                    ... <signed type> (e.g.: 'signed char', 's32')
  * #define Tu                    ... <unsigned type> (e.g.: 'unsigned char', 'u32')
  * #define Tn                    ... <needle type> (e.g.: 'int', 'char32_t')
+ * #define X(x)                  ... <Symbol name generator> (e.g.: 'libc_##x', 'libc_32w##x') [OPTIONAL] (Used for 'libc_splitpath' / 'libc_32wsplitpath', etc.)
  * #define Xstr(x)               ... <Symbol name generator> (e.g.: 'libc_str##x', 'libc_32wcs##x')
  * #define Xstp(x)               ... <Symbol name generator> (e.g.: 'libc_stp##x', 'libc_32wcp##x')
  * #define Xmb(x)                ... <Symbol name generator> (e.g.: 'libc_32mb##x') [OPTIONAL]
@@ -1528,7 +1532,45 @@ DECL T *LIBCCALL Xxa(s64to)(s64 val, T *dst, int radix) {
 #endif /* WANT_S64TOA */
 
 
+#ifdef WANT_SPLITPATH_S
+#undef WANT_SPLITPATH_S
+DECL errno_t LIBCCALL X(splitpath_s)
+(T const *__restrict abspath, T *drive, size_t drivelen,
+ T *dir, size_t dirlen, T *file, size_t filelen,
+ T *ext, size_t extlen) {
+	if (!drive) drivelen = 0;
+	if (!dir) dirlen = 0;
+	if (!file) filelen = 0;
+	if (!ext) extlen = 0;
+
+	(void)drivelen;
+	(void)dirlen;
+	(void)filelen;
+	(void)extlen;
+	/* TODO */
+	
+	NOT_IMPLEMENTED();
+	return EINVAL;
+}
+#endif
+
+#ifdef WANT_SPLITPATH
+#undef WANT_SPLITPATH
+DECL void LIBCCALL X(splitpath)
+(T const *__restrict abspath, T *drive, T *dir, T *file, T *ext) {
+	X(splitpath_s)(abspath,
+	               drive,__DOS_MAX_DRIVE,
+	               dir,__DOS_MAX_DIR,
+	               file,__DOS_MAX_FNAME,
+	               ext,__DOS_MAX_EXT);
+}
+#endif
+
+
 #undef DEFINE_ALIAS
+#ifdef DOS_DECL
+#undef DOS_DECL
+#endif
 #undef DECL
 #undef UTFXTO8
 #undef UTF8TOX
@@ -1542,6 +1584,9 @@ DECL T *LIBCCALL Xxa(s64to)(s64 val, T *dst, int radix) {
 #undef Tn
 #undef Xstr
 #undef Xstp
+#ifdef X
+#undef X
+#endif
 #ifdef Xmb
 #undef Xmb
 #endif

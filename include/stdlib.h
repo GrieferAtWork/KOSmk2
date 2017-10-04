@@ -781,6 +781,19 @@ __LIBC __WUNUSED char *(__LIBCCALL ptsname)(int __fd);
 __LIBC __WUNUSED int (__LIBCCALL posix_openpt)(int __oflag);
 #endif /* __USE_XOPEN2KXSI */
 
+#define __DOS_MAX_PATH         260
+#define __DOS_MAX_DRIVE        3
+#define __DOS_MAX_DIR          256
+#define __DOS_MAX_FNAME        256
+#define __DOS_MAX_EXT          256
+#define __DOS_OUT_TO_DEFAULT   0
+#define __DOS_OUT_TO_STDERR    1
+#define __DOS_OUT_TO_MSGBOX    2
+#define __DOS_REPORT_ERRMODE   3
+#define __DOS_WRITE_ABORT_MSG  0x1
+#define __DOS_CALL_REPORTFAULT 0x2
+#define __DOS_MAX_ENV          0x7fff
+
 /* DOS Extensions. */
 #ifdef __USE_DOS
 #ifndef __errno_t_defined
@@ -806,18 +819,18 @@ typedef int (__LIBCCALL *_onexit_t)(void);
 #   define __max(a,b) ((b) < (a) ? (a) : (b))
 #endif
 
-#define _MAX_PATH         260
-#define _MAX_DRIVE        3
-#define _MAX_DIR          256
-#define _MAX_FNAME        256
-#define _MAX_EXT          256
-#define _OUT_TO_DEFAULT   0
-#define _OUT_TO_STDERR    1
-#define _OUT_TO_MSGBOX    2
-#define _REPORT_ERRMODE   3
-#define _WRITE_ABORT_MSG  0x1
-#define _CALL_REPORTFAULT 0x2
-#define _MAX_ENV          0x7fff
+#define _MAX_PATH         __DOS_MAX_PATH
+#define _MAX_DRIVE        __DOS_MAX_DRIVE
+#define _MAX_DIR          __DOS_MAX_DIR
+#define _MAX_FNAME        __DOS_MAX_FNAME
+#define _MAX_EXT          __DOS_MAX_EXT
+#define _OUT_TO_DEFAULT   __DOS_OUT_TO_DEFAULT
+#define _OUT_TO_STDERR    __DOS_OUT_TO_STDERR
+#define _OUT_TO_MSGBOX    __DOS_OUT_TO_MSGBOX
+#define _REPORT_ERRMODE   __DOS_REPORT_ERRMODE
+#define _WRITE_ABORT_MSG  __DOS_WRITE_ABORT_MSG
+#define _CALL_REPORTFAULT __DOS_CALL_REPORTFAULT
+#define _MAX_ENV          __DOS_MAX_ENV
 
 #ifndef _CRT_ERRNO_DEFINED
 #define _CRT_ERRNO_DEFINED 1
@@ -1131,7 +1144,7 @@ __NAMESPACE_STD_USING(wcstold)
 #endif /* !_WSTDLIB_DEFINED */
 
 #define _CVTBUFSIZE   349
-__LIBC char *(__LIBCCALL _fullpath)(char *__buf, const char *__path, size_t __buflen);
+__LIBC char *(__LIBCCALL _fullpath)(char *__buf, char const *__path, size_t __buflen);
 __LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL _ecvt)(double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign) __KOS_ASMNAME("ecvt");
 __LIBC __WUNUSED __NONNULL((3,4)) char *(__LIBCCALL _fcvt)(double __val, int __ndigit, int *__restrict __decpt, int *__restrict __sign) __KOS_ASMNAME("fcvt");
 __LIBC __WUNUSED __NONNULL((3)) char *(__LIBCCALL _gcvt)(double __val, int __ndigit, char *__buf) __KOS_ASMNAME("gcvt");
@@ -1178,15 +1191,15 @@ __NAMESPACE_STD_USING(perror)
 #endif /* !__perror_defined */
 #endif  /* _CRT_PERROR_DEFINED */
 
-__LIBC int (__LIBCCALL _putenv)(const char *__envstr) __KOS_ASMNAME("putenv");
-__LIBC errno_t (__LIBCCALL _putenv_s)(const char *__name, const char *__val);
+__LIBC int (__LIBCCALL _putenv)(char const *__envstr) __KOS_ASMNAME("putenv");
+__LIBC errno_t (__LIBCCALL _putenv_s)(char const *__name, char const *__val);
 
-__LIBC void (__LIBCCALL _makepath)(char *__buf, const char *__drive, const char *__dir, const char *__file, const char *__ext);
-__LIBC void (__LIBCCALL _searchenv)(const char *__file, const char *__envvar, char *__resultpath);
-__LIBC void (__LIBCCALL _splitpath)(const char *__abspath, char *__drive, char *__dir, char *__file, char *__ext);
-__LIBC errno_t (__LIBCCALL _makepath_s)(char *__buf, size_t __buflen, const char *__drive, const char *__dir, const char *__file, const char *__ext);
-__LIBC errno_t (__LIBCCALL _searchenv_s)(const char *__file, const char *__envvar, char *__resultpath, size_t __buflen);
-__LIBC errno_t (__LIBCCALL _splitpath_s)(const char *__abspath, char *__drive, size_t __drivelen, char *__dir, size_t __dirlen, char *__file, size_t __filelen, char *__ext, size_t __extlen);
+__LIBC void (__LIBCCALL _makepath)(char *__restrict __buf, char const *__drive, char const *__dir, char const *__file, char const *__ext);
+__LIBC void (__LIBCCALL _searchenv)(char const *__file, char const *__envvar, char *__restrict __resultpath);
+__LIBC void (__LIBCCALL _splitpath)(char const *__restrict __abspath, char *__drive, char *__dir, char *__file, char *__ext);
+__LIBC errno_t (__LIBCCALL _makepath_s)(char *__buf, size_t __buflen, char const *__drive, char const *__dir, char const *__file, char const *__ext);
+__LIBC errno_t (__LIBCCALL _searchenv_s)(char const *__file, char const *__envvar, char *__restrict __resultpath, size_t __buflen);
+__LIBC errno_t (__LIBCCALL _splitpath_s)(char const *__restrict __abspath, char *__drive, size_t __drivelen, char *__dir, size_t __dirlen, char *__file, size_t __filelen, char *__ext, size_t __extlen) __KOS_ASMNAME("splitpath_s");
 
 #if __SIZEOF_INT__ == __SIZEOF_SIZE_T__ && !defined(__PE__)
 __LIBC __NONNULL((1,2)) void (__LIBCCALL _swab)(void const *__restrict __from, void *__restrict __to, int __n_bytes) __ASMNAME("swab");
@@ -1198,18 +1211,19 @@ __LIBC __NONNULL((1,2)) void (__LIBCCALL _swab)(void const *__restrict __from, v
 #define _WSTDLIBP_DEFINED 1
 __LIBC wchar_t *(__LIBCCALL _wfullpath)(wchar_t *__restrict __abspath, wchar_t const *__restrict __path, size_t __maxlen);
 __LIBC int (__LIBCCALL _wputenv)(wchar_t const *__restrict __envstr);
-__LIBC void (__LIBCCALL _wmakepath)(wchar_t *__restrict __dst, wchar_t const *__restrict __drive, wchar_t const *__restrict __dir, wchar_t const *__restrict __file, wchar_t const *__restrict __ext) __KOS_ASMNAME("wmakepath");
-__LIBC void (__LIBCCALL _wsearchenv)(wchar_t const *__restrict __file, wchar_t const *__restrict __varname,  wchar_t *__restrict __dst);
-__LIBC void (__LIBCCALL _wsplitpath)(wchar_t const *__restrict __abspath, wchar_t *__restrict __drive, wchar_t *__restrict __dir, wchar_t *__restrict __file, wchar_t *__restrict __ext);
-__LIBC errno_t (__LIBCCALL _wmakepath_s)(wchar_t *__restrict __dst, size_t __maxlen, wchar_t const *__restrict __drive, wchar_t const *__restrict __dir, wchar_t const *__restrict __file, wchar_t const *__restrict __ext) __KOS_ASMNAME("wmakepath_s");
-__LIBC errno_t (__LIBCCALL _wputenv_s)(wchar_t const *__restrict __name, wchar_t const *__restrict __val);
-__LIBC errno_t (__LIBCCALL _wsearchenv_s)(wchar_t const *__restrict __file, wchar_t const *__restrict __varname, wchar_t * __restrict __dst, size_t __maxlen);
-__LIBC errno_t (__LIBCCALL _wsplitpath_s)(wchar_t const *__restrict __abspath, wchar_t *__restrict __drive, size_t __drivelen, wchar_t *__restrict __dir, size_t __dirlen, wchar_t *__restrict __file, size_t __filelen, wchar_t *__restrict __ext, size_t __extlen);
+__LIBC void (__LIBCCALL _wmakepath)(wchar_t *__restrict __dst, wchar_t const *__drive, wchar_t const *__dir, wchar_t const *__file, wchar_t const *__ext) __KOS_ASMNAME("wmakepath");
+__LIBC void (__LIBCCALL _wsearchenv)(wchar_t const *__file, wchar_t const *__varname,  wchar_t *__restrict __dst);
+__LIBC void (__LIBCCALL _wsplitpath)(wchar_t const *__restrict __abspath, wchar_t *__drive, wchar_t *__dir, wchar_t *__file, wchar_t *__ext) __KOS_ASMNAME("wsplitpath");
+__LIBC errno_t (__LIBCCALL _wmakepath_s)(wchar_t *__restrict __dst, size_t __maxlen, wchar_t const *__drive, wchar_t const *__dir, wchar_t const *__file, wchar_t const *__ext) __KOS_ASMNAME("wmakepath_s");
+__LIBC errno_t (__LIBCCALL _wputenv_s)(wchar_t const *__name, wchar_t const *__val);
+__LIBC errno_t (__LIBCCALL _wsearchenv_s)(wchar_t const *__file, wchar_t const *__varname, wchar_t *__restrict __dst, size_t __maxlen);
+__LIBC errno_t (__LIBCCALL _wsplitpath_s)(wchar_t const *__restrict __abspath, wchar_t *__drive, size_t __drivelen, wchar_t *__dir, size_t __dirlen, wchar_t *__file, size_t __filelen, wchar_t *__ext, size_t __extlen) __KOS_ASMNAME("wsplitpath_s");
+#endif /* !_WSTDLIBP_DEFINED */
+
 #ifndef _CRT_WPERROR_DEFINED
 #define _CRT_WPERROR_DEFINED 1
 __LIBC void (__LIBCCALL _wperror)(wchar_t const *__restrict __errmsg) __KOS_ASMNAME("wperror");
 #endif /* !_CRT_WPERROR_DEFINED */
-#endif /* !_WSTDLIBP_DEFINED */
 
 __LIBC void (__LIBCCALL _seterrormode)(int __mode);
 __LIBC void (__LIBCCALL _beep)(unsigned int __freq, unsigned int __duration);

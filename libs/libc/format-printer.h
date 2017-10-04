@@ -149,8 +149,8 @@ INTDEF size_t LIBCCALL   libc_dos_vscprintf_p_l(char const *__restrict format, l
 INTDEF size_t ATTR_CDECL libc_dos_scprintf_p_l(char const *__restrict format, locale_t locale, ...);
 
 /* The following 4 return an error, rather than the required size when the buffer is too small */
-INTDEF ssize_t ATTR_CDECL libc_dos_snprintf_broken(char *__restrict buf, size_t buflen, const char *__restrict format, ...);
-INTDEF ssize_t LIBCCALL   libc_dos_vsnprintf_broken(char *__restrict buf, size_t buflen, const char *__restrict format, va_list args);
+INTDEF ssize_t ATTR_CDECL libc_dos_snprintf_broken(char *__restrict buf, size_t buflen, char const *__restrict format, ...);
+INTDEF ssize_t LIBCCALL   libc_dos_vsnprintf_broken(char *__restrict buf, size_t buflen, char const *__restrict format, va_list args);
 INTDEF ssize_t ATTR_CDECL libc_dos_snprintf_l_broken(char *__restrict buf, size_t buflen, char const *__restrict format, locale_t locale, ...);
 INTDEF ssize_t LIBCCALL   libc_dos_vsnprintf_l_broken(char *__restrict buf, size_t buflen, char const *__restrict format, locale_t locale, va_list args);
 INTDEF size_t ATTR_CDECL  libc_dos_snprintf_c(char *__restrict buf, size_t buflen, char const *__restrict format, ...);

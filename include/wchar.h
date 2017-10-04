@@ -1315,13 +1315,13 @@ __LIBC __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __lo
 #define _WSTDLIBP_DEFINED 1
 __LIBC wchar_t *(__LIBCCALL _wfullpath)(wchar_t *__restrict __abspath, wchar_t const *__restrict __path, size_t __maxlen);
 __LIBC int (__LIBCCALL _wputenv)(wchar_t const *__restrict __envstr);
-__LIBC void (__LIBCCALL _wmakepath)(wchar_t *__restrict __dst, wchar_t const *__restrict __drive, wchar_t const *__restrict __dir, wchar_t const *__restrict __file, wchar_t const *__restrict __ext) __KOS_ASMNAME("wmakepath");
-__LIBC void (__LIBCCALL _wsearchenv)(wchar_t const *__restrict __file, wchar_t const *__restrict __varname,  wchar_t *__restrict __dst);
-__LIBC void (__LIBCCALL _wsplitpath)(wchar_t const *__restrict __abspath, wchar_t *__restrict __drive, wchar_t *__restrict __dir, wchar_t *__restrict __file, wchar_t *__restrict __ext);
-__LIBC errno_t (__LIBCCALL _wmakepath_s)(wchar_t *__restrict __dst, size_t __maxlen, wchar_t const *__restrict __drive, wchar_t const *__restrict __dir, wchar_t const *__restrict __file, wchar_t const *__restrict __ext) __KOS_ASMNAME("wmakepath_s");
-__LIBC errno_t (__LIBCCALL _wputenv_s)(wchar_t const *__restrict __name, wchar_t const *__restrict __val);
-__LIBC errno_t (__LIBCCALL _wsearchenv_s)(wchar_t const *__restrict __file, wchar_t const *__restrict __varname, wchar_t * __restrict __dst, size_t __maxlen);
-__LIBC errno_t (__LIBCCALL _wsplitpath_s)(wchar_t const *__restrict __abspath, wchar_t *__restrict __drive, size_t __drivelen, wchar_t *__restrict __dir, size_t __dirlen, wchar_t *__restrict __file, size_t __filelen, wchar_t *__restrict __ext, size_t __extlen);
+__LIBC void (__LIBCCALL _wmakepath)(wchar_t *__restrict __dst, wchar_t const *__drive, wchar_t const *__dir, wchar_t const *__file, wchar_t const *__ext) __KOS_ASMNAME("wmakepath");
+__LIBC void (__LIBCCALL _wsearchenv)(wchar_t const *__file, wchar_t const *__varname,  wchar_t *__restrict __dst);
+__LIBC void (__LIBCCALL _wsplitpath)(wchar_t const *__restrict __abspath, wchar_t *__drive, wchar_t *__dir, wchar_t *__file, wchar_t *__ext) __KOS_ASMNAME("wsplitpath");
+__LIBC errno_t (__LIBCCALL _wmakepath_s)(wchar_t *__restrict __dst, size_t __maxlen, wchar_t const *__drive, wchar_t const *__dir, wchar_t const *__file, wchar_t const *__ext) __KOS_ASMNAME("wmakepath_s");
+__LIBC errno_t (__LIBCCALL _wputenv_s)(wchar_t const *__name, wchar_t const *__val);
+__LIBC errno_t (__LIBCCALL _wsearchenv_s)(wchar_t const *__file, wchar_t const *__varname, wchar_t *__restrict __dst, size_t __maxlen);
+__LIBC errno_t (__LIBCCALL _wsplitpath_s)(wchar_t const *__restrict __abspath, wchar_t *__drive, size_t __drivelen, wchar_t *__dir, size_t __dirlen, wchar_t *__file, size_t __filelen, wchar_t *__ext, size_t __extlen) __KOS_ASMNAME("wsplitpath_s");
 #endif /* !_WSTDLIBP_DEFINED */
 
 #ifndef _WSTRING_DEFINED

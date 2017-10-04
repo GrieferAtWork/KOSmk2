@@ -674,8 +674,8 @@ __LIBC int (__ATTR_CDECL _scprintf_p_l)(char const *__restrict __format, __local
 __LIBC int (__LIBCCALL _vscprintf_p_l)(char const *__restrict __format, __locale_t __locale, __VA_LIST __args) __ASMNAME("_vscprintf_l");
 
 /* The following 2 return an error, rather than the required size when the buffer is too small */
-__LIBC int (__ATTR_CDECL _snprintf)(char *__restrict __buf, size_t __buflen, const char *__restrict __format, ...);
-__LIBC int (__LIBCCALL _vsnprintf)(char *__restrict __buf, size_t __buflen, const char *__restrict __format, __VA_LIST __args);
+__LIBC int (__ATTR_CDECL _snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...);
+__LIBC int (__LIBCCALL _vsnprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _snprintf_c)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...) __KOS_ASMNAME("snprintf");
 __LIBC int (__LIBCCALL _vsnprintf_c)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args) __KOS_ASMNAME("vsnprintf");
 __LIBC int (__ATTR_CDECL _snprintf_l)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __locale_t __locale, ...);

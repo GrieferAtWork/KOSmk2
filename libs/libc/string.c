@@ -55,6 +55,7 @@
 #include "system.h"
 #include "unicode.h"
 #include "format-printer.h"
+#include <stdlib.h>
 #include <wchar.h>
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #include <bits/dos-errno.h>
@@ -81,6 +82,7 @@ DECL_BEGIN
 #define Ts           signed char
 #define Tu           unsigned char
 #define Tn           int
+#define X(x)         libc_##x
 #define Xstr(x)      libc_str##x
 #define Xstp(x)      libc_stp##x
 #define Xa(x)        libc_a##x
@@ -90,6 +92,9 @@ DECL_BEGIN
 #define TOUPPER(x)   libc_toupper(x)
 #define S            __SIZEOF_CHAR__
 #define DECL         INTERN
+#if !defined(__KERNEL__) && !defined(CONFIG_LIBC_NO_DOS_LIBC)
+#define DOS_DECL     INTERN ATTR_DOSTEXT
+#endif
 #define DEFINE_ALIAS DEFINE_INTERN_ALIAS
 
 /* Select optional functions. */
@@ -213,6 +218,8 @@ DECL_BEGIN
 #  define WANT_U64TOA         /* u64toa() */
 #  define WANT_S32TOA         /* s32toa() */
 #  define WANT_S64TOA         /* s64toa() */
+#  define WANT_SPLITPATH_S    /* splitpath_s() */
+#  define WANT_SPLITPATH      /* splitpath() */
 #endif
 
 #include "templates/string.code"
@@ -830,6 +837,7 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #define Tu           u32
 #define Tn           wint_t
 #define Tneedle      T
+#define X(x)         libc_32w##x
 #define Xstr(x)      libc_32wcs##x
 #define Xstp(x)      libc_32wcp##x
 #define Xmb(x)       libc_32mb##x
@@ -952,6 +960,8 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #  define WANT_U32TOA         /* u32tow() */
 #  define WANT_S64TOA         /* s64tow() */
 #  define WANT_S32TOA         /* s32tow() */
+#  define WANT_SPLITPATH_S    /* splitpath_s() */
+#  define WANT_SPLITPATH      /* splitpath() */
 
 
 /* Disable API functions only used in DOS mode.
@@ -988,6 +998,8 @@ DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 #undef WANT_U64TOA
 #undef WANT_S32TOA
 #undef WANT_S64TOA
+#undef WANT_SPLITPATH_S
+#undef WANT_SPLITPATH
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */
 
 DEFINE_INTERN_ALIAS(libc_32wmemcpy,libc_memcpyl);
@@ -1150,6 +1162,7 @@ DEFINE_PUBLIC_ALIAS(_strtoumax_l,libc_strtou64_l);
 #define Tu           u16
 #define Tn           wint_t
 #define Tneedle      T
+#define X(x)         libc_16w##x
 #define Xstr(x)      libc_16wcs##x
 #define Xstp(x)      libc_16wcp##x
 #define Xmb(x)       libc_16mb##x
@@ -1272,6 +1285,8 @@ DEFINE_PUBLIC_ALIAS(_strtoumax_l,libc_strtou64_l);
 #  define WANT_U64TOA         /* u64tow() */
 #  define WANT_S32TOA         /* s32tow() */
 #  define WANT_S64TOA         /* s64tow() */
+#  define WANT_SPLITPATH_S    /* splitpath_s() */
+#  define WANT_SPLITPATH      /* splitpath() */
 
 DEFINE_INTERN_ALIAS(libc_16wmemcpy,libc_memcpyw);
 DEFINE_INTERN_ALIAS(libc_16wmempcpy,libc_mempcpyw);
@@ -1792,10 +1807,9 @@ INTERN ATTR_DOSRODATA char const dos_makepath_format[] = {'%','s','%','s','%','s
 INTERN ATTR_DOSRODATA char16_t const dos_16wmakepath_format[] = {'%','l','s','%','l','s','%','l','s','%','l','s','%','l','s','%','l','s','%','l','s',0};
 INTERN ATTR_DOSRODATA char32_t const dos_32wmakepath_format[] = {'%','l','s','%','l','s','%','l','s','%','l','s','%','l','s','%','l','s','%','l','s',0};
 
-
-INTDEF errno_t LIBCCALL
-libc_makepath_s(char *buf, size_t buflen, const char *drive,
-                const char *dir, const char *file, const char *ext) {
+INTERN ATTR_DOSTEXT errno_t LIBCCALL
+libc_makepath_s(char *__restrict buf, size_t buflen, char const *drive,
+                char const *dir, char const *file, char const *ext) {
  char const *dir_end; size_t reqsize;
  if (!drive) dir = dos_str0;
  if (!dir) dir = dos_str0;
@@ -1808,10 +1822,10 @@ libc_makepath_s(char *buf, size_t buflen, const char *drive,
                          dos_str_slash,file,*ext ? dos_str_dot : dos_str0,ext);
  return reqsize >= buflen ? __DOS_ERANGE : EOK;
 }
-INTDEF errno_t LIBCCALL
-libc_16wmakepath_s(char16_t *__restrict buf, size_t buflen, char16_t const *drive,
-                   char16_t const *__restrict dir, char16_t const *__restrict file,
-                   char16_t const *__restrict ext) {
+INTERN ATTR_DOSTEXT errno_t LIBCCALL
+libc_16wmakepath_s(char16_t *__restrict buf, size_t buflen,
+                   char16_t const *drive, char16_t const *dir,
+                   char16_t const *file, char16_t const *ext) {
  char16_t const *dir_end; size_t reqsize;
  if (!drive) dir = dos_16wstr0;
  if (!dir) dir = dos_16wstr0;
@@ -1824,10 +1838,10 @@ libc_16wmakepath_s(char16_t *__restrict buf, size_t buflen, char16_t const *driv
                                dos_16wstr_slash,file,*ext ? dos_16wstr_dot : dos_16wstr0,ext);
  return reqsize >= buflen ? __DOS_ERANGE : EOK;
 }
-INTDEF errno_t LIBCCALL
-libc_32wmakepath_s(char32_t *__restrict buf, size_t buflen, char32_t const *drive,
-                   char32_t const *__restrict dir, char32_t const *__restrict file,
-                   char32_t const *__restrict ext) {
+INTERN ATTR_DOSTEXT errno_t LIBCCALL
+libc_32wmakepath_s(char32_t *__restrict buf, size_t buflen,
+                   char32_t const *drive, char32_t const *dir,
+                   char32_t const *file, char32_t const *ext) {
  char32_t const *dir_end; size_t reqsize;
  if (!drive) dir = dos_32wstr0;
  if (!dir) dir = dos_32wstr0;
@@ -1841,23 +1855,23 @@ libc_32wmakepath_s(char32_t *__restrict buf, size_t buflen, char32_t const *driv
  return reqsize >= buflen ? __DOS_ERANGE : EOK;
 }
 
-INTDEF void LIBCCALL
-libc_makepath(char *buf, const char *drive,
-              const char *dir, const char *file,
-              const char *ext) {
- libc_makepath_s(buf,260,drive,dir,file,ext);
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_makepath(char *__restrict buf, char const *drive,
+              char const *dir, char const *file,
+              char const *ext) {
+ libc_makepath_s(buf,__DOS_MAX_PATH,drive,dir,file,ext);
 }
-INTDEF void LIBCCALL
-libc_16wmakepath(char16_t *__restrict buf, char16_t const *__restrict drive,
-                 char16_t const *__restrict dir, char16_t const *__restrict file,
-                 char16_t const *__restrict ext) {
- libc_16wmakepath_s(buf,260,drive,dir,file,ext);
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_16wmakepath(char16_t *__restrict buf,
+                 char16_t const *drive, char16_t const *dir,
+                 char16_t const *file, char16_t const *ext) {
+ libc_16wmakepath_s(buf,__DOS_MAX_PATH,drive,dir,file,ext);
 }
-INTDEF void LIBCCALL
-libc_32wmakepath(char32_t *__restrict buf, char32_t const *__restrict drive,
-                 char32_t const *__restrict dir, char32_t const *__restrict file,
-                 char32_t const *__restrict ext) {
- libc_32wmakepath_s(buf,260,drive,dir,file,ext);
+INTERN ATTR_DOSTEXT void LIBCCALL
+libc_32wmakepath(char32_t *__restrict buf,
+                 char32_t const *drive, char32_t const *dir,
+                 char32_t const *file, char32_t const *ext) {
+ libc_32wmakepath_s(buf,__DOS_MAX_PATH,drive,dir,file,ext);
 }
 
 DEFINE_PUBLIC_ALIAS(_makepath,libc_makepath);
@@ -1866,6 +1880,15 @@ DEFINE_PUBLIC_ALIAS(_wmakepath,libc_16wmakepath);
 DEFINE_PUBLIC_ALIAS(wmakepath,libc_32wmakepath);
 DEFINE_PUBLIC_ALIAS(_wmakepath_s,libc_16wmakepath_s);
 DEFINE_PUBLIC_ALIAS(wmakepath_s,libc_32wmakepath_s);
+
+
+DEFINE_PUBLIC_ALIAS(_splitpath,libc_splitpath);
+DEFINE_PUBLIC_ALIAS(_wsplitpath,libc_16wsplitpath);
+DEFINE_PUBLIC_ALIAS(wsplitpath,libc_32wsplitpath);
+DEFINE_PUBLIC_ALIAS(_splitpath_s,libc_splitpath_s);
+DEFINE_PUBLIC_ALIAS(_wsplitpath_s,libc_16wsplitpath_s);
+DEFINE_PUBLIC_ALIAS(wsplitpath_s,libc_32wsplitpath_s);
+
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
