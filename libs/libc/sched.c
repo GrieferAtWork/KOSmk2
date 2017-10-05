@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <hybrid/compiler.h>
 #include <sched.h>
+#include <sys/syscall.h>
 
 DECL_BEGIN
 
@@ -43,7 +44,6 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
            void *arg, ...) {
  void *newtls = NULL; va_list args;
  pid_t result,*ptid = NULL,*ctid = NULL;
- libc_syslog(LOG_DEBUG,"fn = %p\n",fn);
  va_start(args,arg);
  if (flags&CLONE_PARENT_SETTID) ptid = va_arg(args,pid_t *);
  if (flags&CLONE_SETTLS) newtls = va_arg(args,void *);
@@ -65,12 +65,18 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
                       "    pushl %%ebp\n" /* 'arg' */
                       "    xorl  %%ebp, %%ebp\n" /* ZERO out EBP to terminate tracebacks. */
                       "    call *%[fn]\n" /* Call the user-defined function.  */
-                      "    pushl %%eax\n" /* Push the thread exitcode. */
-                      "    call  libc_thread_exit\n" /* Exit the thread. */
+                      "    movl  %%eax, %%ebx\n" /* Load the thread's exitcode. */
+                      /* NOTE: Don't be confused, the kernel calls 'pthread_exit()'
+                       *       'exit()', and calls stdlib's 'exit()' 'exit_group()'.
+                       *       The reason for this is historical and lies in the fact
+                       *       that multithreading wasn't something you could always do.
+                       *      (fork() came before clone(), and exit_group() was an afterthough). */
+                      "    movl  $(" PP_STR(SYS_exit) "), %%eax\n"
+                      "    int   $0x80\n" /* Exit the thread. */
                       /* unreachable */
                       "1:  popl  %%ebp\n" /* This is where the parent jumps */
                       : "=a" (result)
-                      : "a" (__NR_clone)
+                      : "a" (SYS_clone)
                       , "b" (flags)
                       , "c" (child_stack)
                       , "d" (ptid)
@@ -89,7 +95,7 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
  return result;
 }
 INTERN int LIBCCALL libc_sched_yield(void) {
- __asm__("int $3\n");
+ /*__asm__("int $3\n");*/
  return sys_sched_yield();
 }
 INTERN int LIBCCALL libc_sched_getcpu(void) { NOT_IMPLEMENTED(); return -1; }

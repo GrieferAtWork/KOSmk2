@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
  pid_t child,waitno; int status;
  printf("shared_variable = %d\n",shared_variable);
  printf("main: gettid() == %d\n",syscall(SYS_gettid));
- child = clone(&thread_function,NULL,
+ child = clone(&thread_function,CLONE_CHILDSTACK_AUTO,
                CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD,
               (void *)0x12345678);
  if (child < 0) err(1,"clone() failed");

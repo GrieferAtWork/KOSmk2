@@ -94,6 +94,7 @@ struct timezone;
 LOCAL SYSCALL4(int,openat,(int,dfd,char const *,filename,oflag_t,flags,mode_t,mode));
 LOCAL SYSCALL1(__errno_t,close,(int,fd));
 LOCAL SYSCALL1(void,exit,(int,exitcode));
+LOCAL SYSCALL1(void,exit_group,(int,exitcode));
 LOCAL SYSCALL1(__errno_t,unshare,(int,flags));
 LOCAL SYSCALL2(ssize_t,munmap,(void *,addr,size_t,len));
 LOCAL SYSCALL5(void *,mremap,(VIRT void *,addr,size_t,old_len,size_t,new_len,int,flags,VIRT void *,new_addr));

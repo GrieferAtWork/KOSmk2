@@ -50,6 +50,76 @@
 
 DECL_BEGIN
 
+INTERN ATTR_NORETURN
+void KCALL task_userexit_group(void *exitcode) {
+ /* More commonly known as stdlib:'exit()' */
+ struct task *caller = THIS_TASK;
+ REF struct task *leader;
+ task_crit();
+ exitcode = (void *)__W_EXITCODE((u8)(uintptr_t)exitcode,0);
+ atomic_rwlock_read(&caller->t_pid.tp_leadlock);
+ leader = caller->t_pid.tp_leader,TASK_INCREF(leader);
+ atomic_rwlock_endread(&caller->t_pid.tp_leadlock);
+ for (;;) {
+  struct task *group_task;
+  atomic_rwlock_read(&leader->t_pid.tp_grouplock);
+  if (!leader->t_pid.tp_group) break;
+  if (!atomic_rwlock_upgrade(&leader->t_pid.tp_grouplock) &&
+      !ATOMIC_READ(leader->t_pid.tp_group)) {
+   atomic_rwlock_downgrade(&leader->t_pid.tp_grouplock);
+   break;
+  }
+  group_task = leader->t_pid.tp_group;
+  assert(group_task->t_pid.tp_leader == leader);
+  assert(group_task->t_pid.tp_grplink.le_pself == &leader->t_pid.tp_group);
+  THREAD_PID_DELGROUP(leader->t_pid.tp_group,group_task);
+  assert(leader->t_pid.tp_group != group_task);
+  if (group_task == leader ||
+      group_task == caller ||
+     !TASK_TRYINCREF(group_task))
+      group_task = NULL;
+  atomic_rwlock_endwrite(&leader->t_pid.tp_grouplock);
+  if (group_task) {
+   /* Terminate all processes part of this group. */
+   task_terminate(group_task,exitcode);
+   TASK_DECREF(group_task);
+  }
+ }
+ assert(!leader->t_pid.tp_group);
+ atomic_rwlock_endread(&leader->t_pid.tp_grouplock);
+ /* Terminate the leader thread. */
+ if (leader != caller)
+     task_terminate(leader,exitcode);
+ TASK_DECREF(leader);
+ task_endcrit();
+
+ /* And finally, terminate the caller themself. */
+ task_terminate(caller,exitcode);
+ __builtin_unreachable();
+}
+
+INTERN ATTR_NORETURN void KCALL task_userexit(void *exitcode) {
+ /* More commonly known as pthread:'pthread_exit()' */
+ task_terminate(THIS_TASK,(void *)__W_EXITCODE((u8)(uintptr_t)exitcode,0));
+ __builtin_unreachable();
+}
+
+GLOBAL_ASM(
+L(.section .text                                                              )
+L(INTERN_ENTRY(sys_exit_group)                                                )
+L(    sti                                                                     )
+L(    /* Load segment registers */                                            )
+L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
+L(    pushl %ebx                                                              )
+L(    call task_userexit_group                                                )
+#ifdef CONFIG_DEBUG
+L(.global __assertion_unreachable                                             )
+L(    call __assertion_unreachable                                            )
+#endif
+L(SYM_END(sys_exit_group)                                                     )
+L(.previous                                                                   )
+);
+
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(sys_exit)                                                      )
@@ -57,8 +127,7 @@ L(    sti                                                                     )
 L(    /* Load segment registers */                                            )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
 L(    pushl %ebx                                                              )
-L(    pushl ASM_CPU(CPU_OFFSETOF_RUNNING)                                     )
-L(    call task_terminate                                                     )
+L(    call task_userexit                                                      )
 #ifdef CONFIG_DEBUG
 L(.global __assertion_unreachable                                             )
 L(    call __assertion_unreachable                                            )

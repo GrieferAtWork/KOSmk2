@@ -47,6 +47,8 @@ for (local line: fp) {
 #define SYS_symlinkat __NR_symlinkat
 #define SYS_linkat __NR_linkat
 #define SYS_renameat __NR_renameat
+#define SYS_umount2 __NR_umount2
+#define SYS_mount __NR_mount
 #define SYS_truncate __NR_truncate
 #define SYS_ftruncate __NR_ftruncate
 #define SYS_fallocate __NR_fallocate
@@ -60,6 +62,7 @@ for (local line: fp) {
 #define SYS_fchown __NR_fchown
 #define SYS_openat __NR_openat
 #define SYS_close __NR_close
+#define SYS_pipe2 __NR_pipe2
 #define SYS_lseek __NR_lseek
 #define SYS_read __NR_read
 #define SYS_write __NR_write
@@ -75,12 +78,16 @@ for (local line: fp) {
 #define SYS_fdatasync __NR_fdatasync
 #define SYS_utimensat __NR_utimensat
 #define SYS_exit __NR_exit
+#define SYS_exit_group __NR_exit_group
 #define SYS_waitid __NR_waitid
 #define SYS_unshare __NR_unshare
+#define SYS_futex __NR_futex
+#define SYS_nanosleep __NR_nanosleep
 #define SYS_sched_yield __NR_sched_yield
 #define SYS_kill __NR_kill
 #define SYS_tkill __NR_tkill
 #define SYS_tgkill __NR_tgkill
+#define SYS_sigsuspend __NR_sigsuspend
 #define SYS_sigaction __NR_sigaction
 #define SYS_sigprocmask __NR_sigprocmask
 #define SYS_sigpending __NR_sigpending
@@ -88,6 +95,7 @@ for (local line: fp) {
 #define SYS_sigreturn __NR_sigreturn
 #define SYS_setpgid __NR_setpgid
 #define SYS_getpgid __NR_getpgid
+#define SYS_umask __NR_umask
 #define SYS_gettimeofday __NR_gettimeofday
 #define SYS_settimeofday __NR_settimeofday
 #define SYS_getpid __NR_getpid
@@ -95,8 +103,12 @@ for (local line: fp) {
 #define SYS_gettid __NR_gettid
 #define SYS_munmap __NR_munmap
 #define SYS_mremap __NR_mremap
+#define SYS_clone __NR_clone
 #define SYS_execve __NR_execve
 #define SYS_mmap __NR_mmap
+#define SYS_swapon __NR_swapon
+#define SYS_swapoff __NR_swapoff
+#define SYS_mprotect __NR_mprotect
 #define SYS_wait4 __NR_wait4
 #define SYS_syncfs __NR_syncfs
 #define SYS_fork __NR_fork
@@ -107,6 +119,15 @@ for (local line: fp) {
 #define SYS_xreaddir __NR_xreaddir
 #define SYS_xopenpty __NR_xopenpty
 #define SYS_xfdname __NR_xfdname
+#define SYS_xpipe __NR_xpipe
+#define SYS_xfexecve __NR_xfexecve
+#define SYS_xfchdirat __NR_xfchdirat
+#define SYS_xrenameat __NR_xrenameat
+#define SYS_xsymlinkat __NR_xsymlinkat
+#define SYS_xdlopen __NR_xdlopen
+#define SYS_xfdlopen __NR_xfdlopen
+#define SYS_xdlclose __NR_xdlclose
+#define SYS_xdlsym __NR_xdlsym
 #define SYS_xpaused __NR_xpaused
 //[[[end]]]
 

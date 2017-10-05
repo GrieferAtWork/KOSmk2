@@ -91,8 +91,7 @@ INTERN ATTR_COLDTEXT void LIBCCALL libc_run_at_quick_exit(void) {
  atomic_rwptr_endread(&onexit_q);
  libc_run_common_atexit();
 }
-DEFINE_INTERN_ALIAS(libc_thread_exit,libc__exit); /* TODO */
-INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc__exit(int status) { sys_exit(status); }
+INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc__exit(int status) { sys_exit_group(status); }
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_abort(void) { libc__exit(EXIT_FAILURE); }
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_exit(int status) {
  atomic_rwptr_read(&onexit_n);

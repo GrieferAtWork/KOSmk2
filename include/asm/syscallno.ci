@@ -140,6 +140,10 @@ __SYSCALL(__NR_utimensat,sys_utimensat)
 #define __SC_ATTRIB_ISNRT_93 1
 #define __NR_exit         93
 __SYSCALL_ASM(__NR_exit,sys_exit)
+#define __SC_ATTRIB_CLOBB_94 C("memory")
+#define __SC_ATTRIB_ISNRT_94 1
+#define __NR_exit_group   94
+__SYSCALL_ASM(__NR_exit_group,sys_exit_group)
 #define __SC_ATTRIB_CLOBB_95 C("memory")
 #define __NR_waitid       95
 __SYSCALL(__NR_waitid,sys_waitid)

@@ -51,7 +51,6 @@ struct exitcall {
 INTDEF ATTR_NORETURN void LIBCCALL libc__exit(int status);
 INTDEF ATTR_NORETURN void LIBCCALL libc_abort(void);
 INTDEF ATTR_NORETURN void LIBCCALL libc_exit(int status);
-INTDEF ATTR_NORETURN void LIBCCALL libc_thread_exit(int status);
 INTDEF ATTR_NORETURN void LIBCCALL libc_quick_exit(int status);
 INTDEF int LIBCCALL libc_on_exit(void (LIBCCALL *func)(int status, void *arg), void *arg);
 INTDEF int LIBCCALL libc_atexit(void (LIBCCALL *func)(void));
