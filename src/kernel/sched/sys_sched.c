@@ -1001,6 +1001,11 @@ end_double_lock:
   if (copy_to_user(parent_tidptr,&child_pid,sizeof(pid_t))) goto err1_fault;
  }
 
+ /* Inherit CPU-affinity from the calling thread. */
+ atomic_rwlock_read(&caller->t_affinity_lock);
+ memcpy(&result->t_affinity,&caller->t_affinity,sizeof(cpu_set_t));
+ atomic_rwlock_endread(&caller->t_affinity_lock);
+
  /* Inherit thread-priority from the calling thread. */
  result->t_priority = ATOMIC_READ(caller->t_priority);
 

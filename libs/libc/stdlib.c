@@ -400,7 +400,7 @@ INTERN imaxdiv_t LIBCCALL libc_imaxdiv(intmax_t numer, intmax_t denom) {
 #endif
 INTERN int LIBCCALL libc_system(char const *__restrict command) {
  pid_t child,error; int status;
- if ((child = libc_fork()) < 0) return -1;
+ if ((child = libc_fork()) < 0) return -1; /* XXX: Use vfork()? */
  if (child == 0) {
   libc_execl("/bin/sh","sh","-c",command,NULL);
   libc_execl("/bin/busybox","sh","-c",command,NULL);
