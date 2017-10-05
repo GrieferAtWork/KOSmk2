@@ -90,9 +90,9 @@ PRIVATE void KCALL
 alloc_user_stack(struct task *thread, struct mman *mm, size_t n_bytes) {
  REF struct stack *ustack;
  n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
+ task_nointr();
  ustack = omalloc(struct stack);
  assert(ustack);
- task_nointr();
  mman_write(mm);
  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(0x10000000-n_bytes),
                                            n_bytes,8,0,MMAN_FINDSPACE_BELOW);
@@ -442,7 +442,7 @@ kernel_boot(u32        mb_magic,
  /* Initialize the bios boot-disk driver. */
  blkdev_bootdisk_initialize();
 
- /* Only initialize scheduling properly _after_ core modules have
+ /* Only properly initialize scheduling _after_ core modules have
   * been loaded, as not to run into synchronization problems related
   * to some of the things being done during core-module initialization! */
  sched_initialize();

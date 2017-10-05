@@ -24,6 +24,7 @@
 #include "libc.h"
 #include "system.h"
 #include "sched.h"
+#include "stdlib.h"
 
 #include <errno.h>
 #include <hybrid/compiler.h>
@@ -36,11 +37,56 @@ INTERN int LIBCCALL libc_unshare(int flags) {
  if (E_ISERR(result)) { SET_ERRNO(-result); return -1; }
  return 0;
 }
-INTERN int LIBCCALL libc_clone(int (LIBCCALL *fn)(void *arg),
-                               void *child_stack, int flags,
-                               void *arg, ...) {
- NOT_IMPLEMENTED();
- return -1;
+INTERN pid_t LIBCCALL
+libc_clone(int (LIBCCALL *fn)(void *arg),
+           void *child_stack, int flags,
+           void *arg, ...) {
+ void *newtls = NULL; va_list args;
+ pid_t result,*ptid = NULL,*ctid = NULL;
+ libc_syslog(LOG_DEBUG,"fn = %p\n",fn);
+ va_start(args,arg);
+ if (flags&CLONE_PARENT_SETTID) ptid = va_arg(args,pid_t *);
+ if (flags&CLONE_SETTLS) newtls = va_arg(args,void *);
+ if (flags&CLONE_CHILD_SETTID) ctid = va_arg(args,pid_t *);
+ va_end(args);
+ (void)newtls; /* Not used by the kernel, and the argument slot is used to pass 'arg'. */
+
+ /* NOTE: The clone() system call cannot be called safely without custom assembly,
+  *       due to the fact that it returns to the same address as the parent thread. */
+ __asm__ __volatile__("    pushl %%ebp\n"
+                      "    movl  %[arg], %%ebp\n" /* Safe the argument in EBP */
+                      "    int   $0x80\n"
+                      /* This is where (presumably) two threads are going to show up,
+                       * the only difference between the two being the value of EAX,
+                       * which is supposed to be ZERO(0) for the child. */
+                      "    testl %%eax, %%eax\n"
+                      "    jnz 1f\n" /* Jump if this is the parent thread. */
+                      /* Userspace child initialization. */
+                      "    pushl %%ebp\n" /* 'arg' */
+                      "    xorl  %%ebp, %%ebp\n" /* ZERO out EBP to terminate tracebacks. */
+                      "    call *%[fn]\n" /* Call the user-defined function.  */
+                      "    pushl %%eax\n" /* Push the thread exitcode. */
+                      "    call  libc_thread_exit\n" /* Exit the thread. */
+                      /* unreachable */
+                      "1:  popl  %%ebp\n" /* This is where the parent jumps */
+                      : "=a" (result)
+                      : "a" (__NR_clone)
+                      , "b" (flags)
+                      , "c" (child_stack)
+                      , "d" (ptid)
+                      , "S" (ctid)
+#if 1
+                      , [fn] "D" (fn)
+                      , [arg] "m" (arg)
+#else
+                      , "D" (newtls)
+                      , [stp] "m" (stp)
+#endif
+                      : "memory");
+ /* Check for errors. */
+ if (E_ISERR(result)) { SET_ERRNO(-result); return -1; }
+ /* Return the child thread PID. */
+ return result;
 }
 INTERN int LIBCCALL libc_sched_yield(void) {
  __asm__("int $3\n");

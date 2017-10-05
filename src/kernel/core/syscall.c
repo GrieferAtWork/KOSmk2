@@ -190,7 +190,7 @@ L(.previous                                                                   )
 PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
  syslog(LOG_DEBUG,"SYSCALL:%Iu\n",sysno);
 }
-#define SYS_ENTER pushal; pushl %eax; call syscall_enter; addl $4, %esp; popal;
+#define SYS_ENTER pushal; movl %eax, %ecx; call syscall_enter; popal;
 #else
 #define SYS_ENTER /* nothing */
 #endif

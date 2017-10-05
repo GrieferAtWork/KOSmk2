@@ -146,6 +146,9 @@ __SYSCALL(__NR_waitid,sys_waitid)
 #define __SC_ATTRIB_CLOBB_97 C("memory")
 #define __NR_unshare      97
 __SYSCALL(__NR_unshare,sys_unshare)
+#define __SC_ATTRIB_CLOBB_98 C("memory")
+#define __NR_futex        98
+__SYSCALL(__NR_futex,sys_futex)
 
 #define __NR_nanosleep    101
 __SYSCALL(__NR_nanosleep,sys_nanosleep)
@@ -203,8 +206,9 @@ __SYSCALL(__NR_munmap,sys_munmap)
 #define __NR_mremap       216
 __SYSCALL(__NR_mremap,sys_mremap)
 
-//#define __NR_clone        220
-//__SYSCALL(__NR_clone,sys_clone)
+#define __SC_ATTRIB_CLOBB_220 C("memory")
+#define __NR_clone        220
+__SYSCALL(__NR_clone,sys_clone)
 #define __SC_ATTRIB_CLOBB_221 C("memory")
 #define __NR_execve       221
 __SYSCALL(__NR_execve,sys_execve)

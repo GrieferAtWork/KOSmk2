@@ -27,7 +27,7 @@
 DECL_BEGIN
 
 INTDEF int libc_unshare(int flags);
-INTDEF int libc_clone(int (LIBCCALL *fn)(void *arg), void *child_stack, int flags, void *arg, ...);
+INTDEF pid_t libc_clone(int (LIBCCALL *fn)(void *arg), void *child_stack, int flags, void *arg, ...);
 #ifndef __libc_sched_yield_defined
 #define __libc_sched_yield_defined 1
 INTDEF int libc_sched_yield(void);

@@ -27,6 +27,11 @@
 #include <hybrid/compiler.h>
 #include <hybrid/sched/yield.h>
 #include <kernel/mman.h>
+#include <kernel/syscall.h>
+#include <kernel/user.h>
+#include <dev/rtc.h>
+#include <linux/futex.h>
+#include <sched/task.h>
 
 DECL_BEGIN
 
@@ -171,6 +176,117 @@ err_nomem:
  atomic_rwptr_endread(iter);
  return NULL;
 }
+
+SYSCALL_DEFINE6(futex,USER u32 *,uaddr,int,op,u32,val,
+                USER struct timespec *,utime,USER u32 *,uaddr2,
+                u32,val3) {
+ /* futex() system call for linux compatibility. */
+ struct timespec tmo,*ptmo = NULL; u32 val2 = 0;
+ struct mman *mm = THIS_MMAN; ssize_t error;
+ struct mfutex *lock = E_PTR(-ENOSYS);
+ int cmd = op & FUTEX_CMD_MASK;
+ if (utime &&
+    (cmd == FUTEX_WAIT || cmd == FUTEX_LOCK_PI ||
+     cmd == FUTEX_WAIT_BITSET || cmd == FUTEX_WAIT_REQUEUE_PI)) {
+  /* Copy the given timeout if doing so is apart of the command. */
+  if (copy_from_user(&tmo,utime,sizeof(struct timespec)))
+      return -EFAULT;
+  /* Add the current time to the timeout. */
+  if (cmd == FUTEX_WAIT) {
+   struct timespec now;
+   sysrtc_get(&now);
+   TIMESPEC_ADD(tmo,now);
+  }
+  ptmo = &tmo;
+ }
+ /* Interpret 'utime' as the second argument for specific commands. */
+ if (cmd == FUTEX_REQUEUE || cmd == FUTEX_CMP_REQUEUE ||
+     cmd == FUTEX_CMP_REQUEUE_PI || cmd == FUTEX_WAKE_OP)
+     val2 = (u32)(uintptr_t)utime;
+
+ (void)val2;
+
+ task_crit();
+ /* Now to execute the command. */
+ switch (cmd) {
+
+ case FUTEX_WAIT:
+  val3 = FUTEX_BITSET_MATCH_ANY;
+ case FUTEX_WAIT_BITSET:
+  if unlikely(!val3) goto err_inval;
+  lock = mman_newfutex(mm,uaddr);
+  if (E_ISOK(lock)) {
+   u32 user_value;
+   bool has_write_lock = false;
+   mfutex_read(lock);
+wait_check_again:
+   if (copy_from_user(&user_value,uaddr,4)) {
+    if (has_write_lock)
+         mfutex_endwrite(lock);
+    else mfutex_endread(lock);
+    MFUTEX_DECREF(lock);
+    goto err_fault;
+   }
+   if ((user_value&val3) != val) {
+    /* Different value. -> Don't wait. */
+    if (has_write_lock)
+         mfutex_endwrite(lock);
+    else mfutex_endread(lock);
+    MFUTEX_DECREF(lock);
+    break;
+   }
+   if (!has_write_lock) {
+    has_write_lock = true;
+    if (!mfutex_upgrade(lock))
+         goto wait_check_again;
+   }
+   /* The value is still the same. - Now wait for the associated signal. */
+   error = sig_timedrecv_endwrite(&lock->f_sig,ptmo);
+   MFUTEX_DECREF(lock);
+   lock = E_PTR(error);
+  }
+  break;
+
+ case FUTEX_WAKE:
+  val3 = FUTEX_BITSET_MATCH_ANY;
+ case FUTEX_WAKE_BITSET:
+  //if unlikely(!val3) goto err_inval;
+  /* TODO: Linux only wake threads who's wait bit-sets match 'val3' */
+  lock = mman_getfutex(mm,uaddr);
+  if (E_ISOK(lock)) {
+   /* Wake at most 'val' threads waiting for the associated futex. */
+   error = (ssize_t)sig_send(&lock->f_sig,(size_t)val);
+   MFUTEX_DECREF(lock);
+   lock = E_PTR(error);
+  } else if (lock == E_PTR(-EFAULT)) {
+   lock = E_PTR(0); /* Nothing was waiting for this address. */
+  }
+  break;
+
+#if 0 /* TODO */
+ case FUTEX_REQUEUE:
+ case FUTEX_CMP_REQUEUE:
+ case FUTEX_WAKE_OP:
+ case FUTEX_LOCK_PI:
+ case FUTEX_UNLOCK_PI:
+ case FUTEX_TRYLOCK_PI:
+ case FUTEX_WAIT_REQUEUE_PI:
+ case FUTEX_CMP_REQUEUE_PI:
+#endif
+ default:
+  /* Unknown command. */
+  assert(lock == E_PTR(-ENOSYS));
+  break;
+ }
+end:
+ task_endcrit();
+ return (syscall_slong_t)lock;
+err_inval: lock = E_PTR(-EINVAL); goto end;
+err_fault: lock = E_PTR(-EFAULT); goto end;
+}
+
+/* TODO: KOS-specific futex() system call that can be used to wait on multiple
+ *       addresses, as well as allow for atomic wake()+wait() on the same address. */
 
 
 DECL_END

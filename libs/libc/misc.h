@@ -77,6 +77,9 @@ INTDEF u32 LIBCCALL libc_statusfp(void);
 INTDEF void LIBCCALL libc_fpreset(void);
 INTDEF u32 LIBCCALL libc_control87(u32 newval, u32 mask);
 INTDEF int *LIBCCALL libc_fpecode(void);
+INTERN u16 LIBCCALL libc_bswap16(u16 x);
+INTERN u32 LIBCCALL libc_bswap32(u32 x);
+INTERN u64 LIBCCALL libc_bswap64(u64 x);
 
 INTDEF ATTR_DOSTEXT void LIBCCALL libc_crt_debugger_hook(int code);
 #if defined(__i386__) || defined(__x86_64__) || defined(__ia64__)

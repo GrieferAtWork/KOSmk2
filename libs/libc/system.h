@@ -164,6 +164,8 @@ LOCAL SYSCALL1(mode_t,umask,(mode_t,mask));
 LOCAL SYSCALL3(__errno_t,mprotect,(USER void *,start,size_t,len,u32,prot));
 LOCAL SYSCALL2(__errno_t,swapon,(char const *,specialfile,int,flags));
 LOCAL SYSCALL1(__errno_t,swapoff,(char const *,specialfile));
+LOCAL SYSCALL6(syscall_slong_t,futex,(USER u32 *,uaddr,int,op,u32,val,USER struct timespec *,utime,USER u32 *,uaddr2,u32,val3));
+LOCAL SYSCALL5(pid_t,clone,(syscall_ulong_t,flags,USER void *,newsp,USER pid_t *,parent_tidptr,USER pid_t *,child_tidptr,USER void *,tls_val));
 
 /* KOS system-call extensions. */
 LOCAL SYSCALL3(ssize_t,xsyslog,(int,type,char const *,p,size_t,len));

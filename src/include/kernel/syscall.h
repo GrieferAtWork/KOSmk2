@@ -80,10 +80,10 @@ struct syscall_descr {
 /* NOTE: 'THIS_SYSCALL_EIP' */
 #define THIS_SYSCALL_EIP     __STACKBASE_VALUE(void *,-20)
 /* WARNING: Everything that follows doesn't reliably work in assembly system calls. */
-#define THIS_SYSCALL_GS      __STACKBASE_VALUE(u16,-22)
-#define THIS_SYSCALL_FS      __STACKBASE_VALUE(u16,-24)
-#define THIS_SYSCALL_ES      __STACKBASE_VALUE(u16,-26)
-#define THIS_SYSCALL_DS      __STACKBASE_VALUE(u16,-28)
+#define THIS_SYSCALL_DS      __STACKBASE_VALUE(u16,-22)
+#define THIS_SYSCALL_ES      __STACKBASE_VALUE(u16,-24)
+#define THIS_SYSCALL_FS      __STACKBASE_VALUE(u16,-26)
+#define THIS_SYSCALL_GS      __STACKBASE_VALUE(u16,-28)
 #ifdef CONFIG_DEBUG
 #define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-36)
 #define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-40)

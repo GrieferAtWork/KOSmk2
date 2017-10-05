@@ -16,49 +16,46 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-
-BEGIN APPLICATION("init")
-	SET_COMPILER("i686-kos-cxx")
-	SET_OUTPUT("/bin/apps/init")
-	SET_DISKFILE("/bin/init")
-	SOURCE("init/*.c")
-END
-BEGIN APPLICATION("terminal-vga")
-	SET_OUTPUT("/bin/apps/terminal-vga")
-	SET_DISKFILE("/bin/terminal-vga")
-	SOURCE("terminal-vga/*.c")
-END
-//BEGIN_NEW PROJECT("elfimg")
-//	SET_COMPILER("host-c")
-//	SET_LINKER("host-c")
-//	SET_OUTPUT("/bin/apps/elfimg")
-//	SET_DISKFILE(none)
-//	SOURCE("elfimg/*.c")
-//END
-//BEGIN_NEW PROJECT("elf2lib")
-//	SET_COMPILER("host-c")
-//	SET_LINKER("host-c")
-//	SET_OUTPUT("/bin/apps/elf2lib")
-//	SET_DISKFILE(none)
-//	SOURCE("elf2lib/*.c")
-//END
-
-#if __has_include("private/.sources")
-#include "private/.sources"
-#endif
-
-BEGIN APPLICATION("my_test")
-	SET_OUTPUT("/bin/apps/my_test")
-	SET_DISKFILE("/opt/my_test")
-	SOURCE("test/my_test.c")
-END
-
-BEGIN APPLICATION("playground")
-	SET_OUTPUT("/bin/apps/playground")
-	SET_DISKFILE("/opt/playground")
-	SOURCE("test/playground.c")
-END
-
-DISK_SYNC("hybrid_demo/main.exe","/bin/hybrid-demo.exe")
+#ifndef GUARD_PLAYGROUND_C
+#define GUARD_PLAYGROUND_C 1
+#define _GNU_SOURCE 1
 
 
+#include <sched.h>
+#include <stdio.h>
+#include <err.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/wait.h>
+#include <syslog.h>
+#include <errno.h>
+
+
+static int shared_variable = 0;
+
+int thread_function(void *arg) {
+ printf("thread_function: gettid() == %d\n",syscall(SYS_gettid));
+ printf("arg = %p\n",arg);
+ shared_variable = 199;
+ return 42;
+}
+
+
+int main(int argc, char *argv[]) {
+ pid_t child,waitno; int status;
+ printf("shared_variable = %d\n",shared_variable);
+ printf("main: gettid() == %d\n",syscall(SYS_gettid));
+ child = clone(&thread_function,NULL,
+               CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD,
+              (void *)0x12345678);
+ if (child < 0) err(1,"clone() failed");
+ printf("clone() returned '%d'\n",child);
+ while ((waitno = wait(&status)) == -1 && errno == EINTR);
+ if (waitno < 0) err(1,"wait() failed");
+ printf("wait() returned %d\n",waitno);
+ printf("status = %d (%d)\n",status,WEXITSTATUS(status));
+ printf("shared_variable = %d\n",shared_variable);
+ return 0;
+}
+
+#endif /* !GUARD_PLAYGROUND_C */

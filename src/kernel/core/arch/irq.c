@@ -638,10 +638,10 @@ kill_task:
                      irq_excname[info->intno].descr,
                      info->exc_code,info->exc_code);
  }
- __assertion_printf("\nCPU #%d%s (%p)\n",this_cpu->c_id,
+ __assertion_printf("\nCPU #%d%s (%p; GPID %d)\n",this_cpu->c_id,
                     this_task == &inittask ? " (BOOT-TASK)" :
                     this_task == &this_cpu->c_idle ? " (IDLE-TASK)" : "",
-                    this_task);
+                    this_task,this_task->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
  __assertion_printf("EAX %p  ECX %p  EDX %p  EBX %p  EIP %p\n",
                     info->eax,info->ecx,info->edx,info->ebx,info->eip);
  esp = is_user ? info->useresp : info->esp+(offsetafter(struct irq_info,eflags)-

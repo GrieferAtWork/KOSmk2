@@ -30,6 +30,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <sys/io.h>
+#include <sched/cpu.h>
 
 DECL_BEGIN
 
@@ -112,9 +113,18 @@ PUBLIC pformatprinter KCALL syslog_set_printer(pformatprinter printer) {
 PUBLIC void (ATTR_CDECL syslog)(int level, char const *format, ...) {
  va_list args;
  va_start(args,format);
+#ifdef CONFIG_DEBUG
+ { bool was = PREEMPTION_ENABLED();
+   format_vprintf(&syslog_printer,
+                   SYSLOG_PRINTER_CLOSURE(level),
+                   format,args);
+   assert(was == PREEMPTION_ENABLED());
+ }
+#else
  format_vprintf(&syslog_printer,
                  SYSLOG_PRINTER_CLOSURE(level),
                  format,args);
+#endif
  va_end(args);
 }
 PUBLIC void (LIBCCALL vsyslog)(int level, char const *format, va_list args) {

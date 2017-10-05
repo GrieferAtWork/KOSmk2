@@ -146,6 +146,8 @@ PRIVATE isr_t nt_syscall_isr   = ISR_DEFAULT_DPL3(0x2e,&_KiSystemService);
 
 PRIVATE void MODULE_INIT KCALL pe_init(void) {
  struct cpu *c;
+ /* NOTE: Re assert the alignment of 'nt_current_flavor', because
+  *       only pointer-aligned addresses are intrinsically atomic. */
  assertf(IS_ALIGNED((uintptr_t)&nt_current_flavor,__SIZEOF_POINTER__),
          "Must adjust offset of 'nt_current_flavor' using %Iu nops",
         (uintptr_t)&nt_current_flavor & (__SIZEOF_POINTER__-1));

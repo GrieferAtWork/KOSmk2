@@ -717,7 +717,7 @@ kernel_insmod(struct module *__restrict mod,
 #define INSMOD_NORMAL    0x00000000 /*< In the even that 'mod' has already been loaded, fail by returning '-EEXIST'. */
 #define INSMOD_REUSE     0x00000001 /*< In the even that 'mod' has already been loaded, return a reference to the existing instance. */
 #define INSMOD_SECONDARY 0x00000002 /*< In the even that 'mod' has already been loaded, create and return a secondary instance. */
-#define INSMOD_NOINIT    0x00010000 /*< Do not execute  */
+#define INSMOD_NOINIT    0x00010000 /*< Do not execute initializers. */
 
 LOCAL SAFE REF struct instance *KCALL kernel_insmod_f(struct file *__restrict fp, HOST char const *cmdline, u32 mode);
 LOCAL SAFE REF struct instance *KCALL kernel_insmod_s(HOST char const *__restrict abs_filename, HOST char const *cmdline, u32 mode);

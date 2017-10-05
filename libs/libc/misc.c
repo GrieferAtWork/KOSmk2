@@ -41,6 +41,7 @@
 #include <sys/mman.h>
 #include <bits/dos-errno.h>
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <byteswap.h>
 #include <winapi/windows.h>
 #include <winapi/excpt.h>
 #include <winapi/ntdef.h>
@@ -508,7 +509,9 @@ REDIRECT_LIBM(asinhl,libc_asinhl,asinhl,long double,(long double x),(x));
 REDIRECT_LIBM(acoshl,libc_acoshl,acoshl,long double,(long double x),(x));
 #endif
 DEFINE_PUBLIC_ALIAS(_logb,libc_logb);
+DEFINE_PUBLIC_ALIAS(_logbf,libc_logbf);
 DEFINE_PUBLIC_ALIAS(_copysign,libc_copysign);
+DEFINE_PUBLIC_ALIAS(_copysignf,libc_copysignf);
 REDIRECT_LIBM(_finite,libc_finite,finite,int,(double x),(x));
 REDIRECT_LIBM(_finitef,libc_finitef,finitef,int,(float x),(x));
 REDIRECT_LIBM(_isnan,libc_isnan,isnan,int,(double x),(x));
@@ -549,6 +552,14 @@ DEFINE_PUBLIC_ALIAS(_fpreset,libc_fpreset);
 DEFINE_PUBLIC_ALIAS(_control87,libc_control87);
 DEFINE_PUBLIC_ALIAS(__fpecode,libc_fpecode);
 
+INTERN ATTR_DOSTEXT u16 LIBCCALL libc_bswap16(u16 x) { return bswap_16(x); }
+INTERN ATTR_DOSTEXT u32 LIBCCALL libc_bswap32(u32 x) { return bswap_32(x); }
+INTERN ATTR_DOSTEXT u64 LIBCCALL libc_bswap64(u64 x) { return bswap_64(x); }
+DEFINE_PUBLIC_ALIAS(_byteswap_ushort,libc_bswap16);
+DEFINE_PUBLIC_ALIAS(_byteswap_ulong,libc_bswap32);
+DEFINE_PUBLIC_ALIAS(_byteswap_uint64,libc_bswap64);
+
+
 INTERN ATTR_DOSTEXT void LIBCCALL libc_crt_debugger_hook(int UNUSED(code)) { /* This literally does nothing... */ }
 #if defined(__i386__) || defined(__x86_64__)
 DEFINE_PUBLIC_ALIAS(_crt_debugger_hook,libc_crt_debugger_hook);
@@ -571,6 +582,7 @@ DEFINE_PUBLIC_ALIAS(__crtUnhandledException,libc_crt_unhandled_exception);
 INTERN ATTR_DOSTEXT void LIBCCALL
 libc_crt_set_unhandled_exception_filter(/*LPTOP_LEVEL_EXCEPTION_FILTER*/void *exceptionFilter) {
  /* TODO: SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)exceptionFilter); */
+ NOT_IMPLEMENTED();
 }
 DEFINE_PUBLIC_ALIAS(__crtSetUnhandledExceptionFilter,libc_crt_set_unhandled_exception_filter);
 

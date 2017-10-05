@@ -68,6 +68,19 @@ struct mfutex {
  struct sig        f_sig;    /*< Signal used to implement scheduling with this futex. */
 };
 
+/* Locking helpers for futex objects. */
+#define mfutex_reading(x)     sig_reading(&(x)->f_sig)
+#define mfutex_writing(x)     sig_writing(&(x)->f_sig)
+#define mfutex_tryread(x)     sig_tryread(&(x)->f_sig)
+#define mfutex_trywrite(x)    sig_trywrite(&(x)->f_sig)
+#define mfutex_tryupgrade(x)  sig_tryupgrade(&(x)->f_sig)
+#define mfutex_read(x)        sig_read(&(x)->f_sig)
+#define mfutex_write(x)       sig_write(&(x)->f_sig)
+#define mfutex_upgrade(x)     sig_upgrade(&(x)->f_sig)
+#define mfutex_downgrade(x)   sig_downgrade(&(x)->f_sig)
+#define mfutex_endread(x)     sig_endread(&(x)->f_sig)
+#define mfutex_endwrite(x)    sig_endwrite(&(x)->f_sig)
+
 /* NOTE: Futex objects are always allocated in shared memory, so-as to ensure
  *       that shared access is possible without switching page directories.
  *       This is always possible, as no code used to allocate/map memory

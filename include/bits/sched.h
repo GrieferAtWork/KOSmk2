@@ -52,6 +52,24 @@ __DECL_BEGIN
 #define CLONE_NEWPID         0x20000000 /* New pid namespace. */
 #define CLONE_NEWNET         0x40000000 /* New network namespace. */
 #define CLONE_IO             0x80000000 /* Clone I/O context. */
+
+/* Value passed for 'CHILD_STACK' to 'clone()':
+ * When given, let the kernel decide where and how to allocate a new stack for the child.
+ * NOTE: The value was chosen due to the fact that it represents the wrap-around address
+ *       that would otherwise cause a STACK_FAULT when attempted to be used with push/pop,
+ *       meaning that it can't be used for any other meaningful purpose.
+ * HINT: The kernel's auto-generated stack will be automatically configured to either be
+ *       a copy of the calling thread's stack (at the same address in case CLONE_VM was passed),
+ *       or be located at a different address and consist of a pre-mapped portion (e.g.: 4K), as well
+ *       as a guard page with the potential of extending the stack some number of times (e.g.: 8)
+ *       The stack memory itself will be lazily allocated on access and be pre-initialized
+ *       to either all ZEROs or a debug constant such as '0xCC'. */
+#if 1 /* ARCH_STACK_GROWS_DOWN */
+#   define CLONE_CHILDSTACK_AUTO ((void *)0)
+#else
+#   define CLONE_CHILDSTACK_AUTO ((void *)-1)
+#endif
+
 #endif
 
 #ifdef __CC__
