@@ -213,9 +213,7 @@ INTERN int LIBCCALL libc_sigaltstack(struct sigaltstack const *__restrict ss,
  NOT_IMPLEMENTED();
  return 0;
 }
-INTERN int LIBCCALL libc_sigsuspend(sigset_t const *set) {
- return FORWARD_SYSTEM_ERROR(sys_sigsuspend(set,sizeof(sigset_t)));
-}
+INTERN int LIBCCALL libc_sigsuspend(sigset_t const *set) { return FORWARD_SYSTEM_ERROR(sys_sigsuspend(set,sizeof(sigset_t))); }
 INTERN int LIBCCALL libc_pthread_kill(pthread_t threadid, int signo) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc_pthread_sigqueue(pthread_t threadid, int signo, union sigval const value) { NOT_IMPLEMENTED(); return 0; }
 INTERN int LIBCCALL libc___xpg_sigpause(int sig) { NOT_IMPLEMENTED(); return 0; }

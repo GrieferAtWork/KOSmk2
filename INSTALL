@@ -49,6 +49,8 @@ mkdir ${GCC_PREFIX}/usr
 ln -s ${PREFIX}/include ${GCC_PREFIX}/usr/include
 ln -s ${PREFIX}/bin/libs  ${GCC_PREFIX}/usr/lib
 
+# TODO: Why not just create a .patch for all these changes?
+
 # NOTE: To build (this version of) binutils and gcc, you need the following
 #       applications (NOTE: These _EXACT_ version numbers are required!)
 #        - "autoconf-2.64"  (https://ftp.gnu.org/gnu/autoconf/)

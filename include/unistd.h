@@ -31,7 +31,7 @@
 
 __DECL_BEGIN
 
-/* Disclaimer: Code below is based off of /usr/include/unistd.h */
+/* Disclaimer: Code below is based off of /usr/include/unistd.h, yet has been _heavily_ modified. */
 
 /* Copyright (C) 1991-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -187,6 +187,19 @@ typedef __socklen_t socklen_t;
 #endif /* !L_SET */
 #endif
 
+
+/* Argument types used by exec() and spawn() functions. */
+#ifndef __TARGV
+#ifdef __USE_DOS
+#   define __TARGV  char const *const *___argv
+#   define __TENVP  char const *const *___envp
+#else
+#   define __TARGV  char *const ___argv[]
+#   define __TENVP  char *const ___envp[]
+#endif
+#endif /* !__TARGV */
+
+
 #ifndef __KERNEL__
 
 #ifndef ____environ_defined
@@ -198,9 +211,9 @@ __LIBC char **__environ __ASMNAME2("environ","_environ");
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execl);
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execle)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execle);
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execlp)(char const *__file, char const *__args, ...) __PE_FUNC_OLDPEA(execlp);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execv)(char const *__path, char *const ___argv[]) __UFS_FUNC_OLDPEA(execv);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execve)(char const *__path, char *const ___argv[], char *const ___envp[]) __UFS_FUNC_OLDPEA(execve);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execvp)(char const *__file, char *const ___argv[]) __PE_FUNC_OLDPEA(execvp);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execv)(char const *__path, __TARGV) __UFS_FUNC_OLDPEA(execv);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execve)(char const *__path, __TARGV, __TENVP) __UFS_FUNC_OLDPEA(execve);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execvp)(char const *__file, __TARGV) __PE_FUNC_OLDPEA(execvp);
 __LIBC __pid_t (__LIBCCALL getpid)(void) __PE_FUNC_OLDPEA(getpid);
 __LIBC __pid_t (__LIBCCALL getppid)(void);
 __LIBC __pid_t (__LIBCCALL getpgrp)(void);
@@ -351,7 +364,7 @@ __LIBC char **environ __PE_ASMNAME("_environ");
 #endif /* __PE__ || __USE_KOS */
 #endif /* !__PE__ || __LAZY_DOS_COMPAT__ */
 #endif /* !__environ_defined */
-__LIBC __NONNULL((1,2)) int (__LIBCCALL execvpe)(char const *__file, char *const ___argv[], char *const ___envp[]) __UFS_FUNC_OLDPEA(execvpe);
+__LIBC __NONNULL((1,2)) int (__LIBCCALL execvpe)(char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEA(execvpe);
 __LIBC int (__LIBCCALL pipe2)(int __pipedes[2], int __flags);
 __LIBC __WUNUSED char *(__LIBCCALL get_current_dir_name)(void);
 __LIBC int (__LIBCCALL dup3)(int __fd, int __fd2, int __flags);
@@ -384,14 +397,14 @@ __LIBC __NONNULL((1)) int (__LIBCCALL truncate64)(char const *__file, __off64_t 
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
 
 #ifdef __USE_XOPEN2K8
-__LIBC __NONNULL((2)) int (__LIBCCALL fexecve)(int __fd, char *const ___argv[], char *const ___envp[]);
+__LIBC __NONNULL((2)) int (__LIBCCALL fexecve)(int __fd, __TARGV, __TENVP);
 #endif /* __USE_XOPEN2K8 */
 
 #ifdef __USE_KOS
 __LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execlpe)(char const *__file, char const *__args, ...);
 __LIBC __NONNULL((2)) __ATTR_SENTINEL int (__ATTR_CDECL fexecl)(int __fd, char const *__args, ...);
 __LIBC __NONNULL((2)) __ATTR_SENTINEL int (__ATTR_CDECL fexecle)(int __fd, char const *__args, ...);
-__LIBC __NONNULL((2)) int (__LIBCCALL fexecv)(int __fd, char *const ___argv[]);
+__LIBC __NONNULL((2)) int (__LIBCCALL fexecv)(int __fd, __TARGV);
 #endif /* __USE_KOS */
 
 #if defined(__USE_MISC) || defined(__USE_XOPEN)

@@ -264,7 +264,7 @@ INTERN void (LIBCCALL libc___assertion_tbprint2)(void const *ebp, size_t n_skip)
 #endif
   {
    /* Print one traceback line. */
-   __assertion_tbprintl(iter->sf_return,iter,tb_id-n_skip);
+   libc___assertion_tbprintl(iter->sf_return,iter,tb_id-n_skip);
   }
   iter = iter->sf_caller;
   ++tb_id;
@@ -274,7 +274,8 @@ INTERN void (LIBCCALL libc___assertion_tbprint2)(void const *ebp, size_t n_skip)
  }
 }
 
-INTERN void (LIBCCALL libc___assertion_unreachable)(void) {
+INTERN ATTR_NORETURN void LIBCCALL
+libc___assertion_unreachable(void) {
  assertion_corefail("__builtin_unreachable()",DEBUGINFO_NUL,NULL,NULL);
 }
 
@@ -284,8 +285,8 @@ void (LIBCCALL libc___assertion_failed)(char const *expr, DEBUGINFO) {
 }
 
 INTERN ATTR_NORETURN ATTR_NOINLINE
-void (libc___assertion_failedf)(char const *expr, DEBUGINFO,
-                                char const *format, ...) {
+void libc___assertion_failedf(char const *expr, DEBUGINFO,
+                              char const *format, ...) {
  va_list args;
  va_start(args,format);
  assertion_corefail(expr,DEBUGINFO_FWD,format,args);

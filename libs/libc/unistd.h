@@ -429,40 +429,40 @@ INTDEF int LIBCCALL libc_open_osfhandle(intptr_t osfd, int flags);
 #define WEXEC_F_DOSMODE 0x1
 #define WEXEC_F_PATH    0x2
 
-INTDEF int LIBCCALL libc_impl_16wexecve(int mode, char16_t const *path, char16_t const *const *argv, char16_t const *const *envp);
-INTDEF int LIBCCALL libc_impl_32wexecve(int mode, char32_t const *path, char32_t const *const *argv, char32_t const *const *envp);
-INTDEF int LIBCCALL libc_16wexecv(char16_t const *path, char16_t const *const *argv);
-INTDEF int LIBCCALL libc_16wexecve(char16_t const *path, char16_t const *const *argv, char16_t const *const *envp);
-INTDEF int LIBCCALL libc_16wexecvp(char16_t const *file, char16_t const *const *argv);
-INTDEF int LIBCCALL libc_16wexecvpe(char16_t const *file, char16_t const *const *argv, char16_t const *const *envp);
-INTDEF int LIBCCALL libc_32wexecv(char32_t const *path, char32_t const *const *argv);
-INTDEF int LIBCCALL libc_32wexecve(char32_t const *path, char32_t const *const *argv, char32_t const *const *envp);
-INTDEF int LIBCCALL libc_32wexecvp(char32_t const *file, char32_t const *const *argv);
-INTDEF int LIBCCALL libc_32wexecvpe(char32_t const *file, char32_t const *const *argv, char32_t const *const *envp);
-INTDEF int LIBCCALL libc_dos_16wexecv(char16_t const *path, char16_t const *const *argv);
-INTDEF int LIBCCALL libc_dos_16wexecve(char16_t const *path, char16_t const *const *argv, char16_t const *const *envp);
-INTDEF int LIBCCALL libc_dos_16wexecvp(char16_t const *file, char16_t const *const *argv);
-INTDEF int LIBCCALL libc_dos_16wexecvpe(char16_t const *file, char16_t const *const *argv, char16_t const *const *envp);
-INTDEF int LIBCCALL libc_dos_32wexecv(char32_t const *path, char32_t const *const *argv);
-INTDEF int LIBCCALL libc_dos_32wexecve(char32_t const *path, char32_t const *const *argv, char32_t const *const *envp);
-INTDEF int LIBCCALL libc_dos_32wexecvp(char32_t const *file, char32_t const *const *argv);
-INTDEF int LIBCCALL libc_dos_32wexecvpe(char32_t const *file, char32_t const *const *argv, char32_t const *const *envp);
-INTDEF int ATTR_CDECL libc_16wexecl(char16_t const *path, char16_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_16wexecle(char16_t const *path, char16_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_16wexeclp(char16_t const *file, char16_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_16wexeclpe(char16_t const *file, char16_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_32wexecl(char32_t const *path, char32_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_32wexecle(char32_t const *path, char32_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_32wexeclp(char32_t const *file, char32_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_32wexeclpe(char32_t const *file, char32_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_dos_16wexecl(char16_t const *path, char16_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_dos_16wexecle(char16_t const *path, char16_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_dos_16wexeclp(char16_t const *file, char16_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_dos_16wexeclpe(char16_t const *file, char16_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_dos_32wexecl(char32_t const *path, char32_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_dos_32wexecle(char32_t const *path, char32_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_dos_32wexeclp(char32_t const *file, char32_t const *argv, ...);
-INTDEF int ATTR_CDECL libc_dos_32wexeclpe(char32_t const *file, char32_t const *argv, ...);
+INTDEF int LIBCCALL libc_impl_16wexecve(int mode, char16_t const *path, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_impl_32wexecve(int mode, char32_t const *path, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int LIBCCALL libc_16wexecv(char16_t const *path, char16_t *const argv[]);
+INTDEF int LIBCCALL libc_16wexecve(char16_t const *path, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_16wexecvp(char16_t const *file, char16_t *const argv[]);
+INTDEF int LIBCCALL libc_16wexecvpe(char16_t const *file, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_32wexecv(char32_t const *path, char32_t *const argv[]);
+INTDEF int LIBCCALL libc_32wexecve(char32_t const *path, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int LIBCCALL libc_32wexecvp(char32_t const *file, char32_t *const argv[]);
+INTDEF int LIBCCALL libc_32wexecvpe(char32_t const *file, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int LIBCCALL libc_dos_16wexecv(char16_t const *path, char16_t *const argv[]);
+INTDEF int LIBCCALL libc_dos_16wexecve(char16_t const *path, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_dos_16wexecvp(char16_t const *file, char16_t *const argv[]);
+INTDEF int LIBCCALL libc_dos_16wexecvpe(char16_t const *file, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_dos_32wexecv(char32_t const *path, char32_t *const argv[]);
+INTDEF int LIBCCALL libc_dos_32wexecve(char32_t const *path, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int LIBCCALL libc_dos_32wexecvp(char32_t const *file, char32_t *const argv[]);
+INTDEF int LIBCCALL libc_dos_32wexecvpe(char32_t const *file, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int ATTR_CDECL libc_16wexecl(char16_t const *path, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_16wexecle(char16_t const *path, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_16wexeclp(char16_t const *file, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_16wexeclpe(char16_t const *file, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_32wexecl(char32_t const *path, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_32wexecle(char32_t const *path, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_32wexeclp(char32_t const *file, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_32wexeclpe(char32_t const *file, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_16wexecl(char16_t const *path, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_16wexecle(char16_t const *path, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_16wexeclp(char16_t const *file, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_16wexeclpe(char16_t const *file, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_32wexecl(char32_t const *path, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_32wexecle(char32_t const *path, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_32wexeclp(char32_t const *file, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_32wexeclpe(char32_t const *file, char32_t const *arg, ...);
 
 
 /* Unicode lstat() and fstatat() are currently not used in header files.
@@ -518,7 +518,62 @@ INTDEF int LIBCCALL libc_dos_local_16wstat32i64(char16_t const *__restrict file,
  *       characters, and the functions above are only ever used when building in PE-mode. */
 
 
-/* TODO: Spawn functions. */
+/* Spawn function family. */
+INTDEF intptr_t LIBCCALL libc_cwait(int *tstat, intptr_t pid, int action);
+INTDEF intptr_t ATTR_CDECL libc_spawnl(int mode, char const *file, char const *arg, ...);
+INTDEF intptr_t ATTR_CDECL libc_spawnle(int mode, char const *file, char const *arg, ...);
+INTDEF intptr_t ATTR_CDECL libc_spawnlp(int mode, char const *file, char const *arg, ...);
+INTDEF intptr_t ATTR_CDECL libc_spawnlpe(int mode, char const *file, char const *arg, ...);
+INTDEF intptr_t LIBCCALL libc_spawnv(int mode, char const *file, char *const argv[]);
+INTDEF intptr_t LIBCCALL libc_spawnve(int mode, char const *file, char *const argv[], char *const envp[]);
+INTDEF intptr_t LIBCCALL libc_spawnvp(int mode, char const *file, char *const argv[]);
+INTDEF intptr_t LIBCCALL libc_spawnvpe(int mode, char const *file, char *const argv[], char *const envp[]);
+INTDEF intptr_t ATTR_CDECL libc_fspawnl(int mode, int fd, char const *arg, ...);
+INTDEF intptr_t ATTR_CDECL libc_fspawnle(int mode, int fd, char const *arg, ...);
+INTDEF intptr_t LIBCCALL libc_fspawnv(int mode, int fd, char *const argv[]);
+INTDEF intptr_t LIBCCALL libc_fspawnve(int mode, int fd, char *const argv[], char *const envp[]);
+INTDEF intptr_t ATTR_CDECL libc_dos_spawnl(int mode, char const *file, char const *arg, ...);
+INTDEF intptr_t ATTR_CDECL libc_dos_spawnle(int mode, char const *file, char const *arg, ...);
+INTDEF intptr_t ATTR_CDECL libc_dos_spawnlp(int mode, char const *file, char const *arg, ...);
+INTDEF intptr_t ATTR_CDECL libc_dos_spawnlpe(int mode, char const *file, char const *arg, ...);
+INTDEF intptr_t LIBCCALL libc_dos_spawnv(int mode, char const *file, char *const argv[]);
+INTDEF intptr_t LIBCCALL libc_dos_spawnve(int mode, char const *file, char *const argv[], char *const envp[]);
+INTDEF intptr_t LIBCCALL libc_dos_spawnvp(int mode, char const *file, char *const argv[]);
+INTDEF intptr_t LIBCCALL libc_dos_spawnvpe(int mode, char const *file, char *const argv[], char *const envp[]);
+
+INTDEF int LIBCCALL libc_16wspawnv(int mode, char16_t const *path, char16_t *const argv[]);
+INTDEF int LIBCCALL libc_16wspawnve(int mode, char16_t const *path, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_16wspawnvp(int mode, char16_t const *file, char16_t *const argv[]);
+INTDEF int LIBCCALL libc_16wspawnvpe(int mode, char16_t const *file, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_32wspawnv(int mode, char32_t const *path, char32_t *const argv[]);
+INTDEF int LIBCCALL libc_32wspawnve(int mode, char32_t const *path, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int LIBCCALL libc_32wspawnvp(int mode, char32_t const *file, char32_t *const argv[]);
+INTDEF int LIBCCALL libc_32wspawnvpe(int mode, char32_t const *file, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int LIBCCALL libc_dos_16wspawnv(int mode, char16_t const *path, char16_t *const argv[]);
+INTDEF int LIBCCALL libc_dos_16wspawnve(int mode, char16_t const *path, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_dos_16wspawnvp(int mode, char16_t const *file, char16_t *const argv[]);
+INTDEF int LIBCCALL libc_dos_16wspawnvpe(int mode, char16_t const *file, char16_t *const argv[], char16_t *const envp[]);
+INTDEF int LIBCCALL libc_dos_32wspawnv(int mode, char32_t const *path, char32_t *const argv[]);
+INTDEF int LIBCCALL libc_dos_32wspawnve(int mode, char32_t const *path, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int LIBCCALL libc_dos_32wspawnvp(int mode, char32_t const *file, char32_t *const argv[]);
+INTDEF int LIBCCALL libc_dos_32wspawnvpe(int mode, char32_t const *file, char32_t *const argv[], char32_t *const envp[]);
+INTDEF int ATTR_CDECL libc_16wspawnl(int mode, char16_t const *path, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_16wspawnle(int mode, char16_t const *path, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_16wspawnlp(int mode, char16_t const *file, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_16wspawnlpe(int mode, char16_t const *file, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_32wspawnl(int mode, char32_t const *path, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_32wspawnle(int mode, char32_t const *path, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_32wspawnlp(int mode, char32_t const *file, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_32wspawnlpe(int mode, char32_t const *file, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_16wspawnl(int mode, char16_t const *path, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_16wspawnle(int mode, char16_t const *path, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_16wspawnlp(int mode, char16_t const *file, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_16wspawnlpe(int mode, char16_t const *file, char16_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_32wspawnl(int mode, char32_t const *path, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_32wspawnle(int mode, char32_t const *path, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_32wspawnlp(int mode, char32_t const *file, char32_t const *arg, ...);
+INTDEF int ATTR_CDECL libc_dos_32wspawnlpe(int mode, char32_t const *file, char32_t const *arg, ...);
+
 // __LIBC intptr_t (__LIBCCALL _spawnl)(int __mode, char const *__file, char const *__argv, ...) __UFS_FUNC_OLDPEB(spawnl);
 // __LIBC intptr_t (__LIBCCALL _spawnle)(int __mode, char const *__file, char const *__argv, ...) __UFS_FUNC_OLDPEB(spawnle);
 // __LIBC intptr_t (__LIBCCALL _spawnlp)(int __mode, char const *__file, char const *__argv, ...) __UFS_FUNC_OLDPEB(spawnlp);

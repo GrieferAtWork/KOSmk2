@@ -51,13 +51,13 @@ DECL_BEGIN
 PRIVATE int syslog_options = 0;
 PRIVATE int syslog_facility = 0;
 PRIVATE int syslog_mask = -1;
-INTDEF void LIBCCALL libc_closelog(void) {}
-INTDEF void LIBCCALL libc_openlog(char const *UNUSED(ident), int option, int facility) {
+INTERN void LIBCCALL libc_closelog(void) {}
+INTERN void LIBCCALL libc_openlog(char const *UNUSED(ident), int option, int facility) {
  syslog_options  = option;
  syslog_facility = facility;
 }
-INTDEF int LIBCCALL libc_setlogmask(int mask) { return ATOMIC_XCH(syslog_mask,mask); }
-INTDEF ssize_t LIBCCALL
+INTERN int LIBCCALL libc_setlogmask(int mask) { return ATOMIC_XCH(syslog_mask,mask); }
+INTERN ssize_t LIBCCALL
 libc_syslog_printer(char const *__restrict data,
                     size_t datalen, void *closure) {
  /* Check if the specified priority should be ignored. */
@@ -68,7 +68,7 @@ libc_syslog_printer(char const *__restrict data,
      libc_fwrite(data,sizeof(char),datalen,stderr);
  return sys_xsyslog((int)(uintptr_t)closure,data,datalen);
 }
-INTDEF void LIBCCALL libc_vsyslog(int level, char const *format, va_list args) {
+INTERN void LIBCCALL libc_vsyslog(int level, char const *format, va_list args) {
 #if 1
  /* NOTE: Print the given message unbuffered to prevent syslog calls from
   *       other functions that may either cause a deadlock, or an infinite
@@ -82,7 +82,7 @@ INTDEF void LIBCCALL libc_vsyslog(int level, char const *format, va_list args) {
                        format,args);
 #endif
 }
-INTDEF void ATTR_CDECL
+INTERN void ATTR_CDECL
 libc_syslog(int level, char const *format, ...) {
  va_list args;
  va_start(args,format);
@@ -91,27 +91,27 @@ libc_syslog(int level, char const *format, ...) {
 }
 
 
-INTDEF int LIBCCALL
+INTERN int LIBCCALL
 libc_munmap(void *addr, size_t len) {
  ssize_t result = sys_munmap(addr,len);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return -1; }
  return 0;
 }
-INTDEF void *LIBCCALL
+INTERN void *LIBCCALL
 libc_xmmap1(struct mmap_info const *data) {
  void *result;
  result = sys_xmmap(MMAP_INFO_CURRENT,data);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return MAP_FAILED; }
  return result;
 }
-INTDEF ssize_t LIBCCALL
+INTERN ssize_t LIBCCALL
 libc_xmunmap(void *addr, size_t len, int flags, void *tag) {
  ssize_t result = sys_xmunmap(addr,len,flags,tag);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return -1; }
  return result;
 }
 
-INTDEF void *LIBCCALL libc_xsharesym(char const *name) {
+INTERN void *LIBCCALL libc_xsharesym(char const *name) {
  void *result = sys_xsharesym(name);
  if (!result) SET_ERRNO(EINVAL);
  else if (E_ISERR(result)) {
@@ -120,13 +120,13 @@ INTDEF void *LIBCCALL libc_xsharesym(char const *name) {
  }
  return result;
 }
-INTDEF void *LIBCCALL libc_mmap(void *addr, size_t len, int prot,
+INTERN void *LIBCCALL libc_mmap(void *addr, size_t len, int prot,
                                 int flags, int fd, off_t offset) {
  void *result = sys_mmap(addr,len,prot,flags,fd,offset);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return MAP_FAILED; }
  return result;
 }
-INTDEF void *LIBCCALL libc_mmap64(void *addr, size_t len, int prot,
+INTERN void *LIBCCALL libc_mmap64(void *addr, size_t len, int prot,
                                   int flags, int fd, off64_t offset) {
 #if __SIZEOF_SYSCALL_LONG__ >= 8
  void *rresult = sys_mmap(addr,len,prot,flags,fd,offset);
@@ -151,7 +151,7 @@ INTDEF void *LIBCCALL libc_mmap64(void *addr, size_t len, int prot,
 #endif
 }
 
-INTDEF void *ATTR_CDECL libc_mremap(void *addr, size_t old_len,
+INTERN void *ATTR_CDECL libc_mremap(void *addr, size_t old_len,
                                     size_t new_len, int flags, ...) {
  va_list args; void *result,*newaddr;
  va_start(args,flags);
@@ -164,27 +164,39 @@ INTDEF void *ATTR_CDECL libc_mremap(void *addr, size_t old_len,
  }
  return result;
 }
-
-INTDEF int LIBCCALL libc_mprotect(void *addr, size_t len, int prot) {
+INTERN int LIBCCALL libc_mprotect(void *addr, size_t len, int prot) {
  return FORWARD_SYSTEM_ERROR(sys_mprotect(addr,len,prot));
 }
 
-INTDEF void *LIBCCALL libc_xdlopen(char const *filename, int flags) {
+INTERN int LIBCCALL libc_msync(void *addr, size_t len, int flags) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_mlock(void const *addr, size_t len) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_munlock(void const *addr, size_t len) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_mlockall(int flags) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_munlockall(void) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_shm_open(char const *name, int oflag, mode_t mode) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_shm_unlink(char const *name) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_madvise(void *addr, size_t len, int advice) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_mincore(void *start, size_t len, unsigned char *vec) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_posix_madvise(void *addr, size_t len, int advice) { NOT_IMPLEMENTED(); return -1; }
+INTERN int LIBCCALL libc_remap_file_pages(void *start, size_t size, int prot, size_t pgoff, int flags) { NOT_IMPLEMENTED(); return -1; }
+
+
+INTERN void *LIBCCALL libc_xdlopen(char const *filename, int flags) {
  void *result = sys_xdlopen(filename,flags);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
-INTDEF void *LIBCCALL libc_xfdlopen(int fd, int flags) {
+INTERN void *LIBCCALL libc_xfdlopen(int fd, int flags) {
  void *result = sys_xfdlopen(fd,flags);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
-INTDEF void *LIBCCALL libc_xdlsym(void *handle, char const *symbol) {
+INTERN void *LIBCCALL libc_xdlsym(void *handle, char const *symbol) {
  void *result = sys_xdlsym(handle,symbol);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
-INTDEF int LIBCCALL libc_xdlclose(void *handle) {
+INTERN int LIBCCALL libc_xdlclose(void *handle) {
  return FORWARD_SYSTEM_ERROR(sys_xdlclose(handle));
 }
 
@@ -218,6 +230,18 @@ DEFINE_PUBLIC_ALIAS(mmap,libc_mmap);
 DEFINE_PUBLIC_ALIAS(mmap64,libc_mmap64);
 DEFINE_PUBLIC_ALIAS(mremap,libc_mremap);
 DEFINE_PUBLIC_ALIAS(mprotect,libc_mprotect);
+DEFINE_PUBLIC_ALIAS(msync,libc_msync);
+DEFINE_PUBLIC_ALIAS(mlock,libc_mlock);
+DEFINE_PUBLIC_ALIAS(munlock,libc_munlock);
+DEFINE_PUBLIC_ALIAS(mlockall,libc_mlockall);
+DEFINE_PUBLIC_ALIAS(munlockall,libc_munlockall);
+DEFINE_PUBLIC_ALIAS(shm_open,libc_shm_open);
+DEFINE_PUBLIC_ALIAS(shm_unlink,libc_shm_unlink);
+DEFINE_PUBLIC_ALIAS(madvise,libc_madvise);
+DEFINE_PUBLIC_ALIAS(mincore,libc_mincore);
+DEFINE_PUBLIC_ALIAS(posix_madvise,libc_posix_madvise);
+DEFINE_PUBLIC_ALIAS(remap_file_pages,libc_remap_file_pages);
+
 DEFINE_PUBLIC_ALIAS(xdlopen,libc_xdlopen);
 DEFINE_PUBLIC_ALIAS(xfdlopen,libc_xfdlopen);
 DEFINE_PUBLIC_ALIAS(xdlsym,libc_xdlsym);
@@ -726,7 +750,7 @@ libc_dos_xcptfilter(u32 xno, struct _EXCEPTION_POINTERS *infp_ptrs) {
 }
 DEFINE_PUBLIC_ALIAS(_XcptFilter,libc_dos_xcptfilter);
 
-INTDEF void *LIBCCALL
+INTERN void *LIBCCALL
 libc_dos_crt_rtc_init(void *UNUSED(r0), void **UNUSED(r1),
                       s32 UNUSED(r2), s32 UNUSED(r3), s32 UNUSED(r4)) {
  return NULL;

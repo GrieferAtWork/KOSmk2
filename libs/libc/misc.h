@@ -45,6 +45,19 @@ INTDEF void *LIBCCALL libc_mmap(void *addr, size_t len, int prot, int flags, int
 INTDEF void *LIBCCALL libc_mmap64(void *addr, size_t len, int prot, int flags, int fd, off64_t offset);
 INTDEF void *ATTR_CDECL libc_mremap(void *addr, size_t old_len, size_t new_len, int flags, ...);
 INTDEF int LIBCCALL libc_mprotect(void *addr, size_t len, int prot);
+INTDEF int LIBCCALL libc_msync(void *addr, size_t len, int flags);
+INTDEF int LIBCCALL libc_mlock(void const *addr, size_t len);
+INTDEF int LIBCCALL libc_munlock(void const *addr, size_t len);
+INTDEF int LIBCCALL libc_mlockall(int flags);
+INTDEF int LIBCCALL libc_munlockall(void);
+INTDEF int LIBCCALL libc_shm_open(char const *name, int oflag, mode_t mode);
+INTDEF int LIBCCALL libc_shm_unlink(char const *name);
+INTDEF int LIBCCALL libc_madvise(void *addr, size_t len, int advice);
+INTDEF int LIBCCALL libc_mincore(void *start, size_t len, unsigned char *vec);
+INTDEF int LIBCCALL libc_posix_madvise(void *addr, size_t len, int advice);
+INTDEF int LIBCCALL libc_remap_file_pages(void *start, size_t size, int prot, size_t pgoff, int flags);
+
+
 INTDEF void *LIBCCALL libc_xdlopen(char const *filename, int flags);
 INTDEF void *LIBCCALL libc_xfdlopen(int fd, int flags);
 INTDEF void *LIBCCALL libc_xdlsym(void *handle, char const *symbol);

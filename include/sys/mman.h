@@ -119,7 +119,7 @@ typedef __mode_t mode_t;
 
 struct mmap_virt {
  int        mv_file;  /*< [valid_if(!MAP_ANONYMOUS)] File descriptor of the file to map.
-                       *   WARNING: The kernel cannot guaranty that a file mappings
+                       *   WARNING: The kernel cannot guaranty that file mappings
                        *            remain identical, especially when being modified
                        *            after being mapped.
                        *            In addition, mapping a file descriptor opened for
@@ -142,9 +142,9 @@ struct mmap_virt {
                        *   But writing? - I guess it would be cool to create persistent
                        *   application memory, such as a program that saves its configuration
                        *   within its own binary. But other than that: It just seems outdated and lazy.
-                       *   And in addition, this changed allowed me to remove the annoying restriction
-                       *   of (mv_off & (PAGESIZE-1) == 0) unix imposes on write-mappings of files.
-                       *   And besides: As long as only once instance is running, write-mappings do work completely!
+                       *   And in addition, this change allowed me to remove the annoying restriction
+                       *   of (mv_off & (PAGESIZE-1) == 0) unix imposes on file mappings.
+                       *   And besides: As long as only once instance is running, write-mappings do fully work!
                        */
  /* NOTE: File mappings are initialized as follows:
   *                 
@@ -165,17 +165,18 @@ union{
 #ifdef __USE_LARGEFILE64
  __off64_t  mv_off64; /*< [valid_if(!MAP_ANONYMOUS)] Offset into 'mv_file' where mapping starts (64-bit field). */
 #endif
+ __off64_t  __mv_off; /*< Force 64-bit alignment. */
 };
  size_t     mv_len;   /*< [valid_if(!MAP_ANONYMOUS)] Max amount of bytes to read from 'mv_file', starting at 'mv_off/mv_off64'.
                        *   Clamped to 'mi_size' when greater; when lower, difference is
                        *   _always_ initialized with 'mi_fill' (ignoring 'MAP_UNINITIALIZED').
-                       *   >> Very useful when mapping program headers with a smaller memory-size, than file-size. */
+                       *   >> Very useful when mapping program headers with a smaller memory-size than file-size. */
  __uint32_t mv_fill;  /*< [valid_if(MAP_ANONYMOUS ? !MAP_UNINITIALIZED : mv_len < mi_size)]
                        *   Filler double-word for any undefined memory.
-                       *   On some platforms, a multi-byte pattern might described by this may be
+                       *   On some platforms, a multi-byte pattern described by this may be
                        *   used to initialize memory, but KOS only guaranties that the lowest byte
                        *  (that is 'mi_fill & 0xff') will always be used, meaning that a consistent
-                       *   initialization of memory is only consistent when 'mi_fill == 0x01010101*(mi_fill & 0xff)'. */
+                       *   initialization of memory is only guarantied when 'mi_fill == 0x01010101*(mi_fill & 0xff)'. */
  size_t     mv_guard; /*< [valid_if(MAP_GROWSDOWN||MAP_GROWSUP)] Size of the guard region in bytes.
                        *   NOTE: When ZERO(0), both the 'MAP_GROWSDOWN' and 'MAP_GROWSUP' flags are ignored.
                        *   NOTE: Clamped to 'mi_size-PAGESIZE' when greater.
@@ -194,7 +195,7 @@ union{
 struct mmap_phys {
  PHYS void *mp_addr;  /*< [valid_if(XMAP_PHYSICAL)] Physical address at which memory should be allocated.
                        *  [REQUIRES(!MAP_FIXED || mp_addr & (PAGESIZE-1) == mi_addr & (PAGESIZE-1))]
-                       *   NOTE: When mapping memory at a non-fixed address, make match sub-page alignments. */
+                       *   NOTE: When mapping memory at a non-fixed address, sub-page alignments are made to match. */
 };
 
 
@@ -203,19 +204,19 @@ struct mmap_phys {
                                    *  NOTE: Using this flag requires the 'CAP_SYS_ADMIN' capability.
                                    *  NOTE: When this mode is used, no memory pre-initialization can be performed!
                                    *        This is pure, low-level hardware access and only meant for ring#3
-                                   *        drivers that need access to memory-mapped hardware and I/O. */
+                                   *        drivers that need access to memory-mapped device buffers or I/O. */
 #define XMAP_TYPE      0x00000001 /*< Mask for known XMAP types. */
 #define XMAP_FINDAUTO  0x00000000 /*< [valid_if(!MAP_FIXED)] Find free memory the same way 'mmap()' does:
                                    *   When 'mi_addr' is NULL, find suitable memory within the thread's user heap/stack.
-                                   *   Otherwise, do the same as if 'XMAP_FINDBELOW' and 'XMAP_FINDABOVE' are set. */
+                                   *   Otherwise, do the same as if both 'XMAP_FINDBELOW' and 'XMAP_FINDABOVE' were set. */
 #define XMAP_FINDBELOW 0x00000010 /*< [valid_if(!MAP_FIXED)] Use the nearest unused address range above (considering 'mi_addr...+=mi_size' first and 'CEIL_ALIGN(mi_addr+mi_size,mi_align)...+=mi_size' next). */
 #define XMAP_FINDABOVE 0x00000020 /*< [valid_if(!MAP_FIXED)] Use the nearest unused address range below (considering 'mi_addr...+=mi_size' first and 'FLOOR_ALIGN(mi_addr-mi_size,mi_align)...+=mi_size' next).
                                    *   NOTE: When both 'XMAP_FINDBELOW' and 'XMAP_FINDABOVE' are set, use whichever
                                    *         discovered range (if any) is located closer to 'mi_addr...+=mi_size' */
 #define XMAP_NOTRYNGAP 0x00000040 /*< [valid_if(!MAP_FIXED)] When the first attempt to find free memory fails, and
                                    *                         'mi_gap' was non-zero, don't try again without any gap. */
-#define XMAP_FORCEGAP  0x00000080 /*< [valid_if(!MAP_FIXED)] Force a gap before & after around all types of memory mappings.
-                                   *                         When not set, only try to keep a gap before 'MAP_GROWSDOWN' and after 'MAP_GROWSUP' */
+#define XMAP_FORCEGAP  0x00000080 /*< [valid_if(!MAP_FIXED)] Force a gap before & after all types of memory mappings.
+                                   *   When not set, only try to keep a gap before 'MAP_GROWSDOWN' and after 'MAP_GROWSUP' */
 
 /* mmap_info version control. */
 #define MMAP_INFO_V1      0
@@ -239,7 +240,7 @@ struct mmap_info_v1 {
  size_t           mi_gap;   /*< [valid_if(!MAP_FIXED)] When searching for suitable addresses and 'mi_addr...+=mi_size'
                              *   was already in use, any address range considered there-after must not be closer to another existing range than 'mi_gap' bytes.
                              *   HINT: This member is useful for discovering free memory while leaving a gap for guard mappings to expand into.
-                             *   HINT: mmap() has this argument is set to 16*PAGESIZE, not setting 'XMAP_NOTRYNGAP'. */
+                             *   HINT: mmap() has sets this argument to 16*PAGESIZE, not setting 'XMAP_NOTRYNGAP'. */
  void            *mi_tag;   /*< A virtual memory mapping tag that can later be re-used to identify this mapping. */
 union{
  struct mmap_virt mi_virt;  /*< [valid_if(mi_xflag&XMAP_TYPE == XMAP_VIRTUAL)] Virtual mapping data. */
@@ -258,40 +259,38 @@ union{
 #   define MREMAP_FIXED   2
 #endif
 
+#define MAP_FAILED   ((void *)-1)
 
 #ifndef __KERNEL__
-#define MAP_FAILED   ((void *)-1)
 __LIBC void *(__LIBCCALL mmap)(void *__addr, size_t __len, int __prot, int __flags, int __fd, __FS_TYPE(off) __offset) __FS_FUNC(mmap);
-#ifdef __USE_LARGEFILE64
-__LIBC void *(__LIBCCALL mmap64)(void *__addr, size_t __len, int __prot, int __flags, int __fd, __off64_t __offset);
-#endif
 __LIBC int (__LIBCCALL munmap)(void *__addr, size_t __len);
 __LIBC int (__LIBCCALL mprotect)(void *__addr, size_t __len, int __prot);
 __LIBC int (__LIBCCALL msync)(void *__addr, size_t __len, int __flags);
-#ifdef __USE_MISC
-__LIBC int (__LIBCCALL madvise)(void *__addr, size_t __len, int __advice);
-#endif
-#ifdef __USE_XOPEN2K
-__LIBC int (__LIBCCALL posix_madvise)(void *__addr, size_t __len, int __advice);
-#endif
 __LIBC int (__LIBCCALL mlock)(void const *__addr, size_t __len);
 __LIBC int (__LIBCCALL munlock)(void const *__addr, size_t __len);
 __LIBC int (__LIBCCALL mlockall)(int __flags);
 __LIBC int (__LIBCCALL munlockall)(void);
+__LIBC int (__LIBCCALL shm_open)(char const *__name, int __oflag, mode_t __mode);
+__LIBC int (__LIBCCALL shm_unlink)(char const *__name);
 #ifdef __USE_MISC
+__LIBC int (__LIBCCALL madvise)(void *__addr, size_t __len, int __advice);
 __LIBC int (__LIBCCALL mincore)(void *__start, size_t __len, unsigned char *__vec);
-#endif
+#endif /* __USE_MISC */
+#ifdef __USE_LARGEFILE64
+__LIBC void *(__LIBCCALL mmap64)(void *__addr, size_t __len, int __prot, int __flags, int __fd, __off64_t __offset);
+#endif /* __USE_LARGEFILE64 */
+#ifdef __USE_XOPEN2K
+__LIBC int (__LIBCCALL posix_madvise)(void *__addr, size_t __len, int __advice);
+#endif /* __USE_XOPEN2K */
 #ifdef __USE_GNU
 __LIBC void *(__ATTR_CDECL mremap)(void *__addr, size_t __old_len, size_t __new_len, int __flags, ...);
 __LIBC int (__LIBCCALL remap_file_pages)(void *__start, size_t __size, int __prot, size_t __pgoff, int __flags);
-#endif
-__LIBC int (__LIBCCALL shm_open)(char const *__name, int __oflag, mode_t __mode);
-__LIBC int (__LIBCCALL shm_unlink)(char const *__name);
+#endif /* __USE_GNU */
 
 #ifdef __USE_KOS
 __LIBC void *(__LIBCCALL xmmap)(struct mmap_info const *__data) __ASMNAME("xmmap1");
 __LIBC ssize_t (__LIBCCALL xmunmap)(void *__addr, size_t __len, int __flags, void *__tag);
-#endif
+#endif /* __USE_KOS */
 
 #endif /* !__KERNEL__ */
 
