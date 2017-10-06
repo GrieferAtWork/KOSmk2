@@ -23,6 +23,7 @@
 
 #include <assert.h>
 #include <dev/blkdev.h>
+#include <dev/rtc.h>
 #include <fcntl.h>
 #include <fs/access.h>
 #include <fs/basic_types.h>
@@ -31,13 +32,13 @@
 #include <fs/fs.h>
 #include <fs/inode.h>
 #include <fs/superblock.h>
+#include <hybrid/align.h>
 #include <hybrid/atomic.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/list/list.h>
 #include <kernel/boot.h>
 #include <kernel/user.h>
-#include <sys/syslog.h>
 #include <linker/module.h>
 #include <malloc.h>
 #include <sched/cpu.h>
@@ -45,8 +46,8 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/syslog.h>
 #include <unistd.h>
-#include <hybrid/align.h>
 
 DECL_BEGIN
 
@@ -1113,10 +1114,21 @@ def_name:default:
    if unlikely(INODE_ISREADONLY(ino)) {
     res_ino = E_PTR(-EROFS);
    } else {
-    iattrset_t attr_mode = attr_valid;
+    iattrset_t attr_mode;
+    struct iattr used_attr;
+    attr_mode = IATTR_MODE|IATTR_UID|IATTR_GID|IATTR_SIZ|IATTR_ATIME|IATTR_MTIME|IATTR_CTIME;
     if (!(oflags&O_EXCL)) attr_mode |= IATTR_EXISTS;
     if (oflags&O_TRUNC) attr_mode |= IATTR_TRUNC;
-    res_ino = (*ino->i_ops->ino_mkreg)(ino,res_entry,attr,attr_mode);
+    memcpy(&used_attr,attr,sizeof(struct iattr));
+    /* Fill in all missing information when creating a new file. */
+    if (!(attr_valid&IATTR_MODE))  used_attr.ia_mode = 0400;
+    if (!(attr_valid&IATTR_UID))   used_attr.ia_uid  = 0;
+    if (!(attr_valid&IATTR_GID))   used_attr.ia_gid  = 0;
+    if (!(attr_valid&IATTR_SIZ))   used_attr.ia_siz  = 0;
+    if (!(attr_valid&IATTR_CTIME)) sysrtc_get(&used_attr.ia_ctime);
+    if (!(attr_valid&IATTR_MTIME)) memcpy(&used_attr.ia_mtime,&used_attr.ia_ctime,sizeof(struct timespec));
+    if (!(attr_valid&IATTR_ATIME)) memcpy(&used_attr.ia_atime,&used_attr.ia_mtime,sizeof(struct timespec));
+    res_ino = (*ino->i_ops->ino_mkreg)(ino,res_entry,&used_attr,attr_mode);
     must_sync = fs_autosync;
     assert(res_ino);
    }

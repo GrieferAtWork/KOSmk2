@@ -287,6 +287,13 @@ struct inodeops {
  /* $ > "/foo/bar"
   * >> ino_mkreg(EFFECTIVE_INODE("/foo"),DENTRY("/foo/bar")) -> INODE("/foo/bar");
   * @assume(S_ISDIR(dir_node->i_attr.ia_mode));
+  * @assume(mode&IATTR_MODE);
+  * @assume(mode&IATTR_UID);
+  * @assume(mode&IATTR_GID);
+  * @assume(mode&IATTR_SIZ);
+  * @assume(mode&IATTR_ATIME);
+  * @assume(mode&IATTR_MTIME);
+  * @assume(mode&IATTR_CTIME);
   * @param: mode: When 'IATTR_TRUNC|IATTR_EXISTS' is set, allow existing files to
   *               be opened, and mirror attributes specified by this argument.
   *               WARNING: When the file doesn't exists, all attributes specified (except

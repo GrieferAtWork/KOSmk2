@@ -65,6 +65,12 @@ __DECL_BEGIN
 #endif /* __USE_UNIX98 */
 #endif /* !__USE_DOS */
 
+#ifdef __USE_KOS
+#define SIG_CONT  ((__sighandler_t)8)  /*< Continue execution. */
+#define SIG_STOP  ((__sighandler_t)9)  /*< Suspend execution. */
+#define SIG_CORE  ((__sighandler_t)10) /*< Create a coredump and terminate. */
+#endif /* __USE_KOS */
+
 /* Signals. */
 #define SIGHUP    1     /*< Hangup (POSIX). */
 #define SIGINT    2     /*< Interrupt (ANSI). */

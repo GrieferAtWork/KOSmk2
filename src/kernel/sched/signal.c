@@ -930,12 +930,15 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
     goto ignore_signal;
 
    case DA_STOP:
+do_stop:
     return task_suspend_cpu_endwrite(t,TASK_SUSP_USER|TASK_SUSP_NOW,was);
 
    case DA_CONT:
+do_cont:
     return task_resume_cpu_endwrite(t,TASK_SUSP_USER|TASK_SUSP_NOW,was);
 
    case DA_CORE:
+do_core:
     error = task_terminate_cpu_endwrite(c,t,(void *)
                                        (__WCOREFLAG|__W_EXITCODE(0,signal_info->si_signo)));
     if (t != THIS_TASK && (t->t_cstate->host.cs&3) == 3)
@@ -948,6 +951,11 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
 
    }
   }
+  /* KOS extension builtin signal handlers. */
+  if (action->sa_handler == SIG_CONT) goto do_cont;
+  if (action->sa_handler == SIG_STOP) goto do_stop;
+  if (action->sa_handler == SIG_CORE) goto do_core;
+
   if (action->sa_handler == SIG_IGN) {
    /* Nothing to do here... */
    /* XXX: What about exception signals?

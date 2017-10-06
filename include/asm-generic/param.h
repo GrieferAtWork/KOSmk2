@@ -22,7 +22,11 @@
 #define __ASM_GENERIC_PARAM_H 1
 
 #ifndef HZ
+#if 1
+#define HZ               20
+#else
 #define HZ               100
+#endif
 #endif
 
 #ifndef EXEC_PAGESIZE
