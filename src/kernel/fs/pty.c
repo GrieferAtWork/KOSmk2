@@ -291,7 +291,7 @@ handle_clear:
    goto handle_clear;
   } else if (ch == self->pm_ios.c_cc[VINTR] ||
              ch == self->pm_ios.c_cc[VQUIT]) {
-   int signum = ch == self->pm_ios.c_cc[VINTR] ? SIGINT : SIGKILL;
+   int signum = ch == self->pm_ios.c_cc[VINTR] ? SIGINT : SIGQUIT;
    REF struct task *fproc;
    if (iter-1 > canon_start)
        PRINT(canon_start,(size_t)((iter-1)-canon_start)*sizeof(cc_t));
@@ -747,12 +747,13 @@ SYSCALL_LDEFINE3(xopenpty,USER char *,name,
   master->pm_ios.c_cc[VEOF]   =  4; /* ^D. */
   master->pm_ios.c_cc[VEOL]   =  0; /* Not set. */
   master->pm_ios.c_cc[VERASE] = '\b';
-  master->pm_ios.c_cc[VINTR]  =  3; /* ^C. */
-  master->pm_ios.c_cc[VKILL]  = 21; /* ^U. */
-  master->pm_ios.c_cc[VQUIT]  = 28; /* ^\. */
-  master->pm_ios.c_cc[VSTART] = 17; /* ^Q. */
-  master->pm_ios.c_cc[VSTOP]  = 19; /* ^S. */
-  master->pm_ios.c_cc[VSUSP]  = 26; /* ^Z. */
+#define CTRL_CODE(x) ((x)-64) /* ^x */
+  master->pm_ios.c_cc[VINTR]  = CTRL_CODE('C'); /* ^C. */
+  master->pm_ios.c_cc[VKILL]  = CTRL_CODE('U'); /* ^U. */
+  master->pm_ios.c_cc[VQUIT]  = CTRL_CODE('^'); /* Might supposed to be '\\'? */
+  master->pm_ios.c_cc[VSTART] = CTRL_CODE('Q'); /* ^Q. */
+  master->pm_ios.c_cc[VSTOP]  = CTRL_CODE('S'); /* ^S. */
+  master->pm_ios.c_cc[VSUSP]  = CTRL_CODE('Z'); /* ^Z. */
   master->pm_ios.c_cc[VTIME]  =  0;
  }
  if (winp) {

@@ -816,6 +816,11 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
    case DA_CONT:
     return task_resume_cpu_endwrite(t,TASK_SUSP_USER|TASK_SUSP_NOW,was);
 
+   case DA_CORE:
+    error = task_terminate_cpu_endwrite(c,t,(void *)
+                                       (__WCOREFLAG|__W_EXITCODE(0,signal_info->si_signo)));
+    goto ppop_end;
+
    default:
     goto do_term;
 
@@ -853,7 +858,7 @@ ppop_end:
  PREEMPTION_POP(was);
  return error;
 do_term:
- error = task_terminate_cpu_endwrite(c,t,(void *)__W_EXITCODE(0,signal_info->si_signo+1));
+ error = task_terminate_cpu_endwrite(c,t,(void *)__W_EXITCODE(0,signal_info->si_signo));
  goto ppop_end;
 }
 
