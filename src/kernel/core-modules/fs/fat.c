@@ -1086,6 +1086,7 @@ filedata_write(struct filedata *__restrict self,
   assert(self->fd_pos >= self->fd_begin);
   assert(self->fd_pos <= self->fd_max);
   max_write = (size_t)(self->fd_end-self->fd_pos);
+  assert(max_write <= fs->f_clustersize);
   if (!max_write) break;
   if (max_write > bufsize)
       max_write = bufsize;
@@ -1098,16 +1099,19 @@ filedata_write(struct filedata *__restrict self,
   if (!temp) break;
   bufsize            -= (size_t)temp;
   *(uintptr_t *)&buf += (size_t)temp;
-  if (self->fd_pos > self->fd_max) {
+  if (self->fd_pos > self->fd_max ||
+     (self->fd_pos == self->fd_max &&
+      self->fd_pos == self->fd_end)) {
    pos_t new_size;
    bool have_write_lock = false;
    /* Update the stored file size. */
    temp = rwlock_read(&node->i_attr_lock);
 update_size_again:
    if (E_ISERR(temp)) return temp;
-   new_size = ((pos_t)self->fd_cls_act*fs->f_clustersize)+
+   new_size = ((pos_t)self->fd_cls_sel*fs->f_clustersize)+
                (self->fd_pos-self->fd_begin);
-   if (node->i_attr_disk.ia_siz < new_size) {
+   /* XXX: Why not use lazy INode attributes here? */
+   if (new_size > node->i_attr_disk.ia_siz) {
 #if __SIZEOF_POS_T__ > 4
     /* Handle special case: The absolute FAT file size limit (4Gb) */
     if (new_size > (pos_t)(u32)-1) {
