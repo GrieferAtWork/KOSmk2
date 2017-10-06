@@ -39,6 +39,7 @@
 #include <bits/fcntl-linux.h>
 #include <hybrid/section.h>
 #include <signal.h>
+#include <fs/access.h>
 
 DECL_BEGIN
 
@@ -226,8 +227,10 @@ next_normal:
     u64 print_num; struct timespec temp;
     if (0) { case 'u': print_num = TASK_GETUID(thread); }
     if (0) { case 'g': print_num = TASK_GETGID(thread); }
-    if (0) { case 'p': print_num = thread->t_pid.tp_ids[PIDTYPE_GPID].tl_pid; }
+    if (0) { case 'p': print_num = thread->t_pid.tp_ids[PIDTYPE_PID].tl_pid; }
+    if (0) { case 'P': print_num = thread->t_pid.tp_ids[PIDTYPE_GPID].tl_pid; }
     if (0) { case 's': print_num = reason->si_signo; }
+    if (0) { case 'c': print_num = (u64)-1; /* TODO: 'RLIMIT_CORE' */ }
     if (0) { case 't': sysrtc_get(&temp); print_num = temp.tv_sec; }
     printf("%I64u",print_num);
    } break;
@@ -235,14 +238,20 @@ next_normal:
    {
     struct module *vm_exe;
    case 'e':
+   case 'E':
     result = E_PTR(mman_read(vm));
     if (E_ISERR(result)) goto err;
     vm_exe = vm->m_exe ? vm->m_exe->i_module : NULL;
     if (vm_exe) MODULE_INCREF(vm_exe);
     mman_endread(vm);
     if (vm_exe) {
-     print(vm_exe->m_name->dn_name,
-           vm_exe->m_name->dn_size);
+     if (ch == 'E') {
+      /* Am I understanding this correctly? */
+      printf("%[file]",vm_exe->m_file);
+     } else {
+      print(vm_exe->m_name->dn_name,
+            vm_exe->m_name->dn_size);
+     }
      MODULE_DECREF(vm_exe);
     } else {
      print("app",3); /* ??? */
@@ -263,8 +272,30 @@ next_normal:
 #undef printf
 #undef print
  filename = stringprinter_pack(&printer,&filename_len);
- result = fs_kopen(filename,filename_len,NULL,
-                   IATTR_NONE,O_CREAT|O_WRONLY);
+ {
+  struct iattr attr; struct dentry_walker walker;
+  DENTRY_WALKER_SETKERNEL(walker);
+
+  /* read-only access only by it's owner 'root'. */
+  attr.ia_mode = 0400;
+  attr.ia_uid  = 0;
+  attr.ia_gid  = 0;
+
+  /* Open the file! */
+  result = fs_xopen(&walker,&fs_root,filename,filename_len,
+                    &attr,IATTR_MODE|IATTR_UID|IATTR_GID,
+                    O_CREAT|O_WRONLY|O_NOFOLLOW);
+  if (E_ISOK(result)) {
+   /* Make sure we're really who owns this file. */
+   if (result->f_node->i_nlink > 1 ||
+       result->f_node->i_attr.ia_uid != GET_THIS_UID() ||
+       result->f_node->i_attr.ia_gid != GET_THIS_UID() ||
+      (result->f_node->i_attr.ia_mode&07)) {
+    FILE_DECREF(result);
+    result = E_PTR(-EPERM);
+   }
+  }
+ }
  free(filename);
  return result;
 err_nomem: result = E_PTR(-ENOMEM);

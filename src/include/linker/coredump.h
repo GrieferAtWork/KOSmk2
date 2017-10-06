@@ -48,7 +48,6 @@ typedef errno_t (KCALL *coreformat_callback)(struct file *__restrict fp, struct 
                                              struct task *__restrict thread, struct ucontext *__restrict state,
                                              struct __siginfo_struct const *__restrict reason, u32 flags, void *closure);
 #define COREDUMP_FLAG_NORMAL 0x00000000 /*< Create a regular coredump containing all information. */
-#define COREDUMP_FLAG_NOHEAP 0x00000001 /*< Don't include heap memory within the dump. - Only dump private memory mapped by 'inst'. */
 
 
 struct coreformat {
@@ -107,15 +106,13 @@ core_dodump(struct mman *__restrict vm, struct task *__restrict thread,
  *   - %%: Expand to a single '%'
  *   - %u: UID (Of the thread being dumped)
  *   - %g: GID (Of the thread being dumped)
- *   - %p: GPID (Of the thread being dumped)
+ *   - %p: PID (Of the thread being dumped, as seen from that same thread's PID namespace)
+ *   - %P: GPID (Of the thread being dumped)
  *   - %s: signal number
  *   - %t: 'time_t' of when the dump occurred. (Acquired using 'sysrtc_get()')
  *   - %h: KOS's user-defined hostname.
  *   - %e: Filename (excluding path) of the vm's root executable.
- * NOTE: When the pattern describes a relative path, the PWD
- *       of the thread being dumped is used, and when invalid
- *       or unusable for creating new files, the system root
- *       folder is used instead.
+ * NOTE: When the pattern describes a relative path, the system root is used as PWD.
  * NOTE: During boot, the pattern is pre-initialized to CORE_PATTERN_DEFAULT
  * NOTE: Passing NULL for 'format' will reset the default pattern.
  * @return: -EOK:    Successfully set the given format as pattern.

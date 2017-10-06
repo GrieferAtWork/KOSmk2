@@ -556,12 +556,12 @@ inode_setattr(struct inode *__restrict self,
      valid &= ~(IATTR_SIZ);
  error = rwlock_read(&self->i_attr_lock);
  if (E_ISERR(error)) goto end;
- changed = iattr_compare(&self->i_attr,attr);
+ changed = valid&iattr_compare(&self->i_attr,attr);
  if (changed == IATTR_NONE) goto rend;
  error = rwlock_upgrade(&self->i_attr_lock);
  if (error == -ERELOAD) {
   error = -EOK;
-  changed = iattr_compare(&self->i_attr,attr);
+  changed = valid&iattr_compare(&self->i_attr,attr);
   if (changed == IATTR_NONE) goto wend;
  }
  if (E_ISERR(error)) goto rend;

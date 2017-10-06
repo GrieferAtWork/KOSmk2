@@ -512,28 +512,48 @@ PRIVATE int LIBCCALL A(impl_futimesat)(int fd, char const *file,
                                        struct atimeval const tvp[2],
                                        int flags) {
  struct atimespec times[2];
- TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
- TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
+ if (!tvp) {
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_nsec = UTIME_NOW;
+ } else {
+  TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
+  TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
+ }
  return A(libc_utimensat)(fd,file,times,flags);
 }
 PRIVATE int LIBCCALL B(impl_futimesat)(int fd, char const *file,
                                        struct btimeval const tvp[2],
                                        int flags) {
  struct atimespec times[2];
- TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
- TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
+ if (!tvp) {
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_nsec = UTIME_NOW;
+ } else {
+  TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
+  TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
+ }
  return A(libc_utimensat)(fd,file,times,flags);
 }
 INTERN int LIBCCALL A(libc_futimes)(int fd, struct atimeval const tvp[2]) {
  struct atimespec times[2];
- TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
- TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
+ if (!tvp) {
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_nsec = UTIME_NOW;
+ } else {
+  TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
+  TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
+ }
  return A(libc_futimens)(fd,times);
 }
 INTERN int LIBCCALL B(libc_futimes)(int fd, struct btimeval const tvp[2]) {
  struct atimespec times[2];
- TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
- TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
+ if (!tvp) {
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_nsec = UTIME_NOW;
+ } else {
+  TIMEVAL_TO_TIMESPEC(&tvp[0],&times[0]);
+  TIMEVAL_TO_TIMESPEC(&tvp[1],&times[1]);
+ }
  return A(libc_futimens)(fd,times);
 }
 INTERN int LIBCCALL A(libc_futimens)(int fd, struct atimespec const times[2]) { return A(libc_utimensat)(fd,NULL,times,0); }
@@ -547,7 +567,7 @@ INTERN int LIBCCALL B(libc_futimesat)(int fd, char const *file, struct btimeval 
 
 INTERN int LIBCCALL A(libc_futimeat)(int dfd, char const *file, struct A(utimbuf) const *file_times, int flags) {
  struct atimespec times[2];
- if (file_times) {
+ if (!file_times) {
   times[0].tv_nsec = UTIME_NOW;
   times[1].tv_nsec = UTIME_NOW;
  } else {
@@ -560,7 +580,7 @@ INTERN int LIBCCALL A(libc_futimeat)(int dfd, char const *file, struct A(utimbuf
 }
 INTERN int LIBCCALL B(libc_futimeat)(int dfd, char const *file, struct B(utimbuf) const *file_times, int flags) {
  struct atimespec times[2];
- if (file_times) {
+ if (!file_times) {
   times[0].tv_nsec = UTIME_NOW;
   times[1].tv_nsec = UTIME_NOW;
  } else {

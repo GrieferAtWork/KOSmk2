@@ -25,6 +25,7 @@
 #include <linker/coredump.h>
 #include <hybrid/debuginfo.h>
 #include <signal.h>
+#include <elf.h>
 #include <syslog.h>
 #include <sys/ucontext.h>
 
@@ -33,8 +34,11 @@ DECL_BEGIN
 FUNDEF errno_t KCALL
 elfcore_create(struct file *__restrict fp, struct mman *__restrict vm,
                struct task *__restrict thread, ucontext_t *__restrict state,
-               siginfo_t const *__restrict reason, u32 flags, void *UNUSED(closure)) {
+               siginfo_t const *__restrict reason,
+               u32 UNUSED(flags), void *UNUSED(closure)) {
  syslog(LOG_DEBUG,"TODO: Create ELF core file\n");
+
+
  /* TODO */
  return -ENOSYS;
 }
