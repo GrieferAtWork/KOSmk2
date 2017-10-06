@@ -40,6 +40,7 @@
 #include <hybrid/section.h>
 #include <signal.h>
 #include <fs/access.h>
+#include <sched/paging.h>
 
 DECL_BEGIN
 
@@ -120,6 +121,7 @@ core_makedump(struct file *__restrict fp, struct mman *__restrict vm,
               siginfo_t const *__restrict reason, u32 flags) {
  errno_t error; struct moduleops const *exe_ops;
  struct coreformat *format,*used_format = NULL;
+ struct mman *omm;
  error = rwlock_read(&core_lock);
  if (E_ISERR(error)) return error;
  error = mman_read(vm);
@@ -143,8 +145,16 @@ core_makedump(struct file *__restrict fp, struct mman *__restrict vm,
  if unlikely(!INSTANCE_LOCKWEAK(used_format->cf_owner)) goto end;
 
  /* All right! Let's call this one. */
- error = (*used_format->cf_callback)(fp,vm,thread,state,reason,flags,
-                                     used_format->cf_closure);
+ TASK_PDIR_KERNEL_BEGIN(omm);
+ error = mman_write(vm);
+ /* TODO: Suspend all threads in 'vm' but the caller? */
+
+ if (E_ISOK(error)) {
+  error = (*used_format->cf_callback)(fp,vm,thread,state,reason,flags,
+                                      used_format->cf_closure);
+  mman_endwrite(vm);
+ }
+ TASK_PDIR_KERNEL_END(omm);
  INSTANCE_DECREF(used_format->cf_owner);
 end:
  rwlock_endread(&core_lock);

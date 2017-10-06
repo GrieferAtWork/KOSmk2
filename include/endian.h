@@ -47,7 +47,9 @@
 #   define LITTLE_ENDIAN __LITTLE_ENDIAN
 #   define BIG_ENDIAN    __BIG_ENDIAN
 #   define PDP_ENDIAN    __PDP_ENDIAN
+#ifndef BYTE_ORDER
 #   define BYTE_ORDER    __BYTE_ORDER
+#endif
 #endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN

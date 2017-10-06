@@ -28,7 +28,9 @@ DECL_BEGIN
 #define LITTLE_ENDIAN_ORDER __LITTLE_ENDIAN
 #define BIG_ENDIAN_ORDER    __BIG_ENDIAN
 #define PDP_ENDIAN_ORDER    __PDP_ENDIAN
-#define BYTEORDER           __BYTE_ORDER
+#ifndef BYTE_ORDER
+#define BYTE_ORDER          __BYTE_ORDER
+#endif
 
 #define BSWAP16(x)    __bswap_16(x)
 #define BSWAP32(x)    __bswap_32(x)
@@ -51,7 +53,7 @@ DECL_BEGIN
 #   define BSWAP_BE2H16(x)    ____INTELLISENSE_BSWAP_BE2H16(x)
 #   define BSWAP_BE2H32(x)    ____INTELLISENSE_BSWAP_BE2H32(x)
 #   define BSWAP_BE2H64(x)    ____INTELLISENSE_BSWAP_BE2H64(x)
-#elif BYTEORDER == LITTLE_ENDIAN_ORDER
+#elif BYTE_ORDER == LITTLE_ENDIAN_ORDER
 #   define BSWAP_H2LE16(x)   (x)
 #   define BSWAP_H2LE32(x)   (x)
 #   define BSWAP_H2LE64(x)   (x)
@@ -64,7 +66,7 @@ DECL_BEGIN
 #   define BSWAP_BE2H16(x)    BSWAP16(x)
 #   define BSWAP_BE2H32(x)    BSWAP32(x)
 #   define BSWAP_BE2H64(x)    BSWAP64(x)
-#elif BYTEORDER == BIG_ENDIAN_ORDER
+#elif BYTE_ORDER == BIG_ENDIAN_ORDER
 #   define BSWAP_H2LE16(x)    BSWAP16(x)
 #   define BSWAP_H2LE32(x)    BSWAP32(x)
 #   define BSWAP_H2LE64(x)    BSWAP64(x)
@@ -81,7 +83,7 @@ DECL_BEGIN
 #   error FIXME
 #endif
 
-#if BYTEORDER == LITTLE_ENDIAN_ORDER
+#if BYTE_ORDER == LITTLE_ENDIAN_ORDER
 #   define BSWAP_H2LE16_C(x) (x)
 #   define BSWAP_H2LE32_C(x) (x)
 #   define BSWAP_H2LE64_C(x) (x)
@@ -94,7 +96,7 @@ DECL_BEGIN
 #   define BSWAP_BE2H16_C(x)  BSWAP16_C(x)
 #   define BSWAP_BE2H32_C(x)  BSWAP32_C(x)
 #   define BSWAP_BE2H64_C(x)  BSWAP64_C(x)
-#elif BYTEORDER == BIG_ENDIAN_ORDER
+#elif BYTE_ORDER == BIG_ENDIAN_ORDER
 #   define BSWAP_H2LE16_C(x)  BSWAP16_C(x)
 #   define BSWAP_H2LE32_C(x)  BSWAP32_C(x)
 #   define BSWAP_H2LE64_C(x)  BSWAP64_C(x)

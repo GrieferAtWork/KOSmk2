@@ -35,6 +35,8 @@ struct ucontext;
 struct __siginfo_struct;
 
 /* Generate and write a coredump of user-defined format to 'fp'.
+ * HINT: This function is executed in the context of the kernel page
+ *       directory, as well as while holding a write-lock on 'VM'
  * @param: fp:          A file opened for writing, to which data should be dumped.
  * @param: vm:          The VM in which 'thread' was running.
  * @param: thread:      The thread that caused the coredump.
@@ -44,9 +46,9 @@ struct __siginfo_struct;
  * @param: closure:     The closure argument stored in the associated 'coreformat'.
  * @return: -EOK:       The coredump was successfully written to 'fp'
  * @return: E_ISERR(*): Failed to write the dump for some reason. */
-typedef errno_t (KCALL *coreformat_callback)(struct file *__restrict fp, struct mman *__restrict vm,
-                                             struct task *__restrict thread, struct ucontext *__restrict state,
-                                             struct __siginfo_struct const *__restrict reason, u32 flags, void *closure);
+typedef KPD errno_t (KCALL *coreformat_callback)(struct file *__restrict fp, struct mman *__restrict vm,
+                                                 struct task *__restrict thread, struct ucontext *__restrict state,
+                                                 struct __siginfo_struct const *__restrict reason, u32 flags, void *closure);
 #define COREDUMP_FLAG_NORMAL 0x00000000 /*< Create a regular coredump containing all information. */
 
 
@@ -122,7 +124,11 @@ core_dodump(struct mman *__restrict vm, struct task *__restrict thread,
  * @return: -EFAULT: The given 'format' is a faulty pointer. */
 FUNDEF errno_t KCALL core_setpattern(USER char const *__restrict format);
 #define CORE_PATTERN_MAXLEN  1024 /* Max length of the core pattern format string. */
+#if 1
+#define CORE_PATTERN_DEFAULT "/core.%e"
+#else
 #define CORE_PATTERN_DEFAULT "/core.%p.%e.%t"
+#endif
 
 
 DECL_END

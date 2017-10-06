@@ -50,18 +50,6 @@ DECL_BEGIN
 
 #define ELF_USING_RELA 0
 
-#if __SIZEOF_POINTER__ == 4
-#   define Elf(x)   Elf32_##x
-#   define ELF(x)   ELF32_##x
-#   define ELFCLASS ELFCLASS32
-#elif __SIZEOF_POINTER__ == 8
-#   define Elf(x)   Elf64_##x
-#   define ELF(x)   ELF64_##x
-#   define ELFCLASS ELFCLASS64
-#else
-#   error FIXME
-#endif
-
 /* These limits are supposed to be very generous, but are required
  * to prevent exploiting kernel memory with unchecked limits. */
 #define ELF_PHNUM_MAX    256
@@ -69,8 +57,8 @@ DECL_BEGIN
 /* NOTE: We allow for 'p_flags' and 'p_align' to be missing.
  *    >> 'p_flags' defaults to 'PF_X|PF_W|PF_R' and
  *       'p_align' isn't used to begin with. */
-#define ELF_ENTSIZE_MIN  offsetafter(Elf(Phdr),p_memsz)
-#define ELF_ENTSIZE_MAX (sizeof(Elf(Phdr))*16)
+#define ELF_ENTSIZE_MIN  offsetafter(Elf_Phdr,p_memsz)
+#define ELF_ENTSIZE_MAX (sizeof(Elf_Phdr)*16)
 
 typedef uintptr_t elf_str_t; /* Offset into the string table 'd_strtab' (when present) */
 
@@ -135,7 +123,7 @@ struct {
 
 
  size_t     d_depc;            /*< Amount of library dependencies. */
- Elf(Word) *d_depv;            /*< [0..d_depc][owned] Vector of string-table offsets to library dependencies. */
+ Elf_Word  *d_depv;            /*< [0..d_depc][owned] Vector of string-table offsets to library dependencies. */
 };
 
 struct elf_module {
@@ -158,13 +146,13 @@ elf_module_offsetof(struct elf_module *__restrict self,
 PRIVATE errno_t KCALL
 elf_load_dyn(struct elf_module *__restrict self,
              struct file *__restrict fp,
-             Elf(Dyn) const *__restrict dyn);
+             Elf_Dyn const *__restrict dyn);
 
 /* Parse a given dynamic program header. */
 PRIVATE errno_t KCALL
 elf_load_dynamic(struct elf_module *__restrict self,
                  struct file *__restrict fp,
-                 Elf(Phdr) const *__restrict pt_dynamic);
+                 Elf_Phdr const *__restrict pt_dynamic);
 
 
 
@@ -172,10 +160,10 @@ elf_load_dynamic(struct elf_module *__restrict self,
 
 PRIVATE bool KCALL
 elf_module_add_dep(struct elf_module *__restrict self,
-                   Elf(Word) string_table_offset) {
- Elf(Word) *new_vec;
+                   Elf_Word string_table_offset) {
+ Elf_Word *new_vec;
  CHECK_HOST_DOBJ(self);
- new_vec = trealloc(Elf(Word),self->e_dynamic.d_depv,
+ new_vec = trealloc(Elf_Word,self->e_dynamic.d_depv,
                     self->e_dynamic.d_depc+1);
  if unlikely(!new_vec) return false;
  new_vec[self->e_dynamic.d_depc++] = string_table_offset;
@@ -207,7 +195,7 @@ elf_module_offsetof(struct elf_module *__restrict self,
 PRIVATE errno_t KCALL
 elf_load_dyn(struct elf_module *__restrict self,
              struct file *__restrict fp,
-             Elf(Dyn) const *__restrict dyn) {
+             Elf_Dyn const *__restrict dyn) {
  errno_t error = -EOK;
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(fp);
@@ -340,12 +328,12 @@ elf_load_dyn(struct elf_module *__restrict self,
 PRIVATE errno_t KCALL
 elf_load_dynamic(struct elf_module *__restrict self,
                  struct file *__restrict fp,
-                 Elf(Phdr) const *__restrict pt_dynamic) {
+                 Elf_Phdr const *__restrict pt_dynamic) {
 #define DYN_BUFSIZE  16
  errno_t error; ssize_t dyn_size;
  size_t file_size;
- Elf(Dyn) buffer[DYN_BUFSIZE];
- Elf(Dyn) *iter,*end;
+ Elf_Dyn buffer[DYN_BUFSIZE];
+ Elf_Dyn *iter,*end;
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(fp);
  CHECK_HOST_DOBJ(pt_dynamic);
@@ -356,13 +344,13 @@ elf_load_dynamic(struct elf_module *__restrict self,
  if (E_ISERR(error)) goto done;
  while (file_size) {
   size_t part_size = file_size;
-  if (part_size > DYN_BUFSIZE*sizeof(Elf(Dyn)))
-      part_size = DYN_BUFSIZE*sizeof(Elf(Dyn));
+  if (part_size > DYN_BUFSIZE*sizeof(Elf_Dyn))
+      part_size = DYN_BUFSIZE*sizeof(Elf_Dyn);
   dyn_size = file_kread(fp,buffer,part_size);
   if (E_ISERR(dyn_size)) return (errno_t)dyn_size;
   if (!dyn_size) break;
   assert((size_t)dyn_size <= part_size);
-  end = (iter = buffer)+(dyn_size/sizeof(Elf(Dyn)));
+  end = (iter = buffer)+(dyn_size/sizeof(Elf_Dyn));
   for (; iter != end; ++iter) {
    assert(iter < end);
 #if 0
@@ -373,7 +361,7 @@ elf_load_dynamic(struct elf_module *__restrict self,
    error = elf_load_dyn(self,fp,iter);
    if (E_ISERR(error)) goto done;
   }
-  if ((dyn_size % sizeof(Elf(Dyn))) != 0) break;
+  if ((dyn_size % sizeof(Elf_Dyn)) != 0) break;
   file_size -= dyn_size;
  }
 done:
@@ -467,8 +455,8 @@ log_invalid_addr(struct module *__restrict mod,
 #define DATAADDR(p) (load_addr+(uintptr_t)(p))
 
 struct elf_hashtab {
- Elf(Word) ht_nbuckts;
- Elf(Word) ht_nchains;
+ Elf_Word ht_nbuckts;
+ Elf_Word ht_nchains;
 };
 PRIVATE struct modsym KCALL
 elf_symaddr(struct instance *__restrict inst,
@@ -478,18 +466,18 @@ elf_symaddr(struct instance *__restrict inst,
  struct modsym result;
  result.ms_type = MODSYM_TYPE_INVALID;
  if (DYNAMIC.d_flags&(ELF_DYNAMIC_HAS_STRTAB|ELF_DYNAMIC_HAS_SYMTAB)) {
-  Elf(Sym) *symtab_begin,*symtab_end,*symtab_iter;
+  Elf_Sym *symtab_begin,*symtab_end,*symtab_iter;
   char *string_table = (char *)DATAADDR(DYNAMIC.d_strtab);
   char *string_end = (char *)((uintptr_t)string_table+DYNAMIC.d_strsz);
   while (string_end != string_table && string_end[-1] != '\0') --string_end;
   if unlikely(string_end == string_table) goto end;
 #define STRLEN(x) strnlen(x,(size_t)(string_end-(x)))
-  symtab_begin = (Elf(Sym) *)DATAADDR(DYNAMIC.d_symtab);
-  symtab_end   = (Elf(Sym) *)((uintptr_t)symtab_begin+DYNAMIC.d_symsz);
+  symtab_begin = (Elf_Sym *)DATAADDR(DYNAMIC.d_symtab);
+  symtab_end   = (Elf_Sym *)((uintptr_t)symtab_begin+DYNAMIC.d_symsz);
   if (DYNAMIC.d_flags&ELF_DYNAMIC_HAS_HASH) {
    /* Make use of '.hash' information! */
    struct elf_hashtab *phashtab;
-   struct elf_hashtab hashtab; Elf(Word) *ptable,chain;
+   struct elf_hashtab hashtab; Elf_Word *ptable,chain;
    phashtab = (struct elf_hashtab *)(load_addr+DYNAMIC.d_hash);
    memcpy(&hashtab,phashtab,sizeof(struct elf_hashtab));
    if unlikely(!hashtab.ht_nbuckts || !hashtab.ht_nbuckts) {
@@ -498,21 +486,21 @@ broken_hash:
     syslog(LOG_EXEC|LOG_WARN,"[ELF] Module '%[file]' contains invalid hash table\n",self->m_file);
     ATOMIC_FETCHAND(DYNAMIC.d_flags,~(ELF_DYNAMIC_HAS_HASH));
    } else {
-    Elf(Word) max_attempts = hashtab.ht_nchains;
+    Elf_Word max_attempts = hashtab.ht_nchains;
     /* Make sure the hash-table isn't too large. */
     if unlikely((sizeof(struct elf_hashtab)+(hashtab.ht_nbuckts+
                                              hashtab.ht_nchains)*
-                 sizeof(Elf(Word))) > DYNAMIC.d_hashsz) goto broken_hash;
+                 sizeof(Elf_Word)) > DYNAMIC.d_hashsz) goto broken_hash;
     /* Make sure the hash-table isn't trying to go out-of-bounds. */
     if unlikely(hashtab.ht_nchains > DYNAMIC.d_symcnt) goto broken_hash;
-    ptable  = (Elf(Word) *)(phashtab+1);
+    ptable  = (Elf_Word *)(phashtab+1);
     chain   = ptable[hash % hashtab.ht_nbuckts];
     ptable += hashtab.ht_nbuckts;
     while likely(max_attempts--) {
      char *sym_name;
      if unlikely(chain == STN_UNDEF || chain >= DYNAMIC.d_symcnt) break;
      /* Check this candidate. */
-     symtab_iter = (Elf(Sym) *)((uintptr_t)symtab_begin+chain*DYNAMIC.d_syment);
+     symtab_iter = (Elf_Sym *)((uintptr_t)symtab_begin+chain*DYNAMIC.d_syment);
      assert(symtab_iter >= symtab_begin);
      assert(symtab_iter <  symtab_end);
      sym_name = string_table+symtab_iter->st_name;
@@ -529,7 +517,7 @@ broken_hash:
      if (symtab_iter->st_shndx != SHN_ABS)
        *(uintptr_t *)&result.ms_addr += load_addr;
      result.ms_type = MODSYM_TYPE_OK;
-     if (ELF(ST_BIND)(symtab_iter->st_info) == STB_WEAK)
+     if (ELF_ST_BIND(symtab_iter->st_info) == STB_WEAK)
          result.ms_type = MODSYM_TYPE_WEAK;
      goto end;
 next_candidate:
@@ -555,7 +543,7 @@ next_candidate:
    if (symtab_iter->st_shndx != SHN_ABS)
      *(uintptr_t *)&result.ms_addr += load_addr;
    result.ms_type = MODSYM_TYPE_OK;
-   if (ELF(ST_BIND)(symtab_iter->st_info) == STB_WEAK)
+   if (ELF_ST_BIND(symtab_iter->st_info) == STB_WEAK)
        result.ms_type = MODSYM_TYPE_WEAK;
    goto end;
   }
@@ -567,8 +555,8 @@ end:
 
 PRIVATE errno_t KCALL
 elf_patch(struct modpatch *__restrict patcher) {
- Elf(Rel) *iter,*end; errno_t result = -EFAULT;
- Elf(Sym) *symtab_begin,*symtab_end;
+ Elf_Rel *iter,*end; errno_t result = -EFAULT;
+ Elf_Sym *symtab_begin,*symtab_end;
  struct instance *inst = patcher->p_inst;
  struct module *self   = inst->i_module;
  uintptr_t load_addr   = (uintptr_t)inst->i_base;
@@ -578,8 +566,8 @@ elf_patch(struct modpatch *__restrict patcher) {
 #define STRLEN(x) strnlen(x,(size_t)(string_end-(x)))
  char *string_table = (char *)DATAADDR(DYNAMIC.d_strtab);
  char *string_end   = (char *)((uintptr_t)string_table+DYNAMIC.d_strsz);
- symtab_begin  = (Elf(Sym) *)DATAADDR(DYNAMIC.d_symtab);
- symtab_end    = (Elf(Sym) *)((uintptr_t)symtab_begin+DYNAMIC.d_symsz);
+ symtab_begin  = (Elf_Sym *)DATAADDR(DYNAMIC.d_symtab);
+ symtab_end    = (Elf_Sym *)((uintptr_t)symtab_begin+DYNAMIC.d_symsz);
  relgroup_end  = (relgroup_iter = DYNAMIC.d_relv)+COMPILER_LENOF(DYNAMIC.d_relv);
 
  /* Truncate the string table to ensure the last string is zero-terminated!
@@ -605,7 +593,7 @@ elf_patch(struct modpatch *__restrict patcher) {
  assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)symtab_end   <= KERNEL_BASE);
 
  /* Load all module dependencies. */
- { Elf(Word) *dep_iter,*dep_begin;
+ { Elf_Word *dep_iter,*dep_begin;
    dep_iter = (dep_begin = DYNAMIC.d_depv)+DYNAMIC.d_depc;
    /* Add dependencies in reverse order to prefer symbols from later libraries. */
    while (dep_iter-- != dep_begin) {
@@ -650,12 +638,12 @@ got_module:
 
  /* Load all module relocations. */
  for (; relgroup_iter != relgroup_end; ++relgroup_iter) {
-  iter = (Elf(Rel) *)DATAADDR(relgroup_iter->er_rel);
-  end  = (Elf(Rel) *)((uintptr_t)iter+relgroup_iter->er_relsz);
+  iter = (Elf_Rel *)DATAADDR(relgroup_iter->er_rel);
+  end  = (Elf_Rel *)((uintptr_t)iter+relgroup_iter->er_relsz);
   for (; iter < end; *(uintptr_t *)&iter += relgroup_iter->er_relent) {
-#define SYM(i) (Elf(Sym) *)((uintptr_t)symtab_begin+((i)*DYNAMIC.d_syment))
-   Elf(Sym) *sym; uintptr_t rel_value;
-   u8  type     = ELF(R_TYPE)(iter->r_info);
+#define SYM(i) (Elf_Sym *)((uintptr_t)symtab_begin+((i)*DYNAMIC.d_syment))
+   Elf_Sym *sym; uintptr_t rel_value;
+   u8  type     = ELF_R_TYPE(iter->r_info);
    u8 *rel_addr = (u8 *)DATAADDR(iter->r_offset);
    bool extern_sym = false;
 #ifdef R_RELATIVE
@@ -666,7 +654,7 @@ got_module:
     continue;
    }
 #endif
-   sym = SYM(ELF(R_SYM)(iter->r_info));
+   sym = SYM(ELF_R_SYM(iter->r_info));
    SYMBOL_CHECK(sym);
    rel_value = (uintptr_t)load_addr+sym->st_value;
    if (sym->st_shndx != SHN_UNDEF) {
@@ -692,7 +680,7 @@ find_extern:
     /* NOTE: Weak symbols are linked as NULL when not found. */
     if (!rel_value) {
      if (sym->st_shndx == SHN_UNDEF) {
-      if (ELF(ST_BIND)(sym->st_info) == STB_WEAK) goto got_symbol;
+      if (ELF_ST_BIND(sym->st_info) == STB_WEAK) goto got_symbol;
       syslog(LOG_EXEC|LOG_ERROR,"[ELF] Failed to patch symbol %$q (hash %#.8I32x) from module %$q at %p\n",
              STRLEN(sym_name),sym_name,sym_hash,
              self->m_name->dn_size,self->m_name->dn_name,rel_addr);
@@ -826,7 +814,7 @@ got_symbol:
    default:
     syslog(LOG_EXEC|LOG_WARN,"[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in '%[file]'\n",
          ((uintptr_t)iter-DATAADDR(relgroup_iter->er_rel))/relgroup_iter->er_relent,
-           iter->r_offset,type,(unsigned)(ELF(R_SYM)(iter->r_info)),self->m_file);
+           iter->r_offset,type,(unsigned)(ELF_R_SYM(iter->r_info)),self->m_file);
     break;
    }
   }
@@ -851,11 +839,11 @@ PUBLIC struct moduleops const elf_modops = {
 PRIVATE REF struct module *KCALL
 elf_loader(struct file *__restrict fp) {
  REF struct elf_module *result = NULL;
- errno_t error; Elf(Ehdr) ehdr;
- Elf(Phdr) *phdrv = NULL;
+ errno_t error; Elf_Ehdr ehdr;
+ Elf_Phdr *phdrv = NULL;
  CHECK_HOST_DOBJ(fp);
 
- error = file_kreadall(fp,&ehdr,offsetafter(Elf(Ehdr),e_phnum));
+ error = file_kreadall(fp,&ehdr,offsetafter(Elf_Ehdr,e_phnum));
 
  if (E_ISERR(error)) goto err;
  /* These should've already been checked, but we'll check them again... */
@@ -896,7 +884,7 @@ elf_loader(struct file *__restrict fp) {
   *      (After writing a compiler, I've learned from the
   *       mistakes I've made in the old KOS loader
   *      '/__ice__/src/kernel/linker/linker-elf32.c') */
- if (ehdr.e_ehsize < offsetafter(Elf(Ehdr),e_phnum))
+ if (ehdr.e_ehsize < offsetafter(Elf_Ehdr,e_phnum))
      goto enoexec;
  if (ehdr.e_phnum == 0)
      goto enoexec;
@@ -931,28 +919,28 @@ elf_loader(struct file *__restrict fp) {
  }
 
  /* All checks are done. - Now to read the program headers. */
- phdrv = tmalloc(Elf(Phdr),ehdr.e_phnum);
+ phdrv = tmalloc(Elf_Phdr,ehdr.e_phnum);
  if unlikely(!phdrv) goto enomem;
  error = (errno_t)file_seek(fp,ehdr.e_phoff,SEEK_SET);
  if (E_ISERR(error)) goto err;
 
- if (ehdr.e_phentsize == sizeof(Elf(Phdr))) {
+ if (ehdr.e_phentsize == sizeof(Elf_Phdr)) {
   /* Most likely case: We can do a linear read-throu. */
-  error = file_kreadall(fp,phdrv,ehdr.e_phnum*sizeof(Elf(Phdr)));
+  error = file_kreadall(fp,phdrv,ehdr.e_phnum*sizeof(Elf_Phdr));
   if (E_ISERR(error)) goto read_error;
- } else if (ehdr.e_phentsize > sizeof(Elf(Phdr))) {
+ } else if (ehdr.e_phentsize > sizeof(Elf_Phdr)) {
   /* Read the headers scattered access the file. */
-  Elf(Phdr) *iter,*end;
-  off_t seek_diff = (off_t)(ehdr.e_phentsize-sizeof(Elf(Phdr)));
+  Elf_Phdr *iter,*end;
+  off_t seek_diff = (off_t)(ehdr.e_phentsize-sizeof(Elf_Phdr));
   end = (iter = phdrv)+ehdr.e_phnum;
   for (; iter != end; ++iter) {
-   error = file_kreadall(fp,iter,sizeof(Elf(Phdr)));
+   error = file_kreadall(fp,iter,sizeof(Elf_Phdr));
    if (E_ISERR(error)) goto read_error;
    error = (errno_t)file_seek(fp,seek_diff,SEEK_CUR);
    if (E_ISERR(error)) goto read_error;
   }
  } else {
-  Elf(Phdr) *dst_hdr; byte_t *src_hdr;
+  Elf_Phdr *dst_hdr; byte_t *src_hdr;
   /* Read truncated. */
   error = file_kreadall(fp,phdrv,ehdr.e_phnum*ehdr.e_phentsize);
   if (E_ISERR(error)) goto read_error;
@@ -963,13 +951,13 @@ elf_loader(struct file *__restrict fp) {
    src_hdr -= ehdr.e_phentsize;
    memmove(dst_hdr,src_hdr,ehdr.e_phentsize);
    memset((byte_t *)dst_hdr+ehdr.e_phentsize,0,
-           sizeof(Elf(Phdr))-ehdr.e_phentsize);
+           sizeof(Elf_Phdr)-ehdr.e_phentsize);
   }
  }
 
  /* The program headers have been loaded! */
  {
-  Elf(Phdr) *iter,*end;
+  Elf_Phdr *iter,*end;
   struct modseg *seg_iter;
   size_t max_size,n_load_hdr = 0;
   size_t min_alignment = 1;
@@ -1015,7 +1003,7 @@ elf_loader(struct file *__restrict fp) {
    seg_iter->ms_fsize = iter->p_filesz;
    if (min_alignment < iter->p_align)
        min_alignment = iter->p_align;
-   if (ehdr.e_phentsize < offsetafter(Elf(Phdr),p_flags))
+   if (ehdr.e_phentsize < offsetafter(Elf_Phdr,p_flags))
        iter->p_flags = PF_X|PF_W|PF_R;
 #if (PROT_EXEC  == PF_X) && \
     (PROT_WRITE == PF_W) && \
@@ -1053,11 +1041,11 @@ elf_loader(struct file *__restrict fp) {
   
   assert(seg_iter == result->e_module.m_segv+
                      result->e_module.m_segc);
-  result->e_dynamic.d_syment           = sizeof(Elf(Sym));
-  result->e_dynamic.d_rel.er_relent    = sizeof(Elf(Rel));
-  result->e_dynamic.d_jmprel.er_relent = sizeof(Elf(Rel));
+  result->e_dynamic.d_syment           = sizeof(Elf_Sym);
+  result->e_dynamic.d_rel.er_relent    = sizeof(Elf_Rel);
+  result->e_dynamic.d_jmprel.er_relent = sizeof(Elf_Rel);
 #if ELF_USING_RELA
-  result->e_dynamic.d_rela.er_relent   = sizeof(Elf(Rela));
+  result->e_dynamic.d_rela.er_relent   = sizeof(Elf_Rela);
 #endif
   /* Parse 'PT_DYNAMIC' headers. */
   for (iter = phdrv; iter != end; ++iter) {
@@ -1078,14 +1066,14 @@ elf_loader(struct file *__restrict fp) {
   }
   if (!(result->e_dynamic.d_flags&ELF_DYNAMIC_HAS_RELSZ) ||
        !result->e_dynamic.d_rel.er_relsz ||
-        result->e_dynamic.d_rel.er_relent < sizeof(Elf(Rel))) {
+        result->e_dynamic.d_rel.er_relent < sizeof(Elf_Rel)) {
    result->e_dynamic.d_flags &= ~(ELF_DYNAMIC_HAS_REL|
                                   ELF_DYNAMIC_HAS_RELSZ);
    result->e_dynamic.d_rel.er_relsz  = 0;
   }
   if (!(result->e_dynamic.d_flags&ELF_DYNAMIC_HAS_JMPRELSZ) ||
        !result->e_dynamic.d_jmprel.er_relsz ||
-        result->e_dynamic.d_jmprel.er_relent < sizeof(Elf(Rel))) {
+        result->e_dynamic.d_jmprel.er_relent < sizeof(Elf_Rel)) {
    result->e_dynamic.d_flags &= ~(ELF_DYNAMIC_HAS_JMPREL|
                                   ELF_DYNAMIC_HAS_JMPRELSZ
 #ifdef ELF_DYNAMIC_JMPREL_ISRELA
@@ -1097,7 +1085,7 @@ elf_loader(struct file *__restrict fp) {
 #if ELF_USING_RELA
   if (!(result->e_dynamic.d_flags&ELF_DYNAMIC_HAS_RELASZ) ||
        !result->e_dynamic.d_rela.er_relsz ||
-        result->e_dynamic.d_rela.er_relent < sizeof(Elf(Rela))) {
+        result->e_dynamic.d_rela.er_relent < sizeof(Elf_Rela)) {
    result->e_dynamic.d_flags &= ~(ELF_DYNAMIC_HAS_RELA|
                                   ELF_DYNAMIC_HAS_RELASZ);
    result->e_dynamic.d_rela.er_relsz  = 0;
@@ -1126,7 +1114,7 @@ elf_loader(struct file *__restrict fp) {
    }
   }
   if (!(result->e_dynamic.d_flags&ELF_DYNAMIC_HAS_SYMTAB) ||
-        result->e_dynamic.d_syment < sizeof(Elf(Sym))) {
+        result->e_dynamic.d_syment < sizeof(Elf_Sym)) {
    result->e_dynamic.d_flags &= ~(ELF_DYNAMIC_HAS_HASH|
                                   ELF_DYNAMIC_HAS_SYMTAB);
    result->e_dynamic.d_symsz  = 0;

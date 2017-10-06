@@ -143,9 +143,10 @@ struct mregion_part {
 union{ struct mscatter     mt_memory; /*< [lock(:mr_plock)][valid_if(mt_refcnt != 0 && mt_state == MPART_STATE_INCORE)] Physical memory scatter chain for in-core data. */
        struct mswap_ticket mt_stick;  /*< [lock(:mr_plock)][valid_if(mt_refcnt != 0 && mt_state == MPART_STATE_INSWAP)] Swap ticket describing memory data. */};
 };
-#define MREGION_PART_BEGIN(self)      ((self)->mt_start)
-#define MREGION_PART_END(self,region) ((self)->mt_chain.le_next ? (self)->mt_chain.le_next->mt_start : (region)->mr_size)
-#define MREGION_PART_ISLOCKED(self)   ((self)->mt_locked > 0)
+#define MREGION_PART_BEGIN(self)       ((self)->mt_start)
+#define MREGION_PART_END(self,region)  ((self)->mt_chain.le_next ? (self)->mt_chain.le_next->mt_start : (region)->mr_size)
+#define MREGION_PART_SIZE(self,region) (MREGION_PART_END(self,region)-MREGION_PART_BEGIN(self))
+#define MREGION_PART_ISLOCKED(self)    ((self)->mt_locked > 0)
 
 
 /* Memory region types (used to implement guard regions) */

@@ -1101,7 +1101,7 @@ filedata_write(struct filedata *__restrict self,
   *(uintptr_t *)&buf += (size_t)temp;
   if (self->fd_pos > self->fd_max ||
      (self->fd_pos == self->fd_max &&
-      self->fd_pos == self->fd_end)) {
+      self->fd_max == self->fd_end)) {
    pos_t new_size;
    bool have_write_lock = false;
    /* Update the stored file size. */

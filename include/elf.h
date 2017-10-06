@@ -22,10 +22,15 @@
 
 /* Standard ELF types. */
 #include "__stdinc.h"
+#include <features.h>
 
 #ifdef __CC__
 #include <stdint.h>
-#endif
+#endif /* __CC__ */
+#ifdef __USE_KOS
+#include <hybrid/host.h>
+#include <hybrid/typecore.h>
+#endif /* __USE_KOS */
 
 #ifdef __cplusplus
 extern "C" {
@@ -2644,6 +2649,65 @@ typedef Elf32_Addr Elf32_Conflict;
                                            with signed low */
 #define R_M32R_GOTOFF_LO        64      /* Low 16 bit offset to GOT */
 #define R_M32R_NUM              256     /* Keep this the last entry. */
+
+
+#ifdef __USE_KOS
+#ifndef ELF_POINTER_SIZE
+#define ELF_POINTER_SIZE __SIZEOF_POINTER__
+#endif
+#if ELF_POINTER_SIZE == 4
+#   define Elf(x) Elf32_##x
+#   define ELF(x) ELF32_##x
+#   define ELFCLASS ELFCLASS32
+#elif ELF_POINTER_SIZE == 8
+#   define Elf(x) Elf16_##x
+#   define ELF(x) ELF16_##x
+#   define ELFCLASS ELFCLASS64
+#else
+#   error "Unsupported ELF pointer size"
+#endif
+
+/* Define ELF-pointer-size based types and macros. */
+#ifdef __CC__
+typedef Elf(Half)    Elf_Half;
+typedef Elf(Word)    Elf_Word;
+typedef Elf(Sword)   Elf_Sword;
+typedef Elf(Xword)   Elf_Xword;
+typedef Elf(Sxword)  Elf_Sxword;
+typedef Elf(Addr)    Elf_Addr;
+typedef Elf(Off)     Elf_Off;
+typedef Elf(Section) Elf_Section;
+typedef Elf(Versym)  Elf_Versym;
+typedef Elf(Ehdr)    Elf_Ehdr;
+typedef Elf(Shdr)    Elf_Shdr;
+typedef Elf(Sym)     Elf_Sym;
+typedef Elf(Syminfo) Elf_Syminfo;
+typedef Elf(Rel)     Elf_Rel;
+typedef Elf(Rela)    Elf_Rela;
+typedef Elf(Phdr)    Elf_Phdr;
+typedef Elf(Dyn)     Elf_Dyn;
+typedef Elf(Verdef)  Elf_Verdef;
+typedef Elf(Verdaux) Elf_Verdaux;
+typedef Elf(Verneed) Elf_Verneed;
+typedef Elf(Vernaux) Elf_Vernaux;
+typedef Elf(auxv_t)  Elf_auxv_t;
+typedef Elf(Nhdr)    Elf_Nhdr;
+typedef Elf(Move)    Elf_Move;
+typedef Elf(Lib)     Elf_Lib;
+#endif /* __CC__ */
+
+#define ELF_ST_BIND(val)       ELF(ST_BIND)(val)
+#define ELF_ST_TYPE(val)       ELF(ST_TYPE)(val)
+#define ELF_ST_INFO(bind,type) ELF(ST_INFO)(bind,type)
+#define ELF_ST_VISIBILITY(o)   ELF(ST_VISIBILITY)(o)
+#define ELF_R_SYM(val)         ELF(R_SYM)(val)
+#define ELF_R_TYPE(val)        ELF(R_TYPE)(val)
+#define ELF_R_INFO(sym,type)   ELF(R_INFO)(sym,type)
+#define ELF_M_SYM(info)        ELF(M_SYM)(info)
+#define ELF_M_SIZE(info)       ELF(M_SIZE)(info)
+#define ELF_M_INFO(sym,size)   ELF(M_INFO)(sym,size)
+
+#endif /* __USE_KOS */
 
 #ifdef __cplusplus
 }
