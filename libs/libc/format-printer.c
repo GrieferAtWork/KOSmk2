@@ -56,6 +56,7 @@
 #include "unistd.h"
 #include "malloc.h"
 #include "unicode.h"
+#include "errno.h"
 #include <stdio.h>
 #include <kos/fcntl.h>
 #endif

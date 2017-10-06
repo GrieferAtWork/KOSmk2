@@ -88,7 +88,9 @@
 #   include "__stdinc-generic.h"
 #endif
 
-#ifdef __cplusplus
+#ifdef __INTELLISENSE__
+#   define __NOTHROW       /* nothing */
+#elif defined(__cplusplus)
 #   define __NOTHROW(prot) prot throw()
 #elif defined(__NO_ATTR_NOTHROW)
 #   define __NOTHROW(prot) prot

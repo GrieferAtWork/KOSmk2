@@ -31,6 +31,7 @@
 #include "unistd.h"
 #include "unicode.h"
 #include "string.h"
+#include "errno.h"
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #include <bits/dos-errno.h>
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */

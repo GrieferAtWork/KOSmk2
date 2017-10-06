@@ -25,6 +25,7 @@
 #include "libc.h"
 #include "system.h"
 #include "sysconf.h"
+#include "errno.h"
 
 #include <linux/limits.h>
 #include <limits.h>

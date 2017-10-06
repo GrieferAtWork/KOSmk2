@@ -25,9 +25,10 @@
 #include "system.h"
 #include "sched.h"
 #include "stdlib.h"
+#include "errno.h"
 
-#include <errno.h>
 #include <hybrid/compiler.h>
+#include <hybrid/types.h>
 #include <sched.h>
 #include <sys/syscall.h>
 

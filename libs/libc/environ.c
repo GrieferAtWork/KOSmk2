@@ -29,7 +29,7 @@
 #include "system.h"
 #include "unicode.h"
 #include "unistd.h"
-
+#include "errno.h"
 #include <assert.h>
 #include <hybrid/compiler.h>
 #include <hybrid/sync/atomic-rwlock.h>

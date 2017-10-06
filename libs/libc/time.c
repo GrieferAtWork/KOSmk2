@@ -30,6 +30,7 @@
 #include "format-printer.h"
 #include "unicode.h"
 #include "malloc.h"
+#include "errno.h"
 
 #include <time.h>
 #include <hybrid/compiler.h>

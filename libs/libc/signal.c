@@ -25,6 +25,7 @@
 #include "system.h"
 #include "signal.h"
 #include "unistd.h"
+#include "errno.h"
 
 #include <hybrid/compiler.h>
 #include <stddef.h>

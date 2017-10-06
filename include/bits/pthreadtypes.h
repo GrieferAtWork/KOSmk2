@@ -20,8 +20,26 @@
 #define _BITS_PTHREADTYPES_H 1
 
 #include <__stdinc.h>
+#include <hybrid/typecore.h>
 
 __DECL_BEGIN
+
+/* Copyright (C) 2002-2016 Free Software Foundation, Inc.
+   This file is part of the GNU C Library.
+
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library; if not, see
+   <http://www.gnu.org/licenses/>.  */
 
 #ifdef __x86_64__
 #if __SIZEOF_POINTER__ == 8
@@ -57,11 +75,11 @@ __DECL_BEGIN
 #   define __SIZEOF_PTHREAD_BARRIERATTR_T 4
 #endif
 
-typedef unsigned long int pthread_t;
+typedef __UINTPTR_TYPE__ pthread_t;
 
 union pthread_attr_t {
  char __size[__SIZEOF_PTHREAD_ATTR_T];
- long int __align;
+ __INTPTR_TYPE__ __align;
 };
 #ifndef __have_pthread_attr_t
 #define __have_pthread_attr_t 1
@@ -111,7 +129,7 @@ typedef union {
 #endif
  } __data;
  char __size[__SIZEOF_PTHREAD_MUTEX_T];
- long int __align;
+ __INTPTR_TYPE__ __align;
 } pthread_mutex_t;
 
 typedef union {
@@ -163,7 +181,7 @@ typedef union {
   unsigned char __pad1[7];
 #define __PTHREAD_RWLOCK_ELISION_EXTRA 0,{0,0,0,0,0,0,0}
 #endif
-  unsigned long int __pad2;
+  __UINTPTR_TYPE__ __pad2;
   unsigned int __flags;
 # define __PTHREAD_RWLOCK_INT_FLAGS_SHARED    1
  } __data;
@@ -184,12 +202,12 @@ typedef union {
  } __data;
 #endif
  char __size[__SIZEOF_PTHREAD_RWLOCK_T];
- long int __align;
+ __INTPTR_TYPE__ __align;
 } pthread_rwlock_t;
 
 typedef union {
  char __size[__SIZEOF_PTHREAD_RWLOCKATTR_T];
- long int __align;
+ __INTPTR_TYPE__ __align;
 } pthread_rwlockattr_t;
 #endif
 
@@ -198,7 +216,7 @@ typedef union {
 typedef volatile int pthread_spinlock_t;
 typedef union {
  char __size[__SIZEOF_PTHREAD_BARRIER_T];
- long int __align;
+ __INTPTR_TYPE__ __align;
 } pthread_barrier_t;
 typedef union {
  char __size[__SIZEOF_PTHREAD_BARRIERATTR_T];

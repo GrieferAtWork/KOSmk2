@@ -21,7 +21,6 @@
 
 #include "libc.h"
 #include "system.h"
-#include "errno.h"
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -291,6 +290,11 @@ INTDEF int LIBCCALL libc_brk(void *addr);
 INTDEF void *LIBCCALL libc_sbrk(intptr_t increment);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
 struct _diskfree_t;
 INTDEF int LIBCCALL libc_chdrive(int drive);
 INTDEF int LIBCCALL libc_getdrive(void);
@@ -379,10 +383,10 @@ INTDEF int LIBCCALL libc_16waccess(char16_t const *file, int type);
 INTDEF int LIBCCALL libc_32waccess(char32_t const *file, int type);
 INTDEF int LIBCCALL libc_dos_16waccess(char16_t const *file, int type);
 INTDEF int LIBCCALL libc_dos_32waccess(char32_t const *file, int type);
-INTDEF __errno_t LIBCCALL libc_16waccess_s(char16_t const *file, int type);
-INTDEF __errno_t LIBCCALL libc_32waccess_s(char32_t const *file, int type);
-INTDEF __errno_t LIBCCALL libc_dos_16waccess_s(char16_t const *file, int type);
-INTDEF __errno_t LIBCCALL libc_dos_32waccess_s(char32_t const *file, int type);
+INTDEF errno_t LIBCCALL libc_16waccess_s(char16_t const *file, int type);
+INTDEF errno_t LIBCCALL libc_32waccess_s(char32_t const *file, int type);
+INTDEF errno_t LIBCCALL libc_dos_16waccess_s(char16_t const *file, int type);
+INTDEF errno_t LIBCCALL libc_dos_32waccess_s(char32_t const *file, int type);
 INTDEF int LIBCCALL libc_16wchmod(char16_t const *file, mode_t mode);
 INTDEF int LIBCCALL libc_32wchmod(char32_t const *file, mode_t mode);
 INTDEF int LIBCCALL libc_16wunlink(char16_t const *file);
@@ -400,8 +404,8 @@ INTDEF int LIBCCALL libc_dos_32wremove(char32_t const *file);
 INTDEF int LIBCCALL libc_dos_16wrename(char16_t const *oldname, char16_t const *newname);
 INTDEF int LIBCCALL libc_dos_32wrename(char32_t const *oldname, char32_t const *newname);
 
-INTDEF __errno_t LIBCCALL libc_access_s(char const *file, int type);
-INTDEF __errno_t LIBCCALL libc_dos_access_s(char const *file, int type);
+INTDEF errno_t LIBCCALL libc_access_s(char const *file, int type);
+INTDEF errno_t LIBCCALL libc_dos_access_s(char const *file, int type);
 INTDEF int LIBCCALL libc_dos_rename(char const *old, char const *new_);
 INTDEF int LIBCCALL libc_dos_chdir(char const *path);
 INTDEF int LIBCCALL libc_dos_rmdir(char const *path);
@@ -419,7 +423,7 @@ INTDEF off64_t LIBCCALL libc_fdsize64(int fd);
 INTDEF off64_t LIBCCALL libc_fdtell64(int fd);
 INTDEF int LIBCCALL libc_dos_pipe(int pipedes[2], u32 pipesize, int textmode);
 INTDEF mode_t LIBCCALL libc_setmode(int fd, mode_t mode);
-INTDEF __errno_t LIBCCALL libc_umask_s(mode_t new_mode, mode_t *old_mode);
+INTDEF errno_t LIBCCALL libc_umask_s(mode_t new_mode, mode_t *old_mode);
 INTDEF int  LIBCCALL libc__lock_fhandle(int fd);
 INTDEF void LIBCCALL libc_unlock_fhandle(int fd);
 INTDEF intptr_t LIBCCALL libc_get_osfhandle(int fd);

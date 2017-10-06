@@ -29,6 +29,7 @@
 #include "string.h"
 #include "unistd.h"
 #include "stdlib.h"
+#include "errno.h"
 
 #include <fcntl.h>
 #include <assert.h>

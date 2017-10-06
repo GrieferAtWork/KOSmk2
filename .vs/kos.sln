@@ -48,6 +48,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\nl_types.h = ..\include\nl_types.h
 		..\include\paths.h = ..\include\paths.h
 		..\include\process.h = ..\include\process.h
+		..\include\pthread.h = ..\include\pthread.h
 		..\include\pty.h = ..\include\pty.h
 		..\include\pwd.h = ..\include\pwd.h
 		..\include\sal.h = ..\include\sal.h
@@ -327,6 +328,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "elf2lib", "apps\elf2lib.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "playground", "apps\playground.vcxproj", "{B93B27CF-4DAC-400F-A6F2-0188749134FD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpthread", "libs\libpthread.vcxproj", "{F2B1ACE4-7044-492F-A623-9ABDC37CCFCF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -369,6 +372,10 @@ Global
 		{B93B27CF-4DAC-400F-A6F2-0188749134FD}.Debug|Win32.Build.0 = Debug|Win32
 		{B93B27CF-4DAC-400F-A6F2-0188749134FD}.Release|Win32.ActiveCfg = Release|Win32
 		{B93B27CF-4DAC-400F-A6F2-0188749134FD}.Release|Win32.Build.0 = Release|Win32
+		{F2B1ACE4-7044-492F-A623-9ABDC37CCFCF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F2B1ACE4-7044-492F-A623-9ABDC37CCFCF}.Debug|Win32.Build.0 = Debug|Win32
+		{F2B1ACE4-7044-492F-A623-9ABDC37CCFCF}.Release|Win32.ActiveCfg = Release|Win32
+		{F2B1ACE4-7044-492F-A623-9ABDC37CCFCF}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -397,5 +404,6 @@ Global
 		{E60C43FC-AA5A-4451-8B2C-5B8CD2A76044} = {8C9AB07B-15FA-46B5-B7CC-364910789270}
 		{9790111D-8875-451F-858D-16EC89619D82} = {2503C059-4B4F-457D-9853-FFA845ED7BF2}
 		{B93B27CF-4DAC-400F-A6F2-0188749134FD} = {2503C059-4B4F-457D-9853-FFA845ED7BF2}
+		{F2B1ACE4-7044-492F-A623-9ABDC37CCFCF} = {8C9AB07B-15FA-46B5-B7CC-364910789270}
 	EndGlobalSection
 EndGlobal

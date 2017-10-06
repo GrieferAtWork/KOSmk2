@@ -26,6 +26,7 @@
 #include "ctype.h"
 #include "stdio.h"
 #include "malloc.h"
+#include "errno.h"
 
 #include <alloca.h>
 #include <assert.h>
