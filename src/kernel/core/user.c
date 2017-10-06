@@ -395,6 +395,7 @@ PUBLIC SAFE VIRT char *KCALL
 acquire_string(USER char const *str, size_t max_length,
                size_t *opt_pstrlen, int *__restrict pstate) {
  struct mman *mm = THIS_MMAN;
+ /* NOTE: We need a write-lock in case accessing the string causes a #PF. */
  char *result = E_PTR(mman_write(mm));
  char *string_end; size_t string_length;
  if (E_ISERR(result)) return result;
@@ -548,6 +549,48 @@ release_string(VIRT char *__restrict virt_str, int state) {
  }
 }
 
+PUBLIC SAFE ATTR_MALLOC char *KCALL
+copy_string(USER char const *str, size_t max_length, size_t *opt_pstrlen) {
+ struct mman *mm = THIS_MMAN;
+ /* NOTE: We need a write-lock in case accessing the string causes a #PF. */
+ char *result = E_PTR(mman_write(mm));
+ char *string_end; size_t string_length;
+ if (E_ISERR(result)) return result;
+ /* Figure out where the string ends, thus validating
+  * it and figuring out its initial length. */
+ string_end = strend_user(str);
+ if unlikely(!string_end) { result = E_PTR(-EFAULT); goto end; }
+ string_length = (size_t)(string_end-str);
+ assert(mm->m_tasks != NULL);
+ /* Make sure the string's length isn't too large. */
+ if unlikely(string_length > max_length) { result = E_PTR(-EINVAL); goto end; }
+ if (mm->m_tasks == THIS_TASK && !THIS_TASK->t_mman_tasks.le_next) {
+  /* Simple case: The calling process is single-threaded,
+   *              so there's no chance the string may change. */
+  result = (char *)memdup(str,(max_length+1)*sizeof(char));
+  if (result) result[max_length] = '\0';
+  if (opt_pstrlen) *opt_pstrlen = string_length;
+ } else {
+  char *result_end; size_t new_strlen;
+copy_string: ATTR_UNUSED;
+  result = (char *)kmalloc(string_length,GFP_SHARED);
+  if unlikely(!result) { result = E_PTR(-ENOMEM); goto end; }
+  result_end = stpncpy_from_user(result,str,string_length);
+  /* Shouldn't happen, but checked anyways. */
+  if unlikely(!result_end) { kfree(result); result = E_PTR(-EFAULT); goto end; }
+  new_strlen = result_end-result;
+  assert(new_strlen <= string_length);
+  /* Truncate our string copy if user-space modified the string in the meantime. */
+  if unlikely(new_strlen != string_length) {
+   char *new_result = trealloc(char,result,new_strlen+1);
+   if (new_result) result = new_result;
+  }
+  if (opt_pstrlen) *opt_pstrlen = new_strlen;
+ }
+end:
+ mman_endwrite(mm);
+ return result;
+}
 
 
 

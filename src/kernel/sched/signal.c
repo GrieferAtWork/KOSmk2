@@ -37,6 +37,7 @@
 #include <kernel/syscall.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
+#include <linker/coredump.h>
 #include <sys/syslog.h>
 #include <malloc.h>
 #include <sched/cpu.h>
@@ -311,16 +312,93 @@ STATIC_ASSERT(sizeof(struct sigenter_info)           == SIGENTER_INFO_SIZE);
 STATIC_ASSERT(offsetof(struct sigenter_info,ei_info) == SIGENTER_INFO_OFFSETOF_INFO);
 STATIC_ASSERT(offsetof(struct sigenter_info,ei_ctx)  == SIGENTER_INFO_OFFSETOF_CTX);
 
+PRIVATE void KCALL
+ucontext_from_usertask(ucontext_t *__restrict result,
+                       struct task *__restrict t,
+                       greg_t reg_trapno, greg_t reg_err);
+PRIVATE void KCALL
+fpstate_from_task(struct _libc_fpstate *__restrict result,
+                      struct task *__restrict t);
+
+PRIVATE void KCALL
+coredump_user_task(struct task *__restrict t,
+                   siginfo_t const *__restrict reason,
+                   greg_t reg_trapno, greg_t reg_err) {
+ ucontext_t context;
+ ucontext_from_usertask(&context,t,reg_trapno,reg_err);
+ core_dodump(t->t_real_mman,t,&context,reason,COREDUMP_FLAG_NORMAL);
+}
+PRIVATE void KCALL
+coredump_host_task(struct task *__restrict t,
+                   siginfo_t const *__restrict reason,
+                   greg_t reg_trapno, greg_t reg_err) {
+ ucontext_t ctx;
+#ifdef __i386__
+#undef __STACKBASE_TASK
+#define __STACKBASE_TASK     t
+ ctx.uc_flags = 0; /* ??? */
+ ctx.uc_link  = NULL;
+ if (t->t_ustack) {
+  ctx.uc_stack.ss_sp    = (void *)t->t_ustack->s_begin;
+  ctx.uc_stack.ss_size  = ((uintptr_t)t->t_ustack->s_end-
+                           (uintptr_t)t->t_ustack->s_begin);
+  ctx.uc_stack.ss_flags = 0;
+ } else {
+  ctx.uc_stack.ss_sp    = THIS_SYSCALL_REAL_USERESP;
+  ctx.uc_stack.ss_size  = 0;
+  ctx.uc_stack.ss_flags = 0;
+ }
+ /* Fill in what we still know about user-space registers.
+  * XXX: The may this function acquires user-space registers isn't quite safe... */
+ ctx.uc_mcontext.cr2               = (unsigned long int)t->t_lastcr2;
+ ctx.uc_mcontext.oldmask           = 0; /* ??? */
+ ctx.uc_mcontext.gregs[REG_GS]     = (greg_t)THIS_SYSCALL_GS;
+ ctx.uc_mcontext.gregs[REG_FS]     = (greg_t)THIS_SYSCALL_FS;
+ ctx.uc_mcontext.gregs[REG_ES]     = (greg_t)THIS_SYSCALL_ES;
+ ctx.uc_mcontext.gregs[REG_DS]     = (greg_t)THIS_SYSCALL_DS;
+ ctx.uc_mcontext.gregs[REG_EDI]    = THIS_SYSCALL_EDI;
+ ctx.uc_mcontext.gregs[REG_ESI]    = THIS_SYSCALL_ESI;
+ ctx.uc_mcontext.gregs[REG_EBP]    = THIS_SYSCALL_EBP;
+ ctx.uc_mcontext.gregs[REG_ESP]    = (greg_t)THIS_SYSCALL_REAL_USERESP;
+ ctx.uc_mcontext.gregs[REG_EBX]    = THIS_SYSCALL_EBX;
+ ctx.uc_mcontext.gregs[REG_EDX]    = THIS_SYSCALL_EDX;
+ ctx.uc_mcontext.gregs[REG_ECX]    = THIS_SYSCALL_ECX;
+ ctx.uc_mcontext.gregs[REG_EAX]    = -EOK; /* Simulate an OK system call. */
+ ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
+ ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
+ ctx.uc_mcontext.gregs[REG_EIP]    = (greg_t)THIS_SYSCALL_REAL_EIP;
+ ctx.uc_mcontext.gregs[REG_CS]     = THIS_SYSCALL_REAL_CS;
+ ctx.uc_mcontext.gregs[REG_EFL]    = THIS_SYSCALL_REAL_EFLAGS;
+ ctx.uc_mcontext.gregs[REG_UESP]   = ctx.uc_mcontext.gregs[REG_ESP];
+ ctx.uc_mcontext.gregs[REG_SS]     = THIS_SYSCALL_REAL_SS;
+ ctx.uc_mcontext.fpregs = &ctx.__fpregs_mem;
+ fpstate_from_task(&ctx.__fpregs_mem,t);
+ memcpy(&ctx.uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
+#undef __STACKBASE_TASK
+#define __STACKBASE_TASK     THIS_TASK
+#else
+#error FIXME
+#endif
+ core_dodump(t->t_real_mman,t,&ctx,reason,COREDUMP_FLAG_NORMAL);
+}
+
+
+
 /* Exception handler for managing broken signal stacks. */
 INTERN ATTR_NORETURN void KCALL sigfault(void) {
+ siginfo_t info;
  assert(!THIS_TASK->t_critical);
  syslog(LOG_ERROR,"[SIG] Terminating thread %d:%d with faulty signal stack pointer at %p\n",
         GET_THIS_PID(),GET_THIS_TID(),THIS_TASK->t_lastcr2);
+ memset(&info,0,sizeof(siginfo_t));
+ info.si_signo = SIGSEGV;
+ info.si_code  = SEGV_MAPERR;
+ coredump_host_task(THIS_TASK,&info,0,0);
  task_terminate(THIS_TASK,(void *)(__WCOREFLAG|__W_EXITCODE(1,0)));
  __builtin_unreachable();
 }
 INTERN ATTR_NORETURN void KCALL sigill(char const *__restrict format, ...) {
- va_list args;
+ siginfo_t info; va_list args;
  assert(!THIS_TASK->t_critical);
  syslog(LOG_ERROR,"[SIG] Terminating thread %d:%d with illegal signal context: Invalid ",
         GET_THIS_PID(),GET_THIS_TID());
@@ -328,6 +406,13 @@ INTERN ATTR_NORETURN void KCALL sigill(char const *__restrict format, ...) {
  vsyslog(LOG_DEBUG,format,args);
  va_end(args);
  syslog(LOG_ERROR,"\n");
+
+ /* Create a core dump for the thread. */
+ memset(&info,0,sizeof(siginfo_t));
+ info.si_signo = SIGILL;
+ info.si_code  = ILL_PRVREG;
+ coredump_host_task(THIS_TASK,&info,0,0);
+
  task_terminate(THIS_TASK,(void *)(__WCOREFLAG|__W_EXITCODE(2,0)));
  __builtin_unreachable();
 }
@@ -529,6 +614,79 @@ PRIVATE dact_t const default_actions[_NSIG-1] = {
 
 INTDEF void (ASMCALL signal_return)(void);
 
+PRIVATE void KCALL
+fpstate_from_task(struct _libc_fpstate *__restrict result,
+                      struct task *__restrict t) {
+#ifndef CONFIG_NO_FPU
+ if (t == THIS_TASK) {
+  /* TODO: Update/safe current register state. */
+ }
+ if (t->t_arch.at_fpu != NULL) {
+  struct _libc_fpreg *dst,*end; struct fpu_reg *src;
+  result->cw      = t->t_arch.at_fpu->fp_fcw;
+  result->sw      = t->t_arch.at_fpu->fp_fsw;
+  result->tag     = t->t_arch.at_fpu->fp_ftw;
+  result->ipoff   = t->t_arch.at_fpu->fp_fpuip;
+  result->cssel   = t->t_arch.at_fpu->fp_fpucs;
+  result->dataoff = t->t_arch.at_fpu->fp_fpudp;
+  result->datasel = t->t_arch.at_fpu->fp_fpuds;
+  result->status  = result->sw; /* ??? */
+  end = (dst = result->_st)+COMPILER_LENOF(result->_st);
+  src = t->t_arch.at_fpu->fp_regs;
+  for (; dst != end; ++dst,++src) memcpy(dst,src,sizeof(src->f_data));
+ } else
+#endif
+ {
+  memset(result,0,sizeof(struct _libc_fpstate)); /* TODO */
+ }
+}
+
+PRIVATE void KCALL
+ucontext_from_usertask(ucontext_t *__restrict result,
+                       struct task *__restrict t,
+                       greg_t reg_trapno, greg_t reg_err) {
+#ifdef __i386__
+ struct cpustate *cs_descr = t->t_cstate;
+ result->uc_flags = 0; /* ??? */
+ result->uc_link  = NULL;
+ if (t->t_ustack) {
+  result->uc_stack.ss_sp    = (void *)t->t_ustack->s_begin;
+  result->uc_stack.ss_size  = ((uintptr_t)t->t_ustack->s_end-
+                                (uintptr_t)t->t_ustack->s_begin);
+  result->uc_stack.ss_flags = 0;
+ } else {
+  result->uc_stack.ss_sp    = (void *)cs_descr->useresp;
+  result->uc_stack.ss_size  = 0;
+  result->uc_stack.ss_flags = 0;
+ }
+ result->uc_mcontext.cr2     = (unsigned long int)t->t_lastcr2;
+ result->uc_mcontext.oldmask = 0; /* ??? */
+ result->uc_mcontext.gregs[REG_GS] = (u32)cs_descr->host.gs;
+ result->uc_mcontext.gregs[REG_FS] = (u32)cs_descr->host.fs;
+ result->uc_mcontext.gregs[REG_ES] = (u32)cs_descr->host.es;
+ result->uc_mcontext.gregs[REG_DS] = (u32)cs_descr->host.ds;
+ result->uc_mcontext.gregs[REG_EDI] = cs_descr->host.edi;
+ result->uc_mcontext.gregs[REG_ESI] = cs_descr->host.esi;
+ result->uc_mcontext.gregs[REG_EBP] = cs_descr->host.ebp;
+ result->uc_mcontext.gregs[REG_ESP] = cs_descr->host.esp;
+ result->uc_mcontext.gregs[REG_EBX] = cs_descr->host.ebx;
+ result->uc_mcontext.gregs[REG_EDX] = cs_descr->host.edx;
+ result->uc_mcontext.gregs[REG_ECX] = cs_descr->host.ecx;
+ result->uc_mcontext.gregs[REG_EAX] = cs_descr->host.eax;
+ result->uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
+ result->uc_mcontext.gregs[REG_ERR] = reg_err;
+ result->uc_mcontext.gregs[REG_EIP] = cs_descr->host.eip;
+ result->uc_mcontext.gregs[REG_CS] = cs_descr->host.cs;
+ result->uc_mcontext.gregs[REG_EFL] = cs_descr->host.eflags;
+ result->uc_mcontext.gregs[REG_UESP] = cs_descr->useresp;
+ result->uc_mcontext.gregs[REG_SS] = cs_descr->ss;
+ fpstate_from_task(&result->__fpregs_mem,t);
+ memcpy(&result->uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
+#else
+#error FIXME
+#endif
+}
+
 
 PRIVATE errno_t KCALL
 deliver_signal_to_task_in_user(struct task *__restrict t,
@@ -545,47 +703,8 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
  /* TODO: Use sigaltstack() here, if it was ever set! */
  user_info = ((USER struct sigenter_info *)cs_descr->useresp)-1;
 
-#ifdef __i386__
- info.ei_ctx.uc_flags = 0; /* ??? */
- info.ei_ctx.uc_link  = NULL;
- if (t->t_ustack) {
-  info.ei_ctx.uc_stack.ss_sp    = (void *)t->t_ustack->s_begin;
-  info.ei_ctx.uc_stack.ss_size  = ((uintptr_t)t->t_ustack->s_end-
-                                (uintptr_t)t->t_ustack->s_begin);
-  info.ei_ctx.uc_stack.ss_flags = 0;
- } else {
-  info.ei_ctx.uc_stack.ss_sp    = (void *)cs_descr->useresp;
-  info.ei_ctx.uc_stack.ss_size  = 0;
-  info.ei_ctx.uc_stack.ss_flags = 0;
- }
- info.ei_ctx.uc_mcontext.cr2     = (unsigned long int)t->t_lastcr2;
- info.ei_ctx.uc_mcontext.oldmask = 0; /* ??? */
- info.ei_ctx.uc_mcontext.gregs[REG_GS] = (u32)cs_descr->host.gs;
- info.ei_ctx.uc_mcontext.gregs[REG_FS] = (u32)cs_descr->host.fs;
- info.ei_ctx.uc_mcontext.gregs[REG_ES] = (u32)cs_descr->host.es;
- info.ei_ctx.uc_mcontext.gregs[REG_DS] = (u32)cs_descr->host.ds;
- info.ei_ctx.uc_mcontext.gregs[REG_EDI] = cs_descr->host.edi;
- info.ei_ctx.uc_mcontext.gregs[REG_ESI] = cs_descr->host.esi;
- info.ei_ctx.uc_mcontext.gregs[REG_EBP] = cs_descr->host.ebp;
- info.ei_ctx.uc_mcontext.gregs[REG_ESP] = cs_descr->host.esp;
- info.ei_ctx.uc_mcontext.gregs[REG_EBX] = cs_descr->host.ebx;
- info.ei_ctx.uc_mcontext.gregs[REG_EDX] = cs_descr->host.edx;
- info.ei_ctx.uc_mcontext.gregs[REG_ECX] = cs_descr->host.ecx;
- info.ei_ctx.uc_mcontext.gregs[REG_EAX] = cs_descr->host.eax;
- info.ei_ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
- info.ei_ctx.uc_mcontext.gregs[REG_ERR] = reg_err;
- info.ei_ctx.uc_mcontext.gregs[REG_EIP] = cs_descr->host.eip;
- info.ei_ctx.uc_mcontext.gregs[REG_CS] = cs_descr->host.cs;
- info.ei_ctx.uc_mcontext.gregs[REG_EFL] = cs_descr->host.eflags;
- info.ei_ctx.uc_mcontext.gregs[REG_UESP] = cs_descr->useresp;
- info.ei_ctx.uc_mcontext.gregs[REG_SS] = cs_descr->ss;
+ ucontext_from_usertask(&info.ei_ctx,t,reg_trapno,reg_err);
  info.ei_ctx.uc_mcontext.fpregs = &user_info->ei_ctx.__fpregs_mem;
-#else
-#error FIXME
-#endif
-
- memset(&info.ei_ctx.__fpregs_mem,0,sizeof(struct _libc_fpstate)); /* TODO */
- memcpy(&info.ei_ctx.uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
 
  memset((byte_t *)&info.__ei_info_pad+sizeof(siginfo_t),0,__SI_MAX_SIZE-sizeof(siginfo_t));
  memcpy(&info.ei_info,signal_info,sizeof(siginfo_t));
@@ -702,7 +821,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
  info.ei_ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
  info.ei_ctx.uc_mcontext.fpregs = &user_info->ei_ctx.__fpregs_mem;
  info.ei_old_eip = (USER void *)t->t_sigenter.se_eip;
- memset(&info.ei_ctx.__fpregs_mem,0,sizeof(struct _libc_fpstate)); /* TODO */
+ fpstate_from_task(&info.ei_ctx.__fpregs_mem,t);
  memcpy(&info.ei_ctx.uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
 
  /* Fixup execution of the signal handler itself. */
@@ -819,6 +938,9 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
    case DA_CORE:
     error = task_terminate_cpu_endwrite(c,t,(void *)
                                        (__WCOREFLAG|__W_EXITCODE(0,signal_info->si_signo)));
+    if (t != THIS_TASK && (t->t_cstate->host.cs&3) == 3)
+         coredump_user_task(t,signal_info,reg_trapno,reg_err);
+    else coredump_host_task(t,signal_info,reg_trapno,reg_err);
     goto ppop_end;
 
    default:

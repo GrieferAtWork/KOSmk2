@@ -27,6 +27,7 @@
 #include "format-printer.h"
 #include "string.h"
 #include "fcntl.h"
+#include "malloc.h"
 
 #include <alloca.h>
 #include <assert.h>
@@ -54,7 +55,6 @@
 #include <fs/dentry.h>
 #else
 #include "unistd.h"
-#include "malloc.h"
 #include "unicode.h"
 #include "errno.h"
 #include <stdio.h>
@@ -731,7 +731,9 @@ quote_string:
    } break;
 #endif
 
-   case '%': goto done_fmt;
+   case '%':
+    flush_start = format-1;
+    goto next_normal;
    default:
     if (ch >= '0' && ch <= '9') {
      for (;;) {
@@ -1007,6 +1009,89 @@ libc_format_hexdump(pformatprinter printer, void *closure,
 
 
 
+INTERN int LIBCCALL
+libc_stringprinter_init(struct stringprinter *__restrict self,
+                        size_t hint) {
+ CHECK_HOST_DOBJ(self);
+ if (!hint) hint = 4*sizeof(void *);
+ self->sp_buffer = (char *)libc_malloc((hint+1)*sizeof(char));
+ if unlikely(!self->sp_buffer) {
+  self->sp_bufpos = NULL;
+  self->sp_buffer = NULL;
+  return -1;
+ }
+ self->sp_bufpos = self->sp_buffer;
+ self->sp_bufend = self->sp_buffer+hint;
+ self->sp_bufend[0] = '\0';
+ return 0;
+}
+INTERN char *LIBCCALL
+libc_stringprinter_pack(struct stringprinter *__restrict self,
+                        size_t *length) {
+ char *result; size_t result_size;
+ CHECK_HOST_DOBJ(self);
+ assert(self->sp_bufpos >= self->sp_buffer);
+ assert(self->sp_bufpos <= self->sp_bufend);
+ result_size = (size_t)(self->sp_bufpos-self->sp_buffer);
+ if (self->sp_bufpos != self->sp_bufend) {
+  result = (char *)libc_realloc(self->sp_buffer,(result_size+1)*sizeof(char));
+  if unlikely(!result) result = self->sp_buffer;
+ } else {
+  result = self->sp_buffer;
+ }
+ result[result_size] = '\0';
+ self->sp_buffer = NULL;
+ if (length) *length = result_size;
+ return result;
+}
+INTERN void LIBCCALL
+libc_stringprinter_fini(struct stringprinter *__restrict self) {
+ CHECK_HOST_DOBJ(self);
+ libc_free(self->sp_buffer);
+}
+INTERN ssize_t LIBCCALL
+libc_stringprinter_print(char const *__restrict data,
+                         size_t datalen, void *closure) {
+ struct stringprinter *self = (struct stringprinter *)closure;
+ size_t size_avail,newsize,reqsize;
+ char *new_buffer;
+ CHECK_HOST_DOBJ(self);
+ assert(self->sp_bufpos >= self->sp_buffer);
+ assert(self->sp_bufpos <= self->sp_bufend);
+ size_avail = (size_t)(self->sp_bufend-self->sp_bufpos);
+ if unlikely(size_avail < datalen) {
+  /* Must allocate more memory. */
+  newsize = (size_t)(self->sp_bufend-self->sp_buffer);
+  assert(newsize);
+  reqsize = newsize+(datalen-size_avail);
+  /* Double the buffer size until it is of sufficient length. */
+  do newsize *= 2; while (newsize < reqsize);
+  /* Reallocate the buffer (But include 1 character for the terminating '\0') */
+  new_buffer = (char *)libc_realloc(self->sp_buffer,(newsize+1)*sizeof(char));
+  if unlikely(!new_buffer) return -1;
+  self->sp_bufpos = new_buffer+(self->sp_bufpos-self->sp_buffer);
+  self->sp_bufend = new_buffer+newsize;
+  self->sp_buffer = new_buffer;
+ }
+ libc_memcpy(self->sp_bufpos,data,datalen);
+ self->sp_bufpos += datalen;
+ assert(self->sp_bufpos <= self->sp_bufend);
+ return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef __KERNEL__
 INTERN ssize_t ATTR_CDECL
 libc_format_scanf(pformatgetc pgetc, pformatungetc pungetc,
@@ -1031,10 +1116,6 @@ libc_format_vscanf(pformatgetc pgetc, pformatungetc pungetc,
  /* TODO */
  return 0;
 }
-
-
-
-
 
 INTERN char const abbr_month_names[12][4] = {
  "Jan","Feb","Mar","Apr","May","Jun",
@@ -1245,80 +1326,6 @@ end:
  return result;
 }
 
-
-
-
-
-
-
-
-
-
-INTERN int LIBCCALL
-libc_stringprinter_init(struct stringprinter *__restrict self,
-                        size_t hint) {
- CHECK_HOST_DOBJ(self);
- if (!hint) hint = 4*sizeof(void *);
- self->sp_buffer = (char *)libc_malloc((hint+1)*sizeof(char));
- if unlikely(!self->sp_buffer) return -1;
- self->sp_bufpos = self->sp_buffer;
- self->sp_bufend = self->sp_buffer+hint;
- self->sp_bufend[0] = '\0';
- return 0;
-}
-INTERN char *LIBCCALL
-libc_stringprinter_pack(struct stringprinter *__restrict self,
-                        size_t *length) {
- char *result; size_t result_size;
- CHECK_HOST_DOBJ(self);
- assert(self->sp_bufpos >= self->sp_buffer);
- assert(self->sp_bufpos <= self->sp_bufend);
- result_size = (size_t)(self->sp_bufpos-self->sp_buffer);
- if (self->sp_bufpos != self->sp_bufend) {
-  result = (char *)libc_realloc(self->sp_buffer,(result_size+1)*sizeof(char));
-  if unlikely(!result) result = self->sp_buffer;
- } else {
-  result = self->sp_buffer;
- }
- result[result_size] = '\0';
- self->sp_buffer = NULL;
- if (length) *length = result_size;
- return result;
-}
-INTERN void LIBCCALL
-libc_stringprinter_fini(struct stringprinter *__restrict self) {
- CHECK_HOST_DOBJ(self);
- libc_free(self->sp_buffer);
-}
-INTERN ssize_t LIBCCALL
-libc_stringprinter_print(char const *__restrict data,
-                         size_t datalen, void *closure) {
- struct stringprinter *self = (struct stringprinter *)closure;
- size_t size_avail,newsize,reqsize;
- char *new_buffer;
- CHECK_HOST_DOBJ(self);
- assert(self->sp_bufpos >= self->sp_buffer);
- assert(self->sp_bufpos <= self->sp_bufend);
- size_avail = (size_t)(self->sp_bufend-self->sp_bufpos);
- if unlikely(size_avail < datalen) {
-  /* Must allocate more memory. */
-  newsize = (size_t)(self->sp_bufend-self->sp_buffer);
-  assert(newsize);
-  reqsize = newsize+(datalen-size_avail);
-  /* Double the buffer size until it is of sufficient length. */
-  do newsize *= 2; while (newsize < reqsize);
-  /* Reallocate the buffer (But include 1 character for the terminating '\0') */
-  new_buffer = (char *)libc_realloc(self->sp_buffer,(newsize+1)*sizeof(char));
-  if unlikely(!new_buffer) return -1;
-  self->sp_bufpos = new_buffer+(self->sp_bufpos-self->sp_buffer);
-  self->sp_bufend = new_buffer+newsize;
-  self->sp_buffer = new_buffer;
- }
- libc_memcpy(self->sp_bufpos,data,datalen);
- self->sp_bufpos += datalen;
- assert(self->sp_bufpos <= self->sp_bufend);
- return 0;
-}
 
 
 #define BUFFER_FLUSHTRUNC 256
@@ -1611,14 +1618,14 @@ DEFINE_PUBLIC_ALIAS(format_vprintf,libc_format_vprintf);
 DEFINE_PUBLIC_ALIAS(format_printf,libc_format_printf);
 DEFINE_PUBLIC_ALIAS(format_quote,libc_format_quote);
 DEFINE_PUBLIC_ALIAS(format_hexdump,libc_format_hexdump);
-#ifndef __KERNEL__
-DEFINE_PUBLIC_ALIAS(format_scanf,libc_format_scanf);
-DEFINE_PUBLIC_ALIAS(format_vscanf,libc_format_vscanf);
-DEFINE_PUBLIC_ALIAS(format_strftime,libc_format_strftime);
 DEFINE_PUBLIC_ALIAS(stringprinter_init,libc_stringprinter_init);
 DEFINE_PUBLIC_ALIAS(stringprinter_pack,libc_stringprinter_pack);
 DEFINE_PUBLIC_ALIAS(stringprinter_fini,libc_stringprinter_fini);
 DEFINE_PUBLIC_ALIAS(stringprinter_print,libc_stringprinter_print);
+#ifndef __KERNEL__
+DEFINE_PUBLIC_ALIAS(format_scanf,libc_format_scanf);
+DEFINE_PUBLIC_ALIAS(format_vscanf,libc_format_vscanf);
+DEFINE_PUBLIC_ALIAS(format_strftime,libc_format_strftime);
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 DEFINE_PUBLIC_ALIAS(__DSYM(format_printf),libc_dos_format_printf);
 DEFINE_PUBLIC_ALIAS(__DSYM(format_vprintf),libc_dos_format_vprintf);

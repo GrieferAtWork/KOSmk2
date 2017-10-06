@@ -71,6 +71,7 @@
     <ClCompile Include="..\..\src\kernel\fs\textfile.c" />
     <ClCompile Include="..\..\src\kernel\fs\vfs.c" />
     <ClCompile Include="..\..\src\kernel\input\keyboard.c" />
+    <ClCompile Include="..\..\src\kernel\linker\coredump.c" />
     <ClCompile Include="..\..\src\kernel\linker\driver-module.c" />
     <ClCompile Include="..\..\src\kernel\linker\exec.c" />
     <ClCompile Include="..\..\src\kernel\linker\kernel-module.c" />
@@ -104,6 +105,7 @@
     <ClCompile Include="..\..\src\modules\fs\proc\procfs.c" />
     <ClCompile Include="..\..\src\modules\fs\proc\taskutil.c" />
     <ClCompile Include="..\..\src\modules\input\ps2.c" />
+    <ClCompile Include="..\..\src\modules\linker\elf-coredump.c" />
     <ClCompile Include="..\..\src\modules\linker\pe.c" />
     <ClCompile Include="..\..\src\modules\linker\shebang.c" />
     <ClCompile Include="..\..\src\modules\nt\api.c" />
@@ -161,6 +163,7 @@
     <ClInclude Include="..\..\src\include\kernel\syslog.h" />
     <ClInclude Include="..\..\src\include\kernel\test.h" />
     <ClInclude Include="..\..\src\include\kernel\user.h" />
+    <ClInclude Include="..\..\src\include\linker\coredump.h" />
     <ClInclude Include="..\..\src\include\linker\module.h" />
     <ClInclude Include="..\..\src\include\linker\patch.h" />
     <ClInclude Include="..\..\src\include\modules\ata.h" />

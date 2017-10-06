@@ -209,7 +209,6 @@ __LIBC __NONNULL((1,3)) __ssize_t
 
 
 #ifdef __CC__
-#ifndef __KERNEL__
 struct stringprinter {
  char *sp_bufpos; /*< [1..1][>= sp_buffer][<= sp_bufend] . */
  char *sp_buffer; /*< [1..1] Allocate buffer base pointer. */
@@ -239,6 +238,7 @@ __LIBC __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL stringprinter_pack)(st
 __LIBC __ssize_t (__LIBCCALL stringprinter_print)(char const *__restrict __data, __size_t __datalen, void *__closure);
 
 
+#ifndef __KERNEL__
 #ifndef ____mbstate_t_defined
 #define ____mbstate_t_defined 1
 typedef struct __mbstate {

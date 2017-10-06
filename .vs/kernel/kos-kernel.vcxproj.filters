@@ -408,6 +408,12 @@
     <ClCompile Include="..\..\src\modules\nt\api.c">
       <Filter>modules\nt</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\modules\linker\elf-coredump.c">
+      <Filter>modules\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\linker\coredump.c">
+      <Filter>kernel\linker</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -655,6 +661,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\modules\nt\api.h">
       <Filter>modules\nt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\linker\coredump.h">
+      <Filter>include\linker</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

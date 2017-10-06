@@ -310,7 +310,7 @@ end_double_lock:
 #ifdef __i386__
    cs->ss          = THIS_SYSCALL_SS;
    cs->_n2         = 0;
-   cs->useresp     = THIS_SYSCALL_USERESP;
+   cs->useresp     = (u32)THIS_SYSCALL_USERESP;
    cs->host.eax    = 0; /* The child process returns ZERO(0) in EAX. */
    cs->host.ecx    = THIS_SYSCALL_ECX;
    cs->host.edx    = THIS_SYSCALL_EDX;

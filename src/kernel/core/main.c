@@ -467,6 +467,7 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/shebang");
  kinsmod("/mod/pe");
  kinsmod("/mod/nt");
+ kinsmod("/mod/elf-coredump");
 
  /* TODO: Actual locale support? */
 

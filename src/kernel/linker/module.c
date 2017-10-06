@@ -467,6 +467,46 @@ PRIVATE DEFINE_RWLOCK(modloader_lock);
 PRIVATE SLIST_HEAD(struct modloader) modloader_ymaglist = NULL; /*< [lock(modloader_lock)] List of loaders with magic. */
 PRIVATE SLIST_HEAD(struct modloader) modloader_nmaglist = NULL; /*< [lock(modloader_lock)] List of loaders without magic. */
 
+INTERN void KCALL
+modloader_delete_from_instance(struct instance *__restrict inst) {
+ struct modloader **piter,*iter;
+ struct modloader **plists[2];
+ size_t i,num_refs = 0;
+ bool has_write_lock = false;
+ CHECK_HOST_DOBJ(inst);
+ plists[0] = &modloader_ymaglist;
+ plists[1] = &modloader_nmaglist;
+ task_nointr();
+ rwlock_read(&modloader_lock);
+restart:
+ for (i = 0; i < COMPILER_LENOF(plists); ++i) {
+  piter = plists[i];
+  while ((iter = *piter) != NULL) {
+   if (iter->ml_owner == inst) {
+    if (!has_write_lock) {
+     has_write_lock = true;
+     if (rwlock_upgrade(&modloader_lock) == -ERELOAD)
+         goto restart;
+    }
+    /* Delete this hook. */
+    *piter = iter->ml_chain.le_next;
+    ++num_refs;
+   } else {
+    piter = &iter->ml_chain.le_next;
+   }
+  }
+ }
+ if (has_write_lock)
+      rwlock_endwrite(&modloader_lock);
+ else rwlock_endread(&modloader_lock);
+ if (num_refs) {
+  assert(num_refs >= ATOMIC_READ(inst->i_weakcnt));
+  ATOMIC_FETCHSUB(inst->i_weakcnt,num_refs);
+ }
+ task_endnointr();
+}
+
+
 PUBLIC SAFE REF struct module *KCALL
 module_open_new(struct file *__restrict fp) {
  REF struct module *result = E_PTR(-ENOEXEC);
@@ -577,8 +617,8 @@ module_delloader(struct modloader *__restrict loader) {
  }
 done:
  rwlock_endwrite(&modloader_lock);
- task_endnointr();
  if (result) INSTANCE_WEAK_DECREF(loader->ml_owner);
+ task_endnointr();
  return result;
 }
 

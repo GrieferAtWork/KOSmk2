@@ -389,7 +389,7 @@ typedef REF struct module *(KCALL *modloader_callback)(struct file *__restrict f
 struct modloader {
  SLIST_NODE(struct modloader)
                            ml_chain;  /*< [lock(INTERNAL(::modloader_lock))] Chain of registered loaders. */
- WEAK REF struct instance *ml_owner;  /*< [1..1][const] Owner module.
+ REF struct instance      *ml_owner;  /*< [1..1][const] Owner module.
                                        *   NOTE: Should be set to 'THIS_INSTANCE' before calling 'module_addloader'. */
  modloader_callback        ml_loader; /*< [1..1][const] Callback for loading a module of this type
                                        *   NOTE: Upon error, return an E_PTR(); don't return NULL!

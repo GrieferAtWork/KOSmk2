@@ -74,7 +74,7 @@ struct syscall_descr {
      (*(type *)((uintptr_t)__STACKBASE_TASK->t_hstack.hs_end+(off)))
 
 #define THIS_SYSCALL_SS      __STACKBASE_VALUE(u16,-4)
-#define THIS_SYSCALL_USERESP __STACKBASE_VALUE(u32,-8)
+#define THIS_SYSCALL_USERESP __STACKBASE_VALUE(void *,-8)
 #define THIS_SYSCALL_EFLAGS  __STACKBASE_VALUE(u32,-12)
 #define THIS_SYSCALL_CS      __STACKBASE_VALUE(u16,-16)
 /* NOTE: 'THIS_SYSCALL_EIP' */

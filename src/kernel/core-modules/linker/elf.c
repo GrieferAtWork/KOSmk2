@@ -838,7 +838,7 @@ end:
 }
 
 
-PRIVATE struct moduleops const elf_modops = {
+PUBLIC struct moduleops const elf_modops = {
     .o_fini      = &elf_module_fini,
     .o_symaddr   = &elf_symaddr,
     .o_patch     = &elf_patch,

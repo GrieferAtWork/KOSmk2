@@ -189,6 +189,8 @@ INTDEF void KCALL fstype_delete_from_instance(struct instance *__restrict inst);
 INTDEF void KCALL devns_delete_from_instance(struct devns *__restrict self,
                                              struct instance *__restrict inst);
 INTDEF void KCALL irq_delete_from_instance(struct instance *__restrict inst);
+INTDEF void KCALL coredump_delete_from_instance(struct instance *__restrict inst);
+INTDEF void KCALL modloader_delete_from_instance(struct instance *__restrict inst);
 
 PRIVATE SAFE void KCALL
 driver_delete_system_hooks(struct instance *__restrict inst) {
@@ -199,6 +201,8 @@ driver_delete_system_hooks(struct instance *__restrict inst) {
  devns_delete_from_instance(&ns_chrdev,inst);
  devns_delete_from_instance(&ns_blkdev,inst);
  irq_delete_from_instance(inst);
+ coredump_delete_from_instance(inst);
+ modloader_delete_from_instance(inst);
  /* TODO: Unmount any filesystem superblocks mounted using the given instance. */
 }
 

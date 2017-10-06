@@ -94,6 +94,16 @@ FUNDEF SAFE void KCALL release_string(VIRT char *__restrict virt_str, int state)
 #define RELEASE_STRING(virt_str,state)     release_string(virt_str,state)
 #define ACQUIRE_FS_STRING(str,plen,pstate) acquire_string(str,DEFAULT_MAX_FS_STRING_LENGTH,plen,pstate)
 
+/* Similar to 'acquire_string()', but always create a duplicate in kernel memory.
+ * NOTE: Upon error, an E_PTR(*) error code is returned.
+ * @return: * :      The GFP_SHARED heap-allocated copy of the string.
+ * @return: -EINVAL: The given string is longer than 'max_length'.
+ * @return: -EINTR:  The calling thread was interrupted.
+ * @return: -ENOMEM: Not enough available memory.
+ * @return: -EFAULT: The given string is faulty. */
+FUNDEF SAFE ATTR_MALLOC char *KCALL
+copy_string(USER char const *str, size_t max_length, size_t *opt_pstrlen);
+
 
 /* Execute 'worker()' and handle illegal user-memory
  * accesses that occur within by returning -EFAULT.
