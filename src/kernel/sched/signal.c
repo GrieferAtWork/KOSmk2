@@ -655,31 +655,31 @@ ucontext_from_usertask(ucontext_t *__restrict result,
                                 (uintptr_t)t->t_ustack->s_begin);
   result->uc_stack.ss_flags = 0;
  } else {
-  result->uc_stack.ss_sp    = (void *)cs_descr->useresp;
+  result->uc_stack.ss_sp    = (void *)cs_descr->iret.useresp;
   result->uc_stack.ss_size  = 0;
   result->uc_stack.ss_flags = 0;
  }
- result->uc_mcontext.cr2     = (unsigned long int)t->t_lastcr2;
- result->uc_mcontext.oldmask = 0; /* ??? */
- result->uc_mcontext.gregs[REG_GS] = (u32)cs_descr->host.gs;
- result->uc_mcontext.gregs[REG_FS] = (u32)cs_descr->host.fs;
- result->uc_mcontext.gregs[REG_ES] = (u32)cs_descr->host.es;
- result->uc_mcontext.gregs[REG_DS] = (u32)cs_descr->host.ds;
- result->uc_mcontext.gregs[REG_EDI] = cs_descr->host.edi;
- result->uc_mcontext.gregs[REG_ESI] = cs_descr->host.esi;
- result->uc_mcontext.gregs[REG_EBP] = cs_descr->host.ebp;
- result->uc_mcontext.gregs[REG_ESP] = cs_descr->host.esp;
- result->uc_mcontext.gregs[REG_EBX] = cs_descr->host.ebx;
- result->uc_mcontext.gregs[REG_EDX] = cs_descr->host.edx;
- result->uc_mcontext.gregs[REG_ECX] = cs_descr->host.ecx;
- result->uc_mcontext.gregs[REG_EAX] = cs_descr->host.eax;
+ result->uc_mcontext.cr2               = (unsigned long int)t->t_lastcr2;
+ result->uc_mcontext.oldmask           = 0; /* ??? */
+ result->uc_mcontext.gregs[REG_GS]     = (u32)cs_descr->host.sg.gs;
+ result->uc_mcontext.gregs[REG_FS]     = (u32)cs_descr->host.sg.fs;
+ result->uc_mcontext.gregs[REG_ES]     = (u32)cs_descr->host.sg.es;
+ result->uc_mcontext.gregs[REG_DS]     = (u32)cs_descr->host.sg.ds;
+ result->uc_mcontext.gregs[REG_EDI]    = cs_descr->host.gp.edi;
+ result->uc_mcontext.gregs[REG_ESI]    = cs_descr->host.gp.esi;
+ result->uc_mcontext.gregs[REG_EBP]    = cs_descr->host.gp.ebp;
+ result->uc_mcontext.gregs[REG_ESP]    = cs_descr->host.gp.esp;
+ result->uc_mcontext.gregs[REG_EBX]    = cs_descr->host.gp.ebx;
+ result->uc_mcontext.gregs[REG_EDX]    = cs_descr->host.gp.edx;
+ result->uc_mcontext.gregs[REG_ECX]    = cs_descr->host.gp.ecx;
+ result->uc_mcontext.gregs[REG_EAX]    = cs_descr->host.gp.eax;
  result->uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
- result->uc_mcontext.gregs[REG_ERR] = reg_err;
- result->uc_mcontext.gregs[REG_EIP] = cs_descr->host.eip;
- result->uc_mcontext.gregs[REG_CS] = cs_descr->host.cs;
- result->uc_mcontext.gregs[REG_EFL] = cs_descr->host.eflags;
- result->uc_mcontext.gregs[REG_UESP] = cs_descr->useresp;
- result->uc_mcontext.gregs[REG_SS] = cs_descr->ss;
+ result->uc_mcontext.gregs[REG_ERR]    = reg_err;
+ result->uc_mcontext.gregs[REG_EIP]    = cs_descr->iret.eip;
+ result->uc_mcontext.gregs[REG_CS]     = cs_descr->iret.cs;
+ result->uc_mcontext.gregs[REG_EFL]    = cs_descr->iret.eflags;
+ result->uc_mcontext.gregs[REG_UESP]   = cs_descr->iret.useresp;
+ result->uc_mcontext.gregs[REG_SS]     = cs_descr->iret.ss;
  fpstate_from_task(&result->__fpregs_mem,t);
  memcpy(&result->uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
 #else
@@ -701,7 +701,7 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
  cs_descr = t->t_cstate;
 
  /* TODO: Use sigaltstack() here, if it was ever set! */
- user_info = ((USER struct sigenter_info *)cs_descr->useresp)-1;
+ user_info = ((USER struct sigenter_info *)cs_descr->iret.useresp)-1;
 
  ucontext_from_usertask(&info.ei_ctx,t,reg_trapno,reg_err);
  info.ei_ctx.uc_mcontext.fpregs = &user_info->ei_ctx.__fpregs_mem;
@@ -712,8 +712,8 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
  info.ei_signo   = signal_info->si_signo;
  info.ei_pinfo   = &user_info->ei_info;
  info.ei_pctx    = &user_info->ei_ctx;
- info.ei_old_ebp = (USER void *)cs_descr->host.ebp;
- info.ei_old_eip = (USER void *)cs_descr->host.eip;
+ info.ei_old_ebp = (USER void *)cs_descr->host.gp.ebp;
+ info.ei_old_eip = (USER void *)cs_descr->iret.eip;
  /* Copy all the information we've gathered onto the user-space stack. */
  { struct mman *omm;
    size_t copy_error;
@@ -732,9 +732,9 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
  /* Setup the register state to-be used when the task will execute.
   * NOTE: We keep all registers but EBP, EIP and ESP
   *       as they were before the interrupt occurred. */
- cs_descr->host.ebp = (u32)&user_info->ei_old_ebp;
- cs_descr->host.eip = (u32)action->sa_handler;
- cs_descr->useresp  = (u32)user_info;
+ cs_descr->host.gp.ebp   = (u32)&user_info->ei_old_ebp;
+ cs_descr->host.iret.eip = (u32)action->sa_handler;
+ cs_descr->iret.useresp  = (u32)user_info;
 
  /* Interrupt (wake) the task, so-as to execute the signal handler. */
  return -EOK;
@@ -942,7 +942,7 @@ do_cont:
 do_core:
     error = task_terminate_cpu_endwrite(c,t,(void *)
                                        (__WCOREFLAG|__W_EXITCODE(0,signal_info->si_signo)));
-    if (t != THIS_TASK && (t->t_cstate->host.cs&3) == 3)
+    if (t != THIS_TASK && (t->t_cstate->iret.cs&3) == 3)
          coredump_user_task(t,signal_info,reg_trapno,reg_err);
     else coredump_host_task(t,signal_info,reg_trapno,reg_err);
     goto ppop_end;
@@ -973,7 +973,7 @@ ignore_signal:;
   } else {
    sigword_t *dst,*end,*src;
 
-   if (t != THIS_TASK && (t->t_cstate->host.cs&3) == 3) {
+   if (t != THIS_TASK && (t->t_cstate->iret.cs&3) == 3) {
     /* The task isn't active, and currently running in user-space. */
     error = deliver_signal_to_task_in_user(t,action,signal_info,reg_trapno,reg_err);
    } else {
@@ -1265,7 +1265,7 @@ L(.previous                                                                     
 INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
  ucontext_t ctx; size_t context_indirection;
  USER struct sigenter_info *last_context;
- if (copy_from_user(&ctx,(ucontext_t *)cs->host.ebx,sizeof(ucontext_t)))
+ if (copy_from_user(&ctx,(ucontext_t *)cs->host.gp.ebx,sizeof(ucontext_t)))
      sigfault();
  /* TODO: Accept TLS segments. */
 #if !IGNORE_SEGMENT_REGISTERS
@@ -1301,26 +1301,26 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
   * NOTE: We don't jump directly, because that would break execution of
   *       additional signals that may have been unblocked by 'task_set_sigblock()'. */
 #if IGNORE_SEGMENT_REGISTERS
- cs->host.gs     = __USER_GS;
- cs->host.fs     = __USER_FS;
- cs->host.es     = __USER_DS;
- cs->host.ds     = __USER_DS;
+ cs->host.sg.gs     = __USER_GS;
+ cs->host.sg.fs     = __USER_FS;
+ cs->host.sg.es     = __USER_DS;
+ cs->host.sg.ds     = __USER_DS;
  ctx.uc_mcontext.gregs[REG_CS] = __USER_CS;
  ctx.uc_mcontext.gregs[REG_SS] = __USER_DS;
 #else /* IGNORE_SEGMENT_REGISTERS */
- cs->host.gs     = (u16)ctx.uc_mcontext.gregs[REG_GS];
- cs->host.fs     = (u16)ctx.uc_mcontext.gregs[REG_FS];
- cs->host.es     = (u16)ctx.uc_mcontext.gregs[REG_ES];
- cs->host.ds     = (u16)ctx.uc_mcontext.gregs[REG_DS];
+ cs->host.sg.gs     = (u16)ctx.uc_mcontext.gregs[REG_GS];
+ cs->host.sg.fs     = (u16)ctx.uc_mcontext.gregs[REG_FS];
+ cs->host.sg.es     = (u16)ctx.uc_mcontext.gregs[REG_ES];
+ cs->host.sg.ds     = (u16)ctx.uc_mcontext.gregs[REG_DS];
 #endif /* !IGNORE_SEGMENT_REGISTERS */
- cs->host.edi    = ctx.uc_mcontext.gregs[REG_EDI];
- cs->host.esi    = ctx.uc_mcontext.gregs[REG_ESI];
- cs->host.ebp    = ctx.uc_mcontext.gregs[REG_EBP];
- cs->host.esp    = ctx.uc_mcontext.gregs[REG_ESP];
- cs->host.ebx    = ctx.uc_mcontext.gregs[REG_EBX];
- cs->host.edx    = ctx.uc_mcontext.gregs[REG_EDX];
- cs->host.ecx    = ctx.uc_mcontext.gregs[REG_ECX];
- cs->host.eax    = ctx.uc_mcontext.gregs[REG_EAX];
+ cs->host.gp.edi    = ctx.uc_mcontext.gregs[REG_EDI];
+ cs->host.gp.esi    = ctx.uc_mcontext.gregs[REG_ESI];
+ cs->host.gp.ebp    = ctx.uc_mcontext.gregs[REG_EBP];
+ cs->host.gp.esp    = ctx.uc_mcontext.gregs[REG_ESP];
+ cs->host.gp.ebx    = ctx.uc_mcontext.gregs[REG_EBX];
+ cs->host.gp.edx    = ctx.uc_mcontext.gregs[REG_EDX];
+ cs->host.gp.ecx    = ctx.uc_mcontext.gregs[REG_ECX];
+ cs->host.gp.eax    = ctx.uc_mcontext.gregs[REG_EAX];
  
  /* NOTE: Disable preemption to prevent more signals from being raised,
   *       now that we'll be attempting to update the bottom-most entry
@@ -1354,11 +1354,11 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
  } else {
   /* Simple case: no indirection. - This signal will
    * switch back to regular user-space code flow. */
-  cs->host.eip    = ctx.uc_mcontext.gregs[REG_EIP];
-  cs->host.cs     = ctx.uc_mcontext.gregs[REG_CS];
-  cs->host.eflags = ctx.uc_mcontext.gregs[REG_EFL];
-  cs->useresp     = ctx.uc_mcontext.gregs[REG_UESP];
-  cs->ss          = ctx.uc_mcontext.gregs[REG_SS];
+  cs->iret.eip     = ctx.uc_mcontext.gregs[REG_EIP];
+  cs->iret.cs      = ctx.uc_mcontext.gregs[REG_CS];
+  cs->iret.eflags  = ctx.uc_mcontext.gregs[REG_EFL];
+  cs->iret.useresp = ctx.uc_mcontext.gregs[REG_UESP];
+  cs->iret.ss      = ctx.uc_mcontext.gregs[REG_SS];
  }
  /* NOTE: Technically, we don't have to re-enable interrupts now.
   *       But let's try to be as pre-emptive as possible... */

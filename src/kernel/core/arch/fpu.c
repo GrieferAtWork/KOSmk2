@@ -34,6 +34,7 @@
 #include <hybrid/align.h>
 #include <sched/paging.h>
 #include <kernel/mman.h>
+#include <kernel/arch/cpustate.h>
 
 #ifndef CONFIG_NO_FPU
 DECL_BEGIN
@@ -95,7 +96,10 @@ fpu_irq_nm(struct cpustate *__restrict info) {
  }
 
  /* Fallback: This is something else... */
- irq_unhandled(IRQ_EXC_NM,info);
+ { struct cpustate_e state;
+   CPUSTATE_TO_CPUSTATE_E(*info,state,0);
+   irq_default(IRQ_EXC_NM,&state);
+ }
 }
 
 PRIVATE MODULE_INIT void KCALL fpu_init(void) {

@@ -197,21 +197,19 @@ run_init(char const *__restrict filename) {
  task_ldtlb(thrd);
 #endif /* !CONFIG_NO_TLB */
 
- state->host.ds     = __USER_DS;
- state->host.es     = __USER_DS;
- state->host.fs     = __USER_FS;
- state->host.gs     = __USER_GS;
- state->host.cs     = __USER_CS;
- state->host.ecx    = (uintptr_t)penviron; /* Pass the environment block through ECX. */
- state->host._n1    = 0;
- state->useresp     = (uintptr_t)thrd->t_ustack->s_end;
- state->ss          = __USER_DS;
- state->_n2         = 0;
- state->host.eip    = (uintptr_t)inst->i_base+mod->m_entry;
+ state->host.sg.ds   = __USER_DS;
+ state->host.sg.es   = __USER_DS;
+ state->host.sg.fs   = __USER_FS;
+ state->host.sg.gs   = __USER_GS;
+ state->host.gp.ecx  = (uintptr_t)penviron; /* Pass the environment block through ECX. */
+ state->iret.cs      = __USER_CS;
+ state->iret.useresp = (uintptr_t)thrd->t_ustack->s_end;
+ state->iret.ss      = __USER_DS;
+ state->iret.eip     = (uintptr_t)inst->i_base+mod->m_entry;
 #ifdef CONFIG_ALLOW_USER_IO
- state->host.eflags = EFLAGS_IF|EFLAGS_IOPL(3);
+ state->iret.eflags  = EFLAGS_IF|EFLAGS_IOPL(3);
 #else
- state->host.eflags = EFLAGS_IF;
+ state->iret.eflags  = EFLAGS_IF;
 #endif
 
  //asserte(E_ISOK(mman_read(mm)));
@@ -219,7 +217,7 @@ run_init(char const *__restrict filename) {
  //mman_endread(mm);
 
  syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in '%[file]') at %p\n",
-        filename,mod->m_file,state->host.eip);
+        filename,mod->m_file,state->iret.eip);
  assert(mm == thrd->t_mman);
 
  assert(!mman_reading(mm));

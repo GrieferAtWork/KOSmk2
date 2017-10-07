@@ -132,8 +132,8 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
 #undef __assertion_tbprint
       libc___assertion_tbprint();
      } else {
-      __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
+      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
     } while ((iter = iter->t_sched.sd_running.re_next) != start);
     for (iter = THIS_CPU->c_idling;
@@ -146,8 +146,8 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
 #undef __assertion_tbprint
       libc___assertion_tbprint();
      } else {
-      __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
+      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
     }
     task_crit();
@@ -158,8 +158,8 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
+      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
      for (iter = THIS_CPU->c_sleeping; iter;
           iter = iter->t_sched.sd_sleeping.le_next) {
@@ -167,8 +167,8 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
+      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
      cpu_endread(THIS_CPU);
     }

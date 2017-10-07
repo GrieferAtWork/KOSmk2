@@ -106,7 +106,7 @@ STATIC_ASSERT(IS_ALIGNED(offsetof(struct cpu,c_idle),TASK_ALIGN));
 
 STATIC_ASSERT(sizeof(struct cpu)                 == CPU_SIZE);
 STATIC_ASSERT(sizeof(atomic_rwptr_t)             == __SIZEOF_POINTER__);
-STATIC_ASSERT(offsetof(struct cpustate,useresp)  == 52);
+STATIC_ASSERT(offsetof(struct cpustate,iret.useresp)  == 52);
 
 //enum{
 // x = CPU_OFFSETOF_IDLE+TASK_OFFSETOF_PID,
@@ -293,8 +293,8 @@ task_start(struct task *__restrict t) {
  assert(t->t_tlb != NULL);
  assert((uintptr_t)t->t_cstate >= (uintptr_t)t->t_hstack.hs_begin &&
         (uintptr_t)t->t_cstate <= (uintptr_t)t->t_hstack.hs_end);
- assertf((t->t_cstate->host.cs&3) != 3 ||
-         (t->t_cstate->host.eflags&EFLAGS_IF),
+ assertf((t->t_cstate->iret.cs&3) != 3 ||
+         (t->t_cstate->iret.eflags&EFLAGS_IF),
          "User-level tasks must run with the #IF flag enabled\n"
          "Either change the task CPL to non-3, or set EFLAGS_IF in eflags.");
  t->t_real_mman = t->t_mman;
@@ -1207,8 +1207,8 @@ pit_exc(struct cpustate *__restrict state) {
 
 #if 0
  __assertion_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : PIT Trigger: %p'\n",
-                   (uintptr_t)state->host.eip-1,state->host.eip);
- __assertion_tbprint2((void *)state->host.ebp,0);
+                   (uintptr_t)state->iret.eip-1,state->iret.eip);
+ __assertion_tbprint2((void *)state->gp.ebp,0);
 #endif
 
  /* Update the sub-second clock. */
@@ -1276,9 +1276,9 @@ pit_exc(struct cpustate *__restrict state) {
 #if 0
  if (old_task != new_task) {
   syslog(LOG_DEBUG,"#PIT %p(%p) --> %p(%p) (IF 1->%d)\n",
-         old_task,old_task->t_cstate->host.eip,
-         new_task,new_task->t_cstate->host.eip,
-      !!(new_task->t_cstate->host.eflags&EFLAGS_IF));
+         old_task,old_task->t_cstate->iret.eip,
+         new_task,new_task->t_cstate->iret.eip,
+      !!(new_task->t_cstate->iret.eflags&EFLAGS_IF));
  }
 #endif
 
@@ -1298,24 +1298,24 @@ pit_exc(struct cpustate *__restrict state) {
 
 #if 0
  __assertion_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : Returning to: %p'\n",
-                   (uintptr_t)new_task->t_cstate->host.eip,new_task->t_cstate->host.eip);
- __assertion_tbprint2((void *)new_task->t_cstate->host.ebp,0);
+                   (uintptr_t)new_task->t_cstate->iret.eip,new_task->t_cstate->iret.eip);
+ __assertion_tbprint2((void *)new_task->t_cstate->gp.ebp,0);
  __assertion_printf("EAX %p  ECX %p  EDX %p  EBX %p\n",
-                    new_task->t_cstate->host.eax,
-                    new_task->t_cstate->host.ecx,
-                    new_task->t_cstate->host.edx,
-                    new_task->t_cstate->host.ebx);
+                    new_task->t_cstate->gp.eax,
+                    new_task->t_cstate->gp.ecx,
+                    new_task->t_cstate->gp.edx,
+                    new_task->t_cstate->gp.ebx);
  __assertion_printf("ESP %p  EBP %p  ESI %p  EDI %p\n",
                     new_task->t_cstate,
-                    new_task->t_cstate->host.ebp,
-                    new_task->t_cstate->host.esi,
-                    new_task->t_cstate->host.edi);
+                    new_task->t_cstate->gp.ebp,
+                    new_task->t_cstate->gp.esi,
+                    new_task->t_cstate->gp.edi);
 #endif
 
  assertf(new_task->t_cstate,"Task %p has no cpu state",new_task);
- assertf(state->host.eflags&EFLAGS_IF,"How did you manage to preempt without interrupts enabled?");
- assertf((new_task->t_cstate->host.cs&3) != 3 ||
-         (new_task->t_cstate->host.eflags&EFLAGS_IF),
+ assertf(state->iret.eflags&EFLAGS_IF,"How did you manage to preempt without interrupts enabled?");
+ assertf((new_task->t_cstate->iret.cs&3) != 3 ||
+         (new_task->t_cstate->iret.eflags&EFLAGS_IF),
           "Must not switch to user-level task with #IF flag disabled");
 
  /* Return the new CPU state that should be loaded next.

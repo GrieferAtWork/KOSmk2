@@ -86,23 +86,23 @@ bool KCALL try_e820(void) {
  struct smap_entry *entry; struct cpustate16 s;
  memset(&s,0,sizeof(s));
  entry = SMAP_BUFFER;
- s.ebx = 0; /* continue-id. */
+ s.gp.ebx = 0; /* continue-id. */
  do {
-  s.eax = 0xe820;
-  s.ecx = sizeof(struct smap_entry);
-  s.edx = 0x534D4150;
-  s.edi = (u32)entry;
-  s.sp  = REALMODE_EARLY_STACK;
+  s.gp.eax = 0xe820;
+  s.gp.ecx = sizeof(struct smap_entry);
+  s.gp.edx = 0x534D4150;
+  s.gp.edi = (u32)entry;
+  s.gp.sp  = REALMODE_EARLY_STACK;
   early_rm_interrupt(&s,0x15); /* Execute realmode interrupt. */
   if (s.eflags & EFLAGS_CF) return false; /* Unsupported. */
-  if (s.eax != 0x534D4150) return false; /* Error. */
-  if (s.ecx > 20 && (entry->sm_acpi & 1) == 0) continue; /* Ignored. */
+  if (s.gp.eax != 0x534D4150) return false; /* Error. */
+  if (s.gp.ecx > 20 && (entry->sm_acpi & 1) == 0) continue; /* Ignored. */
   if (entry->sm_type != 1) continue; /* Only use (normal) RAM. */
   if (entry->sm_addr_hi) continue; /* Too large. */
   memory_install_nodata(entry->sm_addr_lo,
                         entry->sm_size_hi ? (0-entry->sm_addr_lo)
                                           :    entry->sm_size_lo);
- } while (s.ebx);
+ } while (s.gp.ebx);
  return true;
 }
 

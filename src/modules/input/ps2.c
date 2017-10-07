@@ -119,11 +119,11 @@ PRIVATE void KCALL keyboard_send(key_t k) {
 #if 1
  if (k == KEY_F12) {
   __assertion_printf("BOOT_TASK:\n");
-  __assertion_tbprintl((void *)inittask.t_cstate->host.eip,NULL,0);
-  __assertion_tbprint2((void *)inittask.t_cstate->host.ebp,0);
+  __assertion_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
+  __assertion_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
   __assertion_printf("IDLE_TASK:\n");
-  __assertion_tbprintl((void *)THIS_CPU->c_idle.t_cstate->host.eip,NULL,0);
-  __assertion_tbprint2((void *)THIS_CPU->c_idle.t_cstate->host.ebp,0);
+  __assertion_tbprintl((void *)THIS_CPU->c_idle.t_cstate->iret.eip,NULL,0);
+  __assertion_tbprint2((void *)THIS_CPU->c_idle.t_cstate->gp.ebp,0);
   { pflag_t was = PREEMPTION_PUSH();
     struct task *start,*iter;
     iter = start = THIS_CPU->c_running;
@@ -136,8 +136,8 @@ PRIVATE void KCALL keyboard_send(key_t k) {
 #undef __assertion_tbprint
       __assertion_tbprint();
      } else {
-      __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
+      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
     } while ((iter = iter->t_sched.sd_running.re_next) != start);
     for (iter = THIS_CPU->c_idling;
@@ -150,8 +150,8 @@ PRIVATE void KCALL keyboard_send(key_t k) {
 #undef __assertion_tbprint
       __assertion_tbprint();
      } else {
-      __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
+      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
     }
     task_crit();
@@ -163,8 +163,8 @@ PRIVATE void KCALL keyboard_send(key_t k) {
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
+      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
      for (iter = THIS_CPU->c_sleeping; iter;
           iter = iter->t_sched.sd_sleeping.le_next) {
@@ -172,8 +172,8 @@ PRIVATE void KCALL keyboard_send(key_t k) {
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      __assertion_tbprintl((void *)iter->t_cstate->host.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->host.ebp,0);
+      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
      cpu_endread(THIS_CPU);
     } else {

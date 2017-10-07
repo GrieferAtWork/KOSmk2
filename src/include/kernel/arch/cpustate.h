@@ -24,78 +24,109 @@
 
 DECL_BEGIN
 
-#define __COMMON_REG1(n) union{ u32 e##n##x; u16 n##x; struct { u8 n##l,n##h; }; };
-#define __COMMON_REG2(n) union{ u32 e##n; u16 n; };
+#define __COMMON_REG1(n) union PACKED { u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
+#define __COMMON_REG2(n) union PACKED { u32 e##n; u16 n; };
 
-/* General-purpose registers. */
+/* General purpose registers. */
 /* HINT: pushad/popad-compatible */
-#define __COMMON_32BIT    \
-        __COMMON_REG2(di) \
-        __COMMON_REG2(si) \
-        __COMMON_REG2(bp) \
-        __COMMON_REG2(sp) \
-        __COMMON_REG1(b)  \
-        __COMMON_REG1(d)  \
-        __COMMON_REG1(c)  \
-        __COMMON_REG1(a) 
+struct PACKED gpregs {
+ __COMMON_REG2(di)
+ __COMMON_REG2(si)
+ __COMMON_REG2(bp)
+ __COMMON_REG2(sp)
+ __COMMON_REG1(b)
+ __COMMON_REG1(d)
+ __COMMON_REG1(c)
+ __COMMON_REG1(a)
+};
+#undef __COMMON_REG2
+#undef __COMMON_REG1
 
+#define __SEGMENT32(x) union PACKED { struct PACKED { u16 x##16,__##x##16hi; }; u32 x; }
 
+/* Segment registers */
+struct PACKED sgregs { u16 gs,fs,es,ds; };
+
+/* Interrupt return registers (_MUST_ be iret-compatible). */
+#define IRREGS_ISUSER(x) (((x).cs&3) == 3) /* When true, must use 'struct irregs' */
+struct PACKED irregs_host   { u32 eip; __SEGMENT32(cs); u32 eflags; };
+struct PACKED irregs        { union PACKED { struct irregs_host host; struct PACKED {
+                              u32 eip; __SEGMENT32(cs); u32 eflags; };};
+                              u32 useresp; __SEGMENT32(ss); };
+struct PACKED irregs_host_e { u32 exc_code; union PACKED { struct irregs_host tail; struct PACKED {
+                              u32 eip; __SEGMENT32(cs); u32 eflags; };};};
+struct PACKED irregs_e      { union PACKED { struct irregs_host_e host; struct PACKED {
+                              u32 exc_code; union PACKED { struct irregs tail; struct PACKED {
+                              u32 eip; __SEGMENT32(cs); u32 eflags;
+                              u32 useresp; __SEGMENT32(ss); };};};};};
+#undef __SEGMENT32
+
+/* CPU state for 16-bit realmode interrupts. */
 struct PACKED cpustate16 {
- /* Common CPU state. */
- __COMMON_32BIT
- u16 gs,fs,es,ds,ss;
- u32 eflags;
+ struct gpregs gp;
+ struct sgregs sg;
+ u16           ss;
+ u32           eflags;
 };
 
-struct PACKED ccpustate {
- /* Common CPU state. */
- __COMMON_32BIT
- u16 gs,fs,es,ds;     /* Segment registers */
+/* Common CPU state. */
+struct PACKED comregs {
+ struct gpregs gp;
+ struct sgregs sg;
 };
 
 
 struct PACKED host_cpustate {
-union PACKED{
- struct ccpustate com;
-struct PACKED{
- __COMMON_32BIT
- u16 gs,fs,es,ds;         /* Segment registers */
+union PACKED {
+ struct comregs com;
+struct PACKED {
+ struct gpregs gp;
+ struct sgregs sg;
 };};
- /* iret-compatible return block (place ESP on '&eip' and execute 'iret'). */
- u32 eip;                 /* iret tail: Instruction pointer. */
- u16 cs,_n1; u32 eflags;  /* iret tail: misc. data */
+ struct irregs_host iret;
 };
-struct PACKED cpustate {
+struct PACKED cpustate {union PACKED {
  struct host_cpustate host; /* host CPU state. */
- u32 useresp; u16 ss,_n2;   /* [valid_if(CPUSTATE_ISUSER(this))]
-                             * iret tail: user-space stack pointer. */
-};
-
-
-struct PACKED host_cpustate_irq_c {
-union PACKED{
- struct ccpustate com;
-struct PACKED{
- __COMMON_32BIT
- u16 gs,fs,es,ds;         /* Segment registers */
+struct PACKED {
+union PACKED {
+ struct comregs com;
+struct PACKED {
+ struct gpregs gp;
+ struct sgregs sg;
 };};
- u32 exc_code;            /* Exception code (Must be popped). */
- /* iret-compatible return block (place ESP on '&eip' and execute 'iret'). */
- u32 eip;                 /* iret tail: Instruction pointer. */
- u16 cs,_n1; u32 eflags;  /* iret tail: misc. data */
+ struct irregs iret;
+};};};
+
+
+struct PACKED host_cpustate_e {
+union PACKED {
+ struct comregs com;
+struct PACKED {
+ struct gpregs gp;
+ struct sgregs sg;
+};};
+ struct irregs_host_e iret;
 };
 
-struct PACKED cpustate_irq_c {
- struct host_cpustate_irq_c host; /* host CPU state. */
- u32 useresp; u16 ss,_n2;         /* [valid_if(CPUSTATE_ISUSER(this))]
-                                   * iret tail: user-space stack pointer. */
-};
+struct PACKED cpustate_e {union PACKED {
+ struct host_cpustate_e host; /* host CPU state. */
+struct PACKED {
+union PACKED {
+ struct comregs  com;
+struct PACKED {
+ struct gpregs   gp;
+ struct sgregs   sg;
+};};
+ struct irregs_e iret;
+};};};
 
-#define CPUSTATE_ISUSER(x) (((x)->host.cs&3) == 3)
-
-#undef __COMMON_32BIT
-#undef __COMMON_REG2
-#undef __COMMON_REG1
+#define CPUSTATE_TO_CPUSTATE_E(cs,cse,ecode) \
+ ((cse).com = (cs).com, \
+  (cse).iret.tail = (cs).iret, \
+  (cse).iret.exc_code = (ecode))
+#define CPUSTATE_E_TO_CPUSTATE(cse,cs) \
+ ((cs).com = (cse).com, \
+  (cs).iret.tail = (cse).iret)
 
 DECL_END
 

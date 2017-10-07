@@ -231,20 +231,24 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
     },
 #endif /* CONFIG_DEBUG */
     .s_boot = {
+        .sg = {
 #ifdef __x86_64__
-        .gs     = __KERNEL_PERCPU,
-        .fs     = __KERNEL_DS,
+            .gs = __KERNEL_PERCPU,
+            .fs = __KERNEL_DS,
 #else
-        .gs     = __KERNEL_DS,
-        .fs     = __KERNEL_PERCPU,
+            .gs = __KERNEL_DS,
+            .fs = __KERNEL_PERCPU,
 #endif
-        .es     = __KERNEL_DS,
-        .ds     = __KERNEL_DS,
-        .eip    = (uintptr_t)&cpu_idle,
-        .cs     = __KERNEL_CS,
-        /* All other flags don't matter, but 'IF' (interrupt flag) must be set.
-         * If it wasn't, the idle task would otherwise block forever! */
-        .eflags = EFLAGS_IF|EFLAGS_IOPL(0),
+            .es = __KERNEL_DS,
+            .ds = __KERNEL_DS,
+        },
+        .iret = {
+            .eip    = (uintptr_t)&cpu_idle,
+            .cs     = __KERNEL_CS,
+            /* All other flags don't matter, but 'IF' (interrupt flag) must be set.
+             * If it wasn't, the idle task would otherwise block forever! */
+            .eflags = EFLAGS_IF|EFLAGS_IOPL(0),
+        },
     },
 };
 

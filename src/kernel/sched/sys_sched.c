@@ -308,36 +308,30 @@ end_double_lock:
 #undef __STACKBASE_TASK
 #define __STACKBASE_TASK caller
 #ifdef __i386__
-   cs->ss          = THIS_SYSCALL_SS;
-   cs->_n2         = 0;
-   cs->useresp     = (u32)THIS_SYSCALL_USERESP;
-   cs->host.eax    = 0; /* The child process returns ZERO(0) in EAX. */
-   cs->host.ecx    = THIS_SYSCALL_ECX;
-   cs->host.edx    = THIS_SYSCALL_EDX;
-   cs->host.ebx    = THIS_SYSCALL_EBX;
-   cs->host.esi    = THIS_SYSCALL_ESI;
-   cs->host.edi    = THIS_SYSCALL_EDI;
-   cs->host.ebp    = THIS_SYSCALL_EBP;
-   cs->host.eip    = (u32)THIS_SYSCALL_EIP;
-   cs->host.cs     = THIS_SYSCALL_CS;
-   cs->host._n1    = 0;
-   cs->host.eflags = THIS_SYSCALL_EFLAGS;
-   cs->host.gs     = THIS_SYSCALL_GS;
-   cs->host.fs     = THIS_SYSCALL_FS;
-   cs->host.es     = THIS_SYSCALL_ES;
-   cs->host.ds     = THIS_SYSCALL_DS;
+   cs->iret.ss      = THIS_SYSCALL_SS;
+   cs->iret.useresp = (u32)THIS_SYSCALL_USERESP;
+   cs->gp.eax       = 0; /* The child process returns ZERO(0) in EAX. */
+   cs->gp.ecx       = THIS_SYSCALL_ECX;
+   cs->gp.edx       = THIS_SYSCALL_EDX;
+   cs->gp.ebx       = THIS_SYSCALL_EBX;
+   cs->gp.esi       = THIS_SYSCALL_ESI;
+   cs->gp.edi       = THIS_SYSCALL_EDI;
+   cs->gp.ebp       = THIS_SYSCALL_EBP;
+   cs->iret.eip     = (u32)THIS_SYSCALL_EIP;
+   cs->iret.cs      = THIS_SYSCALL_CS;
+   cs->iret.eflags  = THIS_SYSCALL_EFLAGS;
+   cs->sg.gs        = THIS_SYSCALL_GS;
+   cs->sg.fs        = THIS_SYSCALL_FS;
+   cs->sg.es        = THIS_SYSCALL_ES;
+   cs->sg.ds        = THIS_SYSCALL_DS;
 #if 0
-   syslog(LOG_DEBUG,"FORK at %p\n",cs->host.eip);
+   syslog(LOG_DEBUG,"FORK at %p\n",cs->iret.eip);
    syslog(LOG_DEBUG,"EAX %p  ECX %p  EDX %p  EBX %p EFLAGS %p\n",
-                     cs->host.eax,
-                     cs->host.ecx,
-                     cs->host.edx,
-                     cs->host.ebx,cs->host.eflags);
+                     cs->gp.eax,cs->gp.ecx,cs->gp.edx,
+                     cs->gp.ebx,cs->iret.eflags);
    syslog(LOG_DEBUG,"ESP %p  EBP %p  ESI %p  EDI %p\n",
-                     cs->host.eip,cs->useresp,
-                     cs->host.ebp,
-                     cs->host.esi,
-                     cs->host.edi);
+                     cs->iret.eip,cs->iret.useresp,
+                     cs->gp.ebp,cs->gp.esi,cs->gp.edi);
 #endif
 #else
 #error FIXME
@@ -1019,36 +1013,30 @@ end_double_lock:
 #ifdef __i386__
    /* Inherit all registers other than EAX and ESP to-be used for argument passing.
     * NOTE: 'ESP' is also inherited when an automatic stack is used and the VM was copied. */
-   cs->ss          = THIS_SYSCALL_SS;
-   cs->_n2         = 0;
-   cs->useresp     = (u32)newsp;
-   cs->host.eax    = 0; /* The child process returns ZERO(0) in EAX. */
-   cs->host.ecx    = THIS_SYSCALL_ECX;
-   cs->host.edx    = THIS_SYSCALL_EDX;
-   cs->host.ebx    = THIS_SYSCALL_EBX;
-   cs->host.esi    = THIS_SYSCALL_ESI;
-   cs->host.edi    = THIS_SYSCALL_EDI;
-   cs->host.ebp    = THIS_SYSCALL_EBP;
-   cs->host.eip    = (u32)THIS_SYSCALL_EIP;
-   cs->host.cs     = THIS_SYSCALL_CS;
-   cs->host._n1    = 0;
-   cs->host.eflags = THIS_SYSCALL_EFLAGS;
-   cs->host.gs     = THIS_SYSCALL_GS;
-   cs->host.fs     = THIS_SYSCALL_FS;
-   cs->host.es     = THIS_SYSCALL_ES;
-   cs->host.ds     = THIS_SYSCALL_DS;
+   cs->iret.ss      = THIS_SYSCALL_SS;
+   cs->iret.useresp = (u32)newsp;
+   cs->gp.eax       = 0; /* The child process returns ZERO(0) in EAX. */
+   cs->gp.ecx       = THIS_SYSCALL_ECX;
+   cs->gp.edx       = THIS_SYSCALL_EDX;
+   cs->gp.ebx       = THIS_SYSCALL_EBX;
+   cs->gp.esi       = THIS_SYSCALL_ESI;
+   cs->gp.edi       = THIS_SYSCALL_EDI;
+   cs->gp.ebp       = THIS_SYSCALL_EBP;
+   cs->iret.eip     = (u32)THIS_SYSCALL_EIP;
+   cs->iret.cs      = THIS_SYSCALL_CS;
+   cs->iret.eflags  = THIS_SYSCALL_EFLAGS;
+   cs->sg.gs        = THIS_SYSCALL_GS;
+   cs->sg.fs        = THIS_SYSCALL_FS;
+   cs->sg.es        = THIS_SYSCALL_ES;
+   cs->sg.ds        = THIS_SYSCALL_DS;
 #if 0
-   syslog(LOG_DEBUG,"FORK at %p\n",cs->host.eip);
+   syslog(LOG_DEBUG,"FORK at %p\n",cs->iret.eip);
    syslog(LOG_DEBUG,"EAX %p  ECX %p  EDX %p  EBX %p EFLAGS %p\n",
-                     cs->host.eax,
-                     cs->host.ecx,
-                     cs->host.edx,
-                     cs->host.ebx,cs->host.eflags);
+                     cs->gp.eax,cs->gp.ecx,cs->gp.edx,
+                     cs->gp.ebx,cs->iret.eflags);
    syslog(LOG_DEBUG,"ESP %p  EBP %p  ESI %p  EDI %p\n",
-                     cs->host.eip,cs->useresp,
-                     cs->host.ebp,
-                     cs->host.esi,
-                     cs->host.edi);
+                     cs->iret.eip,cs->iret.useresp,
+                     cs->gp.ebp,cs->gp.esi,cs->gp.edi);
 #endif
 #else
 #error FIXME

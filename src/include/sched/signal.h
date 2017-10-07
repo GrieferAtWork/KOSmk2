@@ -160,7 +160,6 @@ FUNDEF void KCALL sighand_reset(struct sighand *__restrict self);
  *                  the calling thread to be interrupted. */
 FUNDEF errno_t KCALL task_set_sigblock(sigset_t *__restrict newset);
 
-
 #ifndef __pflag_t_defined
 #define __pflag_t_defined 1
 typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */

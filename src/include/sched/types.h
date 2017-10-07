@@ -296,7 +296,7 @@ struct intchain {
 #define INTCHAIN_OPT_ALL 0x07 /*< Ignore 'ic_irq' and handle all interrupts. */
 
 #ifdef __CC__
-struct ccpustate;
+struct comregs;
 /* Trigger & execute a local interrupt.
  * NOTE: When executed, this function will not return.
  * @param: pchain: The pointer to an intchain head. - When a handler is
@@ -304,7 +304,7 @@ struct ccpustate;
  * @param: cstate: CPU state used for loading general purpose registers
  *                 before execution ('GET_EXCEPTION_CPUSTATE'). */
 FUNDEF void KCALL intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
-                                   struct ccpustate const *__restrict cstate, u32 eflags);
+                                   struct comregs const *__restrict cstate, u32 eflags);
 #endif /* __CC__ */
 
 

@@ -28,7 +28,7 @@
 DECL_BEGIN
 
 struct cpustate;
-struct cpustate_irq_c;
+struct cpustate_e;
 
 
 
@@ -286,17 +286,13 @@ struct PACKED {
 
 
 
-#if 1
 /* The default IRQ handler that will either:
  * - cause user-space applications to terminate (unless they provide appropriate handlers)
  * - syslog() a warning for unhandled PIC interrupts (hardware interrupts)
  * - log all it can and cause kernel panic
- * NOTE: When calling this function from assembly, make sure to notice
- *       that it takes an extended CPU-state structure, as well as
- *       using the fastcall calling-convention. */
-FUNDEF void FCALL irq_unhandled(irq_t code, struct cpustate *__restrict state);
-FUNDEF void FCALL irq_unhandled_c(irq_t code, struct cpustate_irq_c *__restrict state);
-#endif
+ * NOTE: When calling this function from assembly, make sure to
+ *       notice that the fastcall calling-convention is used. */
+FUNDEF void FCALL irq_default(int intno, struct cpustate_e *__restrict state);
 
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
@@ -494,7 +490,7 @@ __INT_LEAVE \
  *          an XCODE-handler _ALWAYS_ include the exc_code field!
  *          It may never be absent!
  *          The same way, no other kind of handler may be used if there is a code! */
-typedef void FCALL code_handler(struct cpustate_irq_c *__restrict info);
+typedef void FCALL code_handler(struct cpustate_e *__restrict info);
 
 
 /* Define a task handler wrapper 'h_irq' that

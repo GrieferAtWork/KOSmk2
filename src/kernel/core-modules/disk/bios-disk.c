@@ -122,35 +122,35 @@ bd_access_chs(bd_t *__restrict self, blkaddr_t block,
   if (write && copy_from_user(bios_page_v,buf,self->b_device.bd_blocksize)) { result = -EFAULT; break; }
 retry:
   { CPU16(c);
-    c.dl = self->b_drive;
-    c.sp = realmode_stack;
+    c.gp.dl = self->b_drive;
+    c.gp.sp = realmode_stack;
     rm_interrupt(&c,0x13);
   }
   { CPU16(c);
-    c.ah = 0x2+!!write;
-    c.al = 1; /* Total sector count (Only read one at a time to keep things simple) */
-    c.ch = cylinder & 0xff;
-    c.cl = sector | ((cylinder >> 2) & 0xc0);
-    c.dh = head;
-    c.dl = self->b_drive;
-    c.es = (u16)(((uintptr_t)bios_page_p >> 16) << 12);
-    c.bx = (u16)((uintptr_t)bios_page_p & 0xffff);
-    c.sp = realmode_stack;
+    c.gp.ah = 0x2+!!write;
+    c.gp.al = 1; /* Total sector count (Only read one at a time to keep things simple) */
+    c.gp.ch = cylinder & 0xff;
+    c.gp.cl = sector | ((cylinder >> 2) & 0xc0);
+    c.gp.dh = head;
+    c.gp.dl = self->b_drive;
+    c.sg.es = (u16)(((uintptr_t)bios_page_p >> 16) << 12);
+    c.gp.bx = (u16)((uintptr_t)bios_page_p & 0xffff);
+    c.gp.sp = realmode_stack;
     /* Execute the BIOS interrupt. */
     rm_interrupt(&c,0x13);
     if (c.eflags&EFLAGS_CF) {
      syslog(LOG_HW|LOG_ERROR,
             "[BIOS] Disk access failed: drive %#.2I8x al:%.2I8x, ah:%.2I8x "
             "(block:%I64u, cylinder: %I16u, head: %I8u, sector: %I8u)\n",
-            self->b_drive,c.al,c.ah,block,cylinder,head,sector);
+            self->b_drive,c.gp.al,c.gp.ah,block,cylinder,head,sector);
      if (!did_retry) {
       CPU16(c);
-      c.dl = self->b_drive;
-      c.sp = realmode_stack;
+      c.gp.dl = self->b_drive;
+      c.gp.sp = realmode_stack;
       rm_interrupt(&c,0x13);
       syslog(LOG_HW|LOG_ERROR,
              "[BIOS] Reset drive: %#.2I8x: %s %d\n",
-             self->b_drive,c.eflags&EFLAGS_CF ? "ERR" : "OK",c.ah);
+             self->b_drive,c.eflags&EFLAGS_CF ? "ERR" : "OK",c.gp.ah);
       did_retry = true;
       goto retry;
      }
@@ -193,13 +193,13 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
  while (n_blocks) {
   size_t copy_size;
   CPU16(c);
-  c.ah = 0x42+!!write;
-  c.dl = self->b_drive;
+  c.gp.ah = 0x42+!!write;
+  c.gp.dl = self->b_drive;
   if (max_sectors > n_blocks)
       max_sectors = n_blocks;
-  c.ds = (u16)(((uintptr_t)bios_page_p >> 16) << 12);
-  c.si = (u16)((uintptr_t)bios_page_p & 0xffff);
-  c.sp = realmode_stack;
+  c.sg.ds = (u16)(((uintptr_t)bios_page_p >> 16) << 12);
+  c.gp.si = (u16)((uintptr_t)bios_page_p & 0xffff);
+  c.gp.sp = realmode_stack;
 
   assert(max_sectors != 0);
 
@@ -222,7 +222,7 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
    /* Stop on error. */
 #if 1
    syslog(LOG_DEBUG,"[BIOS] Disk I/O failure in drive %#.2I8x (Error %#.2I8x; %I8d)\n",
-          self->b_drive,c.ah,c.ah);
+          self->b_drive,c.gp.ah,c.gp.ah);
 #endif
 #if IO_ERROR == -EOK
    buffer->b_seccnt = max_sectors;
@@ -340,9 +340,9 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
  }
  if (bios_exti13h < 0) {
   CPU16(c);
-  c.ah = 0x41;
-  c.bx = 0x55aa;
-  c.dl = drive;
+  c.gp.ah = 0x41;
+  c.gp.bx = 0x55aa;
+  c.gp.dl = drive;
   rm_interrupt(&c,0x13);
   /* If 'CF' isn't set, the bios does support the extensions. */
   has_extensions = !(c.eflags&EFLAGS_CF);
@@ -357,11 +357,11 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
   buf = (struct bd_13h48h_buffer *)bios_page_v;
   memset(buf,0,sizeof(struct bd_13h48h_buffer));
   buf->b_bufsize = sizeof(struct bd_13h48h_buffer);
-  c.ah = 0x48;
-  c.dl = drive;
-  c.ds = (u16)(((uintptr_t)bios_page_p >> 16) << 12);
-  c.si = (u16)((uintptr_t)bios_page_p & 0xffff);
-  c.sp = realmode_stack;
+  c.gp.ah = 0x48;
+  c.gp.dl = drive;
+  c.sg.ds = (u16)(((uintptr_t)bios_page_p >> 16) << 12);
+  c.gp.si = (u16)((uintptr_t)bios_page_p & 0xffff);
+  c.gp.sp = realmode_stack;
   rm_interrupt(&c,0x13);
   if (c.eflags&EFLAGS_CF || !buf->b_abs_secnum || !buf->b_abs_secsiz) {
    syslog(LOG_HW|LOG_WARN,
@@ -397,20 +397,20 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
   /* Figure out the drive geometry. */
   u16 max_cylinder;
   CPU16(c);
-  c.ah = 8;
-  c.dl = drive;
-  c.sp = realmode_stack;
+  c.gp.ah = 8;
+  c.gp.dl = drive;
+  c.gp.sp = realmode_stack;
   rm_interrupt(&c,0x13);
   if (c.eflags&EFLAGS_CF) return E_PTR(-ENODEV);
-  if (!(c.cl & 0x3f)) return E_PTR(-ENODEV);
-  max_cylinder = 1+(c.ch | ((c.cl&0xc0) >> 2));
+  if (!(c.gp.cl & 0x3f)) return E_PTR(-ENODEV);
+  max_cylinder = 1+(c.gp.ch | ((c.gp.cl&0xc0) >> 2));
   if (!max_cylinder) return E_PTR(-ENODEV);
 
   result = (bd_t *)blkdev_new(sizeof(bd_t));
   if unlikely(!result) return E_PTR(-ENOMEM);
 
-  result->b_sectors_per_track = c.cl & 0x3f;
-  result->b_number_of_heads   = c.dh+1;
+  result->b_sectors_per_track = c.gp.cl & 0x3f;
+  result->b_number_of_heads   = c.gp.dh+1;
   result->b_device.bd_blockcount = (blkaddr_t)max_cylinder*
                                    (blkaddr_t)result->b_sectors_per_track*
                                    (blkaddr_t)result->b_number_of_heads;

@@ -404,7 +404,7 @@ got_space:
 
 PUBLIC void KCALL
 intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
-                 struct ccpustate const *__restrict cstate, u32 eflags) {
+                 struct comregs const *__restrict cstate, u32 eflags) {
  struct intchain *iter;
  CHECK_HOST_DOBJ(pchain);
 check_again:
@@ -415,7 +415,7 @@ check_again:
       (iter->ic_opt&INTCHAIN_OPT_PIC && IRQ_ISPIC(irq)) ||
       (iter->ic_opt&INTCHAIN_OPT_USR && IRQ_ISUSR(irq))) {
    struct {
-    struct ccpustate state;
+    struct comregs state;
     u32              eflag;
    union{
     byte_t          *esp_minus_4;
@@ -426,7 +426,7 @@ check_again:
 #error FIXME
 #endif
    /* Trigger this handler! */
-   memcpy(&data.state,cstate,sizeof(struct ccpustate));
+   memcpy(&data.state,cstate,sizeof(struct comregs));
    data.eflag = eflags;
    data.p_eip = (void **)&iter->ic_int;
 

@@ -53,20 +53,9 @@
 DECL_BEGIN
 
 struct PACKED irq_info {
-union PACKED{
- struct ccpustate com;
-struct PACKED{
- u32 edi,esi,ebp,esp;     /* General-purpose registers. */
- u32 ebx,edx,ecx,eax;     /* HINT: pushad/popad-compatible */
- u16 gs,fs,es,ds;         /* Segment registers */
-};};
 union{irq_t intno;        /* Interrupt number. */
       u32   intno32;      /* Interrupt number. */};
- u32 exc_code;            /* Exception code. */
- HOST u32 eip;            /* iret tail: Instruction pointer (in host memory). */
- u16 cs,_n1; u32 eflags;  /* iret tail: misc. data */
- u32 useresp; u16 ss,_n2; /* [valid_if((cs & 3) == 3)]
-                           * iret tail: user-space stack pointer. */
+ struct cpustate_e state;
 };
 
 
@@ -93,54 +82,32 @@ PUBLIC bool KCALL irq_pic_2_spurious(void) {
 }
 
 
-INTDEF void FCALL
-irq_default(struct irq_info *__restrict info);
-
+FUNDEF void FCALL irq_default(int intno, struct cpustate_e *__restrict state);
 GLOBAL_ASM(
 L(.section .text                                                              )
-L(INTERN_ENTRY(dirq_ncode)                                                    )
-//L(1:  jmp 1b)
-L(    popl  -8(%esp)  /* Hacky way of shifting 'exc_code' into 'intno32' without polluting any registers. */)
-L(    pushl $0         /* Fill 'exc_code' with '0' by default. */             )
-L(    subl  $4, %esp                                                          )
 L(INTERN_ENTRY(dirq_ycode)                                                    )
-L(                                                                            )
-L(    pushw %ds                                                               )
-L(    pushw %es                                                               )
-L(    pushw %fs                                                               )
-L(    pushw %gs                                                               )
-L(    pushal                                                                  )
-L(                                                                            )
-#ifdef __x86_64__
+L(    popl  -44(%esp)  /* Hacky way of shifting 'exc_code' into 'intno32' without polluting any registers. */)
+L(    jmp 1f                                                                  )
+L(INTERN_ENTRY(dirq_ncode)                                                    )
+L(    popl  -48(%esp)  /* Hacky way of shifting 'exc_code' into 'intno32' without polluting any registers. */)
+L(    pushl $0         /* Fill 'exc_code' with '0' by default. */             )
+L(1:  __ASM_PUSH_SEGMENTS                                                     )
+L(    __ASM_PUSH_REGISTERS                                                    )
+L(    subl  $4, %esp   /* intno */                                            )
 L(    /* Load the proper kernel segment registers */                          )
-L(    movw  $(__USER_DS), %dx                                                 )
-L(    movw  %dx, %ds                                                          )
-L(    movw  %dx, %es                                                          )
-L(    movw  %dx, %fs                                                          )
-L(    movw  $(__KERNEL_PERCPU), %dx                                           )
-L(    movw  %dx, %gs                                                          )
-#else
-L(    /* Load the proper kernel segment registers */                          )
-L(    movw  $(__USER_DS), %dx                                                 )
-L(    movw  %dx, %ds                                                          )
-L(    movw  %dx, %es                                                          )
-L(    movw  %dx, %gs                                                          )
-L(    movw  $(__KERNEL_PERCPU), %dx                                           )
-L(    movw  %dx, %fs                                                          )
-#endif
+L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
 L(                                                                            )
-L(    movl  %esp, %ecx                                                        )
+L(    popl  %ecx       /* int intno; */                                       )
+L(    movl  %esp, %edx /* cpustate_e *state; */                               )
 __DEBUG_CODE(L(pushl 56(%esp)                                                ))
 __DEBUG_CODE(L(pushl %ebp                                                    ))
 __DEBUG_CODE(L(movl %esp, %ebp                                               ))
 L(    call  irq_default                                                       )
 __DEBUG_CODE(L(addl $8, %esp                                                 ))
-L(    popal                                                                   )
-L(    popw  %gs                                                               )
-L(    popw  %fs                                                               )
-L(    popw  %es                                                               )
-L(    popw  %ds                                                               )
-L(    add $8, %esp                                                            )
+L(    addl $4, %esp /* intno */                                               )
+L(    __ASM_POP_REGISTERS                                                     )
+L(    __ASM_POP_SEGMENTS                                                      )
+L(    addl $4, %esp /* exc_code */                                            )
 L(    iret                                                                    )
 L(SYM_END(dirq_ycode)                                                         )
 L(SYM_END(dirq_ncode)                                                         )
@@ -380,87 +347,6 @@ struct irqname const irq_excname[32] = {
 #undef S
 };
 
-
-PUBLIC void FCALL
-irq_unhandled(irq_t code, struct cpustate *__restrict state) {
- struct irq_info info;
- info.edi = state->host.edi;
- info.esi = state->host.esi;
- info.ebp = state->host.ebp;
- info.ebx = state->host.ebx;
- info.edx = state->host.edx;
- info.ecx = state->host.ecx;
- info.eax = state->host.eax;
- info.esp = ((uintptr_t)state+offsetafter(struct cpustate,host))-
-                             (offsetafter(struct irq_info,eflags)-
-                              offsetafter(struct irq_info,eax));
- info.gs       = state->host.gs;
- info.fs       = state->host.fs;
- info.es       = state->host.es;
- info.ds       = state->host.ds;
- info.intno    = code;
- info.exc_code = 0;
- info.eip      = state->host.eip;
- info.cs       = state->host.cs;
- info.eflags   = state->host.eflags;
- if ((info.cs&3) == 3) {
-  info.useresp = state->useresp;
-  info.ss      = state->ss;
- }
- irq_default(&info);
- info.edi = state->host.edi;
- info.esi = state->host.esi;
- info.ebp = state->host.ebp;
- info.ebx = state->host.ebx;
- info.edx = state->host.edx;
- info.ecx = state->host.ecx;
- info.eax = state->host.eax;
- info.esp = ((uintptr_t)state+offsetafter(struct cpustate,host))-
-                             (offsetafter(struct irq_info,eflags)-
-                              offsetafter(struct irq_info,eax));
- info.gs       = state->host.gs;
- info.fs       = state->host.fs;
- info.es       = state->host.es;
- info.ds       = state->host.ds;
- info.intno    = code;
- info.exc_code = 0;
- info.eip      = state->host.eip;
- info.cs       = state->host.cs;
- state->host.eflags = info.eflags;
- if ((info.cs&3) == 3) {
-  state->useresp = info.useresp;
-  state->ss      = info.ss;
- }
-}
-PUBLIC void FCALL
-irq_unhandled_c(irq_t code, struct cpustate_irq_c *__restrict state) {
- struct irq_info info;
- info.edi = state->host.edi;
- info.esi = state->host.esi;
- info.ebp = state->host.ebp;
- info.ebx = state->host.ebx;
- info.edx = state->host.edx;
- info.ecx = state->host.ecx;
- info.eax = state->host.eax;
- info.esp = ((uintptr_t)state+offsetafter(struct cpustate_irq_c,host))-
-                             (offsetafter(struct irq_info,eflags)-
-                              offsetafter(struct irq_info,eax));
- info.gs       = state->host.gs;
- info.fs       = state->host.fs;
- info.es       = state->host.es;
- info.ds       = state->host.ds;
- info.intno    = code;
- info.exc_code = state->host.exc_code;
- info.eip      = state->host.eip;
- info.cs       = state->host.cs;
- info.eflags   = state->host.eflags;
- if ((info.cs&3) == 3) {
-  info.useresp = state->useresp;
-  info.ss      = state->ss;
- }
- irq_default(&info);
-}
-
 #define GET_REG(x) \
  XBLOCK({ register uintptr_t _r; \
           __asm__ __volatile__("movl %%" x ", %0" : "=r" (_r)); \
@@ -505,30 +391,29 @@ print_segment_register(char const *__restrict name, u16 value) {
 #define IRQPANIC_DISP_MMAN      1
 #define IRQPANIC_DISP_PDIR      0
 
-INTERN ATTR_COLDTEXT ATTR_NOINLINE void FCALL
-irq_default(struct irq_info *__restrict info) {
+PUBLIC ATTR_COLDTEXT ATTR_NOINLINE void FCALL
+irq_default(int intno, struct cpustate_e *__restrict state) {
  char buffer[64],*iter; u32 temp; uintptr_t esp;
- bool is_user = (info->cs&3) == 3;
+ bool is_user = (state->iret.cs&3) == 3;
  struct cpu *this_cpu = THIS_CPU;
  struct task *this_task = THIS_TASK;
  PREEMPTION_DISABLE();
  /* If the exception occurred in kernel-space, try to trigger a local IRQ handler.
   * >> This is used to implement safe tracebacks, as well as copy_(to|from|in)_user & friends! */
- if ((info->cs&3) == 0) {
+ if ((state->iret.cs&3) == 0) {
 #if 0
-  __assertion_tbprintl((void *)info->eip,(void *)info->ebp,0);
+  __assertion_tbprintl((void *)state->iret.eip,(void *)state->gp.ebp,0);
 #endif
-  intchain_trigger(&this_task->t_ic,
-                   info->intno,&info->com,
-                   info->eflags);
+  intchain_trigger(&this_task->t_ic,(irq_t)intno,
+                   &state->com,state->iret.eflags);
  } else
-#if !defined(CONFIG_DEBUG) || 0
+#if !defined(CONFIG_DEBUG) || 1
  {
   /* Handle exceptions in user-space by raising a signal. */
   siginfo_t si;
   memset(&si,0,sizeof(siginfo_t));
-  si.si_addr = (void *)info->eip;
-  switch (info->intno) {
+  si.si_addr = (void *)state->iret.eip;
+  switch (intno) {
 
   case IRQ_EXC_DE: /*< Divide-by-zero. */
    si.si_signo = SIGFPE;
@@ -592,7 +477,7 @@ irq_default(struct irq_info *__restrict info) {
 //case IRQ_EXC_SX:  /*< Security Exception. */
 
 kill_task:
-   task_kill2(THIS_TASK,&si,info->intno,info->exc_code);
+   task_kill2(THIS_TASK,&si,intno,state->iret.exc_code);
    return;
   default: break;
   }
@@ -600,22 +485,22 @@ kill_task:
  }
 #endif
 
- if (IRQ_ISPIC(info->intno)) {
+ if (IRQ_ISPIC(intno)) {
   syslog(LOG_IRQ|LOG_WARN,
          "[IRQ] Unmapped PIC interrupt %#.2I8x (%I8d) (%s pin #%d)\n",
-         info->intno,info->intno,
-         info->intno >= IRQ_PIC2_BASE ? "Slave" : "Master",
-        (info->intno-IRQ_PIC1_BASE) % 8);
+         intno,intno,
+         intno >= IRQ_PIC2_BASE ? "Slave" : "Master",
+        (intno-IRQ_PIC1_BASE) % 8);
 #if 0
 #if 1
-  __assertion_tbprintl((void *)inittask.t_cstate->host.eip,NULL,0);
-  __assertion_tbprint2((void *)inittask.t_cstate->host.ebp,0);
+  __assertion_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
+  __assertion_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
 #else
-  __assertion_tbprintl((void *)info->eip,NULL,0);
-  __assertion_tbprint2((void *)info->ebp,0);
+  __assertion_tbprintl((void *)state->iret.eip,NULL,0);
+  __assertion_tbprint2((void *)state->gp.ebp,0);
 #endif
 #endif
-  IRQ_PIC_EOI(info->intno);
+  IRQ_PIC_EOI(intno);
   goto done;
  }
 #define IRQ_RECURSION_MIN 2
@@ -623,32 +508,35 @@ kill_task:
   if (in_ireq_default == IRQ_RECURSION_MIN) {
    ++in_ireq_default;
    __assertion_printf("\n\nPANIC!!! IRQ HANDLER RECURSION!\n");
-   __assertion_printf("EIP = %p\n",info->eip);
+   __assertion_printf("EIP = %p\n",state->iret.eip);
   }
   goto end;
  }
  ++in_ireq_default;
  __assertion_printf("\n\n<RING #%d(%s) FAULT> Unhandled %s %#.2I8x (%I8d)\n",
-                    info->cs & 3,is_user ? "USER" : "KERNEL",
-                    IRQ_ISEXC(info->intno) ? "Exception" : "Interrupt",
-                    info->intno,info->intno);
- if (IRQ_ISEXC(info->intno)) {
+                    state->iret.cs & 3,is_user ? "USER" : "KERNEL",
+                    IRQ_ISEXC(intno) ? "Exception" : "Interrupt",
+                    intno,intno);
+ if (IRQ_ISEXC(intno)) {
   __assertion_printf("<%s> - %s - ECODE %#I32x (%I32d)",
-                     irq_excname[info->intno].mn,
-                     irq_excname[info->intno].descr,
-                     info->exc_code,info->exc_code);
+                     irq_excname[intno].mn,
+                     irq_excname[intno].descr,
+                     state->iret.exc_code,
+                     state->iret.exc_code);
  }
  __assertion_printf("\nCPU #%d%s (%p; GPID %d)\n",this_cpu->c_id,
                     this_task == &inittask ? " (BOOT-TASK)" :
                     this_task == &this_cpu->c_idle ? " (IDLE-TASK)" : "",
                     this_task,this_task->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
  __assertion_printf("EAX %p  ECX %p  EDX %p  EBX %p  EIP %p\n",
-                    info->eax,info->ecx,info->edx,info->ebx,info->eip);
- esp = is_user ? info->useresp : info->esp+(offsetafter(struct irq_info,eflags)-
-                                            offsetafter(struct irq_info,eax));
+                    state->gp.eax,state->gp.ecx,
+                    state->gp.edx,state->gp.ebx,
+                    state->iret.eip);
+ esp = is_user ? state->iret.useresp : state->gp.esp+(offsetafter(struct cpustate_e,iret.eflags)-
+                                                      offsetafter(struct cpustate_e,gp.eax));
  __assertion_printf("ESP %p  EBP %p  ESI %p  EDI %p  ---\n",
-                    esp,info->ebp,info->esi,info->edi);
- iter = buffer,temp = info->eflags;
+                    esp,state->gp.ebp,state->gp.esi,state->gp.edi);
+ iter = buffer,temp = state->iret.eflags;
  if (temp&EFLAGS_CF) iter = stpcpy(iter,"+CF");
  if (temp&EFLAGS_PF) iter = stpcpy(iter,"+PF");
  if (temp&EFLAGS_AF) iter = stpcpy(iter,"+AF");
@@ -671,21 +559,21 @@ kill_task:
 #if IRQPANIC_DISP_SEGMENTS
  {
   register u16 seg_ss;
-  if (is_user) seg_ss = info->ss;
+  if (is_user) seg_ss = state->iret.ss;
   else __asm__ __volatile__("movw %%ss, %0" : "=r" (seg_ss));
 #if 1
-  print_segment_register("DS",info->ds);
-  print_segment_register("ES",info->es);
-  print_segment_register("FS",info->fs);
-  print_segment_register("GS",info->gs);
-  print_segment_register("CS",info->cs);
+  print_segment_register("DS",state->sg.ds);
+  print_segment_register("ES",state->sg.es);
+  print_segment_register("FS",state->sg.fs);
+  print_segment_register("GS",state->sg.gs);
+  print_segment_register("CS",state->iret.cs);
   print_segment_register("SS",seg_ss);
 #else
   __assertion_printf("DS %.4X  ES %.4X  FS %.4X  GS %.4X\n",
-                    (int)info->ds,(int)info->es,
-                    (int)info->fs,(int)info->gs);
+                    (int)state->sg.ds,(int)state->sg.es,
+                    (int)state->sg.fs,(int)state->sg.gs);
   __assertion_printf("CS %.4X  SS %.4X  --       --\n",
-                    (int)info->cs,(int)seg_ss);
+                    (int)state->iret.cs,(int)seg_ss);
 #endif
  }
 #endif
@@ -766,19 +654,19 @@ kill_task:
 #endif /* IRQPANIC_DISP_DRX */
 
 #if IRQPANIC_DISP_TRACEBACK
- __assertion_tbprintl((void *)info->eip,(void *)info->ebp,0);
+ __assertion_tbprintl((void *)state->iret.eip,(void *)state->gp.ebp,0);
 
  /* TODO: Local exception handling? */
- if (((byte_t *)&info->ebp)[0] != ((byte_t *)&info->ebp)[1]
-  || ((byte_t *)&info->ebp)[0] != ((byte_t *)&info->ebp)[2]
-  || ((byte_t *)&info->ebp)[0] != ((byte_t *)&info->ebp)[3]
+ if (((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[1]
+  || ((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[2]
+  || ((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[3]
 #if __SIZEOF_POINTER__ == 8
-  || ((byte_t *)&info->ebp)[0] != ((byte_t *)&info->ebp)[4]
-  || ((byte_t *)&info->ebp)[0] != ((byte_t *)&info->ebp)[5]
-  || ((byte_t *)&info->ebp)[0] != ((byte_t *)&info->ebp)[6]
-  || ((byte_t *)&info->ebp)[0] != ((byte_t *)&info->ebp)[7]
+  || ((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[4]
+  || ((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[5]
+  || ((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[6]
+  || ((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[7]
 #endif
-     ) __assertion_tbprint2((void *)info->ebp,0);
+     ) __assertion_tbprint2((void *)state->gp.ebp,0);
 #if 0
  __assertion_tbprint(1);
 #endif
@@ -884,7 +772,7 @@ done_stack:
  }
 #endif /* IRQPANIC_DISP_MMAN || IRQPANIC_DISP_PDIR */
 end:
- if (info->intno != 3)
+ if (intno != 3)
      PREEMPTION_FREEZE();
  --in_ireq_default;
 done:;
