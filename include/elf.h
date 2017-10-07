@@ -23,11 +23,13 @@
 /* Standard ELF types. */
 #include "__stdinc.h"
 #include <features.h>
+#include <bits/elf-types.h>
 
 #ifdef __CC__
 #include <stdint.h>
 #endif /* __CC__ */
 #ifdef __USE_KOS
+#include <bits/elf.h>
 #include <hybrid/host.h>
 #include <hybrid/typecore.h>
 #endif /* __USE_KOS */
@@ -36,7 +38,7 @@
 extern "C" {
 #endif
 
-#ifdef __CC__
+#if 0
 /* Type for a 16-bit quantity. */
 typedef uint16_t Elf32_Half;
 typedef uint16_t Elf64_Half;
@@ -607,9 +609,9 @@ typedef struct
 
 /* Legal values for note segment descriptor types for core files. */
 
-#define NT_PRSTATUS     1               /* Contains copy of prstatus struct */
-#define NT_FPREGSET     2               /* Contains copy of fpregset struct */
-#define NT_PRPSINFO     3               /* Contains copy of prpsinfo struct */
+#define NT_PRSTATUS     1               /* [Elf_Prstatus] Contains copy of prstatus struct */
+#define NT_FPREGSET     2               /* [Elf_Fpregset] Contains copy of fpregset struct */
+#define NT_PRPSINFO     3               /* [Elf_Prpsinfo] Contains copy of prpsinfo struct */
 #define NT_PRXREG       4               /* Contains copy of prxregset struct */
 #define NT_TASKSTRUCT   4               /* Contains copy of task structure */
 #define NT_PLATFORM     5               /* String from sysinfo(SI_PLATFORM) */
@@ -623,6 +625,36 @@ typedef struct
 #define NT_LWPSTATUS    16              /* Contains copy of lwpstatus struct */
 #define NT_LWPSINFO     17              /* Contains copy of lwpinfo struct */
 #define NT_PRFPXREG     20              /* Contains copy of fprxregset struct*/
+
+#ifdef __USE_KOS
+/* Additional note codes, as used by coredumps and the BFD library. (Required for the elf-coredump driver) */
+#define NT_PRXFPREG          0x46e62b7f /* Contains a user_xfpregs_struct; note name must be "LINUX". */
+#define NT_PPC_VMX           0x100      /* PowerPC Altivec/VMX registers; note name must be "LINUX". */
+#define NT_PPC_VSX           0x102      /* PowerPC VSX registers; note name must be "LINUX". */
+#define NT_386_TLS           0x200      /* x86 TLS information; note name must be "LINUX". */
+#define NT_386_IOPERM        0x201      /* x86 io permissions; note name must be "LINUX". */
+#define NT_X86_XSTATE        0x202      /* x86 XSAVE extended state; note name must be "LINUX". */
+#define NT_S390_HIGH_GPRS    0x300      /* S/390 upper halves of GPRs; note name must be "LINUX". */
+#define NT_S390_TIMER        0x301      /* S390 timer; note name must be "LINUX". */
+#define NT_S390_TODCMP       0x302      /* S390 TOD clock comparator; note name must be "LINUX". */
+#define NT_S390_TODPREG      0x303      /* S390 TOD programmable register; note name must be "LINUX". */
+#define NT_S390_CTRS         0x304      /* S390 control registers; note name must be "LINUX". */
+#define NT_S390_PREFIX       0x305      /* S390 prefix register; note name must be "LINUX". */
+#define NT_S390_LAST_BREAK   0x306      /* S390 breaking event address; note name must be "LINUX". */
+#define NT_S390_SYSTEM_CALL  0x307      /* S390 system call restart data; note name must be "LINUX". */
+#define NT_S390_TDB          0x308      /* S390 transaction diagnostic block; note name must be "LINUX". */
+#define NT_S390_VXRS_LOW     0x309      /* S390 vector registers 0-15 upper half; note name must be "LINUX". */
+#define NT_S390_VXRS_HIGH    0x30a      /* S390 vector registers 16-31; note name must be "LINUX". */
+#define NT_ARM_VFP           0x400      /* ARM VFP registers */
+/* The following definitions should really use NT_AARCH_...,
+ * but defined this way for compatibility with Linux. */
+#define NT_ARM_TLS           0x401      /* AArch TLS registers; note name must be "LINUX". */
+#define NT_ARM_HW_BREAK      0x402      /* AArch hardware breakpoint registers; note name must be "LINUX". */
+#define NT_ARM_HW_WATCH      0x403      /* AArch hardware watchpoint registers; note name must be "LINUX". */
+#define NT_SIGINFO           0x53494749 /* Fields of siginfo_t. */
+#define NT_FILE              0x46494c45 /* [Elf_Ntfile] Description of mapped files. */
+#endif /* __USE_KOS */
+
 
 /* Legal values for the note segment descriptor types for object files. */
 
@@ -2669,31 +2701,42 @@ typedef Elf32_Addr Elf32_Conflict;
 
 /* Define ELF-pointer-size based types and macros. */
 #ifdef __CC__
-typedef Elf(Half)    Elf_Half;
-typedef Elf(Word)    Elf_Word;
-typedef Elf(Sword)   Elf_Sword;
-typedef Elf(Xword)   Elf_Xword;
-typedef Elf(Sxword)  Elf_Sxword;
-typedef Elf(Addr)    Elf_Addr;
-typedef Elf(Off)     Elf_Off;
-typedef Elf(Section) Elf_Section;
-typedef Elf(Versym)  Elf_Versym;
-typedef Elf(Ehdr)    Elf_Ehdr;
-typedef Elf(Shdr)    Elf_Shdr;
-typedef Elf(Sym)     Elf_Sym;
-typedef Elf(Syminfo) Elf_Syminfo;
-typedef Elf(Rel)     Elf_Rel;
-typedef Elf(Rela)    Elf_Rela;
-typedef Elf(Phdr)    Elf_Phdr;
-typedef Elf(Dyn)     Elf_Dyn;
-typedef Elf(Verdef)  Elf_Verdef;
-typedef Elf(Verdaux) Elf_Verdaux;
-typedef Elf(Verneed) Elf_Verneed;
-typedef Elf(Vernaux) Elf_Vernaux;
-typedef Elf(auxv_t)  Elf_auxv_t;
-typedef Elf(Nhdr)    Elf_Nhdr;
-typedef Elf(Move)    Elf_Move;
-typedef Elf(Lib)     Elf_Lib;
+typedef Elf(Half)      Elf_Half;
+typedef Elf(Word)      Elf_Word;
+typedef Elf(Sword)     Elf_Sword;
+typedef Elf(Xword)     Elf_Xword;
+typedef Elf(Sxword)    Elf_Sxword;
+typedef Elf(Addr)      Elf_Addr;
+typedef Elf(Off)       Elf_Off;
+typedef Elf(Section)   Elf_Section;
+typedef Elf(Versym)    Elf_Versym;
+typedef Elf(Ehdr)      Elf_Ehdr;
+typedef Elf(Shdr)      Elf_Shdr;
+typedef Elf(Sym)       Elf_Sym;
+typedef Elf(Syminfo)   Elf_Syminfo;
+typedef Elf(Rel)       Elf_Rel;
+typedef Elf(Rela)      Elf_Rela;
+typedef Elf(Phdr)      Elf_Phdr;
+typedef Elf(Dyn)       Elf_Dyn;
+typedef Elf(Verdef)    Elf_Verdef;
+typedef Elf(Verdaux)   Elf_Verdaux;
+typedef Elf(Verneed)   Elf_Verneed;
+typedef Elf(Vernaux)   Elf_Vernaux;
+typedef Elf(auxv_t)    Elf_auxv_t;
+typedef Elf(Nhdr)      Elf_Nhdr;
+typedef Elf(Move)      Elf_Move;
+typedef Elf(Lib)       Elf_Lib;
+typedef Elf(pid_t)     Elf_pid_t;
+typedef Elf(greg_t)    Elf_greg_t;
+typedef Elf(Siginfo)   Elf_Siginfo;
+typedef Elf(Userregs)  Elf_Userregs;
+typedef Elf(Prtimeval) Elf_Prtimeval;
+typedef Elf(Prstatus)  Elf_Prstatus;
+typedef Elf(Prpsinfo)  Elf_Prpsinfo;
+typedef Elf(Ntfileent) Elf_Ntfileent;
+typedef Elf(Ntfile)    Elf_Ntfile;
+typedef Elf(Fpregset)  Elf_Fpregset;
+
 #endif /* __CC__ */
 
 #define ELF_ST_BIND(val)       ELF(ST_BIND)(val)

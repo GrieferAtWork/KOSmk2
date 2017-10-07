@@ -443,6 +443,7 @@ LOCAL pid_t KCALL thread_pid_getppid(struct thread_pid *__restrict self, pidtype
 #define TASK_GETPID(self)   THREAD_PID_GETPID(&(self)->t_pid)
 #define TASK_GETPGID(self)  THREAD_PID_GETPGID(&(self)->t_pid)
 #define TASK_GETPPID(self)  THREAD_PID_GETPPID(&(self)->t_pid)
+#define TASK_GETSID(self)   0 /* TODO */
 
 
 struct pid_bucket {

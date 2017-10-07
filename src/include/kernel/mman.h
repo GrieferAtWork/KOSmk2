@@ -743,7 +743,6 @@ FUNDEF REF struct instance *KCALL
 mman_instance_of_unlocked(struct mman const *__restrict self,
                           struct module *__restrict mod);
 
-
 /* Same as 'mman_insbranch_unlocked', but also map
  * the branch within the associated page directory.
  * NOTE: During mapping, a read-lock is temporarily acquired on 'branch->mb_region->mr_plock'

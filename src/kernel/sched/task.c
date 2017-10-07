@@ -2390,8 +2390,10 @@ task_signal_stop_cpu_endwrite(struct cpu *__restrict c,
   info.si_pid   = THIS_NAMESPACE == t->t_pid.tp_ids[PIDTYPE_PID].tl_ns ? GET_THIS_PID() : 0;
   info.si_uid   = GET_THIS_UID();
   info.si_code  = CLD_STOPPED;
+  assertf(parent->t_cpu == c,"TODO: Signal to different CPU");
+
   /* Raise the SIGCHLD in the parent process. */
-  task_kill2_cpu_endwrite(t,&info,0,0,was);
+  task_kill2_cpu_endwrite(parent,&info,0,0,was);
  } else {
   cpu_endwrite(c);
   PREEMPTION_POP(was);
@@ -2425,8 +2427,10 @@ task_signal_cont_cpu_endwrite(struct cpu *__restrict c,
   info.si_pid   = THIS_NAMESPACE == t->t_pid.tp_ids[PIDTYPE_PID].tl_ns ? GET_THIS_PID() : 0;
   info.si_uid   = GET_THIS_UID();
   info.si_code  = CLD_CONTINUED;
+  assertf(parent->t_cpu == c,"TODO: Signal to different CPU");
+
   /* Raise the SIGCHLD in the parent process. */
-  task_kill2_cpu_endwrite(t,&info,0,0,was);
+  task_kill2_cpu_endwrite(parent,&info,0,0,was);
  } else {
   cpu_endwrite(c);
   PREEMPTION_POP(was);

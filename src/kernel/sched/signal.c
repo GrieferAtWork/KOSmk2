@@ -318,7 +318,7 @@ ucontext_from_usertask(ucontext_t *__restrict result,
                        greg_t reg_trapno, greg_t reg_err);
 PRIVATE void KCALL
 fpstate_from_task(struct _libc_fpstate *__restrict result,
-                      struct task *__restrict t);
+                  struct task *__restrict t);
 
 PRIVATE void KCALL
 coredump_user_task(struct task *__restrict t,
@@ -789,7 +789,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
  if (t->t_ustack) {
   info.ei_ctx.uc_stack.ss_sp    = (void *)t->t_ustack->s_begin;
   info.ei_ctx.uc_stack.ss_size  = ((uintptr_t)t->t_ustack->s_end-
-                                (uintptr_t)t->t_ustack->s_begin);
+                                   (uintptr_t)t->t_ustack->s_begin);
   info.ei_ctx.uc_stack.ss_flags = 0;
  } else {
   info.ei_ctx.uc_stack.ss_sp    = (void *)user_info;
@@ -902,6 +902,7 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
   struct sighand *hand;
   /* Check if the signal is currently being blocked. */
   if (sigismember(&t->t_sigblock,signo+1)) {
+enqueue_later:
    /* Enqueue the signal to be send at a later time. */
    cpu_endwrite(c);
    PREEMPTION_POP(was);
@@ -955,6 +956,14 @@ do_core:
   if (action->sa_handler == SIG_CONT) goto do_cont;
   if (action->sa_handler == SIG_STOP) goto do_stop;
   if (action->sa_handler == SIG_CORE) goto do_core;
+  if (action->sa_handler == SIG_HOLD) {
+   /* Add the signal to the hold mask (blocking). */
+   unsigned long int mask = __sigmask(signo+1);
+   unsigned long int word = __sigword(signo+1);
+   if (ATOMIC_FETCHOR(t->t_sigblock.__val[word],mask)&mask)
+       goto enqueue_later;
+   goto done;
+  }
 
   if (action->sa_handler == SIG_IGN) {
    /* Nothing to do here... */
