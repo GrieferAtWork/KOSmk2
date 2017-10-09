@@ -136,8 +136,6 @@
 #define __LOCAL                  static __inline
 #define __LONGLONG               long long
 #define __ULONGLONG              unsigned long long
-#define __NO_builtin_prefetch    1
-#define __builtin_prefetch(...) (void)0
 #define __NO_builtin_constant_p  1
 #define __builtin_constant_p(x)  0
 #define __restrict_arr           __restrict
@@ -146,9 +144,22 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-extern void _ReadBarrier(void);
-extern void _WriteBarrier(void);
-extern void _ReadWriteBarrier(void);
+#if defined(__i386__) || defined(__i386) || defined(i386) || \
+    defined(__I86__) || defined(_M_IX86) || defined(__X86__) || \
+    defined(_X86_) || defined(__THW_INTEL__) || defined(__INTEL__) || \
+    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
+    defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64) || \
+    defined(_WIN64) || defined(WIN64)
+extern void (__cdecl _m_prefetch)(void *);
+#define __builtin_prefetch(addr,...) ((_m_prefetch)(addr))
+#pragma intrinsic(_m_prefetch)
+#else
+#define __NO_builtin_prefetch    1
+#define __builtin_prefetch(...) (void)0
+#endif
+extern void (__cdecl _ReadBarrier)(void);
+extern void (__cdecl _WriteBarrier)(void);
+extern void (__cdecl _ReadWriteBarrier)(void);
 #pragma intrinsic(_ReadBarrier)
 #pragma intrinsic(_WriteBarrier)
 #pragma intrinsic(_ReadWriteBarrier)

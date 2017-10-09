@@ -771,6 +771,14 @@
 #define __CHAR32_TYPE__ __UINT32_TYPE__
 #endif
 
+#if __SIZEOF_LONG__ == __SIZEOF_SIZE_T__
+#   define __LONGSIZE_TYPE__  unsigned long int
+#   define __LONGSSIZE_TYPE__ long int
+#else
+#   define __LONGSIZE_TYPE__  __SIZE_TYPE__
+#   define __LONGSSIZE_TYPE__ __SSIZE_TYPE__
+#endif
+
 #if __SIZEOF_LONG__ == 4
 #define __LONG32_TYPE__  long int
 #define __ULONG32_TYPE__ unsigned long int

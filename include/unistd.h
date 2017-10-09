@@ -20,11 +20,13 @@
 #define _UNISTD_H 1
 
 #include "__stdinc.h"
-#include <asm/unistd.h>
 #include <features.h>
 #include <bits/types.h>
 #include <bits/confname.h>
 #include <bits/posix_opt.h>
+#ifdef __CRT_GLC
+#include <asm/unistd.h>
+#endif /* __CRT_GLC */
 #if defined(__USE_UNIX98) || defined(__USE_XOPEN2K)
 #include <bits/environments.h>
 #endif

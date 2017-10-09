@@ -56,7 +56,7 @@ struct tms {
 };
 
 #ifndef __KERNEL__
-__LIBC clock_t (__LIBCCALL times)(struct tms *__buffer) __DOS_FUNC(times);
+__REDIRECT_UFS(__LIBC,,clock_t,__LIBCCALL,times,(struct tms *__buffer),times,(__buffer))
 #endif /* !__KERNEL__ */
 
 __SYSDECL_END

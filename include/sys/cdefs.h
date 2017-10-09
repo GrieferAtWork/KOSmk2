@@ -19,6 +19,8 @@
 #ifndef _SYS_CDEFS_H
 #define _SYS_CDEFS_H 1
 
+/* XXX: Get rid of this header? (The '__REDIRECT' defined here breaks ours) */
+
 #include <__stdinc.h>
 #ifndef _FEATURES_H
 #include <features.h>

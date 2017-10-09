@@ -119,7 +119,7 @@ __REDIRECT_PE_FUNC_OLDPEA(__LIBC,,__LONG32_TYPE__,__LIBCCALL,lseek,(int __fd, __
 #endif /* !__lseek_defined */
 #ifndef __mktemp_defined
 #define __mktemp_defined 1
-__LIBC __NONNULL((1)) char *(__LIBCCALL mktemp)(char *__template) __PE_FUNC_OLDPEA(mktemp);
+__REDIRECT_PE_FUNC_OLDPEA(__LIBC,__NONNULL((1)),char *,__LIBCCALL,mktemp,(char *__template),mktemp,(__template))
 #endif /* !__mktemp_defined */
 #ifndef __umask_defined
 #define __umask_defined 1

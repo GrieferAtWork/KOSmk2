@@ -224,8 +224,19 @@ typedef int errno_t;
 #define _CRT_ERRNO_DEFINED 1
 #define errno                                            (*__errno())
 __REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,__WUNUSED,__errno_t *,__LIBCCALL,__errno,(void),_errno,())
-__REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,__WUNUSED,__errno_t,__LIBCCALL,__get_errno,(void),_get_errno,())
 __REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,,__errno_t,__LIBCCALL,__set_errno,(__errno_t __err),_set_errno,(__err))
+#if defined(__CRT_DOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+__LIBC __WUNUSED __errno_t __NOTHROW((__LIBCCALL __get_errno)(void));
+#else /* Builtin... */
+__LOCAL __WUNUSED __errno_t __NOTHROW((__LIBCCALL __get_errno)(void)) { return errno; }
+#endif /* Compat... */
+#if defined(__CRT_DOS) && !defined(__GLC_COMPAT__)
+__LIBC __errno_t __NOTHROW((__LIBCCALL _get_errno)(__errno_t *__perr));
+__LIBC __errno_t __NOTHROW((__LIBCCALL _set_errno)(__errno_t __err));
+#else /* Builtin... */
+__LOCAL __errno_t __NOTHROW((__LIBCCALL _get_errno)(__errno_t *__perr)) { if (__perr) *__perr = errno; return 0; }
+__LOCAL __errno_t __NOTHROW((__LIBCCALL _set_errno)(__errno_t __err)) { return (errno = __err); }
+#endif /* Compat... */
 #endif /* !_CRT_ERRNO_DEFINED */
 
 #ifdef __USE_GNU
@@ -240,7 +251,7 @@ __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_short_
 __LIBC char *program_invocation_name;
 __LIBC char *program_invocation_short_name;
 #elif defined(__CRT_DOS)
-__LIBC char **(__LIBCCALL __p__pgmptr)(void);
+__LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
 #define program_invocation_name        (*__p__pgmptr())
 #define program_invocation_short_name  (*__p__pgmptr())
 #endif

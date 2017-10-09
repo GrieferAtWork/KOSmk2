@@ -85,34 +85,35 @@ __NAMESPACE_STD_USING(tm)
 typedef __WINT_TYPE__ wint_t;
 #endif /* !__wint_t_defined */
 
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL mbr16len)(char const *__restrict __s, size_t __n, mbstate_t *__restrict __ps) __C16_DECL(mbrlen);
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL mbr32len)(char const *__restrict __s, size_t __n, mbstate_t *__restrict __ps) __C32_DECL(mbrlen);
-__LIBC __PORT_KOSONLY __NONNULL((1,2)) char16_t *(__LIBCCALL c16cpy)(char16_t *__restrict __dst, char16_t const *__restrict __src) __C16_FUNC(cpy);
-__LIBC __PORT_KOSONLY __NONNULL((1,2)) char32_t *(__LIBCCALL c32cpy)(char32_t *__restrict __dst, char32_t const *__restrict __src) __C32_FUNC(cpy);
-__LIBC __PORT_KOSONLY __NONNULL((1,2)) char16_t *(__LIBCCALL c16ncpy)(char16_t *__restrict __dst, char16_t const *__restrict __src, size_t __n) __C16_FUNC(ncpy);
-__LIBC __PORT_KOSONLY __NONNULL((1,2)) char32_t *(__LIBCCALL c32ncpy)(char32_t *__restrict __dst, char32_t const *__restrict __src, size_t __n) __C32_FUNC(ncpy);
-__LIBC __PORT_KOSONLY __NONNULL((1,2)) char16_t *(__LIBCCALL c16cat)(char16_t *__restrict __dst, char16_t const *__restrict __src) __C16_FUNC(cat);
-__LIBC __PORT_KOSONLY __NONNULL((1,2)) char32_t *(__LIBCCALL c32cat)(char32_t *__restrict __dst, char32_t const *__restrict __src) __C32_FUNC(cat);
-__LIBC __PORT_KOSONLY __NONNULL((1,2)) char16_t *(__LIBCCALL c16ncat)(char16_t *__restrict __dst, char16_t const *__restrict __src, size_t __n) __C16_FUNC(ncat);
-__LIBC __PORT_KOSONLY __NONNULL((1,2)) char32_t *(__LIBCCALL c32ncat)(char32_t *__restrict __dst, char32_t const *__restrict __src, size_t __n) __C32_FUNC(ncat);
-__LIBC __PORT_KOSONLY __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL c16cmp)(char16_t const *__s1, char16_t const *__s2) __C16_FUNC(cmp);
-__LIBC __PORT_KOSONLY __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL c32cmp)(char32_t const *__s1, char32_t const *__s2) __C32_FUNC(cmp);
-__LIBC __PORT_KOSONLY __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL c16ncmp)(char16_t const *__s1, char16_t const *__s2, size_t __n) __C16_FUNC(ncmp);
-__LIBC __PORT_KOSONLY __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL c32ncmp)(char32_t const *__s1, char32_t const *__s2, size_t __n) __C32_FUNC(ncmp);
-__LIBC __PORT_KOSONLY int (__LIBCCALL c16coll)(char16_t const *__s1, char16_t const *__s2) __C16_FUNC(coll);
-__LIBC __PORT_KOSONLY int (__LIBCCALL c32coll)(char32_t const *__s1, char32_t const *__s2) __C32_FUNC(coll);
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16xfrm)(char16_t *__restrict __s1, char16_t const *__restrict __s2, size_t __n) __C16_FUNC(xfrm);
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c32xfrm)(char32_t *__restrict __s1, char32_t const *__restrict __s2, size_t __n) __C32_FUNC(xfrm);
+__REDIRECT_C16(__LIBC,__PORT_KOSONLY,size_t,__LIBCCALL,mbr16len,(char const *__restrict __s, size_t __n, mbstate_t *__restrict __ps),mbrlen,(__s,__n,__ps))
+__REDIRECT_C32(__LIBC,__PORT_KOSONLY,size_t,__LIBCCALL,mbr32len,(char const *__restrict __s, size_t __n, mbstate_t *__restrict __ps),mbrlen,(__s,__n,__ps))
+/* TODO: Redirect all functions in this file. */
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) char16_t *(__LIBCCALL c16cpy)(char16_t *__restrict __dst, char16_t const *__restrict __src) __C16_DECL(wcscpy);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) char32_t *(__LIBCCALL c32cpy)(char32_t *__restrict __dst, char32_t const *__restrict __src) __C32_DECL(wcscpy);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) char16_t *(__LIBCCALL c16ncpy)(char16_t *__restrict __dst, char16_t const *__restrict __src, size_t __n) __C16_DECL(wcsncpy);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) char32_t *(__LIBCCALL c32ncpy)(char32_t *__restrict __dst, char32_t const *__restrict __src, size_t __n) __C32_DECL(wcsncpy);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) char16_t *(__LIBCCALL c16cat)(char16_t *__restrict __dst, char16_t const *__restrict __src) __C16_DECL(wcscat);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) char32_t *(__LIBCCALL c32cat)(char32_t *__restrict __dst, char32_t const *__restrict __src) __C32_DECL(wcscat);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) char16_t *(__LIBCCALL c16ncat)(char16_t *__restrict __dst, char16_t const *__restrict __src, size_t __n) __C16_DECL(wcsncat);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) char32_t *(__LIBCCALL c32ncat)(char32_t *__restrict __dst, char32_t const *__restrict __src, size_t __n) __C32_DECL(wcsncat);
+__LIBC __PORT_KOSONLY __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL c16cmp)(char16_t const *__s1, char16_t const *__s2) __C16_DECL(wcscmp);
+__LIBC __PORT_KOSONLY __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL c32cmp)(char32_t const *__s1, char32_t const *__s2) __C32_DECL(wcscmp);
+__LIBC __PORT_KOSONLY __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL c16ncmp)(char16_t const *__s1, char16_t const *__s2, size_t __n) __C16_DECL(wcsncmp);
+__LIBC __PORT_KOSONLY __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL c32ncmp)(char32_t const *__s1, char32_t const *__s2, size_t __n) __C32_DECL(wcsncmp);
+__LIBC __PORT_KOSONLY int (__LIBCCALL c16coll)(char16_t const *__s1, char16_t const *__s2) __C16_DECL(wcscoll);
+__LIBC __PORT_KOSONLY int (__LIBCCALL c32coll)(char32_t const *__s1, char32_t const *__s2) __C32_DECL(wcscoll);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16xfrm)(char16_t *__restrict __s1, char16_t const *__restrict __s2, size_t __n) __C16_DECL(wcsxfrm);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c32xfrm)(char32_t *__restrict __s1, char32_t const *__restrict __s2, size_t __n) __C32_DECL(wcsxfrm);
 __LIBC __PORT_KOSONLY size_t (__LIBCCALL mbsrtoc16)(char16_t *__restrict __dst, char const **__restrict __psrc, size_t __len, mbstate_t *__restrict __ps) __C16_DECL(mbsrtowcs);
 __LIBC __PORT_KOSONLY size_t (__LIBCCALL mbsrtoc32)(char32_t *__restrict __dst, char const **__restrict __psrc, size_t __len, mbstate_t *__restrict __ps) __C32_DECL(mbsrtowcs);
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16rtombs)(char *__restrict __dst, char16_t const **__restrict __psrc, size_t __len, mbstate_t *__restrict __ps) __C16_FUNC(rtombs);
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c32rtombs)(char *__restrict __dst, char32_t const **__restrict __psrc, size_t __len, mbstate_t *__restrict __ps) __C32_FUNC(rtombs);
-__LIBC __PORT_KOSONLY double (__LIBCCALL c16tod)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __C16_FUNC(tod);
-__LIBC __PORT_KOSONLY double (__LIBCCALL c32tod)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr) __C32_FUNC(tod);
-__LIBC __PORT_KOSONLY long int (__LIBCCALL c16tol)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __C16_FUNC(tol);
-__LIBC __PORT_KOSONLY long int (__LIBCCALL c32tol)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_FUNC(tol);
-__LIBC __PORT_KOSONLY unsigned long int (__LIBCCALL c16toul)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __C16_FUNC(toul);
-__LIBC __PORT_KOSONLY unsigned long int (__LIBCCALL c32toul)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_FUNC(toul);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16rtombs)(char *__restrict __dst, char16_t const **__restrict __psrc, size_t __len, mbstate_t *__restrict __ps) __C16_DECL(wcsrtombs);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c32rtombs)(char *__restrict __dst, char32_t const **__restrict __psrc, size_t __len, mbstate_t *__restrict __ps) __C32_DECL(wcsrtombs);
+__LIBC __PORT_KOSONLY double (__LIBCCALL c16tod)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __C16_DECL(wcstod);
+__LIBC __PORT_KOSONLY double (__LIBCCALL c32tod)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr) __C32_DECL(wcstod);
+__LIBC __PORT_KOSONLY long int (__LIBCCALL c16tol)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __C16_DECL(wcstol);
+__LIBC __PORT_KOSONLY long int (__LIBCCALL c32tol)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_DECL(wcstol);
+__LIBC __PORT_KOSONLY unsigned long int (__LIBCCALL c16toul)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __C16_DECL(wcstoul);
+__LIBC __PORT_KOSONLY unsigned long int (__LIBCCALL c32toul)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_DECL(wcstoul);
 __LIBC __PORT_KOSONLY wint_t (__LIBCCALL fgetc16)(__FILE *__stream) __C16_DECL(fgetwc);
 __LIBC __PORT_KOSONLY wint_t (__LIBCCALL fgetc32)(__FILE *__stream) __C32_DECL(fgetwc);
 __LIBC __PORT_KOSONLY wint_t (__LIBCCALL getc16)(__FILE *__stream) __C16_DECL(getwc);
@@ -141,13 +142,13 @@ __LIBC __PORT_KOSONLY int (__LIBCCALL fputc16s)(char16_t const *__restrict __ws,
 __LIBC __PORT_KOSONLY int (__LIBCCALL fputc32s)(char32_t const *__restrict __ws, __FILE *__restrict __stream) __C32_DECL(fputws);
 __LIBC __PORT_KOSONLY wint_t (__LIBCCALL ungetc16)(wint_t __wc, __FILE *__stream) __C16_DECL(ungetwc);
 __LIBC __PORT_KOSONLY wint_t (__LIBCCALL ungetc32)(wint_t __wc, __FILE *__stream) __C32_DECL(ungetwc);
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16ftime)(char16_t *__restrict __s, size_t __maxsize, char16_t const *__restrict __format, struct tm const *__restrict __tp) __C16_FUNC(ftime);
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c32ftime)(char32_t *__restrict __s, size_t __maxsize, char32_t const *__restrict __format, struct tm const *__restrict __tp) __C32_FUNC(ftime);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16ftime)(char16_t *__restrict __s, size_t __maxsize, char16_t const *__restrict __format, struct tm const *__restrict __tp) __C16_DECL(wcsftime);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c32ftime)(char32_t *__restrict __s, size_t __maxsize, char32_t const *__restrict __format, struct tm const *__restrict __tp) __C32_DECL(wcsftime);
 __LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16tok)(char16_t *__restrict __s, char16_t const *__restrict __delim, char16_t **__restrict __ptr) __ASMNAME("wcstok_s");
 __LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32tok)(char32_t *__restrict __s, char32_t const *__restrict __delim, char32_t **__restrict __ptr) __ASMNAME("wcstok");
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16len)(char16_t const *__s) __C16_FUNC(len);
-__LIBC __PORT_KOSONLY __ATTR_PURE size_t (__LIBCCALL c16spn)(char16_t const *__haystack, char16_t const *__accept) __C16_FUNC(spn);
-__LIBC __PORT_KOSONLY __ATTR_PURE size_t (__LIBCCALL c16cspn)(char16_t const *__haystack, char16_t const *__reject) __C16_FUNC(cspn);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16len)(char16_t const *__s) __C16_DECL(wcslen);
+__LIBC __PORT_KOSONLY __ATTR_PURE size_t (__LIBCCALL c16spn)(char16_t const *__haystack, char16_t const *__accept) __C16_DECL(wcsspn);
+__LIBC __PORT_KOSONLY __ATTR_PURE size_t (__LIBCCALL c16cspn)(char16_t const *__haystack, char16_t const *__reject) __C16_DECL(wcscspn);
 __LIBC __PORT_KOSONLY __ATTR_PURE int (__LIBCCALL umemcmp)(char16_t const *__s1, char16_t const *__s2, size_t __n) __ASMNAME("memcmpw");
 __LIBC __PORT_KOSONLY __ATTR_PURE int (__LIBCCALL Umemcmp)(char32_t const *__s1, char32_t const *__s2, size_t __n) __ASMNAME("memcmpl");
 __LIBC __PORT_KOSONLY char16_t *(__LIBCCALL umemcpy)(char16_t *__restrict __s1, char16_t const *__restrict __s2, size_t __n) __ASMNAME("memcpyw");
@@ -159,36 +160,36 @@ __LIBC __PORT_KOSONLY char32_t *(__LIBCCALL Umemset)(char32_t *__s, char32_t __c
 
 #if defined(__cplusplus) && !defined(__NO_ASMNAME)
 extern "C++" {
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16chr)(char16_t *__haystack, char16_t __wc) __C16_FUNC(chr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32chr)(char32_t *__haystack, char32_t __wc) __C32_FUNC(chr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL c16chr)(char16_t const *__haystack, char16_t __wc) __C16_FUNC(chr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL c32chr)(char32_t const *__haystack, char32_t __wc) __C32_FUNC(chr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16rchr)(char16_t *__haystack, char16_t __wc) __C16_FUNC(rchr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32rchr)(char32_t *__haystack, char32_t __wc) __C32_FUNC(rchr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL c16rchr)(char16_t const *__haystack, char16_t __wc) __C16_FUNC(rchr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL c32rchr)(char32_t const *__haystack, char32_t __wc) __C32_FUNC(rchr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16pbrk)(char16_t *__haystack, char16_t const *__accept) __C16_FUNC(pbrk);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32pbrk)(char32_t *__haystack, char32_t const *__accept) __C32_FUNC(pbrk);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL c16pbrk)(char16_t const *__haystack, char16_t const *__accept) __C16_FUNC(pbrk);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL c32pbrk)(char32_t const *__haystack, char32_t const *__accept) __C32_FUNC(pbrk);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16str)(char16_t *__haystack, char16_t const *__needle) __C16_FUNC(str);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32str)(char32_t *__haystack, char32_t const *__needle) __C32_FUNC(str);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL c16str)(char16_t const *__haystack, char16_t const *__needle) __C16_FUNC(str);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL c32str)(char32_t const *__haystack, char32_t const *__needle) __C32_FUNC(str);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16chr)(char16_t *__haystack, char16_t __wc) __C16_DECL(wcschr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32chr)(char32_t *__haystack, char32_t __wc) __C32_DECL(wcschr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL c16chr)(char16_t const *__haystack, char16_t __wc) __C16_DECL(wcschr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL c32chr)(char32_t const *__haystack, char32_t __wc) __C32_DECL(wcschr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16rchr)(char16_t *__haystack, char16_t __wc) __C16_DECL(wcsrchr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32rchr)(char32_t *__haystack, char32_t __wc) __C32_DECL(wcsrchr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL c16rchr)(char16_t const *__haystack, char16_t __wc) __C16_DECL(wcsrchr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL c32rchr)(char32_t const *__haystack, char32_t __wc) __C32_DECL(wcsrchr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16pbrk)(char16_t *__haystack, char16_t const *__accept) __C16_DECL(wcspbrk);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32pbrk)(char32_t *__haystack, char32_t const *__accept) __C32_DECL(wcspbrk);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL c16pbrk)(char16_t const *__haystack, char16_t const *__accept) __C16_DECL(wcspbrk);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL c32pbrk)(char32_t const *__haystack, char32_t const *__accept) __C32_DECL(wcspbrk);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16str)(char16_t *__haystack, char16_t const *__needle) __C16_DECL(wcsstr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32str)(char32_t *__haystack, char32_t const *__needle) __C32_DECL(wcsstr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL c16str)(char16_t const *__haystack, char16_t const *__needle) __C16_DECL(wcsstr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL c32str)(char32_t const *__haystack, char32_t const *__needle) __C32_DECL(wcsstr);
 __LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL umemchr)(char16_t *__s, char16_t __c, size_t __n) __ASMNAME("memchrw");
 __LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL Umemchr)(char32_t *__s, char32_t __c, size_t __n) __ASMNAME("memchrl");
 __LIBC __PORT_KOSONLY __ATTR_PURE char16_t const *(__LIBCCALL umemchr)(char16_t const *__s, char16_t __c, size_t __n) __ASMNAME("memchrw");
 __LIBC __PORT_KOSONLY __ATTR_PURE char32_t const *(__LIBCCALL Umemchr)(char32_t const *__s, char32_t __c, size_t __n) __ASMNAME("memchrl");
 }
 #else
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16chr)(char16_t const *__haystack, char16_t __wc) __C16_FUNC(chr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32chr)(char32_t const *__haystack, char32_t __wc) __C32_FUNC(chr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16rchr)(char16_t const *__haystack, char16_t __wc) __C16_FUNC(rchr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32rchr)(char32_t const *__haystack, char32_t __wc) __C32_FUNC(rchr);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16pbrk)(char16_t const *__haystack, char16_t const *__accept) __C16_FUNC(pbrk);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32pbrk)(char32_t const *__haystack, char32_t const *__accept) __C32_FUNC(pbrk);
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16str)(char16_t const *__haystack, char16_t const *__needle) __C16_FUNC(str);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32str)(char32_t const *__haystack, char32_t const *__needle) __C32_FUNC(str);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16chr)(char16_t const *__haystack, char16_t __wc) __C16_DECL(wcschr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32chr)(char32_t const *__haystack, char32_t __wc) __C32_DECL(wcschr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16rchr)(char16_t const *__haystack, char16_t __wc) __C16_DECL(wcsrchr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32rchr)(char32_t const *__haystack, char32_t __wc) __C32_DECL(wcsrchr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16pbrk)(char16_t const *__haystack, char16_t const *__accept) __C16_DECL(wcspbrk);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32pbrk)(char32_t const *__haystack, char32_t const *__accept) __C32_DECL(wcspbrk);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16str)(char16_t const *__haystack, char16_t const *__needle) __C16_DECL(wcsstr);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32str)(char32_t const *__haystack, char32_t const *__needle) __C32_DECL(wcsstr);
 __LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL umemchr)(char16_t const *__s, char16_t __c, size_t __n) __ASMNAME("memchrw");
 __LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL Umemchr)(char32_t const *__s, char32_t __c, size_t __n) __ASMNAME("memchrl");
 #endif
@@ -234,8 +235,8 @@ __LIBC __PORT_KOSONLY int (__LIBCCALL sUscanf)(char32_t const *__restrict __s, c
 #endif /* !__USE_KOS */
 #endif /* __USE_ISOC95 || __USE_UNIX98 */
 #ifdef __USE_ISOC99
-__LIBC __PORT_KOSONLY float (__LIBCCALL c16tof)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __C16_FUNC(tof);
-__LIBC __PORT_KOSONLY float (__LIBCCALL c32tof)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr) __C32_FUNC(tof);
+__LIBC __PORT_KOSONLY float (__LIBCCALL c16tof)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __C16_DECL(wcstof);
+__LIBC __PORT_KOSONLY float (__LIBCCALL c32tof)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr) __C32_DECL(wcstof);
 #ifdef __PE__
 __LIBC __PORT_KOSONLY long double (__LIBCCALL c16told)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr) __ASMNAME("wcstod");
 __LIBC __PORT_KOSONLY long double (__LIBCCALL c32told)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr) __ASMNAME(".kos.wcstod");
@@ -247,11 +248,11 @@ __LIBC __PORT_KOSONLY long double (__LIBCCALL c32told)(char32_t const *__restric
 __LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c16toll)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __ASMNAME("_wcstoi64");
 __LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c16toull)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __ASMNAME("_wcstoui64");
 #else
-__LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c16toll)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __C16_FUNC(toll);
-__LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c16toull)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __C16_FUNC(toull);
+__LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c16toll)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __C16_DECL(wcstoll);
+__LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c16toull)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base) __C16_DECL(wcstoull);
 #endif
-__LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c32toll)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_FUNC(toll);
-__LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c32toull)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_FUNC(toull);
+__LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c32toll)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_DECL(wcstoll);
+__LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c32toull)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_DECL(wcstoull);
 #ifdef __USE_KOS
 __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfuscanf)(__FILE *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vfwscanf);
 __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfUscanf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwscanf);
@@ -295,8 +296,8 @@ __LIBC __PORT_KOSONLY __FILE *(__LIBCCALL open_Umemstream)(char32_t **__bufloc, 
 #endif /* __USE_XOPEN2K8 */
 
 #if defined(__USE_XOPEN2K8) || defined(__USE_DOS)
-__LIBC __PORT_KOSONLY __ATTR_PURE size_t (__LIBCCALL c16nlen)(char16_t const *__s, size_t __maxlen) __C16_FUNC(nlen);
-__LIBC __PORT_KOSONLY __ATTR_PURE size_t (__LIBCCALL c32nlen)(char32_t const *__s, size_t __maxlen) __C32_FUNC(nlen);
+__LIBC __PORT_KOSONLY __ATTR_PURE size_t (__LIBCCALL c16nlen)(char16_t const *__s, size_t __maxlen) __C16_DECL(wcsnlen);
+__LIBC __PORT_KOSONLY __ATTR_PURE size_t (__LIBCCALL c32nlen)(char32_t const *__s, size_t __maxlen) __C32_DECL(wcsnlen);
 __LIBC __PORT_KOSONLY __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char16_t *(__LIBCCALL c16dup)(char16_t const *__restrict __s) __ASMNAME("_wcsdup");
 __LIBC __PORT_KOSONLY __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char32_t *(__LIBCCALL c32dup)(char32_t const *__restrict __s) __ASMNAME("wcsdup");
 #endif /* __USE_XOPEN2K8 || __USE_DOS */
@@ -330,19 +331,19 @@ __LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32c32)(char32_t const *
 #endif /* __USE_XOPEN || __USE_DOS */
 
 #ifdef __USE_GNU
-__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16chrnul)(char16_t const *__s, char16_t __wc) __C16_FUNC(chrnul);
-__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32chrnul)(char32_t const *__s, char32_t __wc) __C32_FUNC(chrnul);
+__LIBC __PORT_KOSONLY __ATTR_PURE char16_t *(__LIBCCALL c16chrnul)(char16_t const *__s, char16_t __wc) __C16_DECL(wcschrnul);
+__LIBC __PORT_KOSONLY __ATTR_PURE char32_t *(__LIBCCALL c32chrnul)(char32_t const *__s, char32_t __wc) __C32_DECL(wcschrnul);
 __LIBC __PORT_KOSONLY char16_t *(__LIBCCALL umempcpy)(char16_t *__restrict __s1, char16_t const *__restrict __s2, size_t __n) __ASMNAME("mempcpyw");
 __LIBC __PORT_KOSONLY char32_t *(__LIBCCALL Umempcpy)(char32_t *__restrict __s1, char32_t const *__restrict __s2, size_t __n) __ASMNAME("mempcpyl");
 #if __SIZEOF_LONG_LONG__ == 8
 __LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c16toll_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME("_wcstoi64_l");
 __LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c16toull_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME("_wcstoui64_l");
 #else
-__LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c16toll_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base, __locale_t __loc) __C16_FUNC(toll_l);
-__LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c16toull_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base, __locale_t __loc) __C16_FUNC(toull_l);
+__LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c16toll_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base, __locale_t __loc) __C16_DECL(wcstoll_l);
+__LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c16toull_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base, __locale_t __loc) __C16_DECL(wcstoull_l);
 #endif
-__LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c32toll_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base, __locale_t __loc) __C32_FUNC(toll_l);
-__LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c32toull_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base, __locale_t __loc) __C32_FUNC(toull_l);
+__LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c32toll_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base, __locale_t __loc) __C32_DECL(wcstoll_l);
+__LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c32toull_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base, __locale_t __loc) __C32_DECL(wcstoull_l);
 __LIBC __PORT_KOSONLY long int (__LIBCCALL c16tol_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME("_wcstol_l");
 __LIBC __PORT_KOSONLY long int (__LIBCCALL c32tol_l)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME("wcstol_l");
 __LIBC __PORT_KOSONLY unsigned long int (__LIBCCALL c16toul_l)(char16_t const *__restrict __nptr, char16_t **__restrict __endptr, int __base, __locale_t __loc) __ASMNAME("_wcstoul_l");
@@ -384,27 +385,27 @@ __LIBC __PORT_KOSONLY char32_t *(__LIBCCALL fgetc32s_unlocked)(char32_t *__restr
 #endif /* !__USE_KOS */
 __LIBC __PORT_KOSONLY int (__LIBCCALL fputc16s_unlocked)(char16_t const *__restrict __str, __FILE *__restrict __stream) __ASMNAME("_fputws_nolock");
 __LIBC __PORT_KOSONLY int (__LIBCCALL fputc32s_unlocked)(char32_t const *__restrict __str, __FILE *__restrict __stream) __ASMNAME("fputws_unlocked");
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16ftime_l)(char16_t *__restrict __buf, size_t __maxsize, char16_t const *__restrict __format, struct tm const *__restrict __tp, __locale_t __loc) __C16_FUNC(ftime_l);
-__LIBC __PORT_KOSONLY size_t (__LIBCCALL c32ftime_l)(char32_t *__restrict __buf, size_t __maxsize, char32_t const *__restrict __format, struct tm const *__restrict __tp, __locale_t __loc) __C32_FUNC(ftime_l);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c16ftime_l)(char16_t *__restrict __buf, size_t __maxsize, char16_t const *__restrict __format, struct tm const *__restrict __tp, __locale_t __loc) __C16_DECL(wcsftime_l);
+__LIBC __PORT_KOSONLY size_t (__LIBCCALL c32ftime_l)(char32_t *__restrict __buf, size_t __maxsize, char32_t const *__restrict __format, struct tm const *__restrict __tp, __locale_t __loc) __C32_DECL(wcsftime_l);
 #endif /* __USE_GNU */
 
 #ifdef __USE_KOS
 #if defined(__cplusplus) && !defined(__NO_ASMNAME)
 extern "C++" {
-__LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16end)(char16_t *__restrict __s) __C16_FUNC(end);
-__LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32end)(char32_t *__restrict __s) __C32_FUNC(end);
-__LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16nend)(char16_t *__restrict __s, size_t __n) __C16_FUNC(nend);
-__LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32nend)(char32_t *__restrict __s, size_t __n) __C32_FUNC(nend);
-__LIBC __PORT_KOSONLY char16_t const *(__LIBCCALL c16end)(char16_t const *__restrict __s) __C16_FUNC(end);
-__LIBC __PORT_KOSONLY char32_t const *(__LIBCCALL c32end)(char32_t const *__restrict __s) __C32_FUNC(end);
-__LIBC __PORT_KOSONLY char16_t const *(__LIBCCALL c16nend)(char16_t const *__restrict __s, size_t __n) __C16_FUNC(nend);
-__LIBC __PORT_KOSONLY char32_t const *(__LIBCCALL c32nend)(char32_t const *__restrict __s, size_t __n) __C32_FUNC(nend);
+__LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16end)(char16_t *__restrict __s) __C16_DECL(wcsend);
+__LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32end)(char32_t *__restrict __s) __C32_DECL(wcsend);
+__LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16nend)(char16_t *__restrict __s, size_t __n) __C16_DECL(wcsnend);
+__LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32nend)(char32_t *__restrict __s, size_t __n) __C32_DECL(wcsnend);
+__LIBC __PORT_KOSONLY char16_t const *(__LIBCCALL c16end)(char16_t const *__restrict __s) __C16_DECL(wcsend);
+__LIBC __PORT_KOSONLY char32_t const *(__LIBCCALL c32end)(char32_t const *__restrict __s) __C32_DECL(wcsend);
+__LIBC __PORT_KOSONLY char16_t const *(__LIBCCALL c16nend)(char16_t const *__restrict __s, size_t __n) __C16_DECL(wcsnend);
+__LIBC __PORT_KOSONLY char32_t const *(__LIBCCALL c32nend)(char32_t const *__restrict __s, size_t __n) __C32_DECL(wcsnend);
 }
 #else
-__LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16end)(char16_t const *__restrict __s) __C16_FUNC(end);
-__LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32end)(char32_t const *__restrict __s) __C32_FUNC(end);
-__LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16nend)(char16_t const *__restrict __s, size_t __n) __C16_FUNC(nend);
-__LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32nend)(char32_t const *__restrict __s, size_t __n) __C32_FUNC(nend);
+__LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16end)(char16_t const *__restrict __s) __C16_DECL(wcsend);
+__LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32end)(char32_t const *__restrict __s) __C32_DECL(wcsend);
+__LIBC __PORT_KOSONLY char16_t *(__LIBCCALL c16nend)(char16_t const *__restrict __s, size_t __n) __C16_DECL(wcsnend);
+__LIBC __PORT_KOSONLY char32_t *(__LIBCCALL c32nend)(char32_t const *__restrict __s, size_t __n) __C32_DECL(wcsnend);
 #endif
 #endif /* __USE_KOS */
 

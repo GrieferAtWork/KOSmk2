@@ -23,7 +23,6 @@
 #include <hybrid/limits.h>
 #include <hybrid/typecore.h>
 #include <hybrid/types.h>
-#include <kos/ksym.h>
 
 DECL_BEGIN
 

@@ -64,18 +64,19 @@
 #undef __USE_REENTRANT
 #undef __USE_FORTIFY_LEVEL
 #undef __KERNEL_STRICT_NAMES
-#undef __USE_KOS         /* '#ifdef _KOS_SOURCE'     Additions & changes added by KOS */
+
+#undef __USE_KOS         /* '#ifdef _KOS_SOURCE'     Additions added & Changes made by KOS. */
 #undef __USE_KXS         /* '#if _KOS_SOURCE >= 2'   Minor extended functionality that is likely to collide with existing programs. */
 #undef __USE_UTF         /* '#ifdef _UTF_SOURCE'     Enable additional string functions that accept char16_t and char32_t. (Referred to as 'c16/u' and 'c32/U') */
 #undef __USE_DOS         /* '#ifdef _DOS_SOURCE'     Functions usually only found in DOS: spawn, strlwr, etc. */
 #undef __USE_OLD_DOS     /* '#if _DOS_SOURCE >= 2'   Make some old, long deprecated DOS APIs (namely in <dos.h>) available. */
-#undef __USE_DOSFS       /* '#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). */
-#undef __USE_DOS_SLIB    /* '#if _DOS_SOURCE && __STDC_WANT_SECURE_LIB__' Enable prototypes for the so-called ~secure~ DOS library. (It's just meant to do some additional checks on arguments and such...) */
-#undef __USE_TIME64      /* '#ifdef _TIME64_SOURCE'  Provide 64-bit time functions (e.g.: 'time64()'). */
-#undef __USE_TIME_BITS64 /* '#if _TIME_T_BITS == 64' Use a 64-bit interger for 'time_t'. */
-#undef __USE_DEBUG       /* '#ifdef _DEBUG_SOURCE'   Enable debug function prototypes, either as real debug functions ('_DEBUG_SOURCE' defined as non-zero), or as stubs/aliases for non-debug version ('_DEBUG_SOURCE' defined as zero) */
-#undef __USE_DEBUG_HOOK  /* '#ifndef NDEBUG'         Implies '_DEBUG_SOURCE=1', redirecting functions such as 'malloc()' to their debug counterparts. */
-#undef __USE_PORTABLE    /* '#ifdef _PORT_SOURCE'    Mark all non-portable functions as deprecated (So-long as they can't be emulated when linking against any supported LIBC). */
+#undef __USE_DOSFS       /* '#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). - Only when option when linking against __CRT_KOS. */
+#undef __USE_DOS_SLIB    /* '#if _DOS_SOURCE && __STDC_WANT_SECURE_LIB__' Enable prototypes for the so-called ~secure~ DOS library. (They're really just functions that perform additional checks on arguments and such...) */
+#undef __USE_TIME64      /* '#ifdef _TIME64_SOURCE'  Provide 64-bit time functions (e.g.: 'time64()'). - A real implementation of this either requires __CRT_DOS or __CRT_KOS. - __CRT_GLC prototypes are emulated and truncate/zero-extend time arguments. */
+#undef __USE_TIME_BITS64 /* '#if _TIME_T_BITS == 64' Use a 64-bit interger for 'time_t' and replace all functions taking it as argument with 64-bit variations. */
+#undef __USE_DEBUG       /* '#ifdef _DEBUG_SOURCE'   Enable debug function prototypes, either as real debug functions ('_DEBUG_SOURCE' defined as non-zero and '__CRT_KOS' is present), or as stubs/aliases for non-debug version ('_DEBUG_SOURCE' defined as zero or '__CRT_KOS' isn't present) */
+#undef __USE_DEBUG_HOOK  /* '#ifndef NDEBUG'         Redirect functions such as 'malloc()' to their debug counterparts (Implies '_DEBUG_SOURCE=1'). */
+#undef __USE_PORTABLE    /* '#ifdef _PORT_SOURCE'    Mark all non-portable functions as deprecated (So-long as they can't be emulated when linking against any supported LIBC in stand-alone mode). */
 
 /* '#ifdef __DOS_COMPAT__' Even if CRT-GLC may be available, still emulate extended libc functions using functions also provided by DOS.
  *                         NOTE: Automatically defined when CRT-GLC isn't available, but CRT-DOS is. */
@@ -277,6 +278,15 @@
 # define __USE_REENTRANT 1
 #endif
 
+/* Try to enable 64-bit time by default (future-proofing) */
+#if defined(__USE_DOS) || /* DOS already made this change. */ \
+  (!defined(__CRT_GLC) && defined(__CRT_DOS))
+#   define __USE_TIME_BITS64 1
+#elif !defined(_NO_EXPERIMENTAL_SOURCE) && \
+      (defined(__CRT_KOS) || defined(__CRT_DOS))
+#   define __USE_TIME_BITS64 1
+#endif
+
 
 /* 64-bit time_t extensions for KOS
  * (By the time of this writing, but I'm guessing by 2038 this'll be
@@ -284,23 +294,18 @@
 #ifdef _TIME64_SOURCE
 #   define __USE_TIME64 1
 #endif
-#if defined(_TIME_T_BITS) && _TIME_T_BITS == 64
+#if defined(_TIME_T_BITS) && (_TIME_T_BITS+0) >= 64
 #   define __USE_TIME_BITS64 1
-#elif (!defined(__CRT_KOS) && defined(__CRT_DOS)) && \
-       !defined(_USE_32BIT_TIME_T)
-#   define __USE_TIME_BITS64 1
+#elif defined(_TIME_T_BITS) && (_TIME_T_BITS-10) != -10 && (_TIME_T_BITS+0) < 64
+#   undef __USE_TIME_BITS64
+#elif defined(_USE_32BIT_TIME_T)
+#   undef __USE_TIME_BITS64
 #endif
 
 #undef _USE_32BIT_TIME_T
 #ifndef __USE_TIME_BITS64
 #define _USE_32BIT_TIME_T 1
 #endif
-
-/* Try to enable 64-bit time by default (future-proofing) */
-//#if !defined(_NO_EXPERIMENTAL_SOURCE)
-//# undef __USE_TIME_BITS64
-//# define __USE_TIME_BITS64 1
-//#endif
 
 #ifdef _KOS_SOURCE
 #   define __USE_KOS 1
@@ -312,7 +317,8 @@
 #endif
 #endif
 
-/* Enable additional utf16/32 functions in system headers. */
+/* Enable additional utf16/32 functions in system headers.
+ * NOTE: Most functions defined by this extension require __CRT_KOS to be available. */
 #ifdef _UTF_SOURCE
 #   undef __USE_UTF
 #   define __USE_UTF 1
@@ -561,17 +567,42 @@
 #ifdef __PE__
 #   define __C16_DECL(x)     __ASMNAME(#x)
 #   define __C32_DECL(x)     __ASMNAME(".kos." #x)
-#   define __C16_FUNC(x)     __ASMNAME("wcs" #x)
-#   define __C32_FUNC(x)     __ASMNAME(".kos.wcs" #x)
 #   define __C16_FUNC_ALT(x) __ASMNAME("_wcs" #x)
 #   define __C32_FUNC_ALT(x) __ASMNAME(".kos.wcs" #x)
+#   define __REDIRECT_C16(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
+#   define __REDIRECT_C16_ALT(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,_##asmname,args)
+#ifndef __NO_ASMNAME
+#   define __REDIRECT_C32(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_C32_ALT(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#endif
 #else
 #   define __C16_DECL(x)     __ASMNAME(".dos." #x)
 #   define __C32_DECL(x)     __ASMNAME(#x)
-#   define __C16_FUNC(x)     __ASMNAME(".dos.wcs" #x)
-#   define __C32_FUNC(x)     __ASMNAME("wcs" #x)
 #   define __C16_FUNC_ALT(x) __ASMNAME(".dos._wcs" #x)
 #   define __C32_FUNC_ALT(x) __ASMNAME("wcs" #x)
+#   define __REDIRECT_C32(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
+#   define __REDIRECT_C32_ALT(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
+#ifndef __NO_ASMNAME
+#   define __REDIRECT_C16(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,__PORT_DOSONLY attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_C16_ALT(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,__PORT_DOSONLY attr,Treturn,cc,name,param,.dos._##asmname,args)
+#endif
+#endif
+
+#ifndef __REDIRECT_C16
+#   define __REDIRECT_C16     __IGNORE_REDIRECT
+#   define __REDIRECT_C16_ALT __IGNORE_REDIRECT_ALT
+#endif
+#ifndef __REDIRECT_C32
+#   define __REDIRECT_C32     __IGNORE_REDIRECT
+#   define __REDIRECT_C32_ALT __IGNORE_REDIRECT_ALT
 #endif
 
 
@@ -769,19 +800,11 @@
 
 /* Strictly link against the KOS version of a given function. */
 #ifdef __PE__
-#   define __KOS_FUNC(x)          __ASMNAME(".kos." #x)
-#   define __KOS_FUNC_(x)         __ASMNAME(".kos." #x)
 #   define __PE_ASMNAME(x)        __ASMNAME(x)
 #   define __KOS_ASMNAME(x)       /* nothing */
-#   define __PE_FUNC(x)           /* nothing */
-#   define __PE_FUNC_(x)          __ASMNAME(#x)
 #else
-#   define __KOS_FUNC(x)          /* nothing */
-#   define __KOS_FUNC_(x)         __ASMNAME(#x)
 #   define __PE_ASMNAME(x)        /* nothing */
 #   define __KOS_ASMNAME(x)       __ASMNAME(x)
-#   define __PE_FUNC(x)           __ASMNAME(".dos." #x)
-#   define __PE_FUNC_(x)          __ASMNAME(".dos." #x)
 #endif
 
 #ifdef __DOS_COMPAT__

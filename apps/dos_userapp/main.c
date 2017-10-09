@@ -18,8 +18,8 @@
  */
 
 /* This source acts as a test for using KOS's system headers to link against DOS directly.
- * >> Essentially, here we're testing using KOS's headers as a drop-in replacement for
- *    the cancer that are the original DOS headers.
+ * >> Essentially, here we're testing using KOS's headers as a drop-in
+ *    replacement for the ~joy~ that the original DOS headers are.
  * Yes. This application, when linked against KOS's system headers and compiled
  * using something like msvc will produce a regular old exe that only depends on
  * 'msvcrtXXX.dll', thanks to '__DOS_COMPAT__' mode, which is automatically enabled
@@ -47,6 +47,7 @@
 #include <string.h>
 #include <alloca.h>
 #include <time.h>
+#include <uchar.h>
 #include <utime.h>
 #include <sys/stat.h>
 
@@ -67,7 +68,6 @@ int main(int argc, char **argv) {
   buf.st_atime64;
  }
  closedir(d);
-
 
  ssize_t n;
  char buf[16];
