@@ -219,7 +219,9 @@ enum __priority_which {
 
 #ifndef __KERNEL__
 #ifdef __USE_GNU
-__LIBC int (__LIBCCALL prlimit)(__pid_t __pid, enum __rlimit_resource __resource, struct rlimit const *__new_limit, struct rlimit *__old_limit) __FS_FUNC(prlimit);
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,prlimit,
+                  (__pid_t __pid, enum __rlimit_resource __resource, struct rlimit const *__new_limit, struct rlimit *__old_limit),
+                   prlimit,(__pid,__resource,__new_limit,__old_limit))
 #ifdef __USE_LARGEFILE64
 __LIBC int (__LIBCCALL prlimit64)(__pid_t __pid, enum __rlimit_resource __resource, struct rlimit64 const *__new_limit, struct rlimit64 *__old_limit);
 #endif /* __USE_LARGEFILE64 */

@@ -606,47 +606,58 @@ INTERN int LIBCCALL libc_getrusage(__rusage_who_t who, struct rusage *usage) { l
 
 
 LOCAL void LIBCCALL
-glibc_load_stat_buffer(struct glibc_stat *__restrict dst,
-                       struct stat64 const *__restrict src) {
- dst->st_dev = (glibc_dev_t)src->st_dev;
-#ifdef __x86_64__
- dst->st_ino   = (glibc_ino_t)src->st_ino64;
-#else
- dst->st_ino32 = src->st_ino32;
- dst->st_ino64 = src->st_ino64;
-#endif
- dst->st_nlink   = (glibc_nlink_t)src->st_nlink;
- dst->st_mode    = (glibc_mode_t)src->st_mode;
- dst->st_uid     = (glibc_uid_t)src->st_uid;
- dst->st_gid     = (glibc_gid_t)src->st_gid;
- dst->st_rdev    = (glibc_dev_t)src->st_rdev;
- dst->st_size    = (glibc_off64_t)src->st_size;
- dst->st_blksize = (glibc_blksize_t)src->st_blksize;
- dst->st_blocks  = (glibc_blkcnt64_t)src->st_blocks;
+glibc_filstat(struct __glc_stat *__restrict dst,
+              struct stat64 const *__restrict src) {
+ dst->st_dev     = src->st_dev;
+ dst->st_ino     = src->st_ino32;
+ dst->st_nlink   = src->st_nlink;
+ dst->st_mode    = src->st_mode;
+ dst->st_uid     = src->st_uid;
+ dst->st_gid     = src->st_gid;
+ dst->st_rdev    = src->st_rdev;
+ dst->st_size    = src->st_size32;
+ dst->st_blksize = src->st_blksize;
+ dst->st_blocks  = src->st_blocks;
+ dst->st_atim    = src->st_atim32;
+ dst->st_mtim    = src->st_mtim32;
+ dst->st_ctim    = src->st_ctim32;
+}
+LOCAL void LIBCCALL
+glibc_filstat64(struct __glc_stat64 *__restrict dst,
+                struct stat64 const *__restrict src) {
+ dst->st_dev     = src->st_dev;
+ dst->__st_ino32 = src->st_ino32;
+ dst->st_ino     = src->st_ino64;
+ dst->st_nlink   = src->st_nlink;
+ dst->st_mode    = src->st_mode;
+ dst->st_uid     = src->st_uid;
+ dst->st_gid     = src->st_gid;
+ dst->st_rdev    = src->st_rdev;
+ dst->st_size    = src->st_size64;
+ dst->st_blksize = src->st_blksize;
+ dst->st_blocks  = src->st_blocks;
  dst->st_atim    = src->st_atim32;
  dst->st_mtim    = src->st_mtim32;
  dst->st_ctim    = src->st_ctim32;
 }
 
-INTERN int LIBCCALL libc_glibc_fstat(int fd, struct glibc_stat *statbuf) {
- struct stat64 buf; int result;
- result = libc_fstat64(fd,&buf);
- if (!result) glibc_load_stat_buffer(statbuf,&buf);
- return result;
-}
-INTERN int LIBCCALL libc_glibc_fstatat(int fd, char const *filename, struct glibc_stat *statbuf, int flags) {
- struct stat64 buf; int result;
- result = libc_fstatat64(fd,filename,&buf,flags);
- if (!result) glibc_load_stat_buffer(statbuf,&buf);
- return result;
-}
-INTERN int LIBCCALL libc_glibc_stat(char const *path, struct glibc_stat *statbuf) { return libc_glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_FOLLOW); }
-INTERN int LIBCCALL libc_glibc_lstat(char const *path, struct glibc_stat *statbuf) { return libc_glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_NOFOLLOW); }
+INTERN int LIBCCALL libc_glibc_fstat(int fd, struct __glc_stat *statbuf) { struct stat64 buf; int result; result = libc_fstat64(fd,&buf); if (!result) glibc_filstat(statbuf,&buf); return result; }
+INTERN int LIBCCALL libc_glibc_fstat64(int fd, struct __glc_stat64 *statbuf) { struct stat64 buf; int result; result = libc_fstat64(fd,&buf); if (!result) glibc_filstat64(statbuf,&buf); return result; }
+INTERN int LIBCCALL libc_glibc_fstatat(int fd, char const *filename, struct __glc_stat *statbuf, int flags) { struct stat64 buf; int result; result = libc_fstatat64(fd,filename,&buf,flags); if (!result) glibc_filstat(statbuf,&buf); return result; }
+INTERN int LIBCCALL libc_glibc_fstatat64(int fd, char const *filename, struct __glc_stat64 *statbuf, int flags) { struct stat64 buf; int result; result = libc_fstatat64(fd,filename,&buf,flags); if (!result) glibc_filstat64(statbuf,&buf); return result; }
+INTERN int LIBCCALL libc_glibc_stat(char const *path, struct __glc_stat *statbuf) { return libc_glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_FOLLOW); }
+INTERN int LIBCCALL libc_glibc_stat64(char const *path, struct __glc_stat64 *statbuf) { return libc_glibc_fstatat64(AT_FDCWD,path,statbuf,AT_SYMLINK_FOLLOW); }
+INTERN int LIBCCALL libc_glibc_lstat(char const *path, struct __glc_stat *statbuf) { return libc_glibc_fstatat(AT_FDCWD,path,statbuf,AT_SYMLINK_NOFOLLOW); }
+INTERN int LIBCCALL libc_glibc_lstat64(char const *path, struct __glc_stat64 *statbuf) { return libc_glibc_fstatat64(AT_FDCWD,path,statbuf,AT_SYMLINK_NOFOLLOW); }
 #define VERCHK { if (ver != 0) { SET_ERRNO(-EINVAL); return -1; } }
-INTERN int LIBCCALL libc___fxstat(int ver, int fd, struct glibc_stat *statbuf) { VERCHK return libc_glibc_fstat(fd,statbuf); }
-INTERN int LIBCCALL libc___xstat(int ver, char const *filename, struct glibc_stat *statbuf) { VERCHK return libc_glibc_stat(filename,statbuf); }
-INTERN int LIBCCALL libc___lxstat(int ver, char const *filename, struct glibc_stat *statbuf) { VERCHK return libc_glibc_lstat(filename,statbuf); }
-INTERN int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struct glibc_stat *statbuf, int flags) { VERCHK return libc_glibc_fstatat(fd,filename,statbuf,flags); }
+INTERN int LIBCCALL libc___fxstat(int ver, int fd, struct __glc_stat *statbuf) { VERCHK return libc_glibc_fstat(fd,statbuf); }
+INTERN int LIBCCALL libc___xstat(int ver, char const *filename, struct __glc_stat *statbuf) { VERCHK return libc_glibc_stat(filename,statbuf); }
+INTERN int LIBCCALL libc___lxstat(int ver, char const *filename, struct __glc_stat *statbuf) { VERCHK return libc_glibc_lstat(filename,statbuf); }
+INTERN int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struct __glc_stat *statbuf, int flags) { VERCHK return libc_glibc_fstatat(fd,filename,statbuf,flags); }
+INTERN int LIBCCALL libc___fxstat64(int ver, int fd, struct __glc_stat64 *statbuf) { VERCHK return libc_glibc_fstat64(fd,statbuf); }
+INTERN int LIBCCALL libc___xstat64(int ver, char const *filename, struct __glc_stat64 *statbuf) { VERCHK return libc_glibc_stat64(filename,statbuf); }
+INTERN int LIBCCALL libc___lxstat64(int ver, char const *filename, struct __glc_stat64 *statbuf) { VERCHK return libc_glibc_lstat64(filename,statbuf); }
+INTERN int LIBCCALL libc___fxstatat64(int ver, int fd, char const *filename, struct __glc_stat64 *statbuf, int flags) { VERCHK return libc_glibc_fstatat64(fd,filename,statbuf,flags); }
 #undef VERCHK
 
 
@@ -935,14 +946,27 @@ DEFINE_PUBLIC_ALIAS(setpriority,libc_setpriority);
 DEFINE_PUBLIC_ALIAS(prlimit,libc_prlimit);
 DEFINE_PUBLIC_ALIAS(prlimit64,libc_prlimit64);
 DEFINE_PUBLIC_ALIAS(getrusage,libc_getrusage);
-DEFINE_PUBLIC_ALIAS(__fxstat,libc___fxstat);
-DEFINE_PUBLIC_ALIAS(__xstat,libc___xstat);
-DEFINE_PUBLIC_ALIAS(__lxstat,libc___lxstat);
-DEFINE_PUBLIC_ALIAS(__fxstatat,libc___fxstatat);
 DEFINE_PUBLIC_ALIAS(uname,libc_uname);
 DEFINE_PUBLIC_ALIAS(brk,libc_brk);
 DEFINE_PUBLIC_ALIAS(sbrk,libc_sbrk);
 
+/* Export GLIBC stat functions for binary compatibility. */
+DEFINE_PUBLIC_ALIAS(stat,libc_glibc_stat);
+DEFINE_PUBLIC_ALIAS(lstat,libc_glibc_lstat);
+DEFINE_PUBLIC_ALIAS(fstat,libc_glibc_fstat);
+DEFINE_PUBLIC_ALIAS(fstatat,libc_glibc_fstatat);
+DEFINE_PUBLIC_ALIAS(stat64,libc_glibc_stat64);
+DEFINE_PUBLIC_ALIAS(lstat64,libc_glibc_lstat64);
+DEFINE_PUBLIC_ALIAS(fstat64,libc_glibc_fstat64);
+DEFINE_PUBLIC_ALIAS(fstatat64,libc_glibc_fstatat64);
+DEFINE_PUBLIC_ALIAS(__fxstat,libc___fxstat);
+DEFINE_PUBLIC_ALIAS(__xstat,libc___xstat);
+DEFINE_PUBLIC_ALIAS(__lxstat,libc___lxstat);
+DEFINE_PUBLIC_ALIAS(__fxstatat,libc___fxstatat);
+DEFINE_PUBLIC_ALIAS(__fxstat64,libc___fxstat64);
+DEFINE_PUBLIC_ALIAS(__xstat64,libc___xstat64);
+DEFINE_PUBLIC_ALIAS(__lxstat64,libc___lxstat64);
+DEFINE_PUBLIC_ALIAS(__fxstatat64,libc___fxstatat64);
 
 
 DEFINE_PUBLIC_ALIAS(kstat,libc_stat64);
@@ -950,21 +974,6 @@ DEFINE_PUBLIC_ALIAS(klstat,libc_lstat64);
 DEFINE_PUBLIC_ALIAS(kfstat,libc_fstat64);
 DEFINE_PUBLIC_ALIAS(kfstatat,libc_fstatat64);
 DEFINE_PUBLIC_ALIAS(__getpgid,libc_getpgid);
-
-/* GLIBC does the same trick where the 32-bit stat
- * buffer has binary compatibility with the 64-bit one! */
-DEFINE_PUBLIC_ALIAS(__fxstat64,libc___fxstat);
-DEFINE_PUBLIC_ALIAS(__xstat64,libc___xstat);
-DEFINE_PUBLIC_ALIAS(__lxstat64,libc___lxstat);
-DEFINE_PUBLIC_ALIAS(__fxstatat64,libc___fxstatat);
-DEFINE_PUBLIC_ALIAS(stat,libc_glibc_stat);
-DEFINE_PUBLIC_ALIAS(lstat,libc_glibc_lstat);
-DEFINE_PUBLIC_ALIAS(fstat,libc_glibc_fstat);
-DEFINE_PUBLIC_ALIAS(fstatat,libc_glibc_fstatat);
-DEFINE_PUBLIC_ALIAS(stat64,libc_glibc_stat);
-DEFINE_PUBLIC_ALIAS(lstat64,libc_glibc_lstat);
-DEFINE_PUBLIC_ALIAS(fstat64,libc_glibc_fstat);
-DEFINE_PUBLIC_ALIAS(fstatat64,libc_glibc_fstatat);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 DEFINE_PUBLIC_ALIAS(__threadid,libc_gettid);

@@ -23,6 +23,10 @@
 #include <features.h>
 #include <bits/types.h>
 
+#ifndef __CRT_GLC
+#error "<sys/mman.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
 #ifndef __off_t_defined
@@ -262,7 +266,10 @@ union{
 #define MAP_FAILED   ((void *)-1)
 
 #ifndef __KERNEL__
-__LIBC void *(__LIBCCALL mmap)(void *__addr, size_t __len, int __prot, int __flags, int __fd, __FS_TYPE(off) __offset) __FS_FUNC(mmap);
+#ifdef __CRT_GLC
+__REDIRECT_FS_FUNC(__LIBC,__WUNUSED,void *,__LIBCCALL,mmap,
+                  (void *__addr, size_t __len, int __prot, int __flags, int __fd, __FS_TYPE(off) __offset),
+                   mmap,(__addr,__len,__prot,__flags,__fd,__offset))
 __LIBC int (__LIBCCALL munmap)(void *__addr, size_t __len);
 __LIBC int (__LIBCCALL mprotect)(void *__addr, size_t __len, int __prot);
 __LIBC int (__LIBCCALL msync)(void *__addr, size_t __len, int __flags);
@@ -286,11 +293,12 @@ __LIBC int (__LIBCCALL posix_madvise)(void *__addr, size_t __len, int __advice);
 __LIBC void *(__ATTR_CDECL mremap)(void *__addr, size_t __old_len, size_t __new_len, int __flags, ...);
 __LIBC int (__LIBCCALL remap_file_pages)(void *__start, size_t __size, int __prot, size_t __pgoff, int __flags);
 #endif /* __USE_GNU */
+#endif /* __CRT_GLC */
 
-#ifdef __USE_KOS
-__LIBC void *(__LIBCCALL xmmap)(struct mmap_info const *__data) __ASMNAME("xmmap1");
-__LIBC ssize_t (__LIBCCALL xmunmap)(void *__addr, size_t __len, int __flags, void *__tag);
-#endif /* __USE_KOS */
+#if defined(__USE_KOS) && defined(__CRT_KOS)
+__REDIRECT(__LIBC,__PORT_KOSONLY_ALT(mmap),void *,__LIBCCALL,xmmap,(struct mmap_info const *__data),xmmap1,(__data))
+__LIBC __PORT_KOSONLY_ALT(munmap) ssize_t (__LIBCCALL xmunmap)(void *__addr, size_t __len, int __flags, void *__tag);
+#endif /* __USE_KOS && __CRT_KOS */
 
 #endif /* !__KERNEL__ */
 

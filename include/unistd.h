@@ -400,8 +400,8 @@ __LOCAL __WUNUSED ssize_t (__LIBCCALL pwrite64)(int __fd, void const *__buf, siz
 #endif /* __USE_LARGEFILE64 */
 #undef __DEFINE_PREADWRITE
 #else /* __DOS_COMPAT__ */
-__LIBC __WUNUSED ssize_t (__LIBCCALL pread)(int __fd, void *__buf, size_t __n_bytes, __FS_TYPE(off) __offset) __FS_FUNC(pread);
-__LIBC __WUNUSED ssize_t (__LIBCCALL pwrite)(int __fd, void const *__buf, size_t __n_bytes, __FS_TYPE(off) __offset) __FS_FUNC(pwrite);
+__REDIRECT_FS_FUNC(__LIBC,__WUNUSED,ssize_t,__LIBCCALL,pread,(int __fd, void *__buf, size_t __n_bytes, __FS_TYPE(off) __offset),pread,(__fd,__buf,__n_bytes,__offset))
+__REDIRECT_FS_FUNC(__LIBC,__WUNUSED,ssize_t,__LIBCCALL,pwrite,(int __fd, void const *__buf, size_t __n_bytes, __FS_TYPE(off) __offset),pwrite,(__fd,__buf,__n_bytes,__offset))
 #ifdef __USE_LARGEFILE64
 __LIBC __WUNUSED ssize_t (__LIBCCALL pread64)(int __fd, void *__buf, size_t __n_bytes, __off64_t __offset);
 __LIBC __WUNUSED ssize_t (__LIBCCALL pwrite64)(int __fd, void const *__buf, size_t __n_bytes, __off64_t __offset);
@@ -473,15 +473,22 @@ __LIBC __PORT_NODOS __pid_t (__LIBCCALL vfork)(void);
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
-__LIBC int (__LIBCCALL fchown)(int __fd, __uid_t __owner, __gid_t __group);
-__LIBC __NONNULL((1)) int (__LIBCCALL lchown)(char const *__file, __uid_t __owner, __gid_t __group) __UFS_FUNC(lchown);
-__LIBC int (__LIBCCALL fchdir)(int __fd);
-__LIBC __pid_t (__LIBCCALL getpgid)(__pid_t __pid);
-__LIBC __pid_t (__LIBCCALL getsid)(__pid_t __pid);
-__LIBC __NONNULL((1)) int (__LIBCCALL truncate)(char const *__file, __FS_TYPE(off) __length) __UFS_FUNCn(truncate);
+#ifdef __CRT_GLC
+__LIBC __PORT_NODOS int (__LIBCCALL fchown)(int __fd, __uid_t __owner, __gid_t __group);
+__REDIRECT_UFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,lchown,(char const *__file, __uid_t __owner, __gid_t __group),lchown,(__file,__owner,__group))
+__LIBC __PORT_NODOS int (__LIBCCALL fchdir)(int __fd);
+__LIBC __PORT_NODOS __pid_t (__LIBCCALL getpgid)(__pid_t __pid);
+__LIBC __PORT_NODOS __pid_t (__LIBCCALL getsid)(__pid_t __pid);
+__REDIRECT_UFS_FUNCn(__LIBC,__NONNULL((1)),int,__LIBCCALL,truncate,(char const *__file, __FS_TYPE(off) __length),truncate,(__file,__length))
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((1)) int (__LIBCCALL truncate64)(char const *__file, __off64_t __length) __UFS_FUNC(truncate64);
+__REDIRECT_UFS(__LIBC,__NONNULL((1)),int,__LIBCCALL,truncate64,(char const *__file, __off64_t __length),truncate64,(__file,__length))
 #endif /* __USE_LARGEFILE64 */
+#else /* __CRT_GLC */
+__LOCAL __NONNULL((1)) int (__LIBCCALL truncate)(char const *__file, __FS_TYPE(off) __length) { return 0; /* TODO: open()+ftruncate(); */ }
+#ifdef __USE_LARGEFILE64
+__LOCAL __NONNULL((1)) int (__LIBCCALL truncate64)(char const *__file, __off64_t __length) { return 0; /* TODO: open()+ftruncate64(); */ }
+#endif /* __USE_LARGEFILE64 */
+#endif /* !__CRT_GLC */
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
 
 #ifdef __USE_XOPEN2K8
@@ -600,9 +607,9 @@ __LIBC __PORT_NODOS int (__LIBCCALL ttyslot)(void);
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K)
-__LIBC __PORT_NODOS __NONNULL((1,2)) int (__LIBCCALL symlink)(char const *__from, char const *__to) __UFS_FUNC(symlink);
-__LIBC __PORT_NODOS __NONNULL((1,2)) ssize_t (__LIBCCALL readlink)(char const *__restrict __path, char *__restrict __buf, size_t __buflen) __UFS_FUNC(readlink);
-#endif
+__REDIRECT_UFS(__LIBC,__PORT_NODOS __NONNULL((1,2)),int,__LIBCCALL,symlink,(char const *__from, char const *__to),symlink,(__from,__to))
+__REDIRECT_UFS(__LIBC,__PORT_NODOS __NONNULL((1,2)),ssize_t,__LIBCCALL,readlink,(char const *__restrict __path, char *__restrict __buf, size_t __buflen),readlink,(__path,__buf,__buflen))
+#endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K */
 
 #if defined(__USE_REENTRANT) || defined(__USE_POSIX199506)
 __LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL getlogin_r)(char *__name, size_t __name_len);
@@ -619,9 +626,9 @@ __LIBC __PORT_NODOS int (__LIBCCALL sethostid)(long int __id);
 __LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL getdomainname)(char *__name, size_t __buflen);
 __LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL setdomainname)(char const *__name, size_t __len);
 __LIBC __PORT_NODOS int (__LIBCCALL vhangup)(void);
-__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL revoke)(char const *__file) __UFS_FUNC(revoke);
+__REDIRECT_UFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,revoke,(char const *__file),revoke,(__file))
 __LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL profil)(unsigned short int *__sample_buffer, size_t __size, size_t __offset, unsigned int __scale);
-__LIBC __PORT_NODOS int (__LIBCCALL acct)(char const *__name) __UFS_FUNC(acct);
+__REDIRECT_UFS(__LIBC,__PORT_NODOS,int,__LIBCCALL,acct,(char const *__name),acct,(__name))
 __LIBC __PORT_NODOS char *(__LIBCCALL getusershell)(void);
 __LIBC __PORT_NODOS void (__LIBCCALL endusershell)(void);
 __LIBC __PORT_NODOS void (__LIBCCALL setusershell)(void);
@@ -642,7 +649,7 @@ __LIBC __PORT_NODOS long int (__ATTR_CDECL syscall)(long int __sysno, ...);
 
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN) && !defined(__USE_XOPEN2K))
-__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL chroot)(char const *__path) __UFS_FUNC(chroot);
+__REDIRECT_UFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,chroot,(char const *__path),chroot,(__path))
 __LIBC __PORT_NODOS __NONNULL((1)) char *(__LIBCCALL getpass)(char const *__prompt);
 #endif
 #endif /* __CRT_GLC */

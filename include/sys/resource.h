@@ -23,12 +23,16 @@
 #include <bits/resource.h>
 #include <bits/types.h>
 
+#ifndef __CRT_GLC
+#error "<sys/resource.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
 #ifndef __id_t_defined
 #define __id_t_defined
 typedef __id_t id_t;
-#endif
+#endif /* !__id_t_defined */
 
 #if defined(__USE_GNU) && !defined(__cplusplus)
 typedef enum __rlimit_resource __rlimit_resource_t;
@@ -41,15 +45,15 @@ typedef int __priority_which_t;
 #endif
 
 #ifndef __KERNEL__
-__LIBC int (__LIBCCALL getrlimit)(__rlimit_resource_t __resource, struct rlimit *__rlimits) __FS_FUNC(getrlimit);
-__LIBC int (__LIBCCALL setrlimit)(__rlimit_resource_t __resource, struct rlimit const *__rlimits) __FS_FUNC(setrlimit);
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,getrlimit,(__rlimit_resource_t __resource, struct rlimit *__rlimits),getrlimit,(__resource,__rlimits))
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,setrlimit,(__rlimit_resource_t __resource, struct rlimit const *__rlimits),setrlimit,(__resource,__rlimits))
 __LIBC int (__LIBCCALL getrusage)(__rusage_who_t __who, struct rusage *__usage);
 __LIBC int (__LIBCCALL getpriority)(__priority_which_t __which, id_t __who);
 __LIBC int (__LIBCCALL setpriority)(__priority_which_t __which, id_t __who, int __prio);
 #ifdef __USE_LARGEFILE64
 __LIBC int (__LIBCCALL getrlimit64)(__rlimit_resource_t __resource, struct rlimit64 *__rlimits);
 __LIBC int (__LIBCCALL setrlimit64)(__rlimit_resource_t __resource, struct rlimit64 const *__rlimits);
-#endif
+#endif /* __USE_LARGEFILE64 */
 #endif /* !__KERNEL__ */
 
 __SYSDECL_END

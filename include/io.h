@@ -123,7 +123,7 @@ __LIBC __NONNULL((1)) char *(__LIBCCALL mktemp)(char *__template) __PE_FUNC_OLDP
 #endif /* !__mktemp_defined */
 #ifndef __umask_defined
 #define __umask_defined 1
-__LIBC int (__LIBCCALL umask)(int __mode) __PE_ASMNAME("_uname");
+__REDIRECT_PE_FUNC_OLDPEA(__LIBC,,__mode_t,__LIBCCALL,umask,(__mode_t __mode),umask,(__mode))
 #endif /* !__umask_defined */
 #ifndef __read_defined
 #define __read_defined 1
@@ -180,7 +180,7 @@ __LOCAL __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL _write)(int __fd, void const *
 
 __LIBC int (__ATTR_CDECL _open)(char const *__file, int __oflag, ...) __UFS_FUNC_OLDPEB(open); /* TODO: Use redirection. */
 __REDIRECT_PE_FUNC_OLDPEB(__LIBC,,int,__LIBCCALL,_setmode,(int __fd, int __mode),setmode,(__fd,__mode))
-__REDIRECT_PE_FUNC_OLDPEB(__LIBC,,int,__LIBCCALL,_umask,(int __mode),umask,(__mode))
+__REDIRECT_PE_FUNC_OLDPEB(__LIBC,,__mode_t,__LIBCCALL,_umask,(__mode_t __mode),umask,(__mode))
 __REDIRECT_PE_FUNC_OLDPEB(__LIBC,,int,__LIBCCALL,_isatty,(int __fd),isatty,(__fd))
 __REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_locking,(int __fd, int __lockmode, __LONG32_TYPE__ __numofbytes),lockf,(__fd,__lockmode,__numofbytes))
 

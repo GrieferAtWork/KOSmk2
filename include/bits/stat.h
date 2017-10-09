@@ -26,17 +26,25 @@
 
 __SYSDECL_BEGIN
 
-#if defined(__PE__) && defined(__USE_DOS)
-/* DOS-filesystem mode while hosting a PE binary.
- * >> Where, we must maintain binary compatibility with DOS. */
-
-/* Rename all the DOS stat-buffers below to their proper names. */
+#ifdef __DOS_COMPAT__
+/* DOS compatibility mode. */
 #define __dos_stat       stat
-#define __dos_stat32     _stat32
+#ifdef __USE_TIME_BITS64
 #define __dos_stat32i64  _stat32i64
-#define __dos_stat64i32  _stat64i32
+#define __dos_stat64     stat64
+#else /* __USE_TIME_BITS64 */
 #define __dos_stat64     _stat64
-#else /* __PE__ && __USE_DOS */
+#define __dos_stat32i64  stat64
+#endif /* !__USE_TIME_BITS64 */
+#define __dos_stat32     _stat32
+#define __dos_stat64i32  _stat64i32
+#elif defined(__GLC_COMPAT__)
+/* GLibc compatibility mode. */
+#define __glc_stat       stat
+#ifdef __USE_LARGEFILE64
+#define __glc_stat64     stat64
+#endif /* __USE_LARGEFILE64 */
+#else /* __DOS_COMPAT__ */
 
 #undef _STATBUF_ST_TIM
 #undef _STATBUF_ST_TIME
@@ -367,10 +375,70 @@ union{__time64_t      st_ctime; struct __timespec64 __st_ctim64;};
 };
 #endif /* !_STAT_DEFINED */
 #endif /* __USE_DOS */
-#endif /* !__PE__ || !__USE_DOS */
+#endif /* KOS... */
 
-#if defined(__USE_DOS) || defined(__BUILDING_LIBC)
-#if defined(__PE__) || defined(__BUILDING_LIBC)
+#if defined(__CRT_GLC) && \
+   (defined(__GLC_COMPAT__) || defined(__BUILDING_LIBC))
+struct __glc_stat {
+    /* +0  */__UINT64_TYPE__   st_dev;
+    /* +8  */__UINT32_TYPE__ __pad0;
+#ifdef __USE_FILE_OFFSET64
+    /* +12 */__UINT32_TYPE__ __st_ino32;
+#else
+    /* +12 */__UINT32_TYPE__   st_ino;
+#endif
+    /* +16 */__UINT32_TYPE__   st_mode;
+    /* +20 */__UINT32_TYPE__   st_nlink;
+    /* +24 */__UINT32_TYPE__   st_uid;
+    /* +28 */__UINT32_TYPE__   st_gid;
+    /* +32 */__UINT64_TYPE__   st_rdev;
+    /* +40 */__UINT32_TYPE__ __pad1;
+#ifdef __USE_FILE_OFFSET64
+    /* +44 */__INT64_TYPE__    st_size;
+    /* +52 */__INT32_TYPE__    st_blksize;
+    /* +56 */__INT64_TYPE__    st_blocks;
+    /* +64 */struct __timespec32 st_atim;
+    /* +72 */struct __timespec32 st_mtim;
+    /* +80 */struct __timespec32 st_ctim;
+    /* +88 */__UINT64_TYPE__   st_ino;
+#else /* __USE_FILE_OFFSET64 */
+    /* +44 */__INT32_TYPE__    st_size;
+    /* +48 */__INT32_TYPE__    st_blksize;
+    /* +52 */__INT32_TYPE__    st_blocks;
+    /* +56 */struct __timespec32 st_atim;
+    /* +64 */struct __timespec32 st_mtim;
+    /* +72 */struct __timespec32 st_ctim;
+    /* +80 */__UINT32_TYPE__ __pad2;
+    /* +84 */__UINT32_TYPE__ __pad3;
+#endif /* !__USE_FILE_OFFSET64 */
+};
+
+#ifdef __USE_LARGEFILE64
+struct __glc_stat64 {
+    /* +0  */__UINT64_TYPE__   st_dev;
+    /* +8  */__UINT32_TYPE__ __pad0;
+    /* +12 */__UINT32_TYPE__ __st_ino32;
+    /* +16 */__UINT32_TYPE__   st_mode;
+    /* +20 */__UINT32_TYPE__   st_nlink;
+    /* +24 */__UINT32_TYPE__   st_uid;
+    /* +28 */__UINT32_TYPE__   st_gid;
+    /* +32 */__UINT64_TYPE__   st_rdev;
+    /* +40 */__UINT32_TYPE__ __pad1;
+    /* +44 */__INT64_TYPE__    st_size;
+    /* +52 */__INT32_TYPE__    st_blksize;
+    /* +56 */__INT64_TYPE__    st_blocks;
+    /* +64 */struct __timespec32 st_atim;
+    /* +72 */struct __timespec32 st_mtim;
+    /* +80 */struct __timespec32 st_ctim;
+    /* +88 */__UINT64_TYPE__   st_ino;
+};
+#endif /* __USE_LARGEFILE64 */
+#endif /* GLC... */
+
+#if defined(__CRT_DOS) && \
+   (defined(__USE_DOS) || defined(__DOS_COMPAT__) || \
+    defined(__BUILDING_LIBC))
+#if defined(__DOS_COMPAT__) || defined(__BUILDING_LIBC)
 /* Define the binary layout of DOS's stat buffers. */
 struct __dos_stat {
  __dos_dev_t    st_dev;
@@ -381,11 +449,21 @@ struct __dos_stat {
  __int16_t      st_gid;
  __int16_t    __st_pad0;
  __dos_dev_t    st_rdev;
+#ifdef __USE_FILE_OFFSET64
+ __INT64_TYPE__ st_size;
+#elif defined(__USE_TIME_BITS64)
+ __int32_t    __st_pad1;
+union{ /* binary compatibility to 'stat64i32' and 'stat64'. */
  __dos_off_t    st_size;
+ __INT64_TYPE__ __st_pad2; };
+#else
+ __dos_off_t    st_size;
+#endif
  __TM_TYPE(time) st_atime;
  __TM_TYPE(time) st_mtime;
  __TM_TYPE(time) st_ctime;
 };
+
 struct __dos_stat32 {
  __dos_dev_t    st_dev;
  __dos_ino_t    st_ino;
@@ -428,7 +506,7 @@ struct __dos_stat64i32 {
  __int32_t    __st_pad1;
 union{
  __dos_off_t    st_size;
- __INT64_TYPE__ __st_pad; /* This is what DOS silently does to match the
+ __INT64_TYPE__ __st_pad2; /* This is what DOS silently does to match the
                            * binary layout of 'stat64i32' with 'stat64'. */
 };
  __time64_t     st_atime;
@@ -450,9 +528,11 @@ struct __dos_stat64 {
  __time64_t     st_mtime;
  __time64_t     st_ctime;
 };
-#endif /* __PE__ || __BUILDING_LIBC */
+#endif /* __DOS_COMPAT__ || __BUILDING_LIBC */
 
-#ifndef __BUILDING_LIBC
+#endif /* DOS... */
+
+#ifdef __USE_DOS
 /* Define alias macros. */
 #define __stat64    _stat64
 #ifdef __USE_TIME_BITS64
@@ -470,8 +550,6 @@ struct __dos_stat64 {
 #define _wstat      _wstat32
 #define _wstati64   _wstat32i64
 #endif /* !__USE_TIME_BITS64 */
-#endif /* !__BUILDING_LIBC */
-
 #endif /* __USE_DOS */
 
 __SYSDECL_END

@@ -48,6 +48,7 @@
 #include <alloca.h>
 #include <time.h>
 #include <utime.h>
+#include <sys/stat.h>
 
 DECL_BEGIN
 
@@ -59,7 +60,10 @@ int main(int argc, char **argv) {
  struct dirent64 *ent;
 
  while ((ent = readdir64(d)) != NULL) {
+  struct _stat buf;
   printf("ent: %s\n",ent->d_name);
+  if (!_stat(ent->d_name,&buf))
+      printf("mode = %o\n",buf.st_mode);
  }
  closedir(d);
 

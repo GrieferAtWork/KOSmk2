@@ -190,7 +190,12 @@ typedef __UINT32_TYPE__         __fsuint32_t;
 typedef __UINT32_TYPE__         __gid_t;
 typedef __UINT32_TYPE__         __id_t;
 typedef __UINT32_TYPE__         __ino32_t;
+#ifdef __USE_DOS
+/* Simple enough: DOS defines this one as signed, rather than unsigned. */
+typedef __INT32_TYPE__          __mode_t;
+#else /* __DOS_COMPAT__ */
 typedef __UINT32_TYPE__         __mode_t;
+#endif /* !__DOS_COMPAT__ */
 typedef __UINT32_TYPE__         __nlink_t;
 typedef __UINT32_TYPE__         __pos32_t;
 typedef __UINT32_TYPE__         __rlim32_t;
@@ -536,8 +541,7 @@ __SYSDECL_END
  *   - __FS_TYPE(off):       The effective user-space type.
  *                           This is the implicitly-defined type that headers will
  *                           link c-functions using the type as argument again.
- *   - __FS_FUNC:            Same as '__FS_TYPE', but for assembly symbols linked against c-functions (lseek vs. lseek64)
- *   - __FS_FUNC(lseek):     Same as '__FS_TYPE(off)', but for assembly symbols linked against c-functions (lseek vs. lseek64)
+ *   - __REDIRECTFS_FUNC:    Same as '__FS_TYPE', but for assembly symbols linked against c-functions (lseek vs. lseek64)
  *   - off_t:                An alias for '__FS_TYPE(off)' defined by various headers.
  *   - off64_t:              An alias for '__off64_t', defined 
  *   - __ASMNAME("lseek"):   A libc function using __off32_t as argument.

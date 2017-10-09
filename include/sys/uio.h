@@ -24,20 +24,24 @@
 #include <sys/types.h>
 #include <bits/uio.h>
 
+#ifndef __CRT_GLC
+#error "<sys/uio.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
 #ifdef __USE_GNU
-__LIBC ssize_t (__LIBCCALL process_vm_readv)(__pid_t __pid, const struct iovec *__lvec, unsigned long int __liovcnt, const struct iovec *__rvec, unsigned long int __riovcnt, unsigned long int __flags);
-__LIBC ssize_t (__LIBCCALL process_vm_writev)(__pid_t __pid, const struct iovec *__lvec, unsigned long int __liovcnt, const struct iovec *__rvec, unsigned long int __riovcnt, unsigned long int __flags);
-#endif
-__LIBC __WUNUSED ssize_t (__LIBCCALL readv)(int __fd, const struct iovec *__iovec, int __count);
-__LIBC __WUNUSED ssize_t (__LIBCCALL writev)(int __fd, const struct iovec *__iovec, int __count);
+__LIBC ssize_t (__LIBCCALL process_vm_readv)(__pid_t __pid, struct iovec const *__lvec, unsigned long int __liovcnt, struct iovec const *__rvec, unsigned long int __riovcnt, unsigned long int __flags);
+__LIBC ssize_t (__LIBCCALL process_vm_writev)(__pid_t __pid, struct iovec const *__lvec, unsigned long int __liovcnt, struct iovec const *__rvec, unsigned long int __riovcnt, unsigned long int __flags);
+#endif /* __USE_GNU */
+__LIBC __WUNUSED ssize_t (__LIBCCALL readv)(int __fd, struct iovec const *__iovec, int __count);
+__LIBC __WUNUSED ssize_t (__LIBCCALL writev)(int __fd, struct iovec const *__iovec, int __count);
 #ifdef __USE_MISC
-__LIBC __WUNUSED ssize_t (__LIBCCALL preadv)(int __fd, const struct iovec *__iovec, int __count, __FS_TYPE(off) __offset) __FS_FUNC(preadv);
-__LIBC __WUNUSED ssize_t (__LIBCCALL pwritev)(int __fd, const struct iovec *__iovec, int __count, __FS_TYPE(off) __offset) __FS_FUNC(preadv);
+__REDIRECT_FS_FUNC(__LIBC,__WUNUSED,ssize_t,__LIBCCALL,preadv,(int __fd, struct iovec const *__iovec, int __count, __FS_TYPE(off) __offset),preadv,(__fd,__iovec,__count,__offset))
+__REDIRECT_FS_FUNC(__LIBC,__WUNUSED,ssize_t,__LIBCCALL,pwritev,(int __fd, struct iovec const *__iovec, int __count, __FS_TYPE(off) __offset),preadv,(__fd,__iovec,__count,__offset))
 #ifdef __USE_LARGEFILE64
-__LIBC __WUNUSED ssize_t (__LIBCCALL preadv64)(int __fd, const struct iovec *__iovec, int __count, __off64_t __offset);
-__LIBC __WUNUSED ssize_t (__LIBCCALL pwritev64)(int __fd, const struct iovec *__iovec, int __count, __off64_t __offset);
+__LIBC __WUNUSED ssize_t (__LIBCCALL preadv64)(int __fd, struct iovec const *__iovec, int __count, __off64_t __offset);
+__LIBC __WUNUSED ssize_t (__LIBCCALL pwritev64)(int __fd, struct iovec const *__iovec, int __count, __off64_t __offset);
 #endif /* __USE_LARGEFILE64 */
 #endif /* !__USE_MISC */
 

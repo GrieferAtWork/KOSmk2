@@ -39,12 +39,6 @@ struct _diskfree_t {
 
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,char *,__LIBCCALL,_getcwd,(char *__buf, size_t __size),getcwd,(__buf,__size))
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1)),int,__LIBCCALL,_chdir,(char const *__path),chdir,(__path));
-#ifdef __USE_DOSFS
-__LIBC __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path);
-#else /* __USE_DOSFS */
-__REDIRECT_UFS_(__LIBC,__NONNULL((1)),int,__LIBCCALL,__kos_mkdir,(char const *__path, int __mode),mkdir,(__path,__mode))
-__LOCAL __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path) { return __kos_mkdir(__path,0755); }
-#endif /* !__USE_DOSFS */
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1)),int,__LIBCCALL,_rmdir,(char const *__path),rmdir,(__path));
 
 #ifdef __CRT_DOS
@@ -72,19 +66,26 @@ __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,char *,__LIBCCALL,getcwd,(char *__buf, size_t
 #define __chdir_defined 1
 __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,chdir,(char const *__path),chdir,(__path));
 #endif /* !__chdir_defined */
+#ifndef __rmdir_defined
+#define __rmdir_defined 1
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,rmdir,(char const *__path),rmdir,(__path))
+#endif /* !__rmdir_defined */
+
+#if defined(__CRT_DOS) && defined(__USE_DOSFS)
+__LIBC __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path);
+#else /* __CRT_DOS && __USE_DOSFS */
+__REDIRECT_UFS_(__LIBC,__NONNULL((1)),int,__LIBCCALL,__kos_mkdir,(char const *__path, int __mode),mkdir,(__path,__mode))
+__LOCAL __NONNULL((1)) int (__LIBCCALL _mkdir)(char const *__path) { return __kos_mkdir(__path,0755); }
+#endif /* !__CRT_DOS || !__USE_DOSFS */
+
 #ifndef __mkdir_defined
 #define __mkdir_defined 1
-#ifdef __USE_DOSFS
-/* NOTE: 'mkdir()' with 2 arguments is defined in <sys/stat.h> */
+#if defined(__CRT_DOS) && defined(__USE_DOSFS)
 __REDIRECT(__LIBC,__NONNULL((1)),int,__LIBCCALL,mkdir,(char const *__path),_mkdir,(__path))
 #else /* __USE_DOSFS */
 __LOCAL __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) { return __kos_mkdir(__path,0755); }
 #endif /* !__USE_DOSFS */
 #endif /* !__mkdir_defined */
-#ifndef __rmdir_defined
-#define __rmdir_defined 1
-__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,rmdir,(char const *__path),rmdir,(__path))
-#endif /* !__rmdir_defined */
 
 #ifdef __USE_DOS
 #ifdef __CRT_DOS

@@ -234,57 +234,24 @@ INTDEF int LIBCCALL libc_prlimit64(pid_t pid, enum __rlimit_resource resource, s
 INTDEF int LIBCCALL libc_getrusage(__rusage_who_t who, struct rusage *usage);
 
 /* Binary compatibility with glibc's stat() buffer. */
-typedef u64             glibc_dev_t;
-typedef syscall_ulong_t glibc_ino_t;
-typedef u64             glibc_ino64_t;
-typedef u32             glibc_mode_t;
-typedef syscall_ulong_t glibc_nlink_t;
-typedef u32             glibc_uid_t;
-typedef u32             glibc_gid_t;
-typedef s64             glibc_off64_t;
-typedef u64             glibc_blkcnt64_t;
-typedef syscall_slong_t glibc_blksize_t;
-struct glibc_stat {
-    glibc_dev_t   st_dev;
-#ifdef __x86_64__
-    glibc_ino_t   st_ino;
-    glibc_nlink_t st_nlink;
-    glibc_mode_t  st_mode;
-#else
-    unsigned short int __pad1;
-    glibc_ino_t   st_ino32;
-    glibc_mode_t  st_mode;
-    glibc_nlink_t st_nlink;
-#endif
-    glibc_uid_t   st_uid;
-    glibc_gid_t   st_gid;
-#ifdef __x86_64__
-    int         __pad0;
-#endif
-    glibc_dev_t   st_rdev;
-#ifndef __x86_64__
-    unsigned short int __pad2;
-#endif
-    glibc_off64_t st_size;
-    glibc_blksize_t st_blksize;
-    glibc_blkcnt64_t st_blocks;
-    struct __timespec32 st_atim;
-    struct __timespec32 st_mtim;
-    struct __timespec32 st_ctim;
-#ifdef __x86_64__
-    __syscall_slong_t __glibc_reserved[3];
-#else
-    glibc_ino64_t st_ino64;
-#endif
-};
-INTDEF int LIBCCALL libc_glibc_stat(char const *path, struct glibc_stat *statbuf);
-INTDEF int LIBCCALL libc_glibc_lstat(char const *path, struct glibc_stat *statbuf);
-INTDEF int LIBCCALL libc_glibc_fstat(int fd, struct glibc_stat *statbuf);
-INTDEF int LIBCCALL libc_glibc_fstatat(int fd, char const *filename, struct glibc_stat *statbuf, int flags);
-INTDEF int LIBCCALL libc___fxstat(int ver, int fd, struct glibc_stat *statbuf);
-INTDEF int LIBCCALL libc___xstat(int ver, char const *filename, struct glibc_stat *statbuf);
-INTDEF int LIBCCALL libc___lxstat(int ver, char const *filename, struct glibc_stat *statbuf);
-INTDEF int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struct glibc_stat *statbuf, int flags);
+struct __glc_stat;
+struct __glc_stat64;
+INTDEF int LIBCCALL libc_glibc_stat(char const *path, struct __glc_stat *statbuf);
+INTDEF int LIBCCALL libc_glibc_stat64(char const *path, struct __glc_stat64 *statbuf);
+INTDEF int LIBCCALL libc_glibc_lstat(char const *path, struct __glc_stat *statbuf);
+INTDEF int LIBCCALL libc_glibc_lstat64(char const *path, struct __glc_stat64 *statbuf);
+INTDEF int LIBCCALL libc_glibc_fstat(int fd, struct __glc_stat *statbuf);
+INTDEF int LIBCCALL libc_glibc_fstat64(int fd, struct __glc_stat64 *statbuf);
+INTDEF int LIBCCALL libc_glibc_fstatat(int fd, char const *filename, struct __glc_stat *statbuf, int flags);
+INTDEF int LIBCCALL libc_glibc_fstatat64(int fd, char const *filename, struct __glc_stat64 *statbuf, int flags);
+INTDEF int LIBCCALL libc___fxstat(int ver, int fd, struct __glc_stat *statbuf);
+INTDEF int LIBCCALL libc___fxstat64(int ver, int fd, struct __glc_stat64 *statbuf);
+INTDEF int LIBCCALL libc___xstat(int ver, char const *filename, struct __glc_stat *statbuf);
+INTDEF int LIBCCALL libc___xstat64(int ver, char const *filename, struct __glc_stat64 *statbuf);
+INTDEF int LIBCCALL libc___lxstat(int ver, char const *filename, struct __glc_stat *statbuf);
+INTDEF int LIBCCALL libc___lxstat64(int ver, char const *filename, struct __glc_stat64 *statbuf);
+INTDEF int LIBCCALL libc___fxstatat(int ver, int fd, char const *filename, struct __glc_stat *statbuf, int flags);
+INTDEF int LIBCCALL libc___fxstatat64(int ver, int fd, char const *filename, struct __glc_stat64 *statbuf, int flags);
 INTDEF int LIBCCALL libc_uname(struct utsname *name);
 INTDEF int LIBCCALL libc_brk(void *addr);
 INTDEF void *LIBCCALL libc_sbrk(intptr_t increment);

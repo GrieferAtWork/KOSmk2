@@ -277,18 +277,17 @@ struct file_handle {
 
 #ifdef __USE_GNU
 struct iovec;
-
 __LIBC __ssize_t (__LIBCCALL readahead)(int __fd, __off64_t __offset, __size_t __count);
 __LIBC int (__LIBCCALL sync_file_range)(int __fd, __off64_t __offset, __off64_t __count, unsigned int __flags);
-__LIBC __ssize_t (__LIBCCALL vmsplice)(int __fdout, const struct iovec *__iov, __size_t __count, unsigned int __flags);
+__LIBC __ssize_t (__LIBCCALL vmsplice)(int __fdout, struct iovec const *__iov, __size_t __count, unsigned int __flags);
 __LIBC __ssize_t (__LIBCCALL splice)(int __fdin, __off64_t *__offin, int __fdout, __off64_t *__offout, __size_t __len, unsigned int __flags);
 __LIBC __ssize_t (__LIBCCALL tee)(int __fdin, int __fdout, __size_t __len, unsigned int __flags);
-__LIBC int (__LIBCCALL fallocate)(int __fd, int __mode, __off_t __offset, __off_t __len) __FS_FUNC(fallocate);
+__LIBC int (__LIBCCALL name_to_handle_at)(int __dfd, char const *__name, struct file_handle *__handle, int *__mnt_id, int __flags);
+__LIBC int (__LIBCCALL open_by_handle_at)(int __mountdirfd, struct file_handle *__handle, int __flags);
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,fallocate,(int __fd, int __mode, __off_t __offset, __off_t __len),fallocate,(__fd,__mode,__offset,__len))
 #ifdef __USE_LARGEFILE64
 __LIBC int (__LIBCCALL fallocate64)(int __fd, int __mode, __off64_t __offset, __off64_t __len);
 #endif /* __USE_LARGEFILE64 */
-__LIBC int (__LIBCCALL name_to_handle_at)(int __dfd, char const *__name, struct file_handle *__handle, int *__mnt_id, int __flags);
-__LIBC int (__LIBCCALL open_by_handle_at)(int __mountdirfd, struct file_handle *__handle, int __flags);
 #endif /* __USE_GNU */
 
 __SYSDECL_END

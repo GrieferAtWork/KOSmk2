@@ -343,6 +343,8 @@
 #endif
 #endif
 
+/* HINT: In order to be able to use _DOS_SOURCE or '_DOSFS_SOURCE', 'libc'
+ *       must be built with 'CONFIG_LIBC_NO_DOS_LIBC' disabled! */
 #ifdef _DOSFS_SOURCE
 #undef __USE_DOSFS
 /* Manually enable DOS-FS */
@@ -351,26 +353,9 @@
 #endif
 #endif
 
-/* NOTE: In order to be able to use _DOS_SOURCE or '_DOSFS_SOURCE', 'libc'
- *       must be built with 'CONFIG_LIBC_NO_DOS_LIBC' disabled! */
-
-
-#ifndef __CRT_KOS
-/* Check for illegal feature combinations. */
-#if defined(__CRT_DOS) && !defined(__CRT_GLC)
-#ifndef __USE_DOSFS
-#   error "The linked CRT only supports DOS-FS mode"
-#endif
-#elif defined(__CRT_GLC) && !defined(__CRT_DOS)
-#ifdef __USE_DOSFS
-#   error "The linked CRT does not support DOS-FS mode"
-#endif
-#endif /* ... */
-#endif /* !__CRT_KOS */
-
-
 #ifdef __KERNEL__
 /* Within the kernel, pre-configure based on config options. */
+#   undef __USE_DOSFS
 #   undef __USE_LARGEFILE64
 #   undef __USE_FILE_OFFSET64
 #   undef __USE_TIME64
@@ -409,6 +394,29 @@
 #if (!defined(__CRT_DOS) && !defined(__CRT_KOS)) && \
     (defined(__USE_TIME64) || defined(__USE_TIME_BITS64))
 #error "The selected CRT does not support 64-bit time() functions (Try building with '-D_TIME_T_BITS=32')"
+#endif
+
+#ifndef __CRT_KOS
+/* Check for illegal feature combinations. */
+#if defined(__CRT_DOS) && !defined(__CRT_GLC)
+#ifndef __USE_DOSFS
+#   error "The linked CRT only supports DOS-FS mode (Try building with `-D_DOSFS_SOURCE=1')"
+#endif
+#elif defined(__CRT_GLC) && !defined(__CRT_DOS)
+#ifdef __USE_DOSFS
+#   error "The linked CRT does not support DOS-FS mode (Try building with `-D_DOSFS_SOURCE=0')"
+#endif
+#endif /* ... */
+#endif /* !__CRT_KOS */
+
+#ifdef __DOS_COMPAT__
+#ifndef __USE_DOSFS
+#   error "DOS-FS mode cannot be disable in DOS compatibility mode (Try building with `-D_DOSFS_SOURCE=1')"
+#endif
+#elif defined(__GLC_COMPAT__)
+#ifdef __USE_DOSFS
+#   error "DOS-FS mode cannot be enable in GLibc compatibility mode (Try building with `-D_DOSFS_SOURCE=0')"
+#endif
 #endif
 
 
@@ -540,12 +548,10 @@
 
 #if __SIZEOF_WCHAR_T__ == 2
 #   define __WFS_FUNC      __W16FS_FUNC
-#   define __WFS_FUNC_     __W16FS_FUNC_
 #   define __REDIRECT_WFS  __REDIRECT_W16FS
 #   define __REDIRECT_WFS_ __REDIRECT_W16FS_
 #elif __SIZEOF_WCHAR_T__ == 4
 #   define __WFS_FUNC      __W32FS_FUNC
-#   define __WFS_FUNC_     __W32FS_FUNC_
 #   define __REDIRECT_WFS  __REDIRECT_W32FS
 #   define __REDIRECT_WFS_ __REDIRECT_W32FS_
 #else
@@ -570,8 +576,6 @@
 
 
 #ifdef __USE_FILE_OFFSET64
-#   define __FS_FUNC(x)      __ASMNAME(#x "64")
-#   define __FS_FUNC_R(x)    __ASMNAME(#x "64_r")
 #   define __REDIRECT_FS_FUNC(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
 #   define __REDIRECT_FS_FUNC_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -579,14 +583,12 @@
 #ifdef __USE_DOSFS
 #ifdef __PE__
 #   define __UFS_FUNCn(x)    __ASMNAME(#x "64")
-#   define __UFS_FUNCn_R(x)  __ASMNAME(#x "64_r")
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
 #   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #else
 #   define __UFS_FUNCn(x)    __ASMNAME(".dos." #x "64")
-#   define __UFS_FUNCn_R(x)  __ASMNAME(".dos." #x "64_r")
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##64,args)
 #   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -595,14 +597,12 @@
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __UFS_FUNCn(x)    __ASMNAME(".kos." #x "64")
-#   define __UFS_FUNCn_R(x)  __ASMNAME(".kos." #x "64_r")
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64,args)
 #   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64_r,args)
 #else
 #   define __UFS_FUNCn(x)    __ASMNAME(#x "64")
-#   define __UFS_FUNCn_R(x)  __ASMNAME(#x "64_r")
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
 #   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -610,10 +610,6 @@
 #endif
 #endif /* !__USE_DOSFS */
 #else /* __USE_FILE_OFFSET64 */
-#   define __FS_FUNC(x)      /* nothing */
-#   define __FS_FUNC_(x)     __ASMNAME(#x)
-#   define __FS_FUNC_R(x)    /* nothing */
-#   define __FS_FUNC_R_(x)   __ASMNAME(#x "_r")
 #   define __REDIRECT_FS_FUNC         __NOREDIRECT
 #   define __REDIRECT_FS_FUNC_        __REDIRECT
 #   define __REDIRECT_FS_FUNC_R       __NOREDIRECT
@@ -623,8 +619,6 @@
 #ifdef __PE__
 #   define __UFS_FUNCn(x)    /* nothing */
 #   define __UFS_FUNCn_(x)   __ASMNAME(#x)
-#   define __UFS_FUNCn_R(x)  /* nothing */
-#   define __UFS_FUNCn_R_(x) __ASMNAME(#x "_r")
 #   define __REDIRECT_UFS_FUNCn       __NOREDIRECT
 #   define __REDIRECT_UFS_FUNCn_      __REDIRECT
 #   define __REDIRECT_UFS_FUNCn_R     __NOREDIRECT
@@ -632,7 +626,6 @@
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #else
 #   define __UFS_FUNCn(x)    __ASMNAME(".dos." #x)
-#   define __UFS_FUNCn_R(x)  __ASMNAME(".dos." #x "_r")
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
 #   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -641,7 +634,6 @@
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __UFS_FUNCn(x)    __ASMNAME(".kos." #x)
-#   define __UFS_FUNCn_R(x)  __ASMNAME(".kos." #x "_r")
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
 #   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -649,8 +641,6 @@
 #else
 #   define __UFS_FUNCn(x)    /* nothing */
 #   define __UFS_FUNCn_(x)   __ASMNAME(#x)
-#   define __UFS_FUNCn_R(x)  /* nothing */
-#   define __UFS_FUNCn_R_(x) __ASMNAME(#x "_r")
 #   define __REDIRECT_UFS_FUNCn       __NOREDIRECT
 #   define __REDIRECT_UFS_FUNCn_      __REDIRECT
 #   define __REDIRECT_UFS_FUNCn_R     __NOREDIRECT
@@ -662,9 +652,6 @@
 #ifndef __UFS_FUNCn_
 #define __UFS_FUNCn_ __UFS_FUNCn
 #endif
-#ifndef __UFS_FUNCn_R_
-#define __UFS_FUNCn_R_ __UFS_FUNCn_R
-#endif
 #ifndef __REDIRECT_UFS_FUNCn_
 #define __REDIRECT_UFS_FUNCn_ __REDIRECT_UFS_FUNCn
 #endif
@@ -675,15 +662,11 @@
 #ifdef __USE_TIME_BITS64
 #ifdef __USE_DOSFS
 #ifdef __PE__
-#   define __UFS_FUNCt(x)    __ASMNAME(#x "64")
-#   define __UFS_FUNCt_R(x)  __ASMNAME(#x "64_r")
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #else
-#   define __UFS_FUNCt(x)    __ASMNAME(".dos." #x "64")
-#   define __UFS_FUNCt_R(x)  __ASMNAME(".dos." #x "64_r")
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##64,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -691,15 +674,11 @@
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
-#   define __UFS_FUNCt(x)    __ASMNAME(".kos." #x "64")
-#   define __UFS_FUNCt_R(x)  __ASMNAME(".kos." #x "64_r")
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64_r,args)
 #else
-#   define __UFS_FUNCt(x)    __ASMNAME(#x "64")
-#   define __UFS_FUNCt_R(x)  __ASMNAME(#x "64_r")
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -709,18 +688,12 @@
 #else /* __USE_TIME_BITS64 */
 #ifdef __USE_DOSFS
 #ifdef __PE__
-#   define __UFS_FUNCt(x)    /* nothing */
-#   define __UFS_FUNCt_(x)   __ASMNAME(#x)
-#   define __UFS_FUNCt_R(x)  /* nothing */
-#   define __UFS_FUNCt_R_(x) __ASMNAME(#x "_r")
 #   define __REDIRECT_UFS_FUNCt       __NOREDIRECT
 #   define __REDIRECT_UFS_FUNCt_      __REDIRECT
 #   define __REDIRECT_UFS_FUNCt_R     __NOREDIRECT
 #   define __REDIRECT_UFS_FUNCt_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #else
-#   define __UFS_FUNCt(x)    __ASMNAME(".dos." #x)
-#   define __UFS_FUNCt_R(x)  __ASMNAME(".dos." #x "_r")
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -728,17 +701,11 @@
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
-#   define __UFS_FUNCt(x)    __ASMNAME(".kos." #x)
-#   define __UFS_FUNCt_R(x)  __ASMNAME(".kos." #x "_r")
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##_r,args)
 #else
-#   define __UFS_FUNCt(x)    /* nothing */
-#   define __UFS_FUNCt_(x)   __ASMNAME(#x)
-#   define __UFS_FUNCt_R(x)  /* nothing */
-#   define __UFS_FUNCt_R_(x) __ASMNAME(#x "_r")
 #   define __REDIRECT_UFS_FUNCt       __NOREDIRECT
 #   define __REDIRECT_UFS_FUNCt_      __REDIRECT
 #   define __REDIRECT_UFS_FUNCt_R     __NOREDIRECT
@@ -747,12 +714,6 @@
 #endif
 #endif /* !__USE_DOSFS */
 #endif /* !__USE_TIME_BITS64 */
-#ifndef __UFS_FUNCt_
-#define __UFS_FUNCt_ __UFS_FUNCt
-#endif
-#ifndef __UFS_FUNCt_R_
-#define __UFS_FUNCt_R_ __UFS_FUNCt_R
-#endif
 #ifndef __REDIRECT_UFS_FUNCt_
 #define __REDIRECT_UFS_FUNCt_ __REDIRECT_UFS_FUNCt
 #endif
