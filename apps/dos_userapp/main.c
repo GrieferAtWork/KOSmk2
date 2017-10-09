@@ -60,12 +60,14 @@ int main(int argc, char **argv) {
  struct dirent64 *ent;
 
  while ((ent = readdir64(d)) != NULL) {
-  struct _stat buf;
+  struct stat64 buf;
   printf("ent: %s\n",ent->d_name);
-  if (!_stat(ent->d_name,&buf))
+  if (!stat64(ent->d_name,&buf))
       printf("mode = %o\n",buf.st_mode);
+  buf.st_atime64;
  }
  closedir(d);
+
 
  ssize_t n;
  char buf[16];

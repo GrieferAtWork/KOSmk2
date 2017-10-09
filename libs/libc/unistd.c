@@ -609,13 +609,13 @@ LOCAL void LIBCCALL
 glibc_filstat(struct __glc_stat *__restrict dst,
               struct stat64 const *__restrict src) {
  dst->st_dev     = src->st_dev;
- dst->st_ino     = src->st_ino32;
+ dst->st_ino32   = src->st_ino32;
  dst->st_nlink   = src->st_nlink;
  dst->st_mode    = src->st_mode;
  dst->st_uid     = src->st_uid;
  dst->st_gid     = src->st_gid;
  dst->st_rdev    = src->st_rdev;
- dst->st_size    = src->st_size32;
+ dst->st_size32  = src->st_size32;
  dst->st_blksize = src->st_blksize;
  dst->st_blocks  = src->st_blocks;
  dst->st_atim    = src->st_atim32;
@@ -626,8 +626,8 @@ LOCAL void LIBCCALL
 glibc_filstat64(struct __glc_stat64 *__restrict dst,
                 struct stat64 const *__restrict src) {
  dst->st_dev     = src->st_dev;
- dst->__st_ino32 = src->st_ino32;
- dst->st_ino     = src->st_ino64;
+ dst->st_ino32   = src->st_ino32;
+ dst->st_ino64   = src->st_ino64;
  dst->st_nlink   = src->st_nlink;
  dst->st_mode    = src->st_mode;
  dst->st_uid     = src->st_uid;

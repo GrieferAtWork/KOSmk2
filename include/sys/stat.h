@@ -33,6 +33,13 @@
 
 __SYSDECL_BEGIN
 
+#ifdef __INTELLISENSE__
+struct stat;
+#ifdef __USE_LARGEFILE64
+struct stat64;
+#endif /* __USE_LARGEFILE64 */
+#endif /* __INTELLISENSE__ */
+
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K)
 #ifndef __dev_t_defined
 #define __dev_t_defined 1
@@ -188,20 +195,20 @@ typedef __blksize_t blksize_t;
 /* Recognized & known stat() structures and assembly names.
  * 
  * __CRT_KOS: (Used by default)
- * >> int CDECL kfstat(int fd, struct stat *buf);
- * >> int CDECL kfstat64(int fd, struct stat64 *buf);
- * >> int CDECL kstat(char const *kos_file, struct stat *buf);
- * >> int CDECL kstat64(char const *kos_file, struct stat64 *buf);
- * >> int CDECL kfstatat(int fd, char const *kos_file, struct stat *buf, int flag);
- * >> int CDECL kfstatat64(int fd, char const *kos_file, struct stat64 *buf, int flag);
- * >> int CDECL klstat(char const *kos_file, struct stat *buf);
- * >> int CDECL klstat64(char const *kos_file, struct stat64 *buf);
- * >> int CDECL .dos.kstat(char const *dos_file, struct stat *buf);
- * >> int CDECL .dos.kstat64(char const *dos_file, struct stat64 *buf);
- * >> int CDECL .dos.kfstatat(int fd, char const *dos_file, struct stat *buf, int flag);
- * >> int CDECL .dos.kfstatat64(int fd, char const *dos_file, struct stat64 *buf, int flag);
- * >> int CDECL .dos.klstat(char const *dos_file, struct stat *buf);
- * >> int CDECL .dos.klstat64(char const *dos_file, struct stat64 *buf);
+ * >> int CDECL kfstat(int fd, struct __kos_stat *buf);
+ * >> int CDECL kfstat64(int fd, struct __kos_stat64 *buf);
+ * >> int CDECL kstat(char const *kos_file, struct __kos_stat *buf);
+ * >> int CDECL kstat64(char const *kos_file, struct __kos_stat64 *buf);
+ * >> int CDECL kfstatat(int fd, char const *kos_file, struct __kos_stat *buf, int flag);
+ * >> int CDECL kfstatat64(int fd, char const *kos_file, struct __kos_stat64 *buf, int flag);
+ * >> int CDECL klstat(char const *kos_file, struct __kos_stat *buf);
+ * >> int CDECL klstat64(char const *kos_file, struct __kos_stat64 *buf);
+ * >> int CDECL .dos.kstat(char const *dos_file, struct __kos_stat *buf);
+ * >> int CDECL .dos.kstat64(char const *dos_file, struct __kos_stat64 *buf);
+ * >> int CDECL .dos.kfstatat(int fd, char const *dos_file, struct __kos_stat *buf, int flag);
+ * >> int CDECL .dos.kfstatat64(int fd, char const *dos_file, struct __kos_stat64 *buf, int flag);
+ * >> int CDECL .dos.klstat(char const *dos_file, struct __kos_stat *buf);
+ * >> int CDECL .dos.klstat64(char const *dos_file, struct __kos_stat64 *buf);
  *
  * __CRT_GLC: (__GLC_COMPAT__)
  * >> int CDECL fstat(int fd, struct __glc_stat *buf);
@@ -467,7 +474,8 @@ __REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,_fstat64i32,(int __fd, struct _s
 #endif /* __USE_DOS */
 
 #ifdef __DOS_COMPAT__
-#ifdef __USE_TIME_BITS64
+/* Redefinite stat functions. */
+#if defined(__USE_TIME_BITS64) || 1
 #define _stat64          stat64
 #else /* __USE_TIME_BITS64 */
 #define _stat32i64       stat64
