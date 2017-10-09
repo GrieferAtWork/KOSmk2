@@ -22,18 +22,18 @@
 #include <__stdinc.h>
 #include <hybrid/check.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Print tracebacks. */
-__LIBC void (__LIBCCALL __assertion_tbprintl)(void const *__eip, void const *__frame, __SIZE_TYPE__ __tb_id);
-__LIBC void (__LIBCCALL __assertion_tbprint2)(void const *__ebp, __SIZE_TYPE__ __n_skip);
-__LIBC void (__LIBCCALL __assertion_tbprint)(void);
-#define __assertion_tbprint(__n_skip) \
+__LIBC void (__LIBCCALL debug_tbprintl)(void const *__eip, void const *__frame, __SIZE_TYPE__ __tb_id);
+__LIBC void (__LIBCCALL debug_tbprint2)(void const *__ebp, __SIZE_TYPE__ __n_skip);
+__LIBC void (__LIBCCALL debug_tbprint)(void);
+#define debug_tbprint(__n_skip) \
   __XBLOCK({ register void *__ebp; \
              __asm__ __volatile__("movl %%ebp, %0\n" : "=g" (__ebp)); \
-             __assertion_tbprint2(__ebp,__n_skip); })
+             debug_tbprint2(__ebp,__n_skip); })
 
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !__GUARD_HYBRID_TRACEBACK_H */

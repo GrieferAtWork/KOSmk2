@@ -42,6 +42,7 @@
 #include <bits/dos-errno.h>
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #include <byteswap.h>
+#include <bits/rotate.h>
 #include <winapi/windows.h>
 #include <winapi/excpt.h>
 #include <winapi/ntdef.h>
@@ -558,7 +559,16 @@ INTERN ATTR_DOSTEXT u64 LIBCCALL libc_bswap64(u64 x) { return bswap_64(x); }
 DEFINE_PUBLIC_ALIAS(_byteswap_ushort,libc_bswap16);
 DEFINE_PUBLIC_ALIAS(_byteswap_ulong,libc_bswap32);
 DEFINE_PUBLIC_ALIAS(_byteswap_uint64,libc_bswap64);
-
+INTERN ATTR_DOSTEXT u32 LIBCCALL libc_rol32(u32 val, int shift) { return __rol_32(val,shift); }
+INTERN ATTR_DOSTEXT u32 LIBCCALL libc_ror32(u32 val, int shift) { return __ror_32(val,shift); }
+INTERN ATTR_DOSTEXT u64 LIBCCALL libc_rol64(u64 val, int shift) { return __rol_64(val,shift); }
+INTERN ATTR_DOSTEXT u64 LIBCCALL libc_ror64(u64 val, int shift) { return __ror_64(val,shift); }
+DEFINE_PUBLIC_ALIAS(_rotl,libc_rol32);
+DEFINE_PUBLIC_ALIAS(_rotr,libc_ror32);
+DEFINE_PUBLIC_ALIAS(_lrotl,libc_rol32);
+DEFINE_PUBLIC_ALIAS(_lrotr,libc_ror32);
+DEFINE_PUBLIC_ALIAS(_rotl64,libc_rol64);
+DEFINE_PUBLIC_ALIAS(_rotr64,libc_ror64);
 
 INTERN ATTR_DOSTEXT void LIBCCALL libc_crt_debugger_hook(int UNUSED(code)) { /* This literally does nothing... */ }
 #if defined(__i386__) || defined(__x86_64__)

@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Signal number definitions.  Linux version.
    Copyright (C) 1995-2016 Free Software Foundation, Inc.
@@ -129,6 +129,6 @@ __DECL_BEGIN
 #endif
 
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SIGNUM_H */

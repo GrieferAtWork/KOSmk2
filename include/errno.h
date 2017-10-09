@@ -26,7 +26,7 @@
 #include <bits/dos-errno.h>
 #endif /* __USE_DOS */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __CC__
 typedef int __errno_t;
@@ -222,25 +222,36 @@ typedef int errno_t;
 #ifndef __KERNEL__
 #ifndef _CRT_ERRNO_DEFINED
 #define _CRT_ERRNO_DEFINED 1
-__LIBC __errno_t *__NOTHROW((__LIBCCALL __errno)(void)) __DOS_FUNC_(_errno);
-__LIBC __errno_t  __NOTHROW((__LIBCCALL __get_errno)(void)) __DOS_FUNC_(_get_errno);
-__LIBC __errno_t  __NOTHROW((__LIBCCALL __set_errno)(__errno_t __err)) __DOS_FUNC_(_set_errno);
-#define errno                         (*__errno())
+#define errno                                            (*__errno())
+__REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,__WUNUSED,__errno_t *,__LIBCCALL,__errno,(void),_errno,())
+__REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,__WUNUSED,__errno_t,__LIBCCALL,__get_errno,(void),_get_errno,())
+__REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,,__errno_t,__LIBCCALL,__set_errno,(__errno_t __err),_set_errno,(__err))
 #endif /* !_CRT_ERRNO_DEFINED */
 
 #ifdef __USE_GNU
+#undef program_invocation_name
+#undef program_invocation_short_name
+#ifdef __CRT_KOS
 #define program_invocation_name       __libc_program_invocation_name()
 #define program_invocation_short_name __libc_program_invocation_short_name()
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_name)(void));
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_short_name)(void));
+#elif defined(__CRT_GLC)
+__LIBC char *program_invocation_name;
+__LIBC char *program_invocation_short_name;
+#elif defined(__CRT_DOS)
+__LIBC char **(__LIBCCALL __p__pgmptr)(void);
+#define program_invocation_name        (*__p__pgmptr())
+#define program_invocation_short_name  (*__p__pgmptr())
+#endif
 #endif /* __USE_GNU */
 #endif /* !__KERNEL__ */
 #endif /* __CC__ */
 
-#ifdef __USE_KOS
-__LIBC errno_t __NOTHROW((__LIBCCALL errno_dos2kos)(errno_t __eno));
-__LIBC errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
-#endif /* __USE_KOS */
+#if defined(__USE_KOS) && defined(__CRT_KOS)
+__LIBC __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_dos2kos)(errno_t __eno));
+__LIBC __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
+#endif /* __USE_KOS && __CRT_KOS */
 
 #ifdef __KERNEL__
 #define ERELOAD         500 /* Resource must be reloaded (after a lock was temporarily lost). */
@@ -288,6 +299,6 @@ __LIBC errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
 #endif
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_ERRNO_H */

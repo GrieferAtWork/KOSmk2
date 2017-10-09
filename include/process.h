@@ -24,7 +24,7 @@
 
 /* DOS Header. */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Argument types used by exec() and spawn() functions. */
 #ifndef __TARGV
@@ -77,10 +77,12 @@ typedef __WCHAR_TYPE__ wchar_t;
 #define WAIT_GRANDCHILD _WAIT_GRANDCHILD
 
 #ifndef __KERNEL__
-__LIBC uintptr_t (__LIBCCALL _beginthread)(void (__LIBCCALL *__entry)(void *__arg), __UINT32_TYPE__ __stacksz, void *__arg);
-__LIBC uintptr_t (__LIBCCALL _beginthreadex)(void *__sec, __UINT32_TYPE__ __stacksz, __UINT32_TYPE__ (__ATTR_STDCALL *__entry)(void *__arg), void *__arg, __UINT32_TYPE__ __flags, __UINT32_TYPE__ *__threadaddr);
-__LIBC void (__LIBCCALL _endthread)(void);
-__LIBC void (__LIBCCALL _endthreadex)(__UINT32_TYPE__ __exitcode);
+#ifdef __CRT_DOS
+__LIBC __PORT_DOSONLY uintptr_t (__LIBCCALL _beginthread)(void (__LIBCCALL *__entry)(void *__arg), __UINT32_TYPE__ __stacksz, void *__arg);
+__LIBC __PORT_DOSONLY uintptr_t (__LIBCCALL _beginthreadex)(void *__sec, __UINT32_TYPE__ __stacksz, __UINT32_TYPE__ (__ATTR_STDCALL *__entry)(void *__arg), void *__arg, __UINT32_TYPE__ __flags, __UINT32_TYPE__ *__threadaddr);
+__LIBC __PORT_DOSONLY void (__LIBCCALL _endthread)(void);
+__LIBC __PORT_DOSONLY void (__LIBCCALL _endthreadex)(__UINT32_TYPE__ __exitcode);
+#endif /* __CRT_DOS */
 
 #ifndef _CRT_TERMINATE_DEFINED
 #define _CRT_TERMINATE_DEFINED 1
@@ -106,27 +108,32 @@ __LIBC __ATTR_NORETURN void (__LIBCCALL _exit)(int __status);
 #endif /* !___exit_defined */
 #endif /* !_CRT_TERMINATE_DEFINED */
 
-__LIBC void (__LIBCCALL _cexit)(void);
-__LIBC void (__LIBCCALL _c_exit)(void);
+#ifdef __CRT_DOS
+__LIBC __PORT_DOSONLY void (__LIBCCALL _cexit)(void);
+__LIBC __PORT_DOSONLY void (__LIBCCALL _c_exit)(void);
+#endif /* __CRT_DOS */
 __LIBC int (__LIBCCALL _getpid)(void) __ASMNAME("getpid");
 
-__LIBC intptr_t (__LIBCCALL _cwait)(int *__tstat, intptr_t __pid, int __action);
-__LIBC intptr_t (__LIBCCALL _execl)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(execl);
-__LIBC intptr_t (__LIBCCALL _execle)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(execle);
+__LIBC intptr_t (__LIBCCALL _execl)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEB(execl); /* TODO: Redirect. */
+__LIBC intptr_t (__LIBCCALL _execle)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEB(execle);
 __LIBC intptr_t (__LIBCCALL _execlp)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(execlp);
 __LIBC intptr_t (__LIBCCALL _execlpe)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(execlpe);
-__LIBC intptr_t (__LIBCCALL _execv)(char const *__file, __TARGV) __UFS_FUNC_OLDPEB(execv);
-__LIBC intptr_t (__LIBCCALL _execve)(char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEB(execve);
-__LIBC intptr_t (__LIBCCALL _execvp)(char const *__file, __TARGV) __UFS_FUNC_OLDPEB(execvp);
-__LIBC intptr_t (__LIBCCALL _execvpe)(char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEB(execvpe);
-__LIBC intptr_t (__LIBCCALL _spawnl)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(spawnl);
-__LIBC intptr_t (__LIBCCALL _spawnle)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(spawnle);
-__LIBC intptr_t (__LIBCCALL _spawnlp)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(spawnlp);
-__LIBC intptr_t (__LIBCCALL _spawnlpe)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(spawnlpe);
-__LIBC intptr_t (__LIBCCALL _spawnv)(int __mode, char const *__file, __TARGV) __UFS_FUNC_OLDPEB(spawnv);
-__LIBC intptr_t (__LIBCCALL _spawnve)(int __mode, char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEB(spawnve);
-__LIBC intptr_t (__LIBCCALL _spawnvp)(int __mode, char const *__file, __TARGV) __UFS_FUNC_OLDPEB(_spawnvp);
-__LIBC intptr_t (__LIBCCALL _spawnvpe)(int __mode, char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEB(spawnvpe);
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execv,(char const *__path, __TARGV),execv,(__path,___argv))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execve,(char const *__path, __TARGV, __TENVP),execve,(__path,___argv,___envp))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execvp,(char const *__file, __TARGV),execvp,(__file,___argv));
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execvpe,(char const *__file, __TARGV, __TENVP),execvpe,(__file,___argv,___envp));
+
+#ifdef __CRT_DOS
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL _cwait)(int *__tstat, intptr_t __pid, int __action);
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL _spawnl)(int __mode, char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEB(spawnl); /* TODO: Redirect. */
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL _spawnle)(int __mode, char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEB(spawnle);
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL _spawnlp)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(spawnlp);
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL _spawnlpe)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(spawnlpe);
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_spawnv,(int __mode, char const *__path, __TARGV),spawnv,(__mode,__path,___argv))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_spawnve,(int __mode, char const *__path, __TARGV, __TENVP),spawnve,(__mode,__path,___argv,___envp))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_spawnvp,(int __mode, char const *__file, __TARGV),spawnvp,(__mode,__file,___argv));
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_spawnvpe,(int __mode, char const *__file, __TARGV, __TENVP),spawnvpe,(__mode,__file,___argv,___envp));
+#endif /* __CRT_DOS */
 
 #ifndef __system_defined
 #define __system_defined 1
@@ -136,76 +143,88 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(system)
 #endif /* !__system_defined */
 
+#ifdef __CRT_DOS
 #ifndef _WPROCESS_DEFINED
 #define _WPROCESS_DEFINED 1
-__LIBC intptr_t (__ATTR_CDECL _wexecl)(wchar_t const *__path, wchar_t const *__args, ...) __WFS_FUNC(_wexecl);
-__LIBC intptr_t (__ATTR_CDECL _wexecle)(wchar_t const *__path, wchar_t const *__args, ...) __WFS_FUNC(_wexecle);
-__LIBC intptr_t (__ATTR_CDECL _wexeclp)(wchar_t const *__file, wchar_t const *__args, ...) __WFS_FUNC(_wexeclp);
-__LIBC intptr_t (__ATTR_CDECL _wexeclpe)(wchar_t const *__file, wchar_t const *__args, ...) __WFS_FUNC(_wexeclpe);
-__LIBC intptr_t (__LIBCCALL _wexecv)(wchar_t const *__path, __TWARGV) __WFS_FUNC(_wexecv);
-__LIBC intptr_t (__LIBCCALL _wexecve)(wchar_t const *__path, __TWARGV, __TWENVP) __WFS_FUNC(_wexecve);
-__LIBC intptr_t (__LIBCCALL _wexecvp)(wchar_t const *__file, __TWARGV) __WFS_FUNC(_wexecvp);
-__LIBC intptr_t (__LIBCCALL _wexecvpe)(wchar_t const *__file, __TWARGV, __TWENVP) __WFS_FUNC(_wexecvpe);
-__LIBC intptr_t (__ATTR_CDECL _wspawnl)(int __mode, wchar_t const *__path, wchar_t const *__args, ...) __WFS_FUNC(_wspawnl);
-__LIBC intptr_t (__ATTR_CDECL _wspawnle)(int __mode, wchar_t const *__path, wchar_t const *__args, ...) __WFS_FUNC(_wspawnle);
-__LIBC intptr_t (__ATTR_CDECL _wspawnlp)(int __mode, wchar_t const *__file, wchar_t const *__args, ...) __WFS_FUNC(_wspawnlp);
-__LIBC intptr_t (__ATTR_CDECL _wspawnlpe)(int __mode, wchar_t const *__file, wchar_t const *__args, ...) __WFS_FUNC(_wspawnlpe);
-__LIBC intptr_t (__LIBCCALL _wspawnv)(int __mode, wchar_t const *__path, __TWARGV) __WFS_FUNC(_wspawnv);
-__LIBC intptr_t (__LIBCCALL _wspawnve)(int __mode, wchar_t const *__path, __TWARGV, __TWENVP) __WFS_FUNC(_wspawnve);
-__LIBC intptr_t (__LIBCCALL _wspawnvp)(int __mode, wchar_t const *__file, __TWARGV) __WFS_FUNC(_wspawnvp);
-__LIBC intptr_t (__LIBCCALL _wspawnvpe)(int __mode, wchar_t const *__file, __TWARGV, __TWENVP) __WFS_FUNC(_wspawnvpe);
+__LIBC __PORT_DOSONLY intptr_t (__ATTR_CDECL _wexecl)(wchar_t const *__path, wchar_t const *__args, ...) __WFS_FUNC(_wexecl); /* TODO: Redirect. */
+__LIBC __PORT_DOSONLY intptr_t (__ATTR_CDECL _wexecle)(wchar_t const *__path, wchar_t const *__args, ...) __WFS_FUNC(_wexecle);
+__LIBC __PORT_DOSONLY intptr_t (__ATTR_CDECL _wexeclp)(wchar_t const *__file, wchar_t const *__args, ...) __WFS_FUNC(_wexeclp);
+__LIBC __PORT_DOSONLY intptr_t (__ATTR_CDECL _wexeclpe)(wchar_t const *__file, wchar_t const *__args, ...) __WFS_FUNC(_wexeclpe);
+__LIBC __PORT_DOSONLY intptr_t (__ATTR_CDECL _wspawnl)(int __mode, wchar_t const *__path, wchar_t const *__args, ...) __WFS_FUNC(_wspawnl);
+__LIBC __PORT_DOSONLY intptr_t (__ATTR_CDECL _wspawnle)(int __mode, wchar_t const *__path, wchar_t const *__args, ...) __WFS_FUNC(_wspawnle);
+__LIBC __PORT_DOSONLY intptr_t (__ATTR_CDECL _wspawnlp)(int __mode, wchar_t const *__file, wchar_t const *__args, ...) __WFS_FUNC(_wspawnlp);
+__LIBC __PORT_DOSONLY intptr_t (__ATTR_CDECL _wspawnlpe)(int __mode, wchar_t const *__file, wchar_t const *__args, ...) __WFS_FUNC(_wspawnlpe);
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wexecv,(wchar_t const *__path, __TWARGV),wexecv,(__path,___argv))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wexecve,(wchar_t const *__path, __TWARGV, __TWENVP),wexecve,(__path,___argv,___envp))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wexecvp,(wchar_t const *__file, __TWARGV),wexecvp,(__file,___argv));
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wexecvpe,(wchar_t const *__file, __TWARGV, __TWENVP),wexecvpe,(__file,___argv,___envp));
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wspawnv,(int __mode, wchar_t const *__path, __TWARGV),wspawnv,(__mode,__path,___argv))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wspawnve,(int __mode, wchar_t const *__path, __TWARGV, __TWENVP),wspawnve,(__mode,__path,___argv,___envp))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wspawnvp,(int __mode, wchar_t const *__file, __TWARGV),wspawnvp,(__mode,__file,___argv));
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wspawnvpe,(int __mode, wchar_t const *__file, __TWARGV, __TWENVP),wspawnvpe,(__mode,__file,___argv,___envp));
 #endif /* !_WPROCESS_DEFINED */
+#endif /* __CRT_DOS */
 
 #ifndef _CRT_WSYSTEM_DEFINED
 #define _CRT_WSYSTEM_DEFINED 1
-__LIBC int (__LIBCCALL _wsystem)(wchar_t const *__restrict __cmd);
+#ifdef __CRT_DOS
+__LIBC __PORT_DOSONLY int (__LIBCCALL _wsystem)(wchar_t const *__restrict __cmd);
+#endif /* __CRT_DOS */
 #endif /* !_CRT_WSYSTEM_DEFINED */
 
-__LIBC intptr_t (__LIBCCALL _loaddll)(char *__file) __KOS_ASMNAME("xdlopen");
-__LIBC int (__LIBCCALL _unloaddll)(intptr_t __hnd) __KOS_ASMNAME("xdlclose");
+#ifdef __CRT_DOS
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,intptr_t,__LIBCCALL,_loaddll,(char *__file),xdlopen,(__file))
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_unloaddll,(intptr_t __hnd),xdlclose,(__hnd))
 #ifdef __USE_KOS
 #define __FIXED_CONST const
 #else
 #define __FIXED_CONST /* nothing (*sigh*) */
 #endif
+typedef int (__LIBCCALL *__procfun)(void);
 #if defined(__i386__) || defined(__x86_64__)
-__LIBC int (__LIBCCALL *(__LIBCCALL _getdllprocaddr)(intptr_t __hnd, char __FIXED_CONST *__symname, intptr_t __ord))(void) __KOS_ASMNAME("xdlsym");
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,__procfun,__LIBCCALL,_getdllprocaddr,
+                (intptr_t __hnd, char __FIXED_CONST *__symname, intptr_t __ord),xdlsym,(__hnd,__symname,__ord))
 #else
-__LIBC int (__LIBCCALL *(__LIBCCALL _getdllprocaddr)(intptr_t __hnd, char __FIXED_CONST *__symname, intptr_t __ord))(void);
+__LIBC __PORT_DOSONLY __procfun (__LIBCCALL _getdllprocaddr)(intptr_t __hnd, char __FIXED_CONST *__symname, intptr_t __ord);
 #endif
 #undef __FIXED_CONST
+#endif /* __CRT_DOS */
 
-__LIBC int (__LIBCCALL getpid)(void) __PE_ASMNAME("_getpid");
-__LIBC intptr_t (__LIBCCALL cwait)(int *__tstat, intptr_t __pid, int __action) __ASMNAME("_cwait");
-__LIBC intptr_t (__LIBCCALL execl)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(execl);
+
+__REDIRECT_IFDOS(__LIBC,,int,__LIBCCALL,getpid,(void),_getpid,())
+__LIBC intptr_t (__LIBCCALL execl)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(execl); /* TODO: Redirect. */
 __LIBC intptr_t (__LIBCCALL execle)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(execle);
 __LIBC intptr_t (__LIBCCALL execlp)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(execlp);
 __LIBC intptr_t (__LIBCCALL execlpe)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(execlpe);
-__LIBC intptr_t (__LIBCCALL execv)(char const *__file, __TARGV) __UFS_FUNC_OLDPEA(execv);
-__LIBC intptr_t (__LIBCCALL execve)(char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEA(execve);
-__LIBC intptr_t (__LIBCCALL execvp)(char const *__file, __TARGV) __UFS_FUNC_OLDPEA(execvp);
-__LIBC intptr_t (__LIBCCALL execvpe)(char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEA(execvpe);
-__LIBC intptr_t (__LIBCCALL spawnl)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(spawnl);
-__LIBC intptr_t (__LIBCCALL spawnle)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(spawnle);
-__LIBC intptr_t (__LIBCCALL spawnlp)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(spawnlp);
-__LIBC intptr_t (__LIBCCALL spawnlpe)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(spawnlpe);
-__LIBC intptr_t (__LIBCCALL spawnv)(int __mode, char const *__file, __TARGV) __UFS_FUNC_OLDPEA(spawnv);
-__LIBC intptr_t (__LIBCCALL spawnve)(int __mode, char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEA(spawnve);
-__LIBC intptr_t (__LIBCCALL spawnvp)(int __mode, char const *__file, __TARGV) __UFS_FUNC_OLDPEA(spawnvp);
-__LIBC intptr_t (__LIBCCALL spawnvpe)(int __mode, char const *__file, __TARGV, __TENVP) __UFS_FUNC_OLDPEA(spawnvpe);
-#ifdef __USE_KOS
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,execv,(char const *__path, __TARGV),execv,(__path,___argv))
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,execve,(char const *__path, __TARGV, __TENVP),execve,(__path,___argv,___envp))
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,execvp,(char const *__file, __TARGV),execvp,(__file,___argv));
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,execvpe,(char const *__file, __TARGV, __TENVP),execvpe,(__file,___argv,___envp));
+#ifdef __CRT_DOS
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL cwait)(int *__tstat, intptr_t __pid, int __action) __ASMNAME("_cwait");
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL spawnl)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(spawnl);
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL spawnle)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(spawnle);
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL spawnlp)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(spawnlp);
+__LIBC __PORT_DOSONLY intptr_t (__LIBCCALL spawnlpe)(int __mode, char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(spawnlpe);
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,spawnv,(int __mode, char const *__path, __TARGV),spawnv,(__mode,__path,___argv))
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,spawnve,(int __mode, char const *__path, __TARGV, __TENVP),spawnve,(__mode,__path,___argv,___envp))
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,spawnvp,(int __mode, char const *__file, __TARGV),spawnvp,(__mode,__file,___argv));
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,spawnvpe,(int __mode, char const *__file, __TARGV, __TENVP),spawnvpe,(__mode,__file,___argv,___envp));
+#endif /* __CRT_DOS */
+
+#if defined(__USE_KOS) && defined(__CRT_KOS)
 /* As an extension, just like with the exec() family,
  * KOS supports spawning a process from a file descriptor.
  * NOTE: These functions were not apart of the DOS Application Binary Interface
  *       and are not supported on anything other than KOS itself! */
-__LIBC intptr_t (__LIBCCALL fspawnl)(int __mode, int __fd, char const *__args, ...);
-__LIBC intptr_t (__LIBCCALL fspawnle)(int __mode, int __fd, char const *__args, ...);
-__LIBC intptr_t (__LIBCCALL fspawnv)(int __mode, int __fd, __TARGV);
-__LIBC intptr_t (__LIBCCALL fspawnve)(int __mode, int __fd, __TARGV, __TENVP);
-#endif /* __USE_KOS */
+__LIBC __PORT_KOSONLY_ALT(spawnl)  intptr_t (__LIBCCALL fspawnl)(int __mode, int __fd, char const *__args, ...);
+__LIBC __PORT_KOSONLY_ALT(spawnle) intptr_t (__LIBCCALL fspawnle)(int __mode, int __fd, char const *__args, ...);
+__LIBC __PORT_KOSONLY_ALT(spawnv)  intptr_t (__LIBCCALL fspawnv)(int __mode, int __fd, __TARGV);
+__LIBC __PORT_KOSONLY_ALT(spawnve) intptr_t (__LIBCCALL fspawnve)(int __mode, int __fd, __TARGV, __TENVP);
+#endif /* __USE_KOS && __CRT_KOS */
 
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_PROCESS_H */

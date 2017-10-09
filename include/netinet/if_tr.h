@@ -23,7 +23,7 @@
 #include <features.h>
 #include <sys/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Copyright (C) 1997-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -121,6 +121,6 @@ struct trn_hdr {
 };
 #endif /* __USE_MISC */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_NETINET_IF_TR_H */

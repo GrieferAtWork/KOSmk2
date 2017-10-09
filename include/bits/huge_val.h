@@ -40,7 +40,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if __GCC_VERSION(3,3,0)
 #   define HUGE_VAL    (__builtin_huge_val())
@@ -62,6 +62,6 @@ __PRIVATE __huge_val_t const __huge_val = {__HUGE_VAL_bytes};
 #define HUGE_VAL    (__huge_val.__d)
 #endif /* !... */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_HUGE_VAL_H */

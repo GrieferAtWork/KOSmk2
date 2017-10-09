@@ -68,7 +68,7 @@
 #include <features.h>
 #include <sys/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* UDP header as specified by RFC 768, August 1980. */
 struct udphdr {
@@ -100,6 +100,6 @@ struct udphdr {
 #define UDP_ENCAP_L2TPINUDP        3  /*< rfc2661 */
 #define SOL_UDP                    17 /*< sockopt level for UDP */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* __NETINET_UDP_H */

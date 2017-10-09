@@ -45,6 +45,9 @@
 #define __COMPILER_HAVE_LONGLONG 1
 #endif
 #define __COMPILER_HAVE_LONGDOUBLE 1
+#define __COMPILER_HAVE_TRANSPARENT_STRUCT 1
+#define __COMPILER_HAVE_TRANSPARENT_UNION 1
+#define __COMPILER_HAVE_PRAGMA_PUSHMACRO 1
 #if 1
 /* XXX: When was this added in C? */
 #   define __COMPILER_HAVE_AUTOTYPE 1
@@ -71,6 +74,7 @@
 #else
 #define __ASMNAME(x)   __asm__(x)
 #endif
+//#define __NO_ASMNAME 1 /* TODO: Remove me */
 #if !__GCC_VERSION(2,8,0)
 #define __extension__
 #endif
@@ -247,4 +251,14 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #define __COMPILER_BARRIER()       __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
 #define __COMPILER_READ_BARRIER()  __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
 #define __COMPILER_WRITE_BARRIER() __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
+
+#ifdef __cplusplus
+#ifdef __INTELLISENSE__
+#   define __NULLPTR    nullptr
+#else
+#   define __NULLPTR          0
+#endif
+#else
+#   define __NULLPTR ((void *)0)
+#endif
 

@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
@@ -35,6 +35,6 @@ struct iovec {
  size_t iov_len;  /*< Length of data. */
 };
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_UIO_H */

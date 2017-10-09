@@ -79,7 +79,7 @@
 #include <net/ethernet.h>
 #include <net/if_arp.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 /*
  * Ethernet Address Resolution Protocol.
  *
@@ -114,7 +114,7 @@ struct ether_arp {
   (enaddr)[5] = ((u_int8_t *)ipaddr)[3]; \
 }
 
-__DECL_END
+__SYSDECL_END
 #endif /* __USE_MISC */
 
 #endif /* !__NETINET_IF_ETHER_H */

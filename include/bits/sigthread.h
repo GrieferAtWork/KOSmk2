@@ -39,7 +39,7 @@
    License along with the GNU C Library; see the file COPYING.LIB.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __KERNEL__
 __LIBC int (__LIBCCALL pthread_sigmask)(int __how, const __sigset_t *__restrict __newmask, __sigset_t *__restrict __oldmask);
@@ -49,6 +49,6 @@ __LIBC int (__LIBCCALL pthread_sigqueue)(pthread_t __threadid, int __signo, unio
 #endif /* __USE_GNU */
 #endif /* __KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* _BITS_SIGTHREAD_H */

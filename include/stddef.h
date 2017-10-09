@@ -23,7 +23,7 @@
 #include <features.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __MAX_ALIGN_TYPE__
 #define __MAX_ALIGN_TYPE__ long double
@@ -48,10 +48,12 @@ typedef __SIZE_TYPE__ size_t;
 typedef __MAX_ALIGN_TYPE__ max_align_t;
 #endif /* !__std_max_align_t_defined */
 
+#if defined(__cplusplus)
 #ifndef __std_nullptr_t_defined
 #define __std_nullptr_t_defined 1
 typedef decltype(nullptr) nullptr_t;
 #endif /* !__std_nullptr_t_defined */
+#endif
 
 __NAMESPACE_STD_END
 
@@ -105,15 +107,9 @@ typedef __WCHAR_TYPE__ wchar_t;
 #endif /* __USE_KOS */
 
 #ifndef NULL
-#ifdef __INTELLISENSE__
-#   define NULL nullptr
-#elif defined(__cplusplus) || defined(__LINKER__)
-#   define NULL          0
-#else
-#   define NULL ((void *)0)
-#endif
+#define NULL __NULLPTR
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_STDDEF_H */

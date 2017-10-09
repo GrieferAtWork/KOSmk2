@@ -22,7 +22,11 @@
 #include <features.h>
 #include <paths.h>
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<mntent.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 #define MNTTAB          _PATH_MNTTAB
 #define MOUNTED         _PATH_MOUNTED
@@ -74,6 +78,6 @@ __LIBC struct mntent *(__LIBCCALL getmntent_r)(FILE *__restrict __stream, struct
 #endif /* __USE_MISC */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_MNTENT_H */

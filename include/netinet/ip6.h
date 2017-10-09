@@ -39,7 +39,7 @@
 #include <inttypes.h>
 #include <netinet/in.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct ip6_hdr {
  union {
@@ -186,6 +186,6 @@ struct ip6_opt_router {
 #   define IP6_ALERT_AN   0x0200
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_NETINET_IP6_H */

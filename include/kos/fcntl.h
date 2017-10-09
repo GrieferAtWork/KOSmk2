@@ -23,7 +23,7 @@
 #include <bits/types.h>
 #include <hybrid/timespec.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* File descriptor type IDs. */
 #define FD_TYPE_NULL     0x00 /*< Invalid file descriptor object. (Never returned by 'fcntl()') */
@@ -63,6 +63,6 @@ __LIBC char *(__LIBCCALL xfdname)(int __fd, int __type, char *__buf, __size_t __
 __LIBC __ssize_t (__LIBCCALL xfdname2)(int __fd, int __type, char *__buf, __size_t __bufsize);
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_KOS_FCNTL_H */

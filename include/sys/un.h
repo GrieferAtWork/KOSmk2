@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <bits/sockaddr.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct sockaddr_un {
  __SOCKADDR_COMMON(sun_);
@@ -37,6 +37,6 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strlen)(char cons
 #define SUN_LEN(ptr)   ((size_t)(((struct sockaddr_un *)0)->sun_path)+strlen((ptr)->sun_path))
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_UN_H */

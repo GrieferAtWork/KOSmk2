@@ -43,16 +43,10 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef NULL
-#ifdef __INTELLISENSE__
-#   define NULL nullptr
-#elif defined(__cplusplus) || defined(__LINKER__)
-#   define NULL          0
-#else
-#   define NULL ((void *)0)
-#endif
+#define NULL __NULLPTR
 #endif
 
 #define __DOS_LC_ALL      0
@@ -170,7 +164,9 @@ struct lconv {
 #endif
 };
 
-__LIBC char *(__LIBCCALL setlocale)(int __category, char const *__locale)  __DOS_FUNC(setlocale);
+__REDIRECT_DOS_FUNC(__LIBC,,char *,__LIBCCALL,setlocale,
+                   (int __category, char const *__locale),
+                    setlocale,(__category,__locale))
 #if defined(__PE__) && !defined(__USE_DOS)
 __LIBC struct lconv *(__LIBCCALL localeconv)(void) __ASMNAME(".kos.localeconv");
 #else
@@ -183,9 +179,10 @@ __NAMESPACE_STD_USING(setlocale)
 __NAMESPACE_STD_USING(localeconv)
 
 
-#ifdef __USE_XOPEN2K8
+#if defined(__USE_XOPEN2K8)
 
-__LIBC __locale_t (__LIBCCALL newlocale)(int __category_mask, char const *__locale, __locale_t __base);
+#ifdef __CRT_GLC
+__LIBC __PORT_NODOS __locale_t (__LIBCCALL newlocale)(int __category_mask, char const *__locale, __locale_t __base);
 
 /* These are the bits that can be set in the CATEGORY_MASK
  * argument to `newlocale'. In the GNU implementation, LC_FOO_MASK
@@ -207,14 +204,15 @@ __LIBC __locale_t (__LIBCCALL newlocale)(int __category_mask, char const *__loca
                                |LC_MONETARY_MASK|LC_MESSAGES_MASK|LC_PAPER_MASK|LC_NAME_MASK \
                                |LC_ADDRESS_MASK|LC_TELEPHONE_MASK|LC_MEASUREMENT_MASK \
                                |LC_IDENTIFICATION_MASK)
-
-__LIBC __locale_t (__LIBCCALL duplocale)(__locale_t __dataset);
-__LIBC void (__LIBCCALL freelocale)(__locale_t __dataset);
-__LIBC __locale_t (__LIBCCALL uselocale)(__locale_t __dataset);
+__LIBC __PORT_NODOS __locale_t (__LIBCCALL duplocale)(__locale_t __dataset);
+__LIBC __PORT_NODOS __locale_t (__LIBCCALL uselocale)(__locale_t __dataset);
 #define LC_GLOBAL_LOCALE    ((__locale_t)-1L)
+#endif /* __CRT_GLC */
+
+__REDIRECT_IFDOS_VOID(__LIBC,,__LIBCCALL,freelocale,(__locale_t __dataset),_free_locale,(__dataset))
 #endif /* __USE_XOPEN2K8 */
 
-#ifdef __USE_DOS
+#if defined(__USE_DOS) && defined(__CRT_DOS)
 #ifndef _CONFIG_LOCALE_SWT
 #define _CONFIG_LOCALE_SWT 1
 #define _ENABLE_PER_THREAD_LOCALE         0x001
@@ -225,21 +223,21 @@ __LIBC __locale_t (__LIBCCALL uselocale)(__locale_t __dataset);
 #define _DISABLE_PER_THREAD_LOCALE_NEW    0x200
 #endif /* !_CONFIG_LOCALE_SWT */
 
-__LIBC int (__LIBCCALL _configthreadlocale)(int __flag);
-__LIBC __locale_t (__LIBCCALL _get_current_locale)(void);
-__LIBC __locale_t (__LIBCCALL __get_current_locale)(void) __ASMNAME("_get_current_locale");
-__LIBC __locale_t (__LIBCCALL _create_locale)(int __dos_category, char const *__locale);
-__LIBC __locale_t (__LIBCCALL __create_locale)(int __dos_category, char const *__locale) __ASMNAME("_create_locale");
-__LIBC void (__LIBCCALL __free_locale)(__locale_t __locale) __ASMNAME("freelocale");
-__LIBC void (__LIBCCALL _free_locale)(__locale_t __locale) __ASMNAME("freelocale");
+__LIBC __PORT_DOSONLY int (__LIBCCALL _configthreadlocale)(int __flag);
+__LIBC __PORT_DOSONLY __locale_t (__LIBCCALL _get_current_locale)(void);
+__LIBC __PORT_DOSONLY __locale_t (__LIBCCALL _create_locale)(int __dos_category, char const *__locale);
+__REDIRECT(__LIBC,__PORT_DOSONLY,__locale_t,__LIBCCALL,__get_current_locale,(void),_get_current_locale,())
+__REDIRECT(__LIBC,__PORT_DOSONLY,__locale_t,__LIBCCALL,__create_locale,(int __dos_category, char const *__locale),_create_locale,(__dos_category,__locale))
+__REDIRECT2_VOID(__LIBC,,__LIBCCALL,__free_locale,(__locale_t __locale),freelocale,_free_locale,(__locale))
+__REDIRECT_IFKOS_VOID(__LIBC,,__LIBCCALL,_free_locale,(__locale_t __locale),freelocale,(__locale))
 
 #ifndef _WLOCALE_DEFINED
 #define _WLOCALE_DEFINED 1
-__LIBC wchar_t *(__LIBCCALL _wsetlocale)(int __category, wchar_t const *__locale);
-__LIBC __locale_t (__LIBCCALL _wcreate_locale)(int __category, wchar_t const *__locale);
+__LIBC __PORT_DOSONLY wchar_t *(__LIBCCALL _wsetlocale)(int __category, wchar_t const *__locale);
+__LIBC __PORT_DOSONLY __locale_t (__LIBCCALL _wcreate_locale)(int __category, wchar_t const *__locale);
 #endif /* !_WLOCALE_DEFINED */
 #endif /* __USE_DOS */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_LOCALE_H */

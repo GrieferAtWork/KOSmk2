@@ -22,7 +22,7 @@
 #include <features.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __time_t_defined
 #define __time_t_defined 1
@@ -137,6 +137,6 @@ __LIBC errno_t (__LIBCCALL _ftime64_s)(struct __timeb64 *__timebuf) __ASMNAME("f
 
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_TIMEB_H */

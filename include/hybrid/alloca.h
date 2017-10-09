@@ -22,15 +22,20 @@
 #include <__stdinc.h>
 #include <features.h>
 
-#if defined(__USE_DEBUG_HOOK) && !defined(__GNUC__)
+#if defined(__GNUC__) || __has_builtin(__builtin_alloca)
+#define __ALLOCA(s)  __builtin_alloca((s))
+#else /* ... */
 #include "typecore.h"
-__DECL_BEGIN
-__LIBC __SAFE __WUNUSED __ATTR_ALLOC_SIZE((1))
-void *(__LIBCCALL alloca)(__SIZE_TYPE__ __n_bytes);
-__DECL_END
-#   define __ALLOCA(s)  alloca((s))
-#else /* __USE_DEBUG_HOOK */
-#   define __ALLOCA(s)  __builtin_alloca((s))
-#endif /* !__USE_DEBUG_HOOK */
+__SYSDECL_BEGIN
+#ifdef _MSC_VER
+extern __WUNUSED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL _alloca)(__SIZE_TYPE__ __n_bytes);
+#define __ALLOCA(s)  _alloca((s))
+#pragma intrinsic(_alloca)
+#else /* _MSC_VER */
+__LIBC __WUNUSED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL alloca)(__SIZE_TYPE__ __n_bytes);
+#define __ALLOCA(s)  alloca((s))
+#endif /* !_MSC_VER */
+__SYSDECL_END
+#endif /* ... */
 
 #endif /* !__GUARD_HYBRID_ALLOCA_H */

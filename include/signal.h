@@ -20,10 +20,10 @@
 #define _SIGNAL_H 1
 
 #include <features.h>
-#include <bits/sigset.h>
 #include <bits/types.h>
 #include <bits/signum.h>
 
+#include <bits/sigset.h>
 #ifdef __USE_POSIX199309
 #include <hybrid/timespec.h>
 #endif /* __USE_POSIX199309 */
@@ -47,7 +47,7 @@
 #include <bits/sigthread.h>
 #endif /* __USE_POSIX199506 || __USE_UNIX98 */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* An integral type that can be modified atomically, without the
    possibility of a signal arriving in the middle of the operation.  */
@@ -59,10 +59,12 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(sig_atomic_t)
 #endif
 
+#ifdef __CRT_GLC
 #ifndef __sigset_t_defined
 #define __sigset_t_defined 1
 typedef __sigset_t sigset_t;
 #endif
+#endif /* __CRT_GLC */
 
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K)
 #ifndef __pid_t_defined
@@ -98,85 +100,97 @@ __NAMESPACE_STD_BEGIN
 __LIBC int (__LIBCCALL raise)(int __sig);
 __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(raise)
-__LIBC __sighandler_t (__LIBCCALL __sysv_signal)(int __sig, __sighandler_t __handler) __ASMNAME("sysv_signal");
+
+#ifdef __CRT_GLC
+__REDIRECT(__LIBC,,__sighandler_t,__LIBCCALL,__sysv_signal,(int __sig, __sighandler_t __handler),sysv_signal,(__sig,__handler))
 #ifdef __USE_GNU
 __LIBC __sighandler_t (__LIBCCALL sysv_signal)(int __sig, __sighandler_t __handler);
 #endif /* __USE_GNU */
+#endif /* __CRT_GLC */
+
 #ifdef __USE_MISC
 __NAMESPACE_STD_BEGIN
-__LIBC __sighandler_t (__LIBCCALL signal)(int __sig, __sighandler_t __handler) __DOS_FUNC(signal);
+__REDIRECT_DOS_FUNC(__LIBC,,__sighandler_t,__LIBCCALL,signal,
+                   (int __sig, __sighandler_t __handler),signal,(__sig,__handler));
 __NAMESPACE_STD_END
-__LIBC __sighandler_t (__LIBCCALL ssignal)(int __sig, __sighandler_t __handler);
-__LIBC int (__LIBCCALL gsignal)(int __sig);
+#ifdef __CRT_GLC
+__LIBC __PORT_NODOS __sighandler_t (__LIBCCALL ssignal)(int __sig, __sighandler_t __handler);
+__LIBC __PORT_NODOS int (__LIBCCALL gsignal)(int __sig);
 #define sigmask(sig)    __sigmask(sig)
 __LIBC __ATTR_DEPRECATED("Using `sigprocmask()' instead") int (__LIBCCALL sigblock)(int __mask);
 __LIBC __ATTR_DEPRECATED("Using `sigprocmask()' instead") int (__LIBCCALL sigsetmask)(int __mask);
 __LIBC __ATTR_DEPRECATED("Using `sigprocmask()' instead") int (__LIBCCALL siggetmask)(void);
 #undef _sys_siglist
 #undef sys_siglist
-__LIBC char const *const (_sys_siglist)[_NSIG] __ASMNAME("sys_siglist");
-__LIBC char const *const (sys_siglist)[_NSIG];
-__LIBC __ATTR_NORETURN void (__LIBCCALL sigreturn)(struct sigcontext const *__scp);
+__LIBC __PORT_NODOS char const *const (_sys_siglist)[_NSIG] __ASMNAME("sys_siglist");
+__LIBC __PORT_NODOS char const *const (sys_siglist)[_NSIG];
+__LIBC __PORT_NODOS __ATTR_NORETURN void (__LIBCCALL sigreturn)(struct sigcontext const *__scp);
+#endif /* __CRT_GLC */
 #else /* __USE_MISC */
 __NAMESPACE_STD_BEGIN
 #ifdef __USE_DOS
-__LIBC __sighandler_t (__LIBCCALL signal)(int __sig, __sighandler_t __handler) __DOS_FUNC(signal);
+__REDIRECT_DOS_FUNC(__LIBC,,__sighandler_t,__LIBCCALL,signal,(int __sig, __sighandler_t __handler),signal,(__sig,__handler))
 #else /* __USE_DOS */
-__LIBC __sighandler_t (__LIBCCALL signal)(int __sig, __sighandler_t __handler) __ASMNAME("sysv_signal");
+__REDIRECT(__LIBC,,__sighandler_t,__LIBCCALL,signal,(int __sig, __sighandler_t __handler),sysv_signal,(__sig,__handler))
 #endif /* !__USE_DOS */
 __NAMESPACE_STD_END
 #endif /* !__USE_MISC */
 __NAMESPACE_STD_USING(signal)
+
+#ifdef __CRT_GLC
 #ifdef __USE_XOPEN
-__LIBC __sighandler_t (__LIBCCALL bsd_signal)(int __sig, __sighandler_t __handler);
-__LIBC int (__LIBCCALL sigpause)(int __sig) __ASMNAME("__xpg_sigpause");
+__LIBC __PORT_NODOS __sighandler_t (__LIBCCALL bsd_signal)(int __sig, __sighandler_t __handler);
+__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,sigpause,(int __sig),__xpg_sigpause,(__sig))
 #endif /* __USE_XOPEN */
 #ifdef __USE_POSIX
-__LIBC int (__LIBCCALL kill)(__pid_t __pid, int __sig);
-__LIBC __NONNULL((1)) int (__LIBCCALL sigemptyset)(sigset_t *__set);
-__LIBC __NONNULL((1)) int (__LIBCCALL sigfillset)(sigset_t *__set);
-__LIBC __NONNULL((1)) int (__LIBCCALL sigaddset)(sigset_t *__set, int __signo);
-__LIBC __NONNULL((1)) int (__LIBCCALL sigdelset)(sigset_t *__set, int __signo);
-__LIBC __NONNULL((1)) int (__LIBCCALL sigismember)(sigset_t const *__set, int __signo);
-__LIBC int (__LIBCCALL sigprocmask)(int __how, sigset_t const *__restrict __set, sigset_t *__restrict __oset);
-__LIBC __NONNULL((1)) int (__LIBCCALL sigsuspend)(sigset_t const *__set);
-__LIBC int (__LIBCCALL sigaction)(int __sig, struct sigaction const *__restrict __act, struct sigaction *__restrict __oact);
-__LIBC __NONNULL((1)) int (__LIBCCALL sigpending)(sigset_t *__set);
-__LIBC __NONNULL((1,2)) int (__LIBCCALL sigwait)(sigset_t const *__restrict __set, int *__restrict __sig);
+__LIBC __PORT_NODOS int (__LIBCCALL kill)(__pid_t __pid, int __sig);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigemptyset)(sigset_t *__set);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigfillset)(sigset_t *__set);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigaddset)(sigset_t *__set, int __signo);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigdelset)(sigset_t *__set, int __signo);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigismember)(sigset_t const *__set, int __signo);
+__LIBC __PORT_NODOS int (__LIBCCALL sigprocmask)(int __how, sigset_t const *__restrict __set, sigset_t *__restrict __oset);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigsuspend)(sigset_t const *__set);
+__LIBC __PORT_NODOS int (__LIBCCALL sigaction)(int __sig, struct sigaction const *__restrict __act, struct sigaction *__restrict __oact);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigpending)(sigset_t *__set);
+__LIBC __PORT_NODOS __NONNULL((1,2)) int (__LIBCCALL sigwait)(sigset_t const *__restrict __set, int *__restrict __sig);
 #ifdef __USE_GNU
-__LIBC __NONNULL((1)) int (__LIBCCALL sigisemptyset)(sigset_t const *__set);
-__LIBC __NONNULL((1,2,3)) int (__LIBCCALL sigandset)(sigset_t *__set, sigset_t const *__left, sigset_t const *__right);
-__LIBC __NONNULL((1,2,3)) int (__LIBCCALL sigorset)(sigset_t *__set, sigset_t const *__left, sigset_t const *__right);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigisemptyset)(sigset_t const *__set);
+__LIBC __PORT_NODOS __NONNULL((1,2,3)) int (__LIBCCALL sigandset)(sigset_t *__set, sigset_t const *__left, sigset_t const *__right);
+__LIBC __PORT_NODOS __NONNULL((1,2,3)) int (__LIBCCALL sigorset)(sigset_t *__set, sigset_t const *__left, sigset_t const *__right);
 #endif /* __USE_GNU */
 #ifdef __USE_POSIX199309
-__LIBC __NONNULL((1)) int (__LIBCCALL sigwaitinfo)(sigset_t const *__restrict __set, siginfo_t *__restrict __info);
-__LIBC __NONNULL((1)) int (__LIBCCALL sigtimedwait)(sigset_t const *__restrict __set, siginfo_t *__restrict __info, struct timespec const *__timeout) __TM_FUNC(sigtimedwait);
-__LIBC int (__LIBCCALL sigqueue)(__pid_t __pid, int __sig, union sigval const __val);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigwaitinfo)(sigset_t const *__restrict __set, siginfo_t *__restrict __info);
+__REDIRECT_TM_FUNC(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,sigtimedwait,
+                  (sigset_t const *__restrict __set, siginfo_t *__restrict __info,
+                   struct timespec const *__timeout),sigtimedwait,(__set,__info,__timeout))
+__LIBC __PORT_NODOS int (__LIBCCALL sigqueue)(__pid_t __pid, int __sig, union sigval const __val);
 #ifdef __USE_TIME64
-__LIBC __NONNULL((1)) int (__LIBCCALL sigtimedwait64)(sigset_t const *__restrict __set, siginfo_t *__restrict __info, struct __timespec64 const *__timeout);
+__LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL sigtimedwait64)(sigset_t const *__restrict __set, siginfo_t *__restrict __info, struct __timespec64 const *__timeout);
 #endif /* __USE_TIME64 */
 #endif /* __USE_POSIX199309 */
 #endif /* __USE_POSIX */
 #if defined(__USE_MISC) || defined(__USE_XOPEN_EXTENDED)
-__LIBC int (__LIBCCALL killpg)(__pid_t __pgrp, int __sig);
+__LIBC __PORT_NODOS int (__LIBCCALL killpg)(__pid_t __pgrp, int __sig);
 #endif /* __USE_MISC || __USE_XOPEN_EXTENDED */
 #ifdef __USE_XOPEN2K8
-__LIBC void (__LIBCCALL psignal)(int __sig, char const *__s);
-__LIBC void (__LIBCCALL psiginfo)(siginfo_t const *__pinfo, char const *__s);
+__LIBC __PORT_NODOS void (__LIBCCALL psignal)(int __sig, char const *__s);
+__LIBC __PORT_NODOS void (__LIBCCALL psiginfo)(siginfo_t const *__pinfo, char const *__s);
 #endif /* __USE_XOPEN2K8 */
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
-__LIBC int (__LIBCCALL siginterrupt)(int __sig, int __interrupt);
-__LIBC __ATTR_DEPRECATED_ int (__LIBCCALL sigstack)(struct sigstack *__ss, struct sigstack *__oss);
-__LIBC int (__LIBCCALL sigaltstack)(struct sigaltstack const *__restrict __ss, struct sigaltstack *__restrict __oss);
+__LIBC __PORT_NODOS int (__LIBCCALL siginterrupt)(int __sig, int __interrupt);
+__LIBC __PORT_NODOS __ATTR_DEPRECATED_ int (__LIBCCALL sigstack)(struct sigstack *__ss, struct sigstack *__oss);
+__LIBC __PORT_NODOS int (__LIBCCALL sigaltstack)(struct sigaltstack const *__restrict __ss, struct sigaltstack *__restrict __oss);
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
 #ifdef __USE_XOPEN_EXTENDED
-__LIBC int (__LIBCCALL sighold)(int __sig);
-__LIBC int (__LIBCCALL sigrelse)(int __sig);
-__LIBC int (__LIBCCALL sigignore)(int __sig);
-__LIBC __sighandler_t (__LIBCCALL sigset)(int __sig, __sighandler_t __disp);
+__LIBC __PORT_NODOS int (__LIBCCALL sighold)(int __sig);
+__LIBC __PORT_NODOS int (__LIBCCALL sigrelse)(int __sig);
+__LIBC __PORT_NODOS int (__LIBCCALL sigignore)(int __sig);
+__LIBC __PORT_NODOS __sighandler_t (__LIBCCALL sigset)(int __sig, __sighandler_t __disp);
 #endif /* __USE_XOPEN_EXTENDED */
-__LIBC int (__LIBCCALL __libc_current_sigrtmin)(void);
-__LIBC int (__LIBCCALL __libc_current_sigrtmax)(void);
+__LIBC __PORT_NODOS int (__LIBCCALL __libc_current_sigrtmin)(void);
+__LIBC __PORT_NODOS int (__LIBCCALL __libc_current_sigrtmax)(void);
+#endif /* __CRT_GLC */
 
 #else /* !__KERNEL__ */
 #define sigismember(set,sig) __sigismember(set,sig)
@@ -184,6 +198,6 @@ __LIBC int (__LIBCCALL __libc_current_sigrtmax)(void);
 #define sigdelset(set,sig)   __sigdelset(set,sig)
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SIGNAL_H */

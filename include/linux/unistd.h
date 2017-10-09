@@ -23,7 +23,7 @@
 #include <features.h>
 #include <asm/unistd.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #define __PRIVATE_SYSCALL_ATTR6_     ,
 #define __PRIVATE_SYSCALL_ATTR6_1    ,
@@ -189,6 +189,6 @@ __DECL_BEGIN
 #define _syscall5(type,name,...) __SYSCALL_FUN5(,,type,__NR_##name,name,__VA_ARGS__)
 #define _syscall6(type,name,...) __SYSCALL_FUN6(,,type,__NR_##name,name,__VA_ARGS__)
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_LINUX_UNISTD_H */

@@ -24,6 +24,7 @@
 #ifndef __KERNEL__
 #include <hybrid/types.h>
 #include <hybrid/section.h>
+#include <bits/mbstate.h>
 #include <uchar.h>
 
 DECL_BEGIN
@@ -32,35 +33,6 @@ DECL_BEGIN
 #define ATTR_UNIRODATA ATTR_RARERODATA
 #define ATTR_UNIDATA   ATTR_RAREDATA
 #define ATTR_UNIBSS    ATTR_RAREBSS
-
-#ifndef ____mbstate_t_defined
-#define ____mbstate_t_defined 1
-typedef struct __mbstate {
- int                   __count;
- union { __WINT_TYPE__ __wch; char   __wchb[4]; } __value;
-} __mbstate_t;
-#define __MBSTATE_INIT {0,{0}}
-#endif /* !____mbstate_t_defined */
-
-#ifndef __std_mbstate_t_defined
-#define __std_mbstate_t_defined 1
-__NAMESPACE_STD_BEGIN
-typedef __mbstate_t mbstate_t;
-__NAMESPACE_STD_END
-#endif /* !__std_mbstate_t_defined */
-
-#ifndef __mbstate_t_defined
-#define __mbstate_t_defined 1
-__NAMESPACE_STD_USING(mbstate_t)
-#endif /* !__mbstate_t_defined */
-
-#ifndef __MBSTATE_INIT
-#define __MBSTATE_INIT     {0,{0}}
-#endif /* !__MBSTATE_INIT */
-
-#ifndef MBSTATE_INIT
-#define MBSTATE_INIT     __MBSTATE_INIT
-#endif /* !MBSTATE_INIT */
 
 #define mbstate_reset(p)  libc_memset(p,0,sizeof(mbstate_t))
 

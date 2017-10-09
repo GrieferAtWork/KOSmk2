@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* DOS errno values */
 #define __DOS_EPERM           1
@@ -192,6 +192,6 @@ __DECL_BEGIN
 #define EWOULDBLOCK     __DOS_EWOULDBLOCK    
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_DOS_ERRNO_H */

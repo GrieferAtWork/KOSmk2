@@ -46,7 +46,7 @@
 #include <bits/sockaddr.h>
 #include <asm/socket.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
@@ -295,7 +295,7 @@ struct linger {
  int l_linger; /*< Time to linger. */
 };
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !__BITS_SOCKET_H */
 #endif /* !_BITS_SOCKET_H */

@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <hybrid/asm.h>
 #include <hybrid/atomic.h>
+#include <hybrid/debug.h>
 #include <hybrid/compiler.h>
 #include <hybrid/debuginfo.h>
 #include <hybrid/traceback.h>
@@ -58,31 +59,31 @@ DECL_BEGIN
 /* Allow for calls from assembly. */
 GLOBAL_ASM(
 L(.section .text                                    )
-L(INTERN_ENTRY(libc___assertion_tbprint)            )
+L(INTERN_ENTRY(libc_debug_tbprint)            )
 L(    pushal /* Preserve registers */               )
 L(    pushl  $0                                     )
 L(    pushl  %ebp                                   )
-L(    call PLT_SYM(libc___assertion_tbprint2)       )
+L(    call PLT_SYM(libc_debug_tbprint2)       )
 L(    popal /* Restore registers */                 )
 L(    ret                                           )
-L(SYM_END(libc___assertion_tbprint)                 )
+L(SYM_END(libc_debug_tbprint)                 )
 L(.previous                                         )
 );
 
 
-INTERN void (LIBCCALL libc___assertion_tbprintl)(void const *eip, void const *frame, size_t tb_id) {
+INTERN void (LIBCCALL libc_debug_tbprintl)(void const *eip, void const *frame, size_t tb_id) {
  if (frame) {
-  __assertion_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p : %p'\n",
+  debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p : %p'\n",
                     (uintptr_t)eip-1,tb_id,eip,frame);
  } else {
-  __assertion_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p'\n",
+  debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p'\n",
                     (uintptr_t)eip-1,tb_id,eip);
  }
 }
 
 
 INTERN ssize_t LIBCCALL
-libc___assertion_print(char const *data, size_t datalen,
+libc_debug_print(char const *data, size_t datalen,
                        void *UNUSED(ignored_closure)) {
 #if defined(__KERNEL__) && 1
  ssize_t result;
@@ -96,13 +97,13 @@ libc___assertion_print(char const *data, size_t datalen,
 #endif
 }
 
-INTERN void (LIBCCALL libc___assertion_vprintf)(char const *format, __VA_LIST args) {
- libc_format_vprintf(&libc___assertion_print,NULL,format,args);
+INTERN void (LIBCCALL libc_debug_vprintf)(char const *format, __VA_LIST args) {
+ libc_format_vprintf(&libc_debug_print,NULL,format,args);
 }
-INTERN void (ATTR_CDECL libc___assertion_printf)(char const *format, ...) {
+INTERN void (ATTR_CDECL libc_debug_printf)(char const *format, ...) {
  va_list args;
  va_start(args,format);
- __assertion_vprintf(format,args);
+ debug_vprintf(format,args);
  va_end(args);
 }
 PRIVATE ATTR_NORETURN ATTR_NOINLINE void
@@ -113,72 +114,72 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
  PREEMPTION_DISABLE();
 #endif
  if (ATOMIC_XCH(in_core,1) == 0) {
-  __assertion_printf("\n\n%s(%d) : %q : Assertion failed : %q\n",
+  debug_printf("\n\n%s(%d) : %q : Assertion failed : %q\n",
                      __file,__line,__func,expr);
   if (format) {
-   __assertion_vprintf(format,args);
-   __assertion_print("\n",1,NULL);
+   debug_vprintf(format,args);
+   debug_print("\n",1,NULL);
   }
-  __assertion_tbprint(1);
+  debug_tbprint(1);
 #if defined(__KERNEL__) && 1
   { struct task *start,*iter;
     iter = start = THIS_CPU->c_running;
     if (start) do {
-     __assertion_printf("RUNNING TASK %p (PID = %d/%d) - %[file]\n",iter,
+     debug_printf("RUNNING TASK %p (PID = %d/%d) - %[file]\n",iter,
                         iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                         iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
      if (iter == THIS_TASK) {
-#undef __assertion_tbprint
-      libc___assertion_tbprint();
+#undef debug_tbprint
+      libc_debug_tbprint();
      } else {
-      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
     } while ((iter = iter->t_sched.sd_running.re_next) != start);
     for (iter = THIS_CPU->c_idling;
          iter; iter = iter->t_sched.sd_running.re_next) {
-     __assertion_printf("IDLING TASK %p (PID = %d/%d) - %[file]\n",iter,
+     debug_printf("IDLING TASK %p (PID = %d/%d) - %[file]\n",iter,
                         iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                         iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
      if (iter == THIS_TASK) {
-#undef __assertion_tbprint
-      libc___assertion_tbprint();
+#undef debug_tbprint
+      libc_debug_tbprint();
      } else {
-      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
     }
     task_crit();
     if (cpu_tryread(THIS_CPU)) {
      for (iter = THIS_CPU->c_suspended; iter;
           iter = iter->t_sched.sd_suspended.le_next) {
-      __assertion_printf("SUSPENDED TASK %p (PID = %d/%d) - %[file]\n",iter,
+      debug_printf("SUSPENDED TASK %p (PID = %d/%d) - %[file]\n",iter,
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
      for (iter = THIS_CPU->c_sleeping; iter;
           iter = iter->t_sched.sd_sleeping.le_next) {
-      __assertion_printf("SLEEPING TASK %p (PID = %d/%d) - %[file]\n",iter,
+      debug_printf("SLEEPING TASK %p (PID = %d/%d) - %[file]\n",iter,
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
      cpu_endread(THIS_CPU);
     }
     task_endcrit();
   }
-  __assertion_printf("==DONE\n");
+  debug_printf("==DONE\n");
 #endif
  } else if (ATOMIC_XCH(in_core,2) == 1) {
   uintptr_t return_address; char buffer[__SIZEOF_POINTER__*2],*iter;
-  __assertion_print("\n\nASSERTION CORE RECURSION\n",27,NULL);
+  debug_print("\n\nASSERTION CORE RECURSION\n",27,NULL);
   __asm__ __volatile__("movl 4(%%ebp), %0\n" : "=r" (return_address) : : "memory");
   iter = COMPILER_ENDOF(buffer);
   while (iter-- != buffer) {
@@ -189,9 +190,9 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
    else            *iter = (char)('0'+temp);
   }
   ++iter;
-  __assertion_print("EIP = ",6,NULL);
-  __assertion_print(iter,COMPILER_ENDOF(buffer)-iter,NULL);
-  __assertion_print("\n",1,NULL);
+  debug_print("EIP = ",6,NULL);
+  debug_print(iter,COMPILER_ENDOF(buffer)-iter,NULL);
+  debug_print("\n",1,NULL);
  }
 #ifndef __KERNEL__
  __asm__ __volatile__("int $3\n" : : : "memory");
@@ -216,7 +217,7 @@ void (ATTR_STDCALL libc___assertion_tbprint2_impl)(void const *ebp, size_t n_ski
 #endif
 GLOBAL_ASM(
 L(.section .text                                                 )
-L(INTERN_ENTRY(libc___assertion_tbprint2)                        )
+L(INTERN_ENTRY(libc_debug_tbprint2)                        )
 L(    pushl %ebp                                                 )
 L(    movl  %esp, %ebp                                           )
 L(    pushal                                                     )
@@ -236,12 +237,12 @@ L(    addl  $8, %esp                                             )
 L(1:  popal                                                      )
 L(    leave                                                      )
 L(    ret $8                                                     )
-L(SYM_END(libc___assertion_tbprint2)                             )
+L(SYM_END(libc_debug_tbprint2)                             )
 L(.previous                                                      )
 );
 PRIVATE void (ATTR_STDCALL libc___assertion_tbprint2_impl)(void const *ebp, size_t n_skip)
 #else
-INTERN void (LIBCCALL libc___assertion_tbprint2)(void const *ebp, size_t n_skip)
+INTERN void (LIBCCALL libc_debug_tbprint2)(void const *ebp, size_t n_skip)
 #endif
 {
  struct stackframe *iter2,*iter;
@@ -264,7 +265,7 @@ INTERN void (LIBCCALL libc___assertion_tbprint2)(void const *ebp, size_t n_skip)
 #endif
   {
    /* Print one traceback line. */
-   libc___assertion_tbprintl(iter->sf_return,iter,tb_id-n_skip);
+   libc_debug_tbprintl(iter->sf_return,iter,tb_id-n_skip);
   }
   iter = iter->sf_caller;
   ++tb_id;
@@ -305,32 +306,46 @@ PUBLIC ATTR_NORETURN ATTR_NOINLINE void __stack_chk_fail(void) {
 
 #undef __stack_chk_fail_local
 #undef __assertion_unreachable
-#undef __assertion_print
-#undef __assertion_printf
-#undef __assertion_vprintf
-#undef __assertion_failed
-#undef __assertion_failedf
-#undef __assertion_tbprintl
-#undef __assertion_tbprint2
-#undef __assertion_tbprint
+#undef __afail
+#undef __afailf
+#undef debug_print
+#undef debug_printf
+#undef debug_vprintf
+#undef debug_tbprintl
+#undef debug_tbprint2
+#undef debug_tbprint
 
 DEFINE_PUBLIC_ALIAS(__stack_chk_fail_local,__stack_chk_fail);
 DEFINE_PUBLIC_ALIAS(__assertion_unreachable,libc___assertion_unreachable);
-DEFINE_PUBLIC_ALIAS(__assertion_print,libc___assertion_print);
-DEFINE_PUBLIC_ALIAS(__assertion_printf,libc___assertion_printf);
-DEFINE_PUBLIC_ALIAS(__assertion_vprintf,libc___assertion_vprintf);
-DEFINE_PUBLIC_ALIAS(__assertion_failed,libc___assertion_failed);
-DEFINE_PUBLIC_ALIAS(__assertion_failedf,libc___assertion_failedf);
-DEFINE_PUBLIC_ALIAS(__assertion_tbprintl,libc___assertion_tbprintl);
-DEFINE_PUBLIC_ALIAS(__assertion_tbprint2,libc___assertion_tbprint2);
-DEFINE_PUBLIC_ALIAS(__assertion_tbprint,libc___assertion_tbprint);
+DEFINE_PUBLIC_ALIAS(debug_print,libc_debug_print);
+DEFINE_PUBLIC_ALIAS(debug_printf,libc_debug_printf);
+DEFINE_PUBLIC_ALIAS(debug_vprintf,libc_debug_vprintf);
+DEFINE_PUBLIC_ALIAS(__afail,libc___assertion_failed);
+DEFINE_PUBLIC_ALIAS(__afailf,libc___assertion_failedf);
+DEFINE_PUBLIC_ALIAS(debug_tbprintl,libc_debug_tbprintl);
+DEFINE_PUBLIC_ALIAS(debug_tbprint2,libc_debug_tbprint2);
+DEFINE_PUBLIC_ALIAS(debug_tbprint,libc_debug_tbprint);
 
 #ifndef __KERNEL__
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTERN ATTR_DOSTEXT ATTR_NORETURN ATTR_NOINLINE
-void LIBCCALL libc_assert(char const *msg, char const *file, u32 line) {
+DEFINE_PUBLIC_ALIAS(__assertion_failed,libc___assertion_failed);
+DEFINE_PUBLIC_ALIAS(__assertion_failedf,libc___assertion_failed);
+#endif
+
+#ifndef __KERNEL__
+INTERN ATTR_COLDTEXT ATTR_NORETURN ATTR_NOINLINE void LIBCCALL
+libc_assert(char const *msg, char const *file, unsigned int line) {
  assertion_corefail(msg,file,(int)line,NULL,NULL,NULL);
 }
+INTERN ATTR_COLDTEXT ATTR_NORETURN ATTR_NOINLINE void LIBCCALL
+libc_assert_perror_fail(int errnum, const char *file,
+                        unsigned int line, const char *function) {
+ assertion_corefail("TODO",file,(int)line,function,NULL,NULL);
+}
+DEFINE_PUBLIC_ALIAS(__assert_perror_fail,libc_assert_perror_fail);
+DEFINE_PUBLIC_ALIAS(__assert,libc_assert);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_assert,libc_assert);
 INTERN ATTR_DOSTEXT ATTR_NORETURN ATTR_NOINLINE
 void LIBCCALL libc_16wassert(char16_t const *msg, char16_t const *file, u32 line) {
  assertion_corefail(libc_utf16to8m(msg),
@@ -340,9 +355,7 @@ void LIBCCALL libc_16wassert(char16_t const *msg, char16_t const *file, u32 line
 
 /* NOTE: We're only exporting 16-bit '_wassert', because
  *       this is only for binary compatibility with DOS. */
-DEFINE_PUBLIC_ALIAS(_assert,libc_assert);
 DEFINE_PUBLIC_ALIAS(_wassert,libc_16wassert);
-
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 #endif /* !__KERNEL__ */
 

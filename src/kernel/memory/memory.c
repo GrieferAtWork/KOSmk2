@@ -323,7 +323,7 @@ search_zone:
           "[MEM] Allocated memory %p...%p from zone #%d (#%d)\n",
           result,(uintptr_t)result+(n_bytes-1),
          (int)(zone-page_zones),zone_id);
-   if (zone_id == 0) __assertion_tbprint(0);
+   if (zone_id == 0) debug_tbprint(0);
 #endif /* LOG_PHYSICAL_ALLOCATIONS */
 
    if (must_clear) memsetl(result,0,n_bytes/4);
@@ -569,7 +569,7 @@ search_zone:
           "[MEM] Allocated memory %p...%p from zone #%d (#%d)\n",
           result,(uintptr_t)result+(alloc_size-1),
          (int)(zone-page_zones),zone_id);
-   if (zone_id == 0) __assertion_tbprint(0);
+   if (zone_id == 0) debug_tbprint(0);
 #endif /* LOG_PHYSICAL_ALLOCATIONS */
 
    if (must_clear) memsetl(result,0,alloc_size/4);

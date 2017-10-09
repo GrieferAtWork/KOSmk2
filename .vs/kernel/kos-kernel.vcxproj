@@ -27,6 +27,7 @@
     <None Include="..\..\src\kernel\mman\ldt.c.inl" />
     <None Include="..\..\src\kernel\mman\mcore.c.inl" />
     <None Include="..\..\src\kernel\sched\pid.c.inl" />
+    <None Include="..\..\src\kernel\sched\sighand.c.inl" />
     <None Include="..\..\src\linker-scripts\kernel.ld" />
     <None Include="..\..\src\linker-scripts\module.ld" />
     <None Include="..\..\src\modules\block\ata-pio.c.inl" />

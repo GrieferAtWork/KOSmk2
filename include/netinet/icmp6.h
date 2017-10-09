@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #define ICMP6_FILTER             1
 #define ICMP6_FILTER_BLOCK       1
@@ -290,6 +290,6 @@ struct nd_opt_home_agent_info {
  uint16_t nd_opt_home_agent_info_lifetime;
 };
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* netinet/icmpv6.h */

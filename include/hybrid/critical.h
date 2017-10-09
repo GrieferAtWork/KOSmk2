@@ -22,12 +22,12 @@
 #include <__stdinc.h>
 
 #if defined(__CC__) && (defined(__KERNEL__) && !defined(__INTELLISENSE__))
-__DECL_BEGIN
+__SYSDECL_BEGIN
 __PUBDEF      __BOOL (__KCALL task_issafe)(void);
 __PUBDEF      __BOOL (__KCALL task_iscrit)(void);
 __PUBDEF        void (__KCALL task_crit)(void);
 __PUBDEF __SAFE void (__KCALL task_endcrit)(void);
-__DECL_END
+__SYSDECL_END
 #   define TASK_ISSAFE()    task_issafe() /* task_iscrit() || !PREEMPTION_ENABLED() */
 #   define TASK_ISCRIT()    task_iscrit()
 #   define TASK_CRIT()      task_crit()

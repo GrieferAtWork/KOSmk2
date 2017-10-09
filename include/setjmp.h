@@ -24,8 +24,10 @@
 #include <bits/sigset.h>
 #include <features.h>
 
+/* TODO: Compatibility with DOS and GLibc */
+
 #ifndef __KERNEL__
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct __jmp_buf {
  __UINTPTR_TYPE__ __ebx,__esp,__ebp;
@@ -69,7 +71,7 @@ __LIBC __attribute__((__returns_twice__)) int (__LIBCCALL sigsetjmp)(sigjmp_buf 
 __LIBC __ATTR_NORETURN void (__LIBCCALL siglongjmp)(sigjmp_buf __buf, int __sig);
 #endif /* __USE_POSIX */
 
-__DECL_END
+__SYSDECL_END
 #endif /* !__KERNEL__ */
 
 #endif /* !_SETJMP_H */

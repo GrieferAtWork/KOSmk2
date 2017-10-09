@@ -40,7 +40,7 @@
 #include <features.h>
 
 #ifdef __USE_ISOC99
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if defined(__x86_64__) || \
    (defined(__FLT_EVAL_METHOD__) && __FLT_EVAL_METHOD__ == 0)
@@ -63,7 +63,7 @@ typedef long double double_t; /*< `double' expressions are evaluated as `long do
 #   define FP_FAST_FMAL 1
 #endif
 
-__DECL_END
+__SYSDECL_END
 #endif /* __USE_ISOC99 */
 
 #endif /* !_BITS_MATHDEF_H */

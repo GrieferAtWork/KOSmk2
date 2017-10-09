@@ -40,7 +40,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if __GCC_VERSION(3,3,0)
 #   define HUGE_VALL    (__builtin_huge_vall())
@@ -58,6 +58,6 @@ __PRIVATE __huge_vall_t const __huge_vall = { __HUGE_VALL_bytes };
 #endif /* !__GNUC__ */
 #endif /* !... */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_HUGE_VALL_H */

@@ -22,61 +22,14 @@
 #include <features.h>
 #include <bits/types.h>
 #include <sys/select.h>
+#include <hybrid/timeval.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __time_t_defined
 #define __time_t_defined  1
 typedef __TM_TYPE(time) time_t;
 #endif /* !__time_t_defined */
-
-#ifndef _STRUCT_TIMEVAL
-#define _STRUCT_TIMEVAL 1
-#ifndef __timeval_defined
-#define __timeval_defined 1
-struct timeval {
-    __time_t      tv_sec;  /*< Seconds. */
-    __suseconds_t tv_usec; /*< Microseconds. */
-};
-#endif /* !__timeval_defined */
-#endif /* !_STRUCT_TIMEVAL */
-
-#ifndef __timeval32_t_defined
-#define __timeval32_t_defined 1
-#ifndef __USE_TIME_BITS64
-#define __timeval32 timeval
-#ifdef __USE_KOS
-#define timeval32   timeval
-#endif /* __USE_KOS */
-#else /* !__USE_TIME_BITS64 */
-#ifdef __USE_KOS
-#define __timeval32 timeval32
-#endif /* __USE_KOS */
-struct __timeval32 {
-    __time32_t    tv_sec;  /*< Seconds. */
-    __suseconds_t tv_usec; /*< Microseconds. */
-};
-#endif /* __USE_TIME_BITS64 */
-#endif /* !__timeval32_t_defined */
-
-#ifndef __timeval64_t_defined
-#define __timeval64_t_defined 1
-#ifdef __USE_TIME_BITS64
-#define __timeval64 timeval
-#ifdef __USE_TIME64
-#define timeval64   timeval
-#endif /* __USE_TIME64 */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_TIME64
-#define __timeval64 timeval64
-#endif /* __USE_TIME64 */
-struct __timeval64 {
-    __time64_t    tv_sec;  /*< Seconds. */
-    __suseconds_t tv_usec; /*< Microseconds. */
-};
-#endif /* !__USE_TIME_BITS64 */
-#endif /* !__timeval64_t_defined */
-
 
 #ifndef __suseconds_t_defined
 #define __suseconds_t_defined
@@ -208,6 +161,6 @@ do{ (result)->tv_sec  = (a)->tv_sec  - (b)->tv_sec; \
 }while(0)
 #endif /* __USE_MISC */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* sys/time.h */

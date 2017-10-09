@@ -703,7 +703,7 @@ L(    movl  %esp, %ebp                                                        )
 #if CONFIG_LOG_WAITING
 L(    testb $0xff, dont_log_waiting                                           )
 L(    jnz 1f                                                                  )
-L(    call  __assertion_tbprint                                               )
+L(    call  debug_tbprint                                               )
 L(1:                                                                          )
 #endif
 L(                                                                            )
@@ -823,12 +823,12 @@ INTERN void ATTR_CDECL noyield_without_irq(void *eip) {
   syslog(LOG_SCHED|LOG_WARN,
          "#!$ addr2line(%Ix) '{file}({line}) : {func} : %p : Cannot yield while interrupts are disabled'\n",
         (uintptr_t)eip-1,eip);
-  __assertion_tbprint(0);
+  debug_tbprint(0);
   CPU(noyield_last_eip) = eip;
  } else
 #endif
  {
-  __assertion_failed("Cannot yield while interrupts are disabled",DEBUGINFO_GEN);
+  __afail("Cannot yield while interrupts are disabled",DEBUGINFO_GEN);
  }
 }
 #endif /* CONFIG_DEBUG */
@@ -1206,9 +1206,9 @@ pit_exc(struct cpustate *__restrict state) {
  if (IRQ_PIC_SPURIOUS(IRQ_PIC1_PIT)) return state;
 
 #if 0
- __assertion_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : PIT Trigger: %p'\n",
+ debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : PIT Trigger: %p'\n",
                    (uintptr_t)state->iret.eip-1,state->iret.eip);
- __assertion_tbprint2((void *)state->gp.ebp,0);
+ debug_tbprint2((void *)state->gp.ebp,0);
 #endif
 
  /* Update the sub-second clock. */
@@ -1297,15 +1297,15 @@ pit_exc(struct cpustate *__restrict state) {
  COMPILER_BARRIER(); /* Make sure that everything above has been done. */
 
 #if 0
- __assertion_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : Returning to: %p'\n",
+ debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : Returning to: %p'\n",
                    (uintptr_t)new_task->t_cstate->iret.eip,new_task->t_cstate->iret.eip);
- __assertion_tbprint2((void *)new_task->t_cstate->gp.ebp,0);
- __assertion_printf("EAX %p  ECX %p  EDX %p  EBX %p\n",
+ debug_tbprint2((void *)new_task->t_cstate->gp.ebp,0);
+ debug_printf("EAX %p  ECX %p  EDX %p  EBX %p\n",
                     new_task->t_cstate->gp.eax,
                     new_task->t_cstate->gp.ecx,
                     new_task->t_cstate->gp.edx,
                     new_task->t_cstate->gp.ebx);
- __assertion_printf("ESP %p  EBP %p  ESI %p  EDI %p\n",
+ debug_printf("ESP %p  EBP %p  ESI %p  EDI %p\n",
                     new_task->t_cstate,
                     new_task->t_cstate->gp.ebp,
                     new_task->t_cstate->gp.esi,
@@ -1855,9 +1855,9 @@ task_waitfor(struct timespec const *abstime) {
  struct task *t = THIS_TASK;
 
 #if CONFIG_LOG_WAITING
-#undef __assertion_tbprint
+#undef debug_tbprint
  if (dont_log_waiting == 0)
-     __assertion_tbprint();
+     debug_tbprint();
 #endif
 
  /* Prevent any of the signals from being send while we're still adding them. */
@@ -2269,8 +2269,8 @@ task_terminate_cpu_endwrite(struct cpu *__restrict c,
  assert(ATOMIC_READ(t->t_mode) != TASKMODE_NOTSTARTED);
 #if 0
  syslog(LOG_DEBUG,"Terminate: %p\n",exitcode);
-#undef __assertion_tbprint
- __assertion_tbprint();
+#undef debug_tbprint
+ debug_tbprint();
 #endif
 
  if (ATOMIC_READ(t->t_critical)) {

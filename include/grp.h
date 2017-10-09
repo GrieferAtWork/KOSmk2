@@ -22,7 +22,11 @@
 #include <features.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<grp.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
@@ -94,6 +98,6 @@ __LIBC int (__LIBCCALL initgroups)(char const *__user, __gid_t __group);
 #endif /* __USE_MISC */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_GRP_H */

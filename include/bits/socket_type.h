@@ -39,7 +39,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Types of sockets.  */
 enum __socket_type {
@@ -66,6 +66,6 @@ enum __socket_type {
 #define SOCK_CLOEXEC   SOCK_CLOEXEC
 #define SOCK_NONBLOCK  SOCK_NONBLOCK
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SOCKET_TYPE_H */

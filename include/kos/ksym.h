@@ -34,10 +34,10 @@
 
 
 #if !defined(__KERNEL__) && defined(__USE_KOS)
-__DECL_BEGIN
+__SYSDECL_BEGIN
 /* Load the address of a user-share symbol 'name', or NULL with errno set. */
 __LIBC void *(__LIBCCALL xsharesym)(char const *name);
-__DECL_END
+__SYSDECL_END
 #endif
 
 #endif /* !_KOS_KSYM_H */

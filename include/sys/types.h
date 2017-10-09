@@ -32,7 +32,7 @@
 #include <bits/pthreadtypes.h>
 #endif /* __USE_POSIX199506 || __USE_UNIX98 */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __USE_KOS
 typedef __byte_t byte_t;
@@ -123,7 +123,7 @@ typedef __id_t id_t;
 
 #ifndef __clock_t_defined
 #define __clock_t_defined 1
-typedef __clock_t clock_t;
+typedef __typedef_clock_t clock_t;
 #endif /* !__clock_t_defined */
 #endif /* __USE_XOPEN || __USE_XOPEN2K8 */
 
@@ -251,6 +251,6 @@ typedef __typedef_off_t _off_t;
 #endif /* !_OFF_T_DEFINED */
 #endif /* __USE_DOS */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_TYPES_H */

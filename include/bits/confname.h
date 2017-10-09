@@ -39,7 +39,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Values for the NAME argument to `pathconf' and `fpathconf'.  */
 #define _PC_LINK_MAX                             0
@@ -354,6 +354,6 @@ __DECL_BEGIN
 #define _CS_V6_ENV                               1148
 #define _CS_V7_ENV                               1149
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_CONFNAME_H */

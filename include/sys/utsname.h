@@ -25,7 +25,7 @@
 #include <kos/ksym.h>
 #endif /* __USE_KOS */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef _UTSNAME_SYSNAME_LENGTH
 #define _UTSNAME_SYSNAME_LENGTH _UTSNAME_LENGTH
@@ -71,6 +71,6 @@ __PUBDEF struct utsname const active_uname __KSYM(uname);
 __LIBC int (__LIBCCALL uname)(struct utsname *__name);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_UTSNAME_H */

@@ -21,7 +21,7 @@
 
 #include <__stdinc.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __KERNEL__
 #   define __OK_USER_TEXT(p,s)       ((void)(p),(void)(s),1) /* TODO: Check for readable user memory. */
@@ -66,7 +66,7 @@ __DECL_BEGIN
 #define __CHECK_USER_DOBJ(o) __CHECK_USER_DATA(o,sizeof(*(o)))
 #define __CHECK_HOST_DOBJ(o) __CHECK_HOST_DATA(o,sizeof(*(o)))
 
-__DECL_END
+__SYSDECL_END
 
 #ifdef __GUARD_HYBRID_COMPILER_H
 #   define OK_USER_TEXT    __OK_USER_TEXT

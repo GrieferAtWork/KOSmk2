@@ -24,7 +24,7 @@
 #include <hybrid/timespec.h>
 
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if defined(__PE__) && defined(__USE_DOS)
 /* DOS-filesystem mode while hosting a PE binary.
@@ -379,6 +379,7 @@ struct __dos_stat {
  __int16_t      st_nlink;
  __int16_t      st_uid;
  __int16_t      st_gid;
+ __int16_t    __st_pad0;
  __dos_dev_t    st_rdev;
  __dos_off_t    st_size;
  __TM_TYPE(time) st_atime;
@@ -392,6 +393,7 @@ struct __dos_stat32 {
  __int16_t      st_nlink;
  __int16_t      st_uid;
  __int16_t      st_gid;
+ __int16_t    __st_pad0;
  __dos_dev_t    st_rdev;
  __dos_off_t    st_size;
  __time32_t     st_atime;
@@ -405,11 +407,14 @@ struct __dos_stat32i64 {
  __int16_t      st_nlink;
  __int16_t      st_uid;
  __int16_t      st_gid;
+ __int16_t    __st_pad0;
  __dos_dev_t    st_rdev;
+ __int32_t    __st_pad1;
  __INT64_TYPE__ st_size;
  __time32_t     st_atime;
  __time32_t     st_mtime;
  __time32_t     st_ctime;
+ __int32_t    __st_pad2;
 };
 struct __dos_stat64i32 {
  __dos_dev_t    st_dev;
@@ -418,10 +423,13 @@ struct __dos_stat64i32 {
  __int16_t      st_nlink;
  __int16_t      st_uid;
  __int16_t      st_gid;
+ __int16_t    __st_pad0;
  __dos_dev_t    st_rdev;
+ __int32_t    __st_pad1;
 union{
  __dos_off_t    st_size;
- __INT64_TYPE__ __st_pad; /* I think this is correct? */
+ __INT64_TYPE__ __st_pad; /* This is what DOS silently does to match the
+                           * binary layout of 'stat64i32' with 'stat64'. */
 };
  __time64_t     st_atime;
  __time64_t     st_mtime;
@@ -434,7 +442,9 @@ struct __dos_stat64 {
  __int16_t      st_nlink;
  __int16_t      st_uid;
  __int16_t      st_gid;
+ __int16_t    __st_pad0;
  __dos_dev_t    st_rdev;
+ __int32_t    __st_pad1;
  __INT64_TYPE__ st_size;
  __time64_t     st_atime;
  __time64_t     st_mtime;
@@ -464,6 +474,6 @@ struct __dos_stat64 {
 
 #endif /* __USE_DOS */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_STAT_H */

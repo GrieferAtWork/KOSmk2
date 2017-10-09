@@ -28,26 +28,66 @@
 
 #include "__stdinc.h"
 
+#ifndef __assertion_failed_defined
+#define __assertion_failed_defined 1
 #ifdef __CC__
 #include <features.h>
 #include <hybrid/debuginfo.h>
 #include <hybrid/typecore.h>
 
-#ifndef __assertion_failed_defined
-#define __assertion_failed_defined 1
-__LIBC                   __SSIZE_TYPE__ (__LIBCCALL __assertion_print)(char const *__data, __SIZE_TYPE__ __datalen, void *__ignored_closure);
-__LIBC                             void (           __assertion_printf)(char const *__format, ...);
-__LIBC                             void (__LIBCCALL __assertion_vprintf)(char const *__format, __VA_LIST args);
-__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __assertion_failed)(char const *__expr, __DEBUGINFO);
-__LIBC __ATTR_NORETURN __ATTR_COLD void (           __assertion_failedf)(char const *__expr, __DEBUGINFO, char const *__format, ...);
-#   define __yes_assert(sexpr,expr)         (void)(__likely(expr) || (__assertion_failed(sexpr,__DEBUGINFO_GEN),0))
-#   define __yes_assertf(sexpr,expr,...)    (void)(__likely(expr) || (__assertion_failedf(sexpr,__DEBUGINFO_GEN,__VA_ARGS__),0))
-#   define __yes_asserte(sexpr,expr)        (void)(__likely(expr) || (__assertion_failed(sexpr,__DEBUGINFO_GEN),0))
-#   define __yes_assertef(sexpr,expr,...)   (void)(__likely(expr) || (__assertion_failedf(sexpr,__DEBUGINFO_GEN,__VA_ARGS__),0))
-#   define __yes_assert_d(sexpr,expr,...)   (void)(__likely(expr) || (__assertion_failed(sexpr,__VA_ARGS__),0))
-#   define __yes_assertf_d(sexpr,expr,...)  (void)(__likely(expr) || (__assertion_failedf(sexpr,__VA_ARGS__),0))
-#   define __yes_asserte_d(sexpr,expr,...)  (void)(__likely(expr) || (__assertion_failed(sexpr,__VA_ARGS__),0))
-#   define __yes_assertef_d(sexpr,expr,...) (void)(__likely(expr) || (__assertion_failedf(sexpr,__VA_ARGS__),0))
+#ifdef __CRT_KOS
+__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __afail)(char const *__expr, __DEBUGINFO);
+__LIBC __ATTR_NORETURN __ATTR_COLD void (           __afailf)(char const *__expr, __DEBUGINFO, char const *__format, ...);
+#   define __yes_assert(sexpr,expr)         (void)(__likely(expr) || (__afail(sexpr,__DEBUGINFO_GEN),0))
+#   define __yes_assertf(sexpr,expr,...)    (void)(__likely(expr) || (__afailf(sexpr,__DEBUGINFO_GEN,__VA_ARGS__),0))
+#   define __yes_asserte(sexpr,expr)        (void)(__likely(expr) || (__afail(sexpr,__DEBUGINFO_GEN),0))
+#   define __yes_assertef(sexpr,expr,...)   (void)(__likely(expr) || (__afailf(sexpr,__DEBUGINFO_GEN,__VA_ARGS__),0))
+#   define __yes_assert_d(sexpr,expr,...)   (void)(__likely(expr) || (__afail(sexpr,__VA_ARGS__),0))
+#   define __yes_assertf_d(sexpr,expr,...)  (void)(__likely(expr) || (__afailf(sexpr,__VA_ARGS__),0))
+#   define __yes_asserte_d(sexpr,expr,...)  (void)(__likely(expr) || (__afail(sexpr,__VA_ARGS__),0))
+#   define __yes_assertef_d(sexpr,expr,...) (void)(__likely(expr) || (__afailf(sexpr,__VA_ARGS__),0))
+#elif defined(__CRT_GLC)
+__LIBC __ATTR_NORETURN __ATTR_COLD (__LIBCCALL __assert_fail)(const char *__assertion, const char *__file, unsigned int __line, const char *__function);
+#   define __yes_assert(sexpr,expr)         (void)(__likely(expr) || (__assert_fail(sexpr,__FILE__,__LINE__,__FUNCTION__),0))
+#   define __yes_asserte(sexpr,expr)        (void)(__likely(expr) || (__assert_fail(sexpr,__FILE__,__LINE__,__FUNCTION__),0))
+#   define __yes_assertf(sexpr,expr,...)    (void)(__likely(expr) || (__assert_fail(sexpr,__FILE__,__LINE__,__FUNCTION__),0))
+#   define __yes_assertef(sexpr,expr,...)   (void)(__likely(expr) || (__assert_fail(sexpr,__FILE__,__LINE__,__FUNCTION__),0))
+#   define __IMPL2_yes_assert_d(sexpr,expr,file,line,func,...) (void)(__likely(expr) || (__assert_fail(sexpr,file,line,func),0))
+#   define __IMPL_yes_assert_d(args)        __IMPL2_yes_assert_d args
+#   define __yes_assert_d(sexpr,expr,...)   __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_assertf_d(sexpr,expr,...)  __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_asserte_d(sexpr,expr,...)  __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_assertef_d(sexpr,expr,...) __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#elif defined(__CRT_DOS)
+__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL _assert)(const char *__assertion, const char *__file, int __line);
+#   define __yes_assert(sexpr,expr)         (void)(__likely(expr) || (_assert(sexpr,__FILE__,__LINE__),0))
+#   define __yes_asserte(sexpr,expr)        (void)(__likely(expr) || (_assert(sexpr,__FILE__,__LINE__),0))
+#   define __yes_assertf(sexpr,expr,...)    (void)(__likely(expr) || (_assert(sexpr,__FILE__,__LINE__),0))
+#   define __yes_assertef(sexpr,expr,...)   (void)(__likely(expr) || (_assert(sexpr,__FILE__,__LINE__),0))
+#   define __IMPL2_yes_assert_d(sexpr,expr,file,line,func,...) (void)(__likely(expr) || (_assert(sexpr,file,line,func),0))
+#   define __IMPL_yes_assert_d(args)        __IMPL2_yes_assert_d args
+#   define __yes_assert_d(sexpr,expr,...)   __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_assertf_d(sexpr,expr,...)  __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_asserte_d(sexpr,expr,...)  __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_assertef_d(sexpr,expr,...) __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#else
+#   error "Not way of implementing assert()"
+#endif
+
+#ifndef __KERNEL__
+#ifdef __CRT_GLC
+__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __assert_perror_fail)(int __errnum, const char *__file, unsigned int __line, const char *__function);
+#endif /* __CRT_GLC */
+__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __assert)(const char *__assertion, const char *__file, int __line) __PE_ASMNAME("_assert");
+#endif /* !__KERNEL__ */
+
+#ifdef __CRT_GLC
+#   define __yes_assert_perror(e_num) \
+   (void)(!(e_num) || (__assert_perror_fail((e_num),__FILE__,__LINE__,__FUNCTION__),0))
+#else
+#   define __yes_assert_perror(e_num) (ASSERT_PERROR_FAIL_IS_NOT_DEFINED)
+#endif
+
 #ifdef __OPTIMIZE__
 #   define __no_assert(sexpr,expr)           __builtin_assume(expr)
 #   define __no_assertf(sexpr,expr,...)      __builtin_assume(expr)
@@ -59,21 +99,26 @@ __LIBC __ATTR_NORETURN __ATTR_COLD void (           __assertion_failedf)(char co
 #   define __no_assert_d(sexpr,expr,...)    (void)0      
 #   define __no_assertf_d(sexpr,expr,...)   (void)0      
 #endif
-#   define __no_asserte(sexpr,expr)         (void)(__likely(expr) || (__assertion_failed(sexpr,__DEBUGINFO_GEN),0))
-#   define __no_assertef(sexpr,expr,...)    (void)(__likely(expr) || (__assertion_failedf(sexpr,__DEBUGINFO_GEN,__VA_ARGS__),0))
-#   define __no_asserte_d(sexpr,expr,...)   (void)(__likely(expr) || (__assertion_failed(sexpr,__VA_ARGS__),0))
-#   define __no_assertef_d(sexpr,expr,...)  (void)(__likely(expr) || (__assertion_failedf(sexpr,__VA_ARGS__),0))
+#   define __no_asserte(sexpr,expr)         (void)(expr)
+#   define __no_assertef(sexpr,expr,...)    (void)(expr)
+#   define __no_asserte_d(sexpr,expr,...)   (void)(expr)
+#   define __no_assertef_d(sexpr,expr,...)  (void)(expr)
+#   define __no_assert_perror(e_num)        (void)0
 #ifdef __USE_KOS
 #   define assertf     __assertf
 #   define asserte     __asserte
 #   define assertef    __assertef
-#endif
+#endif /* __USE_KOS */
 #ifdef __USE_KXS
 #   define assert_d    __assert_d
 #   define assertf_d   __assertf_d
 #   define asserte_d   __asserte_d
 #   define assertef_d  __assertef_d
+#endif /* __USE_KXS */
+#ifdef	__USE_GNU
+#   define assert_perror __assert_perror
 #endif
+#endif /* __CC__ */
 #endif /* __assertion_failed_defined */
 
 #undef assert
@@ -94,6 +139,7 @@ __LIBC __ATTR_NORETURN __ATTR_COLD void (           __assertion_failedf)(char co
 #   define __assertef(expr,...)   __yes_assertef(#expr,expr,__VA_ARGS__)
 #   define __asserte_d(expr,...)  __yes_asserte_d(#expr,expr,__VA_ARGS__)
 #   define __assertef_d(expr,...) __yes_assertef_d(#expr,expr,__VA_ARGS__)
+#   define __assert_perror(e_num) __yes_assert_perror(e_num)
 #else
 #   define assert(expr)           __no_assert(#expr,expr)
 #   define __assertf(expr,...)    __no_assertf(#expr,expr,__VA_ARGS__)
@@ -103,7 +149,7 @@ __LIBC __ATTR_NORETURN __ATTR_COLD void (           __assertion_failedf)(char co
 #   define __assertef(expr,...)   __no_assertef(#expr,expr,__VA_ARGS__)
 #   define __asserte_d(expr,...)  __no_asserte_d(#expr,expr,__VA_ARGS__)
 #   define __assertef_d(expr,...) __no_assertef_d(#expr,expr,__VA_ARGS__)
+#   define __assert_perror(e_num) __no_assert_perror(e_num)
 #endif
-#endif /* __CC__ */
 
 #endif /* Changed... */

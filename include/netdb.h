@@ -52,7 +52,11 @@
 #include <hybrid/timespec.h>
 #endif /* __USE_GNU */
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<netdb.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 struct timespec;
 
@@ -281,6 +285,6 @@ __LIBC int (__LIBCCALL gai_cancel)(struct gaicb *__gaicbp);
 #endif /* __USE_GNU */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_NETDB_H */

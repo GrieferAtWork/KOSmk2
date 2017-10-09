@@ -23,7 +23,7 @@
 #include <hybrid/typecore.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Using the same trick as the linux kernel... */
 #define __IO_SLOWDOWN_IMPL "\noutb %%al,$0x80"
@@ -210,6 +210,6 @@ __FORCELOCAL void (__LIBCCALL io_delay)(void) {
 #undef __IO_SLOWDOWN
 #undef __IO_SLOWDOWN_IMPL
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_IO_H */

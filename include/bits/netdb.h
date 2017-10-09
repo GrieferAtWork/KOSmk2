@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <stdint.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct netent {
   char    *n_name;     /*< Official name of network. */
@@ -31,6 +31,6 @@ struct netent {
   uint32_t n_net;      /*< Network number. */
 };
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_NETDB_H */

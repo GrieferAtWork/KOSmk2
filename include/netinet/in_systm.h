@@ -40,12 +40,12 @@
 #include <__stdinc.h>
 #include <sys/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 typedef u_int16_t n_short; /*< short as received from the net. */
 typedef u_int32_t n_long;  /*< long as received from the net. */
 typedef u_int32_t n_time;  /*< ms since 00:00 GMT, byte rev. */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_NETINET_IN_SYSTM_H */

@@ -27,16 +27,10 @@
 #include <sys/types.h>
 #include <hybrid/minmax.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef NULL
-#ifdef __INTELLISENSE__
-#   define NULL nullptr
-#elif defined(__cplusplus) || defined(__LINKER__)
-#   define NULL          0
-#else
-#   define NULL ((void *)0)
-#endif
+#define NULL __NULLPTR
 #endif
 
 #define NBBY              CHAR_BIT
@@ -90,6 +84,6 @@ __DECL_BEGIN
 #   define roundup(x,y)  ((((x)+((y)-1))/(y))*(y))
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_PARAM_H */

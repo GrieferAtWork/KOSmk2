@@ -25,7 +25,7 @@
 #include <hybrid/malloc.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __USE_GNU
 /* Cloning flags. */
@@ -174,6 +174,6 @@ typedef struct { __cpu_mask __bits[__CPU_SETSIZE/__NCPUBITS]; } __cpu_set_t;
 #define __CPU_ALLOC(count) ((__cpu_set_t *)__hybrid_calloc(((count)+__NCPUBITS-1)/__NCPUBITS,sizeof(__cpu_mask))
 #define __CPU_FREE(cpuset)   __hybrid_free(cpuset)
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SCHED_H */

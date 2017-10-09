@@ -22,9 +22,8 @@
 #include "__stdinc.h"
 #include <features.h>
 #include <bits/types.h>
-#include <bits/dirent.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __USE_XOPEN
 #ifndef __ino_t_defined
@@ -39,25 +38,16 @@ typedef __ino64_t ino64_t;
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_XOPEN */
 
-#ifdef __USE_MISC
-#ifndef d_fileno
-#   define d_ino d_fileno
-#endif /* !d_fileno */
-#endif
+#ifndef __size_t_defined
+#define __size_t_defined 1
+typedef __SIZE_TYPE__ size_t;
+#endif /* !__size_t_defined */
 
+__SYSDECL_END
 
-#ifdef _DIRENT_HAVE_D_NAMLEN
-#   define _D_EXACT_NAMLEN(d) ((d)->d_namlen)
-#   define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN(d)+1)
-#else
-#   define _D_EXACT_NAMLEN(d) strlen((d)->d_name)
-#ifdef _DIRENT_HAVE_D_RECLEN
-#   define _D_ALLOC_NAMLEN(d) (((char *)(d)+(d)->d_reclen)-&(d)->d_name[0])
-#else
-#   define _D_ALLOC_NAMLEN(d) (sizeof((d)->d_name) > 1 ? sizeof((d)->d_name) : _D_EXACT_NAMLEN(d)+1)
-# endif
-#endif
-
+#ifdef __CRT_GLC
+#include <bits/dirent.h>
+__SYSDECL_BEGIN
 
 #ifdef __USE_MISC
 enum {
@@ -100,30 +90,33 @@ typedef struct __dirstream DIR;
 
 __LIBC __WUNUSED __NONNULL((1)) DIR *(__LIBCCALL opendir)(char const *__name);
 #if defined(__USE_KOS) && defined(__USE_ATFILE)
-__LIBC __WUNUSED __NONNULL((2)) DIR *(__LIBCCALL opendirat)(int __dfd, char const *__name);
+__LIBC __PORT_KOSONLY_ALT(opendir) __WUNUSED __NONNULL((2)) DIR *(__LIBCCALL opendirat)(int __dfd, char const *__name);
 #endif /* __USE_KOS && __USE_ATFILE */
 __LIBC __NONNULL((1)) int (__LIBCCALL closedir)(DIR *__dirp);
-__LIBC __NONNULL((1)) struct dirent *(__LIBCCALL readdir)(DIR *__dirp) __FS_FUNC(readdir);
-__LIBC __NONNULL((1)) void (__LIBCCALL rewinddir)(DIR *__dirp);
+__REDIRECT_FS_FUNC(__LIBC,__NONNULL((1)),struct dirent *,__LIBCCALL,readdir,(DIR *__dirp),readdir,(__dirp))
+__LIBC __PORT_NODOS __NONNULL((1)) void (__LIBCCALL rewinddir)(DIR *__dirp);
 #ifdef __USE_XOPEN2K8
-__LIBC __WUNUSED DIR *(__LIBCCALL fdopendir)(int __fd);
+__LIBC __PORT_NODOS __WUNUSED DIR *(__LIBCCALL fdopendir)(int __fd);
 #endif /* __USE_XOPEN2K8 */
 #ifdef __USE_LARGEFILE64
 __LIBC __NONNULL((1)) struct dirent64 *(__LIBCCALL readdir64)(DIR *__dirp);
 #endif /* __USE_LARGEFILE64 */
 #ifdef __USE_POSIX
-__LIBC __NONNULL((1,2,3)) int (__LIBCCALL readdir_r)(DIR *__restrict __dirp, struct dirent *__restrict __entry, struct dirent **__restrict __result) __FS_FUNC_R(readdir);
+__REDIRECT_FS_FUNC_R(__LIBC,__PORT_NODOS __NONNULL((1,2,3)),int,__LIBCCALL,readdir_r,
+                    (DIR *__restrict __dirp, struct dirent *__restrict __entry,
+                     struct dirent **__restrict __result),readdir,
+                    (__dirp,__entry,__result))
 #ifdef __USE_LARGEFILE64
 /* NOTE: This ~reentrant~ version of readdir() is strongly discouraged from being used in KOS, as the
  *       kernel does not impose a limit on the length of a single directory entry name (s.a. 'xreaddir')
  * >> Instead, simply use 'readdir()'/'readdir64()', which will automatically (re-)allocate an internal,
  *    per-directory buffer of sufficient size to house any directory entry (s.a.: 'READDIR_DEFAULT') */
-__LIBC __NONNULL((1,2,3)) int (__LIBCCALL readdir64_r)(DIR *__restrict __dirp, struct dirent64 *__restrict __entry, struct dirent64 **__restrict __result);
+__LIBC __PORT_NODOS __NONNULL((1,2,3)) int (__LIBCCALL readdir64_r)(DIR *__restrict __dirp, struct dirent64 *__restrict __entry, struct dirent64 **__restrict __result);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_POSIX */
 #if defined(__USE_MISC) || defined(__USE_XOPEN)
-__LIBC __NONNULL((1)) void (__LIBCCALL seekdir)(DIR *__dirp, long int __pos);
-__LIBC __NONNULL((1)) long int (__LIBCCALL telldir)(DIR *__dirp);
+__LIBC __PORT_NODOS __NONNULL((1)) void (__LIBCCALL seekdir)(DIR *__dirp, long int __pos);
+__LIBC __PORT_NODOS __NONNULL((1)) long int (__LIBCCALL telldir)(DIR *__dirp);
 #endif /* __USE_MISC || __USE_XOPEN */
 
 #ifdef __USE_XOPEN2K8
@@ -132,34 +125,31 @@ __LIBC __WUNUSED __NONNULL((1)) int (__LIBCCALL dirfd)(DIR *__dirp);
 #define MAXNAMLEN    255 /*< == 'NAME_MAX' from <linux/limits.h> */
 #endif
 
-#ifndef __size_t_defined
-#define __size_t_defined 1
-typedef __SIZE_TYPE__ size_t;
-#endif /* !__size_t_defined */
-
-__LIBC __NONNULL((1,2)) int (__LIBCCALL scandir)
-      (char const *__restrict __dir, struct dirent ***__restrict __namelist,
-       int (*__selector) (struct dirent const *),
-       int (*__cmp) (struct dirent const **, struct dirent const **)) __FS_FUNC(scandir);
-
-__LIBC __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL alphasort)
-      (struct dirent const **__e1, struct dirent const **__e2) __FS_FUNC(alphasort);
+__REDIRECT_FS_FUNC(__LIBC,__PORT_NODOS __NONNULL((1,2)),int,__LIBCCALL,scandir,
+                  (char const *__restrict __dir, struct dirent ***__restrict __namelist,
+                   int (*__selector) (struct dirent const *),
+                   int (*__cmp) (struct dirent const **, struct dirent const **)),
+                   scandir,(__dir,__namelist,__selector,__cmp))
+__REDIRECT_FS_FUNC(__LIBC,__PORT_NODOS __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,alphasort,
+                  (struct dirent const **__e1, struct dirent const **__e2),
+                   alphasort,(__e1,__e2))
 #ifdef __USE_LARGEFILE64
-__LIBC __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL alphasort64)
+__LIBC __PORT_NODOS __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL alphasort64)
       (struct dirent64 const **__e1, struct dirent64 const **__e2);
 #endif /* __USE_LARGEFILE64 */
 
 #ifdef __USE_GNU
-__LIBC __NONNULL((2,3)) int (__LIBCCALL scandirat)
-      (int __dfd, char const *__restrict __dir, struct dirent ***__restrict __namelist,
-       int (*__selector) (struct dirent const *),
-       int (*__cmp) (struct dirent const **, struct dirent const **)) __FS_FUNC(scandirat);
+__REDIRECT_FS_FUNC(__LIBC,__PORT_NODOS __NONNULL((2,3)),int,__LIBCCALL,scandirat,
+                  (int __dfd, char const *__restrict __dir, struct dirent ***__restrict __namelist,
+                   int (*__selector) (struct dirent const *),
+                   int (*__cmp) (struct dirent const **, struct dirent const **)),
+                   scandirat,(__dfd,__dir,__namelist,__selector,__cmp))
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((1,2)) int (__LIBCCALL scandir64)
+__LIBC __PORT_NODOS __NONNULL((1,2)) int (__LIBCCALL scandir64)
       (char const *__restrict __dir, struct dirent64 ***__restrict __namelist,
        int (*__selector) (const struct dirent64 *),
        int (*__cmp) (const struct dirent64 **, const struct dirent64 **));
-__LIBC __NONNULL((2,3)) int (__LIBCCALL scandirat64)
+__LIBC __PORT_NODOS __NONNULL((2,3)) int (__LIBCCALL scandirat64)
       (int __dfd, char const *__restrict __dir, struct dirent64 ***__restrict __namelist,
        int (*__selector) (const struct dirent64 *),
        int (*__cmp) (const struct dirent64 **, const struct dirent64 **));
@@ -168,25 +158,25 @@ __LIBC __NONNULL((2,3)) int (__LIBCCALL scandirat64)
 #endif /* __USE_XOPEN2K8 */
 
 #ifdef __USE_MISC
-__LIBC __NONNULL((2,4)) __ssize_t (__LIBCCALL getdirentries)
-      (int __fd, char *__restrict __buf, size_t __nbytes, __FS_TYPE(off) *__restrict __basep)
-       __FS_FUNC(getdirentries);
+__REDIRECT_FS_FUNC(__LIBC,__PORT_NODOS __NONNULL((2,4)),__ssize_t,__LIBCCALL,getdirentries,
+                  (int __fd, char *__restrict __buf, size_t __nbytes, __FS_TYPE(off) *__restrict __basep),
+                   getdirentries,(__fd,__buf,__nbytes,__basep))
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((2,4)) __ssize_t (__LIBCCALL getdirentries64)
+__LIBC __PORT_NODOS __NONNULL((2,4)) __ssize_t (__LIBCCALL getdirentries64)
       (int __fd, char *__restrict __buf, size_t __nbytes, __off64_t *__restrict __basep);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_MISC */
 
 #ifdef __USE_GNU
-__LIBC __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL versionsort)
-      (struct dirent const **__e1, struct dirent const **__e2) __FS_FUNC(versionsort);
+__REDIRECT_FS_FUNC(__LIBC,__PORT_NODOS __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,versionsort,
+                  (struct dirent const **__e1, struct dirent const **__e2),versionsort,(__e1,__e2))
 #ifdef __USE_LARGEFILE64
-__LIBC __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL versionsort64)
+__LIBC __PORT_NODOS __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL versionsort64)
       (struct dirent64 const **__e1, struct dirent64 const **__e2);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_GNU */
 
-#ifdef __USE_KOS
+#if defined(__USE_KOS) && defined(__CRT_KOS)
 /* NOTE: Keep these mode constants in sync with 'FILE_READDIR_*' from "/src/kernel/include/fs/inode.h" */
 #define READDIR_DEFAULT  0 /*< Yield to next entry when 'buf' was of sufficient size. */
 #define READDIR_CONTINUE 1 /*< Always yield to next entry. */
@@ -200,15 +190,127 @@ __LIBC __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL versionsort64)
  *                    stream will only be advanced when this value is >= 'BUFSIZE'
  * @return: 0 : The end of the directory has been reached.
  * @return: -1: Failed to read a directory entry for some reason (s.a.: 'errno') */
-__LIBC __NONNULL((2)) __ssize_t (__LIBCCALL xreaddir)(int __fd, struct dirent *__buf, size_t __bufsize, int __mode);
-
+__LIBC __PORT_KOSONLY_ALT(readdir) __NONNULL((2))
+__ssize_t (__LIBCCALL xreaddir)(int __fd, struct dirent *__buf, size_t __bufsize, int __mode);
 #endif
 #endif /* !__KERNEL__ */
 
+__SYSDECL_END
+#elif defined(__CRT_DOS)
 
+#include <errno.h>
+#include <hybrid/malloc.h>
+#include <hybrid/string.h>
 
+__SYSDECL_BEGIN
 
-__DECL_END
+#ifdef __USE_LARGEFILE64
+#ifdef __INTELLISENSE__
+struct dirent64 { __dos_ino_t d_ino; char d_name[260]; };
+#else
+#define dirent64 dirent
+#endif
+#endif /* __USE_LARGEFILE64 */
 
+struct dirent {
+ __dos_ino_t       d_ino; /* Mandatory */
+#ifndef __INTELLISENSE__
+ __UINT16_TYPE__ __d_pad;
+ /* Members below are arranged for binary compatibility with 'struct _finddata32_t' */
+ __UINT32_TYPE__ __d_attrib;
+ __UINT32_TYPE__ __d_time_create;
+ __UINT32_TYPE__ __d_time_access;
+ __UINT32_TYPE__ __d_time_write;
+ __UINT32_TYPE__ __d_size;
+#endif /* !__INTELLISENSE__ */
+ char              d_name[260];
+};
+#define d_fileno d_ino /*< Backwards compatibility. */
+
+#undef  _DIRENT_HAVE_D_RECLEN
+#undef  _DIRENT_HAVE_D_NAMLEN
+#undef  _DIRENT_HAVE_D_TYPE
+#define _DIRENT_MATCHES_DIRENT64 1
+
+typedef struct __dirstream DIR;
+struct __dirstream {
+ __INTPTR_TYPE__ __d_hnd;
+ int             __d_isfirst;
+ struct dirent   __d_ent;
+};
+
+__REDIRECT(__LIBC,__NONNULL((1,2)),__INTPTR_TYPE__,__LIBCCALL,__dos_findfirst,(char const *__file, void *__buf),_findfirst32,(__file,__buf))
+__REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,__dos_findnext,(__INTPTR_TYPE__ __findfd, void *__buf),_findnext32,(__findfd,__buf))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_findclose,(__INTPTR_TYPE__ __findfd),_findclose,(__findfd))
+__LOCAL __WUNUSED __NONNULL((1)) DIR *(__LIBCCALL opendir)(char const *__name);
+__LOCAL __NONNULL((1)) int (__LIBCCALL closedir)(DIR *__dirp);
+__LOCAL __NONNULL((1)) struct dirent *(__LIBCCALL readdir)(DIR *__dirp);
+#ifdef __INTELLISENSE__
+#ifdef __USE_LARGEFILE64
+__LOCAL __NONNULL((1)) struct dirent64 *(__LIBCCALL readdir64)(DIR *__dirp);
+#endif /* __USE_LARGEFILE64 */
+#else
+__LOCAL DIR *(__LIBCCALL opendir)(char const *__name) {
+ DIR *__result; size_t __namelen = __hybrid_strlen(__name);
+ char *__query = (char *)__hybrid_malloc((__namelen+3)*sizeof(char));
+ if __unlikely(!__query) return 0;
+ __result = (DIR *)__hybrid_malloc(sizeof(DIR));
+ if __unlikely(!__result) goto __end;
+ __hybrid_memcpy(__query,__name,__namelen*sizeof(char));
+ __query[__namelen]   = '\\';
+ __query[__namelen+1] = '*';
+ __query[__namelen+2] = '\0';
+ __result->__d_isfirst = 1;
+ __result->__d_ent.d_ino = 0;
+ __result->__d_hnd = __dos_findfirst(__query,&__result->__d_ent.__d_attrib);
+ if __unlikely(__result->__d_hnd == -1) { __hybrid_free(__result); __result = 0; }
+__end:
+ __hybrid_free(__query);
+ return __result;
+}
+__LOCAL int (__LIBCCALL closedir)(DIR *__dirp) {
+ if __unlikely(!__dirp) { __set_errno(EINVAL); return -1; }
+ __dos_findclose(__dirp->__d_hnd);
+ __hybrid_free(__dirp);
+ return 0;
+}
+__LOCAL struct dirent *(__LIBCCALL readdir)(DIR *__dirp) {
+ if __unlikely(!__dirp) { __set_errno(EINVAL); return 0; }
+ if (!__dirp->__d_isfirst) {
+  if (__dos_findnext(__dirp->__d_hnd,&__dirp->__d_ent.__d_attrib))
+      return 0;
+  ++__dirp->__d_ent.d_ino;
+ }
+ __dirp->__d_isfirst = 0;
+ return &__dirp->__d_ent;
+}
+
+#ifdef __USE_LARGEFILE64
+#define readdir64(dir)                readdir(dir)
+#endif /* __USE_LARGEFILE64 */
+#endif /* !__INTELLISENSE__ */
+
+__SYSDECL_END
+#else
+#error "<dirent.h> is not supported by the linked libc"
+#endif /* __CRT_GLC */
+
+#ifdef _DIRENT_HAVE_D_NAMLEN
+#   define _D_EXACT_NAMLEN(d) ((d)->d_namlen)
+#   define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN(d)+1)
+#else
+#   define _D_EXACT_NAMLEN(d) strlen((d)->d_name)
+#ifdef _DIRENT_HAVE_D_RECLEN
+#   define _D_ALLOC_NAMLEN(d) (((char *)(d)+(d)->d_reclen)-&(d)->d_name[0])
+#else
+#   define _D_ALLOC_NAMLEN(d) (sizeof((d)->d_name) > 1 ? sizeof((d)->d_name) : _D_EXACT_NAMLEN(d)+1)
+# endif
+#endif
+
+#ifdef __USE_MISC
+#ifndef d_fileno
+#   define d_ino d_fileno
+#endif /* !d_fileno */
+#endif
 
 #endif /* !_DIRENT_H */

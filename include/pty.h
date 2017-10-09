@@ -23,7 +23,11 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<pty.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 struct termios;
 struct winsize;
@@ -33,6 +37,6 @@ __LIBC int (__LIBCCALL openpty)(int *__amaster, int *__aslave, char *__name, str
 __LIBC int (__LIBCCALL forkpty)(int *__amaster, char *__name, struct termios const *__termp, struct winsize const *__winp);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_PTY_H */

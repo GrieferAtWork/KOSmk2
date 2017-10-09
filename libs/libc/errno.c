@@ -127,8 +127,8 @@ INTERN void LIBCCALL libc_errx(int status, char const *format, ...) {
  libc_verrx(status,format,args);
 }
 
-PUBLIC ATTR_COLDDATA unsigned int error_message_count = 0;
-PUBLIC ATTR_COLDDATA int          error_one_per_line = 0;
+PUBLIC ATTR_COLDDATA unsigned int error_message_count         = 0;
+PUBLIC ATTR_COLDDATA int          error_one_per_line          = 0;
 PUBLIC ATTR_COLDDATA void       (*error_print_progname)(void) = NULL;
 PRIVATE ATTR_COLDTEXT void LIBCCALL error_prefix(void) {
  void (*print_name)(void) = error_print_progname;

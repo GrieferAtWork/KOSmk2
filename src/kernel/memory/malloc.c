@@ -34,6 +34,7 @@
 #include <hybrid/list/atree.h>
 #include <hybrid/list/list.h>
 #include <hybrid/minmax.h>
+#include <hybrid/debug.h>
 #include <hybrid/section.h>
 #include <hybrid/sync/atomic-owner-rwlock.h>
 #include <hybrid/sync/atomic-rwlock.h>
@@ -1894,17 +1895,17 @@ malloc_panic(struct dsetup *setup,
              char const *__restrict format, ...) {
  va_list args;
  PREEMPTION_DISABLE();
- __assertion_printf("\n\n");
+ debug_printf("\n\n");
  va_start(args,format);
- __assertion_vprintf(format,args);
- __assertion_printf("\n");
+ debug_vprintf(format,args);
+ debug_printf("\n");
  va_end(args);
  if (setup) {
-  __assertion_printf("%s(%d) : %s : [%s] : See reference to caller location\n",
+  debug_printf("%s(%d) : %s : [%s] : See reference to caller location\n",
                      setup->s_info.i_file,setup->s_info.i_line,
                      setup->s_info.i_func,
                      setup->s_info.i_inst->i_module->m_name->dn_name);
-  __assertion_tbprint2(setup->s_tbebp,0);
+  debug_tbprint2(setup->s_tbebp,0);
  }
  if (info_header) {
   bool ok_module;
@@ -1915,7 +1916,7 @@ malloc_panic(struct dsetup *setup,
                OK_HOST_TEXT(info_header->m_info.i_inst->i_module->m_name,sizeof(struct dentryname)) &&
                OK_HOST_TEXT(info_header->m_info.i_inst->i_module->m_name->dn_name,
                             info_header->m_info.i_inst->i_module->m_name->dn_size));
-  __assertion_printf("%s(%d) : %s : [%.?s] : See reference to associated allocation\n",
+  debug_printf("%s(%d) : %s : [%.?s] : See reference to associated allocation\n",
                      OK_HOST_TEXT(info_header->m_info.i_file,1) ? info_header->m_info.i_file : NULL,
                      info_header->m_info.i_line,
                      OK_HOST_TEXT(info_header->m_info.i_func,1) ? info_header->m_info.i_func : NULL,
@@ -1931,7 +1932,7 @@ malloc_panic(struct dsetup *setup,
    pos = 0;
    while (iter != end) {
     if (*iter == MPTR_TAIL_TB_EOF) break;
-    __assertion_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
+    debug_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
                       (uintptr_t)*iter-1,pos,*iter);
     ++iter,++pos;
    }
@@ -1939,9 +1940,9 @@ malloc_panic(struct dsetup *setup,
 #endif
  }
 
- __assertion_printf("\n");
+ debug_printf("\n");
 #if 1
- __assertion_failed("MALL PANIC",__DEBUGINFO_NUL);
+ __afail("MALL PANIC",__DEBUGINFO_NUL);
 #else
  PREEMPTION_FREEZE();
 #endif

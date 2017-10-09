@@ -28,7 +28,7 @@
  *       but their names are non-standardized and should not be expected to be
  *       available on platforms other than KOS. */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Data structures for core file note segments. */
 #define NT_PRSTATUS     1               /* Contains copy of prstatus struct */
@@ -299,6 +299,6 @@ typedef struct {
 /* XXX: There doesn't seem to be the equivalent of 'Elf64_Prxfpreg'... */
 
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_ELF_H */

@@ -39,7 +39,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 typedef unsigned char cc_t;
 typedef unsigned int  speed_t;
@@ -233,6 +233,6 @@ struct termios {
 #define _IOT_termios /* Hurd ioctl type field.  */ \
   _IOT(_IOTS(cflag_t),4,_IOTS(cc_t),NCCS,_IOTS(speed_t),2)
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_TERMIOS_H */

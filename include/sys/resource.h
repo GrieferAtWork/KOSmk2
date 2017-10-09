@@ -23,7 +23,7 @@
 #include <bits/resource.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __id_t_defined
 #define __id_t_defined
@@ -52,6 +52,6 @@ __LIBC int (__LIBCCALL setrlimit64)(__rlimit_resource_t __resource, struct rlimi
 #endif
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif    /* sys/resource.h  */

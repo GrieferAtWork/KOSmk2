@@ -23,7 +23,7 @@
 #include <features.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __off_t_defined
 #define __off_t_defined 1
@@ -295,6 +295,6 @@ __LIBC ssize_t (__LIBCCALL xmunmap)(void *__addr, size_t __len, int __flags, voi
 #endif /* !__KERNEL__ */
 
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_MMAN_H */

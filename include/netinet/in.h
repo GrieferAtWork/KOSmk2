@@ -42,17 +42,17 @@
 #include <stdint.h>
 #include <sys/socket.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Internet address. */
 typedef uint32_t in_addr_t;
 struct in_addr { in_addr_t s_addr; };
 
-__DECL_END
+__SYSDECL_END
 
 #include <bits/in.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Standard well-defined IP protocols. */
 enum {
@@ -402,6 +402,6 @@ __LIBC int (__LIBCCALL setsourcefilter)(int __s, uint32_t __interface_addr, stru
 #endif /* !__KERNEL__ */
 #endif /* __USE_GNU */
 
-__DECL_END
+__SYSDECL_END
 
 #endif    /* netinet/in.h */

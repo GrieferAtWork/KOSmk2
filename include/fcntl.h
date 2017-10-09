@@ -28,7 +28,7 @@
 #include <bits/stat.h>
 #endif
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __O_TMPFILE
 #   define __OPEN_NEEDS_MODE(oflag) (((oflag)&O_CREAT) || ((oflag)&__O_TMPFILE) == __O_TMPFILE)
@@ -108,44 +108,64 @@ typedef __pid_t pid_t;
 #endif
 
 #ifndef __KERNEL__
+
+#ifdef __CRT_GLC
 #ifdef __USE_KOS
-__LIBC __ssize_t (__ATTR_CDECL fcntl)(int __fd, int __cmd, ...);
+__LIBC __PORT_NODOS __ssize_t (__ATTR_CDECL fcntl)(int __fd, int __cmd, ...);
 #else /* __USE_KOS */
-__LIBC int (__ATTR_CDECL fcntl)(int __fd, int __cmd, ...);
+__LIBC __PORT_NODOS int (__ATTR_CDECL fcntl)(int __fd, int __cmd, ...);
 #endif /* !__USE_KOS */
+#endif /* __CRT_GLC */
+
 #ifndef __open_defined
-#define __open_defined 1
+#define __open_defined 1 /* TODO: Use redirection */
 __LIBC __NONNULL((1)) int (__ATTR_CDECL open)(char const *__file, int __oflag, ...) __UFS_FUNCn_OLDPEA(open);
 #endif /* !__open_defined */
+
 #ifndef __creat_defined
 #define __creat_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL creat)(char const *__file, mode_t __mode) __UFS_FUNCn_OLDPEA(creat);
+__REDIRECT_UFS_FUNCn_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,creat,(char const *__file, mode_t __mode),creat,(__file,__mode))
 #endif /* !__creat_defined */
+
 #ifdef __USE_LARGEFILE64
+/* TODO: Use redirection */
 #ifdef __PE__
 __LIBC __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC_(_open);
-__LIBC __NONNULL((1)) int (__LIBCCALL creat64)(char const *__file, mode_t __mode) __UFS_FUNC_(_creat);
-#else
+__REDIRECT_UFS_(__LIBC,__NONNULL((1)),int,__LIBCCALL,creat64,
+               (char const *__file, mode_t __mode),_creat,(__file,__mode))
+#else /* __PE__ */
 __LIBC __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC(open64);
-__LIBC __NONNULL((1)) int (__LIBCCALL creat64)(char const *__file, mode_t __mode) __UFS_FUNC(creat64);
-#endif
+__REDIRECT_UFS(__LIBC,__NONNULL((1)),int,__LIBCCALL,creat64,
+              (char const *__file, mode_t __mode),creat64,(__file,__mode))
+#endif /* !__PE__ */
 #endif /* __USE_LARGEFILE64 */
 
-#ifdef __USE_ATFILE
-__LIBC __NONNULL((2)) int (__ATTR_CDECL openat)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNCn(openat);
+#ifdef __CRT_GLC
+#ifdef __USE_ATFILE /* TODO: Use redirection */
+__LIBC __PORT_NODOS_ALT(open) __NONNULL((2)) int (__ATTR_CDECL openat)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNCn(openat);
 #ifdef __USE_LARGEFILE64
-__LIBC __NONNULL((2)) int (__ATTR_CDECL openat64)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNC(openat64);
+__LIBC __PORT_NODOS_ALT(open64) __NONNULL((2)) int (__ATTR_CDECL openat64)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNC(openat64);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_ATFILE */
-
 #ifdef __USE_XOPEN2K
-__LIBC int (__LIBCCALL posix_fadvise)(int __fd, __FS_TYPE(off) __offset, __FS_TYPE(off) __len, int __advise) __FS_FUNC(posix_fadvise);
-__LIBC int (__LIBCCALL posix_fallocate)(int __fd, __FS_TYPE(off) __offset, __FS_TYPE(off) __len) __FS_FUNC(posix_fallocate);
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,posix_fadvise,(int __fd, __FS_TYPE(off) __offset, __FS_TYPE(off) __len, int __advise),posix_fadvise,(__fd,__offset,__len,__advise));
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,posix_fallocate,(int __fd, __FS_TYPE(off) __offset, __FS_TYPE(off) __len),posix_fallocate,(__fd,__offset,__len))
 #ifdef __USE_LARGEFILE64
 __LIBC int (__LIBCCALL posix_fadvise64)(int __fd, __off64_t __offset, __off64_t __len, int __advise);
 __LIBC int (__LIBCCALL posix_fallocate64)(int __fd, __off64_t __offset, __off64_t __len);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_XOPEN2K */
+#else /* __CRT_GLC */
+#ifdef __USE_XOPEN2K
+__LOCAL int (__LIBCCALL posix_fadvise)(int __UNUSED(__fd), __FS_TYPE(off) __UNUSED(__offset), __FS_TYPE(off) __UNUSED(__len), int __UNUSED(__advise)) { return 0; }
+__LOCAL int (__LIBCCALL posix_fallocate)(int __UNUSED(__fd), __FS_TYPE(off) __UNUSED(__offset), __FS_TYPE(off) __UNUSED(__len)) { return 0; }
+#ifdef __USE_LARGEFILE64
+__LOCAL int (__LIBCCALL posix_fadvise64)(int __UNUSED(__fd), __off64_t __UNUSED(__offset), __off64_t __UNUSED(__len), int __UNUSED(__advise)) { return 0; }
+__LOCAL int (__LIBCCALL posix_fallocate64)(int __UNUSED(__fd), __off64_t __UNUSED(__offset), __off64_t __UNUSED(__len)) { return 0; }
+#endif /* __USE_LARGEFILE64 */
+#endif /* __USE_XOPEN2K */
+#endif /* !__CRT_GLC */
+
 
 #endif /* !__KERNEL__ */
 
@@ -156,18 +176,27 @@ __LIBC int (__LIBCCALL posix_fallocate64)(int __fd, __off64_t __offset, __off64_
 #   define F_TLOCK 2 /*< Test and lock a region for exclusive use. */
 #   define F_TEST  3 /*< Test a region for other processes locks. */
 #ifndef __KERNEL__
-#if defined(__PE__) && !defined(__USE_FILE_OFFSET64)
-__LIBC int (__LIBCCALL lockf)(int __fd, int __cmd, __FS_TYPE(off) __len) __ASMNAME("_locking");
-#else /* __PE__ */
-__LIBC int (__LIBCCALL lockf)(int __fd, int __cmd, __FS_TYPE(off) __len) __FS_FUNC(lockf);
-#endif /* !__PE__ */
+#if defined(__DOS_COMPAT__) || (defined(__PE__) && !defined(__USE_FILE_OFFSET64))
+#ifdef __USE_FILE_OFFSET64
+__REDIRECT(__LIBC,,int,__LIBCCALL,__lockf32,(int __fd, int __cmd, __off32_t __len),_locking,(__fd,__cmd,__len))
+__LOCAL int (__LIBCCALL lockf)(int __fd, int __cmd, __off64_t __len) { return __lockf32(__fd,__cmd,(__off32_t)__len); }
+#else /* __USE_FILE_OFFSET64 */
+__REDIRECT(__LIBC,,int,__LIBCCALL,lockf,(int __fd, int __cmd, __FS_TYPE(off) __len),_locking,(__fd,__cmd,__len))
+#endif /* !__USE_FILE_OFFSET64 */
+#else /* ... */
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,lockf,(int __fd, int __cmd, __FS_TYPE(off) __len),lockf,(__fd,__cmd,__len))
+#endif /* !... */
 #ifdef __USE_LARGEFILE64
+#ifdef __CRT_GLC
 __LIBC int (__LIBCCALL lockf64)(int __fd, int __cmd, __off64_t __len);
+#else /* __CRT_GLC */
+__LOCAL int (__LIBCCALL lockf64)(int __fd, int __cmd, __off64_t __len) { return lockf(__fd,__cmd,(__FS_TYPE(off))__len); }
+#endif /* !__CRT_GLC */
 #endif /* __USE_LARGEFILE64 */
 #endif /* !__KERNEL__ */
-#endif
+#endif /* ... */
 
-__DECL_END
+__SYSDECL_END
 
 
 #endif /* !_FCNTL_H */

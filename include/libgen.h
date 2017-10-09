@@ -39,14 +39,17 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __KERNEL__
-__LIBC char *(__LIBCCALL dirname)(char *__path);
-__LIBC char *(__LIBCCALL __xpg_basename)(char *__path);
-#define basename    __xpg_basename
+#ifdef __CRT_GLC
+__LIBC __PORT_NODOS char *(__LIBCCALL dirname)(char *__path);
+__LIBC __PORT_NODOS char *(__LIBCCALL __xpg_basename)(char *__path);
+#define basename(path)   __xpg_basename(path)
+#endif /* __CRT_GLC */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
+
 
 #endif /* !_LIBGEN_H */

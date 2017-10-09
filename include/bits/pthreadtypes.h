@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Copyright (C) 2002-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -228,6 +228,6 @@ typedef union {
 #define __cleanup_fct_attribute   __attribute__((__regparm__(1)))
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_PTHREADTYPES_H */

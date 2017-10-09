@@ -67,14 +67,29 @@
 #define likely              __likely
 #define unlikely            __unlikely
 
-#define ASMNAME             __ASMNAME
 #define DECL_BEGIN          __DECL_BEGIN
 #define DECL_END            __DECL_END
+//#define SYSDECL_BEGIN     __SYSDECL_BEGIN /* Not defined to discourage use in anything but system headers. */
+//#define SYSDECL_END       __SYSDECL_END
+#define ASMNAME             __ASMNAME
 #define PACKED              __ATTR_PACKED
 #define FCALL               __FCALL
 #define KCALL               __KCALL
 #define XBLOCK              __XBLOCK
 #define XRETURN             __XRETURN
+
+#ifdef __REDIRECT_WSUPPRESS_BEGIN
+/* If defined by the compiler, suppress specific warnings within redirections. */
+#define REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)         __REDIRECT_WSUPPRESS_BEGIN __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) __REDIRECT_WSUPPRESS_END
+#define REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) __REDIRECT_WSUPPRESS_BEGIN __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) __REDIRECT_WSUPPRESS_END
+#define REDIRECT_VOID(decl,attr,cc,name,param,asmname,args)            __REDIRECT_WSUPPRESS_BEGIN __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args) __REDIRECT_WSUPPRESS_END
+#define REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args)    __REDIRECT_WSUPPRESS_BEGIN __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) __REDIRECT_WSUPPRESS_END
+#else
+#define REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)         __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
+#define REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args)
+#define REDIRECT_VOID(decl,attr,cc,name,param,asmname,args)            __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args)
+#define REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args)    __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args)
+#endif
 
 #define PP_PRIVATE_STR      __PP_PRIVATE_STR
 #define PP_STR              __PP_STR

@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if defined(__x86_64__) && defined(__ILP32__)
 #   define __SIZEOF_SYSCALL_LONG__ 8
@@ -458,7 +458,7 @@ typedef __time64_t           __time_t;
 #undef __SYSCALL_SLONG_TYPE
 #undef __SYSCALL_ULONG_TYPE
 
-__DECL_END
+__SYSDECL_END
 
 #ifndef __KERNEL__
 #include <features.h>
@@ -483,28 +483,34 @@ __DECL_END
 #   define __TM_SIZEOF(x) __SIZEOF_##x##_T__
 #endif
 
-#define __dos_dev_t          __uint32_t
-#define __dos_ino_t          __uint16_t
-#define __dos_off_t          __int32_t
-#define __SIZEOF_DOS_DEV_T__ 4
-#define __SIZEOF_DOS_INO_T__ 2
-#define __SIZEOF_DOS_OFF_T__ 4
+#define __dos_dev_t            __uint32_t
+#define __dos_ino_t            __uint16_t
+#define __dos_off_t            __int32_t
+#define __dos_clock_t          __LONG32_TYPE__
+#define __SIZEOF_DOS_DEV_T__   4
+#define __SIZEOF_DOS_INO_T__   2
+#define __SIZEOF_DOS_OFF_T__   4
+#define __SIZEOF_DOS_CLOCK_T__ 4
 
 #ifdef __USE_DOSFS
 /* DOS filesystem headers contain different types for these... */
-#define __typedef_dev_t          __dos_dev_t
-#define __typedef_ino_t          __dos_ino_t
-#define __typedef_off_t          __dos_off_t
-#define __SIZEOF_TYPEDEF_DEV_T__ __SIZEOF_DOS_DEV_T__
-#define __SIZEOF_TYPEDEF_INO_T__ __SIZEOF_DOS_INO_T__
-#define __SIZEOF_TYPEDEF_OFF_T__ __SIZEOF_DOS_OFF_T__
+#define __typedef_dev_t            __dos_dev_t
+#define __typedef_ino_t            __dos_ino_t
+#define __typedef_off_t            __dos_off_t
+#define __typedef_clock_t          __dos_clock_t
+#define __SIZEOF_TYPEDEF_DEV_T__   __SIZEOF_DOS_DEV_T__
+#define __SIZEOF_TYPEDEF_INO_T__   __SIZEOF_DOS_INO_T__
+#define __SIZEOF_TYPEDEF_OFF_T__   __SIZEOF_DOS_OFF_T__
+#define __SIZEOF_TYPEDEF_CLOCK_T__ __SIZEOF_DOS_CLOCK_T__
 #else
-#define __typedef_dev_t          __dev_t
-#define __typedef_ino_t          __FS_TYPE(ino)
-#define __typedef_off_t          __FS_TYPE(off)
-#define __SIZEOF_TYPEDEF_DEV_T__ __SIZEOF_DEV_T__
-#define __SIZEOF_TYPEDEF_INO_T__ __SIZEOF_INO_T__
-#define __SIZEOF_TYPEDEF_OFF_T__ __SIZEOF_OFF_T__
+#define __typedef_dev_t            __dev_t
+#define __typedef_ino_t            __FS_TYPE(ino)
+#define __typedef_off_t            __FS_TYPE(off)
+#define __typedef_clock_t          __clock_t
+#define __SIZEOF_TYPEDEF_DEV_T__   __SIZEOF_DEV_T__
+#define __SIZEOF_TYPEDEF_INO_T__   __SIZEOF_INO_T__
+#define __SIZEOF_TYPEDEF_OFF_T__   __SIZEOF_OFF_T__
+#define __SIZEOF_TYPEDEF_CLOCK_T__ __SIZEOF_CLOCK_T__
 #endif
 
 

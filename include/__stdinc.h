@@ -80,6 +80,7 @@
 #define __COMPILER_STRLEN(str)         (sizeof(str)/sizeof(char)-1)
 #define __COMPILER_STREND(str)  ((str)+(sizeof(str)/sizeof(char)-1))
 
+
 #ifdef __GNUC__
 #   include "__stdinc-gcc.h"
 #elif defined(_MSC_VER)
@@ -87,6 +88,11 @@
 #else
 #   include "__stdinc-generic.h"
 #endif
+
+#ifndef __SYSDECL_BEGIN
+#define __SYSDECL_BEGIN __DECL_BEGIN
+#define __SYSDECL_END   __DECL_END
+#endif /* !__SYSDECL_BEGIN */
 
 #ifdef __INTELLISENSE__
 #   define __NOTHROW       /* nothing */
@@ -101,6 +107,11 @@
 #endif
 
 #ifdef __cplusplus
+/* Mark the wchar_t type as already being defined when pre-defined by the compiler */
+#if !defined(__wchar_t_defined) && \
+    (defined(_NATIVE_WCHAR_T_DEFINED) || defined(__GNUC__))
+#   define __wchar_t_defined 1
+#endif
 #   define __NAMESPACE_STD_EXISTS     1
 #   define __NAMESPACE_STD_BEGIN      namespace std {
 #   define __NAMESPACE_STD_END        }
@@ -151,6 +162,7 @@
            __typeof__(old) new __ATTR_ALIAS(#old)
 #endif
 
+
 #define __IFDEF_ARG_PLACEHOLDER_     ,
 #define __IFDEF_ARG_PLACEHOLDER_1    ,
 #define __IFDEF_TAKE_SECOND_ARG_IMPL(x,val,...) val
@@ -171,7 +183,8 @@
 #if !defined(__PE__) && !defined(__ELF__)
 /* Try to determine current binary format using other platform
  * identifiers. (When KOS headers are used on other systems) */
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(__linux__) || defined(__linux) || defined(linux) || \
+    defined(__unix__) || defined(__unix) || defined(unix)
 #   define __ELF__ 1
 #elif defined(__CYGWIN__) || defined(__MINGW32__) || defined(__WINDOWS__) || \
       defined(_WIN16) || defined(WIN16) || defined(_WIN32) || defined(WIN32) || \
@@ -182,6 +195,13 @@
 #   warning "Target binary format not defined. - Assuming '__ELF__'"
 #   define __ELF__ 1
 #endif
+#endif
+
+#ifndef __CXX_CONSTEXPR11
+#define __CXX_CONSTEXPR11 /* nothing */
+#endif
+#ifndef __CXX_CONSTEXPR14
+#define __CXX_CONSTEXPR14 /* nothing */
 #endif
 
 #ifndef __VA_LIST
@@ -233,13 +253,102 @@
 #   define __UNUSED(name)   name
 #endif
 
+#define __IGNORE_REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
+#define __IGNORE_REDIRECT_VOID(decl,attr,Treturn,cc,name,param,asmname,args)
+#define __NOREDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
+    decl attr Treturn (cc name) param;
+#define __NOREDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+    decl attr Treturn __NOTHROW((cc name) param);
+#define __NOREDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
+    decl attr void (cc name) param;
+#define __NOREDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
+    decl attr void __NOTHROW((cc name) param);
+
+/* General purpose redirection implementation. */
+#ifndef __REDIRECT
+#ifdef __INTELLISENSE__
+/* Only declare the functions for intellisense to minimize IDE lag. */
+#define __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
+    decl attr Treturn (cc name) param;
+#define __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+    decl attr Treturn __NOTHROW((cc name) param);
+#define __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
+    decl attr void (cc name) param;
+#define __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
+    decl attr void __NOTHROW((cc name) param);
+#elif !defined(__NO_ASMNAME)
+/* Use GCC families assembly name extension. */
+#define __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
+    decl attr Treturn (cc name) param __ASMNAME(#asmname);
+#define __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+    decl attr Treturn __NOTHROW((cc name) param) __ASMNAME(#asmname);
+#define __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
+    decl attr void (cc name) param __ASMNAME(#asmname);
+#define __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
+    decl attr void __NOTHROW((cc name) param) __ASMNAME(#asmname);
+#elif defined(__cplusplus)
+/* In C++, we can use use namespaces to prevent collisions with incompatible prototypes. */
+#define __REDIRECT_UNIQUE  __PP_CAT2(__u,__LINE__)
+#define __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
+namespace __rd { namespace __REDIRECT_UNIQUE { extern "C" { decl Treturn (cc asmname) param; } } } \
+__LOCAL attr Treturn (cc name) param { \
+    return (__rd::__REDIRECT_UNIQUE:: asmname) args; \
+}
+#define __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+namespace __rd { namespace __REDIRECT_UNIQUE { extern "C" { decl Treturn __NOTHROW((cc asmname) param); } } } \
+__LOCAL attr Treturn __NOTHROW((cc name) param) { \
+    return (__rd::__REDIRECT_UNIQUE:: asmname) args; \
+}
+#define __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
+namespace __rd { namespace __REDIRECT_UNIQUE { extern "C" { decl void (cc asmname) param; } } } \
+__LOCAL attr void (cc name) param { \
+    (__rd::__REDIRECT_UNIQUE:: asmname) args; \
+}
+#define __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
+namespace __rd { namespace __REDIRECT_UNIQUE { extern "C" { decl void __NOTHROW((cc asmname) param); } } } \
+__LOCAL attr void __NOTHROW((cc name) param) { \
+    (__rd::__REDIRECT_UNIQUE:: asmname) args; \
+}
+#else
+/* Fallback: Assume that the compiler supports scoped declarations,
+ *           as well as deleting them once the scope ends.
+ * NOTE: GCC actually doesn't support this one, somehow keeping
+ *       track of the C declaration types even after the scope ends,
+ *       causing it to fail fatal()-style with incompatible-prototype errors.
+ * HINT: Function implementation does how ever work for MSVC when compiling for C.
+ */
+#define __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
+__LOCAL attr Treturn (cc name) param { \
+    decl Treturn (cc asmname) param; \
+    return (asmname) args; \
+}
+#define __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+__LOCAL attr Treturn __NOTHROW((cc name) param) { \
+    decl Treturn __NOTHROW((cc asmname) param); \
+    return (asmname) args; \
+}
+#define __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
+__LOCAL attr void (cc name) param { \
+    decl void (cc asmname) param; \
+    (asmname) args; \
+}
+#define __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
+__LOCAL attr void __NOTHROW((cc name) param) { \
+    decl void __NOTHROW((cc asmname) param); \
+    (asmname) args; \
+}
+#endif
+#endif /* !__REDIRECT */
+
+
+
 #ifdef __cplusplus
 extern "C++" {
 class __any_ptr {
  void *__p;
 public:
- constexpr inline __any_ptr(void *__p) throw(): __p(__p) {}
- template<class T> constexpr inline operator T *(void) throw() { return (T *)this->__p; }
+ __CXX_CONSTEXPR11 inline __any_ptr(void *__p) throw(): __p(__p) {}
+ template<class T> __CXX_CONSTEXPR11 inline operator T *(void) throw() { return (T *)this->__p; }
 };
 }
 #   define __COMPILER_UNIPOINTER(p) __any_ptr((void *)(__UINTPTR_TYPE__)(p))
@@ -254,7 +363,7 @@ public:
 #ifndef CONFIG_DEBUG
 #   define NDEBUG 1
 #endif
-#elif defined(__KOS__)
+#else
 #ifdef __NAMESPACE_STD_EXISTS
 #ifdef __CC__
 __NAMESPACE_STD_BEGIN
@@ -275,6 +384,7 @@ struct _IO_FILE;
 #   define __LIBCCALL __KCALL
 #else
 #   define __LIBCCALL /* Nothing */
+#   define __LIBCCALL_CALLER_CLEANUP 1
 #endif
 #endif
 

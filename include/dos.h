@@ -27,7 +27,7 @@
 #include <bits/types.h>
 #endif /* __USE_OLD_DOS */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Use the better name by default. */
 #define _diskfree_t diskfree_t
@@ -76,20 +76,20 @@ __FORCELOCAL void (__LIBCCALL _enable)(void) { __asm__ __volatile__("sti" : : : 
 
 
 #ifdef __USE_OLD_DOS
-__LIBC int (__LIBCCALL __libc_usleep)(__useconds_t __useconds) __ASMNAME("usleep");
-__LOCAL void (__LIBCCALL delay)(unsigned __mill) { __libc_usleep((__useconds_t)__mill*1000); }
-__LIBC unsigned (__LIBCCALL _dos_getdiskfree)(int __dr, struct diskfree_t *__restrict __d) __ASMNAME("_getdiskfree");
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_usleep,(__useconds_t __useconds),usleep,(__useconds))
+__LOCAL void (__LIBCCALL delay)(unsigned int __mill) { __libc_usleep((__useconds_t)__mill*1000); }
+__REDIRECT(__LIBC,,unsigned int,__LIBCCALL,_dos_getdiskfree,(int __dr, struct diskfree_t *__restrict __d),_getdiskfree,(__dr,__d))
 #ifndef __sleep_defined
 #define __sleep_defined 1
 #if __SIZEOF_INT__ == 4
-__LIBC void (__LIBCCALL sleep)(unsigned int __seconds) __PE_ASMNAME("_sleep");
-#else
+__REDIRECT_VOID(__LIBC,,__LIBCCALL,sleep,(unsigned int __seconds),_sleep,(__seconds))
+#else /* __SIZEOF_INT__ == 4 */
 __LIBC void (__LIBCCALL sleep)(unsigned int __seconds);
-#endif
+#endif /* __SIZEOF_INT__ != 4 */
 #endif /* !__sleep_defined */
 #ifndef __unlink_defined
 #define __unlink_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL unlink)(char const *__name) __UFS_FUNC_OLDPEA(unlink);
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,unlink,(char const *__name),unlink,(__name))
 #endif /* !__unlink_defined */
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -117,6 +117,6 @@ __LOCAL void (__LIBCCALL outport)(__UINT16_TYPE__ __port, __UINT16_TYPE__ __val)
 #define SEEK_END  2
 #endif /* __USE_OLD_DOS */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_DOS_H */

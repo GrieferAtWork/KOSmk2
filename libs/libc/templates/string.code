@@ -297,7 +297,7 @@ DECL T *LIBCCALL Xstr(nrchrnul)
 #undef WANT_STROFF
 DECL size_t LIBCCALL Xstr(off)
 (T const *__restrict haystack, Tneedle needle) {
-	return Xstr(chrnul)(haystack,needle)-haystack;
+	return (size_t)(Xstr(chrnul)(haystack,needle)-haystack);
 }
 #endif /* WANT_STROFF */
 
@@ -305,7 +305,7 @@ DECL size_t LIBCCALL Xstr(off)
 #undef WANT_STRROFF
 DECL size_t LIBCCALL Xstr(roff)
 (T const *__restrict haystack, Tneedle needle) {
-	return Xstr(rchrnul)(haystack,needle)-haystack;
+	return (size_t)(Xstr(rchrnul)(haystack,needle)-haystack);
 }
 #endif /* WANT_STRROFF */
 
@@ -313,7 +313,7 @@ DECL size_t LIBCCALL Xstr(roff)
 #undef WANT_STRNOFF
 DECL size_t LIBCCALL Xstr(noff)
 (T const *__restrict haystack, Tneedle needle, size_t maxlen) {
-	return Xstr(nchrnul)(haystack,needle,maxlen)-haystack;
+	return (size_t)(Xstr(nchrnul)(haystack,needle,maxlen)-haystack);
 }
 #endif /* WANT_STRNOFF */
 

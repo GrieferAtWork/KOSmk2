@@ -16,6 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
+#ifndef ____INTELLISENSE_STDINC_SYNTAX_H
+#define ____INTELLISENSE_STDINC_SYNTAX_H 1
 
 /*
  * Always-include, wrapper header to re-configure Visual Studio's
@@ -24,11 +26,11 @@
  * >> This header is never included by any production code,
  *    only ever included through the nmake forced include option,
  *    and functions defined here are never implemented.
- *   (So there's no need to go looking...)
+ *   (So there's no need to go looking for them...)
  */
 
 
-// Get rid of Visual Studio's defines
+/* Get rid of MSVC's predefined macros */
 #undef WIN32
 #undef WIN64
 #undef _WIN32
@@ -39,6 +41,7 @@
 #undef _MSC_BUILD
 #undef _MSC_EXTENSIONS
 #undef _MT
+#undef __BOOL_DEFINED
 
 
 #define __KOS__           1
@@ -924,3 +927,4 @@ __UINT64_TYPE__ ____INTELLISENSE_BSWAP_BE2H64(____INTELLISENSE_integer<4321,__UI
 #define ____INTELLISENSE_attribute_context          ____INTELLISENSE_ATTR_FUNC
 void __context__(void const volatile *expr, int mode);
 
+#endif /* !____INTELLISENSE_STDINC_SYNTAX_H */

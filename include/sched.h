@@ -27,7 +27,7 @@
 
 #define sched_priority	__sched_priority
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __USE_GNU
 
@@ -68,24 +68,24 @@ typedef __cpu_set_t    cpu_set_t;
 
 #ifdef __CC__
 #ifndef __KERNEL__
-__LIBC int (__LIBCCALL sched_setparam)(__pid_t __pid, struct sched_param const *__param);
-__LIBC int (__LIBCCALL sched_getparam)(__pid_t __pid, struct sched_param *__param);
-__LIBC int (__LIBCCALL sched_setscheduler)(__pid_t __pid, int __policy, struct sched_param const *__param);
-__LIBC int (__LIBCCALL sched_getscheduler)(__pid_t __pid);
-__LIBC int (__LIBCCALL sched_yield)(void);
-__LIBC int (__LIBCCALL sched_get_priority_max)(int __algorithm);
-__LIBC int (__LIBCCALL sched_get_priority_min)(int __algorithm);
-__LIBC int (__LIBCCALL sched_setaffinity)(__pid_t __pid, __size_t __cpusetsize, cpu_set_t const *__cpuset);
-__LIBC int (__LIBCCALL sched_getaffinity)(__pid_t __pid, __size_t __cpusetsize, cpu_set_t *__cpuset);
-__LIBC int (__LIBCCALL sched_rr_get_interval)(__pid_t __pid, struct timespec *__t) __TM_FUNC(sched_rr_get_interval);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_setparam)(__pid_t __pid, struct sched_param const *__param);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_getparam)(__pid_t __pid, struct sched_param *__param);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_setscheduler)(__pid_t __pid, int __policy, struct sched_param const *__param);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_getscheduler)(__pid_t __pid);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_yield)(void);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_get_priority_max)(int __algorithm);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_get_priority_min)(int __algorithm);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_setaffinity)(__pid_t __pid, __size_t __cpusetsize, cpu_set_t const *__cpuset);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_getaffinity)(__pid_t __pid, __size_t __cpusetsize, cpu_set_t *__cpuset);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_rr_get_interval)(__pid_t __pid, struct timespec *__t) __TM_FUNC(sched_rr_get_interval);
 #ifdef __USE_TIME64
-__LIBC int (__LIBCCALL sched_rr_get_interval64)(__pid_t __pid, struct __timespec64 *__t);
+__LIBC __PORT_NODOS int (__LIBCCALL sched_rr_get_interval64)(__pid_t __pid, struct __timespec64 *__t);
 #endif /* __USE_TIME64 */
 #endif /* !__KERNEL__ */
 #endif /* __CC__ */
 
 #endif /* __USE_GNU */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SCHED_H */

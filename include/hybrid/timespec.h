@@ -23,22 +23,20 @@
 #include <bits/types.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #define __SIZEOF_TIMESPEC       (__SIZEOF_TIME_T__+__SIZEOF_SYSCALL_LONG__)
 
 #ifdef __CC__
-#ifndef __timespec_defined
-#define __timespec_defined 1
+#ifdef _MSC_VER
+#pragma pack(push,1)
+#endif
 struct timespec {
  __TM_TYPE(time)   tv_sec;  /*< Seconds. */
  __syscall_slong_t tv_nsec; /*< Nano seconds. */
 };
-#endif
 
 /* Define 64-bit and 32-bit alternatives of 'struct timespec' */
-#ifndef __timespec64_defined
-#define __timespec64_defined 1
 #ifdef __USE_TIME_BITS64
 #define __timespec64 timespec
 #ifdef __USE_TIME64
@@ -53,10 +51,7 @@ struct __timespec64 {
  __syscall_slong_t tv_nsec; /*< Nano seconds. */
 };
 #endif /* !__USE_TIME_BITS64 */
-#endif /* !__timespec64_defined */
 
-#ifndef __timespec32_defined
-#define __timespec32_defined 1
 #ifndef __USE_TIME_BITS64
 #define __timespec32 timespec
 #ifdef __USE_KOS
@@ -71,7 +66,10 @@ struct __timespec32 {
  __syscall_slong_t tv_nsec; /*< Nano seconds. */
 };
 #endif /* __USE_TIME_BITS64 */
-#endif /* !__timespec32_defined */
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 #define __NSECS_PER_SEC   1000000000l
 
@@ -107,6 +105,6 @@ struct __timespec32 {
 #endif
 #endif /* __CC__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !__GUARD_HYBRID_TIMESPEC_H */

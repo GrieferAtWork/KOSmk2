@@ -26,7 +26,7 @@
 #include <bits/ioctl-types.h>
 #include <sys/ttydefaults.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __KERNEL__
 #ifdef __USE_KOS
@@ -36,7 +36,7 @@ __LIBC int (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
 #endif /* !__USE_KOS */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 
 #endif /* !_SYS_IOCTL_H */

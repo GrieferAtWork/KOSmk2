@@ -22,56 +22,9 @@
 #include <__stdinc.h>
 #include <features.h>
 #include <bits/types.h>
+#include <hybrid/timeval.h>
 
-__DECL_BEGIN
-
-#ifndef _STRUCT_TIMEVAL
-#define _STRUCT_TIMEVAL 1
-#ifndef __timeval_defined
-#define __timeval_defined 1
-struct timeval {
-    __time_t      tv_sec;  /*< Seconds. */
-    __suseconds_t tv_usec; /*< Microseconds. */
-};
-#endif /* !__timeval_defined */
-#endif /* !_STRUCT_TIMEVAL */
-
-#ifndef __timeval32_t_defined
-#define __timeval32_t_defined 1
-#ifndef __USE_TIME_BITS64
-#define __timeval32 timeval
-#ifdef __USE_KOS
-#define timeval32   timeval
-#endif /* __USE_KOS */
-#else /* !__USE_TIME_BITS64 */
-#ifdef __USE_KOS
-#define __timeval32 timeval32
-#endif /* __USE_KOS */
-struct __timeval32 {
-    __time32_t    tv_sec;  /*< Seconds. */
-    __suseconds_t tv_usec; /*< Microseconds. */
-};
-#endif /* __USE_TIME_BITS64 */
-#endif /* !__timeval32_t_defined */
-
-#ifndef __timeval64_t_defined
-#define __timeval64_t_defined 1
-#ifdef __USE_TIME_BITS64
-#define __timeval64 timeval
-#ifdef __USE_TIME64
-#define timeval64   timeval
-#endif /* __USE_TIME64 */
-#else /* __USE_TIME_BITS64 */
-#ifdef __USE_TIME64
-#define __timeval64 timeval64
-#endif /* __USE_TIME64 */
-struct __timeval64 {
-    __time64_t    tv_sec;  /*< Seconds. */
-    __suseconds_t tv_usec; /*< Microseconds. */
-};
-#endif /* !__USE_TIME_BITS64 */
-#endif /* !__timeval64_t_defined */
-
+__SYSDECL_BEGIN
 
 /* System-dependent timing definitions.  Linux version.
    Copyright (C) 1996-2016 Free Software Foundation, Inc.
@@ -103,11 +56,12 @@ struct __timeval64 {
 #if (!defined(__STRICT_ANSI__) || defined(__USE_POSIX)) && \
      !defined(__USE_XOPEN2K)
 __LIBC long int (__LIBCCALL __sysconf)(int);
-#define CLK_TCK ((__clock_t)__sysconf(2))
+#define CLK_TCK ((__typedef_clock_t)__sysconf(2))
 #endif
 #endif /* !__KERNEL__ */
 
 
+#ifdef __CRT_GLC
 #ifdef __USE_POSIX199309
 #   define CLOCK_REALTIME           0 /*< Identifier for system-wide realtime clock. */
 #   define CLOCK_MONOTONIC          1 /*< Monotonic system-wide clock. */
@@ -125,9 +79,10 @@ __LIBC long int (__LIBCCALL __sysconf)(int);
 
 #ifdef __USE_GNU
 struct timex;
-__LIBC int (__LIBCCALL clock_adjtime)(__clockid_t __clock_id, struct timex *__utx);
+__LIBC __PORT_NODOS int (__LIBCCALL clock_adjtime)(__clockid_t __clock_id, struct timex *__utx);
 #endif /* __USE_GNU */
+#endif /* __CRT_GLC */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_TIME_H */

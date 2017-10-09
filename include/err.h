@@ -22,7 +22,11 @@
 #include <__stdinc.h>
 #include <features.h>
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<err.h> is not supported by the linked libc"
+#endif /* __CRT_GLC */
+
+__SYSDECL_BEGIN
 
 #ifndef __KERNEL__
 __LIBC void (__LIBCCALL warn)(char const *__format, ...);
@@ -35,6 +39,6 @@ __LIBC __ATTR_NORETURN void (__LIBCCALL errx)(int __status, char const *__format
 __LIBC __ATTR_NORETURN void (__LIBCCALL verrx)(int __status, char const *__format, __VA_LIST __args);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_ERR_H */

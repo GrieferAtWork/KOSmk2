@@ -444,7 +444,7 @@ check_again:
             data.esp_minus_4+4,data.state.ebp,data.state.esi,data.state.edi);
      syslog(LOG_DEBUG,"DS %.4I16X ES %.4I16X FS %.4I16X GS %.4I16X\n",
             data.state.ds,data.state.es,data.state.fs,data.state.gs);
-     __assertion_tbprint(0);
+     debug_tbprint(0);
      struct mman *omm;
      TASK_PDIR_KERNEL_BEGIN(omm);
      mman_read(omm);

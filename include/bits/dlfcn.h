@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* System dependent definitions for run-time dynamic loading.
    Copyright (C) 1996-2016 Free Software Foundation, Inc.
@@ -84,6 +84,6 @@ extern void (_dl_mcount_wrapper_check)(void *__selfpc);
 #endif
 #endif /* __USE_GNU */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_DLFCN_H */

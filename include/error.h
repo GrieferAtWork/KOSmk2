@@ -21,7 +21,11 @@
 
 #include <features.h>
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<error.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 /* Print an error message using 'fprintf(stderr,FORMAT,...)';
  * @param: ERRNUM: When nonzero, printf(": %s",strerror(ERRNUM)).
@@ -46,17 +50,20 @@ __LIBC void (__LIBCCALL error)(int __status, int __errnum, char const *__format,
 __LIBC void (__LIBCCALL error_at_line)(int __status, int __errnum, char const *__fname, unsigned int __lineno, char const *__format, ...);
 #endif
 
+
+#ifdef __CRT_GLC
 #undef error_print_progname
 /* Optional user-callback that may override the following default:
  * >> fflush(stdout);
  * >> fprintf(stderr,"%s: ",argv[0]); */
-__LIBC void (*(error_print_progname))(void);
+__LIBC void (*error_print_progname)(void);
 
 #undef error_message_count
 #undef error_one_per_line
-__LIBC unsigned int (error_message_count); /* Incremented each time error() is called. */
-__LIBC int (error_one_per_line);
+__LIBC unsigned int error_message_count; /* Incremented each time error() is called. */
+__LIBC int error_one_per_line;
+#endif /* !__CRT_GLC */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_ERROR_H */

@@ -24,7 +24,7 @@
 #include <features.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 #endif
 
 #ifdef __CC__
@@ -292,7 +292,7 @@ __ATTR_ALIGNED(64) struct keymap {
 
 
 #ifndef __DEEMON__
-__DECL_END
+__SYSDECL_END
 #endif
 
 #endif /* !_KOS_KEYBOARD_H */

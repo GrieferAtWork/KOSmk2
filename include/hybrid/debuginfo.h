@@ -21,7 +21,7 @@
 
 #include <__stdinc.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __KERNEL__
 #ifndef THIS_INSTANCE
@@ -62,6 +62,6 @@ __PUBDEF struct instance __this_instance;
 #   define DEBUGINFO_NUL     __DEBUGINFO_NUL
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !__GUARD_HYBRID_DEBUGINFO_H */

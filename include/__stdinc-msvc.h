@@ -27,6 +27,9 @@
 #   define __COMPILER_HAVE_LONGLONG 1
 #endif
 #define __COMPILER_HAVE_LONGDOUBLE 1
+#define __COMPILER_HAVE_TRANSPARENT_STRUCT 1
+#define __COMPILER_HAVE_TRANSPARENT_UNION 1
+#define __COMPILER_HAVE_PRAGMA_PUSHMACRO 1
 
 #if __has_feature(cxx_auto_type) || \
    (defined(__cplusplus) && _MSC_VER >= 1600)
@@ -94,7 +97,12 @@
 #define __ATTR_ERROR(text)       /* Nothing */
 #define __NO_ATTR_TSECTION       1
 #define __ATTR_SECTION(name)     /* Nothing */
+#ifdef __cplusplus
 #define __ATTR_NOTHROW           __declspec(nothrow)
+#else
+#define __NO_ATTR_NOTHROW        1
+#define __ATTR_NOTHROW           /* Nothing */
+#endif
 #define __NO_ATTR_NOTHROW_SUFFIX 1
 #define __NO_ATTR_RETNONNULL     1
 #define __ATTR_RETNONNULL        /* Nothing */
@@ -108,8 +116,7 @@
 #   define __NO_ATTR_ALIGNED     1
 #   define __ATTR_ALIGNED(n)     /* Nothing */
 #endif
-#define __NO_ATTR_WEAK           1
-#define __ATTR_WEAK              /* Nothing */
+#define __ATTR_WEAK              __declspec(selectany) /* For all that we care, it's basically the same. */
 #define __NO_ATTR_VISIBILITY     1
 #define __ATTR_VISIBILITY(vis)   /* Nothing */
 #define __ATTR_DLLIMPORT         __declspec(dllimport)
@@ -135,6 +142,71 @@
 #define __builtin_constant_p(x)  0
 #define __restrict_arr           __restrict
 
-#define __COMPILER_BARRIER()       (void)0 /* TODO: some function from <intrin.h> */
-#define __COMPILER_READ_BARRIER()  (void)0 /* TODO: some function from <intrin.h> */
-#define __COMPILER_WRITE_BARRIER() (void)0 /* TODO: some function from <intrin.h> */
+/* Define intrinsic barrier functions. */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+extern void _ReadBarrier(void);
+extern void _WriteBarrier(void);
+extern void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadBarrier)
+#pragma intrinsic(_WriteBarrier)
+#pragma intrinsic(_ReadWriteBarrier)
+#define __COMPILER_BARRIER()       _ReadWriteBarrier()
+#define __COMPILER_READ_BARRIER()  _ReadBarrier()
+#define __COMPILER_WRITE_BARRIER() _WriteBarrier()
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
+#ifdef __INTELLISENSE__
+#   define __NULLPTR    nullptr
+#else
+#   define __NULLPTR          0
+#endif
+#else
+#   define __NULLPTR ((void *)0)
+#endif
+
+
+/* Define varargs macros expected by system headers. */
+#define __VA_LIST        char *
+#define __VA_ADDROF(v)   &(v)
+#if defined(__i386__) || defined(__i386) || defined(i386) || \
+    defined(__I86__) || defined(_M_IX86) || defined(__X86__) || \
+    defined(_X86_) || defined(__THW_INTEL__) || defined(__INTEL__)
+#define __VA_SIZEOF(n)                 ((sizeof(n)+3)&~3)
+#define __builtin_va_start(ap,last_arg) (void)(ap = (__VA_LIST)__VA_ADDROF(last_arg)+__VA_SIZEOF(last_arg))
+#define __builtin_va_arg(ap,T)          (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
+#define __builtin_va_end(ap)            (void)0
+#elif defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
+      defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64) || \
+      defined(_WIN64) || defined(WIN64)
+extern void (__cdecl __va_start)(__VA_LIST *, ...);
+#define __builtin_va_start(ap,x) __va_start(&ap,x)
+#define __builtin_va_arg(ap,T) \
+    ((sizeof(T) > 8 || (sizeof(T)&(sizeof(T) - 1)) != 0) ? **(T **)((ap += 8)-8) : *(T *)((ap += 8)-8))
+#define __builtin_va_end(ap)    (void)0
+#else /* ... */
+#define __VA_SIZEOF(n)            ((sizeof(n)+3)&~3)
+#define __builtin_va_start(ap,v)  (ap = (va_list)__VA_ADDROF(v)+__VA_SIZEOF(v))
+#define __builtin_va_arg(ap,T)    (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
+#define __builtin_va_end(ap)      (void)0
+#endif /* !... */
+
+#pragma warning(disable: 4514) /* Unused inline function was removed. */
+#pragma warning(disable: 4574) /* Nonsensical preprocessor warning. */
+#pragma warning(disable: 4710) /* Function not inlined (Emit for local varargs functions...) */
+#ifndef __cplusplus
+/* Disable some warnings that are caused by function redirection in system headers. */
+#define __REDIRECT_WSUPPRESS_BEGIN __pragma(warning(push)) \
+                                   __pragma(warning(disable: 4210 4028 4142 4565))
+#define __REDIRECT_WSUPPRESS_END   __pragma(warning(pop))
+/* Suppress warnings caused by C-mode redirections in system headers. */
+#define __SYSDECL_BEGIN __DECL_BEGIN __REDIRECT_WSUPPRESS_BEGIN
+#define __SYSDECL_END   __REDIRECT_WSUPPRESS_END __DECL_END
+#endif
+
+
+

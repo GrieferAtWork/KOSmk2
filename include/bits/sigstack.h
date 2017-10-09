@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* sigstack, sigaltstack definitions.
    Copyright (C) 1998-2016 Free Software Foundation, Inc.
@@ -72,6 +72,6 @@ typedef struct sigaltstack {
  __SIZE_TYPE__ ss_size;
 } stack_t;
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SIGSTACK_H */

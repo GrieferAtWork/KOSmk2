@@ -95,7 +95,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
         "[MEM] Checking to load core memory after PAGEFAULT near %p %p %p\n",
         fault_addr,&fault_addr,info->iret.eip);
  if (!addr_isvirt(fault_addr))
-      __assertion_tbprintl((void *)info->iret.eip,NULL,0);
+      debug_tbprintl((void *)info->iret.eip,NULL,0);
 #endif
 
  fault_page = FLOOR_ALIGN(fault_addr,PAGESIZE);

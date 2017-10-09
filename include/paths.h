@@ -23,7 +23,11 @@
 
 #include <__stdinc.h>
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<paths.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 /*
  * Copyright (c) 1989, 1993
@@ -93,7 +97,7 @@ __DECL_BEGIN
 #define _PATH_VARRUN   "/var/run/"
 #define _PATH_VARTMP   "/var/tmp/"
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_PATHS_H_ */
 #endif /* !_PATHS_H */

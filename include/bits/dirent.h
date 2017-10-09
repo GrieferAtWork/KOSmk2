@@ -23,7 +23,7 @@
 #include <features.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct dirent {
 union {
@@ -78,6 +78,6 @@ union {
 #define _DIRENT_HAVE_D_TYPE
 #define _DIRENT_MATCHES_DIRENT64 1
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_DIRENT_H */

@@ -59,6 +59,9 @@
     <None Include="..\..\src\modules\nt\flavor-link.inl">
       <Filter>modules\nt</Filter>
     </None>
+    <None Include="..\..\src\kernel\sched\sighand.c.inl">
+      <Filter>kernel\sched</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

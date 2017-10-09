@@ -45,7 +45,7 @@
 #include <__stdinc.h>
 #include <hybrid/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Define max and min legal sizes. The frame sizes do 
  * not include 4 byte FCS/CRC (frame check sequence). */
@@ -118,6 +118,6 @@ struct PACKED fddihdr {
  } hdr;
 };
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* _LINUX_IF_FDDI_H */

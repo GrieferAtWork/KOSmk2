@@ -23,7 +23,7 @@
 
 #include <__stdinc.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /*-
  * Copyright (c) 1982, 1986, 1993
@@ -101,7 +101,7 @@ __DECL_BEGIN
 #define CRPRNT      CREPRINT
 #define CFLUSH      CDISCARD
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_TTYDEFAULTS_H */
 

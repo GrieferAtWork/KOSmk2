@@ -23,7 +23,7 @@
 #include <features.h>
 #include <hybrid/limitcore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 
 /* You should really just always using 'MB_CUR_MAX'... */
@@ -86,7 +86,7 @@ __DECL_BEGIN
 
 #endif /* __USE_DOS */
 
-__DECL_END
+__SYSDECL_END
 
 #ifdef __USE_POSIX
 #include <bits/posix1_lim.h>

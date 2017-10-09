@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* NOTE: This file based on the GLIBC header of the same name: */
 /* Definitions of flag bits for `waitpid' et al.
@@ -81,6 +81,6 @@ typedef enum {
 #endif /* !__ENUM_IDTYPE_T */
 #endif /* ... */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_WAITFLAGS_H */

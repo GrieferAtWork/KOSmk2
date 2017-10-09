@@ -40,7 +40,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if __GCC_VERSION(3,3,0)
 #   define HUGE_VALF    (__builtin_huge_valf())
@@ -62,6 +62,6 @@ __PRIVATE __huge_valf_t const __huge_valf = { __HUGE_VALF_bytes };
 #define HUGE_VALF    (__huge_valf.__f)
 #endif /* !... */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_HUGE_VALF_H */

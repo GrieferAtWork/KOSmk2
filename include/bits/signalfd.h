@@ -21,7 +21,7 @@
 
 #include <__stdinc.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 enum {
  SFD_CLOEXEC  = 02000000,
@@ -30,6 +30,6 @@ enum {
 #define SFD_CLOEXEC  SFD_CLOEXEC
 #define SFD_NONBLOCK SFD_NONBLOCK
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SIGNALFD_H */

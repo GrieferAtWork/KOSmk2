@@ -43,7 +43,7 @@
 #include <netinet/in.h>
 #include <hybrid/byteorder.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct timestamp {
  u_int8_t len;
@@ -273,7 +273,7 @@ struct ip_timestamp {
 #define IPTTLDEC              1    /*< subtracted when forwarding */
 #define IP_MSS                576  /*< default maximum segment size */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !__NETINET_IP_H */
 #endif /* !_NETINET_IP_H */

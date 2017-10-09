@@ -42,7 +42,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __x86_64__
 #define __SIZEOF_GREG_T__  8
@@ -264,6 +264,6 @@ typedef struct ucontext {
 } ucontext_t;
 #endif /* !__x86_64__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_UCONTEXT_H */

@@ -42,7 +42,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct winsize {
     unsigned short int ws_row;
@@ -94,6 +94,6 @@ struct termio {
 #define N_SYNC_PPP     14 /* synchronous PPP  */
 #define N_HCI          15 /* Bluetooth HCI UART  */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_IOCTL_TYPES_H */

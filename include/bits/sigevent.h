@@ -41,7 +41,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #define __SIGEV_MAX_SIZE    64
 #if __SIZEOF_POINTER__ == 8
@@ -96,6 +96,6 @@ enum {
 #define SIGEV_THREAD    SIGEV_THREAD
 #define SIGEV_THREAD_ID SIGEV_THREAD_ID
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BIT_SIGEVENT_H */

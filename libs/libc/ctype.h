@@ -21,6 +21,7 @@
 #define _ISOC99_SOURCE 1
 
 #include "libc.h"
+#include <bits/endian.h>
 #include <hybrid/byteorder.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>

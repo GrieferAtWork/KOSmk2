@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if defined(__USE_DOSFS) && __SIZEOF_DOS_DEV_T__ != __SIZEOF_DEV_T__
 #warning "<sys/sysmacros.h> uses a different 'dev_t' type than is defined by DOS"
@@ -37,6 +37,6 @@ __LIBC __ATTR_CONST __dev_t (__LIBCCALL gnu_dev_makedev)(__major_t __major, __mi
 #define minor(dev)       gnu_dev_minor(dev)
 #define makedev(maj,min) gnu_dev_makedev(maj,min)
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_SYSMACROS_H */

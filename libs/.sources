@@ -62,6 +62,7 @@ BEGIN LIBRARY("libpthread")
 	SET_OUTPUT("/bin/libs/libpthread.so")
 	SET_DISKFILE("/lib/libpthread.so")
 	LIBPATH("/bin/libs")
+	PROJ_DEP("libc")
 	LIB("c")
 	SOURCE("libpthread/*.c")
 END

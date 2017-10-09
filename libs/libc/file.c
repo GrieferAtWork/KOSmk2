@@ -925,7 +925,7 @@ libc_setbuffer(FILE *__restrict self,
                char *__restrict buf, size_t size) {
  libc_setvbuf(self,buf,
               buf ? _IOFBF : _IONBF,
-              buf ? BUFSIZ : 0);
+              buf ? size : 0);
 }
 INTERN void LIBCCALL libc_setlinebuf(FILE *self) {
  libc_setvbuf(self,NULL,_IOLBF,0);

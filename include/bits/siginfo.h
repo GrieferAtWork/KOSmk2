@@ -41,7 +41,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __have_sigval_t
 #define __have_sigval_t 1
@@ -62,10 +62,10 @@ typedef union sigval {
 #endif
 #if defined(__x86_64__) && __SIZEOF_POINTER__ == 4
 #define __SI_ALIGNMENT __attribute__((__aligned__(8)))
-typedef __clock_t __attribute__((__aligned__(4))) __sigchld_clock_t;
+typedef __typedef_clock_t __attribute__((__aligned__(4))) __sigchld_clock_t;
 #else
 #define __SI_ALIGNMENT
-typedef __clock_t __sigchld_clock_t;
+typedef __typedef_clock_t __sigchld_clock_t;
 #endif
 
 typedef struct __siginfo_struct {
@@ -267,6 +267,6 @@ enum { /* `si_code' values for SIGPOLL signal. */
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
 #endif /* !__have_siginfo_t */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SIGINFO_H */

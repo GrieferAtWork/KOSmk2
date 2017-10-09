@@ -56,7 +56,7 @@
  *	@(#)syslog.h	8.1 (Berkeley) 6/2/93
  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #define LOG_EMERG   0    /*< system is unusable */
 #define LOG_ALERT   1    /*< action must be taken immediately */
@@ -210,6 +210,6 @@ __LIBC __ssize_t (__LIBCCALL syslog_printer)(char const *__restrict __data,
 #define SYSLOG_PRINTER_CLOSURE(level) ((void *)(uintptr_t)(int)(level))
 #endif /* __USE_KOS */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_SYSLOG_H */

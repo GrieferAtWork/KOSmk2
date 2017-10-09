@@ -38,7 +38,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Event types that can be polled for. These bits may be set in `events'
  * to indicate the interesting event types; they will appear in `revents'
@@ -69,6 +69,6 @@ __DECL_BEGIN
 #define POLLHUP        0x010 /*< Hung up. */
 #define POLLNVAL       0x020 /*< Invalid polling request. */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_POLL_H */

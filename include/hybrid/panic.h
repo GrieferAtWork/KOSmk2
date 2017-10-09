@@ -22,6 +22,6 @@
 #include <assert.h>
 #include <__stdinc.h>
 
-#define PANIC(...) __assertion_failedf("PANIC",__DEBUGINFO_GEN,__VA_ARGS__)
+#define PANIC(...) __afailf("PANIC",__DEBUGINFO_GEN,__VA_ARGS__)
 
 #endif /* !__GUARD_HYBRID_PANIC_H */

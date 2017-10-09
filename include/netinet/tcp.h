@@ -52,7 +52,7 @@
 
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* User-settable options (used with setsockopt). */
 #define TCP_NODELAY              1  /*< Don't delay send to coalesce packets.  */
@@ -84,13 +84,13 @@ __DECL_BEGIN
 #define TCP_SAVE_SYN             27 /*< Record SYN headers for new connections. */
 #define TCP_SAVED_SYN            28 /*< Get SYN headers recorded for connection. */
 
-__DECL_END
+__SYSDECL_END
 
 #ifdef __USE_MISC
 #include <sys/types.h>
 #include <sys/socket.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 typedef u_int32_t tcp_seq;
 /* TCP header. (Per RFC 793, September, 1981). */
@@ -306,7 +306,7 @@ struct tcp_cookie_transactions {
  u_int8_t    tcpct_value[TCP_MSS_DEFAULT];
 };
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* __USE_MISC */
 

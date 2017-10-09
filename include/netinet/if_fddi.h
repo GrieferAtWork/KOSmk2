@@ -43,13 +43,13 @@
 #include <linux/if_fddi.h>
 
 #ifdef __USE_MISC
-__DECL_BEGIN
+__SYSDECL_BEGIN
 struct fddi_header {
    u_int8_t fddi_fc;                 /*< Frame Control (FC) value */
    u_int8_t fddi_dhost[FDDI_K_ALEN]; /*< Destination host */
    u_int8_t fddi_shost[FDDI_K_ALEN]; /*< Source host */
 };
-__DECL_END
+__SYSDECL_END
 #endif
 
 #endif /* _NETINET_IF_FDDI_H */

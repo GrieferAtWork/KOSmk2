@@ -23,8 +23,15 @@
 #include <bits/types.h>
 #include <hybrid/typecore.h>
 #include <features.h>
+#ifndef __KERNEL__
+#include <bits/mbstate.h>
+#endif
 
-__DECL_BEGIN
+#ifndef __CRT_KOS
+#error "<format-printer.h> is not supported by the linked libc"
+#endif /* !__CRT_KOS */
+
+__SYSDECL_BEGIN
 
 #ifdef __CC__
 #ifndef __pformatprinter_defined
@@ -239,37 +246,6 @@ __LIBC __ssize_t (__LIBCCALL stringprinter_print)(char const *__restrict __data,
 
 
 #ifndef __KERNEL__
-#ifndef ____mbstate_t_defined
-#define ____mbstate_t_defined 1
-typedef struct __mbstate {
- int                   __count;
- union { __WINT_TYPE__ __wch; char   __wchb[4]; } __value;
-} __mbstate_t;
-#define __MBSTATE_INIT {0,{0}}
-#endif /* !____mbstate_t_defined */
-
-#ifndef __std_mbstate_t_defined
-#define __std_mbstate_t_defined 1
-__NAMESPACE_STD_BEGIN
-typedef __mbstate_t mbstate_t;
-__NAMESPACE_STD_END
-#endif /* !__std_mbstate_t_defined */
-
-#ifndef __mbstate_t_defined
-#define __mbstate_t_defined 1
-__NAMESPACE_STD_USING(mbstate_t)
-#endif /* !__mbstate_t_defined */
-
-#ifndef __MBSTATE_INIT
-#define __MBSTATE_INIT     {0,{0}}
-#endif /* !__MBSTATE_INIT */
-
-#ifdef __USE_KOS
-#ifndef MBSTATE_INIT
-#define MBSTATE_INIT     __MBSTATE_INIT
-#endif /* !MBSTATE_INIT */
-#endif /* __USE_KOS */
-
 #ifndef __wchar_t_defined
 #define __wchar_t_defined 1
 typedef __WCHAR_TYPE__ wchar_t;
@@ -287,10 +263,10 @@ typedef __CHAR32_TYPE__ char32_t;
  *       To use strnlen-style semantics, use 'format_*sntomb' instead.
  * NOTE: Upon encoding error, errno is set to 'EILSEQ' and '-1' is returned.
  * HINT: These functions are also used to implement '%ls'. */
-__LIBC __ssize_t (__LIBCCALL format_c16sztomb)(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16len, mbstate_t *__restrict __ps) __PE_FUNC_(format_wcsztomb);
-__LIBC __ssize_t (__LIBCCALL format_c32sztomb)(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32len, mbstate_t *__restrict __ps) __KOS_FUNC_(format_wcsztomb);
-__LIBC __ssize_t (__LIBCCALL format_c16sntomb)(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16max, mbstate_t *__restrict __ps) __PE_FUNC_(format_wcsntomb);
-__LIBC __ssize_t (__LIBCCALL format_c32sntomb)(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32max, mbstate_t *__restrict __ps) __KOS_FUNC_(format_wcsntomb);
+__REDIRECT_TOPE_ (__LIBC,,__ssize_t,__LIBCCALL,format_c16sztomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16len, mbstate_t *__restrict __ps),format_wcsztomb,(__printer,__closure,__c16,__c16len,__ps))
+__REDIRECT_TOKOS_(__LIBC,,__ssize_t,__LIBCCALL,format_c32sztomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32len, mbstate_t *__restrict __ps),format_wcsztomb,(__printer,__closure,__c32,__c32len,__ps))
+__REDIRECT_TOPE_ (__LIBC,,__ssize_t,__LIBCCALL,format_c16sntomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16max, mbstate_t *__restrict __ps),format_wcsntomb,(__printer,__closure,__c16,__c16max,__ps))
+__REDIRECT_TOKOS_(__LIBC,,__ssize_t,__LIBCCALL,format_c32sntomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32max, mbstate_t *__restrict __ps),format_wcsntomb,(__printer,__closure,__c32,__c32max,__ps))
 __LIBC __ssize_t (__LIBCCALL format_wcsztomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcslen, mbstate_t *__restrict __ps);
 __LIBC __ssize_t (__LIBCCALL format_wcsntomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcsmax, mbstate_t *__restrict __ps);
 
@@ -336,12 +312,12 @@ __LIBC __ssize_t (__LIBCCALL wprinter_print)(char const *__restrict __data, __si
 #ifdef __USE_UTF
 #define C16PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
 #define C32PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
-__LIBC void (__LIBCCALL c16printer_init)(struct c16printer *__restrict wp, pc16formatprinter printer, void *__closure) __PE_FUNC_(wprinter_init);
-__LIBC void (__LIBCCALL c32printer_init)(struct c32printer *__restrict wp, pc32formatprinter printer, void *__closure) __KOS_FUNC_(wprinter_init);
-__LIBC void (__LIBCCALL c16printer_fini)(struct c16printer *__restrict wp) __PE_FUNC_(wprinter_fini);
-__LIBC void (__LIBCCALL c32printer_fini)(struct c32printer *__restrict wp) __KOS_FUNC_(wprinter_fini);
-__LIBC __ssize_t (__LIBCCALL c16printer_print)(char const *__restrict __data, __size_t __datalen, void *__closure) __PE_FUNC_(wprinter_print);
-__LIBC __ssize_t (__LIBCCALL c32printer_print)(char const *__restrict __data, __size_t __datalen, void *__closure) __KOS_FUNC_(wprinter_print);
+__REDIRECT_TOPE_VOID_ (__LIBC,,__LIBCCALL,c16printer_init,(struct c16printer *__restrict wp, pc16formatprinter printer, void *__closure),wprinter_init,(wp,printer,__closure))
+__REDIRECT_TOKOS_VOID_(__LIBC,,__LIBCCALL,c32printer_init,(struct c32printer *__restrict wp, pc32formatprinter printer, void *__closure),wprinter_init,(wp,printer,__closure))
+__REDIRECT_TOPE_VOID_ (__LIBC,,__LIBCCALL,c16printer_fini,(struct c16printer *__restrict wp),wprinter_fini,(wp))
+__REDIRECT_TOKOS_VOID_(__LIBC,,__LIBCCALL,c32printer_fini,(struct c32printer *__restrict wp),wprinter_fini,(wp))
+__REDIRECT_TOPE_ (__LIBC,,__ssize_t,__LIBCCALL,c16printer_print,(char const *__restrict __data, __size_t __datalen, void *__closure),wprinter_print,(__data,__datalen,__closure))
+__REDIRECT_TOKOS_(__LIBC,,__ssize_t,__LIBCCALL,c32printer_print,(char const *__restrict __data, __size_t __datalen, void *__closure),wprinter_print,(__data,__datalen,__closure))
 #endif /* __USE_UTF */
 
 
@@ -425,6 +401,6 @@ __LIBC __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vbprintf)(pformatprinter __
 #endif /* __CC__ */
 
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_FORMAT_PRINTER_H */

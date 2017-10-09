@@ -40,11 +40,11 @@
 #include <features.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __clock_t_defined
 #define __clock_t_defined 1
-typedef __clock_t clock_t;
+typedef __typedef_clock_t clock_t;
 #endif /* !__clock_t_defined */
 
 /* Structure describing CPU time used by a process and its children. */
@@ -59,6 +59,6 @@ struct tms {
 __LIBC clock_t (__LIBCCALL times)(struct tms *__buffer) __DOS_FUNC(times);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_TIMES_H */

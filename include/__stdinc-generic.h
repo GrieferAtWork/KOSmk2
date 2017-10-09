@@ -33,7 +33,13 @@
      defined(__TINYC__) || defined(__DCC_VERSION__)
 #   define __COMPILER_HAVE_LONGLONG 1
 #endif
-#   define __COMPILER_HAVE_LONGDOUBLE 1
+#define __COMPILER_HAVE_LONGDOUBLE 1
+#define __COMPILER_HAVE_TRANSPARENT_STRUCT 1
+#define __COMPILER_HAVE_TRANSPARENT_UNION 1
+#if __has_feature(__tpp_pragma_push_macro__) || \
+   (defined(__TPP_VERSION__) && __TPP_VERSION__ == 103)
+#define __COMPILER_HAVE_PRAGMA_PUSHMACRO 1
+#endif
 
 #if defined(__DCC_VERSION__)
 #   define __COMPILER_HAVE_AUTOTYPE 1
@@ -390,3 +396,30 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #define __COMPILER_BARRIER()       (void)0 /* ??? */
 #define __COMPILER_READ_BARRIER()  (void)0 /* ??? */
 #define __COMPILER_WRITE_BARRIER() (void)0 /* ??? */
+
+#ifdef __cplusplus
+#ifdef __INTELLISENSE__
+#   define __NULLPTR    nullptr
+#else
+#   define __NULLPTR          0
+#endif
+#else
+#   define __NULLPTR ((void *)0)
+#endif
+
+
+/* Define varargs macros expected by system headers. */
+#if __has_builtin(__builtin_va_list) || \
+    __has_builtin(__builtin_va_start)
+#define __VA_LIST                  __builtin_va_list
+#else
+/* Just guess some generic implementation... */
+#define __VA_LIST                  char *
+#define __VA_ADDROF(v)            &(v)
+#define __VA_SIZEOF(n)            ((sizeof(n)+3)&~3)
+#define __builtin_va_start(ap,v)  (ap = (va_list)__VA_ADDROF(v)+__VA_SIZEOF(v))
+#define __builtin_va_arg(ap,T)    (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
+#define __builtin_va_end(ap)      (void)0
+#endif
+
+

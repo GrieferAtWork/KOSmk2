@@ -23,16 +23,16 @@
 #define CONFIG_LIBC_NO_DOS_LIBC 1
 #endif
 
-#define __assertion_print    libc___assertion_print
-#define __assertion_printf   libc___assertion_printf
-#define __assertion_vprintf  libc___assertion_vprintf
-#define __assertion_failed   libc___assertion_failed
-#define __assertion_failedf  libc___assertion_failedf
-#define __assertion_tbprintl libc___assertion_tbprintl
-#define __assertion_tbprint2 libc___assertion_tbprint2
-#define __assertion_tbprint  libc___assertion_tbprint
-#define __chattr             libc___chattr
-#define __LIBC               extern
+#define debug_print    libc_debug_print
+#define debug_printf   libc_debug_printf
+#define debug_vprintf  libc_debug_vprintf
+#define __afail        libc___assertion_failed
+#define __afailf       libc___assertion_failedf
+#define debug_tbprintl libc_debug_tbprintl
+#define debug_tbprint2 libc_debug_tbprint2
+#define debug_tbprint  libc_debug_tbprint
+#define __chattr       libc___chattr
+#define __LIBC         extern
 
 #include <__stdinc.h>
 #include <assert.h>

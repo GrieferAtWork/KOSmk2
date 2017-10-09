@@ -41,7 +41,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #define BLOCK_SIZE      1024
 #define BLOCK_SIZE_BITS 10
@@ -114,6 +114,6 @@ __LIBC __WARN_NODOSFS int (__LIBCCALL umount)(char const *__special_file);
 __LIBC __WARN_NODOSFS int (__LIBCCALL umount2)(char const *__special_file, int __flags);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_MOUNT_H */

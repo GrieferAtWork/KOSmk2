@@ -23,7 +23,7 @@
 #include <features.h>
 #include <bits/waitflags.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* NOTE: This file based on the GLIBC header of the same name: */
 /* Definitions of status bits for `wait' et al.
@@ -102,6 +102,6 @@ union wait {
 #define w_stopval  __wait_stopped.__w_stopval
 #endif /* __USE_MISC */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_WAITSTATUS_H */

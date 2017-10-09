@@ -23,7 +23,7 @@
 #include <features.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
@@ -49,6 +49,6 @@ __LIBC int (__LIBCCALL getrpcent_r)(struct rpcent *__result_buf, char *__buffer,
 #endif /* __USE_MISC */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_RPC_NETDB_H */

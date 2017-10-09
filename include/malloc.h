@@ -24,7 +24,7 @@
 #include <hybrid/typecore.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
@@ -47,17 +47,19 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MAL
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_MALLOC void *(__LIBCCALL calloc)(size_t __count, size_t __n_bytes);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL realloc)(void *__restrict __mallptr, size_t __n_bytes);
 #endif /* !__malloc_stdlib_defined */
-__LIBC __SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memalign)(size_t __alignment, size_t __n_bytes);
-__LIBC __SAFE __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL realloc_in_place)(void *__restrict __mallptr, size_t __n_bytes);
-__LIBC __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL pvalloc)(size_t __n_bytes);
+__REDIRECT_IFDOS(__LIBC,__SAFE __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)),void *,__LIBCCALL,realloc_in_place,(void *__restrict __mallptr, size_t __n_bytes),_expand,(__mallptr,__n_bytes))
+#ifdef __CRT_GLC
+__LIBC __PORT_NODOS __SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memalign)(size_t __alignment, size_t __n_bytes);
+__LIBC __PORT_NODOS __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL pvalloc)(size_t __n_bytes);
 #ifndef __valloc_defined
 #define __valloc_defined 1
-__LIBC __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL valloc)(size_t __n_bytes);
+__LIBC __PORT_NODOS __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL valloc)(size_t __n_bytes);
 #endif /* !__valloc_defined */
 #ifndef __posix_memalign_defined
 #define __posix_memalign_defined 1
-__LIBC __SAFE __NONNULL((1)) int (__LIBCCALL posix_memalign)(void **__restrict __pp, size_t __alignment, size_t __n_bytes);
+__LIBC __PORT_NODOS __SAFE __NONNULL((1)) int (__LIBCCALL posix_memalign)(void **__restrict __pp, size_t __alignment, size_t __n_bytes);
 #endif /* !__posix_memalign_defined */
+#endif /* __CRT_GLC */
 
 #define M_TRIM_THRESHOLD     (-1)
 #define M_GRANULARITY        (-2)
@@ -65,13 +67,13 @@ __LIBC __SAFE __NONNULL((1)) int (__LIBCCALL posix_memalign)(void **__restrict _
 #ifdef __KERNEL__
 #ifndef __malloc_stdlib_defined
 #define __malloc_stdlib_defined 1
-__LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr) __ASMNAME("kfree");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,free,(void *__restrict __mallptr),kfree,(__mallptr))
 #endif /* !__malloc_stdlib_defined */
 #ifndef __cfree_defined
 #define __cfree_defined 1
-__LIBC __SAFE void (__LIBCCALL cfree)(void *__restrict __mallptr) __ASMNAME("kfree");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,cfree,(void *__restrict __mallptr),kfree,(__mallptr))
 #endif /* !__cfree_defined */
-__LIBC __SAFE __WUNUSED size_t (__LIBCCALL malloc_usable_size)(void *__restrict __mallptr) __ASMNAME("kmalloc_usable_size");
+__REDIRECT(__LIBC,__SAFE __WUNUSED,size_t,__LIBCCALL,malloc_usable_size,(void *__restrict __mallptr),kmalloc_usable_size,(__mallptr))
 #else
 #ifndef __malloc_stdlib_defined
 #define __malloc_stdlib_defined 1
@@ -79,17 +81,29 @@ __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr);
 #endif /* !__malloc_stdlib_defined */
 #ifndef __cfree_defined
 #define __cfree_defined 1
-__LIBC __SAFE void (__LIBCCALL cfree)(void *__restrict __mallptr) __ASMNAME("free");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,cfree,(void *__restrict __mallptr),free,(__mallptr))
 #endif /* !__cfree_defined */
-__LIBC __SAFE __WUNUSED int    (__LIBCCALL malloc_trim)(size_t __pad);
-__LIBC __SAFE __WUNUSED size_t (__LIBCCALL malloc_usable_size)(void *__restrict __mallptr) __PE_ASMNAME("_msize");
+#ifdef __CRT_GLC
+__LIBC __SAFE __WUNUSED int (__LIBCCALL malloc_trim)(size_t __pad);
+#else /* __CRT_GLC */
+__LOCAL __SAFE __WUNUSED int (__LIBCCALL malloc_trim)(size_t __UNUSED(__pad)) { return 0; }
+#endif /* !__CRT_GLC */
+__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED,size_t,__LIBCCALL,malloc_usable_size,(void *__restrict __mallptr),_msize,(__mallptr))
 #define M_MMAP_THRESHOLD     (-3)
 #endif
 
+#ifdef __CRT_GLC
 __LIBC __SAFE int (__LIBCCALL mallopt)(int __parameter_number, int __parameter_value);
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL __memdup)(void const *__restrict __ptr, size_t __n_bytes) __ASMNAME("memdup");
+#else /* __CRT_GLC */
+__LOCAL __SAFE int (__LIBCCALL mallopt)(int __UNUSED(__parameter_number), int __UNUSED(__parameter_value)) { return 0; }
+#endif /* !__CRT_GLC */
+
+#ifdef __CRT_KOS
+__REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC,
+           void *,__LIBCCALL,__memdup,(void const *__restrict __ptr, size_t __n_bytes),memdup,(__ptr,__n_bytes))
 #ifndef __KERNEL__
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL __memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) __ASMNAME("memcdup");
+__REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
+           void *,__LIBCCALL,__memcdup,(void const *__restrict __ptr, int __needle, size_t __n_bytes),memcdup,(__ptr,__needle,__n_bytes))
 #endif /* !__KERNEL__ */
 #ifdef __USE_KOS
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memdup)(void const *__restrict __ptr, size_t __n_bytes);
@@ -97,9 +111,24 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MAL
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes);
 #endif /* !__KERNEL__ */
 #endif
+#else /* __CRT_KOS */
+__SYSDECL_END
+#include <hybrid/string.h>
+__SYSDECL_BEGIN
+__REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC,
+           void *,__LIBCCALL,__memdup,(void const *__restrict __ptr, size_t __n_bytes),memdup,(__ptr,__n_bytes))
+__REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
+           void *,__LIBCCALL,__memcdup,(void const *__restrict __ptr, int __needle, size_t __n_bytes),memcdup,(__ptr,__needle,__n_bytes))
+__LOCAL void *(__LIBCCALL __memdup)(void const *__restrict __ptr, size_t __n_bytes) { void *__result = malloc(__n_bytes); if (__result) __hybrid_memcpy(__result,__ptr,__n_bytes); return __result; }
+__LOCAL void *(__LIBCCALL __memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) { if (__n_bytes) { void const *__endaddr = __hybrid_memchr(__ptr,__needle,__n_bytes-1); if (__endaddr) __n_bytes = ((__UINTPTR_TYPE__)__endaddr-(__UINTPTR_TYPE__)__ptr)+1; } return __memdup(__ptr,__size); }
+#ifdef __USE_KOS
+__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memdup)(void const *__restrict __ptr, size_t __n_bytes) { return (__memdup)(__ptr,__n_bytes) }
+__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) { return (__memcdup)(__ptr,__n_bytes) }
+#endif /* __USE_KOS */
+#endif /* !__CRT_KOS */
 
 #ifdef __USE_KOS
-#ifdef __USE_DEBUG
+#if defined(__USE_DEBUG) && defined(__CRT_KOS)
 #include <hybrid/debuginfo.h>
 /* Mallblock extension functions
  * >> Used for working with/enumerating allocated malloc blocks
@@ -114,7 +143,7 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL m
 #ifdef __KERNEL__
 #define __MALL_ATTRIB_INST  (-100)
 #endif
-__LIBC __ATTR_PURE __WUNUSED __NONNULL((1))
+__LIBC __PORT_KOSONLY __ATTR_PURE __WUNUSED __NONNULL((1))
 void *(__LIBCCALL _mall_getattrib)(void *__restrict __mallptr, int __attrib);
 
 #ifdef __KERNEL__
@@ -126,12 +155,12 @@ struct instance;
  *          are implement as no-ops always returning NULL/0.
  * NOTE: These functions may be (and are) implemented as
  *       macros (without any exported prototype) */
-extern char const *_mall_getfile(void *__restrict __self);
-extern int         _mall_getline(void *__restrict __self);
-extern char const *_mall_getfunc(void *__restrict __self);
-extern size_t      _mall_getsize(void *__restrict __self);
+extern __PORT_KOSONLY char const *_mall_getfile(void *__restrict __self);
+extern __PORT_KOSONLY int         _mall_getline(void *__restrict __self);
+extern __PORT_KOSONLY char const *_mall_getfunc(void *__restrict __self);
+extern __PORT_KOSONLY size_t      _mall_getsize(void *__restrict __self);
 #ifdef __KERNEL__
-extern REF struct instance *_mall_getinst(void *__restrict self);
+extern __PORT_KOSONLY REF struct instance *_mall_getinst(void *__restrict self);
 #endif
 #else
 #   define _mall_getfile(self)          (char const *)_mall_getattrib(self,__MALL_ATTRIB_FILE)
@@ -165,7 +194,7 @@ typedef __SSIZE_TYPE__ (__LIBCCALL *__ptbwalker)(void const *__restrict __instru
  * - Usual rules apply, and enumeration can be halted
  *   with the same negative returned by 'CALLBACK'.
  *   Otherwise, the sum of all return values of 'CALLBACK' is returned. */
-__LIBC __NONNULL((1,2)) __SSIZE_TYPE__ (__LIBCCALL _mall_traceback)(void *__restrict __mallptr, __ptbwalker __callback, void *__closure);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) __SSIZE_TYPE__ (__LIBCCALL _mall_traceback)(void *__restrict __mallptr, __ptbwalker __callback, void *__closure);
 
 /* Enumerate all allocated mall-pointers
  * If the given CALLBACK returns non-zero, enumeration aborts with that value.
@@ -188,9 +217,9 @@ __LIBC __NONNULL((1,2)) __SSIZE_TYPE__ (__LIBCCALL _mall_traceback)(void *__rest
  *                     existing mall-pointers are enumerated.
  * @return: >= 0: Enumeration finished without being aborted. */
 #ifdef __KERNEL__
-__LIBC __NONNULL((3)) __SSIZE_TYPE__
+__LIBC __PORT_KOSONLY __NONNULL((3)) __SSIZE_TYPE__
 #else
-__LIBC __NONNULL((2)) __SSIZE_TYPE__
+__LIBC __PORT_KOSONLY __NONNULL((2)) __SSIZE_TYPE__
 #endif
 (__LIBCCALL _mall_enum)(__MALL_MODULE_ARG_ void *__checkpoint,
                         __SSIZE_TYPE__ (__LIBCCALL *__callback)(void *__restrict __mallptr,
@@ -205,7 +234,7 @@ __LIBC __NONNULL((2)) __SSIZE_TYPE__
  * [many] >> {file}({line}) : {func} : [{frame_index}] : {instruction_addr}
  * HINT: libc debug-builds automatically hook this function to be
  *       called via 'atexit' when exiting through normal means. */
-__LIBC void (__LIBCCALL _mall_printleaks)(__MALL_MODULE_ARG);
+__LIBC __PORT_KOSONLY void (__LIBCCALL _mall_printleaks)(__MALL_MODULE_ARG);
 
 /* Validate the header/footers of all allocated malloc pointers.
  * Invalid memory blocks cause an error to be printed to stderr,
@@ -214,13 +243,13 @@ __LIBC void (__LIBCCALL _mall_printleaks)(__MALL_MODULE_ARG);
  * expensive, can be very useful to narrow down the point at
  * which some chunk of memory starts being corrupted.
  * HINT: Visual C/C++ has an equivalent called '_CrtCheckMemory()' */
-__LIBC void (__LIBCCALL _mall_validate)(__MALL_MODULE_ARG);
+__LIBC __PORT_KOSONLY void (__LIBCCALL _mall_validate)(__MALL_MODULE_ARG);
 
 /* Untrack a given pointer previously allocated through malloc() and friends.
  * When not tracked, the associated allocation cannot be enumerated.
  * NOTE: This function is a no-op if the given MALLPTR wasn't tracked, or if NULL is passed.
  * @return: * : Always returns MALLPTR. */
-__LIBC __NONNULL((1)) void *(__LIBCCALL _mall_untrack)(void *__mallptr);
+__LIBC __PORT_KOSONLY __NONNULL((1)) void *(__LIBCCALL _mall_untrack)(void *__mallptr);
 
 /* Implying '_mall_untrack' behavior, '_mall_nofree' will set
  * the state of the given MALLPTR in such a way that will cause an
@@ -234,7 +263,7 @@ __LIBC __NONNULL((1)) void *(__LIBCCALL _mall_untrack)(void *__mallptr);
  * memory mappings of the kernel itself within its virtual
  * address space.
  * @return: * : Always returns MALLPTR. */
-__LIBC __NONNULL((1)) void *(__LIBCCALL _mall_nofree)(void *__mallptr);
+__LIBC __PORT_KOSONLY __NONNULL((1)) void *(__LIBCCALL _mall_nofree)(void *__mallptr);
 
 #ifdef __KERNEL__
 /* Mark the given pointer as being intended for global use:
@@ -251,25 +280,25 @@ __LIBC __NONNULL((1)) void *(__LIBCCALL _mall_nofree)(void *__mallptr);
  * suppress the error message emit when the module is unloaded while
  * some user-application still holds a mapping to its data structure.
  * @return: * : Always returns MALLPTR. */
-__LIBC __NONNULL((1)) void *(__LIBCCALL _mall_global)(void *__mallptr);
-#endif
+__LIBC __PORT_KOSONLY __NONNULL((1)) void *(__LIBCCALL _mall_global)(void *__mallptr);
+#endif /* __KERNEL__ */
 
 
 
-#if __USE_DEBUG != 0
-__LIBC __ATTR_PURE __WUNUSED __NONNULL((1)) void *(__LIBCCALL _mall_getattrib_d)(void *__restrict __mallptr, int __attrib, __DEBUGINFO);
-__LIBC __NONNULL((1,2)) __SSIZE_TYPE__ (__LIBCCALL _mall_traceback_d)(void *__restrict __mallptr, __ptbwalker __callback, void *__closure, __DEBUGINFO);
+#if __USE_DEBUG != 0 && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+__LIBC __PORT_KOSONLY __ATTR_PURE __WUNUSED __NONNULL((1)) void *(__LIBCCALL _mall_getattrib_d)(void *__restrict __mallptr, int __attrib, __DEBUGINFO);
+__LIBC __PORT_KOSONLY __NONNULL((1,2)) __SSIZE_TYPE__ (__LIBCCALL _mall_traceback_d)(void *__restrict __mallptr, __ptbwalker __callback, void *__closure, __DEBUGINFO);
 #ifdef __KERNEL__
-__LIBC __NONNULL((3)) __SSIZE_TYPE__ (__LIBCCALL _mall_enum_d)(__MALL_MODULE_ARG_ void *__checkpoint, __SSIZE_TYPE__ (__LIBCCALL *__callback)(void *__restrict __mallptr, void *__closure), void *__closure, __DEBUGINFO);
+__LIBC __PORT_KOSONLY __NONNULL((3)) __SSIZE_TYPE__ (__LIBCCALL _mall_enum_d)(__MALL_MODULE_ARG_ void *__checkpoint, __SSIZE_TYPE__ (__LIBCCALL *__callback)(void *__restrict __mallptr, void *__closure), void *__closure, __DEBUGINFO);
 #else
-__LIBC __NONNULL((2)) __SSIZE_TYPE__ (__LIBCCALL _mall_enum_d)(__MALL_MODULE_ARG_ void *__checkpoint, __SSIZE_TYPE__ (__LIBCCALL *__callback)(void *__restrict __mallptr, void *__closure), void *__closure, __DEBUGINFO);
+__LIBC __PORT_KOSONLY __NONNULL((2)) __SSIZE_TYPE__ (__LIBCCALL _mall_enum_d)(__MALL_MODULE_ARG_ void *__checkpoint, __SSIZE_TYPE__ (__LIBCCALL *__callback)(void *__restrict __mallptr, void *__closure), void *__closure, __DEBUGINFO);
 #endif
-__LIBC void (__LIBCCALL _mall_printleaks_d)(__MALL_MODULE_ARG_ __DEBUGINFO);
-__LIBC void (__LIBCCALL _mall_validate_d)(__MALL_MODULE_ARG_ __DEBUGINFO);
-__LIBC __NONNULL((1)) void *(__LIBCCALL _mall_untrack_d)(void *__mallptr, __DEBUGINFO);
-__LIBC __NONNULL((1)) void *(__LIBCCALL _mall_nofree_d)(void *__mallptr, __DEBUGINFO);
+__LIBC __PORT_KOSONLY void (__LIBCCALL _mall_printleaks_d)(__MALL_MODULE_ARG_ __DEBUGINFO);
+__LIBC __PORT_KOSONLY void (__LIBCCALL _mall_validate_d)(__MALL_MODULE_ARG_ __DEBUGINFO);
+__LIBC __PORT_KOSONLY __NONNULL((1)) void *(__LIBCCALL _mall_untrack_d)(void *__mallptr, __DEBUGINFO);
+__LIBC __PORT_KOSONLY __NONNULL((1)) void *(__LIBCCALL _mall_nofree_d)(void *__mallptr, __DEBUGINFO);
 #ifdef __KERNEL__
-__LIBC __NONNULL((1)) void *(__LIBCCALL _mall_global_d)(void *__mallptr, __DEBUGINFO);
+__LIBC __PORT_KOSONLY __NONNULL((1)) void *(__LIBCCALL _mall_global_d)(void *__mallptr, __DEBUGINFO);
 #endif
 #else
 #   define _mall_getattrib_d(ptr,attrib,...) _mall_getattrib(ptr,attrib)
@@ -407,7 +436,8 @@ template<class __T> inline __T *__cxx_malloc_global(__T *__mallptr) { return (__
 
 #ifdef __USE_DEBUG
 #include <hybrid/debuginfo.h>
-#if __USE_DEBUG != 0
+#if __USE_DEBUG != 0 && defined(__CRT_KOS) && \
+  (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
 
 /* Values that may be passed for 'PARAMTER_VALUE' to 'mallopt' in debug-mode.
  * These values are used by toggle (0/1) options and always return the old state as 0/1. */
@@ -424,16 +454,16 @@ template<class __T> inline __T *__cxx_malloc_global(__T *__mallptr) { return (__
 __LIBC __SAFE int (__LIBCCALL _mallopt_d)(int __parameter_number, int __parameter_value, __DEBUGINFO);
 __LIBC __SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL _memalign_d)(size_t __alignment, size_t __n_bytes, __DEBUGINFO);
 __LIBC __SAFE __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL _realloc_in_place_d)(void *__restrict __mallptr, size_t __n_bytes, __DEBUGINFO);
-__LIBC __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL _pvalloc_d)(size_t __n_bytes, __DEBUGINFO);
+__LIBC __PORT_NODOS __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL _pvalloc_d)(size_t __n_bytes, __DEBUGINFO);
 
 #ifndef __posix_memalign_d_defined
 #define __posix_memalign_d_defined 1
-__LIBC __SAFE __NONNULL((1)) int (__LIBCCALL _posix_memalign_d)(void **__restrict __pp, size_t __alignment, size_t __n_bytes, __DEBUGINFO);
+__LIBC __PORT_NODOS __SAFE __NONNULL((1)) int (__LIBCCALL _posix_memalign_d)(void **__restrict __pp, size_t __alignment, size_t __n_bytes, __DEBUGINFO);
 #endif /* !__posix_memalign_d_defined */
 
 #ifndef __valloc_d_defined
 #define __valloc_d_defined 1
-__LIBC __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL _valloc_d)(size_t __n_bytes, __DEBUGINFO);
+__LIBC __PORT_NODOS __SAFE __WUNUSED __MALL_ATTR_PAGEALIGNED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL _valloc_d)(size_t __n_bytes, __DEBUGINFO);
 #endif /* !__valloc_d_defined */
 #ifndef __malloc_calloc_d_defined
 #define __malloc_calloc_d_defined 1
@@ -441,7 +471,7 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MAL
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_MALLOC void *(__LIBCCALL _calloc_d)(size_t __count, size_t __n_bytes, __DEBUGINFO);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL _realloc_d)(void *__restrict __mallptr, size_t __n_bytes, __DEBUGINFO);
 #ifdef __KERNEL__
-__LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_kfree_d");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,_free_d,(void *__restrict __mallptr, __DEBUGINFO),_kfree_d,(__mallptr,__DEBUGINFO_FWD))
 #else /* __KERNEL__ */
 __LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO);
 #endif /* !__KERNEL__ */
@@ -450,21 +480,25 @@ __LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO)
 #ifndef __cfree_d_defined
 #define __cfree_d_defined 1
 #ifdef __KERNEL__
-__LIBC __SAFE void (__LIBCCALL _cfree_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_kfree_d");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,_cfree_d,(void *__restrict __mallptr, __DEBUGINFO),_kfree_d,(__mallptr,__DEBUGINFO_FWD))
 #else /* __KERNEL__ */
 __LIBC __SAFE void (__LIBCCALL _cfree_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_free_d");
 #endif /* !__KERNEL__ */
 #endif /* !__cfree_d_defined */
 
 #ifdef __KERNEL__
-__LIBC __SAFE __WUNUSED size_t (__LIBCCALL _malloc_usable_size_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_kmalloc_usable_size_d");
+__REDIRECT(__LIBC,__SAFE,size_t,__LIBCCALL,_malloc_usable_size_d,(void *__restrict __mallptr, __DEBUGINFO),_kmalloc_usable_size_d,(__mallptr,__DEBUGINFO_FWD))
 #else /* __KERNEL__ */
 __LIBC __SAFE __WUNUSED size_t (__LIBCCALL _malloc_usable_size_d)(void *__restrict __mallptr, __DEBUGINFO);
 __LIBC __SAFE __WUNUSED int (__LIBCCALL _malloc_trim_d)(size_t __pad, __DEBUGINFO);
 #endif /* !__KERNEL__ */
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL __memdup_d)(void const *__restrict __ptr, size_t __n_bytes, __DEBUGINFO) __ASMNAME("_memdup_d");
+__REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC,
+           void *,__LIBCCALL,__memdup_d,(void const *__restrict __ptr, size_t __n_bytes, __DEBUGINFO),
+           _memdup_d,(__ptr,__n_bytes,__DEBUGINFO_FWD))
 #ifndef __KERNEL__
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL __memcdup_d)(void const *__restrict __ptr, int __needle, size_t __n_bytes, __DEBUGINFO) __ASMNAME("_memcdup_d");
+__REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,void *,__LIBCCALL,__memcdup_d,
+          (void const *__restrict __ptr, int __needle, size_t __n_bytes, __DEBUGINFO),
+           _memcdup_d,(__ptr,__needle,__n_bytes,__DEBUGINFO_FWD))
 #endif /* !__KERNEL__ */
 #ifdef __USE_KOS
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL _memdup_d)(void const *__restrict __ptr, size_t __n_bytes, __DEBUGINFO);
@@ -488,6 +522,7 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL _
 #define __valloc_d_defined 1
 #   define _valloc_d(n_bytes,...)                           valloc(n_bytes)
 #endif /* !__valloc_d_defined */
+#ifdef __CRT_GLC
 #ifndef __posix_memalign_d_defined
 #define __posix_memalign_d_defined 1
 #   define _posix_memalign_d(pp,alignment,n_bytes,...)      posix_memalign(pp,alignment,n_bytes)
@@ -496,6 +531,7 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL _
 #   define _memalign_d(alignment,n_bytes,...)               memalign(alignment,n_bytes)
 #   define _realloc_in_place_d(ptr,n_bytes,...)             realloc_in_place(ptr,n_bytes)
 #   define _pvalloc_d(n_bytes,...)                          pvalloc(n_bytes)
+#endif /* __CRT_GLC */
 #ifndef __KERNEL__
 #   define _malloc_trim_d(pad,...)                          malloc_trim(pad)
 #endif /* !__KERNEL__ */
@@ -518,30 +554,32 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL _
 #   undef  realloc
 #   undef  free
 #   undef  cfree
-#   undef  valloc
-#   undef  posix_memalign
-#   undef  memalign
-#   undef  realloc_in_place
-#   undef  pvalloc
-#   undef  mallopt
 #   define malloc(n_bytes)                           _malloc_d(n_bytes,__DEBUGINFO_GEN)
 #   define calloc(count,n_bytes)                     _calloc_d(count,n_bytes,__DEBUGINFO_GEN)
 #   define realloc(ptr,n_bytes)                      _realloc_d(ptr,n_bytes,__DEBUGINFO_GEN)
 #   define free(ptr)                                 _free_d(ptr,__DEBUGINFO_GEN)
 #   define cfree(ptr)                                _cfree_d(ptr,__DEBUGINFO_GEN)
+#ifdef __CRT_GLC
+#   undef  valloc
+#   undef  posix_memalign
+#   undef  memalign
+#   undef  pvalloc
 #   define valloc(n_bytes)                           _valloc_d(n_bytes,__DEBUGINFO_GEN)
 #   define posix_memalign(pp,alignment,n_bytes)      _posix_memalign_d(pp,alignment,n_bytes,__DEBUGINFO_GEN)
 #   define memalign(alignment,n_bytes)               _memalign_d(alignment,n_bytes,__DEBUGINFO_GEN)
-#   define realloc_in_place(ptr,n_bytes)             _realloc_in_place_d(ptr,n_bytes,__DEBUGINFO_GEN)
 #   define pvalloc(n_bytes)                          _pvalloc_d(n_bytes,__DEBUGINFO_GEN)
+#endif /* __CRT_GLC */
+#   undef  mallopt
+#   undef  realloc_in_place
 #   define mallopt(parameter_number,parameter_value) _mallopt_d(parameter_number,parameter_value,__DEBUGINFO_GEN)
+#   define realloc_in_place(ptr,n_bytes)             _realloc_in_place_d(ptr,n_bytes,__DEBUGINFO_GEN)
 #ifndef __KERNEL__
 #   undef  malloc_trim
 #   define malloc_trim(pad)                          _malloc_trim_d(pad,__DEBUGINFO_GEN)
 #endif /* !__KERNEL__ */
 #   undef  malloc_usable_size
-#   undef  __memdup
 #   define malloc_usable_size(ptr)                   _malloc_usable_size_d(ptr,__DEBUGINFO_GEN)
+#   undef  __memdup
 #   define __memdup(ptr,n_bytes)                     __memdup_d(ptr,n_bytes,__DEBUGINFO_GEN)
 #ifndef __KERNEL__
 #   undef  __memcdup
@@ -560,15 +598,17 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL _
 
 #ifdef __USE_DOS
 #ifdef __KERNEL__
-__LIBC __SAFE __WUNUSED size_t (__LIBCCALL _msize)(void *__restrict __mallptr) __ASMNAME("kmalloc_usable_size");
+__REDIRECT(__LIBC,__SAFE __WUNUSED,size_t,__LIBCCALL,_msize,(void *__restrict __mallptr),kmalloc_usable_size,(__mallptr))
 #else /* __KERNEL__ */
-__LIBC __SAFE __WUNUSED size_t (__LIBCCALL _msize)(void *__restrict __mallptr) __KOS_ASMNAME("malloc_usable_size");
+__REDIRECT_IFKOS(__LIBC,__SAFE __WUNUSED,size_t,__LIBCCALL,_msize,(void *__restrict __mallptr),malloc_usable_size,(__mallptr))
 #endif /* !__KERNEL__ */
 #endif /* __USE_DOS */
 
-__DECL_END
+__SYSDECL_END
 
+#ifdef __CRT_GLC
 #define __tmemalign(T)          ((T *)memalign(__COMPILER_ALIGNOF(T),sizeof(T)))
+#endif /* __CRT_GLC */
 #define __tmalloc(T,n)          ((T *)malloc((n)*sizeof(T)))
 #define __tcalloc(T,n)          ((T *)calloc((n),sizeof(T)))
 #define __trealloc(T,p,n)       ((T *)realloc(p,(n)*sizeof(T)))
@@ -577,14 +617,18 @@ __DECL_END
 
 #ifdef __USE_KXS
 #ifdef __USE_DEBUG
+#ifdef __CRT_GLC
 #   define _tmemalign_d(T,...)    ((T *)_memalign_d(__COMPILER_ALIGNOF(T),sizeof(T),__VA_ARGS__))
+#endif /* __CRT_GLC */
 #   define _tmalloc_d(T,n,...)    ((T *)_malloc_d((n)*sizeof(T),__VA_ARGS__))
 #   define _tcalloc_d(T,n,...)    ((T *)_calloc_d((n),sizeof(T),__VA_ARGS__))
 #   define _trealloc_d(T,p,n,...) ((T *)_realloc_d(p,(n)*sizeof(T),__VA_ARGS__))
 #   define _omalloc_d(T,...)      ((T *)_malloc_d(sizeof(T),__VA_ARGS__))
 #   define _ocalloc_d(T,...)      ((T *)_calloc_d(1,sizeof(T),__VA_ARGS__))
 #endif /* __USE_DEBUG */
+#ifdef __CRT_GLC
 #   define tmemalign(T)           ((T *)memalign(__COMPILER_ALIGNOF(T),sizeof(T)))
+#endif /* __CRT_GLC */
 #   define tmalloc(T,n)           ((T *)malloc((n)*sizeof(T)))
 #   define tcalloc(T,n)           ((T *)calloc((n),sizeof(T)))
 #   define trealloc(T,p,n)        ((T *)realloc(p,(n)*sizeof(T)))

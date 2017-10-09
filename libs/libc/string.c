@@ -817,20 +817,21 @@ DEFINE_PUBLIC_ALIAS(bcmp,libc_memcmp);
 DEFINE_PUBLIC_ALIAS(__bzero,libc_bzero);
 DEFINE_PUBLIC_ALIAS(__strtok_r,libc_strtok_r);
 
-DEFINE_PUBLIC_ALIAS(strlwr,libc_strlwr);
-DEFINE_PUBLIC_ALIAS(strupr,libc_strupr);
-DEFINE_PUBLIC_ALIAS(strset,libc_strset);
-DEFINE_PUBLIC_ALIAS(strnset,libc_strnset);
-DEFINE_PUBLIC_ALIAS(strrev,libc_strrev);
-DEFINE_PUBLIC_ALIAS(strcasecoll,libc_strcasecoll);
-DEFINE_PUBLIC_ALIAS(strncoll,libc_strncoll);
-DEFINE_PUBLIC_ALIAS(strncasecoll,libc_strncasecoll);
-DEFINE_PUBLIC_ALIAS(strlwr_l,libc_strlwr_l);
-DEFINE_PUBLIC_ALIAS(strupr_l,libc_strupr_l);
-DEFINE_PUBLIC_ALIAS(strcasecoll_l,libc_strcasecoll_l);
-DEFINE_PUBLIC_ALIAS(strncoll_l,libc_strncoll_l);
-DEFINE_PUBLIC_ALIAS(strncasecoll_l,libc_strncasecoll_l);
-DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
+/* Already exported (under different names) by DOS. */
+// DEFINE_PUBLIC_ALIAS(strlwr,libc_strlwr);
+// DEFINE_PUBLIC_ALIAS(strupr,libc_strupr);
+// DEFINE_PUBLIC_ALIAS(strset,libc_strset);
+// DEFINE_PUBLIC_ALIAS(strnset,libc_strnset);
+// DEFINE_PUBLIC_ALIAS(strrev,libc_strrev);
+// DEFINE_PUBLIC_ALIAS(strcasecoll,libc_strcasecoll);
+// DEFINE_PUBLIC_ALIAS(strncoll,libc_strncoll);
+// DEFINE_PUBLIC_ALIAS(strncasecoll,libc_strncasecoll);
+// DEFINE_PUBLIC_ALIAS(strlwr_l,libc_strlwr_l);
+// DEFINE_PUBLIC_ALIAS(strupr_l,libc_strupr_l);
+// DEFINE_PUBLIC_ALIAS(strcasecoll_l,libc_strcasecoll_l);
+// DEFINE_PUBLIC_ALIAS(strncoll_l,libc_strncoll_l);
+// DEFINE_PUBLIC_ALIAS(strncasecoll_l,libc_strncasecoll_l);
+// DEFINE_PUBLIC_ALIAS(memcasecmp_l,libc_memcasecmp_l);
 
 /* Define 32-bit wide string libc functions. */
 #define T            char32_t

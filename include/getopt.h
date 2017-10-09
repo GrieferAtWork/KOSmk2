@@ -22,6 +22,10 @@
 #include <__stdinc.h>
 #include <features.h>
 
+#ifndef __CRT_GLC
+#error "<getopt.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 #ifndef __KERNEL__
 /* DISCLAIMER: Documentation comments are derived from those found in "/usr/include/getopt.h".
  *          >> The following is the original copyright notice found in that file. */
@@ -44,7 +48,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* For communication from `getopt' to the caller.
  * When `getopt' finds an option that takes an argument,
@@ -120,7 +124,7 @@ __LIBC int (__LIBCCALL getopt)(int ___argc, char *const *___argv, char const *__
 __LIBC int (__LIBCCALL getopt_long)(int ___argc, char *const *___argv, char const *__shortopts, const struct option *__longopts, int *__longind);
 __LIBC int (__LIBCCALL getopt_long_only)(int ___argc, char *const *___argv, char const *__shortopts, const struct option *__longopts, int *__longind);
 
-__DECL_END
+__SYSDECL_END
 #endif /* !__KERNEL__ */
 
 #endif /* !_GETOPT_H */

@@ -25,7 +25,7 @@
 
 /* NOTE: To use anything from this file, you must link with '-ldl' */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* User functions for run-time dynamic loading.
    Copyright (C) 1995-2016 Free Software Foundation, Inc.
@@ -132,6 +132,6 @@ extern __NONNULL((1,3)) int (dlinfo)(void *__restrict __handle, int __request, v
 
 #endif /* __USE_GNU */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_DLFCN_H */

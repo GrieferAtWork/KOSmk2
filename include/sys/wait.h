@@ -43,7 +43,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __WAIT_MACROS_DEFINED
 #define __WAIT_MACROS_DEFINED 1
@@ -120,6 +120,6 @@ __LIBC __pid_t (__LIBCCALL wait4)(__pid_t __pid, __WAIT_STATUS __stat_loc, int _
 #endif /* __USE_MISC */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_WAIT_H */

@@ -37,7 +37,7 @@
 #ifdef NDEBUG
 #   define __AMALLOC_KEY_ALLOCA        0
 #   define __AMALLOC_KEY_MALLOC        1
-#   define __AMALLOC_SKEW_ALLOCA(p,s) (void)0
+#   define __AMALLOC_SKEW_ALLOCA(p,s) (p)
 #   define __AMALLOC_GETKEY(p)       ((__UINT8_TYPE__ *)(p))[-__AMALLOC_ALIGN]
 #   define __AMALLOC_MUSTFREE(p)      (__AMALLOC_GETKEY(p) != __AMALLOC_KEY_ALLOCA)
 #else
@@ -60,8 +60,8 @@
  * small allocations, but malloc() for larger ones.
  * NOTE: In all cases, 'afree()' should be used to clean up a
  *       pointer previously allocated using 'amalloc()' and
- *       friends.
- */
+ *       friends. */
+#ifndef __NO_XBLOCK
 #define __amalloc(s) \
 __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
            __UINT8_TYPE__ *__res; \
@@ -75,9 +75,9 @@ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
              __res = (__UINT8_TYPE__ *)__ALLOCA(__s); \
              *__res = __AMALLOC_KEY_ALLOCA; \
              __res += __AMALLOC_ALIGN; \
-             __AMALLOC_SKEW_ALLOCA(__res,__s-__AMALLOC_ALIGN); \
+             (void)__AMALLOC_SKEW_ALLOCA(__res,__s-__AMALLOC_ALIGN); \
            } \
-           XRETURN (void *)__res; \
+           __XRETURN (void *)__res; \
 })
 #define __acalloc(s) \
 __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
@@ -94,7 +94,7 @@ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
              __res += __AMALLOC_ALIGN; \
              __hybrid_memset(__res,0,__s-__AMALLOC_ALIGN); \
            } \
-           XRETURN (void *)__res;\
+           __XRETURN (void *)__res;\
 })
 #define __afree(p) \
 __XBLOCK({ void *const __p = (p); \
@@ -102,5 +102,39 @@ __XBLOCK({ void *const __p = (p); \
                __hybrid_free((void *)((__UINT8_TYPE__ *)__p-__AMALLOC_ALIGN)); \
            (void)0; \
 })
+#else
+__LOCAL void *(__LIBCCALL __libc_amalloc_heap)(__SIZE_TYPE__ __s) {
+ __UINT8_TYPE__ *__res;
+ __res = (__UINT8_TYPE__ *)__hybrid_malloc(__s+__AMALLOC_ALIGN);
+ if (__res) { *__res = __AMALLOC_KEY_MALLOC; __res += __AMALLOC_ALIGN; }
+ return (void *)__res;
+}
+__LOCAL void *(__LIBCCALL __libc_acalloc_heap)(__SIZE_TYPE__ __s) {
+ __UINT8_TYPE__ *__res;
+ __res = (__UINT8_TYPE__ *)__hybrid_calloc(1,__s+__AMALLOC_ALIGN);
+ if (__res) { *__res = __AMALLOC_KEY_MALLOC; __res += __AMALLOC_ALIGN; }
+ return (void *)__res;
+}
+__LOCAL void *(__LIBCCALL __libc_aminit_stack)(void *__p, __SIZE_TYPE__ __s) {
+ *(__BYTE_TYPE__ *)__p = __AMALLOC_KEY_ALLOCA;
+ return __AMALLOC_SKEW_ALLOCA((__BYTE_TYPE__ *)__p+__AMALLOC_ALIGN,__s);
+}
+__LOCAL void *(__LIBCCALL __libc_acinit_stack)(void *__p, __SIZE_TYPE__ __s) {
+ *(__BYTE_TYPE__ *)__p = __AMALLOC_KEY_ALLOCA;
+ return __hybrid_memset((__BYTE_TYPE__ *)__p+__AMALLOC_ALIGN,0,__s);
+}
+__LOCAL void (__LIBCCALL __libc_afree)(void *__p) {
+ if (__AMALLOC_MUSTFREE(__p))
+     __hybrid_free((void *)((__UINT8_TYPE__ *)__p-__AMALLOC_ALIGN));
+}
+/* Implementation that doesn't make use of X-blocks. */
+#define __amalloc(s) \
+  ((s) > __AMALLOC_MAX-__AMALLOC_ALIGN ? __libc_amalloc_heap(s) : \
+         __libc_aminit_stack(__ALLOCA((s)+__AMALLOC_ALIGN),(s)))
+#define __acalloc(s) \
+  ((s) > __AMALLOC_MAX-__AMALLOC_ALIGN ? __libc_acalloc_heap(s) : \
+         __libc_acinit_stack(__ALLOCA((s)+__AMALLOC_ALIGN),(s)))
+#define __afree(p) __libc_afree(p)
+#endif
 
 #endif /* !___AMALLOCA_H */

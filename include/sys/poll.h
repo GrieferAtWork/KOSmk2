@@ -26,7 +26,7 @@
 #include <hybrid/timespec.h>
 #endif /* __USE_GNU */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 typedef unsigned long int nfds_t;
 
@@ -46,6 +46,6 @@ __LIBC int (__LIBCCALL ppoll64)(struct pollfd *__fds, nfds_t __nfds, struct __ti
 #endif /* __USE_GNU */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_POLL_H */

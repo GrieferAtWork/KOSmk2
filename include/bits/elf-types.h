@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __CC__
 /* Type for a 16-bit quantity. */
@@ -58,6 +58,6 @@ typedef Elf32_Half Elf32_Versym;
 typedef Elf64_Half Elf64_Versym;
 #endif /* __CC__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_ELF_TYPES_H */

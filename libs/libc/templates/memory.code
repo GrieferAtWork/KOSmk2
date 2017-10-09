@@ -416,7 +416,8 @@ DECL void *LIBCCALL X(libc_mempat)
 		++iter,--n_bytes;
 	}
 #endif
-	X(libc_memset)(dst,pattern,n_bytes/S);
+	X(libc_memset)(iter,pattern,n_bytes/S);
+	iter += n_bytes;
 	n_bytes &= (S-1);
 #if S == 2
 	if (n_bytes) *iter = ((u8 *)&pattern)[0];

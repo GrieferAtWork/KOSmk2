@@ -23,7 +23,7 @@
 
 /* DISCLAIMER: Mostly taken from /usr/include/linux/futex.h */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Second argument to futex syscall */
 #define FUTEX_WAIT            0x00
@@ -163,6 +163,6 @@ struct robust_list_head {
    (((oparg) & 0xfff) << 12) | ((cmparg) & 0xfff))
 
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_LINUX_FUTEX_H */

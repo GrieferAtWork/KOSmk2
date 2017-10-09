@@ -43,7 +43,7 @@
 #ifdef __USE_MISC
 #include <netinet/in.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /*
  * Copyright (c) 1988 Stephen Deering.
@@ -120,7 +120,7 @@ struct igmp {
 #define IGMP_HOST_NEW_MEMBERSHIP_REPORT IGMP_V2_MEMBERSHIP_REPORT
 #define IGMP_HOST_LEAVE_MESSAGE         IGMP_V2_LEAVE_GROUP
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* __USE_MISC */
 

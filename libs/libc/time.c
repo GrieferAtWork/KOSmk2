@@ -1019,6 +1019,11 @@ libc_setsystime(struct tm const *__restrict tp, u32 msec) {
 DEFINE_PUBLIC_ALIAS(_getsystime,libc_getsystime);
 DEFINE_PUBLIC_ALIAS(_setsystime,libc_setsystime);
 
+INTERN ATTR_DOSTEXT void LIBCCALL libc_sleep_msec(u32 msecs) {
+ libc_usleep(msecs*USEC_PER_MSEC);
+}
+DEFINE_PUBLIC_ALIAS(__crtSleep,libc_sleep_msec);
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

@@ -22,7 +22,7 @@
 #include <features.h>
 #include <netinet/if_ether.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __KERNEL__
 __LIBC char *(__LIBCCALL ether_ntoa)(struct ether_addr const *__addr);
@@ -34,6 +34,6 @@ __LIBC int (__LIBCCALL ether_hostton)(char const *__hostname, struct ether_addr 
 __LIBC int (__LIBCCALL ether_line)(char const *__line, struct ether_addr *__addr, char *__hostname);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_NETINET_ETHER_H */

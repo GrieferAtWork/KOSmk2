@@ -22,8 +22,11 @@
 #include <__stdinc.h>
 #include <nl_types.h>
 #include <bits/locale.h> /* __LC_* */
+#ifdef __USE_XOPEN2K
+#include <xlocale.h>
+#endif /* __USE_XOPEN2K */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Access to locale-dependent parameters.
    Copyright (C) 1995-2016 Free Software Foundation, Inc.
@@ -480,14 +483,12 @@ __DECL_BEGIN
 #endif
 
 #ifndef __KERNEL__
-__LIBC char *(__LIBCCALL nl_langinfo)(nl_item __item);
-
+__LIBC __PORT_NODOS char *(__LIBCCALL nl_langinfo)(nl_item __item);
 #ifdef __USE_XOPEN2K
-#include <xlocale.h>
-__LIBC char *(__LIBCCALL nl_langinfo_l)(nl_item __item, __locale_t __l);
-#endif
+__LIBC __PORT_NODOS char *(__LIBCCALL nl_langinfo_l)(nl_item __item, __locale_t __l);
+#endif /* __USE_XOPEN2K */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_LANGINFO_H */

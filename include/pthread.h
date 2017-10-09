@@ -26,7 +26,7 @@
 #define __LIBP     __IMPDEF
 #define __LIBPCALL __ATTR_CDECL
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* TODO */
 
@@ -36,6 +36,6 @@ __LIBP int (__LIBPCALL pthread_join)(pthread_t __th, void **__thread_return);
 __LIBP __ATTR_CONST pthread_t __NOTHROW((__LIBPCALL pthread_self)(void));
 __LIBP __ATTR_CONST int __NOTHROW((__LIBPCALL pthread_equal)(pthread_t __thread1, pthread_t __thread2));
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_PTHREAD_H */

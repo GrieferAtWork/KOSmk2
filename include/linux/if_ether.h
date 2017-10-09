@@ -42,7 +42,7 @@
 #include <__stdinc.h>
 #include <hybrid/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* IEEE 802.3 Ethernet magic constants.
  * The frame sizes omit the preamble and FCS/CRC (frame check sequence). */
@@ -145,6 +145,6 @@ struct PACKED ethhdr {
  __be16        h_proto;            /*< packet type ID field. */
 };
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* _LINUX_IF_ETHER_H */

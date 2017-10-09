@@ -21,7 +21,7 @@
 
 #include "__stdinc.h"
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __va_list_defined
 #define __va_list_defined 1
@@ -36,6 +36,6 @@ __NAMESPACE_STD_USING(va_list)
 #define va_end    __builtin_va_end
 #define va_arg    __builtin_va_arg
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_STDARG_H */

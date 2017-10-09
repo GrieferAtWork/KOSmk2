@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <bits/uio.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __USE_GNU
 __LIBC ssize_t (__LIBCCALL process_vm_readv)(__pid_t __pid, const struct iovec *__lvec, unsigned long int __liovcnt, const struct iovec *__rvec, unsigned long int __riovcnt, unsigned long int __flags);
@@ -41,6 +41,6 @@ __LIBC __WUNUSED ssize_t (__LIBCCALL pwritev64)(int __fd, const struct iovec *__
 #endif /* __USE_LARGEFILE64 */
 #endif /* !__USE_MISC */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_UIO_H */

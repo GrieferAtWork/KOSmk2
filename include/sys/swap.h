@@ -48,13 +48,13 @@
 #define SWAP_FLAG_PRIO_SHIFT       0
 #define SWAP_FLAG_DISCARD    0x10000 /*< Discard swap cluster after use. */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __KERNEL__
 __LIBC __WARN_NODOSFS int (__LIBCCALL swapon)(char const *__path, int __flags);
 __LIBC __WARN_NODOSFS int (__LIBCCALL swapoff)(char const *__path);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* _SYS_SWAP_H */

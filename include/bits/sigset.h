@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* __sig_atomic_t, __sigset_t, and related definitions.  Linux version.
    Copyright (C) 1991-2016 Free Software Foundation, Inc.
@@ -48,7 +48,10 @@ __DECL_BEGIN
 #define _SIGSET_H_types 1
 #define _SIGSET_NWORDS    (1024/(8*__SIZEOF_LONG__))
 #ifdef __CC__
+#ifndef ____sig_atomic_t_defined
+#define ____sig_atomic_t_defined 1
 typedef __SIG_ATOMIC_TYPE__ __sig_atomic_t;
+#endif /* !____sig_atomic_t_defined */
 typedef struct { unsigned long int __val[_SIGSET_NWORDS]; } __sigset_t;
 #endif /* __CC__ */
 #endif
@@ -113,6 +116,6 @@ __SIGSETFN(__sigdelset,((__set->__val[__word] &= ~__mask), 0),)
 #endif /* __KERNEL__ */
 #endif /* __CC__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SIGSET_H */

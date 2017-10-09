@@ -22,7 +22,11 @@
 #include <features.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<pwd.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
@@ -98,6 +102,6 @@ __LIBC int (__LIBCCALL getpw)(__uid_t __uid, char *__buffer);
 #endif /* __USE_GNU */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_PWD_H */

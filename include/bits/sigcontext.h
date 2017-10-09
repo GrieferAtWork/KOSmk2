@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* No idea what glibc was up to with this one.
  * I mean: It's 'sigcontext' was even lacking a signal mask,
@@ -34,6 +34,6 @@ __DECL_BEGIN
 #define sigcontext ucontext
 struct sigcontext;
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* _BITS_SIGCONTEXT_H */

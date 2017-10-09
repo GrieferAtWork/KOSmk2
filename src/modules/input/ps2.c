@@ -27,6 +27,7 @@
 #include <fs/fs.h>
 #include <fs/inode.h>
 #include <hybrid/compiler.h>
+#include <hybrid/debug.h>
 #include <hybrid/traceback.h>
 #include <input/keyboard.h>
 #include <kernel/arch/cpustate.h>
@@ -118,40 +119,40 @@ PRIVATE struct inodeops const kbd_ops = {
 PRIVATE void KCALL keyboard_send(key_t k) {
 #if 1
  if (k == KEY_F12) {
-  __assertion_printf("BOOT_TASK:\n");
-  __assertion_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
-  __assertion_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
-  __assertion_printf("IDLE_TASK:\n");
-  __assertion_tbprintl((void *)THIS_CPU->c_idle.t_cstate->iret.eip,NULL,0);
-  __assertion_tbprint2((void *)THIS_CPU->c_idle.t_cstate->gp.ebp,0);
+  debug_printf("BOOT_TASK:\n");
+  debug_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
+  debug_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
+  debug_printf("IDLE_TASK:\n");
+  debug_tbprintl((void *)THIS_CPU->c_idle.t_cstate->iret.eip,NULL,0);
+  debug_tbprint2((void *)THIS_CPU->c_idle.t_cstate->gp.ebp,0);
   { pflag_t was = PREEMPTION_PUSH();
     struct task *start,*iter;
     iter = start = THIS_CPU->c_running;
     if (start) do {
-     __assertion_printf("RUNNING TASK %p (PID = %d/%d) - %[file]\n",iter,
+     debug_printf("RUNNING TASK %p (PID = %d/%d) - %[file]\n",iter,
                         iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                         iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
      if (iter == THIS_TASK) {
-#undef __assertion_tbprint
-      __assertion_tbprint();
+#undef debug_tbprint
+      debug_tbprint();
      } else {
-      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
     } while ((iter = iter->t_sched.sd_running.re_next) != start);
     for (iter = THIS_CPU->c_idling;
          iter; iter = iter->t_sched.sd_running.re_next) {
-     __assertion_printf("IDLING TASK %p (PID = %d/%d) - %[file]\n",iter,
+     debug_printf("IDLING TASK %p (PID = %d/%d) - %[file]\n",iter,
                         iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                         iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
      if (iter == THIS_TASK) {
-#undef __assertion_tbprint
-      __assertion_tbprint();
+#undef debug_tbprint
+      debug_tbprint();
      } else {
-      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
     }
     task_crit();
@@ -159,31 +160,31 @@ PRIVATE void KCALL keyboard_send(key_t k) {
      cpu_validate_counters(false);
      for (iter = THIS_CPU->c_suspended; iter;
           iter = iter->t_sched.sd_suspended.le_next) {
-      __assertion_printf("SUSPENDED TASK %p (PID = %d/%d) - %[file]\n",iter,
+      debug_printf("SUSPENDED TASK %p (PID = %d/%d) - %[file]\n",iter,
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
      for (iter = THIS_CPU->c_sleeping; iter;
           iter = iter->t_sched.sd_sleeping.le_next) {
-      __assertion_printf("SLEEPING TASK %p (PID = %d/%d) - %[file]\n",iter,
+      debug_printf("SLEEPING TASK %p (PID = %d/%d) - %[file]\n",iter,
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      __assertion_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      __assertion_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
      }
      cpu_endread(THIS_CPU);
     } else {
-     __assertion_printf("Failed to lock CPU for reading\n");
+     debug_printf("Failed to lock CPU for reading\n");
      cpu_validate_counters(true);
     }
     task_endcrit();
     PREEMPTION_POP(was);
   }
-  __assertion_printf("==DONE\n");
+  debug_printf("==DONE\n");
  }
 #endif
 

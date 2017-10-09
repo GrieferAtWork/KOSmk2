@@ -31,7 +31,7 @@
 #include <hybrid/timespec.h>
 #endif
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K)
 #ifndef __dev_t_defined
@@ -255,7 +255,7 @@ __LIBC __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path, __mode_t __mode
 
 #ifndef __chmod_defined
 #define __chmod_defined 1
-__LIBC __NONNULL((1)) int (__LIBCCALL chmod)(char const *__file, __mode_t __mode) __UFS_FUNC(chmod);
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,chmod,(char const *__file, int __mode),chmod,(__file,__mode))
 #endif /* !__chmod_defined */
 
 #ifndef __umask_defined
@@ -296,6 +296,6 @@ __LIBC __NONNULL((2)) int (__LIBCCALL futimens64)(int __fd, struct __timespec64 
 #endif /* __USE_XOPEN2K8 */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_STAT_H */

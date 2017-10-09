@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <bits/siginfo.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* The proper definitions for Linux's sigaction.
    Copyright (C) 1993-2016 Free Software Foundation, Inc.
@@ -86,6 +86,6 @@ struct sigaction {
 #define SIG_UNBLOCK   1 /*< Unblock signals. */
 #define SIG_SETMASK   2 /*< Set the set of blocked signals. */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SIGACTION_H */

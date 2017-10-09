@@ -77,18 +77,38 @@ struct _IO_FILE {
                                      *  HINT: To fix binary compatibility with DOS, the first byte of
                                      *        this structure is a NUL-character, allowing library users
                                      *        to interpret this member as a C-string of 0 length. */
+#define __f_ptr      if_ptr
+#define __f_cnt      if_cnt
+#define __f_base     if_base
+#define __f_flag     if_flag
+#define __f_file     if_fd
+#define __f_charbuf  if_charbuf
+#define __f_bufsiz   if_bufsiz
+#define __f_tmpfname if_exdata
 #else /* __BUILDING_LIBC */
 #ifdef __USE_KOS
  /* Use names that are protected by the C standard. */
- char          *__ptr;
- __INT32_TYPE__ __cnt;
- char          *__base;
- __INT32_TYPE__ __flag;
- __INT32_TYPE__ __file;
- __INT32_TYPE__ __charbuf;
- __INT32_TYPE__ __bufsiz;
- char          *__tmpfname;
+ char          *__f_ptr;
+ __INT32_TYPE__ __f_cnt;
+ char          *__f_base;
+ __INT32_TYPE__ __f_flag;
+ __INT32_TYPE__ __f_file;
+ __INT32_TYPE__ __f_charbuf;
+ __INT32_TYPE__ __f_bufsiz;
+ char          *__f_tmpfname;
 #else /* __USE_KOS */
+#if defined(__COMPILER_HAVE_PRAGMA_PUSHMACRO) && \
+    defined(__COMPILER_HAVE_TRANSPARENT_UNION)
+#pragma push_macro("_ptr")
+#pragma push_macro("_cnt")
+#pragma push_macro("_base")
+#pragma push_macro("_flag")
+#pragma push_macro("_file")
+#pragma push_macro("_charbuf")
+#pragma push_macro("_bufsiz")
+#pragma push_macro("_tmpfname")
+#endif
+
  /* Must #undef keyboard that are not allowed by the C
   * standard and may collide with user-defined macros. */
 #undef _ptr
@@ -99,6 +119,17 @@ struct _IO_FILE {
 #undef _charbuf
 #undef _bufsiz
 #undef _tmpfname
+
+#ifdef __COMPILER_HAVE_TRANSPARENT_UNION
+ union { char          *__f_ptr;      char          *_ptr;      };
+ union { __INT32_TYPE__ __f_cnt;      __INT32_TYPE__ _cnt;      };
+ union { char          *__f_base;     char          *_base;     };
+ union { __INT32_TYPE__ __f_flag;     __INT32_TYPE__ _flag;     };
+ union { __INT32_TYPE__ __f_file;     __INT32_TYPE__ _file;     };
+ union { __INT32_TYPE__ __f_charbuf;  __INT32_TYPE__ _charbuf;  };
+ union { __INT32_TYPE__ __f_bufsiz;   __INT32_TYPE__ _bufsiz;   };
+ union { char          *__f_tmpfname; char          *_tmpfname; };
+#else /* __COMPILER_HAVE_TRANSPARENT_UNION */
  char          *_ptr;
  __INT32_TYPE__ _cnt;
  char          *_base;
@@ -107,6 +138,27 @@ struct _IO_FILE {
  __INT32_TYPE__ _charbuf;
  __INT32_TYPE__ _bufsiz;
  char          *_tmpfname;
+#define __f_ptr      _ptr
+#define __f_cnt      _cnt
+#define __f_base     _base
+#define __f_flag     _flag
+#define __f_file     _file
+#define __f_charbuf  _charbuf
+#define __f_bufsiz   _bufsiz
+#define __f_tmpfname _tmpfname
+#endif /* !__COMPILER_HAVE_TRANSPARENT_UNION */
+
+#if defined(__COMPILER_HAVE_PRAGMA_PUSHMACRO) && \
+    defined(__COMPILER_HAVE_TRANSPARENT_UNION)
+#pragma pop_macro("_tmpfname")
+#pragma pop_macro("_bufsiz")
+#pragma pop_macro("_charbuf")
+#pragma pop_macro("_file")
+#pragma pop_macro("_flag")
+#pragma pop_macro("_base")
+#pragma pop_macro("_cnt")
+#pragma pop_macro("_ptr")
+#endif
 #endif /* !__USE_KOS */
 #endif /* !__BUILDING_LIBC */
 };

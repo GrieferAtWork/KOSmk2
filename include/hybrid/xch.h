@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/host.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if defined(__x86_64__)
 #define __XCH(x,y) \
@@ -76,6 +76,6 @@ __DECL_BEGIN
 #define XCH(x,y) __XCH(x,y)
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !__GUARD_HYBRID_XCH_H */

@@ -23,7 +23,7 @@
 #include <bits/types.h>
 #include <netinet/in.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __socklen_t_defined
 #define __socklen_t_defined 1
@@ -49,6 +49,6 @@ __LIBC char *(__LIBCCALL inet_nsap_ntoa)(int __len, const unsigned char *__cp, c
 #endif /* __USE_MISC */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_ARPA_INET_H */

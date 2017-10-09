@@ -51,7 +51,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #define __SIMD_DECL(function)                         __PP_CAT2(__DECL_SIMD_,function)
 #define __MATHCALL_VEC(function,suffix,args)          __SIMD_DECL(__MATH_PRECNAME(function,suffix)) __MATHCALL(function,suffix,args)
@@ -386,6 +386,6 @@ __LIBC int __NOTHROW((__LIBCCALL matherr)(struct exception *__exc));
 #endif
 #endif /* __USE_ISOC99 */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* _MATH_H */

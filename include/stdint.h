@@ -24,7 +24,7 @@
 #include <hybrid/typecore.h>
 
 #ifdef __CC__
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __NAMESPACE_STD_EXISTS
 __NAMESPACE_STD_BEGIN
@@ -200,7 +200,7 @@ typedef __UINTPTR_TYPE__      uintptr_t;
 
 #endif /* !__NAMESPACE_STD_EXISTS */
 
-__DECL_END
+__SYSDECL_END
 #endif /* __CC__ */
 
 

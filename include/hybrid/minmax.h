@@ -21,7 +21,7 @@
 
 #include <__stdinc.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if defined(__DCC_VERSION__) || \
    (__has_builtin(__builtin_min) && __has_builtin(__builtin_max))
@@ -35,6 +35,6 @@ __DECL_BEGIN
 #   define MAX(a,b) ((b) < (a) ? (a) : (b))
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !__GUARD_HYBRID_MINMAX_H */

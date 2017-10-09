@@ -39,7 +39,11 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<nl_types.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 #define NL_SETD       1 /*< The default message set used by the gencat program. */
 #define NL_CAT_LOCALE 1 /*< Value for FLAG parameter of `catgets' to say we want XPG4 compliance. */
@@ -53,6 +57,6 @@ __LIBC __NONNULL((1)) char *(__LIBCCALL catgets)(nl_catd __catalog, int __set, i
 __LIBC __NONNULL((1)) int (__LIBCCALL catclose)(nl_catd __catalog);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_NL_TYPES_H */

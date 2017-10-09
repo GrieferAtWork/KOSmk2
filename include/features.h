@@ -75,7 +75,40 @@
 #undef __USE_TIME_BITS64 /* '#if _TIME_T_BITS == 64' Use a 64-bit interger for 'time_t'. */
 #undef __USE_DEBUG       /* '#ifdef _DEBUG_SOURCE'   Enable debug function prototypes, either as real debug functions ('_DEBUG_SOURCE' defined as non-zero), or as stubs/aliases for non-debug version ('_DEBUG_SOURCE' defined as zero) */
 #undef __USE_DEBUG_HOOK  /* '#ifndef NDEBUG'         Implies '_DEBUG_SOURCE=1', redirecting functions such as 'malloc()' to their debug counterparts. */
+#undef __USE_PORTABLE    /* '#ifdef _PORT_SOURCE'    Mark all non-portable functions as deprecated (So-long as they can't be emulated when linking against any supported LIBC). */
 
+/* '#ifdef __DOS_COMPAT__' Even if CRT-GLC may be available, still emulate extended libc functions using functions also provided by DOS.
+ *                         NOTE: Automatically defined when CRT-GLC isn't available, but CRT-DOS is. */
+/* '#ifdef __GLC_COMPAT__' Same as '__DOS_COMPAT__' but for GLibc, rather than DOS. */
+
+#undef __CRT_DOS
+#undef __CRT_GLC
+#undef __CRT_KOS
+#ifdef __KOS__
+#   define __CRT_KOS 1
+#elif defined(__linux__) || defined(__linux) || defined(linux) || \
+      defined(__unix__) || defined(__unix) || defined(unix)
+#   define __CRT_GLC 1
+#elif defined(__WINDOWS__) || defined(_MSC_VER) || \
+      defined(_WIN16) || defined(WIN16) || defined(_WIN32) || defined(WIN32) || \
+      defined(_WIN64) || defined(WIN64) || defined(__WIN32__) || defined(__TOS_WIN__) || \
+      defined(_WIN32_WCE) || defined(WIN32_WCE)
+#   define __CRT_DOS 1
+#else
+#   define __CRT_KOS 1
+#endif
+#ifdef __CRT_KOS
+#   define __CRT_DOS 1
+#   define __CRT_GLC 1
+#endif
+
+#if defined(__CRT_DOS) && !defined(__CRT_GLC)
+#undef __DOS_COMPAT__
+#define __DOS_COMPAT__ 1
+#elif defined(__CRT_GLC) && !defined(__CRT_DOS)
+#undef __GLC_COMPAT__
+#define __GLC_COMPAT__ 1
+#endif
 
 #ifndef _LOOSE_KERNEL_NAMES
 # define __KERNEL_STRICT_NAMES
@@ -249,12 +282,13 @@
  * (By the time of this writing, but I'm guessing by 2038 this'll be
  *  similar to what glibc will have to do if it doesn't wan'na roll over) */
 #ifdef _TIME64_SOURCE
-# define __USE_TIME64 1
+#   define __USE_TIME64 1
 #endif
 #if defined(_TIME_T_BITS) && _TIME_T_BITS == 64
-# define __USE_TIME_BITS64 1
-#elif !defined(__ELF__) && !defined(_USE_32BIT_TIME_T)
-# define __USE_TIME_BITS64 1
+#   define __USE_TIME_BITS64 1
+#elif (!defined(__CRT_KOS) && defined(__CRT_DOS)) && \
+       !defined(_USE_32BIT_TIME_T)
+#   define __USE_TIME_BITS64 1
 #endif
 
 #undef _USE_32BIT_TIME_T
@@ -284,10 +318,12 @@
 #   define __USE_UTF 1
 #endif
 
+/* When targeting PE or DOS's CRT, enable DOS-extensions and DOS-filesystem by default. */
+#if defined(__CRT_DOS) && !defined(__CRT_GLC)
+#define __USE_DOSFS 1 /* Enable DOS filesystem semantics. */
+#endif
 #ifdef __PE__
-/* When targeting PE, enable DOS-extensions and DOS-filesystem by default. */
-#   define __USE_DOS   1
-#   define __USE_DOSFS 1
+#define __USE_DOS   1 /* Enable DOS extensions. */
 #endif
 
 /* HINT: You can forceably disable DOS extensions in PE-mode by
@@ -296,7 +332,9 @@
 #ifdef _DOS_SOURCE
 #undef __USE_DOS
 #if (_DOS_SOURCE+0) == 0
-#   undef __USE_DOSFS /* Also disable DOS-FS */
+#ifdef __CRT_KOS
+#   undef __USE_DOSFS /* Also disable DOS-FS when linking against KOS's CRT. */
+#endif
 #else
 #   define __USE_DOS   1
 #endif
@@ -317,6 +355,19 @@
  *       must be built with 'CONFIG_LIBC_NO_DOS_LIBC' disabled! */
 
 
+#ifndef __CRT_KOS
+/* Check for illegal feature combinations. */
+#if defined(__CRT_DOS) && !defined(__CRT_GLC)
+#ifndef __USE_DOSFS
+#   error "The linked CRT only supports DOS-FS mode"
+#endif
+#elif defined(__CRT_GLC) && !defined(__CRT_DOS)
+#ifdef __USE_DOSFS
+#   error "The linked CRT does not support DOS-FS mode"
+#endif
+#endif /* ... */
+#endif /* !__CRT_KOS */
+
 
 #ifdef __KERNEL__
 /* Within the kernel, pre-configure based on config options. */
@@ -326,7 +377,7 @@
 #   undef __USE_TIME_BITS64
 #if defined(_FILE_OFFSET_BITS) && \
     ((_FILE_OFFSET_BITS+0) != 32 && (_FILE_OFFSET_BITS+0) != 64)
-#warning "Invalid '_FILE_OFFSET_BITS'"
+#warning "Unrecognized '_FILE_OFFSET_BITS'"
 #undef _FILE_OFFSET_BITS
 #endif
 /* Use 'CONFIG_32BIT_FILESYSTEM' to default-configure '_FILE_OFFSET_BITS' */
@@ -355,6 +406,11 @@
 #endif /* _TIME_T_BITS == 64 */
 #endif /* __KERNEL__ */
 
+#if (!defined(__CRT_DOS) && !defined(__CRT_KOS)) && \
+    (defined(__USE_TIME64) || defined(__USE_TIME_BITS64))
+#error "The selected CRT does not support 64-bit time() functions (Try building with '-D_TIME_T_BITS=32')"
+#endif
+
 
 #ifndef __SIZEOF_WCHAR_T__
 #ifdef __PE__
@@ -374,52 +430,93 @@
 #   define __UFS_FUNC_OLDPEB(x)  /* nothing (linked by default) */
 #   define __UFS_FUNCn_OLDPEA(x) __ASMNAME("_" #x)
 #   define __UFS_FUNCn_OLDPEB(x) /* nothing (linked by default) */
+#   define __REDIRECT_UFS_FUNC_OLDPEA(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,_##asmname,args)
+#   define __REDIRECT_UFS_FUNC_OLDPEB     __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCn_OLDPEA(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,_##asmname,args)
+#   define __REDIRECT_UFS_FUNCn_OLDPEB    __NOREDIRECT
 #else
-#   define __UFS_FUNC_OLDPEA(x)  /* nothing (linked by default) */
-#   define __UFS_FUNC_OLDPEB(x)  __ASMNAME(#x)
+#   define __UFS_FUNC_OLDPEA(x)          /* nothing (linked by default) */
+#   define __UFS_FUNC_OLDPEB(x)          __ASMNAME(#x)
+#   define __REDIRECT_UFS_FUNC_OLDPEA    __NOREDIRECT
+#   define __REDIRECT_UFS_FUNC_OLDPEB    __REDIRECT
 #ifdef __USE_FILE_OFFSET64
 #   define __UFS_FUNCn_OLDPEA(x) __ASMNAME(#x "64")
 #   define __UFS_FUNCn_OLDPEB(x) __ASMNAME(#x "64")
+#   define __REDIRECT_UFS_FUNCn_OLDPEA(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
+#   define __REDIRECT_UFS_FUNCn_OLDPEB(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
 #else
 #   define __UFS_FUNCn_OLDPEA(x) /* nothing (linked by default) */
 #   define __UFS_FUNCn_OLDPEB(x) __ASMNAME(#x)
+#   define __REDIRECT_UFS_FUNCn_OLDPEA    __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCn_OLDPEB    __REDIRECT
 #endif
 #endif
 #ifdef __PE__
-#   define __PE_FUNC_OLDPEA(x)  __ASMNAME("_" #x)
-#   define __PE_FUNC_OLDPEB(x)  /* nothing (linked by default) */
+#   define __PE_FUNC_OLDPEA(x)          __ASMNAME("_" #x)
+#   define __PE_FUNC_OLDPEB(x)          /* nothing (linked by default) */
+#   define __REDIRECT_PE_FUNC_OLDPEA(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,_##asmname,args)
+#   define __REDIRECT_PE_FUNC_OLDPEB    __NOREDIRECT
 #else
-#   define __PE_FUNC_OLDPEA(x)  /* nothing (linked by default) */
-#   define __PE_FUNC_OLDPEB(x)  __ASMNAME(#x)
+#   define __PE_FUNC_OLDPEA(x)           /* nothing (linked by default) */
+#   define __PE_FUNC_OLDPEB(x)           __ASMNAME(#x)
+#   define __REDIRECT_PE_FUNC_OLDPEA     __NOREDIRECT
+#   define __REDIRECT_PE_FUNC_OLDPEB     __REDIRECT
 #endif
 
 #ifdef __USE_DOSFS
 #ifdef __PE__
-#   define __W16FS_FUNC(x)       /* nothing (linked by default) */
-#   define __W16FS_FUNC_(x)      __ASMNAME(#x)
-#   define __W32FS_FUNC(x)       __ASMNAME("U" #x)
-#   define __UFS_FUNC(x)         /* nothing (linked by default) */
-#   define __UFS_FUNC_(x)        __ASMNAME(#x)
-#   define __UFS_FUNC2(unix,dos) __ASMNAME(#dos)
+#   define __W16FS_FUNC(x)           /* nothing (linked by default) */
+#   define __W16FS_FUNC_(x)          __ASMNAME(#x)
+#   define __W32FS_FUNC(x)           __ASMNAME("U" #x)
+#   define __UFS_FUNC(x)             /* nothing (linked by default) */
+#   define __UFS_FUNC_(x)            __ASMNAME(#x)
+#   define __REDIRECT_W16FS          __NOREDIRECT
+#   define __REDIRECT_W16FS_         __REDIRECT
+#   define __REDIRECT_W32FS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,U##asmname,args)
+#   define __REDIRECT_UFS            __NOREDIRECT
+#   define __REDIRECT_UFS_           __REDIRECT
 #else
 #   define __W16FS_FUNC(x)       __ASMNAME(".dos." #x)
 #   define __W32FS_FUNC(x)       __ASMNAME(".dos.U" #x)
 #   define __UFS_FUNC(x)         __ASMNAME(".dos." #x)
-#   define __UFS_FUNC2(unix,dos) __ASMNAME(".dos." #dos)
+#   define __REDIRECT_W16FS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_W32FS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.U##asmname,args)
+#   define __REDIRECT_UFS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __W16FS_FUNC(x)       __ASMNAME(".kos.u" #x)
 #   define __W32FS_FUNC(x)       __ASMNAME(".kos." #x)
 #   define __UFS_FUNC(x)         __ASMNAME(".kos." #x)
-#   define __UFS_FUNC2(unix,dos) __ASMNAME(".kos." #unix)
+#   define __REDIRECT_W16FS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.u##asmname,args)
+#   define __REDIRECT_W32FS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_UFS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
 #else
 #   define __W16FS_FUNC(x)       __ASMNAME("u" #x)
 #   define __W32FS_FUNC(x)       /* nothing (linked by default) */
 #   define __W32FS_FUNC_(x)      __ASMNAME(#x)
 #   define __UFS_FUNC(x)         /* nothing (linked by default) */
 #   define __UFS_FUNC_(x)        __ASMNAME(#x)
-#   define __UFS_FUNC2(unix,dos) __ASMNAME(#unix)
+#   define __REDIRECT_W16FS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,u##asmname,args)
+#   define __REDIRECT_W32FS      __NOREDIRECT
+#   define __REDIRECT_W32FS_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
+#   define __REDIRECT_UFS        __NOREDIRECT
+#   define __REDIRECT_UFS_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
 #endif
 #endif /* !__USE_DOSFS */
 #ifndef __W16FS_FUNC_
@@ -431,13 +528,26 @@
 #ifndef __UFS_FUNC_
 #define __UFS_FUNC_   __UFS_FUNC
 #endif
+#ifndef __REDIRECT_W16FS_
+#define __REDIRECT_W16FS_ __REDIRECT_W16FS
+#endif
+#ifndef __REDIRECT_W32FS_
+#define __REDIRECT_W32FS_ __REDIRECT_W32FS
+#endif
+#ifndef __REDIRECT_UFS_
+#define __REDIRECT_UFS_   __REDIRECT_UFS
+#endif
 
 #if __SIZEOF_WCHAR_T__ == 2
-#   define __WFS_FUNC  __W16FS_FUNC
-#   define __WFS_FUNC_ __W16FS_FUNC_
+#   define __WFS_FUNC      __W16FS_FUNC
+#   define __WFS_FUNC_     __W16FS_FUNC_
+#   define __REDIRECT_WFS  __REDIRECT_W16FS
+#   define __REDIRECT_WFS_ __REDIRECT_W16FS_
 #elif __SIZEOF_WCHAR_T__ == 4
-#   define __WFS_FUNC  __W32FS_FUNC
-#   define __WFS_FUNC_ __W32FS_FUNC_
+#   define __WFS_FUNC      __W32FS_FUNC
+#   define __WFS_FUNC_     __W32FS_FUNC_
+#   define __REDIRECT_WFS  __REDIRECT_W32FS
+#   define __REDIRECT_WFS_ __REDIRECT_W32FS_
 #else
 #   error "Unsupport wide-character width"
 #endif
@@ -462,21 +572,41 @@
 #ifdef __USE_FILE_OFFSET64
 #   define __FS_FUNC(x)      __ASMNAME(#x "64")
 #   define __FS_FUNC_R(x)    __ASMNAME(#x "64_r")
+#   define __REDIRECT_FS_FUNC(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
+#   define __REDIRECT_FS_FUNC_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #ifdef __USE_DOSFS
 #ifdef __PE__
 #   define __UFS_FUNCn(x)    __ASMNAME(#x "64")
 #   define __UFS_FUNCn_R(x)  __ASMNAME(#x "64_r")
+#   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
+#   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #else
 #   define __UFS_FUNCn(x)    __ASMNAME(".dos." #x "64")
 #   define __UFS_FUNCn_R(x)  __ASMNAME(".dos." #x "64_r")
+#   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##64,args)
+#   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##64_r,args)
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __UFS_FUNCn(x)    __ASMNAME(".kos." #x "64")
 #   define __UFS_FUNCn_R(x)  __ASMNAME(".kos." #x "64_r")
+#   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64,args)
+#   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64_r,args)
 #else
 #   define __UFS_FUNCn(x)    __ASMNAME(#x "64")
 #   define __UFS_FUNCn_R(x)  __ASMNAME(#x "64_r")
+#   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
+#   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #endif
 #endif /* !__USE_DOSFS */
 #else /* __USE_FILE_OFFSET64 */
@@ -484,25 +614,48 @@
 #   define __FS_FUNC_(x)     __ASMNAME(#x)
 #   define __FS_FUNC_R(x)    /* nothing */
 #   define __FS_FUNC_R_(x)   __ASMNAME(#x "_r")
+#   define __REDIRECT_FS_FUNC         __NOREDIRECT
+#   define __REDIRECT_FS_FUNC_        __REDIRECT
+#   define __REDIRECT_FS_FUNC_R       __NOREDIRECT
+#   define __REDIRECT_FS_FUNC_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #ifdef __USE_DOSFS
 #ifdef __PE__
 #   define __UFS_FUNCn(x)    /* nothing */
 #   define __UFS_FUNCn_(x)   __ASMNAME(#x)
 #   define __UFS_FUNCn_R(x)  /* nothing */
 #   define __UFS_FUNCn_R_(x) __ASMNAME(#x "_r")
+#   define __REDIRECT_UFS_FUNCn       __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCn_      __REDIRECT
+#   define __REDIRECT_UFS_FUNCn_R     __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCn_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #else
 #   define __UFS_FUNCn(x)    __ASMNAME(".dos." #x)
 #   define __UFS_FUNCn_R(x)  __ASMNAME(".dos." #x "_r")
+#   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##_r,args)
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __UFS_FUNCn(x)    __ASMNAME(".kos." #x)
 #   define __UFS_FUNCn_R(x)  __ASMNAME(".kos." #x "_r")
+#   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##_r,args)
 #else
 #   define __UFS_FUNCn(x)    /* nothing */
 #   define __UFS_FUNCn_(x)   __ASMNAME(#x)
 #   define __UFS_FUNCn_R(x)  /* nothing */
 #   define __UFS_FUNCn_R_(x) __ASMNAME(#x "_r")
+#   define __REDIRECT_UFS_FUNCn       __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCn_      __REDIRECT
+#   define __REDIRECT_UFS_FUNCn_R     __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCn_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #endif
 #endif /* !__USE_DOSFS */
 #endif /* !__USE_FILE_OFFSET64 */
@@ -512,23 +665,45 @@
 #ifndef __UFS_FUNCn_R_
 #define __UFS_FUNCn_R_ __UFS_FUNCn_R
 #endif
+#ifndef __REDIRECT_UFS_FUNCn_
+#define __REDIRECT_UFS_FUNCn_ __REDIRECT_UFS_FUNCn
+#endif
+#ifndef __REDIRECT_UFS_FUNCn_R_
+#define __REDIRECT_UFS_FUNCn_R_ __REDIRECT_UFS_FUNCn_R
+#endif
 
 #ifdef __USE_TIME_BITS64
 #ifdef __USE_DOSFS
 #ifdef __PE__
 #   define __UFS_FUNCt(x)    __ASMNAME(#x "64")
 #   define __UFS_FUNCt_R(x)  __ASMNAME(#x "64_r")
+#   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
+#   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #else
 #   define __UFS_FUNCt(x)    __ASMNAME(".dos." #x "64")
 #   define __UFS_FUNCt_R(x)  __ASMNAME(".dos." #x "64_r")
+#   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##64,args)
+#   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##64_r,args)
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __UFS_FUNCt(x)    __ASMNAME(".kos." #x "64")
 #   define __UFS_FUNCt_R(x)  __ASMNAME(".kos." #x "64_r")
+#   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64,args)
+#   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64_r,args)
 #else
 #   define __UFS_FUNCt(x)    __ASMNAME(#x "64")
 #   define __UFS_FUNCt_R(x)  __ASMNAME(#x "64_r")
+#   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
+#   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #endif
 #endif /* !__USE_DOSFS */
 #else /* __USE_TIME_BITS64 */
@@ -538,19 +713,37 @@
 #   define __UFS_FUNCt_(x)   __ASMNAME(#x)
 #   define __UFS_FUNCt_R(x)  /* nothing */
 #   define __UFS_FUNCt_R_(x) __ASMNAME(#x "_r")
+#   define __REDIRECT_UFS_FUNCt       __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCt_      __REDIRECT
+#   define __REDIRECT_UFS_FUNCt_R     __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCt_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #else
 #   define __UFS_FUNCt(x)    __ASMNAME(".dos." #x)
 #   define __UFS_FUNCt_R(x)  __ASMNAME(".dos." #x "_r")
+#   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##_r,args)
 #endif
 #else /* __USE_DOSFS */
 #ifdef __PE__
 #   define __UFS_FUNCt(x)    __ASMNAME(".kos." #x)
 #   define __UFS_FUNCt_R(x)  __ASMNAME(".kos." #x "_r")
+#   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##_r,args)
 #else
 #   define __UFS_FUNCt(x)    /* nothing */
 #   define __UFS_FUNCt_(x)   __ASMNAME(#x)
 #   define __UFS_FUNCt_R(x)  /* nothing */
 #   define __UFS_FUNCt_R_(x) __ASMNAME(#x "_r")
+#   define __REDIRECT_UFS_FUNCt       __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCt_      __REDIRECT
+#   define __REDIRECT_UFS_FUNCt_R     __NOREDIRECT
+#   define __REDIRECT_UFS_FUNCt_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #endif
 #endif /* !__USE_DOSFS */
 #endif /* !__USE_TIME_BITS64 */
@@ -560,51 +753,241 @@
 #ifndef __UFS_FUNCt_R_
 #define __UFS_FUNCt_R_ __UFS_FUNCt_R
 #endif
+#ifndef __REDIRECT_UFS_FUNCt_
+#define __REDIRECT_UFS_FUNCt_ __REDIRECT_UFS_FUNCt
+#endif
+#ifndef __REDIRECT_UFS_FUNCt_R_
+#define __REDIRECT_UFS_FUNCt_R_ __REDIRECT_UFS_FUNCt_R
+#endif
 
 
 /* Link the dos-default version when DOS-mode is enabled.
  * >> Used for functions available in both DOS and KOS mode, but
  *    with incompatible prototypes or associated data objects. */
-#ifdef __USE_DOS
+#if defined(__USE_DOS) || defined(__DOS_COMPAT__)
 #ifdef __PE__
 #   define __DOS_FUNC(x)  /* nothing (linked by default) */
 #   define __DOS_FUNC_(x) __ASMNAME(#x)
+#   define __REDIRECT_DOS_FUNC  __NOREDIRECT
+#   define __REDIRECT_DOS_FUNC_ __REDIRECT
+#   define __REDIRECT_DOS_FUNC_NOTHROW  __NOREDIRECT_NOTHROW
+#   define __REDIRECT_DOS_FUNC_NOTHROW_ __REDIRECT_NOTHROW
 #else
 #   define __DOS_FUNC(x)  __ASMNAME(".dos." #x)
+#   define __DOS_FUNC_(x) __ASMNAME(".dos." #x)
+#   define __REDIRECT_DOS_FUNC(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_DOS_FUNC_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_DOS_FUNC_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_DOS_FUNC_NOTHROW_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
 #endif
-#else /* __USE_DOS */
+#else /* __USE_DOS || __DOS_COMPAT__ */
 #ifdef __PE__
 #   define __DOS_FUNC(x)  __ASMNAME(".kos." #x)
+#   define __DOS_FUNC_(x) __ASMNAME(".kos." #x)
+#   define __REDIRECT_DOS_FUNC(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_DOS_FUNC_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_DOS_FUNC_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_DOS_FUNC_NOTHROW_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
 #else
 #   define __DOS_FUNC(x)  /* nothing (linked by default) */
 #   define __DOS_FUNC_(x) __ASMNAME(#x)
+#   define __REDIRECT_DOS_FUNC  __NOREDIRECT
+#   define __REDIRECT_DOS_FUNC_ __REDIRECT
+#   define __REDIRECT_DOS_FUNC_NOTHROW  __NOREDIRECT_NOTHROW
+#   define __REDIRECT_DOS_FUNC_NOTHROW_ __REDIRECT_NOTHROW
 #endif
-#endif /* !__USE_DOS */
-#ifndef __DOS_FUNC_
-#define __DOS_FUNC_ __DOS_FUNC
-#endif
+#endif /* !__USE_DOS && !__DOS_COMPAT__ */
 
 /* Strictly link against the KOS version of a given function. */
 #ifdef __PE__
-#   define __KOS_FUNC(x)        __ASMNAME(".kos." #x)
-#   define __PE_ASMNAME(x)      __ASMNAME(x)
-#   define __KOS_ASMNAME(x)     /* nothing */
-#   define __PE_FUNC(x)         /* nothing */
-#   define __PE_FUNC_(x)        __ASMNAME(#x)
-#   define __ASMNAME2(unix,dos) __ASMNAME(dos)
+#   define __KOS_FUNC(x)          __ASMNAME(".kos." #x)
+#   define __KOS_FUNC_(x)         __ASMNAME(".kos." #x)
+#   define __PE_ASMNAME(x)        __ASMNAME(x)
+#   define __KOS_ASMNAME(x)       /* nothing */
+#   define __PE_FUNC(x)           /* nothing */
+#   define __PE_FUNC_(x)          __ASMNAME(#x)
 #else
-#   define __KOS_FUNC(x)        /* nothing */
-#   define __KOS_FUNC_(x)       __ASMNAME(#x)
-#   define __PE_ASMNAME(x)      /* nothing */
-#   define __KOS_ASMNAME(x)     __ASMNAME(x)
-#   define __PE_FUNC(x)         __ASMNAME(".dos." #x)
-#   define __ASMNAME2(unix,dos) __ASMNAME(unix)
+#   define __KOS_FUNC(x)          /* nothing */
+#   define __KOS_FUNC_(x)         __ASMNAME(#x)
+#   define __PE_ASMNAME(x)        /* nothing */
+#   define __KOS_ASMNAME(x)       __ASMNAME(x)
+#   define __PE_FUNC(x)           __ASMNAME(".dos." #x)
+#   define __PE_FUNC_(x)          __ASMNAME(".dos." #x)
 #endif
-#ifndef __KOS_FUNC_
-#define __KOS_FUNC_ __KOS_FUNC
+
+#ifdef __DOS_COMPAT__
+#   define __ASMNAME_IFKOS(x) /* nothing */
+#else
+#   define __ASMNAME_IFKOS(x) __ASMNAME(x)
 #endif
-#ifndef __PE_FUNC_
-#define __PE_FUNC_  __PE_FUNC
+
+/* Redirect based on sizeof(wchar_t) */
+#if __SIZEOF_WCHAR_T__ == 2
+#   define __REDIRECT_IFW16      __REDIRECT
+#   define __REDIRECT_IFW32      __NOREDIRECT
+#   define __REDIRECT_IFW16_VOID __REDIRECT_VOID
+#   define __REDIRECT_IFW32_VOID __NOREDIRECT_VOID
+#else
+#   define __REDIRECT_IFW16      __NOREDIRECT
+#   define __REDIRECT_IFW32      __REDIRECT
+#   define __REDIRECT_IFW16_VOID __NOREDIRECT_VOID
+#   define __REDIRECT_IFW32_VOID __REDIRECT_VOID
+#endif
+
+/* Redirect based on DOS filesystem being enabled. */
+#ifdef __USE_DOSFS
+#   define __REDIRECT_IFDOSFS __REDIRECT
+#   define __REDIRECT_IFKOSFS __NOREDIRECT
+#else
+#   define __REDIRECT_IFDOSFS __NOREDIRECT
+#   define __REDIRECT_IFKOSFS __REDIRECT
+#endif
+
+#ifdef __DOS_COMPAT__
+#   define __ASMNAME2(unix,dos)   __ASMNAME(dos)
+#   define __REDIRECT2(decl,attr,Treturn,cc,name,param,unix_asmname,dos_asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,dos_asmname,args)
+#   define __REDIRECT2_VOID(decl,attr,cc,name,param,unix_asmname,dos_asmname,args) \
+           __REDIRECT_VOID(decl,attr,cc,name,param,dos_asmname,args)
+#   define __REDIRECT2_NOTHROW(decl,attr,Treturn,cc,name,param,unix_asmname,dos_asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,dos_asmname,args)
+#   define __REDIRECT2_VOID_NOTHROW(decl,attr,cc,name,param,unix_asmname,dos_asmname,args) \
+           __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,dos_asmname,args)
+#   define __REDIRECT_IFDOS              __REDIRECT
+#   define __REDIRECT_IFKOS              __NOREDIRECT
+#   define __REDIRECT_IFDOS_VOID         __REDIRECT_VOID
+#   define __REDIRECT_IFKOS_VOID         __NOREDIRECT_VOID
+#   define __REDIRECT_IFDOS_NOTHROW      __REDIRECT_NOTHROW
+#   define __REDIRECT_IFKOS_NOTHROW      __NOREDIRECT_NOTHROW
+#   define __REDIRECT_IFDOS_VOID_NOTHROW __REDIRECT_VOID_NOTHROW
+#   define __REDIRECT_IFKOS_VOID_NOTHROW __NOREDIRECT_VOID_NOTHROW
+#else
+#   define __ASMNAME2(unix,dos)   __ASMNAME(unix)
+#   define __REDIRECT2(decl,attr,Treturn,cc,name,param,unix_asmname,dos_asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,unix_asmname,args)
+#   define __REDIRECT2_VOID(decl,attr,cc,name,param,unix_asmname,dos_asmname,args) \
+           __REDIRECT_VOID(decl,attr,cc,name,param,unix_asmname,args)
+#   define __REDIRECT2_NOTHROW(decl,attr,Treturn,cc,name,param,unix_asmname,dos_asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,unix_asmname,args)
+#   define __REDIRECT2_VOID_NOTHROW(decl,attr,cc,name,param,unix_asmname,dos_asmname,args) \
+           __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,unix_asmname,args)
+#   define __REDIRECT_IFDOS              __NOREDIRECT
+#   define __REDIRECT_IFKOS              __REDIRECT
+#   define __REDIRECT_IFDOS_VOID         __NOREDIRECT_VOID
+#   define __REDIRECT_IFKOS_VOID         __REDIRECT_VOID
+#   define __REDIRECT_IFDOS_NOTHROW      __NOREDIRECT_NOTHROW
+#   define __REDIRECT_IFKOS_NOTHROW      __REDIRECT_NOTHROW
+#   define __REDIRECT_IFDOS_VOID_NOTHROW __NOREDIRECT_VOID_NOTHROW
+#   define __REDIRECT_IFKOS_VOID_NOTHROW __REDIRECT_VOID_NOTHROW
+#endif
+
+#ifdef __PE__
+#   define __REDIRECT_TOPE               __NOREDIRECT
+#   define __REDIRECT_TOPE_              __REDIRECT
+#   define __REDIRECT_TOPE_VOID          __NOREDIRECT_VOID
+#   define __REDIRECT_TOPE_VOID_         __REDIRECT_VOID
+#   define __REDIRECT_TOPE_NOTHROW       __NOREDIRECT_NOTHROW
+#   define __REDIRECT_TOPE_NOTHROW_      __REDIRECT_NOTHROW
+#   define __REDIRECT_TOPE_VOID_NOTHROW  __NOREDIRECT_VOID_NOTHROW
+#   define __REDIRECT_TOPE_VOID_NOTHROW_ __REDIRECT_VOID_NOTHROW
+#if defined(__KOS__) && defined(__CRT_KOS) && !defined(__NO_ASMNAME)
+#   define __REDIRECT_TOKOS(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_TOKOS_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_TOKOS_VOID(decl,attr,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_TOKOS_VOID_(decl,attr,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_TOKOS_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_TOKOS_NOTHROW_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_TOKOS_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
+           __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,.kos.asmname,args)
+#   define __REDIRECT_TOKOS_VOID_NOTHROW_(decl,attr,cc,name,param,asmname,args) \
+           __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,.kos.asmname,args)
+#endif /* __KOS__ && __CRT_KOS */
+#else /* __PE__ */
+#   define __REDIRECT_TOKOS               __NOREDIRECT
+#   define __REDIRECT_TOKOS_              __REDIRECT
+#   define __REDIRECT_TOKOS_VOID          __NOREDIRECT_VOID
+#   define __REDIRECT_TOKOS_VOID_         __REDIRECT_VOID
+#   define __REDIRECT_TOKOS_NOTHROW       __NOREDIRECT_NOTHROW
+#   define __REDIRECT_TOKOS_NOTHROW_      __REDIRECT_NOTHROW
+#   define __REDIRECT_TOKOS_VOID_NOTHROW  __NOREDIRECT_VOID_NOTHROW
+#   define __REDIRECT_TOKOS_VOID_NOTHROW_ __REDIRECT_VOID_NOTHROW
+#if defined(__KOS__) && defined(__CRT_DOS) && !defined(__NO_ASMNAME)
+#   define __REDIRECT_TOPE(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_TOPE_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_TOPE_VOID(decl,attr,cc,name,param,asmname,args) \
+           __REDIRECT_VOID(decl,attr,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_TOPE_VOID_(decl,attr,cc,name,param,asmname,args) \
+           __REDIRECT_VOID(decl,attr,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_TOPE_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_TOPE_NOTHROW_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_TOPE_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
+           __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,.dos.asmname,args)
+#   define __REDIRECT_TOPE_VOID_NOTHROW_(decl,attr,cc,name,param,asmname,args) \
+           __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,.dos.asmname,args)
+#endif /* __KOS__ && __CRT_DOS */
+#endif /* __PE__ */
+
+#ifndef __REDIRECT_TOKOS
+#   define __REDIRECT_TOKOS               __IGNORE_REDIRECT
+#   define __REDIRECT_TOKOS_              __IGNORE_REDIRECT
+#   define __REDIRECT_TOKOS_VOID          __IGNORE_REDIRECT_VOID
+#   define __REDIRECT_TOKOS_VOID_         __IGNORE_REDIRECT_VOID
+#   define __REDIRECT_TOKOS_NOTHROW       __IGNORE_REDIRECT
+#   define __REDIRECT_TOKOS_NOTHROW_      __IGNORE_REDIRECT
+#   define __REDIRECT_TOKOS_VOID_NOTHROW  __IGNORE_REDIRECT_VOID
+#   define __REDIRECT_TOKOS_VOID_NOTHROW_ __IGNORE_REDIRECT_VOID
+#endif
+#ifndef __REDIRECT_TOPE
+#   define __REDIRECT_TOPE                __IGNORE_REDIRECT
+#   define __REDIRECT_TOPE_               __IGNORE_REDIRECT
+#   define __REDIRECT_TOPE_VOID           __IGNORE_REDIRECT_VOID
+#   define __REDIRECT_TOPE_VOID_          __IGNORE_REDIRECT_VOID
+#   define __REDIRECT_TOPE_NOTHROW        __IGNORE_REDIRECT
+#   define __REDIRECT_TOPE_NOTHROW_       __IGNORE_REDIRECT
+#   define __REDIRECT_TOPE_VOID_NOTHROW   __IGNORE_REDIRECT_VOID
+#   define __REDIRECT_TOPE_VOID_NOTHROW_  __IGNORE_REDIRECT_VOID
+#endif
+
+#ifdef _PORT_SOURCE
+#define __USE_PORTABLE 1
+#endif
+
+#ifdef __USE_PORTABLE
+#   define __PORT_KOSONLY        __ATTR_DEPRECATED("Non-portable KOS extension")
+#   define __PORT_DOSONLY        __ATTR_DEPRECATED("Only available under DOS")
+#   define __PORT_NODOS          __ATTR_DEPRECATED("Not available under DOS")
+#   define __PORT_KOSONLY_ALT(x) __ATTR_DEPRECATED("Non-portable KOS extension (Consider using `" #x "' in portable code)")
+#   define __PORT_DOSONLY_ALT(x) __ATTR_DEPRECATED("Only available under DOS (Consider using `" #x "' instead)")
+#   define __PORT_NODOS_ALT(x)   __ATTR_DEPRECATED("Not available under DOS (Consider using `" #x "' in portable code)")
+#   define __WARN_NONSTD(alt) \
+      __ATTR_DEPRECATED("This function does not behave according to the STD-C standard. " \
+                        "Consider using compliant function `" #alt "' instead")
+#else
+#   define __PORT_KOSONLY        /* nothing */
+#   define __PORT_DOSONLY        /* nothing */
+#   define __PORT_NODOS          /* nothing */
+#   define __PORT_KOSONLY_ALT(x) /* nothing */
+#   define __PORT_DOSONLY_ALT(x) /* nothing */
+#   define __PORT_NODOS_ALT(x)   /* nothing */
+#   define __WARN_NONSTD(alt)    /* nothing */
 #endif
 
 
@@ -616,28 +999,29 @@
 #   define __WARN_NOKOSFS __ATTR_DEPRECATED("This function does not support KOS filesystem semantics. Try building with `-D_DOSFS_SOURCE=1'")
 #endif
 
-#ifndef __NO_NONSTD_WARNINGS
-#define __WARN_NONSTD(alt) \
-   __ATTR_DEPRECATED("This function does not behave according to the STD-C standard. " \
-                     "Consider using compliant function `" #alt "' instead")
-#else
-#define __WARN_NONSTD(alt) /* nothing */
-#endif
-
 #ifdef __USE_TIME_BITS64
 #   define __TM_FUNC(x)     __ASMNAME(#x "64")
+#   define __TM_FUNC_(x)    __ASMNAME(#x "64")
 #   define __TM_FUNC_R(x)   __ASMNAME(#x "64_r")
+#   define __TM_FUNC_R_(x)  __ASMNAME(#x "64_r")
+#   define __REDIRECT_TM_FUNC(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
+#   define __REDIRECT_TM_FUNC_R(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
+#   define __REDIRECT_TM_FUNC_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
+#   define __REDIRECT_TM_FUNC_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #else
 #   define __TM_FUNC(x)     /* nothing */
 #   define __TM_FUNC_(x)    __ASMNAME(#x)
 #   define __TM_FUNC_R(x)   /* nothing */
 #   define __TM_FUNC_R_(x)  __ASMNAME(#x "_r")
-#endif
-#ifndef __TM_FUNC_
-#define __TM_FUNC_ __TM_FUNC
-#endif
-#ifndef __TM_FUNC_R_
-#define __TM_FUNC_R_ __TM_FUNC_R
+#   define __REDIRECT_TM_FUNC   __NOREDIRECT
+#   define __REDIRECT_TM_FUNC_  __REDIRECT
+#   define __REDIRECT_TM_FUNC_R __NOREDIRECT
+#   define __REDIRECT_TM_FUNC_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
+           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #endif
 
 #ifdef __USE_DOS
@@ -669,6 +1053,11 @@
 #ifndef __USE_DEBUG
 #define __USE_DEBUG 1
 #endif
+#endif
+
+#if defined(__USE_DEBUG) && __USE_DEBUG == 0
+/* No point in hook debug functions if they'll just loop back. */
+#undef __USE_DEBUG_HOOK
 #endif
 
 #ifdef __INTELLISENSE__

@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_LIBS_LIBC_UNICODE_C
 #define GUARD_LIBS_LIBC_UNICODE_C 1
+#define _KOS_SOURCE 1
 
 #include "libc.h"
 #include "unicode.h"

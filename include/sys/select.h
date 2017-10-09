@@ -27,7 +27,7 @@
 #include <hybrid/timespec.h> /* struct timespec */
 #include <bits/time.h>       /* struct timeval */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __time_t_defined
 #define __time_t_defined  1
@@ -91,7 +91,7 @@ __LIBC int (__LIBCCALL pselect64)(int __nfds, fd_set *__restrict __readfds, fd_s
 #endif /* __USE_TIME64 */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 
 #endif /* !_SYS_SELECT_H */

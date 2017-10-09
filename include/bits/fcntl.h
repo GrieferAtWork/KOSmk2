@@ -23,7 +23,7 @@
 #include <bits/types.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct flock {
  short int      l_type;   /*< Type of lock: F_RDLCK, F_WRLCK, or F_UNLCK.	*/
@@ -43,7 +43,7 @@ struct flock64 {
 };
 #endif
 
-__DECL_END
+__SYSDECL_END
 
 #include "fcntl-linux.h"
 

@@ -47,7 +47,7 @@
 #include <bits/sigset.h>
 #endif /* __USE_GNU */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
@@ -138,6 +138,6 @@ __LIBC int (__LIBCCALL isfdtype)(int __fd, int __fdtype);
 #endif /* __USE_MISC */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_SYS_SOCKET_H */

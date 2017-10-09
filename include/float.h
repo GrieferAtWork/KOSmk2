@@ -25,7 +25,7 @@
 #include <hybrid/typecore.h>
 #include <hybrid/host.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if __has_include_next(<float.h>)
 #include_next <float.h>
@@ -292,6 +292,6 @@ __LIBC void (__LIBCCALL fpreset)(void) __ASMNAME("_fpreset");
 #endif /* __USE_DOS */
 
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_FLOAT_H */

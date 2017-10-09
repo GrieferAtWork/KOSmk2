@@ -23,8 +23,15 @@
 #include <features.h>
 #include <bits/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("actime")
+#pragma push_macro("modtime")
+#endif
+
+#undef actime
+#undef modtime
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K) || \
     defined(__USE_DOS)
 #ifndef __time_t_defined
@@ -39,10 +46,14 @@ struct utimbuf {
 };
 
 #ifdef __USE_TIME64
+#ifdef __USE_TIME_BITS64
+#define utimbuf64 utimbuf
+#else /* __USE_TIME_BITS64 */
 struct utimbuf64 {
     __time64_t      actime;  /*< Access time. */
     __time64_t      modtime; /*< Modification time. */
 };
+#endif /* !__USE_TIME_BITS64 */
 #endif /* __USE_TIME64 */
 
 #ifdef __USE_DOS
@@ -70,50 +81,69 @@ struct utimbuf32 {
 #endif /* __USE_DOS */
 
 /* Used assembly names (Required for binary compatibility):
- *          KOS        DOS
- * 32-BIT   utime     .dos._utime32
- * 64-BIT   utime64   .dos._utime64
- * 32-BIT  _wutime32  .dos.U_wutime32
- * 64-BIT  _wutime64  .dos.U_wutime64
- * 32-BIT  u_wutime32 .dos._wutime32
- * 64-BIT  u_wutime64 .dos._wutime64
- * 32-BIT  _futime32  <inherited>
- * 64-BIT  _futime64  <inherited>
+ * FMT       TIME  KOS         DOS(HOSTED)      DOS        GLC
+ * char      32    utime       .dos._utime32    _utime32   utime
+ * char      64    utime64     .dos._utime64    _utime64   ---
+ * char32_t  32    _wutime32   .dos.U_wutime32  ---        ---
+ * char32_t  64    _wutime64   .dos.U_wutime64  ---        ---
+ * char16_t  32    u_wutime32  .dos._wutime32   _wutime32  ---
+ * char16_t  64    u_wutime64  .dos._wutime64   _wutime64  ---
+ * int fd    32    _futime32   _futime32        _futime32  ---
+ * int fd    64    _futime64   _futime64        _futime64  ---
  */
 
 #ifndef __KERNEL__
-__LIBC __NONNULL((1)) int (__LIBCCALL utime)(char const *__file, struct utimbuf const *__file_times)
 #ifdef __USE_DOSFS
 #ifdef __USE_TIME_BITS64
-    __PE_FUNC_(_utime64);
+__REDIRECT_IFDOS(__LIBC,__NONNULL((1)),int,__LIBCCALL,utime,(char const *__file, struct utimbuf const *__file_times),_utime64,(__file,__file_times))
+#else /* __USE_TIME_BITS64 */
+__REDIRECT_IFDOS(__LIBC,__NONNULL((1)),int,__LIBCCALL,utime,(char const *__file, struct utimbuf const *__file_times),_utime32,(__file,__file_times))
+#endif /* !__USE_TIME_BITS64 */
+#ifdef __USE_TIME64
+__REDIRECT_UFS(__LIBC,__NONNULL((1)),int,__LIBCCALL,utime64,(char const *__file, struct utimbuf64 const *__file_times),_utime64,(__file,__file_times))
+#endif /* __USE_TIME64 */
+#elif defined(__GLC_COMPAT__)
+#ifdef __USE_TIME_BITS64
+struct __glc_utimbuf32 { __time32_t actime,modtime; };
+__REDIRECT(__LIBC,__NONNULL((1)),int,__LIBCCALL,__utime32,(char const *__file, struct __glc_utimbuf32 const *__file_times),utime,(__file,__file_times))
+__LOCAL __NONNULL((1)) int (__LIBCCALL utime)(char const *__file, struct utimbuf const *__file_times) {
+ struct __glc_utimbuf32 __buf32;
+ if (__file_times) __buf32.actime = (__time32_t)__file_times->actime,
+                   __buf32.modtime = (__time32_t)__file_times->modtime;
+ return __utime32(__file,__file_times ? &__buf32 : 0);
+}
 #else
-    __PE_FUNC_(_utime32);
-#endif
-#else
-    __UFS_FUNCt(utime);
+__LIBC __NONNULL((1)) int (__LIBCCALL utime)(char const *__file, struct utimbuf const *__file_times);
 #endif
 #ifdef __USE_TIME64
-__LIBC __NONNULL((1)) int (__LIBCCALL utime64)(char const *__file, struct utimbuf64 const *__file_times)
-#ifdef __USE_DOSFS
-    __UFS_FUNC(_utime64)
+__LOCAL __NONNULL((1)) int (__LIBCCALL utime64)(char const *__file, struct utimbuf64 const *__file_times) {
+#ifdef __USE_TIME_BITS64
+ return utime(__file,__file_times);
 #else
-    __UFS_FUNC(utime64)
+ struct utimbuf __buf32;
+ if (__file_times) __buf32.actime = (__time32_t)__file_times->actime,
+                   __buf32.modtime = (__time32_t)__file_times->modtime;
+ return utime(__file,__file_times ? &__buf32 : 0);
 #endif
-;
+}
 #endif /* __USE_TIME64 */
+#else /* __USE_DOSFS */
+__REDIRECT_UFS_FUNCt(__LIBC,__NONNULL((1)),int,__LIBCCALL,utime,(char const *__file, struct utimbuf const *__file_times),utime,(__file,__file_times))
+#ifdef __USE_TIME64
+__REDIRECT_UFS(__LIBC,__NONNULL((1)),int,__LIBCCALL,utime64,(char const *__file, struct utimbuf64 const *__file_times),utime64,(__file,__file_times))
+#endif /* __USE_TIME64 */
+#endif /* !__USE_DOSFS */
 
-#ifdef __USE_KOS
-__LIBC int (__LIBCCALL futime)(int __fd, struct utimbuf const *__file_times)
+#if defined(__USE_KOS) && defined(__CRT_DOS)
 #ifdef __USE_TIME_BITS64
-    __ASMNAME("_futime64")
-#else
-    __ASMNAME("_futime32")
-#endif
-;
+__REDIRECT(__LIBC,__PORT_DOSONLY_ALT(utime),int,__LIBCCALL,futime,(int __fd, struct utimbuf const *__file_times),_futime64,(__fd,__file_times))
+#else /* __USE_TIME_BITS64 */
+__REDIRECT(__LIBC,__PORT_DOSONLY_ALT(utime),int,__LIBCCALL,futime,(int __fd, struct utimbuf const *__file_times),_futime32,(__fd,__file_times))
+#endif /* !__USE_TIME_BITS64 */
 #ifdef __USE_TIME64
-__LIBC int (__LIBCCALL futime64)(int __fd, struct utimbuf const *__file_times) __ASMNAME("_futime64");
+__REDIRECT(__LIBC,__PORT_DOSONLY_ALT(utime),int,__LIBCCALL,futime64,(int __fd, struct utimbuf64 const *__file_times),_futime64,(__fd,__file_times))
 #endif /* __USE_TIME64 */
-#endif /* __USE_KOS */
+#endif /* __USE_KOS && __CRT_DOS */
 
 #ifdef __USE_DOS
 #ifndef __wchar_t_defined
@@ -128,54 +158,47 @@ typedef __WCHAR_TYPE__ wchar_t;
 #define __FIXED_CONST
 #endif
 
-__LIBC int (__LIBCCALL _futime32)(int __fd, struct __utimbuf32 __FIXED_CONST *__file_times);
-__LIBC int (__LIBCCALL _futime64)(int __fd, struct __utimbuf64 __FIXED_CONST *__file_times);
+#ifdef __CRT_DOS
+__LOCAL int (__LIBCCALL _utime)(char const *__file, struct _utimbuf __FIXED_CONST *__file_times) { return utime(__file,(struct utimbuf *)__file_times); }
+__LIBC __PORT_DOSONLY_ALT(utime) int (__LIBCCALL _futime32)(int __fd, struct __utimbuf32 __FIXED_CONST *__file_times);
+__LIBC __PORT_DOSONLY_ALT(utime64) int (__LIBCCALL _futime64)(int __fd, struct __utimbuf64 __FIXED_CONST *__file_times);
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wutime32,(wchar_t const *__file, struct __utimbuf32 __FIXED_CONST *__file_times),_wutime32,(__file,__file_times))
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wutime64,(wchar_t const *__file, struct __utimbuf64 __FIXED_CONST *__file_times),_wutime64,(__file,__file_times))
 #ifdef __USE_DOSFS
-__LIBC int (__LIBCCALL _utime32)(char const *__file, struct __utimbuf32 __FIXED_CONST *__file_times) __UFS_FUNC(_utime32);
-__LIBC int (__LIBCCALL _utime64)(char const *__file, struct __utimbuf64 __FIXED_CONST *__file_times) __UFS_FUNC(_utime64);
+__REDIRECT_UFS(__LIBC,,int,__LIBCCALL,_utime32,(char const *__file, struct __utimbuf32 __FIXED_CONST *__file_times),_utime32,(__file,__file_times))
+__REDIRECT_UFS(__LIBC,,int,__LIBCCALL,_utime64,(char const *__file, struct __utimbuf64 __FIXED_CONST *__file_times),_utime64,(__file,__file_times))
 #else /* __USE_DOSFS */
-__LIBC int (__LIBCCALL _utime32)(char const *__file, struct __utimbuf32 __FIXED_CONST *__file_times) __UFS_FUNC_(utime);
-__LIBC int (__LIBCCALL _utime64)(char const *__file, struct __utimbuf64 __FIXED_CONST *__file_times) __UFS_FUNC_(utime64);
+__REDIRECT_UFS_(__LIBC,,int,__LIBCCALL,_utime32,(char const *__file, struct __utimbuf32 __FIXED_CONST *__file_times),utime,(__file,__file_times))
+__REDIRECT_UFS_(__LIBC,,int,__LIBCCALL,_utime64,(char const *__file, struct __utimbuf64 __FIXED_CONST *__file_times),utime64,(__file,__file_times))
 #endif /* !__USE_DOSFS */
-
-__LIBC int (__LIBCCALL _wutime32)(wchar_t const *__file, struct __utimbuf32 __FIXED_CONST *__file_times) __WFS_FUNC(_wutime32);
-__LIBC int (__LIBCCALL _wutime64)(wchar_t const *__file, struct __utimbuf64 __FIXED_CONST *__file_times) __WFS_FUNC(_wutime64);
-
-#ifndef __NO_ASMNAME
-__LIBC int (__LIBCCALL _utime)(char const *__file, struct _utimbuf *__file_times)
-#ifdef __USE_DOSFS
 #ifdef __USE_TIME_BITS64
-    __PE_FUNC_(_utime64);
-#else
-    __PE_FUNC_(_utime32);
-#endif
-#else
-    __UFS_FUNCt_(utime);
-#endif
-__LIBC int (__LIBCCALL _wutime)(wchar_t const *__file, struct _utimbuf *__file_times)
-#ifdef __USE_TIME_BITS64
-    __WFS_FUNC_(utime64);
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wutime,(wchar_t const *__file, struct _utimbuf __FIXED_CONST *__file_times),_wutime64,(__file,__file_times))
+__REDIRECT(__LIBC,__PORT_DOSONLY_ALT(utime),int,__LIBCCALL,_futime,(int __fd, struct _utimbuf __FIXED_CONST *__file_times),_futime64,(__fd,__file_times))
 #else /* __USE_TIME_BITS64 */
-    __WFS_FUNC_(utime32);
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wutime,(wchar_t const *__file, struct _utimbuf __FIXED_CONST *__file_times),_wutime32,(__file,__file_times))
+__REDIRECT(__LIBC,__PORT_DOSONLY_ALT(utime),int,__LIBCCALL,_futime,(int __fd, struct _utimbuf __FIXED_CONST *__file_times),_futime32,(__fd,__file_times))
 #endif /* !__USE_TIME_BITS64 */
-__LIBC int (__LIBCCALL _futime)(int __fd, struct _utimbuf *__file_times);
-#else /* !__NO_ASMNAME */
-#ifdef __USE_TIME_BITS64
-__FORCELOCAL int (__LIBCCALL _utime)(char const *__file, struct _utimbuf *__file_times) { return _utime64(__file,(struct __utimbuf64 *)__file_times); }
-__FORCELOCAL int (__LIBCCALL _wutime)(wchar_t const *__file, struct _utimbuf *__file_times) { return _wutime64(__file,(struct __utimbuf64 *)__file_times); }
-__FORCELOCAL int (__LIBCCALL _futime)(int __fd, struct _utimbuf *__file_times) { return _futime64(__fd,(struct __utimbuf64 *)__file_times); }
-#else /* __USE_TIME_BITS64 */
-__FORCELOCAL int (__LIBCCALL _utime)(char const *__file, struct _utimbuf *__file_times) { return _utime32(__file,(struct __utimbuf32 *)__file_times); }
-__FORCELOCAL int (__LIBCCALL _wutime)(wchar_t const *__file, struct _utimbuf *__file_times) { return _wutime32(__file,(struct __utimbuf32 *)__file_times); }
-__FORCELOCAL int (__LIBCCALL _futime)(int __fd, struct _utimbuf *__file_times) { return _futime32(__fd,(struct __utimbuf32 *)__file_times); }
-#endif /* !__USE_TIME_BITS64 */
-#endif /* __NO_ASMNAME */
+#else /* __CRT_DOS */
+__LOCAL int (__LIBCCALL _utime)(char const *__file, struct _utimbuf __FIXED_CONST *__file_times) { return utime(__file,(struct utimbuf *)__file_times); }
+__REDIRECT(__LIBC,,int,__LIBCCALL,_utime32,(char const *__file, struct __utimbuf32 __FIXED_CONST *__file_times),utime,(__file,__file_times))
+__LOCAL int (__LIBCCALL _utime64)(char const *__file, struct __utimbuf64 __FIXED_CONST *__file_times) {
+ struct __utimbuf32 __buf32;
+ if (__file_times) __buf32.actime = __file_times->actime,
+                   __buf32.modtime = __file_times->modtime;
+ return _utime32(__file,__file_times ? &__buf32 : 0);
+}
+#endif /* !__CRT_DOS */
 
 #undef __FIXED_CONST
 #endif /* __USE_DOS */
 
 #endif /* !__KERNEL__ */
 
-__DECL_END
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("modtime")
+#pragma pop_macro("actime")
+#endif
+
+__SYSDECL_END
 
 #endif /* !_UTIME_H */

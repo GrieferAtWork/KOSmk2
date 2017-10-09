@@ -20,8 +20,13 @@
 #define _FNMATCH_H 1
 
 #include <__stdinc.h>
+#include <features.h>
 
-__DECL_BEGIN
+#ifndef __CRT_GLC
+#error "<fnmatch.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 #undef FNM_PATHNAME
 #undef FNM_NOESCAPE
@@ -45,6 +50,6 @@ __DECL_BEGIN
 __LIBC int (__LIBCCALL fnmatch)(char const *__pattern, char const *__name, int __flags);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_FNMATCH_H */

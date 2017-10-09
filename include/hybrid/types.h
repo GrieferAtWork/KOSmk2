@@ -232,7 +232,7 @@ typedef __id_t id_t;
 
 #ifndef __clock_t_defined
 #define __clock_t_defined 1
-typedef __clock_t clock_t;
+typedef __typedef_clock_t clock_t;
 #endif /* !__clock_t_defined */
 
 #ifndef __clockid_t_defined

@@ -39,7 +39,7 @@
 
 #include <__stdinc.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if __GCC_VERSION(3,3,0)
 #   define NAN    __builtin_nanf("")
@@ -57,6 +57,6 @@ __PRIVATE __ATTR_UNUSED union{ unsigned char __c[4]; float __d; } const __qnan_u
 # define NAN                   (__qnan_union.__d)
 #endif /* !... */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_NAN_H */

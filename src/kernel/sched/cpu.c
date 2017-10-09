@@ -150,7 +150,7 @@ ATTR_FREEDATA struct task inittask = {
 INTDEF void ASMCALL cpu_idle(void);
 
 PRIVATE ATTR_USED void invalid_idle_task(void) {
- __assertion_failedf(NULL,DEBUGINFO_GEN,
+ __afailf(NULL,DEBUGINFO_GEN,
                      "Invalid IDLE task %p != %p",
                      THIS_TASK,&THIS_CPU->c_idle);
 }

@@ -21,7 +21,7 @@
 
 #include "__stdinc.h"
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if 1
 typedef void *__locale_t;
@@ -31,10 +31,10 @@ typedef void *__locale_t;
 #ifndef __KERNEL__
 typedef __locale_t locale_t;
 #ifdef __USE_DOS
-typedef __locale_t _locale_t;
+typedef __locale_t __locale_t;
 #endif /* __USE_DOS */
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_XLOCALE_H */

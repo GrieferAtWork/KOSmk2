@@ -506,28 +506,28 @@ mall_panic(struct dsetup *__restrict setup,
  va_list args;
  setup->s_tbskip += 3;
  va_start(args,format);
- __assertion_vprintf(format,args);
- __assertion_printf("\n");
+ debug_vprintf(format,args);
+ debug_printf("\n");
  va_end(args);
- __assertion_printf("%s(%d) : %s : See reference to caller location\n",
+ debug_printf("%s(%d) : %s : See reference to caller location\n",
                     setup->s_info.i_file,setup->s_info.i_line,
                     setup->s_info.i_func);
- __assertion_tbprint(setup->s_tbskip);
+ debug_tbprint(setup->s_tbskip);
  if (info_header) {
   void **iter,**end; size_t pos;
-  __assertion_printf("%s(%d) : %s : See reference to associated mall pointer\n",
+  debug_printf("%s(%d) : %s : See reference to associated mall pointer\n",
                      info_header->mh_info.i_file,
                      info_header->mh_info.i_line,
                      info_header->mh_info.i_func);
   end = (iter = info_header->mh_tail->mt_tb)+info_header->mh_tbsize;
   pos = 0;
   while (iter != end) {
-   __assertion_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
+   debug_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
                      (uintptr_t)*iter-1,pos,*iter);
    ++iter,++pos;
   }
  }
- __assertion_failed("MALL PANIC",__DEBUGINFO_NUL);
+ __afail("MALL PANIC",__DEBUGINFO_NUL);
 }
 MALLDECL struct mallhead *LIBCCALL
 mall_loadptr(struct dsetup *__restrict setup, void *p) {
@@ -990,14 +990,14 @@ mall_printleak(struct mallhead const *__restrict head,
                char const *reason) {
  void **iter,**end;
  size_t pos = 0;
- __assertion_printf("##################################################\n"
+ debug_printf("##################################################\n"
                     "%s(%d) : %s : %s %Iu bytes at %p\n",
                     head->mh_info.i_file,head->mh_info.i_line,
                     head->mh_info.i_func,reason,mall_usablesize(head),
                     mall_head2user(head));
  end = (iter = head->mh_tail->mt_tb)+head->mh_tbsize;
  while (iter != end) {
-  __assertion_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
+  debug_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
                     (uintptr_t)*iter-1,pos,*iter);
   ++iter,++pos;
  }

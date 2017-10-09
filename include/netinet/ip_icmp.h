@@ -41,7 +41,7 @@
 #include <__stdinc.h>
 #include <sys/types.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 struct icmphdr {
  u_int8_t  type; /* message type */
@@ -104,7 +104,7 @@ struct icmphdr {
 #define ICMP_EXC_TTL         0  /*< TTL count exceeded. */
 #define ICMP_EXC_FRAGTIME    1  /*< Fragment Reass time exceeded. */
 
-__DECL_END
+__SYSDECL_END
 
 #ifdef __USE_MISC
 /*
@@ -141,7 +141,7 @@ __DECL_END
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Internal of an ICMP Router Advertisement */
 struct icmp_ra_addr {
@@ -277,7 +277,7 @@ struct icmp {
      (type) == ICMP_IREQ || (type) == ICMP_IREQREPLY || \
      (type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* __USE_MISC */
 

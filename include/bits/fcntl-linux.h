@@ -24,7 +24,7 @@
 #include <bits/types.h>
 #include <features.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #ifdef __USE_GNU
 //#include <bits/uio.h>
@@ -291,6 +291,6 @@ __LIBC int (__LIBCCALL name_to_handle_at)(int __dfd, char const *__name, struct 
 __LIBC int (__LIBCCALL open_by_handle_at)(int __mountdirfd, struct file_handle *__handle, int __flags);
 #endif /* __USE_GNU */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_FCNTL_LINUX_H */

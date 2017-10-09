@@ -98,7 +98,7 @@ syscall_t xsyscall_c_table[(__NR_xsyscall_max-__NR_xsyscall_min)+1] = {
 
 #if defined(CONFIG_DEBUG) && 1
 PRIVATE ATTR_NORETURN ATTR_USED void FCALL preemption_not_enabled_leave(void)
-{ __assertion_failed("Preemption not enabled on SYSCALL_LEAVE",DEBUGINFO_NUL); }
+{ __afail("Preemption not enabled on SYSCALL_LEAVE",DEBUGINFO_NUL); }
 
 #if 0
 PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
@@ -205,7 +205,7 @@ PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
 #ifdef CONFIG_SYSCALL_CHECK_SEGMENTS
 PRIVATE ATTR_NORETURN ATTR_USED ATTR_COLDTEXT void KCALL
 sysreturn_bad_segment(u32 current, u32 correct, char const *name) {
- __assertion_failedf("Bad segment upon system-call return",DEBUGINFO_NUL,
+ __afailf("Bad segment upon system-call return",DEBUGINFO_NUL,
                      "SEGMENT: %q\n"
                      "CURRENT: %.4I32X\n"
                      "CORRECT: %.4I32X\n",

@@ -77,9 +77,13 @@ INTDEF u32 LIBCCALL libc_statusfp(void);
 INTDEF void LIBCCALL libc_fpreset(void);
 INTDEF u32 LIBCCALL libc_control87(u32 newval, u32 mask);
 INTDEF int *LIBCCALL libc_fpecode(void);
-INTERN u16 LIBCCALL libc_bswap16(u16 x);
-INTERN u32 LIBCCALL libc_bswap32(u32 x);
-INTERN u64 LIBCCALL libc_bswap64(u64 x);
+INTDEF u16 LIBCCALL libc_bswap16(u16 x);
+INTDEF u32 LIBCCALL libc_bswap32(u32 x);
+INTDEF u64 LIBCCALL libc_bswap64(u64 x);
+INTDEF u32 LIBCCALL libc_rol32(u32 val, int shift);
+INTDEF u32 LIBCCALL libc_ror32(u32 val, int shift);
+INTDEF u64 LIBCCALL libc_rol64(u64 val, int shift);
+INTDEF u64 LIBCCALL libc_ror64(u64 val, int shift);
 
 INTDEF ATTR_DOSTEXT void LIBCCALL libc_crt_debugger_hook(int code);
 #if defined(__i386__) || defined(__x86_64__) || defined(__ia64__)

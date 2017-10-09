@@ -21,7 +21,7 @@
 
 #include <__stdinc.h>
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 typedef unsigned short int sa_family_t;
 
@@ -29,6 +29,6 @@ typedef unsigned short int sa_family_t;
 #define __SOCKADDR_COMMON_SIZE      (sizeof(sa_family_t))
 #define _SS_SIZE                     128
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* !_BITS_SOCKADDR_H */

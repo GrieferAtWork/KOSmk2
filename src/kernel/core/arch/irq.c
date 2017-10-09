@@ -29,6 +29,7 @@
 #include <hybrid/arch/eflags.h>
 #include <hybrid/asm.h>
 #include <hybrid/atomic.h>
+#include <hybrid/debug.h>
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>
 #include <hybrid/traceback.h>
@@ -359,17 +360,17 @@ print_segment_register(char const *__restrict name, u16 value) {
  if (value&4) __asm__ __volatile__("sldt %0" : : "m" (idt) : "memory");
  else         __asm__ __volatile__("sgdt %0" : : "m" (idt) : "memory");
  entry_id = (value&~7) >> 3;
- __assertion_printf("%s %.4X (%s:%.2d RPL#%d - ",
+ debug_printf("%s %.4X (%s:%.2d RPL#%d - ",
                     name,value,(value&4) ? "LDT" : "GDT",
                     entry_id,value&3);
  entry_count = (idt.ip_limit+1)/8;
  if (entry_id >= entry_count) {
-  __assertion_printf("INVALID INDEX >= %Iu)\n",entry_count);
+  debug_printf("INVALID INDEX >= %Iu)\n",entry_count);
  } else {
   struct segment seg = idt.ip_gdt[entry_id];
   size_t seg_size = SEGMENT_GTSIZE(seg);
   if (seg.granularity) seg_size <<= 12,seg_size |= 0xfff;
-  __assertion_printf("%p, %p DPL#%d %c%c%c%c%c%c)\n",
+  debug_printf("%p, %p DPL#%d %c%c%c%c%c%c)\n",
                      SEGMENT_GTBASE(seg),seg_size,
                      seg.privl,
                      seg.present  ? 'P' : '-',
@@ -402,7 +403,7 @@ irq_default(int intno, struct cpustate_e *__restrict state) {
   * >> This is used to implement safe tracebacks, as well as copy_(to|from|in)_user & friends! */
  if ((state->iret.cs&3) == 0) {
 #if 0
-  __assertion_tbprintl((void *)state->iret.eip,(void *)state->gp.ebp,0);
+  debug_tbprintl((void *)state->iret.eip,(void *)state->gp.ebp,0);
 #endif
   intchain_trigger(&this_task->t_ic,(irq_t)intno,
                    &state->com,state->iret.eflags);
@@ -493,11 +494,11 @@ kill_task:
         (intno-IRQ_PIC1_BASE) % 8);
 #if 0
 #if 1
-  __assertion_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
-  __assertion_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
+  debug_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
+  debug_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
 #else
-  __assertion_tbprintl((void *)state->iret.eip,NULL,0);
-  __assertion_tbprint2((void *)state->gp.ebp,0);
+  debug_tbprintl((void *)state->iret.eip,NULL,0);
+  debug_tbprint2((void *)state->gp.ebp,0);
 #endif
 #endif
   IRQ_PIC_EOI(intno);
@@ -507,34 +508,34 @@ kill_task:
  if (in_ireq_default >= IRQ_RECURSION_MIN) {
   if (in_ireq_default == IRQ_RECURSION_MIN) {
    ++in_ireq_default;
-   __assertion_printf("\n\nPANIC!!! IRQ HANDLER RECURSION!\n");
-   __assertion_printf("EIP = %p\n",state->iret.eip);
+   debug_printf("\n\nPANIC!!! IRQ HANDLER RECURSION!\n");
+   debug_printf("EIP = %p\n",state->iret.eip);
   }
   goto end;
  }
  ++in_ireq_default;
- __assertion_printf("\n\n<RING #%d(%s) FAULT> Unhandled %s %#.2I8x (%I8d)\n",
+ debug_printf("\n\n<RING #%d(%s) FAULT> Unhandled %s %#.2I8x (%I8d)\n",
                     state->iret.cs & 3,is_user ? "USER" : "KERNEL",
                     IRQ_ISEXC(intno) ? "Exception" : "Interrupt",
                     intno,intno);
  if (IRQ_ISEXC(intno)) {
-  __assertion_printf("<%s> - %s - ECODE %#I32x (%I32d)",
+  debug_printf("<%s> - %s - ECODE %#I32x (%I32d)",
                      irq_excname[intno].mn,
                      irq_excname[intno].descr,
                      state->iret.exc_code,
                      state->iret.exc_code);
  }
- __assertion_printf("\nCPU #%d%s (%p; GPID %d)\n",this_cpu->c_id,
+ debug_printf("\nCPU #%d%s (%p; GPID %d)\n",this_cpu->c_id,
                     this_task == &inittask ? " (BOOT-TASK)" :
                     this_task == &this_cpu->c_idle ? " (IDLE-TASK)" : "",
                     this_task,this_task->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
- __assertion_printf("EAX %p  ECX %p  EDX %p  EBX %p  EIP %p\n",
+ debug_printf("EAX %p  ECX %p  EDX %p  EBX %p  EIP %p\n",
                     state->gp.eax,state->gp.ecx,
                     state->gp.edx,state->gp.ebx,
                     state->iret.eip);
  esp = is_user ? state->iret.useresp : state->gp.esp+(offsetafter(struct cpustate_e,iret.eflags)-
                                                       offsetafter(struct cpustate_e,gp.eax));
- __assertion_printf("ESP %p  EBP %p  ESI %p  EDI %p  ---\n",
+ debug_printf("ESP %p  EBP %p  ESI %p  EDI %p  ---\n",
                     esp,state->gp.ebp,state->gp.esi,state->gp.edi);
  iter = buffer,temp = state->iret.eflags;
  if (temp&EFLAGS_CF) iter = stpcpy(iter,"+CF");
@@ -554,7 +555,7 @@ kill_task:
  if (temp&EFLAGS_VIP) iter = stpcpy(iter,"+VIP");
  if (temp&EFLAGS_ID) iter = stpcpy(iter,"+ID");
  *iter = '\0';
- __assertion_printf("EFLAGS %p (IOPL(%d)%s)\n",temp,
+ debug_printf("EFLAGS %p (IOPL(%d)%s)\n",temp,
                     EFLAGS_GTIOPL(temp),buffer);
 #if IRQPANIC_DISP_SEGMENTS
  {
@@ -569,10 +570,10 @@ kill_task:
   print_segment_register("CS",state->iret.cs);
   print_segment_register("SS",seg_ss);
 #else
-  __assertion_printf("DS %.4X  ES %.4X  FS %.4X  GS %.4X\n",
+  debug_printf("DS %.4X  ES %.4X  FS %.4X  GS %.4X\n",
                     (int)state->sg.ds,(int)state->sg.es,
                     (int)state->sg.fs,(int)state->sg.gs);
-  __assertion_printf("CS %.4X  SS %.4X  --       --\n",
+  debug_printf("CS %.4X  SS %.4X  --       --\n",
                     (int)state->iret.cs,(int)seg_ss);
 #endif
  }
@@ -594,13 +595,13 @@ kill_task:
   uintptr_t cr3 = GET_REG("cr3");
   if (iter != buffer) {
    *iter = '\0';
-   __assertion_printf("CR0 %p (%s)\n",temp,buffer+1);
-   __assertion_printf("CR2 %p  CR3 %p",this_task->t_lastcr2,cr3);
+   debug_printf("CR0 %p (%s)\n",temp,buffer+1);
+   debug_printf("CR2 %p  CR3 %p",this_task->t_lastcr2,cr3);
   } else {
-   __assertion_printf("CR0 %p  CR2 %p  CR3 %p",
+   debug_printf("CR0 %p  CR2 %p  CR3 %p",
                       temp,this_task->t_lastcr2,cr3);
   }
-  __assertion_printf("%s\n",cr3 == (uintptr_t)&pdir_kernel ? " (PDIR_KERNEL)" : "");
+  debug_printf("%s\n",cr3 == (uintptr_t)&pdir_kernel ? " (PDIR_KERNEL)" : "");
  }
  iter = buffer,temp = GET_REG("cr4");
  if (temp&CR4_VME)        iter = stpcpy(iter,"+VME");
@@ -622,24 +623,24 @@ kill_task:
  if (temp&CR4_SMAP)       iter = stpcpy(iter,"+SMAP");
  if (iter != buffer) {
   *iter = '\0';
-  __assertion_printf("CR4 %p (%s)\n",temp,buffer+1);
+  debug_printf("CR4 %p (%s)\n",temp,buffer+1);
  } else {
-  __assertion_printf("CR4 %p\n",temp);
+  debug_printf("CR4 %p\n",temp);
  }
 #endif /* IRQPANIC_DISP_CRX */
 
 #if IRQPANIC_DISP_DRX
- __assertion_printf("DR0 %p  DR1 %p DR2 %p  DR3 %p\n",
+ debug_printf("DR0 %p  DR1 %p DR2 %p  DR3 %p\n",
                     GET_REG("dr0"),GET_REG("dr1"),
                     GET_REG("dr2"),GET_REG("dr3"));
  iter = buffer,temp = GET_REG("dr7");
- __assertion_printf("DR6 %p  DR7 %p",GET_REG("dr6"),temp);
+ debug_printf("DR6 %p  DR7 %p",GET_REG("dr6"),temp);
  if (!(temp&(DR7_L0|DR7_G0|DR7_L1|DR7_G1|DR7_L2|DR7_G2|DR7_L3|DR7_G3))) {
-  __assertion_printf(" ---           ---\n");
+  debug_printf(" ---           ---\n");
  } else {
   bool first = true;
-  __assertion_printf("(");
-#define BRK(n,i,shift) __assertion_printf("%s%s(%d,%d)",first ? (first = false,"") : "+",#n #i,(temp&DR7_C##i) >> shift,(temp&DR7_S##i) >> (shift+2))
+  debug_printf("(");
+#define BRK(n,i,shift) debug_printf("%s%s(%d,%d)",first ? (first = false,"") : "+",#n #i,(temp&DR7_C##i) >> shift,(temp&DR7_S##i) >> (shift+2))
   if (temp&DR7_L0) BRK(L,0,16);
   if (temp&DR7_G0) BRK(G,0,16);
   if (temp&DR7_L1) BRK(L,1,20);
@@ -649,12 +650,12 @@ kill_task:
   if (temp&DR7_L3) BRK(L,3,28);
   if (temp&DR7_G3) BRK(G,3,28);
 #undef BRK
-  __assertion_printf(")\n");
+  debug_printf(")\n");
  }
 #endif /* IRQPANIC_DISP_DRX */
 
 #if IRQPANIC_DISP_TRACEBACK
- __assertion_tbprintl((void *)state->iret.eip,(void *)state->gp.ebp,0);
+ debug_tbprintl((void *)state->iret.eip,(void *)state->gp.ebp,0);
 
  /* TODO: Local exception handling? */
  if (((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[1]
@@ -666,9 +667,9 @@ kill_task:
   || ((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[6]
   || ((byte_t *)&state->gp.ebp)[0] != ((byte_t *)&state->gp.ebp)[7]
 #endif
-     ) __assertion_tbprint2((void *)state->gp.ebp,0);
+     ) debug_tbprint2((void *)state->gp.ebp,0);
 #if 0
- __assertion_tbprint(1);
+ debug_tbprint(1);
 #endif
 #endif /* IRQPANIC_DISP_TRACEBACK */
 
@@ -678,7 +679,7 @@ kill_task:
    ppage_t stack_begin,stack_end;
    if (is_user) {
     if (!this_task->t_ustack) {
-     __assertion_printf("STACK: No stack allocated\n");
+     debug_printf("STACK: No stack allocated\n");
      goto done_stack;
     }
     stack_begin = this_task->t_ustack->s_begin;
@@ -692,21 +693,21 @@ kill_task:
 #define MAX_PRINT 128
     uintptr_t max_stack = (uintptr_t)stack_end-esp;
     if (max_stack > MAX_PRINT) max_stack = MAX_PRINT;
-    __assertion_printf("STACK: %p...%p (%Iu bytes)\n"
+    debug_printf("STACK: %p...%p (%Iu bytes)\n"
                        "%.?[hex]\n",esp,esp+max_stack-1,
                        max_stack,max_stack,esp);
    } else if (esp < (uintptr_t)stack_begin) {
-    __assertion_printf("STACK: Overflow by %Iu bytes (%p < %p...%p)\n",
+    debug_printf("STACK: Overflow by %Iu bytes (%p < %p...%p)\n",
                        (uintptr_t)stack_begin-esp,esp,
                        (uintptr_t)stack_begin,
                        (uintptr_t)stack_end-1);
    } else if (esp == (uintptr_t)stack_end) {
-    __assertion_printf("STACK: EMPTY (%p == %p; in %p...%p)\n",
+    debug_printf("STACK: EMPTY (%p == %p; in %p...%p)\n",
                        esp,(uintptr_t)stack_end,
                       (uintptr_t)stack_begin,(uintptr_t)stack_end-1);
    } else {
     assert(esp > (uintptr_t)stack_end);
-    __assertion_printf("STACK: Underflow by %Iu bytes (%p > %p...%p)\n",
+    debug_printf("STACK: Underflow by %Iu bytes (%p > %p...%p)\n",
                        esp-(uintptr_t)stack_end,
                        esp,(uintptr_t)stack_begin,(uintptr_t)stack_end-1);
    }
@@ -714,7 +715,7 @@ kill_task:
 done_stack:
 #endif /* IRQPANIC_DISP_STACK */
 #if IRQPANIC_DISP_TSS
- __assertion_printf("SS0 %.4I16x ESP0 %p\n"
+ debug_printf("SS0 %.4I16x ESP0 %p\n"
                     "SS1 %.4I16x ESP1 %p\n"
                     "SS2 %.4I16x ESP2 %p\n",
                     this_cpu->c_arch.ac_tss.ss0,this_cpu->c_arch.ac_tss.esp0,
@@ -730,28 +731,28 @@ done_stack:
     if (dt.ip_limit) {
      struct segment *iter,*end,seg;
      char const *name = i ? "gdt" : "ldt";
-     __assertion_printf("%s[%I16u] = {\n",name,dt.ip_limit/sizeof(struct segment));
+     debug_printf("%s[%I16u] = {\n",name,dt.ip_limit/sizeof(struct segment));
      end = (struct segment *)((uintptr_t)(iter = dt.ip_gdt)+dt.ip_limit);
      for (; iter < end; ++iter) {
       static char const bool_str[][6] = { "false", "true" };
       seg = *iter;
-      __assertion_printf("    [%I16u] = {\n",iter-dt.ip_gdt);
-      __assertion_printf("        .base        = %p,\n",SEGMENT_GTBASE(seg));
-      __assertion_printf("        .size        = %p,\n",SEGMENT_GTSIZE(seg));
-      __assertion_printf("        .accessed    = %s,\n",bool_str[seg.accessed]);
-      __assertion_printf("        .rw          = %s,\n",bool_str[seg.rw]);
-      __assertion_printf("        .dc          = %s,\n",bool_str[seg.dc]);
-      __assertion_printf("        .execute     = %s,\n",bool_str[seg.execute]);
-      __assertion_printf("        .system      = %s,\n",bool_str[seg.system]);
-      __assertion_printf("        .privl       = %d,\n",seg.privl);
-      __assertion_printf("        .present     = %s,\n",bool_str[seg.present]);
-      __assertion_printf("        .available   = %s,\n",bool_str[seg.available]);
-      __assertion_printf("        .longmode    = %s,\n",bool_str[seg.longmode]);
-      __assertion_printf("        .dbbit       = %s,\n",bool_str[seg.dbbit]);
-      __assertion_printf("        .granularity = %s\n",bool_str[seg.granularity]);
-      __assertion_printf("    }\n");
+      debug_printf("    [%I16u] = {\n",iter-dt.ip_gdt);
+      debug_printf("        .base        = %p,\n",SEGMENT_GTBASE(seg));
+      debug_printf("        .size        = %p,\n",SEGMENT_GTSIZE(seg));
+      debug_printf("        .accessed    = %s,\n",bool_str[seg.accessed]);
+      debug_printf("        .rw          = %s,\n",bool_str[seg.rw]);
+      debug_printf("        .dc          = %s,\n",bool_str[seg.dc]);
+      debug_printf("        .execute     = %s,\n",bool_str[seg.execute]);
+      debug_printf("        .system      = %s,\n",bool_str[seg.system]);
+      debug_printf("        .privl       = %d,\n",seg.privl);
+      debug_printf("        .present     = %s,\n",bool_str[seg.present]);
+      debug_printf("        .available   = %s,\n",bool_str[seg.available]);
+      debug_printf("        .longmode    = %s,\n",bool_str[seg.longmode]);
+      debug_printf("        .dbbit       = %s,\n",bool_str[seg.dbbit]);
+      debug_printf("        .granularity = %s\n",bool_str[seg.granularity]);
+      debug_printf("    }\n");
      }
-     __assertion_printf("}\n");
+     debug_printf("}\n");
     }
    }
  }
@@ -762,10 +763,10 @@ done_stack:
   struct mman *old_mm;
   TASK_PDIR_KERNEL_BEGIN(old_mm);
 #if IRQPANIC_DISP_MMAN
-  mman_print_unlocked(old_mm,&__assertion_print,NULL);
+  mman_print_unlocked(old_mm,&debug_print,NULL);
 #endif
 #if IRQPANIC_DISP_PDIR
-  pdir_print(&old_mm->m_pdir,&__assertion_print,NULL);
+  pdir_print(&old_mm->m_pdir,&debug_print,NULL);
 #endif
   TASK_PDIR_KERNEL_END(old_mm);
   mman_endread(this_task->t_mman);

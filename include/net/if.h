@@ -43,7 +43,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 /* Length of interface name. */
 #define IF_NAMESIZE    16
@@ -193,6 +193,6 @@ __LIBC struct if_nameindex *(__LIBCCALL if_nameindex)(void);
 __LIBC void (__LIBCCALL if_freenameindex)(struct if_nameindex *__ptr);
 #endif /* !__KERNEL__ */
 
-__DECL_END
+__SYSDECL_END
 
 #endif /* net/if.h */
