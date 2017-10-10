@@ -281,16 +281,6 @@ LOCAL void FCALL pci_write(pci_addr_t base, pci_reg_t reg, u32 value) { assert(!
 #define    PCI_CDEV40_VENDORSHIFT 0
 #define PCI_CDEV_LEGACY_BASEADDR16 0x44 /*< 16-bit PC Card legacy mode base address. */
 
-/* PCI Helper functions. */
-
-/* Enable/Disable a PCI device at a given address by connecting/disconnecting it.
- * NOTE: No-op if the device was already enabled/disabled. */
-FUNDEF errno_t KCALL pci_enable(pci_addr_t baseaddr);
-#define pci_disable(baseaddr) \
-   pci_write(baseaddr,PCI_DEV4,PCI_DEV4_CMD_DISCONNECT << PCI_DEV4_CMDSHIFT)
-
-
-
 /* Stuff exported by the PCI database. */
 typedef struct _PCI_VENTABLE {
  u16            VenId;
@@ -341,16 +331,37 @@ FUNDEF PPCI_DEVTABLE KCALL pci_db_getdevice(u16 vendor_id, u16 device_id);
 /* Return the class descriptor obtained through 'PCI_DEV8' */
 FUNDEF PPCI_CLASSCODETABLE KCALL pci_db_getclass(u8 base_class, u8 sub_class, u8 prog_if);
 
+struct pci_resource {
+ PHYS uintptr_t pr_begin; /*< Base address of the resource (either in I/O, or in memory) */
+ size_t         pr_size;  /*< Resource size (in bytes). */
+ size_t         pr_align; /*< Resource alignment (in bytes). */
+#define PCI_RESOURCE_MEM   0x0001 /*< Memory resource. */
+#define PCI_RESOURCE_MEM16 0x0002 /*< Needs a 16-bit memory address. */
+#define PCI_RESOURCE_MEM32 0x0000 /*< Needs a 32-bit memory address. */
+#define PCI_RESOURCE_MEM64 0x0004 /*< Needs a 64-bit memory address. */
+#define PCI_RESOURCE_IO    0x8000 /*< I/O resource. */
+ uintptr_t      pr_flags; /*< Resource flags. */
+};
+
+/* PCI Resource IDs. */
+#define PD_RESOURCE_BAR(i) i
+#define PD_RESOURCE_BAR0   0
+/*      PD_RESOURCE_BAR1-4 1-4 */
+#define PD_RESOURCE_BAR5   5
+#define PD_RESOURCE_EXPROM 6
+#define PD_RESOURCE_COUNT  7
 
 
 /* Kernel-level descriptor for PCI devices. */
 struct pci_device {
  ATOMIC_DATA ref_t             pd_refcnt;   /*< Reference counter. */
- LIST_NODE(struct pci_device)  pd_link;     /*< [0..1][lock(pci_lock)][owned] Pointer to the next existing device. */
+ REF LIST_NODE(struct pci_device)
+                               pd_link;     /*< [0..1][lock(pci_lock)] Pointer to the next existing device. */
  pci_addr_t                    pd_addr;     /*< [const] The base address of the PCI device. */
  PPCI_VENTABLE                 pd_vendor;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_vendorid'. */
  PPCI_DEVTABLE                 pd_device;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_vendorid' + 'pd_deviceid'. */
  PPCI_CLASSCODETABLE           pd_class;    /*< [0..1][lock(pci_lock)] Database entry for 'pd_classid' + 'pd_subclassid' + 'pd_progif'. */
+ struct pci_resource           pd_resources[PD_RESOURCE_COUNT]; /*< [const] Resources. */
 union PACKED { struct PACKED {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
  u16                           pd_vendorid; /*< Vendor ID. */
@@ -373,6 +384,19 @@ union PACKED { struct PACKED {
  u8                            pd_revid;      /*< Revision ID. */
 #endif
 }; u32                         pd_dev8; };    /*< Value of the PCI register 'PCI_DEV8' */
+union PACKED { struct PACKED {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+ u8                            pd_pad0;   /*< ... */
+ u8                            pd_pad1;   /*< ... */
+ u8                            pd_header; /*< PCI_DEVC_HEADERMASK */
+ u8                            pd_pad2;   /*< ... */
+#else
+ u8                            pd_pad0;   /*< ... */
+ u8                            pd_header; /*< PCI_DEVC_HEADERMASK */
+ u8                            pd_pad1;   /*< ... */
+ u8                            pd_pad2;   /*< ... */
+#endif
+}; u32                         pd_devc; };    /*< Value of the PCI register 'PCI_DEVC' */
 };
 DATDEF SLIST_HEAD(struct pci_device) pci_list; /*< [0..1][owned] Globally linked list of PCI devices. */
 DATDEF atomic_rwlock_t               pci_lock; /*< Lock for 'pci_list'. */
@@ -407,6 +431,20 @@ FUNDEF struct pci_device *KCALL pci_getdevice_at_unlocked(pci_addr_t addr);
 #define PCI_DEVICE_PRESENT(self)         (!LIST_ISUNBOUND(self,pd_link))
 #define PCI_DEVICE_INCREF(self)    (void)(ATOMIC_FETCHINC((self)->pd_refcnt))
 #define PCI_DEVICE_DECREF(self)    (void)(ATOMIC_DECFETCH((self)->pd_refcnt) || (free(self),0))
+
+
+/* PCI Helper functions. */
+
+/* Enable/Disable a PCI device at a given address by connecting/disconnecting it.
+ * NOTE: No-op if the device was already enabled/disabled. */
+FUNDEF errno_t KCALL pci_enable(struct pci_device *__restrict dev);
+#define pci_disable(dev) pci_write((dev)->pd_addr,PCI_DEV4,PCI_DEV4_CMD_DISCONNECT << PCI_DEV4_CMDSHIFT)
+#define pci_iobase(dev) pci_write((dev)->pd_addr,PCI_DEV4,PCI_DEV4_CMD_DISCONNECT << PCI_DEV4_CMDSHIFT)
+
+/* Find and return the first I/O or memory resource, or return NULL if no such resource exists. */
+FUNDEF struct pci_resource *KCALL pci_find_iobar(struct pci_device *__restrict dev);
+FUNDEF struct pci_resource *KCALL pci_find_membar(struct pci_device *__restrict dev);
+
 
 DECL_END
 

@@ -47,6 +47,7 @@
     <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp.c" />
     <ClCompile Include="..\..\src\kernel\core\boot.c" />
+    <ClCompile Include="..\..\src\kernel\core\iomgr.c" />
     <ClCompile Include="..\..\src\kernel\core\main.c" />
     <ClCompile Include="..\..\src\kernel\core\paging.c" />
     <ClCompile Include="..\..\src\kernel\core\stack.c" />
@@ -154,6 +155,7 @@
     <ClInclude Include="..\..\src\include\kernel\boot.h" />
     <ClInclude Include="..\..\src\include\kernel\exec.h" />
     <ClInclude Include="..\..\src\include\kernel\export.h" />
+    <ClInclude Include="..\..\src\include\kernel\iomgr.h" />
     <ClInclude Include="..\..\src\include\kernel\irq.h" />
     <ClInclude Include="..\..\src\include\kernel\malloc.h" />
     <ClInclude Include="..\..\src\include\kernel\memory.h" />

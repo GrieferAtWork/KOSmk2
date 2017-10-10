@@ -254,6 +254,14 @@ INTDEF INITCALL void KCALL mem_relocate_info(void);
  * @return: PAGE_ERROR: Failed to allocate a continuous memory block of sufficient size.
  *                      In addition to this, swapping memory failed, too. */
 FUNDEF SAFE KPD ppage_t KCALL page_malloc(size_t n_bytes, pgattr_t attr, mzone_t zone);
+/* Same as 'page_malloc', but ensure the given minimum physical alignment.
+ * NOTE: 'alignment' will be ceil-aligned to PAGESIZE before being interpreted.
+ * NOTE: When 'alignment <= PAGESIZE', 'PAGESIZE' will be used instead
+ *       and the function will behave equivalent to 'page_malloc()'.
+ * @return: *:          Address to a block of dynamic memory of at least 'n_bytes' bytes, aligned by 'alignment'.
+ * @return: PAGE_ERROR: Failed to allocate a continuous memory block of sufficient size.
+ *                      In addition to this, swapping memory failed, too. */
+FUNDEF SAFE KPD ppage_t KCALL page_memalign(size_t alignment, size_t n_bytes, pgattr_t attr, mzone_t zone);
 
 /* Similar to 'page_malloc', but only allocate dynamic
  * memory at the given address 'start', returning 'start' upon success,
@@ -390,7 +398,7 @@ LOCAL SAFE KPD void KCALL page_free_scatter(struct mscatter *__restrict scatter,
 LOCAL SAFE void KCALL page_free_scatter_list(struct mscatter *__restrict scatter);
 
 
-FUNDEF SAFE KPD void KCALL page_free_(ppage_t start, size_t n_bytes, pgattr_t attr);
+FUNDEF SAFE KPD void KCALL page_ffree(ppage_t start, size_t n_bytes, pgattr_t attr);
 
 #ifdef __INTELLISENSE__
 /* Free a given memory range previous allocated with 'page_(m|c)alloc{at}'.
@@ -404,8 +412,8 @@ FUNDEF SAFE KPD void KCALL page_free(ppage_t start, size_t n_bytes);
  *       If this cannot be guarantied, 'page_free' should be called instead. */
 FUNDEF SAFE KPD void KCALL page_cfree(ppage_t start, size_t n_bytes);
 #else
-#define page_free(start,n_bytes)  page_free_(start,n_bytes,PAGEATTR_NONE)
-#define page_cfree(start,n_bytes) page_free_(start,n_bytes,PAGEATTR_ZERO)
+#define page_free(start,n_bytes)  page_ffree(start,n_bytes,PAGEATTR_NONE)
+#define page_cfree(start,n_bytes) page_ffree(start,n_bytes,PAGEATTR_ZERO)
 #endif
 
 
@@ -584,7 +592,7 @@ page_free_scatter(struct mscatter *__restrict self, pgattr_t attr) {
  struct mscatter entry = *self;
  CHECK_HOST_DOBJ(self);
  for (;;) {
-  page_free_(entry.m_start,entry.m_size,attr);
+  page_ffree(entry.m_start,entry.m_size,attr);
   if ((self = entry.m_next) == NULL) break;
   entry = *self;
   kffree(self,GFP_NOFREQ);

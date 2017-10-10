@@ -429,6 +429,9 @@
     <ClCompile Include="..\..\src\modules\pci\pci.c">
       <Filter>modules\pci</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\iomgr.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -685,6 +688,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\modules\pci.h">
       <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\iomgr.h">
+      <Filter>include\kernel</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -121,6 +121,10 @@ do{ __typeof__(*(list)) *_iter = (list),*_next;\
       ? (void)((elem)->key.le_next->key.le_pself = &(elem)->key.le_next) \
       : (void)0)
 
+
+#define ARRAY_FOREACH(elem,arr) \
+ for ((elem) = (arr); (elem) != COMPILER_ENDOF(arr); ++(elem))
+
 DECL_END
 
 #endif /* !__GUARD_HYBRID_LIST_LIST_H */

@@ -16,42 +16,54 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_MODULES_NET_NE2000_C
-#define GUARD_MODULES_NET_NE2000_C 1
-#define _KOS_SOURCE 2
+#ifndef GUARD_KERNEL_CORE_IOMGR_C
+#define GUARD_KERNEL_CORE_IOMGR_C 1
 
 #include <hybrid/compiler.h>
-#include <kernel/export.h>
-#include <dev/net.h>
+#include <hybrid/types.h>
+#include <hybrid/list/atree.h>
+#include <hybrid/list/list.h>
+#include <hybrid/sync/atomic-rwlock.h>
 #include <syslog.h>
-#include <modules/pci.h>
+#include <errno.h>
+#include <kernel/iomgr.h>
+#include <linker/module.h>
 
 DECL_BEGIN
 
-PRIVATE void MODULE_INIT KCALL net_init(void) {
- struct pci_device *dev;
- struct pci_resource *io;
- struct pci_resource *mem;
- PCI_READ();
- /* Search for network cards. */
- PCI_FOREACH_CLASS(dev,PCI_DEV8_CLASS_NETWORK,
-                   PCI_DEV8_CLASS_NOCLASS) {
-  /* Try to enable the device. */
-  if (E_ISERR(pci_enable(dev))) continue;
-  /* Lookup the proper resources. */
-  if ((io = pci_find_iobar(dev)) == NULL) continue;
-  if ((mem = pci_find_membar(dev)) == NULL) continue;
+PUBLIC struct iomgr io_mgr = {
+};
 
-  syslog(LOG_DEBUG,"[NE2000] Found network card at %p\n",dev->pd_addr);
-  syslog(LOG_DEBUG,"io   = %p...%p\n",io->pr_begin,io->pr_begin+io->pr_size-1);
-  syslog(LOG_DEBUG,"mem  = %p...%p\n",mem->pr_begin,mem->pr_begin+mem->pr_size-1);
-  syslog(LOG_DEBUG,"bar0 = %p\n",pci_read(dev->pd_addr,PCI_GDEV_BAR0));
-  syslog(LOG_DEBUG,"bar1 = %p\n",pci_read(dev->pd_addr,PCI_GDEV_BAR1));
-  
- }
- PCI_ENDREAD();
+FUNDEF ioaddr_t KCALL
+io_malloc(iosize_t size, ioport_t max,
+          struct instance *__restrict owner) {
+ syslog(LOG_WARN,"TODO: io_malloc()\n");
+ return -ENOMEM;
 }
+FUNDEF void KCALL io_free(ioport_t port, iosize_t size) {
+ syslog(LOG_WARN,"TODO: io_free()\n");
+}
+FUNDEF ioaddr_t KCALL
+io_malloc_at(ioport_t addr, iosize_t size,
+             struct instance *__restrict owner) {
+ /* TODO */
+ return addr;
+}
+
+
+FUNDEF ioaddr_t KCALL
+io_malloc_at_warn(ioport_t addr, iosize_t size,
+                  struct instance *__restrict owner) {
+ ioaddr_t result;
+ result = io_malloc_at(addr,size,owner);
+ /* Log an error message if the reservation failed. */
+ if (E_ISERR(result))
+     syslog(LOG_ERR,"[IO] Failed to reserve I/O range %.4I16x...%.4I16x for module %[file]: %[errno]\n",
+            addr,addr+size-1,owner->i_module->m_file,-result);
+ return result;
+}
+
 
 DECL_END
 
-#endif /* !GUARD_MODULES_NET_NE2000_C */
+#endif /* !GUARD_KERNEL_CORE_IOMGR_C */

@@ -1009,7 +1009,7 @@ core_page_free(PAGE_ALIGNED void *ptr,
  assert(IS_ALIGNED((uintptr_t)ptr,PAGESIZE));
  assert((uintptr_t)ptr+CEIL_ALIGN(n_bytes,PAGESIZE) >= (uintptr_t)ptr);
  if (flags&GFP_MEMORY) {
-  page_free_((ppage_t)ptr,n_bytes,GFP_GTPAGEATTR(flags));
+  page_ffree((ppage_t)ptr,n_bytes,GFP_GTPAGEATTR(flags));
  } else {
   PHYS struct mman *old_mman;
   assert((flags&GFP_KERNEL)

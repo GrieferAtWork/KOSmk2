@@ -32,7 +32,7 @@ memory_register(PAGE_ALIGNED ppage_t start,
 #else
 #define MY_FREESTR /* Nothing */
 PUBLIC SAFE KPD void KCALL
-page_free_(ppage_t start, size_t n_bytes, pgattr_t attr)
+page_ffree(ppage_t start, size_t n_bytes, pgattr_t attr)
 #endif
 {
 #ifdef MMAN_REGISTER
@@ -81,7 +81,7 @@ page_free_(ppage_t start, size_t n_bytes, pgattr_t attr)
          (uintptr_t)start+n_bytes-1);
   }
 #else
-  page_free_((ppage_t)((uintptr_t)start+zone_offset),n_bytes-zone_offset,attr);
+  page_ffree((ppage_t)((uintptr_t)start+zone_offset),n_bytes-zone_offset,attr);
 #endif
   /* Update the free pointers. */
   n_bytes  = zone_offset;

@@ -19,6 +19,7 @@
 
 /* Include the database itself. */
 #pragma GCC visibility push(default)
+/* XXX: Maybe do some compression here? */
 #include "PCIHDR.H"
 #pragma GCC visibility pop
 

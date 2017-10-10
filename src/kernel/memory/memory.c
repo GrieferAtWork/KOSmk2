@@ -338,6 +338,35 @@ search_zone:
 }
 
 PUBLIC SAFE KPD ppage_t KCALL
+page_memalign(size_t alignment, size_t n_bytes,
+              pgattr_t attr, mzone_t zone_id) {
+ ppage_t result,aligned_result,result_end;
+ size_t total_size;
+ /* Use regular malloc() for sub-page alignments. */
+ if (alignment <= PAGESIZE)
+     return page_malloc(n_bytes,attr,zone_id);
+ /* Make sure to align by multiples of pages.
+  * HINT: Also handles the case of illegal non-power-of-2
+  *       alignments as weak undefined behavior. */
+ alignment = CEIL_ALIGN(alignment,PAGESIZE);
+ /* Make sure that the alignment doesn't overflow when added to 'n_bytes' */
+ if (__builtin_add_overflow(alignment,n_bytes,&total_size))
+     return PAGE_ERROR;
+ /* Overallocate + free unused portion. */
+ result = page_malloc(total_size,attr,zone_id);
+ if likely(result != PAGE_ERROR) {
+  aligned_result = (ppage_t)CEIL_ALIGN((uintptr_t)result,alignment);
+  result_end     = (ppage_t)((uintptr_t)aligned_result+n_bytes);
+  /* Free alignment memory below and above. */
+  page_ffree(result,(uintptr_t)aligned_result-(uintptr_t)result,attr);
+  page_ffree(result_end,((uintptr_t)result+total_size)-(uintptr_t)result_end,attr);
+  /* Return the aligned pointer. */
+  result = aligned_result;
+ }
+ return result;
+}
+
+PUBLIC SAFE KPD ppage_t KCALL
 page_malloc_in(ppage_t min, ppage_t max,
               size_t n_bytes, pgattr_t attr) {
  struct mzone *zone,*zone_min;
@@ -697,7 +726,7 @@ nomem:
  { struct mscatter *s_iter = scatter;
    do {
     s_next = s_iter->m_next;
-    page_free_(s_iter->m_start,s_iter->m_size,attr);
+    page_ffree(s_iter->m_start,s_iter->m_size,attr);
     if (s_iter != scatter) kffree(s_iter,GFP_NOFREQ);
    } while ((s_iter = s_next) != NULL);
  }
@@ -799,7 +828,7 @@ page_print(mzone_t zone_id,
 
 #ifndef CONFIG_NEW_MEMINFO
 #define page_free_initial(start,n_bytes,attr) \
- (ATOMIC_FETCHADD(page_inuse,n_bytes),page_free_(start,n_bytes,attr))
+ (ATOMIC_FETCHADD(page_inuse,n_bytes),page_ffree(start,n_bytes,attr))
 
 #undef KERNEL_BEGIN
 #undef KERNEL_END
