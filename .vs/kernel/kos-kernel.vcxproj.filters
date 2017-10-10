@@ -178,6 +178,12 @@
     <Filter Include="modules\nt">
       <UniqueIdentifier>{357385a4-dbb0-414c-a3b1-28e4a9fe87e0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="modules\net">
+      <UniqueIdentifier>{d6d7e4a0-c83c-44b2-a7ba-3bca3ab6df2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\pci">
+      <UniqueIdentifier>{71ef776d-68e3-4fd9-b60e-1be43e509a98}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core\main.c">
@@ -416,6 +422,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\linker\coredump.c">
       <Filter>kernel\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\net\ne2000.c">
+      <Filter>modules\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\pci\pci.c">
+      <Filter>modules\pci</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -667,6 +679,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\linker\coredump.h">
       <Filter>include\linker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\dev\net.h">
+      <Filter>include\dev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\pci.h">
+      <Filter>include\modules</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

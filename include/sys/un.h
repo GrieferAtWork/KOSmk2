@@ -32,10 +32,13 @@ struct sockaddr_un {
 #ifdef __USE_MISC
 #ifndef __strlen_defined
 #define __strlen_defined 1
+__NAMESPACE_STD_BEGIN
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strlen)(char const *__s);
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(strlen)
 #endif /* !__strlen_defined */
-#define SUN_LEN(ptr)   ((size_t)(((struct sockaddr_un *)0)->sun_path)+strlen((ptr)->sun_path))
-#endif
+#define SUN_LEN(ptr)   ((size_t)(((struct sockaddr_un *)0)->sun_path)+__NAMESPACE_STD_SYM strlen((ptr)->sun_path))
+#endif /* __USE_MISC */
 
 __SYSDECL_END
 

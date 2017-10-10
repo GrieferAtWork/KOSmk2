@@ -47,6 +47,10 @@
 #include <bits/sigset.h>
 #endif /* __USE_GNU */
 
+#ifndef __CRT_GLC
+#error "<sys/socket.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
 #ifndef __size_t_defined

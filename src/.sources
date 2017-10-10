@@ -180,13 +180,14 @@ BEGIN
 		SET_OUTPUT("/bin/mod/" name) \
 		SET_DISKFILE("/mod/" name)
 #define DEFAULT_MODULE(name) \
-		MODULE(name) \
+		MODULE_NOSTDLIB(name) \
+		LIBPATH("/bin/mod") \
 		SET_OUTPUT("/bin/mod/" name) \
 		SET_DISKFILE("/mod/" name)
 #define LIBRARY_MODULE(name) \
 		MODULE(name) \
-		SET_OUTPUT("/bin/mod/" name ".so") \
-		SET_DISKFILE("/mod/" name ".so")
+		SET_OUTPUT("/bin/mod/lib" name ".so") \
+		SET_DISKFILE("/mod/lib" name ".so")
 #define USING(name) PROJ_DEP(name) LIB(name.lsstrip("lib"))
 
 	/* Dynamic kernel modules. */
@@ -199,6 +200,8 @@ BEGIN
 	BEGIN BASIC_MODULE("pe")           SOURCE("modules/linker/pe.c")           END
 	BEGIN BASIC_MODULE("shebang")      SOURCE("modules/linker/shebang.c")      END
 	BEGIN BASIC_MODULE("nt")           SOURCE("modules/nt/*.c")                END
+	BEGIN LIBRARY_MODULE("pci")        SOURCE("modules/pci/*.c")               END
+	BEGIN DEFAULT_MODULE("ne2000")     SOURCE("modules/net/ne2000.c") USING("pci") END
 	BEGIN BASIC_MODULE("elf-coredump") SOURCE("modules/linker/elf-coredump.c") END
 
 END

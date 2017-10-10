@@ -16,31 +16,21 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _SYS_IOCTL_H
-#define _SYS_IOCTL_H 1
+#ifndef GUARD_INCLUDE_DEV_NET_H
+#define GUARD_INCLUDE_DEV_NET_H 1
 
-#include <__stdinc.h>
-#include <features.h>
-#include <bits/ioctls.h>
-#include <bits/types.h>
-#include <bits/ioctl-types.h>
-#include <sys/ttydefaults.h>
+#include <dev/chrdev.h>
+#include <hybrid/compiler.h>
+#include <hybrid/types.h>
 
-#ifndef __CRT_GLC
-#error "<ioctl.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
+DECL_BEGIN
 
-__SYSDECL_BEGIN
-
-#ifndef __KERNEL__
-#if defined(__USE_KOS) && defined(__CRT_KOS)
-__LIBC __ssize_t (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
-#else /* __USE_KOS && __CRT_KOS */
-__LIBC int (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
-#endif /* !__USE_KOS || !__CRT_KOS */
-#endif /* !__KERNEL__ */
-
-__SYSDECL_END
+struct netdev {
+ struct chrdev   n_dev; /*< Underlying character device. */
+ /* TODO: General purpose callbacks. */
+};
 
 
-#endif /* !_SYS_IOCTL_H */
+DECL_END
+
+#endif /* !GUARD_INCLUDE_DEV_NET_H */

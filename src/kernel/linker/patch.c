@@ -476,6 +476,14 @@ done:
  /* Inherit the load-address hint of dependency patcher. */
  self->p_dephint = inst_patcher.p_dephint;
 
+ /* Run initializers for drivers. */
+ if (MODPATCH_ISHOST(self)) {
+  instance_callinit(inst);
+  syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module '%[file]' at %p...%p\n",
+         inst->i_module->m_file,inst->i_base,
+        (uintptr_t)inst->i_base+inst->i_module->m_size-1);
+ }
+
  /* Only return a weak pointer.
   * The real instance reference itself is stored in the
   * dependency vector, which is owned by the caller. */

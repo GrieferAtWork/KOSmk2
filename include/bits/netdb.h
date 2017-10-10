@@ -25,10 +25,10 @@
 __SYSDECL_BEGIN
 
 struct netent {
-  char    *n_name;     /*< Official name of network. */
-  char   **n_aliases;  /*< Alias list. */
-  int      n_addrtype; /*< Net address type. */
-  uint32_t n_net;      /*< Network number. */
+    char    *n_name;     /*< Official name of network. */
+    char   **n_aliases;  /*< Alias list. */
+    int      n_addrtype; /*< Net address type. */
+    uint32_t n_net;      /*< Network number. */
 };
 
 __SYSDECL_END

@@ -84,38 +84,38 @@ __SYSDECL_BEGIN
 
 /* Define 802.2 Type 1 header */
 struct PACKED fddi_8022_1_hdr {
- __u8 dsap; /*< destination service access point */
- __u8 ssap; /*< source service access point */
- __u8 ctrl; /*< control byte #1 */
+    __u8 dsap; /*< destination service access point */
+    __u8 ssap; /*< source service access point */
+    __u8 ctrl; /*< control byte #1 */
 };
 
 /* Define 802.2 Type 2 header */
 struct PACKED fddi_8022_2_hdr {
- __u8 dsap;   /*< destination service access point */
- __u8 ssap;   /*< source service access point */
- __u8 ctrl_1; /*< control byte #1 */
- __u8 ctrl_2; /*< control byte #2 */
+    __u8 dsap;   /*< destination service access point */
+    __u8 ssap;   /*< source service access point */
+    __u8 ctrl_1; /*< control byte #1 */
+    __u8 ctrl_2; /*< control byte #2 */
 };
 
 /* Define 802.2 SNAP header */
 struct PACKED fddi_snap_hdr {
- __u8   dsap;                /*< always 0xAA. */
- __u8   ssap;                /*< always 0xAA. */
- __u8   ctrl;                /*< always 0x03. */
- __u8   oui[FDDI_K_OUI_LEN]; /*< organizational universal id. */
- __be16 ethertype;           /*< packet type ID field. */
+    __u8   dsap;                /*< always 0xAA. */
+    __u8   ssap;                /*< always 0xAA. */
+    __u8   ctrl;                /*< always 0x03. */
+    __u8   oui[FDDI_K_OUI_LEN]; /*< organizational universal id. */
+    __be16 ethertype;           /*< packet type ID field. */
 };
 
 /* Define FDDI LLC frame header */
 struct PACKED fddihdr {
- __u8 fc;                 /*< frame control. */
- __u8 daddr[FDDI_K_ALEN]; /*< destination address. */
- __u8 saddr[FDDI_K_ALEN]; /*< source address. */
- union {
-  struct fddi_8022_1_hdr llc_8022_1;
-  struct fddi_8022_2_hdr llc_8022_2;
-  struct fddi_snap_hdr   llc_snap;
- } hdr;
+    __u8 fc;                 /*< frame control. */
+    __u8 daddr[FDDI_K_ALEN]; /*< destination address. */
+    __u8 saddr[FDDI_K_ALEN]; /*< source address. */
+    union {
+        struct fddi_8022_1_hdr llc_8022_1;
+        struct fddi_8022_2_hdr llc_8022_2;
+        struct fddi_snap_hdr   llc_snap;
+    } hdr;
 };
 
 __SYSDECL_END

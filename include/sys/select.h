@@ -73,12 +73,81 @@ typedef __fd_mask fd_mask;
 #define FD_ZERO(fdsetp)     __FD_ZERO(fdsetp)
 
 #ifndef __KERNEL__
+#ifdef __GLC_COMPAT__
+#ifdef __USE_TIME_BITS64
+__REDIRECT(__LIBC,,int,__LIBCCALL,__select32,
+          (int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
+           fd_set *__restrict __exceptfds, struct __timeval32 *__restrict __timeout),
+           select,(__nfds,__readfds,__writefds,__exceptfds,__timeout))
+__LOCAL int (__LIBCCALL select)(int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
+                                fd_set *__restrict __exceptfds, struct timeval *__restrict __timeout) {
+ struct __timeval32 __tmo32;
+ if (__timeout) __tmo32.tv_sec = (__time32_t)__timeout->tv_sec,
+                __tmo32.tv_usec = __timeout->tv_usec;
+ return __select32(__nfds,__readfds,__writefds,__exceptfds,__timeout ? &__tmo32 : 0);
+}
+#ifdef __USE_XOPEN2K
+__REDIRECT(__LIBC,,int,__LIBCCALL,__pselect32,
+          (int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
+           fd_set *__restrict __exceptfds, struct timespec const *__restrict __timeout,
+           __sigset_t const *__restrict __sigmask),pselect,
+          (__nfds,__readfds,__writefds,__exceptfds,__timeout,__sigmask))
+__LOCAL int (__LIBCCALL pselect)(int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
+                                 fd_set *__restrict __exceptfds, struct timespec const *__restrict __timeout,
+                                 __sigset_t const *__restrict __sigmask) {
+ struct __timeval32 __tmo32;
+ if (__timeout) __tmo32.tv_sec = (__time32_t)__timeout->tv_sec,
+                __tmo32.tv_usec = __timeout->tv_usec;
+ return __pselect32(__nfds,__readfds,__writefds,__exceptfds,__timeout ? &__tmo32 : 0,__sigmask);
+}
+#endif /* __USE_XOPEN2K */
+#else /* __USE_TIME_BITS64 */
 __LIBC int (__LIBCCALL select)(int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
-                               fd_set *__restrict __exceptfds, struct timeval *__restrict __timeout) __TM_FUNC(select);
+                               fd_set *__restrict __exceptfds, struct timeval *__restrict __timeout);
 #ifdef __USE_XOPEN2K
 __LIBC int (__LIBCCALL pselect)(int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
                                 fd_set *__restrict __exceptfds, struct timespec const *__restrict __timeout,
-                                __sigset_t const *__restrict __sigmask) __TM_FUNC(pselect);
+                                __sigset_t const *__restrict __sigmask);
+#endif /* __USE_XOPEN2K */
+#endif /* !__USE_TIME_BITS64 */
+#ifdef __USE_TIME64
+__LOCAL int (__LIBCCALL select64)(int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
+                                  fd_set *__restrict __exceptfds, struct timeval64 *__restrict __timeout) {
+#ifdef __USE_TIME_BITS64
+ return select(__nfds,__readfds,__writefds,__exceptfds,__timeout);
+#else
+ struct timeval __tmo32;
+ if (__timeout) __tmo32.tv_sec = (__time32_t)__timeout->tv_sec,
+                __tmo32.tv_usec = __timeout->tv_usec;
+ return select(__nfds,__readfds,__writefds,__exceptfds,__timeout ? &__tmo32 : 0);
+#endif
+}
+#ifdef __USE_XOPEN2K
+__LOCAL int (__LIBCCALL pselect64)(int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
+                                   fd_set *__restrict __exceptfds, struct __timespec64 const *__restrict __timeout,
+                                   __sigset_t const *__restrict __sigmask) {
+#ifdef __USE_TIME_BITS64
+ return pselect(__nfds,__readfds,__writefds,__exceptfds,__timeout,__sigmask);
+#else
+ struct timeval __tmo32;
+ if (__timeout) __tmo32.tv_sec = (__time32_t)__timeout->tv_sec,
+                __tmo32.tv_usec = __timeout->tv_usec;
+ return pselect(__nfds,__readfds,__writefds,__exceptfds,__timeout ? &__tmo32 : 0,__sigmask);
+#endif
+}
+#endif /* __USE_XOPEN2K */
+#endif /* __USE_TIME64 */
+#else /* __GLC_COMPAT__ */
+__REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,select,
+                  (int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
+                   fd_set *__restrict __exceptfds, struct timeval *__restrict __timeout),
+                   select,(__nfds,__readfds,__writefds,__exceptfds,__timeout))
+#ifdef __USE_XOPEN2K
+__REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,pselect,
+                  (int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
+                   fd_set *__restrict __exceptfds, struct timespec const *__restrict __timeout,
+                   __sigset_t const *__restrict __sigmask),pselect,
+                  (__nfds,__readfds,__writefds,__exceptfds,__timeout,__sigmask))
 #endif /* __USE_XOPEN2K */
 #ifdef __USE_TIME64
 __LIBC int (__LIBCCALL select64)(int __nfds, fd_set *__restrict __readfds, fd_set *__restrict __writefds,
@@ -89,6 +158,7 @@ __LIBC int (__LIBCCALL pselect64)(int __nfds, fd_set *__restrict __readfds, fd_s
                                   __sigset_t const *__restrict __sigmask);
 #endif /* __USE_XOPEN2K */
 #endif /* __USE_TIME64 */
+#endif /* !__GLC_COMPAT__ */
 #endif /* !__KERNEL__ */
 
 __SYSDECL_END

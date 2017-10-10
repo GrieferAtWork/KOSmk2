@@ -122,8 +122,9 @@ local_nomem:
   * TODO: Must somehow pass 'cmdline' to the driver. */
  instance_callinit(result);
 
- syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module %.?q from %[file]\n",
-        mod->m_name->dn_size,mod->m_name->dn_name,mod->m_file);
+ syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module '%[file]' at %p...%p\n",
+        mod->m_file,result->i_base,
+       (uintptr_t)result->i_base+mod->m_size-1);
 
  return result;
 err2:

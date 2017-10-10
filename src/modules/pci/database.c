@@ -16,31 +16,21 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _SYS_IOCTL_H
-#define _SYS_IOCTL_H 1
 
-#include <__stdinc.h>
-#include <features.h>
-#include <bits/ioctls.h>
-#include <bits/types.h>
-#include <bits/ioctl-types.h>
-#include <sys/ttydefaults.h>
+/* Include the database itself. */
+#pragma GCC visibility push(default)
+#include "PCIHDR.H"
+#pragma GCC visibility pop
 
-#ifndef __CRT_GLC
-#error "<ioctl.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
-
-__SYSDECL_BEGIN
-
-#ifndef __KERNEL__
-#if defined(__USE_KOS) && defined(__CRT_KOS)
-__LIBC __ssize_t (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
-#else /* __USE_KOS && __CRT_KOS */
-__LIBC int (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
-#endif /* !__USE_KOS || !__CRT_KOS */
-#endif /* !__KERNEL__ */
-
-__SYSDECL_END
+/* In addition, export the length of the various tables.
+ * >> Since tables aren't terminated by some sentinal, this is required for iteration. */
+#include <hybrid/compiler.h>
+#include <hybrid/types.h>
+PUBLIC size_t pci_ventable_len       = PCI_VENTABLE_LEN;
+PUBLIC size_t pci_devtable_len       = PCI_DEVTABLE_LEN;
+PUBLIC size_t pci_classcodetable_len = PCI_CLASSCODETABLE_LEN;
+PUBLIC size_t pci_commandflags_len   = PCI_COMMANDFLAGS_LEN;
+PUBLIC size_t pci_statusflags_len    = PCI_STATUSFLAGS_LEN;
+PUBLIC size_t pci_devselflags_len    = PCI_DEVSELFLAGS_LEN;
 
 
-#endif /* !_SYS_IOCTL_H */

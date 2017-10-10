@@ -135,16 +135,16 @@ typedef struct { __cpu_mask __bits[__CPU_SETSIZE/__NCPUBITS]; } __cpu_set_t;
 #define __CPU_FILL_S(setsize,cpusetp)   do __hybrid_memset(cpusetp,0xff,setsize); while (0)
 #define __CPU_ZERO_S(setsize,cpusetp)   do __hybrid_memset(cpusetp,0x00,setsize); while (0)
 #define __CPU_SET_S(cpu,setsize,cpusetp) \
- XBLOCK({ __size_t const __cpu = (cpu); \
-          XRETURN (__cpu/8 < (setsize)) ? ((cpusetp)->__bits[__CPUELT(__cpu)] |= __CPUMASK(__cpu)) : 0; \
+ __XBLOCK({ __size_t const __cpu = (cpu); \
+            __XRETURN (__cpu/8 < (setsize)) ? ((cpusetp)->__bits[__CPUELT(__cpu)] |= __CPUMASK(__cpu)) : 0; \
  })
 #define __CPU_CLR_S(cpu,setsize,cpusetp) \
- XBLOCK({ __size_t const __cpu = (cpu); \
-          XRETURN (__cpu / 8 < (setsize)) ? ((cpusetp)->__bits[__CPUELT(__cpu)] &= ~__CPUMASK(__cpu)) : 0; \
+ __XBLOCK({ __size_t const __cpu = (cpu); \
+            __XRETURN (__cpu / 8 < (setsize)) ? ((cpusetp)->__bits[__CPUELT(__cpu)] &= ~__CPUMASK(__cpu)) : 0; \
  })
 #define __CPU_ISSET_S(cpu,setsize,cpusetp) \
- XBLOCK({ __size_t const __cpu = (cpu); \
-          XRETURN (__cpu / 8 < (setsize)) && ((cpusetp)->__bits[__CPUELT(__cpu)] & __CPUMASK(__cpu)); \
+ __XBLOCK({ __size_t const __cpu = (cpu); \
+            __XRETURN (__cpu / 8 < (setsize)) && ((cpusetp)->__bits[__CPUELT(__cpu)] & __CPUMASK(__cpu)); \
  })
 
 #ifdef __USE_KOS
@@ -153,26 +153,26 @@ typedef struct { __cpu_mask __bits[__CPU_SETSIZE/__NCPUBITS]; } __cpu_set_t;
 #define __CPU_COUNT_S_RESULT_TYPE int
 #endif
 #define __CPU_COUNT_S(setsize,cpusetp) \
- XBLOCK({ __CPU_COUNT_S_RESULT_TYPE __res = 0; \
-          __cpu_mask const *__iter,*__end; \
-          __end = (__iter = (cpusetp)->__bits)+((setsize)/sizeof(__cpu_mask)); \
-          for (; __iter < __end; ++__iter) __res += __CPUMASK_POPCOUNT(*__iter); \
-          XRETURN __res; \
+ __XBLOCK({ __CPU_COUNT_S_RESULT_TYPE __res = 0; \
+            __cpu_mask const *__iter,*__end; \
+            __end = (__iter = (cpusetp)->__bits)+((setsize)/sizeof(__cpu_mask)); \
+            for (; __iter < __end; ++__iter) __res += __CPUMASK_POPCOUNT(*__iter); \
+            __XRETURN __res; \
  })
 
 #define __CPU_EQUAL_S(setsize,cpusetp1,cpusetp2) (!__hybrid_memcmp(cpusetp1,cpusetp2,setsize))
 #define __CPU_OP_S(setsize,destset,srcset1,srcset2,op) \
- XBLOCK({ __cpu_set_t *const __dest = (destset); \
-          __cpu_mask const *const __arr1 = (srcset1)->__bits; \
-          __cpu_mask const *const __arr2 = (srcset2)->__bits; \
-          __SIZE_TYPE__ __i,__imax = (setsize) / sizeof (__cpu_mask); \
-          for (__i = 0; __i < __imax; ++__i) \
-               __dest->__bits[__i] = __arr1[__i] op __arr2[__i]; \
-          __dest; \
+ __XBLOCK({ __cpu_set_t *const __dest = (destset); \
+            __cpu_mask const *const __arr1 = (srcset1)->__bits; \
+            __cpu_mask const *const __arr2 = (srcset2)->__bits; \
+            __SIZE_TYPE__ __i,__imax = (setsize) / sizeof (__cpu_mask); \
+            for (__i = 0; __i < __imax; ++__i) \
+                 __dest->__bits[__i] = __arr1[__i] op __arr2[__i]; \
+            __XRETURN __dest; \
  })
 #define __CPU_ALLOC_SIZE(count) ((((count)+__NCPUBITS-1)/__NCPUBITS)*sizeof(__cpu_mask))
-#define __CPU_ALLOC(count) ((__cpu_set_t *)__hybrid_calloc(((count)+__NCPUBITS-1)/__NCPUBITS,sizeof(__cpu_mask))
-#define __CPU_FREE(cpuset)   __hybrid_free(cpuset)
+#define __CPU_ALLOC(count)      ((__cpu_set_t *)__hybrid_calloc(((count)+__NCPUBITS-1)/__NCPUBITS,sizeof(__cpu_mask))
+#define __CPU_FREE(cpuset)        __hybrid_free(cpuset)
 
 __SYSDECL_END
 

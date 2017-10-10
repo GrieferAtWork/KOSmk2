@@ -27,6 +27,22 @@
 
 __SYSDECL_BEGIN
 
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("sysname")
+#pragma push_macro("nodename")
+#pragma push_macro("release")
+#pragma push_macro("version")
+#pragma push_macro("machine")
+#pragma push_macro("domainname")
+#endif
+
+#undef sysname
+#undef nodename
+#undef release
+#undef version
+#undef machine
+#undef domainname
+
 #ifndef _UTSNAME_SYSNAME_LENGTH
 #define _UTSNAME_SYSNAME_LENGTH _UTSNAME_LENGTH
 #endif
@@ -70,6 +86,15 @@ __PUBDEF struct utsname const active_uname __KSYM(uname);
 #ifndef __KERNEL__
 __LIBC int (__LIBCCALL uname)(struct utsname *__name);
 #endif /* !__KERNEL__ */
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("domainname")
+#pragma pop_macro("machine")
+#pragma pop_macro("version")
+#pragma pop_macro("release")
+#pragma pop_macro("nodename")
+#pragma pop_macro("sysname")
+#endif
 
 __SYSDECL_END
 

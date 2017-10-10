@@ -510,7 +510,7 @@ __LIBC wchar_t *(__LIBCCALL wcpcpy)(wchar_t *__restrict __dst, wchar_t const *__
 __LIBC wchar_t *(__LIBCCALL wcpncpy)(wchar_t *__restrict __dst, wchar_t const *__restrict __src, size_t __n);
 /* TODO: Check if there really isn't any way of emulate the following two (because they're _very_ useful...) */
 __LIBC __PORT_NODOS size_t (__LIBCCALL mbsnrtowcs)(wchar_t *__restrict __dst, char const **__restrict __psrc, size_t __nmc, size_t __len, mbstate_t *__restrict __ps);
-__LIBC __PORT_NODOS __PORT_NODOS size_t (__LIBCCALL wcsnrtombs)(char *__restrict __dst, wchar_t const **__restrict __psrc, size_t __nwc, size_t __len, mbstate_t *__restrict __ps);
+__LIBC __PORT_NODOS size_t (__LIBCCALL wcsnrtombs)(char *__restrict __dst, wchar_t const **__restrict __psrc, size_t __nwc, size_t __len, mbstate_t *__restrict __ps);
 __REDIRECT_IFW16(__LIBC,__PORT_NODOS,__FILE *,__LIBCCALL,open_wmemstream,(wchar_t **__bufloc, size_t *__sizeloc),_open_wmemstream,(__bufloc,__sizeloc))
 #else /* __CRT_GLC */
 __LOCAL wchar_t *(__LIBCCALL wcpcpy)(wchar_t *__restrict __dst, wchar_t const *__restrict __src) { return wcscpy(__dst,__src)+wcslen(__dst); }

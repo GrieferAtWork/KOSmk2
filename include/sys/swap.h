@@ -40,6 +40,11 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
+#ifndef __CRT_GLC
+#error "<sys/swap.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
+__SYSDECL_BEGIN
 
 /* The swap priority is encoded as:
  * >> (prio << SWAP_FLAG_PRIO_SHIFT) & SWAP_FLAG_PRIO_MASK */
@@ -47,8 +52,6 @@
 #define SWAP_FLAG_PRIO_MASK  0x07fff
 #define SWAP_FLAG_PRIO_SHIFT       0
 #define SWAP_FLAG_DISCARD    0x10000 /*< Discard swap cluster after use. */
-
-__SYSDECL_BEGIN
 
 #ifndef __KERNEL__
 __LIBC __WARN_NODOSFS int (__LIBCCALL swapon)(char const *__path, int __flags);

@@ -109,15 +109,18 @@
     <ClCompile Include="..\..\src\modules\linker\elf-coredump.c" />
     <ClCompile Include="..\..\src\modules\linker\pe.c" />
     <ClCompile Include="..\..\src\modules\linker\shebang.c" />
+    <ClCompile Include="..\..\src\modules\net\ne2000.c" />
     <ClCompile Include="..\..\src\modules\nt\api.c" />
     <ClCompile Include="..\..\src\modules\nt\flavor.c" />
     <ClCompile Include="..\..\src\modules\nt\nt.c" />
+    <ClCompile Include="..\..\src\modules\pci\pci.c" />
     <ClCompile Include="..\..\src\modules\video\vga-tty.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\include\dev\blkdev.h" />
     <ClInclude Include="..\..\src\include\dev\chrdev.h" />
     <ClInclude Include="..\..\src\include\dev\device.h" />
+    <ClInclude Include="..\..\src\include\dev\net.h" />
     <ClInclude Include="..\..\src\include\dev\rtc.h" />
     <ClInclude Include="..\..\src\include\fs\access.h" />
     <ClInclude Include="..\..\src\include\fs\atomic-iobuffer.h" />
@@ -173,6 +176,7 @@
     <ClInclude Include="..\..\src\include\modules\fat.h" />
     <ClInclude Include="..\..\src\include\modules\mbr.h" />
     <ClInclude Include="..\..\src\include\modules\memdev.h" />
+    <ClInclude Include="..\..\src\include\modules\pci.h" />
     <ClInclude Include="..\..\src\include\modules\ps2.h" />
     <ClInclude Include="..\..\src\include\modules\tty.h" />
     <ClInclude Include="..\..\src\include\modules\vga.h" />

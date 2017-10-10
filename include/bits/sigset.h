@@ -66,9 +66,9 @@ typedef struct { unsigned long int __val[_SIGSET_NWORDS]; } __sigset_t;
              __XRETURN 0; })
 #define __sigfillset(set) \
   __XBLOCK({ int __cnt = _SIGSET_NWORDS; \
-              __sigset_t *__set = (set); \
-              while (--__cnt >= 0) __set->__val[__cnt] = ~0UL; \
-              __XRETURN 0; })
+             __sigset_t *__set = (set); \
+             while (--__cnt >= 0) __set->__val[__cnt] = ~0UL; \
+             __XRETURN 0; })
 
 #ifdef __USE_GNU
 #define __sigisemptyset(set) \

@@ -371,9 +371,9 @@ done:
 
 typedef void (*elf_func)(void);
 PRIVATE void KCALL elf_callfun(elf_func fun) {
- syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (BEGIN)\n",fun);
+ /*syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (BEGIN)\n",fun);*/
  (*fun)();
- syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (END)\n",fun);
+ /*syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (END)\n",fun);*/
 }
 
 
@@ -387,7 +387,7 @@ elf_exec_init(struct module *__restrict self, VIRT ppage_t load_addr) {
  for (; iter != end; ++iter) elf_callfun(*iter);
  end = (iter = (elf_func *)((uintptr_t)load_addr+DYNAMIC.d_init_array))+
                                                  DYNAMIC.d_init_array_sz;
- syslog(LOG_EXEC|LOG_DEBUG,"[ELF] INIT_VECTOR: %p\n",iter);
+ /*syslog(LOG_EXEC|LOG_DEBUG,"[ELF] INIT_VECTOR: %p\n",iter);*/
  for (; iter != end; ++iter) elf_callfun(*iter);
  if (DYNAMIC.d_flags&ELF_DYNAMIC_HAS_INIT)
      elf_callfun((elf_func)((uintptr_t)load_addr+DYNAMIC.d_init));

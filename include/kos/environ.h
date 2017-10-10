@@ -40,23 +40,23 @@ DECL_BEGIN
 
 ATTR_ALIGNED(PAGESIZE)
 struct envdata {
- /* NOTE: This data structure exists exclusively in userspace, and is always page-aligned.
-  * HINT: A pointer to this data structure is passed through ECX to '_start()' */
- struct envdata *e_self;    /*< [1..1][== self] Original self pointer. */
- size_t          e_size;    /*< Total size of this data structure (in bytes).
-                             *  NOTE: This kernel internally limits this value to prevent
-                             *        excessive data transfer during calls to 'exec()'. */
- size_t          e_envc;    /*< Amount of entries in the 'e_envp' vector below. */
- size_t          e_argc;    /*< Amount of entries in the '__e_argv' vector below. */
- char          **e_envp;    /*< A pointer to '__e_envv' below (== ENVDATA_ENVV(*self)). */
- char          **e_argv;    /*< A pointer to '__e_argv' below. */
- void           *e_root;    /*< Base address of the initial instance that created the VM (Usable as a handle in dl* functions like 'dlsym'). */
- void           *e_pad[25]; /*< ... Alignment. */
+    /* NOTE: This data structure exists exclusively in userspace, and is always page-aligned.
+     * HINT: A pointer to this data structure is passed through ECX to '_start()' */
+    struct envdata *e_self;    /*< [1..1][== self] Original self pointer. */
+    size_t          e_size;    /*< Total size of this data structure (in bytes).
+                                *  NOTE: This kernel internally limits this value to prevent
+                                *        excessive data transfer during calls to 'exec()'. */
+    size_t          e_envc;    /*< Amount of entries in the 'e_envp' vector below. */
+    size_t          e_argc;    /*< Amount of entries in the '__e_argv' vector below. */
+    char          **e_envp;    /*< A pointer to '__e_envv' below (== ENVDATA_ENVV(*self)). */
+    char          **e_argv;    /*< A pointer to '__e_argv' below. */
+    void           *e_root;    /*< Base address of the initial instance that created the VM (Usable as a handle in dl* functions like 'dlsym'). */
+    void           *e_pad[25]; /*< ... Alignment. */
 
- USER char      *__e_envv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of environment strings (HINT: NULL-terminated). */
- char            __e_tenv[1]; /*< Text buffer into which pointers from '__e_envv' point into. */
- USER char      *__e_argv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of argument strings (HINT: NULL-terminated). */
- char            __e_targ[1]; /*< Text buffer into which pointers from '__e_argv' and 'e_envp' point into. */
+    USER char      *__e_envv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of environment strings (HINT: NULL-terminated). */
+    char            __e_tenv[1]; /*< Text buffer into which pointers from '__e_envv' point into. */
+    USER char      *__e_argv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of argument strings (HINT: NULL-terminated). */
+    char            __e_targ[1]; /*< Text buffer into which pointers from '__e_argv' and 'e_envp' point into. */
 };
 
 /* Helper macros for accessing common environment data. */

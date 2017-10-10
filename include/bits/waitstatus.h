@@ -68,31 +68,31 @@ __SYSDECL_BEGIN
 #ifdef __USE_MISC
 #include <hybrid/byteorder.h>
 union wait {
- int w_status;
- struct {
+    int w_status;
+    struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  unsigned int __w_termsig : 7; /* Terminating signal. */
-  unsigned int __w_coredump : 1; /* Set if dumped core. */
-  unsigned int __w_retcode : 8; /* Return code if exited normally. */
-  unsigned int : 16;
+        unsigned int __w_termsig : 7; /* Terminating signal. */
+        unsigned int __w_coredump : 1; /* Set if dumped core. */
+        unsigned int __w_retcode : 8; /* Return code if exited normally. */
+        unsigned int : 16;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-  unsigned int : 16;
-  unsigned int __w_retcode : 8;
-  unsigned int __w_coredump : 1;
-  unsigned int __w_termsig : 7;
+        unsigned int : 16;
+        unsigned int __w_retcode : 8;
+        unsigned int __w_coredump : 1;
+        unsigned int __w_termsig : 7;
 #endif
- } __wait_terminated;
- struct {
+    } __wait_terminated;
+    struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  unsigned int __w_stopval : 8; /* W_STOPPED if stopped. */
-  unsigned int __w_stopsig : 8; /* Stopping signal. */
-  unsigned int : 16;
+        unsigned int __w_stopval : 8; /* W_STOPPED if stopped. */
+        unsigned int __w_stopsig : 8; /* Stopping signal. */
+        unsigned int : 16;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-  unsigned int : 16;
-  unsigned int __w_stopsig : 8; /* Stopping signal. */
-  unsigned int __w_stopval : 8; /* W_STOPPED if stopped. */
+        unsigned int : 16;
+        unsigned int __w_stopsig : 8; /* Stopping signal. */
+        unsigned int __w_stopval : 8; /* W_STOPPED if stopped. */
 #endif
- } __wait_stopped;
+    } __wait_stopped;
 };
 
 #define w_termsig  __wait_terminated.__w_termsig

@@ -56,6 +56,10 @@
  *	@(#)syslog.h	8.1 (Berkeley) 6/2/93
  */
 
+#ifndef __CRT_GLC
+#error "<sys/syslog.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
 #define LOG_EMERG   0    /*< system is unusable */

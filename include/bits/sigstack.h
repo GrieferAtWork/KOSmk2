@@ -45,13 +45,13 @@ __SYSDECL_BEGIN
 
 /* Structure describing a signal stack (obsolete). */
 struct sigstack {
- void *ss_sp;      /*< Signal stack pointer. */
- int   ss_onstack; /*< Nonzero if executing on this stack. */
+    void *ss_sp;      /*< Signal stack pointer. */
+    int   ss_onstack; /*< Nonzero if executing on this stack. */
 };
 
 enum { /* Possible values for `ss_flags.'. */
- SS_ONSTACK = 1,
- SS_DISABLE
+    SS_ONSTACK = 1,
+    SS_DISABLE
 #define SS_ONSTACK SS_ONSTACK
 #define SS_DISABLE SS_DISABLE
 };
@@ -67,9 +67,9 @@ enum { /* Possible values for `ss_flags.'. */
 
 /* Alternate, preferred interface. */
 typedef struct sigaltstack {
- void         *ss_sp;
- int           ss_flags;
- __SIZE_TYPE__ ss_size;
+    void         *ss_sp;
+    int           ss_flags;
+    __SIZE_TYPE__ ss_size;
 } stack_t;
 
 __SYSDECL_END

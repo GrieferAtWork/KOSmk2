@@ -47,6 +47,7 @@ __SYSDECL_BEGIN
 #define FDNAME_TAIL      2 /*< "passwd" */
 
 #ifndef __KERNEL__
+#ifdef __CRT_KOS
 /* NOTE: 'xfdname()' follows 'getcwd()' semantics by returning a newly
  *        allocated string when 'NULL,0' is passed for 'buf' and 'bufsize',
  *        while 'xfdname2()' follows the system call interface exactly
@@ -59,9 +60,10 @@ __SYSDECL_BEGIN
  * >> free(name);
  * >> close(fd);
  */
-__LIBC char *(__LIBCCALL xfdname)(int __fd, int __type, char *__buf, __size_t __bufsize);
-__LIBC __ssize_t (__LIBCCALL xfdname2)(int __fd, int __type, char *__buf, __size_t __bufsize);
-#endif
+__LIBC __PORT_KOSONLY char *(__LIBCCALL xfdname)(int __fd, int __type, char *__buf, __size_t __bufsize);
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL xfdname2)(int __fd, int __type, char *__buf, __size_t __bufsize);
+#endif /* __CRT_KOS */
+#endif /* !__KERNEL__ */
 
 __SYSDECL_END
 

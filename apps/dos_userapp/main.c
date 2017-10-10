@@ -50,6 +50,7 @@
 #include <uchar.h>
 #include <utime.h>
 #include <sys/stat.h>
+#include <sys/timeb.h>
 
 DECL_BEGIN
 

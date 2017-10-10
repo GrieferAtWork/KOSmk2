@@ -67,9 +67,9 @@ __SYSDECL_BEGIN
 #undef P_PGID
 
 typedef enum {
- P_ALL,  /* Wait for any child. */
- P_PID,  /* Wait for specified process. */
- P_PGID  /* Wait for members of process group. */
+    P_ALL, /*< Wait for any child. */
+    P_PID, /*< Wait for specified process. */
+    P_PGID /*< Wait for members of process group. */
 } idtype_t;
 
 #ifndef __cplusplus

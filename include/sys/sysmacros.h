@@ -22,6 +22,10 @@
 #include <__stdinc.h>
 #include <bits/types.h>
 
+#ifndef __CRT_GLC
+#error "<sys/sysmacros.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
 #if defined(__USE_DOSFS) && __SIZEOF_DOS_DEV_T__ != __SIZEOF_DEV_T__

@@ -879,8 +879,10 @@ DEFINE_PUBLIC_ALIAS(__DSYM(times),libc_dos_times);
 DEFINE_PUBLIC_ALIAS(_ftime,libc_ftime); /* This is not an error. - DOS defines this name, too. */
 DEFINE_PUBLIC_ALIAS(_ftime32,libc_ftime);
 DEFINE_PUBLIC_ALIAS(_ftime64,libc_ftime64);
-DEFINE_PUBLIC_ALIAS(_ftime32_s,libc_ftime);
-DEFINE_PUBLIC_ALIAS(_ftime64_s,libc_ftime64);
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_ftime_s(struct timeb *timebuf) { return libc_ftime(timebuf) ? GET_DOS_ERRNO() : EOK; }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_ftime64_s(struct timeb64 *timebuf) { return libc_ftime64(timebuf) ? GET_DOS_ERRNO() : EOK; }
+DEFINE_PUBLIC_ALIAS(_ftime32_s,libc_ftime_s);
+DEFINE_PUBLIC_ALIAS(_ftime64_s,libc_ftime64_s);
 
 /* Define DOS-mode time functions. */
 INTERN ATTR_DOSTEXT int LIBCCALL A(libc_dos_utimensat)(int fd, char const *path, struct atimespec const times[2], int flags) { return A(libc_utimensat)(fd,path,times,AT_DOSPATH|flags); }

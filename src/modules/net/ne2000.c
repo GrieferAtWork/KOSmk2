@@ -16,31 +16,31 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _SYS_IOCTL_H
-#define _SYS_IOCTL_H 1
+#ifndef GUARD_MODULES_NET_NE2000_C
+#define GUARD_MODULES_NET_NE2000_C 1
+#define _KOS_SOURCE 2
 
-#include <__stdinc.h>
-#include <features.h>
-#include <bits/ioctls.h>
-#include <bits/types.h>
-#include <bits/ioctl-types.h>
-#include <sys/ttydefaults.h>
+#include <hybrid/compiler.h>
+#include <kernel/export.h>
+#include <dev/net.h>
+#include <modules/pci.h>
 
-#ifndef __CRT_GLC
-#error "<ioctl.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
+DECL_BEGIN
 
-__SYSDECL_BEGIN
-
-#ifndef __KERNEL__
-#if defined(__USE_KOS) && defined(__CRT_KOS)
-__LIBC __ssize_t (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
-#else /* __USE_KOS && __CRT_KOS */
-__LIBC int (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
-#endif /* !__USE_KOS || !__CRT_KOS */
-#endif /* !__KERNEL__ */
-
-__SYSDECL_END
+PRIVATE void MODULE_INIT KCALL net_init(void) {
+ struct pci_device *dev;
+ PCI_READ();
+ /* Search for network cards. */
+ PCI_FOREACH_CLASS(dev,PCI_DEV8_CLASS_NETWORK,
+                   PCI_DEV8_CLASS_NOCLASS) {
+  /* Try to enable the device. */
+  if (E_ISERR(pci_enable(dev->pd_addr))) continue;
 
 
-#endif /* !_SYS_IOCTL_H */
+ }
+ PCI_ENDREAD();
+}
+
+DECL_END
+
+#endif /* !GUARD_MODULES_NET_NE2000_C */

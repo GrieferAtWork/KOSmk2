@@ -78,8 +78,8 @@ __SYSDECL_BEGIN
 typedef __UINTPTR_TYPE__ pthread_t;
 
 union pthread_attr_t {
- char __size[__SIZEOF_PTHREAD_ATTR_T];
- __INTPTR_TYPE__ __align;
+    char __size[__SIZEOF_PTHREAD_ATTR_T];
+    __INTPTR_TYPE__ __align;
 };
 #ifndef __have_pthread_attr_t
 #define __have_pthread_attr_t 1
@@ -88,74 +88,74 @@ typedef union pthread_attr_t pthread_attr_t;
 
 #ifdef __x86_64__
 typedef struct __pthread_internal_list {
- struct __pthread_internal_list *__prev;
- struct __pthread_internal_list *__next;
+    struct __pthread_internal_list *__prev;
+    struct __pthread_internal_list *__next;
 } __pthread_list_t;
 #else
 typedef struct __pthread_internal_slist {
- struct __pthread_internal_slist *__next;
+    struct __pthread_internal_slist *__next;
 } __pthread_slist_t;
 #endif
 
 
 typedef union {
- struct __pthread_mutex_s {
-  int __lock;
-  unsigned int __count;
-  int __owner;
+    struct __pthread_mutex_s {
+        int __lock;
+        unsigned int __count;
+        int __owner;
 #ifdef __x86_64__
-  unsigned int __nusers;
+        unsigned int __nusers;
 #endif
-  /* KIND must stay at this position in the structure to maintain binary compatibility.  */
-  int __kind;
+        /* KIND must stay at this position in the structure to maintain binary compatibility.  */
+        int __kind;
 #ifdef __x86_64__
-  short __spins;
-  short __elision;
-  __pthread_list_t __list;
-# define __PTHREAD_MUTEX_HAVE_PREV    1
-# define __PTHREAD_SPINS             0, 0
+        short __spins;
+        short __elision;
+        __pthread_list_t __list;
+#define __PTHREAD_MUTEX_HAVE_PREV  1
+#define __PTHREAD_SPINS            0, 0
 #else
-  unsigned int __nusers;
-  union {
-   struct {
-    short __espins;
-    short __elision;
+        unsigned int __nusers;
+        union {
+            struct {
+                short __espins;
+                short __elision;
 #define __spins   __elision_data.__espins
 #define __elision __elision_data.__elision
-#define __PTHREAD_SPINS         { 0, 0 }
-   } __elision_data;
-   __pthread_slist_t __list;
-  };
+#define __PTHREAD_SPINS         {0,0}
+            } __elision_data;
+            __pthread_slist_t __list;
+        };
 #endif
- } __data;
- char __size[__SIZEOF_PTHREAD_MUTEX_T];
- __INTPTR_TYPE__ __align;
+    } __data;
+    char __size[__SIZEOF_PTHREAD_MUTEX_T];
+    __INTPTR_TYPE__ __align;
 } pthread_mutex_t;
 
 typedef union {
- char __size[__SIZEOF_PTHREAD_MUTEXATTR_T];
- int __align;
+    char __size[__SIZEOF_PTHREAD_MUTEXATTR_T];
+    int  __align;
 } pthread_mutexattr_t;
 
 
 typedef union {
- struct {
-  int __lock;
-  unsigned int __futex;
-  __ULONGLONG __total_seq;
-  __ULONGLONG __wakeup_seq;
-  __ULONGLONG __woken_seq;
-  void *__mutex;
-  unsigned int __nwaiters;
-  unsigned int __broadcast_seq;
- } __data;
- char __size[__SIZEOF_PTHREAD_COND_T];
- __LONGLONG __align;
+    struct {
+        int          __lock;
+        unsigned int __futex;
+        __ULONGLONG  __total_seq;
+        __ULONGLONG  __wakeup_seq;
+        __ULONGLONG  __woken_seq;
+        void        *__mutex;
+        unsigned int __nwaiters;
+        unsigned int __broadcast_seq;
+    } __data;
+    char __size[__SIZEOF_PTHREAD_COND_T];
+    __LONGLONG __align;
 } pthread_cond_t;
 
 typedef union {
- char __size[__SIZEOF_PTHREAD_CONDATTR_T];
- int __align;
+    char __size[__SIZEOF_PTHREAD_CONDATTR_T];
+    int  __align;
 } pthread_condattr_t;
 
 typedef unsigned int pthread_key_t;
@@ -164,65 +164,64 @@ typedef int pthread_once_t;
 #if defined(__USE_UNIX98) || defined(__USE_XOPEN2K)
 typedef union {
 #ifdef __x86_64__
- struct {
-  int __lock;
-  unsigned int __nr_readers;
-  unsigned int __readers_wakeup;
-  unsigned int __writer_wakeup;
-  unsigned int __nr_readers_queued;
-  unsigned int __nr_writers_queued;
-  int __writer;
-  int __shared;
-  signed char __rwelision;
+    struct {
+        int __lock;
+        unsigned int __nr_readers;
+        unsigned int __readers_wakeup;
+        unsigned int __writer_wakeup;
+        unsigned int __nr_readers_queued;
+        unsigned int __nr_writers_queued;
+        int __writer;
+        int __shared;
+        signed char __rwelision;
 #ifdef  __ILP32__
-  unsigned char __pad1[3];
+        unsigned char __pad1[3];
 #define __PTHREAD_RWLOCK_ELISION_EXTRA 0,{0,0,0}
-#else
-  unsigned char __pad1[7];
+#else /* __ILP32__ */
+        unsigned char __pad1[7];
 #define __PTHREAD_RWLOCK_ELISION_EXTRA 0,{0,0,0,0,0,0,0}
-#endif
-  __UINTPTR_TYPE__ __pad2;
-  unsigned int __flags;
-# define __PTHREAD_RWLOCK_INT_FLAGS_SHARED    1
- } __data;
-# else
- struct {
-  int __lock;
-  unsigned int __nr_readers;
-  unsigned int __readers_wakeup;
-  unsigned int __writer_wakeup;
-  unsigned int __nr_readers_queued;
-  unsigned int __nr_writers_queued;
-  unsigned char __flags;
-  unsigned char __shared;
-  signed char __rwelision;
+#endif /* !__ILP32__ */
+        __UINTPTR_TYPE__ __pad2;
+        unsigned int __flags;
+#define __PTHREAD_RWLOCK_INT_FLAGS_SHARED    1
+    } __data;
+#else /* __x86_64__ */
+    struct {
+        int           __lock;
+        unsigned int  __nr_readers;
+        unsigned int  __readers_wakeup;
+        unsigned int  __writer_wakeup;
+        unsigned int  __nr_readers_queued;
+        unsigned int  __nr_writers_queued;
+        unsigned char __flags;
+        unsigned char __shared;
+        signed char   __rwelision;
 #define __PTHREAD_RWLOCK_ELISION_EXTRA 0
-  unsigned char __pad2;
-  int __writer;
- } __data;
-#endif
- char __size[__SIZEOF_PTHREAD_RWLOCK_T];
- __INTPTR_TYPE__ __align;
+        unsigned char __pad2;
+        int           __writer;
+    } __data;
+#endif /* !__x86_64__ */
+    char __size[__SIZEOF_PTHREAD_RWLOCK_T];
+    __INTPTR_TYPE__ __align;
 } pthread_rwlock_t;
 
 typedef union {
- char __size[__SIZEOF_PTHREAD_RWLOCKATTR_T];
- __INTPTR_TYPE__ __align;
+    char __size[__SIZEOF_PTHREAD_RWLOCKATTR_T];
+    __INTPTR_TYPE__ __align;
 } pthread_rwlockattr_t;
 #endif
-
 
 #ifdef __USE_XOPEN2K
 typedef volatile int pthread_spinlock_t;
 typedef union {
- char __size[__SIZEOF_PTHREAD_BARRIER_T];
- __INTPTR_TYPE__ __align;
+    char __size[__SIZEOF_PTHREAD_BARRIER_T];
+    __INTPTR_TYPE__ __align;
 } pthread_barrier_t;
 typedef union {
- char __size[__SIZEOF_PTHREAD_BARRIERATTR_T];
- int __align;
+    char __size[__SIZEOF_PTHREAD_BARRIERATTR_T];
+    int  __align;
 } pthread_barrierattr_t;
-#endif
+#endif /* __USE_XOPEN2K */
 
 #ifndef __x86_64__
 #define __cleanup_fct_attribute   __attribute__((__regparm__(1)))

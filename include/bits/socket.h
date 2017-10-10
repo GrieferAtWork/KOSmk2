@@ -182,27 +182,27 @@ struct sockaddr_storage {
 
 /* Bits in the FLAGS argument to `send', `recv', et al. */
 enum {
- MSG_OOB         = 0x00000001, /*< Process out-of-band data. */
- MSG_PEEK        = 0x00000002, /*< Peek at incoming messages. */
- MSG_DONTROUTE   = 0x00000004, /*< Don't use local routing. */
+ MSG_OOB          = 0x00000001, /*< Process out-of-band data. */
+ MSG_PEEK         = 0x00000002, /*< Peek at incoming messages. */
+ MSG_DONTROUTE    = 0x00000004, /*< Don't use local routing. */
 #ifdef __USE_GNU
- MSG_TRYHARD     = MSG_DONTROUTE, /*< DECnet uses a different name. */
+ MSG_TRYHARD      = MSG_DONTROUTE, /*< DECnet uses a different name. */
 #endif
- MSG_CTRUNC      = 0x00000008, /*< Control data lost before delivery. */
- MSG_PROXY       = 0x00000010, /*< Supply or ask second address. */
- MSG_TRUNC       = 0x00000020,
- MSG_DONTWAIT    = 0x00000040, /*< Nonblocking IO. */
- MSG_EOR         = 0x00000080, /*< End of record. */
- MSG_WAITALL     = 0x00000100, /*< Wait for a full request. */
- MSG_FIN         = 0x00000200,
- MSG_SYN         = 0x00000400,
- MSG_CONFIRM     = 0x00000800, /*< Confirm path validity. */
- MSG_RST         = 0x00001000,
- MSG_ERRQUEUE    = 0x00002000, /*< Fetch message from error queue. */
- MSG_NOSIGNAL    = 0x00004000, /*< Do not generate SIGPIPE. */
- MSG_MORE        = 0x00008000, /*< Sender will send more. */
- MSG_WAITFORONE  = 0x00010000, /*< Wait for at least one packet to return.*/
- MSG_FASTOPEN    = 0x20000000, /*< Send data in TCP SYN. */
+ MSG_CTRUNC       = 0x00000008, /*< Control data lost before delivery. */
+ MSG_PROXY        = 0x00000010, /*< Supply or ask second address. */
+ MSG_TRUNC        = 0x00000020,
+ MSG_DONTWAIT     = 0x00000040, /*< Nonblocking IO. */
+ MSG_EOR          = 0x00000080, /*< End of record. */
+ MSG_WAITALL      = 0x00000100, /*< Wait for a full request. */
+ MSG_FIN          = 0x00000200,
+ MSG_SYN          = 0x00000400,
+ MSG_CONFIRM      = 0x00000800, /*< Confirm path validity. */
+ MSG_RST          = 0x00001000,
+ MSG_ERRQUEUE     = 0x00002000, /*< Fetch message from error queue. */
+ MSG_NOSIGNAL     = 0x00004000, /*< Do not generate SIGPIPE. */
+ MSG_MORE         = 0x00008000, /*< Sender will send more. */
+ MSG_WAITFORONE   = 0x00010000, /*< Wait for at least one packet to return.*/
+ MSG_FASTOPEN     = 0x20000000, /*< Send data in TCP SYN. */
  MSG_CMSG_CLOEXEC = 0x40000000, /*< Set close_on_exit for file descriptor received through SCM_RIGHTS. */
 };
 
@@ -257,13 +257,13 @@ struct cmsghdr {
 #define CMSG_NXTHDR(mhdr,cmsg)   __cmsg_nxthdr(mhdr, cmsg)
 #ifdef __KERNEL__
 __LOCAL struct cmsghdr *(__LIBCCALL __cmsg_nxthdr)(struct msghdr *__mhdr, struct cmsghdr *__cmsg) {
- if ((size_t)__cmsg->cmsg_len < sizeof(struct cmsghdr)) return (struct cmsghdr *) 0;
- __cmsg = (struct cmsghdr *)((unsigned char *)__cmsg+CMSG_ALIGN(__cmsg->cmsg_len));
- if ((unsigned char *)(__cmsg+1) >((unsigned char *)__mhdr->msg_control+__mhdr->msg_controllen) ||
-    ((unsigned char *) __cmsg+CMSG_ALIGN(__cmsg->cmsg_len) >
-    ((unsigned char *) __mhdr->msg_control+__mhdr->msg_controllen)))
-      return (struct cmsghdr *)0;
- return __cmsg;
+    if ((size_t)__cmsg->cmsg_len < sizeof(struct cmsghdr)) return (struct cmsghdr *) 0;
+    __cmsg = (struct cmsghdr *)((unsigned char *)__cmsg+CMSG_ALIGN(__cmsg->cmsg_len));
+    if ((unsigned char *)(__cmsg+1) >((unsigned char *)__mhdr->msg_control+__mhdr->msg_controllen) ||
+       ((unsigned char *) __cmsg+CMSG_ALIGN(__cmsg->cmsg_len) >
+       ((unsigned char *) __mhdr->msg_control+__mhdr->msg_controllen)))
+         return (struct cmsghdr *)0;
+    return __cmsg;
 }
 #else
 __LIBC struct cmsghdr *(__LIBCCALL __cmsg_nxthdr)(struct msghdr *__mhdr, struct cmsghdr *__cmsg);

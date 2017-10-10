@@ -273,13 +273,13 @@ typedef __UINT16_TYPE__ key_t;      /*< One of 'KEY_*' */
 
 #define KEYMAP_SIZEOF    1600
 __ATTR_ALIGNED(64) struct keymap {
- /* NOTE: Use 'KEY_*' constants from '<kos/keyboard.h>' for these arrays. */
- char            km_name[64];   /*< Key map name (ZERO-terminated). */
- /* NOTE: Characters below are encoded in UTF-16 (host-endian)
-  *      (if you're lazy, you can just cast to 'char' and be happy...) */
- __UINT16_TYPE__ km_press[256]; /*< Regular key map. */
- __UINT16_TYPE__ km_shift[256]; /*< Key map when case-shifting is active. */
- __UINT16_TYPE__ km_altgr[256]; /*< Key map when RALT or CTRL+ALT is held down. */
+    /* NOTE: Use 'KEY_*' constants from '<kos/keyboard.h>' for these arrays. */
+    char            km_name[64];   /*< Key map name (ZERO-terminated). */
+    /* NOTE: Characters below are encoded in UTF-16 (host-endian)
+     *      (if you're lazy, you can just cast to 'char' and be happy...) */
+    __UINT16_TYPE__ km_press[256]; /*< Regular key map. */
+    __UINT16_TYPE__ km_shift[256]; /*< Key map when case-shifting is active. */
+    __UINT16_TYPE__ km_altgr[256]; /*< Key map when RALT or CTRL+ALT is held down. */
 };
 
 /* For xsharesym(): The currently active (global) key -> ascii map. */

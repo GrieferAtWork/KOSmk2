@@ -459,6 +459,9 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/ps2");
  kinsmod("/mod/memdev");
  kinsmod("/mod/vga-tty");
+
+ PREEMPTION_ENABLE();
+
  /* --- SPLIT: Modules below are mostly optional. */
  /* TODO: These shouldn't be loaded here... */
  kinsmod("/mod/procfs");
@@ -466,10 +469,10 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/pe");
  kinsmod("/mod/nt");
  kinsmod("/mod/elf-coredump");
+ kinsmod("/mod/ne2000");
 
  /* TODO: Actual locale support? */
 
- PREEMPTION_ENABLE();
 #ifdef CONFIG_DEBUG
  { INTDEF bool interrupts_enabled_initial;
    interrupts_enabled_initial = true;
@@ -545,7 +548,6 @@ end: ATTR_UNUSED;
  mman_print_unlocked(&mman_kernel,&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_DEBUG));
  pdir_print(&mman_kernel.m_pdir,&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_DEBUG));
  mman_endread(&mman_kernel);
-
 #endif
 
  _mall_printleaks(NULL);

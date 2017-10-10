@@ -62,21 +62,21 @@ __NAMESPACE_STD_BEGIN
  * Yet seeing as how  */
 struct _IO_FILE {
 #ifdef __BUILDING_LIBC
- char               *if_ptr;        /*< [0..1] Pointer to the next character to-be read. */
- __UINT32_TYPE__     if_cnt;        /*< Amount of characters available in 'if_ptr'.
-                                     *  NOTE: When this value underflows, then the caller
-                                     *        is responsible for loading more data into 'if_ptr' */
- char               *if_base;       /*< [0..if_bufsiz][owned_if(__IO_FILE_IOMALLBUF)] Base pointer to the used buffer. */
- __UINT32_TYPE__     if_flag;       /*< Set of '__IO_FILE_IO*' */
- int                 if_fd;         /*< [valid_if(__IO_FILE_IOSTRG)] Underlying file descriptor.
-                                     *  NOTE: When available, this stream's file pointer is assumed
-                                     *        to be located at the end of the loaded buffer. */
- char                if_charbuf[4]; /*< A very small inline-allocated buffer used as fallback for 'if_base' */
- __UINT32_TYPE__     if_bufsiz;     /*< Allocated/available size of the buffer  */
- struct iofile_data *if_exdata;     /*< [1..1][owned] Pointer to some internal data.
-                                     *  HINT: To fix binary compatibility with DOS, the first byte of
-                                     *        this structure is a NUL-character, allowing library users
-                                     *        to interpret this member as a C-string of 0 length. */
+    char               *if_ptr;        /*< [0..1] Pointer to the next character to-be read. */
+    __UINT32_TYPE__     if_cnt;        /*< Amount of characters available in 'if_ptr'.
+                                        *  NOTE: When this value underflows, then the caller
+                                        *        is responsible for loading more data into 'if_ptr' */
+    char               *if_base;       /*< [0..if_bufsiz][owned_if(__IO_FILE_IOMALLBUF)] Base pointer to the used buffer. */
+    __UINT32_TYPE__     if_flag;       /*< Set of '__IO_FILE_IO*' */
+    int                 if_fd;         /*< [valid_if(__IO_FILE_IOSTRG)] Underlying file descriptor.
+                                        *  NOTE: When available, this stream's file pointer is assumed
+                                        *        to be located at the end of the loaded buffer. */
+    char                if_charbuf[4]; /*< A very small inline-allocated buffer used as fallback for 'if_base' */
+    __UINT32_TYPE__     if_bufsiz;     /*< Allocated/available size of the buffer  */
+    struct iofile_data *if_exdata;     /*< [1..1][owned] Pointer to some internal data.
+                                        *  HINT: To fix binary compatibility with DOS, the first byte of
+                                        *        this structure is a NUL-character, allowing library users
+                                        *        to interpret this member as a C-string of 0 length. */
 #define __f_ptr      if_ptr
 #define __f_cnt      if_cnt
 #define __f_base     if_base
@@ -87,18 +87,17 @@ struct _IO_FILE {
 #define __f_tmpfname if_exdata
 #else /* __BUILDING_LIBC */
 #ifdef __USE_KOS
- /* Use names that are protected by the C standard. */
- char          *__f_ptr;
- __INT32_TYPE__ __f_cnt;
- char          *__f_base;
- __INT32_TYPE__ __f_flag;
- __INT32_TYPE__ __f_file;
- __INT32_TYPE__ __f_charbuf;
- __INT32_TYPE__ __f_bufsiz;
- char          *__f_tmpfname;
+    /* Use names that are protected by the C standard. */
+    char          *__f_ptr;
+    __INT32_TYPE__ __f_cnt;
+    char          *__f_base;
+    __INT32_TYPE__ __f_flag;
+    __INT32_TYPE__ __f_file;
+    __INT32_TYPE__ __f_charbuf;
+    __INT32_TYPE__ __f_bufsiz;
+    char          *__f_tmpfname;
 #else /* __USE_KOS */
-#if defined(__COMPILER_HAVE_PRAGMA_PUSHMACRO) && \
-    defined(__COMPILER_HAVE_TRANSPARENT_UNION)
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma push_macro("_ptr")
 #pragma push_macro("_cnt")
 #pragma push_macro("_base")
@@ -121,23 +120,23 @@ struct _IO_FILE {
 #undef _tmpfname
 
 #ifdef __COMPILER_HAVE_TRANSPARENT_UNION
- union { char          *__f_ptr;      char          *_ptr;      };
- union { __INT32_TYPE__ __f_cnt;      __INT32_TYPE__ _cnt;      };
- union { char          *__f_base;     char          *_base;     };
- union { __INT32_TYPE__ __f_flag;     __INT32_TYPE__ _flag;     };
- union { __INT32_TYPE__ __f_file;     __INT32_TYPE__ _file;     };
- union { __INT32_TYPE__ __f_charbuf;  __INT32_TYPE__ _charbuf;  };
- union { __INT32_TYPE__ __f_bufsiz;   __INT32_TYPE__ _bufsiz;   };
- union { char          *__f_tmpfname; char          *_tmpfname; };
+    union { char          *__f_ptr;      char          *_ptr;      };
+    union { __INT32_TYPE__ __f_cnt;      __INT32_TYPE__ _cnt;      };
+    union { char          *__f_base;     char          *_base;     };
+    union { __INT32_TYPE__ __f_flag;     __INT32_TYPE__ _flag;     };
+    union { __INT32_TYPE__ __f_file;     __INT32_TYPE__ _file;     };
+    union { __INT32_TYPE__ __f_charbuf;  __INT32_TYPE__ _charbuf;  };
+    union { __INT32_TYPE__ __f_bufsiz;   __INT32_TYPE__ _bufsiz;   };
+    union { char          *__f_tmpfname; char          *_tmpfname; };
 #else /* __COMPILER_HAVE_TRANSPARENT_UNION */
- char          *_ptr;
- __INT32_TYPE__ _cnt;
- char          *_base;
- __INT32_TYPE__ _flag;
- __INT32_TYPE__ _file;
- __INT32_TYPE__ _charbuf;
- __INT32_TYPE__ _bufsiz;
- char          *_tmpfname;
+    char          *_ptr;
+    __INT32_TYPE__ _cnt;
+    char          *_base;
+    __INT32_TYPE__ _flag;
+    __INT32_TYPE__ _file;
+    __INT32_TYPE__ _charbuf;
+    __INT32_TYPE__ _bufsiz;
+    char          *_tmpfname;
 #define __f_ptr      _ptr
 #define __f_cnt      _cnt
 #define __f_base     _base
@@ -148,8 +147,7 @@ struct _IO_FILE {
 #define __f_tmpfname _tmpfname
 #endif /* !__COMPILER_HAVE_TRANSPARENT_UNION */
 
-#if defined(__COMPILER_HAVE_PRAGMA_PUSHMACRO) && \
-    defined(__COMPILER_HAVE_TRANSPARENT_UNION)
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma pop_macro("_tmpfname")
 #pragma pop_macro("_bufsiz")
 #pragma pop_macro("_charbuf")

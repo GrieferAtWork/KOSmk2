@@ -31,8 +31,8 @@ typedef __SIZE_TYPE__ size_t;
 
 #define UIO_MAXIOV  1024
 struct iovec {
- void  *iov_base; /*< Pointer to data. */
- size_t iov_len;  /*< Length of data. */
+    void  *iov_base; /*< Pointer to data. */
+    size_t iov_len;  /*< Length of data. */
 };
 
 __SYSDECL_END

@@ -31,9 +31,8 @@ union {
 #ifdef __USE_KOS
     __ino32_t          d_ino32;
     __ino64_t          d_ino64;
-#else /* __USE_KOS */
-    __ino64_t        __padding0;
 #endif /* !__USE_KOS */
+    __ino64_t        __padding0;
 };
     unsigned char      d_type;
     unsigned short int d_namlen; /*< == strlen(d_name) */

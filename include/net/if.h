@@ -54,41 +54,24 @@ struct if_nameindex {
 };
 
 #ifdef __USE_MISC
-enum { /* Standard interface flags. */
-  IFF_UP          = 0x1,    /*< Interface is up. */
-  IFF_BROADCAST   = 0x2,    /*< Broadcast address valid. */
-  IFF_DEBUG       = 0x4,    /*< Turn on debugging. */
-  IFF_LOOPBACK    = 0x8,    /*< Is a loopback net. */
-  IFF_POINTOPOINT = 0x10,   /*< Interface is point-to-point link. */
-  IFF_NOTRAILERS  = 0x20,   /*< Avoid use of trailers. */
-  IFF_RUNNING     = 0x40,   /*< Resources allocated. */
-  IFF_NOARP       = 0x80,   /*< No address resolution protocol. */
-  IFF_PROMISC     = 0x100,  /*< Receive all packets. */
-  /* Not supported */
-  IFF_ALLMULTI    = 0x200,  /*< Receive all multicast packets. */
-  IFF_MASTER      = 0x400,  /*< Master of a load balancer. */
-  IFF_SLAVE       = 0x800,  /*< Slave of a load balancer. */
-  IFF_MULTICAST   = 0x1000, /*< Supports multicast. */
-  IFF_PORTSEL     = 0x2000, /*< Can set media type. */
-  IFF_AUTOMEDIA   = 0x4000, /*< Auto media select active. */
-  IFF_DYNAMIC     = 0x8000, /*< Dialup device with changing addresses. */
-};
-#define IFF_UP          IFF_UP
-#define IFF_BROADCAST   IFF_BROADCAST
-#define IFF_DEBUG       IFF_DEBUG
-#define IFF_LOOPBACK    IFF_LOOPBACK
-#define IFF_POINTOPOINT IFF_POINTOPOINT
-#define IFF_NOTRAILERS  IFF_NOTRAILERS
-#define IFF_RUNNING     IFF_RUNNING
-#define IFF_NOARP       IFF_NOARP
-#define IFF_PROMISC     IFF_PROMISC
-#define IFF_ALLMULTI    IFF_ALLMULTI
-#define IFF_MASTER      IFF_MASTER
-#define IFF_SLAVE       IFF_SLAVE
-#define IFF_MULTICAST   IFF_MULTICAST
-#define IFF_PORTSEL     IFF_PORTSEL
-#define IFF_AUTOMEDIA   IFF_AUTOMEDIA
-#define IFF_DYNAMIC     IFF_DYNAMIC
+/* Standard interface flags. */
+#define IFF_UP          0x0001  /*< Interface is up. */
+#define IFF_BROADCAST   0x0002  /*< Broadcast address valid. */
+#define IFF_DEBUG       0x0004  /*< Turn on debugging. */
+#define IFF_LOOPBACK    0x0008  /*< Is a loopback net. */
+#define IFF_POINTOPOINT 0x0010  /*< Interface is point-to-point link. */
+#define IFF_NOTRAILERS  0x0020  /*< Avoid use of trailers. */
+#define IFF_RUNNING     0x0040  /*< Resources allocated. */
+#define IFF_NOARP       0x0080  /*< No address resolution protocol. */
+#define IFF_PROMISC     0x0100  /*< Receive all packets. */
+/* Not supported */
+#define IFF_ALLMULTI    0x0200  /*< Receive all multicast packets. */
+#define IFF_MASTER      0x0400  /*< Master of a load balancer. */
+#define IFF_SLAVE       0x0800  /*< Slave of a load balancer. */
+#define IFF_MULTICAST   0x1000  /*< Supports multicast. */
+#define IFF_PORTSEL     0x2000  /*< Can set media type. */
+#define IFF_AUTOMEDIA   0x4000  /*< Auto media select active. */
+#define IFF_DYNAMIC     0x8000  /*< Dialup device with changing addresses. */
 
 
 /* The ifaddr structure contains information about one address of an
