@@ -1572,6 +1572,31 @@ dentry_mount(struct dentry *__restrict self,
  return error;
 }
 
+PUBLIC ssize_t KCALL fs_sync(void) {
+ ssize_t result = 0;
+ errno_t temp = 0;
+ struct superblock *sb;
+ task_crit();
+ result = rwlock_read(&fs_mountlock);
+ if (E_ISERR(result)) goto end;
+ FS_FOREACH_MOUNT(sb) {
+  temp = superblock_sync(sb);
+  if (E_ISOK(temp)) ++result;
+  else if (temp == -ENOMEM || temp == -EINTR) {
+   /* Stop for crucial errors. */
+   result = temp;
+   break;
+  }
+ }
+ rwlock_endread(&fs_mountlock);
+ /* If nothing else was synced, return the
+  * last error that prevented anything. */
+ if (!result) result = (ssize_t)temp;
+end:
+ task_endcrit();
+ return result;
+}
+
 
 PUBLIC errno_t KCALL
 dentry_setattr(struct dentry *__restrict dir_ent,

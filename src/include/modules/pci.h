@@ -432,15 +432,6 @@ FUNDEF struct pci_device *KCALL pci_getdevice_at_unlocked(pci_addr_t addr);
 #define PCI_DEVICE_INCREF(self)    (void)(ATOMIC_FETCHINC((self)->pd_refcnt))
 #define PCI_DEVICE_DECREF(self)    (void)(ATOMIC_DECFETCH((self)->pd_refcnt) || (free(self),0))
 
-
-/* PCI Helper functions. */
-
-/* Enable/Disable a PCI device at a given address by connecting/disconnecting it.
- * NOTE: No-op if the device was already enabled/disabled. */
-FUNDEF errno_t KCALL pci_enable(struct pci_device *__restrict dev);
-#define pci_disable(dev) pci_write((dev)->pd_addr,PCI_DEV4,PCI_DEV4_CMD_DISCONNECT << PCI_DEV4_CMDSHIFT)
-#define pci_iobase(dev) pci_write((dev)->pd_addr,PCI_DEV4,PCI_DEV4_CMD_DISCONNECT << PCI_DEV4_CMDSHIFT)
-
 /* Find and return the first I/O or memory resource, or return NULL if no such resource exists. */
 FUNDEF struct pci_resource *KCALL pci_find_iobar(struct pci_device *__restrict dev);
 FUNDEF struct pci_resource *KCALL pci_find_membar(struct pci_device *__restrict dev);

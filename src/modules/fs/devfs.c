@@ -83,8 +83,6 @@ PRIVATE struct devname const dnam_blk[] = {
     {0,0,0,NULL},
 };
 PRIVATE struct devname const dnam_chr[] = {
-    {DV_PS2_KEYBOARD,     1, DN_INT,"keyboard"},
-    {DV_JIFFY_RTC,        1, DN_INT,"rtc"},
     {MD_MEM,              1, DN_INT,"mem"},
     {MD_KMEM,             1, DN_INT,"kmem"},
     {MD_NULL,             1, DN_INT,"null"},
@@ -97,6 +95,9 @@ PRIVATE struct devname const dnam_chr[] = {
     {MD_AIO,              1, DN_INT,"aio"},
     {MD_KMSG,             1, DN_INT,"kmsg"},
     {VGA_TTY,             1, DN_INT,"vga-tty"},
+    {DV_PS2_KEYBOARD,     1, DN_INT,"keyboard"},
+    {DV_JIFFY_RTC,        1, DN_INT,"rtc"},
+    {DV_ETHERNET,         1, DN_INT|DN_ALL,"eth"},
     {0,0,0,NULL},
 };
 

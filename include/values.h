@@ -16,42 +16,50 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_MODULES_NET_NE2000_C
-#define GUARD_MODULES_NET_NE2000_C 1
-#define _KOS_SOURCE 2
+#ifndef _VALUES_H
+#define _VALUES_H 1
 
-#include <hybrid/compiler.h>
-#include <kernel/export.h>
-#include <dev/net.h>
-#include <syslog.h>
-#include <modules/pci.h>
+#include "__stdinc.h"
+#include <features.h>
+#include "hybrid/floatcore.h"
+#include "hybrid/limitcore.h"
+#include "hybrid/typecore.h"
 
-DECL_BEGIN
+/* GLibc includes these two headers unconditionally,
+ * but as an extension KOS doesn't. */
+#ifndef __USE_KOS
+#include <limits.h>
+#include <float.h>
+#endif /* !__USE_KOS */
 
-PRIVATE void MODULE_INIT KCALL net_init(void) {
- struct pci_device *dev;
- struct pci_resource *io;
- struct pci_resource *mem;
- PCI_READ();
- /* Search for network cards. */
- PCI_FOREACH_CLASS(dev,PCI_DEV8_CLASS_NETWORK,
-                   PCI_DEV8_CLASS_NOCLASS) {
-  /* Try to enable the device. */
-  if (E_ISERR(pci_enable(dev))) continue;
-  /* Lookup the proper resources. */
-  if ((io = pci_find_iobar(dev)) == NULL) continue;
-  if ((mem = pci_find_membar(dev)) == NULL) continue;
+#define _TYPEBITS(type) (sizeof(type)*__CHAR_BIT__)
+#define CHARBITS    __CHAR_BIT__
+#define SHORTBITS  (__CHAR_BIT__*__SIZEOF_SHORT__)
+#define INTBITS    (__CHAR_BIT__*__SIZEOF_INT__)
+#define LONGBITS   (__CHAR_BIT__*__SIZEOF_LONG__)
+#define PTRBITS    (__CHAR_BIT__*__SIZEOF_POINTER__)
+#define DOUBLEBITS (__CHAR_BIT__*__SIZEOF_DOUBLE__)
+#define FLOATBITS  (__CHAR_BIT__*__SIZEOF_FLOAT__)
 
-  syslog(LOG_DEBUG,"[NE2000] Found network card at %p\n",dev->pd_addr);
-  syslog(LOG_DEBUG,"io   = %p...%p\n",io->pr_begin,io->pr_begin+io->pr_size-1);
-  syslog(LOG_DEBUG,"mem  = %p...%p\n",mem->pr_begin,mem->pr_begin+mem->pr_size-1);
-  syslog(LOG_DEBUG,"bar0 = %p\n",pci_read(dev->pd_addr,PCI_GDEV_BAR0));
-  syslog(LOG_DEBUG,"bar1 = %p\n",pci_read(dev->pd_addr,PCI_GDEV_BAR1));
-  
- }
- PCI_ENDREAD();
-}
+#define MINSHORT    __SHRT_MIN__
+#define MAXSHORT    __SHRT_MAX__
+#define MININT      __INT_MIN__
+#define MAXINT      __INT_MAX__
+#define MINLONG     __LONG_MIN__
+#define MAXLONG     __LONG_MAX__
+#define HIBITS      __SHRT_MIN__
+#define HIBITL      __LONG_MIN__
+#define MAXDOUBLE   __DBL_MAX__
+#define MAXFLOAT    __FLT_MAX__
+#define MINDOUBLE   __DBL_MIN__
+#define MINFLOAT    __FLT_MIN__
+#define DMINEXP     __DBL_MIN_EXP__
+#define FMINEXP     __FLT_MIN_EXP__
+#define DMAXEXP     __DBL_MAX_EXP__
+#define FMAXEXP     __FLT_MAX_EXP__
 
-DECL_END
+#ifdef __USE_MISC
+#define BITSPERBYTE __CHAR_BIT__
+#endif /* __USE_MISC */
 
-#endif /* !GUARD_MODULES_NET_NE2000_C */
+#endif /* !_VALUES_H */

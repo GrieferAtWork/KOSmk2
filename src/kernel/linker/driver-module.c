@@ -117,14 +117,14 @@ local_nomem:
    module_loadhint = patch.p_dephint;
  }
 
+ syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module '%[file]' at %p...%p\n",
+        mod->m_file,result->i_base,
+       (uintptr_t)result->i_base+mod->m_size-1);
+
  /* Run the module initialization function.
   * TODO: Module initializers must somehow be able to return error codes...
   * TODO: Must somehow pass 'cmdline' to the driver. */
  instance_callinit(result);
-
- syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module '%[file]' at %p...%p\n",
-        mod->m_file,result->i_base,
-       (uintptr_t)result->i_base+mod->m_size-1);
 
  return result;
 err2:

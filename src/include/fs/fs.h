@@ -276,6 +276,15 @@ DATDEF struct dentry fs_root;
 INTDEF INITCALL void KCALL mount_root_filesystem(void);
 #endif
 
+/* Synchronize all mounted filesystems and underlying block devices,
+ * flushing any unwritten data to disk in the process.
+ * >> This is literally the same as the 'sync()' system calls.
+ * @return: * :         The amount of successfully synchronized filesystems.
+ * @return: -ENOMEM:    Not enough available memory.
+ * @return: -EINTR:     The calling thread was interrupted.
+ * @return: E_ISERR(*): Failed to synchronize anything for some reason. */
+FUNDEF ssize_t KCALL fs_sync(void);
+
 
 /* A simplified set of FS-function for use by the kernel itself. */
 LOCAL REF struct file *KCALL fs_kopen(char const *__restrict path, size_t pathlen, struct iattr const *attr, iattrset_t attr_valid, oflag_t oflags);

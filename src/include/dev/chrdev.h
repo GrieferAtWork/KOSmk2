@@ -21,6 +21,7 @@
 
 #include <dev/device.h>
 #include <hybrid/compiler.h>
+#include <kernel/malloc.h>
 
 DECL_BEGIN
 
@@ -37,7 +38,7 @@ struct chrdev {
  *  - cd_device.d_node.i_ops
  */
 #define chrdev_new(type_size) \
-        chrdev_cinit((struct chrdev *)calloc(1,type_size))
+        chrdev_cinit((struct chrdev *)kcalloc(type_size,GFP_SHARED))
 FUNDEF struct chrdev *KCALL chrdev_cinit(struct chrdev *self);
 
 /* Character device finalization (Must be called from 'cd_device.d_node.i_ops->ino_fini') */

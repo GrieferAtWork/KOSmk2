@@ -423,14 +423,17 @@
     <ClCompile Include="..\..\src\kernel\linker\coredump.c">
       <Filter>kernel\linker</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\modules\net\ne2000.c">
-      <Filter>modules\net</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\modules\pci\pci.c">
       <Filter>modules\pci</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core\iomgr.c">
       <Filter>kernel\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\nt\error.c">
+      <Filter>modules\nt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\net\ne2k.c">
+      <Filter>modules\net</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -691,6 +694,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\iomgr.h">
       <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\nt\error.h">
+      <Filter>modules\nt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\modules\net\ne2k.h">
+      <Filter>modules\net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

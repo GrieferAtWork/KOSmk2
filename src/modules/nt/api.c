@@ -26,12 +26,23 @@
 #include <bits/signum.h>
 #include <winapi/ntstatus.h>
 #include <syslog.h>
+#include <dev/rtc.h>
+#include <sched/task.h>
+#include <fs/superblock.h>
+#include "error.h"
 
 DECL_BEGIN
+
 
 /* Special system call executed as fallback for unimplemented IDs. */
 INTERN void NTAPI NtBadSysCall(VOID) { task_kill(THIS_TASK,SIGSYS); }
 INTERN void NTAPI NtSegFault(VOID) { task_kill(THIS_TASK,SIGSEGV); }
+
+
+INTERN NTSTATUS NTAPI NtYieldExecution(VOID) { task_yield(); return STATUS_SUCCESS; }
+INTERN ULONG NTAPI NtGetTickCount(void) { return (ULONG)(jiffies64*(1000/HZ)); }
+INTERN NTSTATUS NTAPI NtFlushWriteBuffer(VOID) { return errno_kos2ntv(fs_sync()); }
+
 
 PRIVATE void KCALL noimp(int line, char const *func) {
  syslog(LOG_ERROR,__FILE__ "(%d) : %s : STATUS_NOT_IMPLEMENTED\n",line,func);
@@ -187,7 +198,6 @@ INTERN NTSTATUS NTAPI NtUnloadDriver(IN PUNICODE_STRING DriverServiceName) NOT_I
 INTERN NTSTATUS NTAPI NtCreateFile(PHANDLE FileHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocateSize, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer, ULONG EaLength) NOT_IMPLEMENTED
 INTERN NTSTATUS NTAPI NtCreateMailslotFile(OUT PHANDLE FileHandle, IN ACCESS_MASK DesiredAccess, IN POBJECT_ATTRIBUTES ObjectAttributes, OUT PIO_STATUS_BLOCK IoStatusBlock, IN ULONG CreateOptions, IN ULONG MailslotQuota, IN ULONG MaxMessageSize, IN PLARGE_INTEGER TimeOut) NOT_IMPLEMENTED
 INTERN NTSTATUS NTAPI NtCreateNamedPipeFile(OUT PHANDLE FileHandle, IN ACCESS_MASK DesiredAccess, IN POBJECT_ATTRIBUTES ObjectAttributes, OUT PIO_STATUS_BLOCK IoStatusBlock, IN ULONG ShareAccess, IN ULONG CreateDisposition, IN ULONG CreateOptions, IN ULONG NamedPipeType, IN ULONG ReadMode, IN ULONG CompletionMode, IN ULONG MaximumInstances, IN ULONG InboundQuota, IN ULONG OutboundQuota, IN PLARGE_INTEGER DefaultTimeout) NOT_IMPLEMENTED
-INTERN NTSTATUS NTAPI NtFlushWriteBuffer(VOID) NOT_IMPLEMENTED
 INTERN NTSTATUS NTAPI NtOpenFile(OUT PHANDLE FileHandle, IN ACCESS_MASK DesiredAccess, IN POBJECT_ATTRIBUTES ObjectAttributes, OUT PIO_STATUS_BLOCK IoStatusBlock, IN ULONG ShareAccess, IN ULONG OpenOptions) NOT_IMPLEMENTED
 INTERN NTSTATUS NTAPI NtQueryAttributesFile(IN POBJECT_ATTRIBUTES ObjectAttributes, OUT PFILE_BASIC_INFORMATION FileInformation) NOT_IMPLEMENTED
 INTERN NTSTATUS NTAPI NtQueryFullAttributesFile(IN POBJECT_ATTRIBUTES ObjectAttributes, OUT PFILE_NETWORK_OPEN_INFORMATION FileInformation) NOT_IMPLEMENTED
@@ -228,8 +238,6 @@ INTERN NTSTATUS NTAPI NtPlugPlayControl(IN PLUGPLAY_CONTROL_CLASS PlugPlayContro
 INTERN NTSTATUS NTAPI NtQueryDebugFilterState(IN ULONG ComponentId, IN ULONG Level) NOT_IMPLEMENTED
 INTERN NTSTATUS NTAPI NtSetDebugFilterState(IN ULONG ComponentId, IN ULONG Level, IN BOOLEAN State) NOT_IMPLEMENTED
 
-INTERN NTSTATUS NTAPI NtYieldExecution(VOID) NOT_IMPLEMENTED
-
 INTERN NTSTATUS NTAPI NtDelayExecution(IN BOOLEAN Alertable, IN PLARGE_INTEGER DelayInterval) NOT_IMPLEMENTED
 
 INTERN NTSTATUS NTAPI NtRaiseException(IN PEXCEPTION_RECORD ExceptionRecord, IN PCONTEXT Context, IN BOOLEAN FirstChance) NOT_IMPLEMENTED
@@ -240,8 +248,6 @@ INTERN NTSTATUS NTAPI NtSetLdtEntries(ULONG Selector1, LDT_ENTRY LdtEntry1, ULON
 #endif
 
 INTERN NTSTATUS NTAPI NtCallbackReturn(_In_ PVOID Result, _In_ ULONG ResultLength, _In_ NTSTATUS CallbackStatus) NOT_IMPLEMENTED
-
-INTERN ULONG NTAPI NtGetTickCount(void) NOT_IMPLEMENTED_R(0)
 
 INTERN NTSTATUS NTAPI NtSecureConnectPort(OUT PHANDLE PortHandle, IN PUNICODE_STRING PortName, IN PSECURITY_QUALITY_OF_SERVICE SecurityQos, IN OUT PPORT_VIEW ClientView OPTIONAL, IN PSID ServerSid OPTIONAL, IN OUT PREMOTE_PORT_VIEW ServerView OPTIONAL, OUT PULONG MaxMessageLength OPTIONAL, IN OUT PVOID ConnectionInformation OPTIONAL, IN OUT PULONG ConnectionInformationLength OPTIONAL) NOT_IMPLEMENTED
 INTERN NTSTATUS NTAPI NtConnectPort(OUT PHANDLE PortHandle, IN PUNICODE_STRING PortName, IN PSECURITY_QUALITY_OF_SERVICE SecurityQos, IN OUT PPORT_VIEW ClientView OPTIONAL, IN OUT PREMOTE_PORT_VIEW ServerView OPTIONAL, OUT PULONG MaxMessageLength OPTIONAL, IN OUT PVOID ConnectionInformation OPTIONAL, IN OUT PULONG ConnectionInformationLength OPTIONAL) NOT_IMPLEMENTED

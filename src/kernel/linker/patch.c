@@ -478,10 +478,10 @@ done:
 
  /* Run initializers for drivers. */
  if (MODPATCH_ISHOST(self)) {
-  instance_callinit(inst);
   syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module '%[file]' at %p...%p\n",
          inst->i_module->m_file,inst->i_base,
         (uintptr_t)inst->i_base+inst->i_module->m_size-1);
+  instance_callinit(inst);
  }
 
  /* Only return a weak pointer.

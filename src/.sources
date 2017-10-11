@@ -201,7 +201,7 @@ BEGIN
 	BEGIN BASIC_MODULE("shebang")      SOURCE("modules/linker/shebang.c")      END
 	BEGIN BASIC_MODULE("nt")           SOURCE("modules/nt/*.c")                END
 	BEGIN LIBRARY_MODULE("pci")        SOURCE("modules/pci/*.c")               END
-	BEGIN DEFAULT_MODULE("ne2000")     SOURCE("modules/net/ne2000.c") USING("pci") END
+	BEGIN DEFAULT_MODULE("ne2000")     SOURCE("modules/net/ne2k.c") USING("pci") END
 	BEGIN BASIC_MODULE("elf-coredump") SOURCE("modules/linker/elf-coredump.c") END
 
 END

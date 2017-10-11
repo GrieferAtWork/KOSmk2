@@ -16,31 +16,46 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_DEV_NET_H
-#define GUARD_INCLUDE_DEV_NET_H 1
+#ifndef GUARD_MODULES_NT_ERROR_C
+#define GUARD_MODULES_NT_ERROR_C 1
 
-#include <dev/chrdev.h>
 #include <hybrid/compiler.h>
-#include <hybrid/types.h>
+#include <errno.h>
+
+#include "error.h"
+
+#include <winapi/windows.h>
+#include <winapi/windef.h>
+#include <winapi/ntstatus.h>
+#include <winapi/ntdef.h>
 
 DECL_BEGIN
 
-struct macaddr {
- u8  ma_bytes[6];
+#define FALLBACK  STATUS_NOT_SUPPORTED
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverride-init"
+
+PRIVATE LONG const errno_matrix[__EBASEMAX+1] = {
+    [0 ... __EBASEMAX] = FALLBACK,
+    [ENOMEM] = STATUS_NO_MEMORY,
+    /* TODO */
 };
 
-struct netdev {
- struct chrdev   n_dev; /*< Underlying character device. */
- struct macaddr  n_mac; /*< MAC Address of the device. */
- /* TODO: General purpose callbacks. */
-};
-#define NETDEV_TRYINCREF(self)  CHRDEV_TRYINCREF(&(self)->n_dev)
-#define NETDEV_INCREF(self)     CHRDEV_INCREF(&(self)->n_dev)
-#define NETDEV_DECREF(self)     CHRDEV_DECREF(&(self)->n_dev)
+#pragma GCC diagnostic pop
 
-#define netdev_new(type_size) ((struct netdev *)chrdev_new(type_size))
+PUBLIC LONG KCALL errno_kos2nt(errno_t err) {
+ if ((unsigned int)err >= COMPILER_LENOF(errno_matrix))
+      return FALLBACK;
+ return errno_matrix[(unsigned int)err];
+}
 
+PUBLIC LONG KCALL errno_kos2ntv(ssize_t err_or_value) {
+ if (E_ISERR(err_or_value))
+     return errno_kos2nt((errno_t)-err_or_value);
+ return (LONG)err_or_value;
+}
 
 DECL_END
 
-#endif /* !GUARD_INCLUDE_DEV_NET_H */
+#endif /* !GUARD_MODULES_NT_ERROR_C */

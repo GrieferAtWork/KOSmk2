@@ -16,31 +16,22 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_DEV_NET_H
-#define GUARD_INCLUDE_DEV_NET_H 1
+#ifndef GUARD_MODULES_NT_ERROR_H
+#define GUARD_MODULES_NT_ERROR_H 1
 
-#include <dev/chrdev.h>
 #include <hybrid/compiler.h>
-#include <hybrid/types.h>
+#include <winapi/windef.h>
+#include <errno.h>
 
 DECL_BEGIN
 
-struct macaddr {
- u8  ma_bytes[6];
-};
+/* Returns the closest 'STATUS_*' matching the given errno code. */
+FUNDEF LONG KCALL errno_kos2nt(errno_t err);
 
-struct netdev {
- struct chrdev   n_dev; /*< Underlying character device. */
- struct macaddr  n_mac; /*< MAC Address of the device. */
- /* TODO: General purpose callbacks. */
-};
-#define NETDEV_TRYINCREF(self)  CHRDEV_TRYINCREF(&(self)->n_dev)
-#define NETDEV_INCREF(self)     CHRDEV_INCREF(&(self)->n_dev)
-#define NETDEV_DECREF(self)     CHRDEV_DECREF(&(self)->n_dev)
-
-#define netdev_new(type_size) ((struct netdev *)chrdev_new(type_size))
-
+/* Translate negatively encoded error codes, but
+ * forward non-error values without transformation. */
+FUNDEF LONG KCALL errno_kos2ntv(ssize_t err_or_value);
 
 DECL_END
 
-#endif /* !GUARD_INCLUDE_DEV_NET_H */
+#endif /* !GUARD_MODULES_NT_ERROR_H */

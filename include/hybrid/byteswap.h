@@ -113,6 +113,22 @@ DECL_BEGIN
 #   error FIXME
 #endif
 
+
+/* Convert to/from network endian. */
+#define BSWAP_H2N16(x)    BSWAP_H2BE16(x)
+#define BSWAP_H2N32(x)    BSWAP_H2BE32(x)
+#define BSWAP_H2N64(x)    BSWAP_H2BE64(x)
+#define BSWAP_N2H16(x)    BSWAP_BE2H16(x)
+#define BSWAP_N2H32(x)    BSWAP_BE2H32(x)
+#define BSWAP_N2H64(x)    BSWAP_BE2H64(x)
+#define BSWAP_H2N16_C(x)  BSWAP_H2BE16_C(x)
+#define BSWAP_H2N32_C(x)  BSWAP_H2BE32_C(x)
+#define BSWAP_H2N64_C(x)  BSWAP_H2BE64_C(x)
+#define BSWAP_N2H16_C(x)  BSWAP_BE2H16_C(x)
+#define BSWAP_N2H32_C(x)  BSWAP_BE2H32_C(x)
+#define BSWAP_N2H64_C(x)  BSWAP_BE2H64_C(x)
+
+
 DECL_END
 
 #endif /* !__GUARD_HYBRID_BYTESWAP_H */

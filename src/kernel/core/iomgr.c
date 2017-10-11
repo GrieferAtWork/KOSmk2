@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <kernel/iomgr.h>
 #include <linker/module.h>
+#include <hybrid/align.h>
 
 DECL_BEGIN
 
@@ -35,18 +36,25 @@ PUBLIC struct iomgr io_mgr = {
 };
 
 FUNDEF ioaddr_t KCALL
-io_malloc(iosize_t size, ioport_t max,
+io_malloc(iosize_t align, iosize_t size, ioport_t max,
           struct instance *__restrict owner) {
- syslog(LOG_WARN,"TODO: io_malloc()\n");
- return -ENOMEM;
+ PRIVATE ioport_t portaddr = 0x800;
+ ioport_t result;
+ /* TODO */
+ portaddr  = CEIL_ALIGN(portaddr,align);
+ result    = portaddr;
+ portaddr += size;
+ return result;
 }
 FUNDEF void KCALL io_free(ioport_t port, iosize_t size) {
  syslog(LOG_WARN,"TODO: io_free()\n");
 }
+
 FUNDEF ioaddr_t KCALL
 io_malloc_at(ioport_t addr, iosize_t size,
              struct instance *__restrict owner) {
  /* TODO */
+ return -ENOMEM;
  return addr;
 }
 

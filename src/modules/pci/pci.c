@@ -56,27 +56,6 @@ PUBLIC void FCALL pci_writeaddr(pci_addr_t addr, u32 value) {
 
 
 
-
-
-
-
-PUBLIC errno_t KCALL
-pci_enable(struct pci_device *__restrict dev) {
- /* TODO? */
- return -EOK;
-}
-
-
-
-
-
-
-
-
-
-
-
-
 /* Database functions */
 PUBLIC PPCI_VENTABLE KCALL pci_db_getvendor(u16 vendor_id) {
  PPCI_VENTABLE iter,end;
@@ -112,7 +91,7 @@ pci_db_getclass(u8 base_class, u8 sub_class, u8 prog_if) {
 
 
 /* PCI Discovery (Executed during module initilization, but may be re-executed later). */
-PRIVATE struct pci_device *KCALL register_device(pci_addr_t addr, u32 pci_dev8);
+PRIVATE struct pci_device *KCALL register_device(pci_addr_t addr);
 PRIVATE void KCALL check_fun(pci_addr_t addr);
 PRIVATE void KCALL check_dev(pci_bus_t bus, pci_dev_t dev);
 PRIVATE void KCALL check_bus(pci_bus_t bus);
@@ -143,24 +122,29 @@ pci_getdevice_at(pci_addr_t addr) {
 PRIVATE bool KCALL
 pci_alloc_resource(struct pci_device *__restrict dev,
                    struct pci_resource *__restrict res) {
+#if 0
+ return false;
+#else
  /* Allocate PCI resources (memory and I/O ranges). */
  if (res->pr_flags&PCI_RESOURCE_IO) {
+  ioaddr_t addr;
   /* Try to allocate I/O space at the pre-configured address. */
   if (res->pr_begin+res->pr_size   >= res->pr_begin &&
       res->pr_begin+res->pr_size-1 <= (ioport_t)-1 &&
-      E_ISOK(io_malloc_at((ioport_t)res->pr_begin,(iosize_t)res->pr_size,THIS_INSTANCE)));
-  else {
-   ioaddr_t addr; /* If that failed, allocate at the default address. */
-   addr = io_malloc((ioport_t)res->pr_size,(ioport_t)-1,THIS_INSTANCE);
-   if (E_ISERR(addr)) {
-    syslog(LOG_DEBUG,FREESTR("[PCI] Failed to allocate %Iu bytes of I/O address space for BAR #%d of PCI device at %p\n"),
-           res->pr_size,(int)(res-dev->pd_resources),dev->pd_addr);
-    /* Delete the BAR to hide our failure. */
-    res->pr_flags = 0;
-    return false;
-   } else {
-    res->pr_begin = (PHYS uintptr_t)addr;
-   }
+      E_ISOK(io_malloc_at((ioport_t)res->pr_begin,(iosize_t)res->pr_size,THIS_INSTANCE)))
+      return false; /* No need to update */
+  /* If that failed, allocate a new range. */
+  addr = io_malloc((iosize_t)res->pr_align,
+                   (iosize_t)res->pr_size,
+                   (ioport_t)-1,THIS_INSTANCE);
+  if (E_ISERR(addr)) {
+   syslog(LOG_DEBUG,FREESTR("[PCI] Failed to allocate %Iu bytes of I/O address space for BAR #%d of PCI device at %p\n"),
+          res->pr_size,(int)(res-dev->pd_resources),dev->pd_addr);
+   /* Delete the BAR to hide our failure. */
+   res->pr_flags = 0;
+   return false;
+  } else {
+   res->pr_begin = (PHYS uintptr_t)addr;
   }
  } else if (res->pr_flags&PCI_RESOURCE_MEM) {
   /* Allocate physical memory for the device. */
@@ -181,11 +165,12 @@ pci_alloc_resource(struct pci_device *__restrict dev,
   return false;
  }
  return true;
+#endif
 }
 
 
 PRIVATE ATTR_FREETEXT struct pci_device *KCALL
-register_device(pci_addr_t addr, u32 pci_dev8) {
+register_device(pci_addr_t addr) {
  REF struct pci_device *result;
  int i; struct pci_resource *iter;
  u32 maxsize,state;
@@ -197,7 +182,7 @@ register_device(pci_addr_t addr, u32 pci_dev8) {
  result->pd_refcnt = 1;
  result->pd_addr   = addr;
  result->pd_dev0   = pci_read(addr,PCI_DEV0);
- result->pd_dev8   = pci_dev8;
+ result->pd_dev8   = pci_read(addr,PCI_DEV8);
  result->pd_devc   = pci_read(addr,PCI_DEVC);
  result->pd_vendor = pci_db_getvendor(result->pd_vendorid);
  result->pd_device = pci_db_getdevice(result->pd_vendorid,result->pd_deviceid);
@@ -208,12 +193,13 @@ register_device(pci_addr_t addr, u32 pci_dev8) {
  switch (result->pd_header) {
 
  case PCI_DEVC_HEADER_GENERIC:
-  for (i = 0; i <= 6; ++i,++iter) {
-   pci_reg_t reg = i == 6 ? PCI_GDEV_EXPROM : PCI_GDEV_BAR0+i*(PCI_GDEV_BAR1-PCI_GDEV_BAR0);
+  for (i = 0; i < 6; ++i,++iter) {
+   pci_reg_t reg = PCI_GDEV_BAR0+i*(PCI_GDEV_BAR1-PCI_GDEV_BAR0);
    state = pci_read(addr,reg);
    if (!(state&~0xf)) continue; /* Unused. */
    pci_write(addr,reg,(u32)-1);
    maxsize = pci_read(addr,reg);
+   //syslog(LOG_DEBUG,FREESTR("state = %p/%p\n"),state,maxsize);
    if (state&1) {
     /* I/O range. */
     iter->pr_begin  = state&~0x3;
@@ -226,18 +212,16 @@ register_device(pci_addr_t addr, u32 pci_dev8) {
     iter->pr_flags |= PCI_RESOURCE_MEM;
     iter->pr_flags |= (state&0x6); /* Memory type. */
     /* A 64-bit memory range takes up 2 BARs. */
-    if (iter->pr_flags&PCI_RESOURCE_MEM64 && !(i&1) &&
-        reg <= PCI_GDEV_BAR5) ++i,++iter;
+    if (iter->pr_flags&PCI_RESOURCE_MEM64 && !(i&1)) ++i,++iter;
    }
    if (iter->pr_size)
        iter->pr_align = 1 << (ffs(iter->pr_size)-1);
    else iter->pr_flags = 0; /* Ignore this case */
    /* Allocate PCI resources */
-   if (pci_alloc_resource(result,iter)) {
+   if (reg <= PCI_GDEV_BAR5 && pci_alloc_resource(result,iter)) {
     state = (u32)((state&1)|iter->pr_begin);
 #if __SIZEOF_POINTER__ > 4
-    if (iter->pr_flags&PCI_RESOURCE_MEM64 && !(i&1) &&
-        reg <= PCI_GDEV_BAR5) {
+    if (iter->pr_flags&PCI_RESOURCE_MEM64 && !(i&1)) {
      pci_write(addr,reg+(PCI_GDEV_BAR1-PCI_GDEV_BAR0),
               (u32)((state&1)|(iter->pr_begin >> 32)));
     }
@@ -292,8 +276,6 @@ register_device(pci_addr_t addr, u32 pci_dev8) {
  default: break;
  }
 
- 
-
  LIST_INSERT(pci_list,result,pd_link);
 
  syslog(LOG_DEBUG,FREESTR("[PCI] Device at %I32p (Vendor: %s; Device: %s; Class: %s,%s,%s)\n"),
@@ -325,13 +307,14 @@ pci_find_membar(struct pci_device *__restrict dev) {
 
 
 PRIVATE ATTR_FREETEXT void KCALL check_fun(pci_addr_t addr) {
- u32 resp = pci_read(addr,PCI_DEV8);
- struct pci_device *dev = register_device(addr,resp);
+ struct pci_device *dev = register_device(addr);
  if (!dev) return;
- if (PCI_DEV8_CLASS(resp)    == PCI_DEV8_CLASS_BRIDGE &&
-     PCI_DEV8_SUBCLASS(resp) == PCI_DEV8_CLASS_MUMEDIA) {
+ if (dev->pd_classid == PCI_DEV8_CLASS_BRIDGE/* &&
+     dev->pd_subclassid == PCI_DEV8_CLASS_MUMEDIA*/) {
+  //syslog(LOG_DEBUG,"ENTER_BRIDGE\n");
   /* Recursively enumerate a bridge device. */
   check_bus(PCI_BDEV18_SECONDARY_BUS(pci_read(addr,PCI_BDEV18)));
+  //syslog(LOG_DEBUG,"LEAVE_BRIDGE\n");
  }
 }
 PRIVATE ATTR_FREETEXT void KCALL check_dev(pci_bus_t bus, pci_dev_t dev) {

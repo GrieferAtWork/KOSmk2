@@ -56,7 +56,8 @@ DATDEF struct iomgr io_mgr;
  * @return: * :      The base address of the newly allocated I/O address range.
  * @return: -ENOMEM: No free I/O range of sufficient size available.
  * @return: -EPERM:  The given owner module does not allow new references to be created. */
-FUNDEF ioaddr_t KCALL io_malloc(iosize_t size, ioport_t max, struct instance *__restrict owner);
+FUNDEF ioaddr_t KCALL io_malloc(iosize_t align, iosize_t size,
+                                ioport_t max, struct instance *__restrict owner);
 
 /* Free the given I/O address range.
  * NOTE: I/O ranges allocated by modules are automatically freed upon module unload. */

@@ -228,6 +228,29 @@ LONG_PRINTER(filepath_printer);
 LONG_PRINTER(fdpath_printer);
 #endif
 
+
+#if defined(__KERNEL__) || 1
+#define LONGPRINTER_HAVE_MAC
+#define LONGPRINTER_HAVE_IP
+#endif
+
+#ifdef LONGPRINTER_HAVE_MAC
+LONG_PRINTER(mac_printer) {
+ u8 *bytes = va_arg(*args,u8 *);
+ char buffer[64],*iter = buffer; size_t n = 6;
+ while (n--) iter += libc_sprintf(iter,"%.2I8X:",*bytes++);
+ return (*printer)(buffer,(size_t)(iter-buffer)-1,closure);
+}
+#endif
+#ifdef LONGPRINTER_HAVE_IP
+LONG_PRINTER(ip_printer) {
+ u8 *bytes = va_arg(*args,u8 *);
+ char buffer[64],*iter = buffer; size_t n = 4;
+ while (n--) iter += libc_sprintf(iter,"%I8d.",*bytes++);
+ return (*printer)(buffer,(size_t)(iter-buffer)-1,closure);
+}
+#endif
+
 PRIVATE struct longprint const ext_printers[] = {
  {"errno",&errno_printer},
  {"dev_t",&dev_t_printer},
@@ -239,6 +262,12 @@ PRIVATE struct longprint const ext_printers[] = {
  {"fd",&fdpath_printer},
  {"dentry",&fdpath_printer},
  {"file",&fdpath_printer},
+#endif
+#ifdef LONGPRINTER_HAVE_MAC
+ {"mac",&mac_printer},
+#endif
+#ifdef LONGPRINTER_HAVE_IP
+ {"ip",&ip_printer},
 #endif
  {"",NULL},
 };

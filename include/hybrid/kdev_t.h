@@ -52,6 +52,7 @@ typedef __minor_t   minor_t;
 /* KOS non-standard device mappings (major numbers 0x100-0x1ff) */
 #define DV_JIFFY_RTC      MKDEV(0x100,0) /* The default RTC synchronized using jiffies. */
 #define DV_PS2_KEYBOARD   MKDEV(0x101,0) /* KOS character device for the PS2-compliant keyboards. */
+#define DV_ETHERNET       MKDEV(0x102,0) /* KOS character device for ethernet adapters. */
 
 
 DECL_END
