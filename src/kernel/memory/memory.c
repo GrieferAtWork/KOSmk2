@@ -395,9 +395,11 @@ page_memalign(size_t alignment, size_t n_bytes,
   * HINT: Also handles the case of illegal non-power-of-2
   *       alignments as weak undefined behavior. */
  alignment = CEIL_ALIGN(alignment,PAGESIZE);
+ n_bytes   = CEIL_ALIGN(n_bytes,PAGESIZE);
  /* Make sure that the alignment doesn't overflow when added to 'n_bytes' */
  if (__builtin_add_overflow(alignment,n_bytes,&total_size))
      return PAGE_ERROR;
+
  /* Overallocate + free unused portion. */
  result = page_malloc(total_size,attr,zone_id);
  if likely(result != PAGE_ERROR) {

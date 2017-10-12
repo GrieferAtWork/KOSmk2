@@ -41,12 +41,12 @@
 DECL_BEGIN
 
 PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
-   [MEMTYPE_RAM   ] = "ram",
-   [MEMTYPE_NVS   ] = "nvs",
-   [MEMTYPE_DEVICE] = "device",
-   [MEMTYPE_KERNEL] = "kernel",
-   [MEMTYPE_KFREE ] = "kfree",
-   [MEMTYPE_BADRAM] = "badram",
+    [MEMTYPE_RAM   ] = "ram",
+    [MEMTYPE_NVS   ] = "nvs",
+    [MEMTYPE_DEVICE] = "device",
+    [MEMTYPE_KERNEL] = "kernel",
+    [MEMTYPE_KFREE ] = "kfree",
+    [MEMTYPE_BADRAM] = "badram",
 };
 
 

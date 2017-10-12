@@ -191,9 +191,11 @@ DATDEF struct meminfo const *const mem_info[MZONE_COUNT];
  * as well as overflows of the given address range, never storing memory
  * information already received in regions that are typed as 'MEMTYPE_PRESERVE'.
  * @return: * : The amount of bytes that have become available for use by the physical memory allocator. */
-INTDEF INITCALL PAGE_ALIGNED size_t KCALL mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type);
+INTDEF INITCALL PAGE_ALIGNED size_t KCALL
+mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type);
 #if __SIZEOF_POINTER__ < 8
-INTDEF INITCALL PAGE_ALIGNED size_t KCALL mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type);
+INTDEF INITCALL PAGE_ALIGNED size_t KCALL
+mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type);
 #else
 #define mem_install64(base,num_bytes,type) \
         mem_install((uintptr_t)(base),(size_t)(num_bytes),type)

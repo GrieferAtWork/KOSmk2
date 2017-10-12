@@ -23,7 +23,7 @@ make KBUILD_SRC=../busybox-1.27.2 -f ../busybox-1.27.2/Makefile allnoconfig
 # with the "busybox-config" file found in this directory.
 # Doing so should override an existing file previously created by 'make'
 # NOTE: You must rename "busybox-config" to ".config"
-# NOTE: Failing this step will produce 
+# NOTE: Failing this step will produce a busybox binary without any real features
 cp "${PREFIX}/apps/busybox-config" "${PREFIX}/apps/private/build-busybox-1.27.2/.config"
 
 # In ".config", find the option "CONFIG_CROSS_COMPILER_PREFIX=".
@@ -44,15 +44,15 @@ echo <<EOF
 # define ENABLE_ASH_INTERNAL_GLOB 1
 #endif
 EOF
-vi ${PREFIX}/apps/private/busybox-1.27.2/platform.h
+vi ${PREFIX}/apps/private/busybox-1.27.2/include/platform.h
 
 
 # Add to "${PREFIX}/apps/private/.sources"
 # NOTE: You must create this file the fist time.
-#       It is automatically included from 
+#       It is automatically included from "${PREFIX}/apps/.sources"
 echo 'DISK_SYNC("install/bin/busybox","/bin/busybox")' > "${PREFIX}/apps/private/.sources"
 
-# Run the following commands to build busybox for KOS and update the disk image to 
+# Run the following commands to build busybox for KOS and update the disk image
 deemon ${PREFIX}/magic.dee --build-only
 cd ${PREFIX}/apps/private/build-busybox-1.27.2
 make
@@ -65,7 +65,7 @@ deemon ${PREFIX}/magic.dee --build-only
 #       "${PREFIX}/apps/private/install" to the root directory of the drive.
 
 # HINT: The busybox binary installed will be stripped of debug information.
-#       Use "${PREFIX}/apps/private/build-busybox-1.27.2/busybox_unstripped" instead.
+#       Use "${PREFIX}/apps/private/build-busybox-1.27.2/busybox_unstripped" for addr2line instead.
 
 
 # === How to recompile Busybox after making changes ===
