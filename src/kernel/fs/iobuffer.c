@@ -389,7 +389,8 @@ buffer_is_full:
    if (result && (mode&(IO_BLOCKFIRST|IO_BLOCKALL)) == IO_BLOCKFIRST) goto end;
    /* Wake readers if we did write something before having to start waiting. */
    if (result) sig_broadcast(&self->ib_avail);
-   //printf("WAIT ON FULL BUFFER (r:%p w:%p b:%p e:%p)\n",
+   //syslog(LOG_DEBUG,
+   //       "WAIT ON FULL BUFFER (r:%p w:%p b:%p e:%p)\n",
    //       self->ib_rpos,self->ib_wpos,self->ib_buffer,
    //       self->ib_buffer+self->ib_size);
    /* Wait until at there is at least something to read
@@ -465,7 +466,7 @@ buffer_is_full:
  }
  /* Copy into the lower portion */
  max_write = (size_t)(self->ib_rpos-self->ib_buffer);
- if (!max_write) {
+ if (!max_write || self->ib_rpos == bufend) {
   /* Special case: We can't wrap the buffer because
    *               that would indicate an empty ring. */
   goto buffer_is_full;
