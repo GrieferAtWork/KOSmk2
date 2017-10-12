@@ -141,14 +141,24 @@ PUBLIC struct fd const fd_invalid = {
 
 PUBLIC struct fdman fdman_kernel = {
     /* Create 3 references initially:
-     *  - 'fdman_kernel'
-     *  - 'inittask.t_fdman'
-     *  - '__bootcpu.c_idle.t_fdman' */
+     *  - fdman_kernel
+     *  - inittask.t_fdman
+     *  - __bootcpu.c_idle.t_fdman
+     *  - [!CONFIG_NO_JOBS] __bootcpu.c_work.t_fdman
+     */
+#ifndef CONFIG_NO_JOBS
+#ifdef CONFIG_DEBUG
+    .fm_refcnt = 4,
+#else
+    .fm_refcnt = 0x80000004,
+#endif
+#else /* !CONFIG_NO_JOBS */
 #ifdef CONFIG_DEBUG
     .fm_refcnt = 3,
 #else
     .fm_refcnt = 0x80000003,
 #endif
+#endif /* CONFIG_NO_JOBS */
     .fm_cwd    = &fs_root,
     .fm_root   = &fs_root,
     .fm_umask  = 0022,

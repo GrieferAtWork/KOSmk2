@@ -77,7 +77,7 @@ __SYSDECL_BEGIN
 #   define howmany(x,y)  (((x)+((y)-1))/(y))
 #endif
 #define powerof2(x)      (!(((x)-1)&(x)))
-#ifndef __NO_builtin_prefetch
+#ifndef __NO_builtin_constant_p
 #   define roundup(x,y)  (__builtin_constant_p(y) && powerof2(y) ? \
                          (((x)+(y)-1)&~((y)-1)) : ((((x)+((y)-1))/(y))*(y)))
 #else

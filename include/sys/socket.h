@@ -60,23 +60,25 @@ typedef __SIZE_TYPE__ size_t;
 
 #ifdef __USE_MISC
 struct osockaddr {
- unsigned short int sa_family;
- unsigned char      sa_data[14];
+    unsigned short int sa_family;
+    unsigned char      sa_data[14];
 };
 #endif /* __USE_MISC */
 
 enum {
-  SHUT_RD = 0,     /*< No more receptions. */
-  SHUT_WR,         /*< No more transmissions. */
-  SHUT_RDWR        /*< No more receptions or transmissions. */
+    SHUT_RD = 0,     /*< No more receptions. */
+    SHUT_WR,         /*< No more transmissions. */
+    SHUT_RDWR        /*< No more receptions or transmissions. */
 #define SHUT_RD    SHUT_RD
 #define SHUT_WR    SHUT_WR
 #define SHUT_RDWR  SHUT_RDWR
 };
 
-#if defined(__cplusplus) || !__GCC_VERSION(2,7,0) || !defined(__USE_GNU)
+
+#if defined(__cplusplus) || !defined(__USE_GNU) || \
+  (!__GCC_VERSION(2,7,0) && !__has_attribute(__transparent_union__))
 #   define __SOCKADDR_ARG       struct sockaddr *__restrict
-#   define __CONST_SOCKADDR_ARG struct sockaddr const *
+#   define __CONST_SOCKADDR_ARG struct sockaddr const *__restrict
 #else
 # define __SOCKADDR_ALLTYPES \
   __SOCKADDR_ONETYPE(sockaddr) \
@@ -93,10 +95,10 @@ enum {
   __SOCKADDR_ONETYPE(sockaddr_un) \
   __SOCKADDR_ONETYPE(sockaddr_x25)
 #define __SOCKADDR_ONETYPE(type) struct type *__restrict __##type##__;
-typedef union { __SOCKADDR_ALLTYPES } __SOCKADDR_ARG __attribute__ ((__transparent_union__));
+typedef union { __SOCKADDR_ALLTYPES } __SOCKADDR_ARG __attribute__((__transparent_union__));
 #undef __SOCKADDR_ONETYPE
-#define __SOCKADDR_ONETYPE(type) const struct type *__restrict __##type##__;
-typedef union { __SOCKADDR_ALLTYPES } __CONST_SOCKADDR_ARG __attribute__ ((__transparent_union__));
+#define __SOCKADDR_ONETYPE(type) struct type const *__restrict __##type##__;
+typedef union { __SOCKADDR_ALLTYPES } __CONST_SOCKADDR_ARG __attribute__((__transparent_union__));
 #undef __SOCKADDR_ONETYPE
 #endif
 
@@ -127,12 +129,39 @@ __LIBC int (__LIBCCALL listen)(int __fd, int __n);
 __LIBC int (__LIBCCALL accept)(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __addr_len);
 __LIBC int (__LIBCCALL shutdown)(int __fd, int __how);
 #ifdef __USE_GNU
+__LIBC int (__LIBCCALL accept4)(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __addr_len, int __flags);
 __LIBC int (__LIBCCALL sendmmsg)(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags);
-__LIBC int (__LIBCCALL recvmmsg)(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags, struct timespec *__tmo) __TM_FUNC(recvmmsg);
+#ifdef __GLC_COMPAT__
+#ifdef __USE_TIME_BITS64
+__REDIRECT(__LIBC,,int,__LIBCCALL,__recvmmsg32,(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags, struct timespec *__tmo),recvmmsg,(__fd,__vmessages,__vlen,__flags,__tmo))
+__LOCAL int (__LIBCCALL recvmmsg)(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags, struct timespec *__tmo) {
+    struct __timespec32 __tmo32;
+    if (__tmo) __tmo32.tv_sec = (__time32_t)__tmo->tv_sec,
+               __tmo32.tv_nsec = (__time32_t)__tmo->tv_nsec;
+    return __recvmmsg32(__fd,__vmessages,__vlen,__flags,__tmo ? &__tmo32 : 0);
+}
+#ifdef __USE_TIME64
+__LOCAL int (__LIBCCALL recvmmsg64)(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags, struct __timespec64 *__tmo) {
+    return recvmmsg(__fd,__vmessages,__vlen,__flags,__tmo);
+}
+#endif /* __USE_TIME64 */
+#else /* __USE_TIME_BITS64 */
+__LIBC int (__LIBCCALL recvmmsg)(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags, struct timespec *__tmo);
+#ifdef __USE_TIME64
+__LOCAL int (__LIBCCALL recvmmsg64)(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags, struct __timespec64 *__tmo) {
+    struct __timespec32 __tmo32;
+    if (__tmo) __tmo32.tv_sec = (__time32_t)__tmo->tv_sec,
+               __tmo32.tv_nsec = (__time32_t)__tmo->tv_nsec;
+    return recvmmsg(__fd,__vmessages,__vlen,__flags,__tmo ? &__tmo32 : 0);
+}
+#endif /* __USE_TIME64 */
+#endif /* !__USE_TIME_BITS64 */
+#else /* __GLC_COMPAT__ */
+__REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,recvmmsg,(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags, struct timespec *__tmo),recvmmsg,(__fd,__vmessages,__vlen,__flags,__tmo))
 #ifdef __USE_TIME64
 __LIBC int (__LIBCCALL recvmmsg64)(int __fd, struct mmsghdr *__vmessages, unsigned int __vlen, int __flags, struct __timespec64 *__tmo);
 #endif /* __USE_TIME64 */
-__LIBC int (__LIBCCALL accept4)(int __fd, __SOCKADDR_ARG __addr, socklen_t *__restrict __addr_len, int __flags);
+#endif /* !__GLC_COMPAT__ */
 #endif /* __USE_GNU */
 #ifdef __USE_XOPEN2K
 __LIBC int (__LIBCCALL sockatmark)(int __fd);

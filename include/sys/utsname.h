@@ -60,16 +60,16 @@ __SYSDECL_BEGIN
 #endif
 
 struct utsname {
- char sysname[_UTSNAME_SYSNAME_LENGTH];     /*< Name of the implementation of the operating system. */
- char nodename[_UTSNAME_NODENAME_LENGTH];   /*< Name of this node on the network. */
- char release[_UTSNAME_RELEASE_LENGTH];     /*< Current release level of this implementation. */
- char version[_UTSNAME_VERSION_LENGTH];     /*< Current version level of this release. */
- char machine[_UTSNAME_MACHINE_LENGTH];     /*< Name of the hardware type the system is running on. */
+    char sysname[_UTSNAME_SYSNAME_LENGTH];     /*< Name of the implementation of the operating system. */
+    char nodename[_UTSNAME_NODENAME_LENGTH];   /*< Name of this node on the network. */
+    char release[_UTSNAME_RELEASE_LENGTH];     /*< Current release level of this implementation. */
+    char version[_UTSNAME_VERSION_LENGTH];     /*< Current version level of this release. */
+    char machine[_UTSNAME_MACHINE_LENGTH];     /*< Name of the hardware type the system is running on. */
 #if (_UTSNAME_DOMAIN_LENGTH+0) != 0
 #ifdef __USE_GNU
- char domainname[_UTSNAME_DOMAIN_LENGTH];   /*< Name of the domain of this node on the network. */
+    char domainname[_UTSNAME_DOMAIN_LENGTH];   /*< Name of the domain of this node on the network. */
 #else
- char __domainname[_UTSNAME_DOMAIN_LENGTH]; /*< Name of the domain of this node on the network. */
+    char __domainname[_UTSNAME_DOMAIN_LENGTH]; /*< Name of the domain of this node on the network. */
 #endif
 #endif
 };

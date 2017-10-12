@@ -479,8 +479,14 @@ FUNDEF WEAK REF struct task *KCALL pid_namespace_lookup_weak(struct pid_namespac
 #define TASK_IS_ZOMBIE(self) ((self)->t_mode == TASKMODE_TERMINATED)
 
 /* Global/Init-pid namespace IDs of bootstrap tasks. */
-#define BOOTCPU_IDLE_PID 0 /*< This task is actually kept forever! */
-#define BOOTTASK_PID     1 /*< WARNING: This task is later replaced by '/bin/init'. */
+#define BOOTTASK_PID     0 /*< WARNING: This task is later replaced by '/bin/init'. */
+#define BOOTCPU_IDLE_PID 1 /*< This task is actually kept forever! */
+#ifndef CONFIG_NO_JOBS
+#define BOOTCPU_WORK_PID 2 /*< This task is actually kept forever! */
+#define BOOSTRAP_PID_COUNT 3
+#else /* !CONFIG_NO_JOBS */
+#define BOOSTRAP_PID_COUNT 2
+#endif /* CONFIG_NO_JOBS */
 
 DATDEF struct pid_namespace pid_global; /* The global PID namespace. */
 DATDEF struct pid_namespace pid_init;   /* The init PID namespace (Initial namespace used for local pids). */
@@ -656,9 +662,12 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 struct task {
  ATOMIC_DATA ref_t       t_refcnt;    /*< Task reference counter. */
  ATOMIC_DATA ref_t       t_weakcnt;   /*< Task weak reference counter. */
+union{
  HOST struct cpustate   *t_cstate;    /*< [1..1][in(t_hstack)][lock(PRIVATE(THIS_CPU))]
                                        *  [valid_if(t_mode != TASKMODE_RUNNING || t_cpu->c_running != this)]
                                        *  Pointer to a location on the host stack, describing the CPU state to return to when switching to the task. */
+ REF struct task        *t_termnext;  /*< [0..1][INTERNAL] Link to another task about to be destroyed. */
+};
 #ifdef CONFIG_SMP
  atomic_rwlock_t         t_affinity_lock; /*< [ORDER(AFTER(t_cpu->c_lock))] Task affinity lock. */
  __cpu_set_t             t_affinity;  /*< [lock(t_affinity_lock)] CPU Affinity of this task. */
@@ -756,7 +765,17 @@ LOCAL SAFE pid_t KCALL thread_pid_getppid(struct thread_pid *__restrict self, pi
 #endif /* __CC__ */
 
 
-
+#ifndef CONFIG_NO_JOBS
+#ifdef __CC__
+struct job {
+ LIST_NODE(struct job) j_next;  /*< [lock(:c_lock)] Next job to-be performed. */
+ void          (KCALL *j_work)(void *data); /*< [const][1..1] The job function to-be called. */
+ void                 *j_data;  /*< [const] Data argument passed to 'j_work' */
+ struct instance      *j_owner; /*< [const][1..1] The owner module of this job. */
+};
+#define JOB_INIT(work,data) {{NULL,NULL},work,data,THIS_INSTANCE}
+#endif /* __CC__ */
+#endif /* !CONFIG_NO_JOBS */
 
 
 
@@ -770,12 +789,19 @@ LOCAL SAFE pid_t KCALL thread_pid_getppid(struct thread_pid *__restrict self, pi
 #define CPU_OFFSETOF_SUSPENDED   (3*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE)
 #define CPU_OFFSETOF_SLEEPING    (4*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE)
 #define CPU_OFFSETOF_IDLE        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE)
+#ifndef CONFIG_NO_JOBS
+#define CPU_OFFSETOF_WORK        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
+#define CPU_OFFSETOF_JOBS        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
+#define CPU_OFFSETOF_JOBS_END    (6*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
+#define CPU_OFFSETOF_ARCH        (7*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
+#else
 #define CPU_OFFSETOF_ARCH        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
-#define CPU_OFFSETOF_N_RUN       (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE)
-#define CPU_OFFSETOF_N_IDLE      (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE+__SIZEOF_SIZE_T__)
-#define CPU_OFFSETOF_N_SUSP      (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE+2*__SIZEOF_SIZE_T__)
-#define CPU_OFFSETOF_N_SLEEP     (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE+3*__SIZEOF_SIZE_T__)
-#define CPU_SIZE                 (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE+4*__SIZEOF_SIZE_T__)
+#endif
+#define CPU_OFFSETOF_N_RUN       (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE)
+#define CPU_OFFSETOF_N_IDLE      (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+__SIZEOF_SIZE_T__)
+#define CPU_OFFSETOF_N_SUSP      (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+2*__SIZEOF_SIZE_T__)
+#define CPU_OFFSETOF_N_SLEEP     (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+3*__SIZEOF_SIZE_T__)
+#define CPU_SIZE                 (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+4*__SIZEOF_SIZE_T__)
 
 #ifdef __CC__
 struct cpu {
@@ -806,6 +832,23 @@ struct cpu {
  u32                        c_padding;   /*< ... */
  struct task                c_idle;      /*< A small, lightweight IDLE task for this CPU.
                                           *  HINT: This task is also (ab-)used when booting up a cpu. */
+#ifndef CONFIG_NO_JOBS
+ struct task                c_work;      /*< Another small task that runs asynchronous runlater()-style jobs for the CPU.
+                                          *  NOTE: This task is only scheduled while jobs needed to be done are
+                                          *        available, during which time it is scheduled under max priority,
+                                          *        aka. whenever 'c_jobs != NULL'
+                                          *  This special task solves the problem of running code after the death of a task,
+                                          *  or when special handling must be undertaken after an IRQ triggered actions that
+                                          *  would normally involve locks having to be acquired (something that could otherwise
+                                          *  cause a deadlock due to the fact that the task that was interrupted may already be
+                                          *  holding those same locks).
+                                          *  Jobs scheduled for this task are executed in order of first being added,
+                                          *  yet any single job can only be scheduled in one place before being made
+                                          *  available again just before being executed.
+                                          */
+ LIST_HEAD(struct job)      c_jobs;      /*< [0..1][lock(c_lock)][(!= NULL) == (c_jobs_end != NULL)] The first job to-be executed by c_work. */
+ LIST_HEAD(struct job)      c_jobs_end;  /*< [0..1][lock(c_lock)][(!= NULL) == (c_jobs != NULL)] The last job to-be executed by c_work. */
+#endif /* !CONFIG_NO_JOBS */
  struct archcpu             c_arch;      /*< Arch-specific per-cpu information. */
  WEAK size_t                c_n_run;     /*< [lock(PRIVATE(THIS_CPU))][!0] Total amount of tasks within 'c_running' */
  WEAK size_t                c_n_idle;    /*< [lock(PRIVATE(THIS_CPU))] Total amount of tasks within 'c_idling' */

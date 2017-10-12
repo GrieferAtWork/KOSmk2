@@ -58,8 +58,7 @@
 #define __ATTR_CDECL             __cdecl
 #define __ATTR_PURE              __declspec(noalias)
 #define __ATTR_CONST             __declspec(noalias)
-#define __NO_ATTR_MALLOC         1
-#define __ATTR_MALLOC            /* Nothing */
+#define __ATTR_MALLOC            __declspec(restrict)
 #define __NO_ATTR_HOT            1
 #define __ATTR_HOT               /* Nothing */
 #define __NO_ATTR_COLD           1
@@ -210,7 +209,7 @@ extern void (__cdecl __va_start)(__VA_LIST *, ...);
 #pragma warning(disable: 4574) /* Nonsensical preprocessor warning. */
 #pragma warning(disable: 4710) /* Function not inlined (Emit for local varargs functions...) */
 #ifndef __cplusplus
-/* Disable some warnings that are caused by function redirection in system headers. */
+/* Disable some warnings that are caused by function redirections in system headers. */
 #define __REDIRECT_WSUPPRESS_BEGIN __pragma(warning(push)) \
                                    __pragma(warning(disable: 4210 4028 4142 4565))
 #define __REDIRECT_WSUPPRESS_END   __pragma(warning(pop))

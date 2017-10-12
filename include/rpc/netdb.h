@@ -31,9 +31,9 @@ typedef __SIZE_TYPE__ size_t;
 #endif /* !__size_t_defined */
 
 struct rpcent {
- char  *r_name;    /*< Name of server for this rpc program. */
- char **r_aliases; /*< Alias list. */
- int    r_number;  /*< RPC program number. */
+    char  *r_name;    /*< Name of server for this rpc program. */
+    char **r_aliases; /*< Alias list. */
+    int    r_number;  /*< RPC program number. */
 };
 
 #ifndef __KERNEL__

@@ -27,6 +27,10 @@
 #include <hybrid/timespec.h> /* struct timespec */
 #include <bits/time.h>       /* struct timeval */
 
+#ifndef __CRT_GLC
+#error "<sys/select.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
 #ifndef __time_t_defined

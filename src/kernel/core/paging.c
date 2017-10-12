@@ -869,11 +869,25 @@ PHYS struct mman __mman_kernel_p = {
         },
     },
     .m_ppdir  = &pdir_kernel,
+    /* Reference counter:
+     *   - mman_kernel
+     *   - __boottask.t_mman
+     *   - __bootcpu.c_idle.t_mman
+     *   - [!CONFIG_NO_JOBS] __bootcpu.c_work.t_mman
+     */
+#ifndef CONFIG_NO_JOBS
 #ifdef CONFIG_DEBUG
-    .m_refcnt = 1,
+    .m_refcnt = 4,
 #else
-    .m_refcnt = 0x80000001,
+    .m_refcnt = 0x80000004,
 #endif
+#else /* !CONFIG_NO_JOBS */
+#ifdef CONFIG_DEBUG
+    .m_refcnt = 3,
+#else
+    .m_refcnt = 0x80000003,
+#endif
+#endif /* CONFIG_NO_JOBS */
     .m_lock   = OWNER_RWLOCK_INIT,
     .m_tasks_lock = ATOMIC_RWLOCK_INIT,
     .m_tasks  = &inittask,

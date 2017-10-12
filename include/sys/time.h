@@ -102,20 +102,14 @@ __REDIRECT_TM_FUNC(__LIBC,__NONNULL((1)),int,__LIBCCALL,gettimeofday,(struct tim
 __REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,getitimer,(__itimer_which_t __which, struct itimerval *__value),getitimer,(__which,__value))
 __REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,setitimer,(__itimer_which_t __which, struct itimerval const *__restrict __new, struct itimerval *__restrict __old),setitimer,(__which,__new,__old))
 __REDIRECT_TM_FUNC(__LIBC,__NONNULL((1)),int,__LIBCCALL,utimes,(char const *__file, struct timeval const __tvp[2]),utimes,(__file,__tvp))
-
 #ifdef __USE_GNU
 __REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,futimesat,(int __fd, char const *__file, struct timeval const __tvp[2]),futimesat,(__fd,__file,__tvp))
 #endif /* __USE_GNU */
-
 #ifdef __USE_MISC
 __REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,settimeofday,(struct timeval const *__tv, struct timezone const *__tz),settimeofday,(__tv,__tz))
 __REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,adjtime,(struct timeval const *__delta, struct timeval *__olddelta),adjtime,(__delta,__olddelta))
 __REDIRECT_TM_FUNC(__LIBC,__NONNULL((1)),int,__LIBCCALL,lutimes,(char const *__file, struct timeval const __tvp[2]),lutimes,(__file,__tvp))
 __REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,futimes,(int __fd, struct timeval const __tvp[2]),futimes,(__fd,__tvp))
-#ifdef __USE_TIME64
-__LIBC int (__LIBCCALL settimeofday64)(struct timeval64 const *__tv, struct timezone const *__tz);
-__LIBC int (__LIBCCALL adjtime64)(struct timeval64 const *__delta, struct timeval64 *__olddelta);
-#endif /* __USE_TIME64 */
 #endif /* __USE_MISC */
 
 #ifdef __USE_TIME64
@@ -124,6 +118,8 @@ __LIBC int (__LIBCCALL getitimer64)(__itimer_which_t __which, struct itimerval64
 __LIBC int (__LIBCCALL setitimer64)(__itimer_which_t __which, const struct itimerval64 *__restrict __new, struct itimerval64 *__restrict __old);
 __LIBC __NONNULL((1)) int (__LIBCCALL utimes64)(char const *__file, struct timeval64 const __tvp[2]);
 #ifdef __USE_MISC
+__LIBC int (__LIBCCALL settimeofday64)(struct timeval64 const *__tv, struct timezone const *__tz);
+__LIBC int (__LIBCCALL adjtime64)(struct timeval64 const *__delta, struct timeval64 *__olddelta);
 __LIBC __NONNULL((1)) int (__LIBCCALL lutimes64)(char const *__file, struct timeval64 const __tvp[2]);
 __LIBC int (__LIBCCALL futimes64)(int __fd, struct timeval64 const __tvp[2]);
 #endif /* __USE_MISC */

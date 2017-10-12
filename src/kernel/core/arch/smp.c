@@ -581,6 +581,7 @@ L(.previous                                             )
 INTERN ATTR_FREETEXT errno_t KCALL
 smp_init_cpu(struct cpu *__restrict vcpu) {
  CHECK_HOST_DOBJ(vcpu);
+ memset(&vcpu->c_idle,0,sizeof(struct task));
  vcpu->c_idle.t_cpu                       = vcpu;
  vcpu->c_idle.t_sched.sd_running.re_prev  = &vcpu->c_idle;
  vcpu->c_idle.t_sched.sd_running.re_next  = &vcpu->c_idle;
@@ -594,48 +595,75 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  ATOMIC_WRITE(vcpu->c_idle.t_mode,TASKMODE_NOTSTARTED);
  vcpu->c_idle.t_prioscore                 =
  vcpu->c_idle.t_priority                  = ATOMIC_READ(__bootcpu.c_idle.t_priority);
- vcpu->c_idle.t_signals.ts_slotc          = 0;
- vcpu->c_idle.t_signals.ts_slota          = 0;
- vcpu->c_idle.t_signals.ts_slotv          = NULL;
  vcpu->c_idle.t_signals.ts_first.tss_self = &__bootcpu.c_idle;
- vcpu->c_idle.t_signals.ts_first.tss_sig  = NULL;
- vcpu->c_idle.t_signals.ts_recv           = NULL;
  vcpu->c_idle.t_critical                  = 1;
  vcpu->c_idle.t_nointr                    = 1;
  vcpu->c_idle.t_addrlimit                 = KERNEL_BASE;
- vcpu->c_idle.t_ic                        = NULL;
- vcpu->c_idle.t_suspend[0]                = 0;
- vcpu->c_idle.t_suspend[1]                = 0;
- vcpu->c_idle.t_ustack                    = NULL;
- atomic_rwlock_init(&vcpu->c_idle.t_pid.tp_parlock);
- atomic_rwlock_init(&vcpu->c_idle.t_pid.tp_leadlock);
- atomic_rwlock_init(&vcpu->c_idle.t_pid.tp_childlock);
- atomic_rwlock_init(&vcpu->c_idle.t_pid.tp_grouplock);
+ atomic_rwlock_cinit(&vcpu->c_idle.t_pid.tp_parlock);
+ atomic_rwlock_cinit(&vcpu->c_idle.t_pid.tp_leadlock);
+ atomic_rwlock_cinit(&vcpu->c_idle.t_pid.tp_childlock);
+ atomic_rwlock_cinit(&vcpu->c_idle.t_pid.tp_grouplock);
  memset(&vcpu->c_idle.t_pid.tp_ids,0,sizeof(vcpu->c_idle.t_pid.tp_ids));
  vcpu->c_idle.t_pid.tp_parent             = &vcpu->c_idle;
  vcpu->c_idle.t_pid.tp_leader             = &vcpu->c_idle;
  vcpu->c_idle.t_pid.tp_children           = &vcpu->c_idle;
  vcpu->c_idle.t_pid.tp_group              = &vcpu->c_idle;
  vcpu->c_idle.t_pid.tp_siblings.le_pself  = &vcpu->c_idle.t_pid.tp_children;
- vcpu->c_idle.t_pid.tp_siblings.le_next   = NULL;
  vcpu->c_idle.t_pid.tp_grplink.le_pself   = &vcpu->c_idle.t_pid.tp_group;
- vcpu->c_idle.t_pid.tp_grplink.le_next    = NULL;
  vcpu->c_idle.t_fdman = &fdman_kernel;
  FDMAN_INCREF(&fdman_kernel);
  vcpu->c_idle.t_sighand = &sighand_kernel;
  SIGHAND_INCREF(&sighand_kernel);
- sig_init(&vcpu->c_idle.t_event);
- memset(&vcpu->c_idle.t_sigblock,0,sizeof(sigset_t));
- sigpending_init(&vcpu->c_idle.t_sigpend);
+ sig_cinit(&vcpu->c_idle.t_event);
+ sigpending_cinit(&vcpu->c_idle.t_sigpend);
  vcpu->c_idle.t_sigshare = &sigshare_kernel;
  SIGSHARE_INCREF(&sigshare_kernel);
- vcpu->c_idle.t_sigenter.se_count = 0;
 #ifndef CONFIG_NO_LDT
  vcpu->c_idle.t_arch.at_ldt_gdt = SEG(SEG_KERNEL_LDT);
 #endif /* !CONFIG_NO_LDT */
-#ifndef CONFIG_NO_FPU
- vcpu->c_idle.t_arch.at_fpu = NULL;
+#ifndef CONFIG_NO_JOBS
+ memset(&vcpu->c_work,0,
+        offsetafter(struct cpu,c_jobs_end)-
+        offsetof(struct cpu,c_work));
+ vcpu->c_work.t_cpu = vcpu;
+ vcpu->c_work.t_sched.sd_suspended.le_pself = &vcpu->c_suspended;
+#ifdef CONFIG_DEBUG
+ vcpu->c_work.t_refcnt                    = 1;
+#else
+ vcpu->c_work.t_refcnt                    = 0x80000001;
 #endif
+ vcpu->c_work.t_weakcnt                   = 1;
+ vcpu->c_work.t_flags                     = TASKFLAG_NOTALEADER;
+ vcpu->c_work.t_mode                      = TASKMODE_SUSPENDED;
+ vcpu->c_work.t_prioscore                 =
+ vcpu->c_work.t_priority                  = ATOMIC_READ(__bootcpu.c_work.t_priority);
+ vcpu->c_work.t_signals.ts_first.tss_self = &__bootcpu.c_work;
+ vcpu->c_work.t_critical                  = 1;
+ vcpu->c_work.t_nointr                    = 1;
+ vcpu->c_work.t_addrlimit                 = KERNEL_BASE;
+ atomic_rwlock_cinit(&vcpu->c_work.t_pid.tp_parlock);
+ atomic_rwlock_cinit(&vcpu->c_work.t_pid.tp_leadlock);
+ atomic_rwlock_cinit(&vcpu->c_work.t_pid.tp_childlock);
+ atomic_rwlock_cinit(&vcpu->c_work.t_pid.tp_grouplock);
+ memset(&vcpu->c_work.t_pid.tp_ids,0,sizeof(vcpu->c_work.t_pid.tp_ids));
+ vcpu->c_work.t_pid.tp_parent             = &vcpu->c_work;
+ vcpu->c_work.t_pid.tp_leader             = &vcpu->c_work;
+ vcpu->c_work.t_pid.tp_children           = &vcpu->c_work;
+ vcpu->c_work.t_pid.tp_group              = &vcpu->c_work;
+ vcpu->c_work.t_pid.tp_siblings.le_pself  = &vcpu->c_work.t_pid.tp_children;
+ vcpu->c_work.t_pid.tp_grplink.le_pself   = &vcpu->c_work.t_pid.tp_group;
+ vcpu->c_work.t_fdman = &fdman_kernel;
+ FDMAN_INCREF(&fdman_kernel);
+ vcpu->c_work.t_sighand = &sighand_kernel;
+ SIGHAND_INCREF(&sighand_kernel);
+ sig_cinit(&vcpu->c_work.t_event);
+ sigpending_cinit(&vcpu->c_work.t_sigpend);
+ vcpu->c_work.t_sigshare = &sigshare_kernel;
+ SIGSHARE_INCREF(&sigshare_kernel);
+#ifndef CONFIG_NO_LDT
+ vcpu->c_work.t_arch.at_ldt_gdt = SEG(SEG_KERNEL_LDT);
+#endif /* !CONFIG_NO_LDT */
+#endif /* !CONFIG_NO_JOBS */
 
  /* Setup the affinity of the IDLE task. */
  atomic_rwlock_init(&vcpu->c_idle.t_affinity_lock);
@@ -645,6 +673,9 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
 #ifndef CONFIG_NO_LDT
  ldt_write(&ldt_kernel);
  LIST_INSERT(ldt_kernel.l_tasks,&vcpu->c_idle,t_arch.at_ldt_tasks);
+#ifndef CONFIG_NO_JOBS
+ LIST_INSERT(ldt_kernel.l_tasks,&vcpu->c_work,t_arch.at_ldt_tasks);
+#endif /* !CONFIG_NO_JOBS */
  ldt_endwrite(&ldt_kernel);
 #endif /* !CONFIG_NO_LDT */
 
@@ -654,12 +685,22 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
   *        meaning we are safe to assert that this always succeeds. */
  asserte(E_ISOK(task_set_id(&vcpu->c_idle,&pid_global)));
  asserte(E_ISOK(task_set_id(&vcpu->c_idle,&pid_init)));
+#ifndef CONFIG_NO_JOBS
+ asserte(E_ISOK(task_set_id(&vcpu->c_work,&pid_global)));
+ asserte(E_ISOK(task_set_id(&vcpu->c_work,&pid_init)));
+#endif /* !CONFIG_NO_JOBS */
 
  vcpu->c_self      = vcpu;
  vcpu->c_running   = &vcpu->c_idle;
- vcpu->c_suspended = NULL;
  vcpu->c_sleeping  = NULL;
  vcpu->c_idling    = NULL;
+#ifndef CONFIG_NO_JOBS
+ vcpu->c_jobs      = NULL;
+ vcpu->c_jobs_end  = NULL;
+ vcpu->c_suspended = &vcpu->c_work;
+#else
+ vcpu->c_suspended = NULL;
+#endif
  vcpu->c_prio_min  = vcpu->c_idle.t_priority;
  vcpu->c_prio_max  = vcpu->c_idle.t_priority;
  atomic_rwlock_init(&vcpu->c_lock);

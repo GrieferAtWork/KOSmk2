@@ -33,38 +33,55 @@
 DECL_BEGIN
 
 PUBLIC struct pid_namespace pid_global = {
-    /* 3 initial references:
+    /* 3/4 initial references:
      *    - pid_global
      *    - inittask.t_pid.tp_ids[PIDTYPE_GPID].tl_ns
      *    - __bootcpu.c_idle.t_pid.tp_ids[PIDTYPE_GPID].tl_ns
+     *    - [!CONFIG_NO_JOBS] __bootcpu.c_work.t_pid.tp_ids[PIDTYPE_GPID].tl_ns
      */
+#ifndef CONFIG_NO_JOBS
+#ifdef CONFIG_DEBUG
+    .pn_refcnt = 4,
+#else
+    .pn_refcnt = 0x80000004,
+#endif
+#else /* !CONFIG_NO_JOBS */
 #ifdef CONFIG_DEBUG
     .pn_refcnt = 3,
 #else
     .pn_refcnt = 0x80000003,
 #endif
+#endif /* CONFIG_NO_JOBS */
     .pn_type   = PIDTYPE_GPID,
-    .pn_min    = 2,
+    .pn_min    = BOOSTRAP_PID_COUNT,
     .pn_max    = (1 << 16)-1,
     .pn_lock   = ATOMIC_RWLOCK_INIT,
-    .pn_next   = 2,
-    .pn_mapa   = 2,
-    .pn_mapc   = 2,
+    .pn_next   = BOOSTRAP_PID_COUNT,
+    .pn_mapa   = BOOSTRAP_PID_COUNT,
+    .pn_mapc   = BOOSTRAP_PID_COUNT,
     .pn_map    = NULL,
 };
 PUBLIC struct pid_namespace pid_init = {
+#ifndef CONFIG_NO_JOBS
+#ifdef CONFIG_DEBUG
+    .pn_refcnt = 4,
+#else
+    .pn_refcnt = 0x80000004,
+#endif
+#else /* !CONFIG_NO_JOBS */
 #ifdef CONFIG_DEBUG
     .pn_refcnt = 3,
 #else
     .pn_refcnt = 0x80000003,
 #endif
+#endif /* CONFIG_NO_JOBS */
     .pn_type   = PIDTYPE_PID,
-    .pn_min    = 2,
+    .pn_min    = BOOSTRAP_PID_COUNT,
     .pn_max    = (1 << 16)-1,
     .pn_lock   = ATOMIC_RWLOCK_INIT,
-    .pn_next   = 2,
-    .pn_mapa   = 2,
-    .pn_mapc   = 2,
+    .pn_next   = BOOSTRAP_PID_COUNT,
+    .pn_mapa   = BOOSTRAP_PID_COUNT,
+    .pn_mapc   = BOOSTRAP_PID_COUNT,
     .pn_map    = NULL,
 };
 
@@ -132,16 +149,20 @@ PRIVATE ATTR_FREETEXT void KCALL
 setup_pid_namespace(struct pid_namespace *__restrict self) {
  CHECK_HOST_DOBJ(self);
  assert(self->pn_map == NULL);
- assert(self->pn_mapa == 2);
- assert(self->pn_mapc == 2);
- self->pn_map = _mall_untrack(tmalloc(struct pid_bucket,2));
+ assert(self->pn_mapa == BOOSTRAP_PID_COUNT);
+ assert(self->pn_mapc == BOOSTRAP_PID_COUNT);
+ self->pn_map = _mall_untrack(tmalloc(struct pid_bucket,BOOSTRAP_PID_COUNT));
  if unlikely(!self->pn_map)
     PANIC("PID namespace setup failed: %[errno]",ENOMEM);
  /* Link the initial namespace entries. */
- self->pn_map[BOOTTASK_PID % 2].pb_chain     = &inittask;
- self->pn_map[BOOTCPU_IDLE_PID % 2].pb_chain = &__bootcpu.c_idle;
- inittask.t_pid.tp_ids[self->pn_type].tl_link.le_pself = &self->pn_map[BOOTTASK_PID % 2].pb_chain;
- __bootcpu.c_idle.t_pid.tp_ids[self->pn_type].tl_link.le_pself = &self->pn_map[BOOTCPU_IDLE_PID % 2].pb_chain;
+ self->pn_map[BOOTTASK_PID % BOOSTRAP_PID_COUNT].pb_chain     = &inittask;
+ self->pn_map[BOOTCPU_IDLE_PID % BOOSTRAP_PID_COUNT].pb_chain = &__bootcpu.c_idle;
+ inittask.t_pid.tp_ids[self->pn_type].tl_link.le_pself = &self->pn_map[BOOTTASK_PID % BOOSTRAP_PID_COUNT].pb_chain;
+ __bootcpu.c_idle.t_pid.tp_ids[self->pn_type].tl_link.le_pself = &self->pn_map[BOOTCPU_IDLE_PID % BOOSTRAP_PID_COUNT].pb_chain;
+#ifndef CONFIG_NO_JOBS
+ self->pn_map[BOOTCPU_WORK_PID % BOOSTRAP_PID_COUNT].pb_chain = &__bootcpu.c_work;
+ __bootcpu.c_work.t_pid.tp_ids[self->pn_type].tl_link.le_pself = &self->pn_map[BOOTCPU_WORK_PID % BOOSTRAP_PID_COUNT].pb_chain;
+#endif
 }
 
 

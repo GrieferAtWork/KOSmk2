@@ -23,6 +23,7 @@
 #include <hybrid/types.h>
 #include <sched/percpu.h>
 #include <sched/types.h>
+#include <stdbool.h>
 
 DECL_BEGIN
 
@@ -118,6 +119,17 @@ typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
 
 /* Special CPU ID reserved for the boot CPU. */
 #define CPUID_BOOTCPU 0 /* NOTE: Always ZERO(0). */
+
+
+#ifndef CONFIG_NO_JOBS
+/* Schedule work to-be performed on the calling CPU at a later, safer time.
+ * @return: true:  The given job was scheduled.
+ * @return: false: The given job had already been scheduled, though had yet to be executed.
+ *                 The module associated with the given job is currently being unloaded. */
+FUNDEF bool KCALL schedule_work(struct job *__restrict work);
+FUNDEF bool KCALL schedule_work_unlocked(struct job *__restrict work);
+#endif /* !CONFIG_NO_JOBS */
+
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 INTDEF void KCALL cpu_add_running(REF struct task *__restrict t);

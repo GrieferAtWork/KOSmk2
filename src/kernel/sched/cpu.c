@@ -252,6 +252,13 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
     },
 };
 
+#ifndef CONFIG_NO_JOBS
+INTERN ATTR_RAREBSS ATTR_ALIGNED(16) u8 __bootworkstack[TASK_HOSTSTACK_WORKSIZE];
+#define WORKSTATE \
+  ((struct cpustate *)(__bootworkstack+(TASK_HOSTSTACK_WORKSIZE-sizeof(struct host_cpustate))))
+
+#endif /* !CONFIG_NO_JOBS */
+
 PRIVATE ATTR_FREETEXT taskprio_t KCALL
 prio_from_string(char *__restrict s) {
  taskprio_t p;
@@ -277,6 +284,13 @@ DEFINE_EARLY_SETUP("idle-priority=",idle_priority) {
  __bootcpu.c_idle.t_prioscore = prio_from_string(arg);
  return true;
 }
+#ifndef CONFIG_NO_JOBS
+DEFINE_EARLY_SETUP("work-priority=",work_priority) {
+ __bootcpu.c_work.t_priority = 
+ __bootcpu.c_work.t_prioscore = prio_from_string(arg);
+ return true;
+}
+#endif /* !CONFIG_NO_JOBS */
 
 ATTR_USED ATTR_SECTION(".boot.cpu")
 PUBLIC struct cpu __bootcpu = {
@@ -286,8 +300,14 @@ PUBLIC struct cpu __bootcpu = {
     .c_id         = CPUID_BOOTCPU,
     .c_prio_min   = TASKPRIO_DEFAULT,
     .c_prio_max   = TASKPRIO_DEFAULT,
+#ifndef CONFIG_NO_JOBS
+    .c_suspended  = &__bootcpu.c_work,
+#else
+    .c_suspended  = NULL,
+#endif
+    .c_sleeping   = NULL,
     .c_lock       = ATOMIC_RWLOCK_INIT,
-    .c_idle       = {
+    .c_idle = {
         /* Reference counter:
          *   - __bootcpu.c_idle
          *   - __bootcpu.c_idling
@@ -355,7 +375,7 @@ PUBLIC struct cpu __bootcpu = {
         },
         .t_hstack = {
             .hs_begin = (ppage_t)((uintptr_t)&__bootidlestack),
-            .hs_end   = (ppage_t)((uintptr_t)&__bootidlestack+BOOTSTACK_SIZE),
+            .hs_end   = (ppage_t)((uintptr_t)&__bootidlestack+TASK_HOSTSTACK_IDLESIZE),
         },
         /* NOTE: Technically, IDLE tasks can run under any page directory,
          *       but adding an exception just for them may already negate
@@ -363,7 +383,11 @@ PUBLIC struct cpu __bootcpu = {
          *       carry. - Especially considering that IDLE tasks aren't
          *       meant to be run continuously at all! */
         .t_mman_tasks = {
+#ifndef CONFIG_NO_JOBS
+            .le_next  = &__bootcpu.c_work,
+#else /* !CONFIG_NO_JOBS */
             .le_next  = NULL,
+#endif /* CONFIG_NO_JOBS */
             .le_pself = &inittask.t_mman_tasks.le_next,
         },
         .t_real_mman = &mman_kernel,
@@ -376,12 +400,115 @@ PUBLIC struct cpu __bootcpu = {
         .t_arch = {
             .at_ldt_tasks = {
                 .le_pself = &inittask.t_arch.at_ldt_tasks.le_next,
+#ifndef CONFIG_NO_JOBS
+                .le_next  = &__bootcpu.c_work,
+#else /* !CONFIG_NO_JOBS */
+                .le_next  = NULL,
+#endif /* CONFIG_NO_JOBS */
+            },
+            .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
+        },
+#endif /* !CONFIG_NO_LDT */
+    },
+#ifndef CONFIG_NO_JOBS
+    .c_work = {
+        /* Reference counter:
+         *   - __bootcpu.c_work
+         *   - __bootcpu.c_idling->t_sched.re_[prev|next]
+         *   - pid_global.pn_map[BOOTCPU_IDLE_PID]
+         *   - pid_init.pn_map[BOOTCPU_IDLE_PID]
+         */
+#ifdef CONFIG_DEBUG
+        .t_refcnt    = 4,
+#else
+        .t_refcnt    = 0x80000004,
+#endif
+        .t_weakcnt   = 1, /* Held by the non-zero 't_refcnt' */
+        /* The location of the bootstrap cpu-state block. */
+        .t_cstate    = WORKSTATE,
+#ifdef CONFIG_SMP
+        .t_affinity_lock = ATOMIC_RWLOCK_INIT,
+        .t_affinity  = CPU_SETONE(CPUID_BOOTCPU),
+        .t_cpu       = &__bootcpu,
+#endif
+        .t_flags     = TASKFLAG_NOTALEADER,
+        .t_mode      = TASKMODE_SUSPENDED,
+        .t_sched = {
+            .sd_suspended = {
+                .le_pself = &__bootcpu.c_suspended,
+                .le_next  = NULL,
+            },
+        },
+        .t_priority  = TASKPRIO_MAX,
+        .t_prioscore = TASKPRIO_MAX,
+        .t_signals   = {
+            .ts_slotc = 0,
+            .ts_slota = 0,
+            .ts_slotv = NULL,
+            .ts_first = {
+                .tss_self = &__bootcpu.c_idle,
+            },
+        },
+        .t_event     = SIG_INIT,
+        .t_critical  = 1,
+        .t_nointr    = 1,
+        .t_addrlimit = KERNEL_BASE,
+        .t_suspend   = {0,0},
+        .t_ustack    = NULL,
+        .t_pid = {
+            .tp_parlock   = ATOMIC_RWLOCK_INIT,
+            .tp_leadlock  = ATOMIC_RWLOCK_INIT,
+            .tp_childlock = ATOMIC_RWLOCK_INIT,
+            .tp_grouplock = ATOMIC_RWLOCK_INIT,
+            .tp_parent = &__bootcpu.c_work,
+            .tp_leader = &__bootcpu.c_work,
+            .tp_ids = {
+                [PIDTYPE_GPID] = {
+                    .tl_pid = BOOTCPU_WORK_PID,
+                    .tl_ns  = &pid_global,
+                },
+                [PIDTYPE_PID] = {
+                    .tl_pid = BOOTCPU_WORK_PID,
+                    .tl_ns  = &pid_init,
+                },
+            },
+            .tp_children  = &__bootcpu.c_work,
+            .tp_siblings  = { NULL, &__bootcpu.c_work.t_pid.tp_children },
+            .tp_group     = &__bootcpu.c_work,
+            .tp_grplink   = { NULL, &__bootcpu.c_work.t_pid.tp_group },
+        },
+        .t_hstack = {
+            .hs_begin = (ppage_t)((uintptr_t)&__bootworkstack),
+            .hs_end   = (ppage_t)((uintptr_t)&__bootworkstack+TASK_HOSTSTACK_WORKSIZE),
+        },
+        /* NOTE: Technically, IDLE tasks can run under any page directory,
+         *       but adding an exception just for them may already negate
+         *       the overhead that such additional checks would otherwise
+         *       carry. - Especially considering that IDLE tasks aren't
+         *       meant to be run continuously at all! */
+        .t_mman_tasks = {
+            .le_next  = NULL,
+            .le_pself = &__bootcpu.c_idle.t_mman_tasks.le_next,
+        },
+        .t_real_mman = &mman_kernel,
+        .t_mman = &mman_kernel,
+        .t_fdman = &fdman_kernel,
+        .t_sighand = &sighand_kernel,
+        .t_sigpend = SIGPENDING_INIT,
+        .t_sigshare = &sigshare_kernel,
+#ifndef CONFIG_NO_LDT
+        .t_arch = {
+            .at_ldt_tasks = {
+                .le_pself = &__bootcpu.c_idle.t_arch.at_ldt_tasks.le_next,
                 .le_next  = NULL,
             },
             .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
         },
-#endif
+#endif /* !CONFIG_NO_LDT */
     },
+    .c_jobs     = NULL,
+    .c_jobs_end = NULL,
+#endif /* !CONFIG_NO_JOBS */
     .c_arch = {
 #if defined(__i386__) || defined(__x86_64__)
         .ac_tss = {
@@ -399,15 +526,40 @@ PUBLIC struct cpu __bootcpu = {
     },
     .c_n_run   = 1,
     .c_n_idle  = 1,
+#ifndef CONFIG_NO_JOBS
+    .c_n_susp  = 1,
+#else /* !CONFIG_NO_JOBS */
     .c_n_susp  = 0,
+#endif /* CONFIG_NO_JOBS */
     .c_n_sleep = 0,
 };
 
+#ifndef CONFIG_NO_JOBS
+/* Function implementing the per-cpu worker loop, and associated scheduling. */
+INTDEF ATTR_NORETURN void KCALL cpu_jobworker(void);
+#endif /* !CONFIG_NO_JOBS */
 
 INTDEF ATTR_USED struct cpustate *FCALL pit_exc(struct cpustate *__restrict state);
 INTERN DEFINE_TASK_HANDLER(pit_irq,pit_exc);
 PRIVATE ATTR_FREERODATA isr_t const pit_isr = ISR_DEFAULT(IRQ_PIC1_PIT,&pit_irq);
 INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
+
+#ifndef CONFIG_NO_JOBS
+ /* Initialize the stack of the boot CPU's worker task. */
+ WORKSTATE->iret.cs     = __KERNEL_CS;
+ WORKSTATE->iret.eflags = EFLAGS_IF|EFLAGS_IOPL(3);
+ WORKSTATE->iret.eip    = (u32)&cpu_jobworker;
+ memset(&WORKSTATE->gp,0,sizeof(WORKSTATE->gp));
+ WORKSTATE->sg.ds       = __KERNEL_DS;
+ WORKSTATE->sg.es       = __KERNEL_DS;
+#ifdef __x86_64__
+ WORKSTATE->sg.fs       = __KERNEL_DS;
+ WORKSTATE->sg.gs       = __KERNEL_PERCPU;
+#else /* __x86_64__ */
+ WORKSTATE->sg.fs       = __KERNEL_PERCPU;
+ WORKSTATE->sg.gs       = __KERNEL_DS;
+#endif /* !__x86_64__ */
+#endif /* !CONFIG_NO_JOBS */
 
  /* Install the PIT IRQ handler. */
  irq_set(&pit_isr,NULL,IRQ_SET_RELOAD);

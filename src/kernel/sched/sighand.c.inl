@@ -33,12 +33,21 @@ PUBLIC struct sigshare sigshare_kernel = {
      *   - sigshare_kernel
      *   - inittask.t_sigshare
      *   - __bootcpu.c_idle.t_sigshare
+     *   - [!CONFIG_NO_JOBS] __bootcpu.c_work.t_sigshare
      */
+#ifndef CONFIG_NO_JOBS
+#ifdef CONFIG_DEBUG
+    .ss_refcnt = 4,
+#else
+    .ss_refcnt = 0x80000004,
+#endif
+#else /* !CONFIG_NO_JOBS */
 #ifdef CONFIG_DEBUG
     .ss_refcnt = 3,
 #else
     .ss_refcnt = 0x80000003,
 #endif
+#endif /* CONFIG_NO_JOBS */
     .ss_pending = SIGPENDING_INIT,
 };
 
@@ -221,12 +230,21 @@ PUBLIC struct sighand sighand_kernel = {
      *   - sighand_kernel
      *   - inittask.t_sighand
      *   - __bootcpu.c_idle.t_sighand
+     *   - [!CONFIG_NO_JOBS] __bootcpu.c_work.t_sighand
      */
+#ifndef CONFIG_NO_JOBS
+#ifdef CONFIG_DEBUG
+    .sh_refcnt = 4,
+#else
+    .sh_refcnt = 0x80000004,
+#endif
+#else /* !CONFIG_NO_JOBS */
 #ifdef CONFIG_DEBUG
     .sh_refcnt = 3,
 #else
     .sh_refcnt = 0x80000003,
 #endif
+#endif /* CONFIG_NO_JOBS */
     .sh_actions = {
     },
 };

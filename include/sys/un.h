@@ -25,8 +25,8 @@
 __SYSDECL_BEGIN
 
 struct sockaddr_un {
- __SOCKADDR_COMMON(sun_);
- char sun_path[108]; /*< Path name. */
+    __SOCKADDR_COMMON(sun_);
+    char sun_path[108]; /*< Path name. */
 };
 
 #ifdef __USE_MISC

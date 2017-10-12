@@ -55,7 +55,7 @@ ne2k_send(ne2k_t *__restrict self,
  size_t transmission_size;
  /* TODO: This only checks the hard limit, but I'm guessing
   *       a connected device is more limited that this... */
- if (len > 0xffff) return -ENOBUFS;
+ if (len > 0xffff) return -EINVAL;
  transmission_size = len;
  if (transmission_size&1) ++transmission_size;
 
@@ -78,6 +78,7 @@ ne2k_send(ne2k_t *__restrict self,
    ne2k_reset(self->n_iobase);
    return -ETIMEDOUT;
   }
+  task_yield();
  }
  outb(self->n_iobase+EN0_ISR,ENISR_RDC); /* Acknowledge */
 
@@ -94,11 +95,12 @@ ne2k_send(ne2k_t *__restrict self,
    ne2k_reset(self->n_iobase);
    return -ETIMEDOUT;
   }
+  task_yield();
  }
  outb(self->n_iobase+EN0_ISR,ENISR_RDC); /* Acknowledge */
 
  /* Check if the status register indicates an error. */
- if (status&ENISR_TX_ERR)
+ if ((status&(ENISR_TX_ERR|ENISR_TX)) != ENISR_TX)
      return -EIO;
 
  return -EOK;

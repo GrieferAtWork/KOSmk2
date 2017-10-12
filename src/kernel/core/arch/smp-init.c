@@ -420,6 +420,10 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
    * access it to allocate the IDLE stack. */
   error = task_mkhstack(&vcpu->c_idle,TASK_HOSTSTACK_IDLESIZE);
   if (E_ISERR(error)) goto err;
+#ifndef CONFIG_NO_JOBS
+  error = task_mkhstack(&vcpu->c_work,TASK_HOSTSTACK_WORKSIZE);
+  if (E_ISERR(error)) goto err;
+#endif /* !CONFIG_NO_JOBS */
 
 #ifdef CONFIG_TRACE_LEAKS
   { struct mbranch *idle_stack_branch;
@@ -431,7 +435,18 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
     (void)_mall_nofree(idle_stack_branch);
     (void)_mall_nofree(idle_stack_branch->mb_region);
   }
-#endif
+#ifndef CONFIG_NO_JOBS
+  { struct mbranch *work_stack_branch;
+    work_stack_branch = mman_getbranch_unlocked(&mman_kernel,vcpu->c_work.t_hstack.hs_begin);
+    assertf(work_stack_branch,"Work stack at %p mapped improperly",vcpu->c_work.t_hstack.hs_begin);
+    CHECK_HOST_DOBJ(work_stack_branch);
+    CHECK_HOST_DOBJ(work_stack_branch->mb_region);
+    /* This branch & region must never be freed! */
+    (void)_mall_nofree(work_stack_branch);
+    (void)_mall_nofree(work_stack_branch->mb_region);
+  }
+#endif /* !CONFIG_NO_JOBS */
+#endif /* !CONFIG_TRACE_LEAKS */
 
   /* Fill in in-cpu pointers using its virtual address. */
   vcpu->c_id = (cpuid_t)(dst_iter-newvec)-1;

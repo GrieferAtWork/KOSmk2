@@ -54,8 +54,8 @@ __SYSDECL_BEGIN
 #define SWAP_FLAG_DISCARD    0x10000 /*< Discard swap cluster after use. */
 
 #ifndef __KERNEL__
-__LIBC __WARN_NODOSFS int (__LIBCCALL swapon)(char const *__path, int __flags);
-__LIBC __WARN_NODOSFS int (__LIBCCALL swapoff)(char const *__path);
+__LIBC int (__LIBCCALL swapon)(char const *__path, int __flags);
+__LIBC int (__LIBCCALL swapoff)(char const *__path);
 #endif /* !__KERNEL__ */
 
 __SYSDECL_END

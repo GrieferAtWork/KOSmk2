@@ -21,30 +21,97 @@
 
 #include <features.h>
 #include <bits/poll.h>
+#include <hybrid/typecore.h>
 #ifdef __USE_GNU
 #include <bits/sigset.h>
 #include <hybrid/timespec.h>
 #endif /* __USE_GNU */
 
+#ifndef __CRT_GLC
+#error "<sys/poll.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
-typedef unsigned long int nfds_t;
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("fd")
+#pragma push_macro("events")
+#pragma push_macro("revents")
+#endif
+
+#undef fd
+#undef events
+#undef revents
+
+typedef __UINTPTR_TYPE__ nfds_t;
 
 struct pollfd {
- int       fd;      /*< File descriptor to poll.  */
- short int events;  /*< Types of events poller cares about.  */
- short int revents; /*< Types of events that actually occurred.  */
+    int            fd;      /*< File descriptor to poll.  */
+    __INT16_TYPE__ events;  /*< Types of events poller cares about.  */
+    __INT16_TYPE__ revents; /*< Types of events that actually occurred.  */
 };
 
 #ifndef __KERNEL__
 __LIBC int (__LIBCCALL poll)(struct pollfd *__fds, nfds_t __nfds, int __timeout);
+
 #ifdef __USE_GNU
-__LIBC int (__LIBCCALL ppoll)(struct pollfd *__fds, nfds_t __nfds, struct timespec const *__timeout, __sigset_t const *__ss) __TM_FUNC(ppoll);
+#ifdef __GLC_COMPAT__
+#ifdef __USE_TIME_BITS64
+__REDIRECT(__LIBC,,int,__LIBCCALL,__ppoll32,
+          (struct pollfd *__fds, nfds_t __nfds,
+           struct __timespec32 const *__timeout,
+           __sigset_t const *__ss),
+           ppoll,(__fds,__nfds,__timeout,__ss))
+__LOCAL int (__LIBCCALL ppoll)(struct pollfd *__fds, nfds_t __nfds,
+                               struct timespec const *__timeout,
+                               __sigset_t const *__ss) {
+    struct __timespec32 __tmo;
+    if (__timeout) __tmo.tv_sec = (__time32_t)__timeout->tv_sec,
+                   __tmo.tv_nsec = (__time32_t)__timeout->tv_nsec;
+    return __ppoll32(__fds,__nfds,__timeout ? &__tmo : 0,__ss);
+}
 #ifdef __USE_TIME64
-__LIBC int (__LIBCCALL ppoll64)(struct pollfd *__fds, nfds_t __nfds, struct __timespec64 const *__timeout, __sigset_t const *__ss);
+__LOCAL int (__LIBCCALL ppoll64)(struct pollfd *__fds, nfds_t __nfds,
+                                 struct __timespec64 const *__timeout,
+                                 __sigset_t const *__ss) {
+    return ppoll(__fds,__nfds,__timeout,__ss);
+}
 #endif /* __USE_TIME64 */
+#else /* __USE_TIME_BITS64 */
+__LIBC int (__LIBCCALL ppoll)(struct pollfd *__fds, nfds_t __nfds,
+                              struct timespec const *__timeout,
+                              __sigset_t const *__ss);
+#ifdef __USE_TIME64
+__LOCAL int (__LIBCCALL ppoll64)(struct pollfd *__fds, nfds_t __nfds,
+                                 struct __timespec64 const *__timeout,
+                                 __sigset_t const *__ss) {
+    struct timespec __tmo;
+    if (__timeout) __tmo.tv_sec = (__time32_t)__timeout->tv_sec,
+                   __tmo.tv_nsec = (__time32_t)__timeout->tv_nsec;
+    return ppoll(__fds,__nfds,__timeout ? &__tmo : 0,__ss);
+}
+#endif /* __USE_TIME64 */
+#endif /* !__USE_TIME_BITS64 */
+#else /* __GLC_COMPAT__ */
+__REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,ppoll,
+                  (struct pollfd *__fds, nfds_t __nfds,
+                   struct timespec const *__timeout,
+                   __sigset_t const *__ss),
+                   ppoll,(__fds,__nfds,__timeout,__ss))
+#ifdef __USE_TIME64
+__LIBC int (__LIBCCALL ppoll64)(struct pollfd *__fds, nfds_t __nfds,
+                                struct __timespec64 const *__timeout,
+                                __sigset_t const *__ss);
+#endif /* __USE_TIME64 */
+#endif /* !__GLC_COMPAT__ */
 #endif /* __USE_GNU */
 #endif /* !__KERNEL__ */
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("revents")
+#pragma pop_macro("events")
+#pragma pop_macro("fd")
+#endif
 
 __SYSDECL_END
 

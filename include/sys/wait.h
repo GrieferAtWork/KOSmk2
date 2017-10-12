@@ -43,6 +43,10 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
+#ifndef __CRT_GLC
+#error "<sys/wait.h> is not supported by the linked libc"
+#endif /* !__CRT_GLC */
+
 __SYSDECL_BEGIN
 
 #ifndef __WAIT_MACROS_DEFINED

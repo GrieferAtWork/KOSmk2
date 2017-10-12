@@ -127,6 +127,9 @@ FUNDEF SAFE errno_t KCALL task_mkhstack(struct task *__restrict self, size_t n_b
 #define TASK_HOSTSTACK_DEFAULTSIZE 0x4000 /*< Default, generic size for host stacks. */
 #define TASK_HOSTSTACK_BOOTSIZE    0x4000 /*< For reference: The size of the boot stack. */
 #define TASK_HOSTSTACK_IDLESIZE    0x4000 /*< For reference: The size of IDLE-thread stacks. */
+#ifndef CONFIG_NO_JOBS
+#define TASK_HOSTSTACK_WORKSIZE    0x4000 /*< For reference: The size of WORK-thread stacks. */
+#endif /* !CONFIG_NO_JOBS */
 #define TASK_HOSTSTACK_ALIGN       16     /*< Alignment hint that should be respected by all host-stack allocators. */
 
 /* Similar to 'task_mkhstack()', but the stack is allocated lazily for user-space. */

@@ -55,8 +55,8 @@ local run_kernel_binary = "bin/kos.bin"; /* Output name of the kernel binary. */
 local run_addr2line_exe = run_kernel_binary;
 local run_addr2line_base = 0;
 
-local run_addr2line_exe = "bin/mod/libpci.so";
-local run_addr2line_base = 0xe0061000;
+//local run_addr2line_exe = "bin/mod/libpci.so";
+//local run_addr2line_base = 0xe0061000;
 //local run_addr2line_exe = "bin/mod/pe";
 //local run_addr2line_base = 0xe001f000;
 //local run_addr2line_exe = "bin/libs/libc.so";
