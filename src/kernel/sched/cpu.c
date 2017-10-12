@@ -446,7 +446,7 @@ PUBLIC struct cpu __bootcpu = {
             .ts_slota = 0,
             .ts_slotv = NULL,
             .ts_first = {
-                .tss_self = &__bootcpu.c_idle,
+                .tss_self = &__bootcpu.c_work,
             },
         },
         .t_event     = SIG_INIT,
@@ -506,8 +506,6 @@ PUBLIC struct cpu __bootcpu = {
         },
 #endif /* !CONFIG_NO_LDT */
     },
-    .c_jobs     = NULL,
-    .c_jobs_end = NULL,
 #endif /* !CONFIG_NO_JOBS */
     .c_arch = {
 #if defined(__i386__) || defined(__x86_64__)

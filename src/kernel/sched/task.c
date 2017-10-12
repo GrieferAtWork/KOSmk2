@@ -547,7 +547,11 @@ task_destroy(struct task *__restrict t) {
  assert(IS_ALIGNED((uintptr_t)t->t_hstack.hs_begin,PAGESIZE));
  assert(IS_ALIGNED((uintptr_t)t->t_hstack.hs_end,  PAGESIZE));
  assertf(t != &inittask,"Cannot destroy boot task");
- assertf(!t->t_cpu || t != &t->t_cpu->c_idle,"Cannot destroy cpu IDLE-task");
+ assertf(t->t_cpu != NULL,"Task has no associated CPU");
+ assertf(t != &t->t_cpu->c_idle,"Cannot destroy cpu IDLE-task");
+#ifndef CONFIG_NO_JOBS
+ assertf(t != &t->t_cpu->c_work,"Cannot destroy cpu WORK-task");
+#endif /* !CONFIG_NO_JOBS */
  /* Validate the consistency of the task's state. */
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_cpu != NULL));
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_mman != NULL));
@@ -1978,6 +1982,7 @@ end_clear:
 PRIVATE CPU_BSS struct task *termself_chain = NULL;
 PRIVATE void KCALL termself_callback(void *UNUSED(data)) {
  struct task *t;
+ syslog(LOG_DEBUG,"termself_callback()\n");
  for (;;) {
   /* t = atomic_linked_list_pop(CPU(termself_chain)); */
   do {
@@ -1985,6 +1990,7 @@ PRIVATE void KCALL termself_callback(void *UNUSED(data)) {
    if (!t) return;
   } while (!ATOMIC_CMPXCH_WEAK(CPU(termself_chain),t,t->t_termnext));
   /* Signal termination and drop a reference. */
+  sig_broadcast(&t->t_event);
   task_is_terminating(t);
   TASK_DECREF(t);
  }
@@ -1997,9 +2003,13 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
  assert(t == THIS_TASK);
 
  PREEMPTION_DISABLE();
+ /* With preemption disabled, we can not unlock the CPU. */
+ cpu_endwrite(THIS_CPU);
+
  assert(TASK_CPU(t) == THIS_CPU);
  assert(THIS_CPU->c_running == t);
  ATOMIC_WRITE(t->t_critical,0);
+
 
  /* With runlater()-style jobs now a thing, use them to
   * fix the deadlock caused by hi-jacking another task. */
@@ -2024,10 +2034,7 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
   * NOTE: During this here is safe, because preemption is still disabled,
   *       meaning that the job can't start deleting our stack before we've
   *       switched to the next task. */
- schedule_work_unlocked(&termself_job);
-
- /* With the termination cleanup job scheduled, we can not unlock the CPU. */
- cpu_endwrite(THIS_CPU);
+ schedule_work(&termself_job);
 
  assert(THIS_CPU->c_running == t);
  asserte(cpu_sched_remove_current() == t);
@@ -2048,7 +2055,7 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
               ((THIS_PDIR_BASE-KERNEL_BASE)/PDTABLE_REPRSIZE)*4) == 0);
  TASK_SWITCH_CONTEXT(t,new_task);
 
-#if 0
+#if 1
  syslog(LOG_DEBUG,"Terminating SELF: %p (%d)\n",t,t->t_refcnt);
 #endif
 
@@ -2880,46 +2887,244 @@ PUBLIC errno_t KCALL task_testintr(void) {
 
 /* Thread worker process. */
 #ifndef CONFIG_NO_JOBS
-PUBLIC bool KCALL schedule_work_unlocked(struct job *__restrict work) {
- bool result = false;
- assert(!PREEMPTION_ENABLED());
- assert(cpu_writing(THIS_CPU));
- /* Make sure the instance associated with the job still exists. */
- if unlikely(INSTANCE_ISUNLOADING(work->j_owner)) goto end;
+
+#ifdef CONFIG_SMP
+PRIVATE CPU_BSS DEFINE_ATOMIC_RWLOCK(cpu_jlock);
+#define CPU_JLOCK_ACQUIRE() atomic_rwlock_write(&CPU(cpu_jlock))
+#define CPU_JLOCK_RELEASE() atomic_rwlock_endwrite(&CPU(cpu_jlock))
+#else
+#define CPU_JLOCK_ACQUIRE() (void)0
+#define CPU_JLOCK_RELEASE() (void)0
+#endif
+
+/* [0..1][lock(PRIVATE(THIS_CPU))][(!= NULL) == (c_jobs_end != NULL)]
+ *  The first job to-be executed by c_work. */
+PRIVATE CPU_BSS LIST_HEAD(struct job) cpu_jobs = NULL;
+
+/* [0..1][lock(PRIVATE(THIS_CPU))][(!= NULL) == (c_jobs != NULL)]
+ *  The last job to-be executed by c_work. */
+PRIVATE CPU_BSS LIST_HEAD(struct job) cpu_jobs_end = NULL;
+
+/* [0..1][lock(PRIVATE(THIS_CPU))] Ordered list of delayed jobs. */
+PRIVATE CPU_BSS LIST_HEAD(struct job) cpu_delay_jobs = NULL;
+
+PUBLIC errno_t KCALL
+schedule_work(struct job *__restrict work) {
+ errno_t result = -EOK;
+ pflag_t was = PREEMPTION_PUSH();
+ CPU_JLOCK_ACQUIRE();
+ CHECK_HOST_DOBJ(work);
+
  /* If the job is already scheduled, don't do anything. */
- if unlikely(work->j_next.le_pself != NULL) goto end;
+ if unlikely(work->j_next.le_pself != NULL) { result = -EALREADY; goto end; }
+ /* Make sure the instance associated with the job still exists. */
+ if unlikely(INSTANCE_ISUNLOADING(work->j_owner)) { result = -EPERM; goto end; }
 
  work->j_next.le_next = NULL;
- assert((THIS_CPU->c_jobs != NULL) ==
-        (THIS_CPU->c_jobs_end != NULL));
+ assert((CPU(cpu_jobs) != NULL) ==
+        (CPU(cpu_jobs_end) != NULL));
  /* Schedule at the back. */
- if (THIS_CPU->c_jobs_end) {
-  work->j_next.le_pself = &THIS_CPU->c_jobs_end->j_next.le_next;
-  THIS_CPU->c_jobs_end->j_next.le_next = work;
-  THIS_CPU->c_jobs_end = work;
+ if (CPU(cpu_jobs_end)) {
+  assertf(THIS_CPU->c_work.t_mode == TASKMODE_RUNNING ||
+          THIS_CPU->c_work.t_mode == TASKMODE_WAKEUP,
+          "The worker task must be scheduled to run");
+  work->j_next.le_pself = &CPU(cpu_jobs_end)->j_next.le_next;
+  CPU(cpu_jobs_end)->j_next.le_next = work;
+  CPU(cpu_jobs_end)                 = work;
  } else {
-  work->j_next.le_pself = &THIS_CPU->c_jobs;
-  THIS_CPU->c_jobs     = work;
-  THIS_CPU->c_jobs_end = work;
+  work->j_next.le_pself = &CPU(cpu_jobs);
+  CPU(cpu_jobs)         = work;
+  CPU(cpu_jobs_end)     = work;
   /* This is the first job. - Make sure to schedule the worker task. */
-  assert(THIS_CPU->c_work.t_mode == TASKMODE_SUSPENDED);
-  cpu_del_suspended(THIS_CPU,&THIS_CPU->c_work);
-  ATOMIC_WRITE(THIS_CPU->c_work.t_mode,TASKMODE_RUNNING);
-  cpu_add_running(&THIS_CPU->c_work);
+  cpu_write(THIS_CPU);
+  if (THIS_CPU->c_work.t_mode != TASKMODE_RUNNING) {
+   assert(THIS_CPU->c_work.t_mode == TASKMODE_SUSPENDED ||
+          THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING);
+   if (THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING)
+        cpu_del_sleeping(THIS_CPU,&THIS_CPU->c_work);
+   else cpu_del_suspended(THIS_CPU,&THIS_CPU->c_work);
+   ATOMIC_WRITE(THIS_CPU->c_work.t_mode,TASKMODE_RUNNING);
+   cpu_add_running(&THIS_CPU->c_work);
+  }
+  cpu_endwrite(THIS_CPU);
  }
- result = true;
 end:
- return result;
-}
-PUBLIC bool KCALL schedule_work(struct job *__restrict work) {
- bool result;
- pflag_t was = PREEMPTION_PUSH();
- cpu_write(THIS_CPU);
- result = schedule_work_unlocked(work);
- cpu_endwrite(THIS_CPU);
+ CPU_JLOCK_RELEASE();
  PREEMPTION_POP(was);
  return result;
 }
+
+PUBLIC errno_t KCALL
+schedule_work_delayed(struct job *__restrict work,
+                      struct timespec const *__restrict abs_exectime) {
+ errno_t result = -EOK;
+ pflag_t was = PREEMPTION_PUSH();
+ struct job **piter,*iter;
+ CPU_JLOCK_ACQUIRE();
+ CHECK_HOST_DOBJ(work);
+ CHECK_HOST_DOBJ(abs_exectime);
+
+ /* If the job is already scheduled, don't do anything. */
+ if unlikely(work->j_next.le_pself != NULL) {
+  if (TIMESPEC_LOWER(*abs_exectime,work->j_time)) {
+   /* Re-prioritize the job to be executed sooner. */
+   piter = work->j_next.le_pself;
+   /* TODO: What if the job was scheduled on another CPU?
+    *       The caller may have been transferred without them knowing,
+    *       and us operating on per-cpu variables are assuming that
+    *       the given job is apart of our own delayed execution list. */
+   while ((assert(piter != &CPU(cpu_jobs)),
+           assert(piter != &CPU(cpu_jobs_end)),
+           piter != &CPU(cpu_delay_jobs)) &&
+         (iter = container_of(piter,struct job,j_next.le_next),assert(iter),
+          TIMESPEC_GREATER_EQUAL(iter->j_time,work->j_time)))
+          piter = iter->j_next.le_pself;
+   /* Re-insert the work task. */
+   LIST_REMOVE(work,j_next);
+   if ((work->j_next.le_next = *piter) != NULL)
+        work->j_next.le_next->j_next.le_pself = &work->j_next.le_next;
+   work->j_next.le_pself = piter;
+   *piter = work;
+   if (piter == &CPU(cpu_delay_jobs)) {
+    /* The first task was overwritten, meaning we must update
+     * when the worker task itself gets re-scheduled. */
+    cpu_write(THIS_CPU);
+    /* Make sure the worker task matches the state of present tasks.
+     * Since it is illegal to re-schedule a non-timeout job with a
+     * timeout before it has finished, we can assume that the worker
+     * task isn't currently suspended because it had to have had
+     * at least one sleeper-job ('work') beforehand. */
+    assert(THIS_CPU->c_work.t_mode == TASKMODE_RUNNING ||
+           THIS_CPU->c_work.t_mode == TASKMODE_WAKEUP ||
+           THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING);
+    if (THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING) {
+     cpu_del_sleeping(THIS_CPU,&THIS_CPU->c_work);
+     memcpy(&THIS_CPU->c_work.t_timeout,abs_exectime,sizeof(struct timespec));
+     cpu_add_sleeping(THIS_CPU,&THIS_CPU->c_work);
+    }
+    cpu_endwrite(THIS_CPU);
+   }
+  }
+  result = -EALREADY;
+  goto end;
+ }
+ /* Make sure the instance associated with the job still exists. */
+ if unlikely(INSTANCE_ISUNLOADING(work->j_owner)) { result = -EPERM; goto end; }
+
+ memcpy(&work->j_time,abs_exectime,sizeof(struct timespec));
+
+ /* Figure out where to insert the job. */
+ piter = &CPU(cpu_delay_jobs);
+ while ((iter = *piter) != NULL &&
+         TIMESPEC_LOWER_EQUAL(iter->j_time,*abs_exectime))
+         piter = &iter->j_next.le_next;
+
+ /* Insert the new job. */
+ work->j_next.le_pself = piter;
+ if ((work->j_next.le_next = *piter) != NULL)
+      work->j_next.le_next->j_next.le_pself = &work->j_next.le_next;
+ *piter = work;
+
+ if (piter == &CPU(cpu_delay_jobs)) {
+  /* The job was inserted at the front, meaning that we must
+   * either reduce the worker task's timeout, or switch the
+   * worker task from being suspended to sleeping. */
+  cpu_write(THIS_CPU);
+  if (THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING) {
+   /* Decrement the timeout. */
+   assert(TIMESPEC_LOWER(THIS_CPU->c_work.t_timeout,*abs_exectime));
+   cpu_del_sleeping(THIS_CPU,&THIS_CPU->c_work);
+   memcpy(&THIS_CPU->c_work.t_timeout,abs_exectime,sizeof(struct timespec));
+   cpu_add_sleeping(THIS_CPU,&THIS_CPU->c_work);
+  } else if (THIS_CPU->c_work.t_mode == TASKMODE_SUSPENDED) {
+   cpu_del_suspended(THIS_CPU,&THIS_CPU->c_work);
+   memcpy(&THIS_CPU->c_work.t_timeout,abs_exectime,sizeof(struct timespec));
+   ATOMIC_WRITE(THIS_CPU->c_work.t_mode,TASKMODE_SLEEPING);
+   cpu_add_sleeping(THIS_CPU,&THIS_CPU->c_work);
+  } else {
+   assert(THIS_CPU->c_work.t_mode == TASKMODE_RUNNING);
+  }
+  cpu_endwrite(THIS_CPU);
+ }
+end:
+ CPU_JLOCK_RELEASE();
+ PREEMPTION_POP(was);
+ return result;
+}
+
+
+PRIVATE ATTR_COLDTEXT void KCALL
+jobs_delete_in_chain(struct job **__restrict piter,
+                     struct instance *__restrict inst) {
+ struct job *iter;
+ while ((iter = *piter) != NULL) {
+  if (iter->j_owner == inst) {
+   /* Delete this job. */
+   *piter = iter->j_next.le_next;
+  } else {
+   piter = &iter->j_next.le_next;
+  }
+ }
+}
+
+INTERN ATTR_COLDTEXT void KCALL
+jobs_delete_from_instance(struct instance *__restrict inst) {
+ struct cpu *c; pflag_t was;
+ struct job *iter;
+ FOREACH_CPU(c) {
+  was = PREEMPTION_PUSH();
+#ifdef CONFIG_SMP
+  atomic_rwlock_write(&VCPU(c,cpu_jlock));
+#endif /* CONFIG_SMP */
+  jobs_delete_in_chain(&VCPU(c,cpu_jobs),inst);
+  jobs_delete_in_chain(&VCPU(c,cpu_delay_jobs),inst);
+
+  /* Update the end of the regular job chain. */
+  iter = VCPU(c,cpu_jobs);
+  if (iter) while (iter->j_next.le_next) iter = iter->j_next.le_next;
+  VCPU(c,cpu_jobs_end) = iter;
+
+  /* Must potentially update the CPU's worker task timeout. */
+  cpu_write(c);
+  if (VCPU(c,cpu_delay_jobs)) {
+   /* Update the timeout. */
+   assert(c->c_work.t_mode == TASKMODE_SLEEPING ||
+          c->c_work.t_mode == TASKMODE_RUNNING);
+   if (c->c_work.t_mode == TASKMODE_SLEEPING &&
+       TIMESPEC_NOT_EQUAL(c->c_work.t_timeout,
+                          VCPU(c,cpu_delay_jobs)->j_time)) {
+    assert(TIMESPEC_LOWER(c->c_work.t_timeout,VCPU(c,cpu_delay_jobs)->j_time));
+    cpu_del_sleeping(c,&c->c_work);
+    memcpy(&c->c_work.t_timeout,
+           &VCPU(c,cpu_delay_jobs)->j_time,
+           sizeof(struct timespec));
+    cpu_add_sleeping(c,&c->c_work);
+   }
+  } else if (c->c_work.t_mode == TASKMODE_SLEEPING) {
+   /* If the worker was in timeout-mode, switch it to being suspended.
+    * NOTE: This is only done because a CPU without any sleeping tasks
+    *       has a little bit less overhead during preemption. */
+   assert(!VCPU(c,cpu_jobs));
+   cpu_del_sleeping(c,&c->c_work);
+   ATOMIC_WRITE(c->c_work.t_mode,TASKMODE_SUSPENDED);
+   cpu_add_suspended(c,&c->c_work);
+  }
+#if 0
+  else if (c->c_work.t_mode == TASKMODE_RUNNING) {
+   /* NOTE: We can't safely disable the worker because 'c' may not be our CPU.
+    *       Instead, we simply let to run and disable itself when it sees that
+    *       there is nothing to be done. */
+  }
+#endif
+  cpu_endwrite(c);
+
+#ifdef CONFIG_SMP
+  atomic_rwlock_endwrite(&VCPU(c,cpu_jlock));
+#endif /* CONFIG_SMP */
+  PREEMPTION_POP(was);
+ }
+}
+
 
 /* Function implementing the per-cpu worker loop, and associated scheduling. */
 INTERN ATTR_RARETEXT ATTR_NORETURN
@@ -2932,35 +3137,35 @@ loop:
   assert(PREEMPTION_ENABLED());
 
   PREEMPTION_DISABLE();
-  cpu_write(THIS_CPU);
   COMPILER_READ_BARRIER();
+  CPU_JLOCK_ACQUIRE();
 
   /* Take the first job that we can get a lock on. */
   for (;;) {
-   assert((THIS_CPU->c_jobs != NULL) ==
-          (THIS_CPU->c_jobs_end != NULL));
+   assert((CPU(cpu_jobs) != NULL) ==
+          (CPU(cpu_jobs_end) != NULL));
 
    /* Stop if there are no more jobs. */
-   if (!THIS_CPU->c_jobs) goto no_more_jobs;
+   if (!CPU(cpu_jobs)) goto no_more_jobs;
 
-   memcpy(&exec_job,THIS_CPU->c_jobs,sizeof(struct job));
+   memcpy(&exec_job,CPU(cpu_jobs),sizeof(struct job));
    /* Remove the job from the queue. */
-   assert(exec_job.j_next.le_pself == &THIS_CPU->c_jobs);
-   assert((THIS_CPU->c_jobs == THIS_CPU->c_jobs_end) ==
+   assert(exec_job.j_next.le_pself == &CPU(cpu_jobs));
+   assert((CPU(cpu_jobs) == CPU(cpu_jobs_end)) ==
           (exec_job.j_next.le_next == NULL));
-   THIS_CPU->c_jobs->j_next.le_pself = NULL;
-   if ((THIS_CPU->c_jobs = exec_job.j_next.le_next) != NULL) {
+   CPU(cpu_jobs)->j_next.le_pself = NULL;
+   if ((CPU(cpu_jobs) = exec_job.j_next.le_next) != NULL) {
     /* Update the loopback pointer. */
-    exec_job.j_next.le_next->j_next.le_pself = &THIS_CPU->c_jobs;
+    exec_job.j_next.le_next->j_next.le_pself = &CPU(cpu_jobs);
    } else {
-    THIS_CPU->c_jobs_end = NULL;
+    CPU(cpu_jobs_end) = NULL;
    }
    /* _VERY_ likely case: lock the associated instance, thus keeping it from
     *                     being unloaded for the during of work being done. */
    if likely(INSTANCE_TRYINCREF(exec_job.j_owner))
       break;
   }
-  cpu_endwrite(THIS_CPU);
+  CPU_JLOCK_RELEASE();
   PREEMPTION_ENABLE();
 
   /* Now to execute this job! */
@@ -2971,31 +3176,48 @@ loop:
  }
 
  PREEMPTION_DISABLE();
- cpu_write(THIS_CPU);
- if (!ATOMIC_READ(THIS_CPU->c_jobs)) {
+ if (!ATOMIC_READ(CPU(cpu_jobs))) {
+  CPU_JLOCK_ACQUIRE();
 no_more_jobs:
+  cpu_write(THIS_CPU);
 
   /* If there really aren't no more jobs, unschedule the worker task.
    * Once new ones get added, we'll be re-scheduled! */
   asserte(cpu_sched_remove_current() == &THIS_CPU->c_work);
-  ATOMIC_WRITE(THIS_CPU->c_work.t_mode,TASKMODE_SUSPENDED);
-  cpu_add_suspended(THIS_CPU,&THIS_CPU->c_work);
+  if (CPU(cpu_delay_jobs)) {
+   /* Enter sleep mode, waiting for the next task. */
+   memcpy(&THIS_CPU->c_work.t_timeout,
+          &CPU(cpu_delay_jobs)->j_time,
+          sizeof(struct timespec));
+   ATOMIC_WRITE(THIS_CPU->c_work.t_mode,TASKMODE_SLEEPING);
+   cpu_add_sleeping(THIS_CPU,&THIS_CPU->c_work);
+  } else {
+   ATOMIC_WRITE(THIS_CPU->c_work.t_mode,TASKMODE_SUSPENDED);
+   cpu_add_suspended(THIS_CPU,&THIS_CPU->c_work);
+  }
   TASK_SWITCH_CONTEXT(&THIS_CPU->c_work,THIS_CPU->c_running);
   cpu_endwrite(THIS_CPU);
+  CPU_JLOCK_RELEASE();
 
   /* Switch to the next thread. */
   cpu_validate_counters(true);
   cpu_sched_setrunning_save(&THIS_CPU->c_work);
   cpu_validate_counters(true);
-
- } else {
-  cpu_endwrite(THIS_CPU);
  }
  PREEMPTION_ENABLE();
 
  /* Loop back to do more work. */
  goto loop;
 }
+
+
+PUBLIC errno_t KCALL
+task_schedule_alarm(struct task *__restrict self,
+                    struct timespec const *__restrict abstime) {
+ /* TODO: Use jobs. */
+ return -EOK;
+}
+
 #endif /* !CONFIG_NO_JOBS */
 
 

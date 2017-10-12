@@ -188,7 +188,7 @@ typedef u8 taskmode_t;  /*< Task mode (One of 'TASKMODE_*'). */
                                   *   NOTE: Only 'TASK_CPU(self)' may enter/leave 'TASKMODE_RUNNING'-mode */
 #define TASKMODE_SLEEPING   0x01 /*< The task is sleeping, but will re-awake once a timeout expires. */
 #define TASKMODE_SUSPENDED  0x02 /*< The task is suspended and is never supplied with a quantum. */
-#define TASKMODE_WAKEUP     0x03 /*< Similar to 'TASKMODE_SLEEPING' when a timeout has expired, but doesn't set the timed-out task flag. */
+#define TASKMODE_WAKEUP     0x03 /*< Similar to 'TASKMODE_SLEEPING', but when a timeout expires don't set the timed-out task flag. */
 #define TASKMODE_NOTSTARTED 0xfe /*< The thread hasn't started yet. (Some components of the task may be in a less-consistent state; treat the task as terminated) */
 #define TASKMODE_TERMINATED 0xff /*< The thread has terminated (This state cannot be altered, or reverted) */
 
@@ -772,8 +772,11 @@ struct job {
  void          (KCALL *j_work)(void *data); /*< [const][1..1] The job function to-be called. */
  void                 *j_data;  /*< [const] Data argument passed to 'j_work' */
  struct instance      *j_owner; /*< [const][1..1] The owner module of this job. */
+ struct timespec       j_time;  /*< [INTERN] Point in time when a delayed job should be executed.
+                                 *   NOTE: Delayed jobs are tack independently of regular jobs,
+                                 *         and are sorted ascendingly by time of execution. */
 };
-#define JOB_INIT(work,data) {{NULL,NULL},work,data,THIS_INSTANCE}
+#define JOB_INIT(work,data) {{NULL,NULL},work,data,THIS_INSTANCE,{0,0}}
 #endif /* __CC__ */
 #endif /* !CONFIG_NO_JOBS */
 
@@ -791,9 +794,7 @@ struct job {
 #define CPU_OFFSETOF_IDLE        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE)
 #ifndef CONFIG_NO_JOBS
 #define CPU_OFFSETOF_WORK        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
-#define CPU_OFFSETOF_JOBS        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
-#define CPU_OFFSETOF_JOBS_END    (6*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
-#define CPU_OFFSETOF_ARCH        (7*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
+#define CPU_OFFSETOF_ARCH        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
 #else
 #define CPU_OFFSETOF_ARCH        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
 #endif
@@ -836,7 +837,7 @@ struct cpu {
  struct task                c_work;      /*< Another small task that runs asynchronous runlater()-style jobs for the CPU.
                                           *  NOTE: This task is only scheduled while jobs needed to be done are
                                           *        available, during which time it is scheduled under max priority,
-                                          *        aka. whenever 'c_jobs != NULL'
+                                          *        aka. whenever jobs have been scheduled (Job tracking is implemented using per-cpu variables).
                                           *  This special task solves the problem of running code after the death of a task,
                                           *  or when special handling must be undertaken after an IRQ triggered actions that
                                           *  would normally involve locks having to be acquired (something that could otherwise
@@ -844,10 +845,7 @@ struct cpu {
                                           *  holding those same locks).
                                           *  Jobs scheduled for this task are executed in order of first being added,
                                           *  yet any single job can only be scheduled in one place before being made
-                                          *  available again just before being executed.
-                                          */
- LIST_HEAD(struct job)      c_jobs;      /*< [0..1][lock(c_lock)][(!= NULL) == (c_jobs_end != NULL)] The first job to-be executed by c_work. */
- LIST_HEAD(struct job)      c_jobs_end;  /*< [0..1][lock(c_lock)][(!= NULL) == (c_jobs != NULL)] The last job to-be executed by c_work. */
+                                          *  available again just before being executed. */
 #endif /* !CONFIG_NO_JOBS */
  struct archcpu             c_arch;      /*< Arch-specific per-cpu information. */
  WEAK size_t                c_n_run;     /*< [lock(PRIVATE(THIS_CPU))][!0] Total amount of tasks within 'c_running' */

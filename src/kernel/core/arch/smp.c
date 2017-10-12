@@ -622,9 +622,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_idle.t_arch.at_ldt_gdt = SEG(SEG_KERNEL_LDT);
 #endif /* !CONFIG_NO_LDT */
 #ifndef CONFIG_NO_JOBS
- memset(&vcpu->c_work,0,
-        offsetafter(struct cpu,c_jobs_end)-
-        offsetof(struct cpu,c_work));
+ memset(&vcpu->c_work,0,sizeof(struct task));
  vcpu->c_work.t_cpu = vcpu;
  vcpu->c_work.t_sched.sd_suspended.le_pself = &vcpu->c_suspended;
 #ifdef CONFIG_DEBUG
@@ -695,8 +693,6 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_sleeping  = NULL;
  vcpu->c_idling    = NULL;
 #ifndef CONFIG_NO_JOBS
- vcpu->c_jobs      = NULL;
- vcpu->c_jobs_end  = NULL;
  vcpu->c_suspended = &vcpu->c_work;
 #else
  vcpu->c_suspended = NULL;

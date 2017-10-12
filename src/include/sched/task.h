@@ -191,9 +191,6 @@ FUNDEF errno_t KCALL task_set_id(struct task *__restrict self, struct pid_namesp
 
 /* Perform final setup on the given task, registering it in
  * the associated cpu and allowing it to start executing.
- * NOTE: The task is initialized with 2 references, meaning
- *       that the caller must inherit one, while the other
- *       is owned by the associated CPU.
  * @return: -EOK:   Successfully started the task.
  * #ifdef CONFIG_SMP
  * @return: -ENODEV: Failed to find/start an accepting CPU to run 'self' under.
@@ -259,7 +256,7 @@ FUNDEF void (KCALL task_endnointr)(void);
 #define task_endnointr() (void)(assert(THIS_TASK->t_nointr),--THIS_TASK->t_nointr)
 #endif
 
-/* Add some wait to push/pop the current set of wait-signals.
+/* Push/pop the current set of wait-signals.
  * >> Required when a task is forced to allocate more signal-wait
  *    slots, as 'malloc()' uses functions like 'rwlock_write()'
  *    internally, which in turn would normally register new
@@ -346,6 +343,7 @@ FUNDEF struct sig *KCALL task_waitfor(struct timespec const *abstime);
  *          NOTE: In this case, all signals added via 'task_addwait()' are cleared.
  * @return: NULL: No signals in the calling thread's waiting-set has been sent. */
 FUNDEF struct sig *KCALL task_trywait(void);
+
 /* Same as 'task_trywait() != NULL', but don't clear the signal-receive
  * vector in the event that a signal has already been sent and received.
  * @return: true:  A pending signal has been received.
@@ -381,6 +379,21 @@ FUNDEF bool KCALL task_haswait(struct sig *__restrict s);
  *                they decide not to block until a signal does arrive.
  * @return: NULL: All pending signals were cleared and no signal had been sent until now. */
 FUNDEF SAFE struct sig *KCALL task_clrwait(void);
+
+#ifndef CONFIG_NO_JOBS
+/* Schedule a delayed alarm() for the given task 'self', causing
+ * its next call to 'task_waitfor()' after 'abstime' has passed
+ * to be interrupted and return '-EINTR'.
+ * This function is implemented using an asynchronous job
+ * that is registered in the caller's per-CPU job chain and
+ * will simply call 'task_interrupt()' once that time has passed.
+ * @return: -EOK:    Successfully scheduled an alarm() for the task.
+ * @return: -ENOMEM: Not enough available memory. */
+FUNDEF errno_t KCALL
+task_schedule_alarm(struct task *__restrict self,
+                    struct timespec const *__restrict abstime);
+#endif /* !CONFIG_NO_JOBS */
+
 
 /* Set the scheduler priority of the given thread 'self'.
  * NOTE: Using this function you can also set if a thread is considered IDLE.

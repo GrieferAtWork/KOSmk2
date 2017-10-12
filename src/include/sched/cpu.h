@@ -123,11 +123,28 @@ typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
 
 #ifndef CONFIG_NO_JOBS
 /* Schedule work to-be performed on the calling CPU at a later, safer time.
- * @return: true:  The given job was scheduled.
- * @return: false: The given job had already been scheduled, though had yet to be executed.
- *                 The module associated with the given job is currently being unloaded. */
-FUNDEF bool KCALL schedule_work(struct job *__restrict work);
-FUNDEF bool KCALL schedule_work_unlocked(struct job *__restrict work);
+ * @return: -EOK:      The given job was scheduled.
+ * @return: -EALREADY: The given job had already been scheduled, though had yet to be executed.
+ * @return: -EPERM:    The module associated with the given job is currently being unloaded. */
+FUNDEF errno_t KCALL schedule_work(struct job *__restrict work);
+/* Schedule delayed execution of a job, given the absolute point in time when it should run.
+ * HINT: Among other things, these functions are used to implement 'alarm()'.
+ * NOTE: Internally, these differ from 'schedule_work()' very little.
+ *       Rather than scheduling the per-cpu worker thread as running, it is setup
+ *       as sleeping until the lowest 'abs_exectime' passes, as which point is
+ *       is rescheduled just like any other thread that timed out, allowing it
+ *       to then execute any that with an absolute point in time that has passed.
+ * NOTE: In case the job was already scheduled ('-EALREADY' is returned),
+ *       its execution time will be updated to 'MIN(*abstime,work->j_time)'
+ * WARNING: Attempting to add a delay to a job with that was already scheduled
+ *          using 'schedule_work()' is illegal and causes undefined behavior.
+ *          NOTE: This only applies to jobs until they are actually executed,
+ *                meaning that a job re-scheduling itself with a delay, after
+ *                being scheduled without one the first time is fully allowed.
+ * @return: -EOK:      The given job was scheduled.
+ * @return: -EALREADY: The given job had already been scheduled, though had yet to be executed.
+ * @return: -EPERM:    The module associated with the given job is currently being unloaded. */
+FUNDEF errno_t KCALL schedule_delayed_work(struct job *__restrict work, struct timespec const *__restrict abs_exectime);
 #endif /* !CONFIG_NO_JOBS */
 
 
