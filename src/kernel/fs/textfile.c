@@ -28,6 +28,7 @@
 #include <malloc.h>
 #include <stddef.h>
 #include <hybrid/check.h>
+#include <syslog.h>
 #include <string.h>
 #include <unistd.h>
 #include <hybrid/minmax.h>
@@ -40,6 +41,7 @@ PUBLIC ssize_t KCALL
 textfile_read(struct file *__restrict fp,
               USER void *buf, size_t bufsize) {
  size_t maxread;
+ //debug_tbprint();
  if unlikely(TF->tf_bufpos >= TF->tf_bufmax)
     return 0; /* EOF */
  maxread = MIN((size_t)(TF->tf_bufmax-TF->tf_bufpos)*sizeof(char),bufsize);
@@ -155,12 +157,10 @@ textfile_printer(char const *__restrict data,
   while (new_size < min_size) new_size *= 2;
 do_reloc:
   new_buffer = trealloc(char,TF->tf_buffer,new_size);
-  if unlikely(!new_buffer && new_size != min_size) {
-   new_size = min_size;
-   goto do_reloc;
+  if unlikely(!new_buffer) {
+   if (new_size != min_size) { new_size = min_size; goto do_reloc; }
+   return -ENOMEM;
   }
-  if unlikely(!new_buffer)
-     return -ENOMEM;
   /* Update the textfile using the newly (re-)allocated buffer. */
   TF->tf_bufmax = new_buffer+(TF->tf_bufmax-TF->tf_buffer);
   TF->tf_bufend = new_buffer+new_size;
@@ -171,7 +171,7 @@ do_reloc:
  assert(TF->tf_bufmax+datalen <= TF->tf_bufend);
  memcpy(TF->tf_bufmax,data,datalen*sizeof(char));
  TF->tf_bufmax += datalen;
- return datalen;
+ return (ssize_t)datalen;
 }
 #undef TF
 
