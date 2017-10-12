@@ -420,8 +420,8 @@ FUNDEF SAFE KPD ppage_t KCALL page_realloc_inplace(ppage_t start, size_t old_byt
 
 
 struct mzstat {
- PAGE_ALIGNED size_t mz_avail;   /* Total amount of available, non-continuous bytes */
- PAGE_ALIGNED size_t mz_inuse;   /* Total amount of non-continuous bytes currently in use */
+ PAGE_ALIGNED size_t mz_avail;   /*< Total amount of available, non-continuous bytes. */
+ PAGE_ALIGNED size_t mz_inuse;   /*< Total amount of non-continuous bytes currently in use. */
  PAGE_ALIGNED size_t mz_freemin; /*< Size of the smallest free page block (in bytes). */
  PAGE_ALIGNED size_t mz_freemax; /*< Size of the largest free page block (in bytes). */
  PAGE_ALIGNED size_t mz_zeromin; /*< Size of the smallest zero-initialized page block (in bytes). */
@@ -436,7 +436,10 @@ struct mstat {
 };
 
 /* Query various page statistics and store the information in '*info'. */
-FUNDEF KPD void KCALL page_stat(struct mstat *__restrict info);
+FUNDEF void KCALL page_stat(struct mstat *__restrict info);
+
+/* Return the total number of free bytes within the given address range. */
+FUNDEF size_t KCALL page_available(ppage_t start, PAGE_ALIGNED size_t n_bytes);
 
 /* Print human-readable debug information about free memory from the given zone. */
 FUNDEF SAFE KPD ssize_t KCALL page_print(mzone_t zone, pformatprinter printer, void *closure);

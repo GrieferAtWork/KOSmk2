@@ -214,7 +214,7 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
         },
         [1] = {
             .mi_next      = MEMINFO_EARLY_NULL,
-            .mi_type      = MEMTYPE_KERNEL,
+            .mi_type      = MEMTYPE_KFREE,
             .mi_addr      = (void *)((uintptr_t)__kernel_free_start - KERNEL_BASE),
             .mi_part_addr = (ppage_t)((uintptr_t)__kernel_free_start - KERNEL_BASE),
             .mi_full_addr = (ppage_t)((uintptr_t)__kernel_free_start - KERNEL_BASE),

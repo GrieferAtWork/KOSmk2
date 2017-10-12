@@ -184,6 +184,38 @@ enum printf_length {
 #endif
 #endif /* !__KERNEL__ */
 
+typedef union {
+ s8 s_8; s16 s_16; s32 s_32; s64 s_64; s32 s_32_64[2];
+ u8 u_8; u16 u_16; u32 u_32; u64 u_64; u32 u_32_64[2];
+} fint_t;
+
+#if VA_SIZE == 8
+#define FINT_LOAD(arg,length,flags,args) { arg.u_64 = va_arg(args,u64); }
+#elif VA_SIZE == 4
+#define FINT_LOAD(arg,length,flags,args) \
+  { arg.u_64 = 0; \
+    if (len_is64(length)) arg.u_64 = va_arg(args,u64); \
+    else { arg.u_32 = va_arg(args,u32); \
+    if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; } \
+  }
+#elif VA_SIZE == 2
+#define FINT_LOAD(arg,length,flags,args) \
+  {  arg.u_64 = 0; \
+         if (len_is64(length)) arg.u_64 = va_arg(args,u64); \
+    else if (len_is32(length)) { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; } \
+    else { arg.u_16 = va_arg(args,u16); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_16; } \
+  }
+#else
+#define FINT_LOAD(arg,length,flags,args) \
+  { arg.u_64 = 0; \
+         if (len_is64(length)) arg.u_64 = va_arg(args,u64); \
+    else if (len_is32(length)) { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; } \
+    else if (len_is16(length)) { arg.u_16 = va_arg(args,u16); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_16; } \
+    else { arg.u_8 = va_arg(args,u8); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_8; } \
+  }
+#endif
+
+
 #define PRINTF_FLAG_NONE     0x0000
 #define PRINTF_FLAG_PREFIX   0x0001 /*< '%#'. */
 #define PRINTF_FLAG_LJUST    0x0002 /*< '%-'. */
@@ -218,6 +250,15 @@ struct longprint {
                                enum printf_length length, u16 flags, \
                                size_t precision, va_list *args)
 
+#if defined(__KERNEL__) || 1
+#define HAVE_LONGPRINTER_MAC   /*< AA:BB:CC:DD:EE:FF */
+#define HAVE_LONGPRINTER_IP    /*< "127.0.0.1" */
+#endif
+#define HAVE_LONGPRINTER_UNIT /*< 53+10*1024 == "~10Kb" */
+#define HAVE_LONGPRINTER_ND    /*< 0 == "0"; 1 == "1st"; 2 == "2nd"; 3 == "3rd"; 4 == "4th" ... */
+
+
+
 LONG_PRINTER(errno_printer);
 LONG_PRINTER(dev_t_printer);
 LONG_PRINTER(hex_printer);
@@ -229,12 +270,7 @@ LONG_PRINTER(fdpath_printer);
 #endif
 
 
-#if defined(__KERNEL__) || 1
-#define LONGPRINTER_HAVE_MAC
-#define LONGPRINTER_HAVE_IP
-#endif
-
-#ifdef LONGPRINTER_HAVE_MAC
+#ifdef HAVE_LONGPRINTER_MAC
 LONG_PRINTER(mac_printer) {
  u8 *bytes = va_arg(*args,u8 *);
  char buffer[64],*iter = buffer; size_t n = 6;
@@ -242,12 +278,34 @@ LONG_PRINTER(mac_printer) {
  return (*printer)(buffer,(size_t)(iter-buffer)-1,closure);
 }
 #endif
-#ifdef LONGPRINTER_HAVE_IP
+#ifdef HAVE_LONGPRINTER_IP
 LONG_PRINTER(ip_printer) {
  u8 *bytes = va_arg(*args,u8 *);
  char buffer[64],*iter = buffer; size_t n = 4;
  while (n--) iter += libc_sprintf(iter,"%I8d.",*bytes++);
  return (*printer)(buffer,(size_t)(iter-buffer)-1,closure);
+}
+#endif
+#ifdef HAVE_LONGPRINTER_UNIT
+LONG_PRINTER(unit_printer) {
+ fint_t val; FINT_LOAD(val,length,flags,*args);
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+ if (val.u_32_64[1])
+#else
+ if (val.u_32_64[0])
+#endif
+ {
+  /* Value is larger than 32 bits. */
+  u64 gb = val.u_64/(1024*1024*1024);
+  return gb >= 8*1024 
+   ? libc_format_printf(printer,closure,"%I64uTb",(u64)(gb/1024))
+   : libc_format_printf(printer,closure,"%I64uGb",(u64)gb);
+ }
+ if (val.u_32 > 1024*1024*4)
+     return libc_format_printf(printer,closure,"%I64uMb",(u64)(val.u_32/(1024*1024)));
+ if (val.u_32 > 1024*2)
+     return libc_format_printf(printer,closure,"%I64uKb",(u64)(val.u_32/1024));
+ return libc_format_printf(printer,closure,"%I64uB",(u64)val.u_32);
 }
 #endif
 
@@ -263,11 +321,14 @@ PRIVATE struct longprint const ext_printers[] = {
  {"dentry",&fdpath_printer},
  {"file",&fdpath_printer},
 #endif
-#ifdef LONGPRINTER_HAVE_MAC
+#ifdef HAVE_LONGPRINTER_MAC
  {"mac",&mac_printer},
 #endif
-#ifdef LONGPRINTER_HAVE_IP
+#ifdef HAVE_LONGPRINTER_IP
  {"ip",&ip_printer},
+#endif
+#ifdef HAVE_LONGPRINTER_UNIT
+ {"unit",&unit_printer},
 #endif
  {"",NULL},
 };
@@ -535,10 +596,8 @@ have_precision:
     int numsys; /* Integer formating. */
     char buf[32],*iter;
     char const *dec;
-    union {
-     s8 s_8; s16 s_16; s32 s_32; s64 s_64;
-     u8 u_8; u16 u_16; u32 u_32; u64 u_64;
-    } arg; size_t bufsize;
+    size_t bufsize;
+    fint_t arg;
     if (0) { case 'B': flags |= PRINTF_FLAG_UPPER; case 'b': numsys = 2; }
     if (0) { case 'o': numsys = 8; }
     if (0) { case 'u': numsys = 10; if unlikely(length == len_t) flags |= PRINTF_FLAG_SIGNED; }
@@ -549,22 +608,7 @@ have_precision:
     if (0) { case 'p': if (!(flags&PRINTF_FLAG_HASPREC)) { precision = sizeof(void *)*2; flags |= PRINTF_FLAG_HASPREC; }
              case 'X': flags |= PRINTF_FLAG_UPPER;
              case 'x': numsys = 16; if unlikely(length == len_t) flags |= PRINTF_FLAG_SIGNED; }
-    arg.u_64 = 0;
-#if VA_SIZE == 8
-    arg.u_64 = va_arg(args,u64);
-#elif VA_SIZE == 4
-    if (len_is64(length)) arg.u_64 = va_arg(args,u64);
-    else { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; }
-#elif VA_SIZE == 2
-         if (len_is64(length)) arg.u_64 = va_arg(args,u64);
-    else if (len_is32(length)) { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; }
-    else { arg.u_16 = va_arg(args,u16); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_16; }
-#else
-         if (len_is64(length)) arg.u_64 = va_arg(args,u64);
-    else if (len_is32(length)) { arg.u_32 = va_arg(args,u32); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_32; }
-    else if (len_is16(length)) { arg.u_16 = va_arg(args,u16); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_16; }
-    else { arg.u_8 = va_arg(args,u8); if (flags&PRINTF_FLAG_SIGNED) arg.s_64 = (s64)arg.s_8; }
-#endif
+    FINT_LOAD(arg,length,flags,args);
     iter = buf;
     if (flags&PRINTF_FLAG_SIGNED) {
      if (arg.s_64 < 0) {

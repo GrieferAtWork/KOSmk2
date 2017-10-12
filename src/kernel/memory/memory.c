@@ -36,12 +36,13 @@
 #include <kernel/memory.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
-#include <sys/syslog.h>
 #include <malloc.h>
 #include <proprietary/multiboot.h>
 #include <proprietary/multiboot2.h>
+#include <sched/paging.h>
 #include <sched/task.h>
 #include <string.h>
+#include <sys/syslog.h>
 
 DECL_BEGIN
 
@@ -150,11 +151,11 @@ mov_pages_hi(void *dst, void const *src, size_t n_bytes) {
  }
 }
 
-PUBLIC KPD void KCALL
+PUBLIC void KCALL
 page_stat(struct mstat *__restrict info) {
  struct mzone *zone;
  struct mzstat *zinfo;
- assert(PDIR_ISKPD());
+ struct mman *omm;
  CHECK_HOST_DOBJ(info);
  info->m_total.mz_avail   = 0;
  info->m_total.mz_inuse   = 0;
@@ -165,6 +166,7 @@ page_stat(struct mstat *__restrict info) {
  info->m_total.mz_zeromax = 0;
  info->m_total.mz_zeroblk = 0;
  zinfo = info->m_zones;
+ TASK_PDIR_KERNEL_BEGIN(omm);
  PAGEZONES_FOREACH(zone) {
   ppage_t iter;
   task_crit();
@@ -203,8 +205,52 @@ page_stat(struct mstat *__restrict info) {
   if unlikely(zinfo->mz_zeromin == (size_t)-1) zinfo->mz_zeromin = 0;
   ++zinfo;
  }
+ TASK_PDIR_KERNEL_END(omm);
  if unlikely(info->m_total.mz_freemin == (size_t)-1) info->m_total.mz_freemin = 0;
  if unlikely(info->m_total.mz_zeromin == (size_t)-1) info->m_total.mz_zeromin = 0;
+}
+
+PRIVATE size_t KCALL
+page_do_available(mzone_t zoneid, ppage_t start, size_t n_bytes) {
+ struct mzone *zone; ppage_t iter;
+ size_t result = 0; ppage_t check_end;
+ zone = &page_zones[zoneid];
+ check_end = (ppage_t)((uintptr_t)start+n_bytes);
+ task_crit();
+ atomic_rwlock_read(&zone->z_lock);
+ PAGE_FOREACH(iter,zone) {
+  ppage_t page_end = PAGE_END(iter);
+  if (page_end <= start) continue;
+  if (iter >= check_end) break;
+  result += MIN((uintptr_t)page_end,(uintptr_t)check_end)-
+            MAX((uintptr_t)iter,(uintptr_t)start);
+ }
+ atomic_rwlock_endread(&zone->z_lock);
+ task_endcrit();
+ return result;
+}
+
+PUBLIC size_t KCALL
+page_available(ppage_t start, PAGE_ALIGNED size_t n_bytes) {
+ mzone_t zone; size_t result = 0;
+ struct mman *omm = NULL;
+ assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
+ assert(IS_ALIGNED(n_bytes,PAGESIZE));
+ for (zone = 0; zone < MZONE_COUNT; ++zone) {
+  if ((uintptr_t)start >= MZONE_MIN(zone) &&
+      (uintptr_t)start <= MZONE_MAX(zone)) {
+   size_t zone_bytes = (MZONE_MAX(zone)+1)-(uintptr_t)start;
+   if (zone_bytes > n_bytes)
+       zone_bytes = n_bytes;
+   if (!omm) TASK_PDIR_KERNEL_BEGIN(omm);
+   result += page_do_available(zone,start,zone_bytes);
+   n_bytes -= zone_bytes;
+   if (!n_bytes) break;
+   *(uintptr_t *)&start += zone_bytes;
+  }
+ }
+ if (omm) TASK_PDIR_KERNEL_END(omm);
+ return result;
 }
 
 

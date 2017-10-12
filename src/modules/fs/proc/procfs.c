@@ -101,13 +101,17 @@ err:  textfile_delete(result);
 }
 
 PRIVATE REF struct file *KCALL
-sysmem_fopen(struct inode *__restrict ino,
+memory_fopen(struct inode *__restrict ino,
              struct dentry *__restrict node_ent,
              oflag_t oflags) {
- PRIVATE char const head[] = "zone type   begin    end      mapped            available        \n";
- //                          "0    device 00000000-00000000 00000000-00000000 00000000-00000000\n";
+ PRIVATE char const head[] = "zone type   begin    end      used free   size\n";
+ //                          "0    device 00000000-00000000  52% 10Mb   10Mb\n";
  REF struct textfile *result;
  ssize_t error; mzone_t zone;
+ size_t mem_avail;
+ size_t total_usable = 0;
+ size_t total_used = 0;
+ size_t total_free = 0;
  result = textfile_new();
  if unlikely(!result) return E_PTR(-ENOMEM);
 #define printf(...) { if ((error = textfile_printf(result,__VA_ARGS__)),E_ISERR(error)) goto err; }
@@ -116,13 +120,22 @@ sysmem_fopen(struct inode *__restrict ino,
  for (zone = 0; zone < MZONE_COUNT; ++zone) {
   struct meminfo const *info;
   MEMINFO_FOREACH(info,zone) {
-   printf("%d    %6s %p-%p %p-%p %p-%p\n",
+   mem_avail = page_available(info->mi_full_addr,info->mi_full_size);
+   if (info->mi_type == MEMTYPE_RAM) {
+    total_usable += info->mi_full_size;
+    total_used   += info->mi_full_size-mem_avail;
+    total_free   += mem_avail;
+   }
+   printf("%d    %6s %p-%p %-3d%% %6I[unit] %6I[unit]\n",
           zone,memtype_names[info->mi_type],
           info->mi_addr,(uintptr_t)info->mi_addr+info->mi_size-1,
-          info->mi_part_addr,(uintptr_t)info->mi_part_addr+info->mi_part_size-1,
-          info->mi_full_addr,(uintptr_t)info->mi_full_addr+info->mi_full_size-1);
+         (int)(info->mi_full_size ? ((info->mi_full_size-mem_avail)*100)/info->mi_full_size : 0),
+          mem_avail,info->mi_full_size);
   }
  }
+ printf("-    total  -------- -------- %-3d%% %6I[unit] %6I[unit]\n",
+       (total_used*100)/total_usable,
+        total_free,total_usable);
 #undef printf
  textfile_truncate(result);
  file_setup(&result->tf_file,ino,node_ent,oflags);
@@ -161,8 +174,8 @@ INTERN struct procnode const root_content[] = {
  {MKINO,S_IFREG|0444,/*[[[deemon DNAM("filesystems"); ]]]*/{"filesystems",11,H(802163638u,1733680310429884923llu)}/*[[[end]]]*/,
  { .ino_fopen = &filesystems_fopen, TEXTFILE_OPS_INIT
  }},
- {MKINO,S_IFREG|0444,/*[[[deemon DNAM("sysmem"); ]]]*/{"sysmem",6,H(3641684592u,120282395408755llu)}/*[[[end]]]*/,
- { .ino_fopen = &sysmem_fopen, TEXTFILE_OPS_INIT
+ {MKINO,S_IFREG|0444,/*[[[deemon DNAM("memory"); ]]]*/{"memory",6,H(3940092487u,133532402673005llu)}/*[[[end]]]*/,
+ { .ino_fopen = &memory_fopen, TEXTFILE_OPS_INIT
  }},
  {MKINO,S_IFREG|0444,/*[[[deemon DNAM("cmdline"); ]]]*/{"cmdline",7,H(3488433892u,28550371716918627llu)}/*[[[end]]]*/,
  { .ino_fopen = &cmdline_fopen, TEXTFILE_OPS_INIT

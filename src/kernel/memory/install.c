@@ -451,6 +451,7 @@ mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type) {
    result += mem_install_zone(base,zone_bytes,type,zone);
    num_bytes -= zone_bytes;
    if (!num_bytes) break;
+   base += zone_bytes;
   }
  }
  return result;
