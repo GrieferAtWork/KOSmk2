@@ -20,13 +20,7 @@
     <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl">
       <Filter>kernel\fs</Filter>
     </None>
-    <None Include="..\..\src\kernel\memory\memory-info.c.inl">
-      <Filter>kernel\memory</Filter>
-    </None>
     <None Include="..\..\src\kernel\memory\malloc-realign.c.inl">
-      <Filter>kernel\memory</Filter>
-    </None>
-    <None Include="..\..\src\kernel\memory\memory-free.c.inl">
       <Filter>kernel\memory</Filter>
     </None>
     <None Include="..\..\src\kernel\mman\mcore.c.inl">

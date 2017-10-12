@@ -613,6 +613,135 @@ search_zone:
 #endif
 }
 
+PUBLIC SAFE KPD void KCALL
+page_ffree(ppage_t start, size_t n_bytes, pgattr_t attr) {
+ ppage_t *piter,iter,free_end;
+ struct mzone *zone;
+ mzone_t zone_id;
+ assert(PDIR_ISKPD());
+ /* NOTE: Intentionally don't check for writable. */
+ CHECK_HOST_TEXT(start,n_bytes);
+ if unlikely(!n_bytes) return;
+ assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
+ assert(addr_isphys(start));
+ n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
+ zone_id = mzone_of(start);
+
+ /* TODO: if (attr&PAGEATTR_ZERO) assert(is_zero_initialized(start,n_bytes)); */
+ assertf((uintptr_t)start+(n_bytes-1) >= (uintptr_t)start,
+         "Pointer overflow while freeing pages: %p + %Id(%Ix) overflows into %p",
+         (uintptr_t)start,n_bytes,n_bytes,(uintptr_t)start+(n_bytes-1));
+ free_end = (ppage_t)((uintptr_t)start+n_bytes);
+ if ((uintptr_t)free_end-1 > MZONE_MAX(zone_id)) {
+  /* Split the free requested when it overlaps into a different zone. */
+  size_t zone_offset = (uintptr_t)(MZONE_MAX(zone_id)+1)-(uintptr_t)start;
+  assertf(zone_offset,"But the we've determined the wrong zone above...");
+  assertf(zone_offset < n_bytes,
+          "Zone %d %p...%p\n"
+          "zone_offset = %Iu\n"
+          "n_bytes     = %Iu\n",
+          zone_id,start,(uintptr_t)start+n_bytes-1,
+          zone_offset,n_bytes);
+  assert(IS_ALIGNED(zone_offset,PAGESIZE));
+  /* Recursively free memory above the zone limits. */
+  page_ffree((ppage_t)((uintptr_t)start+zone_offset),n_bytes-zone_offset,attr);
+  /* Update the free pointers. */
+  n_bytes  = zone_offset;
+  free_end = (ppage_t)((uintptr_t)start+zone_offset);
+ }
+ assert((uintptr_t)free_end-1 <= MZONE_MAX(zone_id));
+
+ assert(n_bytes);
+ assert(zone_id != MZONE_DEV);
+#if LOG_PHYSICAL_ALLOCATIONS
+ syslog(LOG_MEM|LOG_DEBUG,
+        "[MEM] Feeing memory %p...%p from zone #%d\n",
+        start,(uintptr_t)start+(n_bytes-1),zone_id);
+#endif /* LOG_PHYSICAL_ALLOCATIONS */
+ VERIFY_MEMORY_F(start,n_bytes,attr);
+
+ /* Load the zone this pointer is apart of. */
+ zone = PAGEZONE(zone_id);
+ atomic_rwlock_write(&zone->z_lock);
+ piter = &zone->z_root;
+ while ((iter = *piter) != PAGE_ERROR &&
+         PAGE_END(iter) <= start) {
+  assert(iter <= start);
+  piter = &iter->p_free.p_next;
+ }
+ assertf(iter == PAGE_ERROR || (uintptr_t)iter >= (uintptr_t)start+n_bytes,
+         "At least part of address range %p...%p was already marked as free by %p...%p",
+         start,(uintptr_t)free_end-1,iter,(uintptr_t)PAGE_END(iter)-1);
+
+ /* Insert after 'piter' / before 'iter' */
+ 
+ /* Check for extending the previous range. */
+ if (piter != &zone->z_root) {
+  ppage_t prev_page = container_of(piter,union page,p_free.p_next);
+  if (PAGE_END(prev_page) == start) {
+   /* Extend the previous range. */
+   prev_page->p_free.p_size += n_bytes;
+   prev_page->p_free.p_attr &= attr;
+   assert(prev_page->p_free.p_next == iter);
+   assert(PAGE_END(prev_page) <= iter);
+   if unlikely(PAGE_END(prev_page) == iter) {
+    /* Extending the previous range causes it to touch the next. - Merge the two. */
+    prev_page->p_free.p_attr &= iter->p_free.p_attr;
+    prev_page->p_free.p_size += iter->p_free.p_size;
+    prev_page->p_free.p_next  = iter->p_free.p_next;
+    if (prev_page->p_free.p_next != PAGE_ERROR)
+        prev_page->p_free.p_next->p_free.p_self = &prev_page->p_free.p_next;
+    /* Clear the controller of the next range if the merged range is zero-initialized. */
+    if (prev_page->p_free.p_attr&PAGEATTR_ZERO) {
+     iter->p_free.p_next = 0;
+     iter->p_free.p_self = 0;
+     iter->p_free.p_size = 0;
+     iter->p_free.p_attr = 0;
+    }
+   }
+   goto done;
+  }
+ }
+
+ /* Check for merging with the next range. */
+ if (iter != PAGE_ERROR &&
+    (uintptr_t)iter == (uintptr_t)start+n_bytes) {
+  start->p_free         = iter->p_free;
+  start->p_free.p_size += n_bytes;
+  start->p_free.p_attr &= attr;
+  if (start->p_free.p_attr&PAGEATTR_ZERO) {
+   iter->p_free.p_next = 0;
+   iter->p_free.p_self = 0;
+   iter->p_free.p_size = 0;
+   iter->p_free.p_attr = 0;
+  }
+  if (start->p_free.p_next != PAGE_ERROR)
+      start->p_free.p_next->p_free.p_self = &start->p_free.p_next;
+  *start->p_free.p_self = start;
+  goto done;
+ }
+
+ /* Fallback: Create & insert a new free-range. */
+ start->p_free.p_size = n_bytes;
+ start->p_free.p_self = piter;
+ start->p_free.p_next = iter;
+ start->p_free.p_attr = attr;
+ *piter               = start;
+ if (iter != PAGE_ERROR)
+     iter->p_free.p_self = &start->p_free.p_next;
+
+done:
+#ifdef CONFIG_DEBUG
+ PAGE_FOREACH(iter,zone) {}
+#endif
+ zone->z_inuse -= n_bytes;
+ zone->z_avail += n_bytes;
+ /* Track free-calls. */
+ ++zone->z_free;
+ atomic_rwlock_endwrite(&zone->z_lock);
+}
+
+
 
 PUBLIC SAFE KPD bool KCALL
 mscatter_split_lo(struct mscatter *__restrict dst,
@@ -826,234 +955,6 @@ page_print(mzone_t zone_id,
 
 
 
-#ifndef CONFIG_NEW_MEMINFO
-#define page_free_initial(start,n_bytes,attr) \
- (ATOMIC_FETCHADD(page_inuse,n_bytes),page_ffree(start,n_bytes,attr))
-
-#undef KERNEL_BEGIN
-#undef KERNEL_END
-
-/* We must work with the physical variants below! */
-#define KERNEL_BEGIN ((uintptr_t)__kernel_start-KERNEL_BASE)
-#define KERNEL_END   ((uintptr_t)__kernel_end-KERNEL_BASE)
-
-
-/* Add the given memory range as a RAM-range within meminfo. */
-PRIVATE SAFE KPD void KCALL memory_register(PAGE_ALIGNED ppage_t start, PAGE_ALIGNED size_t n_bytes, bool without_info);
-PRIVATE SAFE KPD void KCALL memory_register_info(PAGE_ALIGNED ppage_t start, PAGE_ALIGNED size_t n_bytes);
-
-#define MEMORY_INSTALL_MODE_NORMAL   0
-#define MEMORY_INSTALL_MODE_NOINFO   1
-#define MEMORY_INSTALL_MODE_ONLYINFO 2
-PRIVATE ATTR_FREETEXT SAFE KPD size_t KCALL
-memory_do_install(PHYS PAGE_ALIGNED uintptr_t start,
-                       PAGE_ALIGNED size_t size,
-                       int mode) {
- assert(IS_ALIGNED(start,PAGESIZE));
- assert(IS_ALIGNED(size,PAGESIZE));
- /* Align the given memory region by whole pages. */
- assert(IS_ALIGNED(KERNEL_BEGIN,PAGESIZE));
- assert(IS_ALIGNED(KERNEL_END,PAGESIZE));
- if (start+size < start) size = 0-start;
- /* NOTE: We must not allow physical memory within the kernel's virtual address space.
-  *       All addresses '>= KERNEL_BASE' are mapped to the same places in _all_
-  *       page directories, and must therefor not describe physical addresses. */
- if (start      >= KERNEL_BASE) return 0;
- if (start+size >= KERNEL_BASE) size = KERNEL_BASE-(start+size);
-
- /* Make sure not to allocate memory across the kernel. */
- if (start < KERNEL_BEGIN) {
-  /* Free region is located before the kernel. */
-  uintptr_t max_size = KERNEL_BEGIN-start;
-  if (start+size > KERNEL_END)
-      memory_do_install(KERNEL_END,(start+size)-KERNEL_END,mode);
-  if (size > max_size)
-      size = max_size;
- } else if (start < KERNEL_END) {
-  /* Free region begins inside the kernel. */
-  uintptr_t reserved_size = KERNEL_END-start;
-  start += reserved_size;
-  if (size < reserved_size) size = 0;
-  else size -= reserved_size;
- }
-
-#ifdef CONFIG_RESERVE_NULL_PAGE
- /* Don't consider memory at NULL */
- if (start == (uintptr_t)NULL && size) {
-     start += PAGESIZE;
-     size  -= PAGESIZE;
- }
-#endif
-
- /* Mark the region as available. */
- if (size) {
-  if (mode != MEMORY_INSTALL_MODE_ONLYINFO) {
-   syslog(LOG_MEM|LOG_INFO,
-          FREESTR("[MEM] Using dynamic memory %p..%p\n"),
-          start,start+size-1);
-   memory_register((ppage_t)start,size,mode == MEMORY_INSTALL_MODE_NOINFO);
-  } else {
-   memory_register_info((ppage_t)start,size);
-  }
- }
- return size;
-}
-
-
-struct memrange {
- PAGE_ALIGNED uintptr_t mr_begin; /*< Start address of this no-touch range (first address protected) */
- PAGE_ALIGNED uintptr_t mr_end;   /*< End address of this no-touch range (first address no longer protected). */
-};
-
-PRIVATE ATTR_FREEDATA
-struct memrange nt[MEMORY_NOTOUCH_MAXCOUNT] = {
-    [0 ... MEMORY_NOTOUCH_MAXCOUNT-1] = {
-        .mr_begin = 0,
-        .mr_end   = 0,
-    },
-};
-PRIVATE ATTR_FREEDATA
-struct memrange fl[MEMORY_FREELATER_MAXCOUNT] = {
-    [0 ... MEMORY_FREELATER_MAXCOUNT-1] = {
-        .mr_begin = 0,
-        .mr_end   = 0,
-    },
-};
-
-PRIVATE ATTR_FREETEXT SAFE KPD bool KCALL
-memory_install_free_later(PHYS PAGE_ALIGNED uintptr_t start,
-                               PAGE_ALIGNED uintptr_t mend) {
- struct memrange *iter;
- assert(IS_ALIGNED(start,PAGESIZE));
- assert(IS_ALIGNED(mend,PAGESIZE));
- assert(start <= mend);
- if unlikely(start == mend) return true;
- for (iter = fl; iter < COMPILER_ENDOF(fl); ++iter) {
-  /* Extend an overlapping no-touch region. */
-  if (start <= iter->mr_end && mend >= iter->mr_begin) {
-   if (iter->mr_begin > start) iter->mr_begin = start;
-   if (iter->mr_end   < mend)  iter->mr_end   = mend;
-   return true;
-  }
-  /* Create a new region in the first free slot. */
-  if (iter->mr_begin == iter->mr_end) {
-   iter->mr_begin = start;
-   iter->mr_end   = mend;
-   return true;
-  }
- }
- return false;
-}
-
-INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
-memory_install(PHYS uintptr_t start, size_t size) {
- struct memrange *iter; uintptr_t mend,temp;
- /* Fix the given memory range potentially not being page-aligned. */
- temp  = CEIL_ALIGN(start,PAGESIZE);
- if (__builtin_sub_overflow(size,temp-start,&size))
-     return 0; /* Range is too small. */
- start = temp;
- size  = FLOOR_ALIGN(size,PAGESIZE);
- mend  = start+size;
- /* Fix overflow. */
- if unlikely(mend < start) {
-#define END_OFFSET PAGESIZE
-  size = (((uintptr_t)-END_OFFSET)-start);
-  mend = (uintptr_t)-END_OFFSET;
-  assert(mend == start+size);
-#undef END_OFFSET
- }
- for (iter = nt; iter < COMPILER_ENDOF(nt); ++iter) {
-  if (mend <= iter->mr_begin || start >= iter->mr_end) continue;
-  size_t result = 0;
-  assert(mend > iter->mr_begin && start < iter->mr_end);
-  /* Install memory before & after this no-touch guard. */
-  if (mend  > iter->mr_end)   result += memory_install(iter->mr_end,mend-iter->mr_end),mend = iter->mr_end;
-  if (start < iter->mr_begin) result += memory_install(start,iter->mr_begin-start),start = iter->mr_begin;
-  /* Mark this portion of the no-touch guard as free-later. */
-  assert(start < mend);
-  if (!memory_install_free_later(start,mend)) {
-   syslog(LOG_MEM|LOG_WARN,
-          FREESTR("[MEM] Insufficient free-later-ranges to mark %p...%p\n"),
-          start,mend-1);
-  }
-  return result;
- }
- return memory_do_install(start,size,MEMORY_INSTALL_MODE_NORMAL);
-}
-
-INTERN ATTR_FREETEXT SAFE KPD bool KCALL
-memory_notouch(PHYS uintptr_t start, size_t size) {
- struct memrange *iter;
- uintptr_t mend = start+size;
- /* Fix the given memory range potentially not being page-aligned. */
- size  += start & (PAGESIZE-1);
- start &= ~(PAGESIZE-1);
- size   = CEIL_ALIGN(size,PAGESIZE);
- mend   = start+size;
- if unlikely(!size) return true;
- for (iter = nt; iter < COMPILER_ENDOF(nt); ++iter) {
-  /* Extend an overlapping no-touch region. */
-  if (start <= iter->mr_end && mend >= iter->mr_begin) {
-   if (iter->mr_begin > start) iter->mr_begin = start;
-   if (iter->mr_end   < mend)  iter->mr_end   = mend;
-   return true;
-  }
-  /* Create a new region in the first free slot. */
-  if (iter->mr_begin == iter->mr_end) {
-   iter->mr_begin = start;
-   iter->mr_end   = mend;
-   return true;
-  }
- }
- return false;
-}
-INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
-memory_done_install(void) {
- struct memrange *iter; size_t result = 0;
- for (iter = fl; iter < COMPILER_ENDOF(fl); ++iter) {
-  result += memory_do_install(iter->mr_begin,
-                             (size_t)(iter->mr_end-iter->mr_begin),
-                              MEMORY_INSTALL_MODE_NOINFO);
- }
-#ifdef CONFIG_DEBUG
- /* Enumerate all zones to check for proper linkage. */
- { ppage_t iter;
-   PAGE_FOREACH(iter,&page_zones[0]) {}
-   PAGE_FOREACH(iter,&page_zones[1]) {}
-   PAGE_FOREACH(iter,&page_zones[2]) {}
-   PAGE_FOREACH(iter,&page_zones[3]) {}
- }
-#endif
- return result;
-}
-INTERN ATTR_FREETEXT SAFE KPD void KCALL
-memory_mirror_freelater_info(void) {
- struct memrange *iter; size_t result = 0;
- for (iter = fl; iter < COMPILER_ENDOF(fl); ++iter) {
-  result += memory_do_install(iter->mr_begin,
-                             (size_t)(iter->mr_end-iter->mr_begin),
-                              MEMORY_INSTALL_MODE_ONLYINFO);
- }
-}
-
-#if __SIZEOF_POINTER__ < 8
-PRIVATE ATTR_FREETEXT SAFE KPD size_t KCALL
-memory_install64(u64 begin, u64 size) {
- uintptr_t used_begin; size_t used_size;
- used_begin = (uintptr_t)begin;
- used_size  = (uintptr_t)size;
- if ((u64)used_begin < begin) return 0;
- if ((u64)used_size < size) used_size = (size_t)-1;
- return memory_install(used_begin,used_size);
-}
-#else
-#define memory_install64   memory_install
-#endif
-#else /* !CONFIG_NEW_MEMINFO */
-#define memory_install64(begin,size) mem_install64(begin,size,MEMTYPE_RAM)
-#endif /* CONFIG_NEW_MEMINFO */
-
 INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
 memory_load_mb_lower_upper(u32 mem_lower, u32 mem_upper) {
  syslog(LOG_MEM|LOG_INFO,
@@ -1067,20 +968,11 @@ memory_load_mb_mmap(struct mb_mmap_entry *__restrict iter, u32 info_len) {
  mb_memory_map_t *end; size_t result = 0;
  for (end  = (mb_memory_map_t *)((uintptr_t)iter+info_len); iter < end;
       iter = (mb_memory_map_t *)((uintptr_t)&iter->addr+iter->size)) {
-#ifdef CONFIG_NEW_MEMINFO
-  memtype_t type;
-  switch (iter->type) {
-  case MB_MEMORY_AVAILABLE: type = MEMTYPE_RAM; break;
-  case MB_MEMORY_RESERVED:  type = MEMTYPE_DEVICE; break;
-  case MB_MEMORY_NVS:       type = MEMTYPE_NVS; break;
-  case MB_MEMORY_BADRAM:    type = MEMTYPE_BADRAM; break;
-  default: continue; /* Ignore anything we don't recognize. */
-  }
-  result += mem_install64(iter->addr,iter->len,type);
-#else
-  if (iter->type != MB_MEMORY_AVAILABLE) continue;
-  result += memory_install64(iter->addr,iter->len);
-#endif
+  if (iter->type >= COMPILER_LENOF(memtype_bios_matrix) ||
+      memtype_bios_matrix[iter->type] >= MEMTYPE_COUNT)
+      continue;
+  result += mem_install64(iter->addr,iter->len,
+                          memtype_bios_matrix[iter->type]);
  }
  return result;
 }
@@ -1092,121 +984,13 @@ memory_load_mb2_mmap(struct mb2_tag_mmap *__restrict info) {
  end  = (mb2_memory_map_t *)((uintptr_t)info+info->size);
  if unlikely(!info->entry_size) goto done;
  for (; iter < end; *(uintptr_t *)&iter += info->entry_size) {
-#ifdef CONFIG_NEW_MEMINFO
-  memtype_t type;
-  switch (iter->type) {
-  case MB2_MEMORY_AVAILABLE: type = MEMTYPE_RAM; break;
-  case MB2_MEMORY_RESERVED:  type = MEMTYPE_DEVICE; break;
-  case MB2_MEMORY_NVS:       type = MEMTYPE_NVS; break;
-  case MB2_MEMORY_BADRAM:    type = MEMTYPE_BADRAM; break;
-  default: continue; /* Ignore anything we don't recognize. */
-  }
-  result += mem_install64(iter->addr,iter->len,type);
-#else
-  if (iter->type != MB2_MEMORY_AVAILABLE) continue;
-  result += memory_install64(iter->addr,iter->len);
-#endif
+  result += mem_install64(iter->addr,iter->len,
+                          memtype_bios_matrix[iter->type]);
  }
 done:
  return result;
 }
 
-
-#if 0
-INTERN ATTR_FREETEXT SAFE KPD void KCALL
-memory_load_mbinfo(mb_info_t *__restrict info) {
- /* Address of the commandline memory (or '(void *)-1' when not available) */
- ppage_t cmd_page; char *cmd_addr = (char *)-1;
- size_t cmd_reserve,cmd_size = 0;
- if (info->flags&MB_INFO_CMDLINE) {
-  cmd_addr = (char *)info->cmdline;
-  if unlikely(!cmd_addr) cmd_addr = (char *)-1;
-  else cmd_size = strlen(cmd_addr);
- }
- if (cmd_addr == (char *)-1 && cmd_size != 0) {
-  cmd_page    = 0;
-  cmd_reserve = 0;
- } else {
-  cmd_page    = (ppage_t)FLOOR_ALIGN((uintptr_t)cmd_addr,PAGESIZE);
-  cmd_reserve = CEIL_ALIGN(((uintptr_t)cmd_addr-(uintptr_t)cmd_page)+cmd_size,PAGESIZE);
- }
-
- if (info->flags&MB_INFO_MEMORY) {
-  mb_memory_map_t *iter,*end;
-  for (iter = (mb_memory_map_t *)info->mmap_addr,
-       end  = (mb_memory_map_t *)((uintptr_t)iter+info->mmap_length); iter < end;
-       iter = (mb_memory_map_t *)((uintptr_t)&iter->addr+iter->size)) {
-   if (iter->type == 1) {
-    u64 begin = iter->addr;
-    u64 size  = iter->len;
-#if __SIZEOF_POINTER__ < 8
-    uintptr_t used_begin; size_t used_size;
-#else
-#define used_begin begin
-#define used_size  size
-#endif
-    if (begin+size <= begin) continue;
-    /* NOTE: We must not allow physical memory within the kernel's virtual address space.
-     *       All addresses '>= KERNEL_BASE' are mapped to the same places in _all_
-     *       page directories, and must therefor not describe physical addresses. */
-    if (begin      >= KERNEL_BASE) continue;
-    if (begin+size >= KERNEL_BASE) size = KERNEL_BASE-(begin+size);
-    if (!size) continue;
-#if __SIZEOF_POINTER__ < 8
-    used_begin = (uintptr_t)begin;
-    used_size  = (uintptr_t)size;
-#endif
-    /* Make sure to allocate all pages for the CMD prematurely. */
-    if (used_begin < (uintptr_t)cmd_page) {
-     /* Free region is located before the kernel. */
-     uintptr_t max_size = (uintptr_t)cmd_page-used_begin;
-     if (used_begin+used_size > (uintptr_t)cmd_page+cmd_reserve) {
-      memory_install((uintptr_t)cmd_page+cmd_reserve,
-                     (used_begin+used_size)-
-                     (uintptr_t)cmd_page+cmd_reserve);
-     }
-     if (used_size > max_size)
-         used_size = max_size;
-    } else if (used_begin < (uintptr_t)cmd_page+cmd_reserve) {
-     /* Free region begins inside the kernel. */
-     uintptr_t reserved_size = ((uintptr_t)cmd_page+cmd_reserve)-
-                                used_begin;
-     used_size += reserved_size;
-     if (used_size < reserved_size) used_size = 0;
-     else used_size -= reserved_size;
-    }
-    memory_install(used_begin,
-                   used_size);
-#undef used_begin
-#undef used_size
-   }
-  }
- } else {
-  /* Search for memory ourself. */
-  memory_load_detect();
- }
-
-#ifdef CONFIG_DEBUG
- /* Enumerate all zones to check for proper linkage. */
- { ppage_t iter;
-   PAGE_FOREACH(iter,&page_zones[0]) {}
-   PAGE_FOREACH(iter,&page_zones[1]) {}
-   PAGE_FOREACH(iter,&page_zones[2]) {}
-   PAGE_FOREACH(iter,&page_zones[3]) {}
- }
-#endif
-}
-#endif
-
 DECL_END
-
-#ifndef __INTELLISENSE__
-#ifndef CONFIG_NEW_MEMINFO
-#define MMAN_REGISTER
-#include "memory-free.c.inl"
-#endif /* !CONFIG_NEW_MEMINFO */
-#include "memory-free.c.inl"
-#include "memory-info.c.inl"
-#endif
 
 #endif /* !GUARD_KERNEL_MEMORY_MEMORY_C */

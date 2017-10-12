@@ -45,7 +45,7 @@ typedef __SIZE_TYPE__ size_t;
 
 __SYSDECL_END
 
-#ifdef __CRT_GLC
+#ifndef __DOS_COMPAT__
 #include <bits/dirent.h>
 __SYSDECL_BEGIN
 
@@ -176,7 +176,8 @@ __LIBC __PORT_NODOS __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL versionsort64)
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_GNU */
 
-#if defined(__USE_KOS) && defined(__CRT_KOS)
+#if defined(__USE_KOS) && \
+   (defined(__CRT_KOS) && !defined(__GLC_COMPAT__))
 /* NOTE: Keep these mode constants in sync with 'FILE_READDIR_*' from "/src/kernel/include/fs/inode.h" */
 #define READDIR_DEFAULT  0 /*< Yield to next entry when 'buf' was of sufficient size. */
 #define READDIR_CONTINUE 1 /*< Always yield to next entry. */

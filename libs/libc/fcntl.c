@@ -268,6 +268,7 @@ DEFINE_PUBLIC_ALIAS(__DSYMw32(_wopen),libc_dos_32wopen);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wsopen),libc_dos_32wsopen);
 DEFINE_PUBLIC_ALIAS(__DSYMw32(_wsopen_s),libc_dos_32wsopen_s);
 
+DEFINE_PUBLIC_ALIAS(_getcwd,libc_getcwd);
 DEFINE_PUBLIC_ALIAS(_getdcwd,libc_getdcwd);
 DEFINE_PUBLIC_ALIAS(_wgetcwd,libc_32wgetcwd);
 DEFINE_PUBLIC_ALIAS(_wgetdcwd,libc_32wgetdcwd);

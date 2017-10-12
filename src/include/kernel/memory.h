@@ -118,13 +118,6 @@ LOCAL mzone_t KCALL mzone_of(PHYS void *ptr) {
 }
 
 
-
-/* Use the new meminfo system (TODO: Once done and tested,
- * completely remove the old, including this switch) */
-#define CONFIG_NEW_MEMINFO
-
-
-#ifdef CONFIG_NEW_MEMINFO
 #define MEMTYPE_RAM        0 /*< [USE|MAP] Dynamic; aka. RAM memory (mapped and used) */
 #define MEMTYPE_NVS        1 /*< [MAP] Non-volatile memory (that is: memory that doesn't get wiped after shutdown) */
 #define MEMTYPE_DEVICE     2 /*< [MAP] Device memory (mapped, but not used as RAM) */
@@ -151,12 +144,8 @@ DATDEF char const memtype_names[MEMTYPE_COUNT][8];
 #define MEMTYPE_ISMAP(x) ((x) <= 4)
 #endif
 typedef int memtype_t;
-#else /* CONFIG_NEW_MEMINFO */
-#define MEMINFO_EARLY_NULL   NULL
-#endif /* !CONFIG_NEW_MEMINFO */
 
 struct meminfo {
-#ifdef CONFIG_NEW_MEMINFO
  /* NOTE: 'mi_part_addr..+=mi_part_size' never overlaps with another info record's range,
   *        meaning that different info records with sub-page overlapping ranges are truncated. */
  PHYS struct meminfo const *mi_next;      /*< [0..1][->mi_addr >= mi_addr+mi_size][const] Next info link. */
@@ -180,15 +169,6 @@ union{
  PAGE_ALIGNED size_t        mi_part_size; /*< [const][== CEIL_ALIGN(mi_size+(mi_addr-mi_part_addr),PAGESIZE)][>= mi_full_size][!0] Amount of bytes apart of partially, or fully associated pages. */
  PHYS ppage_t               mi_full_addr; /*< [const][== CEIL_ALIGN(mi_addr,PAGESIZE)][<= mi_part_addr] First fully associated page. */
  PAGE_ALIGNED size_t        mi_full_size; /*< [const][== CEIL_ALIGN(mi_addr+mi_size,PAGESIZE)-mi_full_addr][<= mi_part_size][!0] Amount of bytes apart of full pages. */
-#else /* CONFIG_NEW_MEMINFO */
- PHYS struct meminfo const *mi_next;      /*< [0..1][->mi_addr > mi_addr+mi_size][const] Next info link. */
- ppage_t                    mi_addr;
- size_t                     mi_size;
-#define mi_part_addr        mi_addr
-#define mi_part_size        mi_size
-#define mi_full_addr        mi_addr
-#define mi_full_size        mi_size
-#endif /* !CONFIG_NEW_MEMINFO */
 };
 
 /* [0..1][MZONE_COUNT] Per-zone information about memory available for dynamic allocation.
@@ -201,7 +181,6 @@ DATDEF struct meminfo const *const mem_info[MZONE_COUNT];
       (iter) != NULL; (iter) = (iter)->mi_next)
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-#ifdef CONFIG_NEW_MEMINFO
 #define MEMINFO_EARLY_FOREACH(iter,zone) \
  for ((iter)  = mem_info[zone]; \
       (iter) != MEMINFO_EARLY_NULL; (iter) = (iter)->mi_next)
@@ -234,7 +213,6 @@ INTDEF INITCALL PAGE_ALIGNED size_t KCALL mem_unpreserve(void);
  * memory marked as 'MEMTYPE_RAM', that was passed to 'mem_install()' at some point. */
 INTDEF INITCALL void KCALL mem_relocate_info(void);
 
-#endif /* CONFIG_NEW_MEMINFO */
 #endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 
@@ -476,52 +454,7 @@ INTDEF INITCALL SAFE KPD size_t KCALL memory_load_mb2_mmap(struct mb2_tag_mmap *
 
 /* Try various different ways of detecting memory. */
 INTDEF INITCALL SAFE KPD void KCALL memory_load_detect(void);
-
-#ifdef CONFIG_NEW_MEMINFO
-#define memory_install(start,size)      mem_install(start,size,MEMTYPE_RAM)
-#define memory_notouch(start,size)      mem_install(start,size,MEMTYPE_PRESERVE)
-#define memory_done_install()          (mem_unpreserve(),mem_relocate_info())
-#define memory_mirror_freelater_info() (void)0
-#define memory_relocate_info()         (void)0
-#else /* CONFIG_NEW_MEMINFO */
-/* Register physical memory for use by the physical memory allocator
- * NOTE: Physical memory used by the kernel image itself is
- *       ignored, and memory marked using 'memory_notouch()'
- *       will be updated to only become available once
- *      'memory_done_install()' has been called.
- * WARNING: This function is an init-call and may not
- *          be called once init memory has been freed.
- * @return: * : The actual amount of usable bytes now installed. */
-INTDEF SAFE KPD size_t KCALL memory_install(PHYS uintptr_t start, size_t size);
-
-/* Helper functions for defining special regions of memory that
- * must not be touched when installing available memory.
- * >> Veryuseful when the memory information source itself
- *    is located in the dynamic memory it is describing.
- *    In such an event, this function may be used to prevent
- *    any data within 'start...+=size' from be corrupted
- *    before having been copied into a safe location.
- * >> To commit all free-memory mappings overlapping with
- *    the given range, 'memory_done_install()' must be called
- *    at a later time to install all previously protected
- *    memory, thereby allowing the system to start using it.
- *    NOTE: Only memory parts that were attempted to be installed
- *          through calls to 'memory_install()' will be registered
- *          following a call to 'memory_notouch()'. */
-INTDEF SAFE KPD bool KCALL memory_notouch(PHYS uintptr_t start, size_t size);
-INTDEF SAFE KPD size_t KCALL memory_done_install(void);
-#define MEMORY_NOTOUCH_MAXCOUNT   8
-#define MEMORY_FREELATER_MAXCOUNT 8
-
-/* Mirror all touched free-later pages within memory information.
- * NOTE: This function must be called after all dynamic memory
- *       has been detected, but before paging is initialized. */
-INTDEF SAFE KPD void KCALL memory_mirror_freelater_info(void);
-
-/* If possible, relocate any core information allocated within the 'MZONE_V_1MB' zone. */
-INTDEF SAFE KPD void KCALL memory_relocate_info(void);
-#endif /* !CONFIG_NEW_MEMINFO */
-
+INTDEF u8 const memtype_bios_matrix[6];
 
 #endif
 #endif /* __CC__ */

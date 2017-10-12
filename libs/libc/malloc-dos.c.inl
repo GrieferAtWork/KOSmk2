@@ -25,6 +25,7 @@
 #include "malloc.h"
 #include "string.h"
 #include "fcntl.h"
+#include "errno.h"
 
 #include <uchar.h>
 #include <hybrid/minmax.h>
@@ -423,6 +424,26 @@ DEFINE_PUBLIC_ALIAS(_wfullpath_dbg,libc_dos_wfullpath_dbg);
 DEFINE_PUBLIC_ALIAS(_wgetcwd_dbg,libc_dos_wgetcwd_dbg);
 DEFINE_PUBLIC_ALIAS(_wgetdcwd_dbg,libc_dos_wgetdcwd_dbg);
 DEFINE_PUBLIC_ALIAS(_wgetdcwd_lk_dbg,libc_dos_wgetdcwd_lk_dbg);
+
+DEFINE_PUBLIC_ALIAS(_free_base,EXPORT_FREE);
+DEFINE_PUBLIC_ALIAS(_malloc_base,EXPORT_MALLOC);
+
+INTERN ATTR_DOSTEXT int LIBCCALL libc_heapadd(void *block, size_t size) { SET_ERRNO(ENOSYS); return -1; }
+DEFINE_PUBLIC_ALIAS(_heapadd,libc_heapadd);
+DEFINE_PUBLIC_ALIAS(_heapchk,libc_dos_mall_validate);
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_PUBLIC_ALIAS(_heapset,libc_dos_mall_validate);
+#else
+INTERN ATTR_DOSTEXT int LIBCCALL libc_heapset(unsigned int UNUSED(fill)) { return libc_dos_mall_validate(); }
+DEFINE_PUBLIC_ALIAS(_heapset,libc_heapset);
+#endif
+INTERN ATTR_DOSTEXT int LIBCCALL libc_heapmin(void) { return EXPORT_MALLOC_TRIM(0) ? 0 : -1; }
+DEFINE_PUBLIC_ALIAS(_heapmin,libc_heapmin);
+INTERN ATTR_DOSTEXT size_t LIBCCALL
+libc_heapused(size_t *UNUSED(pused), size_t *UNUSED(pcommit)) { SET_ERRNO(ENOSYS); return 0; }
+DEFINE_PUBLIC_ALIAS(_heapused,libc_heapused);
+INTERN ATTR_DOSTEXT int LIBCCALL libc_heapwalk(void *UNUSED(entry)) { return -5; /*_HEAPEND*/ }
+DEFINE_PUBLIC_ALIAS(_heapwalk,libc_heapwalk);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

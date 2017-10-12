@@ -29,12 +29,6 @@ DECL_BEGIN
 struct cpu;
 struct timespec;
 
-#ifdef CONFIG_BUILDING_KERNEL_CORE
-#define BOOTCPU  (&__bootcpu)
-#else
-#define BOOTCPU    CPUI(0)
-#endif
-
 #ifdef CONFIG_SMP
 struct hwcpu {
  ATOMIC_DATA size_t hw_onln; /*< [!0] Amount of cpus currently online. */

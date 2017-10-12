@@ -38,7 +38,6 @@
 #include <kernel/arch/cpustate.h>
 #include <kernel/paging.h>
 
-#ifdef CONFIG_NEW_MEMINFO
 DECL_BEGIN
 
 PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
@@ -571,6 +570,5 @@ mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type) {
 #endif
 
 DECL_END
-#endif
 
 #endif /* !GUARD_KERNEL_MEMORY_INSTALL_C */

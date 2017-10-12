@@ -272,14 +272,15 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
      (KERNEL_COMMANDLINE.cl_size = strlen((char *)info->cmdline)) != 0) {
    KERNEL_COMMANDLINE.cl_text = (char *)info->cmdline;
    /* Protect the kernel commandline from touchies. */
-   memory_notouch((uintptr_t)kernel_commandline.cl_text,
-                             kernel_commandline.cl_size);
+   mem_install((uintptr_t)kernel_commandline.cl_text,
+                          kernel_commandline.cl_size,
+                MEMTYPE_PRESERVE);
   }
   /* Use multiboot memory information. */
   if (info->flags&MB_MEMORY_INFO)
       mbt_memory += memory_load_mb_lower_upper(info->mem_lower,info->mem_upper);
   if (info->flags&MB_INFO_MEM_MAP)
-      memory_notouch(info->mmap_addr,info->mmap_length),
+      mem_install(info->mmap_addr,info->mmap_length,MEMTYPE_PRESERVE),
       mbt_memory += memory_load_mb_mmap((struct mb_mmap_entry *)info->mmap_addr,info->mmap_length);
  } break;
 
@@ -308,7 +309,7 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
         (uintptr_t)info,(uintptr_t)info+mbt_min_size-1);
 
   /* Protect the multiboot information buffer from being overwritten too early. */
-  memory_notouch((uintptr_t)info,mbt_min_size);
+  mem_install((uintptr_t)info,mbt_min_size,MEMTYPE_PRESERVE);
 
   for (tag_iter = tag_begin; tag_iter != tag_end;
      *(uintptr_t *)&tag_iter += CEIL_ALIGN(tag_iter->size,MB2_TAG_ALIGN)) {
@@ -376,20 +377,9 @@ kernel_boot(u32        mb_magic,
  /* Initialize basic data using the information potentially provided by the bootloader. */
  basicdata_initialize(mb_magic,mb_mbt);
 
- /* Mirror all memory information that was registered as free-later within
-  * the dynamic memory information table, thus finalizing its contents.
-  * NOTE: This needs to be done _after_ all dynamic memory has been detected
-  *       in order to prevent early failure when the first dynamic memory
-  *       information table cannot be allocated because no dynamic memory
-  *       to store it inside of may be available yet when the first part
-  *       of RAM being detect is fully protected by an early no-touch region. */
- memory_mirror_freelater_info();
-
  /* Parse the commandline & execute early setup arguments. */
  commandline_initialize_parse();
  commandline_initialize_early();
-
- memory_relocate_info();
 
  /* Perform early SMP initialization (do this while we're
   * still mapping the whole of the 3Gb physical address space). */
@@ -404,10 +394,14 @@ kernel_boot(u32        mb_magic,
 
  /* Release all physical memory (including the commandline)
   * that was protected from being used as free data. */
- memory_done_install();
+ mem_unpreserve();
 
- /* Initialize realmode now that 'memory_done_install()' has likely
-  * released a whole bunch of data within the 1Mb memory zone. */
+ /* Relocate memory information to high memory, thus potentially
+  * freeing up some of the much more valuable memory below 1Mb */
+ mem_relocate_info();
+
+ /* Initialize realmode now that 'mem_unpreserve()' and 'mem_relocate_info()'
+  * have likely released a whole bunch of data within the 1Mb memory zone. */
  realmode_initialize();
 
  /* Must initialize the global PID namespaces before creating secondary

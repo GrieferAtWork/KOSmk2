@@ -550,7 +550,7 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, size
 
 
 __NAMESPACE_STD_BEGIN
-#if defined(__USE_KOS) && (defined(__CRT_KOS) || __SIZEOF_SIZE_T__ <= __SIZEOF_INT__)
+#if defined(__USE_KOS) && ((defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__)) || __SIZEOF_SIZE_T__ <= __SIZEOF_INT__)
 __LIBC __ssize_t (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
 __LIBC __ssize_t (__LIBCCALL vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args);
 __LIBC __size_t (__ATTR_CDECL sscanf)(char const *__restrict __buf, char const *__restrict __format, ...);

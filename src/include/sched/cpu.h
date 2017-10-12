@@ -123,10 +123,29 @@ typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
 
 #ifndef CONFIG_NO_JOBS
 /* Schedule work to-be performed on the calling CPU at a later, safer time.
+ * NOTE: When eventually being executed, the job will run in the context
+ *       of the caller's CPU at the time of its work being scheduled.
+ *       All registers will be in an undefined state, except for ESP,
+ *       which points to a valid, unique stack that is used by the worker
+ *       task held responsible for job completion.
+ *       Additionally, the 'j_data' member of 'work' is pushed onto the stack
+ *       before the job function is invoked, which in return can simply
+ *       pass execution to either the next scheduled job, or another task
+ *       by execution a return-statement.
+ * HINT: Worker tasks are per-cpu and cannot be assigned a different CPU,
+ *       meaning that once scheduled, a job cannot be migrated to another CPU.
+ * HINT: This function is 100% safe to be called in _ANY_ kind of context,
+ *       most notable being an interrupt handler that can't safely acquire
+ *       locks without expensive workarounds that disable preemption when
+ *       other code accesses the same data.
+ *       With that in mind, this function does momentarily disable preemption
+ *       itself, yet will re-enable it so long as it was enabled when the
+ *       caller passed control.
  * @return: -EOK:      The given job was scheduled.
  * @return: -EALREADY: The given job had already been scheduled, though had yet to be executed.
  * @return: -EPERM:    The module associated with the given job is currently being unloaded. */
 FUNDEF errno_t KCALL schedule_work(struct job *__restrict work);
+
 /* Schedule delayed execution of a job, given the absolute point in time when it should run.
  * HINT: Among other things, these functions are used to implement 'alarm()'.
  * NOTE: Internally, these differ from 'schedule_work()' very little.
@@ -145,6 +164,7 @@ FUNDEF errno_t KCALL schedule_work(struct job *__restrict work);
  * @return: -EALREADY: The given job had already been scheduled, though had yet to be executed.
  * @return: -EPERM:    The module associated with the given job is currently being unloaded. */
 FUNDEF errno_t KCALL schedule_delayed_work(struct job *__restrict work, struct timespec const *__restrict abs_exectime);
+/* TODO: Using jobs, we can easily implement 'alarm()' */
 #endif /* !CONFIG_NO_JOBS */
 
 
@@ -197,6 +217,7 @@ FUNDEF void KCALL cpu_validate_counters(bool private_only);
 
 /* The initial boot cpu (Always has id #0; same as 'smp_hwcpu.hw_cpuv[0]') */
 DATDEF struct cpu __bootcpu;
+#define BOOTCPU (&__bootcpu)
 
 /* The original BOOT-task, as well as host for '/bin/init'. */
 DATDEF struct task inittask;

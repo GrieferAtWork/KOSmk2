@@ -175,8 +175,8 @@ __NAMESPACE_STD_USING(strchr)
 __NAMESPACE_STD_USING(strrchr)
 
 
-#if defined(__USE_KOS) && defined(__CRT_KOS)
-__LIBC __PORT_KOSONLY __WUNUSED char const *(__LIBCCALL strerror_s)(int __errnum) ;
+#if defined(__USE_KOS) && (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
+__LIBC __PORT_KOSONLY __WUNUSED char const *(__LIBCCALL strerror_s)(int __errnum);
 __LIBC __PORT_KOSONLY __WUNUSED char const *(__LIBCCALL strerrorname_s)(int __errnum);
 #endif /* __USE_KOS && __CRT_KOS */
 #ifndef __KERNEL__

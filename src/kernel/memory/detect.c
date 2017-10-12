@@ -40,35 +40,6 @@
 
 DECL_BEGIN
 
-PRIVATE ATTR_FREEBSS bool datapage_ok = false;
-
-/* TODO: Don't use 'memory_install_nodata()' - Use 'memory_notouch()' instead! */
-PRIVATE ATTR_FREETEXT SAFE KPD void KCALL
-memory_install_nodata(PHYS uintptr_t start,
-                      uintptr_t size) {
- uintptr_t aligned_start;
- size = FLOOR_ALIGN(size,PAGESIZE);
- if unlikely(!size) return;
- aligned_start = CEIL_ALIGN(start,PAGESIZE);
- size -= (aligned_start-start);
- assert(IS_ALIGNED(size,PAGESIZE));
- /* Make sure not to allocate the page we're
-  * using for realmode execution prematurely. */
- if (aligned_start <= FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE) &&
-     aligned_start+size > FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE)+PAGESIZE) {
-  datapage_ok = true;
-  memory_install(aligned_start,FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE)-aligned_start);
-  memory_install(FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE)+PAGESIZE,
-                (aligned_start+size)-(FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE)+PAGESIZE));
- } else {
-  memory_install(aligned_start,size);
- }
-}
-PRIVATE ATTR_FREETEXT SAFE KPD void KCALL
-memory_install_data(void) {
- if (datapage_ok)
-     memory_install(FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE),PAGESIZE);
-}
 
 struct smap_entry {
  u32 sm_addr_lo;
@@ -81,8 +52,18 @@ struct smap_entry {
 
 #define SMAP_BUFFER ((struct smap_entry *)(REALMODE_STARTRELO+0xf00))
 
-PRIVATE ATTR_FREETEXT SAFE KPD
-bool KCALL try_e820(void) {
+INTERN ATTR_FREERODATA u8 const memtype_bios_matrix[6] = {
+    MEMTYPE_COUNT,
+    MEMTYPE_RAM,    /* Available. */
+    MEMTYPE_DEVICE, /* Reserved. */
+    MEMTYPE_COUNT,  /* ACPI-Reclaimable. */
+    MEMTYPE_NVS,    /* NVS. */
+    MEMTYPE_BADRAM, /* Badram. */
+};
+
+
+
+PRIVATE ATTR_FREETEXT SAFE KPD bool KCALL try_e820(void) {
  struct smap_entry *entry; struct cpustate16 s;
  memset(&s,0,sizeof(s));
  entry = SMAP_BUFFER;
@@ -97,29 +78,31 @@ bool KCALL try_e820(void) {
   if (s.eflags & EFLAGS_CF) return false; /* Unsupported. */
   if (s.gp.eax != 0x534D4150) return false; /* Error. */
   if (s.gp.ecx > 20 && (entry->sm_acpi & 1) == 0) continue; /* Ignored. */
-  if (entry->sm_type != 1) continue; /* Only use (normal) RAM. */
+  if (entry->sm_type >= COMPILER_LENOF(memtype_bios_matrix) ||
+      memtype_bios_matrix[entry->sm_type] >= MEMTYPE_COUNT) continue;
   if (entry->sm_addr_hi) continue; /* Too large. */
-  memory_install_nodata(entry->sm_addr_lo,
-                        entry->sm_size_hi ? (0-entry->sm_addr_lo)
-                                          :    entry->sm_size_lo);
+  mem_install(entry->sm_addr_lo,
+              entry->sm_size_hi ? (0-entry->sm_addr_lo)
+                                :    entry->sm_size_lo,
+              memtype_bios_matrix[entry->sm_type]);
  } while (s.gp.ebx);
  return true;
 }
 
 PRIVATE ATTR_FREETEXT SAFE KPD
 bool KCALL memory_try_detect(void) {
- if (try_e820()) goto ok;
- /* XXX: There are other things we could try... (Other system calls) */
+ if (try_e820()) return true;
+ /* XXX: There are other things we could try... (Other bios calls) */
  return false;
-ok: memory_install_data();
- return true;
 }
 
 INTDEF ATTR_FREETEXT SAFE KPD
 void KCALL memory_load_detect(void) {
+ mem_install(FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE),
+             PAGESIZE,MEMTYPE_PRESERVE);
  if (!memory_try_detect()) {
   syslog(LOG_MEM|LOG_WARN,FREESTR("[MEM] Guess available dynamic memory\n"));
-#define RANGE(a,b) memory_install(a,(b-a)+1)
+#define RANGE(a,b) mem_install(a,(b-a)+1,MEMTYPE_RAM)
   /* Most likely that at least this memory exists... */
   RANGE(0x00000500,0x0008ffff);
   /* ... */

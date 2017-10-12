@@ -25,14 +25,36 @@
 #include <hybrid/byteswap.h>
 #include <hybrid/compiler.h>
 #include <kernel/export.h>
+#include <kernel/irq.h>
 #include <linux/if_ether.h>
 #include <modules/pci.h>
+#include <sched/cpu.h>
+#include <sched/rpc.h>
+#include <sched/smp.h>
 #include <string.h>
 #include <syslog.h>
 
 #include "ne2k.h"
 
 DECL_BEGIN
+
+#define NE2K_IRQ IRQ_PIC1_COM2 /* TODO: Dynamically allocate. */
+
+PRIVATE void KCALL ne2k_recv(ne2k_t *dev);
+PRIVATE struct job ne2k_recv_job = JOB_INIT((void(KCALL *)(void *))&ne2k_recv,NULL);
+PRIVATE void KCALL ne2k_recv(ne2k_t *dev) {
+ syslog(LOG_WARN,"NE2K: Receive data\n");
+ /* TODO */
+}
+
+DEFINE_INT_HANDLER(ne2k_irq,ne2k_int);
+PRIVATE isr_t ne2k_isr = ISR_DEFAULT(NE2K_IRQ,&ne2k_irq);
+INTERN void ne2k_int(void) {
+ if (IRQ_PIC_SPURIOUS(NE2K_IRQ)) return;
+ IRQ_PIC_EOI(NE2K_IRQ);
+ /* Schedule a job to safely receive data. */
+ schedule_work(&ne2k_recv_job);
+}
 
 PRIVATE errno_t KCALL ne2k_reset(u16 iobase) {
  u32 start;
@@ -116,6 +138,10 @@ ne2k_fini(struct inode *__restrict ino) {
 #undef NE2K
 
 
+
+
+
+
 PRIVATE struct inodeops ne2k_ops = {
     .ino_fini = &ne2k_fini,
 };
@@ -173,10 +199,20 @@ ne2k_probe(struct pci_device *dev) {
  /* Register the device. */
  /* TODO: Tracking of Ethernet card numbers for dynamic allocation. */
  error = CHRDEV_REGISTER(netdev,DV_ETHERNET);
+ if (E_ISERR(error)) goto end;
+
+ /* Setup an IRQ handler for incoming packages. */
+ { u32 v = pci_read(dev->pd_addr,PCI_GDEV3C);
+   ne2k_recv_job.j_data = netdev; /* TODO: This is unsafe */
+   pci_write(dev->pd_addr,PCI_GDEV3C,(v & ~PCI_GDEV3C_IRQLINEMASK)|
+            (NE2K_IRQ << PCI_GDEV3C_IRQLINESHIFT));
+   irq_vset(BOOTCPU,&ne2k_isr,NULL,IRQ_SET_RELOAD);
+ }
 
  syslog(LOG_DEBUG,"[NE2K] Found network card (I/O %.4I16x; MAC: %[mac])\n",
         ioaddr,&netdev->n_dev.n_mac);
  syslog(LOG_DEBUG,"%.?[hex]\n",32,prom);
+
 
 #if 1
  ne2k_reset(ioaddr);
@@ -197,10 +233,10 @@ ne2k_probe(struct pci_device *dev) {
  }
 #endif
 
+end:
  NETDEV_DECREF(&netdev->n_dev);
  return error;
 }
-
 
 
 PRIVATE void MODULE_INIT KCALL ne2k_init(void) {

@@ -259,7 +259,8 @@ __LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
 #endif /* !__KERNEL__ */
 #endif /* __CC__ */
 
-#if defined(__USE_KOS) && defined(__CRT_KOS)
+#if defined(__USE_KOS) && \
+   (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
 __LIBC __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_dos2kos)(errno_t __eno));
 __LIBC __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
 #endif /* __USE_KOS && __CRT_KOS */

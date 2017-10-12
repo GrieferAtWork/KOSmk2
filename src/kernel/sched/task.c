@@ -3201,21 +3201,14 @@ no_more_jobs:
 
   /* Switch to the next thread. */
   cpu_validate_counters(true);
-  cpu_sched_setrunning_save(&THIS_CPU->c_work);
+  cpu_sched_setrunning_savef(&THIS_CPU->c_work,EFLAGS_IF);
   cpu_validate_counters(true);
+ } else {
+  PREEMPTION_ENABLE();
  }
- PREEMPTION_ENABLE();
 
  /* Loop back to do more work. */
  goto loop;
-}
-
-
-PUBLIC errno_t KCALL
-task_schedule_alarm(struct task *__restrict self,
-                    struct timespec const *__restrict abstime) {
- /* TODO: Use jobs. */
- return -EOK;
 }
 
 #endif /* !CONFIG_NO_JOBS */

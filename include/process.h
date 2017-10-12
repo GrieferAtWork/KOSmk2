@@ -114,14 +114,26 @@ __LIBC __PORT_DOSONLY void (__LIBCCALL _c_exit)(void);
 #endif /* __CRT_DOS */
 __LIBC int (__LIBCCALL _getpid)(void) __ASMNAME("getpid");
 
-__LIBC intptr_t (__LIBCCALL _execl)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEB(execl); /* TODO: Redirect. */
-__LIBC intptr_t (__LIBCCALL _execle)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEB(execle);
-__LIBC intptr_t (__LIBCCALL _execlp)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(execlp);
-__LIBC intptr_t (__LIBCCALL _execlpe)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(execlpe);
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execv,(char const *__path, __TARGV),execv,(__path,___argv))
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execve,(char const *__path, __TARGV, __TENVP),execve,(__path,___argv,___envp))
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execvp,(char const *__file, __TARGV),execvp,(__file,___argv));
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execvpe,(char const *__file, __TARGV, __TENVP),execvpe,(__file,___argv,___envp));
+#ifdef __USE_DOSFS
+__LIBC intptr_t (__LIBCCALL _execl)(char const *__path, char const *__args, ...);
+__LIBC intptr_t (__LIBCCALL _execle)(char const *__path, char const *__args, ...);
+__LIBC intptr_t (__LIBCCALL _execlp)(char const *__file, char const *__args, ...);
+__LIBC intptr_t (__LIBCCALL _execlpe)(char const *__file, char const *__args, ...);
+#elif !defined(__NO_ASMNAME)
+__LIBC intptr_t (__LIBCCALL _execl)(char const *__path, char const *__args, ...) __ASMNAME("execl");
+__LIBC intptr_t (__LIBCCALL _execle)(char const *__path, char const *__args, ...) __ASMNAME("execle");
+__LIBC intptr_t (__LIBCCALL _execlp)(char const *__file, char const *__args, ...) __ASMNAME("execlp");
+__LIBC intptr_t (__LIBCCALL _execlpe)(char const *__file, char const *__args, ...) __ASMNAME("execlpe");
+#else
+__LIBC intptr_t (__LIBCCALL _execl)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEB(execl); /* TODO: Redirect. */
+__LIBC intptr_t (__LIBCCALL _execle)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEB(execle);
+__LIBC intptr_t (__LIBCCALL _execlp)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(execlp);
+__LIBC intptr_t (__LIBCCALL _execlpe)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEB(execlpe);
+#endif
 
 #ifdef __CRT_DOS
 __LIBC __PORT_DOSONLY intptr_t (__LIBCCALL _cwait)(int *__tstat, intptr_t __pid, int __action);
@@ -212,7 +224,8 @@ __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,spawnvp,(int __mode, char
 __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,intptr_t,__LIBCCALL,spawnvpe,(int __mode, char const *__file, __TARGV, __TENVP),spawnvpe,(__mode,__file,___argv,___envp));
 #endif /* __CRT_DOS */
 
-#if defined(__USE_KOS) && defined(__CRT_KOS)
+#if defined(__USE_KOS) && \
+   (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
 /* As an extension, just like with the exec() family,
  * KOS supports spawning a process from a file descriptor.
  * NOTE: These functions were not apart of the DOS Application Binary Interface

@@ -83,8 +83,11 @@ __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr);
 #define __cfree_defined 1
 __REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,cfree,(void *__restrict __mallptr),free,(__mallptr))
 #endif /* !__cfree_defined */
-#ifdef __CRT_GLC
+#if defined(__CRT_GLC) && !defined(__DOS_COMPAT__)
 __LIBC __SAFE __WUNUSED int (__LIBCCALL malloc_trim)(size_t __pad);
+#elif defined(__CRT_DOS) && !defined(__GLC_COMPAT__)
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_heapmin,(void),_heapmin,())
+__LOCAL __SAFE __WUNUSED int (__LIBCCALL malloc_trim)(size_t __UNUSED(__pad)) { return __libc_heapmin() ? 1 : 0; }
 #else /* __CRT_GLC */
 __LOCAL __SAFE __WUNUSED int (__LIBCCALL malloc_trim)(size_t __UNUSED(__pad)) { return 0; }
 #endif /* !__CRT_GLC */
@@ -128,7 +131,8 @@ __LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL 
 #endif /* !__CRT_KOS */
 
 #ifdef __USE_KOS
-#if defined(__USE_DEBUG) && defined(__CRT_KOS)
+#if defined(__USE_DEBUG) && \
+   (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
 #include <hybrid/debuginfo.h>
 /* Mallblock extension functions
  * >> Used for working with/enumerating allocated malloc blocks

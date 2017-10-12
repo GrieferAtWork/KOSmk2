@@ -26,6 +26,7 @@
 #include "sched.h"
 #include "stdlib.h"
 #include "errno.h"
+#include "malloc.h"
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -126,6 +127,63 @@ DEFINE_PUBLIC_ALIAS(sched_get_priority_min,libc_sched_get_priority_min);
 DEFINE_PUBLIC_ALIAS(sched_rr_get_interval,libc_sched_rr_get_interval);
 DEFINE_PUBLIC_ALIAS(sched_setaffinity,libc_sched_setaffinity);
 DEFINE_PUBLIC_ALIAS(sched_getaffinity,libc_sched_getaffinity);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+
+struct dos_thread_data {
+ u32 (ATTR_STDCALL *entry)(void *arg);
+ void              *arg;
+};
+PRIVATE ATTR_DOSTEXT int dos_thread_entry(void *arg) {
+ struct dos_thread_data data = *(struct dos_thread_data *)arg;
+ libc_free(arg);
+ return (int)(*data.entry)(data.arg);
+}
+
+INTERN ATTR_DOSTEXT uintptr_t LIBCCALL
+libc_beginthreadex(void *UNUSED(sec), u32 UNUSED(stacksz),
+                   u32 (ATTR_STDCALL *entry)(void *arg),
+                   void *arg, u32 UNUSED(flags), u32 *threadaddr) {
+ struct dos_thread_data *data; uintptr_t result;
+ data = (struct dos_thread_data *)libc_malloc(sizeof(struct dos_thread_data));
+ if unlikely(!data) return (uintptr_t)-1;
+ data->entry = entry,data->arg = arg;
+ result = (uintptr_t)libc_clone(&dos_thread_entry,CLONE_CHILDSTACK_AUTO,
+                                 CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD,arg);
+ if (result == (uintptr_t)-1) libc_free(data),result = 0;
+ return result;
+}
+
+struct simple_thread_data {
+ void (LIBCCALL *entry)(void *arg);
+ void           *arg;
+};
+PRIVATE ATTR_DOSTEXT u32 ATTR_STDCALL simple_thread_entry(void *arg) {
+ struct simple_thread_data data = *(struct simple_thread_data *)arg;
+ libc_free(arg);
+ (*data.entry)(data.arg);
+ return 0;
+}
+INTERN ATTR_DOSTEXT uintptr_t LIBCCALL
+libc_beginthread(void (LIBCCALL *entry)(void *arg), u32 stacksz, void *arg) {
+ struct simple_thread_data *data; uintptr_t result;
+ data = (struct simple_thread_data *)libc_malloc(sizeof(struct simple_thread_data));
+ if unlikely(!data) return (uintptr_t)-1;
+ data->entry = entry,data->arg = arg;
+ result = libc_beginthreadex(NULL,stacksz,&simple_thread_entry,data,0,NULL);
+ if (!result) libc_free(data);
+ return result;
+}
+INTERN ATTR_DOSTEXT void LIBCCALL libc_endthreadex(u32 exitcode) { sys_exit((int)exitcode); }
+INTERN ATTR_DOSTEXT void LIBCCALL libc_endthread(void) { libc_endthreadex(0); }
+
+/* Export DOS threading functions. */
+DEFINE_PUBLIC_ALIAS(_beginthread,libc_beginthread);
+DEFINE_PUBLIC_ALIAS(_beginthreadex,libc_beginthreadex);
+DEFINE_PUBLIC_ALIAS(_endthread,libc_endthread);
+DEFINE_PUBLIC_ALIAS(_endthreadex,libc_endthreadex);
+
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END
 

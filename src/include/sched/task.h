@@ -380,21 +380,6 @@ FUNDEF bool KCALL task_haswait(struct sig *__restrict s);
  * @return: NULL: All pending signals were cleared and no signal had been sent until now. */
 FUNDEF SAFE struct sig *KCALL task_clrwait(void);
 
-#ifndef CONFIG_NO_JOBS
-/* Schedule a delayed alarm() for the given task 'self', causing
- * its next call to 'task_waitfor()' after 'abstime' has passed
- * to be interrupted and return '-EINTR'.
- * This function is implemented using an asynchronous job
- * that is registered in the caller's per-CPU job chain and
- * will simply call 'task_interrupt()' once that time has passed.
- * @return: -EOK:    Successfully scheduled an alarm() for the task.
- * @return: -ENOMEM: Not enough available memory. */
-FUNDEF errno_t KCALL
-task_schedule_alarm(struct task *__restrict self,
-                    struct timespec const *__restrict abstime);
-#endif /* !CONFIG_NO_JOBS */
-
-
 /* Set the scheduler priority of the given thread 'self'.
  * NOTE: Using this function you can also set if a thread is considered IDLE.
  * @return: -EOK:    Successfully set the given thread's priority.

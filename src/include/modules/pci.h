@@ -185,6 +185,7 @@ LOCAL void FCALL pci_write(pci_addr_t base, pci_reg_t reg, u32 value) { assert(!
 #define    PCI_GDEV3C_MAXLATENCYMASK  0xff000000 /*< Specifies how often the device needs access to the PCI bus (in 1/4 microsecond units). */
 #define    PCI_GDEV3C_MINGRANTMASK    0x00ff0000 /*< Specifies the burst period length, in 1/4 microsecond units, that the device needs (assuming a 33 MHz clock rate). */
 #define    PCI_GDEV3C_IRQPINMASK      0x0000ff00 /*< Interrupt pin number. */
+#define    PCI_GDEV3C_IRQLINE(x)   (((x)&PCI_GDEV3C_IRQLINEMASK) >> PCI_GDEV3C_IRQLINESHIFT)
 #define    PCI_GDEV3C_IRQLINEMASK     0x000000ff /*< Interrupt line number. */
 #define    PCI_GDEV3C_MAXLATENCYSHIFT 24
 #define    PCI_GDEV3C_MINGRANTSHIFT   16

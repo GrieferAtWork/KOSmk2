@@ -198,7 +198,6 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
                              sizeof(size_t))];
  struct host_cpustate s_boot;
 } __bootidlestack = {
-#ifdef CONFIG_NEW_MEMINFO
     /* Bootstrap kernel memory info.
      * >> Used to describe the kernel itself in physical memory. */
     .s_kernused = 2,
@@ -224,7 +223,6 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
             .mi_full_size = (PAGE_ALIGNED size_t)__kernel_free_size,
         },
     },
-#endif /* CONFIG_NEW_MEMINFO */
 #ifdef CONFIG_DEBUG
     .s_data = {
         [0 ... COMPILER_LENOF(__bootidlestack.s_data)-1] = (KERNEL_DEBUG_MEMPAT_HOSTSTACK & 0xff)

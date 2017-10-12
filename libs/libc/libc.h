@@ -97,7 +97,7 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 
 
 #undef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
-#ifndef __KERNEL__
+#ifdef __LIBCCALL_CALLER_CLEANUP
 #define CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP 1
 #endif
 

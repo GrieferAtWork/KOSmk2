@@ -298,6 +298,7 @@ DEFINE_PUBLIC_ALIAS(_invalid_parameter,libc_invalid_parameter);
 DEFINE_PUBLIC_ALIAS(_invalid_parameter_noinfo,libc_invalid_parameter_noinfo);
 DEFINE_PUBLIC_ALIAS(_invalid_parameter_noinfo_noreturn,libc_invalid_parameter_noinfo_noreturn);
 
+
 #if 0
 /* TODO: Faster+smaller assembly version that uses self-modifying code. */
 #else
@@ -796,6 +797,10 @@ DEFINE_PUBLIC_ALIAS(_except_handler3,libc_except_handler4);
 DEFINE_PUBLIC_ALIAS(_except_handler_3,libc_except_handler4);
 DEFINE_PUBLIC_ALIAS(_except_handler4,libc_except_handler4); /* XXX: Are all the others OK? */
 DEFINE_PUBLIC_ALIAS(_except_handler4_common,libc_except_handler4);
+
+
+INTERN ATTR_DOSTEXT void LIBCCALL libc_vacopy(va_list *pdst, va_list src) { *pdst = src; }
+DEFINE_PUBLIC_ALIAS(_vacopy,libc_vacopy);
 
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
