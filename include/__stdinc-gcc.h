@@ -241,6 +241,15 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #define __ULONGLONG  __ulonglong_t
 #endif
 
+#ifndef __restrict
+#if  !__GCC_VERSION(2,95,0)
+#if defined(restrict) || __STDC_VERSION__ >= 199901L
+#   define __restrict restrict
+#else
+#   define __restrict /* nothing */
+#endif
+#endif
+#endif /* !__restrict */
 
 #if __GCC_VERSION(3,1,0) && !defined(__GNUG__)
 #   define __restrict_arr __restrict

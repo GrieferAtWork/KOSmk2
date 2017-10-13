@@ -26,6 +26,7 @@
     <ClCompile Include="..\..\libs\libc\locale.c" />
     <ClCompile Include="..\..\libs\libc\malloc.c" />
     <ClCompile Include="..\..\libs\libc\misc.c" />
+    <ClCompile Include="..\..\libs\libc\regex.c" />
     <ClCompile Include="..\..\libs\libc\sched.c" />
     <ClCompile Include="..\..\libs\libc\signal.c" />
     <ClCompile Include="..\..\libs\libc\start.c" />
@@ -63,6 +64,7 @@
     <ClInclude Include="..\..\libs\libc\locale.h" />
     <ClInclude Include="..\..\libs\libc\malloc.h" />
     <ClInclude Include="..\..\libs\libc\misc.h" />
+    <ClInclude Include="..\..\libs\libc\regex.h" />
     <ClInclude Include="..\..\libs\libc\sched.h" />
     <ClInclude Include="..\..\libs\libc\signal.h" />
     <ClInclude Include="..\..\libs\libc\stdio.h" />

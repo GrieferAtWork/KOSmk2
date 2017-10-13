@@ -31,6 +31,7 @@
     <ClCompile Include="..\..\libs\libc\locale.c" />
     <ClCompile Include="..\..\libs\libc\unicode.c" />
     <ClCompile Include="..\..\libs\libc\file.c" />
+    <ClCompile Include="..\..\libs\libc\regex.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code">
@@ -80,6 +81,7 @@
     </ClInclude>
     <ClInclude Include="..\..\libs\libc\unicode.h" />
     <ClInclude Include="..\..\libs\libc\file.h" />
+    <ClInclude Include="..\..\libs\libc\regex.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">
