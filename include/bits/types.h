@@ -60,6 +60,8 @@ __SYSDECL_BEGIN
 #define __SIZEOF_ID_T__         4
 #define __SIZEOF_INO32_T__      4
 #define __SIZEOF_INO64_T__      8
+#define __SIZEOF_JTIME32_T__    4
+#define __SIZEOF_JTIME64_T__    8
 #define __SIZEOF_KEY_T__        4
 #define __SIZEOF_LOFF_T__       __SIZEOF_OFF64_T__
 #define __SIZEOF_LPOS_T__       __SIZEOF_POS64_T__
@@ -114,6 +116,8 @@ __SYSDECL_BEGIN
 #undef  __int64_t
 #undef  __int8_t
 #undef  __intptr_t
+#undef  __jtime32_t
+#undef  __jtime64_t
 #undef  __key_t
 #undef  __loff_t
 #undef  __lpos_t
@@ -190,6 +194,7 @@ typedef __UINT32_TYPE__         __fsuint32_t;
 typedef __UINT32_TYPE__         __gid_t;
 typedef __UINT32_TYPE__         __id_t;
 typedef __UINT32_TYPE__         __ino32_t;
+typedef __UINT32_TYPE__         __jtime32_t;
 #ifdef __USE_DOS
 /* Simple enough: DOS defines this one as signed, rather than unsigned. */
 typedef __INT32_TYPE__          __mode_t;
@@ -208,6 +213,7 @@ typedef __UINT64_TYPE__         __fsblkcnt64_t;
 typedef __UINT64_TYPE__         __fsfilcnt64_t;
 typedef __UINT64_TYPE__         __fsuint64_t;
 typedef __UINT64_TYPE__         __ino64_t;
+typedef __UINT64_TYPE__         __jtime64_t;
 typedef __UINT64_TYPE__         __pos64_t;
 typedef __UINT64_TYPE__         __rlim64_t;
 typedef __UINT64_TYPE__         __u_quad_t;
@@ -256,6 +262,8 @@ typedef void                   *__timer_t;
 #define __int64_t               __int64_t
 #define __int8_t                __int8_t
 #define __intptr_t              __intptr_t
+#define __jtime32_t             __jtime32_t
+#define __jtime64_t             __jtime64_t
 #define __key_t                 __key_t
 #define __loff_t                __loff_t
 #define __lpos_t                __lpos_t
@@ -331,8 +339,10 @@ typedef void                   *__timer_t;
 #define __SIZEOF_KERNEL_SYSNO_T__    __SIZEOF_SYSCALL_LONG__
 #ifdef CONFIG_32BIT_TIME
 #   define __SIZEOF_KERNEL_TIME_T__  __SIZEOF_TIME32_T__
+#   define __SIZEOF_KERNEL_JTIME_T__ __SIZEOF_JTIME32_T__
 #else
 #   define __SIZEOF_KERNEL_TIME_T__  __SIZEOF_TIME64_T__
+#   define __SIZEOF_KERNEL_JTIME_T__ __SIZEOF_JTIME64_T__
 #endif
 
 #ifdef __CC__
@@ -346,6 +356,7 @@ typedef void                   *__timer_t;
 #undef  __fsword_t
 #undef  __ino_t
 #undef  __irq_t
+#undef  __jtime_t
 #undef  __major_t
 #undef  __minor_t
 #undef  __off_t
@@ -373,8 +384,10 @@ typedef __UINT8_TYPE__       __irq_t; /* Processor interrupt number. */
 typedef __UINTPTR_TYPE__     __ref_t; /* Reference counter. */
 #ifdef CONFIG_32BIT_TIME
 typedef __time32_t           __time_t;
+typedef __jtime32_t          __jtime_t;
 #else
 typedef __time64_t           __time_t;
+typedef __jtime64_t          __jtime_t;
 #endif
 #define __blkcnt_t           __blkcnt_t
 #define __blkaddr_t          __blkaddr_t
@@ -440,8 +453,10 @@ typedef __time64_t           __time_t;
 #endif
 #ifdef __USE_TIME_BITS64
 #   define __SIZEOF_TIME_T__     __SIZEOF_TIME64_T__
+#   define __SIZEOF_JTIME_T__    __SIZEOF_JTIME64_T__
 #else
 #   define __SIZEOF_TIME_T__     __SIZEOF_TIME32_T__
+#   define __SIZEOF_JTIME_T__    __SIZEOF_JTIME32_T__
 #endif
 #else
 #   define __SIZEOF_BLKCNT_T__   __SIZEOF_KERNEL_BLKCNT_T__
@@ -455,6 +470,7 @@ typedef __time64_t           __time_t;
 #   define __SIZEOF_OFF_T__      __SIZEOF_KERNEL_OFF_T__
 #   define __SIZEOF_POS_T__      __SIZEOF_KERNEL_POS_T__
 #   define __SIZEOF_TIME_T__     __SIZEOF_KERNEL_TIME_T__
+#   define __SIZEOF_JTIME_T__    __SIZEOF_KERNEL_JTIME_T__
 #   define __SIZEOF_REAL_INO_T__ __SIZEOF_KERNEL_INO_T__
 #   define __SIZEOF_REAL_OFF_T__ __SIZEOF_KERNEL_OFF_T__
 #endif

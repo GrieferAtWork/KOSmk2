@@ -1859,6 +1859,18 @@ PUBLIC struct sig *KCALL task_trywait(void) {
  return result;
 }
 
+PUBLIC struct sig *KCALL
+task_waitfor_j(jtime_t abstime) {
+ struct timespec time;
+ /* TODO: Use a dedicated system for jiffy-based waiting. */
+ if (abstime == JTIME_INFINITE)
+     return task_waitfor(NULL);
+ if (abstime == JTIME_DONTWAIT)
+     return task_trywait();
+ time = boottime;
+ TIMESPEC_ADD_JIFFIES(time,abstime);
+ return task_waitfor(&time);
+}
 
 PUBLIC struct sig *KCALL
 task_waitfor(struct timespec const *abstime) {
@@ -1982,7 +1994,6 @@ end_clear:
 PRIVATE CPU_BSS struct task *termself_chain = NULL;
 PRIVATE void KCALL termself_callback(void *UNUSED(data)) {
  struct task *t;
- syslog(LOG_DEBUG,"termself_callback()\n");
  for (;;) {
   /* t = atomic_linked_list_pop(CPU(termself_chain)); */
   do {
@@ -2055,7 +2066,7 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
               ((THIS_PDIR_BASE-KERNEL_BASE)/PDTABLE_REPRSIZE)*4) == 0);
  TASK_SWITCH_CONTEXT(t,new_task);
 
-#if 1
+#if 0
  syslog(LOG_DEBUG,"Terminating SELF: %p (%d)\n",t,t->t_refcnt);
 #endif
 

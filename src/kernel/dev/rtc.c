@@ -65,17 +65,12 @@ PUBLIC struct rtc *KCALL rtc_cinit(struct rtc *self) {
 
 
 
-struct drtc {
- struct rtc      d_rtc;
- struct timespec d_start; /*< Base time for this RTC. */
-};
-
 PRIVATE void KCALL
-drtc_get(struct drtc *__restrict self,
+drtc_get(struct rtc *__restrict self,
          struct timespec *__restrict val) {
- *val = self->d_start;
- val->tv_sec  += jiffiesnx/HZ;
- val->tv_nsec += (jiffies % HZ)*(NSEC_PER_SEC/HZ);
+ *val = boottime;
+ val->tv_sec  += jiffies/HZ;
+ val->tv_nsec += (jiffies32 % HZ)*(NSEC_PER_SEC/HZ);
  if (val->tv_nsec >= NSEC_PER_SEC) {
   val->tv_nsec -= NSEC_PER_SEC;
   ++val->tv_sec;
@@ -83,63 +78,57 @@ drtc_get(struct drtc *__restrict self,
  }
 }
 PRIVATE errno_t KCALL
-drtc_set(struct drtc *__restrict self,
+drtc_set(struct rtc *__restrict UNUSED(self),
          struct timespec *__restrict val) {
  struct timespec new_time = *val;
- new_time.tv_sec  -= jiffiesnx/HZ;
- new_time.tv_nsec -= (jiffies % HZ)*(NSEC_PER_SEC/HZ);
+ new_time.tv_sec  -= jiffies/HZ;
+ new_time.tv_nsec -= (jiffies32 % HZ)*(NSEC_PER_SEC/HZ);
  if (new_time.tv_nsec < 0) {
   new_time.tv_nsec += NSEC_PER_SEC;
   ++new_time.tv_sec;
  }
- self->d_start = new_time;
+ *(struct timespec *)&boottime = new_time;
  return -EOK;
 }
 
-PUBLIC struct drtc drtc __ASMNAME("default_system_rtc") = {
-    .d_rtc = {
-        .r_dev = {
-            .cd_device = {
-                .d_node = {
-                    .i_refcnt = 2,
-                    .i_ops    = &rtc_ops,
-                    .i_attr = {
-                        .ia_mode = S_IFCHR|0664,
-                        .ia_uid  = 0,
-                        .ia_gid  = 0,
-                        .ia_siz  = 4096,
-                    },
-                    .i_attr_disk = {
-                        .ia_mode = S_IFCHR|0664,
-                        .ia_uid  = 0,
-                        .ia_gid  = 0,
-                        .ia_siz  = 4096,
-                    },
-                    .i_nlink = 1,
-                    .i_attr_lock = RWLOCK_INIT,
-                    .i_file = {
-                        .i_files_lock = ATOMIC_RWLOCK_INIT,
-                        .i_flock = {
-                            .fl_lock = ATOMIC_RWLOCK_INIT,
-                            .fl_avail = SIG_INIT,
-                            .fl_unlock = SIG_INIT,
-                        },
-                   },
+PUBLIC struct rtc drtc __ASMNAME("default_system_rtc") = {
+    .r_dev = {
+        .cd_device = {
+            .d_node = {
+                .i_refcnt = 2,
+                .i_ops    = &rtc_ops,
+                .i_attr = {
+                    .ia_mode = S_IFCHR|0664,
+                    .ia_uid  = 0,
+                    .ia_gid  = 0,
+                    .ia_siz  = 4096,
                 },
-                .d_id = DV_JIFFY_RTC,
+                .i_attr_disk = {
+                    .ia_mode = S_IFCHR|0664,
+                    .ia_uid  = 0,
+                    .ia_gid  = 0,
+                    .ia_siz  = 4096,
+                },
+                .i_nlink = 1,
+                .i_attr_lock = RWLOCK_INIT,
+                .i_file = {
+                    .i_files_lock = ATOMIC_RWLOCK_INIT,
+                    .i_flock = {
+                        .fl_lock = ATOMIC_RWLOCK_INIT,
+                        .fl_avail = SIG_INIT,
+                        .fl_unlock = SIG_INIT,
+                    },
+               },
             },
+            .d_id = DV_JIFFY_RTC,
         },
-        .r_res = {
-            .tv_sec  = 0,
-            .tv_nsec = NSEC_PER_SEC/HZ,
-        },
-        .r_get = (void    (KCALL *)(struct rtc *__restrict,struct timespec *__restrict))&drtc_get,
-        .r_set = (errno_t (KCALL *)(struct rtc *__restrict,struct timespec *__restrict))&drtc_set,
     },
-    .d_start = {
+    .r_res = {
         .tv_sec  = 0,
-        .tv_nsec = 0,
+        .tv_nsec = NSEC_PER_SEC/HZ,
     },
+    .r_get = &drtc_get,
+    .r_set = &drtc_set,
 };
 
 
@@ -155,7 +144,7 @@ PRIVATE DEFINE_ATOMIC_RWLOCK(sysrtc_lock);
 #define sysrtc_endread()  (void)0
 #define sysrtc_endwrite() (void)0
 #endif
-PRIVATE REF struct rtc *sysrtc = &drtc.d_rtc;
+PRIVATE REF struct rtc *sysrtc = &drtc;
 
 INTERN void KCALL
 delete_default_rtc(struct rtc *__restrict dev) {
@@ -265,7 +254,10 @@ sysrtc_set(struct timespec const *__restrict val) {
 }
 
 
-PUBLIC u64 _jiffies ASMNAME("jiffies") = 1;
+/* XXX: Why not put jiffies into the user-share section? */
+PUBLIC jtime64_t _jiffies ASMNAME("jiffies") = 1;
+PUBLIC struct timespec _boottime __ASMNAME("boottime") = {0,0};
+
 PUBLIC void KCALL sysrtc_periodic(void) {
  /* TODO: Adjust high-precision time. */
 
@@ -275,13 +267,13 @@ PUBLIC void KCALL sysrtc_periodic(void) {
 
 /* Register the default RTC device. */
 PRIVATE MODULE_INIT void KCALL rtc_init(void) {
- asserte(E_ISOK(device_setup(&drtc.d_rtc.r_dev.cd_device,THIS_INSTANCE)));
+ asserte(E_ISOK(device_setup(&drtc.r_dev.cd_device,THIS_INSTANCE)));
  CHRDEV_REGISTER(&drtc,DV_JIFFY_RTC);
 }
 
 #ifndef CONFIG_NO_MODULE_CLEANUP
 PRIVATE MODULE_FINI void KCALL rtc_fini(void) {
- devns_remove(&ns_chrdev,&drtc.d_rtc.r_dev.cd_device,true);
+ devns_remove(&ns_chrdev,&drtc.r_dev.cd_device,true);
 }
 #endif /* !CONFIG_NO_MODULE_CLEANUP */
 

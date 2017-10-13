@@ -325,7 +325,7 @@ PUBLIC struct cpu __bootcpu = {
         .t_affinity = CPU_SETONE(CPUID_BOOTCPU),
         .t_cpu       = &__bootcpu,
 #endif
-        .t_flags     = TASKFLAG_NOTALEADER,
+        .t_flags     = TASKFLAG_NOTALEADER|TASKFLAG_NOSIGNALS,
         .t_mode      = TASKMODE_RUNNING,
         .t_sched = {
             .sd_running = {
@@ -393,6 +393,7 @@ PUBLIC struct cpu __bootcpu = {
         .t_fdman = &fdman_kernel,
         .t_sighand = &sighand_kernel,
         .t_sigpend = SIGPENDING_INIT,
+        .t_sigblock = __SIGSET_INIT_FULL,
         .t_sigshare = &sigshare_kernel,
 #ifndef CONFIG_NO_LDT
         .t_arch = {
@@ -429,7 +430,7 @@ PUBLIC struct cpu __bootcpu = {
         .t_affinity  = CPU_SETONE(CPUID_BOOTCPU),
         .t_cpu       = &__bootcpu,
 #endif
-        .t_flags     = TASKFLAG_NOTALEADER,
+        .t_flags     = TASKFLAG_NOTALEADER|TASKFLAG_NOSIGNALS,
         .t_mode      = TASKMODE_SUSPENDED,
         .t_sched = {
             .sd_suspended = {
@@ -493,6 +494,7 @@ PUBLIC struct cpu __bootcpu = {
         .t_fdman = &fdman_kernel,
         .t_sighand = &sighand_kernel,
         .t_sigpend = SIGPENDING_INIT,
+        .t_sigblock = __SIGSET_INIT_FULL,
         .t_sigshare = &sigshare_kernel,
 #ifndef CONFIG_NO_LDT
         .t_arch = {

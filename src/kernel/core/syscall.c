@@ -338,7 +338,7 @@ L(.previous                                                                   )
 
 
 #define SYSCALL_SAFEREGISTERS \
-    sti; /* Enable interupts */ \
+    sti; /* Enable interrupts */ \
     __ASM_PUSH_SEGMENTS \
     __DEBUG_CODE(pushl 12(%esp); /* __initial_eip */) \
     pushl %ebp; \

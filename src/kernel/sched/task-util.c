@@ -429,6 +429,7 @@ check_again:
    memcpy(&data.state,cstate,sizeof(struct comregs));
    data.eflag = eflags;
    data.p_eip = (void **)&iter->ic_int;
+   //debug_tbprint(0);
 
 #if 0
    {

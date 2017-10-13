@@ -90,7 +90,7 @@ L(INTERN_ENTRY(dirq_ycode)                                                    )
 L(    popl  -44(%esp)  /* Hacky way of shifting 'exc_code' into 'intno32' without polluting any registers. */)
 L(    jmp 1f                                                                  )
 L(INTERN_ENTRY(dirq_ncode)                                                    )
-L(    popl  -48(%esp)  /* Hacky way of shifting 'exc_code' into 'intno32' without polluting any registers. */)
+L(    popl  -48(%esp)  /* Hacky way of shifting the interrupt number without polluting any registers. */)
 L(    pushl $0         /* Fill 'exc_code' with '0' by default. */             )
 L(1:  __ASM_PUSH_SEGMENTS                                                     )
 L(    __ASM_PUSH_REGISTERS                                                    )
@@ -105,7 +105,6 @@ __DEBUG_CODE(L(pushl %ebp                                                    ))
 __DEBUG_CODE(L(movl %esp, %ebp                                               ))
 L(    call  irq_default                                                       )
 __DEBUG_CODE(L(addl $8, %esp                                                 ))
-L(    addl $4, %esp /* intno */                                               )
 L(    __ASM_POP_REGISTERS                                                     )
 L(    __ASM_POP_SEGMENTS                                                      )
 L(    addl $4, %esp /* exc_code */                                            )
@@ -389,7 +388,7 @@ print_segment_register(char const *__restrict name, u16 value) {
 #define IRQPANIC_DISP_STACK     0
 #define IRQPANIC_DISP_TSS       0
 #define IRQPANIC_DISP_GDT_LDT   0
-#define IRQPANIC_DISP_MMAN      1
+#define IRQPANIC_DISP_MMAN      0
 #define IRQPANIC_DISP_PDIR      0
 
 PUBLIC ATTR_COLDTEXT ATTR_NOINLINE void FCALL
@@ -524,6 +523,8 @@ kill_task:
                      irq_excname[intno].descr,
                      state->iret.exc_code,
                      state->iret.exc_code);
+ } else {
+  debug_printf("ECODE %#I32x (%I32d)",state->iret.exc_code,state->iret.exc_code);
  }
  debug_printf("\nCPU #%d%s (%p; GPID %d)\n",this_cpu->c_id,
                     this_task == &inittask ? " (BOOT-TASK)" :

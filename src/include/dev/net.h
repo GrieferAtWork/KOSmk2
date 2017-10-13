@@ -29,6 +29,18 @@ struct macaddr {
  u8  ma_bytes[6];
 };
 
+struct packet {
+ struct packet  *p_next;    /*< [0..1] Next packet. */
+ size_t          p_size;    /*< [!0] Size of the packet (in bytes) */
+ byte_t          p_data[1]; /*< Package data. */
+};
+
+/* Allocate/Free packages for net devices. */
+FUNDEF struct packet *KCALL packet_alloc(size_t data_bytes);
+FUNDEF void KCALL packet_free(struct packet *__restrict pck);
+
+
+
 struct netdev {
  struct chrdev   n_dev;           /*< Underlying character device. */
  struct macaddr  n_mac;           /*< MAC Address of the device. */

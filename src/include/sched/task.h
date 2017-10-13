@@ -335,6 +335,7 @@ FUNDEF SAFE void KCALL task_popwait(struct tasksig *__restrict sigs);
  * @return: -EINTR:      The calling thread was interrupted.
  * @return: -ETIMEDOUT: [abstime != NULL] The given timeout has expired. */
 FUNDEF struct sig *KCALL task_waitfor(struct timespec const *abstime);
+FUNDEF struct sig *KCALL task_waitfor_j(jtime_t abstime);
 
 /* Check if any of the calling thread's pending signals have been sent,
  * returning the signal that was sent, as well as clearing the set of

@@ -102,6 +102,36 @@ ATTR_MALLOC void *(KCALL __kmemadup)(void const *__restrict ptr, size_t alignmen
  *  - M_TRIM_THRESHOLD: Threshold of the size of blocks, before they are returned to the system.
  *  - M_GRANULARITY:    Amount to overallocate by when allocating memory from lower-level APIs. */
 FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t flags) ASMNAME("kmallopt");
+
+
+/* Low-level, heap memory alloc/free.
+ * NOTE: Heap memory allocation is special, in that every allocation
+ *       needs to be at least some internal number of bytes large,
+ *       meaning that attempting to allocate less memory produces
+ *       unused padding that must still be freed again later.
+ * HINT: Input size arguments are ceil-aligned by 'HEAP_ALIGNMENT'.
+ * WARNING: Do not attempt to free heap-allocated memory using regular free functions.
+ *          The specialty of heap memory is that there is no control block that
+ *          tracks the allocated size, allowing for much more efficient allocation
+ *          of special memory that must be (e.g.) page-aligned.
+ * @assume_on_success(IS_ALIGNED(*palloc_size,HEAP_ALIGNMENT));
+ * @param: palloc_size: Pointer to a size_t that is filled with
+ *                      the actually allocates size on success.
+ * @return: * :         Base pointer.
+ * @return: HEAP_ERROR: Failed to allocate memory. */
+FUNDEF SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_MALLOC void *KCALL heap_malloc(size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags);
+FUNDEF SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_MALLOC void *KCALL heap_malloc_at(void *ptr, size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags);
+FUNDEF SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_MALLOC void *KCALL heap_memalign(size_t alignment, size_t offset, size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags);
+#define HEAP_ERROR    ((void *)-1)
+
+/* Free heap memory previously allocated using 'heap_*' functions.
+ * NOTE: The caller is responsible for passing the same heap
+ *       ID as was specified when 'heap_malloc()' was called.
+ * @assume(IS_ALIGNED(size,HEAP_ALIGNMENT));
+ * @return: true:  Successfully freed the given heap range.
+ * @return: false: Failed to free memory, because 'size' is too small. */
+FUNDEF SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags);
+
 #endif /* __CC__ */
 
 
@@ -127,8 +157,8 @@ FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t f
                            *  NOTE: This flag implies 'GFP_INCORE' behavior, but does
                            *        not create mman mappings, meaning it must also
                            *        be used to allocate mman parts/regions/branches. */
-#define __GFP_HEAPCOUNT 5 /*< Amount of different heaps used by the kernel (Use the above macros to address them). */
 /*      GFP_...... 0x0008  */
+#define __GFP_HEAPCOUNT 5 /*< Amount of different heaps used by the kernel (Use the above macros to address them). */
 
 /* Heap name aliases. */
 #define GFP_VIRT   GFP_SHARED
@@ -138,9 +168,9 @@ FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t f
 /* Flag for allocating memory locally
  * (visibly in at least the current page directory) */
 #if 1
-#define GFP_LOCAL  (PDIR_ISKPD() ? GFP_KERNEL : GFP_SHARED)
+#   define GFP_LOCAL  (PDIR_ISKPD() ? GFP_KERNEL : GFP_SHARED)
 #else
-#define GFP_LOCAL                              (GFP_SHARED)
+#   define GFP_LOCAL                              (GFP_SHARED)
 #endif
 #endif /* GUARD_INCLUDE_KERNEL_PAGING_H */
 
@@ -149,7 +179,7 @@ FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t f
 
 /* Additional flags for allocating dynamic memory within the kernel. */
 #define GFP_CALLOC 0x0010 /*< Zero-initialize newly allocated memory. */
-/*      GFP_...... 0x00e0  */
+/*      GFP_...... 0x00e0  *  Unused memory attribute flags. */
 #define GFP_NOTRIM 0x0100 /*< Don't trim kernel heaps to free up more memory.
                            *  NOTE: Any heap currently locked will not be trimmed! */
 #define GFP_NOSWAP 0x0200 /*< Don't initialize any kind of I/O during swap.

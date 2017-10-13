@@ -636,8 +636,7 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
  assert(!PREEMPTION_ENABLED());
  signo = signal_info->si_signo;
  if (signo <= 0 || --signo >= (_NSIG-1)) { error = -EINVAL; goto done; }
- if (signo == SIGKILL || signo == SIGSTOP)
-     goto do_term;
+
 #ifdef CONFIG_SMP
  if (c != THIS_CPU) {
   /* TODO: Send IPC communication. */
@@ -652,6 +651,9 @@ enqueue_later:
    /* Enqueue the signal to be send at a later time. */
    cpu_endwrite(c);
    PREEMPTION_POP(was);
+   /* Check if we're actually allowed to send signals to this task. */
+   if (t->t_flags&TASKFLAG_NOSIGNALS)
+       return -EPERM;
    return sigpending_enqueue(&t->t_sigpend,signal_info);
   }
   syslog(LOG_DEBUG,"[SIG] kill(%d,%d) %p -> %p\n",
@@ -694,7 +696,8 @@ do_core:
     goto ppop_end;
 
    default:
-    goto do_term;
+    error = task_terminate_cpu_endwrite(c,t,(void *)__W_EXITCODE(0,signal_info->si_signo));
+    goto ppop_end;
 
    }
   }
@@ -742,9 +745,6 @@ done:
 ppop_end:
  PREEMPTION_POP(was);
  return error;
-do_term:
- error = task_terminate_cpu_endwrite(c,t,(void *)__W_EXITCODE(0,signal_info->si_signo));
- goto ppop_end;
 }
 
 PUBLIC errno_t KCALL
@@ -1013,7 +1013,6 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
  USER struct sigenter_info *last_context;
  if (copy_from_user(&ctx,(ucontext_t *)cs->host.gp.ebx,sizeof(ucontext_t)))
      sigfault();
- /* TODO: Accept TLS segments. */
 #if !IGNORE_SEGMENT_REGISTERS
 #if 1
 #define CHECK_SEGMENT(id,name,value) \

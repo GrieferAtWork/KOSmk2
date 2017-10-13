@@ -177,6 +177,7 @@ struct hstack {
                                      *  but will terminate as soon as that section is left. */
 #define TASKFLAG_TIMEDOUT    0x0008 /*< The task was awoken, because it timed out (NOTE: Only THIS_TASK may remove this flag once set). */
 #define TASKFLAG_INTERRUPT   0x0010 /*< The task was awoken due to an interrupt (NOTE: Only THIS_TASK may remove this flag once set). */
+#define TASKFLAG_NOSIGNALS   0x2000 /*< [const] Signals cannot be sent to this task (Can only be enforced when all bits in 't_sigblock' is set). */
 #define TASKFLAG_NOTALEADER  0x4000 /*< [const] The task cannot be used as a thread/process group leader. */
 #define TASKFLAG_SIGSTOPCONT 0x8000 /*< [lock(t_cpu->c_lock)] The task has been stopped or continued (NOTE: Not set by forced suspend/resume). */
 #ifdef __CC__
@@ -824,6 +825,7 @@ struct cpu {
                                           *        doing so fails (-EAGAIN case), no task wakeups are
                                           *        performed and no state changes are mirrored for that cycle. */
  REF LIST_HEAD(struct task) c_suspended; /*< [0..1][->t_cpu == this][lock(c_lock)][sort(DESCENDING(t_mman))] Chain of suspended tasks. */
+ /* TODO: Use jiffies for sleeping. - We can't get any more precise anyways. */
  REF LIST_HEAD(struct task) c_sleeping;  /*< [0..1][->t_cpu == this][lock(c_lock)][sort(DESCENDING(t_mode == TASKMODE_WAKEUP),t_mode == TASKMODE_WAKEUP
                                           *                                          ?  DESCENDING(t_mman)
                                           *                                          : (DESCENDING(t_timeout),DESCENDING(t_mman)))]

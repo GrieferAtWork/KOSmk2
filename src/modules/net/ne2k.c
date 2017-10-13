@@ -36,9 +36,53 @@
 
 #include "ne2k.h"
 
+#define NE2K_IRQ IRQ_PIC2_FREE3 /* TODO: Dynamically allocate. */
 DECL_BEGIN
 
-#define NE2K_IRQ IRQ_PIC1_COM2 /* TODO: Dynamically allocate. */
+INTERN errno_t KCALL net_resetdev(ne2k_t *__restrict dev) {
+ errno_t error = net_reset(dev->n_iobase);
+ if (E_ISOK(error)) {
+  /* Clear dangling interrupt messages. */
+  ATOMIC_WRITE(dev->n_sendend.s_ticket,0);
+ }
+ return error;
+}
+INTERN errno_t KCALL net_reset_base(u16 iobase) {
+ u32 start;
+ outb(iobase+NE_RESET,inb(iobase+NE_RESET));
+ /* Wait for the reset to be completed. */
+ start = jiffies32;
+ while (!(inb(iobase+EN0_ISR) & ENISR_RESET)) {
+  if (jiffies32-start > 2) {
+   syslog(LOG_WARN,"[NE2K] Card failed to acknowledge reset.\n");
+   return -ETIMEDOUT;
+  }
+ }
+ return -EOK;
+}
+INTERN errno_t KCALL net_reset(u16 iobase) {
+ errno_t error = net_reset_base(iobase);
+ /* Enable interrupts that we are handling. */
+ if (E_ISOK(error)) outb(iobase+EN0_IMR,ENISR_ALL);
+ return error;
+}
+INTERN s32 KCALL net_waitdma(u16 iobase) {
+ u32 start = jiffies32; u8 status;
+ while (!((status = inb(iobase+EN0_ISR))&ENISR_RDC)) {
+  if (jiffies32-start > 2) {
+   syslog(LOG_WARN,"[NE2K] Timeout during DMA wait\n");
+   return -ETIMEDOUT;
+  }
+  task_yield();
+ }
+ /* Acknowledge remote DMA completion. */
+ outb(iobase+EN0_ISR,ENISR_RDC);
+ return (s32)status;
+}
+
+
+
+
 
 PRIVATE void KCALL ne2k_recv(ne2k_t *dev);
 PRIVATE struct job ne2k_recv_job = JOB_INIT((void(KCALL *)(void *))&ne2k_recv,NULL);
@@ -50,31 +94,71 @@ PRIVATE void KCALL ne2k_recv(ne2k_t *dev) {
 DEFINE_INT_HANDLER(ne2k_irq,ne2k_int);
 PRIVATE isr_t ne2k_isr = ISR_DEFAULT(NE2K_IRQ,&ne2k_irq);
 INTERN void ne2k_int(void) {
+ u8 status; u16 iobase; ne2k_t *dev;
  if (IRQ_PIC_SPURIOUS(NE2K_IRQ)) return;
+ dev    = (ne2k_t *)ne2k_recv_job.j_data;
+ iobase = dev->n_iobase;
+ outb(iobase+E8390_CMD,E8390_NODMA|E8390_START); /* Start receiving data. (XXX: Is this really required?) */
+
+ /* Read the interrupt status register. */
+ status = inb(iobase+EN0_ISR) & ENISR_ALL;
+ syslog(LOG_WARN,"NE2K: Interrupt %.2I8x\n",status);
+
+ if (status & ENISR_RX) {
+  /* Schedule a job to safely receive data. */
+  schedule_work(&ne2k_recv_job);
+  /* Since we're going to re-enable interrupts before
+   * data will actually be read, we must mask all
+   * interrupts caused by the chip, so-as not to deal
+   * with multiple incoming packets at once.
+   */
+  outb(iobase+EN0_IMR,ENISR_ALL);
+  /* Don't acknowledge the receive signal below.
+   * It will only be acknowledged once the data loader job has finished. */
+  status &= ~ENISR_RX;
+ }
+
+ if (status & ENISR_RX_ERR) {
+  u8 recv_error = inb(iobase+EN0_TSR);
+  syslog(LOG_ERR,"[NE2K] Receive error: %.2I8x\n",recv_error);
+  /* XXX: Wake receiver? */
+ }
+
+ if (status & (ENISR_TX|ENISR_TX_ERR)) {
+  u8 transmit_status;
+  if (status&ENISR_TX_ERR) {
+   transmit_status = inb(iobase+EN0_TSR);
+   if (transmit_status&ETSR_EMASK)
+       syslog(LOG_ERR,"[NE2K] Transmit failed: %.2I8x\n",transmit_status);
+  } else {
+   transmit_status = ETSR_PTX; /* Successful transmission. */
+  }
+  dev->n_senderr = transmit_status;
+  /* Acknowledge */
+  if (status&ENISR_TX_ERR) outb(iobase+EN0_ISR,ENISR_TX);
+  if (status&ENISR_TX) outb(iobase+EN0_ISR,ENISR_TX);
+  COMPILER_WRITE_BARRIER();
+  sem_release(&dev->n_sendend,1);
+ }
+    
+ if unlikely(status & ENISR_OVER)
+    syslog(LOG_ERR,"[NE2K] Receiver overwrote the ring\n");
+ if unlikely(status & ENISR_COUNTERS)
+    syslog(LOG_ERR,"[NE2K] Counters need emptying\n");
+
+ /* Acknowledge all handled signals. */
+ if (status)
+     outb(iobase+EN0_ISR,status);
+
+ /* Acknowledge the interrupt within the PIC. */
  IRQ_PIC_EOI(NE2K_IRQ);
- /* Schedule a job to safely receive data. */
- schedule_work(&ne2k_recv_job);
 }
 
-PRIVATE errno_t KCALL ne2k_reset(u16 iobase) {
- u32 start;
- outb(iobase+NE_RESET,inb(iobase+NE_RESET));
- /* Wait for the reset to be completed. */
- start = jiffies;
- while (!(inb(iobase+EN0_ISR) & ENISR_RESET)) {
-  if (jiffies-start > 2) {
-   syslog(LOG_WARN,"[NE2K] Card failed to acknowledge reset.\n");
-   return -ETIMEDOUT;
-  }
- }
- return -EOK;
-}
 
 PRIVATE errno_t KCALL
 ne2k_send(ne2k_t *__restrict self,
           void const *__restrict buf, size_t len) {
- u32 start; u8 status;
- size_t transmission_size;
+ size_t transmission_size; errno_t error;
  /* TODO: This only checks the hard limit, but I'm guessing
   *       a connected device is more limited that this... */
  if (len > 0xffff) return -EINVAL;
@@ -92,17 +176,8 @@ ne2k_send(ne2k_t *__restrict self,
  outsw(self->n_iobase+NE_DATAPORT,buf,len/2);
  if (len&1) outw(self->n_iobase+NE_DATAPORT,(u16)(((u8 *)buf)[len-1]));
 
- start = jiffies;
- while (!((status = inb(self->n_iobase+EN0_ISR))&ENISR_RDC)) {
-  if (jiffies-start > 2) {
-   syslog(LOG_WARN,"[NE2K] Timeout during DMA write\n");
-   /* Reset the card, then time out. */
-   ne2k_reset(self->n_iobase);
-   return -ETIMEDOUT;
-  }
-  task_yield();
- }
- outb(self->n_iobase+EN0_ISR,ENISR_RDC); /* Acknowledge */
+ error = net_waitdma(self->n_iobase);;
+ if (E_ISERR(error)) goto reset;
 
  outb(self->n_iobase+E8390_CMD,E8390_NODMA|E8390_START);
  outb(self->n_iobase+EN0_TPSR,64); /* TODO: Start page. */
@@ -110,22 +185,19 @@ ne2k_send(ne2k_t *__restrict self,
  outb(self->n_iobase+EN0_TCNTHI,transmission_size >> 8);
  outb(self->n_iobase+E8390_CMD,E8390_TRANS|E8390_NODMA|E8390_START);
 
- start = jiffies;
- while (!((status = inb(self->n_iobase+EN0_ISR))&ENISR_TX)) {
-  if (jiffies-start > 16) {
-   syslog(LOG_WARN,"[NE2K] Timeout during send (%.2I8x)\n",status);
-   ne2k_reset(self->n_iobase);
-   return -ETIMEDOUT;
-  }
-  task_yield();
+ { struct timespec now; sysrtc_get(&now);
+   TIMESPEC_ADD(now,self->n_sendtmo);
+   error = sem_timedwait(&self->n_sendend,&now);
+   if (E_ISERR(error)) goto reset;
  }
- outb(self->n_iobase+EN0_ISR,ENISR_RDC); /* Acknowledge */
 
- /* Check if the status register indicates an error. */
- if ((status&(ENISR_TX_ERR|ENISR_TX)) != ENISR_TX)
-     return -EIO;
+ /* Check if the status register indicated an error. */
+ if ((self->n_senderr&(ENISR_TX_ERR|ENISR_TX)) != ENISR_TX)
+      return -EIO;
 
  return -EOK;
+reset:
+ return error;
 }
 
 
@@ -154,7 +226,7 @@ ne2k_probe(struct pci_device *dev) {
  if (inb(ioaddr) == 0xff) return -ENODEV;
 
  /* Reset the card. */
- error = ne2k_reset(ioaddr);
+ error = net_reset_base(ioaddr);
  if (E_ISERR(error)) return error;
 
  /* Execute a sequence of startup instructions. */
@@ -188,13 +260,17 @@ ne2k_probe(struct pci_device *dev) {
  netdev = (ne2k_t *)netdev_new(sizeof(ne2k_t));
  if unlikely(!netdev) return -ENOMEM;
  memcpy(netdev->n_dev.n_mac.ma_bytes,prom,6);
+ netdev->n_dev.n_dev.cd_device.d_node.i_ops = &ne2k_ops;
  netdev->n_iobase = ioaddr;
  netdev->n_pcidev = dev;
  PCI_DEVICE_INCREF(dev);
- netdev->n_dev.n_dev.cd_device.d_node.i_ops = &ne2k_ops;
+ sem_cinit(&netdev->n_sendend,0);
+ netdev->n_sendtmo.tv_sec  = 2;
+ netdev->n_sendtmo.tv_nsec = 0;
 
+ /* Setup the device. */
  error = device_setup(&netdev->n_dev.n_dev.cd_device,THIS_INSTANCE);
- if (E_ISERR(error)) { free(netdev); return error; }
+ if (E_ISERR(error)) { PCI_DEVICE_DECREF(dev); free(netdev); return error; }
 
  /* Register the device. */
  /* TODO: Tracking of Ethernet card numbers for dynamic allocation. */
@@ -204,8 +280,10 @@ ne2k_probe(struct pci_device *dev) {
  /* Setup an IRQ handler for incoming packages. */
  { u32 v = pci_read(dev->pd_addr,PCI_GDEV3C);
    ne2k_recv_job.j_data = netdev; /* TODO: This is unsafe */
-   pci_write(dev->pd_addr,PCI_GDEV3C,(v & ~PCI_GDEV3C_IRQLINEMASK)|
-            (NE2K_IRQ << PCI_GDEV3C_IRQLINESHIFT));
+   pci_write(dev->pd_addr,PCI_GDEV3C,
+            (v & ~(PCI_GDEV3C_IRQLINEMASK|PCI_GDEV3C_IRQPINMASK))|
+            ((NE2K_IRQ >= IRQ_PIC2_BASE ? 1 : 0) << PCI_GDEV3C_IRQPINSHIFT)|
+            ((NE2K_IRQ-IRQ_PIC1_BASE) << PCI_GDEV3C_IRQLINESHIFT));
    irq_vset(BOOTCPU,&ne2k_isr,NULL,IRQ_SET_RELOAD);
  }
 
@@ -213,9 +291,10 @@ ne2k_probe(struct pci_device *dev) {
         ioaddr,&netdev->n_dev.n_mac);
  syslog(LOG_DEBUG,"%.?[hex]\n",32,prom);
 
+ /* Reset the device. */
+ net_reset(ioaddr);
 
 #if 1
- ne2k_reset(ioaddr);
  { struct data {
     struct PACKED ethhdr h;
     char                 text[64];
@@ -232,7 +311,6 @@ ne2k_probe(struct pci_device *dev) {
    ne2k_send(netdev,&data,sizeof(struct data));
  }
 #endif
-
 end:
  NETDEV_DECREF(&netdev->n_dev);
  return error;

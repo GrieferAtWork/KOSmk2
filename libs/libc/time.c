@@ -1004,7 +1004,7 @@ INTERN ATTR_DOSTEXT u32 LIBCCALL
 libc_getsystime(struct tm *__restrict tp) {
  struct A(timeval) now;
  if (A(libc_gettimeofday)(&now,NULL))
-     memset(&now,0,sizeof(struct A(timeval)));
+     libc_memset(&now,0,sizeof(struct A(timeval)));
  A_R(libc_gmtime)(&now.tv_sec,tp);
  /* NOTE: Returns Milliseconds. */
  return now.tv_usec/USEC_PER_MSEC;

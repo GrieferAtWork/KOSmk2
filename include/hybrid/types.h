@@ -119,6 +119,22 @@ typedef __time32_t time32_t;
 typedef __time64_t time64_t;
 #endif /* !__time64_t_defined */
 
+#ifndef __jtime_t_defined
+#define __jtime_t_defined 1
+/* Jiffy time (measured in seconds*HZ having passed since booting) */
+typedef __TM_TYPE(jtime) jtime_t;
+#endif /* !__jtime_t_defined */
+
+#ifndef __jtime32_t_defined
+#define __jtime32_t_defined 1
+typedef __jtime32_t jtime32_t;
+#endif /* !__jtime32_t_defined */
+
+#ifndef __jtime64_t_defined
+#define __jtime64_t_defined 1
+typedef __jtime64_t jtime64_t;
+#endif /* !__jtime64_t_defined */
+
 #ifndef __irq_t_defined
 #define __irq_t_defined 1
 typedef __irq_t     irq_t; /* Processor interrupt number. */
@@ -273,6 +289,12 @@ typedef __socklen_t socklen_t;
 #define __wchar_t_defined 1
 typedef __WCHAR_TYPE__ wchar_t;
 #endif /* !__wchar_t_defined */
+
+
+/* Special jiffy time values. */
+#define JTIME_DONTWAIT   ((jtime_t)0)
+#define JTIME_INFINITE   ((jtime_t)-1)
+
 
 DECL_END
 #endif /* __CC__ */

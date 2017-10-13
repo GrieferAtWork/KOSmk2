@@ -53,6 +53,10 @@ __SYSDECL_BEGIN
 typedef __SIG_ATOMIC_TYPE__ __sig_atomic_t;
 #endif /* !____sig_atomic_t_defined */
 typedef struct { unsigned long int __val[_SIGSET_NWORDS]; } __sigset_t;
+#ifdef __USE_KOS
+#define __SIGSET_INIT_NONE    {{ [0 ... _SIGSET_NWORDS-1] = 0 }}
+#define __SIGSET_INIT_FULL    {{ [0 ... _SIGSET_NWORDS-1] = (unsigned long int)-1 }}
+#endif
 #endif /* __CC__ */
 #endif
 

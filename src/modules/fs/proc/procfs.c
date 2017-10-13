@@ -58,6 +58,13 @@ self_readlink(struct inode *__restrict UNUSED(ino),
               USER char *__restrict buf, size_t bufsize) {
  return snprintf_user(buf,bufsize,PID_FMT,GET_THIS_PID());
 }
+PRIVATE SAFE ssize_t KCALL
+thread_self_readlink(struct inode *__restrict UNUSED(ino),
+                     USER char *__restrict buf, size_t bufsize) {
+ pid_t p = GET_THIS_PID();
+ return snprintf_user(buf,bufsize,PID_FMT "/task/" PID_FMT,p,p);
+}
+
 PRIVATE errno_t KCALL
 write_typechain(struct textfile *__restrict buf,
                 struct fstype *chain, int *is_first) {
@@ -188,6 +195,9 @@ enum{__PROC_FIRST_INO=(__COUNTER__+1)};
 INTERN struct procnode const root_content[] = {
  {MKINO,S_IFLNK|0444,/*[[[deemon DNAM("self"); ]]]*/{"self",4,H(2580517131u,1718379891llu)}/*[[[end]]]*/,
  { .ino_readlink = &self_readlink,
+ }},
+ {MKINO,S_IFLNK|0444,/*[[[deemon DNAM("thread-self"); ]]]*/{"thread-self",11,H(640811138u,907624225281153145llu)}/*[[[end]]]*/,
+ { .ino_readlink = &thread_self_readlink,
  }},
  {MKINO,S_IFREG|0444,/*[[[deemon DNAM("filesystems"); ]]]*/{"filesystems",11,H(802163638u,1733680310429884923llu)}/*[[[end]]]*/,
  { .ino_fopen = &filesystems_fopen, TEXTFILE_OPS_INIT

@@ -591,7 +591,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_idle.t_refcnt                    = 0x80000001;
 #endif
  vcpu->c_idle.t_weakcnt                   = 1;
- vcpu->c_idle.t_flags                     = TASKFLAG_NOTALEADER;
+ vcpu->c_idle.t_flags                     = TASKFLAG_NOTALEADER|TASKFLAG_NOSIGNALS;
  ATOMIC_WRITE(vcpu->c_idle.t_mode,TASKMODE_NOTSTARTED);
  vcpu->c_idle.t_prioscore                 =
  vcpu->c_idle.t_priority                  = ATOMIC_READ(__bootcpu.c_idle.t_priority);
@@ -616,6 +616,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  SIGHAND_INCREF(&sighand_kernel);
  sig_cinit(&vcpu->c_idle.t_event);
  sigpending_cinit(&vcpu->c_idle.t_sigpend);
+ memset(&vcpu->c_idle.t_sigblock,0xff,sizeof(sigset_t));
  vcpu->c_idle.t_sigshare = &sigshare_kernel;
  SIGSHARE_INCREF(&sigshare_kernel);
 #ifndef CONFIG_NO_LDT
@@ -631,7 +632,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_work.t_refcnt                    = 0x80000001;
 #endif
  vcpu->c_work.t_weakcnt                   = 1;
- vcpu->c_work.t_flags                     = TASKFLAG_NOTALEADER;
+ vcpu->c_work.t_flags                     = TASKFLAG_NOTALEADER|TASKFLAG_NOSIGNALS;
  vcpu->c_work.t_mode                      = TASKMODE_SUSPENDED;
  vcpu->c_work.t_prioscore                 =
  vcpu->c_work.t_priority                  = ATOMIC_READ(__bootcpu.c_work.t_priority);
@@ -656,6 +657,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  SIGHAND_INCREF(&sighand_kernel);
  sig_cinit(&vcpu->c_work.t_event);
  sigpending_cinit(&vcpu->c_work.t_sigpend);
+ memset(&vcpu->c_work.t_sigblock,0xff,sizeof(sigset_t));
  vcpu->c_work.t_sigshare = &sigshare_kernel;
  SIGSHARE_INCREF(&sigshare_kernel);
 #ifndef CONFIG_NO_LDT

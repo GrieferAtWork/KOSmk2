@@ -175,11 +175,13 @@ typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
  * @param: reg_err:       The value for 'context->uc_mcontext.gregs[REG_ERR]'
  * @return: -EOK:         Successfully signaled the given task.
  * @return: -EINTR:       The calling thread was interrupted. (self == THIS_TASK)
+ * @return: -EPERM:       Sending signals to the task is not allowed.
  * @return: -EINVAL:      The given task had already been terminated.
  *                        An invalid signal number was passed. */
 FUNDEF errno_t KCALL task_kill2(struct task *__restrict self,
                                 siginfo_t const *__restrict signal_info,
                                 greg_t reg_trapno, greg_t reg_err);
+
 /* Same as 'task_kill2()', but allows the caller to raise
  * signals while holding a write-lock on a given CPU, that will
  * be dropped by a call to this function.

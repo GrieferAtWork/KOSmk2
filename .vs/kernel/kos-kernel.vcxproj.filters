@@ -432,6 +432,9 @@
     <ClCompile Include="..\..\src\kernel\core\sysinfo.c">
       <Filter>kernel\core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\dev\net.c">
+      <Filter>kernel\dev</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -697,6 +700,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\modules\net\ne2k.h">
       <Filter>modules\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\sync\sem.h">
+      <Filter>include\sync</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -620,12 +620,6 @@ union{
                a region, or a region part allocated as 'MMAN_UNIGFP', or for
                another manager, meaning that free()-ing that branch as the
                result of unmapping unused memory will in turn call free() again.
-TODO:  This change also worsens the problems created by the task_terminate_self
-       hi-jacking other threads to clean up itself, as with recursive heap
-       operations now being allowed any running heap operation may become
-       corrupted when its thread is hi-jacked.
-AGAIN: The error here lies in the fact that hi-jacking tasks must be made illegal!
-
 */
 #undef MHEAP_RECURSIVE_LOCK
 #define MHEAP_RECURSIVE_LOCK        1
@@ -1887,6 +1881,48 @@ mheap_validate(struct dsetup *setup,
  mheap_endread(self);
 }
 #endif
+
+/* Public kernel heap API. */
+PUBLIC SAFE void *KCALL
+heap_malloc(size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags) {
+ struct mheap *heap = MHEAP_GET(flags);
+ n_bytes = CEIL_ALIGN(n_bytes,HEAP_ALIGNMENT);
+ mheap_write(heap);
+ return mheap_acquire(heap,n_bytes,palloc_size,flags,true);
+}
+PUBLIC SAFE void *KCALL
+heap_malloc_at(void *ptr, size_t n_bytes,
+               size_t *__restrict palloc_size,
+               gfp_t flags) {
+ void *result;
+ struct mheap *heap = MHEAP_GET(flags);
+ n_bytes = CEIL_ALIGN(n_bytes,HEAP_ALIGNMENT);
+ mheap_write(heap);
+ result = mheap_acquire_at(heap,ptr,n_bytes,palloc_size,flags);
+ mheap_endwrite(heap);
+ return result;
+}
+PUBLIC SAFE void *KCALL
+heap_memalign(size_t alignment, size_t offset, size_t n_bytes,
+              size_t *__restrict palloc_size, gfp_t flags) {
+ struct mheap *heap = MHEAP_GET(flags);
+ if (alignment < HEAP_ALIGNMENT)
+      alignment = HEAP_ALIGNMENT;
+ else alignment = CEIL_ALIGN(alignment,HEAP_ALIGNMENT);
+ n_bytes = CEIL_ALIGN(n_bytes,HEAP_ALIGNMENT);
+ mheap_write(heap);
+ return mheap_acquire_al(heap,alignment,offset,n_bytes,
+                         palloc_size,flags,true);
+}
+
+/* Free heap memory previously allocated using 'heap_*' functions. */
+PUBLIC SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags) {
+ struct mheap *heap = MHEAP_GET(flags);
+ assert(IS_ALIGNED(size,HEAP_ALIGNMENT));
+ mheap_write(heap);
+ return mheap_release(heap,ptr,size,flags,true);
+}
+
 
 #if defined(CONFIG_DEBUG_HEAP) || defined(MALLOC_DEBUG_API)
 PRIVATE ATTR_NORETURN void KCALL

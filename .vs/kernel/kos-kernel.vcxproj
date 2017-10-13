@@ -58,6 +58,7 @@
     <ClCompile Include="..\..\src\kernel\dev\device.c" />
     <ClCompile Include="..\..\src\kernel\dev\diskpart.c" />
     <ClCompile Include="..\..\src\kernel\dev\fstype.c" />
+    <ClCompile Include="..\..\src\kernel\dev\net.c" />
     <ClCompile Include="..\..\src\kernel\dev\rtc.c" />
     <ClCompile Include="..\..\src\kernel\fs\cache.c" />
     <ClCompile Include="..\..\src\kernel\fs\fd.c" />
@@ -195,6 +196,7 @@
     <ClInclude Include="..\..\src\include\sched\types.h" />
     <ClInclude Include="..\..\src\include\sync\owner-rwlock.h" />
     <ClInclude Include="..\..\src\include\sync\rwlock.h" />
+    <ClInclude Include="..\..\src\include\sync\sem.h" />
     <ClInclude Include="..\..\src\include\sync\sig.h" />
     <ClInclude Include="..\..\src\kernel\debug-config.h" />
     <ClInclude Include="..\..\src\kernel\linker\ksym.h" />

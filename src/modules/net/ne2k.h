@@ -24,6 +24,7 @@
 #include <kernel/export.h>
 #include <dev/net.h>
 #include <modules/pci.h>
+#include <sync/sem.h>
 
 DECL_BEGIN
 
@@ -73,6 +74,13 @@ DECL_BEGIN
 #define EN0_IMR      EI_SHIFT(0x0f) /* Interrupt mask reg WR */
 #define EN0_COUNTER2 EI_SHIFT(0x0f) /* Rcv missed frame error counter RD */
 
+/* Page 1 register offsets. */
+#define EN1_PHYS          EI_SHIFT(0x01) /*< This board's physical enet addr RD WR. */
+#define EN1_PHYS_SHIFT(i) EI_SHIFT(i+1)  /*< Get and set mac address. */
+#define EN1_CURPAG        EI_SHIFT(0x07) /*< Current memory page RD WR. */
+#define EN1_MULT          EI_SHIFT(0x08) /*< Multicast filter mask array (8 bytes) RD WR. */
+#define EN1_MULT_SHIFT(i) EI_SHIFT(8+i)  /*< Get and set multicast filter .*/
+
 
 #define NE_DATAPORT  EI_SHIFT(0x10) /* NatSemi-defined port window offset. */
 #define NE_RESET     EI_SHIFT(0x1f) /* Issue a read to reset, a write to clear. */
@@ -89,7 +97,7 @@ DECL_BEGIN
 #define E8390_PAGE1  0x40 /* using the two high-order bits */
 #define E8390_PAGE2  0x80 /* Page 3 is invalid. */
 
-/* Bits in EN0_ISR - Interrupt status register */
+/* Bits in EN0_ISR/EN0_IMR - Interrupt status register */
 #define ENISR_RX       0x01 /* Receiver, no error */
 #define ENISR_TX       0x02 /* Transmitter, no error */
 #define ENISR_RX_ERR   0x04 /* Receiver, with error */
@@ -131,16 +139,35 @@ DECL_BEGIN
 #define ETXCR_ATD  0x08 /* Auto Transmit Disable. (Leave at ZERO) */
 #define ETXCR_OFST 0x10 /* Collision Offset Enable. */
 
-#define E8390_TXCONFIG 0x00 /* EN0_TXCR: Normal transmit mode */
-#define E8390_TXOFF    0x02 /* EN0_TXCR: Transmitter off */
 
+/* Bits in EN0_TSR - Transmit status Register. */
+#define ETSR_OWC    0x80 /*< ERROR: Out of Window Collision. */
+#define ETSR_CHD    0x40 /*< ERROR: CD Heartbeat. (I think this bit indicates a collision?) */
+#define ETSR_CRS    0x10 /*< ERROR: Carrier is lost during packet transmission. (Whatever that means...) */
+#define ETSR_ABT    0x08 /*< ERROR: Transmission aborted due to excessive collisions. */
+#define ETSR_COL    0x04 /*< ERROR: Collision with some other station on the network. */
+#define ETSR_PTX    0x01 /*< OK: Transmission completed with no errors. */
+#define ETSR_EMASK (ETSR_OWC|ETSR_CHD|ETSR_CRS|ETSR_ABT|ETSR_COL) /*< Mask of all error bits. */
+
+
+#define NET_PAGESIZE 256
 typedef struct ne2k ne2k_t;
 struct ne2k {
- struct netdev          n_dev;    /*< Underlying net device. */
- u16                    n_iobase; /*< I/O Base address. */
- REF struct pci_device *n_pcidev; /*< Associated PCI device. */
+ struct netdev          n_dev;     /*< Underlying net device. */
+ REF struct pci_device *n_pcidev;  /*< [const] Associated PCI device. */
+ u16                    n_iobase;  /*< [const] I/O Base address. */
+ u8                     n_nextpck; /*< [lock(IN_IRQ)] Next package page pointer. */
+ u8                     n_senderr; /*< [lock(n_dev.n_send_lock)] Error code after transmission completion (Set of 'ETSR_*'). */
+ sem_t                  n_sendend; /*< [lock(n_dev.n_send_lock)] Semaphore used to notify transmission completion. */
+ struct timespec        n_sendtmo; /*< [lock(n_dev.n_send_lock)] Timeout when sending data.
+                                    *   TODO: Replace with 'n_dev.n_send_timeout' */
 };
 
+INTERN errno_t KCALL net_reset_base(u16 iobase); /* Reset the card. */
+INTDEF errno_t KCALL net_reset(u16 iobase); /* Reset the card and interrupts. */
+INTDEF s32 KCALL net_waitdma(u16 iobase); /* Wait for DMA completion, returning an error or the status register. */
+
+INTDEF errno_t KCALL net_resetdev(ne2k_t *__restrict dev);
 
 DECL_END
 
