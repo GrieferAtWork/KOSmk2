@@ -127,15 +127,13 @@ __SYSDECL_BEGIN
         struct __timespec32 __##id##tim##suffix; \
         __IFTHEN(_STATBUF_ST_TIM)(struct __timespec32 id##tim##suffix;) \
         __IFTHEN(_STATBUF_ST_TIMESPEC)(struct __timespec32 id##timespec##suffix;) \
-struct{ __IFELSE(_STATBUF_ST_TIME)(__time32_t __##id##time##suffix;) \
-        __IFTHEN(_STATBUF_ST_TIME)(__time32_t id##time##suffix;) \
+struct{ __time32_t id##time##suffix; \
         __IFTHEN(_STATBUF_ST_NSEC)(__syscall_ulong_t id##timensec##suffix;) };
 #define __STAT_TIMESPEC64_MEMB(id,suffix) \
         struct __timespec64 __##id##tim##suffix; \
         __IFTHEN(_STATBUF_ST_TIM)(struct __timespec64 id##tim##suffix;) \
         __IFTHEN(_STATBUF_ST_TIMESPEC)(struct __timespec64 id##timespec##suffix;) \
-struct{ __IFELSE(_STATBUF_ST_TIME)(__time64_t __##id##time##suffix;) \
-        __IFTHEN(_STATBUF_ST_TIME)(__time64_t id##time##suffix;) \
+struct{ __time64_t id##time##suffix; \
         __IFTHEN(_STATBUF_ST_NSEC)(__syscall_ulong_t id##timensec##suffix;) };
 
 #ifdef __USE_TIME_BITS64
@@ -145,7 +143,7 @@ struct{ __IFELSE(_STATBUF_ST_TIME)(__time64_t __##id##time##suffix;) \
 #   define __STAT_TIMESPEC64_ALT(id) union{ __STAT_TIMESPEC64_MEMB(st_##id,) __STAT_TIMESPEC64_MEMB(st_##id,64) }
 #else /* __USE_KOS */
 #   define __STAT_TIMESPEC32(id)     struct __timespec32 __st_##id##tim32
-#   define __STAT_TIMESPEC64(id)     union{ __STAT_TIMESPEC64_MEMB(__st_##id,) }
+#   define __STAT_TIMESPEC64(id)     union{ __STAT_TIMESPEC64_MEMB(st_##id,) }
 #   define __STAT_TIMESPEC64_ALT(id) union{ __STAT_TIMESPEC64_MEMB(st_##id,) }
 #endif /* !__USE_KOS */
 #else /* __USE_TIME_BITS64 */

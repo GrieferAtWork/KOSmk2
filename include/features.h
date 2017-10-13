@@ -282,7 +282,7 @@
 #if defined(__USE_DOS) || /* DOS already made this change. */ \
   (!defined(__CRT_GLC) && defined(__CRT_DOS))
 #   define __USE_TIME_BITS64 1
-#elif !defined(_NO_EXPERIMENTAL_SOURCE) && \
+#elif (!defined(_NO_EXPERIMENTAL_SOURCE) && 0) && \
       (defined(__CRT_KOS) || defined(__CRT_DOS))
 #   define __USE_TIME_BITS64 1
 #endif

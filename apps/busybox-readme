@@ -33,7 +33,7 @@ cp "${PREFIX}/apps/busybox-config" "${PREFIX}/apps/private/build-busybox-1.27.2/
 # (As KOS advances in development, I will also enable more applets as they will be
 #  able to function properly)
 
-# Add the following to above the comment block stating
+# Add the following above the comment block stating
 # "Now, define prototypes for all the functions defined..."
 echo <<EOF
 #ifdef __KOS__

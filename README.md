@@ -53,7 +53,9 @@ Chaos|KOS - Even more chaotic that last time.
    - Binary (ABI) compatibility with both MSVCrt and GLibC
    - System headers designed with portability and clean namespaces
      - Use of <code>\<features.h\></code> emulating GLibC, allowing for control of available features using <code>\*\_SOURCE</code> macros
-     - Option to warn about use of non-portable functions such
+     - Option to warn about use of non-portable functions
+     - Redundant fallbacks of (some) KOS-specific extensions allows for use on other platforms
+     - You can actually use KOS's /include folder to spoof MSVCrt and get a much more portable library at the same time!
    - Support for future-proof <b>64-bit time\_t</b> types and functions
  - PS/2 keyboard input
    - Using a proper driver this time
@@ -62,7 +64,7 @@ Chaos|KOS - Even more chaotic that last time.
    - PID-based addressing, including a mountable <code>/proc</code> filesystem
    - Per-thread _everything_ (Page-directory, files, signals, you-name-it; just like linux...)
    - The only thing that what you call a process must have in common is a secondary, shared signal pool that is per-thread-group
-   - SMP support
+   - Multi-core SMP support
    - low-cpu/true idle (Using per-cpu IDLE threads)
  - ELF binaries/libraries (<i>no extension</i> / <b>.so</b>)
  - PE binaries/libraries (<b>.exe</b> / <b>.dll</b>)
