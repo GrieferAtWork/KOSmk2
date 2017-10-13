@@ -27,7 +27,12 @@
 #ifdef __CC__
 DECL_BEGIN
 
+#ifndef ____suX_defined
+#define ____suX_defined 1
 #define KTYPE(x) __##x,x
+#else
+#define KTYPE(x) x
+#endif
 typedef __INT8_TYPE__   KTYPE(s8);
 typedef __INT16_TYPE__  KTYPE(s16);
 typedef __INT32_TYPE__  KTYPE(s32);
@@ -36,6 +41,15 @@ typedef __UINT8_TYPE__  KTYPE(u8);
 typedef __UINT16_TYPE__ KTYPE(u16);
 typedef __UINT32_TYPE__ KTYPE(u32);
 typedef __UINT64_TYPE__ KTYPE(u64);
+#undef KTYPE
+
+#ifndef ____lebesuX_defined
+#define ____lebesuX_defined 1
+#define KTYPE(x) __##x,x
+#else
+#define KTYPE(x) x
+#endif
+
 #ifdef __INTELLISENSE__
 typedef ____INTELLISENSE_integer<1234,__UINT16_TYPE__> KTYPE(le16);
 typedef ____INTELLISENSE_integer<4321,__UINT16_TYPE__> KTYPE(be16);

@@ -16,30 +16,28 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ASM_GENERIC_PARAM_H
-#define _ASM_GENERIC_PARAM_H 1
-#ifndef __ASM_GENERIC_PARAM_H
-#define __ASM_GENERIC_PARAM_H 1
+#ifndef _ASM_GENERIC_TYPES_H
+#define _ASM_GENERIC_TYPES_H 1
 
-#ifndef HZ
-#if defined(__KERNEL__) && defined(CONFIG_HZ)
-#   define HZ            CONFIG_HZ
-#elif 1
-#   define HZ            20
-#else
-#   define HZ            100
-#endif
-#endif
+#include <__stdinc.h>
+#include <hybrid/typecore.h>
 
-#ifndef EXEC_PAGESIZE
-#define EXEC_PAGESIZE    4096
-#endif
+#ifndef __ASSEMBLY__
 
-#ifndef NOGROUP
-#define NOGROUP        (-1)
-#endif
+#ifndef ____suX_defined
+#define ____suX_defined 1
+__SYSDECL_BEGIN
+typedef __INT8_TYPE__   __s8;
+typedef __INT16_TYPE__  __s16;
+typedef __INT32_TYPE__  __s32;
+typedef __INT64_TYPE__  __s64;
+typedef __UINT8_TYPE__  __u8;
+typedef __UINT16_TYPE__ __u16;
+typedef __UINT32_TYPE__ __u32;
+typedef __UINT64_TYPE__ __u64;
+__SYSDECL_END
+#endif /* !____suX_defined */
 
-#define MAXHOSTNAMELEN   64 /*< max length of hostname. (TODO: Not implemented; add to user-share) */
+#endif /* __ASSEMBLY__ */
 
-#endif /* !__ASM_GENERIC_PARAM_H */
-#endif /* !_ASM_GENERIC_PARAM_H */
+#endif /* !_ASM_GENERIC_TYPES_H */

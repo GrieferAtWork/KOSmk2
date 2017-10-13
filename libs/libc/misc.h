@@ -24,6 +24,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <hybrid/host.h>
+#include <uchar.h>
 
 DECL_BEGIN
 
@@ -67,6 +68,14 @@ INTDEF int LIBCCALL libc_xdlclose(void *handle);
  * before writing an error message hinting the user to look
  * at system logs for further details. */
 INTDEF ATTR_NORETURN void LIBCCALL libc_internal_failure(void);
+
+struct sysinfo;
+INTDEF int LIBCCALL libc_sysinfo(struct sysinfo *info);
+INTDEF int LIBCCALL libc_get_nprocs_conf(void);
+INTDEF int LIBCCALL libc_get_nprocs(void);
+INTDEF ssize_t LIBCCALL libc_get_phys_pages(void);
+INTDEF ssize_t LIBCCALL libc_get_avphys_pages(void);
+
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTDEF u32 LIBCCALL libc_clearfp(void);

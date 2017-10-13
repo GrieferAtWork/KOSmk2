@@ -38,10 +38,9 @@ cp "${PREFIX}/apps/busybox-config" "${PREFIX}/apps/private/build-busybox-1.27.2/
 echo <<EOF
 #ifdef __KOS__
 # include <linux/fs.h>
+# include <sys/sysinfo.h>
 # undef HAVE_NET_ETHERNET_H
 # undef HAVE_SYS_STATFS_H
-# undef ENABLE_ASH_INTERNAL_GLOB
-# define ENABLE_ASH_INTERNAL_GLOB 1
 #endif
 EOF
 vi ${PREFIX}/apps/private/busybox-1.27.2/include/platform.h

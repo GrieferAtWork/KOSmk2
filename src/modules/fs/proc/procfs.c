@@ -33,6 +33,7 @@
 #include <fs/inode.h>
 #include <fs/superblock.h>
 #include <fs/vfs.h>
+#include <dev/rtc.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
@@ -161,7 +162,24 @@ kcore_fopen(struct inode *__restrict node,
  return make_memfile(node,dent,oflags,&mman_kernel,
                     (uintptr_t)0,(uintptr_t)-1);
 }
-
+PRIVATE REF struct file *KCALL
+uptime_fopen(struct inode *__restrict ino,
+             struct dentry *__restrict node_ent,
+             oflag_t oflags) {
+ REF struct textfile *result; ssize_t error;
+ result = textfile_new();
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ error = textfile_printf(result,"%I64u.%u 0.0\n",
+                        (u64)(jiffies64/HZ),
+                        (unsigned int)(((jiffies64%HZ)*100)/HZ));
+ if (E_ISERR(error)) goto err;
+ textfile_truncate(result);
+ file_setup(&result->tf_file,ino,node_ent,oflags);
+ assert(result->tf_bufpos == result->tf_buffer);
+ return &result->tf_file;
+err: textfile_delete(result);
+ return E_PTR(error);
+}
 
 enum{__PROC_FIRST_INO=(__COUNTER__+1)};
 #define MKINO  (__COUNTER__-__PROC_FIRST_INO)
@@ -182,6 +200,9 @@ INTERN struct procnode const root_content[] = {
  }},
  {MKINO,S_IFREG|0400,/*[[[deemon DNAM("kcore"); ]]]*/{"kcore",5,H(99254056u,435711599467llu)}/*[[[end]]]*/,
  { .ino_fopen = &kcore_fopen, MEMFILE_OPS_INIT
+ }},
+ {MKINO,S_IFREG|0444,/*[[[deemon DNAM("uptime"); ]]]*/{"uptime",6,H(3038271882u,111520595079285llu)}/*[[[end]]]*/,
+ { .ino_fopen = &uptime_fopen, TEXTFILE_OPS_INIT
  }},
 };
 #undef MKINO

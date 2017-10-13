@@ -429,6 +429,9 @@
     <ClCompile Include="..\..\src\modules\net\ne2k.c">
       <Filter>modules\net</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\sysinfo.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">

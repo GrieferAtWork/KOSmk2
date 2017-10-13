@@ -16,30 +16,28 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ASM_GENERIC_PARAM_H
-#define _ASM_GENERIC_PARAM_H 1
-#ifndef __ASM_GENERIC_PARAM_H
-#define __ASM_GENERIC_PARAM_H 1
+#ifndef _LINUX_POSIX_TYPES_H
+#define _LINUX_POSIX_TYPES_H 1
 
-#ifndef HZ
-#if defined(__KERNEL__) && defined(CONFIG_HZ)
-#   define HZ            CONFIG_HZ
-#elif 1
-#   define HZ            20
-#else
-#   define HZ            100
-#endif
-#endif
+#include "stddef.h"
+#include <__stdinc.h>
+#include <asm/posix_types.h>
 
-#ifndef EXEC_PAGESIZE
-#define EXEC_PAGESIZE    4096
-#endif
+__SYSDECL_BEGIN
 
-#ifndef NOGROUP
-#define NOGROUP        (-1)
-#endif
+/* NOTE: This stuff isn't actually used by the KOS kernel,
+ *       which uses the same structures/types as userspace. */
+#undef __FD_SETSIZE
+#define __FD_SETSIZE  1024
 
-#define MAXHOSTNAMELEN   64 /*< max length of hostname. (TODO: Not implemented; add to user-share) */
+typedef struct {
+ unsigned long fds_bits[__FD_SETSIZE/(8*sizeof(long))];
+} __kernel_fd_set;
 
-#endif /* !__ASM_GENERIC_PARAM_H */
-#endif /* !_ASM_GENERIC_PARAM_H */
+typedef void (*__kernel_sighandler_t)(int);
+typedef int __kernel_key_t;
+typedef int __kernel_mqd_t;
+
+__SYSDECL_END
+
+#endif /* !_LINUX_POSIX_TYPES_H */

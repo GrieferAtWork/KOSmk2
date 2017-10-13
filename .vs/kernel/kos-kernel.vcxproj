@@ -50,6 +50,7 @@
     <ClCompile Include="..\..\src\kernel\core\paging.c" />
     <ClCompile Include="..\..\src\kernel\core\stack.c" />
     <ClCompile Include="..\..\src\kernel\core\syscall.c" />
+    <ClCompile Include="..\..\src\kernel\core\sysinfo.c" />
     <ClCompile Include="..\..\src\kernel\core\syslog.c" />
     <ClCompile Include="..\..\src\kernel\core\user.c" />
     <ClCompile Include="..\..\src\kernel\dev\blkdev.c" />

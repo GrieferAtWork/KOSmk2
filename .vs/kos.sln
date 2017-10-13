@@ -93,6 +93,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys", "sys", "{E47928E9-383
 		..\include\sys\stat.h = ..\include\sys\stat.h
 		..\include\sys\swap.h = ..\include\sys\swap.h
 		..\include\sys\syscall.h = ..\include\sys\syscall.h
+		..\include\sys\sysinfo.h = ..\include\sys\sysinfo.h
 		..\include\sys\syslog.h = ..\include\sys\syslog.h
 		..\include\sys\sysmacros.h = ..\include\sys\sysmacros.h
 		..\include\sys\time.h = ..\include\sys\time.h
@@ -255,10 +256,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "arch", "arch", "{216EA1E4-5
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm", "asm", "{6550F869-2963-45A7-A0E3-BA83522B91DC}"
 	ProjectSection(SolutionItems) = preProject
+		..\include\asm\bitsperlong.h = ..\include\asm\bitsperlong.h
 		..\include\asm\ioctl.h = ..\include\asm\ioctl.h
 		..\include\asm\ioctls.h = ..\include\asm\ioctls.h
 		..\include\asm\param.h = ..\include\asm\param.h
+		..\include\asm\posix_types.h = ..\include\asm\posix_types.h
+		..\include\asm\posix_types_32.h = ..\include\asm\posix_types_32.h
+		..\include\asm\posix_types_64.h = ..\include\asm\posix_types_64.h
+		..\include\asm\posix_types_x32.h = ..\include\asm\posix_types_x32.h
+		..\include\asm\socket.h = ..\include\asm\socket.h
+		..\include\asm\sockios.h = ..\include\asm\sockios.h
 		..\include\asm\syscallno.ci = ..\include\asm\syscallno.ci
+		..\include\asm\types.h = ..\include\asm\types.h
 		..\include\asm\unistd.h = ..\include\asm\unistd.h
 	EndProjectSection
 EndProject
@@ -271,6 +280,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "linux", "linux", "{61261588
 		..\include\linux\ioctl.h = ..\include\linux\ioctl.h
 		..\include\linux\limits.h = ..\include\linux\limits.h
 		..\include\linux\param.h = ..\include\linux\param.h
+		..\include\linux\posix_types.h = ..\include\linux\posix_types.h
+		..\include\linux\sysinfo.h = ..\include\linux\sysinfo.h
+		..\include\linux\types.h = ..\include\linux\types.h
 		..\include\linux\unistd.h = ..\include\linux\unistd.h
 	EndProjectSection
 EndProject
@@ -285,11 +297,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "kos", "kos", "{AF58F0E7-505
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm-generic", "asm-generic", "{4ECF509D-E819-4FE3-8323-A7DCF338FCCA}"
 	ProjectSection(SolutionItems) = preProject
+		..\include\asm-generic\bitsperlong.h = ..\include\asm-generic\bitsperlong.h
+		..\include\asm-generic\int-l64.h = ..\include\asm-generic\int-l64.h
+		..\include\asm-generic\int-ll64.h = ..\include\asm-generic\int-ll64.h
 		..\include\asm-generic\ioctl.h = ..\include\asm-generic\ioctl.h
 		..\include\asm-generic\ioctls.h = ..\include\asm-generic\ioctls.h
 		..\include\asm-generic\param.h = ..\include\asm-generic\param.h
+		..\include\asm-generic\posix_types.h = ..\include\asm-generic\posix_types.h
 		..\include\asm-generic\socket.h = ..\include\asm-generic\socket.h
 		..\include\asm-generic\sockios.h = ..\include\asm-generic\sockios.h
+		..\include\asm-generic\types.h = ..\include\asm-generic\types.h
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "init", "apps\init.vcxproj", "{5D2D22BC-574F-4F20-9D1F-7668E3FBE1C3}"

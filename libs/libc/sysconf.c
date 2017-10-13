@@ -26,6 +26,7 @@
 #include "system.h"
 #include "sysconf.h"
 #include "errno.h"
+#include "misc.h"
 
 #include <linux/limits.h>
 #include <limits.h>
@@ -485,8 +486,8 @@ INTERN long int LIBCCALL libc_sysconf(int name) {
 
  case _SC_CLK_TCK:          return -1; /* TODO: __getclktck(); */
  case _SC_OPEN_MAX:         return -1; /* TODO: __getdtablesize(); */
- case _SC_NPROCESSORS_CONF: return -1; /* TODO: __get_nprocs_conf(); */
- case _SC_NPROCESSORS_ONLN: return -1; /* TODO: __get_nprocs(); */
+ case _SC_NPROCESSORS_CONF: return libc_get_nprocs_conf();
+ case _SC_NPROCESSORS_ONLN: return libc_get_nprocs();
  case _SC_PHYS_PAGES:       return -1; /* TODO: __get_phys_pages(); */
  case _SC_AVPHYS_PAGES:     return -1; /* TODO: __get_avphys_pages(); */
 

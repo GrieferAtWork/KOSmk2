@@ -16,30 +16,17 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ASM_GENERIC_PARAM_H
-#define _ASM_GENERIC_PARAM_H 1
-#ifndef __ASM_GENERIC_PARAM_H
-#define __ASM_GENERIC_PARAM_H 1
+#ifndef _ASM_POSIX_TYPES_H
+#define _ASM_POSIX_TYPES_H 1
 
-#ifndef HZ
-#if defined(__KERNEL__) && defined(CONFIG_HZ)
-#   define HZ            CONFIG_HZ
-#elif 1
-#   define HZ            20
+#include <hybrid/host.h>
+
+#ifdef __i386__
+#   include "posix_types_32.h"
+#elif defined(__ILP32__)
+#   include "posix_types_x32.h"
 #else
-#   define HZ            100
-#endif
-#endif
-
-#ifndef EXEC_PAGESIZE
-#define EXEC_PAGESIZE    4096
+#   include "posix_types_64.h"
 #endif
 
-#ifndef NOGROUP
-#define NOGROUP        (-1)
-#endif
-
-#define MAXHOSTNAMELEN   64 /*< max length of hostname. (TODO: Not implemented; add to user-share) */
-
-#endif /* !__ASM_GENERIC_PARAM_H */
-#endif /* !_ASM_GENERIC_PARAM_H */
+#endif /* !_ASM_POSIX_TYPES_H */

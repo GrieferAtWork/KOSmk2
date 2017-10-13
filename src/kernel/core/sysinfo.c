@@ -16,30 +16,44 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ASM_GENERIC_PARAM_H
-#define _ASM_GENERIC_PARAM_H 1
-#ifndef __ASM_GENERIC_PARAM_H
-#define __ASM_GENERIC_PARAM_H 1
+#ifndef GUARD_KERNEL_CORE_SYSINFO_C
+#define GUARD_KERNEL_CORE_SYSINFO_C 1
+#define _KOS_SOURCE 1
 
-#ifndef HZ
-#if defined(__KERNEL__) && defined(CONFIG_HZ)
-#   define HZ            CONFIG_HZ
-#elif 1
-#   define HZ            20
-#else
-#   define HZ            100
-#endif
-#endif
+#include <hybrid/compiler.h>
+#include <sched/cpu.h>
+#include <sched/smp.h>
+#include <kernel/syscall.h>
+#include <kernel/user.h>
+#include <sys/sysinfo.h>
+#include <dev/rtc.h>
+#include <hybrid/limits.h>
+#include <string.h>
 
-#ifndef EXEC_PAGESIZE
-#define EXEC_PAGESIZE    4096
-#endif
+DECL_BEGIN
 
-#ifndef NOGROUP
-#define NOGROUP        (-1)
-#endif
+SYSCALL_DEFINE1(sysinfo,USER struct sysinfo *,info) {
+ struct sysinfo i;
+ memset(&i,0,sizeof(struct sysinfo));
+ *(u32 *)&i.procs = (u32)ATOMIC_READ(pid_init.pn_mapc);
+ i.mem_unit = PAGESIZE;
+ i.uptime   = jiffies64/HZ;
 
-#define MAXHOSTNAMELEN   64 /*< max length of hostname. (TODO: Not implemented; add to user-share) */
+ /* TODO */
+ //i.totalram;  /*< Total usable main memory size. */
+ //i.freeram;   /*< Available memory size. */
+ //i.sharedram; /*< Amount of shared memory. */
+ //i.bufferram; /*< Memory used by buffers. */
+ //i.totalswap; /*< Total swap space size. */
+ //i.freeswap;  /*< swap space still available. */
+ //i.totalhigh; /*< Total high memory size. */
+ //i.freehigh;  /*< Available high memory size. */
 
-#endif /* !__ASM_GENERIC_PARAM_H */
-#endif /* !_ASM_GENERIC_PARAM_H */
+ if (copy_to_user(info,&i,sizeof(struct sysinfo)))
+     return -EFAULT;
+ return -EOK;
+}
+
+DECL_END
+
+#endif /* !GUARD_KERNEL_CORE_SYSINFO_C */

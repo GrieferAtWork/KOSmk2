@@ -16,30 +16,22 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ASM_GENERIC_PARAM_H
-#define _ASM_GENERIC_PARAM_H 1
-#ifndef __ASM_GENERIC_PARAM_H
-#define __ASM_GENERIC_PARAM_H 1
+#ifndef _SYS_SYSINFO_H
+#define _SYS_SYSINFO_H 1
 
-#ifndef HZ
-#if defined(__KERNEL__) && defined(CONFIG_HZ)
-#   define HZ            CONFIG_HZ
-#elif 1
-#   define HZ            20
-#else
-#   define HZ            100
-#endif
-#endif
+#include <features.h>
+#include <linux/kernel.h>
 
-#ifndef EXEC_PAGESIZE
-#define EXEC_PAGESIZE    4096
-#endif
+__SYSDECL_BEGIN
 
-#ifndef NOGROUP
-#define NOGROUP        (-1)
-#endif
+#ifndef __KERNEL__
+__LIBC int __NOTHROW((__LIBCCALL sysinfo)(struct sysinfo *__info));
+__LIBC int __NOTHROW((__LIBCCALL get_nprocs_conf)(void));
+__LIBC int __NOTHROW((__LIBCCALL get_nprocs)(void));
+__LIBC __INTPTR_TYPE__ __NOTHROW((__LIBCCALL get_phys_pages)(void));
+__LIBC __INTPTR_TYPE__ __NOTHROW((__LIBCCALL get_avphys_pages)(void));
+#endif /* !__KERNEL__ */
 
-#define MAXHOSTNAMELEN   64 /*< max length of hostname. (TODO: Not implemented; add to user-share) */
+__SYSDECL_END
 
-#endif /* !__ASM_GENERIC_PARAM_H */
-#endif /* !_ASM_GENERIC_PARAM_H */
+#endif /* !_SYS_SYSINFO_H */

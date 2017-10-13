@@ -201,6 +201,8 @@ __SYSCALL(__NR_getpid,sys_getpid)
 __SYSCALL(__NR_getppid,sys_getppid)
 #define __NR_gettid       178
 __SYSCALL(__NR_gettid,sys_gettid)
+#define __NR_sysinfo      179
+__SYSCALL(__NR_sysinfo,sys_sysinfo)
 
 
 #define __SC_ATTRIB_CLOBB_215 C("memory")

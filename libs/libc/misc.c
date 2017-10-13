@@ -32,6 +32,7 @@
 #include "signal.h"
 #include "malloc.h"
 #include "unicode.h"
+#include "sysconf.h"
 
 #include <hybrid/compiler.h>
 #include <hybrid/atomic.h>
@@ -40,6 +41,9 @@
 #include <sys/syslog.h>
 #include <sys/mman.h>
 #include <bits/dos-errno.h>
+#include <sys/sysinfo.h>
+#include <bits/confname.h>
+
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #include <byteswap.h>
 #include <bits/rotate.h>
@@ -248,6 +252,20 @@ DEFINE_PUBLIC_ALIAS(xdlopen,libc_xdlopen);
 DEFINE_PUBLIC_ALIAS(xfdlopen,libc_xfdlopen);
 DEFINE_PUBLIC_ALIAS(xdlsym,libc_xdlsym);
 DEFINE_PUBLIC_ALIAS(xdlclose,libc_xdlclose);
+
+
+INTERN ATTR_RARETEXT int LIBCCALL libc_sysinfo(struct sysinfo *info) { return FORWARD_SYSTEM_ERROR(sys_sysinfo(info)); }
+INTERN ATTR_RARETEXT ssize_t LIBCCALL libc_get_phys_pages(void) { struct sysinfo info; int result = libc_sysinfo(&info); return result ? result : (ssize_t)info.totalram; }
+INTERN ATTR_RARETEXT ssize_t LIBCCALL libc_get_avphys_pages(void) { struct sysinfo info; int result = libc_sysinfo(&info); return result ? result : (ssize_t)info.freeram; }
+INTERN ATTR_RARETEXT int LIBCCALL libc_get_nprocs_conf(void) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_RARETEXT int LIBCCALL libc_get_nprocs(void) { NOT_IMPLEMENTED(); return -1; }
+DEFINE_PUBLIC_ALIAS(sysinfo,libc_sysinfo);
+DEFINE_PUBLIC_ALIAS(get_nprocs_conf,libc_get_nprocs_conf);
+DEFINE_PUBLIC_ALIAS(get_nprocs,libc_get_nprocs);
+DEFINE_PUBLIC_ALIAS(get_phys_pages,libc_get_phys_pages);
+DEFINE_PUBLIC_ALIAS(get_avphys_pages,libc_get_avphys_pages);
+
+
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
