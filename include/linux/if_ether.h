@@ -19,6 +19,8 @@
 #ifndef _LINUX_IF_ETHER_H
 #define _LINUX_IF_ETHER_H 1
 
+#include <features.h>
+
 /*
  * INET   An implementation of the TCP/IP protocol suite for the LINUX
  *        operating system.  INET is implemented using the  BSD Socket
@@ -138,12 +140,28 @@ __SYSDECL_BEGIN
 #define ETH_P_CAIF       0x00F7 /*< ST-Ericsson CAIF protocol. */
 #define ETH_P_XDSA       0x00F8 /*< Multiplexed DSA protocol. */
 
+#if defined(__KERNEL__) || defined(__USE_KOS)
+#ifndef __macaddr_defined
+#define __macaddr_defined 1
+struct PACKED macaddr { u8 ma_bytes[6]; };
+#endif /* !__macaddr_defined */
 /* This is an Ethernet frame header. */
 struct PACKED ethhdr {
- unsigned char h_dest[ETH_ALEN];   /*< destination eth addr. */
- unsigned char h_source[ETH_ALEN]; /*< source ether addr. */
- __be16        h_proto;            /*< packet type ID field. */
+union{unsigned char  h_dest[ETH_ALEN];   /*< Destination eth addr. */
+      struct macaddr h_dest_mac;         /*< Destination mac addr. */};
+union{unsigned char  h_source[ETH_ALEN]; /*< Source ether addr. */
+      struct macaddr h_source_mac;       /*< Source mac addr. */};
+      __be16         h_proto;            /*< Packet type ID field. */
 };
+#else
+/* This is an Ethernet frame header. */
+struct PACKED ethhdr {
+ unsigned char h_dest[ETH_ALEN];   /*< Destination eth addr. */
+ unsigned char h_source[ETH_ALEN]; /*< Source ether addr. */
+ __be16        h_proto;            /*< Packet type ID field. */
+};
+#endif
+
 
 __SYSDECL_END
 

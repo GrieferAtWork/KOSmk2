@@ -66,6 +66,7 @@ delete_default_keyboard(struct device *__restrict dev) {
  }
  atomic_rwlock_endread(&keyboard_lock);
 }
+
 PUBLIC REF struct chrdev *
 KCALL get_default_keyboard(void) {
  REF struct chrdev *result;

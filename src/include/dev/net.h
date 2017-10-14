@@ -27,71 +27,136 @@
 
 DECL_BEGIN
 
-struct macaddr {
- u8  ma_bytes[6];
-};
+#ifndef __macaddr_defined
+#define __macaddr_defined 1
+struct PACKED macaddr { u8 ma_bytes[6]; };
+#endif /* !__macaddr_defined */
 
-struct packet {
- struct packet  *p_next;    /*< [0..1] Next packet. */
- size_t          p_size;    /*< [!0] Size of the packet (in bytes) */
- byte_t          p_data[1]; /*< Package data. */
+#ifdef __INTELLISENSE__
+#define ETHADDR(a,b,c,d,e,f) (a,b,c,d,e,f,macaddr())
+#else
+#define ETHADDR(a,b,c,d,e,f) (struct macaddr){{a,b,c,d,e,f}}
+#endif
+
+/* Broadcast ethernet address. */
+#define ETHADDR_BROADCAST  \
+        ETHADDR(0xff,0xff,0xff,0xff,0xff,0xff)
+
+struct ipacket {
+ /* Input packet data structure. */
+ struct ipacket  *ip_next;    /*< [0..1][owned(ipacket_free)] Next packet. */
+ size_t           ip_size;    /*< [!0] Size of the packet (in bytes) */
+ byte_t           ip_data[1]; /*< Package data. */
 };
 
 /* Allocate/Free packages for net devices. */
-FUNDEF struct packet *KCALL packet_alloc(size_t data_bytes);
-FUNDEF void KCALL packet_free(struct packet *__restrict pck);
+FUNDEF struct ipacket *KCALL ipacket_alloc(size_t data_bytes);
+FUNDEF void KCALL ipacket_free(struct ipacket *__restrict pck);
 
 
-#define NETDEV_DEFAULT_WTIMEOUT MSEC_TO_JIFFIES(200)
-#define NETDEV_DEFAULT_STIMEOUT  SEC_TO_JIFFIES(1)
+struct opacket {
+ /* Output packet data structure. */
+ void           *op_data; /*< [0..op_size] Package data/header. */
+ size_t          op_size; /*< Package data/header size. */
+ struct opacket *op_wrap; /*< [0..1] Wrapped (inner) package. */
+ void           *op_tail; /*< [0..op_tsiz] Package tail data. */
+ size_t          op_tsiz; /*< Package tail data size. */
+};
+#define OPACKET_INIT(p,s) {p,s,NULL,NULL,0}
 
+/* Returns the absolute package size of the given output package. */
+FUNDEF size_t KCALL opacket_abssize(struct opacket const *__restrict self);
+
+
+
+#define NETDEV_DEFAULT_STIMEOUT      SEC_TO_JIFFIES(1)
+#define NETDEV_DEFAULT_PACKETS_MAX (16*4096) /* 64K bytes */
 struct netdev {
  struct chrdev   n_dev;           /*< Underlying character device. */
  struct macaddr  n_mac;           /*< MAC Address of the device. */
- u32             n_write_timeout; /*< Timeout when writing to buffer (In jiffies; Ignored by software-buffered devices) */
- u32             n_send_timeout;  /*< Timeout when waiting for a package to be commit (In jiffies) */
+ u8              n_pad[2];        /* ... */
+ atomic_rwlock_t n_recv_lock;     /*< Lock used to protect the incoming packet buffer. */
+ struct ipacket *n_recv;          /*< [lock(n_recv_lock)][owned(ipacket_free)] Linked list of received packages (In receive order). */
+ struct ipacket *n_recv_last;     /*< [lock(n_recv_lock)] The back of the linked packet list (New packages are appended here). */
+ size_t          n_recv_siz;      /*< [lock(n_recv_lock)][<= n_recv_max] The total amount of data bytes (Sum of 'p_size' of all packets) currently buffered. */
+ size_t          n_recv_max;      /*< [lock(n_recv_lock)] The max size of a single package supported by the adapter. */
  rwlock_t        n_send_lock;     /*< Lock that must held when sending data. */
-
- /* Begin/end sending packets.
-  * The usual implementation look like this:
-  * >> n_send_packet(packet) { WRITE_TO_BUFFER(packet); }
-  * >> n_send_commit()       { TRANSFER_SEND_BUFFER(); }
-  * >> n_send_discard()      { CLEAR_BUFFER(); }
-  * NOTE: The buffer described here may either be implemented in hardware, or software. */
+ jtime32_t       n_send_timeout;  /*< [lock(n_send_lock)] Timeout when waiting for a package to be commit (In jiffies) */
+ size_t          n_send_maxsize;  /*< [const] Max package size that can be transmitted. */
 
  /* NOTE: The given packet must be allocated in HOST memory!
-  * @assume(rwlock_writing(&dev->n_buffer_lock));
-  * @return: packet_size:  Successfully written the packet into the buffer.
-  * @return: -EINVAL:      The packet is too large to be handled by the adapter.
-  * @return: -ENOBUFS:     The buffer is full and already written packages must
-  *                        be commit before new can be added (The caller must
-  *                        execute 'n_send_commit()' followed by 'n_send_begin()',
-  *                        before attempting to write more data.
-  * @return: -EIO:         An I/O error occurred while writing to a buffer.
-  * @return: -ETIMEDOUT:   A hardware buffer failed to acknowledge the packet with 'n_write_timeout' ticks.
-  * @return: E_ISERR(*):   Failed to write the packet to buffer for some reason. */
- ssize_t (KCALL *n_send_packet)(struct netdev *__restrict dev,
-                                HOST void const *__restrict packet,
-                                size_t packet_size); /* [1..1] */
- /* NOTE: No matter the return value, this function always unlocks the adapter's internal buffer lock.
-  * @assume(rwlock_writing(&dev->n_buffer_lock));
-  * @return: * :           The total amount of previously buffered bytes that were committed.
-  * @return: -IO:          Data transmission failed for some reason.
-  * @return: -ETIMEDOUT:   The adapter failed to acknowledge data having been send in time.
-  * @return: E_ISERR(*):   Failed to send data for some reason. */
- ssize_t (KCALL *n_send_commit)(struct netdev *__restrict dev); /* [1..1] */
- /* @assume(rwlock_writing(&dev->n_buffer_lock)); */
- void    (KCALL *n_send_discard)(struct netdev *__restrict dev); /* [1..1] */
-
-
-
+  * @assume(rwlock_writing(&self->n_send_lock));
+  * @assume(packet_size <= n_send_maxsize);
+  * @assume(packet_size == opacket_abssize(packet));
+  * @return: packet_size: Successfully written the packet into the buffer.
+  * @return: -IO:         Data transmission failed due to an internal adapter error.
+  * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having been send in time.
+  * @return: E_ISERR(*):  Failed to write the packet to buffer for some reason. */
+ ssize_t (KCALL *n_send)(struct netdev *__restrict self,
+                         struct opacket const *__restrict packet,
+                         size_t packet_size); /* [1..1] */
+ /* Network card finalizer. */
+ void (KCALL *n_fini)(struct netdev *__restrict self); /* [0..1] */
 };
+
 #define NETDEV_TRYINCREF(self)  CHRDEV_TRYINCREF(&(self)->n_dev)
 #define NETDEV_INCREF(self)     CHRDEV_INCREF(&(self)->n_dev)
 #define NETDEV_DECREF(self)     CHRDEV_DECREF(&(self)->n_dev)
 
 #define netdev_new(type_size) netdev_cinit((struct netdev *)kcalloc(type_size,GFP_SHARED))
 FUNDEF struct netdev *KCALL netdev_cinit(struct netdev *self);
+
+
+#define INODE_ISNETDEV(self) ((self)->i_ops == &netdev_ops)
+DATDEF struct inodeops netdev_ops;
+
+
+/* Check if adding a new package of 'packet_size' bytes is allowed.
+ * NOTE: The caller must be holding a read-lock to 'self->n_recv_lock'
+ * @return: true:  The packet may be allocated, filled and added using 'netdev_addpck_unlocked()'
+ * @return: false: The packet may not be received at this time, though a small may.
+ *                 The packet is empty. */
+#define netdev_pushok_unlocked(self,packet_size) \
+  ((self)->n_recv_siz+(packet_size) >  (self)->n_recv_siz && \
+   (self)->n_recv_siz+(packet_size) <= (self)->n_recv_max)
+#define netdev_pushok_atomic(self,packet_size) \
+ XBLOCK({ size_t const _old_size = ATOMIC_READ((self)->n_recv_siz); \
+          XRETURN _old_size+(packet_size) >  _old_size && \
+                  _old_size+(packet_size) <= ATOMIC_READ((self)->n_recv_max); })
+
+/* Add a packet 'pck' to the receiver buffer of the given network device.
+ * The caller is responsible to ensure that 'netdev_pushok_unlocked()' for the packet succeeds.
+ * NOTE: The caller must be holding a write-lock to 'self->n_recv_lock' */
+FUNDEF void KCALL netdev_addpck_unlocked(struct netdev *__restrict self, struct ipacket *__restrict pck);
+
+/* Pop the oldest package from the buffer of incoming data, returning
+ * it or NULL when no more packages are queued for processing.
+ * NOTE: The caller must be holding a write-lock to 'self->n_recv_lock' */
+FUNDEF struct ipacket *KCALL netdev_poppck_unlocked(struct netdev *__restrict self);
+
+/* Send the given package over the network.
+ * @assume(rwlock_writing(&self->n_send_lock));
+ * @assume(packet_size == opacket_abssize(packet));
+ * @return: packet_size: Successfully written the packet into the buffer.
+ * @return: -IO:         Data transmission failed due to an internal adapter error.
+ * @return: -EMSGSIZE:   The package is too large to be transmit in one piece.
+ * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having been send in time.
+ * @return: E_ISERR(*):  Failed to write the packet to buffer for some reason. */
+FUNDEF ssize_t KCALL
+netdev_send_unlocked(struct netdev *__restrict self,
+                     struct opacket *__restrict pck,
+                     size_t packet_size);
+/* Same as 'netdev_send_unlocked()', but also performs locking.
+ * @return: -EINTR: The calling thread was interrupted. */
+FUNDEF ssize_t KCALL
+netdev_send(struct netdev *__restrict self,
+            struct opacket *__restrict pck,
+            size_t packet_size);
+
+
+/* Get/Set the default adapter device, or NULL if none is installed. */
+FUNDEF REF struct netdev *KCALL get_default_adapter(void);
+FUNDEF bool KCALL set_default_adapter(struct netdev *__restrict dev, bool replace_existing);
 
 
 DECL_END

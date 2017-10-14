@@ -71,8 +71,7 @@ struct keymap_header {
  * WARNING: This data structure is visible in user-space! */
 DATDEF WEAK struct keymap const active_keymap __ASMNAME("keymap");
 
-/* The default keyboard device, or NULL if none is installed.
- * NOTE: This field is protected by the fact that it is only ever set once. */
+/* Get/Set the default keyboard device, or NULL if none is installed. */
 FUNDEF REF struct chrdev *KCALL get_default_keyboard(void);
 FUNDEF bool KCALL set_default_keyboard(struct chrdev *__restrict kbd, bool replace_existing);
 

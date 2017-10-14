@@ -58,6 +58,7 @@
     <ClCompile Include="..\..\src\kernel\dev\device.c" />
     <ClCompile Include="..\..\src\kernel\dev\diskpart.c" />
     <ClCompile Include="..\..\src\kernel\dev\fstype.c" />
+    <ClCompile Include="..\..\src\kernel\dev\net-stack.c" />
     <ClCompile Include="..\..\src\kernel\dev\net.c" />
     <ClCompile Include="..\..\src\kernel\dev\rtc.c" />
     <ClCompile Include="..\..\src\kernel\fs\cache.c" />
@@ -122,6 +123,7 @@
     <ClInclude Include="..\..\src\include\dev\blkdev.h" />
     <ClInclude Include="..\..\src\include\dev\chrdev.h" />
     <ClInclude Include="..\..\src\include\dev\device.h" />
+    <ClInclude Include="..\..\src\include\dev\net-stack.h" />
     <ClInclude Include="..\..\src\include\dev\net.h" />
     <ClInclude Include="..\..\src\include\dev\rtc.h" />
     <ClInclude Include="..\..\src\include\fs\access.h" />

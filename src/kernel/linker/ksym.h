@@ -7,6 +7,7 @@ STRING_BEGIN
 	STR("__cpu_shutdown_now_endwrite")
 	STR("mman_mmap_instance_unlocked")
 	STR("cpu_sched_setrunning_savef")
+	STR("netdev_send_ether_unlocked")
 	STR("modpatch_common_dlsym_impl")
 	STR("__linker_dynsym_bucket_end")
 	STR("kernel_unload_all_modules")
@@ -37,7 +38,9 @@ STRING_BEGIN
 	STR("sig_vtimedrecv_endwrite")
 	STR("__stack_chk_fail_local")
 	STR("mman_mrestore_unlocked")
+	STR("netdev_addpck_unlocked")
 	STR("mman_mprotect_unlocked")
+	STR("netdev_poppck_unlocked")
 	STR("mman_newfutex_unlocked")
 	STR("mman_getfutex_unlocked")
 	STR("sig_timedrecv_endwrite")
@@ -61,6 +64,7 @@ STRING_BEGIN
 	STR("dentry_xwalk_internal")
 	STR("mman_munmap_unlocked")
 	STR("cpu_sendipc_unlocked")
+	STR("netdev_send_unlocked")
 	STR("inode_flock_endwrite")
 	STR("task_unshare_sighand")
 	STR("mman_mremap_unlocked")
@@ -87,6 +91,7 @@ STRING_BEGIN
 	STR("inode_fopen_default")
 	STR("mman_valid_unlocked")
 	STR("stringprinter_print")
+	STR("set_default_adapter")
 	STR("canonbuffer_capture")
 	STR("cpu_enable_unlocked")
 	STR("mman_inuse_unlocked")
@@ -94,6 +99,7 @@ STRING_BEGIN
 	STR("mman_mcore_unlocked")
 	STR("dentryname_loadhash")
 	STR("page_malloc_scatter")
+	STR("get_default_adapter")
 	STR("modpatch_host_dlsym")
 	STR("inode_flock_endread")
 	STR("task_mktlb_unlocked")
@@ -226,6 +232,7 @@ STRING_BEGIN
 	STR("memfile_do_read")
 	STR("ptymaster_cinit")
 	STR("inode_mayaccess")
+	STR("opacket_abssize")
 	STR("vsuperblock_ops")
 	STR("argvlist_append")
 	STR("kernel_delmod_m")
@@ -333,6 +340,7 @@ STRING_BEGIN
 	STR("dentry_rename")
 	STR("inode_setattr")
 	STR("dentry_unused")
+	STR("ipacket_alloc")
 	STR("dentry_remove")
 	STR("inode_destroy")
 	STR("loopdevs_lock")
@@ -383,7 +391,6 @@ STRING_BEGIN
 	STR("copy_to_user")
 	STR("_kmemalign_d")
 	STR("task_endcrit")
-	STR("packet_alloc")
 	STR("mswap_unload")
 	STR("memfile_read")
 	STR("task_trywait")
@@ -400,6 +407,7 @@ STRING_BEGIN
 	STR("chrdev_cinit")
 	STR("get_bootpart")
 	STR("pty_register")
+	STR("ipacket_free")
 	STR("sym_hashname")
 	STR("task_addwait")
 	STR("file_destroy")
@@ -426,6 +434,7 @@ STRING_BEGIN
 	STR("strnrchrnul")
 	STR("rawmemrlenw")
 	STR("_mempcpyw_d")
+	STR("netdev_send")
 	STR("device_fini")
 	STR("fs_autosync")
 	STR("fstype_auto")
@@ -452,7 +461,6 @@ STRING_BEGIN
 	STR("_krealloc_d")
 	STR("debug_print")
 	STR("tty_printer")
-	STR("packet_free")
 	STR("inode_setup")
 	STR("blkdev_sync")
 	STR("task_issafe")
@@ -502,6 +510,7 @@ STRING_BEGIN
 	STR("fs_xinsnod")
 	STR("rawmemlenw")
 	STR("fs_xrename")
+	STR("netdev_ops")
 	STR("rawmemchrl")
 	STR("_realloc_d")
 	STR("task_cinit")
@@ -688,1593 +697,1608 @@ STRING_BEGIN
 	STR("atoi")
 STRING_END
 BUCKET_BEGIN
-	SYM(9657,128685510,stroff,0xc01995a5)
-	SYM(9457,89638812,__afail,0xc019b4c8)
-	SYM(3710,227032470,ptyslave_add2dev,0xc012de18)
-	SYM(3157,17160174,io_malloc_at_warn,0xc0101864)
+	SYM(7087,79154436,get_bootpart,0xc010e3a5)
+	SYM(1584,35392020,netdev_send_unlocked,0xc01165e9)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4777,80518051,strerrorname_s,0xc019ac19)
+	SYM(5167,27207109,task_terminate,0xc017398c)
+	SYM(2001,167921077,kmalloc_usable_size,0xc0144d84)
 BUCKET_END
-BUCKET_BEGIN
-	SYM(9561,10116092,iscntrl,0xc019b678)
-	SYM(5654,72151076,kernel_insmod,0xc017a4d3)
-	SYM(5002,239268494,boot_emulation,0xc01c1754)
-BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7815,191831008,file_setup,0xc011dbb3)
+	SYM(4649,168669411,vsuperblock_ops,0xc01aaaf8)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7958,52684349,_mall_enum,0xc0143cf4)
-	SYM(2400,38471765,usershare_writable,0xc01c8624)
+	SYM(7367,139070692,_krealign_d,0xc014574c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8419,58995060,fdman_get,0xc0117c0e)
-	SYM(6871,178304658,copy_in_user,0xc0105dbd)
-	SYM(1679,212182260,mman_newldt_unlocked,0xc01573f4)
+	SYM(8122,52684349,_mall_enum,0xc01453b4)
+	SYM(3487,22362389,realloc_in_place,0xc014511e)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9636,110637907,calloc,0xc0143954)
-	SYM(6298,108608857,fdman_destroy,0xc0117aa9)
-	SYM(4672,176161399,release_string,0xc010651c)
+	SYM(9520,179917518,strnlen,0xc019aa20)
+	SYM(5422,48444786,debug_tbprint2,0xc019ca9a)
+	SYM(3912,222813522,textfile_printer,0xc0136824)
 BUCKET_END
 EMPTY_BUCKET
-BUCKET_BEGIN
-	SYM(5878,228501657,modpatch_fini,0xc018215b)
-BUCKET_END
-BUCKET_BEGIN
-	SYM(7731,48381310,module_open,0xc017f56d)
-BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9169,63161543,memendw,0xc0198415)
-	SYM(6637,253152551,sigshare_new,0xc0162ed2)
-	SYM(3421,50041973,xsyscall_c_table,0xc01c1440)
+	SYM(8111,191880009,page_query,0xc01472c9)
 BUCKET_END
 EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(1623,205469636,iobuffer_read,0xc0127fe3)
+	SYM(8562,199243283,pipefs_ops,0xc01a8e78)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9664,119330997,kffree,0xc014365c)
+	SYM(3129,78561589,canonbuffer_erase,0xc012b166)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5724,3027796,debug_tbprint,0xc019adf9)
+	SYM(9285,158294126,fs_xopen,0xc0127145)
+	SYM(2439,190263794,syslog_set_printer,0xc010541f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9473,16568243,jiffies,0xc01c19f8)
-	SYM(4227,52170659,dentry_openthis,0xc0122f1c)
+	SYM(9376,10037307,isblank,0xc019cd53)
+	SYM(7571,113371575,copy_string,0xc01069e0)
+	SYM(4713,102061971,sysrtc_periodic,0xc011749b)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(3778,222813522,textfile_printer,0xc0135164)
+	SYM(2241,193294516,mman_mcore_unlocked,0xc01543a1)
 BUCKET_END
 EMPTY_BUCKET
 EMPTY_BUCKET
-BUCKET_BEGIN
-	SYM(6598,95069883,memfile_seek,0xc0135d8f)
-BUCKET_END
 BUCKET_BEGIN
-	SYM(9521,145136146,qsort_r,0xc0197368)
-	SYM(6481,65421940,_mall_enum_d,0xc014492f)
+	SYM(8430,211865059,strerror_s,0xc019c2c8)
+	SYM(2477,257156611,irq_pic_1_spurious,0xc0107793)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7266,206122343,memrlenw,0xc01984c3)
-	SYM(8519,106930229,smp_hwcpu,0xc01c17c0)
-	SYM(2723,17692853,kernel_commandline,0xc01c8678)
-	SYM(1359,9909563,schedule_delayed_work,0xc0173b4b)
+	SYM(9456,179943116,strtoul,0xc019b262)
+	SYM(6671,224578340,task_suspend,0xc0174635)
+	SYM(2341,130795268,inode_flock_endread,0xc011ea8c)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8222,180713781,fs_deltype,0xc0115011)
-	SYM(4563,102061971,sysrtc_periodic,0xc0115ddb)
-	SYM(3540,52801497,sigshare_destroy,0xc0162f81)
+	SYM(9688,179784201,stpncpy,0xc019ad0c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6546,163658098,dentry_walk2,0xc0121dd0)
+	SYM(5227,199980310,format_vprintf,0xc019d390)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8579,116656068,fs_xmount,0xc0126695)
+	SYM(7256,263679059,ptyslave_ops,0xc01a9560)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9393,63161564,memendl,0xc0197ae0)
-	SYM(1967,72864068,mman_mlock_unlocked,0xc0152918)
-	SYM(2207,130795268,inode_flock_endread,0xc011d3cc)
-	SYM(1020,233049668,mman_getfutex_unlocked,0xc014f34f)
+	SYM(8864,58996236,fdman_del,0xc011a228)
+	SYM(7165,261191508,task_clrwait,0xc0171cdc)
+	SYM(4329,62238516,_mall_untrack_d,0xc014614d)
+	SYM(4014,250761108,page_malloc_part,0xc014844f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6468,60886599,instance_new,0xc018048e)
+	SYM(3572,265304629,cpu_get_suitable,0xc016a0b6)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9273,63212596,memrend,0xc0199176)
-	SYM(7791,98629360,apic_base_p,0xc01c86a8)
-	SYM(6403,63101788,_mall_global,0xc0143edc)
-	SYM(4355,139219108,fs_user_xinsnod,0xc01268a1)
+	SYM(9704,37237539,kmalloc,0xc0144b2e)
+	SYM(8573,78772179,mzone_spec,0xc01ae040)
+	SYM(7547,179288763,fs_xsymlink,0xc0127842)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9313,63203849,mempcpy,0xc0198af4)
-	SYM(5752,138457547,task_mkustack,0xc01697d3)
-	SYM(4419,119704265,sighand_destroy,0xc01634be)
+	SYM(8834,225305524,sig_vsend,0xc016b3db)
+	SYM(5790,149040112,mregion_setup,0xc014f6ed)
+	SYM(5874,3027796,debug_tbprint,0xc019c4b9)
+	SYM(2629,41081044,blkdev_addautopart,0xc0114252)
+	SYM(955,98106796,__stack_chk_fail_local,0xc019cbfb)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3283,25878564,__kernel_data_end,0xc01eb30c)
+	SYM(4521,4037874,task_set_leader,0xc016cd69)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7859,55669879,getloadavg,0xc0197341)
-	SYM(7623,217030627,blkdev_sync,0xc010bf0b)
+	SYM(9923,7906964,qsort,0xc0198a86)
+	SYM(9384,161188088,bsearch,0xc01989b9)
+	SYM(9060,230316548,vgdt_get,0xc01075be)
+	SYM(7319,178581764,fpu_current,0x00001170)
+	SYM(6827,234179732,device_cinit,0xc0110546)
+	SYM(60,49160180,mman_insbranch_map_unlocked,0xc015076b)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9193,179942996,strtold,0xc0199eb5)
-	SYM(8876,175702646,vsprintf,0xc019d77b)
-	SYM(9110,158294126,fs_xopen,0xc0125a85)
+	SYM(9352,5626053,io_free,0xc010181c)
+	SYM(4461,101945877,file_pwrite,0xc011f89e)
+	SYM(6126,183570153,stack_mnotify,0xc0104f89)
+	SYM(4297,19562937,mregion_destroy,0xc014eaff)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(463,196070421,cpu_sched_setrunning_save,0xc016d88f)
+	SYM(9760,191657650,toupper,0xc019cd81)
+	SYM(5668,205007086,memalign,0xc0145070)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7551,187282084,inode_cinit,0xc011f4f1)
+	SYM(6528,79041803,get_bootdisk,0xc010e369)
+	SYM(5748,241415579,_mall_untrack,0xc01454e2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7110,146289443,realloc,0xc0143a04)
-	SYM(6910,2683733,devns_remove,0xc0112100)
+	SYM(978,205453332,mman_mrestore_unlocked,0xc01532f2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7001,261191508,task_clrwait,0xc017061c)
+	SYM(7463,165610681,device_fini,0xc011078d)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7698,206122364,memrlenl,0xc0197b78)
-	SYM(7683,108208916,task_iscrit,0xc0173790)
+	SYM(5152,239268494,boot_emulation,0xc01c27b4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6242,42983829,devns_release,0xc01128e7)
-	SYM(4211,216404181,kernel_instance,0xc01c8370)
+	SYM(9512,63153159,memcmpw,0xc0199999)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9713,128686528,strsep,0xc019aa89)
-	SYM(9265,179943004,strtoll,0xc0199e29)
-	SYM(1721,148837060,set_default_keyboard,0xc0177553)
+	SYM(7499,181149028,irq_default,0xc01d30e5)
+	SYM(6392,178543396,memfile_pread,0xc013735f)
+	SYM(516,167741044,mman_instance_at_unlocked,0xc0150429)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6624,12465461,format_quote,0xc019cae6)
+	SYM(2857,17692853,kernel_commandline,0xc01c9758)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8903,58929492,kmallopt,0xc014384b)
-	SYM(5242,166569744,modpatch_dldep,0xc0182643)
+	SYM(9267,92043894,__afailf,0xc019cba9)
+	SYM(8551,23489106,task_kill2,0xc016239f)
+	SYM(6308,200912670,fs_user_xopen,0xc0127e97)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6845,70671253,_mall_nofree,0xc0143e7f)
+	SYM(9867,111986131,dev_fs,0xc01c2840)
+	SYM(9752,229679911,vsyslog,0xc01054f0)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(3253,139067492,_memalign_d,0xc014455b)
+	SYM(2261,196920584,dentryname_loadhash,0xc01226bb)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5808,101513301,kernel_module,0xc01da640)
+	SYM(8924,104358659,io_malloc,0xc01017bb)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1742,121011136,pid_namespace_lookup,0xc01743eb)
+	SYM(7990,140567892,pdir_print,0xc01049d6)
+	SYM(8540,140737140,mswap_list,0xc01c9854)
+	SYM(1878,259545300,mman_assert_unlocked,0xc01502b2)
+	SYM(617,189277860,mman_setenviron_unlocked,0xc0154dc1)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9505,63154295,memcpyw,0xc0197d45)
-	SYM(6741,254907539,packet_alloc,0xc01151e7)
-	SYM(2514,85135589,instanceset_remove,0xc01806df)
+	SYM(116,149461285,task_terminate_cpu_endwrite,0xc0173686)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8002,137707668,_pvalloc_d,0xc01446fc)
-	SYM(7167,104792832,pdir_munmap,0xc010425c)
-	SYM(7191,161432244,dentry_init,0xc011fa9b)
+	SYM(9186,94277090,__chattr,0xc01bf6e0)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7539,216858601,blkdev_fini,0xc010bbee)
+	SYM(7487,114827439,fstype_auto,0xc01c9804)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5674,179915312,strncmp,0xc01996dc)
+	SYM(9303,265723348,sig_send,0xc016b310)
+	SYM(3765,160335472,memcasecmp,0xc019c170)
+	SYM(5197,197269420,sighand_kernel,0xc01c70a0)
+	SYM(2361,221114692,task_mktlb_unlocked,0xc016a73d)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8639,261480693,apic_base,0xc01c86a4)
+	SYM(9488,63203849,mempcpy,0xc019a1b4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5077,199980310,format_vprintf,0xc019bcd0)
+	SYM(3844,227032470,ptyslave_add2dev,0xc012f4d8)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9772,6862380,atoll,0xc0199e9c)
-	SYM(5864,102089220,task_pushwait,0xc0170797)
+	SYM(8298,251878964,fs_xinsnod,0xc0127329)
+	SYM(2221,166570100,__kernel_user_start,0xc01d0000)
+	SYM(438,149395364,fdman_put_nearby_unlocked,0xc011a041)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3387,40819202,intchain_trigger,0xc0169b40)
-	SYM(227,67156028,modpatch_common_dlsym_impl,0xc01821e3)
+	SYM(7113,195273381,ipacket_free,0xc0116588)
+	SYM(5017,129862965,fdman_get_file,0xc011967d)
+	SYM(3674,52801497,sigshare_destroy,0xc0164641)
+	SYM(490,196070421,cpu_sched_setrunning_save,0xc016ef4f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9029,204866559,mem_info,0xc01c1bc8)
-	SYM(5122,203915943,acquire_string,0xc0106269)
-	SYM(5452,259430265,module_destroy,0xc017eded)
-	SYM(760,118195749,task_pause_cpu_endwrite,0xc017324f)
+	SYM(7703,217386322,memset_user,0xc0106161)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8609,173815049,ldt_empty,0xc01c1ea0)
-	SYM(3574,50465333,iobuffer_reserve,0xc0127b0d)
+	SYM(9344,63161543,memendw,0xc0199ad5)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1158,201703188,mman_getstate_unlocked,0xc014f115)
+	SYM(9392,63153180,memcmpl,0xc0199074)
+	SYM(8188,102481692,ldt_kernel,0xc01c2f80)
+	SYM(8342,63182700,rawmemchrl,0xc0199256)
+	SYM(6879,38666340,_kmemalign_d,0xc01456de)
+	SYM(6905,34606356,mswap_unload,0xc015a6b0)
+	SYM(2201,115634820,mman_inuse_unlocked,0xc0152579)
+	SYM(1542,229237620,mman_munmap_unlocked,0xc0153adb)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9692,111986131,dev_fs,0xc01c17e0)
-	SYM(3744,245147701,inode_invalidate,0xc011f735)
+	SYM(6775,227097913,mman_destroy,0xc014fd87)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3761,85120052,_kmalloc_flags_d,0xc014425a)
-	SYM(2167,199775714,page_malloc_scatter,0xc0147dfd)
-	SYM(1293,106309166,blkdev_find_partition,0xc0113b91)
+	SYM(3147,59798727,pid_namespace_new,0xc01758c7)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8266,140738379,mswap_lock,0xc01c8764)
+	SYM(5182,48444844,debug_tbprintl,0xc019c4c4)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6074,206544725,dentry_remove,0xc01251e4)
-	SYM(3353,22362389,realloc_in_place,0xc0143a5e)
+	SYM(8221,106574645,heap_ffree,0xc0141835)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8921,63143136,kmemadup,0xc01437de)
-	SYM(8819,258471396,tty_print,0xc0184e9e)
-	SYM(5182,47932308,_mall_global_d,0xc0144b67)
+	SYM(7307,164855982,gdt_builtin,0xc01c27c0)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6650,163810747,dentry_xwalk,0xc0121e58)
+	SYM(7667,55598036,_kmallopt_d,0xc0145a76)
+	SYM(2895,160055540,_mall_traceback_d,0xc0145f78)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4687,73265060,core_delformat,0xc0178f87)
-	SYM(4957,15810626,vsnprintf_user,0xc01061b5)
+	SYM(2041,197696493,modpatch_user_dlsym,0xc0183bcd)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9760,8144949,uname,0xc01cf020)
-	SYM(3336,47571699,mregion_new_phys,0xc014d8f5)
-	SYM(3265,170557401,task_set_affinity,0xc0168a6f)
+	SYM(8518,63182711,rawmemchrw,0xc0199bad)
+	SYM(3237,252214031,mscatter_split_lo,0xc014918f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5047,197269420,sighand_kernel,0xc01c5fc0)
+	SYM(9328,175857108,cpu_gdt,0x00000550)
+	SYM(8155,23614596,task_yield,0xc016ef8f)
+	SYM(7751,218970084,debug_print,0xc019c511)
+	SYM(6931,206075748,task_trywait,0xc017272c)
+	SYM(5706,242421264,core_makedump,0xc017a74e)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6338,224533049,task_destroy,0xc016cd70)
+	SYM(8857,121389758,memlen,0xc019a86c)
+	SYM(7919,83652866,strend_user,0xc01061a9)
+	SYM(3057,78406178,canonbuffer_clear,0xc012b116)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(2438,108833460,instanceset_insert,0xc01805ec)
+	SYM(8684,45488428,file_poll,0xc011f54e)
+	SYM(6140,255868612,dentry_insnod,0xc0124e29)
+	SYM(5047,207479428,core_addformat,0xc017a576)
+	SYM(715,149980372,mman_findspace_unlocked,0xc0151bb8)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(3982,2745493,cpu_sched_rotate,0xc016ec4e)
+	SYM(3657,4790681,instance_destroy,0xc018272e)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8682,121389758,memlen,0xc01991ac)
-	SYM(6046,161423522,inode_setattr,0xc01209d3)
+	SYM(2967,215241714,pdir_maccess_addr,0xc0103aa5)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7707,115744869,task_setcpu,0xc016f7bd)
-	SYM(6962,254768085,sym_hashname,0xc017ec4f)
+	SYM(8023,55669879,getloadavg,0xc0198a01)
+	SYM(7787,217030627,blkdev_sync,0xc010c28b)
+	SYM(3003,155130139,task_set_sigblock,0xc0162de5)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4547,188153524,argvlist_insert,0xc017e90d)
+	SYM(9568,63161564,memendl,0xc01991a0)
+	SYM(9736,10116092,iscntrl,0xc019cd38)
+	SYM(7439,113389844,_mempcpyw_d,0xc01997e9)
+	SYM(7178,77240144,devns_lookup,0xc011148e)
+	SYM(4601,140589572,ptymaster_cinit,0xc012edd3)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1112,27610229,iobuffer_get_read_size,0xc01279f1)
+	SYM(907,49407705,module_restore_readonly,0xc0181a3c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8310,214840272,strverscmp,0xc019aa62)
-	SYM(6780,206075748,task_trywait,0xc017106c)
+	SYM(9696,145136146,qsort_r,0xc0198a28)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9417,179915828,strnend,0xc0199318)
-	SYM(5822,172417334,sig_timedrecv,0xc0169dea)
-	SYM(2247,168329588,mman_print_unlocked,0xc0152d77)
+	SYM(9249,205810572,memmovel,0xc019936a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4327,101945877,file_pwrite,0xc011e1de)
+	SYM(4681,58732093,kernel_delmod_m,0xc017c479)
+	SYM(2021,185277445,canonbuffer_release,0xc012b29a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(489,167741044,mman_instance_at_unlocked,0xc014ed69)
+	SYM(9640,179915138,strnchr,0xc019ab2a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8699,45531971,file_sync,0xc011e53b)
-	SYM(1867,32426981,inode_flock_upgrade,0xc011d1f8)
+	SYM(5677,103145427,get_system_rtc,0xc011715e)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9257,179918262,strnoff,0xc01995db)
-	SYM(5556,242421264,core_makedump,0xc017908e)
-	SYM(2833,215241714,pdir_maccess_addr,0xc0103723)
+	SYM(8386,162584932,sysrtc_set,0xc011732b)
+	SYM(7607,217037524,blkdev_read,0xc010cb21)
+	SYM(7955,98629360,apic_base_p,0xc01c9788)
+	SYM(2181,188721940,cpu_enable_unlocked,0xc0109e9d)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9545,162096643,rtc_ops,0xc01a3c40)
-	SYM(7870,190562149,page_ffree,0xc01472d5)
-	SYM(1249,223724845,modpatch_common_dlsym,0xc01823d4)
+	SYM(4048,54017753,task_tlb_mnotify,0xc016a757)
+	SYM(567,242952149,task_resume_cpu_endwrite,0xc0174376)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7155,178581764,fpu_current,0x00001170)
+	SYM(8364,22965668,task_cinit,0xc016c7e6)
+	SYM(1093,233049668,mman_getfutex_unlocked,0xc0150a0f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9601,128674425,stpcpy,0xc0199617)
-	SYM(1511,213538773,inode_flock_endwrite,0xc011d446)
+	SYM(4265,199001301,fdman_get_inode,0xc011955c)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9441,9975245,isalnum,0xc019b623)
+	SYM(6697,68326595,pdir_maccess,0xc010396f)
 BUCKET_END
-BUCKET_BEGIN
-	SYM(8409,156868260,rtc_cinit,0xc01156cd)
-	SYM(8449,205020654,kmemalign,0xc0143533)
-	SYM(3404,79975284,inode_flock_read,0xc011cee4)
-BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9766,8030276,srand,0xc019724c)
+	SYM(9106,230320548,gdt_set,0xc0107237)
+	SYM(3776,93693132,__stack_chk_fail,0xc019cbfb)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6416,3223252,cpu_rpc_send,0xc015eb5b)
+	SYM(6252,178197577,inode_destroy,0xc01215d4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9137,227979299,fs_sync,0xc0123e18)
+	SYM(9051,175702646,vsprintf,0xc019ee3b)
+	SYM(2281,199775714,page_malloc_scatter,0xc01494bd)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8332,138629172,fdman_init,0xc01179cb)
-	SYM(6936,79154436,get_bootpart,0xc010e025)
+	SYM(7295,161223579,dentry_walk,0xc0122ee4)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7563,139817444,_krealloc_d,0xc0143faa)
+	SYM(8133,227556004,devfs_root,0xc01c97b4)
+	SYM(7451,215110372,netdev_send,0xc011671b)
+	SYM(3207,166920448,strncasecmp,0xc019b1e5)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8439,95107875,vnode_ops,0xc01a8c00)
-	SYM(1315,180955401,pid_namespace_destroy,0xc01742ce)
+	SYM(5944,33853637,devns_reserve,0xc0112c53)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6832,29560084,mswap_reload,0xc0158ffc)
-	SYM(5836,26550772,sighand_reset,0xc0163583)
-	SYM(2815,2690116,instance_callinit,0xc0180c38)
+	SYM(9408,10710450,islower,0xc019cc54)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3642,93693132,__stack_chk_fail,0xc019b53b)
+	SYM(6336,111506491,task_kill2_ok,0xc016245a)
+	SYM(1344,123941299,cpu_validate_counters,0xc016f17b)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6172,111506491,task_kill2_ok,0xc0160d9a)
+	SYM(1717,205469636,iobuffer_read,0xc01296a3)
+	SYM(4537,15668828,page_malloc_all,0xc0149725)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(4987,106667876,_mall_nofree_d,0xc0144afa)
+	SYM(9874,117793762,io_mgr,0xc01c9768)
+	SYM(9600,89970178,__ffs32,0xc019c05e)
+	SYM(7282,168837778,dentry_mkdir,0xc0124a17)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6312,228325341,mman_swapmem,0xc014d3ec)
-	SYM(4435,155446725,fs_user_xrename,0xc0126be4)
-	SYM(3965,26563413,iobuffer_unwrite,0xc0129487)
+	SYM(6280,189300059,schedule_work,0xc0174ee1)
+	SYM(3929,110276003,_mall_printleaks,0xc014542a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7969,227556004,devfs_root,0xc01c86d4)
-	SYM(88,107471236,sigpending_enqueue_unlocked,0xc0163035)
+	SYM(8824,169240236,task_kill,0xc0162466)
+	SYM(8485,214840272,strverscmp,0xc019c122)
+	SYM(2572,108833460,instanceset_insert,0xc0181cac)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9101,7037879,pipe_new,0xc012a9b7)
-	SYM(5141,191389829,file_write,0xc011dfc1)
-	SYM(7407,137476391,sighand_new,0xc01634eb)
+	SYM(4457,164767957,textfile_pwrite,0xc013656c)
+	SYM(3219,237026521,task_set_priority,0xc0174703)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8629,8764153,pdir_fini,0xc0102b8f)
-	SYM(7743,204476839,rawmemrchrw,0xc019851a)
+	SYM(9132,7037187,pipe_ops,0xc01a8d80)
+	SYM(7595,114923931,fstype_lock,0xc01c97f8)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7755,83652866,strend_user,0xc0105e29)
-	SYM(2609,186047720,driver_search_path,0xc01c83c0)
+	SYM(6749,241664610,file_readdir,0xc011fb47)
+	SYM(6866,233879202,copy_to_user,0xc01060c0)
+	SYM(5557,93393522,dentry_setattr,0xc01255da)
+	SYM(859,120930762,schedule_delayed_work_j,0xc017530b)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9177,5626053,io_free,0xc010181c)
-	SYM(2742,95861673,stringprinter_fini,0xc019d531)
-	SYM(1043,179155269,sig_timedrecv_endwrite,0xc0169e27)
+	SYM(3895,85120052,_kmalloc_flags_d,0xc014591a)
+	SYM(1208,155962148,mman_mextract_unlocked,0xc0152705)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6228,178543396,memfile_pread,0xc0135c9f)
-	SYM(4595,209612404,task_set_parent,0xc016b800)
-	SYM(254,261649396,__linker_dynsym_bucket_end,0xc01d4a44)
+	SYM(763,179066469,iobuffer_get_write_size,0xc012913f)
+	SYM(931,30610389,sig_vtimedrecv_endwrite,0xc016b554)
 BUCKET_END
+EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5317,40420740,task_interrupt,0xc0171e51)
-	SYM(3659,119236818,module_addloader,0xc017fcb0)
-	SYM(3999,151819716,devns_reserve_at,0xc01128d1)
+	SYM(7403,107627580,pdir_kernel,0x001cb000)
+	SYM(2081,126853956,inode_fopen_default,0xc011f21d)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1271,123941299,cpu_validate_counters,0xc016dabb)
+	SYM(9656,10141717,isctype,0xc019cdbd)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9289,10994900,ispunct,0xc019b608)
-	SYM(7491,55598036,_kmallopt_d,0xc01443b6)
-	SYM(7779,100574420,mman_assert,0xc014ecdc)
+	SYM(6632,60886599,instance_new,0xc0181b4e)
+	SYM(1498,80355039,mswap_ticket_split_lo,0xc015a6a4)
+	SYM(308,226618275,kernel_unload_all_modules,0xc01d4926)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6559,248184772,blkdev_cinit,0xc010b5d5)
+	SYM(7643,161221636,dentry_used,0xc0117d75)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(2704,257160707,irq_pic_2_spurious,0xc0107486)
+	SYM(8320,261005141,fs_xrename,0xc0127ba2)
+	SYM(1139,233094965,dentry_open_with_inode,0xc0124317)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8244,63117918,rawmemrlen,0xc019925b)
-	SYM(6676,182980098,task_waitfor,0xc01711cb)
-	SYM(2007,21135780,mman_valid_unlocked,0xc0150f47)
-	SYM(437,193343076,task_pause_cpu_endwrite_t,0xc017312f)
+	SYM(3793,119236818,module_addloader,0xc0181370)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7455,107531516,mman_kernel,0xc01ca000)
-	SYM(5212,262177202,fs_user_xmkdir,0xc01269ef)
-	SYM(1204,28117172,boot_emulation_logport,0xc01c1756)
+	SYM(6619,47150948,task_popwait,0xc0171fa3)
+	SYM(3759,142434128,fuzzy_memcasecmp,0xc019b8f1)
+	SYM(1710,157075556,atomic_iobuffer_read,0xc012b3a4)
+	SYM(1070,234555716,mman_newfutex_unlocked,0xc0150ac7)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6102,250896171,loopdevs_lock,0xc01c86b4)
-	SYM(4747,117470217,mfutex_destroy,0xc014a2c2)
+	SYM(6028,228501657,modpatch_fini,0xc018381b)
+	SYM(787,118195749,task_pause_cpu_endwrite,0xc017490f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7431,217037524,blkdev_read,0xc010c7a1)
+	SYM(3345,259687078,ptymaster_add2dev,0xc012f4bd)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5152,110174873,dentry_destroy,0xc011fb14)
-	SYM(3557,51483083,fs_user_xhrdlink,0xc0126a96)
-	SYM(1066,233094965,dentry_open_with_inode,0xc0122c57)
+	SYM(7274,146289443,realloc,0xc01450c4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8886,230317476,gdt_get,0xc0106d57)
+	SYM(1454,226284708,sig_vsendone_unlocked,0xc01715e2)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8966,206095239,memrendw,0xc019845a)
-	SYM(4147,226674423,module_open_new,0xc017fa22)
-	SYM(2419,95752827,stringprinter_pack,0xc019d41c)
+	SYM(4441,229761673,mscatter_memcpy,0xc014934a)
+	SYM(4116,2745493,cpu_sched_rotate,0xc017030e)
+	SYM(3093,208188457,task_weak_destroy,0xc016da87)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5518,205007086,memalign,0xc01439b0)
-	SYM(7347,204476860,rawmemrchrl,0xc0197bba)
+	SYM(8331,181218003,netdev_ops,0xc01c2960)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4115,247772171,dentry_readlink,0xc0123fb4)
+	SYM(7035,7776688,fuzzy_strcmp,0xc019bf25)
+	SYM(4585,178704868,memfile_do_read,0xc0136d1a)
+	SYM(1520,225459628,dentry_xwalk_internal,0xc0123559)
+	SYM(1254,37994836,_kmalloc_usable_size_d,0xc01458af)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7767,107831874,addr_isuser,0xc0105f49)
-	SYM(6585,241664610,file_readdir,0xc011e487)
-	SYM(5850,44871060,diskpart_read,0xc0113549)
-	SYM(2286,44937156,_mall_printleaks_d,0xc01449b5)
+	SYM(9240,205955276,mempcpyl,0xc0198d59)
+	SYM(8794,137576132,_calloc_d,0xc0145baf)
+	SYM(7343,98555120,core_dodump,0xc017b1d7)
+	SYM(2705,171455252,sigpending_discard,0xc0164863)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4927,129952651,fdman_get_task,0xc0118065)
+	SYM(9584,9975441,isalpha,0xc019cc1a)
+	SYM(5602,259430265,module_destroy,0xc01804ad)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9065,205955276,mempcpyl,0xc0197699)
-	SYM(2305,190263794,syslog_set_printer,0xc010509d)
+	SYM(9728,89970214,__ffs16,0xc019c020)
+	SYM(8012,63111442,rawmemrchr,0xc019a8cf)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7719,216807657,chrdev_fini,0xc010e216)
-	SYM(640,207018645,__assertion_unreachable,0xc019b4a9)
+	SYM(9648,16568243,jiffies,0xc01c2ad8)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6260,45545147,file_seek,0xc011e2ff)
-	SYM(6116,189300059,schedule_work,0xc0173821)
+	SYM(8452,23920692,task_start,0xc016d30d)
+	SYM(7204,153253716,task_haswait,0xc01726c4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7936,140269464,pdir_flush,0xc010492f)
-	SYM(6728,232917588,task_endcrit,0xc0101196)
+	SYM(1322,223724845,modpatch_common_dlsym,0xc0183a94)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3438,265304629,cpu_get_suitable,0xc01689f6)
+	SYM(8704,5323587,vlink_ops,0xc01aaa00)
+	SYM(4882,112834443,dentry_symlink,0xc0125a65)
+	SYM(5272,203915943,acquire_string,0xc01065e9)
+	SYM(4617,181579635,inode_mayaccess,0xc0121a00)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6663,234179732,device_cinit,0xc01101c6)
+	SYM(6434,147989812,mregion_cinit,0xc014f214)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9585,191657650,toupper,0xc019b6c1)
-	SYM(5497,150559060,devns_delevent,0xc0110894)
+	SYM(6788,12465461,format_quote,0xc019e1a6)
 BUCKET_END
 EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7503,266910379,fs_xhrdlink,0xc012633e)
-	SYM(2959,208188457,task_weak_destroy,0xc016c3c7)
-	SYM(1927,185277445,canonbuffer_release,0xc0129bda)
+	SYM(2381,168329588,mman_print_unlocked,0xc0154437)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7179,98555120,core_dodump,0xc0179b17)
+	SYM(7126,254768085,sym_hashname,0xc018030f)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9369,89970420,__ffs64,0xc019a9d2)
-	SYM(8939,206095260,memrendl,0xc0197b20)
-	SYM(6494,81251580,fdman_kernel,0xc01c1a20)
+	SYM(7396,121123667,malloc,0xc0144fbd)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9281,179943116,strtoul,0xc0199ba2)
-	SYM(6767,95073908,memfile_read,0xc0135cff)
+	SYM(9664,37501872,kmemdup,0xc0144e3a)
+	SYM(7355,161432244,dentry_init,0xc012115b)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(712,125804661,task_kill2_cpu_endwrite,0xc01608ba)
+	SYM(8804,8764153,pdir_fini,0xc0102f11)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8975,194735500,strtoull,0xc0199c9a)
-	SYM(7215,115748836,task_set_id,0xc016b934)
-	SYM(808,151856692,mman_insbranch_unlocked,0xc014ee6d)
+	SYM(8422,63214286,memrlen,0xc019a88a)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9629,113927795,fd_ops,0xc01a4440)
+	SYM(9942,493636,rand,0xc019891c)
+	SYM(6580,3223252,cpu_rpc_send,0xc016021b)
+	SYM(4409,253310788,iobuffer_unread,0xc012a8c9)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9377,11302578,isupper,0xc019b577)
+	SYM(8744,10026137,__isascii,0xc019cd6e)
+	SYM(3555,50041973,xsyscall_c_table,0xc01c2440)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8255,211865059,strerror_s,0xc019ac08)
+	SYM(7907,204476839,rawmemrchrw,0xc0199bda)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7014,77240144,devns_lookup,0xc011110e)
-	SYM(3625,142434128,fuzzy_memcasecmp,0xc019a231)
+	SYM(8276,53484500,_mallopt_d,0xc0145ae4)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9513,179784201,stpncpy,0xc019964c)
-	SYM(904,30610389,sig_vtimedrecv_endwrite,0xc0169e94)
+	SYM(9902,128684734,strlen,0xc019aa08)
+	SYM(8974,94371670,ns_chrdev,0xc01c97d0)
+	SYM(6112,102822754,task_testintr,0xc0174e85)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6793,191601778,task_filltlb,0xc016926d)
-	SYM(2127,193294516,mman_mcore_unlocked,0xc0152ce1)
+	SYM(1899,225204803,instanceset_contains,0xc0181f21)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(2590,113174015,syslog_print_serio,0xc010505c)
+	SYM(6000,44871060,diskpart_read,0xc01138d7)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9489,37501872,kmemdup,0xc014377a)
-	SYM(9047,262538340,pid_init,0xc01c8340)
-	SYM(7826,140567892,pdir_print,0xc0104654)
-	SYM(1469,229237620,mman_munmap_unlocked,0xc015241b)
+	SYM(3504,181735129,instance_mnotify,0xc0182546)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6507,224578340,task_suspend,0xc0172f75)
-	SYM(4972,164628296,modpatch_patch,0xc018259d)
-	SYM(1658,261774836,mman_getldt_unlocked,0xc0158799)
+	SYM(7655,105017571,page_malloc,0xc01475d2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1700,93670839,cpu_sched_setrunning,0xc016d8ae)
+	SYM(9916,106286440,__ffs8,0xc019bfe5)
+	SYM(5647,150559060,devns_delevent,0xc0110c14)
+	SYM(1815,148837060,set_default_keyboard,0xc0178c13)
+	SYM(642,204895540,mman_mmap_stack_unlocked,0xc015107d)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(4611,262769195,_mall_traceback,0xc0143c8d)
-	SYM(3795,110276003,_mall_printleaks,0xc0143d6a)
+	SYM(8408,7179929,fstype_any,0xc01c9808)
+	SYM(6238,206544725,dentry_remove,0xc01268a4)
+	SYM(4553,119704265,sighand_destroy,0xc0164b7e)
+	SYM(1185,27610229,iobuffer_get_read_size,0xc01290b1)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4657,131660976,blkdev_newloop,0xc010b93d)
-	SYM(3880,250761108,page_malloc_part,0xc0146d8f)
+	SYM(7535,155148438,set_bootdev,0xc010e434)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(2995,78561589,canonbuffer_erase,0xc0129aa6)
+	SYM(9464,10994900,ispunct,0xc019ccc8)
+	SYM(5122,164628296,modpatch_patch,0xc0183c5d)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8885,230316548,vgdt_get,0xc010723e)
+	SYM(6853,48428229,mswap_delete,0xc015a6c8)
+	SYM(5377,68267145,mman_maps_fini,0xc01533d6)
+	SYM(2913,157974489,task_get_affinity,0xc016a0c2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6988,203068473,file_destroy,0xc011dd16)
-	SYM(5976,183570153,stack_mnotify,0xc0104c07)
+	SYM(4313,249281326,modpatch_dlopen,0xc01845e4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9329,9919924,irq_get,0xc01075f3)
-	SYM(8789,93548374,ns_blkdev,0xc01c86d8)
+	SYM(2838,257160707,irq_pic_2_spurious,0xc0107806)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(3523,4790681,instance_destroy,0xc018106e)
-	SYM(1805,225204803,instanceset_contains,0xc0180861)
+	SYM(8994,258471396,tty_print,0xc018655e)
+	SYM(5587,108616068,devns_addevent,0xc0110b3b)
+	SYM(3946,231309060,superblock_cinit,0xc0120e6b)
+	SYM(3039,252246612,sig_send_unlocked,0xc016b36b)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6715,38666340,_kmemalign_d,0xc014401e)
-	SYM(6949,213605442,pty_register,0xc012de33)
-	SYM(6186,21376404,pdir_mprotect,0xc01032c1)
-	SYM(1987,126853956,inode_fopen_default,0xc011db5d)
+	SYM(4281,226674423,module_open_new,0xc01810e2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6819,243552763,fs_mountlock,0xc01c8748)
+	SYM(8254,190900612,page_print,0xc0149a38)
+	SYM(8474,77086252,strnchrnul,0xc019abc4)
+	SYM(7523,204476860,rawmemrchrl,0xc019927a)
+	SYM(5818,124475200,fuzzy_strncmp,0xc019bf52)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8178,137703908,_realloc_d,0xc01445bf)
+	SYM(5542,64141243,dentry_hrdlink,0xc012574f)
+	SYM(2610,103434823,__cpu_shutdown_now,0xc01096ce)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5227,68267145,mman_maps_fini,0xc0151d16)
-	SYM(3591,108696027,fs_user_xsymlink,0xc0126b34)
+	SYM(9294,30981428,_kfree_d,0xc01457c9)
+	SYM(8954,230087924,page_stat,0xc0146913)
+	SYM(5452,248642720,blkdev_getloop,0xc010be2d)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9741,106286440,__ffs8,0xc019a925)
-	SYM(8321,137706340,_kmalloc_d,0xc0143f39)
-	SYM(3631,160335472,memcasecmp,0xc019aab0)
-	SYM(6572,224066596,rm_interrupt,0xc0107dfc)
+	SYM(9776,128674425,stpcpy,0xc019acd7)
+	SYM(3399,170557401,task_set_affinity,0xc016a12f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7299,215694275,fs_autosync,0xc01c1a98)
-	SYM(2941,267639899,dentry_user_xwalk,0xc0126736)
+	SYM(8734,257571538,tty_color,0xc01c94a4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4387,4037874,task_set_leader,0xc016b6a9)
+	SYM(9680,63154295,memcpyw,0xc0199405)
+	SYM(9168,205810679,memmovew,0xc0199cd3)
+	SYM(1432,9909563,schedule_delayed_work,0xc017520b)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9578,129016663,syslog,0xc01050ca)
+	SYM(9078,58929492,kmallopt,0xc0144f0b)
+	SYM(8914,205134180,_memcpy_d,0xc0199f95)
+	SYM(7230,243553476,fs_mountlist,0xc01c9710)
+	SYM(5332,47932308,_mall_global_d,0xc0146227)
+	SYM(5392,166569744,modpatch_dldep,0xc0183d03)
+	SYM(3538,79975284,inode_flock_read,0xc011e5a4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4403,15668828,page_malloc_all,0xc0148065)
-	SYM(2761,160055540,_mall_traceback_d,0xc01448b8)
-	SYM(2147,196920584,dentryname_loadhash,0xc0120ffb)
+	SYM(412,120960853,task_suspend_cpu_endwrite,0xc0173efd)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8849,59007879,mman_new,0xc014e2d7)
-	SYM(5527,103145427,get_system_rtc,0xc0115a9e)
-	SYM(2779,157974489,task_get_affinity,0xc0168a02)
-	SYM(2362,157882149,sigpending_enqueue,0xc0163141)
+	SYM(9213,200702739,tty_putc,0xc0186393)
+	SYM(360,204848331,pid_namespace_lookup_weak,0xc0175bc7)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8799,94371670,ns_chrdev,0xc01c86f0)
-	SYM(5482,208492246,sig_vtimedrecv,0xc0169e55)
+	SYM(7511,179831609,ldt_destroy,0xc01588ab)
+	SYM(6084,36551861,realmode_base,0xc01c9708)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8057,106574645,heap_ffree,0xc0140175)
-	SYM(8079,105084083,elf_modops,0xc01bcee0)
+	SYM(7100,213605442,pty_register,0xc012f4f3)
+	SYM(3291,17160174,io_malloc_at_warn,0xc0101864)
+	SYM(2141,48897618,set_default_adapter,0xc01168c0)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1381,226284708,sig_vsendone_unlocked,0xc016ff22)
+	SYM(5077,129952651,fdman_get_task,0xc0119725)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8479,116671783,fs_xmkreg,0xc0125e1c)
+	SYM(8089,205367396,_kmemdup_d,0xc0145985)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6975,227156,task_addwait,0xc0170a7f)
-	SYM(1887,104406116,_realloc_in_place_d,0xc0144629)
+	SYM(3589,233393193,fdman_get_dentry,0xc0119475)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4499,168669411,vsuperblock_ops,0xc01a8d78)
+	SYM(6710,163658098,dentry_walk2,0xc0123490)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9727,128684734,strlen,0xc0199348)
-	SYM(6377,103872004,io_malloc_at,0xc0101847)
-	SYM(4897,207479428,core_addformat,0xc0178eb6)
+	SYM(3691,51483083,fs_user_xhrdlink,0xc0128156)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9569,63203527,mempatw,0xc019859f)
-	SYM(9577,229679911,vsyslog,0xc010516e)
+	SYM(6014,102089220,task_pushwait,0xc0171e57)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8112,53484500,_mallopt_d,0xc0144424)
-	SYM(6455,47150948,task_popwait,0xc01708e3)
+	SYM(5107,15810626,vsnprintf_user,0xc0106535)
+	SYM(3606,80516498,call_user_worker,0xc010626e)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6884,7776688,fuzzy_strcmp,0xc019a865)
-	SYM(4822,118419934,page_malloc_in,0xc014654e)
-	SYM(3506,234443200,superblock_setup,0xc011f87c)
-	SYM(1490,195414484,cpu_sendipc_unlocked,0xc010a285)
+	SYM(8634,215539012,_kffree_d,0xc0145837)
+	SYM(7979,191831008,file_setup,0xc011f273)
+	SYM(6645,65421940,_mall_enum_d,0xc0145fef)
 BUCKET_END
 EMPTY_BUCKET
 EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8499,169202564,task_crit,0xc01737a8)
-	SYM(5949,220289426,sprintf_user,0xc0105fda)
+	SYM(3629,160306112,strcasecmp,0xc019b181)
+	SYM(6489,57231620,devns_insert,0xc0112355)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6429,168850215,dentry_mkreg,0xc0122f69)
+	SYM(8397,180713781,fs_deltype,0xc011539f)
+	SYM(5497,15841629,instance_dlsym,0xc0181f9f)
 BUCKET_END
-EMPTY_BUCKET
+BUCKET_BEGIN
+	SYM(5257,185809426,inode_syncattr,0xc012257f)
+BUCKET_END
+BUCKET_BEGIN
+	SYM(6424,45545147,file_seek,0xc011f9bf)
+BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8689,58996236,fdman_del,0xc0118b68)
-	SYM(8709,156680292,errnotext,0xc01d043d)
-	SYM(7903,162590052,sysrtc_get,0xc0115b93)
+	SYM(8034,190562149,page_ffree,0xc0148995)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3676,27293971,irq_pic_spurious,0xc01c8694)
+	SYM(9204,204866559,mem_info,0xc01c2ca8)
+	SYM(3470,47571699,mregion_new_phys,0xc014efb5)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7275,113389844,_mempcpyw_d,0xc0198129)
-	SYM(1574,148836740,get_default_keyboard,0xc0177513)
+	SYM(9504,9919924,irq_get,0xc0107973)
+	SYM(6515,82254256,fuzzy_memcmp,0xc019bc1d)
+	SYM(4867,140324032,format_hexdump,0xc019e660)
+	SYM(5617,63502168,iobuffer_flush,0xc0129484)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7263,204580455,rawmemrlenw,0xc0198578)
+	SYM(5734,205288697,iobuffer_fini,0xc0128fd3)
+	SYM(5437,66411365,iobuffer_write,0xc012a037)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8769,169250686,task_join,0xc0171ef2)
-	SYM(6351,82254256,fuzzy_memcmp,0xc019a55d)
-	SYM(2797,156797908,__stack_chk_guard,0xc01c8620)
-	SYM(3247,149663428,_posix_memalign_d,0xc01447d7)
+	SYM(8419,63117918,rawmemrlen,0xc019a91b)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5362,179564580,heap_malloc_at,0xc0140008)
+	SYM(9744,63203527,mempatw,0xc0199c5f)
+	SYM(7910,206084263,memrchrw,0xc0199a92)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1337,235077445,inode_flock_downgrade,0xc011d378)
+	SYM(1857,262515188,mman_setldt_unlocked,0xc01595d6)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7972,227972612,fs_root,0xc01c1a60)
-	SYM(2533,175262024,mman_assert_branch,0xc014ea2e)
+	SYM(8144,128809269,fs_addtype,0xc011529f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9529,37237539,kmalloc,0xc014346e)
-	SYM(7311,114827439,fstype_auto,0xc01c8724)
+	SYM(8944,169250686,task_join,0xc01735b2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9593,63203548,mempatl,0xc0197c1e)
-	SYM(5780,130111654,debug_vprintf,0xc019ae8e)
-	SYM(5962,102822754,task_testintr,0xc01737c5)
+	SYM(1920,29270291,module_open_in_paths,0xc0180bae)
+	SYM(1476,166873835,instance_destroy_weak,0xc0182a92)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6364,79041803,get_bootdisk,0xc010dfe9)
+	SYM(4201,209880540,sigshare_kernel,0xc01c7000)
+	SYM(4425,219841572,blkdev_autopart,0xc0113feb)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4033,47647662,mregion_new_anon,0xc014da03)
+	SYM(6182,206569381,dentry_rename,0xc0125e90)
+	SYM(3963,37959013,load_keymap_file,0xc0178ca4)
+	SYM(883,183838489,instance_add_dependency,0xc0182128)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8619,137576132,_calloc_d,0xc01444ef)
-	SYM(8189,22965668,task_cinit,0xc016b126)
+	SYM(6762,95069883,memfile_seek,0xc013744f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9161,63194805,memmove,0xc0199276)
+	SYM(9105,230321668,vgdt_set,0xc0107661)
+	SYM(6983,29560084,mswap_reload,0xc015a6bc)
+	SYM(7243,168833476,dentry_mount,0xc0125214)
+	SYM(6042,37585588,module_open_d,0xc018069b)
+	SYM(4745,209612404,task_set_parent,0xc016cec0)
+	SYM(88,107471236,sigpending_enqueue_unlocked,0xc01646f5)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5948,119626210,vsprintf_user,0xc01060c4)
-	SYM(172,260454916,mman_mmap_instance_unlocked,0xc014f4bf)
+	SYM(9846,128686770,strstr,0xc019adfb)
+	SYM(9528,179931522,strrchr,0xc019aaa2)
+	SYM(7931,107831874,addr_isuser,0xc01062c9)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4942,252372251,mswap_fallback,0xc01c1ee0)
+	SYM(7269,265423411,page_realloc,0xc01497d9)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9353,179931522,strrchr,0xc01993e2)
-	SYM(8599,8803632,pdir_mmap,0xc0103b9b)
-	SYM(7359,155148438,set_bootdev,0xc010e0b4)
-	SYM(3693,210243828,_mall_validate_d,0xc0144a21)
-	SYM(2381,40797012,mman_mmap_unlocked,0xc01508e0)
+	SYM(7799,108010965,task_issafe,0xc0174e19)
+	SYM(5407,172201221,memfile_pwrite,0xc013738f)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9748,7906964,qsort,0xc01973c6)
-	SYM(8134,251878964,fs_xinsnod,0xc0125c69)
+	SYM(8015,63211906,memrchr,0xc019a7c0)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8148,63188007,memlenw,0xc0198499)
+	SYM(9472,130560803,pvalloc,0xc01451d1)
+	SYM(2724,113174015,syslog_print_serio,0xc01053de)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(4259,14657507,superblock_sync,0xc011f8e3)
+	SYM(7691,52291476,_kmemadup_d,0xc01459f9)
+	SYM(6658,81251580,fdman_kernel,0xc01c2b00)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9490,121387968,memdup,0xc0143b72)
-	SYM(8669,116684946,fs_xmkdir,0xc0125fcf)
-	SYM(7695,204580476,rawmemrlenl,0xc0197c03)
-	SYM(1595,91406628,cpu_disable_unlocked,0xc0109da2)
-	SYM(951,205453332,mman_mrestore_unlocked,0xc0151c32)
+	SYM(1162,7186885,atomic_iobuffer_kwrite,0xc012b7ff)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7053,13860470,debug_printf,0xc019aeab)
-	SYM(1847,236710424,module_open_in_path,0xc017f2f2)
+	SYM(5362,262177202,fs_user_xmkdir,0xc01280af)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9783,428889,atoi,0xc0199e89)
-	SYM(4579,179961177,sigpending_fini,0xc0162fec)
+	SYM(6593,168850215,dentry_mkreg,0xc0124629)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5197,120391186,syslog_printer,0xc01c16c2)
-	SYM(4451,178704868,memfile_do_read,0xc013565a)
+	SYM(9768,63203548,mempatl,0xc01992de)
+	SYM(7526,206084284,memrchrl,0xc0199162)
+	SYM(9087,183171844,isxdigit,0xc019cc8e)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9778,428892,atol,0xc0199e89)
-	SYM(8376,23489106,task_kill2,0xc0160cdf)
-	SYM(6754,34606356,mswap_unload,0xc0158ff0)
+	SYM(1961,32426981,inode_flock_upgrade,0xc011e8b8)
+	SYM(144,1722245,__cpu_shutdown_now_endwrite,0xc01095f4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(856,183838489,instance_add_dependency,0xc0180a68)
+	SYM(2301,116006466,get_default_adapter,0xc0116880)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9449,10981412,isprint,0xc019b63e)
-	SYM(4642,74027762,copy_from_user,0xc0105d64)
+	SYM(9069,205955383,mempcpyw,0xc0199693)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5257,172201221,memfile_pwrite,0xc0135ccf)
-	SYM(1637,240983829,page_realloc_inplace,0xc0148071)
+	SYM(9536,230316764,gdt_del,0xc0107012)
+	SYM(8287,144195116,strrchrnul,0xc019aadf)
+	SYM(3387,139067492,_memalign_d,0xc0145c1b)
+	SYM(7074,247893956,chrdev_cinit,0xc010e560)
+	SYM(6378,219399284,blkdev_mkpart,0xc0113a21)
+	SYM(3021,159581924,_mall_getattrib_d,0xc0145f0a)
+	SYM(2819,134900744,module_search_path,0xc01c949c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8101,190483084,file_ioctl,0xc011e447)
-	SYM(2227,221114692,task_mktlb_unlocked,0xc016907d)
+	SYM(6406,42983829,devns_release,0xc0112c75)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7092,263679059,ptyslave_ops,0xc01a77e0)
+	SYM(7763,133555618,tty_printer,0xc0186597)
+	SYM(6944,191601778,task_filltlb,0xc016a92d)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8867,194350674,strnrchr,0xc01994b4)
-	SYM(7914,98973660,pid_global,0xc01c8300)
-	SYM(5542,73629732,kernel_delmod,0xc017ae67)
-	SYM(4912,127746804,textfile_pread,0xc0134e91)
+	SYM(9320,63216839,memsetw,0xc019992f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8894,205955383,mempcpyw,0xc0197fd3)
-	SYM(116,149461285,task_terminate_cpu_endwrite,0xc0171fc6)
+	SYM(9665,121387968,memdup,0xc0145232)
+	SYM(9222,262538340,pid_init,0xc01c9420)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(200,184336646,cpu_sched_setrunning_savef,0xc016d885)
+	SYM(7715,216858601,blkdev_fini,0xc010bf6e)
 BUCKET_END
-EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8233,7179929,fstype_any,0xc01c8728)
+	SYM(3997,76800963,module_mkregions,0xc018180c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8203,63188028,memlenl,0xc0197b5a)
+	SYM(1047,177257524,netdev_poppck_unlocked,0xc011632f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6442,251505253,blkdev_write,0xc010d31c)
+	SYM(7823,114948677,fstype_none,0xc01c9800)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(736,179066469,iobuffer_get_write_size,0xc0127a7f)
+	SYM(9432,179918262,strnoff,0xc019ac9b)
+	SYM(8844,116684946,fs_xmkdir,0xc012768f)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(359,194342909,dentry_clearcache_freemem,0xc0116bc1)
+	SYM(5482,103145107,set_system_rtc,0xc01171b0)
+	SYM(2401,1053139,default_system_rtc,0xc01c29e0)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8592,121387506,memchr,0xc0199093)
-	SYM(8277,23920692,task_start,0xc016bc4d)
+	SYM(5824,179915312,strncmp,0xc019ad9c)
+	SYM(5804,72151076,kernel_insmod,0xc017bb93)
+	SYM(4217,67921844,__bootcpu_start,0xc01ce000)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6325,57231620,devns_insert,0xc0111fd5)
-	SYM(5302,248642720,blkdev_getloop,0xc010baad)
+	SYM(1731,240983829,page_realloc_inplace,0xc0149731)
+	SYM(1388,180955401,pid_namespace_destroy,0xc017598e)
+	SYM(739,125804661,task_kill2_cpu_endwrite,0xc0161f7a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7479,105017571,page_malloc,0xc0145f12)
+	SYM(5347,120391186,syslog_printer,0xc01c2720)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4179,249281326,modpatch_dlopen,0xc0182f24)
+	SYM(8243,105084083,elf_modops,0xc01bec60)
+	SYM(3075,267639899,dentry_user_xwalk,0xc0127df6)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(540,242952149,task_resume_cpu_endwrite,0xc0172cb6)
+	SYM(8100,140269464,pdir_flush,0xc0104cb1)
+	SYM(3623,142201056,fuzzy_strcasecmp,0xc019bf85)
+	SYM(2762,41930964,blkdev_delautopart,0xc0114348)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9074,205810572,memmovel,0xc0197caa)
-	SYM(6806,231015504,device_setup,0xc0110309)
+	SYM(6606,251505253,blkdev_write,0xc010d69c)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8247,63214286,memrlen,0xc01991ca)
-	SYM(2685,134900744,module_search_path,0xc01c83bc)
+	SYM(1366,106309166,blkdev_find_partition,0xc0113f1f)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8839,8754100,pdir_init,0xc01028b2)
-	SYM(3211,259687078,ptymaster_add2dev,0xc012ddfd)
+	SYM(1647,246015028,mman_mremap_unlocked,0xc015356c)
 BUCKET_END
+EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8167,63182700,rawmemchrl,0xc0197b96)
-	SYM(6144,200912670,fs_user_xopen,0xc01267d7)
+	SYM(3810,27293971,irq_pic_spurious,0xc01c9774)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
+BUCKET_BEGIN
+	SYM(9576,63216860,memsetl,0xc0199013)
+	SYM(7943,100574420,mman_assert,0xc015039c)
+	SYM(1981,104406116,_realloc_in_place_d,0xc0145ce9)
+BUCKET_END
 BUCKET_BEGIN
-	SYM(6689,48428229,mswap_delete,0xc0159008)
-	SYM(4852,95193093,_mall_validate,0xc0143dc6)
+	SYM(4150,235618089,fdman_put_nearby,0xc011a331)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4916,190929748,file_pread,0xc011e186)
+	SYM(9416,191065522,tolower,0xc019cd9f)
+	SYM(4184,88122886,argvlist_appendv,0xc0180216)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5137,127162661,textfile_write,0xc0134e85)
+	SYM(9804,113927795,fd_ops,0xc01a61c0)
+	SYM(9312,227979299,fs_sync,0xc01254d8)
+	SYM(7583,137476391,sighand_new,0xc0164bab)
+	SYM(6420,142161707,textfile_seek,0xc0136587)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8904,58930692,mallopt,0xc01438a9)
-	SYM(3812,231309060,superblock_cinit,0xc011f7ab)
+	SYM(8774,8803632,pdir_mmap,0xc0103f1d)
+	SYM(7331,104792832,pdir_munmap,0xc01045de)
+	SYM(2800,139771572,fdman_del_unlocked,0xc0119d73)
 BUCKET_END
+EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9720,119341952,keymap,0xc01d0460)
-	SYM(3193,69061364,mswapoff_unlocked,0xc015904c)
+	SYM(7391,106605363,heap_malloc,0xc014162d)
+	SYM(6266,250896171,loopdevs_lock,0xc01c9794)
+	SYM(2553,95752827,stringprinter_pack,0xc019eadc)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5422,48883131,realmode_stack,0xc01c862a)
+	SYM(3640,234443200,superblock_setup,0xc0120f3c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4717,140324032,format_hexdump,0xc019cfa0)
-	SYM(3948,46291780,iobuffer_discard,0xc0127941)
+	SYM(7559,154551749,devns_erase,0xc0112601)
+	SYM(4633,3891509,opacket_abssize,0xc01165b5)
+	SYM(3165,2670857,instance_callfini,0xc018241f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8343,63182711,rawmemchrw,0xc01984ed)
-	SYM(2047,198055973,canonbuffer_capture,0xc0129b5c)
+	SYM(9825,126372450,rand_r,0xc019896a)
+	SYM(8767,121387506,memchr,0xc019a753)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9497,10157684,isdigit,0xc019b5b1)
-	SYM(6130,250894868,loopdevs_list,0xc01c86b8)
-	SYM(2851,244004846,task_unshare_mman,0xc0176173)
-	SYM(2923,78406178,canonbuffer_clear,0xc0129a56)
-	SYM(2571,171455252,sigpending_discard,0xc01631a3)
+	SYM(4927,80518051,strerrorname_s,0xc019c2d9)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1425,80355039,mswap_ticket_split_lo,0xc0158fe4)
+	SYM(9592,179915828,strnend,0xc019a9d8)
+	SYM(334,168666740,mman_instance_of_unlocked,0xc01504a6)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8509,45488428,file_poll,0xc011de8e)
-	SYM(8559,257571538,tty_color,0xc01c83c4)
-	SYM(7892,179528686,inode_open,0xc0122eec)
-	SYM(688,149980372,mman_findspace_unlocked,0xc01504f8)
+	SYM(3273,18226917,dentry_clearcache,0xc01181b6)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5934,36551861,realmode_base,0xc01c8628)
-	SYM(3031,2670857,instance_callfini,0xc0180d5f)
+	SYM(5930,130111654,debug_vprintf,0xc019c54e)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9671,128686770,strstr,0xc019973b)
-	SYM(8931,230320548,gdt_set,0xc0106eb7)
-	SYM(8365,140737140,mswap_list,0xc01c876c)
+	SYM(9473,130560851,valloc,0xc014517b)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(3370,181735129,instance_mnotify,0xc0180e86)
+	SYM(8067,162590052,sysrtc_get,0xc0117253)
+	SYM(2458,95851236,stringprinter_init,0xc019ea41)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8346,63152103,memchrw,0xc0198358)
-	SYM(9409,9975441,isalpha,0xc019b55a)
-	SYM(9038,200702739,tty_putc,0xc0184cd3)
-	SYM(7227,106605363,heap_malloc,0xc013ff6d)
+	SYM(6196,161423522,inode_setattr,0xc0122093)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5892,37585588,module_open_d,0xc017efdb)
-	SYM(4339,238901854,core_setpattern,0xc0179488)
+	SYM(5762,74254407,mfutexptr_new,0xc014bc14)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8387,199243283,pipefs_ops,0xc01a70f8)
+	SYM(5066,190929748,file_pread,0xc011f846)
+	SYM(6723,248184772,blkdev_cinit,0xc010b955)
+	SYM(1836,121011136,pid_namespace_lookup,0xc0175aab)
 BUCKET_END
+EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9002,181166515,vdev_ops,0xc01a8d00)
+	SYM(9496,230319271,gdt_new,0xc0106f46)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8659,225305524,sig_vsend,0xc0169d1b)
-	SYM(8090,190900612,page_print,0xc0148378)
-	SYM(4275,253310788,iobuffer_unread,0xc0129209)
+	SYM(8199,60977300,_memcpyw_d,0xc0199554)
+	SYM(1626,146018516,task_unshare_sighand,0xc017855b)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8156,261005141,fs_xrename,0xc01264e2)
+	SYM(7191,77321541,make_memfile,0xc0136aee)
+	SYM(4897,117470217,mfutex_destroy,0xc014b982)
+	SYM(667,207018645,__assertion_unreachable,0xc019cb69)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9650,126372450,rand_r,0xc01972aa)
-	SYM(4762,221524446,__percpu_begin,0x00000550)
-	SYM(3121,136483680,blkdev_do_newloop,0xc010b734)
-	SYM(590,189277860,mman_setenviron_unlocked,0xc0153701)
+	SYM(8854,238836286,rawmemlen,0xc019a900)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(1907,167921077,kmalloc_usable_size,0xc01436c4)
+	SYM(8934,137576292,_malloc_d,0xc0145b48)
+	SYM(8984,144707340,strchrnul,0xc019aa3b)
+	SYM(8507,138629172,fdman_init,0xc011908b)
+	SYM(5846,142157796,textfile_read,0xc01364ac)
+	SYM(4807,131660976,blkdev_newloop,0xc010bcbd)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1532,146018516,task_unshare_sighand,0xc0176e9b)
+	SYM(9480,11167717,isspace,0xc019ccab)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(333,204848331,pid_namespace_lookup_weak,0xc0174507)
+	SYM(8441,140738379,mswap_lock,0xc01c984c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9249,63154060,memcpyl,0xc01973ed)
-	SYM(8589,238829938,rawmemchr,0xc01991e8)
-	SYM(7323,181149028,irq_default,0xc01d20e5)
-	SYM(5990,255868612,dentry_insnod,0xc0123769)
+	SYM(6322,74248516,mfutexptr_get,0xc014bafc)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9297,130560803,pvalloc,0xc0143b11)
+	SYM(8784,173815049,ldt_empty,0xc01c2f80)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9433,10389528,isgraph,0xc019b65b)
-	SYM(7515,52291476,_kmemadup_d,0xc0144339)
-	SYM(5272,48444786,debug_tbprint2,0xc019b3da)
+	SYM(6056,172247046,pdir_kernel_v,0xc01cb000)
+	SYM(6154,185719974,format_printf,0xc019e154)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(60,49160180,mman_insbranch_map_unlocked,0xc014f0ab)
+	SYM(9177,181166515,vdev_ops,0xc01aaa80)
+	SYM(4822,176161399,release_string,0xc010689c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6200,3616149,file_allocate,0xc011e270)
-	SYM(4732,112834443,dentry_symlink,0xc01243a5)
+	SYM(5137,106667876,_mall_nofree_d,0xc01461ba)
+	SYM(3327,69061364,mswapoff_unlocked,0xc015a70c)
+	SYM(2667,175262024,mman_assert_branch,0xc01500ee)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3914,54017753,task_tlb_mnotify,0xc0169097)
+	SYM(4569,155446725,fs_user_xrename,0xc01282a4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8170,63152124,memchrl,0xc0197a31)
-	SYM(7671,155934870,get_bootdev,0xc010e061)
+	SYM(5888,239835550,page_memalign,0xc0147af2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4307,229761673,mscatter_memcpy,0xc0147c8a)
-	SYM(2977,77388037,canonbuffer_write,0xc01296fc)
-	SYM(385,120960853,task_suspend_cpu_endwrite,0xc017283d)
+	SYM(9276,7037879,pipe_new,0xc012c077)
+	SYM(5832,191934923,task_mkhstack,0xc016aa59)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7980,128809269,fs_addtype,0xc0114f11)
-	SYM(4483,181579635,inode_mayaccess,0xc0120340)
-	SYM(3013,59798727,pid_namespace_new,0xc0174207)
+	SYM(8166,137707668,_pvalloc_d,0xc0145dbc)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7851,63211906,memrchr,0xc0199100)
-	SYM(4958,15817186,snprintf_user,0xc0106029)
+	SYM(5242,191097541,xsyscall_table,0xc01c1100)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7232,121123667,malloc,0xc01438fd)
-	SYM(7803,116793893,task_resume,0xc0172fdc)
+	SYM(5527,262189575,fs_user_xmkreg,0xc0128008)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9345,179917518,strnlen,0xc0199360)
-	SYM(9056,194351718,strnroff,0xc01995f9)
+	SYM(7727,187282084,inode_cinit,0xc0120bb1)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6611,227097913,mman_destroy,0xc014e6c7)
-	SYM(4099,174509797,textfile_fclose,0xc013501e)
+	SYM(2534,38471765,usershare_writable,0xc01c9704)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7925,205367396,_kmemdup_d,0xc01442c5)
+	SYM(8624,205020654,kmemalign,0xc0144bf3)
+	SYM(3435,3351330,stpncpy_from_user,0xc0106201)
 BUCKET_END
 EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(4807,3745925,page_available,0xc01459f2)
+	SYM(8674,169202564,task_crit,0xc0174e68)
+	SYM(6918,95073908,memfile_read,0xc01373bf)
 BUCKET_END
-EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(2027,189846020,stringprinter_print,0xc019d562)
-	SYM(515,256078100,cpu_sched_remove_current,0xc016ed39)
+	SYM(8664,91789318,vsnprintf,0xc019eed1)
+	SYM(7811,161522446,dentry_open,0xc012379c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8398,78772179,mzone_spec,0xc01ac2c0)
-	SYM(3863,76800963,module_mkregions,0xc018014c)
+	SYM(8874,45531971,file_sync,0xc011fbfb)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1181,37994836,_kmalloc_usable_size_d,0xc01441ef)
+	SYM(8594,58995060,fdman_get,0xc01192ce)
+	SYM(8529,5949588,fd_invalid,0xc01a62d8)
+	SYM(5032,135138948,task_waitfor_t,0xc017276b)
+	SYM(5512,179564580,heap_malloc_at,0xc01416c8)
+	SYM(4133,151819716,devns_reserve_at,0xc0112c5f)
 BUCKET_END
 EMPTY_BUCKET
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8024,102481692,ldt_kernel,0xc01c1ea0)
-	SYM(4882,135138948,task_waitfor_t,0xc01710ab)
-	SYM(3067,110023440,fuzzy_strncasecmp,0xc019a8f2)
+	SYM(6567,63101788,_mall_global,0xc014559c)
+	SYM(4489,139219108,fs_user_xinsnod,0xc0127f61)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6088,178197577,inode_destroy,0xc011ff14)
+	SYM(9783,121390013,memmem,0xc019b889)
+	SYM(4957,3745925,page_available,0xc01470b2)
+	SYM(5302,110174873,dentry_destroy,0xc01211d4)
+	SYM(32,127048997,task_interrupt_cpu_endwrite,0xc01733aa)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(565,178010468,blkdev_findloop_unlocked,0xc010b9d7)
+	SYM(4987,129925230,fdman_get_mman,0xc011984b)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9185,9922996,irq_set,0xc010772b)
-	SYM(8679,238836286,rawmemlen,0xc0199240)
-	SYM(8299,77086252,strnchrnul,0xc0199504)
-	SYM(7203,139070692,_krealign_d,0xc014408c)
+	SYM(6814,163810747,dentry_xwalk,0xc0123518)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9608,121390013,memmem,0xc019a1c9)
-	SYM(5794,33853637,devns_reserve,0xc01128c5)
-	SYM(32,127048997,task_interrupt_cpu_endwrite,0xc0171cea)
+	SYM(5916,68550692,kernel_getmod,0xc017c002)
+	SYM(1752,261774836,mman_getldt_unlocked,0xc0159e59)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6357,121387584,memcmp,0xc0199016)
-	SYM(4371,95278692,device_irq_lost,0xc011073e)
+	SYM(9839,119330997,kffree,0xc0144d1c)
+	SYM(7009,52058361,sighand_copy,0xc0164bfd)
+	SYM(4099,26563413,iobuffer_unwrite,0xc012ab47)
+	SYM(2496,157882149,sigpending_enqueue,0xc0164801)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7746,206084263,memrchrw,0xc01983d2)
+	SYM(4393,14657507,superblock_sync,0xc0120fa3)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8035,60977300,_memcpyw_d,0xc0197e94)
+	SYM(2420,44937156,_mall_printleaks_d,0xc0146075)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4131,199001301,fdman_get_inode,0xc0117e9c)
-	SYM(3319,218545305,syslog_print_tty,0xc0105013)
+	SYM(3878,245147701,inode_invalidate,0xc0120df5)
+	SYM(1410,235077445,inode_flock_downgrade,0xc011ea38)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1447,225459628,dentry_xwalk_internal,0xc0121e99)
+	SYM(7217,13860470,debug_printf,0xc019c56b)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6533,68326595,pdir_maccess,0xc01035ed)
+	SYM(8614,95107875,vnode_ops,0xc01aa980)
+	SYM(6448,191173827,kmalloc_flags,0xc0144ddf)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7991,23614596,task_yield,0xc016d8cf)
-	SYM(2628,41930964,blkdev_delautopart,0xc0113fba)
+	SYM(9360,9922996,irq_set,0xc0107aab)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7105,265423411,page_realloc,0xc0148119)
-	SYM(5017,27207109,task_terminate,0xc01722cc)
+	SYM(5243,191095109,syscall_table,0xc01c0000)
+	SYM(5287,127162661,textfile_write,0xc0136545)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1763,262515188,mman_setldt_unlocked,0xc0157f16)
+	SYM(9042,194350674,strnrchr,0xc019ab74)
 BUCKET_END
 EMPTY_BUCKET
-BUCKET_BEGIN
-	SYM(9767,493636,rand,0xc019725c)
-	SYM(7837,60924820,_memcpyl_d,0xc019754b)
-	SYM(3073,166920448,strncasecmp,0xc0199b25)
-	SYM(7647,161522446,dentry_open,0xc01220dc)
-BUCKET_END
 BUCKET_BEGIN
-	SYM(7383,154551749,devns_erase,0xc0112281)
-	SYM(144,1722245,__cpu_shutdown_now_endwrite,0xc0109274)
+	SYM(9941,8030276,srand,0xc019890c)
+	SYM(9672,10157684,isdigit,0xc019cc71)
+	SYM(7139,227156,task_addwait,0xc017213f)
+	SYM(4852,128447768,textfile_flush,0xc0136681)
+	SYM(2061,72864068,mman_mlock_unlocked,0xc0153fd8)
+	SYM(1668,148836740,get_default_keyboard,0xc0178bd3)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7443,113368596,_mempcpyl_d,0xc01977fe)
-	SYM(2552,187617732,sig_vsend_unlocked,0xc0169d78)
-	SYM(784,148166196,mman_getbranch_unlocked,0xc014f0f2)
+	SYM(8764,238829938,rawmemchr,0xc019a8a8)
+	SYM(8056,179528686,inode_open,0xc01245ac)
+	SYM(6098,119626210,vsprintf_user,0xc0106444)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9020,107719333,boottime,0xc01c872c)
-	SYM(7287,165610681,device_fini,0xc011040d)
-	SYM(4323,164767957,textfile_pwrite,0xc0134eac)
+	SYM(6801,253152551,sigshare_new,0xc0164592)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5700,45540980,file_read,0xc011df07)
+	SYM(9544,89970420,__ffs64,0xc019c092)
+	SYM(9632,89638812,__afail,0xc019cb88)
+	SYM(9096,63143136,kmemadup,0xc0144e9e)
+	SYM(8604,137576340,_valloc_d,0xc0145d56)
+	SYM(6957,231015504,device_setup,0xc0110689)
+	SYM(3417,25878564,__kernel_data_end,0xc01ec30c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5377,262189575,fs_user_xmkreg,0xc0126948)
+	SYM(6462,108608857,fdman_destroy,0xc0119169)
+	SYM(4233,174509797,textfile_fclose,0xc01366de)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6158,74248516,mfutexptr_get,0xc014a43c)
+	SYM(8210,23401346,task_ldtlb,0xc016a801)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9298,130560851,valloc,0xc0143abb)
-	SYM(5584,205288697,iobuffer_fini,0xc0127913)
+	SYM(9024,59007879,mman_new,0xc014f997)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9092,92043894,__afailf,0xc019b4e9)
-	SYM(8809,144707340,strchrnul,0xc019937b)
-	SYM(7575,218970084,debug_print,0xc019ae51)
-	SYM(2087,115634820,mman_inuse_unlocked,0xc0150eb9)
-	SYM(832,120930762,schedule_delayed_work_j,0xc0173c4b)
+	SYM(2949,2690116,instance_callinit,0xc01822f8)
+	SYM(281,261649396,__linker_dynsym_bucket_end,0xc01d5a5c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9481,10141717,isctype,0xc019b6fd)
-	SYM(5332,103145107,set_system_rtc,0xc0115af0)
+	SYM(5291,191389829,file_write,0xc011f681)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9209,161188088,bsearch,0xc01972f9)
-	SYM(6390,237795296,module_setup,0xc017ecad)
-	SYM(1616,157075556,atomic_iobuffer_read,0xc0129ce4)
+	SYM(9552,11302578,isupper,0xc019cc37)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7350,206084284,memrchrl,0xc0197aa2)
+	SYM(9720,162096643,rtc_ops,0xc01a59c0)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8948,146286846,krealign,0xc0143591)
-	SYM(5407,93393522,dentry_setattr,0xc0123f1a)
-	SYM(3301,3351330,stpncpy_from_user,0xc0105e81)
-	SYM(0,99705204,sigpending_try_dequeue_unlocked,0xc01632f0)
+	SYM(4837,73265060,core_delformat,0xc017a647)
+	SYM(3309,144032864,modpatch_find_dep,0xc0183c92)
+	SYM(1277,28117172,boot_emulation_logport,0xc01c27b6)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(1227,56386081,inode_invalidate_data,0xc012071f)
+	SYM(9958,428889,atoi,0xc019b549)
+	SYM(9929,7461045,kfree,0xc0144cbe)
+	SYM(9336,63194805,memmove,0xc019a936)
+	SYM(1116,179155269,sig_timedrecv_endwrite,0xc016b4e7)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8490,91816454,snprintf,0xc019d904)
-	SYM(7881,74194580,_mempcpy_d,0xc0198d2a)
+	SYM(8232,160325938,strcasestr,0xc019aedb)
+	SYM(5632,208492246,sig_vtimedrecv,0xc016b515)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4867,129862965,fdman_get_file,0xc0117fbd)
-	SYM(281,226618275,kernel_unload_all_modules,0xc01d3926)
+	SYM(5092,252372251,mswap_fallback,0xc01c2fc0)
+	SYM(4761,262769195,_mall_traceback,0xc014534d)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5032,48444844,debug_tbprintl,0xc019ae04)
-	SYM(2067,188721940,cpu_enable_unlocked,0xc0109b1d)
+	SYM(9953,428892,atol,0xc019b549)
+	SYM(6521,121387584,memcmp,0xc019a6d6)
+	SYM(6892,232917588,task_endcrit,0xc0101196)
+	SYM(464,193343076,task_pause_cpu_endwrite_t,0xc01747ef)
+	SYM(227,217567188,netdev_send_ether_unlocked,0xc01154cf)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8749,104358659,io_malloc,0xc01017bb)
+	SYM(9195,107719333,boottime,0xc01c9814)
+	SYM(4942,167064373,memfile_fclose,0xc01374cb)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9678,121388100,memend,0xc019913a)
-	SYM(5696,142157796,textfile_read,0xc0134dec)
+	SYM(6099,220289426,sprintf_user,0xc010635a)
+	SYM(5776,110119310,heap_memalign,0xc0141779)
+	SYM(5972,172417334,sig_timedrecv,0xc016b4aa)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6018,218660515,ptymaster_ops,0xc01a7760)
+	SYM(5860,178308051,memtype_names,0xc01aada0)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9465,179915138,strnchr,0xc019946a)
+	SYM(8265,190483084,file_ioctl,0xc011fb07)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7131,161223579,dentry_walk,0xc0121824)
+	SYM(7061,2683733,devns_remove,0xc0112480)
+	SYM(3742,174799109,memfile_do_write,0xc0137031)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8068,160325938,strcasestr,0xc019981b)
-	SYM(7467,161221636,dentry_used,0xc01166b5)
-	SYM(1553,246015028,mman_mremap_unlocked,0xc0151eac)
-	SYM(615,204895540,mman_mmap_stack_unlocked,0xc014f9bd)
+	SYM(1941,236710424,module_open_in_path,0xc01809b2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8993,205810679,memmovew,0xc0198613)
+	SYM(4729,179961177,sigpending_fini,0xc01646ac)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(3489,142201056,fuzzy_strcasecmp,0xc019a8c5)
-	SYM(2324,95851236,stringprinter_init,0xc019d381)
+	SYM(5108,15817186,snprintf_user,0xc01063a9)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8719,157732645,__bootcpu,0xc01cd000)
+	SYM(6224,171021539,ipacket_alloc,0xc0116508)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9734,128682482,strchr,0xc01993ab)
-	SYM(8123,144195116,strrchrnul,0xc019941f)
-	SYM(1135,155962148,mman_mextract_unlocked,0xc0151045)
+	SYM(6210,209743908,dentry_unused,0xc0117cbe)
+	SYM(2515,40797012,mman_mmap_unlocked,0xc0151fa0)
+	SYM(1773,212182260,mman_newldt_unlocked,0xc0158ab4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9337,63153159,memcmpw,0xc01982d9)
+	SYM(6996,70671253,_mall_nofree,0xc014553f)
+	SYM(3111,77388037,canonbuffer_write,0xc012adbc)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
-EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9011,94277090,__chattr,0xc01bd960)
+	SYM(9909,128682482,strchr,0xc019aa6b)
+	SYM(9258,266100050,sigenter,0xc016125c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7635,108010965,task_issafe,0xc0173759)
-	SYM(6284,191173827,kmalloc_flags,0xc014371f)
-	SYM(2187,96838797,modpatch_host_dlsym,0xc0182458)
+	SYM(9141,206095239,memrendw,0xc0199b1a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5738,239835550,page_memalign,0xc0146432)
-	SYM(6270,147989812,mregion_cinit,0xc014db54)
+	SYM(8714,58983796,fdman_set,0xc0119aa5)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8739,205134180,_memcpy_d,0xc01988d5)
-	SYM(8759,137576292,_malloc_d,0xc0144488)
-	SYM(5906,172247046,pdir_kernel_v,0xc01ca000)
-	SYM(4195,62238516,_mall_untrack_d,0xc0144a8d)
+	SYM(6840,182980098,task_waitfor,0xc017288b)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9119,30981428,_kfree_d,0xc0144109)
+	SYM(9159,84651931,inittask,0xc01ec0c0)
+	SYM(8654,116671783,fs_xmkreg,0xc01274dc)
+	SYM(7679,266910379,fs_xhrdlink,0xc01279fe)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8912,183171844,isxdigit,0xc019b5ce)
-	SYM(7587,133555618,tty_printer,0xc0184ed7)
+	SYM(6554,237795296,module_setup,0xc018036d)
+	SYM(6070,216796736,core_opendump,0xc017ac67)
+	SYM(2743,186047720,driver_search_path,0xc01c94a0)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9145,63216839,memsetw,0xc019826f)
-	SYM(6256,142161707,textfile_seek,0xc0134ec7)
-	SYM(1403,166873835,instance_destroy_weak,0xc01813d2)
+	SYM(9935,8144949,uname,0xc01d0020)
+	SYM(3453,218545305,syslog_print_tty,0xc0105395)
 BUCKET_END
-EMPTY_BUCKET
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9361,230316764,gdt_del,0xc0106c92)
-	SYM(8200,63284396,rawmemlenl,0xc0197be8)
-	SYM(5766,68550692,kernel_getmod,0xc017a942)
-	SYM(3472,80516498,call_user_worker,0xc0105eee)
+	SYM(5902,138457547,task_mkustack,0xc016ae93)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4316,121387641,memcpy,0xc01986a6)
-	SYM(8957,7037187,pipe_ops,0xc01a7000)
+	SYM(9853,121388100,memend,0xc019a7fa)
 BUCKET_END
-BUCKET_BEGIN
-	SYM(5668,124475200,fuzzy_strncmp,0xc019a892)
-	SYM(4050,88122886,argvlist_appendv,0xc017eb56)
-BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5093,191095109,syscall_table,0xc01bf000)
+	SYM(8463,179417044,inode_stat,0xc0121a7a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9217,63153180,memcmpl,0xc01979b4)
-	SYM(7251,149245164,strnrchrnul,0xc0199547)
+	SYM(2161,198055973,canonbuffer_capture,0xc012b21c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5092,191097541,xsyscall_table,0xc01c0100)
-	SYM(2869,155130139,task_set_sigblock,0xc0161725)
+	SYM(7835,155934870,get_bootdev,0xc010e3e1)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5920,216796736,core_opendump,0xc01795a7)
-	SYM(4702,128447768,textfile_flush,0xc0134fc1)
+	SYM(9811,110637907,calloc,0xc0145014)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7027,77321541,make_memfile,0xc013542e)
+	SYM(9368,179942996,strtold,0xc019b575)
+	SYM(7739,139817444,_krealloc_d,0xc014566a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9425,89970178,__ffs32,0xc019a99e)
+	SYM(7871,115744869,task_setcpu,0xc0170e7d)
+	SYM(7152,203068473,file_destroy,0xc011f3d6)
+	SYM(3183,205721829,inode_flock_write,0xc011e72e)
+	SYM(3363,87876021,textfile_truncate,0xc013671b)
+	SYM(2876,95861673,stringprinter_fini,0xc019ebf1)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5682,191934923,task_mkhstack,0xc0169399)
+	SYM(9818,128686932,strtod,0xc019b86e)
+	SYM(9860,121391556,memset,0xc019a610)
+	SYM(9114,206095260,memrendl,0xc01991e0)
+	SYM(811,148166196,mman_getbranch_unlocked,0xc01507b2)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6060,209743908,dentry_unused,0xc01165fe)
-	SYM(2666,139771572,fdman_del_unlocked,0xc01186b3)
-	SYM(1784,259545300,mman_assert_unlocked,0xc014ebf2)
+	SYM(8894,157732645,__bootcpu,0xc01ce000)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8858,146290291,krealloc,0xc01434cf)
-	SYM(8145,63284407,rawmemlenw,0xc0198551)
-	SYM(2343,257156611,irq_pic_1_spurious,0xc0107413)
-	SYM(1089,7186885,atomic_iobuffer_kwrite,0xc012a13f)
+	SYM(9881,128686934,strtof,0xc019b853)
+	SYM(8665,91816454,snprintf,0xc019efc4)
+	SYM(2985,244004846,task_unshare_mman,0xc0177833)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3897,253453778,module_delloader,0xc017ff8c)
-	SYM(2107,166570100,__kernel_user_start,0xc01cf000)
+	SYM(9440,179943004,strtoll,0xc019b4e9)
+	SYM(835,151856692,mman_insbranch_unlocked,0xc015052d)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7947,191880009,page_query,0xc0145c09)
+	SYM(3708,50465333,iobuffer_reserve,0xc01291cd)
+	SYM(2648,85135589,instanceset_remove,0xc0181d9f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9225,9919180,irq_del,0xc01079d1)
-	SYM(8539,58983796,fdman_set,0xc01183e5)
-	SYM(7118,168837778,dentry_mkdir,0xc0123357)
-	SYM(2457,145619614,task_unshare_fdman,0xc0176ca7)
-	SYM(928,98106796,__stack_chk_fail_local,0xc019b53b)
+	SYM(9231,194351718,strnroff,0xc019acb9)
+	SYM(5662,244894878,posix_memalign,0xc014528c)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7143,164855982,gdt_builtin,0xc01c1760)
-	SYM(7066,243553476,fs_mountlist,0xc01c8630)
+	SYM(9797,128686940,strtol,0xc019b49c)
+	SYM(8375,63284396,rawmemlenl,0xc01992a8)
+	SYM(7847,108208916,task_iscrit,0xc0174e50)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9305,11167717,isspace,0xc019b5eb)
+	SYM(8814,261480693,apic_base,0xc01c9784)
+	SYM(2321,96838797,modpatch_host_dlsym,0xc0183b18)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9401,63216860,memsetl,0xc0197953)
-	SYM(7611,186228320,inode_setup,0xc011f64f)
-	SYM(3846,224800196,mswapon_unlocked,0xc0159010)
+	SYM(9560,179934646,strroff,0xc019ac80)
+	SYM(2591,145619614,task_unshare_fdman,0xc0178367)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7395,113371575,copy_string,0xc0106660)
-	SYM(5612,74254407,mfutexptr_new,0xc014a554)
-	SYM(664,115209141,superblock_remove_inode,0xc011f9f1)
+	SYM(9079,58930692,mallopt,0xc0144f69)
+	SYM(8754,116656068,fs_xmount,0xc0127d55)
+	SYM(7415,149245164,strnrchrnul,0xc019ac07)
+	SYM(1689,91406628,cpu_disable_unlocked,0xc010a122)
+	SYM(1231,201703188,mman_getstate_unlocked,0xc01507d5)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(2647,17455588,iobuffer_interrupt,0xc0127d58)
+	SYM(4377,45712130,_mall_getattrib,0xc01452ef)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5437,108616068,devns_addevent,0xc01107bb)
+	SYM(4665,190057060,argvlist_append,0xc0180075)
+	SYM(2781,17455588,iobuffer_interrupt,0xc0129418)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(4792,167064373,memfile_fclose,0xc0135e0b)
-	SYM(2476,103434823,__cpu_shutdown_now,0xc010934e)
+	SYM(7022,178304658,copy_in_user,0xc010613d)
+	SYM(4167,47647662,mregion_new_anon,0xc014f0c3)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8877,175703510,sprintf,0xc019d8b5)
-	SYM(8729,205235300,_memdup_d,0xc014476d)
-	SYM(6214,219399284,blkdev_mkpart,0xc0113693)
+	SYM(8309,63284407,rawmemlenw,0xc0199c11)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(3229,87876021,textfile_truncate,0xc013505b)
+	SYM(7775,186228320,inode_setup,0xc0120d0f)
+	SYM(6684,219508676,netdev_cinit,0xc0115f54)
+	SYM(1001,110152820,netdev_addpck_unlocked,0xc0116169)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9128,265723348,sig_send,0xc0169c50)
+	SYM(4450,121387641,memcpy,0xc0199d66)
+	SYM(9004,8770317,pdir_enum,0xc0104a2f)
+	SYM(5958,101513301,kernel_module,0xc01db780)
 BUCKET_END
 EMPTY_BUCKET
+BUCKET_BEGIN
+	SYM(7430,206122343,memrlenw,0xc0199b83)
+BUCKET_END
 BUCKET_BEGIN
-	SYM(9685,121391556,memset,0xc0198f50)
-	SYM(7040,153253716,task_haswait,0xc0171004)
-	SYM(6004,185719974,format_printf,0xc019ca94)
-	SYM(4837,129925230,fdman_get_mman,0xc011818b)
+	SYM(3827,210243828,_mall_validate_d,0xc01460e1)
+	SYM(3255,136483680,blkdev_do_newloop,0xc010bab4)
+	SYM(2686,187617732,sig_vsend_unlocked,0xc016b438)
+	SYM(0,99705204,sigpending_try_dequeue_unlocked,0xc01649b0)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5392,64141243,dentry_hrdlink,0xc012408f)
+	SYM(1300,56386081,inode_invalidate_data,0xc0121ddf)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6923,247893956,chrdev_cinit,0xc010e1e0)
-	SYM(2887,159581924,_mall_getattrib_d,0xc014484a)
-	SYM(411,149395364,fdman_put_nearby_unlocked,0xc0118981)
+	SYM(3521,40819202,intchain_trigger,0xc016b200)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8288,179417044,inode_stat,0xc01203ba)
+	SYM(9150,194735500,strtoull,0xc019b35a)
+	SYM(7379,115748836,task_set_id,0xc016cff4)
+	SYM(4697,188153524,argvlist_insert,0xc017ffcd)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5598,241415579,_mall_untrack,0xc0143e22)
+	SYM(8694,106930229,smp_hwcpu,0xc01c2820)
 BUCKET_END
 EMPTY_BUCKET
+EMPTY_BUCKET
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6032,206569381,dentry_rename,0xc01247d0)
+	SYM(4473,238901854,core_setpattern,0xc017ab48)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4083,67921844,__bootcpu_start,0xc01cd000)
-	SYM(4243,45712130,_mall_getattrib,0xc0143c2f)
+	SYM(8724,261512699,apic_lock,0xc01c978c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8529,5323587,vlink_ops,0xc01a8c80)
-	SYM(4016,235618089,fdman_put_nearby,0xc0118c71)
+	SYM(8884,156680292,errnotext,0xc01d143d)
+	SYM(4505,95278692,device_irq_lost,0xc0110abe)
+	SYM(3201,110023440,fuzzy_strncasecmp,0xc019bfb2)
 BUCKET_END
 EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7335,179831609,ldt_destroy,0xc01571eb)
+	SYM(3725,108696027,fs_user_xsymlink,0xc01281f4)
+	SYM(1794,93670839,cpu_sched_setrunning,0xc016ef6e)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8429,137576340,_valloc_d,0xc0144696)
+	SYM(9448,63212596,memrend,0xc019a836)
+	SYM(8644,58985332,fdman_put,0xc011a2cf)
+	SYM(9014,8754100,pdir_init,0xc0102c34)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(3085,237026521,task_set_priority,0xc0173043)
+	SYM(9616,9975245,isalnum,0xc019cce3)
 BUCKET_END
 EMPTY_BUCKET
+BUCKET_BEGIN
+	SYM(4777,156063331,pipefs_rootops,0xc01a8e00)
+BUCKET_END
 BUCKET_BEGIN
-	SYM(9201,10037307,isblank,0xc019b693)
+	SYM(7862,206122364,memrlenl,0xc0199238)
+	SYM(3861,162118868,mswap_ticket_cat,0xc015a698)
+	SYM(2121,189846020,stringprinter_print,0xc019ec22)
+	SYM(592,178010468,blkdev_findloop_unlocked,0xc010bd57)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9385,179934646,strroff,0xc01995c0)
-	SYM(9553,89970214,__ffs16,0xc019a960)
-	SYM(8930,230321668,vgdt_set,0xc01072e1)
-	SYM(8211,162584932,sysrtc_set,0xc0115c6b)
-	SYM(5640,149040112,mregion_setup,0xc014e02d)
-	SYM(5467,63502168,iobuffer_flush,0xc0127dc4)
-	SYM(2495,41081044,blkdev_addautopart,0xc0113ec4)
+	SYM(6476,228325341,mman_swapmem,0xc014eaac)
+	SYM(6364,3616149,file_allocate,0xc011f930)
+	SYM(5002,95193093,_mall_validate,0xc0145486)
+	SYM(4345,216404181,kernel_instance,0xc01c9450)
+	SYM(3556,49419381,syscall_c_table,0xc01c1340)
+	SYM(1605,213538773,inode_flock_endwrite,0xc011eb06)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5287,66411365,iobuffer_write,0xc0128977)
+	SYM(2101,21135780,mman_valid_unlocked,0xc0152607)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9153,175857108,cpu_gdt,0x00000550)
+	SYM(5212,212729929,pdir_load_copy,0xc0102d23)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(5062,212729929,pdir_load_copy,0xc01029a1)
+	SYM(8312,63188007,memlenw,0xc0199b59)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(307,168666740,mman_instance_of_unlocked,0xc014ede6)
+	SYM(9424,63154060,memcpyl,0xc0198aad)
+	SYM(6736,224066596,rm_interrupt,0xc010817c)
+	SYM(1563,195414484,cpu_sendipc_unlocked,0xc010a605)
+	SYM(172,260454916,mman_mmap_instance_unlocked,0xc0150b7f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9537,117880227,pipe_fs,0xc01c1aa0)
-	SYM(3455,233393193,fdman_get_dentry,0xc0117db5)
-	SYM(1947,197696493,modpatch_user_dlsym,0xc018250d)
+	SYM(386,194342909,dentry_clearcache_freemem,0xc0118281)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8459,215539012,_kffree_d,0xc0144177)
-	SYM(8489,91789318,vsnprintf,0xc019d811)
-	SYM(4515,190057060,argvlist_append,0xc017e9b5)
+	SYM(9832,128685510,stroff,0xc019ac65)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8569,10026137,__isascii,0xc019b6ae)
-	SYM(7659,114948677,fstype_none,0xc01c8720)
-	SYM(3103,252214031,mscatter_split_lo,0xc0147acf)
+	SYM(7041,128682560,strcmp,0xc019ad56)
+	SYM(8904,205235300,_memdup_d,0xc0145e2d)
+	SYM(6294,250894868,loopdevs_list,0xc01c9798)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8013,23430018,task_mktlb,0xc0169063)
-	SYM(4291,219841572,blkdev_autopart,0xc0113c5d)
+	SYM(691,115209141,superblock_remove_inode,0xc01210b1)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8046,23401346,task_ldtlb,0xc0169141)
-	SYM(3727,162118868,mswap_ticket_cat,0xc0158fd8)
-	SYM(3175,144032864,modpatch_find_dep,0xc01825d2)
+	SYM(4972,118419934,page_malloc_in,0xc0147c0e)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8829,8770317,pdir_enum,0xc01046ad)
-	SYM(7371,179288763,fs_xsymlink,0xc0126182)
-	SYM(7599,217293477,packet_free,0xc0115267)
+	SYM(4361,52170659,dentry_openthis,0xc01245dc)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5107,185809426,inode_syncattr,0xc0120ebf)
+	SYM(9947,6862380,atoll,0xc019b55c)
+	SYM(9608,10389528,isgraph,0xc019cd1b)
+	SYM(8584,156868260,rtc_cinit,0xc0116d8d)
+	SYM(5692,73629732,kernel_delmod,0xc017c527)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9643,128686932,strtod,0xc019a1ae)
-	SYM(7239,107627580,pdir_kernel,0x001ca000)
-	SYM(6702,233879202,copy_to_user,0xc0105d40)
-	SYM(5512,244894878,posix_memalign,0xc0143bcc)
+	SYM(4792,74027762,copy_from_user,0xc01060e4)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8984,84651931,inittask,0xc01eb0c0)
-	SYM(4531,58732093,kernel_delmod_m,0xc017adb9)
+	SYM(8521,63152103,memchrw,0xc0199a18)
+	SYM(7427,204580455,rawmemrlenw,0xc0199c38)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6890,128682560,strcmp,0xc0199696)
-	SYM(9706,128686934,strtof,0xc019a193)
-	SYM(997,234555716,mman_newfutex_unlocked,0xc014f407)
+	SYM(9400,9919180,irq_del,0xc0107d51)
+	SYM(8001,60924820,_memcpyl_d,0xc0198c0b)
+	SYM(8496,137706340,_kmalloc_d,0xc01455f9)
+	SYM(2931,156797908,__stack_chk_guard,0xc01c9700)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9241,191065522,tolower,0xc019b6df)
-	SYM(7848,63111442,rawmemrchr,0xc019920f)
-	SYM(974,202128340,mman_mprotect_unlocked,0xc0150271)
+	SYM(5720,179134709,memfile_write,0xc0137407)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(5570,179134709,memfile_write,0xc0135d47)
-	SYM(1826,29270291,module_open_in_paths,0xc017f4ee)
+	SYM(4912,221524446,__percpu_begin,0x00000550)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(8649,169240236,task_kill,0xc0160da6)
+	SYM(6970,243552763,fs_mountlock,0xc01c9830)
+	SYM(6168,218660515,ptymaster_ops,0xc01a94e0)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9622,128686940,strtol,0xc0199ddc)
-	SYM(8779,230087924,page_stat,0xc0145253)
-	SYM(6520,219508676,netdev_cinit,0xc0115141)
-	SYM(5626,110119310,heap_memalign,0xc01400b9)
+	SYM(9895,119341952,keymap,0xc01d1460)
+	SYM(9624,10981412,isprint,0xc019ccfe)
+	SYM(542,256078100,cpu_sched_remove_current,0xc01703f9)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9754,7461045,kfree,0xc01435fe)
-	SYM(5347,15841629,instance_dlsym,0xc01808df)
-	SYM(3049,205721829,inode_flock_write,0xc011d06e)
-	SYM(3139,18226917,dentry_clearcache,0xc0116af6)
-	SYM(880,49407705,module_restore_readonly,0xc018037c)
+	SYM(4065,57666310,argvlist_insertv,0xc01800fe)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(3608,174799109,memfile_do_write,0xc0135971)
+	SYM(9061,230317476,gdt_get,0xc01070d7)
+	SYM(8378,63188028,memlenl,0xc019921a)
 BUCKET_END
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8354,5949588,fd_invalid,0xc01a4558)
-	SYM(2905,252246612,sig_send_unlocked,0xc0169cab)
+	SYM(9052,175703510,sprintf,0xc019ef75)
+	SYM(4031,253453778,module_delloader,0xc018164c)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(2267,1053139,default_system_rtc,0xc01c1900)
+	SYM(9712,117880227,pipe_fs,0xc01c2b80)
+	SYM(5572,48883131,realmode_stack,0xc01c970a)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4467,140589572,ptymaster_cinit,0xc012d713)
+	SYM(6541,103872004,io_malloc_at,0xc0101847)
+	SYM(3381,149663428,_posix_memalign_d,0xc0145e97)
+	SYM(1024,202128340,mman_mprotect_unlocked,0xc0151931)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(4163,19562937,mregion_destroy,0xc014d43f)
+	SYM(7967,116793893,task_resume,0xc017469c)
 BUCKET_END
+EMPTY_BUCKET
+EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(7527,217386322,memset_user,0xc0105de1)
-	SYM(3931,57666310,argvlist_insertv,0xc017ea3e)
+	SYM(9790,128683076,strend,0xc019a9be)
+	SYM(8136,227972612,fs_root,0xc01c2b40)
+	SYM(5850,45540980,file_read,0xc011f5c7)
+	SYM(3980,224800196,mswapon_unlocked,0xc015a6d0)
 BUCKET_END
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9233,10710450,islower,0xc019b594)
-	SYM(5167,19925010,blkdev_mksuper,0xc0114c31)
-	SYM(4067,209880540,sigshare_kernel,0xc01c5f20)
+	SYM(7883,216807657,chrdev_fini,0xc010e596)
+	SYM(7048,45431757,kmalloc_trim,0xc0141b79)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9321,230319271,gdt_new,0xc0106bc6)
-	SYM(4627,156063331,pipefs_rootops,0xc01a7080)
-	SYM(3829,37959013,load_keymap_file,0xc01775e4)
+	SYM(8964,93548374,ns_blkdev,0xc01c97b8)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9083,266100050,sigenter,0xc015fb9c)
-	SYM(3495,160306112,strcasecmp,0xc0199ac1)
+	SYM(4249,247772171,dentry_readlink,0xc0125674)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(6858,52058361,sighand_copy,0xc016353d)
-	SYM(3422,49419381,syscall_c_table,0xc01c0340)
+	SYM(8345,63152124,memchrl,0xc01990f1)
+	SYM(8078,98973660,pid_global,0xc01c93e0)
+	SYM(7619,113368596,_mempcpyl_d,0xc0198ebe)
+	SYM(7859,204580476,rawmemrlenl,0xc01992c3)
+	SYM(6350,21376404,pdir_mprotect,0xc0103643)
+	SYM(5062,127746804,textfile_pread,0xc0136551)
+	SYM(5467,40420740,task_interrupt,0xc0173511)
 BUCKET_END
 EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(8549,261512699,apic_lock,0xc01c86ac)
+	SYM(200,184336646,cpu_sched_setrunning_savef,0xc016ef45)
 BUCKET_END
 EMPTY_BUCKET
-EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(6897,45431757,kmalloc_trim,0xc01404b9)
+	SYM(9888,128686528,strsep,0xc019c149)
+	SYM(5986,26550772,sighand_reset,0xc0164c43)
+	SYM(4082,46291780,iobuffer_discard,0xc0129001)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7079,168833476,dentry_mount,0xc0123b54)
+	SYM(6502,224533049,task_destroy,0xc016e430)
 BUCKET_END
-EMPTY_BUCKET
-EMPTY_BUCKET
-EMPTY_BUCKET
 BUCKET_BEGIN
-	SYM(9615,128683076,strend,0xc01992fe)
+	SYM(9123,146286846,krealign,0xc0144c51)
+	SYM(8177,23430018,task_mktlb,0xc016a723)
+	SYM(5317,19925010,blkdev_mksuper,0xc0114fbf)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(7419,114923931,fstype_lock,0xc01c8718)
-	SYM(5710,178308051,memtype_names,0xc01a9020)
+	SYM(9753,129016663,syslog,0xc010544c)
+	SYM(9033,146290291,krealloc,0xc0144b8f)
 BUCKET_END
 BUCKET_BEGIN
-	SYM(9699,117793762,io_mgr,0xc01c8688)
-	SYM(8469,58985332,fdman_put,0xc0118c0f)
+	SYM(8045,74194580,_mempcpy_d,0xc019a3ea)
+	SYM(8353,137703908,_realloc_d,0xc0145c7f)
+	SYM(7631,107531516,mman_kernel,0xc01cb000)
+	SYM(254,67156028,modpatch_common_dlsym_impl,0xc01838a3)
 BUCKET_END
 EMPTY_BUCKET
+BUCKET_BEGIN
+	SYM(7895,48381310,module_open,0xc0180c2d)
+BUCKET_END
+BUCKET_BEGIN
+	SYM(7475,215694275,fs_autosync,0xc01c2b78)
+BUCKET_END

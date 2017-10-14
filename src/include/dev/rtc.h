@@ -82,7 +82,11 @@ FUNDEF SAFE void KCALL sysrtc_periodic(void);
  * second, as well as preemption switching tasks.
  * WARNING: Neither can be done when interrupts are disabled,
  *          meaning that over time the actual heartz will be
- *          a bit lower than this. */
+ *          a bit lower than this.
+ *          With that in mind, setting this value too high
+ *          will introduce inaccuracy caused by ticks being
+ *          dropped at random.
+ */
 #ifdef CONFIG_HZ
 #   define HZ CONFIG_HZ
 #else
@@ -91,7 +95,12 @@ FUNDEF SAFE void KCALL sysrtc_periodic(void);
 
 
 #define SEC_TO_JIFFIES(n)  (jtime_t)((n)*HZ)
+#if HZ >= 1000
+#define MSEC_TO_JIFFIES(n) (jtime_t)((n)*(HZ/1000l))
+#else
 #define MSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000l/HZ))
+#endif
+/* Assume that 'HZ <= 1000000l' for the entire kernel. */
 #define USEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000l/HZ))
 #define NSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000000l/HZ))
 #define FSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000000000000ll/HZ))

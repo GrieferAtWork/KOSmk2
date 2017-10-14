@@ -20,9 +20,9 @@
 #define GUARD_MODULES_NET_NE2K_H 1
 #define _KOS_SOURCE 2
 
+#include <dev/net.h>
 #include <hybrid/compiler.h>
 #include <kernel/export.h>
-#include <dev/net.h>
 #include <modules/pci.h>
 #include <sync/sem.h>
 
@@ -69,14 +69,13 @@ DECL_BEGIN
 #define EN0_TXCR     EI_SHIFT(0x0d) /* TX configuration reg WR */
 #define EN0_COUNTER0 EI_SHIFT(0x0d) /* Rcv alignment error counter RD */
 #define EN0_DCFG     EI_SHIFT(0x0e) /* Data configuration reg WR */
-//#define //T1 FT0 ARM LS LAS BOS WTS 
 #define EN0_COUNTER1 EI_SHIFT(0x0e) /* Rcv CRC error counter RD */
 #define EN0_IMR      EI_SHIFT(0x0f) /* Interrupt mask reg WR */
 #define EN0_COUNTER2 EI_SHIFT(0x0f) /* Rcv missed frame error counter RD */
 
 /* Page 1 register offsets. */
 #define EN1_PHYS          EI_SHIFT(0x01) /*< This board's physical enet addr RD WR. */
-#define EN1_PHYS_SHIFT(i) EI_SHIFT(i+1)  /*< Get and set mac address. */
+#define EN1_PHYS_SHIFT(i) EI_SHIFT(1+i)  /*< Get and set mac address. */
 #define EN1_CURPAG        EI_SHIFT(0x07) /*< Current memory page RD WR. */
 #define EN1_MULT          EI_SHIFT(0x08) /*< Multicast filter mask array (8 bytes) RD WR. */
 #define EN1_MULT_SHIFT(i) EI_SHIFT(8+i)  /*< Get and set multicast filter .*/
@@ -150,23 +149,47 @@ DECL_BEGIN
 #define ETSR_EMASK (ETSR_OWC|ETSR_CHD|ETSR_CRS|ETSR_ABT|ETSR_COL) /*< Mask of all error bits. */
 
 
+typedef struct {
+ u8  ph_status; /* ??? */
+ u8  ph_nextpg; /*< Page of the next package. */
+ u16 ph_size;   /*< Package size (in bytes) */
+} pck_header_t;
+
+
+/* == 0xff+1
+ * WARNING: Some code relies on the fact that
+ *          this shifts by exactly 8 bits! */
 #define NET_PAGESIZE 256
+#define NET_TX_START 64 /* First page of the transmission buffer. */
+#define NET_TX_PAGES 6  /* Amount of pages set aside for transmission. */
+
 typedef struct ne2k ne2k_t;
 struct ne2k {
- struct netdev          n_dev;     /*< Underlying net device. */
- REF struct pci_device *n_pcidev;  /*< [const] Associated PCI device. */
- u16                    n_iobase;  /*< [const] I/O Base address. */
- u8                     n_nextpck; /*< [lock(IN_IRQ)] Next package page pointer. */
- u8                     n_senderr; /*< [lock(n_dev.n_send_lock)] Error code after transmission completion (Set of 'ETSR_*'). */
- sem_t                  n_sendend; /*< [lock(n_dev.n_send_lock)] Semaphore used to notify transmission completion. */
+ struct netdev          n_dev;         /*< Underlying net device. */
+ REF struct pci_device *n_pcidev;      /*< [const] Associated PCI device. */
+ u16                    n_rx_begin;    /*< [const] Receive buffer start page. */
+ u16                    n_rx_end;      /*< [const] Receive buffer end page +1. */
+ u16                    n_tx_begin;    /*< [const] Transmit buffer start page. */
+ u16                    n_tx_end;      /*< [const] Transmit buffer end page +1. */
+ u16                    n_iobase;      /*< [const] I/O Base address. */
+ u8                     n_nextpck;     /*< [lock(IN_IRQ)] Pointer to the next unread incoming package. */
+ u8                     n_senderr;     /*< [lock(n_dev.n_send_lock)] Error code after transmission completion (Set of 'ETSR_*'). */
+ sem_t                  n_sendend;     /*< [lock(n_dev.n_send_lock)] Semaphore used to notify transmission completion. */
+#define NET_DEFAULT_DMATIMEOUT  MSEC_TO_JIFFIES(200)
+ jtime_t                n_dma_timeout; /*< [lock(n_dev.n_send_lock)] DMA timeout. */
 };
 
 INTERN errno_t KCALL net_reset_base(u16 iobase); /* Reset the card. */
-INTDEF errno_t KCALL net_reset(u16 iobase); /* Reset the card and interrupts. */
 
 /* Wait for DMA completion, returning an error or the status register. */
 INTDEF s32 KCALL net_waitdma(ne2k_t *__restrict dev);
-INTDEF errno_t KCALL net_resetdev(ne2k_t *__restrict dev);
+INTDEF errno_t KCALL net_reset(ne2k_t *__restrict dev);
+
+INTDEF ssize_t KCALL
+net_send(struct netdev *__restrict self,
+         struct opacket const *__restrict packet,
+         size_t packet_size);
+
 
 DECL_END
 

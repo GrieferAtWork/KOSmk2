@@ -743,6 +743,7 @@ again:
 
 INTDEF void KCALL delete_boot_device(struct device *__restrict dev);
 INTDEF void KCALL delete_default_keyboard(struct device *__restrict dev);
+INTDEF void KCALL delete_default_adapter(struct device *__restrict dev);
 INTERN void KCALL delete_default_rtc(struct rtc *__restrict dev);
 
 INTERN void KCALL
@@ -767,6 +768,7 @@ handle_dev:
   /* Check for deleting special, global device hooks. */
   delete_boot_device(dev);
   delete_default_keyboard(dev);
+  delete_default_adapter(dev);
   delete_default_rtc(container_of(dev,struct rtc,r_dev.cd_device));
   /* Remove any mapping of the device from '/dev' */
   superblock_remove_inode(&dev_fs.v_super,&dev->d_node);
