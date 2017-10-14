@@ -346,8 +346,12 @@ task_start(struct task *__restrict t) {
    cpu_add_suspended(t->t_cpu,t);
   } else {
    ATOMIC_WRITE(t->t_mode,TASKMODE_WAKEUP);
+#ifdef CONFIG_JIFFY_TIMEOUT
+   t->t_timeout = JTIME_DONTWAIT;
+#else
    t->t_timeout.tv_sec  = 0;
    t->t_timeout.tv_nsec = 0;
+#endif
    cpu_add_sleeping(t->t_cpu,t);
   }
   cpu_endwrite(t->t_cpu);
@@ -851,8 +855,12 @@ task_set_running(struct task *__restrict t) {
 #ifdef CONFIG_SMP
  if (t->t_cpu != THIS_CPU) {
   ATOMIC_WRITE(t->t_mode,TASKMODE_WAKEUP);
+#ifdef CONFIG_JIFFY_TIMEOUT
+  t->t_timeout = JTIME_DONTWAIT;
+#else
   t->t_timeout.tv_sec  = 0;
   t->t_timeout.tv_nsec = 0;
+#endif
   cpu_add_sleeping(t->t_cpu,t);
  } else
 #endif
@@ -1055,8 +1063,13 @@ cpu_add_sleeping(struct cpu *__restrict c,
  piter = &c->c_sleeping;
  if (t->t_mode == TASKMODE_WAKEUP) {
   /* Install the given task for a future wakeup. */
+#ifdef CONFIG_JIFFY_TIMEOUT
+  assertf(t->t_timeout == JTIME_DONTWAIT,
+          "Wakeup tasks must have their timeout set to JTIME_DONTWAIT");
+#else /* CONFIG_JIFFY_TIMEOUT */
   assertf(t->t_timeout.tv_nsec == 0 && t->t_timeout.tv_sec == 0,
           "Wakeup tasks must have their timeout set to {0,0}");
+#endif /* !CONFIG_JIFFY_TIMEOUT */
   while ((iter = *piter) != NULL &&
           iter->t_mode == TASKMODE_WAKEUP &&
           iter->t_mman <  t->t_mman)
@@ -1067,9 +1080,16 @@ cpu_add_sleeping(struct cpu *__restrict c,
          (assert(iter->t_mode == TASKMODE_WAKEUP ||
                  iter->t_mode == TASKMODE_SLEEPING),
          (iter->t_mode == TASKMODE_WAKEUP ||
+#ifdef CONFIG_JIFFY_TIMEOUT
+         (iter->t_timeout < t->t_timeout ||
+         (iter->t_timeout == t->t_timeout &&
+          iter->t_mman < t->t_mman))
+#else
          (TIMESPEC_LOWER(iter->t_timeout,t->t_timeout) ||
          (TIMESPEC_EQUAL(iter->t_timeout,t->t_timeout) &&
-          iter->t_mman < t->t_mman)))))
+          iter->t_mman < t->t_mman))
+#endif
+          )))
           piter = &iter->t_sched.sd_sleeping.le_next;
  }
  t->t_sched.sd_sleeping.le_next  = iter;
@@ -1229,9 +1249,45 @@ pit_exc(struct cpustate *__restrict state) {
   struct task *wake;
   /* Check for wakeups in sleeping tasks. */
   if ((wake = THIS_CPU->c_sleeping) != NULL) {
+#ifndef CONFIG_JIFFY_TIMEOUT
    struct timespec now; sysrtc_get(&now);
+#endif /* !CONFIG_JIFFY_TIMEOUT */
    for (;;) {
+#ifdef CONFIG_JIFFY_TIMEOUT
+    /* NOTE: Since we (the PIC interrupt timer) are the only ones who may update jiffies,
+     *       we also know that we're only ever updating it through incrementing by one.
+     *       This in return means that no tick is ever skipped as far as the jiffi counter
+     *       is concerned, which also means that we can safely perform a comparison for
+     *       equality, rather than lower, meaning this check is actually safe when it
+     *       comes to counter overroll!
+     * XXX: Don't do this! Remember how sleeping tasks are sorted:
+     *  jiffies == 0xffffffffffffffe0
+     *  thread #1: sleep(jiffies+10); (Sleep until '0xffffffffffffffea')
+     *  thread #2: sleep(jiffies+60); (Sleep until '0x000000000000001c') // Overflow
+     * Sort order:
+     *  thread #2 == CPU->c_sleeping
+     *  thread #1 == CPU->c_sleeping->t_sched.sd_sleeping.le_next
+     * 
+     * Checking for '!=' will actually cause execution of thread #1
+     * to be paused until long after the end of the know universe!
+     * 
+     * TODO: A better solution for this would be to re-schedule all tasks with a
+     *       timeout '>= 0x8000000000000000' when the jiffi counter rolls over,
+     *       but still perform a check using '!=', as this still works for threads
+     *       with long timeouts that extend past the end of jiffi's 64-bit timing.
+     *      (Notice how thread #2 is still woken at the correct point in time, while
+     *       this proposed solution would simply wait a bit too long before waking
+     *       thread #1, while still waking it before thread #2, as was the originally
+     *       intention by the programmer)
+     */
+#if 0
+    if (jiffies != wake->t_timeout) break;
+#else
+    if (jiffies < wake->t_timeout) break;
+#endif
+#else /* CONFIG_JIFFY_TIMEOUT */
     if (TIMESPEC_LOWER(now,wake->t_timeout)) break;
+#endif /* !CONFIG_JIFFY_TIMEOUT */
     assert(wake->t_mode == TASKMODE_SLEEPING ||
            wake->t_mode == TASKMODE_WAKEUP);
     /* Mark the task as having timed out. */
@@ -1453,8 +1509,12 @@ has_old_lock:
 
   /* Add the task to the new CPU using the wakeup chain. */
   ATOMIC_WRITE(t->t_mode,TASKMODE_WAKEUP);
+#ifdef CONFIG_JIFFY_TIMEOUT
+  t->t_timeout = JTIME_DONTWAIT;
+#else
   t->t_timeout.tv_nsec = 0;
   t->t_timeout.tv_sec  = 0;
+#endif
   cpu_add_sleeping(new_cpu,t);
 
   cpu_endwrite(old_cpu);
@@ -1859,21 +1919,33 @@ PUBLIC struct sig *KCALL task_trywait(void) {
  return result;
 }
 
+#ifdef CONFIG_JIFFY_TIMEOUT
 PUBLIC struct sig *KCALL
-task_waitfor_j(jtime_t abstime) {
- struct timespec time;
- /* TODO: Use a dedicated system for jiffy-based waiting. */
- if (abstime == JTIME_INFINITE)
-     return task_waitfor(NULL);
- if (abstime == JTIME_DONTWAIT)
-     return task_trywait();
- time = boottime;
- TIMESPEC_ADD_JIFFIES(time,abstime);
- return task_waitfor(&time);
+task_waitfor_t(struct timespec const *abstime) {
+ jtime_t jabstime;
+ if (!abstime) jabstime = JTIME_INFINITE;
+ else jabstime = TIMESPEC_ABS_TO_JIFFIES(*abstime);
+ return task_waitfor(jabstime);
 }
 
 PUBLIC struct sig *KCALL
-task_waitfor(struct timespec const *abstime) {
+task_waitfor(jtime_t abstime)
+#else
+PUBLIC struct sig *KCALL
+task_waitfor(jtime_t abstime) {
+ struct timespec time;
+ if (abstime == JTIME_INFINITE)
+     return task_waitfor_t(NULL);
+ if (abstime == JTIME_DONTWAIT)
+     return task_trywait();
+ JIFFIES_TO_ABS_TIMESPEC(time,abstime);
+ return task_waitfor_t(&time);
+}
+
+PUBLIC struct sig *KCALL
+task_waitfor_t(struct timespec const *abstime)
+#endif
+{
  struct sig *result; pflag_t was;
  struct task *t = THIS_TASK;
 
@@ -1915,6 +1987,15 @@ task_waitfor(struct timespec const *abstime) {
    }
 
    /* Check for timeout. */
+#ifdef CONFIG_JIFFY_TIMEOUT
+   /* NOTE: The second check must be performed in case
+    *       jiffies will overflow during the next tick. */
+   if (jiffies >= abstime && abstime != JTIME_INFINITE) {
+    result = E_PTR(-ETIMEDOUT);
+    if (!(was&EFLAGS_IF)) PREEMPTION_DISABLE();
+    goto end_clear2;
+   }
+#else
    if (abstime) {
     struct timespec now;
     sysrtc_get(&now);
@@ -1924,6 +2005,7 @@ task_waitfor(struct timespec const *abstime) {
      goto end_clear2;
     }
    }
+#endif
    PREEMPTION_DISABLE();
    assert(THIS_CPU->c_running == &THIS_CPU->c_idle);
    /* Try to switch to another task. */
@@ -1949,12 +2031,21 @@ task_waitfor(struct timespec const *abstime) {
  asserte(cpu_sched_remove_current() == t);
 
  /* Re-add the task as either sleeping, or suspended. */
+#ifdef CONFIG_JIFFY_TIMEOUT
+ if (abstime != JTIME_INFINITE) {
+  t->t_timeout = abstime;
+  ATOMIC_WRITE(t->t_mode,TASKMODE_SLEEPING);
+  cpu_add_sleeping(THIS_CPU,t);
+ } else
+#else
  if (abstime) {
   CHECK_HOST_TOBJ(abstime);
   t->t_timeout = *abstime;
   ATOMIC_WRITE(t->t_mode,TASKMODE_SLEEPING);
   cpu_add_sleeping(THIS_CPU,t);
- } else {
+ } else
+#endif
+ {
   ATOMIC_WRITE(t->t_mode,TASKMODE_SUSPENDED);
   cpu_add_suspended(THIS_CPU,t);
  }
@@ -1972,7 +2063,14 @@ got_signal:
 
  if unlikely(t->t_flags&(TASKFLAG_INTERRUPT|TASKFLAG_TIMEDOUT)) {
   if (t->t_flags&TASKFLAG_INTERRUPT) result = E_PTR(-EINTR);
-  else { assert(abstime); result = E_PTR(-ETIMEDOUT); }
+  else {
+#ifdef CONFIG_JIFFY_TIMEOUT
+   assert(abstime != JTIME_INFINITE);
+#else /* CONFIG_JIFFY_TIMEOUT */
+   assert(abstime);
+#endif /* !CONFIG_JIFFY_TIMEOUT */
+   result = E_PTR(-ETIMEDOUT);
+  }
   t->t_flags &= ~(TASKFLAG_INTERRUPT|TASKFLAG_TIMEDOUT);
   ATOMIC_WRITE(t->t_signals.ts_recv,NULL);
  } else {
@@ -2335,8 +2433,7 @@ task_interrupt(struct task *__restrict t) {
 
 PUBLIC errno_t KCALL
 task_join(struct task *__restrict t,
-          struct timespec const *timeout,
-          void **exitcode) {
+          jtime_t timeout, void **exitcode) {
  errno_t result = -EOK;
  CHECK_HOST_DOBJ(t);
 wait_again: ATTR_UNUSED;
@@ -2668,10 +2765,16 @@ task_resume_cpu_endwrite(struct task *__restrict t, u32 mode, pflag_t was) {
   /* Suspended task. */
   if ((t->t_flags&(TASKFLAG_TIMEDOUT|TASKFLAG_SUSP_TIMED)) ==
                                     (TASKFLAG_SUSP_TIMED)) {
+#ifdef CONFIG_JIFFY_TIMEOUT
+   /* Check for a timeout. */
+   if (jiffies >= t->t_timeout)
+       t->t_flags |= TASKFLAG_TIMEDOUT;
+#else
    struct timespec now; sysrtc_get(&now);
    /* Check for a timeout. */
    if (TIMESPEC_GREATER_EQUAL(now,t->t_timeout))
        t->t_flags |= TASKFLAG_TIMEDOUT;
+#endif
   }
   t->t_flags &= ~(TASKFLAG_SUSP_TIMED);
 
@@ -2773,8 +2876,29 @@ end:
  return error;
 }
 
+#ifdef CONFIG_JIFFY_TIMEOUT
 PUBLIC SAFE errno_t KCALL
-task_pause_cpu_endwrite(struct timespec const *abstime) {
+task_pause_cpu_endwrite_t(struct timespec const *abstime) {
+ jtime_t jabstime;
+ if (!abstime) jabstime = JTIME_INFINITE;
+ else jabstime = TIMESPEC_ABS_TO_JIFFIES(*abstime);
+ return task_pause_cpu_endwrite(jabstime);
+}
+PUBLIC SAFE errno_t KCALL
+task_pause_cpu_endwrite(jtime_t abstime)
+#else /* CONFIG_JIFFY_TIMEOUT */
+PUBLIC SAFE errno_t KCALL
+task_pause_cpu_endwrite(jtime_t abstime) {
+ struct timespec time;
+ if (abstime == JTIME_INFINITE)
+     return task_pause_cpu_endwrite_t(NULL);
+ JIFFIES_TO_ABS_TIMESPEC(time,abstime);
+ return task_pause_cpu_endwrite_t(&time);
+}
+PUBLIC SAFE errno_t KCALL
+task_pause_cpu_endwrite_t(struct timespec const *abstime)
+#endif /* !CONFIG_JIFFY_TIMEOUT */
+{
  REF struct task *caller; errno_t error = -EINTR;
  assert(!PREEMPTION_ENABLED());
  assert(cpu_writing(THIS_CPU));
@@ -2787,6 +2911,19 @@ task_pause_cpu_endwrite(struct timespec const *abstime) {
  /* Unschedule the calling thread. */
  caller = cpu_sched_remove_current();
 
+#ifdef CONFIG_JIFFY_TIMEOUT
+ if (abstime != JTIME_INFINITE) {
+  /* Re-schedule as an interruptible sleeper. */
+  caller->t_timeout = abstime;
+  ATOMIC_WRITE(caller->t_mode,TASKMODE_SLEEPING);
+  cpu_add_sleeping(THIS_CPU,caller);
+ } else {
+  /* Re-schedule as an interruptible suspended. */
+  //caller->t_timeout = JTIME_DONTWAIT;
+  ATOMIC_WRITE(caller->t_mode,TASKMODE_SUSPENDED);
+  cpu_add_suspended(THIS_CPU,caller);
+ }
+#else
  if (abstime) {
   /* Re-schedule as an interruptible sleeper. */
   caller->t_timeout = *abstime;
@@ -2794,11 +2931,12 @@ task_pause_cpu_endwrite(struct timespec const *abstime) {
   cpu_add_sleeping(THIS_CPU,caller);
  } else {
   /* Re-schedule as an interruptible suspended. */
-  caller->t_timeout.tv_nsec = 0;
-  caller->t_timeout.tv_sec  = 0;
+  //caller->t_timeout.tv_nsec = 0;
+  //caller->t_timeout.tv_sec  = 0;
   ATOMIC_WRITE(caller->t_mode,TASKMODE_SUSPENDED);
   cpu_add_suspended(THIS_CPU,caller);
  }
+#endif
  TASK_SWITCH_CONTEXT(caller,THIS_CPU->c_running);
  cpu_endwrite(THIS_CPU);
 
@@ -2965,19 +3103,44 @@ end:
  return result;
 }
 
+#ifdef CONFIG_JIFFY_TIMEOUT
 PUBLIC errno_t KCALL
-schedule_work_delayed(struct job *__restrict work,
+schedule_delayed_work(struct job *__restrict work,
                       struct timespec const *__restrict abs_exectime) {
+ CHECK_HOST_DOBJ(abs_exectime);
+ return schedule_delayed_work_j(work,TIMESPEC_ABS_TO_JIFFIES(*abs_exectime));
+}
+PUBLIC errno_t KCALL
+schedule_delayed_work_j(struct job *__restrict work, jtime_t abs_exectime)
+#else
+PUBLIC errno_t KCALL
+schedule_delayed_work_j(struct job *__restrict work, jtime_t abs_exectime) {
+ struct timespec time;
+ JIFFIES_TO_ABS_TIMESPEC(time,abstime);
+ return schedule_delayed_work(work,&time);
+}
+PUBLIC errno_t KCALL
+schedule_delayed_work(struct job *__restrict work,
+                      struct timespec const *__restrict abs_exectime)
+#endif
+{
  errno_t result = -EOK;
  pflag_t was = PREEMPTION_PUSH();
  struct job **piter,*iter;
  CPU_JLOCK_ACQUIRE();
  CHECK_HOST_DOBJ(work);
+#ifndef CONFIG_JIFFY_TIMEOUT
  CHECK_HOST_DOBJ(abs_exectime);
+#endif /* !CONFIG_JIFFY_TIMEOUT */
 
  /* If the job is already scheduled, don't do anything. */
  if unlikely(work->j_next.le_pself != NULL) {
-  if (TIMESPEC_LOWER(*abs_exectime,work->j_time)) {
+#ifdef CONFIG_JIFFY_TIMEOUT
+  if (abs_exectime < work->j_time)
+#else /* CONFIG_JIFFY_TIMEOUT */
+  if (TIMESPEC_LOWER(*abs_exectime,work->j_time))
+#endif /* !CONFIG_JIFFY_TIMEOUT */
+  {
    /* Re-prioritize the job to be executed sooner. */
    piter = work->j_next.le_pself;
    /* TODO: What if the job was scheduled on another CPU?
@@ -2988,7 +3151,12 @@ schedule_work_delayed(struct job *__restrict work,
            assert(piter != &CPU(cpu_jobs_end)),
            piter != &CPU(cpu_delay_jobs)) &&
          (iter = container_of(piter,struct job,j_next.le_next),assert(iter),
-          TIMESPEC_GREATER_EQUAL(iter->j_time,work->j_time)))
+#ifdef CONFIG_JIFFY_TIMEOUT
+          iter->j_time >= work->j_time
+#else /* CONFIG_JIFFY_TIMEOUT */
+          TIMESPEC_GREATER_EQUAL(iter->j_time,work->j_time)
+#endif /* !CONFIG_JIFFY_TIMEOUT */
+          ))
           piter = iter->j_next.le_pself;
    /* Re-insert the work task. */
    LIST_REMOVE(work,j_next);
@@ -3010,7 +3178,11 @@ schedule_work_delayed(struct job *__restrict work,
            THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING);
     if (THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING) {
      cpu_del_sleeping(THIS_CPU,&THIS_CPU->c_work);
+#ifdef CONFIG_JIFFY_TIMEOUT
+     THIS_CPU->c_work.t_timeout = abs_exectime;
+#else /* CONFIG_JIFFY_TIMEOUT */
      memcpy(&THIS_CPU->c_work.t_timeout,abs_exectime,sizeof(struct timespec));
+#endif /* !CONFIG_JIFFY_TIMEOUT */
      cpu_add_sleeping(THIS_CPU,&THIS_CPU->c_work);
     }
     cpu_endwrite(THIS_CPU);
@@ -3022,12 +3194,21 @@ schedule_work_delayed(struct job *__restrict work,
  /* Make sure the instance associated with the job still exists. */
  if unlikely(INSTANCE_ISUNLOADING(work->j_owner)) { result = -EPERM; goto end; }
 
+#ifdef CONFIG_JIFFY_TIMEOUT
+ work->j_time = abs_exectime;
+#else
  memcpy(&work->j_time,abs_exectime,sizeof(struct timespec));
+#endif
 
  /* Figure out where to insert the job. */
  piter = &CPU(cpu_delay_jobs);
  while ((iter = *piter) != NULL &&
-         TIMESPEC_LOWER_EQUAL(iter->j_time,*abs_exectime))
+#ifdef CONFIG_JIFFY_TIMEOUT
+         iter->j_time <= abs_exectime
+#else
+         TIMESPEC_LOWER_EQUAL(iter->j_time,*abs_exectime)
+#endif
+         )
          piter = &iter->j_next.le_next;
 
  /* Insert the new job. */
@@ -3043,13 +3224,25 @@ schedule_work_delayed(struct job *__restrict work,
   cpu_write(THIS_CPU);
   if (THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING) {
    /* Decrement the timeout. */
+#ifdef CONFIG_JIFFY_TIMEOUT
+   assert(THIS_CPU->c_work.t_timeout < abs_exectime);
+#else /* CONFIG_JIFFY_TIMEOUT */
    assert(TIMESPEC_LOWER(THIS_CPU->c_work.t_timeout,*abs_exectime));
+#endif /* !CONFIG_JIFFY_TIMEOUT */
    cpu_del_sleeping(THIS_CPU,&THIS_CPU->c_work);
+#ifdef CONFIG_JIFFY_TIMEOUT
+   THIS_CPU->c_work.t_timeout = abs_exectime;
+#else /* CONFIG_JIFFY_TIMEOUT */
    memcpy(&THIS_CPU->c_work.t_timeout,abs_exectime,sizeof(struct timespec));
+#endif /* !CONFIG_JIFFY_TIMEOUT */
    cpu_add_sleeping(THIS_CPU,&THIS_CPU->c_work);
   } else if (THIS_CPU->c_work.t_mode == TASKMODE_SUSPENDED) {
    cpu_del_suspended(THIS_CPU,&THIS_CPU->c_work);
+#ifdef CONFIG_JIFFY_TIMEOUT
+   THIS_CPU->c_work.t_timeout = abs_exectime;
+#else /* CONFIG_JIFFY_TIMEOUT */
    memcpy(&THIS_CPU->c_work.t_timeout,abs_exectime,sizeof(struct timespec));
+#endif /* !CONFIG_JIFFY_TIMEOUT */
    ATOMIC_WRITE(THIS_CPU->c_work.t_mode,TASKMODE_SLEEPING);
    cpu_add_sleeping(THIS_CPU,&THIS_CPU->c_work);
   } else {
@@ -3102,9 +3295,18 @@ jobs_delete_from_instance(struct instance *__restrict inst) {
    assert(c->c_work.t_mode == TASKMODE_SLEEPING ||
           c->c_work.t_mode == TASKMODE_RUNNING);
    if (c->c_work.t_mode == TASKMODE_SLEEPING &&
+#ifdef CONFIG_JIFFY_TIMEOUT
+       c->c_work.t_timeout != VCPU(c,cpu_delay_jobs)->j_time
+#else /* CONFIG_JIFFY_TIMEOUT */
        TIMESPEC_NOT_EQUAL(c->c_work.t_timeout,
-                          VCPU(c,cpu_delay_jobs)->j_time)) {
+                          VCPU(c,cpu_delay_jobs)->j_time)
+#endif /* !CONFIG_JIFFY_TIMEOUT */
+       ) {
+#ifdef CONFIG_JIFFY_TIMEOUT
+    assert(c->c_work.t_timeout < VCPU(c,cpu_delay_jobs)->j_time);
+#else /* CONFIG_JIFFY_TIMEOUT */
     assert(TIMESPEC_LOWER(c->c_work.t_timeout,VCPU(c,cpu_delay_jobs)->j_time));
+#endif /* !CONFIG_JIFFY_TIMEOUT */
     cpu_del_sleeping(c,&c->c_work);
     memcpy(&c->c_work.t_timeout,
            &VCPU(c,cpu_delay_jobs)->j_time,

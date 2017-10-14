@@ -164,6 +164,7 @@ FUNDEF errno_t KCALL schedule_work(struct job *__restrict work);
  * @return: -EALREADY: The given job had already been scheduled, though had yet to be executed.
  * @return: -EPERM:    The module associated with the given job is currently being unloaded. */
 FUNDEF errno_t KCALL schedule_delayed_work(struct job *__restrict work, struct timespec const *__restrict abs_exectime);
+FUNDEF errno_t KCALL schedule_delayed_work_j(struct job *__restrict work, jtime_t abs_exectime);
 /* TODO: Using jobs, we can easily implement 'alarm()' */
 #endif /* !CONFIG_NO_JOBS */
 

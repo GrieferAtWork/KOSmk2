@@ -517,7 +517,7 @@ wait_for_sigchld(struct timespec *abstime) {
  /* Make sure to unmask SIGCHLD to guaranty the signal actually being received. */
  was_blocked = sigismember(&caller->t_sigblock,SIGCHLD);
  sigdelset(&caller->t_sigblock,SIGCHLD);
- error = task_pause_cpu_endwrite(abstime);
+ error = task_pause_cpu_endwrite_t(abstime);
 
  /* Restore the old blocking behavior of 'SIGCHLD' */
  if (was_blocked)
@@ -555,7 +555,7 @@ again:
   if (second_pass) { result = -EINTR; goto unlock_cpu; }
   second_pass = true;
   /* Wait for a child process to deliver a signal. */
-  result = task_pause_cpu_endwrite(abstime);
+  result = task_pause_cpu_endwrite_t(abstime);
   if (result == -EINTR) goto again;
  } else {
   if (second_pass)
@@ -610,7 +610,7 @@ again:
   if (second_pass) { result = -EINTR; goto unlock_cpu; }
   second_pass = true;
   /* Wait for a child process to deliver a signal. */
-  result = task_pause_cpu_endwrite(abstime);
+  result = task_pause_cpu_endwrite_t(abstime);
   if (result == -EINTR) goto again;
  } else {
 unlock_cpu:

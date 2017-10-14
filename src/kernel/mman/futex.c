@@ -181,23 +181,23 @@ SYSCALL_DEFINE6(futex,USER u32 *,uaddr,int,op,u32,val,
                 USER struct timespec *,utime,USER u32 *,uaddr2,
                 u32,val3) {
  /* futex() system call for linux compatibility. */
- struct timespec tmo,*ptmo = NULL; u32 val2 = 0;
+ jtime_t timeout = JTIME_INFINITE; u32 val2 = 0;
  struct mman *mm = THIS_MMAN; ssize_t error;
  struct mfutex *lock = E_PTR(-ENOSYS);
  int cmd = op & FUTEX_CMD_MASK;
  if (utime &&
     (cmd == FUTEX_WAIT || cmd == FUTEX_LOCK_PI ||
      cmd == FUTEX_WAIT_BITSET || cmd == FUTEX_WAIT_REQUEUE_PI)) {
+  struct timespec tmo;
   /* Copy the given timeout if doing so is apart of the command. */
   if (copy_from_user(&tmo,utime,sizeof(struct timespec)))
       return -EFAULT;
   /* Add the current time to the timeout. */
-  if (cmd == FUTEX_WAIT) {
-   struct timespec now;
-   sysrtc_get(&now);
-   TIMESPEC_ADD(tmo,now);
+  if (cmd != FUTEX_WAIT) {
+   timeout = TIMESPEC_ABS_TO_JIFFIES(tmo);
+  } else {
+   timeout = TIMESPEC_OFF_TO_JIFFIES(tmo);
   }
-  ptmo = &tmo;
  }
  /* Interpret 'utime' as the second argument for specific commands. */
  if (cmd == FUTEX_REQUEUE || cmd == FUTEX_CMP_REQUEUE ||
@@ -241,7 +241,7 @@ wait_check_again:
          goto wait_check_again;
    }
    /* The value is still the same. - Now wait for the associated signal. */
-   error = sig_timedrecv_endwrite(&lock->f_sig,ptmo);
+   error = sig_timedrecv_endwrite(&lock->f_sig,timeout);
    MFUTEX_DECREF(lock);
    lock = E_PTR(error);
   }

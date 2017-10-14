@@ -194,7 +194,7 @@ relock_tasks_again:
     task_terminate(term_task,TERMINATE_ON_EXEC_CODE);
 
     /* Join the task. */
-    error = task_join(term_task,NULL,NULL);
+    error = task_join(term_task,JTIME_INFINITE,NULL);
     TASK_DECREF(term_task);
     if (E_ISERR(error)) goto end;
 

@@ -159,14 +159,13 @@ struct ne2k {
  u8                     n_nextpck; /*< [lock(IN_IRQ)] Next package page pointer. */
  u8                     n_senderr; /*< [lock(n_dev.n_send_lock)] Error code after transmission completion (Set of 'ETSR_*'). */
  sem_t                  n_sendend; /*< [lock(n_dev.n_send_lock)] Semaphore used to notify transmission completion. */
- struct timespec        n_sendtmo; /*< [lock(n_dev.n_send_lock)] Timeout when sending data.
-                                    *   TODO: Replace with 'n_dev.n_send_timeout' */
 };
 
 INTERN errno_t KCALL net_reset_base(u16 iobase); /* Reset the card. */
 INTDEF errno_t KCALL net_reset(u16 iobase); /* Reset the card and interrupts. */
-INTDEF s32 KCALL net_waitdma(u16 iobase); /* Wait for DMA completion, returning an error or the status register. */
 
+/* Wait for DMA completion, returning an error or the status register. */
+INTDEF s32 KCALL net_waitdma(ne2k_t *__restrict dev);
 INTDEF errno_t KCALL net_resetdev(ne2k_t *__restrict dev);
 
 DECL_END

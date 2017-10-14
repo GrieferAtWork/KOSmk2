@@ -108,7 +108,7 @@ PUBLIC DEFINE_RWLOCK(apic_lock);
 
 INTDEF uintptr_t           cpu_bootstrap;
 INTDEF struct idt_pointer *cpu_bootstrap_gdt; /*< [lock(apic_lock)] realmode symbol describing the GDT loaded during bootup. */
-INTDEF ATTR_NORETURN void cpu_bootstrap_c(void);
+INTDEF ATTR_NORETURN void  cpu_bootstrap_c(void);
 
 
 GLOBAL_ASM(
@@ -360,7 +360,7 @@ cpu_do_activate_endwrite(struct cpu *__restrict self) {
  }
 
  /* Unlock the sigon/off and wait for the CPU to respond that it's finished booting. */
- error = sig_timedrecv_endwrite(&self->c_arch.ac_sigonoff,NULL);
+ error = sig_timedrecv_endwrite(&self->c_arch.ac_sigonoff,JTIME_INFINITE);
 
 init_fail:
  task_endnointr();
@@ -410,7 +410,7 @@ again:
   shutdown = self->c_arch.ac_mode != CPUMODE_STARTUP;
   /* Someone else has already booted this cpu.
    * Join their wait of a response. */
-  error = sig_timedrecv_endwrite(&self->c_arch.ac_sigonoff,NULL);
+  error = sig_timedrecv_endwrite(&self->c_arch.ac_sigonoff,JTIME_INFINITE);
   if (E_ISERR(error) || !shutdown) goto end;
   goto again;
  }
@@ -477,7 +477,8 @@ again:
    HOSTMEMORY_BEGIN {
     /* Wait for the CPU to acknowledge the request. */
     error = sig_vtimedrecv_endwrite(&self->c_arch.ac_sigonoff,
-                                    &reason,sizeof(reason),NULL);
+                                    &reason,sizeof(reason),
+                                    JTIME_INFINITE);
    }
    HOSTMEMORY_END;
    task_endnointr();
@@ -532,7 +533,7 @@ again:
   startup = self->c_arch.ac_mode == CPUMODE_STARTUP;
   /* Someone else has already booted this cpu.
    * Join their wait of a response. */
-  error = sig_timedrecv_endwrite(&self->c_arch.ac_sigonoff,NULL);
+  error = sig_timedrecv_endwrite(&self->c_arch.ac_sigonoff,JTIME_INFINITE);
   if (E_ISERR(error) || !startup) goto end;
   goto again;
  }

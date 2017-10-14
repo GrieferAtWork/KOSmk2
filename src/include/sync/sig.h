@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <hybrid/list/list.h>
 #include <hybrid/compiler.h>
+#include <hybrid/types.h>
 #ifdef CONFIG_SIGNAL_USING_ATOMIC_RWPTR
 #include <hybrid/sync/atomic-rwptr.h>
 #else
@@ -318,30 +319,28 @@ struct sig {
 #define sig_endwrite(x)    atomic_rwlock_endwrite(&(x)->s_lock)
 #endif
 
-struct timespec;
-
 /* Receive a a signal, only returning once it is send, or 'abstime' expires.
  * NOTE: '*_endwrite' will unlock an exclusive (write) lock on the
  *       signal, while the other functions are simply wrappers that
  *       acquire said lock before calling the '*_endwrite' versions.
- * HINT: 'NULL' may be passed for 'abstime' to use an infinite timeout.
+ * HINT: 'JTIME_INFINITE' may be passed for 'abstime' to use an infinite timeout.
  * @return: -EOK:       The signal was successfully received.
  * @return: -ETIMEDOUT: The given timeout has expired.
  * @return: -EINTR:     The calling thread was interrupted. */
-FUNDEF errno_t KCALL sig_timedrecv(struct sig *__restrict sig, struct timespec const *abstime);
-FUNDEF errno_t KCALL sig_timedrecv_endwrite(struct sig *__restrict sig, struct timespec const *abstime);
-FUNDEF errno_t KCALL sig_vtimedrecv(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize, struct timespec const *abstime);
-FUNDEF errno_t KCALL sig_vtimedrecv_endwrite(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize, struct timespec const *abstime);
+FUNDEF errno_t KCALL sig_timedrecv(struct sig *__restrict sig, jtime_t abstime);
+FUNDEF errno_t KCALL sig_timedrecv_endwrite(struct sig *__restrict sig, jtime_t abstime);
+FUNDEF errno_t KCALL sig_vtimedrecv(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize, jtime_t abstime);
+FUNDEF errno_t KCALL sig_vtimedrecv_endwrite(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize, jtime_t abstime);
 #ifdef __INTELLISENSE__
 FUNDEF errno_t KCALL sig_recv(struct sig *__restrict sig);
 FUNDEF errno_t KCALL sig_recv_endwrite(struct sig *__restrict sig);
 FUNDEF errno_t KCALL sig_vrecv(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize);
 FUNDEF errno_t KCALL sig_vrecv_endwrite(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize);
 #else
-#define sig_recv(sig)                           sig_timedrecv(sig,NULL)
-#define sig_recv_endwrite(sig)                  sig_timedrecv_endwrite(sig,NULL)
-#define sig_vrecv(sig,msg_buf,bufsize)          sig_vtimedrecv(sig,msg_buf,bufsize,NULL)
-#define sig_vrecv_endwrite(sig,msg_buf,bufsize) sig_vtimedrecv_endwrite(sig,msg_buf,bufsize,NULL)
+#define sig_recv(sig)                           sig_timedrecv(sig,JTIME_INFINITE)
+#define sig_recv_endwrite(sig)                  sig_timedrecv_endwrite(sig,JTIME_INFINITE)
+#define sig_vrecv(sig,msg_buf,bufsize)          sig_vtimedrecv(sig,msg_buf,bufsize,JTIME_INFINITE)
+#define sig_vrecv_endwrite(sig,msg_buf,bufsize) sig_vtimedrecv_endwrite(sig,msg_buf,bufsize,JTIME_INFINITE)
 #endif
 
 /* Send the specified signal to at most 'max_threads' threads,

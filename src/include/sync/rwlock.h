@@ -54,8 +54,8 @@ typedef struct rwlock {
  * @return: -EAGAIN:    [rwlock_try*] Failed to acquire a lock immediately.
  * @return: -EINTR:     [rwlock_(read|write)] The calling thread was interrupted.
  * @return: -ETIMEDOUT: [rwlock_timed(read|write)] The given abstime has expired. */
-LOCAL errno_t KCALL rwlock_timedread(rwlock_t *__restrict self, struct timespec const *abstime);
-LOCAL errno_t KCALL rwlock_timedwrite(rwlock_t *__restrict self, struct timespec const *abstime);
+LOCAL errno_t KCALL rwlock_timedread(rwlock_t *__restrict self, jtime_t abstime);
+LOCAL errno_t KCALL rwlock_timedwrite(rwlock_t *__restrict self, jtime_t abstime);
 #ifdef __INTELLISENSE__
 LOCAL errno_t KCALL rwlock_tryread(rwlock_t *__restrict self);
 LOCAL errno_t KCALL rwlock_trywrite(rwlock_t *__restrict self);
@@ -64,8 +64,8 @@ LOCAL errno_t KCALL rwlock_write(rwlock_t *__restrict self);
 #else
 #define rwlock_tryread(self)  (atomic_rwlock_tryread(&(self)->rw_lock) ? -EOK : -EAGAIN)
 #define rwlock_trywrite(self) (atomic_rwlock_trywrite(&(self)->rw_lock) ? -EOK : -EAGAIN)
-#define rwlock_read(self)      rwlock_timedread(self,NULL)
-#define rwlock_write(self)     rwlock_timedwrite(self,NULL)
+#define rwlock_read(self)      rwlock_timedread(self,JTIME_INFINITE)
+#define rwlock_write(self)     rwlock_timedwrite(self,JTIME_INFINITE)
 #endif
 
 /* Try to upgrade a read-lock to a write-lock.
@@ -85,11 +85,11 @@ LOCAL errno_t KCALL rwlock_tryupgrade(rwlock_t *__restrict self);
  *                    local copies of affected resources.
  * @return: -ETIMEDOUT: [rwlock_timedupgrade] The given abstime has expired (WARNING: The read-lock was lost).
  */
-LOCAL errno_t KCALL rwlock_timedupgrade(rwlock_t *__restrict self, struct timespec const *abstime);
+LOCAL errno_t KCALL rwlock_timedupgrade(rwlock_t *__restrict self, jtime_t abstime);
 #ifdef __INTELLISENSE__
 LOCAL errno_t KCALL rwlock_upgrade(rwlock_t *__restrict self);
 #else
-#define rwlock_upgrade(self) rwlock_timedupgrade(self,NULL)
+#define rwlock_upgrade(self) rwlock_timedupgrade(self,JTIME_INFINITE)
 #endif
 
 /* Downgrade a write-lock to a read-lock (Always succeeds). */
@@ -140,8 +140,7 @@ LOCAL void KCALL rwlock_end(rwlock_t *__restrict self) {
 }
 
 LOCAL errno_t KCALL
-rwlock_timedread(rwlock_t *__restrict self,
-                 struct timespec const *abstime) {
+rwlock_timedread(rwlock_t *__restrict self, jtime_t abstime) {
  errno_t error = -EOK;
  while (!RWLOCK_TRYREAD(self)) {
   sig_read(&self->rw_sig);
@@ -153,8 +152,7 @@ rwlock_timedread(rwlock_t *__restrict self,
  return error;
 }
 LOCAL errno_t KCALL
-rwlock_timedwrite(rwlock_t *__restrict self,
-                  struct timespec const *abstime) {
+rwlock_timedwrite(rwlock_t *__restrict self, jtime_t abstime) {
  errno_t error = -EOK;
  while (!RWLOCK_TRYWRITE(self)) {
   sig_read(&self->rw_sig);
@@ -166,8 +164,7 @@ rwlock_timedwrite(rwlock_t *__restrict self,
  return error;
 }
 LOCAL errno_t KCALL
-rwlock_timedupgrade(rwlock_t *__restrict self,
-                    struct timespec const *abstime) {
+rwlock_timedupgrade(rwlock_t *__restrict self, jtime_t abstime) {
  errno_t error = -EOK;
  if (!RWLOCK_TRYUPGRADE(self)) {
   rwlock_endread(self);

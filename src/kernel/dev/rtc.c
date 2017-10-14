@@ -317,14 +317,12 @@ SYSCALL_DEFINE2(settimeofday,USER struct timeval const *,tv,
 
 SYSCALL_DEFINE2(nanosleep,USER struct timespec const *,rqtp,
                           USER struct timespec *,rmtp) {
- struct timespec req,now; struct sig *error;
+ jtime_t now,timeout; struct sig *error; struct timespec req;
  if (copy_from_user(&req,rqtp,sizeof(struct timespec)))
      return -EFAULT;
+ timeout = jiffies+TIMESPEC_OFF_TO_JIFFIES(req);
  task_crit();
- sysrtc_get(&now);
- TIMESPEC_ADD(req,now);
- error = task_waitfor(&req);
- sysrtc_get(&now);
+ error = task_waitfor(timeout);
  if (E_ISOK(error)) error = E_PTR(-EOK);
  if (error == E_PTR(-ETIMEDOUT)) {
   /* Return EOK when the timeout expired. */
@@ -338,13 +336,14 @@ no_remainder:
  } else if (rmtp) {
   /* Assume that an interrupt occurred and
    * write the time we didn't wait to 'rmtp' */
-  sysrtc_get(&now);
+  now = jiffies;
   /* If the current point in time still lies
    * past the requested, return all ZEROes. */
-  if (TIMESPEC_GREATER_EQUAL(now,req))
+  if (now >= timeout)
       goto no_remainder;
   /* Subtract NOW from the requested time. */
-  TIMESPEC_SUB(req,now);
+  timeout -= now;
+  JIFFIES_TO_OFF_TIMESPEC(req,timeout);
   /* And copy it back to user-space. */
   if (copy_to_user(rmtp,&req,sizeof(struct timespec)))
       error = E_PTR(-EFAULT);

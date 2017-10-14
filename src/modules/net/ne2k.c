@@ -66,17 +66,17 @@ INTERN errno_t KCALL net_reset(u16 iobase) {
  if (E_ISOK(error)) outb(iobase+EN0_IMR,ENISR_ALL);
  return error;
 }
-INTERN s32 KCALL net_waitdma(u16 iobase) {
+INTERN s32 KCALL net_waitdma(ne2k_t *__restrict dev) {
  u32 start = jiffies32; u8 status;
- while (!((status = inb(iobase+EN0_ISR))&ENISR_RDC)) {
-  if (jiffies32-start > 2) {
+ while (!((status = inb(dev->n_iobase+EN0_ISR))&ENISR_RDC)) {
+  if (jiffies32-start > dev->n_dev.n_write_timeout) {
    syslog(LOG_WARN,"[NE2K] Timeout during DMA wait\n");
    return -ETIMEDOUT;
   }
   task_yield();
  }
  /* Acknowledge remote DMA completion. */
- outb(iobase+EN0_ISR,ENISR_RDC);
+ outb(dev->n_iobase+EN0_ISR,ENISR_RDC);
  return (s32)status;
 }
 
@@ -176,7 +176,7 @@ ne2k_send(ne2k_t *__restrict self,
  outsw(self->n_iobase+NE_DATAPORT,buf,len/2);
  if (len&1) outw(self->n_iobase+NE_DATAPORT,(u16)(((u8 *)buf)[len-1]));
 
- error = net_waitdma(self->n_iobase);;
+ error = net_waitdma(self);
  if (E_ISERR(error)) goto reset;
 
  outb(self->n_iobase+E8390_CMD,E8390_NODMA|E8390_START);
@@ -185,11 +185,9 @@ ne2k_send(ne2k_t *__restrict self,
  outb(self->n_iobase+EN0_TCNTHI,transmission_size >> 8);
  outb(self->n_iobase+E8390_CMD,E8390_TRANS|E8390_NODMA|E8390_START);
 
- { struct timespec now; sysrtc_get(&now);
-   TIMESPEC_ADD(now,self->n_sendtmo);
-   error = sem_timedwait(&self->n_sendend,&now);
-   if (E_ISERR(error)) goto reset;
- }
+ error = sem_timedwait(&self->n_sendend,jiffies+
+                       self->n_dev.n_send_timeout);
+ if (E_ISERR(error)) goto reset;
 
  /* Check if the status register indicated an error. */
  if ((self->n_senderr&(ENISR_TX_ERR|ENISR_TX)) != ENISR_TX)
@@ -265,8 +263,6 @@ ne2k_probe(struct pci_device *dev) {
  netdev->n_pcidev = dev;
  PCI_DEVICE_INCREF(dev);
  sem_cinit(&netdev->n_sendend,0);
- netdev->n_sendtmo.tv_sec  = 2;
- netdev->n_sendtmo.tv_nsec = 0;
 
  /* Setup the device. */
  error = device_setup(&netdev->n_dev.n_dev.cd_device,THIS_INSTANCE);

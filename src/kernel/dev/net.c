@@ -28,6 +28,18 @@
 
 DECL_BEGIN
 
+PUBLIC struct netdev *KCALL
+netdev_cinit(struct netdev *self) {
+ if (self) {
+  chrdev_cinit(&self->n_dev);
+  self->n_write_timeout = NETDEV_DEFAULT_WTIMEOUT;
+  self->n_send_timeout  = NETDEV_DEFAULT_STIMEOUT;
+  rwlock_cinit(&self->n_send_lock);
+ }
+ return self;
+}
+
+
 PUBLIC struct packet *KCALL packet_alloc(size_t data_bytes) {
  struct packet *result;
  size_t alloc_size = CEIL_ALIGN(data_bytes,256);

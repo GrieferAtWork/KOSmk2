@@ -19,11 +19,41 @@
 #ifndef GUARD_INCLUDE_SCHED_TYPES_H
 #define GUARD_INCLUDE_SCHED_TYPES_H 1
 
+/* Always enable jiffy timeouts:
+ * >> The way that a task is re-awoken after having slept is
+ *    through use of PIC interrupts, which fire HZ times per
+ *    second, while also incrementing the jiffy counter by
+ *    one each time.
+ *    With that in mind, no other mechanism could be more
+ *    precise that jiffies, quite simply for the fact that
+ *    short of idly waiting for time to pass, it is impossible
+ *    to use scheduling and preemption to be more precise
+ *    timings that multiples of seconds/HZ.
+ * >> In other words, using 'timespec' for timeouts may seem
+ *    the logical choice, but when you think about it, it
+ *    doesn't really make sense, because there's no gain on
+ *    one side, yet still the problem that would arise when
+ *    the system RTC driver attempts to lock the device,
+ *    thus breaking real-time access for all timings.
+ * One thing I haven't mentioned yet are small deviations in
+ * jiffy timings that can be caused by an imprecise calibrated
+ * crystal, or some piece of code disabling preemption for
+ * more than 2 ticks, thus causing the later of the two to be
+ * unnoticed when the first can finally be handled.
+ * Though this minor problem appears acceptable simply because
+ * of the advantage that not interfering with device locks during
+ * preemption would represent (Such as it did in the old KOS)
+ */
+#undef CONFIG_JIFFY_TIMEOUT
+#define CONFIG_JIFFY_TIMEOUT 1
+
 #include <bits/sigset.h>
 #include <hybrid/compiler.h>
 #include <hybrid/sync/atomic-rwlock.h>
 #include <hybrid/sync/atomic-rwptr.h>
+#ifndef CONFIG_JIFFY_TIMEOUT
 #include <hybrid/timespec.h>
+#endif /* !CONFIG_JIFFY_TIMEOUT */
 #include <hybrid/types.h>
 #include <kernel/arch/cpu.h>
 #include <kernel/arch/task.h>
@@ -44,6 +74,7 @@ struct cpustate;
 struct mman;
 struct stack;
 struct sigqueue;
+struct timespec;
 #endif /* __CC__ */
 
 #define TASKSIGSLOT_OFFSETOF_SELF    0
@@ -626,36 +657,41 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #define TASK_OFFSETOF_SCHED        (TASK_OFFSETOF_FLAGS+4)
 #define TASK_OFFSETOF_SIGNALS      (TASK_OFFSETOF_FLAGS+4+2*__SIZEOF_POINTER__)
 #define TASK_OFFSETOF_TIMEOUT      (TASK_OFFSETOF_FLAGS+4+2*__SIZEOF_POINTER__+TASKSIG_SIZE)
-#define TASK_OFFSETOF_PRIORITY     (TASK_OFFSETOF_FLAGS+4+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC)
-#define TASK_OFFSETOF_PRIOSCORE    (TASK_OFFSETOF_FLAGS+5+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC)
-#define TASK_OFFSETOF_EXITCODE     (TASK_OFFSETOF_FLAGS+8+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC)
-#define TASK_OFFSETOF_EVENT        (TASK_OFFSETOF_FLAGS+8+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC)
-#define TASK_OFFSETOF_CRITICAL     (TASK_OFFSETOF_FLAGS+8+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
-#define TASK_OFFSETOF_NOINTR       (TASK_OFFSETOF_FLAGS+12+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
-#define TASK_OFFSETOF_ADDRLIMIT    (TASK_OFFSETOF_FLAGS+16+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
-#define TASK_OFFSETOF_IC           (TASK_OFFSETOF_FLAGS+16+4*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
-#define TASK_OFFSETOF_SUSPEND      (TASK_OFFSETOF_FLAGS+16+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
-#define TASK_OFFSETOF_PID          (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE)
-#define TASK_OFFSETOF_HSTACK       (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE)
-#define TASK_OFFSETOF_LASTCR2      (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_MMAN_TASKS   (TASK_OFFSETOF_FLAGS+24+6*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_REAL_MMAN    (TASK_OFFSETOF_FLAGS+24+8*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_MMAN         (TASK_OFFSETOF_FLAGS+24+9*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_FDMAN        (TASK_OFFSETOF_FLAGS+24+10*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_USTACK       (TASK_OFFSETOF_FLAGS+24+11*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGHAND      (TASK_OFFSETOF_FLAGS+24+12*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGBLOCK     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGPEND      (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__)
-#define TASK_OFFSETOF_SIGSHARE     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
-#define TASK_OFFSETOF_SIGENTER     (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
+#ifdef CONFIG_JIFFY_TIMEOUT
+#define __TASK_SIZEOF_TIMEOUT       __SIZEOF_JTIME_T__
+#else /* CONFIG_JIFFY_TIMEOUT */
+#define __TASK_SIZEOF_TIMEOUT       __SIZEOF_TIMESPEC
+#endif /* !CONFIG_JIFFY_TIMEOUT */
+#define TASK_OFFSETOF_PRIORITY     (TASK_OFFSETOF_FLAGS+4+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT)
+#define TASK_OFFSETOF_PRIOSCORE    (TASK_OFFSETOF_FLAGS+5+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT)
+#define TASK_OFFSETOF_EXITCODE     (TASK_OFFSETOF_FLAGS+8+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT)
+#define TASK_OFFSETOF_EVENT        (TASK_OFFSETOF_FLAGS+8+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT)
+#define TASK_OFFSETOF_CRITICAL     (TASK_OFFSETOF_FLAGS+8+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
+#define TASK_OFFSETOF_NOINTR       (TASK_OFFSETOF_FLAGS+12+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
+#define TASK_OFFSETOF_ADDRLIMIT    (TASK_OFFSETOF_FLAGS+16+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
+#define TASK_OFFSETOF_IC           (TASK_OFFSETOF_FLAGS+16+4*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
+#define TASK_OFFSETOF_SUSPEND      (TASK_OFFSETOF_FLAGS+16+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
+#define TASK_OFFSETOF_PID          (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
+#define TASK_OFFSETOF_HSTACK       (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE)
+#define TASK_OFFSETOF_LASTCR2      (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_MMAN_TASKS   (TASK_OFFSETOF_FLAGS+24+6*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_REAL_MMAN    (TASK_OFFSETOF_FLAGS+24+8*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_MMAN         (TASK_OFFSETOF_FLAGS+24+9*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_FDMAN        (TASK_OFFSETOF_FLAGS+24+10*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_USTACK       (TASK_OFFSETOF_FLAGS+24+11*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_SIGHAND      (TASK_OFFSETOF_FLAGS+24+12*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_SIGBLOCK     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_SIGPEND      (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__)
+#define TASK_OFFSETOF_SIGSHARE     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
+#define TASK_OFFSETOF_SIGENTER     (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
 #ifndef CONFIG_NO_TLB
-#define TASK_OFFSETOF_TLB          (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#define TASK_OFFSETOF_TLB          (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
 #endif /* !CONFIG_NO_TLB */
 #ifdef ARCHTASK_SIZE
-#define TASK_OFFSETOF_ARCH         (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
-#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE+ARCHTASK_SIZE)
+#define TASK_OFFSETOF_ARCH         (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE+ARCHTASK_SIZE)
 #else
-#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__SIZEOF_TIMESPEC+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
 #endif
 #define TASK_ALIGN                  TASKSIGSLOT_ALIGN
 
@@ -689,9 +725,15 @@ union{
   LIST_NODE(struct task) sd_suspended;/*< [valid_if(t_mode == TASKMODE_SUSPENDED)][lock(t_cpu->c_lock)] List entry of suspended tasks. */
  }                       t_sched;     /*< Scheduling chain data. */
  struct tasksig          t_signals;   /*< [lock(THIS_TASK || (t_mode != TASKMODE_RUNNING && t_cpu->c_lock))] Signal wait controller. */
+#ifdef CONFIG_JIFFY_TIMEOUT
+ jtime_t                 t_timeout;   /*< [valid_if(t_mode == TASKMODE_WAKEUP ||t_mode == TASKMODE_SLEEPING)][lock(t_cpu->c_lock)]
+                                       *  Timeout used when sleeping. When this time expires, the task is re-scheduled during the
+                                       *  next IRQ of the associated CPU, and the last blocking operation will fail with '-ETIMEDOUT'. */
+#else /* CONFIG_JIFFY_TIMEOUT */
  struct timespec         t_timeout;   /*< [valid_if(t_mode == TASKMODE_WAKEUP ||t_mode == TASKMODE_SLEEPING)][lock(t_cpu->c_lock)]
                                        *  Timeout used when sleeping. When this time expires, the task is re-scheduled during the
                                        *  next IRQ of the associated CPU, and the last blocking operation will fail with '-ETIMEDOUT'. */
+#endif /* !CONFIG_JIFFY_TIMEOUT */
  taskprio_t              t_priority;  /*< [lock(t_cpu == THIS_CPU || READ(ATOMIC))] The effective task priority. */
  taskprio_t              t_prioscore; /*< [lock(t_cpu == THIS_CPU)] Current priority score. */
  u16                     t_padding2;  /*< ... */
@@ -773,11 +815,21 @@ struct job {
  void          (KCALL *j_work)(void *data); /*< [const][1..1] The job function to-be called. */
  void                 *j_data;  /*< [const] Data argument passed to 'j_work' */
  struct instance      *j_owner; /*< [const][1..1] The owner module of this job. */
+#ifdef CONFIG_JIFFY_TIMEOUT
+ jtime_t               j_time;  /*< [INTERN] Point in time when a delayed job should be executed.
+                                 *   NOTE: Delayed jobs are tack independently of regular jobs,
+                                 *         and are sorted ascendingly by time of execution. */
+#else /* CONFIG_JIFFY_TIMEOUT */
  struct timespec       j_time;  /*< [INTERN] Point in time when a delayed job should be executed.
                                  *   NOTE: Delayed jobs are tack independently of regular jobs,
                                  *         and are sorted ascendingly by time of execution. */
+#endif /* !CONFIG_JIFFY_TIMEOUT */
 };
+#ifdef CONFIG_JIFFY_TIMEOUT
+#define JOB_INIT(work,data) {{NULL,NULL},work,data,THIS_INSTANCE,0}
+#else /* CONFIG_JIFFY_TIMEOUT */
 #define JOB_INIT(work,data) {{NULL,NULL},work,data,THIS_INSTANCE,{0,0}}
+#endif /* !CONFIG_JIFFY_TIMEOUT */
 #endif /* __CC__ */
 #endif /* !CONFIG_NO_JOBS */
 

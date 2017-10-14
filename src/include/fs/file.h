@@ -151,7 +151,7 @@ FUNDEF errno_t KCALL file_flock(struct file *__restrict self, pos_t start, pos_t
  * >>     }
  * >> }
  * >> // Wait for the data to become available in any file apart of the set.
- * >> task_waitfor(NULL);
+ * >> task_waitfor(JTIME_INFINITE);
  * WARNING: Regardless of return value, any number of signals may have been
  *          added to the calling thread's sigwait set, meaning that the caller
  *          is always responsible for cleanup by either calling 'task_clrwait()'

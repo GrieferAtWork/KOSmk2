@@ -24,6 +24,7 @@
 #include <asm/unistd.h>
 #include <bits/signum.h>
 #include <bits/waitstatus.h>
+#include <dev/rtc.h>
 #include <errno.h>
 #include <hybrid/arch/eflags.h>
 #include <hybrid/asm.h>
@@ -1128,15 +1129,19 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
 
 SYSCALL_DEFINE4(sigtimedwait,USER sigset_t const *,uthese,USER siginfo_t *,uinfo,
                 USER struct timespec const *,uts,size_t,sigsetsize) {
- sigset_t wait_mask,old_block; struct timespec abstime;
+ sigset_t wait_mask,old_block; jtime_t timeout = JTIME_INFINITE;
  struct task *t = THIS_TASK; errno_t error; struct sigqueue *signal;
  bool local_write_lock,share_write_lock,is_blocking = false;
  if (sigsetsize > sizeof(sigset_t)) return -EINVAL;
  memset((u8 *)&wait_mask+sigsetsize,0,sizeof(sigset_t)-sigsetsize);
  if (copy_from_user(&wait_mask,uthese,sigsetsize))
      return -EFAULT;
- if (uts && copy_from_user(&abstime,uts,sizeof(struct timespec)))
-     return -EFAULT;
+ if (uts) {
+  struct timespec tmo;
+  if (copy_from_user(&tmo,uts,sizeof(struct timespec)))
+      return -EFAULT;
+  timeout = jiffies+TIMESPEC_OFF_TO_JIFFIES(tmo);
+ }
  /* Make sure never to unmask these signals! */
  sigdelset(&wait_mask,SIGKILL);
  sigdelset(&wait_mask,SIGSTOP);
@@ -1204,7 +1209,7 @@ scan_again_shared:
    sig_endwrite(&t->t_sigpend.sp_newsig);
    sig_endwrite(&t->t_sigshare->ss_pending.sp_newsig);
 
-   wait_error = task_waitfor(uts ? &abstime : NULL);
+   wait_error = task_waitfor(timeout);
    if (E_ISERR(wait_error)) { error = E_GTERR(wait_error); goto end; }
    goto scan_again;
   }
@@ -1418,7 +1423,7 @@ SYSCALL_DEFINE2(sigsuspend,USER sigset_t const *,unewset,size_t,sigsetsize) {
  if (E_ISERR(result)) goto end;
 
  /* Wait until we're sent a signal we can handle. */
- { struct sig *s = task_waitfor(NULL); /* XXX: Timeout? */
+ { struct sig *s = task_waitfor(JTIME_INFINITE); /* XXX: Timeout? */
    assert(E_ISERR(s));
    result = E_GTERR(s);
  }

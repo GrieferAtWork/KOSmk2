@@ -20,8 +20,10 @@
 #define GUARD_INCLUDE_DEV_NET_H 1
 
 #include <dev/chrdev.h>
+#include <dev/rtc.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <kernel/malloc.h>
 
 DECL_BEGIN
 
@@ -40,6 +42,8 @@ FUNDEF struct packet *KCALL packet_alloc(size_t data_bytes);
 FUNDEF void KCALL packet_free(struct packet *__restrict pck);
 
 
+#define NETDEV_DEFAULT_WTIMEOUT MSEC_TO_JIFFIES(200)
+#define NETDEV_DEFAULT_STIMEOUT  SEC_TO_JIFFIES(1)
 
 struct netdev {
  struct chrdev   n_dev;           /*< Underlying character device. */
@@ -86,7 +90,8 @@ struct netdev {
 #define NETDEV_INCREF(self)     CHRDEV_INCREF(&(self)->n_dev)
 #define NETDEV_DECREF(self)     CHRDEV_DECREF(&(self)->n_dev)
 
-#define netdev_new(type_size) ((struct netdev *)chrdev_new(type_size))
+#define netdev_new(type_size) netdev_cinit((struct netdev *)kcalloc(type_size,GFP_SHARED))
+FUNDEF struct netdev *KCALL netdev_cinit(struct netdev *self);
 
 
 DECL_END

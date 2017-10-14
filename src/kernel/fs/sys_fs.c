@@ -973,7 +973,7 @@ end: task_endcrit();
 SYSCALL_DEFINE6(pselect6,size_t,n,USER fd_set *,inp,USER fd_set *,outp,
                 USER fd_set *,exp,USER struct timespec const *,tsp,
                 USER void *,sig) {
- struct timespec abstime; ssize_t result;
+ jtime_t timeout = JTIME_INFINITE; ssize_t result;
  sigset_t old_set,new_set; size_t fd_base;
  struct task *t = THIS_TASK;
  struct fdman *fdm = t->t_fdman;
@@ -982,11 +982,10 @@ SYSCALL_DEFINE6(pselect6,size_t,n,USER fd_set *,inp,USER fd_set *,outp,
   size_t         setsz;
  } signal_blocking;
  if (tsp) {
-  struct timespec now;
-  if (copy_from_user(&abstime,tsp,sizeof(struct timespec)))
+  struct timespec tmo;
+  if (copy_from_user(&tmo,tsp,sizeof(struct timespec)))
       return -EFAULT;
-  sysrtc_get(&now);
-  TIMESPEC_ADD(abstime,now);
+  timeout = jiffies+TIMESPEC_OFF_TO_JIFFIES(tmo);
  }
  if (sig) {
   if (copy_from_user(&signal_blocking,sig,sizeof(signal_blocking)))
@@ -1044,7 +1043,7 @@ scan_again:
 
  /* Wait for one of the file descriptors to change state. */
  if (!result) {
-  result = E_GTERR(task_waitfor(tsp ? &abstime : NULL));
+  result = E_GTERR(task_waitfor(timeout));
   /* If we've received one of the signals in question, scan again. */
   if (E_ISOK(result)) goto scan_again;
   /* NOTE: pselect() must return ZERO(0) on timeout! */
@@ -1072,15 +1071,14 @@ SYSCALL_DEFINE5(ppoll,USER struct pollfd *,ufds,size_t,nfds,
  ssize_t result,old_result;
  struct task *t = THIS_TASK;
  struct fdman *fdm = t->t_fdman;
- struct timespec abstime;
+ jtime_t timeout = JTIME_INFINITE;
  struct sig *error = E_PTR(-EOK);
  sigset_t old_set,new_set;
  if (tsp) {
-  struct timespec now;
-  if (copy_from_user(&abstime,tsp,sizeof(struct timespec)))
+  struct timespec tmo;
+  if (copy_from_user(&tmo,tsp,sizeof(struct timespec)))
       return -EFAULT;
-  sysrtc_get(&now);
-  TIMESPEC_ADD(abstime,now);
+  timeout = jiffies+TIMESPEC_OFF_TO_JIFFIES(tmo);
  }
  if (sigmask && sigsetsize) {
   if (sigsetsize > sizeof(sigset_t))
@@ -1134,7 +1132,7 @@ scan_again:
   src       += partsize;
  }
  if (!result) {
-  error = task_waitfor(tsp ? &abstime : NULL);
+  error = task_waitfor(timeout);
   /* If the wait was successful, some FD was signaled and we must scan again. */
   if (E_ISOK(error))
       goto scan_again;

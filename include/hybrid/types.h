@@ -291,7 +291,7 @@ typedef __WCHAR_TYPE__ wchar_t;
 #endif /* !__wchar_t_defined */
 
 
-/* Special jiffy time values. */
+/* Special jiffi time values. */
 #define JTIME_DONTWAIT   ((jtime_t)0)
 #define JTIME_INFINITE   ((jtime_t)-1)
 

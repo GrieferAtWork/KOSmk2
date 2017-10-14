@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <hybrid/compiler.h>
 #include <hybrid/atomic.h>
+#include <hybrid/types.h>
 #include <sched/cpu.h>
 #include <sync/sig.h>
 
@@ -44,11 +45,11 @@ typedef struct sem {
 
 LOCAL semcount_t KCALL sem_release(sem_t *__restrict self, semcount_t num_tickets);
 LOCAL errno_t KCALL sem_trywait(sem_t *__restrict self);
-LOCAL errno_t KCALL sem_timedwait(sem_t *__restrict self, struct timespec const *abstime);
+LOCAL errno_t KCALL sem_timedwait(sem_t *__restrict self, jtime_t abstime);
 #ifdef __INTELLISENSE__
 LOCAL errno_t KCALL sem_wait(sem_t *__restrict self);
 #else
-#define sem_wait(self)  sem_timedwait(self,NULL)
+#define sem_wait(self)  sem_timedwait(self,JTIME_INFINITE)
 #endif
 
 
@@ -74,7 +75,7 @@ sem_trywait(sem_t *__restrict self) {
  return -EOK;
 }
 LOCAL errno_t KCALL
-sem_timedwait(sem_t *__restrict self, struct timespec const *abstime) {
+sem_timedwait(sem_t *__restrict self, jtime_t abstime) {
  errno_t error; pflag_t was;
  for (;;) {
   error = sem_trywait(self);

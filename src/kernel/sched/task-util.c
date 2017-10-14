@@ -565,21 +565,18 @@ sig_vsend_unlocked(struct sig *__restrict sig,
 
 
 PUBLIC errno_t KCALL
-sig_timedrecv(struct sig *__restrict self,
-              struct timespec const *abstime) {
+sig_timedrecv(struct sig *__restrict self, jtime_t abstime) {
  CHECK_HOST_DOBJ(self);
  sig_write(self);
  return sig_vtimedrecv_endwrite(self,NULL,0,abstime);
 }
 PUBLIC errno_t KCALL
-sig_timedrecv_endwrite(struct sig *__restrict self,
-                       struct timespec const *abstime) {
+sig_timedrecv_endwrite(struct sig *__restrict self, jtime_t abstime) {
  return sig_vtimedrecv_endwrite(self,NULL,0,abstime);
 }
 PUBLIC errno_t KCALL
 sig_vtimedrecv(struct sig *__restrict self,
-               USER void *msg_buf, size_t bufsize,
-               struct timespec const *abstime) {
+               USER void *msg_buf, size_t bufsize, jtime_t abstime) {
  CHECK_HOST_DOBJ(self);
  sig_write(self);
  return sig_vtimedrecv_endwrite(self,msg_buf,bufsize,abstime);
@@ -587,7 +584,7 @@ sig_vtimedrecv(struct sig *__restrict self,
 PUBLIC errno_t KCALL
 sig_vtimedrecv_endwrite(struct sig *__restrict self,
                         USER void *msg_buf, size_t bufsize,
-                        struct timespec const *abstime) {
+                        jtime_t abstime) {
  struct sig *error;
  CHECK_HOST_DOBJ(self);
  assert(sig_writing(self));

@@ -334,8 +334,8 @@ FUNDEF SAFE void KCALL task_popwait(struct tasksig *__restrict sigs);
  * @return: * :          A pointer to the signal that woke up the thread.
  * @return: -EINTR:      The calling thread was interrupted.
  * @return: -ETIMEDOUT: [abstime != NULL] The given timeout has expired. */
-FUNDEF struct sig *KCALL task_waitfor(struct timespec const *abstime);
-FUNDEF struct sig *KCALL task_waitfor_j(jtime_t abstime);
+FUNDEF struct sig *KCALL task_waitfor(jtime_t abstime);
+FUNDEF struct sig *KCALL task_waitfor_t(struct timespec const *abstime);
 
 /* Check if any of the calling thread's pending signals have been sent,
  * returning the signal that was sent, as well as clearing the set of
@@ -459,10 +459,7 @@ FUNDEF SAFE errno_t KCALL task_interrupt_cpu_endwrite(struct task *__restrict se
  * @return: -EOK:       Successfully joined the given task.
  * @return: -ETIMEDOUT: The given timeout has expired.
  * @return: -EINTR:     The calling thread was interrupted. */
-FUNDEF errno_t KCALL
-task_join(struct task *__restrict self,
-          struct timespec const *timeout,
-          void **exitcode);
+FUNDEF errno_t KCALL task_join(struct task *__restrict self, jtime_t timeout, void **exitcode);
 
 /* Yield the remainder of the caller's quantum to the next
  * scheduled task (no-op if no task to switch to exists). */
@@ -471,8 +468,9 @@ FUNDEF void KCALL task_yield(void);
 /* Unlock the associated CPU and pause execution until the task is interrupted.
  * NOTE: The caller must have disabled pre-emption and be holding a write-lock to 'THIS_CPU'
  * @return: -EINTR:      The calling thread was interrupted.
- * @return: -ETIMEDOUT: [abstime != NULL] The given timeout has expired. */
-FUNDEF SAFE errno_t KCALL task_pause_cpu_endwrite(struct timespec const *abstime);
+ * @return: -ETIMEDOUT: [abstime != NULL || abstime != JTIME_INFINITE] The given timeout has expired. */
+FUNDEF SAFE errno_t KCALL task_pause_cpu_endwrite(jtime_t abstime);
+FUNDEF SAFE errno_t KCALL task_pause_cpu_endwrite_t(struct timespec const *abstime);
 
 
 /* Get/Set the CPU-affinity of a given task.

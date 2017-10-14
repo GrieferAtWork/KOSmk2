@@ -237,7 +237,7 @@ run_init(char const *__restrict filename) {
 
  /* And now join it! */
  { errno_t error;
-   while ((error = task_join(thrd,NULL,&exitcode)) == -EINTR);
+   while ((error = task_join(thrd,JTIME_INFINITE,&exitcode)) == -EINTR);
    assertf(E_ISOK(error),"%[errno]",-error);
  }
 

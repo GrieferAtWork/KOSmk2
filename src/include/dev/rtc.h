@@ -89,6 +89,13 @@ FUNDEF SAFE void KCALL sysrtc_periodic(void);
 #   define HZ 20
 #endif
 
+
+#define SEC_TO_JIFFIES(n)  (jtime_t)((n)*HZ)
+#define MSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000l/HZ))
+#define USEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000l/HZ))
+#define NSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000000l/HZ))
+#define FSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000000000000ll/HZ))
+
 DATDEF struct timespec const boottime; /* Point in time when the machine booted. */
 DATDEF jtime_t   jiffies;
 DATDEF jtime32_t jiffies32 ASMNAME("jiffies");
@@ -101,12 +108,11 @@ DATDEF jtime64_t jiffies64 ASMNAME("jiffies");
 #define JIFFIES_TO_OFF_TIMESPEC(tms,jff) \
       ((tms).tv_sec = (jff)/HZ,(tms).tv_nsec = ((jff) % HZ)*(1000000000l/HZ))
 #define TIMESPEC_ABS_TO_JIFFIES(tms) \
-        XBLOCK({ struct timespec _then = (tms),_now; \
-                 sysrtc_get(&_now); \
-                 TIMESPEC_SUB(_then,_now); \
+        XBLOCK({ struct timespec _then = (tms); \
+                 TIMESPEC_SUB(_then,boottime); \
                  XRETURN TIMESPEC_OFF_TO_JIFFIES(_then); })
 #define JIFFIES_TO_ABS_TIMESPEC(tms,jff) \
-      ((tms).tv_sec = (jff)/HZ,(tms).tv_nsec = ((jff) % HZ)*(1000000000l/HZ))
+      ((tms) = boottime,TIMESPEC_ADD_JIFFIES(tms,jff))
 
 
 DECL_END
