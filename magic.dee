@@ -1260,7 +1260,7 @@ function run_bochs() {
 	bochs.join();
 }
 
-function run_qemu() {
+function run_qemu(tap) {
 	local qemu = process(executables[run_qemu_binary],[
 		(run_mode_hosted ? ["-no-reboot","-no-shutdown"] : [])...,
 		"-serial","stdio","-d","debug","-smp","2",
@@ -1273,7 +1273,7 @@ function run_qemu() {
 		"-display","gtk",
 		//"-net","nic,model=rtl8139","-net","user",
 		//"-net","nic,model=ne2k_pci","-net","user",
-		"-netdev","tap,ifname=tap0,id=u1","-device","ne2k_pci,netdev=u1",
+		"-netdev",tap ? "tap,ifname=tap0,id=u1" : "user,id=u1","-device","ne2k_pci,netdev=u1",
 		"-object","filter-dump,id=f1,netdev=u1,file=dump.dat",
 		//"-vga","std",
 		(kernel_args ? ["-append","\""+
@@ -1358,7 +1358,7 @@ on_line_start:
 			outfile.write(c);
 		}
 	}
-	qemu.join();
+	return qemu.join();
 }
 
 if (!config_build_only) {
@@ -1367,7 +1367,9 @@ if (!config_build_only) {
 			run_bochs();
 		} else {
 			start_addr2line();
-			run_qemu();
+			/* Try to run with tap enabled, but if that fails, still run without. */
+			if (run_qemu(true))
+				run_qemu(false);
 		}
 	} finally {
 		if (addr2line_proc) {
