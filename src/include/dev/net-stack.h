@@ -26,9 +26,18 @@
 DECL_BEGIN
 
 /* Send layer #2 ethernet packages. */
-FUNDEF ssize_t KCALL
-netdev_send_ether_unlocked(struct netdev *__restrict self, struct macaddr dst, be16 type,
-                           struct opacket *__restrict pck, size_t packet_size);
+FUNDEF errno_t KCALL
+netdev_send_ether_unlocked(struct netdev *__restrict self,
+                           struct macaddr dst, be16 type,
+                           struct opacket *__restrict pck);
+
+/* Send layer #3 IP packages. */
+FUNDEF errno_t KCALL
+netdev_send_ip_unlocked(struct netdev *__restrict self,
+                        be32 src, be32 dst, u8 protocol,
+                        struct opacket *__restrict pck);
+
+
 
 
 DECL_END

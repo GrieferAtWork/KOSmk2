@@ -74,7 +74,32 @@
 #include <sys/io.h>
 #include <sys/mman.h>
 
+#include <dev/net.h>
+#include <dev/net-stack.h>
+#include <hybrid/byteswap.h>
+
 DECL_BEGIN
+
+PRIVATE void KCALL network_test(void) {
+ ssize_t error;
+ REF struct netdev *net = get_default_adapter();
+ if unlikely(!net) return;
+
+ PRIVATE char data[64] = "THIS IS DATA TO BE SENT\nTHIS IS DATA TO BE SENT\n";
+ struct opacket pck = OPACKET_INIT(data,sizeof(data));
+ 
+ /* Test sending some data. - Should appear in 'dump.dat' */
+ rwlock_write(&net->n_send_lock);
+ error = netdev_send_ip_unlocked(net,BSWAP_H2N32(0),BSWAP_H2N32(0),42,&pck);
+ rwlock_endwrite(&net->n_send_lock);
+ 
+ syslog(LOG_DEBUG,"error = %Iu: %[errno]\n",error,-error);
+
+ NETDEV_DECREF(net);
+}
+
+
+
 
 PRIVATE ATTR_FREETEXT ATTR_UNUSED
 void KCALL kinsmod(char const *filename) {
@@ -455,6 +480,11 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/vga-tty");
 
  PREEMPTION_ENABLE();
+#ifdef CONFIG_DEBUG
+ { INTDEF bool interrupts_enabled_initial;
+   interrupts_enabled_initial = true;
+ }
+#endif
 
  /* --- SPLIT: Modules below are mostly optional. */
  /* TODO: These shouldn't be loaded here... */
@@ -467,11 +497,7 @@ kernel_boot(u32        mb_magic,
 
  /* TODO: Actual locale support? */
 
-#ifdef CONFIG_DEBUG
- { INTDEF bool interrupts_enabled_initial;
-   interrupts_enabled_initial = true;
- }
-#endif
+ network_test();
 
 #if 1
  run_init("/bin/init");

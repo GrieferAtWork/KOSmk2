@@ -177,6 +177,8 @@ struct ne2k {
  sem_t                  n_sendend;     /*< [lock(n_dev.n_send_lock)] Semaphore used to notify transmission completion. */
 #define NET_DEFAULT_DMATIMEOUT  MSEC_TO_JIFFIES(200)
  jtime_t                n_dma_timeout; /*< [lock(n_dev.n_send_lock)] DMA timeout. */
+ byte_t                *n_ibufv;       /*< [0..n_ibufa][owned] Input package buffer. */
+ size_t                 n_ibufa;       /*< Allocate input package buffer size. */
 };
 
 INTERN errno_t KCALL net_reset_base(u16 iobase); /* Reset the card. */
@@ -185,10 +187,9 @@ INTERN errno_t KCALL net_reset_base(u16 iobase); /* Reset the card. */
 INTDEF s32 KCALL net_waitdma(ne2k_t *__restrict dev);
 INTDEF errno_t KCALL net_reset(ne2k_t *__restrict dev);
 
-INTDEF ssize_t KCALL
+INTDEF errno_t KCALL
 net_send(struct netdev *__restrict self,
-         struct opacket const *__restrict packet,
-         size_t packet_size);
+         struct opacket const *__restrict packet);
 
 
 DECL_END

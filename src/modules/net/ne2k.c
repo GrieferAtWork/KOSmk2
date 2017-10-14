@@ -34,6 +34,7 @@
 #include <sched/smp.h>
 #include <string.h>
 #include <syslog.h>
+#include <hybrid/align.h>
 
 #include "ne2k.h"
 
@@ -119,45 +120,48 @@ PRIVATE void KCALL ne2k_recv(ne2k_t *self);
 PRIVATE struct job ne2k_recv_job = JOB_INIT((void(KCALL *)(void *))&ne2k_recv,NULL);
 PRIVATE void KCALL ne2k_recv(ne2k_t *self) {
  u16 iobase = self->n_iobase;
- syslog(LOG_WARN,"NE2K: Receive data\n");
  for (;;) {
   STATIC_ASSERT(!(sizeof(pck_header_t) & 1));
-  struct ipacket *pck; errno_t error;
-  pck_header_t header; u8 curr_page;
+  errno_t error; byte_t *buffer;
+  pck_header_t header; u8 curr_page,packet_page;
   u16 curr_addr,high_data,low_data,aligned_size;
 
   /* Signal start. */
   outb(iobase+E8390_CMD,E8390_PAGE1|E8390_NODMA|E8390_START);
   /* Stop if the current read-header is where the next package will eventually be. */
-  curr_page = inb(iobase+EN1_CURPAG);
-  if (curr_page == self->n_nextpck) break;
+  curr_page   = inb(iobase+EN1_CURPAG);
+  packet_page = self->n_nextpck;
+  if (curr_page == packet_page) break;
   curr_addr = curr_page*NET_PAGESIZE;
 
   /* Read the package header. */
-  outb(iobase+E8390_CMD,E8390_NODMA|E8390_START);
+  outb(iobase+E8390_CMD,E8390_PAGE0|E8390_NODMA|E8390_START);
   outb(iobase+EN0_RCNTLO,sizeof(pck_header_t)); /* Only read the header (for now). */
   outb(iobase+EN0_RCNTHI,0);
   outb(iobase+EN0_RSARLO,0); /* Start reading at the page base address. */
-  outb(iobase+EN0_RSARHI,curr_page);
-  outb(iobase+E8390_CMD,E8390_RREAD|E8390_START); /* initiate the read. */
+  outb(iobase+EN0_RSARHI,packet_page);
+  outb(iobase+E8390_CMD,E8390_PAGE0|E8390_RREAD|E8390_START); /* initiate the read. */
   insw(iobase+NE_DATAPORT,&header,sizeof(pck_header_t)/2);
+
+  if unlikely(!header.ph_size) {
+   /* Shouldn't  */
+   syslog(LOG_ERR,"[NE2K] Card indicates empty packet (Reset)\n");
+   net_reset(self);
+   return;
+  }
 
   /* Inherit the next-package pointer. */
   self->n_nextpck = header.ph_nextpg;
 
   /* Now we know what this package looks like, we can start processing it. */
-  if unlikely(!netdev_pushok_atomic(&self->n_dev,header.ph_size) ||
-               header.ph_size == 0xffff) {
+  if unlikely(header.ph_size == 0xffff) {
+fail_msgsize:
    error = -EMSGSIZE;
 fail:
    syslog(LOG_ERR,"[NE2K] Cannot receive package of %I16u bytes: %[errno]\n",
           header.ph_size,-error);
    continue;
   }
-
-  /* Allocate the package we're going to fill. */
-  pck = ipacket_alloc((size_t)header.ph_size);
-  if unlikely(!pck) { error = -ENOMEM; goto fail; }
 
   /* Now read the package data.
    * First, we must figure out how must should be read from high memory, and how much from low memory.
@@ -170,13 +174,24 @@ fail:
    /* Read the remainder from low memory. */
    low_data  = header.ph_size-high_data;
    /* Make sure low memory doesn't wrap around again. */
-   if unlikely(low_data > curr_addr) {
-err_packet_size:
-    error = -EMSGSIZE;
-    ipacket_free(pck);
-    goto fail;
-   }
+   if unlikely(low_data > curr_addr) goto fail_msgsize;
   }
+
+  buffer = self->n_ibufv;
+  if unlikely(header.ph_size > self->n_ibufa) {
+   size_t new_size = CEIL_ALIGN(header.ph_size,64);
+do_realloc:
+   buffer = (byte_t *)realloc(buffer,new_size);
+   if unlikely(!buffer) {
+    if (new_size == header.ph_size) { error = -ENOMEM; goto fail; }
+    new_size = header.ph_size;
+    buffer = self->n_ibufv;
+    goto do_realloc;
+   }
+   self->n_ibufv = buffer;
+   self->n_ibufa = new_size;
+  }
+
   /* At this point we must read up to 2 areas of memory:
    * READ: DEVICE(curr_addr...+=high_data)       --> PACKET(0...+=high_data)
    * READ: DEVICE(self->n_rx_begin...+=low_data) --> PACKET(high_data...+=low_data)
@@ -190,23 +205,23 @@ err_packet_size:
    outb(iobase+EN0_RCNTLO,aligned_size & 0xff);
    outb(iobase+EN0_RCNTHI,aligned_size >> 16);
    outb(iobase+EN0_RSARLO,sizeof(pck_header_t)); /* Read data after the package header. */
-   outb(iobase+EN0_RSARHI,curr_page);
+   outb(iobase+EN0_RSARHI,packet_page);
    outb(iobase+E8390_CMD,E8390_RREAD|E8390_START); /* Initiate the read. */
-   insw(iobase+NE_DATAPORT,pck->ip_data,high_data/2);
+   insw(iobase+NE_DATAPORT,buffer,high_data/2);
    /* Also read the last byte. */
    if (high_data&1) {
     u16 last = inw(iobase+NE_DATAPORT);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-    pck->ip_data[high_data-1] = last >> 8;
+    buffer[high_data-1] = last >> 8;
 #else
-    pck->ip_data[high_data-1] = last & 0xff;
+    buffer[high_data-1] = last & 0xff;
 #endif
    }
   }
 
   /* Read low memory */
   if (low_data) {
-   byte_t *dst = pck->ip_data+high_data;
+   byte_t *dst = buffer+high_data;
    outb(iobase+E8390_CMD,E8390_NODMA|E8390_START);
    aligned_size = low_data;
    if (aligned_size&1) ++aligned_size;
@@ -229,23 +244,15 @@ err_packet_size:
 
   COMPILER_WRITE_BARRIER();
 
-  /* All right! we've got the package.
-   * Now to lock the packet buffer and store it. */
-  atomic_rwlock_write(&self->n_dev.n_recv_lock);
-#if 0
-  assert(netdev_pushok_unlocked(&self->n_dev,header.ph_size));
-#else
-  /* Must check the package size again in case buffer space
-   * was taken away due to spoofed packages being queued by someone else. */
-  if unlikely(!netdev_pushok_unlocked(&self->n_dev,header.ph_size)) {
-   atomic_rwlock_endwrite(&self->n_dev.n_recv_lock);
-   goto err_packet_size;
-  }
-#endif
-  /* Finally, register the package! */
-  netdev_addpck_unlocked(&self->n_dev,pck);
-  atomic_rwlock_endwrite(&self->n_dev.n_recv_lock);
+  /* All right! we've got the package. Now to handle it. */
+  atomic_rwlock_write(&self->n_dev.n_hand_lock);
+  (*self->n_dev.n_hand.nh_packet)(buffer,(size_t)header.ph_size);
+  atomic_rwlock_endwrite(&self->n_dev.n_hand_lock);
  }
+ /* Acknowledge receive interrupts. */
+ outb(iobase+EN0_ISR,ENISR_RX);
+ /* Re-enable all interrupts. */
+ outb(iobase+EN0_IMR,ENISR_ALL);
 }
 
 
@@ -262,7 +269,7 @@ INTERN void ne2k_int(void) {
 
  /* Read the interrupt status register. */
  status = inb(iobase+EN0_ISR) & ENISR_ALL;
- syslog(LOG_WARN,"NE2K: Interrupt %.2I8x\n",status);
+ //syslog(LOG_DEBUG,"NE2K: Interrupt %.2I8x\n",status);
 
  if (status & ENISR_RX) {
   /* Schedule a job to safely receive data. */
@@ -270,9 +277,8 @@ INTERN void ne2k_int(void) {
   /* Since we're going to re-enable interrupts before
    * data will actually be read, we must mask all
    * interrupts caused by the chip, so-as not to deal
-   * with multiple incoming packets at once.
-   */
-  outb(iobase+EN0_IMR,ENISR_ALL);
+   * with multiple incoming packets at once. */
+  outb(iobase+EN0_IMR,ENISR_ALL&~(ENISR_RX));
   /* Don't acknowledge the receive signal below.
    * It will only be acknowledged once the data loader job has finished. */
   status &= ~ENISR_RX;
@@ -314,67 +320,36 @@ INTERN void ne2k_int(void) {
  IRQ_PIC_EOI(NE2K_IRQ);
 }
 
-PRIVATE byte_t *KCALL
-emit_package(byte_t *safe, u16 port,
-             struct opacket const *__restrict packet) {
- byte_t safe_data[2],*data; size_t size;
- byte_t *my_safe = safe;
- CHECK_HOST_DOBJ(packet);
-again:
- size = packet->op_size;
- if (size) {
-  data = (byte_t *)packet->op_data;
-  if (my_safe) {
-   my_safe[1] = *data++;
-   outw(port,*(u16 *)my_safe);
-  }
-  outsw(port,data,size/2);
-  if (size&1) {
-   my_safe    = safe ? safe : safe_data;
-   my_safe[0] = data[size-1];
-  }
- }
 
- /* Emit the inner package. */
- if (packet->op_wrap) {
-  if (!packet->op_tsiz) {
-   packet = packet->op_wrap;
-   goto again;
-  }
-  my_safe = emit_package(my_safe,port,packet->op_wrap);
- }
+struct print_data {
+ int  has_safe;
+ u16  out_port;
+ u8   out_safe[2];
+};
 
- /* Emit tail data. */
- size = packet->op_tsiz;
- if (size) {
-  data = (byte_t *)packet->op_tail;
-  if (my_safe) {
-   my_safe[1] = *data++;
-   outw(port,*(u16 *)my_safe);
-   my_safe = NULL;
-  }
-  outsw(port,data,size/2);
-  if (size&1) {
-   if (safe) (my_safe = safe)[1] = data[size-1];
-   else outw(port,(u16)data[size-1]);
-  }
- } else if (my_safe && my_safe != safe) {
-  assert(!safe);
-  assert(my_safe == safe_data);
-  safe_data[1] = 0;
-  outw(port,*(u16 *)safe_data);
-  my_safe = NULL;
+PRIVATE void KCALL
+emit_package(byte_t const *data, size_t n, void *closure) {
+ struct print_data *pd = (struct print_data *)closure;
+ if (pd->has_safe && n) {
+  pd->has_safe = 0;
+  pd->out_safe[1] = *data++,--n;
+  outw(pd->out_port,*(u16 *)pd->out_safe);
  }
- return my_safe;
+ outsw(pd->out_port,data,n/2);
+ if (n&1) {
+  pd->has_safe    = 1;
+  pd->out_safe[0] = data[n-1];
+ }
 }
 
 #define NE2K   container_of(self,ne2k_t,n_dev)
-INTERN ssize_t KCALL
+INTERN errno_t KCALL
 net_send(struct netdev *__restrict self,
-         struct opacket const *__restrict packet,
-         size_t packet_size) {
+         struct opacket const *__restrict packet) {
  errno_t error; u16 aligned_size;
- aligned_size = (u16)packet_size;
+ aligned_size = (u16)OPACKET_SIZE(packet);
+ if unlikely(aligned_size > self->n_send_maxsize)
+    return -EMSGSIZE;
  if (aligned_size&1) ++aligned_size;
 
  /* Perform a read-before-write. */
@@ -389,7 +364,13 @@ net_send(struct netdev *__restrict self,
  outb(NE2K->n_iobase+E8390_CMD,E8390_PAGE0|E8390_RWRITE|E8390_START);
 
  /* Output packet data. */
- emit_package(NULL,NE2K->n_iobase+NE_DATAPORT,packet);
+ { struct print_data data;
+   data.out_port = NE2K->n_iobase+NE_DATAPORT;
+   data.has_safe = 0;
+   opacket_print(packet,&emit_package,&data);
+   if (data.has_safe) data.out_safe[1] = 0,
+       outw(data.out_port,*(u16 *)data.out_safe);
+ }
 
  /* Wait for data to be acknowledged. */
  error = net_waitdma(NE2K);
@@ -410,7 +391,7 @@ net_send(struct netdev *__restrict self,
  if ((NE2K->n_senderr&(ENISR_TX_ERR|ENISR_TX)) != ENISR_TX)
       return -EIO;
 
- return (ssize_t)packet_size;
+ return error;
 err:
  /* Reset the card on error. */
  net_reset(NE2K);
@@ -444,7 +425,7 @@ ne2k_probe(struct pci_device *dev) {
  /* Execute a sequence of startup instructions. */
  { PRIVATE struct { u8 off,val; } startup[] = {
        {EN0_ISR,   0xff}, /* Acknowledge interrupts. (From before) */
-       {E8390_CMD, E8390_PAGE0|E8390_STOP|E8390_NODMA},
+       {E8390_CMD, E8390_PAGE0|E8390_NODMA|E8390_STOP},
        {EN0_DCFG,  ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS}, /* Set word-wide mode. */
        {EN0_RCNTLO,0}, /* Clear count registers. */
        {EN0_RCNTHI,0}, /* ... */

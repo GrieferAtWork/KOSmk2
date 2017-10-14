@@ -1273,7 +1273,7 @@ function run_qemu() {
 		"-display","gtk",
 		//"-net","nic,model=rtl8139","-net","user",
 		//"-net","nic,model=ne2k_pci","-net","user",
-		"-netdev","socket,id=u1,listen=:1234","-device","ne2k_pci,netdev=u1",
+		"-netdev","tap,ifname=tap0,id=u1","-device","ne2k_pci,netdev=u1",
 		"-object","filter-dump,id=f1,netdev=u1,file=dump.dat",
 		//"-vga","std",
 		(kernel_args ? ["-append","\""+
