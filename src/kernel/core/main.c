@@ -89,10 +89,11 @@ PRIVATE void KCALL network_test(void) {
  struct opacket pck = OPACKET_INIT(data,sizeof(data));
  
  /* Test sending some data. - Should appear in 'dump.dat' */
- rwlock_write(&net->n_send_lock);
- error = netdev_send_ip_unlocked(net,BSWAP_H2N32(0),BSWAP_H2N32(0),42,&pck);
- rwlock_endwrite(&net->n_send_lock);
- 
+ error = rwlock_write(&net->n_lock);
+ if (E_ISOK(error)) error = netdev_ifup_unlocked(net);
+ if (E_ISOK(error)) error = netdev_send_ip_unlocked(net,BSWAP_H2N32(0),BSWAP_H2N32(0),42,&pck);
+ rwlock_endwrite(&net->n_lock);
+
  syslog(LOG_DEBUG,"error = %Iu: %[errno]\n",error,-error);
 
  NETDEV_DECREF(net);

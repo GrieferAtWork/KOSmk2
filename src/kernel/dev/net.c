@@ -35,7 +35,7 @@ DECL_BEGIN
 PRIVATE void KCALL
 netdev_fini(struct inode *__restrict ino) {
  /* Execute a driver-specific finalizer. */
- if (NDEV->n_fini) (*NDEV->n_fini)(NDEV);
+ if (NDEV->n_ops->n_fini) (*NDEV->n_ops->n_fini)(NDEV);
 
 }
 #undef NDEV
@@ -55,8 +55,7 @@ netdev_cinit(struct netdev *self) {
   self->n_hand.nh_packet = &nethand_packet;
   self->n_send_timeout   = NETDEV_DEFAULT_STIMEOUT;
   self->n_ip_mtu         = NETDEV_DEFAULT_IO_MTU;
-  atomic_rwlock_cinit(&self->n_hand_lock);
-  rwlock_cinit(&self->n_send_lock);
+  rwlock_cinit(&self->n_lock);
   self->n_dev.cd_device.d_node.i_ops = &netdev_ops;
  }
  return self;
@@ -147,20 +146,58 @@ netdev_send_unlocked(struct netdev *__restrict self,
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(pck);
  assert(INODE_ISNETDEV(&self->n_dev.cd_device.d_node));
- assert(self->n_send != NULL);
- assert(rwlock_writing(&self->n_send_lock));
- return (*self->n_send)(self,pck);
+ assert(self->n_ops->n_send != NULL);
+ assert(rwlock_writing(&self->n_lock));
+ return (*self->n_ops->n_send)(self,pck);
 }
 
 PUBLIC errno_t KCALL
 netdev_send(struct netdev *__restrict self,
             struct opacket *__restrict pck) {
  errno_t result;
- result = rwlock_write(&self->n_send_lock);
+ CHECK_HOST_DOBJ(self);
+ result = rwlock_write(&self->n_lock);
  if (E_ISERR(result)) return result;
  result = netdev_send_unlocked(self,pck);
- rwlock_endwrite(&self->n_send_lock);
+ rwlock_endwrite(&self->n_lock);
  return result;
+}
+
+PUBLIC errno_t KCALL
+netdev_ifup_unlocked(struct netdev *__restrict self) {
+ errno_t error;
+ CHECK_HOST_DOBJ(self);
+ assert(rwlock_writing(&self->n_lock));
+ assert(self->n_ops->n_ifup != NULL);
+ /* Check if the device is already up. */
+ if (self->n_flags&NETDEV_F_ISUP)
+     return -EALREADY;
+ /* Set the interface-up flag. */
+ self->n_flags |= NETDEV_F_ISUP;
+ COMPILER_WRITE_BARRIER();
+ error = (*self->n_ops->n_ifup)(self);
+ /* Undo the interface-up flag if something went wrong. */
+ if (E_ISERR(error))
+     self->n_flags &= ~NETDEV_F_ISUP;
+ return error;
+}
+PUBLIC errno_t KCALL
+netdev_ifdown_unlocked(struct netdev *__restrict self) {
+ errno_t error;
+ CHECK_HOST_DOBJ(self);
+ assert(rwlock_writing(&self->n_lock));
+ assert(self->n_ops->n_ifdown != NULL);
+ /* Check if the device is already down. */
+ if (!(self->n_flags&NETDEV_F_ISUP))
+     return -EALREADY;
+ /* Clear the interface-up flag. */
+ self->n_flags &= ~NETDEV_F_ISUP;
+ COMPILER_WRITE_BARRIER();
+ error = (*self->n_ops->n_ifdown)(self);
+ /* Restore the interface-up flag if something went wrong. */
+ if (E_ISERR(error))
+     self->n_flags |= NETDEV_F_ISUP;
+ return error;
 }
 
 

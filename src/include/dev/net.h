@@ -69,7 +69,7 @@ typedef void (KCALL *ethandler_callback)(struct netdev *__restrict dev, void *__
                                          size_t packet_size, void *closure);
 
 struct nethand {
- /* NOTE: All function pointers are [1..1][lock(:n_hand_lock)] */
+ /* NOTE: All function pointers are [1..1][lock(:n_lock)] */
  ethandler_callback nh_packet;  /*< Ethernet packet handler (Defaults to 'nethand_packet()')
                                  *  NOTE: This callback is overwritten when userspace
                                  *        opens a socket for RAW network access. */
@@ -83,36 +83,54 @@ FUNDEF void KCALL nethand_packet(struct netdev *__restrict dev, void *__restrict
                                  size_t packet_size, void *UNUSED(closure));
 
 
+struct netops {
+ /* Network card finalizer. */
+ void (KCALL *n_fini)(struct netdev *__restrict self); /* [0..1] */
+ /* NOTE: The given packet must be allocated in HOST memory!
+  * @assume(rwlock_writing(&self->n_send_lock));
+  * @return: -EOK:        Successfully send the packet.
+  * @return: -IO:         Data transmission failed due to an internal adapter error.
+  * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having been send in time.
+  * @return: E_ISERR(*):  Failed to write the packet to buffer for some reason. */
+ errno_t (KCALL *n_send)(struct netdev *__restrict self,
+                         struct opacket const *__restrict packet); /* [1..1] */
+ /* Callbacks for turning the adapter on/off.
+  * NOTE: When called, 'n_flags&NETDEV_F_ISUP' already contains the
+  *       new card state, which will be reverted when an error is returned.
+  * @assume(rwlock_writing(&self->n_lock));
+  * @return: -EOK:        Successfully turned the card on/off.
+  * @return: E_ISERR(*):  Failed to turn the card on/off for some reason. */
+ errno_t (KCALL *n_ifup)(struct netdev *__restrict self); /* [1..1] */
+ errno_t (KCALL *n_ifdown)(struct netdev *__restrict self); /* [1..1] */
+};
 
 #define NETDEV_DEFAULT_IO_MTU       1480
 #define NETDEV_DEFAULT_STIMEOUT     SEC_TO_JIFFIES(1)
 struct netdev {
  struct chrdev   n_dev;           /*< Underlying character device. */
  struct macaddr  n_mac;           /*< MAC Address of the device. */
- u8              n_pad[2];        /* ... */
- atomic_rwlock_t n_hand_lock;     /*< Lock used to protect the incoming packet buffer. */
+ struct netops  *n_ops;           /*< [const][1..1] Network operation callbacks. */
+ rwlock_t        n_lock;          /*< Lock used to protect use of the adapter (send/recv). */
  struct nethand  n_hand;          /*< Network package handler. */
- rwlock_t        n_send_lock;     /*< Lock that must held when sending data. */
  size_t          n_send_maxsize;  /*< [const] Max package size that can be transmitted. */
- jtime32_t       n_send_timeout;  /*< [lock(n_send_lock)] Timeout when waiting for a package to be commit (In jiffies) */
- u16             n_ip_datagram;   /*< [lock(n_send_lock)] Next IP datagram id. */
- u16             n_ip_mtu;        /*< [lock(n_send_lock)] Max IP packet fragment size. */
- /* NOTE: The given packet must be allocated in HOST memory!
-  * @assume(rwlock_writing(&self->n_send_lock));
-  * @return: -EOK:        Successfully written the packet into the buffer.
-  * @return: -IO:         Data transmission failed due to an internal adapter error.
-  * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having been send in time.
-  * @return: E_ISERR(*):  Failed to write the packet to buffer for some reason. */
- errno_t (KCALL *n_send)(struct netdev *__restrict self,
-                         struct opacket const *__restrict packet); /* [1..1] */
- /* Network card finalizer. */
- void (KCALL *n_fini)(struct netdev *__restrict self); /* [0..1] */
+ jtime32_t       n_send_timeout;  /*< [lock(n_lock)] Timeout when waiting for a package to be commit (In jiffies) */
+#define NETDEV_F_ISDOWN           0x00000000
+#define NETDEV_F_ISUP             0x00000001
+ u32             n_flags;         /*< [lock(n_lock)] Adapter state & flags (Set of 'NETDEV_F_*'). */
+ u16             n_ip_datagram;   /*< [lock(n_lock)] Next IP datagram id. */
+ u16             n_ip_mtu;        /*< [lock(n_lock)] Max IP packet fragment size. */
 };
 
 #define NETDEV_TRYINCREF(self)  CHRDEV_TRYINCREF(&(self)->n_dev)
 #define NETDEV_INCREF(self)     CHRDEV_INCREF(&(self)->n_dev)
 #define NETDEV_DECREF(self)     CHRDEV_DECREF(&(self)->n_dev)
 
+/* Allocate a new network device.
+ * The caller must initialize:
+ *   - n_mac
+ *   - n_ops
+ *   - n_send_maxsize
+ */
 #define netdev_new(type_size) netdev_cinit((struct netdev *)kcalloc(type_size,GFP_SHARED))
 FUNDEF struct netdev *KCALL netdev_cinit(struct netdev *self);
 
@@ -137,6 +155,14 @@ netdev_send_unlocked(struct netdev *__restrict self,
 FUNDEF errno_t KCALL
 netdev_send(struct netdev *__restrict self,
             struct opacket *__restrict pck);
+
+/* Safely turn a network device on/off.
+ * @return: -EOK:       Successfully changed the network device mode.
+ * @return: -EALREADY:  The device was already up/down.
+ * @return: E_ISERR(*): Failed to turn the device on/off. */
+FUNDEF errno_t KCALL netdev_ifup_unlocked(struct netdev *__restrict self);
+FUNDEF errno_t KCALL netdev_ifdown_unlocked(struct netdev *__restrict self);
+
 
 
 /* Get/Set the default adapter device, or NULL if none is installed. */

@@ -57,8 +57,9 @@ INTERN errno_t KCALL net_reset_base(u16 iobase) {
 INTERN errno_t KCALL net_reset(ne2k_t *__restrict dev) {
  errno_t error;
  error = net_reset_base(dev->n_iobase);
- /* Execute the re-initialization command sequence */
- if (E_ISOK(error)) {
+ /* Execute the re-initialization command sequence
+  * if the interface is supposed to be enabled. */
+ if (E_ISOK(error) && dev->n_dev.n_flags&NETDEV_F_ISUP) {
   /* Clear dangling interrupt messages. */
   ATOMIC_WRITE(dev->n_sendend.s_ticket,0);
   /* Reset buffer pointers. */
@@ -71,7 +72,7 @@ INTERN errno_t KCALL net_reset(ne2k_t *__restrict dev) {
         {EN0_DCFG,  ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS}, /* Set word-wide mode. */
         {EN0_RCNTLO,0}, /* Clear count registers. */
         {EN0_RCNTHI,0}, /* ... */
-#if 0
+#if 0 /* Accept all packages (TODO: ioctl() for this?) */
         {EN0_RXCR,  ERXCR_AR|ERXCR_AB|ERXCR_AM|ERXCR_PRO},
 #else
         {EN0_RXCR,  ERXCR_AB}, /* Accept broadcast packages. */
@@ -116,7 +117,6 @@ INTERN s32 KCALL net_waitdma(ne2k_t *__restrict dev) {
  outb(dev->n_iobase+EN0_ISR,ENISR_RDC);
  return (s32)status;
 }
-
 
 
 
@@ -246,7 +246,9 @@ do_realloc:
 #endif
    }
   }
-  outb(iobase+E8390_CMD,E8390_NODMA|E8390_START);
+
+  /* Update the boundary pointer. */
+  outb(iobase+E8390_CMD,E8390_PAGE0|E8390_NODMA|E8390_START);
   if (self->n_nextpck == self->n_rx_begin)
        outb(iobase+EN0_BOUNDARY,self->n_rx_end-1);
   else outb(iobase+EN0_BOUNDARY,self->n_nextpck-1);
@@ -254,10 +256,10 @@ do_realloc:
   COMPILER_WRITE_BARRIER();
 
   /* All right! we've got the package. Now to handle it. */
-  atomic_rwlock_read(&self->n_dev.n_hand_lock);
+  if (E_ISERR(rwlock_read(&self->n_dev.n_lock))) break; /* Shouldn't happen... */
   (*self->n_dev.n_hand.nh_packet)(&self->n_dev,buffer,(size_t)header.ph_size,
                                    self->n_dev.n_hand.nh_closure);
-  atomic_rwlock_endread(&self->n_dev.n_hand_lock);
+  rwlock_endread(&self->n_dev.n_lock);
  }
  /* Switch back to page 0. */
  outb(iobase+E8390_CMD,E8390_PAGE0|E8390_NODMA|E8390_START);
@@ -444,7 +446,12 @@ net_fini(struct netdev *__restrict self) {
 
 
 
-
+PRIVATE struct netops net_ops = {
+    .n_send   = &net_send,
+    .n_fini   = &net_fini,
+    .n_ifup   = (errno_t(KCALL *)(struct netdev *__restrict self))&net_reset,
+    .n_ifdown = (errno_t(KCALL *)(struct netdev *__restrict self))&net_reset,
+};
 
 
 PRIVATE errno_t KCALL
@@ -489,8 +496,7 @@ ne2k_probe(struct pci_device *dev) {
  self = (ne2k_t *)netdev_new(sizeof(ne2k_t));
  if unlikely(!self) return -ENOMEM;
  memcpy(self->n_dev.n_mac.ma_bytes,prom,6);
- self->n_dev.n_send                    = &net_send;
- self->n_dev.n_fini                    = &net_fini;
+ self->n_dev.n_ops                     = &net_ops;
  self->n_dev.n_dev.cd_device.d_irq_ctl = &net_irqctl;
  self->n_iobase                        = iobase;
  self->n_pcidev                        = dev;
@@ -528,7 +534,7 @@ ne2k_probe(struct pci_device *dev) {
   return error;
  }
 
- /* Reset the device into a working & online state. */
+ /* Reset the device into the default (off) state. */
  error = net_reset(self);
  atomic_owner_rwlock_endwrite(&irqctl_lock);
 

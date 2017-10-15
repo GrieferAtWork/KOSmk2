@@ -62,7 +62,7 @@ DATDEF struct inodeops const rtc_ops;
 DATDEF struct rtc default_system_rtc;
 
 /* Get/Set the system rtc used by 'sysrtc_get()' and 'sysrtc_set()' */
-FUNDEF  REF struct rtc *KCALL get_system_rtc(void);
+FUNDEF REF struct rtc *KCALL get_system_rtc(void);
 FUNDEF bool KCALL set_system_rtc(struct rtc *__restrict rtc, bool replace_existing);
 
 /* Get/Set the current time using the active system RTC. (may be used for 'date')
@@ -81,7 +81,7 @@ FUNDEF SAFE void KCALL sysrtc_periodic(void);
 /* Amount of times jiffies are incremented per
  * second, as well as preemption switching tasks.
  * WARNING: Neither can be done when interrupts are disabled,
- *          meaning that over time the actual heartz will be
+ *          meaning that over time the actual hertz will be
  *          a bit lower than this.
  *          With that in mind, setting this value too high
  *          will introduce inaccuracy caused by ticks being

@@ -28,7 +28,7 @@ Chaos|KOS - Even more chaotic that last time.
  - multiboot/multiboot2
    - Kernel commandline support
  - dynamic memory
-   - ALOA (ALocateOnAccess)
+   - ALLOA (ALLocateOnAccess)
    - LOA (LoadOnAccess)
    - COW (CopyOnWrite)
    - SWAP (SWAPping memory to disk)
