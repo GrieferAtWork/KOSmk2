@@ -86,26 +86,46 @@ FUNDEF void KCALL nethand_packet(struct netdev *__restrict dev, void *__restrict
 struct netops {
  /* Network card finalizer. */
  void (KCALL *n_fini)(struct netdev *__restrict self); /* [0..1] */
+
  /* NOTE: The given packet must be allocated in HOST memory!
-  * @assume(rwlock_writing(&self->n_send_lock));
+  * @assume(netdev_writing(self));
+  * @assume(self->n_flags&NETDEV_F_ISUP);
+  * @assume(OPACKET_SIZE(packet) <= self->n_send_maxsize);
   * @return: -EOK:        Successfully send the packet.
-  * @return: -IO:         Data transmission failed due to an internal adapter error.
-  * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having been send in time.
+  * @return: -EIO:        Data transmission failed due to an internal adapter error.
+  * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having
+  *                       been sent before 'n_send_timeout' has passed.
   * @return: E_ISERR(*):  Failed to write the packet to buffer for some reason. */
  errno_t (KCALL *n_send)(struct netdev *__restrict self,
                          struct opacket const *__restrict packet); /* [1..1] */
+
  /* Callbacks for turning the adapter on/off.
   * NOTE: When called, 'n_flags&NETDEV_F_ISUP' already contains the
   *       new card state, which will be reverted when an error is returned.
-  * @assume(rwlock_writing(&self->n_lock));
+  * @function n_ifup: assume(!(self->n_flags&NETDEV_F_ISUP));
+  * @function n_ifdown: assume(self->n_flags&NETDEV_F_ISUP);
+  * @assume(netdev_writing(self));
   * @return: -EOK:        Successfully turned the card on/off.
   * @return: E_ISERR(*):  Failed to turn the card on/off for some reason. */
  errno_t (KCALL *n_ifup)(struct netdev *__restrict self); /* [1..1] */
  errno_t (KCALL *n_ifdown)(struct netdev *__restrict self); /* [1..1] */
+
+ /* Set 'self->n_mac' as the mac address actively being listened for.
+  * @assume(self->n_flags&NETDEV_F_ISUP);
+  * @assume(netdev_writing(self));
+  * @return: -EOK:        Successfully setup the new mac address.
+  * @return: E_ISERR(*):  Failed to spoof the mac address for some reason. */
+ errno_t (KCALL *n_setmac)(struct netdev *__restrict self); /* [0..1] */
+
+ /* Reset 'self->n_mac' the the default, hard-wired mac address of
+  * the adapter, and set that address as the one currently listened for.
+  * WARNING: This function may be called when the adapter is offline.
+  * @return: -EOK:        Successfully reset the mac address.
+  * @return: E_ISERR(*):  Failed to reset the mac address for some reason. */
+ errno_t (KCALL *n_resetmac)(struct netdev *__restrict self); /* [0..1] */
 };
 
-#define NETDEV_DEFAULT_IO_MTU       1480
-#define NETDEV_DEFAULT_STIMEOUT     SEC_TO_JIFFIES(1)
+
 struct netdev {
  struct chrdev   n_dev;           /*< Underlying character device. */
  struct macaddr  n_mac;           /*< MAC Address of the device. */
@@ -113,43 +133,87 @@ struct netdev {
  rwlock_t        n_lock;          /*< Lock used to protect use of the adapter (send/recv). */
  struct nethand  n_hand;          /*< Network package handler. */
  size_t          n_send_maxsize;  /*< [const] Max package size that can be transmitted. */
+#define NETDEV_DEFAULT_STIMEOUT   SEC_TO_JIFFIES(1)
  jtime32_t       n_send_timeout;  /*< [lock(n_lock)] Timeout when waiting for a package to be commit (In jiffies) */
-#define NETDEV_F_ISDOWN           0x00000000
-#define NETDEV_F_ISUP             0x00000001
+#define NETDEV_F_DEFAULT 0x00000000 /* Default adapter state.
+                                     * NOTE: Code may assume that this is equal to
+                                     *       IFDOWN without any special features enabled. */
+#define NETDEV_F_ISDOWN  0x00000000 /*< Symbolic flag indicating a potential state of an interface currently down. */
+#define NETDEV_F_ISUP    0x00000001 /*< Set if the network card is currently online. (Packets can be received) */
+#define NETDEV_F_MONITOR 0x00000002 /*< Set before 'n_ifup' is called: Enable monitoring mode
+                                     * (receive all packets that pass by, regardless of destination) */
+#define NETDEV_F_USERMAC 0x00000004 /*< Set if a user-defined mac address is being used. */
  u32             n_flags;         /*< [lock(n_lock)] Adapter state & flags (Set of 'NETDEV_F_*'). */
  u16             n_ip_datagram;   /*< [lock(n_lock)] Next IP datagram id. */
+#define NETDEV_DEFAULT_IO_MTU     1480
  u16             n_ip_mtu;        /*< [lock(n_lock)] Max IP packet fragment size. */
+ size_t          n_tx_total;      /*< [lock(n_lock)] Total number of bytes transmitted. */
+ size_t          n_rx_total;      /*< [lock(n_lock)] Total number of bytes received. */
 };
 
+/* Locking control. */
+#define netdev_reading(x)      rwlock_reading(&(x)->n_lock)
+#define netdev_writing(x)      rwlock_writing(&(x)->n_lock)
+#define netdev_tryread(x)      rwlock_tryread(&(x)->n_lock)
+#define netdev_trywrite(x)     rwlock_trywrite(&(x)->n_lock)
+#define netdev_tryupgrade(x)   rwlock_tryupgrade(&(x)->n_lock)
+#define netdev_read(x)         rwlock_read(&(x)->n_lock)
+#define netdev_write(x)        rwlock_write(&(x)->n_lock)
+#define netdev_upgrade(x)      rwlock_upgrade(&(x)->n_lock)
+#define netdev_downgrade(x)    rwlock_downgrade(&(x)->n_lock)
+#define netdev_endread(x)      rwlock_endread(&(x)->n_lock)
+#define netdev_endwrite(x)     rwlock_endwrite(&(x)->n_lock)
+
+/* Reference counting control. */
 #define NETDEV_TRYINCREF(self)  CHRDEV_TRYINCREF(&(self)->n_dev)
 #define NETDEV_INCREF(self)     CHRDEV_INCREF(&(self)->n_dev)
 #define NETDEV_DECREF(self)     CHRDEV_DECREF(&(self)->n_dev)
+
+/* Set the current state of a network device. */
+#define NETDEV_ISDOWN(self)   (!((self)->n_flags&NETDEV_F_ISUP))
+#define NETDEV_ISUP(self)       ((self)->n_flags&NETDEV_F_ISUP)
+#define NETDEV_ISMONITOR(self)  ((self)->n_flags&NETDEV_F_MONITOR)
+#define NETDEV_ISUSERMAC(self)  ((self)->n_flags&NETDEV_F_USERMAC)
 
 /* Allocate a new network device.
  * The caller must initialize:
  *   - n_mac
  *   - n_ops
- *   - n_send_maxsize
- */
+ *   - n_send_maxsize */
 #define netdev_new(type_size) netdev_cinit((struct netdev *)kcalloc(type_size,GFP_SHARED))
 FUNDEF struct netdev *KCALL netdev_cinit(struct netdev *self);
 
 
-#define INODE_ISNETDEV(self) ((self)->i_ops == &netdev_ops)
-DATDEF struct inodeops netdev_ops;
 
+DATDEF struct inodeops netdev_ops;
+#define INODE_ISNETDEV(self) ((self)->i_ops == &netdev_ops)
+#define INODE_TONETDEV(self)   container_of(self,struct netdev,n_dev.cd_device.d_node)
+
+
+/* Handle incoming packet data.
+ * Usually called from the driver implementation itself.
+ * NOTE: This function must be called in a safe context, meaning that
+ *       it must be allowed to preempting to other threads must be allowed
+ *       and interrupts (if disabled to being with) are allowed to be
+ *       re-enabled temporarily.
+ * WARNING: Packet handling code may modify the provided 'packet' buffer! */
+FUNDEF void KCALL
+netdev_recv_unlocked(struct netdev *__restrict self,
+                     void *__restrict packet,
+                     size_t packet_size);
 
 /* Send the given package over the network.
- * @assume(rwlock_writing(&self->n_send_lock));
- * @assume(packet_size == opacket_abssize(packet));
+ * @assume(netdev_writing(self));
  * @return: packet_size: Successfully written the packet into the buffer.
- * @return: -IO:         Data transmission failed due to an internal adapter error.
+ * @return: -EIO:        Data transmission failed due to an internal adapter error.
+ * @return: -ENETDOWN:   The adapter is currently down. (Must call 'netdev_ifup_unlocked()' first)
  * @return: -EMSGSIZE:   The package is too large to be transmit in one piece.
  * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having been send in time.
  * @return: E_ISERR(*):  Failed to write the packet to buffer for some reason. */
 FUNDEF errno_t KCALL
 netdev_send_unlocked(struct netdev *__restrict self,
                      struct opacket *__restrict pck);
+
 /* Same as 'netdev_send_unlocked()', but also performs locking.
  * @return: -EINTR: The calling thread was interrupted. */
 FUNDEF errno_t KCALL
@@ -157,15 +221,27 @@ netdev_send(struct netdev *__restrict self,
             struct opacket *__restrict pck);
 
 /* Safely turn a network device on/off.
+ * @assume(netdev_writing(self));
  * @return: -EOK:       Successfully changed the network device mode.
+ * @return: -EPERM:    [netdev_ifup_unlocked] The card may not power on because special features are
+ *                                            enabled, such as 'NETDEV_F_USERMAC' or 'NETDEV_F_MONITOR'.
+ *                                            Clear those bits, then try again.
+ *                                   WARNING: This error may also indicate other problems. Disabling
+ *                                            special features does not guaranty success the next time.
  * @return: -EALREADY:  The device was already up/down.
  * @return: E_ISERR(*): Failed to turn the device on/off. */
 FUNDEF errno_t KCALL netdev_ifup_unlocked(struct netdev *__restrict self);
 FUNDEF errno_t KCALL netdev_ifdown_unlocked(struct netdev *__restrict self);
 
+/* Set a custom/reset the default mac address of the given network device.
+ * @assume(netdev_writing(self));
+ * @return: -EOK:       Successfully set/reset the MAC address listened for.
+ * @return: -EPERM:     The adapter cannot be reconfigured to listen for custom addresses.
+ * @return: E_ISERR(*): Failed to turn the device on/off. */
+FUNDEF errno_t KCALL netdev_setmac_unlocked(struct netdev *__restrict self, struct macaddr const *__restrict addr);
+FUNDEF errno_t KCALL netdev_resetmac_unlocked(struct netdev *__restrict self);
 
-
-/* Get/Set the default adapter device, or NULL if none is installed. */
+/* Get/Set the default network adapter, or NULL if none is installed. */
 FUNDEF REF struct netdev *KCALL get_default_adapter(void);
 FUNDEF bool KCALL set_default_adapter(struct netdev *__restrict dev, bool replace_existing);
 

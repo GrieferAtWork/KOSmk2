@@ -54,56 +54,56 @@ INTERN errno_t KCALL net_reset_base(u16 iobase) {
  }
  return -EOK;
 }
+INTERN void KCALL net_reset_high(ne2k_t *__restrict dev) {
+ /* Clear dangling interrupt messages. */
+ ATOMIC_WRITE(dev->n_sendend.s_ticket,0);
+ /* Reset buffer pointers. */
+ dev->n_nextpck = dev->n_rx_begin;
+ /* Don't turn the card back on if ISUP isn't set. */
+ if (!(dev->n_dev.n_flags&NETDEV_F_ISUP)) return;
+ { unsigned int i;
+   struct { u8 off,val; } reset[] = {
+       {EN0_ISR,   0xff}, /* Acknowledge interrupts. (From 'net_reset_base()') */
+       {E8390_CMD, E8390_PAGE0|E8390_STOP|E8390_NODMA},
+       {EN0_DCFG,  ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS}, /* Set word-wide mode. */
+       {EN0_RCNTLO,0}, /* Clear count registers. */
+       {EN0_RCNTHI,0}, /* ... */
+       {EN0_RXCR,  dev->n_dev.n_flags&NETDEV_F_MONITOR
+                 ? ERXCR_AR|ERXCR_AB|ERXCR_AM|ERXCR_PRO /* Accept all packages. */
+                 : ERXCR_AB}, /* Accept broadcast packages. */
+       {EN0_TXCR,  ETXCR_LOOPBACK_INTERN}, /* Disable loopback for all packages. */
+       /* Configure the card's receive buffer. */
+       {EN0_BOUNDARY,dev->n_nextpck},
+       {EN0_STARTPG,dev->n_rx_begin},
+       {EN0_STOPPG,dev->n_rx_end},
+       {EN0_ISR,   0xff}, /* Acknowledge anything that may still be dangling. */
+       {EN0_IMR,   ENISR_ALL}, /* Enable all the interrupts that we are handling. */
+       {E8390_CMD, E8390_PAGE1|E8390_STOP|E8390_NODMA}, /* Switch to page 1. */
+   };
+   for (i = 0; i < COMPILER_LENOF(reset); ++i)
+        outb(dev->n_iobase+reset[i].off,reset[i].val);
+   for (i = 0; i < 6; ++i) /* Configure the hardware address to listen for. */
+        outb(dev->n_iobase+EN1_PHYS_SHIFT(i),dev->n_dev.n_mac.ma_bytes[i]);
+   for (i = 0; i < 8; ++i) /* XXX: Multicast? */
+        outb(dev->n_iobase+EN1_MULT_SHIFT(i),0xff);
+   /* Still being in page #1, set the next-package pointer. */
+   outb(dev->n_iobase+EN1_CURPAG,dev->n_nextpck);
+
+   /* Finally, initialize the card. */
+   outb(dev->n_iobase+E8390_CMD,E8390_PAGE0|E8390_NODMA|E8390_START);
+
+   /* And disable loopback, enabling outgoing packages. */
+   outb(dev->n_iobase+EN0_TXCR,ETXCR_LOOPBACK_NORMAL);
+ }
+}
 INTERN errno_t KCALL net_reset(ne2k_t *__restrict dev) {
- errno_t error;
- error = net_reset_base(dev->n_iobase);
+ errno_t error = net_reset_base(dev->n_iobase);
  /* Execute the re-initialization command sequence
   * if the interface is supposed to be enabled. */
- if (E_ISOK(error) && dev->n_dev.n_flags&NETDEV_F_ISUP) {
-  /* Clear dangling interrupt messages. */
-  ATOMIC_WRITE(dev->n_sendend.s_ticket,0);
-  /* Reset buffer pointers. */
-  dev->n_nextpck = dev->n_rx_begin;
-
-  { unsigned int i;
-    struct { u8 off,val; } reset[] = {
-        {EN0_ISR,   0xff}, /* Acknowledge interrupts. (From 'net_reset_base()') */
-        {E8390_CMD, E8390_PAGE0|E8390_STOP|E8390_NODMA},
-        {EN0_DCFG,  ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS}, /* Set word-wide mode. */
-        {EN0_RCNTLO,0}, /* Clear count registers. */
-        {EN0_RCNTHI,0}, /* ... */
-#if 0 /* Accept all packages (TODO: ioctl() for this?) */
-        {EN0_RXCR,  ERXCR_AR|ERXCR_AB|ERXCR_AM|ERXCR_PRO},
-#else
-        {EN0_RXCR,  ERXCR_AB}, /* Accept broadcast packages. */
-#endif
-        {EN0_TXCR,  ETXCR_LOOPBACK_INTERN}, /* Disable loopback for all packages. */
-        /* Configure the card's receive buffer. */
-        {EN0_BOUNDARY,dev->n_nextpck},
-        {EN0_STARTPG,dev->n_rx_begin},
-        {EN0_STOPPG,dev->n_rx_end},
-        {EN0_ISR,   0xff}, /* Acknowledge anything that may still be dangling. */
-        {EN0_IMR,   ENISR_ALL}, /* Enable all the interrupts that we are handling. */
-        {E8390_CMD, E8390_PAGE1|E8390_STOP|E8390_NODMA}, /* Switch to page 1. */
-    };
-    for (i = 0; i < COMPILER_LENOF(reset); ++i)
-         outb(dev->n_iobase+reset[i].off,reset[i].val);
-    for (i = 0; i < 6; ++i) /* Configure the hardware address to listen for. */
-         outb(dev->n_iobase+EN1_PHYS_SHIFT(i),dev->n_dev.n_mac.ma_bytes[i]);
-    for (i = 0; i < 8; ++i) /* XXX: Multicast? */
-         outb(dev->n_iobase+EN1_MULT_SHIFT(i),0xff);
-    /* Still being in page #1, set the next-package pointer. */
-    outb(dev->n_iobase+EN1_CURPAG,dev->n_nextpck);
-
-    /* Finally, initialize the card. */
-    outb(dev->n_iobase+E8390_CMD,E8390_PAGE0|E8390_NODMA|E8390_START);
-
-    /* And disable loopback, enabling outgoing packages. */
-    outb(dev->n_iobase+EN0_TXCR,ETXCR_LOOPBACK_NORMAL);
-  }
- }
+ if (E_ISOK(error)) net_reset_high(dev);
  return error;
 }
+
 INTERN s32 KCALL net_waitdma(ne2k_t *__restrict dev) {
  u32 start = jiffies32; u8 status;
  while (!((status = inb(dev->n_iobase+EN0_ISR))&ENISR_RDC)) {
@@ -125,6 +125,12 @@ PRIVATE void KCALL ne2k_recv(ne2k_t *self);
 PRIVATE struct job ne2k_recv_job = JOB_INIT((void(KCALL *)(void *))&ne2k_recv,NULL);
 PRIVATE void KCALL ne2k_recv(ne2k_t *self) {
  u16 iobase = self->n_iobase;
+ /* All right! we've got the package. Now to handle it. */
+ if (E_ISERR(netdev_read(&self->n_dev)))
+     return; /* Shouldn't happen... */
+ /* Don't process anything if the interface is supposed to be down. */
+ if (!(self->n_dev.n_flags&NETDEV_F_ISUP)) goto end;
+
  for (;;) {
   STATIC_ASSERT(!(sizeof(pck_header_t) & 1));
   errno_t error; byte_t *buffer;
@@ -152,7 +158,7 @@ PRIVATE void KCALL ne2k_recv(ne2k_t *self) {
    /* Shouldn't  */
    syslog(LOG_ERR,"[NE2K] Card indicates empty packet (Reset)\n");
    net_reset(self);
-   return;
+   goto end;
   }
 
   /* Inherit the next-package pointer. */
@@ -255,11 +261,9 @@ do_realloc:
 
   COMPILER_WRITE_BARRIER();
 
-  /* All right! we've got the package. Now to handle it. */
-  if (E_ISERR(rwlock_read(&self->n_dev.n_lock))) break; /* Shouldn't happen... */
-  (*self->n_dev.n_hand.nh_packet)(&self->n_dev,buffer,(size_t)header.ph_size,
-                                   self->n_dev.n_hand.nh_closure);
-  rwlock_endread(&self->n_dev.n_lock);
+  /* Process the package. */
+  netdev_recv_unlocked(&self->n_dev,buffer,(size_t)header.ph_size);
+
  }
  /* Switch back to page 0. */
  outb(iobase+E8390_CMD,E8390_PAGE0|E8390_NODMA|E8390_START);
@@ -267,6 +271,8 @@ do_realloc:
  outb(iobase+EN0_ISR,ENISR_RX|ENISR_RX_ERR);
  /* Re-enable all interrupts. */
  outb(iobase+EN0_IMR,ENISR_ALL);
+end:
+ netdev_endread(&self->n_dev);
 }
 
 
@@ -363,8 +369,7 @@ net_send(struct netdev *__restrict self,
          struct opacket const *__restrict packet) {
  errno_t error; u16 aligned_size;
  aligned_size = (u16)OPACKET_SIZE(packet);
- if unlikely(aligned_size > self->n_send_maxsize)
-    return -EMSGSIZE;
+ assert(aligned_size <= self->n_send_maxsize);
  if (aligned_size&1) ++aligned_size;
 
  /* Perform a read-before-write. */
@@ -444,23 +449,9 @@ net_fini(struct netdev *__restrict self) {
 }
 #undef NE2K
 
-
-
-PRIVATE struct netops net_ops = {
-    .n_send   = &net_send,
-    .n_fini   = &net_fini,
-    .n_ifup   = (errno_t(KCALL *)(struct netdev *__restrict self))&net_reset,
-    .n_ifdown = (errno_t(KCALL *)(struct netdev *__restrict self))&net_reset,
-};
-
-
-PRIVATE errno_t KCALL
-ne2k_probe(struct pci_device *dev) {
- ne2k_t *self; errno_t error;
- u8 prom[32]; unsigned int i;
- u16 iobase = dev->pd_resources[0].pr_begin;
- if (inb(iobase) == 0xff) return -ENODEV;
-
+INTERN errno_t KCALL
+net_load_mac(u16 iobase, u8 prom[32]) {
+ errno_t error; unsigned int i;
  /* Reset the card. */
  error = net_reset_base(iobase);
  if (E_ISERR(error)) return error;
@@ -486,12 +477,45 @@ ne2k_probe(struct pci_device *dev) {
    for (i = 0; i < COMPILER_LENOF(startup); ++i)
         outb(iobase+startup[i].off,startup[i].val);
  }
-
  /* Read PROM. */
  for (i = 0; i < 32; i++)
       prom[i] = inb(iobase+0x10);
+ //outb(iobase+EN0_DCFG,ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS);
+ return error;
+}
+INTERN errno_t KCALL
+net_reset_mac(ne2k_t *__restrict dev) {
+ u8 prom[32]; errno_t error;
+ /* Turn off the card. */
+ error = net_load_mac(dev->n_iobase,prom);
+ if (E_ISERR(error)) return error;
+ memcpy(&dev->n_dev.n_mac,prom,sizeof(struct macaddr));
+ net_reset_high(dev);
+ return error;
+}
 
- outb(iobase+EN0_DCFG,ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS);
+
+PRIVATE struct netops net_ops = {
+    .n_send   = &net_send,
+    .n_fini   = &net_fini,
+    /* Many network device operations can simply be
+     * implemented using a general purpose reset. */
+    .n_ifup     = (errno_t(KCALL *)(struct netdev *__restrict self))&net_reset,
+    .n_ifdown   = (errno_t(KCALL *)(struct netdev *__restrict self))&net_reset,
+    .n_setmac   = (errno_t(KCALL *)(struct netdev *__restrict self))&net_reset,
+    .n_resetmac = (errno_t(KCALL *)(struct netdev *__restrict self))&net_reset_mac,
+};
+
+
+PRIVATE errno_t KCALL
+ne2k_probe(struct pci_device *dev) {
+ ne2k_t *self; errno_t error; u8 prom[32];
+ u16 iobase = dev->pd_resources[0].pr_begin;
+ if (inb(iobase) == 0xff) return -ENODEV;
+
+ /* Reset the card and load the default mac address. */
+ error = net_load_mac(iobase,prom);
+ if (E_ISERR(error)) return error;
 
  self = (ne2k_t *)netdev_new(sizeof(ne2k_t));
  if unlikely(!self) return -ENOMEM;

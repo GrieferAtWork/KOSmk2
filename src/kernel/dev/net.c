@@ -27,6 +27,7 @@
 #include <hybrid/check.h>
 #include <hybrid/minmax.h>
 #include <stddef.h>
+#include <string.h>
 #include <malloc.h>
 
 DECL_BEGIN
@@ -41,7 +42,10 @@ netdev_fini(struct inode *__restrict ino) {
 #undef NDEV
 
 PUBLIC struct inodeops netdev_ops = {
-    .ino_fini = &netdev_fini,
+    .ino_fini  = &netdev_fini,
+    .ino_fopen = &inode_fopen_default,
+    /* TODO: errno_t (KCALL *f_ioctl)(struct file *__restrict fp, int name, USER void *arg);
+     * >> Required for ifup/ifdown functionality, etc. */
 };
 
 PUBLIC struct netdev *KCALL
@@ -52,11 +56,18 @@ netdev_cinit(struct netdev *self) {
   assert(self->n_send_maxsize == 0);
   assert(self->n_hand.nh_packet == NULL);
   assert(self->n_hand.nh_closure == NULL);
-  self->n_hand.nh_packet = &nethand_packet;
-  self->n_send_timeout   = NETDEV_DEFAULT_STIMEOUT;
-  self->n_ip_mtu         = NETDEV_DEFAULT_IO_MTU;
-  rwlock_cinit(&self->n_lock);
+  assert(self->n_ops == NULL);
+  assert(self->n_rx_total == 0);
+  assert(self->n_tx_total == 0);
+  /* Setup default routing and restrictions. */
+  self->n_hand.nh_packet             = &nethand_packet;
+  self->n_send_timeout               = NETDEV_DEFAULT_STIMEOUT;
+  self->n_ip_mtu                     = NETDEV_DEFAULT_IO_MTU;
   self->n_dev.cd_device.d_node.i_ops = &netdev_ops;
+  rwlock_cinit(&self->n_lock);
+#if NETDEV_F_DEFAULT != 0
+  self->n_flags = NETDEV_F_DEFAULT;
+#endif
  }
  return self;
 }
@@ -140,15 +151,40 @@ opacket_print(struct opacket const *__restrict self,
 }
 
 
+FUNDEF void KCALL
+netdev_recv_unlocked(struct netdev *__restrict self,
+                     void *__restrict packet,
+                     size_t packet_size) {
+ CHECK_HOST_DOBJ(self);
+ CHECK_HOST_DATA(packet,packet_size);
+ assert(netdev_writing(self));
+
+ /* Track the total number of received bytes. */
+ self->n_rx_total += packet_size;
+ (*self->n_hand.nh_packet)(self,packet,packet_size,
+                           self->n_hand.nh_closure);
+}
+
+
 PUBLIC errno_t KCALL
 netdev_send_unlocked(struct netdev *__restrict self,
                      struct opacket *__restrict pck) {
+ errno_t error; size_t packet_size;
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(pck);
  assert(INODE_ISNETDEV(&self->n_dev.cd_device.d_node));
  assert(self->n_ops->n_send != NULL);
- assert(rwlock_writing(&self->n_lock));
- return (*self->n_ops->n_send)(self,pck);
+ assert(netdev_writing(self));
+ if unlikely(NETDEV_ISDOWN(self))
+    return -ENETDOWN;
+ packet_size = OPACKET_SIZE(pck);
+ if unlikely(packet_size > self->n_send_maxsize)
+    return -EMSGSIZE;
+ error = (*self->n_ops->n_send)(self,pck);
+ /* Track the total number of bytes transmitted. */
+ if (E_ISOK(error))
+     self->n_tx_total += packet_size;
+ return error;
 }
 
 PUBLIC errno_t KCALL
@@ -156,10 +192,10 @@ netdev_send(struct netdev *__restrict self,
             struct opacket *__restrict pck) {
  errno_t result;
  CHECK_HOST_DOBJ(self);
- result = rwlock_write(&self->n_lock);
+ result = netdev_write(self);
  if (E_ISERR(result)) return result;
  result = netdev_send_unlocked(self,pck);
- rwlock_endwrite(&self->n_lock);
+ netdev_endwrite(self);
  return result;
 }
 
@@ -167,10 +203,10 @@ PUBLIC errno_t KCALL
 netdev_ifup_unlocked(struct netdev *__restrict self) {
  errno_t error;
  CHECK_HOST_DOBJ(self);
- assert(rwlock_writing(&self->n_lock));
+ assert(netdev_writing(self));
  assert(self->n_ops->n_ifup != NULL);
  /* Check if the device is already up. */
- if (self->n_flags&NETDEV_F_ISUP)
+ if (NETDEV_ISUP(self))
      return -EALREADY;
  /* Set the interface-up flag. */
  self->n_flags |= NETDEV_F_ISUP;
@@ -185,10 +221,10 @@ PUBLIC errno_t KCALL
 netdev_ifdown_unlocked(struct netdev *__restrict self) {
  errno_t error;
  CHECK_HOST_DOBJ(self);
- assert(rwlock_writing(&self->n_lock));
+ assert(netdev_writing(self));
  assert(self->n_ops->n_ifdown != NULL);
  /* Check if the device is already down. */
- if (!(self->n_flags&NETDEV_F_ISUP))
+ if (NETDEV_ISDOWN(self))
      return -EALREADY;
  /* Clear the interface-up flag. */
  self->n_flags &= ~NETDEV_F_ISUP;
@@ -199,6 +235,54 @@ netdev_ifdown_unlocked(struct netdev *__restrict self) {
      self->n_flags |= NETDEV_F_ISUP;
  return error;
 }
+
+PUBLIC errno_t KCALL
+netdev_setmac_unlocked(struct netdev *__restrict self,
+                       struct macaddr const *__restrict addr) {
+ struct macaddr old_addr;
+ errno_t error = -EOK; u32 old_flags;
+ CHECK_HOST_DOBJ(self);
+ CHECK_HOST_DOBJ(addr);
+ assert(netdev_writing(self));
+ if (!self->n_ops->n_setmac)
+      return -EPERM;
+ /* Check if changes are required to-be performed. */
+ if (memcmp(&self->n_mac,addr,sizeof(struct macaddr)) == 0)
+     return -EOK;
+ memcpy(&old_addr,&self->n_mac,sizeof(struct macaddr));
+ old_flags = self->n_flags;
+ memcpy(&self->n_mac,addr,sizeof(struct macaddr));
+ self->n_flags |= NETDEV_F_USERMAC;
+ if (NETDEV_ISUP(self)) {
+  error = (*self->n_ops->n_setmac)(self);
+  /* Restore the old mac address on error. */
+  if (E_ISERR(error))
+      memcpy(&self->n_mac,&old_addr,sizeof(struct macaddr)),
+      self->n_flags = (self->n_flags&~NETDEV_F_USERMAC)|
+                      (old_flags&NETDEV_F_USERMAC);
+ }
+ return error;
+}
+PUBLIC errno_t KCALL
+netdev_resetmac_unlocked(struct netdev *__restrict self) {
+ errno_t error = -EOK;
+ struct macaddr old_mac;
+ CHECK_HOST_DOBJ(self);
+ /* If no user-mac is being used, nothing needs to be done. */
+ if (!NETDEV_ISUSERMAC(self)) return -EOK;
+ if (!self->n_ops->n_resetmac) return -EPERM;
+ /* NOTE: Also store the current address, in case a failed
+  *       reset would leave it in an undefined state. */
+ memcpy(&old_mac,&self->n_mac,sizeof(struct macaddr));
+ self->n_flags &= ~NETDEV_F_USERMAC;
+ error = (*self->n_ops->n_resetmac)(self);
+ /* Restore old properties on error. */
+ if (E_ISERR(error))
+     self->n_flags |= NETDEV_F_USERMAC,
+     memcpy(&self->n_mac,&old_mac,sizeof(struct macaddr));
+ return error;
+}
+
 
 
 PRIVATE DEFINE_ATOMIC_RWLOCK(adapter_lock);
@@ -233,15 +317,15 @@ KCALL get_default_adapter(void) {
  return result;
 }
 PUBLIC bool KCALL
-set_default_adapter(struct netdev *__restrict kbd,
+set_default_adapter(struct netdev *__restrict dev,
                     bool replace_existing) {
  REF struct netdev *old_device = NULL;
- CHECK_HOST_DOBJ(kbd);
+ CHECK_HOST_DOBJ(dev);
  atomic_rwlock_write(&adapter_lock);
  if (replace_existing || !default_adapter) {
-  NETDEV_INCREF(kbd);
+  NETDEV_INCREF(dev);
   old_device      = default_adapter;
-  default_adapter = kbd;
+  default_adapter = dev;
  }
  atomic_rwlock_endwrite(&adapter_lock);
  if (old_device) NETDEV_DECREF(old_device);

@@ -191,6 +191,7 @@ INTERN errno_t KCALL net_reset_base(u16 iobase); /* Reset the card. */
 /* Wait for DMA completion, returning an error or the status register. */
 INTDEF s32 KCALL net_waitdma(ne2k_t *__restrict dev);
 INTDEF errno_t KCALL net_reset(ne2k_t *__restrict dev);
+INTDEF errno_t KCALL net_reset_mac(ne2k_t *__restrict dev);
 
 INTDEF errno_t KCALL net_send(struct netdev *__restrict self, struct opacket const *__restrict packet);
 INTDEF void KCALL net_irqctl(struct device *__restrict dev, unsigned int cmd);
