@@ -26,6 +26,11 @@
 #include <modules/pci.h>
 #include <sync/sem.h>
 
+#ifdef CONFIG_NO_NET
+#error "The kernel isn't configured for networking. - This module must be disabled"
+#endif /* CONFIG_NO_NET */
+
+
 DECL_BEGIN
 
 /* Some of the definitions and macros below are taken from
@@ -190,6 +195,7 @@ INTDEF errno_t KCALL net_reset(ne2k_t *__restrict dev);
 INTDEF errno_t KCALL
 net_send(struct netdev *__restrict self,
          struct opacket const *__restrict packet);
+INTDEF void KCALL net_irqctl(struct device *__restrict dev, unsigned int cmd);
 
 
 DECL_END

@@ -20,8 +20,9 @@
 #define GUARD_KERNEL_DEV_NET_C 1
 #define _KOS_SOURCE 1
 
-#include <dev/net.h>
 #include <hybrid/compiler.h>
+#ifndef CONFIG_NO_NET
+#include <dev/net.h>
 #include <hybrid/align.h>
 #include <hybrid/check.h>
 #include <hybrid/minmax.h>
@@ -49,7 +50,9 @@ netdev_cinit(struct netdev *self) {
   chrdev_cinit(&self->n_dev);
   assert(self->n_send_timeout == 0);
   assert(self->n_send_maxsize == 0);
-  self->n_hand.nh_packet = nethand_packet;
+  assert(self->n_hand.nh_packet == NULL);
+  assert(self->n_hand.nh_closure == NULL);
+  self->n_hand.nh_packet = &nethand_packet;
   self->n_send_timeout   = NETDEV_DEFAULT_STIMEOUT;
   self->n_ip_mtu         = NETDEV_DEFAULT_IO_MTU;
   atomic_rwlock_cinit(&self->n_hand_lock);
@@ -208,7 +211,7 @@ set_default_adapter(struct netdev *__restrict kbd,
  return old_device != NULL;
 }
 
-
 DECL_END
+#endif /* !CONFIG_NO_NET */
 
 #endif /* !GUARD_KERNEL_DEV_NET_C */

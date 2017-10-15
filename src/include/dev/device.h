@@ -29,6 +29,7 @@
 #include <hybrid/list/btree.h>
 #include <hybrid/list/list.h>
 #include <hybrid/sync/atomic-rwlock.h>
+#include <hybrid/sync/atomic-owner-rwlock.h>
 #include <hybrid/types.h>
 #include <sync/rwlock.h>
 
@@ -37,6 +38,11 @@ DECL_BEGIN
 struct instance;
 struct devns;
 struct vsuperblock;
+
+#define IRQCTL_DISABLE  0 /*< Disable interrupts caused by the device. */
+#define IRQCTL_ENABLE   1 /*< Disable interrupts and check for lost interrupts. */
+#define IRQCTL_TEST     2 /*< Check for lost interrupts. */
+typedef void (KCALL *pirqctl)(struct device *__restrict dev, unsigned int cmd);
 
 struct device {
  struct inode                  d_node;   /*< Underlying INode. */
@@ -62,7 +68,8 @@ struct device {
   *        For that reason, any driver required to handle interrupts (such as PS/2)
   *        should implement this function to quickly check if there are pending
   *        interrupts that could not be handled (See PS/2 for an example of this). */
- void                  (KCALL *d_irq_lost)(struct device *__restrict self);
+ pirqctl                       d_irq_ctl;
+ LIST_NODE(struct device)      d_irq_dev; /*< [valid_if(d_irq_ctl != NULL)][lock(INTERNAL)] Chain of devices that implement IRQ controls. */
 };
 #define DEVICE_TRYINCREF(self)  INODE_TRYINCREF(&(self)->d_node)
 #define DEVICE_INCREF(self)     INODE_INCREF(&(self)->d_node)
@@ -110,9 +117,13 @@ FUNDEF void KCALL device_fini(struct device *__restrict self);
 /* Call this function when you think that device IRQs may have been lost.
  * This function will then go through all registered devices and manually
  * check for any new notifications that may have been skipped.
- * HINT: This function is called after a realmode BIOS interrupt completes. */
-FUNDEF void KCALL device_irq_lost(void);
+ * NOTE: The caller must be holding a read-lock to 'irqctl_lock'
+ * HINT: This function is called before and after a realmode BIOS interrupt.
+ * @param: cmd: One of 'IRQCTL_*' */
+FUNDEF void KCALL device_irqctl(unsigned int cmd);
 
+/* Lock held when icqctl commands are fired. */
+DATDEF atomic_owner_rwlock_t irqctl_lock;
 
 /* The device filesystem superblock ("/dev"). */
 DATDEF struct vsuperblock dev_fs;

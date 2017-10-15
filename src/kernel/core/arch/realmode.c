@@ -69,10 +69,6 @@ L(DEFINE_BSS(rm_bios_int_cr0,4)                   )
 L(DEFINE_BSS(rm_bios_int_cr3,4)                   )
 L(DEFINE_BSS(rm_bios_int_esp,4)                   )
 L(DEFINE_BSS(rm_bios_int_gdt,6)                   )
-L(rm_bios_int_idt:                                )
-L(    .word 0x03ff                                )
-L(    .long 0x00000000                            )
-L(.size rm_bios_int_idt, . - rm_bios_int_idt      )
 L(rm_bios_int:                                    )
 L(    movw $(SEG(SEG_HOST_DATA16)), %ax        )
 L(    movw %ax, %ds                               )
@@ -80,8 +76,6 @@ L(    movw %ax, %es                               )
 L(    movw %ax, %fs                               )
 L(    movw %ax, %gs                               )
 L(    movw %ax, %ss                               )
-L(                                                )
-L(    RM_LIDT(rm_bios_int_idt)                    )
 L(                                                )
 L(    movl %cr0, %eax                             )
 L(    andl $~(CR0_PG|CR0_PE), %eax                )
@@ -155,6 +149,7 @@ INTDEF u32                rm_bios_int_cr0;
 INTDEF u32                rm_bios_int_cr3;
 INTDEF u32                rm_bios_int_esp;
 INTDEF struct idt_pointer rm_bios_int_gdt;
+INTERN struct idt_pointer rm_bios_int_idt = { .ip_limit = 0x03ff, .ip_idt = NULL, };
 
 PRIVATE SAFE void KCALL
 do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
@@ -183,6 +178,7 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    sidt (%%esp)                                )
      L(                                                )
      L(    call pic_bios_begin                         )
+     L(    lidt (rm_bios_int_idt)                      )
      L(                                                )
      L(    jmp 1f                                      )
      L(.section .text.phys                             )
@@ -276,10 +272,16 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
 
 PUBLIC SAFE void KCALL
 rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
+ atomic_owner_rwlock_read(&irqctl_lock);
+ device_irqctl(IRQCTL_DISABLE);
+
  atomic_rwlock_write(&realmode_intlock);
  do_rm_interrupt(state,intno);
  atomic_rwlock_endwrite(&realmode_intlock);
- device_irq_lost();
+
+ device_irqctl(IRQCTL_ENABLE);
+ atomic_owner_rwlock_endread(&irqctl_lock);
+
  /* Due to the high chance that a PIT interrupt was
   * lost, manually preempt if we've allowed to.
   * >> Prevents soft-locking when the speed of interrupts

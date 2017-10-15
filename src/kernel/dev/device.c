@@ -89,12 +89,23 @@ INTERN ATTR_COLDTEXT void KCALL devfs_mount_finalize(void) {
 #endif
 
 
+PUBLIC DEFINE_ATOMIC_OWNER_RWLOCK(irqctl_lock);
+PRIVATE LIST_HEAD(struct device) irqctl_list = NULL;
+PUBLIC void KCALL device_irqctl(unsigned int cmd) {
+ struct device *dev;
+ assert(atomic_owner_rwlock_reading(&irqctl_lock));
+ LIST_FOREACH(dev,irqctl_list,d_irq_dev) {
+  assert(dev->d_irq_ctl);
+  (*dev->d_irq_ctl)(dev,cmd);
+ }
+}
+
 
 PUBLIC struct device *KCALL
 device_cinit(struct device *self) {
  if (self) {
   CHECK_HOST_DOBJ(self);
-  assert(self->d_irq_lost == NULL);
+  assert(self->d_irq_ctl == NULL);
   inode_cinit(&self->d_node);
   assert(self->d_node.i_attr.ia_uid == 0);
   assert(self->d_node.i_attr.ia_gid == 0);
@@ -127,6 +138,13 @@ device_setup(struct device *__restrict self,
  atomic_rwlock_write(&dev_fs.v_super.sb_nodes_lock);
  LIST_INSERT(dev_fs.v_super.sb_nodes,&self->d_node,i_nodes);
  atomic_rwlock_endwrite(&dev_fs.v_super.sb_nodes_lock);
+
+ /* If the device implements IRQ controls, track it. */
+ if (self->d_irq_ctl) {
+  atomic_owner_rwlock_write(&irqctl_lock);
+  LIST_INSERT(irqctl_list,self,d_irq_dev);
+  atomic_owner_rwlock_endwrite(&irqctl_lock);
+ }
  return -EOK;
 }
 
@@ -139,6 +157,11 @@ device_fini(struct device *__restrict self) {
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(self->d_node.i_owner);
  assert(INODE_ISDEV(&self->d_node));
+ if (self->d_irq_ctl) {
+  atomic_owner_rwlock_write(&irqctl_lock);
+  LIST_REMOVE(self,d_irq_dev);
+  atomic_owner_rwlock_endwrite(&irqctl_lock);
+ }
  if (self->d_flags&DEVICE_FLAG_WEAKID) {
   struct device *del_dev;
   /* Weak devices must delete their own device namespace entry. */
@@ -161,62 +184,6 @@ device_fini(struct device *__restrict self) {
   BLKDEV_DECREF(part->dp_ref);
  }
 }
-
-
-PRIVATE void KCALL
-device_check_lost(struct device *__restrict self) {
-again:
- assert(self);
- CHECK_HOST_DOBJ(self);
- if (self->d_irq_lost) {
-#if 0
-  syslog(LOG_DEBUG,"d_irq_lost@%p(%p) - %[dev_t]\n",
-         self->d_irq_lost,self,self->d_id);
-#endif
-  (*self->d_irq_lost)(self);
- }
- /* Recursively scan other devices. */
- if (self->d_devnode.bt_min) {
-  if (self->d_devnode.bt_max)
-      device_check_lost(self->d_devnode.bt_max);
-  self = self->d_devnode.bt_min;
-  goto again;
- }
- if (self->d_devnode.bt_max) {
-  self = self->d_devnode.bt_max;
-  goto again;
- }
-}
-PRIVATE void KCALL
-devns_major_check_lost(struct devns_major *__restrict self) {
- struct device **iter,**end;
-again:
- assert(self);
- CHECK_HOST_DOBJ(self);
- end = (iter = DEVNS_MAJOR_VEC(self))+DEVNS_MAJOR_CNT(self);
- for (; iter != end; ++iter) if (*iter) device_check_lost(*iter);
- /* Recursively scan all nodes. */
- if (self->ma_node.a_min) {
-  if (self->ma_node.a_max)
-      devns_major_check_lost(self->ma_node.a_max);
-  self = self->ma_node.a_min;
-  goto again;
- }
- if (self->ma_node.a_max) {
-  self = self->ma_node.a_max;
-  goto again;
- }
-}
-
-PUBLIC void KCALL device_irq_lost(void) {
- atomic_rwlock_read(&ns_blkdev.d_lock);
- if (ns_blkdev.d_tree) devns_major_check_lost(ns_blkdev.d_tree);
- atomic_rwlock_endread(&ns_blkdev.d_lock);
- atomic_rwlock_read(&ns_chrdev.d_lock);
- if (ns_chrdev.d_tree) devns_major_check_lost(ns_chrdev.d_tree);
- atomic_rwlock_endread(&ns_chrdev.d_lock);
-}
-
 
 PUBLIC struct devns ns_blkdev = {
     .d_lock  = ATOMIC_RWLOCK_INIT,

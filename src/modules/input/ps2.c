@@ -583,7 +583,9 @@ remove_cmd:
 }
 
 PRIVATE void KCALL
-keyboard_irq_lost(struct device *__restrict self) {
+keyboard_irqctl(struct device *__restrict dev, unsigned int cmd) {
+ /* XXX: Disable keyboard interrupts before BIOS? */
+ if (cmd != IRQCTL_ENABLE) return;
  /* Check if keyboard data arrived while we were gone. */
  if (inb(PS2_STATUS) & PS2_STATUS_OUTFULL) {
   pflag_t was;
@@ -703,7 +705,7 @@ got_keyboard:
  if unlikely(!ps2_keyboard) return -ENOMEM;
  ps2_keyboard->kb_port                          = port;
  ps2_keyboard->kb_device.cd_device.d_node.i_ops = &kbd_ops;
- ps2_keyboard->kb_device.cd_device.d_irq_lost   = &keyboard_irq_lost;
+ ps2_keyboard->kb_device.cd_device.d_irq_ctl    = &keyboard_irqctl;
  error = device_setup(&ps2_keyboard->kb_device.cd_device,THIS_INSTANCE);
  if (E_ISERR(error)) goto err;
 

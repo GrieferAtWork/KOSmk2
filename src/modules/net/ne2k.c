@@ -66,11 +66,16 @@ INTERN errno_t KCALL net_reset(ne2k_t *__restrict dev) {
 
   { unsigned int i;
     struct { u8 off,val; } reset[] = {
+        {EN0_ISR,   0xff}, /* Acknowledge interrupts. (From 'net_reset_base()') */
         {E8390_CMD, E8390_PAGE0|E8390_STOP|E8390_NODMA},
         {EN0_DCFG,  ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS}, /* Set word-wide mode. */
         {EN0_RCNTLO,0}, /* Clear count registers. */
         {EN0_RCNTHI,0}, /* ... */
+#if 0
+        {EN0_RXCR,  ERXCR_AR|ERXCR_AB|ERXCR_AM|ERXCR_PRO},
+#else
         {EN0_RXCR,  ERXCR_AB}, /* Accept broadcast packages. */
+#endif
         {EN0_TXCR,  ETXCR_LOOPBACK_INTERN}, /* Disable loopback for all packages. */
         /* Configure the card's receive buffer. */
         {EN0_BOUNDARY,dev->n_nextpck},
@@ -78,14 +83,14 @@ INTERN errno_t KCALL net_reset(ne2k_t *__restrict dev) {
         {EN0_STOPPG,dev->n_rx_end},
         {EN0_ISR,   0xff}, /* Acknowledge anything that may still be dangling. */
         {EN0_IMR,   ENISR_ALL}, /* Enable all the interrupts that we are handling. */
-        {E8390_CMD, E8390_PAGE1|E8390_NODMA|E8390_STOP}, /* Switch to page 1. */
+        {E8390_CMD, E8390_PAGE1|E8390_STOP|E8390_NODMA}, /* Switch to page 1. */
     };
     for (i = 0; i < COMPILER_LENOF(reset); ++i)
          outb(dev->n_iobase+reset[i].off,reset[i].val);
     for (i = 0; i < 6; ++i) /* Configure the hardware address to listen for. */
          outb(dev->n_iobase+EN1_PHYS_SHIFT(i),dev->n_dev.n_mac.ma_bytes[i]);
     for (i = 0; i < 8; ++i) /* XXX: Multicast? */
-         outb(dev->n_iobase+EN1_MULT_SHIFT(i),0);
+         outb(dev->n_iobase+EN1_MULT_SHIFT(i),0xff);
     /* Still being in page #1, set the next-package pointer. */
     outb(dev->n_iobase+EN1_CURPAG,dev->n_nextpck);
 
@@ -241,16 +246,23 @@ do_realloc:
 #endif
    }
   }
+  outb(iobase+E8390_CMD,E8390_NODMA|E8390_START);
+  if (self->n_nextpck == self->n_rx_begin)
+       outb(iobase+EN0_BOUNDARY,self->n_rx_end-1);
+  else outb(iobase+EN0_BOUNDARY,self->n_nextpck-1);
 
   COMPILER_WRITE_BARRIER();
 
   /* All right! we've got the package. Now to handle it. */
-  atomic_rwlock_write(&self->n_dev.n_hand_lock);
-  (*self->n_dev.n_hand.nh_packet)(buffer,(size_t)header.ph_size);
-  atomic_rwlock_endwrite(&self->n_dev.n_hand_lock);
+  atomic_rwlock_read(&self->n_dev.n_hand_lock);
+  (*self->n_dev.n_hand.nh_packet)(&self->n_dev,buffer,(size_t)header.ph_size,
+                                   self->n_dev.n_hand.nh_closure);
+  atomic_rwlock_endread(&self->n_dev.n_hand_lock);
  }
+ /* Switch back to page 0. */
+ outb(iobase+E8390_CMD,E8390_PAGE0|E8390_NODMA|E8390_START);
  /* Acknowledge receive interrupts. */
- outb(iobase+EN0_ISR,ENISR_RX);
+ outb(iobase+EN0_ISR,ENISR_RX|ENISR_RX_ERR);
  /* Re-enable all interrupts. */
  outb(iobase+EN0_IMR,ENISR_ALL);
 }
@@ -259,10 +271,8 @@ do_realloc:
 
 DEFINE_INT_HANDLER(ne2k_irq,ne2k_int);
 PRIVATE isr_t ne2k_isr = ISR_DEFAULT(NE2K_IRQ,&ne2k_irq);
-INTERN void ne2k_int(void) {
- u8 status; u16 iobase; ne2k_t *dev;
- if (IRQ_PIC_SPURIOUS(NE2K_IRQ)) return;
- dev    = (ne2k_t *)ne2k_recv_job.j_data;
+INTERN void ne2k_do_int(ne2k_t *dev) {
+ u8 status; u16 iobase;
  iobase = dev->n_iobase;
  /* Start receiving data. (XXX: Is this really required?) */
  outb(iobase+E8390_CMD,E8390_NODMA|E8390_START);
@@ -306,7 +316,7 @@ INTERN void ne2k_int(void) {
   COMPILER_WRITE_BARRIER();
   sem_release(&dev->n_sendend,1);
  }
-    
+
  if unlikely(status & ENISR_OVER)
     syslog(LOG_ERR,"[NE2K] Receiver overwrote the ring\n");
  if unlikely(status & ENISR_COUNTERS)
@@ -315,7 +325,10 @@ INTERN void ne2k_int(void) {
  /* Acknowledge all handled signals. */
  if (status)
      outb(iobase+EN0_ISR,status);
-
+}
+INTERN void ne2k_int(void) {
+ if (IRQ_PIC_SPURIOUS(NE2K_IRQ)) return;
+ ne2k_do_int((ne2k_t *)ne2k_recv_job.j_data);
  /* Acknowledge the interrupt within the PIC. */
  IRQ_PIC_EOI(NE2K_IRQ);
 }
@@ -399,9 +412,32 @@ err:
 }
 #undef NE2K
 
+#define NE2K   container_of(dev,ne2k_t,n_dev.n_dev.cd_device)
+INTERN void KCALL
+net_irqctl(struct device *__restrict dev, unsigned int cmd) {
+ u16 iobase = NE2K->n_iobase;
+ switch (cmd) {
+ case IRQCTL_DISABLE:
+  /* Disable all interrupts raised by the card. */
+  outb(iobase+EN0_IMR,0);
+  break;
+ case IRQCTL_ENABLE:
+  /* Enable all interrupts that we handle. */
+  outb(iobase+EN0_IMR,ENISR_ALL);
+ case IRQCTL_TEST:
+  /* Check for interrupts.
+   * NOTE: There should be no race condition between this and the package recv
+   *       job, as attempting to schedule an already running job is a no-op. */
+  ne2k_do_int(NE2K);
+  break;
+ default: break;
+ }
+}
+#undef NE2K
+
 #define NE2K   container_of(self,ne2k_t,n_dev)
 PRIVATE void KCALL
-ne2k_fini(struct netdev *__restrict self) {
+net_fini(struct netdev *__restrict self) {
  PCI_DEVICE_DECREF(NE2K->n_pcidev);
 }
 #undef NE2K
@@ -453,12 +489,13 @@ ne2k_probe(struct pci_device *dev) {
  self = (ne2k_t *)netdev_new(sizeof(ne2k_t));
  if unlikely(!self) return -ENOMEM;
  memcpy(self->n_dev.n_mac.ma_bytes,prom,6);
- self->n_dev.n_send         = &net_send;
- self->n_dev.n_fini         = &ne2k_fini;
- self->n_iobase             = iobase;
- self->n_pcidev             = dev;
- self->n_dma_timeout        = NET_DEFAULT_DMATIMEOUT;
- self->n_dev.n_send_maxsize = NET_TX_PAGES*NET_PAGESIZE;
+ self->n_dev.n_send                    = &net_send;
+ self->n_dev.n_fini                    = &net_fini;
+ self->n_dev.n_dev.cd_device.d_irq_ctl = &net_irqctl;
+ self->n_iobase                        = iobase;
+ self->n_pcidev                        = dev;
+ self->n_dma_timeout                   = NET_DEFAULT_DMATIMEOUT;
+ self->n_dev.n_send_maxsize            = NET_TX_PAGES*NET_PAGESIZE;
 
  { u16 mem_pages = 64; /* XXX: Can the chip tell me this? */
    self->n_tx_begin = NET_TX_START;
@@ -480,12 +517,21 @@ ne2k_probe(struct pci_device *dev) {
    irq_vset(BOOTCPU,&ne2k_isr,NULL,IRQ_SET_RELOAD);
  }
 
+ atomic_owner_rwlock_write(&irqctl_lock);
+
  /* Setup the device. */
  error = device_setup(&self->n_dev.n_dev.cd_device,THIS_INSTANCE);
- if (E_ISERR(error)) { PCI_DEVICE_DECREF(dev); free(self); return error; }
+ if (E_ISERR(error)) {
+  atomic_owner_rwlock_endwrite(&irqctl_lock);
+  PCI_DEVICE_DECREF(dev);
+  free(self);
+  return error;
+ }
 
  /* Reset the device into a working & online state. */
  error = net_reset(self);
+ atomic_owner_rwlock_endwrite(&irqctl_lock);
+
  if (E_ISERR(error)) goto end;
 
  /* Register the device. */
@@ -494,6 +540,7 @@ ne2k_probe(struct pci_device *dev) {
  if (E_ISERR(error)) {
   /* Disable the device. */
   net_reset_base(iobase);
+  outb(iobase+EN0_ISR,0xff); /* Acknowledge interrupts. (From 'net_reset_base()') */
   goto end;
  }
 

@@ -61,6 +61,7 @@ DECL_BEGIN
 
 #undef CONFIG_LOG_WAITING
 //#undef CONFIG_SMP
+//#define CONFIG_LOG_WAITING 1
 
 STATIC_ASSERT(IS_ALIGNED(offsetof(struct task,t_signals.ts_first),TASKSIGSLOT_ALIGN));
 STATIC_ASSERT(sizeof(struct tasksigslot)           == TASKSIGSLOT_SIZE);
@@ -3416,6 +3417,7 @@ no_more_jobs:
   cpu_validate_counters(true);
   cpu_sched_setrunning_savef(&THIS_CPU->c_work,EFLAGS_IF);
   cpu_validate_counters(true);
+  assert(PREEMPTION_ENABLED());
  } else {
   PREEMPTION_ENABLE();
  }

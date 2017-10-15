@@ -850,8 +850,16 @@ INTERN ATTR_COLDTEXT void KCALL pic_bios_begin(void) {
  outb_p(PIC2_DATA,2);
  outb_p(PIC1_DATA,ICW4_8086);
  outb_p(PIC2_DATA,ICW4_8086);
- outb_p(PIC1_DATA,0x00);
- outb_p(PIC2_DATA,0x00);
+
+ /* Mask all interrupts while inside the bios, except for some that may actually be used. */
+ outb_p(PIC1_DATA,0xff & ~((IRQ_PIC1_PIT-IRQ_PIC1_BASE)|    /* PIT Timer (may be used for timeouts...) */
+                           (IRQ_PIC1_KBD-IRQ_PIC1_BASE)|    /* Keyboard (user input?) */
+                           (IRQ_PIC1_CAS-IRQ_PIC1_BASE)|    /* Cascade (Needed to talk to PIC #2) */
+                           (IRQ_PIC1_LPT1-IRQ_PIC1_BASE)|   /* Spurious interrupt vector (Better keep this enabled) */
+                           (IRQ_PIC1_FLOP-IRQ_PIC1_BASE))); /* Floppy (Drive I/O) */
+ outb_p(PIC2_DATA,0xff & ~((IRQ_PIC2_ATA1-IRQ_PIC2_BASE)|   /* ATA (Drive I/O) */
+                           (IRQ_PIC2_ATA2-IRQ_PIC2_BASE)|   /* ATA (Drive I/O) */
+                           (IRQ_PIC2_PS2M-IRQ_PIC2_BASE))); /* PS/2 mouse (user input?) */
 
  /* Restore the original PIC crystal speed set by the BIOS.
   * XXX: Is this required? */

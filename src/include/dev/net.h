@@ -19,13 +19,16 @@
 #ifndef GUARD_INCLUDE_DEV_NET_H
 #define GUARD_INCLUDE_DEV_NET_H 1
 
+#include <hybrid/compiler.h>
+#ifndef CONFIG_NO_NET
 #include <dev/chrdev.h>
 #include <dev/rtc.h>
-#include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <kernel/malloc.h>
 
 DECL_BEGIN
+
+struct netdev;
 
 #ifndef __macaddr_defined
 #define __macaddr_defined 1
@@ -62,15 +65,22 @@ typedef void (KCALL *op_printer)(byte_t const *__restrict data, size_t size, voi
 FUNDEF void KCALL opacket_print(struct opacket const *__restrict self, op_printer printer, void *closure);
 
 
+typedef void (KCALL *ethandler_callback)(struct netdev *__restrict dev, void *__restrict packet,
+                                         size_t packet_size, void *closure);
 
 struct nethand {
  /* NOTE: All function pointers are [1..1][lock(:n_hand_lock)] */
- void (KCALL *nh_packet)(void *__restrict packet, size_t size);
+ ethandler_callback nh_packet;  /*< Ethernet packet handler (Defaults to 'nethand_packet()')
+                                 *  NOTE: This callback is overwritten when userspace
+                                 *        opens a socket for RAW network access. */
+ void              *nh_closure; /*< Closure parameter passed to packet callbacks. */
 };
 
 /* Default network handling functions.
+ * This function will execute custom handlers registered by 'ethandler_addhandler()'.
  * NOTE: Implemented in '/src/kernel/dev/net-stack.c' */
-FUNDEF void KCALL nethand_packet(void *__restrict packet, size_t size);
+FUNDEF void KCALL nethand_packet(struct netdev *__restrict dev, void *__restrict packet,
+                                 size_t packet_size, void *UNUSED(closure));
 
 
 
@@ -133,7 +143,7 @@ netdev_send(struct netdev *__restrict self,
 FUNDEF REF struct netdev *KCALL get_default_adapter(void);
 FUNDEF bool KCALL set_default_adapter(struct netdev *__restrict dev, bool replace_existing);
 
-
 DECL_END
+#endif /* !CONFIG_NO_NET */
 
 #endif /* !GUARD_INCLUDE_DEV_NET_H */
