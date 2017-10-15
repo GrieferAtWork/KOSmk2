@@ -126,7 +126,7 @@ PRIVATE struct job ne2k_recv_job = JOB_INIT((void(KCALL *)(void *))&ne2k_recv,NU
 PRIVATE void KCALL ne2k_recv(ne2k_t *self) {
  u16 iobase = self->n_iobase;
  /* All right! we've got the package. Now to handle it. */
- if (E_ISERR(netdev_read(&self->n_dev)))
+ if (E_ISERR(netdev_write(&self->n_dev)))
      return; /* Shouldn't happen... */
  /* Don't process anything if the interface is supposed to be down. */
  if (!(self->n_dev.n_flags&NETDEV_F_ISUP)) goto end;
@@ -272,7 +272,7 @@ do_realloc:
  /* Re-enable all interrupts. */
  outb(iobase+EN0_IMR,ENISR_ALL);
 end:
- netdev_endread(&self->n_dev);
+ netdev_endwrite(&self->n_dev);
 }
 
 
