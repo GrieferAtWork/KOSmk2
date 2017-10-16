@@ -282,55 +282,125 @@ LOCAL void FCALL pci_write(pci_addr_t base, pci_reg_t reg, u32 value) { assert(!
 #define    PCI_CDEV40_VENDORSHIFT 0
 #define PCI_CDEV_LEGACY_BASEADDR16 0x44 /*< 16-bit PC Card legacy mode base address. */
 
+
+
 /* Stuff exported by the PCI database. */
-typedef struct _PCI_VENTABLE {
- u16            VenId;
- char          *VenShort;
- char          *VenFull;
-} PCI_VENTABLE,*PPCI_VENTABLE;
-typedef struct _PCI_DEVTABLE {
- u16            VenId;
- u16            DevId;
- char          *Chip;
- char          *ChipDesc;
-} PCI_DEVTABLE,*PPCI_DEVTABLE;
-typedef struct _PCI_CLASSCODETABLE {
- u8             BaseClass;
- u8             SubClass;
- u8             ProgIf;
- char          *BaseDesc;
- char          *SubDesc;
- char          *ProgDesc;
-} PCI_CLASSCODETABLE,*PPCI_CLASSCODETABLE;
+struct db_ref {
+ u16 r_pci_vendor_id; /* PCI vendor ID. */
+ u16 r_pci_device_id; /* PCI device ID. */
+};
 
-DATDEF PCI_VENTABLE PciVenTable[];
-DATDEF PCI_DEVTABLE PciDevTable[];
-DATDEF PCI_CLASSCODETABLE PciClassCodeTable[];
-DATDEF char *PciStatusFlags[];
-DATDEF char *PciCommandFlags[];
-DATDEF char *PciDevSelFlags[];
+struct db_device {
+ u16 d_pci_vendor_id; /* PCI ID of this device's vendor. */
+ u16 d_pci_device_id; /* PCI ID of this device. */
+#define DB_DEVICE_NAME(x) (db_strtab+(x)->d_nameaddr)
+ u32 d_nameaddr;      /* Byte-offset into 'db_strtab' containing the device name. */
+ u16 d_parcount;      /* Number of parent devices (Aka. devices that this one is compatible with). */
+ u16 d_subcount;      /* Number of sub-devices (Aka. devices that are compatible with this one). */
+#define DB_DEVICE_PARDEVS(x) ((struct db_ref *)((uintptr_t)db_refs+(x)->d_refs))
+#define DB_DEVICE_SUBDEVS(x) ((struct db_ref *)((uintptr_t)db_refs+(x)->d_refs)+(x)->d_parcount)
+ u32 d_refs;          /* Byte-offset into 'db_refs', containing a vector of
+                       * 'd_parcount' 'struct db_ref', followed by 'd_subcount' more. */
+};
 
-/* Length (in elements) of arrays above. */
-DATDEF size_t const pci_ventable_len;
-DATDEF size_t const pci_devtable_len;
-DATDEF size_t const pci_classcodetable_len;
-DATDEF size_t const pci_commandflags_len;
-DATDEF size_t const pci_statusflags_len;
-DATDEF size_t const pci_devselflags_len;
-#define	PCI_VENTABLE_LEN       pci_ventable_len
-#define	PCI_DEVTABLE_LEN       pci_devtable_len
-#define	PCI_CLASSCODETABLE_LEN pci_classcodetable_len
-#define	PCI_COMMANDFLAGS_LEN   pci_commandflags_len
-#define	PCI_STATUSFLAGS_LEN    pci_statusflags_len
-#define	PCI_DEVSELFLAGS_LEN    pci_devselflags_len
+struct db_devicebucket {
+ u32 db_devicec; /* Amount of devices in this bucket. */
+#define DB_DEVICEBUCKET_DEVICEV(x) ((struct db_device *)((uintptr_t)db_devices+(x)->db_devicev))
+ u32 db_devicev; /* Byte-offset from 'db_devices', pointing at the start
+                  * of a 'db_devicec'-long vector of 'struct pci_device'. */
+};
 
+struct db_vendor {
+ u16   v_pci_id;              /* PCI ID of this vendor. */
+ u16 __v_padding;             /* ... */
+#define DB_VENDOR_NAME(x)    (db_strtab+(x)->v_nameaddr)
+ u32   v_nameaddr;            /* Byte-offset into 'db_strtab' containing the vendor name. */
+ u32   v_device_count;        /* Amount of known devices of this vendor. */
+ u32   v_device_bucket_count; /* Amount of buckets used to track devices. */
+#define DB_VENDOR_DEVICE_BUCKETS(x) ((struct db_devicebucket *)((uintptr_t)db_device_hashmap+(x)->v_device_bucket_start))
+ u32   v_device_bucket_start; /* Byte-offset from 'db_device_hashmap', pointing at the start of this vendor's device hash-map. */
+};
+
+struct db_vendorbucket {
+ u32 vb_vendorc; /* Amount of vendors in this bucket. */
+#define DB_VENDORBUCKET_VENDORV(x) ((struct db_vendor *)((uintptr_t)db_vendors+(x)->vb_vendorv))
+ u32 vb_vendorv; /* Offset from 'db_vendors', pointing at the start of a
+                  * 'vb_vendorc'-long vector of 'struct db_vendor'. */
+};
+
+#define DB_HASH_VENDOR(vendor_id) (vendor_id)
+#define DB_HASH_DEVICE(device_id) (device_id)
+
+DATDEF byte_t db_vendor_count[];
+DATDEF byte_t db_vendor_buckets[];
+#define DB_VENDOR_COUNT    ((uintptr_t)db_vendor_count)
+#define DB_VENDOR_BUCKETS  ((uintptr_t)db_vendor_buckets)
+DATDEF struct db_vendorbucket const db_vendor_hashmap[]; /* DATABASE ROOT! */
+
+/* Relocation-independent indirection offsets. */
+DATDEF char const db_strtab[];
+DATDEF struct db_devicebucket const db_device_hashmap[];
+DATDEF struct db_vendor const db_vendors[];
+DATDEF struct db_device const db_devices[];
+DATDEF struct db_ref const db_refs[];
 
 /* Database lookup functions.
  * NOTE: All functions return NULL if no match exists. */
-FUNDEF PPCI_VENTABLE KCALL pci_db_getvendor(u16 vendor_id);
-FUNDEF PPCI_DEVTABLE KCALL pci_db_getdevice(u16 vendor_id, u16 device_id);
-/* Return the class descriptor obtained through 'PCI_DEV8' */
-FUNDEF PPCI_CLASSCODETABLE KCALL pci_db_getclass(u8 base_class, u8 sub_class, u8 prog_if);
+FUNDEF struct db_vendor const *KCALL pci_db_getvendor(u16 vendor_id);
+FUNDEF struct db_device const *KCALL pci_db_getdevice(struct db_vendor const *vendor, u16 device_id);
+
+
+#ifndef CONFIG_NO_PCI_CLASSES
+/* PCI Class database. */
+struct db_class {
+ u8    c_class_id;
+ u8    c_subclass_count;
+#define DB_CLASS_SUBCLASSES(x) ((struct db_subclass *)((uintptr_t)db_subclasses+(x)->c_subclass_addr))
+ u16   c_subclass_addr; /* Offset into db_subclasses */
+#define DB_CLASS_NAME(x) (db_strtab+(x)->c_name)
+ u32   c_name;          /* Offset into db_strtab */
+};
+
+
+struct db_subclass {
+ u8    sc_class_id;
+ u8    sc_subclass_id;
+ u8    sc_progif_count;
+ u8  __sc_pad0;
+#define DB_SUBCLASS_NAME(x) (db_strtab+(x)->sc_name)
+ u32   sc_name;         /* Offset into db_strtab */
+#define DB_SUBCLASS_PROGIFS(x) ((struct db_progif *)((uintptr_t)db_progifs+(x)->sc_progif_addr))
+ u16   sc_progif_addr;  /* Offset into db_progifs */
+#define DB_SUBCLASS_CLASS(x) ((struct db_class *)((uintptr_t)db_classes+(x)->sc_class_addr))
+ u16   sc_class_addr;   /* Offset into db_classes */
+};
+struct db_progif {
+ u8    pi_class_id;
+ u8    pi_subclass_id;
+ u8    pi_progif_id;
+ u8  __pi_pad0;
+#define DB_PROGIF_NAME(x) (db_strtab+(x)->pi_name)
+ u32   pi_name;         /* Offset into db_strtab */
+#define DB_PROGIF_CLASS(x) ((struct db_class *)((uintptr_t)db_classes+(x)->pi_class_addr))
+ u16   pi_class_addr;   /* Offset into db_classes */
+#define DB_PROGIF_SUBCLASS(x) ((struct db_subclass *)((uintptr_t)db_subclasses+(x)->pi_subclass_addr))
+ u16   pi_subclass_addr;/* Offset into db_subclasses */
+};
+
+DATDEF byte_t db_classes_count[];
+#define DB_CLASSES_COUNT  ((uintptr_t)db_classes_count)
+DATDEF struct db_class const db_classes[];
+DATDEF struct db_subclass const db_subclasses[];
+DATDEF struct db_progif const db_progifs[];
+
+/* Lookup class descriptors from the PCI database. */
+FUNDEF struct db_class const *KCALL pci_db_getclass(u8 classid);
+FUNDEF struct db_subclass const *KCALL pci_db_getsubclass(struct db_class const *class_, u8 subclassid);
+FUNDEF struct db_progif const *KCALL pci_db_getprogif(struct db_subclass const *subclass, u8 progifid);
+
+#endif /* !CONFIG_NO_PCI_CLASSES */
+
+
 
 struct pci_resource {
  PHYS uintptr_t pr_begin; /*< Base address of the resource (either in I/O, or in memory) */
@@ -359,9 +429,13 @@ struct pci_device {
  REF LIST_NODE(struct pci_device)
                                pd_link;     /*< [0..1][lock(pci_lock)] Pointer to the next existing device. */
  pci_addr_t                    pd_addr;     /*< [const] The base address of the PCI device. */
- PPCI_VENTABLE                 pd_vendor;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_vendorid'. */
- PPCI_DEVTABLE                 pd_device;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_vendorid' + 'pd_deviceid'. */
- PPCI_CLASSCODETABLE           pd_class;    /*< [0..1][lock(pci_lock)] Database entry for 'pd_classid' + 'pd_subclassid' + 'pd_progif'. */
+ struct db_vendor const       *pd_vendor;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_vendorid'. */
+ struct db_device const       *pd_device;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_vendorid' + 'pd_deviceid'. */
+#ifndef CONFIG_NO_PCI_CLASSES
+ struct db_class const        *pd_class;    /*< [0..1][lock(pci_lock)] Database entry for 'pd_classid'. */
+ struct db_subclass const     *pd_subclass; /*< [0..1][lock(pci_lock)] Database entry for 'pd_classid' + 'pd_subclassid'. */
+ struct db_progif const       *pd_progif;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_classid' + 'pd_subclassid' + 'pd_progifid'. */
+#endif /* !CONFIG_NO_PCI_CLASSES */
  struct pci_resource           pd_resources[PD_RESOURCE_COUNT]; /*< [const] Resources. */
 union PACKED { struct PACKED {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -375,13 +449,13 @@ union PACKED { struct PACKED {
 union PACKED { struct PACKED {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
  u8                            pd_revid;      /*< Revision ID. */
- u8                            pd_progif;     /*< Prog-IF ID. */
+ u8                            pd_progifid;   /*< Prog-IF ID. */
  u8                            pd_subclassid; /*< Device sub-class (One of 'PCI_DEV8_CLASS_*') */
  u8                            pd_classid;    /*< Device class (One of 'PCI_DEV8_CLASS_*') */
 #else
  u8                            pd_classid;    /*< Device class (One of 'PCI_DEV8_CLASS_*') */
  u8                            pd_subclassid; /*< Device sub-class (One of 'PCI_DEV8_CLASS_*') */
- u8                            pd_progif;     /*< Prog-IF ID. */
+ u8                            pd_progifid;   /*< Prog-IF ID. */
  u8                            pd_revid;      /*< Revision ID. */
 #endif
 }; u32                         pd_dev8; };    /*< Value of the PCI register 'PCI_DEV8' */

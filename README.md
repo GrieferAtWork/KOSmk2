@@ -18,7 +18,7 @@ And if you think that's pretty awesome, wait until you realize that this kernel 
 
 Like everything, this is another <b>one-person project</b>, with development (of this rendition) having started on <b>5.7.2017</b>.
 
-Chaos|KOS - Even more chaotic that last time.
+Chaos|KOS - Even more chaotic than last time.
 
 ## Features ##
  - i486+ (Yes. Your machine can't be older than time itself...)
@@ -44,7 +44,7 @@ Chaos|KOS - Even more chaotic that last time.
    - <code>open()</code>/<code>read()</code>/<code>write()</code>/<code>lseek()</code>
    - <code>fcntl()</code>/<code>ioctl()</code>/<code>openpty()</code>
    - <code>mount()</code>/<code>umount()</code>
-   - <code>argc</code>/<code>argv</code>/<code>environ</code>
+   - <code>main()</code>/<code>argc</code>/<code>argv</code>/<code>environ</code>
    - <code>dlopen()</code>/<code>dlclose()</code>/<code>dlsym()</code>
    - <code>clone()</code>/<code>futex()</code>/<code>exit_group()</code>
      - Linux-compatible multi-threading support
@@ -57,9 +57,6 @@ Chaos|KOS - Even more chaotic that last time.
      - Redundant fallbacks of (some) KOS-specific extensions allows for use on other platforms
      - You can actually use KOS's /include folder to spoof MSVCrt and get a much more portable library at the same time!
    - Support for future-proof <b>64-bit time\_t</b> types and functions
- - PS/2 keyboard input
-   - Using a proper driver this time
-   - Supports all scansets (#1, #2 and #3)
  - multitasking/scheduler
    - PID-based addressing, including a mountable <code>/proc</code> filesystem
    - Per-thread _everything_ (Page-directory, files, signals, you-name-it; just like linux...)
@@ -81,6 +78,11 @@ Chaos|KOS - Even more chaotic that last time.
        - Including write support & symlink extension (using cygwin symlinks)
      - <code>/dev</code>
      - <code>/proc</code>
+ - Drivers
+   - PS/2 keyboard input
+     - Supports all scansets (#1, #2 and #3)
+   - Ne2000 ethernet driver
+   - PCI enumeration & database
  - Modular kernel design (New features are loaded by drivers)
 
 ## Planned (As seen in the old KOS) ##

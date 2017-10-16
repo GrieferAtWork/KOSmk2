@@ -57,40 +57,90 @@ PUBLIC void FCALL pci_writeaddr(pci_addr_t addr, u32 value) {
 
 
 /* Database functions */
-PUBLIC PPCI_VENTABLE KCALL pci_db_getvendor(u16 vendor_id) {
- PPCI_VENTABLE iter,end;
- end = (iter = PciVenTable)+PCI_VENTABLE_LEN;
+PUBLIC struct db_vendor const *KCALL
+pci_db_getvendor(u16 vendor_id) {
+ struct db_vendor const *iter,*end;
+ struct db_vendorbucket const *bucket;
+ /* Lookup the vendor associated with the given ID. */
+ assertf(DB_VENDOR_BUCKETS,"The database is empty?");
+ bucket = &db_vendor_hashmap[DB_HASH_VENDOR(vendor_id) % DB_VENDOR_BUCKETS];
+ end = (iter = DB_VENDORBUCKET_VENDORV(bucket))+bucket->vb_vendorc;
  for (; iter != end; ++iter) {
-  if (iter->VenId == vendor_id)
+  assert((DB_HASH_VENDOR(iter->v_pci_id) % DB_VENDOR_BUCKETS) ==
+         (DB_HASH_VENDOR(vendor_id) % DB_VENDOR_BUCKETS));
+  if (iter->v_pci_id == vendor_id)
       return iter;
  }
  return NULL;
 }
-PUBLIC PPCI_DEVTABLE KCALL pci_db_getdevice(u16 vendor_id, u16 device_id) {
- PPCI_DEVTABLE iter,end;
- end = (iter = PciDevTable)+PCI_DEVTABLE_LEN;
+PUBLIC struct db_device const *KCALL
+pci_db_getdevice(struct db_vendor const *vendor, u16 device_id) {
+ struct db_devicebucket const *bucket;
+ struct db_device const *iter,*end;
+ /* Make sure the given vendor is valid and has produced devices. */
+ if unlikely(!vendor || !vendor->v_device_bucket_count) return NULL;
+ /* Lookup a device produced by the given vendor. */
+ bucket = &DB_VENDOR_DEVICE_BUCKETS(vendor)[DB_HASH_DEVICE(device_id) %
+                                            vendor->v_device_bucket_count];
+ end = (iter = DB_DEVICEBUCKET_DEVICEV(bucket))+bucket->db_devicec;
  for (; iter != end; ++iter) {
-  if (iter->VenId == vendor_id &&
-      iter->DevId == device_id)
-      return iter;
- }
- return NULL;
-}
-PUBLIC PPCI_CLASSCODETABLE KCALL
-pci_db_getclass(u8 base_class, u8 sub_class, u8 prog_if) {
- PPCI_CLASSCODETABLE iter,end;
- end = (iter = PciClassCodeTable)+PCI_CLASSCODETABLE_LEN;
- for (; iter != end; ++iter) {
-  if (iter->BaseClass == base_class &&
-      iter->SubClass  == sub_class &&
-      iter->ProgIf    == prog_if)
+  assert(iter->d_pci_vendor_id == vendor->v_pci_id);
+  assert((DB_HASH_DEVICE(iter->d_pci_device_id) % vendor->v_device_bucket_count) ==
+         (DB_HASH_DEVICE(device_id) % vendor->v_device_bucket_count));
+  if (iter->d_pci_device_id == device_id)
       return iter;
  }
  return NULL;
 }
 
+#ifndef CONFIG_NO_PCI_CLASSES
+PUBLIC struct db_class const *KCALL pci_db_getclass(u8 classid) {
+ struct db_class const *iter,*end;
+ end = (iter = db_classes)+DB_CLASSES_COUNT;
+ for (; iter != end; ++iter) {
+  if (iter->c_class_id >= classid) {
+   if (iter->c_class_id == classid)
+       return iter;
+   break;
+  }
+ }
+ return NULL;
+}
+PUBLIC struct db_subclass const *KCALL
+pci_db_getsubclass(struct db_class const *class_, u8 subclassid) {
+ struct db_subclass const *iter,*end;
+ if (!class_) return NULL;
+ end = (iter = DB_CLASS_SUBCLASSES(class_))+class_->c_subclass_count;
+ for (; iter != end; ++iter) {
+  assert(DB_SUBCLASS_CLASS(iter) == class_);
+  if (iter->sc_subclass_id >= subclassid) {
+   if (iter->sc_subclass_id == subclassid)
+       return iter;
+   break;
+  }
+ }
+ return NULL;
+}
+PUBLIC struct db_progif const *KCALL
+pci_db_getprogif(struct db_subclass const *subclass, u8 progifid) {
+ struct db_progif const *iter,*end;
+ if (!subclass) return NULL;
+ end = (iter = DB_SUBCLASS_PROGIFS(subclass))+subclass->sc_progif_count;
+ for (; iter != end; ++iter) {
+  assert(DB_PROGIF_SUBCLASS(iter) == subclass);
+  if (iter->pi_progif_id >= progifid) {
+   if (iter->pi_progif_id == progifid)
+       return iter;
+   break;
+  }
+ }
+ return NULL;
+}
+#endif /* !CONFIG_NO_PCI_CLASSES */
 
-/* PCI Discovery (Executed during module initilization, but may be re-executed later). */
+
+
+/* PCI Discovery (Executed during module initialization, but may be re-executed later). */
 PRIVATE struct pci_device *KCALL register_device(pci_addr_t addr);
 PRIVATE void KCALL check_fun(pci_addr_t addr);
 PRIVATE void KCALL check_dev(pci_bus_t bus, pci_dev_t dev);
@@ -185,8 +235,12 @@ register_device(pci_addr_t addr) {
  result->pd_dev8   = pci_read(addr,PCI_DEV8);
  result->pd_devc   = pci_read(addr,PCI_DEVC);
  result->pd_vendor = pci_db_getvendor(result->pd_vendorid);
- result->pd_device = pci_db_getdevice(result->pd_vendorid,result->pd_deviceid);
- result->pd_class  = pci_db_getclass(result->pd_classid,result->pd_subclassid,result->pd_progif);
+ result->pd_device = pci_db_getdevice(result->pd_vendor,result->pd_deviceid);
+#ifndef CONFIG_NO_PCI_CLASSES
+ result->pd_class    = pci_db_getclass(result->pd_classid);
+ result->pd_subclass = pci_db_getsubclass(result->pd_class,result->pd_subclassid);
+ result->pd_progif   = pci_db_getprogif(result->pd_subclass,result->pd_progifid);
+#endif /* !CONFIG_NO_PCI_CLASSES */
 
  /* Read device-specific configuration fields. */
  iter = result->pd_resources;
@@ -277,14 +331,20 @@ register_device(pci_addr_t addr) {
  }
 
  LIST_INSERT(pci_list,result,pd_link);
-
- syslog(LOG_DEBUG,FREESTR("[PCI] Device at %I32p (Vendor: %s; Device: %s; Class: %s,%s,%s)\n"),
-        addr,
-        result->pd_vendor ? result->pd_vendor->VenShort : FREESTR("?"),
-        result->pd_device ? result->pd_device->Chip : FREESTR("?"),
-        result->pd_class  ? result->pd_class->BaseDesc : FREESTR("?"),
-        result->pd_class  ? result->pd_class->SubDesc : FREESTR("?"),
-        result->pd_class  ? result->pd_class->ProgDesc : FREESTR("?"));
+#ifndef CONFIG_NO_PCI_CLASSES
+ syslog(LOG_DEBUG,FREESTR("[PCI] Device at %I32p - %.4I16x:%.4I16x (Vendor: %s; Device: %s; Class: %s:%s:%s)\n"),
+        addr,result->pd_vendorid,result->pd_deviceid,
+        result->pd_vendor ? DB_VENDOR_NAME(result->pd_vendor) : FREESTR("?"),
+        result->pd_device ? DB_DEVICE_NAME(result->pd_device) : FREESTR("?"),
+        result->pd_class ? DB_CLASS_NAME(result->pd_class) : FREESTR("?"),
+        result->pd_subclass ? DB_SUBCLASS_NAME(result->pd_subclass) : FREESTR("?"),
+        result->pd_progif ? DB_PROGIF_NAME(result->pd_progif) : FREESTR("?"));
+#else
+ syslog(LOG_DEBUG,FREESTR("[PCI] Device at %I32p - %.4I16x:%.4I16x (Vendor: %s; Device: %s)\n"),
+        addr,result->pd_vendorid,result->pd_deviceid,
+        result->pd_vendor ? DB_VENDOR_NAME(result->pd_vendor) : FREESTR("?"),
+        result->pd_device ? DB_DEVICE_NAME(result->pd_device) : FREESTR("?"));
+#endif
  return result;
 }
 

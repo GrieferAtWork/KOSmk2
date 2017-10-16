@@ -1,0 +1,669 @@
+const copyright = "\
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */";
+
+#include <file>
+#include <sys>
+#include <util>
+
+local inline_text = true;
+local string_optimizations = true;
+
+local vendors = dict {};
+local lineno  = 0;
+
+class String {
+	this(s) {
+		s = str s;
+		this.s = s;
+		this.s0 = s+"\0";
+		this.used = false;
+	}
+	operator str () -> this.s;
+	operator repr () -> repr this.s;
+	operator < (x) -> this.s < str x;
+	operator <= (x) -> this.s <= str x;
+	operator == (x) -> this.s == str x;
+	operator != (x) -> this.s != str x;
+	operator > (x) -> this.s > str x;
+	operator >= (x) -> this.s >= str x;
+};
+
+class Device {
+	this(vendor,id) {
+		this.vendor  = vendor;
+		this.id      = id;
+		this.name    = none;
+		this.pardevs = [];
+		this.subdevs = dict {};
+	}
+	set_name(name) {
+		if (this.name !is none) {
+			if (this.name.s == name) return;
+			print file.io.stderr: lineno,"WARNING:",this,"renamed to",repr name;
+		}
+		this.name = String(name);
+	}
+	get_subdevice(vendor,id) {
+		try {
+			local result = this.subdevs[id];
+			if (result.vendor != vendor)
+				print file.io.stderr: lineno,"WARNING: Missmatching sub-vendors:",result.vendor,"and",vendor;
+			return result;
+		} catch (...);
+		local result = vendor.get_device(id);
+		this.subdevs[id] = result;
+		result.pardevs.append(this);
+		return result;
+	}
+	operator str () -> "DEV("+(str this.name)+(" ("+("%x:%x" % (this.vendor.id,this.id))+")")+")";
+};
+class Vendor {
+	this(id) {
+		this.id      = id;
+		this.name    = none;
+		this.devices = dict {};
+	}
+	set_name(name) {
+		if (this.name !is none) {
+			if (this.name.s == name) return;
+			print file.io.stderr: lineno,"WARNING:",this,"renamed to",repr name;
+		}
+		this.name = String(name);
+	}
+	get_device(id) {
+		try return this.devices[id];
+		catch (...);
+		local result = Device(this,id);
+		this.devices[id] = result;
+		return result;
+	}
+	operator str () -> "VND("+(str this.name)+(" ("+this.id+")")+")";
+};
+
+function get_vendor(id) {
+	if (id >= 0xffff) return none;
+	try return vendors[id];
+	catch (...);
+	local result = Vendor(id);
+	vendors[id] = result;
+	return result;
+}
+
+
+local classes = [];
+
+class ProgIf {
+	this(subclass,id) {
+		this.subclass = subclass;
+		this.id       = id;
+		this.name     = none;
+	}
+	set_name(name) {
+		if (this.name !is none) {
+			if (this.name.s == name) return;
+			print file.io.stderr: lineno,"WARNING:",this,"renamed to",repr name;
+		}
+		this.name = String(name);
+	}
+	operator str () -> "PGF("+(str this.name)+(" ("+this.id+")")+")";
+};
+
+class SubClass {
+	this(class_,id) {
+		this.class_ = class_;
+		this.id     = id;
+		this.name   = none;
+		this.progif = [];
+	}
+	set_name(name) {
+		if (this.name !is none) {
+			if (this.name.s == name) return;
+			print file.io.stderr: lineno,"WARNING:",this,"renamed to",repr name;
+		}
+		this.name = String(name);
+	}
+	get_progif(id) {
+		try return this.progif.at(id);
+		catch (...);
+		local result = ProgIf(this,id);
+		if (id >= #this.progif)
+			this.progif.resize(id+1);
+		this.progif[id] = result;
+		return result;
+	}
+	operator str () -> "SBC("+(str this.name)+(" ("+this.id+")")+")";
+};
+
+class Class {
+	this(id) {
+		this.id         = id;
+		this.name       = none;
+		this.subclasses = [];
+	}
+	set_name(name) {
+		if (this.name !is none) {
+			if (this.name.s == name) return;
+			print file.io.stderr: lineno,"WARNING:",this,"renamed to",repr name;
+		}
+		this.name = String(name);
+	}
+	get_subclass(id) {
+		try return this.subclasses.at(id);
+		catch (...);
+		local result = SubClass(this,id);
+		if (id >= #this.subclasses)
+			this.subclasses.resize(id+1);
+		this.subclasses[id] = result;
+		return result;
+	}
+	operator str () -> "CLS("+(str this.name)+(" ("+this.id+")")+")";
+};
+
+function get_class(id) {
+	if (id >= 0xff) return none;
+	try return classes.at(id);
+	catch (...);
+	local result = Class(id);
+	if (id >= #classes)
+		classes.resize(id+1);
+	classes[id] = result;
+	return result;
+}
+
+local current_vendor = none;
+local current_device = none;
+local current_class = none;
+local current_subclass = none;
+
+
+// Syntax:
+// vendor  vendor_name
+//	device  device_name				<-- single tab
+//		subvendor subdevice  subsystem_name	<-- two tabs
+// Syntax:
+// C class	class_name
+//	subclass	subclass_name  		<-- single tab
+//		prog-if  prog-if_name  	<-- two tabs
+
+for (local line: file.io.stdin) {
+	local stripped = line.strip();
+	++lineno;
+	if (stripped.startswith("#"))
+		continue; /* Comment */
+	if (!stripped)
+		continue; /* Empty line */
+	try {
+		if (line.startswith("\t\t")) {
+			if (current_subclass !is none) {
+				local prog_if,prog_if_name = stripped.scanf("%[^ ] %[^]")...;
+				prog_if = current_subclass.get_progif((int)("0x"+prog_if.strip()));
+				prog_if.set_name(prog_if_name.strip());
+			} else if (current_device !is none){
+				local subvendor,subdevice,subsystem_name = stripped.scanf("%[^ ] %[^ ] %[^]")...;
+				local vendor = get_vendor((int)("0x"+subvendor.strip()));
+				if (vendor is none) continue;
+				local subdev = current_device.get_subdevice(vendor,(int)("0x"+subdevice.strip()));
+				subdev.set_name(subsystem_name.strip());
+			} else {
+				print file.io.stderr: lineno,"WARNING: No subclass/device selected";
+			}
+		} else if (line.startswith("\t")) {
+			if (current_class !is none) {
+				local subclass,subclass_name = stripped.scanf("%[^ ] %[^]")...;
+				subclass = current_class.get_subclass((int)("0x"+subclass.strip()));
+				subclass.set_name(subclass_name.strip());
+				current_subclass = subclass;
+			} else if (current_vendor !is none) {
+				local device,device_name = stripped.scanf("%[^ ] %[^]")...;
+				device = current_vendor.get_device((int)("0x"+device));
+				device.set_name(device_name.strip());
+				current_device = device;
+			} else {
+				print file.io.stderr: lineno,"WARNING: No class/vendor selected";
+			}
+		} else if (stripped.startswith("C")) {
+			local class_,class_name = stripped.scanf("C %[^ ] %[^]")...;
+			class_ = get_class((int)("0x"+class_));
+			class_.set_name(class_name.strip());
+			current_class = class_;
+			current_vendor = none;
+			current_device = none;
+		} else {
+			local vendor,vendor_name = stripped.scanf("%[^ ] %[^]")...;
+			vendor = get_vendor((int)("0x"+vendor));
+			vendor.set_name(vendor_name);
+			current_vendor = vendor;
+			current_class = none;
+			current_subclass = none;
+		}
+	} catch (...) {
+		print file.io.stderr: lineno,"ERROR:";
+		throw;
+	}
+}
+
+/* Generate the string table. */
+local strings = [];
+for (local v: vendors.items()) {
+	if (v.name !is none)
+		strings.append(v.name);
+	for (local d: v.devices.items()) {
+		if (d.name !is none)
+			strings.append(d.name);
+	}
+}for (local c: classes) {
+	if (c.name !is none)
+		strings.append(c.name);
+	for (local sc: c.subclasses) {
+		if (sc.name !is none)
+			strings.append(sc.name);
+		for (local pif: sc.progif) {
+			if (pif.name !is none)
+				strings.append(pif.name);
+		}
+	}
+}
+
+
+local strtab;
+
+if (!string_optimizations) {
+	strtab = "".join(for (local x: strings) x.s0);
+	local offset = 0;
+	for (local s: strings) {
+		s.used = true;
+		s.addr = copy offset;
+		offset += #s.s0;
+	}
+} else {
+	strings.sort([](a,b) -> #a.s > #b.s);
+	strtab = "".join(for (local x: strings) x.s0);
+	/* The current version of deemon has a broken string.count()
+	 * function that ignores the begin/end range arguments.
+	 * This has been fixed, but for backwards compatibility, use a fallback here. */
+	local const str_count_broken = ("abcda".count("a",0,1) != 1);
+#define STR_COUNT(s,sub,begin,end) \
+	(str_count_broken ? s[begin:end].count(sub) : s.count(sub,begin,end))
+
+	local i = 0,pct = 0,total = #strings;
+	for (local s: strings) {
+		local new_pct = ((i++)*100)/total;
+		if (new_pct != pct) {
+			print file.io.stderr: "\rGenerating string table #1: ",new_pct,;
+			pct = new_pct;
+		}
+		local addr = strtab.index(s.s0);
+		try {
+			strings.at(STR_COUNT(strtab,"\0",0,addr)).used = true;
+		} catch (...) {
+			print file.io.stderr: "addr:",addr;
+			throw;
+		}
+		s.addr = addr;
+	}
+	local strtab = "".join(for (local x: copy strings) if (x.used) x.s0);
+	local i = 0,pct = 0;
+	for (local s: strings) {
+		local new_pct = ((i++)*100)/total;
+		if (new_pct != pct) {
+			print file.io.stderr: "\rGenerating string table #2: ",new_pct,;
+			pct = new_pct;
+		}
+		s.addr = strtab.index(s.s0);
+	}
+}
+
+local vendor_num = #vendors;
+local vendor_num_buckets = (vendor_num*2)/3;
+if (vendor_num && !vendor_num_buckets)
+	vendor_num_buckets = vendor_num;
+local vendor_buckets = [none] * vendor_num_buckets;
+
+for (local v: vendors.items()) {
+	local id = v.id % vendor_num_buckets;
+	if (vendor_buckets[id] is none)
+		vendor_buckets[id] = [];
+	vendor_buckets[id].append(v);
+}
+
+function count_elem(seq) {
+	local result = 0;
+	for (local x: seq)
+		if (x !is none) ++result;
+	return result;
+}
+
+
+
+
+//local keys = vendors.keys().sorted();
+print copyright;
+print "/* Auto-generated file. DO NOT EDIT!";
+print " * To generate this file, use `deemon database.dee < database.ids > database.h'";
+print " * ENABLED OPTIONS:";
+if (inline_text)          print " *    - inline_text";
+if (string_optimizations) print " *    - string_optimizations";
+print " */";
+print "#ifndef PCI_DATABASE_H";
+print "#define PCI_DATABASE_H 1";
+print;
+
+print "#define PCI_STRTAB_COUNT",#strings," /* Total amount of \\0-terminated strings */";
+print "#define PCI_STRTAB_SIZE ",#strtab," /* Total size in bytes */";
+print "#define PCI_STRTAB_NUL  ",#strtab-1," /* Empty string address */";
+print;
+print "/* Return the hash used for indexing vendor/device hash-maps. */";
+print "#define PCI_HASH_VENDOR(vendor_id)  (vendor_id)";
+print "#define PCI_HASH_DEVICE(device_id)  (device_id)";
+print;
+print "/* Special string used for vendors/devices with unknown names */";
+print "#ifndef VENDOR_NO_NAME";
+print "#define VENDOR_NO_NAME \"\"";
+print "#endif";
+print "#ifndef DEVICE_NO_NAME";
+print "#define DEVICE_NO_NAME \"\"";
+print "#endif";
+print;
+print "/* Special string table address used for vendors/devices with unknown names */";
+print "#ifndef VENDOR_NO_NAME_ADDR";
+print "#define VENDOR_NO_NAME_ADDR PCI_STRTAB_NUL";
+print "#endif";
+print "#ifndef DEVICE_NO_NAME_ADDR";
+print "#define DEVICE_NO_NAME_ADDR PCI_STRTAB_NUL";
+print "#endif";
+print;
+print "/* The total number of known vendors */";
+print "#define VENDOR_COUNT",vendor_num;
+print;
+print "/* The total number of logical vendor buckets */";
+print "#define VENDOR_BUCKET_COUNT",vendor_num_buckets;
+print;
+print "/* The total number of known classes */";
+print "#define CLASSES_COUNT",count_elem(classes);
+print;
+print "/* The greatest known class id +1 */";
+print "#define CLASSES_MAX",#classes;
+print;
+print "/* Database hooks (Should be defined as macros by the user)";
+print " * Using macros for everything allows the user to define their own database layout";
+print " *";
+print " * #define DEFINE_STRING_TABLE_BEGIN";
+print " * #define DEFINE_STRING_TABLE(s)";
+print " * #define DEFINE_STRING_TABLE_END";
+print " *";
+print " * #define VENDOR_BUCKETS_BEGIN";
+print " *             vendor_bucket_id: Index of this bucket";
+print " * #define     VENDOR_BUCKET_EMPTY(vendor_bucket_id)";
+print " *             vendor_bucket_count: Amount of elements within this bucket (Never ZERO)";
+print " * #define     VENDOR_BUCKET_BEGIN(vendor_bucket_id,vendor_bucket_count)";
+print " *                 vendor_name_addr:    Offset into the string table containing the name of this vendor";
+print " *                 vendor_name:         The name of this vendor";
+print " *                 device_count:        The amount of devices produced by this vendor";
+print " *                 device_bucket_count: The amount of buckets used to split this vendor's devices";
+print " * #define         VENDOR_BEGIN(vendor_bucket_id,vendor_bucket_off,vendor_name_addr,vendor_name,vendor_pci_id,device_count,device_bucket_count)";
+print " * #define             DEVICE_BUCKETS_EMPTY(vendor_bucket_id,vendor_bucket_off)";
+print " *                     device_bucket_count: Total number of devices within this bucket (Never ZERO)";
+print " * #define             DEVICE_BUCKETS_BEGIN(vendor_bucket_id,vendor_bucket_off,device_count,device_bucket_count)";
+print " *                         device_bucket_id:  Bucket index number from a total of 'device_bucket_count' buckets";
+print " * #define                 DEVICE_BUCKET_EMPTY(vendor_bucket_id,vendor_bucket_off,dev_bucket_id)";
+print " * #define                 DEVICE_BUCKET_BEGIN(vendor_bucket_id,vendor_bucket_off,device_bucket_id,device_bucket_count)";
+print " *                             device_pci_id:    PCI ID of the device";
+print " *                             device_par_count: Amount of devices noting this as a sub-device";
+print " *                             device_sub_count: Amount of sub-devices associated with this one";
+print " * #define                     DEVICE_BEGIN(vendor_bucket_id,vendor_bucket_off,device_bucket_id,device_bucket_off,\\\n"
+      " *                                          vendor_name_addr,vendor_name,device_name_addr,device_name,vendor_pci_id,\\\n"
+      " *                                          device_pci_id,device_par_count,device_sub_count)";
+print " * #define                         DEVICE_NO_PARENTS";
+print " * #define                         DEVICE_PARENTS_BEGIN(device_par_count)";
+print " * #define                             DEVICE_PARENT(vendor_pci_id,device_pci_id)";
+print " * #define                         DEVICE_PARENTS_END";
+print " * #define                         DEVICE_NO_SUBDEVS";
+print " * #define                         DEVICE_SUBDEVS_BEGIN(device_par_count)";
+print " * #define                             DEVICE_SUBDEV(vendor_pci_id,device_pci_id)";
+print " * #define                         DEVICE_SUBDEVS_END";
+print " * #define                     DEVICE_END";
+print " * #define                 DEVICE_BUCKET_END";
+print " * #define             DEVICE_BUCKETS_END";
+print " * #define         VENDOR_END";
+print " * #define     VENDOR_BUCKET_END";
+print " * #define VENDOR_BUCKETS_END";
+print " *";
+print " * #define CLASSES_BEGIN";
+print " *             class_id: PCI ID for this class";
+print " * #define     CLASS_MISSING(class_id)";
+print " *             class_name_addr: Offset into the string table containing the name of this class";
+print " *             class_name:      The name of this class";
+print " * #define     CLASS_EMPTY(class_id,class_name_addr,class_name)";
+print " *             subclass_count: The total number of sub-classes associated with this class (non-zero)";
+print " *             subclass_max:   The greatest sub-class id +1";
+print " * #define     CLASS_BEGIN(class_id,class_name_addr,class_name,subclass_count,subclass_max)";
+print " *                 subclass_id: The ID Of this sub-class";
+print " * #define         SUBCLASS_MISSING(class_id,subclass_id,class_name_addr,class_name)";
+print " *                 subclass_name_addr: Offset into the string table containing the name of this sub-class";
+print " *                 subclass_name:      The name of this sub-class";
+print " * #define         SUBCLASS_EMPTY(class_id,subclass_id,class_name_addr,class_name,subclass_name_addr,subclass_name)";
+print " *                 progif_count: The total number of prog-if slots associated with this sub-class (non-zero)";
+print " *                 progif_max:   The greatest prog-if slot id +1";
+print " * #define         SUBCLASS_BEGIN(class_id,subclass_id,class_name_addr,class_name,subclass_name_addr,subclass_name,progif_count,progif_max)";
+print " *                     progif_id: The id of this prog-if slot";
+print " * #define             PROGIF_MISSING(class_id,subclass_id,progif_id,class_name_addr,class_name,subclass_name_addr,subclass_name)";
+print " *                     progif_name_addr: Offset into the string table containing the name of this prog-if";
+print " *                     progif_name:      The name of this prog-if";
+print " * #define             PROGIF(class_id,subclass_id,progif_id,class_name_addr,class_name,subclass_name_addr,subclass_name,progif_name_addr,progif_name)";
+print " * #define         SUBCLASS_END";
+print " * #define     CLASS_END";
+print " * #define CLASSES_END";
+print " */";
+
+print;
+print "#if defined(__TPP_VERSION__) && __TPP_VERSION__ >= 200";
+print "#pragma extension(push,\"-fno-trigraphs\")";
+print "#endif";
+print "#ifdef __GNUC__";
+print "#pragma GCC diagnostic push";
+print "#pragma GCC diagnostic ignored \"-Wtrigraphs\"";
+print "#endif";
+
+for (none: util::range(20)) print;
+
+print "DEFINE_STRING_TABLE_BEGIN";
+print "DEFINE_STRING_TABLE(";
+for (local part: strings) {
+	if (part.used)
+		print "\t"+repr(part.s0);
+}
+print ")";
+print "DEFINE_STRING_TABLE_END";
+
+for (none: util::range(20)) print;
+
+print "VENDOR_BUCKETS_BEGIN";
+for (local vendor_bucket_id,bucket: util::enumerate(vendor_buckets)) {
+	if (bucket is none || bucket.empty()) {
+		print "\tVENDOR_BUCKET_EMPTY("+vendor_bucket_id+")";
+	} else {
+		print "\tVENDOR_BUCKET_BEGIN("+vendor_bucket_id+","+#bucket+")";
+		for (local vendor_bucket_off,vendor: util::enumerate(bucket)) {
+			local device_bucket_count = (#vendor.devices*2)/3;
+			if (vendor.devices && !device_bucket_count)
+				device_bucket_count = #vendor.devices;
+			if (inline_text) {
+				print "\t\tVENDOR_BEGIN(",;
+				print ""+vendor_bucket_id+",",;
+				print ""+vendor_bucket_off+",",;
+				print ""+(vendor.name !is none ? vendor.name.addr : "VENDOR_NO_NAME_ADDR")+",",;
+				print ""+(vendor.name !is none ? repr vendor.name : "VENDOR_NO_NAME")+",",;
+				print ""+("0x%.4x" % vendor.id)+",",;
+				print ""+#vendor.devices+",",;
+				print ""+device_bucket_count+")";
+			} else {
+				print "\t\tVENDOR_BEGIN(";
+				print "\t\t\t/* vendor_bucket_id    */"+vendor_bucket_id+",";
+				print "\t\t\t/* vendor_bucket_off   */"+vendor_bucket_off+",";
+				print "\t\t\t/* vendor_name_addr    */"+(vendor.name !is none ? vendor.name.addr : "VENDOR_NO_NAME_ADDR")+",";
+				print "\t\t\t/* vendor_name         */"+(vendor.name !is none ? repr vendor.name : "VENDOR_NO_NAME")+",";
+				print "\t\t\t/* vendor_pci_id       */"+("0x%.4x" % vendor.id)+",";
+				print "\t\t\t/* device_count        */"+#vendor.devices+",";
+				print "\t\t\t/* device_bucket_count */"+device_bucket_count+")";
+			}
+			if (!vendor.devices) {
+				print "\t\t\tDEVICE_BUCKETS_EMPTY("+vendor_bucket_id+","+vendor_bucket_off+")";
+			} else {
+				print "\t\t\tDEVICE_BUCKETS_BEGIN("+vendor_bucket_id+","+vendor_bucket_off+","+#vendor.devices+","+device_bucket_count+")";
+				local device_buckets = [none] * device_bucket_count;
+				for (local d: vendor.devices.items()) {
+					local id = d.id % device_bucket_count;
+					if (device_buckets[id] is none)
+						device_buckets[id] = [];
+					device_buckets[id].append(d);
+				}
+				for (local dev_bucket_id,dev_bucket: util::enumerate(device_buckets)) {
+					if (dev_bucket is none || dev_bucket.empty()) {
+						print "\t\t\t\tDEVICE_BUCKET_EMPTY("+vendor_bucket_id+","+vendor_bucket_off+","+dev_bucket_id+")";
+					} else {
+						print "\t\t\t\tDEVICE_BUCKET_BEGIN("+vendor_bucket_id+","+vendor_bucket_off+","+dev_bucket_id+","+#dev_bucket+")";
+						for (local dev_bucket_off,device: util::enumerate(dev_bucket)) {
+							if (inline_text) {
+								print "\t\t\t\t\tDEVICE_BEGIN(",;
+								print ""+vendor_bucket_id+",",;
+								print ""+vendor_bucket_off+",",;
+								print ""+dev_bucket_id+",",;
+								print ""+dev_bucket_off+",",;
+								print ""+(vendor.name !is none ? vendor.name.addr : "VENDOR_NO_NAME_ADDR")+",",;
+								print ""+(vendor.name !is none ? repr vendor.name : "VENDOR_NO_NAME")+",",;
+								print ""+(device.name !is none ? device.name.addr : "DEVICE_NO_NAME_ADDR")+",",;
+								print ""+(device.name !is none ? repr device.name : "DEVICE_NO_NAME")+",",;
+								print ""+("0x%.4x" % vendor.id)+",",;
+								print ""+("0x%.4x" % device.id)+",",;
+								print ""+("0x%.4x" % #device.pardevs)+",",;
+								print ""+("0x%.4x" % #device.subdevs)+")";
+							} else {
+								print "\t\t\t\t\tDEVICE_BEGIN(";
+								print "\t\t\t\t\t\t/* vendor_bucket_id  */"+vendor_bucket_id+",";
+								print "\t\t\t\t\t\t/* vendor_bucket_off */"+vendor_bucket_off+",";
+								print "\t\t\t\t\t\t/* device_bucket_id  */"+dev_bucket_id+",";
+								print "\t\t\t\t\t\t/* device_bucket_off */"+dev_bucket_off+",";
+								print "\t\t\t\t\t\t/* vendor_name_addr  */"+(vendor.name !is none ? vendor.name.addr : "VENDOR_NO_NAME_ADDR")+",";
+								print "\t\t\t\t\t\t/* vendor_name       */"+(vendor.name !is none ? repr vendor.name : "VENDOR_NO_NAME")+",";
+								print "\t\t\t\t\t\t/* device_name_addr  */"+(device.name !is none ? device.name.addr : "DEVICE_NO_NAME_ADDR")+",";
+								print "\t\t\t\t\t\t/* device_name       */"+(device.name !is none ? repr device.name : "DEVICE_NO_NAME")+",";
+								print "\t\t\t\t\t\t/* vendor_pci_id     */"+("0x%.4x" % vendor.id)+",";
+								print "\t\t\t\t\t\t/* device_pci_id     */"+("0x%.4x" % device.id)+",";
+								print "\t\t\t\t\t\t/* device_par_count  */"+("0x%.4x" % #device.pardevs)+",";
+								print "\t\t\t\t\t\t/* device_sub_count  */"+("0x%.4x" % #device.subdevs)+")";
+							}
+							if (!device.pardevs) {
+								print "\t\t\t\t\t\tDEVICE_NO_PARENTS";
+							} else {
+								print "\t\t\t\t\t\tDEVICE_PARENTS_BEGIN("+#device.pardevs+")";
+								for (local d: device.pardevs) {
+									print "\t\t\t\t\t\t\tDEVICE_PARENT(0x%.4x,0x%.4x)" % (d.vendor.id,d.id);
+								}
+								print "\t\t\t\t\t\tDEVICE_PARENTS_END";
+							}
+							if (!device.subdevs) {
+								print "\t\t\t\t\t\tDEVICE_NO_SUBDEVS";
+							} else {
+								print "\t\t\t\t\t\tDEVICE_SUBDEVS_BEGIN("+#device.subdevs+")";
+								for (local d: device.subdevs.items()) {
+									print "\t\t\t\t\t\t\tDEVICE_SUBDEV(0x%.4x,0x%.4x)" % (d.vendor.id,d.id);
+								}
+								print "\t\t\t\t\t\tDEVICE_SUBDEVS_END";
+							}
+							print "\t\t\t\t\tDEVICE_END";
+						}
+						print "\t\t\t\tDEVICE_BUCKET_END";
+					}
+				}
+				print "\t\t\tDEVICE_BUCKETS_END";
+			}
+			print "\t\tVENDOR_END";
+		}
+		print "\tVENDOR_BUCKET_END";
+	}
+}
+print "VENDOR_BUCKETS_END";
+
+for (none: util::range(20)) print;
+
+if (!classes.empty()) {
+	print "#ifdef CLASSES_BEGIN";
+	print "CLASSES_BEGIN";
+	for (local i,class_: util::enumerate(classes)) {
+		if (class_ is none) {
+			print "\tCLASS_MISSING(0x%.2x)" % (i);
+		} else if (class_.subclasses.empty()) {
+			print "\tCLASS_EMPTY(0x%.2x,%d,%s)" %
+				(i,class_.name.addr,repr class_.name.s);
+		} else {
+			local subs = class_.subclasses;
+			print "\tCLASS_BEGIN(0x%.2x,%d,%s,%d,%d)" %
+				(i,class_.name.addr,repr class_.name.s,count_elem(subs),#subs);
+			for (local sub_i,sub: util::enumerate(subs)) {
+				if (sub is none) {
+					print "\t\tSUBCLASS_MISSING(0x%.2x,0x%.2x,%d,%s)" %
+						(i,sub_i,class_.name.addr,repr class_.name.s);
+				} else if (sub.progif.empty()) {
+					print "\t\tSUBCLASS_EMPTY(0x%.2x,0x%.2x,%d,%s,%d,%s)" %
+						(i,sub_i,class_.name.addr,repr class_.name.s,
+						 sub.name.addr,repr sub.name.s);
+				} else {
+					local progs = sub.progif;
+					print "\t\tSUBCLASS_BEGIN(0x%.2x,0x%.2x,%d,%s,%d,%s,%d,%d)" %
+						(i,sub_i,class_.name.addr,repr class_.name.s,
+						 sub.name.addr,repr sub.name.s,count_elem(progs),#progs);
+					for (local prog_i,prog: util::enumerate(progs)) {
+						if (prog is none) {
+							print "\t\t\tPROGIF_MISSING(0x%.2x,0x%.2x,0x%.2x,%d,%s,%d,%s)" %
+								(i,sub_i,prog_i,class_.name.addr,repr class_.name.s,
+								 sub.name.addr,repr sub.name.s);
+						} else {
+							print "\t\t\tPROGIF(0x%.2x,0x%.2x,0x%.2x,%d,%s,%d,%s,%d,%s)" %
+								(i,sub_i,prog_i,class_.name.addr,repr class_.name.s,
+								 sub.name.addr,repr sub.name.s,
+								 prog.name.addr,repr prog.name.s);
+						}
+					}
+					print "\t\tSUBCLASS_END";
+				}
+			}
+			print "\tCLASS_END";
+		}
+	}
+	print "CLASSES_END";
+	print "#endif /* CLASSES_BEGIN */";
+}
+print;
+print;
+print "#ifdef __GNUC__";
+print "#pragma GCC diagnostic pop";
+print "#endif";
+print "#if defined(__TPP_VERSION__) && __TPP_VERSION__ >= 200";
+print "#pragma extension(pop)";
+print "#endif";
+print;
+print "#endif /* !PCI_DATABASE_H */";
+sys.exit(0);
+
+
+
+
+
+
