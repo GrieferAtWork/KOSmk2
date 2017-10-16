@@ -23,8 +23,10 @@
 #ifndef CONFIG_NO_NET
 #include <dev/chrdev.h>
 #include <dev/rtc.h>
+#include <net/if.h>
 #include <hybrid/types.h>
 #include <kernel/malloc.h>
+//#include <bits/socket.h>
 
 DECL_BEGIN
 
@@ -89,7 +91,7 @@ struct netops {
 
  /* NOTE: The given packet must be allocated in HOST memory!
   * @assume(netdev_writing(self));
-  * @assume(self->n_flags&NETDEV_F_ISUP);
+  * @assume(self->n_flags&IFF_UP);
   * @assume(OPACKET_SIZE(packet) <= self->n_send_maxsize);
   * @return: -EOK:        Successfully send the packet.
   * @return: -EIO:        Data transmission failed due to an internal adapter error.
@@ -100,24 +102,24 @@ struct netops {
                          struct opacket const *__restrict packet); /* [1..1] */
 
  /* Callbacks for turning the adapter on/off.
-  * NOTE: When called, 'n_flags&NETDEV_F_ISUP' already contains the
+  * NOTE: When called, 'n_flags&IFF_UP' already contains the
   *       new card state, which will be reverted when an error is returned.
-  * @function n_ifup: assume(!(self->n_flags&NETDEV_F_ISUP));
-  * @function n_ifdown: assume(self->n_flags&NETDEV_F_ISUP);
+  * @function n_ifup: assume(!(self->n_flags&IFF_UP));
+  * @function n_ifdown: assume(self->n_flags&IFF_UP);
   * @assume(netdev_writing(self));
   * @return: -EOK:        Successfully turned the card on/off.
   * @return: E_ISERR(*):  Failed to turn the card on/off for some reason. */
  errno_t (KCALL *n_ifup)(struct netdev *__restrict self); /* [1..1] */
  errno_t (KCALL *n_ifdown)(struct netdev *__restrict self); /* [1..1] */
 
- /* Set 'self->n_mac' as the mac address actively being listened for.
-  * @assume(self->n_flags&NETDEV_F_ISUP);
+ /* Set 'self->n_macaddr' as the mac address actively being listened for.
+  * @assume(self->n_flags&IFF_UP);
   * @assume(netdev_writing(self));
   * @return: -EOK:        Successfully setup the new mac address.
   * @return: E_ISERR(*):  Failed to spoof the mac address for some reason. */
  errno_t (KCALL *n_setmac)(struct netdev *__restrict self); /* [0..1] */
 
- /* Reset 'self->n_mac' the the default, hard-wired mac address of
+ /* Reset 'self->n_macaddr' the the default, hard-wired mac address of
   * the adapter, and set that address as the one currently listened for.
   * WARNING: This function may be called when the adapter is offline.
   * @return: -EOK:        Successfully reset the mac address.
@@ -125,28 +127,22 @@ struct netops {
  errno_t (KCALL *n_resetmac)(struct netdev *__restrict self); /* [0..1] */
 };
 
+/* Extended (kernel-only) interface flags. */
+#define IFF_USERMAC 0x80000000 /*< Set if a user-defined mac address is being used. */
 
 struct netdev {
  struct chrdev   n_dev;           /*< Underlying character device. */
- struct macaddr  n_mac;           /*< MAC Address of the device. */
  struct netops  *n_ops;           /*< [const][1..1] Network operation callbacks. */
  rwlock_t        n_lock;          /*< Lock used to protect use of the adapter (send/recv). */
  struct nethand  n_hand;          /*< Network package handler. */
  size_t          n_send_maxsize;  /*< [const] Max package size that can be transmitted. */
 #define NETDEV_DEFAULT_STIMEOUT   SEC_TO_JIFFIES(1)
  jtime32_t       n_send_timeout;  /*< [lock(n_lock)] Timeout when waiting for a package to be commit (In jiffies) */
-#define NETDEV_F_DEFAULT 0x00000000 /* Default adapter state.
-                                     * NOTE: Code may assume that this is equal to
-                                     *       IFDOWN without any special features enabled. */
-#define NETDEV_F_ISDOWN  0x00000000 /*< Symbolic flag indicating a potential state of an interface currently down. */
-#define NETDEV_F_ISUP    0x00000001 /*< Set if the network card is currently online. (Packets can be received) */
-#define NETDEV_F_MONITOR 0x00000002 /*< Set before 'n_ifup' is called: Enable monitoring mode
-                                     * (receive all packets that pass by, regardless of destination) */
-#define NETDEV_F_USERMAC 0x00000004 /*< Set if a user-defined mac address is being used. */
- u32             n_flags;         /*< [lock(n_lock)] Adapter state & flags (Set of 'NETDEV_F_*'). */
+ u32             n_flags;         /*< [lock(n_lock)] Adapter state & flags (Set of 'IFF_*'). */
  u16             n_ip_datagram;   /*< [lock(n_lock)] Next IP datagram id. */
 #define NETDEV_DEFAULT_IO_MTU     1480
  u16             n_ip_mtu;        /*< [lock(n_lock)] Max IP packet fragment size. */
+ struct macaddr  n_macaddr;       /*< [lock(n_lock)] MAC Address of the device. */
  size_t          n_tx_total;      /*< [lock(n_lock)] Total number of bytes transmitted. */
  size_t          n_rx_total;      /*< [lock(n_lock)] Total number of bytes received. */
 };
@@ -170,14 +166,14 @@ struct netdev {
 #define NETDEV_DECREF(self)     CHRDEV_DECREF(&(self)->n_dev)
 
 /* Set the current state of a network device. */
-#define NETDEV_ISDOWN(self)   (!((self)->n_flags&NETDEV_F_ISUP))
-#define NETDEV_ISUP(self)       ((self)->n_flags&NETDEV_F_ISUP)
-#define NETDEV_ISMONITOR(self)  ((self)->n_flags&NETDEV_F_MONITOR)
-#define NETDEV_ISUSERMAC(self)  ((self)->n_flags&NETDEV_F_USERMAC)
+#define NETDEV_ISDOWN(self)   (!((self)->n_flags&IFF_UP))
+#define NETDEV_ISUP(self)       ((self)->n_flags&IFF_UP)
+#define NETDEV_ISMONITOR(self)  ((self)->n_flags&IFF_PROMISC)
+#define NETDEV_ISUSERMAC(self)  ((self)->n_flags&IFF_USERMAC)
 
 /* Allocate a new network device.
  * The caller must initialize:
- *   - n_mac
+ *   - n_macaddr
  *   - n_ops
  *   - n_send_maxsize */
 #define netdev_new(type_size) netdev_cinit((struct netdev *)kcalloc(type_size,GFP_SHARED))
@@ -224,7 +220,7 @@ netdev_send(struct netdev *__restrict self,
  * @assume(netdev_writing(self));
  * @return: -EOK:       Successfully changed the network device mode.
  * @return: -EPERM:    [netdev_ifup_unlocked] The card may not power on because special features are
- *                                            enabled, such as 'NETDEV_F_USERMAC' or 'NETDEV_F_MONITOR'.
+ *                                            enabled, such as 'IFF_USERMAC' or 'IFF_PROMISC'.
  *                                            Clear those bits, then try again.
  *                                   WARNING: This error may also indicate other problems. Disabling
  *                                            special features does not guaranty success the next time.

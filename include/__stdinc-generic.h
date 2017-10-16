@@ -287,6 +287,9 @@
 #if __has_attribute(__weak__) || \
    (defined(__ELF__) || defined(__TINYC__))
 #   define __ATTR_WEAK           __attribute__((__weak__))
+#elif __has_declspec_attribute(selectany)
+#   define __ATTR_WEAK           __declspec(selectany)
+#   define __ATTR_WEAK_IS_SELECTANY 1
 #else
 #   define __NO_ATTR_WEAK        1
 #   define __ATTR_WEAK           /* Nothing */

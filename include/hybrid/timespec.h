@@ -75,13 +75,13 @@ struct __timespec32 {
 
 #define __TIMESPEC_ADD(x,y) \
  (void)((x).tv_nsec += (y).tv_nsec, \
-        (x).tv_sec  += (x).tv_nsec/1000000000l, \
-        (x).tv_nsec %= 1000000000l, \
+        (x).tv_sec  += (x).tv_nsec/__NSECS_PER_SEC, \
+        (x).tv_nsec %= __NSECS_PER_SEC, \
         (x).tv_sec  += (y).tv_sec)
 #define __TIMESPEC_SUB(x,y) \
  ((x).tv_sec -= (y).tv_sec,((x).tv_nsec -= (y).tv_nsec) < 0 \
-   ? (void)((x).tv_sec -= (-(x).tv_nsec)/1000000000l, \
-            (x).tv_nsec = (-(x).tv_nsec)%1000000000l) : (void)0)
+   ? (void)((x).tv_sec -= (-(x).tv_nsec)/__NSECS_PER_SEC, \
+            (x).tv_nsec = (-(x).tv_nsec)%__NSECS_PER_SEC) : (void)0)
 #define __TIMESPEC_LOWER(x,y)         ((x).tv_sec <  (y).tv_sec || \
                                       ((x).tv_sec == (y).tv_sec && (x).tv_nsec < (y).tv_nsec))
 #define __TIMESPEC_LOWER_EQUAL(x,y)   ((x).tv_sec <  (y).tv_sec || \

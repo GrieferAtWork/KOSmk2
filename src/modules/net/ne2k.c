@@ -60,7 +60,7 @@ INTERN void KCALL net_reset_high(ne2k_t *__restrict dev) {
  /* Reset buffer pointers. */
  dev->n_nextpck = dev->n_rx_begin;
  /* Don't turn the card back on if ISUP isn't set. */
- if (!(dev->n_dev.n_flags&NETDEV_F_ISUP)) return;
+ if (!(dev->n_dev.n_flags&IFF_UP)) return;
  { unsigned int i;
    struct { u8 off,val; } reset[] = {
        {EN0_ISR,   0xff}, /* Acknowledge interrupts. (From 'net_reset_base()') */
@@ -68,9 +68,13 @@ INTERN void KCALL net_reset_high(ne2k_t *__restrict dev) {
        {EN0_DCFG,  ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS}, /* Set word-wide mode. */
        {EN0_RCNTLO,0}, /* Clear count registers. */
        {EN0_RCNTHI,0}, /* ... */
-       {EN0_RXCR,  dev->n_dev.n_flags&NETDEV_F_MONITOR
-                 ? ERXCR_AR|ERXCR_AB|ERXCR_AM|ERXCR_PRO /* Accept all packages. */
-                 : ERXCR_AB}, /* Accept broadcast packages. */
+       {EN0_RXCR,  (dev->n_dev.n_flags&IFF_LOOPBACK ? ERXCR_MON : 0)|
+                   (dev->n_dev.n_flags&IFF_PROMISC
+                 ? (ERXCR_AR|ERXCR_AB|ERXCR_AM|ERXCR_PRO) /* Accept all packages. */
+                    /* Accept broadcast packages. */
+                 : (dev->n_dev.n_flags&IFF_ALLMULTI ? ERXCR_AM : 0)|
+                   (dev->n_dev.n_flags&IFF_BROADCAST ? ERXCR_AB : 0))
+       },
        {EN0_TXCR,  ETXCR_LOOPBACK_INTERN}, /* Disable loopback for all packages. */
        /* Configure the card's receive buffer. */
        {EN0_BOUNDARY,dev->n_nextpck},
@@ -83,7 +87,7 @@ INTERN void KCALL net_reset_high(ne2k_t *__restrict dev) {
    for (i = 0; i < COMPILER_LENOF(reset); ++i)
         outb(dev->n_iobase+reset[i].off,reset[i].val);
    for (i = 0; i < 6; ++i) /* Configure the hardware address to listen for. */
-        outb(dev->n_iobase+EN1_PHYS_SHIFT(i),dev->n_dev.n_mac.ma_bytes[i]);
+        outb(dev->n_iobase+EN1_PHYS_SHIFT(i),dev->n_dev.n_macaddr.ma_bytes[i]);
    for (i = 0; i < 8; ++i) /* XXX: Multicast? */
         outb(dev->n_iobase+EN1_MULT_SHIFT(i),0xff);
    /* Still being in page #1, set the next-package pointer. */
@@ -92,8 +96,12 @@ INTERN void KCALL net_reset_high(ne2k_t *__restrict dev) {
    /* Finally, initialize the card. */
    outb(dev->n_iobase+E8390_CMD,E8390_PAGE0|E8390_NODMA|E8390_START);
 
-   /* And disable loopback, enabling outgoing packages. */
-   outb(dev->n_iobase+EN0_TXCR,ETXCR_LOOPBACK_NORMAL);
+   /* And disable loopback, allowing for outgoing packages. */
+   if (!(dev->n_dev.n_flags&IFF_LOOPBACK))
+       outb(dev->n_iobase+EN0_TXCR,ETXCR_LOOPBACK_NORMAL);
+
+   /* XXX: Only set if the ethernet cable is plugged in. */
+   dev->n_dev.n_flags |= IFF_RUNNING;
  }
 }
 INTERN errno_t KCALL net_reset(ne2k_t *__restrict dev) {
@@ -129,7 +137,7 @@ PRIVATE void KCALL ne2k_recv(ne2k_t *self) {
  if (E_ISERR(netdev_write(&self->n_dev)))
      return; /* Shouldn't happen... */
  /* Don't process anything if the interface is supposed to be down. */
- if (!(self->n_dev.n_flags&NETDEV_F_ISUP)) goto end;
+ if (!(self->n_dev.n_flags&IFF_UP)) goto end;
 
  for (;;) {
   STATIC_ASSERT(!(sizeof(pck_header_t) & 1));
@@ -489,7 +497,7 @@ net_reset_mac(ne2k_t *__restrict dev) {
  /* Turn off the card. */
  error = net_load_mac(dev->n_iobase,prom);
  if (E_ISERR(error)) return error;
- memcpy(&dev->n_dev.n_mac,prom,sizeof(struct macaddr));
+ memcpy(&dev->n_dev.n_macaddr,prom,sizeof(struct macaddr));
  net_reset_high(dev);
  return error;
 }
@@ -519,8 +527,9 @@ ne2k_probe(struct pci_device *dev) {
 
  self = (ne2k_t *)netdev_new(sizeof(ne2k_t));
  if unlikely(!self) return -ENOMEM;
- memcpy(self->n_dev.n_mac.ma_bytes,prom,6);
+ memcpy(self->n_dev.n_macaddr.ma_bytes,prom,6);
  self->n_dev.n_ops                     = &net_ops;
+ self->n_dev.n_flags                  |= IFF_BROADCAST|IFF_MULTICAST;
  self->n_dev.n_dev.cd_device.d_irq_ctl = &net_irqctl;
  self->n_iobase                        = iobase;
  self->n_pcidev                        = dev;
@@ -578,7 +587,7 @@ ne2k_probe(struct pci_device *dev) {
  set_default_adapter(&self->n_dev,false);
 
  syslog(LOG_INFO,"[NE2K] Found network card (I/O %.4I16x; MAC: %[mac])\n",
-        iobase,&self->n_dev.n_mac);
+        iobase,&self->n_dev.n_macaddr);
  syslog(LOG_DEBUG,"%.?[hex]\n",32,prom);
 end:
  NETDEV_DECREF(&self->n_dev);

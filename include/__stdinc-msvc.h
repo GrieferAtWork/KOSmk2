@@ -116,6 +116,7 @@
 #   define __ATTR_ALIGNED(n)     /* Nothing */
 #endif
 #define __ATTR_WEAK              __declspec(selectany) /* For all that we care, it's basically the same. */
+#define __ATTR_WEAK_IS_SELECTANY 1
 #define __NO_ATTR_VISIBILITY     1
 #define __ATTR_VISIBILITY(vis)   /* Nothing */
 #define __ATTR_DLLIMPORT         __declspec(dllimport)
@@ -177,6 +178,18 @@ extern void (__cdecl _ReadWriteBarrier)(void);
 #endif
 #else
 #   define __NULLPTR ((void *)0)
+#endif
+
+/* Emulate the '__OPTIMIZE__' predefined macro, used in various headers. */
+#if defined(RELEASE) || defined(_RELEASE)
+#ifndef _RELEASE
+#   define _RELEASE  RELEASE
+#endif
+#if (_RELEASE+0) >= 1
+#   define __OPTIMIZE__ _RELEASE
+#else
+#   define __OPTIMIZE__ 3
+#endif
 #endif
 
 

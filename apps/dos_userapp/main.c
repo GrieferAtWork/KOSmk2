@@ -51,6 +51,7 @@
 #include <utime.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
+#include <format-printer.h>
 
 DECL_BEGIN
 
@@ -76,6 +77,8 @@ int main(int argc, char **argv) {
               "This text is too long for the buffer");
  printf("n   = %d\n",n); /* Must not be -1, as would normally be the case in DOS. */
  printf("buf = '%.*s'\n",16,buf); /* Must contain the 16 characters. */
+
+ format_printf(&file_printer,stdout,"HELLO WORLD\n");
 
  return 0;
 }

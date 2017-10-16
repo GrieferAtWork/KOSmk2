@@ -65,9 +65,6 @@ netdev_cinit(struct netdev *self) {
   self->n_ip_mtu                     = NETDEV_DEFAULT_IO_MTU;
   self->n_dev.cd_device.d_node.i_ops = &netdev_ops;
   rwlock_cinit(&self->n_lock);
-#if NETDEV_F_DEFAULT != 0
-  self->n_flags = NETDEV_F_DEFAULT;
-#endif
  }
  return self;
 }
@@ -209,17 +206,17 @@ netdev_ifup_unlocked(struct netdev *__restrict self) {
  if (NETDEV_ISUP(self))
      return -EALREADY;
  /* Set the interface-up flag. */
- self->n_flags |= NETDEV_F_ISUP;
+ self->n_flags |= IFF_UP;
  COMPILER_WRITE_BARRIER();
  error = (*self->n_ops->n_ifup)(self);
  /* Undo the interface-up flag if something went wrong. */
  if (E_ISERR(error))
-     self->n_flags &= ~NETDEV_F_ISUP;
+     self->n_flags &= ~IFF_UP;
  return error;
 }
 PUBLIC errno_t KCALL
 netdev_ifdown_unlocked(struct netdev *__restrict self) {
- errno_t error;
+ errno_t error; u32 old_flags;
  CHECK_HOST_DOBJ(self);
  assert(netdev_writing(self));
  assert(self->n_ops->n_ifdown != NULL);
@@ -227,12 +224,13 @@ netdev_ifdown_unlocked(struct netdev *__restrict self) {
  if (NETDEV_ISDOWN(self))
      return -EALREADY;
  /* Clear the interface-up flag. */
- self->n_flags &= ~NETDEV_F_ISUP;
+ old_flags = self->n_flags;
+ self->n_flags &= ~(IFF_UP|IFF_RUNNING);
  COMPILER_WRITE_BARRIER();
  error = (*self->n_ops->n_ifdown)(self);
  /* Restore the interface-up flag if something went wrong. */
  if (E_ISERR(error))
-     self->n_flags |= NETDEV_F_ISUP;
+     self->n_flags |= old_flags&(IFF_UP|IFF_RUNNING);
  return error;
 }
 
@@ -247,19 +245,19 @@ netdev_setmac_unlocked(struct netdev *__restrict self,
  if (!self->n_ops->n_setmac)
       return -EPERM;
  /* Check if changes are required to-be performed. */
- if (memcmp(&self->n_mac,addr,sizeof(struct macaddr)) == 0)
+ if (memcmp(&self->n_macaddr,addr,sizeof(struct macaddr)) == 0)
      return -EOK;
- memcpy(&old_addr,&self->n_mac,sizeof(struct macaddr));
+ memcpy(&old_addr,&self->n_macaddr,sizeof(struct macaddr));
  old_flags = self->n_flags;
- memcpy(&self->n_mac,addr,sizeof(struct macaddr));
- self->n_flags |= NETDEV_F_USERMAC;
+ memcpy(&self->n_macaddr,addr,sizeof(struct macaddr));
+ self->n_flags |= IFF_USERMAC;
  if (NETDEV_ISUP(self)) {
   error = (*self->n_ops->n_setmac)(self);
   /* Restore the old mac address on error. */
   if (E_ISERR(error))
-      memcpy(&self->n_mac,&old_addr,sizeof(struct macaddr)),
-      self->n_flags = (self->n_flags&~NETDEV_F_USERMAC)|
-                      (old_flags&NETDEV_F_USERMAC);
+      memcpy(&self->n_macaddr,&old_addr,sizeof(struct macaddr)),
+      self->n_flags = (self->n_flags&~IFF_USERMAC)|
+                      (old_flags&IFF_USERMAC);
  }
  return error;
 }
@@ -273,13 +271,13 @@ netdev_resetmac_unlocked(struct netdev *__restrict self) {
  if (!self->n_ops->n_resetmac) return -EPERM;
  /* NOTE: Also store the current address, in case a failed
   *       reset would leave it in an undefined state. */
- memcpy(&old_mac,&self->n_mac,sizeof(struct macaddr));
- self->n_flags &= ~NETDEV_F_USERMAC;
+ memcpy(&old_mac,&self->n_macaddr,sizeof(struct macaddr));
+ self->n_flags &= ~IFF_USERMAC;
  error = (*self->n_ops->n_resetmac)(self);
  /* Restore old properties on error. */
  if (E_ISERR(error))
-     self->n_flags |= NETDEV_F_USERMAC,
-     memcpy(&self->n_mac,&old_mac,sizeof(struct macaddr));
+     self->n_flags |= IFF_USERMAC,
+     memcpy(&self->n_macaddr,&old_mac,sizeof(struct macaddr));
  return error;
 }
 

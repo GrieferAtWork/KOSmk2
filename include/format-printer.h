@@ -27,9 +27,19 @@
 #include <bits/mbstate.h>
 #endif
 
-#ifndef __CRT_KOS
-#error "<format-printer.h> is not supported by the linked libc"
-#endif /* !__CRT_KOS */
+#if (!defined(__CRT_KOS) || \
+     (defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__))) && \
+     !defined(__BUILDING_LIBC)
+#define __USE_PRIVATE_FORMAT_PRINTER
+#if !defined(__NO_ATTR_WEAK) && \
+    !defined(__ATTR_WEAK_IS_SELECTANY)
+#define __FORMAT_PRINTER_DECL __INTDEF __ATTR_WEAK
+#else /* !__NO_ATTR_WEAK */
+#define __FORMAT_PRINTER_DECL __PRIVATE
+#endif /* __NO_ATTR_WEAK */
+#else
+#define __FORMAT_PRINTER_DECL __LIBC
+#endif
 
 __SYSDECL_BEGIN
 
@@ -89,12 +99,15 @@ typedef __ssize_t (__LIBCCALL *pformatungetc)(int __ch, void *__closure);
  *                      increasing the buffer when it gets filled completely.
  *  - k_syslogf:        Unbuffered system-log output.
  *  - ...               There are a _lot_ more... */
-__LIBC __NONNULL((1,3)) __ssize_t (__ATTR_CDECL format_printf)(pformatprinter __printer, void *__closure,
-                                                               char const *__restrict __format, ...);
-__LIBC __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
-                                                              char const *__restrict __format, __VA_LIST __args);
+__FORMAT_PRINTER_DECL __NONNULL((1,3))
+__ssize_t (__ATTR_CDECL format_printf)(pformatprinter __printer, void *__closure,
+                                       char const *__restrict __format, ...);
+__FORMAT_PRINTER_DECL __NONNULL((1,3))
+__ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
+                                      char const *__restrict __format, __VA_LIST __args);
 
 
+#ifdef __CRT_KOS
 /* Generic scanf implementation
  * Taking a regular scanf-style format string and argument, these
  * functions will call the given 'SCANNER' function which in
@@ -116,11 +129,13 @@ __LIBC __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __p
  *                 >> sscanf(data,"My name is %.?s\n",sizeof(buffer),buffer);
  * format -> %[*|?][width][length]specifier
  * @return: * : The total number of successfully scanned arguments. */
-__LIBC __NONNULL((1,4)) __ssize_t (__ATTR_CDECL format_scanf)(pformatgetc __pgetc, pformatungetc __pungetc,
-                                                              void *__closure, char const *__restrict __format, ...);
-__LIBC __NONNULL((1,4)) __ssize_t (__LIBCCALL format_vscanf)(pformatgetc __pgetc, pformatungetc __pungetc,
-                                                             void *__closure, char const *__restrict __format,
-                                                             __VA_LIST __args);
+__LIBC __PORT_KOSONLY __NONNULL((1,4))
+__ssize_t (__ATTR_CDECL format_scanf)(pformatgetc __pgetc, pformatungetc __pungetc,
+                                      void *__closure, char const *__restrict __format, ...);
+__LIBC __PORT_KOSONLY __NONNULL((1,4))
+__ssize_t (__LIBCCALL format_vscanf)(pformatgetc __pgetc, pformatungetc __pungetc,
+                                     void *__closure, char const *__restrict __format,
+                                     __VA_LIST __args);
 
 #ifndef __KERNEL__
 struct tm;
@@ -156,9 +171,11 @@ struct tm;
  *           - 'H'      --> 'hour'
  *           - 'MI'|'I' --> 'minute'
  *           - 'S'      --> 'second' */
-__LIBC __NONNULL((1,4)) __ssize_t (__LIBCCALL format_strftime)(pformatprinter __printer, void *__closure,
-                                                               char const *__restrict __format, struct tm const *__tm);
+__LIBC __PORT_KOSONLY __NONNULL((1,4))
+__ssize_t (__LIBCCALL format_strftime)(pformatprinter __printer, void *__closure,
+                                       char const *__restrict __format, struct tm const *__tm);
 #endif /* !__KERNEL__ */
+#endif /* __CRT_KOS */
 
 /* Do C-style quotation on the given text, printing
  * all of its escaped portions to the given printer.
@@ -177,12 +194,11 @@ __LIBC __NONNULL((1,4)) __ssize_t (__LIBCCALL format_strftime)(pformatprinter __
  *                  unless the 'FORMAT_QUOTE_FLAG_QUOTEALL' flag is
  *                  set, in which case it is the exact amount of characters
  *                  to quote from 'TEXT', including '\0' characters. */
-__LIBC __NONNULL((1,3)) __ssize_t
+__FORMAT_PRINTER_DECL __NONNULL((1,3)) __ssize_t
 (__LIBCCALL format_quote)(pformatprinter __printer, void *__closure,
                           char const *__restrict __text, __size_t __textlen,
                           __UINT32_TYPE__ __flags);
 #endif /* __CC__ */
-
 #define FORMAT_QUOTE_FLAG_NONE     0x00000000
 #define FORMAT_QUOTE_FLAG_PRINTRAW 0x00000001 /*< Don't surround the quoted text with "..."; */
 #define FORMAT_QUOTE_FLAG_FORCEHEX 0x00000002 /*< Force hex encoding of all control characters without special strings ('\n', etc.). */
@@ -192,6 +208,8 @@ __LIBC __NONNULL((1,3)) __ssize_t
 #define FORMAT_QUOTE_FLAG_UPPERHEX 0x00000020 /*< Use uppercase characters for hex (e.g.: '\xAB'). */
 
 
+
+#ifdef __CRT_KOS
 #ifdef __CC__
 /* Print a hex dump of the given data using the provided format printer.
  * @param: PRINTER:  A function called for all quoted portions of the text.
@@ -202,7 +220,7 @@ __LIBC __NONNULL((1,3)) __ssize_t
  * @param: FLAGS:    A set of 'FORMAT_HEXDUMP_FLAG_*'.
  * @return: 0: The given data was successfully hex-dumped.
  * @return: *: The first non-ZERO(0) return value of PRINTER. */
-__LIBC __NONNULL((1,3)) __ssize_t
+__LIBC __PORT_KOSONLY __NONNULL((1,3)) __ssize_t
 (__LIBCCALL format_hexdump)(pformatprinter __printer, void *__closure,
                             void const *__restrict __data, __size_t __size,
                             __size_t __linesize, __UINT32_TYPE__ __flags);
@@ -213,13 +231,20 @@ __LIBC __NONNULL((1,3)) __ssize_t
 #define FORMAT_HEXDUMP_FLAG_NOHEX    0x00000004 /*< Don't print the actual hex dump (hex data representation). */
 #define FORMAT_HEXDUMP_FLAG_NOASCII  0x00000008 /*< Don't print ascii representation of printable characters at the end of lines. */
 #define FORMAT_HEXDUMP_FLAG_HEXLOWER 0x00000010 /*< Print hex text of the dump in lowercase (does not affect address/offset). */
+#endif /* __CRT_KOS */
 
 
 #ifdef __CC__
 struct stringprinter {
- char *sp_bufpos; /*< [1..1][>= sp_buffer][<= sp_bufend] . */
- char *sp_buffer; /*< [1..1] Allocate buffer base pointer. */
- char *sp_bufend; /*< [1..1] Buffer end (Pointer to currently allocated '\0'-character). */
+#if defined(__BUILDING_LIBC) || defined(__KERNEL__)
+ char   *sp_bufpos; /*< [1..1][>= sp_buffer][<= sp_bufend] . */
+ char   *sp_buffer; /*< [1..1] Allocate buffer base pointer. */
+ char   *sp_bufend; /*< [1..1] Buffer end (Pointer to currently allocated '\0'-character). */
+#else /* __BUILDING_LIBC || __KERNEL__ */
+ char *__sp_bufpos; /*< [1..1][>= __sp_buffer][<= __sp_bufend] . */
+ char *__sp_buffer; /*< [1..1] Allocate buffer base pointer. */
+ char *__sp_bufend; /*< [1..1] Buffer end (Pointer to currently allocated '\0'-character). */
+#endif /* !__BUILDING_LIBC && !__KERNEL__ */
 };
 
 /* Helper functions for using any pformatprinter-style
@@ -239,13 +264,13 @@ struct stringprinter {
  *               be allocated as (Pass ZERO if unknown).
  * @return:  0: Successfully printed to/initialized the given string printer.
  * @return: -1: Failed to initialize/print the given text ('errno' is set to ENOMEM) */
-__LIBC __NONNULL((1)) int  (__LIBCCALL stringprinter_init)(struct stringprinter *__restrict __self, __size_t __hint);
-__LIBC __NONNULL((1)) void (__LIBCCALL stringprinter_fini)(struct stringprinter *__restrict __self);
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL stringprinter_pack)(struct stringprinter *__restrict __self, __size_t *__length);
-__LIBC __ssize_t (__LIBCCALL stringprinter_print)(char const *__restrict __data, __size_t __datalen, void *__closure);
+__FORMAT_PRINTER_DECL __NONNULL((1)) int  (__LIBCCALL stringprinter_init)(struct stringprinter *__restrict __self, __size_t __hint);
+__FORMAT_PRINTER_DECL __NONNULL((1)) void (__LIBCCALL stringprinter_fini)(struct stringprinter *__restrict __self);
+__FORMAT_PRINTER_DECL __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL stringprinter_pack)(struct stringprinter *__restrict __self, __size_t *__length);
+__FORMAT_PRINTER_DECL __ssize_t (__LIBCCALL stringprinter_print)(char const *__restrict __data, __size_t __datalen, void *__closure);
 
 
-#ifndef __KERNEL__
+#if !defined(__KERNEL__) && defined(__CRT_KOS)
 #ifndef __wchar_t_defined
 #define __wchar_t_defined 1
 typedef __WCHAR_TYPE__ wchar_t;
@@ -263,12 +288,12 @@ typedef __CHAR32_TYPE__ char32_t;
  *       To use strnlen-style semantics, use 'format_*sntomb' instead.
  * NOTE: Upon encoding error, errno is set to 'EILSEQ' and '-1' is returned.
  * HINT: These functions are also used to implement '%ls'. */
-__REDIRECT_TOPE_ (__LIBC,,__ssize_t,__LIBCCALL,format_c16sztomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16len, mbstate_t *__restrict __ps),format_wcsztomb,(__printer,__closure,__c16,__c16len,__ps))
-__REDIRECT_TOKOS_(__LIBC,,__ssize_t,__LIBCCALL,format_c32sztomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32len, mbstate_t *__restrict __ps),format_wcsztomb,(__printer,__closure,__c32,__c32len,__ps))
-__REDIRECT_TOPE_ (__LIBC,,__ssize_t,__LIBCCALL,format_c16sntomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16max, mbstate_t *__restrict __ps),format_wcsntomb,(__printer,__closure,__c16,__c16max,__ps))
-__REDIRECT_TOKOS_(__LIBC,,__ssize_t,__LIBCCALL,format_c32sntomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32max, mbstate_t *__restrict __ps),format_wcsntomb,(__printer,__closure,__c32,__c32max,__ps))
-__LIBC __ssize_t (__LIBCCALL format_wcsztomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcslen, mbstate_t *__restrict __ps);
-__LIBC __ssize_t (__LIBCCALL format_wcsntomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcsmax, mbstate_t *__restrict __ps);
+__REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c16sztomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16len, mbstate_t *__restrict __ps),format_wcsztomb,(__printer,__closure,__c16,__c16len,__ps))
+__REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c32sztomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32len, mbstate_t *__restrict __ps),format_wcsztomb,(__printer,__closure,__c32,__c32len,__ps))
+__REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c16sntomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16max, mbstate_t *__restrict __ps),format_wcsntomb,(__printer,__closure,__c16,__c16max,__ps))
+__REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c32sntomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32max, mbstate_t *__restrict __ps),format_wcsntomb,(__printer,__closure,__c32,__c32max,__ps))
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL format_wcsztomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcslen, mbstate_t *__restrict __ps);
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL format_wcsntomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcsmax, mbstate_t *__restrict __ps);
 
 
 
@@ -303,21 +328,21 @@ struct c32printer __DEFINE_PRINTER(char32_t,pc32formatprinter);
 #undef __DEFINE_PRINTER
 
 #define WPRINTER_INIT(printer,closure)   {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
-__LIBC void (__LIBCCALL wprinter_init)(struct wprinter *__restrict wp, pwformatprinter printer, void *__closure);
-__LIBC void (__LIBCCALL wprinter_fini)(struct wprinter *__restrict wp);
+__LIBC __PORT_KOSONLY void (__LIBCCALL wprinter_init)(struct wprinter *__restrict wp, pwformatprinter printer, void *__closure);
+__LIBC __PORT_KOSONLY void (__LIBCCALL wprinter_fini)(struct wprinter *__restrict wp);
 /* NOTE: Wide-character printers forward the return value of the underlying printer,
  *       or -1 if a format error occurred, alongside setting errno to EILSEQ. */
-__LIBC __ssize_t (__LIBCCALL wprinter_print)(char const *__restrict __data, __size_t __datalen, void *__closure);
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL wprinter_print)(char const *__restrict __data, __size_t __datalen, void *__closure);
 
 #ifdef __USE_UTF
 #define C16PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
 #define C32PRINTER_INIT(printer,closure) {printer,closure,NULL,0,__MBSTATE_INIT,NULL}
-__REDIRECT_TOPE_VOID_ (__LIBC,,__LIBCCALL,c16printer_init,(struct c16printer *__restrict wp, pc16formatprinter printer, void *__closure),wprinter_init,(wp,printer,__closure))
-__REDIRECT_TOKOS_VOID_(__LIBC,,__LIBCCALL,c32printer_init,(struct c32printer *__restrict wp, pc32formatprinter printer, void *__closure),wprinter_init,(wp,printer,__closure))
-__REDIRECT_TOPE_VOID_ (__LIBC,,__LIBCCALL,c16printer_fini,(struct c16printer *__restrict wp),wprinter_fini,(wp))
-__REDIRECT_TOKOS_VOID_(__LIBC,,__LIBCCALL,c32printer_fini,(struct c32printer *__restrict wp),wprinter_fini,(wp))
-__REDIRECT_TOPE_ (__LIBC,,__ssize_t,__LIBCCALL,c16printer_print,(char const *__restrict __data, __size_t __datalen, void *__closure),wprinter_print,(__data,__datalen,__closure))
-__REDIRECT_TOKOS_(__LIBC,,__ssize_t,__LIBCCALL,c32printer_print,(char const *__restrict __data, __size_t __datalen, void *__closure),wprinter_print,(__data,__datalen,__closure))
+__REDIRECT_TOPE_VOID_ (__LIBC,__PORT_KOSONLY,__LIBCCALL,c16printer_init,(struct c16printer *__restrict wp, pc16formatprinter printer, void *__closure),wprinter_init,(wp,printer,__closure))
+__REDIRECT_TOKOS_VOID_(__LIBC,__PORT_KOSONLY,__LIBCCALL,c32printer_init,(struct c32printer *__restrict wp, pc32formatprinter printer, void *__closure),wprinter_init,(wp,printer,__closure))
+__REDIRECT_TOPE_VOID_ (__LIBC,__PORT_KOSONLY,__LIBCCALL,c16printer_fini,(struct c16printer *__restrict wp),wprinter_fini,(wp))
+__REDIRECT_TOKOS_VOID_(__LIBC,__PORT_KOSONLY,__LIBCCALL,c32printer_fini,(struct c32printer *__restrict wp),wprinter_fini,(wp))
+__REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,c16printer_print,(char const *__restrict __data, __size_t __datalen, void *__closure),wprinter_print,(__data,__datalen,__closure))
+__REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,c32printer_print,(char const *__restrict __data, __size_t __datalen, void *__closure),wprinter_print,(__data,__datalen,__closure))
 #endif /* __USE_UTF */
 
 
@@ -362,8 +387,8 @@ union{
 /* Initialize the given buffer using the provided PRINTER and CLOSURE.
  * NOTE: Even though possible, it is unwise to chain
  *       multiple buffers, or a buffer and a 'stringprinter' */
-__LIBC void (__LIBCCALL buffer_init)(struct buffer *__restrict self,
-                                     pformatprinter __printer, void *__closure);
+__LIBC __PORT_KOSONLY void (__LIBCCALL buffer_init)(struct buffer *__restrict self,
+                                                    pformatprinter __printer, void *__closure);
 
 /* NOTE: 'buffer_fini()' will automatically flush the buffer one last time,
  *        and return the total sum of return values from all calls to PRINTER,
@@ -372,7 +397,7 @@ __LIBC void (__LIBCCALL buffer_init)(struct buffer *__restrict self,
  * HINT:  With that in mind and the fact that 'buffer_print' is a no-op after an
  *        error occurred, printer return values can always be ignored safely,
  *        centralizing error handling to this call. */
-__LIBC __ssize_t (__LIBCCALL buffer_fini)(struct buffer *__restrict __buf);
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_fini)(struct buffer *__restrict __buf);
 
 /* Flush will write any unwritten data and return the sum of PRINTER
  * return values that were required to perform the flush.
@@ -382,25 +407,30 @@ __LIBC __ssize_t (__LIBCCALL buffer_fini)(struct buffer *__restrict __buf);
  *          Else, the same corner-cases as possible with fflush() could arise.
  * @return: <  0 : ERROR: The current PRINTER error code.
  * @return: >= 0 : The sum of PRINTER return values called when flushing data. */
-__LIBC __ssize_t (__LIBCCALL buffer_flush)(struct buffer *__restrict __buf);
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_flush)(struct buffer *__restrict __buf);
 
 /* The main printer callback used for printing to a buffer.
  * Pass a pointer to the buffer for 'CLOSURE' */
-__LIBC __ssize_t (__LIBCCALL buffer_print)(char const *__restrict __data,
-                                           __size_t __datalen, void *__closure);
-
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_print)(char const *__restrict __data,
+                                                          __size_t __datalen, void *__closure);
 
 /* Same as the original functions above, but use a temporary
  * buffer in-between to reduce potential printer overhead. */
-__LIBC __NONNULL((1,3)) __ssize_t (__ATTR_CDECL format_bprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, ...);
-__LIBC __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vbprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, __VA_LIST __args);
-
+__LIBC __PORT_KOSONLY __NONNULL((1,3)) __ssize_t (__ATTR_CDECL format_bprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, ...);
+__LIBC __PORT_KOSONLY __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vbprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, __VA_LIST __args);
 #endif /* !__KERNEL__ */
-
 
 #endif /* __CC__ */
 
+#undef __FORMAT_PRINTER_DECL
 
 __SYSDECL_END
+
+#ifdef __USE_PRIVATE_FORMAT_PRINTER
+/* Pull in our own format-printer implementation. */
+#define __LIBC_FORMAT_PRINTER_INCLUDE_MAGIC 0xdeadbeef
+#include <libc/format-printer.h>
+#undef __LIBC_FORMAT_PRINTER_INCLUDE_MAGIC
+#endif /* __USE_PRIVATE_FORMAT_PRINTER */
 
 #endif /* !_FORMAT_PRINTER_H */

@@ -190,7 +190,8 @@ typedef union {
 } fint_t;
 
 #if VA_SIZE == 8
-#define FINT_LOAD(arg,length,flags,args) { arg.u_64 = va_arg(args,u64); }
+#define FINT_LOAD(arg,length,flags,args) \
+  { arg.u_64 = va_arg(args,u64); }
 #elif VA_SIZE == 4
 #define FINT_LOAD(arg,length,flags,args) \
   { arg.u_64 = 0; \
@@ -468,8 +469,8 @@ next_normal:
   ch = *format++;
   if unlikely(!ch) break;
   if (ch == '%') {
-   enum printf_length length;
-   u16 flags; size_t width,precision,print_width;
+   enum printf_length length; u16 flags;
+   size_t width,precision,print_width;
    if (format-1 != flush_start)
        print(flush_start,(size_t)((format-1)-flush_start));
    flush_start = format;
@@ -602,10 +603,10 @@ have_precision:
     if (0) { case 'o': numsys = 8; }
     if (0) { case 'u': numsys = 10; if unlikely(length == len_t) flags |= PRINTF_FLAG_SIGNED; }
     if (0) { case 'd': case 'i': numsys = 10; if likely(length != len_z) flags |= PRINTF_FLAG_SIGNED; }
-#if __SIZEOF_POINTER__ > VA_SIZE
-#error "TODO: Explicit handling when 'sizeof(void *) > VA_SIZE' (Must fix 'length')"
-#endif
     if (0) { case 'p': if (!(flags&PRINTF_FLAG_HASPREC)) { precision = sizeof(void *)*2; flags |= PRINTF_FLAG_HASPREC; }
+#if __SIZEOF_POINTER__ > VA_SIZE
+                       if (!length) length = len_I;
+#endif
              case 'X': flags |= PRINTF_FLAG_UPPER;
              case 'x': numsys = 16; if unlikely(length == len_t) flags |= PRINTF_FLAG_SIGNED; }
     FINT_LOAD(arg,length,flags,args);
@@ -625,7 +626,7 @@ have_precision:
      else if (numsys == 2)  *iter++ = dec[11]; /* B/b */
     }
     if (iter != buf) print(buf,(size_t)(iter-buf));
-    libc_memset(buf,0xcc,sizeof(buf));
+    //libc_memset(buf,0xcc,sizeof(buf));
     iter = COMPILER_ENDOF(buf);
     assertf(numsys <= 16,"%d",numsys);
     do *--iter = dec[arg.u_64 % numsys];
@@ -821,7 +822,9 @@ quote_string:
 broken_format:
 #if PRINTF_EXTENSION_ERRORMSG
     printf("<INVALID_FORMAT_OPTION:'%c'>",ch);
-broken_format2: ATTR_UNUSED
+#if PRINTF_EXTENSION_LONGDESCR
+broken_format2:
+#endif /* PRINTF_EXTENSION_LONGDESCR */
 #endif
     format = flush_start;
     goto next_normal;
@@ -931,7 +934,7 @@ special_control:
     case '\\': case '\'': case '\"': break;
     default: goto default_ctrl;
     }
-    encoded_text[1] = ch;
+    encoded_text[1] = (char)ch;
     encoded_text_size = 2;
     goto print_encoded;
    } else if ((ch == '\\' || ch == '\'' || ch == '\"') &&
@@ -1146,7 +1149,7 @@ libc_stringprinter_print(char const *__restrict data,
   self->sp_bufend = new_buffer+newsize;
   self->sp_buffer = new_buffer;
  }
- libc_memcpy(self->sp_bufpos,data,datalen);
+ libc_memcpy(self->sp_bufpos,data,datalen*sizeof(char));
  self->sp_bufpos += datalen;
  assert(self->sp_bufpos <= self->sp_bufend);
  return 0;

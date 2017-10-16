@@ -486,6 +486,9 @@ __REDIRECT_IFDOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1,2)),void *,__LIBCCALL,mem
 #ifdef __USE_KOS
 /* KOS String extensions. */
 #if !defined(__CRT_KOS) || defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__)
+__SYSDECL_END
+#include "hybrid/string.h"
+__SYSDECL_BEGIN
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
 void *(__LIBCCALL __local_memend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) {
     __BYTE_TYPE__ *__iter,*__end;
@@ -503,8 +506,6 @@ __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
 char *(__LIBCCALL __local_strend)(char const *__str) {
     return (char *)__str+__NAMESPACE_STD_SYM strlen(__str);
 }
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),size_t,__LIBCCALL,__libc_strnlen,
-          (char const *__str, size_t __max_chars),strnlen,(__str,__max_chars))
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
 char *(__LIBCCALL __local_strnend)(char const *__str, size_t __max_chars) {
     return (char *)__str+__libc_strnlen(__str,__max_chars);

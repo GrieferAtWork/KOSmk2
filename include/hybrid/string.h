@@ -30,6 +30,7 @@ __REDIRECT(__LIBC,__ATTR_RETNONNULL __NONNULL((1,2)),void *,__LIBCCALL,__libc_me
 __REDIRECT(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),void *,__LIBCCALL,__libc_memset,(void *__dst, int __byte, __SIZE_TYPE__ __n_bytes),memset,(__dst,__byte,__n_bytes))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,__libc_memcmp,(void const *__a, void const *__b, __SIZE_TYPE__ __n_bytes),memcmp,(__a,__b,__n_bytes))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__SIZE_TYPE__,__LIBCCALL,__libc_strlen,(char const *__restrict __s),strlen,(__s))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__SIZE_TYPE__,__LIBCCALL,__libc_strnlen,(char const *__restrict __s, __SIZE_TYPE__ __max_chars),strnlen,(__s,__max_chars))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,__libc_strcmp,(char const *__s1, char const *__s2),strcmp,(__s1,__s2))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void *,__LIBCCALL,__libc_memchr,(void const *__restrict __haystack, int __needle, __SIZE_TYPE__ __n_bytes),memchr,(__haystack,__needle,__n_bytes))
 
@@ -119,6 +120,7 @@ __FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int
 #define __hybrid_memcmp(a,b,n_bytes)        __libc_memcmp(a,b,n_bytes)
 #endif
 #define __hybrid_strlen(s)                  __libc_strlen(s)
+#define __hybrid_strnlen(s,max_chars)       __libc_strnlen(s,max_chars)
 #define __hybrid_strcmp(s1,s2)              __libc_strcmp(s1,s2)
 #define __hybrid_memchr(ptr,needle,n_bytes) __libc_memchr(ptr,needle,n_bytes)
 

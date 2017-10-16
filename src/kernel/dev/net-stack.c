@@ -197,7 +197,7 @@ netdev_send_ether_unlocked(struct netdev *__restrict self, struct macaddr dst,
                            be16 type, struct opacket *__restrict pck) {
  struct ethhdr header = {
      .h_dest_mac   = dst,
-     .h_source_mac = self->n_mac,
+     .h_source_mac = self->n_macaddr,
      .h_proto      = type,
  };
  struct opacket container = OPACKET_HEAD(&header,sizeof(header),pck);
