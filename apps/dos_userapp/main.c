@@ -41,12 +41,12 @@
 #define _PORT_SOURCE   1
 #define _TIME64_SOURCE 1
 
+#include <string.h>
 #include <alloca.h>
 #include <dirent.h>
 #include <format-printer.h>
 #include <hybrid/compiler.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
 #include <time.h>
@@ -79,7 +79,9 @@ int main(int argc, char **argv) {
  printf("n   = %d\n",n); /* Must not be -1, as would normally be the case in DOS. */
  printf("buf = '%.*s'\n",16,buf); /* Must contain the 16 characters. */
 
- format_printf(&file_printer,stdout,"Format-printer text");
+ format_printf(&file_printer,stdout,
+               "Format-printer text %s",
+               strdupaf("foo %d",42));
 
  return 0;
 }

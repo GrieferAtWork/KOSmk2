@@ -83,7 +83,10 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char 
 #define ____libc_vsnprintf_defined 1
 #ifdef __DOS_COMPAT__
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vsnprintf,(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+#ifndef ____dos_vscprintf_defined
+#define ____dos_vscprintf_defined 1
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __VA_LIST __args),_vscprintf,(__format,__args))
+#endif /* !____dos_vsnprintf_defined */
 __LOCAL int (__LIBCCALL __libc_vsnprintf)(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args) {
  /* Workaround for DOS's broken vsnprintf() implementation. */
  int __result = __dos_vsnprintf(__buf,__buflen,__format,__args);

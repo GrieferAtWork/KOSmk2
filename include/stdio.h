@@ -542,8 +542,11 @@ __LIBC __ssize_t (__LIBCCALL file_printer)(char const *__restrict __data,
 #ifndef ____libc_vsnprintf_defined
 #define ____libc_vsnprintf_defined 1
 #ifdef __DOS_COMPAT__
-__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vsnprintf,(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vsnprintf,(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+#ifndef ____dos_vscprintf_defined
+#define ____dos_vscprintf_defined 1
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __VA_LIST __args),_vscprintf,(__format,__args))
+#endif /* !____dos_vsnprintf_defined */
 __LOCAL int (__LIBCCALL __libc_vsnprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args) {
  /* Workaround for DOS's broken vsnprintf() implementation. */
  int __result = __dos_vsnprintf(__buf,__buflen,__format,__args);
@@ -558,7 +561,9 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, size
 
 __NAMESPACE_STD_BEGIN
 #if defined(__USE_KOS) && ((defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__)) || __SIZEOF_SIZE_T__ <= __SIZEOF_INT__)
+#ifndef __sprintf_defined
 __LIBC __ssize_t (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
+#endif /* !__sprintf_defined */
 __LIBC __ssize_t (__LIBCCALL vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args);
 __LIBC __size_t (__ATTR_CDECL sscanf)(char const *__restrict __buf, char const *__restrict __format, ...);
 #if defined(__USE_ISOC99) || defined(__USE_UNIX98) || defined(__USE_DOS)
@@ -569,6 +574,7 @@ __LIBC __ssize_t (__LIBCCALL vsnprintf)(char *__restrict __buf, size_t __buflen,
 #endif /* !__DOS_COMPAT__ */
 #endif /* __USE_ISOC99 || __USE_UNIX98 || __USE_DOS */
 #if defined(__USE_ISOC99) || defined(__USE_UNIX98)
+#ifndef __snprintf_defined
 #ifdef __DOS_COMPAT__
 __LOCAL __ssize_t (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...) {
  __ssize_t __result; __VA_LIST __args; __builtin_va_start(__args,__format);
@@ -579,12 +585,15 @@ __LOCAL __ssize_t (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __bufle
 #else /* __DOS_COMPAT__ */
 __LIBC __ssize_t (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...);
 #endif /* !__DOS_COMPAT__ */
+#endif /* !__snprintf_defined */
 #endif /* __USE_ISOC99 || __USE_UNIX98 */
 #if defined(__USE_ISOC99) || defined(__USE_DOS)
 __LIBC __size_t (__LIBCCALL vsscanf)(char const *__restrict __buf, char const *__restrict __format, __VA_LIST __args);
 #endif /* __USE_ISOC99 || __USE_DOS */
 #else /* __USE_KOS */
+#ifndef __sprintf_defined
 __LIBC int (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
+#endif /* !__sprintf_defined */
 __LIBC int (__LIBCCALL vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL sscanf)(char const *__restrict __buf, char const *__restrict __format, ...);
 #if defined(__USE_ISOC99) || defined(__USE_UNIX98) || defined(__USE_DOS)
@@ -595,6 +604,7 @@ __LIBC int (__LIBCCALL vsnprintf)(char *__restrict __buf, size_t __buflen, char 
 #endif /* !__DOS_COMPAT__ */
 #endif /* __USE_ISOC99 || __USE_UNIX98 || __USE_DOS */
 #if defined(__USE_ISOC99) || defined(__USE_UNIX98)
+#ifndef __snprintf_defined
 #ifdef __DOS_COMPAT__
 __LOCAL int (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...) {
  int __result; __VA_LIST __args; __builtin_va_start(__args,__format);
@@ -605,17 +615,24 @@ __LOCAL int (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, cha
 #else /* __DOS_COMPAT__ */
 __LIBC int (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...);
 #endif /* !__DOS_COMPAT__ */
+#endif /* !__snprintf_defined */
 #endif /* __USE_ISOC99 || __USE_UNIX98 */
 #if defined(__USE_ISOC99) || defined(__USE_DOS)
 __LIBC int (__LIBCCALL vsscanf)(char const *__restrict __buf, char const *__restrict __format, __VA_LIST __args);
 #endif /* __USE_ISOC99 || __USE_DOS */
 #endif /* !__USE_KOS */
 __NAMESPACE_STD_END
+#ifndef __sprintf_defined
+#define __sprintf_defined 1
 __NAMESPACE_STD_USING(sprintf)
+#endif /* !__sprintf_defined */
 __NAMESPACE_STD_USING(vsprintf)
 __NAMESPACE_STD_USING(sscanf)
 #if defined(__USE_ISOC99) || defined(__USE_UNIX98)
+#ifndef __snprintf_defined
+#define __snprintf_defined 1
 __NAMESPACE_STD_USING(snprintf)
+#endif /* !__snprintf_defined */
 #endif /* __USE_ISOC99 || __USE_UNIX98 */
 #if defined(__USE_ISOC99) || defined(__USE_UNIX98) || defined(__USE_DOS)
 __NAMESPACE_STD_USING(vsnprintf)
@@ -791,7 +808,10 @@ __LIBC int (__LIBCCALL _vsprintf_p_l)(char *__restrict __buf, size_t __buflen, c
 __LIBC int (__ATTR_CDECL _sprintf_s_l)(char *__restrict __buf, size_t __bufsize, char const *__restrict __format, __locale_t __locale, ...);
 __LIBC int (__LIBCCALL _vsprintf_s_l)(char *__restrict __buf, size_t __bufsize, char const *__restrict __format, __locale_t __locale, __VA_LIST __args);
 
+#ifndef ___scprintf_defined
+#define ___scprintf_defined 1
 __LIBC int (__ATTR_CDECL _scprintf)(char const *__restrict __format, ...);
+#endif /* !___scprintf_defined */
 __LIBC int (__LIBCCALL _vscprintf)(char const *__restrict __format, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _scprintf_l)(char const *__restrict __format, __locale_t __locale, ...);
 __LIBC int (__LIBCCALL _vscprintf_l)(char const *__restrict __format, __locale_t __locale, __VA_LIST __args);

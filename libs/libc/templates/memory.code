@@ -347,11 +347,11 @@ DECL vB *LIBCCALL X(libc_memrend)
 
 DECL size_t LIBCCALL X(libc_memlen)
 (vB const *__restrict haystack, B needle, size_t n) {
-	return (uintptr_t)X(libc_memend)(haystack,needle,n) - (uintptr_t)haystack;
+	return (size_t)((T *)X(libc_memend)(haystack,needle,n) - (T *)haystack);
 }
 DECL size_t LIBCCALL X(libc_memrlen)
 (vB const *__restrict haystack, B needle, size_t n) {
-	return (uintptr_t)X(libc_memrend)(haystack,needle,n) - (uintptr_t)haystack;
+	return (size_t)((T *)X(libc_memrend)(haystack,needle,n) - (T *)haystack);
 }
 
 
@@ -393,11 +393,11 @@ DECL vB *LIBCCALL X(libc_rawmemrchr)
 
 DECL size_t (LIBCCALL X(libc_rawmemlen))
 (vB const *__restrict haystack, B needle) {
-	return (uintptr_t)X(libc_rawmemchr)(haystack,needle) - (uintptr_t)haystack;
+	return (size_t)((T *)X(libc_rawmemchr)(haystack,needle) - (T *)haystack);
 }
 DECL size_t (LIBCCALL X(libc_rawmemrlen))
 (vB const *__restrict haystack, B needle) {
-	return (uintptr_t)X(libc_rawmemrchr)(haystack,needle) - (uintptr_t)haystack;
+	return (size_t)((T *)X(libc_rawmemrchr)(haystack,needle) - (T *)haystack);
 }
 
 

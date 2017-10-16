@@ -27,6 +27,33 @@
 #endif /* !__CRT_GLC */
 
 #ifndef __KERNEL__
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("optarg")
+#pragma push_macro("optind")
+#pragma push_macro("opterr")
+#pragma push_macro("optopt")
+#pragma push_macro("option")
+#pragma push_macro("name")
+#pragma push_macro("has_arg")
+#pragma push_macro("flag")
+#pragma push_macro("val")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
+#undef optarg
+#undef optind
+#undef opterr
+#undef optopt
+#undef option
+#undef name
+#undef has_arg
+#undef flag
+#undef val
+
+#undef no_argument
+#undef required_argument
+#undef optional_argument
+
 /* DISCLAIMER: Documentation comments are derived from those found in "/usr/include/getopt.h".
  *          >> The following is the original copyright notice found in that file. */
 
@@ -55,7 +82,7 @@ __SYSDECL_BEGIN
  * the argument value is returned here.
  * Also, when `ordering' is RETURN_IN_ORDER,
  * each non-option ARGV-element is returned here. */
-__LIBC char *(optarg);
+__LIBC char *optarg;
 
 /* Index in ARGV of the next element to be scanned.
  * - This is used for communication to and from the caller
@@ -65,14 +92,14 @@ __LIBC char *(optarg);
  *   the non-option elements that the caller should itself scan.
  * - Otherwise, `optind' communicates from one call to
  *   the next how much of ARGV has been scanned so far. */
-__LIBC int (optind);
+__LIBC int optind;
 
 /* Callers store zero here to inhibit the error message
  * `getopt' prints for unrecognized options. */
-__LIBC int (opterr);
+__LIBC int opterr;
 
 /* Set to an option character which was unrecognized. */
-__LIBC int (optopt);
+__LIBC int optopt;
 
 /* Describe the long-named options requested by the application.
  * The LONG_OPTIONS argument to getopt_long or getopt_long_only is a vector
@@ -125,6 +152,19 @@ __LIBC int (__LIBCCALL getopt_long)(int ___argc, char *const *___argv, char cons
 __LIBC int (__LIBCCALL getopt_long_only)(int ___argc, char *const *___argv, char const *__shortopts, const struct option *__longopts, int *__longind);
 
 __SYSDECL_END
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("val")
+#pragma pop_macro("flag")
+#pragma pop_macro("has_arg")
+#pragma pop_macro("name")
+#pragma pop_macro("option")
+#pragma pop_macro("optopt")
+#pragma pop_macro("opterr")
+#pragma pop_macro("optind")
+#pragma pop_macro("optarg")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
 #endif /* !__KERNEL__ */
 
 #endif /* !_GETOPT_H */

@@ -744,6 +744,12 @@ __LOCAL int (__LIBCCALL lockf64)(int __fd, int __cmd, __off64_t __len) { return 
             do __result = (expression); \
             while (__result == -1L && errno == EINTR); \
             __XRETURN __result; }))
+#elif defined(__COMPILER_HAVE_AUTOTYPE)
+#define TEMP_FAILURE_RETRY(expression) \
+ __XBLOCK({ __auto_type __result; \
+            do __result = (expression); \
+            while (__result == -1L && errno == EINTR); \
+            __XRETURN __result; }))
 #else
 #define TEMP_FAILURE_RETRY(expression) \
  __XBLOCK({ long int __result; \
