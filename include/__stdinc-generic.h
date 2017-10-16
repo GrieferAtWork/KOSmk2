@@ -396,6 +396,13 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #   define __restrict_arr /* Not supported.  */
 #endif
 
+#ifdef __cplusplus
+#define __IF0     if(false)
+#define __WHILE0  while(false)
+#else
+#define __IF0     if(0)
+#define __WHILE0  while(0)
+#endif
 #define __COMPILER_BARRIER()       (void)0 /* ??? */
 #define __COMPILER_READ_BARRIER()  (void)0 /* ??? */
 #define __COMPILER_WRITE_BARRIER() (void)0 /* ??? */

@@ -177,19 +177,26 @@ typedef __FILE FILE;
 #undef stdin
 #undef stdout
 #undef stderr
-#ifdef __PE__
+#ifdef __DOS_COMPAT__
+#ifdef __USE_DOS_LINKOBJECTS
+__LIBC FILE _iob[];
+#define stdin  (_iob+0)
+#define stdout (_iob+1)
+#define stderr (_iob+2)
+#else /* __USE_DOS_LINKOBJECTS */
 __LIBC FILE *(__LIBCCALL __iob_func)(void);
 #define stdin  (__iob_func()+0)
 #define stdout (__iob_func()+1)
 #define stderr (__iob_func()+2)
-#else /* __PE__ */
-__LIBC __FILE *(stdin);
-__LIBC __FILE *(stdout);
-__LIBC __FILE *(stderr);
-#define stdin   stdin
-#define stdout  stdout
-#define stderr  stderr
-#endif /* !__PE__ */
+#endif /* !__USE_DOS_LINKOBJECTS */
+#else /* __DOS_COMPAT__ */
+__LIBC __FILE *stdin;
+__LIBC __FILE *stdout;
+__LIBC __FILE *stderr;
+#define stdin  stdin
+#define stdout stdout
+#define stderr stderr
+#endif /* !__DOS_COMPAT__ */
 #endif /* !__stdstreams_defined */
 
 __NAMESPACE_STD_BEGIN
@@ -370,22 +377,19 @@ __REDIRECT_UFS(__LIBC,__PORT_KOSONLY_ALT(renameat),int,__LIBCCALL,frenameat,
 
 #ifdef __USE_LARGEFILE64
 __REDIRECT_IFDOS(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,tmpfile64,(void),tmpfile,())
-#ifdef __PE__
-__REDIRECT_UFS_(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,fopen64,(char const *__restrict __filename, char const *__restrict __modes),fopen,(__filename,__modes))
-__REDIRECT_UFS_(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,freopen64,(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream),freopen,(__filename,__modes,__stream))
-#else /* __PE__ */
-__REDIRECT_UFS(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,fopen64,(char const *__restrict __filename, char const *__restrict __modes),fopen64,(__filename,__modes));
-__REDIRECT_UFS(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,freopen64,(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream),freopen64,(__filename,__modes,__stream))
-#endif /* !__PE__ */
 __REDIRECT_IFDOS(__LIBC,,int,__LIBCCALL,fseeko64,(__FILE *__stream, __off64_t __off, int __whence),_fseeki64,(__stream,__off,__whence))
 __REDIRECT_IFDOS(__LIBC,__WUNUSED,__off64_t,__LIBCCALL,ftello64,(__FILE *__stream),_ftelli64,(__stream))
-#if defined(__PE__) && defined(__DOS_COMPAT__)
+#ifdef __DOS_COMPAT__
+__REDIRECT_UFS_(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,fopen64,(char const *__restrict __filename, char const *__restrict __modes),fopen,(__filename,__modes))
+__REDIRECT_UFS_(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,freopen64,(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream),freopen,(__filename,__modes,__stream))
 __LOCAL int (__LIBCCALL fgetpos64)(__FILE *__restrict __stream, fpos64_t *__restrict __pos) { return (__pos && (__off64_t)(*__pos = (fpos64_t)ftello64(__stream)) >= 0) ? 0 : -1; }
 __LOCAL int (__LIBCCALL fsetpos64)(__FILE *__stream, fpos64_t const *__pos) { return (__pos && fseeko64(__stream,(__off64_t)*__pos,SEEK_SET) >= 0) ? 0 : -1; }
-#else
+#else /* __DOS_COMPAT__ */
+__REDIRECT_UFS(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,fopen64,(char const *__restrict __filename, char const *__restrict __modes),fopen64,(__filename,__modes));
+__REDIRECT_UFS(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,freopen64,(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream),freopen64,(__filename,__modes,__stream))
 __LIBC int (__LIBCCALL fgetpos64)(__FILE *__restrict __stream, fpos64_t *__restrict __pos);
 __LIBC int (__LIBCCALL fsetpos64)(__FILE *__stream, fpos64_t const *__pos);
-#endif
+#endif /* !__DOS_COMPAT__ */
 #endif /* __USE_LARGEFILE64 */
 #ifdef __USE_MISC
 #ifdef __DOS_COMPAT__
@@ -503,7 +507,7 @@ __LIBC __PORT_NODOS int (__LIBCCALL obstack_vprintf)(struct obstack *__restrict 
 #endif /* __USE_GNU */
 
 #if defined(__USE_LARGEFILE) || defined(__USE_XOPEN2K)
-#ifdef __PE__
+#ifdef __DOS_COMPAT__
 #ifdef __USE_FILE_OFFSET64
 __REDIRECT(__LIBC,,int,__LIBCCALL,fseeko,(__FILE *__stream, __FS_TYPE(off) __off, int __whence),_fseeki64,(__stream,__off,__whence))
 __REDIRECT(__LIBC,__WUNUSED,__FS_TYPE(off),__LIBCCALL,ftello,(__FILE *__stream),_ftelli64,(__stream))
@@ -511,10 +515,10 @@ __REDIRECT(__LIBC,__WUNUSED,__FS_TYPE(off),__LIBCCALL,ftello,(__FILE *__stream),
 __REDIRECT(__LIBC,,int,__LIBCCALL,fseeko,(__FILE *__stream, __FS_TYPE(off) __off, int __whence),fseek,(__stream,__off,__whence))
 __REDIRECT(__LIBC,__WUNUSED,__FS_TYPE(off),__LIBCCALL,ftello,(__FILE *__stream),ftell,(__stream))
 #endif /* !__USE_FILE_OFFSET64 */
-#else /* __PE__ */
+#else /* __DOS_COMPAT__ */
 __REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,fseeko,(__FILE *__stream, __FS_TYPE(off) __off, int __whence),fseeko,(__stream,__off,__whence));
 __REDIRECT_FS_FUNC(__LIBC,__WUNUSED,__FS_TYPE(off),__LIBCCALL,ftello,(__FILE *__stream),ftello,(__stream));
-#endif /* !__PE__ */
+#endif /* !__DOS_COMPAT__ */
 #endif /* __USE_LARGEFILE || __USE_XOPEN2K */
 #ifdef __USE_XOPEN
 #ifdef __CRT_GLC
@@ -523,7 +527,7 @@ __LIBC __PORT_NODOS char *(__LIBCCALL cuserid)(char *__buf);
 #endif /* __USE_XOPEN */
 #ifdef __USE_KOS
 /* For use with 'format_printf()' and friends: Prints to a 'FILE *' closure argument. */
-#if defined(__PE__) && !defined(__LAZY_DOS_COMPAT__)
+#if !defined(__CRT_KOS) || (defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__))
 __LOCAL __ssize_t (__LIBCCALL file_printer)(char const *__restrict __data,
                                             size_t __datalen, void *__closure) {
  return (__ssize_t)fwrite(__data,sizeof(char),__datalen,(FILE *)__closure);
@@ -535,6 +539,8 @@ __LIBC __ssize_t (__LIBCCALL file_printer)(char const *__restrict __data,
 #endif /* __USE_KOS */
 #endif /* !__KERNEL__ */
 
+#ifndef ____libc_vsnprintf_defined
+#define ____libc_vsnprintf_defined 1
 #ifdef __DOS_COMPAT__
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vsnprintf,(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __VA_LIST __args),_vscprintf,(__format,__args))
@@ -547,6 +553,7 @@ __LOCAL int (__LIBCCALL __libc_vsnprintf)(char *__restrict __buf, size_t __bufle
 #else /* __DOS_COMPAT__ */
 __REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
 #endif /* !__DOS_COMPAT__ */
+#endif /* !____libc_vsnprintf_defined */
 
 
 __NAMESPACE_STD_BEGIN
@@ -1125,7 +1132,9 @@ __NAMESPACE_STD_BEGIN
 #if __SIZEOF_INT__ == __SIZEOF_SIZE_T__
 __LIBC wchar_t *(__LIBCCALL fgetws)(wchar_t *__restrict __buf, size_t __n, __FILE *__restrict __stream);
 #else /* __SIZEOF_INT__ == __SIZEOF_SIZE_T__ */
-#ifdef __PE__ /* In PE-mode, we don't export the size_t version */
+/* In PE-mode, we don't export the size_t version */
+#if defined(__PE__) || !defined(__CRT_KOS) || \
+   (defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__))
 #ifdef __NO_ASMNAME
 __LIBC wchar_t *(__LIBCCALL fgetws)(wchar_t *__restrict __buf, int __n, __FILE *__restrict __stream);
 #define fgetws(buf,n,stream) fgetws(buf,(int)(n),stream)
@@ -1133,9 +1142,9 @@ __LIBC wchar_t *(__LIBCCALL fgetws)(wchar_t *__restrict __buf, int __n, __FILE *
 __REDIRECT(__LIBC,,wchar_t *,__LIBCCALL,__pe_fgetws,(wchar_t *__restrict __buf, int __n, __FILE *__restrict __stream),fgetws,(__buf,__n,__stream))
 __LOCAL wchar_t *(__LIBCCALL fgetws)(wchar_t *__restrict __buf, size_t __n, __FILE *__restrict __stream) { return __pe_fgetws(__ws,(int)__n,__stream); }
 #endif /* !__NO_ASMNAME */
-#else /* __PE__ */
+#else /* ... */
 __REDIRECT(__LIBC,,wchar_t *,__LIBCCALL,fgetws,(wchar_t *__restrict __buf, size_t __n, __FILE *__restrict __stream),fgetws_sz,(__buf,__n,__stream))
-#endif /* !__PE__ */
+#endif /* !... */
 #endif /* __SIZEOF_INT__ != __SIZEOF_SIZE_T__ */
 #else /* __USE_KOS */
 __LIBC wchar_t *(__LIBCCALL fgetws)(wchar_t *__restrict __buf, int __n, __FILE *__restrict __stream);

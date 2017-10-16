@@ -682,7 +682,10 @@ __SYSDECL_END
 #include "hybrid/malloc.h"
 __SYSDECL_BEGIN
 __REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vscprintf,(char const *__restrict __format, __VA_LIST __args),_vscprintf,(__format,__args));
+#ifndef ____libc_vsprintf_defined
+#define ____libc_vsprintf_defined 1
 __REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
+#endif /* !____libc_vsprintf_defined */
 __LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
     int __resultlen = __libc_vscprintf(__format,__args);

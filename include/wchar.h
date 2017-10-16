@@ -711,19 +711,26 @@ typedef wchar_t _Wint_t;
 #undef stdin
 #undef stdout
 #undef stderr
-#ifdef __PE__
+#ifdef __DOS_COMPAT__
+#ifdef __USE_DOS_LINKOBJECTS
+__LIBC FILE _iob[];
+#define stdin  (_iob+0)
+#define stdout (_iob+1)
+#define stderr (_iob+2)
+#else /* __USE_DOS_LINKOBJECTS */
 __LIBC FILE *(__LIBCCALL __iob_func)(void);
 #define stdin  (__iob_func()+0)
 #define stdout (__iob_func()+1)
 #define stderr (__iob_func()+2)
-#else /* __PE__ */
-__LIBC __FILE *(stdin);
-__LIBC __FILE *(stdout);
-__LIBC __FILE *(stderr);
-#define stdin   stdin
-#define stdout  stdout
-#define stderr  stderr
-#endif /* !__PE__ */
+#endif /* !__USE_DOS_LINKOBJECTS */
+#else /* __DOS_COMPAT__ */
+__LIBC __FILE *stdin;
+__LIBC __FILE *stdout;
+__LIBC __FILE *stderr;
+#define stdin  stdin
+#define stdout stdout
+#define stderr stderr
+#endif /* !__DOS_COMPAT__ */
 #endif /* !__stdstreams_defined */
 
 #ifndef _FSIZE_T_DEFINED

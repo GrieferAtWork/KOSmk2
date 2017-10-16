@@ -26,6 +26,9 @@
 #include <hybrid/typecore.h>
 #include <hybrid/string.h>
 #include <hybrid/malloc.h>
+#ifndef __USE_KOS_PRINTF
+#include <__amalloc.h>
+#endif /* !__USE_KOS_PRINTF */
 
 #ifdef __INTELLISENSE__
 #ifndef _FORMAT_PRINTER_H
@@ -48,10 +51,67 @@
 
 __SYSDECL_BEGIN
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4127)
+#ifdef __ATTR_WEAK_IS_SELECTANY
+__INTERN __ATTR_WEAK
+#else
+__FORMAT_PRINTER_IMPL
 #endif
+char const __printf_decimals[2][17] = {
+ {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','x'},
+ {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','X'},
+};
+
+#define __print(s,n) \
+do{ if ((__temp = (*__printer)(s,n,__closure)) < 0) return __temp; \
+    __result += __temp; \
+}__WHILE0
+#define __printf(...) \
+do{ if ((__temp = format_printf(__printer,__closure,__VA_ARGS__)) < 0) return __temp; \
+    __result += __temp; \
+}__WHILE0
+#define __quote(s,n,flags) \
+do{ if ((__temp = format_quote(__printer,__closure,s,n,flags)) < 0) return __temp; \
+    __result += __temp; \
+}__WHILE0
+
+#ifndef __USE_KOS_PRINTF
+#ifndef ____libc_vsprintf_defined
+#define ____libc_vsprintf_defined 1
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
+#endif /* !____libc_vsprintf_defined */
+#ifndef ____libc_vsnprintf_defined
+#define ____libc_vsnprintf_defined 1
+#ifdef __DOS_COMPAT__
+__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vsnprintf,(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __VA_LIST __args),_vscprintf,(__format,__args))
+__LOCAL int (__LIBCCALL __libc_vsnprintf)(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args) {
+ /* Workaround for DOS's broken vsnprintf() implementation. */
+ int __result = __dos_vsnprintf(__buf,__buflen,__format,__args);
+ if (__result < 0) __result = __dos_vscprintf(__format,__args);
+ return __result;
+}
+#else /* __DOS_COMPAT__ */
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+#endif /* !__DOS_COMPAT__ */
+#endif /* !____libc_vsnprintf_defined */
+
+
+__FORMAT_PRINTER_IMPL
+__ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
+                                      char const *__restrict __format, __VA_LIST __args) {
+ char *__buffer; __size_t __reqlen; __ssize_t __result;
+#ifdef __DOS_COMPAT__
+ __reqlen = (__size_t)__dos_vscprintf(__format,__args);
+#else /* __DOS_COMPAT__ */
+ __reqlen = (__size_t)__libc_vsnprintf(NULL,0,__format,__args);
+#endif /* !__DOS_COMPAT__ */
+ __amalloc_nofail(__buffer,(__reqlen+1)*sizeof(char));
+ __libc_vsprintf(__buffer,__format,__args);
+ __result = (*__printer)(__buffer,__reqlen,__closure);
+ __afree(__buffer);
+ return __result;
+}
+#else /* !__USE_KOS_PRINTF */
 
 #define __PRINTF_FLAG_NONE     0x0000
 #define __PRINTF_FLAG_PREFIX   0x0001 /*< '%#'. */
@@ -119,30 +179,6 @@ __SYSDECL_BEGIN
 #define __PRINTF_LEN_l   __PP_CAT2(__PRINTF_LEN_I,__PP_MUL8(__SIZEOF_LONG__))
 #define __PRINTF_LEN_ll  __PP_CAT2(__PRINTF_LEN_I,__PP_MUL8(__SIZEOF_LONG_LONG__))
 #define __PRINTF_LEN_j   __PRINTF_LEN_I64 /* intmax_t */
-
-
-#ifdef __ATTR_WEAK_IS_SELECTANY
-__INTERN __ATTR_WEAK
-#else
-__FORMAT_PRINTER_IMPL
-#endif
-char const __printf_decimals[2][17] = {
- {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','x'},
- {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','X'},
-};
-
-#define __print(s,n) \
-do{ if ((__temp = (*__printer)(s,n,__closure)) < 0) return __temp; \
-    __result += __temp; \
-}while(0)
-#define __printf(...) \
-do{ if ((__temp = format_printf(__printer,__closure,__VA_ARGS__)) < 0) return __temp; \
-    __result += __temp; \
-}while(0)
-#define __quote(s,n,flags) \
-do{ if ((__temp = format_quote(__printer,__closure,s,n,flags)) < 0) return __temp; \
-    __result += __temp; \
-}while(0)
 
 __FORMAT_PRINTER_IMPL
 __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
@@ -410,6 +446,33 @@ end:
      __print(__flush_start,(__size_t)(__format-__flush_start));
  return __result;
 }
+#undef __PRINTF_FLAG_NONE
+#undef __PRINTF_FLAG_PREFIX
+#undef __PRINTF_FLAG_LJUST
+#undef __PRINTF_FLAG_SIGN
+#undef __PRINTF_FLAG_SPACE
+#undef __PRINTF_FLAG_PADZERO
+#undef __PRINTF_FLAG_HASWIDTH
+#undef __PRINTF_FLAG_HASPREC
+#undef __PRINTF_FLAG_UPPER
+#undef __PRINTF_FLAG_SIGNED
+#undef __PRINTF_FLAG_FIXBUF
+#undef __PRINTF_FLAG_QUOTE
+#undef __PRINTF_FLAG_CHQUOTE
+#undef __PRINTF_VA_SIZE
+#undef __PRINTF_LEN_I64
+#undef __PRINTF_LEN_I32
+#undef __PRINTF_LEN_I16
+#undef __PRINTF_LEN_I8
+#undef __PRINTF_FINT_LOAD
+#undef __PRINTF_LEN_PTR
+#undef __PRINTF_LEN_hh
+#undef __PRINTF_LEN_h
+#undef __PRINTF_LEN_l
+#undef __PRINTF_LEN_ll
+#undef __PRINTF_LEN_j
+#endif /* __USE_KOS_PRINTF */
+
 
 __FORMAT_PRINTER_IMPL
 __ssize_t (__ATTR_CDECL format_printf)(pformatprinter __printer, void *__closure,
@@ -428,7 +491,7 @@ __FORMAT_PRINTER_IMPL __NONNULL((1,3)) __ssize_t
                           __UINT32_TYPE__ __flags) {
  char __encoded_text[4];
  __size_t __encoded_text_size;
- ssize_t __result = 0,__temp; unsigned char __ch;
+ __ssize_t __result = 0,__temp; unsigned char __ch;
  char const *__iter,*__end,*__flush_start,*__c_hex;
  __end = (__iter = __flush_start = __text)+__textlen;
  __c_hex = __printf_decimals[!(__flags&FORMAT_QUOTE_FLAG_UPPERHEX)];
@@ -565,7 +628,7 @@ __FORMAT_PRINTER_IMPL __ssize_t
  assert(__self->__sp_bufpos >= __self->__sp_buffer);
  assert(__self->__sp_bufpos <= __self->__sp_bufend);
  __size_avail = (__size_t)(__self->__sp_bufend-__self->__sp_bufpos);
- if unlikely(__size_avail < __datalen) {
+ if __unlikely(__size_avail < __datalen) {
   /* Must allocate more memory. */
   __newsize = (__size_t)(__self->__sp_bufend-__self->__sp_buffer);
   assert(__newsize);
@@ -574,7 +637,7 @@ __FORMAT_PRINTER_IMPL __ssize_t
   do __newsize *= 2; while (__newsize < __reqsize);
   /* Reallocate the buffer (But include 1 character for the terminating '\0') */
   __new_buffer = (char *)__hybrid_realloc(__self->__sp_buffer,(__newsize+1)*sizeof(char));
-  if unlikely(!__new_buffer) return -1;
+  if __unlikely(!__new_buffer) return -1;
   __self->__sp_bufpos = __new_buffer+(__self->__sp_bufpos-__self->__sp_buffer);
   __self->__sp_bufend = __new_buffer+__newsize;
   __self->__sp_buffer = __new_buffer;
@@ -585,41 +648,10 @@ __FORMAT_PRINTER_IMPL __ssize_t
  return 0;
 }
 
-
-
-#undef __PRINTF_FLAG_NONE
-#undef __PRINTF_FLAG_PREFIX
-#undef __PRINTF_FLAG_LJUST
-#undef __PRINTF_FLAG_SIGN
-#undef __PRINTF_FLAG_SPACE
-#undef __PRINTF_FLAG_PADZERO
-#undef __PRINTF_FLAG_HASWIDTH
-#undef __PRINTF_FLAG_HASPREC
-#undef __PRINTF_FLAG_UPPER
-#undef __PRINTF_FLAG_SIGNED
-#undef __PRINTF_FLAG_FIXBUF
-#undef __PRINTF_FLAG_QUOTE
-#undef __PRINTF_FLAG_CHQUOTE
-#undef __PRINTF_VA_SIZE
-#undef __PRINTF_LEN_I64
-#undef __PRINTF_LEN_I32
-#undef __PRINTF_LEN_I16
-#undef __PRINTF_LEN_I8
-#undef __PRINTF_FINT_LOAD
-#undef __PRINTF_LEN_PTR
-#undef __PRINTF_LEN_hh
-#undef __PRINTF_LEN_h
-#undef __PRINTF_LEN_l
-#undef __PRINTF_LEN_ll
-#undef __PRINTF_LEN_j
 #undef __print
 #undef __printf
 #undef __quote
 #undef __FORMAT_PRINTER_IMPL
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 __SYSDECL_END
 

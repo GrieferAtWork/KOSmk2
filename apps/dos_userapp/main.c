@@ -35,29 +35,31 @@
 
 
 //#define _DOS_SOURCE  0
+//#define _KOS_PRINTF_SOURCE 1
 #define _GNU_SOURCE    1
 #define _KOS_SOURCE    1
 #define _PORT_SOURCE   1
 #define _TIME64_SOURCE 1
 
-#include <wchar.h>
-#include <stdio.h>
-#include <hybrid/compiler.h>
-#include <dirent.h>
-#include <string.h>
 #include <alloca.h>
+#include <dirent.h>
+#include <format-printer.h>
+#include <hybrid/compiler.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/timeb.h>
 #include <time.h>
 #include <uchar.h>
 #include <utime.h>
-#include <sys/stat.h>
-#include <sys/timeb.h>
-#include <format-printer.h>
+#include <wchar.h>
 
 DECL_BEGIN
 
 int main(int argc, char **argv) {
  (void)argc;
  (void)argv;
+
 
  DIR *d = opendir(".");
  struct dirent64 *ent;
@@ -67,7 +69,6 @@ int main(int argc, char **argv) {
   printf("ent: %s\n",ent->d_name);
   if (!stat64(ent->d_name,&buf))
       printf("mode = %o\n",buf.st_mode);
-  buf.st_atime64;
  }
  closedir(d);
 
@@ -78,7 +79,7 @@ int main(int argc, char **argv) {
  printf("n   = %d\n",n); /* Must not be -1, as would normally be the case in DOS. */
  printf("buf = '%.*s'\n",16,buf); /* Must contain the 16 characters. */
 
- format_printf(&file_printer,stdout,"HELLO WORLD\n");
+ format_printf(&file_printer,stdout,"Format-printer text");
 
  return 0;
 }

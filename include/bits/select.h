@@ -39,13 +39,13 @@ do{ __intptr_t __d0,__d1; \
                          : "a" (0), "0" (sizeof(fd_set)/sizeof(__fd_mask)) \
                          , "1" (&__FDS_BITS(fdsp)[0]) \
                          : "memory"); \
-}while(0)
+}__WHILE0
 #else /* Assembly version... */
 #define __FD_ZERO(set) \
 do{ __size_t __i; fd_set *const __arr = (set); \
     for (__i = 0; __i < sizeof(fd_set)/sizeof(__fd_mask); ++__i) \
          __FDS_BITS(__arr)[__i] = 0; \
-}while(0)
+}__WHILE0
 #endif /* C version... */
 
 #define __FD_SET(d,set)   ((void)(__FDS_BITS(set)[__FD_ELT(d)] |= __FD_MASK(d)))

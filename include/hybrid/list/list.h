@@ -67,7 +67,7 @@ do{ __typeof__(*(list)) *_iter = (list),*_next;\
      cleanup(_iter);\
      iter = _next;\
     }\
-}while(0)
+}__WHILE0
 
 #define SLIST_INSERT(list,elem,key) ((elem)->key.le_next = (list),(list) = (elem))
 

@@ -257,6 +257,15 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #   define __restrict_arr /* Nothing */
 #endif
 
+#ifdef __cplusplus
+#define __IF0     if(false)
+#define __WHILE0  while(false)
+#else
+#define __IF0     if(0)
+#define __WHILE0  while(0)
+#endif
+
+
 #if 1
 #define __COMPILER_BARRIER()       __atomic_signal_fence(__ATOMIC_ACQ_REL)
 #define __COMPILER_READ_BARRIER()  __atomic_signal_fence(__ATOMIC_ACQUIRE)

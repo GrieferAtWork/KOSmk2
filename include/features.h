@@ -78,6 +78,21 @@
 #undef __USE_DEBUG_HOOK  /* '#ifndef NDEBUG'         Redirect functions such as 'malloc()' to their debug counterparts (Implies '_DEBUG_SOURCE=1'). */
 #undef __USE_PORTABLE    /* '#ifdef _PORT_SOURCE'    Mark all non-portable functions as deprecated (So-long as they can't be emulated when linking against any supported LIBC in stand-alone mode). */
 
+#undef __USE_KOS_PRINTF  /* '#if __KOS_CRT || _KOS_PRINTF_SOURCE || _KOS_SOURCE >= 2'
+                          *    Always use KOS's printf() function & extension, as provided through 'format_printf()'.
+                          *    When running in dos/glc compatibility mode, functions such as 'printf()' normally link
+                          *    against the platform's integrated libc function, meaning that KOS-specific extensions
+                          *    such as '%q' are not available normally.
+                          * >> Enabling this option forces such functions to pass through some
+                          *    emulation of KOS's printf function, re-enabling its extensions. */
+
+/* Some DOS exports, such as stdin/stdout/stderr are exported in different ways,
+ * some of which are the objects in question themself, while others are indirect
+ * functions that simply return that same object.
+ * When this option is enabled, KOS system headers attempt
+ * to link against objects, rather than functions. */
+#undef __USE_DOS_LINKOBJECTS
+
 /* '#ifdef __DOS_COMPAT__' Even if CRT-GLC may be available, still emulate extended libc functions using functions also provided by DOS.
  *                         NOTE: Automatically defined when CRT-GLC isn't available, but CRT-DOS is. */
 /* '#ifdef __GLC_COMPAT__' Same as '__DOS_COMPAT__' but for GLibc, rather than DOS. */
@@ -316,6 +331,13 @@
 #   define __USE_KXS 1
 #endif
 #endif
+
+#if defined(__KOS_CRT) || \
+    defined(_KOS_PRINTF_SOURCE) || \
+    defined(__USE_KXS)
+#define __USE_KOS_PRINTF 1
+#endif
+
 
 /* Enable additional utf16/32 functions in system headers.
  * NOTE: Most functions defined by this extension require __CRT_KOS to be available. */

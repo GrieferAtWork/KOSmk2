@@ -126,7 +126,9 @@
 #define __NO_WUNUSED             1
 #define __WUNUSED                /* Nothing */
 #define __NO_XBLOCK              1
-#define __XBLOCK(...)            do __VA_ARGS__ while(0)
+#define __IF0                    if(__LINE__ == -1)    /* Always false, but not warned about. */
+#define __WHILE0                 while(__LINE__ == -1) /* ... */
+#define __XBLOCK(...)            do __VA_ARGS__ __WHILE0
 #define __XRETURN                /* Nothing */
 #define __builtin_assume(x)      __assume(x)
 #define __builtin_unreachable()  __assume(0)
