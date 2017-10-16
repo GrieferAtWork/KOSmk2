@@ -192,6 +192,8 @@ local current_device = none;
 local current_class = none;
 local current_subclass = none;
 
+local in_copyright = true;
+local copyright_lines = [];
 
 // Syntax:
 // vendor  vendor_name
@@ -205,8 +207,13 @@ local current_subclass = none;
 for (local line: file.io.stdin) {
 	local stripped = line.strip();
 	++lineno;
-	if (stripped.startswith("#"))
+	if (stripped.startswith("#")) {
+		if (in_copyright) {
+			copyright_lines.append(stripped.lstrip("#").lstrip());
+		}
 		continue; /* Comment */
+	}
+	in_copyright = false;
 	if (!stripped)
 		continue; /* Empty line */
 	try {
@@ -355,12 +362,24 @@ function count_elem(seq) {
 
 //local keys = vendors.keys().sorted();
 print copyright;
+print;
 print "/* Auto-generated file. DO NOT EDIT!";
 print " * To generate this file, use `deemon database.dee < database.ids > database.h'";
 print " * ENABLED OPTIONS:";
 if (inline_text)          print " *    - inline_text";
 if (string_optimizations) print " *    - string_optimizations";
 print " */";
+print;
+print "/*";
+print " * This header is genearted from the 'pci.ids' database.";
+print " * The following copyright notice was extracted from the source:";
+print " *";
+while (copyright_lines && !copyright_lines.front()) copyright_lines.pop_front();
+while (copyright_lines && !copyright_lines.back()) copyright_lines.pop_back();
+for (local line: copyright_lines)
+	print (" * >> "+line).rstrip();
+print " */";
+print;
 print "#ifndef PCI_DATABASE_H";
 print "#define PCI_DATABASE_H 1";
 print;
