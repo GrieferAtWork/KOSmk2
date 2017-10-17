@@ -458,7 +458,7 @@ libc_getmainargs(int *pargc, char ***pargv, char ***penvp,
  libc_dos_init();
  if (pargc) *pargc = libc_argc;
  if (pargv) *pargv = libc_argv;
- if (penvp) *pargv = environ;
+ if (penvp) *penvp = environ;
  return 0;
 }
 INTERN ATTR_DOSTEXT int LIBCCALL
@@ -467,7 +467,7 @@ libc_16wgetmainargs(int *pargc, char16_t ***pargv, char16_t ***penvp,
  libc_dos_init();
  if (pargc) *pargc = libc_argc;
  if (pargv) *pargv = *libc_p_16wargv();
- if (penvp) *pargv = *libc_p_16wenviron();
+ if (penvp) *penvp = *libc_p_16wenviron();
  /* Also initialize this one, which in turn will force-setup '__wargv'.
   * NOTE: We only do this in wide-mode to improve startup times.
   * NOTE: Also, when filling in 'pargv', '__wargv' should have already been initialized. */
