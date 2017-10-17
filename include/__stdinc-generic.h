@@ -148,7 +148,7 @@
 #   define __ATTR_MALLOC         /* Nothing */
 #endif
 #if __has_attribute(__hot__)
-#   define __ATTR_HOT         __attribute__((__hot__))
+#   define __ATTR_HOT            __attribute__((__hot__))
 #else
 #   define __NO_ATTR_HOT         1
 #   define __ATTR_HOT            /* Nothing */
@@ -293,6 +293,12 @@
 #else
 #   define __NO_ATTR_WEAK        1
 #   define __ATTR_WEAK           /* Nothing */
+#endif
+#if __has_attribute(__returns_twice__)
+#   define __ATTR_RETURNS_TWICE  __attribute__((__returns_twice__))
+#else
+#   define __NO_ATTR_RETURNS_TWICE 1
+#   define __ATTR_RETURNS_TWICE  /* nothing */
 #endif
 #if __has_attribute(__visibility__) || \
    (defined(__ELF__) || defined(__TINYC__))

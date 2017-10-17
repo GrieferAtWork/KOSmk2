@@ -119,32 +119,32 @@ __LIBC __PORT_NODOS int (__ATTR_CDECL fcntl)(int __fd, int __cmd, ...);
 
 #ifndef __open_defined
 #define __open_defined 1 /* TODO: Use redirection */
-__LIBC __NONNULL((1)) int (__ATTR_CDECL open)(char const *__file, int __oflag, ...) __UFS_FUNCn_OLDPEA(open);
+__LIBC __WUNUSED __NONNULL((1)) int (__ATTR_CDECL open)(char const *__file, int __oflag, ...) __UFS_FUNCn_OLDPEA(open);
 #endif /* !__open_defined */
 
 #ifndef __creat_defined
 #define __creat_defined 1
-__REDIRECT_UFS_FUNCn_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,creat,(char const *__file, mode_t __mode),creat,(__file,__mode))
+__REDIRECT_UFS_FUNCn_OLDPEA(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,creat,(char const *__file, mode_t __mode),creat,(__file,__mode))
 #endif /* !__creat_defined */
 
 #ifdef __USE_LARGEFILE64
 /* TODO: Use redirection */
 #ifdef __PE__
-__LIBC __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC_(_open);
-__REDIRECT_UFS_(__LIBC,__NONNULL((1)),int,__LIBCCALL,creat64,
+__LIBC __WUNUSED __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC_(_open);
+__REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,creat64,
                (char const *__file, mode_t __mode),_creat,(__file,__mode))
 #else /* __PE__ */
-__LIBC __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC(open64);
-__REDIRECT_UFS(__LIBC,__NONNULL((1)),int,__LIBCCALL,creat64,
+__LIBC __WUNUSED __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC(open64);
+__REDIRECT_UFS(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,creat64,
               (char const *__file, mode_t __mode),creat64,(__file,__mode))
 #endif /* !__PE__ */
 #endif /* __USE_LARGEFILE64 */
 
 #ifdef __CRT_GLC
 #ifdef __USE_ATFILE /* TODO: Use redirection */
-__LIBC __PORT_NODOS_ALT(open) __NONNULL((2)) int (__ATTR_CDECL openat)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNCn(openat);
+__LIBC __WUNUSED __PORT_NODOS_ALT(open) __NONNULL((2)) int (__ATTR_CDECL openat)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNCn(openat);
 #ifdef __USE_LARGEFILE64
-__LIBC __PORT_NODOS_ALT(open64) __NONNULL((2)) int (__ATTR_CDECL openat64)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNC(openat64);
+__LIBC __WUNUSED __PORT_NODOS_ALT(open64) __NONNULL((2)) int (__ATTR_CDECL openat64)(int __fd, char const *__file, int __oflag, ...) __UFS_FUNC(openat64);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_ATFILE */
 #ifdef __USE_XOPEN2K

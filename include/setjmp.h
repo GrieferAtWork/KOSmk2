@@ -21,30 +21,49 @@
 
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
+#include <hybrid/host.h>
 #include <bits/sigset.h>
 #include <features.h>
 
-/* TODO: Compatibility with DOS and GLibc */
+/* TODO: Compatibility with GLibc */
 
 #ifndef __KERNEL__
 __SYSDECL_BEGIN
 
+#ifdef __DOS_COMPAT__
+#if defined(__x86_64__)
+#define __JMP_BUF_ALIGN 16
+#define __JMP_BUF_SIZE  256
+#elif defined(__i386__)
+#define __JMP_BUF_SIZE  64
+#elif defined(__arm__)
+#define __JMP_BUF_SIZE  112
+#endif
+
+#ifdef __JMP_BUF_ALIGN
+__ATTR_ALIGNED(__JMP_BUF_ALIGN)
+#else
+__ATTR_ALIGNED(__SIZEOF_POINTER__)
+#endif
+struct __jmp_buf {
+ __BYTE_TYPE__ __data[__JMP_BUF_SIZE];
+};
+#else
 struct __jmp_buf {
  __UINTPTR_TYPE__ __ebx,__esp,__ebp;
  __UINTPTR_TYPE__ __esi,__edi,__eip;
  __UINTPTR_TYPE__ __padding[2];
 };
 #define __JMP_BUF_STATIC_INIT  {{0,0,0,0,0,0,0,0}}
+#endif
 
 __NAMESPACE_STD_BEGIN
 typedef struct __jmp_buf jmp_buf[1];
 
-#if defined(__GNUC__) || __has_attribute(__returns_twice__)
-__LIBC __attribute__((__returns_twice__)) int (__LIBCCALL setjmp)(jmp_buf __buf);
-#else
-__LIBC int (__LIBCCALL setjmp)(jmp_buf __buf);
-#endif
-#if defined(__OPTIMIZE__) && !defined(__NO_ASMNAME)
+__REDIRECT_IFDOS(__LIBC,__ATTR_RETURNS_TWICE,int,__LIBCCALL,setjmp,(jmp_buf __buf),_setjmp,(__buf));
+
+#if defined(__OPTIMIZE__) && !defined(__NO_ASMNAME) && \
+   (defined(__CRT_KOS) && !defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
 __LIBC __ATTR_NORETURN void (__LIBCCALL __longjmp)(jmp_buf __buf, int __sig) __ASMNAME("longjmp");
 __LIBC __ATTR_NORETURN void (__LIBCCALL __longjmp2)(jmp_buf __buf, int __sig);
 __LOCAL __ATTR_NORETURN void (__LIBCCALL longjmp)(jmp_buf __buf, int __sig) {
@@ -63,12 +82,19 @@ __NAMESPACE_STD_USING(longjmp)
 #ifdef __USE_POSIX
 struct __sigjmp_buf {
  struct __jmp_buf __jmp;
+#ifndef __DOS_COMPAT__
  __sigset_t       __sig;
+#endif /* !__DOS_COMPAT__ */
 };
 typedef struct __sigjmp_buf sigjmp_buf[1];
 
-__LIBC __attribute__((__returns_twice__)) int (__LIBCCALL sigsetjmp)(sigjmp_buf __buf, int __savemask);
-__LIBC __ATTR_NORETURN void (__LIBCCALL siglongjmp)(sigjmp_buf __buf, int __sig);
+#ifdef __DOS_COMPAT__
+__REDIRECT(__LIBC,__ATTR_RETURNS_TWICE,int,__LIBCCALL,__dos_setjmpex,(sigjmp_buf __buf),_setjmpex,(__buf))
+__LOCAL __ATTR_RETURNS_TWICE int (__LIBCCALL sigsetjmp)(sigjmp_buf __buf, int __savemask) { return __savemask ? __dos_setjmpex(__buf) : __NAMESPACE_STD_SYM setjmp(__buf); }
+#else /* __DOS_COMPAT__ */
+__LIBC __ATTR_RETURNS_TWICE int (__LIBCCALL sigsetjmp)(sigjmp_buf __buf, int __savemask);
+#endif /* !__DOS_COMPAT__ */
+__REDIRECT_IFDOS_VOID(__LIBC,__ATTR_NORETURN,__LIBCCALL,siglongjmp,(sigjmp_buf __buf, int __sig),longjmp,(__buf,__sig))
 #endif /* __USE_POSIX */
 
 __SYSDECL_END

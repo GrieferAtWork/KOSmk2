@@ -59,6 +59,7 @@ BEGIN APPLICATION("playground")
 	SOURCE("test/playground.c")
 END
 
+DISK_SYNC("../bin/apps/dos_userapp.exe","/bin/dos_userapp.exe")
 DISK_SYNC("hybrid_demo/main.exe","/bin/hybrid-demo.exe")
 
 

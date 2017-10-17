@@ -16,27 +16,28 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _PTY_H
-#define _PTY_H 1
+#ifndef GUARD_LIBS_LIBKERNEL32_MISC_H
+#define GUARD_LIBS_LIBKERNEL32_MISC_H 1
 
-#include <features.h>
-#include <termios.h>
-#include <sys/ioctl.h>
+#include <hybrid/compiler.h>
+#include <winapi/windows.h>
+#include <winapi/ntdef.h>
 
-#ifndef __CRT_GLC
-#error "<pty.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
+DECL_BEGIN
 
-__SYSDECL_BEGIN
+INTDEF DWORD WINAPI K32_GetCurrentThreadId(void);
+INTDEF void WINAPI K32_GetSystemTimeAsFileTime(LPFILETIME presult);
+INTDEF DWORD WINAPI K32_GetCurrentProcessId(void);
+INTDEF WINBOOL WINAPI K32_QueryPerformanceCounter(LARGE_INTEGER *ptick);
+INTDEF WINBOOL WINAPI K32_QueryPerformanceFrequency(LARGE_INTEGER *pfreq);
+INTDEF WINBOOL WINAPI K32_IsProcessorFeaturePresent(DWORD feature);
+INTDEF WINBOOL WINAPI K32_IsDebuggerPresent(void);
+INTDEF PVOID WINAPI K32_EncodePointer(PVOID p);
+INTDEF PVOID WINAPI K32_DecodePointer(PVOID p);
+INTDEF PVOID WINAPI K32_EncodeSystemPointer(PVOID p);
+INTDEF PVOID WINAPI K32_DecodeSystemPointer(PVOID p);
 
-struct termios;
-struct winsize;
 
-#ifndef __KERNEL__
-__LIBC __PORT_NODOS int (__LIBCCALL openpty)(int *__amaster, int *__aslave, char *__name, struct termios const *__termp, struct winsize const *__winp);
-__LIBC __PORT_NODOS int (__LIBCCALL forkpty)(int *__amaster, char *__name, struct termios const *__termp, struct winsize const *__winp);
-#endif /* !__KERNEL__ */
+DECL_END
 
-__SYSDECL_END
-
-#endif /* !_PTY_H */
+#endif /* !GUARD_LIBS_LIBKERNEL32_MISC_H */

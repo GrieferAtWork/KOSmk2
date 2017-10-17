@@ -31,6 +31,8 @@
 
 DECL_BEGIN
 
+#define DLCALL __DLFCN_CALL
+
 #define SYSCALL0(type,name,decl) __SYSCALL_FUN(0,LIBCCALL,,type,__NR_##name,sys_##name,decl)
 #define SYSCALL1(type,name,decl) __SYSCALL_FUN(1,LIBCCALL,,type,__NR_##name,sys_##name,decl)
 #define SYSCALL2(type,name,decl) __SYSCALL_FUN(2,LIBCCALL,,type,__NR_##name,sys_##name,decl)
@@ -47,24 +49,24 @@ LOCAL SYSCALL1(int,xdlclose,(void *,handle));
 #define DECL PRIVATE ATTR_USED
 
 PRIVATE errno_t dl_error = -EOK;
-DECL void *dl_dlopen(char const *file, int mode) {
+DECL void *DLCALL dl_dlopen(char const *file, int mode) {
  void *result = sys_xdlopen(file,mode);
  dl_error = E_GTERR(result);
  if (E_ISERR(result)) result = NULL;
  return result;
 }
-DECL void *dl_fdlopen(int fd, int mode) {
+DECL void *DLCALL dl_fdlopen(int fd, int mode) {
  void *result = sys_xfdlopen(fd,mode);
  dl_error = E_GTERR(result);
  if (E_ISERR(result)) result = NULL;
  return result;
 }
-DECL int dl_dlclose(void *handle) {
+DECL int DLCALL dl_dlclose(void *handle) {
  dl_error = sys_xdlclose(handle);
  return E_ISOK(dl_error) ? 0 : -1;
 }
-DECL void *dl_dlsym(void *__restrict handle,
-                    char const *__restrict name) {
+DECL void *DLCALL dl_dlsym(void *__restrict handle,
+                           char const *__restrict name) {
  void *result = sys_xdlsym(handle,name);
  dl_error = E_GTERR(result);
  if (E_ISERR(result)) result = NULL;
@@ -77,7 +79,7 @@ PRIVATE void *p_libc_handle = NULL;
 PRIVATE pstrerror p_libc_strerror;
 PRIVATE char uerror[] = "Unknown error 0x~~";
 
-DECL char *dl_dlerror(void) {
+DECL char *DLCALL dl_dlerror(void) {
  errno_t error = ATOMIC_XCH(dl_error,-EOK);
  if (error == -EOK) return NULL;
  if (!p_libc_strerror) {
@@ -98,16 +100,16 @@ fallback:
  COMPILER_ENDOF(uerror)[-1] = ((error & 0x0f)     ) >= 10 ? 'A'+(((error & 0x0f)     )-10) : '0'+((error & 0x0f)     );
  return uerror;
 }
-DECL int dl_dladdr1(const void *UNUSED(address), Dl_info *UNUSED(info),
-                    void **UNUSED(extra_info), int UNUSED(flags)) {
+DECL int DLCALL dl_dladdr1(const void *UNUSED(address), Dl_info *UNUSED(info),
+                           void **UNUSED(extra_info), int UNUSED(flags)) {
  /* TODO: This one we could actually implement quite easily... */
  dl_error = -ENOSYS;
  return -1;
 }
-DECL void *dl_dlmopen(Lmid_t UNUSED(nsid), char const *file, int mode) { return dl_dlopen(file,mode); }
-DECL void *dl_dlvsym(void *__restrict handle, char const *__restrict name, char const *__restrict UNUSED(version)) { return dl_dlsym(handle,name); }
-DECL int dl_dladdr(const void *address, Dl_info *info) { return dl_dladdr1(address,info,NULL,0); }
-DECL int dl_dlinfo(void *__restrict handle, int request, void *__restrict arg) { dl_error = -ENOSYS; return -1; }
+DECL void *DLCALL dl_dlmopen(Lmid_t UNUSED(nsid), char const *file, int mode) { return dl_dlopen(file,mode); }
+DECL void *DLCALL dl_dlvsym(void *__restrict handle, char const *__restrict name, char const *__restrict UNUSED(version)) { return dl_dlsym(handle,name); }
+DECL int DLCALL dl_dladdr(const void *address, Dl_info *info) { return dl_dladdr1(address,info,NULL,0); }
+DECL int DLCALL dl_dlinfo(void *__restrict handle, int request, void *__restrict arg) { dl_error = -ENOSYS; return -1; }
 
 
 /* NOTE: By defining the global symbols as aliases, we can still call our internally

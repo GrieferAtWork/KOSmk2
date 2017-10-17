@@ -115,8 +115,10 @@
 #   define __NO_ATTR_ALIGNED     1
 #   define __ATTR_ALIGNED(n)     /* Nothing */
 #endif
-#define __ATTR_WEAK              __declspec(selectany) /* For all that we care, it's basically the same. */
 #define __ATTR_WEAK_IS_SELECTANY 1
+#define __ATTR_WEAK              __declspec(selectany) /* For all that we care, it's basically the same. */
+#define __NO_ATTR_RETURNS_TWICE  1
+#define __ATTR_RETURNS_TWICE     /* nothing */
 #define __NO_ATTR_VISIBILITY     1
 #define __ATTR_VISIBILITY(vis)   /* Nothing */
 #define __ATTR_DLLIMPORT         __declspec(dllimport)

@@ -27,6 +27,9 @@
 
 __SYSDECL_BEGIN
 
+#define __DLFCN      __IMPDEF
+#define __DLFCN_CALL __ATTR_CDECL
+
 /* User functions for run-time dynamic loading.
    Copyright (C) 1995-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -75,12 +78,12 @@ typedef long int Lmid_t;
 #endif
 
 #ifndef __KERNEL__
-extern void *(dlopen)(char const *__file, int __mode);
-extern __NONNULL((1)) int (dlclose)(void *__handle);
-extern __NONNULL((2)) void *(dlsym)(void *__restrict __handle, char const *__restrict __name);
-extern char *(dlerror)(void);
+__DLFCN __WUNUSED void *(__DLFCN_CALL dlopen)(char const *__file, int __mode);
+__DLFCN __NONNULL((1)) int (__DLFCN_CALL dlclose)(void *__handle);
+__DLFCN __NONNULL((2)) void *(__DLFCN_CALL dlsym)(void *__restrict __handle, char const *__restrict __name);
+__DLFCN char *(__DLFCN_CALL dlerror)(void);
 #ifdef __USE_KOS
-extern void *(fdlopen)(int __fd, int __mode);
+__DLFCN void *(__DLFCN_CALL fdlopen)(int __fd, int __mode);
 #endif /* __USE_KOS */
 #endif /* !__KERNEL__ */
 
@@ -123,11 +126,11 @@ typedef struct {
 } Dl_serinfo;
 
 #ifndef __KERNEL__
-extern void *(dlmopen)(Lmid_t __nsid, char const *__file, int __mode);
-extern __NONNULL((2,3)) void *(dlvsym)(void *__restrict __handle, char const *__restrict __name, char const *__restrict __version);
-extern __NONNULL((2)) int (dladdr)(const void *__address, Dl_info *__info);
-extern __NONNULL((2)) int (dladdr1)(const void *__address, Dl_info *__info, void **__extra_info, int __flags);
-extern __NONNULL((1,3)) int (dlinfo)(void *__restrict __handle, int __request, void *__restrict __arg);
+__DLFCN void *(__DLFCN_CALL dlmopen)(Lmid_t __nsid, char const *__file, int __mode);
+__DLFCN __NONNULL((2,3)) void *(__DLFCN_CALL dlvsym)(void *__restrict __handle, char const *__restrict __name, char const *__restrict __version);
+__DLFCN __NONNULL((2)) int (__DLFCN_CALL dladdr)(const void *__address, Dl_info *__info);
+__DLFCN __NONNULL((2)) int (__DLFCN_CALL dladdr1)(const void *__address, Dl_info *__info, void **__extra_info, int __flags);
+__DLFCN __NONNULL((1,3)) int (__DLFCN_CALL dlinfo)(void *__restrict __handle, int __request, void *__restrict __arg);
 #endif /* !__KERNEL__ */
 
 #endif /* __USE_GNU */

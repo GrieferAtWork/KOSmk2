@@ -195,6 +195,12 @@ DEFINE_PUBLIC_ALIAS(longjmp,libc_longjmp);
 DEFINE_PUBLIC_ALIAS(__longjmp2,libc___longjmp2);
 DEFINE_PUBLIC_ALIAS(alloca,libc_alloca);
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_alloca,libc_alloca);
+DEFINE_PUBLIC_ALIAS(_setjmp,libc_setjmp);
+DEFINE_PUBLIC_ALIAS(_setjmpex,libc_setjmp); /* TODO: Must safe local exception handlers. */
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_ASM_C */

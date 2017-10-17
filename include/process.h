@@ -112,7 +112,7 @@ __LIBC __ATTR_NORETURN void (__LIBCCALL _exit)(int __status);
 __LIBC __PORT_DOSONLY void (__LIBCCALL _cexit)(void);
 __LIBC __PORT_DOSONLY void (__LIBCCALL _c_exit)(void);
 #endif /* __CRT_DOS */
-__LIBC int (__LIBCCALL _getpid)(void) __ASMNAME("getpid");
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_getpid,(void),getpid,())
 
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execv,(char const *__path, __TARGV),execv,(__path,___argv))
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_execve,(char const *__path, __TARGV, __TENVP),execve,(__path,___argv,___envp))
@@ -180,7 +180,7 @@ __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_wspawnvpe,(int __mode, w
 #ifndef _CRT_WSYSTEM_DEFINED
 #define _CRT_WSYSTEM_DEFINED 1
 #ifdef __CRT_DOS
-__LIBC __PORT_DOSONLY int (__LIBCCALL _wsystem)(wchar_t const *__restrict __cmd);
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wsystem,(wchar_t const *__restrict __cmd),wsystem,(__cmd))
 #endif /* __CRT_DOS */
 #endif /* !_CRT_WSYSTEM_DEFINED */
 

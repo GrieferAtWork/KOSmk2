@@ -56,10 +56,12 @@
 
 DECL_BEGIN
 
+/* NOTE: Try copy-pasting the .exe created by this app into KOS.
+ * HINT: It will run dispite dependencies to msvcrt and kernel32 ;) */
+
 int main(int argc, char **argv) {
  (void)argc;
  (void)argv;
-
 
  DIR *d = opendir(".");
  struct dirent64 *ent;
@@ -77,11 +79,15 @@ int main(int argc, char **argv) {
  n = snprintf(buf,sizeof(buf),"foo bar foobar %s\n",
               "This text is too long for the buffer");
  printf("n   = %d\n",n); /* Must not be -1, as would normally be the case in DOS. */
- printf("buf = '%.*s'\n",16,buf); /* Must contain the 16 characters. */
+ printf("buf = '%.*s'\n",16,buf); /* Must contain the first 16 characters. */
 
  format_printf(&file_printer,stdout,
-               "Format-printer text %s",
+               "Format-printer text %s\n",
                strdupaf("foo %d",42));
+
+ printf("argc = %d\n",argc);
+ printf("argv = %p\n",argv);
+ while (argc--) printf("argv[%d] = %s\n",argc,argv[argc]);
 
  return 0;
 }

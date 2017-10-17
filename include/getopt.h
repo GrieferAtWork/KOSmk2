@@ -146,10 +146,10 @@ struct option {
  *   `getopt'. */
 #ifndef __getopt_defined
 #define __getopt_defined 1
-__LIBC int (__LIBCCALL getopt)(int ___argc, char *const *___argv, char const *__shortopts);
+__LIBC __PORT_NODOS __WUNUSED int (__LIBCCALL getopt)(int ___argc, char *const *___argv, char const *__shortopts);
 #endif /* !__getopt_defined */
-__LIBC int (__LIBCCALL getopt_long)(int ___argc, char *const *___argv, char const *__shortopts, const struct option *__longopts, int *__longind);
-__LIBC int (__LIBCCALL getopt_long_only)(int ___argc, char *const *___argv, char const *__shortopts, const struct option *__longopts, int *__longind);
+__LIBC __PORT_NODOS __WUNUSED int (__LIBCCALL getopt_long)(int ___argc, char *const *___argv, char const *__shortopts, const struct option *__longopts, int *__longind);
+__LIBC __PORT_NODOS __WUNUSED int (__LIBCCALL getopt_long_only)(int ___argc, char *const *___argv, char const *__shortopts, const struct option *__longopts, int *__longind);
 
 __SYSDECL_END
 

@@ -81,6 +81,7 @@
 DECL_BEGIN
 
 PRIVATE void KCALL network_test(void) {
+#if 0
  ssize_t error;
  REF struct netdev *net = get_default_adapter();
  if unlikely(!net) return;
@@ -97,6 +98,7 @@ PRIVATE void KCALL network_test(void) {
  syslog(LOG_DEBUG,"error = %Iu: %[errno]\n",error,-error);
 
  NETDEV_DECREF(net);
+#endif
 }
 
 

@@ -37,16 +37,17 @@ struct _diskfree_t {
 
 #ifndef __KERNEL__
 
-__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,char *,__LIBCCALL,_getcwd,(char *__buf, size_t __size),getcwd,(__buf,__size))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__WUNUSED_SUGGESTED,char *,__LIBCCALL,_getcwd,(char *__buf, size_t __size),getcwd,(__buf,__size))
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1)),int,__LIBCCALL,_chdir,(char const *__path),chdir,(__path));
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1)),int,__LIBCCALL,_rmdir,(char const *__path),rmdir,(__path));
 
 #ifdef __CRT_DOS
-#define _getdcwd_nolock               _getdcwd
-__LIBC __PORT_NODOS char *(__LIBCCALL _getdcwd)(int __drive, char *__buf, size_t __size);
+#define _getdcwd_nolock _getdcwd
+__LIBC __PORT_NODOS_ALT(getcwd) __WUNUSED_SUGGESTED
+char *(__LIBCCALL _getdcwd)(int __drive, char *__buf, size_t __size);
 __LIBC __PORT_NODOS int (__LIBCCALL _chdrive)(int __drive);
-__LIBC __PORT_NODOS int (__LIBCCALL _getdrive)(void);
-__LIBC __PORT_NODOS unsigned long (__LIBCCALL _getdrives)(void);
+__LIBC __WUNUSED __PORT_NODOS int (__LIBCCALL _getdrive)(void);
+__LIBC __WUNUSED __PORT_NODOS unsigned long (__LIBCCALL _getdrives)(void);
 #ifndef _GETDISKFREE_DEFINED
 #define _GETDISKFREE_DEFINED 1
 #ifdef __USE_KOS
@@ -60,7 +61,7 @@ __LIBC __PORT_NODOS unsigned int (__LIBCCALL _getdiskfree)(unsigned int __drive,
 /* A small hand full of functions defined in '<direct.h>' */
 #ifndef __getcwd_defined
 #define __getcwd_defined 1
-__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,,char *,__LIBCCALL,getcwd,(char *__buf, size_t __size),getcwd,(__buf,__size))
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__WUNUSED_SUGGESTED,char *,__LIBCCALL,getcwd,(char *__buf, size_t __size),getcwd,(__buf,__size))
 #endif /* !__getcwd_defined */
 #ifndef __chdir_defined
 #define __chdir_defined 1
@@ -91,8 +92,8 @@ __LOCAL __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) { return __kos
 #ifdef __CRT_DOS
 #ifndef _WDIRECT_DEFINED
 #define _WDIRECT_DEFINED 1
-__LIBC __PORT_NODOS __NONNULL((1)) wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__dstbuf, int __dstlen);
-__LIBC __PORT_NODOS __NONNULL((2)) wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __dstlen);
+__LIBC __WUNUSED_SUGGESTED __PORT_NODOS __NONNULL((1)) wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__dstbuf, int __dstlen);
+__LIBC __WUNUSED_SUGGESTED __PORT_NODOS __NONNULL((2)) wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __dstlen);
 #define _wgetdcwd_nolock    _wgetdcwd
 __REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wchdir,(wchar_t const *__path),_wchdir,(__path));
 __REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wrmdir,(wchar_t const *__path),_wrmdir,(__path));

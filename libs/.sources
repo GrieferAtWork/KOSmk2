@@ -67,6 +67,15 @@ BEGIN LIBRARY("libpthread")
 	SOURCE("libpthread/*.c")
 END
 
+BEGIN LIBRARY("libkernel32")
+	SET_OUTPUT("/bin/libs/kernel32.so")
+	SET_DISKFILE("/lib/KERNEL32.dll")
+	LIBPATH("/bin/libs")
+	PROJ_DEP("libc")
+	LIB("c")
+	SOURCE("libkernel32/*.c")
+END
+
 BEGIN ARCHIVE("_start")
 	SET_ARCHIVER("")
 	SET_OUTPUT("/bin/libs/crt0.o")

@@ -254,7 +254,7 @@ __LOCAL __NONNULL((1)) struct dirent64 *(__LIBCCALL readdir64)(DIR *__dirp);
 __LOCAL DIR *(__LIBCCALL opendir)(char const *__name) {
  DIR *__result; size_t __namelen = __hybrid_strlen(__name);
  char *__query = (char *)__hybrid_malloc((__namelen+3)*sizeof(char));
- if __unlikely(!__query) return 0;
+ if __unlikely(!__query) return __NULLPTR;
  __result = (DIR *)__hybrid_malloc(sizeof(DIR));
  if __unlikely(!__result) goto __end;
  __hybrid_memcpy(__query,__name,__namelen*sizeof(char));
@@ -276,10 +276,10 @@ __LOCAL int (__LIBCCALL closedir)(DIR *__dirp) {
  return 0;
 }
 __LOCAL struct dirent *(__LIBCCALL readdir)(DIR *__dirp) {
- if __unlikely(!__dirp) { __set_errno(EINVAL); return 0; }
+ if __unlikely(!__dirp) { __set_errno(EINVAL); return __NULLPTR; }
  if (!__dirp->__d_isfirst) {
   if (__dos_findnext(__dirp->__d_hnd,&__dirp->__d_ent.__d_attrib))
-      return 0;
+      return __NULLPTR;
   ++__dirp->__d_ent.d_ino;
  }
  __dirp->__d_isfirst = 0;

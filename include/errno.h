@@ -225,7 +225,7 @@ typedef int errno_t;
 #define errno                                            (*__errno())
 __REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,__WUNUSED,__errno_t *,__LIBCCALL,__errno,(void),_errno,())
 __REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,,__errno_t,__LIBCCALL,__set_errno,(__errno_t __err),_set_errno,(__err))
-#if defined(__CRT_DOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+#if defined(__CRT_KOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
 __LIBC __WUNUSED __errno_t __NOTHROW((__LIBCCALL __get_errno)(void));
 #else /* Builtin... */
 __LOCAL __WUNUSED __errno_t __NOTHROW((__LIBCCALL __get_errno)(void)) { return errno; }
@@ -242,12 +242,12 @@ __LOCAL __errno_t __NOTHROW((__LIBCCALL _set_errno)(__errno_t __err)) { return (
 #ifdef __USE_GNU
 #undef program_invocation_name
 #undef program_invocation_short_name
-#ifdef __CRT_KOS
+#if defined(__CRT_KOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
 #define program_invocation_name       __libc_program_invocation_name()
 #define program_invocation_short_name __libc_program_invocation_short_name()
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_name)(void));
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_short_name)(void));
-#elif defined(__CRT_GLC)
+#elif defined(__CRT_GLC) && !defined(__GLC_COMPAT__)
 __LIBC char *program_invocation_name;
 __LIBC char *program_invocation_short_name;
 #elif defined(__CRT_DOS)
@@ -261,8 +261,8 @@ __LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
 
 #if defined(__USE_KOS) && \
    (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
-__LIBC __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_dos2kos)(errno_t __eno));
-__LIBC __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
+__LIBC __WUNUSED __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_dos2kos)(errno_t __eno));
+__LIBC __WUNUSED __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
 #endif /* __USE_KOS && __CRT_KOS */
 
 #ifdef __KERNEL__

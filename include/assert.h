@@ -80,7 +80,7 @@ __LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL _assert)(const char *__asser
 #ifdef __CRT_GLC
 __LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __assert_perror_fail)(int __errnum, const char *__file, unsigned int __line, const char *__function);
 #endif /* __CRT_GLC */
-__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __assert)(const char *__assertion, const char *__file, int __line) __PE_ASMNAME("_assert");
+__REDIRECT_IFDOS_VOID(__LIBC,__ATTR_NORETURN __ATTR_COLD,__LIBCCALL,__assert,(const char *__assertion, const char *__file, int __line),_assert,(__assertion,__file,__line))
 #endif /* !__KERNEL__ */
 
 #ifdef __CRT_GLC

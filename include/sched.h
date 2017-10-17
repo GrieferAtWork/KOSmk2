@@ -77,7 +77,7 @@ __LIBC __PORT_NODOS int (__LIBCCALL sched_get_priority_max)(int __algorithm);
 __LIBC __PORT_NODOS int (__LIBCCALL sched_get_priority_min)(int __algorithm);
 __LIBC __PORT_NODOS int (__LIBCCALL sched_setaffinity)(__pid_t __pid, __size_t __cpusetsize, cpu_set_t const *__cpuset);
 __LIBC __PORT_NODOS int (__LIBCCALL sched_getaffinity)(__pid_t __pid, __size_t __cpusetsize, cpu_set_t *__cpuset);
-__LIBC __PORT_NODOS int (__LIBCCALL sched_rr_get_interval)(__pid_t __pid, struct timespec *__t) __TM_FUNC(sched_rr_get_interval);
+__REDIRECT_TM_FUNC(__LIBC,__PORT_NODOS,int,__LIBCCALL,sched_rr_get_interval,(__pid_t __pid, struct timespec *__t),sched_rr_get_interval,(__pid,__t))
 #ifdef __USE_TIME64
 __LIBC __PORT_NODOS int (__LIBCCALL sched_rr_get_interval64)(__pid_t __pid, struct __timespec64 *__t);
 #endif /* __USE_TIME64 */

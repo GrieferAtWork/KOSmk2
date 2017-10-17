@@ -61,12 +61,12 @@ __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,bcmp,
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
 char *(__LIBCCALL __local_index)(char const *__haystack, int __needle) {
     char *__iter = (char *)__haystack;
-    while (*__iter != __needle) { if (!*__iter) return 0; ++__iter; }
+    while (*__iter != __needle) { if (!*__iter) return __NULLPTR; ++__iter; }
     return __iter;
 }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
 char *(__LIBCCALL __local_rindex)(char const *__restrict __haystack, int __needle) {
-    char *__result = 0,*__iter = (char *)__haystack;
+    char *__result = __NULLPTR,*__iter = (char *)__haystack;
     for (;;) { if (*__iter == __needle) __result = __iter; if (!*__iter) break; ++__iter; }
     return __result;
 }

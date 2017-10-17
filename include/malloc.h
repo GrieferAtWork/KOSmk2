@@ -74,7 +74,7 @@ __REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,free,(void *__restrict __mallptr),kfree
 __REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,cfree,(void *__restrict __mallptr),kfree,(__mallptr))
 #endif /* !__cfree_defined */
 __REDIRECT(__LIBC,__SAFE __WUNUSED,size_t,__LIBCCALL,malloc_usable_size,(void *__restrict __mallptr),kmalloc_usable_size,(__mallptr))
-#else
+#else /* __KERNEL__ */
 #ifndef __malloc_stdlib_defined
 #define __malloc_stdlib_defined 1
 __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr);
@@ -93,7 +93,7 @@ __LOCAL __SAFE __WUNUSED int (__LIBCCALL malloc_trim)(size_t __UNUSED(__pad)) { 
 #endif /* !__CRT_GLC */
 __REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED,size_t,__LIBCCALL,malloc_usable_size,(void *__restrict __mallptr),_msize,(__mallptr))
 #define M_MMAP_THRESHOLD     (-3)
-#endif
+#endif /* !__KERNEL__ */
 
 #ifdef __CRT_GLC
 __LIBC __SAFE int (__LIBCCALL mallopt)(int __parameter_number, int __parameter_value);

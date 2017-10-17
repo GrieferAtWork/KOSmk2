@@ -276,7 +276,7 @@ __LIBC int (__LIBCCALL getnameinfo)(struct sockaddr const *__restrict __sa, sock
 #ifndef __KERNEL__
 #ifdef __USE_GNU
 __LIBC int (__LIBCCALL getaddrinfo_a)(int __mode, struct gaicb *__list[__restrict_arr], int __ent, struct sigevent *__restrict __sig);
-__LIBC int (__LIBCCALL gai_suspend)(struct gaicb const *const __list[], int __ent, struct timespec const *__timeout) __TM_FUNC(gai_suspend);
+__REDIRECT_TM_FUNC(__LIBC,,int,__LIBCCALL,gai_suspend,(struct gaicb const *const __list[], int __ent, struct timespec const *__timeout),gai_suspend,(__list,__ent,__timeout))
 #ifdef __USE_TIME64
 __LIBC int (__LIBCCALL gai_suspend64)(struct gaicb const *const __list[], int __ent, struct __timespec64 const *__timeout);
 #endif /* __USE_TIME64 */

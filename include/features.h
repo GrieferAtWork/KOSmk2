@@ -1005,11 +1005,16 @@
 #   define __WARN_NOKOSFS __ATTR_DEPRECATED("This function does not support KOS filesystem semantics. Try building with `-D_DOSFS_SOURCE=1'")
 #endif
 
+#if 1 /* TODO: Option */
+/* Set on functions like read() that (may) modify some user-provided data,
+ * but can only tell how much and if at all something was done by having the
+ * caller inspect the return value. */
+#define __WUNUSED_SUGGESTED /* nothing */
+#else
+#define __WUNUSED_SUGGESTED __WUNUSED
+#endif
+
 #ifdef __USE_TIME_BITS64
-#   define __TM_FUNC(x)     __ASMNAME(#x "64")
-#   define __TM_FUNC_(x)    __ASMNAME(#x "64")
-#   define __TM_FUNC_R(x)   __ASMNAME(#x "64_r")
-#   define __TM_FUNC_R_(x)  __ASMNAME(#x "64_r")
 #   define __REDIRECT_TM_FUNC(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
 #   define __REDIRECT_TM_FUNC_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -1019,10 +1024,6 @@
 #   define __REDIRECT_TM_FUNC_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #else
-#   define __TM_FUNC(x)     /* nothing */
-#   define __TM_FUNC_(x)    __ASMNAME(#x)
-#   define __TM_FUNC_R(x)   /* nothing */
-#   define __TM_FUNC_R_(x)  __ASMNAME(#x "_r")
 #   define __REDIRECT_TM_FUNC   __NOREDIRECT
 #   define __REDIRECT_TM_FUNC_  __REDIRECT
 #   define __REDIRECT_TM_FUNC_R __NOREDIRECT

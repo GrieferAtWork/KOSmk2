@@ -388,7 +388,7 @@ print_segment_register(char const *__restrict name, u16 value) {
 #define IRQPANIC_DISP_STACK     0
 #define IRQPANIC_DISP_TSS       0
 #define IRQPANIC_DISP_GDT_LDT   0
-#define IRQPANIC_DISP_MMAN      0
+#define IRQPANIC_DISP_MMAN      1
 #define IRQPANIC_DISP_PDIR      0
 
 PUBLIC ATTR_COLDTEXT ATTR_NOINLINE void FCALL
@@ -407,7 +407,7 @@ irq_default(int intno, struct cpustate_e *__restrict state) {
   intchain_trigger(&this_task->t_ic,(irq_t)intno,
                    &state->com,state->iret.eflags);
  } else
-#if !defined(CONFIG_DEBUG) || 1
+#if !defined(CONFIG_DEBUG) || 0
  {
   /* Handle exceptions in user-space by raising a signal. */
   siginfo_t si;

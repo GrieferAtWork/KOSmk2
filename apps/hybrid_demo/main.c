@@ -1,5 +1,8 @@
 /* Compile with 'tcc main.c' */
 
+/* NOTE: Changes have been made that now also allow
+ *       applications compiled by MSVC to be run natively. */
+
 #include <stdio.h>
 
 int main(int argc, char **argv) {

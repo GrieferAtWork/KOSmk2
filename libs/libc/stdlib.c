@@ -625,8 +625,8 @@ libc_rand_s(unsigned int *__restrict randval) {
 DEFINE_PUBLIC_ALIAS(bsearch_s,libc_bsearch_s);
 DEFINE_PUBLIC_ALIAS(qsort_s,libc_qsort_s);
 DEFINE_PUBLIC_ALIAS(_mktemp_s,libc_mktemp_s);
-DEFINE_PUBLIC_ALIAS(_wsystem,libc_32wsystem);
-DEFINE_PUBLIC_ALIAS(__DSYM(_wsystem),libc_16wsystem);
+DEFINE_PUBLIC_ALIAS(wsystem,libc_32wsystem);
+DEFINE_PUBLIC_ALIAS(_wsystem,libc_16wsystem);
 DEFINE_PUBLIC_ALIAS(rand_s,libc_rand_s);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */

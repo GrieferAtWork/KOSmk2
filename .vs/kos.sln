@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kos-kernel", "kernel\kos-kernel.vcxproj", "{86D226C5-EF62-4562-AC06-E6A753DFA7CF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{56225502-7CD8-4090-B4EF-3561F270CA7E} = {56225502-7CD8-4090-B4EF-3561F270CA7E}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6EEC02-606F-4004-8FB6-DBFA474B9157}"
 	ProjectSection(SolutionItems) = preProject
@@ -367,6 +370,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libc", "libc", "{C7A7D468-3
 		..\include\libc\format-printer.h = ..\include\libc\format-printer.h
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkernel32", "libs\libkernel32.vcxproj", "{CB10BC24-64B5-4035-8DB0-423011414723}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -417,6 +422,10 @@ Global
 		{56225502-7CD8-4090-B4EF-3561F270CA7E}.Debug|Win32.Build.0 = Debug|Win32
 		{56225502-7CD8-4090-B4EF-3561F270CA7E}.Release|Win32.ActiveCfg = Release|Win32
 		{56225502-7CD8-4090-B4EF-3561F270CA7E}.Release|Win32.Build.0 = Release|Win32
+		{CB10BC24-64B5-4035-8DB0-423011414723}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CB10BC24-64B5-4035-8DB0-423011414723}.Debug|Win32.Build.0 = Debug|Win32
+		{CB10BC24-64B5-4035-8DB0-423011414723}.Release|Win32.ActiveCfg = Release|Win32
+		{CB10BC24-64B5-4035-8DB0-423011414723}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -449,5 +458,6 @@ Global
 		{56225502-7CD8-4090-B4EF-3561F270CA7E} = {C3DF0168-3FCF-4A6F-BB22-BF3F5ECE05A9}
 		{C3DF0168-3FCF-4A6F-BB22-BF3F5ECE05A9} = {2503C059-4B4F-457D-9853-FFA845ED7BF2}
 		{C7A7D468-3AA5-4DF8-B5D7-F14F23D76C69} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
+		{CB10BC24-64B5-4035-8DB0-423011414723} = {8C9AB07B-15FA-46B5-B7CC-364910789270}
 	EndGlobalSection
 EndGlobal

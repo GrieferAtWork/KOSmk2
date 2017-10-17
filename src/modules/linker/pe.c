@@ -250,6 +250,7 @@ pe_patch(struct modpatch *__restrict patcher) {
     }
    }
 
+#if 0
    if (E_ISERR(mod)) {
     /* STOP THIS REDICULOUS DEPENDENCY TREE! */
     if (filename.dn_size >= 8 &&
@@ -263,6 +264,7 @@ pe_patch(struct modpatch *__restrict patcher) {
            filename.dn_name,-E_GTERR(mod));
     return E_GTERR(mod);
    }
+#endif
 
    /* Load this additional dependency. */
    dep = modpatch_dldep(patcher,mod);
@@ -310,7 +312,7 @@ pe_patch(struct modpatch *__restrict patcher) {
    if (!instance_add_dependency(inst,dep))
         return -ENOMEM;
 
-next_dependency:;
+/*next_dependency:;*/
   } while (++iter != end);
  }
 
@@ -516,8 +518,8 @@ pe_loader(struct file *__restrict fp) {
       (((x)->VirtualAddress+(x)->Misc.VirtualSize) > (x)->VirtualAddress && \
       !((x)->Characteristics&(IMAGE_SCN_LNK_INFO|IMAGE_SCN_LNK_REMOVE)) && \
        ((x)->VirtualAddress+(x)->Misc.VirtualSize) <= KERNEL_BASE)
- { IMAGE_SECTION_HEADER *iter,*end;
-   struct modseg *dst; size_t section_count = 0;
+ { IMAGE_SECTION_HEADER *iter,*end; DWORD min_section_address = (DWORD)-1;
+   struct modseg *dst; size_t section_count = 1; /* +1 section for hidden program headers */
    end = (iter = section_headers)+nt_header.FileHeader.NumberOfSections;
    for (; iter != end; ++iter) {
     if (!USE_HEADER(iter)) continue; /* Ignore these sections. */
@@ -528,7 +530,7 @@ pe_loader(struct file *__restrict fp) {
    result->p_module.m_segv = tcalloc(struct modseg,section_count);
    if unlikely(!result->p_module.m_segv) { error = -ENOMEM; goto err3; }
    /* Parse the section headers into our abstract format. */
-   iter = section_headers,dst = result->p_module.m_segv;
+   iter = section_headers,dst = result->p_module.m_segv+1;
 
    /* Track the minimum alignment requirements of sections. */
    result->p_module.m_align = PAGESIZE;
@@ -545,6 +547,8 @@ pe_loader(struct file *__restrict fp) {
     dst->ms_msize = (size_t)iter->Misc.VirtualSize;
     dst->ms_fsize = (size_t)iter->SizeOfRawData;
     dst->ms_fpos  = (pos_t)iter->PointerToRawData;
+    if (min_section_address > dst->ms_paddr)
+        min_section_address = dst->ms_paddr;
     syslog(LOG_EXEC|LOG_WARN,"[PE] Segment %.8q at %p...%p (%.8I32X)\n",
            iter->Name,dst->ms_paddr,dst->ms_paddr+dst->ms_msize-1,
            iter->Characteristics);
@@ -568,6 +572,27 @@ pe_loader(struct file *__restrict fp) {
     ++dst;
    }
    assert(dst == result->p_module.m_segv+section_count);
+   dst = result->p_module.m_segv;
+   /* Setup the hidden base section containing the program header itself. */
+#if MODSEG_LOAD != 0
+   dst->ms_type = MODSEG_LOAD;
+#endif
+   //dst->ms_fpos  = 0; /* Map the header itself. */
+   //dst->ms_vaddr = 0; /* Map at the base of relative virtual memory. */
+   //dst->ms_paddr = 0;
+
+   /* Only map up to the first following segment. */
+   dst->ms_msize = MIN(min_section_address,0x1000);
+
+   /* Map the program header, NT header, and section headers. */
+   dst->ms_fsize = section_header_start+
+                   nt_header.FileHeader.NumberOfSections*
+                   sizeof(IMAGE_SECTION_HEADER);
+   /* Don't map more than there is memory to map stuff into. */
+   if (dst->ms_fsize > dst->ms_msize)
+       dst->ms_fsize = dst->ms_msize;
+   /* Map as read/write (I'm not sure if this should actually be writable...) */
+   dst->ms_prot = PROT_READ|PROT_WRITE;
  }
  afree(section_headers);
 

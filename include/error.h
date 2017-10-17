@@ -52,16 +52,29 @@ __LIBC void (__LIBCCALL error_at_line)(int __status, int __errnum, char const *_
 
 
 #ifdef __CRT_GLC
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("error_print_progname")
+#pragma push_macro("error_message_count")
+#pragma push_macro("error_one_per_line")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
 #undef error_print_progname
+#undef error_message_count
+#undef error_one_per_line
+
 /* Optional user-callback that may override the following default:
  * >> fflush(stdout);
  * >> fprintf(stderr,"%s: ",argv[0]); */
 __LIBC void (*error_print_progname)(void);
 
-#undef error_message_count
-#undef error_one_per_line
 __LIBC unsigned int error_message_count; /* Incremented each time error() is called. */
 __LIBC int error_one_per_line;
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("error_one_per_line")
+#pragma pop_macro("error_message_count")
+#pragma pop_macro("error_print_progname")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #endif /* !__CRT_GLC */
 
 __SYSDECL_END

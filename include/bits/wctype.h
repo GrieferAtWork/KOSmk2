@@ -83,7 +83,8 @@ typedef __WINT_TYPE__ wint_t;
 #ifndef ____kos_iswctype_defined
 #define ____kos_iswctype_defined 1
 __NAMESPACE_STD_BEGIN
-__REDIRECT_NOTHROW(__LIBC,,int,__LIBCCALL,__kos_iswctype,(wint_t __wc, wctype_t __desc),iswctype,(__wc,__desc))
+__REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__kos_iswctype,
+                  (wint_t __wc, wctype_t __desc),iswctype,(__wc,__desc))
 __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(__kos_iswctype)
 #endif /* !____kos_iswctype_defined */
@@ -145,24 +146,24 @@ __NAMESPACE_STD_USING(__kos_iswctype)
 #define _WCTYPE_DEFINED 1
 
 __NAMESPACE_STD_BEGIN
-__LIBC int __NOTHROW((__LIBCCALL iswalnum)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswalpha)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswcntrl)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswdigit)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswgraph)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswlower)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswprint)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswpunct)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswspace)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswupper)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL iswxdigit)(wint_t __wc));
-__LIBC wctype_t __NOTHROW((__LIBCCALL wctype)(char const *__prop));
-__LIBC int __NOTHROW((__LIBCCALL iswctype)(wint_t __wc, wctype_t __desc)) __DOS_FUNC(iswctype);
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswalnum)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswalpha)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswcntrl)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswdigit)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswgraph)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswlower)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswprint)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswpunct)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswspace)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswupper)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswxdigit)(wint_t __wc));
+__LIBC __WUNUSED wctype_t __NOTHROW((__LIBCCALL wctype)(char const *__prop));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswctype)(wint_t __wc, wctype_t __desc)) __DOS_FUNC(iswctype);
 #ifdef __USE_ISOC99
-__LIBC int __NOTHROW((__LIBCCALL iswblank)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswblank)(wint_t __wc));
 #endif /* __USE_ISOC99 */
-__LIBC wint_t __NOTHROW((__LIBCCALL towlower)(wint_t __wc));
-__LIBC wint_t __NOTHROW((__LIBCCALL towupper)(wint_t __wc));
+__LIBC __WUNUSED wint_t __NOTHROW((__LIBCCALL towlower)(wint_t __wc));
+__LIBC __WUNUSED wint_t __NOTHROW((__LIBCCALL towupper)(wint_t __wc));
 __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(iswalnum)
 __NAMESPACE_STD_USING(iswalpha)
@@ -187,36 +188,36 @@ __LIBC int __NOTHROW((__LIBCCALL iswascii)(wint_t __wc));
 #endif /* __USE_KOS || __USE_DOS */
 
 #ifdef __USE_DOS
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswalnum_l,(wint_t __wc, __locale_t __locale),iswalnum_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswalpha_l,(wint_t __wc, __locale_t __locale),iswalpha_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswcntrl_l,(wint_t __wc, __locale_t __locale),iswcntrl_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswdigit_l,(wint_t __wc, __locale_t __locale),iswdigit_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswgraph_l,(wint_t __wc, __locale_t __locale),iswgraph_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswlower_l,(wint_t __wc, __locale_t __locale),iswlower_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswprint_l,(wint_t __wc, __locale_t __locale),iswprint_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswpunct_l,(wint_t __wc, __locale_t __locale),iswpunct_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswspace_l,(wint_t __wc, __locale_t __locale),iswspace_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswupper_l,(wint_t __wc, __locale_t __locale),iswupper_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswxdigit_l,(wint_t __wc, __locale_t __locale),iswxdigit_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswblank_l,(wint_t __wc, __locale_t __locale),iswblank_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,wint_t,__LIBCCALL,_towupper_l,(wint_t __wc, __locale_t __locale),towupper_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,wint_t,__LIBCCALL,_towlower_l,(wint_t __wc, __locale_t __locale),towlower_l,(__wc,__locale))
-__REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_iswctype_l,(wint_t __wc, wctype_t __type, __locale_t __locale),iswctype_l,(__wc,__type,__locale))
-__REDIRECT_NOTHROW(__LIBC,,int,__LIBCCALL,is_wctype,(wint_t __wc, wctype_t __desc),iswctype,(__wc,__desc))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswalnum_l,(wint_t __wc, __locale_t __locale),iswalnum_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswalpha_l,(wint_t __wc, __locale_t __locale),iswalpha_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswcntrl_l,(wint_t __wc, __locale_t __locale),iswcntrl_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswdigit_l,(wint_t __wc, __locale_t __locale),iswdigit_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswgraph_l,(wint_t __wc, __locale_t __locale),iswgraph_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswlower_l,(wint_t __wc, __locale_t __locale),iswlower_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswprint_l,(wint_t __wc, __locale_t __locale),iswprint_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswpunct_l,(wint_t __wc, __locale_t __locale),iswpunct_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswspace_l,(wint_t __wc, __locale_t __locale),iswspace_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswupper_l,(wint_t __wc, __locale_t __locale),iswupper_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswxdigit_l,(wint_t __wc, __locale_t __locale),iswxdigit_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswblank_l,(wint_t __wc, __locale_t __locale),iswblank_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,wint_t,__LIBCCALL,_towupper_l,(wint_t __wc, __locale_t __locale),towupper_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,wint_t,__LIBCCALL,_towlower_l,(wint_t __wc, __locale_t __locale),towlower_l,(__wc,__locale))
+__REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswctype_l,(wint_t __wc, wctype_t __type, __locale_t __locale),iswctype_l,(__wc,__type,__locale))
+__REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,is_wctype,(wint_t __wc, wctype_t __desc),iswctype,(__wc,__desc))
 #if !defined(__GLC_COMPAT__) && defined(__CRT_DOS)
-__LIBC int __NOTHROW((__LIBCCALL isleadbyte)(int __wc));
-__LIBC int __NOTHROW((__LIBCCALL _isleadbyte_l)(int __wc, __locale_t __locale));
-__LIBC int __NOTHROW((__LIBCCALL __iswcsymf)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL __iswcsym)(wint_t __wc));
-__LIBC int __NOTHROW((__LIBCCALL _iswcsymf_l)(wint_t __wc, __locale_t __locale));
-__LIBC int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t __locale));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL isleadbyte)(int __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL _isleadbyte_l)(int __wc, __locale_t __locale));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL __iswcsymf)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL __iswcsym)(wint_t __wc));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL _iswcsymf_l)(wint_t __wc, __locale_t __locale));
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t __locale));
 #else /* !__GLC_COMPAT__ && __CRT_DOS */
-__LOCAL int __NOTHROW((__LIBCCALL isleadbyte)(int __wc)) { return __wc >= 192 && __wc <= 255; }
-__LOCAL int __NOTHROW((__LIBCCALL _isleadbyte_l)(int __wc, __locale_t __UNUSED(__locale))) { return __wc >= 192 && __wc <= 255; }
-__LOCAL int __NOTHROW((__LIBCCALL __iswcsymf)(wint_t __wc)) { return __NAMESPACE_STD_SYM iswalpha(wc) || wc == '_' }
-__LOCAL int __NOTHROW((__LIBCCALL __iswcsym)(wint_t __wc)) { return __NAMESPACE_STD_SYM iswalnum(wc) || wc == '_' }
-__LOCAL int __NOTHROW((__LIBCCALL _iswcsymf_l)(wint_t __wc, __locale_t __locale)) { return _iswalpha_l(wc,__locale) || wc == '_' }
-__LOCAL int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t __locale)) { return _iswalnum_l(wc,__locale) || wc == '_' }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isleadbyte)(int __wc)) { return __wc >= 192 && __wc <= 255; }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isleadbyte_l)(int __wc, __locale_t __UNUSED(__locale))) { return __wc >= 192 && __wc <= 255; }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __iswcsymf)(wint_t __wc)) { return __NAMESPACE_STD_SYM iswalpha(wc) || wc == '_' }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __iswcsym)(wint_t __wc)) { return __NAMESPACE_STD_SYM iswalnum(wc) || wc == '_' }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _iswcsymf_l)(wint_t __wc, __locale_t __locale)) { return _iswalpha_l(wc,__locale) || wc == '_' }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t __locale)) { return _iswalnum_l(wc,__locale) || wc == '_' }
 #endif /* __GLC_COMPAT__ || !__CRT_DOS */
 #endif /* __USE_DOS */
 #endif /* !_WCTYPE_DEFINED */
