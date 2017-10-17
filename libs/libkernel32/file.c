@@ -20,6 +20,7 @@
 #define GUARD_LIBS_LIBKERNEL32_FILE_C 1
 #define _LARGEFILE64_SOURCE 1
 #define _KOS_SOURCE 2
+#define _GNU_SOURCE 1
 #define _TIME64_SOURCE 1
 
 #include "k32.h"
@@ -39,10 +40,30 @@
 #include <malloc.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <kos/fcntl.h>
 #include <sys/stat.h>
 
-
 DECL_BEGIN
+
+/* DOS libc functions, addressed explicitly. */
+__LIBC DIR *LIBCCALL dos_opendir(char const *dos_name) ASMNAME(".dos.opendir");
+__LIBC DIR *LIBCCALL dos_opendirat(int dfd, char const *dos_name) ASMNAME(".dos.opendirat");
+__LIBC int LIBCCALL dos_chdir(char const *dos_path) ASMNAME("_chdir");
+__LIBC int LIBCCALL dos_rmdir(char const *dos_path) ASMNAME("_rmdir");
+__LIBC int LIBCCALL dos_mkdir(char const *dos_path) ASMNAME("_mkdir");
+__LIBC int LIBCCALL dos_mkdir2(char const *dos_path, mode_t mode) ASMNAME(".dos.mkdir");
+__LIBC int LIBCCALL dos_stat(char const *dos_file, struct stat *buf) ASMNAME(".dos.kstat");
+__LIBC int LIBCCALL dos_stat64(char const *dos_file, struct stat64 *buf) ASMNAME(".dos.kstat64");
+__LIBC int LIBCCALL dos_fstatat(int fd, char const *dos_file, struct stat *buf, int flag) ASMNAME(".dos.kfstatat");
+__LIBC int LIBCCALL dos_fstatat64(int fd, char const *dos_file, struct stat64 *buf, int flag) ASMNAME(".dos.kfstatat64");
+__LIBC int LIBCCALL dos_lstat(char const *dos_file, struct stat *buf) ASMNAME(".dos.klstat");
+__LIBC int LIBCCALL dos_lstat64(char const *dos_file, struct stat64 *buf) ASMNAME(".dos.klstat64");
+__LIBC int ATTR_CDECL dos_open(char const *dos_file, int oflag, ...) ASMNAME("_open");
+__LIBC int LIBCCALL dos_creat(char const *dos_file, mode_t mode) ASMNAME("_creat");
+__LIBC int ATTR_CDECL dos_openat(int dfd, char const *dos_file, int oflag, ...) ASMNAME(".dos.openat");
+__LIBC int LIBCCALL dos_chmod(char const *dos_file, int mode) ASMNAME("_chmod");
+__LIBC int LIBCCALL dos_unlink(char const *dos_name) ASMNAME("_unlink");
+
 
 INTERN WINBOOL WINAPI K32_CloseHandle(HANDLE hObject) {
  switch (HANDLE_TYPE(hObject)) {
@@ -289,9 +310,6 @@ K32_GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
 
 
 
-__LIBC DIR *LIBCCALL dos_opendir(char const *name) ASMNAME(".dos.opendir");
-__LIBC DIR *LIBCCALL dos_opendirat(int dfd, char const *name) ASMNAME(".dos.opendirat");
-
 struct find_query {
  DIR              *fq_stream; /*< [1..1][owned] Underlying libc-style directory stream. */
  char             *fq_query;  /*< [1..1][owned] Wildcard-style string matching */
@@ -437,8 +455,9 @@ INTDEF HANDLE WINAPI
 K32_FindFirstFileExW(LPCWSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId,
                      LPVOID lpFindFileData, FINDEX_SEARCH_OPS fSearchOp,
                      LPVOID lpSearchFilter, DWORD dwAdditionalFlags) {
- WIN32_FIND_DATAA temp; HANDLE result;
- char *query = uni_utf16to8m(lpFileName);
+ WIN32_FIND_DATAA temp; HANDLE result; char *query;
+ if unlikely(!lpFileName) { __set_errno(EINVAL); return INVALID_HANDLE_VALUE; }
+ query = uni_utf16to8m(lpFileName);
  if unlikely(!query) return INVALID_HANDLE_VALUE;
  result = K32_FindFirstFileExA(query,fInfoLevelId,&temp,fSearchOp,
                                lpSearchFilter,dwAdditionalFlags);
@@ -479,13 +498,275 @@ K32_DeviceIoControl(HANDLE hDevice, DWORD dwIoControlCode,
  __set_errno(ENOSYS);
  return FALSE;
 }
-INTERN WINBOOL WINAPI K32_RequestDeviceWakeup(HANDLE hDevice) { __set_errno(ENOSYS); return FALSE; }
-INTERN WINBOOL WINAPI K32_CancelDeviceWakeupRequest(HANDLE hDevice) { __set_errno(ENOSYS); return FALSE; }
-INTERN WINBOOL WINAPI K32_GetDevicePowerState(HANDLE hDevice, WINBOOL *pfOn) { __set_errno(ENOSYS); return FALSE; }
-INTERN WINBOOL WINAPI K32_SetMessageWaitingIndicator(HANDLE hMsgIndicator, ULONG ulMsgCount) { __set_errno(ENOSYS); return FALSE; }
-INTERN WINBOOL WINAPI K32_SetFileValidData(HANDLE hFile, LONGLONG ValidDataLength) { __set_errno(ENOSYS); return FALSE; }
-INTERN WINBOOL WINAPI K32_SetFileShortNameA(HANDLE hFile, LPCSTR lpShortName) { __set_errno(ENOSYS); return FALSE; }
-INTERN WINBOOL WINAPI K32_SetFileShortNameW(HANDLE hFile, LPCWSTR lpShortName) { __set_errno(ENOSYS); return FALSE; }
+INTERN WINBOOL WINAPI K32_RequestDeviceWakeup(HANDLE hDevice) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN WINBOOL WINAPI K32_CancelDeviceWakeupRequest(HANDLE hDevice) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN WINBOOL WINAPI K32_GetDevicePowerState(HANDLE hDevice, WINBOOL *pfOn) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN WINBOOL WINAPI K32_SetMessageWaitingIndicator(HANDLE hMsgIndicator, ULONG ulMsgCount) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN WINBOOL WINAPI K32_SetFileValidData(HANDLE hFile, LONGLONG ValidDataLength) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN WINBOOL WINAPI K32_SetFileShortNameA(HANDLE hFile, LPCSTR lpShortName) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN WINBOOL WINAPI K32_SetFileShortNameW(HANDLE hFile, LPCWSTR lpShortName) { NOT_IMPLEMENTED(); return FALSE; }
+
+
+
+/* PWD access. */
+INTERN WINBOOL WINAPI K32_SetCurrentDirectoryA(LPCSTR lpPathName) { return !dos_chdir(lpPathName); }
+INTERN WINBOOL WINAPI K32_SetCurrentDirectoryW(LPCWSTR lpPathName) {
+ char *path; WINBOOL result;
+ if unlikely(!lpPathName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpPathName);
+ if unlikely(!path) return FALSE;
+ result = K32_SetCurrentDirectoryA(path);
+ free(path);
+ return result;
+}
+INTERN DWORD WINAPI K32_GetCurrentDirectoryA(DWORD nBufferLength, LPSTR lpBuffer) {
+ ssize_t result = xfdname2(AT_FDCWD,FDNAME_PATH,lpBuffer,nBufferLength);
+ if (result < 1) result = 1;
+ return (DWORD)(result-1); /* Don't include the terminating \0-character */
+}
+INTERN DWORD WINAPI K32_GetCurrentDirectoryW(DWORD nBufferLength, LPWSTR lpBuffer) {
+ size_t result; mbstate_t state = MBSTATE_INIT;
+ char *pwd = getcwd(NULL,0); if (!pwd) return 0;
+ result = uni_utf8to16(pwd,(size_t)-1,lpBuffer,nBufferLength,&state,
+                       UNICODE_F_STOPONNUL|UNICODE_F_ALWAYSZEROTERM);
+ if (result) --result; /* Don't include the terminating \0-character */
+ free(pwd);
+ return result;
+}
+
+
+/* Disk-free access. */
+INTERN WINBOOL WINAPI
+K32_GetDiskFreeSpaceExA(LPCSTR lpDirectoryName,
+                        PULARGE_INTEGER lpFreeBytesAvailableToCaller,
+                        PULARGE_INTEGER lpTotalNumberOfBytes,
+                        PULARGE_INTEGER lpTotalNumberOfFreeBytes) {
+ if unlikely(!lpDirectoryName) { __set_errno(EINVAL); return FALSE; }
+ NOT_IMPLEMENTED();
+ return FALSE;
+}
+INTERN WINBOOL WINAPI
+K32_GetDiskFreeSpaceA(LPCSTR lpRootPathName,
+                      LPDWORD lpSectorsPerCluster,
+                      LPDWORD lpBytesPerSector,
+                      LPDWORD lpNumberOfFreeClusters,
+                      LPDWORD lpTotalNumberOfClusters) {
+ if unlikely(!lpRootPathName) { __set_errno(EINVAL); return FALSE; }
+ NOT_IMPLEMENTED();
+ return FALSE;
+}
+
+INTERN WINBOOL WINAPI
+K32_GetDiskFreeSpaceExW(LPCWSTR lpDirectoryName,
+                        PULARGE_INTEGER lpFreeBytesAvailableToCaller,
+                        PULARGE_INTEGER lpTotalNumberOfBytes,
+                        PULARGE_INTEGER lpTotalNumberOfFreeBytes) {
+ WINBOOL result; char *path;
+ if unlikely(!lpDirectoryName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpDirectoryName);
+ if unlikely(!path) return FALSE;
+ result = K32_GetDiskFreeSpaceExA(path,
+                                  lpFreeBytesAvailableToCaller,
+                                  lpTotalNumberOfBytes,
+                                  lpTotalNumberOfFreeBytes);
+ free(path);
+ return result;
+}
+INTERN WINBOOL WINAPI
+K32_GetDiskFreeSpaceW(LPCWSTR lpRootPathName,
+                      LPDWORD lpSectorsPerCluster,
+                      LPDWORD lpBytesPerSector,
+                      LPDWORD lpNumberOfFreeClusters,
+                      LPDWORD lpTotalNumberOfClusters) {
+ WINBOOL result; char *path;
+ if unlikely(!lpRootPathName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpRootPathName);
+ if unlikely(!path) return FALSE;
+ result = K32_GetDiskFreeSpaceA(path,
+                                lpSectorsPerCluster,
+                                lpBytesPerSector,
+                                lpNumberOfFreeClusters,
+                                lpTotalNumberOfClusters);
+ free(path);
+ return result;
+}
+
+
+/* Directory create/delete API. */
+INTERN WINBOOL WINAPI
+K32_CreateDirectoryA(LPCSTR lpPathName,
+                     LPSECURITY_ATTRIBUTES UNUSED(lpSecurityAttributes)) {
+ return !dos_mkdir(lpPathName);
+}
+
+INTERN WINBOOL WINAPI K32_RemoveDirectoryA(LPCSTR lpPathName) { return !dos_rmdir(lpPathName); }
+INTERN WINBOOL WINAPI
+K32_CreateDirectoryW(LPCWSTR lpPathName,
+                     LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
+ char *path; WINBOOL result;
+ if unlikely(!lpPathName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpPathName);
+ if unlikely(!path) return FALSE;
+ result = K32_CreateDirectoryA(path,lpSecurityAttributes);
+ free(path);
+ return result;
+}
+INTERN WINBOOL WINAPI
+K32_RemoveDirectoryW(LPCWSTR lpPathName) {
+ char *path; WINBOOL result;
+ if unlikely(!lpPathName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpPathName);
+ if unlikely(!path) return FALSE;
+ result = K32_RemoveDirectoryA(path);
+ free(path);
+ return result;
+}
+INTERN WINBOOL WINAPI
+K32_CreateDirectoryExA(LPCSTR UNUSED(lpTemplateDirectory),
+                       LPCSTR lpNewDirectory,
+                       LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
+ return K32_CreateDirectoryA(lpNewDirectory,lpSecurityAttributes);
+}
+INTERN WINBOOL WINAPI
+K32_CreateDirectoryExW(LPCWSTR UNUSED(lpTemplateDirectory),
+                       LPCWSTR lpNewDirectory,
+                       LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
+ return K32_CreateDirectoryW(lpNewDirectory,lpSecurityAttributes);
+}
+
+
+PRIVATE int const creation_disk_flags[] = {
+    [CREATE_NEW       ] = O_CREAT|O_TRUNC,
+    [CREATE_ALWAYS    ] = O_CREAT|O_EXCL,
+    [OPEN_EXISTING    ] = 0,
+    [OPEN_ALWAYS      ] = O_CREAT,
+    [TRUNCATE_EXISTING] = O_TRUNC,
+};
+
+/* File creation/attribute API. */
+INTERN oflag_t WINAPI
+K32_DesiredAccessToOflags(DWORD dwDesiredAccess) {
+ oflag_t result = O_RDONLY;
+ if (dwDesiredAccess&GENERIC_ALL)
+     dwDesiredAccess |= (GENERIC_READ|GENERIC_WRITE);
+ if (dwDesiredAccess&(FILE_WRITE_DATA|FILE_APPEND_DATA|
+                      FILE_WRITE_EA|FILE_DELETE_CHILD))
+     dwDesiredAccess |= GENERIC_WRITE;
+ if (dwDesiredAccess&(FILE_READ_DATA|FILE_READ_EA))
+     dwDesiredAccess |= GENERIC_READ;
+ if (dwDesiredAccess&GENERIC_WRITE)
+     result = dwDesiredAccess&GENERIC_READ ? O_RDWR : O_WRONLY;
+ return result;
+}
+
+INTERN HANDLE WINAPI
+K32_CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD UNUSED(dwShareMode),
+                LPSECURITY_ATTRIBUTES UNUSED(lpSecurityAttributes), DWORD dwCreationDisposition,
+                DWORD dwFlagsAndAttributes, HANDLE UNUSED(hTemplateFile)) {
+ int result; oflag_t oflags; mode_t mode = 0666;
+ if (dwCreationDisposition >= COMPILER_LENOF(creation_disk_flags)) {
+  __set_errno(EINVAL);
+  return INVALID_HANDLE_VALUE;
+ }
+ /* Apply creation disposition flags. */
+ oflags  = K32_DesiredAccessToOflags(dwDesiredAccess);
+ oflags |= creation_disk_flags[dwCreationDisposition];
+ if (dwFlagsAndAttributes&FILE_FLAG_WRITE_THROUGH)      oflags |= O_DIRECT;
+ if (dwFlagsAndAttributes&FILE_FLAG_DELETE_ON_CLOSE)    oflags |= O_TMPFILE;
+ if (dwFlagsAndAttributes&FILE_FLAG_OPEN_REPARSE_POINT) oflags |= O_NOFOLLOW;
+ if (dwFlagsAndAttributes&FILE_ATTRIBUTE_READONLY)      mode &= ~0222; /* Disable write-permissions. */
+
+ result = dos_open(lpFileName,oflags,mode);
+ if (result < 0) return INVALID_HANDLE_VALUE;
+
+ if (!(dwFlagsAndAttributes&FILE_FLAG_BACKUP_SEMANTICS)) {
+  struct stat64 info; /* Make sure this isn't a directly. */
+  if (!fstat64(result,&info) && 
+      S_ISDIR(info.st_mode)) {
+   close(result);
+   __set_errno(EISDIR);
+   return INVALID_HANDLE_VALUE;
+  }
+ }
+
+ return FD_TO_HANDLE(result);
+}
+INTERN HANDLE WINAPI
+K32_CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
+                LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
+                DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
+ HANDLE result; char *path;
+ if unlikely(!lpFileName) { __set_errno(EINVAL); return INVALID_HANDLE_VALUE; }
+ path = uni_utf16to8m(lpFileName);
+ if unlikely(!path) return INVALID_HANDLE_VALUE;
+ result = K32_CreateFileA(path,dwDesiredAccess,dwShareMode,lpSecurityAttributes,
+                          dwCreationDisposition,dwFlagsAndAttributes,hTemplateFile);
+ free(path);
+ return result;
+}
+
+INTERN HANDLE WINAPI
+K32_ReOpenFile(HANDLE hOriginalFile, DWORD dwDesiredAccess,
+               DWORD UNUSED(dwShareMode), DWORD UNUSED(dwFlagsAndAttributes)) {
+ int result; oflag_t oflags = K32_DesiredAccessToOflags(dwDesiredAccess);
+ if (!HANDLE_IS_FD(hOriginalFile)) { __set_errno(EBADF); return INVALID_HANDLE_VALUE; }
+ result = dup(HANDLE_TO_FD(hOriginalFile));
+ if (fcntl(result,F_SETFL,oflags) < 0) { close(result); return INVALID_HANDLE_VALUE; }
+ return FD_TO_HANDLE(result);
+}
+
+
+INTERN WINBOOL WINAPI
+K32_SetFileAttributesA(LPCSTR lpFileName, DWORD dwFileAttributes) {
+ struct stat64 info; mode_t new_mode;
+ if (dos_stat64(lpFileName,&info)) return FALSE;
+ new_mode = info.st_mode;
+ if (dwFileAttributes&FILE_ATTRIBUTE_READONLY)
+      new_mode &= ~0222; /* Disable write access */
+ else new_mode |=  0222; /* Enable write access */
+ if (new_mode == info.st_mode) return TRUE;
+ return !dos_chmod(lpFileName,new_mode);
+}
+
+INTERN DWORD WINAPI
+K32_GetFileAttributesA(LPCSTR lpFileName) {
+ struct stat64 info;
+ if (dos_stat64(lpFileName,&info))
+     return INVALID_FILE_ATTRIBUTES;
+ return K32_GetFileAttributesFromUnixMode(info.st_mode);
+}
+INTERN WINBOOL WINAPI
+K32_SetFileAttributesW(LPCWSTR lpFileName, DWORD dwFileAttributes) {
+ WINBOOL result; char *path;
+ if unlikely(!lpFileName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpFileName);
+ if unlikely(!path) return FALSE;
+ result = K32_SetFileAttributesA(path,dwFileAttributes);
+ free(path);
+ return result;
+}
+INTERN DWORD WINAPI
+K32_GetFileAttributesW(LPCWSTR lpFileName) {
+ DWORD result; char *path;
+ if unlikely(!lpFileName) { __set_errno(EINVAL); return INVALID_FILE_ATTRIBUTES; }
+ path = uni_utf16to8m(lpFileName);
+ if unlikely(!path) return INVALID_FILE_ATTRIBUTES;
+ result = K32_GetFileAttributesA(path);
+ free(path);
+ return result;
+}
+INTERN WINBOOL WINAPI K32_DeleteFileA(LPCSTR lpFileName) { return !dos_unlink(lpFileName); }
+INTERN WINBOOL WINAPI K32_DeleteFileW(LPCWSTR lpFileName) {
+ WINBOOL result; char *path;
+ if unlikely(!lpFileName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpFileName);
+ if unlikely(!path) return FALSE;
+ result = K32_DeleteFileA(path);
+ free(path);
+ return result;
+}
+
+
 
 
 /* Low-level Handle/File API. */
@@ -508,7 +789,7 @@ DEFINE_PUBLIC_ALIAS(GetFileType,K32_GetFileType);
 DEFINE_PUBLIC_ALIAS(GetFileSize,K32_GetFileSize);
 DEFINE_PUBLIC_ALIAS(GetFileSizeEx,K32_GetFileSizeEx);
 
-/* Directory scanning API. */
+/* Directory scanning APIs. */
 DEFINE_PUBLIC_ALIAS(FindFirstFileExA,K32_FindFirstFileExA);
 DEFINE_PUBLIC_ALIAS(FindFirstFileExW,K32_FindFirstFileExW);
 DEFINE_PUBLIC_ALIAS(FindFirstFileA,K32_FindFirstFileA);
@@ -526,6 +807,36 @@ DEFINE_PUBLIC_ALIAS(SetMessageWaitingIndicator,K32_SetMessageWaitingIndicator);
 DEFINE_PUBLIC_ALIAS(SetFileValidData,K32_SetFileValidData);
 DEFINE_PUBLIC_ALIAS(SetFileShortNameA,K32_SetFileShortNameA);
 DEFINE_PUBLIC_ALIAS(SetFileShortNameW,K32_SetFileShortNameW);
+
+/* PWD access. */
+DEFINE_PUBLIC_ALIAS(SetCurrentDirectoryA,K32_SetCurrentDirectoryA);
+DEFINE_PUBLIC_ALIAS(SetCurrentDirectoryW,K32_SetCurrentDirectoryW);
+DEFINE_PUBLIC_ALIAS(GetCurrentDirectoryA,K32_GetCurrentDirectoryA);
+DEFINE_PUBLIC_ALIAS(GetCurrentDirectoryW,K32_GetCurrentDirectoryW);
+
+/* Disk-free access. */
+DEFINE_PUBLIC_ALIAS(GetDiskFreeSpaceA,K32_GetDiskFreeSpaceA);
+DEFINE_PUBLIC_ALIAS(GetDiskFreeSpaceW,K32_GetDiskFreeSpaceW);
+DEFINE_PUBLIC_ALIAS(GetDiskFreeSpaceExA,K32_GetDiskFreeSpaceExA);
+DEFINE_PUBLIC_ALIAS(GetDiskFreeSpaceExW,K32_GetDiskFreeSpaceExW);
+
+/* Directory create/delete API. */
+DEFINE_PUBLIC_ALIAS(CreateDirectoryA,K32_CreateDirectoryA);
+DEFINE_PUBLIC_ALIAS(CreateDirectoryW,K32_CreateDirectoryW);
+DEFINE_PUBLIC_ALIAS(CreateDirectoryExA,K32_CreateDirectoryExA);
+DEFINE_PUBLIC_ALIAS(CreateDirectoryExW,K32_CreateDirectoryExW);
+DEFINE_PUBLIC_ALIAS(RemoveDirectoryA,K32_RemoveDirectoryA);
+DEFINE_PUBLIC_ALIAS(RemoveDirectoryW,K32_RemoveDirectoryW);
+
+/* File creation/attribute API. */
+DEFINE_PUBLIC_ALIAS(CreateFileA,K32_CreateFileA);
+DEFINE_PUBLIC_ALIAS(CreateFileW,K32_CreateFileW);
+DEFINE_PUBLIC_ALIAS(ReOpenFile,K32_ReOpenFile);
+DEFINE_PUBLIC_ALIAS(SetFileAttributesA,K32_SetFileAttributesA);
+DEFINE_PUBLIC_ALIAS(SetFileAttributesW,K32_SetFileAttributesW);
+DEFINE_PUBLIC_ALIAS(GetFileAttributesA,K32_GetFileAttributesA);
+DEFINE_PUBLIC_ALIAS(GetFileAttributesW,K32_GetFileAttributesW);
+
 
 DECL_END
 

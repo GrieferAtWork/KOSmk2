@@ -787,7 +787,7 @@ DEFINE_PUBLIC_ALIAS(strerrorname_s,libc_strerrorname_s);
 DEFINE_PUBLIC_ALIAS(strerror,libc_strerror);
 DEFINE_PUBLIC_ALIAS(__xpg_strerror_r,libc___xpg_strerror_r);
 DEFINE_PUBLIC_ALIAS(strerror_r,libc_strerror_r);
-DEFINE_PUBLIC_ALIAS(memcasecmp,libc_memcasecmp);
+DEFINE_PUBLIC_ALIAS(_memicmp,libc_memcasecmp);
 
 #if __SIZEOF_INT__ == 4
 #define __INTFUN(x)   x##32
@@ -1218,7 +1218,7 @@ DEFINE_PUBLIC_ALIAS(_strrev,libc_strrev);
 DEFINE_PUBLIC_ALIAS(_strset,libc_strset);
 DEFINE_PUBLIC_ALIAS(_strupr,libc_strupr);
 DEFINE_PUBLIC_ALIAS(_strupr_l,libc_strupr_l);
-DEFINE_PUBLIC_ALIAS(_memicmp,libc_memcasecmp);
+//DEFINE_PUBLIC_ALIAS(_memicmp,libc_memcasecmp); /* Always exported (Primary name) */
 DEFINE_PUBLIC_ALIAS(_memicmp_l,libc_memcasecmp_l);
 DEFINE_PUBLIC_ALIAS(_strcmpi,libc_strcasecmp);
 DEFINE_PUBLIC_ALIAS(_strcoll_l,libc_strcoll_l);

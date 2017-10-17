@@ -16,24 +16,29 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_LIBS_LIBKERNEL32_K32_H
-#define GUARD_LIBS_LIBKERNEL32_K32_H 1
+#ifndef GUARD_LIBS_LIBKERNEL32_LINKER_C
+#define GUARD_LIBS_LIBKERNEL32_LINKER_C 1
+#define _KOS_SOURCE 1 /* xdlopen(), etc. */
 
+#include "k32.h"
 #include <hybrid/compiler.h>
-#include <winapi/windows.h>
-#include <winapi/ntdef.h>
-#include <syslog.h>
-#include <errno.h>
+#include <stdlib.h> /* xdlopen(), etc. */
+
+#include "linker.h"
 
 DECL_BEGIN
 
-DEFINE_PRIVATE_ALIAS(__stack_chk_fail_local,__stack_chk_fail);
+/* PWD access. */
+INTERN WINBOOL WINAPI K32_SetDllDirectoryA(LPCSTR lpPathName) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN WINBOOL WINAPI K32_SetDllDirectoryW(LPCWSTR lpPathName) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN DWORD WINAPI K32_GetDllDirectoryA(DWORD nBufferLength, LPSTR lpBuffer) { NOT_IMPLEMENTED(); return 0; }
+INTERN DWORD WINAPI K32_GetDllDirectoryW(DWORD nBufferLength, LPWSTR lpBuffer) { NOT_IMPLEMENTED(); return 0; }
 
-#define NOT_IMPLEMENTED() \
-  (__set_errno(ENOSYS), \
-   syslog(LOG_WARNING,"%s(%d) : KERNEL32::%s : NOT_IMPLEMENTED()\n",__FILE__,__LINE__,__FUNCTION__))
-
+DEFINE_PUBLIC_ALIAS(SetDllDirectoryA,K32_SetDllDirectoryA);
+DEFINE_PUBLIC_ALIAS(SetDllDirectoryW,K32_SetDllDirectoryW);
+DEFINE_PUBLIC_ALIAS(GetDllDirectoryA,K32_GetDllDirectoryA);
+DEFINE_PUBLIC_ALIAS(GetDllDirectoryW,K32_GetDllDirectoryW);
 
 DECL_END
 
-#endif /* !GUARD_LIBS_LIBKERNEL32_K32_H */
+#endif /* !GUARD_LIBS_LIBKERNEL32_LINKER_C */

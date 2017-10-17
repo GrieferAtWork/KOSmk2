@@ -16,24 +16,20 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_LIBS_LIBKERNEL32_K32_H
-#define GUARD_LIBS_LIBKERNEL32_K32_H 1
+#ifndef GUARD_LIBS_LIBKERNEL32_LINKER_H
+#define GUARD_LIBS_LIBKERNEL32_LINKER_H 1
 
+#include "k32.h"
 #include <hybrid/compiler.h>
-#include <winapi/windows.h>
-#include <winapi/ntdef.h>
-#include <syslog.h>
-#include <errno.h>
 
 DECL_BEGIN
 
-DEFINE_PRIVATE_ALIAS(__stack_chk_fail_local,__stack_chk_fail);
-
-#define NOT_IMPLEMENTED() \
-  (__set_errno(ENOSYS), \
-   syslog(LOG_WARNING,"%s(%d) : KERNEL32::%s : NOT_IMPLEMENTED()\n",__FILE__,__LINE__,__FUNCTION__))
-
+/* PWD access. */
+INTDEF WINBOOL WINAPI K32_SetDllDirectoryA(LPCSTR lpPathName);
+INTDEF WINBOOL WINAPI K32_SetDllDirectoryW(LPCWSTR lpPathName);
+INTDEF DWORD   WINAPI K32_GetDllDirectoryA(DWORD nBufferLength, LPSTR lpBuffer);
+INTDEF DWORD   WINAPI K32_GetDllDirectoryW(DWORD nBufferLength, LPWSTR lpBuffer);
 
 DECL_END
 
-#endif /* !GUARD_LIBS_LIBKERNEL32_K32_H */
+#endif /* !GUARD_LIBS_LIBKERNEL32_LINKER_H */

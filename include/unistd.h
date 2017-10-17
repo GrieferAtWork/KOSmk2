@@ -361,7 +361,7 @@ __REDIRECT_UFS(__LIBC,__PORT_KOSONLY_ALT(chdir) __NONNULL((2)),int,__LIBCCALL,fc
 #ifdef __USE_GNU
 #ifdef __DOS_COMPAT__
 __REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,euidaccess,(char const *__name, int __type),_access,(__name,__type));
-__REDIRECT_UFS(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,eaccess,(char const *__name, int __type),_access,(__name,__type));
+__REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,eaccess,(char const *__name, int __type),_access,(__name,__type));
 #else /* __DOS_COMPAT__ */
 __REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,euidaccess,(char const *__name, int __type),eaccess,(__name,__type));
 __REDIRECT_UFS(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,eaccess,(char const *__name, int __type),eaccess,(__name,__type));
