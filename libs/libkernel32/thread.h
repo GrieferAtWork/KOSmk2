@@ -77,6 +77,15 @@ INTDEF WINBOOL WINAPI K32_GetExitCodeThread(HANDLE hThread, LPDWORD lpExitCode);
 INTDEF WINBOOL WINAPI K32_GetThreadSelectorEntry(HANDLE hThread, DWORD dwSelector, LPLDT_ENTRY lpSelectorEntry);
 INTDEF EXECUTION_STATE WINAPI K32_SetThreadExecutionState(EXECUTION_STATE esFlags);
 
+/* Critical section API. */
+INTDEF void    WINAPI K32_InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+INTDEF void    WINAPI K32_EnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+INTDEF void    WINAPI K32_LeaveCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+INTDEF WINBOOL WINAPI K32_InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount);
+INTDEF DWORD   WINAPI K32_SetCriticalSectionSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount);
+INTDEF WINBOOL WINAPI K32_TryEnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+INTDEF void    WINAPI K32_DeleteCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+
 /* Error code APIs. */
 INTDEF DWORD WINAPI K32_GetLastError(void);
 INTDEF void WINAPI K32_SetLastError(DWORD dwErrCode);

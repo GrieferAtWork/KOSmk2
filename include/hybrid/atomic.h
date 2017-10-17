@@ -20,6 +20,7 @@
 #define __GUARD_HYBRID_ATOMIC_H 1
 
 #include "compiler.h"
+#include "__atomic.h"
 
 DECL_BEGIN
 
@@ -36,29 +37,29 @@ typedef enum {
 } memory_order;
 #endif
 
-#define OATOMIC_LOAD(x,order)                          __atomic_load_n(&(x),order)
-#define OATOMIC_STORE(x,v,order)                       __atomic_store_n(&(x),v,order)
-#define OATOMIC_XCH(x,v,order)                         __atomic_exchange_n(&(x),v,order)
-#define OATOMIC_CMPXCH(x,oldv,newv,succ,fail)          XBLOCK({ __typeof__(x) __oldv=(oldv); XRETURN __atomic_compare_exchange_n(&(x),&__oldv,newv,0,fail,succ); })
-#define OATOMIC_CMPXCH_WEAK(x,oldv,newv,succ,fail)     XBLOCK({ __typeof__(x) __oldv=(oldv); XRETURN __atomic_compare_exchange_n(&(x),&__oldv,newv,1,fail,succ); })
-#define OATOMIC_CMPXCH_VAL(x,oldv,newv,succ,fail)      XBLOCK({ __typeof__(x) __oldv=(oldv); __atomic_compare_exchange_n(&(x),&__oldv,newv,0,fail,succ); XRETURN __oldv; })
-#define OATOMIC_CMPXCH_VAL_WEAK(x,oldv,newv,succ,fail) XBLOCK({ __typeof__(x) __oldv=(oldv); __atomic_compare_exchange_n(&(x),&__oldv,newv,1,fail,succ); XRETURN __oldv; })
-#define OATOMIC_ADDFETCH(x,v,order)                    __atomic_add_fetch(&(x),v,order)
-#define OATOMIC_SUBFETCH(x,v,order)                    __atomic_sub_fetch(&(x),v,order)
-#define OATOMIC_ANDFETCH(x,v,order)                    __atomic_and_fetch(&(x),v,order)
-#define OATOMIC_ORFETCH(x,v,order)                     __atomic_or_fetch(&(x),v,order)
-#define OATOMIC_XORFETCH(x,v,order)                    __atomic_xor_fetch(&(x),v,order)
-#define OATOMIC_NANDFETCH(x,v,order)                   __atomic_nand_fetch(&(x),v,order)
-#define OATOMIC_FETCHADD(x,v,order)                    __atomic_fetch_add(&(x),v,order)
-#define OATOMIC_FETCHSUB(x,v,order)                    __atomic_fetch_sub(&(x),v,order)
-#define OATOMIC_FETCHAND(x,v,order)                    __atomic_fetch_and(&(x),v,order)
-#define OATOMIC_FETCHOR(x,v,order)                     __atomic_fetch_or(&(x),v,order)
-#define OATOMIC_FETCHXOR(x,v,order)                    __atomic_fetch_xor(&(x),v,order)
-#define OATOMIC_FETCHNAND(x,v,order)                   __atomic_fetch_nand(&(x),v,order)
-#define OATOMIC_INCFETCH(x,order)                      OATOMIC_ADDFETCH(x,1,order)
-#define OATOMIC_DECFETCH(x,order)                      OATOMIC_SUBFETCH(x,1,order)
-#define OATOMIC_FETCHINC(x,order)                      OATOMIC_FETCHADD(x,1,order)
-#define OATOMIC_FETCHDEC(x,order)                      OATOMIC_FETCHSUB(x,1,order)
+#define OATOMIC_LOAD(x,order)                          __hybrid_atomic_load(x,order)
+#define OATOMIC_STORE(x,v,order)                       __hybrid_atomic_store(x,v,order)
+#define OATOMIC_XCH(x,v,order)                         __hybrid_atomic_xch(x,v,order)
+#define OATOMIC_CMPXCH(x,oldv,newv,succ,fail)          __hybrid_atomic_cmpxch(x,oldv,newv,succ,fail)
+#define OATOMIC_CMPXCH_WEAK(x,oldv,newv,succ,fail)     __hybrid_atomic_cmpxch_weak(x,oldv,newv,succ,fail)
+#define OATOMIC_CMPXCH_VAL(x,oldv,newv,succ,fail)      __hybrid_atomic_cmpxch_val(x,oldv,newv,succ,fail)
+#define OATOMIC_CMPXCH_VAL_WEAK(x,oldv,newv,succ,fail) __hybrid_atomic_cmpxch_val_weak(x,oldv,newv,succ,fail)
+#define OATOMIC_ADDFETCH(x,v,order)                    __hybrid_atomic_addfetch(x,v,order)
+#define OATOMIC_SUBFETCH(x,v,order)                    __hybrid_atomic_subfetch(x,v,order)
+#define OATOMIC_ANDFETCH(x,v,order)                    __hybrid_atomic_andfetch(x,v,order)
+#define OATOMIC_ORFETCH(x,v,order)                     __hybrid_atomic_orfetch(x,v,order)
+#define OATOMIC_XORFETCH(x,v,order)                    __hybrid_atomic_xorfetch(x,v,order)
+#define OATOMIC_NANDFETCH(x,v,order)                   __hybrid_atomic_nandfetch(x,v,order)
+#define OATOMIC_FETCHADD(x,v,order)                    __hybrid_atomic_fetchadd(x,v,order)
+#define OATOMIC_FETCHSUB(x,v,order)                    __hybrid_atomic_fetchsub(x,v,order)
+#define OATOMIC_FETCHAND(x,v,order)                    __hybrid_atomic_fetchand(x,v,order)
+#define OATOMIC_FETCHOR(x,v,order)                     __hybrid_atomic_fetchor(x,v,order)
+#define OATOMIC_FETCHXOR(x,v,order)                    __hybrid_atomic_fetchxor(x,v,order)
+#define OATOMIC_FETCHNAND(x,v,order)                   __hybrid_atomic_fetchnand(x,v,order)
+#define OATOMIC_INCFETCH(x,order)                      __hybrid_atomic_incfetch(x,order)
+#define OATOMIC_DECFETCH(x,order)                      __hybrid_atomic_decfetch(x,order)
+#define OATOMIC_FETCHINC(x,order)                      __hybrid_atomic_fetchinc(x,order)
+#define OATOMIC_FETCHDEC(x,order)                      __hybrid_atomic_fetchdec(x,order)
 
 #define ATOMIC_LOAD(x)                      OATOMIC_LOAD(x,__ATOMIC_SEQ_CST)
 #define ATOMIC_STORE(x,v)                   OATOMIC_STORE(x,v,__ATOMIC_SEQ_CST)
@@ -84,17 +85,17 @@ typedef enum {
 #define ATOMIC_FETCHINC(x)                  OATOMIC_FETCHINC(x,__ATOMIC_SEQ_CST)
 #define ATOMIC_FETCHDEC(x)                  OATOMIC_FETCHDEC(x,__ATOMIC_SEQ_CST)
 
-#define ATOMIC_INCIFNONZERO(x) \
- XBLOCK({ register __typeof__(x) _temp; \
-          do { _temp = ATOMIC_READ(x); \
-               if (!_temp) break; \
-          } while (!ATOMIC_CMPXCH_WEAK(x,_temp,_temp+1)); \
-          XRETURN _temp != 0; \
- })
-
 
 #define ATOMIC_READ(x)     OATOMIC_LOAD(x,__ATOMIC_ACQUIRE)
 #define ATOMIC_WRITE(x,v)  OATOMIC_STORE(x,v,__ATOMIC_RELEASE)
+
+#define ATOMIC_INCIFNONZERO(x) \
+ XBLOCK({ register __typeof__(x) __temp; \
+          do { __temp = ATOMIC_READ(x); \
+               if (!__temp) break; \
+          } while (!ATOMIC_CMPXCH_WEAK(x,__temp,__temp+1)); \
+          XRETURN __temp != 0; \
+ })
 
 #endif /* __CC__ */
 

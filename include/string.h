@@ -228,7 +228,8 @@ __ATTR_MALLOC char *(__LIBCCALL strndup)(char const *__restrict __str, size_t __
 
 #ifndef __KERNEL__
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8) || defined(__USE_DOS)
-__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,char *,__LIBCCALL,strdup,(char const *__restrict __str),_strdup,(__str))
+__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
+                 char *,__LIBCCALL,strdup,(char const *__restrict __str),_strdup,(__str))
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 || __USE_DOS */
 #endif /* !__KERNEL__ */
 

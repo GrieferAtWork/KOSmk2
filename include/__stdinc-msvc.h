@@ -129,7 +129,22 @@
 #define __WUNUSED                /* Nothing */
 #define __NO_XBLOCK              1
 #define __IF0                    if(__LINE__ == -1)    /* Always false, but not warned about. */
+#define __IF1                    if(__LINE__ != -1)    /* Always true, but not warned about. */
 #define __WHILE0                 while(__LINE__ == -1) /* ... */
+#define __WHILE1                 while(__LINE__ != -1) /* ... */
+#ifdef __cplusplus
+namespace __msvc {
+template<bool> struct __static_if {};
+template<> struct __static_if<true> { bool __is_true__(); };
+}
+#define __STATIC_IF(c) \
+     __if_exists(::__msvc::__static_if<((c))>::__is_true__)
+#define __STATIC_ELSE(c) \
+     __if_not_exists(::__msvc::__static_if<((c))>::__is_true__)
+#else
+#define __STATIC_IF(x)           if((x) == (__LINE__ != -1))
+#define __STATIC_ELSE(x)         if((x) != (__LINE__ != -1))
+#endif
 #define __XBLOCK(...)            do __VA_ARGS__ __WHILE0
 #define __XRETURN                /* Nothing */
 #define __builtin_assume(x)      __assume(x)
@@ -227,8 +242,11 @@ extern void (__cdecl __va_start)(__VA_LIST *, ...);
 #pragma warning(disable: 4710) /* Function not inlined (Emit for local varargs functions...) */
 #ifndef __cplusplus
 /* Disable some warnings that are caused by function redirections in system headers. */
-#define __REDIRECT_WSUPPRESS_BEGIN __pragma(warning(push)) \
-                                   __pragma(warning(disable: 4210 4028 4142 4565))
+#define __REDIRECT_WSUPPRESS_BEGIN \
+ __pragma(warning(push)) \
+ __pragma(warning(disable: /* Redirections  */4210 4028 4142 4565 4559 4211 4115 4996 \
+                           /* Unnamed union */4201))
+
 #define __REDIRECT_WSUPPRESS_END   __pragma(warning(pop))
 /* Suppress warnings caused by C-mode redirections in system headers. */
 #define __SYSDECL_BEGIN __DECL_BEGIN __REDIRECT_WSUPPRESS_BEGIN

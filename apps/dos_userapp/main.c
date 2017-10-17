@@ -46,6 +46,7 @@
 #include <dirent.h>
 #include <format-printer.h>
 #include <hybrid/compiler.h>
+#include <hybrid/atomic.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>

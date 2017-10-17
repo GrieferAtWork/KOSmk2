@@ -191,6 +191,20 @@ K32_SetThreadExecutionState(EXECUTION_STATE esFlags) {
 
 
 
+
+/* Critical section API. */
+INTERN void WINAPI K32_InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); }
+INTERN void WINAPI K32_EnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); }
+INTERN void WINAPI K32_LeaveCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); }
+INTERN WINBOOL WINAPI K32_InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount) {  NOT_IMPLEMENTED(); return TRUE; }
+INTERN DWORD WINAPI K32_SetCriticalSectionSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount) {  NOT_IMPLEMENTED(); return dwSpinCount; }
+INTERN WINBOOL WINAPI K32_TryEnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); return TRUE; }
+INTERN void WINAPI K32_DeleteCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); }
+
+
+
+
+
 /* Error code APIs. */
 INTERN DWORD WINAPI K32_GetLastError(void) { return errno_kos2nt(__get_errno()); }
 INTERN void WINAPI K32_SetLastError(DWORD dwErrCode) { __set_errno(errno_kos2nt(dwErrCode)); }
@@ -365,6 +379,15 @@ DEFINE_PUBLIC_ALIAS(TerminateThread,K32_TerminateThread);
 DEFINE_PUBLIC_ALIAS(GetExitCodeThread,K32_GetExitCodeThread);
 DEFINE_PUBLIC_ALIAS(GetThreadSelectorEntry,K32_GetThreadSelectorEntry);
 DEFINE_PUBLIC_ALIAS(SetThreadExecutionState,K32_SetThreadExecutionState);
+
+/* Critical section API. */
+DEFINE_PUBLIC_ALIAS(InitializeCriticalSection,K32_InitializeCriticalSection);
+DEFINE_PUBLIC_ALIAS(EnterCriticalSection,K32_EnterCriticalSection);
+DEFINE_PUBLIC_ALIAS(LeaveCriticalSection,K32_LeaveCriticalSection);
+DEFINE_PUBLIC_ALIAS(InitializeCriticalSectionAndSpinCount,K32_InitializeCriticalSectionAndSpinCount);
+DEFINE_PUBLIC_ALIAS(SetCriticalSectionSpinCount,K32_SetCriticalSectionSpinCount);
+DEFINE_PUBLIC_ALIAS(TryEnterCriticalSection,K32_TryEnterCriticalSection);
+DEFINE_PUBLIC_ALIAS(DeleteCriticalSection,K32_DeleteCriticalSection);
 
 /* Error code APIs. */
 DEFINE_PUBLIC_ALIAS(GetLastError,K32_GetLastError);

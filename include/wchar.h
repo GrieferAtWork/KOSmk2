@@ -625,8 +625,8 @@ __LOCAL wchar_t const *(__LIBCCALL wcsend)(wchar_t const *__restrict __s) { retu
 __LOCAL wchar_t const *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n) { return __s+__libc_wcsnlen(__s,__n); }
 }
 #else /* C++ */
-__LOCAL wchar_t *(__LIBCCALL wcsend)(wchar_t const *__restrict __s) { return __s+__NAMESPACE_STD_SYM wcslen(__s); }
-__LOCAL wchar_t *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n) { return __s+__libc_wcsnlen(__s,__n); }
+__LOCAL wchar_t *(__LIBCCALL wcsend)(wchar_t const *__restrict __s) { return (wchar_t *)__s+__NAMESPACE_STD_SYM wcslen(__s); }
+__LOCAL wchar_t *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n) { return (wchar_t *)__s+__libc_wcsnlen(__s,__n); }
 #endif /* !C++ */
 #else /* Compat... */
 #if defined(__cplusplus) && !defined(__NO_ASMNAME)
@@ -1223,13 +1223,13 @@ __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) { ret
 __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) { return _wcstoi64_l(__s,0,10,__locale); }
 #endif /* !__CRT_DOS */
 #elif __SIZEOF_LONG_LONG__ == 8
-__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wcstoi64,(wchar_t const *__restrict __s, wchar_t **__pend, int __radix),wcstoll,(__s,__pend,__radix))
-__REDIRECT(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_wcstoui64,(wchar_t const *__restrict __s, wchar_t **__pend, int __radix),wcstoull,(__s,__pend,__radix))
-__REDIRECT2(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wcstoi64_l,(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale),wcstoll_l,_wcstoll_l,(__s,__pend,__radix,__locale))
-__REDIRECT2(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_wcstoui64_l,(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale),wcstoull_l,_wcstoull_l,(__s,__pend,__radix,__locale))
+__REDIRECT_IFKOS(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wcstoi64,(wchar_t const *__restrict __s, wchar_t **__pend, int __radix),wcstoll,(__s,__pend,__radix))
+__REDIRECT_IFKOS(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_wcstoui64,(wchar_t const *__restrict __s, wchar_t **__pend, int __radix),wcstoull,(__s,__pend,__radix))
+__REDIRECT_IFKOS(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wcstoi64_l,(wchar_t const *__restrict __s, wchar_t **__pend, int __radix, __locale_t __locale),wcstoll_l,(__s,__pend,__radix,__locale))
+__REDIRECT_IFKOS(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_wcstoui64_l,(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale),wcstoull_l,(__s,__pend,__radix,__locale))
 #ifdef __CRT_DOS
-__REDIRECT2(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wtoi64,(wchar_t const *__restrict __s),wtoll,_wtoll,(__s))
-__REDIRECT2(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wtoi64_l,(wchar_t const *__restrict __s, __locale_t __locale),wtoll_l,_wtoll_l,(__s,__locale))
+__REDIRECT_IFW32(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wtoi64,(wchar_t const *__restrict __s),wtoi64,(__s))
+__REDIRECT_IFW32(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wtoi64_l,(wchar_t const *__restrict __s, __locale_t __locale),wtoi64_l,(__s,__locale))
 #else /* __CRT_DOS */
 __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) { return _wcstoi64(__s,0,10); }
 __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) { return _wcstoi64_l(__s,0,10,__locale); }

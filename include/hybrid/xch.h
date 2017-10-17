@@ -24,7 +24,30 @@
 
 __SYSDECL_BEGIN
 
-#if defined(__x86_64__)
+#if !defined(__GNUC__) && !defined(__DCC_VERSION__) && !defined(__TINYC__)
+#ifdef __cplusplus
+extern "C++" { template<class __T> __FORCELOCAL __T (__cxx_xch)(__T &__x, __T __y) { __T __res = __x; __x = __y; return __res; } }
+#define __XCH(x,y) ::__cxx_xch(x,y)
+#else
+__FORCELOCAL __UINT8_TYPE__ __xch8(void *__x, __UINT8_TYPE__ __y) { __UINT8_TYPE__ __res = *(__UINT8_TYPE__ *)__x; *(__UINT8_TYPE__ *)__x = __y; return __res; }
+__FORCELOCAL __UINT16_TYPE__ __xch16(void *__x, __UINT16_TYPE__ __y) { __UINT16_TYPE__ __res = *(__UINT16_TYPE__ *)__x; *(__UINT16_TYPE__ *)__x = __y; return __res; }
+__FORCELOCAL __UINT32_TYPE__ __xch32(void *__x, __UINT32_TYPE__ __y) { __UINT32_TYPE__ __res = *(__UINT32_TYPE__ *)__x; *(__UINT32_TYPE__ *)__x = __y; return __res; }
+__FORCELOCAL __UINT64_TYPE__ __xch64(void *__x, __UINT64_TYPE__ __y) { __UINT64_TYPE__ __res = *(__UINT64_TYPE__ *)__x; *(__UINT64_TYPE__ *)__x = __y; return __res; }
+#ifdef __COMPILER_HAVE_TYPEOF
+#define __XCH(x,y) \
+  ((__typeof__(x))(sizeof(x) == 1 ? __xch8(&(x),(__UINT8_TYPE__)(y)) : \
+                   sizeof(x) == 2 ? __xch16(&(x),(__UINT16_TYPE__)(y)) : \
+                   sizeof(x) == 4 ? __xch32(&(x),(__UINT32_TYPE__)(y)) : \
+                                    __xch64(&(x),(__UINT64_TYPE__)(y))))
+#else /* __COMPILER_HAVE_TYPEOF */
+#define __XCH(x,y) \
+  (sizeof(x) == 1 ? __xch8(&(x),(__UINT8_TYPE__)(y)) : \
+   sizeof(x) == 2 ? __xch16(&(x),(__UINT16_TYPE__)(y)) : \
+   sizeof(x) == 4 ? __xch32(&(x),(__UINT32_TYPE__)(y)) : \
+                    __xch64(&(x),(__UINT64_TYPE__)(y)))
+#endif /* !__COMPILER_HAVE_TYPEOF */
+#endif
+#elif defined(__x86_64__)
 #define __XCH(x,y) \
  __XBLOCK({ __typeof__(x) __oldx; \
             if (sizeof(__oldx) == 1) { \
