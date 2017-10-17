@@ -122,11 +122,17 @@
 #   define __NAMESPACE_STD_USINGX2(d) __NAMESPACE_STD_USING_##d
 #   define __NAMESPACE_STD_USINGX1(d) __NAMESPACE_STD_USINGX2(d)
 #   define __NAMESPACE_STD_USING(x)   __NAMESPACE_STD_USINGX1(__CXX_SYSTEM_HEADER)(x)
+#   define __NAMESPACE_INT_BEGIN      namespace __int {
+#   define __NAMESPACE_INT_END        }
+#   define __NAMESPACE_INT_SYM        ::__int::
 #else
 #   define __NAMESPACE_STD_BEGIN    /* nothing */
 #   define __NAMESPACE_STD_END      /* nothing */
 #   define __NAMESPACE_STD_SYM      /* nothing */
 #   define __NAMESPACE_STD_USING(x) /* nothing */
+#   define __NAMESPACE_INT_BEGIN    /* nothing */
+#   define __NAMESPACE_INT_END      /* nothing */
+#   define __NAMESPACE_INT_SYM      /* nothing */
 #endif
 
 #define __FCALL                  __ATTR_FASTCALL
@@ -292,24 +298,24 @@
 /* In C++, we can use use namespaces to prevent collisions with incompatible prototypes. */
 #define __REDIRECT_UNIQUE  __PP_CAT2(__u,__LINE__)
 #define __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
-namespace __rd { namespace __REDIRECT_UNIQUE { extern "C" { decl Treturn (cc asmname) param; } } } \
+namespace __int { namespace __REDIRECT_UNIQUE { extern "C" { decl Treturn (cc asmname) param; } } } \
 __LOCAL attr Treturn (cc name) param { \
-    return (__rd::__REDIRECT_UNIQUE:: asmname) args; \
+    return (__int::__REDIRECT_UNIQUE:: asmname) args; \
 }
 #define __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
-namespace __rd { namespace __REDIRECT_UNIQUE { extern "C" { decl Treturn __NOTHROW((cc asmname) param); } } } \
+namespace __int { namespace __REDIRECT_UNIQUE { extern "C" { decl Treturn __NOTHROW((cc asmname) param); } } } \
 __LOCAL attr Treturn __NOTHROW((cc name) param) { \
-    return (__rd::__REDIRECT_UNIQUE:: asmname) args; \
+    return (__int::__REDIRECT_UNIQUE:: asmname) args; \
 }
 #define __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
-namespace __rd { namespace __REDIRECT_UNIQUE { extern "C" { decl void (cc asmname) param; } } } \
+namespace __int { namespace __REDIRECT_UNIQUE { extern "C" { decl void (cc asmname) param; } } } \
 __LOCAL attr void (cc name) param { \
-    (__rd::__REDIRECT_UNIQUE:: asmname) args; \
+    (__int::__REDIRECT_UNIQUE:: asmname) args; \
 }
 #define __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
-namespace __rd { namespace __REDIRECT_UNIQUE { extern "C" { decl void __NOTHROW((cc asmname) param); } } } \
+namespace __int { namespace __REDIRECT_UNIQUE { extern "C" { decl void __NOTHROW((cc asmname) param); } } } \
 __LOCAL attr void __NOTHROW((cc name) param) { \
-    (__rd::__REDIRECT_UNIQUE:: asmname) args; \
+    (__int::__REDIRECT_UNIQUE:: asmname) args; \
 }
 #else
 /* Fallback: Assume that the compiler supports scoped declarations,

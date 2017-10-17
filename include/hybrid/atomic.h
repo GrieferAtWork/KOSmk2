@@ -25,6 +25,7 @@
 DECL_BEGIN
 
 #ifdef __CC__
+
 #ifndef __memory_order_defined
 #define __memory_order_defined 1
 typedef enum {
@@ -35,7 +36,7 @@ typedef enum {
  memory_order_acq_rel = __ATOMIC_ACQ_REL,
  memory_order_seq_cst = __ATOMIC_SEQ_CST,
 } memory_order;
-#endif
+#endif /* !__memory_order_defined */
 
 #define OATOMIC_LOAD(x,order)                          __hybrid_atomic_load(x,order)
 #define OATOMIC_STORE(x,v,order)                       __hybrid_atomic_store(x,v,order)

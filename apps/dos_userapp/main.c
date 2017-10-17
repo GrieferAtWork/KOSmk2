@@ -33,7 +33,6 @@
  *    supporting GLibc, KOS's CRT and DOS (msvcrt).
  */
 
-
 //#define _DOS_SOURCE  0
 //#define _KOS_PRINTF_SOURCE 1
 #define _GNU_SOURCE    1
@@ -57,8 +56,8 @@
 
 DECL_BEGIN
 
-/* NOTE: Try copy-pasting the .exe created by this app into KOS.
- * HINT: It will run dispite dependencies to msvcrt and kernel32 ;) */
+/* NOTE: Try copy-pasting the .exe this file compiles to into KOS.
+ * HINT: It will run dispite depending on both msvcrt and kernel32 ;) */
 
 int main(int argc, char **argv) {
  (void)argc;
@@ -89,6 +88,10 @@ int main(int argc, char **argv) {
  printf("argc = %d\n",argc);
  printf("argv = %p\n",argv);
  while (argc--) printf("argv[%d] = %s\n",argc,argv[argc]);
+ int x = 0x80;
+ int y = ATOMIC_FETCHOR(x,0x01);
+ printf("x = %x\n",x);
+ printf("y = %x\n",y);
 
  return 0;
 }

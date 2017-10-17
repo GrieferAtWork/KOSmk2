@@ -133,14 +133,14 @@
 #define __WHILE0                 while(__LINE__ == -1) /* ... */
 #define __WHILE1                 while(__LINE__ != -1) /* ... */
 #ifdef __cplusplus
-namespace __msvc {
+namespace __int {
 template<bool> struct __static_if {};
 template<> struct __static_if<true> { bool __is_true__(); };
 }
 #define __STATIC_IF(c) \
-     __if_exists(::__msvc::__static_if<((c))>::__is_true__)
+     __if_exists(::__int::__static_if<((c))>::__is_true__)
 #define __STATIC_ELSE(c) \
-     __if_not_exists(::__msvc::__static_if<((c))>::__is_true__)
+     __if_not_exists(::__int::__static_if<((c))>::__is_true__)
 #else
 #define __STATIC_IF(x)           if((x) == (__LINE__ != -1))
 #define __STATIC_ELSE(x)         if((x) != (__LINE__ != -1))
@@ -161,7 +161,7 @@ template<> struct __static_if<true> { bool __is_true__(); };
 
 /* Define intrinsic barrier functions. */
 #ifdef __cplusplus
-extern "C" {
+namespace __int { extern "C" {
 #endif /* __cplusplus */
 #if defined(__i386__) || defined(__i386) || defined(i386) || \
     defined(__I86__) || defined(_M_IX86) || defined(__X86__) || \
@@ -170,8 +170,12 @@ extern "C" {
     defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64) || \
     defined(_WIN64) || defined(WIN64)
 extern void (__cdecl _m_prefetch)(void *);
-#define __builtin_prefetch(addr,...) ((_m_prefetch)(addr))
 #pragma intrinsic(_m_prefetch)
+#ifdef __cplusplus
+#define __builtin_prefetch(addr,...) ::__int::_m_prefetch(addr)
+#else /* __cplusplus */
+#define __builtin_prefetch(addr,...) _m_prefetch(addr)
+#endif /* !__cplusplus */
 #else
 #define __NO_builtin_prefetch    1
 #define __builtin_prefetch(...) (void)0
@@ -182,11 +186,17 @@ extern void (__cdecl _ReadWriteBarrier)(void);
 #pragma intrinsic(_ReadBarrier)
 #pragma intrinsic(_WriteBarrier)
 #pragma intrinsic(_ReadWriteBarrier)
+#ifdef __cplusplus
+#define __COMPILER_BARRIER()       ::__int::_ReadWriteBarrier()
+#define __COMPILER_READ_BARRIER()  ::__int::_ReadBarrier()
+#define __COMPILER_WRITE_BARRIER() ::__int::_WriteBarrier()
+#else /* __cplusplus */
 #define __COMPILER_BARRIER()       _ReadWriteBarrier()
 #define __COMPILER_READ_BARRIER()  _ReadBarrier()
 #define __COMPILER_WRITE_BARRIER() _WriteBarrier()
+#endif /* !__cplusplus */
 #ifdef __cplusplus
-}
+} }
 #endif /* __cplusplus */
 
 #ifdef __cplusplus
@@ -225,8 +235,13 @@ extern void (__cdecl _ReadWriteBarrier)(void);
 #elif defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
       defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64) || \
       defined(_WIN64) || defined(WIN64)
+#ifdef __cplusplus
+namespace __int { extern "C" { extern void (__cdecl __va_start)(__VA_LIST *, ...); } }
+#define __builtin_va_start(ap,x) ::__int::__va_start(&ap,x)
+#else
 extern void (__cdecl __va_start)(__VA_LIST *, ...);
 #define __builtin_va_start(ap,x) __va_start(&ap,x)
+#endif
 #define __builtin_va_arg(ap,T) \
     ((sizeof(T) > 8 || (sizeof(T)&(sizeof(T) - 1)) != 0) ? **(T **)((ap += 8)-8) : *(T *)((ap += 8)-8))
 #define __builtin_va_end(ap)    (void)0
