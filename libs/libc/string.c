@@ -240,6 +240,7 @@ INTERN void *LIBCCALL libc_memmem(void const *haystack, size_t haystacklen,
 }
 
 
+#ifndef __KERNEL__
 #define NOCASE
 #include "templates/fuzzy_memcmp.code"
 #include "templates/fuzzy_memcmp.code"
@@ -262,6 +263,97 @@ INTERN size_t LIBCCALL libc_fuzzy_strncasecmp(char const *a, size_t max_a_chars,
  return libc_fuzzy_memcasecmp(a,libc_strnlen(a,max_a_chars)*sizeof(char),
                               b,libc_strnlen(b,max_b_chars)*sizeof(char));
 }
+
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_INTERN_ALIAS(libc_fuzzy_memcasecmp_l,libc_fuzzy_memcasecmp);
+DEFINE_INTERN_ALIAS(libc_fuzzy_strcasecmp_l,libc_fuzzy_strcasecmp);
+DEFINE_INTERN_ALIAS(libc_fuzzy_strncasecmp_l,libc_fuzzy_strncasecmp);
+#else /* CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP */
+INTERN size_t LIBCCALL libc_fuzzy_memcasecmp_l(void const *a, size_t a_bytes, void const *b, size_t b_bytes, locale_t UNUSED(locale)) { return libc_fuzzy_memcasecmp(a,a_bytes,b,b_bytes); }
+INTERN size_t LIBCCALL libc_fuzzy_strcasecmp_l(char const *a, char const *b, locale_t UNUSED(locale)) { return libc_fuzzy_strcasecmp(a,b); }
+INTERN size_t LIBCCALL libc_fuzzy_strncasecmp_l(char const *a, size_t max_a_chars, char const *b, size_t max_b_chars, locale_t UNUSED(locale)) { return libc_fuzzy_strncasecmp(a,max_a_chars,b,max_b_chars); }
+#endif /* !CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP */
+
+
+INTERN int LIBCCALL
+libc_wildstrcmp(char const *pattern, char const *string) {
+ char card_post;
+ for (;;) {
+  if (!*string) {
+   /* End of string (if the patter is empty, or only contains '*', we have a match) */
+   while (*pattern == '*') ++pattern;
+   return -(int)*pattern;
+  }
+  if (!*pattern) return (int)*string; /* Pattern end doesn't match */
+  if (*pattern == '*') {
+   /* Skip starts */
+   do ++pattern; while (*pattern == '*');
+   if ((card_post = *pattern++) == '\0')
+        return 0; /* Pattern ends with '*' (matches everything) */
+   if (card_post == '?') goto next; /* Match any --> already found */
+   for (;;) {
+    char ch = *string++;
+    if (ch == card_post) {
+     /* Recursively check if the rest of the string and pattern match */
+     if (!libc_wildstrcmp(string,pattern)) return 0;
+    } else if (!ch) {
+     return -(int)card_post; /* Wildcard suffix not found */
+    }
+   }
+  }
+  if (*pattern == *string || *pattern == '?') {
+next: ++string,++pattern;
+   continue; /* single character match */
+  }
+  break; /* mismatch */
+ }
+ return *string-*pattern;
+}
+
+INTERN int LIBCCALL
+libc_wildstrcasecmp(char const *pattern, char const *string) {
+#define UNIFORM(x) libc_tolower(x)
+ char card_post;
+ for (;;) {
+  if (!*string) {
+   /* End of string (if the patter is empty, or only contains '*', we have a match) */
+   while (*pattern == '*') ++pattern;
+   return -(int)UNIFORM(*pattern);
+  }
+  if (!*pattern) return (int)*string; /* Pattern end doesn't match */
+  if (*pattern == '*') {
+   /* Skip starts */
+   do ++pattern; while (*pattern == '*');
+   if ((card_post = *pattern++) == '\0')
+        return 0; /* Pattern ends with '*' (matches everything) */
+   if (card_post == '?') goto next; /* Match any --> already found */
+   card_post = UNIFORM(card_post);
+   for (;;) {
+    char ch = *string++;
+    if (UNIFORM(ch) == card_post) {
+     /* Recursively check if the rest of the string and pattern match */
+     if (!libc_wildstrcasecmp(string,pattern)) return 0;
+    } else if (!ch) {
+     return -(int)card_post; /* Wildcard suffix not found */
+    }
+   }
+  }
+  if (UNIFORM(*pattern) == UNIFORM(*string) || *pattern == '?') {
+next: ++string,++pattern;
+   continue; /* single character match */
+  }
+  break; /* mismatch */
+ }
+ return UNIFORM(*string)-UNIFORM(*pattern);
+#undef UNIFORM
+}
+#ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
+DEFINE_INTERN_ALIAS(libc_wildstrcasecmp_l,libc_wildstrcasecmp);
+#else /* CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP */
+INTERN int LIBCCALL libc_wildstrcasecmp_l(char const *pattern, char const *string, locale_t UNUSED(locale)) { return libc_wildstrcasecmp(pattern,string); }
+#endif /* !CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP */
+#endif /* !__KERNEL__ */
+
 
 #define DO_FFS(i) \
 { int result; \
@@ -670,12 +762,20 @@ DEFINE_PUBLIC_ALIAS(strncasecmp,libc_strncasecmp);
 DEFINE_PUBLIC_ALIAS(strstr,libc_strstr);
 DEFINE_PUBLIC_ALIAS(strcasestr,libc_strcasestr);
 DEFINE_PUBLIC_ALIAS(memmem,libc_memmem);
-DEFINE_PUBLIC_ALIAS(fuzzy_memcasecmp,libc_fuzzy_memcasecmp);
+#ifndef __KERNEL__
 DEFINE_PUBLIC_ALIAS(fuzzy_memcmp,libc_fuzzy_memcmp);
 DEFINE_PUBLIC_ALIAS(fuzzy_strcmp,libc_fuzzy_strcmp);
 DEFINE_PUBLIC_ALIAS(fuzzy_strncmp,libc_fuzzy_strncmp);
+DEFINE_PUBLIC_ALIAS(fuzzy_memcasecmp,libc_fuzzy_memcasecmp);
 DEFINE_PUBLIC_ALIAS(fuzzy_strcasecmp,libc_fuzzy_strcasecmp);
 DEFINE_PUBLIC_ALIAS(fuzzy_strncasecmp,libc_fuzzy_strncasecmp);
+DEFINE_PUBLIC_ALIAS(fuzzy_memcasecmp_l,libc_fuzzy_memcasecmp_l);
+DEFINE_PUBLIC_ALIAS(fuzzy_strcasecmp_l,libc_fuzzy_strcasecmp_l);
+DEFINE_PUBLIC_ALIAS(fuzzy_strncasecmp_l,libc_fuzzy_strncasecmp_l);
+DEFINE_PUBLIC_ALIAS(wildstrcmp,libc_wildstrcmp);
+DEFINE_PUBLIC_ALIAS(wildstrcasecmp,libc_wildstrcasecmp);
+DEFINE_PUBLIC_ALIAS(wildstrcasecmp_l,libc_wildstrcasecmp_l);
+#endif /* !__KERNEL__ */
 DEFINE_PUBLIC_ALIAS(__ffs8,libc___ffs8);
 DEFINE_PUBLIC_ALIAS(__ffs16,libc___ffs16);
 DEFINE_PUBLIC_ALIAS(__ffs32,libc___ffs32);

@@ -58,6 +58,13 @@
 #   define _X86_    1
 #endif
 
+#ifdef __WCHAR_DEFINED
+#error "`WCHAR' was already defined"
+#endif
+
+#define __WCHAR_DEFINED 1
+typedef __CHAR16_TYPE__ WCHAR;
+
 
 #if !defined(_MSC_VER) && !defined(__INTELLISENSE__)
 

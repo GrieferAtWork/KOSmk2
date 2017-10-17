@@ -39,6 +39,11 @@ struct __dirstream {
 
 INTDEF ssize_t LIBCCALL libc_xreaddir(int fd, struct dirent *buf, size_t bufsize, int mode);
 INTDEF DIR *LIBCCALL libc_fdopendir(int fd);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF DIR *LIBCCALL libc_opendirat_ex(int dfd, char const *name, int oflags);
+INTDEF DIR *LIBCCALL libc_dos_opendirat(int dfd, char const *name);
+INTDEF DIR *LIBCCALL libc_dos_opendir(char const *name);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTDEF DIR *LIBCCALL libc_opendirat(int dfd, char const *name);
 INTDEF DIR *LIBCCALL libc_opendir(char const *name);
 INTDEF int LIBCCALL libc_closedir(DIR *dirp);

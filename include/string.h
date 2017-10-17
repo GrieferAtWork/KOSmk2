@@ -1042,6 +1042,10 @@ __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *
 #endif /* Compat... */
 
 #ifdef __CRT_KOS
+__SYSDECL_END
+#include "xlocale.h"
+__SYSDECL_BEGIN
+
 /* Fuzzy string compare extensions.
  *  - Lower return values indicate more closely matching data.
  *  - ZERO(0) indicates perfectly matching data. */
@@ -1051,19 +1055,26 @@ __LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,3)) size_t (__LIBCCALL 
 __LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL fuzzy_strcasecmp)(char const *__a, char const *__b);
 __LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,3)) size_t (__LIBCCALL fuzzy_memcasecmp)(void const *__a, size_t __a_bytes, void const *__b, size_t __b_bytes);
 __LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,3)) size_t (__LIBCCALL fuzzy_strncasecmp)(char const *__a, size_t __max_a_chars, char const *__b, size_t __max_b_chars);
+__LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL fuzzy_strcasecmp_l)(char const *__a, char const *__b, __locale_t __locale);
+__LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,3)) size_t (__LIBCCALL fuzzy_memcasecmp_l)(void const *__a, size_t __a_bytes, void const *__b, size_t __b_bytes, __locale_t __locale);
+__LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,3)) size_t (__LIBCCALL fuzzy_strncasecmp_l)(char const *__a, size_t __max_a_chars, char const *__b, size_t __max_b_chars, __locale_t __locale);
+/* Perform a wildcard string comparison, returning ZERO(0) upon match, or non-zero when not. */
+__LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL wildstrcmp)(char const *__pattern, char const *__string);
+__LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL wildstrcasecmp)(char const *__pattern, char const *__string);
+__LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL wildstrcasecmp_l)(char const *__pattern, char const *__string, __locale_t __locale);
 #endif /* __CRT_KOS */
 
 #ifndef __GLC_COMPAT__
-__REDIRECT_IFDOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,memcasecmp,
-                (void const *__a, void const *__b, size_t __n_bytes),_memicmp,(__a,__b,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,memcasecmp,
+          (void const *__a, void const *__b, size_t __n_bytes),_memicmp,(__a,__b,__n_bytes))
 #ifndef __KERNEL__
-__REDIRECT_IFDOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,memcasecmp_l,
-                (void const *__a, void const *__b, size_t __n_bytes),_memicmp_l,(__a,__b,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,memcasecmp_l,
+          (void const *__a, void const *__b, size_t __n_bytes, __locale_t __locale),_memicmp_l,(__a,__b,__n_bytes,__locale))
 #endif /* !__KERNEL__ */
 #else /* !__GLC_COMPAT__ */
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcasecmp)(void const *__a, void const *__b, size_t __n_bytes) { return __NULLPTR; } /* TODO */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcasecmp)(void const *__a, void const *__b, size_t __n_bytes) { return 0; } /* TODO */
 #ifndef __KERNEL__
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcasecmp_l)(void const *__a, void const *__b, size_t __n_bytes) { return __NULLPTR; } /* TODO */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcasecmp_l)(void const *__a, void const *__b, size_t __n_bytes, __locale_t __UNUSED(__locale)) { return memcasecmp(__a,__b,__n_bytes); }
 #endif /* !__KERNEL__ */
 #endif /* __GLC_COMPAT__ */
 
@@ -1385,7 +1396,7 @@ __REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_strnicmp,(char const *__str1, char cons
 __REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_strnicmp_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),strncasecmp_l,(__str1,__str2,__max_chars,__locale))
 __REDIRECT_IFKOS(__LIBC,,size_t,__LIBCCALL,_strxfrm_l,(char *__dst, char const *__src, size_t __max_chars, __locale_t __locale),strxfrm_l,(__dst,__src,__max_chars,__locale))
 __REDIRECT_IFKOS(__LIBC,,void *,__LIBCCALL,_memccpy,(void *__dst, void const *__src, int __needle, size_t __max_chars),memccpy,(__dst,__src,__needle,__max_chars))
-__REDIRECT2(__LIBC,,int,__LIBCCALL,memicmp,(void const *__a, void const *__b, size_t __n_bytes),memcasecmp,_memicmp,(__a,__b,__n_bytes))
+__REDIRECT(__LIBC,,int,__LIBCCALL,memicmp,(void const *__a, void const *__b, size_t __n_bytes),_memicmp,(__a,__b,__n_bytes))
 __REDIRECT2(__LIBC,,int,__LIBCCALL,strcmpi,(char const *__str1, char const *__str2),strcasecmp,_stricmp,(__str1,__str2))
 __REDIRECT2(__LIBC,,int,__LIBCCALL,stricmp,(char const *__str1, char const *__str2),strcasecmp,_stricmp,(__str1,__str2))
 __REDIRECT2(__LIBC,,int,__LIBCCALL,strnicmp,(char const *__str1, char const *__str2, size_t __max_chars),strncasecmp,_strnicmp,(__str1,__str2,__max_chars))

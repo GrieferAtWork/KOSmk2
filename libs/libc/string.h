@@ -148,12 +148,20 @@ INTDEF int LIBCCALL libc_strncasecmp(char const *s1, char const *s2, size_t n);
 INTDEF char *LIBCCALL libc_strstr(char const *haystack, char const *needle);
 INTDEF char *LIBCCALL libc_strcasestr(char const *haystack, char const *needle);
 INTDEF void *LIBCCALL libc_memmem(void const *haystack, size_t haystacklen, void const *needle, size_t needlelen);
-INTDEF size_t LIBCCALL libc_fuzzy_memcasecmp(void const *a, size_t a_bytes, void const *b, size_t b_bytes);
+#ifndef __KERNEL__
 INTDEF size_t LIBCCALL libc_fuzzy_memcmp(void const *a, size_t a_bytes, void const *b, size_t b_bytes);
 INTDEF size_t LIBCCALL libc_fuzzy_strcmp(char const *a, char const *b);
 INTDEF size_t LIBCCALL libc_fuzzy_strncmp(char const *a, size_t max_a_chars, char const *b, size_t max_b_chars);
+INTDEF size_t LIBCCALL libc_fuzzy_memcasecmp(void const *a, size_t a_bytes, void const *b, size_t b_bytes);
 INTDEF size_t LIBCCALL libc_fuzzy_strcasecmp(char const *a, char const *b);
 INTDEF size_t LIBCCALL libc_fuzzy_strncasecmp(char const *a, size_t max_a_chars, char const *b, size_t max_b_chars);
+INTDEF size_t LIBCCALL libc_fuzzy_memcasecmp_l(void const *a, size_t a_bytes, void const *b, size_t b_bytes, locale_t locale);
+INTDEF size_t LIBCCALL libc_fuzzy_strcasecmp_l(char const *a, char const *b, locale_t locale);
+INTDEF size_t LIBCCALL libc_fuzzy_strncasecmp_l(char const *a, size_t max_a_chars, char const *b, size_t max_b_chars, locale_t locale);
+INTDEF int LIBCCALL libc_wildstrcmp(char const *pattern, char const *string);
+INTDEF int LIBCCALL libc_wildstrcasecmp(char const *pattern, char const *string);
+INTDEF int LIBCCALL libc_wildstrcasecmp_l(char const *pattern, char const *string, locale_t locale);
+#endif /* !__KERNEL__ */
 INTDEF int LIBCCALL libc___ffs8(s8 i);
 INTDEF int LIBCCALL libc___ffs16(s16 i);
 INTDEF int LIBCCALL libc___ffs32(s32 i);

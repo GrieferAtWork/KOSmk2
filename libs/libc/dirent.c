@@ -62,16 +62,26 @@ INTERN DIR *LIBCCALL libc_fdopendir(int fd) {
  }
  return result;
 }
-INTERN DIR *LIBCCALL libc_opendirat(int dfd, char const *name) {
+INTERN DIR *LIBCCALL libc_opendir(char const *name) { return libc_opendirat(AT_FDCWD,name); }
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF DIR *LIBCCALL libc_dos_opendir(char const *name) { return libc_dos_opendirat(AT_FDCWD,name); }
+INTDEF DIR *LIBCCALL libc_dos_opendirat(int dfd, char const *name) { return libc_opendirat_ex(dfd,name,O_RDONLY|O_DIRECTORY|O_DOSPATH); }
+INTERN DIR *LIBCCALL libc_opendirat(int dfd, char const *name) { return libc_opendirat_ex(dfd,name,O_RDONLY|O_DIRECTORY); }
+INTDEF DIR *LIBCCALL libc_opendirat_ex(int dfd, char const *name, int oflags)
+#else /* !CONFIG_LIBC_NO_DOS_LIBC */
+INTERN DIR *LIBCCALL libc_opendirat(int dfd, char const *name)
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+{
  DIR *result;
+#ifdef CONFIG_LIBC_NO_DOS_LIBC
  int fd = libc_openat(dfd,name,O_RDONLY|O_DIRECTORY);
+#else /* CONFIG_LIBC_NO_DOS_LIBC */
+ int fd = libc_openat(dfd,name,oflags);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
  if (fd < 0) return NULL;
  result = libc_fdopendir(fd);
  if unlikely(!result) sys_close(fd);
  return result;
-}
-INTERN DIR *LIBCCALL libc_opendir(char const *name) {
- return libc_opendirat(AT_FDCWD,name);
 }
 INTERN int LIBCCALL libc_closedir(DIR *dirp) {
  if unlikely(!dirp) { SET_ERRNO(EBADF); return -1; }
@@ -189,6 +199,10 @@ DEFINE_PUBLIC_ALIAS(xreaddir,libc_xreaddir);
 DEFINE_PUBLIC_ALIAS(fdopendir,libc_fdopendir);
 DEFINE_PUBLIC_ALIAS(opendirat,libc_opendirat);
 DEFINE_PUBLIC_ALIAS(opendir,libc_opendir);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(__DSYM(opendirat),libc_dos_opendirat);
+DEFINE_PUBLIC_ALIAS(__DSYM(opendir),libc_dos_opendir);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 DEFINE_PUBLIC_ALIAS(closedir,libc_closedir);
 DEFINE_PUBLIC_ALIAS(readdir,libc_readdir);
 DEFINE_PUBLIC_ALIAS(rewinddir,libc_rewinddir);

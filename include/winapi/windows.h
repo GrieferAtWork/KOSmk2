@@ -58,6 +58,7 @@
 
 #include "windef.h"
 #include "winbase.h"
+#include "winnls.h"
 #include "winver.h"
 
 #endif

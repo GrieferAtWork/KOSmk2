@@ -619,6 +619,21 @@ INTERN ATTR_UNITEXT char32_t *LIBCCALL libc_utf8to32m(char const *__restrict utf
 INTERN ATTR_UNITEXT char *LIBCCALL libc_utf16to8m(char16_t const *__restrict utf16) { return libc_utf16to8ms(utf16,libc_16wcslen(utf16)); }
 INTERN ATTR_UNITEXT char *LIBCCALL libc_utf32to8m(char32_t const *__restrict utf32) { return libc_utf32to8ms(utf32,libc_32wcslen(utf32)); }
 
+
+/* Export the Unicode API (available through the <unicode.h> KOS extension header) */
+DEFINE_PUBLIC_ALIAS(uni_utf8to32,libc_utf8to32);
+DEFINE_PUBLIC_ALIAS(uni_utf8to16,libc_utf8to16);
+DEFINE_PUBLIC_ALIAS(uni_utf32to8,libc_utf32to8);
+DEFINE_PUBLIC_ALIAS(uni_utf16to8,libc_utf16to8);
+DEFINE_PUBLIC_ALIAS(uni_utf8to16m,libc_utf8to16m);
+DEFINE_PUBLIC_ALIAS(uni_utf8to32m,libc_utf8to32m);
+DEFINE_PUBLIC_ALIAS(uni_utf16to8m,libc_utf16to8m);
+DEFINE_PUBLIC_ALIAS(uni_utf32to8m,libc_utf32to8m);
+DEFINE_PUBLIC_ALIAS(uni_utf8to16ms,libc_utf8to16ms);
+DEFINE_PUBLIC_ALIAS(uni_utf8to32ms,libc_utf8to32ms);
+DEFINE_PUBLIC_ALIAS(uni_utf16to8ms,libc_utf16to8ms);
+DEFINE_PUBLIC_ALIAS(uni_utf32to8ms,libc_utf32to8ms);
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_UNICODE_C */

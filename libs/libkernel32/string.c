@@ -16,28 +16,42 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_LIBS_LIBKERNEL32_MISC_H
-#define GUARD_LIBS_LIBKERNEL32_MISC_H 1
+#ifndef GUARD_LIBS_LIBKERNEL32_STRING_C
+#define GUARD_LIBS_LIBKERNEL32_STRING_C 1
+#define _UTF_SOURCE 1
+
+#include "k32.h"
+#include "string.h"
+#include <string.h>
+#include <uchar.h>
 
 #include <hybrid/compiler.h>
-#include <winapi/windows.h>
-#include <winapi/ntdef.h>
+#include <hybrid/minmax.h>
 
 DECL_BEGIN
 
-INTDEF DWORD WINAPI K32_GetCurrentThreadId(void);
-INTDEF void WINAPI K32_GetSystemTimeAsFileTime(LPFILETIME presult);
-INTDEF DWORD WINAPI K32_GetCurrentProcessId(void);
-INTDEF WINBOOL WINAPI K32_QueryPerformanceCounter(LARGE_INTEGER *ptick);
-INTDEF WINBOOL WINAPI K32_QueryPerformanceFrequency(LARGE_INTEGER *pfreq);
-INTDEF WINBOOL WINAPI K32_IsProcessorFeaturePresent(DWORD feature);
-INTDEF WINBOOL WINAPI K32_IsDebuggerPresent(void);
-INTDEF PVOID WINAPI K32_EncodePointer(PVOID p);
-INTDEF PVOID WINAPI K32_DecodePointer(PVOID p);
-INTDEF PVOID WINAPI K32_EncodeSystemPointer(PVOID p);
-INTDEF PVOID WINAPI K32_DecodeSystemPointer(PVOID p);
+INTERN int WINAPI
+K32_CompareStringA(LCID UNUSED(Locale), DWORD UNUSED(dwCmpFlags),
+                   LPCSTR lpString1, int cchCount1,
+                   LPCSTR lpString2, int cchCount2) {
+ return strncmp(lpString1,lpString2,
+                MIN((unsigned int)cchCount1,
+                    (unsigned int)cchCount2));
+}
 
+INTERN int WINAPI
+K32_CompareStringW(LCID UNUSED(Locale), DWORD UNUSED(dwCmpFlags),
+                   LPCWSTR lpString1, int cchCount1,
+                   LPCWSTR lpString2, int cchCount2) {
+ return c16ncmp(lpString1,lpString2,
+                MIN((unsigned int)cchCount1,
+                    (unsigned int)cchCount2));
+
+}
+
+DEFINE_PUBLIC_ALIAS(CompareStringA,K32_CompareStringA);
+DEFINE_PUBLIC_ALIAS(CompareStringW,K32_CompareStringW);
 
 DECL_END
 
-#endif /* !GUARD_LIBS_LIBKERNEL32_MISC_H */
+#endif /* !GUARD_LIBS_LIBKERNEL32_STRING_C */

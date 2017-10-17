@@ -240,7 +240,9 @@
 #endif
 
 
-#if defined(__cplusplus) || defined(__DEEMON__)
+#ifdef __INTELLISENSE__
+#   define __UNUSED         /* Nothing */
+#elif defined(__cplusplus) || defined(__DEEMON__)
 #   define __UNUSED(name)   /* Nothing */
 #elif !defined(__NO_ATTR_UNUSED)
 #   define __UNUSED(name)   name __ATTR_UNUSED
@@ -279,13 +281,13 @@
 #elif !defined(__NO_ASMNAME)
 /* Use GCC families assembly name extension. */
 #define __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
-    decl attr Treturn (cc name) param __ASMNAME(#asmname);
+    decl attr Treturn (cc name) param __ASMNAME(__PP_PRIVATE_STR(asmname));
 #define __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
-    decl attr Treturn __NOTHROW((cc name) param) __ASMNAME(#asmname);
+    decl attr Treturn __NOTHROW((cc name) param) __ASMNAME(__PP_PRIVATE_STR(asmname));
 #define __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
-    decl attr void (cc name) param __ASMNAME(#asmname);
+    decl attr void (cc name) param __ASMNAME(__PP_PRIVATE_STR(asmname));
 #define __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
-    decl attr void __NOTHROW((cc name) param) __ASMNAME(#asmname);
+    decl attr void __NOTHROW((cc name) param) __ASMNAME(__PP_PRIVATE_STR(asmname));
 #elif defined(__cplusplus)
 /* In C++, we can use use namespaces to prevent collisions with incompatible prototypes. */
 #define __REDIRECT_UNIQUE  __PP_CAT2(__u,__LINE__)

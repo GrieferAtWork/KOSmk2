@@ -155,6 +155,7 @@ INTDEF int ATTR_CDECL libc_dos_crt_dbg_reportw(int type, char16_t const *file, i
 
 INTDEF int LIBCCALL libc_set_error_mode(int mode);
 INTDEF void LIBCCALL libc_set_app_type(int type);
+INTDEF int LIBCCALL libc_beep(unsigned int freq, unsigned int duration);
 
 struct _EXCEPTION_POINTERS;
 INTDEF int LIBCCALL libc_dos_xcptfilter(u32 xno, struct _EXCEPTION_POINTERS *infp_ptrs);

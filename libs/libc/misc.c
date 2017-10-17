@@ -779,9 +779,11 @@ DEFINE_PUBLIC_ALIAS("?_CrtDbgReportW%%YAHHPEBGH00ZZ",libc_dos_crt_dbg_reportw);
 
 INTERN ATTR_DOSTEXT int LIBCCALL libc_set_error_mode(int UNUSED(mode)) { return 0; } /* Unused */
 INTERN ATTR_DOSTEXT void LIBCCALL libc_set_app_type(int UNUSED(type)) { } /* Unused */
+INTERN ATTR_DOSTEXT int LIBCCALL libc_beep(unsigned int freq, unsigned int duration) { NOT_IMPLEMENTED(); return -1; }
 DEFINE_PUBLIC_ALIAS(_seterrormode,libc_set_error_mode);
 DEFINE_PUBLIC_ALIAS(_set_error_mode,libc_set_error_mode);
 DEFINE_PUBLIC_ALIAS(__set_app_type,libc_set_app_type);
+DEFINE_PUBLIC_ALIAS(_beep,libc_beep);
 
 struct _EXCEPTION_POINTERS;
 INTERN ATTR_DOSTEXT int LIBCCALL

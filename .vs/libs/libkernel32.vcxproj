@@ -11,10 +11,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libs\libkernel32\misc.h" />
+    <ClCompile Include="..\..\libs\libkernel32\file.c" />
+    <ClCompile Include="..\..\libs\libkernel32\string.c" />
+    <ClCompile Include="..\..\libs\libkernel32\thread.c" />
+    <ClCompile Include="..\..\libs\libkernel32\time.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libs\libkernel32\misc.c" />
+    <ClInclude Include="..\..\libs\libkernel32\file.h" />
+    <ClInclude Include="..\..\libs\libkernel32\k32.h" />
+    <ClInclude Include="..\..\libs\libkernel32\string.h" />
+    <ClInclude Include="..\..\libs\libkernel32\thread.h" />
+    <ClInclude Include="..\..\libs\libkernel32\time.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CB10BC24-64B5-4035-8DB0-423011414723}</ProjectGuid>
