@@ -24,11 +24,21 @@
 
 DECL_BEGIN
 
-/* PWD access. */
+/* DLL Directory access. */
 INTDEF WINBOOL WINAPI K32_SetDllDirectoryA(LPCSTR lpPathName);
 INTDEF WINBOOL WINAPI K32_SetDllDirectoryW(LPCWSTR lpPathName);
 INTDEF DWORD   WINAPI K32_GetDllDirectoryA(DWORD nBufferLength, LPSTR lpBuffer);
 INTDEF DWORD   WINAPI K32_GetDllDirectoryW(DWORD nBufferLength, LPWSTR lpBuffer);
+
+/* Library loading/unloading. */
+INTDEF HMODULE WINAPI K32_LoadLibraryA(LPCSTR lpLibFileName);
+INTDEF HMODULE WINAPI K32_LoadLibraryW(LPCWSTR lpLibFileName);
+INTDEF HMODULE WINAPI K32_LoadLibraryExA(LPCSTR lpLibFileName, HANDLE hFile, DWORD dwFlags);
+INTDEF HMODULE WINAPI K32_LoadLibraryExW(LPCWSTR lpLibFileName, HANDLE hFile, DWORD dwFlags);
+INTDEF WINBOOL WINAPI K32_FreeLibrary(HMODULE hLibModule);
+INTDEF ATTR_NORETURN void WINAPI K32_FreeLibraryAndExitThread(HMODULE hLibModule, DWORD dwExitCode);
+INTDEF WINBOOL WINAPI K32_DisableThreadLibraryCalls(HMODULE hLibModule);
+INTDEF FARPROC WINAPI K32_GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 
 DECL_END
 

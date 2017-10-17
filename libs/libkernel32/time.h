@@ -26,15 +26,30 @@
 
 DECL_BEGIN
 
+/* Time conversion functions. */
 INTDEF FILETIME WINAPI K32_TimespecToFiletime(struct __timespec64 val);
 INTDEF FILETIME WINAPI K32_TimevalToFiletime(struct __timeval64 val);
 INTDEF struct __timespec64 WINAPI K32_FiletimeToTimespec(FILETIME val);
 INTDEF struct __timeval64 WINAPI K32_FiletimeToTimeval(FILETIME val);
 
-INTDEF void WINAPI K32_GetSystemTimeAsFileTime(LPFILETIME presult);
+/* Time utility functions. */
+INTDEF LONG WINAPI K32_CompareFileTime(CONST FILETIME *lpFileTime1, CONST FILETIME *lpFileTime2);
+
+/* Realtime get/set API. */
+INTDEF void    WINAPI K32_GetSystemTimeAsFileTime(LPFILETIME lpSystemTimeAsFileTime);
+INTDEF void    WINAPI K32_GetSystemTime(LPSYSTEMTIME lpSystemTime);
+INTDEF WINBOOL WINAPI K32_SetSystemTime(CONST SYSTEMTIME *lpSystemTime);
+INTDEF void    WINAPI K32_GetLocalTime(LPSYSTEMTIME lpSystemTime);
+INTDEF WINBOOL WINAPI K32_SetLocalTime(CONST SYSTEMTIME *lpSystemTime);
+INTDEF WINBOOL WINAPI K32_GetSystemTimes(LPFILETIME lpIdleTime, LPFILETIME lpKernelTime, LPFILETIME lpUserTime);
+
+/* High-performance tick-style query. */
 INTDEF WINBOOL WINAPI K32_QueryPerformanceCounter(LARGE_INTEGER *ptick);
 INTDEF WINBOOL WINAPI K32_QueryPerformanceFrequency(LARGE_INTEGER *pfreq);
+
+/* Misc. */
 INTDEF BOOL WINAPI K32_Beep(DWORD freq, DWORD duration);
+INTDEF int WINAPI K32_MulDiv(int nNumber, int nNumerator, int nDenominator);
 
 DECL_END
 

@@ -151,6 +151,7 @@ libc_beginthreadex(void *UNUSED(sec), u32 UNUSED(stacksz),
  result = (uintptr_t)libc_clone(&dos_thread_entry,CLONE_CHILDSTACK_AUTO,
                                  CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD,arg);
  if (result == (uintptr_t)-1) libc_free(data),result = 0;
+ if (threadaddr) *threadaddr = (u32)result;
  return result;
 }
 

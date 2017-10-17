@@ -112,13 +112,11 @@ INTDEF DWORD   WINAPI K32_GetFileAttributesA(LPCSTR lpFileName);
 INTDEF DWORD   WINAPI K32_GetFileAttributesW(LPCWSTR lpFileName);
 INTDEF WINBOOL WINAPI K32_DeleteFileA(LPCSTR lpFileName);
 INTDEF WINBOOL WINAPI K32_DeleteFileW(LPCWSTR lpFileName);
+INTDEF WINBOOL WINAPI K32_GetFileAttributesExA(LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation);
+INTDEF WINBOOL WINAPI K32_GetFileAttributesExW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation);
+INTDEF DWORD   WINAPI K32_GetCompressedFileSizeA(LPCSTR lpFileName, LPDWORD lpFileSizeHigh);
+INTDEF DWORD   WINAPI K32_GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh);
 
-//INTDEF WINBOOL WINAPI K32_GetFileAttributesExA(LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation);
-//INTDEF WINBOOL WINAPI K32_GetFileAttributesExW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation);
-//INTDEF DWORD   WINAPI K32_GetCompressedFileSizeA(LPCSTR lpFileName, LPDWORD lpFileSizeHigh);
-//INTDEF DWORD   WINAPI K32_GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh);
-//INTDEF WINBOOL WINAPI K32_CheckNameLegalDOS8Dot3A(LPCSTR lpName, LPSTR lpOemName, DWORD OemNameSize, PBOOL pbNameContainsSpaces, PBOOL pbNameLegal);
-//INTDEF WINBOOL WINAPI K32_CheckNameLegalDOS8Dot3W(LPCWSTR lpName, LPSTR lpOemName, DWORD OemNameSize, PBOOL pbNameContainsSpaces, PBOOL pbNameLegal);
 
 DECL_END
 

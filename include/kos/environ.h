@@ -53,10 +53,17 @@ struct envdata {
     void           *e_root;    /*< Base address of the initial instance that created the VM (Usable as a handle in dl* functions like 'dlsym'). */
     void           *e_pad[25]; /*< ... Alignment. */
 
+#ifdef __INTELLISENSE__
+    char           *__e_envv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of environment strings (HINT: NULL-terminated). */
+    char            __e_tenv[1]; /*< Text buffer into which pointers from '__e_envv' point into. */
+    char           *__e_argv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of argument strings (HINT: NULL-terminated). */
+    char            __e_targ[1]; /*< Text buffer into which pointers from '__e_argv' and 'e_envp' point into. */
+#else
     USER char      *__e_envv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of environment strings (HINT: NULL-terminated). */
     char            __e_tenv[1]; /*< Text buffer into which pointers from '__e_envv' point into. */
     USER char      *__e_argv[1]; /*< [1..1][in(e_text)][env_argc] Inlined vector of argument strings (HINT: NULL-terminated). */
     char            __e_targ[1]; /*< Text buffer into which pointers from '__e_argv' and 'e_envp' point into. */
+#endif
 };
 
 /* Helper macros for accessing common environment data. */

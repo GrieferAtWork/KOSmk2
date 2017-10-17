@@ -218,8 +218,20 @@ DEFINE_PUBLIC_ALIAS(_get_errno,libc_get_errno2);
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_dos2kos(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_dos2kos) ? vec_errno_dos2kos[eno] : KOS_ERRNO_NOT_SUPPORTED; }
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_kos2dos(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_kos2dos) ? vec_errno_kos2dos[eno] : DOS_ERRNO_NOT_SUPPORTED; }
 INTERN ATTR_DOSTEXT u32 LIBCCALL libc_errno_kos2nt(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_kos2nt) ? vec_errno_kos2nt[eno] : NT_ERRNO_NOT_SUPPORTED; }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_nt2kos(u32 eno) {
+ u16 const *iter; errno_t result = EINVAL;
+ /* Translate an NT error code to KOS. */
+ for (iter = vec_errno_kos2nt;
+      iter != COMPILER_ENDOF(vec_errno_kos2nt); ++iter) {
+  if ((u32)*iter == eno) {
+   result = (errno_t)(iter-vec_errno_kos2nt);
+   break;
+  }
+ }
+ return result;
+}
 INTERN ATTR_DOSTEXT errno_t LIBCCALL
-libc_errno_dosmaperr(u32 eno) {
+libc_errno_nt2dos(u32 eno) {
  u16 const *iter; errno_t result = EINVAL;
  /* Translate an NT error code to KOS. */
  for (iter = vec_errno_kos2nt;
@@ -232,7 +244,6 @@ libc_errno_dosmaperr(u32 eno) {
  /* Translate a KOS error code to DOS. */
  return libc_errno_kos2dos(result);
 }
-DEFINE_PUBLIC_ALIAS(_dosmaperr,libc_errno_dosmaperr);
 
 INTERN ATTR_DOSTEXT
 errno_t *LIBCCALL libc_dos___errno(void) {
@@ -262,6 +273,9 @@ DEFINE_PUBLIC_ALIAS(__DSYM(_get_errno),libc_dos___get_errno);
 DEFINE_PUBLIC_ALIAS(__DSYM(_set_errno),libc_dos___set_errno);
 DEFINE_PUBLIC_ALIAS(errno_dos2kos,libc_errno_dos2kos);
 DEFINE_PUBLIC_ALIAS(errno_kos2dos,libc_errno_kos2dos);
+DEFINE_PUBLIC_ALIAS(errno_kos2nt,libc_errno_kos2nt);
+DEFINE_PUBLIC_ALIAS(errno_nt2dos,libc_errno_nt2kos);
+DEFINE_PUBLIC_ALIAS(_dosmaperr,libc_errno_nt2dos);
 
 
 #if EOK != 0

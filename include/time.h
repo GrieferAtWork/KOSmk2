@@ -454,8 +454,8 @@ __LOCAL time64_t (__LIBCCALL timegm64)(struct tm *__tp) { return (time64_t)timeg
 __LOCAL time64_t (__LIBCCALL timelocal64)(struct tm *__tp) { return (time64_t)timelocal(__tp); }
 #else /* Compat... */
 __LIBC int (__LIBCCALL stime64)(time64_t const *__when);
-__LIBC time64_t (__LIBCCALL timegm64)(struct tm *__tp);
-__LIBC time64_t (__LIBCCALL timelocal64)(struct tm *__tp);
+__LIBC time64_t (__LIBCCALL timegm64)(struct tm __FIXED_CONST *__tp);
+__LIBC time64_t (__LIBCCALL timelocal64)(struct tm __FIXED_CONST *__tp);
 #endif /* Builtin... */
 #endif /* __USE_TIME64 */
 

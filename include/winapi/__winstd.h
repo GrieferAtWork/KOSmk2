@@ -45,6 +45,7 @@
 #undef WIN32
 #define __MINGW_EXTENSION __extension__
 #define DUMMYUNIONNAME /* nothing */
+#define DUMMYSTRUCTNAME /* nothing */
 
 #define WIN32       1
 #define _WIN32      1

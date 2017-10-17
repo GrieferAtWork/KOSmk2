@@ -42,6 +42,7 @@
 #include <fcntl.h>
 #include <kos/fcntl.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 DECL_BEGIN
 
@@ -70,7 +71,21 @@ INTERN WINBOOL WINAPI K32_CloseHandle(HANDLE hObject) {
  case HANDLE_TYPE_FD:
   return !close(HANDLE_TO_FD(hObject));
  case HANDLE_TYPE_PID:
-  break;
+  /* Reap dead child processes.
+   * >> Where functions like 'WaitForSingleObject()' will
+   *    not cause process handles to be reaped, allowing for
+   *    later calls to something like 'GetExitCodeProcess()',
+   *    closing such a handle must actually get rid of the
+   *    child process.
+   * >> With that in mind, simply reap the given process
+   *    handle if the associated PID has exited.
+   *    NOTE: 'WNOHANG' will prevent this function from hanging
+   *           if the associated process hasn't died, such as
+   *           when this function is called in the context of
+   *           a child process being detached. */
+  if (waitpid(HANDLE_TO_PID(hObject),NULL,WNOHANG|WEXITED) &&
+      __get_errno() == ESRCH) return FALSE;
+  return TRUE;
  default:
   __set_errno(EBADF);
   break;
@@ -766,6 +781,60 @@ INTERN WINBOOL WINAPI K32_DeleteFileW(LPCWSTR lpFileName) {
  return result;
 }
 
+INTDEF WINBOOL WINAPI
+K32_GetFileAttributesExA(LPCSTR lpFileName,
+                         GET_FILEEX_INFO_LEVELS fInfoLevelId,
+                         LPVOID lpFileInformation) {
+ struct stat64 info;
+ LPWIN32_FILE_ATTRIBUTE_DATA out;
+ if unlikely(!lpFileInformation ||
+             fInfoLevelId != GetFileExInfoStandard) {
+  __set_errno(EINVAL);
+  return FALSE;
+ }
+ if (dos_stat64(lpFileName,&info)) return FALSE;
+ out = (LPWIN32_FILE_ATTRIBUTE_DATA)lpFileInformation;
+ out->dwFileAttributes = K32_GetFileAttributesFromUnixMode(info.st_mode);
+ out->ftCreationTime   = K32_TimespecToFiletime(info.st_ctim64);
+ out->ftLastAccessTime = K32_TimespecToFiletime(info.st_atim64);
+ out->ftLastWriteTime  = K32_TimespecToFiletime(info.st_mtim64);
+ out->nFileSizeHigh    = (u32)((u64)info.st_size64 >> 32);
+ out->nFileSizeLow     = info.st_size32;
+ return TRUE;
+}
+
+INTDEF DWORD WINAPI
+K32_GetCompressedFileSizeA(LPCSTR lpFileName, LPDWORD lpFileSizeHigh) {
+ struct stat64 info;
+ if (dos_stat64(lpFileName,&info)) return INVALID_FILE_SIZE;
+ /* Just return the uncompressed size. */
+ if (lpFileSizeHigh) *lpFileSizeHigh = (u32)(info.st_size64 >> 32);
+ return info.st_size32;
+}
+
+INTDEF WINBOOL WINAPI
+K32_GetFileAttributesExW(LPCWSTR lpFileName,
+                         GET_FILEEX_INFO_LEVELS fInfoLevelId,
+                         LPVOID lpFileInformation) {
+ WINBOOL result; char *path;
+ if unlikely(!lpFileName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpFileName);
+ if unlikely(!path) return FALSE;
+ result = K32_GetFileAttributesExA(path,fInfoLevelId,lpFileInformation);
+ free(path);
+ return result;
+}
+INTDEF DWORD WINAPI
+K32_GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh) {
+ DWORD result; char *path;
+ if unlikely(!lpFileName) { __set_errno(EINVAL); return FALSE; }
+ path = uni_utf16to8m(lpFileName);
+ if unlikely(!path) return FALSE;
+ result = K32_GetCompressedFileSizeA(path,lpFileSizeHigh);
+ free(path);
+ return result;
+}
+
 
 
 
@@ -836,6 +905,12 @@ DEFINE_PUBLIC_ALIAS(SetFileAttributesA,K32_SetFileAttributesA);
 DEFINE_PUBLIC_ALIAS(SetFileAttributesW,K32_SetFileAttributesW);
 DEFINE_PUBLIC_ALIAS(GetFileAttributesA,K32_GetFileAttributesA);
 DEFINE_PUBLIC_ALIAS(GetFileAttributesW,K32_GetFileAttributesW);
+DEFINE_PUBLIC_ALIAS(DeleteFileA,K32_DeleteFileA);
+DEFINE_PUBLIC_ALIAS(DeleteFileW,K32_DeleteFileW);
+DEFINE_PUBLIC_ALIAS(GetFileAttributesExA,K32_GetFileAttributesExA);
+DEFINE_PUBLIC_ALIAS(GetFileAttributesExW,K32_GetFileAttributesExW);
+DEFINE_PUBLIC_ALIAS(GetCompressedFileSizeA,K32_GetCompressedFileSizeA);
+DEFINE_PUBLIC_ALIAS(GetCompressedFileSizeW,K32_GetCompressedFileSizeW);
 
 
 DECL_END

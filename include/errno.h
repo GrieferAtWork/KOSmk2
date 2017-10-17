@@ -259,11 +259,17 @@ __LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
 #endif /* !__KERNEL__ */
 #endif /* __CC__ */
 
-#if defined(__USE_KOS) && \
-   (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
-__LIBC __WUNUSED __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_dos2kos)(errno_t __eno));
-__LIBC __WUNUSED __PORT_KOSONLY errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
-#endif /* __USE_KOS && __CRT_KOS */
+#ifdef __USE_KOS
+#if defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__)
+__LIBC __PORT_KOSONLY __WUNUSED errno_t __NOTHROW((__LIBCCALL errno_dos2kos)(errno_t __eno));
+__LIBC __PORT_KOSONLY __WUNUSED errno_t __NOTHROW((__LIBCCALL errno_kos2dos)(errno_t __eno));
+__LIBC __PORT_KOSONLY __WUNUSED __UINT32_TYPE__ __NOTHROW((__LIBCCALL errno_kos2nt)(errno_t __eno));
+__LIBC __PORT_KOSONLY __WUNUSED errno_t __NOTHROW((__LIBCCALL errno_nt2kos)(__UINT32_TYPE__ __eno));
+#endif /* __CRT_KOS && !__GLC_COMPAT__ && !__DOS_COMPAT__ */
+#if defined(__CRT_DOS) && !defined(__GLC_COMPAT__)
+__REDIRECT_NOTHROW(__LIBC,__PORT_DOSONLY __WUNUSED,errno_t,__LIBCCALL,errno_nt2dos,(__UINT32_TYPE__ __eno),_dosmaperr,(__eno))
+#endif /* __CRT_DOS && !__GLC_COMPAT__ */
+#endif /* __USE_KOS */
 
 #ifdef __KERNEL__
 #define ERELOAD         500 /* Resource must be reloaded (after a lock was temporarily lost). */

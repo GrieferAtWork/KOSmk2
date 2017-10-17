@@ -21,23 +21,66 @@
 #define _KOS_SOURCE 1 /* xdlopen(), etc. */
 
 #include "k32.h"
+#include "thread.h"
 #include <hybrid/compiler.h>
 #include <stdlib.h> /* xdlopen(), etc. */
+#include <malloc.h>
+#include <unicode.h>
 
 #include "linker.h"
 
 DECL_BEGIN
 
-/* PWD access. */
+/* DLL Directory access. */
 INTERN WINBOOL WINAPI K32_SetDllDirectoryA(LPCSTR lpPathName) { NOT_IMPLEMENTED(); return FALSE; }
 INTERN WINBOOL WINAPI K32_SetDllDirectoryW(LPCWSTR lpPathName) { NOT_IMPLEMENTED(); return FALSE; }
 INTERN DWORD WINAPI K32_GetDllDirectoryA(DWORD nBufferLength, LPSTR lpBuffer) { NOT_IMPLEMENTED(); return 0; }
 INTERN DWORD WINAPI K32_GetDllDirectoryW(DWORD nBufferLength, LPWSTR lpBuffer) { NOT_IMPLEMENTED(); return 0; }
 
+
+
+
+/* Library loading/unloading. */
+INTERN HMODULE WINAPI
+K32_LoadLibraryExA(LPCSTR lpLibFileName, HANDLE UNUSED(hFile), DWORD dwFlags) {
+ (void)dwFlags; /* TODO: Handle 'dwFlags' */
+ return (HMODULE)xdlopen(lpLibFileName,0);
+}
+INTERN HMODULE WINAPI K32_LoadLibraryExW(LPCWSTR lpLibFileName, HANDLE hFile, DWORD dwFlags) {
+ HMODULE result; char *path;
+ if unlikely(!lpLibFileName) { __set_errno(EINVAL); return NULL; }
+ path = uni_utf16to8m(lpLibFileName);
+ if unlikely(!path) return NULL;
+ result = K32_LoadLibraryExA(path,hFile,dwFlags);
+ free(path);
+ return result;
+}
+INTERN HMODULE WINAPI K32_LoadLibraryA(LPCSTR lpLibFileName) { return K32_LoadLibraryExA(lpLibFileName,NULL,0); }
+INTERN HMODULE WINAPI K32_LoadLibraryW(LPCWSTR lpLibFileName) { return K32_LoadLibraryExW(lpLibFileName,NULL,0); }
+INTERN WINBOOL WINAPI K32_FreeLibrary(HMODULE hLibModule) { return !xdlclose(hLibModule); }
+INTERN ATTR_NORETURN void WINAPI K32_FreeLibraryAndExitThread(HMODULE hLibModule, DWORD dwExitCode) { K32_FreeLibrary(hLibModule); K32_ExitThread(dwExitCode); }
+INTERN WINBOOL WINAPI K32_DisableThreadLibraryCalls(HMODULE hLibModule) { NOT_IMPLEMENTED(); return FALSE; }
+INTERN FARPROC WINAPI K32_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) { return (FARPROC)xdlsym((void *)hModule,lpProcName); }
+
+
+
+
+
+/* DLL Directory access. */
 DEFINE_PUBLIC_ALIAS(SetDllDirectoryA,K32_SetDllDirectoryA);
 DEFINE_PUBLIC_ALIAS(SetDllDirectoryW,K32_SetDllDirectoryW);
 DEFINE_PUBLIC_ALIAS(GetDllDirectoryA,K32_GetDllDirectoryA);
 DEFINE_PUBLIC_ALIAS(GetDllDirectoryW,K32_GetDllDirectoryW);
+
+/* Library loading/unloading. */
+DEFINE_PUBLIC_ALIAS(LoadLibraryA,K32_LoadLibraryA);
+DEFINE_PUBLIC_ALIAS(LoadLibraryW,K32_LoadLibraryW);
+DEFINE_PUBLIC_ALIAS(LoadLibraryExA,K32_LoadLibraryExA);
+DEFINE_PUBLIC_ALIAS(LoadLibraryExW,K32_LoadLibraryExW);
+DEFINE_PUBLIC_ALIAS(FreeLibrary,K32_FreeLibrary);
+DEFINE_PUBLIC_ALIAS(FreeLibraryAndExitThread,K32_FreeLibraryAndExitThread);
+DEFINE_PUBLIC_ALIAS(DisableThreadLibraryCalls,K32_DisableThreadLibraryCalls);
+DEFINE_PUBLIC_ALIAS(GetProcAddress,K32_GetProcAddress);
 
 DECL_END
 
