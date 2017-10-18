@@ -48,7 +48,7 @@ K32_LoadLibraryExA(LPCSTR lpLibFileName, HANDLE UNUSED(hFile), DWORD dwFlags) {
 }
 INTERN HMODULE WINAPI K32_LoadLibraryExW(LPCWSTR lpLibFileName, HANDLE hFile, DWORD dwFlags) {
  HMODULE result; char *path;
- if unlikely(!lpLibFileName) { __set_errno(EINVAL); return NULL; }
+ if unlikely(!lpLibFileName) { SET_ERRNO(EINVAL); return NULL; }
  path = uni_utf16to8m(lpLibFileName);
  if unlikely(!path) return NULL;
  result = K32_LoadLibraryExA(path,hFile,dwFlags);

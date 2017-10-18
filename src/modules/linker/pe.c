@@ -39,7 +39,7 @@
 
 /* PE runtime linker (for running .exe and .dll files natively). */
 
-#if defined(CONFIG_DEBUG) && 1
+#if defined(CONFIG_DEBUG) && 0
 #define PE_DEBUG(x)       x
 #else
 #define PE_DEBUG(x) (void)0

@@ -143,7 +143,7 @@ INTERN void WINAPI K32_GetLocalTime(LPSYSTEMTIME lpSystemTime) {
 INTERN WINBOOL WINAPI
 K32_SetSystemTime(CONST SYSTEMTIME *lpSystemTime) {
  struct timeval64 tmv; struct tm tmm;
- if unlikely(!lpSystemTime) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpSystemTime) { SET_ERRNO(EINVAL); return FALSE; }
  K32_GetTmFromSystemTime(&tmm,lpSystemTime);
  tmv.tv_sec  = timegm64(&tmm);
  tmv.tv_usec = lpSystemTime->wMilliseconds*USEC_PER_MSEC;
@@ -152,7 +152,7 @@ K32_SetSystemTime(CONST SYSTEMTIME *lpSystemTime) {
 INTERN WINBOOL WINAPI
 K32_SetLocalTime(CONST SYSTEMTIME *lpSystemTime) {
  struct timeval64 tmv; struct tm tmm;
- if unlikely(!lpSystemTime) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpSystemTime) { SET_ERRNO(EINVAL); return FALSE; }
  K32_GetTmFromSystemTime(&tmm,lpSystemTime);
  tmv.tv_sec  = timelocal64(&tmm);
  tmv.tv_usec = lpSystemTime->wMilliseconds*USEC_PER_MSEC;

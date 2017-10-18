@@ -30,7 +30,7 @@ DECL_BEGIN
 DEFINE_PRIVATE_ALIAS(__stack_chk_fail_local,__stack_chk_fail);
 
 #define NOT_IMPLEMENTED() \
-  (__set_errno(ENOSYS), \
+  (SET_ERRNO(ENOSYS), \
    syslog(LOG_WARNING,"%s(%d) : KERNEL32::%s : NOT_IMPLEMENTED()\n",__FILE__,__LINE__,__FUNCTION__))
 
 

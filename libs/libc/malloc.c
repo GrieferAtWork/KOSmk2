@@ -69,10 +69,27 @@
 #undef MALLOC_FAILURE_ACTION
 #define MALLOC_FAILURE_ACTION SET_ERRNO(ENOMEM);
 
+#undef DEBUG
+#undef FOOTERS
+#if defined(CONFIG_DEBUG_MALLOC) || 1 /* TODO: Remove me */
+#define DEBUG                   1
+#define FOOTERS                 1
+#endif
+#define NO_MALLOC_STATS         1
+#define NO_FOOTPRINT_LIMIT      1
+#define USE_LOCKS               1
+#define NO_MALLOC_STATS         1
+#define MSPACES                 0
+#define ONLY_MSPACES            0
+#define ABORT_ON_ASSERT_FAILURE 0
+#undef REALLOC_ZERO_BYTES_FREES
+
 /* Use dlmalloc to define the low-level malloc API used as default for non-debug functions. */
 #define USE_DL_PREFIX
 #define DLMALLOC_EXPORT  INTDEF
+#pragma GCC visibility push(hidden)
 #include "dlmalloc.c.inl"
+#pragma GCC visibility pop
 
 
 

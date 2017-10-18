@@ -87,7 +87,7 @@ INTERN WINBOOL WINAPI K32_CloseHandle(HANDLE hObject) {
       __get_errno() == ESRCH) return FALSE;
   return TRUE;
  default:
-  __set_errno(EBADF);
+  SET_ERRNO(EBADF);
   break;
  }
  return FALSE;
@@ -99,10 +99,10 @@ K32_DuplicateHandle(HANDLE hSourceProcessHandle, HANDLE hSourceHandle,
                     DWORD UNUSED(dwDesiredAccess),
                     WINBOOL bInheritHandle, DWORD UNUSED(dwOptions)) {
  int result;
- if (!lpTargetHandle) { __set_errno(EINVAL); return FALSE; }
+ if (!lpTargetHandle) { SET_ERRNO(EINVAL); return FALSE; }
  if (!HANDLE_IS_PID(hSourceProcessHandle) ||
       hSourceProcessHandle != hTargetProcessHandle) {
-  __set_errno(EACCES);
+  SET_ERRNO(EACCES);
   return FALSE;
  }
 
@@ -121,7 +121,7 @@ K32_DuplicateHandle(HANDLE hSourceProcessHandle, HANDLE hSourceHandle,
   break;
 
  default:
-  __set_errno(EPERM);
+  SET_ERRNO(EPERM);
   return FALSE;
  }
  return TRUE;
@@ -145,7 +145,7 @@ K32_GetFileTime(HANDLE hFile,
                 LPFILETIME lpLastAccessTime,
                 LPFILETIME lpLastWriteTime) {
  struct stat64 val;
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  if (fstat64(HANDLE_TO_FD(hFile),&val)) return FALSE;
  if (lpCreationTime)   *lpCreationTime   = K32_TimespecToFiletime(val.st_ctim64);
  if (lpLastAccessTime) *lpLastAccessTime = K32_TimespecToFiletime(val.st_atim64);
@@ -158,7 +158,7 @@ K32_SetFileTime(HANDLE hFile,
                 CONST FILETIME *lpLastAccessTime,
                 CONST FILETIME *lpLastWriteTime) {
  struct timespec64 tms[2];
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  if (lpLastAccessTime)
       tms[0] = K32_FiletimeToTimespec(*lpLastAccessTime);
  else tms[0].tv_nsec = UTIME_OMIT;
@@ -174,7 +174,7 @@ K32_SetFilePointer(HANDLE hFile,
                    PLONG lpDistanceToMoveHigh,
                    DWORD dwMoveMethod) {
  off64_t result;
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return INVALID_SET_FILE_POINTER; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return INVALID_SET_FILE_POINTER; }
  result = lDistanceToMove;
  if (lpDistanceToMoveHigh) result |= (off64_t)*lpDistanceToMoveHigh << 32;
  result = lseek64(HANDLE_TO_FD(hFile),result,(int)dwMoveMethod);
@@ -189,7 +189,7 @@ K32_SetFilePointerEx(HANDLE hFile,
                      PLARGE_INTEGER lpNewFilePointer,
                      DWORD dwMoveMethod) {
  off64_t result;
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  result = lseek64(HANDLE_TO_FD(hFile),liDistanceToMove.QuadPart,(int)dwMoveMethod);
  if (result < 0) return FALSE;
  if (lpNewFilePointer) lpNewFilePointer->QuadPart = result;
@@ -198,14 +198,14 @@ K32_SetFilePointerEx(HANDLE hFile,
 
 INTERN WINBOOL WINAPI K32_SetEndOfFile(HANDLE hFile) {
  off64_t file_length;
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  file_length = lseek64(HANDLE_TO_FD(hFile),0,SEEK_CUR);
  if (file_length < 0) return FALSE;
  return !ftruncate64(HANDLE_TO_FD(hFile),file_length);
 }
 
 INTERN WINBOOL WINAPI K32_FlushFileBuffers(HANDLE hFile) {
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  return !fdatasync(HANDLE_TO_FD(hFile));
 }
 
@@ -216,7 +216,7 @@ INTERN HANDLE WINAPI K32_GetStdHandle(DWORD nStdHandle) {
  case STD_ERROR_HANDLE:  return FD_TO_HANDLE(STDERR_FILENO);
  default: break;
  }
- __set_errno(EINVAL);
+ SET_ERRNO(EINVAL);
  return INVALID_HANDLE_VALUE;
 }
 
@@ -224,7 +224,7 @@ INTERN WINBOOL WINAPI
 K32_SetStdHandle(DWORD nStdHandle, HANDLE hHandle) {
  HANDLE handno = K32_GetStdHandle(nStdHandle);
  if (!HANDLE_IS_FD(handno)) return FALSE;
- if (!HANDLE_IS_FD(hHandle)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_FD(hHandle)) { SET_ERRNO(EBADF); return FALSE; }
  return !dup2(HANDLE_TO_FD(handno),HANDLE_TO_FD(hHandle));
 }
 
@@ -232,7 +232,7 @@ INTERN WINBOOL WINAPI
 K32_WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite,
               LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped) {
  ssize_t error;
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  if (lpOverlapped) {
   off64_t write_pos; /* pwrite64() */
   write_pos  = (off64_t)lpOverlapped->Offset;
@@ -249,7 +249,7 @@ INTERN WINBOOL WINAPI
 K32_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
              LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped) {
  ssize_t error;
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  if (lpOverlapped) {
   off64_t write_pos; /* pread64() */
   write_pos  = (off64_t)lpOverlapped->Offset;
@@ -276,8 +276,8 @@ K32_GetFileAttributesFromUnixMode(mode_t val) {
 INTERN WINBOOL WINAPI
 K32_GetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_FILE_INFORMATION lpFileInformation) {
  struct stat64 info;
- if (!lpFileInformation) { __set_errno(EINVAL); return FALSE; }
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!lpFileInformation) { SET_ERRNO(EINVAL); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  if (fstat64(HANDLE_TO_FD(hFile),&info)) return FALSE;
  /* Translate information to DOS format. */
  //memset(lpFileInformation,0,sizeof(BY_HANDLE_FILE_INFORMATION));
@@ -296,7 +296,7 @@ K32_GetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_FILE_INFORMATION lpFile
 
 INTERN DWORD WINAPI K32_GetFileType(HANDLE hFile) {
  struct stat64 info;
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FILE_TYPE_UNKNOWN; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FILE_TYPE_UNKNOWN; }
  if (fstat64(HANDLE_TO_FD(hFile),&info)) return FILE_TYPE_UNKNOWN;
  if (S_ISCHR(info.st_mode)) return FILE_TYPE_CHAR;
  if (S_ISFIFO(info.st_mode)) return FILE_TYPE_PIPE;
@@ -307,8 +307,8 @@ INTERN DWORD WINAPI K32_GetFileType(HANDLE hFile) {
 INTERN WINBOOL WINAPI
 K32_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
  struct stat64 info;
- if (!lpFileSize) { __set_errno(EINVAL); return FALSE; }
- if (!HANDLE_IS_FD(hFile)) { __set_errno(EBADF); return FALSE; }
+ if (!lpFileSize) { SET_ERRNO(EINVAL); return FALSE; }
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
  if (fstat64(HANDLE_TO_FD(hFile),&info)) return FALSE;
  lpFileSize->QuadPart = info.st_size64;
  return TRUE;
@@ -345,7 +345,7 @@ K32_FindFirstFileExA(LPCSTR lpFileName,
  struct find_query *result;
  if (fInfoLevelId != FindExInfoStandard ||
      (unsigned int)fSearchOp >= FindExSearchMaxSearchOp) {
-  __set_errno(EINVAL);
+  SET_ERRNO(EINVAL);
   return INVALID_HANDLE_VALUE;
  }
 
@@ -396,7 +396,7 @@ K32_FindNextFileA(HANDLE hFindFile,
  struct find_query *query;
  struct dirent64 *ent;
  struct stat64 info;
- if (!FINDHANDLE_ISVALID(hFindFile)) { __set_errno(EINVAL); return FALSE; }
+ if (!FINDHANDLE_ISVALID(hFindFile)) { SET_ERRNO(EINVAL); return FALSE; }
  query = (struct find_query *)hFindFile;
  for (;;) {
   ent = readdir64(query->fq_stream);
@@ -442,7 +442,7 @@ K32_FindNextFileA(HANDLE hFindFile,
 
 INTDEF WINBOOL WINAPI K32_FindClose(HANDLE hFindFile) {
  struct find_query *query;
- if (!FINDHANDLE_ISVALID(hFindFile)) { __set_errno(EINVAL); return FALSE; }
+ if (!FINDHANDLE_ISVALID(hFindFile)) { SET_ERRNO(EINVAL); return FALSE; }
  query = (struct find_query *)hFindFile;
  closedir(query->fq_stream);
  free(query->fq_query);
@@ -471,7 +471,7 @@ K32_FindFirstFileExW(LPCWSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId,
                      LPVOID lpFindFileData, FINDEX_SEARCH_OPS fSearchOp,
                      LPVOID lpSearchFilter, DWORD dwAdditionalFlags) {
  WIN32_FIND_DATAA temp; HANDLE result; char *query;
- if unlikely(!lpFileName) { __set_errno(EINVAL); return INVALID_HANDLE_VALUE; }
+ if unlikely(!lpFileName) { SET_ERRNO(EINVAL); return INVALID_HANDLE_VALUE; }
  query = uni_utf16to8m(lpFileName);
  if unlikely(!query) return INVALID_HANDLE_VALUE;
  result = K32_FindFirstFileExA(query,fInfoLevelId,&temp,fSearchOp,
@@ -510,7 +510,7 @@ K32_DeviceIoControl(HANDLE hDevice, DWORD dwIoControlCode,
                     LPVOID lpInBuffer, DWORD nInBufferSize,
                     LPVOID lpOutBuffer, DWORD nOutBufferSize,
                     LPDWORD lpBytesReturned, LPOVERLAPPED lpOverlapped) {
- __set_errno(ENOSYS);
+ SET_ERRNO(ENOSYS);
  return FALSE;
 }
 INTERN WINBOOL WINAPI K32_RequestDeviceWakeup(HANDLE hDevice) { NOT_IMPLEMENTED(); return FALSE; }
@@ -527,7 +527,7 @@ INTERN WINBOOL WINAPI K32_SetFileShortNameW(HANDLE hFile, LPCWSTR lpShortName) {
 INTERN WINBOOL WINAPI K32_SetCurrentDirectoryA(LPCSTR lpPathName) { return !dos_chdir(lpPathName); }
 INTERN WINBOOL WINAPI K32_SetCurrentDirectoryW(LPCWSTR lpPathName) {
  char *path; WINBOOL result;
- if unlikely(!lpPathName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpPathName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpPathName);
  if unlikely(!path) return FALSE;
  result = K32_SetCurrentDirectoryA(path);
@@ -556,7 +556,7 @@ K32_GetDiskFreeSpaceExA(LPCSTR lpDirectoryName,
                         PULARGE_INTEGER lpFreeBytesAvailableToCaller,
                         PULARGE_INTEGER lpTotalNumberOfBytes,
                         PULARGE_INTEGER lpTotalNumberOfFreeBytes) {
- if unlikely(!lpDirectoryName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpDirectoryName) { SET_ERRNO(EINVAL); return FALSE; }
  NOT_IMPLEMENTED();
  return FALSE;
 }
@@ -566,7 +566,7 @@ K32_GetDiskFreeSpaceA(LPCSTR lpRootPathName,
                       LPDWORD lpBytesPerSector,
                       LPDWORD lpNumberOfFreeClusters,
                       LPDWORD lpTotalNumberOfClusters) {
- if unlikely(!lpRootPathName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpRootPathName) { SET_ERRNO(EINVAL); return FALSE; }
  NOT_IMPLEMENTED();
  return FALSE;
 }
@@ -577,7 +577,7 @@ K32_GetDiskFreeSpaceExW(LPCWSTR lpDirectoryName,
                         PULARGE_INTEGER lpTotalNumberOfBytes,
                         PULARGE_INTEGER lpTotalNumberOfFreeBytes) {
  WINBOOL result; char *path;
- if unlikely(!lpDirectoryName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpDirectoryName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpDirectoryName);
  if unlikely(!path) return FALSE;
  result = K32_GetDiskFreeSpaceExA(path,
@@ -594,7 +594,7 @@ K32_GetDiskFreeSpaceW(LPCWSTR lpRootPathName,
                       LPDWORD lpNumberOfFreeClusters,
                       LPDWORD lpTotalNumberOfClusters) {
  WINBOOL result; char *path;
- if unlikely(!lpRootPathName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpRootPathName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpRootPathName);
  if unlikely(!path) return FALSE;
  result = K32_GetDiskFreeSpaceA(path,
@@ -619,7 +619,7 @@ INTERN WINBOOL WINAPI
 K32_CreateDirectoryW(LPCWSTR lpPathName,
                      LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
  char *path; WINBOOL result;
- if unlikely(!lpPathName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpPathName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpPathName);
  if unlikely(!path) return FALSE;
  result = K32_CreateDirectoryA(path,lpSecurityAttributes);
@@ -629,7 +629,7 @@ K32_CreateDirectoryW(LPCWSTR lpPathName,
 INTERN WINBOOL WINAPI
 K32_RemoveDirectoryW(LPCWSTR lpPathName) {
  char *path; WINBOOL result;
- if unlikely(!lpPathName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpPathName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpPathName);
  if unlikely(!path) return FALSE;
  result = K32_RemoveDirectoryA(path);
@@ -680,7 +680,7 @@ K32_CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD UNUSED(dwShareMo
                 DWORD dwFlagsAndAttributes, HANDLE UNUSED(hTemplateFile)) {
  int result; oflag_t oflags; mode_t mode = 0666;
  if (dwCreationDisposition >= COMPILER_LENOF(creation_disk_flags)) {
-  __set_errno(EINVAL);
+  SET_ERRNO(EINVAL);
   return INVALID_HANDLE_VALUE;
  }
  /* Apply creation disposition flags. */
@@ -699,7 +699,7 @@ K32_CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD UNUSED(dwShareMo
   if (!fstat64(result,&info) && 
       S_ISDIR(info.st_mode)) {
    close(result);
-   __set_errno(EISDIR);
+   SET_ERRNO(EISDIR);
    return INVALID_HANDLE_VALUE;
   }
  }
@@ -711,7 +711,7 @@ K32_CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
                 LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
                 DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
  HANDLE result; char *path;
- if unlikely(!lpFileName) { __set_errno(EINVAL); return INVALID_HANDLE_VALUE; }
+ if unlikely(!lpFileName) { SET_ERRNO(EINVAL); return INVALID_HANDLE_VALUE; }
  path = uni_utf16to8m(lpFileName);
  if unlikely(!path) return INVALID_HANDLE_VALUE;
  result = K32_CreateFileA(path,dwDesiredAccess,dwShareMode,lpSecurityAttributes,
@@ -724,7 +724,7 @@ INTERN HANDLE WINAPI
 K32_ReOpenFile(HANDLE hOriginalFile, DWORD dwDesiredAccess,
                DWORD UNUSED(dwShareMode), DWORD UNUSED(dwFlagsAndAttributes)) {
  int result; oflag_t oflags = K32_DesiredAccessToOflags(dwDesiredAccess);
- if (!HANDLE_IS_FD(hOriginalFile)) { __set_errno(EBADF); return INVALID_HANDLE_VALUE; }
+ if (!HANDLE_IS_FD(hOriginalFile)) { SET_ERRNO(EBADF); return INVALID_HANDLE_VALUE; }
  result = dup(HANDLE_TO_FD(hOriginalFile));
  if (fcntl(result,F_SETFL,oflags) < 0) { close(result); return INVALID_HANDLE_VALUE; }
  return FD_TO_HANDLE(result);
@@ -753,7 +753,7 @@ K32_GetFileAttributesA(LPCSTR lpFileName) {
 INTERN WINBOOL WINAPI
 K32_SetFileAttributesW(LPCWSTR lpFileName, DWORD dwFileAttributes) {
  WINBOOL result; char *path;
- if unlikely(!lpFileName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpFileName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpFileName);
  if unlikely(!path) return FALSE;
  result = K32_SetFileAttributesA(path,dwFileAttributes);
@@ -763,7 +763,7 @@ K32_SetFileAttributesW(LPCWSTR lpFileName, DWORD dwFileAttributes) {
 INTERN DWORD WINAPI
 K32_GetFileAttributesW(LPCWSTR lpFileName) {
  DWORD result; char *path;
- if unlikely(!lpFileName) { __set_errno(EINVAL); return INVALID_FILE_ATTRIBUTES; }
+ if unlikely(!lpFileName) { SET_ERRNO(EINVAL); return INVALID_FILE_ATTRIBUTES; }
  path = uni_utf16to8m(lpFileName);
  if unlikely(!path) return INVALID_FILE_ATTRIBUTES;
  result = K32_GetFileAttributesA(path);
@@ -773,7 +773,7 @@ K32_GetFileAttributesW(LPCWSTR lpFileName) {
 INTERN WINBOOL WINAPI K32_DeleteFileA(LPCSTR lpFileName) { return !dos_unlink(lpFileName); }
 INTERN WINBOOL WINAPI K32_DeleteFileW(LPCWSTR lpFileName) {
  WINBOOL result; char *path;
- if unlikely(!lpFileName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpFileName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpFileName);
  if unlikely(!path) return FALSE;
  result = K32_DeleteFileA(path);
@@ -789,7 +789,7 @@ K32_GetFileAttributesExA(LPCSTR lpFileName,
  LPWIN32_FILE_ATTRIBUTE_DATA out;
  if unlikely(!lpFileInformation ||
              fInfoLevelId != GetFileExInfoStandard) {
-  __set_errno(EINVAL);
+  SET_ERRNO(EINVAL);
   return FALSE;
  }
  if (dos_stat64(lpFileName,&info)) return FALSE;
@@ -817,7 +817,7 @@ K32_GetFileAttributesExW(LPCWSTR lpFileName,
                          GET_FILEEX_INFO_LEVELS fInfoLevelId,
                          LPVOID lpFileInformation) {
  WINBOOL result; char *path;
- if unlikely(!lpFileName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpFileName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpFileName);
  if unlikely(!path) return FALSE;
  result = K32_GetFileAttributesExA(path,fInfoLevelId,lpFileInformation);
@@ -827,7 +827,7 @@ K32_GetFileAttributesExW(LPCWSTR lpFileName,
 INTDEF DWORD WINAPI
 K32_GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh) {
  DWORD result; char *path;
- if unlikely(!lpFileName) { __set_errno(EINVAL); return FALSE; }
+ if unlikely(!lpFileName) { SET_ERRNO(EINVAL); return FALSE; }
  path = uni_utf16to8m(lpFileName);
  if unlikely(!path) return FALSE;
  result = K32_GetCompressedFileSizeA(path,lpFileSizeHigh);
@@ -851,7 +851,7 @@ K32_CreateSymbolicLinkW(LPWSTR lpSymLinkFileName,
                         LPWSTR lpTargetFileName,
                         DWORD dwFlags) {
  char *link_name,*link_text; BOOLEAN result = FALSE;
- if (!lpSymLinkFileName || !lpTargetFileName) { __set_errno(EINVAL); goto end; }
+ if (!lpSymLinkFileName || !lpTargetFileName) { SET_ERRNO(EINVAL); goto end; }
  link_name = uni_utf16to8m(lpSymLinkFileName);
  if unlikely(!link_name) goto end;
  link_text = uni_utf16to8m(lpTargetFileName);
@@ -870,7 +870,7 @@ INTERN WINBOOL WINAPI
 K32_CreateHardLinkW(LPCWSTR lpFileName, LPCWSTR lpExistingFileName,
                     LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
  char *link_name,*link_target; BOOLEAN result = FALSE;
- if (!lpFileName || !lpExistingFileName) { __set_errno(EINVAL); goto end; }
+ if (!lpFileName || !lpExistingFileName) { SET_ERRNO(EINVAL); goto end; }
  link_name = uni_utf16to8m(lpFileName);
  if unlikely(!link_name) goto end;
  link_target = uni_utf16to8m(lpExistingFileName);

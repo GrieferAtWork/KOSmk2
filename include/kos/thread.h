@@ -76,8 +76,8 @@ struct tib {
 #endif
  void             *it_rtc;          /*< ??? */
  void             *it_tls;          /*< ??? */
-// FS:[0x30] 	4 	NT 	Linear address of Process Environment Block (PEB)
-// FS:[0x34] 	4 	NT 	Last error number
+ void             *it_pe;           /*< Linear address of Process Environment Block (PEB) */
+ u32               it_error_code;   /*< Last error number (GetLastError()) */
 // FS:[0x38] 	4 	NT 	Count of owned critical sections
 // FS:[0x3C] 	4 	NT 	Address of CSR Client Thread
 // FS:[0x40] 	4 	NT 	Win32 Thread Information
@@ -133,8 +133,15 @@ struct tlb {
   *       the kernel to move the TIB anywhere else within the TLB block, potentially
   *       even disconnecting it entirely at some point in the future.
   *    >> Or in other words: _DONT_ do this: 'THIS_TLB->__tl_tib.<...>',
-  *                     and instead do this: 'THIS_TIB-><...>'
-  */
+  *                     and instead do this: 'THIS_TIB-><...>' */
+union{u32      __tl_pad0;
+#define TLB_ERRNO_KOS 0 /* KOS errno format. (The only used format when libc was build with 'CONFIG_LIBC_NO_DOS_LIBC') */
+#define TLB_ERRNO_DOS 1 /* DOS errno format. */
+#define TLB_ERRNO_NT  2 /* NT errno format (GetLastError()-style; NOTE: Mirrored in 'it_error_code') */
+ unsigned int    tl_errno_fmt; /* The format of 'tl_errno_val' (One of 'TLB_ERRNO_*') */};
+union{u32      __tl_pad1;
+ int             tl_errno_val; /* The thread-local 'errno' value. */};
+
 #ifdef __KERNEL__
  struct tib      tl_tib;  /*< The TIB block. */
 #else
@@ -200,6 +207,17 @@ struct tlb {
  })
 #endif
 
+#define TLB_ADDR(off) \
+ XBLOCK({ register void *__res = (void *)(uintptr_t)(off); \
+          __asm__ __volatile__("addl {%%" __TLB_SEGMENT_S ":0, %0|%0, [" __TLB_SEGMENT_S ":0]}\n" : "+r" (__res)); \
+          XRETURN __res; \
+ })
+#define TIB_ADDR(off) \
+ XBLOCK({ register void *__res = (void *)(uintptr_t)(off); \
+          __asm__ __volatile__("addl {%%" __TIB_SEGMENT_S ":0x18, %0|%0, [" __TIB_SEGMENT_S ":0x18]}\n" : "+r" (__res)); \
+          XRETURN __res; \
+ })
+
 
 #define TLB_T_PEEKB(T,off)     __TLB_PEEK(T,"b",off)
 #define TLB_T_PEEKW(T,off)     __TLB_PEEK(T,"w",off)
@@ -234,17 +252,27 @@ struct tlb {
 #   error "Unsupported 'sizeof(void *)'"
 #endif
 
-#define TLB_PEEKB(off) TLB_T_PEEKB(u8,off)
-#define TLB_PEEKW(off) TLB_T_PEEKW(u16,off)
-#define TLB_PEEKL(off) TLB_T_PEEKL(u32,off)
-#define TLB_PEEKI(off) TLB_T_PEEKI(uintptr_t,off)
-#define TIB_PEEKB(off) TIB_T_PEEKB(u8,off)
-#define TIB_PEEKW(off) TIB_T_PEEKW(u16,off)
-#define TIB_PEEKL(off) TIB_T_PEEKL(u32,off)
-#define TIB_PEEKI(off) TIB_T_PEEKI(uintptr_t,off)
+#define TLB_POKEB(off,v) TLB_T_POKEB(u8,off,v)
+#define TLB_POKEW(off,v) TLB_T_POKEW(u16,off,v)
+#define TLB_POKEL(off,v) TLB_T_POKEL(u32,off,v)
+#define TLB_POKEI(off,v) TLB_T_POKEI(uintptr_t,off,v)
+#define TIB_POKEB(off,v) TIB_T_POKEB(u8,off,v)
+#define TIB_POKEW(off,v) TIB_T_POKEW(u16,off,v)
+#define TIB_POKEL(off,v) TIB_T_POKEL(u32,off,v)
+#define TIB_POKEI(off,v) TIB_T_POKEI(uintptr_t,off,v)
+#define TLB_PEEKB(off)   TLB_T_PEEKB(u8,off)
+#define TLB_PEEKW(off)   TLB_T_PEEKW(u16,off)
+#define TLB_PEEKL(off)   TLB_T_PEEKL(u32,off)
+#define TLB_PEEKI(off)   TLB_T_PEEKI(uintptr_t,off)
+#define TIB_PEEKB(off)   TIB_T_PEEKB(u8,off)
+#define TIB_PEEKW(off)   TIB_T_PEEKW(u16,off)
+#define TIB_PEEKL(off)   TIB_T_PEEKL(u32,off)
+#define TIB_PEEKI(off)   TIB_T_PEEKI(uintptr_t,off)
 #ifdef TLB_T_PEEKQ
-#define TLB_PEEKQ(off) TLB_T_PEEKQ(u64,off)
-#define TIB_PEEKQ(off) TIB_T_PEEKQ(u64,off)
+#define TLB_POKEQ(off,v) TLB_T_PEEKQ(u64,off,v)
+#define TIB_POKEQ(off,v) TIB_T_PEEKQ(u64,off,v)
+#define TLB_PEEKQ(off)   TLB_T_PEEKQ(u64,off)
+#define TIB_PEEKQ(off)   TIB_T_PEEKQ(u64,off)
 #endif
 
 #ifdef __seg_tlb

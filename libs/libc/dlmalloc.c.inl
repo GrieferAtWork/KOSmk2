@@ -13,27 +13,6 @@
 #define SPIN_LOCK_YIELD  SCHED_YIELD();
 #define ABORT            PANIC("dlmalloc panic")
 
-#ifdef __KERNEL__
-#include <kernel/memory.h>
-#define MALLOC_ZONE     (MZONE_SHARE/*|MZONE_VIRTUAL*/) /* TODO: Use paging */
-#define MMAP(s)          page_malloc(s,PAGEATTR_NONE,MALLOC_ZONE)
-#define MREMAP(p,o,n,mv) \
- ((mv) ? page_realloc        ((ppage_t)(p),o,n,PAGEATTR_NONE,MALLOC_ZONE)\
-       : page_realloc_inplace((ppage_t)(p),o,n,PAGEATTR_NONE))
-#define DIRECT_MMAP(s)   page_malloc(s,PAGEATTR_NONE,MALLOC_ZONE)
-#define MUNMAP(a,s)     (page_free((ppage_t)(a),s),0)
-#define MFAIL            PAGE_ERROR
-/* Lie about the fact, and tell dlmalloc that we don't have
- * this header, thereby preventing it from attempting to
- * overwrite our malloc-hooks as defined above, or to make wrong
- * assumptions about the kind of memory we're allocating above. */
-#define LACKS_SYS_MMAN_H
-#define LACKS_TIME_H
-#define LACKS_SCHED_H
-#else
-#define NO_MALLOC_STATS 1
-#endif
-
 /* Prefer using one-time initialization, instead of lazy initialization:
  * Both the kernel, as well as user-land libc-based applications will
  * require at least some dynamic memory during initialization, making
@@ -42,41 +21,40 @@
  * libc and raw, low-level RAM are. */
 #ifndef DLMALLOC_NO_ONETIME_INIT
 #ifndef DLMALLOC_USE_ONETIME_INIT
-#if 0
-#elif defined(__KERNEL__)
-#define DLMALLOC_USE_ONETIME_INIT kernel_initialize_dlmalloc
-#elif 1 /* Use one-time initialization in userland as well. */
 #define DLMALLOC_USE_ONETIME_INIT user_initialize_dlmalloc
-#endif
 #endif /* !DLMALLOC_USE_ONETIME_INIT */
 #endif /* !DLMALLOC_NO_ONETIME_INIT */
-
-#ifdef __LIBC_HAVE_DEBUG_MALLOC
-/* While mall will already put in some great work to assure proper
- * validation of allocated blocks, besides somewhat diminishing
- * performance, there is no harm is enabling dlmalloc debug hooks as well. */
-#define DEBUG   1
-#define FOOTERS 1
-#else
-#define DEBUG   0
-#define FOOTERS 0
-#endif
 
 
 /* Tell dlmalloc what KOS is offering it. */
 #define HAVE_MMAP               1
-#ifdef __KERNEL__
 #define HAVE_MREMAP             1
-#else
-#define HAVE_MREMAP             1
-#endif
+
+#ifndef NO_FOOTPRINT_LIMIT
 /* NON-STANDARD DLMALLOC SWITCH: Added to increase speed & reduce overhead of dlmalloc. */
 #define NO_FOOTPRINT_LIMIT      1
+#endif
+#ifndef USE_LOCKS
 #define USE_LOCKS               1
+#endif
+#ifndef NO_MALLOC_STATS
+#define NO_MALLOC_STATS         1
+#endif
+#ifndef DEBUG
+#define DEBUG                   0
+#endif
+#ifndef FOOTERS
+#define FOOTERS                 0
+#endif
+#ifndef MSPACES
 #define MSPACES                 0
+#endif
+#ifndef ONLY_MSPACES
 #define ONLY_MSPACES            0
+#endif
+#ifndef ABORT_ON_ASSERT_FAILURE
 #define ABORT_ON_ASSERT_FAILURE 0
-#define LACKS_SYS_PARAM_H
+#endif
 
 /* Make dlmalloc use the same attributes we've already figured out. */
 #define FORCEINLINE     __FORCELOCAL
@@ -3615,7 +3593,9 @@ static struct mallinfo DLCALL internal_mallinfo(mstate m) {
   struct mallinfo nm = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   ensure_initialization();
   if (!PREACTION(m)) {
+#if !NO_MALLOC_STATS
     check_malloc_state(m);
+#endif /* !NO_MALLOC_STATS */
     if (is_initialized(m)) {
       size_t nfree = SIZE_T_ONE; /* top always free */
       size_t mfree = m->topsize + TOP_FOOT_SIZE;
@@ -4494,8 +4474,11 @@ static int DLCALL sys_trim(mstate m, size_t pad) {
     if (released == 0 && m->topsize > m->trim_check)
       m->trim_check = MAX_SIZE_T;
   }
-
+#if defined(TRIM_RETURNS_RELEASED) && (TRIM_RETURNS_RELEASED+0)
+  return released;
+#else
   return (released != 0)? 1 : 0;
+#endif
 }
 
 /* Consolidate and bin a chunk. Differs from exported versions
@@ -6058,6 +6041,7 @@ size_t DLCALL mspace_max_footprint(mspace msp) {
   return result;
 }
 
+#if !NO_FOOTPRINT_LIMIT
 size_t DLCALL mspace_footprint_limit(mspace msp) {
   size_t result = 0;
   mstate ms = (mstate)msp;
@@ -6088,6 +6072,7 @@ size_t DLCALL mspace_set_footprint_limit(mspace msp, size_t bytes) {
   }
   return result;
 }
+#endif /* !NO_FOOTPRINT_LIMIT */
 
 #if !NO_MALLINFO
 struct mallinfo DLCALL mspace_mallinfo(mspace msp) {

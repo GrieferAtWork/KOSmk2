@@ -34,9 +34,14 @@ DECL_BEGIN
 typedef int errno_t;
 #endif /* !__errno_t_defined */
 
+#undef GET_ERRNO
+#undef SET_ERRNO
+#define GET_ERRNO()        libc_get_errno()
+#define SET_ERRNO(err)     libc_set_errno(err)
 INTDEF errno_t *LIBCCALL libc_errno(void);
 INTDEF errno_t LIBCCALL libc_get_errno(void);
 INTDEF errno_t LIBCCALL libc_set_errno(errno_t err);
+
 INTDEF char *LIBCCALL libc_program_invocation_name(void);
 INTDEF char *LIBCCALL libc_program_invocation_short_name(void);
 INTDEF void LIBCCALL libc_vwarn(char const *format, va_list args);
@@ -50,25 +55,32 @@ INTDEF void LIBCCALL libc_errx(int status, char const *format, ...);
 INTDEF ATTR_COLDTEXT void LIBCCALL libc_error(int status, errno_t errnum, char const *format, ...);
 INTDEF ATTR_COLDTEXT void LIBCCALL libc_error_at_line(int status, errno_t errnum, char const *fname, unsigned int lineno, char const *format, ...);
 
-#define GET_ERRNO()        libc_get_errno()
-#define SET_ERRNO(err)     libc_set_errno(err)
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTDEF errno_t LIBCCALL libc_get_errno2(errno_t *perr);
-#define GET_DOS_ERRNO()    libc_dos___get_errno()
-#define SET_DOS_ERRNO(err) libc_dos___set_errno(err)
-INTDEF errno_t *LIBCCALL libc_dos___errno(void);
-INTDEF errno_t LIBCCALL libc_dos___get_errno(void);
-INTDEF errno_t LIBCCALL libc_dos___set_errno(errno_t err);
+#undef GET_DOS_ERRNO
+#undef SET_DOS_ERRNO
+#define GET_DOS_ERRNO()    libc_get_doserrno()
+#define SET_DOS_ERRNO(err) libc_set_doserrno(err)
+
+/* Direct access to DOS/NT errno values. */
+INTDEF errno_t *LIBCCALL libc_doserrno(void);
+INTDEF u32     *LIBCCALL libc_nterrno(void);
+
+INTDEF errno_t LIBCCALL libc_get_doserrno2(errno_t *perr);
+INTDEF errno_t LIBCCALL libc_get_nterrno2(u32 *perr);
+
+INTDEF u32     LIBCCALL libc_get_nterrno(void);
+INTDEF errno_t LIBCCALL libc_set_nterrno(u32 err);
+INTDEF errno_t LIBCCALL libc_get_doserrno(void);
+INTDEF errno_t LIBCCALL libc_set_doserrno(errno_t err);
+
+/* Error code transformations. */
 INTDEF errno_t LIBCCALL libc_errno_dos2kos(errno_t eno);
 INTDEF errno_t LIBCCALL libc_errno_kos2dos(errno_t eno);
-INTDEF u32 LIBCCALL libc_errno_kos2nt(errno_t eno);
+INTDEF u32     LIBCCALL libc_errno_kos2nt(errno_t eno);
 INTERN errno_t LIBCCALL libc_errno_nt2kos(u32 eno);
 INTERN errno_t LIBCCALL libc_errno_nt2dos(u32 eno);
 
-INTDEF u32    *LIBCCALL libc_dos___doserrno(void);
-INTDEF errno_t LIBCCALL libc_dos___get_doserrno(u32 *__restrict perr);
-INTDEF errno_t LIBCCALL libc_dos___set_doserrno(u32 err);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_END

@@ -61,7 +61,7 @@ K32_GetProcessAffinityMask(HANDLE hProcess,
                            PDWORD_PTR lpProcessAffinityMask,
                            PDWORD_PTR lpSystemAffinityMask) {
  WINBOOL result;
- if (!HANDLE_IS_PID(hProcess)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_PID(hProcess)) { SET_ERRNO(EBADF); return FALSE; }
  result = !sched_getaffinity(HANDLE_TO_PID(hProcess),sizeof(DWORD),
                             (cpu_set_t *)lpProcessAffinityMask);
  if (result) *lpSystemAffinityMask = *lpProcessAffinityMask;
@@ -70,7 +70,7 @@ K32_GetProcessAffinityMask(HANDLE hProcess,
 INTERN WINBOOL WINAPI
 K32_SetProcessAffinityMask(HANDLE hProcess,
                            DWORD_PTR dwProcessAffinityMask) {
- if (!HANDLE_IS_PID(hProcess)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_PID(hProcess)) { SET_ERRNO(EBADF); return FALSE; }
  return !sched_setaffinity(HANDLE_TO_PID(hProcess),sizeof(DWORD),
                           (cpu_set_t *)&dwProcessAffinityMask);
 }
@@ -91,14 +91,14 @@ INTERN ATTR_NORETURN void WINAPI K32_ExitProcess(UINT uExitCode) { _exit((int)uE
 
 DEFINE_INTERN_ALIAS(K32_TerminateThread,K32_TerminateProcess);
 INTERN WINBOOL WINAPI K32_TerminateProcess(HANDLE hProcess, UINT UNUSED(uExitCode)) {
- if (!HANDLE_IS_PID(hProcess)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_PID(hProcess)) { SET_ERRNO(EBADF); return FALSE; }
  return !kill(HANDLE_TO_PID(hProcess),SIGKILL);
 }
 DEFINE_INTERN_ALIAS(K32_GetExitCodeThread,K32_GetExitCodeProcess);
 INTERN WINBOOL WINAPI K32_GetExitCodeProcess(HANDLE hProcess, LPDWORD lpExitCode) {
  int info;
- if (!lpExitCode) { __set_errno(EINVAL); return FALSE; }
- if (!HANDLE_IS_PID(hProcess)) { __set_errno(EBADF); return FALSE; }
+ if (!lpExitCode) { SET_ERRNO(EINVAL); return FALSE; }
+ if (!HANDLE_IS_PID(hProcess)) { SET_ERRNO(EBADF); return FALSE; }
  /* Poll the exit status of the given process, but don't reap it. */
  if (waitpid(HANDLE_TO_PID(hProcess),&info,WNOHANG|WEXITED|WNOWAIT)) {
   if (__get_errno() != EAGAIN) return FALSE;
@@ -138,8 +138,8 @@ INTERN HANDLE WINAPI
 K32_CreateRemoteThread(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes,
                        SIZE_T dwStackSize, LPTHREAD_START_ROUTINE lpStartAddress,
                        LPVOID lpParameter, DWORD dwCreationFlags, LPDWORD lpThreadId) {
- if (!HANDLE_IS_PID(hProcess)) { __set_errno(EBADF); return NULL; }
- if (HANDLE_TO_PID(hProcess) != (pid_t)K32_GetCurrentProcessId()) { __set_errno(EACCES); return NULL; }
+ if (!HANDLE_IS_PID(hProcess)) { SET_ERRNO(EBADF); return NULL; }
+ if (HANDLE_TO_PID(hProcess) != (pid_t)K32_GetCurrentProcessId()) { SET_ERRNO(EACCES); return NULL; }
  return K32_CreateThread(lpThreadAttributes,dwStackSize,lpStartAddress,
                          lpParameter,dwCreationFlags,lpThreadId);
 }
@@ -147,37 +147,37 @@ INTERN HANDLE WINAPI K32_GetCurrentThread(void) { return PID_TO_HANDLE(K32_GetCu
 INTERN DWORD WINAPI K32_GetCurrentThreadId(void) { return (DWORD)syscall(SYS_gettid); }
 INTERN WINBOOL WINAPI K32_SetThreadStackGuarantee(PULONG StackSizeInBytes) { NOT_IMPLEMENTED(); return FALSE; }
 INTERN DWORD WINAPI K32_GetProcessIdOfThread(HANDLE Thread) {
- if (!HANDLE_IS_PID(Thread)) { __set_errno(EBADF); return 0; }
+ if (!HANDLE_IS_PID(Thread)) { SET_ERRNO(EBADF); return 0; }
  return getpgid(HANDLE_TO_PID(Thread));
 }
 INTERN DWORD WINAPI K32_GetThreadId(HANDLE Thread) {
- if (!HANDLE_IS_PID(Thread)) { __set_errno(EBADF); return 0; }
+ if (!HANDLE_IS_PID(Thread)) { SET_ERRNO(EBADF); return 0; }
  return HANDLE_TO_PID(Thread);
 }
 DEFINE_INTERN_ALIAS(K32_GetProcessId,K32_GetThreadId);
 INTERN DWORD WINAPI K32_GetCurrentProcessorNumber(void) { return (DWORD)sched_getcpu(); }
 INTERN DWORD WINAPI K32_SetThreadIdealProcessor(HANDLE UNUSED(hThread), DWORD dwIdealProcessor) { return dwIdealProcessor; }
-INTERN WINBOOL WINAPI K32_SetProcessPriorityBoost(HANDLE hProcess, WINBOOL bDisablePriorityBoost) { if (!HANDLE_IS_PID(hProcess)) { __set_errno(EBADF); return FALSE; } return TRUE; }
-INTERN WINBOOL WINAPI K32_GetProcessPriorityBoost(HANDLE hProcess, PBOOL pDisablePriorityBoost) { if (!HANDLE_IS_PID(hProcess)) { __set_errno(EBADF); return FALSE; } if (pDisablePriorityBoost) *pDisablePriorityBoost = TRUE; return TRUE; }
+INTERN WINBOOL WINAPI K32_SetProcessPriorityBoost(HANDLE hProcess, WINBOOL bDisablePriorityBoost) { if (!HANDLE_IS_PID(hProcess)) { SET_ERRNO(EBADF); return FALSE; } return TRUE; }
+INTERN WINBOOL WINAPI K32_GetProcessPriorityBoost(HANDLE hProcess, PBOOL pDisablePriorityBoost) { if (!HANDLE_IS_PID(hProcess)) { SET_ERRNO(EBADF); return FALSE; } if (pDisablePriorityBoost) *pDisablePriorityBoost = TRUE; return TRUE; }
 DEFINE_INTERN_ALIAS(K32_SetThreadPriorityBoost,K32_SetProcessPriorityBoost);
 DEFINE_INTERN_ALIAS(K32_GetThreadPriorityBoost,K32_GetProcessPriorityBoost);
-INTERN WINBOOL WINAPI K32_RequestWakeupLatency(LATENCY_TIME UNUSED(latency)) { __set_errno(ENOSYS); return FALSE; }
+INTERN WINBOOL WINAPI K32_RequestWakeupLatency(LATENCY_TIME UNUSED(latency)) { SET_ERRNO(ENOSYS); return FALSE; }
 INTERN WINBOOL WINAPI K32_IsSystemResumeAutomatic(void) { return FALSE; }
 DEFINE_INTERN_ALIAS(K32_GetPriorityClass,K32_GetThreadPriority);
 DEFINE_INTERN_ALIAS(K32_SetPriorityClass,K32_SetThreadPriority);
 INTERN int WINAPI K32_GetThreadPriority(HANDLE hThread) {
  struct sched_param param;
- if (!HANDLE_IS_PID(hThread)) { __set_errno(EBADF); return THREAD_PRIORITY_ERROR_RETURN; }
+ if (!HANDLE_IS_PID(hThread)) { SET_ERRNO(EBADF); return THREAD_PRIORITY_ERROR_RETURN; }
  if (sched_getparam(HANDLE_TO_PID(hThread),&param)) return THREAD_PRIORITY_ERROR_RETURN;
  return param.__sched_priority;
 }
 INTERN WINBOOL WINAPI K32_SetThreadPriority(HANDLE hThread, int nPriority) {
  struct sched_param param = { nPriority };
- if (!HANDLE_IS_PID(hThread)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_PID(hThread)) { SET_ERRNO(EBADF); return FALSE; }
  return !sched_setparam(HANDLE_TO_PID(hThread),&param);
 }
 INTERN WINBOOL WINAPI K32_GetThreadIOPendingFlag(HANDLE hThread, PBOOL lpIOIsPending) {
- if (!HANDLE_IS_PID(hThread)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_PID(hThread)) { SET_ERRNO(EBADF); return FALSE; }
  if (lpIOIsPending) *lpIOIsPending = FALSE;
  return TRUE;
 }
@@ -189,7 +189,7 @@ K32_ExitThread(DWORD dwExitCode) {
 INTERN WINBOOL WINAPI
 K32_GetThreadSelectorEntry(HANDLE hThread, DWORD dwSelector,
                            LPLDT_ENTRY lpSelectorEntry) {
- if (!HANDLE_IS_PID(hThread)) { __set_errno(EBADF); return FALSE; }
+ if (!HANDLE_IS_PID(hThread)) { SET_ERRNO(EBADF); return FALSE; }
  NOT_IMPLEMENTED();
  return FALSE;
 }
@@ -277,7 +277,7 @@ PRIVATE char **WINAPI K32_SplitCommandLine(LPSTR lpCommandLine) {
  }
  argv[argc] = NULL; /* NULL-terminate the argument list. */
 end:
- __set_errno(EOK);
+ SET_ERRNO(EOK);
  return argv;
 fail:
  free(argv);
@@ -322,7 +322,7 @@ K32_DO_CreateProcessA(LPCSTR lpApplicationName, LPSTR lpCommandLine,
  } else {
 noapp:
   /* Neither appname, nor cmdline given. */
-  __set_errno(EINVAL);
+  SET_ERRNO(EINVAL);
   goto end;
  }
 
@@ -535,8 +535,8 @@ INTERN void WINAPI K32_DeleteCriticalSection(LPCRITICAL_SECTION lpCriticalSectio
 
 
 /* Error code APIs. */
-INTERN DWORD WINAPI K32_GetLastError(void) { return errno_kos2nt(__get_errno()); }
-INTERN void WINAPI K32_SetLastError(DWORD dwErrCode) { __set_errno(errno_kos2nt(dwErrCode)); }
+INTERN DWORD WINAPI K32_GetLastError(void) { return GET_NT_ERRNO(); }
+INTERN void WINAPI K32_SetLastError(DWORD dwErrCode) { SET_NT_ERRNO(dwErrCode); }
 
 
 
@@ -620,7 +620,7 @@ INTERN WINBOOL WINAPI K32_GetComputerNameA(LPSTR lpBuffer, LPDWORD nSize) {
  return result;
 }
 INTERN WINBOOL WINAPI K32_SetComputerNameA(LPCSTR lpComputerName) {
- if (!lpComputerName) { __set_errno(EINVAL); return FALSE; }
+ if (!lpComputerName) { SET_ERRNO(EINVAL); return FALSE; }
  return !sethostname(lpComputerName,strlen(lpComputerName));
 }
 INTERN WINBOOL WINAPI K32_GetComputerNameW(LPWSTR lpBuffer, LPDWORD nSize) {
@@ -637,7 +637,7 @@ INTERN WINBOOL WINAPI K32_GetComputerNameW(LPWSTR lpBuffer, LPDWORD nSize) {
 }
 INTERN WINBOOL WINAPI K32_SetComputerNameW(LPCWSTR lpComputerName) {
  char *name; WINBOOL result;
- if (!lpComputerName) { __set_errno(EINVAL); return FALSE; }
+ if (!lpComputerName) { SET_ERRNO(EINVAL); return FALSE; }
  name = uni_utf16to8m(lpComputerName);
  if (!name) return FALSE;
  result = K32_SetComputerNameA(name);
@@ -658,9 +658,9 @@ DEFINE_INTERN_ALIAS(K32_DecodeSystemPointer,K32_EncodePointer);
 INTERN void    WINAPI K32_DebugBreak(void) { __asm__ __volatile__("int $3\n" : : : "memory"); }
 INTERN WINBOOL WINAPI K32_IsDebuggerPresent(void) { return FALSE; }
 INTERN WINBOOL WINAPI K32_DebugBreakProcess(HANDLE Process) {
- if unlikely(!HANDLE_IS_PID(Process)) { __set_errno(EBADF); return FALSE; }
+ if unlikely(!HANDLE_IS_PID(Process)) { SET_ERRNO(EBADF); return FALSE; }
  /* You can't debug-break any other process than yourself. */
- if (HANDLE_TO_PID(Process) != (pid_t)K32_GetCurrentProcessId()) { __set_errno(EACCES); return FALSE; }
+ if (HANDLE_TO_PID(Process) != (pid_t)K32_GetCurrentProcessId()) { SET_ERRNO(EACCES); return FALSE; }
  K32_DebugBreak();
  return TRUE;
 }
