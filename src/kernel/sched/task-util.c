@@ -416,10 +416,10 @@ check_again:
       (iter->ic_opt&INTCHAIN_OPT_USR && IRQ_ISUSR(irq))) {
    struct {
     struct comregs state;
-    u32              eflag;
+    u32            eflag;
    union{
-    byte_t          *esp_minus_4;
-    void           **p_eip;
+    byte_t        *esp_minus_4;
+    void         **p_eip;
    };
    } data;
 #ifndef __i386__

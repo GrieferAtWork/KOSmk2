@@ -235,11 +235,19 @@ relock_tasks_again:
  mman_munmap_unlocked(mm,(ppage_t)0,(size_t)-1,
                       MMAN_MUNMAP_ALL,NULL);
 
+ /* Check/Reset the memory manager state. */
+ assert(!mm->m_map);
+ assert(!mm->m_order);
+ assert(!mm->m_inst);
+ mm->m_uheap = MMAN_UHEAP_DEFAULT_ADDR;
+ mm->m_ustck = MMAN_USTCK_DEFAULT_ADDR;
+
  /* Map the new instance into the (currently) empty address space. */
  error = mman_mmap_instance_unlocked(mm,inst,(u32)-1,
                                      mod->m_flag&MODFLAG_TEXTREL
                                    ? PROT_CLEAN|PROT_WRITE
                                    : PROT_CLEAN);
+
 endwrite:
 #ifndef CONFIG_NO_VM_EXE
  if (E_ISOK(error)) {

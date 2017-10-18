@@ -1724,7 +1724,13 @@ mman_mcore_unlocked(struct mman *__restrict self,
                     u32 mode) {
  CHECK_HOST_DOBJ(self);
  assert(IS_ALIGNED((uintptr_t)addr,PAGESIZE));
- if unlikely(!n_bytes) return 0;
+ /* NOTE: We _MUST_ Check that the mman isn't empty here. 
+  *       Failing to do so will likely (and did at one point) cause a triple fault
+  *       when the page-fault handler tries to load memory into the core, yet doing
+  *       so causes another fault that eventually leads to the kernel stack
+  *       overflowing, at which point the CPU is no longer able to push exception
+  *       data, resulting in a hard crash! */
+ if unlikely(!n_bytes || !self->m_map) return 0;
  n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
  /* Recursively scan branches within the given range. */
  return mman_mcore_impl(self->m_map,self,

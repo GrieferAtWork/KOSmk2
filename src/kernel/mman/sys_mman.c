@@ -277,6 +277,7 @@ user_mmap(struct mmap_info *__restrict info) {
 got_regions:
 
  if (info->mi_flags&MAP_FIXED) {
+  has_write_lock = true;
   result = mman_write(mm);
   if (E_ISERR(result)) goto end_region;
   map_addr = (VIRT ppage_t)FLOOR_ALIGN((uintptr_t)base_addr,PAGESIZE);
@@ -367,8 +368,8 @@ SYSCALL_DEFINE2(xmmap,int,version,USER struct mmap_info const *,data){
  return user_mmap(&info);
 }
 
-SYSCALL_DEFINE6(mmap,VIRT void *,addr, size_t,len, u32,prot,
-                     u32,flags, int,fd, syscall_ulong_t,off) {
+SYSCALL_DEFINE6(mmap,VIRT void *,addr,size_t,len,u32,prot,
+                     u32,flags,int,fd,syscall_ulong_t,off) {
  /* linux-compatible system call. */
  struct mmap_info info;
  info.mi_prot          = prot;
@@ -388,7 +389,7 @@ SYSCALL_DEFINE6(mmap,VIRT void *,addr, size_t,len, u32,prot,
  return user_mmap(&info);
 }
 
-SYSCALL_DEFINE4(xmunmap,VIRT void *,addr, size_t,len, u32,flags, void *,tag) {
+SYSCALL_DEFINE4(xmunmap,VIRT void *,addr,size_t,len,u32,flags,void *,tag) {
  struct mman *mm = THIS_TASK->t_mman;
  ssize_t result;
  len += (uintptr_t)addr & (PAGESIZE-1);

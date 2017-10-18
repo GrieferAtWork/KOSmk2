@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_LIBS_LIBKERNEL32_MISC_H
-#define GUARD_LIBS_LIBKERNEL32_MISC_H 1
+#ifndef GUARD_LIBS_LIBKERNEL32_TIME_H
+#define GUARD_LIBS_LIBKERNEL32_TIME_H 1
 
 #include "k32.h"
 #include <hybrid/compiler.h>
@@ -53,4 +53,4 @@ INTDEF int WINAPI K32_MulDiv(int nNumber, int nNumerator, int nDenominator);
 
 DECL_END
 
-#endif /* !GUARD_LIBS_LIBKERNEL32_MISC_H */
+#endif /* !GUARD_LIBS_LIBKERNEL32_TIME_H */

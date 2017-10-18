@@ -194,15 +194,15 @@ term_init(struct term *__restrict self,
  ansi_arga = 4;
  for (;;) {
   ansi_buf = (char *)malloc((ansi_size+1)*sizeof(char));
-  if __likely(ansi_buf) break;
+  if likely(ansi_buf) break;
   ansi_size /= 2;
-  if __unlikely(!ansi_size) return NULL;
+  if unlikely(!ansi_size) return NULL;
  }
  for (;;) {
   ansi_argv = (char **)malloc(ansi_arga*sizeof(char *));
-  if __likely(ansi_argv) break;
+  if likely(ansi_argv) break;
   ansi_arga /= 2;
-  if __unlikely(!ansi_arga) goto err_ansibuf;
+  if unlikely(!ansi_arga) goto err_ansibuf;
  }
  self->tr_user        = closure;
  self->tr_buffer      = ansi_buf;
@@ -253,7 +253,7 @@ LOCAL int TAPI resize_buffer(struct term *__restrict self, size_t newsize) {
  assert(self->tr_bufend != self->tr_buffer);
  oldbuffer = self->tr_buffer;
  newbuffer = (char *)realloc(oldbuffer,(newsize+1)*sizeof(char));
- if __unlikely(!newbuffer) return 0;
+ if unlikely(!newbuffer) return 0;
  arg_end = (arg_iter = self->tr_argv)+self->tr_argc;
  for (; arg_iter != arg_end; ++arg_iter) {
   assert(*arg_iter >= oldbuffer && *arg_iter < self->tr_bufend);
@@ -656,7 +656,7 @@ end_escape:
  self->tr_escape = (self->tr_attrib&ANSI_BOX) ? MODE_BOX : MODE_TEXT;
  return;
 add_to_buffer:
- if __unlikely(self->tr_bufpos == self->tr_bufend) {
+ if unlikely(self->tr_bufpos == self->tr_bufend) {
   size_t new_size = (self->tr_bufend-self->tr_buffer)*2;
   assert(new_size);
   if (!resize_buffer(self,new_size)) goto dump_buffer;

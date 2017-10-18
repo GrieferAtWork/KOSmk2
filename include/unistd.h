@@ -681,7 +681,7 @@ __REDIRECT_IFDOS(__LIBC,,int,__LIBCCALL,ftruncate64,(int __fd, __off64_t __lengt
 #if (defined(__USE_XOPEN_EXTENDED) && !defined(__USE_XOPEN2K)) || \
      defined(__USE_MISC)
 __LIBC __PORT_NODOS_ALT(free) int (__LIBCCALL brk)(void *__addr);
-__LIBC __WUNUSED __PORT_NODOS_ALT(malloc) void *(__LIBCCALL sbrk)(intptr_t __delta);
+__LIBC __PORT_NODOS_ALT(malloc) void *(__LIBCCALL sbrk)(intptr_t __delta);
 #endif
 #endif /* __CRT_GLC */
 

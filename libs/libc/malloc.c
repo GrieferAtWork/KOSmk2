@@ -33,6 +33,8 @@
 #include "string.h"
 #include "sysconf.h"
 #include "system.h"
+#include "time.h"
+#include "unistd.h"
 
 #include <string.h>
 #include <assert.h>
@@ -61,6 +63,9 @@
 #define malloc_getpagesize PAGESIZE
 #define fprintf            libc_fprintf
 #define sched_yield        libc_sched_yield
+#define brk(x)             libc_brk(x)
+#define sbrk(x)            libc_sbrk(x)
+#define time(x)            libc_time(x)
 #undef MALLOC_FAILURE_ACTION
 #define MALLOC_FAILURE_ACTION SET_ERRNO(ENOMEM);
 
@@ -341,8 +346,8 @@ PRIVATE byte_t mall_footer_seed[4] = {0xCF,0x6A,0xB7,0x97};
 /* Put a twist on random number generation, making it impossible for
  * code to intentionally guess the correct sequence twice in a row. */
 #define MALL_INITIALIZE() \
- (*(uint32_t *)mall_header_seed ^=  (uint32_t)time(NULL),\
-  *(uint32_t *)mall_footer_seed ^= ~(uint32_t)time(NULL))
+ (*(uint32_t *)mall_header_seed ^=  (uint32_t)libc_time(NULL),\
+  *(uint32_t *)mall_footer_seed ^= ~(uint32_t)libc_time(NULL))
 #endif
 #endif
 

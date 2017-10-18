@@ -94,8 +94,6 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
  syslog(LOG_MEM|LOG_DEBUG,
         "[MEM] Checking to load core memory after PAGEFAULT near %p %p %p\n",
         fault_addr,&fault_addr,info->iret.eip);
- if (!addr_isvirt(fault_addr))
-      debug_tbprintl((void *)info->iret.eip,NULL,0);
 #endif
 
  fault_page = FLOOR_ALIGN(fault_addr,PAGESIZE);
@@ -127,14 +125,16 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
   if (E_ISERR(error)) goto end_mcore;
 #else
   task_pushwait(&old_sigset);
-#ifdef CONFIG_DEBUG
+#ifndef NDEBUG
   { struct task *old_owner = ATOMIC_READ(eff_mman->m_lock.orw_lock.aorw_owner);
     if (old_owner == THIS_TASK) {
      assertf(eff_mman->m_lock.orw_lock.aorw_lock&ATOMIC_OWNER_RWLOCK_WFLAG,
              "Code that is not locked in-core must always use write-locks "
              "when accessing their effective memory manager. - A read-lock "
              "cannot be used because page-faults must temporarily acquire a "
-             "write-lock that could potentially fail when a read-lock is shared.");
+             "write-lock that could potentially fail when a read-lock is shared.\n"
+             "eff_mman->m_lock.orw_lock.aorw_lock = %.8I32x\n",
+             eff_mman->m_lock.orw_lock.aorw_lock);
      asserte(E_ISOK(mman_trywrite(eff_mman)));
     } else {
      mman_write(eff_mman);

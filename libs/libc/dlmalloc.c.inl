@@ -31,7 +31,6 @@
 #define LACKS_TIME_H
 #define LACKS_SCHED_H
 #else
-#define LACKS_TIME_H
 #define NO_MALLOC_STATS 1
 #endif
 
@@ -41,6 +40,7 @@
  * the idea to using lazy initialization pointless and actually slower.
  * Instead, dlmalloc is initialized explicitly at the same time that
  * libc and raw, low-level RAM are. */
+#ifndef DLMALLOC_NO_ONETIME_INIT
 #ifndef DLMALLOC_USE_ONETIME_INIT
 #if 0
 #elif defined(__KERNEL__)
@@ -49,6 +49,7 @@
 #define DLMALLOC_USE_ONETIME_INIT user_initialize_dlmalloc
 #endif
 #endif /* !DLMALLOC_USE_ONETIME_INIT */
+#endif /* !DLMALLOC_NO_ONETIME_INIT */
 
 #ifdef __LIBC_HAVE_DEBUG_MALLOC
 /* While mall will already put in some great work to assure proper
@@ -79,8 +80,8 @@
 #define LACKS_SYS_PARAM_H
 
 /* Make dlmalloc use the same attributes we've already figured out. */
-#define FORCEINLINE     __attribute_forceinline
-#define NOINLINE        __noinline
+#define FORCEINLINE     __FORCELOCAL
+#define NOINLINE        __ATTR_NOINLINE
 
 #ifdef __KERNEL__
 /* The kernel doesn't have morecore (aka. brk/sbrk). */
@@ -99,9 +100,7 @@
 #define NO_MALLOC_STATS 1
 #define MALLOC_FAILURE_ACTION /* nothing (The kernel doesn't have errno). */
 #else
-#ifndef __LIBC_HAVE_SBRK
-#define HAVE_MORECORE   0
-#endif /* !__LIBC_HAVE_SBRK */
+//#define HAVE_MORECORE 0
 #endif
 
 

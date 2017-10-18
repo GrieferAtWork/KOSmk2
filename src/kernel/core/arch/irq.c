@@ -398,6 +398,7 @@ irq_default(int intno, struct cpustate_e *__restrict state) {
  struct cpu *this_cpu = THIS_CPU;
  struct task *this_task = THIS_TASK;
  PREEMPTION_DISABLE();
+
  /* If the exception occurred in kernel-space, try to trigger a local IRQ handler.
   * >> This is used to implement safe tracebacks, as well as copy_(to|from|in)_user & friends! */
  if ((state->iret.cs&3) == 0) {

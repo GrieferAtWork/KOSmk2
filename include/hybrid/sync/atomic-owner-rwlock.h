@@ -104,6 +104,8 @@ LOCAL SAFE void KCALL atomic_owner_rwlock_endread(atomic_owner_rwlock_t *__restr
   f = ATOMIC_READ(self->aorw_lock);
   __assertf(f != 0,"Lock isn't held by anyone");
   if (f&ATOMIC_OWNER_RWLOCK_WFLAG) {
+   __assertf(f != ATOMIC_OWNER_RWLOCK_WFLAG,
+             "No more read-locks available. - You probably meant to close a write-lock");
    __assertf(self->aorw_owner == THREADID_SELF(),
              "You're not the owner!");
   }

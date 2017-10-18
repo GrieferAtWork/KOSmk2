@@ -682,11 +682,11 @@ PRIVATE byte_t *brk_curr = NULL;
 PRIVATE DEFINE_ATOMIC_RWLOCK(brk_lock);
 
 PRIVATE int LIBCCALL do_brk(void *addr) {
- byte_t *real_oldbrk,*real_newbrk,*oldbrk;
- oldbrk = brk_curr;
- if (!oldbrk) oldbrk = _end;
- real_oldbrk = (byte_t *)FLOOR_ALIGN((uintptr_t)oldbrk,4096);
- real_newbrk = (byte_t *)CEIL_ALIGN((uintptr_t)addr,4096);
+ byte_t *real_oldbrk,*real_newbrk;
+ if ((real_oldbrk = brk_curr) == NULL)
+      real_oldbrk = (byte_t *)CEIL_ALIGN((uintptr_t)_end,PAGESIZE);
+ else real_oldbrk = (byte_t *)CEIL_ALIGN((uintptr_t)real_oldbrk,PAGESIZE);
+ real_newbrk = (byte_t *)CEIL_ALIGN((uintptr_t)addr,PAGESIZE);
  if (real_newbrk < real_oldbrk) {
   /* Release memory */
   if unlikely(libc_munmap(real_newbrk,real_oldbrk-real_newbrk) == -1)
@@ -714,9 +714,9 @@ INTERN int LIBCCALL libc_brk(void *addr) {
 INTERN void *LIBCCALL libc_sbrk(intptr_t increment) {
  byte_t *result;
  atomic_rwlock_write(&brk_lock);
- result = brk_curr;
- if (do_brk(result+increment) != 0)
-     result = (byte_t *)-1;
+ if ((result = brk_curr) == NULL)
+      result = (byte_t *)CEIL_ALIGN((uintptr_t)_end,PAGESIZE);
+ if (do_brk(result+increment) != 0) result = (byte_t *)-1;
  atomic_rwlock_endwrite(&brk_lock);
  return result;
 }
