@@ -271,20 +271,19 @@ DEFINE_PUBLIC_ALIAS(error_at_line,libc_error_at_line);
 
 PRIVATE ATTR_DOSRODATA u8 const vec_errno_dos2kos[__DOS_EMAX+1] = {
     [0 ... __DOS_EMAX] = KOS_ERRNO_NOT_SUPPORTED,
-#define PAIR(kos,dos,dos2) [dos] = kos,
+#define PAIR(kos,dos,nt) [dos] = kos,
 #include "templates/errno-dospair.code"
 };
 PRIVATE ATTR_DOSRODATA u8 const vec_errno_kos2dos[__EBASEMAX+1] = {
     [0 ... __EBASEMAX] = DOS_ERRNO_NOT_SUPPORTED,
-#define PAIR(kos,dos,dos2) [kos] = dos,
+#define PAIR(kos,dos,nt) [kos] = dos,
 #include "templates/errno-dospair.code"
 };
 PRIVATE ATTR_DOSRODATA u16 const vec_errno_kos2nt[__EBASEMAX+1] = {
     [0 ... __EBASEMAX] = NT_ERRNO_NOT_SUPPORTED,
-#define PAIR(kos,dos,dos2) [kos] = dos2,
+#define PAIR(kos,dos,nt) [kos] = nt,
 #include "templates/errno-dospair.code"
 };
-
 #pragma GCC diagnostic pop
 
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_dos2kos(errno_t eno) { return (unsigned int)eno < COMPILER_LENOF(vec_errno_dos2kos) ? vec_errno_dos2kos[eno] : KOS_ERRNO_NOT_SUPPORTED; }
@@ -300,6 +299,12 @@ INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_errno_nt2kos(u32 eno) {
    result = (errno_t)(iter-vec_errno_kos2nt);
    break;
   }
+ }
+ switch (eno) {
+#define PAIR(kos,dos,nt)
+#define NT_ALIAS(nt,kos,dos) case nt: result = kos; break;
+#include "templates/errno-dospair.code"
+ default: break;
  }
  return result;
 }

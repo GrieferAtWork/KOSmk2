@@ -89,7 +89,7 @@ typedef int errno_t;
 #define ENODEV          19  /* No such device */
 #define ENOTDIR         20  /* Not a directory */
 #define EISDIR          21  /* Is a directory */
-#define EINVAL          22  /* Invalid argument */
+#define EINVAL          22  /* [NT("ERROR_INVALID_PARAMETER")] Invalid argument */
 #define ENFILE          23  /* File table overflow */
 #define EMFILE          24  /* Too many open files */
 #define ENOTTY          25  /* Not a typewriter */
@@ -101,7 +101,7 @@ typedef int errno_t;
 #define EMLINK          31  /* Too many links */
 #define EPIPE           32  /* Broken pipe */
 #define EDOM            33  /* Math argument out of domain of func */
-#define ERANGE          34  /* Math result not representable */
+#define ERANGE          34  /* [NT("ERROR_INSUFFICIENT_BUFFER")] Math result not representable */
 #define EDEADLK         35  /* Resource deadlock would occur */
 #define ENAMETOOLONG    36  /* File name too long */
 #define ENOLCK          37  /* No record locks available */
@@ -159,7 +159,7 @@ typedef int errno_t;
 #define ELIBSCN         81  /* .lib section in a.out corrupted */
 #define ELIBMAX         82  /* Attempting to link in too many shared libraries */
 #define ELIBEXEC        83  /* Cannot exec a shared library directly */
-#define EILSEQ          84  /* Illegal byte sequence */
+#define EILSEQ          84  /* [NT("ERROR_NO_UNICODE_TRANSLATION")] Illegal byte sequence */
 #define ERESTART        85  /* Interrupted system call should be restarted */
 #define ESTRPIPE        86  /* Streams pipe error */
 #define EUSERS          87  /* Too many users */

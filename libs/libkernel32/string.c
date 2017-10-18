@@ -25,6 +25,7 @@
 #include "string.h"
 #include <string.h>
 #include <uchar.h>
+#include <unicode.h>
 
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
@@ -65,6 +66,48 @@ K32_CompareStringW(LCID UNUSED(Locale), DWORD UNUSED(dwCmpFlags),
 
 }
 
+
+INTERN int WINAPI
+K32_MultiByteToWideChar(UINT UNUSED(CodePage), DWORD dwFlags,
+                        LPCSTR lpMultiByteStr, int cbMultiByte,
+                        LPWSTR lpWideCharStr, int cchWideChar) {
+ mbstate_t state = MBSTATE_INIT; size_t result;
+ size_t count = (size_t)cbMultiByte;
+ if (!lpWideCharStr || !cchWideChar) goto erange;
+ if (!lpMultiByteStr && count) goto einval;
+ result = uni_utf8to16((char *)&lpMultiByteStr,
+                       (size_t)&count,lpWideCharStr,cchWideChar,
+                      &state,(dwFlags&MB_ERR_INVALID_CHARS) ?
+                       UNICODE_F_SETERRNO|UNICODE_F_UPDATESRC :
+                       UNICODE_F_NOFAIL|UNICODE_F_UPDATESRC);
+ if (result == UNICODE_ERROR) return 0;
+ if (count) goto erange;
+ return result;
+einval: SET_ERRNO(EINVAL); return 0;
+erange: SET_ERRNO(ERANGE); return 0;
+}
+INTERN int WINAPI
+K32_WideCharToMultiByte(UINT UNUSED(CodePage), DWORD dwFlags,
+                        LPCWSTR lpWideCharStr, int cchWideChar,
+                        LPSTR lpMultiByteStr, int cbMultiByte,
+                        LPCSTR lpDefaultChar, LPBOOL lpUsedDefaultChar) {
+ mbstate_t state = MBSTATE_INIT; size_t result;
+ size_t count = (size_t)cchWideChar;
+ if (!lpWideCharStr && count) goto einval;
+ if (!lpMultiByteStr || !cbMultiByte) goto erange;
+ result = uni_utf16to8((char16_t *)&lpWideCharStr,
+                       (size_t)&count,lpMultiByteStr,count,
+                      &state,(dwFlags&MB_ERR_INVALID_CHARS) ?
+                       UNICODE_F_SETERRNO|UNICODE_F_UPDATESRC :
+                       UNICODE_F_NOFAIL|UNICODE_F_UPDATESRC);
+ if (result == UNICODE_ERROR) return 0;
+ if (count) goto erange;
+ return result;
+einval: SET_ERRNO(EINVAL); return 0;
+erange: SET_ERRNO(ERANGE); return 0;
+}
+
+
 #undef lstrcmp
 #undef lstrcmpi
 #undef lstrlen
@@ -92,6 +135,9 @@ DEFINE_PUBLIC_ALIAS(lstrcatA,K32_lstrcatA);
 DEFINE_PUBLIC_ALIAS(lstrcatW,K32_lstrcatW);
 DEFINE_PUBLIC_ALIAS(CompareStringA,K32_CompareStringA);
 DEFINE_PUBLIC_ALIAS(CompareStringW,K32_CompareStringW);
+
+DEFINE_PUBLIC_ALIAS(MultiByteToWideChar,K32_MultiByteToWideChar);
+DEFINE_PUBLIC_ALIAS(WideCharToMultiByte,K32_WideCharToMultiByte);
 
 DECL_END
 

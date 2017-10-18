@@ -95,7 +95,8 @@ __LIBC size_t (__LIBCCALL uni_utf16to8)(char16_t const *__restrict __utf16, size
 #define UNICODE_F_UTF16HALF      0x0010 /*< For 'uni_utf8to16': When the target buffer is too small return 'UNICODE_UTF16HALF' and use the shift state and return the second half next call. */
 #define UNICODE_F_UPDATESRC      0x0020 /*< Treat input arguments (the first two) as pointers and update them before returning upon success.
                                          *  NOTE: When set, the first two arguments are interpreted with one additional indirection. */
-#define UNICODE_F_SETERRNO       0x0040 /*< Set 'errno' to 'EILSEQ' if a malformed sequence causes 'UNICODE_ERROR' to be returned.
+#define UNICODE_F_SETERRNO       0x0040 /*< Set 'errno' to 'EILSEQ' ('ERROR_NO_UNICODE_TRANSLATION')
+                                         *  if a malformed sequence causes 'UNICODE_ERROR' to be returned.
                                          *  NOTE: This flag is ignored when 'UNICODE_F_NOFAIL' is passed. */
 #define UNICODE_F_NOFAIL         0x0080 /*< Never fail and emit 'UNICODE_REPLACEMENT' for illegal characters. */
 

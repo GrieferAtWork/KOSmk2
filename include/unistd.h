@@ -618,6 +618,10 @@ __REDIRECT_UFS(__LIBC,__PORT_NODOS __NONNULL((1,2)),int,__LIBCCALL,symlink,(char
 __REDIRECT_UFS(__LIBC,__PORT_NODOS __NONNULL((1,2)),ssize_t,__LIBCCALL,readlink,(char const *__restrict __path, char *__restrict __buf, size_t __buflen),readlink,(__path,__buf,__buflen))
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K */
 
+#ifdef __USE_KOS
+__LIBC __PORT_KOSONLY_ALT(readlink) __NONNULL((2)) ssize_t (__LIBCCALL freadlink)(int __fd, char *__restrict __buf, size_t __buflen);
+#endif /* __USE_KOS */
+
 #if defined(__USE_REENTRANT) || defined(__USE_POSIX199506)
 __LIBC __PORT_NODOS __WUNUSED_SUGGESTED __NONNULL((1)) int (__LIBCCALL getlogin_r)(char *__name, size_t __name_len);
 #endif /* __USE_REENTRANT || __USE_POSIX199506 */

@@ -66,6 +66,12 @@ INTERN FARPROC WINAPI K32_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) { r
 
 
 
+/* Command execution. */
+INTERN UINT WINAPI K32_WinExec(LPCSTR lpCmdLine, UINT UNUSED(uCmdShow)) { return system(lpCmdLine); }
+
+
+
+
 /* DLL Directory access. */
 DEFINE_PUBLIC_ALIAS(SetDllDirectoryA,K32_SetDllDirectoryA);
 DEFINE_PUBLIC_ALIAS(SetDllDirectoryW,K32_SetDllDirectoryW);
@@ -81,6 +87,9 @@ DEFINE_PUBLIC_ALIAS(FreeLibrary,K32_FreeLibrary);
 DEFINE_PUBLIC_ALIAS(FreeLibraryAndExitThread,K32_FreeLibraryAndExitThread);
 DEFINE_PUBLIC_ALIAS(DisableThreadLibraryCalls,K32_DisableThreadLibraryCalls);
 DEFINE_PUBLIC_ALIAS(GetProcAddress,K32_GetProcAddress);
+
+/* Command execution. */
+DEFINE_PUBLIC_ALIAS(WinExec,K32_WinExec);
 
 DECL_END
 

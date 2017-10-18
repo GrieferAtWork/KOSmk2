@@ -175,6 +175,7 @@ INTERN ssize_t LIBCCALL libc_readlinkat(int fd, char const *__restrict path, cha
   *   >> POSIX readlink() does not return the amount of required bytes, but the amount written. */
  return FORWARD_SYSTEM_VALUE(sys_readlinkat(fd,path,buf,len));
 }
+INTERN ssize_t LIBCCALL libc_freadlink(int fd, char *__restrict buf, size_t len) { return libc_readlinkat(fd,NULL,buf,len); }
 INTERN int LIBCCALL libc_removeat(int fd, char const *filename) { return libc_unlinkat(fd,filename,AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
 INTERN int LIBCCALL libc_remove(char const *filename) { return libc_removeat(AT_FDCWD,filename); }
 INTERN int LIBCCALL libc_rename(char const *old, char const *new_) { return libc_renameat(AT_FDCWD,old,AT_FDCWD,new_); }
@@ -809,6 +810,7 @@ DEFINE_PUBLIC_ALIAS(unlinkat,libc_unlinkat);
 DEFINE_PUBLIC_ALIAS(renameat,libc_renameat);
 DEFINE_PUBLIC_ALIAS(frenameat,libc_frenameat);
 DEFINE_PUBLIC_ALIAS(readlinkat,libc_readlinkat);
+DEFINE_PUBLIC_ALIAS(freadlink,libc_freadlink);
 DEFINE_PUBLIC_ALIAS(removeat,libc_removeat);
 DEFINE_PUBLIC_ALIAS(remove,libc_remove);
 DEFINE_PUBLIC_ALIAS(rename,libc_rename);
@@ -1022,9 +1024,11 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mknodat(int fd, char const *path, mode
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkdirat(int fd, char const *path, mode_t mode) { return libc_mkdirat(fd,path,O_DOSPATH|mode); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkfifoat(int fd, char const *path, mode_t mode) { return libc_mkfifoat(fd,path,O_DOSPATH|mode); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_linkat(int fromfd, char const *from, int tofd, char const *to, int flags) { return libc_linkat(fromfd,from,tofd,to,AT_DOSPATH|flags); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_symlinkat(char const *from, int tofd, char const *to) { return FORWARD_SYSTEM_ERROR(sys_xsymlinkat(from,tofd,to,AT_DOSPATH)); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_symlinkat(char const *from, int tofd, char const *to) { return FORWARD_SYSTEM_ERROR(sys_xfsymlinkat(from,tofd,to,AT_DOSPATH)); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_unlinkat(int fd, char const *name, int flags) { return libc_unlinkat(fd,name,AT_DOSPATH|flags); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_renameat(int oldfd, char const *old, int newfd, char const *new_) { return FORWARD_SYSTEM_ERROR(sys_xrenameat(oldfd,old,newfd,new_,AT_DOSPATH|AT_SYMLINK_NOFOLLOW)); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_renameat(int oldfd, char const *old, int newfd, char const *new_) { return libc_dos_frenameat(oldfd,old,newfd,new_,AT_SYMLINK_NOFOLLOW); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_frenameat(int oldfd, char const *old, int newfd, char const *new_, int flags) { return libc_frenameat(oldfd,old,newfd,new_,AT_DOSPATH|flags); }
+INTERN ATTR_DOSTEXT ssize_t LIBCCALL libc_dos_readlinkat(int fd, char const *__restrict path, char *__restrict buf, size_t len) { return FORWARD_SYSTEM_VALUE(sys_xfreadlinkat(fd,path,buf,len,AT_DOSPATH)); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_removeat(int fd, char const *filename) { return libc_unlinkat(fd,filename,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_remove(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rename(char const *old, char const *new_) { return libc_dos_renameat(AT_FDCWD,old,AT_FDCWD,new_); }
@@ -1032,6 +1036,7 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execv(char const *path, char *const ar
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execvp(char const *file, char *const argv[]) { return libc_dos_execvpe(file,argv,EXEC_CURRENT_ENVIRON); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_link(char const *from, char const *to) { return libc_linkat(AT_FDCWD,from,AT_FDCWD,to,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_symlink(char const *from, char const *to) { return libc_dos_symlinkat(from,AT_FDCWD,to); }
+INTERN ATTR_DOSTEXT ssize_t LIBCCALL libc_dos_readlink(char const *__restrict path, char *__restrict buf, size_t len) { return libc_dos_readlinkat(AT_FDCWD,path,buf,len); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_unlink(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rmdir(char const *path) { return libc_unlinkat(AT_FDCWD,path,AT_DOSPATH|AT_SYMLINK_FOLLOW|AT_REMOVEDIR); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_mkdir(char const *path, mode_t mode) { return libc_mkdir(path,O_DOSPATH|mode); }
@@ -1100,6 +1105,9 @@ libc_dos_execve(char const *path, char *const argv[], char *const envp[]) {
 }
 
 
+/* TODO: Anything now available in true DOS should be
+ *       renamed to '_<NAME>', rather than '.dos.<NAME>'
+ *    >> Future-proofing if any of these ever get added to DOS... */
 DEFINE_PUBLIC_ALIAS(__DSYM(truncate),libc_dos_truncate);
 DEFINE_PUBLIC_ALIAS(__DSYM(truncate64),libc_dos_truncate64);
 DEFINE_PUBLIC_ALIAS(__DSYM(chroot),libc_dos_chroot);
@@ -1120,6 +1128,8 @@ DEFINE_PUBLIC_ALIAS(__DSYM(linkat),libc_dos_linkat);
 DEFINE_PUBLIC_ALIAS(__DSYM(symlinkat),libc_dos_symlinkat);
 DEFINE_PUBLIC_ALIAS(__DSYM(unlinkat),libc_dos_unlinkat);
 DEFINE_PUBLIC_ALIAS(__DSYM(renameat),libc_dos_renameat);
+DEFINE_PUBLIC_ALIAS(__DSYM(frenameat),libc_dos_frenameat);
+DEFINE_PUBLIC_ALIAS(__DSYM(readlinkat),libc_dos_readlinkat);
 DEFINE_PUBLIC_ALIAS(__DSYM(removeat),libc_dos_removeat);
 DEFINE_PUBLIC_ALIAS(__DSYM(remove),libc_dos_remove);
 DEFINE_PUBLIC_ALIAS(__DSYM(rename),libc_dos_rename);
@@ -1133,6 +1143,7 @@ DEFINE_PUBLIC_ALIAS(_execv,libc_dos_execv);
 DEFINE_PUBLIC_ALIAS(_execvp,libc_dos_execvp);
 DEFINE_PUBLIC_ALIAS(__DSYM(link),libc_dos_link);
 DEFINE_PUBLIC_ALIAS(__DSYM(symlink),libc_dos_symlink);
+DEFINE_PUBLIC_ALIAS(__DSYM(readlink),libc_dos_readlink);
 DEFINE_PUBLIC_ALIAS(__DSYM(mkdir),libc_dos_mkdir);
 DEFINE_PUBLIC_ALIAS(__DSYM(mkfifo),libc_dos_mkfifo);
 DEFINE_PUBLIC_ALIAS(__DSYM(mknod),libc_dos_mknod);

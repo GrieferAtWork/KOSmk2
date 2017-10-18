@@ -91,10 +91,15 @@ INTERN ssize_t LIBCCALL libc_xfdname2(int fd, int type, char *buf, size_t bufsiz
  return FORWARD_SYSTEM_ERROR(sys_xfdname(fd,type,buf,bufsize));
 }
 INTERN char *LIBCCALL libc_xfdname(int fd, int type, char *buf, size_t bufsize) {
- ssize_t reqsize;
- if (!buf && bufsize && (buf = (char *)libc_malloc(bufsize)) == NULL) return NULL;
+ ssize_t reqsize; bool is_libc_buffer = false;
+ if (!buf && bufsize && (is_libc_buffer = true,
+      buf = (char *)libc_malloc(bufsize)) == NULL) return NULL;
  reqsize = libc_xfdname2(fd,type,buf,bufsize);
- if (E_ISERR(reqsize)) { SET_ERRNO((errno_t)-reqsize); return NULL; }
+ if (E_ISERR(reqsize)) {
+  if (is_libc_buffer) libc_free(buf);
+  SET_ERRNO((errno_t)-reqsize);
+  return NULL;
+ }
  if ((size_t)reqsize > bufsize) {
   if (!buf) {
    /* Allocate a new buffer dynamically. */
@@ -116,10 +121,15 @@ INTERN char *LIBCCALL libc_xfdname(int fd, int type, char *buf, size_t bufsize) 
 }
 INTERN char *LIBCCALL libc_getcwd(char *buf, size_t bufsize) {
 #ifndef __OPTIMIZE_SIZE__
- ssize_t reqsize;
- if (!buf && bufsize && (buf = (char *)libc_malloc(bufsize)) == NULL) return NULL;
+ ssize_t reqsize; bool is_libc_buffer = false;
+ if (!buf && bufsize && (is_libc_buffer = true,
+      buf = (char *)libc_malloc(bufsize)) == NULL) return NULL;
  reqsize = sys_getcwd(buf,bufsize);
- if (E_ISERR(reqsize)) { SET_ERRNO((errno_t)-reqsize); return NULL; }
+ if (E_ISERR(reqsize)) {
+  if (is_libc_buffer) libc_free(buf);
+  SET_ERRNO((errno_t)-reqsize);
+  return NULL;
+ }
  if ((size_t)reqsize > bufsize) {
   if (!buf) {
    /* Allocate a new buffer dynamically. */

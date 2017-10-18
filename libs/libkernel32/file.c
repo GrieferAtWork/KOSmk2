@@ -34,12 +34,14 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <unicode.h>
 #include <malloc.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <kos/fcntl.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -64,6 +66,10 @@ __LIBC int LIBCCALL dos_creat(char const *dos_file, mode_t mode) ASMNAME("_creat
 __LIBC int ATTR_CDECL dos_openat(int dfd, char const *dos_file, int oflag, ...) ASMNAME(".dos.openat");
 __LIBC int LIBCCALL dos_chmod(char const *dos_file, int mode) ASMNAME("_chmod");
 __LIBC int LIBCCALL dos_unlink(char const *dos_name) ASMNAME("_unlink");
+__LIBC ssize_t LIBCCALL dos_readlink(char const *__restrict path, char *__restrict buf, size_t len) ASMNAME(".dos.readlink");
+__LIBC ssize_t LIBCCALL dos_readlinkat(int fd, char const *__restrict path, char *__restrict buf, size_t len) ASMNAME(".dos.readlinkat");
+__LIBC int LIBCCALL dos_rename(char const *__old, char const *__new) ASMNAME(".dos.rename");
+__LIBC int LIBCCALL dos_unlinkat(int fd, char const *name, int flags) ASMNAME(".dos.unlinkat");
 
 
 STATIC_ASSERT(OF_READ == O_RDONLY);
@@ -350,6 +356,119 @@ K32_GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
 
 
 
+
+/* Extended File APIs. */
+INTERN WINBOOL WINAPI
+K32_ReadFileEx(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
+               LPOVERLAPPED lpOverlapped,
+               LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
+ DWORD read_ok = 0,did_read; OVERLAPPED my_overlap;
+ if (lpOverlapped) my_overlap = *lpOverlapped;
+ while (nNumberOfBytesToRead) {
+  if (!K32_ReadFile(hFile,lpBuffer,nNumberOfBytesToRead,&did_read,
+                    lpOverlapped ? &my_overlap : NULL)) {
+call_error:
+   if (lpCompletionRoutine)
+     (*lpCompletionRoutine)(GET_NT_ERRNO(),read_ok,lpOverlapped);
+   return FALSE;
+  }
+  assert(did_read <= nNumberOfBytesToRead);
+  if (!did_read) { SET_NT_ERRNO(ERROR_BROKEN_PIPE); goto call_error; }
+  if (lpOverlapped) *(u64 *)&my_overlap.Offset += did_read;
+  *(uintptr_t *)&lpBuffer += did_read;
+  nNumberOfBytesToRead -= did_read;
+  read_ok += did_read;
+ }
+ return TRUE;
+}
+INTERN WINBOOL WINAPI
+K32_WriteFileEx(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite,
+               LPOVERLAPPED lpOverlapped,
+               LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
+ DWORD write_ok = 0,did_write; OVERLAPPED my_overlap;
+ if (lpOverlapped) my_overlap = *lpOverlapped;
+ while (nNumberOfBytesToWrite) {
+  if (!K32_WriteFile(hFile,lpBuffer,nNumberOfBytesToWrite,&did_write,
+                     lpOverlapped ? &my_overlap : NULL)) {
+call_error:
+   if (lpCompletionRoutine)
+     (*lpCompletionRoutine)(GET_NT_ERRNO(),write_ok,lpOverlapped);
+   return FALSE;
+  }
+  assert(did_write <= nNumberOfBytesToWrite);
+  if (!did_write) { SET_NT_ERRNO(ERROR_BROKEN_PIPE); goto call_error; }
+  if (lpOverlapped) *(u64 *)&my_overlap.Offset += did_write;
+  *(uintptr_t *)&lpBuffer += did_write;
+  nNumberOfBytesToWrite -= did_write;
+  write_ok += did_write;
+ }
+ return TRUE;
+}
+
+INTERN WINBOOL WINAPI
+K32_BackupRead(HANDLE hFile, LPBYTE lpBuffer, DWORD nNumberOfBytesToRead,
+               LPDWORD lpNumberOfBytesRead, WINBOOL UNUSED(bAbort),
+               WINBOOL UNUSED(bProcessSecurity), LPVOID *UNUSED(lpContext)) {
+ return K32_ReadFile(hFile,lpBuffer,nNumberOfBytesToRead,lpNumberOfBytesRead,NULL);
+}
+INTERN WINBOOL WINAPI
+K32_BackupSeek(HANDLE hFile, DWORD dwLowBytesToSeek, DWORD dwHighBytesToSeek,
+               LPDWORD lpdwLowByteSeeked, LPDWORD lpdwHighByteSeeked, LPVOID *UNUSED(lpContext)) {
+ DWORD error = K32_SetFilePointer(hFile,dwLowBytesToSeek,(PLONG)&dwHighBytesToSeek,SEEK_SET);
+ if (error == INVALID_SET_FILE_POINTER && GET_ERRNO() != EOK)
+     return FALSE;
+ if (lpdwLowByteSeeked) *lpdwLowByteSeeked = error;
+ if (lpdwHighByteSeeked) *lpdwHighByteSeeked = dwHighBytesToSeek;
+ return TRUE;
+}
+INTERN WINBOOL WINAPI
+K32_BackupWrite(HANDLE hFile, LPBYTE lpBuffer, DWORD nNumberOfBytesToWrite,
+                LPDWORD lpNumberOfBytesWritten, WINBOOL UNUSED(bAbort),
+                WINBOOL UNUSED(bProcessSecurity), LPVOID *UNUSED(lpContext)) {
+ return K32_WriteFile(hFile,lpBuffer,nNumberOfBytesToWrite,lpNumberOfBytesWritten,NULL);
+}
+INTERN WINBOOL WINAPI
+K32_ReadFileScatter(HANDLE hFile, FILE_SEGMENT_ELEMENT aSegmentArray[],
+                    DWORD nNumberOfBytesToRead, LPDWORD UNUSED(lpReserved),
+                    LPOVERLAPPED lpOverlapped) {
+ OVERLAPPED my_overlap;
+ if (lpOverlapped) my_overlap = *lpOverlapped;
+ while (nNumberOfBytesToRead) {
+  DWORD partsize = MIN(PAGESIZE,nNumberOfBytesToRead);
+  if (!K32_ReadFileEx(hFile,(LPVOID)aSegmentArray[0].Buffer,partsize,
+                      lpOverlapped ? &my_overlap : NULL,NULL))
+       return FALSE;
+  if (lpOverlapped) *(u64 *)&my_overlap.Offset += partsize;
+  nNumberOfBytesToRead -= partsize;
+  ++aSegmentArray;
+ }
+ return TRUE;
+}
+INTERN WINBOOL WINAPI
+K32_WriteFileGather(HANDLE hFile, FILE_SEGMENT_ELEMENT aSegmentArray[],
+                    DWORD nNumberOfBytesToWrite, LPDWORD lpReserved,
+                    LPOVERLAPPED lpOverlapped) {
+ OVERLAPPED my_overlap;
+ if (lpOverlapped) my_overlap = *lpOverlapped;
+ while (nNumberOfBytesToWrite) {
+  DWORD partsize = MIN(PAGESIZE,nNumberOfBytesToWrite);
+  if (!K32_WriteFileEx(hFile,(LPVOID)aSegmentArray[0].Buffer,partsize,
+                       lpOverlapped ? &my_overlap : NULL,NULL))
+       return FALSE;
+  if (lpOverlapped) *(u64 *)&my_overlap.Offset += partsize;
+  nNumberOfBytesToWrite -= partsize;
+  ++aSegmentArray;
+ }
+ return TRUE;
+}
+
+
+
+
+
+
+
+
 struct find_query {
  DIR              *fq_stream; /*< [1..1][owned] Underlying libc-style directory stream. */
  char             *fq_query;  /*< [1..1][owned] Wildcard-style string matching */
@@ -359,7 +478,7 @@ struct find_query {
 #define FINDHANDLE_ISVALID(p) \
   ((p) && (p) != INVALID_HANDLE_VALUE)
 
-INTDEF HANDLE WINAPI
+INTERN HANDLE WINAPI
 K32_FindFirstFileExA(LPCSTR lpFileName,
                      FINDEX_INFO_LEVELS fInfoLevelId,
                      LPVOID lpFindFileData,
@@ -415,7 +534,7 @@ err2: free(result->fq_query);
 err:  free(result);
  return INVALID_HANDLE_VALUE;
 }
-INTDEF WINBOOL WINAPI
+INTERN WINBOOL WINAPI
 K32_FindNextFileA(HANDLE hFindFile,
                   LPWIN32_FIND_DATAA lpFindFileData) {
  struct find_query *query;
@@ -465,7 +584,7 @@ K32_FindNextFileA(HANDLE hFindFile,
  return TRUE;
 }
 
-INTDEF WINBOOL WINAPI K32_FindClose(HANDLE hFindFile) {
+INTERN WINBOOL WINAPI K32_FindClose(HANDLE hFindFile) {
  struct find_query *query;
  if (!FINDHANDLE_ISVALID(hFindFile)) { SET_ERRNO(EINVAL); return FALSE; }
  query = (struct find_query *)hFindFile;
@@ -491,7 +610,7 @@ K32_FinddataAToFinddataW(LPWIN32_FIND_DATAW dst,
               dst->cAlternateFileName,COMPILER_LENOF(src->cAlternateFileName),
              &state,UNICODE_F_STOPONNUL|UNICODE_F_ALWAYSZEROTERM);
 }
-INTDEF HANDLE WINAPI
+INTERN HANDLE WINAPI
 K32_FindFirstFileExW(LPCWSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId,
                      LPVOID lpFindFileData, FINDEX_SEARCH_OPS fSearchOp,
                      LPVOID lpSearchFilter, DWORD dwAdditionalFlags) {
@@ -506,19 +625,19 @@ K32_FindFirstFileExW(LPCWSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId,
      K32_FinddataAToFinddataW((LPWIN32_FIND_DATAW)lpFindFileData,&temp);
  return result;
 }
-INTDEF WINBOOL WINAPI
+INTERN WINBOOL WINAPI
 K32_FindNextFileW(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData) {
  WIN32_FIND_DATAA temp; WINBOOL result;
  result = K32_FindNextFileA(hFindFile,&temp);
  if (result) K32_FinddataAToFinddataW(lpFindFileData,&temp);
  return result;
 }
-INTDEF HANDLE WINAPI
+INTERN HANDLE WINAPI
 K32_FindFirstFileA(LPCSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData) {
  return K32_FindFirstFileExA(lpFileName,FindExInfoStandard,lpFindFileData,
                              FindExSearchNameMatch,NULL,0);
 }
-INTDEF HANDLE WINAPI
+INTERN HANDLE WINAPI
 K32_FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData) {
  return K32_FindFirstFileExW(lpFileName,FindExInfoStandard,lpFindFileData,
                              FindExSearchNameMatch,NULL,0);
@@ -806,7 +925,7 @@ INTERN WINBOOL WINAPI K32_DeleteFileW(LPCWSTR lpFileName) {
  return result;
 }
 
-INTDEF WINBOOL WINAPI
+INTERN WINBOOL WINAPI
 K32_GetFileAttributesExA(LPCSTR lpFileName,
                          GET_FILEEX_INFO_LEVELS fInfoLevelId,
                          LPVOID lpFileInformation) {
@@ -828,7 +947,7 @@ K32_GetFileAttributesExA(LPCSTR lpFileName,
  return TRUE;
 }
 
-INTDEF DWORD WINAPI
+INTERN DWORD WINAPI
 K32_GetCompressedFileSizeA(LPCSTR lpFileName, LPDWORD lpFileSizeHigh) {
  struct stat64 info;
  if (dos_stat64(lpFileName,&info)) return INVALID_FILE_SIZE;
@@ -837,7 +956,7 @@ K32_GetCompressedFileSizeA(LPCSTR lpFileName, LPDWORD lpFileSizeHigh) {
  return info.st_size32;
 }
 
-INTDEF WINBOOL WINAPI
+INTERN WINBOOL WINAPI
 K32_GetFileAttributesExW(LPCWSTR lpFileName,
                          GET_FILEEX_INFO_LEVELS fInfoLevelId,
                          LPVOID lpFileInformation) {
@@ -849,7 +968,7 @@ K32_GetFileAttributesExW(LPCWSTR lpFileName,
  free(path);
  return result;
 }
-INTDEF DWORD WINAPI
+INTERN DWORD WINAPI
 K32_GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh) {
  DWORD result; char *path;
  if unlikely(!lpFileName) { SET_ERRNO(EINVAL); return FALSE; }
@@ -908,6 +1027,197 @@ end: return result;
 
 
 
+INTERN char *WINAPI K32_MallocFReadLink(int fd) {
+ ssize_t reqsize; size_t bufsize = 256;
+ char *new_buf,*result = (char *)malloc(bufsize);
+ if (!result) return NULL;
+ reqsize = freadlink(fd,result,bufsize);
+ if (reqsize < 0) { SET_ERRNO((errno_t)-reqsize); return NULL; }
+ if ((size_t)reqsize > bufsize) {
+  /* Allocate a new buffer dynamically. */
+  do {
+   bufsize = (size_t)reqsize;
+   new_buf = (char *)realloc(result,bufsize);
+   if unlikely(!new_buf) { free(result); return NULL; }
+   result = new_buf;
+  } while ((reqsize = freadlink(fd,result,bufsize),
+            reqsize >= 0 && (size_t)reqsize != bufsize));
+  if (reqsize < 0) { free(result); return NULL; }
+ } else if ((size_t)reqsize < bufsize) {
+  new_buf = (char *)realloc(result,(size_t)reqsize);
+  if (new_buf) result = new_buf;
+ }
+ return result;
+}
+
+
+/* File Copy/Move APIs. */
+INTERN WINBOOL WINAPI
+K32_CopyFileExA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName,
+                LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData,
+                LPBOOL pbCancel, DWORD dwCopyFlags) {
+ char *wpos,*buffer = NULL; WINBOOL result = FALSE; DWORD status;
+ ssize_t read_part,write_part; size_t write_missing;
+ LARGE_INTEGER transferred = { .QuadPart = 0 };
+ LARGE_INTEGER buffer_size,part_size = { .QuadPart = 0 };
+ struct stat64 source_info; int sfd = -1,dfd = -1;
+ int soflag = O_RDONLY,doflag = O_WRONLY|O_CREAT|O_TRUNC;
+ if (dwCopyFlags&COPY_FILE_COPY_SYMLINK)          soflag |= O_NOFOLLOW;
+ if (dwCopyFlags&COPY_FILE_FAIL_IF_EXISTS)        doflag |= O_EXCL,doflag &= ~O_TRUNC;
+ if (dwCopyFlags&COPY_FILE_NO_BUFFERING)          soflag |= O_DIRECT,doflag |= O_DIRECT;
+ if (dwCopyFlags&COPY_FILE_OPEN_SOURCE_FOR_WRITE) soflag |= O_RDWR;
+ sfd = dos_open(lpExistingFileName,soflag);
+ if (sfd < 0 || fstat64(sfd,&source_info)) goto end;
+ if (dwCopyFlags&COPY_FILE_COPY_SYMLINK &&
+     S_ISLNK(source_info.st_mode)) {
+  /* Copy a symbolic link. */
+  char *target = K32_MallocFReadLink(sfd);
+  if unlikely(!target) goto end;
+  result = !symlink(target,lpNewFileName);
+  free(target);
+  goto end;
+ }
+
+ /* Open a stream to the target. */
+ dfd = dos_open(lpNewFileName,doflag);
+ if (dfd < 0) goto end;
+ if (source_info.st_blksize < 128)
+     source_info.st_blksize = 128;
+ buffer = (char *)malloc(source_info.st_blksize);
+ buffer_size.QuadPart = source_info.st_blksize;
+ if unlikely(!buffer) goto end;
+ if (pbCancel && *pbCancel) goto err_cancel_delete;
+ if (lpProgressRoutine) {
+  status = (*lpProgressRoutine)(*(LARGE_INTEGER *)&source_info.st_size64,
+                                  transferred,buffer_size,part_size,
+                                 (DWORD)sfd,CALLBACK_STREAM_SWITCH,
+                                  FD_TO_HANDLE(sfd),FD_TO_HANDLE(dfd),lpData);
+  if (status == PROGRESS_CANCEL) goto err_cancel_delete;
+  if (status == PROGRESS_STOP) goto err_cancel;
+  if (status == PROGRESS_QUIET) lpProgressRoutine = NULL;
+ }
+
+ /* Transfer data to the target stream. */
+ for (;;) {
+  if (pbCancel && *pbCancel) goto err_cancel_delete;
+  ERROR_REQUEST_ABORTED;
+  read_part = read(sfd,buffer,source_info.st_blksize);
+  if (!read_part) break; /* That was the last part. - we're done! */
+  if (read_part < 0) goto end;
+  assert((size_t)read_part <= source_info.st_blksize);
+  part_size.QuadPart = (LONGLONG)read_part;
+
+  /* Write everything we've just read. */
+  wpos = buffer,write_missing = (size_t)read_part;
+  while (write_missing) {
+   write_part = write(dfd,wpos,write_missing);
+   if (write_part < 0) goto end;
+   if (!write_part) { SET_ERRNO(ENOSPC); goto end; }
+   assert((size_t)write_part <= write_missing);
+   write_missing -= (size_t)write_part;
+   wpos          += (size_t)write_part;
+  }
+
+  /* Track the total amount of data transferred. */
+  transferred.QuadPart += (LONGLONG)read_part;
+
+  /* Execute the user-given progress callback. */
+  if (lpProgressRoutine) {
+   status = (*lpProgressRoutine)(*(LARGE_INTEGER *)&source_info.st_size64,
+                                   transferred,buffer_size,part_size,
+                                  (DWORD)sfd,CALLBACK_CHUNK_FINISHED,
+                                   FD_TO_HANDLE(sfd),FD_TO_HANDLE(dfd),lpData);
+   if (status == PROGRESS_CANCEL) goto err_cancel_delete;
+   if (status == PROGRESS_STOP) goto err_cancel;
+   if (status == PROGRESS_QUIET) lpProgressRoutine = NULL;
+  }
+ }
+ /* Success! */
+ result = TRUE;
+end:
+ free(buffer);
+ if (dfd >= 0) close(dfd);
+ if (sfd >= 0) close(sfd);
+ return result;
+err_cancel_delete:
+ if (dfd >= 0) close(dfd),dfd = -1;
+ dos_unlink(lpNewFileName);
+err_cancel:
+ SET_NT_ERRNO(ERROR_REQUEST_ABORTED);
+ goto end;
+}
+
+INTERN WINBOOL WINAPI
+K32_MoveFileWithProgressA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName,
+                          LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData,
+                          DWORD dwFlags) {
+ bool did_delete_target = false;
+again:
+ if (!dos_rename(lpExistingFileName,lpNewFileName)) return TRUE;
+ switch (GET_ERRNO()) {
+
+ {
+  DWORD copy_flags;
+ case ENXIO:
+  /* Can't move between different superblocks. */
+  if (!(dwFlags&MOVEFILE_COPY_ALLOWED)) return FALSE;
+  copy_flags = COPY_FILE_COPY_SYMLINK;
+  if (!(dwFlags&MOVEFILE_REPLACE_EXISTING)) copy_flags |= COPY_FILE_FAIL_IF_EXISTS;
+  if (dwFlags&MOVEFILE_WRITE_THROUGH) copy_flags |= COPY_FILE_NO_BUFFERING;
+  if (!K32_CopyFileExA(lpExistingFileName,lpNewFileName,lpProgressRoutine,lpData,NULL,copy_flags)) return FALSE;
+  if (dos_unlink(lpExistingFileName)) { dos_unlink(lpNewFileName); return FALSE; }
+  return TRUE;
+ } break;
+
+ case EEXIST:
+  /* Target file already exists. */
+  if (!(dwFlags&MOVEFILE_REPLACE_EXISTING) &&
+      !did_delete_target) return FALSE;
+  if (dos_unlinkat(AT_FDCWD,lpNewFileName,AT_REMOVEDIR|AT_REMOVEREG))
+      return FALSE;
+  did_delete_target = true;
+  goto again;
+
+ default: break;
+ }
+ return FALSE;
+}
+
+INTERN WINBOOL WINAPI
+K32_CopyFileExW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName,
+                LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData,
+                LPBOOL pbCancel, DWORD dwCopyFlags) {
+ WINBOOL result = FALSE; char *oldname,*newname;
+ if (!lpExistingFileName || !lpNewFileName) { SET_ERRNO(EINVAL); goto end; }
+ if ((oldname = uni_utf16to8m(lpExistingFileName)) == NULL) goto end;
+ if ((newname = uni_utf16to8m(lpNewFileName)) == NULL) goto end2;
+ result = K32_CopyFileExA(oldname,newname,lpProgressRoutine,lpData,pbCancel,dwCopyFlags);
+ free(newname);
+end2: free(oldname);
+end: return result;
+}
+INTERN WINBOOL WINAPI
+K32_MoveFileWithProgressW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName,
+                          LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData,
+                          DWORD dwFlags) {
+ WINBOOL result = FALSE; char *oldname,*newname;
+ if (!lpExistingFileName || !lpNewFileName) { SET_ERRNO(EINVAL); goto end; }
+ if ((oldname = uni_utf16to8m(lpExistingFileName)) == NULL) goto end;
+ if ((newname = uni_utf16to8m(lpNewFileName)) == NULL) goto end2;
+ result = K32_MoveFileWithProgressA(oldname,newname,lpProgressRoutine,lpData,dwFlags);
+ free(newname);
+end2: free(oldname);
+end: return result;
+}
+INTERN WINBOOL WINAPI K32_CopyFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, WINBOOL bFailIfExists) { return K32_CopyFileExA(lpExistingFileName,lpNewFileName,NULL,NULL,NULL,bFailIfExists ? COPY_FILE_FAIL_IF_EXISTS : 0); }
+INTERN WINBOOL WINAPI K32_CopyFileW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, WINBOOL bFailIfExists) { return K32_CopyFileExW(lpExistingFileName,lpNewFileName,NULL,NULL,NULL,bFailIfExists ? COPY_FILE_FAIL_IF_EXISTS : 0); }
+INTERN WINBOOL WINAPI K32_MoveFileExA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, DWORD dwFlags) { return K32_MoveFileWithProgressA(lpExistingFileName,lpNewFileName,NULL,NULL,dwFlags); }
+INTERN WINBOOL WINAPI K32_MoveFileExW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, DWORD dwFlags) { return K32_MoveFileWithProgressW(lpExistingFileName,lpNewFileName,NULL,NULL,dwFlags); }
+INTERN WINBOOL WINAPI K32_MoveFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName) { return K32_MoveFileExA(lpExistingFileName,lpNewFileName,0); }
+INTERN WINBOOL WINAPI K32_MoveFileW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName) { return K32_MoveFileExW(lpExistingFileName,lpNewFileName,0); }
+
+
+
 
 
 
@@ -943,6 +1253,15 @@ DEFINE_PUBLIC_ALIAS(GetFileInformationByHandle,K32_GetFileInformationByHandle);
 DEFINE_PUBLIC_ALIAS(GetFileType,K32_GetFileType);
 DEFINE_PUBLIC_ALIAS(GetFileSize,K32_GetFileSize);
 DEFINE_PUBLIC_ALIAS(GetFileSizeEx,K32_GetFileSizeEx);
+
+/* Extended File APIs. */
+DEFINE_PUBLIC_ALIAS(ReadFileEx,K32_ReadFileEx);
+DEFINE_PUBLIC_ALIAS(WriteFileEx,K32_WriteFileEx);
+DEFINE_PUBLIC_ALIAS(BackupRead,K32_BackupRead);
+DEFINE_PUBLIC_ALIAS(BackupSeek,K32_BackupSeek);
+DEFINE_PUBLIC_ALIAS(BackupWrite,K32_BackupWrite);
+DEFINE_PUBLIC_ALIAS(ReadFileScatter,K32_ReadFileScatter);
+DEFINE_PUBLIC_ALIAS(WriteFileGather,K32_WriteFileGather);
 
 /* Directory scanning APIs. */
 DEFINE_PUBLIC_ALIAS(FindFirstFileExA,K32_FindFirstFileExA);
@@ -1004,6 +1323,17 @@ DEFINE_PUBLIC_ALIAS(CreateSymbolicLinkW,K32_CreateSymbolicLinkW);
 DEFINE_PUBLIC_ALIAS(CreateHardLinkA,K32_CreateHardLinkA);
 DEFINE_PUBLIC_ALIAS(CreateHardLinkW,K32_CreateHardLinkW);
 
+/* File Copy/Move APIs. */
+DEFINE_PUBLIC_ALIAS(CopyFileA,K32_CopyFileA);
+DEFINE_PUBLIC_ALIAS(CopyFileW,K32_CopyFileW);
+DEFINE_PUBLIC_ALIAS(CopyFileExA,K32_CopyFileExA);
+DEFINE_PUBLIC_ALIAS(CopyFileExW,K32_CopyFileExW);
+DEFINE_PUBLIC_ALIAS(MoveFileA,K32_MoveFileA);
+DEFINE_PUBLIC_ALIAS(MoveFileW,K32_MoveFileW);
+DEFINE_PUBLIC_ALIAS(MoveFileExA,K32_MoveFileExA);
+DEFINE_PUBLIC_ALIAS(MoveFileExW,K32_MoveFileExW);
+DEFINE_PUBLIC_ALIAS(MoveFileWithProgressA,K32_MoveFileWithProgressA);
+DEFINE_PUBLIC_ALIAS(MoveFileWithProgressW,K32_MoveFileWithProgressW);
 
 DECL_END
 

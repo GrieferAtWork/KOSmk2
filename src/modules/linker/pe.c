@@ -150,8 +150,8 @@ pe_import_symbol_impl(struct instance *__restrict inst,
                                              sym_hashname((char *)entry->Name+6));
    if (sym.ms_type != MODSYM_TYPE_INVALID) return sym.ms_addr;
   } else {
-   /* NOTE: We _MUST_ use alloca(), because accessing the name again may SEGFAULT,
-    *       so we can't use malloc()-ated buffers here. */
+   /* NOTE: We _MUST_ use alloca(), because accessing the name again may
+    *       SEGFAULT, so we can't use malloc()-ated buffers here. */
    char *buffer = (char *)alloca((name_length+6)*sizeof(char));
    memcpy(buffer,".dos.",5*sizeof(char));
    memcpy(buffer+5,entry->Name,name_length*sizeof(char));

@@ -25,6 +25,7 @@
 
 DECL_BEGIN
 
+
 #define HANDLE_TYPEMASK  0xf000
 /* NOTE: Don't use types 0xf and 0x0, because they
  *       overlap with INVALID_HANDLE_VALUE and NULL. */
@@ -42,6 +43,7 @@ DECL_BEGIN
 
 INTERN DWORD   WINAPI K32_GetFileAttributesFromUnixMode(mode_t val);
 INTERN oflag_t WINAPI K32_DesiredAccessToOflags(DWORD dwDesiredAccess);
+INTERN char   *WINAPI K32_MallocFReadLink(int fd);
 
 /* 16-bit compatibility File API.
  * HINT: These directly map to the underlying file descriptors! */
@@ -74,6 +76,15 @@ INTDEF WINBOOL WINAPI K32_GetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_F
 INTDEF DWORD   WINAPI K32_GetFileType(HANDLE hFile);
 INTDEF DWORD   WINAPI K32_GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh);
 INTDEF WINBOOL WINAPI K32_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize);
+
+/* Extended File APIs. */
+INTDEF WINBOOL WINAPI K32_ReadFileEx(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPOVERLAPPED lpOverlapped, LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
+INTDEF WINBOOL WINAPI K32_WriteFileEx(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPOVERLAPPED lpOverlapped, LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
+INTDEF WINBOOL WINAPI K32_BackupRead(HANDLE hFile, LPBYTE lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, WINBOOL bAbort, WINBOOL bProcessSecurity, LPVOID *lpContext);
+INTDEF WINBOOL WINAPI K32_BackupSeek(HANDLE hFile, DWORD dwLowBytesToSeek, DWORD dwHighBytesToSeek, LPDWORD lpdwLowByteSeeked, LPDWORD lpdwHighByteSeeked, LPVOID *lpContext);
+INTDEF WINBOOL WINAPI K32_BackupWrite(HANDLE hFile, LPBYTE lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, WINBOOL bAbort, WINBOOL bProcessSecurity, LPVOID *lpContext);
+INTDEF WINBOOL WINAPI K32_ReadFileScatter(HANDLE hFile, FILE_SEGMENT_ELEMENT aSegmentArray[], DWORD nNumberOfBytesToRead, LPDWORD lpReserved, LPOVERLAPPED lpOverlapped);
+INTDEF WINBOOL WINAPI K32_WriteFileGather(HANDLE hFile, FILE_SEGMENT_ELEMENT aSegmentArray[], DWORD nNumberOfBytesToWrite, LPDWORD lpReserved, LPOVERLAPPED lpOverlapped);
 
 /* Directory scanning APIs. */
 INTDEF HANDLE  WINAPI K32_FindFirstFileExA(LPCSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags);
@@ -134,6 +145,18 @@ INTDEF BOOLEAN WINAPI K32_CreateSymbolicLinkA(LPSTR lpSymLinkFileName, LPSTR lpT
 INTDEF BOOLEAN WINAPI K32_CreateSymbolicLinkW(LPWSTR lpSymLinkFileName, LPWSTR lpTargetFileName, DWORD dwFlags);
 INTDEF WINBOOL WINAPI K32_CreateHardLinkA(LPCSTR lpFileName, LPCSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
 INTDEF WINBOOL WINAPI K32_CreateHardLinkW(LPCWSTR lpFileName, LPCWSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+
+/* File Copy/Move APIs. */
+INTDEF WINBOOL WINAPI K32_CopyFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, WINBOOL bFailIfExists);
+INTDEF WINBOOL WINAPI K32_CopyFileW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, WINBOOL bFailIfExists);
+INTDEF WINBOOL WINAPI K32_CopyFileExA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, LPBOOL pbCancel, DWORD dwCopyFlags);
+INTDEF WINBOOL WINAPI K32_CopyFileExW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, LPBOOL pbCancel, DWORD dwCopyFlags);
+INTDEF WINBOOL WINAPI K32_MoveFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName);
+INTDEF WINBOOL WINAPI K32_MoveFileW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName);
+INTDEF WINBOOL WINAPI K32_MoveFileExA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, DWORD dwFlags);
+INTDEF WINBOOL WINAPI K32_MoveFileExW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, DWORD dwFlags);
+INTDEF WINBOOL WINAPI K32_MoveFileWithProgressA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, DWORD dwFlags);
+INTDEF WINBOOL WINAPI K32_MoveFileWithProgressW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, DWORD dwFlags);
 
 
 DECL_END

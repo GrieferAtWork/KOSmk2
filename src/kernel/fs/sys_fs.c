@@ -471,11 +471,13 @@ SYSCALL_DEFINE5(fchownat,int,dfd,USER char const *,filename,uid_t,user,gid_t,gro
                         flag&AT_SYMLINK_NOFOLLOW);
 }
 
-SYSCALL_DEFINE4(readlinkat,int,dfd,USER char const *,path,USER char *,buf,size_t,len) {
+SYSCALL_DEFINE5(xfreadlinkat,int,dfd,USER char const *,path,
+                USER char *,buf,size_t,len,int,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *cwd; ssize_t result;
  struct dentry *link_file;
+ (void)flags; /* TODO: AT_DOSPATH */
  FSACCESS_SETUSER(walker.dw_access);
  walker.dw_nlink    = 0;
  walker.dw_nofollow = true;
@@ -500,6 +502,10 @@ SYSCALL_DEFINE4(readlinkat,int,dfd,USER char const *,path,USER char *,buf,size_t
 end:
  task_endcrit();
  return result;
+}
+SYSCALL_DEFINE4(readlinkat,int,dfd,USER char const *,path,
+                           USER char *,buf,size_t,len) {
+ return SYSC_xfreadlinkat(dfd,path,buf,len,0);
 }
 
 #define NO_STAT 0
@@ -706,7 +712,7 @@ end:
  task_endcrit();
  return result;
 }
-SYSCALL_DEFINE4(xsymlinkat,USER char const *,oldname,int,newdfd,
+SYSCALL_DEFINE4(xfsymlinkat,USER char const *,oldname,int,newdfd,
                 USER char const *,newname,int,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
@@ -745,7 +751,7 @@ end: task_endcrit();
  return result;
 }
 SYSCALL_DEFINE3(symlinkat,USER char const *,oldname,int,newdfd,USER char const *,newname) {
- return SYSC_xsymlinkat(oldname,newdfd,newname,0);
+ return SYSC_xfsymlinkat(oldname,newdfd,newname,0);
 }
 
 SYSCALL_DEFINE5(linkat,int,olddfd,USER char const *,oldname,

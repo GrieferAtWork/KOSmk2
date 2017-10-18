@@ -40,6 +40,9 @@ INTDEF ATTR_NORETURN void WINAPI K32_FreeLibraryAndExitThread(HMODULE hLibModule
 INTDEF WINBOOL WINAPI K32_DisableThreadLibraryCalls(HMODULE hLibModule);
 INTDEF FARPROC WINAPI K32_GetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 
+/* Command execution. */
+INTDEF UINT WINAPI K32_WinExec(LPCSTR lpCmdLine, UINT uCmdShow);
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBKERNEL32_LINKER_H */

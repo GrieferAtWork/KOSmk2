@@ -803,6 +803,7 @@ DEFINE_PUBLIC_ALIAS(DeleteCriticalSection,K32_DeleteCriticalSection);
 /* Error code APIs. */
 DEFINE_PUBLIC_ALIAS(GetLastError,K32_GetLastError);
 DEFINE_PUBLIC_ALIAS(SetLastError,K32_SetLastError);
+DEFINE_PUBLIC_ALIAS(RestoreLastError,K32_SetLastError);
 
 /* Environment strings API. */
 DEFINE_PUBLIC_ALIAS(GetEnvironmentStrings,K32_GetEnvironmentStringsA); /* Yes! This one is called 'GetEnvironmentStrings', not 'GetEnvironmentStringsA' */

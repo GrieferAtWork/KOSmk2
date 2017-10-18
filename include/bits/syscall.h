@@ -123,7 +123,7 @@ for (local line: fp) {
 #define SYS_xfexecve __NR_xfexecve
 #define SYS_xfchdirat __NR_xfchdirat
 #define SYS_xrenameat __NR_xrenameat
-#define SYS_xsymlinkat __NR_xsymlinkat
+#define SYS_xfsymlinkat __NR_xfsymlinkat
 #define SYS_xdlopen __NR_xdlopen
 #define SYS_xfdlopen __NR_xfdlopen
 #define SYS_xdlclose __NR_xdlclose

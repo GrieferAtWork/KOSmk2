@@ -17,7 +17,10 @@
  * 3. This notice may not be removed or altered from any source distribution. *
  */
 #ifndef PAIR
-#error "Must '#define PAIR(kos,dos,dos2) ...' before including this file"
+#error "Must '#define PAIR(kos,dos,nt) ...' before including this file"
+#endif
+#ifndef NT_ALIAS
+#define NT_ALIAS(nt,kos,dos)
 #endif
 
 PAIR(EOK,             0,                    ERROR_SUCCESS)
@@ -32,7 +35,7 @@ PAIR(ENOEXEC,         __DOS_ENOEXEC,        ERROR_BAD_FORMAT)
 PAIR(EBADF,           __DOS_EBADF,          ERROR_INVALID_HANDLE)
 PAIR(ECHILD,          __DOS_ECHILD,         ERROR_SIGNAL_PENDING)
 PAIR(EAGAIN,          __DOS_EAGAIN,         NT_ERRNO_NOT_SUPPORTED)
-PAIR(ENOMEM,          __DOS_ENOMEM,         ERROR_NOT_ENOUGH_MEMORY)
+PAIR(ENOMEM,          __DOS_ENOMEM,         ERROR_OUTOFMEMORY)
 PAIR(EACCES,          __DOS_EACCES,         ERROR_ACCESS_DENIED)		 
 PAIR(EFAULT,          __DOS_EFAULT,         ERROR_INVALID_ADDRESS)
 PAIR(EBUSY,           __DOS_EBUSY,          ERROR_BUSY)
@@ -57,8 +60,8 @@ PAIR(ENOLCK,          __DOS_ENOLCK,         ERROR_NOT_LOCKED)
 PAIR(ENOSYS,          __DOS_ENOSYS,         ERROR_UNKNOWN_FEATURE)
 PAIR(ENOTEMPTY,       __DOS_ENOTEMPTY,      ERROR_DIR_NOT_EMPTY)
 PAIR(EINVAL,          __DOS_EINVAL,         ERROR_INVALID_PARAMETER)
-PAIR(ERANGE,          __DOS_ERANGE,         ERROR_BUFFER_OVERFLOW)
-PAIR(EILSEQ,          __DOS_EILSEQ,         NT_ERRNO_NOT_SUPPORTED)
+PAIR(ERANGE,          __DOS_ERANGE,         ERROR_INSUFFICIENT_BUFFER)
+PAIR(EILSEQ,          __DOS_EILSEQ,         ERROR_NO_UNICODE_TRANSLATION)
 //PAIR(STRUNCATE,     __DOS_STRUNCATE,      NT_ERRNO_NOT_SUPPORTED)
 PAIR(EADDRINUSE,      __DOS_EADDRINUSE,     WSAEADDRINUSE)
 PAIR(EADDRNOTAVAIL,   __DOS_EADDRNOTAVAIL,  WSAEADDRNOTAVAIL)
@@ -102,4 +105,8 @@ PAIR(ETIMEDOUT,       __DOS_ETIMEDOUT,      WSAETIMEDOUT)
 PAIR(ETXTBSY,         __DOS_ETXTBSY,        ERROR_PIPE_BUSY)
 PAIR(EWOULDBLOCK,     __DOS_EWOULDBLOCK,    NT_ERRNO_NOT_SUPPORTED)
 
+NT_ALIAS(ERROR_INVALID_FLAGS,EINVAL,__DOS_EINVAL)
+NT_ALIAS(ERROR_NOT_ENOUGH_MEMORY,ENOMEM,__DOS_ENOMEM)
+
+#undef NT_ALIAS
 #undef PAIR

@@ -45,6 +45,9 @@ INTDEF LPWSTR WINAPI K32_lstrcatW(LPWSTR lpString1, LPCWSTR lpString2);
 INTDEF int WINAPI K32_CompareStringA(LCID Locale, DWORD dwCmpFlags, LPCSTR lpString1, int cchCount1, LPCSTR lpString2, int cchCount2);
 INTDEF int WINAPI K32_CompareStringW(LCID Locale, DWORD dwCmpFlags, LPCWSTR lpString1, int cchCount1, LPCWSTR lpString2, int cchCount2);
 
+INTDEF int WINAPI K32_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte, LPWSTR lpWideCharStr, int cchWideChar);
+INTDEF int WINAPI K32_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar, LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar, LPBOOL lpUsedDefaultChar);
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBKERNEL32_STRING_H */

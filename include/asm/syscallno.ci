@@ -276,8 +276,10 @@ __XSYSCALL(__NR_xfexecve,sys_xfexecve)
 __XSYSCALL(__NR_xfchdirat,sys_xfchdirat)
 #define __NR_xrenameat    0x8000000a
 __XSYSCALL(__NR_xrenameat,sys_xrenameat)
-#define __NR_xsymlinkat   0x8000000b
-__XSYSCALL(__NR_xsymlinkat,sys_xsymlinkat)
+#define __NR_xfsymlinkat  0x8000000b
+__XSYSCALL(__NR_xfsymlinkat,sys_xfsymlinkat)
+#define __NR_xfreadlinkat 0x8000000c
+__XSYSCALL(__NR_xfreadlinkat,sys_xfreadlinkat)
 
 /* Dynamic linker system calls.
  * NOTE: Library handles and simply the instance base pointer,
