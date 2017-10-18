@@ -29,6 +29,13 @@
  *   (So there's no need to go looking for them...)
  */
 
+#ifndef __INTELLISENSE__
+#error "This header is only meant for syntax highlighting. - Don't let your real compiler see it!"
+#endif
+
+#ifndef __cplusplus
+#error "Syntax highlighting depends on C++ features being available"
+#endif
 
 /* Get rid of MSVC's predefined macros */
 #undef WIN32
@@ -72,9 +79,7 @@
 #define __GNUC_MINOR__      2
 #define __GNUC_PATCH__      0
 #define __GNUC_PATCHLEVEL__ 0
-#ifdef __cplusplus
 #define __GXX_EXPERIMENTAL_CXX0X__ 1
-#endif
 
 #define __INT8_TYPE__           signed __int8
 #define __INT16_TYPE__          signed __int16
@@ -220,8 +225,8 @@
 #define __INTMAX_C(c)  c##i64
 #define __UINTMAX_C(c) c##ui64
 
-#define __CHAR16_TYPE__     ____INTELLISENSE_char16_t
-#define __CHAR32_TYPE__     ____INTELLISENSE_char32_t
+#define __CHAR16_TYPE__     ::__int::____INTELLISENSE_char16_t
+#define __CHAR32_TYPE__     ::__int::____INTELLISENSE_char32_t
 #define __WCHAR_TYPE__      wchar_t
 #define __WINT_TYPE__       unsigned int
 #define __SIZEOF_WCHAR_T__  2 /* Psht... */
@@ -618,7 +623,7 @@ enum{ /* Highlight attributes in a different color */
 #define ____INTELLISENSE_HASATTR___weak__               1
 #define __has_attribute(x) ____INTELLISENSE_IS_DEFINED(____INTELLISENSE_HASATTR_##x)
 
-
+namespace __int {
 template<class T> struct ____INTELLISENSE_remlval { typedef T __type; };
 template<class T> struct ____INTELLISENSE_remlval<T &> { typedef T __type; };
 struct ____INTELLISENSE_void_helper {};
@@ -633,9 +638,9 @@ template<class T, class ...Args> T (__fastcall ____INTELLISENSE_typeof_helper(T 
 template<class T, class ...Args> T (__fastcall ____INTELLISENSE_typeof_helper(T (__fastcall &)(Args...,...)))(Args...,...);
 template<class T, class ...Args> T (__stdcall ____INTELLISENSE_typeof_helper(T (__stdcall &)(Args...)))(Args...);
 template<class T, class ...Args> T (__stdcall ____INTELLISENSE_typeof_helper(T (__stdcall &)(Args...,...)))(Args...,...);
-#define typeof(...)     decltype(::____INTELLISENSE_typeof_helper(((__VA_ARGS__),::____INTELLISENSE_void_helper())))
-#define __typeof(...)   decltype(::____INTELLISENSE_typeof_helper(((__VA_ARGS__),::____INTELLISENSE_void_helper())))
-#define __typeof__(...) decltype(::____INTELLISENSE_typeof_helper(((__VA_ARGS__),::____INTELLISENSE_void_helper())))
+#define typeof(...)     decltype(::__int::____INTELLISENSE_typeof_helper(((__VA_ARGS__),::__int::____INTELLISENSE_void_helper())))
+#define __typeof(...)   decltype(::__int::____INTELLISENSE_typeof_helper(((__VA_ARGS__),::__int::____INTELLISENSE_void_helper())))
+#define __typeof__(...) decltype(::__int::____INTELLISENSE_typeof_helper(((__VA_ARGS__),::__int::____INTELLISENSE_void_helper())))
 #define __auto_type     auto
 
 template<class T> struct ____INTELLISENSE_remcv {typedef T __type; };
@@ -647,7 +652,7 @@ template<class T1> struct ____INTELLISENSE_sametype_impl<T1,T1> {enum{__val=true
 template<class T1, class T2> struct ____INTELLISENSE_sametype:
  ____INTELLISENSE_sametype_impl<typename ____INTELLISENSE_remcv<T1>::__type,
                                typename ____INTELLISENSE_remcv<T2>::__type>{};
-#define __builtin_types_compatible_p(...) ____INTELLISENSE_sametype< __VA_ARGS__ >::__val
+#define __builtin_types_compatible_p(...) (::__int::____INTELLISENSE_sametype< __VA_ARGS__ >::__val)
 
 template<class T> struct ____INTELLISENSE_classify {
  enum{__val = __is_enum(T) ? 3 :
@@ -679,7 +684,8 @@ template<class T, class ...Args> struct ____INTELLISENSE_classify<T(Args...)> {e
 template<class T, class ...Args> struct ____INTELLISENSE_classify<T(Args...,...)> {enum{__val=10};};
 template<class T, class C, class ...Args> struct ____INTELLISENSE_classify<T(C::*)(Args...)> {enum{__val=11};};
 template<class T, class C, class ...Args> struct ____INTELLISENSE_classify<T(C::*)(Args...,...)> {enum{__val=11};};
-#define __builtin_classify_type(...) ____INTELLISENSE_classify<__typeof__(__VA_ARGS__)>::__val
+#define __builtin_classify_type(...) (::__int::____INTELLISENSE_classify<__typeof__(__VA_ARGS__)>::__val)
+}
 
 int __builtin_va_arg_pack(void);
 __declspec(noreturn) void __builtin_abort(void);
@@ -758,19 +764,23 @@ bool __builtin_umulll_overflow(unsigned long long int a, unsigned long long int 
 #if 1
 #define __builtin_choose_expr(c,tt,ff) ((c) ? (tt) : (ff))
 #else
+namespace __int {
 template<bool> struct ____INTELLISENSE_static_if_helper {};
 template<> struct ____INTELLISENSE_static_if_helper<true> { bool __is_true__(); };
+}
 #define __builtin_choose_expr(c,tt,ff) \
-     __if_exists(::____INTELLISENSE_static_if_helper<((c))>::__is_true__){tt} \
- __if_not_exists(::____INTELLISENSE_static_if_helper<((c))>::__is_true__){ff}
+     __if_exists(::__int::____INTELLISENSE_static_if_helper<((c))>::__is_true__){tt} \
+ __if_not_exists(::__int::____INTELLISENSE_static_if_helper<((c))>::__is_true__){ff}
 #endif
 
 typedef char *__builtin_va_list,*__gnuc_va_list;
 template<class T> void __builtin_va_start(__builtin_va_list &ap, T &before_start);
 void __builtin_va_end(__builtin_va_list &ap);
 void __builtin_va_copy(__builtin_va_list &dst_ap, __builtin_va_list &src_ap);
+namespace __int {
 template<class T> T ____INTELLISENSE_va_arg_heper(__builtin_va_list &);
-#define __builtin_va_arg(ap,T)   ____INTELLISENSE_va_arg_heper< T >(ap)
+}
+#define __builtin_va_arg(ap,T)   (::__int::____INTELLISENSE_va_arg_heper< T >(ap))
 
 
 #define __ATOMIC_RELAXED 0
@@ -793,29 +803,33 @@ template<class T> T ____INTELLISENSE_va_arg_heper(__builtin_va_list &);
 #define __GCC_ATOMIC_LLONG_LOCK_FREE    1
 #define __GCC_ATOMIC_POINTER_LOCK_FREE  1
 
+
+namespace __int {
 template<class T, class S> struct ____INTELLISENSE_enableif_nc { typedef S __type; };
 template<class T, class S> struct ____INTELLISENSE_enableif_nc<T const,S> {};
+}
 
-template<class type>          typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_load_n(type const volatile *ptr, int memorder);
-template<class type>          typename ____INTELLISENSE_enableif_nc<type,void>::__type __atomic_load(type const volatile *ptr, type *ret, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,void>::__type __atomic_store_n(type volatile *ptr, S val, int memorder);
-template<class type>          typename ____INTELLISENSE_enableif_nc<type,void>::__type __atomic_store(type volatile *ptr, type *val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_exchange_n(type volatile *ptr, S val, int memorder);
-template<class type>          typename ____INTELLISENSE_enableif_nc<type,void>::__type __atomic_exchange(type volatile *ptr, type *val, type *ret, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,bool>::__type __atomic_compare_exchange_n(type volatile *ptr, type *expected, S desired, bool weak, int success_memorder, int failure_memorder);
-template<class type>          typename ____INTELLISENSE_enableif_nc<type,bool>::__type __atomic_compare_exchange(type volatile *ptr, type *expected, type *desired, bool weak, int success_memorder, int failure_memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_add_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_sub_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_and_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_xor_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_or_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_nand_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_add(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_sub(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_and(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_xor(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_or(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_nand(type volatile *ptr, S val, int memorder);
+template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_load_n(type const volatile *ptr, int memorder);
+template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,void>::__type __atomic_load(type const volatile *ptr, type *ret, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,void>::__type __atomic_store_n(type volatile *ptr, S val, int memorder);
+template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,void>::__type __atomic_store(type volatile *ptr, type *val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_exchange_n(type volatile *ptr, S val, int memorder);
+template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,void>::__type __atomic_exchange(type volatile *ptr, type *val, type *ret, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,bool>::__type __atomic_compare_exchange_n(type volatile *ptr, type *expected, S desired, bool weak, int success_memorder, int failure_memorder);
+template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,bool>::__type __atomic_compare_exchange(type volatile *ptr, type *expected, type *desired, bool weak, int success_memorder, int failure_memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_add_fetch(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_sub_fetch(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_and_fetch(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_xor_fetch(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_or_fetch(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_nand_fetch(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_add(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_sub(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_and(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_xor(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_or(type volatile *ptr, S val, int memorder);
+template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_nand(type volatile *ptr, S val, int memorder);
+
 bool __atomic_test_and_set(void *ptr, int memorder);
 void __atomic_clear(bool *ptr, int memorder);
 void __atomic_thread_fence(int memorder);
@@ -843,6 +857,7 @@ template<class type> type __sync_lock_test_and_set(type *ptr, type value, ...);
 template<class type> void __sync_lock_release(type *ptr, ...);
 
 
+namespace __int {
 class ____INTELLISENSE_char16_t {
  unsigned __int16 __v;
 public:
@@ -909,6 +924,7 @@ __UINT64_TYPE__ ____INTELLISENSE_BSWAP_LE2H64(____INTELLISENSE_integer<1234,__UI
 __UINT16_TYPE__ ____INTELLISENSE_BSWAP_BE2H16(____INTELLISENSE_integer<4321,__UINT16_TYPE__> x);
 __UINT32_TYPE__ ____INTELLISENSE_BSWAP_BE2H32(____INTELLISENSE_integer<4321,__UINT32_TYPE__> x);
 __UINT64_TYPE__ ____INTELLISENSE_BSWAP_BE2H64(____INTELLISENSE_integer<4321,__UINT64_TYPE__> x);
+}
 
 
 /* Sparse emulation */

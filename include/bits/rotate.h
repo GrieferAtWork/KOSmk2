@@ -25,6 +25,8 @@
 
 __SYSDECL_BEGIN
 
+#define __constant_rol_8(x,shift)  (((x)>>(0x8-((shift)&0x07)))|((x)<<((shift)&0x07)))
+#define __constant_ror_8(x,shift)  (((x)<<(0x8-((shift)&0x07)))|((x)>>((shift)&0x07)))
 #define __constant_rol_16(x,shift) (((x)>>(0x10-((shift)&0x0f)))|((x)<<((shift)&0x0f)))
 #define __constant_ror_16(x,shift) (((x)<<(0x10-((shift)&0x0f)))|((x)>>((shift)&0x0f)))
 #define __constant_rol_32(x,shift) (((x)>>(0x20-((shift)&0x1f)))|((x)<<((shift)&0x1f)))
@@ -32,10 +34,12 @@ __SYSDECL_BEGIN
 #define __constant_rol_64(x,shift) (((x)>>(0x40-((shift)&0x3f)))|((x)<<((shift)&0x3f)))
 #define __constant_ror_64(x,shift) (((x)<<(0x40-((shift)&0x3f)))|((x)>>((shift)&0x3f)))
 
-/* TODO (Use rol/ror instructions) */
+/* TODO: Use rol/ror instructions */
+#define __rol_8(x,shift)  __constant_rol_8(x,shift)
 #define __rol_16(x,shift) __constant_rol_16(x,shift)
 #define __rol_32(x,shift) __constant_rol_32(x,shift)
 #define __rol_64(x,shift) __constant_rol_64(x,shift)
+#define __ror_8(x,shift)  __constant_ror_8(x,shift)
 #define __ror_16(x,shift) __constant_ror_16(x,shift)
 #define __ror_32(x,shift) __constant_ror_32(x,shift)
 #define __ror_64(x,shift) __constant_ror_64(x,shift)

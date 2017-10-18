@@ -44,8 +44,8 @@ __SYSDECL_BEGIN
 
 #if defined(__x86_64__) || \
    (defined(__FLT_EVAL_METHOD__) && __FLT_EVAL_METHOD__ == 0)
-typedef float  float_t;  /*< `float' expressions are evaluated as `float'.  */
-typedef double double_t; /*< `double' expressions are evaluated as `double'.  */
+typedef float       float_t;  /*< `float' expressions are evaluated as `float'.  */
+typedef double      double_t; /*< `double' expressions are evaluated as `double'.  */
 #else
 typedef long double float_t;  /*< `float' expressions are evaluated as `long double'.  */
 typedef long double double_t; /*< `double' expressions are evaluated as `long double'.  */

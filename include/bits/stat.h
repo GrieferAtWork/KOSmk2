@@ -26,6 +26,18 @@
 
 __SYSDECL_BEGIN
 
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("stat")
+#ifdef __USE_LARGEFILE64
+#pragma push_macro("stat64")
+#endif /* __USE_LARGEFILE64 */
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
+#undef stat
+#ifdef __USE_LARGEFILE64
+#undef stat64
+#endif /* __USE_LARGEFILE64 */
+
 #define __S_IFMT           0170000 /*< These bits determine file type. */
 #define __S_IFDIR          0040000 /*< Directory. */
 #define __S_IFCHR          0020000 /*< Character device. */
@@ -701,6 +713,13 @@ union{__time64_t   st_ctime; __time64_t st_ctime32; __time64_t st_ctime64; };
 #define _wstati64   _wstat32i64
 #endif /* !__USE_TIME_BITS64 */
 #endif /* __USE_DOS */
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("stat")
+#ifdef __USE_LARGEFILE64
+#pragma pop_macro("stat64")
+#endif /* __USE_LARGEFILE64 */
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 
 __SYSDECL_END
 

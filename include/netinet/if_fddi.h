@@ -19,6 +19,12 @@
 #ifndef _NETINET_IF_FDDI_H
 #define _NETINET_IF_FDDI_H 1
 
+#include <__stdinc.h>
+#include <features.h>
+#include <sys/types.h>
+#include <asm/types.h>
+#include <linux/if_fddi.h>
+
 /* Copyright (C) 1997-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
@@ -36,20 +42,16 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-#include <__stdinc.h>
-#include <features.h>
-#include <sys/types.h>
-#include <asm/types.h>
-#include <linux/if_fddi.h>
+__SYSDECL_BEGIN
 
 #ifdef __USE_MISC
-__SYSDECL_BEGIN
 struct fddi_header {
-   u_int8_t fddi_fc;                 /*< Frame Control (FC) value */
-   u_int8_t fddi_dhost[FDDI_K_ALEN]; /*< Destination host */
-   u_int8_t fddi_shost[FDDI_K_ALEN]; /*< Source host */
+    u_int8_t fddi_fc;                 /*< Frame Control (FC) value */
+    u_int8_t fddi_dhost[FDDI_K_ALEN]; /*< Destination host */
+    u_int8_t fddi_shost[FDDI_K_ALEN]; /*< Source host */
 };
+#endif /* __USE_MISC */
+
 __SYSDECL_END
-#endif
 
 #endif /* _NETINET_IF_FDDI_H */

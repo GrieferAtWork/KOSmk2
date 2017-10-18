@@ -45,25 +45,24 @@ __SYSDECL_BEGIN
 
 /* Kinds of resource limit. */
 enum __rlimit_resource {
-  __RLIMIT_CPU        = 0,  /*< Per-process CPU limit, in seconds. */
-  __RLIMIT_FSIZE      = 1,  /*< Largest file that can be created, in bytes. */
-  __RLIMIT_DATA       = 2,  /*< Maximum size of data segment, in bytes. */
-  __RLIMIT_STACK      = 3,  /*< Maximum size of stack segment, in bytes. */
-  __RLIMIT_CORE       = 4,  /*< Largest core file that can be created, in bytes. */
-  __RLIMIT_RSS        = 5,  /*< Largest resident set size, in bytes. This affects swapping; processes that are exceeding their resident set size will be more likely to have physical memory taken from them. */
-  __RLIMIT_NOFILE     = 7,  /*< Number of open files. */
-  __RLIMIT_AS         = 9,  /*< Address space limit. */
-  __RLIMIT_NPROC      = 6,  /*< Number of processes. */
-  __RLIMIT_MEMLOCK    = 8,  /*< Locked-in-memory address space. */
-  __RLIMIT_LOCKS      = 10, /*< Maximum number of file locks. */
-  __RLIMIT_SIGPENDING = 11, /*< Maximum number of pending signals. */
-  __RLIMIT_MSGQUEUE   = 12, /*< Maximum bytes in POSIX message queues. */
-  __RLIMIT_NICE       = 13, /*< Maximum nice priority allowed to raise to. Nice levels 19 .. -20 correspond to 0 .. 39 values of this resource limit. */
-  __RLIMIT_RTPRIO     = 14, /*< Maximum realtime priority allowed for non-priviledged processes. */
-  __RLIMIT_RTTIME     = 15, /*< Maximum CPU time in µs that a process scheduled under a real-time scheduling policy may consume without making a blocking system call before being forcibly descheduled. */
-  __RLIMIT_NLIMITS    = 16,
+    __RLIMIT_CPU        = 0,  /*< Per-process CPU limit, in seconds. */
+    __RLIMIT_FSIZE      = 1,  /*< Largest file that can be created, in bytes. */
+    __RLIMIT_DATA       = 2,  /*< Maximum size of data segment, in bytes. */
+    __RLIMIT_STACK      = 3,  /*< Maximum size of stack segment, in bytes. */
+    __RLIMIT_CORE       = 4,  /*< Largest core file that can be created, in bytes. */
+    __RLIMIT_RSS        = 5,  /*< Largest resident set size, in bytes. This affects swapping; processes that are exceeding their resident set size will be more likely to have physical memory taken from them. */
+    __RLIMIT_NOFILE     = 7,  /*< Number of open files. */
+    __RLIMIT_AS         = 9,  /*< Address space limit. */
+    __RLIMIT_NPROC      = 6,  /*< Number of processes. */
+    __RLIMIT_MEMLOCK    = 8,  /*< Locked-in-memory address space. */
+    __RLIMIT_LOCKS      = 10, /*< Maximum number of file locks. */
+    __RLIMIT_SIGPENDING = 11, /*< Maximum number of pending signals. */
+    __RLIMIT_MSGQUEUE   = 12, /*< Maximum bytes in POSIX message queues. */
+    __RLIMIT_NICE       = 13, /*< Maximum nice priority allowed to raise to. Nice levels 19 .. -20 correspond to 0 .. 39 values of this resource limit. */
+    __RLIMIT_RTPRIO     = 14, /*< Maximum realtime priority allowed for non-priviledged processes. */
+    __RLIMIT_RTTIME     = 15, /*< Maximum CPU time in µs that a process scheduled under a real-time scheduling policy may consume without making a blocking system call before being forcibly descheduled. */
+    __RLIMIT_NLIMITS    = 16,
 };
-
 #define RLIMIT_CPU        __RLIMIT_CPU
 #define RLIMIT_FSIZE      __RLIMIT_FSIZE
 #define RLIMIT_DATA       __RLIMIT_DATA
@@ -71,7 +70,7 @@ enum __rlimit_resource {
 #define RLIMIT_CORE       __RLIMIT_CORE
 #define RLIMIT_RSS        __RLIMIT_RSS
 #define RLIMIT_NOFILE     __RLIMIT_NOFILE
-#define RLIMIT_OFILE      __RLIMIT_NOFILE /* BSD name for same. */
+#define RLIMIT_OFILE      __RLIMIT_NOFILE /*< BSD name for same. */
 #define RLIMIT_AS         __RLIMIT_AS
 #define RLIMIT_NPROC      __RLIMIT_NPROC
 #define RLIMIT_MEMLOCK    __RLIMIT_MEMLOCK
@@ -110,112 +109,69 @@ typedef __rlim64_t rlim64_t;
 
 
 struct rlimit {
- rlim_t rlim_cur; /*< The current (soft) limit. */
- rlim_t rlim_max; /*< The hard limit. */
+    rlim_t rlim_cur; /*< The current (soft) limit. */
+    rlim_t rlim_max; /*< The hard limit. */
 };
 
 #ifdef __USE_LARGEFILE64
 struct rlimit64 {
- rlim64_t rlim_cur; /* The current (soft) limit. */
- rlim64_t rlim_max; /* The hard limit. */
+    rlim64_t rlim_cur; /* The current (soft) limit. */
+    rlim64_t rlim_max; /* The hard limit. */
 };
 #endif /* __USE_LARGEFILE64 */
 
 /* Whose usage statistics do you want?  */
 enum __rusage_who {
-  RUSAGE_SELF     =  0, /*< The calling process. */
-  RUSAGE_CHILDREN = -1, /*< All of its terminated child processes. */
-#ifdef __USE_GNU
-  RUSAGE_THREAD   =  1  /*< The calling thread. */
-#endif
-};
-
-#define RUSAGE_SELF   RUSAGE_SELF
+    RUSAGE_SELF     =  0, /*< The calling process. */
+    RUSAGE_CHILDREN = -1, /*< All of its terminated child processes. */
+#define RUSAGE_SELF     RUSAGE_SELF
 #define RUSAGE_CHILDREN RUSAGE_CHILDREN
 #ifdef __USE_GNU
+    RUSAGE_THREAD   =  1  /*< The calling thread. */
 #define RUSAGE_THREAD RUSAGE_THREAD
 #define RUSAGE_LWP    RUSAGE_THREAD /* Name for the same functionality on Solaris. */
-#endif
+#endif /* __USE_GNU */
+};
 
 struct rusage {
- struct timeval ru_utime; /* Total amount of user time used. */
- struct timeval ru_stime; /* Total amount of system time used. */
- union { /* Maximum resident set size (in kilobytes). */
-  long int            ru_maxrss;
-  __syscall_slong_t __ru_maxrss_word;
- };
- /* Amount of sharing of text segment memory with other processes (kilobyte-seconds). */
- union {
-  long int            ru_ixrss; /*< Maximum resident set size (in kilobytes). */
-  __syscall_slong_t __ru_ixrss_word;
- };
- union {
-  long int            ru_idrss; /*< Amount of data segment memory used (kilobyte-seconds). */
-  __syscall_slong_t __ru_idrss_word;
- };
- union {
-  long int            ru_isrss; /*< Amount of stack memory used (kilobyte-seconds). */
-  __syscall_slong_t __ru_isrss_word;
- };
- union {
-  long int            ru_minflt; /*< Number of soft page faults (i.e. those serviced by reclaiming a page from the list of pages awaiting reallocation. */
-  __syscall_slong_t __ru_minflt_word;
- };
- union {
-  long int            ru_majflt; /*< Number of hard page faults (i.e. those that required I/O). */
-  __syscall_slong_t __ru_majflt_word;
- };
- union {
-  long int            ru_nswap; /*< Number of times a process was swapped out of physical memory. */
-  __syscall_slong_t __ru_nswap_word;
- };
- union {
-  long int            ru_inblock; /*< Number of input operations via the file system.
-                                   *  Note: This and `ru_oublock' do not include operations with the cache. */
-  __syscall_slong_t __ru_inblock_word;
- };
- __extension__ union {
-  long int            ru_oublock; /*< Number of output operations via the file system. */
-  __syscall_slong_t __ru_oublock_word;
- };
- union {
-  long int            ru_msgsnd; /*< Number of IPC messages sent. */
-  __syscall_slong_t __ru_msgsnd_word;
- };
- union {
-  long int            ru_msgrcv; /*< Number of IPC messages received. */
-  __syscall_slong_t __ru_msgrcv_word;
- };
- union {
-  long int            ru_nsignals; /*< Number of signals delivered. */
-  __syscall_slong_t __ru_nsignals_word;
- };
- union {
-  long int            ru_nvcsw; /*< Number of voluntary context switches, i.e. because the process gave up the
-                                 *  process before it had to (usually to wait for some resource to be available). */
-  __syscall_slong_t __ru_nvcsw_word;
- };
- union {
-  long int ru_nivcsw; /*< Number of involuntary context switches, i.e. a higher priority process
-                       *  became runnable or the current process used up its time slice. */
-  __syscall_slong_t __ru_nivcsw_word;
- };
+    struct timeval ru_utime;  /*< Total amount of user time used. */
+    struct timeval ru_stime;  /*< Total amount of system time used. */
+#define __RU_MEMBER(x) __extension__ union { long int x; __syscall_slong_t __##x##_word; }
+    __RU_MEMBER(ru_maxrss);   /*< Maximum resident set size (in kilobytes). */
+    /* Amount of sharing of text segment memory with other processes (kilobyte-seconds). */
+    __RU_MEMBER(ru_ixrss);    /*< Maximum resident set size (in kilobytes). */
+    __RU_MEMBER(ru_idrss);    /*< Amount of data segment memory used (kilobyte-seconds). */
+    __RU_MEMBER(ru_isrss);    /*< Amount of stack memory used (kilobyte-seconds). */
+    __RU_MEMBER(ru_minflt);   /*< Number of soft page faults (i.e. those serviced by reclaiming a page from the list of pages awaiting reallocation. */
+    __RU_MEMBER(ru_majflt);   /*< Number of hard page faults (i.e. those that required I/O). */
+    __RU_MEMBER(ru_nswap);    /*< Number of times a process was swapped out of physical memory. */
+    __RU_MEMBER(ru_inblock);  /*< Number of input operations via the file system.
+                               *  NOTE: This and `ru_oublock' do not include operations with the cache. */
+    __RU_MEMBER(ru_oublock);  /*< Number of output operations via the file system. */
+    __RU_MEMBER(ru_msgsnd);   /*< Number of IPC messages sent. */
+    __RU_MEMBER(ru_msgrcv);   /*< Number of IPC messages received. */
+    __RU_MEMBER(ru_nsignals); /*< Number of signals delivered. */
+    __RU_MEMBER(ru_nvcsw);    /*< Number of voluntary context switches, i.e. because the process gave up the
+                               *  process before it had to (usually to wait for some resource to be available). */
+    __RU_MEMBER(ru_nivcsw);   /*< Number of involuntary context switches, i.e. a higher priority process
+                               *  became runnable or the current process used up its time slice. */
+#undef __RU_MEMBER
 };
 
 /* Priority limits. */
 #define PRIO_MIN  (-20) /*< Minimum priority a process can have. */
 #define PRIO_MAX    20  /*< Maximum priority a process can have. */
+
 /* The type of the WHICH argument to `getpriority' and `setpriority',
    indicating what flavor of entity the WHO argument specifies. */
 enum __priority_which {
- PRIO_PROCESS = 0, /*< WHO is a process ID. */
- PRIO_PGRP    = 1, /*< WHO is a process group ID. */
- PRIO_USER    = 2  /*< WHO is a user ID. */
+    PRIO_PROCESS = 0, /*< WHO is a process ID. */
+    PRIO_PGRP    = 1, /*< WHO is a process group ID. */
+    PRIO_USER    = 2  /*< WHO is a user ID. */
 };
 #define PRIO_PROCESS PRIO_PROCESS
-#define PRIO_PGRP PRIO_PGRP
-#define PRIO_USER PRIO_USER
-
+#define PRIO_PGRP    PRIO_PGRP
+#define PRIO_USER    PRIO_USER
 
 #ifndef __KERNEL__
 #ifdef __USE_GNU

@@ -63,15 +63,15 @@ __LIBC unsigned int (__LIBCCALL _getdiskfree)(unsigned int __drive, struct _disk
 #endif /* !__KERNEL__ */
 
 #if defined(__i386__) || defined(__x86_64__)
-#ifdef _MSC_VER
+#ifdef __COMPILER_HAVE_GCC_ASM
+__FORCELOCAL void (__LIBCCALL _disable)(void) { __asm__ __volatile__("cli" : : : "memory"); }
+__FORCELOCAL void (__LIBCCALL _enable)(void) { __asm__ __volatile__("sti" : : : "memory"); }
+#else /* __COMPILER_HAVE_GCC_ASM */
 #undef cli
 #undef sti
 __FORCELOCAL void (__LIBCCALL _disable)(void) { __asm cli; }
 __FORCELOCAL void (__LIBCCALL _enable)(void) { __asm sti; }
-#else
-__FORCELOCAL void (__LIBCCALL _disable)(void) { __asm__ __volatile__("cli" : : : "memory"); }
-__FORCELOCAL void (__LIBCCALL _enable)(void) { __asm__ __volatile__("sti" : : : "memory"); }
-#endif
+#endif /* !__COMPILER_HAVE_GCC_ASM */
 #endif /* X64... */
 
 

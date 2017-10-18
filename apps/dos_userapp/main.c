@@ -49,6 +49,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
+#include <sys/io.h>
 #include <time.h>
 #include <uchar.h>
 #include <utime.h>

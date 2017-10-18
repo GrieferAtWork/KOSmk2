@@ -59,11 +59,11 @@ typedef __TM_TYPE(time) time_t;
    <http://www.gnu.org/licenses/>.  */
 
 struct timeb {
- time_t          time;     /*< Seconds since epoch, as from 'time'. */
- __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
- __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
- __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
- __INT16_TYPE__  __pad0;   /*< ... */
+    time_t          time;     /*< Seconds since epoch, as from 'time'. */
+    __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
+    __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
+    __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
+    __INT16_TYPE__  __pad0;   /*< ... */
 };
 
 #ifdef __USE_TIME64
@@ -73,11 +73,11 @@ typedef __time64_t time64_t;
 #endif /* !__time64_t_defined */
 
 struct timeb64 {
- time64_t        time;     /*< Seconds since epoch, as from 'time'. */
- __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
- __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
- __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
- __INT16_TYPE__  __pad0;   /*< ... */
+    time64_t        time;     /*< Seconds since epoch, as from 'time'. */
+    __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
+    __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
+    __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
+    __INT16_TYPE__  __pad0;   /*< ... */
 };
 #endif
 
@@ -85,19 +85,19 @@ struct timeb64 {
 #ifndef _TIMEB_DEFINED
 #define _TIMEB_DEFINED 1
 struct __timeb32 {
- __time32_t      time;     /*< Seconds since epoch, as from 'time'. */
- __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
- __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
- __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
- __INT16_TYPE__  __pad0;   /*< ... */
+    __time32_t      time;     /*< Seconds since epoch, as from 'time'. */
+    __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
+    __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
+    __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
+    __INT16_TYPE__  __pad0;   /*< ... */
 };
 
 struct __timeb64 {
- __time64_t      time;     /*< Seconds since epoch, as from 'time'. */
- __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
- __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
- __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
- __INT16_TYPE__  __pad0;   /*< ... */
+    __time64_t      time;     /*< Seconds since epoch, as from 'time'. */
+    __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
+    __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
+    __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
+    __INT16_TYPE__  __pad0;   /*< ... */
 };
 
 #ifdef __USE_TIME_BITS64
@@ -176,12 +176,12 @@ __LOCAL void (__LIBCCALL _ftime64)(struct __timeb64 *__timebuf) { ftime(__timebu
 #else /* __USE_TIME_BITS64 */
 __LOCAL errno_t (__LIBCCALL _ftime32_s)(struct __timeb32 *__timebuf) { return ftime(__timebuf); }
 __LOCAL errno_t (__LIBCCALL _ftime64_s)(struct __timeb64 *__timebuf) {
- struct __timeb32 __buf; errno_t __result = _ftime32_s(&__buf);
- __timebuf->time     = (__time64_t)__buf.time;
- __timebuf->millitm  = __buf.millitm;
- __timebuf->timezone = __buf.timezone;
- __timebuf->dstflag  = __buf.dstflag;
- return __result;
+    struct __timeb32 __buf; errno_t __result = _ftime32_s(&__buf);
+    __timebuf->time     = (__time64_t)__buf.time;
+    __timebuf->millitm  = __buf.millitm;
+    __timebuf->timezone = __buf.timezone;
+    __timebuf->dstflag  = __buf.dstflag;
+    return __result;
 }
 __LOCAL void (__LIBCCALL _ftime32)(struct __timeb32 *__timebuf) { ftime(__timebuf); }
 __LOCAL void (__LIBCCALL _ftime64)(struct __timeb64 *__timebuf) { _ftime64_s(__timebuf); }

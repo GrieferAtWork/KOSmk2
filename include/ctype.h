@@ -59,15 +59,14 @@ __SYSDECL_BEGIN
 #ifdef __cplusplus
 __NAMESPACE_STD_BEGIN
 __LIBC __UINT16_TYPE__ const __chattr[256];
-__FORCELOCAL bool __NOTHROW(__isctype(char __c, __UINT16_TYPE__ __type));
-__FORCELOCAL bool __isctype(char __c, __UINT16_TYPE__ __type) { return __chattr[(__UINT8_TYPE__)__c] & __type; }
+__LOCAL bool __NOTHROW((__LIBCCALL __isctype)(char __c, __UINT16_TYPE__ __type)) { return __chattr[(__UINT8_TYPE__)__c] & __type; }
 __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(__chattr)
 __NAMESPACE_STD_USING(__isctype)
-#else
+#else /* __cplusplus */
 __LIBC __UINT16_TYPE__ const __chattr[256];
 #define __isctype(c,type) (__chattr[(__UINT8_TYPE__)(c)]&(__UINT16_TYPE__)type)
-#endif
+#endif /* !__cplusplus */
 
 __NAMESPACE_STD_BEGIN
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL isalpha)(int __c));

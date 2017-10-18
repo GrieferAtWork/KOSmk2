@@ -101,6 +101,7 @@ for (local line: fp) {
 #define SYS_getpid __NR_getpid
 #define SYS_getppid __NR_getppid
 #define SYS_gettid __NR_gettid
+#define SYS_sysinfo __NR_sysinfo
 #define SYS_munmap __NR_munmap
 #define SYS_mremap __NR_mremap
 #define SYS_clone __NR_clone
@@ -124,6 +125,7 @@ for (local line: fp) {
 #define SYS_xfchdirat __NR_xfchdirat
 #define SYS_xrenameat __NR_xrenameat
 #define SYS_xfsymlinkat __NR_xfsymlinkat
+#define SYS_xfreadlinkat __NR_xfreadlinkat
 #define SYS_xdlopen __NR_xdlopen
 #define SYS_xfdlopen __NR_xfdlopen
 #define SYS_xdlclose __NR_xdlclose

@@ -20,6 +20,7 @@
 #define _BIT_SIGEVENT_H 1
 
 #include <__stdinc.h>
+#include <features.h>
 #include <hybrid/typecore.h>
 #include <bits/types.h>
 
@@ -54,47 +55,80 @@ __SYSDECL_BEGIN
 #define __have_sigval_t 1
 /* Type for data associated with a signal. */
 typedef union sigval {
- int   sival_int;
- void *sival_ptr;
+    int   sival_int;
+    void *sival_ptr;
 } sigval_t;
 #endif /* !__have_sigval_t */
 
 #ifndef __have_pthread_attr_t
 #define __have_pthread_attr_t 1
 typedef union pthread_attr_t pthread_attr_t;
-#endif
+#endif /* !__have_pthread_attr_t */
 
 typedef struct sigevent {
- sigval_t sigev_value;
- int sigev_signo;
- int sigev_notify;
- union {
-  int _pad[__SIGEV_PAD_SIZE];
-  /* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the thread to receive the signal. */
-  __pid_t _tid;
-  struct {
-   void(*_function) (sigval_t);    /* Function to start. */
-   pthread_attr_t *_attribute;        /* Thread attributes. */
-  } _sigev_thread;
- } _sigev_un;
-} sigevent_t;
-
-/* POSIX names to access some of the members. */
+    sigval_t sigev_value;
+    int      sigev_signo;
+    int      sigev_notify;
+#if defined(__COMPILER_HAVE_TRANSPARENT_STRUCT) && \
+    defined(__COMPILER_HAVE_TRANSPARENT_UNION)
+#ifndef __USE_KOS
+    struct{
+#endif /* !__USE_KOS */
+    union {
+        int _pad[__SIGEV_PAD_SIZE];
+        /* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the thread to receive the signal. */
+        __pid_t _tid;
+        struct {
+            void (__ATTR_CDECL *sigev_notify_function)(sigval_t __val); /* Function to start. */
+            pthread_attr_t     *sigev_notify_attributes;                /* Thread attributes. */
+        };
+    };
+#ifndef __USE_KOS
+    union {
+        int _pad[__SIGEV_PAD_SIZE];
+        /* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the thread to receive the signal. */
+        __pid_t _tid;
+        struct {
+            void (__ATTR_CDECL *_function)(sigval_t __val); /* Function to start. */
+            pthread_attr_t *_attribute;                     /* Thread attributes. */
+        } _sigev_thread;
+    } _sigev_un;
+    };
+#endif /* !__USE_KOS */
+#else
+    union {
+        int _pad[__SIGEV_PAD_SIZE];
+        /* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the thread to receive the signal. */
+        __pid_t _tid;
+        struct {
+            void (__ATTR_CDECL *_function)(sigval_t __val); /* Function to start. */
+            pthread_attr_t *_attribute;                     /* Thread attributes. */
+        } _sigev_thread;
+    } _sigev_un;
 #define sigev_notify_function   _sigev_un._sigev_thread._function
 #define sigev_notify_attributes _sigev_un._sigev_thread._attribute
+#endif
+} sigevent_t;
+
 
 /* `sigev_notify' values. */
+#ifdef __COMPILER_PREFERR_ENUMS
 enum {
-  SIGEV_SIGNAL    = 0, /*< Notify via signal. */
-  SIGEV_NONE      = 1, /*< Other notification: meaningless. */
-  SIGEV_THREAD    = 2, /*< Deliver via thread creation. */
-  SIGEV_THREAD_ID = 4  /*< Send signal to specific thread. */
+    SIGEV_SIGNAL    = 0, /*< Notify via signal. */
+    SIGEV_NONE      = 1, /*< Other notification: meaningless. */
+    SIGEV_THREAD    = 2, /*< Deliver via thread creation. */
+    SIGEV_THREAD_ID = 4  /*< Send signal to specific thread. */
 };
-
 #define SIGEV_SIGNAL    SIGEV_SIGNAL
 #define SIGEV_NONE      SIGEV_NONE
 #define SIGEV_THREAD    SIGEV_THREAD
 #define SIGEV_THREAD_ID SIGEV_THREAD_ID
+#else /* __COMPILER_PREFERR_ENUMS */
+#define SIGEV_SIGNAL    0 /*< Notify via signal. */
+#define SIGEV_NONE      1 /*< Other notification: meaningless. */
+#define SIGEV_THREAD    2 /*< Deliver via thread creation. */
+#define SIGEV_THREAD_ID 4 /*< Send signal to specific thread. */
+#endif /* !__COMPILER_PREFERR_ENUMS */
 
 __SYSDECL_END
 

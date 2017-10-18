@@ -39,20 +39,20 @@ DECL_BEGIN
 #define BSWAP32_C(x)  __bswap_constant_32(x)
 #define BSWAP64_C(x)  __bswap_constant_64(x)
 
-#ifdef __INTELLISENSE__
+#ifdef ____INTELLISENSE_STDINC_SYNTAX_H
 /* Highlight improper usage (For use alongside [__](le|be)(16|32|64) types from <hybrid/types.h>) */
-#   define BSWAP_H2LE16(x)    ____INTELLISENSE_BSWAP_H2LE16(x)
-#   define BSWAP_H2LE32(x)    ____INTELLISENSE_BSWAP_H2LE32(x)
-#   define BSWAP_H2LE64(x)    ____INTELLISENSE_BSWAP_H2LE64(x)
-#   define BSWAP_H2BE16(x)    ____INTELLISENSE_BSWAP_H2BE16(x)
-#   define BSWAP_H2BE32(x)    ____INTELLISENSE_BSWAP_H2BE32(x)
-#   define BSWAP_H2BE64(x)    ____INTELLISENSE_BSWAP_H2BE64(x)
-#   define BSWAP_LE2H16(x)    ____INTELLISENSE_BSWAP_LE2H16(x)
-#   define BSWAP_LE2H32(x)    ____INTELLISENSE_BSWAP_LE2H32(x)
-#   define BSWAP_LE2H64(x)    ____INTELLISENSE_BSWAP_LE2H64(x)
-#   define BSWAP_BE2H16(x)    ____INTELLISENSE_BSWAP_BE2H16(x)
-#   define BSWAP_BE2H32(x)    ____INTELLISENSE_BSWAP_BE2H32(x)
-#   define BSWAP_BE2H64(x)    ____INTELLISENSE_BSWAP_BE2H64(x)
+#   define BSWAP_H2LE16(x)    ::__int::____INTELLISENSE_BSWAP_H2LE16(x)
+#   define BSWAP_H2LE32(x)    ::__int::____INTELLISENSE_BSWAP_H2LE32(x)
+#   define BSWAP_H2LE64(x)    ::__int::____INTELLISENSE_BSWAP_H2LE64(x)
+#   define BSWAP_H2BE16(x)    ::__int::____INTELLISENSE_BSWAP_H2BE16(x)
+#   define BSWAP_H2BE32(x)    ::__int::____INTELLISENSE_BSWAP_H2BE32(x)
+#   define BSWAP_H2BE64(x)    ::__int::____INTELLISENSE_BSWAP_H2BE64(x)
+#   define BSWAP_LE2H16(x)    ::__int::____INTELLISENSE_BSWAP_LE2H16(x)
+#   define BSWAP_LE2H32(x)    ::__int::____INTELLISENSE_BSWAP_LE2H32(x)
+#   define BSWAP_LE2H64(x)    ::__int::____INTELLISENSE_BSWAP_LE2H64(x)
+#   define BSWAP_BE2H16(x)    ::__int::____INTELLISENSE_BSWAP_BE2H16(x)
+#   define BSWAP_BE2H32(x)    ::__int::____INTELLISENSE_BSWAP_BE2H32(x)
+#   define BSWAP_BE2H64(x)    ::__int::____INTELLISENSE_BSWAP_BE2H64(x)
 #elif BYTE_ORDER == LITTLE_ENDIAN_ORDER
 #   define BSWAP_H2LE16(x)   (x)
 #   define BSWAP_H2LE32(x)   (x)

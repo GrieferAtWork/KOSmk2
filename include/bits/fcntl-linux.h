@@ -193,15 +193,25 @@ __SYSDECL_BEGIN
 
 #ifdef __USE_GNU
 enum __pid_type {
- F_OWNER_TID = 0,           /*< Kernel thread. */
- F_OWNER_PID,               /*< Process. */
- F_OWNER_PGRP,              /*< Process group. */
- F_OWNER_GID = F_OWNER_PGRP /*< Alternative, obsolete name. */
+    F_OWNER_TID  = 0, /*< Kernel thread. */
+    F_OWNER_PID  = 1, /*< Process. */
+    F_OWNER_PGRP = 2, /*< Process group. */
+    F_OWNER_GID  = 2  /*< Alternative, obsolete name. */
 };
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("type")
+#pragma push_macro("pid")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef type
+#undef pid
 struct f_owner_ex {
- enum __pid_type type; /*< Owner type of ID. */
- __pid_t         pid;  /*< ID of owner. */
+    enum __pid_type type; /*< Owner type of ID. */
+    __pid_t         pid;  /*< ID of owner. */
 };
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("pid")
+#pragma pop_macro("type")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #endif
 
 #ifdef __USE_MISC
@@ -239,12 +249,22 @@ struct f_owner_ex {
 #   define FALLOC_FL_COLLAPSE_RANGE    8 /* Remove a range of a file without leaving a hole. */
 #   define FALLOC_FL_ZERO_RANGE        16 /* Convert a range of a file to zeros. */
 
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("handle_bytes")
+#pragma push_macro("handle_type")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef handle_bytes
+#undef handle_type
 struct file_handle {
- unsigned int  handle_bytes;
- int           handle_type;
- unsigned char f_handle[0]; /* File identifier. */
+    unsigned int  handle_bytes;
+    int           handle_type;
+    unsigned char f_handle[0]; /* File identifier. */
 };
 #define MAX_HANDLE_SZ    128
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("handle_type")
+#pragma pop_macro("handle_bytes")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #endif
 
 #ifdef __USE_ATFILE
@@ -277,7 +297,7 @@ struct file_handle {
 #endif /* __USE_ATFILE */
 
 #ifdef __USE_GNU
-struct iovec;
+struct iovec; /* TODO: Dos attributes/compatibility. */
 __LIBC __ssize_t (__LIBCCALL readahead)(int __fd, __off64_t __offset, __size_t __count);
 __LIBC int (__LIBCCALL sync_file_range)(int __fd, __off64_t __offset, __off64_t __count, unsigned int __flags);
 __LIBC __ssize_t (__LIBCCALL vmsplice)(int __fdout, struct iovec const *__iov, __size_t __count, unsigned int __flags);

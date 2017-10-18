@@ -26,22 +26,22 @@
 __SYSDECL_BEGIN
 
 struct flock {
- short int      l_type;   /*< Type of lock: F_RDLCK, F_WRLCK, or F_UNLCK.	*/
- short int      l_whence; /*< Where `l_start' is relative to (like `lseek'). */
- __FS_TYPE(off) l_start;  /*< Offset where the lock begins. */
- __FS_TYPE(off) l_len;    /*< Size of the locked area; zero means until EOF. */
- __pid_t        l_pid;    /*< Process holding the lock. */
+    short int      l_type;   /*< Type of lock: F_RDLCK, F_WRLCK, or F_UNLCK.	*/
+    short int      l_whence; /*< Where `l_start' is relative to (like `lseek'). */
+    __FS_TYPE(off) l_start;  /*< Offset where the lock begins. */
+    __FS_TYPE(off) l_len;    /*< Size of the locked area; zero means until EOF. */
+    __pid_t        l_pid;    /*< Process holding the lock. */
 };
 
 #ifdef __USE_LARGEFILE64
 struct flock64 {
- short int l_type;   /*< Type of lock: F_RDLCK, F_WRLCK, or F_UNLCK. */
- short int l_whence; /*< Where `l_start' is relative to (like `lseek'). */
- __off64_t l_start;  /*< Offset where the lock begins. */
- __off64_t l_len;    /*< Size of the locked area; zero means until EOF. */
- __pid_t   l_pid;    /*< Process holding the lock. */
+    short int l_type;   /*< Type of lock: F_RDLCK, F_WRLCK, or F_UNLCK. */
+    short int l_whence; /*< Where `l_start' is relative to (like `lseek'). */
+    __off64_t l_start;  /*< Offset where the lock begins. */
+    __off64_t l_len;    /*< Size of the locked area; zero means until EOF. */
+    __pid_t   l_pid;    /*< Process holding the lock. */
 };
-#endif
+#endif /* __USE_LARGEFILE64 */
 
 __SYSDECL_END
 

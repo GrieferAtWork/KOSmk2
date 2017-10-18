@@ -65,8 +65,8 @@ __SYSDECL_BEGIN
 #   define __WAIT_STATUS_DEFN void *
 #else
 typedef union {
- union wait *__uptr;
- int        *__iptr;
+    union wait *__uptr;
+    int        *__iptr;
 } __WAIT_STATUS __attribute__((__transparent_union__));
 #   define __WAIT_STATUS_DEFN int *
 #endif

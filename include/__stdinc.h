@@ -106,6 +106,10 @@
 #   define __NOTHROW(prot) __ATTR_NOTHROW prot
 #endif
 
+#if defined(__cplusplus) && !defined(__INTELLISENSE__)
+#define __COMPILER_PREFERR_ENUMS 1
+#endif
+
 #ifdef __cplusplus
 /* Mark the wchar_t type as already being defined when pre-defined by the compiler */
 #if !defined(__wchar_t_defined) && \

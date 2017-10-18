@@ -51,12 +51,14 @@ __SYSDECL_BEGIN
 
 #if defined(__INTELLISENSE__) && defined(__cplusplus)
 #undef __MEMPORT_T
-#define __MEMPORT_T   ____INTELLISENSE_memport_t
+#define __MEMPORT_T __NAMESPACE_INT_SYM ____INTELLISENSE_memport_t
+__NAMESPACE_INT_BEGIN
 extern "C++" {class ____INTELLISENSE_memport_t {
 public:
  ____INTELLISENSE_memport_t(void *);
  ____INTELLISENSE_memport_t(__UINTPTR_TYPE__);
 };}
+__NAMESPACE_INT_END
 #elif defined(__USE_KOS) || defined(__KERNEL__)
 #   define readb(port)              readb((__UINTPTR_TYPE__)(port))
 #   define readw(port)              readw((__UINTPTR_TYPE__)(port))
@@ -97,60 +99,7 @@ public:
 #   define __writesl(port,addr,count) __writesl((__UINTPTR_TYPE__)(port),addr,count)
 #endif
 
-#ifdef _MSC_VER
-extern __UINT8_TYPE__ (__cdecl __inbyte)(__IOPORT_T __port);
-extern __UINT16_TYPE__ (__cdecl __inword)(__IOPORT_T __port);
-extern __ULONG32_TYPE__ (__cdecl __indword)(__IOPORT_T __port);
-extern void (__cdecl __inbytestring)(__IOPORT_T __port, __UINT8_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
-extern void (__cdecl __inwordstring)(__IOPORT_T __port, __UINT16_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
-extern void (__cdecl __indwordstring)(__IOPORT_T __port, __ULONG32_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
-extern void (__cdecl __outbyte)(__IOPORT_T __port, __UINT8_TYPE__ __val);
-extern void (__cdecl __outword)(__IOPORT_T __port, __UINT16_TYPE__ __val);
-extern void (__cdecl __outdword)(__IOPORT_T __port, __ULONG32_TYPE__ __val);
-extern void (__cdecl __outbytestring)(__IOPORT_T __port, __UINT8_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
-extern void (__cdecl __outwordstring)(__IOPORT_T __port, __UINT16_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
-extern void (__cdecl __outdwordstring)(__IOPORT_T __port, __ULONG32_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
-#pragma intrinsic(__inbyte)
-#pragma intrinsic(__inword)
-#pragma intrinsic(__indword)
-#pragma intrinsic(__inbytestring)
-#pragma intrinsic(__inwordstring)
-#pragma intrinsic(__indwordstring)
-#pragma intrinsic(__outbyte)
-#pragma intrinsic(__outword)
-#pragma intrinsic(__outdword)
-#pragma intrinsic(__outbytestring)
-#pragma intrinsic(__outwordstring)
-#pragma intrinsic(__outdwordstring)
-__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL inb)(__IOPORT_T __port) { return (__inbyte)(__port); }
-__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL inw)(__IOPORT_T __port) { return (__inword)(__port); }
-__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL inl)(__IOPORT_T __port) { return (__UINT32_TYPE__)(__indword)(__port); }
-__FORCELOCAL void (__LIBCCALL insb)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { (__inbytestring)(__port,(__UINT8_TYPE__ *)__addr,(__LONGSIZE_TYPE__)__count); }
-__FORCELOCAL void (__LIBCCALL insw)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { (__inwordstring)(__port,(__UINT16_TYPE__ *)__addr,(__LONGSIZE_TYPE__)__count); }
-__FORCELOCAL void (__LIBCCALL insl)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { (__indwordstring)(__port,(__ULONG32_TYPE__ *)__addr,(__LONGSIZE_TYPE__)__count); }
-__FORCELOCAL void (__LIBCCALL outb)(__IOPORT_T __port, __UINT8_TYPE__ __val) { (__outbyte)(__port,__val); }
-__FORCELOCAL void (__LIBCCALL outw)(__IOPORT_T __port, __UINT16_TYPE__ __val) { (__outword)(__port,__val); }
-__FORCELOCAL void (__LIBCCALL outl)(__IOPORT_T __port, __UINT32_TYPE__ __val) { (__outdword)(__port,(__ULONG32_TYPE__)__val); }
-__FORCELOCAL void (__LIBCCALL outsb)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { (__outbytestring)(__port,(__UINT8_TYPE__ *)__addr,(__SIZE_TYPE__)__count); }
-__FORCELOCAL void (__LIBCCALL outsw)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { (__outwordstring)(__port,(__UINT16_TYPE__ *)__addr,(__SIZE_TYPE__)__count); }
-__FORCELOCAL void (__LIBCCALL outsl)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { (__outdwordstring)(__port,(__ULONG32_TYPE__ *)__addr,(__SIZE_TYPE__)__count); }
-
-#ifndef __INTELLISENSE__
-#define inb(port)                              ((__inbyte)(port))
-#define inw(port)                              ((__inword)(port))
-#define inl(port)             ((__UINT32_TYPE__)(__indword)(port))
-#define insb(port,addr,count)                  ((__inbyte)(port,(__UINT8_TYPE__ *)(addr),(__LONGSIZE_TYPE__)(count)))
-#define insw(port,addr,count)                  ((__inword)(port,(__UINT16_TYPE__ *)(addr),(__LONGSIZE_TYPE__)(count)))
-#define insl(port,addr,count)                  ((__indword)(port,(__ULONG32_TYPE__ *)(addr),(__LONGSIZE_TYPE__)(count)))
-#define outb(port,val)                         ((__outbyte)(__port,__val))
-#define outw(port,val)                         ((__outword)(__port,__val))
-#define outl(port,val)                         ((__outdword)(__port,(__ULONG32_TYPE__)(__val)))
-#define outsb(port,addr,count)                 ((__outbytestring)(__port,(__UINT8_TYPE__ *)(__addr),(__SIZE_TYPE__)(__count)))
-#define outsw(port,addr,count)                 ((__outwordstring)(__port,(__UINT16_TYPE__ *)(__addr),(__SIZE_TYPE__)(__count)))
-#define outsl(port,addr,count)                 ((__outdwordstring)(__port,(__ULONG32_TYPE__ *)(__addr),(__SIZE_TYPE__)(__count)))
-#endif /* !__INTELLISENSE__ */
-
-#else /* Compiler... */
+#ifdef __COMPILER_HAVE_GCC_ASM
 /* Using the same trick as the linux kernel... */
 #define __IO_SLOWDOWN_IMPL "\noutb %%al,$0x80"
 #if 0
@@ -255,9 +204,101 @@ __MAKEOUT(__UINT32_TYPE__,l,"",4)
 __FORCELOCAL void (__LIBCCALL io_delay)(void) {
  __asm__ __volatile__(__IO_SLOWDOWN : : : "memory");
 }
-#endif
-#endif /* Compiler... */
+#endif /* __USE_KOS || __KERNEL__ */
+#else /* GCC... */
 
+__NAMESPACE_INT_BEGIN
+extern __UINT8_TYPE__ (__cdecl __inbyte)(__IOPORT_T __port);
+extern __UINT16_TYPE__ (__cdecl __inword)(__IOPORT_T __port);
+extern __ULONG32_TYPE__ (__cdecl __indword)(__IOPORT_T __port);
+extern void (__cdecl __inbytestring)(__IOPORT_T __port, __UINT8_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
+extern void (__cdecl __inwordstring)(__IOPORT_T __port, __UINT16_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
+extern void (__cdecl __indwordstring)(__IOPORT_T __port, __ULONG32_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
+extern void (__cdecl __outbyte)(__IOPORT_T __port, __UINT8_TYPE__ __val);
+extern void (__cdecl __outword)(__IOPORT_T __port, __UINT16_TYPE__ __val);
+extern void (__cdecl __outdword)(__IOPORT_T __port, __ULONG32_TYPE__ __val);
+extern void (__cdecl __outbytestring)(__IOPORT_T __port, __UINT8_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
+extern void (__cdecl __outwordstring)(__IOPORT_T __port, __UINT16_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
+extern void (__cdecl __outdwordstring)(__IOPORT_T __port, __ULONG32_TYPE__ *__addr, __LONGSIZE_TYPE__ __count);
+#pragma intrinsic(__inbyte)
+#pragma intrinsic(__inword)
+#pragma intrinsic(__indword)
+#pragma intrinsic(__inbytestring)
+#pragma intrinsic(__inwordstring)
+#pragma intrinsic(__indwordstring)
+#pragma intrinsic(__outbyte)
+#pragma intrinsic(__outword)
+#pragma intrinsic(__outdword)
+#pragma intrinsic(__outbytestring)
+#pragma intrinsic(__outwordstring)
+#pragma intrinsic(__outdwordstring)
+__NAMESPACE_INT_END
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("out")
+#pragma push_macro("al")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
+#undef out
+#undef al
+
+/* Using the same trick as the linux kernel... */
+#define __IO_SLOWDOWN_IMPL __asm { out 0x80, al }
+#if 0
+#define __IO_SLOWDOWN  __IO_SLOWDOWN_IMPL \
+                       __IO_SLOWDOWN_IMPL \
+                       __IO_SLOWDOWN_IMPL
+#else
+#define __IO_SLOWDOWN  __IO_SLOWDOWN_IMPL
+#endif
+
+__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL inb)(__IOPORT_T __port) { return (__NAMESPACE_INT_SYM __inbyte)(__port); }
+__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL inw)(__IOPORT_T __port) { return (__NAMESPACE_INT_SYM __inword)(__port); }
+__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL inl)(__IOPORT_T __port) { return (__UINT32_TYPE__)(__NAMESPACE_INT_SYM __indword)(__port); }
+__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL inb_p)(__IOPORT_T __port) { __UINT8_TYPE__ __res = (__NAMESPACE_INT_SYM __inbyte)(__port); __IO_SLOWDOWN return __res; }
+__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL inw_p)(__IOPORT_T __port) { __UINT16_TYPE__ __res = (__NAMESPACE_INT_SYM __inword)(__port); __IO_SLOWDOWN return __res; }
+__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL inl_p)(__IOPORT_T __port) { __UINT32_TYPE__ __res = (__UINT32_TYPE__)(__NAMESPACE_INT_SYM __indword)(__port); __IO_SLOWDOWN return __res; }
+__FORCELOCAL void (__LIBCCALL insb)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { (__NAMESPACE_INT_SYM __inbytestring)(__port,(__UINT8_TYPE__ *)__addr,(__LONGSIZE_TYPE__)__count); }
+__FORCELOCAL void (__LIBCCALL insw)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { (__NAMESPACE_INT_SYM __inwordstring)(__port,(__UINT16_TYPE__ *)__addr,(__LONGSIZE_TYPE__)__count); }
+__FORCELOCAL void (__LIBCCALL insl)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { (__NAMESPACE_INT_SYM __indwordstring)(__port,(__ULONG32_TYPE__ *)__addr,(__LONGSIZE_TYPE__)__count); }
+__FORCELOCAL void (__LIBCCALL outb)(__IOPORT_T __port, __UINT8_TYPE__ __val) { (__NAMESPACE_INT_SYM __outbyte)(__port,__val); }
+__FORCELOCAL void (__LIBCCALL outw)(__IOPORT_T __port, __UINT16_TYPE__ __val) { (__NAMESPACE_INT_SYM __outword)(__port,__val); }
+__FORCELOCAL void (__LIBCCALL outl)(__IOPORT_T __port, __UINT32_TYPE__ __val) { (__NAMESPACE_INT_SYM __outdword)(__port,(__ULONG32_TYPE__)__val); }
+__FORCELOCAL void (__LIBCCALL outb_p)(__IOPORT_T __port, __UINT8_TYPE__ __val) { (__NAMESPACE_INT_SYM __outbyte)(__port,__val); __IO_SLOWDOWN }
+__FORCELOCAL void (__LIBCCALL outw_p)(__IOPORT_T __port, __UINT16_TYPE__ __val) { (__NAMESPACE_INT_SYM __outword)(__port,__val); __IO_SLOWDOWN }
+__FORCELOCAL void (__LIBCCALL outl_p)(__IOPORT_T __port, __UINT32_TYPE__ __val) { (__NAMESPACE_INT_SYM __outdword)(__port,(__ULONG32_TYPE__)__val); __IO_SLOWDOWN }
+__FORCELOCAL void (__LIBCCALL outsb)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { (__NAMESPACE_INT_SYM __outbytestring)(__port,(__UINT8_TYPE__ *)__addr,(__SIZE_TYPE__)__count); }
+__FORCELOCAL void (__LIBCCALL outsw)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { (__NAMESPACE_INT_SYM __outwordstring)(__port,(__UINT16_TYPE__ *)__addr,(__SIZE_TYPE__)__count); }
+__FORCELOCAL void (__LIBCCALL outsl)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { (__NAMESPACE_INT_SYM __outdwordstring)(__port,(__ULONG32_TYPE__ *)__addr,(__SIZE_TYPE__)__count); }
+
+#if defined(__USE_KOS) || defined(__KERNEL__)
+__FORCELOCAL void (__LIBCCALL io_delay)(void) { __IO_SLOWDOWN }
+#endif /* __USE_KOS || __KERNEL__ */
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("al")
+#pragma pop_macro("out")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
+#undef __IO_SLOWDOWN
+#undef __IO_SLOWDOWN_IMPL
+
+#ifndef __INTELLISENSE__
+#define inb(port)                              ((__NAMESPACE_INT_SYM __inbyte)(port))
+#define inw(port)                              ((__NAMESPACE_INT_SYM __inword)(port))
+#define inl(port)             ((__UINT32_TYPE__)(__NAMESPACE_INT_SYM __indword)(port))
+#define insb(port,addr,count)                  ((__NAMESPACE_INT_SYM __inbytestring)(port,(__UINT8_TYPE__ *)(addr),(__LONGSIZE_TYPE__)(count)))
+#define insw(port,addr,count)                  ((__NAMESPACE_INT_SYM __inwordstring)(port,(__UINT16_TYPE__ *)(addr),(__LONGSIZE_TYPE__)(count)))
+#define insl(port,addr,count)                  ((__NAMESPACE_INT_SYM __indwordstring)(port,(__ULONG32_TYPE__ *)(addr),(__LONGSIZE_TYPE__)(count)))
+#define outb(port,val)                         ((__NAMESPACE_INT_SYM __outbyte)(port,val))
+#define outw(port,val)                         ((__NAMESPACE_INT_SYM __outword)(port,val))
+#define outl(port,val)                         ((__NAMESPACE_INT_SYM __outdword)(port,(__ULONG32_TYPE__)(val)))
+#define outsb(port,addr,count)                 ((__NAMESPACE_INT_SYM __outbytestring)(port,(__UINT8_TYPE__ *)(addr),(__SIZE_TYPE__)(count)))
+#define outsw(port,addr,count)                 ((__NAMESPACE_INT_SYM __outwordstring)(port,(__UINT16_TYPE__ *)(addr),(__SIZE_TYPE__)(count)))
+#define outsl(port,addr,count)                 ((__NAMESPACE_INT_SYM __outdwordstring)(port,(__ULONG32_TYPE__ *)(addr),(__SIZE_TYPE__)(count)))
+#endif /* !__INTELLISENSE__ */
+
+#endif /* !GCC... */
 
 #undef __IOPORT_T
 #undef __MEMPORT_T

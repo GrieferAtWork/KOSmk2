@@ -65,35 +65,41 @@ struct osockaddr {
 };
 #endif /* __USE_MISC */
 
+#ifdef __COMPILER_PREFERR_ENUMS
 enum {
-    SHUT_RD = 0,     /*< No more receptions. */
-    SHUT_WR,         /*< No more transmissions. */
-    SHUT_RDWR        /*< No more receptions or transmissions. */
-#define SHUT_RD    SHUT_RD
-#define SHUT_WR    SHUT_WR
-#define SHUT_RDWR  SHUT_RDWR
+    SHUT_RD   = 0, /*< No more receptions. */
+    SHUT_WR   = 1, /*< No more transmissions. */
+    SHUT_RDWR = 2  /*< No more receptions or transmissions. */
+#define SHUT_RD   SHUT_RD
+#define SHUT_WR   SHUT_WR
+#define SHUT_RDWR SHUT_RDWR
 };
+#else /* __COMPILER_PREFERR_ENUMS */
+#define SHUT_RD    0 /*< No more receptions. */
+#define SHUT_WR    1 /*< No more transmissions. */
+#define SHUT_RDWR  2 /*< No more receptions or transmissions. */
+#endif /* !__COMPILER_PREFERR_ENUMS */
 
 
 #if defined(__cplusplus) || !defined(__USE_GNU) || \
   (!__GCC_VERSION(2,7,0) && !__has_attribute(__transparent_union__))
-#   define __SOCKADDR_ARG       struct sockaddr *__restrict
-#   define __CONST_SOCKADDR_ARG struct sockaddr const *__restrict
+#define __SOCKADDR_ARG       struct sockaddr *__restrict
+#define __CONST_SOCKADDR_ARG struct sockaddr const *__restrict
 #else
-# define __SOCKADDR_ALLTYPES \
-  __SOCKADDR_ONETYPE(sockaddr) \
-  __SOCKADDR_ONETYPE(sockaddr_at) \
-  __SOCKADDR_ONETYPE(sockaddr_ax25) \
-  __SOCKADDR_ONETYPE(sockaddr_dl) \
-  __SOCKADDR_ONETYPE(sockaddr_eon) \
-  __SOCKADDR_ONETYPE(sockaddr_in) \
-  __SOCKADDR_ONETYPE(sockaddr_in6) \
-  __SOCKADDR_ONETYPE(sockaddr_inarp) \
-  __SOCKADDR_ONETYPE(sockaddr_ipx) \
-  __SOCKADDR_ONETYPE(sockaddr_iso) \
-  __SOCKADDR_ONETYPE(sockaddr_ns) \
-  __SOCKADDR_ONETYPE(sockaddr_un) \
-  __SOCKADDR_ONETYPE(sockaddr_x25)
+#define __SOCKADDR_ALLTYPES \
+    __SOCKADDR_ONETYPE(sockaddr) \
+    __SOCKADDR_ONETYPE(sockaddr_at) \
+    __SOCKADDR_ONETYPE(sockaddr_ax25) \
+    __SOCKADDR_ONETYPE(sockaddr_dl) \
+    __SOCKADDR_ONETYPE(sockaddr_eon) \
+    __SOCKADDR_ONETYPE(sockaddr_in) \
+    __SOCKADDR_ONETYPE(sockaddr_in6) \
+    __SOCKADDR_ONETYPE(sockaddr_inarp) \
+    __SOCKADDR_ONETYPE(sockaddr_ipx) \
+    __SOCKADDR_ONETYPE(sockaddr_iso) \
+    __SOCKADDR_ONETYPE(sockaddr_ns) \
+    __SOCKADDR_ONETYPE(sockaddr_un) \
+    __SOCKADDR_ONETYPE(sockaddr_x25)
 #define __SOCKADDR_ONETYPE(type) struct type *__restrict __##type##__;
 typedef union { __SOCKADDR_ALLTYPES } __SOCKADDR_ARG __attribute__((__transparent_union__));
 #undef __SOCKADDR_ONETYPE
@@ -105,8 +111,8 @@ typedef union { __SOCKADDR_ALLTYPES } __CONST_SOCKADDR_ARG __attribute__((__tran
 #ifdef __USE_GNU
 /* For `recvmmsg' and `sendmmsg'. */
 struct mmsghdr {
- struct msghdr msg_hdr; /*< Actual message header. */
- unsigned int  msg_len; /*< Number of received or sent bytes for the entry. */
+    struct msghdr msg_hdr; /*< Actual message header. */
+    unsigned int  msg_len; /*< Number of received or sent bytes for the entry. */
 };
 #endif
 

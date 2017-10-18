@@ -53,14 +53,15 @@
 
 __SYSDECL_BEGIN
 
-#define __SIMD_DECL(function)                         __PP_CAT2(__DECL_SIMD_,function)
-#define __MATHCALL_VEC(function,suffix,args)          __SIMD_DECL(__MATH_PRECNAME(function,suffix)) __MATHCALL(function,suffix,args)
-#define __MATHDECL_VEC(type,function,suffix,args)     __SIMD_DECL(__MATH_PRECNAME(function,suffix)) __MATHDECL(type,function,suffix,args)
-#define __MATHCALL(function,suffix,args)              __MATHDECL(_Mdouble_,function,suffix,args)
-#define __MATHDECL(type,function,suffix,args)         __MATHDECL_1(type,function,suffix,args); __MATHDECL_1(type,__PP_CAT2(__,function),suffix,args)
-#define __MATHCALLX(function,suffix,args,attrib)      __MATHDECLX(_Mdouble_,function,suffix,args,attrib)
-#define __MATHDECLX(type,function,suffix,args,attrib) __MATHDECL_1(type,function,suffix,args) __attribute__(attrib); __MATHDECL_1(type,__PP_CAT2(__,function),suffix,args) __attribute__(attrib)
-#define __MATHDECL_1(type,function,suffix,args)       __LIBC type (__LIBCCALL __MATH_PRECNAME(function,suffix)) args /*__THROW*/
+#define __SIMD_DECL(function)                               __PP_CAT2(__DECL_SIMD_,function)
+#define __MATHCALL_VEC(function,suffix,args)                __SIMD_DECL(__MATH_PRECNAME(function,suffix)) __MATHCALL(function,suffix,args)
+#define __MATHDECL_VEC(type,function,suffix,args)           __SIMD_DECL(__MATH_PRECNAME(function,suffix)) __MATHDECL(type,function,suffix,args)
+#define __MATHCALL(function,suffix,args)                    __MATHDECL(_Mdouble_,function,suffix,args)
+#define __MATHDECL(type,function,suffix,args)               __MATHDECL_1(type,function,suffix,args); __MATHDECL_1(type,__PP_CAT2(__,function),suffix,args)
+#define __MATHCALLX(function,suffix,args,attrib)            __MATHDECLX(_Mdouble_,function,suffix,args,attrib)
+#define __MATHDECLX(type,function,suffix,args,attrib)       __MATHDECL_1_ATTR(type,function,suffix,args,attrib); attrib __MATHDECL_1_ATTR(type,__PP_CAT2(__,function),suffix,args,attrib)
+#define __MATHDECL_1(type,function,suffix,args)             __LIBC type __NOTHROW((__LIBCCALL __MATH_PRECNAME(function,suffix)) args)
+#define __MATHDECL_1_ATTR(type,function,suffix,args,attrib) __LIBC attrib type __NOTHROW((__LIBCCALL __MATH_PRECNAME(function,suffix)) args)
 #define _Mdouble_                double
 #define __MATH_PRECNAME(name,r)  name##r
 #define __MATH_DECLARING_DOUBLE  1
@@ -112,6 +113,7 @@ __SYSDECL_BEGIN
 #undef  __MATHNS_USING
 #endif /* __COMPILER_HAVE_LONGDOUBLE */
 #endif /* __USE_ISOC99 */
+#undef  __MATHDECL_1_ATTR
 #undef  __MATHDECL_1
 #undef  __MATHDECL
 #undef  __MATHCALL
@@ -243,43 +245,71 @@ enum {
 #ifdef __USE_MISC
 /* Support for various different standard error handling behaviors. */
 typedef enum {
-  _IEEE_ = -1, /* According to IEEE 754/IEEE 854. */
-  _SVID_,      /* According to System V, release 4. */
-  _XOPEN_,     /* Nowadays also Unix98. */
-  _POSIX_,
-  _ISOC_       /* Actually this is ISO C99. */
+  _IEEE_  = -1, /*< According to IEEE 754/IEEE 854. */
+  _SVID_  = 0,  /*< According to System V, release 4. */
+  _XOPEN_ = 1,  /*< Nowadays also Unix98. */
+  _POSIX_ = 2,
+  _ISOC_  = 3   /*< Actually this is ISO C99. */
 } _LIB_VERSION_TYPE;
 
 /* This variable can be changed at run-time to any of the values above to
  * affect floating point error handling behavior (it may also be necessary
  * to change the hardware FPU exception settings). */
 #ifndef __KERNEL__
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("_LIB_VERSION")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #undef _LIB_VERSION
-__LIBC _LIB_VERSION_TYPE (_LIB_VERSION);
-#endif
-#endif
+__LIBC _LIB_VERSION_TYPE _LIB_VERSION;
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("_LIB_VERSION")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#endif /* !__KERNEL__ */
+#endif /* __USE_MISC */
 
 
 #ifdef __USE_MISC
+
 /* In SVID error handling, `matherr' is called with this description of the exceptional condition.
  * We have a problem when using C++ since `exception' is a reserved name in C++. */
 #ifdef __cplusplus
 struct __exception
 #else
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("exception")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef exception
 struct exception
 #endif
 {
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("type")
+#pragma push_macro("name")
+#pragma push_macro("arg1")
+#pragma push_macro("arg2")
+#pragma push_macro("retval")
+#pragma push_macro("err")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #undef type
 #undef name
 #undef arg1
 #undef arg2
 #undef retval
- int    type;
- char  *name;
- double arg1;
- double arg2;
- double retval;
- int    err;
+#undef err
+    int    type;
+    char  *name;
+    double arg1;
+    double arg2;
+    double retval;
+    int    err;
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("type")
+#pragma pop_macro("name")
+#pragma pop_macro("arg1")
+#pragma pop_macro("arg2")
+#pragma pop_macro("retval")
+#pragma pop_macro("err")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 };
 
 #ifndef __KERNEL__
@@ -287,6 +317,9 @@ struct exception
 __LIBC int __NOTHROW((__LIBCCALL matherr)(struct __exception *__exc));
 #else
 __LIBC int __NOTHROW((__LIBCCALL matherr)(struct exception *__exc));
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("exception")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #endif
 #endif /* !__KERNEL__ */
 
@@ -382,7 +415,7 @@ __LIBC int __NOTHROW((__LIBCCALL matherr)(struct exception *__exc));
 #define islessgreater(x,y)  __XBLOCK({ __typeof__(x) __x = (x); __typeof__(y) __y = (y); __XRETURN !isunordered(__x,__y) &&(__x < __y || __y < __x); })
 #endif
 #ifndef isunordered
-#define isunordered(u,v)    __XBLOCK({ __typeof__(u) __u = (u); __typeof__(v) __v = (v); __XRETURN fpclassify(__u) == FP_NAN || fpclassify(__v) == FP_NAN; })
+#define isunordered(u,v)   (fpclassify(u) == FP_NAN || fpclassify(v) == FP_NAN)
 #endif
 #endif /* __USE_ISOC99 */
 

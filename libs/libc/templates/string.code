@@ -936,7 +936,7 @@ DECL errno_t LIBCCALL Xstr(set_s)(T *__restrict str, size_t buflen, T val) {
 #undef WANT_STRNSET_S
 DECL errno_t LIBCCALL Xstr(nset_s)(T *__restrict str, size_t buflen, T val, size_t maxlen) {
 	/* XXX: How is this supposed to fail? */
-	STR_MEMSET(str,NUL,Xstr(nlen)(str,MIN(buflen,maxlen)));
+	STR_MEMSET(str,val,Xstr(nlen)(str,MIN(buflen,maxlen)));
 	return EOK;
 }
 #endif /* WANT_STRNSET_S */

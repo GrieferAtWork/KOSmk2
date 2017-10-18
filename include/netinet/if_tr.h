@@ -55,49 +55,49 @@ __SYSDECL_BEGIN
 
 /* This is an Token-Ring frame header. */
 struct trh_hdr {
- u_int8_t  ac;             /*< access control field */
- u_int8_t  fc;             /*< frame control field */
- u_int8_t  daddr[TR_ALEN]; /*< destination address */
- u_int8_t  saddr[TR_ALEN]; /*< source address */
- u_int16_t rcf;            /*< route control field */
- u_int16_t rseg[8];        /*< routing registers */
+    u_int8_t  ac;             /*< access control field */
+    u_int8_t  fc;             /*< frame control field */
+    u_int8_t  daddr[TR_ALEN]; /*< destination address */
+    u_int8_t  saddr[TR_ALEN]; /*< source address */
+    u_int16_t rcf;            /*< route control field */
+    u_int16_t rseg[8];        /*< routing registers */
 };
 
 /* This is an Token-Ring LLC structure */
 struct trllc {
- u_int8_t  dsap;      /*< destination SAP */
- u_int8_t  ssap;      /*< source SAP */
- u_int8_t  llc;       /*< LLC control field */
- u_int8_t  protid[3]; /*< protocol id */
- u_int16_t ethertype; /*< ether type field */
+    u_int8_t  dsap;      /*< destination SAP */
+    u_int8_t  ssap;      /*< source SAP */
+    u_int8_t  llc;       /*< LLC control field */
+    u_int8_t  protid[3]; /*< protocol id */
+    u_int16_t ethertype; /*< ether type field */
 };
 
 /* Token-Ring statistics collection data. */
 struct tr_statistics {
-  unsigned long rx_packets; /*< total packets received. */
-  unsigned long tx_packets; /*< total packets transmitted. */
-  unsigned long rx_bytes;   /*< total bytes received. */
-  unsigned long tx_bytes;   /*< total bytes transmitted. */
-  unsigned long rx_errors;  /*< bad packets received. */
-  unsigned long tx_errors;  /*< packet transmit problems. */
-  unsigned long rx_dropped; /*< no space in linux buffers. */
-  unsigned long tx_dropped; /*< no space available in linux. */
-  unsigned long multicast;  /*< multicast packets received. */
-  unsigned long transmit_collision;
+    unsigned long rx_packets; /*< total packets received. */
+    unsigned long tx_packets; /*< total packets transmitted. */
+    unsigned long rx_bytes;   /*< total bytes received. */
+    unsigned long tx_bytes;   /*< total bytes transmitted. */
+    unsigned long rx_errors;  /*< bad packets received. */
+    unsigned long tx_errors;  /*< packet transmit problems. */
+    unsigned long rx_dropped; /*< no space in linux buffers. */
+    unsigned long tx_dropped; /*< no space available in linux. */
+    unsigned long multicast;  /*< multicast packets received. */
+    unsigned long transmit_collision;
 
-  /* detailed Token-Ring errors.
-   * See IBM Token-Ring Network Architecture for more info */
-  unsigned long line_errors;
-  unsigned long internal_errors;
-  unsigned long burst_errors;
-  unsigned long A_C_errors;
-  unsigned long abort_delimiters;
-  unsigned long lost_frames;
-  unsigned long recv_congest_count;
-  unsigned long frame_copied_errors;
-  unsigned long frequency_errors;
-  unsigned long token_errors;
-  unsigned long dummy1;
+    /* detailed Token-Ring errors.
+     * See IBM Token-Ring Network Architecture for more info */
+    unsigned long line_errors;
+    unsigned long internal_errors;
+    unsigned long burst_errors;
+    unsigned long A_C_errors;
+    unsigned long abort_delimiters;
+    unsigned long lost_frames;
+    unsigned long recv_congest_count;
+    unsigned long frame_copied_errors;
+    unsigned long frequency_errors;
+    unsigned long token_errors;
+    unsigned long dummy1;
 };
 
 /* source routing stuff */
@@ -112,12 +112,12 @@ struct tr_statistics {
 
 #ifdef __USE_MISC
 struct trn_hdr {
- u_int8_t  trn_ac;             /*< access control field. */
- u_int8_t  trn_fc;             /*< field control field. */
- u_int8_t  trn_dhost[TR_ALEN]; /*< destination host. */
- u_int8_t  trn_shost[TR_ALEN]; /*< source host. */
- u_int16_t trn_rcf;            /*< route control field. */
- u_int16_t trn_rseg[8];        /*< routing registers. */
+    u_int8_t  trn_ac;             /*< access control field. */
+    u_int8_t  trn_fc;             /*< field control field. */
+    u_int8_t  trn_dhost[TR_ALEN]; /*< destination host. */
+    u_int8_t  trn_shost[TR_ALEN]; /*< source host. */
+    u_int16_t trn_rcf;            /*< route control field. */
+    u_int16_t trn_rseg[8];        /*< routing registers. */
 };
 #endif /* __USE_MISC */
 

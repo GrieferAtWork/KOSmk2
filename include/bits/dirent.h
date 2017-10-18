@@ -26,14 +26,31 @@
 __SYSDECL_BEGIN
 
 struct dirent {
+#ifdef __USE_KOS
+#ifdef __COMPILER_HAVE_TRANSPARENT_UNION
 union {
     __FS_TYPE(ino)     d_ino;
-#ifdef __USE_KOS
     __ino32_t          d_ino32;
     __ino64_t          d_ino64;
-#endif /* !__USE_KOS */
-    __ino64_t        __padding0;
 };
+#else /* __COMPILER_HAVE_TRANSPARENT_UNION */
+union {
+    __FS_TYPE(ino)   __d_ino;
+    __ino32_t        __d_ino32;
+    __ino64_t        __d_ino64;
+}                    __u_d_ino;
+#define d_ino        __u_d_ino.__d_ino
+#define d_ino32      __u_d_ino.__d_ino32
+#define d_ino64      __u_d_ino.__d_ino64
+#endif /* !__COMPILER_HAVE_TRANSPARENT_UNION */
+#else /* __USE_KOS */
+#ifdef __USE_FILE_OFFSET64
+    __ino64_t          d_ino;
+#else /* __USE_FILE_OFFSET64 */
+    __ino32_t          d_ino;
+    __ino32_t        __padding0;
+#endif /* !__USE_FILE_OFFSET64 */
+#endif /* !__USE_KOS */
     unsigned char      d_type;
     unsigned short int d_namlen; /*< == strlen(d_name) */
 #ifdef __USE_KOS
@@ -49,13 +66,26 @@ union {
 
 #ifdef __USE_LARGEFILE64
 struct dirent64 {
+#ifdef __USE_KOS
+#ifdef __COMPILER_HAVE_TRANSPARENT_UNION
 union {
     __ino64_t          d_ino;
-#ifdef __USE_KOS
     __ino32_t          d_ino32;
     __ino64_t          d_ino64;
-#endif /* __USE_KOS */
 };
+#else /* __COMPILER_HAVE_TRANSPARENT_UNION */
+union {
+    __ino64_t        __d_ino;
+    __ino32_t        __d_ino32;
+    __ino64_t        __d_ino64;
+}                    __u_d_ino;
+//#define d_ino      __u_d_ino.__d_ino
+//#define d_ino32    __u_d_ino.__d_ino32
+//#define d_ino64    __u_d_ino.__d_ino64
+#endif /* !__COMPILER_HAVE_TRANSPARENT_UNION */
+#else /* __USE_KOS */
+    __ino64_t          d_ino;
+#endif /* !__USE_KOS */
     unsigned char      d_type;
     unsigned short int d_namlen; /*< == strlen(d_name) */
 #ifdef __USE_KOS

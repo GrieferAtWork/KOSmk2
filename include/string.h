@@ -286,6 +286,10 @@ __LOCAL __NONNULL((1,2))
 void *(__LIBCCALL __mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n) {
     return mempcpy(__dst,__src,__n);
 }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
+int (__LIBCCALL strverscmp)(char const *__s1, char const *__s2) {
+    return __NAMESPACE_STD_SYM strcmp(__s1,__s2); /* TODO. */
+}
 #endif /* __USE_GNU */
 #elif defined(__USE_GNU)
 #define __local_rawmemchr(haystack,needle)       rawmemchr(haystack,needle)
@@ -335,7 +339,7 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strcasestr)(char
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,3)) void *(__LIBCCALL memmem)(void const *__haystack, size_t __haystacklen, void const *__needle, size_t __needlelen);
 __LIBC __NONNULL((1,2)) void *(__LIBCCALL __mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n) __ASMNAME("mempcpy");
 __LIBC __NONNULL((1,2)) void *(__LIBCCALL mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n);
-__LIBC __PORT_NODOS __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strverscmp)(char const *__s1, char const *__s2); /* TODO: Implement as inline in DOS. */
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strverscmp)(char const *__s1, char const *__s2);
 #endif /* !__DOS_COMPAT__ */
 #ifndef __KERNEL__
 #ifdef __CRT_GLC
@@ -1073,9 +1077,19 @@ __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,memcasec
           (void const *__a, void const *__b, size_t __n_bytes, __locale_t __locale),_memicmp_l,(__a,__b,__n_bytes,__locale))
 #endif /* !__KERNEL__ */
 #else /* !__GLC_COMPAT__ */
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcasecmp)(void const *__a, void const *__b, size_t __n_bytes) { return 0; } /* TODO */
+__REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_tolower,(int __c),tolower,(__c))
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
+int (__LIBCCALL memcasecmp)(void const *__a, void const *__b, size_t __n_bytes) {
+    __BYTE_TYPE__ *__ai = (__BYTE_TYPE__ *)__a,*__bi = (__BYTE_TYPE__ *)__b; int __temp;
+    while (__n_bytes--) if ((__temp = __libc_tolower(*__ai++) - __libc_tolower(*__bi++)) != 0) return temp;
+    return 0;
+}
 #ifndef __KERNEL__
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcasecmp_l)(void const *__a, void const *__b, size_t __n_bytes, __locale_t __UNUSED(__locale)) { return memcasecmp(__a,__b,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
+int (__LIBCCALL memcasecmp_l)(void const *__a, void const *__b, size_t __n_bytes,
+                              __locale_t __UNUSED(__locale)) {
+    return memcasecmp(__a,__b,__n_bytes);
+}
 #endif /* !__KERNEL__ */
 #endif /* __GLC_COMPAT__ */
 
@@ -1599,23 +1613,71 @@ __LIBC __PORT_DOSONLY_ALT(strerror) errno_t (__LIBCCALL __wcserror_s)(wchar_t *_
 
 #ifndef ___wcsset_s_defined
 #define ___wcsset_s_defined 1
-/* TODO: These could be implemented as inline */
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wcsset_s,(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val),wcsset_s,(__str,__maxlen,__val))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wcsnset_s,(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen),wcsnset_s,(__str,__buflen,__val,__maxlen))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wcslwr_s,(wchar_t *__restrict __str, size_t __maxlen),wcslwr_s,(__str,__maxlen))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wcsupr_s,(wchar_t *__restrict __str, size_t __maxlen),wcsupr_s,(__str,__maxlen))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wcslwr_s_l,(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale),wcslwr_s_l,(__str,__maxlen,__locale))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wcsupr_s_l,(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale),wcsupr_s_l,(__str,__maxlen,__locale))
+#ifdef __GLC_COMPAT__
+__REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_towlower,(int __wc),towlower,(__wc))
+__REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_towupper,(int __wc),towupper,(__wc))
+__REDIRECT2_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_towlower_l,(int __wc, __locale_t __locale),towlower_l,_towlower_l,(__wc))
+__REDIRECT2_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_towupper_l,(int __wc, __locale_t __locale),towupper_l,_towupper_l,(__wc))
+__LOCAL errno_t (__LIBCCALL _wcsset_s)(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val) { if (wcsnlen(__str,__buflen) == __buflen) return 34; wcsset(__str,__val); return 0; }
+__LOCAL errno_t (__LIBCCALL _wcsnset_s)(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen) { if (__maxlen < __buflen) __buflen = __maxlen; while (__buflen-- && *__str) *__str++ = __val; return 0; }
+__LOCAL errno_t (__LIBCCALL _wcslwr_s)(wchar_t *__restrict __str, size_t __maxlen) { while (__maxlen-- && *__str) *__str = __libc_towlower(*__str),++__str; return 0 }
+__LOCAL errno_t (__LIBCCALL _wcsupr_s)(wchar_t *__restrict __str, size_t __maxlen) { while (__maxlen-- && *__str) *__str = __libc_towupper(*__str),++__str; return 0 }
+__LOCAL errno_t (__LIBCCALL _wcslwr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale) { while (__maxlen-- && *__str) *__str = __libc_towlower_l(*__str,__locale),++__str; return 0 }
+__LOCAL errno_t (__LIBCCALL _wcsupr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale) { while (__maxlen-- && *__str) *__str = __libc_towupper_l(*__str,__locale),++__str; return 0 }
+#else /* __GLC_COMPAT__ */
+__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsset_s,(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val),wcsset_s,(__str,__maxlen,__val))
+__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsnset_s,(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen),wcsnset_s,(__str,__buflen,__val,__maxlen))
+__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcslwr_s,(wchar_t *__restrict __str, size_t __maxlen),wcslwr_s,(__str,__maxlen))
+__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsupr_s,(wchar_t *__restrict __str, size_t __maxlen),wcsupr_s,(__str,__maxlen))
+__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcslwr_s_l,(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale),wcslwr_s_l,(__str,__maxlen,__locale))
+__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsupr_s_l,(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale),wcsupr_s_l,(__str,__maxlen,__locale))
+#endif /* !__GLC_COMPAT__ */
 #endif /* !___wcsset_s_defined */
 
 #ifdef __USE_DOS_SLIB
 #ifndef __wcsncat_s_defined
 #define __wcsncat_s_defined 1
-/* TODO: These could be implemented as inline */
-__LIBC __PORT_DOSONLY errno_t (__LIBCCALL wcscat_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src);
-__LIBC __PORT_DOSONLY errno_t (__LIBCCALL wcscpy_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src);
-__LIBC __PORT_DOSONLY errno_t (__LIBCCALL wcsncat_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars);
-__LIBC __PORT_DOSONLY errno_t (__LIBCCALL wcsncpy_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars);
+#ifdef __GLC_COMPAT__
+__LOCAL errno_t (__LIBCCALL wcscat_s)
+(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src) {
+    wchar_t *__dstend = (wchar_t *)__dst+wcsnlen(__dst,__dstsize);
+    size_t __srclen = wcslen(__src);
+    __dstsize -= (size_t)(__dstend-__dst);
+    if (__srclen+1 > __dstsize) return 34;
+    do *__dstend++ = *__src++; while (__srclen--);
+    return 0;
+}
+__LOCAL errno_t (__LIBCCALL wcscpy_s)
+(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src) {
+    size_t __srclen = wcslen(__src);
+    if (__srclen+1 > __dstsize) return 34;
+    do *__dst++ = *__src++; while (__srclen--);
+    return 0;
+}
+__LOCAL errno_t (__LIBCCALL wcsncat_s)
+(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars) {
+    wchar_t *__dstend = (wchar_t *)__dst+wcsnlen(__dst,__dstsize);
+    size_t __srclen = wcsnlen(__src,__maxlen);
+    __dstsize -= (size_t)(__dstend-__dst);
+    if (__srclen+1 > __dstsize) return 34;
+    while (__srclen--) *__dstend++ = *__src++;
+    *__dstend = (wchar_t)'\0';
+    return 0;
+}
+__LOCAL errno_t (__LIBCCALL wcsncpy_s)
+(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars) {
+    size_t __srclen = wcsnlen(__src,__maxlen);
+    if (__srclen+1 > __dstsize) return 34;
+    while (__srclen--) *__dst++ = *__src++;
+    *__dst = (wchar_t)'\0';
+    return 0;
+}
+#else
+__LIBC errno_t (__LIBCCALL wcscat_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src);
+__LIBC errno_t (__LIBCCALL wcscpy_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src);
+__LIBC errno_t (__LIBCCALL wcsncat_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars);
+__LIBC errno_t (__LIBCCALL wcsncpy_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars);
+#endif
 #endif /* !__wcsncat_s_defined */
 #endif /* __USE_DOS_SLIB */
 #endif /* __CRT_DOS */

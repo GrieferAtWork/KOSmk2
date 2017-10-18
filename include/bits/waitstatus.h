@@ -22,6 +22,10 @@
 #include <__stdinc.h>
 #include <features.h>
 #include <bits/waitflags.h>
+#ifdef __USE_MISC
+#include <bits/endian.h>
+#include <hybrid/byteorder.h>
+#endif /* __USE_MISC */
 
 __SYSDECL_BEGIN
 
@@ -66,40 +70,70 @@ __SYSDECL_BEGIN
 #define __WCOREFLAG             0x80
 
 #ifdef __USE_MISC
-#include <hybrid/byteorder.h>
 union wait {
     int w_status;
+#ifdef __COMPILER_HAVE_TRANSPARENT_STRUCT
     struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-        unsigned int __w_termsig : 7; /* Terminating signal. */
-        unsigned int __w_coredump : 1; /* Set if dumped core. */
-        unsigned int __w_retcode : 8; /* Return code if exited normally. */
-        unsigned int : 16;
+        unsigned int w_termsig  : 7; /*< Terminating signal. */
+        unsigned int w_coredump : 1; /*< Set if dumped core. */
+        unsigned int w_retcode  : 8; /*< Return code if exited normally. */
+        unsigned int __w_pad0   : 16;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-        unsigned int : 16;
-        unsigned int __w_retcode : 8;
-        unsigned int __w_coredump : 1;
-        unsigned int __w_termsig : 7;
-#endif
+        unsigned int __w_pad0   : 16;
+        unsigned int w_retcode  : 8; /*< Return code if exited normally. */
+        unsigned int w_coredump : 1; /*< Set if dumped core. */
+        unsigned int w_termsig  : 7; /*< Terminating signal. */
+#endif /* Endian... */
+    };
+    struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+        unsigned int w_stopval : 8; /*< W_STOPPED if stopped. */
+        unsigned int w_stopsig : 8; /*< Stopping signal. */
+        unsigned int __w_pad1  : 16;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+        unsigned int __w_pad1  : 16;
+        unsigned int w_stopsig : 8; /*< Stopping signal. */
+        unsigned int w_stopval : 8; /*< W_STOPPED if stopped. */
+#endif /* Endian... */
+    };
+#endif /* __COMPILER_HAVE_TRANSPARENT_STRUCT */
+#if !defined(__USE_KOS) || \
+    !defined(__COMPILER_HAVE_TRANSPARENT_STRUCT)
+    struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+        unsigned int __w_termsig  : 7; /* Terminating signal. */
+        unsigned int __w_coredump : 1; /* Set if dumped core. */
+        unsigned int __w_retcode  : 8; /* Return code if exited normally. */
+        unsigned int __w_pad0     : 16;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+        unsigned int __w_pad0     : 16;
+        unsigned int __w_retcode  : 8; /* Return code if exited normally. */
+        unsigned int __w_coredump : 1; /* Set if dumped core. */
+        unsigned int __w_termsig  : 7; /* Terminating signal. */
+#endif /* Endian... */
     } __wait_terminated;
     struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-        unsigned int __w_stopval : 8; /* W_STOPPED if stopped. */
-        unsigned int __w_stopsig : 8; /* Stopping signal. */
-        unsigned int : 16;
+        unsigned int __w_stopval : 8; /*< W_STOPPED if stopped. */
+        unsigned int __w_stopsig : 8; /*< Stopping signal. */
+        unsigned int __w_pad1    : 16;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-        unsigned int : 16;
-        unsigned int __w_stopsig : 8; /* Stopping signal. */
-        unsigned int __w_stopval : 8; /* W_STOPPED if stopped. */
-#endif
+        unsigned int __w_pad1    : 16;
+        unsigned int __w_stopsig : 8; /*< Stopping signal. */
+        unsigned int __w_stopval : 8; /*< W_STOPPED if stopped. */
+#endif /* Endian... */
     } __wait_stopped;
-};
-
+#ifndef __COMPILER_HAVE_TRANSPARENT_STRUCT
 #define w_termsig  __wait_terminated.__w_termsig
 #define w_coredump __wait_terminated.__w_coredump
 #define w_retcode  __wait_terminated.__w_retcode
 #define w_stopsig  __wait_stopped.__w_stopsig
 #define w_stopval  __wait_stopped.__w_stopval
+#endif /* !__COMPILER_HAVE_TRANSPARENT_STRUCT */
+#endif /* !__USE_KOS || !__COMPILER_HAVE_TRANSPARENT_STRUCT */
+};
+
 #endif /* __USE_MISC */
 
 __SYSDECL_END

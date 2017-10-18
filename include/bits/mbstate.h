@@ -33,16 +33,22 @@ typedef struct __mbstate { __INT32_TYPE__ __val; } __mbstate_t;
 #define __MBSTATE_INIT     {0}
 #elif defined(__DOS_COMAPT__)
 typedef struct __mbstate {
- int                   __count;
- union { __WINT_TYPE__ __wch; char __wchb[4]; } __value;
+    int                   __count;
+    union { __WINT_TYPE__ __wch; char __wchb[4]; } __value;
 } __mbstate_t;
 #define __MBSTATE_INIT     {0,{0}}
 #else
 /* TODO: For binary compatibility with dos, we must
- *       be able to do with a 32-bit integer type! */
+ *       be able to do with a 32-bit integer type!
+ * >> In theory this is possible:
+ *    Even though we need 32 bits to store parsed characters,
+ *    not all combinations are actually possible, meaning
+ *    that we might be able to squeeze out 2 bits which
+ *    we can use to track the character count.
+ */
 typedef struct __mbstate {
- int                   __count;
- union { __WINT_TYPE__ __wch; char __wchb[4]; } __value;
+    int                   __count;
+    union { __WINT_TYPE__ __wch; char __wchb[4]; } __value;
 } __mbstate_t;
 #define __MBSTATE_INIT     {0,{0}}
 #endif
@@ -60,7 +66,7 @@ __NAMESPACE_STD_END
 #define __mbstate_t_defined 1
 __NAMESPACE_STD_USING(mbstate_t)
 #endif /* !__mbstate_t_defined */
-#endif
+#endif /* __USE_GNU || __USE_XOPEN2K8 */
 
 #ifdef __USE_KOS
 #ifndef MBSTATE_INIT

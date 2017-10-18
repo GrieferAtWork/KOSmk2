@@ -374,7 +374,7 @@ K32_LockFileEx(HANDLE hFile, DWORD dwFlags, DWORD UNUSED(dwReserved),
  if (dwFlags&LOCKFILE_FAIL_IMMEDIATELY) lock.l_type |= LOCK_NB;
  lock.l_whence = SEEK_SET;
  lock.l_pid    = getpid(); /* XXX: Will this be required? */
- return !fcntl(HANDLE_TO_FD(hFile),F_SETLK,&lock);
+ return !fcntl(HANDLE_TO_FD(hFile),F_SETLK64,&lock);
 }
 INTERN WINBOOL WINAPI
 K32_UnlockFile(HANDLE hFile, DWORD dwFileOffsetLow, DWORD dwFileOffsetHigh,
@@ -386,7 +386,7 @@ K32_UnlockFile(HANDLE hFile, DWORD dwFileOffsetLow, DWORD dwFileOffsetHigh,
  lock.l_type   = F_UNLCK;
  lock.l_whence = SEEK_SET;
  lock.l_pid    = getpid(); /* XXX: Will this be required? */
- return !fcntl(HANDLE_TO_FD(hFile),F_SETLK,&lock);
+ return !fcntl(HANDLE_TO_FD(hFile),F_SETLK64,&lock);
 }
 INTERN WINBOOL WINAPI
 K32_LockFile(HANDLE hFile, DWORD dwFileOffsetLow, DWORD dwFileOffsetHigh,

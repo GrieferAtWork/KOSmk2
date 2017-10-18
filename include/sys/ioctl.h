@@ -26,18 +26,16 @@
 #include <bits/ioctl-types.h>
 #include <sys/ttydefaults.h>
 
-#ifndef __CRT_GLC
-#error "<ioctl.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
-
 __SYSDECL_BEGIN
 
 #ifndef __KERNEL__
+#ifdef __CRT_GLC
 #if defined(__USE_KOS) && defined(__CRT_KOS)
-__LIBC __ssize_t (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
+__LIBC __PORT_NODOS __ssize_t (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
 #else /* __USE_KOS && __CRT_KOS */
-__LIBC int (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
+__LIBC __PORT_NODOS int (__ATTR_CDECL ioctl)(int __fd, unsigned long int __request, ...);
 #endif /* !__USE_KOS || !__CRT_KOS */
+#endif /* __CRT_GLC */
 #endif /* !__KERNEL__ */
 
 __SYSDECL_END

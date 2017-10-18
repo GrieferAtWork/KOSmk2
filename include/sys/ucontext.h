@@ -57,29 +57,29 @@ typedef greg_t gregset_t[NGREG]; /*< Container for all general registers. */
 #ifdef __USE_GNU
 /* Number of each register in the `gregset_t' array. */
 enum {
-  REG_R8 = 0,
-  REG_R9,
-  REG_R10,
-  REG_R11,
-  REG_R12,
-  REG_R13,
-  REG_R14,
-  REG_R15,
-  REG_RDI,
-  REG_RSI,
-  REG_RBP,
-  REG_RBX,
-  REG_RDX,
-  REG_RAX,
-  REG_RCX,
-  REG_RSP,
-  REG_RIP,
-  REG_EFL,
-  REG_CSGSFS, /* Actually short cs, gs, fs, __pad0. */
-  REG_ERR,
-  REG_TRAPNO,
-  REG_OLDMASK,
-  REG_CR2
+    REG_R8 = 0,
+    REG_R9,
+    REG_R10,
+    REG_R11,
+    REG_R12,
+    REG_R13,
+    REG_R14,
+    REG_R15,
+    REG_RDI,
+    REG_RSI,
+    REG_RBP,
+    REG_RBX,
+    REG_RDX,
+    REG_RAX,
+    REG_RCX,
+    REG_RSP,
+    REG_RIP,
+    REG_EFL,
+    REG_CSGSFS, /* Actually short cs, gs, fs, __pad0. */
+    REG_ERR,
+    REG_TRAPNO,
+    REG_OLDMASK,
+    REG_CR2
 };
 #define REG_R8      REG_R8
 #define REG_R9      REG_R9
@@ -107,45 +107,45 @@ enum {
 #endif /* __USE_GNU */
 
 struct _libc_fpxreg {
- unsigned short int significand[4];
- unsigned short int exponent;
- unsigned short int padding[3];
+    unsigned short int significand[4];
+    unsigned short int exponent;
+    unsigned short int padding[3];
 };
 struct _libc_xmmreg {
- __uint32_t element[4];
+    __uint32_t element[4];
 };
 struct _libc_fpstate {
- /* 64-bit FXSAVE format. */
- __uint16_t          cwd;
- __uint16_t          swd;
- __uint16_t          ftw;
- __uint16_t          fop;
- __uint64_t          rip;
- __uint64_t          rdp;
- __uint32_t          mxcsr;
- __uint32_t          mxcr_mask;
- struct _libc_fpxreg _st[8];
- struct _libc_xmmreg _xmm[16];
- __uint32_t          padding[24];
+    /* 64-bit FXSAVE format. */
+    __uint16_t          cwd;
+    __uint16_t          swd;
+    __uint16_t          ftw;
+    __uint16_t          fop;
+    __uint64_t          rip;
+    __uint64_t          rdp;
+    __uint32_t          mxcsr;
+    __uint32_t          mxcr_mask;
+    struct _libc_fpxreg _st[8];
+    struct _libc_xmmreg _xmm[16];
+    __uint32_t          padding[24];
 };
 /* Structure to describe FPU registers. */
 typedef struct _libc_fpstate *fpregset_t;
 
 /* Context to describe whole processor state. */
 typedef struct {
- gregset_t   gregs;
- fpregset_t  fpregs; /* Note that fpregs is a pointer. */
- __ULONGLONG __reserved1[8];
+    gregset_t   gregs;
+    fpregset_t  fpregs; /* Note that fpregs is a pointer. */
+    __ULONGLONG __reserved1[8];
 } mcontext_t;
 
 /* Userlevel context. */
 typedef struct ucontext {
- unsigned long int    uc_flags;
- struct ucontext     *uc_link;
- stack_t              uc_stack;
- mcontext_t           uc_mcontext;
- __sigset_t           uc_sigmask;
- struct _libc_fpstate __fpregs_mem;
+    unsigned long int    uc_flags;
+    struct ucontext     *uc_link;
+    stack_t              uc_stack;
+    mcontext_t           uc_mcontext;
+    __sigset_t           uc_sigmask;
+    struct _libc_fpstate __fpregs_mem;
 } ucontext_t;
 #else /* __x86_64__ */
 
@@ -156,25 +156,25 @@ typedef greg_t gregset_t[NGREG]; /* Container for all general registers. */
 
 #ifdef __USE_GNU
 enum { /* Number of each register is the `gregset_t' array. */
-  REG_GS = 0,
-  REG_FS,
-  REG_ES,
-  REG_DS,
-  REG_EDI,
-  REG_ESI,
-  REG_EBP,
-  REG_ESP,
-  REG_EBX,
-  REG_EDX,
-  REG_ECX,
-  REG_EAX,
-  REG_TRAPNO,
-  REG_ERR,
-  REG_EIP,
-  REG_CS,
-  REG_EFL,
-  REG_UESP,
-  REG_SS
+    REG_GS = 0,
+    REG_FS,
+    REG_ES,
+    REG_DS,
+    REG_EDI,
+    REG_ESI,
+    REG_EBP,
+    REG_ESP,
+    REG_EBX,
+    REG_EDX,
+    REG_ECX,
+    REG_EAX,
+    REG_TRAPNO,
+    REG_ERR,
+    REG_EIP,
+    REG_CS,
+    REG_EFL,
+    REG_UESP,
+    REG_SS
 };
 
 /* WARNING: Changes to this order of registers must be mirrored by
@@ -204,9 +204,9 @@ enum { /* Number of each register is the `gregset_t' array. */
 #define __LIBC_FPREG_OFFSETOF_EXPONENT    8
 #define __LIBC_FPREG_SIZE                 10
 struct _libc_fpreg {
- /* Definitions taken from the kernel headers. */
- unsigned short int significand[4];
- unsigned short int exponent;
+    /* Definitions taken from the kernel headers. */
+    unsigned short int significand[4];
+    unsigned short int exponent;
 };
 
 #define __LIBC_FPSTATE_OFFSETOF_CW       0
@@ -220,15 +220,15 @@ struct _libc_fpreg {
 #define __LIBC_FPSTATE_OFFSETOF_STATUS   108
 #define __LIBC_FPSTATE_SIZE              112
 struct _libc_fpstate {
- unsigned long int  cw;
- unsigned long int  sw;
- unsigned long int  tag;
- unsigned long int  ipoff;
- unsigned long int  cssel;
- unsigned long int  dataoff;
- unsigned long int  datasel;
- struct _libc_fpreg _st[8];
- unsigned long int  status;
+    unsigned long int  cw;
+    unsigned long int  sw;
+    unsigned long int  tag;
+    unsigned long int  ipoff;
+    unsigned long int  cssel;
+    unsigned long int  dataoff;
+    unsigned long int  datasel;
+    struct _libc_fpreg _st[8];
+    unsigned long int  status;
 };
 /* Structure to describe FPU registers. */
 typedef struct _libc_fpstate *fpregset_t;
@@ -240,13 +240,13 @@ typedef struct _libc_fpstate *fpregset_t;
 #define __MCONTEXT_OFFSETOF_CR2       (__SIZEOF_GREG_T__*NGREG+8)
 #define __MCONTEXT_SIZE               (__SIZEOF_GREG_T__*NGREG+12)
 typedef struct {
- /* Context to describe whole processor state. */
- gregset_t gregs;
- /* Due to Linux's history we have to use a pointer here.
-  * The SysV/i386 ABI requires a struct with the values. */
- fpregset_t fpregs;
- unsigned long int oldmask;
- unsigned long int cr2;
+    /* Context to describe whole processor state. */
+    gregset_t gregs;
+    /* Due to Linux's history we have to use a pointer here.
+     * The SysV/i386 ABI requires a struct with the values. */
+    fpregset_t fpregs;
+    unsigned long int oldmask;
+    unsigned long int cr2;
 } mcontext_t;
 
 #define __UCONTEXT_OFFSETOF_FLAGS      0
@@ -259,12 +259,12 @@ typedef struct {
 
 /* Userlevel context. */
 typedef struct ucontext {
- unsigned long int    uc_flags;
- struct ucontext     *uc_link;
- stack_t              uc_stack;
- mcontext_t           uc_mcontext;
- __sigset_t           uc_sigmask;
- struct _libc_fpstate __fpregs_mem;
+    unsigned long int    uc_flags;
+    struct ucontext     *uc_link;
+    stack_t              uc_stack;
+    mcontext_t           uc_mcontext;
+    __sigset_t           uc_sigmask;
+    struct _libc_fpstate __fpregs_mem;
 } ucontext_t;
 #endif /* !__x86_64__ */
 

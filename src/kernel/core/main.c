@@ -77,6 +77,7 @@
 #include <dev/net.h>
 #include <dev/net-stack.h>
 #include <hybrid/byteswap.h>
+#include <netinet/in.h>
 
 DECL_BEGIN
 
@@ -92,7 +93,10 @@ PRIVATE void KCALL network_test(void) {
  /* Test sending some data. - Should appear in 'dump.dat' */
  error = rwlock_write(&net->n_lock);
  if (E_ISOK(error)) error = netdev_ifup_unlocked(net);
- if (E_ISOK(error)) error = netdev_send_ip_unlocked(net,BSWAP_H2N32(0),BSWAP_H2N32(0),42,&pck);
+ if (E_ISOK(error)) error = netdev_send_ip_unlocked(net,
+                                                    BSWAP_H2N32(INADDR_ANY),
+                                                    BSWAP_H2N32(INADDR_BROADCAST),
+                                                    42,&pck);
  rwlock_endwrite(&net->n_lock);
 
  syslog(LOG_DEBUG,"error = %Iu: %[errno]\n",error,-error);

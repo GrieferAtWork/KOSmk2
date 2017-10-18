@@ -51,7 +51,7 @@ struct sigstack {
 
 enum { /* Possible values for `ss_flags.'. */
     SS_ONSTACK = 1,
-    SS_DISABLE
+    SS_DISABLE = 2
 #define SS_ONSTACK SS_ONSTACK
 #define SS_DISABLE SS_DISABLE
 };

@@ -165,8 +165,8 @@ typedef __socklen_t socklen_t;
 
 /* Structure describing a generic socket address. */
 struct sockaddr {
- __SOCKADDR_COMMON(sa_); /*< Common data: address family and length. */
- char sa_data[14];       /*< Address data. */
+    __SOCKADDR_COMMON(sa_); /*< Common data: address family and length. */
+    char sa_data[14];       /*< Address data. */
 };
 
 /* Structure large enough to hold any socket address (with the historical exception of AF_UNIX). */
@@ -174,36 +174,36 @@ struct sockaddr {
 #define _SS_PADSIZE     (_SS_SIZE-__SOCKADDR_COMMON_SIZE-sizeof (__ss_aligntype))
 
 struct sockaddr_storage {
- __SOCKADDR_COMMON(ss_);    /*< Address family, etc. */
- char           __ss_padding[_SS_PADSIZE];
- __ss_aligntype __ss_align; /*< Force desired alignment. */
+    __SOCKADDR_COMMON(ss_);    /*< Address family, etc. */
+    char           __ss_padding[_SS_PADSIZE];
+    __ss_aligntype __ss_align; /*< Force desired alignment. */
 };
 
 
 /* Bits in the FLAGS argument to `send', `recv', et al. */
 enum {
- MSG_OOB          = 0x00000001, /*< Process out-of-band data. */
- MSG_PEEK         = 0x00000002, /*< Peek at incoming messages. */
- MSG_DONTROUTE    = 0x00000004, /*< Don't use local routing. */
+    MSG_OOB          = 0x00000001, /*< Process out-of-band data. */
+    MSG_PEEK         = 0x00000002, /*< Peek at incoming messages. */
+    MSG_DONTROUTE    = 0x00000004, /*< Don't use local routing. */
 #ifdef __USE_GNU
- MSG_TRYHARD      = MSG_DONTROUTE, /*< DECnet uses a different name. */
+    MSG_TRYHARD      = MSG_DONTROUTE, /*< DECnet uses a different name. */
 #endif
- MSG_CTRUNC       = 0x00000008, /*< Control data lost before delivery. */
- MSG_PROXY        = 0x00000010, /*< Supply or ask second address. */
- MSG_TRUNC        = 0x00000020,
- MSG_DONTWAIT     = 0x00000040, /*< Nonblocking IO. */
- MSG_EOR          = 0x00000080, /*< End of record. */
- MSG_WAITALL      = 0x00000100, /*< Wait for a full request. */
- MSG_FIN          = 0x00000200,
- MSG_SYN          = 0x00000400,
- MSG_CONFIRM      = 0x00000800, /*< Confirm path validity. */
- MSG_RST          = 0x00001000,
- MSG_ERRQUEUE     = 0x00002000, /*< Fetch message from error queue. */
- MSG_NOSIGNAL     = 0x00004000, /*< Do not generate SIGPIPE. */
- MSG_MORE         = 0x00008000, /*< Sender will send more. */
- MSG_WAITFORONE   = 0x00010000, /*< Wait for at least one packet to return.*/
- MSG_FASTOPEN     = 0x20000000, /*< Send data in TCP SYN. */
- MSG_CMSG_CLOEXEC = 0x40000000, /*< Set close_on_exit for file descriptor received through SCM_RIGHTS. */
+    MSG_CTRUNC       = 0x00000008, /*< Control data lost before delivery. */
+    MSG_PROXY        = 0x00000010, /*< Supply or ask second address. */
+    MSG_TRUNC        = 0x00000020,
+    MSG_DONTWAIT     = 0x00000040, /*< Nonblocking IO. */
+    MSG_EOR          = 0x00000080, /*< End of record. */
+    MSG_WAITALL      = 0x00000100, /*< Wait for a full request. */
+    MSG_FIN          = 0x00000200,
+    MSG_SYN          = 0x00000400,
+    MSG_CONFIRM      = 0x00000800, /*< Confirm path validity. */
+    MSG_RST          = 0x00001000,
+    MSG_ERRQUEUE     = 0x00002000, /*< Fetch message from error queue. */
+    MSG_NOSIGNAL     = 0x00004000, /*< Do not generate SIGPIPE. */
+    MSG_MORE         = 0x00008000, /*< Sender will send more. */
+    MSG_WAITFORONE   = 0x00010000, /*< Wait for at least one packet to return.*/
+    MSG_FASTOPEN     = 0x20000000, /*< Send data in TCP SYN. */
+    MSG_CMSG_CLOEXEC = 0x40000000, /*< Set close_on_exit for file descriptor received through SCM_RIGHTS. */
 };
 
 #define MSG_OOB          MSG_OOB
@@ -231,21 +231,21 @@ enum {
 
 /* Structure describing messages sent by `sendmsg' and received by `recvmsg'. */
 struct msghdr {
- void         *msg_name;       /*< Address to send to/receive from. */
- socklen_t     msg_namelen;    /*< Length of address data. */
- struct iovec *msg_iov;        /*< Vector of data to send/receive into. */
- size_t        msg_iovlen;     /*< Number of elements in the vector. */
- void         *msg_control;    /*< Ancillary data (eg BSD filedesc passing). */
- size_t        msg_controllen; /*< Ancillary data buffer length. !! The type should be socklen_t but the definition of the kernel is incompatible with this. */
- int           msg_flags;      /*< Flags on received message. */
+    void         *msg_name;       /*< Address to send to/receive from. */
+    socklen_t     msg_namelen;    /*< Length of address data. */
+    struct iovec *msg_iov;        /*< Vector of data to send/receive into. */
+    size_t        msg_iovlen;     /*< Number of elements in the vector. */
+    void         *msg_control;    /*< Ancillary data (eg BSD filedesc passing). */
+    size_t        msg_controllen; /*< Ancillary data buffer length. !! The type should be socklen_t but the definition of the kernel is incompatible with this. */
+    int           msg_flags;      /*< Flags on received message. */
 };
 
 /* Structure used for storage of ancillary data object information. */
 struct cmsghdr {
- size_t          cmsg_len;     /*< Length of data in cmsg_data plus length of cmsghdr structure. !! The type should be socklen_t but the definition of the kernel is incompatible with this. */
- int             cmsg_level;   /*< Originating protocol. */
- int             cmsg_type;    /*< Protocol specific type. */
- unsigned char __cmsg_data[1]; /*< Ancillary data. */
+    size_t          cmsg_len;     /*< Length of data in cmsg_data plus length of cmsghdr structure. !! The type should be socklen_t but the definition of the kernel is incompatible with this. */
+    int             cmsg_level;   /*< Originating protocol. */
+    int             cmsg_type;    /*< Protocol specific type. */
+    unsigned char __cmsg_data[1]; /*< Ancillary data. */
 };
 
 /* Ancillary data object manipulation macros. */
@@ -270,9 +270,9 @@ __LIBC struct cmsghdr *(__LIBCCALL __cmsg_nxthdr)(struct msghdr *__mhdr, struct 
 #endif
 
 enum {
- SCM_RIGHTS      = 0x01, /*< Transfer file descriptors. */
+    SCM_RIGHTS      = 0x01, /*< Transfer file descriptors. */
 #ifdef __USE_GNU
- SCM_CREDENTIALS = 0x02  /*< Credentials passing. */
+    SCM_CREDENTIALS = 0x02  /*< Credentials passing. */
 #endif /* __USE_GNU */
 };
 
@@ -282,17 +282,32 @@ enum {
 #endif
 
 #ifdef __USE_GNU
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("pid")
+#pragma push_macro("uid")
+#pragma push_macro("gid")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef pid
+#undef uid
+#undef gid
+
 /* User visible structure for SCM_CREDENTIALS message */
 struct ucred {
- pid_t pid; /*< PID of sending process. */
- uid_t uid; /*< UID of sending process. */
- gid_t gid; /*< GID of sending process. */
+    pid_t pid; /*< PID of sending process. */
+    uid_t uid; /*< UID of sending process. */
+    gid_t gid; /*< GID of sending process. */
 };
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("gid")
+#pragma pop_macro("uid")
+#pragma pop_macro("pid")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #endif
 
 struct linger {
- int l_onoff;  /*< Nonzero to linger on close. */
- int l_linger; /*< Time to linger. */
+    int l_onoff;  /*< Nonzero to linger on close. */
+    int l_linger; /*< Time to linger. */
 };
 
 __SYSDECL_END

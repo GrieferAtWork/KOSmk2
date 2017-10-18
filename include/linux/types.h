@@ -46,21 +46,21 @@ __DECL_BEGIN
 #endif /* !__bitwise */
 
 
-#ifdef __INTELLISENSE__
-typedef ____INTELLISENSE_integer<1234,__UINT16_TYPE__> __le16;
-typedef ____INTELLISENSE_integer<4321,__UINT16_TYPE__> __be16;
-typedef ____INTELLISENSE_integer<1234,__UINT32_TYPE__> __le32;
-typedef ____INTELLISENSE_integer<4321,__UINT32_TYPE__> __be32;
-typedef ____INTELLISENSE_integer<1234,__UINT64_TYPE__> __le64;
-typedef ____INTELLISENSE_integer<4321,__UINT64_TYPE__> __be64;
-#else
+#ifdef ____INTELLISENSE_STDINC_SYNTAX_H
+typedef ::__int::____INTELLISENSE_integer<1234,__UINT16_TYPE__> __le16;
+typedef ::__int::____INTELLISENSE_integer<4321,__UINT16_TYPE__> __be16;
+typedef ::__int::____INTELLISENSE_integer<1234,__UINT32_TYPE__> __le32;
+typedef ::__int::____INTELLISENSE_integer<4321,__UINT32_TYPE__> __be32;
+typedef ::__int::____INTELLISENSE_integer<1234,__UINT64_TYPE__> __le64;
+typedef ::__int::____INTELLISENSE_integer<4321,__UINT64_TYPE__> __be64;
+#else /* ____INTELLISENSE_STDINC_SYNTAX_H */
 typedef __UINT16_TYPE__ __bitwise __le16;
 typedef __UINT32_TYPE__ __bitwise __le32;
 typedef __UINT64_TYPE__ __bitwise __le64;
 typedef __UINT16_TYPE__ __bitwise __be16;
 typedef __UINT32_TYPE__ __bitwise __be32;
 typedef __UINT64_TYPE__ __bitwise __be64;
-#endif
+#endif /* !____INTELLISENSE_STDINC_SYNTAX_H */
 #endif /* !____lebesuX_defined */
 
 typedef __UINT16_TYPE__ __sum16;

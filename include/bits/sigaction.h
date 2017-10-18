@@ -43,22 +43,22 @@ __SYSDECL_BEGIN
    <http://www.gnu.org/licenses/>.  */
 
 
-typedef void (*__sighandler_t)(int);
+typedef void (__ATTR_CDECL *__sighandler_t)(int __signo);
 
 /* Structure describing the action to be taken when a signal arrives. */
 struct sigaction {
- /* Signal handler. */
+    /* Signal handler. */
 #ifdef __USE_POSIX199309
- union {
-  __sighandler_t sa_handler; /*< Used if SA_SIGINFO is not set. */
-  void(*sa_sigaction) (int,siginfo_t *,void *); /*< Used if SA_SIGINFO is set. */
- };
+    union {
+        __sighandler_t sa_handler; /*< Used if SA_SIGINFO is not set. */
+        void (__ATTR_CDECL *sa_sigaction)(int __signo, siginfo_t *__info, void *__ctx); /*< Used if SA_SIGINFO is set. */
+    };
 #else /* __USE_POSIX199309 */
- __sighandler_t sa_handler;
+    __sighandler_t sa_handler;
 #endif /* !__USE_POSIX199309 */
- __sigset_t sa_mask;  /*< Additional set of signals to be blocked. */
- int        sa_flags; /*< Special flags. */
- void     (*sa_restorer)(void); /*< Restore handler. */
+    __sigset_t sa_mask;  /*< Additional set of signals to be blocked. */
+    int        sa_flags; /*< Special flags. */
+    void (__ATTR_CDECL *sa_restorer)(void); /*< Restore handler. */
 };
 
 /* Bits in `sa_flags'. */

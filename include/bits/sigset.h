@@ -108,7 +108,7 @@ __LIBC int (__LIBCCALL __sigaddset)(__sigset_t *__set, int __sig);
 __LIBC int (__LIBCCALL __sigdelset)(__sigset_t *__set, int __sig);
 #else /* !__KERNEL__ */
 #define __SIGSETFN(name,body,const) \
-__LOCAL int name(const __sigset_t *__set, int __sig) { \
+__LOCAL int (__LIBCCALL name)(const __sigset_t *__set, int __sig) { \
  unsigned long int __mask = __sigmask(__sig); \
  unsigned long int __word = __sigword(__sig); \
  return body; \

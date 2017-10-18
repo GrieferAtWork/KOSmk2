@@ -38,9 +38,9 @@
 #ifndef __cplusplus
 #ifndef __COMPILER_HAVE_TYPEOF
 #define __TYPEOF_RECAST(x,y)                 (y)
-#else
+#else /* !__COMPILER_HAVE_TYPEOF */
 #define __TYPEOF_RECAST(x,y) ((__typeof__(x))(y))
-#endif
+#endif /* __COMPILER_HAVE_TYPEOF */
 #endif /* !__cplusplus */
 
 /* Define atomic memory order constants. */

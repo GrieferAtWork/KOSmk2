@@ -47,8 +47,8 @@ typedef __suseconds_t suseconds_t;
 
 #ifdef __USE_MISC
 struct timezone {
- int tz_minuteswest; /*< Minutes west of GMT. */
- int tz_dsttime;     /*< Nonzero if DST is ever in effect. */
+    int tz_minuteswest; /*< Minutes west of GMT. */
+    int tz_dsttime;     /*< Nonzero if DST is ever in effect. */
 };
 typedef struct timezone *__restrict __timezone_ptr_t;
 #else /* __USE_MISC */
@@ -56,17 +56,17 @@ typedef void *__restrict __timezone_ptr_t;
 #endif /* !__USE_MISC */
 
 enum __itimer_which {
- ITIMER_REAL    = 0,
- ITIMER_VIRTUAL = 1,
- ITIMER_PROF    = 2
+    ITIMER_REAL    = 0,
+    ITIMER_VIRTUAL = 1,
+    ITIMER_PROF    = 2
 };
 #define ITIMER_REAL    0
 #define ITIMER_VIRTUAL 1
 #define ITIMER_PROF    2
 
 struct itimerval {
- struct timeval it_interval; /*< Value to put into `it_value' when the timer expires. */
- struct timeval it_value;    /*< Time to the next timer expiration. */
+    struct timeval it_interval; /*< Value to put into `it_value' when the timer expires. */
+    struct timeval it_value;    /*< Time to the next timer expiration. */
 };
 
 #ifdef __USE_KOS
@@ -74,8 +74,8 @@ struct itimerval {
 #define itimerval32 itimerval
 #else /* __USE_TIME_BITS64 */
 struct itimerval32 {
- struct timeval32 it_interval; /*< Value to put into `it_value' when the timer expires. */
- struct timeval32 it_value;    /*< Time to the next timer expiration. */
+    struct timeval32 it_interval; /*< Value to put into `it_value' when the timer expires. */
+    struct timeval32 it_value;    /*< Time to the next timer expiration. */
 };
 #endif /* !__USE_TIME_BITS64 */
 #endif /* __USE_KOS */
@@ -84,8 +84,8 @@ struct itimerval32 {
 #define itimerval64 itimerval
 #else /* __USE_TIME_BITS64 */
 struct itimerval64 {
- struct timeval64 it_interval; /*< Value to put into `it_value' when the timer expires. */
- struct timeval64 it_value;    /*< Time to the next timer expiration. */
+    struct timeval64 it_interval; /*< Value to put into `it_value' when the timer expires. */
+    struct timeval64 it_value;    /*< Time to the next timer expiration. */
 };
 #endif /* !__USE_TIME_BITS64 */
 #endif /* __USE_TIME64 */

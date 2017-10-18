@@ -26,7 +26,6 @@
 #include <hybrid/malloc.h>
 #include <hybrid/string.h>
 
-
 #define __AMALLOC_ALIGN    8
 #ifdef __KERNEL__
 #   define __AMALLOC_MAX   256 /* Without guard pages, don't be excessive */
@@ -38,12 +37,12 @@
 #   define __AMALLOC_KEY_ALLOCA        0
 #   define __AMALLOC_KEY_MALLOC        1
 #   define __AMALLOC_SKEW_ALLOCA(p,s) (p)
-#   define __AMALLOC_GETKEY(p)       ((__UINT8_TYPE__ *)(p))[-__AMALLOC_ALIGN]
+#   define __AMALLOC_GETKEY(p)       ((__BYTE_TYPE__ *)(p))[-__AMALLOC_ALIGN]
 #   define __AMALLOC_MUSTFREE(p)      (__AMALLOC_GETKEY(p) != __AMALLOC_KEY_ALLOCA)
 #else
 #   define __AMALLOC_KEY_ALLOCA        0x7c
 #   define __AMALLOC_KEY_MALLOC        0xb3
-#   define __AMALLOC_GETKEY(p)       ((__UINT8_TYPE__ *)(p))[-__AMALLOC_ALIGN]
+#   define __AMALLOC_GETKEY(p)       ((__BYTE_TYPE__ *)(p))[-__AMALLOC_ALIGN]
 #ifdef assert
 #   define __AMALLOC_MUSTFREE(p) \
    (assert(__AMALLOC_GETKEY(p) == __AMALLOC_KEY_ALLOCA || \
@@ -63,109 +62,108 @@
  *       friends. */
 #ifndef __NO_XBLOCK
 #define __amalloc_stack(s) \
-__XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
-           __UINT8_TYPE__ *__res = (__UINT8_TYPE__ *)__ALLOCA(__s); \
-          *__res = __AMALLOC_KEY_ALLOCA,__res += __AMALLOC_ALIGN; \
-          (void)__AMALLOC_SKEW_ALLOCA(__res,__s-__AMALLOC_ALIGN); \
-           __XRETURN (void *)__res; \
-})
+ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
+            __BYTE_TYPE__ *__res = (__BYTE_TYPE__ *)__ALLOCA(__s); \
+           *__res = __AMALLOC_KEY_ALLOCA,__res += __AMALLOC_ALIGN; \
+           (void)__AMALLOC_SKEW_ALLOCA(__res,__s-__AMALLOC_ALIGN); \
+            __XRETURN (void *)__res; })
 #define __amalloc_heap(s) \
-__XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
-           __UINT8_TYPE__ *__res = (__UINT8_TYPE__ *)__hybrid_malloc(__s); \
-           if (__res) *__res = __AMALLOC_KEY_MALLOC,__res += __AMALLOC_ALIGN; \
-           __XRETURN (void *)__res; \
-})
+ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
+            __BYTE_TYPE__ *__res = (__BYTE_TYPE__ *)__hybrid_malloc(__s); \
+            if (__res) *__res = __AMALLOC_KEY_MALLOC,__res += __AMALLOC_ALIGN; \
+            __XRETURN (void *)__res; })
 #define __amalloc(s) \
-__XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
-           __UINT8_TYPE__ *__res; \
-           if (__s > __AMALLOC_MAX) { \
-             __res = (__UINT8_TYPE__ *)__hybrid_malloc(__s); \
-             if (__res) *__res = __AMALLOC_KEY_MALLOC,__res += __AMALLOC_ALIGN; \
-           } else { \
-             __res = (__UINT8_TYPE__ *)__ALLOCA(__s); \
-            *__res = __AMALLOC_KEY_ALLOCA,__res += __AMALLOC_ALIGN; \
-            (void)__AMALLOC_SKEW_ALLOCA(__res,__s-__AMALLOC_ALIGN); \
-           } \
-           __XRETURN (void *)__res; \
-})
+ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
+            __BYTE_TYPE__ *__res; \
+            if (__s > __AMALLOC_MAX) { \
+              __res = (__BYTE_TYPE__ *)__hybrid_malloc(__s); \
+              if (__res) *__res = __AMALLOC_KEY_MALLOC,__res += __AMALLOC_ALIGN; \
+            } else { \
+              __res = (__BYTE_TYPE__ *)__ALLOCA(__s); \
+             *__res = __AMALLOC_KEY_ALLOCA,__res += __AMALLOC_ALIGN; \
+             (void)__AMALLOC_SKEW_ALLOCA(__res,__s-__AMALLOC_ALIGN); \
+            } \
+            __XRETURN (void *)__res; })
 #define __acalloc_stack(s) \
-__XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
-           __UINT8_TYPE__ *__res = (__UINT8_TYPE__ *)__ALLOCA(__s); \
-          *__res = __AMALLOC_KEY_ALLOCA,__res += __AMALLOC_ALIGN; \
-           __hybrid_memset(__res,0,__s-__AMALLOC_ALIGN); \
-           __XRETURN (void *)__res;\
-})
+ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
+            __BYTE_TYPE__ *__res = (__BYTE_TYPE__ *)__ALLOCA(__s); \
+           *__res = __AMALLOC_KEY_ALLOCA,__res += __AMALLOC_ALIGN; \
+            __hybrid_memset(__res,0,__s-__AMALLOC_ALIGN); \
+            __XRETURN (void *)__res; })
 #define __acalloc_heap(s) \
-__XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
-           __UINT8_TYPE__ *__res = (__UINT8_TYPE__ *)__hybrid_calloc(1,__s); \
-           if (__res) { *__res = __AMALLOC_KEY_MALLOC; __res += __AMALLOC_ALIGN; } \
-           __XRETURN (void *)__res;\
-})
+ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
+            __BYTE_TYPE__ *__res = (__BYTE_TYPE__ *)__hybrid_calloc(1,__s); \
+            if (__res) { *__res = __AMALLOC_KEY_MALLOC; __res += __AMALLOC_ALIGN; } \
+            __XRETURN (void *)__res; })
 #define __acalloc(s) \
-__XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
-           __UINT8_TYPE__ *__res; \
-           if (__s > __AMALLOC_MAX) { \
-             __res = (__UINT8_TYPE__ *)__hybrid_calloc(1,__s); \
-             if (__res) *__res = __AMALLOC_KEY_MALLOC,__res += __AMALLOC_ALIGN; \
-           } else { \
-             __res = (__UINT8_TYPE__ *)__ALLOCA(__s); \
-            *__res = __AMALLOC_KEY_ALLOCA,__res += __AMALLOC_ALIGN; \
-             __hybrid_memset(__res,0,__s-__AMALLOC_ALIGN); \
-           } \
-           __XRETURN (void *)__res;\
-})
+ __XBLOCK({ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
+            __BYTE_TYPE__ *__res; \
+            if (__s > __AMALLOC_MAX) { \
+              __res = (__BYTE_TYPE__ *)__hybrid_calloc(1,__s); \
+              if (__res) *__res = __AMALLOC_KEY_MALLOC,__res += __AMALLOC_ALIGN; \
+            } else { \
+              __res = (__BYTE_TYPE__ *)__ALLOCA(__s); \
+             *__res = __AMALLOC_KEY_ALLOCA,__res += __AMALLOC_ALIGN; \
+              __hybrid_memset(__res,0,__s-__AMALLOC_ALIGN); \
+            } \
+            __XRETURN (void *)__res; })
 #define __afree(p) \
-__XBLOCK({ void *const __p = (p); \
-           if (__AMALLOC_MUSTFREE(__p)) \
-               __hybrid_free((void *)((__UINT8_TYPE__ *)__p-__AMALLOC_ALIGN)); \
-           (void)0; \
-})
+ __XBLOCK({ void *const __p = (p); \
+            if (__AMALLOC_MUSTFREE(__p)) \
+                __hybrid_free((void *)((__BYTE_TYPE__ *)__p-__AMALLOC_ALIGN)); \
+           (void)0; })
 #else
-__LOCAL void *(__LIBCCALL __libc_amalloc_heap)(__SIZE_TYPE__ __s) {
- __UINT8_TYPE__ *__res;
- __res = (__UINT8_TYPE__ *)__hybrid_malloc(__s+__AMALLOC_ALIGN);
+__NAMESPACE_INT_BEGIN
+__LOCAL void *(__LIBCCALL __local_amalloc_heap)(__SIZE_TYPE__ __s) {
+ __BYTE_TYPE__ *__res;
+ __res = (__BYTE_TYPE__ *)__hybrid_malloc(__s+__AMALLOC_ALIGN);
  if (__res) { *__res = __AMALLOC_KEY_MALLOC; __res += __AMALLOC_ALIGN; }
  return (void *)__res;
 }
-__LOCAL void *(__LIBCCALL __libc_acalloc_heap)(__SIZE_TYPE__ __s) {
- __UINT8_TYPE__ *__res;
- __res = (__UINT8_TYPE__ *)__hybrid_calloc(1,__s+__AMALLOC_ALIGN);
+__LOCAL void *(__LIBCCALL __local_acalloc_heap)(__SIZE_TYPE__ __s) {
+ __BYTE_TYPE__ *__res;
+ __res = (__BYTE_TYPE__ *)__hybrid_calloc(1,__s+__AMALLOC_ALIGN);
  if (__res) { *__res = __AMALLOC_KEY_MALLOC; __res += __AMALLOC_ALIGN; }
  return (void *)__res;
 }
-__LOCAL void *(__LIBCCALL __libc_aminit_stack)(void *__p, __SIZE_TYPE__ __s) {
+__LOCAL void *(__LIBCCALL __local_aminit_stack)(void *__p, __SIZE_TYPE__ __s) {
  *(__BYTE_TYPE__ *)__p = __AMALLOC_KEY_ALLOCA;
  return __AMALLOC_SKEW_ALLOCA((__BYTE_TYPE__ *)__p+__AMALLOC_ALIGN,__s);
 }
-__LOCAL void *(__LIBCCALL __libc_acinit_stack)(void *__p, __SIZE_TYPE__ __s) {
+__LOCAL void *(__LIBCCALL __local_acinit_stack)(void *__p, __SIZE_TYPE__ __s) {
  *(__BYTE_TYPE__ *)__p = __AMALLOC_KEY_ALLOCA;
  return __hybrid_memset((__BYTE_TYPE__ *)__p+__AMALLOC_ALIGN,0,__s);
 }
-__LOCAL void (__LIBCCALL __libc_afree)(void *__p) {
+__LOCAL void (__LIBCCALL __local_afree)(void *__p) {
  if (__AMALLOC_MUSTFREE(__p))
-     __hybrid_free((void *)((__UINT8_TYPE__ *)__p-__AMALLOC_ALIGN));
+     __hybrid_free((void *)((__BYTE_TYPE__ *)__p-__AMALLOC_ALIGN));
 }
+__NAMESPACE_INT_END
 
 /* Implementation that doesn't make use of X-blocks. */
+#define __amalloc_stack(s) (__NAMESPACE_INT_SYM __local_aminit_stack(__ALLOCA((s)+__AMALLOC_ALIGN),(s)))
+#define __amalloc_heap(s)  (__NAMESPACE_INT_SYM __local_amalloc_heap(s))
 #define __amalloc(s) \
-  ((s) > __AMALLOC_MAX-__AMALLOC_ALIGN ? __libc_amalloc_heap(s) : \
-         __libc_aminit_stack(__ALLOCA((s)+__AMALLOC_ALIGN),(s)))
+  ((s) > __AMALLOC_MAX-__AMALLOC_ALIGN ? __NAMESPACE_INT_SYM __local_amalloc_heap(s) : \
+         __NAMESPACE_INT_SYM __local_aminit_stack(__ALLOCA((s)+__AMALLOC_ALIGN),(s)))
+#define __acalloc_stack(s) (__NAMESPACE_INT_SYM __local_acinit_stack(__ALLOCA((s)+__AMALLOC_ALIGN),(s)))
+#define __acalloc_heap(s)  (__NAMESPACE_INT_SYM __local_acalloc_heap(s))
 #define __acalloc(s) \
-  ((s) > __AMALLOC_MAX-__AMALLOC_ALIGN ? __libc_acalloc_heap(s) : \
-         __libc_acinit_stack(__ALLOCA((s)+__AMALLOC_ALIGN),(s)))
-#define __afree(p) __libc_afree(p)
+  ((s) > __AMALLOC_MAX-__AMALLOC_ALIGN ? __NAMESPACE_INT_SYM __local_acalloc_heap(s) : \
+         __NAMESPACE_INT_SYM __local_acinit_stack(__ALLOCA((s)+__AMALLOC_ALIGN),(s)))
+#define __afree(p) __NAMESPACE_INT_SYM __local_afree(p)
 #endif
 
 #define __amalloc_nofail(p,s) \
 do{ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
     if (__s > __AMALLOC_MAX && \
        (*(void **)&(p) = __hybrid_malloc(__s)) != __NULLPTR) { \
-      *(__UINT8_TYPE__ *)(p) = __AMALLOC_KEY_MALLOC; \
-      *(__UINT8_TYPE__ **)&(p) += __AMALLOC_ALIGN; \
+      *(__BYTE_TYPE__ *)(p) = __AMALLOC_KEY_MALLOC; \
+      *(__BYTE_TYPE__ **)&(p) += __AMALLOC_ALIGN; \
     } else { \
       *(void **)&(p) = __ALLOCA(__s); \
-      *(__UINT8_TYPE__ *)(p) = __AMALLOC_KEY_ALLOCA; \
-      *(__UINT8_TYPE__ **)&(p) += __AMALLOC_ALIGN; \
+      *(__BYTE_TYPE__ *)(p) = __AMALLOC_KEY_ALLOCA; \
+      *(__BYTE_TYPE__ **)&(p) += __AMALLOC_ALIGN; \
       __hybrid_memset((void *)(p),0,__s-__AMALLOC_ALIGN); \
     } \
 }__WHILE0
@@ -173,12 +171,12 @@ do{ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
 do{ __SIZE_TYPE__ const __s = (s)+__AMALLOC_ALIGN; \
     if (__s > __AMALLOC_MAX && \
        (*(void **)&(p) = __hybrid_calloc(1,__s)) != __NULLPTR) { \
-      *(__UINT8_TYPE__ *)(p) = __AMALLOC_KEY_MALLOC; \
-      *(__UINT8_TYPE__ **)&(p) += __AMALLOC_ALIGN; \
+      *(__BYTE_TYPE__ *)(p) = __AMALLOC_KEY_MALLOC; \
+      *(__BYTE_TYPE__ **)&(p) += __AMALLOC_ALIGN; \
     } else { \
       *(void **)&(p) = __ALLOCA(__s); \
-      *(__UINT8_TYPE__ *)(p) = __AMALLOC_KEY_ALLOCA; \
-      *(__UINT8_TYPE__ **)&(p) += __AMALLOC_ALIGN; \
+      *(__BYTE_TYPE__ *)(p) = __AMALLOC_KEY_ALLOCA; \
+      *(__BYTE_TYPE__ **)&(p) += __AMALLOC_ALIGN; \
       (void)__AMALLOC_SKEW_ALLOCA((void *)(p),__s-__AMALLOC_ALIGN); \
     } \
 }__WHILE0

@@ -172,12 +172,12 @@ __MATHNS_USING(cbrt,)
 
 /* Nearest integer, absolute value, and remainder functions. */
 __MATHNS_BEGIN
-__MATHCALLX(ceil,,(_Mdouble_ __x),(__const__)); /* Smallest integral value not less than X. */
-__MATHCALLX(fabs,,(_Mdouble_ __x),(__const__)); /* Absolute value of X. */
-__MATHCALLX(floor,,(_Mdouble_ __x),(__const__)); /* Largest integer not greater than X. */
+__MATHCALLX(ceil,,(_Mdouble_ __x),__ATTR_CONST); /* Smallest integral value not less than X. */
+__MATHCALLX(fabs,,(_Mdouble_ __x),__ATTR_CONST); /* Absolute value of X. */
+__MATHCALLX(floor,,(_Mdouble_ __x),__ATTR_CONST); /* Largest integer not greater than X. */
 __MATHCALL(fmod,,(_Mdouble_ __x,_Mdouble_ __y)); /* Floating-point modulo remainder of X/Y. */
-__MATHDECL_1(int,__isinf,,(_Mdouble_ __value)) __ATTR_CONST; /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
-__MATHDECL_1(int,__finite,,(_Mdouble_ __value)) __ATTR_CONST; /* Return nonzero if VALUE is finite and not NaN. */
+__MATHDECL_1_ATTR(int,__isinf,,(_Mdouble_ __value),__ATTR_CONST); /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
+__MATHDECL_1_ATTR(int,__finite,,(_Mdouble_ __value),__ATTR_CONST); /* Return nonzero if VALUE is finite and not NaN. */
 __MATHNS_END
 __MATHNS_USING(ceil,)
 __MATHNS_USING(fabs,)
@@ -189,27 +189,27 @@ __MATHNS_USING(__finite,)
 #ifdef __USE_MISC
 #if (!defined(__cplusplus) || __cplusplus < 201103L /* isinf conflicts with C++11. */ \
            || __MATH_DECLARING_DOUBLE == 0) /* isinff or isinfl don't. */
-__MATHDECL_1(int,isinf,,(_Mdouble_ __value)) __ATTR_CONST; /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
+__MATHDECL_1_ATTR(int,isinf,,(_Mdouble_ __value),__ATTR_CONST); /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
 #endif
-__MATHDECL_1(int,finite,,(_Mdouble_ __value)) __ATTR_CONST; /* Return nonzero if VALUE is finite and not NaN. */
+__MATHDECL_1_ATTR(int,finite,,(_Mdouble_ __value),__ATTR_CONST); /* Return nonzero if VALUE is finite and not NaN. */
 __MATHCALL(drem,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return the remainder of X/Y. */
 __MATHCALL(significand,,(_Mdouble_ __x)); /* Return the fractional part of X after dividing out `ilogb (X)'. */
 #endif /* __USE_MISC */
 
 #ifdef __USE_ISOC99
 __MATHNS_BEGIN
-__MATHCALLX(copysign,,(_Mdouble_ __x,_Mdouble_ __y),(__const__)); /* Return X with its signed changed to Y's. */
-__MATHCALLX(nan,,(char const *__tagb),(__const__)); /* Return representation of qNaN for double type. */
+__MATHCALLX(copysign,,(_Mdouble_ __x,_Mdouble_ __y),__ATTR_CONST); /* Return X with its signed changed to Y's. */
+__MATHCALLX(nan,,(char const *__tagb),__ATTR_CONST); /* Return representation of qNaN for double type. */
 __MATHNS_END
 __MATHNS_USING(copysign,)
 __MATHNS_USING(nan,)
 #endif /* __USE_ISOC99 */
 
-__MATHDECL_1(int,__isnan,,(_Mdouble_ __value)) __ATTR_CONST; /* Return nonzero if VALUE is not a number. */
+__MATHDECL_1_ATTR(int,__isnan,,(_Mdouble_ __value),__ATTR_CONST); /* Return nonzero if VALUE is not a number. */
 #if defined(__USE_MISC) || (defined(__USE_XOPEN) && !defined(__USE_XOPEN2K))
 #if (!defined __cplusplus || __cplusplus < 201103L /* isnan conflicts with C++11. */ \
    || __MATH_DECLARING_DOUBLE == 0) /* isnanf or isnanl don't. */
-__MATHDECL_1(int,isnan,,(_Mdouble_ __value)) __ATTR_CONST; /* Return nonzero if VALUE is not a number. */
+__MATHDECL_1_ATTR(int,isnan,,(_Mdouble_ __value),__ATTR_CONST); /* Return nonzero if VALUE is not a number. */
 #endif
 #endif
 
@@ -253,11 +253,11 @@ __MATHCALL(lgamma,_r,(_Mdouble_, int *__signgamp));
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_ISOC99)
 __MATHNS_BEGIN
 __MATHCALL(rint,,(_Mdouble_ __x)); /* Return the integer nearest X in the direction of the prevailing rounding mode. */
-__MATHCALLX(nextafter,,(_Mdouble_ __x, _Mdouble_ __y),(__const__)); /* Return X + epsilon if X < Y, X - epsilon if X > Y. */
+__MATHCALLX(nextafter,,(_Mdouble_ __x, _Mdouble_ __y),__ATTR_CONST); /* Return X + epsilon if X < Y, X - epsilon if X > Y. */
 __MATHCALL(remainder,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return the remainder of integer divison X / Y with infinite precision. */
 __MATHDECL(int,ilogb,,(_Mdouble_ __x)); /* Return the binary exponent of X, which must be nonzero. */
 #ifdef __USE_ISOC99
-__MATHCALLX(nexttoward,,(_Mdouble_ __x, long double __y),(__const__));
+__MATHCALLX(nexttoward,,(_Mdouble_ __x, long double __y),__ATTR_CONST);
 __MATHCALL(scalbn,,(_Mdouble_ __x, int __n)); /* Return X times (2 to the Nth power). */
 #endif /* __USE_ISOC99 */
 __MATHNS_END
@@ -275,8 +275,8 @@ __MATHNS_USING(scalbn,)
 __MATHNS_BEGIN
 __MATHCALL(scalbln,,(_Mdouble_ __x, long int __n)); /* Return X times (2 to the Nth power). */
 __MATHCALL(nearbyint,,(_Mdouble_ __x)); /* Round X to integral value in floating-point format using current rounding direction, but do not raise inexact exception. */
-__MATHCALLX(round,,(_Mdouble_ __x),(__const__)); /* Round X to nearest integral value, rounding halfway cases away from zero. */
-__MATHCALLX(trunc,,(_Mdouble_ __x),(__const__)); /* Round X to the integral value in floating-point format nearest but not larger in magnitude. */
+__MATHCALLX(round,,(_Mdouble_ __x),__ATTR_CONST); /* Round X to nearest integral value, rounding halfway cases away from zero. */
+__MATHCALLX(trunc,,(_Mdouble_ __x),__ATTR_CONST); /* Round X to the integral value in floating-point format nearest but not larger in magnitude. */
 __MATHCALL(remquo,,(_Mdouble_ __x, _Mdouble_ __y, int *__quo)); /* Compute remainder of X and Y and put in *QUO a value with sign of x/y and magnitude congruent `mod 2^n' to the magnitude of the integral quotient x/y, with n >= 3. */
 
 /* Conversion functions. */
@@ -285,10 +285,10 @@ __MATHDECL(__LONGLONG,llrint,,(_Mdouble_ __x));
 __MATHDECL(long int,lround,,(_Mdouble_ __x)); /* Round X to nearest integral value, rounding halfway cases away from zero. */
 __MATHDECL(__LONGLONG,llround,,(_Mdouble_ __x));
 __MATHCALL(fdim,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return positive difference between X and Y. */
-__MATHCALLX(fmax,,(_Mdouble_ __x, _Mdouble_ __y),(__const__)); /* Return maximum numeric value from X and Y. */
-__MATHCALLX(fmin,,(_Mdouble_ __x, _Mdouble_ __y),(__const__)); /* Return minimum numeric value from X and Y. */
-__MATHDECL_1(int,__fpclassify,,(_Mdouble_ __value)) __ATTR_CONST; /* Classify given number. */
-__MATHDECL_1(int,__signbit,,(_Mdouble_ __value)) __ATTR_CONST; /* Test for negative number. */
+__MATHCALLX(fmax,,(_Mdouble_ __x, _Mdouble_ __y),__ATTR_CONST); /* Return maximum numeric value from X and Y. */
+__MATHCALLX(fmin,,(_Mdouble_ __x, _Mdouble_ __y),__ATTR_CONST); /* Return minimum numeric value from X and Y. */
+__MATHDECL_1_ATTR(int,__fpclassify,,(_Mdouble_ __value),__ATTR_CONST); /* Classify given number. */
+__MATHDECL_1_ATTR(int,__signbit,,(_Mdouble_ __value),__ATTR_CONST); /* Test for negative number. */
 __MATHCALL(fma,,(_Mdouble_ __x,_Mdouble_ __y,_Mdouble_ __z)); /* Multiply-add function computed as a ternary operation. */
 __MATHNS_END
 __MATHNS_USING(scalbln,)
@@ -309,7 +309,7 @@ __MATHNS_USING(fma,)
 #endif /* __USE_ISOC99 */
 
 #ifdef __USE_GNU
-__MATHDECL_1(int,__issignaling,,(_Mdouble_ __value)) __ATTR_CONST;
+__MATHDECL_1_ATTR(int,__issignaling,,(_Mdouble_ __value),__ATTR_CONST);
 #endif /* __USE_GNU */
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN_EXTENDED) && __MATH_DECLARING_DOUBLE && !defined __USE_XOPEN2K8)

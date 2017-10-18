@@ -17,7 +17,7 @@
  * 3. This notice may not be removed or altered from any source distribution. *
  */
 #ifndef _NETINET_IN_H
-#define _NETINET_IN_H    1
+#define _NETINET_IN_H 1
 
 /* Copyright (C) 1991-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -41,47 +41,38 @@
 #include <features.h>
 #include <stdint.h>
 #include <sys/socket.h>
-
-__SYSDECL_BEGIN
-
-/* Internet address. */
-typedef uint32_t in_addr_t;
-struct in_addr { in_addr_t s_addr; };
-
-__SYSDECL_END
-
 #include <bits/in.h>
 
 __SYSDECL_BEGIN
 
 /* Standard well-defined IP protocols. */
 enum {
-  IPPROTO_IP      = 0,   /*< Dummy protocol for TCP. */
-  IPPROTO_ICMP    = 1,   /*< Internet Control Message Protocol. */
-  IPPROTO_IGMP    = 2,   /*< Internet Group Management Protocol. */
-  IPPROTO_IPIP    = 4,   /*< IPIP tunnels (older KA9Q tunnels use 94). */
-  IPPROTO_TCP     = 6,   /*< Transmission Control Protocol. */
-  IPPROTO_EGP     = 8,   /*< Exterior Gateway Protocol. */
-  IPPROTO_PUP     = 12,  /*< PUP protocol. */
-  IPPROTO_UDP     = 17,  /*< User Datagram Protocol. */
-  IPPROTO_IDP     = 22,  /*< XNS IDP protocol. */
-  IPPROTO_TP      = 29,  /*< SO Transport Protocol Class 4. */
-  IPPROTO_DCCP    = 33,  /*< Datagram Congestion Control Protocol. */
-  IPPROTO_IPV6    = 41,  /*< IPv6 header. */
-  IPPROTO_RSVP    = 46,  /*< Reservation Protocol. */
-  IPPROTO_GRE     = 47,  /*< General Routing Encapsulation. */
-  IPPROTO_ESP     = 50,  /*< encapsulating security payload. */
-  IPPROTO_AH      = 51,  /*< authentication header. */
-  IPPROTO_MTP     = 92,  /*< Multicast Transport Protocol. */
-  IPPROTO_BEETPH  = 94,  /*< IP option pseudo header for BEET. */
-  IPPROTO_ENCAP   = 98,  /*< Encapsulation Header. */
-  IPPROTO_PIM     = 103, /*< Protocol Independent Multicast. */
-  IPPROTO_COMP    = 108, /*< Compression Header Protocol. */
-  IPPROTO_SCTP    = 132, /*< Stream Control Transmission Protocol. */
-  IPPROTO_UDPLITE = 136, /*< UDP-Lite protocol. */
-  IPPROTO_MPLS    = 137, /*< MPLS in IP. */
-  IPPROTO_RAW     = 255, /*< Raw IP packets. */
-  IPPROTO_MAX
+    IPPROTO_IP      = 0,   /*< Dummy protocol for TCP. */
+    IPPROTO_ICMP    = 1,   /*< Internet Control Message Protocol. */
+    IPPROTO_IGMP    = 2,   /*< Internet Group Management Protocol. */
+    IPPROTO_IPIP    = 4,   /*< IPIP tunnels (older KA9Q tunnels use 94). */
+    IPPROTO_TCP     = 6,   /*< Transmission Control Protocol. */
+    IPPROTO_EGP     = 8,   /*< Exterior Gateway Protocol. */
+    IPPROTO_PUP     = 12,  /*< PUP protocol. */
+    IPPROTO_UDP     = 17,  /*< User Datagram Protocol. */
+    IPPROTO_IDP     = 22,  /*< XNS IDP protocol. */
+    IPPROTO_TP      = 29,  /*< SO Transport Protocol Class 4. */
+    IPPROTO_DCCP    = 33,  /*< Datagram Congestion Control Protocol. */
+    IPPROTO_IPV6    = 41,  /*< IPv6 header. */
+    IPPROTO_RSVP    = 46,  /*< Reservation Protocol. */
+    IPPROTO_GRE     = 47,  /*< General Routing Encapsulation. */
+    IPPROTO_ESP     = 50,  /*< encapsulating security payload. */
+    IPPROTO_AH      = 51,  /*< authentication header. */
+    IPPROTO_MTP     = 92,  /*< Multicast Transport Protocol. */
+    IPPROTO_BEETPH  = 94,  /*< IP option pseudo header for BEET. */
+    IPPROTO_ENCAP   = 98,  /*< Encapsulation Header. */
+    IPPROTO_PIM     = 103, /*< Protocol Independent Multicast. */
+    IPPROTO_COMP    = 108, /*< Compression Header Protocol. */
+    IPPROTO_SCTP    = 132, /*< Stream Control Transmission Protocol. */
+    IPPROTO_UDPLITE = 136, /*< UDP-Lite protocol. */
+    IPPROTO_MPLS    = 137, /*< MPLS in IP. */
+    IPPROTO_RAW     = 255, /*< Raw IP packets. */
+    IPPROTO_MAX
 };
 #define IPPROTO_IP      IPPROTO_IP
 #define IPPROTO_ICMP    IPPROTO_ICMP
@@ -110,13 +101,13 @@ enum {
 #define IPPROTO_RAW     IPPROTO_RAW
 
 enum {
-  IPPROTO_HOPOPTS  = 0,  /*< IPv6 Hop-by-Hop options. */
-  IPPROTO_ROUTING  = 43, /*< IPv6 routing header. */
-  IPPROTO_FRAGMENT = 44, /*< IPv6 fragmentation header. */
-  IPPROTO_ICMPV6   = 58, /*< ICMPv6. */
-  IPPROTO_NONE     = 59, /*< IPv6 no next header. */
-  IPPROTO_DSTOPTS  = 60, /*< IPv6 destination options. */
-  IPPROTO_MH       = 135 /*< IPv6 mobility header. */
+    IPPROTO_HOPOPTS  = 0,  /*< IPv6 Hop-by-Hop options. */
+    IPPROTO_ROUTING  = 43, /*< IPv6 routing header. */
+    IPPROTO_FRAGMENT = 44, /*< IPv6 fragmentation header. */
+    IPPROTO_ICMPV6   = 58, /*< ICMPv6. */
+    IPPROTO_NONE     = 59, /*< IPv6 no next header. */
+    IPPROTO_DSTOPTS  = 60, /*< IPv6 destination options. */
+    IPPROTO_MH       = 135 /*< IPv6 mobility header. */
 };
 #define IPPROTO_HOPOPTS  IPPROTO_HOPOPTS
 #define IPPROTO_ROUTING  IPPROTO_ROUTING
@@ -130,32 +121,32 @@ typedef uint16_t in_port_t; /* Type to represent a port. */
 
 /* Standard well-known ports. */
 enum {
-  IPPORT_ECHO         = 7,    /*< Echo service. */
-  IPPORT_DISCARD      = 9,    /*< Discard transmissions service. */
-  IPPORT_SYSTAT       = 11,   /*< System status service. */
-  IPPORT_DAYTIME      = 13,   /*< Time of day service. */
-  IPPORT_NETSTAT      = 15,   /*< Network status service. */
-  IPPORT_FTP          = 21,   /*< File Transfer Protocol. */
-  IPPORT_TELNET       = 23,   /*< Telnet protocol. */
-  IPPORT_SMTP         = 25,   /*< Simple Mail Transfer Protocol. */
-  IPPORT_TIMESERVER   = 37,   /*< Timeserver service. */
-  IPPORT_NAMESERVER   = 42,   /*< Domain Name Service. */
-  IPPORT_WHOIS        = 43,   /*< Internet Whois service. */
-  IPPORT_MTP          = 57,
-  IPPORT_TFTP         = 69,   /*< Trivial File Transfer Protocol. */
-  IPPORT_RJE          = 77,
-  IPPORT_FINGER       = 79,   /*< Finger service. */
-  IPPORT_TTYLINK      = 87,
-  IPPORT_SUPDUP       = 95,   /*< SUPDUP protocol. */
-  IPPORT_EXECSERVER   = 512,  /*< execd service. */
-  IPPORT_LOGINSERVER  = 513,  /*< rlogind service. */
-  IPPORT_CMDSERVER    = 514,
-  IPPORT_EFSSERVER    = 520,
-  IPPORT_BIFFUDP      = 512,  /*< UDP ports. */
-  IPPORT_WHOSERVER    = 513,  /*< ... */
-  IPPORT_ROUTESERVER  = 520,  /*< ... */
-  IPPORT_RESERVED     = 1024, /*< Ports less than this value are reserved for privileged processes. */
-  IPPORT_USERRESERVED = 5000  /*< Ports greater this value are reserved for (non-privileged) servers. */
+    IPPORT_ECHO         = 7,    /*< Echo service. */
+    IPPORT_DISCARD      = 9,    /*< Discard transmissions service. */
+    IPPORT_SYSTAT       = 11,   /*< System status service. */
+    IPPORT_DAYTIME      = 13,   /*< Time of day service. */
+    IPPORT_NETSTAT      = 15,   /*< Network status service. */
+    IPPORT_FTP          = 21,   /*< File Transfer Protocol. */
+    IPPORT_TELNET       = 23,   /*< Telnet protocol. */
+    IPPORT_SMTP         = 25,   /*< Simple Mail Transfer Protocol. */
+    IPPORT_TIMESERVER   = 37,   /*< Timeserver service. */
+    IPPORT_NAMESERVER   = 42,   /*< Domain Name Service. */
+    IPPORT_WHOIS        = 43,   /*< Internet Whois service. */
+    IPPORT_MTP          = 57,
+    IPPORT_TFTP         = 69,   /*< Trivial File Transfer Protocol. */
+    IPPORT_RJE          = 77,
+    IPPORT_FINGER       = 79,   /*< Finger service. */
+    IPPORT_TTYLINK      = 87,
+    IPPORT_SUPDUP       = 95,   /*< SUPDUP protocol. */
+    IPPORT_EXECSERVER   = 512,  /*< execd service. */
+    IPPORT_LOGINSERVER  = 513,  /*< rlogind service. */
+    IPPORT_CMDSERVER    = 514,
+    IPPORT_EFSSERVER    = 520,
+    IPPORT_BIFFUDP      = 512,  /*< UDP ports. */
+    IPPORT_WHOSERVER    = 513,  /*< ... */
+    IPPORT_ROUTESERVER  = 520,  /*< ... */
+    IPPORT_RESERVED     = 1024, /*< Ports less than this value are reserved for privileged processes. */
+    IPPORT_USERRESERVED = 5000  /*< Ports greater this value are reserved for (non-privileged) servers. */
 };
 
 /* Definitions of the bits in an Internet address integer.
@@ -197,18 +188,32 @@ enum {
 
 /* IPv6 address */
 struct in6_addr {
- union {
-  uint8_t  __u6_addr8[16];
+#ifdef __COMPILER_HAVE_TRANSPARENT_UNION
+    union {
+#undef s6_addr
+        uint8_t  s6_addr[16];
 #ifdef __USE_MISC
-  uint16_t __u6_addr16[8];
-  uint32_t __u6_addr32[4];
-#endif
- } __in6_u;
+#undef s6_addr16
+#undef s6_addr32
+        uint16_t s6_addr16[8];
+        uint32_t s6_addr32[4];
+#endif /* __USE_MISC */
+    };
+#else /* __COMPILER_HAVE_TRANSPARENT_UNION */
+    union {
+        uint8_t  __u6_addr8[16];
+#undef s6_addr
 #define s6_addr      __in6_u.__u6_addr8
 #ifdef __USE_MISC
-#   define s6_addr16 __in6_u.__u6_addr16
-#   define s6_addr32 __in6_u.__u6_addr32
-#endif
+        uint16_t __u6_addr16[8];
+        uint32_t __u6_addr32[4];
+#undef s6_addr16
+#undef s6_addr32
+#define s6_addr16 __in6_u.__u6_addr16
+#define s6_addr32 __in6_u.__u6_addr32
+#endif /* __USE_MISC */
+    } __in6_u;
+#endif /* !__COMPILER_HAVE_TRANSPARENT_UNION */
 };
 
 
@@ -234,63 +239,63 @@ struct sockaddr_in {
 };
 
 struct sockaddr_in6 {
- __SOCKADDR_COMMON(sin6_);
- in_port_t       sin6_port;     /* Transport layer port # */
- uint32_t        sin6_flowinfo; /* IPv6 flow information */
- struct in6_addr sin6_addr;     /* IPv6 address */
- uint32_t        sin6_scope_id; /* IPv6 scope-id */
+    __SOCKADDR_COMMON(sin6_);
+    in_port_t       sin6_port;     /* Transport layer port # */
+    uint32_t        sin6_flowinfo; /* IPv6 flow information */
+    struct in6_addr sin6_addr;     /* IPv6 address */
+    uint32_t        sin6_scope_id; /* IPv6 scope-id */
 };
 
 #ifdef __USE_MISC
 /* IPv4 multicast request. */
 struct ip_mreq {
- struct in_addr imr_multiaddr; /* IP multicast address of group. */
- struct in_addr imr_interface; /* Local IP address of interface. */
+    struct in_addr imr_multiaddr; /* IP multicast address of group. */
+    struct in_addr imr_interface; /* Local IP address of interface. */
 };
 struct ip_mreq_source {
- struct in_addr imr_multiaddr;  /* IP multicast address of group. */
- struct in_addr imr_interface;  /* IP address of source. */
- struct in_addr imr_sourceaddr; /* IP address of interface. */
+    struct in_addr imr_multiaddr;  /* IP multicast address of group. */
+    struct in_addr imr_interface;  /* IP address of source. */
+    struct in_addr imr_sourceaddr; /* IP address of interface. */
 };
 #endif /* __USE_MISC */
 
 /* IPv6 multicast request. */
 struct ipv6_mreq {
- struct in6_addr ipv6mr_multiaddr; /*< IPv6 multicast address of group */
- unsigned int    ipv6mr_interface; /*< local interface */
+    struct in6_addr ipv6mr_multiaddr; /*< IPv6 multicast address of group */
+    unsigned int    ipv6mr_interface; /*< local interface */
 };
 
 #ifdef __USE_MISC
 /* Multicast group request. */
 struct group_req {
- uint32_t                gr_interface; /*< Interface index. */
- struct sockaddr_storage gr_group;     /*< Group address. */
+    uint32_t                gr_interface; /*< Interface index. */
+    struct sockaddr_storage gr_group;     /*< Group address. */
 };
 
 struct group_source_req {
- uint32_t                gsr_interface; /*< Interface index. */
- struct sockaddr_storage gsr_group;     /*< Group address. */
- struct sockaddr_storage gsr_source;    /*< Source address. */
+    uint32_t                gsr_interface; /*< Interface index. */
+    struct sockaddr_storage gsr_group;     /*< Group address. */
+    struct sockaddr_storage gsr_source;    /*< Source address. */
 };
 
 /* Full-state filter operations. */
 struct ip_msfilter {
- struct in_addr imsf_multiaddr; /*< IP multicast address of group. */
- struct in_addr imsf_interface; /*< Local IP address of interface. */
- uint32_t       imsf_fmode;     /*< Filter mode. */
- uint32_t       imsf_numsrc;    /*< Number of source addresses. */
- struct in_addr imsf_slist[1];  /*< Source addresses. */
+    struct in_addr imsf_multiaddr; /*< IP multicast address of group. */
+    struct in_addr imsf_interface; /*< Local IP address of interface. */
+    uint32_t       imsf_fmode;     /*< Filter mode. */
+    uint32_t       imsf_numsrc;    /*< Number of source addresses. */
+    struct in_addr imsf_slist[1];  /*< Source addresses. */
 };
 #define IP_MSFILTER_SIZE(numsrc) (sizeof(struct ip_msfilter) \
                                  -sizeof(struct in_addr) \
                                  +(numsrc)*sizeof(struct in_addr))
 
 struct group_filter {
- uint32_t                gf_interface; /*< Interface index. */
- struct sockaddr_storage gf_group;     /*< Group address. */
- uint32_t                gf_fmode;     /*< Filter mode. */
- uint32_t                gf_numsrc;    /*< Number of source addresses. */
- struct sockaddr_storage gf_slist[1];  /*< Source addresses. */
+    uint32_t                gf_interface; /*< Interface index. */
+    struct sockaddr_storage gf_group;     /*< Group address. */
+    uint32_t                gf_fmode;     /*< Filter mode. */
+    uint32_t                gf_numsrc;    /*< Number of source addresses. */
+    struct sockaddr_storage gf_slist[1];  /*< Source addresses. */
 };
 #define GROUP_FILTER_SIZE(numsrc) (sizeof(struct group_filter) \
                                   -sizeof(struct sockaddr_storage) \

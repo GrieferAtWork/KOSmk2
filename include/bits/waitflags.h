@@ -61,23 +61,24 @@ __SYSDECL_BEGIN
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K8)
 #ifndef __ENUM_IDTYPE_T
 #define __ENUM_IDTYPE_T 1
-
 #undef P_ALL
 #undef P_PID
 #undef P_PGID
-
+#ifdef __COMPILER_PREFERR_ENUMS
 typedef enum {
-    P_ALL, /*< Wait for any child. */
-    P_PID, /*< Wait for specified process. */
-    P_PGID /*< Wait for members of process group. */
+    P_ALL  = 0, /*< Wait for any child. */
+    P_PID  = 1, /*< Wait for specified process. */
+    P_PGID = 2  /*< Wait for members of process group. */
 } idtype_t;
-
-#ifndef __cplusplus
-#define P_ALL  0
-#define P_PID  1
-#define P_PGID 2
-#endif /* !__cplusplus */
-
+#define P_ALL   P_ALL
+#define P_PID   P_PID
+#define P_PGID  P_PGID
+#else /* __COMPILER_PREFERR_ENUMS */
+typedef int idtype_t;
+#define P_ALL  0 /*< Wait for any child. */
+#define P_PID  1 /*< Wait for specified process. */
+#define P_PGID 2 /*< Wait for members of process group. */
+#endif /* !__COMPILER_PREFERR_ENUMS */
 #endif /* !__ENUM_IDTYPE_T */
 #endif /* ... */
 

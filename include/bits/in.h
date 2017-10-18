@@ -20,6 +20,14 @@
 #define _BITS_IN_H 1
 
 #include <__stdinc.h>
+#include <stdint.h>
+
+__SYSDECL_BEGIN
+
+/* Internet address. */
+typedef uint32_t in_addr_t;
+struct in_addr { in_addr_t s_addr; };
+
 
 /* Copyright (C) 1991-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
@@ -134,22 +142,22 @@
  * The `ip_dst' field is used for the first-hop gateway when using a
  * source route (this gets put into the header proper). */
 struct ip_opts {
- struct in_addr ip_dst; /* First hop; zero without source route. */
- char ip_opts[40];      /* Actually variable in size. */
+    struct in_addr ip_dst; /* First hop; zero without source route. */
+    char ip_opts[40];      /* Actually variable in size. */
 };
 
 /* Like `struct ip_mreq' but including interface specification by index. */
 struct ip_mreqn {
- struct in_addr imr_multiaddr; /*< IP multicast address of group */
- struct in_addr imr_address;   /*< local IP address of interface */
- int            imr_ifindex;   /*< Interface index */
+    struct in_addr imr_multiaddr; /*< IP multicast address of group */
+    struct in_addr imr_address;   /*< local IP address of interface */
+    int            imr_ifindex;   /*< Interface index */
 };
 
 /* Structure used for IP_PKTINFO. */
 struct in_pktinfo {
- int            ipi_ifindex;  /*< Interface index. */
- struct in_addr ipi_spec_dst; /*< Routing destination address. */
- struct in_addr ipi_addr;     /*< Header destination address. */
+    int            ipi_ifindex;  /*< Interface index. */
+    struct in_addr ipi_spec_dst; /*< Routing destination address. */
+    struct in_addr ipi_addr;     /*< Header destination address. */
 };
 #endif
 
@@ -225,5 +233,7 @@ struct in_pktinfo {
 #define IPV6_RTHDR_LOOSE    0 /*< Hop doesn't need to be neighbor. */
 #define IPV6_RTHDR_STRICT   1 /*< Hop must be a neighbor. */
 #define IPV6_RTHDR_TYPE_0   0 /*< IPv6 Routing header type 0. */
+
+__SYSDECL_END
 
 #endif /* !_BITS_IN_H */
