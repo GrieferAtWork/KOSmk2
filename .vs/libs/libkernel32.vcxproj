@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libs\libkernel32\file.c" />
+    <ClCompile Include="..\..\libs\libkernel32\heap.c" />
     <ClCompile Include="..\..\libs\libkernel32\linker.c" />
     <ClCompile Include="..\..\libs\libkernel32\string.c" />
     <ClCompile Include="..\..\libs\libkernel32\thread.c" />
@@ -19,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\libkernel32\file.h" />
+    <ClInclude Include="..\..\libs\libkernel32\heap.h" />
     <ClInclude Include="..\..\libs\libkernel32\k32.h" />
     <ClInclude Include="..\..\libs\libkernel32\linker.h" />
     <ClInclude Include="..\..\libs\libkernel32\string.h" />
