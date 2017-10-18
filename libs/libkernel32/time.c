@@ -34,8 +34,6 @@
 
 DECL_BEGIN
 
-__LIBC int LIBCCALL libc_beep(unsigned int freq, unsigned int duration) ASMNAME("_beep");
-
 
 /* Time conversion functions. */
 INTERN FILETIME WINAPI
@@ -187,13 +185,6 @@ K32_QueryPerformanceFrequency(LARGE_INTEGER *pfreq) {
 
 
 /* Misc. */
-INTERN BOOL WINAPI K32_Beep(DWORD freq, DWORD duration) {
- return !libc_beep((unsigned int)freq,(unsigned int)duration);
-}
-INTERN int WINAPI
-K32_MulDiv(int nNumber, int nNumerator, int nDenominator) {
- return (int)(((s64)nNumber*(s64)nNumerator)/nDenominator);
-}
 INTERN MMRESULT WINAPI K32_timeBeginPeriod(UINT uPeriod) { NOT_IMPLEMENTED(); return MMSYSERR_ERROR; }
 INTERN MMRESULT WINAPI K32_timeEndPeriod(UINT uPeriod) { NOT_IMPLEMENTED(); return MMSYSERR_ERROR; }
 INTERN MMRESULT WINAPI K32_timeGetDevCaps(LPTIMECAPS ptc, UINT cbtc) { NOT_IMPLEMENTED(); return MMSYSERR_ERROR; }
@@ -220,8 +211,6 @@ DEFINE_PUBLIC_ALIAS(QueryPerformanceCounter,K32_QueryPerformanceCounter);
 DEFINE_PUBLIC_ALIAS(QueryPerformanceFrequency,K32_QueryPerformanceFrequency);
 
 /* Misc. */
-DEFINE_PUBLIC_ALIAS(Beep,K32_Beep);
-DEFINE_PUBLIC_ALIAS(MulDiv,K32_MulDiv);
 DEFINE_PUBLIC_ALIAS(timeBeginPeriod,K32_timeBeginPeriod);
 DEFINE_PUBLIC_ALIAS(timeEndPeriod,K32_timeEndPeriod);
 DEFINE_PUBLIC_ALIAS(timeGetDevCaps,K32_timeGetDevCaps);

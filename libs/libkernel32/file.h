@@ -41,9 +41,14 @@ DECL_BEGIN
 #define FD_TO_HANDLE(x)  ((HANDLE)((uintptr_t)(x)|HANDLE_TYPE_FD))
 #define PID_TO_HANDLE(x) ((HANDLE)((uintptr_t)(x)|HANDLE_TYPE_PID))
 
-INTERN DWORD   WINAPI K32_GetFileAttributesFromUnixMode(mode_t val);
-INTERN oflag_t WINAPI K32_DesiredAccessToOflags(DWORD dwDesiredAccess);
-INTERN char   *WINAPI K32_MallocFReadLink(int fd);
+INTDEF DWORD   WINAPI K32_GetFileAttributesFromUnixMode(mode_t val);
+INTDEF oflag_t WINAPI K32_DesiredAccessToOflags(DWORD dwDesiredAccess);
+INTDEF char   *WINAPI K32_MallocFReadLink(int fd);
+
+/* File-api Codepage API. */
+INTDEF void    WINAPI K32_SetFileApisToOEM(void);
+INTDEF void    WINAPI K32_SetFileApisToANSI(void);
+INTDEF WINBOOL WINAPI K32_AreFileApisANSI(void);
 
 /* 16-bit compatibility File API.
  * HINT: These directly map to the underlying file descriptors! */
@@ -76,6 +81,9 @@ INTDEF WINBOOL WINAPI K32_GetFileInformationByHandle(HANDLE hFile, LPBY_HANDLE_F
 INTDEF DWORD   WINAPI K32_GetFileType(HANDLE hFile);
 INTDEF DWORD   WINAPI K32_GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh);
 INTDEF WINBOOL WINAPI K32_GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize);
+INTDEF WINBOOL WINAPI K32_LockFile(HANDLE hFile, DWORD dwFileOffsetLow, DWORD dwFileOffsetHigh, DWORD nNumberOfBytesToLockLow, DWORD nNumberOfBytesToLockHigh);
+INTDEF WINBOOL WINAPI K32_UnlockFile(HANDLE hFile, DWORD dwFileOffsetLow, DWORD dwFileOffsetHigh, DWORD nNumberOfBytesToUnlockLow, DWORD nNumberOfBytesToUnlockHigh);
+INTDEF WINBOOL WINAPI K32_LockFileEx(HANDLE hFile, DWORD dwFlags, DWORD dwReserved, DWORD nNumberOfBytesToLockLow, DWORD nNumberOfBytesToLockHigh, LPOVERLAPPED lpOverlapped);
 
 /* Extended File APIs. */
 INTDEF WINBOOL WINAPI K32_ReadFileEx(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPOVERLAPPED lpOverlapped, LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);

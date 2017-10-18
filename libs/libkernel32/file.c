@@ -34,6 +34,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
+#include <hybrid/section.h>
 #include <assert.h>
 #include <dirent.h>
 #include <errno.h>
@@ -43,6 +44,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <kos/fcntl.h>
+#include <bits/fcntl.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
@@ -77,6 +79,12 @@ STATIC_ASSERT(OF_WRITE == O_WRONLY);
 STATIC_ASSERT(OF_READWRITE == O_RDWR);
 STATIC_ASSERT(HFILE_ERROR == -1); /* _hread() returns this on error, which should be the same as 'read()' */
 
+
+/* File-api Codepage API. */
+PRIVATE ATTR_COLDBSS BOOL is_oem = FALSE;
+INTERN ATTR_COLDTEXT void WINAPI K32_SetFileApisToOEM(void) { is_oem = TRUE; }
+INTERN ATTR_COLDTEXT void WINAPI K32_SetFileApisToANSI(void) { is_oem = FALSE; }
+INTERN ATTR_COLDTEXT WINBOOL WINAPI K32_AreFileApisANSI(void) { return !is_oem; }
 
 INTERN HFILE WINAPI
 K32_OpenFile(LPCSTR lpFileName, LPOFSTRUCT UNUSED(lpReOpenBuff), UINT uStyle) {
@@ -352,6 +360,44 @@ K32_GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
  if (lpFileSizeHigh) *lpFileSizeHigh = result.u.HighPart;
  return result.u.LowPart;
 }
+INTERN WINBOOL WINAPI
+K32_LockFileEx(HANDLE hFile, DWORD dwFlags, DWORD UNUSED(dwReserved),
+               DWORD nNumberOfBytesToLockLow,
+               DWORD nNumberOfBytesToLockHigh,
+               LPOVERLAPPED lpOverlapped) {
+ struct flock64 lock;
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
+ if (!lpOverlapped) { SET_ERRNO(EINVAL); return FALSE; }
+ lock.l_start  = *(u64 *)&lpOverlapped->Offset;
+ lock.l_len    = (u64)nNumberOfBytesToLockHigh << 32 | nNumberOfBytesToLockLow;
+ lock.l_type   = dwFlags&LOCKFILE_EXCLUSIVE_LOCK ? F_WRLCK : F_RDLCK;
+ if (dwFlags&LOCKFILE_FAIL_IMMEDIATELY) lock.l_type |= LOCK_NB;
+ lock.l_whence = SEEK_SET;
+ lock.l_pid    = getpid(); /* XXX: Will this be required? */
+ return !fcntl(HANDLE_TO_FD(hFile),F_SETLK,&lock);
+}
+INTERN WINBOOL WINAPI
+K32_UnlockFile(HANDLE hFile, DWORD dwFileOffsetLow, DWORD dwFileOffsetHigh,
+               DWORD nNumberOfBytesToUnlockLow, DWORD nNumberOfBytesToUnlockHigh) {
+ struct flock64 lock;
+ if (!HANDLE_IS_FD(hFile)) { SET_ERRNO(EBADF); return FALSE; }
+ lock.l_start  = (u64)dwFileOffsetHigh << 32 | dwFileOffsetLow;
+ lock.l_len    = (u64)nNumberOfBytesToUnlockHigh << 32 | nNumberOfBytesToUnlockLow;
+ lock.l_type   = F_UNLCK;
+ lock.l_whence = SEEK_SET;
+ lock.l_pid    = getpid(); /* XXX: Will this be required? */
+ return !fcntl(HANDLE_TO_FD(hFile),F_SETLK,&lock);
+}
+INTERN WINBOOL WINAPI
+K32_LockFile(HANDLE hFile, DWORD dwFileOffsetLow, DWORD dwFileOffsetHigh,
+             DWORD nNumberOfBytesToLockLow, DWORD nNumberOfBytesToLockHigh) {
+ OVERLAPPED start = { .Offset = nNumberOfBytesToLockLow,
+                      .OffsetHigh = nNumberOfBytesToLockHigh, };
+ return K32_LockFileEx(hFile,LOCKFILE_EXCLUSIVE_LOCK,0,
+                       nNumberOfBytesToLockLow,
+                       nNumberOfBytesToLockHigh,&start);
+}
+
 
 
 
@@ -1222,6 +1268,11 @@ INTERN WINBOOL WINAPI K32_MoveFileW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFil
 
 
 
+/* File-api Codepage API. */
+DEFINE_PUBLIC_ALIAS(SetFileApisToOEM,K32_SetFileApisToOEM);
+DEFINE_PUBLIC_ALIAS(SetFileApisToANSI,K32_SetFileApisToANSI);
+DEFINE_PUBLIC_ALIAS(AreFileApisANSI,K32_AreFileApisANSI);
+
 /* 16-bit compatibility File API.
  * HINT: These directly map to the underlying file descriptors! */
 DEFINE_PUBLIC_ALIAS(OpenFile,K32_OpenFile);
@@ -1253,6 +1304,9 @@ DEFINE_PUBLIC_ALIAS(GetFileInformationByHandle,K32_GetFileInformationByHandle);
 DEFINE_PUBLIC_ALIAS(GetFileType,K32_GetFileType);
 DEFINE_PUBLIC_ALIAS(GetFileSize,K32_GetFileSize);
 DEFINE_PUBLIC_ALIAS(GetFileSizeEx,K32_GetFileSizeEx);
+DEFINE_PUBLIC_ALIAS(LockFile,K32_LockFile);
+DEFINE_PUBLIC_ALIAS(UnlockFile,K32_UnlockFile);
+DEFINE_PUBLIC_ALIAS(LockFileEx,K32_LockFileEx);
 
 /* Extended File APIs. */
 DEFINE_PUBLIC_ALIAS(ReadFileEx,K32_ReadFileEx);

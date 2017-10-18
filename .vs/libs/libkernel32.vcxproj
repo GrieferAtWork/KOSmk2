@@ -14,6 +14,7 @@
     <ClCompile Include="..\..\libs\libkernel32\file.c" />
     <ClCompile Include="..\..\libs\libkernel32\heap.c" />
     <ClCompile Include="..\..\libs\libkernel32\linker.c" />
+    <ClCompile Include="..\..\libs\libkernel32\misc.c" />
     <ClCompile Include="..\..\libs\libkernel32\string.c" />
     <ClCompile Include="..\..\libs\libkernel32\thread.c" />
     <ClCompile Include="..\..\libs\libkernel32\time.c" />
@@ -23,6 +24,7 @@
     <ClInclude Include="..\..\libs\libkernel32\heap.h" />
     <ClInclude Include="..\..\libs\libkernel32\k32.h" />
     <ClInclude Include="..\..\libs\libkernel32\linker.h" />
+    <ClInclude Include="..\..\libs\libkernel32\misc.h" />
     <ClInclude Include="..\..\libs\libkernel32\string.h" />
     <ClInclude Include="..\..\libs\libkernel32\thread.h" />
     <ClInclude Include="..\..\libs\libkernel32\time.h" />
