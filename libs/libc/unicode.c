@@ -159,6 +159,7 @@ got_char:
   if unlikely(ch >= UNI_SURROGATE_HIGH_BEGIN &&
               ch <= UNI_SURROGATE_LOW_END)
      goto err;
+put_char:
   if (dst < dst_end) *dst = ch;
   ++dst;
   if (mode&UNICODE_F_DOSINGLE) break;
@@ -175,6 +176,10 @@ done:
  }
  return (size_t)(dst-(u32 *)utf32);
 err:
+ if (mode&UNICODE_F_NOFAIL) {
+  ch = UNICODE_REPLACEMENT;
+  goto put_char;
+ }
  if (mode&UNICODE_F_SETERRNO)
      SET_ERRNO(EILSEQ);
  return UNICODE_ERROR;
@@ -247,6 +252,7 @@ got_char:
    if unlikely(ch >= UNI_SURROGATE_HIGH_BEGIN &&
                ch <= UNI_SURROGATE_LOW_END)
       goto err;
+put_char:
    if (dst < dst_end) *dst = (u16)ch;
    ++dst;
   } else if unlikely(ch > UNI_MAX_UTF16) {
@@ -287,6 +293,10 @@ done:
  }
  return (size_t)(dst-(u16 *)utf16);
 err:
+ if (mode&UNICODE_F_NOFAIL) {
+  ch = UNICODE_REPLACEMENT;
+  goto put_char;
+ }
  if (mode&UNICODE_F_SETERRNO)
      SET_ERRNO(EILSEQ);
  return UNICODE_ERROR;
@@ -325,6 +335,7 @@ libc_utf32to8(char32_t const *__restrict utf32, size_t utf32len,
   case 2: if (dst < dst_end) { *dst++ = (char)((ch|0x80)&0xBF); } ++dst; ch >>= 6;
   case 1: if (dst < dst_end) { *dst   = (char) (ch|uni_bytemarks[dst_size]); } ++dst;
   }
+done_ch:
   if (mode&UNICODE_F_DOSINGLE) break;
  }
  if (!(mode&UNICODE_F_NOZEROTERM)) {
@@ -339,6 +350,11 @@ libc_utf32to8(char32_t const *__restrict utf32, size_t utf32len,
  }
  return (size_t)(dst-utf8);
 err:
+ if (mode&UNICODE_F_NOFAIL) {
+  if (dst < dst_end) *dst = UNICODE_REPLACEMENT;
+  ++dst;
+  goto done_ch;
+ }
  if (mode&UNICODE_F_SETERRNO)
      SET_ERRNO(EILSEQ);
  return UNICODE_ERROR;
@@ -403,6 +419,7 @@ second_char:
    case 2: if (temp < dst_end) { temp[-1] = (char)(u8)((ch|0x80)&0xBF); } --temp,ch >>= 6;
    case 1: if (temp < dst_end) { temp[-1] = (char)(u8)(ch|uni_bytemarks[dst_size]); }
   }
+done_ch:
   if (mode&UNICODE_F_DOSINGLE) break;
  }
  if (!(mode&UNICODE_F_NOZEROTERM)) {
@@ -417,6 +434,11 @@ done:
  }
  return (size_t)(dst-utf8);
 err:
+ if (mode&UNICODE_F_NOFAIL) {
+  if (dst < dst_end) *dst = UNICODE_REPLACEMENT;
+  ++dst;
+  goto done_ch;
+ }
  if (mode&UNICODE_F_SETERRNO)
      SET_ERRNO(EILSEQ);
  return UNICODE_ERROR;
@@ -427,7 +449,7 @@ err:
 INTDEF ATTR_UNITEXT ssize_t LIBCCALL
 libc_format_16wsztomb(pformatprinter printer, void *closure,
                       char16_t const *__restrict c16, size_t c16len,
-                      mbstate_t *__restrict ps) {
+                      mbstate_t *__restrict ps, u32 mode) {
  char *iter,buf[4];
  u16 const *end = (u16 const *)c16+c16len;
  u32 ch; size_t dst_size;
@@ -474,6 +496,7 @@ second_char:
    case 1: *--iter = (char)(u8)(ch|uni_bytemarks[dst_size]); break;
   }
   /* XXX: Maybe not print each character individually? */
+print_buf:
   temp = (*printer)(buf,(size_t)(iter-buf),closure);
   if (temp < 0) return temp;
   result += temp;
@@ -481,6 +504,11 @@ second_char:
 done:
  return result;
 err:
+ if (mode&UNICODE_F_NOFAIL) {
+  iter = buf+1;
+  buf[0] = UNICODE_REPLACEMENT;
+  goto print_buf;
+ }
  SET_ERRNO(EILSEQ);
  return -1;
 }
@@ -490,7 +518,7 @@ err:
 INTDEF ATTR_UNITEXT ssize_t LIBCCALL
 libc_format_32wsztomb(pformatprinter printer, void *closure,
                       char32_t const *__restrict c32, size_t c32len,
-                      mbstate_t *__restrict ps) {
+                      mbstate_t *__restrict ps, u32 mode) {
  char *iter,buf[4];
  u32 const *end = (u32 *)c32+c32len;
  u32 ch; size_t dst_size;
@@ -513,12 +541,18 @@ libc_format_32wsztomb(pformatprinter printer, void *closure,
   case 1: *iter++ = (char)((ch|uni_bytemarks[dst_size])); break;
   }
   /* XXX: Maybe not print each character individually? */
+print_buf:
   temp = (*printer)(buf,iter-buf,closure);
   if (temp < 0) return temp;
   result += temp;
  }
  return result;
 err:
+ if (mode&UNICODE_F_NOFAIL) {
+  iter = buf+1;
+  buf[0] = UNICODE_REPLACEMENT;
+  goto print_buf;
+ }
  SET_ERRNO(EILSEQ);
  return -1;
 }
@@ -526,20 +560,20 @@ err:
 INTDEF ssize_t LIBCCALL
 libc_format_16wsntomb(pformatprinter printer, void *closure,
                       char16_t const *__restrict c16, size_t c16max,
-                      mbstate_t *__restrict ps) {
+                      mbstate_t *__restrict ps, u32 mode) {
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
- return libc_format_16wsztomb(printer,closure,c16,libc_16wcsnlen(c16,c16max),ps);
+ return libc_format_16wsztomb(printer,closure,c16,libc_16wcsnlen(c16,c16max),ps,mode);
 #else
  char16_t const *iter = c16,*end = c16+c16max;
  for (; iter != end && *iter; ++iter);
- return libc_format_16wsztomb(printer,closure,c16,(size_t)(iter-c16),ps);
+ return libc_format_16wsztomb(printer,closure,c16,(size_t)(iter-c16),ps,mode);
 #endif
 }
 INTDEF ssize_t LIBCCALL
 libc_format_32wsntomb(pformatprinter printer, void *closure,
                       char32_t const *__restrict c32, size_t c32max,
-                      mbstate_t *__restrict ps) {
- return libc_format_32wsztomb(printer,closure,c32,libc_32wcsnlen(c32,c32max),ps);
+                      mbstate_t *__restrict ps, u32 mode) {
+ return libc_format_32wsztomb(printer,closure,c32,libc_32wcsnlen(c32,c32max),ps,mode);
 }
 
 

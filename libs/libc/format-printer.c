@@ -746,17 +746,17 @@ quote_string:
 #ifndef __KERNEL__
      if (length == len_l) {
       mbstate_t state = MBSTATE_INIT;
-      temp = unlikely(wch16) ? libc_format_16wsztomb(printer,closure,(char16_t *)s,precision,&state)
-                             : libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state);
+      temp = unlikely(wch16) ? libc_format_16wsztomb(printer,closure,(char16_t *)s,precision,&state,UNICODE_F_NOFAIL)
+                             : libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state,UNICODE_F_NOFAIL);
      } else
 #endif
 #if PRINTF_EXTENSION_UNICODE
      if (length == len_U16) {
       mbstate_t state = MBSTATE_INIT;
-      temp = libc_format_16wsztomb(printer,closure,(char16_t *)s,precision,&state);
+      temp = libc_format_16wsztomb(printer,closure,(char16_t *)s,precision,&state,UNICODE_F_NOFAIL);
      } else if (length == len_U32) {
       mbstate_t state = MBSTATE_INIT;
-      temp = libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state);
+      temp = libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state,UNICODE_F_NOFAIL);
      } else
 #endif
      { temp = (*printer)(s,precision,closure); }

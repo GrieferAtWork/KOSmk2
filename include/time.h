@@ -100,11 +100,11 @@ typedef __TM_TYPE(time) time_t;
 #define __pid_t_defined 1
 typedef __pid_t pid_t;
 #endif
-#else
-#ifndef __STRICT_ANSI__
+#endif
+#if defined(__USE_DOS) || \
+  (!defined(__USE_XOPEN2K) && !defined(__STRICT_ANSI__))
 #ifndef CLK_TCK
 #   define CLK_TCK CLOCKS_PER_SEC
-#endif
 #endif
 #endif
 
@@ -357,9 +357,12 @@ __LOCAL struct tm *(__LIBCCALL gmtime_r)(time_t const *__restrict __timer, struc
 __LOCAL struct tm *(__LIBCCALL localtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) { return __dos_localtime_s(__tp,__timer) ? 0 : __tp; }
 __LOCAL char *(__LIBCCALL ctime_r)(time_t const *__restrict __timer, char *__restrict __buf) { return __dos_ctime_s(__buf,26,__timer) ? 0 : __buf; }
 #elif defined(__GLC_COMPAT__) && defined(__USE_TIME_BITS64)
+#ifndef ____ctime32_r_defined
+#define ____ctime32_r_defined 1
 __REDIRECT(__LIBC,,struct tm *,__LIBCCALL,__gmtime32_r,(__time32_t const *__restrict __timer, struct tm *__restrict __tp),gmtime_r,(__timer,__tp))
 __REDIRECT(__LIBC,,struct tm *,__LIBCCALL,__localtime32_r,(__time32_t const *__restrict __timer, struct tm *__restrict __tp),localtime_r,(__timer,__tp))
 __REDIRECT(__LIBC,,char *,__LIBCCALL,__ctime32_r,(__time32_t const *__restrict __timer, char *__restrict __buf),ctime_r,(__timer,__buf))
+#endif /* !____ctime32_r_defined */
 __LOCAL struct tm *(__LIBCCALL gmtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) { __time32_t __t = (__time32_t)*__timer; return __gmtime32_r(&__t,__tp); }
 __LOCAL struct tm *(__LIBCCALL localtime_r)(time_t const *__restrict __timer, struct tm *__restrict __tp) { __time32_t __t = (__time32_t)*__timer; return __localtime32_r(&__t,__tp); }
 __LOCAL char *(__LIBCCALL ctime_r)(time_t const *__restrict __timer, char *__restrict __buf) { __time32_t __t = (__time32_t)*__timer; return __ctime32_r(&__t,__buf); }
@@ -391,19 +394,25 @@ __LIBC char *(__LIBCCALL ctime64_r)(time64_t const *__restrict __timer, char *__
 #endif /* Builtin... */
 #endif /* __USE_TIME64 */
 
-#undef tzname
-__REDIRECT_IFDOS_VOID(__LIBC,,__LIBCCALL,tzset,(void),_tzset,())
 #ifdef __DOS_COMPAT__
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_asctime_s,(char *__buf, size_t __bufsize, struct tm const *__restrict __tp),asctime_s,(__buf,__bufsize,__tp))
 __LOCAL char *(__LIBCCALL asctime_r)(struct tm const *__restrict __tp, char *__restrict __buf) { return __dos_asctime_s(__buf,26,__tp) ? 0 : __buf; }
-#define tzname     __dos_tzname()
 #else /* __DOS_COMPAT__ */
 __LIBC char *(__LIBCCALL asctime_r)(struct tm const *__restrict __tp, char *__restrict __buf);
-__LIBC char *tzname[2];
 #endif /* !__DOS_COMPAT__ */
 #endif /* __USE_POSIX */
 
-#if defined(__USE_MISC) || defined(__USE_XOPEN)
+#if defined(__USE_POSIX) || defined(__USE_DOS)
+#undef tzname
+__REDIRECT_IFDOS_VOID(__LIBC,,__LIBCCALL,tzset,(void),_tzset,())
+#ifdef __DOS_COMPAT__
+#define tzname     __dos_tzname()
+#else /* __DOS_COMPAT__ */
+__LIBC char *tzname[2];
+#endif /* !__DOS_COMPAT__ */
+#endif /* __USE_POSIX || __USE_DOS */
+
+#if defined(__USE_MISC) || defined(__USE_XOPEN) || defined(__USE_DOS)
 #undef daylight
 #undef timezone
 #ifdef __DOS_COMPAT__
@@ -413,7 +422,7 @@ __LIBC char *tzname[2];
 __LIBC int daylight;
 __LIBC long int timezone;
 #endif /* !__DOS_COMPAT__ */
-#endif /* __USE_MISC || __USE_XOPEN */
+#endif /* __USE_MISC || __USE_XOPEN || __USE_DOS */
 
 
 #ifdef __USE_MISC
@@ -757,11 +766,119 @@ __LIBC __PORT_NODOS struct tm *(__LIBCCALL getdate)(char const *__string);
 #endif /* __USE_MISC */
 
 #endif /* __KERNEL__ */
-#undef __FIXED_CONST
 
+/* DOS Extensions. */
 #ifdef __USE_DOS
-/* TODO: DOS Extensions. */
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
+__REDIRECT_IFKOS(__LIBC,,size_t,__LIBCCALL,_strftime_l,
+                (char *__restrict __buf, size_t __bufsize, const char *__restrict __format,
+                 struct tm const *__restrict __tp, __locale_t __locale),
+                 strftime_l,(__buf,__bufsize,__format,__tp,__locale))
+__REDIRECT_IFKOS_VOID(__LIBC,,__LIBCCALL,_tzset,(void),tzset,())
+
+__REDIRECT_IFKOS(__LIBC,,char *,__LIBCCALL,_ctime32,(__time32_t const *__restrict __timer),ctime,(__timer))
+__REDIRECT_IFKOS(__LIBC,,double,__LIBCCALL,_difftime32,(__time32_t __time1, __time32_t __time0),difftime,(__time1,__time0))
+__REDIRECT_IFKOS(__LIBC,,struct tm *,__LIBCCALL,_gmtime32,(__time32_t const *__restrict __timer),gmtime,(__timer))
+__REDIRECT_IFKOS(__LIBC,,struct tm *,__LIBCCALL,_localtime32,(__time32_t const *__restrict __timer),localtime,(__timer))
+__REDIRECT_IFKOS(__LIBC,,__time32_t,__LIBCCALL,_time32,(__time32_t *__timer),time,(__timer))
+__REDIRECT_IFKOS(__LIBC,,__time32_t,__LIBCCALL,_mktime32,(struct tm __FIXED_CONST *__restrict __tp),mktime,(__tp))
+__REDIRECT_IFKOS(__LIBC,,__time32_t,__LIBCCALL,_mkgmtime32,(struct tm __FIXED_CONST *__restrict __tp),timegm,(__tp))
+
+#ifdef __GLC_COMPAT__
+__LOCAL double (__LIBCCALL _difftime64)(__time64_t __time1, __time64_t __time0) { return _difftime32((__time32_t)__time1,(__time32_t)__time0); }
+__LOCAL char *(__LIBCCALL _ctime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _ctime32(&__tm); }
+__LOCAL struct tm *(__LIBCCALL _gmtime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _gmtime32(&__tm); }
+__LOCAL struct tm *(__LIBCCALL _localtime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _localtime32(&__tm); }
+__LOCAL __time64_t (__LIBCCALL _mktime64)(struct tm __FIXED_CONST *__restrict __tp) { return (__time64_t)_mktime32(__tp); }
+__LOCAL __time64_t (__LIBCCALL _mkgmtime64)(struct tm __FIXED_CONST *__restrict __tp) { return (__time64_t)_mkgmtime32(__tp); }
+__LOCAL __time64_t (__LIBCCALL _time64)(__time64_t *__timer) { __time32_t __res = _time32(NULL); if (__timer) *__timer = __res; return __res; }
+#else /* __GLC_COMPAT__ */
+__REDIRECT_IFKOS(__LIBC,,double,__LIBCCALL,_difftime64,(__time64_t __time1, __time64_t __time0),difftime64,(__time1,__time0))
+__REDIRECT_IFKOS(__LIBC,,char *,__LIBCCALL,_ctime64,(__time64_t const *__restrict __timer),ctime64,(__timer))
+__REDIRECT_IFKOS(__LIBC,,struct tm *,__LIBCCALL,_gmtime64,(__time64_t const *__restrict __timer),gmtime64,(__timer))
+__REDIRECT_IFKOS(__LIBC,,struct tm *,__LIBCCALL,_localtime64,(__time64_t const *__restrict __timer),localtime64,(__timer))
+__REDIRECT_IFKOS(__LIBC,,__time64_t,__LIBCCALL,_mktime64,(struct tm __FIXED_CONST *__restrict __tp),mktime64,(__tp))
+__REDIRECT_IFKOS(__LIBC,,__time64_t,__LIBCCALL,_mkgmtime64,(struct tm __FIXED_CONST *__restrict __tp),mkgmtime64,(__tp))
+__REDIRECT_IFKOS(__LIBC,,__time64_t,__LIBCCALL,_time64,(__time64_t *__timer),time64,(__timer))
+#endif /* !__GLC_COMPAT__ */
+
+#ifdef __CRT_DOS
+__LIBC __PORT_DOSONLY __UINT32_TYPE__ (__LIBCCALL _getsystime)(struct tm *__restrict __tp);
+__LIBC __PORT_DOSONLY __UINT32_TYPE__ (__LIBCCALL _setsystime)(struct tm __FIXED_CONST *__restrict __tp, __UINT32_TYPE__ __msec);
+__LIBC __PORT_DOSONLY char *(__LIBCCALL _strdate)(char __buf[9]);
+__LIBC __PORT_DOSONLY char *(__LIBCCALL _strtime)(char __buf[9]);
+__LIBC __PORT_DOSONLY errno_t (__LIBCCALL _strdate_s)(char __buf[9], size_t __bufsize);
+__LIBC __PORT_DOSONLY errno_t (__LIBCCALL _strtime_s)(char __buf[9], size_t __bufsize);
+#endif /* __CRT_DOS */
+
+#ifdef __GLC_COMPAT__
+#ifndef ____ctime32_r_defined
+#define ____ctime32_r_defined 1
+__REDIRECT(__LIBC,,struct tm *,__LIBCCALL,__gmtime32_r,(__time32_t const *__restrict __timer, struct tm *__restrict __tp),gmtime_r,(__timer,__tp))
+__REDIRECT(__LIBC,,struct tm *,__LIBCCALL,__localtime32_r,(__time32_t const *__restrict __timer, struct tm *__restrict __tp),localtime_r,(__timer,__tp))
+__REDIRECT(__LIBC,,char *,__LIBCCALL,__ctime32_r,(__time32_t const *__restrict __timer, char *__restrict __buf),ctime_r,(__timer,__buf))
+#endif /* !____ctime32_r_defined */
+__LOCAL errno_t (__LIBCCALL _ctime32_s)(char __buf[26], size_t __bufsize, __time32_t const *__restrict __timer) { return __bufsize >= 26 && __ctime32_r(__timer_t,__buf) ? 0 : 1; }
+__LOCAL errno_t (__LIBCCALL _ctime64_s)(char __buf[26], size_t __bufsize, __time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _ctime32_s(__buf,__bufsize,&__tm); }
+__LOCAL errno_t (__LIBCCALL _gmtime32_s)(struct tm *__restrict __tp, __time32_t const *__restrict __timer) { return __gmtime32_r(__timer,__tp) ? 0 : 1; }
+__LOCAL errno_t (__LIBCCALL _localtime32_s)(struct tm *__restrict __tp, __time32_t const *__restrict __timer) { return __localtime32_r(__timer,__tp) ? 0 : 1; }
+__LOCAL errno_t (__LIBCCALL _gmtime64_s)(struct tm *__restrict __tp, __time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _gmtime32_s(__tp,&__tm); }
+__LOCAL errno_t (__LIBCCALL _localtime64_s)(struct tm *__restrict __tp, __time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _localtime32_s(__tp,&__tm); }
+#ifdef __USE_DOS_SLIB
+__REDIRECT(__LIBC,,char *,__LIBCCALL,__asctime_r,(struct tm const *__restrict __tp, char *__restrict __buf),asctime_r,(__tp,__buf))
+__LOCAL errno_t (__LIBCCALL asctime_s)(char __buf[26], size_t __bufsize, struct tm const *__restrict __tp) { return __bufsize >= 26 && __asctime_r(__tp,__buf) ? 0 : 1; }
+#endif /* __USE_DOS_SLIB */
+#else /* __GLC_COMPAT__ */
+/* WARNING: The following functions always return DOS error codes! */
+__LIBC errno_t (__LIBCCALL _ctime32_s)(char __buf[26], size_t __bufsize, __time32_t const *__restrict __timer);
+__LIBC errno_t (__LIBCCALL _gmtime32_s)(struct tm *__restrict __tp, __time32_t const *__restrict __timer);
+__LIBC errno_t (__LIBCCALL _localtime32_s)(struct tm *__restrict __tp, __time32_t const *__restrict __timer);
+__LIBC errno_t (__LIBCCALL _ctime64_s)(char __buf[26], size_t __bufsize, __time64_t const *__restrict __timer);
+__LIBC errno_t (__LIBCCALL _gmtime64_s)(struct tm *__restrict __tp, __time64_t const *__restrict __timer);
+__LIBC errno_t (__LIBCCALL _localtime64_s)(struct tm *__restrict __tp, __time64_t const *__restrict __timer);
+#ifdef __USE_DOS_SLIB
+__LIBC errno_t (__LIBCCALL asctime_s)(char __buf[26], size_t __bufsize, struct tm const *__restrict __tp);
+#endif /* __USE_DOS_SLIB */
+#endif /* !__GLC_COMPAT__ */
+
+#ifndef _WTIME_DEFINED
+#define _WTIME_DEFINED 1
+__REDIRECT_IFW32(__LIBC,,size_t,__LIBCCALL,_wcsftime_l,(wchar_t *__restrict __buf, size_t __maxlen, wchar_t const *__restrict __format, struct tm const *__restrict __ptm, __locale_t __locale),wcsftime_l,(__buf,__maxlen,__format,__ptm,__locale))
+#ifdef __CRT_DOS
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wasctime_s,(wchar_t __buf[26], size_t __maxlen, struct tm const *__restrict __ptm),wasctime_s,(__buf,__maxlen,__ptm))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wstrdate_s,(wchar_t __buf[9], size_t __maxlen),wstrdate_s,(__buf,__maxlen))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wstrtime_s,(wchar_t __buf[9], size_t __maxlen),wstrtime_s,(__buf,__maxlen))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wasctime,(struct tm const *__restrict __ptm),wasctime,(__ptm))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wstrdate,(wchar_t *__restrict __buf),wstrdate,(__buf))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wstrtime,(wchar_t *__restrict __buf),wstrtime,(__buf))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime32,(__time32_t const *__restrict __timer),wctime32,(__timer))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime64,(__time64_t const *__restrict __timer),wctime64,(__timer))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime32_s,(wchar_t __buf[26], size_t __maxlen, __time32_t const *__timer),wctime32_s,(__buf,__maxlen,__timer))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime64_s,(wchar_t __buf[26], size_t __maxlen, __time64_t const *__timer),wctime64_s,(__buf,__maxlen,__timer))
+#ifdef __USE_TIME_BITS64
+__REDIRECT2(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime,(time_t const *__restrict __timer),wctime64,_wctime64,(__timer))
+__REDIRECT2(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime_s,(wchar_t *__restrict __buf, size_t __maxlen, time_t const *__restrict __timer),wctime64_s,_wctime64_s,(__buf,__maxlen,__timer))
+#else /* __USE_TIME_BITS64 */
+__REDIRECT2(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime,(time_t const *__restrict __timer),wctime32,_wctime32,(__timer))
+__REDIRECT2(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime_s,(wchar_t *__restrict __buf, size_t __maxlen, time_t const *__restrict __timer),wctime32_s,_wctime32_s,(__buf,__maxlen,__timer))
+#endif /* !__USE_TIME_BITS64 */
+#endif /* __CRT_DOS */
+
+#ifndef __wcsftime_defined
+#define __wcsftime_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC size_t (__LIBCCALL wcsftime)(wchar_t *__restrict __buf, size_t __maxlen, wchar_t const *__restrict __format, struct tm const *__restrict __ptm);
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(wcsftime)
+#endif /* !__wcsftime_defined */
+#endif /* !_WTIME_DEFINED */
+
 #endif /* __USE_DOS */
+#undef __FIXED_CONST
 
 __SYSDECL_END
 

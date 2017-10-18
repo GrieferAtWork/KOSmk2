@@ -117,6 +117,12 @@ INTDEF WINBOOL WINAPI K32_GetFileAttributesExW(LPCWSTR lpFileName, GET_FILEEX_IN
 INTDEF DWORD   WINAPI K32_GetCompressedFileSizeA(LPCSTR lpFileName, LPDWORD lpFileSizeHigh);
 INTDEF DWORD   WINAPI K32_GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh);
 
+/* Symbolic/Hard link API. */
+INTDEF BOOLEAN WINAPI K32_CreateSymbolicLinkA(LPSTR lpSymLinkFileName, LPSTR lpTargetFileName, DWORD dwFlags);
+INTDEF BOOLEAN WINAPI K32_CreateSymbolicLinkW(LPWSTR lpSymLinkFileName, LPWSTR lpTargetFileName, DWORD dwFlags);
+INTDEF WINBOOL WINAPI K32_CreateHardLinkA(LPCSTR lpFileName, LPCSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+INTDEF WINBOOL WINAPI K32_CreateHardLinkW(LPCWSTR lpFileName, LPCWSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+
 
 DECL_END
 

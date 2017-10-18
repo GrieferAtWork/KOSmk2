@@ -47,10 +47,10 @@ INTDEF ssize_t ATTR_CDECL libc_dos_format_printf(pformatprinter printer, void *c
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 /* NOTE: There 4 are implemented in "/libs/libc/unicode.c" */
-INTDEF ssize_t LIBCCALL libc_format_16wsztomb(pformatprinter printer, void *closure, char16_t const *__restrict c16, size_t c16len, mbstate_t *__restrict ps);
-INTDEF ssize_t LIBCCALL libc_format_32wsztomb(pformatprinter printer, void *closure, char32_t const *__restrict c32, size_t c32len, mbstate_t *__restrict ps);
-INTDEF ssize_t LIBCCALL libc_format_16wsntomb(pformatprinter printer, void *closure, char16_t const *__restrict c16, size_t c16max, mbstate_t *__restrict ps);
-INTDEF ssize_t LIBCCALL libc_format_32wsntomb(pformatprinter printer, void *closure, char32_t const *__restrict c32, size_t c32max, mbstate_t *__restrict ps);
+INTDEF ssize_t LIBCCALL libc_format_16wsztomb(pformatprinter printer, void *closure, char16_t const *__restrict c16, size_t c16len, mbstate_t *__restrict ps, u32 mode);
+INTDEF ssize_t LIBCCALL libc_format_32wsztomb(pformatprinter printer, void *closure, char32_t const *__restrict c32, size_t c32len, mbstate_t *__restrict ps, u32 mode);
+INTDEF ssize_t LIBCCALL libc_format_16wsntomb(pformatprinter printer, void *closure, char16_t const *__restrict c16, size_t c16max, mbstate_t *__restrict ps, u32 mode);
+INTDEF ssize_t LIBCCALL libc_format_32wsntomb(pformatprinter printer, void *closure, char32_t const *__restrict c32, size_t c32max, mbstate_t *__restrict ps, u32 mode);
 
 INTDEF ssize_t ATTR_CDECL libc_format_scanf(pformatgetc scanner, pformatungetc returnch, void *closure, char const *__restrict format, ...);
 INTDEF ssize_t LIBCCALL libc_format_vscanf(pformatgetc scanner, pformatungetc returnch, void *closure, char const *__restrict format, va_list args);

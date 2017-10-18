@@ -36,6 +36,9 @@
 #define __COMPILER_HAVE_LONGDOUBLE 1
 #define __COMPILER_HAVE_TRANSPARENT_STRUCT 1
 #define __COMPILER_HAVE_TRANSPARENT_UNION 1
+#if defined(__DCC_VERSION__) || defined(__TINYC__)
+#define __COMPILER_HAVE_GCC_ASM 1
+#endif
 #if __has_feature(__tpp_pragma_push_macro__) || \
    (defined(__TPP_VERSION__) && __TPP_VERSION__ == 103)
 #define __COMPILER_HAVE_PRAGMA_PUSHMACRO 1

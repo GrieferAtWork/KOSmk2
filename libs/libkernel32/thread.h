@@ -65,10 +65,12 @@ INTDEF WINBOOL WINAPI K32_GetProcessPriorityBoost(HANDLE hProcess, PBOOL pDisabl
 INTDEF WINBOOL WINAPI K32_RequestWakeupLatency(LATENCY_TIME latency);
 INTDEF WINBOOL WINAPI K32_IsSystemResumeAutomatic(void);
 INTDEF HANDLE  WINAPI K32_OpenThread(DWORD dwDesiredAccess, WINBOOL bInheritHandle, DWORD dwThreadId);
+INTDEF int     WINAPI K32_GetThreadPriority(HANDLE hThread);
 INTDEF WINBOOL WINAPI K32_SetThreadPriority(HANDLE hThread, int nPriority);
+INTDEF DWORD   WINAPI K32_GetPriorityClass(HANDLE hProcess);
+INTDEF WINBOOL WINAPI K32_SetPriorityClass(HANDLE hProcess, DWORD dwPriorityClass);
 INTDEF WINBOOL WINAPI K32_SetThreadPriorityBoost(HANDLE hThread, WINBOOL bDisablePriorityBoost);
 INTDEF WINBOOL WINAPI K32_GetThreadPriorityBoost(HANDLE hThread, PBOOL pDisablePriorityBoost);
-INTDEF int     WINAPI K32_GetThreadPriority(HANDLE hThread);
 INTDEF WINBOOL WINAPI K32_GetThreadTimes(HANDLE hThread, LPFILETIME lpCreationTime, LPFILETIME lpExitTime, LPFILETIME lpKernelTime, LPFILETIME lpUserTime);
 INTDEF WINBOOL WINAPI K32_GetThreadIOPendingFlag(HANDLE hThread, PBOOL lpIOIsPending);
 INTDEF ATTR_NORETURN void WINAPI K32_ExitThread(DWORD dwExitCode);
@@ -76,6 +78,11 @@ INTDEF WINBOOL WINAPI K32_TerminateThread(HANDLE hThread, DWORD dwExitCode);
 INTDEF WINBOOL WINAPI K32_GetExitCodeThread(HANDLE hThread, LPDWORD lpExitCode);
 INTDEF WINBOOL WINAPI K32_GetThreadSelectorEntry(HANDLE hThread, DWORD dwSelector, LPLDT_ENTRY lpSelectorEntry);
 INTDEF EXECUTION_STATE WINAPI K32_SetThreadExecutionState(EXECUTION_STATE esFlags);
+INTDEF WINBOOL WINAPI K32_IsWow64Process(HANDLE hProcess, PBOOL Wow64Process);
+INTDEF WINBOOL WINAPI K32_CreateProcessA(LPCSTR lpApplicationName, LPSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, WINBOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCSTR lpCurrentDirectory, LPSTARTUPINFOA lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
+INTDEF WINBOOL WINAPI K32_CreateProcessW(LPCWSTR lpApplicationName, LPWSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, WINBOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
+INTDEF WINBOOL WINAPI K32_CreateProcessAsUserA(HANDLE hToken, LPCSTR lpApplicationName, LPSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, WINBOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCSTR lpCurrentDirectory, LPSTARTUPINFOA lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
+INTDEF WINBOOL WINAPI K32_CreateProcessAsUserW(HANDLE hToken, LPCWSTR lpApplicationName, LPWSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, WINBOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 
 /* Critical section API. */
 INTDEF void    WINAPI K32_InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
@@ -107,6 +114,10 @@ INTDEF void WINAPI K32_GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo);
 INTDEF WINBOOL WINAPI K32_SetSystemFileCacheSize(SIZE_T MinimumFileCacheSize, SIZE_T MaximumFileCacheSize, DWORD Flags);
 INTDEF WINBOOL WINAPI K32_GetSystemFileCacheSize(PSIZE_T lpMinimumFileCacheSize, PSIZE_T lpMaximumFileCacheSize, PDWORD lpFlags);
 INTDEF WINBOOL WINAPI K32_GetSystemRegistryQuota(PDWORD pdwQuotaAllowed, PDWORD pdwQuotaUsed);
+INTDEF WINBOOL WINAPI K32_GetComputerNameA(LPSTR lpBuffer, LPDWORD nSize);
+INTDEF WINBOOL WINAPI K32_GetComputerNameW(LPWSTR lpBuffer, LPDWORD nSize);
+INTDEF WINBOOL WINAPI K32_SetComputerNameA(LPCSTR lpComputerName);
+INTDEF WINBOOL WINAPI K32_SetComputerNameW(LPCWSTR lpComputerName);
 
 /* Pointer encode/decode. */
 INTDEF PVOID   WINAPI K32_EncodePointer(PVOID p);

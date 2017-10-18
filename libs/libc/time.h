@@ -198,10 +198,16 @@ INTDEF errno_t LIBCCALL libc_gmtime_s(struct tm *__restrict tp, time_t const *__
 INTDEF errno_t LIBCCALL libc_gmtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer);
 INTDEF errno_t LIBCCALL libc_localtime_s(struct tm *__restrict tp, time_t const *__restrict timer);
 INTDEF errno_t LIBCCALL libc_localtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer);
+INTDEF errno_t LIBCCALL libc_ctime_s(char buf[26], size_t bufsize, time32_t const *__restrict timer);
+INTDEF errno_t LIBCCALL libc_ctime64_s(char buf[26], size_t bufsize, time64_t const *__restrict timer);
+INTDEF errno_t LIBCCALL libc_asctime_s(char buf[26], size_t bufsize, struct tm const *__restrict tp);
+
 
 INTDEF u32 LIBCCALL libc_getsystime(struct tm *__restrict tp);
 INTDEF u32 LIBCCALL libc_setsystime(struct tm const *__restrict tp, u32 msec);
 
+INTDEF char *LIBCCALL libc_strdate(char buf[9]);
+INTDEF char *LIBCCALL libc_strtime(char buf[9]);
 
 INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_p_timezone(void);
 INTERN ATTR_DOSTEXT s32 *LIBCCALL libc_daylight(void);

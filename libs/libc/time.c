@@ -839,6 +839,10 @@ INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_gmtime_s(struct tm *__restrict tp, tim
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_gmtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer) { return libc_gmtime64_r(timer,tp) ? EOK : GET_DOS_ERRNO(); }
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_localtime_s(struct tm *__restrict tp, time_t const *__restrict timer) { return libc_localtime_r(timer,tp) ? EOK : GET_DOS_ERRNO(); }
 INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_localtime64_s(struct tm *__restrict tp, time64_t const *__restrict timer) { return libc_localtime64_r(timer,tp) ? EOK : GET_DOS_ERRNO(); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_ctime_s(char buf[26], size_t bufsize, time32_t const *__restrict timer) { return bufsize >= 26 && libc_ctime_r(timer,buf) ? EOK : GET_DOS_ERRNO(); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_ctime64_s(char buf[26], size_t bufsize, time64_t const *__restrict timer) { return bufsize >= 26 && libc_ctime64_r(timer,buf) ? EOK : GET_DOS_ERRNO(); }
+INTERN ATTR_DOSTEXT errno_t LIBCCALL libc_asctime_s(char buf[26], size_t bufsize, struct tm const *__restrict tp) { return bufsize >= 26 && libc_asctime_r(tp,buf) ? EOK : GET_DOS_ERRNO(); }
+
 INTERN ATTR_DOSTEXT clock_t LIBCCALL libc_dos_clock(void) {
  return libc_clock()/(CLOCKS_PER_SEC/__DOS_CLOCKS_PER_SEC);
 }
@@ -863,6 +867,9 @@ DEFINE_PUBLIC_ALIAS(_localtime32,libc_localtime);
 DEFINE_PUBLIC_ALIAS(_localtime64,libc_localtime64);
 DEFINE_PUBLIC_ALIAS(_localtime32_s,libc_localtime_s);
 DEFINE_PUBLIC_ALIAS(_localtime64_s,libc_localtime64_s);
+DEFINE_PUBLIC_ALIAS(_ctime32_s,libc_ctime_s);
+DEFINE_PUBLIC_ALIAS(_ctime64_s,libc_ctime64_s);
+DEFINE_PUBLIC_ALIAS(asctime_s,libc_asctime_s);
 DEFINE_PUBLIC_ALIAS(_difftime32,libc_difftime);
 DEFINE_PUBLIC_ALIAS(_difftime64,libc_difftime64);
 
@@ -1020,6 +1027,12 @@ libc_setsystime(struct tm const *__restrict tp, u32 msec) {
 }
 DEFINE_PUBLIC_ALIAS(_getsystime,libc_getsystime);
 DEFINE_PUBLIC_ALIAS(_setsystime,libc_setsystime);
+
+INTERN ATTR_DOSTEXT char *LIBCCALL libc_strdate(char buf[9]) { NOT_IMPLEMENTED(); return NULL; }
+INTERN ATTR_DOSTEXT char *LIBCCALL libc_strtime(char buf[9]) { NOT_IMPLEMENTED(); return NULL; }
+DEFINE_PUBLIC_ALIAS(_strdate,libc_strdate);
+DEFINE_PUBLIC_ALIAS(_strtime,libc_strtime);
+
 
 INTERN ATTR_DOSTEXT void LIBCCALL libc_sleep_msec(u32 msecs) {
  libc_usleep(msecs*USEC_PER_MSEC);

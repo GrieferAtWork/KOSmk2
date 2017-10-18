@@ -60,7 +60,10 @@ typedef __CHAR32_TYPE__ char32_t;
  * appended with the 'utf32'-buffer is of sufficient length to represent the
  * entirety of the provided 'utf8' buffer).
  * @param: mode: Set of 'UNICODE_F_*' found below (Unicode mode flags)
- * @return: UNICODE_ERROR: An encoding error occurred and 'state' and 'utf32' are left in an undefined state.
+ * @return: UNICODE_ERROR: [!UNICODE_F_NOFAIL] An encoding error occurred and
+ *                          'state' and 'utf32' are left in an undefined state.
+ *                          You may pass 'UNICODE_F_NOFAIL' to instead emit a
+ *                          'UNICODE_REPLACEMENT' character.
  * >> wchar_t buf[128]; size_t buflen;
  * >> mbstate_t state = MBSTATE_INIT;
  * >> char *text = "Encode this text in UTF-32";
@@ -81,6 +84,7 @@ __LIBC size_t (__LIBCCALL uni_utf16to8)(char16_t const *__restrict __utf16, size
 #define UNICODE_ERROR           ((size_t)-1)
 #define UNICODE_UTF16HALF       ((size_t)-3)
 #define UNICODE_IS_STATEDEPENDENT 1 /* ??? (I think...) */
+#define UNICODE_REPLACEMENT      '?'
 
 /* Unicode mode flags. */
 #define UNICODE_F_NORMAL         0x0000 /*< Regular string conversion. */
@@ -91,7 +95,9 @@ __LIBC size_t (__LIBCCALL uni_utf16to8)(char16_t const *__restrict __utf16, size
 #define UNICODE_F_UTF16HALF      0x0010 /*< For 'uni_utf8to16': When the target buffer is too small return 'UNICODE_UTF16HALF' and use the shift state and return the second half next call. */
 #define UNICODE_F_UPDATESRC      0x0020 /*< Treat input arguments (the first two) as pointers and update them before returning upon success.
                                          *  NOTE: When set, the first two arguments are interpreted with one additional indirection. */
-#define UNICODE_F_SETERRNO       0x0040 /*< Set 'errno' to 'EILSEQ' if a malformed sequence causes 'UNICODE_ERROR' to be returned. */
+#define UNICODE_F_SETERRNO       0x0040 /*< Set 'errno' to 'EILSEQ' if a malformed sequence causes 'UNICODE_ERROR' to be returned.
+                                         *  NOTE: This flag is ignored when 'UNICODE_F_NOFAIL' is passed. */
+#define UNICODE_F_NOFAIL         0x0080 /*< Never fail and emit 'UNICODE_REPLACEMENT' for illegal characters. */
 
 
 /* Helper functions that return a malloc'ed string, or NULL upon error. */

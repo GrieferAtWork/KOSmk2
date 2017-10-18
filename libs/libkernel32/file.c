@@ -838,6 +838,56 @@ K32_GetCompressedFileSizeW(LPCWSTR lpFileName, LPDWORD lpFileSizeHigh) {
 
 
 
+
+/* Symbolic/Hard link API. */
+INTERN BOOLEAN WINAPI
+K32_CreateSymbolicLinkA(LPSTR lpSymLinkFileName,
+                        LPSTR lpTargetFileName,
+                        DWORD UNUSED(dwFlags)) {
+ return !symlink(lpTargetFileName,lpSymLinkFileName);
+}
+INTERN BOOLEAN WINAPI
+K32_CreateSymbolicLinkW(LPWSTR lpSymLinkFileName,
+                        LPWSTR lpTargetFileName,
+                        DWORD dwFlags) {
+ char *link_name,*link_text; BOOLEAN result = FALSE;
+ if (!lpSymLinkFileName || !lpTargetFileName) { __set_errno(EINVAL); goto end; }
+ link_name = uni_utf16to8m(lpSymLinkFileName);
+ if unlikely(!link_name) goto end;
+ link_text = uni_utf16to8m(lpTargetFileName);
+ if unlikely(!link_text) goto end2;
+ result = K32_CreateSymbolicLinkA(link_name,link_text,dwFlags);
+ free(link_text);
+end2: free(link_name);
+end: return result;
+}
+INTERN WINBOOL WINAPI
+K32_CreateHardLinkA(LPCSTR lpFileName, LPCSTR lpExistingFileName,
+                    LPSECURITY_ATTRIBUTES UNUSED(lpSecurityAttributes)) {
+ return !link(lpExistingFileName,lpFileName);
+}
+INTERN WINBOOL WINAPI
+K32_CreateHardLinkW(LPCWSTR lpFileName, LPCWSTR lpExistingFileName,
+                    LPSECURITY_ATTRIBUTES lpSecurityAttributes) {
+ char *link_name,*link_target; BOOLEAN result = FALSE;
+ if (!lpFileName || !lpExistingFileName) { __set_errno(EINVAL); goto end; }
+ link_name = uni_utf16to8m(lpFileName);
+ if unlikely(!link_name) goto end;
+ link_target = uni_utf16to8m(lpExistingFileName);
+ if unlikely(!link_target) goto end2;
+ result = K32_CreateHardLinkA(link_name,link_target,lpSecurityAttributes);
+ free(link_target);
+end2: free(link_name);
+end: return result;
+}
+
+
+
+
+
+
+
+
 /* Low-level Handle/File API. */
 DEFINE_PUBLIC_ALIAS(CloseHandle,K32_CloseHandle);
 DEFINE_PUBLIC_ALIAS(DuplicateHandle,K32_DuplicateHandle);
@@ -911,6 +961,12 @@ DEFINE_PUBLIC_ALIAS(GetFileAttributesExA,K32_GetFileAttributesExA);
 DEFINE_PUBLIC_ALIAS(GetFileAttributesExW,K32_GetFileAttributesExW);
 DEFINE_PUBLIC_ALIAS(GetCompressedFileSizeA,K32_GetCompressedFileSizeA);
 DEFINE_PUBLIC_ALIAS(GetCompressedFileSizeW,K32_GetCompressedFileSizeW);
+
+/* Symbolic/Hard link API. */
+DEFINE_PUBLIC_ALIAS(CreateSymbolicLinkA,K32_CreateSymbolicLinkA);
+DEFINE_PUBLIC_ALIAS(CreateSymbolicLinkW,K32_CreateSymbolicLinkW);
+DEFINE_PUBLIC_ALIAS(CreateHardLinkA,K32_CreateHardLinkA);
+DEFINE_PUBLIC_ALIAS(CreateHardLinkW,K32_CreateHardLinkW);
 
 
 DECL_END

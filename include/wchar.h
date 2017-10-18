@@ -1396,18 +1396,18 @@ __NAMESPACE_STD_END
 typedef __TM_TYPE(time) time_t;
 #endif /* !__time_t_defined */
 
-__REDIRECT_IFKOS(__LIBC,,size_t,__LIBCCALL,_wcsftime_l,(wchar_t *__restrict __buf, size_t __maxlen, wchar_t const *__restrict __format, struct tm const *__restrict __ptm, __locale_t __locale),wcsftime_l,(__buf,__maxlen,__format,__ptm,__locale))
+__REDIRECT_IFW32(__LIBC,,size_t,__LIBCCALL,_wcsftime_l,(wchar_t *__restrict __buf, size_t __maxlen, wchar_t const *__restrict __format, struct tm const *__restrict __ptm, __locale_t __locale),wcsftime_l,(__buf,__maxlen,__format,__ptm,__locale))
 #ifdef __CRT_DOS
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wasctime_s,(wchar_t __buf[26], size_t __maxlen, struct tm const *__restrict __ptm),wasctime_s,(__buf,__maxlen,__ptm))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wstrdate_s,(wchar_t __buf[9], size_t __maxlen),wstrdate_s,(__buf,__maxlen))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wstrtime_s,(wchar_t __buf[9], size_t __maxlen),wstrtime_s,(__buf,__maxlen))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wasctime,(struct tm const *__restrict __ptm),wasctime,(__ptm))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wstrdate,(wchar_t *__restrict __buf),wstrdate,(__buf))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wstrtime,(wchar_t *__restrict __buf),wstrtime,(__buf))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime32,(__time32_t const *__restrict __timer),wctime32,(__timer))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime64,(__time64_t const *__restrict __timer),wctime64,(__timer))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime32_s,(wchar_t __buf[26], size_t __maxlen, __time32_t const *__timer),wctime32_s,(__buf,__maxlen,__timer))
-__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime64_s,(wchar_t __buf[26], size_t __maxlen, __time64_t const *__timer),wctime64_s,(__buf,__maxlen,__timer))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wasctime_s,(wchar_t __buf[26], size_t __maxlen, struct tm const *__restrict __ptm),wasctime_s,(__buf,__maxlen,__ptm))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wstrdate_s,(wchar_t __buf[9], size_t __maxlen),wstrdate_s,(__buf,__maxlen))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wstrtime_s,(wchar_t __buf[9], size_t __maxlen),wstrtime_s,(__buf,__maxlen))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wasctime,(struct tm const *__restrict __ptm),wasctime,(__ptm))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wstrdate,(wchar_t *__restrict __buf),wstrdate,(__buf))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wstrtime,(wchar_t *__restrict __buf),wstrtime,(__buf))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime32,(__time32_t const *__restrict __timer),wctime32,(__timer))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime64,(__time64_t const *__restrict __timer),wctime64,(__timer))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime32_s,(wchar_t __buf[26], size_t __maxlen, __time32_t const *__timer),wctime32_s,(__buf,__maxlen,__timer))
+__REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime64_s,(wchar_t __buf[26], size_t __maxlen, __time64_t const *__timer),wctime64_s,(__buf,__maxlen,__timer))
 #ifdef __USE_TIME_BITS64
 __REDIRECT2(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime,(time_t const *__restrict __timer),wctime64,_wctime64,(__timer))
 __REDIRECT2(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime_s,(wchar_t *__restrict __buf, size_t __maxlen, time_t const *__restrict __timer),wctime64_s,_wctime64_s,(__buf,__maxlen,__timer))

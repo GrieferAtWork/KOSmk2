@@ -287,13 +287,14 @@ typedef __CHAR32_TYPE__ char32_t;
  *       meaning that any NUL-characters before then are printed as well.
  *       To use strnlen-style semantics, use 'format_*sntomb' instead.
  * NOTE: Upon encoding error, errno is set to 'EILSEQ' and '-1' is returned.
+ * @param: MODE: Set of 'UNICODE_F_*' from '<unicode.h>' (Only 'UNICODE_F_NOFAIL' changes the behavior)
  * HINT: These functions are also used to implement '%ls'. */
-__REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c16sztomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16len, mbstate_t *__restrict __ps),format_wcsztomb,(__printer,__closure,__c16,__c16len,__ps))
-__REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c32sztomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32len, mbstate_t *__restrict __ps),format_wcsztomb,(__printer,__closure,__c32,__c32len,__ps))
-__REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c16sntomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16max, mbstate_t *__restrict __ps),format_wcsntomb,(__printer,__closure,__c16,__c16max,__ps))
-__REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c32sntomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32max, mbstate_t *__restrict __ps),format_wcsntomb,(__printer,__closure,__c32,__c32max,__ps))
-__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL format_wcsztomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcslen, mbstate_t *__restrict __ps);
-__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL format_wcsntomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcsmax, mbstate_t *__restrict __ps);
+__REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c16sztomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16len, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode),format_wcsztomb,(__printer,__closure,__c16,__c16len,__ps,__mode))
+__REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c32sztomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32len, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode),format_wcsztomb,(__printer,__closure,__c32,__c32len,__ps,__mode))
+__REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c16sntomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16max, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode),format_wcsntomb,(__printer,__closure,__c16,__c16max,__ps,__mode))
+__REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c32sntomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32max, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode),format_wcsntomb,(__printer,__closure,__c32,__c32max,__ps,__mode))
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL format_wcsztomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcslen, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode);
+__LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL format_wcsntomb)(pformatprinter __printer, void *__closure, wchar_t const *__restrict __wcs, __size_t __wcsmax, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode);
 
 
 
