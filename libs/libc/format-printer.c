@@ -1710,16 +1710,10 @@ DEFINE_PUBLIC_ALIAS(buffer_init,libc_buffer_init);
 DEFINE_PUBLIC_ALIAS(buffer_fini,libc_buffer_fini);
 DEFINE_PUBLIC_ALIAS(buffer_flush,libc_buffer_flush);
 DEFINE_PUBLIC_ALIAS(buffer_print,libc_buffer_print);
-#endif /* !__KERNEL__ */
 
-#ifndef __KERNEL__
 DEFINE_PUBLIC_ALIAS(format_bprintf,libc_format_bprintf);
 DEFINE_PUBLIC_ALIAS(format_vbprintf,libc_format_vbprintf);
-DEFINE_PUBLIC_ALIAS(format_wcsztomb,libc_format_32wsztomb);
-DEFINE_PUBLIC_ALIAS(format_wcsntomb,libc_format_32wsntomb);
-DEFINE_PUBLIC_ALIAS(__DSYM(format_wcsztomb),libc_format_16wsztomb);
-DEFINE_PUBLIC_ALIAS(__DSYM(format_wcsntomb),libc_format_16wsntomb);
-#endif
+#endif /* !__KERNEL__ */
 
 
 

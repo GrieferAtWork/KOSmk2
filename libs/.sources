@@ -70,6 +70,7 @@ END
 BEGIN LIBRARY("libkernel32")
 	SET_OUTPUT("/bin/libs/kernel32.so")
 	SET_DISKFILE("/lib/KERNEL32.dll")
+	L_FLAGS("-soname","KERNEL32.dll")
 	LIBPATH("/bin/libs")
 	PROJ_DEP("libc")
 	LIB("c")

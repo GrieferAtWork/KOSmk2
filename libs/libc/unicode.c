@@ -668,6 +668,14 @@ DEFINE_PUBLIC_ALIAS(uni_utf8to32ms,libc_utf8to32ms);
 DEFINE_PUBLIC_ALIAS(uni_utf16to8ms,libc_utf16to8ms);
 DEFINE_PUBLIC_ALIAS(uni_utf32to8ms,libc_utf32to8ms);
 
+
+/* Export format-printer conversion functions. */
+DEFINE_PUBLIC_ALIAS(format_wcsztomb,libc_format_32wsztomb);
+DEFINE_PUBLIC_ALIAS(format_wcsntomb,libc_format_32wsntomb);
+DEFINE_PUBLIC_ALIAS(__DSYM(format_wcsztomb),libc_format_16wsztomb);
+DEFINE_PUBLIC_ALIAS(__DSYM(format_wcsntomb),libc_format_16wsntomb);
+
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_UNICODE_C */

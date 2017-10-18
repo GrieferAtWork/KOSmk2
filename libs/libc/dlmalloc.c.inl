@@ -75,7 +75,6 @@
 #define USE_LOCKS               1
 #define MSPACES                 0
 #define ONLY_MSPACES            0
-#define MMAP_CLEARS             0
 #define ABORT_ON_ASSERT_FAILURE 0
 #define LACKS_SYS_PARAM_H
 
@@ -99,8 +98,10 @@
 #define NO_MALLINFO     1
 #define NO_MALLOC_STATS 1
 #define MALLOC_FAILURE_ACTION /* nothing (The kernel doesn't have errno). */
+#define MMAP_CLEARS     0
 #else
 //#define HAVE_MORECORE 0
+#define MMAP_CLEARS     1 /* Yes, it does. */
 #endif
 
 
