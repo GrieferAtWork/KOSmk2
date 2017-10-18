@@ -194,6 +194,11 @@ INTERN int WINAPI
 K32_MulDiv(int nNumber, int nNumerator, int nDenominator) {
  return (int)(((s64)nNumber*(s64)nNumerator)/nDenominator);
 }
+INTERN MMRESULT WINAPI K32_timeBeginPeriod(UINT uPeriod) { NOT_IMPLEMENTED(); return MMSYSERR_ERROR; }
+INTERN MMRESULT WINAPI K32_timeEndPeriod(UINT uPeriod) { NOT_IMPLEMENTED(); return MMSYSERR_ERROR; }
+INTERN MMRESULT WINAPI K32_timeGetDevCaps(LPTIMECAPS ptc, UINT cbtc) { NOT_IMPLEMENTED(); return MMSYSERR_ERROR; }
+INTERN MMRESULT WINAPI K32_timeGetSystemTime(LPMMTIME pmmt, UINT cbmmt) { NOT_IMPLEMENTED(); return MMSYSERR_ERROR; }
+INTERN DWORD WINAPI K32_timeGetTime(void) { return time(NULL); }
 
 
 
@@ -217,6 +222,11 @@ DEFINE_PUBLIC_ALIAS(QueryPerformanceFrequency,K32_QueryPerformanceFrequency);
 /* Misc. */
 DEFINE_PUBLIC_ALIAS(Beep,K32_Beep);
 DEFINE_PUBLIC_ALIAS(MulDiv,K32_MulDiv);
+DEFINE_PUBLIC_ALIAS(timeBeginPeriod,K32_timeBeginPeriod);
+DEFINE_PUBLIC_ALIAS(timeEndPeriod,K32_timeEndPeriod);
+DEFINE_PUBLIC_ALIAS(timeGetDevCaps,K32_timeGetDevCaps);
+DEFINE_PUBLIC_ALIAS(timeGetSystemTime,K32_timeGetSystemTime);
+DEFINE_PUBLIC_ALIAS(timeGetTime,K32_timeGetTime);
 
 DECL_END
 

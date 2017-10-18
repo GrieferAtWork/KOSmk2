@@ -23,6 +23,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/timespec.h>
 #include <hybrid/timeval.h>
+#include <winapi/mmsystem.h>
 
 DECL_BEGIN
 
@@ -50,6 +51,12 @@ INTDEF WINBOOL WINAPI K32_QueryPerformanceFrequency(LARGE_INTEGER *pfreq);
 /* Misc. */
 INTDEF BOOL WINAPI K32_Beep(DWORD freq, DWORD duration);
 INTDEF int WINAPI K32_MulDiv(int nNumber, int nNumerator, int nDenominator);
+INTDEF MMRESULT WINAPI K32_timeBeginPeriod(UINT uPeriod);
+INTDEF MMRESULT WINAPI K32_timeEndPeriod(UINT uPeriod);
+INTDEF MMRESULT WINAPI K32_timeGetDevCaps(LPTIMECAPS ptc, UINT cbtc);
+INTDEF MMRESULT WINAPI K32_timeGetSystemTime(LPMMTIME pmmt, UINT cbmmt);
+INTDEF DWORD WINAPI K32_timeGetTime(void);
+
 
 DECL_END
 

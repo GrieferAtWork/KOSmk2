@@ -43,6 +43,18 @@ DECL_BEGIN
 INTERN DWORD   WINAPI K32_GetFileAttributesFromUnixMode(mode_t val);
 INTERN oflag_t WINAPI K32_DesiredAccessToOflags(DWORD dwDesiredAccess);
 
+/* 16-bit compatibility File API.
+ * HINT: These directly map to the underlying file descriptors! */
+INTDEF HFILE WINAPI K32_OpenFile(LPCSTR lpFileName, LPOFSTRUCT lpReOpenBuff, UINT uStyle);
+INTDEF HFILE WINAPI K32_lopen(LPCSTR lpPathName, int iReadWrite);
+INTDEF HFILE WINAPI K32_lcreat(LPCSTR lpPathName, int iAttribute);
+INTDEF UINT  WINAPI K32_lread(HFILE hFile, LPVOID lpBuffer, UINT uBytes);
+INTDEF UINT  WINAPI K32_lwrite(HFILE hFile, LPCCH lpBuffer, UINT uBytes);
+INTDEF LONG  WINAPI K32_hread(HFILE hFile, LPVOID lpBuffer, LONG lBytes);
+INTDEF LONG  WINAPI K32_hwrite(HFILE hFile, LPCCH lpBuffer, LONG lBytes);
+INTDEF HFILE WINAPI K32_lclose(HFILE hFile);
+INTDEF LONG  WINAPI K32_llseek(HFILE hFile, LONG lOffset, int iOrigin);
+
 /* Low-level Handle/File API. */
 INTDEF WINBOOL WINAPI K32_CloseHandle(HANDLE hObject);
 INTDEF WINBOOL WINAPI K32_DuplicateHandle(HANDLE hSourceProcessHandle, HANDLE hSourceHandle, HANDLE hTargetProcessHandle, LPHANDLE lpTargetHandle, DWORD dwDesiredAccess, WINBOOL bInheritHandle, DWORD dwOptions);

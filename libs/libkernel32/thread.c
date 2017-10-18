@@ -34,6 +34,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <format-printer.h>
 #include <process.h>
 #include <unicode.h>
@@ -516,6 +517,48 @@ K32_CreateProcessAsUserW(HANDLE UNUSED(hToken), LPCWSTR lpApplicationName, LPWST
                            lpEnvironment,lpCurrentDirectory,lpStartupInfo,
                            lpProcessInformation);
 }
+INTERN /*fd*/int WINAPI
+K32_OpenProcessMemory(HANDLE hProcess, oflag_t mode) {
+ char path[sizeof("/proc/XXXXXXXX/mem")];
+ if (!HANDLE_IS_PID(hProcess)) { SET_ERRNO(EBADF); return -1; }
+ sprintf(path,"/proc/%d/mem",HANDLE_TO_PID(hProcess));
+ return open(path,mode);
+}
+
+#if __SIZEOF_POINTER__ >= 8
+#define PREADI  pread64
+#define PWRITEI pwrite64
+#else
+#define PREADI  pread
+#define PWRITEI pwrite
+#endif
+
+INTERN WINBOOL WINAPI
+K32_ReadProcessMemory(HANDLE hProcess, LPCVOID lpBaseAddress,
+                      LPVOID lpBuffer, SIZE_T nSize,
+                      SIZE_T *lpNumberOfBytesRead) {
+ ssize_t error;
+ int fd = K32_OpenProcessMemory(hProcess,O_RDONLY);
+ if (fd < 0) return FALSE;
+ error = PREADI(fd,lpBuffer,nSize,(intptr_t)lpBaseAddress);
+ close(fd);
+ if (error < 0) return FALSE;
+ if (lpNumberOfBytesRead) *lpNumberOfBytesRead = (SIZE_T)error;
+ return TRUE;
+}
+INTERN WINBOOL WINAPI
+K32_WriteProcessMemory(HANDLE hProcess, LPVOID lpBaseAddress,
+                       LPCVOID lpBuffer, SIZE_T nSize,
+                       SIZE_T *lpNumberOfBytesWritten) {
+ ssize_t error;
+ int fd = K32_OpenProcessMemory(hProcess,O_WRONLY);
+ if (fd < 0) return FALSE;
+ error = PWRITEI(fd,lpBuffer,nSize,(intptr_t)lpBaseAddress);
+ close(fd);
+ if (error < 0) return FALSE;
+ if (lpNumberOfBytesWritten) *lpNumberOfBytesWritten = (SIZE_T)error;
+ return TRUE;
+}
 
 
 
@@ -745,6 +788,8 @@ DEFINE_PUBLIC_ALIAS(CreateProcessA,K32_CreateProcessA);
 DEFINE_PUBLIC_ALIAS(CreateProcessW,K32_CreateProcessW);
 DEFINE_PUBLIC_ALIAS(CreateProcessAsUserA,K32_CreateProcessAsUserA);
 DEFINE_PUBLIC_ALIAS(CreateProcessAsUserW,K32_CreateProcessAsUserW);
+DEFINE_PUBLIC_ALIAS(ReadProcessMemory,K32_ReadProcessMemory);
+DEFINE_PUBLIC_ALIAS(WriteProcessMemory,K32_WriteProcessMemory);
 
 /* Critical section API. */
 DEFINE_PUBLIC_ALIAS(InitializeCriticalSection,K32_InitializeCriticalSection);

@@ -278,10 +278,12 @@ __LOCAL __errno_t __NOTHROW((__LIBCCALL _set_errno)(__errno_t __err)) { return (
 #undef program_invocation_name
 #undef program_invocation_short_name
 #if defined(__CRT_KOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
-#define program_invocation_name       __libc_program_invocation_name()
-#define program_invocation_short_name __libc_program_invocation_short_name()
+#define program_invocation_name       (__NAMESPACE_INT_SYM __libc_program_invocation_name())
+#define program_invocation_short_name (__NAMESPACE_INT_SYM __libc_program_invocation_short_name())
+__NAMESPACE_INT_BEGIN
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_name)(void));
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_short_name)(void));
+__NAMESPACE_INT_END
 #elif defined(__CRT_GLC) && !defined(__GLC_COMPAT__)
 __LIBC char *program_invocation_name;
 __LIBC char *program_invocation_short_name;
@@ -294,6 +296,7 @@ __LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
 #endif /* !__KERNEL__ */
 #endif /* __CC__ */
 
+/* Unified error code access. */
 #ifdef __USE_KOS
 #if defined(__CRT_DOS) && !defined(__GLC_COMPAT__)
 __REDIRECT_NOTHROW(__LIBC,__PORT_DOSONLY __WUNUSED,errno_t,__LIBCCALL,errno_nt2dos,(__UINT32_TYPE__ __eno),_dosmaperr,(__eno))

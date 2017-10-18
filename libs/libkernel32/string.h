@@ -24,6 +24,24 @@
 
 DECL_BEGIN
 
+INTDEF CHAR  const K32_EmptyStringA[1] ASMNAME("K32_EmptyString");
+INTDEF WCHAR const K32_EmptyStringW[1] ASMNAME("K32_EmptyString");
+#define K32_StringOrEmptyA(x) ((x) ? (x) : K32_EmptyStringA)
+#define K32_StringOrEmptyW(x) ((x) ? (x) : K32_EmptyStringW)
+
+INTDEF int    WINAPI K32_lstrcmpA(LPCSTR lpString1, LPCSTR lpString2);
+INTDEF int    WINAPI K32_lstrcmpW(LPCWSTR lpString1, LPCWSTR lpString2);
+INTDEF int    WINAPI K32_lstrcmpiA(LPCSTR lpString1, LPCSTR lpString2);
+INTDEF int    WINAPI K32_lstrcmpiW(LPCWSTR lpString1, LPCWSTR lpString2);
+INTDEF int    WINAPI K32_lstrlenA(LPCSTR lpString);
+INTDEF int    WINAPI K32_lstrlenW(LPCWSTR lpString);
+INTDEF LPSTR  WINAPI K32_lstrcpynA(LPSTR lpString1, LPCSTR lpString2, int iMaxLength);
+INTDEF LPWSTR WINAPI K32_lstrcpynW(LPWSTR lpString1, LPCWSTR lpString2, int iMaxLength);
+INTDEF LPSTR  WINAPI K32_lstrcpyA(LPSTR lpString1, LPCSTR lpString2);
+INTDEF LPWSTR WINAPI K32_lstrcpyW(LPWSTR lpString1, LPCWSTR lpString2);
+INTDEF LPSTR  WINAPI K32_lstrcatA(LPSTR lpString1, LPCSTR lpString2);
+INTDEF LPWSTR WINAPI K32_lstrcatW(LPWSTR lpString1, LPCWSTR lpString2);
+
 INTDEF int WINAPI K32_CompareStringA(LCID Locale, DWORD dwCmpFlags, LPCSTR lpString1, int cchCount1, LPCSTR lpString2, int cchCount2);
 INTDEF int WINAPI K32_CompareStringW(LCID Locale, DWORD dwCmpFlags, LPCWSTR lpString1, int cchCount1, LPCWSTR lpString2, int cchCount2);
 

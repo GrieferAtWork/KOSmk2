@@ -66,6 +66,31 @@ __LIBC int LIBCCALL dos_chmod(char const *dos_file, int mode) ASMNAME("_chmod");
 __LIBC int LIBCCALL dos_unlink(char const *dos_name) ASMNAME("_unlink");
 
 
+STATIC_ASSERT(OF_READ == O_RDONLY);
+STATIC_ASSERT(OF_WRITE == O_WRONLY);
+STATIC_ASSERT(OF_READWRITE == O_RDWR);
+STATIC_ASSERT(HFILE_ERROR == -1); /* _hread() returns this on error, which should be the same as 'read()' */
+
+
+INTERN HFILE WINAPI
+K32_OpenFile(LPCSTR lpFileName, LPOFSTRUCT UNUSED(lpReOpenBuff), UINT uStyle) {
+ oflag_t mode = uStyle&O_ACCMODE; /* Mostly guessed... */
+ if (uStyle&OF_CREATE) mode |= O_CREAT|O_TRUNC;
+ if (uStyle&OF_EXIST) mode |= O_EXCL;
+ if (uStyle&OF_DELETE) mode |= O_TRUNC;
+ return dos_open(lpFileName,mode);
+}
+INTERN HFILE WINAPI K32_lopen(LPCSTR lpPathName, int iReadWrite) { return dos_open(lpPathName,iReadWrite&O_ACCMODE); }
+INTERN HFILE WINAPI K32_lcreat(LPCSTR lpPathName, int iAttribute) { return dos_creat(lpPathName,iAttribute == 1 ? 0444 : 0666); }
+INTERN UINT  WINAPI K32_lread(HFILE hFile, LPVOID lpBuffer, UINT uBytes) { s32 res = read(hFile,lpBuffer,uBytes); return res < 0 ? 0 : (u32)res; }
+INTERN UINT  WINAPI K32_lwrite(HFILE hFile, LPCCH lpBuffer, UINT uBytes) { s32 res = write(hFile,lpBuffer,uBytes); return res < 0 ? 0 : (u32)res; }
+INTERN LONG  WINAPI K32_hread(HFILE hFile, LPVOID lpBuffer, LONG lBytes) { return (LONG)read(hFile,lpBuffer,(u32)lBytes); }
+INTERN LONG  WINAPI K32_hwrite(HFILE hFile, LPCCH lpBuffer, LONG lBytes) { return (LONG)write(hFile,lpBuffer,(u32)lBytes); }
+INTERN HFILE WINAPI K32_lclose(HFILE hFile) { close(hFile); return hFile; }
+INTERN LONG  WINAPI K32_llseek(HFILE hFile, LONG lOffset, int iOrigin) { return (LONG)lseek(hFile,(off32_t)lOffset,iOrigin); }
+
+
+
 INTERN WINBOOL WINAPI K32_CloseHandle(HANDLE hObject) {
  switch (HANDLE_TYPE(hObject)) {
  case HANDLE_TYPE_FD:
@@ -887,6 +912,17 @@ end: return result;
 
 
 
+/* 16-bit compatibility File API.
+ * HINT: These directly map to the underlying file descriptors! */
+DEFINE_PUBLIC_ALIAS(OpenFile,K32_OpenFile);
+DEFINE_PUBLIC_ALIAS(_lopen,K32_lopen);
+DEFINE_PUBLIC_ALIAS(_lcreat,K32_lcreat);
+DEFINE_PUBLIC_ALIAS(_lread,K32_lread);
+DEFINE_PUBLIC_ALIAS(_lwrite,K32_lwrite);
+DEFINE_PUBLIC_ALIAS(_hread,K32_hread);
+DEFINE_PUBLIC_ALIAS(_hwrite,K32_hwrite);
+DEFINE_PUBLIC_ALIAS(_lclose,K32_lclose);
+DEFINE_PUBLIC_ALIAS(_llseek,K32_llseek);
 
 /* Low-level Handle/File API. */
 DEFINE_PUBLIC_ALIAS(CloseHandle,K32_CloseHandle);
