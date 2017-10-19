@@ -16,33 +16,13 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _STDARG_H
-#define _STDARG_H 1
+#ifndef _STDNORETURN_H
+#define _STDNORETURN_H 1
 
 #include "__stdinc.h"
-#include "features.h"
 
-__SYSDECL_BEGIN
+#if !defined(__cplusplus) || !defined(__GNUC__)
+#define noreturn __ATTR_NORETURN
+#endif /* !__cplusplus || !__GNUC__ */
 
-#ifndef __va_list_defined
-#define __va_list_defined 1
-__NAMESPACE_STD_BEGIN
-typedef __VA_LIST va_list;
-__NAMESPACE_STD_END
-__NAMESPACE_STD_USING(va_list)
-#endif /* !__va_list_defined */
-
-#define va_start  __builtin_va_start
-#define __va_copy __builtin_va_copy
-#define va_end    __builtin_va_end
-#define va_arg    __builtin_va_arg
-
-#if defined(__USE_ISOC99) || \
-   (defined(__STDC_VERSION__) && (__STDC_VERSION__+0 >= 199900L)) || \
-   (defined(__cplusplus) && (__cplusplus+0 >= 201103L))
-#define va_copy   __builtin_va_copy
-#endif
-
-__SYSDECL_END
-
-#endif /* !_STDARG_H */
+#endif /* !_STDNORETURN_H */

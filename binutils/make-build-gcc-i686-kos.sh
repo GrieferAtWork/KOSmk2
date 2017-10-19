@@ -49,7 +49,6 @@ make -j 8 all-gcc || exit $?
 make -j 8 all-target-libgcc || exit $?
 make -j 8 install-gcc || exit $?
 make -j 8 install-target-libgcc || exit $?
-
 make -j 8 all-target-libstdc++-v3 || exit $?
 make -j 8 install-target-libstdc++-v3 || exit $?
 
@@ -59,4 +58,27 @@ cp "$PREFIX/i686-kos/lib/libstdc++.la"        "$ROOT/../bin/libs/"
 cp "$PREFIX/i686-kos/lib/libstdc++.a-gdb.py"  "$ROOT/../bin/libs/"
 cp "$PREFIX/i686-kos/lib/libsupc++.a"         "$ROOT/../bin/libs/"
 cp "$PREFIX/i686-kos/lib/libsupc++.la"        "$ROOT/../bin/libs/"
+
+
+# Get rid of broken ~FiXiNcLuDe~ headers that we don't want
+disable_fixinclude() {
+	mv "$PREFIX/lib/gcc/i686-kos/6.2.0/include/$1" "$PREFIX/lib/gcc/i686-kos/6.2.0/include/$1.nope"
+}
+disable_fixinclude2() {
+	mv "$PREFIX/lib/gcc/i686-kos/6.2.0/include-fixed/$1" "$PREFIX/lib/gcc/i686-kos/6.2.0/include-fixed/$1.nope"
+}
+
+# These are headers that _WE_ are implementing. - So shut your face GCC
+disable_fixinclude "stddef.h"
+disable_fixinclude "stdbool.h"
+disable_fixinclude "stdarg.h"
+disable_fixinclude "stdnoreturn.h"
+disable_fixinclude "stdalign.h"
+disable_fixinclude "float.h"
+disable_fixinclude "iso646.h"
+disable_fixinclude2 "limits.h"
+
+# The header missing should really be the better indicator...
+disable_fixinclude "varargs.h"
+
 
