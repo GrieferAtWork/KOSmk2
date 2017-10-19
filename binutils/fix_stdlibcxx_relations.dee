@@ -1,0 +1,124 @@
+#!/usr/bin/deemon
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+/* Since KOS is required to overrule GCC's default include resolution when
+ * it comes to c++ headers, we come to the problem that libstdc++'s headers
+ * attempting to '#include <...>' other headers from its own library, will
+ * fail to do so because KOS's header system does not provide those same names.
+ * >> This script fixes that problem by going through all of libstdc++'s headers,
+ *    replacing all <...> and "..." includes accoding to the file being present
+ *    in KOS's include folder (Such as '<new>'), while all other includes are
+ *    replaced to relative paths, causing libstdc++ to use relative include
+ *    directives when pulling in any of its own headers that isn't provided by KOS.
+ */
+const libstdcxx_include_root  = "build-binutils-i686-kos/i686-kos/include-c++/6.2.0";
+const libstdcxx_include_root2 = "build-binutils-i686-kos/i686-kos/include-c++/6.2.0/i686-kos";
+const kos_include_folder      = "../include";
+
+#include <file>
+#include <fs>
+#include <util>
+
+function fix_file(filename) {
+	filename = filename.replace("\\","/");
+	local changed = false;
+	local lines = file.open(filename,"r").read().splitlines(false);
+	for (local i,l: util::enumerate(lines)) {
+		local incname;
+		local system_style = true;
+		try incname = l.scanf(" # include <%[^>]>")...;
+		catch (...) {
+			try incname = l.scanf(" # include \"%[^\"]\"")...;
+			catch (...) continue;
+			system_style = false;
+		}
+		local prefix = l[:l.index(incname)-1];
+		local suffix = l[l.index(incname)+#incname+1:];
+		incname = incname.strip();
+		
+		if (fs::exists(fs::path::join(kos_include_folder,incname))) {
+			/* Use a system-style include, because KOS overrides this header. */
+			incname = "<"+incname+">";
+		} else {
+			/* Replace with a relative include. */
+			local absname;
+			if (system_style) {
+				absname = fs::path::abs(incname,libstdcxx_include_root);
+				if (!fs::exists(absname)) {
+					/* Use the alternative location. */
+					absname = fs::path::abs(incname,libstdcxx_include_root2);
+				}
+			} else {
+				absname = fs::path::abs(incname,fs::path::head(filename));
+			}
+			if (!fs::exists(absname)) {
+				/* Warn if the header doesn't exist. */
+				print "{}({}) : WARNING: Missing header:".format({ filename,i }),repr incname;
+				continue;
+			}
+			/* Make the pathname relative to its own location. */
+			incname = fs::path::rel(absname,fs::path::head(filename));
+			incname = "\""+incname+"\"";
+		}
+		incname = incname.replace("\\","/");
+		local new_line = prefix+incname+suffix;
+		if (l == new_line) continue;
+		l = new_line;
+		lines[i] = l;
+		changed = true;
+	}
+	if (changed) {
+		print "Updating:",repr filename;
+		local text = "\n".join(lines);
+		file.open(filename,"w").write(text); /* TODO: Enable me. */
+	}
+}
+
+function scan_dir(path) {
+	for (local f: fs::dir(path)) {
+		f = fs::path::join(path,f);
+		if (fs::isdir(f)) {
+			scan_dir(f);
+		} else if (fs::isfile(f)) {
+			fix_file(f);
+		}
+	}
+}
+
+/* Recursively update all headers. */
+scan_dir(libstdcxx_include_root);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

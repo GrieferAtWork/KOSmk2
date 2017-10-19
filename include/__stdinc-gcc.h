@@ -192,6 +192,7 @@
 #define __ATTR_ALIGNED(n)        __attribute__((__aligned__(n)))
 #define __ATTR_WEAK              __attribute__((__weak__))
 #define __ATTR_RETURNS_TWICE     __attribute__((__returns_twice__))
+#define __ATTR_EXTERNALLY_VISIBLE __attribute__((__externally_visible__))
 #define __ATTR_VISIBILITY(vis)   __attribute__((__visibility__(vis)))
 #if defined(__PE__) || defined(_WIN32)
 #   define __ATTR_DLLIMPORT      __attribute__((__dllimport__))

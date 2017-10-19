@@ -466,6 +466,9 @@ function start_process(proc,proj) {
 					} else {
 						filename = "../../"+filename;
 					}
+					if (filename.startswith("../../include/c++/current/")) {
+						filename = "../../binutils/build-binutils-i686-kos/i686-kos/include-c++/6.2.0/"+filename[#"../../include/c++/current/":];
+					}
 #endif /* __WINDOWS__ */
 					local msg_class = "warning";
 					if (col && !col.isdigit()) {

@@ -1,0 +1,97 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+#ifndef _CXX_NEW
+#define _CXX_NEW 1
+
+#include "__stdcxx.h"
+#include "exception"
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("new")
+#pragma push_macro("delete")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef new
+#undef delete
+
+#ifndef __PE__
+#include <c++/current/new>
+#else /* !__PE__ */
+
+__CXXDECL_BEGIN
+__NAMESPACE_STD_BEGIN
+
+#ifndef __std_size_t_defined
+#define __std_size_t_defined 1
+typedef __SIZE_TYPE__ size_t;
+#endif /* !__std_size_t_defined */
+
+class bad_alloc : public exception {
+public:
+    bad_alloc() __CXX_NOEXCEPT: exception("bad allocation",1) {}
+    virtual ~bad_alloc() __CXX_NOEXCEPT {}
+#ifdef __USE_DOS
+private:
+    friend class bad_array_new_length;
+    bad_alloc(const char *__msg) __CXX_NOEXCEPT: exception(__msg,1) {}
+#endif /* __USE_DOS */
+};
+
+#ifdef __USE_DOS
+class bad_array_new_length: public bad_alloc {
+public:
+    bad_array_new_length(): bad_alloc("bad array new length") {}
+};
+#endif /* __USE_DOS */
+
+
+
+typedef void (__LIBCCALL *new_handler)();
+
+struct nothrow_t {};
+extern nothrow_t const nothrow;
+
+__LIBC new_handler __NOTHROW((__LIBCCALL set_new_handler)(new_handler __hand));
+__LIBC new_handler __NOTHROW((__LIBCCALL get_new_handler)());
+
+__NAMESPACE_STD_END
+
+extern __ATTR_EXTERNALLY_VISIBLE void *operator new(std::size_t __n_bytes) __CXX_THROWS(std::bad_alloc);
+extern __ATTR_EXTERNALLY_VISIBLE void *operator new[](std::size_t __n_bytes) __CXX_THROWS(std::bad_alloc);
+extern __ATTR_EXTERNALLY_VISIBLE void operator delete(void *__heap_ptr) __CXX_NOEXCEPT;
+extern __ATTR_EXTERNALLY_VISIBLE void operator delete[](void *__heap_ptr) __CXX_NOEXCEPT;
+__LIBC __ATTR_EXTERNALLY_VISIBLE void *operator new(std::size_t __n_bytes, std::nothrow_t const &) __CXX_NOEXCEPT;
+__LIBC __ATTR_EXTERNALLY_VISIBLE void *operator new[](std::size_t __n_bytes, std::nothrow_t const &) __CXX_NOEXCEPT;
+__LIBC __ATTR_EXTERNALLY_VISIBLE void operator delete(void *__heap_ptr, std::nothrow_t const &) __CXX_NOEXCEPT;
+__LIBC __ATTR_EXTERNALLY_VISIBLE void operator delete[](void *__heap_ptr, std::nothrow_t const &) __CXX_NOEXCEPT;
+
+__LOCAL void* operator new(std::size_t, void *__p) __CXX_NOEXCEPT { return __p; }
+__LOCAL void* operator new[](std::size_t, void *__p) __CXX_NOEXCEPT { return __p; }
+__LOCAL void operator delete(void *, void *) __CXX_NOEXCEPT {}
+__LOCAL void operator delete[](void *, void *) __CXX_NOEXCEPT {}
+
+__CXXDECL_END
+
+#endif /* __PE__ */
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("delete")
+#pragma pop_macro("new")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
+#endif /* !_CXX_NEW */

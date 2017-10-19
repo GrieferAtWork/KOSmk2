@@ -42,6 +42,7 @@
 
 #ifdef __cplusplus
 #include <atomic>
+#include <new>
 #endif
 
 #include <string.h>

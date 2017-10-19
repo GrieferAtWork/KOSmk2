@@ -1,0 +1,123 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+#ifndef _CXX_EXCEPTION
+#define _CXX_EXCEPTION 1
+
+#include "__stdcxx.h"
+
+#ifndef __PE__
+#include <c++/current/exception>
+#else /* !__PE__ */
+
+__CXXDECL_BEGIN
+__NAMESPACE_STD_BEGIN
+
+typedef void (*terminate_handler)();
+typedef void (*unexpected_handler)();
+
+
+#ifdef _MSC_VER
+class __ATTR_DLLIMPORT exception
+#else
+class exception
+#endif
+{
+public:
+    exception();
+    explicit exception(const char * const &);
+    exception(const char * const &,int);
+    exception(const exception&);
+    exception& operator=(const exception&);
+    virtual ~exception() __CXX_NOEXCEPT;
+    virtual const char * what() const;
+private:
+    void _Copy_str(const char *);
+    void _Tidy();
+    const char *__what;
+    bool        __dofree;
+    bool        __pad[3];
+};
+
+class bad_exception: public exception {
+public:
+    bad_exception(const char *_Message = "bad exception") __CXX_NOEXCEPT: exception(_Message){}
+    virtual ~bad_exception() __CXX_NOEXCEPT {}
+};
+
+__LIBC __ATTR_PURE bool (__LIBCCALL uncaught_exception)() __CXX_NOEXCEPT;
+__REDIRECT(__LIBC,,terminate_handler,__LIBCCALL,get_terminate,(void),_get_terminate,())
+__REDIRECT(__LIBC,,unexpected_handler,__LIBCCALL,get_unexpected,(void),_get_unexpected,())
+
+__NAMESPACE_INT_BEGIN
+extern "C" {
+__LIBC __ATTR_PURE void (__LIBCCALL __ExceptionPtrCreate)(void *);
+__LIBC __ATTR_PURE void (__LIBCCALL __ExceptionPtrDestroy)(void *);
+__LIBC __ATTR_PURE void (__LIBCCALL __ExceptionPtrCopy)(void *, void const *);
+__LIBC __ATTR_PURE void (__LIBCCALL __ExceptionPtrAssign)(void *, void const *);
+__LIBC __ATTR_PURE bool (__LIBCCALL __ExceptionPtrCompare)(void const *, void const *);
+__LIBC __ATTR_PURE bool (__LIBCCALL __ExceptionPtrToBool)(void const *);
+__LIBC __ATTR_PURE void (__LIBCCALL __ExceptionPtrSwap)(void *, void *);
+__LIBC __ATTR_PURE void (__LIBCCALL __ExceptionPtrCurrentException)(void *);
+__LIBC __ATTR_PURE void (__LIBCCALL __ExceptionPtrRethrow)(void const *);
+__LIBC __ATTR_PURE void (__LIBCCALL __ExceptionPtrCopyException)(void *, void const *, void const *);
+}
+__NAMESPACE_INT_END
+
+#ifndef __std_nullptr_t_defined
+#define __std_nullptr_t_defined 1
+typedef decltype(nullptr) nullptr_t;
+#endif /* !__std_nullptr_t_defined */
+
+class exception_ptr {
+public:
+    exception_ptr() { __int::__ExceptionPtrCreate(this); }
+    exception_ptr(nullptr_t) { __int::__ExceptionPtrCreate(this); }
+    exception_ptr(exception_ptr const &__other) { __int::__ExceptionPtrCopy(this, &__other); }
+    ~exception_ptr() __CXX_NOEXCEPT { __int::__ExceptionPtrDestroy(this); }
+    exception_ptr& operator = (exception_ptr const &__other) { __int::__ExceptionPtrAssign(this, &__other); return *this; }
+    exception_ptr& operator = (nullptr_t) { exception_ptr __ptr; __int::__ExceptionPtrAssign(this, &__ptr); return *this; }
+    explicit operator bool() const __CXX_NOEXCEPT { return __int::__ExceptionPtrToBool(this); }
+    void __rethrow_exception() const { __int::__ExceptionPtrRethrow(this); }
+    static exception_ptr __current_exception(void) { exception_ptr __result; __int::__ExceptionPtrCurrentException(&__result); return __result; }
+    static exception_ptr __copy_exception(void *__exception, void const *__ptr) { exception_ptr __result((nullptr_t())); if (__ptr) __int::__ExceptionPtrCopyException(&__result,__exception,__ptr); return __result; }
+private:
+    void *__d0;
+    void *__d1;
+};
+
+__LOCAL void (swap)(exception_ptr& __lhs, exception_ptr& __rhs) { __int::__ExceptionPtrSwap(&__lhs, &__rhs); }
+__LOCAL bool operator == (exception_ptr const &__lhs, exception_ptr const &__rhs) { return __int::__ExceptionPtrCompare(&__lhs, &__rhs); }
+__LOCAL bool operator == (nullptr_t, exception_ptr const &__rhs) { return !__rhs; }
+__LOCAL bool operator == (exception_ptr const &__lhs, nullptr_t) { return !__lhs; }
+__LOCAL bool operator != (exception_ptr const &__lhs, exception_ptr const &__rhs) { return !(__lhs == __rhs); }
+__LOCAL bool operator != (nullptr_t __lhs, exception_ptr const &__rhs) { return !(__lhs == __rhs); }
+__LOCAL bool operator != (exception_ptr const &__lhs, nullptr_t __rhs) { return !(__lhs == __rhs); }
+__LOCAL exception_ptr (current_exception)() { return exception_ptr::__current_exception(); }
+__LOCAL void (rethrow_exception)(exception_ptr __exc) { __exc.__rethrow_exception(); }
+
+template<class __E> void *(__GetExceptionInfo)(__E);
+template<class __E> __LOCAL exception_ptr (make_exception_ptr)(__E __exception) {
+ return exception_ptr::__copy_exception(__CXX_ADDROF(__exception),__GetExceptionInfo(__exception));
+}
+
+__NAMESPACE_STD_END
+__CXXDECL_END
+#endif /* __PE__ */
+
+#endif /* !_CXX_EXCEPTION */

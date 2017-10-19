@@ -74,6 +74,16 @@
 #define __CXXDECL_END   __pragma(warning(pop))
 #endif
 
+#ifdef __COMPILER_HAVE_CXX11_NOEXCEPT
+#   define __CXX_THROWS(...) /* nothing */
+#elif defined(_MSC_VER) && !defined(__INTELLISENSE__)
+#   define __CXX_THROWS(...) /* nothing */
+#else
+#   define __CXX_THROWS(...) throw(__VA_ARGS__)
+#endif
+
+#define __CXX_ADDROF(x) (&(x)) /* TODO: It's more complicated that this... */
+
 #ifndef __CXXDECL_BEGIN
 #define __CXXDECL_BEGIN
 #define __CXXDECL_END

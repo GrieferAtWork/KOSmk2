@@ -119,6 +119,8 @@
 #define __ATTR_WEAK              __declspec(selectany) /* For all that we care, it's basically the same. */
 #define __NO_ATTR_RETURNS_TWICE  1
 #define __ATTR_RETURNS_TWICE     /* nothing */
+#define __NO_ATTR_EXTERNALLY_VISIBLE 1
+#define __ATTR_EXTERNALLY_VISIBLE /* nothing */
 #define __NO_ATTR_VISIBILITY     1
 #define __ATTR_VISIBILITY(vis)   /* Nothing */
 #define __ATTR_DLLIMPORT         __declspec(dllimport)

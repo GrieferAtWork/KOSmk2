@@ -45,12 +45,18 @@ fi
 
 # HINT: When something goes wrong here, try starting
 #       over by clearing "build-gcc-i686-kos"
-make -j 8 all-gcc || exit $?
-make -j 8 all-target-libgcc || exit $?
-make -j 8 install-gcc || exit $?
-make -j 8 install-target-libgcc || exit $?
-make -j 8 all-target-libstdc++-v3 || exit $?
-make -j 8 install-target-libstdc++-v3 || exit $?
+#make -j 8 all-gcc || exit $?
+#make -j 8 all-target-libgcc || exit $?
+#make -j 8 install-gcc || exit $?
+#make -j 8 install-target-libgcc || exit $?
+#make -j 8 all-target-libstdc++-v3 || exit $?
+#make -j 8 install-target-libstdc++-v3 || exit $?
+
+# Create the symlink that's used for wrapping libstdc++ headers.
+mv "$PREFIX/i686-kos/include/c++"  "$PREFIX/i686-kos/include-c++"
+ln -s "../../binutils/$BUILDFOLDER/i686-kos/include-c++/6.2.0"  "$ROOT/../include/c++/6.2"
+ln -s "6.2" "$ROOT/../include/c++/6"
+ln -s "6.2" "$ROOT/../include/c++/current"
 
 # Copy libstdc++ files into KOS's lib folder.
 cp "$PREFIX/i686-kos/lib/libstdc++.a"         "$ROOT/../bin/libs/"
@@ -80,5 +86,9 @@ disable_fixinclude2 "limits.h"
 
 # The header missing should really be the better indicator...
 disable_fixinclude "varargs.h"
+
+# Switch back to the binutils root folder and fix stdlibc++ header files.
+cd "$ROOT"
+deemon "fix_stdlibcxx_relations.dee"
 
 

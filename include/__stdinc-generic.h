@@ -303,6 +303,12 @@
 #   define __NO_ATTR_RETURNS_TWICE 1
 #   define __ATTR_RETURNS_TWICE  /* nothing */
 #endif
+#if __has_attribute(__externally_visible__)
+#   define __ATTR_EXTERNALLY_VISIBLE __attribute__((__externally_visible__))
+#else
+#   define __NO_ATTR_EXTERNALLY_VISIBLE 1
+#   define __ATTR_EXTERNALLY_VISIBLE /* nothing */
+#endif
 #if __has_attribute(__visibility__) || \
    (defined(__ELF__) || defined(__TINYC__))
 #   define __ATTR_VISIBILITY(vis) __attribute__((__visibility__(vis)))

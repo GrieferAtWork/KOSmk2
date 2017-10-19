@@ -408,6 +408,8 @@ typedef bool _Bool;
 #define ____INTELLISENSE_attribute___destructor__             ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute_error                      ____INTELLISENSE_ATTR_FUNC_STR
 #define ____INTELLISENSE_attribute___error__                  ____INTELLISENSE_ATTR_FUNC_STR
+#define ____INTELLISENSE_attribute_externally_visible         ____INTELLISENSE_ATTR_FUNC
+#define ____INTELLISENSE_attribute___externally_visible__     ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute_fastcall                   __fastcall
 #define ____INTELLISENSE_attribute___fastcall__               __fastcall
 #define ____INTELLISENSE_attribute_format(name,fmt_idx,varargs_idx) ____INTELLISENSE_ATTR_FORMAT_##name
@@ -493,6 +495,7 @@ enum{ /* Highlight attributes in a different color */
     __deprecated__,         /*< __attribute__((deprecated(reason))); */
     __destructor__,         /*< __attribute__((destructor)); */
     __error__,              /*< __attribute__((error)); */
+    __externally_visible__, /*< __attribute__((externally_visible)); */
     __fastcall__,           /*< __attribute__((fastcall)); */
     __format__,             /*< __attribute__((format(...,1,2))); */
     __format_arg__,         /*< __attribute__((format_arg(2))); */
@@ -569,6 +572,8 @@ enum{ /* Highlight attributes in a different color */
 #define ____INTELLISENSE_HASATTR___destructor__         1
 #define ____INTELLISENSE_HASATTR_error                  1
 #define ____INTELLISENSE_HASATTR___error__              1
+#define ____INTELLISENSE_HASATTR_externally_visible     1
+#define ____INTELLISENSE_HASATTR___externally_visible__ 1
 #define ____INTELLISENSE_HASATTR_fastcall               1
 #define ____INTELLISENSE_HASATTR___fastcall__           1
 #define ____INTELLISENSE_HASATTR_format                 1

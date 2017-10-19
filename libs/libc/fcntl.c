@@ -290,6 +290,12 @@ DEFINE_PUBLIC_ALIAS(_sopen,libc_dos_sopen);
 DEFINE_PUBLIC_ALIAS(_sopen_s,libc_dos_sopen_s);
 DEFINE_PUBLIC_ALIAS(_sopen_s_nolock,libc_dos_sopen_s);
 
+DEFINE_PUBLIC_ALIAS("?_open%%YAHPEBDHH%Z",libc_dos_open);
+DEFINE_PUBLIC_ALIAS("?_sopen%%YAHPBDHHH%Z",libc_dos_sopen);
+DEFINE_PUBLIC_ALIAS("?_wopen%%YAHPEB_WHH%Z",libc_dos_16wopen);
+DEFINE_PUBLIC_ALIAS("?_wsopen%%YAHPEB_WHHH%Z",libc_dos_16wsopen);
+
+
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 
