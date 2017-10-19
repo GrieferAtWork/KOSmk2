@@ -237,57 +237,57 @@ __LIBC wchar_t *(__LIBCCALL wmemcpy)(wchar_t *__restrict __s1, wchar_t const *__
 __LIBC wchar_t *(__LIBCCALL wmemmove)(wchar_t *__s1, wchar_t const *__s2, size_t __n);
 __LIBC wchar_t *(__LIBCCALL wmemset)(wchar_t *__s, wchar_t __c, size_t __n);
 #endif /* !__DOS_COMPAT__ */
-#if defined(__cplusplus) && !defined(__NO_ASMNAME)
+#ifdef __CORRECT_ISO_CPP_WCHAR_H_PROTO
 extern "C++" {
 #ifndef __wcschr_defined
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcschr)(wchar_t *__haystack, wchar_t __wc) __ASMNAME("wcschr");
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcsrchr)(wchar_t *__haystack, wchar_t __wc) __ASMNAME("wcsrchr");
-__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wcschr)(wchar_t const *__haystack, wchar_t __wc) __ASMNAME("wcschr");
-__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wcsrchr)(wchar_t const *__haystack, wchar_t __wc) __ASMNAME("wcsrchr");
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wcschr,(wchar_t *__str, wchar_t __needle),wcschr,(__str,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wcsrchr,(wchar_t *__str, wchar_t __needle),wcsrchr,(__str,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wcschr,(wchar_t const *__str, wchar_t __needle),wcschr,(__str,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wcsrchr,(wchar_t const *__str, wchar_t __needle),wcsrchr,(__str,__needle))
 #endif /* !__wcschr_defined */
 #ifndef __wcsstr_defined
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcspbrk)(wchar_t *__haystack, wchar_t const *__accept) __ASMNAME("wcspbrk");
-__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wcspbrk)(wchar_t const *__haystack, wchar_t const *__accept) __ASMNAME("wcspbrk");
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcsstr)(wchar_t *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
-__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wcspbrk,(wchar_t *__haystack, wchar_t const *__accept),wcspbrk,(__haystack,__accept))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wcspbrk,(wchar_t const *__haystack, wchar_t const *__accept),wcspbrk,(__haystack,__accept))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wcsstr,(wchar_t *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wcsstr,(wchar_t const *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
 #endif /* !__wcsstr_defined */
 #ifdef __DOS_COMPAT__
 #if __SIZEOF_WCHAR_T__ == 4
-__LOCAL __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT32_TYPE__)__c,__n); }
-__LOCAL __ATTR_PURE wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT32_TYPE__)__c,__n); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT32_TYPE__)__c,__n); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT32_TYPE__)__c,__n); }
 #elif __SIZEOF_WCHAR_T__ == 2
-__LOCAL __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT16_TYPE__)__c,__n); }
-__LOCAL __ATTR_PURE wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT16_TYPE__)__c,__n); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT16_TYPE__)__c,__n); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT16_TYPE__)__c,__n); }
 #else /* ... */
-__LOCAL __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchr(__s,(int)__c,__n*sizeof(wchar_t)); }
-__LOCAL __ATTR_PURE wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchr(__s,(int)__c,__n*sizeof(wchar_t)); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchr(__s,(int)__c,__n*sizeof(wchar_t)); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchr(__s,(int)__c,__n*sizeof(wchar_t)); }
 #endif /* !... */
 #else /* __DOS_COMPAT__ */
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t *__s, wchar_t __c, size_t __n) __ASMNAME("wmemchr");
-__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) __ASMNAME("wmemchr");
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wmemchr,(wchar_t *__s, wchar_t __c, size_t __n),wmemchr,(__s,__c,__n))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wmemchr,(wchar_t const *__s, wchar_t __c, size_t __n),wmemchr,(__s,__c,__n))
 #endif /* !__DOS_COMPAT__ */
 }
-#else
+#else /* __CORRECT_ISO_CPP_WCHAR_H_PROTO */
 #ifndef __wcschr_defined
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcschr)(wchar_t const *__haystack, wchar_t __wc);
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcsrchr)(wchar_t const *__haystack, wchar_t __wc);
+__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcschr)(wchar_t const *__haystack, wchar_t __wc);
+__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcsrchr)(wchar_t const *__haystack, wchar_t __wc);
 #endif /* !__wcschr_defined */
 #ifndef __wcsstr_defined
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcspbrk)(wchar_t const *__haystack, wchar_t const *__accept);
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle);
+__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcspbrk)(wchar_t const *__haystack, wchar_t const *__accept);
+__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle);
 #endif /* !__wcsstr_defined */
 #ifdef __DOS_COMPAT__
 #if __SIZEOF_WCHAR_T__ == 4
-__LOCAL __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT32_TYPE__)__c,__n); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT32_TYPE__)__c,__n); }
 #elif __SIZEOF_WCHAR_T__ == 2
-__LOCAL __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT16_TYPE__)__c,__n); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchrl(__s,(__UINT16_TYPE__)__c,__n); }
 #else /* ... */
-__LOCAL __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchr(__s,(int)__c,__n*sizeof(wchar_t)); }
+__LOCAL __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n) { return (wchar_t *)__libc_memchr(__s,(int)__c,__n*sizeof(wchar_t)); }
 #endif /* !... */
 #else /* __DOS_COMPAT__ */
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n);
+__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wmemchr)(wchar_t const *__s, wchar_t __c, size_t __n);
 #endif /* !__DOS_COMPAT__ */
-#endif
+#endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 #if defined(__USE_ISOC95) || defined(__USE_UNIX98)
 #if defined(__CRT_GLC) && !defined(__DOS_COMPAT__)
 __LIBC int (__LIBCCALL fwide)(__FILE *__fp, int __mode);
@@ -521,11 +521,11 @@ __LOCAL wchar_t *(__LIBCCALL wcpncpy)(wchar_t *__restrict __dst, wchar_t const *
 #if defined(__USE_XOPEN2K8) || defined(__USE_DOS)
 #ifndef __wcsnlen_defined
 #define __wcsnlen_defined 1
-__LIBC __ATTR_PURE size_t (__LIBCCALL wcsnlen)(wchar_t const *__s, size_t __maxlen);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL wcsnlen)(wchar_t const *__s, size_t __maxlen);
 #endif /* !__wcsnlen_defined */
 #ifndef __wcsdup_defined
 #define __wcsdup_defined 1
-__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
+__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC __NONNULL((1)),
                 wchar_t *,__LIBCCALL,wcsdup,(wchar_t const *__restrict __str),_wcsdup,(__str))
 #endif /* !__wcsdup_defined */
 #endif /* __USE_XOPEN2K8 || __USE_DOS */
@@ -545,14 +545,14 @@ __LIBC __PORT_NODOS int (__LIBCCALL wcswidth)(wchar_t const *__restrict __s, siz
 #if defined(__USE_XOPEN) || defined(__USE_DOS)
 #ifndef __wcswcs_defined
 #define __wcswcs_defined 1
-#if defined(__cplusplus) && !defined(__NO_ASMNAME)
+#ifdef __CORRECT_ISO_CPP_WCHAR_H_PROTO
 extern "C++" {
-__LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcswcs)(wchar_t *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
-__LIBC __ATTR_PURE wchar_t const *(__LIBCCALL wcswcs)(wchar_t const *__haystack, wchar_t const *__needle) __ASMNAME("wcsstr");
+__REDIRECT(__LIBC,__ATTR_PURE,wchar_t *,__LIBCCALL,wcswcs,(wchar_t *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
+__REDIRECT(__LIBC,__ATTR_PURE,wchar_t const *,__LIBCCALL,wcswcs,(wchar_t const *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
 }
-#else
+#else /* __CORRECT_ISO_CPP_WCHAR_H_PROTO */
 __REDIRECT(__LIBC,__ATTR_PURE,wchar_t *,__LIBCCALL,wcswcs,(wchar_t const *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
-#endif
+#endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 #endif /* !__wcswcs_defined */
 #endif /* __USE_XOPEN || __USE_DOS */
 
@@ -612,34 +612,35 @@ __REDIRECT_IFDOS(__LIBC,,size_t,__LIBCCALL,wcsftime_l,(wchar_t *__restrict __buf
 
 #ifdef __USE_KOS
 #ifndef __wcsnlen_defined
-__REDIRECT(__LIBC,__ATTR_PURE,size_t,__LIBCCALL,__libc_wcsnlen,(wchar_t const *__s, size_t __maxlen),wcsnlen,(__s,__maxlen))
+__REDIRECT(__LIBC,__ATTR_PURE,size_t,__LIBCCALL,__libc_wcsnlen,
+          (wchar_t const *__s, size_t __maxlen),wcsnlen,(__s,__maxlen))
 #else /* !__wcsnlen_defined */
 #define __libc_wcsnlen(s,maxlen) wcsnlen(s,maxlen)
 #endif /* __wcsnlen_defined */
 #if (defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__)) || !defined(__CRT_KOS)
-#ifdef __cplusplus
+#ifdef __CORRECT_ISO_CPP_WCHAR_H_PROTO
 extern "C++" {
-__LOCAL wchar_t *(__LIBCCALL wcsend)(wchar_t *__restrict __s) { return __s+__NAMESPACE_STD_SYM wcslen(__s); }
-__LOCAL wchar_t *(__LIBCCALL wcsnend)(wchar_t *__restrict __s, size_t __n) { return __s+__libc_wcsnlen(__s,__n); }
-__LOCAL wchar_t const *(__LIBCCALL wcsend)(wchar_t const *__restrict __s) { return __s+__NAMESPACE_STD_SYM wcslen(__s); }
-__LOCAL wchar_t const *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n) { return __s+__libc_wcsnlen(__s,__n); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wcsend)(wchar_t *__restrict __s) { return __s+__NAMESPACE_STD_SYM wcslen(__s); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wcsnend)(wchar_t *__restrict __s, size_t __n) { return __s+__libc_wcsnlen(__s,__n); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t const *(__LIBCCALL wcsend)(wchar_t const *__restrict __s) { return __s+__NAMESPACE_STD_SYM wcslen(__s); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t const *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n) { return __s+__libc_wcsnlen(__s,__n); }
 }
-#else /* C++ */
-__LOCAL wchar_t *(__LIBCCALL wcsend)(wchar_t const *__restrict __s) { return (wchar_t *)__s+__NAMESPACE_STD_SYM wcslen(__s); }
-__LOCAL wchar_t *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n) { return (wchar_t *)__s+__libc_wcsnlen(__s,__n); }
-#endif /* !C++ */
+#else /* __CORRECT_ISO_CPP_WCHAR_H_PROTO */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wcsend)(wchar_t const *__restrict __s) { return (wchar_t *)__s+__NAMESPACE_STD_SYM wcslen(__s); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n) { return (wchar_t *)__s+__libc_wcsnlen(__s,__n); }
+#endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 #else /* Compat... */
-#if defined(__cplusplus) && !defined(__NO_ASMNAME)
+#ifdef __CORRECT_ISO_CPP_WCHAR_H_PROTO
 extern "C++" {
-__LIBC wchar_t *(__LIBCCALL wcsend)(wchar_t *__restrict __s) __ASMNAME("wcsend");
-__LIBC wchar_t *(__LIBCCALL wcsnend)(wchar_t *__restrict __s, size_t __n) __ASMNAME("wcsnend");
-__LIBC wchar_t const *(__LIBCCALL wcsend)(wchar_t const *__restrict __s) __ASMNAME("wcsend");
-__LIBC wchar_t const *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n) __ASMNAME("wcsnend");
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),wchar_t *,__LIBCCALL,wcsend,(wchar_t *__restrict __s),wcsend,(__s))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),wchar_t const *,__LIBCCALL,wcsend,(wchar_t const *__restrict __s),wcsend,(__s))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),wchar_t *,__LIBCCALL,wcsnend,(wchar_t *__restrict __s, size_t __n),wcsnend,(__s,__n))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),wchar_t const *,__LIBCCALL,wcsnend,(wchar_t const *__restrict __s, size_t __n),wcsnend,(__s,__n))
 }
-#else /* C++ */
-__LIBC wchar_t *(__LIBCCALL wcsend)(wchar_t const *__restrict __s);
-__LIBC wchar_t *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n);
-#endif /* !C++ */
+#else /* __CORRECT_ISO_CPP_WCHAR_H_PROTO */
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wcsend)(wchar_t const *__restrict __s);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wcsnend)(wchar_t const *__restrict __s, size_t __n);
+#endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 #endif /* Builtin... */
 #endif /* __USE_KOS */
 #endif /* !__KERNEL__ */

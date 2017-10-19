@@ -73,7 +73,7 @@ char *(__LIBCCALL __local_rindex)(char const *__restrict __haystack, int __needl
 #ifdef __DOS_COMPAT__
 
 #endif /* __DOS_COMPAT__ */
-#if defined(__cplusplus) && !defined(__NO_ASMNAME)
+#ifdef __CORRECT_ISO_CPP_STRINGS_H_PROTO
 extern "C++" {
 #ifdef __DOS_COMPAT__
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL index)(char *__haystack, int __needle) { return __local_index(__haystack,__needle); }
@@ -81,13 +81,13 @@ __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL index)(char
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL rindex)(char *__restrict __haystack, int __needle) { return __local_rindex(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL rindex)(char const *__restrict __haystack, int __needle) { return __local_rindex(__haystack,__needle); }
 #else /* __DOS_COMPAT__ */
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL index)(char *__haystack, int __needle) __ASMNAME("index");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL index)(char const *__haystack, int __needle) __ASMNAME("index");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL rindex)(char *__restrict __haystack, int __needle) __ASMNAME("rindex");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL rindex)(char const *__restrict __haystack, int __needle) __ASMNAME("rindex");
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,index,(char *__haystack, int __needle),index,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,index,(char const *__haystack, int __needle),index,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,rindex,(char *__restrict __haystack, int __needle),rindex,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,rindex,(char const *__restrict __haystack, int __needle),rindex,(__haystack,__needle))
 #endif /* !__DOS_COMPAT__ */
 }
-#else /* C++ */
+#else /* __CORRECT_ISO_CPP_STRINGS_H_PROTO */
 #ifdef __DOS_COMPAT__
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL index)(char const *__restrict __haystack, int __needle) { return __local_index(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL rindex)(char const *__restrict __haystack, int __needle) { return __local_rindex(__haystack,__needle); }
@@ -95,7 +95,7 @@ __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL rindex)(char cons
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL index)(char const *__restrict __haystack, int __needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL rindex)(char const *__restrict __haystack, int __needle);
 #endif /* !__DOS_COMPAT__ */
-#endif /* !C++ */
+#endif /* !__CORRECT_ISO_CPP_STRINGS_H_PROTO */
 #endif /* !__index_defined */
 #endif /* !__KERNEL__ */
 

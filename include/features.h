@@ -181,6 +181,18 @@
     (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199409L))
 # define __USE_ISOC95 1
 #endif
+#if defined(__GXX_EXPERIMENTAL_CXX0X__) || \
+   (defined(__cplusplus) && __cplusplus >= 201103L)
+# define __USE_ISOCXX11	1
+#endif
+#if defined(__cplusplus) && \
+  (!defined(__GNUC__) || __GCC_VERSION(4,4,0))
+/* Enable proper C++ prototype declarations. */
+# define __CORRECT_ISO_CPP_STRING_H_PROTO  1
+# define __CORRECT_ISO_CPP_STRINGS_H_PROTO 1
+# define __CORRECT_ISO_CPP_WCHAR_H_PROTO   1
+# define __CORRECT_ISO_CPP_STDLIB_H_PROTO  1
+#endif
 
 #ifdef _DEFAULT_SOURCE
 # if !defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE)

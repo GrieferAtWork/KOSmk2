@@ -50,7 +50,13 @@ make -j 8 all-target-libgcc || exit $?
 make -j 8 install-gcc || exit $?
 make -j 8 install-target-libgcc || exit $?
 
-#make -j 8 all-target-libstdc++-v3 || exit $?
-#make -j 8 install-target-libstdc++-v3 || exit $?
+make -j 8 all-target-libstdc++-v3 || exit $?
+make -j 8 install-target-libstdc++-v3 || exit $?
 
+# Copy libstdc++ files into KOS's lib folder.
+cp "$PREFIX/i686-kos/lib/libstdc++.a"         "$ROOT/../bin/libs/"
+cp "$PREFIX/i686-kos/lib/libstdc++.la"        "$ROOT/../bin/libs/"
+cp "$PREFIX/i686-kos/lib/libstdc++.a-gdb.py"  "$ROOT/../bin/libs/"
+cp "$PREFIX/i686-kos/lib/libsupc++.a"         "$ROOT/../bin/libs/"
+cp "$PREFIX/i686-kos/lib/libsupc++.la"        "$ROOT/../bin/libs/"
 

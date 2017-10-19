@@ -59,13 +59,13 @@ __SYSDECL_BEGIN
 #define __MATHCALL(function,suffix,args)                    __MATHDECL(_Mdouble_,function,suffix,args)
 #define __MATHDECL(type,function,suffix,args)               __MATHDECL_1(type,function,suffix,args); __MATHDECL_1(type,__PP_CAT2(__,function),suffix,args)
 #define __MATHCALLX(function,suffix,args,attrib)            __MATHDECLX(_Mdouble_,function,suffix,args,attrib)
-#define __MATHDECLX(type,function,suffix,args,attrib)       __MATHDECL_1_ATTR(type,function,suffix,args,attrib); attrib __MATHDECL_1_ATTR(type,__PP_CAT2(__,function),suffix,args,attrib)
+#define __MATHDECLX(type,function,suffix,args,attrib)       __MATHDECL_1_ATTR(type,function,suffix,args,attrib); __MATHDECL_1_ATTR(type,__PP_CAT2(__,function),suffix,args,attrib)
 #define __MATHDECL_1(type,function,suffix,args)             __LIBC type __NOTHROW((__LIBCCALL __MATH_PRECNAME(function,suffix)) args)
 #define __MATHDECL_1_ATTR(type,function,suffix,args,attrib) __LIBC attrib type __NOTHROW((__LIBCCALL __MATH_PRECNAME(function,suffix)) args)
 #define _Mdouble_                double
 #define __MATH_PRECNAME(name,r)  name##r
 #define __MATH_DECLARING_DOUBLE  1
-#define __MATHNS_BEGIN           __NAMESPACE_STD_END
+#define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##r)
 #include <bits/mathcalls.h>
@@ -83,7 +83,7 @@ __SYSDECL_BEGIN
 #define _Mdouble_                _Mfloat_
 #define __MATH_PRECNAME(name,r)  name##f##r
 #define __MATH_DECLARING_DOUBLE  0
-#define __MATHNS_BEGIN           __NAMESPACE_STD_END
+#define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##f##r)
 #include <bits/mathcalls.h>
@@ -101,7 +101,7 @@ __SYSDECL_BEGIN
 #define __MATH_PRECNAME(name,r) name##l##r
 #define __MATH_DECLARING_DOUBLE  0
 #define __MATH_DECLARE_LDOUBLE   1
-#define __MATHNS_BEGIN           __NAMESPACE_STD_END
+#define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##l##r)
 #include <bits/mathcalls.h>
@@ -302,6 +302,9 @@ struct exception
     double arg2;
     double retval;
     int    err;
+#ifdef _MSC_VER
+    int    __pad;
+#endif
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma pop_macro("type")
 #pragma pop_macro("name")

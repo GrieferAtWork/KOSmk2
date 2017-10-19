@@ -176,8 +176,8 @@ __MATHCALLX(ceil,,(_Mdouble_ __x),__ATTR_CONST); /* Smallest integral value not 
 __MATHCALLX(fabs,,(_Mdouble_ __x),__ATTR_CONST); /* Absolute value of X. */
 __MATHCALLX(floor,,(_Mdouble_ __x),__ATTR_CONST); /* Largest integer not greater than X. */
 __MATHCALL(fmod,,(_Mdouble_ __x,_Mdouble_ __y)); /* Floating-point modulo remainder of X/Y. */
-__MATHDECL_1_ATTR(int,__isinf,,(_Mdouble_ __value),__ATTR_CONST); /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
-__MATHDECL_1_ATTR(int,__finite,,(_Mdouble_ __value),__ATTR_CONST); /* Return nonzero if VALUE is finite and not NaN. */
+__MATHDECL_1_ATTR(int,__isinf,,(_Mdouble_ __val),__ATTR_CONST); /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
+__MATHDECL_1_ATTR(int,__finite,,(_Mdouble_ __val),__ATTR_CONST); /* Return nonzero if VALUE is finite and not NaN. */
 __MATHNS_END
 __MATHNS_USING(ceil,)
 __MATHNS_USING(fabs,)
@@ -189,9 +189,9 @@ __MATHNS_USING(__finite,)
 #ifdef __USE_MISC
 #if (!defined(__cplusplus) || __cplusplus < 201103L /* isinf conflicts with C++11. */ \
            || __MATH_DECLARING_DOUBLE == 0) /* isinff or isinfl don't. */
-__MATHDECL_1_ATTR(int,isinf,,(_Mdouble_ __value),__ATTR_CONST); /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
+__MATHDECL_1_ATTR(int,isinf,,(_Mdouble_ __val),__ATTR_CONST); /* Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity. */
 #endif
-__MATHDECL_1_ATTR(int,finite,,(_Mdouble_ __value),__ATTR_CONST); /* Return nonzero if VALUE is finite and not NaN. */
+__MATHDECL_1_ATTR(int,finite,,(_Mdouble_ __val),__ATTR_CONST); /* Return nonzero if VALUE is finite and not NaN. */
 __MATHCALL(drem,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return the remainder of X/Y. */
 __MATHCALL(significand,,(_Mdouble_ __x)); /* Return the fractional part of X after dividing out `ilogb (X)'. */
 #endif /* __USE_MISC */
@@ -205,11 +205,11 @@ __MATHNS_USING(copysign,)
 __MATHNS_USING(nan,)
 #endif /* __USE_ISOC99 */
 
-__MATHDECL_1_ATTR(int,__isnan,,(_Mdouble_ __value),__ATTR_CONST); /* Return nonzero if VALUE is not a number. */
+__MATHDECL_1_ATTR(int,__isnan,,(_Mdouble_ __val),__ATTR_CONST); /* Return nonzero if VALUE is not a number. */
 #if defined(__USE_MISC) || (defined(__USE_XOPEN) && !defined(__USE_XOPEN2K))
 #if (!defined __cplusplus || __cplusplus < 201103L /* isnan conflicts with C++11. */ \
    || __MATH_DECLARING_DOUBLE == 0) /* isnanf or isnanl don't. */
-__MATHDECL_1_ATTR(int,isnan,,(_Mdouble_ __value),__ATTR_CONST); /* Return nonzero if VALUE is not a number. */
+__MATHDECL_1_ATTR(int,isnan,,(_Mdouble_ __val),__ATTR_CONST); /* Return nonzero if VALUE is not a number. */
 #endif
 #endif
 
@@ -287,8 +287,8 @@ __MATHDECL(__LONGLONG,llround,,(_Mdouble_ __x));
 __MATHCALL(fdim,,(_Mdouble_ __x, _Mdouble_ __y)); /* Return positive difference between X and Y. */
 __MATHCALLX(fmax,,(_Mdouble_ __x, _Mdouble_ __y),__ATTR_CONST); /* Return maximum numeric value from X and Y. */
 __MATHCALLX(fmin,,(_Mdouble_ __x, _Mdouble_ __y),__ATTR_CONST); /* Return minimum numeric value from X and Y. */
-__MATHDECL_1_ATTR(int,__fpclassify,,(_Mdouble_ __value),__ATTR_CONST); /* Classify given number. */
-__MATHDECL_1_ATTR(int,__signbit,,(_Mdouble_ __value),__ATTR_CONST); /* Test for negative number. */
+__MATHDECL_1_ATTR(int,__fpclassify,,(_Mdouble_ __val),__ATTR_CONST); /* Classify given number. */
+__MATHDECL_1_ATTR(int,__signbit,,(_Mdouble_ __val),__ATTR_CONST); /* Test for negative number. */
 __MATHCALL(fma,,(_Mdouble_ __x,_Mdouble_ __y,_Mdouble_ __z)); /* Multiply-add function computed as a ternary operation. */
 __MATHNS_END
 __MATHNS_USING(scalbln,)
@@ -309,7 +309,7 @@ __MATHNS_USING(fma,)
 #endif /* __USE_ISOC99 */
 
 #ifdef __USE_GNU
-__MATHDECL_1_ATTR(int,__issignaling,,(_Mdouble_ __value),__ATTR_CONST);
+__MATHDECL_1_ATTR(int,__issignaling,,(_Mdouble_ __val),__ATTR_CONST);
 #endif /* __USE_GNU */
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN_EXTENDED) && __MATH_DECLARING_DOUBLE && !defined __USE_XOPEN2K8)

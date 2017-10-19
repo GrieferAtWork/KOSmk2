@@ -58,6 +58,7 @@
 #include <uchar.h>
 #include <utime.h>
 #include <wchar.h>
+#include <math.h>
 
 DECL_BEGIN
 
@@ -79,6 +80,8 @@ int main(int argc, char **argv) {
  }
  closedir(d);
 
+ //strchr("foo",'o');
+
  ssize_t n;
  char buf[16];
  n = snprintf(buf,sizeof(buf),"foo bar foobar %s\n",
@@ -99,12 +102,9 @@ int main(int argc, char **argv) {
  printf("y = %x\n",y);
 
 #ifdef __cplusplus
- std::atomic<char const *> b = ATOMIC_VAR_INIT("foo");
- std::atomic_flag f = ATOMIC_FLAG_INIT;
+ int *p = new int(42);
 
- b = "bar";
- b += 1;
- b.fetch_add(2);
+ delete p;
 #endif
 
  return 0;

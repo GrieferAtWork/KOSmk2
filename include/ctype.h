@@ -124,7 +124,9 @@ __LOCAL int __NOTHROW((__LIBCCALL isascii)(int __c)) { return (__UINT8_TYPE__)__
 #define isupper(c)  __isctype((c),_ISupper)
 #define isxdigit(c) __isctype((c),_ISxdigit)
 #ifdef __USE_ISOC99
+#ifndef __cplusplus /* libstdc++ doesn't undef this one properly... */
 #define isblank(c)  __isctype((c),_ISblank)
+#endif
 #endif /* __USE_ISOC99 */
 #endif /* __CRT_GLC */
 

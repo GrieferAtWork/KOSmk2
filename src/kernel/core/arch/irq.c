@@ -528,17 +528,17 @@ kill_task:
   debug_printf("ECODE %#I32x (%I32d)",state->iret.exc_code,state->iret.exc_code);
  }
  debug_printf("\nCPU #%d%s (%p; GPID %d)\n",this_cpu->c_id,
-                    this_task == &inittask ? " (BOOT-TASK)" :
-                    this_task == &this_cpu->c_idle ? " (IDLE-TASK)" : "",
-                    this_task,this_task->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
+              this_task == &inittask ? " (BOOT-TASK)" :
+              this_task == &this_cpu->c_idle ? " (IDLE-TASK)" : "",
+              this_task,this_task->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
  debug_printf("EAX %p  ECX %p  EDX %p  EBX %p  EIP %p\n",
-                    state->gp.eax,state->gp.ecx,
-                    state->gp.edx,state->gp.ebx,
-                    state->iret.eip);
+              state->gp.eax,state->gp.ecx,
+              state->gp.edx,state->gp.ebx,
+              state->iret.eip);
  esp = is_user ? state->iret.useresp : state->gp.esp+(offsetafter(struct cpustate_e,iret.eflags)-
                                                       offsetafter(struct cpustate_e,gp.eax));
  debug_printf("ESP %p  EBP %p  ESI %p  EDI %p  ---\n",
-                    esp,state->gp.ebp,state->gp.esi,state->gp.edi);
+              esp,state->gp.ebp,state->gp.esi,state->gp.edi);
  iter = buffer,temp = state->iret.eflags;
  if (temp&EFLAGS_CF) iter = stpcpy(iter,"+CF");
  if (temp&EFLAGS_PF) iter = stpcpy(iter,"+PF");

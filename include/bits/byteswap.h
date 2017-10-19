@@ -49,12 +49,12 @@ __LIBC __ATTR_CONST __UINT16_TYPE__ __NOTHROW((__LIBCCALL _byteswap_ushort)(__UI
 #elif defined(__CRT_DOS)
 #ifndef ___byteswap_ulong_defined
 #define ___byteswap_ulong_defined 1
-__LIBC __ATTR_CONST __UINT32_TYPE__ __NOTHROW((__LIBCCALL _byteswap_ulong)(__UINT32_TYPE__ x));
+__LIBC __ATTR_CONST __ULONG32_TYPE__ __NOTHROW((__LIBCCALL _byteswap_ulong)(__ULONG32_TYPE__ x));
 #ifdef _MSC_VER
 #pragma intrinsic(_byteswap_ulong)
 #endif /* _MSC_VER */
 #endif /* !___byteswap_ulong_defined */
-#   define __bswap_nonconst_32(x) _byteswap_ulong(x)
+#   define __bswap_nonconst_32(x) ((__UINT32_TYPE__)_byteswap_ulong((__ULONG32_TYPE__ )(x)))
 #else /* ... */
 #   define __bswap_nonconst_32(x) __bswap_constant_32(x)
 #endif /* !... */
