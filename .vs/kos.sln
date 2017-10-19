@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\__stdinc.h = ..\include\__stdinc.h
 		..\include\alloca.h = ..\include\alloca.h
 		..\include\assert.h = ..\include\assert.h
+		..\include\atomic = ..\include\atomic
 		..\include\byteswap.h = ..\include\byteswap.h
 		..\include\ConcurrencySal.h = ..\include\ConcurrencySal.h
 		..\include\ctype.h = ..\include\ctype.h

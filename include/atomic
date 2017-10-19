@@ -24,9 +24,6 @@
 #include <hybrid/typecore.h>
 #include <hybrid/__atomic.h>
 
-#include <cstdint>
-#include <cstddef>
-
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma push_macro("atomic")
 #endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
@@ -217,14 +214,14 @@ public:
     __pointer_type operator ++ () volatile __CXX_NOEXCEPT { return (__pointer_type)(sizeof(__T) == 1 ? __hybrid_atomic_incfetch(__m_val,memory_order_seq_cst) : __hybrid_atomic_addfetch(__m_val,sizeof(__T),memory_order_seq_cst)); }
     __pointer_type operator -- () __CXX_NOEXCEPT { return (__pointer_type)(sizeof(__T) == 1 ? __hybrid_atomic_decfetch(__m_val,memory_order_seq_cst) : __hybrid_atomic_subfetch(__m_val,sizeof(__T),memory_order_seq_cst)); }
     __pointer_type operator -- () volatile __CXX_NOEXCEPT { return (__pointer_type)(sizeof(__T) == 1 ? __hybrid_atomic_decfetch(__m_val,memory_order_seq_cst) : __hybrid_atomic_subfetch(__m_val,sizeof(__T),memory_order_seq_cst)); }
-    __pointer_type operator += (ptrdiff_t __val) __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_addfetch(__m_val,__val*sizeof(__T),memory_order_seq_cst); }
-    __pointer_type operator += (ptrdiff_t __val) volatile __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_addfetch(__m_val,__val*sizeof(__T),memory_order_seq_cst); }
-    __pointer_type operator -= (ptrdiff_t __val) __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_subfetch(__m_val,__val*sizeof(__T),memory_order_seq_cst); }
-    __pointer_type operator -= (ptrdiff_t __val) volatile __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_subfetch(__m_val,__val*sizeof(__T),memory_order_seq_cst); }
-    __pointer_type (fetch_add)(ptrdiff_t __val, memory_order __order = memory_order_seq_cst) __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_fetchadd(__m_val,__val*sizeof(__T),__order); }
-    __pointer_type (fetch_add)(ptrdiff_t __val, memory_order __order = memory_order_seq_cst) volatile __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_fetchadd(__m_val,__val*sizeof(__T),__order); }
-    __pointer_type (fetch_sub)(ptrdiff_t __val, memory_order __order = memory_order_seq_cst) __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_fetchsub(__m_val,__val*sizeof(__T),__order); }
-    __pointer_type (fetch_sub)(ptrdiff_t __val, memory_order __order = memory_order_seq_cst) volatile __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_fetchsub(__m_val,__val*sizeof(__T),__order); }
+    __pointer_type operator += (__PTRDIFF_TYPE__ __val) __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_addfetch(__m_val,__val*sizeof(__T),memory_order_seq_cst); }
+    __pointer_type operator += (__PTRDIFF_TYPE__ __val) volatile __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_addfetch(__m_val,__val*sizeof(__T),memory_order_seq_cst); }
+    __pointer_type operator -= (__PTRDIFF_TYPE__ __val) __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_subfetch(__m_val,__val*sizeof(__T),memory_order_seq_cst); }
+    __pointer_type operator -= (__PTRDIFF_TYPE__ __val) volatile __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_subfetch(__m_val,__val*sizeof(__T),memory_order_seq_cst); }
+    __pointer_type (fetch_add)(__PTRDIFF_TYPE__ __val, memory_order __order = memory_order_seq_cst) __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_fetchadd(__m_val,__val*sizeof(__T),__order); }
+    __pointer_type (fetch_add)(__PTRDIFF_TYPE__ __val, memory_order __order = memory_order_seq_cst) volatile __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_fetchadd(__m_val,__val*sizeof(__T),__order); }
+    __pointer_type (fetch_sub)(__PTRDIFF_TYPE__ __val, memory_order __order = memory_order_seq_cst) __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_fetchsub(__m_val,__val*sizeof(__T),__order); }
+    __pointer_type (fetch_sub)(__PTRDIFF_TYPE__ __val, memory_order __order = memory_order_seq_cst) volatile __CXX_NOEXCEPT { return (__pointer_type)__hybrid_atomic_fetchsub(__m_val,__val*sizeof(__T),__order); }
     bool (is_lock_free)() const __CXX_NOEXCEPT { return __hybrid_atomic_lockfree(__m_val); }
     bool (is_lock_free)() const volatile __CXX_NOEXCEPT { return __hybrid_atomic_lockfree(__m_val); }
     void (store)(__pointer_type __val, memory_order __order = memory_order_seq_cst) __CXX_NOEXCEPT { __hybrid_atomic_store(__m_val,__val,__order); }
@@ -280,7 +277,7 @@ __SPECIALIZE_INTEGRAL(char32_t)
 #endif /* __native_char16_t_defined */
 #undef __SPECIALIZE_INTEGRAL
 
-typedef atomic<bool> atomic_bool;
+typedef atomic<__BOOL> atomic_bool;
 typedef atomic<char> atomic_char;
 typedef atomic<signed char> atomic_schar;
 typedef atomic<unsigned char> atomic_uchar;
@@ -295,28 +292,28 @@ typedef atomic<unsigned long long> atomic_ullong;
 typedef atomic<wchar_t> atomic_wchar_t;
 typedef atomic<char16_t> atomic_char16_t;
 typedef atomic<char32_t> atomic_char32_t;
-typedef atomic<intmax_t> atomic_intmax_t;
-typedef atomic<uintmax_t> atomic_uintmax_t;
-typedef atomic<int_least8_t> atomic_int_least8_t;
-typedef atomic<int_least16_t> atomic_int_least16_t;
-typedef atomic<int_least32_t> atomic_int_least32_t;
-typedef atomic<int_least64_t> atomic_int_least64_t;
-typedef atomic<uint_least8_t> atomic_uint_least8_t;
-typedef atomic<uint_least16_t> atomic_uint_least16_t;
-typedef atomic<uint_least32_t> atomic_uint_least32_t;
-typedef atomic<uint_least64_t> atomic_uint_least64_t;
-typedef atomic<int_fast8_t> atomic_int_fast8_t;
-typedef atomic<int_fast16_t> atomic_int_fast16_t;
-typedef atomic<int_fast32_t> atomic_int_fast32_t;
-typedef atomic<int_fast64_t> atomic_int_fast64_t;
-typedef atomic<uint_fast8_t> atomic_uint_fast8_t;
-typedef atomic<uint_fast16_t> atomic_uint_fast16_t;
-typedef atomic<uint_fast32_t> atomic_uint_fast32_t;
-typedef atomic<uint_fast64_t> atomic_uint_fast64_t;
-typedef atomic<intptr_t> atomic_intptr_t;
-typedef atomic<uintptr_t> atomic_uintptr_t;
-typedef atomic<size_t> atomic_size_t;
-typedef atomic<ptrdiff_t> atomic_ptrdiff_t;
+typedef atomic<__INTMAX_TYPE__> atomic_intmax_t;
+typedef atomic<__UINTMAX_TYPE__> atomic_uintmax_t;
+typedef atomic<__INT_LEAST8_TYPE__> atomic_int_least8_t;
+typedef atomic<__INT_LEAST16_TYPE__> atomic_int_least16_t;
+typedef atomic<__INT_LEAST32_TYPE__> atomic_int_least32_t;
+typedef atomic<__INT_LEAST64_TYPE__> atomic_int_least64_t;
+typedef atomic<__UINT_LEAST8_TYPE__> atomic_uint_least8_t;
+typedef atomic<__UINT_LEAST16_TYPE__> atomic_uint_least16_t;
+typedef atomic<__UINT_LEAST32_TYPE__> atomic_uint_least32_t;
+typedef atomic<__UINT_LEAST64_TYPE__> atomic_uint_least64_t;
+typedef atomic<__INT_FAST8_TYPE__> atomic_int_fast8_t;
+typedef atomic<__INT_FAST16_TYPE__> atomic_int_fast16_t;
+typedef atomic<__INT_FAST32_TYPE__> atomic_int_fast32_t;
+typedef atomic<__INT_FAST64_TYPE__> atomic_int_fast64_t;
+typedef atomic<__UINT_FAST8_TYPE__> atomic_uint_fast8_t;
+typedef atomic<__UINT_FAST16_TYPE__> atomic_uint_fast16_t;
+typedef atomic<__UINT_FAST32_TYPE__> atomic_uint_fast32_t;
+typedef atomic<__UINT_FAST64_TYPE__> atomic_uint_fast64_t;
+typedef atomic<__INTPTR_TYPE__> atomic_intptr_t;
+typedef atomic<__UINTPTR_TYPE__> atomic_uintptr_t;
+typedef atomic<__SIZE_TYPE__> atomic_size_t;
+typedef atomic<__PTRDIFF_TYPE__> atomic_ptrdiff_t;
 
 
 #define ATOMIC_FLAG_INIT   {0}
@@ -389,14 +386,14 @@ template<class __T> __LOCAL __T (atomic_fetch_or)(atomic<__T> *__ato, __T __val)
 template<class __T> __LOCAL __T (atomic_fetch_or)(atomic<__T> volatile *__ato, __T __val) __CXX_NOEXCEPT { return atomic_fetch_or_explicit(__ato,__val,memory_order_seq_cst); }
 template<class __T> __LOCAL __T (atomic_fetch_xor)(atomic<__T> *__ato, __T __val) __CXX_NOEXCEPT { return atomic_fetch_xor_explicit(__ato,__val,memory_order_seq_cst); }
 template<class __T> __LOCAL __T (atomic_fetch_xor)(atomic<__T> volatile *__ato, __T __val) __CXX_NOEXCEPT { return atomic_fetch_xor_explicit(__ato,__val,memory_order_seq_cst); }
-template<class __T> __LOCAL __T *(atomic_fetch_add_explicit)(atomic<__T *> *__ato, ptrdiff_t __val, memory_order __order) __CXX_NOEXCEPT { return __ato->fetch_add(__val,__order); }
-template<class __T> __LOCAL __T *(atomic_fetch_add_explicit)(atomic<__T *> volatile *__ato, ptrdiff_t __val, memory_order __order) __CXX_NOEXCEPT { return __ato->fetch_add(__val,__order); }
-template<class __T> __LOCAL __T *(atomic_fetch_add)(atomic<__T *> volatile *__ato, ptrdiff_t __val) __CXX_NOEXCEPT { return __ato->fetch_add(__val); }
-template<class __T> __LOCAL __T *(atomic_fetch_add)(atomic<__T *> *__ato, ptrdiff_t __val) __CXX_NOEXCEPT { return __ato->fetch_add(__val); }
-template<class __T> __LOCAL __T *(atomic_fetch_sub_explicit)(atomic<__T *> volatile *__ato, ptrdiff_t __val, memory_order __order) __CXX_NOEXCEPT { return __ato->fetch_sub(__val,__order); }
-template<class __T> __LOCAL __T *(atomic_fetch_sub_explicit)(atomic<__T *> *__ato, ptrdiff_t __val, memory_order __order) __CXX_NOEXCEPT { return __ato->fetch_sub(__val,__order); }
-template<class __T> __LOCAL __T *(atomic_fetch_sub)(atomic<__T *> volatile *__ato, ptrdiff_t __val) __CXX_NOEXCEPT { return __ato->fetch_sub(__val); }
-template<class __T> __LOCAL __T *(atomic_fetch_sub)(atomic<__T *> *__ato, ptrdiff_t __val) __CXX_NOEXCEPT { return __ato->fetch_sub(__val); }
+template<class __T> __LOCAL __T *(atomic_fetch_add_explicit)(atomic<__T *> *__ato, __PTRDIFF_TYPE__ __val, memory_order __order) __CXX_NOEXCEPT { return __ato->fetch_add(__val,__order); }
+template<class __T> __LOCAL __T *(atomic_fetch_add_explicit)(atomic<__T *> volatile *__ato, __PTRDIFF_TYPE__ __val, memory_order __order) __CXX_NOEXCEPT { return __ato->fetch_add(__val,__order); }
+template<class __T> __LOCAL __T *(atomic_fetch_add)(atomic<__T *> volatile *__ato, __PTRDIFF_TYPE__ __val) __CXX_NOEXCEPT { return __ato->fetch_add(__val); }
+template<class __T> __LOCAL __T *(atomic_fetch_add)(atomic<__T *> *__ato, __PTRDIFF_TYPE__ __val) __CXX_NOEXCEPT { return __ato->fetch_add(__val); }
+template<class __T> __LOCAL __T *(atomic_fetch_sub_explicit)(atomic<__T *> volatile *__ato, __PTRDIFF_TYPE__ __val, memory_order __order) __CXX_NOEXCEPT { return __ato->fetch_sub(__val,__order); }
+template<class __T> __LOCAL __T *(atomic_fetch_sub_explicit)(atomic<__T *> *__ato, __PTRDIFF_TYPE__ __val, memory_order __order) __CXX_NOEXCEPT { return __ato->fetch_sub(__val,__order); }
+template<class __T> __LOCAL __T *(atomic_fetch_sub)(atomic<__T *> volatile *__ato, __PTRDIFF_TYPE__ __val) __CXX_NOEXCEPT { return __ato->fetch_sub(__val); }
+template<class __T> __LOCAL __T *(atomic_fetch_sub)(atomic<__T *> *__ato, __PTRDIFF_TYPE__ __val) __CXX_NOEXCEPT { return __ato->fetch_sub(__val); }
 
 #ifdef __USE_KOS
 template<class __T> __LOCAL bool (atomic_cmpxch)(atomic<__T> *__ato, __T __oldv, __T __newv, memory_order __succ, memory_order __fail) __CXX_NOEXCEPT { return __ato->cmpxch(__oldv,__newv,__succ,__fail); }

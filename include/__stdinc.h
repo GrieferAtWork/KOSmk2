@@ -98,7 +98,7 @@
    (defined(__cpp_constexpr) && __cpp_constexpr >= 200704) || \
    (defined(__IBMCPP__) && defined(__IBMCPP_CONSTEXPR) && (__IBMCPP_CONSTEXPR+0)) || \
    (defined(__SUNPRO_CC) && __SUNPRO_CC >= 0x5130) || \
-   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,6,0)) || \
+   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,6,0) && !defined(__INTELLISENSE__)) || \
    (defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023026))
 #   define __COMPILER_HAVE_CXX11_CONSTEXPR 1
 #   define __CXX11_CONSTEXPR          constexpr
@@ -120,7 +120,7 @@
 #   define __CXX14_CONSTEXPR_OR_CONST const
 #endif
 #if defined(__cplusplus) && (__has_feature(cxx_noexcept) || \
-   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,6,0)) || \
+   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,6,0) && !defined(__INTELLISENSE__)) || \
    (defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190021730))
 #   define __COMPILER_HAVE_CXX11_NOEXCEPT 1
 #   define __CXX_NOEXCEPT noexcept
