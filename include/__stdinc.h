@@ -148,24 +148,13 @@
 #endif
 
 #ifdef __cplusplus
-/* Mark the wchar_t type as already being defined when pre-defined by the compiler */
-#if !defined(__wchar_t_defined) && \
-    (defined(_NATIVE_WCHAR_T_DEFINED) || defined(__GNUC__))
-#   define __wchar_t_defined 1
-#endif
-#   define __NAMESPACE_STD_EXISTS     1
-#   define __NAMESPACE_STD_BEGIN      namespace std {
-#   define __NAMESPACE_STD_END        }
-#   define __NAMESPACE_STD_SYM        ::std::
-#   define __NAMESPACE_STD_USING_(x)
-#   define __NAMESPACE_STD_USING_1(x)
-#   define __NAMESPACE_STD_USING___CXX_SYSTEM_HEADER(x) using std::x;
-#   define __NAMESPACE_STD_USINGX2(d) __NAMESPACE_STD_USING_##d
-#   define __NAMESPACE_STD_USINGX1(d) __NAMESPACE_STD_USINGX2(d)
-#   define __NAMESPACE_STD_USING(x)   __NAMESPACE_STD_USINGX1(__CXX_SYSTEM_HEADER)(x)
-#   define __NAMESPACE_INT_BEGIN      namespace __int {
-#   define __NAMESPACE_INT_END        }
-#   define __NAMESPACE_INT_SYM        ::__int::
+#   define __NAMESPACE_STD_BEGIN    namespace std {
+#   define __NAMESPACE_STD_END      }
+#   define __NAMESPACE_STD_SYM      ::std::
+#   define __NAMESPACE_STD_USING(x) using ::std::x;
+#   define __NAMESPACE_INT_BEGIN    namespace __int {
+#   define __NAMESPACE_INT_END      }
+#   define __NAMESPACE_INT_SYM      ::__int::
 #else
 #   define __NAMESPACE_STD_BEGIN    /* nothing */
 #   define __NAMESPACE_STD_END      /* nothing */
@@ -406,7 +395,7 @@ public:
 #   define NDEBUG 1
 #endif
 #else
-#ifdef __NAMESPACE_STD_EXISTS
+#ifdef __cplusplus
 #ifdef __CC__
 __NAMESPACE_STD_BEGIN
 struct _IO_FILE;

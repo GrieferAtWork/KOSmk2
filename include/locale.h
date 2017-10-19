@@ -174,9 +174,12 @@ __LIBC struct lconv *(__LIBCCALL localeconv)(void);
 #endif
 
 __NAMESPACE_STD_END
+
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(lconv)
 __NAMESPACE_STD_USING(setlocale)
 __NAMESPACE_STD_USING(localeconv)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 
 #if defined(__USE_XOPEN2K8)

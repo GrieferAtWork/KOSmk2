@@ -438,6 +438,11 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #   define __NULLPTR ((void *)0)
 #endif
 
+/* Mark the wchar_t type as already being defined when pre-defined by the compiler */
+#ifdef __cplusplus
+#define __wchar_t_defined 1
+#endif
+
 
 /* Define varargs macros expected by system headers. */
 #if __has_builtin(__builtin_va_list) || \

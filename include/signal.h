@@ -51,13 +51,13 @@ __SYSDECL_BEGIN
 
 /* An integral type that can be modified atomically, without the
    possibility of a signal arriving in the middle of the operation.  */
-#ifndef __sig_atomic_t_defined
-#define __sig_atomic_t_defined 1
+
 __NAMESPACE_STD_BEGIN
 typedef __sig_atomic_t sig_atomic_t;
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(sig_atomic_t)
-#endif
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __CRT_GLC
 #ifndef __sigset_t_defined
@@ -70,11 +70,11 @@ typedef __sigset_t sigset_t;
 #ifndef __pid_t_defined
 #define __pid_t_defined 1
 typedef __pid_t pid_t;
-#endif
+#endif /* !__pid_t_defined */
 #ifndef __uid_t_defined
 #define __uid_t_defined 1
 typedef __uid_t uid_t;
-#endif
+#endif /* !__uid_t_defined */
 #endif /* __USE_XOPEN || __USE_XOPEN2K */
 
 #ifdef __USE_GNU
@@ -99,7 +99,9 @@ typedef __size_t size_t;
 __NAMESPACE_STD_BEGIN
 __LIBC int (__LIBCCALL raise)(int __sig);
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(raise)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __CRT_GLC
 __REDIRECT(__LIBC,,__sighandler_t,__LIBCCALL,__sysv_signal,(int __sig, __sighandler_t __handler),sysv_signal,(__sig,__handler))
@@ -135,7 +137,9 @@ __REDIRECT(__LIBC,,__sighandler_t,__LIBCCALL,signal,(int __sig, __sighandler_t _
 #endif /* !__USE_DOS */
 __NAMESPACE_STD_END
 #endif /* !__USE_MISC */
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(signal)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __CRT_GLC
 #ifdef __USE_XOPEN

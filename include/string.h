@@ -26,7 +26,6 @@
 
 __SYSDECL_BEGIN
 
-#ifdef __NAMESPACE_STD_EXISTS
 #ifndef __std_size_t_defined
 #define __std_size_t_defined 1
 __NAMESPACE_STD_BEGIN
@@ -39,39 +38,32 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(size_t)
 #endif /* !__size_t_defined */
 #endif /* !__CXX_SYSTEM_HEADER */
-#else /* __NAMESPACE_STD_EXISTS */
-#ifndef __size_t_defined
-#define __size_t_defined 1
-typedef __SIZE_TYPE__ size_t;
-#endif /* !__size_t_defined */
-#endif /* !__NAMESPACE_STD_EXISTS */
 
 #ifndef NULL
 #define NULL __NULLPTR
 #endif
 
 __NAMESPACE_STD_BEGIN
-#ifndef __memcpy_defined
+#ifndef __std_memcpy_defined
+#define __std_memcpy_defined 1
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes);
-#endif /* !__memcpy_defined */
-#ifndef __memmove_defined
+#endif /* !__std_memcpy_defined */
+#ifndef __std_memmove_defined
+#define __std_memmove_defined 1
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memmove)(void *__dst, void const *__src, size_t __n_bytes);
-#endif /* !__memmove_defined */
-#ifndef __memset_defined
-__LIBC __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memset)(void *__dst, int __byte, size_t __n_bytes);
-#endif /* !__memset_defined */
-#ifndef __memcmp_defined
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcmp)(void const *__a, void const *__b, size_t __n_bytes);
-#endif /* !__memcmp_defined */
-#ifndef __strlen_defined
+#endif /* !__std_memmove_defined */
+#ifndef __std_strlen_defined
+#define __std_strlen_defined 1
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strlen)(char const *__restrict __s);
-#endif /* !__strlen_defined */
-#ifndef __strcmp_defined
+#endif /* !__std_strlen_defined */
+__LIBC __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memset)(void *__dst, int __byte, size_t __n_bytes);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcmp)(void const *__a, void const *__b, size_t __n_bytes);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strcmp)(char const *__s1, char const *__s2);
-#endif /* !__strcmp_defined */
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strncmp)(char const *__s1, char const *__s2, size_t __n);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strstr)(char const *__haystack, char const *__needle);
 __NAMESPACE_STD_END
+
+#ifndef __CXX_SYSTEM_HEADER
 #ifndef __memcpy_defined
 #define __memcpy_defined 1
 __NAMESPACE_STD_USING(memcpy)
@@ -80,24 +72,16 @@ __NAMESPACE_STD_USING(memcpy)
 #define __memmove_defined 1
 __NAMESPACE_STD_USING(memmove)
 #endif /* !__memmove_defined */
-#ifndef __memset_defined
-#define __memset_defined 1
-__NAMESPACE_STD_USING(memset)
-#endif /* !__memset_defined */
-#ifndef __memcmp_defined
-#define __memcmp_defined 1
-__NAMESPACE_STD_USING(memcmp)
-#endif /* !__memcmp_defined */
 #ifndef __strlen_defined
 #define __strlen_defined 1
 __NAMESPACE_STD_USING(strlen)
 #endif /* !__strlen_defined */
-#ifndef __strcmp_defined
-#define __strcmp_defined 1
+__NAMESPACE_STD_USING(memset)
+__NAMESPACE_STD_USING(memcmp)
 __NAMESPACE_STD_USING(strcmp)
-#endif /* !__strcmp_defined */
 __NAMESPACE_STD_USING(strncmp)
 __NAMESPACE_STD_USING(strstr)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifndef __KERNEL__
 __NAMESPACE_STD_BEGIN
@@ -112,6 +96,7 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL strspn)(char co
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strpbrk)(char const *__s, char const *__accept);
 __LIBC __NONNULL((2)) char *(__LIBCCALL strtok)(char *__restrict __s, char const *__restrict __delim);
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(strcpy)
 __NAMESPACE_STD_USING(strncpy)
 __NAMESPACE_STD_USING(strcat)
@@ -122,6 +107,7 @@ __NAMESPACE_STD_USING(strcspn)
 __NAMESPACE_STD_USING(strspn)
 __NAMESPACE_STD_USING(strpbrk)
 __NAMESPACE_STD_USING(strtok)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __DOS_COMPAT__
 __LOCAL __NONNULL((1)) void (__LIBCCALL __bzero)(void *__s, size_t __n) { __NAMESPACE_STD_SYM memset(__s,0,__n); }
@@ -143,36 +129,27 @@ __LIBC __PORT_NODOS_ALT(strerror) __WUNUSED __ATTR_RETNONNULL __NONNULL((2)) cha
 #endif /* __USE_XOPEN2K */
 #endif /* !__KERNEL__ */
 
-#ifndef __memchr_defined
-#define __memchr_defined 1
 __NAMESPACE_STD_BEGIN
 #ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
 extern "C++" {
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void *,__LIBCCALL,memchr,(void *__restrict __haystack, int __needle, size_t __n_bytes),memchr,(__haystack,__needle,__n_bytes))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void const *,__LIBCCALL,memchr,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memchr,(__haystack,__needle,__n_bytes))
-}
-#else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
-#endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
-__NAMESPACE_STD_END
-__NAMESPACE_STD_USING(memchr)
-#endif /* !__memchr_defined */
-
-__NAMESPACE_STD_BEGIN
-#ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
-extern "C++" {
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,strchr,(char *__restrict __haystack, int __needle),strchr,(__haystack,__needle))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,strchr,(char const *__restrict __haystack, int __needle),strchr,(__haystack,__needle))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,strrchr,(char *__restrict __haystack, int __needle),strrchr,(__haystack,__needle))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,strrchr,(char const *__restrict __haystack, int __needle),strrchr,(__haystack,__needle))
 }
 #else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchr)(char const *__restrict __haystack, int __needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strrchr)(char const *__restrict __haystack, int __needle);
 #endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
+__NAMESPACE_STD_USING(memchr)
 __NAMESPACE_STD_USING(strchr)
 __NAMESPACE_STD_USING(strrchr)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 
 #if defined(__USE_KOS) && (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
@@ -183,7 +160,9 @@ __LIBC __PORT_KOSONLY __WUNUSED char const *(__LIBCCALL strerrorname_s)(int __er
 __NAMESPACE_STD_BEGIN
 __LIBC __WUNUSED __ATTR_RETNONNULL char *(__LIBCCALL strerror)(int __errnum);
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(strerror)
+#endif /* !__CXX_SYSTEM_HEADER */
 #endif /* !__KERNEL__ */
 
 #ifdef __USE_XOPEN2K8
@@ -1118,11 +1097,14 @@ __LIBC __ssize_t (__ATTR_CDECL __libc_sprintf)(char *__restrict __buf, char cons
 #define ___scprintf_defined 1
 __LIBC int (__ATTR_CDECL _scprintf)(char const *__restrict __format, ...);
 #endif /* !___scprintf_defined */
-#ifndef __sprintf_defined
-#define __sprintf_defined
+#ifndef __std_sprintf_defined
+#define __std_sprintf_defined
 __NAMESPACE_STD_BEGIN
 __LIBC __ssize_t (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
 __NAMESPACE_STD_END
+#endif /* !__std_sprintf_defined */
+#ifndef __sprintf_defined
+#define __sprintf_defined
 __NAMESPACE_STD_USING(sprintf)
 #endif /* !__sprintf_defined */
 #endif /* __NO_ASMNAME */
@@ -1165,18 +1147,24 @@ __LIBC __ssize_t (__ATTR_CDECL __libc_snprintf)(char *__restrict __buf, size_t _
 #else /* !__NO_ASMNAME */
 #define __libc_sprintf(...)   __NAMESPACE_STD_SYM sprintf(__VA_ARGS__)
 #define __libc_snprintf(...)  __NAMESPACE_STD_SYM snprintf(__VA_ARGS__)
-#ifndef __sprintf_defined
-#define __sprintf_defined
+#ifndef __std_sprintf_defined
+#define __std_sprintf_defined
 __NAMESPACE_STD_BEGIN
 __LIBC __ssize_t (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
 __NAMESPACE_STD_END
+#endif /* !__std_sprintf_defined */
+#ifndef __std_snprintf_defined
+#define __std_snprintf_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC __ssize_t (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...);
+__NAMESPACE_STD_END
+#endif /* !__std_snprintf_defined */
+#ifndef __sprintf_defined
+#define __sprintf_defined
 __NAMESPACE_STD_USING(sprintf)
 #endif /* !__sprintf_defined */
 #ifndef __snprintf_defined
 #define __snprintf_defined 1
-__NAMESPACE_STD_BEGIN
-__LIBC __ssize_t (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...);
-__NAMESPACE_STD_END
 __NAMESPACE_STD_USING(snprintf)
 #endif /* !__snprintf_defined */
 #endif /* __NO_ASMNAME */
@@ -1470,35 +1458,44 @@ __REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_w
 __REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsupr_l,(wchar_t *__restrict __str, __locale_t __locale),wcsupr_l,(__str,__locale))
 #endif /* !__wcsrev_defined */
 
-#ifndef __wcscmp_defined
-#define __wcscmp_defined 1
+#ifndef __std_wcscmp_defined
+#define __std_wcscmp_defined 1
 __NAMESPACE_STD_BEGIN
 __LIBC __ATTR_PURE int (__LIBCCALL wcscmp)(wchar_t const *__str1, wchar_t const *__str2);
 __LIBC __ATTR_PURE int (__LIBCCALL wcsncmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars);
 __LIBC int (__LIBCCALL wcscoll)(wchar_t const *__str1, wchar_t const *__str2);
 __LIBC size_t (__LIBCCALL wcsxfrm)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
 __NAMESPACE_STD_END
+#endif /* !__std_wcscmp_defined */
+#ifndef __wcscmp_defined
+#define __wcscmp_defined 1
 __NAMESPACE_STD_USING(wcscmp)
 __NAMESPACE_STD_USING(wcsncmp)
 __NAMESPACE_STD_USING(wcscoll)
 __NAMESPACE_STD_USING(wcsxfrm)
 #endif /* !__wcscmp_defined */
 
-#ifndef __wcsspn_defined
-#define __wcsspn_defined 1
+#ifndef __std_wcsspn_defined
+#define __std_wcsspn_defined 1
 __NAMESPACE_STD_BEGIN
 __LIBC __ATTR_PURE size_t (__LIBCCALL wcsspn)(wchar_t const *__haystack, wchar_t const *__accept);
 __LIBC __ATTR_PURE size_t (__LIBCCALL wcscspn)(wchar_t const *__haystack, wchar_t const *__reject);
 __NAMESPACE_STD_END
+#endif /* !__std_wcsspn_defined */
+#ifndef __wcsspn_defined
+#define __wcsspn_defined 1
 __NAMESPACE_STD_USING(wcsspn)
 __NAMESPACE_STD_USING(wcscspn)
 #endif /* !__wcsspn_defined */
 
-#ifndef __wcslen_defined
-#define __wcslen_defined 1
+#ifndef __std_wcslen_defined
+#define __std_wcslen_defined 1
 __NAMESPACE_STD_BEGIN
 __LIBC size_t (__LIBCCALL wcslen)(wchar_t const *__str);
 __NAMESPACE_STD_END
+#endif /* !__std_wcslen_defined */
+#ifndef __wcslen_defined
+#define __wcslen_defined 1
 __NAMESPACE_STD_USING(wcslen)
 #endif /* !__wcslen_defined */
 
@@ -1507,8 +1504,8 @@ __NAMESPACE_STD_USING(wcslen)
 __LIBC size_t (__LIBCCALL wcsnlen)(wchar_t const *__src, size_t __max_chars);
 #endif /* !__wcsnlen_defined */
 
-#ifndef __wcschr_defined
-#define __wcschr_defined 1
+#ifndef __std_wcschr_defined
+#define __std_wcschr_defined 1
 __NAMESPACE_STD_BEGIN
 #ifdef __CORRECT_ISO_CPP_WCHAR_H_PROTO
 extern "C++" {
@@ -1522,18 +1519,24 @@ __LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcschr)(wchar_t const *__str, 
 __LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcsrchr)(wchar_t const *__str, wchar_t __needle);
 #endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 __NAMESPACE_STD_END
+#endif /* !__std_wcschr_defined */
+#ifndef __wcschr_defined
+#define __wcschr_defined 1
 __NAMESPACE_STD_USING(wcschr)
 __NAMESPACE_STD_USING(wcsrchr)
 #endif /* !__wcschr_defined */
 
-#ifndef __wcscpy_defined
-#define __wcscpy_defined 1
+#ifndef __std_wcscpy_defined
+#define __std_wcscpy_defined 1
 __NAMESPACE_STD_BEGIN
 __LIBC wchar_t *(__LIBCCALL wcscpy)(wchar_t *__dst, wchar_t const *__src);
 __LIBC wchar_t *(__LIBCCALL wcscat)(wchar_t *__dst, wchar_t const *__src);
 __LIBC wchar_t *(__LIBCCALL wcsncat)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
 __LIBC wchar_t *(__LIBCCALL wcsncpy)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
 __NAMESPACE_STD_END
+#endif /* !__std_wcscpy_defined */
+#ifndef __wcscpy_defined
+#define __wcscpy_defined 1
 __NAMESPACE_STD_USING(wcscpy)
 __NAMESPACE_STD_USING(wcscat)
 __NAMESPACE_STD_USING(wcsncat)
@@ -1546,8 +1549,8 @@ __REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
                 wchar_t *,__LIBCCALL,wcsdup,(wchar_t const *__restrict __str),_wcsdup,(__str))
 #endif /* !__wcsdup_defined */
 
-#ifndef __wcsstr_defined
-#define __wcsstr_defined 1
+#ifndef __std_wcsstr_defined
+#define __std_wcsstr_defined 1
 __NAMESPACE_STD_BEGIN
 #ifdef __CORRECT_ISO_CPP_WCHAR_H_PROTO
 extern "C++" {
@@ -1561,6 +1564,9 @@ __LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcspbrk)(wchar_t const *__hays
 __LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle);
 #endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 __NAMESPACE_STD_END
+#endif /* !__std_wcsstr_defined */
+#ifndef __wcsstr_defined
+#define __wcsstr_defined 1
 __NAMESPACE_STD_USING(wcspbrk)
 __NAMESPACE_STD_USING(wcsstr)
 #endif /* !__wcsstr_defined */
@@ -1577,15 +1583,18 @@ __LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcswcs)(wchar_t const *__haystack, wchar
 #endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 #endif /* !__wcswcs_defined */
 
-#ifndef __wcstok_defined
-#define __wcstok_defined 1
+#ifndef __std_wcstok_defined
+#define __std_wcstok_defined 1
 #ifdef __CRT_DOS
 __NAMESPACE_STD_BEGIN
 __REDIRECT_IFKOS(__LIBC,__PORT_NODOS_ALT(wcstok_s),wchar_t *,__LIBCCALL,wcstok,
                 (wchar_t *__str, wchar_t const *__delim),__wcstok_f,(__str,__delim))
 __NAMESPACE_STD_END
-__NAMESPACE_STD_USING(wcstok)
 #endif /* __CRT_DOS */
+#endif /* !__std_wcstok_defined */
+#ifndef __wcstok_defined
+#define __wcstok_defined 1
+__NAMESPACE_STD_USING(wcstok)
 #endif /* !__wcstok_defined */
 
 #ifndef _WSTRING_DEFINED

@@ -75,9 +75,11 @@ __LOCAL __ATTR_NORETURN void (__LIBCCALL longjmp)(jmp_buf __buf, int __sig) {
 __LIBC __ATTR_NORETURN void (__LIBCCALL longjmp)(jmp_buf __buf, int __sig);
 #endif
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(jmp_buf)
 __NAMESPACE_STD_USING(setjmp)
 __NAMESPACE_STD_USING(longjmp)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __USE_POSIX
 struct __sigjmp_buf {

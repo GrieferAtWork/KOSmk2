@@ -86,21 +86,29 @@ __LIBC __PORT_DOSONLY void (__LIBCCALL _endthreadex)(__UINT32_TYPE__ __exitcode)
 
 #ifndef _CRT_TERMINATE_DEFINED
 #define _CRT_TERMINATE_DEFINED 1
-#ifndef __exit_defined
-#define __exit_defined 1
+#ifndef __std_exit_defined
+#define __std_exit_defined 1
 __NAMESPACE_STD_BEGIN
 __LIBC __ATTR_NORETURN void (__LIBCCALL exit)(int __status);
 __NAMESPACE_STD_END
-__NAMESPACE_STD_USING(exit)
-#endif /* !__exit_defined */
-
-#ifndef __abort_defined
-#define __abort_defined 1
+#endif /* !__std_exit_defined */
+#ifndef __std_abort_defined
+#define __std_abort_defined 1
 __NAMESPACE_STD_BEGIN
 __LIBC __ATTR_NORETURN void (__LIBCCALL abort)(void);
 __NAMESPACE_STD_END
+#endif /* !__std_abort_defined */
+
+#ifndef __CXX_SYSTEM_HEADER
+#ifndef __exit_defined
+#define __exit_defined 1
+__NAMESPACE_STD_USING(exit)
+#endif /* !__exit_defined */
+#ifndef __abort_defined
+#define __abort_defined 1
 __NAMESPACE_STD_USING(abort)
 #endif /* !__abort_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifndef ___exit_defined
 #define ___exit_defined 1
@@ -147,13 +155,18 @@ __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_spawnvp,(int __mode, cha
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,,intptr_t,__LIBCCALL,_spawnvpe,(int __mode, char const *__file, __TARGV, __TENVP),spawnvpe,(__mode,__file,___argv,___envp));
 #endif /* __CRT_DOS */
 
-#ifndef __system_defined
-#define __system_defined 1
+#ifndef __std_system_defined
+#define __std_system_defined 1
 __NAMESPACE_STD_BEGIN
 __LIBC int (__LIBCCALL system)(char const *__command);
 __NAMESPACE_STD_END
+#endif /* !__std_system_defined */
+#ifndef __CXX_SYSTEM_HEADER
+#ifndef __system_defined
+#define __system_defined 1
 __NAMESPACE_STD_USING(system)
 #endif /* !__system_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __CRT_DOS
 #ifndef _WPROCESS_DEFINED

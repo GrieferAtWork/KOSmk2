@@ -243,14 +243,18 @@ __LIBC __UINTMAX_TYPE__ (__LIBCCALL wcstoumax)(__gwchar_t const *__restrict __np
 
 __NAMESPACE_STD_END
 
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(imaxdiv_t)
+#endif /* !__CXX_SYSTEM_HEADER */
 #ifndef __KERNEL__
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(imaxabs)
 __NAMESPACE_STD_USING(imaxdiv)
 __NAMESPACE_STD_USING(strtoimax)
 __NAMESPACE_STD_USING(strtoumax)
 __NAMESPACE_STD_USING(wcstoimax)
 __NAMESPACE_STD_USING(wcstoumax)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __USE_DOS
 #if __SIZEOF_INTMAX_T__ == __SIZEOF_LONG__

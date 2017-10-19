@@ -111,11 +111,14 @@ INTDEF int (LIBCCALL libc__tolower)(int ch);
 typedef __WINT_TYPE__ wint_t;
 #endif /* !__wint_t_defined */
 
-#ifndef __wctype_t_defined
-#define __wctype_t_defined 1
+#ifndef __std_wctype_t_defined
+#define __std_wctype_t_defined 1
 __NAMESPACE_STD_BEGIN
 typedef unsigned long int wctype_t;
 __NAMESPACE_STD_END
+#endif /* !__std_wctype_t_defined */
+#ifndef __wctype_t_defined
+#define __wctype_t_defined 1
 __NAMESPACE_STD_USING(wctype_t)
 #endif /* !__wctype_t_defined */
 

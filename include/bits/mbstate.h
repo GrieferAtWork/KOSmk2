@@ -62,10 +62,12 @@ __NAMESPACE_STD_END
 #endif /* !__std_mbstate_t_defined */
 
 #if defined(__USE_GNU) || defined(__USE_XOPEN2K8)
+#ifndef __CXX_SYSTEM_HEADER
 #ifndef __mbstate_t_defined
 #define __mbstate_t_defined 1
 __NAMESPACE_STD_USING(mbstate_t)
 #endif /* !__mbstate_t_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
 #endif /* __USE_GNU || __USE_XOPEN2K8 */
 
 #ifdef __USE_KOS

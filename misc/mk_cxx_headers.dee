@@ -28,7 +28,7 @@ const text = "\
 #ifdef __CXX_SYSTEM_HEADER\n\
 #include \"{name}.h\"\n\
 #else /* __CXX_SYSTEM_HEADER */\n\
-#define __CXX_SYSTEM_HEADER\n\
+#define __CXX_SYSTEM_HEADER 1\n\
 #include \"{name}.h\"\n\
 #undef __CXX_SYSTEM_HEADER\n\
 #endif /* !__CXX_SYSTEM_HEADER */\n\

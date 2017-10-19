@@ -41,6 +41,8 @@
 #define _TIME64_SOURCE 1
 
 #ifdef __cplusplus
+//#include <c++/current/map>
+#include <cwchar>
 #include <atomic>
 #include <new>
 #endif

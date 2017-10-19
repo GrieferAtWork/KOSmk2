@@ -28,13 +28,22 @@
  *    replaced to relative paths, causing libstdc++ to use relative include
  *    directives when pulling in any of its own headers that isn't provided by KOS.
  */
-const libstdcxx_include_root  = "build-binutils-i686-kos/i686-kos/include-c++/6.2.0";
-const libstdcxx_include_root2 = "build-binutils-i686-kos/i686-kos/include-c++/6.2.0/i686-kos";
-const kos_include_folder      = "../include";
+local libstdcxx_include_root  = "build-binutils-i686-kos/i686-kos/include-c++/6.2.0";
+local libstdcxx_include_root2 = "build-binutils-i686-kos/i686-kos/include-c++/6.2.0/i686-kos";
+local kos_include_folder      = "../include";
 
 #include <file>
 #include <fs>
 #include <util>
+
+#ifdef __WINDOWS__
+if (fs::isdir(kos_include_folder+"/c++/current")) {
+	/* In case you decide to move the headers into the real include
+	 * tree, so-as to fix source navigation in Visual studio... */
+	libstdcxx_include_root  = kos_include_folder+"/c++/current";
+	libstdcxx_include_root2 = kos_include_folder+"/c++/current/i686-kos";
+}
+#endif
 
 function fix_file(filename) {
 	filename = filename.replace("\\","/");

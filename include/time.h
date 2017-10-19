@@ -32,64 +32,35 @@
 
 __SYSDECL_BEGIN
 
-#ifdef __NAMESPACE_STD_EXISTS
-
 __NAMESPACE_STD_BEGIN
-
 #ifndef __std_size_t_defined
 #define __std_size_t_defined 1
 typedef __SIZE_TYPE__ size_t;
 #endif /* !__std_size_t_defined */
-
 #ifndef __std_clock_t_defined
 #define __std_clock_t_defined 1
 typedef __typedef_clock_t clock_t;
 #endif /* !__std_clock_t_defined */
-
 #ifndef __std_time_t_defined
 #define __std_time_t_defined 1
 typedef __TM_TYPE(time) time_t;
 #endif /* !__std_time_t_defined */
-
 __NAMESPACE_STD_END
 
 #ifndef __CXX_SYSTEM_HEADER
-
 #ifndef __size_t_defined
 #define __size_t_defined 1
 __NAMESPACE_STD_USING(size_t)
 #endif /* !__size_t_defined */
-
 #ifndef __clock_t_defined
 #define __clock_t_defined 1
 __NAMESPACE_STD_USING(clock_t)
 #endif /* !__clock_t_defined */
-
 #ifndef __time_t_defined
 #define __time_t_defined 1
 __NAMESPACE_STD_USING(time_t)
 #endif /* !__time_t_defined */
-
 #endif /* !__CXX_SYSTEM_HEADER */
-
-#else /* __NAMESPACE_STD_EXISTS */
-
-#ifndef __size_t_defined
-#define __size_t_defined 1
-typedef __SIZE_TYPE__ size_t;
-#endif /* !__size_t_defined */
-
-#ifndef __clock_t_defined
-#define __clock_t_defined 1
-typedef __typedef_clock_t clock_t;
-#endif /* !__clock_t_defined */
-
-#ifndef __time_t_defined
-#define __time_t_defined 1
-typedef __TM_TYPE(time) time_t;
-#endif /* !__time_t_defined */
-
-#endif /* !__NAMESPACE_STD_EXISTS */
 
 #ifndef NULL
 #define NULL __NULLPTR
@@ -152,10 +123,13 @@ struct tm {
 };
 __NAMESPACE_STD_END
 #endif /* !__std_tm_defined */
+
+#ifndef __CXX_SYSTEM_HEADER
 #ifndef __tm_defined
 #define __tm_defined 1
 __NAMESPACE_STD_USING(tm)
 #endif /* !__tm_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __USE_POSIX199309
 struct itimerspec {
@@ -274,6 +248,8 @@ __REDIRECT_TM_FUNC(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,localtime,(time_t con
 __LIBC size_t (__LIBCCALL strftime)(char *__restrict __s, size_t __maxsize, char const *__restrict __format, struct tm const *__restrict __tp);
 __LIBC char *(__LIBCCALL asctime)(struct tm const *__tp);
 __NAMESPACE_STD_END
+
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(clock)
 __NAMESPACE_STD_USING(time)
 __NAMESPACE_STD_USING(difftime)
@@ -283,6 +259,7 @@ __NAMESPACE_STD_USING(asctime)
 __NAMESPACE_STD_USING(ctime)
 __NAMESPACE_STD_USING(gmtime)
 __NAMESPACE_STD_USING(localtime)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __USE_TIME64
 #if (defined(__PE__) || defined(__DOS_COMPAT__)) && defined(__CRT_DOS)
@@ -868,11 +845,14 @@ __REDIRECT2(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime_s,(wchar_t *__restr
 #endif /* !__USE_TIME_BITS64 */
 #endif /* __CRT_DOS */
 
-#ifndef __wcsftime_defined
-#define __wcsftime_defined 1
+#ifndef __std_wcsftime_defined
+#define __std_wcsftime_defined 1
 __NAMESPACE_STD_BEGIN
 __LIBC size_t (__LIBCCALL wcsftime)(wchar_t *__restrict __buf, size_t __maxlen, wchar_t const *__restrict __format, struct tm const *__restrict __ptm);
 __NAMESPACE_STD_END
+#endif /* !__std_wcsftime_defined */
+#ifndef __wcsftime_defined
+#define __wcsftime_defined 1
 __NAMESPACE_STD_USING(wcsftime)
 #endif /* !__wcsftime_defined */
 #endif /* !_WTIME_DEFINED */

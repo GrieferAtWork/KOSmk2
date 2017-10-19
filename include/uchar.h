@@ -31,7 +31,6 @@
 __SYSDECL_BEGIN
 
 /* Define 'size_t' */
-#ifdef __NAMESPACE_STD_EXISTS
 #ifndef __std_size_t_defined
 #define __std_size_t_defined 1
 __NAMESPACE_STD_BEGIN
@@ -44,12 +43,6 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(size_t)
 #endif /* !__size_t_defined */
 #endif /* !__CXX_SYSTEM_HEADER */
-#else /* STD-namespace */
-#ifndef __size_t_defined
-#define __size_t_defined 1
-typedef __SIZE_TYPE__ size_t;
-#endif /* !__size_t_defined */
-#endif /* !STD-namespace */
 
 #ifndef __char16_t_defined
 #define __char16_t_defined 1

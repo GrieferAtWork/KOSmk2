@@ -63,18 +63,24 @@ struct _finddata64i32_t;
 #ifndef __KERNEL__
 
 /* Functions with the correct names, also present in other headers. */
-#ifndef __remove_defined
-#define __remove_defined 1
+#ifndef __std_remove_defined
+#define __std_remove_defined 1
 __NAMESPACE_STD_BEGIN
 __REDIRECT_UFS(__LIBC,__NONNULL((1)),int,__LIBCCALL,remove,(char const *__file),remove,(__file))
 __NAMESPACE_STD_END
+#endif /* !__std_remove_defined */
+#ifndef __remove_defined
+#define __remove_defined 1
 __NAMESPACE_STD_USING(remove)
 #endif /* !__remove_defined */
-#ifndef __rename_defined
-#define __rename_defined 1
+#ifndef __std_rename_defined
+#define __std_rename_defined 1
 __NAMESPACE_STD_BEGIN
 __REDIRECT_UFS(__LIBC,__NONNULL((1)),int,__LIBCCALL,rename,(char const *__old, char const *__new),rename,(__old,__new))
 __NAMESPACE_STD_END
+#endif /* !__std_rename_defined */
+#ifndef __rename_defined
+#define __rename_defined 1
 __NAMESPACE_STD_USING(rename)
 #endif /* !__rename_defined */
 #ifndef __unlink_defined

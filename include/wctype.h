@@ -48,25 +48,18 @@
 
 __SYSDECL_BEGIN
 
-#ifdef __NAMESPACE_STD_EXISTS
-__NAMESPACE_STD_BEGIN
 #ifndef __std_wint_t_defined
 #define __std_wint_t_defined 1
+__NAMESPACE_STD_BEGIN
 typedef __WINT_TYPE__ wint_t;
-#endif /* !__std_wint_t_defined */
 __NAMESPACE_STD_END
+#endif /* !__std_wint_t_defined */
 #ifndef __CXX_SYSTEM_HEADER
 #ifndef __wint_t_defined
 #define __wint_t_defined 1
 __NAMESPACE_STD_USING(wint_t)
 #endif /* !__wint_t_defined */
 #endif /* !__CXX_SYSTEM_HEADER */
-#else /* STD-namespace */
-#ifndef __wint_t_defined
-#define __wint_t_defined 1
-typedef __WINT_TYPE__ wint_t;
-#endif /* !__wint_t_defined */
-#endif /* !STD-namespace */
 
 #ifndef __wchar_t_defined
 #define __wchar_t_defined 1
@@ -85,7 +78,9 @@ typedef wchar_t wctrans_t;
 typedef __int32_t const *wctrans_t;
 #endif /* !__DOS_COMPAT__ */
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(wctrans_t)
+#endif /* !__CXX_SYSTEM_HEADER */
 #endif /* __USE_ISOC99 || __USE_GNU */
 
 #ifndef __KERNEL__
@@ -93,8 +88,10 @@ __NAMESPACE_STD_BEGIN
 __LIBC __WUNUSED wctrans_t __NOTHROW((__LIBCCALL wctrans)(char const *__prop));
 __LIBC __WUNUSED wint_t __NOTHROW((__LIBCCALL towctrans)(wint_t __wc, wctrans_t __desc));
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(wctrans)
 __NAMESPACE_STD_USING(towctrans)
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __USE_XOPEN2K8
 __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,iswalnum_l,(wint_t __wc, __locale_t __locale),_iswalnum_l,(__wc,__locale))

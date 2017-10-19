@@ -67,7 +67,11 @@ __SYSDECL_BEGIN
 #define __MATH_DECLARING_DOUBLE  1
 #define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
+#ifdef __CXX_SYSTEM_HEADER
+#define __MATHNS_USING(name,r)   /* nothing */
+#else
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##r)
+#endif
 #include <bits/mathcalls.h>
 #undef  _Mdouble_
 #undef  __MATH_PRECNAME
@@ -85,7 +89,11 @@ __SYSDECL_BEGIN
 #define __MATH_DECLARING_DOUBLE  0
 #define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
+#ifdef __CXX_SYSTEM_HEADER
+#define __MATHNS_USING(name,r)   /* nothing */
+#else
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##f##r)
+#endif
 #include <bits/mathcalls.h>
 #undef  _Mdouble_
 #undef  __MATH_PRECNAME
@@ -103,7 +111,11 @@ __SYSDECL_BEGIN
 #define __MATH_DECLARE_LDOUBLE   1
 #define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
+#ifdef __CXX_SYSTEM_HEADER
+#define __MATHNS_USING(name,r)   /* nothing */
+#else
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##l##r)
+#endif
 #include <bits/mathcalls.h>
 #undef  _Mdouble_
 #undef  __MATH_PRECNAME

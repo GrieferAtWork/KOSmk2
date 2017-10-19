@@ -55,7 +55,7 @@ private:
 #ifdef __USE_DOS
 class bad_array_new_length: public bad_alloc {
 public:
-    bad_array_new_length(): bad_alloc("bad array new length") {}
+    bad_array_new_length() __CXX_NOEXCEPT: bad_alloc("bad array new length") {}
 };
 #endif /* __USE_DOS */
 

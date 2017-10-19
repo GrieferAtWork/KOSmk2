@@ -25,13 +25,18 @@
 
 __SYSDECL_BEGIN
 
-#ifndef __wctype_t_defined
-#define __wctype_t_defined 1
+#ifndef __std_wctype_t_defined
+#define __std_wctype_t_defined 1
 __NAMESPACE_STD_BEGIN
 typedef unsigned long int wctype_t;
 __NAMESPACE_STD_END
+#endif /* !__std_wctype_t_defined */
+#ifndef __CXX_SYSTEM_HEADER
+#ifndef __wctype_t_defined
+#define __wctype_t_defined 1
 __NAMESPACE_STD_USING(wctype_t)
 #endif /* !__wctype_t_defined */
+#endif /* !__CXX_SYSTEM_HEADER */
 
 #ifndef __KERNEL__
 #ifdef __CRT_GLC
@@ -86,7 +91,9 @@ __NAMESPACE_STD_BEGIN
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__kos_iswctype,
                   (wint_t __wc, wctype_t __desc),iswctype,(__wc,__desc))
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(__kos_iswctype)
+#endif /* !__CXX_SYSTEM_HEADER */
 #endif /* !____kos_iswctype_defined */
 #define iswalnum(wc)  __kos_iswctype((wc),_ISwalnum)
 #define iswalpha(wc)  __kos_iswctype((wc),_ISwalpha)
@@ -165,6 +172,7 @@ __LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswblank)(wint_t __wc));
 __LIBC __WUNUSED wint_t __NOTHROW((__LIBCCALL towlower)(wint_t __wc));
 __LIBC __WUNUSED wint_t __NOTHROW((__LIBCCALL towupper)(wint_t __wc));
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(iswalnum)
 __NAMESPACE_STD_USING(iswalpha)
 __NAMESPACE_STD_USING(iswcntrl)
@@ -183,11 +191,18 @@ __NAMESPACE_STD_USING(iswblank)
 #endif /* __USE_ISOC99 */
 __NAMESPACE_STD_USING(towlower)
 __NAMESPACE_STD_USING(towupper)
+#endif /* !__CXX_SYSTEM_HEADER */
+
 #if defined(__USE_KOS) || defined(__USE_DOS)
 __LIBC int __NOTHROW((__LIBCCALL iswascii)(wint_t __wc));
 #endif /* __USE_KOS || __USE_DOS */
 
 #ifdef __USE_DOS
+#ifndef __wctype_t_defined
+#define __wctype_t_defined 1
+__NAMESPACE_STD_USING(wctype_t)
+#endif /* !__wctype_t_defined */
+
 __REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswalnum_l,(wint_t __wc, __locale_t __locale),iswalnum_l,(__wc,__locale))
 __REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswalpha_l,(wint_t __wc, __locale_t __locale),iswalpha_l,(__wc,__locale))
 __REDIRECT_IFKOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iswcntrl_l,(wint_t __wc, __locale_t __locale),iswcntrl_l,(__wc,__locale))

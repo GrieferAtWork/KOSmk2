@@ -274,6 +274,10 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #define __WHILE1  while(1)
 #endif
 
+#ifdef __cplusplus
+#define __wchar_t_defined 1
+#endif
+
 
 #if 1
 #define __COMPILER_BARRIER()       __atomic_signal_fence(__ATOMIC_ACQ_REL)

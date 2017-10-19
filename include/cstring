@@ -3,7 +3,7 @@
 #ifdef __CXX_SYSTEM_HEADER
 #include "string.h"
 #else /* __CXX_SYSTEM_HEADER */
-#define __CXX_SYSTEM_HEADER
+#define __CXX_SYSTEM_HEADER 1
 #include "string.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */

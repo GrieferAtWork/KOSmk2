@@ -160,6 +160,7 @@ template<> struct __static_if<true> { bool __is_true__(); };
 #define __NO_builtin_constant_p  1
 #define __builtin_constant_p(x)  0
 #define __restrict_arr           __restrict
+#define __attribute__(x)         /* nothing */
 
 /* Define intrinsic barrier functions. */
 #ifdef __cplusplus
@@ -221,6 +222,10 @@ extern void (__cdecl _ReadWriteBarrier)(void);
 #else
 #   define __OPTIMIZE__ 3
 #endif
+#endif
+
+#ifdef _NATIVE_WCHAR_T_DEFINED
+#define __wchar_t_defined 1
 #endif
 
 

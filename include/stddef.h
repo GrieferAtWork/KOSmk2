@@ -30,7 +30,6 @@ __SYSDECL_BEGIN
 #endif
 
 #ifdef __CC__
-#ifdef __NAMESPACE_STD_EXISTS
 __NAMESPACE_STD_BEGIN
 
 #ifndef __std_ptrdiff_t_defined
@@ -62,36 +61,15 @@ __NAMESPACE_STD_END
 #define __ptrdiff_t_defined 1
 __NAMESPACE_STD_USING(ptrdiff_t)
 #endif /* !__ptrdiff_t_defined */
-
 #ifndef __size_t_defined
 #define __size_t_defined 1
 __NAMESPACE_STD_USING(size_t)
 #endif /* !__size_t_defined */
-
 #ifndef __max_align_t_defined
 #define __max_align_t_defined 1
 __NAMESPACE_STD_USING(max_align_t)
 #endif /* !__max_align_t_defined */
 #endif /* !__CXX_SYSTEM_HEADER */
-
-#else /* STD-namespace */
-
-#ifndef __ptrdiff_t_defined
-#define __ptrdiff_t_defined 1
-typedef __PTRDIFF_TYPE__ ptrdiff_t;
-#endif /* !__ptrdiff_t_defined */
-
-#ifndef __size_t_defined
-#define __size_t_defined 1
-typedef __SIZE_TYPE__ size_t;
-#endif /* !__size_t_defined */
-
-#ifndef __max_align_t_defined
-#define __max_align_t_defined 1
-typedef __MAX_ALIGN_TYPE__ max_align_t;
-#endif /* !__max_align_t_defined */
-
-#endif /* !STD-namespace */
 
 #ifndef __wchar_t_defined
 #define __wchar_t_defined 1

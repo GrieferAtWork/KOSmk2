@@ -61,8 +61,10 @@ __NAMESPACE_STD_BEGIN
 __LIBC __UINT16_TYPE__ const __chattr[256];
 __LOCAL bool __NOTHROW((__LIBCCALL __isctype)(char __c, __UINT16_TYPE__ __type)) { return __chattr[(__UINT8_TYPE__)__c] & __type; }
 __NAMESPACE_STD_END
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(__chattr)
 __NAMESPACE_STD_USING(__isctype)
+#endif /* !__CXX_SYSTEM_HEADER */
 #else /* __cplusplus */
 __LIBC __UINT16_TYPE__ const __chattr[256];
 #define __isctype(c,type) (__chattr[(__UINT8_TYPE__)(c)]&(__UINT16_TYPE__)type)
@@ -87,6 +89,7 @@ __LIBC __WUNUSED int __NOTHROW((__LIBCCALL isblank)(int __c));
 #endif /* __USE_ISOC99 */
 __NAMESPACE_STD_END
 
+#ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(isalpha)
 __NAMESPACE_STD_USING(isupper)
 __NAMESPACE_STD_USING(islower)
@@ -103,6 +106,7 @@ __NAMESPACE_STD_USING(tolower)
 #ifdef __USE_ISOC99
 __NAMESPACE_STD_USING(isblank)
 #endif /* __USE_ISOC99 */
+#endif /* !__CXX_SYSTEM_HEADER */
 #if defined(__USE_KOS) || defined(__USE_DOS)
 #if defined(__CRT_DOS) && !defined(__NO_ASMNAME)
 __LIBC int __NOTHROW((__LIBCCALL isascii)(int __c)) __ASMNAME("__isascii");
