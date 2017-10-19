@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 
 #ifdef __cplusplus
  int *p = new int(42);
-
+ printf("p = %p\n",p);
  delete p;
 #endif
 

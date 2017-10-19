@@ -70,10 +70,18 @@ DECL_BEGIN
 
  /* Define the DOS debug-malloc API. */
 DEFINE_INTERN_ALIAS(libc_dos_expand,EXPORT_REALLOC_IN_PLACE);
+#if !defined(CONFIG_DEBUG_MALLOC) && \
+     defined(CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP)
+DEFINE_INTERN_ALIAS(libc_dos_malloc_dbg,EXPORT_MALLOC);
+DEFINE_INTERN_ALIAS(libc_dos_calloc_dbg,EXPORT_CALLOC);
+DEFINE_INTERN_ALIAS(libc_dos_realloc_dbg,EXPORT_REALLOC);
+DEFINE_INTERN_ALIAS(libc_dos_expand_dbg,EXPORT_REALLOC_IN_PLACE);
+#else
 INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_malloc_dbg(size_t size, int UNUSED(btype), char const *file, int lno) { return libc__malloc_d(size,DEBUGINFO_MK(file,lno,NULL)); }
 INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_calloc_dbg(size_t count, size_t size, int UNUSED(btype), char const *file, int lno) { return libc__calloc_d(count,size,DEBUGINFO_MK(file,lno,NULL)); }
 INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_realloc_dbg(void *mptr, size_t size, int UNUSED(btype), char const *file, int lno) { return libc__realloc_d(mptr,size,DEBUGINFO_MK(file,lno,NULL)); }
 INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_expand_dbg(void *mptr, size_t size, int UNUSED(btype), char const *file, int lno) { return libc__realloc_in_place_d(mptr,size,DEBUGINFO_MK(file,lno,NULL)); }
+#endif
 INTERN ATTR_DOSTEXT void *LIBCCALL libc_dos_recalloc_dbg(void *mptr, size_t count, size_t size, int UNUSED(btype), char const *file, int lno) {
  size_t oldsize = libc__malloc_usable_size_d(mptr,DEBUGINFO_MK(file,lno,NULL));
  void *result = (size *= count,libc__realloc_d(mptr,size,DEBUGINFO_MK(file,lno,NULL)));
@@ -93,10 +101,10 @@ DEFINE_INTERN_ALIAS(libc_dos_msize,EXPORT_MALLOC_USABLE_SIZE);
 #ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
 DEFINE_INTERN_ALIAS(libc_dos_free_dbg,EXPORT_FREE);
 DEFINE_INTERN_ALIAS(libc_dos_msize_dbg,EXPORT_MALLOC_USABLE_SIZE);
-#else
+#else /* CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP */
 INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_free_dbg(void *mptr, int UNUSED(btype)) { return EXPORT_FREE(mptr); }
 INTERN ATTR_DOSTEXT size_t LIBCCALL libc_dos_msize_dbg(void *mptr, int UNUSED(btype)) { return EXPORT_MALLOC_USABLE_SIZE(mptr); }
-#endif
+#endif /* !CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP */
 
 /* DOS's aligned memory API.
  * NOTE: It's not pretty, but it should work... */
@@ -444,6 +452,23 @@ libc_heapused(size_t *UNUSED(pused), size_t *UNUSED(pcommit)) { SET_ERRNO(ENOSYS
 DEFINE_PUBLIC_ALIAS(_heapused,libc_heapused);
 INTERN ATTR_DOSTEXT int LIBCCALL libc_heapwalk(void *UNUSED(entry)) { return -5; /*_HEAPEND*/ }
 DEFINE_PUBLIC_ALIAS(_heapwalk,libc_heapwalk);
+
+
+/* HINT: Since MSVC uses cdecl, we can directly link the C++
+ *       operations against the associated malloc/free functions. */
+#if __SIZEOF_SIZE_T__ == 4
+DEFINE_PUBLIC_ALIAS("??2%YAPAXI%Z",     EXPORT_MALLOC);       /* void * __cdecl operator new(unsigned int); */
+DEFINE_PUBLIC_ALIAS("??2%YAPAXIHPBDH%Z",libc_dos_malloc_dbg); /* void * __cdecl operator new(unsigned int,int,char const *,int); */
+DEFINE_PUBLIC_ALIAS("??3%YAXPAX%Z",     EXPORT_FREE);         /* void __cdecl operator delete(void *); */
+DEFINE_PUBLIC_ALIAS("??3%YAXPAXHPBDH%Z",libc_dos_free_dbg);   /* void __cdecl operator delete(void *,int,char const *,int); */
+#elif __SIZEOF_SIZE_T__ == 8
+DEFINE_PUBLIC_ALIAS("??2%YAPEAX_K%Z",      EXPORT_MALLOC);       /* void * __ptr64 __cdecl operator new(unsigned __int64); */
+DEFINE_PUBLIC_ALIAS("??2%YAPEAX_KHPEBDH%Z",libc_dos_malloc_dbg); /* void * __ptr64 __cdecl operator new(unsigned __int64,int,char const * __ptr64,int); */
+DEFINE_PUBLIC_ALIAS("??3%YAXPEAX%Z",       EXPORT_FREE);         /* void __cdecl operator delete(void * __ptr64); */
+DEFINE_PUBLIC_ALIAS("??3%YAXPEAXHPEBDH%Z", libc_dos_free_dbg);   /* void __cdecl operator delete(void * __ptr64,int,char const * __ptr64,int); */
+#else
+#error "Unsupported pointer size"
+#endif
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
