@@ -35,6 +35,7 @@
 #include <kernel/syscall.h>
 #include <kernel/user.h>
 #include <sys/syslog.h>
+#include <dev/rtc.h>
 #include <malloc.h>
 #include <sched.h>
 #include <sched/cpu.h>
@@ -510,14 +511,14 @@ do_try_single(struct task *__restrict t, int options,
 }
 
 LOCAL errno_t KCALL
-wait_for_sigchld(struct timespec *abstime) {
+wait_for_sigchld(jtime_t abstime) {
  errno_t error; bool was_blocked;
  struct task *caller = THIS_TASK;
 
  /* Make sure to unmask SIGCHLD to guaranty the signal actually being received. */
  was_blocked = sigismember(&caller->t_sigblock,SIGCHLD);
  sigdelset(&caller->t_sigblock,SIGCHLD);
- error = task_pause_cpu_endwrite_t(abstime);
+ error = task_pause_cpu_endwrite(abstime);
 
  /* Restore the old blocking behavior of 'SIGCHLD' */
  if (was_blocked)
@@ -528,7 +529,7 @@ wait_for_sigchld(struct timespec *abstime) {
 PRIVATE pid_t KCALL
 do_wait_single(struct task *__restrict t, int options,
                USER int *stat_addr, USER siginfo_t *infop,
-               USER struct rusage *ru, struct timespec *abstime) {
+               USER struct rusage *ru, jtime_t abstime) {
  struct cpu *c; pflag_t was;
  pid_t result = -EOK; bool second_pass = false;
  struct task *caller = THIS_TASK;
@@ -555,7 +556,7 @@ again:
   if (second_pass) { result = -EINTR; goto unlock_cpu; }
   second_pass = true;
   /* Wait for a child process to deliver a signal. */
-  result = task_pause_cpu_endwrite_t(abstime);
+  result = task_pause_cpu_endwrite(abstime);
   if (result == -EINTR) goto again;
  } else {
   if (second_pass)
@@ -572,7 +573,7 @@ unlock_cpu:
 PRIVATE pid_t KCALL
 do_wait(int which, /*global*/pid_t pid, int options,
         USER int *stat_addr, USER siginfo_t *infop,
-        USER struct rusage *ru, struct timespec *abstime) {
+        USER struct rusage *ru, jtime_t abstime) {
  struct cpu *c; pflag_t was; size_t n_candidates;
  pid_t result = -EOK; bool second_pass = false;
  struct task *child,*caller = THIS_TASK;
@@ -610,7 +611,7 @@ again:
   if (second_pass) { result = -EINTR; goto unlock_cpu; }
   second_pass = true;
   /* Wait for a child process to deliver a signal. */
-  result = task_pause_cpu_endwrite_t(abstime);
+  result = task_pause_cpu_endwrite(abstime);
   if (result == -EINTR) goto again;
  } else {
 unlock_cpu:
@@ -638,7 +639,7 @@ SYSCALL_DEFINE5(waitid,int,which,pid_t,upid,USER siginfo_t *,
   if unlikely(!t) { result = -ECHILD; goto end; }
   if (which == P_PID) {
    if (TASK_TRYINCREF(t)) {
-    result = do_wait_single(t,options,NULL,infop,ru,NULL);
+    result = do_wait_single(t,options,NULL,infop,ru,JTIME_INFINITE);
     TASK_DECREF(t);
     if (E_ISOK(result)) {
      result = 0;
@@ -695,11 +696,12 @@ inval:
   result = -EINVAL;
   goto end;
  }
- result = do_wait(which,upid,options,NULL,infop,ru,NULL);
+ result = do_wait(which,upid,options,NULL,infop,ru,JTIME_INFINITE);
 end:
  task_endcrit();
  return result;
 }
+
 SYSCALL_DEFINE4(wait4,pid_t,upid,USER int *,stat_addr,
                 int,options,USER struct rusage *,ru) {
  WEAK REF struct task *t; pid_t result; int which;
@@ -732,7 +734,7 @@ SYSCALL_DEFINE4(wait4,pid_t,upid,USER int *,stat_addr,
   t = pid_namespace_lookup_weak(THIS_NAMESPACE,upid);
   if unlikely(!t) { result = -ECHILD; goto end; }
   if (TASK_TRYINCREF(t)) {
-   result = do_wait_single(t,options,stat_addr,NULL,ru,NULL);
+   result = do_wait_single(t,options,stat_addr,NULL,ru,JTIME_INFINITE);
    TASK_DECREF(t);
    if (E_ISOK(result) && ATOMIC_READ(t->t_pid.tp_parent) == THIS_TASK)
        goto reap_zombie;
@@ -764,7 +766,7 @@ reap_zombie:
   TASK_WEAK_DECREF(t);
   goto end;
  }
- result = do_wait(which,upid,options,stat_addr,NULL,ru,NULL);
+ result = do_wait(which,upid,options,stat_addr,NULL,ru,JTIME_INFINITE);
 end:
  task_endcrit();
  return result;

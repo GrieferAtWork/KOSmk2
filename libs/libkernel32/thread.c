@@ -18,7 +18,7 @@
  */
 #ifndef GUARD_LIBS_LIBKERNEL32_THREAD_C
 #define GUARD_LIBS_LIBKERNEL32_THREAD_C 1
-#define _KOS_SOURCE 1
+#define _KOS_SOURCE 2
 #define _GNU_SOURCE 1
 
 #include "k32.h"
@@ -42,12 +42,17 @@
 #include <sys/syscall.h>
 #include <kos/environ.h>
 #include <sys/wait.h>
+#include <sys/select.h>
+#include <sys/poll.h>
 #include <sched.h>
 #include <termio.h>
 #include <termios.h>
 #include <pty.h>
+#include <time.h>
 
 DECL_BEGIN
+
+__LIBC pid_t LIBCCALL gettid(void) ASMNAME("__gettid");
 
 __LIBC int LIBCCALL dos_chdir(char const *dos_path) ASMNAME("_chdir");
 __LIBC int LIBCCALL dos_execv(char const *path, char *argv[]) ASMNAME("_execv");
@@ -145,7 +150,7 @@ K32_CreateRemoteThread(HANDLE hProcess, LPSECURITY_ATTRIBUTES lpThreadAttributes
                          lpParameter,dwCreationFlags,lpThreadId);
 }
 INTERN HANDLE WINAPI K32_GetCurrentThread(void) { return PID_TO_HANDLE(K32_GetCurrentThreadId()); }
-INTERN DWORD WINAPI K32_GetCurrentThreadId(void) { return (DWORD)syscall(SYS_gettid); }
+INTERN DWORD WINAPI K32_GetCurrentThreadId(void) { return (DWORD)gettid(); }
 INTERN WINBOOL WINAPI K32_SetThreadStackGuarantee(PULONG StackSizeInBytes) { NOT_IMPLEMENTED(); return FALSE; }
 INTERN DWORD WINAPI K32_GetProcessIdOfThread(HANDLE Thread) {
  if (!HANDLE_IS_PID(Thread)) { SET_ERRNO(EBADF); return 0; }
@@ -564,14 +569,88 @@ K32_WriteProcessMemory(HANDLE hProcess, LPVOID lpBaseAddress,
 
 
 
+/* Wait/Delay API. */
+INTERN DWORD WINAPI
+K32_WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds) {
+ switch (HANDLE_TYPE(hHandle)) {
+ {
+  pid_t error;
+  sigset_t newset;
+  sigset_t oldset;
+ case HANDLE_TYPE_PID:
+  /* Use a one-time alarm to simulate the timeout. */
+  if (dwMilliseconds != INFINITE) {
+   sigemptyset(&newset);
+   sigaddset(&newset,SIGALRM);
+   sigprocmask(SIG_BLOCK,&newset,&oldset);
+   ualarm(dwMilliseconds*USEC_PER_MSEC,0);
+  }
+  error = waitpid(HANDLE_TO_PID(hHandle),NULL,dwMilliseconds == 0 ?
+                  WNOHANG|WEXITED|WNOWAIT : WEXITED|WNOWAIT);
+  if (dwMilliseconds != INFINITE) 
+      sigprocmask(SIG_SETMASK,&oldset,NULL);
+  if (error < 0 && GET_ERRNO() == EINTR) return WAIT_TIMEOUT;
+  return WAIT_OBJECT_0;
+ } break;
+ {
+  struct pollfd fd;
+ case HANDLE_TYPE_FD:
+  /* Use poll. */
+  fd.events = POLLIN|POLLPRI|POLLOUT;
+  fd.revents = 0;
+  fd.fd = HANDLE_TO_FD(hHandle);
+  if (!poll(&fd,1,dwMilliseconds) && fd.revents)
+       return WAIT_OBJECT_0;
+  if (GET_ERRNO() == EINTR) return WAIT_TIMEOUT;
+  return WAIT_FAILED;
+ } break;
+
+ default:
+  break;
+ }
+
+ SET_ERRNO(EBADF);
+ return WAIT_FAILED;
+}
+INTERN DWORD WINAPI
+K32_WaitForMultipleObjects(DWORD nCount, CONST HANDLE *lpHandles,
+                           WINBOOL bWaitAll, DWORD dwMilliseconds) {
+ DWORD result = WAIT_FAILED;
+ struct pollfd *waitfds,*iter; bool only_files = false;
+ if (nCount == 0 || !lpHandles) { SET_ERRNO(EINVAL); return WAIT_FAILED; }
+ if (nCount == 1) return K32_WaitForSingleObject(lpHandles[0],dwMilliseconds);
+ waitfds = tmalloc(struct pollfd,nCount);
+ if unlikely(!waitfds) return WAIT_FAILED;
+ NOT_IMPLEMENTED();
+ //poll(,,(int)dwMilliseconds);
+ /* TODO */
+ (void)iter;
+ (void)only_files;
+
+ free(waitfds);
+ return result;
+}
+INTERN void WINAPI K32_Sleep(DWORD dwMilliseconds) {
+ if (!dwMilliseconds)
+  sched_yield(); /* An argument of ZERO only performs a manual preemption. */
+ else {
+  usleep(dwMilliseconds*USEC_PER_MSEC);
+ }
+}
+
+
+
+
+
+
 /* Critical section API. */
-INTERN void WINAPI K32_InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); }
-INTERN void WINAPI K32_EnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); }
-INTERN void WINAPI K32_LeaveCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); }
-INTERN WINBOOL WINAPI K32_InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount) {  NOT_IMPLEMENTED(); return TRUE; }
-INTERN DWORD WINAPI K32_SetCriticalSectionSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount) {  NOT_IMPLEMENTED(); return dwSpinCount; }
-INTERN WINBOOL WINAPI K32_TryEnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); return TRUE; }
-INTERN void WINAPI K32_DeleteCriticalSection(LPCRITICAL_SECTION lpCriticalSection) {  NOT_IMPLEMENTED(); }
+INTERN void WINAPI K32_InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection) { NOT_IMPLEMENTED(); }
+INTERN void WINAPI K32_EnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection) { NOT_IMPLEMENTED(); }
+INTERN void WINAPI K32_LeaveCriticalSection(LPCRITICAL_SECTION lpCriticalSection) { NOT_IMPLEMENTED(); }
+INTERN WINBOOL WINAPI K32_InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount) { NOT_IMPLEMENTED(); return TRUE; }
+INTERN DWORD WINAPI K32_SetCriticalSectionSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount) { NOT_IMPLEMENTED(); return dwSpinCount; }
+INTERN WINBOOL WINAPI K32_TryEnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection) { NOT_IMPLEMENTED(); return TRUE; }
+INTERN void WINAPI K32_DeleteCriticalSection(LPCRITICAL_SECTION lpCriticalSection) { NOT_IMPLEMENTED(); }
 
 
 
@@ -790,6 +869,11 @@ DEFINE_PUBLIC_ALIAS(CreateProcessAsUserA,K32_CreateProcessAsUserA);
 DEFINE_PUBLIC_ALIAS(CreateProcessAsUserW,K32_CreateProcessAsUserW);
 DEFINE_PUBLIC_ALIAS(ReadProcessMemory,K32_ReadProcessMemory);
 DEFINE_PUBLIC_ALIAS(WriteProcessMemory,K32_WriteProcessMemory);
+
+/* Wait/Delay API. */
+DEFINE_PUBLIC_ALIAS(WaitForSingleObject,K32_WaitForSingleObject);
+DEFINE_PUBLIC_ALIAS(WaitForMultipleObjects,K32_WaitForMultipleObjects);
+DEFINE_PUBLIC_ALIAS(Sleep,K32_Sleep);
 
 /* Critical section API. */
 DEFINE_PUBLIC_ALIAS(InitializeCriticalSection,K32_InitializeCriticalSection);

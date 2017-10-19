@@ -90,6 +90,8 @@ typedef __CHAR16_TYPE__ WCHAR;
 
 #define __MSVCRT__ 1
 #undef _MSVCRT_
+#endif
+
 #define __MINGW_IMPORT extern __declspec(dllimport)
 #define __MINGW_ATTRIB_NORETURN
 #define __MINGW_ATTRIB_CONST
@@ -136,8 +138,6 @@ typedef __CHAR16_TYPE__ WCHAR;
 #endif
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x502
-#endif
-
 #endif
 
 #endif /* !_WINAPI___WINSTD_H */

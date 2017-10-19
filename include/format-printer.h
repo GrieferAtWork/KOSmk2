@@ -138,7 +138,12 @@ __ssize_t (__LIBCCALL format_vscanf)(pformatgetc __pgetc, pformatungetc __punget
                                      __VA_LIST __args);
 
 #ifndef __KERNEL__
-struct tm;
+#ifndef __tm_defined
+#define __tm_defined 1
+__NAMESPACE_STD_BEGIN struct tm;
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(tm)
+#endif /* !__tm_defined */
 /* The format-generic version of strftime-style formatting.
  * NOTE: Besides supported the standard, name extensions, as already supported
  *       by deemon are supported as well (Documentation taken from deemon):

@@ -53,7 +53,14 @@
 #define __ATOMIC_SEQ_CST 5
 #endif /* !__ATOMIC_RELAXED */
 
+#define __hybrid_atomic_lockfree(x) 1 /* TODO */
+
 #ifdef _MSC_VER
+#ifndef __cplusplus
+#pragma warning(push) /* Keep '4197' disabled in C */
+#endif /* __cplusplus */
+#pragma warning(disable: 4197) /* Casting away 'volatile' */
+
 #include "__atomic-msvc.h"
 #endif
 
@@ -172,17 +179,17 @@ __NAMESPACE_INT_END
 extern "C++" { template<class __T, class __OV, class __NV>
 #define __hybrid_atomic_cmpxch  __hybrid_atomic_cmpxch
 __FORCELOCAL __BOOL (__hybrid_atomic_cmpxch)(__T &__x, __OV __oldv, __NV __newv, int __succ, int __fail) {
-    __STATIC_IF(sizeof(__T) == 1) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch8(&__x,(__UINT8_TYPE__)__oldv,(__UINT8_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 1) {
-    __STATIC_IF(sizeof(__T) == 2) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch16(&__x,(__UINT16_TYPE__)__oldv,(__UINT16_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 2) {
-    __STATIC_IF(sizeof(__T) == 4) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch32(&__x,(__UINT32_TYPE__)__oldv,(__UINT32_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 4) {
-    return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch64(&__x,(__UINT64_TYPE__)__oldv,(__UINT64_TYPE__)__newv,__succ,__fail);
+    __STATIC_IF(sizeof(__T) == 1) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch8((void *)&__x,(__UINT8_TYPE__)__oldv,(__UINT8_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 1) {
+    __STATIC_IF(sizeof(__T) == 2) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch16((void *)&__x,(__UINT16_TYPE__)__oldv,(__UINT16_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 2) {
+    __STATIC_IF(sizeof(__T) == 4) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch32((void *)&__x,(__UINT32_TYPE__)__oldv,(__UINT32_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 4) {
+    return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch64((void *)&__x,(__UINT64_TYPE__)__oldv,(__UINT64_TYPE__)__newv,__succ,__fail);
 } } } } }
 #else
 #define __hybrid_atomic_cmpxch(x,oldv,newv,succ,fail) \
- (sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch8(&(x),(__UINT8_TYPE__)(oldv),(__UINT8_TYPE__)(newv),succ,fail) : \
-  sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch16(&(x),(__UINT16_TYPE__)(oldv),(__UINT16_TYPE__)(newv),succ,fail) : \
-  sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch32(&(x),(__UINT32_TYPE__)(oldv),(__UINT32_TYPE__)(newv),succ,fail) : \
-                   __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch64(&(x),(__UINT64_TYPE__)(oldv),(__UINT64_TYPE__)(newv),succ,fail))
+ (sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch8((void *)&(x),(__UINT8_TYPE__)(oldv),(__UINT8_TYPE__)(newv),succ,fail) : \
+  sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch16((void *)&(x),(__UINT16_TYPE__)(oldv),(__UINT16_TYPE__)(newv),succ,fail) : \
+  sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch32((void *)&(x),(__UINT32_TYPE__)(oldv),(__UINT32_TYPE__)(newv),succ,fail) : \
+                   __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch64((void *)&(x),(__UINT64_TYPE__)(oldv),(__UINT64_TYPE__)(newv),succ,fail))
 #endif
 #endif /* __NO_XBLOCK */
 #endif
@@ -250,17 +257,17 @@ __NAMESPACE_INT_END
 extern "C++" { template<class __T, class __OV, class __NV>
 #define __hybrid_atomic_cmpxch_val __hybrid_atomic_cmpxch_val
 __FORCELOCAL __T (__hybrid_atomic_cmpxch_val)(__T &__x, __OV __oldv, __NV __newv, int __succ, int __fail) {
-    __STATIC_IF(sizeof(__T) == 1) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val8(&__x,(__UINT8_TYPE__)__oldv,(__UINT8_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 1) {
-    __STATIC_IF(sizeof(__T) == 2) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val16(&__x,(__UINT16_TYPE__)__oldv,(__UINT16_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 2) {
-    __STATIC_IF(sizeof(__T) == 4) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val32(&__x,(__UINT32_TYPE__)__oldv,(__UINT32_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 4) {
-    return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val64(&__x,(__UINT64_TYPE__)__oldv,(__UINT64_TYPE__)__newv,__succ,__fail);
+    __STATIC_IF(sizeof(__T) == 1) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val8((void *)&__x,(__UINT8_TYPE__)__oldv,(__UINT8_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 1) {
+    __STATIC_IF(sizeof(__T) == 2) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val16((void *)&__x,(__UINT16_TYPE__)__oldv,(__UINT16_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 2) {
+    __STATIC_IF(sizeof(__T) == 4) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val32((void *)&__x,(__UINT32_TYPE__)__oldv,(__UINT32_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 4) {
+    return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val64((void *)&__x,(__UINT64_TYPE__)__oldv,(__UINT64_TYPE__)__newv,__succ,__fail);
 } } } } }
 #else /* __cplusplus */
 #define __hybrid_atomic_cmpxch_val(x,oldv,newv,succ,fail) \
- __TYPEOF_RECAST(x,sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val8(&(x),(__UINT8_TYPE__)(oldv),(__UINT8_TYPE__)(newv),succ,fail) : \
-                   sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val16(&(x),(__UINT16_TYPE__)(oldv),(__UINT16_TYPE__)(newv),succ,fail) : \
-                   sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val32(&(x),(__UINT32_TYPE__)(oldv),(__UINT32_TYPE__)(newv),succ,fail) : \
-                                    __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val64(&(x),(__UINT64_TYPE__)(oldv),(__UINT64_TYPE__)(newv),succ,fail))
+ __TYPEOF_RECAST(x,sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val8((void *)&(x),(__UINT8_TYPE__)(oldv),(__UINT8_TYPE__)(newv),succ,fail) : \
+                   sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val16((void *)&(x),(__UINT16_TYPE__)(oldv),(__UINT16_TYPE__)(newv),succ,fail) : \
+                   sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val32((void *)&(x),(__UINT32_TYPE__)(oldv),(__UINT32_TYPE__)(newv),succ,fail) : \
+                                    __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val64((void *)&(x),(__UINT64_TYPE__)(oldv),(__UINT64_TYPE__)(newv),succ,fail))
 #endif /* !__cplusplus */
 #endif /* __NO_XBLOCK || !__COMPILER_HAVE_TYPEOF */
 #endif
@@ -320,17 +327,17 @@ __NAMESPACE_INT_END
 #ifdef __cplusplus
 extern "C++" { template<class __T, class __V>
 __FORCELOCAL __T (__hybrid_atomic_cmpxch_val)(__T &__x, __V __oldv, __V __newv, int __succ, int __fail) {
-    __STATIC_IF(sizeof(__T) == 1) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val8(&__x,(__UINT8_TYPE__)__oldv,(__UINT8_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 1) {
-    __STATIC_IF(sizeof(__T) == 2) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val16(&__x,(__UINT16_TYPE__)__oldv,(__UINT16_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 2) {
-    __STATIC_IF(sizeof(__T) == 4) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val32(&__x,(__UINT32_TYPE__)__oldv,(__UINT32_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 4) {
-    return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val64(&__x,(__UINT64_TYPE__)__oldv,(__UINT64_TYPE__)__newv,__succ,__fail);
+    __STATIC_IF(sizeof(__T) == 1) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val8((void *)&__x,(__UINT8_TYPE__)__oldv,(__UINT8_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 1) {
+    __STATIC_IF(sizeof(__T) == 2) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val16((void *)&__x,(__UINT16_TYPE__)__oldv,(__UINT16_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 2) {
+    __STATIC_IF(sizeof(__T) == 4) { return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val32((void *)&__x,(__UINT32_TYPE__)__oldv,(__UINT32_TYPE__)__newv,__succ,__fail); } __STATIC_ELSE(sizeof(__T) == 4) {
+    return __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val64((void *)&__x,(__UINT64_TYPE__)__oldv,(__UINT64_TYPE__)__newv,__succ,__fail);
 } } } } }
 #else /* __cplusplus */
 #define __hybrid_atomic_cmpxch_val(x,oldv,newv,succ,fail) \
- __TYPEOF_RECAST(x,sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val8(&(x),(__UINT8_TYPE__)(oldv),(__UINT8_TYPE__)(newv),succ,fail) : \
-                   sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val16(&(x),(__UINT16_TYPE__)(oldv),(__UINT16_TYPE__)(newv),succ,fail) : \
-                   sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val32(&(x),(__UINT32_TYPE__)(oldv),(__UINT32_TYPE__)(newv),succ,fail) : \
-                                    __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val64(&(x),(__UINT64_TYPE__)(oldv),(__UINT64_TYPE__)(newv),succ,fail))
+ __TYPEOF_RECAST(x,sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val8((void *)&(x),(__UINT8_TYPE__)(oldv),(__UINT8_TYPE__)(newv),succ,fail) : \
+                   sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val16((void *)&(x),(__UINT16_TYPE__)(oldv),(__UINT16_TYPE__)(newv),succ,fail) : \
+                   sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val32((void *)&(x),(__UINT32_TYPE__)(oldv),(__UINT32_TYPE__)(newv),succ,fail) : \
+                                    __NAMESPACE_INT_SYM __impl_hybrid_atomic_cmpxch_val64((void *)&(x),(__UINT64_TYPE__)(oldv),(__UINT64_TYPE__)(newv),succ,fail))
 #endif /* __cplusplus */
 #endif /* !__NO_XBLOCK */
 #endif /* !__hybrid_atomic_cmpxch_val */
@@ -401,17 +408,17 @@ __NAMESPACE_INT_END
 extern "C++" { template<class __T>
 #define __hybrid_atomic_load __hybrid_atomic_load
 __FORCELOCAL __T (__hybrid_atomic_load)(__T &__x, int __order) {
-    __STATIC_IF(sizeof(__T) == 1) { return (__T)__NAMESPACE_INT_SYM __impl_hybrid_atomic_load8(&__x,__order); } __STATIC_ELSE(sizeof(__T) == 1) {
-    __STATIC_IF(sizeof(__T) == 2) { return (__T)__NAMESPACE_INT_SYM __impl_hybrid_atomic_load16(&__x,__order); } __STATIC_ELSE(sizeof(__T) == 2) {
-    __STATIC_IF(sizeof(__T) == 4) { return (__T)__NAMESPACE_INT_SYM __impl_hybrid_atomic_load32(&__x,__order); } __STATIC_ELSE(sizeof(__T) == 4) {
-    return (__T)__NAMESPACE_INT_SYM __impl_hybrid_atomic_load64(&__x,__order);
+    __STATIC_IF(sizeof(__T) == 1) { return (__T)__NAMESPACE_INT_SYM __impl_hybrid_atomic_load8((void *)&__x,__order); } __STATIC_ELSE(sizeof(__T) == 1) {
+    __STATIC_IF(sizeof(__T) == 2) { return (__T)__NAMESPACE_INT_SYM __impl_hybrid_atomic_load16((void *)&__x,__order); } __STATIC_ELSE(sizeof(__T) == 2) {
+    __STATIC_IF(sizeof(__T) == 4) { return (__T)__NAMESPACE_INT_SYM __impl_hybrid_atomic_load32((void *)&__x,__order); } __STATIC_ELSE(sizeof(__T) == 4) {
+    return (__T)__NAMESPACE_INT_SYM __impl_hybrid_atomic_load64((void *)&__x,__order);
 } } } } }
 #else /* __cplusplus */
 #define __hybrid_atomic_load(x,order) \
- __TYPEOF_RECAST(x,sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_load8(&(x),order) : \
-                   sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_load16(&(x),order) : \
-                   sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_load32(&(x),order) : \
-                                    __NAMESPACE_INT_SYM __impl_hybrid_atomic_load64(&(x),order))
+ __TYPEOF_RECAST(x,sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_load8((void *)&(x),order) : \
+                   sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_load16((void *)&(x),order) : \
+                   sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_load32((void *)&(x),order) : \
+                                    __NAMESPACE_INT_SYM __impl_hybrid_atomic_load64((void *)&(x),order))
 #endif /* !__cplusplus */
 #endif /* __NO_XBLOCK || !__COMPILER_HAVE_TYPEOF */
 #endif /* !__hybrid_atomic_load */
@@ -462,18 +469,19 @@ __NAMESPACE_INT_END
 #undef __DEFINE_WRAPPER
 #ifdef __cplusplus
 extern "C++" { template<class __T, class __V>
+#define __hybrid_atomic_store __hybrid_atomic_store
 __FORCELOCAL void (__hybrid_atomic_store)(__T &__x, __V __v, int __order) {
-    __STATIC_IF(sizeof(__T) == 1) { __NAMESPACE_INT_SYM __impl_hybrid_atomic_store8(&__x,(__UINT8_TYPE__)__v,order); } __STATIC_ELSE(sizeof(__T) == 1) {
-    __STATIC_IF(sizeof(__T) == 2) { __NAMESPACE_INT_SYM __impl_hybrid_atomic_store16(&__x,(__UINT16_TYPE__)__v,order); } __STATIC_ELSE(sizeof(__T) == 2) {
-    __STATIC_IF(sizeof(__T) == 4) { __NAMESPACE_INT_SYM __impl_hybrid_atomic_store32(&__x,(__UINT32_TYPE__)__v,order); } __STATIC_ELSE(sizeof(__T) == 4) {
-    __NAMESPACE_INT_SYM __impl_hybrid_atomic_store64(&__x,(__UINT64_TYPE__)__v,order);
+    __STATIC_IF(sizeof(__T) == 1) { __NAMESPACE_INT_SYM __impl_hybrid_atomic_store8((void *)&__x,(__UINT8_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 1) {
+    __STATIC_IF(sizeof(__T) == 2) { __NAMESPACE_INT_SYM __impl_hybrid_atomic_store16((void *)&__x,(__UINT16_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 2) {
+    __STATIC_IF(sizeof(__T) == 4) { __NAMESPACE_INT_SYM __impl_hybrid_atomic_store32((void *)&__x,(__UINT32_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 4) {
+    __NAMESPACE_INT_SYM __impl_hybrid_atomic_store64((void *)&__x,(__UINT64_TYPE__)__v,order);
 } } } } }
 #else /* __cplusplus */
 #define __hybrid_atomic_store(x,v,order) \
- (sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_store8(&(x),(__UINT8_TYPE__)(v),order) : \
-  sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_store16(&(x),(__UINT16_TYPE__)(v),order) : \
-  sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_store32(&(x),(__UINT32_TYPE__)(v),order) : \
-                   __NAMESPACE_INT_SYM __impl_hybrid_atomic_store64(&(x),(__UINT64_TYPE__)(v),order))
+ (sizeof(x) == 1 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_store8((void *)&(x),(__UINT8_TYPE__)(v),order) : \
+  sizeof(x) == 2 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_store16((void *)&(x),(__UINT16_TYPE__)(v),order) : \
+  sizeof(x) == 4 ? __NAMESPACE_INT_SYM __impl_hybrid_atomic_store32((void *)&(x),(__UINT32_TYPE__)(v),order) : \
+                   __NAMESPACE_INT_SYM __impl_hybrid_atomic_store64((void *)&(x),(__UINT64_TYPE__)(v),order))
 #endif /* !__cplusplus */
 #endif /* __NO_XBLOCK */
 #endif /* !__hybrid_atomic_store */
@@ -558,20 +566,20 @@ __FORCELOCAL __UINT##n##_TYPE__ \
  __DECL_INLINE_hybrid_atomic_fetchop_seqcst(name,32,opfun) \
  __DECL_INLINE_hybrid_atomic_fetchop_seqcst(name,64,opfun)
 #define __CALL_hybrid_atomic_fetchop_seqcst(name,x,v) \
- __TYPEOF_RECAST(x,sizeof(x) == 1 ? name##8_seqcst(&(x),(__UINT8_TYPE__)(v)) : \
-                   sizeof(x) == 2 ? name##16_seqcst(&(x),(__UINT16_TYPE__)(v)) : \
-                   sizeof(x) == 4 ? name##32_seqcst(&(x),(__UINT32_TYPE__)(v)) : \
-                                    name##64_seqcst(&(x),(__UINT64_TYPE__)(v)))
+ __TYPEOF_RECAST(x,sizeof(x) == 1 ? name##8_seqcst((void *)&(x),(__UINT8_TYPE__)(v)) : \
+                   sizeof(x) == 2 ? name##16_seqcst((void *)&(x),(__UINT16_TYPE__)(v)) : \
+                   sizeof(x) == 4 ? name##32_seqcst((void *)&(x),(__UINT32_TYPE__)(v)) : \
+                                    name##64_seqcst((void *)&(x),(__UINT64_TYPE__)(v)))
 #define __INLINE_hybrid_atomic_fetchop(name,name_seqcst,opfun) \
  __DECL_INLINE_hybrid_atomic_fetchop(__impl_##name,name_seqcst,8,opfun) \
  __DECL_INLINE_hybrid_atomic_fetchop(__impl_##name,name_seqcst,16,opfun) \
  __DECL_INLINE_hybrid_atomic_fetchop(__impl_##name,name_seqcst,32,opfun) \
  __DECL_INLINE_hybrid_atomic_fetchop(__impl_##name,name_seqcst,64,opfun)
 #define __CALL_hybrid_atomic_fetchop(name,x,v,order) \
- __TYPEOF_RECAST(x,sizeof(x) == 1 ? __impl_##name##8(&(x),(__UINT8_TYPE__)(v),order) : \
-                   sizeof(x) == 2 ? __impl_##name##16(&(x),(__UINT16_TYPE__)(v),order) : \
-                   sizeof(x) == 4 ? __impl_##name##32(&(x),(__UINT32_TYPE__)(v),order) : \
-                                    __impl_##name##64(&(x),(__UINT64_TYPE__)(v),order))
+ __TYPEOF_RECAST(x,sizeof(x) == 1 ? __impl_##name##8((void *)&(x),(__UINT8_TYPE__)(v),order) : \
+                   sizeof(x) == 2 ? __impl_##name##16((void *)&(x),(__UINT16_TYPE__)(v),order) : \
+                   sizeof(x) == 4 ? __impl_##name##32((void *)&(x),(__UINT32_TYPE__)(v),order) : \
+                                    __impl_##name##64((void *)&(x),(__UINT64_TYPE__)(v),order))
 #else /* !__cplusplus */
 #define __INLINE_hybrid_atomic_fetchop_seqcst(name,opfun) \
  __NAMESPACE_INT_BEGIN \
@@ -582,10 +590,10 @@ __FORCELOCAL __UINT##n##_TYPE__ \
  __NAMESPACE_INT_END \
 extern "C++" { template<class __T, class __V> \
 __FORCELOCAL __T (name##_seqcst)(__T &__x, __V __v) { \
-    __STATIC_IF(sizeof(__T) == 1) { return (__T)__NAMESPACE_INT_SYM name##8_seqcst(&__x,(__UINT8_TYPE__)__v); } __STATIC_ELSE(sizeof(__T) == 1) { \
-    __STATIC_IF(sizeof(__T) == 2) { return (__T)__NAMESPACE_INT_SYM name##16_seqcst(&__x,(__UINT16_TYPE__)__v); } __STATIC_ELSE(sizeof(__T) == 2) { \
-    __STATIC_IF(sizeof(__T) == 4) { return (__T)__NAMESPACE_INT_SYM name##32_seqcst(&__x,(__UINT64_TYPE__)__v); } __STATIC_ELSE(sizeof(__T) == 4) { \
-    return (__T)__NAMESPACE_INT_SYM name##64_seqcst(&__x,(__UINT64_TYPE__)__v); \
+    __STATIC_IF(sizeof(__T) == 1) { return (__T)__NAMESPACE_INT_SYM name##8_seqcst((void *)&__x,(__UINT8_TYPE__)__v); } __STATIC_ELSE(sizeof(__T) == 1) { \
+    __STATIC_IF(sizeof(__T) == 2) { return (__T)__NAMESPACE_INT_SYM name##16_seqcst((void *)&__x,(__UINT16_TYPE__)__v); } __STATIC_ELSE(sizeof(__T) == 2) { \
+    __STATIC_IF(sizeof(__T) == 4) { return (__T)__NAMESPACE_INT_SYM name##32_seqcst((void *)&__x,(__UINT64_TYPE__)__v); } __STATIC_ELSE(sizeof(__T) == 4) { \
+    return (__T)__NAMESPACE_INT_SYM name##64_seqcst((void *)&__x,(__UINT64_TYPE__)__v); \
 } } } } }
 #define __INLINE_hybrid_atomic_fetchop(name,name_seqcst,opfun) \
  __NAMESPACE_INT_BEGIN \
@@ -596,10 +604,10 @@ __FORCELOCAL __T (name##_seqcst)(__T &__x, __V __v) { \
  __NAMESPACE_INT_END \
 extern "C++" { template<class __T, class __V> \
 __FORCELOCAL __T (name)(__T &__x, __V __v, int __order) { \
-    __STATIC_IF(sizeof(__T) == 1) { return (__T)__NAMESPACE_INT_SYM __impl_##name##8(&__x,(__UINT8_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 1) { \
-    __STATIC_IF(sizeof(__T) == 2) { return (__T)__NAMESPACE_INT_SYM __impl_##name##16(&__x,(__UINT16_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 2) { \
-    __STATIC_IF(sizeof(__T) == 4) { return (__T)__NAMESPACE_INT_SYM __impl_##name##32(&__x,(__UINT64_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 4) { \
-    return (__T)__NAMESPACE_INT_SYM __impl_##name##64(&__x,(__UINT64_TYPE__)__v,__order); \
+    __STATIC_IF(sizeof(__T) == 1) { return (__T)__NAMESPACE_INT_SYM __impl_##name##8((void *)&__x,(__UINT8_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 1) { \
+    __STATIC_IF(sizeof(__T) == 2) { return (__T)__NAMESPACE_INT_SYM __impl_##name##16((void *)&__x,(__UINT16_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 2) { \
+    __STATIC_IF(sizeof(__T) == 4) { return (__T)__NAMESPACE_INT_SYM __impl_##name##32((void *)&__x,(__UINT64_TYPE__)__v,__order); } __STATIC_ELSE(sizeof(__T) == 4) { \
+    return (__T)__NAMESPACE_INT_SYM __impl_##name##64((void *)&__x,(__UINT64_TYPE__)__v,__order); \
 } } } } }
 #endif /* __cplusplus */
 #endif /* __NO_XBLOCK || !__COMPILER_HAVE_TYPEOF */
@@ -876,5 +884,11 @@ __INLINE_hybrid_atomic_fetchop(__hybrid_atomic_fetchnand,__impl_hybrid_atomic_fe
 #endif /* __CC__ */
 
 __DECL_END
+
+#ifdef _MSC_VER
+#ifndef __cplusplus
+#pragma warning(pop)
+#endif /* __cplusplus */
+#endif
 
 #endif /* !__GUARD_HYBRID___ATOMIC_H */

@@ -26,7 +26,7 @@ DECL_BEGIN
 #ifdef __CC__
 #ifdef __KERNEL__
 /* Yield execution to another task.
- * NOTE: No-op when interrupts are disabled. */
+ * NOTE: Illegal on single-core host when interrupts are disabled. */
 FUNDEF void (KCALL task_yield)(void);
 #   define SCHED_YIELD() task_yield()
 #else

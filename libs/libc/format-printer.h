@@ -31,7 +31,12 @@
 
 DECL_BEGIN
 
-struct tm;
+#ifndef __tm_defined
+#define __tm_defined 1
+__NAMESPACE_STD_BEGIN struct tm;
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(tm)
+#endif /* !__tm_defined */
 
 INTDEF ssize_t LIBCCALL libc_format_vprintf(pformatprinter printer, void *closure, char const *__restrict format, va_list args);
 INTDEF ssize_t ATTR_CDECL libc_format_printf(pformatprinter printer, void *closure, char const *__restrict format, ...);

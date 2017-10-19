@@ -87,6 +87,11 @@ INTDEF /*fd*/int WINAPI K32_OpenProcessMemory(HANDLE hProcess, oflag_t mode);
 INTDEF WINBOOL WINAPI K32_ReadProcessMemory(HANDLE hProcess, LPCVOID lpBaseAddress, LPVOID lpBuffer, SIZE_T nSize, SIZE_T *lpNumberOfBytesRead);
 INTDEF WINBOOL WINAPI K32_WriteProcessMemory(HANDLE hProcess, LPVOID lpBaseAddress, LPCVOID lpBuffer, SIZE_T nSize, SIZE_T *lpNumberOfBytesWritten);
 
+/* Wait/Delay API. */
+INTDEF DWORD WINAPI K32_WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds);
+INTDEF DWORD WINAPI K32_WaitForMultipleObjects(DWORD nCount, CONST HANDLE *lpHandles, WINBOOL bWaitAll, DWORD dwMilliseconds);
+INTDEF void  WINAPI K32_Sleep(DWORD dwMilliseconds);
+
 /* Critical section API. */
 INTDEF void    WINAPI K32_InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
 INTDEF void    WINAPI K32_EnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection);

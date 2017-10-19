@@ -94,10 +94,47 @@
 #define __SYSDECL_END   __DECL_END
 #endif /* !__SYSDECL_BEGIN */
 
+#if defined(__cplusplus) && (__has_feature(cxx_constexpr) || \
+   (defined(__cpp_constexpr) && __cpp_constexpr >= 200704) || \
+   (defined(__IBMCPP__) && defined(__IBMCPP_CONSTEXPR) && (__IBMCPP_CONSTEXPR+0)) || \
+   (defined(__SUNPRO_CC) && __SUNPRO_CC >= 0x5130) || \
+   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,6,0)) || \
+   (defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023026))
+#   define __COMPILER_HAVE_CXX11_CONSTEXPR 1
+#   define __CXX11_CONSTEXPR          constexpr
+#   define __CXX11_CONSTEXPR_OR_CONST constexpr
+#else
+#   define __CXX11_CONSTEXPR          /* nothing */
+#   define __CXX11_CONSTEXPR_OR_CONST const
+#endif
+#if defined(__cplusplus) && (\
+   (defined(__clang__) && !(!__has_feature(cxx_generic_lambdas) || \
+                           !(__has_feature(cxx_relaxed_constexpr) || \
+                             __has_extension(cxx_relaxed_constexpr)))) || \
+   (defined(__cpp_constexpr) && __cpp_constexpr >= 201304 && !defined(__clang__)))
+#   define __COMPILER_HAVE_CXX14_CONSTEXPR 1
+#   define __CXX14_CONSTEXPR          constexpr
+#   define __CXX14_CONSTEXPR_OR_CONST constexpr
+#else
+#   define __CXX14_CONSTEXPR          /* nothing */
+#   define __CXX14_CONSTEXPR_OR_CONST const
+#endif
+#if defined(__cplusplus) && (__has_feature(cxx_noexcept) || \
+   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,6,0)) || \
+   (defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190021730))
+#   define __COMPILER_HAVE_CXX11_NOEXCEPT 1
+#   define __CXX_NOEXCEPT noexcept
+#elif defined(__cplusplus)
+#   define __CXX_NOEXCEPT throw()
+#else
+#   define __CXX_NOEXCEPT /* nothing */
+#endif
+
+
 #ifdef __INTELLISENSE__
 #   define __NOTHROW       /* nothing */
 #elif defined(__cplusplus)
-#   define __NOTHROW(prot) prot throw()
+#   define __NOTHROW(prot) prot __CXX_NOEXCEPT
 #elif defined(__NO_ATTR_NOTHROW)
 #   define __NOTHROW(prot) prot
 #elif defined(__NO_ATTR_NOTHROW_SUFFIX)
@@ -207,12 +244,6 @@
 #endif
 #endif
 
-#ifndef __CXX_CONSTEXPR11
-#define __CXX_CONSTEXPR11 /* nothing */
-#endif
-#ifndef __CXX_CONSTEXPR14
-#define __CXX_CONSTEXPR14 /* nothing */
-#endif
 
 #ifndef __VA_LIST
 #define __VA_LIST  char *
@@ -353,14 +384,13 @@ __LOCAL attr void __NOTHROW((cc name) param) { \
 #endif /* !__REDIRECT */
 
 
-
 #ifdef __cplusplus
 extern "C++" {
 class __any_ptr {
  void *__p;
 public:
- __CXX_CONSTEXPR11 inline __any_ptr(void *__p) throw(): __p(__p) {}
- template<class T> __CXX_CONSTEXPR11 inline operator T *(void) throw() { return (T *)this->__p; }
+ __CXX11_CONSTEXPR inline __any_ptr(void *__p) throw(): __p(__p) {}
+ template<class T> __CXX11_CONSTEXPR inline operator T *(void) throw() { return (T *)this->__p; }
 };
 }
 #   define __COMPILER_UNIPOINTER(p) __any_ptr((void *)(__UINTPTR_TYPE__)(p))

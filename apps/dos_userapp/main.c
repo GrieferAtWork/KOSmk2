@@ -40,6 +40,10 @@
 #define _PORT_SOURCE   1
 #define _TIME64_SOURCE 1
 
+#ifdef __cplusplus
+#include <atomic>
+#endif
+
 #include <string.h>
 #include <alloca.h>
 #include <dirent.h>
@@ -93,6 +97,15 @@ int main(int argc, char **argv) {
  int y = ATOMIC_FETCHOR(x,0x01);
  printf("x = %x\n",x);
  printf("y = %x\n",y);
+
+#ifdef __cplusplus
+ std::atomic<char const *> b = ATOMIC_VAR_INIT("foo");
+ std::atomic_flag f = ATOMIC_FLAG_INIT;
+
+ b = "bar";
+ b += 1;
+ b.fetch_add(2);
+#endif
 
  return 0;
 }

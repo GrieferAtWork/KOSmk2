@@ -40,8 +40,7 @@ typedef int errno_t;
 
 #ifndef __tm_defined
 #define __tm_defined 1
-__NAMESPACE_STD_BEGIN
-struct tm;
+__NAMESPACE_STD_BEGIN struct tm;
 __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(tm)
 #endif /* !__tm_defined */

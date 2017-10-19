@@ -59,6 +59,14 @@ BEGIN APPLICATION("playground")
 	SOURCE("test/playground.c")
 END
 
+/* Test compiling C++ headers with something other than MSVC. */
+BEGIN APPLICATION("gcc_dos_userapp")
+	SET_OUTPUT("/bin/apps/gcc_dos_playground")
+	SET_DISKFILE(none)
+	SET_COMPILER("i686-kos-cxx")
+	SOURCE("dos_userapp/*.c")
+END
+
 DISK_SYNC("../bin/apps/dos_userapp.exe","/bin/dos_userapp.exe")
 DISK_SYNC("hybrid_demo/main.exe","/bin/hybrid-demo.exe")
 

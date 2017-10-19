@@ -47,8 +47,8 @@ typedef __UINTPTR_TYPE__ nfds_t;
 
 struct pollfd {
     int            fd;      /*< File descriptor to poll.  */
-    __INT16_TYPE__ events;  /*< Types of events poller cares about.  */
-    __INT16_TYPE__ revents; /*< Types of events that actually occurred.  */
+    __INT16_TYPE__ events;  /*< Types of events poller cares about (Set of 'POLL*'). */
+    __INT16_TYPE__ revents; /*< Types of events that actually occurred (Set of 'POLL*'). */
 };
 
 #ifndef __KERNEL__
