@@ -438,6 +438,9 @@
     <ClCompile Include="..\..\src\kernel\dev\net-stack.c">
       <Filter>kernel\dev</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\linker\debug.c">
+      <Filter>kernel\linker</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -709,6 +712,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\dev\net-stack.h">
       <Filter>include\dev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\linker\debug.h">
+      <Filter>include\linker</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -60,6 +60,7 @@ libc_setlocale(int category, char const *locale) {
  return (char *)locale;
 }
 INTERN struct lconv *LIBCCALL libc_localeconv(void) {
+ NOT_IMPLEMENTED();
  if (!is_initialized) {
   /* Return the equivalent of the "C" locale. */
   current_conv.decimal_point     = ".";
@@ -98,7 +99,7 @@ INTERN char *LIBCCALL libc_nl_langinfo(nl_item item) {
  case CODESET: return "UTF-8";
  default: break;
  }
- /*NOT_IMPLEMENTED();*/
+ NOT_IMPLEMENTED();
  return (char *)"";
 }
 INTERN char *LIBCCALL libc_nl_langinfo_l(nl_item item, locale_t l) {

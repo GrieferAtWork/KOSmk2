@@ -41,6 +41,7 @@
 #include <kernel/paging.h>
 #include <sys/syslog.h>
 #include <linker/module.h>
+#include <linker/debug.h>
 #include <malloc.h>
 #include <sched/task.h>
 #include <string.h>
@@ -207,6 +208,26 @@ module_destroy(struct module *__restrict self) {
  CHECK_HOST_DOBJ(self->m_owner);
  assert(self != &__this_module);
  assert(!self->m_refcnt);
+
+ /* Delete module debug information. */
+ { REF struct moddebug *info;
+   atomic_rwptr_write(&self->m_debug);
+   info = (REF struct moddebug *)ATOMIC_RWPTR_GET(self->m_debug);
+   ATOMIC_WRITE(self->m_debug.ap_ptr,NULL);
+   if (info) {
+    task_nointr();
+    /* Delete the weakly linked reference the debug descriptor had. */
+    rwlock_write(&info->md_lock);
+    assert(info->md_module == self);
+    info->md_module = NULL;
+    COMPILER_WRITE_BARRIER();
+    rwlock_endwrite(&info->md_lock);
+    task_endnointr();
+    /* Drop our old reference. */
+    MODDEBUG_DECREF(info);
+   }
+ }
+
  /* TODO: Only call this operator if we can acquire a
   *       reference to the associated owner-instance. */
  /* TODO: When an linker-driver instance dies, we must call the fini() operator
@@ -385,12 +406,30 @@ module_open_in_paths(HOST char const *__restrict paths,
 }
 
 
+PUBLIC SAFE struct file *KCALL
+module_file(struct module *__restrict self) {
+ CHECK_HOST_DOBJ(self);
+ if (self == &kernel_module && !kernel_module.m_file) {
+  struct file *stream;
+  PRIVATE bool core_open_attempted = false;
+  if (core_open_attempted) return NULL;
+  core_open_attempted = true;
+  /* Try to open the kernel core binary for reading. */
+  stream = _mall_untrack(kopen(CONFIG_KERNEL_CORE_BIN,O_RDONLY));
+  if unlikely(!stream) return NULL;
+  /* Try to fill in the kernel module's file pointer. */
+  if (!ATOMIC_CMPXCH(kernel_module.m_file,NULL,stream))
+       FILE_DECREF(stream);
+ }
+ assert(self->m_file);
+ return self->m_file;
+}
+
 
 PUBLIC char const *_module_search_path __ASMNAME("module_search_path") = "/lib:/usr/lib:/usr/local/lib";
 PUBLIC char const *_driver_search_path __ASMNAME("driver_search_path") = "/mod";
 DEFINE_SETUP("libpath=",linker_libpath) { _module_search_path = arg; return true; }
 DEFINE_SETUP("drvpath=",linker_drvpath) { _driver_search_path = arg; return true; }
-
 
 
 

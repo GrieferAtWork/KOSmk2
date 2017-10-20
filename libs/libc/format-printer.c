@@ -53,6 +53,7 @@
 #include <fs/fs.h>
 #include <fs/file.h>
 #include <fs/dentry.h>
+#include <linker/debug.h>
 #else
 #include "unistd.h"
 #include "unicode.h"
@@ -243,14 +244,17 @@ typedef union {
 struct longprint {
  char const         lp_name[LONGPRINT_NAMEMAX];
  ssize_t (LIBCCALL *lp_func)(pformatprinter printer, void *closure,
-                             enum printf_length length, u16 flags,
-                             size_t precision, va_list *args);
+                             char const *cmd, enum printf_length length,
+                             u16 flags, size_t precision, va_list *args);
 };
 #define LONG_PRINTER(name) \
  PRIVATE ssize_t LIBCCALL name(pformatprinter printer, void *closure, \
-                               enum printf_length length, u16 flags, \
-                               size_t precision, va_list *args)
+                               char const *cmd, enum printf_length length, \
+                               u16 flags, size_t precision, va_list *args)
 
+#if defined(__KERNEL__)
+#define HAVE_LONGPRINTER_VINFO /*< "%[vinfo:]" --> "foo.c(42) : my_function" */
+#endif
 #if defined(__KERNEL__) || 1
 #define HAVE_LONGPRINTER_MAC   /*< AA:BB:CC:DD:EE:FF */
 #define HAVE_LONGPRINTER_IP    /*< "127.0.0.1" */
@@ -309,6 +313,113 @@ LONG_PRINTER(unit_printer) {
  return libc_format_printf(printer,closure,"%I64uB",(u64)val.u_32);
 }
 #endif
+#ifdef HAVE_LONGPRINTER_VINFO
+LONG_PRINTER(vinfo_printer) {
+ char const *flush_start; void *addr;
+ char ch,buffer[256]; ssize_t temp,result = 0;
+#define VI  (*(struct virtinfo *)buffer)
+ addr = va_arg(*args,void *);
+ HOSTMEMORY_BEGIN {
+  temp = mman_virtinfo(addr,&VI,sizeof(buffer),MOD_VIRTINFO_NORMAL);
+ }
+ HOSTMEMORY_END;
+ if (temp < 0) memset(buffer,0,sizeof(buffer));
+ /* Format options:
+  *    %%: Emit a '%' character.
+  *    %f: Source file name. (Or '???')
+  *    %l: Source line number (1-based). (Or '0')
+  *    %c: Source column offset (1-based). (Or '0')
+  *    %n: Nearest symbol name. (Or '???')
+  *    %<: Next lower address. (Or 0)
+  *    %>: Next greater address. (Or 0)
+  *    %p: The requested address.
+  * Example:
+  * >>my_label:
+  * >>    syslog(LOG_DEBUG,"%[vinfo:%f(%l,%c) : %n] : HERE\n",&&my_label);
+  */
+ /* Use a debug representation if no argument was given. */
+ if (*cmd == ']' || !*cmd) cmd = "%f(%l,%c) : %n";
+
+ flush_start = cmd;
+ for (;;) {
+next_normal:
+  ch = *cmd++;
+  if (!ch || ch == ']') break;
+  if (ch == '%') {
+   if (cmd-1 != flush_start)
+       print(flush_start,(size_t)((cmd-1)-flush_start));
+   ch = *cmd++;
+   switch (ch) {
+   {
+    char *iter;
+   case 'f':
+    if (!VI.ai_source[VIRTINFO_SOURCE_PATH]) {
+unknown:
+     print("??" "?",3);
+    } else {
+     char *iter_end;
+     if (VI.ai_source[VIRTINFO_SOURCE_DRIVE])
+         printf("%s:",VI.ai_source[VIRTINFO_SOURCE_DRIVE]);
+     iter = VI.ai_source[VIRTINFO_SOURCE_PATH];
+     while (*iter == '/' || *iter == '\\') ++iter;
+     iter_end = libc_strend(iter);
+     while (iter_end != iter && (iter_end[-1] == '/' || iter_end[-1] == '\\')) --iter_end;
+     if (VI.ai_source[VIRTINFO_SOURCE_NAME] && *iter_end == '/') ++iter_end;
+     if ((((uintptr_t)iter&(PAGESIZE-1)) ||
+            iter != VI.ai_source[VIRTINFO_SOURCE_PATH]) &&
+            iter[-1] == '/') --iter;
+     if (*iter != '/') print("/",1);
+     print(iter,(size_t)(iter_end-iter));
+     if ((iter = VI.ai_source[VIRTINFO_SOURCE_NAME]) != NULL) {
+      while (*iter == '/' || *iter == '\\') ++iter;
+      if (iter_end[-1] != '/') {
+       if ((((uintptr_t)iter&(PAGESIZE-1)) ||
+              iter != VI.ai_source[VIRTINFO_SOURCE_NAME]) &&
+              iter[-1] == '/') --iter;
+       else print("/",1);
+      }
+      print(iter,libc_strlen(iter));
+      if (VI.ai_source[VIRTINFO_SOURCE_EXT])
+          printf(".%s",VI.ai_source[VIRTINFO_SOURCE_EXT]);
+     }
+    }
+   } break;
+
+   {
+    s32 decimal;
+    __IF0 { case 'l': decimal = VI.ai_line; }
+    __IF0 { case 'c': decimal = VI.ai_column; }
+#if __SIZEOF_INT__ >= 4
+    printf("%d",(int)decimal);
+#else
+    printf("%I32d",decimal);
+#endif
+   } break;
+
+   case 'n':
+    if (!VI.ai_name) goto unknown;
+    print(VI.ai_name,libc_strlen(VI.ai_name));
+    break;
+
+   {
+    void *ptr;
+    __IF0 { case '<': ptr = (void *)VI.ai_data[VIRTINFO_DATA_PREVADDR]; }
+    __IF0 { case '>': ptr = (void *)VI.ai_data[VIRTINFO_DATA_NEXTADDR]; }
+    __IF0 { case 'p': ptr = addr; }
+    printf("%p",ptr);
+   } break;
+
+   default:
+    flush_start = cmd-1;
+    goto next_normal;
+   }
+   flush_start = cmd;
+  }
+ }
+#undef VI
+ return result;
+}
+#endif
 
 PRIVATE struct longprint const ext_printers[] = {
  {"errno",&errno_printer},
@@ -330,6 +441,9 @@ PRIVATE struct longprint const ext_printers[] = {
 #endif
 #ifdef HAVE_LONGPRINTER_UNIT
  {"unit",&unit_printer},
+#endif
+#ifdef HAVE_LONGPRINTER_VINFO
+ {"vinfo",&vinfo_printer},
 #endif
  {"",NULL},
 };
@@ -599,11 +713,11 @@ have_precision:
     char const *dec;
     size_t bufsize;
     fint_t arg;
-    if (0) { case 'B': flags |= PRINTF_FLAG_UPPER; case 'b': numsys = 2; }
-    if (0) { case 'o': numsys = 8; }
-    if (0) { case 'u': numsys = 10; if unlikely(length == len_t) flags |= PRINTF_FLAG_SIGNED; }
-    if (0) { case 'd': case 'i': numsys = 10; if likely(length != len_z) flags |= PRINTF_FLAG_SIGNED; }
-    if (0) { case 'p': if (!(flags&PRINTF_FLAG_HASPREC)) { precision = sizeof(void *)*2; flags |= PRINTF_FLAG_HASPREC; }
+    __IF0 { case 'B': flags |= PRINTF_FLAG_UPPER; case 'b': numsys = 2; }
+    __IF0 { case 'o': numsys = 8; }
+    __IF0 { case 'u': numsys = 10; if unlikely(length == len_t) flags |= PRINTF_FLAG_SIGNED; }
+    __IF0 { case 'd': case 'i': numsys = 10; if likely(length != len_z) flags |= PRINTF_FLAG_SIGNED; }
+    __IF0 { case 'p': if (!(flags&PRINTF_FLAG_HASPREC)) { precision = sizeof(void *)*2; flags |= PRINTF_FLAG_HASPREC; }
 #if __SIZEOF_POINTER__ > VA_SIZE
                        if (!length) length = len_I;
 #endif
@@ -777,17 +891,21 @@ quote_string:
    {
     size_t format_len;
     struct longprint const *printers;
+    char const *cmd;
    case '[':
-    format_len = libc_stroff(format,']');
+    cmd = format;
+    while (*cmd && *cmd != ':' && *cmd != ']') ++cmd;
+    format_len = cmd-format;
+    while (*cmd && *cmd != ']') ++cmd;
     if (format_len <= LONGPRINT_NAMEMAX) {
      for (printers = ext_printers;
           printers->lp_func; ++printers) {
       if (!libc_memcmp(printers->lp_name,format,format_len)) {
-       temp = (*printers->lp_func)(printer,closure,length,
+       temp = (*printers->lp_func)(printer,closure,cmd,length,
                                    flags,precision,&args);
        if (temp < 0) return temp;
        result += temp;
-       format += format_len;
+       format = cmd;
        if (*format) ++format;
        goto done_fmt;
       }

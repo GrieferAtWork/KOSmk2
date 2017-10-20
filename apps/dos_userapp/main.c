@@ -111,10 +111,7 @@ int main(int argc, char **argv) {
  delete p;
 #endif
 #ifdef __GNUC__
- /* TODO: This crashes because we're not calling static initializers! */
  syslog(LOG_DEBUG,"std::cout @ %p\n",&std::cout);
- new(&std::__ioinit) std::ios_base::Init();
-
  std::cout << "Hello World\n";
 #endif
 

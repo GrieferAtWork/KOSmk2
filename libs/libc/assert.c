@@ -59,14 +59,14 @@ DECL_BEGIN
 /* Allow for calls from assembly. */
 GLOBAL_ASM(
 L(.section .text                                    )
-L(INTERN_ENTRY(libc_debug_tbprint)            )
+L(INTERN_ENTRY(libc_debug_tbprint)                  )
 L(    pushal /* Preserve registers */               )
 L(    pushl  $0                                     )
 L(    pushl  %ebp                                   )
-L(    call PLT_SYM(libc_debug_tbprint2)       )
+L(    call PLT_SYM(libc_debug_tbprint2)             )
 L(    popal /* Restore registers */                 )
 L(    ret                                           )
-L(SYM_END(libc_debug_tbprint)                 )
+L(SYM_END(libc_debug_tbprint)                       )
 L(.previous                                         )
 );
 

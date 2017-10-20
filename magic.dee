@@ -1251,7 +1251,8 @@ function run_addr2line(addr) {
 		filename = filename[#"/cygdrive/":].strip();
 		local drive,none,path = filename.partition("/")...;
 		filename = drive.upper()+":\\"+path.strip().strip("/").replace("/","\\");
-	} else if (filename.startswith("/opt/kos/usr/include/")) {
+	}
+	if (filename.startswith("/opt/kos/usr/include/")) {
 		filename = filename[#"/opt/kos/usr/":].strip().replace("/","\\");
 	}
 	filename = filename.replace("\\\\","\\");

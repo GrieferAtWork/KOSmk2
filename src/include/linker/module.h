@@ -30,6 +30,7 @@
 #include <fs/basic_types.h>
 #include <malloc.h>
 #include <hybrid/sync/atomic-rwlock.h>
+#include <hybrid/sync/atomic-rwptr.h>
 
 DECL_BEGIN
 
@@ -216,6 +217,7 @@ FUNDEF errno_t KCALL argvlist_appendv(struct argvlist *__restrict self, char con
 #define MODFLAG_TEXTREL 0x00000004 /*< Executing relocations requires all segments to be mapped as writable. */
 #define MODFLAG_PREFERR 0x00000008 /*< When set, prefer loading the module at 'm_load' (Implied with consequences upon failure when 'MODFLAG_RELO' isn't set). */
 #define MODFLAG_TLSSEG  0x00000010 /*< When set, the module contains TLS segments. */
+#define MODFLAG_NODEBUG 0x40000010 /*< [lock(m_debug)] When set, don't attempt to load missing debug information if none exists (Used to prevent repeated attempts of loading debug information). */
 #define MODFLAG_NOTABIN 0x80000000 /*< Not a binary. - When set, the module cannot be loaded directly, but may implement
                                     * 'o_real_module' and 'o_transform_environ' to proxy another module instead. */
 
@@ -235,7 +237,8 @@ FUNDEF errno_t KCALL argvlist_appendv(struct argvlist *__restrict self, char con
 #define MODULE_OFFSETOF_SEGC    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
 #define MODULE_OFFSETOF_SEGV    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
 #define MODULE_OFFSETOF_RLOCK   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_SIZE             (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
+#define MODULE_OFFSETOF_DEBUG   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
+#define MODULE_SIZE             (__SIZEOF_REF_T__+8*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
 
 struct module {
  ATOMIC_DATA ref_t       m_refcnt; /*< Module reference counter. */
@@ -270,10 +273,25 @@ struct module {
  size_t                  m_segc;   /*< [const] Amount of module segments. */
  struct modseg          *m_segv;   /*< [const][0..md_modc][owned] Vector of module segments. */
  atomic_rwlock_t         m_rlock;  /*< Lock for 'ms_region' of individual segments. */
+ REF atomic_rwptr_t      m_debug;  /*< [TYPE(struct moddebug)][0..1] Optional/lazily allocated debug information. */
  /* TODO: Startup thread stack size. */
 
  /* Custom module data goes here. */
 };
+
+#ifndef CONFIG_KERNEL_CORE_BIN
+#define CONFIG_KERNEL_CORE_BIN "/boot/kos.bin"
+#endif /* !CONFIG_KERNEL_CORE_BIN */
+
+/* Returns the file stream used to access the given module.
+ * NOTE: This function's only purpose is to lazily attempt to open the
+ *       kernel-core module's binary file located at 'CONFIG_KERNEL_CORE_BIN',
+ *       and return an open file stream to that file.
+ *       For any other module, it immediately returns 'self->m_file'
+ * WARNING: In the event that 'self' is the kernel, NULL may be
+ *          returned if the kernel's core binary couldn't be found. */
+FUNDEF SAFE struct file *KCALL module_file(struct module *__restrict self);
+
 
 #define MODULE_TRYINCREF(self)    ATOMIC_INCIFNONZERO((self)->m_refcnt)
 #define MODULE_INCREF(self)    (void)(ATOMIC_FETCHINC((self)->m_refcnt))
@@ -375,6 +393,15 @@ LOCAL SAFE REF struct module *KCALL module_open_s(HOST char const *__restrict ab
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF SAFE errno_t KCALL module_mkregions(struct module *__restrict self);
 
+/* Return module debug information for the given module, or NULL if none exists.
+ * In the event that no debug information is known for the given module, attempt
+ * to create and cache a new information descriptor for the module.
+ * @return: * :   A reference to the debug information descriptor of the given module.
+ * @return: NULL: No debug information is available/information is corrupt
+ *               (Corruption-related errors are written to the system log)
+ * NOTE: This function is implemented in /src/kernel/linker/debug.c" */
+FUNDEF SAFE REF struct moddebug *KCALL module_debug(struct module *__restrict self);
+
 /* Restore read-write segments to being read-only
  * after they were mapped for text relocations. */
 FUNDEF SAFE errno_t KCALL module_restore_readonly(struct module *__restrict self,
@@ -413,15 +440,12 @@ struct modloader {
  *           remaining allocated for at least the duration
  *           of the loader remaining registered.
  * NOTE: The reference stored in 'ml_owner' is added by this function.
- * HINT: Registering a second loader with the same magic will
- *       override the previous when 'secondary' is false.
- *       >> So you could easily override the builtin ELF loader.
  * @param: mode: A set of 'MODULE_LOADER_*'
  * WARNING: Do not attempt to call either of these functions
  *          from within a module loader. - You will deadlock!
  *       >> That also includes anything a module loader may call, such
  *          as file I/O, dynamic/physical/virtual memory management, etc.
- * WARNING: Do not modify any of the loaders fields once it is registered! */
+ * WARNING: Do not modify any of the loader's fields once it is registered! */
 FUNDEF void KCALL module_addloader(struct modloader *__restrict loader, int mode);
 /* @return: true:  Successfully removed the loader.
  * @return: false: The given loader has been overwritten, or never added. */
@@ -463,7 +487,6 @@ struct kinstance {
  atomic_rwlock_t k_tlock; /*< Lock for 'k_trace' */
  struct mptr    *k_trace; /*< [0..1|null(KINSTANCE_TRACE_NULL)][lock(k_tlock)] Chain of traced managed memory pointers. */
 #endif
- /* TODO: Track registered devices. */
  int             k_placeholder;
 };
 

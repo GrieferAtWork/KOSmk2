@@ -294,16 +294,16 @@ __have_precision:
     char const *dec;
     __size_t bufsize;
     __fint_t __arg;
-    if (0) { case 'B': __flags |= __PRINTF_FLAG_UPPER; case 'b': __numsys = 2; }
-    if (0) { case 'o': __numsys = 8; }
-    if (0) { case 'u': __numsys = 10; if __unlikely(__length == 't') __flags |= __PRINTF_FLAG_SIGNED; }
-    if (0) { case 'd': case 'i': __numsys = 10; if __likely(__length != 'z') __flags |= __PRINTF_FLAG_SIGNED; }
-    if (0) { case 'p': if (!(__flags&__PRINTF_FLAG_HASPREC)) { __precision = sizeof(void *)*2; __flags |= __PRINTF_FLAG_HASPREC; }
+    __IF0 { case 'B': __flags |= __PRINTF_FLAG_UPPER; case 'b': __numsys = 2; }
+    __IF0 { case 'o': __numsys = 8; }
+    __IF0 { case 'u': __numsys = 10; if __unlikely(__length == 't') __flags |= __PRINTF_FLAG_SIGNED; }
+    __IF0 { case 'd': case 'i': __numsys = 10; if __likely(__length != 'z') __flags |= __PRINTF_FLAG_SIGNED; }
+    __IF0 { case 'p': if (!(__flags&__PRINTF_FLAG_HASPREC)) { __precision = sizeof(void *)*2; __flags |= __PRINTF_FLAG_HASPREC; }
 #if __SIZEOF_POINTER__ > __PRINTF_VA_SIZE
-                       if (!__length) __length = __PRINTF_LEN_PTR;
+                      if (!__length) __length = __PRINTF_LEN_PTR;
 #endif
-             case 'X': __flags |= __PRINTF_FLAG_UPPER;
-             case 'x': __numsys = 16; if __unlikely(__length == 't') __flags |= __PRINTF_FLAG_SIGNED; }
+            case 'X': __flags |= __PRINTF_FLAG_UPPER;
+            case 'x': __numsys = 16; if __unlikely(__length == 't') __flags |= __PRINTF_FLAG_SIGNED; }
     __PRINTF_FINT_LOAD(__arg,__length,__flags,__args);
     __iter = __buf;
     if (__flags&__PRINTF_FLAG_SIGNED) {

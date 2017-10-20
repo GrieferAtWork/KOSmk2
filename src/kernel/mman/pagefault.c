@@ -96,6 +96,11 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
         fault_addr,&fault_addr,info->iret.eip);
 #endif
 
+#if 0
+ syslog(LOG_DEBUG,"#!$ addr2line(%Ix) '{file}({line}) : {func} : %p #PF at %p'\n",
+       (uintptr_t)info->iret.eip-1,info->iret.eip,fault_addr);
+#endif
+
  fault_page = FLOOR_ALIGN(fault_addr,PAGESIZE);
  user_mman = THIS_TASK->t_mman;
  assert(addr_isvirt(user_mman));
