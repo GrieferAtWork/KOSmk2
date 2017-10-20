@@ -55,7 +55,8 @@ local run_kernel_binary = "bin/kos.bin"; /* Output name of the kernel binary. */
 local run_addr2line_exe = run_kernel_binary;
 local run_addr2line_base = 0;
 
-local run_addr2line_exe = "bin/apps/terminal-vga";
+//local run_addr2line_exe = "bin/apps/elf_dos_userapp";
+//local run_addr2line_exe = "bin/apps/terminal-vga";
 //local run_addr2line_exe = "bin/mod/libpci.so";
 //local run_addr2line_base = 0xe0061000;
 //local run_addr2line_exe = "bin/mod/pe";
@@ -466,9 +467,9 @@ function start_process(proc,proj) {
 					} else {
 						filename = "../../"+filename;
 					}
-					if (filename.startswith("../../include/c++/current/")) {
-						filename = "../../binutils/build-binutils-i686-kos/i686-kos/include-c++/6.2.0/"+filename[#"../../include/c++/current/":];
-					}
+					//if (filename.startswith("../../include/c++/current/")) {
+					//	filename = "../../binutils/build-binutils-i686-kos/i686-kos/include-c++/6.2.0/"+filename[#"../../include/c++/current/":];
+					//}
 #endif /* __WINDOWS__ */
 					local msg_class = "warning";
 					if (col && !col.isdigit()) {
@@ -819,7 +820,8 @@ class Project {
 	}
 
 	relink() {
-		if (!::config_generate_preprocessor) {
+		if (!::config_generate_preprocessor &&
+		    !::config_generate_assembly) {
 			local source_objects = [];
 			for (local s: this._sources) {
 				source_objects.append(s.get_obj_file(this));
@@ -918,6 +920,7 @@ class Project {
 	}
 	update_disk() {
 		if (::config_generate_preprocessor) return;
+		if (::config_generate_assembly) return;
 		local output_file = this._dskfile;
 		SYNC_PRINT("["+this.logname()+"] Updating disk",repr output_file);
 		disk_force_mkdir(fs::path::head(output_file));
@@ -925,6 +928,7 @@ class Project {
 	}
 	update_usb() {
 		if (::config_generate_preprocessor) return;
+		if (::config_generate_assembly) return;
 		local output_file = this.usb_outfile();
 		SYNC_PRINT("["+this.logname()+"] Updating USB",repr output_file);
 		force_mkdir(fs::path::head(output_file));
@@ -944,6 +948,7 @@ function must_update_flat_kernel() {
 }
 function update_flat_kernel() {
 	if (::config_generate_preprocessor) return;
+	if (::config_generate_assembly) return;
 	if (must_update_flat_kernel()) {
 		print "Updating flat kernel image";
 		local update = process("bin/apps/elfimg");
@@ -958,6 +963,7 @@ function update_flat_kernel() {
 local disk_ops = [];
 function disk_do_sync_file(src,dst) {
 	if (::config_generate_preprocessor) return;
+	if (::config_generate_assembly) return;
 	disk_ops.append([]{
 		try {
 			local src_mtime = fast_getmtime(src);

@@ -94,15 +94,25 @@ INTERN ATTR_COLDTEXT void LIBCCALL libc_run_at_quick_exit(void) {
 }
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc__exit(int status) { sys_exit_group(status); }
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_abort(void) { libc__exit(EXIT_FAILURE); }
+
+#define xdlfini_exit(status) \
+ __asm__ __volatile__("int $0x80\n" \
+                      "pushl %1\n" \
+                      "call libc__exit\n" \
+                      : : "a" (__NR_xdlfini), "m" (status) \
+                      : "memory")
+
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_exit(int status) {
  atomic_rwptr_read(&onexit_n);
  run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_n),status);
- libc__exit(status);
+ xdlfini_exit(status);
+ __builtin_unreachable();
 }
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_quick_exit(int status) {
  atomic_rwptr_read(&onexit_q);
  run_onexit((struct exitcall *)ATOMIC_RWPTR_GET(onexit_q),status);
- libc__exit(status);
+ xdlfini_exit(status);
+ __builtin_unreachable();
 }
 
 PRIVATE void LIBCCALL callarg(int status, void *arg) { (*(void (LIBCCALL *)(void))arg)(); }

@@ -743,6 +743,16 @@
 #ifndef __UINTMAX_TYPE__
 #define __UINTMAX_TYPE__ __UINT64_TYPE__
 #endif
+
+#if __SIZEOF_LONG__ == __SIZEOF_POINTER__
+#define __LONGPTR_TYPE__  signed long
+#define __ULONGPTR_TYPE__ unsigned long
+#else
+#define __LONGPTR_TYPE__  __INTPTR_TYPE__
+#define __ULONGPTR_TYPE__ __UINTPTR_TYPE__
+#endif
+
+
 #ifndef __SSIZE_TYPE__
 #define __SSIZE_TYPE__   __TYPEFOR_INTIB(__SIZEOF_SIZE_T__)
 #endif
@@ -764,6 +774,9 @@
 #   define __WINT_TYPE__  __TYPEFOR_INTIB(__SIZEOF_WINT_T__)
 #endif
 #endif
+#ifndef __WCTYPE_TYPE__
+#define __WCTYPE_TYPE__   __ULONGPTR_TYPE__
+#endif /* !__WCTYPE_TYPE__ */
 #ifndef __CHAR16_TYPE__
 #define __CHAR16_TYPE__ __UINT16_TYPE__
 #endif

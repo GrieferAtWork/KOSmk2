@@ -1,5 +1,5 @@
-#ifndef __CXX_CSTDARG
-#define __CXX_CSTDARG 1
+#ifndef _CXX_CSTDARG
+#define _CXX_CSTDARG 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "stdarg.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "stdarg.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_STDARG */
+#endif /* !_CXX_STDARG */

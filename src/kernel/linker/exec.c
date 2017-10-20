@@ -38,6 +38,7 @@
 #include <linker/patch.h>
 #include <sched/cpu.h>
 #include <sched/task.h>
+#include <kernel/user.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sched/signal.h>
@@ -107,7 +108,42 @@ reloc_again:
 }
 
 
+/* Collect user-space module initializers to-be
+ * executed before jumping to the module's entry point.
+ * NOTE: This function must be executed as a user-space helper. */
+#define DID_INIT   INSTANCE_FLAG_RESERVED0
 
+struct user_collect_data {
+ void USER *USER *user_stack;
+ void USER       *last_eip;
+};
+
+PRIVATE ssize_t KCALL
+user_collect_push(VIRT void *pfun, modfun_t UNUSED(single_type), void *closure) {
+ struct user_collect_data *data = (struct user_collect_data *)closure;
+ *--data->user_stack = data->last_eip;
+ data->last_eip = pfun;
+ return 0;
+}
+PRIVATE ssize_t KCALL
+user_collect_init(struct instance *__restrict self,
+                  struct user_collect_data *__restrict data) {
+ ssize_t (KCALL *pmodfun)(struct instance *__restrict self,
+                          modfun_t types, penummodfun callback, void *closure);
+ struct instance **begin,**end;
+ /* Make sure to only run initializers once. */
+ if (ATOMIC_FETCHOR(self->i_flags,DID_INIT)&DID_INIT)
+     return 0;
+ /* Must push initializers in reverse order. */
+ pmodfun = self->i_module->m_ops->o_modfun;
+ if (pmodfun) {
+  (*pmodfun)(self,MODFUN_INIT|MODFUN_REVERSE,
+             &user_collect_push,data);
+ }
+ end = (begin = self->i_deps.is_setv)+self->i_deps.is_setc;
+ while (end-- != begin) user_collect_init(*end,data);
+ return 0;
+}
 
 
 /* NOTE: Upon success, this function does not
@@ -292,10 +328,13 @@ endwrite:
  modpatch_init_user(&patch,inst);
  error = modpatch_patch(&patch);
 
- if (E_ISERR(error)) goto end_too_late_patch;
+ /* Cleanup the patching controller. */
+ modpatch_fini(&patch);
+
+ if (E_ISERR(error)) goto end_too_late;
  if (mod->m_flag&MODFLAG_TEXTREL) {
   error = module_restore_readonly(mod,inst->i_base);
-  if (E_ISERR(error)) goto end_too_late_patch;
+  if (E_ISERR(error)) goto end_too_late;
  }
 
  /* Restore environment pages. */
@@ -342,7 +381,7 @@ endwrite:
                        TASK_USERSTACK_DEFAULTSIZE,
                        TASK_USERSTACK_GUARDSIZE,
                        TASK_USERSTACK_FUNDS);
- if (E_ISERR(error)) goto end_too_late_patch;
+ if (E_ISERR(error)) goto end_too_late;
 
 #ifndef CONFIG_NO_TLB
  /* Fill in TLB information for the task.
@@ -360,14 +399,6 @@ endwrite:
  /* Reset signal handlers. */
  sighand_reset(exec_task->t_sighand);
 
- /* TODO: call module constructors? (Push the real entry point and all
-  *       constructors but the first in reverse order on the user-stack,
-  *       then simply jump to the first. - When it rets, it will execute
-  *       the next constructor, and so on.
-  *    >> With that in mind, we'll probably have to move the
-  *       environment block to a callee-save register such as EBX.
-  */
-
  /* All right! Everything's been set up!
   * >> The last thing remaining now, is to actually start execution of the module! */
  { struct cpustate state;
@@ -380,17 +411,31 @@ endwrite:
    state.gp.ecx       = (uintptr_t)environ; /* Pass the environment block through ECX. */
    state.iret.useresp = (uintptr_t)exec_task->t_ustack->s_end;
    state.iret.ss      = __USER_DS;
-   state.iret.eip     = (uintptr_t)inst->i_base+mod->m_entry;
 #ifdef CONFIG_ALLOW_USER_IO
    state.iret.eflags  = EFLAGS_IF|EFLAGS_IOPL(3);
 #else
    state.iret.eflags  = EFLAGS_IF;
 #endif
+   /* Call module constructors. (Push the real entry point and all
+    * constructors but the first in reverse order on the user-stack,
+    * then simply jump to the first. - When it rets, it will execute
+    * the next constructor, and so on.
+    *    >> With that in mind, we'll probably have to move the
+    *       environment block to a callee-save register such as EBX.
+    */
+   { struct user_collect_data data;
+     data.last_eip = (void *)((uintptr_t)inst->i_base+mod->m_entry);
+     data.user_stack = (void **)exec_task->t_ustack->s_end;
+     error = (errno_t)call_user_worker(user_collect_init,2,inst,&data);
+     if (E_ISERR(error)) goto end_too_late;
+     state.iret.eip     = (uintptr_t)data.last_eip;
+     state.iret.useresp = (uintptr_t)data.user_stack;
+   }
 
    syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app '%[file]' at %p\n",
           mod->m_file,state.iret.eip);
 
-   /* Last phase: actually switch to the new task! */
+   /* Last phase: Cleanup stuff the caller gave us. */
    moduleset_fini(free_modules);
    MODULE_DECREF(mod);
    task_endcrit(); /* End the last remaining critical block. */
@@ -403,8 +448,6 @@ endwrite:
    __builtin_unreachable();
  }
 
-end_too_late_patch:
- modpatch_fini(&patch);
 end_too_late:
  /* It's too late to rewind, after failing to start the application.
   * >> Log failure and mark the caller to termination once its critical block ends. */

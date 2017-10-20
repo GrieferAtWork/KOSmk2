@@ -1,5 +1,5 @@
-#ifndef __CXX_CSTDDEF
-#define __CXX_CSTDDEF 1
+#ifndef _CXX_CSTDDEF
+#define _CXX_CSTDDEF 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "stddef.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "stddef.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_STDDEF */
+#endif /* !_CXX_STDDEF */

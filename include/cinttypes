@@ -1,5 +1,5 @@
-#ifndef __CXX_CINTTYPES
-#define __CXX_CINTTYPES 1
+#ifndef _CXX_CINTTYPES
+#define _CXX_CINTTYPES 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "inttypes.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "inttypes.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_INTTYPES */
+#endif /* !_CXX_INTTYPES */

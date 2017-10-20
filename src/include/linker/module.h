@@ -70,11 +70,9 @@ struct modseg {
 #define MODULEOPS_OFFSETOF_SYMADDR              __SIZEOF_POINTER__
 #define MODULEOPS_OFFSETOF_PATCH             (2*__SIZEOF_POINTER__)
 #define MODULEOPS_OFFSETOF_MODFUN            (3*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_EXEC_INIT         (4*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_EXEC_FINI         (5*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_REAL_MODULE       (6*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_TRANSFORM_ENVIRON (7*__SIZEOF_POINTER__)
-#define MODULEOPS_SIZE                       (8*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_REAL_MODULE       (4*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_TRANSFORM_ENVIRON (5*__SIZEOF_POINTER__)
+#define MODULEOPS_SIZE                       (6*__SIZEOF_POINTER__)
 
 struct modsym {
  void     *ms_addr; /*< [?..?] Symbol address. */
@@ -89,9 +87,14 @@ struct modsym {
 #define MODFUN_INIT1   0x01 /*< For elf: .preinit_array */
 #define MODFUN_INIT2   0x02 /*< For elf: .init_array (GCC: '__attribute__((constructor))') */
 #define MODFUN_INIT3   0x04 /*< For elf: .init ($ ld --init foo) */
+/*      MODFUN_INIT4   0x08  */
 #define MODFUN_FINI1   0x10 /*< For elf: .fini ($ ld --fini foo)  */
 #define MODFUN_FINI2   0x20 /*< For elf: .fini_array (GCC: '__attribute__((destructor))') */
+/*      MODFUN_FINI3   0x40  */
+#define MODFUN_REVERSE 0x80 /*< Reverse enumeration order. */
 typedef u8 modfun_t; /*< Set of 'MODFUN_*' */
+#define MODFUN_INIT    0x0f
+#define MODFUN_FINI    0x70
 
 
 /* Module function enumeration callback. (NOTE: 'single_type' is _ONE_ of 'MODFUN_*') */
@@ -133,17 +136,14 @@ struct moduleops {
   * WARNING: For safety concerns, the caller should validate that any given
   *          module address is actually apart of user-space, and does not
   *          originate from within the kernel.
+  * NOTE: This operator must be safe to executed as a user-worker callback ('call_user_worker()').
   * @param: types:        A set of 'MODFUN_*'
   * @param: callback:     The callback executed for each function found (in order).
   * @param: closure:      The closure argument forwarded to 'callback'.
   * @return: * :          The sum of all of callback's return values.
   * @return: E_ISERR(*) : The first error code returned by any call to 'callback'. */
- ssize_t (KCALL *o_modfun)(struct instance *__restrict self, modfun_t types,
-                           penummodfun callback, void *closure);
- /* [0..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
-  * TODO: Remove these & switch to the new o_modfun-system. */
- void (KCALL *o_exec_init)(struct module *__restrict self, VIRT ppage_t load_addr);
- void (KCALL *o_exec_fini)(struct module *__restrict self, VIRT ppage_t load_addr);
+ ssize_t (KCALL *o_modfun)(struct instance *__restrict self,
+                           modfun_t types, penummodfun callback, void *closure);
  /* [0..1] An optional operator that returns the pointed-to (real)
   * module, such as when executing shebang scripts.
   * NOTE: This operator may return '-ENOENT' or '-ENOEXEC' to indicate
@@ -489,6 +489,11 @@ struct kinstance {
                                              *           allowing the kernel to delete driver memory mappings once the driver has been unloaded. */
 #define INSTANCE_FLAG_DID_FINI   0x00040000 /*< [atomic] Atomically set before module fini-functions are called to prevent them being run more than once. */
 #define INSTANCE_FLAG_PERSISTENT INSTANCE_FLAG_NOUNMAP /*< [const] The instance may never be unloaded until the associated mman is destroyed. */
+#define INSTANCE_FLAG_RESERVED   0xf0000000 /*< Flags matching this mask should be ignored and initialized to ZERO. */
+#define INSTANCE_FLAG_RESERVED0  0x10000000 /*< NOTE: Used by sys_exec(). */
+#define INSTANCE_FLAG_RESERVED1  0x20000000
+#define INSTANCE_FLAG_RESERVED2  0x40000000
+#define INSTANCE_FLAG_RESERVED3  0x80000000
 
 /* Default instance flags for drivers:
  * @flag: INSTANCE_FLAG_KERNEL:  Drivers run in kernel space.

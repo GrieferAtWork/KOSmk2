@@ -108,6 +108,11 @@ struct syscall_descr {
 #define THIS_SYSCALL_REAL_EFLAGS  (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_eflags : THIS_SYSCALL_EFLAGS)
 #define THIS_SYSCALL_REAL_USERESP (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_useresp : THIS_SYSCALL_USERESP)
 #define THIS_SYSCALL_REAL_SS      (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_ss : THIS_SYSCALL_SS)
+#define SET_THIS_SYSCALL_REAL_EIP(x)     (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_eip : &THIS_SYSCALL_EIP) = (x))
+#define SET_THIS_SYSCALL_REAL_CS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_cs : &THIS_SYSCALL_CS) = (x))
+#define SET_THIS_SYSCALL_REAL_EFLAGS(x)  (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_eflags : &THIS_SYSCALL_EFLAGS) = (x))
+#define SET_THIS_SYSCALL_REAL_USERESP(x) (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_useresp : &THIS_SYSCALL_USERESP) = (x))
+#define SET_THIS_SYSCALL_REAL_SS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_ss : &THIS_SYSCALL_SS) = (x))
 
 #else
 #error "FIXME: Need at least 'THIS_SYSCALL_EIP'"

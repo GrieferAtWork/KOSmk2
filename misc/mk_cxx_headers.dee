@@ -23,8 +23,8 @@
 fs::chdir(fs::path::head(__FILE__));
 
 const text = "\
-#ifndef __CXX_C{name.upper()}\n\
-#define __CXX_C{name.upper()} 1\n\
+#ifndef _CXX_C{name.upper()}\n\
+#define _CXX_C{name.upper()} 1\n\
 #ifdef __CXX_SYSTEM_HEADER\n\
 #include \"{name}.h\"\n\
 #else /* __CXX_SYSTEM_HEADER */\n\
@@ -32,7 +32,7 @@ const text = "\
 #include \"{name}.h\"\n\
 #undef __CXX_SYSTEM_HEADER\n\
 #endif /* !__CXX_SYSTEM_HEADER */\n\
-#endif /* !__CXX_{name.upper()} */\n";
+#endif /* !_CXX_{name.upper()} */\n";
 
 function header(name) {
 	local fp = file.open("../include/c"+name,"w");
@@ -41,7 +41,7 @@ function header(name) {
 }
 
 header("assert");
-header("ctype");
+// header("ctype"); /* Contains custom content */
 // header("fenv");
 // header("float");
 header("inttypes");

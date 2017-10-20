@@ -297,6 +297,29 @@ __XSYSCALL(__NR_xfdlopen,sys_xfdlopen)
 __XSYSCALL(__NR_xdlclose,sys_xdlclose)
 #define __NR_xdlsym       0x80000023
 __XSYSCALL(__NR_xdlsym,sys_xdlsym)
+/* Push a list of all non-executed module finalizers onto the stack
+ * and start executing the in order, returning to the caller once all
+ * have been run.
+ * WARNING: Since most of this system-call operates in user-space,
+ *          the kernel has no control over preservation of registers.
+ *       >> The caller should therefor assume that all registers except
+ *          for ESP may be clobbered (although EBP, EBX, ESI and EDI)
+ *          should also be preserved under normal circumstances.
+ * NOTE: Since registers such as EAX and EDX are clobbered as well,
+ *       there is no way of testing for a potential error during
+ *       execution, meaning that the caller must only
+ * WARNING: The caller is responsible for providing a buffer of
+ *          sufficient size to hold any potential number of finalizers
+ *          through ESP (aka: This function will use your user-space
+ *          stack for working its wonders)
+ * NOTE: This systemcall is invoked after main() returns,
+ *       or when 'exit()' or 'quick_exit()' is called.
+ *       It is however not called when '_exit()' or '_Exit()' is invoked,
+ *       or when an unhandled signal causes the application to terminate.
+ * NOTE: libc invokes this system-call after 'atexit()' was executed. */
+#define __NR_xdlfini      0x80000024
+#define __SC_ATTRIB_CLOBB_0x80000024 C("memory")
+__XSYSCALL_ASM(__NR_xdlfini,sys_xdlfini)
 
 #define __NR_xpaused      0x80000080
 #if !defined(__KERNEL__) || defined(CONFIG_DEBUG)

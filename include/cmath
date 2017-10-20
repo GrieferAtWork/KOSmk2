@@ -1,5 +1,5 @@
-#ifndef __CXX_CMATH
-#define __CXX_CMATH 1
+#ifndef _CXX_CMATH
+#define _CXX_CMATH 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "math.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "math.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_MATH */
+#endif /* !_CXX_MATH */

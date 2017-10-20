@@ -1,5 +1,5 @@
-#ifndef __CXX_CWCHAR
-#define __CXX_CWCHAR 1
+#ifndef _CXX_CWCHAR
+#define _CXX_CWCHAR 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "wchar.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "wchar.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_WCHAR */
+#endif /* !_CXX_WCHAR */

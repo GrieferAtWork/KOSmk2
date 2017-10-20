@@ -63,6 +63,11 @@
 #include <wchar.h>
 #include <math.h>
 
+#ifdef __GNUC__
+#include <syslog.h>
+#include <c++/current/iostream>
+#endif
+
 DECL_BEGIN
 
 /* NOTE: Try copy-pasting the .exe this file compiles to into KOS.
@@ -92,10 +97,6 @@ int main(int argc, char **argv) {
  printf("n   = %d\n",n); /* Must not be -1, as would normally be the case in DOS. */
  printf("buf = '%.*s'\n",16,buf); /* Must contain the first 16 characters. */
 
- format_printf(&file_printer,stdout,
-               "Format-printer text %s\n",
-               strdupaf("foo %d",42));
-
  printf("argc = %d\n",argc);
  printf("argv = %p\n",argv);
  while (argc--) printf("argv[%d] = %s\n",argc,argv[argc]);
@@ -108,6 +109,13 @@ int main(int argc, char **argv) {
  int *p = new int(42);
  printf("p = %p\n",p);
  delete p;
+#endif
+#ifdef __GNUC__
+ /* TODO: This crashes because we're not calling static initializers! */
+ syslog(LOG_DEBUG,"std::cout @ %p\n",&std::cout);
+ new(&std::__ioinit) std::ios_base::Init();
+
+ std::cout << "Hello World\n";
 #endif
 
  return 0;

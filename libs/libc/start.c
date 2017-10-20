@@ -25,14 +25,13 @@
 #include "stdlib.h"
 #include <hybrid/compiler.h>
 #include <kos/environ.h>
+#include <kos/thread.h>
 #include <hybrid/asm.h>
 
 DECL_BEGIN
 
 typedef int (*pmain)(int argc, char **argv, char **envp);
 __LIBC ATTR_NORETURN void (FCALL __entry)(struct envdata *__restrict env, pmain main);
-
-INTDEF int LIBCCALL user_initialize_dlmalloc(void);
 
 #undef environ
 DEFINE_PUBLIC_ALIAS(__environ,environ);
@@ -45,9 +44,14 @@ PUBLIC struct envdata *appenv;
 
 PUBLIC ATTR_NORETURN
 void (FCALL __entry)(struct envdata *__restrict env, pmain main) {
+#if 1
+ /* With module initializer now a thing, we can no longer rely
+  * on the original ECX passed by the kernel to be correct...
+  * XXX: Find a better solution? */
+ env = (struct envdata *)TLB_PEEKI(offsetof(struct tlb,tl_env));
+#endif
  appenv  = env;
  environ = env->e_envp;
- user_initialize_dlmalloc();
  libc_exit((*main)(env->e_argc,env->e_argv,environ));
 }
 

@@ -21,28 +21,166 @@
 #define _KOS_SOURCE 2
 #define _GNU_SOURCE 1
 
+#include <dlfcn.h>
+#include <fs/dentry.h>
+#include <fs/fd.h>
+#include <hybrid/asm.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
+#include <kernel/mman.h>
 #include <kernel/syscall.h>
+#include <kernel/user.h>
 #include <linker/module.h>
 #include <linker/patch.h>
-#include <syslog.h>
-#include <string.h>
-#include <fs/dentry.h>
 #include <sched/task.h>
+#include <string.h>
 #include <sys/mman.h>
-#include <kernel/mman.h>
-#include <kernel/user.h>
-#include <dlfcn.h>
-#include <fs/fd.h>
+#include <syslog.h>
+#include <kernel/irq.h>
+#include <kernel/arch/cpustate.h>
+#include <sched/cpu.h>
 
 DECL_BEGIN
 
+#define DID_INIT  INSTANCE_FLAG_RESERVED0
+#define DID_FINI  INSTANCE_FLAG_DID_FINI
+
+
+struct dl_saved_registers {
+#ifdef __x86_64__
+#error TODO
+#elif defined(__i386__)
+ struct gpregs gp;
+ u32 eflags,eip;
+#else
+#error "ERROR: Unsupported architecture."
+#endif
+};
+
+GLOBAL_ASM(
+L(.section .text.user                                                            )
+/* Pushed as the last function to restore registers and return
+ * to the caller after the xdlopen() system call was executed.
+ * @ENTRY: ESP is `struct dl_saved_registers *' */
+L(PRIVATE_ENTRY(dl_restore_regs)                                                 )
+#ifdef __x86_64__
+#error TODO
+#elif defined(__i386__)
+L(    popal /* gpregs */                                                         )
+L(    popfl /* eflags */                                                         )
+L(    ret   /* eip */                                                            )
+#else
+#error "ERROR: Unsupported architecture."
+#endif
+L(.previous                                                                      )
+);
+
+INTDEF byte_t dl_restore_regs[];
+
+
+PRIVATE ssize_t KCALL
+dl_do_pushinit(VIRT void *pfun,
+               modfun_t UNUSED(single_type),
+               void *closure) {
+ void HOST *HOST *pbase_return_value = (void **)closure;
+ byte_t USER *user_stack = (byte_t USER *)THIS_SYSCALL_REAL_USERESP;
+ if (*pbase_return_value != (void *)-1) {
+  USER struct dl_saved_registers *regs;
+  /* Special handling after the last initializer: restore registers. */
+  user_stack -= sizeof(struct dl_saved_registers);
+  regs = (struct dl_saved_registers *)user_stack;
+  regs->eip    = (uintptr_t)THIS_SYSCALL_REAL_EIP;
+  regs->eflags = THIS_SYSCALL_REAL_EFLAGS;
+  regs->gp.edi = THIS_SYSCALL_EDI;
+  regs->gp.esi = THIS_SYSCALL_ESI;
+  regs->gp.ebp = THIS_SYSCALL_EBP;
+  regs->gp.esp = (uintptr_t)THIS_SYSCALL_REAL_USERESP; /* Could really be anything... */
+  regs->gp.ebx = THIS_SYSCALL_EDX;
+  regs->gp.edx = THIS_SYSCALL_EBX;
+  regs->gp.ecx = THIS_SYSCALL_ECX;
+  /* Return the base address of the first module to the original caller. */
+  regs->gp.eax = (uintptr_t)*pbase_return_value;
+  /* Return to this special location. */
+  SET_THIS_SYSCALL_REAL_EIP((void *)dl_restore_regs);
+  *pbase_return_value = (void *)-1;
+ }
+
+ /* Now just push the given callback onto the user-stack. */
+ user_stack -= sizeof(USER void *);
+ *(USER void **)user_stack = THIS_SYSCALL_REAL_EIP;
+ SET_THIS_SYSCALL_REAL_EIP(pfun);
+ SET_THIS_SYSCALL_REAL_USERESP(user_stack);
+
+ return 0;
+}
+
+PRIVATE ssize_t KCALL
+dl_do_loadinit(struct instance *__restrict inst,
+               void **pbase_return_value) {
+ struct instance **begin,**end;
+ ssize_t (KCALL *pmodfun)(struct instance *__restrict self,
+                          modfun_t types, penummodfun callback, void *closure);
+ /* Make sure to only run initializers once. */
+ if (ATOMIC_FETCHOR(inst->i_flags,DID_INIT)&DID_INIT)
+     return 0;
+ pmodfun = inst->i_module->m_ops->o_modfun;
+ if (pmodfun) (*pmodfun)(inst,MODFUN_INIT|MODFUN_REVERSE,
+                        &dl_do_pushinit,pbase_return_value);
+
+ /* Recursively load initializers for dependencies. */
+ end = (begin = inst->i_deps.is_setv)+inst->i_deps.is_setc;
+ while (end-- != begin) dl_do_loadinit(*end,pbase_return_value);
+
+ return 0;
+}
+
+PRIVATE errno_t KCALL
+dl_loadinit(struct instance *__restrict inst,
+            void *base_return_value) {
+ errno_t error; struct mman *mm = THIS_MMAN;
+ void *safed_esp,*safed_eip;
+ /* Disable preemption to prevent the signal delivery from
+  * interfering with us modifying system-call return information. */
+ pflag_t was = PREEMPTION_PUSH();
+ safed_esp = THIS_SYSCALL_REAL_USERESP;
+ safed_eip = THIS_SYSCALL_REAL_EIP;
+ /* Make sure to lock the memory manager to prevent
+  * changes to the instance's dependency tree. */
+ error = mman_write(mm);
+ if (E_ISERR(error)) return error;
+ error = (errno_t)call_user_worker(&dl_do_loadinit,2,inst,&base_return_value);
+ mman_endwrite(mm);
+ if (E_ISERR(error)) {
+  /* Restore the saved system call registers */
+  SET_THIS_SYSCALL_REAL_USERESP(safed_esp);
+  SET_THIS_SYSCALL_REAL_EIP(safed_eip);
+ }
+ PREEMPTION_POP(was);
+ return error;
+}
+
+
+
 PRIVATE SAFE USER void *KCALL
 do_dlopen(struct module *__restrict mod, int flags) {
- REF struct instance *inst;
+ struct instance *inst;
  struct modpatch patch;
  void *result;
+ bool inst_is_ref = false;
+
+ if (flags&RTLD_NOLOAD) {
+  struct mman *mm = THIS_MMAN;
+  /* Search for an instance already resident in memory. */
+  result = E_PTR(mman_read(mm));
+  if (E_ISERR(result)) return result;
+  inst = mman_instance_of_unlocked(mm,mod);
+  mman_endread(mm);
+  if (!inst) return E_PTR(-ENOENT); /* Module not loaded. */
+  inst_is_ref = true;
+  goto got_inst_noload;
+ }
+
  modpatch_init_user(&patch,THIS_MMAN->m_exe);
  /* NOTE: Since 'p_inst' is allowed to be NULL, no
   *       need to handle the case of a missing 'm_exe' */
@@ -55,14 +193,14 @@ do_dlopen(struct module *__restrict mod, int flags) {
  /* We make our lives simple by loading the given
   * module as a dependency of the root executable. */
  inst = modpatch_dldep(&patch,mod);
+ modpatch_fini(&patch);
+ if (E_ISERR(inst)) return E_PTR(E_GTERR(inst));
+
+ /* Increment the instance's dlopen() recursion counter. */
+ ATOMIC_FETCHINC(inst->i_openrec);
+got_inst_noload:
  /* We use instance base addresses as module handles. */
- if (E_ISOK(inst)) {
-  /* Increment the instance's dlopen() recursion counter. */
-  ATOMIC_FETCHINC(inst->i_openrec);
-  result = (void *)((uintptr_t)inst->i_base+mod->m_begin);
- } else {
-  result = E_PTR(E_GTERR(inst));
- }
+ result = (void *)((uintptr_t)inst->i_base+mod->m_begin);
 
  if (flags&RTLD_GLOBAL && THIS_MMAN->m_exe) {
   if (flags&RTLD_NODELETE) {
@@ -74,8 +212,20 @@ do_dlopen(struct module *__restrict mod, int flags) {
   }
  }
 
- modpatch_fini(&patch);
+ if (!(flags&RTLD_NOINIT)) {
+  /* Call initializers on 'inst' and all
+   * dependencies that don't have 'DID_INIT' set.
+   * >> Just like in all other places, we need the system call to
+   *    return to user-space by executing a long list of custom
+   *    callbacks, yet this time we also need to preserve all
+   *    user-space registers except for 'EAX'.
+   * HINT: We can determine their values by looking at the 'THIS_SYSCALL_*' macros. */
+  errno_t error = dl_loadinit(inst,result);
+  if (E_ISERR(error)) result = E_PTR(error);
+ }
 
+ if (inst_is_ref)
+     INSTANCE_DECREF(inst);
  return result;
 }
 
@@ -138,6 +288,9 @@ search_module:
  inst = mman_instance_at_unlocked(mm,handle);
  if unlikely(!inst) goto end2;
 
+ /* TODO: Run instance finalizers.
+  * NOTE: In case the instance is munmap()'ed instead, finalizers will never be run. */
+
  /* Decrement the dlopen()/dlclose() recursion counter.
   * >> Only actually unmap the module when it hits ZERO(0). */
  { ref_t old_counter;
@@ -195,6 +348,7 @@ end:  task_endcrit();
  return result;
 }
 
+
 SYSCALL_DEFINE2(xdlsym,USER void *,handle,USER char const *,symbol) {
  void *result; int state; char *name;
  struct mman *mm = THIS_MMAN;
@@ -224,6 +378,96 @@ end2: mman_endwrite(mm);
 end:  task_endcrit();
  return (syscall_slong_t)result;
 }
+
+
+#if defined(CONFIG_DEBUG) && 1
+#define DLFINI_DEBUG(x) x
+#else
+#define DLFINI_DEBUG(x) (void)0
+#endif
+
+PRIVATE ssize_t KCALL
+dl_enum_fini(VIRT void *pfun,
+             modfun_t UNUSED(single_type),
+             void *closure) {
+ struct irregs *regs = (struct irregs *)closure;
+ /* Push the previous return address and replace it with the finalizer. */
+ DLFINI_DEBUG(syslog(LOG_DEBUG,"[DLFINI] Push finalizer at %p\n",pfun));
+ regs->useresp -= sizeof(USER void *);
+ (*(USER void *USER *)regs->useresp) = (USER void *)regs->eip;
+ regs->eip = (uintptr_t)pfun;
+ return 0;
+}
+
+PRIVATE void FCALL /* Use fastcall to optimize the loop calling this function. */
+dl_do_loadfini_inst(struct instance *__restrict inst,
+                    struct irregs *__restrict regs) {
+ ssize_t (KCALL *pmodfun)(struct instance *__restrict self,
+                          modfun_t types, penummodfun callback, void *closure);
+ struct instance **iter,**end;
+ /* Make sure we only call finalizers for any instance once.
+  * NOTE: By also checking the DID_INIT-flag, we prevent
+  *       finalizing a library that was never initialized. */
+ if ((ATOMIC_FETCHOR(inst->i_flags,DID_FINI)&
+     (DID_INIT|DID_FINI)) != DID_INIT) return;
+ /* Reminder: We must push finalizers in reverse. */
+ pmodfun = inst->i_module->m_ops->o_modfun;
+ if (pmodfun) {
+  DLFINI_DEBUG(syslog(LOG_DEBUG,"[DLFINI] Scan module '%[file]' for finalizers\n",inst->i_module->m_file));
+  (*pmodfun)(inst,MODFUN_FINI|MODFUN_REVERSE,&dl_enum_fini,regs);
+ }
+
+ /* NOTE: Holding a lock to the memory manager, there should
+  *       be no way the dependency/using chains can change. */
+ end = (iter = inst->i_deps.is_setv)+inst->i_deps.is_setc;
+ for (; iter != end; ++iter) dl_do_loadfini_inst(*iter,regs);
+}
+
+INTERN void KCALL
+dl_do_loadfini(struct mman *__restrict mm,
+               struct irregs *__restrict regs) {
+ struct instance *inst;
+ /* Start out by pushing finalizers for the executable
+  * itself, as well as its dependencies. */
+ if (mm->m_exe)
+     dl_do_loadfini_inst(mm->m_exe,regs);
+ /* Now go through the list of instances again and make sure
+  * we didn't skip anything (Such as lazily loaded modules). */
+ MMAN_FOREACH_INST(inst,mm) {
+  dl_do_loadfini_inst(inst,regs);
+ }
+}
+
+INTERN void FCALL
+dl_loadfini(struct irregs *__restrict regs) {
+ struct mman *mm = THIS_MMAN;
+ task_crit();
+ /* XXX: Clear all pending user-alarm()s. */
+
+ /* NOTE: We need a write-lock in case pushing
+  *       data onto the user-stack causes a #PF. */
+ if (E_ISERR(mman_write(mm))) goto end;
+ /* Use a user-worker to handle segfaults when pushing data onto the user-stack. */
+ call_user_worker(&dl_do_loadfini,2,mm,regs);
+ mman_endwrite(mm);
+end:
+ task_endcrit();
+}
+
+
+GLOBAL_ASM(
+L(.section .text                                                                 )
+L(INTERN_ENTRY(sys_xdlfini)                                                      )
+L(    sti /* Enable interrupts. */                                               )
+L(    movl %esp, %ecx      /* Load IRET registers into ECX (argument to 'dl_loadfini()') */)
+L(    __ASM_PUSH_SEGMENTS                                                        )
+L(    __ASM_LOAD_SEGMENTS(%ax) /* Load kernel segments */                        )
+L(    call dl_loadfini                                                           )
+L(    __ASM_POP_SEGMENTS                                                         )
+L(    iret                                                                       )
+L(SYM_END(sys_xdlfini)                                                           )
+L(.previous                                                                      )
+);
 
 
 DECL_END

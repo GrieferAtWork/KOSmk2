@@ -433,12 +433,9 @@ DEFINE_PUBLIC_ALIAS(__wargv,libc_16wargv);
 DEFINE_PUBLIC_ALIAS(__winitenv,libc_16winitenv);
 
 
-INTDEF int LIBCCALL user_initialize_dlmalloc(void);
 PRIVATE ATTR_DOSTEXT void LIBCCALL libc_dos_init(void) {
  /* Initialize global variables, filling argc/argv and environ from appenv. */
  struct envdata *env;
- /* Initialize dlmalloc() */
- user_initialize_dlmalloc();
  /* NOTE: Since we have no control over when this function is called,
   *       we cannot rely on the fact that the kernel will have filled
   *       in '%ECX' with the environment block upon application start.

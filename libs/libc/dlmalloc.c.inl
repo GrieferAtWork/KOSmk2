@@ -19,11 +19,13 @@
  * the idea to using lazy initialization pointless and actually slower.
  * Instead, dlmalloc is initialized explicitly at the same time that
  * libc and raw, low-level RAM are. */
+#ifndef DLMALLOC_USE_STATIC_INIT
 #ifndef DLMALLOC_NO_ONETIME_INIT
 #ifndef DLMALLOC_USE_ONETIME_INIT
 #define DLMALLOC_USE_ONETIME_INIT user_initialize_dlmalloc
 #endif /* !DLMALLOC_USE_ONETIME_INIT */
 #endif /* !DLMALLOC_NO_ONETIME_INIT */
+#endif /* !DLMALLOC_USE_STATIC_INIT */
 
 
 /* Tell dlmalloc what KOS is offering it. */
@@ -2713,10 +2715,27 @@ struct malloc_params {
   flag_t default_mflags;
 };
 
+#ifdef DLMALLOC_USE_STATIC_INIT
+static struct malloc_params mparams = {
+    .magic          = 0x77976be1,
+    .page_size      = malloc_getpagesize,
+    .granularity    = (DEFAULT_GRANULARITY ? DEFAULT_GRANULARITY : malloc_getpagesize),
+    .mmap_threshold = DEFAULT_MMAP_THRESHOLD,
+    .trim_threshold = DEFAULT_TRIM_THRESHOLD,
+#if MORECORE_CONTIGUOUS
+    .default_mflags = USE_LOCK_BIT|USE_MMAP_BIT
+#else /* MORECORE_CONTIGUOUS */
+    .default_mflags = USE_LOCK_BIT|USE_MMAP_BIT|USE_NONCONTIGUOUS_BIT
+#endif /* !MORECORE_CONTIGUOUS */
+};
+#else
 static struct malloc_params mparams;
+#endif
 
 /* Ensure mparams initialized */
-#ifdef DLMALLOC_USE_ONETIME_INIT
+#ifdef DLMALLOC_USE_STATIC_INIT
+#define ensure_initialization() (void)0
+#elif defined(DLMALLOC_USE_ONETIME_INIT)
 #define ensure_initialization() (void)0
 #else
 #define ensure_initialization() (void)(mparams.magic != 0 || init_mparams())
@@ -2725,7 +2744,18 @@ static struct malloc_params mparams;
 #if !ONLY_MSPACES
 
 /* The global malloc_state used for all non-"mspace" calls */
+#ifdef DLMALLOC_USE_STATIC_INIT
+static struct malloc_state _gm_ = {
+#if MORECORE_CONTIGUOUS
+    .mflags = USE_LOCK_BIT|USE_MMAP_BIT,
+#else /* MORECORE_CONTIGUOUS */
+    .mflags = USE_LOCK_BIT|USE_MMAP_BIT|USE_NONCONTIGUOUS_BIT,
+#endif /* !MORECORE_CONTIGUOUS */
+    .mutex  = 0
+};
+#else
 static struct malloc_state _gm_;
+#endif
 #define gm                 (&_gm_)
 #define is_global(M)       ((M) == &_gm_)
 
@@ -3196,6 +3226,7 @@ static void DLCALL post_fork_child(void)  { INITIAL_LOCK(&(gm)->mutex); }
 #endif /* LOCK_AT_FORK */
 
 /* Initialize mparams */
+#ifndef DLMALLOC_USE_STATIC_INIT
 #ifndef DLMALLOC_USE_ONETIME_INIT
 static int DLCALL init_mparams(void)
 #else
@@ -3290,6 +3321,7 @@ INTERN int DLCALL DLMALLOC_USE_ONETIME_INIT(void)
   RELEASE_MALLOC_GLOBAL_LOCK();
   return 1;
 }
+#endif /* !DLMALLOC_USE_STATIC_INIT */
 
 /* support for mallopt */
 static int DLCALL change_mparam(int param_number, int value) {

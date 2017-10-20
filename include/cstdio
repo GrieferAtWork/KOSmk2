@@ -1,5 +1,5 @@
-#ifndef __CXX_CSTDIO
-#define __CXX_CSTDIO 1
+#ifndef _CXX_CSTDIO
+#define _CXX_CSTDIO 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "stdio.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "stdio.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_STDIO */
+#endif /* !_CXX_STDIO */

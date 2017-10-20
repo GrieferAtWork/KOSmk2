@@ -64,6 +64,16 @@ __SYSDECL_BEGIN
 /* Do not delete object when closed.  */
 #define RTLD_NODELETE     0x01000
 
+#if defined(__USE_KOS) && defined(__CRT_KOS)
+/* KOS Extension: Don't run module initializers, and consequently skip running finalizers as well.
+ * When set, `(x)dlopen()' will immeditaly return to the caller upon success,
+ * rather than running initializers of all affected libraries first.
+ * HINT: You may run initializers (and finalizers during exit()) at a
+ *       later time by calling `(x)dlopen()' again without passing this flag.
+ * WARNING: Initializers of the newly loaded dependencies will not be executed either! */
+#define RTLD_NOINIT    0x80000000
+#endif
+
 #ifdef __USE_GNU
 /* To support profiling of shared objects it is a good idea to call
  * the function found using `dlsym' using the following macro since

@@ -1,5 +1,5 @@
-#ifndef __CXX_CSTRING
-#define __CXX_CSTRING 1
+#ifndef _CXX_CSTRING
+#define _CXX_CSTRING 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "string.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "string.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_STRING */
+#endif /* !_CXX_STRING */

@@ -1,5 +1,5 @@
-#ifndef __CXX_CTIME
-#define __CXX_CTIME 1
+#ifndef _CXX_CTIME
+#define _CXX_CTIME 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "time.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "time.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_TIME */
+#endif /* !_CXX_TIME */

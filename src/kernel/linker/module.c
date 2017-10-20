@@ -916,6 +916,13 @@ end2:
  return result;
 }
 
+PRIVATE ssize_t KCALL
+exec_callback(VIRT void *pfun,
+              modfun_t UNUSED(single_type),
+              void *UNUSED(closure)) {
+ (*(void *(*)(void))pfun)();
+ return 0;
+}
 
 PUBLIC SAFE void KCALL
 instance_callinit(struct instance *__restrict self) {
@@ -930,8 +937,8 @@ instance_callinit(struct instance *__restrict self) {
               INSTANCE_ISEMPTY(self)) return;
  ops = self->i_module->m_ops;
  CHECK_HOST_TOBJ(ops);
- if (ops->o_exec_init)
-   (*ops->o_exec_init)(self->i_module,self->i_base);
+ if (ops->o_modfun)
+   (*ops->o_modfun)(self,MODFUN_INIT,&exec_callback,NULL);
 }
 PUBLIC SAFE void KCALL
 instance_callfini(struct instance *__restrict self) {
@@ -946,8 +953,8 @@ instance_callfini(struct instance *__restrict self) {
               INSTANCE_ISEMPTY(self)) return;
  ops = self->i_module->m_ops;
  CHECK_HOST_TOBJ(ops);
- if (ops->o_exec_fini)
-   (*ops->o_exec_fini)(self->i_module,self->i_base);
+ if (ops->o_modfun)
+   (*ops->o_modfun)(self,MODFUN_FINI,&exec_callback,NULL);
 }
 
 PUBLIC ssize_t KCALL

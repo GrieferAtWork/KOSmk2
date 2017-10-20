@@ -1,5 +1,5 @@
-#ifndef __CXX_CLIMITS
-#define __CXX_CLIMITS 1
+#ifndef _CXX_CLIMITS
+#define _CXX_CLIMITS 1
 #ifdef __CXX_SYSTEM_HEADER
 #include "limits.h"
 #else /* __CXX_SYSTEM_HEADER */
@@ -7,4 +7,4 @@
 #include "limits.h"
 #undef __CXX_SYSTEM_HEADER
 #endif /* !__CXX_SYSTEM_HEADER */
-#endif /* !__CXX_LIMITS */
+#endif /* !_CXX_LIMITS */

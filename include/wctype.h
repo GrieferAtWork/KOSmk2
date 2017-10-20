@@ -71,6 +71,8 @@ typedef __WCHAR_TYPE__ wchar_t;
 #endif
 
 #if defined(__USE_ISOC99) || defined(__USE_GNU)
+#ifndef __std_wctrans_t_defined
+#define __std_wctrans_t_defined 1
 __NAMESPACE_STD_BEGIN
 #ifdef __DOS_COMPAT__
 typedef wchar_t wctrans_t;
@@ -78,8 +80,13 @@ typedef wchar_t wctrans_t;
 typedef __int32_t const *wctrans_t;
 #endif /* !__DOS_COMPAT__ */
 __NAMESPACE_STD_END
+#endif /* !__std_wctrans_t_defined */
+
 #ifndef __CXX_SYSTEM_HEADER
+#ifndef __wctrans_t_defined
+#define __wctrans_t_defined 1
 __NAMESPACE_STD_USING(wctrans_t)
+#endif /* !__wctrans_t_defined */
 #endif /* !__CXX_SYSTEM_HEADER */
 #endif /* __USE_ISOC99 || __USE_GNU */
 
@@ -94,6 +101,11 @@ __NAMESPACE_STD_USING(towctrans)
 #endif /* !__CXX_SYSTEM_HEADER */
 
 #ifdef __USE_XOPEN2K8
+#ifndef __wctype_t_defined
+#define __wctype_t_defined 1
+__NAMESPACE_STD_USING(wctype_t)
+#endif /* !__wctype_t_defined */
+
 __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,iswalnum_l,(wint_t __wc, __locale_t __locale),_iswalnum_l,(__wc,__locale))
 __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,iswalpha_l,(wint_t __wc, __locale_t __locale),_iswalpha_l,(__wc,__locale))
 __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,iswcntrl_l,(wint_t __wc, __locale_t __locale),_iswcntrl_l,(__wc,__locale))
@@ -110,6 +122,10 @@ __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,iswctype_l,(wint_t __wc
 __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,wint_t,__LIBCCALL,towupper_l,(wint_t __wc, __locale_t __locale),_towupper_l,(__wc,__locale))
 __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,wint_t,__LIBCCALL,towlower_l,(wint_t __wc, __locale_t __locale),_towlower_l,(__wc,__locale))
 #ifdef __CRT_GLC
+#ifndef __wctrans_t_defined
+#define __wctrans_t_defined 1
+__NAMESPACE_STD_USING(wctrans_t)
+#endif /* !__wctrans_t_defined */
 __LIBC __WUNUSED __PORT_NODOS_ALT(wctype) wctype_t __NOTHROW((__LIBCCALL wctype_l)(char const *__prop, __locale_t __locale));
 __LIBC __WUNUSED __PORT_NODOS_ALT(wctrans) wctrans_t __NOTHROW((__LIBCCALL wctrans_l)(char const *__prop, __locale_t __locale));
 __LIBC __WUNUSED __PORT_NODOS_ALT(towctrans) wint_t __NOTHROW((__LIBCCALL towctrans_l)(wint_t __wc, wctrans_t __desc, __locale_t __locale));

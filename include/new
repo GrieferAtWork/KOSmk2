@@ -29,9 +29,9 @@
 #undef new
 #undef delete
 
-#ifndef __PE__
+#ifdef __CRT_GLC
 #include <c++/current/new>
-#else /* !__PE__ */
+#else /* __CRT_GLC */
 
 __CXXDECL_BEGIN
 __NAMESPACE_STD_BEGIN
@@ -60,9 +60,7 @@ public:
 #endif /* __USE_DOS */
 
 
-
 typedef void (__LIBCCALL *new_handler)();
-
 struct nothrow_t {};
 extern nothrow_t const nothrow;
 
@@ -87,7 +85,7 @@ __LOCAL void operator delete[](void *, void *) __CXX_NOEXCEPT {}
 
 __CXXDECL_END
 
-#endif /* __PE__ */
+#endif /* !__CRT_GLC */
 
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma pop_macro("delete")

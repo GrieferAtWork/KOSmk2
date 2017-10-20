@@ -21,6 +21,7 @@
 
 #include <__stdinc.h>
 #include <features.h>
+#include <hybrid/typecore.h>
 #include <bits/dos-ctype.h>
 
 __SYSDECL_BEGIN
@@ -28,7 +29,7 @@ __SYSDECL_BEGIN
 #ifndef __std_wctype_t_defined
 #define __std_wctype_t_defined 1
 __NAMESPACE_STD_BEGIN
-typedef unsigned long int wctype_t;
+typedef __WCTYPE_TYPE__ wctype_t;
 __NAMESPACE_STD_END
 #endif /* !__std_wctype_t_defined */
 #ifndef __CXX_SYSTEM_HEADER

@@ -45,6 +45,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <hybrid/section.h>
 
 DECL_BEGIN
 
@@ -318,7 +319,7 @@ elf_load_dyn(struct elf_module *__restrict self,
   if (dyn->d_tag >= DT_NUM) break;
   /* Warn about unknown core dynamic entries. */
   syslog(LOG_EXEC|LOG_WARN,
-         "[ELF] Unknown 'PT_DYNAMIC' segment entry in '%[file]' taged as %.8x\n",
+         COLDSTR("[ELF] Unknown 'PT_DYNAMIC' segment entry in '%[file]' taged as %.8x\n"),
          fp,dyn->d_tag);
   break;
  }
@@ -354,7 +355,8 @@ elf_load_dynamic(struct elf_module *__restrict self,
   for (; iter != end; ++iter) {
    assert(iter < end);
 #if 0
-   syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Module %[file] tag: %.8x (%d)\n",
+   syslog(LOG_EXEC|LOG_DEBUG,
+          COLDSTR("[ELF] Module %[file] tag: %.8x (%d)\n"),
           fp,iter->d_tag,iter->d_tag);
 #endif
    if (iter->d_tag == DT_NULL) goto done;
@@ -368,64 +370,121 @@ done:
  return error;
 }
 
-
-typedef void (*elf_func)(void);
-PRIVATE void KCALL elf_callfun(elf_func fun) {
- /*syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (BEGIN)\n",fun);*/
- (*fun)();
- /*syslog(LOG_EXEC|LOG_DEBUG,"[ELF] Calling %p (END)\n",fun);*/
-}
-
-
-#define DYNAMIC  ((struct elf_module *)self)->e_dynamic
-PRIVATE void KCALL
-elf_exec_init(struct module *__restrict self, VIRT ppage_t load_addr) {
- elf_func *iter,*end;
- /* TODO: Ring #3 execution */
- end = (iter = (elf_func *)((uintptr_t)load_addr+DYNAMIC.d_preinit_array))+
-                                                 DYNAMIC.d_preinit_array_sz;
- for (; iter != end; ++iter) elf_callfun(*iter);
- end = (iter = (elf_func *)((uintptr_t)load_addr+DYNAMIC.d_init_array))+
-                                                 DYNAMIC.d_init_array_sz;
- /*syslog(LOG_EXEC|LOG_DEBUG,"[ELF] INIT_VECTOR: %p\n",iter);*/
- for (; iter != end; ++iter) elf_callfun(*iter);
- if (DYNAMIC.d_flags&ELF_DYNAMIC_HAS_INIT)
-     elf_callfun((elf_func)((uintptr_t)load_addr+DYNAMIC.d_init));
-}
-PRIVATE void KCALL
-elf_exec_fini(struct module *__restrict self, VIRT ppage_t load_addr) {
- elf_func *begin,*end;
- /* TODO: Ring #3 execution */
- end = (begin = (elf_func *)((uintptr_t)load_addr+DYNAMIC.d_fini_array))+
-                                                  DYNAMIC.d_fini_array_sz;
- while (end-- != begin) elf_callfun(*end);
- if (DYNAMIC.d_flags&ELF_DYNAMIC_HAS_FINI)
-     elf_callfun((elf_func)((uintptr_t)load_addr+DYNAMIC.d_fini));
-}
 PRIVATE ssize_t KCALL
 elf_modfun(struct instance *__restrict self,
-           modfun_t types, penummodfun callback, void *closure) {
- ssize_t /*temp,*/result = 0;
- /* TODO */
+           modfun_t types, penummodfun callback,
+           void *closure) {
+ struct elf_module *mod = container_of(self->i_module,struct elf_module,e_module);
+ uintptr_t load_addr = (uintptr_t)self->i_base;
+ void **iter,**end; ssize_t temp,result = 0;
+ if (types&MODFUN_REVERSE) {
+  /* Enumerate various finalizer groups. */
+  if (types&MODFUN_FINI2) {
+   end = (iter = (void **)(load_addr+mod->e_dynamic.d_fini_array))+
+                                     mod->e_dynamic.d_fini_array_sz;
+   for (; iter != end; ++iter) {
+    temp = (*callback)(*iter,MODFUN_FINI2,closure);
+    if (temp < 0) return temp;
+    result += temp;
+   }
+  }
+  if (types&MODFUN_FINI1 &&
+      mod->e_dynamic.d_flags&ELF_DYNAMIC_HAS_FINI) {
+   temp = (*callback)((void *)(load_addr+mod->e_dynamic.d_fini),
+                       MODFUN_FINI1,closure);
+   if (temp < 0) return temp;
+   result += temp;
+  }
+  /* Enumerate various initializer groups. */
+  if (types&MODFUN_INIT3 &&
+      mod->e_dynamic.d_flags&ELF_DYNAMIC_HAS_INIT) {
+   temp = (*callback)((void *)(load_addr+mod->e_dynamic.d_init),
+                       MODFUN_INIT3,closure);
+   if (temp < 0) return temp;
+   result += temp;
+  }
+  if (types&MODFUN_INIT2) {
+   end = (iter = (void **)(load_addr+mod->e_dynamic.d_init_array))+
+                                     mod->e_dynamic.d_init_array_sz;
+   while (end-- != iter) {
+    temp = (*callback)(*end,MODFUN_INIT2,closure);
+    if (temp < 0) return temp;
+    result += temp;
+   }
+  }
+  if (types&MODFUN_INIT1) {
+   end = (iter = (void **)(load_addr+mod->e_dynamic.d_preinit_array))+
+                                     mod->e_dynamic.d_preinit_array_sz;
+   while (end-- != iter) {
+    temp = (*callback)(*end,MODFUN_INIT1,closure);
+    if (temp < 0) return temp;
+    result += temp;
+   }
+  }
+ } else {
+  /* Enumerate various initializer groups. */
+  if (types&MODFUN_INIT1) {
+   end = (iter = (void **)(load_addr+mod->e_dynamic.d_preinit_array))+
+                                     mod->e_dynamic.d_preinit_array_sz;
+   for (; iter != end; ++iter) {
+    temp = (*callback)(*iter,MODFUN_INIT1,closure);
+    if (temp < 0) return temp;
+    result += temp;
+   }
+  }
+  if (types&MODFUN_INIT2) {
+   end = (iter = (void **)(load_addr+mod->e_dynamic.d_init_array))+
+                                     mod->e_dynamic.d_init_array_sz;
+   for (; iter != end; ++iter) {
+    temp = (*callback)(*iter,MODFUN_INIT2,closure);
+    if (temp < 0) return temp;
+    result += temp;
+   }
+  }
+  if (types&MODFUN_INIT3 &&
+      mod->e_dynamic.d_flags&ELF_DYNAMIC_HAS_INIT) {
+   temp = (*callback)((void *)(load_addr+mod->e_dynamic.d_init),
+                       MODFUN_INIT3,closure);
+   if (temp < 0) return temp;
+   result += temp;
+  }
+  /* Enumerate various finalizer groups. */
+  if (types&MODFUN_FINI1 &&
+      mod->e_dynamic.d_flags&ELF_DYNAMIC_HAS_FINI) {
+   temp = (*callback)((void *)(load_addr+mod->e_dynamic.d_fini),
+                       MODFUN_FINI1,closure);
+   if (temp < 0) return temp;
+   result += temp;
+  }
+  if (types&MODFUN_FINI2) {
+   end = (iter = (void **)(load_addr+mod->e_dynamic.d_fini_array))+
+                                     mod->e_dynamic.d_fini_array_sz;
+   while (end-- != iter) {
+    temp = (*callback)(*end,MODFUN_FINI2,closure);
+    if (temp < 0) return temp;
+    result += temp;
+   }
+  }
+ }
  return result;
 }
 
 
 PRIVATE void KCALL
 elf_module_fini(struct module *__restrict self) {
- free(DYNAMIC.d_depv);
+ free(container_of(self,struct elf_module,e_module)->e_dynamic.d_depv);
 }
 
 
 
 
-PRIVATE void KCALL
-log_invalid_addr(struct module *__restrict mod,
+PRIVATE ATTR_COLD ATTR_COLDTEXT void KCALL
+log_invalid_addr(struct elf_module *__restrict self,
                  uintptr_t p, size_t s,
                  uintptr_t rp, size_t re) {
  syslog(LOG_EXEC|LOG_ERROR,
-        "[ELF] Faulty address %p...%p outside of %p...%p encountered during relocations in '%[file]'\n",
-        p,p+s-1,rp,re-1,mod->m_file,mod->m_size);
+        COLDSTR("[ELF] Faulty address %p...%p outside of %p...%p encountered during relocations in '%[file]'\n"),
+        p,p+s-1,rp,re-1,self->e_module.m_file,self->e_module.m_size);
 }
 
 #ifdef __i386__
@@ -461,46 +520,48 @@ struct elf_hashtab {
 PRIVATE struct modsym KCALL
 elf_symaddr(struct instance *__restrict inst,
             char const *__restrict name, u32 hash) {
- struct module *self = inst->i_module;
+ struct elf_module *self = container_of(inst->i_module,struct elf_module,e_module);
  uintptr_t load_addr = (uintptr_t)inst->i_base;
  struct modsym result;
  result.ms_type = MODSYM_TYPE_INVALID;
- if (DYNAMIC.d_flags&(ELF_DYNAMIC_HAS_STRTAB|ELF_DYNAMIC_HAS_SYMTAB)) {
+ if (self->e_dynamic.d_flags&(ELF_DYNAMIC_HAS_STRTAB|ELF_DYNAMIC_HAS_SYMTAB)) {
   Elf_Sym *symtab_begin,*symtab_end,*symtab_iter;
-  char *string_table = (char *)DATAADDR(DYNAMIC.d_strtab);
-  char *string_end = (char *)((uintptr_t)string_table+DYNAMIC.d_strsz);
+  char *string_table = (char *)DATAADDR(self->e_dynamic.d_strtab);
+  char *string_end = (char *)((uintptr_t)string_table+self->e_dynamic.d_strsz);
   while (string_end != string_table && string_end[-1] != '\0') --string_end;
   if unlikely(string_end == string_table) goto end;
 #define STRLEN(x) strnlen(x,(size_t)(string_end-(x)))
-  symtab_begin = (Elf_Sym *)DATAADDR(DYNAMIC.d_symtab);
-  symtab_end   = (Elf_Sym *)((uintptr_t)symtab_begin+DYNAMIC.d_symsz);
-  if (DYNAMIC.d_flags&ELF_DYNAMIC_HAS_HASH) {
+  symtab_begin = (Elf_Sym *)DATAADDR(self->e_dynamic.d_symtab);
+  symtab_end   = (Elf_Sym *)((uintptr_t)symtab_begin+self->e_dynamic.d_symsz);
+  if (self->e_dynamic.d_flags&ELF_DYNAMIC_HAS_HASH) {
    /* Make use of '.hash' information! */
    struct elf_hashtab *phashtab;
    struct elf_hashtab hashtab; Elf_Word *ptable,chain;
-   phashtab = (struct elf_hashtab *)(load_addr+DYNAMIC.d_hash);
+   phashtab = (struct elf_hashtab *)(load_addr+self->e_dynamic.d_hash);
    memcpy(&hashtab,phashtab,sizeof(struct elf_hashtab));
    if unlikely(!hashtab.ht_nbuckts || !hashtab.ht_nbuckts) {
     /* Nope. - The hash-table is broken. */
 broken_hash:
-    syslog(LOG_EXEC|LOG_WARN,"[ELF] Module '%[file]' contains invalid hash table\n",self->m_file);
-    ATOMIC_FETCHAND(DYNAMIC.d_flags,~(ELF_DYNAMIC_HAS_HASH));
+    syslog(LOG_EXEC|LOG_WARN,
+           COLDSTR("[ELF] Module '%[file]' contains invalid hash table\n"),
+           self->e_module.m_file);
+    ATOMIC_FETCHAND(self->e_dynamic.d_flags,~(ELF_DYNAMIC_HAS_HASH));
    } else {
     Elf_Word max_attempts = hashtab.ht_nchains;
     /* Make sure the hash-table isn't too large. */
     if unlikely((sizeof(struct elf_hashtab)+(hashtab.ht_nbuckts+
                                              hashtab.ht_nchains)*
-                 sizeof(Elf_Word)) > DYNAMIC.d_hashsz) goto broken_hash;
+                 sizeof(Elf_Word)) > self->e_dynamic.d_hashsz) goto broken_hash;
     /* Make sure the hash-table isn't trying to go out-of-bounds. */
-    if unlikely(hashtab.ht_nchains > DYNAMIC.d_symcnt) goto broken_hash;
+    if unlikely(hashtab.ht_nchains > self->e_dynamic.d_symcnt) goto broken_hash;
     ptable  = (Elf_Word *)(phashtab+1);
     chain   = ptable[hash % hashtab.ht_nbuckts];
     ptable += hashtab.ht_nbuckts;
     while likely(max_attempts--) {
      char *sym_name;
-     if unlikely(chain == STN_UNDEF || chain >= DYNAMIC.d_symcnt) break;
+     if unlikely(chain == STN_UNDEF || chain >= self->e_dynamic.d_symcnt) break;
      /* Check this candidate. */
-     symtab_iter = (Elf_Sym *)((uintptr_t)symtab_begin+chain*DYNAMIC.d_syment);
+     symtab_iter = (Elf_Sym *)((uintptr_t)symtab_begin+chain*self->e_dynamic.d_syment);
      assert(symtab_iter >= symtab_begin);
      assert(symtab_iter <  symtab_end);
      sym_name = string_table+symtab_iter->st_name;
@@ -508,7 +569,7 @@ broken_hash:
                  (uintptr_t)sym_name >= (uintptr_t)string_end) break;
 #if 0
      syslog(LOG_EXEC|LOG_DEBUG,
-            "Checking hashed symbol name %q == %q (chain = %X; value = %p)\n",
+            COLDSTR("Checking hashed symbol name %q == %q (chain = %X; value = %p)\n"),
             name,sym_name,chain,symtab_iter->st_value);
 #endif
      if (strcmp(sym_name,name) != 0) goto next_candidate;
@@ -526,14 +587,15 @@ next_candidate:
      else chain = ptable[chain];
     }
 #if 0
-    syslog(LOG_EXEC|LOG_WARN,"[ELF] Failed to find symbol %q in hash table of '%[file]' (hash = %x)\n",
+    syslog(LOG_EXEC|LOG_WARN,
+           COLDSTR("[ELF] Failed to find symbol %q in hash table of '%[file]' (hash = %x)\n"),
            name,self->m_file,hash);
 #endif
    }
   }
   for (symtab_iter = symtab_begin;
        symtab_iter < symtab_end;
-     *(uintptr_t *)&symtab_iter += DYNAMIC.d_syment) {
+     *(uintptr_t *)&symtab_iter += self->e_dynamic.d_syment) {
    char *sym_name = string_table+symtab_iter->st_name;
    if unlikely((uintptr_t)sym_name <  (uintptr_t)string_table || 
                (uintptr_t)sym_name >= (uintptr_t)string_end) break;
@@ -558,17 +620,17 @@ elf_patch(struct modpatch *__restrict patcher) {
  Elf_Rel *iter,*end; errno_t result = -EFAULT;
  Elf_Sym *symtab_begin,*symtab_end;
  struct instance *inst = patcher->p_inst;
- struct module *self   = inst->i_module;
+ struct elf_module *self = container_of(inst->i_module,struct elf_module,e_module);
  uintptr_t load_addr   = (uintptr_t)inst->i_base;
- uintptr_t data_begin  = (uintptr_t)load_addr+self->m_begin;
- uintptr_t data_end    = (uintptr_t)load_addr+self->m_end;
+ uintptr_t data_begin  = (uintptr_t)load_addr+self->e_module.m_begin;
+ uintptr_t data_end    = (uintptr_t)load_addr+self->e_module.m_end;
  struct elf_rel *relgroup_iter,*relgroup_end;
 #define STRLEN(x) strnlen(x,(size_t)(string_end-(x)))
- char *string_table = (char *)DATAADDR(DYNAMIC.d_strtab);
- char *string_end   = (char *)((uintptr_t)string_table+DYNAMIC.d_strsz);
- symtab_begin  = (Elf_Sym *)DATAADDR(DYNAMIC.d_symtab);
- symtab_end    = (Elf_Sym *)((uintptr_t)symtab_begin+DYNAMIC.d_symsz);
- relgroup_end  = (relgroup_iter = DYNAMIC.d_relv)+COMPILER_LENOF(DYNAMIC.d_relv);
+ char *string_table = (char *)DATAADDR(self->e_dynamic.d_strtab);
+ char *string_end   = (char *)((uintptr_t)string_table+self->e_dynamic.d_strsz);
+ symtab_begin  = (Elf_Sym *)DATAADDR(self->e_dynamic.d_symtab);
+ symtab_end    = (Elf_Sym *)((uintptr_t)symtab_begin+self->e_dynamic.d_symsz);
+ relgroup_end  = (relgroup_iter = self->e_dynamic.d_relv)+COMPILER_LENOF(self->e_dynamic.d_relv);
 
  /* Truncate the string table to ensure the last string is zero-terminated!
   * >> Later code relies on the fact that any pointer
@@ -594,7 +656,7 @@ elf_patch(struct modpatch *__restrict patcher) {
 
  /* Load all module dependencies. */
  { Elf_Word *dep_iter,*dep_begin;
-   dep_iter = (dep_begin = DYNAMIC.d_depv)+DYNAMIC.d_depc;
+   dep_iter = (dep_begin = self->e_dynamic.d_depv)+self->e_dynamic.d_depc;
    /* Add dependencies in reverse order to prefer symbols from later libraries. */
    while (dep_iter-- != dep_begin) {
     struct module *mod; struct instance *dep;
@@ -604,8 +666,8 @@ elf_patch(struct modpatch *__restrict patcher) {
     filename.dn_size = strlen(filename.dn_name);
     dentryname_loadhash(&filename);
     /* Search the module's explicit run-path. */
-    if (DYNAMIC.d_flags&ELF_DYNAMIC_HAS_RUNPATH) {
-     char *runpath = string_table+DYNAMIC.d_runpath;
+    if (self->e_dynamic.d_flags&ELF_DYNAMIC_HAS_RUNPATH) {
+     char *runpath = string_table+self->e_dynamic.d_runpath;
      STRING_CHECK(runpath);
      mod = module_open_in_paths(runpath,&filename,
                               !(patcher->p_iflags&INSTANCE_FLAG_DRIVER));
@@ -615,8 +677,8 @@ elf_patch(struct modpatch *__restrict patcher) {
 got_module:
     if (E_ISERR(mod)) {
      syslog(LOG_EXEC|LOG_ERROR,
-            "[ELF] Failed to open module %$q dependency %q: %[errno]\n",
-            self->m_name->dn_size,self->m_name->dn_name,
+            COLDSTR("[ELF] Failed to open module %$q dependency %q: %[errno]\n"),
+            self->e_module.m_name->dn_size,self->e_module.m_name->dn_name,
             filename.dn_name,-E_GTERR(mod));
      return E_GTERR(mod);
     }
@@ -625,8 +687,8 @@ got_module:
     MODULE_DECREF(mod);
     if (E_ISERR(dep)) {
      syslog(LOG_EXEC|LOG_ERROR,
-            "[ELF] Failed to patch module %$q dependency %q: %[errno]\n",
-            self->m_name->dn_size,self->m_name->dn_name,
+            COLDSTR("[ELF] Failed to patch module %$q dependency %q: %[errno]\n"),
+            self->e_module.m_name->dn_size,self->e_module.m_name->dn_name,
             filename.dn_name,-E_GTERR(dep));
      return E_GTERR(dep);
     }
@@ -641,7 +703,7 @@ got_module:
   iter = (Elf_Rel *)DATAADDR(relgroup_iter->er_rel);
   end  = (Elf_Rel *)((uintptr_t)iter+relgroup_iter->er_relsz);
   for (; iter < end; *(uintptr_t *)&iter += relgroup_iter->er_relent) {
-#define SYM(i) (Elf_Sym *)((uintptr_t)symtab_begin+((i)*DYNAMIC.d_syment))
+#define SYM(i) (Elf_Sym *)((uintptr_t)symtab_begin+((i)*self->e_dynamic.d_syment))
    Elf_Sym *sym; uintptr_t rel_value;
    u8  type     = ELF_R_TYPE(iter->r_info);
    u8 *rel_addr = (u8 *)DATAADDR(iter->r_offset);
@@ -665,7 +727,7 @@ got_module:
     char const *sym_name; u32 sym_hash;
 find_extern:
     if (sym->st_shndx != SHN_UNDEF &&
-        DYNAMIC.d_flags&ELF_DYNAMIC_IS_SYMBOLIC) {
+        self->e_dynamic.d_flags&ELF_DYNAMIC_IS_SYMBOLIC) {
      /* Use symbolic symbol resolution (Keep using the private symbol version). */
      goto got_symbol;
     }
@@ -681,9 +743,11 @@ find_extern:
     if (!rel_value) {
      if (sym->st_shndx == SHN_UNDEF) {
       if (ELF_ST_BIND(sym->st_info) == STB_WEAK) goto got_symbol;
-      syslog(LOG_EXEC|LOG_ERROR,"[ELF] Failed to patch symbol %$q (hash %#.8I32x) from module %$q at %p\n",
+      syslog(LOG_EXEC|LOG_ERROR,
+             COLDSTR("[ELF] Failed to patch symbol %$q (hash %#.8I32x) from module %$q at %p\n"),
              STRLEN(sym_name),sym_name,sym_hash,
-             self->m_name->dn_size,self->m_name->dn_name,rel_addr);
+             self->e_module.m_name->dn_size,
+             self->e_module.m_name->dn_name,rel_addr);
       return -ENOREL;
      }
      rel_value = (uintptr_t)load_addr+sym->st_value;
@@ -695,7 +759,9 @@ got_symbol:
    }
 
 #if 0
-   syslog(LOG_EXEC|LOG_DEBUG,"REL: %I8u -> %p:%p\n",type,rel_addr,rel_value);
+   syslog(LOG_EXEC|LOG_DEBUG,
+          COLDSTR("REL: %I8u -> %p:%p\n"),
+          type,rel_addr,rel_value);
 #endif
    switch (type) {
 
@@ -757,8 +823,8 @@ got_symbol:
            sym_name >= string_end)
            sym_name = "??" "?";
        syslog(LOG_EXEC|LOG_ERROR,
-              "[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from '%[file]'\n",
-              sym_name,rel_value,rel_value+sym->st_size-1,self->m_file);
+              COLDSTR("[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from '%[file]'\n"),
+              sym_name,rel_value,rel_value+sym->st_size-1,self->e_module.m_file);
        goto end;
       }
      }
@@ -812,9 +878,10 @@ got_symbol:
 #endif
 
    default:
-    syslog(LOG_EXEC|LOG_WARN,"[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in '%[file]'\n",
+    syslog(LOG_EXEC|LOG_WARN,
+           COLDSTR("[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in '%[file]'\n"),
          ((uintptr_t)iter-DATAADDR(relgroup_iter->er_rel))/relgroup_iter->er_relent,
-           iter->r_offset,type,(unsigned)(ELF_R_SYM(iter->r_info)),self->m_file);
+           iter->r_offset,type,(unsigned)(ELF_R_SYM(iter->r_info)),self->e_module.m_file);
     break;
    }
   }
@@ -827,12 +894,10 @@ end:
 
 
 PUBLIC struct moduleops const elf_modops = {
-    .o_fini      = &elf_module_fini,
-    .o_symaddr   = &elf_symaddr,
-    .o_patch     = &elf_patch,
-    .o_modfun    = &elf_modfun,
-    .o_exec_init = &elf_exec_init,
-    .o_exec_fini = &elf_exec_fini,
+    .o_fini    = &elf_module_fini,
+    .o_symaddr = &elf_symaddr,
+    .o_patch   = &elf_patch,
+    .o_modfun  = &elf_modfun,
 };
 
 
@@ -897,7 +962,7 @@ elf_loader(struct file *__restrict fp) {
  /* Prevent exploits... */
  if (ehdr.e_phnum > ELF_PHNUM_MAX) {
   syslog(LOG_EXEC|LOG_ERROR,
-         "[ELF] Elf binary '%[file]' PHDR count %u exceeds limit of %u\n",
+         COLDSTR("[ELF] Elf binary '%[file]' PHDR count %u exceeds limit of %u\n"),
          fp,(unsigned)ehdr.e_phnum,ELF_PHNUM_MAX);
   goto enoexec;
  }
@@ -905,7 +970,7 @@ elf_loader(struct file *__restrict fp) {
  /* Only warn if the binary wasn't compiled for SYSV (which KOS tries to follow) */
  if (ehdr.e_ident[EI_OSABI] != ELFOSABI_SYSV) {
   syslog(LOG_EXEC|LOG_WARN,
-         "[ELF] Loading ELF binary '%[file]' that isn't SYSV (EI_OSABI = %d)\n",
+         COLDSTR("[ELF] Loading ELF binary '%[file]' that isn't SYSV (EI_OSABI = %d)\n"),
          fp,(int)ehdr.e_ident[EI_OSABI]);
  }
 
@@ -914,7 +979,7 @@ elf_loader(struct file *__restrict fp) {
  if (ehdr.e_version           != EV_CURRENT ||
      ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
   syslog(LOG_EXEC|LOG_WARN,
-         "[ELF] Loading ELF binary '%[file]' that has an unrecognized version (%d/%d)\n",
+         COLDSTR("[ELF] Loading ELF binary '%[file]' that has an unrecognized version (%d/%d)\n"),
          ehdr.e_version,ehdr.e_ident[EI_VERSION]);
  }
 
@@ -969,7 +1034,8 @@ elf_loader(struct file *__restrict fp) {
   }
   if (!n_load_hdr) {
    syslog(LOG_EXEC|LOG_WARN,
-          "[ELF] ELF binary '%[file]' doesn't contain any PT_LOAD headers\n",fp);
+          COLDSTR("[ELF] ELF binary '%[file]' doesn't contain any PT_LOAD headers\n"),
+          fp);
    goto enoexec;
   }
   /* Allocate the result module object. */
@@ -1138,7 +1204,6 @@ elf_loader(struct file *__restrict fp) {
        result->e_dynamic.d_rela.er_relsz = max_size;
   }
 #endif
-  /* TODO: Load dependencies? */
  }
 
  /* Setup the resulting module. */
@@ -1156,7 +1221,8 @@ elf_loader(struct file *__restrict fp) {
    end = (iter = result->e_module.m_segv)+
                  result->e_module.m_segc;
    for (; iter != end; ++iter) {
-    syslog(LOG_EXEC|LOG_DEBUG,"[ELF] SEGMENT '%[file]' - %p...%p %p...%p from %I64X + %Ix\n",
+    syslog(LOG_EXEC|LOG_DEBUG,
+           COLDSTR("[ELF] SEGMENT '%[file]' - %p...%p %p...%p from %I64X + %Ix\n"),
            fp,
            iter->ms_vaddr,
            iter->ms_vaddr+iter->ms_msize-1,

@@ -82,6 +82,7 @@
 #define MSPACES                 0
 #define ONLY_MSPACES            0
 #define ABORT_ON_ASSERT_FAILURE 0
+#define DLMALLOC_USE_STATIC_INIT 1
 #undef REALLOC_ZERO_BYTES_FREES
 
 /* Use dlmalloc to define the low-level malloc API used as default for non-debug functions. */

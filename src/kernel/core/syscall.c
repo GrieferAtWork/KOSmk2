@@ -205,6 +205,7 @@ PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
 #ifdef CONFIG_SYSCALL_CHECK_SEGMENTS
 PRIVATE ATTR_NORETURN ATTR_USED ATTR_COLDTEXT void KCALL
 sysreturn_bad_segment(u32 current, u32 correct, char const *name) {
+ __NAMESPACE_INT_SYM
  __afailf("Bad segment upon system-call return",DEBUGINFO_NUL,
                      "SEGMENT: %q\n"
                      "CURRENT: %.4I32X\n"
