@@ -62,8 +62,7 @@ debug_clearcache(struct moddebug *__restrict self, size_t hint) {
 
 PRIVATE ssize_t KCALL
 debug_virtinfo(struct moddebug *__restrict self,
-               struct instance *__restrict inst,
-               VIRT void *addr, USER struct virtinfo *buf,
+               maddr_t addr, USER struct virtinfo *buf,
                size_t bufsize, u32 flags) {
  syslog(LOG_DEBUG,"HERE : debug_virtinfo()\n");
  /* TODO */

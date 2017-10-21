@@ -56,7 +56,6 @@ struct utsname const uname __ASMNAME("uname") = {
 };
 
 
-
 PUBLIC struct cmdline _kernel_commandline
 __ASMNAME("kernel_commandline") = {
     .cl_text = NULL,

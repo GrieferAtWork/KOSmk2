@@ -85,6 +85,7 @@ struct virtinfo {
 #   define VIRTINFO_FLAG_VALID  0x80000000 /*< Indicates that this field is implemented. */
 #define VIRTINFO_DATA_ISA      4 /*< The type of instruction set found at the given address. (Assume any/default when ZERO)
                                   *  XXX: I couldn't find any actual values for this, but you should now that this is defined by DWARF. */
+#define VIRTINFO_DATA_DISC     5 /*< Source location discriminator. */
  uintptr_t  ai_data[16];  /*< Extended information fields (Unknown/unused/reserved fields are set to ZERO). */
  /* Locally buffered data goes here. (Aka. strings pointed to within ai_source, ai_name, etc.) */
 };

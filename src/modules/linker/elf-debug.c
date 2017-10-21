@@ -284,6 +284,44 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
  syslog(LOG_DEBUG," u8  li_opcode_base      = %I8u\n" ,self->c_lnfo.li_opcode_base);
 #endif
 
+#if 0
+#define STATEREPR() \
+ { \
+  char *path = NULL,*file = NULL; \
+  size_t file_id = state.file; byte_t *ptr,*eptr; \
+  if (file_id) --file_id; \
+  if (file_id < self->c_ftabc) { \
+   size_t dir_id; \
+   ptr = (byte_t *)self->c_ftab; \
+   eptr  = self->c_code; \
+   for (;;) { \
+    file = (char *)ptr; \
+    if (ptr == eptr) break; \
+    ptr = (byte_t *)strnend((char *)ptr, \
+                            ((char *)eptr-(char *)ptr)-1)+1; \
+    dir_id = parse_uleb128(&ptr,eptr); \
+    if (!file_id--) break; \
+    parse_uleb128(&ptr,eptr); /* time? */ \
+    parse_uleb128(&ptr,eptr); /* size? */ \
+   } \
+   if (dir_id) --dir_id; \
+   if (dir_id < self->c_dtabc) { \
+    ptr = (byte_t *)self->c_dtab; \
+    eptr  = (byte_t *)self->c_ftab; \
+    for (;;) { \
+     path = (char *)ptr; \
+     if (ptr == eptr) break; \
+     ptr = (byte_t *)strnend((char *)ptr, \
+                             ((char *)eptr-(char *)ptr)-1)+1; \
+     if (!dir_id--) break; \
+    } \
+   } \
+  } \
+  syslog(LOG_DEBUG,"%s/%s(%Iu,%Iu) : %p (opcode = %d)\n", \
+         path,file,state.line,state.column,state.address,opcode); \
+ }
+#endif
+
  /* Chunk data is now parsed and loaded.
   * >> Time for the state machine! */
  data = self->c_code;
@@ -305,13 +343,14 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
  while (data != end) {
   assert(data < end);
   opcode = *data++;
+  //STATEREPR();
   if (opcode >= self->c_lnfo.li_opcode_base) {
    /* Handle so-called special opcodes. */
    size_t temp;
    opcode -= self->c_lnfo.li_opcode_base;
    temp = opcode/self->c_lnfo.li_line_range;
    if (self->c_lnfo.li_max_ops_per_insn == 1) {
-    temp   *= self->c_lnfo.li_min_insn_length;
+    temp *= self->c_lnfo.li_min_insn_length;
     state.address += temp;
    } else {
     state.address += ((state.op_index+temp)/self->c_lnfo.li_max_ops_per_insn)*
@@ -319,7 +358,8 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
     state.op_index = (state.op_index+temp)%self->c_lnfo.li_max_ops_per_insn;
    }
    state.line += (ssize_t)(opcode % self->c_lnfo.li_line_range)+
-                           self->c_lnfo.li_line_base;
+                                    self->c_lnfo.li_line_base;
+   opcode += self->c_lnfo.li_opcode_base;
    TEST_STATE();
   } else {
    uleb128_t temp;
@@ -341,14 +381,18 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
 
      case DW_LNE_end_sequence:
       TEST_STATE();
+#if 1
+      return -ENODATA;
+#else
       RESET();
+#endif
       break;
 
      case DW_LNE_set_address:
-           if ((size_t)temp >= 8) state.address = (uintptr_t)*(__u64 *)ext_data;
-      else if ((size_t)temp >= 4) state.address = (uintptr_t)*(__u32 *)ext_data;
-      else if ((size_t)temp >= 2) state.address = (uintptr_t)*(__u16 *)ext_data;
-      else                        state.address = (uintptr_t)*(__u8  *)ext_data;
+           if ((size_t)temp-1 >= 8) state.address = (uintptr_t)*(__u64 *)ext_data;
+      else if ((size_t)temp-1 >= 4) state.address = (uintptr_t)*(__u32 *)ext_data;
+      else if ((size_t)temp-1 >= 2) state.address = (uintptr_t)*(__u16 *)ext_data;
+      else                          state.address = (uintptr_t)*(__u8  *)ext_data;
       state.op_index = 0;
       break;
 
@@ -357,7 +401,7 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
       break;
 
      case DW_LNE_set_discriminator:
-      state.discriminator = (uintptr_t)parse_uleb128(&data,end);
+      state.discriminator = (uintptr_t)parse_uleb128(&ext_data,end);
       break;
 
      default:
@@ -368,7 +412,7 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
 
    case DW_LNS_copy:
     TEST_STATE();
-    state.discriminator  = 0;
+    state.discriminator = 0;
     state.flags &= ~(VIRTINFO_FLAG_BBLOCK|
                      VIRTINFO_FLAG_EPILOG);
     state.flags |=   VIRTINFO_FLAG_PROLOG;
@@ -380,8 +424,9 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
      temp *= self->c_lnfo.li_min_insn_length;
      state.address += temp;
     } else {
-     state.address += ((state.op_index+temp)/self->c_lnfo.li_max_ops_per_insn)*self->c_lnfo.li_min_insn_length;
-     state.op_index = (state.op_index+temp)%self->c_lnfo.li_max_ops_per_insn;
+     state.address += ((state.op_index+temp)/self->c_lnfo.li_max_ops_per_insn)*
+                                             self->c_lnfo.li_min_insn_length;
+     state.op_index = ((state.op_index+temp)%self->c_lnfo.li_max_ops_per_insn);
     }
     break;
 
@@ -487,9 +532,9 @@ got_state:
    }
   }
   if (!path && file) path = file,path_len = file_len,file_len = 0;
-  /*ELF_DEBUG*/(syslog(LOG_DEBUG,"path: %q\n",path));
-  /*ELF_DEBUG*/(syslog(LOG_DEBUG,"file: %q\n",file));
-  /*ELF_DEBUG*/(syslog(LOG_DEBUG,"line: %d\n",RESULT_STATE.line));
+  ELF_DEBUG(syslog(LOG_DEBUG,"path: %q\n",path));
+  ELF_DEBUG(syslog(LOG_DEBUG,"file: %q\n",file));
+  ELF_DEBUG(syslog(LOG_DEBUG,"line: %d\n",RESULT_STATE.line));
 
   /* Clear information to zero out all fields not implemented. */
   memset(&info,0,sizeof(struct virtinfo));
@@ -502,6 +547,7 @@ got_state:
   info.ai_data[VIRTINFO_DATA_SOURCEID] = self->c_chid;
   info.ai_data[VIRTINFO_DATA_FLAGS]    = state.flags;
   info.ai_data[VIRTINFO_DATA_ISA]      = RESULT_STATE.isa;
+  info.ai_data[VIRTINFO_DATA_DISC]     = RESULT_STATE.discriminator;
   if (!path_len) info.ai_source[VIRTINFO_SOURCE_PATH] = NULL;
   if (!file_len) info.ai_source[VIRTINFO_SOURCE_NAME] = NULL;
 
@@ -518,6 +564,7 @@ got_state:
   /* *(uintptr_t *)&buf += part,bufsize -= part; */
 
   return (ssize_t)result;
+#undef RESULT_STATE
  }
 }
 
@@ -675,16 +722,14 @@ debug_clearcache(struct moddebug *__restrict self, size_t hint) {
 
 PRIVATE ssize_t KCALL
 debug_virtinfo(struct moddebug *__restrict self,
-               struct instance *__restrict inst,
-               VIRT void *addr, USER struct virtinfo *buf,
+               maddr_t addr, USER struct virtinfo *buf,
                size_t bufsize, u32 flags) {
- chunk_t *iter,*end; ssize_t result = -ENODATA; maddr_t symaddr;
- symaddr = (uintptr_t)addr-(uintptr_t)inst->i_base;
+ chunk_t *iter,*end; ssize_t result = -ENODATA;
 
  /* Scan chunks that have already been loaded. */
  end = (iter = SELF->d_chunkv)+SELF->d_chunkc;
  for (; iter != end; ++iter) {
-  result = chunk_virtinfo(iter,SELF->d_fp,symaddr,buf,bufsize,flags);
+  result = chunk_virtinfo(iter,SELF->d_fp,addr,buf,bufsize,flags);
   if (result != -ENODATA) goto done_maybeerr;
  }
 
@@ -692,7 +737,8 @@ debug_virtinfo(struct moddebug *__restrict self,
  while (!(SELF->d_flags&DEBUG_CHUNKSDONE)) {
   iter = read_chunk(SELF);
   if (E_ISERR(iter)) { result = E_GTERR(iter); goto done_maybeerr; }
-  result = chunk_virtinfo(iter,SELF->d_fp,symaddr,buf,bufsize,flags);
+  //syslog(LOG_DEBUG,"chunk %Iu at %I64u\n",iter->c_chid,iter->c_addr);
+  result = chunk_virtinfo(iter,SELF->d_fp,addr,buf,bufsize,flags);
   if (result != -ENODATA) goto done_maybeerr;
  }
 
