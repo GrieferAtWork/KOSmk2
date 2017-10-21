@@ -73,11 +73,19 @@ L(.previous                                         )
 
 INTERN void (LIBCCALL libc_debug_tbprintl)(void const *eip, void const *frame, size_t tb_id) {
  if (frame) {
+#ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
   debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p : %p'\n",
                     (uintptr_t)eip-1,tb_id,eip,frame);
+#else /* CONFIG_USE_EXTERNAL_ADDR2LINE */
+  debug_printf("%[vinfo] : [%Ix] : %p : %p\n",(uintptr_t)eip-1,tb_id,eip,frame);
+#endif /* !CONFIG_USE_EXTERNAL_ADDR2LINE */
  } else {
+#ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
   debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p'\n",
-                    (uintptr_t)eip-1,tb_id,eip);
+              (uintptr_t)eip-1,tb_id,eip);
+#else
+  debug_printf("%[vinfo] : [%Ix] : %p\n",(uintptr_t)eip-1,tb_id,eip);
+#endif
  }
 }
 

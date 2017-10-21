@@ -1968,8 +1968,13 @@ malloc_panic(struct dsetup *setup,
    pos = 0;
    while (iter != end) {
     if (*iter == MPTR_TAIL_TB_EOF) break;
+#ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
     debug_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
-                      (uintptr_t)*iter-1,pos,*iter);
+                (uintptr_t)*iter-1,pos,*iter);
+#else
+    debug_printf("%[vinfo] : [%Ix] : %p\n",
+                (uintptr_t)*iter-1,pos,*iter);
+#endif
     ++iter,++pos;
    }
   }
@@ -3004,8 +3009,13 @@ PRIVATE ssize_t (KCALL mptr_printleak)(struct mptr *__restrict self,
  { void **iter,**end; size_t pos = 0;
    end = (iter = MPTR_TRACEBACK_ADDR(self))+MPTR_TRACEBACK_SIZE(self);
    for (; iter != end; ++iter,++pos) {
+#ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
     F_PRINTF("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
             (uintptr_t)*iter-1,pos,*iter);
+#else
+    F_PRINTF("%[vinfo] : [%Ix] : %p\n",
+            (uintptr_t)*iter-1,pos,*iter);
+#endif
    }
  }
 #endif

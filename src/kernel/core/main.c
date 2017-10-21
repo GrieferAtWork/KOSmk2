@@ -507,9 +507,7 @@ kernel_boot(u32        mb_magic,
 
  network_test();
 
- syslog(LOG_DEBUG,"%[vinfo] : I'm network_test()\n",&network_test);
-
-#if 0
+#if 1
  run_init("/bin/init");
  for (;;) run_init("/bin/init");
 #endif

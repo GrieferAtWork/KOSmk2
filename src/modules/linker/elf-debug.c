@@ -87,13 +87,13 @@ DECL_BEGIN
 #define DWARF_MIN_ILI_SIZE  15 /* Minimum size of the DWARF LineInfo header. */
 typedef struct PACKED {
 union PACKED {
-  u32   li_length32; /* If this is 0xffffffff, a in the file a 64-bit length follows and the header is 64-bit. */
+  u32   li_length32; /* If this is 0xffffffff, in the file a 64-bit length follows and the header is 64-bit as well. */
   u64   li_length;   /* WARNING: In-file this describes the chunk-size after this field, but in-mem it is the chunk-size after this header (aka. at 'li_opcodes'). */
   size_t li_lengthI;
 };
   u16   li_version;
 union PACKED {
-  u32   li_prologue_length32; /*< Only 32-bit if __li_length_32 wasn't 0xffffffff (else: 64-bit). */
+  u32   li_prologue_length32; /*< Only 32-bit if li_length32 wasn't 0xffffffff (else: 64-bit). */
   u64   li_prologue_length;
 };
   u8    li_min_insn_length;
@@ -139,7 +139,7 @@ typedef struct {
 #endif
  Elf_Shdr                 d_debugline; /*< The section header for DWARF's `.debug_line' */
 #define DEBUG_CHUNKSDONE  0x00000001   /*< Set once 'd_chunkv' has been loaded. */
- u32                      d_flags;     /*< Set of 'DEBUG_LNFO_*' */
+ u32                      d_flags;     /*< Set of 'DEBUG_*' */
  size_t                   d_chunkc;    /*< Chunk count. */
  chunk_t                 *d_chunkv;    /*< [0..d_chunkc][owned] */
  pos_t                    d_nextchunk; /*< Absolute in-file address of the next chunk. */
@@ -245,13 +245,13 @@ chunk_loaddata(chunk_t *__restrict self, struct file *__restrict fp) {
 
 typedef struct {
     uintptr_t address;
-    u8        op_index;
     size_t    file;
     ssize_t   line;
     size_t    column;
     uintptr_t flags; /* Set of 'VIRTINFO_FLAG_*' */
     uintptr_t isa;
     uintptr_t discriminator;
+    u8        op_index;
 } state_machine_t;
 
 PRIVATE ssize_t KCALL
@@ -293,7 +293,8 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
  state.column = 0,state.flags = self->c_lnfo.li_default_is_stmt \
                 ? VIRTINFO_FLAG_PROLOG|VIRTINFO_FLAG_VALID|VIRTINFO_FLAG_STMT \
                 : VIRTINFO_FLAG_PROLOG|VIRTINFO_FLAG_VALID, \
- state.isa = 0,state.discriminator = 0)
+ state.isa = 0,state.discriminator = 0, \
+ prev_state.address = (uintptr_t)-1)
 #define TEST_STATE() \
 { if (prev_state.address <= addr && state.address >= addr) \
       goto got_state; \
@@ -301,7 +302,6 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
 }
 
  RESET();
- prev_state.address = (uintptr_t)-1;
  while (data != end) {
   assert(data < end);
   opcode = *data++;
@@ -623,8 +623,11 @@ PRIVATE chunk_t *KCALL read_chunk(debug_t *__restrict self) {
                    (pos_t)(self->d_debugline.sh_offset+self->d_debugline.sh_size)-
                            self->d_nextchunk);
  if (E_ISERR(error)) {
-  if (error == -ENOSPC) /* Indicate that all chunks are now loaded. */
-      self->d_flags |= DEBUG_CHUNKSDONE;
+  if (error == -ENOSPC) {
+   /* Indicate that all chunks are now loaded. */
+   self->d_flags |= DEBUG_CHUNKSDONE;
+   error = -ENODATA;
+  }
   return E_PTR(error);
  }
  /* Use the original number numbers as chunk and source ID.

@@ -836,9 +836,14 @@ INTERN void ATTR_CDECL noyield_without_irq(void *eip) {
  if (SMP_ONLINE > 1) {
   PRIVATE CPU_DATA void *noyield_last_eip = (void *)-1;
   if (eip == CPU(noyield_last_eip)) return;
+#ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
   syslog(LOG_SCHED|LOG_WARN,
          "#!$ addr2line(%Ix) '{file}({line}) : {func} : %p : Cannot yield while interrupts are disabled'\n",
         (uintptr_t)eip-1,eip);
+#else
+  syslog(LOG_SCHED|LOG_WARN,"%[vinfo] : %p : Cannot yield while interrupts are disabled'\n",
+        (uintptr_t)eip-1,eip);
+#endif
   debug_tbprint(0);
   CPU(noyield_last_eip) = eip;
  } else
@@ -1239,7 +1244,7 @@ pit_exc(struct cpustate *__restrict state) {
 
 #if 0
  debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : PIT Trigger: %p'\n",
-                   (uintptr_t)state->iret.eip-1,state->iret.eip);
+             (uintptr_t)state->iret.eip-1,state->iret.eip);
  debug_tbprint2((void *)state->gp.ebp,0);
 #endif
 
@@ -1366,18 +1371,18 @@ pit_exc(struct cpustate *__restrict state) {
 
 #if 0
  debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : Returning to: %p'\n",
-                   (uintptr_t)new_task->t_cstate->iret.eip,new_task->t_cstate->iret.eip);
+             (uintptr_t)new_task->t_cstate->iret.eip,new_task->t_cstate->iret.eip);
  debug_tbprint2((void *)new_task->t_cstate->gp.ebp,0);
  debug_printf("EAX %p  ECX %p  EDX %p  EBX %p\n",
-                    new_task->t_cstate->gp.eax,
-                    new_task->t_cstate->gp.ecx,
-                    new_task->t_cstate->gp.edx,
-                    new_task->t_cstate->gp.ebx);
+              new_task->t_cstate->gp.eax,
+              new_task->t_cstate->gp.ecx,
+              new_task->t_cstate->gp.edx,
+              new_task->t_cstate->gp.ebx);
  debug_printf("ESP %p  EBP %p  ESI %p  EDI %p\n",
-                    new_task->t_cstate,
-                    new_task->t_cstate->gp.ebp,
-                    new_task->t_cstate->gp.esi,
-                    new_task->t_cstate->gp.edi);
+              new_task->t_cstate,
+              new_task->t_cstate->gp.ebp,
+              new_task->t_cstate->gp.esi,
+              new_task->t_cstate->gp.edi);
 #endif
 
  assertf(new_task->t_cstate,"Task %p has no cpu state",new_task);

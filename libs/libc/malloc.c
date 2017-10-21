@@ -533,20 +533,25 @@ mall_panic(struct dsetup *__restrict setup,
  debug_printf("\n");
  va_end(args);
  debug_printf("%s(%d) : %s : See reference to caller location\n",
-                    setup->s_info.i_file,setup->s_info.i_line,
-                    setup->s_info.i_func);
+              setup->s_info.i_file,setup->s_info.i_line,
+              setup->s_info.i_func);
  debug_tbprint(setup->s_tbskip);
  if (info_header) {
   void **iter,**end; size_t pos;
   debug_printf("%s(%d) : %s : See reference to associated mall pointer\n",
-                     info_header->mh_info.i_file,
-                     info_header->mh_info.i_line,
-                     info_header->mh_info.i_func);
+               info_header->mh_info.i_file,
+               info_header->mh_info.i_line,
+               info_header->mh_info.i_func);
   end = (iter = info_header->mh_tail->mt_tb)+info_header->mh_tbsize;
   pos = 0;
   while (iter != end) {
+#ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
    debug_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
-                     (uintptr_t)*iter-1,pos,*iter);
+               (uintptr_t)*iter-1,pos,*iter);
+#else
+   debug_printf("%[vinfo] : [%Ix] : %p'\n",
+               (uintptr_t)*iter-1,pos,*iter);
+#endif
    ++iter,++pos;
   }
  }
@@ -1020,8 +1025,13 @@ mall_printleak(struct mallhead const *__restrict head,
                     mall_head2user(head));
  end = (iter = head->mh_tail->mt_tb)+head->mh_tbsize;
  while (iter != end) {
+#ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
   debug_printf("#!$ addr2line(%p) '{file}({line}) : {func} : [%Ix] : %p'\n",
-                    (uintptr_t)*iter-1,pos,*iter);
+              (uintptr_t)*iter-1,pos,*iter);
+#else
+  debug_printf("%[vinfo] : [%Ix] : %p\n",
+              (uintptr_t)*iter-1,pos,*iter);
+#endif
   ++iter,++pos;
  }
  return 0;
