@@ -320,10 +320,7 @@ LONG_PRINTER(vinfo_printer) {
 #define VI  (*(struct virtinfo *)buffer)
  addr = va_arg(*args,void *);
 #ifdef __KERNEL__
- HOSTMEMORY_BEGIN {
-  temp = mman_virtinfo(addr,&VI,sizeof(buffer),VIRTINFO_NORMAL);
- }
- HOSTMEMORY_END;
+ temp = kern_virtinfo(addr,&VI,sizeof(buffer),VIRTINFO_NORMAL);
 #else
  temp = libc_xvirtinfo2(addr,&VI,sizeof(buffer),VIRTINFO_NORMAL);
 #endif

@@ -204,6 +204,7 @@ BEGIN
 	BEGIN DEFAULT_MODULE("ne2000")     SOURCE("modules/net/ne2k.c") USING("pci") END
 	BEGIN BASIC_MODULE("elf-coredump") SOURCE("modules/linker/elf-coredump.c") END
 	BEGIN BASIC_MODULE("elf-debug")    SOURCE("modules/linker/elf-debug.c")    END
+	BEGIN BASIC_MODULE("pdb-debug")    SOURCE("modules/linker/pdb-debug.c")    END
 
 END
 

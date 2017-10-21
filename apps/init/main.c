@@ -78,6 +78,15 @@ int main(int argc, char **argv) {
  /* Mount the secondary disk passed to QEMU (TODO: Remove me) */
  mount("/dev/dos_hdb1","/mnt",NULL,0,NULL);
 
+#if 1
+ /* Try to exec() an exe (test the PDB debug parser) */
+ if (fork() == 0) {
+  execl("/bin/dos_userapp.exe","dos_userapp.exe",NULL);
+  _exit(127);
+ }
+ while (wait(NULL) == -1 && errno == EINTR);
+#endif
+
 #if 0
  printf("appenv         = %p\n",appenv);
  printf("appenv->e_self = %p\n",appenv->e_self);

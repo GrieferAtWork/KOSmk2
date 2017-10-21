@@ -501,6 +501,7 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/nt");
  kinsmod("/mod/elf-coredump");
  kinsmod("/mod/elf-debug");
+ kinsmod("/mod/pdb-debug");
  kinsmod("/mod/ne2000");
 
  /* TODO: Actual locale support? */

@@ -486,11 +486,10 @@ got_state:
     }
    }
   }
-  if (!path) path = "";
-  if (!file) file = "";
-  ELF_DEBUG(syslog(LOG_DEBUG,"path: %q\n",path));
-  ELF_DEBUG(syslog(LOG_DEBUG,"file: %q\n",file));
-  ELF_DEBUG(syslog(LOG_DEBUG,"line: %d\n",RESULT_STATE.line));
+  if (!path && file) path = file,path_len = file_len,file_len = 0;
+  /*ELF_DEBUG*/(syslog(LOG_DEBUG,"path: %q\n",path));
+  /*ELF_DEBUG*/(syslog(LOG_DEBUG,"file: %q\n",file));
+  /*ELF_DEBUG*/(syslog(LOG_DEBUG,"line: %d\n",RESULT_STATE.line));
 
   /* Clear information to zero out all fields not implemented. */
   memset(&info,0,sizeof(struct virtinfo));
@@ -503,6 +502,8 @@ got_state:
   info.ai_data[VIRTINFO_DATA_SOURCEID] = self->c_chid;
   info.ai_data[VIRTINFO_DATA_FLAGS]    = state.flags;
   info.ai_data[VIRTINFO_DATA_ISA]      = RESULT_STATE.isa;
+  if (!path_len) info.ai_source[VIRTINFO_SOURCE_PATH] = NULL;
+  if (!file_len) info.ai_source[VIRTINFO_SOURCE_NAME] = NULL;
 
   /* Copy collected information to user-space. */
   result = sizeof(info)+path_len+file_len;
@@ -819,7 +820,7 @@ PRIVATE struct moddebug_loader loader = {
     .mdl_flags  = MODDEBUG_LOADER_FBINARY,
 };
 
-PRIVATE MODULE_INIT void KCALL elfcore_init(void) {
+PRIVATE MODULE_INIT void KCALL elf_debug_init(void) {
  moddebug_addloader(&loader,MODDEBUG_LOADER_SECONDARY);
 }
 

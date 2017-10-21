@@ -41,7 +41,10 @@ struct modpatch;
 struct module;
 
 #define __SIZEOF_MADDR_T__ __SIZEOF_POINTER__
+#ifndef __maddr_t_defined
+#define __maddr_t_defined 1
 typedef uintptr_t maddr_t; /* An address relative to 'm_load' */
+#endif /* !__maddr_t_defined */
 
 
 #define MODSEG_LOAD     0 /* Regular, old segment that should be loaded somewhere. */

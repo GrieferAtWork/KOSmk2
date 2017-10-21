@@ -32,6 +32,12 @@ struct moddebug;
 struct moddebug_osp;
 struct module;
 
+#ifndef __maddr_t_defined
+#define __maddr_t_defined 1
+typedef uintptr_t maddr_t; /* An address relative to 'm_load' */
+#endif /* !__maddr_t_defined */
+
+
 struct moddebug_ops {
  /* [0..1] Optional finalizer callback.
   * WARNING: When called, 'self->md_module' may equal NULL, meaning that this
@@ -41,11 +47,6 @@ struct moddebug_ops {
  /* [0..1] Lookup source information about the given virtual address.
   *        This is the main function that drive debug facilities such
   *        as addr2line functionality.
-  *  NOTE: The given buffer will be filled with appropriate data,
-  *        but this function is allowed to assume that 'inst' is
-  *        running as part of the currently active VM, meaning that
-  *        accessing user-space memory at the proper locations will
-  *        yield data mapped by 'self'.
   *  HINT: This also means that in the event of debug information strings
   *        already being mapped in user-space, less extended buffer memory
   *        will be required, as instead of copying those strings to the
@@ -56,8 +57,7 @@ struct moddebug_ops {
   * @return: -ENODATA:   No address information is available.
   * @return: E_ISERR(*): Failed to load address information for some reason. */
  ssize_t (KCALL *mo_virtinfo)(struct moddebug *__restrict self,
-                              struct instance *__restrict inst,
-                              VIRT void *addr, USER struct virtinfo *buf,
+                              maddr_t addr, USER struct virtinfo *buf,
                               size_t bufsize, u32 flags);
  /* [0..1] Attempt to delete cached data to free up memory. (Called from 'mman_swapmem()')
   *  TODO: Currently unused. */
@@ -107,17 +107,19 @@ FUNDEF void KCALL moddebug_setup(struct moddebug *__restrict self,
  *                      unloaded, or if the associated module was deleted.
  * @return: E_ISERR(*): Failed to load address information for some reason. */
 FUNDEF SAFE ssize_t KCALL moddebug_virtinfo(struct moddebug *__restrict self,
-                                            struct instance *__restrict inst,
-                                            VIRT void *addr, USER struct virtinfo *buf,
+                                            maddr_t addr, USER struct virtinfo *buf,
                                             size_t bufsize, u32 flags);
 
 /* Helper function to lookup address information, given only an instance. */
 FUNDEF SAFE ssize_t KCALL instance_virtinfo(struct instance *__restrict inst,
                                             VIRT void *addr, USER struct virtinfo *buf,
                                             size_t bufsize, u32 flags);
-/* Helper function to lookup address information in the current VM. */
-FUNDEF SAFE ssize_t KCALL mman_virtinfo(VIRT void *addr, USER struct virtinfo *buf,
+/* Helper function to lookup address information in the given VM. */
+FUNDEF SAFE ssize_t KCALL mman_virtinfo(struct mman *__restrict mm,
+                                        VIRT void *addr, USER struct virtinfo *buf,
                                         size_t bufsize, u32 flags);
+FUNDEF SAFE ssize_t KCALL kern_virtinfo(VIRT void *addr, HOST struct virtinfo *buf, size_t bufsize, u32 flags);
+FUNDEF SAFE ssize_t KCALL user_virtinfo(VIRT void *addr, USER struct virtinfo *buf, size_t bufsize, u32 flags);
 
 
 

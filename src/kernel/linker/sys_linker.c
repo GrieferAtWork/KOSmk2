@@ -459,11 +459,8 @@ SYSCALL_DEFINE4(xvirtinfo,VIRT void *,addr,
                 USER struct virtinfo *,buf,
                 size_t,bufsize,u32,flags) {
  ssize_t result;
- /* Don't allow information query for kernel-space addresses from user-space. */
- if unlikely((uintptr_t)addr >= KERNEL_BASE)
-    return -ENODATA;
  task_crit();
- result = mman_virtinfo(addr,buf,bufsize,flags);
+ result = user_virtinfo(addr,buf,bufsize,flags);
  task_endcrit();
  return result;
 }

@@ -70,6 +70,7 @@ BEGIN PROJECT("gcc_dos_userapp")
 END
 
 DISK_SYNC("../bin/apps/dos_userapp.exe","/bin/dos_userapp.exe")
+DISK_SYNC("../bin/apps/dos_userapp.pdb","/bin/dos_userapp.pdb")
 DISK_SYNC("hybrid_demo/main.exe","/bin/hybrid-demo.exe")
 
 

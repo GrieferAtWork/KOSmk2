@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <string.h>
 #include <sched/paging.h>
+#include <kernel/user.h>
 
 DECL_BEGIN
 
@@ -179,12 +180,10 @@ moddebug_setup(struct moddebug *__restrict self,
 
 PUBLIC SAFE ssize_t KCALL
 moddebug_virtinfo(struct moddebug *__restrict self,
-                  struct instance *__restrict inst,
-                  VIRT void *addr, USER struct virtinfo *buf,
+                  maddr_t addr, USER struct virtinfo *buf,
                   size_t bufsize, u32 flags) {
  ssize_t error;
  CHECK_HOST_DOBJ(self);
- CHECK_HOST_DOBJ(inst);
  error = rwlock_write(&self->md_lock);
  if (E_ISERR(error)) return error;
  /* Make sure the debug descriptor is in an active
@@ -194,7 +193,7 @@ moddebug_virtinfo(struct moddebug *__restrict self,
   rwlock_endwrite(&self->md_lock);
   return -ENODATA;
  }
- error = (*self->md_ops->mo_virtinfo)(self,inst,addr,buf,bufsize,flags);
+ error = (*self->md_ops->mo_virtinfo)(self,addr,buf,bufsize,flags);
  rwlock_endwrite(&self->md_lock);
  INSTANCE_DECREF(self->md_owner);
  return error;
@@ -208,56 +207,37 @@ instance_virtinfo(struct instance *__restrict inst,
  CHECK_HOST_DOBJ(inst);
  info = module_debug(inst->i_module);
  if unlikely(!info) return -ENODATA;
- result = moddebug_virtinfo(info,inst,addr,buf,bufsize,flags);
+ result = moddebug_virtinfo(info,
+                           (uintptr_t)addr-(uintptr_t)inst->i_base,
+                            buf,bufsize,flags);
  MODDEBUG_DECREF(info);
  return result;
 }
 FUNDEF SAFE ssize_t KCALL
-mman_virtinfo(VIRT void *addr, USER struct virtinfo *buf,
+mman_virtinfo(struct mman *__restrict mm,
+              VIRT void *addr, USER struct virtinfo *buf,
               size_t bufsize, u32 flags) {
- ssize_t result; struct mman *mm = THIS_MMAN;
- struct instance *instance_at; bool has_write_lock = false;
+ ssize_t result; bool has_write_lock = false;
+ struct instance *instance_at;
  CHECK_HOST_DOBJ(mm);
- if ((uintptr_t)addr >= KERNEL_BASE && mm != &mman_kernel) {
-  /* Special case: Load virtual address information in shared memory. */
-  THIS_TASK->t_mman = &mman_kernel;
-  COMPILER_WRITE_BARRIER();
-  PDIR_STCURR(&pdir_kernel);
-
-  /* Call ourselves again, now that we've loaded another memory manager. */
-  result = mman_virtinfo(addr,buf,bufsize,flags);
-
-  /* Restore the old page mapping. (`TASK_PDIR_KERNEL_END()') */
-  THIS_TASK->t_mman = mm;
-  COMPILER_WRITE_BARRIER();
-  PDIR_STCURR(mm->m_ppdir);
-  return result;
- }
-
- result = mman_read(mm);
+ result = mman_write(mm);
  if (E_ISERR(result)) return result;
-scan_again:
- instance_at = mman_instance_at_unlocked(mm,addr);
- if (!instance_at) {
-  if (has_write_lock)
-       mman_endwrite(mm);
-  else mman_endread(mm);
-  return -ENODATA;
+ if (mm == &mman_kernel) {
+  /* Need to access the kernel mman in kernel-pdir mode. */
+  struct mman *omm;
+  TASK_PDIR_KERNEL_BEGIN(omm);
+  instance_at = mman_instance_at_unlocked(mm,addr);
+  TASK_PDIR_KERNEL_END(omm);
+ } else {
+  instance_at = mman_instance_at_unlocked(mm,addr);
  }
+ if (!instance_at) { mman_endwrite(mm); return -ENODATA; }
  if (!INSTANCE_TRYINCREF(instance_at)) {
   /* If we fail to acquire a reference to the instance,
    * still proceed but keep the mman locked. */
   has_write_lock = true;
-  result = mman_upgrade(mm);
-  if (E_ISERR(result)) {
-   if (result == -ERELOAD) goto scan_again;
-   return result;
-  }
- } else if unlikely(has_write_lock) {
-  mman_endwrite(mm);
-  has_write_lock = false;
  } else {
-  mman_endread(mm);
+  mman_endwrite(mm);
  }
  result = instance_virtinfo(instance_at,addr,buf,bufsize,flags);
  if (has_write_lock) mman_endwrite(mm);
@@ -265,6 +245,24 @@ scan_again:
  return result;
 }
 
+PUBLIC SAFE ssize_t KCALL
+kern_virtinfo(VIRT void *addr, HOST struct virtinfo *buf,
+              size_t bufsize, u32 flags) {
+ ssize_t result; struct mman *vm;
+ vm = (uintptr_t)addr >= KERNEL_BASE ? &mman_kernel : THIS_TASK->t_real_mman;
+ HOSTMEMORY_BEGIN {
+  result = mman_virtinfo(vm,addr,buf,bufsize,flags);
+ }
+ HOSTMEMORY_END;
+ return result;
+}
+PUBLIC SAFE ssize_t KCALL
+user_virtinfo(VIRT void *addr, USER struct virtinfo *buf,
+              size_t bufsize, u32 flags) {
+ /* Don't allow access to kernel-level data. */
+ if ((uintptr_t)addr >= KERNEL_BASE) return -ENODATA;
+ return mman_virtinfo(THIS_TASK->t_real_mman,addr,buf,bufsize,flags);
+}
 
 
 

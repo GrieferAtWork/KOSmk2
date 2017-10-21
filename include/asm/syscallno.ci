@@ -321,7 +321,7 @@ __XSYSCALL(__NR_xdlsym,sys_xdlsym)
 #define __SC_ATTRIB_CLOBB_0x80000024 C("memory")
 __XSYSCALL_ASM(__NR_xdlfini,sys_xdlfini)
 #define __NR_xvirtinfo    0x8000002a /* Query information on a virtual address (addr2line). */
-__XSYSCALL_ASM(__NR_xvirtinfo,sys_xvirtinfo)
+__XSYSCALL(__NR_xvirtinfo,sys_xvirtinfo)
 
 #define __NR_xpaused      0x80000080
 #if !defined(__KERNEL__) || defined(CONFIG_DEBUG)

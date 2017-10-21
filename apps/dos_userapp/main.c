@@ -77,6 +77,10 @@ int main(int argc, char **argv) {
  (void)argc;
  (void)argv;
 
+ /* Test the PE debug information parser. */
+ printf("%[vinfo] : This is main()\n",&main);
+ fflush(stdout);
+
  DIR *d = opendir(".");
  struct dirent64 *ent;
 
