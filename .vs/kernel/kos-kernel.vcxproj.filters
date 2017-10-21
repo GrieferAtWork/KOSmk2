@@ -722,5 +722,8 @@
     <ClInclude Include="..\..\src\include\linker\debug.h">
       <Filter>include\linker</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\modules\linker\pdb-debug.h">
+      <Filter>modules\linker</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

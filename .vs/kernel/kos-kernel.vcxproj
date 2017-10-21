@@ -210,6 +210,7 @@
     <ClInclude Include="..\..\src\modules\fs\proc\procfs.h" />
     <ClInclude Include="..\..\src\modules\fs\proc\taskutil.h" />
     <ClInclude Include="..\..\src\modules\input\ps2_keymaps.h" />
+    <ClInclude Include="..\..\src\modules\linker\pdb-debug.h" />
     <ClInclude Include="..\..\src\modules\net\ne2k.h" />
     <ClInclude Include="..\..\src\modules\nt\api.h" />
     <ClInclude Include="..\..\src\modules\nt\error.h" />

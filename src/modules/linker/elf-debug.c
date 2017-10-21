@@ -49,6 +49,8 @@ DECL_BEGIN
 #define DWARF_CHUNK_MAXSIZE  0x40000 /* Max size of a single DWARF chunk. */
 #define SHSTRTAB_MAXSIZE     0x10000 /* Max size of the .shstrtab section. */
 #define SHNUM_MAX            1024    /* Max number of section header entries. */
+#define SHSYMTAB_MAXENT      0x100   /* Max entry size of symbols in .symtab. */
+#define SHSTRTAB_MAXNAM      0x100   /* Max length of a single zero-terminated string in .strtab. */
 
 
 /* NOTE: The DWARF implementation here is based on information gathered
@@ -109,44 +111,179 @@ union PACKED {
 
 
 typedef struct {
- DWARF2_Internal_LineInfo c_lnfo; /*< DWARF chunk line-info. */
- u8                       c_opcodec; /* Amount of obcodes. */
+  DWARF2_Internal_LineInfo c_lnfo; /*< DWARF chunk line-info. */
+  u8                       c_opcodec; /* Amount of obcodes. */
 union{
- u8                      *c_opcodev; /* [0..c_opcodec] Length of custom opcodes. */
- byte_t                  *c_data; /*< [0..0|c_size][owned] Chunk data. */
+  u8                      *c_opcodev; /* [0..c_opcodec] Length of custom opcodes. */
+  byte_t                  *c_data; /*< [0..0|c_size][owned] Chunk data. */
 };
- size_t                   c_chid; /*< Unique chunk ID. */
- pos_t                    c_addr; /*< Absolute in-file offset pointing after the DWARF header. */
+  size_t                   c_chid; /*< Unique chunk ID. */
+  pos_t                    c_addr; /*< Absolute in-file offset pointing after the DWARF header. */
 #ifdef __INTELLISENSE__
- size_t                   c_size; /*< Absolute size of the in-file data block located at 'c_addr' */
+  size_t                   c_size; /*< Absolute size of the in-file data block located at 'c_addr' */
 #else
 #define c_size c_lnfo.li_lengthI
 #endif
- char                    *c_dtab;  /*< [valid_if(c_data != NULL)] Directory table start. */
- size_t                   c_dtabc; /*< [valid_if(c_data != NULL)] Amount of ZERO-terminated strings in 'c_dtab'. */
- char                    *c_ftab;  /*< [valid_if(c_data != NULL)] File table start. */
- size_t                   c_ftabc; /*< [valid_if(c_data != NULL)] Amount of ZERO-terminated strings in 'c_ftab'. */
- u8                      *c_code;  /*< [valid_if(c_data != NULL)] Code start address. */
- u8                      *c_codee; /*< [valid_if(c_data != NULL)] Code end address. */
+  char                    *c_dtab;  /*< [valid_if(c_data != NULL)] Directory table start. */
+  size_t                   c_dtabc; /*< [valid_if(c_data != NULL)] Amount of ZERO-terminated strings in 'c_dtab'. */
+  char                    *c_ftab;  /*< [valid_if(c_data != NULL)] File table start. */
+  size_t                   c_ftabc; /*< [valid_if(c_data != NULL)] Amount of ZERO-terminated strings in 'c_ftab'. */
+  u8                      *c_code;  /*< [valid_if(c_data != NULL)] Code start address. */
+  u8                      *c_codee; /*< [valid_if(c_data != NULL)] Code end address. */
 } chunk_t;
 
+#define SYMTAB_MAXBUFSIZ 0x1000 /* Max buffer size (in bytes) for simultaneously loaded symbols. */
 typedef struct {
- struct moddebug          d_base;      /*< Underlying debug descriptor. */
+  Elf_Off  st_next; /*< Offset into :d_symtab (from :d_symtab.sh_offset) of the next-to-load buffer. */
+  size_t   st_syma; /*< [const][== MIN(SYMTAB_MAXBUFSIZ,:d_symtab.sh_size)/:d_symtab.sh_entsize] Allocated symbol buffer size (Only when 'st_symv != NULL'). */
+  size_t   st_symc; /*< [<= st_syma] Amount of symbol loaded within 'st_symv' */
+  Elf_Sym *st_symv; /*< [0..st_symc|alloc(st_syma)|ELEMSIZE(:d_symtab.sh_entsize)][owned] Vector of loaded ELF symbols. */
+} symtab_t;
+
+typedef struct {
+  struct moddebug          d_base;      /*< Underlying debug descriptor. */
 #ifdef __INTELLISENSE__
- struct file             *d_fp;        /*< [== d_base.md_module->m_file] */
+  struct file             *d_fp;        /*< [== d_base.md_module->m_file] */
 #else
-#define d_fp              d_base.md_module->m_file
+#define d_fp               d_base.md_module->m_file
 #endif
- Elf_Shdr                 d_debugline; /*< The section header for DWARF's `.debug_line' */
-#define DEBUG_CHUNKSDONE  0x00000001   /*< Set once 'd_chunkv' has been loaded. */
- u32                      d_flags;     /*< Set of 'DEBUG_*' */
- size_t                   d_chunkc;    /*< Chunk count. */
- chunk_t                 *d_chunkv;    /*< [0..d_chunkc][owned] */
- pos_t                    d_nextchunk; /*< Absolute in-file address of the next chunk. */
+  Elf_Shdr                 d_debugline; /*< The section header for DWARF's `.debug_line' */
+  Elf_Shdr                 d_symtab;    /*< The section header for ELF's `.symtab' */
+  Elf_Shdr                 d_strtab;    /*< The section header for ELF's `.strtab' (Connected to `.symtab') */
+#define DEBUG_CHUNKSDONE   0x00000001   /*< Set once 'd_chunkv' has been loaded. */
+  u32                      d_flags;     /*< Set of 'DEBUG_*' */
+  size_t                   d_chunkc;    /*< Chunk count. */
+  chunk_t                 *d_chunkv;    /*< [0..d_chunkc][owned] */
+  pos_t                    d_nextchunk; /*< Absolute in-file address of the next chunk. */
+  symtab_t                 d_symbols;   /*< Currently loaded symbol information. */
 } debug_t;
 
 typedef s64  leb128_t;
 typedef u64 uleb128_t;
+
+
+/* Return a newly malloc()ed string, or NULL of no string data exists for the given address,
+ * or an E_PTR() error code if something else goes wrong (such as no available memory, an I/O error, etc.) */
+PRIVATE ATTR_MALLOC char *KCALL
+debug_name_at(debug_t *__restrict self, Elf_Word addr) {
+ char *result,*newres; ssize_t maxlen;
+ if (addr >= self->d_strtab.sh_size) return NULL;
+ /* Allocate and read a zero-terminated string at 'addr' in 'self->d_strtab' */
+ maxlen = MIN((SHSTRTAB_MAXNAM+1)*sizeof(char),
+               self->d_strtab.sh_size-addr);
+ result = (char *)malloc((size_t)maxlen);
+ if unlikely(!result) return E_PTR(-ENOMEM);
+ maxlen = file_kpread(self->d_fp,result,maxlen,
+                      self->d_strtab.sh_offset+addr);
+ if (E_ISERR(maxlen)) { free(result); return E_PTR(maxlen); }
+ maxlen = (ssize_t)strnlen(result,(size_t)(maxlen-1));
+ assert(maxlen <= SHSTRTAB_MAXNAM);
+ newres = trealloc(char,result,(size_t)maxlen+1);
+ if (newres) result = newres;
+ result[maxlen] = '\0';
+ return result;
+}
+
+
+/* Load the next chunk of symbols. */
+PRIVATE errno_t KCALL
+debug_load_symbols(debug_t *__restrict self) {
+ ssize_t sym_avail;
+ assert(self->d_symbols.st_next <= self->d_symtab.sh_size);
+ if (!self->d_symbols.st_symv) {
+  /* Allocate and fill the symbol buffer. */
+  self->d_symbols.st_symv = tmalloc(Elf_Sym,self->d_symbols.st_syma);
+  if unlikely(!self->d_symbols.st_symv) return -ENOMEM;
+ }
+ /* Figure out how many symbols we should load. */
+ sym_avail = (self->d_symtab.sh_size-self->d_symbols.st_next)/
+              self->d_symtab.sh_entsize;
+ if unlikely(!sym_avail) {
+  /* Rewind. */
+rewind:
+  self->d_symbols.st_next = 0;
+  sym_avail = self->d_symtab.sh_size/self->d_symtab.sh_entsize;
+  assert(sym_avail != 0);
+ }
+ /* Make sure not to load more than we can handle. */
+ if ((size_t)sym_avail > self->d_symbols.st_syma)
+     sym_avail = (ssize_t)self->d_symbols.st_syma;
+ sym_avail = file_kpread(self->d_fp,self->d_symbols.st_symv,
+                         sym_avail*self->d_symtab.sh_entsize,
+                         self->d_symtab.sh_offset+self->d_symbols.st_next);
+ if (E_ISERR(sym_avail)) return (errno_t)sym_avail;
+ sym_avail /= self->d_symtab.sh_entsize;
+ if unlikely(!sym_avail) {
+  /* No more available symbols. */
+  if (self->d_symbols.st_next == 0) {
+   /* Already did rewind. - THERE ARE NO SYMBOLS! THE HEADER LIED! */
+   free(self->d_symbols.st_symv);
+   self->d_symtab.sh_size  = 0;
+   self->d_symbols.st_syma = 0;
+   self->d_symbols.st_symv = NULL;
+   return -ENODATA;
+  }
+  /* Truncate the symbol header so we don't get here again. */
+  self->d_symtab.sh_size = self->d_symbols.st_next+
+                          (sym_avail*self->d_symtab.sh_entsize);
+  goto rewind;
+ }
+ /* Store the amount of symbols we've just loaded. */
+ self->d_symbols.st_symc = sym_avail;
+ /* Update the contoller to reflect pointing at the next part. */
+ self->d_symbols.st_next += sym_avail*self->d_symtab.sh_entsize;
+ assert(self->d_symbols.st_next <= self->d_symtab.sh_size);
+ return -EOK;
+}
+
+
+/* Search for a symbol containing 'addr' */
+PRIVATE Elf_Sym *KCALL
+debug_scan_symbols(debug_t *__restrict self,
+                   maddr_t addr) {
+ Elf_Sym *iter,*end;
+ assertf(self->d_symtab.sh_entsize >= sizeof(Elf_Sym),
+         "This was already checked during initialization");
+ iter = self->d_symbols.st_symv;
+ end  = (Elf_Sym *)((uintptr_t)iter+self->d_symbols.st_symc*
+                                    self->d_symtab.sh_entsize);
+ for (; iter != end;
+    *(uintptr_t *)&iter += self->d_symtab.sh_entsize) {
+  assert(iter < end);
+  /* Skip undefined and absolute symbols. */
+  if (iter->st_shndx == SHN_UNDEF ||
+      iter->st_shndx == SHN_ABS)
+      continue;
+  /* NOTE: This won't work for ZERO-length symbols. (Sorry, but
+   * you _really_ need to use the '.size' directive for this one...) */
+  if (addr >= iter->st_value &&
+      addr < iter->st_value+iter->st_size)
+      return iter; /* Got it! */
+ }
+ return NULL;
+}
+
+
+/* Return a a pointer to the symbol containing 'addr', or NULL of no such symbol exists,
+ * or an E_PTR() error code if something else goes wrong (such as no available memory, an I/O error, etc.) */
+PRIVATE Elf_Sym *KCALL
+debug_symbol_at(debug_t *__restrict self,
+                maddr_t addr) {
+ errno_t error; Elf_Sym *result;
+ /* Track where we've started so we only ever do a single loop at most. */
+ Elf_Off symtab_start = self->d_symbols.st_next;
+ if (!self->d_symbols.st_syma) return NULL;
+ do {
+  result = debug_scan_symbols(self,addr);
+  if (result) return result;
+  error = debug_load_symbols(self);
+  if (E_ISERR(error)) {
+   if (error == -ENODATA) return NULL;
+   return E_PTR(error);
+  }
+ } while (self->d_symbols.st_next != symtab_start);
+ return NULL;
+}
 
 
 PRIVATE leb128_t FCALL
@@ -244,18 +381,19 @@ chunk_loaddata(chunk_t *__restrict self, struct file *__restrict fp) {
 }
 
 typedef struct {
-    uintptr_t address;
-    size_t    file;
-    ssize_t   line;
-    size_t    column;
-    uintptr_t flags; /* Set of 'VIRTINFO_FLAG_*' */
-    uintptr_t isa;
-    uintptr_t discriminator;
-    u8        op_index;
+  uintptr_t address;
+  size_t    file;
+  ssize_t   line;
+  size_t    column;
+  uintptr_t flags; /* Set of 'VIRTINFO_FLAG_*' */
+  uintptr_t isa;
+  uintptr_t discriminator;
+  u8        op_index;
 } state_machine_t;
 
 PRIVATE ssize_t KCALL
-chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
+chunk_virtinfo(chunk_t *__restrict self,
+               debug_t *__restrict debug,
                maddr_t addr, USER struct virtinfo *buf,
                size_t bufsize, u32 flags) {
  state_machine_t prev_state,state;
@@ -266,7 +404,7 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
  if (self->c_size >= DWARF_CHUNK_MAXSIZE) return -ENODATA;
  /* Lazily load chunk data. */
  if (!self->c_data) {
-  error = chunk_loaddata(self,fp);
+  error = chunk_loaddata(self,debug->d_fp);
   if (E_ISERR(error)) return error;
  }
 #if 0
@@ -381,7 +519,7 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
 
      case DW_LNE_end_sequence:
       TEST_STATE();
-#if 1
+#if 0
       return -ENODATA;
 #else
       RESET();
@@ -489,14 +627,14 @@ chunk_virtinfo(chunk_t *__restrict self, struct file *__restrict fp,
     break;
    }
   }
+  //TEST_STATE();
  }
 #undef TEST_STATE
 #undef RESET
  return -ENODATA;
  {
-  struct virtinfo info;
-  char *path,*file;
-  size_t path_len,file_len,result,part;
+  struct virtinfo info; char *path,*file,*name;
+  size_t path_len,file_len,name_len,result,part;
 got_state:
 #define RESULT_STATE state
   path = NULL,path_len = 0;
@@ -532,14 +670,33 @@ got_state:
    }
   }
   if (!path && file) path = file,path_len = file_len,file_len = 0;
-  ELF_DEBUG(syslog(LOG_DEBUG,"path: %q\n",path));
-  ELF_DEBUG(syslog(LOG_DEBUG,"file: %q\n",file));
-  ELF_DEBUG(syslog(LOG_DEBUG,"line: %d\n",RESULT_STATE.line));
-
   /* Clear information to zero out all fields not implemented. */
   memset(&info,0,sizeof(struct virtinfo));
+
+  /* Lookup ELF symbol name information. */
+  name = NULL;
+  { Elf_Sym *symbol = debug_symbol_at(debug,addr);
+    if (symbol) {
+     if (E_ISERR(symbol)) return E_GTERR(symbol);
+     info.ai_data[VIRTINFO_DATA_SYMADDR] = symbol->st_value;
+     info.ai_data[VIRTINFO_DATA_SYMSIZE] = symbol->st_size;
+     name = debug_name_at(debug,symbol->st_name);
+     if (E_ISERR(name)) return E_GTERR(name);
+    }
+  }
+
+  name_len = 0;
+  if (name) name_len = (strlen(name)+1)*sizeof(char);
+
+
+  ELF_DEBUG(syslog(LOG_DEBUG,"path: %q\n",path));
+  ELF_DEBUG(syslog(LOG_DEBUG,"file: %q\n",file));
+  ELF_DEBUG(syslog(LOG_DEBUG,"name: %q\n",name));
+  ELF_DEBUG(syslog(LOG_DEBUG,"line: %d\n",RESULT_STATE.line));
+
   info.ai_source[VIRTINFO_SOURCE_PATH] = (USER char *)(buf+1);
   info.ai_source[VIRTINFO_SOURCE_NAME] = info.ai_source[VIRTINFO_SOURCE_PATH]+path_len;
+  info.ai_name                         = info.ai_source[VIRTINFO_SOURCE_NAME]+file_len;
   info.ai_line                         = RESULT_STATE.line;
   info.ai_column                       = RESULT_STATE.column;
   info.ai_data[VIRTINFO_DATA_PREVADDR] = prev_state.address;
@@ -550,20 +707,34 @@ got_state:
   info.ai_data[VIRTINFO_DATA_DISC]     = RESULT_STATE.discriminator;
   if (!path_len) info.ai_source[VIRTINFO_SOURCE_PATH] = NULL;
   if (!file_len) info.ai_source[VIRTINFO_SOURCE_NAME] = NULL;
+  if (!name_len) info.ai_name = NULL;
 
+  result = sizeof(info)+path_len+file_len+name_len;
   /* Copy collected information to user-space. */
-  result = sizeof(info)+path_len+file_len;
   part = MIN(bufsize,sizeof(info));
-  if (copy_to_user(buf,&info,part)) return -EFAULT;
+  if (copy_to_user(buf,&info,part)) goto done_fault;
   *(uintptr_t *)&buf += part,bufsize -= part;
-  part = MIN(bufsize,path_len);
-  if (copy_to_user(buf,path,part)) return -EFAULT;
-  *(uintptr_t *)&buf += part,bufsize -= part;
-  part = MIN(bufsize,file_len);
-  if (copy_to_user(buf,file,part)) return -EFAULT;
-  /* *(uintptr_t *)&buf += part,bufsize -= part; */
-
+  if (path_len) {
+   part = MIN(bufsize,path_len);
+   if (copy_to_user(buf,path,part)) goto done_fault;
+   *(uintptr_t *)&buf += part,bufsize -= part;
+  }
+  if (file_len) {
+   part = MIN(bufsize,file_len);
+   if (copy_to_user(buf,file,part)) goto done_fault;
+   *(uintptr_t *)&buf += part,bufsize -= part;
+  }
+  if (name_len) {
+   part = MIN(bufsize,name_len);
+   if (copy_to_user(buf,name,part)) goto done_fault;
+   /* *(uintptr_t *)&buf += part,bufsize -= part; */
+  }
+done:
+  free(name);
   return (ssize_t)result;
+done_fault:
+  result = -EFAULT;
+  goto done;
 #undef RESULT_STATE
  }
 }
@@ -672,6 +843,8 @@ PRIVATE chunk_t *KCALL read_chunk(debug_t *__restrict self) {
                            self->d_nextchunk);
  if (E_ISERR(error)) {
   if (error == -ENOSPC) {
+   /* If there are no chunks at all, free the one we've allocated above. */
+   if (!self->d_chunkc) { free(self->d_chunkv); self->d_chunkv = NULL; }
    /* Indicate that all chunks are now loaded. */
    self->d_flags |= DEBUG_CHUNKSDONE;
    error = -ENODATA;
@@ -729,7 +902,7 @@ debug_virtinfo(struct moddebug *__restrict self,
  /* Scan chunks that have already been loaded. */
  end = (iter = SELF->d_chunkv)+SELF->d_chunkc;
  for (; iter != end; ++iter) {
-  result = chunk_virtinfo(iter,SELF->d_fp,addr,buf,bufsize,flags);
+  result = chunk_virtinfo(iter,SELF,addr,buf,bufsize,flags);
   if (result != -ENODATA) goto done_maybeerr;
  }
 
@@ -738,8 +911,36 @@ debug_virtinfo(struct moddebug *__restrict self,
   iter = read_chunk(SELF);
   if (E_ISERR(iter)) { result = E_GTERR(iter); goto done_maybeerr; }
   //syslog(LOG_DEBUG,"chunk %Iu at %I64u\n",iter->c_chid,iter->c_addr);
-  result = chunk_virtinfo(iter,SELF->d_fp,addr,buf,bufsize,flags);
+  result = chunk_virtinfo(iter,SELF,addr,buf,bufsize,flags);
   if (result != -ENODATA) goto done_maybeerr;
+ }
+
+ /* Check if we at least know the address's name... */
+ { char *name; Elf_Sym *symbol;
+   symbol = debug_symbol_at(SELF,addr);
+   if (E_ISERR(symbol)) return E_GTERR(symbol);
+   if (symbol != NULL && (name = debug_name_at(SELF,symbol->st_name)) != NULL) {
+    struct virtinfo info; size_t part,namesize;
+    if (E_ISERR(name)) return E_GTERR(name);
+    memset(&info,0,sizeof(struct virtinfo));
+    info.ai_data[VIRTINFO_DATA_SYMADDR] = symbol->st_value;
+    info.ai_data[VIRTINFO_DATA_SYMSIZE] = symbol->st_size;
+    info.ai_name = (USER char *)(buf+1);
+    namesize = (strlen(info.ai_name)+1)*sizeof(char);
+    result = sizeof(struct virtinfo)+namesize;
+    part = MIN(sizeof(struct virtinfo),bufsize);
+    if (copy_to_user(buf,&info,part)) goto err_symonly_fault;
+    *(uintptr_t *)&buf += part,bufsize -= part;
+    part = MIN(bufsize,namesize);
+    if (copy_to_user(buf,name,part)) goto err_symonly_fault;
+    /* *(uintptr_t *)&buf += part,bufsize -= part; */
+    free(name);
+end_symonly:
+    return (ssize_t)result;
+err_symonly_fault:
+    result = -EFAULT;
+    goto end_symonly;
+   }
  }
 
  return result;
@@ -773,6 +974,7 @@ PRIVATE REF struct moddebug *KCALL
 elf_debug_loader(struct module *__restrict mod) {
  Elf_Ehdr header; errno_t error;
  Elf_Shdr *s_iter,*s_end,*section_headers = NULL;
+ Elf_Shdr *shdr_symtab,*shdr_debug_lines;
  Elf_Shdr *shdr_strtab; char *shstrtab = NULL;
 #define SHDR(i) ((Elf_Shdr *)((uintptr_t)section_headers+(i)*header.e_shentsize))
 
@@ -817,34 +1019,58 @@ elf_debug_loader(struct module *__restrict mod) {
                     shdr_strtab->sh_size,
                     shdr_strtab->sh_offset);
  if (E_ISERR(temp)) goto err;
- shdr_strtab->sh_size = (Elf32_Word)temp; /* Truncate if necessary. */
+ shdr_strtab->sh_size = (Elf_Word)temp; /* Truncate if necessary. */
 
  /* Now we can finally go through all the sections and search for '.debug_line' */
  s_iter = section_headers;
  s_end  = SHDR(header.e_shnum);
+ shdr_symtab = NULL;
+ shdr_debug_lines = NULL;
  for (; s_iter != s_end; ++s_iter) {
   char *name;
   if (s_iter->sh_name >= shdr_strtab->sh_size)
       continue; /* Invalid section name. */
   if (s_iter->sh_size < DWARF_MIN_ILI_SIZE)
       continue; /* Invalid section size. */
+  if (s_iter->sh_type == SHT_SYMTAB &&
+      s_iter->sh_link < header.e_shnum &&
+      SHDR(s_iter->sh_link)->sh_type == SHT_STRTAB &&
+     (s_iter->sh_entsize >= sizeof(Elf_Sym) ||
+      s_iter->sh_entsize <  SHSYMTAB_MAXENT)) {
+   /* Symbol table. */
+   shdr_symtab = s_iter;
+  }
+
   name = shstrtab+s_iter->sh_name;
   if (!strcmp(name,".debug_line"))
-       goto got_debug_line; /* Found it! */
+       shdr_debug_lines = s_iter; /* Found it! */
+
+  if (shdr_symtab && shdr_debug_lines) break;
  }
- goto err_nodata;
-got_debug_line:
+
+ if (!shdr_symtab && !shdr_debug_lines) goto err_nodata;
 
  /* Create the debug descriptor. */
  result = (debug_t *)moddebug_new(sizeof(debug_t));
  if unlikely(!result) return NULL;
  result->d_base.md_module = mod;
  result->d_base.md_ops    = &debug_ops;
- result->d_nextchunk      = s_iter->sh_offset;
 
- /* Store the .debug_line section header. */
- memcpy(&result->d_debugline,s_iter,
-        MIN(sizeof(Elf_Shdr),header.e_shentsize));
+ if (shdr_symtab) {
+  shdr_strtab = SHDR(shdr_symtab->sh_link);
+  memcpy(&result->d_symtab,shdr_symtab,MIN(sizeof(Elf_Shdr),header.e_shentsize));
+  memcpy(&result->d_strtab,shdr_strtab,MIN(sizeof(Elf_Shdr),header.e_shentsize));
+  result->d_symbols.st_syma = MIN(SYMTAB_MAXBUFSIZ,shdr_symtab->sh_size)/shdr_symtab->sh_entsize;
+ }
+
+ if (shdr_debug_lines) {
+  /* Store the .debug_line section header. */
+  result->d_nextchunk = shdr_debug_lines->sh_offset;
+  memcpy(&result->d_debugline,shdr_debug_lines,
+         MIN(sizeof(Elf_Shdr),header.e_shentsize));
+ }
+
+
  moddebug_setup(&result->d_base,THIS_INSTANCE);
 end:
  free(section_headers);

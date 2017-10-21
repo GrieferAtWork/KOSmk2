@@ -1335,6 +1335,18 @@ on_line_start:
 									.line = line.strip(),
 									.func = func.strip(),
 								})+"\n");
+							} else if (name == "output") {
+								local filename,count = args.scanf(" ( \"%[^\"]\" , %[^)])")...;
+								count = (int)count.strip();
+								local out = file.open(filename,"w");
+								local ok = 0;
+								for (;;) {
+									local data = r.read(1);
+									out.write(data);
+									ok += #data;
+									if (ok >= count) break;
+								}
+								out.close();
 							} else {
 								outfile.write("UNKNOWN CMD:"+repr(name ?: cmd)+"\n");
 							}
