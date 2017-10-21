@@ -500,15 +500,16 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/pe");
  kinsmod("/mod/nt");
  kinsmod("/mod/elf-coredump");
+ kinsmod("/mod/elf-debug");
  kinsmod("/mod/ne2000");
 
  /* TODO: Actual locale support? */
 
  network_test();
 
- syslog(LOG_DEBUG,"%[vinfo] : This is network_test()\n",&network_test);
+ syslog(LOG_DEBUG,"%[vinfo] : I'm network_test()\n",&network_test);
 
-#if 1
+#if 0
  run_init("/bin/init");
  for (;;) run_init("/bin/init");
 #endif

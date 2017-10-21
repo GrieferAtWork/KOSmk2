@@ -441,6 +441,9 @@
     <ClCompile Include="..\..\src\kernel\linker\debug.c">
       <Filter>kernel\linker</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\modules\linker\elf-debug.c">
+      <Filter>modules\linker</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">

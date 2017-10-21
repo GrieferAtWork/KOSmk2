@@ -24,43 +24,13 @@
 #include <hybrid/sync/atomic-rwptr.h>
 #include <sync/rwlock.h>
 #include <kernel/malloc.h>
+#include <kos/virtinfo.h>
 
 DECL_BEGIN
 
 struct moddebug;
 struct moddebug_osp;
 struct module;
-
-
-/* File name descriptors.
- * This information should be merged into human-readable format as follows:
- * >> if (!VIRTINFO_SOURCE_PATH) return "???";
- * >> path = "";
- * >> if (VIRTINFO_SOURCE_DRIVE)
- * >>     path = VIRTINFO_SOURCE_DRIVE+":";
- * >> path += "/"+VIRTINFO_SOURCE_PATH.strip("\\/");
- * >> if (VIRTINFO_SOURCE_NAME) { path += "/"+VIRTINFO_SOURCE_NAME.lstrip("\\/");
- * >> if (VIRTINFO_SOURCE_EXT) path += "."+VIRTINFO_SOURCE_EXT; }
- * >> return path;
- */
-struct virtinfo {
- /* NOTE: Any unknown field is set to 0/ZERO/NULL, meaning that
-  *       every member should be considered '[valid_if(this != 0)]' */
-#define VIRTINFO_SOURCE_DRIVE 0 /*< Drive name of the source file. */
-#define VIRTINFO_SOURCE_PATH  1 /*< Source file path name (May already include VIRTINFO_SOURCE_NAME+VIRTINFO_SOURCE_EXT). */
-#define VIRTINFO_SOURCE_NAME  2 /*< Source file name (May already include VIRTINFO_SOURCE_EXT). */
-#define VIRTINFO_SOURCE_EXT   3 /*< Source file extension. */
- USER char *ai_source[4]; /*< [0..1][4] Source information. */
- USER char *ai_name;      /*< [0..1] Name of the nearest symbol located at 'VIRTINFO_DATA_PREVADDR'. */
- u32        ai_line;      /*< Source line (1-based). */
- u32        ai_column;    /*< Source line column offset (1-based). */
-#define VIRTINFO_DATA_PREVADDR 0 /*< [<= mo_virtinfo::addr] Start address of this set of debug information. */
-#define VIRTINFO_DATA_NEXTADDR 1 /*< [>= mo_virtinfo::addr] Address for the next set of debug information. */
- uintptr_t  ai_data[8];   /*< Extended information fields (Unknown/unused fields are set to ZERO). */
- /* Locally buffered data goes here. */
-};
-
-
 
 struct moddebug_ops {
  /* [0..1] Optional finalizer callback.
@@ -80,7 +50,7 @@ struct moddebug_ops {
   *        already being mapped in user-space, less extended buffer memory
   *        will be required, as instead of copying those strings to the
   *        provided buffer, they can be directly pointed to that mapping.
-  * @param: flags: Set of 'MOD_VIRTINFO_*'
+  * @param: flags: Set of 'VIRTINFO_*'
   * @return: * :         The amount of required buffer bytes.
   * @return: -EFAULT:    The given 'buf' was located at a faulty address.
   * @return: -ENODATA:   No address information is available.
@@ -89,7 +59,9 @@ struct moddebug_ops {
                               struct instance *__restrict inst,
                               VIRT void *addr, USER struct virtinfo *buf,
                               size_t bufsize, u32 flags);
-#define MOD_VIRTINFO_NORMAL 0x00000000 /*< Normal address information query. */
+ /* [0..1] Attempt to delete cached data to free up memory. (Called from 'mman_swapmem()')
+  *  TODO: Currently unused. */
+ size_t (KCALL *mo_clearcache)(struct moddebug *__restrict self, size_t hint);
 };
 
 ATTR_ALIGNED(ATOMIC_RWPTR_ALIGN)
@@ -126,7 +98,7 @@ FUNDEF void KCALL moddebug_setup(struct moddebug *__restrict self,
                                  struct instance *__restrict owner);
 
 /* Query address information.
- * @param: flags: Set of 'MOD_VIRTINFO_*'
+ * @param: flags: Set of 'VIRTINFO_*'
  * @return: * :         The amount of required buffer bytes.
  * @return: -EFAULT:    The given 'buf' was located at a faulty address.
  * @return: -EINTR:     The calling thread was interrupted.

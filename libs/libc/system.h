@@ -45,6 +45,7 @@ struct ucontext;
 struct pollfd;
 struct timezone;
 struct sysinfo;
+struct virtinfo;
 
 #ifndef __errno_t_defined
 #define __errno_t_defined 1
@@ -187,6 +188,8 @@ LOCAL SYSCALL2(void *,xdlsym,(void *,handle,char const *,symbol));
 LOCAL SYSCALL1(int,xdlclose,(void *,handle));
 LOCAL SYSCALL4(errno_t,xfsymlinkat,(USER char const *,oldname,int,newdfd,USER char const *,newname,int,flags));
 LOCAL SYSCALL5(ssize_t,xfreadlinkat,(int,dfd,USER char const *,path,USER char *,buf,size_t,len,int,flags));
+LOCAL SYSCALL4(ssize_t,xvirtinfo,(VIRT void *,addr,USER struct virtinfo *,buf,size_t,bufsize,u32,flags));
+
 
 #ifdef __ARCH_EXTENDED_FS_SYSCALLS
 #undef SYSCALL_NAME

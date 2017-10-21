@@ -87,6 +87,46 @@ INTERN int ATTR_CDECL libc_open(char const *file, int oflag, ...) {
 INTERN int LIBCCALL libc_creat(char const *file, mode_t mode) {
  return libc_open(file,O_CREAT|O_WRONLY|O_TRUNC,mode);
 }
+
+
+INTERN ssize_t LIBCCALL
+libc_xvirtinfo2(VIRT void *addr, USER struct virtinfo *buf,
+                size_t bufsize, u32 flags) {
+ return FORWARD_SYSTEM_VALUE(sys_xvirtinfo(addr,buf,bufsize,flags));
+}
+INTERN struct virtinfo *LIBCCALL
+libc_xvirtinfo(VIRT void *addr, USER struct virtinfo *buf,
+               size_t bufsize, u32 flags) {
+ ssize_t reqsize; bool is_libc_buffer = false;
+ if (!buf && bufsize && (is_libc_buffer = true,
+      buf = (struct virtinfo *)libc_malloc(bufsize)) == NULL) return NULL;
+ reqsize = libc_xvirtinfo2(addr,buf,bufsize,flags);
+ if (E_ISERR(reqsize)) {
+  if (is_libc_buffer) libc_free(buf);
+  SET_ERRNO((errno_t)-reqsize);
+  return NULL;
+ }
+ if ((size_t)reqsize > bufsize) {
+  if (!buf) {
+   /* Allocate a new buffer dynamically. */
+   do {
+    struct virtinfo *new_buf;
+    bufsize = (size_t)reqsize;
+    new_buf = (struct virtinfo *)libc_realloc(buf,bufsize);
+    if unlikely(!new_buf) { libc_free(buf); return NULL; }
+    buf = new_buf;
+   } while ((reqsize = libc_xvirtinfo2(addr,buf,bufsize,flags),
+             E_ISOK(reqsize) && (size_t)reqsize != bufsize));
+   if (E_ISERR(reqsize)) { libc_free(buf); SET_ERRNO(-reqsize); return NULL; }
+   return buf;
+  }
+  SET_ERRNO(-ERANGE);
+  return NULL;
+ }
+ return buf;
+}
+
+
 INTERN ssize_t LIBCCALL libc_xfdname2(int fd, int type, char *buf, size_t bufsize) {
  return FORWARD_SYSTEM_ERROR(sys_xfdname(fd,type,buf,bufsize));
 }
@@ -162,8 +202,6 @@ DEFINE_PUBLIC_ALIAS(fcntl,libc_fcntl);
 DEFINE_PUBLIC_ALIAS(openat,libc_openat);
 DEFINE_PUBLIC_ALIAS(open,libc_open);
 DEFINE_PUBLIC_ALIAS(creat,libc_creat);
-DEFINE_PUBLIC_ALIAS(xfdname2,libc_xfdname2);
-DEFINE_PUBLIC_ALIAS(xfdname,libc_xfdname);
 DEFINE_PUBLIC_ALIAS(getcwd,libc_getcwd);
 DEFINE_PUBLIC_ALIAS(get_current_dir_name,libc_get_current_dir_name);
 DEFINE_PUBLIC_ALIAS(getwd,libc_getwd);
@@ -175,7 +213,10 @@ DEFINE_PUBLIC_ALIAS(openat64,libc_openat);
 DEFINE_PUBLIC_ALIAS(posix_fadvise64,libc_posix_fadvise);
 DEFINE_PUBLIC_ALIAS(posix_fallocate64,libc_posix_fallocate);
 
-
+DEFINE_PUBLIC_ALIAS(xfdname2,libc_xfdname2);
+DEFINE_PUBLIC_ALIAS(xfdname,libc_xfdname);
+DEFINE_PUBLIC_ALIAS(xvirtinfo2,libc_xvirtinfo2);
+DEFINE_PUBLIC_ALIAS(xvirtinfo,libc_xvirtinfo);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTERN ATTR_DOSTEXT char *LIBCCALL libc_getdcwd(int UNUSED(drive), char *buf, size_t size) { return libc_getcwd(buf,size); }

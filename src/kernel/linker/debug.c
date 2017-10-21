@@ -33,6 +33,7 @@
 #include <syslog.h>
 #include <assert.h>
 #include <string.h>
+#include <sched/paging.h>
 
 DECL_BEGIN
 
@@ -45,7 +46,7 @@ PRIVATE DEFINE_RWLOCK(moddebug_loader_lock);
 
 PUBLIC REF struct moddebug *KCALL
 module_create_debug(struct module *__restrict self) {
- REF struct moddebug *result = E_PTR(-ENOEXEC);
+ REF struct moddebug *result = E_PTR(-ENODATA);
  struct moddebug_loader *iter; ssize_t magsz;
  errno_t error; byte_t magic[MODLOADER_MAX_MAGIC];
  CHECK_HOST_DOBJ(self);
@@ -217,6 +218,22 @@ mman_virtinfo(VIRT void *addr, USER struct virtinfo *buf,
  ssize_t result; struct mman *mm = THIS_MMAN;
  struct instance *instance_at; bool has_write_lock = false;
  CHECK_HOST_DOBJ(mm);
+ if ((uintptr_t)addr >= KERNEL_BASE && mm != &mman_kernel) {
+  /* Special case: Load virtual address information in shared memory. */
+  THIS_TASK->t_mman = &mman_kernel;
+  COMPILER_WRITE_BARRIER();
+  PDIR_STCURR(&pdir_kernel);
+
+  /* Call ourselves again, now that we've loaded another memory manager. */
+  result = mman_virtinfo(addr,buf,bufsize,flags);
+
+  /* Restore the old page mapping. (`TASK_PDIR_KERNEL_END()') */
+  THIS_TASK->t_mman = mm;
+  COMPILER_WRITE_BARRIER();
+  PDIR_STCURR(mm->m_ppdir);
+  return result;
+ }
+
  result = mman_read(mm);
  if (E_ISERR(result)) return result;
 scan_again:
@@ -246,6 +263,48 @@ scan_again:
  if (has_write_lock) mman_endwrite(mm);
  else INSTANCE_DECREF(instance_at);
  return result;
+}
+
+
+
+
+INTERN void KCALL
+moddebug_loader_delete_from_instance(struct instance *__restrict inst) {
+ struct moddebug_loader **piter,*iter;
+ struct moddebug_loader **plists[2];
+ size_t i,num_refs = 0;
+ bool has_write_lock = false;
+ CHECK_HOST_DOBJ(inst);
+ plists[0] = &moddebug_loader_ymaglist;
+ plists[1] = &moddebug_loader_nmaglist;
+ task_nointr();
+ rwlock_read(&moddebug_loader_lock);
+restart:
+ for (i = 0; i < COMPILER_LENOF(plists); ++i) {
+  piter = plists[i];
+  while ((iter = *piter) != NULL) {
+   if (iter->mdl_owner == inst) {
+    if (!has_write_lock) {
+     has_write_lock = true;
+     if (rwlock_upgrade(&moddebug_loader_lock) == -ERELOAD)
+         goto restart;
+    }
+    /* Delete this hook. */
+    *piter = iter->mdl_chain.le_next;
+    ++num_refs;
+   } else {
+    piter = &iter->mdl_chain.le_next;
+   }
+  }
+ }
+ if (has_write_lock)
+      rwlock_endwrite(&moddebug_loader_lock);
+ else rwlock_endread(&moddebug_loader_lock);
+ if (num_refs) {
+  assert(num_refs >= ATOMIC_READ(inst->i_weakcnt));
+  ATOMIC_FETCHSUB(inst->i_weakcnt,num_refs);
+ }
+ task_endnointr();
 }
 
 

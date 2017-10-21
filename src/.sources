@@ -203,6 +203,7 @@ BEGIN
 	BEGIN LIBRARY_MODULE("pci")        SOURCE("modules/pci/*.c")               END
 	BEGIN DEFAULT_MODULE("ne2000")     SOURCE("modules/net/ne2k.c") USING("pci") END
 	BEGIN BASIC_MODULE("elf-coredump") SOURCE("modules/linker/elf-coredump.c") END
+	BEGIN BASIC_MODULE("elf-debug")    SOURCE("modules/linker/elf-debug.c")    END
 
 END
 

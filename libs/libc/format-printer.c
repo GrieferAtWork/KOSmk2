@@ -48,6 +48,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+#include <kos/virtinfo.h>
 
 #ifdef __KERNEL__
 #include <fs/fs.h>
@@ -252,15 +253,13 @@ struct longprint {
                                char const *cmd, enum printf_length length, \
                                u16 flags, size_t precision, va_list *args)
 
-#if defined(__KERNEL__)
-#define HAVE_LONGPRINTER_VINFO /*< "%[vinfo:]" --> "foo.c(42) : my_function" */
-#endif
 #if defined(__KERNEL__) || 1
 #define HAVE_LONGPRINTER_MAC   /*< AA:BB:CC:DD:EE:FF */
 #define HAVE_LONGPRINTER_IP    /*< "127.0.0.1" */
 #endif
 #define HAVE_LONGPRINTER_UNIT /*< 53+10*1024 == "~10Kb" */
 #define HAVE_LONGPRINTER_ND    /*< 0 == "0"; 1 == "1st"; 2 == "2nd"; 3 == "3rd"; 4 == "4th" ... */
+#define HAVE_LONGPRINTER_VINFO /*< "%[vinfo:]" --> "foo.c(42) : my_function" */
 
 
 
@@ -315,14 +314,19 @@ LONG_PRINTER(unit_printer) {
 #endif
 #ifdef HAVE_LONGPRINTER_VINFO
 LONG_PRINTER(vinfo_printer) {
+#if 1 /* Use moddebug information. */
  char const *flush_start; void *addr;
  char ch,buffer[256]; ssize_t temp,result = 0;
 #define VI  (*(struct virtinfo *)buffer)
  addr = va_arg(*args,void *);
+#ifdef __KERNEL__
  HOSTMEMORY_BEGIN {
-  temp = mman_virtinfo(addr,&VI,sizeof(buffer),MOD_VIRTINFO_NORMAL);
+  temp = mman_virtinfo(addr,&VI,sizeof(buffer),VIRTINFO_NORMAL);
  }
  HOSTMEMORY_END;
+#else
+ temp = libc_xvirtinfo2(addr,&VI,sizeof(buffer),VIRTINFO_NORMAL);
+#endif
  if (temp < 0) memset(buffer,0,sizeof(buffer));
  /* Format options:
   *    %%: Emit a '%' character.
@@ -357,26 +361,24 @@ next_normal:
 unknown:
      print("??" "?",3);
     } else {
-     char *iter_end;
-     if (VI.ai_source[VIRTINFO_SOURCE_DRIVE])
-         printf("%s:",VI.ai_source[VIRTINFO_SOURCE_DRIVE]);
+     char *iter_end,sep = '/';
      iter = VI.ai_source[VIRTINFO_SOURCE_PATH];
-     while (*iter == '/' || *iter == '\\') ++iter;
+     if (VI.ai_source[VIRTINFO_SOURCE_DRIVE]) {
+      printf("%s:\\",VI.ai_source[VIRTINFO_SOURCE_DRIVE]);
+      sep = '\\';
+      while (*iter == '/' || *iter == '\\') ++iter;
+     }
      iter_end = libc_strend(iter);
      while (iter_end != iter && (iter_end[-1] == '/' || iter_end[-1] == '\\')) --iter_end;
-     if (VI.ai_source[VIRTINFO_SOURCE_NAME] && *iter_end == '/') ++iter_end;
-     if ((((uintptr_t)iter&(PAGESIZE-1)) ||
-            iter != VI.ai_source[VIRTINFO_SOURCE_PATH]) &&
-            iter[-1] == '/') --iter;
-     if (*iter != '/') print("/",1);
+     if (VI.ai_source[VIRTINFO_SOURCE_NAME] && *iter_end == sep) ++iter_end;
      print(iter,(size_t)(iter_end-iter));
      if ((iter = VI.ai_source[VIRTINFO_SOURCE_NAME]) != NULL) {
       while (*iter == '/' || *iter == '\\') ++iter;
-      if (iter_end[-1] != '/') {
+      if (iter_end[-1] != sep) {
        if ((((uintptr_t)iter&(PAGESIZE-1)) ||
               iter != VI.ai_source[VIRTINFO_SOURCE_NAME]) &&
-              iter[-1] == '/') --iter;
-       else print("/",1);
+              iter[-1] == sep) --iter;
+       else print(&sep,1);
       }
       print(iter,libc_strlen(iter));
       if (VI.ai_source[VIRTINFO_SOURCE_EXT])
@@ -418,6 +420,10 @@ unknown:
  }
 #undef VI
  return result;
+#else
+ /* It may not be pretty, but it should do the job if our own system fails. */
+ return printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : '\n",va_arg(*args,void *));
+#endif
 }
 #endif
 

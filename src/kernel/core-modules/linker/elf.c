@@ -1256,7 +1256,8 @@ PRIVATE struct modloader elf_modloader = {
     .ml_owner  = THIS_INSTANCE,
     .ml_loader = &elf_loader,
     .ml_magsz  = SELFMAG,
-    .ml_magic  = {ELFMAG0,ELFMAG1,ELFMAG2,ELFMAG3}
+    .ml_magic  = {ELFMAG0,ELFMAG1,ELFMAG2,ELFMAG3},
+    .ml_flags  = MODLOADER_FBINARY,
 };
 
 PRIVATE MODULE_INIT void KCALL elf_init(void) {

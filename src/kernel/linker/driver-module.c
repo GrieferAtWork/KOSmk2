@@ -192,6 +192,7 @@ INTDEF void KCALL devns_delete_from_instance(struct devns *__restrict self,
 INTDEF void KCALL irq_delete_from_instance(struct instance *__restrict inst);
 INTDEF void KCALL coredump_delete_from_instance(struct instance *__restrict inst);
 INTDEF void KCALL modloader_delete_from_instance(struct instance *__restrict inst);
+INTERN void KCALL moddebug_loader_delete_from_instance(struct instance *__restrict inst);
 #ifndef CONFIG_NO_NET
 INTDEF void KCALL ethandler_delete_from_instance(struct instance *__restrict inst);
 #endif /* !CONFIG_NO_NET */
@@ -210,6 +211,7 @@ driver_delete_system_hooks(struct instance *__restrict inst) {
  irq_delete_from_instance(inst);
  coredump_delete_from_instance(inst);
  modloader_delete_from_instance(inst);
+ moddebug_loader_delete_from_instance(inst);
 #ifndef CONFIG_NO_NET
  ethandler_delete_from_instance(inst);
 #endif /* !CONFIG_NO_NET */

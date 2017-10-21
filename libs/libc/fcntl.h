@@ -27,18 +27,25 @@
 
 DECL_BEGIN
 
+struct virtinfo;
+
+#ifndef __KERNEL__
 INTDEF ssize_t ATTR_CDECL libc_ioctl(int fd, unsigned long int request, ...);
 INTDEF ssize_t ATTR_CDECL libc_fcntl(int fd, int cmd, ...);
 INTDEF int ATTR_CDECL libc_openat(int fd, char const *file, int oflag, ...);
 INTDEF int ATTR_CDECL libc_open(char const *file, int oflag, ...);
 INTDEF int LIBCCALL libc_creat(char const *file, mode_t mode);
-INTDEF ssize_t LIBCCALL libc_xfdname2(int fd, int type, char *buf, size_t bufsize);
-INTDEF char *LIBCCALL libc_xfdname(int fd, int type, char *buf, size_t bufsize);
 INTDEF char *LIBCCALL libc_getcwd(char *buf, size_t bufsize);
 INTDEF char *LIBCCALL libc_get_current_dir_name(void);
 INTDEF char *LIBCCALL libc_getwd(char *buf);
 INTDEF int LIBCCALL libc_posix_fadvise(int fd, off_t offset, off_t len, int advise);
 INTDEF int LIBCCALL libc_posix_fallocate(int fd, off_t offset, off_t len);
+
+INTDEF ssize_t LIBCCALL libc_xfdname2(int fd, int type, char *buf, size_t bufsize);
+INTDEF char *LIBCCALL libc_xfdname(int fd, int type, char *buf, size_t bufsize);
+INTERN ssize_t LIBCCALL libc_xvirtinfo2(VIRT void *addr, USER struct virtinfo *buf, size_t bufsize, u32 flags);
+INTERN struct virtinfo *LIBCCALL libc_xvirtinfo(VIRT void *addr, USER struct virtinfo *buf, size_t bufsize, u32 flags);
+
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 INTDEF char *LIBCCALL libc_getdcwd(int drive, char *buf, size_t size);
@@ -69,6 +76,7 @@ INTDEF int LIBCCALL libc_dos_16wsopen_s(int *fd, char16_t const *file, int oflag
 INTDEF int LIBCCALL libc_dos_32wsopen_s(int *fd, char32_t const *file, int oflag, int sflag, mode_t cmode);
 
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+#endif /* !__KERNEL__ */
 
 DECL_END
 

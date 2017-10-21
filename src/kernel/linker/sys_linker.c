@@ -33,6 +33,7 @@
 #include <kernel/user.h>
 #include <linker/module.h>
 #include <linker/patch.h>
+#include <linker/debug.h>
 #include <sched/task.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -452,6 +453,19 @@ dl_loadfini(struct irregs *__restrict regs) {
  mman_endwrite(mm);
 end:
  task_endcrit();
+}
+
+SYSCALL_DEFINE4(xvirtinfo,VIRT void *,addr,
+                USER struct virtinfo *,buf,
+                size_t,bufsize,u32,flags) {
+ ssize_t result;
+ /* Don't allow information query for kernel-space addresses from user-space. */
+ if unlikely((uintptr_t)addr >= KERNEL_BASE)
+    return -ENODATA;
+ task_crit();
+ result = mman_virtinfo(addr,buf,bufsize,flags);
+ task_endcrit();
+ return result;
 }
 
 
