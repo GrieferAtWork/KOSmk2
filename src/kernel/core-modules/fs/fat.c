@@ -1096,7 +1096,7 @@ filedata_write(struct filedata *__restrict self,
   assert((size_t)temp <= max_write);
   result             += (size_t)temp;
   self->fd_pos       += (size_t)temp;
-  if (!temp) break;
+  if (!temp) { if (!result) return -ENOSPC; break; }
   bufsize            -= (size_t)temp;
   *(uintptr_t *)&buf += (size_t)temp;
   if (self->fd_pos > self->fd_max ||
@@ -2593,7 +2593,10 @@ gotit:
       candidate < hint; ++candidate) {
   temp = fat_get_unlocked(self,candidate,&deref);
   if (E_ISERR(temp)) return temp;
-  if (deref == FAT_CUSTER_UNUSED) goto gotit;
+  if (deref == FAT_CUSTER_UNUSED) {
+   syslog(LOG_DEBUG,"candidate = %I32u,%I32x\n",candidate,candidate);
+   goto gotit;
+  }
  }
  /* The disk is totally filled up... */
  return -ENOSPC;
@@ -2759,6 +2762,8 @@ fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
 
  if (result->f_cluster_eof_marker < result->f_cluster_eof)
      result->f_cluster_eof_marker = result->f_cluster_eof;
+
+
  memcpy(&result->f_oem,header.bpb.bpb_oem,8*sizeof(char));
  result->f_fat_size = result->f_sec4fat*result->f_sectorsize;
  trimspecstring(result->f_oem,8);

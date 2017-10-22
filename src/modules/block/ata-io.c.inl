@@ -67,6 +67,7 @@ ATA_RDWR(struct blkdev *__restrict self, blkaddr_t block,
  bool did_reset; struct bus *b = BUS(SELF);
  ssize_t error,result = (ssize_t)n_blocks;
 #ifdef WRITE
+
  /* In write mode, we don't re-validate user-pointer ranges,
   * meaning we must validate them once at the beginning. */
  { uintptr_t buf_end;
@@ -113,11 +114,11 @@ try_again:
        SELF->a_drive-(ATA_DRIVE_MASTER-0x40));
 #elif defined(LBA28)
   outb(SELF->a_iobase+ATA_HDDEVSEL,
-      (SELF->a_drive+(0xe0-ATA_DRIVE_MASTER)) |
+      (SELF->a_drive+(0xe0-ATA_DRIVE_MASTER))|
       ((block >> 24) & 0x0f));
 #else
   outb(SELF->a_iobase+ATA_HDDEVSEL,
-      (SELF->a_drive+(0xe0-ATA_DRIVE_MASTER)) |
+      (SELF->a_drive+(0xe0-ATA_DRIVE_MASTER))|
       (head & 0x0f));
 #endif
   ata_sleep(SELF->a_iobase);

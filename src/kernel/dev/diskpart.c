@@ -55,7 +55,7 @@ diskpart_write(struct blkdev *__restrict self, blkaddr_t block,
  else n_blocks = 0;
  return blkdev_raw_write(DP->dp_ref,block+DP->dp_start,buf,n_blocks);
 }
-
+#undef DP
 
 
 FUNDEF SAFE REF struct diskpart *KCALL
