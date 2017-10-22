@@ -260,6 +260,8 @@ struct diskpart {
                                         *   WARNING: Disk partition devices may not be linked
                                         *            at times, even though 'dp_ref' always is. */
 };
+#define BLKDEV_TOPART(self) ((struct diskpart *)(self))
+
 #define DISKPART_TRYINCREF(self) BLKDEV_TRYINCREF(&(self)->dp_device)
 #define DISKPART_INCREF(self)    BLKDEV_INCREF(&(self)->dp_device)
 #define DISKPART_DECREF(self)    BLKDEV_DECREF(&(self)->dp_device)

@@ -84,6 +84,7 @@ DEFINE_EARLY_SETUP_NOARG("help",help) {
  syslog(LOG_MESSAGE,SETUPSTR("Recognized boot options:\n"));
  help_print(__setup_early_start,__setup_early_end);
  help_print(__setup_start,__setup_end);
+ /* TODO: Shutdown on emulator/Freeze on real hardware. */
  return true;
 }
 

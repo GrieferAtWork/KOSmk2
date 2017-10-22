@@ -2309,7 +2309,7 @@ fat16_root_mkdir(struct inode *__restrict dir_node,
  return &result->f_inode;
 err:
  task_nointr();
- fat_rment_unlocked(dir_node,result);
+ fat16_root_rment_unlocked(dir_node,result);
  task_endnointr();
  INODE_DECREF(&result->f_inode);
  rwlock_endwrite(&dir_node->i_data->i_dirlock);

@@ -71,9 +71,15 @@ syslog_print_tty(char const *__restrict data,
 FUNDEF ssize_t KCALL
 syslog_print_serio(char const *__restrict data,
                    size_t datalen, void *closure) {
+ /* TODO: Proper serial communication module? */
+ /* TODO: This way of writing to serial only works in QEMU! */
+#if 1
+ outsb(0x3F8,data,datalen);
+#else
  char const *end = data+datalen;
  /* TODO: Proper serial communication module? */
  for (; data != end; ++data) outb(0x3F8,(unsigned char)*data);
+#endif
  return (ssize_t)datalen;
 }
 

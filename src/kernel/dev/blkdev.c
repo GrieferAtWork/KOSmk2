@@ -536,14 +536,16 @@ blkdev_read(struct blkdev *__restrict self, pos_t offset,
  /* Override: Read using the loopback file descriptor. */
  if (BLKDEV_ISLOOPBACK(self))
      return file_pread(self->bd_loopback,buf,bufsize,offset);
- /* Override: Read using the partition base device. */
+ /* Override: Read using the partition base drive. */
  if (BLKDEV_ISPART(self)) {
-  struct diskpart *dp = (struct diskpart *)self;
-  pos_t partsize = dp->dp_device.bd_blockcount*dp->dp_device.bd_blocksize;
+  pos_t partsize = BLKDEV_TOPART(self)->dp_device.bd_blockcount*
+                   BLKDEV_TOPART(self)->dp_device.bd_blocksize;
   if (offset < partsize)
        bufsize = MIN(bufsize,partsize-offset);
   else bufsize = 0;
-  return blkdev_read(dp->dp_ref,dp->dp_start+offset,buf,bufsize);
+  return blkdev_read(BLKDEV_TOPART(self)->dp_ref,
+                     BLKDEV_TOPART(self)->dp_start+
+                     offset,buf,bufsize);
  }
  if unlikely(!bufsize) return 0;
  result = rwlock_read(&self->bd_buffer.bs_lock);
@@ -739,14 +741,16 @@ blkdev_write(struct blkdev *__restrict self, pos_t offset,
  /* Override: Write using the loopback file descriptor. */
  if (BLKDEV_ISLOOPBACK(self))
      return file_pwrite(self->bd_loopback,buf,bufsize,offset);
- /* Override: Write using the partition base device. */
+ /* Override: Write using the partition base drive. */
  if (BLKDEV_ISPART(self)) {
-  struct diskpart *dp = (struct diskpart *)self;
-  pos_t partsize = dp->dp_device.bd_blockcount*dp->dp_device.bd_blocksize;
+  pos_t partsize = BLKDEV_TOPART(self)->dp_device.bd_blockcount*
+                   BLKDEV_TOPART(self)->dp_device.bd_blocksize;
   if (offset < partsize)
        bufsize = MIN(bufsize,partsize-offset);
   else bufsize = 0;
-  return blkdev_write(dp->dp_ref,dp->dp_start+offset,buf,bufsize);
+  return blkdev_write(BLKDEV_TOPART(self)->dp_ref,
+                      BLKDEV_TOPART(self)->dp_start+
+                      offset,buf,bufsize);
  }
 #if 0
  syslog(LOG_FS|LOG_INFO,"BLKDEV_WRITE(%I64u,%p,%Iu) (%$q)\n",offset,buf,bufsize,bufsize,buf);

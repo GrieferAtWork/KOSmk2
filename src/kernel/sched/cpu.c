@@ -281,15 +281,13 @@ prio_from_string(char *__restrict s) {
  else if (!strcasecmp(s,SETUPSTR("min"))) p = TASKPRIO_MIN;
  else if (!strcasecmp(s,SETUPSTR("def"))) p = TASKPRIO_DEFAULT;
  else if (!strcasecmp(s,SETUPSTR("max"))) p = TASKPRIO_MAX;
- else p = strtol(s,NULL,0);
+ else p = (taskprio_t)strtol(s,NULL,0);
  return p;
 }
 
-DEFINE_EARLY_SETUP("boot-priority=",boot_priority) {
- __bootcpu.c_prio_min =
- __bootcpu.c_prio_max =
- inittask.t_priority = 
- inittask.t_prioscore = prio_from_string(arg);
+DEFINE_EARLY_SETUP("init-priority=",init_priority) {
+ __bootcpu.c_prio_min = __bootcpu.c_prio_max =
+ inittask.t_priority = inittask.t_prioscore = prio_from_string(arg);
  return true;
 }
 DEFINE_EARLY_SETUP("idle-priority=",idle_priority) {
