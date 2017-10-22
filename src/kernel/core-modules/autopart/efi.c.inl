@@ -174,6 +174,13 @@ efi_autopart_at(struct blkdev *__restrict self,
     *      attempt to use the grub partition as filesystem root... */
    if (part.p_flags&EFI_PART_F_ACTIVE)
        dp_sysid |= BLKSYS_ACTIVE;
+#else
+   /* According to my tutorial, the boot partition should be named 'kos'.
+    * Until we've got something better, use that as indicator. */
+   if (BSWAP_LE2H16(part.p_name[0]) == 'k' &&
+       BSWAP_LE2H16(part.p_name[1]) == 'o' &&
+       BSWAP_LE2H16(part.p_name[2]) == 's')
+       dp_sysid |= BLKSYS_ACTIVE;
 #endif
 
    /* Create the new partition. */
@@ -188,14 +195,15 @@ efi_autopart_at(struct blkdev *__restrict self,
        dp->dp_device.bd_device.d_node.i_state |= INODE_STATE_READONLY;
 
    syslog(LOG_FS|LOG_INFO,
-          "[EFI] Created partition #%d: %.36Ls (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes%s)\n",
+          "[EFI] Created partition #%d: %.36Ls (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes%s; system %I32x)\n",
          (int)DISKPART_ID(dp),part.p_name,dp->dp_device.bd_device.d_id,
          (u64)(dp->dp_start),
          (u64)(dp->dp_start+dp->dp_device.bd_blockcount),
                dp->dp_ref->bd_device.d_id,
          (u64)(dp->dp_device.bd_blockcount),
                dp->dp_device.bd_blocksize,
-          BLKDEV_ISREADONLY(&dp->dp_device) ? "; read-only" : "");
+          BLKDEV_ISREADONLY(&dp->dp_device) ? "; read-only" : "",
+          dp_sysid);
    ++result,--max_parts;
    /* NOTE: Don't sub-partition this drive. - EFI doesn't do that! */
 

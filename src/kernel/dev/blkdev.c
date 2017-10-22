@@ -537,6 +537,7 @@ blkdev_read(struct blkdev *__restrict self, pos_t offset,
  if (BLKDEV_ISLOOPBACK(self))
      return file_pread(self->bd_loopback,buf,bufsize,offset);
  /* Override: Read using the partition base drive. */
+#if 0 /* TODO: This breaks if the partition isn't located at offset ZERO(0) */
  if (BLKDEV_ISPART(self)) {
   pos_t partsize = BLKDEV_TOPART(self)->dp_device.bd_blockcount*
                    BLKDEV_TOPART(self)->dp_device.bd_blocksize;
@@ -547,6 +548,7 @@ blkdev_read(struct blkdev *__restrict self, pos_t offset,
                      BLKDEV_TOPART(self)->dp_start+
                      offset,buf,bufsize);
  }
+#endif
  if unlikely(!bufsize) return 0;
  result = rwlock_read(&self->bd_buffer.bs_lock);
  if (E_ISERR(result)) return result;
@@ -742,6 +744,7 @@ blkdev_write(struct blkdev *__restrict self, pos_t offset,
  if (BLKDEV_ISLOOPBACK(self))
      return file_pwrite(self->bd_loopback,buf,bufsize,offset);
  /* Override: Write using the partition base drive. */
+#if 0 /* TODO: This breaks if the partition isn't located at offset ZERO(0) */
  if (BLKDEV_ISPART(self)) {
   pos_t partsize = BLKDEV_TOPART(self)->dp_device.bd_blockcount*
                    BLKDEV_TOPART(self)->dp_device.bd_blocksize;
@@ -752,6 +755,7 @@ blkdev_write(struct blkdev *__restrict self, pos_t offset,
                       BLKDEV_TOPART(self)->dp_start+
                       offset,buf,bufsize);
  }
+#endif
 #if 0
  syslog(LOG_FS|LOG_INFO,"BLKDEV_WRITE(%I64u,%p,%Iu) (%$q)\n",offset,buf,bufsize,bufsize,buf);
 #endif

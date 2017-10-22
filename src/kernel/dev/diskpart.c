@@ -228,7 +228,7 @@ done:
   syslog(LOG_HW|LOG_ERROR,
          "[PART] Failed to partition block device %[dev_t] (sysid %#.2I8x): %[errno]\n",
          self->bd_device.d_id,(u8)sysid,(errno_t)-result);
- } else {
+ } else if (result != 0) {
   syslog(LOG_HW|LOG_CONFIRM,
          "[PART] Created %Iu/%Iu partition devices for block device %[dev_t] (sysid %#.2I8x)\n",
         (size_t)result,max_parts,self->bd_device.d_id,(u8)sysid);
