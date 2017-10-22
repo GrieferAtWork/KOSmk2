@@ -515,9 +515,12 @@ kernel_boot(u32        mb_magic,
 
  network_test();
 
-#if 1
+#if 0
  run_init("/bin/init");
  for (;;) run_init("/bin/init");
+#else
+ syslog(LOG_DEBUG,"VENDORID: %.12q\n",THIS_CPU->c_arch.ac_vendorid);
+ syslog(LOG_DEBUG,"BRANDSTR: %.48q\n",THIS_CPU->c_arch.ac_brandstr);
 #endif
 
 end: ATTR_UNUSED;

@@ -1075,7 +1075,7 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
  assert(addr_isvirt(&pdir_kernel_v));
  assert(addr_isvirt(&mman_kernel));
 
- if (!cpu_is_486()) {
+ if (THIS_CPU->c_arch.ac_flags&CPUFLAG_486) {
   /* Replace 'pdir_flush' with its fallback counterpart!
    * (The 'invlpg' instruction is only available starting at 486) */
   memcpy((void *)&pdir_flush,pdir_flush_386,

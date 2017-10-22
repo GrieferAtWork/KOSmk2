@@ -879,8 +879,18 @@ filedata_read(struct filedata *__restrict self, fat_t *__restrict fs,
   assert(self->fd_pos <= self->fd_max);
   max_read = (size_t)(self->fd_max-self->fd_pos);
   if (!max_read) goto next_cluster;
-  if (max_read > bufsize)
-      max_read = bufsize;
+  if (max_read >= bufsize)
+   max_read = bufsize;
+  else {
+   /* TODO: Optimization: Scan ahead for non-fragmented consecutive sectors,
+    *                     allowing for faster disk access when more than a
+    *                     single sector can be read at once.
+    * >> This could drastically improve ALLOA load times:
+    *    4096 byte pages --> 8 sectors (512-byte sector size)
+    *    Currently this requires up to 9 (+1 when unaligned) calls
+    *    to the underlying disk driver, which if properly aligned
+    *    could in theory be optimized into a single operation. */
+  }
   temp = blkdev_read(fs->f_super.sb_blkdev,
                      self->fd_pos,buf,max_read);
   if unlikely(temp < 0) return temp;

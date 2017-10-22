@@ -234,10 +234,6 @@ LOCAL void FCALL pdir_flushall(void) {
 #endif /* GUARD_INCLUDE_KERNEL_MALLOC_H */
 
 
-/* TODO: Currently all page directory function require 'PDIR_ISKPD()'
- *       This wouldn't be necessary if we'd create page-directory self-mappings...
- */
-
 /* Changes the protection/attributes of page mappings within 'start..+=n_bytes'.
  * NOTE: The given argument 'n_bytes' is ceil-aligned by pages.
  * @return: * :      The amount of bytes modified, following 'start' (always a multiple of PAGESIZE)

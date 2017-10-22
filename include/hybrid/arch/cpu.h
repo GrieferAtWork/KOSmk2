@@ -30,17 +30,18 @@ LOCAL bool KCALL cpu_is_486(void) {
  /* NOTE: This variable _must_ be aligned, because the AC flag's
   *       intended purpose (other than checking for 486), is to
   *       trigger faults when working with unaligned pointers. */
- register ATTR_ALIGNED(4) __UINT32_TYPE__ eflags;
+ register ATTR_ALIGNED(4) __UINT32_TYPE__ f1,f2;
  __asm__ __volatile__("pushf\n" /* Store original eflags. */
                       "pushl (%%esp)\n" /* Create working copy of eflags. */
-                      "orl  $0x00040000, (%%esp)\n" /* EFLAGS_AC */
+                      "movl (%%esp), %0\n"
+                      "xorl $0x00040000, (%%esp)\n" /* Flip EFLAGS_AC */
                       "popf\n" /* Try to enable the AC-bit. */
                       "pushf\n" /* See if it was enabled. */
-                      "popl %0\n" /* Store flags with AC potentially enabled. */
+                      "popl %1\n" /* Store flags with AC potentially enabled. */
                       "popf\n" /* Restore original flags. */
-                      : "=g" (eflags));
+                      : "=r" (f1), "=r" (f2));
  /* If we've managed to activate AC-mode, we're running on a 486, or above. */
- return !!(eflags&EFLAGS_AC);
+ return (f1&EFLAGS_AC) != (f2&EFLAGS_AC);
 }
 
 #endif

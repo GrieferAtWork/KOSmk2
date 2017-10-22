@@ -627,7 +627,7 @@ leading_cache:
    }
   } else {
    /* Load directly from disk. */
-   /* XXX: If leading caches are missing as well, read multiple blocks at once! */
+   /* TODO: If leading caches are missing as well, read multiple blocks at once! */
    result = DO_READ(start_block,buf,1);
    if (E_ISERR(result) || !result) goto end;
   }
@@ -831,7 +831,7 @@ leading_cache:
    if (error_size) { result = -EFAULT; goto end; }
   } else {
    /* Directly write to disk. */
-   /* XXX: If leading caches are missing as well, write multiple blocks at once! */
+   /* TODO: If leading caches are missing as well, write multiple blocks at once! */
    result = (*self->bd_write)(self,start_block,buf,1);
    if (E_ISERR(result) || !result) goto end;
   }

@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <hybrid/align.h>
+#include <hybrid/arch/cpu.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>
@@ -39,7 +40,6 @@
 #include <kernel/malloc.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
-#include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <sched/percpu.h>
 #include <sched/smp.h>
@@ -48,6 +48,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/syslog.h>
+
 #include "../../mman/intern.h"
 
 DECL_BEGIN
@@ -206,19 +208,11 @@ normal_cpu:
 
 INTERN ATTR_FREETEXT void KCALL smp_initialize(void) {
  struct mpfps *mp;
- /*if (cpu_is_486())*/
- {
-  /* Figure out CPU features for the boot CPU. */
-  __asm__ __volatile__("cpuid\n"
-                       : "=b" (__bootcpu.c_arch.ac_features)
-                       : "a" (1)
-                       : "ecx", "edx");
- }
  if unlikely((mp = mpfps_locate()) == NULL) {
   syslog(LOG_SCHED|LOG_INFO,FREESTR("[SMP] No valid MP descriptor detected\n"));
 nocfg:
   /* XXX: Additional default initialization? */
-  return;
+  goto scan_bootcpu;
  }
  syslog(LOG_SCHED|LOG_INFO,FREESTR("[SMP] MPFPS structure at %p (v1.%I8u)\n"),mp,mp->mp_specrev);
  if (mp->mp_defcfg != 0) {
@@ -262,6 +256,15 @@ invalid_mptab:
   syslog(LOG_SCHED|LOG_WARN,
          FREESTR("[SMP] No SMP configuration table\n"));
   goto nocfg;
+ }
+scan_bootcpu:
+ if ((__bootcpu.c_arch.ac_flags&
+     (CPUFLAG_LAPIC|CPUFLAG_486)) == CPUFLAG_486) {
+  /* Figure out CPU features for the boot CPU. */
+  __asm__ __volatile__("cpuid\n"
+                       : "=b" (__bootcpu.c_arch.ac_features)
+                       : "a" (1)
+                       : "ecx", "edx");
  }
 }
 

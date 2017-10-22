@@ -19,8 +19,11 @@
 #ifndef GUARD_KERNEL_CORE_ARCH_BOOT_C
 #define GUARD_KERNEL_CORE_ARCH_BOOT_C 1
 
+#include <endian.h>
 #include <hybrid/arch/eflags.h>
 #include <hybrid/asm.h>
+#include <hybrid/byteorder.h>
+#include <hybrid/byteswap.h>
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>
 #include <hybrid/types.h>
@@ -103,14 +106,8 @@ byte_t __bootstack[BOOTSTACK_SIZE];
 
 
 /* Hosting emulation information. */
-#if 0
 PUBLIC u8  boot_emulation         = BOOT_EMULATION_DEFAULT;
 PUBLIC u16 boot_emulation_logport = (u16)0x80; /* 0x80 should be a noop on real hardware... */
-#else
-/* TODO: Find a way to safely detect qemu */
-PUBLIC u8  boot_emulation         = BOOT_EMULATION_QEMU;
-PUBLIC u16 boot_emulation_logport = 0x3F8;
-#endif
 
 
 #ifndef CONFIG_NO_BOOTLOADER
@@ -581,7 +578,80 @@ L(    lldt  %SX                                                               )
 L(    xorl  %ebp, %ebp                                                        )
 L(    pushl $0                                                                )
 #endif /* CONFIG_DEBUG */
+
+/* Figure out if we're running on a 486 */
+L(    pushf                                                                   )
+L(    movl  0(%esp), %eax                                                     )
+L(    xorl  $(EFLAGS_AC), 0(%esp)                                             )
+L(    popf                                                                    )
+L(    pushf                                                                   )
+L(    movl  0(%esp), %ebx                                                     )
+L(    andl  $(~EFLAGS_AC), 0(%esp)                                            )
+L(    popf                                                                    )
+L(    andl  $(EFLAGS_AC), %eax                                                )
+L(    andl  $(EFLAGS_AC), %ebx                                                )
+L(    cmpl  %eax, %ebx                                                        )
+L(    je    1f /* No CPUID - Not running on a 486 */                          )
+L(                                                                            )
+L(    /* It's official. - We're running on a 486 */                                                                        )
+L(    pushl %ecx                                                              )
+L(    pushl %edx                                                              )
+L(                                                                            )
+L(    /* Load some strategic CPUIDs to figure out what our host is */         )
+L(    movl $0, %eax                                                           )
+L(    cpuid                                                                   )
+L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+0      )
+L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+4      )
+L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+8      )
+L(    movl $0x80000000, %eax                                                  )
+L(    cpuid                                                                   )
+L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_CPUID_MAX       )
+L(    cmpl $0x80000004, %eax                                                  )
+L(    jb   2f                                                                 )
+L(    movl $0x80000004, %eax                                                  )
+L(    cpuid                                                                   )
+L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+32     )
+L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+36     )
+L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+40     )
+L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+44     )
+L(    movl $0x80000003, %eax                                                  )
+L(    cpuid                                                                   )
+L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+16     )
+L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+20     )
+L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+24     )
+L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+28     )
+L(    movl $0x80000002, %eax                                                  )
+L(    cpuid                                                                   )
+L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+0      )
+L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+4      )
+L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+8      )
+L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+12     )
+L(                                                                            )
+L(    /* Detect if we're running under QEMU emulation */                      )
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define QUAD(a,b,c,d) ((a) | (b) << 8 | (c) << 16 | (d) << 24)
+#elif BYTE_ORDER == BIG_ENDIAN
+#define QUAD(a,b,c,d) ((a) << 24 | (b) << 16 | (c) << 8 | (d))
+#endif
+L(    cmpl $(QUAD('Q','E','M','U')), %eax                                     )
+L(    jne 2f                                                                  )
+L(    cmpl $(QUAD(' ','V','i','r')), %ebx                                     )
+L(    jne 2f                                                                  )
+L(    cmpl $(QUAD('t','u','a','l')), %ecx                                     )
+L(    jne 2f                                                                  )
+L(    cmpl $(QUAD(' ','C','P','U')), %edx                                     )
+L(    jne 2f                                                                  )
+L(                                                                            )
+L(    /* Yes, we are. - Retain that information */                            )
+L(    movl $(BOOT_EMULATION_QEMU), boot_emulation                             )
+L(    movl $(0x3F8),               boot_emulation_logport                     )
+#undef QUAD
+L(2:  popl  %edx                                                              )
+L(    popl  %ecx                                                              )
+
 /* Jump to the high-level C kernel-boot function. */
+L(    jmp   kernel_boot                                                       )
+L(1:  andb  $(~CPUFLAG_486), __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_FLAGS)
 L(    jmp   kernel_boot                                                       )
 L(.size __start, . - __start                                                  )
 L(.previous                                                                   )

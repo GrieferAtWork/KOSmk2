@@ -530,7 +530,8 @@ PUBLIC struct cpu __bootcpu = {
             .eflags     = EFLAGS_IF,
         },
         .ac_mode          = CPUMODE_ONLINE,
-        .ac_flags         = CPUFLAG_NONE,
+        /* These flags are deleted if the opposite is proven during early boot. */
+        .ac_flags         = CPUFLAG_486|CPUFLAG_IINIT,
         .ac_lapic_id      = 0, /* Likely updated later */
         .ac_lapic_version = APICVER_82489DX, /* Likely updated later */
 #endif

@@ -50,7 +50,7 @@ typedef uintptr_t maddr_t; /* An address relative to 'm_load' */
 #define MODSEG_LOAD     0 /* Regular, old segment that should be loaded somewhere. */
 #define MODSEG_TLS      1 /* Thread-local segment (Loaded identical to 'MODSEG_LOAD', containing the TLS template). */
 /* TODO: Per-thread segments */
-/* TODO: Per-CPU segments? (For drivers?) */
+/* XXX: Per-CPU segments? (For drivers?) (Only think about this if you real a point where it would be useful...) */
 
 struct mregion;
 struct modseg {

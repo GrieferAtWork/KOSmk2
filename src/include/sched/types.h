@@ -758,8 +758,6 @@ union{
                                        *        When it isn't allowed to wake up, the 'TASKFLAG_SUSP_NOCONT' flag is deleted.
                                        *  NOTE: The first counter is used for user-space and the second for kernel-space. 
                                        *        In addition, the second element is unsigned and does not allow for running-recursion! */
- /* TODO: TLS data (will also be used for raising exceptions) */
-
  /* Thread descriptor/context information. */
  struct thread_pid        t_pid;       /*< [const] Process descriptor information. */
  struct hstack            t_hstack;    /*< [const] Kernel stack. */
@@ -877,7 +875,6 @@ struct cpu {
                                           *        doing so fails (-EAGAIN case), no task wakeups are
                                           *        performed and no state changes are mirrored for that cycle. */
  REF LIST_HEAD(struct task) c_suspended; /*< [0..1][->t_cpu == this][lock(c_lock)][sort(DESCENDING(t_mman))] Chain of suspended tasks. */
- /* TODO: Use jiffies for sleeping. - We can't get any more precise anyways. */
  REF LIST_HEAD(struct task) c_sleeping;  /*< [0..1][->t_cpu == this][lock(c_lock)][sort(DESCENDING(t_mode == TASKMODE_WAKEUP),t_mode == TASKMODE_WAKEUP
                                           *                                          ?  DESCENDING(t_mman)
                                           *                                          : (DESCENDING(t_timeout),DESCENDING(t_mman)))]

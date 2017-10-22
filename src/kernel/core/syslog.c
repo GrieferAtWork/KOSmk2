@@ -31,6 +31,7 @@
 #include <stddef.h>
 #include <sys/io.h>
 #include <sched/cpu.h>
+#include <kernel/boot.h>
 
 DECL_BEGIN
 
@@ -71,15 +72,14 @@ syslog_print_tty(char const *__restrict data,
 FUNDEF ssize_t KCALL
 syslog_print_serio(char const *__restrict data,
                    size_t datalen, void *closure) {
- /* TODO: Proper serial communication module? */
- /* TODO: This way of writing to serial only works in QEMU! */
-#if 1
- outsb(0x3F8,data,datalen);
-#else
- char const *end = data+datalen;
- /* TODO: Proper serial communication module? */
- for (; data != end; ++data) outb(0x3F8,(unsigned char)*data);
-#endif
+ if (boot_emulation == BOOT_EMULATION_QEMU) {
+  outsb(boot_emulation_logport,data,datalen);
+ } else {
+  char const *end = data+datalen;
+  /* TODO: This way of writing to serial only works in QEMU! */
+  /* TODO: Proper serial communication module? */
+  for (; data != end; ++data) outb(0x3F8,(unsigned char)*data);
+ }
  return (ssize_t)datalen;
 }
 
