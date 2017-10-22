@@ -94,7 +94,9 @@ blkdev_mkpart(struct blkdev *__restrict self,
   self = part->dp_ref;
  }
 
- if unlikely(!size) start = 0;
+ /* Don't do this, because then we can't
+  * rely on offsets for drive identification. */
+ /*if unlikely(!size) start = 0;*/
  result->dp_device.bd_read       = &diskpart_read;
  result->dp_device.bd_write      = &diskpart_write;
  result->dp_device.bd_blocksize  = self->bd_blocksize;

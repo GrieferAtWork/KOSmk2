@@ -197,8 +197,10 @@ __LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED
 __ATTR_MALLOC char *(__LIBCCALL strndup)(char const *__restrict __str, size_t __max_chars) {
     size_t __resultlen = strnlen(__str,__max_chars);
     char *__result = (char *)__hybrid_malloc((__resultlen+1)*sizeof(char));
-    if (__result) { __NAMESPACE_STD_SYM memcpy(__result,__str,__resultlen*sizeof(char));
-                    __result[__resultlen] = '\0'; }
+    if (__result) {
+        __NAMESPACE_STD_SYM memcpy(__result,__str,__resultlen*sizeof(char));
+        __result[__resultlen] = '\0';
+    }
     return __result;
 }
 #endif /* __DOS_COMPAT__ */
@@ -646,7 +648,7 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnroff)(char co
 
 #ifndef __KERNEL__
 #if defined(__CRT_GLC) && defined(__GLC_COMPAT__)
-/* Implement using 'asprintf' */
+/* Implement using `asprintf' */
 __REDIRECT(__LIBC,,__ssize_t,__LIBCCALL,__libc_vasprintf,(char **__restrict __pstr, char const *__restrict __format, __VA_LIST __args),vasprintf,(__ptr,__format,__args));
 __LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
@@ -743,13 +745,13 @@ __LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL mempcpyl)(void *__r
  * >> mempatw(addr,0x12fd,7):
  *    addr&1 == 0: 12fd12fd12fd12
  *    addr&1 == 1:   fd12fd12fd1212
- *    >> '*byte = (__pattern >> 8*((uintptr_t)byte & 0x2)) & 0xff;'
+ *    >> `*byte = (__pattern >> 8*((uintptr_t)byte & 0x2)) & 0xff;'
  * >> mempatl(addr,0x12345678,11):
  *    addr&3 == 0: 12345678123
  *    addr&3 == 1:   34567812312
  *    addr&3 == 2:     56781231234
  *    addr&3 == 3:       78123123456
- *    >> '*byte = (__pattern >> 8*((uintptr_t)byte & 0x3)) & 0xff;'
+ *    >> `*byte = (__pattern >> 8*((uintptr_t)byte & 0x3)) & 0xff;'
  * WARNING: PATTERN is encoded in host endian, meaning that
  *          byte-order is reversed on little-endian machines. */
 __REDIRECT(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),void *,__LIBCCALL,mempatb,(void *__restrict __dst, int __pattern, size_t __n_bytes),memset,(__dst,__pattern,__n_bytes))
@@ -1189,13 +1191,13 @@ __LOCAL char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const
 
 #else /* Compat... */
 /* >> char *strdupaf(char const *__restrict format, ...);
+ * String duplicate as fu$k!
  * Similar to strdupf, but allocates memory of the stack, instead of the heap.
  * While this function is _very_ useful, be warned that due to the way variadic
  * arguments are managed by cdecl (the only calling convention possible to use
  * for them on most platforms) it is nearly impossible not to waste the stack
  * space that was originally allocated for the arguments (Because in cdecl, the
  * callee is responsible for argument cleanup).
- * String duplicate as fu$k!
  * ANYWAYS: Since its the stack, it shouldn't really matter, but please be advised
  *          that use of these functions fall under the same restrictions as all
  *          other alloca-style functions.
@@ -1208,17 +1210,17 @@ __LIBC __WUNUSED __ATTR_MALLOC char *(__LIBCCALL vstrdupaf)(char const *__restri
 
 #ifdef __INTELLISENSE__
 #elif defined(__GNUC__)
-/* Dear GCC devs: WHY IS THERE NO '__attribute__((alloca))'?
- * Or better yet! Add something like: '__attribute__((clobber("%esp")))'
+/* Dear GCC devs: WHY IS THERE NO `__attribute__((alloca))'?
+ * Or better yet! Add something like: `__attribute__((clobber("%esp")))'
  *
  * Here's what the hacky code below does:
  * We must use '__builtin_alloca' to inform the compiler that the stack pointer
  * contract has been broken, meaning that %ESP can (no longer) be used for offsets.
  * NOTE: If you don't believe me that this is required, and think this is just me
  *       ranting about missing GCC functionality, try the following code yourself:
- * >> printf("path = '%s'\n",strdupaf("%s/%s","/usr","lib")); // OK (Also try cloning this line a bunch of times)
+ * >> printf("path = `%s'\n",strdupaf("%s/%s","/usr","lib")); // OK (Also try cloning this line a bunch of times)
  * >> #undef strdupaf
- * >> printf("path = '%s'\n",strdupaf("%s/%s","/usr","lib")); // Breaks
+ * >> printf("path = `%s'\n",strdupaf("%s/%s","/usr","lib")); // Breaks
  *
  * NOTE: We also can't do __builtin_alloca(0) because that's optimized away too early
  *       and the compiler will (correctly) not mark %ESP as clobbered internally.
@@ -1738,7 +1740,7 @@ __SYSDECL_END
    __XRETURN __new ? (__new[__len] = '\0',(char *)memcpy(__new,__old,__len)) : (char *)0; \
  })
 #endif /* __USE_KOS */
-#endif
+#endif /* __USE_GNU */
 
 
 #endif /* !_STRING_H */

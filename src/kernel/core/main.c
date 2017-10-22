@@ -250,6 +250,8 @@ run_init(char const *__restrict filename) {
 
  syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in '%[file]') at %p\n",
         filename,mod->m_file,state->iret.eip);
+ syslog(LOG_EXEC|LOG_INFO,"[APP] TLB at %p\n",thrd->t_tlb);
+
  assert(mm == thrd->t_mman);
 
  assert(!mman_reading(mm));
@@ -498,13 +500,18 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/procfs");
  kinsmod("/mod/shebang");
  kinsmod("/mod/pe");
- kinsmod("/mod/nt");
+ //kinsmod("/mod/nt");
  kinsmod("/mod/elf-coredump");
  kinsmod("/mod/elf-debug");
  kinsmod("/mod/pdb-debug");
  kinsmod("/mod/ne2000");
+ kinsmod("/mod/ata");
 
  /* TODO: Actual locale support? */
+
+ /* Load a user-defined boot drive replacement. */
+ blkdev_userdisk_initialize();
+
 
  network_test();
 

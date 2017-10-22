@@ -327,6 +327,9 @@ blkdev_fini(struct blkdev *__restrict self) {
  assert(self->bd_buffer.bs_bufc <= self->bd_buffer.bs_bufa);
  assert(self->bd_buffer.bs_bufa <= self->bd_buffer.bs_bufm);
  assert(!self->bd_partitions);
+ /* Call a user-defined finalizer. */
+ if (self->bd_fini) (*self->bd_fini)(self);
+
  /* There is no buffer if this is a loopback device. */
  if (BLKDEV_ISLOOPBACK(self)) {
   minor_t id = MINOR(self->bd_device.d_id);
@@ -371,21 +374,17 @@ fini_dev:
  device_fini(&self->bd_device);
 }
 
-PUBLIC errno_t KCALL
-blkdev_sync(struct blkdev *__restrict self) {
+PRIVATE errno_t KCALL
+blkdev_do_sync_unlocked(struct blkdev *__restrict self) {
  struct blockbuf *iter,*end;
  ssize_t error; bool has_hwlock = false;
  CHECK_HOST_DOBJ(self);
  assert(INODE_ISBLK(&self->bd_device.d_node));
- /* Override: Flush the loopback file descriptor. */
- if (BLKDEV_ISLOOPBACK(self))
-     return file_sync(self->bd_loopback);
+ assert(!BLKDEV_ISLOOPBACK(self));
  assert(self->bd_buffer.bs_bufc <= self->bd_buffer.bs_bufa);
  assert(self->bd_buffer.bs_bufa <= self->bd_buffer.bs_bufm);
 
  /* Cleanup buffer allocations. */
- error = rwlock_write(&self->bd_buffer.bs_lock);
- if (E_ISERR(error)) return error;
  end = (iter = self->bd_buffer.bs_bufv)+
                self->bd_buffer.bs_bufc;
  for (; iter != end; ++iter) {
@@ -406,6 +405,25 @@ blkdev_sync(struct blkdev *__restrict self) {
  }
  if (has_hwlock)
      rwlock_endwrite(&self->bd_hwlock);
+ if (error > 0) error = -EOK;
+ return (errno_t)error;
+}
+
+PUBLIC errno_t KCALL
+blkdev_sync(struct blkdev *__restrict self) {
+ ssize_t error;
+ CHECK_HOST_DOBJ(self);
+ assert(INODE_ISBLK(&self->bd_device.d_node));
+ /* Override: Flush the loopback file descriptor. */
+ if (BLKDEV_ISLOOPBACK(self))
+     return file_sync(self->bd_loopback);
+ assert(self->bd_buffer.bs_bufc <= self->bd_buffer.bs_bufa);
+ assert(self->bd_buffer.bs_bufa <= self->bd_buffer.bs_bufm);
+
+ /* Cleanup buffer allocations. */
+ error = rwlock_write(&self->bd_buffer.bs_lock);
+ if (E_ISERR(error)) return error;
+ error = blkdev_do_sync_unlocked(self);
  rwlock_endwrite(&self->bd_buffer.bs_lock);
  if (error > 0) error = -EOK;
  return error;
@@ -911,6 +929,262 @@ set_bootdev(struct blkdev *__restrict disk,
 }
 
 
+PRIVATE void KCALL
+replace_drive_users(struct blkdev *__restrict old_drive,
+                    struct blkdev *__restrict new_drive) {
+ struct superblock *mount;
+ task_nointr();
+ /* Lock the buffers of both drives to make
+  * sure nothing can write while we do this. */
+ rwlock_write(&new_drive->bd_buffer.bs_lock);
+ rwlock_write(&old_drive->bd_buffer.bs_lock);
+
+ /* Make sure the new drive doesn't have any unwritten changes. */
+ blkdev_do_sync_unlocked(new_drive);
+
+ /* Free the old drive's disk buffer. */
+ { struct blockbuf *iter,*end;
+   end = (iter = new_drive->bd_buffer.bs_bufv)+
+                 new_drive->bd_buffer.bs_bufc;
+   for (; iter != end; ++iter) free(iter->bb_data);
+   free(new_drive->bd_buffer.bs_bufv);
+ }
+
+ /* Replace the disk-buffer of the new drive with that of the old. */
+ new_drive->bd_buffer.bs_bufc = new_drive->bd_buffer.bs_bufc;
+ new_drive->bd_buffer.bs_bufa = new_drive->bd_buffer.bs_bufa;
+ new_drive->bd_buffer.bs_bufv = new_drive->bd_buffer.bs_bufv;
+ /* Make sure that buffer limits remain valid by potentially raising them. */
+ if (new_drive->bd_buffer.bs_bufm < new_drive->bd_buffer.bs_bufa)
+     new_drive->bd_buffer.bs_bufm = new_drive->bd_buffer.bs_bufa;
+
+ rwlock_read(&fs_mountlock);
+ FS_FOREACH_MOUNT(mount) {
+  /* Even though kind-of questionable, the fact that both the old and new
+   * devices will remain as they were, exchanging them atomically shouldn't
+   * really have any negative impacts. */
+  ATOMIC_CMPXCH(mount->sb_blkdev,old_drive,new_drive);
+ }
+ rwlock_endread(&fs_mountlock);
+
+ /* Give other tasks that may have still been using the old
+  * buffer one last change to finish what they were doing. */
+ atomic_rwlock_endwrite(&old_drive->bd_buffer.bs_lock.rw_lock);
+ if (sig_broadcast(&old_drive->bd_buffer.bs_lock.rw_sig)) {
+  if (THIS_CPU->c_n_run > 1) task_yield();
+  /* And synchronize they work again */
+  blkdev_sync(old_drive);
+  blkdev_do_sync_unlocked(new_drive);
+ }
+
+ /* Finally, unlock the new drive, revealing it to the public. */
+ rwlock_endwrite(&new_drive->bd_buffer.bs_lock);
+ task_endnointr();
+}
+
+PRIVATE ATTR_FREEBSS char *user_bootdisk = NULL;
+DEFINE_SETUP("boot=",set_user_bootdisk) { user_bootdisk = arg; return true; }
+
+INTERN ATTR_FREETEXT void KCALL
+blkdev_userdisk_initialize(void) {
+ if (!user_bootdisk) return;
+ /* TODO: Open a block device 'user_bootdisk' and set it as boot-partition replacement. */
+}
+
+
+PRIVATE struct diskpart *KCALL
+blkdev_get_nth_partition(struct blkdev *__restrict self,
+                         minor_t partno) {
+ struct diskpart *iter;
+ dev_t desired_id = self->bd_device.d_id+partno;
+ BLKDEV_FOREACH_PARTITION(iter,self) {
+  if (iter->dp_device.bd_device.d_id == desired_id)
+      return iter;
+ }
+ return NULL;
+}
+
+
+INTDEF ssize_t KCALL
+bd_chs_read(struct blkdev *__restrict self, blkaddr_t block,
+            USER void *buf, size_t n_blocks);
+INTDEF ssize_t KCALL
+bd_lba_read(struct blkdev *__restrict self, blkaddr_t block,
+            USER void *buf, size_t n_blocks);
+
+PUBLIC SAFE errno_t KCALL
+replace_bootdev(struct blkdev *__restrict new_bootdisk) {
+ struct blkdev *old_bootdisk;
+ struct blkdev *old_bootpart;
+ struct blkdev *new_bootpart;
+ struct diskpart *old_part;
+ struct diskpart *new_part;
+ size_t old_num_parts,new_num_parts;
+ CHECK_USER_DOBJ(new_bootdisk);
+ if (BLKDEV_ISPART(new_bootdisk))
+     return -ENOTBLK; /* NO! */
+again:
+ atomic_rwlock_read(&boot_lock);
+ if unlikely(!bootdisk) {
+  if (!atomic_rwlock_upgrade(&boot_lock) &&
+       ATOMIC_READ(bootdisk) != NULL)
+       goto use_olddisk;
+  /* Shouldn't happen, but let's use 'new_bootdisk' anyways... */
+  assert(!bootpart);
+  bootdisk = new_bootdisk;
+  BLKDEV_INCREF(new_bootdisk);
+  atomic_rwlock_read(&new_bootdisk->bd_partlock);
+  bootpart = &new_bootdisk->bd_partitions->dp_device;
+  if (bootpart) BLKDEV_INCREF(bootpart);
+  atomic_rwlock_endread(&new_bootdisk->bd_partlock);
+  if (!bootpart) bootpart = new_bootdisk,BLKDEV_INCREF(new_bootdisk);
+  atomic_rwlock_endwrite(&boot_lock);
+  return -EOK;
+ }
+use_olddisk:
+ /* The bootdisk has already been replaced (It's no longer a bios-disk) */
+ if ((bootdisk->bd_read != &bd_chs_read &&
+      bootdisk->bd_read != &bd_lba_read) ||
+      user_bootdisk != NULL) {
+  atomic_rwlock_endread(&boot_lock);
+  return -EPERM;
+ }
+ /* You are smaller than the bootdisk. */
+ if (new_bootdisk->bd_blockcount*new_bootdisk->bd_blocksize <
+         bootdisk->bd_blockcount*    bootdisk->bd_blocksize) {
+  atomic_rwlock_endread(&boot_lock);
+  return -EINVAL;
+ }
+ /* You already are the bootdisk. */
+ if (new_bootdisk == bootdisk) {
+  atomic_rwlock_endread(&boot_lock);
+  return -EALREADY;
+ }
+
+ old_bootdisk = bootdisk;
+ old_bootpart = bootpart;
+ assert(old_bootdisk);
+ assert(old_bootpart);
+ BLKDEV_INCREF(old_bootdisk);
+ BLKDEV_INCREF(old_bootpart);
+ atomic_rwlock_endread(&boot_lock);
+
+ /* NOTE: We can't really rely on the disk/partition size attributes
+  *       due to the fact that they may have been truncated at some
+  *       point, but what we can rely on are partition offsets! */
+
+
+ /* Figure out the disk/partition numbers.
+  * >> Assuming that the same actual device is also using the same
+  *    partitioning method, these partitions should all be in the
+  *    same order and have the same ID-offsets. */
+ atomic_rwlock_read(&old_bootdisk->bd_partlock);
+ atomic_rwlock_read(&new_bootdisk->bd_partlock);
+
+ old_num_parts = 0;
+ new_bootpart  = NULL;
+ BLKDEV_FOREACH_PARTITION(old_part,old_bootdisk) {
+  /* If the partition exists somewhere else, this is a miss-match. */
+  new_part = blkdev_get_nth_partition(new_bootdisk,
+                                      old_part->dp_device.bd_device.d_id-
+                                      old_bootdisk->bd_device.d_id);
+  if (!new_part) goto not_the_same_parts;
+
+  /* Figure out the new boot partition on the replacement disk. */
+  if (&old_part->dp_device == old_bootpart) {
+   if unlikely(new_bootpart)
+      goto not_the_same_parts;
+   new_bootpart = &new_part->dp_device;
+  }
+
+  /* Make sure that the partitions start at the same locations.
+   * (This is probably the best indicator for miss-matching devices...) */
+  if (old_part->dp_start != new_part->dp_start)
+      goto not_the_same_parts;
+
+  /* Check the partition system IDs for a match. */
+  if (old_part->dp_device.bd_system != new_part->dp_device.bd_system)
+      goto not_the_same_parts;
+
+  /* The partition of the old BIOS-drive may be smaller because it
+   * may have been truncated in the event that it exceeds the maximum
+   * addressable storage location supported by the BIOS.
+   * Therefor we can only abort if the old partition was actually larger than it should be.
+   */
+  if (old_part->dp_device.bd_blockcount*old_part->dp_device.bd_blocksize >
+      new_part->dp_device.bd_blockcount*new_part->dp_device.bd_blocksize)
+      goto not_the_same_parts;
+
+  ++old_num_parts;
+ }
+
+ /* Make sure we've got a new boot partition. */
+ if unlikely(!new_bootpart)
+    goto not_the_same_parts;
+
+ /* Now compare the total number of recognized partitions. */
+ new_num_parts = 0;
+ BLKDEV_FOREACH_PARTITION(new_part,new_bootdisk)
+   ++new_num_parts;
+ if (old_num_parts != new_num_parts)
+     goto not_the_same_parts;
+
+ /* Create a reference to the new boot partition. */
+ BLKDEV_INCREF(new_bootpart);
+
+ atomic_rwlock_endread(&new_bootdisk->bd_partlock);
+ atomic_rwlock_endread(&old_bootdisk->bd_partlock);
+
+ /* All right! Lets override this! */
+ atomic_rwlock_write(&boot_lock);
+ /* Make sure that nothing changed in the mean time. */
+ if (bootdisk != old_bootdisk ||
+     bootpart != old_bootpart) {
+  BLKDEV_DECREF(new_bootpart);
+  atomic_rwlock_endwrite(&boot_lock);
+  goto again;
+ }
+
+ /* Create the reference that will be stored in 'bootdisk' */
+ BLKDEV_INCREF(new_bootdisk);
+
+ /* Actually override the global!! */
+ bootdisk = new_bootdisk;
+ bootpart = new_bootpart;
+ COMPILER_WRITE_BARRIER();
+
+ atomic_rwlock_endwrite(&boot_lock);
+
+ /* XXX: Are there more things we could check, short of attempting to write
+  *      to one of them and checking if data pops up on the other side? */
+ syslog(LOG_FS|LOG_INFO,
+        COLDSTR("[BOOT] Replacing boot disk/part %[dev_t]/%[dev_t] with %[dev_t]/%[dev_t]\n"),
+        old_bootdisk->bd_device.d_id,old_bootpart->bd_device.d_id,
+        new_bootdisk->bd_device.d_id,new_bootpart->bd_device.d_id);
+
+ /* Replace usage of the old boot disk/partition. */
+ replace_drive_users(old_bootpart,new_bootpart);
+ replace_drive_users(old_bootdisk,new_bootdisk);
+
+ /* Sync the old disk/partition one last time. */
+ blkdev_sync(old_bootpart);
+ blkdev_sync(old_bootdisk);
+
+ /* Drop the references previously stored in the global variables. */
+ BLKDEV_DECREF(old_bootpart);
+ BLKDEV_DECREF(old_bootdisk);
+
+ return -EOK;
+not_the_same_parts:
+ atomic_rwlock_endread(&new_bootdisk->bd_partlock);
+ atomic_rwlock_endread(&old_bootdisk->bd_partlock);
+/*not_the_same:*/
+ BLKDEV_DECREF(old_bootdisk);
+ BLKDEV_DECREF(old_bootpart);
+ return -EINVAL;
+}
+
+
 INTDEF ATTR_FREETEXT REF struct biosblkdev *KCALL bios_find_dev(u8 drive);
 
 #define BOOTDRIVE_UNKNOWN 0xff
@@ -931,7 +1205,7 @@ blkdev_bootdisk_initialize(void) {
          boot_drive,bootdisk->bd_device.d_id);
  } else {
   syslog(LOG_FS|LOG_ERROR,FREESTR("[BOOT] Failed to determine correct boot disk (just guess).\n"));
-  /* Use the first ATA driver. */
+  /* Use the first ATA driver (If that driver was loaded). */
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_PRIMARY_MASTER);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_PRIMARY_SLAVE);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_SECONDARY_MASTER);

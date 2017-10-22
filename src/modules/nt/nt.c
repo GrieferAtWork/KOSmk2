@@ -137,7 +137,7 @@ L(.previous                                                                   )
 //idt _KiTrap0F,         INT_32_DPL0  /* INT 2F: RESERVED        */
 
 
-
+/* XXX: These interrupt numbers collide with the PIC vectors... */
 INTDEF void (ASMCALL _KiGetTickCount)(void);
 INTDEF void (ASMCALL _KiSystemService)(void);
 PRIVATE isr_t nt_tickcount_isr = ISR_DEFAULT_DPL3(0x2a,&_KiGetTickCount);

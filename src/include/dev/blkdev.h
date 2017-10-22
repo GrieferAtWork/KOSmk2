@@ -137,6 +137,8 @@ union{
                           USER void *buf, size_t n_blocks);
  ssize_t (KCALL *bd_write)(struct blkdev *__restrict self, blkaddr_t block,
                            USER void const *buf, size_t n_blocks);
+ /* Optional finalization callback. */
+ void (KCALL *bd_fini)(struct blkdev *__restrict self);
 
 };
 #define BLKDEV_FOREACH_PARTITION(part,self) \
@@ -479,6 +481,28 @@ FUNDEF SAFE void KCALL set_bootdev(struct blkdev *__restrict disk,
                                    struct blkdev *__restrict part);
 
 
+/* Perform some in-depth checks trying to override the original
+ * bios-given boot drive with the given 'replacement' if (and only if)
+ * those two drives are actually the same device.
+ * NOTE: This function is also special in that it will try to replace
+ *       the superblock-blkdev pointers of any existing mounting point
+ *       making use of the original bios-disk driver.
+ * NOTE: This function is called late during booting, even after the
+ *       filesystem has already been set-up, and calls are discarded
+ *       if the user explicitly defined the 'boot=/dev/XXX' option.
+ * NOTE: Call this function after you have auto-partitioned the given
+ *       block-device, as one of the check that is done is on the number
+ *       of countained partitions.
+ * @return: -EOK:      Congrats! You've just become the new boot disk/partition!
+ * @return: -EALREADY: Congrats! You already were the boot disk.
+ * @return: -ENOTBLK:  'replacement' is a partition rather than a disk.
+ * @return: -EINVAL:   The given replacement does describes another device than the old boot disk.
+ * @return: -EPERM:    Another custom device was already assigned as boot disk.
+ * @return: -EPERM:    The user provided an override via the 'boot=/dev/XXX' option.
+ */
+FUNDEF SAFE errno_t KCALL replace_bootdev(struct blkdev *__restrict replacement);
+
+
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 /* Post module initialization: fill 'biosblkdev_boot' with the device associated
  *                             with the given drive, or NULL if no matching drive
@@ -489,6 +513,9 @@ FUNDEF SAFE void KCALL set_bootdev(struct blkdev *__restrict disk,
  *       by use of some other driver not dependent on BIOS functions,
  *       that device will be used instead. */
 INTDEF INITCALL void KCALL blkdev_bootdisk_initialize(void);
+
+/* Replace the currently loaded boot-disk with one given via `boot=/dev/XXX' */
+INTDEF INITCALL void KCALL blkdev_userdisk_initialize(void);
 #endif
 
 #ifndef __INTELLISENSE__

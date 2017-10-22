@@ -26,9 +26,6 @@
     <None Include="..\..\src\kernel\mman\mcore.c.inl">
       <Filter>kernel\mman</Filter>
     </None>
-    <None Include="..\..\src\modules\block\ata-pio.c.inl">
-      <Filter>modules\block</Filter>
-    </None>
     <None Include="..\..\src\kernel\mman\environ.c.inl">
       <Filter>kernel\mman</Filter>
     </None>
@@ -55,6 +52,9 @@
     </None>
     <None Include="..\..\src\kernel\sched\sighand.c.inl">
       <Filter>kernel\sched</Filter>
+    </None>
+    <None Include="..\..\src\modules\block\ata-io.c.inl">
+      <Filter>modules\block</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

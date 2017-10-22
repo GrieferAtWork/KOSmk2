@@ -79,8 +79,8 @@ typedef __WCHAR_TYPE__ wchar_t;
 #   define __WAIT_STATUS_DEFN void *
 #else
 typedef union {
- union wait *__uptr;
- int        *__iptr;
+    union wait *__uptr;
+    int        *__iptr;
 } __WAIT_STATUS __attribute__((__transparent_union__));
 #   define __WAIT_STATUS_DEFN int *
 #endif
@@ -651,11 +651,11 @@ __LIBC __PORT_NODOS __WUNUSED char *(__LIBCCALL realpath)(char const *__restrict
 #ifdef __USE_MISC
 #ifdef __CRT_GLC
 struct drand48_data {
- unsigned short __x[3];
- unsigned short __old_x[3];
- unsigned short __c;
- unsigned short __init;
- __ULONGLONG    __a;
+    unsigned short __x[3];
+    unsigned short __old_x[3];
+    unsigned short __c;
+    unsigned short __init;
+    __ULONGLONG    __a;
 };
 
 __LIBC __PORT_NODOS __NONNULL((1,2)) int (__LIBCCALL drand48_r)(struct drand48_data *__restrict __buffer, double *__restrict __result);
@@ -669,13 +669,13 @@ __LIBC __PORT_NODOS __NONNULL((1,2)) int (__LIBCCALL seed48_r)(unsigned short __
 __LIBC __PORT_NODOS __NONNULL((1,2)) int (__LIBCCALL lcong48_r)(unsigned short __param[7], struct drand48_data *__buffer);
 
 struct random_data {
- __INT32_TYPE__ *fptr;
- __INT32_TYPE__ *rptr;
- __INT32_TYPE__ *state;
- int             rand_type;
- int             rand_deg;
- int             rand_sep;
- __INT32_TYPE__ *end_ptr;
+    __INT32_TYPE__ *fptr;
+    __INT32_TYPE__ *rptr;
+    __INT32_TYPE__ *state;
+    int             rand_type;
+    int             rand_deg;
+    int             rand_sep;
+    __INT32_TYPE__ *end_ptr;
 };
 __LIBC __PORT_NODOS __NONNULL((1,2)) int (__LIBCCALL random_r)(struct random_data *__restrict __buf, __INT32_TYPE__ *__restrict __result);
 __LIBC __PORT_NODOS __NONNULL((2)) int (__LIBCCALL srandom_r)(unsigned int __seed, struct random_data *__buf);
@@ -746,20 +746,20 @@ __LOCAL __NONNULL((1)) int (__LIBCCALL unsetenv)(char const *__name);
 __REDIRECT(__LIBC,__NONNULL((1)),int,__LIBCCALL,__dos_putenv,(char *__string),_putenv,(__string))
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_setenv,(char const *__name, char const *__val),_putenv_s,(__name,__val))
 __LOCAL __NONNULL((2)) int (__LIBCCALL setenv)(char const *__name, char const *__val, int __replace) {
- if (!__replace && __NAMESPACE_STD_SYM getenv(__name)) return 0;
- return __dos_setenv(__name,__val);
+    if (!__replace && __NAMESPACE_STD_SYM getenv(__name)) return 0;
+    return __dos_setenv(__name,__val);
 }
 __LOCAL __NONNULL((1)) int (__LIBCCALL unsetenv)(char const *__name) {
- char *__copy; size_t __namelen; int __result; if (!__name) return -1;
- __namelen = __hybrid_strlen(__name);
- __copy = (char *)__hybrid_malloc((__namelen+2)*sizeof(char));
- if __unlikely(!__copy) return -1;
- __hybrid_memcpy(__copy,__name,__namelen*sizeof(char));
- __copy[__namelen] = '=';
- __copy[__namelen+1] = '\0';
- __result = __dos_putenv(__copy);
- __hybrid_free(__copy);
- return __result;
+    char *__copy; size_t __namelen; int __result; if (!__name) return -1;
+    __namelen = __hybrid_strlen(__name);
+    __copy = (char *)__hybrid_malloc((__namelen+2)*sizeof(char));
+    if __unlikely(!__copy) return -1;
+    __hybrid_memcpy(__copy,__name,__namelen*sizeof(char));
+    __copy[__namelen] = '=';
+    __copy[__namelen+1] = '\0';
+    __result = __dos_putenv(__copy);
+    __hybrid_free(__copy);
+    return __result;
 }
 #else /* __DOS_COMPAT__ */
 __LIBC __NONNULL((2)) int (__LIBCCALL setenv)(char const *__name, char const *__val, int __replace);

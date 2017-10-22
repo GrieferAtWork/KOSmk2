@@ -28,7 +28,7 @@
     <None Include="..\..\src\kernel\sched\sighand.c.inl" />
     <None Include="..\..\src\linker-scripts\kernel.ld" />
     <None Include="..\..\src\linker-scripts\module.ld" />
-    <None Include="..\..\src\modules\block\ata-pio.c.inl" />
+    <None Include="..\..\src\modules\block\ata-io.c.inl" />
     <None Include="..\..\src\modules\nt\flavor-link.inl" />
   </ItemGroup>
   <ItemGroup>

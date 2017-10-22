@@ -90,18 +90,17 @@ efi_autopart_at(struct blkdev *__restrict self,
      goto end;
 
  /* Warn if the header isn't large enough. */
- if (efi.gpt_hdrsize <
+ if (BSWAP_LE2H32(efi.gpt_hdrsize) <
      offsetafter(efi_t,gpt_partition_count)) {
   syslog(LOG_FS|LOG_WARN,"[EFI] GPT partition table header is too small (%I32u < %Iu)\n",
-         efi.gpt_hdrsize,offsetafter(efi_t,gpt_partition_count));
+         BSWAP_LE2H32(efi.gpt_hdrsize),offsetafter(efi_t,gpt_partition_count));
  }
  /* Substitute missing members. */
- if (efi.gpt_hdrsize <
-     offsetafter(efi_t,gpt_partition_entsz))
-     efi.gpt_partition_entsz = BSWAP_H2LE64(128);
- else if (BSWAP_LE2H64(efi.gpt_partition_entsz) < offsetafter(efi_part_t,p_part_max)) {
+ if (BSWAP_LE2H32(efi.gpt_hdrsize) < offsetafter(efi_t,gpt_partition_entsz))
+     efi.gpt_partition_entsz = BSWAP_H2LE32(128);
+ else if (BSWAP_LE2H32(efi.gpt_partition_entsz) < offsetafter(efi_part_t,p_part_max)) {
   syslog(LOG_FS|LOG_WARN,"[EFI] GPT partition table entries are too small (%I32u < %Iu)\n",
-         BSWAP_LE2H64(efi.gpt_partition_entsz),offsetafter(efi_part_t,p_part_max));
+         BSWAP_LE2H32(efi.gpt_partition_entsz),offsetafter(efi_part_t,p_part_max));
   goto end;
  }
 #if 1
@@ -178,15 +177,15 @@ efi_autopart_at(struct blkdev *__restrict self,
 #endif
 
    /* Create the new partition. */
-   dp = blkdev_mkpart(self,GPT_ADDR(part.p_part_min),
-                      part.p_part_max-part.p_part_min,
+   dp = blkdev_mkpart(self,GPT_ADDR(BSWAP_LE2H64(part.p_part_min)),
+                      BSWAP_LE2H64(part.p_part_max)-
+                      BSWAP_LE2H64(part.p_part_min),
                       dp_sysid,result);
    if (E_ISERR(dp)) { temp = E_GTERR(dp); goto end; }
 
    /* Mark the device as read-only if requested, to. */
-   if (part.p_flags&EFI_PART_F_READONLY)
+   if (BSWAP_LE2H64(part.p_flags)&EFI_PART_F_READONLY)
        dp->dp_device.bd_device.d_node.i_state |= INODE_STATE_READONLY;
-
 
    syslog(LOG_FS|LOG_INFO,
           "[EFI] Created partition #%d: %.36Ls (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes%s)\n",

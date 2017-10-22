@@ -26,60 +26,59 @@
 
 DECL_BEGIN
 
-typedef u16 ata_bus_t;
-typedef u8  ata_drv_t;
+#define ATA_PRIMARY        0x1f0 /*< ... 0x1f7 */
+#define ATA_SECONDARY      0x170 /*< ... 0x177 */
 
-#define /*ata_bus_t*/ATA_IOPORT_PRIMARY        0x1f0 /*< ... 0x1f7 */
-#define /*ata_bus_t*/ATA_IOPORT_SECONDARY      0x170 /*< ... 0x177 */
-#define /*ata_bus_t*/ATA_IOPORT_CTRL_PRIMARY   0x3f6
-#define /*ata_bus_t*/ATA_IOPORT_CTRL_SECONDARY 0x376
+/* Device control register/Alternate status ports. */
+#define ATA_CTRL_PRIMARY   0x3f6
+#define ATA_CTRL_SECONDARY 0x376
+#   define ATA_CTRL_NIEN   0x02 /* Disable interrupts. */
+#   define ATA_CTRL_SRST   0x04 /* Software reset bit. */
+#   define ATA_CTRL_HOB    0x80 /* Read back the last high-order byte of the last LBA-48 value sent. */
 
-/* Values for the 'ATA_IOPORT_HDDEVSEL' command */
-#define /*ata_drv_t*/ATA_DRIVE_MASTER  0xa0
-#define /*ata_drv_t*/ATA_DRIVE_SLAVE   0xb0
 
-#define ATA_IOPORT_DATA(bus)       ((bus)+0x00)
-#define ATA_IOPORT_ERROR(bus)      ((bus)+0x01)
-#define ATA_IOPORT_FEATURES(bus)   ((bus)+0x01)
-#define ATA_IOPORT_SECCOUNT0(bus)  ((bus)+0x02)
-#define ATA_IOPORT_LBALO(bus)      ((bus)+0x03)
-#define ATA_IOPORT_LBAMD(bus)      ((bus)+0x04)
-#define ATA_IOPORT_LBAHI(bus)      ((bus)+0x05)
-#define ATA_IOPORT_HDDEVSEL(bus)   ((bus)+0x06)
-#define ATA_IOPORT_COMMAND(bus)    ((bus)+0x07)
-#define ATA_IOPORT_STATUS(bus)     ((bus)+0x07)
-#define ATA_IOPORT_SECCOUNT1(bus)  ((bus)+0x08)
-#define ATA_IOPORT_LBA3(bus)       ((bus)+0x09)
-#define ATA_IOPORT_LBA4(bus)       ((bus)+0x0a)
-#define ATA_IOPORT_LBA5(bus)       ((bus)+0x0b)
-#define ATA_IOPORT_CONTROL(bus)    ((bus)+0x0c)
-#define ATA_IOPORT_ALTSTATUS(bus)  ((bus)+0x0c)
-#define ATA_IOPORT_DEVADDRESS(bus) ((bus)+0x0d)
-
-/* Commands used by the 'ATA_IOPORT_COMMAND' ioport */
-#define ATA_CMD_READ_PIO        0x20
-#define ATA_CMD_READ_PIO_EXT    0x24
-#define ATA_CMD_READ_DMA        0xc8
-#define ATA_CMD_READ_DMA_EXT    0x25
-#define ATA_CMD_WRITE_PIO       0x30
-#define ATA_CMD_WRITE_PIO_EXT   0x34
-#define ATA_CMD_WRITE_DMA       0xca
-#define ATA_CMD_WRITE_DMA_EXT   0x35
-#define ATA_CMD_CACHE_FLUSH     0xe7
-#define ATA_CMD_CACHE_FLUSH_EXT 0xea
-#define ATA_CMD_PACKET          0xa0
-#define ATA_CMD_IDENTIFY_PACKET 0xa1
-#define ATA_CMD_IDENTIFY        0xec
-
-/* Flags returned by the 'ATA_IOPORT_STATUS' ioport */
-#define ATA_STATUS_ERR   0x01 /* 1 << 0 */
-#define ATA_STATUS_IDX   0x02 /* 1 << 1 */
-#define ATA_STATUS_CORR  0x04 /* 1 << 2 */
-#define ATA_STATUS_DRQ   0x08 /* 1 << 3 */
-#define ATA_STATUS_DSC   0x10 /* 1 << 4 */
-#define ATA_STATUS_DF    0x20 /* 1 << 5 */
-#define ATA_STATUS_DRDY  0x40 /* 1 << 6 */
-#define ATA_STATUS_BSY   0x80 /* 1 << 7 */
+/* Register offsets from 'ATA_SECONDARY' */
+#define ATA_PORT(x)    x
+#define ATA_DATA       ATA_PORT(0x00)
+#define ATA_ERROR      ATA_PORT(0x01)
+#define ATA_FEATURES   ATA_PORT(0x01)
+#define ATA_SECCOUNT0  ATA_PORT(0x02)
+#define ATA_LBALO      ATA_PORT(0x03)
+#define ATA_LBAMD      ATA_PORT(0x04)
+#define ATA_LBAHI      ATA_PORT(0x05)
+#define ATA_HDDEVSEL   ATA_PORT(0x06)
+#   define ATA_DRIVE_MASTER  0xa0
+#   define ATA_DRIVE_SLAVE   0xb0
+#define ATA_CMD        ATA_PORT(0x07)
+#   define ATA_CMD_READ_PIO        0x20
+#   define ATA_CMD_READ_PIO_EXT    0x24
+#   define ATA_CMD_READ_DMA        0xc8
+#   define ATA_CMD_READ_DMA_EXT    0x25
+#   define ATA_CMD_WRITE_PIO       0x30
+#   define ATA_CMD_WRITE_PIO_EXT   0x34
+#   define ATA_CMD_WRITE_DMA       0xca
+#   define ATA_CMD_WRITE_DMA_EXT   0x35
+#   define ATA_CMD_CACHE_FLUSH     0xe7
+#   define ATA_CMD_CACHE_FLUSH_EXT 0xea
+#   define ATA_CMD_PACKET          0xa0
+#   define ATA_CMD_IDENTIFY_PACKET 0xa1
+#   define ATA_CMD_IDENTIFY        0xec
+#define ATA_STATUS     ATA_PORT(0x07)
+#   define ATA_SR_ERR   0x01 /* 1 << 0 */
+#   define ATA_SR_IDX   0x02 /* 1 << 1 */
+#   define ATA_SR_CORR  0x04 /* 1 << 2 */
+#   define ATA_SR_DRQ   0x08 /* 1 << 3 */
+#   define ATA_SR_DSC   0x10 /* 1 << 4 */
+#   define ATA_SR_DF    0x20 /* 1 << 5 */
+#   define ATA_SR_DRDY  0x40 /* 1 << 6 */
+#   define ATA_SR_BSY   0x80 /* 1 << 7 */
+#define ATA_SECCOUNT1  ATA_PORT(0x08)
+#define ATA_LBA3       ATA_PORT(0x09)
+#define ATA_LBA4       ATA_PORT(0x0a)
+#define ATA_LBA5       ATA_PORT(0x0b)
+#define ATA_CONTROL    ATA_PORT(0x0c)
+#define ATA_ALTSTATUS  ATA_PORT(0x0c)
+#define ATA_DEVADDRESS ATA_PORT(0x0d)
 
 #define UINT unsigned int
 
@@ -301,16 +300,31 @@ struct PACKED ata_spec {
 };
 #undef UINT
 
-struct ata_descr;
+
 struct atablkdev {
- struct blkdev     a_device;     /*< Underlying block device. */
- u16               a_ctrl;       /*< ATA Control port. */
- ata_bus_t         a_bus;        /*< ATA Bus location. */
- ata_drv_t         a_drive;      /*< ATA Drive location. */
- u8                a_padding[3]; /* ... */
- struct ata_descr *a_descr;      /*< Lock descriptor. */
- struct timespec   a_timeout;    /*< Timeout when waiting for the drive to respond. */
- struct ata_spec   a_spec;       /*< ATA device specifications. */
+ struct blkdev              a_device;     /*< Underlying block device. */
+ u16                        a_iobase;     /*< ATA I/O base address. */
+ u16                        a_ctrl;       /*< Device control register/Alternate status port. */
+ u8                         a_drive;      /*< ATA Drive location. */
+ u8                         a_padding[3]; /* ... */
+#if defined(CONFIG_DEBUG) && 1
+#define ATA_DEFAULT_IO_TIMEOUT   SEC_TO_JIFFIES(1)
+#else
+#define ATA_DEFAULT_IO_TIMEOUT   SEC_TO_JIFFIES(30)  /* 30 seconds spin-up timeout. */
+#endif
+#define ATA_DEFAULT_CM_TIMEOUT  MSEC_TO_JIFFIES(200)
+ jtime_t                    a_io_timeout; /*< Timeout for I/O operations. */
+ jtime_t                    a_cm_timeout; /*< Timeout for command acknowledgement. */
+ struct ata_spec            a_spec;       /*< Drive specifications. */
+#ifdef __INTELLISENSE__
+ u16                        a_number_of_heads;
+ u16                        a_cylinders;
+ u16                        a_sectors_per_track;
+#else
+#define a_number_of_heads   a_spec.NumHeads
+#define a_cylinders         a_spec.NumCylinders
+#define a_sectors_per_track a_spec.NumSectorsPerTrack
+#endif
 };
 
 #define ATA_BLOCKSIZE  512

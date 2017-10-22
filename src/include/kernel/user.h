@@ -36,6 +36,16 @@ FUNDEF char  *(KCALL __strend_user)(USER char const *str) ASMNAME("strend_user")
 FUNDEF char  *(KCALL __stpncpy_from_user)(HOST void *__restrict dst, USER char const *str, size_t max_chars) ASMNAME("stpncpy_from_user"); /* Returns NULL on error */
 FUNDEF bool   (KCALL __addr_isuser)(void const *addr, size_t len) ASMNAME("addr_isuser"); /* Returns true if user-space is allowed access to 'addr'. */
 
+/* User-buffered I/O functions.
+ * @return: 0 : Successfully transferred all data.
+ * @return: * : The number of units that couldn't be transferred (bytes/[1,2,4]). */
+FUNDEF size_t (KCALL __insb_user)(u16 port, USER void *addr, size_t count) ASMNAME("insb_user");
+FUNDEF size_t (KCALL __insw_user)(u16 port, USER void *addr, size_t count) ASMNAME("insw_user");
+FUNDEF size_t (KCALL __insl_user)(u16 port, USER void *addr, size_t count) ASMNAME("insl_user");
+FUNDEF size_t (KCALL __outsb_user)(u16 port, USER void const *addr, size_t count) ASMNAME("outsb_user");
+FUNDEF size_t (KCALL __outsw_user)(u16 port, USER void const *addr, size_t count) ASMNAME("outsw_user");
+FUNDEF size_t (KCALL __outsl_user)(u16 port, USER void const *addr, size_t count) ASMNAME("outsl_user");
+
 /* Formatted printing to user-space data buffers.
  * Returns -EFAULT on error, or the total amount to required characters. */
 FUNDEF ssize_t (ATTR_CDECL sprintf_user)(USER char *dst, char const *format, ...);
@@ -161,14 +171,47 @@ FORCELOCAL bool (KCALL _addr_isuser)(void const *addr, size_t len) {
  }
  return __addr_isuser(addr,len);
 }
-#define copy_from_user(dst,src,n_bytes)      __builtin_expect(_copy_from_user(dst,src,n_bytes),0)
-#define copy_to_user(dst,src,n_bytes)        __builtin_expect(_copy_to_user(dst,src,n_bytes),0)
-#define copy_in_user(dst,src,n_bytes)        __builtin_expect(_copy_in_user(dst,src,n_bytes),0)
-#define memset_user(dst,byte,n_bytes)        __builtin_expect(_memset_user(dst,byte,n_bytes),0)
-#define strend_user(str)                                     __strend_user(str)
+FORCELOCAL size_t (KCALL _insb_user)(u16 port, USER void *addr, size_t count) {
+ if (__builtin_constant_p(count) && !count) return 0;
+ return __insb_user(port,addr,count);
+}
+FORCELOCAL size_t (KCALL _insw_user)(u16 port, USER void *addr, size_t count) {
+ if (__builtin_constant_p(count) && !count) return 0;
+ return __insw_user(port,addr,count);
+}
+FORCELOCAL size_t (KCALL _insl_user)(u16 port, USER void *addr, size_t count) {
+ if (__builtin_constant_p(count) && !count) return 0;
+ return __insl_user(port,addr,count);
+}
+FORCELOCAL size_t (KCALL _outsb_user)(u16 port, USER void const *addr, size_t count) {
+ if (__builtin_constant_p(count) && !count) return 0;
+ return __outsb_user(port,addr,count);
+}
+FORCELOCAL size_t (KCALL _outsw_user)(u16 port, USER void const *addr, size_t count) {
+ if (__builtin_constant_p(count) && !count) return 0;
+ return __outsw_user(port,addr,count);
+}
+FORCELOCAL size_t (KCALL _outsl_user)(u16 port, USER void const *addr, size_t count) {
+ if (__builtin_constant_p(count) && !count) return 0;
+ return __outsl_user(port,addr,count);
+}
+
+
+#define copy_from_user(dst,src,n_bytes)      __expect(_copy_from_user(dst,src,n_bytes),0)
+#define copy_to_user(dst,src,n_bytes)        __expect(_copy_to_user(dst,src,n_bytes),0)
+#define copy_in_user(dst,src,n_bytes)        __expect(_copy_in_user(dst,src,n_bytes),0)
+#define memset_user(dst,byte,n_bytes)        __expect(_memset_user(dst,byte,n_bytes),0)
+#define strend_user(str)                              __strend_user(str)
 #define stpncpy_from_user(dst,src,max_chars) _stpncpy_from_user(dst,src,max_chars)
-#define addr_isuser(addr,len)                __builtin_expect(_addr_isuser(addr,len),true)
-#define addr_ishost(addr,len)                __builtin_expect(!_addr_isuser(addr,len),true)
+#define addr_isuser(addr,len)                __expect(_addr_isuser(addr,len),true)
+#define addr_ishost(addr,len)                __expect(!_addr_isuser(addr,len),true)
+
+#define insb_user(port,addr,count)  __expect(_insb_user(port,addr,count),0)
+#define insw_user(port,addr,count)  __expect(_insw_user(port,addr,count),0)
+#define insl_user(port,addr,count)  __expect(_insl_user(port,addr,count),0)
+#define outsb_user(port,addr,count) __expect(_outsb_user(port,addr,count),0)
+#define outsw_user(port,addr,count) __expect(_outsw_user(port,addr,count),0)
+#define outsl_user(port,addr,count) __expect(_outsl_user(port,addr,count),0)
 
 
 /* Begin/End a region of code during which all calls normally accepting

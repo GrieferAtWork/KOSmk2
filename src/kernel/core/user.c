@@ -298,6 +298,66 @@ L(.previous                                                      )
 );
 
 
+/* IOS stands for InOutString... */
+#define DEFINE_IOS(name,io_ins,ifb,ifl,n) \
+GLOBAL_ASM( \
+L(.section .text                                                 ) \
+L(PUBLIC_ENTRY(name)                                             ) \
+L(    pushl %edi                                                 ) \
+L(    movl 16(%esp), %ecx /* count */                            ) \
+L(                                                               ) \
+L(    /* Validate limits */                                      ) \
+ifb(L(movl 12(%esp), %edi /* addr */                             )) \
+ifb(L(addl  %ecx, %edi                                           )) \
+ifb(L(jo    1f /* if (DOES_OVERFLOW(addr+count)) return count; */)) \
+ifl(L(movl 12(%esp), %edx /* addr */                             )) \
+ifl(L(leal  0(%edx,%ecx,n), %edi /* EDI = addr+count*n; */       )) \
+ifl(L(cmpl  %edx, %edi                                           )) \
+ifl(L(jbe   1f /* if (addr+count*n >= addr) return count; */     )) \
+L(    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %eax                  ) \
+L(    movl  TASK_OFFSETOF_ADDRLIMIT(%eax), %edx                  ) \
+L(    cmpl  %edx, %edi                                           ) \
+L(    jae   1f /* if (addr+count >= addr_limit) return count; */ ) \
+L(                                                               ) \
+L(    /* (re-)load remaining registers */                        ) \
+L(    movl  12(%esp), %edi /* addr */                            ) \
+L(    movw  8(%esp),  %dx  /* port */                            ) \
+L(                                                               ) \
+L(    /* Push an exception handler. */                           ) \
+L(    pushl $1f                                                  ) \
+L(    pushl $(EXC_PAGE_FAULT)                                    ) \
+L(    pushl TASK_OFFSETOF_IC(%eax)                               ) \
+L(    movl  %esp, TASK_OFFSETOF_IC(%eax)                         ) \
+L(                                                               ) \
+L(    /* while (count--) *addr++ = inN(port); */                 ) \
+L(    /* while (count--) outN(port,*addr++); */                  ) \
+L(    rep   io_ins                                               ) \
+L(                                                               ) \
+L(    /* Cleanup on success */                                   ) \
+L(    popl  TASK_OFFSETOF_IC(%eax)                               ) \
+L(    addl  $8, %esp                                             ) \
+L(                                                               ) \
+L(1:  popl %edi                                                  ) \
+L(    movl %ecx, %eax /* Return the number of bytes not transferred */) \
+L(    ret $12                                                    ) \
+L(SYM_END(name)                                                  ) \
+L(.previous                                                      ) \
+)
+
+#define I0(x) /* nothing */
+#define I1(x) x
+/* Define user-buffered I/O string functions. */
+DEFINE_IOS(insb_user,insb,I1,I0,1);
+DEFINE_IOS(insw_user,insw,I0,I1,2);
+DEFINE_IOS(insl_user,insw,I0,I1,4);
+DEFINE_IOS(outsb_user,outsb,I1,I0,1);
+DEFINE_IOS(outsw_user,outsw,I0,I1,2);
+DEFINE_IOS(outsl_user,outsw,I0,I1,4);
+#undef DEFINE_IOS
+#undef I1
+#undef I0
+
+
 
 DATDEF byte_t __kernel_user_start[];
 INTDEF byte_t __kernel_user_end[];

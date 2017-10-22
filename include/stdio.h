@@ -91,12 +91,12 @@ typedef __pos64_t      fpos64_t;
 #endif
 
 /* Dos has different values for some of these.
- * Yet since they don't collide with each other, 'setvbuf()' accepts either. */
+ * Yet since they don't collide with each other, `setvbuf()' accepts either. */
 #define __DOS_IOFBF 0x0000 /*< Fully buffered. */
 #define __DOS_IOLBF 0x0040 /*< Line buffered. */
 #define __DOS_IONBF 0x0004 /*< No buffering. */
 
-/* The possibilities for the third argument to 'setvbuf()'. */
+/* The possibilities for the third argument to `setvbuf()'. */
 #ifdef __USE_DOS
 #define _IOFBF __DOS_IOFBF /*< Fully buffered. */
 #define _IOLBF __DOS_IOLBF /*< Line buffered. */
@@ -325,9 +325,9 @@ __NAMESPACE_STD_USING(gets)
 
 #ifdef __USE_KOS
 /* Reopen the given file stream using a provided file descriptor.
- * @param: MODE: Set of 'FDREOPEN_*'
+ * @param: MODE: Set of `FDREOPEN_*'
  * @return: STREAM: Successfully re-opened the given file.
- * @return: NULL:   Failed to re-open the file (see 'errno' for details) */
+ * @return: NULL:   Failed to re-open the file (see `errno' for details) */
 __LIBC __PORT_KOSONLY __WUNUSED __FILE *(__LIBCCALL fdreopen)(int __fd, char const *__restrict __modes,
                                                               __FILE *__restrict __stream, int __mode);
 #define FDREOPEN_DUP            0x0 /*< Duplicate the given descriptor, creating a private copy for the stream. */
@@ -513,7 +513,7 @@ __LIBC __PORT_NODOS char *(__LIBCCALL cuserid)(char *__buf);
 #endif /* __CRT_GLC */
 #endif /* __USE_XOPEN */
 #ifdef __USE_KOS
-/* For use with 'format_printf()' and friends: Prints to a 'FILE *' closure argument. */
+/* For use with `format_printf()' and friends: Prints to a `FILE *' closure argument. */
 #if !defined(__CRT_KOS) || (defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__))
 __LOCAL __ssize_t (__LIBCCALL file_printer)(char const *__restrict __data,
                                             size_t __datalen, void *__closure) {
@@ -914,7 +914,7 @@ __LIBC int (__ATTR_CDECL _fprintf_s_l)(__FILE *__restrict __file, char const *__
 
 #ifdef __USE_DOS_SLIB
 #ifdef __CRT_DOS
-/* WARNING: 'fopen_s' and 'freopen_s' returns DOS error codes in DOS-FS mode! */
+/* WARNING: `fopen_s' and `freopen_s' returns DOS error codes in DOS-FS mode! */
 __REDIRECT_UFS(__LIBC,__PORT_DOSONLY_ALT(fopen),errno_t,__LIBCCALL,fopen_s,(__FILE **__pfile, char const *__file, char const *__mode),fopen_s,(__pfile,__file,__mode))
 __REDIRECT_UFS(__LIBC,__PORT_DOSONLY_ALT(freopen),errno_t,__LIBCCALL,freopen_s,(__FILE **__pfile, char const *__file, char const *__mode, __FILE *__oldfile),freopen_s,(__pfile,__file,__mode,__oldfile))
 __REDIRECT_UFS(__LIBC,__PORT_DOSONLY_ALT(tmpnam),errno_t,__LIBCCALL,tmpnam_s,(char *__restrict __buf, rsize_t __bufsize),tmpnam_s,(__buf,__bufsize));
@@ -1275,7 +1275,7 @@ __LOCAL int (__ATTR_CDECL _wscanf_s_l)(wchar_t const *__restrict __format, __loc
 #ifdef __USE_DOS_SLIB
 /* Simply redirect these so-called ~safe~ functions to the regular version.
  * In KOS, they're already ~safe~ to begin with, because unknown format strings are always handled.
- * NOTE: For binary compatibility, assembly names such as 'fwprintf_s' are exported as alias,
+ * NOTE: For binary compatibility, assembly names such as `fwprintf_s' are exported as alias,
  *       but should never be used by newly compiled applications. */
 #ifndef __NO_ASMNAME
 __LIBC int (__ATTR_CDECL fwprintf_s)(FILE *__restrict __file, wchar_t const *__restrict __format, ...) __ASMNAME("fwprintf");
@@ -1315,11 +1315,11 @@ __REDIRECT_WFS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wremove,(wchar_t const *__r
 
 #if defined(__PE__) && defined(__CRT_DOS)
 /* Versions lacking the C standard mandated BUFLEN argument...
- * NOTE: Internally, these functions will link against '.dos._swprintf' and '.dos._vswprintf' */
+ * NOTE: Internally, these functions will link against `.dos._swprintf' and `.dos._vswprintf' */
 __LIBC int (__LIBCCALL _vswprintf)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, __VA_LIST __args);
 __LIBC int (__ATTR_CDECL _swprintf)(wchar_t *__restrict __buf, wchar_t const *__restrict __format, ...);
 #else /* __PE__ && __CRT_DOS */
-/* Outside of PE-mode, wchar_t is 32 bits wide and '.dos.' isn't inserted before symbol names. */
+/* Outside of PE-mode, wchar_t is 32 bits wide and `.dos.' isn't inserted before symbol names. */
 /* libc doesn't export these superfluous and confusion version of swprintf.
  * (They're lacking the BUFLEN argument mandated by the C standard).
  * So instead, they're implemented as a hack. */

@@ -250,12 +250,12 @@ end:
 }
 
 
-PRIVATE ssize_t KCALL
+INTERN ssize_t KCALL
 bd_chs_read(struct blkdev *__restrict self, blkaddr_t block,
             USER void *buf, size_t n_blocks) {
  return bd_access_chs((bd_t *)self,block,buf,n_blocks,false);
 }
-PRIVATE ssize_t KCALL
+INTERN ssize_t KCALL
 bd_lba_read(struct blkdev *__restrict self, blkaddr_t block,
             USER void *buf, size_t n_blocks) {
  return bd_access_lba((bd_t *)self,block,buf,n_blocks,false);

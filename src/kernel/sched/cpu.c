@@ -49,6 +49,7 @@
 #include <sys/io.h>
 #include <kernel/memory.h>
 #include <kernel/export.h>
+#include <kos/thread.h>
 
 DECL_BEGIN
 
@@ -149,10 +150,26 @@ ATTR_FREEDATA struct task inittask = {
 
 INTDEF void ASMCALL cpu_idle(void);
 
+#ifdef CONFIG_DEBUG
 PRIVATE ATTR_USED void invalid_idle_task(void) {
+ __NAMESPACE_INT_SYM
  __afailf(NULL,DEBUGINFO_GEN,
-                     "Invalid IDLE task %p != %p",
-                     THIS_TASK,&THIS_CPU->c_idle);
+          "Invalid IDLE task %p != %p",
+          THIS_TASK,&THIS_CPU->c_idle);
+}
+#endif
+
+
+PRIVATE ATTR_USED void switch_before_idle(void) {
+ assert(PREEMPTION_ENABLED());
+ while (THIS_CPU->c_n_run > 1) {
+  /* Switch to another task. */
+  PREEMPTION_DISABLE();
+  assert(THIS_CPU->c_running == &THIS_CPU->c_idle);
+  THIS_CPU->c_running = THIS_CPU->c_idle.t_sched.sd_running.re_next;
+  TASK_SWITCH_CONTEXT(&THIS_CPU->c_idle,THIS_CPU->c_running);
+  cpu_sched_setrunning_savef(&THIS_CPU->c_idle,EFLAGS_IF);
+ }
 }
 
 GLOBAL_ASM(
@@ -170,14 +187,12 @@ L(    je 1f                                        )
 L(    call invalid_idle_task                       )
 L(1:                                               )
 #endif
+#if CONFIG_NO_IDLE
+L(    call task_yield                              )
+#else /* CONFIG_NO_IDLE */
+L(    call switch_before_idle                      )
 L(    hlt                                          )
-#ifdef CONFIG_DEBUG
-/* Add a bunch of hlt instructions to we can
- * watch them cycle when everything's working! */
-L(    hlt                                          )
-L(    hlt                                          )
-L(    hlt                                          )
-#endif
+#endif /* !CONFIG_NO_IDLE */
 L(    jmp cpu_idle                                 )
 L(.size cpu_idle, . - cpu_idle                     )
 L(.previous                                        )

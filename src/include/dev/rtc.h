@@ -106,9 +106,9 @@ FUNDEF SAFE void KCALL sysrtc_periodic(void);
 #define FSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000000000000ll/HZ))
 
 DATDEF struct timespec const boottime; /* Point in time when the machine booted. */
-DATDEF jtime_t   jiffies;
-DATDEF jtime32_t jiffies32 ASMNAME("jiffies");
-DATDEF jtime64_t jiffies64 ASMNAME("jiffies");
+DATDEF jtime_t   volatile jiffies;
+DATDEF jtime32_t volatile jiffies32 ASMNAME("jiffies");
+DATDEF jtime64_t volatile jiffies64 ASMNAME("jiffies");
 #define TIMESPEC_OFF_TO_JIFFIES(tms) ((tms).tv_sec*HZ+((tms).tv_nsec/(1000000000l/HZ)))
 #define TIMESPEC_ADD_JIFFIES(tms,jff)    \
       ((tms).tv_sec += (jff)/HZ,(tms).tv_nsec += ((jff) % HZ)*(1000000000l/HZ),\

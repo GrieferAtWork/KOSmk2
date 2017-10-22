@@ -718,8 +718,8 @@ L(    movl  %esp, %ebp                                                        )
 #endif
 #if CONFIG_LOG_WAITING
 L(    testb $0xff, dont_log_waiting                                           )
-L(    jnz 1f                                                                  )
-L(    call  debug_tbprint                                               )
+L(    jnz   1f                                                                )
+L(    call  debug_tbprint                                                     )
 L(1:                                                                          )
 #endif
 L(                                                                            )
@@ -739,8 +739,8 @@ L(    pushl ASM_CPU(CPU_OFFSETOF_RUNNING)  /* Push the old task (Argument for 'c
 L(    call  cpu_sched_rotate               /* Rotate running tasks. */        )
 L(    pushl %eax                                                              )
 L(    pushl %ecx                                                              )
-L(    movl 8(%esp),                   %eax                                    )
-L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING),%ecx                                 )
+L(    movl 8(%esp), %eax                                                      )
+L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING), %ecx                                )
 #if !defined(CONFIG_NO_LDT) || !defined(CONFIG_NO_FPU) || !defined(CONFIG_NO_TLB)
 L(    pushl %ebx                                                              )
 #endif
@@ -764,7 +764,7 @@ L(    /* Switch TIB/TLB pointers */                                           )
 L(    pushl %edx                                                              )
 L(    pushl %esi                                                              )
 L(    movl  ASM_CPU(cpu_gdt+IDT_POINTER_OFFSETOF_GDT), %ebx                   )
-L(    movl  TASK_OFFSETOF_TLB(%eax),                   %esi                   )
+L(    movl  TASK_OFFSETOF_TLB(%ecx),                   %esi                   )
 #define TLB(off) ((off)+SEG_USER_TLB*8)(%ebx)
 #define TIB(off) ((off)+SEG_USER_TIB*8)(%ebx)
 L(                                                                            )
@@ -780,10 +780,10 @@ L(                                                                            )
 L(    /* Update the TIB pointer */                                            )
 L(    movl  %esi,        %edx                                                 )
 L(    shrl  $24,         %edx                                                 )
-L(    movb  %dl,         TLB(SEGMENT_OFFSETOF_BASEHI)                         )
-L(    andl  $0xff000000, TLB(SEGMENT_OFFSETOF_BASELO)                         )
+L(    movb  %dl,         TIB(SEGMENT_OFFSETOF_BASEHI)                         )
+L(    andl  $0xff000000, TIB(SEGMENT_OFFSETOF_BASELO)                         )
 L(    andl  $0x00ffffff, %esi                                                 )
-L(    orl   %esi,        TLB(SEGMENT_OFFSETOF_BASELO)                         )
+L(    orl   %esi,        TIB(SEGMENT_OFFSETOF_BASELO)                         )
 #undef TIB
 #undef TLB
 L(    popl  %esi                                                              )
@@ -835,7 +835,9 @@ INTERN void ATTR_CDECL noyield_without_irq(void *eip) {
 #ifdef CONFIG_SMP
  if (SMP_ONLINE > 1) {
   PRIVATE CPU_DATA void *noyield_last_eip = (void *)-1;
+#ifdef CONFIG_NO_IDLE
   if (eip == CPU(noyield_last_eip)) return;
+#endif /* CONFIG_NO_IDLE */
 #ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
   syslog(LOG_SCHED|LOG_WARN,
          "#!$ addr2line(%Ix) '{file}({line}) : {func} : %p : Cannot yield while interrupts are disabled'\n",
@@ -849,6 +851,7 @@ INTERN void ATTR_CDECL noyield_without_irq(void *eip) {
  } else
 #endif
  {
+  __NAMESPACE_INT_SYM
   __afail("Cannot yield while interrupts are disabled",DEBUGINFO_GEN);
  }
 }
