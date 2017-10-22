@@ -672,9 +672,52 @@ end:
  return E_ISERR(result) ? result : (ssize_t)total_read;
 }
 
+#if defined(CONFIG_DEBUG) && 0
+PRIVATE ssize_t KCALL
+blkdev_do_write(struct blkdev *__restrict self, pos_t offset,
+                USER void const *buf, size_t bufsize);
+
+/* Special handling for detection of infinite loops caused by repeatedly
+ * trying to write when writing is impossible due to space constraints. */
+PRIVATE struct blkdev   *last_zero_self;
+PRIVATE pos_t            last_zero_offset;
+PRIVATE USER void const *last_zero_buf;
+PRIVATE size_t           last_zero_bufsize;
+
 PUBLIC ssize_t KCALL
 blkdev_write(struct blkdev *__restrict self, pos_t offset,
              USER void const *buf, size_t bufsize) {
+ ssize_t result = blkdev_do_write(self,offset,buf,bufsize);
+ if (!result) {
+  if (last_zero_self    == self &&
+      last_zero_offset  == offset &&
+      last_zero_buf     == buf &&
+      last_zero_bufsize == bufsize) {
+   __NAMESPACE_INT_SYM
+   __afailf(NULL,DEBUGINFO_NUL,
+            "Repeated attempt of writing write to the same location failed with no memory (Softlock)\n"
+            "self    = %p\n"
+            "offset  = %I64u\n"
+            "buf     = %p\n"
+            "bufsize = %Iu\n",
+            self,offset,buf,bufsize);
+  }
+  last_zero_self    = self;
+  last_zero_offset  = offset;
+  last_zero_buf     = buf;
+  last_zero_bufsize = bufsize;
+ }
+ return result;
+}
+PRIVATE ssize_t KCALL
+blkdev_do_write(struct blkdev *__restrict self, pos_t offset,
+                USER void const *buf, size_t bufsize)
+#else
+PUBLIC ssize_t KCALL
+blkdev_write(struct blkdev *__restrict self, pos_t offset,
+             USER void const *buf, size_t bufsize)
+#endif
+{
  size_t total_write = 0;
  ssize_t result; int locks = 0;
  struct blockbuf *cache;

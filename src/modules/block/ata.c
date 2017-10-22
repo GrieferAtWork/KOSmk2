@@ -309,6 +309,8 @@ PRIVATE MODULE_INIT void KCALL ata_init(void) {
  ata_probe(ATA_PRIMARY,ATA_CTRL_PRIMARY,ATA_DRIVE_SLAVE);
  ata_probe(ATA_PRIMARY,ATA_CTRL_PRIMARY,ATA_DRIVE_MASTER);
 
+ /* TODO: Lock read/write functions in-core */
+
 }
 
 DECL_END

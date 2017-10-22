@@ -18,8 +18,9 @@
  */
 #ifdef __INTELLISENSE__
 #include "ata.c"
-#define LBA48 1
-//#define WRITE 1
+#define LBA28 1
+//#define LBA48 1
+#define WRITE 1
 #endif
 
 #ifdef LBA48
@@ -45,13 +46,39 @@
 
 DECL_BEGIN
 
+#ifdef WRITE
+#ifndef OUTPUT_USER_HELPER_DEFINED
+#define OUTPUT_USER_HELPER_DEFINED 1
+PRIVATE ssize_t KCALL
+output_data_helper(ata_t *__restrict self,
+                   USER u16 const *__restrict data) {
+ size_t i = ATA_BLOCKSIZE/2;
+ /* Sadly, ATA needs an I/O pause when writing data... */
+ while (i--) outw_p(self->a_iobase+ATA_DATA,*data++);
+ return 0;
+}
+#endif
+#endif
+
 #define SELF container_of(self,ata_t,a_device)
 PRIVATE ssize_t KCALL
 ATA_RDWR(struct blkdev *__restrict self, blkaddr_t block,
          USER void BUF_CONST *buf, size_t n_blocks) {
- struct bus *b = BUS(SELF);
+ bool did_reset; struct bus *b = BUS(SELF);
  ssize_t error,result = (ssize_t)n_blocks;
+#ifdef WRITE
+ /* In write mode, we don't re-validate user-pointer ranges,
+  * meaning we must validate them once at the beginning. */
+ { uintptr_t buf_end;
+   /* NOTE: 'n_blocks*ATA_BLOCKSIZE' can't overflow because the caller
+    *        is required to validate the counter argument for actually
+    *        fitting into the device and the host machine's address space. */
+   if (__builtin_add_overflow((uintptr_t)buf,n_blocks*ATA_BLOCKSIZE,&buf_end) ||
+       buf_end >= THIS_TASK->t_addrlimit) return -EFAULT;
+ }
+#endif
  while (n_blocks) {
+  did_reset = false;
 #ifdef LBA48
   u16 part = (u16)MIN(n_blocks,UINT16_MAX);
 #else
@@ -71,7 +98,7 @@ ATA_RDWR(struct blkdev *__restrict self, blkaddr_t block,
   assert(!b->b_active);
   b->b_active = SELF;
   COMPILER_WRITE_BARRIER();
-
+try_again:
   /* Wait for the bus to stop being busy. */
   error = ata_status_wait(SELF->a_ctrl,ATA_SR_BSY,0,
                           SELF->a_cm_timeout);
@@ -112,11 +139,19 @@ ATA_RDWR(struct blkdev *__restrict self, blkaddr_t block,
   outb(SELF->a_iobase+ATA_LBAMD,(u8)(block >> 8));
   outb(SELF->a_iobase+ATA_LBAHI,(u8)(block >> 16));
 #endif /* !CHS */
+#ifdef WRITE
+#ifdef LBA48
+  outb(SELF->a_iobase+ATA_CMD,ATA_CMD_WRITE_PIO_EXT);
+#else /* LBA48 */
+  outb(SELF->a_iobase+ATA_CMD,ATA_CMD_WRITE_PIO);
+#endif /* !LBA48 */
+#else
 #ifdef LBA48
   outb(SELF->a_iobase+ATA_CMD,ATA_CMD_READ_PIO_EXT);
 #else /* LBA48 */
   outb(SELF->a_iobase+ATA_CMD,ATA_CMD_READ_PIO);
 #endif /* !LBA48 */
+#endif
 
   /* Now's a good time to update counters for later. */
   n_blocks -= (size_t)part;
@@ -125,24 +160,35 @@ ATA_RDWR(struct blkdev *__restrict self, blkaddr_t block,
   /* The command has been uttered. - Now to wait for it to complete.
    * NOTE: This is where we wait for the drive to spin up. */
   do {
+#ifdef WRITE
+   error = ata_status_wait(SELF->a_ctrl,
+                           ATA_SR_DRQ,ATA_SR_DRQ,
+                           SELF->a_io_timeout);
+#else
    size_t copy_error;
    error = sem_timedwait(&b->b_signaled,jiffies+SELF->a_io_timeout);
-   if (E_ISOK(error))
-       error = ata_status_wait(SELF->a_ctrl,ATA_SR_DRQ,
-                               ATA_SR_DRQ,SELF->a_cm_timeout);
-   if (E_ISERR(error)) {
-    if (error == -ETIMEDOUT || error == -EIO)
-        goto cmd_end; /* The device didn't respond. */
-    goto abort;
+   if (E_ISOK(error)) {
+    error = ata_status_wait(SELF->a_ctrl,
+                            ATA_SR_DRQ,ATA_SR_DRQ,
+                            SELF->a_cm_timeout);
+   } else if (error == -ETIMEDOUT &&
+             (inb(SELF->a_ctrl)&ATA_SR_DRQ)) {
+    /* Lost IRQ? */
+    syslog(LOG_DEBUG,"[ATA] Re-enable IRQ after lost interrupt\n");
+    goto reset;
    }
-
-   /* All right! Now to actually read all that schweet data. */
-#ifdef WRITE
-   copy_error = outsw_user(SELF->a_iobase+ATA_DATA,buf,ATA_BLOCKSIZE/2);
-#else
-   copy_error = insw_user(SELF->a_iobase+ATA_DATA,buf,ATA_BLOCKSIZE/2);
 #endif
-   if (copy_error) { error = -EFAULT; goto abort; }
+   if (E_ISERR(error)) goto reset;
+
+#ifdef WRITE
+   /* Sadly, ATA needs an I/O pause when writing data... */
+   error = call_user_worker(&output_data_helper,2,self,buf);
+   if (E_ISERR(error)) goto reset;
+#else
+   /* All right! Now to actually read all that schweet data. */
+   copy_error = insw_user(SELF->a_iobase+ATA_DATA,buf,ATA_BLOCKSIZE/2);
+   if (copy_error) { error = -EFAULT; goto reset; }
+#endif
 
    *(uintptr_t *)&buf += ATA_BLOCKSIZE;
   } while (--part);
@@ -154,14 +200,6 @@ ATA_RDWR(struct blkdev *__restrict self, blkaddr_t block,
    outb(SELF->a_iobase+ATA_CMD,ATA_CMD_CACHE_FLUSH);
    ata_sleep(SELF->a_iobase);
 #endif /* WRITE */
-  __IF0 {
-abort:
-   /* Do a hard-reset on the bus to abort the command. */
-   outb(SELF->a_ctrl,ATA_CTRL_SRST);
-   ata_sleep(SELF->a_iobase);
-   outb(SELF->a_ctrl,0);
-   ata_sleep(SELF->a_iobase);
-  }
 cmd_end:
 
   assert(b->b_active == SELF);
@@ -172,6 +210,20 @@ cmd_end:
   if (E_ISERR(error)) return error;
  }
  return result;
+reset:
+ /* Do a hard-reset on the bus to abort the command. */
+ outb(SELF->a_ctrl,ATA_CTRL_SRST);
+ ata_sleep(SELF->a_iobase);
+ outb(SELF->a_ctrl,0);
+ ata_sleep(SELF->a_iobase);
+ if (error == -EFAULT)
+     goto cmd_end;
+ if (!did_reset) {
+  /* Try one more time after having reset the drive. */
+  did_reset = true;
+  goto try_again;
+ }
+ goto cmd_end;
 }
 #undef SELF
 
