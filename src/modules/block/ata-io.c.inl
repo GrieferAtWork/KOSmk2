@@ -53,7 +53,7 @@ PRIVATE ssize_t KCALL
 output_data_helper(ata_t *__restrict self,
                    USER u16 const *__restrict data) {
  size_t i = ATA_BLOCKSIZE/2;
- /* Sadly, ATA needs an I/O pause when writing data... */
+ /* Sadly, ATA needs an I/O pause when writing data, so no 'outsw_user()' here... */
  while (i--) outw_p(self->a_iobase+ATA_DATA,*data++);
  return 0;
 }
@@ -182,7 +182,7 @@ try_again:
    if (E_ISERR(error)) goto reset;
 
 #ifdef WRITE
-   /* Sadly, ATA needs an I/O pause when writing data... */
+   /* Sadly, ATA needs an I/O pause when writing data, so no 'outsw_user()' here... */
    error = call_user_worker(&output_data_helper,2,self,buf);
    if (E_ISERR(error)) goto reset;
 #else

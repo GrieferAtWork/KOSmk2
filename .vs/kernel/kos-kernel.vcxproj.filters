@@ -447,6 +447,9 @@
     <ClCompile Include="..\..\src\modules\linker\pdb-debug.c">
       <Filter>modules\linker</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\modules\video\vga.c">
+      <Filter>modules\video</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -650,9 +653,6 @@
     <ClInclude Include="..\..\src\modules\input\ps2_keymaps.h">
       <Filter>modules\input</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\modules\vga.h">
-      <Filter>include\modules</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\include\fs\pty.h">
       <Filter>include\fs</Filter>
     </ClInclude>
@@ -724,6 +724,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\modules\linker\pdb-debug.h">
       <Filter>modules\linker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\vga-tty.h">
+      <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\modules\vga.h">
+      <Filter>include\modules</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -846,7 +846,7 @@ core_page_alloc(size_t n_bytes, gfp_t flags) {
   while (result == PAGE_ERROR && MMAN_SWAPOK(mman_swapmem(n_bytes,flags)));
 #ifdef CONFIG_MALLOC_DEBUG_INIT
   if (result != PAGE_ERROR && !(flags&GFP_CALLOC))
-      mempatl(result,CONFIG_MALLOC_DEBUG_INIT,PAGESIZE);
+      mempatl(result,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
 #endif
  } else {
   PHYS struct mman *old_mman; bool has_write_lock = false;
@@ -1044,7 +1044,7 @@ PRIVATE MALIGNED bool KCALL
 mheap_isfree_l(struct mheap *__restrict self, void *p) {
  struct mfree *free_slot;
  CHECK_HOST_DOBJ(self);
-#if 1
+#if !MHEAP_RECURSIVE_LOCK
  if (!mheap_tryread(self)) return false;
 #else
  mheap_read(self);
@@ -1802,7 +1802,7 @@ PRIVATE void KCALL
 mheap_validate(struct dsetup *setup,
                struct mheap *__restrict self) {
  struct mfree **iter,**end,**pnode,*node;
-#if 0
+#if !MHEAP_RECURSIVE_LOCK
  if (!mheap_tryread(self)) return;
 #else
  mheap_read(self);
@@ -1938,9 +1938,9 @@ malloc_panic(struct dsetup *setup,
  va_end(args);
  if (setup) {
   debug_printf("%s(%d) : %s : [%s] : See reference to caller location\n",
-                     setup->s_info.i_file,setup->s_info.i_line,
-                     setup->s_info.i_func,
-                     setup->s_info.i_inst->i_module->m_name->dn_name);
+               setup->s_info.i_file,setup->s_info.i_line,
+               setup->s_info.i_func,
+               setup->s_info.i_inst->i_module->m_name->dn_name);
   debug_tbprint2(setup->s_tbebp,0);
  }
  if (info_header) {
@@ -1953,11 +1953,11 @@ malloc_panic(struct dsetup *setup,
                OK_HOST_TEXT(info_header->m_info.i_inst->i_module->m_name->dn_name,
                             info_header->m_info.i_inst->i_module->m_name->dn_size));
   debug_printf("%s(%d) : %s : [%.?s] : See reference to associated allocation\n",
-                     OK_HOST_TEXT(info_header->m_info.i_file,1) ? info_header->m_info.i_file : NULL,
-                     info_header->m_info.i_line,
-                     OK_HOST_TEXT(info_header->m_info.i_func,1) ? info_header->m_info.i_func : NULL,
-                     ok_module ? info_header->m_info.i_inst->i_module->m_name->dn_size : 0,
-                     ok_module ? info_header->m_info.i_inst->i_module->m_name->dn_name : NULL);
+               OK_HOST_TEXT(info_header->m_info.i_file,1) ? info_header->m_info.i_file : NULL,
+               info_header->m_info.i_line,
+               OK_HOST_TEXT(info_header->m_info.i_func,1) ? info_header->m_info.i_func : NULL,
+               ok_module ? info_header->m_info.i_inst->i_module->m_name->dn_size : 0,
+               ok_module ? info_header->m_info.i_inst->i_module->m_name->dn_name : NULL);
   atomic_rwlock_endread(&mptr_inst_lock);
 #endif
 #ifdef CONFIG_MALLOC_TRACEBACK
@@ -1983,6 +1983,7 @@ malloc_panic(struct dsetup *setup,
 
  debug_printf("\n");
 #if 1
+ __NAMESPACE_INT_SYM
  __afail("MALL PANIC",__DEBUGINFO_NUL);
 #else
  PREEMPTION_FREEZE();

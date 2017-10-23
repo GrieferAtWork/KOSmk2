@@ -16,47 +16,43 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef __GUARD_HYBRID_KDEV_T_H
-#define __GUARD_HYBRID_KDEV_T_H 1
+#ifndef GUARD_INCLUDE_MODULES_VGA_TTY_H
+#define GUARD_INCLUDE_MODULES_VGA_TTY_H 1
 
 #include <hybrid/compiler.h>
-#include <bits/types.h>
+#include <hybrid/types.h>
+#include <hybrid/kdev_t.h>
 
 DECL_BEGIN
 
-#ifndef __dev_t_defined
-#define __dev_t_defined 1
-typedef __typedef_dev_t dev_t;
-#endif /* !__dev_t_defined */
+typedef u16 vtty_char_t;
+#define VTTY_COLOR_BLACK          0
+#define VTTY_COLOR_BLUE           1
+#define VTTY_COLOR_GREEN          2
+#define VTTY_COLOR_CYAN           3
+#define VTTY_COLOR_RED            4
+#define VTTY_COLOR_MAGENTA        5
+#define VTTY_COLOR_BROWN          6
+#define VTTY_COLOR_LIGHT_GREY     7
+#define VTTY_COLOR_DARK_GREY      8
+#define VTTY_COLOR_LIGHT_BLUE     9
+#define VTTY_COLOR_LIGHT_GREEN    10
+#define VTTY_COLOR_LIGHT_CYAN     11
+#define VTTY_COLOR_LIGHT_RED      12
+#define VTTY_COLOR_LIGHT_MAGENTA  13
+#define VTTY_COLOR_LIGHT_BROWN    14
+#define VTTY_COLOR_WHITE          15
+#define VTTY_COLORS               16
+#define vtty_entry_color(fg,bg) ((fg)|(bg) << 4)
+#define vtty_entry(uc,color)    ((vtty_char_t)(uc)|(vtty_char_t)(color) << 8)
 
-#ifndef __major_t_defined
-#define __major_t_defined 1
-typedef __major_t   major_t;
-#endif /* !__major_t_defined */
-
-#ifndef __minor_t_defined
-#define __minor_t_defined 1
-typedef __minor_t   minor_t;
-#endif /* !__minor_t_defined */
-
-#define MINORBITS    20
-#define MAJORBITS    12
-#define MINORMASK  ((1 << MINORBITS)-1)
-#define MAJORMASK  ((1 << MAJORBITS)-1)
-
-#define MAJOR(dev)   ((dev) >> MINORBITS)
-#define MINOR(dev)   ((dev) &  MINORMASK)
-#define MKDEV(ma,mi) ((ma) << MINORBITS | (mi))
-
-
-/* KOS non-standard device mappings (major numbers 0x100-0x1ff) */
-#define DV_JIFFY_RTC      MKDEV(0x100,0) /* The default RTC synchronized using jiffies. */
-#define DV_PS2_KEYBOARD   MKDEV(0x101,0) /* KOS character device for the PS2-compliant keyboards. */
-#define DV_ETHERNET       MKDEV(0x102,0) /* KOS character device for ethernet adapters. */
-#define DV_VGA            MKDEV(0x103,0) /* KOS vga driver. */
-#define DV_VGATTY         MKDEV(0x104,0) /* Device number used for the low-level vga tty driver. */
-
+#define VTTY_DEFAULT_COLOR        vtty_entry_color(VTTY_COLOR_LIGHT_GREY,VTTY_COLOR_BLACK)
+#define VTTY_ADDR               ((vtty_char_t *)phys_to_virt(0xB8000))
+#define VTTY_WIDTH                80
+#define VTTY_HEIGHT               25
+#define VTTY_TABSIZE               4
+#define VTTY_ENDADDR            (VTTY_ADDR+(VTTY_WIDTH*VTTY_HEIGHT))
 
 DECL_END
 
-#endif /* !__GUARD_HYBRID_KDEV_T_H */
+#endif /* !GUARD_INCLUDE_MODULES_VGA_TTY_H */

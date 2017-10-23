@@ -114,6 +114,7 @@
 #define HOST                __HOST         /* Annotation for kernel-space memory (default within kernel). */
 #define VIRT                __VIRT         /* Annotation for virtual memory (default). */
 #define PHYS                __PHYS         /* Annotation for physical memory. */
+#define MMIO                __MMIO         /* Annotation for memory-mapped I/O-port pointers. */
 #define CRIT                __CRIT         /* Annotation for functions that require 'TASK_ISCRIT()' (When called from within the kernel). */
 #define SAFE                __SAFE         /* Annotation for functions that require 'TASK_ISSAFE()' (When called from within the kernel). */
 #define NOMP                __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */

@@ -45,7 +45,8 @@ local config_disk_size  = 16*1024*1024; /* 16Mib */
 local run_mode_bochs    = false; /* Use BOCHS as emulator. */
 local run_mode_run_only = false; /* Skip compilation and only run the emulator. */
 local run_bochs_binary  = "bochs"; /* If existing & older, copy generated kernel binary here. */
-local run_qemu_binary   = "qemu-system-i386"; /*  */
+local run_qemu_binary   = "qemu-system-i386";
+local run_qemu_binary   = "qemu-system-x86_64";
 local run_mode_remote   = false; /* --remote */
 local run_mode_usb      = false; /* --usb */
 local run_mode_hosted   = true; /* --hosted */
@@ -114,10 +115,12 @@ local executables = dict {
 	"bochs"              : "D:\\Bochs-2.6.8\\bochs.exe",
 	"bochsdbg"           : "D:\\Bochs-2.6.8\\bochsdbg.exe",
 	"qemu-system-i386"   : "D:\\qemu\\qemu-system-i386.exe",
+	"qemu-system-x86_64" : "D:\\qemu\\qemu-system-x86_64.exe",
 #else
 	"bochs"              : "bochs",
 	"bochsdbg"           : "bochsdbg",
 	"qemu-system-i386"   : "qemu-system-i386",
+	"qemu-system-x86_64" : "qemu-system-x86_64",
 #endif
 };
 
@@ -950,18 +953,18 @@ function must_update_flat_kernel() {
 	}
 	return false;
 }
-function update_flat_kernel() {
-	if (::config_generate_preprocessor) return;
-	if (::config_generate_assembly) return;
-	if (must_update_flat_kernel()) {
-		print "Updating flat kernel image";
-		local update = process("bin/apps/elfimg");
-		update.stdin = file.open(run_kernel_binary,"r");
-		update.stdout = file.open(run_kernel_flat,"w");
-		update.start();
-		update.join();
-	}
-}
+//function update_flat_kernel() {
+//	if (::config_generate_preprocessor) return;
+//	if (::config_generate_assembly) return;
+//	if (must_update_flat_kernel()) {
+//		print "Updating flat kernel image";
+//		local update = process("bin/apps/elfimg");
+//		update.stdin = file.open(run_kernel_binary,"r");
+//		update.stdout = file.open(run_kernel_flat,"w");
+//		update.start();
+//		update.join();
+//	}
+//}
 
 
 local disk_ops = [];
@@ -1267,7 +1270,7 @@ function run_addr2line(addr) {
 }
 
 function run_bochs() {
-	update_flat_kernel();
+	//update_flat_kernel();
 	local bochs = process(executables[run_bochs_binary],[
 		"-q","-f","bochsrc.bxrc"
 	]);

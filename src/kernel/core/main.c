@@ -497,6 +497,7 @@ kernel_boot(u32        mb_magic,
 
  /* --- SPLIT: Modules below are mostly optional. */
  /* TODO: These shouldn't be loaded here... */
+ kinsmod("/mod/ata");
  kinsmod("/mod/procfs");
  kinsmod("/mod/shebang");
  kinsmod("/mod/pe");
@@ -505,7 +506,7 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/elf-debug");
  kinsmod("/mod/pdb-debug");
  //kinsmod("/mod/ne2000");
- kinsmod("/mod/ata");
+ kinsmod("/mod/vga");
 
  /* TODO: Actual locale support? */
 

@@ -155,8 +155,10 @@ FUNDEF SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags);
                            *  NOTE: All memory allocate by this heap is located below 'KERNEL_BASE'. */
 #define GFP_MEMORY 0x0004 /*< [KPD] Directly allocate physical memory.
                            *  NOTE: This flag implies 'GFP_INCORE' behavior, but does
-                           *        not create mman mappings, meaning it must also
-                           *        be used to allocate mman parts/regions/branches. */
+                           *        not create mman mappings, meaning it must be
+                           *        used to allocate mman parts/regions/branches.
+                           *  Instead, memory allocated by this heap features a one-on-one
+                           *  mapping of virtual to physical memory (at least in 'mman_kernel') */
 /*      GFP_...... 0x0008  */
 #define __GFP_HEAPCOUNT 5 /*< Amount of different heaps used by the kernel (Use the above macros to address them). */
 
@@ -181,7 +183,7 @@ FUNDEF SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags);
 #define GFP_CALLOC 0x0010 /*< Zero-initialize newly allocated memory. */
 /*      GFP_...... 0x00e0  *  Unused memory attribute flags. */
 #define GFP_NOTRIM 0x0100 /*< Don't trim kernel heaps to free up more memory.
-                           *  NOTE: Any heap currently locked will not be trimmed! */
+                           *  NOTE: Any heap currently locked will not be trimmed regardless! */
 #define GFP_NOSWAP 0x0200 /*< Don't initialize any kind of I/O during swap.
                            *  NOTE: 'GFP_NOFS' only prevents write-mapped files from
                            *         being synched, while this flag is required to
@@ -194,7 +196,7 @@ FUNDEF SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags);
 #ifdef CONFIG_MALLOC_NO_FREQUENCY
 #define GFP_NOFREQ 0x0000 /*< Ignored... */
 #else
-#define GFP_NOFREQ 0x1000 /*< Don't spin the malloc frequency edge trigger. - Must be used by functions that may called during a page fault. */
+#define GFP_NOFREQ 0x1000 /*< Don't spin the malloc frequency edge trigger. - Must be used by functions that may be called during a page fault. */
 #endif
 #define GFP_ATOMIC 0x2000 /*< Don't preempt, or sleep when waiting for locks. - Spin atomic locks, and fail for all others. */
 #define GFP_RQUSER 0x4000 /*< Allocate on behalf of the user (fail when exceeding their allocation quota). */

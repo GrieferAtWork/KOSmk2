@@ -39,7 +39,6 @@
 #include <modules/bios-disk.h>
 #include <modules/memdev.h>
 #include <modules/ps2.h>
-#include <modules/vga.h>
 #include <fs/pty.h>
 
 
@@ -94,7 +93,8 @@ PRIVATE struct devname const dnam_chr[] = {
     {MD_URANDOM,          1, DN_INT,"urandom"},
     {MD_AIO,              1, DN_INT,"aio"},
     {MD_KMSG,             1, DN_INT,"kmsg"},
-    {VGA_TTY,             1, DN_INT,"vga-tty"},
+    {DV_VGA,              1, DN_INT,"vga"},
+    {DV_VGATTY,           1, DN_INT,"vga-tty"},
     {DV_PS2_KEYBOARD,     1, DN_INT,"keyboard"},
     {DV_JIFFY_RTC,        1, DN_INT,"rtc"},
     {DV_ETHERNET,         1, DN_INT|DN_ALL,"eth"},

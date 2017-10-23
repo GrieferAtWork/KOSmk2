@@ -24,7 +24,7 @@
 #include <hybrid/types.h>
 #include <stddef.h>
 #include <hybrid/atomic.h>
-#include <modules/vga.h>
+#include <modules/vga-tty.h>
 
 DECL_BEGIN
 

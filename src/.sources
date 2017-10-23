@@ -21,7 +21,7 @@ BEGIN
 	INCLUDE("include")
 	DEFINE("__KERNEL__")
 	DEFINE("CONFIG_SMP")
-	DEFINE("CONFIG_USE_EXTERNAL_ADDR2LINE")
+	//DEFINE("CONFIG_USE_EXTERNAL_ADDR2LINE")
 	//C_FLAGS("-momit-lock-prefix=no") /* Enable when 'CONFIG_SMP' is disabled. */
 	if (config_debug) {
 		DEFINE("CONFIG_DEBUG")
@@ -135,7 +135,7 @@ BEGIN
 						set_file_changed(KERNEL_SYMBOL_TABLE);
 						_proj._relink = true;
 					} else {
-						update_flat_kernel();
+						//update_flat_kernel();
 					}
 				});
 			})
@@ -169,7 +169,6 @@ BEGIN
 			SOURCE("kernel/core-modules/io/tty.c")
 			/* Must be installed before disk drivers! */
 			SOURCE("kernel/core-modules/autopart/mbr.c")
-//			SOURCE("kernel/core-modules/disk/ata.c")
 			SOURCE("kernel/core-modules/disk/bios-disk.c")
 			SOURCE("kernel/core-modules/fs/fat.c")
 			SOURCE("kernel/core-modules/linker/elf.c")
@@ -197,6 +196,7 @@ BEGIN
 	BEGIN BASIC_MODULE("memdev")       SOURCE("modules/char/memdev.c")         END
 	BEGIN BASIC_MODULE("ata")          SOURCE("modules/block/ata.c")           END
 	BEGIN BASIC_MODULE("procfs")       SOURCE("modules/fs/proc/*.c")           END
+	BEGIN BASIC_MODULE("vga")          SOURCE("modules/video/vga.c")           END
 	BEGIN BASIC_MODULE("vga-tty")      SOURCE("modules/video/vga-tty.c")       END
 	BEGIN BASIC_MODULE("pe")           SOURCE("modules/linker/pe.c")           END
 	BEGIN BASIC_MODULE("shebang")      SOURCE("modules/linker/shebang.c")      END

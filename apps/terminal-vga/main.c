@@ -43,7 +43,7 @@
 #include <unistd.h>
 
 #include "libterm.h"
-#include "../../src/include/modules/vga.h"
+#include "../../src/include/modules/vga-tty.h"
 
 
 DECL_BEGIN

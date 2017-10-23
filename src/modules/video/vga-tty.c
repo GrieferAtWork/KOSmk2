@@ -25,7 +25,7 @@
 #include <kernel/export.h>
 #include <malloc.h>
 #include <modules/tty.h>
-#include <modules/vga.h>
+#include <modules/vga-tty.h>
 #include <fs/inode.h>
 #include <kernel/mman.h>
 #include <hybrid/align.h>
@@ -67,7 +67,7 @@ PRIVATE MODULE_INIT errno_t KCALL vga_init(void) {
  dev->cd_device.d_node.i_ops = &vga_ops;
  error = device_setup(&dev->cd_device,THIS_INSTANCE);
  if (E_ISERR(error)) goto err;
- CHRDEV_REGISTER(dev,VGA_TTY);
+ CHRDEV_REGISTER(dev,DV_VGATTY);
  CHRDEV_DECREF(dev);
  return -EOK;
 err:

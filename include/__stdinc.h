@@ -433,6 +433,7 @@ struct _IO_FILE;
 #define __HOST         /* Annotation for kernel-space memory (default within kernel). */
 #define __VIRT         /* Annotation for virtual memory (default). */
 #define __PHYS         /* Annotation for physical memory. */
+#define __MMIO         /* Annotation for memory-mapped I/O-port pointers. */
 #define __CRIT         /* Annotation for functions that require 'TASK_ISCRIT()' (When called from within the kernel). */
 #define __SAFE         /* Annotation for functions that require 'TASK_ISSAFE()' (When called from within the kernel). */
 #define __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */
