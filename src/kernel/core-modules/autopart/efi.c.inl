@@ -184,10 +184,16 @@ efi_autopart_at(struct blkdev *__restrict self,
 #endif
 
    /* Create the new partition. */
-   dp = blkdev_mkpart(self,GPT_ADDR(BSWAP_LE2H64(part.p_part_min)),
-                      BSWAP_LE2H64(part.p_part_max)-
-                      BSWAP_LE2H64(part.p_part_min),
-                      dp_sysid,result);
+   { char name[COMPILER_LENOF(part.p_name)+1],*dst; le16 *src;
+     name[COMPILER_LENOF(part.p_name)] = '\0';
+     src = part.p_name,dst = name;
+     /* Convert the partition name (XXX: in-kernel Unicode support? Libc already has it...) */
+     for (; src != COMPILER_ENDOF(part.p_name); ++src,++dst)
+           *dst = (char)BSWAP_LE2H16(*src);
+     dp = blkdev_mkpart(self,GPT_ADDR(BSWAP_LE2H64(part.p_part_min)),
+                        BSWAP_LE2H64(part.p_part_max)-BSWAP_LE2H64(part.p_part_min),
+                        dp_sysid,result,name,(u8 *)&part.p_part_guid,sizeof(guid_t));
+   }
    if (E_ISERR(dp)) { temp = E_GTERR(dp); goto end; }
 
    /* Mark the device as read-only if requested, to. */
@@ -195,8 +201,8 @@ efi_autopart_at(struct blkdev *__restrict self,
        dp->dp_device.bd_device.d_node.i_state |= INODE_STATE_READONLY;
 
    syslog(LOG_FS|LOG_INFO,
-          "[EFI] Created partition #%d: %.36Ls (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes%s; system %I32x)\n",
-         (int)DISKPART_ID(dp),part.p_name,dp->dp_device.bd_device.d_id,
+          "[EFI] Created partition #%d: %q (%[dev_t]) for %I64u...%I64u of %[dev_t] (%I64ux%Iu bytes%s; system %I32x)\n",
+         (int)DISKPART_ID(dp),dp->dp_name,dp->dp_device.bd_device.d_id,
          (u64)(dp->dp_start),
          (u64)(dp->dp_start+dp->dp_device.bd_blockcount),
                dp->dp_ref->bd_device.d_id,

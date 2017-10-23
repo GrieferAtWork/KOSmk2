@@ -35,6 +35,7 @@
 #include <malloc.h>
 #include <sched/task.h>
 #include <sync/rwlock.h>
+#include <string.h>
 
 DECL_BEGIN
 
@@ -59,9 +60,9 @@ diskpart_write(struct blkdev *__restrict self, blkaddr_t block,
 
 
 FUNDEF SAFE REF struct diskpart *KCALL
-blkdev_mkpart(struct blkdev *__restrict self,
-              blkaddr_t start, blkaddr_t size,
-              blksys_t sysid, size_t partid) {
+blkdev_mkpart(struct blkdev *__restrict self, blkaddr_t start,
+              blkaddr_t size, blksys_t sysid, size_t partid,
+              char const *name, void const *__restrict diskid, u8 ndiskid) {
  REF struct diskpart *result; errno_t error;
  dev_t partno; struct diskpart **ppart,*part;
  result = (REF struct diskpart *)blkdev_new(sizeof(struct diskpart));
@@ -104,6 +105,12 @@ blkdev_mkpart(struct blkdev *__restrict self,
  result->dp_device.bd_system     = sysid;
  result->dp_start                = start;
  result->dp_ref                  = self;
+
+ /* Copy name and disk ID information. */
+ if (name) memcpy(result->dp_name,name,strnlen(name,DISPART_MAXNAME));
+ result->dp_uidlen = MIN(ndiskid,DISPART_MAXUID);
+ memcpy(result->dp_uid,diskid,result->dp_uidlen);
+
  BLKDEV_INCREF(self);
  /* Setup the block device for use.
   * NOTE: Use the same module as the underlying block-device as owner. */

@@ -20,6 +20,8 @@
 #define __GUARD_HYBRID_GUID_H 1
 
 #include "compiler.h"
+#include "types.h"
+#include "byteswap.h"
 
 #ifdef __CC__
 DECL_BEGIN

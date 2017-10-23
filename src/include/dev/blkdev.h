@@ -250,6 +250,8 @@ blkdev_find_partition(struct blkdev *__restrict self,
                       blksys_t mask, blksys_t type);
 
 
+#define DISPART_MAXNAME     46 /* Max length of a partition name. */
+#define DISPART_MAXUID      16 /* Max length of a partition name. */
 
 struct diskpart {
  struct blkdev              dp_device; /*< Underlying block-device. */
@@ -259,6 +261,16 @@ struct diskpart {
                                         *   Sorted chain of partitions.
                                         *   WARNING: Disk partition devices may not be linked
                                         *            at times, even though 'dp_ref' always is. */
+ /* Partition identification. */
+ char dp_name[DISPART_MAXNAME];        /*< [const] ZERO-terminated human-readable partition name, or an empty string if unknown/undefined. */
+ char dp_zero;                         /*< [const] Always ZERO to ensure ZERO-termination of 'dp_name' */
+ u8   dp_uidlen;                       /*< [const][<= DISPART_MAXUID] Length of the partition UID (Or ZERO if unknown).
+                                        *   HINT: EFI partitions simply use 'p_part_guid', as that's its purpose,
+                                        *         but MBR partitions use data collected from the partition entry
+                                        *         as the entry itself does not come with this kind of information
+                                        *         naturally. */
+ u8   dp_uid[DISPART_MAXUID];          /*< [const] Partition UID (May be used for identifying this specific partition).
+                                        *   WARNING: Should be, but may not necessarily be universally unique... */
 };
 #define BLKDEV_TOPART(self) ((struct diskpart *)(self))
 
@@ -284,7 +296,11 @@ struct diskpart {
  * @param: start:    The first block apart of the partition.
  * @param: size:     The amount of blocks apart of the partition.
  * @param: sysid:    One of 'BLKSYS_*', optionally or'd with flags describing the kind of partition.
- * @param: partid:   The id of the partition to-be created (effects order with the block-devices )
+ * @param: partid:   The id of the partition to-be created (affects order with the block-devices)
+ * @param: name:     The human-readable, \0-terminated name of the partition, or NULL/empty string if unknown/undefined.
+ * @param: diskid:   Pointer to a block of data that uniquely identifies the partition (or as good as possible)
+ *                   NOTE: This argument is ignored when 'ndiskid' is ZERO(0).
+ * @param: ndiskid:  The length of 'diskid' in bytes (Truncated to 'DISPART_MAXUID' if greater)
  * @return: * :      A reference to a newly allocated disk-partition device.
  *             NOTE: Since the partition is also allocate within the block-device namespace,
  *                   the caller is safe to decref() this pointer without needing to do
@@ -292,9 +308,10 @@ struct diskpart {
  * @return: -EEXIST: The given block-device 'self' already contained a partition at 'partid'
  * @return: -EPERM:  The module instance associated with 'self' doesn't permit new references being created.
  * @return: -ENOMEM: Not enough available memory. */
-FUNDEF SAFE REF struct diskpart *KCALL blkdev_mkpart(struct blkdev *__restrict self,
-                                                     blkaddr_t start, blkaddr_t size,
-                                                     blksys_t sysid, size_t partid);
+FUNDEF SAFE REF struct diskpart *KCALL
+blkdev_mkpart(struct blkdev *__restrict self, blkaddr_t start,
+              blkaddr_t size, blksys_t sysid, size_t partid,
+              char const *name, void const *__restrict diskid, u8 ndiskid);
 
 /* Automatically partition the given block-device, registering partitions.
  * WARNING: The caller is responsible for registering the given block-device

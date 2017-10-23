@@ -537,7 +537,6 @@ blkdev_read(struct blkdev *__restrict self, pos_t offset,
  if (BLKDEV_ISLOOPBACK(self))
      return file_pread(self->bd_loopback,buf,bufsize,offset);
  /* Override: Read using the partition base drive. */
-#if 0 /* TODO: This breaks if the partition isn't located at offset ZERO(0) */
  if (BLKDEV_ISPART(self)) {
   pos_t partsize = BLKDEV_TOPART(self)->dp_device.bd_blockcount*
                    BLKDEV_TOPART(self)->dp_device.bd_blocksize;
@@ -545,10 +544,10 @@ blkdev_read(struct blkdev *__restrict self, pos_t offset,
        bufsize = MIN(bufsize,partsize-offset);
   else bufsize = 0;
   return blkdev_read(BLKDEV_TOPART(self)->dp_ref,
-                     BLKDEV_TOPART(self)->dp_start+
+                     BLKDEV_TOPART(self)->dp_start*
+                     BLKDEV_TOPART(self)->dp_device.bd_blocksize+
                      offset,buf,bufsize);
  }
-#endif
  if unlikely(!bufsize) return 0;
  result = rwlock_read(&self->bd_buffer.bs_lock);
  if (E_ISERR(result)) return result;
@@ -744,7 +743,6 @@ blkdev_write(struct blkdev *__restrict self, pos_t offset,
  if (BLKDEV_ISLOOPBACK(self))
      return file_pwrite(self->bd_loopback,buf,bufsize,offset);
  /* Override: Write using the partition base drive. */
-#if 0 /* TODO: This breaks if the partition isn't located at offset ZERO(0) */
  if (BLKDEV_ISPART(self)) {
   pos_t partsize = BLKDEV_TOPART(self)->dp_device.bd_blockcount*
                    BLKDEV_TOPART(self)->dp_device.bd_blocksize;
@@ -752,10 +750,10 @@ blkdev_write(struct blkdev *__restrict self, pos_t offset,
        bufsize = MIN(bufsize,partsize-offset);
   else bufsize = 0;
   return blkdev_write(BLKDEV_TOPART(self)->dp_ref,
-                      BLKDEV_TOPART(self)->dp_start+
+                      BLKDEV_TOPART(self)->dp_start*
+                      BLKDEV_TOPART(self)->dp_device.bd_blocksize+
                       offset,buf,bufsize);
  }
-#endif
 #if 0
  syslog(LOG_FS|LOG_INFO,"BLKDEV_WRITE(%I64u,%p,%Iu) (%$q)\n",offset,buf,bufsize,bufsize,buf);
 #endif
@@ -1021,12 +1019,17 @@ replace_drive_users(struct blkdev *__restrict old_drive,
  }
 
  /* Replace the disk-buffer of the new drive with that of the old. */
- new_drive->bd_buffer.bs_bufc = new_drive->bd_buffer.bs_bufc;
- new_drive->bd_buffer.bs_bufa = new_drive->bd_buffer.bs_bufa;
- new_drive->bd_buffer.bs_bufv = new_drive->bd_buffer.bs_bufv;
+ new_drive->bd_buffer.bs_bufc = old_drive->bd_buffer.bs_bufc;
+ new_drive->bd_buffer.bs_bufa = old_drive->bd_buffer.bs_bufa;
+ new_drive->bd_buffer.bs_bufv = old_drive->bd_buffer.bs_bufv;
  /* Make sure that buffer limits remain valid by potentially raising them. */
  if (new_drive->bd_buffer.bs_bufm < new_drive->bd_buffer.bs_bufa)
      new_drive->bd_buffer.bs_bufm = new_drive->bd_buffer.bs_bufa;
+
+ /* Make sure to mark the old drive as being unused. */
+ old_drive->bd_buffer.bs_bufc = 0;
+ old_drive->bd_buffer.bs_bufa = 0;
+ old_drive->bd_buffer.bs_bufv = NULL;
 
  rwlock_read(&fs_mountlock);
  FS_FOREACH_MOUNT(mount) {
@@ -1179,10 +1182,18 @@ use_olddisk:
   /* The partition of the old BIOS-drive may be smaller because it
    * may have been truncated in the event that it exceeds the maximum
    * addressable storage location supported by the BIOS.
-   * Therefor we can only abort if the old partition was actually larger than it should be.
-   */
+   * Therefor we can only abort if the old partition was actually larger than it should be. */
   if (old_part->dp_device.bd_blockcount*old_part->dp_device.bd_blocksize >
       new_part->dp_device.bd_blockcount*new_part->dp_device.bd_blocksize)
+      goto not_the_same_parts;
+
+  /* With the new name and uid fields added, we can now check more stuff,
+   * including EFI's partition GUID field with was intended for this exact purpose! */
+  if (old_part->dp_uidlen != new_part->dp_uidlen ||
+      memcmp(old_part->dp_uid,new_part->dp_uid,old_part->dp_uidlen) != 0)
+      goto not_the_same_parts;
+  /* Also check partition names (You never know...) */
+  if (strcmp(old_part->dp_name,new_part->dp_name) != 0)
       goto not_the_same_parts;
 
   ++old_num_parts;

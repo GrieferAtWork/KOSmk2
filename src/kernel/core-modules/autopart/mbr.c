@@ -99,11 +99,19 @@ mbr_autopart(struct blkdev *__restrict self,
     *       partition limit, thus allowing the EFI partition to grow beyond. */
    temp = efi_autopart_at(self,start,max_parts);
    /* NOTE: If EFI failed to load anything, still create a regular partition. */
-   if (E_ISERR(temp)) syslog(LOG_WARN,"[MBR] Failed to load EFI partition table: %[errno]\n",EINVAL);
+   if (E_ISERR(temp)) syslog(LOG_WARN,"[MBR] Failed to load EFI partition table: %[errno]\n",(errno_t)-temp);
    if (temp != 0 && temp != -EINVAL) goto done_load;
    if (temp == 0) syslog(LOG_INFO,"[MBR] Loading empty EFI partition table as MBR partition\n");
   }
-  part = blkdev_mkpart(self,start,size,sysid,result);
+  /* NOTE: Although MBR partitions don't have names, we can
+   *       still use the partitions table entry itself as UUID.
+   *    >> As a matter of fact: 'union part' is 16 bytes long,
+   *       which is the same size of a single EFI guid identifier...
+   *       It still won't be perfect, but it sure as hell improves
+   *       the odds of identifying duplicate disks once the boot
+   *       process starts trying to get rid of the BIOS boot disk. */
+  part = blkdev_mkpart(self,start,size,sysid,result,
+                       NULL,iter,sizeof(union part));
   if (E_ISERR(part)) { temp = E_GTERR(part); goto end; }
 
   /* Log creation of the partition. */
