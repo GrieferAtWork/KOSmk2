@@ -220,12 +220,16 @@ __LIBC char **environ;
 #endif /* !__NO_ASMNAME */
 #endif /* !____environ_defined */
 
-__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execl);
-__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execle)(char const *__path, char const *__args, ...) __UFS_FUNC_OLDPEA(execle);
-__LIBC __NONNULL((1,2)) __ATTR_SENTINEL int (__ATTR_CDECL execlp)(char const *__file, char const *__args, ...) __PE_FUNC_OLDPEA(execlp);
-__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2)),int,__LIBCCALL,execv,(char const *__path, __TARGV),execv,(__path,___argv))
-__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2)),int,__LIBCCALL,execve,(char const *__path, __TARGV, __TENVP),execve,(__path,___argv,___envp))
-__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2)),int,__LIBCCALL,execvp,(char const *__file, __TARGV),execvp,(__path,___argv))
+#ifndef __execl_defined
+#define __execl_defined 1
+__LIBC __NONNULL((1)) __ATTR_SENTINEL int (__ATTR_CDECL execl)(char const *__restrict __path, char const *__args, ...) __UFS_FUNC_OLDPEA(execl);
+__LIBC __NONNULL((1)) __ATTR_SENTINEL_O(1) int (__ATTR_CDECL execle)(char const *__restrict __path, char const *__args, ...) __UFS_FUNC_OLDPEA(execle);
+__LIBC __NONNULL((1)) __ATTR_SENTINEL int (__ATTR_CDECL execlp)(char const *__restrict __file, char const *__args, ...) __PE_FUNC_OLDPEA(execlp);
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2)),int,__LIBCCALL,execv,(char const *__restrict __path, __TARGV),execv,(__path,___argv))
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2,3)),int,__LIBCCALL,execve,(char const *__restrict __path, __TARGV, __TENVP),execve,(__path,___argv,___envp))
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2)),int,__LIBCCALL,execvp,(char const *__restrict __file, __TARGV),execvp,(__path,___argv))
+#endif /* !__execl_defined */
+
 __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__WUNUSED,__pid_t,__LIBCCALL,getpid,(void),getpid,())
 
 #ifdef __DOS_COMPAT__
@@ -433,7 +437,10 @@ __LIBC char **environ;
 #endif /* __PE__ || __USE_KOS */
 #endif /* !__DOS_COMPAT__ */
 #endif /* !__environ_defined */
-__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2)),int,__LIBCCALL,execvpe,(char const *__file, __TARGV, __TENVP),execvpe,(__FILE,___argv,___envp))
+#ifndef __execvpe_defined
+#define __execvpe_defined 1
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2,3)),int,__LIBCCALL,execvpe,(char const *__file, __TARGV, __TENVP),execvpe,(__file,___argv,___envp))
+#endif /* !__execvpe_defined */
 #ifdef __DOS_COMPAT__
 __LOCAL int (__LIBCCALL pipe2)(int __pipedes[2], int __flags) { return __dos_pipe(__pipedes,4096,0x8000|__flags); }
 __LOCAL int (__LIBCCALL dup3)(int __fd, int __fd2, int __UNUSED(__flags)) { return __fd != __fd2 ? dup2(__fd,__fd2) : -1; }
@@ -503,6 +510,8 @@ __LIBC __PORT_NODOS_ALT(execve) __NONNULL((2)) int (__LIBCCALL fexecve)(int __fd
 #endif /* __USE_XOPEN2K8 */
 
 #ifdef __USE_KOS
+#ifndef __execlpe_defined
+#define __execlpe_defined 1
 #ifdef __GLC_COMPAT__
 __LOCAL __NONNULL((1)) __ATTR_SENTINEL
 int (__ATTR_CDECL execlpe)(char const *__file, char const *__args, ...) {
@@ -511,9 +520,9 @@ int (__ATTR_CDECL execlpe)(char const *__file, char const *__args, ...) {
 }
 #else /* __GLC_COMPAT__ */
 /* TODO: Use redirection. */
-__LIBC __NONNULL((1)) __ATTR_SENTINEL
-int (__ATTR_CDECL execlpe)(char const *__file, char const *__args, ...) __UFS_FUNC_OLDPEA(execlpe);
+__LIBC __NONNULL((1)) __ATTR_SENTINEL_O(1) int (__LIBCCALL execlpe)(char const *__restrict __file, char const *__args, ...) __UFS_FUNC_OLDPEA(execlpe);
 #endif /* !__GLC_COMPAT__ */
+#endif /* !__execlpe_defined */
 
 #ifdef __CRT_KOS
 /* TODO: When linking against GLibc, we could redirect these against 'fexecve' */
@@ -644,7 +653,8 @@ __LIBC __PORT_NODOS __WUNUSED char *(__LIBCCALL getusershell)(void);
 __LIBC __PORT_NODOS void (__LIBCCALL endusershell)(void);
 __LIBC __PORT_NODOS void (__LIBCCALL setusershell)(void);
 __LIBC __PORT_NODOS int (__LIBCCALL daemon)(int __nochdir, int __noclose);
-#if defined(__USE_KOS) && defined(__CRT_KOS) /* Execute a system call returning in both EAX and EDX */
+#if defined(__USE_KOS) && defined(__CRT_KOS)
+/* Execute a system call, returning in both EAX and EDX */
 #ifdef __NO_ASMNAME
 __LIBC __PORT_NODOS long long int (__ATTR_CDECL syscall)(long int __sysno, ...);
 #define lsyscall(__VA_ARGS__)             (syscall)(__VA_ARGS__)
@@ -661,8 +671,8 @@ __LIBC __PORT_NODOS long int (__ATTR_CDECL syscall)(long int __sysno, ...);
 #if defined(__USE_MISC) || \
    (defined(__USE_XOPEN) && !defined(__USE_XOPEN2K))
 __REDIRECT_UFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,
-               chroot,(char const *__path),chroot,(__path))
-__LIBC __PORT_NODOS __WUNUSED __NONNULL((1)) char *(__LIBCCALL getpass)(char const *__prompt);
+               chroot,(char const *__restrict __path),chroot,(__path))
+__LIBC __PORT_NODOS __WUNUSED __NONNULL((1)) char *(__LIBCCALL getpass)(char const *__restrict __prompt);
 #endif
 #endif /* __CRT_GLC */
 

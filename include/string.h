@@ -89,8 +89,8 @@ __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strcpy)(char *__rest
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strncpy)(char *__restrict __dst, char const *__restrict __src, size_t __n);
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strcat)(char *__restrict __dst, char const *__restrict __src);
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strncat)(char *__restrict __dst, char const *__restrict __src, size_t __n);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strcoll)(char const *__s1, char const *__s2);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL strxfrm)(char *__restrict __dst, char const *__restrict __src, size_t __n);
+__LIBC __WUNUSED __NONNULL((1,2)) int (__LIBCCALL strcoll)(char const *__s1, char const *__s2);
+__LIBC __NONNULL((2)) size_t (__LIBCCALL strxfrm)(char *__dst, char const *__restrict __src, size_t __n);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL strcspn)(char const *__s, char const *__reject);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL strspn)(char const *__s, char const *__accept);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strpbrk)(char const *__s, char const *__accept);
@@ -153,8 +153,8 @@ __NAMESPACE_STD_USING(strrchr)
 
 
 #if defined(__USE_KOS) && (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
-__LIBC __PORT_KOSONLY __WUNUSED char const *(__LIBCCALL strerror_s)(int __errnum);
-__LIBC __PORT_KOSONLY __WUNUSED char const *(__LIBCCALL strerrorname_s)(int __errnum);
+__LIBC __PORT_KOSONLY __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerror_s)(int __errnum);
+__LIBC __PORT_KOSONLY __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerrorname_s)(int __errnum);
 #endif /* __USE_KOS && __CRT_KOS */
 #ifndef __KERNEL__
 __NAMESPACE_STD_BEGIN
@@ -186,7 +186,7 @@ __SYSDECL_END
 #endif /* __DOS_COMPAT__ */
 __SYSDECL_BEGIN
 __REDIRECT_IFDOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2,3)),int,__LIBCCALL,strcoll_l,(char const *__s1, char const *__s2, __locale_t __locale),_strcoll_l,(__s1,__s2,__locale))
-__REDIRECT_IFDOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((2,4)),size_t,__LIBCCALL,strxfrm_l,(char *__dst, char const *__src, size_t __n, __locale_t __locale),_strxfrm_l,(__dst,__src,__n,__locale))
+__REDIRECT_IFDOS(__LIBC,__NONNULL((2)),size_t,__LIBCCALL,strxfrm_l,(char *__dst, char const *__restrict __src, size_t __n, __locale_t __locale),_strxfrm_l,(__dst,__src,__n,__locale))
 #ifndef __DOS_COMPAT__
 __LIBC __WUNUSED __NONNULL((2)) char *(__LIBCCALL strerror_l)(int __errnum, __locale_t __locale);
 __LIBC __PORT_NODOS __WUNUSED __ATTR_RETNONNULL char *(__LIBCCALL strsignal)(int __sig);
@@ -209,7 +209,7 @@ __ATTR_MALLOC char *(__LIBCCALL strndup)(char const *__restrict __str, size_t __
 
 #ifndef __KERNEL__
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8) || defined(__USE_DOS)
-__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
+__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC __NONNULL((1)),
                  char *,__LIBCCALL,strdup,(char const *__restrict __str),_strdup,(__str))
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 || __USE_DOS */
 #endif /* !__KERNEL__ */
@@ -1058,7 +1058,10 @@ __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,memcasec
           (void const *__a, void const *__b, size_t __n_bytes, __locale_t __locale),_memicmp_l,(__a,__b,__n_bytes,__locale))
 #endif /* !__KERNEL__ */
 #else /* !__GLC_COMPAT__ */
+#ifndef ____libc_tolower_defined
+#define ____libc_tolower_defined 1
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_tolower,(int __c),tolower,(__c))
+#endif /* !____libc_tolower_defined */
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
 int (__LIBCCALL memcasecmp)(void const *__a, void const *__b, size_t __n_bytes) {
     __BYTE_TYPE__ *__ai = (__BYTE_TYPE__ *)__a,*__bi = (__BYTE_TYPE__ *)__b; int __temp;
@@ -1355,57 +1358,84 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _
 
 
 #ifndef __KERNEL__
+#if defined(__USE_KOS) && defined(__CRT_DOS)
+__REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strlwr_l,(char *__restrict __str, __locale_t __locale),_strlwr_l,(__str,__locale))
+__REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strupr_l,(char *__restrict __str, __locale_t __locale),_strupr_l,(__str,__locale))
+__REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strcasecoll,(char const *__str1, char const *__str2),_stricoll,(__str1,__str2))
+__REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strcasecoll_l,(char const *__str1, char const *__str2, __locale_t __locale),_stricoll_l,(__str1,__str2,__locale))
+__REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncoll,(char const *__str1, char const *__str2, size_t __max_chars),_strncoll,(__str1,__str2,__max_chars))
+__REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncoll_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),_strncoll_l,(__str1,__str2,__max_chars,__locale))
+__REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncasecoll,(char const *__str1, char const *__str2, size_t __max_chars),_strnicoll,(__str1,__str2,__max_chars));
+__REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncasecoll_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),_strnicoll_l,(__str1,__str2,__max_chars,__locale))
+#endif /* __USE_KOS && __CRT_DOS */
 #if (defined(__USE_KOS) || defined(__USE_DOS)) && defined(__CRT_DOS)
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strlwr,(char *__restrict __str),_strlwr,(__str))
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strnset,(char *__restrict __str, int __char, size_t __max_chars),_strnset,(__str,__char,__max_chars))
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strrev,(char *__restrict __str),_strrev,(__str))
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strset,(char *__restrict __str, int __char),_strset,(__str,__char))
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strupr,(char *__restrict __str),_strupr,(__str))
-__REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strlwr_l,(char *__restrict __str, __locale_t __locale),_strlwr_l,(__str,__locale))
-__REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strupr_l,(char *__restrict __str, __locale_t __locale),_strupr_l,(__str,__locale))
-__REDIRECT(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,strcasecoll,(char const *__str1, char const *__str2),_stricoll,(__str1,__str2))
-__REDIRECT(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,strcasecoll_l,(char const *__str1, char const *__str2, __locale_t __locale),_stricoll_l,(__str1,__str2,__locale))
-__REDIRECT(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,strncoll,(char const *__str1, char const *__str2, size_t __max_chars),_strncoll,(__str1,__str2,__max_chars))
-__REDIRECT(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,strncoll_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),_strncoll_l,(__str1,__str2,__max_chars,__locale))
-__REDIRECT(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,strncasecoll,(char const *__str1, char const *__str2, size_t __max_chars),_strnicoll,(__str1,__str2,__max_chars));
-__REDIRECT(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,strncasecoll_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),_strnicoll_l,(__str1,__str2,__max_chars,__locale))
-#endif
+#endif /* (__USE_KOS || __USE_DOS) && __CRT_DOS */
 
 #ifdef __USE_DOS
-__REDIRECT_IFKOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
+__REDIRECT_IFKOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC __NONNULL((1)),
                  char *,__LIBCCALL,_strdup,(char const *__restrict __str),strdup,(__str))
 
-#ifdef __CRT_DOS
+#ifdef __GLC_COMPAT__
+#ifndef ____libc_tolower_defined
+#define ____libc_tolower_defined 1
+__REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_tolower,(int __c),tolower,(__c))
+#endif /* !____libc_tolower_defined */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
+int (__LIBCCALL _memicmp)(void const *__a, void const *__b, size_t __n_bytes) {
+    __BYTE_TYPE__ *__ai = (__BYTE_TYPE__ *)__a,*__bi = (__BYTE_TYPE__ *)__b; int __temp;
+    while (__n_bytes--) if ((__temp = __libc_tolower(*__ai++) - __libc_tolower(*__bi++)) != 0) return temp;
+    return 0;
+}
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
+int (__LIBCCALL _memicmp_l)(void const *__a, void const *__b,
+                            size_t __n_bytes, __locale_t __UNUSED(__locale)) {
+    return _memicmp(__a,__b);
+}
+#elif defined(__CRT_DOS)
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strlwr)(char *__restrict __str);
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strnset)(char *__restrict __str, int __char, size_t __max_chars);
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strrev)(char *__restrict __str);
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strset)(char *__restrict __str, int __char);
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strupr)(char *__restrict __str);
-__LIBC __PORT_DOSONLY char *(__LIBCCALL _strlwr_l)(char *__restrict __str, __locale_t __locale);
-__LIBC __PORT_DOSONLY char *(__LIBCCALL _strupr_l)(char *__restrict __str, __locale_t __locale);
-__LIBC __PORT_DOSONLY int (__LIBCCALL _memicmp)(void const *__a, void const *__b, size_t __n_bytes);
-__LIBC __PORT_DOSONLY int (__LIBCCALL _memicmp_l)(void const *__a, void const *__b, size_t __n_bytes, __locale_t __locale);
-__LIBC __PORT_DOSONLY int (__LIBCCALL _stricoll)(char const *__str1, char const *__str2);
-__LIBC __PORT_DOSONLY int (__LIBCCALL _stricoll_l)(char const *__str1, char const *__str2, __locale_t __locale);
-__LIBC __PORT_DOSONLY int (__LIBCCALL _strncoll)(char const *__str1, char const *__str2, size_t __max_chars);
-__LIBC __PORT_DOSONLY int (__LIBCCALL _strncoll_l)(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale);
-__LIBC __PORT_DOSONLY int (__LIBCCALL _strnicoll)(char const *__str1, char const *__str2, size_t __max_chars);
-__LIBC __PORT_DOSONLY int (__LIBCCALL _strnicoll_l)(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale);
-#endif /* __CRT_DOS */
+__LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strlwr_l)(char *__restrict __str, __locale_t __locale);
+__LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strupr_l)(char *__restrict __str, __locale_t __locale);
+__LIBC __PORT_DOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL _stricoll)(char const *__str1, char const *__str2);
+__LIBC __PORT_DOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL _stricoll_l)(char const *__str1, char const *__str2, __locale_t __locale);
+__LIBC __PORT_DOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL _strncoll)(char const *__str1, char const *__str2, size_t __max_chars);
+__LIBC __PORT_DOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL _strncoll_l)(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale);
+__LIBC __PORT_DOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL _strnicoll)(char const *__str1, char const *__str2, size_t __max_chars);
+__LIBC __PORT_DOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL _strnicoll_l)(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL _memicmp)(void const *__a, void const *__b, size_t __n_bytes);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL _memicmp_l)(void const *__a, void const *__b, size_t __n_bytes, __locale_t __locale);
+#endif /* Builtin... */
 
-__REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_strcmpi,(char const *__str1, char const *__str2),strcasecmp,(__str1,__str2))
-__REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_strcoll_l,(char const *__str1, char const *__str2, __locale_t __locale),strcoll_l,(__str1,__str2,__locale))
-__REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_stricmp,(char const *__str1, char const *__str2),strcasecmp,(__str1,__str2))
-__REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_stricmp_l,(char const *__str1, char const *__str2, __locale_t __locale),strcasecmp_l,(__str1,__str2,__locale))
-__REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_strnicmp,(char const *__str1, char const *__str2, size_t __max_chars),strncasecmp,(__str1,__str2,__max_chars))
-__REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_strnicmp_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),strncasecmp_l,(__str1,__str2,__max_chars,__locale))
-__REDIRECT_IFKOS(__LIBC,,size_t,__LIBCCALL,_strxfrm_l,(char *__dst, char const *__src, size_t __max_chars, __locale_t __locale),strxfrm_l,(__dst,__src,__max_chars,__locale))
-__REDIRECT_IFKOS(__LIBC,,void *,__LIBCCALL,_memccpy,(void *__dst, void const *__src, int __needle, size_t __max_chars),memccpy,(__dst,__src,__needle,__max_chars))
-__REDIRECT(__LIBC,,int,__LIBCCALL,memicmp,(void const *__a, void const *__b, size_t __n_bytes),_memicmp,(__a,__b,__n_bytes))
-__REDIRECT2(__LIBC,,int,__LIBCCALL,strcmpi,(char const *__str1, char const *__str2),strcasecmp,_stricmp,(__str1,__str2))
-__REDIRECT2(__LIBC,,int,__LIBCCALL,stricmp,(char const *__str1, char const *__str2),strcasecmp,_stricmp,(__str1,__str2))
-__REDIRECT2(__LIBC,,int,__LIBCCALL,strnicmp,(char const *__str1, char const *__str2, size_t __max_chars),strncasecmp,_strnicmp,(__str1,__str2,__max_chars))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_strcmpi,(char const *__str1, char const *__str2),strcasecmp,(__str1,__str2))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_strcoll_l,(char const *__str1, char const *__str2, __locale_t __locale),strcoll_l,(__str1,__str2,__locale))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_stricmp,(char const *__str1, char const *__str2),strcasecmp,(__str1,__str2))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_stricmp_l,(char const *__str1, char const *__str2, __locale_t __locale),strcasecmp_l,(__str1,__str2,__locale))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_strnicmp,(char const *__str1, char const *__str2, size_t __max_chars),strncasecmp,(__str1,__str2,__max_chars))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_strnicmp_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),strncasecmp_l,(__str1,__str2,__max_chars,__locale))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1,2)),size_t,__LIBCCALL,_strxfrm_l,(char *__dst, char const *__src, size_t __max_chars, __locale_t __locale),strxfrm_l,(__dst,__src,__max_chars,__locale))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1,2)),void *,__LIBCCALL,_memccpy,(void *__dst, void const *__src, int __needle, size_t __max_chars),memccpy,(__dst,__src,__needle,__max_chars))
+__REDIRECT2(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,strcmpi,(char const *__str1, char const *__str2),strcasecmp,_stricmp,(__str1,__str2))
+__REDIRECT2(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,stricmp,(char const *__str1, char const *__str2),strcasecmp,_stricmp,(__str1,__str2))
+__REDIRECT2(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,strnicmp,(char const *__str1, char const *__str2, size_t __max_chars),strncasecmp,_strnicmp,(__str1,__str2,__max_chars))
+#ifdef __GLC_COMPAT__
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
+int (__LIBCCALL memicmp)(void const *__a, void const *__b, size_t __n_bytes) {
+    return _memicmp(__a,__b,__n_bytes);
+}
+#else /* __GLC_COMPAT__ */
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,memicmp,(void const *__a, void const *__b, size_t __n_bytes),_memicmp,(__a,__b,__n_bytes))
+#endif /* !__GLC_COMPAT__ */
 
+
+/* Fulfill DOS's need to put all the wide-string stuff in here as well... */
 #ifndef __wchar_t_defined
 #define __wchar_t_defined 1
 typedef __WCHAR_TYPE__ wchar_t;
@@ -1413,60 +1443,63 @@ typedef __WCHAR_TYPE__ wchar_t;
 
 #ifndef ___wcsicmp_defined
 #define ___wcsicmp_defined 1
-__REDIRECT2(__LIBC,__WUNUSED,int,__LIBCCALL,wcsicmp,(wchar_t const *__str1, wchar_t const *__str2),wcscasecmp,_wcsicmp,(__str1,__str2))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsicmp,(wchar_t const *__str1, wchar_t const *__str2),wcscasecmp,(__str1,__str2))
-__REDIRECT2(__LIBC,__WUNUSED,int,__LIBCCALL,wcsnicmp,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars),wcsncasecmp,_wcsnicmp,(__str1,__str2,__max_chars))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsnicmp,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars),wcsncasecmp,(__str1,__str2,__max_chars))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsicmp_l,(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale),wcscasecmp_l,(__str1,__str2,__locale))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsnicmp_l,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale),wcsncasecmp_l,(__str1,__str2,__max_chars,__locale))
+__REDIRECT2(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,wcsicmp,(wchar_t const *__str1, wchar_t const *__str2),wcscasecmp,_wcsicmp,(__str1,__str2))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsicmp,(wchar_t const *__str1, wchar_t const *__str2),wcscasecmp,(__str1,__str2))
+__REDIRECT2(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,wcsnicmp,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars),wcsncasecmp,_wcsnicmp,(__str1,__str2,__max_chars))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsnicmp,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars),wcsncasecmp,(__str1,__str2,__max_chars))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsicmp_l,(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale),wcscasecmp_l,(__str1,__str2,__locale))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsnicmp_l,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale),wcsncasecmp_l,(__str1,__str2,__max_chars,__locale))
 #endif /* !___wcsicmp_defined */
 
 #ifndef __wcsicoll_defined
 #define __wcsicoll_defined 1
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcscoll_l,(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale),wcscoll_l,(__str1,__str2,__locale))
-__REDIRECT2(__LIBC,__WUNUSED,int,__LIBCCALL,wcsicoll,(wchar_t const *__str1, wchar_t const *__str2),wcscasecoll,_wcsicoll,(__str1,__str2))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsicoll,(wchar_t const *__str1, wchar_t const *__str2),wcscasecoll,(__str1,__str2))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsicoll_l,(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale),wcscasecoll_l,(__str1,__str2,__locale))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsncoll,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars),wcsncoll,(__str1,__str2,__max_chars))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsncoll_l,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale),wcsncoll_l,(__str1,__str2,__max_chars,__locale))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsnicoll,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars),wcsncasecoll,(__str1,__str2,__max_chars))
-__REDIRECT_IFKOS(__LIBC,__WUNUSED,int,__LIBCCALL,_wcsnicoll_l,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale),wcsncasecoll_l,(__str1,__str2,__max_chars,__locale))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcscoll_l,(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale),wcscoll_l,(__str1,__str2,__locale))
+__REDIRECT2(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,wcsicoll,(wchar_t const *__str1, wchar_t const *__str2),wcscasecoll,_wcsicoll,(__str1,__str2))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsicoll,(wchar_t const *__str1, wchar_t const *__str2),wcscasecoll,(__str1,__str2))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsicoll_l,(wchar_t const *__str1, wchar_t const *__str2, __locale_t __locale),wcscasecoll_l,(__str1,__str2,__locale))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsncoll,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars),wcsncoll,(__str1,__str2,__max_chars))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsncoll_l,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale),wcsncoll_l,(__str1,__str2,__max_chars,__locale))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsnicoll,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars),wcsncasecoll,(__str1,__str2,__max_chars))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,_wcsnicoll_l,(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars, __locale_t __locale),wcsncasecoll_l,(__str1,__str2,__max_chars,__locale))
 #endif /* !__wcsicoll_defined */
 
 #ifndef ___wcsxfrm_l_defined
 #define ___wcsxfrm_l_defined 1
-__REDIRECT_IFKOS(__LIBC,,size_t,__LIBCCALL,_wcsxfrm_l,(wchar_t *__restrict __dst, wchar_t const *__restrict __src, size_t __max_chars, __locale_t __locale),wcsxfrm_l,(__dst,__src,__max_chars,__locale))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1,2)),size_t,__LIBCCALL,_wcsxfrm_l,(wchar_t *__restrict __dst, wchar_t const *__restrict __src, size_t __max_chars, __locale_t __locale),wcsxfrm_l,(__dst,__src,__max_chars,__locale))
 #endif /* !___wcsxfrm_l_defined */
 
 #ifndef ___wcsdup_defined
 #define ___wcsdup_defined 1
-__REDIRECT_IFKOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
+__REDIRECT_IFKOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC __NONNULL((1)),
                  wchar_t *,__LIBCCALL,_wcsdup,(wchar_t const *__restrict __str),wcsdup,(__str))
 #endif /* !___wcsdup_defined */
 
+#ifdef __CRT_DOS
 #ifndef __wcsrev_defined
 #define __wcsrev_defined 1
-__REDIRECT_IFDOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcsrev,(wchar_t *__restrict __str),_wcsrev,(__str))
-__REDIRECT_IFDOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcsset,(wchar_t *__restrict __str, wchar_t __needle),_wcsset,(__str,__needle))
-__REDIRECT_IFDOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcsnset,(wchar_t *__restrict __str, wchar_t __needle, size_t __max_chars),_wcsnset,(__str,__needle,__max_chars))
-__REDIRECT_IFDOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcslwr,(wchar_t *__restrict __str),_wcslwr,(__str))
-__REDIRECT_IFDOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcsupr,(wchar_t *__restrict __str),_wcsupr,(__str))
-__REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsrev,(wchar_t *__restrict __str),wcsrev,(__str))
-__REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsset,(wchar_t *__restrict __str, wchar_t __char),wcsset,(__str,__char))
-__REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsnset,(wchar_t *__restrict __str, wchar_t __char, size_t __max_chars),wcsnset,(__str,__char,__max_chars))
-__REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcslwr,(wchar_t *__restrict __str),wcslwr,(__str))
-__REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcslwr_l,(wchar_t *__restrict __str, __locale_t __locale),wcslwr_l,(__str,__locale))
-__REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsupr,(wchar_t *__restrict __str),wcsupr,(__str))
-__REDIRECT_IFKOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsupr_l,(wchar_t *__restrict __str, __locale_t __locale),wcsupr_l,(__str,__locale))
+/* TODO: Add GLC compat implementations for these. */
+__REDIRECT_IFDOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcsrev,(wchar_t *__restrict __str),_wcsrev,(__str))
+__REDIRECT_IFDOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcsset,(wchar_t *__restrict __str, wchar_t __needle),_wcsset,(__str,__needle))
+__REDIRECT_IFDOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcsnset,(wchar_t *__restrict __str, wchar_t __needle, size_t __max_chars),_wcsnset,(__str,__needle,__max_chars))
+__REDIRECT_IFDOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcslwr,(wchar_t *__restrict __str),_wcslwr,(__str))
+__REDIRECT_IFDOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,wcsupr,(wchar_t *__restrict __str),_wcsupr,(__str))
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsrev,(wchar_t *__restrict __str),wcsrev,(__str))
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsset,(wchar_t *__restrict __str, wchar_t __char),wcsset,(__str,__char))
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsnset,(wchar_t *__restrict __str, wchar_t __char, size_t __max_chars),wcsnset,(__str,__char,__max_chars))
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcslwr,(wchar_t *__restrict __str),wcslwr,(__str))
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcslwr_l,(wchar_t *__restrict __str, __locale_t __locale),wcslwr_l,(__str,__locale))
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsupr,(wchar_t *__restrict __str),wcsupr,(__str))
+__REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),wchar_t *,__LIBCCALL,_wcsupr_l,(wchar_t *__restrict __str, __locale_t __locale),wcsupr_l,(__str,__locale))
 #endif /* !__wcsrev_defined */
+#endif /* __CRT_DOS */
 
 #ifndef __std_wcscmp_defined
 #define __std_wcscmp_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC __ATTR_PURE int (__LIBCCALL wcscmp)(wchar_t const *__str1, wchar_t const *__str2);
-__LIBC __ATTR_PURE int (__LIBCCALL wcsncmp)(wchar_t const *__str1, wchar_t const *__str2, size_t __max_chars);
-__LIBC int (__LIBCCALL wcscoll)(wchar_t const *__str1, wchar_t const *__str2);
-__LIBC size_t (__LIBCCALL wcsxfrm)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL wcscmp)(wchar_t const *__s1, wchar_t const *__s2);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL wcsncmp)(wchar_t const *__s1, wchar_t const *__s2, size_t __n);
+__LIBC __WUNUSED __NONNULL((1,2)) int (__LIBCCALL wcscoll)(wchar_t const *__s1, wchar_t const *__s2);
+__LIBC __NONNULL((1,2)) size_t (__LIBCCALL wcsxfrm)(wchar_t *__restrict __s1, wchar_t const *__restrict __s2, size_t __n);
 __NAMESPACE_STD_END
 #endif /* !__std_wcscmp_defined */
 #ifndef __wcscmp_defined
@@ -1480,8 +1513,8 @@ __NAMESPACE_STD_USING(wcsxfrm)
 #ifndef __std_wcsspn_defined
 #define __std_wcsspn_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC __ATTR_PURE size_t (__LIBCCALL wcsspn)(wchar_t const *__haystack, wchar_t const *__accept);
-__LIBC __ATTR_PURE size_t (__LIBCCALL wcscspn)(wchar_t const *__haystack, wchar_t const *__reject);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL wcsspn)(wchar_t const *__haystack, wchar_t const *__accept);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL wcscspn)(wchar_t const *__haystack, wchar_t const *__reject);
 __NAMESPACE_STD_END
 #endif /* !__std_wcsspn_defined */
 #ifndef __wcsspn_defined
@@ -1493,7 +1526,7 @@ __NAMESPACE_STD_USING(wcscspn)
 #ifndef __std_wcslen_defined
 #define __std_wcslen_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC size_t (__LIBCCALL wcslen)(wchar_t const *__str);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL wcslen)(wchar_t const *__restrict __str);
 __NAMESPACE_STD_END
 #endif /* !__std_wcslen_defined */
 #ifndef __wcslen_defined
@@ -1503,7 +1536,7 @@ __NAMESPACE_STD_USING(wcslen)
 
 #ifndef __wcsnlen_defined
 #define __wcsnlen_defined 1
-__LIBC size_t (__LIBCCALL wcsnlen)(wchar_t const *__src, size_t __max_chars);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL wcsnlen)(wchar_t const *__restrict __src, size_t __max_chars);
 #endif /* !__wcsnlen_defined */
 
 #ifndef __std_wcschr_defined
@@ -1511,14 +1544,14 @@ __LIBC size_t (__LIBCCALL wcsnlen)(wchar_t const *__src, size_t __max_chars);
 __NAMESPACE_STD_BEGIN
 #ifdef __CORRECT_ISO_CPP_WCHAR_H_PROTO
 extern "C++" {
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wcschr,(wchar_t *__str, wchar_t __needle),wcschr,(__str,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wcsrchr,(wchar_t *__str, wchar_t __needle),wcsrchr,(__str,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wcschr,(wchar_t const *__str, wchar_t __needle),wcschr,(__str,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wcsrchr,(wchar_t const *__str, wchar_t __needle),wcsrchr,(__str,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),wchar_t *,__LIBCCALL,wcschr,(wchar_t *__restrict __str, wchar_t __needle),wcschr,(__str,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),wchar_t *,__LIBCCALL,wcsrchr,(wchar_t *__restrict __str, wchar_t __needle),wcsrchr,(__str,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),wchar_t const *,__LIBCCALL,wcschr,(wchar_t const *__restrict __str, wchar_t __needle),wcschr,(__str,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),wchar_t const *,__LIBCCALL,wcsrchr,(wchar_t const *__restrict __str, wchar_t __needle),wcsrchr,(__str,__needle))
 }
 #else /* __CORRECT_ISO_CPP_WCHAR_H_PROTO */
-__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcschr)(wchar_t const *__str, wchar_t __needle);
-__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcsrchr)(wchar_t const *__str, wchar_t __needle);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wcschr)(wchar_t const *__restrict __str, wchar_t __needle);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wcsrchr)(wchar_t const *__restrict __str, wchar_t __needle);
 #endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 __NAMESPACE_STD_END
 #endif /* !__std_wcschr_defined */
@@ -1531,10 +1564,10 @@ __NAMESPACE_STD_USING(wcsrchr)
 #ifndef __std_wcscpy_defined
 #define __std_wcscpy_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC wchar_t *(__LIBCCALL wcscpy)(wchar_t *__dst, wchar_t const *__src);
-__LIBC wchar_t *(__LIBCCALL wcscat)(wchar_t *__dst, wchar_t const *__src);
-__LIBC wchar_t *(__LIBCCALL wcsncat)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
-__LIBC wchar_t *(__LIBCCALL wcsncpy)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) wchar_t *(__LIBCCALL wcscpy)(wchar_t *__dst, wchar_t const *__src);
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) wchar_t *(__LIBCCALL wcscat)(wchar_t *__dst, wchar_t const *__src);
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) wchar_t *(__LIBCCALL wcsncat)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) wchar_t *(__LIBCCALL wcsncpy)(wchar_t *__dst, wchar_t const *__src, size_t __max_chars);
 __NAMESPACE_STD_END
 #endif /* !__std_wcscpy_defined */
 #ifndef __wcscpy_defined
@@ -1547,8 +1580,8 @@ __NAMESPACE_STD_USING(wcsncpy)
 
 #ifndef __wcsdup_defined
 #define __wcsdup_defined 1
-__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
-                wchar_t *,__LIBCCALL,wcsdup,(wchar_t const *__restrict __str),_wcsdup,(__str))
+__REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC __NONNULL((1)),
+                 wchar_t *,__LIBCCALL,wcsdup,(wchar_t const *__restrict __str),_wcsdup,(__str))
 #endif /* !__wcsdup_defined */
 
 #ifndef __std_wcsstr_defined
@@ -1556,14 +1589,14 @@ __REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
 __NAMESPACE_STD_BEGIN
 #ifdef __CORRECT_ISO_CPP_WCHAR_H_PROTO
 extern "C++" {
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wcspbrk,(wchar_t *__haystack, wchar_t const *__accept),wcspbrk,(__haystack,__accept))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wcspbrk,(wchar_t const *__haystack, wchar_t const *__accept),wcspbrk,(__haystack,__accept))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t *,__LIBCCALL,wcsstr,(wchar_t *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE,wchar_t const *,__LIBCCALL,wcsstr,(wchar_t const *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),wchar_t *,__LIBCCALL,wcspbrk,(wchar_t *__haystack, wchar_t const *__accept),wcspbrk,(__haystack,__accept))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),wchar_t const *,__LIBCCALL,wcspbrk,(wchar_t const *__haystack, wchar_t const *__accept),wcspbrk,(__haystack,__accept))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),wchar_t *,__LIBCCALL,wcsstr,(wchar_t *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),wchar_t const *,__LIBCCALL,wcsstr,(wchar_t const *__haystack, wchar_t const *__needle),wcsstr,(__haystack,__needle))
 }
 #else /* __CORRECT_ISO_CPP_WCHAR_H_PROTO */
-__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcspbrk)(wchar_t const *__haystack, wchar_t const *__accept);
-__LIBC __WUNUSED __ATTR_PURE wchar_t *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) wchar_t *(__LIBCCALL wcspbrk)(wchar_t const *__haystack, wchar_t const *__accept);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) wchar_t *(__LIBCCALL wcsstr)(wchar_t const *__haystack, wchar_t const *__needle);
 #endif /* !__CORRECT_ISO_CPP_WCHAR_H_PROTO */
 __NAMESPACE_STD_END
 #endif /* !__std_wcsstr_defined */
@@ -1587,12 +1620,22 @@ __LIBC __ATTR_PURE wchar_t *(__LIBCCALL wcswcs)(wchar_t const *__haystack, wchar
 
 #ifndef __std_wcstok_defined
 #define __std_wcstok_defined 1
-#ifdef __CRT_DOS
 __NAMESPACE_STD_BEGIN
-__REDIRECT_IFKOS(__LIBC,__PORT_NODOS_ALT(wcstok_s),wchar_t *,__LIBCCALL,wcstok,
-                (wchar_t *__str, wchar_t const *__delim),__wcstok_f,(__str,__delim))
+#if defined(__USE_DOS) && !defined(__USE_ISOC95)
+/* Define wcstok() incorrectly, the same way DOS does. */
+#ifdef __CRT_DOS
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1,2)),wchar_t *,__LIBCCALL,wcstok,(wchar_t *__restrict __s, wchar_t const *__restrict __delim),__wcstok_f,(__s,__delim))
+#else /* __CRT_DOS */
+__REDIRECT(__LIBC,,wchar_t *,__LIBCCALL,__wcstok_impl,(wchar_t *__restrict __s, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr),wcstok,(__s,__delim,__ptr))
+__INTERN __ATTR_WEAK __ATTR_UNUSED wchar_t *__wcstok_safe = 0;
+__LOCAL __NONNULL((1,2)) wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim) { return __wcstok_impl(__s,__delim,&__wcstok_safe); }
+#endif /* !__CRT_DOS */
+#elif defined(__CRT_DOS) && __SIZEOF_WCHAR_T__ == 2
+__REDIRECT(__LIBC,__NONNULL((1,2,3)),wchar_t *,__LIBCCALL,wcstok,(wchar_t *__restrict __s, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr),wcstok_s,(__s,__delim,__ptr))
+#else
+__LIBC __NONNULL((1,2,3)) wchar_t *(__LIBCCALL wcstok)(wchar_t *__restrict __s, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr);
+#endif
 __NAMESPACE_STD_END
-#endif /* __CRT_DOS */
 #endif /* !__std_wcstok_defined */
 #ifndef __wcstok_defined
 #define __wcstok_defined 1
@@ -1603,7 +1646,7 @@ __NAMESPACE_STD_USING(wcstok)
 #define _WSTRING_DEFINED 1
 #ifndef __wcstok_s_defined
 #define __wcstok_s_defined 1
-__REDIRECT_IFKOS(__LIBC,,wchar_t *,__LIBCCALL,wcstok_s,
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1,2,3)),wchar_t *,__LIBCCALL,wcstok_s,
                 (wchar_t *__restrict __str, wchar_t const *__restrict __delim, wchar_t **__restrict __ptr),
                  wcstok,(__str,__delim,__ptr))
 #endif /* !__wcstok_s_defined */
@@ -1616,10 +1659,10 @@ typedef int errno_t;
 
 #ifndef __wcserror_defined
 #define __wcserror_defined 1
-__LIBC __PORT_DOSONLY_ALT(strerror) wchar_t *(__LIBCCALL _wcserror)(int __errnum);
-__LIBC __PORT_DOSONLY_ALT(strerror) wchar_t *(__LIBCCALL __wcserror)(wchar_t const *__restrict __str);
-__LIBC __PORT_DOSONLY_ALT(strerror) errno_t (__LIBCCALL _wcserror_s)(wchar_t *__restrict __buf, size_t __max_chars, int __errnum);
-__LIBC __PORT_DOSONLY_ALT(strerror) errno_t (__LIBCCALL __wcserror_s)(wchar_t *__restrict __buf, size_t __max_chars, wchar_t const *__restrict __errmsg);
+__LIBC __WUNUSED __PORT_DOSONLY_ALT(strerror) wchar_t *(__LIBCCALL _wcserror)(int __errnum);
+__LIBC __WUNUSED __PORT_DOSONLY_ALT(strerror) wchar_t *(__LIBCCALL __wcserror)(wchar_t const *__errmsg);
+__LIBC __NONNULL((1)) __PORT_DOSONLY_ALT(strerror) errno_t (__LIBCCALL _wcserror_s)(wchar_t *__restrict __buf, size_t __max_chars, int __errnum);
+__LIBC __NONNULL((1)) __PORT_DOSONLY_ALT(strerror) errno_t (__LIBCCALL __wcserror_s)(wchar_t *__restrict __buf, size_t __max_chars, wchar_t const *__errmsg);
 #endif /* !__wcserror_defined */
 
 #ifndef ___wcsset_s_defined
@@ -1629,19 +1672,19 @@ __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_towlower,(int __wc),to
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_towupper,(int __wc),towupper,(__wc))
 __REDIRECT2_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_towlower_l,(int __wc, __locale_t __locale),towlower_l,_towlower_l,(__wc))
 __REDIRECT2_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_towupper_l,(int __wc, __locale_t __locale),towupper_l,_towupper_l,(__wc))
-__LOCAL errno_t (__LIBCCALL _wcsset_s)(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val) { if (wcsnlen(__str,__buflen) == __buflen) return 34; wcsset(__str,__val); return 0; }
-__LOCAL errno_t (__LIBCCALL _wcsnset_s)(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen) { if (__maxlen < __buflen) __buflen = __maxlen; while (__buflen-- && *__str) *__str++ = __val; return 0; }
-__LOCAL errno_t (__LIBCCALL _wcslwr_s)(wchar_t *__restrict __str, size_t __maxlen) { while (__maxlen-- && *__str) *__str = __libc_towlower(*__str),++__str; return 0 }
-__LOCAL errno_t (__LIBCCALL _wcsupr_s)(wchar_t *__restrict __str, size_t __maxlen) { while (__maxlen-- && *__str) *__str = __libc_towupper(*__str),++__str; return 0 }
-__LOCAL errno_t (__LIBCCALL _wcslwr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale) { while (__maxlen-- && *__str) *__str = __libc_towlower_l(*__str,__locale),++__str; return 0 }
-__LOCAL errno_t (__LIBCCALL _wcsupr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale) { while (__maxlen-- && *__str) *__str = __libc_towupper_l(*__str,__locale),++__str; return 0 }
+__LOCAL __NONNULL((1)) errno_t (__LIBCCALL _wcsset_s)(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val) { if (wcsnlen(__str,__buflen) == __buflen) return 34; wcsset(__str,__val); return 0; }
+__LOCAL __NONNULL((1)) errno_t (__LIBCCALL _wcsnset_s)(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen) { if (__maxlen < __buflen) __buflen = __maxlen; while (__buflen-- && *__str) *__str++ = __val; return 0; }
+__LOCAL __NONNULL((1)) errno_t (__LIBCCALL _wcslwr_s)(wchar_t *__restrict __str, size_t __maxlen) { while (__maxlen-- && *__str) *__str = __libc_towlower(*__str),++__str; return 0 }
+__LOCAL __NONNULL((1)) errno_t (__LIBCCALL _wcsupr_s)(wchar_t *__restrict __str, size_t __maxlen) { while (__maxlen-- && *__str) *__str = __libc_towupper(*__str),++__str; return 0 }
+__LOCAL __NONNULL((1)) errno_t (__LIBCCALL _wcslwr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale) { while (__maxlen-- && *__str) *__str = __libc_towlower_l(*__str,__locale),++__str; return 0 }
+__LOCAL __NONNULL((1)) errno_t (__LIBCCALL _wcsupr_s_l)(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale) { while (__maxlen-- && *__str) *__str = __libc_towupper_l(*__str,__locale),++__str; return 0 }
 #else /* __GLC_COMPAT__ */
-__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsset_s,(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val),wcsset_s,(__str,__maxlen,__val))
-__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsnset_s,(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen),wcsnset_s,(__str,__buflen,__val,__maxlen))
-__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcslwr_s,(wchar_t *__restrict __str, size_t __maxlen),wcslwr_s,(__str,__maxlen))
-__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsupr_s,(wchar_t *__restrict __str, size_t __maxlen),wcsupr_s,(__str,__maxlen))
-__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcslwr_s_l,(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale),wcslwr_s_l,(__str,__maxlen,__locale))
-__REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsupr_s_l,(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale),wcsupr_s_l,(__str,__maxlen,__locale))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1)),errno_t,__LIBCCALL,_wcsset_s,(wchar_t *__restrict __str, size_t __maxlen, wchar_t __val),wcsset_s,(__str,__maxlen,__val))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1)),errno_t,__LIBCCALL,_wcsnset_s,(wchar_t *__restrict __str, size_t __buflen, wchar_t __val, size_t __maxlen),wcsnset_s,(__str,__buflen,__val,__maxlen))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1)),errno_t,__LIBCCALL,_wcslwr_s,(wchar_t *__restrict __str, size_t __maxlen),wcslwr_s,(__str,__maxlen))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1)),errno_t,__LIBCCALL,_wcsupr_s,(wchar_t *__restrict __str, size_t __maxlen),wcsupr_s,(__str,__maxlen))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1)),errno_t,__LIBCCALL,_wcslwr_s_l,(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale),wcslwr_s_l,(__str,__maxlen,__locale))
+__REDIRECT_IFKOS(__LIBC,__NONNULL((1)),errno_t,__LIBCCALL,_wcsupr_s_l,(wchar_t *__restrict __str, size_t __maxlen, __locale_t __locale),wcsupr_s_l,(__str,__maxlen,__locale))
 #endif /* !__GLC_COMPAT__ */
 #endif /* !___wcsset_s_defined */
 
@@ -1649,7 +1692,7 @@ __REDIRECT_IFKOS(__LIBC,,errno_t,__LIBCCALL,_wcsupr_s_l,(wchar_t *__restrict __s
 #ifndef __wcsncat_s_defined
 #define __wcsncat_s_defined 1
 #ifdef __GLC_COMPAT__
-__LOCAL errno_t (__LIBCCALL wcscat_s)
+__LOCAL __NONNULL((1,3)) errno_t (__LIBCCALL wcscat_s)
 (wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src) {
     wchar_t *__dstend = (wchar_t *)__dst+wcsnlen(__dst,__dstsize);
     size_t __srclen = wcslen(__src);
@@ -1658,14 +1701,14 @@ __LOCAL errno_t (__LIBCCALL wcscat_s)
     do *__dstend++ = *__src++; while (__srclen--);
     return 0;
 }
-__LOCAL errno_t (__LIBCCALL wcscpy_s)
+__LOCAL __NONNULL((1,3)) errno_t (__LIBCCALL wcscpy_s)
 (wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src) {
     size_t __srclen = wcslen(__src);
     if (__srclen+1 > __dstsize) return 34;
     do *__dst++ = *__src++; while (__srclen--);
     return 0;
 }
-__LOCAL errno_t (__LIBCCALL wcsncat_s)
+__LOCAL __NONNULL((1,3)) errno_t (__LIBCCALL wcsncat_s)
 (wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars) {
     wchar_t *__dstend = (wchar_t *)__dst+wcsnlen(__dst,__dstsize);
     size_t __srclen = wcsnlen(__src,__maxlen);
@@ -1675,7 +1718,7 @@ __LOCAL errno_t (__LIBCCALL wcsncat_s)
     *__dstend = (wchar_t)'\0';
     return 0;
 }
-__LOCAL errno_t (__LIBCCALL wcsncpy_s)
+__LOCAL __NONNULL((1,3)) errno_t (__LIBCCALL wcsncpy_s)
 (wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars) {
     size_t __srclen = wcsnlen(__src,__maxlen);
     if (__srclen+1 > __dstsize) return 34;
@@ -1684,10 +1727,10 @@ __LOCAL errno_t (__LIBCCALL wcsncpy_s)
     return 0;
 }
 #else
-__LIBC errno_t (__LIBCCALL wcscat_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src);
-__LIBC errno_t (__LIBCCALL wcscpy_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src);
-__LIBC errno_t (__LIBCCALL wcsncat_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars);
-__LIBC errno_t (__LIBCCALL wcsncpy_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars);
+__LIBC __NONNULL((1,3)) errno_t (__LIBCCALL wcscat_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src);
+__LIBC __NONNULL((1,3)) errno_t (__LIBCCALL wcscpy_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src);
+__LIBC __NONNULL((1,3)) errno_t (__LIBCCALL wcsncat_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars);
+__LIBC __NONNULL((1,3)) errno_t (__LIBCCALL wcsncpy_s)(wchar_t *__restrict __dst, rsize_t __dstsize, wchar_t const *__restrict __src, rsize_t __max_chars);
 #endif
 #endif /* !__wcsncat_s_defined */
 #endif /* __USE_DOS_SLIB */
@@ -1696,7 +1739,7 @@ __LIBC errno_t (__LIBCCALL wcsncpy_s)(wchar_t *__restrict __dst, rsize_t __dstsi
 #ifdef __USE_DOS_SLIB
 #ifndef __wcsnlen_s_defined
 #define __wcsnlen_s_defined 1
-__LOCAL size_t (__LIBCCALL wcsnlen_s)(wchar_t const *__restrict __src, size_t __max_chars) { return__src ? wcsnlen(__src,__max_chars) : 0; }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL wcsnlen_s)(wchar_t const *__restrict __src, size_t __max_chars) { return__src ? wcsnlen(__src,__max_chars) : 0; }
 #endif /* !__wcsnlen_s_defined */
 #endif /* __USE_DOS_SLIB */
 #endif /* !_WSTRING_DEFINED */
@@ -1708,17 +1751,18 @@ __SYSDECL_END
 
 #ifdef __USE_GNU
 #include "hybrid/alloca.h"
+#include "hybrid/string.h"
 #define strdupa(s)	\
  __XBLOCK({ \
    char const *const __old = (s); \
-   size_t const __len = strlen(__old)+1; \
+   size_t const __len = __hybrid_strlen(__old)+1; \
    char *const __new = (char *)__ALLOCA(__len); \
    __XRETURN (char *)memcpy(__new,__old,__len); \
  })
 #define strndupa(s,n) \
  __XBLOCK({ \
    char const *const __old = (s); \
-   size_t const __len = strnlen(__old,(n)); \
+   size_t const __len = __hybrid_strnlen(__old,(n)); \
    char *const __new = (char *)__ALLOCA(__len+1); \
    __new[__len] = '\0'; \
    __XRETURN (char *)memcpy(__new,__old,__len); \
@@ -1728,14 +1772,14 @@ __SYSDECL_END
 #define strdupma(s)	\
  __XBLOCK({ \
    char const *const __old = (s); \
-   size_t const __len = strlen(__old)+1; \
+   size_t const __len = __hybrid_strlen(__old)+1; \
    char *const __new = (char *)__amalloc(__len); \
    __XRETURN __new ? (char *)memcpy(__new,__old,__len) : (char *)0; \
  })
 #define strndupma(s,n) \
  __XBLOCK({ \
    char const *const __old = (s); \
-   size_t const __len = strnlen(__old,(n)); \
+   size_t const __len = __hybrid_strnlen(__old,(n)); \
    char *const __new = (char *)__amalloc(__len+1); \
    __XRETURN __new ? (__new[__len] = '\0',(char *)memcpy(__new,__old,__len)) : (char *)0; \
  })

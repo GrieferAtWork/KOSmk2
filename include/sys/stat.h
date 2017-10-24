@@ -222,14 +222,14 @@ typedef __blksize_t blksize_t;
  * >> int CDECL lstat64(char const *kos_file, struct __glc_stat64 *buf);
  * 
  * __CRT_DOS: (__DOS_COMPAT__)
- * >> int CDECL _fstat32(int fd, struct __dos_stat32 *buf);
+ * >> int CDECL [OLD: _fstat,    NEW:_fstat32] (int fd, struct __dos_stat32 *buf);
+ * >> int CDECL [OLD: _fstati64, NEW:_fstat32i64] (int fd, struct __dos_stat32i64 *buf);
+ * >> int CDECL [OLD: _stat,     NEW:_stat32] (char const *dos_file, struct __dos_stat32 *buf);
+ * >> int CDECL [OLD: _stati64,  NEW:_stat32i64] (char const *dos_file, struct __dos_stat32i64 *buf);
  * >> int CDECL _fstat64(int fd, struct __dos_stat64 *buf);
- * >> int CDECL _fstat32i64(int fd, struct __dos_stat32i64 *buf);
- * >> int CDECL _fstat64i32(int fd, struct __dos_stat64i32 *buf) = _fstat64;
- * >> int CDECL _stat32(char const *dos_file, struct __dos_stat32 *buf);
  * >> int CDECL _stat64(char const *dos_file, struct __dos_stat64 *buf);
- * >> int CDECL _stat32i64(char const *dos_file, struct __dos_stat32i64 *buf);
- * >> int CDECL _stat64i32(char const *dos_file, struct __dos_stat64i32 *buf) = _stat64;
+ * >> int CDECL [NEW: _fstat64i32](int fd, struct __dos_stat64i32 *buf) = _fstat64;
+ * >> int CDECL [NEW: _stat64i32](char const *dos_file, struct __dos_stat64i32 *buf) = _stat64;
  *
  * NOTE: Since KOS uses a different 'stat' buffer than glibc, but still wants to
  *       maintain binary compatibility, the 'stat()' function provided internally
@@ -266,18 +266,42 @@ __REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,lstat64,(char c
 #else /* __USE_TIME_BITS64 */
 #undef _stat32
 #undef _stat32i64
+#undef _fstat32
+#undef _fstat32i64
+#ifdef __USE_DOS_LINKOLDFINDSTAT
+#   undef _stat
+#   undef _stati64
+#   undef _fstat
+#   undef _fstati64
+#endif /* __USE_DOS_LINKOLDFINDSTAT */
 #ifdef __USE_FILE_OFFSET64
+#ifdef __USE_DOS_LINKOLDFINDSTAT
+__REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,stat,(char const *__restrict __file, struct stat *__restrict __buf),_stati64,(__file,__buf))
+__REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,fstat,(int __fd, struct stat *__buf),_fstati64,(__fd,__buf))
+#if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K)
+__REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,lstat,(char const *__restrict __file, struct stat *__restrict __buf),_stati64,(__file,__buf))
+#endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K */
+#else /* __USE_DOS_LINKOLDFINDSTAT */
 __REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,stat,(char const *__restrict __file, struct stat *__restrict __buf),_stat32i64,(__file,__buf))
 __REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,fstat,(int __fd, struct stat *__buf),_fstat32i64,(__fd,__buf))
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K)
 __REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,lstat,(char const *__restrict __file, struct stat *__restrict __buf),_stat32i64,(__file,__buf))
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K */
+#endif /* !__USE_DOS_LINKOLDFINDSTAT */
 #else /* __USE_FILE_OFFSET64 */
+#ifdef __USE_DOS_LINKOLDFINDSTAT
+__REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,stat,(char const *__restrict __file, struct stat *__restrict __buf),_stat,(__file,__buf))
+__REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,fstat,(int __fd, struct stat *__buf),_fstat,(__fd,__buf))
+#if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K)
+__REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,lstat,(char const *__restrict __file, struct stat *__restrict __buf),_stat,(__file,__buf))
+#endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K */
+#else /* __USE_DOS_LINKOLDFINDSTAT */
 __REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,stat,(char const *__restrict __file, struct stat *__restrict __buf),_stat32,(__file,__buf))
 __REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,fstat,(int __fd, struct stat *__buf),_fstat32,(__fd,__buf))
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K)
 __REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,lstat,(char const *__restrict __file, struct stat *__restrict __buf),_stat32,(__file,__buf))
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K */
+#endif /* !__USE_DOS_LINKOLDFINDSTAT */
 #endif /* !__USE_FILE_OFFSET64 */
 #ifdef __USE_LARGEFILE64
 __REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,stat64,(char const *__restrict __file, struct stat64 *__restrict __buf),_stat32i64,(__fd,__buf))
@@ -435,12 +459,24 @@ __LIBC __NONNULL((2)) int (__LIBCCALL futimens64)(int __fd, struct __timespec64 
 #ifdef __USE_DOS
 #ifdef __DOS_COMPAT__
 /* Link stat functions with binary compatibility to DOS's stat buffer types. */
+#ifdef __USE_DOS_LINKOLDFINDSTAT
+#undef _stat
+#undef _stati64
+#undef _fstat
+#undef _fstati64
+__REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,_stat32,(char const *__restrict __file, struct _stat32 *__restrict __buf),_stat,(__file,__buf))
+__REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,_stat32i64,(char const *__restrict __file, struct _stat32i64 *__restrict __buf),_stati64,(__file,__buf))
+__REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,_fstat32,(int __fd, struct _stat32 *__restrict __buf),_fstat,(__fd,__buf))
+__REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,_fstat32i64,(int __fd, struct _stat32i64 *__restrict __buf),_fstati64,(__fd,__buf))
+#else /* __USE_DOS_LINKOLDFINDSTAT */
 __LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat32)(char const *__restrict __file, struct _stat32 *__restrict __buf);
-__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat64)(char const *__restrict __file, struct _stat64 *__restrict __buf);
 __LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat32i64)(char const *__restrict __file, struct _stat32i64 *__restrict __buf);
 __LIBC __NONNULL((2)) int (__LIBCCALL _fstat32)(int __fd, struct _stat32 *__restrict __buf);
-__LIBC __NONNULL((2)) int (__LIBCCALL _fstat64)(int __fd, struct _stat64 *__restrict __buf);
 __LIBC __NONNULL((2)) int (__LIBCCALL _fstat32i64)(int __fd, struct _stat32i64 *__restrict __buf);
+#endif /* !__USE_DOS_LINKOLDFINDSTAT  */
+
+__LIBC __WARN_NOKOSFS __NONNULL((1,2)) int (__LIBCCALL _stat64)(char const *__restrict __file, struct _stat64 *__restrict __buf);
+__LIBC __NONNULL((2)) int (__LIBCCALL _fstat64)(int __fd, struct _stat64 *__restrict __buf);
 __REDIRECT(__LIBC,__WARN_NOKOSFS __NONNULL((1,2)),int,__LIBCCALL,_stat64i32,(char const *__restrict __file, struct _stat64i32 *__restrict __buf),_stat64,(__file,__buf))
 __REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,_fstat64i32,(int __fd, struct _stat64i32 *__restrict __buf),_fstat64,(__fd,__buf))
 #elif defined(__GLC_COMPAT__)

@@ -34,8 +34,8 @@ extern __WUNUSED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL _alloca)(__SIZE_TYPE__
 __NAMESPACE_INT_END
 #define __ALLOCA(s)  __NAMESPACE_INT_SYM _alloca((s))
 #else /* _MSC_VER */
-__LIBC __WUNUSED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL alloca)(__SIZE_TYPE__ __n_bytes);
-#define __ALLOCA(s)  alloca((s))
+extern __WUNUSED __ATTR_ALLOC_SIZE((1)) void *(__LIBCCALL alloca)(__SIZE_TYPE__ __n_bytes);
+#define __ALLOCA(s)  (alloca)((s))
 #endif /* !_MSC_VER */
 __SYSDECL_END
 #endif /* ... */

@@ -64,11 +64,11 @@
 #include "__atomic-msvc.h"
 #endif
 
-__DECL_BEGIN
+__SYSDECL_BEGIN
 
 #if defined(__CC__) || defined(__DEEMON__)
 
-#if __GCC_VERSION(4,7,0) || defined(__VS_ANDROID__)
+#if __GCC_VERSION(4,7,0)
 #define __hybrid_atomic_load(x,order)                          __atomic_load_n(&(x),order)
 #define __hybrid_atomic_store(x,v,order)                       __atomic_store_n(&(x),v,order)
 #define __hybrid_atomic_xch(x,v,order)                         __atomic_exchange_n(&(x),v,order)
@@ -107,6 +107,10 @@ __DECL_BEGIN
 #endif /* GCC 4.4 */
 #define __impl_hybrid_atomic_cmpxch_seqcst(x,oldv,newv)     __sync_bool_compare_and_swap(&(x),oldv,newv)
 #define __impl_hybrid_atomic_cmpxch_val_seqcst(x,oldv,newv) __sync_val_compare_and_swap(&(x),oldv,newv)
+#elif defined(__COMPILER_HAVE_GCC_ASM)
+__SYSDECL_END
+#include "__atomic-gasm.h"
+__SYSDECL_BEGIN
 #endif
 
 
@@ -121,16 +125,16 @@ __DECL_BEGIN
 #ifdef __impl_hybrid_atomic_cmpxch_seqcst
 #ifndef __NO_XBLOCK
 #define __hybrid_atomic_cmpxch(x,oldv,newv,succ,fail) \
- __XBLOCK({ register __BOOL __res; \
+ __XBLOCK({ register __BOOL __xb_res; \
             int const __order = __MAX(succ,fail); \
             if (__order >= __ATOMIC_SEQ_CST) { \
-                __res = __impl_hybrid_atomic_cmpxch_seqcst(x,oldv,newv); \
+                __xb_res = __impl_hybrid_atomic_cmpxch_seqcst(x,oldv,newv); \
             } else {\
                 if (__order == __ATOMIC_ACQUIRE || \
                     __order >= __ATOMIC_ACQ_REL) \
                     __COMPILER_READ_BARRIER(); \
-                __res = (x) == (oldv); \
-                if (__res) { \
+                __xb_res = (x) == (oldv); \
+                if (__xb_res) { \
                   (x) = (newv); \
                   if ((succ) >= __ATOMIC_RELEASE) \
                        __COMPILER_WRITE_BARRIER(); \
@@ -139,7 +143,7 @@ __DECL_BEGIN
                        __COMPILER_READ_BARRIER(); \
                 } \
             } \
-            __XRETURN __res; \
+            __XRETURN __xb_res; \
  })
 #else /* !__NO_XBLOCK */
 #define __DEFINE_WRAPPER(n) \
@@ -199,16 +203,16 @@ __FORCELOCAL __BOOL (__hybrid_atomic_cmpxch)(__T &__x, __OV __oldv, __NV __newv,
 #ifdef __impl_hybrid_atomic_cmpxch_val_seqcst
 #if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_TYPEOF)
 #define __hybrid_atomic_cmpxch_val(x,oldv,newv,succ,fail) \
- __XBLOCK({ __typeof__(x) __res; \
+ __XBLOCK({ __typeof__(x) __xv_res; \
             int const __order = __MAX(succ,fail); \
-            if (__order >= __ATOMIC_SEQ_CST) { \
-                __res = (__typeof__(__res))__impl_hybrid_atomic_cmpxch_val_seqcst(x,oldv,newv); \
+            __xv_res (__order >= __ATOMIC_SEQ_CST) { \
+                __xv_res = (__typeof__(__xv_res))__impl_hybrid_atomic_cmpxch_val_seqcst(x,oldv,newv); \
             } else {\
                 if (__order == __ATOMIC_ACQUIRE || \
                     __order >= __ATOMIC_ACQ_REL) \
                     __COMPILER_READ_BARRIER(); \
-                __res = (x); \
-                if (__res == (oldv)) { \
+                __xv_res = (x); \
+                if (__xv_res == (oldv)) { \
                   (x) = (newv); \
                   if ((succ) >= __ATOMIC_RELEASE) \
                        __COMPILER_WRITE_BARRIER(); \
@@ -217,7 +221,7 @@ __FORCELOCAL __BOOL (__hybrid_atomic_cmpxch)(__T &__x, __OV __oldv, __NV __newv,
                        __COMPILER_READ_BARRIER(); \
                 } \
             } \
-            __XRETURN __res; \
+            __XRETURN __xv_res; \
  })
 #else /* !__NO_XBLOCK && __COMPILER_HAVE_TYPEOF */
 #define __DEFINE_WRAPPER(n) \
@@ -292,14 +296,14 @@ __FORCELOCAL __T (__hybrid_atomic_cmpxch_val)(__T &__x, __OV __oldv, __NV __newv
 #ifndef __hybrid_atomic_cmpxch_val
 #if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_TYPEOF)
 #define __hybrid_atomic_cmpxch_val(x,oldv,newv,succ,fail) \
- __XBLOCK({ register __typeof__(x) __res; \
+ __XBLOCK({ register __typeof__(x) __xv_res; \
             do { __COMPILER_READ_BARRIER(); \
-                 __res = (x); /* __ATOMIC_ACQUIRE */ \
-                 if (__hybrid_atomic_cmpxch(x,__res,__res == (oldv) \
-                                         ? (newv) : __res,succ,fail)) \
+                 __xv_res = (x); /* __ATOMIC_ACQUIRE */ \
+                 if (__hybrid_atomic_cmpxch(x,__xv_res,__xv_res == (oldv) \
+                                            ? (newv) : __xv_res,succ,fail)) \
                      break;  \
             } __WHILE1; \
-            __XRETURN __res; \
+            __XRETURN __xv_res; \
  })
 #else /* __NO_XBLOCK */
 #define __DEFINE_WRAPPER(n) \
@@ -367,18 +371,18 @@ __FORCELOCAL __T (__hybrid_atomic_cmpxch_val)(__T &__x, __V __oldv, __V __newv, 
 #endif
 #if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_TYPEOF)
 #define __hybrid_atomic_load(x,order) \
- __XBLOCK({ register __typeof__(x) __res; \
+ __XBLOCK({ register __typeof__(x) __ld_res; \
             if (order >= __ATOMIC_SEQ_CST) \
-                __res = __impl_hybrid_atomic_load_seqcst(x); \
+                __ld_res = __impl_hybrid_atomic_load_seqcst(x); \
             else { \
                 if ((order) == __ATOMIC_ACQUIRE || \
                     (order) == __ATOMIC_ACQ_REL) \
                     __COMPILER_READ_BARRIER(); \
-                __res = (x); \
+                __ld_res = (x); \
                 if ((order) >= __ATOMIC_RELEASE) \
                     __COMPILER_WRITE_BARRIER(); \
             } \
-            __XRETURN __res; \
+            __XRETURN __ld_res; \
  })
 #else /* !__NO_XBLOCK && __COMPILER_HAVE_TYPEOF */
 #define __DEFINE_WRAPPER(n) \
@@ -510,26 +514,26 @@ __FORCELOCAL void (__hybrid_atomic_store)(__T &__x, __V __v, int __order) {
 #define __hybrid_opfun_nand(x,y) (~((x)&(y)))
 #if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_TYPEOF)
 #define __XBLOCK_hybrid_atomic_fetchop_seqcst(opfun,x,v) \
- __XBLOCK({ register __typeof__(x) __res; \
-            do __res = (x); \
-            while (!__hybrid_atomic_cmpxch_weak(x,__res, \
-                  (__typeof__(__res))opfun(__res,v),__ATOMIC_SEQ_CST,__ATOMIC_SEQ_CST)); \
-            __XRETURN __re; \
+ __XBLOCK({ register __typeof__(x) __sc_res; \
+            do __sc_res = (x); \
+            while (!__hybrid_atomic_cmpxch_weak(x,__sc_res, \
+                  (__typeof__(__sc_res))opfun(__sc_res,v),__ATOMIC_SEQ_CST,__ATOMIC_SEQ_CST)); \
+            __XRETURN __sc_res; \
  })
 #define __XBLOCK_hybrid_atomic_fetchop(opfun,seqcst,x,v,order) \
- __XBLOCK({ register __typeof__(x) __res; \
+ __XBLOCK({ register __typeof__(x) __fo_res; \
             if ((order) >= __ATOMIC_SEQ_CST) { \
-                __res = seqcst(x,v); \
+                __fo_res = seqcst(x,v); \
             } else { \
                 if ((order) == __ATOMIC_ACQUIRE || \
                     (order) == __ATOMIC_ACQ_REL) \
                     __COMPILER_READ_BARRIER(); \
-                __res = (x); \
-                (x) = (__typeof__(__res))opfun(__res,v); \
+                __fo_res = (x); \
+                (x) = (__typeof__(__fo_res))opfun(__fo_res,v); \
                 if ((order) >= __ATOMIC_RELEASE) \
                     __COMPILER_WRITE_BARRIER(); \
             } \
-            __XRETURN __res; \
+            __XRETURN __fo_res; \
  })
 #else /* !__NO_XBLOCK && __COMPILER_HAVE_TYPEOF */
 #define __DECL_INLINE_hybrid_atomic_fetchop_seqcst(name,n,opfun) \
@@ -621,7 +625,7 @@ function atomic_operation(name,opname) {
     print " __XBLOCK_hybrid_atomic_fetchop_seqcst(__hybrid_opfun_"+opname+",x,v)";
     print "#endif /" "* __impl_hybrid_atomic_"+name+"_seqcst *" "/";
     print "#define __hybrid_atomic_"+name+"(x,v,order) \\";
-    print "  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_"+opname+",__impl_hybrid_atomic_"+opname+"_seqcst,x,v,order)";
+    print "  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_"+opname+",__impl_hybrid_atomic_"+name+"_seqcst,x,v,order)";
     print "#else /" "* __XBLOCK_hybrid_atomic_fetchop *" "/";
     print "#ifndef __impl_hybrid_atomic_"+name+"_seqcst";
     print "#ifdef __CALL_hybrid_atomic_fetchop_seqcst";
@@ -686,7 +690,7 @@ __INLINE_hybrid_atomic_fetchop(__hybrid_atomic_xch,__impl_hybrid_atomic_xch_seqc
  __XBLOCK_hybrid_atomic_fetchop_seqcst(__hybrid_opfun_add,x,v)
 #endif /* __impl_hybrid_atomic_fetchadd_seqcst */
 #define __hybrid_atomic_fetchadd(x,v,order) \
-  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_add,__impl_hybrid_atomic_add_seqcst,x,v,order)
+  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_add,__impl_hybrid_atomic_fetchadd_seqcst,x,v,order)
 #else /* __XBLOCK_hybrid_atomic_fetchop */
 #ifndef __impl_hybrid_atomic_fetchadd_seqcst
 #ifdef __CALL_hybrid_atomic_fetchop_seqcst
@@ -714,7 +718,7 @@ __INLINE_hybrid_atomic_fetchop(__hybrid_atomic_fetchadd,__impl_hybrid_atomic_fet
  __XBLOCK_hybrid_atomic_fetchop_seqcst(__hybrid_opfun_sub,x,v)
 #endif /* __impl_hybrid_atomic_fetchsub_seqcst */
 #define __hybrid_atomic_fetchsub(x,v,order) \
-  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_sub,__impl_hybrid_atomic_sub_seqcst,x,v,order)
+  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_sub,__impl_hybrid_atomic_fetchsub_seqcst,x,v,order)
 #else /* __XBLOCK_hybrid_atomic_fetchop */
 #ifndef __impl_hybrid_atomic_fetchsub_seqcst
 #ifdef __CALL_hybrid_atomic_fetchop_seqcst
@@ -742,7 +746,7 @@ __INLINE_hybrid_atomic_fetchop(__hybrid_atomic_fetchsub,__impl_hybrid_atomic_fet
  __XBLOCK_hybrid_atomic_fetchop_seqcst(__hybrid_opfun_and,x,v)
 #endif /* __impl_hybrid_atomic_fetchand_seqcst */
 #define __hybrid_atomic_fetchand(x,v,order) \
-  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_and,__impl_hybrid_atomic_and_seqcst,x,v,order)
+  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_and,__impl_hybrid_atomic_fetchand_seqcst,x,v,order)
 #else /* __XBLOCK_hybrid_atomic_fetchop */
 #ifndef __impl_hybrid_atomic_fetchand_seqcst
 #ifdef __CALL_hybrid_atomic_fetchop_seqcst
@@ -770,7 +774,7 @@ __INLINE_hybrid_atomic_fetchop(__hybrid_atomic_fetchand,__impl_hybrid_atomic_fet
  __XBLOCK_hybrid_atomic_fetchop_seqcst(__hybrid_opfun_or,x,v)
 #endif /* __impl_hybrid_atomic_fetchor_seqcst */
 #define __hybrid_atomic_fetchor(x,v,order) \
-  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_or,__impl_hybrid_atomic_or_seqcst,x,v,order)
+  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_or,__impl_hybrid_atomic_fetchor_seqcst,x,v,order)
 #else /* __XBLOCK_hybrid_atomic_fetchop */
 #ifndef __impl_hybrid_atomic_fetchor_seqcst
 #ifdef __CALL_hybrid_atomic_fetchop_seqcst
@@ -798,7 +802,7 @@ __INLINE_hybrid_atomic_fetchop(__hybrid_atomic_fetchor,__impl_hybrid_atomic_fetc
  __XBLOCK_hybrid_atomic_fetchop_seqcst(__hybrid_opfun_xor,x,v)
 #endif /* __impl_hybrid_atomic_fetchxor_seqcst */
 #define __hybrid_atomic_fetchxor(x,v,order) \
-  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_xor,__impl_hybrid_atomic_xor_seqcst,x,v,order)
+  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_xor,__impl_hybrid_atomic_fetchxor_seqcst,x,v,order)
 #else /* __XBLOCK_hybrid_atomic_fetchop */
 #ifndef __impl_hybrid_atomic_fetchxor_seqcst
 #ifdef __CALL_hybrid_atomic_fetchop_seqcst
@@ -826,7 +830,7 @@ __INLINE_hybrid_atomic_fetchop(__hybrid_atomic_fetchxor,__impl_hybrid_atomic_fet
  __XBLOCK_hybrid_atomic_fetchop_seqcst(__hybrid_opfun_nand,x,v)
 #endif /* __impl_hybrid_atomic_fetchnand_seqcst */
 #define __hybrid_atomic_fetchnand(x,v,order) \
-  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_nand,__impl_hybrid_atomic_nand_seqcst,x,v,order)
+  __XBLOCK_hybrid_atomic_fetchop(__hybrid_opfun_nand,__impl_hybrid_atomic_fetchnand_seqcst,x,v,order)
 #else /* __XBLOCK_hybrid_atomic_fetchop */
 #ifndef __impl_hybrid_atomic_fetchnand_seqcst
 #ifdef __CALL_hybrid_atomic_fetchop_seqcst
@@ -883,7 +887,7 @@ __INLINE_hybrid_atomic_fetchop(__hybrid_atomic_fetchnand,__impl_hybrid_atomic_fe
 
 #endif /* __CC__ */
 
-__DECL_END
+__SYSDECL_END
 
 #ifdef _MSC_VER
 #ifndef __cplusplus

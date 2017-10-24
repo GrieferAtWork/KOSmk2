@@ -415,8 +415,11 @@ module_file(struct module *__restrict self) {
   if (core_open_attempted) return NULL;
   core_open_attempted = true;
   /* Try to open the kernel core binary for reading. */
-  stream = _mall_untrack(kopen(CONFIG_KERNEL_CORE_BIN,O_RDONLY));
-  if unlikely(!stream) return NULL;
+  task_nointr();
+  stream = kopen(CONFIG_KERNEL_CORE_BIN,O_RDONLY);
+  task_endnointr();
+  if unlikely(E_ISERR(stream)) return NULL;
+  _mall_untrack(stream);
   /* Try to fill in the kernel module's file pointer. */
   if (!ATOMIC_CMPXCH(kernel_module.m_file,NULL,stream))
        FILE_DECREF(stream);

@@ -177,10 +177,10 @@ struct itimerspec64 {
 #define __yearstodays(n_years) (((146097*(n_years))/400)/*-1*/) /* rounding error? */
 
 #ifdef __DOS_COMPAT__
-__REDIRECT(__LIBC,__ATTR_RETNONNULL,char **,__LIBCCALL,__dos_tzname,(void),__tzname,())
-__REDIRECT(__LIBC,__ATTR_RETNONNULL,int *,__LIBCCALL,__dos_daylight,(void),__daylight,())
-__REDIRECT(__LIBC,__ATTR_RETNONNULL,long *,__LIBCCALL,__dos_timezone,(void),__timezone,())
-__REDIRECT(__LIBC,__ATTR_RETNONNULL,long *,__LIBCCALL,__dos_dstbias,(void),__dstbias,())
+__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL,char **,__LIBCCALL,__dos_tzname,(void),__tzname,())
+__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL,int *,__LIBCCALL,__dos_daylight,(void),__daylight,())
+__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL,long *,__LIBCCALL,__dos_timezone,(void),__timezone,())
+__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL,long *,__LIBCCALL,__dos_dstbias,(void),__dstbias,())
 #ifdef __USE_TIME_BITS64
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_gmtime_s,(struct tm *__restrict __tp, time_t const *__restrict __timer),_gmtime64_s,(__tp,__timer))
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_localtime_s,(struct tm *__restrict __tp, time_t const *__restrict __timer),_localtime64_s,(__tp,__timer))
@@ -206,18 +206,18 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_ctime64_s,(char *__buf, size_t __bufsize
 
 #ifndef __KERNEL__
 __NAMESPACE_STD_BEGIN
-__REDIRECT_DOS_FUNC(__LIBC,,clock_t,__LIBCCALL,clock,(void),clock,())
+__REDIRECT_DOS_FUNC(__LIBC,__WUNUSED,clock_t,__LIBCCALL,clock,(void),clock,())
 #if (defined(__PE__) || defined(__DOS_COMPAT__)) && defined(__CRT_DOS)
 #ifdef __USE_TIME_BITS64
 __REDIRECT(__LIBC,,time_t,__LIBCCALL,time,(time_t *__timer),_time64,(__timer))
-__REDIRECT(__LIBC,__ATTR_CONST,double,__LIBCCALL,difftime,(time_t __time1, time_t __time0),_difftime64,(__time1,__time0))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,double,__LIBCCALL,difftime,(time_t __time1, time_t __time0),_difftime64,(__time1,__time0))
 __REDIRECT(__LIBC,__WUNUSED ,time_t,__LIBCCALL,mktime,(struct tm __FIXED_CONST *__tp),_mktime64,(__tp))
 __REDIRECT(__LIBC,__WUNUSED,char *,__LIBCCALL,ctime,(time_t const *__timer),_ctime64,(__timer))
 __REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,gmtime,(time_t const *__timer),_gmtime64,(__timer))
 __REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,localtime,(time_t const *__timer),_localtime64,(__timer))
 #else /* __USE_TIME_BITS64 */
 __REDIRECT(__LIBC,,time_t,__LIBCCALL,time,(time_t *__timer),_time32,(__timer))
-__REDIRECT(__LIBC,__ATTR_CONST,double,__LIBCCALL,difftime,(time_t __time1, time_t __time0),_difftime32,(__time1,__time0))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,double,__LIBCCALL,difftime,(time_t __time1, time_t __time0),_difftime32,(__time1,__time0))
 __REDIRECT(__LIBC,__WUNUSED ,time_t,__LIBCCALL,mktime,(struct tm __FIXED_CONST *__tp),_mktime32,(__tp))
 __REDIRECT(__LIBC,__WUNUSED,char *,__LIBCCALL,ctime,(time_t const *__timer),_ctime32,(__timer))
 __REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,gmtime,(time_t const *__timer),_gmtime32,(__timer))
@@ -232,21 +232,21 @@ __REDIRECT(__LIBC,__WUNUSED,char *,__LIBCCALL,__ctime32,(__time32_t const *__tim
 __REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,__gmtime32,(time_t const *__timer),gmtime,(__timer))
 __REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,__localtime32,(time_t const *__timer),localtime,(__timer))
 __LOCAL time_t (__LIBCCALL time)(time_t *__timer) { __time32_t __t = __time32(0); if (__timer) *__timer = (time_t)__t; return (time_t)__t; }
-__LOCAL __ATTR_CONST double (__LIBCCALL difftime)(time_t __time1, time_t __time0) { return __difftime32((__time32_t)__time1,(__time32_t)__time0); }
+__LOCAL __WUNUSED __ATTR_CONST double (__LIBCCALL difftime)(time_t __time1, time_t __time0) { return __difftime32((__time32_t)__time1,(__time32_t)__time0); }
 __LOCAL __WUNUSED time_t (__LIBCCALL mktime)(struct tm __FIXED_CONST *__tp) { return (__time_t)__mktime32(__tp); }
 __LOCAL __WUNUSED char *(__LIBCCALL ctime)(time_t const *__timer) { __time32_t __t = (__time32_t)*__timer; return __ctime32(&__t); }
 __LOCAL __WUNUSED struct tm *(__LIBCCALL gmtime)(time_t const *__timer) { __time32_t __t = (__time32_t)*__timer; return __gmtime32(&__t); }
 __LOCAL __WUNUSED struct tm *(__LIBCCALL localtime)(time_t const *__timer) { __time32_t __t = (__time32_t)*__timer; return __localtime32(&__t); }
 #else /* Compat... */
 __REDIRECT_TM_FUNC(__LIBC,,time_t,__LIBCCALL,time,(time_t *__timer),time,(__timer))
-__REDIRECT_TM_FUNC(__LIBC,__ATTR_CONST,double,__LIBCCALL,difftime,(time_t __time1, time_t __time0),difftime,(__time1,__time0))
+__REDIRECT_TM_FUNC(__LIBC,__WUNUSED __ATTR_CONST,double,__LIBCCALL,difftime,(time_t __time1, time_t __time0),difftime,(__time1,__time0))
 __REDIRECT_TM_FUNC(__LIBC,__WUNUSED ,time_t,__LIBCCALL,mktime,(struct tm __FIXED_CONST *__tp),mktime,(__tp))
 __REDIRECT_TM_FUNC(__LIBC,__WUNUSED,char *,__LIBCCALL,ctime,(time_t const *__timer),ctime,(__timer))
 __REDIRECT_TM_FUNC(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,gmtime,(time_t const *__timer),gmtime,(__timer))
 __REDIRECT_TM_FUNC(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,localtime,(time_t const *__timer),localtime,(__timer))
 #endif /* Builtin... */
 __LIBC size_t (__LIBCCALL strftime)(char *__restrict __s, size_t __maxsize, char const *__restrict __format, struct tm const *__restrict __tp);
-__LIBC char *(__LIBCCALL asctime)(struct tm const *__tp);
+__LIBC __WUNUSED char *(__LIBCCALL asctime)(struct tm const *__tp);
 __NAMESPACE_STD_END
 
 #ifndef __CXX_SYSTEM_HEADER
@@ -264,7 +264,7 @@ __NAMESPACE_STD_USING(localtime)
 #ifdef __USE_TIME64
 #if (defined(__PE__) || defined(__DOS_COMPAT__)) && defined(__CRT_DOS)
 __REDIRECT(__LIBC,,time64_t,__LIBCCALL,time64,(time64_t *__timer),_time64,(__timer))
-__REDIRECT(__LIBC,__ATTR_CONST,double,__LIBCCALL,difftime64,(time64_t __time1, time64_t __time0),_difftime64,(__time1,__time0))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,double,__LIBCCALL,difftime64,(time64_t __time1, time64_t __time0),_difftime64,(__time1,__time0))
 __REDIRECT(__LIBC,__WUNUSED ,time64_t,__LIBCCALL,mktime64,(struct tm __FIXED_CONST *__tp),_mktime64,(__tp))
 __REDIRECT(__LIBC,__WUNUSED,char *,__LIBCCALL,ctime64,(time64_t const *__timer),_ctime64,(__timer))
 __REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,gmtime64,(time64_t const *__timer),_gmtime64,(__timer))
@@ -272,14 +272,14 @@ __REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,localtime64,(time64_t const *
 #elif defined(__GLC_COMPAT__) || !defined(__CRT_KOS)
 #ifdef __USE_TIME_BITS64
 __LOCAL time64_t (__LIBCCALL time64)(time64_t *__timer) { __time32_t __t = __NAMESPACE_STD_SYM __time32(0); if (__timer) *__timer = (time64_t)__t; return (time64_t)__t; }
-__LOCAL __ATTR_CONST double (__LIBCCALL difftime64)(time64_t __time1, time64_t __time0) { return __NAMESPACE_STD_SYM __difftime32((__time32_t)__time1,(__time32_t)__time0); }
+__LOCAL __WUNUSED __ATTR_CONST double (__LIBCCALL difftime64)(time64_t __time1, time64_t __time0) { return __NAMESPACE_STD_SYM __difftime32((__time32_t)__time1,(__time32_t)__time0); }
 __LOCAL __WUNUSED time64_t (__LIBCCALL mktime64)(struct tm __FIXED_CONST *__tp) { return (__time64_t)__NAMESPACE_STD_SYM __mktime32(__tp); }
 __LOCAL __WUNUSED char *(__LIBCCALL ctime64)(time64_t const *__timer) { __time32_t __t = (__time32_t)*__timer; return __NAMESPACE_STD_SYM __ctime32(&__t); }
 __LOCAL __WUNUSED struct tm *(__LIBCCALL gmtime64)(time64_t const *__timer) { __time32_t __t = (__time32_t)*__timer; return __NAMESPACE_STD_SYM __gmtime32(&__t); }
 __LOCAL __WUNUSED struct tm *(__LIBCCALL localtime64)(time64_t const *__timer) { __time32_t __t = (__time32_t)*__timer; return __NAMESPACE_STD_SYM __localtime32(&__t); }
 #else /* __USE_TIME_BITS64 */
 __LOCAL time64_t (__LIBCCALL time64)(time64_t *__timer) { __time32_t __t = __NAMESPACE_STD_SYM time(0); if (__timer) *__timer = (time64_t)__t; return (time64_t)__t; }
-__LOCAL __ATTR_CONST double (__LIBCCALL difftime64)(time64_t __time1, time64_t __time0) { return __NAMESPACE_STD_SYM difftime((__time32_t)__time1,(__time32_t)__time0); }
+__LOCAL __WUNUSED __ATTR_CONST double (__LIBCCALL difftime64)(time64_t __time1, time64_t __time0) { return __NAMESPACE_STD_SYM difftime((__time32_t)__time1,(__time32_t)__time0); }
 __LOCAL __WUNUSED time64_t (__LIBCCALL mktime64)(struct tm __FIXED_CONST *__tp) { return (__time64_t)__NAMESPACE_STD_SYM mktime(__tp); }
 __LOCAL __WUNUSED char *(__LIBCCALL ctime64)(time64_t const *__timer) { __time32_t __t = (__time32_t)*__timer; return __NAMESPACE_STD_SYM ctime(&__t); }
 __LOCAL __WUNUSED struct tm *(__LIBCCALL gmtime64)(time64_t const *__timer) { __time32_t __t = (__time32_t)*__timer; return __NAMESPACE_STD_SYM gmtime(&__t); }
@@ -287,7 +287,7 @@ __LOCAL __WUNUSED struct tm *(__LIBCCALL localtime64)(time64_t const *__timer) {
 #endif /* !__USE_TIME_BITS64 */
 #else /* Compat... */
 __LIBC time64_t (__LIBCCALL time64)(time64_t *__timer);
-__LIBC __ATTR_CONST double (__LIBCCALL difftime64)(time64_t __time1, time64_t __time0);
+__LIBC __WUNUSED __ATTR_CONST double (__LIBCCALL difftime64)(time64_t __time1, time64_t __time0);
 __LIBC __WUNUSED time64_t (__LIBCCALL mktime64)(struct tm __FIXED_CONST *__tp);
 __LIBC __WUNUSED char *(__LIBCCALL ctime64)(time64_t const *__timer);
 __LIBC __WUNUSED struct tm *(__LIBCCALL gmtime64)(time64_t const *__timer);
@@ -446,9 +446,9 @@ __LIBC time64_t (__LIBCCALL timelocal64)(struct tm __FIXED_CONST *__tp);
 #endif /* __USE_TIME64 */
 
 #ifdef __DOS_COMPAT__
-__LOCAL __ATTR_CONST int (__LIBCCALL dysize)(int __year) { return __isleap(__year) ? 366 : 365; }
+__LOCAL __WUNUSED __ATTR_CONST int (__LIBCCALL dysize)(int __year) { return __isleap(__year) ? 366 : 365; }
 #else /* __DOS_COMPAT__ */
-__LIBC __ATTR_CONST int (__LIBCCALL dysize)(int __year);
+__LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL dysize)(int __year);
 #endif /* !__DOS_COMPAT__ */
 #endif /* __USE_MISC */
 
@@ -732,7 +732,7 @@ __LIBC __PORT_NODOS __NONNULL((1)) int (__LIBCCALL timespec_get64)(struct timesp
 #ifdef __USE_XOPEN_EXTENDED
 #undef getdate_err
 __LIBC __PORT_NODOS int getdate_err;
-__LIBC __PORT_NODOS struct tm *(__LIBCCALL getdate)(char const *__string);
+__LIBC __WUNUSED __PORT_NODOS struct tm *(__LIBCCALL getdate)(char const *__string);
 #endif /* __USE_XOPEN_EXTENDED */
 #endif /* __CRT_GLC */
 
@@ -757,29 +757,29 @@ __REDIRECT_IFKOS(__LIBC,,size_t,__LIBCCALL,_strftime_l,
                  strftime_l,(__buf,__bufsize,__format,__tp,__locale))
 __REDIRECT_IFKOS_VOID(__LIBC,,__LIBCCALL,_tzset,(void),tzset,())
 
-__REDIRECT_IFKOS(__LIBC,,char *,__LIBCCALL,_ctime32,(__time32_t const *__restrict __timer),ctime,(__timer))
-__REDIRECT_IFKOS(__LIBC,,double,__LIBCCALL,_difftime32,(__time32_t __time1, __time32_t __time0),difftime,(__time1,__time0))
-__REDIRECT_IFKOS(__LIBC,,struct tm *,__LIBCCALL,_gmtime32,(__time32_t const *__restrict __timer),gmtime,(__timer))
-__REDIRECT_IFKOS(__LIBC,,struct tm *,__LIBCCALL,_localtime32,(__time32_t const *__restrict __timer),localtime,(__timer))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,char *,__LIBCCALL,_ctime32,(__time32_t const *__restrict __timer),ctime,(__timer))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,double,__LIBCCALL,_difftime32,(__time32_t __time1, __time32_t __time0),difftime,(__time1,__time0))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,_gmtime32,(__time32_t const *__restrict __timer),gmtime,(__timer))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,_localtime32,(__time32_t const *__restrict __timer),localtime,(__timer))
 __REDIRECT_IFKOS(__LIBC,,__time32_t,__LIBCCALL,_time32,(__time32_t *__timer),time,(__timer))
-__REDIRECT_IFKOS(__LIBC,,__time32_t,__LIBCCALL,_mktime32,(struct tm __FIXED_CONST *__restrict __tp),mktime,(__tp))
-__REDIRECT_IFKOS(__LIBC,,__time32_t,__LIBCCALL,_mkgmtime32,(struct tm __FIXED_CONST *__restrict __tp),timegm,(__tp))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,__time32_t,__LIBCCALL,_mktime32,(struct tm __FIXED_CONST *__restrict __tp),mktime,(__tp))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,__time32_t,__LIBCCALL,_mkgmtime32,(struct tm __FIXED_CONST *__restrict __tp),timegm,(__tp))
 
 #ifdef __GLC_COMPAT__
-__LOCAL double (__LIBCCALL _difftime64)(__time64_t __time1, __time64_t __time0) { return _difftime32((__time32_t)__time1,(__time32_t)__time0); }
-__LOCAL char *(__LIBCCALL _ctime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _ctime32(&__tm); }
-__LOCAL struct tm *(__LIBCCALL _gmtime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _gmtime32(&__tm); }
-__LOCAL struct tm *(__LIBCCALL _localtime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _localtime32(&__tm); }
-__LOCAL __time64_t (__LIBCCALL _mktime64)(struct tm __FIXED_CONST *__restrict __tp) { return (__time64_t)_mktime32(__tp); }
-__LOCAL __time64_t (__LIBCCALL _mkgmtime64)(struct tm __FIXED_CONST *__restrict __tp) { return (__time64_t)_mkgmtime32(__tp); }
+__LOCAL __WUNUSED double (__LIBCCALL _difftime64)(__time64_t __time1, __time64_t __time0) { return _difftime32((__time32_t)__time1,(__time32_t)__time0); }
+__LOCAL __WUNUSED char *(__LIBCCALL _ctime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _ctime32(&__tm); }
+__LOCAL __WUNUSED struct tm *(__LIBCCALL _gmtime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _gmtime32(&__tm); }
+__LOCAL __WUNUSED struct tm *(__LIBCCALL _localtime64)(__time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _localtime32(&__tm); }
+__LOCAL __WUNUSED __time64_t (__LIBCCALL _mktime64)(struct tm __FIXED_CONST *__restrict __tp) { return (__time64_t)_mktime32(__tp); }
+__LOCAL __WUNUSED __time64_t (__LIBCCALL _mkgmtime64)(struct tm __FIXED_CONST *__restrict __tp) { return (__time64_t)_mkgmtime32(__tp); }
 __LOCAL __time64_t (__LIBCCALL _time64)(__time64_t *__timer) { __time32_t __res = _time32(NULL); if (__timer) *__timer = __res; return __res; }
 #else /* __GLC_COMPAT__ */
-__REDIRECT_IFKOS(__LIBC,,double,__LIBCCALL,_difftime64,(__time64_t __time1, __time64_t __time0),difftime64,(__time1,__time0))
-__REDIRECT_IFKOS(__LIBC,,char *,__LIBCCALL,_ctime64,(__time64_t const *__restrict __timer),ctime64,(__timer))
-__REDIRECT_IFKOS(__LIBC,,struct tm *,__LIBCCALL,_gmtime64,(__time64_t const *__restrict __timer),gmtime64,(__timer))
-__REDIRECT_IFKOS(__LIBC,,struct tm *,__LIBCCALL,_localtime64,(__time64_t const *__restrict __timer),localtime64,(__timer))
-__REDIRECT_IFKOS(__LIBC,,__time64_t,__LIBCCALL,_mktime64,(struct tm __FIXED_CONST *__restrict __tp),mktime64,(__tp))
-__REDIRECT_IFKOS(__LIBC,,__time64_t,__LIBCCALL,_mkgmtime64,(struct tm __FIXED_CONST *__restrict __tp),mkgmtime64,(__tp))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,double,__LIBCCALL,_difftime64,(__time64_t __time1, __time64_t __time0),difftime64,(__time1,__time0))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,char *,__LIBCCALL,_ctime64,(__time64_t const *__restrict __timer),ctime64,(__timer))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,_gmtime64,(__time64_t const *__restrict __timer),gmtime64,(__timer))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,_localtime64,(__time64_t const *__restrict __timer),localtime64,(__timer))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,__time64_t,__LIBCCALL,_mktime64,(struct tm __FIXED_CONST *__restrict __tp),mktime64,(__tp))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED,__time64_t,__LIBCCALL,_mkgmtime64,(struct tm __FIXED_CONST *__restrict __tp),mkgmtime64,(__tp))
 __REDIRECT_IFKOS(__LIBC,,__time64_t,__LIBCCALL,_time64,(__time64_t *__timer),time64,(__timer))
 #endif /* !__GLC_COMPAT__ */
 
@@ -837,10 +837,10 @@ __REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime64,(__time64_
 __REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime32_s,(wchar_t __buf[26], size_t __maxlen, __time32_t const *__timer),wctime32_s,(__buf,__maxlen,__timer))
 __REDIRECT_IFW32(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime64_s,(wchar_t __buf[26], size_t __maxlen, __time64_t const *__timer),wctime64_s,(__buf,__maxlen,__timer))
 #ifdef __USE_TIME_BITS64
-__REDIRECT2(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime,(time_t const *__restrict __timer),wctime64,_wctime64,(__timer))
+__REDIRECT2(__LIBC,__WUNUSED __PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime,(time_t const *__restrict __timer),wctime64,_wctime64,(__timer))
 __REDIRECT2(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime_s,(wchar_t *__restrict __buf, size_t __maxlen, time_t const *__restrict __timer),wctime64_s,_wctime64_s,(__buf,__maxlen,__timer))
 #else /* __USE_TIME_BITS64 */
-__REDIRECT2(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime,(time_t const *__restrict __timer),wctime32,_wctime32,(__timer))
+__REDIRECT2(__LIBC,__WUNUSED __PORT_DOSONLY,wchar_t *,__LIBCCALL,_wctime,(time_t const *__restrict __timer),wctime32,_wctime32,(__timer))
 __REDIRECT2(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime_s,(wchar_t *__restrict __buf, size_t __maxlen, time_t const *__restrict __timer),wctime32_s,_wctime32_s,(__buf,__maxlen,__timer))
 #endif /* !__USE_TIME_BITS64 */
 #endif /* __CRT_DOS */
@@ -848,7 +848,7 @@ __REDIRECT2(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_wctime_s,(wchar_t *__restr
 #ifndef __std_wcsftime_defined
 #define __std_wcsftime_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC size_t (__LIBCCALL wcsftime)(wchar_t *__restrict __buf, size_t __maxlen, wchar_t const *__restrict __format, struct tm const *__restrict __ptm);
+__LIBC __NONNULL((1,3,4)) size_t (__LIBCCALL wcsftime)(wchar_t *__restrict __buf, size_t __maxlen, wchar_t const *__restrict __format, struct tm const *__restrict __ptm);
 __NAMESPACE_STD_END
 #endif /* !__std_wcsftime_defined */
 #ifndef __wcsftime_defined

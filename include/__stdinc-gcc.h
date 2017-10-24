@@ -145,9 +145,16 @@
 #endif
 #if __GCC_VERSION(3,5,0)
 #   define __ATTR_SENTINEL         __attribute__((__sentinel__))
+#ifdef __INTELLISENSE__
+#   define __ATTR_SENTINEL_O(x)    __attribute__((__sentinel__))
+#else
+#   define __ATTR_SENTINEL_O(x)    __attribute__((__sentinel__(x)))
+#endif
 #else
 #   define __NO_ATTR_SENTINEL      1
+#   define __NO_ATTR_SENTINEL_O    1
 #   define __ATTR_SENTINEL         /* Nothing */
+#   define __ATTR_SENTINEL_O(x)    /* Nothing */
 #endif
 #if __GCC_VERSION(4,3,0)
 #   define __ATTR_HOT              __attribute__((__hot__))

@@ -93,6 +93,33 @@
  * to link against objects, rather than functions. */
 #undef __USE_DOS_LINKOBJECTS
 
+/* At some point, DOS decided to rename the assembly symbols for the findfirst/findnext/stat functions.
+ * And even though KOS exports both the old names, as well as the new, DOS is only exporting
+ * one at a time, meaning that during compilation one has to select which names should be used:
+ *     OLD           NEW
+ *     _findfirst    _findfirst32
+ *     _findfirst64  _findfirst64|_findfirst64i32
+ *     _findfirsti64 _findfirst32i64
+ *     ... (All other triples follow the same overlap)
+ * Not is should be obvious that the old function not affected by
+ * this is '_findfirst64' (Which only gained an alias we don't ever use)
+ * Yet the pure 32-bit and the 32-bit time/64-bit size versions are
+ * impossible to link while maintaining binary compatibility.
+ * That is where this switch comes into play.
+ * When set, old names are used, and when not, new ones are.
+ */
+#undef __USE_DOS_LINKOLDFINDSTAT
+
+/* TinyC links against an older version of MSVCRT by default,
+ * so we use the old names by default as well. */
+#if defined(_LINK_OLD_FINDSTAT_SOURCE) || defined(__TINYC__)
+#define __USE_DOS_LINKOLDFINDSTAT 1
+#ifdef _LINK_NEW_FINDSTAT_SOURCE
+#undef __USE_DOS_LINKOLDFINDSTAT
+#endif /* _LINK_NEW_FINDSTAT_SOURCE */
+#endif
+
+
 /* '#ifdef __DOS_COMPAT__' Even if CRT-GLC may be available, still emulate extended libc functions using functions also provided by DOS.
  *                         NOTE: Automatically defined when CRT-GLC isn't available, but CRT-DOS is. */
 /* '#ifdef __GLC_COMPAT__' Same as '__DOS_COMPAT__' but for GLibc, rather than DOS. */

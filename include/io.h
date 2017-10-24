@@ -192,16 +192,24 @@ __REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_locking,(int __fd, int __lockmode, __LO
 
 #ifdef __CRT_DOS
 __LIBC __PORT_DOSONLY_ALT(closedir) int (__LIBCCALL _findclose)(intptr_t __findfd);
-__REDIRECT_UFS_(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst32,(char const *__file, struct _finddata32_t *__finddata),_findfirst32,(__file,__finddata))
-__REDIRECT_UFS_(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst64,(char const *__file, struct __finddata64_t *__finddata),_findfirst64,(__file,__finddata))
-__REDIRECT_UFS_(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst64i32,(char const *__file, struct _finddata64i32_t *__finddata),_findfirst64i32,(__file,__finddata))
-__REDIRECT_UFS_(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst32i64,(char const *__file, struct _finddata32i64_t *__finddata),_findfirst32i64,(__file,__finddata))
+#ifdef __USE_DOS_LINKOLDFINDSTAT
+__REDIRECT_UFS_(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst32,(char const *__file, struct _finddata32_t *__finddata),_findfirst,(__file,__finddata))
+__REDIRECT_UFS_(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst32i64,(char const *__file, struct _finddata32i64_t *__finddata),_findfirsti64,(__file,__finddata))
+__REDIRECT(__LIBC,__WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)),int,__LIBCCALL,_findnext32,(intptr_t __findfd, struct _finddata32_t *__finddata),_findnext,(__findfd,__finddata))
+__REDIRECT(__LIBC,__WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)),int,__LIBCCALL,_findnext32i64,(intptr_t __findfd, struct _finddata32i64_t *__finddata),_findnexti64,(__findfd,__finddata))
+#else /* __USE_DOS_LINKOLDFINDSTAT */
+__REDIRECT_UFS(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst32,(char const *__file, struct _finddata32_t *__finddata),_findfirst32,(__file,__finddata))
+__REDIRECT_UFS(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst32i64,(char const *__file, struct _finddata32i64_t *__finddata),_findfirst32i64,(__file,__finddata))
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)) int (__LIBCCALL _findnext32)(intptr_t __findfd, struct _finddata32_t *__finddata);
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)) int (__LIBCCALL _findnext32i64)(intptr_t __findfd, struct _finddata32i64_t *__finddata);
+#endif /* !__USE_DOS_LINKOLDFINDSTAT */
+__REDIRECT_UFS_(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst64i32,(char const *__file, struct _finddata64i32_t *__finddata),_findfirst64,(__file,__finddata))
+__REDIRECT_UFS(__LIBC,__WUNUSED __PORT_DOSONLY_ALT(opendir) __NONNULL((1,2)),intptr_t,__LIBCCALL,_findfirst64,(char const *__file, struct __finddata64_t *__finddata),_findfirst64,(__file,__finddata))
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)) int (__LIBCCALL _findnext64)(intptr_t __findfd, struct __finddata64_t *__finddata);
+__REDIRECT(__LIBC,__WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)),int,__LIBCCALL,_findnext64i32,(intptr_t __findfd, struct _finddata64i32_t *__finddata),_findnext64,(__findfd,__finddata))
+
 __REDIRECT_UFS_(__LIBC,__WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(open) __NONNULL((1,2)),errno_t,__LIBCCALL,_sopen_s,(int *__fd, char const *__file, int __oflag, int __sflag, int __pmode),_sopen_s,(__fd,__file,__oflag,__sflag,__pmode))
 __REDIRECT_UFS_(__LIBC,__WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(open) __NONNULL((1,2)),errno_t,__LIBCCALL,_sopen_s_nolock,(int *__fd, char const *__file, int __oflag, int __sflag, int __pmode),_sopen_s,(__fd,__file,__oflag,__sflag,__pmode))
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)) int (__LIBCCALL _findnext32)(intptr_t __findfd, struct _finddata32_t *__finddata);
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)) int (__LIBCCALL _findnext64)(intptr_t __findfd, struct __finddata64_t *__finddata);
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)) int (__LIBCCALL _findnext32i64)(intptr_t __findfd, struct _finddata32i64_t *__finddata);
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(readdir) __NONNULL((2)) int (__LIBCCALL _findnext64i32)(intptr_t __findfd, struct _finddata64i32_t *__finddata);
 __LIBC __WUNUSED __PORT_DOSONLY_ALT(lseek) int (__LIBCCALL _eof)(int __fd);
 __LIBC __PORT_DOSONLY_ALT(mktemp) __NONNULL((1)) errno_t (__LIBCCALL _mktemp_s)(char *__templatename, size_t __size);
 __LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY_ALT(pipe) __NONNULL((1)) int (__LIBCCALL _pipe)(int __pipedes[2], __UINT32_TYPE__ __pipesize, int __textmode); /* TODO: Emulate outside of DOS. */
@@ -254,31 +262,38 @@ struct _wfinddata64_t;
 struct _wfinddata32i64_t;
 struct _wfinddata64i32_t;
 
-__LIBC __WUNUSED __PORT_DOSONLY int (__ATTR_CDECL _wopen)(wchar_t const *__file, int __oflag, ...) __WFS_FUNC(_wopen); /* TODO: Use redirection */
-__LIBC __WUNUSED __PORT_DOSONLY int (__ATTR_CDECL _wsopen)(wchar_t const *__file, int __oflag, int __sflag, ...) __WFS_FUNC(_wsopen); /* TODO: Use redirection */
-__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY,int,__LIBCCALL,_wcreat,(wchar_t const *__file, int __pmode),_wcreat,(__file,__pmode))
-__REDIRECT_WFS(__LIBC,__WUNUSED_SUGGESTED __PORT_DOSONLY,errno_t,__LIBCCALL,_wsopen_s,(int *__fd, wchar_t const *__file, int __oflag, int __sflag, int __pflags),_wsopen_s,(__fd,__file,__oflag,__sflag,__pflags))
-__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY,int,__LIBCCALL,_waccess,(wchar_t const *__file, int __type),_waccess,(__file,__type))
-__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY,errno_t,__LIBCCALL,_waccess_s,(wchar_t const *__file, int __type),_waccess,(__file,__type))
-__REDIRECT_WFS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wchmod,(wchar_t const *__file, int __mode),_wchmod,(__file,__mode))
-__REDIRECT_WFS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wunlink,(wchar_t const *__file),_wunlink,(__file))
-__REDIRECT_WFS(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wrename,(wchar_t const *__oldname, wchar_t const *__newname),_wrename,(__oldname,__newname))
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY errno_t (__LIBCCALL _wmktemp_s)(wchar_t *__templatename, size_t __sizeinwords);
-__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY,intptr_t,__LIBCCALL,_wfindfirst32,(wchar_t const *__file, struct _wfinddata32_t *__finddata),_wfindfirst32,(__file,__finddata))
-__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY,intptr_t,__LIBCCALL,_wfindfirst64,(wchar_t const *__file, struct _wfinddata64_t *__finddata),_wfindfirst64,(__file,__finddata))
-__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY,intptr_t,__LIBCCALL,_wfindfirst32i64,(wchar_t const *__file, struct _wfinddata32i64_t *__finddata),_wfindfirst32i64,(__file,__finddata))
-__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY,intptr_t,__LIBCCALL,_wfindfirst64i32,(wchar_t const *__file, struct _wfinddata64i32_t *__finddata),_wfindfirst64i32,(__file,__finddata))
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY int (__LIBCCALL _wfindnext32)(intptr_t __findfd, struct _wfinddata32_t *__finddata);
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY int (__LIBCCALL _wfindnext64)(intptr_t __findfd, struct _wfinddata64_t *__finddata);
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY int (__LIBCCALL _wfindnext32i64)(intptr_t __findfd, struct _wfinddata32i64_t *__finddata);
-__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY int (__LIBCCALL _wfindnext64i32)(intptr_t __findfd, struct _wfinddata64i32_t *__finddata);
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY __NONNULL((1)) int (__ATTR_CDECL _wopen)(wchar_t const *__restrict __file, int __oflag, ...) __WFS_FUNC(_wopen); /* TODO: Use redirection */
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY __NONNULL((1)) int (__ATTR_CDECL _wsopen)(wchar_t const *__restrict __file, int __oflag, int __sflag, ...) __WFS_FUNC(_wsopen); /* TODO: Use redirection */
+__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY __NONNULL((1)),int,__LIBCCALL,_wcreat,(wchar_t const *__restrict __file, int __pmode),_wcreat,(__file,__pmode))
+__REDIRECT_WFS(__LIBC,__WUNUSED_SUGGESTED __PORT_DOSONLY __NONNULL((1,2)),errno_t,__LIBCCALL,_wsopen_s,(int *__restrict __fd, wchar_t const *__restrict __file, int __oflag, int __sflag, int __pflags),_wsopen_s,(__fd,__file,__oflag,__sflag,__pflags))
+__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY __NONNULL((1)),int,__LIBCCALL,_waccess,(wchar_t const *__restrict __file, int __type),_waccess,(__file,__type))
+__REDIRECT_WFS(__LIBC,__WUNUSED __PORT_DOSONLY __NONNULL((1)),errno_t,__LIBCCALL,_waccess_s,(wchar_t const *__restrict __file, int __type),_waccess,(__file,__type))
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY __NONNULL((1)),int,__LIBCCALL,_wchmod,(wchar_t const *__restrict __file, int __mode),_wchmod,(__file,__mode))
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY __NONNULL((1)),int,__LIBCCALL,_wunlink,(wchar_t const *__restrict __file),_wunlink,(__file))
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,_wrename,(wchar_t const *__restrict __oldname, wchar_t const *__restrict __newname),_wrename,(__oldname,__newname))
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY __NONNULL((1)) errno_t (__LIBCCALL _wmktemp_s)(wchar_t *__restrict __templatename, size_t __sizeinwords);
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY __NONNULL((1,2)),intptr_t,__LIBCCALL,_wfindfirst32,(wchar_t const *__restrict __file, struct _wfinddata32_t *__restrict __finddata),_wfindfirst32,(__file,__finddata))
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY __NONNULL((1,2)),intptr_t,__LIBCCALL,_wfindfirst64,(wchar_t const *__restrict __file, struct _wfinddata64_t *__restrict __finddata),_wfindfirst64,(__file,__finddata))
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY __NONNULL((1,2)),intptr_t,__LIBCCALL,_wfindfirst32i64,(wchar_t const *__restrict __file, struct _wfinddata32i64_t *__restrict __finddata),_wfindfirst32i64,(__file,__finddata))
+__REDIRECT_WFS(__LIBC,__PORT_DOSONLY __NONNULL((1,2)),intptr_t,__LIBCCALL,_wfindfirst64i32,(wchar_t const *__restrict __file, struct _wfinddata64i32_t *__restrict __finddata),_wfindfirst64i32,(__file,__finddata))
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY __NONNULL((2)) int (__LIBCCALL _wfindnext32)(intptr_t __findfd, struct _wfinddata32_t *__restrict __finddata);
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY __NONNULL((2)) int (__LIBCCALL _wfindnext64)(intptr_t __findfd, struct _wfinddata64_t *__restrict __finddata);
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY __NONNULL((2)) int (__LIBCCALL _wfindnext32i64)(intptr_t __findfd, struct _wfinddata32i64_t *__restrict __finddata);
+__LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY __NONNULL((2)) int (__LIBCCALL _wfindnext64i32)(intptr_t __findfd, struct _wfinddata64i32_t *__restrict __finddata);
 #endif /* !_WIO_DEFINED */
 #endif /* __CRT_DOS */
 #endif /* !__KERNEL__ */
 
-#ifndef _FINDDATA_T_DEFINED
-#define _FINDDATA_T_DEFINED 1
 /* Safely first! */
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("attrib")
+#pragma push_macro("time_create")
+#pragma push_macro("time_access")
+#pragma push_macro("time_write")
+#pragma push_macro("size")
+#pragma push_macro("name")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
 #undef attrib
 #undef time_create
 #undef time_access
@@ -286,6 +301,8 @@ __LIBC __WUNUSED_SUGGESTED __PORT_DOSONLY int (__LIBCCALL _wfindnext64i32)(intpt
 #undef size
 #undef name
 
+#ifndef _FINDDATA_T_DEFINED
+#define _FINDDATA_T_DEFINED 1
 struct _finddata32_t {
  __UINT32_TYPE__ attrib;
  __time32_t      time_create;
@@ -300,7 +317,7 @@ struct _finddata32i64_t {
  __time32_t      time_access;
  __time32_t      time_write;
  /* Microsoft:
-  * A: "I mean: we could use an unsigned type for this, seeing as how _fsize_t also is unsigned."
+  * A: "I mean: we could use an unsigned type for this, seeing as how _fsize_t is also unsigned."
   * B: "Nah! - Lets rather p1$$ off anyone that notices. - That'll be way more fun." */
  __INT64_TYPE__  size;
  char            name[260];
@@ -325,33 +342,26 @@ struct __finddata64_t {
  char            name[260];
 };
 
+
 #ifdef __USE_TIME_BITS64
 #define _finddata_t     _finddata64i32_t
 #define _finddatai64_t  __finddata64_t
-#define _findfirst      _findfirst64i32
-#define _findnext       _findnext64i32
-#define _findfirsti64   _findfirst64
-#define _findnexti64    _findnext64
+#define _findfirst(file,finddata)     _findfirst64i32(file,finddata)
+#define _findnext(findfd,finddata)    _findnext64i32(findfd,finddata)
+#define _findfirsti64(file,finddata)  _findfirst64(file,finddata)
+#define _findnexti64(findfd,finddata) _findnext64(findfd,finddata)
 #else /* __USE_TIME_BITS64 */
 #define _finddata_t     _finddata32_t
 #define _finddatai64_t  _finddata32i64_t
-#define _findfirst      _findfirst32
-#define _findnext       _findnext32
-#define _findfirsti64   _findfirst32i64
-#define _findnexti64    _findnext32i64
+#define _findfirst(file,finddata)     _findfirst32(file,finddata)
+#define _findnext(findfd,finddata)    _findnext32(findfd,finddata)
+#define _findfirsti64(file,finddata)  _findfirst32i64(file,finddata)
+#define _findnexti64(findfd,finddata) _findnext32i64(findfd,finddata)
 #endif /* !__USE_TIME_BITS64 */
 #endif /* !_FINDDATA_T_DEFINED */
 
 #ifndef _WFINDDATA_T_DEFINED
 #define _WFINDDATA_T_DEFINED 1
-/* Safely first! */
-#undef attrib
-#undef time_create
-#undef time_access
-#undef time_write
-#undef size
-#undef name
-
 struct _wfinddata32_t {
  __UINT32_TYPE__ attrib;
  __time32_t      time_create;
@@ -405,6 +415,14 @@ struct _wfinddata64_t {
 #endif /* !__USE_TIME_BITS64 */
 #endif /* !_WFINDDATA_T_DEFINED */
 
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("name")
+#pragma pop_macro("size")
+#pragma pop_macro("time_write")
+#pragma pop_macro("time_access")
+#pragma pop_macro("time_create")
+#pragma pop_macro("attrib")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 
 __SYSDECL_END
 

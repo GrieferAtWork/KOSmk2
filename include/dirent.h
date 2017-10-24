@@ -240,8 +240,13 @@ struct __dirstream {
  struct dirent   __d_ent;
 };
 
+#ifdef __USE_DOS_LINKOLDFINDSTAT
+__REDIRECT(__LIBC,__NONNULL((1,2)),__INTPTR_TYPE__,__LIBCCALL,__dos_findfirst,(char const *__file, void *__buf),_findfirst,(__file,__buf))
+__REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,__dos_findnext,(__INTPTR_TYPE__ __findfd, void *__buf),_findnext,(__findfd,__buf))
+#else /* __USE_DOS_LINKOLDFINDSTAT */
 __REDIRECT(__LIBC,__NONNULL((1,2)),__INTPTR_TYPE__,__LIBCCALL,__dos_findfirst,(char const *__file, void *__buf),_findfirst32,(__file,__buf))
 __REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,__dos_findnext,(__INTPTR_TYPE__ __findfd, void *__buf),_findnext32,(__findfd,__buf))
+#endif /* !__USE_DOS_LINKOLDFINDSTAT */
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_findclose,(__INTPTR_TYPE__ __findfd),_findclose,(__findfd))
 __LOCAL __WUNUSED __NONNULL((1)) DIR *(__LIBCCALL opendir)(char const *__name);
 __LOCAL __NONNULL((1)) int (__LIBCCALL closedir)(DIR *__dirp);

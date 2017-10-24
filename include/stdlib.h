@@ -1260,8 +1260,8 @@ __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __l
 #ifndef __std_wcstol_defined
 #define __std_wcstol_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC long int (__LIBCCALL wcstol)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__LIBC unsigned long int (__LIBCCALL wcstoul)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
+__LIBC __NONNULL((1)) long int (__LIBCCALL wcstol)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
+__LIBC __NONNULL((1)) unsigned long int (__LIBCCALL wcstoul)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
 __NAMESPACE_STD_END
 #endif /* !__std_wcstol_defined */
 #ifndef __wcstol_defined
@@ -1286,7 +1286,7 @@ __NAMESPACE_STD_USING(wcstoull)
 #ifndef __std_wcstod_defined
 #define __std_wcstod_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC double (__LIBCCALL wcstod)(wchar_t const *__restrict __s, wchar_t **__pend);
+__LIBC __NONNULL((1)) double (__LIBCCALL wcstod)(wchar_t const *__restrict __s, wchar_t **__pend);
 __NAMESPACE_STD_END
 #endif /* !__std_wcstod_defined */
 #ifndef __wcstod_defined

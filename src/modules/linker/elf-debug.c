@@ -1002,7 +1002,7 @@ elf_debug_loader(struct module *__restrict mod) {
  temp = file_kpread(fp,section_headers,
                     header.e_shentsize*header.e_shnum,
                     header.e_shoff);
- if (E_ISERR(temp)) goto err;
+ if (E_ISERR(temp)) goto err_temp;
  header.e_shnum = (size_t)temp/header.e_shentsize;
  if unlikely(!header.e_shnum) goto err_nodata;
  /* Make sure the string section isn't out-of-bounds. */
@@ -1018,7 +1018,7 @@ elf_debug_loader(struct module *__restrict mod) {
  temp = file_kpread(fp,shstrtab,
                     shdr_strtab->sh_size,
                     shdr_strtab->sh_offset);
- if (E_ISERR(temp)) goto err;
+ if (E_ISERR(temp)) goto err_temp;
  shdr_strtab->sh_size = (Elf_Word)temp; /* Truncate if necessary. */
 
  /* Now we can finally go through all the sections and search for '.debug_line' */
@@ -1052,7 +1052,7 @@ elf_debug_loader(struct module *__restrict mod) {
 
  /* Create the debug descriptor. */
  result = (debug_t *)moddebug_new(sizeof(debug_t));
- if unlikely(!result) return NULL;
+ if unlikely(!result) return E_PTR(-ENOMEM);
  result->d_base.md_module = mod;
  result->d_base.md_ops    = &debug_ops;
 
@@ -1072,10 +1072,13 @@ elf_debug_loader(struct module *__restrict mod) {
 
 
  moddebug_setup(&result->d_base,THIS_INSTANCE);
+ assert(result != NULL);
 end:
  free(section_headers);
  free(shstrtab);
+ assert(result != NULL);
  return &result->d_base;
+err_temp:   error = (errno_t)temp; goto err;
 err_nomem:  error = -ENOMEM; goto err;
 err_noexec: error = -ENOEXEC; goto err;
 err_nodata: error = -ENODATA;

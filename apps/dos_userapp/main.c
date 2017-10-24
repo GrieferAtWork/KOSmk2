@@ -61,7 +61,7 @@
 #include <uchar.h>
 #include <utime.h>
 #include <wchar.h>
-#include <math.h>
+//#include <math.h>
 
 #ifdef __GNUC__
 #include <syslog.h>
@@ -86,9 +86,8 @@ int main(int argc, char **argv) {
 
  while ((ent = readdir64(d)) != NULL) {
   struct stat64 buf;
-  printf("ent: %s\n",ent->d_name);
-  if (!stat64(ent->d_name,&buf))
-      printf("mode = %o\n",buf.st_mode);
+  stat64(ent->d_name,&buf);
+  printf("ent: %s (mode = %o)\n",ent->d_name,buf.st_mode);
  }
  closedir(d);
 
@@ -113,10 +112,10 @@ int main(int argc, char **argv) {
  int *p = new int(42);
  printf("p = %p\n",p);
  delete p;
-#endif
 #ifdef __GNUC__
  syslog(LOG_DEBUG,"std::cout @ %p\n",&std::cout);
  std::cout << "Hello World\n";
+#endif
 #endif
 
  return 0;

@@ -77,6 +77,8 @@
 #define __ATTR_UNUSED            /* Nothing */
 #define __NO_ATTR_SENTINEL       1
 #define __ATTR_SENTINEL          /* Nothing */
+#define __NO_ATTR_SENTINEL_O     1
+#define __ATTR_SENTINEL_O(x)     /* Nothing */
 #if _MSC_VER >= 1700
 #   define __ATTR_THREAD         __declspec(thread)
 #else
@@ -254,7 +256,7 @@ extern void (__cdecl __va_start)(__VA_LIST *, ...);
 #define __builtin_va_end(ap)    (void)0
 #else /* ... */
 #define __VA_SIZEOF(n)            ((sizeof(n)+3)&~3)
-#define __builtin_va_start(ap,v)  (ap = (va_list)__VA_ADDROF(v)+__VA_SIZEOF(v))
+#define __builtin_va_start(ap,v)  (ap = (__VA_LIST)__VA_ADDROF(v)+__VA_SIZEOF(v))
 #define __builtin_va_arg(ap,T)    (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
 #define __builtin_va_end(ap)      (void)0
 #endif /* !... */

@@ -50,6 +50,9 @@
 #   define __auto_type              auto
 #   define __COMPILER_HAVE_AUTOTYPE 1
 #endif
+#if defined(__DCC_VERSION__) || defined(__TINYC__)
+#   define __COMPILER_HAVE_TYPEOF   1
+#endif
 
 #if defined(__BORLANDC__) && __BORLANDC__ >= 0x599
 #pragma defineonoption __CODEGEAR_0X_SUPPORT__ -Ax
@@ -69,7 +72,7 @@
 #   define __STATIC_ASSERT(expr) typedef int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
 #endif
 
-#if defined(__DCC_VERSION__)
+#if defined(__DCC_VERSION__) || defined(__TINYC__)
 #   define __ASMNAME(x)   __asm__(x)
 #else
 #   define __NO_ASMNAME   1
@@ -91,9 +94,6 @@
 #   define __FUNCTION__ (char *)0
 #endif
 #endif
-#if defined(__DCC_VERSION__) || defined(__TINYC__)
-#define __COMPILER_HAVE_TYPEOF   1
-#endif
 #if __has_attribute(__noinline__)
 #   define __ATTR_NOINLINE       __attribute__((__noinline__))
 #elif __has_declspec_attribute(noinline)
@@ -102,7 +102,7 @@
 #   define __NO_ATTR_NOINLINE    1
 #   define __ATTR_NOINLINE       /* Nothing */
 #endif
-#if __has_attribute(__noreturn__)
+#if __has_attribute(__noreturn__) || defined(__TINYC__)
 #   define __ATTR_NORETURN       __attribute__((__noreturn__))
 #elif __has_declspec_attribute(noreturn)
 #   define __ATTR_NORETURN       __declspec(noreturn)
@@ -110,19 +110,19 @@
 #   define __NO_ATTR_NORETURN    1
 #   define __ATTR_NORETURN       /* Nothing */
 #endif
-#if __has_attribute(__fastcall__)
+#if __has_attribute(__fastcall__) || defined(__TINYC__)
 #   define __ATTR_FASTCALL       __attribute__((__fastcall__))
 #else
 #   define __NO_ATTR_FASTCALL    1
 #   define __ATTR_FASTCALL       /* Nothing */
 #endif
-#if __has_attribute(__stdcall__)
+#if __has_attribute(__stdcall__) || defined(__TINYC__)
 #   define __ATTR_STDCALL        __attribute__((__stdcall__))
 #else
 #   define __NO_ATTR_STDCALL     1
 #   define __ATTR_STDCALL        /* Nothing */
 #endif
-#if __has_attribute(__cdecl__)
+#if __has_attribute(__cdecl__) || defined(__TINYC__)
 #   define __ATTR_CDECL          __attribute__((__cdecl__))
 #else
 #   define __NO_ATTR_CDECL       1
@@ -200,9 +200,16 @@
 #endif
 #if __has_attribute(__sentinel__)
 #   define __ATTR_SENTINEL       __attribute__((__sentinel__))
+#ifdef __INTELLISENSE__
+#   define __ATTR_SENTINEL_O(x)  __attribute__((__sentinel__))
+#else
+#   define __ATTR_SENTINEL_O(x)  __attribute__((__sentinel__(x)))
+#endif
 #else
 #   define __NO_ATTR_SENTINEL    1
+#   define __NO_ATTR_SENTINEL_O  1
 #   define __ATTR_SENTINEL       /* Nothing */
+#   define __ATTR_SENTINEL_O(x)  /* Nothing */
 #endif
 #if __has_feature(cxx_thread_local) || (defined(__cplusplus) && \
    (defined(__SUNPRO_CC) || defined(__IBMC__) || defined(__IBMCPP__)))
@@ -247,7 +254,7 @@
 #   define __NO_ATTR_ERROR       1
 #   define __ATTR_ERROR(text)    /* Nothing */
 #endif
-#if __has_attribute(__section__)
+#if __has_attribute(__section__) || defined(__TINYC__)
 #   define __ATTR_SECTION(name)  __attribute__((__section__(name)))
 #else
 #   define __NO_ATTR_TSECTION    1
@@ -265,19 +272,19 @@
 #   define __NO_ATTR_RETNONNULL  1
 #   define __ATTR_RETNONNULL     /* Nothing */
 #endif
-#if __has_attribute(__packed__)
+#if __has_attribute(__packed__) || defined(__TINYC__)
 #   define __ATTR_PACKED         __attribute__((__packed__))
 #else
 #   define __NO_ATTR_PACKED      1
 #   define __ATTR_PACKED         /* Nothing */
 #endif
-#if __has_attribute(__alias__)
+#if __has_attribute(__alias__) || defined(__TINYC__)
 #   define __ATTR_ALIAS(name)    __attribute__((__alias__(name)))
 #else
 #   define __NO_ATTR_ALIAS       1
 #   define __ATTR_ALIAS(name)    /* Nothing */
 #endif
-#if __has_attribute(__aligned__)
+#if __has_attribute(__aligned__) || defined(__TINYC__)
 #   define __ATTR_ALIGNED(n)     __attribute__((__aligned__(n)))
 #elif __has_declspec_attribute(align)
 #   define __ATTR_ALIGNED(n)     __declspec(align(n))
@@ -319,6 +326,9 @@
 #if __has_attribute(__dllimport__)
 #   define __ATTR_DLLIMPORT      __attribute__((__dllimport__))
 #   define __ATTR_DLLEXPORT      __attribute__((__dllexport__))
+#elif defined(__TINYC__)
+#   define __ATTR_DLLIMPORT      __attribute__((dllimport))
+#   define __ATTR_DLLEXPORT      __attribute__((dllexport))
 #elif __has_declspec_attribute(dllimport)
 #   define __ATTR_DLLIMPORT      __declspec(dllimport)
 #   define __ATTR_DLLEXPORT      __declspec(dllexport)
@@ -359,7 +369,7 @@
 #   define __NO_builtin_unreachable 1
 #   define __builtin_unreachable() do;while(1)
 #endif
-#if !__has_builtin(__builtin_constant_p)
+#if !__has_builtin(__builtin_constant_p) && !defined(__TINYC__)
 #   define __NO_builtin_constant_p 1
 #   define __builtin_constant_p(x) 0
 #endif
@@ -448,14 +458,40 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #if __has_builtin(__builtin_va_list) || \
     __has_builtin(__builtin_va_start)
 #define __VA_LIST                  __builtin_va_list
+#elif defined(__TINYC__)
+#ifdef __x86_64__
+#ifndef _WIN64
+#define __VA_LIST                    void *
+#define __builtin_va_start(ap,last) (void)((ap)=__va_start(__builtin_frame_address(0)))
+#define __builtin_va_arg(ap,type)   (*(type *)__va_arg(ap,__builtin_va_arg_types(type),sizeof(type)))
+#define __builtin_va_copy(dest,src) (void)((dest)=__va_copy(src))
+#define __builtin_va_end(ap)         __va_end(ap)
+extern __VA_LIST (__va_start)(void *fp);
+extern __VA_LIST (__va_copy)(__VA_LIST src);
+extern void *(__va_arg)(__VA_LIST ap, int arg_type, int size);
+extern void (__va_end)(__VA_LIST ap);
+#else /* _WIN64 */
+#define __VA_LIST                    char *
+#define __builtin_va_start(ap,last) (void)((ap)=((char *)&(last))+((sizeof(last)+7)&~7))
+#define __builtin_va_arg(ap,type)   ((ap)+=(sizeof(type)+7)&~7,*(type *)((ap)-((sizeof(type)+7)&~7)))
+#define __builtin_va_copy(dest,src) (void)((dest)=(src))
+#define __builtin_va_end(ap)        (void)0
+#endif /* !_WIN64 */
 #else
+#define __VA_LIST                    char *
+#define __builtin_va_start(ap,last) (void)((ap)=((char *)&(last))+((sizeof(last)+3)&~3))
+#define __builtin_va_arg(ap,type)   ((ap)+=(sizeof(type)+3)&~3,*(type *)((ap)-((sizeof(type)+3)&~3)))
+#define __builtin_va_copy(dest,src) (void)((dest)=(src))
+#define __builtin_va_end(ap)        (void)0
+#endif
+#else /* ... */
 /* Just guess some generic implementation... */
-#define __VA_LIST                  char *
-#define __VA_ADDROF(v)            &(v)
-#define __VA_SIZEOF(n)            ((sizeof(n)+3)&~3)
-#define __builtin_va_start(ap,v)  (ap = (va_list)__VA_ADDROF(v)+__VA_SIZEOF(v))
-#define __builtin_va_arg(ap,T)    (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
-#define __builtin_va_end(ap)      (void)0
+#define __VA_LIST                    char *
+#define __VA_ADDROF(v)              &(v)
+#define __VA_SIZEOF(n)              ((sizeof(n)+3)&~3)
+#define __builtin_va_start(ap,v)    (ap = (__VA_LIST)__VA_ADDROF(v)+__VA_SIZEOF(v))
+#define __builtin_va_arg(ap,T)      (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
+#define __builtin_va_end(ap)        (void)0
 #endif
 
 

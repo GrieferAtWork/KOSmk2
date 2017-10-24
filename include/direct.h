@@ -92,16 +92,16 @@ __LOCAL __NONNULL((1)) int (__LIBCCALL mkdir)(char const *__path) { return __kos
 #ifdef __CRT_DOS
 #ifndef _WDIRECT_DEFINED
 #define _WDIRECT_DEFINED 1
-__LIBC __WUNUSED_SUGGESTED __PORT_NODOS __NONNULL((1)) wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__dstbuf, int __dstlen);
-__LIBC __WUNUSED_SUGGESTED __PORT_NODOS __NONNULL((2)) wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __dstlen);
+__LIBC __PORT_NODOS __NONNULL((1)) wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__restrict __dstbuf, int __dstlen);
+__LIBC __PORT_NODOS __NONNULL((2)) wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __dstlen);
 #define _wgetdcwd_nolock    _wgetdcwd
-__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wchdir,(wchar_t const *__path),_wchdir,(__path));
-__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wrmdir,(wchar_t const *__path),_wrmdir,(__path));
+__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wchdir,(wchar_t const *__restrict __path),_wchdir,(__path));
+__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wrmdir,(wchar_t const *__restrict __path),_wrmdir,(__path));
 #ifdef __USE_DOSFS
-__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wmkdir,(wchar_t const *__path),_wmkdir,(__path));
+__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wmkdir,(wchar_t const *__restrict __path),_wmkdir,(__path));
 #else /* __USE_DOSFS */
-__REDIRECT_WFS_(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,__libc_wmkdir,(wchar_t const *__path, int __mode),_wmkdir,(__path,__mode));
-__LOCAL __PORT_NODOS __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__path) { return __libc_wmkdir(__path,0755); }
+__REDIRECT_WFS_(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,__libc_wmkdir,(wchar_t const *__restrict __path, int __mode),_wmkdir,(__path,__mode));
+__LOCAL __PORT_NODOS __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__restrict __path) { return __libc_wmkdir(__path,0755); }
 #endif /* !__USE_DOSFS */
 #endif /* !_WDIRECT_DEFINED */
 #endif /* __CRT_DOS */
