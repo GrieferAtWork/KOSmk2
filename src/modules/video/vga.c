@@ -562,8 +562,8 @@ done_font:
 
 PUBLIC struct vga_font *vf_current = &vf_bios;
 PUBLIC struct vga_font vf_bios = {
-   .vf_data    = NULL,
-   .vf_cheight = 0,
+    .vf_data    = NULL,
+    .vf_cheight = 0,
 };
 PUBLIC struct vga_mode vm_text = {
     .vm_att_mode          = 0x0c,
@@ -599,7 +599,7 @@ PUBLIC struct vga_mode vm_text = {
     .vm_crt_v_blank_end   = 0xb9,
     .vm_crt_mode          = 0xa3,
     .vm_crt_line_compare  = 0xff,
-    .vm_seq_plane_write   = 0x3,
+    .vm_seq_plane_write   = 0x03,
     .vm_seq_character_map = 0x00,
     .vm_seq_memory_mode   = 0x02,
     .vm_seq_clock_mode    = 0x00,

@@ -247,8 +247,13 @@ LOCAL void KCALL vga_w(MMIO void *regbase, u16 port, u8 val) { regbase ? vga_mm_
 LOCAL void KCALL vga_w_fast(MMIO void *regbase, u16 port, u8 reg, u8 val) { regbase ? vga_mm_w_fast(regbase,port,reg,val) : vga_io_w_fast(port,reg,val); }
 
 #ifdef VGA_OUTW_WRITE
+#if 1
+#define __VGA_OUTW_SELECTOR(func,port_i,port_d,reg,val)           func##_fast(port_i,reg,val)
+#define __VGA_OUTW_SELECTOR2(func,regbase,port_i,port_d,reg,val)  func##_fast(regbase,port_i,reg,val)
+#else
 #define __VGA_OUTW_SELECTOR(func,port_i,port_d,reg,val)          ((port_i+1 == port_d) ? func##_fast(port_i,reg,val)         : (func(port_i,reg),func(port_d,val)))
 #define __VGA_OUTW_SELECTOR2(func,regbase,port_i,port_d,reg,val) ((port_i+1 == port_d) ? func##_fast(regbase,port_i,reg,val) : (func(regbase,port_i,reg),func(regbase,port_d,val)))
+#endif
 #else
 #define __VGA_OUTW_SELECTOR(func,port_i,port_d,reg,val)          (func(port_i,reg),func(port_d,val))
 #define __VGA_OUTW_SELECTOR2(func,regbase,port_i,port_d,reg,val) (func(regbase,port_i,reg),func(regbase,port_d,val))
@@ -335,48 +340,48 @@ typedef struct {
 } vga_t;
 
 struct vga_mode {
-    u8 vm_att_mode;
-    u8 vm_att_overscan;
-    u8 vm_att_plane_enable;
-    u8 vm_att_pel;
-    u8 vm_att_color_page;
-    u8 vm_mis;
-    u8 vm_gfx_sr_value;
-    u8 vm_gfx_sr_enable;
-    u8 vm_gfx_compare_value;
-    u8 vm_gfx_data_rotate;
-    u8 vm_gfx_mode;
-    u8 vm_gfx_misc;
-    u8 vm_gfx_compare_mask;
-    u8 vm_gfx_bit_mask;
-    u8 vm_crt_h_total;
-    u8 vm_crt_h_disp;
-    u8 vm_crt_h_blank_start;
-    u8 vm_crt_h_blank_end;
-    u8 vm_crt_h_sync_start;
-    u8 vm_crt_h_sync_end;
-    u8 vm_crt_v_total;
-    u8 vm_crt_overflow;
-    u8 vm_crt_preset_row;
-    u8 vm_crt_max_scan;
-    u8 vm_crt_v_sync_start;
-    u8 vm_crt_v_sync_end;
-    u8 vm_crt_v_disp_end;
-    u8 vm_crt_offset;
-    u8 vm_crt_underline;
-    u8 vm_crt_v_blank_start;
-    u8 vm_crt_v_blank_end;
-    u8 vm_crt_mode;
-    u8 vm_crt_line_compare;
-    u8 vm_seq_plane_write;
-    u8 vm_seq_character_map;
-    u8 vm_seq_memory_mode;
-    u8 vm_seq_clock_mode;
+ u8 vm_att_mode;          /*< VGA_ATC_MODE. */
+ u8 vm_att_overscan;      /*< VGA_ATC_OVERSCAN. */
+ u8 vm_att_plane_enable;  /*< VGA_ATC_PLANE_ENABLE. */
+ u8 vm_att_pel;           /*< VGA_ATC_PEL. */
+ u8 vm_att_color_page;    /*< VGA_ATC_COLOR_PAGE. */
+ u8 vm_mis;               /*< VGA_MIS_R / VGA_MIS_W. */
+ u8 vm_gfx_sr_value;      /*< VGA_GFX_SR_VALUE. */
+ u8 vm_gfx_sr_enable;     /*< VGA_GFX_SR_ENABLE. */
+ u8 vm_gfx_compare_value; /*< VGA_GFX_COMPARE_VALUE. */
+ u8 vm_gfx_data_rotate;   /*< VGA_GFX_DATA_ROTATE. */
+ u8 vm_gfx_mode;          /*< VGA_GFX_MODE. */
+ u8 vm_gfx_misc;          /*< VGA_GFX_MISC. */
+ u8 vm_gfx_compare_mask;  /*< VGA_GFX_COMPARE_MASK. */
+ u8 vm_gfx_bit_mask;      /*< VGA_GFX_BIT_MASK. */
+ u8 vm_crt_h_total;       /*< VGA_CRTC_H_TOTAL. */
+ u8 vm_crt_h_disp;        /*< VGA_CRTC_H_DISP. */
+ u8 vm_crt_h_blank_start; /*< VGA_CRTC_H_BLANK_START. */
+ u8 vm_crt_h_blank_end;   /*< VGA_CRTC_H_BLANK_END. */
+ u8 vm_crt_h_sync_start;  /*< VGA_CRTC_H_SYNC_START. */
+ u8 vm_crt_h_sync_end;    /*< VGA_CRTC_H_SYNC_END. */
+ u8 vm_crt_v_total;       /*< VGA_CRTC_V_TOTAL. */
+ u8 vm_crt_overflow;      /*< VGA_CRTC_OVERFLOW. */
+ u8 vm_crt_preset_row;    /*< VGA_CRTC_PRESET_ROW. */
+ u8 vm_crt_max_scan;      /*< VGA_CRTC_MAX_SCAN. */
+ u8 vm_crt_v_sync_start;  /*< VGA_CRTC_V_SYNC_START. */
+ u8 vm_crt_v_sync_end;    /*< VGA_CRTC_V_SYNC_END. */
+ u8 vm_crt_v_disp_end;    /*< VGA_CRTC_V_DISP_END. */
+ u8 vm_crt_offset;        /*< VGA_CRTC_OFFSET. */
+ u8 vm_crt_underline;     /*< VGA_CRTC_UNDERLINE. */
+ u8 vm_crt_v_blank_start; /*< VGA_CRTC_V_BLANK_START. */
+ u8 vm_crt_v_blank_end;   /*< VGA_CRTC_V_BLANK_END. */
+ u8 vm_crt_mode;          /*< VGA_CRTC_MODE. */
+ u8 vm_crt_line_compare;  /*< VGA_CRTC_LINE_COMPARE. */
+ u8 vm_seq_plane_write;   /*< VGA_SEQ_PLANE_WRITE. */
+ u8 vm_seq_character_map; /*< VGA_SEQ_CHARACTER_MAP. */
+ u8 vm_seq_memory_mode;   /*< VGA_SEQ_MEMORY_MODE. */
+ u8 vm_seq_clock_mode;    /*< VGA_SEQ_CLOCK_MODE. */
 };
 
 struct vga_font {
-   HOST byte_t *vf_data;    /*< [0..1][owned] Character data. */
-   u8           vf_cheight; /*< [valid_if(vf_data)] Character height (in bytes/pixels; width is always 8). */
+ HOST byte_t *vf_data;    /*< [0..1][owned] Character data. */
+ u8           vf_cheight; /*< [valid_if(vf_data)] Character height (in bytes/pixels; width is always 8). */
 };
 #define VGA_FONT_CHARACTER(self,character) \
       ((self)->vf_data+((size_t)(character)*(self)->vf_cheight))
