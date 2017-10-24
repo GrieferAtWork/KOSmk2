@@ -669,9 +669,37 @@ PRIVATE ATTR_FREETEXT errno_t KCALL vga_probe(void) {
  return error;
 }
 
+PRIVATE ATTR_FREETEXT void KCALL
+vga_disable_annoying_blinking(void) {
+ u8 qr1; /* QEMU don't emulate this annoyingness, so no need. */
+ if (boot_emulation == BOOT_EMULATION_QEMU) return;
+
+ qr1 = vga_rseq(NULL,VGA_SEQ_CLOCK_MODE);
+ vga_wseq(NULL,VGA_SEQ_RESET,0x1);
+ vga_wseq(NULL,VGA_SEQ_CLOCK_MODE,qr1|VGA_SR01_SCREEN_OFF);
+ vga_wseq(NULL,VGA_SEQ_RESET,0x3);
+
+ vga_r(NULL,VGA_IS1_RC);
+ vga_w(NULL,VGA_ATT_W,0x00);
+
+ vga_r(NULL,VGA_IS1_RC);
+ u8 temp = vga_rattr(NULL,VGA_ATC_MODE);
+ vga_r(NULL,VGA_IS1_RC);
+ vga_wattr(NULL,VGA_ATC_MODE,temp & ~(VGA_AT10_BLINK));
+
+ vga_r(NULL,VGA_IS1_RC);
+ vga_w(NULL,VGA_ATT_W,0x20);
+
+ vga_wseq(NULL,VGA_SEQ_RESET,0x1);
+ vga_wseq(NULL,VGA_SEQ_CLOCK_MODE,qr1 & ~VGA_SR01_SCREEN_OFF);
+ vga_wseq(NULL,VGA_SEQ_RESET,0x3);
+}
 
 PRIVATE MODULE_INIT void KCALL vga_init(void) {
  errno_t error;
+ /* Finally! No more seizures! */
+ vga_disable_annoying_blinking();
+
 #if 1
  /* Don't break real hardware until I'm confident this'll work. */
  if (boot_emulation == BOOT_EMULATION_REALHW)
@@ -723,6 +751,7 @@ PRIVATE MODULE_INIT void KCALL vga_init(void) {
     }
    }
    vram_addr[0] = 15;
+   (void)h;
  }
 #endif
  //PREEMPTION_FREEZE();                      
@@ -731,29 +760,6 @@ PRIVATE MODULE_INIT void KCALL vga_init(void) {
  //PREEMPTION_FREEZE();                      
  load_vga(&st,true);
 #endif
-
-#if 0 /* Disable blink-attribute */
- u8 qr1 = vga_rseq(NULL,VGA_SEQ_CLOCK_MODE);
- vga_wseq(NULL,VGA_SEQ_RESET,0x1);
- vga_wseq(NULL,VGA_SEQ_CLOCK_MODE,qr1|VGA_SR01_SCREEN_OFF);
- vga_wseq(NULL,VGA_SEQ_RESET,0x3);
-
- vga_r(NULL,VGA_IS1_RC);
- vga_w(NULL,VGA_ATT_W,0x00);
-
- vga_r(NULL,VGA_IS1_RC);
- u8 temp = vga_rattr(NULL,VGA_ATC_MODE);
- vga_r(NULL,VGA_IS1_RC);
- vga_wattr(NULL,VGA_ATC_MODE,temp & ~(VGA_AT10_BLINK));
-
- vga_r(NULL,VGA_IS1_RC);
- vga_w(NULL,VGA_ATT_W,0x20);
-
- vga_wseq(NULL,VGA_SEQ_RESET,0x1);
- vga_wseq(NULL,VGA_SEQ_CLOCK_MODE,qr1 & ~VGA_SR01_SCREEN_OFF);
- vga_wseq(NULL,VGA_SEQ_RESET,0x3);
-#endif
-
 }
 
 
