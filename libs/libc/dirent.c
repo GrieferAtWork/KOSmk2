@@ -229,7 +229,7 @@ DEFINE_PUBLIC_ALIAS(versionsort64,libc_versionsort);
  * added functionality of performing a Wildcard match against filenames.
  * The downside is, that the we're bound to NT's finddata structures... */
 struct findfd {
- struct __dirstream f_dir;     /*< Underlying  */
+ struct __dirstream f_dir;     /*< Underlying directory stream. */
  char              *f_wcard;   /*< [1..1][owned][const] Wildcard used to match filenames. */
  bool               f_dosmode; /*< [const] When true, use DOS-mode. */
 };
@@ -238,27 +238,31 @@ struct findfd {
 
 #define FFD(hnd) ((struct findfd *)(hnd))
 INTERN ATTR_DOSTEXT struct findfd *LIBCCALL
-libc_findopen(char const *query, bool dosmode) {
+libc_findopen(char const *__restrict query, bool dosmode) {
  struct findfd *result; int fd;
  char const *query_end,*query_end2;
+ if unlikely(!query) { SET_ERRNO(EINVAL); return FINDFD_INVALID; }
  result = (struct findfd *)libc_malloc(sizeof(struct findfd));
  if (result) {
   query_end = libc_strrchr(query,'\\');
   query_end2 = libc_strrchr(query,'/');
-  if (query_end2 > query_end) query_end = query_end2;
-  if (!query_end) fd = libc_openat(AT_FDCWD,NULL,O_RDONLY|O_DIRECTORY);
+  if (query_end < query_end2)
+      query_end = query_end2;
+  /* Duplicate the wild-card pattern string. */
+  result->f_wcard = libc_strdup(query_end ? query_end+1 : query);
+  if unlikely(!result->f_wcard) goto err;
+  if (!query_end)
+   fd = libc_openat(AT_FDCWD,NULL,O_RDONLY|O_DIRECTORY);
   else {
    char *path; size_t pathlen;
-   pathlen = (size_t)(query_end-query);
-   if (pathlen > 1) --pathlen; /* Remove trailing slash if not root path. */
-   pathlen = (pathlen+1)*sizeof(char);
+   pathlen = (size_t)(query_end-query)*sizeof(char);
    if (pathlen > __AMALLOC_MAX) {
-    path = (char *)libc_malloc(pathlen);
-    if unlikely(!path) goto err;
+    path = (char *)libc_malloc(pathlen+sizeof(char));
+    if unlikely(!path) goto err2;
     libc_memcpy(path,query,pathlen);
     path[pathlen] = '\0';
    } else {
-    path = (char *)alloca(pathlen);
+    path = (char *)alloca(pathlen+sizeof(char));
     libc_memcpy(path,query,pathlen);
     path[pathlen] = '\0';
    }
@@ -267,15 +271,15 @@ libc_findopen(char const *query, bool dosmode) {
    if (pathlen > __AMALLOC_MAX)
        libc_free(path);
   }
-  if (fd == -1) goto err;
+  if (fd == -1) goto err2;
   result->f_dir.d_fd    = fd;
   result->f_dir.d_buf   = (struct dirent *)result->f_dir.d_inl;
   result->f_dir.d_bufsz = sizeof(result->f_dir.d_inl);
   result->f_dosmode     = dosmode;
  }
  return result;
-err:
- libc_free(result);
+err2: libc_free(result->f_wcard);
+err:  libc_free(result);
  return FINDFD_INVALID;
 }
 INTERN ATTR_DOSTEXT struct findfd *LIBCCALL
@@ -318,13 +322,8 @@ libc_findread(struct findfd *__restrict fd,
   /* Read a directory entry. */
   result = libc_readdir(&fd->f_dir);
   if unlikely(!result) return NULL;
- }
-#if 1
- while (0);
-#else /* TODO: Wildcard string matching. */
- while (fd->f_dosmode ? libc_wcasematch(fd->f_wcard,result->d_name/*,result->d_namlen*/)
-                      : libc_wmatch(fd->f_wcard,result->d_name/*,result->d_namlen*/));
-#endif
+ } while (fd->f_dosmode ? libc_wildstrcasecmp(fd->f_wcard,result->d_name) != 0
+                        :     libc_wildstrcmp(fd->f_wcard,result->d_name) != 0);
 
  /* Stat the read file. */
  if (libc_fstatat64(fd->f_dir.d_fd,result->d_name,st,
@@ -337,8 +336,10 @@ libc_findread(struct findfd *__restrict fd,
 { \
  struct findfd *result = open(file,dosmode); \
  if unlikely(result != FINDFD_INVALID) { \
-  if (base((intptr_t)result,finddata) != 0) \
-      libc_findclose((intptr_t)result); \
+  if (base((intptr_t)result,finddata) != 0) { \
+   libc_findclose((intptr_t)result); \
+   result = FINDFD_INVALID; \
+  } \
  } \
  return (intptr_t)result; \
 }

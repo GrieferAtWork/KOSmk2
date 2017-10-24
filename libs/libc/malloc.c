@@ -226,9 +226,9 @@ INTERN SAFE void *(LIBCCALL libc_memdup)(void const *__restrict ptr, size_t n_by
 }
 
 INTERN SAFE char *(LIBCCALL libc_strdup)(char const *__restrict str) {
- char *result; size_t len = libc_strlen(str)+1;
- result = (char *)libc_malloc(len*sizeof(char));
- if (result) libc_memcpy(result,str,len*sizeof(char));
+ size_t len = (libc_strlen(str)+1)*sizeof(char);
+ char *result = (char *)libc_malloc(len);
+ if (result) libc_memcpy(result,str,len);
  return result;
 }
 INTERN SAFE char *(LIBCCALL libc_strndup)(char const *__restrict str, size_t max_chars) {
