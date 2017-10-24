@@ -122,7 +122,7 @@ INTDEF INITCALL void KCALL commandline_initialize_later(void);
 
 /* The kind of emulator that KOS determined it is being booted with.
  * >> Useful as certain emulators provide additional debug facilities,
- *    as well as different means of writing to an external  */
+ *    as well as different means of writing to an external log using I/O. */
 #define BOOT_EMULATION_REALHW  0 /*< Real hardware. */
 #define BOOT_EMULATION_QEMU    1 /*< Running under QEMU. */
 #define BOOT_EMULATION_BOCHS   2 /*< Running under BOCHS. */

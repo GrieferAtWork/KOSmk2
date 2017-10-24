@@ -106,8 +106,10 @@ byte_t __bootstack[BOOTSTACK_SIZE];
 
 
 /* Hosting emulation information. */
-PUBLIC u8  boot_emulation         = BOOT_EMULATION_DEFAULT;
-PUBLIC u16 boot_emulation_logport = (u16)0x80; /* 0x80 should be a noop on real hardware... */
+PUBLIC u8  boot_emulation = BOOT_EMULATION_DEFAULT;
+PUBLIC u16 boot_emulation_logport = (u16)0x80;
+/* 0x80 should be a noop on real hardware...
+ * (At least that's what 'outb_p' and friends also assume...) */
 
 
 #ifndef CONFIG_NO_BOOTLOADER
@@ -597,7 +599,7 @@ L(    /* It's official. - We're running on a 486 */                             
 L(    pushl %ecx                                                              )
 L(    pushl %edx                                                              )
 L(                                                                            )
-L(    /* Load some strategic CPUIDs to figure out what our host is */         )
+L(    /* Load some strategic CPUIDs to figure out who's hosting us */         )
 L(    movl $0, %eax                                                           )
 L(    cpuid                                                                   )
 L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+0      )

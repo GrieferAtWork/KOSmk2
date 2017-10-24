@@ -1016,9 +1016,8 @@ memory_load_mb_mmap(struct mb_mmap_entry *__restrict iter, u32 info_len) {
  mb_memory_map_t *end; size_t result = 0;
  for (end  = (mb_memory_map_t *)((uintptr_t)iter+info_len); iter < end;
       iter = (mb_memory_map_t *)((uintptr_t)&iter->addr+iter->size)) {
-  if (iter->type >= COMPILER_LENOF(memtype_bios_matrix) ||
-      memtype_bios_matrix[iter->type] >= MEMTYPE_COUNT)
-      continue;
+  if (iter->type >= COMPILER_LENOF(memtype_bios_matrix)) iter->type = 0;
+  if (memtype_bios_matrix[iter->type] >= MEMTYPE_COUNT) continue;
   result += mem_install64(iter->addr,iter->len,
                           memtype_bios_matrix[iter->type]);
  }
@@ -1032,6 +1031,8 @@ memory_load_mb2_mmap(struct mb2_tag_mmap *__restrict info) {
  end  = (mb2_memory_map_t *)((uintptr_t)info+info->size);
  if unlikely(!info->entry_size) goto done;
  for (; iter < end; *(uintptr_t *)&iter += info->entry_size) {
+  if (iter->type >= COMPILER_LENOF(memtype_bios_matrix)) iter->type = 0;
+  if (memtype_bios_matrix[iter->type] >= MEMTYPE_COUNT) continue;
   result += mem_install64(iter->addr,iter->len,
                           memtype_bios_matrix[iter->type]);
  }

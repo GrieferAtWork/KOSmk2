@@ -41,12 +41,13 @@
 DECL_BEGIN
 
 PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
-    [MEMTYPE_RAM   ] = "ram",
-    [MEMTYPE_NVS   ] = "nvs",
+    [MEMTYPE_RAM]    = "ram",
+    [MEMTYPE_NVS]    = "nvs",
     [MEMTYPE_DEVICE] = "device",
     [MEMTYPE_KERNEL] = "kernel",
-    [MEMTYPE_KFREE ] = "kfree",
+    [MEMTYPE_KFREE]  = "kfree",
     [MEMTYPE_BADRAM] = "badram",
+    [MEMTYPE_NDEF]   = "ndef",
 };
 
 
@@ -93,7 +94,7 @@ page_addmemory(mzone_t zone_id, ppage_t start,
  ppage_t *piter,iter,free_end;
  struct mzone *zone;
  if unlikely(!n_bytes) return 0;
- syslog(LOG_DEBUG,"[MEM] Using dynamic memory range %p...%p\n",
+ syslog(LOG_DEBUG,FREESTR("[MEM] Using dynamic memory range %p...%p\n"),
        (uintptr_t)start,(uintptr_t)start+n_bytes-1);
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert(IS_ALIGNED((uintptr_t)n_bytes,PAGESIZE));
@@ -173,7 +174,7 @@ done:
  zone->z_avail += n_bytes;
 #else
  if unlikely(!n_bytes) return 0;
- syslog(LOG_DEBUG,"[MEM] Using dynamic memory range %p...%p\n",
+ syslog(LOG_DEBUG,FREESTR("[MEM] Using dynamic memory range %p...%p\n"),
        (uintptr_t)start,(uintptr_t)start+n_bytes-1);
  page_free(start,n_bytes);
 #endif
@@ -298,7 +299,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
          (uintptr_t)container_of(piter,struct meminfo,mi_next)->mi_addr+
                     container_of(piter,struct meminfo,mi_next)->mi_size <=
          (uintptr_t)iter->mi_addr,
-          "Illegal overlap: %p...%p %p...%p",
+          FREESTR("Illegal overlap: %p...%p %p...%p"),
          (uintptr_t)container_of(piter,struct meminfo,mi_next)->mi_addr,
          (uintptr_t)container_of(piter,struct meminfo,mi_next)->mi_addr+
                     container_of(piter,struct meminfo,mi_next)->mi_size-1,

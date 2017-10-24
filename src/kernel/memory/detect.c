@@ -53,12 +53,12 @@ struct smap_entry {
 #define SMAP_BUFFER ((struct smap_entry *)(REALMODE_STARTRELO+0xf00))
 
 INTERN ATTR_FREERODATA u8 const memtype_bios_matrix[6] = {
-    MEMTYPE_COUNT,
-    MEMTYPE_RAM,    /* Available. */
-    MEMTYPE_DEVICE, /* Reserved. */
-    MEMTYPE_COUNT,  /* ACPI-Reclaimable. */
-    MEMTYPE_NVS,    /* NVS. */
-    MEMTYPE_BADRAM, /* Badram. */
+    [0] = MEMTYPE_NDEF,   /* Undefined (Fallback). */
+    [1] = MEMTYPE_RAM,    /* Available. */
+    [2] = MEMTYPE_DEVICE, /* Reserved. */
+    [3] = MEMTYPE_COUNT,  /* ACPI-Reclaimable. (Ignored) */
+    [4] = MEMTYPE_NVS,    /* NVS. */
+    [5] = MEMTYPE_BADRAM, /* Badram. */
 };
 
 
@@ -78,8 +78,8 @@ PRIVATE ATTR_FREETEXT SAFE KPD bool KCALL try_e820(void) {
   if (s.eflags & EFLAGS_CF) return false; /* Unsupported. */
   if (s.gp.eax != 0x534D4150) return false; /* Error. */
   if (s.gp.ecx > 20 && (entry->sm_acpi & 1) == 0) continue; /* Ignored. */
-  if (entry->sm_type >= COMPILER_LENOF(memtype_bios_matrix) ||
-      memtype_bios_matrix[entry->sm_type] >= MEMTYPE_COUNT) continue;
+  if (entry->sm_type >= COMPILER_LENOF(memtype_bios_matrix)) entry->sm_type = 0;
+  if (memtype_bios_matrix[entry->sm_type] >= MEMTYPE_COUNT) continue;
   if (entry->sm_addr_hi) continue; /* Too large. */
   mem_install(entry->sm_addr_lo,
               entry->sm_size_hi ? (0-entry->sm_addr_lo)

@@ -124,7 +124,8 @@ LOCAL mzone_t KCALL mzone_of(PHYS void *ptr) {
 #define MEMTYPE_KERNEL     3 /*< [MAP] Kernel core memory (mapped, not used) */
 #define MEMTYPE_KFREE      4 /*< [USE_LATER|MAP] Kernel memory later turned into 'MEMTYPE_RAM' (The '.free' section...) */
 #define MEMTYPE_BADRAM     5 /*< Broken memory (Neither mapped nor used, but known to be present) */
-#define MEMTYPE_COUNT      6 /*< Amount of known memory types. */
+#define MEMTYPE_NDEF       6 /*< Undefined memory (Handled identically to 'MEMTYPE_BADRAM') */
+#define MEMTYPE_COUNT      7 /*< Amount of known memory types. */
 DATDEF char const memtype_names[MEMTYPE_COUNT][8];
 
 #define MEMTYPE_ISUSE(x) ((x) == MEMTYPE_RAM) /* Should this type of memory be used as generic RAM? */
