@@ -22,9 +22,11 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <hybrid/byteorder.h>
+#include <dev/chrdev.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <sys/io.h>
+#include <sched/cpu.h>
 
 DECL_BEGIN
 
@@ -66,6 +68,7 @@ DECL_BEGIN
 #define VGA_SEQ_D       0x3c5 /*< Sequencer Data Register. */
 #define VGA_MIS_R       0x3cc /*< Misc Output Read Register. */
 #define VGA_MIS_W       0x3c2 /*< Misc Output Write Register. */
+#   define VGA_MIS_RESERVED         0x10 /* Mask of reserved registers (Added by GrieferAtWork). */
 #   define VGA_MIS_COLOR            0x01
 #   define VGA_MIS_ENB_MEM_ACCESS   0x02
 #   define VGA_MIS_DCLK_28322_720   0x04
@@ -102,11 +105,11 @@ DECL_BEGIN
 #define VGA_CRTC_H_DISP        1
 #define VGA_CRTC_H_BLANK_START 2
 #define VGA_CRTC_H_BLANK_END   3
-#   define VGA_CR3_MASK            0x0f /* Mask of bits used for hblank-end (Added by GrieferAtWork) */
+#   define VGA_CR3_MASK            0x1f /* Mask of bits used for hblank-end (Added by GrieferAtWork) */
 #   define VGA_CR3_ALWAYS1         0x80 /* Always set this bit when writing this register (backward compatibility) */
 #define VGA_CRTC_H_SYNC_START  4
 #define VGA_CRTC_H_SYNC_END    5
-#   define VGA_CR5_MASK            0x0f /* Mask of bits used for hsync-end (Added by GrieferAtWork) */
+#   define VGA_CR5_MASK            0x1f /* Mask of bits used for hsync-end (Added by GrieferAtWork) */
 #   define VGA_CR5_H_BLANK_END_5   0x80 /* 5th bit for `VGA_CRTC_H_BLANK_END' (Added by GrieferAtWork) */
 #define VGA_CRTC_V_TOTAL       6
 #define VGA_CRTC_OVERFLOW      7
@@ -114,12 +117,16 @@ DECL_BEGIN
 #   define VGA_CR7_V_DISP_END_8    0x02 /* 8th bit for `VGA_CRTC_V_DISP_END' (Added by GrieferAtWork) */
 #   define VGA_CR7_V_SYNC_START_8  0x04 /* 8th bit for `VGA_CRTC_V_SYNC_START' (Added by GrieferAtWork) */
 #   define VGA_CR7_V_BLANK_START_8 0x08 /* 8th bit for `VGA_CRTC_V_BLANK_START' (Added by GrieferAtWork) */
+#   define VGA_CR7_V_LINECOMP_8    0x10 /* 8th bit for `VGA_CRTC_LINE_COMPARE' (Added by GrieferAtWork) */
 #   define VGA_CR7_V_TOTAL_9       0x20 /* 9th bit for `VGA_CRTC_V_TOTAL' (Added by GrieferAtWork) */
 #   define VGA_CR7_V_DISP_END_9    0x40 /* 9th bit for `VGA_CRTC_V_DISP_END' (Added by GrieferAtWork) */
 #   define VGA_CR7_V_SYNC_START_9  0x80 /* 9th bit for `VGA_CRTC_V_SYNC_START' (Added by GrieferAtWork) */
 #define VGA_CRTC_PRESET_ROW    8
+#   define VGA_CR8_RESERVED        0x80 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_CRTC_MAX_SCAN      9
-#   define VGA_CR9_V_BLANK_START_9 0x10 /* 9th bit for `VGA_CRTC_V_BLANK_START' (Added by GrieferAtWork) */
+#   define VGA_CR9_MASK            0x1f /* Mask of bits used for max-scan (Added by GrieferAtWork) */
+#   define VGA_CR9_V_BLANK_START_9 0x20 /* 9th bit for `VGA_CRTC_V_BLANK_START' (Added by GrieferAtWork) */
+#   define VGA_CR9_V_LINECOMP_9    0x40 /* 9th bit for `VGA_CRTC_LINE_COMPARE' (Added by GrieferAtWork) */
 #   define VGA_CR9_SCANDOUBLE      0x80 /* Better don't set... (Don't really understand what this done) (Added by GrieferAtWork) */
 #define VGA_CRTC_CURSOR_START  0x0a
 #   define VGA_CRTC_CURSOR_DISABLE 0x20 /* Disable the text-mode cursor (Added by GrieferAtWork) */
@@ -130,6 +137,7 @@ DECL_BEGIN
 #define VGA_CRTC_CURSOR_LO     0x0f
 #define VGA_CRTC_V_SYNC_START  0x10
 #define VGA_CRTC_V_SYNC_END    0x11
+#   define VGA_CR11_RESERVED     0x30 /* Mask of reserved registers (Added by GrieferAtWork). */
 #   define VGA_CR11_MASK         0x0f /* Mask of bits used for vsync-end (Added by GrieferAtWork) */
 #   define VGA_CR11_LOCK_CR0_CR7 0x80 /* lock writes to CR0 - CR7. */
 #define VGA_CRTC_V_DISP_END    0x12
@@ -137,7 +145,9 @@ DECL_BEGIN
 #define VGA_CRTC_UNDERLINE     0x14
 #define VGA_CRTC_V_BLANK_START 0x15
 #define VGA_CRTC_V_BLANK_END   0x16
+#   define VGA_CR16_RESERVED     0x80 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_CRTC_MODE          0x17
+#   define VGA_CR17_RESERVED     0x10 /* Mask of reserved registers (Added by GrieferAtWork). */
 #   define VGA_CR17_H_V_SIGNALS_ENABLED 0x80
 #define VGA_CRTC_LINE_COMPARE  0x18
 #define VGA_CRTC_REGS          VGA_CRT_C
@@ -160,14 +170,20 @@ DECL_BEGIN
 #define VGA_ATC_PALETTEE       0x0e
 #define VGA_ATC_PALETTEF       0x0f
 #define VGA_ATC_MODE           0x10
-#   define VGA_AT10_GRAPHICS      0x01 /*< Enable graphics, rather than alphanumeric mode (Added by GrieferAtWork). */
-#   define VGA_AT10_DUP9          0x04 /*< Duplicate the 8'th text dot into the 9'th when 'VGA_SR01_CHAR_CLK_8DOTS' isn't set, instead of filling it with background (Added by GrieferAtWork). */
-#   define VGA_AT10_BLINK         0x08 /*< Set to cause character attribute bit #7 to be used for blinking text (Added by GrieferAtWork). */
-#   define VGA_AT10_8BITPAL       0x40 /*< 8-bit palette index (Added by GrieferAtWork). */
+#   define VGA_AT10_RESERVED      0x10 /* Mask of reserved registers (Added by GrieferAtWork). */
+#   define VGA_AT10_GRAPHICS      0x01 /* Enable graphics, rather than alphanumeric mode (Added by GrieferAtWork). */
+#   define VGA_AT10_DUP9          0x04 /* Duplicate the 8'th text dot into the 9'th when 'VGA_SR01_CHAR_CLK_8DOTS' isn't set, instead of filling it with background (Added by GrieferAtWork). */
+#   define VGA_AT10_BLINK         0x08 /* Set to cause character attribute bit #7 to be used for blinking text (Added by GrieferAtWork). */
+#   define VGA_AT10_8BITPAL       0x40 /* 8-bit palette index (Added by GrieferAtWork). */
 #define VGA_ATC_OVERSCAN       0x11
 #define VGA_ATC_PLANE_ENABLE   0x12
+#   define VGA_AT12_MASK          0x0f /* Mask of planes (Added by GrieferAtWork). */
+#   define VGA_AT12_RESERVED      0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_ATC_PEL            0x13
+#   define VGA_AT13_MASK          0x0f /* Mask for pixel panning (Added by GrieferAtWork). */
+#   define VGA_AT13_RESERVED      0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_ATC_COLOR_PAGE     0x14
+#   define VGA_AT14_RESERVED      0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 
 #define VGA_AR_ENABLE_DISPLAY  0x20
 
@@ -176,25 +192,37 @@ DECL_BEGIN
 #define VGA_SEQ_CLOCK_MODE     0x01
 #   define VGA_SR01_CHAR_CLK_8DOTS 0x01 /* bit 0: character clocks 8 dots wide are generated */
 #   define VGA_SR01_SCREEN_OFF     0x20 /* bit 5: Screen is off */
+#   define VGA_SR01_RESERVED       0xc2 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_SEQ_PLANE_WRITE    0x02
 #   define VGA_SR02_PLANE(i)     ((1) << i) /* Added by GrieferAtWork */
 #   define VGA_SR02_ALL_PLANES     0x0f /* bits 3-0: enable access to all planes */
+#   define VGA_SR02_RESERVED       0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_SEQ_CHARACTER_MAP  0x03
+#   define VGA_SR03_RESERVED       0xc0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_SEQ_MEMORY_MODE    0x04
 #   define VGA_SR04_EXT_MEM        0x02 /* bit 1: allows complete mem access to 256K */
 #   define VGA_SR04_SEQ_MODE       0x04 /* bit 2: directs system to use a sequential addressing mode */
 #   define VGA_SR04_CHN_4M         0x08 /* bit 3: selects modulo 4 addressing for CPU access to display memory */
+#   define VGA_SR04_RESERVED       0xf1 /* Mask of reserved registers (Added by GrieferAtWork). */
 
 /* VGA graphics controller register indices */
 #define VGA_GFX_SR_VALUE        0x00
+#   define VGA_GR00_RESERVED       0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_GFX_SR_ENABLE       0x01
+#   define VGA_GR01_RESERVED       0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_GFX_COMPARE_VALUE   0x02
+#   define VGA_GR02_RESERVED       0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_GFX_DATA_ROTATE     0x03
+#   define VGA_GR03_RESERVED       0xe0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_GFX_PLANE_READ      0x04
+#   define VGA_GR04_RESERVED       0xfc /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_GFX_MODE            0x05
+#   define VGA_GR05_RESERVED       0x84 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_GFX_MISC            0x06
+#   define VGA_GR06_RESERVED       0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #   define VGA_GR06_GRAPHICS_MODE  0x01
 #define VGA_GFX_COMPARE_MASK    0x07
+#   define VGA_GR07_RESERVED       0xf0 /* Mask of reserved registers (Added by GrieferAtWork). */
 #define VGA_GFX_BIT_MASK        0x08
 
 /* macro for composing an 8-bit VGA register
@@ -296,39 +324,90 @@ FUNDEF void KCALL load_vga(struct vgastate *__restrict state, bool call_free_vga
 FUNDEF void KCALL free_vga(struct vgastate *__restrict state);
 
 
-struct vmode {
- u16          v_resx;     /*< Horizontal resolution (In pixels). */
- u16          v_resy;     /*< Vertical resolution (In pixels). */
- u32          v_pitch;    /*< Size of a single line (In bytes). */
- unsigned int v_bpp : 3;  /*< Bits per pixel. */
- unsigned int v_pad : 13; /* ... */
- u16          v_hz;       /*< Max refresh speed (A lower value may be set, though). */
+typedef struct {
+ struct chrdev   v_device; /*< Underlying device structure. */
+ VIRT MMIO void *v_mmio;   /*< [0..1] Virtual MMIO memory address (or NULL if not supported). */
+ /* VGA color/mono registers (Determined by `vga_r(v_mmio,VGA_MIS_R)&VGA_MIS_COLOR') */
+ u16             v_crt_i;  /*< CRT Controller Index (Either `VGA_CRT_IC' or `VGA_CRT_IM') */
+ u16             v_crt_d;  /*< CRT Controller Data Register (Either `VGA_CRT_DC' or `VGA_CRT_DM') */
+ u16             v_is1_r;  /*< Input Status Register 1 (Either `VGA_IS1_RC' or `VGA_IS1_RM') */
+ u16           __v_pad;    /* ... */
+} vga_t;
+
+struct vga_mode {
+    u8 vm_att_mode;
+    u8 vm_att_overscan;
+    u8 vm_att_plane_enable;
+    u8 vm_att_pel;
+    u8 vm_att_color_page;
+    u8 vm_mis;
+    u8 vm_gfx_sr_value;
+    u8 vm_gfx_sr_enable;
+    u8 vm_gfx_compare_value;
+    u8 vm_gfx_data_rotate;
+    u8 vm_gfx_mode;
+    u8 vm_gfx_misc;
+    u8 vm_gfx_compare_mask;
+    u8 vm_gfx_bit_mask;
+    u8 vm_crt_h_total;
+    u8 vm_crt_h_disp;
+    u8 vm_crt_h_blank_start;
+    u8 vm_crt_h_blank_end;
+    u8 vm_crt_h_sync_start;
+    u8 vm_crt_h_sync_end;
+    u8 vm_crt_v_total;
+    u8 vm_crt_overflow;
+    u8 vm_crt_preset_row;
+    u8 vm_crt_max_scan;
+    u8 vm_crt_v_sync_start;
+    u8 vm_crt_v_sync_end;
+    u8 vm_crt_v_disp_end;
+    u8 vm_crt_offset;
+    u8 vm_crt_underline;
+    u8 vm_crt_v_blank_start;
+    u8 vm_crt_v_blank_end;
+    u8 vm_crt_mode;
+    u8 vm_crt_line_compare;
+    u8 vm_seq_plane_write;
+    u8 vm_seq_character_map;
+    u8 vm_seq_memory_mode;
+    u8 vm_seq_clock_mode;
 };
 
-struct vga_vmode {
- u8 vv_htotal;       /* VGA_CRTC_H_TOTAL */
- u8 vv_hdisp;        /* VGA_CRTC_H_DISP */
- u8 vv_hblank_start; /* VGA_CRTC_H_BLANK_START */
- u8 vv_hblank_end;   /* [MASK(VGA_CR3_MASK)] VGA_CRTC_H_BLANK_END */
- u8 vv_hsync_start;  /* VGA_CRTC_H_SYNC_START */
- u8 vv_hsync_end;    /* [MASK(VGA_CR5_H_BLANK_END_5|VGA_CR5_MASK)] VGA_CRTC_H_SYNC_END */
- u8 vv_vtotal;       /* VGA_CRTC_V_TOTAL */
- u8 vv_overflow;     /* VGA_CRTC_OVERFLOW */
- u8 vv_max_scan;     /* [MASK(VGA_CR9_V_BLANK_START_9)] VGA_CRTC_MAX_SCAN */
- u8 vv_vsync_start;  /* VGA_CRTC_V_SYNC_START */
- u8 vv_vsync_end;    /* [MASK(VGA_CR11_MASK)] VGA_CRTC_V_SYNC_END */
- u8 vv_vdisp_end;    /* VGA_CRTC_V_DISP_END */
- u8 vv_vblank_start; /* VGA_CRTC_V_BLANK_START */
- u8 vv_vblank_end;   /* VGA_CRTC_V_BLANK_END */
- u8 vv_misc;         /* [MASK(VGA_MIS_ENB_PLL_LOAD)] VGA_MIS_R / VGA_MIS_W */
- u8 vv_clockmode;    /* [MASK(VGA_SR01_CHAR_CLK_8DOTS)] VGA_SEQ_CLOCK_MODE */
+struct vga_font {
+   HOST byte_t *vf_data;    /*< [0..1][owned] Character data. */
+   u8           vf_cheight; /*< [valid_if(vf_data)] Character height (in bytes/pixels; width is always 8). */
 };
+#define VGA_FONT_CHARACTER(self,character) \
+      ((self)->vf_data+((size_t)(character)*(self)->vf_cheight))
 
 
-/* Set the current video mode. */
-FUNDEF void KCALL vga_set_vmode(MMIO void *regbase, struct vmode *__restrict mode);
-FUNDEF void KCALL vga_set_vvmode(MMIO void *regbase, struct vga_vmode const *__restrict mode);
-FUNDEF void KCALL vga_v2vvmode(struct vmode *__restrict mode, struct vga_vmode *__restrict result);
+DATDEF struct vga_mode vm_text;  /* 80x25 color text mode. */
+DATDEF struct vga_mode vm_modeX; /* 320x240 planar 256 color mode */
+
+/* Font used by the BIOS (Original content during boot)
+ * NOTE: When returning to text mode, this font should be restored. */
+DATDEF struct vga_font  vf_bios;
+DATDEF struct vga_font *vf_current; /* [1..1] The currently selected font (Only used in text-mode). */
+
+
+/* Set/Get the current VGA mode. */
+PUBLIC void KCALL vga_setmode(MMIO void *regbase, struct vga_mode const *__restrict mode);
+PUBLIC void KCALL vga_getmode(MMIO void *regbase, struct vga_mode *__restrict mode);
+
+/* Set/Get the current VGA text-mode font.
+ * NOTE: When setting a font, 'vf_current' isn't check
+ *       and the caller must update it upon success.
+ * @return: true:   Successfully read/set the font.
+ * @return: false: [vga_getfont] Not enough available memory. ('vf_data' is set to NULL)
+ * @return: false: [vga_setfont] 'vf_data' was NULL. */
+PUBLIC bool KCALL vga_setfont(MMIO void *regbase, struct vga_font const *__restrict font);
+PUBLIC bool KCALL vga_getfont(MMIO void *regbase, struct vga_font *__restrict font);
+
+#define VGA_SET_VIDEOMODE_EX(regbase) (vga_setmode(regbase,&vm_modeX))
+#define VGA_SET_TEXTMODE_EX(regbase)  (vga_setmode(regbase,&vm_text),vga_setfont(regbase,vf_current))
+#define VGA_SET_VIDEOMODE() VGA_SET_VIDEOMODE_EX(NULL)
+#define VGA_SET_TEXTMODE()  VGA_SET_TEXTMODE_EX(NULL)
 
 
 DECL_END

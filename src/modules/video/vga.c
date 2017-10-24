@@ -31,12 +31,18 @@
 #include <string.h>
 #include <sched/paging.h>
 #include <sched/cpu.h>
+#include <hybrid/section.h>
+#include <kernel/boot.h>
+#include <kernel/arch/realmode.h>
+#include <kernel/arch/cpustate.h>
 
 DECL_BEGIN
 
+#define VRAM_PLANE  (8192*4) /* 32K */
+
 /* Base address and size of video memory. */
-PRIVATE PHYS byte_t *vram_addr = (byte_t *)0xA0000;
-PRIVATE      size_t  vram_size = 8192*4; /* 32K */
+PRIVATE ATTR_USED PHYS byte_t *vram_addr = (byte_t *)0xA0000;
+PRIVATE ATTR_USED      size_t  vram_size = VRAM_PLANE*4; /* 128K */
 
 #define VGA_CMAP_SIZE 768
 #define DATA_PLANE(i) i
@@ -79,10 +85,10 @@ save_vga(struct vgastate *__restrict state,
  memset(state->vs_data,0,sizeof(state->vs_data));
 
  /* Allocate necessary data. */
- if (save&VGA_SAVE_PLANE0 && (state->vs_data[DATA_PLANE0] = (byte_t *)kmalloc(vram_size,GFP_KERNEL)) == NULL) goto err_nomem;
- if (save&VGA_SAVE_PLANE1 && (state->vs_data[DATA_PLANE1] = (byte_t *)kmalloc(vram_size,GFP_KERNEL)) == NULL) goto err_nomem;
- if (save&VGA_SAVE_PLANE2 && (state->vs_data[DATA_PLANE2] = (byte_t *)kmalloc(vram_size,GFP_KERNEL)) == NULL) goto err_nomem;
- if (save&VGA_SAVE_PLANE3 && (state->vs_data[DATA_PLANE3] = (byte_t *)kmalloc(vram_size,GFP_KERNEL)) == NULL) goto err_nomem;
+ if (save&VGA_SAVE_PLANE0 && (state->vs_data[DATA_PLANE0] = (byte_t *)kmalloc(VRAM_PLANE,GFP_KERNEL)) == NULL) goto err_nomem;
+ if (save&VGA_SAVE_PLANE1 && (state->vs_data[DATA_PLANE1] = (byte_t *)kmalloc(VRAM_PLANE,GFP_KERNEL)) == NULL) goto err_nomem;
+ if (save&VGA_SAVE_PLANE2 && (state->vs_data[DATA_PLANE2] = (byte_t *)kmalloc(VRAM_PLANE,GFP_KERNEL)) == NULL) goto err_nomem;
+ if (save&VGA_SAVE_PLANE3 && (state->vs_data[DATA_PLANE3] = (byte_t *)kmalloc(VRAM_PLANE,GFP_KERNEL)) == NULL) goto err_nomem;
  if (save&VGA_SAVE_CMAP     && (state->vs_data[DATA_CMAP] = (byte_t *)kmalloc(VGA_CMAP_SIZE,GFP_KERNEL)) == NULL) goto err_nomem;
 
  if (save&VGA_SAVE_CMAP)
@@ -138,7 +144,7 @@ save_vga(struct vgastate *__restrict state,
    vga_wgfx(regbase,VGA_GFX_PLANE_READ,i);
    vga_wgfx(regbase,VGA_GFX_MODE,0x0);
    vga_wgfx(regbase,VGA_GFX_MISC,0x5);
-   memcpy(state->vs_data[DATA_PLANE(i)],vram_addr,vram_size);
+   memcpy(state->vs_data[DATA_PLANE(i)],vram_addr,VRAM_PLANE);
   }
 
   /* With all planes restored, restore registers and turn the screen back on. */
@@ -260,7 +266,7 @@ load_vga(struct vgastate *__restrict state, bool call_free_vga) {
    vga_wgfx(regbase,VGA_GFX_PLANE_READ,i);
    vga_wgfx(regbase,VGA_GFX_MODE,0x0);
    vga_wgfx(regbase,VGA_GFX_MISC,0x5);
-   memcpy(vram_addr,state->vs_data[DATA_PLANE(i)],vram_size);
+   memcpy(vram_addr,state->vs_data[DATA_PLANE(i)],VRAM_PLANE);
   }
   /* Turn on the screen. */
   vga_wseq(regbase,VGA_SEQ_RESET,0x1);
@@ -294,179 +300,436 @@ free_vga(struct vgastate *__restrict state) {
 }
 
 
-
 PUBLIC void KCALL
-vga_set_vmode(MMIO void *regbase, struct vmode *__restrict mode) {
- struct vga_vmode vvmode;
- vga_v2vvmode(mode,&vvmode);
- vga_set_vvmode(regbase,&vvmode);
-}
-PUBLIC void KCALL
-vga_set_vvmode(MMIO void *regbase, struct vga_vmode const *__restrict mode) {
+vga_setmode(MMIO void *regbase,
+            struct vga_mode const *__restrict mode) {
+ /* Disable preemption to prevent interference. */
+ pflag_t was = PREEMPTION_PUSH();
  u8 temp,qr1 = vga_rseq(regbase,VGA_SEQ_CLOCK_MODE);
+
+ /* Validate the given mode. */
+ /* TODO: Stuff like this: assert(!(mode->vm_att_mode&0x10)); */
 
  /* Turn off the screen. */
  vga_wseq(regbase,VGA_SEQ_RESET,0x1);
  vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,qr1|VGA_SR01_SCREEN_OFF);
  vga_wseq(regbase,VGA_SEQ_RESET,0x3);
 
- /* Apply new graphics settings. */
- vga_wcrt(regbase,VGA_CRTC_H_TOTAL,mode->vv_htotal);
- vga_wcrt(regbase,VGA_CRTC_H_DISP,mode->vv_hdisp);
- vga_wcrt(regbase,VGA_CRTC_H_BLANK_START,mode->vv_hblank_start);
- temp = vga_rcrt(regbase,VGA_CRTC_H_BLANK_END);
- vga_wcrt(regbase,VGA_CRTC_H_BLANK_END,
-         (temp&~(VGA_CR3_MASK))|VGA_CR3_ALWAYS1|
-         (mode->vv_hblank_end&(VGA_CR3_MASK)));
- vga_wcrt(regbase,VGA_CRTC_H_SYNC_START,mode->vv_hsync_start);
- temp = vga_rcrt(regbase,VGA_CRTC_H_SYNC_END);
- vga_wcrt(regbase,VGA_CRTC_H_SYNC_END,
-         (temp&~(VGA_CR5_H_BLANK_END_5|VGA_CR5_MASK))|
-         (mode->vv_hsync_end&(VGA_CR5_H_BLANK_END_5|VGA_CR5_MASK)));
- vga_wcrt(regbase,VGA_CRTC_V_TOTAL,mode->vv_vtotal);
- vga_wcrt(regbase,VGA_CRTC_OVERFLOW,mode->vv_overflow);
- temp = vga_rcrt(regbase,VGA_CRTC_MAX_SCAN);
- vga_wcrt(regbase,VGA_CRTC_MAX_SCAN,
-         (temp&~(VGA_CR9_V_BLANK_START_9|VGA_CR9_SCANDOUBLE))|
-         (mode->vv_max_scan&(VGA_CR9_V_BLANK_START_9)));
- vga_wcrt(regbase,VGA_CRTC_V_SYNC_START,mode->vv_vsync_start);
- temp = vga_rcrt(regbase,VGA_CRTC_V_SYNC_END);
- vga_wcrt(regbase,VGA_CRTC_V_SYNC_END,
-         (temp&~(VGA_CR11_MASK))|
-         (mode->vv_vsync_end&(VGA_CR11_MASK)));
- vga_wcrt(regbase,VGA_CRTC_V_DISP_END,mode->vv_vdisp_end);
- vga_wcrt(regbase,VGA_CRTC_V_BLANK_START,mode->vv_vblank_start);
- vga_wcrt(regbase,VGA_CRTC_V_BLANK_END,mode->vv_vblank_end);
-
  /* Enable graphics mode. */
- vga_r(NULL,VGA_IS1_RC);
- vga_w(NULL,VGA_ATT_W,0x00);
+ vga_r(regbase,VGA_IS1_RC),vga_w(regbase,VGA_ATT_W,0x00);
+ vga_r(regbase,VGA_IS1_RC),temp = vga_rattr(regbase,VGA_ATC_MODE);
+ vga_r(regbase,VGA_IS1_RC),vga_wattr(regbase,VGA_ATC_MODE,(temp&VGA_AT10_RESERVED)|mode->vm_att_mode);
+ vga_r(regbase,VGA_IS1_RC),vga_wattr(regbase,VGA_ATC_OVERSCAN,mode->vm_att_overscan);
+ vga_r(regbase,VGA_IS1_RC),temp = vga_rattr(regbase,VGA_ATC_PLANE_ENABLE);
+ vga_r(regbase,VGA_IS1_RC),vga_wattr(regbase,VGA_ATC_PLANE_ENABLE,(temp&~VGA_AT12_MASK)|mode->vm_att_plane_enable);
+ vga_r(regbase,VGA_IS1_RC),temp = vga_rattr(regbase,VGA_ATC_PEL);
+ vga_r(regbase,VGA_IS1_RC),vga_wattr(regbase,VGA_ATC_PEL,(temp&VGA_AT13_RESERVED)|mode->vm_att_pel);
+ vga_r(regbase,VGA_IS1_RC),temp = vga_rattr(regbase,VGA_ATC_COLOR_PAGE);
+ vga_r(regbase,VGA_IS1_RC),vga_wattr(regbase,VGA_ATC_COLOR_PAGE,(temp&VGA_AT14_RESERVED)|mode->vm_att_color_page);
+ vga_r(regbase,VGA_IS1_RC),vga_w(regbase,VGA_ATT_W,0x20);
 
- vga_r(NULL,VGA_IS1_RC);
- temp = vga_rattr(regbase,VGA_ATC_MODE);
- vga_r(regbase,VGA_IS1_RC);
- vga_r(NULL,VGA_IS1_RC);
- vga_wattr(regbase,VGA_ATC_MODE,temp|
-           VGA_AT10_GRAPHICS|VGA_AT10_8BITPAL|VGA_AT10_BLINK);
-
- vga_r(NULL,VGA_IS1_RC);
- vga_w(NULL,VGA_ATT_W,0x20);
-
- temp = vga_rgfx(regbase,VGA_GFX_MISC);
- vga_wgfx(regbase,VGA_GFX_MISC,(temp&0xf0)|VGA_GR06_GRAPHICS_MODE);
-
- vga_wgfx(regbase,VGA_GFX_MODE,0x40);
- temp = vga_rgfx(regbase,VGA_GFX_COMPARE_MASK);
- vga_wgfx(regbase,VGA_GFX_COMPARE_MASK,temp&0xf0);
- vga_wgfx(regbase,VGA_GFX_BIT_MASK,0xff);
+ temp = vga_r(regbase,VGA_MIS_R);
+ vga_w(regbase,VGA_MIS_W,(temp&VGA_MIS_RESERVED)|mode->vm_mis);
 
  temp = vga_rseq(regbase,VGA_SEQ_PLANE_WRITE);
- vga_wseq(regbase,VGA_SEQ_PLANE_WRITE,temp|VGA_SR02_ALL_PLANES);
+ vga_wseq(regbase,VGA_SEQ_PLANE_WRITE,(temp&VGA_SR02_RESERVED)|mode->vm_seq_plane_write);
+ temp = vga_rseq(regbase,VGA_SEQ_CHARACTER_MAP);
+ vga_wseq(regbase,VGA_SEQ_CHARACTER_MAP,(temp&VGA_SR03_RESERVED)|mode->vm_seq_character_map);
  temp = vga_rseq(regbase,VGA_SEQ_MEMORY_MODE);
- vga_wseq(regbase,VGA_SEQ_MEMORY_MODE,
-         (temp&0xf1)|(VGA_SR04_EXT_MEM|VGA_SR04_SEQ_MODE|VGA_SR04_CHN_4M));
+ vga_wseq(regbase,VGA_SEQ_MEMORY_MODE,(temp&VGA_SR04_RESERVED)|mode->vm_seq_memory_mode);
 
+ temp = vga_rgfx(regbase,VGA_GFX_SR_VALUE),vga_wgfx(regbase,VGA_GFX_SR_VALUE,(temp&VGA_GR00_RESERVED)|mode->vm_gfx_sr_value);
+ temp = vga_rgfx(regbase,VGA_GFX_SR_ENABLE),vga_wgfx(regbase,VGA_GFX_SR_ENABLE,(temp&VGA_GR01_RESERVED)|mode->vm_gfx_sr_enable);
+ temp = vga_rgfx(regbase,VGA_GFX_COMPARE_VALUE),vga_wgfx(regbase,VGA_GFX_COMPARE_VALUE,(temp&VGA_GR02_RESERVED)|mode->vm_gfx_compare_value);
+ temp = vga_rgfx(regbase,VGA_GFX_DATA_ROTATE),vga_wgfx(regbase,VGA_GFX_DATA_ROTATE,(temp&VGA_GR03_RESERVED)|mode->vm_gfx_data_rotate);
+ temp = vga_rgfx(regbase,VGA_GFX_MODE),vga_wgfx(regbase,VGA_GFX_MODE,(temp&VGA_GR05_RESERVED)|mode->vm_gfx_mode);
+ temp = vga_rgfx(regbase,VGA_GFX_MISC),vga_wgfx(regbase,VGA_GFX_MISC,(temp&VGA_GR06_RESERVED)|mode->vm_gfx_misc);
+ temp = vga_rgfx(regbase,VGA_GFX_COMPARE_MASK),vga_wgfx(regbase,VGA_GFX_COMPARE_MASK,(temp&VGA_GR07_RESERVED)|mode->vm_gfx_compare_mask);
+ vga_wgfx(regbase,VGA_GFX_BIT_MASK,mode->vm_gfx_bit_mask);
+
+ /* Apply new graphics settings. */
+ vga_wcrt(regbase,VGA_CRTC_H_TOTAL,mode->vm_crt_h_total);
+ vga_wcrt(regbase,VGA_CRTC_H_DISP,mode->vm_crt_h_disp);
+ vga_wcrt(regbase,VGA_CRTC_H_BLANK_START,mode->vm_crt_h_blank_start);
+ vga_wcrt(regbase,VGA_CRTC_H_BLANK_END,mode->vm_crt_h_blank_end);
+ vga_wcrt(regbase,VGA_CRTC_H_SYNC_START,mode->vm_crt_h_sync_start);
+ vga_wcrt(regbase,VGA_CRTC_H_SYNC_END,mode->vm_crt_h_sync_end);
+ vga_wcrt(regbase,VGA_CRTC_V_TOTAL,mode->vm_crt_v_total);
+ vga_wcrt(regbase,VGA_CRTC_OVERFLOW,mode->vm_crt_overflow);
+ temp = vga_rcrt(regbase,VGA_CRTC_PRESET_ROW);
+ vga_wcrt(regbase,VGA_CRTC_PRESET_ROW,(temp&VGA_CR8_RESERVED)|mode->vm_crt_preset_row);
+ vga_wcrt(regbase,VGA_CRTC_MAX_SCAN,mode->vm_crt_max_scan);
+ vga_wcrt(regbase,VGA_CRTC_V_SYNC_START,mode->vm_crt_v_sync_start);
+ temp = vga_rcrt(regbase,VGA_CRTC_V_SYNC_END);
+ vga_wcrt(regbase,VGA_CRTC_V_SYNC_END,(temp&VGA_CR11_RESERVED)|mode->vm_crt_v_sync_end);
+ vga_wcrt(regbase,VGA_CRTC_V_DISP_END,mode->vm_crt_v_disp_end);
+ vga_wcrt(regbase,VGA_CRTC_OFFSET,mode->vm_crt_offset);
+ vga_wcrt(regbase,VGA_CRTC_UNDERLINE,mode->vm_crt_underline);
+ vga_wcrt(regbase,VGA_CRTC_V_BLANK_START,mode->vm_crt_v_blank_start);
+ temp = vga_rcrt(regbase,VGA_CRTC_V_BLANK_END);
+ vga_wcrt(regbase,VGA_CRTC_V_BLANK_END,(temp&VGA_CR16_RESERVED)|mode->vm_crt_v_blank_end);
  temp = vga_rcrt(regbase,VGA_CRTC_MODE);
- vga_wcrt(regbase,VGA_CRTC_MODE,temp|VGA_CR17_H_V_SIGNALS_ENABLED);
+ vga_wcrt(regbase,VGA_CRTC_MODE,(temp&VGA_CR17_RESERVED)|mode->vm_crt_mode);
+ vga_wcrt(regbase,VGA_CRTC_LINE_COMPARE,mode->vm_crt_line_compare);
 
  /* Turn the screen back on. */
- temp = vga_r(regbase,VGA_MIS_W);
- vga_w(regbase,VGA_MIS_W,
-      (temp&~(VGA_MIS_ENB_PLL_LOAD))|
-      (mode->vv_misc&(VGA_MIS_ENB_PLL_LOAD)));
  vga_wseq(regbase,VGA_SEQ_RESET,0x1);
- vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,
-         (qr1&~(VGA_SR01_SCREEN_OFF|VGA_SR01_CHAR_CLK_8DOTS))|
-         (mode->vv_clockmode&(VGA_SR01_CHAR_CLK_8DOTS)));
+ vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,(qr1&VGA_SR01_RESERVED)|mode->vm_seq_clock_mode);
  vga_wseq(regbase,VGA_SEQ_RESET,0x3);
-
+ PREEMPTION_POP(was);
 }
-
 
 PUBLIC void KCALL
-vga_v2vvmode(struct vmode *__restrict mode,
-             struct vga_vmode *__restrict result) {
- u8 clock_x;
- memset(result,0,sizeof(struct vga_vmode));
- if (!(mode->v_resx % 8)) {
-use_8dot:
-  result->vv_clockmode |= VGA_SR01_CHAR_CLK_8DOTS;
-  result->vv_hdisp = (u8)(mode->v_resx/8);
-  clock_x = 8;
- } else if (!(mode->v_resx % 9)) {
-use_9dot:
-  result->vv_hdisp = (u8)(mode->v_resx/9);
-  clock_x = 9;
- } else {
-  /* Must adjust input width. */
-  u8 a = (u8)(mode->v_resx/8);
-  u8 b = (u8)(mode->v_resx/9);
-  if (mode->v_resx-((u16)a*8) <
-      mode->v_resx-((u16)b*9))
-      goto use_8dot;
-  goto use_9dot;
+vga_getmode(MMIO void *regbase, struct vga_mode *__restrict mode) {
+ /* Disable preemption to prevent interference. */
+ pflag_t was = PREEMPTION_PUSH();
+ vga_r(regbase,VGA_IS1_RC),vga_w(regbase,VGA_ATT_W,0x00);
+ vga_r(regbase,VGA_IS1_RC),mode->vm_att_mode         = vga_rattr(regbase,VGA_ATC_MODE) & ~VGA_AT10_RESERVED;
+ vga_r(regbase,VGA_IS1_RC),mode->vm_att_overscan     = vga_rattr(regbase,VGA_ATC_OVERSCAN);
+ vga_r(regbase,VGA_IS1_RC),mode->vm_att_plane_enable = vga_rattr(regbase,VGA_ATC_PLANE_ENABLE) & ~VGA_AT12_RESERVED;
+ vga_r(regbase,VGA_IS1_RC),mode->vm_att_pel          = vga_rattr(regbase,VGA_ATC_PEL) & ~VGA_AT13_RESERVED;
+ vga_r(regbase,VGA_IS1_RC),mode->vm_att_color_page   = vga_rattr(regbase,VGA_ATC_COLOR_PAGE) & ~VGA_AT14_RESERVED;
+ vga_r(regbase,VGA_IS1_RC),vga_w(regbase,VGA_ATT_W,0x20);
+
+ mode->vm_mis               = vga_r(regbase,VGA_MIS_R) & ~VGA_MIS_RESERVED;
+ mode->vm_gfx_sr_value      = vga_rgfx(regbase,VGA_GFX_SR_VALUE) & ~VGA_GR00_RESERVED;
+ mode->vm_gfx_sr_enable     = vga_rgfx(regbase,VGA_GFX_SR_ENABLE) & ~VGA_GR01_RESERVED;
+ mode->vm_gfx_compare_value = vga_rgfx(regbase,VGA_GFX_COMPARE_VALUE) & ~VGA_GR02_RESERVED;
+ mode->vm_gfx_data_rotate   = vga_rgfx(regbase,VGA_GFX_DATA_ROTATE) & ~VGA_GR03_RESERVED;
+ mode->vm_gfx_mode          = vga_rgfx(regbase,VGA_GFX_MODE) & ~VGA_GR05_RESERVED;
+ mode->vm_gfx_misc          = vga_rgfx(regbase,VGA_GFX_MISC) & ~VGA_GR06_RESERVED;
+ mode->vm_gfx_compare_mask  = vga_rgfx(regbase,VGA_GFX_COMPARE_MASK) & ~VGA_GR07_RESERVED;
+ mode->vm_gfx_bit_mask      = vga_rgfx(regbase,VGA_GFX_BIT_MASK);
+ mode->vm_crt_h_total       = vga_rcrt(regbase,VGA_CRTC_H_TOTAL);
+ mode->vm_crt_h_disp        = vga_rcrt(regbase,VGA_CRTC_H_DISP);
+ mode->vm_crt_h_blank_start = vga_rcrt(regbase,VGA_CRTC_H_BLANK_START);
+ mode->vm_crt_h_blank_end   = vga_rcrt(regbase,VGA_CRTC_H_BLANK_END);
+ mode->vm_crt_h_sync_start  = vga_rcrt(regbase,VGA_CRTC_H_SYNC_START);
+ mode->vm_crt_h_sync_end    = vga_rcrt(regbase,VGA_CRTC_H_SYNC_END);
+ mode->vm_crt_v_total       = vga_rcrt(regbase,VGA_CRTC_V_TOTAL);
+ mode->vm_crt_overflow      = vga_rcrt(regbase,VGA_CRTC_OVERFLOW);
+ mode->vm_crt_preset_row    = vga_rcrt(regbase,VGA_CRTC_PRESET_ROW) & ~VGA_CR8_RESERVED;
+ mode->vm_crt_max_scan      = vga_rcrt(regbase,VGA_CRTC_MAX_SCAN);
+ mode->vm_crt_v_sync_start  = vga_rcrt(regbase,VGA_CRTC_V_SYNC_START);
+ mode->vm_crt_v_sync_end    = vga_rcrt(regbase,VGA_CRTC_V_SYNC_END) & ~VGA_CR11_RESERVED;
+ mode->vm_crt_v_disp_end    = vga_rcrt(regbase,VGA_CRTC_V_DISP_END);
+ mode->vm_crt_offset        = vga_rcrt(regbase,VGA_CRTC_OFFSET);
+ mode->vm_crt_underline     = vga_rcrt(regbase,VGA_CRTC_UNDERLINE);
+ mode->vm_crt_v_blank_start = vga_rcrt(regbase,VGA_CRTC_V_BLANK_START);
+ mode->vm_crt_v_blank_end   = vga_rcrt(regbase,VGA_CRTC_V_BLANK_END) & ~VGA_CR16_RESERVED;
+ mode->vm_crt_mode          = vga_rcrt(regbase,VGA_CRTC_MODE) & ~VGA_CR17_RESERVED;
+ mode->vm_crt_line_compare  = vga_rcrt(regbase,VGA_CRTC_LINE_COMPARE);
+ mode->vm_seq_plane_write   = vga_rseq(regbase,VGA_SEQ_PLANE_WRITE) & ~VGA_SR02_RESERVED;
+ mode->vm_seq_character_map = vga_rseq(regbase,VGA_SEQ_CHARACTER_MAP) & ~VGA_SR03_RESERVED;
+ mode->vm_seq_memory_mode   = vga_rseq(regbase,VGA_SEQ_MEMORY_MODE) & ~VGA_SR04_RESERVED;
+ mode->vm_seq_clock_mode    = vga_rseq(regbase,VGA_SEQ_CLOCK_MODE) & ~VGA_SR01_RESERVED;
+ PREEMPTION_POP(was);
+}
+
+#define VGA_FONTPLANE      2
+#define VGA_CHARSIZE_MIN   8
+#define VGA_CHARSIZE_MAX  32
+
+PUBLIC bool KCALL
+vga_setfont(MMIO void *regbase, struct vga_font const *__restrict font) {
+ u8 gr1,gr3,gr4,gr5,gr6,gr8,qr1,sr2,sr4; pflag_t was;
+ byte_t *src,*dst,*end;
+ CHECK_HOST_DOBJ(font);
+ if (!font->vf_data) return false;
+ assert(font->vf_cheight >= VGA_CHARSIZE_MIN &&
+        font->vf_cheight <= VGA_CHARSIZE_MAX);
+ was = PREEMPTION_PUSH();
+ gr1 = vga_rgfx(regbase,VGA_GFX_SR_ENABLE);
+ gr3 = vga_rgfx(regbase,VGA_GFX_DATA_ROTATE);
+ gr4 = vga_rgfx(regbase,VGA_GFX_PLANE_READ);
+ gr5 = vga_rgfx(regbase,VGA_GFX_MODE);
+ gr6 = vga_rgfx(regbase,VGA_GFX_MISC);
+ gr8 = vga_rgfx(regbase,VGA_GFX_BIT_MASK);
+ sr2 = vga_rseq(regbase,VGA_SEQ_PLANE_WRITE);
+ sr4 = vga_rseq(regbase,VGA_SEQ_MEMORY_MODE);
+ qr1 = vga_rseq(regbase,VGA_SEQ_CLOCK_MODE);
+
+ /* Turn off the screen. */
+ vga_wseq(regbase,VGA_SEQ_RESET,0x1);
+ vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,qr1|VGA_SR01_SCREEN_OFF);
+ vga_wseq(regbase,VGA_SEQ_RESET,0x3);
+
+ vga_wseq(regbase,VGA_SEQ_PLANE_WRITE,VGA_SR02_PLANE(VGA_FONTPLANE));
+ vga_wseq(regbase,VGA_SEQ_MEMORY_MODE,VGA_SR04_EXT_MEM|VGA_SR04_SEQ_MODE);
+ vga_wgfx(regbase,VGA_GFX_PLANE_READ,VGA_FONTPLANE);
+ vga_wgfx(regbase,VGA_GFX_MODE,0x0);
+ vga_wgfx(regbase,VGA_GFX_MISC,0x5);
+ PREEMPTION_POP(was);
+
+ src = font->vf_data;
+ dst = vram_addr;
+ end = src+256*font->vf_cheight;
+
+ /* Copy information into VRAM. */
+ for (; src != end; src += font->vf_cheight,dst += VGA_CHARSIZE_MAX) {
+  memcpy(dst,src,font->vf_cheight);
+  memset(dst+font->vf_cheight,0,VGA_CHARSIZE_MAX-font->vf_cheight);
  }
- result->vv_vdisp_end = (u8)mode->v_resy;
- if (mode->v_resy&(1 << 8)) result->vv_overflow |= VGA_CR7_V_DISP_END_8;
- if (mode->v_resy&(1 << 9)) result->vv_overflow |= VGA_CR7_V_DISP_END_9;
- (void)clock_x;
 
+ /* Turn on the screen. */
+ was = PREEMPTION_PUSH();
+ vga_wseq(regbase,VGA_SEQ_RESET,0x1);
+ vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,qr1 & ~VGA_SR01_SCREEN_OFF);
+ vga_wseq(regbase,VGA_SEQ_RESET,0x3);
+ /* Restore registers. */
+ vga_wgfx(regbase,VGA_GFX_SR_ENABLE,gr1);
+ vga_wgfx(regbase,VGA_GFX_DATA_ROTATE,gr3);
+ vga_wgfx(regbase,VGA_GFX_PLANE_READ,gr4);
+ vga_wgfx(regbase,VGA_GFX_MODE,gr5);
+ vga_wgfx(regbase,VGA_GFX_MISC,gr6);
+ vga_wgfx(regbase,VGA_GFX_BIT_MASK,gr8);
+ vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,qr1);
+ vga_wseq(regbase,VGA_SEQ_PLANE_WRITE,sr2);
+ vga_wseq(regbase,VGA_SEQ_MEMORY_MODE,sr4);
+ PREEMPTION_POP(was);
+ return true;
+}
 
+PUBLIC bool KCALL
+vga_getfont(MMIO void *regbase, struct vga_font *__restrict font) {
+ u8 gr4,gr5,gr6,qr1,sr2,sr4; struct mman *omm;
+ pflag_t was = PREEMPTION_PUSH();
+ byte_t *dst,*src,*end;
+ TASK_PDIR_KERNEL_BEGIN(omm);
+ gr4 = vga_rgfx(regbase,VGA_GFX_PLANE_READ);
+ gr5 = vga_rgfx(regbase,VGA_GFX_MODE);
+ gr6 = vga_rgfx(regbase,VGA_GFX_MISC);
+ sr2 = vga_rseq(regbase,VGA_SEQ_PLANE_WRITE);
+ sr4 = vga_rseq(regbase,VGA_SEQ_MEMORY_MODE);
+ qr1 = vga_rseq(regbase,VGA_SEQ_CLOCK_MODE);
 
- memset(result,0,sizeof(struct vga_vmode));
+ /* Turn off the screen to hide what we're doing. */
+ vga_wseq(regbase,VGA_SEQ_RESET,0x1);
+ vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,qr1|VGA_SR01_SCREEN_OFF);
+ vga_wseq(regbase,VGA_SEQ_RESET,0x3);
+ vga_wseq(regbase,VGA_SEQ_PLANE_WRITE,VGA_SR02_PLANE(VGA_FONTPLANE));
+ vga_wseq(regbase,VGA_SEQ_MEMORY_MODE,VGA_SR04_EXT_MEM|VGA_SR04_SEQ_MODE);
+ vga_wgfx(regbase,VGA_GFX_PLANE_READ,VGA_FONTPLANE);
+ vga_wgfx(regbase,VGA_GFX_MODE,0x0);
+ vga_wgfx(regbase,VGA_GFX_MISC,0x5);
+ PREEMPTION_POP(was);
 
- /* 640x480 register values. */
- result->vv_htotal       = 0x5f;
- result->vv_hdisp        = 0x4f;
- result->vv_hblank_start = 0x50;
- result->vv_hblank_end   = 0x02;
- result->vv_hsync_start  = 0x52;
- result->vv_hsync_end    = VGA_CR5_H_BLANK_END_5;
- result->vv_vtotal       = 0x0b;
- result->vv_overflow     = (VGA_CR7_V_BLANK_START_8|
-                            VGA_CR7_V_SYNC_START_8|
-                            VGA_CR7_V_DISP_END_8|
-                            VGA_CR7_V_TOTAL_9);
- result->vv_max_scan     = 0x00;
- result->vv_vsync_start  = 0xea;
- result->vv_vsync_end    = 0x8c;
- result->vv_vdisp_end    = 0xdf;
- result->vv_vblank_start = 0xe7;
- result->vv_vblank_end   = 0x04;
- result->vv_misc         = 0xe3;
- result->vv_clockmode    = 0x01;
+ /* Probe character db (y: 13, x: 11), which should be a fully colored block. */
+ { byte_t *probe_char = vram_addr+(0xdb*VGA_CHARSIZE_MAX);
+   byte_t *iter = probe_char,*char_end = probe_char+VGA_CHARSIZE_MAX;
+   while (iter != char_end && *iter) ++iter;
+   /* unlikely case, but could happen if the BIOS doesn't support character > 127 */
+   if unlikely(iter == probe_char) {
+    probe_char = vram_addr+((int)'_'*VGA_CHARSIZE_MAX);
+    iter = probe_char,char_end = probe_char+VGA_CHARSIZE_MAX;
+    while (iter != char_end && *iter) ++iter;
+   }
+   font->vf_cheight = (u8)(iter-probe_char);
+   /* Ensure sure that character data is at least 'VGA_CHARSIZE_MIN' pixels tall.
+    * NOTE: This also handles the case where we could find information on '_'. */
+   if (font->vf_cheight < VGA_CHARSIZE_MIN) font->vf_cheight = VGA_CHARSIZE_MIN;
+   if (font->vf_cheight&1) ++font->vf_cheight;
+   assert(font->vf_cheight <= VGA_CHARSIZE_MAX);
+   font->vf_data = (byte_t *)kmalloc(256*font->vf_cheight,GFP_KERNEL);
+ }
+ if unlikely(!font->vf_data) goto done_font;
+
+ dst = font->vf_data;
+ src = vram_addr;
+ end = dst+256*font->vf_cheight;
+
+ /* Copy information into memory. */
+ for (; dst != end; dst += font->vf_cheight,src += VGA_CHARSIZE_MAX)
+        memcpy(dst,src,font->vf_cheight);
+
+ /* With font information stored, restore registers and turn the screen back on. */
+done_font:
+ was = PREEMPTION_PUSH();
+ vga_wseq(regbase,VGA_SEQ_PLANE_WRITE,sr2);
+ vga_wseq(regbase,VGA_SEQ_MEMORY_MODE,sr4);
+ vga_wgfx(regbase,VGA_GFX_PLANE_READ,gr4);
+ vga_wgfx(regbase,VGA_GFX_MODE,gr5);
+ vga_wgfx(regbase,VGA_GFX_MISC,gr6);
+ vga_wseq(regbase,VGA_SEQ_RESET,0x1);
+ vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,qr1 & ~VGA_SR01_SCREEN_OFF);
+ vga_wseq(regbase,VGA_SEQ_RESET,0x3);
+ vga_wseq(regbase,VGA_SEQ_CLOCK_MODE,qr1);
+ PREEMPTION_POP(was);
+ TASK_PDIR_KERNEL_END(omm);
+ return font->vf_data != NULL;
 }
 
 
+PUBLIC struct vga_font *vf_current = &vf_bios;
+PUBLIC struct vga_font vf_bios = {
+   .vf_data    = NULL,
+   .vf_cheight = 0,
+};
+PUBLIC struct vga_mode vm_text = {
+    .vm_att_mode          = 0x0c,
+    .vm_att_overscan      = 0x00,
+    .vm_att_plane_enable  = 0x0f,
+    .vm_att_pel           = 0x08,
+    .vm_att_color_page    = 0x00,
+    .vm_mis               = 0xe3,
+    .vm_gfx_sr_value      = 0x00,
+    .vm_gfx_sr_enable     = 0x00,
+    .vm_gfx_compare_value = 0x00,
+    .vm_gfx_data_rotate   = 0x00,
+    .vm_gfx_mode          = 0x10,
+    .vm_gfx_misc          = 0x0e,
+    .vm_gfx_compare_mask  = 0x0f,
+    .vm_gfx_bit_mask      = 0xff,
+    .vm_crt_h_total       = 0x5f,
+    .vm_crt_h_disp        = 0x4f,
+    .vm_crt_h_blank_start = 0x50,
+    .vm_crt_h_blank_end   = 0x82,
+    .vm_crt_h_sync_start  = 0x55,
+    .vm_crt_h_sync_end    = 0x81,
+    .vm_crt_v_total       = 0xbf,
+    .vm_crt_overflow      = 0x1f,
+    .vm_crt_preset_row    = 0x00,
+    .vm_crt_max_scan      = 0x4f,
+    .vm_crt_v_sync_start  = 0x9c,
+    .vm_crt_v_sync_end    = 0x8e,
+    .vm_crt_v_disp_end    = 0x8f,
+    .vm_crt_offset        = 0x28,
+    .vm_crt_underline     = 0x1f,
+    .vm_crt_v_blank_start = 0x96,
+    .vm_crt_v_blank_end   = 0xb9,
+    .vm_crt_mode          = 0xa3,
+    .vm_crt_line_compare  = 0xff,
+    .vm_seq_plane_write   = 0x3,
+    .vm_seq_character_map = 0x00,
+    .vm_seq_memory_mode   = 0x02,
+    .vm_seq_clock_mode    = 0x00,
+};
+PUBLIC struct vga_mode vm_modeX = {
+    .vm_att_mode          = 0x41,
+    .vm_att_overscan      = 0x00,
+    .vm_att_plane_enable  = 0x0f,
+    .vm_att_pel           = 0x00,
+    .vm_att_color_page    = 0x00,
+    .vm_mis               = 0xe3,
+    .vm_gfx_sr_value      = 0x00,
+    .vm_gfx_sr_enable     = 0x00,
+    .vm_gfx_compare_value = 0x00,
+    .vm_gfx_data_rotate   = 0x00,
+    .vm_gfx_mode          = 0x40,
+    .vm_gfx_misc          = 0x01,
+    .vm_gfx_compare_mask  = 0x00,
+    .vm_gfx_bit_mask      = 0xff,
+    .vm_crt_h_total       = 0x5f,
+    .vm_crt_h_disp        = 0x4f,
+    .vm_crt_h_blank_start = 0x50,
+    .vm_crt_h_blank_end   = 0x82,
+    .vm_crt_h_sync_start  = 0x54,
+    .vm_crt_h_sync_end    = 0x80,
+    .vm_crt_v_total       = 0x0d,
+    .vm_crt_overflow      = 0x3e,
+    .vm_crt_preset_row    = 0x00,
+    .vm_crt_max_scan      = 0x41,
+    .vm_crt_v_sync_start  = 0xea,
+    .vm_crt_v_sync_end    = 0xac,
+    .vm_crt_v_disp_end    = 0xdf,
+    .vm_crt_offset        = 0x28,
+    .vm_crt_underline     = 0x00,
+    .vm_crt_v_blank_start = 0xe7,
+    .vm_crt_v_blank_end   = 0x06,
+    .vm_crt_mode          = 0xe3,
+    .vm_crt_line_compare  = 0xff,
+    .vm_seq_plane_write   = VGA_SR02_ALL_PLANES,
+    .vm_seq_character_map = 0x00,
+    .vm_seq_memory_mode   = 0x0e,
+    .vm_seq_clock_mode    = 0x01,
+};
+
+
+
+PRIVATE struct inodeops vga_ops = {
+};
+
+PRIVATE ATTR_FREETEXT errno_t KCALL vga_probe(void) {
+ vga_t *result; errno_t error;
+ result = (vga_t *)chrdev_new(sizeof(vga_t));
+ if unlikely(!result) return -ENOMEM;
+ result->v_device.cd_device.d_node.i_ops = &vga_ops;
+ result->v_crt_i = VGA_CRT_IC;
+ result->v_crt_d = VGA_CRT_DC;
+ result->v_is1_r = VGA_IS1_RC;
+ if unlikely(!(vga_r(result->v_mmio,VGA_MIS_R)&VGA_MIS_COLOR)) {
+  result->v_crt_i = VGA_CRT_IM;
+  result->v_crt_d = VGA_CRT_DM;
+  result->v_is1_r = VGA_IS1_RM;
+ }
+ error = device_setup(&result->v_device.cd_device,THIS_INSTANCE);
+ if (E_ISERR(error)) { free(result); return error; }
+ error = CHRDEV_REGISTER(&result->v_device,DV_VGA);
+ CHRDEV_DECREF(&result->v_device);
+ return error;
+}
 
 
 PRIVATE MODULE_INIT void KCALL vga_init(void) {
-#if 0
- struct vgastate st;
- save_vga(&st,NULL,0xff);
+ errno_t error;
+#if 1
+ /* Don't break real hardware until I'm confident this'll work. */
+ if (boot_emulation == BOOT_EMULATION_REALHW)
+     return;
+#endif
 
- struct vmode mode = {
-     .v_resx  = 800,
-     .v_resy  = 600,
-     .v_pitch = 1024,
-     .v_bpp   = 0,
-     .v_hz    = 0,
- };
- vga_set_vmode(NULL,&mode);
- memset(vram_addr,0,vram_size);
- for(;;)
- { unsigned int i = 0;
-   for (i = 0; i < 256; ++i) {
-    vram_addr[i] = (u8)rand();
-   }
+ if ((error = vga_probe(),E_ISERR(error))) {
+  syslog(LOG_ERROR,
+         FREESTR("[VGA] Failed to initialize default adapater: %[errno]\n"),
+         -error);
+  return;
  }
- for (;;) PREEMPTION_FREEZE();
+
+ /* Save the BIOS VGA font. */
+ if (!vga_getfont(NULL,&vf_bios)) {
+  syslog(LOG_ERROR,
+         FREESTR("[VGA] Failed to load BIOS VGA font: %[errno]\n"),
+         ENOMEM);
+ }
 
 #if 1
- load_vga(&st,true);
+#if 1
+ struct vgastate st;
+ save_vga(&st,NULL,0xff);
+ { struct cpustate16 state;
+   memset(&state,0,sizeof(state));
+   state.gp.ah = 0;
+   state.gp.al = 0x13; /* 320x200 256-color */
+   rm_interrupt(&state,0x10);
+   /* TODO: Since our modeX doesn't seem to work on real hardware (But this BIOS interrupt does),
+    *       do a register dump at this point and analyze the differences to our modeX
+    *       NOTE: Remember: This is 320x200, while modeX is supposed to be 320x240!
+    */
+ }
+
 #else
- free_vga(&st);
+ vga_setmode(NULL,&vm_modeX);
+ memset(vram_addr,1,vram_size);
 #endif
+
+#if 0
+#elif 1
+ { unsigned int x,y;
+   unsigned int w = 320;
+   unsigned int h = 240;
+   for (y = 0; y < 20; ++y) {
+    for (x = 0; x < 20; ++x) {
+     vram_addr[x+y*w] = (u8)(x+y);
+    }
+   }
+   vram_addr[0] = 15;
+ }
+#endif
+ //PREEMPTION_FREEZE();                      
+ //vga_setmode(NULL,&vm_text);
+ //vga_setfont(NULL,&vf_bios);
+ //PREEMPTION_FREEZE();                      
+ load_vga(&st,true);
 #endif
 
 #if 0 /* Disable blink-attribute */
