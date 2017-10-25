@@ -594,7 +594,24 @@ PUBLIC struct vga_font vf_bios = {
     .vf_cheight = 0,
 };
 PUBLIC struct vga_mode const vm_txt = {
-    .vm_att_mode          = 0x0c,
+    /* BAD! DON'T YOU DARE TO BLINK!
+     * Like literally, dis shit is dangerous to look at
+     * (Sorry, but even though I never actually had a seizure
+     *  from stupid $h1t like this, every time I see this blinking,
+     *  I can just feel that if I were to stare at it for too long,
+     *  I'd either throw up, or literally just die)
+     * Especially since I use the intensity attribute when the kernel
+     * panics, meaning that while this is still enabled, it'll blink
+     * when I was sitting here knowing that I had to look at it to
+     * figure out what happened.
+     * And I know I could have simply used regular colors at any point,
+     * but before starting this module and reading up on VGA I didn't
+     * see the connection and didn't understand why text was sometimes
+     * blinking.
+     * (And wiki.osdev's VGA TTY page neglects to mention the seizure-
+     *  inducing blinkyness that happens on real hardware and emulators
+     *  ~supporting~ the VgA sTaNdArT's GrEaT iDeA oF iNcLuDiNg ThIs FeAtUrE) */
+    .vm_att_mode          = 0x0c & ~(VGA_AT10_BLINK),
     .vm_att_overscan      = 0x00,
     .vm_att_plane_enable  = 0x0f,
     .vm_att_pel           = 0x08,

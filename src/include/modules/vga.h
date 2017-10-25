@@ -173,7 +173,10 @@ DECL_BEGIN
 #   define VGA_AT10_RESERVED      0x10 /* Mask of reserved registers (Added by GrieferAtWork). */
 #   define VGA_AT10_GRAPHICS      0x01 /* Enable graphics, rather than alphanumeric mode (Added by GrieferAtWork). */
 #   define VGA_AT10_DUP9          0x04 /* Duplicate the 8'th text dot into the 9'th when 'VGA_SR01_CHAR_CLK_8DOTS' isn't set, instead of filling it with background (Added by GrieferAtWork). */
-#   define VGA_AT10_BLINK         0x08 /* Set to cause character attribute bit #7 to be used for blinking text (Added by GrieferAtWork). */
+#   define VGA_AT10_BLINK         0x08 /* Set to cause character attribute bit #7 to be used for blinking text;
+                                        * NEVER SET THIS! YOU'LL CAUSE SEIZURES IN PEOPLE (Added by GrieferAtWork).
+                                        * WARNING: After boot, a BIOS mode switch, or a video card reset, this flag
+                                        *          is enabled and _MUST_ under all circumstances be disabled again! */
 #   define VGA_AT10_8BITPAL       0x40 /* 8-bit palette index (Added by GrieferAtWork). */
 #define VGA_ATC_OVERSCAN       0x11
 #define VGA_ATC_PLANE_ENABLE   0x12
