@@ -303,6 +303,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "kos", "kos", "{AF58F0E7-505
 		..\include\kos\keyboard.h = ..\include\kos\keyboard.h
 		..\include\kos\ksym.h = ..\include\kos\ksym.h
 		..\include\kos\thread.h = ..\include\kos\thread.h
+		..\include\kos\vga.h = ..\include\kos\vga.h
 		..\include\kos\virtinfo.h = ..\include\kos\virtinfo.h
 	EndProjectSection
 EndProject

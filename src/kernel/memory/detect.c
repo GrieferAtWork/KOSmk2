@@ -71,12 +71,12 @@ PRIVATE ATTR_FREETEXT SAFE KPD bool KCALL try_e820(void) {
  do {
   s.gp.eax = 0xe820;
   s.gp.ecx = sizeof(struct smap_entry);
-  s.gp.edx = 0x534D4150;
+  s.gp.edx = 0x534d4150;
   s.gp.edi = (u32)entry;
   s.gp.sp  = REALMODE_EARLY_STACK;
   early_rm_interrupt(&s,0x15); /* Execute realmode interrupt. */
   if (s.eflags & EFLAGS_CF) return false; /* Unsupported. */
-  if (s.gp.eax != 0x534D4150) return false; /* Error. */
+  if (s.gp.eax != 0x534d4150) return false; /* Error. */
   if (s.gp.ecx > 20 && (entry->sm_acpi & 1) == 0) continue; /* Ignored. */
   if (entry->sm_type >= COMPILER_LENOF(memtype_bios_matrix)) entry->sm_type = 0;
   if (memtype_bios_matrix[entry->sm_type] >= MEMTYPE_COUNT) continue;

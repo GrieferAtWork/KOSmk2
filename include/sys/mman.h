@@ -197,9 +197,9 @@ union{
 };
 
 struct mmap_phys {
- PHYS void *mp_addr;  /*< [valid_if(XMAP_PHYSICAL)] Physical address at which memory should be allocated.
-                       *  [REQUIRES(!MAP_FIXED || mp_addr & (PAGESIZE-1) == mi_addr & (PAGESIZE-1))]
-                       *   NOTE: When mapping memory at a non-fixed address, sub-page alignments are made to match. */
+ __PHYS void *mp_addr;  /*< [valid_if(XMAP_PHYSICAL)] Physical address at which memory should be allocated.
+                         *  [REQUIRES(!MAP_FIXED || mp_addr & (PAGESIZE-1) == mi_addr & (PAGESIZE-1))]
+                         *   NOTE: When mapping memory at a non-fixed address, sub-page alignments are made to match. */
 };
 
 
@@ -231,7 +231,7 @@ struct mmap_info_v1 {
  __uint32_t       mi_prot;  /*< Set of 'PROT_*' */
  __uint32_t       mi_flags; /*< Set of 'MAP_*' */
  __uint32_t       mi_xflag; /*< Set of 'XMAP_*' */
- VIRT void       *mi_addr;  /*< Base/hint address.
+ __VIRT void     *mi_addr;  /*< Base/hint address.
                              *  NOTE: When 'MAP_FIXED' is given, this member must be page-aligned for virtual allocations.
                              *        This differs somewhat when allocating physical memory, in which case it is required
                              *        that the physical address 'mi_phys.mp_addr' has the same sub-page alignment as 'mi_addr'

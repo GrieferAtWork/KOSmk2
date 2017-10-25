@@ -407,20 +407,6 @@ chunk_virtinfo(chunk_t *__restrict self,
   error = chunk_loaddata(self,debug->d_fp);
   if (E_ISERR(error)) return error;
  }
-#if 0
- syslog(LOG_DEBUG,"HERE\n");
- syslog(LOG_DEBUG," self->c_addr = %I64u\n",self->c_addr);
- syslog(LOG_DEBUG," self->c_size = %Iu\n",self->c_size);
- syslog(LOG_DEBUG," u64 li_length           = %I64u\n",self->c_lnfo.li_length);
- syslog(LOG_DEBUG," u16 li_version          = %I16u\n",self->c_lnfo.li_version);
- syslog(LOG_DEBUG," u64 li_prologue_length  = %I64u\n",self->c_lnfo.li_prologue_length);
- syslog(LOG_DEBUG," u8  li_min_insn_length  = %I8u\n" ,self->c_lnfo.li_min_insn_length);
- syslog(LOG_DEBUG," u8  li_max_ops_per_insn = %I8u\n" ,self->c_lnfo.li_max_ops_per_insn);
- syslog(LOG_DEBUG," u8  li_default_is_stmt  = %I8u\n" ,self->c_lnfo.li_default_is_stmt);
- syslog(LOG_DEBUG," s8  li_line_base        = %I8d\n" ,self->c_lnfo.li_line_base);
- syslog(LOG_DEBUG," u8  li_line_range       = %I8u\n" ,self->c_lnfo.li_line_range);
- syslog(LOG_DEBUG," u8  li_opcode_base      = %I8u\n" ,self->c_lnfo.li_opcode_base);
-#endif
 
 #if 0
 #define STATEREPR() \

@@ -382,7 +382,7 @@ SYSCALL_DEFINE6(mmap,VIRT void *,addr,size_t,len,u32,prot,
  info.mi_virt.mv_file  = fd;
  info.mi_virt.mv_begin = 0;
  info.mi_virt.mv_off   = (off_t)off;
- info.mi_virt.mv_len   = len;
+ info.mi_virt.mv_len   = CEIL_ALIGN(len,PAGESIZE);
  info.mi_virt.mv_fill  = 0;
  info.mi_virt.mv_guard = PAGESIZE;
  info.mi_virt.mv_funds = MMAP_VIRT_MAXFUNDS;

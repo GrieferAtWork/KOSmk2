@@ -336,7 +336,7 @@ LONG_PRINTER(vinfo_printer) {
   *    %p: The requested address.
   * Example:
   * >>my_label:
-  * >>    syslog(LOG_DEBUG,"%[vinfo:%f(%l,%c) : %n] : HERE\n",&&my_label);
+  * >>    syslog(LOG_DEBUG,"%[vinfo:%f(%l,%c) : %n] : This is me\n",&&my_label);
   */
  /* Use a debug representation if no argument was given. */
  if (*cmd == ']' || !*cmd) cmd = "%f(%l,%c) : %n";

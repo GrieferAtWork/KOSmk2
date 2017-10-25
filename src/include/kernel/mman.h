@@ -19,6 +19,12 @@
 #ifndef GUARD_INCLUDE_KERNEL_MMAN_H
 #define GUARD_INCLUDE_KERNEL_MMAN_H 1
 
+/* Kernel memory management:
+ *       malloc.h: Heap memory
+ *       memory.h: Physical memory
+ * THIS: mman.h:   Virtual memory
+ */
+
 #include <hybrid/compiler.h>
 #include <hybrid/list/atree.h>
 #include <hybrid/list/list.h>

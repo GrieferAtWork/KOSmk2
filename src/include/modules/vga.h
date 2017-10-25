@@ -328,17 +328,6 @@ FUNDEF void KCALL load_vga(struct vgastate *__restrict state, bool call_free_vga
 /* Free a VGA state created by 'save_vga()'. */
 FUNDEF void KCALL free_vga(struct vgastate *__restrict state);
 
-
-typedef struct {
- struct chrdev   v_device; /*< Underlying device structure. */
- VIRT MMIO void *v_mmio;   /*< [0..1] Virtual MMIO memory address (or NULL if not supported). */
- /* VGA color/mono registers (Determined by `vga_r(v_mmio,VGA_MIS_R)&VGA_MIS_COLOR') */
- u16             v_crt_i;  /*< CRT Controller Index (Either `VGA_CRT_IC' or `VGA_CRT_IM') */
- u16             v_crt_d;  /*< CRT Controller Data Register (Either `VGA_CRT_DC' or `VGA_CRT_DM') */
- u16             v_is1_r;  /*< Input Status Register 1 (Either `VGA_IS1_RC' or `VGA_IS1_RM') */
- u16           __v_pad;    /* ... */
-} vga_t;
-
 struct vga_mode {
  u8 vm_att_mode;          /*< VGA_ATC_MODE. */
  u8 vm_att_overscan;      /*< VGA_ATC_OVERSCAN. */
@@ -373,10 +362,10 @@ struct vga_mode {
  u8 vm_crt_v_blank_end;   /*< VGA_CRTC_V_BLANK_END. */
  u8 vm_crt_mode;          /*< VGA_CRTC_MODE. */
  u8 vm_crt_line_compare;  /*< VGA_CRTC_LINE_COMPARE. */
+ u8 vm_seq_clock_mode;    /*< VGA_SEQ_CLOCK_MODE. */
  u8 vm_seq_plane_write;   /*< VGA_SEQ_PLANE_WRITE. */
  u8 vm_seq_character_map; /*< VGA_SEQ_CHARACTER_MAP. */
  u8 vm_seq_memory_mode;   /*< VGA_SEQ_MEMORY_MODE. */
- u8 vm_seq_clock_mode;    /*< VGA_SEQ_CLOCK_MODE. */
 };
 
 struct vga_font {
@@ -386,9 +375,16 @@ struct vga_font {
 #define VGA_FONT_CHARACTER(self,character) \
       ((self)->vf_data+((size_t)(character)*(self)->vf_cheight))
 
+struct vga_pal { u8 vp_pal[256][3]; }; /* NOTE: Color channels are 6-bit! (0x3f is the maximum) */
 
-DATDEF struct vga_mode vm_text;  /* 80x25 color text mode. */
-DATDEF struct vga_mode vm_modeX; /* 320x240 planar 256 color mode */
+/* Standard 256 color palette:
+ * https://en.wikipedia.org/wiki/Mode_13h#/media/File:VGA_palette_with_black_borders.svg */
+DATDEF struct vga_pal const vp_gfx_256;
+/* Standard 64 color text-mode palette. (Predefined by the BIOS) */
+DATDEF struct vga_pal const vp_txt_64;
+
+DATDEF struct vga_mode const vm_txt; /* 80x25 color text mode (BIOS 3h). */
+DATDEF struct vga_mode const vm_gfx; /* 320x200 planar 256 color mode (BIOS 13h). */
 
 /* Font used by the BIOS (Original content during boot)
  * NOTE: When returning to text mode, this font should be restored. */
@@ -409,10 +405,27 @@ PUBLIC void KCALL vga_getmode(MMIO void *regbase, struct vga_mode *__restrict mo
 PUBLIC bool KCALL vga_setfont(MMIO void *regbase, struct vga_font const *__restrict font);
 PUBLIC bool KCALL vga_getfont(MMIO void *regbase, struct vga_font *__restrict font);
 
-#define VGA_SET_VIDEOMODE_EX(regbase) (vga_setmode(regbase,&vm_modeX))
-#define VGA_SET_TEXTMODE_EX(regbase)  (vga_setmode(regbase,&vm_text),vga_setfont(regbase,vf_current))
-#define VGA_SET_VIDEOMODE() VGA_SET_VIDEOMODE_EX(NULL)
-#define VGA_SET_TEXTMODE()  VGA_SET_TEXTMODE_EX(NULL)
+/* Set/Get the current VGA palette. */
+PUBLIC void KCALL vga_setpal(MMIO void *regbase, struct vga_pal const *__restrict pal);
+PUBLIC void KCALL vga_getpal(MMIO void *regbase, struct vga_pal *__restrict pal);
+
+#define VGA_SET_VIDEOMODE_EX(regbase) (vga_setmode(regbase,&vm_gfx),vga_setpal(regbase,&vp_gfx_256))
+#define VGA_SET_TEXTMODE_EX(regbase)  (vga_setmode(regbase,&vm_txt),vga_setpal(regbase,&vp_txt_64),vga_setfont(regbase,vf_current))
+#define VGA_SET_VIDEOMODE()            VGA_SET_VIDEOMODE_EX(NULL)
+#define VGA_SET_TEXTMODE()             VGA_SET_TEXTMODE_EX(NULL)
+
+
+
+typedef struct {
+ struct chrdev   v_device; /*< Underlying device structure. */
+ VIRT MMIO void *v_mmio;   /*< [0..1] Virtual MMIO memory address (or NULL if not supported). */
+ /* VGA color/mono registers (Determined by `vga_r(v_mmio,VGA_MIS_R)&VGA_MIS_COLOR') */
+ u16             v_crt_i;  /*< CRT Controller Index (Either `VGA_CRT_IC' or `VGA_CRT_IM') */
+ u16             v_crt_d;  /*< CRT Controller Data Register (Either `VGA_CRT_DC' or `VGA_CRT_DM') */
+ u16             v_is1_r;  /*< Input Status Register 1 (Either `VGA_IS1_RC' or `VGA_IS1_RM') */
+ u16             v_mode;   /*< Current mode (One of 'VIO_MODE_*') */
+
+} vga_t;
 
 
 DECL_END

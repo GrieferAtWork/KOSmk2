@@ -513,7 +513,7 @@ PRIVATE void TERM_CALL term_scroll(struct term *UNUSED(t), offset_t offset) {
  cell_t filler = SPACE;
  cell_t *new_begin,*new_end;
  size_t copycells;
- if (!offset) return;
+ /*if (!offset) return;*/
  if (offset >= VTTY_HEIGHT || offset <= -VTTY_HEIGHT) {
   term_cls(NULL,TERM_CLS_ALL);
   return;
@@ -719,15 +719,12 @@ int main(int argc, char *argv[]) {
  if (!current_keymap) err(EXIT_FAILURE,"Failed to load keyboard map");
 
 
- /* Map the x86 VGA terminal.
-  * NOTE: We map it as loose, so that the device memory won't be
-  *       mapped in the child process we're forking into below. */
+ /* Map the x86 VGA terminal. */
  vga_fd = open(TTY_DEVNAME,O_RDWR);
  if (vga_fd < 0) err(EXIT_FAILURE,"Failed to open %q",TTY_DEVNAME);
  fcntl(vga_fd,F_SETFL,FD_CLOEXEC|FD_CLOFORK);
 
- vga_dev = (cell_t *)mmap(0,PAGESIZE,PROT_READ|PROT_WRITE,
-                          MAP_SHARED,vga_fd,0);
+ vga_dev = (cell_t *)mmap(0,PAGESIZE,PROT_READ|PROT_WRITE,MAP_SHARED,vga_fd,0);
  if (vga_dev == (cell_t *)MAP_FAILED)
      err(EXIT_FAILURE,"Failed to mmap() VGA terminal");
  /*printf("Mapped terminal driver to %p\n",vga_dev);*/

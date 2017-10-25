@@ -18,44 +18,80 @@
  */
 #ifndef GUARD_PLAYGROUND_C
 #define GUARD_PLAYGROUND_C 1
+#define _KOS_SOURCE 1
 #define _GNU_SOURCE 1
 
-
-#include <sched.h>
-#include <stdio.h>
-#include <err.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <sys/wait.h>
-#include <syslog.h>
+#include <fcntl.h>
 #include <errno.h>
+#include <error.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <kos/vga.h>
+#include <hybrid/align.h>
 
+PRIVATE int          vga_dev;
+PRIVATE byte_t      *screen;
+PRIVATE unsigned int screen_width  = 320;
+PRIVATE unsigned int screen_height = 200;
 
-static int shared_variable = 0;
-
-int thread_function(void *arg) {
- printf("thread_function: gettid() == %d\n",syscall(SYS_gettid));
- printf("arg = %p\n",arg);
- shared_variable = 199;
- return 42;
+PRIVATE int gfx_main(int argc, char *argv[]) {
+ unsigned int y;
+ for (;;) {
+  for (y = 0; y < screen_height; ++y)
+   memset(screen+y*screen_width,rand(),screen_width);
+ }
+ return 0;
 }
 
 
+
+/* Scroll the terminal by 0 lines to refresh the screen. */
+PRIVATE char const tty_refresh_screen[] = "\e[0S";
+
 int main(int argc, char *argv[]) {
- pid_t child,waitno; int status;
- printf("shared_variable = %d\n",shared_variable);
- printf("main: gettid() == %d\n",syscall(SYS_gettid));
- child = clone(&thread_function,CLONE_CHILDSTACK_AUTO,
-               CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD,
-              (void *)0x12345678);
- if (child < 0) err(1,"clone() failed");
- printf("clone() returned '%d'\n",child);
- while ((waitno = wait(&status)) == -1 && errno == EINTR);
- if (waitno < 0) err(1,"wait() failed");
- printf("wait() returned %d\n",waitno);
- printf("status = %d (%d)\n",status,WEXITSTATUS(status));
- printf("shared_variable = %d\n",shared_variable);
- return 0;
+ char *message; int status; pid_t child;
+ int is_a_tty;
+ if ((vga_dev = open(VGA_DEVICE,O_RDWR)) < 0)
+      error(EXIT_FAILURE,errno,"Failed to open `" VGA_DEVICE "'");
+
+ /* Switch to VGA graphics mode. */
+ if (ioctl(vga_dev,VIO_SETMODE,VIO_MODE_GFX_256_320X200) < 0)
+     error(EXIT_FAILURE,errno,"Failed to set graphics mode");
+
+ /* Map VGA display memory. (Map it as shared with the child) */
+ screen = (byte_t *)mmap(0,screen_width*screen_height,
+                         PROT_READ|PROT_WRITE,MAP_SHARED,
+                         vga_dev,0);
+ if (screen == MAP_FAILED) { message = "Failed to map display memory"; goto err; }
+ is_a_tty = isatty(STDOUT_FILENO);
+
+ /* Fork into a child so the parent process can
+  * restore text mode if the child crashes. */
+ if ((child = fork()) == 0) {
+  /* Redirect stuff like CTRL+C to the child process. */
+  if (is_a_tty) tcsetpgrp(STDOUT_FILENO,getpid());
+  exit(gfx_main(argc,argv));
+ }
+ if (child < 0) { message = "Failed to fork child"; goto err; }
+ while (waitpid(child,&status,WEXITED) < 0 && errno == EINTR);
+
+ /* Cleanup: Restore text mode. */
+ ioctl(vga_dev,VIO_SETMODE,VIO_MODE_TEXT_COLOR_80X25);
+ if (is_a_tty) write(STDOUT_FILENO,tty_refresh_screen,sizeof(tty_refresh_screen)-sizeof(char));
+ if (WIFEXITED(status))
+     return WEXITSTATUS(status);
+ if (WCOREDUMP(status))
+     return EXIT_FAILURE;
+ return EXIT_SUCCESS;
+err:
+ status = errno;
+ ioctl(vga_dev,VIO_SETMODE,VIO_MODE_TEXT_COLOR_80X25);
+ if (is_a_tty) write(STDOUT_FILENO,tty_refresh_screen,sizeof(tty_refresh_screen)-sizeof(char));
+ error(EXIT_FAILURE,status,message);
 }
 
 #endif /* !GUARD_PLAYGROUND_C */

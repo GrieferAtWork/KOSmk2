@@ -19,6 +19,12 @@
 #ifndef GUARD_INCLUDE_KERNEL_MEMORY_H
 #define GUARD_INCLUDE_KERNEL_MEMORY_H 1
 
+/* Kernel memory management:
+ *       malloc.h: Heap memory
+ * THIS: memory.h: Physical memory
+ *       mman.h:   Virtual memory
+ */
+
 #include <format-printer.h>
 #include <hybrid/compiler.h>
 #include <hybrid/limits.h>
@@ -379,6 +385,13 @@ LOCAL SAFE KPD void KCALL page_free_scatter(struct mscatter *__restrict scatter,
 LOCAL SAFE void KCALL page_free_scatter_list(struct mscatter *__restrict scatter);
 
 
+/* Free a given memory range previous allocated with 'page_(m|c)alloc{at}',
+ * using the given attributes to identify memory once registered as free.
+ * NOTE: The caller is responsible for ensuring that
+ *       memory matches the specified attributes.
+ * @param: attr: A set of 'PAGEATTR_*' serving as a special memory descriptor.
+ * NOTE: No-op when '0' is passed for 'n_bytes'.
+ * NOTE: Unaligned allocation requests are ceil-aligned. */
 FUNDEF SAFE KPD void KCALL page_ffree(ppage_t start, size_t n_bytes, pgattr_t attr);
 
 #ifdef __INTELLISENSE__
@@ -441,7 +454,10 @@ struct mstat {
 /* Query various page statistics and store the information in '*info'. */
 FUNDEF void KCALL page_stat(struct mstat *__restrict info);
 
-/* Return the total number of free bytes within the given address range. */
+/* Lookup the amount of free (usable dynamic memory) in a given address range.
+ * @return: * : The total number of free bytes within the given address range.
+ * WARNING: Do not rely on this value but for statistics. - It may have already
+ *          changed by the time this functions returns (multithreading & such...) */
 FUNDEF size_t KCALL page_available(ppage_t start, PAGE_ALIGNED size_t n_bytes);
 
 /* Print human-readable debug information about free memory from the given zone. */
@@ -460,7 +476,7 @@ INTDEF INITCALL SAFE KPD size_t KCALL memory_load_mb2_mmap(struct mb2_tag_mmap *
 
 /* Try various different ways of detecting memory. */
 INTDEF INITCALL SAFE KPD void KCALL memory_load_detect(void);
-INTDEF u8 const memtype_bios_matrix[6];
+INTDEF INITCALL u8 const memtype_bios_matrix[6];
 
 #endif
 #endif /* __CC__ */

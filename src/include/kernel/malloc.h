@@ -19,6 +19,12 @@
 #ifndef GUARD_INCLUDE_KERNEL_MALLOC_H
 #define GUARD_INCLUDE_KERNEL_MALLOC_H 1
 
+/* Kernel memory management:
+ * THIS: malloc.h: Heap memory
+ *       memory.h: Physical memory
+ *       mman.h:   Virtual memory
+ */
+
 #include <stddef.h>
 #include <stdbool.h>
 #include <hybrid/compiler.h>
