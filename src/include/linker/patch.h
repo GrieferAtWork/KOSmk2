@@ -105,7 +105,7 @@ struct modpatch {
        (self)->p_dlsym   = &modpatch_user_dlsym)
 FUNDEF void KCALL modpatch_fini(struct modpatch *__restrict self);
 
-/* Add a new dependency to 'self', patching it recursively.
+/* Add a new dependency to `self', patching it recursively.
  * NOTE: This function will automatically deduce a suitable location for
  *       mapping 'dependency' within the currently active memory manager.
  * NOTE: Upon success, the instance returned will have its 'i_openrec' counter incremented.

@@ -174,7 +174,7 @@ PRIVATE errno_t KCALL fat_fssync(struct superblock *__restrict sb);
 PRIVATE void    KCALL fat_fsfini(struct superblock *__restrict sb);
 
 /* Search for an existing directory entry 'path->d_name' and return
- * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in 'mode'.
+ * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in `mode'.
  * Otherwise create a new entry and pre-initialize it using 'result_attr',
  * as well as set '*is_new' to true.
  * NOTE: The caller is responsible for holding a write-lock to
@@ -218,7 +218,7 @@ PRIVATE errno_t KCALL filedata_load(struct filedata *__restrict self, fat_t *__r
 /* Similar to 'filedata_load', but allocate missing chunks  */
 PRIVATE ATTR_UNUSED errno_t KCALL filedata_alloc(struct filedata *__restrict self, fat_t *__restrict fs, struct inode *__restrict node);
 
-/* Perform high-level reading/writing, starting at the file position specified within 'self' */
+/* Perform high-level reading/writing, starting at the file position specified within `self' */
 PRIVATE ssize_t KCALL filedata_read(struct filedata *__restrict self, fat_t *__restrict fat, struct inode *__restrict node, USER void *buf, size_t bufsize);
 PRIVATE ssize_t KCALL filedata_write(struct filedata *__restrict self, fat_t *__restrict fat, struct inode *__restrict node, USER void const *buf, size_t bufsize);
 
@@ -252,11 +252,11 @@ PRIVATE bool KCALL lookupdata_cmplfn(struct lookupdata *__restrict self,
 /* Check if long-filename data is available. */
 #define lookupdata_haslfn(self) ((self)->ld_entryc != 0)
 
-/* Search for a directory entry 'name' within the given memory region.
+/* Search for a directory entry `name' within the given memory region.
  * NOTE: Multiple different vectors may be passed, so long as
  *       their ordering is correct and the same 'lookupdata'
  *       is passed every time.
- * @return: NULL:  The given 'name' wasn't found (yet?)
+ * @return: NULL:  The given `name' wasn't found (yet?)
  * @return: !NULL: An E_PTR()-errorcode, or the requested INode. */
 PRIVATE REF struct inode *KCALL
 fat_lookup_memory(struct lookupdata *__restrict lookupdata,
@@ -265,7 +265,7 @@ fat_lookup_memory(struct lookupdata *__restrict lookupdata,
                   pos_t filev_pos, cluster_t cluster_id,
                   fat_t *__restrict fatfs, bool *has_used_entries);
 
-/* Trim whitespace at the front and back of 'buf'. */
+/* Trim whitespace at the front and back of `buf'. */
 PRIVATE void KCALL trimspecstring(char *__restrict buf, size_t size);
 
 
@@ -1796,10 +1796,10 @@ PRIVATE u8 KCALL fat_LFNchksum(char const *short_name) {
 }
 
 /* To-be used in conjunction with 'fat_make8dot3()', fill in
- * 'f' as the 'number'th' LFN entry for the given filename 'name'.
+ * 'f' as the 'number'th' LFN entry for the given filename `name'.
  * WARNING: The caller must not call this function when 'fat_make8dot3()'
  *          returned ZERO(0), or call it with a 'number' greater than
- *          the return value of 'fat_make8dot3()' for the same 'name'.
+ *          the return value of 'fat_make8dot3()' for the same `name'.
  * @param: chksum: == fat_LFNchksum(DOS83_ENTRY.f_nameext);
  */
 PRIVATE void KCALL fat_makeLFN(file_t *__restrict f,

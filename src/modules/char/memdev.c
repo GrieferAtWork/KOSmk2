@@ -265,7 +265,7 @@ md_random_read(struct file *__restrict fp,
 PRIVATE ssize_t KCALL
 md_random_write(struct file *__restrict UNUSED(fp),
                 USER void const *buf, size_t bufsize) {
- /* XXX: Use 'buf' to feed the random number generator? */
+ /* XXX: Use `buf' to feed the random number generator? */
  return (ssize_t)bufsize;
 }
 PRIVATE ssize_t KCALL

@@ -214,7 +214,7 @@ action_do_decref(struct mregion *__restrict region,
    self->mt_flags &= ~(MPART_FLAG_CHNG);
    if (region->mr_init&MREGION_INIT_WRITETHROUGH) {
     if (MREGION_INIT_ISFILE(region->mr_init)) {
-     /* TODO: Signal 'MREGION_INITFUN_MODE_SAVE' to user-defined initializers. */
+     /* TODO: Signal `MREGION_INITFUN_MODE_SAVE' to user-defined initializers. */
      /* TODO: Unlock region. */
      /* Write modified pages back to the file/user-callback. */
      errno_t error = -EOK;

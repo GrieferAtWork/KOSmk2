@@ -469,7 +469,7 @@ again_rangestart:
     if (CURR_RANGE.lr_locks == 1) {
      SIGNAL_UNLOCK(start,overlap);
     } else {
-     /* Must split the current range after 'start' */
+     /* Must split the current range after `start' */
      newrange = omalloc(struct ilockrange);
      if unlikely(!newrange) goto err;
      newrange->lr_start = start;
@@ -712,7 +712,7 @@ inode_flock_downgrade(struct inode *__restrict ino,
  errno_t error = -EOK;
  CHECK_HOST_DOBJ(ino);
  atomic_rwlock_write(&FLOCK.fl_lock);
- /* TODO: Update 'lr_locks' in 'start..+=size' from 'LOCKRANGE_WFLAG' to '1' */
+ /* TODO: Update `lr_locks' in `start..+=size' from `LOCKRANGE_WFLAG' to `1' */
  atomic_rwlock_endwrite(&FLOCK.fl_lock);
  return error;
 }

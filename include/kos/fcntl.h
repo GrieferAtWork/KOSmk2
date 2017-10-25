@@ -41,7 +41,7 @@ __SYSDECL_BEGIN
 #define FCNTL_KOS(i)    (0x35000+i)
 #define FCNTL_KOS_TYPE   FCNTL_KOS(1) /* Return the file-descriptor type (One of 'FD_TYPE_*') */
 
-/* Arguments for the 'type' argument of the KOS system calls 'xfdname()' */
+/* Arguments for the `type' argument of the KOS system calls 'xfdname()' */
 #define FDNAME_PATH      0 /*< "/etc/passwd" */
 #define FDNAME_HEAD      1 /*< "/etc" */
 #define FDNAME_TAIL      2 /*< "passwd" */
@@ -49,9 +49,9 @@ __SYSDECL_BEGIN
 #ifndef __KERNEL__
 #ifdef __CRT_KOS
 /* NOTE: 'xfdname()' follows 'getcwd()' semantics by returning a newly
- *        allocated string when 'NULL,0' is passed for 'buf' and 'bufsize',
+ *        allocated string when 'NULL,0' is passed for `buf' and 'bufsize',
  *        while 'xfdname2()' follows the system call interface exactly
- *        by returning the amount of characters (include \0) in 'buf',
+ *        by returning the amount of characters (include \0) in `buf',
  *        or -1 with 'errno' set if something went wrong.
  * Long story short. - You'll probably just do this:
  * >> int fd = open("/etc/passwd",O_RDONLY);

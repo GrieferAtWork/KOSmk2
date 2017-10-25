@@ -54,12 +54,12 @@ typedef u32 iattrset_t; /* Set of 'IATTR_*' */
 
 #ifndef __rdmode_t_defined
 #define __rdmode_t_defined 1
-typedef int rdmode_t; /* readdir-mode (One of 'FILE_READDIR_*') */
+typedef int rdmode_t; /* readdir-mode (One of `FILE_READDIR_*') */
 #endif /* !__rdmode_t_defined */
 
 #ifndef __pollmode_t_defined
 #define __pollmode_t_defined 1
-typedef int pollmode_t; /* poll()-mode (Set of 'POLLIN|POLLPRI|POLLOUT|POLLERR'). */
+typedef int pollmode_t; /* poll()-mode (Set of `POLLIN|POLLPRI|POLLOUT|POLLERR'). */
 #endif /* !__pollmode_t_defined */
 
 #ifndef __raddr_t_defined
@@ -101,7 +101,7 @@ struct iattr {
 };
 
 /* NOTE: Keep these mode constants in sync with 'READDIR_*' from <dirent.h> */
-#define FILE_READDIR_DEFAULT  0 /*< Yield to next entry when 'buf' was of sufficient size. */
+#define FILE_READDIR_DEFAULT  0 /*< Yield to next entry when `buf' was of sufficient size. */
 #define FILE_READDIR_CONTINUE 1 /*< Always yield to next entry. */
 #define FILE_READDIR_PEEK     2 /*< Never yield to next entry. */
 #define FILE_READDIR_SHOULDINC(mode,bufsize,return_value) \
@@ -125,7 +125,7 @@ struct inodeops {
 #define INODE_FILE_LOCKLESS 0x80000000 /*< Allow for interlocked read/write, meaning that 'f_read', 'f_write',
                                         * 'f_seek', 'f_readdir' and 'f_sync' are no longer caller-synchronized.
                                         *  WARNING: When this flag is set, the file itself must implement
-                                        *           locking capabilities, as well as support for 'O_APPEND'. */
+                                        *           locking capabilities, as well as support for `O_APPEND'. */
  ssize_t (KCALL *f_read)(struct file *__restrict fp, USER void *buf, size_t bufsize); /* NOTE: Caller-synchronized:write */
  ssize_t (KCALL *f_write)(struct file *__restrict fp, USER void const *buf, size_t bufsize); /* NOTE: Caller-synchronized:write */
  ssize_t (KCALL *f_pread)(struct file *__restrict fp, USER void *buf, size_t bufsize, pos_t pos);
@@ -142,7 +142,7 @@ struct inodeops {
   * @param: pregion_start: An optional output pointer to override where mapping will start.
   *                        NOTE: Upon entry, the caller must pre-initialize this field to ZERO(0).
   *                        Upon successful return, the value stored in this argument will be
-  *                        used by the 'start' parameter in an associated 'mman_map_unlocked()' call.
+  *                        used by the `start' parameter in an associated 'mman_map_unlocked()' call.
   * @return: * :           A new reference to the mapped memory region. (Must be properly set up)
   * @return: E_ISERR(*):   Failed to create the new memory region for some reason. */
  REF struct mregion *(KCALL *f_mmap)(struct file *__restrict fp, pos_t pos,
@@ -187,18 +187,18 @@ struct inodeops {
   * >> return result;
   * WARNING: Regardless of return value, any number of signals way have been
   *          added to the calling thread's sigwait set, meaning that the caller
-  *          is always responsible for cleanup by either calling 'task_clrwait()'
-  *          or 'task_waitfor()'.
+  *          is always responsible for cleanup by either calling `task_clrwait()'
+  *          or `task_waitfor()'.
   * @assume((mode&(POLLIN|POLLPRI|POLLOUT|POLLERR)) != 0);
-  * @param: mode: Set of 'POLLIN|POLLPRI|POLLOUT|POLLERR'
-  * @return: * :           The set of signals currently available. (At least one of 'mode')
-  *                  NOTE: In this event, signals may have still been added to waiting 'task_addwait()',
+  * @param: mode: Set of `POLLIN|POLLPRI|POLLOUT|POLLERR'
+  * @return: * :           The set of signals currently available. (At least one of `mode')
+  *                  NOTE: In this event, signals may have still been added to waiting `task_addwait()',
   *                        meaning that the caller is responsible for cleanup, which must include a call
-  *                        to 'task_clrwait()'
-  * @return: 0 :           At least one signal has been added to the caller's waiting set (using 'task_addwait()').
+  *                        to `task_clrwait()'
+  * @return: 0 :           At least one signal has been added to the caller's waiting set (using `task_addwait()').
   * @return: -EWOULDBLOCK: No signal signal requested for polling actually exists.
   * @return: -ENOMEM:      Not enough available memory (likely occurred when
-  *                        trying to allocate a signal slot within 'task_addwait()')
+  *                        trying to allocate a signal slot within `task_addwait()')
   * @return: E_ISERR(*):   Failed to poll data for some reason. */
  pollmode_t (KCALL *f_poll)(struct file *__restrict fp, pollmode_t mode);
 
@@ -227,7 +227,7 @@ struct inodeops {
  /* Notify an associated inode that a file that had opened it was closed. */
  void (KCALL *ino_fclose)(struct inode *__restrict ino, struct file *__restrict fp);
  /* Free a given file pointer previously opened by 'ino_fopen'.
-  * WARNING: Unlike by the time 'ino_fclose' is called, 'fp' is no longer in a valid state! */
+  * WARNING: Unlike by the time 'ino_fclose' is called, `fp' is no longer in a valid state! */
  void (KCALL *ino_ffree)(struct inode *__restrict ino, struct file *__restrict fp);
  /* HINT: All operands may be defined as NULL for default behavior. */
  /* Mirror attribute from 'inode->i_attr' on-disk, copying all fields part of 'changed'.
@@ -238,7 +238,7 @@ struct inodeops {
   *       Doing so is instead the responsibility of the caller. */
  errno_t (KCALL *ino_setattr)(struct inode *__restrict ino, iattrset_t changed);
  /* Copy the text of a symlink to the given user-space
-  * buffer 'buf', including a terminating \0-character.
+  * buffer `buf', including a terminating \0-character.
   * >> Upon success, and given a buffer of sufficient size,
   *    the caller can assume that "buf[return/sizeof(char)-1] == '\0'".
   * @assume(return != 0);
@@ -260,7 +260,7 @@ struct inodeops {
   *                      system call will fail with the error returned by this function. */
  errno_t (KCALL *ino_stat)(struct inode *__restrict ino, struct stat64 *__restrict statbuf);
 
- /* Load the inode associated with the directory entry 'name' inside of 'dir_node' at 'path':
+ /* Load the inode associated with the directory entry `name' inside of 'dir_node' at 'path':
   * $ stat "/opt/my_file"
   * >> ino_lookup(EFFECTIVE_INODE("/opt"),DENTRY("/opt/my_file")) -> INODE("/opt/my_file")
   * NOTE: Don't return NULL if you didn't find a node. - return 'E_PTR(-ENOENT)' instead!
@@ -469,8 +469,8 @@ union{
 
 #define INODE_ISEFFECTIVE(self)  (!(self)->i_ops->ino_effective)
 
-/* Replace 'self' with the effective INode.
- * NOTE: This function may replaces 'self' (a reference) with another reference.
+/* Replace `self' with the effective INode.
+ * NOTE: This function may replaces `self' (a reference) with another reference.
  * @assume(BEFORE(IS_REFERENCE(self)));
  * @assume(AFTER(IS_REFERENCE(self))); */
 #define INODE_GET_EFFECTIVE(self) \
@@ -500,7 +500,7 @@ do{ if (!INODE_ISEFFECTIVE(self)) { \
         inode_cinit((struct inode *)calloc(1,sizeof_type))
 FUNDEF struct inode *KCALL inode_cinit(struct inode *self);
 
-/* Setup a given INode 'self' to be apart of 'sb'.
+/* Setup a given INode `self' to be apart of 'sb'.
  * @return: -EOK:   Successfully added the new filesystem type.
  * @return: -EPERM: The module instance 'self->ap_owner' doesn't permit new references being created. */
 FUNDEF WUNUSED errno_t KCALL inode_setup(struct inode *__restrict self,
@@ -520,7 +520,7 @@ FUNDEF errno_t KCALL inode_invalidate_data(struct inode *__restrict self,
 struct timespec;
 /* Acquire a read/write locks on a given range within the specified INode.
  * WARNING: All errors returned 'inode_flock_upgrade', except for
- *         '-ENOMEM' will have released the previously held read-lock.
+ *         `-ENOMEM' will have released the previously held read-lock.
  * @return: -EOK:        Successfully acquired/upgraded a lock.
  * @return: -ENOMEM:     Failed to allocate controller blocks for locking ranges.
  * @return: -EAGAIN:    [abstime == INODE_FLOCK_TEST] Failed to immediately acquire a lock.
@@ -535,7 +535,7 @@ struct timespec;
  *                       required to release the previously held read-lock.
  *                       But when later code attempted to acquire a new write-lock,
  *                       doing so failed because of insufficient memory.
- *                      (Based on meaning, this is the same as '-ENOMEM',
+ *                      (Based on meaning, this is the same as `-ENOMEM',
  *                       but in addition, the read-lock was lost) */
 FUNDEF errno_t KCALL inode_flock_read(struct inode *__restrict ino, pos_t start, pos_t size, struct timespec const *abstime);
 FUNDEF errno_t KCALL inode_flock_write(struct inode *__restrict ino, pos_t start, pos_t size, struct timespec const *abstime);
@@ -576,7 +576,7 @@ FUNDEF void KCALL inode_destroy(struct inode *__restrict self);
 #define INODE_ISCLOSING(self)                (INODE_GTSTATE(self)&INODE_STATE_CLOSING)
 #define INODE_ISREADONLY_OR_CLOSING(self)    (INODE_GTSTATE(self)&(INODE_STATE_READONLY|INODE_STATE_CLOSING))
 
-/* Check if 'struct fsaccess *ac' has been granted access to 'self'.
+/* Check if 'struct fsaccess *ac' has been granted access to `self'.
  * @param: self:        The EFFECTIVE inode to query.
  * @param: ac:          Access permission UID/GID.
  * @param: rwx:         A set of 'R_OK|W_OK|X_OK' (from <unistd.h>), describing requested permissions.
@@ -623,14 +623,14 @@ FUNDEF errno_t KCALL
 inode_stat(struct inode *__restrict self,
            struct stat64 *__restrict statbuf);
 
-/* Update all INode attributes marked in 'valid' to mirror values from 'attr'
+/* Update all INode attributes marked in 'valid' to mirror values from `attr'
  * @param: self:        The EFFECTIVE inode to update.
  * @return: -EOK:       Successfully updated INode attributes.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: E_ISERR(*): A misc. error caused a failure.
  * NOTE: Unless 'valid&IATTR_NOW' is set, attribute
  *       changes are allowed to be performed ~later~.
- * NOTE: 'ia_siz' from 'attr' is ignored for directories.
+ * NOTE: 'ia_siz' from `attr' is ignored for directories.
  */
 FUNDEF errno_t KCALL
 inode_setattr(struct inode *__restrict self,

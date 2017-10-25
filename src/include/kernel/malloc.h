@@ -42,7 +42,7 @@ DECL_BEGIN
 /* The default & minimal alignment required/used for kmalloc-allocated memory.
  * In addition, this also describes the size of a minimal-sized malloc-chunk
  * (including internal overhead), as well as the alignment of any value
- * ever returned by 'kmalloc_usable_size'.
+ * ever returned by `kmalloc_usable_size'.
  * NOTE: This value can be anything!
  */
 #ifndef HEAP_ALIGNMENT
@@ -53,41 +53,41 @@ DECL_BEGIN
 typedef __UINT16_TYPE__ gfp_t;
 
 /* Truncate unused memory, pre-allocated memory from
- * all heaps, at most releasing 'max_free' bytes of mapped
+ * all heaps, at most releasing `max_free' bytes of mapped
  * memory back to the system (physical memory allocator).
- * NOTE: This function is called during the early phases of 'mman_swapmem' in order
+ * NOTE: This function is called during the early phases of `mman_swapmem' in order
  *       to clean up small portions of memory oftenly available after dynamic memory
  *       allocation has been used for some time.
  * NOTE: Unused heap memory is always freed once a single continuous block of data
- *       exceeds 'M_TRIM_THRESHOLD', effectively meaning that this function releases
- *       all memory as though 'M_TRIM_THRESHOLD' had always been set to 'PAGESIZE'
+ *       exceeds `M_TRIM_THRESHOLD', effectively meaning that this function releases
+ *       all memory as though `M_TRIM_THRESHOLD' had always been set to `PAGESIZE'
  *      (Its minimum effective value).
  * @return: * : The total amount of released bytes of memory. */
 FUNDEF SAFE size_t (KCALL kmalloc_trim)(size_t max_free);
 
 /* Allocate kernel memory.
- * @param: flags: A set of 'GFP_*' */
+ * @param: flags: A set of `GFP_*' */
 FUNDEF SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_ALLOC_SIZE((1))
 ATTR_MALLOC void *(KCALL __kmalloc)(size_t size, gfp_t flags) ASMNAME("kmalloc");
 FUNDEF SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
 ATTR_MALLOC void *(KCALL __kmemalign)(size_t alignment, size_t size, gfp_t flags) ASMNAME("kmemalign");
 
 /* Reallocate existing memory.
- * @param: flags: A set of 'GFP_*' matching 'GFP_MASK_FLAGS'
- *          NOTE: When 'ptr' is NULL, 'flags' may also include any other 'GFP_*' heap-designator flag(s).
- *                Otherwise, heap designators are overwritten by those originally used to allocate 'ptr'. */
+ * @param: flags: A set of `GFP_*' matching `GFP_MASK_FLAGS'
+ *          NOTE: When `ptr' is NULL, `flags' may also include any other `GFP_*' heap-designator flag(s).
+ *                Otherwise, heap designators are overwritten by those originally used to allocate `ptr'. */
 FUNDEF SAFE WUNUSED NONNULL((1)) __MALL_DEFAULT_ALIGNED ATTR_ALLOC_SIZE((2))
 ATTR_MALLOC void *(KCALL __krealloc)(void *ptr, size_t size, gfp_t flags) ASMNAME("krealloc");
 FUNDEF SAFE WUNUSED NONNULL((1)) ATTR_ALLOC_ALIGN(2) ATTR_ALLOC_SIZE((3))
 ATTR_MALLOC void *(KCALL __krealign)(void *ptr, size_t alignment, size_t size, gfp_t flags) ASMNAME("krealign");
 
-/* Free a given kernel-allocated pointer 'ptr'.
- * NOTE: When passing GFP_CALLOC to 'kffree', all usable memory
- *      ('ptr...+=kmalloc_usable_size(ptr)') must be cleared
- *      ('memset(ptr,0,kmalloc_usable_size(ptr))')
+/* Free a given kernel-allocated pointer `ptr'.
+ * NOTE: When passing GFP_CALLOC to `kffree', all usable memory
+ *      (`ptr...+=kmalloc_usable_size(ptr)') must be cleared
+ *      (`memset(ptr,0,kmalloc_usable_size(ptr))')
  *       Failing to ensure this causes undefined behavior.
  *       If you are not sure if memory is cleared, don't pass
- *       'GFP_CALLOC', or simply use 'kfree' */
+ *       `GFP_CALLOC', or simply use `kfree' */
 FUNDEF SAFE NONNULL((1)) void (KCALL __kfree)(void *ptr) ASMNAME("kfree");
 FUNDEF SAFE NONNULL((1)) void (KCALL __kffree)(void *ptr, gfp_t flags) ASMNAME("kffree");
 
@@ -115,7 +115,7 @@ FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t f
  *       needs to be at least some internal number of bytes large,
  *       meaning that attempting to allocate less memory produces
  *       unused padding that must still be freed again later.
- * HINT: Input size arguments are ceil-aligned by 'HEAP_ALIGNMENT'.
+ * HINT: Input size arguments are ceil-aligned by `HEAP_ALIGNMENT'.
  * WARNING: Do not attempt to free heap-allocated memory using regular free functions.
  *          The specialty of heap memory is that there is no control block that
  *          tracks the allocated size, allowing for much more efficient allocation
@@ -130,41 +130,42 @@ FUNDEF SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_MALLOC void *KCALL heap_malloc_a
 FUNDEF SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_MALLOC void *KCALL heap_memalign(size_t alignment, size_t offset, size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags);
 #define HEAP_ERROR    ((void *)-1)
 
-/* Free heap memory previously allocated using 'heap_*' functions.
+/* Free heap memory previously allocated using `heap_*' functions.
  * NOTE: The caller is responsible for passing the same heap
- *       ID as was specified when 'heap_malloc()' was called.
+ *       ID as was specified when `heap_malloc()' was called.
  * @assume(IS_ALIGNED(size,HEAP_ALIGNMENT));
  * @return: true:  Successfully freed the given heap range.
- * @return: false: Failed to free memory, because 'size' is too small. */
+ * @return: false: Failed to free memory, because `size' is too small. */
 FUNDEF SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags);
 
 #endif /* __CC__ */
 
 
 /* Kernel memory allocation heaps
- * With the exception of 'GFP_LOCKED', which should be
+ * With the exception of `GFP_LOCKED', which should be
  * used as a flag, always specify exactly _ONE_ of these!. */
 #define GFP_NORMAL 0x0000 /*< Normal allocation of memory only accessible from
                            *  ring#0, but shared between all page directories.
-                           * (In fact, this is the same as 'GFP_SHARED') */
+                           * (In fact, this is the same as `GFP_SHARED') */
 #define GFP_SHARED 0x0000 /*< Allocate memory shared between all page directories. (_ALWAYS_ ZERO(0))
-                           *  NOTE: All memory allocated by this is located above 'KERNEL_BASE'.
+                           *  NOTE: All memory allocated by this is located above `KERNEL_BASE'.
                            *  NOTE: Dispite being mapped in all page directories,
                            *        only the kernel can access this type of memory.
                            *  WARNING: Unless stated otherwise, _ALL_ dynamically allocated
                            *           structures must be allocated as shared (that is they
                            *           are accessible for all page directories) */
 #define GFP_LOCKED 0x0001 /*< Allocate in-core-locked virtual memory.
-                           *  NOTE: May only or'd together with 'GFP_KERNEL' and 'GFP_SHARED'
-                           *  HINT: You may or' this heap name with 'GFP_INCORE' to  */
+                           *  NOTE: May only or'd together with `GFP_KERNEL' and `GFP_SHARED'
+                           *  HINT: You may or- this heap name with `GFP_INCORE' to  */
 #define GFP_KERNEL 0x0002 /*< [KPD] Allocate virtual memory only visible to the kernel
-                           *  NOTE: All memory allocate by this heap is located below 'KERNEL_BASE'. */
+                           *  NOTE: All memory allocate by this heap is located below `KERNEL_BASE'. */
 #define GFP_MEMORY 0x0004 /*< [KPD] Directly allocate physical memory.
-                           *  NOTE: This flag implies 'GFP_INCORE' behavior, but does
+                           *  NOTE: This flag implies `GFP_INCORE' behavior, but does
                            *        not create mman mappings, meaning it must be
                            *        used to allocate mman parts/regions/branches.
+                           *  WARNING: `GFP_LOCKED' cannot be used with this heap!
                            *  Instead, memory allocated by this heap features a one-on-one
-                           *  mapping of virtual to physical memory (at least in 'mman_kernel') */
+                           *  mapping of virtual to physical memory (at least in `mman_kernel') */
 /*      GFP_...... 0x0008  */
 #define __GFP_HEAPCOUNT 5 /*< Amount of different heaps used by the kernel (Use the above macros to address them). */
 
@@ -191,14 +192,14 @@ FUNDEF SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags);
 #define GFP_NOTRIM 0x0100 /*< Don't trim kernel heaps to free up more memory.
                            *  NOTE: Any heap currently locked will not be trimmed regardless! */
 #define GFP_NOSWAP 0x0200 /*< Don't initialize any kind of I/O during swap.
-                           *  NOTE: 'GFP_NOFS' only prevents write-mapped files from
+                           *  NOTE: `GFP_NOFS' only prevents write-mapped files from
                            *         being synched, while this flag is required to
                            *         prevents any use of a potential swap partition. */
 #define GFP_NOFS   0x0400 /*< Don't sync + unload write-mapped files to free up core memory. */
 #define GFP_INCORE 0x0800 /*< Allocate all memory directly. - Don't use allocate-on-access.
                            *  WARNING: Unless the caller is either read, or write-locking
-                           *          'mman_kernel.m_lock', memory may have already been
-                           *           swapped by the time 'kmalloc' and friends return. */
+                           *          `mman_kernel.m_lock', memory may have already been
+                           *           swapped by the time `kmalloc' and friends return. */
 #ifdef CONFIG_MALLOC_NO_FREQUENCY
 #define GFP_NOFREQ 0x0000 /*< Ignored... */
 #else
@@ -206,7 +207,7 @@ FUNDEF SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags);
 #endif
 #define GFP_ATOMIC 0x2000 /*< Don't preempt, or sleep when waiting for locks. - Spin atomic locks, and fail for all others. */
 #define GFP_RQUSER 0x4000 /*< Allocate on behalf of the user (fail when exceeding their allocation quota). */
-#define GFP_NOMOVE 0x8000 /*< For 'krealloc' & 'krealign': Use 'realloc_in_place()' semantics. */
+#define GFP_NOMOVE 0x8000 /*< For `krealloc' & `krealign': Use `realloc_in_place()' semantics. */
 
 #define GFP_NOIO              (GFP_NOSWAP|GFP_NOFS) /*< Don't make use of any kind of I/O when trying to free up available memory. */
 #define GFP_NOFREE (GFP_NOTRIM|GFP_NOSWAP|GFP_NOFS) /*< Don't take any actions to free up available memory. */

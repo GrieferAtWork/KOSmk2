@@ -203,7 +203,7 @@ STATIC_ASSERT(sizeof(struct modpatch)          == MODPATCH_SIZE);
 GLOBAL_ASM(
 L(.section .text                                                   )
 L(PUBLIC_ENTRY(modpatch_patch)                                     )
-L(    movl 4(%esp), %edx /* Load 'self' */                         )
+L(    movl 4(%esp), %edx /* Load `self' */                         )
 L(    movl MODPATCH_OFFSETOF_INST(%edx),   %eax /* ->p_inst */     )
 L(    testl %eax, %eax                                             )
 L(    jz   3f /* No-op if no instance is set (NOTE: Return -EOK == 0). */)

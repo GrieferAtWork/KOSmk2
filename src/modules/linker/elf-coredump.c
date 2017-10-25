@@ -190,7 +190,7 @@ mregion_part_loadswap(struct mregion_part *__restrict part,
 }
 
 
-/* Search and return the offset past the last non-zero byte apart of 'self'.
+/* Search and return the offset past the last non-zero byte apart of `self'.
  * If no non-zero bytes are apart of the scatter tab, return ZERO(0) instead. */
 PRIVATE uintptr_t KCALL
 mscatter_find_last_nonzero_byte(struct mscatter *__restrict self,
@@ -377,7 +377,7 @@ search_again:
  return result;
 }
 
-/* Write 'size' bytes of memory starting at `addr' to 'fp' */
+/* Write `size' bytes of memory starting at `addr' to `fp' */
 PRIVATE errno_t KCALL
 mman_memory_writefile(struct mman *__restrict self,
                       struct file *__restrict fp,

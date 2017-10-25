@@ -189,10 +189,10 @@ struct hstack {
   * a fixed-length section of locked, virtual (shared) memory above 3GB and just
   * hope that we never actually overflow it (because it's physically impossible to
   * create any sort of protection that would fault again to end up in a triple fault)
-  * WARNING: Kernel stacks must be allocated within 'mman_kernel' and have
+  * WARNING: Kernel stacks must be allocated within `mman_kernel' and have
   *          to be locked + tagged with the address of the associated thread
   *         (When calling 'mman_mmap_unlocked()', the address of the thread
-  *          must be passed as argument for 'closure', which is later used as
+  *          must be passed as argument for `closure', which is later used as
   *          key for ensuring safe unmapping of the stack!)
   */
  ppage_t hs_begin; /*< [const][<= hs_end] First usable stack page. */
@@ -745,7 +745,7 @@ union{
  u32                     t_critical;  /*< [lock(READ(WEAK),WRITE(THIS_TASK))]
                                        *  The task is critical and must not be terminated.
                                        *  NOTE: The lock must only be held when decrementing to ZERO(0). */
- u32                     t_nointr;    /*< [lock(PRIVATE(THIS_TASK))] While non-zero, don't receive interrupts ('-EINTR' is not accepted). */
+ u32                     t_nointr;    /*< [lock(PRIVATE(THIS_TASK))] While non-zero, don't receive interrupts (`-EINTR' is not accepted). */
  uintptr_t               t_addrlimit; /*< [lock(PRIVATE(THIS_TASK))] Only USER-pointers < than this are considered valid. */
  HOST struct intchain   *t_ic;        /*< [lock(PRIVATE(THIS_TASK))][0..1] Chain of local, kernel-level interrupt handlers. */
  s32                     t_suspend[2];/*< [lock(t_cpu->c_lock)] Recursion counter for task_(resume|suspend)

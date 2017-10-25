@@ -434,7 +434,7 @@ kernel_boot(u32        mb_magic,
   * freeing up some of the much more valuable memory below 1Mb */
  mem_relocate_info();
 
- /* Initialize realmode now that 'mem_unpreserve()' and 'mem_relocate_info()'
+ /* Initialize realmode now that `mem_unpreserve()' and `mem_relocate_info()'
   * have likely released a whole bunch of data within the 1Mb memory zone. */
  realmode_initialize();
 

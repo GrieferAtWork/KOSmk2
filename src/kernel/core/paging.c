@@ -75,7 +75,7 @@ STATIC_ASSERT((uintptr_t)(THIS_PDIR_BASE+THIS_PDIR_SIZE) == 0 ||
 
 
 #ifdef CONFIG_PDIR_SELFMAP
-/* Initialize the page-directory self-mappings for all addresses above 'KERNEL_BASE'.
+/* Initialize the page-directory self-mappings for all addresses above `KERNEL_BASE'.
  * NOTE: The caller is responsible for allocating the
  *       page table at 'THIS_PDIR_BASE/PDTABLE_REPRSIZE'. */
 PRIVATE void KCALL
@@ -92,7 +92,7 @@ pdir_initialize_selfmap(pdir_t *__restrict self) {
  end            = self->pd_directory+(PDIR_TABLE_COUNT);
  for (; iter != end; ++iter,++selfmap_table) {
   assertf(PDTABLE_ISALLOC(*iter),
-          "All page tables above 'KERNEL_BASE' must be allocated, but %p...%p isn't",
+          "All page tables above `KERNEL_BASE' must be allocated, but %p...%p isn't",
          ((uintptr_t)((iter-self->pd_directory)  )*PDTABLE_REPRSIZE),
          ((uintptr_t)((iter-self->pd_directory)+1)*PDTABLE_REPRSIZE)-1);
   selfmap_table->pe_data  = (iter->pt_data & ~(PDIR_ATTR_MASK));
@@ -100,7 +100,7 @@ pdir_initialize_selfmap(pdir_t *__restrict self) {
                              PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
   /* NOTE: We enable the 'PDIR_ATTR_GLOBAL' flag, because all
    *       page directory tables (except for the last) above
-   *      'KERNEL_BASE' are still global (the last is the self-map itself). */
+   *      `KERNEL_BASE' are still global (the last is the self-map itself). */
   if likely(iter != end-1) selfmap_table->pe_data |= PDIR_ATTR_GLOBAL;
  }
 }
@@ -205,7 +205,7 @@ PRIVATE size_t KCALL pdir_reqbytes_for_change(pdir_t *__restrict self, VIRT ppag
 
 
 #ifdef CONFIG_DEBUG
-/* Check if a given 'page' is mapped with the specified page directory 'self' */
+/* Check if a given 'page' is mapped with the specified page directory `self' */
 PRIVATE bool KCALL pdir_ismapped(pdir_t *__restrict self, VIRT ppage_t page) {
  union pd_table table;
  union pd_entry entry;
@@ -247,7 +247,7 @@ pdir_table_changed(pdir_t *__restrict self,
 #define pdir_table_changed(self,table_index) (void)0
 #endif /* !CONFIG_PDIR_SELFMAP */
 
-/* Convert a mapping to a table in 'self', using 'dyn_page' as dynamic memory. */
+/* Convert a mapping to a table in `self', using 'dyn_page' as dynamic memory. */
 PRIVATE void KCALL
 pd_table_map2tbl(union pd_table *self, PHYS ppage_t dyn_page) {
  union pd_entry *iter,*end; ppage_t phys_addr;

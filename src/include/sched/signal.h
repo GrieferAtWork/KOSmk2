@@ -71,7 +71,7 @@ FUNDEF errno_t KCALL sigpending_enqueue(struct sigpending *__restrict self,
 FUNDEF size_t KCALL sigpending_discard(struct sigpending *__restrict self, int signo);
 
 /* Wait for the first signal apart of 'wait_mask' to become available and return it.
- * NOTE: The caller must either be holding a read, or write-lock on 'self',
+ * NOTE: The caller must either be holding a read, or write-lock on `self',
  *       indicating the state of said lock through '*has_write_lock'.
  *       If only a read-lock was held, this function is allowed to upgrade the lock
  *       to write-mode, and indicating this upgrade by setting '*has_write_lock' to true.
@@ -165,7 +165,7 @@ FUNDEF errno_t KCALL task_set_sigblock(sigset_t *__restrict newset);
 typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
 #endif
 
-/* Raise a signal 'signal_info->si_signo' within the given task 'self',
+/* Raise a signal 'signal_info->si_signo' within the given task `self',
  * using its latest user-space CPU state as exception context.
  * NOTE: That means you can call this on yourself and the
  *       context will be that which would otherwise be restored

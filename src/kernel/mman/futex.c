@@ -88,7 +88,7 @@ again:
   /* Update the pself-pointer to point to the next futex, and unlock the self pointer. */
   if (self->f_pself) ATOMIC_STORE(self->f_pself->ap_data,(uintptr_t)next_futex);
  }
- /* 'self' is now fully unlinked. */
+ /* `self' is now fully unlinked. */
  assert(!SIG_GETTASK(&self->f_sig));
  free(self);
 }

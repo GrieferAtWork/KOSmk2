@@ -926,7 +926,7 @@ SYSCALL_DEFINE4(sigprocmask,int,how,USER sigset_t const *,set,
 
    /* Difficult: Must return to the first signal that gets unblocked. */
   case SIG_UNBLOCK:
-   /* NOTE: Store a mask of all changes in 'src' */
+   /* NOTE: Store a mask of all changes in `src' */
    for (; dst != end; ++dst,++src) {
     byte_t changed = *dst & *src;
     *dst &= ~*src;
@@ -938,7 +938,7 @@ deque_changes:
 
    /* Difficult: Must return to the first signal that gets unblocked. */
   case SIG_SETMASK:
-   /* NOTE: Store a mask of all changes in 'src' */
+   /* NOTE: Store a mask of all changes in `src' */
    for (; dst != end; ++dst,++src) if (*dst != *src) {
     byte_t changed = *dst & ~*src;
     *dst = *src;
@@ -1200,8 +1200,8 @@ scan_again_shared:
    task_addwait(&t->t_sigshare->ss_pending.sp_newsig,NULL,0);
 
    /* TODO: This is totally unnecessary. - The way the new scheduler has
-    *       been implemented, we can simply lock + 'task_addwait()' + unlock
-    *       any number of signals consecutively and have 'task_waitfor()'
+    *       been implemented, we can simply lock + `task_addwait()' + unlock
+    *       any number of signals consecutively and have `task_waitfor()'
     *       return a pointer to the pending set to which a new signal was
     *       added.
     * >> Thus what we're currently doing by locking both sets
@@ -1370,7 +1370,7 @@ tkill_info(pid_t tgid, pid_t pid, siginfo_t *__restrict info) {
  if ((t = pid_namespace_lookup(THIS_NAMESPACE,pid)) != NULL) {
   if (tgid <= 0 || TASK_GETTGID(t) == tgid) {
    result = task_kill2_ok(t,info);
-   /* NOTE: Don't deliver signal '0'. - It's used to test access. */
+   /* NOTE: Don't deliver signal `0'. - It's used to test access. */
    if (E_ISOK(result) && info->si_signo != 0)
        result = task_kill2(t,info,0,0);
   }

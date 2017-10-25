@@ -101,7 +101,7 @@ pipe_poll(struct file *__restrict fp, pollmode_t mode) {
  if (fp->f_mode&O_NONBLOCK) return mode;
 
  /* NOTE: The filesystem core API already checked that the given
-  *       file 'fp' was opened in a way compatible with 'mode'. */
+  *       file `fp' was opened in a way compatible with `mode'. */
  if (mode&POLLIN) {
   /* Poll the data-avail-signal. */
   sig_write(&p->p_data.ib_avail);

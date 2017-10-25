@@ -56,7 +56,7 @@ DECL_BEGIN
 #define MB2_MOD_ALIGN                        0x00001000 /* Alignment of multiboot modules.  */
 #define MB2_INFO_ALIGN                       0x00000008 /* Alignment of the multiboot info structure.  */
 
-/* Flags set in the 'flags' member of the multiboot header.  */
+/* Flags set in the `flags' member of the multiboot header.  */
 #define MB2_TAG_ALIGN                        8
 #define MB2_TAG_TYPE_END                     0
 #define MB2_TAG_TYPE_CMDLINE                 1

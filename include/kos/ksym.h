@@ -35,7 +35,7 @@
 
 #if !defined(__KERNEL__) && defined(__CRT_KOS)
 __SYSDECL_BEGIN
-/* Load the address of a user-share symbol 'name', or NULL with errno set. */
+/* Load the address of a user-share symbol `name', or NULL with errno set. */
 __LIBC void *(__LIBCCALL xsharesym)(char const *name);
 __SYSDECL_END
 #endif

@@ -40,7 +40,7 @@ struct mregion;
  *       #2 Fill '*pregion_start' with 'pos', thus causing the SHM region's mapping to start
  *          at the desired address, while still pointing into the same underlying memory region.
  *          This way, SHM regions are natively shared by means of using the same underlying
- *         'mregion' to communicate, natively enabling support for 'futex()', process-local COW,
+ *         `mregion' to communicate, natively enabling support for 'futex()', process-local COW,
  *          as well as lazy allocation of memory only when it is used for the first time.
  *       #3 Return 'shm_region' (See below)
  * Now that I think about it, that's pretty much all the magic there is to it...
@@ -59,7 +59,7 @@ struct mregion;
  *    - f_read/f_write/f_seek/f_pread/f_pwrite:
  *        Simulate regular file access (File pointer is an 'raddr_t')
  *    - ino_stat:
- *        Use 'PAGESIZE' to for st_blksize.
+ *        Use `PAGESIZE' to for st_blksize.
  *        Calculate allocated pages for 'st_blocks'/'st_size'.
  *    - ino_setattr: 
  *        Replace the stored region with a new one when truncating to ZERO-size.

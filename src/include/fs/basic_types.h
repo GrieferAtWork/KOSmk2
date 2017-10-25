@@ -34,7 +34,7 @@ typedef u32 iattrset_t; /* Set of 'IATTR_*' */
 
 #ifndef __rdmode_t_defined
 #define __rdmode_t_defined 1
-typedef int rdmode_t;   /* readdir-mode (One of 'FILE_READDIR_*') */
+typedef int rdmode_t;   /* readdir-mode (One of `FILE_READDIR_*') */
 #endif
 
 #define DENTRYNAME_OFFSETOF_NAME  0

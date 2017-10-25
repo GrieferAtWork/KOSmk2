@@ -88,7 +88,7 @@ FUNDEF void KCALL ldt_destroy(struct ldt *__restrict self);
 
 struct mman;
 /* LDT accessor functions.
- * NOTE: The caller must be holding a read/write-lock on 'self' respectively.
+ * NOTE: The caller must be holding a read/write-lock on `self' respectively.
  * NOTE: If the given 'id' is invalid, undefined behavior is invoked.
  *       To circumvent this, only pass ids that _you_ have allocated using 'mman_newldt()' */
 FUNDEF struct segment KCALL mman_getldt_unlocked(struct mman *__restrict self, ldt_t id);
@@ -96,7 +96,7 @@ FUNDEF errno_t KCALL mman_setldt_unlocked(struct mman *__restrict self, ldt_t id
                                           struct segment seg, struct segment *oldseg);
 
 /* Allocate/Delete LDT entries.
- * NOTE: The caller must be holding a write-lock on 'self'
+ * NOTE: The caller must be holding a write-lock on `self'
  * @return: * :         The new segment id.
  * @return: E_ISERR(*): Failed to allocate a segment for some reason. */
 FUNDEF s32 KCALL mman_newldt_unlocked(struct mman *__restrict self, struct segment seg);

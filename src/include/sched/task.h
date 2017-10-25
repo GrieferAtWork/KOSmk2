@@ -92,10 +92,10 @@ struct task;
  *  - t_ustack (Optional; leave it set to NULL if no kernel-managed user-stack is used)
  *  - t_hstack (Memory must be locked in-core; 'task_mkhstack' may be used for a quick setup)
  *              NOTE: Memory must be allocated as a virtual mapping in shared memory 
- *                    within 'mman_kernel', and the address of the 'task' itself must
- *                    be used as argument for 'closure' in 'mman_mmap_unlocked',
- *                    while 'notify' must remain NULL!
- *  - t_tlb (Optional; Use 'task_mktlb()'; pre-initialized to 'PAGE_ERROR')
+ *                    within `mman_kernel', and the address of the 'task' itself must
+ *                    be used as argument for `closure' in `mman_mmap_unlocked',
+ *                    while `notify' must remain NULL!
+ *  - t_tlb (Optional; Use 'task_mktlb()'; pre-initialized to `PAGE_ERROR')
  *  - t_mman (As a real reference)
  *  - t_fdman (As a real reference)
  *  - t_sighand (As a real reference; Set to 'sighand_kernel' for kernel threads)
@@ -108,14 +108,14 @@ struct task;
 FUNDEF struct task *KCALL task_cinit(struct task *self);
 
 
-/* Quickly allocate a host (kernel) stack for the given task, consisting of 'n_bytes'.
+/* Quickly allocate a host (kernel) stack for the given task, consisting of `n_bytes'.
  * In addition, this function will ensure that all of the stack is allocated+locked
  * in-core, as is required to prevent triple faults when accessing unallocated memory
  * without an allocated stack (which would cause an infinite recursion...)
- * NOTE: The stack is allocated in 'mman_kernel' and mapped in shared memory,
+ * NOTE: The stack is allocated in `mman_kernel' and mapped in shared memory,
  *       meaning that (for obvious reasons of pure functionality), the stack
  *       can later be accessed from any page directory.
- * NOTE: The caller is responsible never to pass ZERO(0) for 'n_bytes'
+ * NOTE: The caller is responsible never to pass ZERO(0) for `n_bytes'
  * @param: n_bytes:  The min amount of bytes to allocate for
  *                   the stack (will be ceil-aligned by PAGESIZE)
  * @return: -EOK:    Successfully allocated the stack.
@@ -163,7 +163,7 @@ FUNDEF void KCALL task_ldtlb(struct task *__restrict self);
 /* Fill in the TLB information block of the given task.
  * WARNING: This function may cause a PAGEFAULT, meaning that it must be
  *          called in a protected context, or as a user helper function.
- * WARNING: Additionally, the caller must switch to the page directory of 'self'. */
+ * WARNING: Additionally, the caller must switch to the page directory of `self'. */
 FUNDEF void KCALL task_filltlb(struct task *__restrict self);
 
 #endif /* !CONFIG_NO_TLB */
@@ -193,7 +193,7 @@ FUNDEF errno_t KCALL task_set_id(struct task *__restrict self, struct pid_namesp
  * the associated cpu and allowing it to start executing.
  * @return: -EOK:   Successfully started the task.
  * #ifdef CONFIG_SMP
- * @return: -ENODEV: Failed to find/start an accepting CPU to run 'self' under.
+ * @return: -ENODEV: Failed to find/start an accepting CPU to run `self' under.
  *             NOTE: This error is never returned when either '__bootcpu' (id #0) is allowed.
  * #endif
  * HINT: Even in the event of this function failing, you
@@ -202,20 +202,20 @@ FUNDEF errno_t KCALL task_set_id(struct task *__restrict self, struct pid_namesp
 FUNDEF errno_t KCALL task_start(struct task *__restrict self);
 
 #ifdef CONFIG_SMP
-/* Safely set the CPU that 'self' is running on.
- * NOTE: If 'self' is the caller's task, it this function will return
+/* Safely set the CPU that `self' is running on.
+ * NOTE: If `self' is the caller's task, it this function will return
  *       in the context of 'new_cpu' (UPON_SUCCESS(THIS_CPU == new_cpu))
  * NOTE: This function is a no-op when 'new_cpu' already was the running CPU.
- * NOTE: The caller is responsible for ensuring that 'self' is allowed to be running on 'new_cpu'
+ * NOTE: The caller is responsible for ensuring that `self' is allowed to be running on 'new_cpu'
  *      (You should be hold a read-lock to 't_affinity_lock' when calling this function)
- * @return: * :         The old CPU that 'self' was running under before.
- * @return: -ECOMM:     Failed to communicate with the CPU that 'self' was (is) running under.
+ * @return: * :         The old CPU that `self' was running under before.
+ * @return: -ECOMM:     Failed to communicate with the CPU that `self' was (is) running under.
  * @return: E_ISERR(*): Failed to change the task's CPU for some reason. */
 FUNDEF struct cpu *KCALL
 task_setcpu(struct task *__restrict self,
             struct cpu *__restrict new_cpu);
 
-/* Get the CPU that 'self' is currently running on.
+/* Get the CPU that `self' is currently running on.
  * WARNING: By the time this call returns, the task may
  *          have already switched to a different CPU!
  * NOTE: When stable access to the task's cpu is required,
@@ -260,7 +260,7 @@ FUNDEF void (KCALL task_endnointr)(void);
  * >> Required when a task is forced to allocate more signal-wait
  *    slots, as 'malloc()' uses functions like 'rwlock_write()'
  *    internally, which in turn would normally register new
- *    signals to-be waited for, as well as run 'task_waitfor()',
+ *    signals to-be waited for, as well as run `task_waitfor()',
  *    which clears all wait-for signals.
  *    Another, even more dangerous case is mman's #PF handler,
  *    which may be called at any point whenever execution doesn't
@@ -313,7 +313,7 @@ FUNDEF SAFE void KCALL task_popwait(struct tasksig *__restrict sigs);
  *      (on if the caller was critical at the time), or
  *       by being interrupted ('task_interrupt()'), such
  *       as by being sent a signal ('task_kill()'), both
- *       of with will result in '-EINTR' being returned,
+ *       of with will result in `-EINTR' being returned,
  *       or finally (only when non-NULL), the given 'abstime'
  *       has expired, causing '-ETIMEDOUT' to be returned.
  * NOTE: You may imaging this function being implemented as follows:
@@ -341,7 +341,7 @@ FUNDEF struct sig *KCALL task_waitfor_t(struct timespec const *abstime);
  * returning the signal that was sent, as well as clearing the set of
  * signals currently being waited for.
  * @return: * :   The signal that was received first.
- *          NOTE: In this case, all signals added via 'task_addwait()' are cleared.
+ *          NOTE: In this case, all signals added via `task_addwait()' are cleared.
  * @return: NULL: No signals in the calling thread's waiting-set has been sent. */
 FUNDEF struct sig *KCALL task_trywait(void);
 
@@ -381,7 +381,7 @@ FUNDEF bool KCALL task_haswait(struct sig *__restrict s);
  * @return: NULL: All pending signals were cleared and no signal had been sent until now. */
 FUNDEF SAFE struct sig *KCALL task_clrwait(void);
 
-/* Set the scheduler priority of the given thread 'self'.
+/* Set the scheduler priority of the given thread `self'.
  * NOTE: Using this function you can also set if a thread is considered IDLE.
  * @return: -EOK:    Successfully set the given thread's priority.
  * @return: -EINVAL: The given thread has been terminated.
@@ -400,7 +400,7 @@ typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
 
 /* Recursively suspend/resume the given task.
  * WARNING: '-EINVAL' can only be returned when the
- *          suspension counter of 'self' rolls over.
+ *          suspension counter of `self' rolls over.
  *          With that in mind, don't rely on the return value
  *          to determine if a task has already terminated!
  * @param: mode:     Set of 'TASK_SUSP_*'
@@ -428,7 +428,7 @@ FUNDEF errno_t KCALL task_testintr(void);
 #define task_intr_later() (void)ATOMIC_FETCHOR(THIS_TASK->t_flags,TASKFLAG_INTERRUPT)
 
 /* Terminate the given task using the provided exitcode.
- * NOTE: If 'THIS_TASK' is passed for 'self', and the calling
+ * NOTE: If 'THIS_TASK' is passed for `self', and the calling
  *       thread isn't executing within a critical section,
  *       this function doesn't return.
  * @return: -EOK:    Successfully terminated the given task.
@@ -448,14 +448,14 @@ task_terminate_cpu_endwrite(struct cpu *__restrict c,
                             struct task *__restrict self,
                             void *exitcode);
 
-/* Interrupt the current/next call to 'task_waitfor()' of the given task.
+/* Interrupt the current/next call to `task_waitfor()' of the given task.
  * @return: -EOK:    Successfully terminated the given task.
- * @return: -EINTR: 'self' is THIS_TASK, and you're just interrupted yourself.
+ * @return: -EINTR: `self' is THIS_TASK, and you're just interrupted yourself.
  * @return: -EINVAL: The given task had already been terminated. */
 FUNDEF errno_t KCALL task_interrupt(struct task *__restrict self);
 FUNDEF SAFE errno_t KCALL task_interrupt_cpu_endwrite(struct task *__restrict self);
 
-/* Join the given task 'self'.
+/* Join the given task `self'.
  * @return: -EOK:       Successfully joined the given task.
  * @return: -ETIMEDOUT: The given timeout has expired.
  * @return: -EINTR:     The calling thread was interrupted. */

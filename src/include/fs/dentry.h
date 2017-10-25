@@ -231,7 +231,7 @@ dentry_mkreg(struct dentry *__restrict dir_ent,
              REF struct inode **result_inode);
 
 /* Create a new directory 'ent_name' within 'dir_ent'
- * NOTE: 'ia_siz' from 'attr' is ignored.
+ * NOTE: 'ia_siz' from `attr' is ignored.
  * $ mkdir "/opt/foo" # dentry_mkdir(DENTRY("/opt"),"foo",...);
  * @param: result_inode: When non-NULL, store a reference to the INode associated
  *                       with the returned directory entry in '*result_inode'.
@@ -269,25 +269,25 @@ dentry_insnod(struct dentry *__restrict dir_ent,
               struct device *__restrict dev,
               REF struct inode **result_inode);
 
-/* Mount the given 'filesystem' within 'self'.
+/* Mount the given 'filesystem' within `self'.
  * @return: -EOK:     Successfully mounted the given filesystem.
  * @return: -EACCES: 'access' describes insufficient permissions.
  * @return: -EINTR:   The calling thread was interrupted.
- * @return: -ENOTDIR: The old INode associated with 'self' wasn't a directory, or was another superblock.
+ * @return: -ENOTDIR: The old INode associated with `self' wasn't a directory, or was another superblock.
  */
 FUNDEF errno_t KCALL
 dentry_mount(struct dentry *__restrict self,
              struct fsaccess const *__restrict access,
              struct superblock *__restrict filesystem);
 
-/* Mirror all attributes from 'attr' marked by 'valid'
- * NOTE: 'ia_siz' from 'attr' is ignored for directories.
+/* Mirror all attributes from `attr' marked by 'valid'
+ * NOTE: 'ia_siz' from `attr' is ignored for directories.
  * $ chmod 0777 "/opt/foo" # dentry_setattr(DENTRY("/opt/foo"),...);
  * @return: -EOK:       Successfully updated INode attributes.
- * @return: -ENOENT:    The given 'self' has no associated INode.
+ * @return: -ENOENT:    The given `self' has no associated INode.
  * @return: -EACCES:   'access' describes insufficient permissions.
  * @return: -EINTR:     The calling thread was interrupted.
- * @return: -EROFS:     The INode or superblock associated with 'self' is read-only.
+ * @return: -EROFS:     The INode or superblock associated with `self' is read-only.
  * @return: E_ISERR(*): Failed to set the given attributes for some reason. */
 FUNDEF errno_t KCALL
 dentry_setattr(struct dentry *__restrict self,
@@ -295,11 +295,11 @@ dentry_setattr(struct dentry *__restrict self,
                struct iattr const *__restrict attr,
                iattrset_t valid);
 
-/* Read a symbol link located at 'self'.
+/* Read a symbol link located at `self'.
  * @return: * :         The required buffer size.
  * @return: -EACCES:   'access' describes insufficient permissions.
  * @return: -EINTR:     The calling thread was interrupted.
- * @return: -ENOENT:    The given 'self' has no associated INode.
+ * @return: -ENOENT:    The given `self' has no associated INode.
  * @return: -EFAULT:    A faulty buffer pointer was provided.
  * @return: E_ISERR(*): Failed to read a link for some reason. */
 FUNDEF ssize_t KCALL
@@ -329,7 +329,7 @@ dentry_hrdlink(struct dentry *__restrict dir_ent,
  * @param: result_inode: When non-NULL, store a reference to the INode associated
  *                       with the returned directory entry upon success.
  * @return: * :         A reference to the directory now apart of 'dir_ent'
- * @return: -ENOENT:    The given 'self' has no associated INode.
+ * @return: -ENOENT:    The given `self' has no associated INode.
  * @return: -EACCES:   'access' describes insufficient permissions.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: -ENOTDIR:   The given directory entry 'dir_ent' isn't a directory itself.
@@ -366,13 +366,13 @@ dentry_rename(struct dentry *__restrict dst_dir,
 
 /* Remove files or empty directories.
  * @param: mode: A set of 'DENTRY_REMOVE_*'
- * @return: -ENOENT:    The given directory entry 'self' has no associated INode.
+ * @return: -ENOENT:    The given directory entry `self' has no associated INode.
  * @return: -EACCES:   'access' describes insufficient permissions.
  * @return: -EINTR:     The calling thread was interrupted.
- * @return: -EPERM:     The INode associated with the directory of 'self' doesn't support removing.
- *                      The directory associated with 'self' is part of a different superblock.
+ * @return: -EPERM:     The INode associated with the directory of `self' doesn't support removing.
+ *                      The directory associated with `self' is part of a different superblock.
  * @return: -EISDIR:    The INode is a directory/mounting point, but 'DENTRY_REMOVE_DIR'/'DENTRY_REMOVE_MNT' wasn't specified
- * @return: -EROFS:     The INode or superblock associated with 'self' is read-only.
+ * @return: -EROFS:     The INode or superblock associated with `self' is read-only.
  * @return: E_ISERR(*): Failed to remove the given directory entry for some reason. */
 FUNDEF errno_t KCALL
 dentry_remove(struct dentry *__restrict self,

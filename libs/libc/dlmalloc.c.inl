@@ -6354,7 +6354,7 @@ History:
            usage of 'assert' in non-WIN32 code
          * Improve WIN32 'sbrk()' emulation's 'findRegion()' routine to
            avoid infinite loop
-      * Always call 'fREe()' rather than 'free()'
+      * Always call 'fREe()' rather than `free()'
 
     V2.6.5 Wed Jun 17 15:57:31 1998  Doug Lea  (dl at gee)
       * Fixed ordering problem with boundary-stamping

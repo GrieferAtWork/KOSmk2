@@ -42,7 +42,7 @@ struct stack {
  ATOMIC_DATA ref_t s_refcnt; /*< [!0] Reference counter for the control structure. */
  ATOMIC_DATA ref_t s_branch; /*< Amount of branches mapped to this stack.
                               *  NOTE: This value is updated using the 'mbranch_notity' facility.
-                              *  NOTE: While non-zero, this counter holds a reference to 's_refcnt'. */
+                              *  NOTE: While non-zero, this counter holds a reference to `s_refcnt'. */
  /* NOTE: Locking the following two is a bit complicated:
   *       If the stack was created with a guard page, the caller must
   *       hold a read-lock on the associated mman ([lock(:struct mman::m_lock)])
@@ -78,7 +78,7 @@ LOCAL void KCALL stack_destroy(struct stack *__restrict self) {
 LOCAL REF struct task *KCALL stack_task(struct stack *__restrict self);
 
 /* mman notification used for tracking stack mappings, size & guard position in branches.
- * @param: closure: The 'struct instance' object associated with the instance itself. */
+ * @param: closure: The `struct instance' object associated with the instance itself. */
 FUNDEF ssize_t KCALL stack_mnotify(unsigned int type, void *__restrict closure,
                                    struct mman *mm, ppage_t addr, size_t size);
 

@@ -53,7 +53,7 @@ struct moddebug_ops {
   *        provided buffer, they can be directly pointed to that mapping.
   * @param: flags: Set of 'VIRTINFO_*'
   * @return: * :         The amount of required buffer bytes.
-  * @return: -EFAULT:    The given 'buf' was located at a faulty address.
+  * @return: -EFAULT:    The given `buf' was located at a faulty address.
   * @return: -ENODATA:   No address information is available.
   * @return: E_ISERR(*): Failed to load address information for some reason. */
  ssize_t (KCALL *mo_virtinfo)(struct moddebug *__restrict self,
@@ -100,7 +100,7 @@ FUNDEF void KCALL moddebug_setup(struct moddebug *__restrict self,
 /* Query address information.
  * @param: flags: Set of 'VIRTINFO_*'
  * @return: * :         The amount of required buffer bytes.
- * @return: -EFAULT:    The given 'buf' was located at a faulty address.
+ * @return: -EFAULT:    The given `buf' was located at a faulty address.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: -ENODATA:   No address information is available.
  *                NOTE: Also returned if the debug information driver was

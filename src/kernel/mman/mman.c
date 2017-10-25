@@ -62,7 +62,7 @@ DECL_BEGIN
 
 /* Global list of known memory regions (tracked for swap functionality)
  * WARNING: This list may contain ZERO-refcnt entries, so
- *         'MREGION_TRYINCREF()' must be used when accessing elements.
+ *         `MREGION_TRYINCREF()' must be used when accessing elements.
  * NOTE: To prevent expensive switching to/from mman_kernel,
  *       this list is split into regions allocated in shared
  *       memory, and those allocated in physical memory. */
@@ -122,7 +122,7 @@ mregion_destroy(struct mregion *__restrict self) {
     if (self->mr_type == MREGION_TYPE_MEM) {
      /* The part may not be in-core if the region is being destroyed after
       * having been pre-faulted before a call to mmap() fails, or if the
-      * 'MPART_FLAG_KEEP' flag was set on the part, causing its de-allocation
+      * `MPART_FLAG_KEEP' flag was set on the part, causing its de-allocation
       * to be prolonged until the death of the surrounding region. */
      if (iter->mt_state == MPART_STATE_INCORE) {
       /* Must switch to the kernel memory manager for this part. */
@@ -305,7 +305,7 @@ PUBLIC SAFE struct mman *KCALL mman_new(void) {
 #endif
  assert(IS_ALIGNED((uintptr_t)result,PAGESIZE));
  /* Lock the data for the page directory, and load it into the core.
-  * NOTE: We don't use 'GFP_LOCKED' for this, because on the first
+  * NOTE: We don't use `GFP_LOCKED' for this, because on the first
   *       page needs to be locked for the page directory itself. */
  task_nointr();
  TASK_PDIR_KERNEL_BEGIN(old_mm);
@@ -483,7 +483,7 @@ mman_insbranch_unlocked(struct mman *__restrict self,
   if (insert->mb_node.a_vmin > branch->mb_node.a_vmax) break;
   pinsert = &insert->mb_order.le_next;
  }
- /* Insert the branch before 'insert' at 'pinsert' */
+ /* Insert the branch before `insert' at `pinsert' */
  branch->mb_order.le_pself = pinsert;
  branch->mb_order.le_next  = insert;
  if (insert) insert->mb_order.le_pself = &branch->mb_order.le_next;
@@ -596,8 +596,8 @@ mman_mmap_instance_unlocked(struct mman *__restrict self,
  /* Start mapping! */
  end = (iter = mod->m_segv)+mod->m_segc;
 #ifdef CONFIG_DEBUG
- /* Prevent 'MNOTIFY_INCREF' from causing an
-  * assertion failure because 'i_branch' was zero.
+ /* Prevent `MNOTIFY_INCREF' from causing an
+  * assertion failure because `i_branch' was zero.
   * >> This is the one time it's allowed to be! */
  inst->i_branch = 1;
 #endif
@@ -939,7 +939,7 @@ again:
  if (!info.bi_min) return hint;
  assert(info.bi_min_min < ((uintptr_t)hint+n_bytes-1));
  assert(info.bi_max_max >  (uintptr_t)hint);
- /* Step #2: based on 'mode&MMAN_FINDSPACE_BELOW', search from info.bi_min/info.bi_max
+ /* Step #2: based on `mode&MMAN_FINDSPACE_BELOW', search from info.bi_min/info.bi_max
   *          upwards/downwards until a free memory range of sufficient
   *          size was found, using the ordered branch chain. */
  if (mode&MMAN_FINDSPACE_BELOW) {
@@ -1595,7 +1595,7 @@ again:
                         mode&~(MMAN_MLOCK_UNLOCK|MMAN_MLOCK_LOCK),
                        &did_remap);
    if (E_ISERR(temp)) return temp;
-   /* This check is required when 'mbranch_mcore' remaps branches in a
+   /* This check is required when `mbranch_mcore' remaps branches in a
     * way that would otherwise make us skip a whole bunch of branches. */
    if (did_remap) {
     if (addr_min+PAGESIZE-1 == addr_max) goto end;
@@ -1686,7 +1686,7 @@ again:
                        region_size,mode,&did_remap);
   if (E_ISERR(temp)) return temp;
   result += temp;
-  /* This check is required when 'mbranch_mcore' remaps branches in a
+  /* This check is required when `mbranch_mcore' remaps branches in a
    * way that would otherwise make us skip a whole bunch of branches. */
   if (did_remap) {
    if (addr_min+PAGESIZE-1 == addr_max) goto end;
@@ -1811,7 +1811,7 @@ PRIVATE ATTR_FREERODATA struct addrpair const kernel_core_ranges[] = {
 };
 
 /* WARNING: These regions must contain at least mirror segments from
- *         '__core_segments' in '/kernel/linker/module.c' */
+ *         `__core_segments' in `/kernel/linker/module.c' */
 PRIVATE ATTR_COLDDATA struct mregion kernel_core_regions[] = {
     [CORE_RANGE_ROTEXT] = {
 #ifdef CONFIG_DEBUG
@@ -1820,7 +1820,7 @@ PRIVATE ATTR_COLDDATA struct mregion kernel_core_regions[] = {
         .mr_refcnt = 0x80000001,
 #endif
         .mr_type   = MREGION_TYPE_PHYSICAL,
-        .mr_init   = MREGION_INIT_RAND, /* Actually 'MREGION_INIT_FILE', but we don't have the file... */
+        .mr_init   = MREGION_INIT_RAND, /* Actually `MREGION_INIT_FILE', but we don't have the file... */
         .mr_size   = KERNEL_RO_SIZE,
         .mr_futex  = {{0}},
         .mr_plock  = RWLOCK_INIT,
@@ -1850,7 +1850,7 @@ PRIVATE ATTR_COLDDATA struct mregion kernel_core_regions[] = {
         .mr_refcnt = 0x80000001,
 #endif
         .mr_type   = MREGION_TYPE_PHYSICAL,
-        .mr_init   = MREGION_INIT_RAND, /* Actually 'MREGION_INIT_FILE', but we don't have the file... */
+        .mr_init   = MREGION_INIT_RAND, /* Actually `MREGION_INIT_FILE', but we don't have the file... */
         .mr_size   = KERNEL_RO_SIZE,
         .mr_futex  = {{0}},
         .mr_plock  = RWLOCK_INIT,
@@ -1996,7 +1996,7 @@ mman_initialize(void) {
 
  /* With kernel core branches created, it is time to setup all the
   * additional branches for dynamic memory at its physical address.
-  * NOTE: For this, we can simply re-use 'mem_info' the same
+  * NOTE: For this, we can simply re-use `mem_info' the same
   *       way it got used during fixup initialization of the
   *       kernel page directory.
   * NOTE: Just like the mappings above, these mappings must remain forever! */
@@ -2099,7 +2099,7 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
  assert(mman_writing(self));
  assert(IS_ALIGNED(start,PAGESIZE));
 
- /* Scan for two different branches at 'start' and 'start-1' */
+ /* Scan for two different branches at `start' and `start-1' */
  plo_branch = mbranch_tree_plocate_at(&self->m_map,start-1,&lo_branch_semi,&lo_branch_level);
  if (!plo_branch) return false;
  lo_branch = *plo_branch;
@@ -2112,7 +2112,7 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
  assert(lo_branch != hi_branch);
  assert(MBRANCH_END(lo_branch) == MBRANCH_BEGIN(hi_branch));
  /* Check if basic branch settings such as protection and callbacks match.
-  * HINT: 'mb_closure' is the memory tag, meaning that this also checks for matching tags. */
+  * HINT: `mb_closure' is the memory tag, meaning that this also checks for matching tags. */
  if (lo_branch->mb_prot != hi_branch->mb_prot ||
      lo_branch->mb_notify != hi_branch->mb_notify ||
      lo_branch->mb_closure != hi_branch->mb_closure)
@@ -2178,7 +2178,7 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
   *          merging memory branches in itself is completely optional
   *          and only serves to optimize performance, lookup time, as
   *          well as overhead.
-  * The only thing it can affect, is the output of '/proc/PID/maps' */
+  * The only thing it can affect, is the output of `/proc/PID/maps' */
  if (lo_region->mr_refcnt > 1 || hi_region->mr_refcnt > 1)
      return false;
  /* Make sure both regions are of the same type. */

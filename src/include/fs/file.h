@@ -35,12 +35,12 @@ struct dirent;
 
 #ifndef __rdmode_t_defined
 #define __rdmode_t_defined 1
-typedef int rdmode_t; /* readdir-mode (One of 'FILE_READDIR_*') */
+typedef int rdmode_t; /* readdir-mode (One of `FILE_READDIR_*') */
 #endif /* !__rdmode_t_defined */
 
 #ifndef __pollmode_t_defined
 #define __pollmode_t_defined 1
-typedef int pollmode_t; /* poll()-mode (Set of 'POLLIN|POLLPRI|POLLOUT|POLLERR'). */
+typedef int pollmode_t; /* poll()-mode (Set of `POLLIN|POLLPRI|POLLOUT|POLLERR'). */
 #endif /* !__pollmode_t_defined */
 
 #ifndef __fallocmode_t_defined
@@ -66,7 +66,7 @@ struct file {
  struct inodeops const  *f_ops;    /*< [1..1][const][== f_node->i_ops] Local copy of file operations. */
  REF struct inode       *f_node;   /*< [1..1][const] INode associated with this file stream. */
  REF struct dentry      *f_dent;   /*< [1..1][const] Directory entry associated with this file stream.
-                                    *   WARNING: This directory entry does not necessarily point to 'f_node'! */
+                                    *   WARNING: This directory entry does not necessarily point to `f_node'! */
  LIST_NODE(struct file)  f_open;   /*< [lock(f_node->i_file.i_files_lock)] List entry of streams opened for the associated node. */
  WEAK oflag_t            f_mode;   /*< [const(~(O_APPEND|O_ASYNC|O_DIRECT|O_NOATIME|O_NONBLOCK))]
                                     *   The mode under which this file was opened.
@@ -74,12 +74,12 @@ struct file {
  rwlock_t                f_lock;   /*< File lock for synchronizing various operations (Should not be used by f_ops-implementations).
                                     *  HINT: The state of this lock during operations is documented above,
                                     *        by the 'NOTE: Caller-synchronized:(read|write)' comments. */
- struct filelock         f_flock;  /*< Locks in 'f_node' owned by this file. */
+ struct filelock         f_flock;  /*< Locks in `f_node' owned by this file. */
 #define FILE_FLAG_NONE     0x00000000
-#define FILE_FLAG_BACK     0x00000001 /*< Set when the file pointer is located at the back (Used to implement 'O_APPEND' during writing) */
+#define FILE_FLAG_BACK     0x00000001 /*< Set when the file pointer is located at the back (Used to implement `O_APPEND' during writing) */
 #define FILE_FLAG_DIDWRITE 0x00000002 /*< At some point, this file was used to write data (Used to implement automatic disk synchronization) */
-#define FILE_FLAG_LOCKLESS 0x80000000 /*< [const] Local alias for 'f_ops->f_flags&INODE_FILE_LOCKLESS' */
- u32                     f_flag;   /*< [lock(f_lock)] File state flags (Set of 'FILE_FLAG_*'). */
+#define FILE_FLAG_LOCKLESS 0x80000000 /*< [const] Local alias for `f_ops->f_flags&INODE_FILE_LOCKLESS' */
+ u32                     f_flag;   /*< [lock(f_lock)] File state flags (Set of `FILE_FLAG_*'). */
  /* Additional user-file-data goes here. */
 };
 #define FILE_ISLOCKLESS(self) ((self)->f_flag&FILE_FLAG_LOCKLESS)
@@ -100,7 +100,7 @@ FUNDEF void KCALL file_destroy(struct file *__restrict self);
 #define FILE_DECREF(self)    (void)(ATOMIC_DECFETCH((self)->f_refcnt) || (file_destroy(self),0))
 
 /* Acquire/Release/Override a file lock within the specified range.
- * @param: mode: A set of 'FILE_FLOCK_*'
+ * @param: mode: A set of `FILE_FLOCK_*'
  * @return: -EOK: Successfully acquired a file lock for the specified address range. */
 FUNDEF errno_t KCALL file_flock(struct file *__restrict self, pos_t start, pos_t size, u32 mode);
 #define FILE_FLOCK_UNLOCK 0x00 /*< Release the last lock. */
@@ -154,26 +154,26 @@ FUNDEF errno_t KCALL file_flock(struct file *__restrict self, pos_t start, pos_t
  * >> task_waitfor(JTIME_INFINITE);
  * WARNING: Regardless of return value, any number of signals may have been
  *          added to the calling thread's sigwait set, meaning that the caller
- *          is always responsible for cleanup by either calling 'task_clrwait()'
- *          or 'task_waitfor()'.
- * @param: mode: Set of 'POLLIN|POLLPRI|POLLOUT|POLLERR'
- * @return: * :           The set of signals currently available. (At least one of 'mode')
- *                  NOTE: In this event, signals may have still been added to waiting 'task_addwait()',
+ *          is always responsible for cleanup by either calling `task_clrwait()'
+ *          or `task_waitfor()'.
+ * @param: mode: Set of `POLLIN|POLLPRI|POLLOUT|POLLERR'
+ * @return: * :           The set of signals currently available. (At least one of `mode')
+ *                  NOTE: In this event, signals may have still been added to waiting `task_addwait()',
  *                        meaning that the caller is responsible for cleanup, which must include a call
- *                        to 'task_clrwait()'
- * @return: 0 :           At least one signal has been added to the caller's waiting set (using 'task_addwait()').
+ *                        to `task_clrwait()'.
+ * @return: 0 :           At least one signal has been added to the caller's waiting set (using `task_addwait()').
  * @return: -EWOULDBLOCK: No signal signal requested for polling actually exists.
- * @return: -EWOULDBLOCK: The given 'mode' set does not contain any of 'POLLIN|POLLPRI|POLLOUT|POLLERR'
+ * @return: -EWOULDBLOCK: The given `mode' set does not contain any of `POLLIN|POLLPRI|POLLOUT|POLLERR'
  * @return: -ENOMEM:      Not enough available memory (likely occurred when
- *                        trying to allocate a signal slot within 'task_addwait()')
- * @return: -EPERM:       The oflags used to open 'fp' are absolutely incompatible with 'mode'.
+ *                        trying to allocate a signal slot within `task_addwait()')
+ * @return: -EPERM:       The oflags used to open `fp' are absolutely incompatible with `mode'.
  *                       (e.g.: Trying to wait for data to become available
  *                              for reading on a file opened only for writing)
  * @return: E_ISERR(*):   Failed to poll data for some reason. */
 FUNDEF pollmode_t KCALL file_poll(struct file *__restrict fp, pollmode_t mode);
 
 /* Read/Write data to the given file stream.
- * @return: * :         The amount of bytes read-from/written-to 'buf'.
+ * @return: * :         The amount of bytes read-from/written-to `buf'.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: -EPERM:     The file stream doesn't implement reading/writing, or
  *                      the file wasn't opened with read/write permissions.
@@ -184,13 +184,13 @@ FUNDEF ssize_t KCALL file_write(struct file *__restrict self, USER void const *b
 FUNDEF ssize_t KCALL file_pread(struct file *__restrict self, USER void *buf, size_t bufsize, pos_t pos);
 FUNDEF ssize_t KCALL file_pwrite(struct file *__restrict self, USER void const *buf, size_t bufsize, pos_t pos);
 
-/* Same as the functions above, but return '-ENOSPC' when not all data could be read. */
+/* Same as the functions above, but return `-ENOSPC' when not all data could be read. */
 LOCAL errno_t KCALL file_readall(struct file *__restrict self, USER void *buf, size_t bufsize);
 LOCAL errno_t KCALL file_writeall(struct file *__restrict self, USER void const *buf, size_t bufsize);
 LOCAL errno_t KCALL file_preadall(struct file *__restrict self, USER void *buf, size_t bufsize, pos_t pos);
 LOCAL errno_t KCALL file_pwriteall(struct file *__restrict self, USER void const *buf, size_t bufsize, pos_t pos);
 
-/* Hint the file-system to pre-allocate 'size' bytes within 'fp', starting at 'start'.
+/* Hint the file-system to pre-allocate `size' bytes within `fp', starting at `start'.
  * NOTE: No-op if the given data area has already been allocated for some reason.
  * @param: mode:        One of 'FALLOCMODE_*'
  * @return: -EOK:       Data was successfully pre-allocated
@@ -202,38 +202,38 @@ FUNDEF errno_t KCALL file_allocate(struct file *__restrict fp,
 
 /* Set the file pointer of a given file stream.
  * NOTE: In directories, seeking should move the file index in a
- *       way that simulates each file having a size of '1' byte:
+ *       way that simulates each file having a size of `1' byte:
  *    >> struct file *fp = fs_kopen("/",...);
  *    >> file_seek(fp,7,SEEK_SET); // Select the 7th file in the root directory.
  *    >> file_readdir(fp,...);     // Read the 7th file.
- * @return: * :         The new file pointer location, offset from 'SEEK_SET'.
+ * @return: * :         The new file pointer location, offset from `SEEK_SET'.
  * @return: -EINTR:     The calling thread was interrupted.
- * @return: -ESPIPE:   'self' doesn't support seeking and is a pipe/character/socket-style stream.
- * @return: -EPERM:    'self' doesn't support seeking and isn't a pipe/character/socket-style stream.
+ * @return: -ESPIPE:   `self' doesn't support seeking and is a pipe/character/socket-style stream.
+ * @return: -EPERM:    `self' doesn't support seeking and isn't a pipe/character/socket-style stream.
  * @return: E_ISERR(*): Some error prevented the seek operation from succeeding. */
 FUNDEF off_t KCALL file_seek(struct file *__restrict self, off_t off, int whence);
 
-/* Perform a misc. I/O control function 'name' on the given file stream 'self'.
- * @return: -EINVAL:    The specified command 'name' isn't known or unsupported.
+/* Perform a misc. I/O control function `name' on the given file stream `self'.
+ * @return: -EINVAL:    The specified command `name' isn't known or unsupported.
  * @return: -EFAULT:    A faulty buffer pointer was provided.
  * @return: E_ISERR(*): Some error prevented the I/Octl operation from succeeding. */
 FUNDEF errno_t KCALL file_ioctl(struct file *__restrict self, int name, USER void *arg);
 
-/* Read a directory entry from an opened directory stream 'self'.
- * @return: * :         The amount of bytes required from the 'buf...+=bufsize' buffer.
+/* Read a directory entry from an opened directory stream `self'.
+ * @return: * :         The amount of bytes required from the `buf...+=bufsize' buffer.
  * @return: -EINTR:     The calling thread was interrupted.
- * @return: -EPERM:     The given file stream 'self' does not support reading directory
- *                      entries, or the file 'self' wasn't opened for reading.
+ * @return: -EPERM:     The given file stream `self' does not support reading directory
+ *                      entries, or the file `self' wasn't opened for reading.
  * @return: -EFAULT:    A faulty buffer pointer was provided.
  * @return: E_ISERR(*): Some error prevented a directory from being read. */
 FUNDEF ssize_t KCALL file_readdir(struct file *__restrict self,
                                   USER struct dirent *buf,
                                   size_t bufsize, rdmode_t mode);
 
-/* Sync any unwritten data from the given file stream 'self'.
+/* Sync any unwritten data from the given file stream `self'.
  * @return: -EOK:       Successfully synced some, or no data.
  * @return: -EINTR:     The calling thread was interrupted.
- * @return: -EROFS:     The given file stream 'self' was not opened for writing,
+ * @return: -EROFS:     The given file stream `self' was not opened for writing,
  *                      meaning that no unwritten data needed to be synced.
  * @return: E_ISERR(*): Some error prevented data from being synced. */
 FUNDEF errno_t KCALL file_sync(struct file *__restrict self);

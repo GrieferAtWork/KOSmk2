@@ -181,7 +181,7 @@ INTERN int LIBCCALL libc_setenv(char const *name, char const *value, int replace
             (value_len+1)*sizeof(char));
  environ_write();
  if ((slot = ATOMIC_READ(environ)) != NULL) {
-  /* Search for an old instance of 'name'. */
+  /* Search for an old instance of `name'. */
   for (; *slot; ++slot) {
    if (libc_memcmp(*slot,name,name_len*sizeof(char)) &&
                   (*slot)[name_len] == '=') {

@@ -147,7 +147,7 @@ user_collect_init(struct instance *__restrict self,
 
 
 /* NOTE: Upon success, this function does not
- *       return and will inherit a reference to 'mod'. */
+ *       return and will inherit a reference to `mod'. */
 PRIVATE SAFE errno_t KCALL
 user_do_execve(REF struct module *__restrict mod,
                USER char const *const USER *argv,

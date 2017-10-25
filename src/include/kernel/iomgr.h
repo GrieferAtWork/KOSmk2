@@ -27,9 +27,18 @@
 
 DECL_BEGIN
 
+/* XXX: This system sucks! - Don't implement it and think up something better.
+ *   >> I/O space is different from memory in that it is littered with stuff
+ *      that can't actually be moved, as well as other things that can be
+ *      moved around when the method of doing so always differs. (meaning
+ *      we'd need some kind of operator system that is integrated within
+ *      allocated ranges)
+ *   >> But then again, a true need for such a system has yet to come up...
+ */
+
 /* I/O Address space manager, used for dynamically allocating I/O ranges. */
 
-typedef s32 ioaddr_t; /* Same as 'ioport_t', but may also be used to encode errno values. */
+typedef s32 ioaddr_t; /* Same as `ioport_t', but may also be used to encode errno values. */
 typedef u16 ioport_t;
 typedef u16 iosize_t;
 
@@ -51,8 +60,8 @@ struct iomgr {
 DATDEF struct iomgr io_mgr;
 
 
-/* Dynamically allocate an unused I/O address range of 'size'
- * entires, ensuring that the returned I/O address '<= max'.
+/* Dynamically allocate an unused I/O address range of `size'
+ * entires, ensuring that the returned I/O address `<= max'.
  * @return: * :      The base address of the newly allocated I/O address range.
  * @return: -ENOMEM: No free I/O range of sufficient size available.
  * @return: -EPERM:  The given owner module does not allow new references to be created. */
@@ -66,10 +75,10 @@ FUNDEF void KCALL io_free(ioport_t port, iosize_t size);
 /* Allocate (reserve) the specified region of the I/O address space.
  * @return: addr:    Successfully allocate the I/O address range.
  * @return: -ENOMEM: No free I/O range of sufficient size available.
- * @return: -ENOMEM: 'addr+size' is overflowing.
+ * @return: -ENOMEM: `addr+size' is overflowing.
  * @return: -EPERM:  The given owner module does not allow new references to be created. */
 FUNDEF ioaddr_t KCALL io_malloc_at(ioport_t addr, iosize_t size, struct instance *__restrict owner);
-/* Same as 'io_malloc_at', but log a warning if the allocation fails.
+/* Same as `io_malloc_at', but log a warning if the allocation fails.
  * Useful for soft-fail I/O allocations during initialization. */
 FUNDEF ioaddr_t KCALL io_malloc_at_warn(ioport_t addr, iosize_t size, struct instance *__restrict owner);
 

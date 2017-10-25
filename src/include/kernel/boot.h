@@ -31,9 +31,9 @@ DECL_BEGIN
  * @param: arg:    The remaining argument text following the option name.
  * @return: true:  The argument was handled.
  * @return: false: The argument wasn't handled (When ambiguous, for other suitable options).
- * HINT: Define setup functions as 'ATTR_FREETEXT', as they are only called during early boot.
+ * HINT: Define setup functions as `ATTR_FREETEXT', as they are only called during early boot.
  * HINT: Set the setup function pointer to NULL to indicate an unsupported attribute.
- * WARNING: You may not store 'arg' (or a derived pointer) globally from an early setup function!
+ * WARNING: You may not store `arg' (or a derived pointer) globally from an early setup function!
  *          Early setup is executed _before_ the commandline is relocated to high-memory,
  *          meaning that argument pointers will change before the kernel enters the last phase of
  *          booting by entering userspace (meaning those pointers are no longer valid at runtime!).
@@ -41,9 +41,9 @@ DECL_BEGIN
 typedef bool (KCALL *setup_fun_t)(char *__restrict arg);
 
 struct setup_opt {
- char const *so_name; /*< [1..1][const] Option name (aka. setup prefix; e.g.: 'root=' for 'root=/dev/hda'). */
+ char const *so_name; /*< [1..1][const] Option name (aka. setup prefix; e.g.: `root=' for `root=/dev/hda'). */
  setup_fun_t so_func; /*< [0..1][const] Setup function. */
- u32         so_flag; /*< [const] Set of 'SETUP_*' */
+ u32         so_flag; /*< [const] Set of `SETUP_*' */
 };
 #define SETUP_ARG   0x00
 #define SETUP_NOARG 0x01
@@ -55,7 +55,7 @@ struct setup_opt {
  PRIVATE ATTR_USED ATTR_SECTION(section) \
  struct setup_opt const __optdecl##id = {__optname##id,fun,f}
 
-/* Define an option receiver for a prefix of 'opt_name'. */
+/* Define an option receiver for a prefix of `opt_name'. */
 #define DEFINE_SETUP(opt_name,fun) \
  PRIVATE ATTR_FREETEXT bool (KCALL fun)(char *__restrict arg); \
  __DEFINE_SETUP(".init.setup",opt_name,fun,fun,SETUP_ARG); \
@@ -94,7 +94,7 @@ DEFINE_EARLY_SETUP(name "=",set_##var) { \
 struct cmdline {
  char    *cl_text; /*< [0..cl_size] Fully processed kernel commandline.
                     *   NOTE: Individual argument are split by \0-characters, and
-                    *         the full commandline itself has a length of 'cl_size'.
+                    *         the full commandline itself has a length of `cl_size'.
                     *   NOTE: During early booting, this pointer is directed into
                     *         physical memory (up until the kernel's mman is fully initialized)
                     *         After that, the kernel's commandline is placed in virtual,
@@ -113,7 +113,7 @@ DATDEF struct cmdline const kernel_commandline;
 INTDEF INITCALL void KCALL commandline_initialize_parse(void);
 INTDEF INITCALL void KCALL commandline_initialize_repage(void);
 /* Called after early physical kernel memory has been initialized
- * (no virtual memory exists yet, but 'kmalloc(GFP_MEMORY)' already works) */
+ * (no virtual memory exists yet, but `kmalloc(GFP_MEMORY)' already works) */
 INTDEF INITCALL void KCALL commandline_initialize_early(void);
 /* Called after modules, scheduling and the filesystem have been initialized. */
 INTDEF INITCALL void KCALL commandline_initialize_later(void);
@@ -131,7 +131,7 @@ INTDEF INITCALL void KCALL commandline_initialize_later(void);
 #define BOOT_EMULATION_HASLOGPORT(x) ((x) != BOOT_EMULATION_REALHW)
 DATDEF u8  boot_emulation;         /*< The type of emulation that is hosting KOS. */
 DATDEF u16 boot_emulation_logport; /*< A port that ASCII strings may be written to and appear in some external log.
-                                    *  NOTE: Only valid when 'BOOT_EMULATION_HASLOGPORT(boot_emulation) == true' */
+                                    *  NOTE: Only valid when `BOOT_EMULATION_HASLOGPORT(boot_emulation) == true' */
 
 
 

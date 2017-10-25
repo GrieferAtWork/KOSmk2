@@ -147,12 +147,12 @@ __SYSDECL_BEGIN
 #   define F_DUPFD_CLOEXEC 1030 /*< Duplicate file descriptor with close-on-exit set. */
 #endif
 #ifdef __USE_KOS
-#   define F_SETFL_XCH  5163 /*< Same as 'F_SETFL', but return the old set of flags instead of '-EOK' upon success. */
+#   define F_SETFL_XCH  5163 /*< Same as 'F_SETFL', but return the old set of flags instead of `-EOK' upon success. */
 #endif
 
 #define FD_CLOEXEC   0x01 /*< FLAG: Close the descriptor on 'exec()'. */
 #ifdef __USE_KOS
-#define FD_CLOFORK   0x02 /*< FLAG: Close the descriptor during unsharing after 'fork()' (Similar to 'PROT_LOOSE' for memory). */
+#define FD_CLOFORK   0x02 /*< FLAG: Close the descriptor during unsharing after 'fork()' (Similar to `PROT_LOOSE' for memory). */
 #endif /* __USE_KOS */
 
 #ifndef F_RDLCK

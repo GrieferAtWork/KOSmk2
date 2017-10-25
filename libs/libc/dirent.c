@@ -112,7 +112,7 @@ read_again:
    libc_realloc_in_place(dirp,offsetof(DIR,d_inl));
    result = (struct dirent *)libc_malloc((size_t)error);
    if unlikely(!result) {
-    /* Prevent another attempt from calling 'realloc_in_place()' again. */
+    /* Prevent another attempt from calling `realloc_in_place()' again. */
     dirp->d_buf   = NULL;
     dirp->d_bufsz = 0;
     goto end;

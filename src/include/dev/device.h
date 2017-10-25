@@ -202,7 +202,7 @@ FUNDEF REF struct device *KCALL devns_lookup(struct devns *__restrict self, dev_
 /* Register a device for the given device ID 'id'.
  * NOTE: Attempting to re-register a device under the same id is a no-op.
  * NOTE: 'devns_insert_r' should be used if the given ID should be reserved first.
- * @return: -EOK:       The given device 'dev' is now registered under 'id'.
+ * @return: -EOK:       The given device `dev' is now registered under 'id'.
  * @return: -EEXIST:    Another device was already registered under the given 'id'.
  * @return: -ENOMEM:    Not enough available kernel memory.
  * @return: E_ISERR(*): A 'pdevns_added'-callback failed for some reason. */
@@ -210,7 +210,7 @@ FUNDEF errno_t KCALL devns_insert(struct devns *__restrict self,
                                   struct device *__restrict dev,
                                   dev_t id);
 
-/* Remove the given device 'dev' from the specified device namespace.
+/* Remove the given device `dev' from the specified device namespace.
  * NOTE: When 'release' is true, delete the associated major id when
  *       when this operation removes the last associated minor device. */
 FUNDEF bool KCALL devns_remove(struct devns *__restrict self,

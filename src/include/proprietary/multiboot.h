@@ -53,12 +53,12 @@ DECL_BEGIN
 #define MB_BOOTLOADER_MAGIC      0x2BADB002 /* This should be in %eax.  */
 #define MB_MOD_ALIGN             0x00001000 /* Alignment of multiboot modules.  */
 #define MB_INFO_ALIGN            0x00000004 /* Alignment of the multiboot info structure.  */
-/* Flags set in the 'flags' member of the multiboot header.  */
+/* Flags set in the `flags' member of the multiboot header.  */
 #define MB_PAGE_ALIGN            0x00000001 /* Align all boot modules on i386 page (4KB) boundaries.  */
 #define MB_MEMORY_INFO           0x00000002 /* Must pass memory information to OS.  */
 #define MB_VIDEO_MODE            0x00000004 /* Must pass video information to OS.  */
 #define MB_AOUT_KLUDGE           0x00010000 /* This flag indicates the use of the address fields in the header.  */
-/* Flags to be set in the 'flags' member of the multiboot info structure.  */
+/* Flags to be set in the `flags' member of the multiboot info structure.  */
 #define MB_INFO_MEMORY           0x00000001 /* is there basic lower/upper memory information? */
 #define MB_INFO_BOOTDEV          0x00000002 /* is there a boot device set? */
 #define MB_INFO_CMDLINE          0x00000004 /* is the command-line defined? */

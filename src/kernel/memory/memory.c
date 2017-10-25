@@ -255,7 +255,7 @@ page_available(ppage_t start, PAGE_ALIGNED size_t n_bytes) {
 
 
 
-/* Query page attributes, returning a set of 'PAGEATTR_*' */
+/* Query page attributes, returning a set of `PAGEATTR_*' */
 PUBLIC KPD pgattr_t KCALL
 page_query(PHYS void *start, size_t n_bytes) {
  ppage_t iter; size_t found = 0;
@@ -396,7 +396,7 @@ page_memalign(size_t alignment, size_t n_bytes,
   *       alignments as weak undefined behavior. */
  alignment = CEIL_ALIGN(alignment,PAGESIZE);
  n_bytes   = CEIL_ALIGN(n_bytes,PAGESIZE);
- /* Make sure that the alignment doesn't overflow when added to 'n_bytes' */
+ /* Make sure that the alignment doesn't overflow when added to `n_bytes' */
  if (__builtin_add_overflow(alignment,n_bytes,&total_size))
      return PAGE_ERROR;
 
@@ -450,7 +450,7 @@ scan_zone:
    if (page_avail < best_size) {
     best_page = iter;
     best_size = page_avail;
-    /* It can't get better than 'n_bytes' itself! */
+    /* It can't get better than `n_bytes' itself! */
     if (page_avail == n_bytes) break;
    }
   }

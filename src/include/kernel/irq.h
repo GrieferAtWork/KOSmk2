@@ -71,7 +71,7 @@ struct cpustate_e;
  *       A spurious interrupt was raised if it is up, in which case
  *       no EOI must be send.
  * NOTE: This function must be called at the start of any PIC hardware
- *       interrupt handler (aka. when 'IRQ_ISPIC(irq_t)' is true):
+ *       interrupt handler (aka. when `IRQ_ISPIC(irq_t)' is true):
  * >>
  * >> #define MY_INTNO  0x2e // Same behavior for 0x27 as well
  * >>
@@ -117,8 +117,8 @@ DATDEF struct spurious_pic irq_pic_spurious;
 
 
 /* Get/Set the mask of disabled interrupt lines.
- * >> 'IRQ_PIC1_STMASK()' disables irq_t: 0x20...0x27
- * >> 'IRQ_PIC2_STMASK()' disables irq_t: 0x28...0x2f
+ * >> `IRQ_PIC1_STMASK()' disables irq_t: 0x20...0x27
+ * >> `IRQ_PIC2_STMASK()' disables irq_t: 0x28...0x2f
  */
 #define IRQ_PIC1_GTMASK()   inb_p(PIC1_DATA)
 #define IRQ_PIC1_STMASK(m) outb_p(PIC1_DATA,m)
@@ -217,7 +217,7 @@ struct instance;
  * No additional handling is performed before this handler is called. */
 typedef struct {
  irq_t                i_num;     /*< Interrupt service routine number. */
- u8                   i_flags;   /*< Set of 'IDTFLAG_*|IDTTYPE_*'. */
+ u8                   i_flags;   /*< Set of `IDTFLAG_*|IDTTYPE_*'. */
  u16                  i_padding; /* ... */
  isr_fun_t            i_func;    /*< Interrupt handler function. */
  REF struct instance *i_owner;   /*< [1..1] Function owner. */
@@ -226,31 +226,31 @@ typedef struct {
 #define ISR_DEFAULT(id,func)      {id,IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE,0,func,THIS_INSTANCE}
 #define ISR_DEFAULT_DPL3(id,func) {id,IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(3),0,func,THIS_INSTANCE}
 
-/* Fill on 'i_flags' and 'i_func' using 'num'.
- * WARNING: The caller inherits a reference to 'handler->i_owner' */
+/* Fill on `i_flags' and `i_func' using `num'.
+ * WARNING: The caller inherits a reference to `handler->i_owner' */
 FUNDEF void KCALL irq_get(irq_t num, isr_t *__restrict handler);
 
-/* Install the interrupt service routine 'new_handle' in the current CPU,
+/* Install the interrupt service routine `new_handler' in the current CPU,
  * storing the old handler in '*old_handler' when non-NULL is passed.
- * @param: new_handler: (Required) The new IRQ handler. (NOTE: This function will create a reference to 'i_owner')
- * @param: old_handler: (Optional) The old IRQ handler. (NOTE: This function will return a reference to 'i_owner')
- * @param: mode:        A set of 'IRQ_SET_*'
+ * @param: new_handler: (Required) The new IRQ handler. (NOTE: This function will create a reference to `i_owner')
+ * @param: old_handler: (Optional) The old IRQ handler. (NOTE: This function will return a reference to `i_owner')
+ * @param: mode:        A set of `IRQ_SET_*'
  * @return: true:       Successfully installed the new interrupt handler.
- * @return: false:      The instance associated with 'new_handler' does not permit new references being created. */
+ * @return: false:      The instance associated with `new_handler' does not permit new references being created. */
 FUNDEF SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
                            REF isr_t *old_handler, int mode);
 #define IRQ_SET_QUICK   0x00 /*< Quickly install the given IRQ handler. */
 #define IRQ_SET_RELOAD  0x01 /*< When set, reload the IDT vector, thus safely activating the interrupt. */
-#define IRQ_SET_INHERIT 0x02 /*< Inherit a reference from 'new_handler->i_owner', thus never failing. */
+#define IRQ_SET_INHERIT 0x02 /*< Inherit a reference from `new_handler->i_owner', thus never failing. */
 
-/* Delete the custom interrupt handler for 'num', restoring the default/fallback handler. */
+/* Delete the custom interrupt handler for `num', restoring the default/fallback handler. */
 FUNDEF SAFE void KCALL irq_del(irq_t num, bool reload);
 
 
 
 
 
-/* Amount of 'struct idtentry' that make up a full IDT table. */
+/* Amount of `struct idtentry' that make up a full IDT table. */
 #define IDT_TABLESIZE 256
 
 #define IDTENTRY_OFFSETOF_OFF1  0
@@ -263,11 +263,11 @@ struct PACKED idtentry {
 union PACKED {
  u64 ie_data;
 struct PACKED {
- u16 ie_off1;  /*< Lower 16 bits of an 'irq_handler' pointer. */
- u16 ie_sel;   /*< Kernel code segment (always '__KERNEL_CS') */
+ u16 ie_off1;  /*< Lower 16 bits of an `irq_handler' pointer. */
+ u16 ie_sel;   /*< Kernel code segment (always `__KERNEL_CS') */
  u8  ie_zero;  /*< Always ZERO(0). */
- u8  ie_flags; /*< Set of 'IDTFLAG_*|IDTTYPE_*' */
- u16 ie_off2;  /*< Upper 16 bits of an 'irq_handler' pointer. */
+ u8  ie_flags; /*< Set of `IDTFLAG_*|IDTTYPE_*' */
+ u16 ie_off2;  /*< Upper 16 bits of an `irq_handler' pointer. */
 };};};
 
 #define IDTFLAG_PRESENT                 0x80 /*< Set to 0 for unused interrupts. */
@@ -410,8 +410,8 @@ INTDEF PERCPU struct IDT cpu_idt;
  * be called implemented from a higher-level language, such as C. */
 typedef void int_handler(void);
 
-/* Define an interrupt handler wrapper 'h_irq' that
- * calls an int_handler-compatible 'h_int' */
+/* Define an interrupt handler wrapper `h_irq' that
+ * calls an int_handler-compatible `h_int' */
 #define DEFINE_INT_HANDLER(h_irq,h_int) \
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
@@ -436,7 +436,7 @@ __INT_LEAVE \
  *       wrapper generated by 'DEFINE_EXC_HANDLER'. */
 typedef void FCALL exc_handler(struct cpustate *__restrict state);
 
-/* Define an exception handler wrapper 'h_irq' that
+/* Define an exception handler wrapper `h_irq' that
  * calls an exc_handler-compatible 'h_exc' */
 #define DEFINE_EXC_HANDLER(h_irq,h_exc) \
 void (ASMCALL h_irq)(void); __asm__( \
@@ -461,8 +461,8 @@ __INT_LEAVE \
 typedef struct cpustate *FCALL
 task_handler(struct cpustate *__restrict old_state);
 
-/* Define a task handler wrapper 'h_irq' that
- * calls an task_handler-compatible 'h_task' */
+/* Define a task handler wrapper `h_irq' that
+ * calls an task_handler-compatible `h_task' */
 #define DEFINE_TASK_HANDLER(h_irq,h_task) \
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
@@ -485,7 +485,6 @@ __INT_LEAVE \
  * such as PAGEFAULT and others.
  * >> The function may modify the passed state,
  *    which will be restored once it returns.
- * NOTE: The default IRQ handler 'irq_default' is compatible with this.
  * WARNING: The user must ensure that interrupts triggering
  *          an XCODE-handler _ALWAYS_ include the exc_code field!
  *          It may never be absent!
@@ -493,8 +492,8 @@ __INT_LEAVE \
 typedef void FCALL code_handler(struct cpustate_e *__restrict info);
 
 
-/* Define a task handler wrapper 'h_irq' that
- * calls an code_handler-compatible 'h_code' */
+/* Define a task handler wrapper `h_irq' that
+ * calls an code_handler-compatible `h_code' */
 #define DEFINE_CODE_HANDLER(h_irq,h_code) \
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \

@@ -91,7 +91,7 @@ L(    popl  -44(%esp)  /* Hacky way of shifting 'exc_code' into 'intno32' withou
 L(    jmp 1f                                                                  )
 L(INTERN_ENTRY(dirq_ncode)                                                    )
 L(    popl  -48(%esp)  /* Hacky way of shifting the interrupt number without polluting any registers. */)
-L(    pushl $0         /* Fill 'exc_code' with '0' by default. */             )
+L(    pushl $0         /* Fill 'exc_code' with `0' by default. */             )
 L(1:  __ASM_PUSH_SEGMENTS                                                     )
 L(    __ASM_PUSH_REGISTERS                                                    )
 L(    subl  $4, %esp   /* intno */                                            )
@@ -818,7 +818,7 @@ irq_setup(struct cpu *__restrict self) {
  *       which is later re-enabled as a fallback technology for
  *       implementing preemption.
  *       If we wouldn't do this, 'Unmapped PIC interrupt' warnings,
- *       as emit by 'irq_default' above may start flooding the terminal
+ *       as emit by `irq_default' above may start flooding the terminal
  *       until we've finally gotten around to setting up scheduling.
  *      (Which may actually take some time, as we initialize core
  *       modules, such as our ATA driver first, which in turn may

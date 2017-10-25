@@ -720,7 +720,7 @@ dentry_rehashsubs_unlocked(struct dentry *__restrict self) {
 }
 
 
-/* Find a new child directory entry for the given 'name'
+/* Find a new child directory entry for the given `name'
  * @return: NULL: Failed to find an entry. */
 LOCAL struct dentry *KCALL
 dentry_getsub_unlocked(struct dentry const *__restrict self,
@@ -752,7 +752,7 @@ dentry_getsub_unlocked(struct dentry const *__restrict self,
  return result;
 }
 
-/* Remove 'sub' from the given directory entry 'self'. */
+/* Remove 'sub' from the given directory entry `self'. */
 LOCAL void KCALL
 dentry_delsub_unlocked(struct dentry *__restrict self,
                        struct dentry *__restrict sub) {
@@ -779,7 +779,7 @@ dentry_delsub_unlocked(struct dentry *__restrict self,
 { (sub_node)->i_state |= (parent_node)->i_state&INODE_STATE_DONTCACHE; \
 }
 
-/* Allocate, add and return a new sub-entry 'name' to 'self'. */
+/* Allocate, add and return a new sub-entry `name' to `self'. */
 LOCAL REF struct dentry *KCALL
 dentry_addsub_unlocked(struct dentry *__restrict self,
                        struct dentryname const *__restrict name) {

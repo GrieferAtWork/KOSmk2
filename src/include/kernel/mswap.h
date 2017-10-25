@@ -37,9 +37,9 @@ struct mswappart {
  LIST_NODE(struct mswappart) mt_chain;       /*< [lock(:mt_swap->ms_lock)][SORT(ASCENDING(mt_start))]
                                               *  [.le_next[?]->mt_start >= mt_start+mt_size]
                                               *   Ordered, non-overlapping chain of used swap parts within
-                                              *   the swap device associated with ':mt_swap' */
+                                              *   the swap device associated with `:mt_swap' */
  PAGE_ALIGNED pos_t          mt_start;       /*< [lock(:mt_swap->ms_lock)][<= :mt_swap->ms_size-mt_size] Start disk/partition address
-                                              *   of swapped memory within the associated 'mt_swap'. */
+                                              *   of swapped memory within the associated `:mt_swap'. */
  PAGE_ALIGNED size_t         mt_size;        /*< [lock(:mt_swap->ms_lock)][!0][<= :mt_swap->ms_size] Amount of bytes used by this swap part. */
 };
 
@@ -47,27 +47,27 @@ struct mswap_ticket {
  /* NOTE: Swap tickets that had to be allocated dynamically are
   *       always allocated below 3Gb in the kernel page directory.
   *    >> Statically allocated tickets OTOH are allocated above 3Gb in shared memory.
-  * NOTE: When 'swapoff()' is used to deactivate a swap device, all memory
+  * NOTE: When `swapoff()' is used to deactivate a swap device, all memory
   *       currently residing within that device is moved to a different one.
-  *       During this process, 'mt_swap' of any existing ticket is updated
+  *       During this process, `mt_swap' of any existing ticket is updated
   *       to reflect the new device it will reside within after that point.
   */
  struct mswap                  *mt_swap;    /*< [lock(mswap_lock|mt_swap->ms_lock)]
                                              *   Swap device in which this ticket is allocated. */
- LIST_NODE(struct mswap_ticket) mt_tickets; /*< [lock(mt_swap->ms_lock)] Unordered list of tickets allocated within 'mt_swap'. */
+ LIST_NODE(struct mswap_ticket) mt_tickets; /*< [lock(mt_swap->ms_lock)] Unordered list of tickets allocated within `mt_swap'. */
 union{
  struct mswappart               mt_part0;   /*< First swap part of this ticket. */
- struct mscatter                mt_memory;  /*< Used by 'mswap_fallback' as temporary swap storage. */
+ struct mscatter                mt_memory;  /*< Used by `mswap_fallback' as temporary swap storage. */
 };};
 
-/* Append the given 'src' ticket to 'dst'
+/* Append the given `src' ticket to `dst'
  * @return: true:  Successfully appended the swap tickets.
  * @return: false: Not enough available memory to (re-)allocate control structures. */
 FUNDEF KPD bool KCALL mswap_ticket_cat(struct mswap_ticket *__restrict dst,
                                        struct mswap_ticket const *__restrict src);
 
-/* Split the given swap ticket 'src' at 'offset_from_src', storing
- * the higher half in 'dst' and updating 'src' to contain the lower half.
+/* Split the given swap ticket `src' at `offset_from_src', storing
+ * the higher half in `dst' and updating `src' to contain the lower half.
  * @return: true:  Successfully split the given ticket.
  * @return: false: Not enough available memory to (re-)allocate control structures. */
 FUNDEF KPD bool KCALL mswap_ticket_split_lo(struct mswap_ticket *__restrict dst,
@@ -85,9 +85,9 @@ struct mswap {
                                               *   Total amount of bytes available for swap storage. */
  LIST_HEAD(struct mswappart)    ms_parts;    /*< [lock(ms_lock)][0..1] Linked list of all swap parts. */
  PAGE_ALIGNED pos_t             ms_hintaddr; /*< [lock(ms_lock)] Lowest known address known to have unused memory. */
- struct mswappart             **ms_hinttick; /*< [lock(ms_lock)][0..1][1..1] Pointer to 'le_next' pointing to NULL, or the first part above 'ms_hintaddr'.
+ struct mswappart             **ms_hinttick; /*< [lock(ms_lock)][0..1][1..1] Pointer to `le_next' pointing to NULL, or the first part above `ms_hintaddr'.
                                               *   When allocating a new ticket, the amount of available memory at the hint address can
-                                              *   be determined by '(*ms_hinttick ? (*ms_hinttick)->mt_start : ms_size) - ms_hintaddr'. */
+                                              *   be determined by `(*ms_hinttick ? (*ms_hinttick)->mt_start : ms_size) - ms_hintaddr'. */
  LIST_HEAD(struct mswap_ticket) ms_tickets;  /*< [lock(ms_lock)][0..1] Unordered linked list of allocated tickets.
                                               *   This list is used to transfer allocated tickets to a different
                                               *   swap device if the user should decide to disable this one. */
@@ -98,7 +98,7 @@ DATDEF rwlock_t                mswap_lock; /*< Global lock for accessing availab
 DATDEF RING_HEAD(struct mswap) mswap_list; /*< [0..1][lock(mswap_lock)][owned] Ring of available swap devices
                                             *  (Points to the first swap device that should be used, or NULL if none are available). */
 
-/* A special, internal swap device that is never apart of 'mswap_list',
+/* A special, internal swap device that is never apart of `mswap_list',
  * but is used as temporary in-memory swap storage should the user decide
  * to disable a swap device still containing allocated swap tickets, when
  * there is either no remaining device to transfer tickets to, or no all
@@ -106,21 +106,21 @@ DATDEF RING_HEAD(struct mswap) mswap_list; /*< [0..1][lock(mswap_lock)][owned] R
  * >> In these cases, KOS will attempt to load swapped data back into memory,
  *    and store the not-really-swapped-anymore data in this special, internal device.
  * HINT: In the event that not enough physical memory is available to transfer all
- *       tickets of a swap device to memory, 'swapoff()' will fail with '-ENOMEM'.
+ *       tickets of a swap device to memory, `swapoff()' will fail with `-ENOMEM'.
  * WARNING: Do not attempt to fiddle with this device. - The only defined behavior
  *          when operating with this special device, is to compare its address
- *          against the 'mt_swap' pointer of an allocated ticket. */
+ *          against the `mt_swap' pointer of an allocated ticket. */
 DATDEF struct mswap mswap_fallback;
 
 
-/* Turn swapping using the given block-device 'dev' on/off.
- * The caller is responsible for holding a write-lock to 'mswap_lock'.
- * @param: flags:    Set of 'SWAP_FLAG_*' (from <sys/swap.h>; same as for the libc function 'swapon()')
+/* Turn swapping using the given block-device `dev' on/off.
+ * The caller is responsible for holding a write-lock to `mswap_lock'.
+ * @param: flags:    Set of `SWAP_FLAG_*' (from <sys/swap.h>; same as for the libc function `swapon()')
  * @return: -EOK:    Successfully turned swapping on/off for the given device.
- * @return: -EBUSY:  [mswapon_unlocked] The given 'dev' is already being used for swap.
- * @return: -ENOMEM: Not enough available memory to start swapping or, for 'mswapoff_unlocked()',
- *                   transfer all swap tickets that 'dev' was (and still is) storing.
- * @return: -EINVAL: [mswapoff_unlocked] The given 'dev' isn't used as a swap device. */
+ * @return: -EBUSY:  [mswapon_unlocked] The given `dev' is already being used for swap.
+ * @return: -ENOMEM: Not enough available memory to start swapping or, for `mswapoff_unlocked()',
+ *                   transfer all swap tickets that `dev' was (and still is) storing.
+ * @return: -EINVAL: [mswapoff_unlocked] The given `dev' isn't used as a swap device. */
 FUNDEF errno_t KCALL mswapon_unlocked(struct blkdev *__restrict dev, int flags);
 FUNDEF errno_t KCALL mswapoff_unlocked(struct blkdev *__restrict dev);
 
@@ -130,7 +130,7 @@ FUNDEF errno_t KCALL mswapoff_unlocked(struct blkdev *__restrict dev);
 LOCAL errno_t KCALL mswapon(struct blkdev *__restrict dev, int flags);
 LOCAL errno_t KCALL mswapoff(struct blkdev *__restrict dev);
 
-/* Swap core functionality: Unload/Reload memory described by 'ticket'
+/* Swap core functionality: Unload/Reload memory described by `ticket'
  * @return: -EOK:       Successfully (un|re)-loaded memory.
  * @return: -ENOMEM:    [mswap_unload] All swap partitions filled up or none are present.
  * @return: E_ISERR(*): Failed to un-/re-load memory for some reason. */
@@ -140,7 +140,7 @@ FUNDEF KPD errno_t KCALL mswap_reload(struct mswap_ticket const *__restrict tick
                                       struct mscatter const *__restrict scatter);
 
 /* Delete swap mappings associated with the given ticket.
- * (Same as 'mswap_reload', but without actually loading data) */
+ * (Same as `mswap_reload', but without actually loading data) */
 FUNDEF void KCALL mswap_delete(struct mswap_ticket const *__restrict ticket);
 
 

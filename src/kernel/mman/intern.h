@@ -72,7 +72,7 @@ INTDEF struct mregion_part *
 mregion_part_split_lo(struct mregion_part *__restrict part,
                       raddr_t split_addr);
 
-/* Ensure that a branch starts at the given 'start', potentially creating a split at 'start-1'.
+/* Ensure that a branch starts at the given `start', potentially creating a split at `start-1'.
  * >> This is done for the address begin/end to ensure that the
  *    memory manager is in a proper state before operations such
  *    as mprotect(), mmap(), mremap() and munmap()
@@ -84,12 +84,12 @@ mregion_part_split_lo(struct mregion_part *__restrict part,
 INTDEF errno_t KCALL mman_split_branch_unlocked(struct mman *__restrict self, PAGE_ALIGNED VIRT uintptr_t start);
 
 /* The opposite of 'mman_split_branch_unlocked':
- * Try to merge two branches at 'start' and 'start-1', so-long as
+ * Try to merge two branches at `start' and `start-1', so-long as
  * they reference the same region, or both contain unique regions.
  * >> that is regions not mapped anywhere else when 'mr_refcnt == 1'. */
 INTDEF bool KCALL mman_merge_branch_unlocked(struct mman *__restrict self, PAGE_ALIGNED VIRT uintptr_t start);
 
-/* Load the given address range found within 'self' into the memory core.
+/* Load the given address range found within `self' into the memory core.
  * @param: mode:        A set of 'MMAN_MCORE_*'
  * @param: did_remap:   Set to true when the branches from 'mspace' were remapped.
  * @return: * :         The amount of newly allocated core bytes.

@@ -153,7 +153,7 @@ FUNDEF errno_t KCALL schedule_work(struct job *__restrict work);
  *       as sleeping until the lowest 'abs_exectime' passes, as which point is
  *       is rescheduled just like any other thread that timed out, allowing it
  *       to then execute any that with an absolute point in time that has passed.
- * NOTE: In case the job was already scheduled ('-EALREADY' is returned),
+ * NOTE: In case the job was already scheduled (`-EALREADY' is returned),
  *       its execution time will be updated to 'MIN(*abstime,work->j_time)'
  * WARNING: Attempting to add a delay to a job with that was already scheduled
  *          using 'schedule_work()' is illegal and causes undefined behavior.

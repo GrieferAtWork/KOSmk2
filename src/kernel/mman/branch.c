@@ -123,7 +123,7 @@ mbranch_remap_unlocked(struct mbranch const *__restrict self,
    /* Only map in-core parts as present. */
    part_prot |= PDIR_ATTR_PRESENT;
    /* Map with write-access if that protection is required,
-    * or when COW isn't used when 'PROT_SHARED' is set, or
+    * or when COW isn't used when `PROT_SHARED' is set, or
     * when the part is only used by us! */
    if ((self->mb_prot&PROT_WRITE) &&
         /* real-only file-mappings are loaded into memory regions upon first write-access.
@@ -138,7 +138,7 @@ mbranch_remap_unlocked(struct mbranch const *__restrict self,
 #if 0 /* Due to lazy binding, this can't really be determined? */
    if (update_prot) {
     /* Simple case: Only needing to update permissions, we
-     *              can use one call to 'pdir_mprotect'
+     *              can use one call to `pdir_mprotect'
      *              since we're allowed to assume that the
      *              mapping already exists, as well as is
      *              mapped correctly. */

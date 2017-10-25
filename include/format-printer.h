@@ -49,7 +49,7 @@ __SYSDECL_BEGIN
 /* Callback functions prototypes provided to format functions.
  * NOTE: 'pformatprinter' usually returns the number of characters printed, but isn't required to.
  * @param: DATA:    The base address of a DATALEN bytes long character vector that should be printed.
- * @param: DATALEN: The amount of characters that should be printed, starting at 'data'.
+ * @param: DATALEN: The amount of characters that should be printed, starting at `data'.
  *                  Note that this is an exact value, meaning that a NUL-character appearing
  *                  before then should not terminate printing prematurely, but be printed as well.
  * @param: CLOSURE: The user-defined closure parameter passed alongside this function pointer.

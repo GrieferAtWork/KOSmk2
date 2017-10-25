@@ -61,7 +61,7 @@ struct modseg {
  maddr_t             ms_paddr;  /*< [const] Segment physical address (aka. real address in the effective address space). */
  size_t              ms_msize;  /*< [const][!0][>= ms_fsize] Segment memory size (fill diff with 'ms_fsize' with ZERO-bytes) */
  size_t              ms_fsize;  /*< [const] Segment file size (max amount of bytes to read from file) */
- u32                 ms_prot;   /*< [const] Segment protection (Set of 'PROT_*' from <sys/mman.h>) */
+ u32                 ms_prot;   /*< [const] Segment protection (Set of `PROT_*' from <sys/mman.h>) */
  u32                 ms_fill;   /*< [const] DWORD repeated to fill bss memory (NOTE: All four bytes of this should be equal!) */
  REF struct mregion *ms_region; /*< [0..1][lock(ms_rlock)][write(ONCE)]
                                  *  Pre-cached, mappable memory region for this segment.
@@ -130,7 +130,7 @@ struct moduleops {
   * @param: patcher:     The patching controller.
   * @return: -EOK:       Successfully patched the given module.
   * @return: -EFAULT:    An illegal pointer was encountered during relocations.
-  * @return: -ENOREL:    Failed to lookup a symbol ('patcher->p_dlsym' returned '0').
+  * @return: -ENOREL:    Failed to lookup a symbol ('patcher->p_dlsym' returned `0').
   * @return: E_ISERR(*): Failed to patch the module for some reason. */
  errno_t (KCALL *o_patch)(struct modpatch *__restrict patcher);
  /* [0..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
@@ -151,14 +151,14 @@ struct moduleops {
  /* [0..1] An optional operator that returns the pointed-to (real)
   * module, such as when executing shebang scripts.
   * NOTE: This operator may return '-ENOENT' or '-ENOEXEC' to indicate
-  *       that the associated module 'self' itself should be executed
+  *       that the associated module `self' itself should be executed
   *       when the ~real~ module could not be found, or is invalid.
   *    >> This behavior allows the implementation of weakly
   *       choosing binary to execute based on what actually exists,
   *       allowing for a theoretical module type that executes another
   *       binary if that file exists (NOTE: No such module type exists
   *       as of right now, but drivers are able to implement one)
-  *    >> This behavior is internally triggered only when 'self'
+  *    >> This behavior is internally triggered only when `self'
   *       does not have the 'MODFLAG_NOTABIN' flag set.
   * @return: * :         A new reference to the real module.
   * @return: -ENOENT:    The real module does not exist.
@@ -291,7 +291,7 @@ struct module {
  *       kernel-core module's binary file located at 'CONFIG_KERNEL_CORE_BIN',
  *       and return an open file stream to that file.
  *       For any other module, it immediately returns 'self->m_file'
- * WARNING: In the event that 'self' is the kernel, NULL may be
+ * WARNING: In the event that `self' is the kernel, NULL may be
  *          returned if the kernel's core binary couldn't be found. */
 FUNDEF SAFE struct file *KCALL module_file(struct module *__restrict self);
 
@@ -303,7 +303,7 @@ FUNDEF SAFE void KCALL module_destroy(struct module *__restrict self);
 
 #define module_new(type_size) ((struct module *)kmalloc(type_size,GFP_SHARED|GFP_CALLOC))
 
-/* Perform final initialization of 'self' using 'fp'
+/* Perform final initialization of `self' using `fp'
  * NOTE: This function should be called before a 'modloader_callback' returns.
  * During this phase, the following members are initialized:
  *  - m_name (Set to '&fp->f_dent->d_name' when previously NULL)
@@ -524,7 +524,7 @@ struct kinstance {
 /* Default instance flags for drivers:
  * @flag: INSTANCE_FLAG_KERNEL:  Drivers run in kernel space.
  * @flag: INSTANCE_FLAG_NOUNMAP: Unlike user-space applications, drivers must not accidentally be
- *                               unloaded using 'munmap()'; instead, 'kernel_delmod()' must be used.
+ *                               unloaded using `munmap()'; instead, 'kernel_delmod()' must be used.
  * @flag: INSTANCE_FLAG_NOREMAP: For similar reasons as 'INSTANCE_FLAG_NOUNMAP',
  *                               don't accidentally 'remap()' drivers. */
 #define INSTANCE_FLAG_DRIVER    \
@@ -542,7 +542,7 @@ struct instanceset {
  atomic_rwlock_t        is_lock; /*< Lock for this instance set. */
  size_t                 is_setc; /*< [lock(is_lock)] Amount of instances in the vector below. */
  WEAK struct instance **is_setv; /*< [1..1][0..is_setc][lock(is_lock)] Vector of instances.
-                                  *  (These are all weak aliases; s.a.: documentation in 'struct instance') */
+                                  *  (These are all weak aliases; s.a.: documentation in `struct instance') */
 };
 #define instanceset_reading(x)      atomic_rwlock_reading(&(x)->is_lock)
 #define instanceset_writing(x)      atomic_rwlock_writing(&(x)->is_lock)
@@ -576,7 +576,7 @@ struct instanceset {
  * NOTE: For all of these, the caller must also be holding the appropriate lock!
  * NOTE: Instance sets are ordered, in that instances added before others
  *       are also enumerated by 'INSTANCESET_FOREACH()' before later ones.
- * NOTE: 'instanceset_insert()' requires the given 'inst' to not be apart of the set.
+ * NOTE: 'instanceset_insert()' requires the given `inst' to not be apart of the set.
  * @assume(!instanceset_contains(self,inst)); [instanceset_insert]
  * @return: true:   The operation completed successfully.
  * @return: false: [instanceset_insert] Not enough available memory.
@@ -626,9 +626,9 @@ struct instance {
   * NOTE: All of these are weakly referenced, meaning that
   *       links are deleted by instances as they are destroyed. */
  struct instanceset i_used;   /*< The set of instances that uses this one (aka. that this instance is a dependency of).
-                               *  HINT: 'self' is apart of the 'i_deps' set of each of these. */
+                               *  HINT: `self' is apart of the 'i_deps' set of each of these. */
  struct instanceset i_deps;   /*< The set of instances that this one depends on (aka. that are used by this instance).
-                               *  HINT: 'self' is apart of the 'i_used' set of each of these. */
+                               *  HINT: `self' is apart of the 'i_used' set of each of these. */
  void              *i_temp;   /*< [lock(:struct mman::m_lock)] Temporary pointer used during fork(). */
  u32                i_flags;  /*< Instance flags. */
  struct kinstance   i_driver; /*< Kernel module data (Only allocated for driver modules). */
@@ -650,9 +650,9 @@ FUNDEF SAFE void KCALL instance_destroy_weak(struct instance *__restrict self);
 LOCAL WUNUSED bool KCALL _instance_tryincref(struct instance *__restrict self);
 LOCAL WUNUSED bool KCALL _instance_incref(struct instance *__restrict self);
 
-/* Add the given 'dependency' as a dependency of 'self',
- * consequently also adding 'self' as a user of 'dependency'.
- * NOTE: This function is a no-op when 'dependency' already was a dependency of 'self'.
+/* Add the given 'dependency' as a dependency of `self',
+ * consequently also adding `self' as a user of 'dependency'.
+ * NOTE: This function is a no-op when 'dependency' already was a dependency of `self'.
  * @return: true:  Successfully added both links.
  * @return: false: Not enough available memory. */
 FUNDEF SAFE bool KCALL
@@ -667,7 +667,7 @@ instance_add_dependency(struct instance *__restrict self,
 FUNDEF SAFE USER void *KCALL instance_dlsym(struct instance *__restrict self, char const *__restrict name, u32 hash);
 
 /* Create a new uninitialized instance from the given module.
- * Once done, the caller should ensure that all memory regions from 'mod'
+ * Once done, the caller should ensure that all memory regions from `mod'
  * are loaded, before filling in 'i_base' (HINT: use 'mman_findspace_unlocked')
  * and calling 'mman_mmap_instance_unlocked' to map the instance into some
  * address space.
@@ -675,8 +675,8 @@ FUNDEF SAFE USER void *KCALL instance_dlsym(struct instance *__restrict self, ch
  *   - i_base (Use 'mman_findspace_unlocked')
  * @param: flags: A set of 'INSTANCE_FLAG_*', describing
  *                type and features of the instance.
- * @return: * :   A new reference to an instance of 'mod',
- *                supporting features described by 'flags'.
+ * @return: * :   A new reference to an instance of `mod',
+ *                supporting features described by `flags'.
  * @return: NULL: Not enough available memory. */
 FUNDEF SAFE REF struct instance *KCALL instance_new(struct module *__restrict mod, u32 flags);
 #define instance_new_user(mod)   instance_new(mod,INSTANCE_FLAG_NORMAL)
@@ -690,12 +690,12 @@ FUNDEF SAFE REF struct instance *KCALL instance_new(struct module *__restrict mo
  *    the lifetime of a driver instance loaded into the kernel.
  * NOTE: 'instance_callfini' is called at the beginning of generic instance
  *        termination, before any additional resource classes registered using
- *       'inst' will manually be deleted. */
+ *       `inst' will manually be deleted. */
 FUNDEF SAFE void KCALL instance_callinit(struct instance *__restrict self);
 FUNDEF SAFE void KCALL instance_callfini(struct instance *__restrict self);
 
 /* mman notification used for tracking instance mappings in branches.
- * @param: closure: The 'struct instance' object associated with the instance itself. */
+ * @param: closure: The `struct instance' object associated with the instance itself. */
 FUNDEF ssize_t KCALL instance_mnotify(unsigned int type, void *__restrict closure,
                                       struct mman *mm, ppage_t addr, size_t size);
 
@@ -714,7 +714,7 @@ DATDEF struct module   __this_module;
  * @param: mode:     A set of 'INSMOD_*'
  * @param: cmdline:  A user-space pointer to the commandline
  *                   to-be used, or NULL if none is given.
- * @return: * :      A new reference to the (now loaded + initialized) instance of 'mod'.
+ * @return: * :      A new reference to the (now loaded + initialized) instance of `mod'.
  *             NOTE: When the 'INSMOD_SECONDARY' flag is given and the given module
  *                   was already loaded, it will be loaded again, and a reference
  *                   to the newly loaded module is returned.
@@ -737,7 +737,7 @@ DATDEF struct module   __this_module;
  *                   started unloading itself, meaning that the 'INSTANCE_FLAG_UNLOAD'
  *                   flag may have already been set.
  * @return: -EINTR:   The calling thread was interrupted.
- * @return: -EEXIST: [INSMOD_NORMAL] The given module 'mod' has already been loaded.
+ * @return: -EEXIST: [INSMOD_NORMAL] The given module `mod' has already been loaded.
  *             NOTE:  If this isn't your intended behavior, consider passing different flags.
  * @return: -EPERM:  [INSMOD_REUSE]  The module is already loaded, but is currently being unloaded.
  * @return: -ENOMEM: Not enough available memory. */
@@ -745,25 +745,25 @@ FUNDEF SAFE REF struct instance *KCALL
 kernel_insmod(struct module *__restrict mod,
               USER char const *cmdline,
               u32 mode);
-#define INSMOD_NORMAL    0x00000000 /*< In the even that 'mod' has already been loaded, fail by returning '-EEXIST'. */
-#define INSMOD_REUSE     0x00000001 /*< In the even that 'mod' has already been loaded, return a reference to the existing instance. */
-#define INSMOD_SECONDARY 0x00000002 /*< In the even that 'mod' has already been loaded, create and return a secondary instance. */
+#define INSMOD_NORMAL    0x00000000 /*< In the even that `mod' has already been loaded, fail by returning '-EEXIST'. */
+#define INSMOD_REUSE     0x00000001 /*< In the even that `mod' has already been loaded, return a reference to the existing instance. */
+#define INSMOD_SECONDARY 0x00000002 /*< In the even that `mod' has already been loaded, create and return a secondary instance. */
 #define INSMOD_NOINIT    0x00010000 /*< Do not execute initializers. */
 
 LOCAL SAFE REF struct instance *KCALL kernel_insmod_f(struct file *__restrict fp, HOST char const *cmdline, u32 mode);
 LOCAL SAFE REF struct instance *KCALL kernel_insmod_s(HOST char const *__restrict abs_filename, HOST char const *cmdline, u32 mode);
 
 
-/* Return a reference to some loaded instance of 'mod', or NULL if none exists. */
+/* Return a reference to some loaded instance of `mod', or NULL if none exists. */
 FUNDEF SAFE REF struct instance *KCALL kernel_getmod(struct module *__restrict mod);
 
 /* Unload a given module from kernel-space.
  * NOTE: The process of unloading kernel modules is
  *       somewhat more complicated that the reverse.
- * NOTE: If the given instance 'inst' is that of the caller,
+ * NOTE: If the given instance `inst' is that of the caller,
  *       and the module could successfully be deleted, control
  *       will never return unless an error occurred.
- * WARNING: 'kernel_delmod' will drop one reference from the given 'inst'
+ * WARNING: 'kernel_delmod' will drop one reference from the given `inst'
  *           upon success; that being a requirement for enabling safe
  *           reference tracking by the caller until they deem the module
  *           safe for unloading.
@@ -809,7 +809,7 @@ FUNDEF SAFE ssize_t KCALL kernel_delmod_m(struct module *__restrict mod, u32 mod
                                       *  so creates unresolved references in other loaded module instances.
                                       *  >> I can literally not think of any situation where this flag is a good idea... */
 
-/* Mask used to modulate 'mode' when recursively
+/* Mask used to modulate `mode' when recursively
  * deleting dependencies (s.a.: 'DELMOD_DELDEP'). */
 #define DELMOD_DELDEP_MASK  \
   (DELMOD_BLOCK|DELMOD_DELDEP|\

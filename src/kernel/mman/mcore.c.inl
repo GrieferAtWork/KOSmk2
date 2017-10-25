@@ -544,7 +544,7 @@ err_mapregion:
 
   /* Simply replace the  */
   assert(region == self->mb_region);
-  /* Inherit old reference into 'region' (dropped below) */
+  /* Inherit old reference into `region' (dropped below) */
   /* Inherit new reference from 'mapregion' (Kept valid due to caller-held lock to 'mspace->m_lock') */
   self->mb_region = mapregion;
 
@@ -592,7 +592,7 @@ err_mapregion:
 
   /* Try to merge the mapped guard region with neighbor. */
   if (mman_merge_branch_unlocked(mspace,(uintptr_t)merge_location)) {
-   /* The branch layout has changed. and 'self' may no longer be valid.
+   /* The branch layout has changed. and `self' may no longer be valid.
     * >> Instead, we must opt out and tell the caller that the memory layout has
     *    changed, which will cause them to reload data before calling us again. */
    *did_remap = true;
@@ -831,7 +831,7 @@ err_part_copy_custom:
      /* Replace 'central_branch' in the ordered chain with 'copy_branch' */
      LIST_INSERT_REPLACE(central_branch,copy_branch,mb_order);
      /* NOTE: There is a chance that 'central_branch == self', and because
-      *       of that, we may no longer access 'self' in any way! */
+      *       of that, we may no longer access `self' in any way! */
      assertf(central_branch->mb_region == region,
              "Miss-matching regions at %p in %p...%p (%p != %p)",
              copy_branch_min,

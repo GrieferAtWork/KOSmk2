@@ -327,10 +327,10 @@ LONG_PRINTER(vinfo_printer) {
  if (temp < 0) memset(buffer,0,sizeof(buffer));
  /* Format options:
   *    %%: Emit a '%' character.
-  *    %f: Source file name. (Or '???')
-  *    %l: Source line number (1-based). (Or '0')
-  *    %c: Source column offset (1-based). (Or '0')
-  *    %n: Nearest symbol name. (Or '???')
+  *    %f: Source file name. (Or `"???"')
+  *    %l: Source line number (1-based). (Or `"0"')
+  *    %c: Source column offset (1-based). (Or `"0"')
+  *    %n: Nearest symbol name. (Or `"???"')
   *    %<: Next lower address. (Or 0)
   *    %>: Next greater address. (Or 0)
   *    %p: The requested address.

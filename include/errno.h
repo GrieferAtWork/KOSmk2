@@ -380,9 +380,9 @@ __NAMESPACE_INT_END
  *       itself.
  */
 #if ((0-__EMAX) & 0xffffffff) < __ERRNO_THRESHOLD
-#   error "'__ERRNO_THRESHOLD' is too large"
+#   error "`__ERRNO_THRESHOLD' is too large"
 #elif (((0-(4096-1)) & 0xffffffff) > __ERRNO_THRESHOLD)
-#   error "'__ERRNO_THRESHOLD' is too small"
+#   error "`__ERRNO_THRESHOLD' is too small"
 #endif
 
 /* Helper macros for errors in kernel-space. */

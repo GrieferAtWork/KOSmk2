@@ -193,7 +193,7 @@ FUNDEF ssize_t KCALL iobuffer_unwrite(struct iobuffer *__restrict self, size_t m
  * @param: off: [kiobuf_rseek][off < 0]: Call 'iobuffer_unread' to move the r-pointer backwards (return the amount of unread bytes).
  *              [kiobuf_rseek][off > 0]: Call 'iobuffer_read+IO_SKIP' to move the r-pointer forwards (uses 'IO_BLOCKNONE'; return the amount of skipped bytes).
  *              [kiobuf_wseek][off < 0]: Call 'iobuffer_unwrite' to move the w-pointer backwards (return the amount of unwritten bytes).
- *              [kiobuf_wseek][off > 0]: return '0'.
+ *              [kiobuf_wseek][off > 0]: return `0'.
  * @return: * :     See above.
  * @return: -EINTR: The calling thread was interrupted. */
 #ifdef __INTELLISENSE__

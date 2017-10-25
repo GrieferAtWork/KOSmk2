@@ -214,7 +214,7 @@ got_inst_noload:
  }
 
  if (!(flags&RTLD_NOINIT)) {
-  /* Call initializers on 'inst' and all
+  /* Call initializers on `inst' and all
    * dependencies that don't have 'DID_INIT' set.
    * >> Just like in all other places, we need the system call to
    *    return to user-space by executing a long list of custom
@@ -234,7 +234,7 @@ SYSCALL_DEFINE2(xdlopen,USER char *,name,int,flags) {
  struct dentryname dname; int state;
  REF struct module *mod; void *result;
  task_crit();
- /* Copy 'name' from userspace */
+ /* Copy `name' from userspace */
  dname.dn_name = ACQUIRE_FS_STRING(name,&dname.dn_size,&state);
  if (E_ISERR(dname.dn_name)) { result = E_PTR(E_GTERR(dname.dn_name)); goto end; }
  dentryname_loadhash(&dname);

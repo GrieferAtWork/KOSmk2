@@ -45,7 +45,7 @@ struct task;
 
 #ifndef __rdmode_t_defined
 #define __rdmode_t_defined 1
-typedef int rdmode_t;   /* readdir-mode (One of 'FILE_READDIR_*') */
+typedef int rdmode_t;   /* readdir-mode (One of `FILE_READDIR_*') */
 #endif
 
 #define FD_MASK      0x03 /*< Mask of file descriptor flags stored alongside the pointer to 'fdops' ('FD_CLOEXEC', 'FD_CLOFORK', etc...). */
@@ -188,7 +188,7 @@ FUNDEF SAFE WUNUSED REF struct mman *KCALL fdman_get_mman(struct fdman *__restri
 /* Set/Delete a file descriptor.
  * NOTE: 'fdman_set' will overwrite existing descriptors.
  * @return: -EOK:     Successfully set/deleted the given 'no'.
- * @return: -EINVAL:  'fp' is incompatible with the slot described by 'no' (Special 'AT_FD*' slots)
+ * @return: -EINVAL:  `fp' is incompatible with the slot described by 'no' (Special 'AT_FD*' slots)
  * @return: -EBADF:  [fdman_set] The given 'no' was too high.
  * @return: -EBADF:  [fdman_del] The given 'no' was not in use.
  * @return: -ENFILE:  The given file descriptor number is too large.
@@ -204,7 +204,7 @@ FUNDEF SAFE struct fd KCALL fdman_del_unlocked(struct fdman *__restrict self, in
  * Therefor, automatically re-using them could cause unexpected behavior. */
 #define FDMAN_PUT_RESCAN_START 3
 
-/* Insert 'fp' into the fd manager, choosing the next greater,
+/* Insert `fp' into the fd manager, choosing the next greater,
  * free descriptor number after that chosen during the last call
  * to either 'fdman_put()' or 'fdman_put_nearby()' (starting at ZERO(0)).
  * If attempting to use that greater number would require the

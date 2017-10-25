@@ -137,7 +137,7 @@ struct elf_module {
  * WARNING: This function only considers in-file sizes, meaning
  *          that virtual (aka. '.bss') memory is not considered
  *          apart of segment data.
- * @return: ELF_OFFSETOF_INVALID: An unmapped address was given ('*max_bytes' is set to '0') */
+ * @return: ELF_OFFSETOF_INVALID: An unmapped address was given ('*max_bytes' is set to `0') */
 PRIVATE pos_t KCALL
 elf_module_offsetof(struct elf_module *__restrict self,
                     maddr_t addr, size_t *__restrict max_bytes);

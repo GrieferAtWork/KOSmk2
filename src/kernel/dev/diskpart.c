@@ -118,7 +118,7 @@ blkdev_mkpart(struct blkdev *__restrict self, blkaddr_t start,
                        self->bd_device.d_node.i_owner);
  if (E_ISERR(error)) goto err2;
 
- /* Add the device as a sub-partition of 'self'. */
+ /* Add the device as a sub-partition of `self'. */
  atomic_rwlock_write(&self->bd_partlock);
  ppart = &self->bd_partitions;
  while ((part = *ppart) != NULL &&

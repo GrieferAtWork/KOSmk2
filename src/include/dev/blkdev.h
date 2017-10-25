@@ -182,7 +182,7 @@ DATDEF WEAK LIST_HEAD(struct blkdev) loopdevs_list; /*< [0..1][lock(loopdevs_loc
 FUNDEF struct blkdev *KCALL blkdev_cinit(struct blkdev *self);
 
 
-/* Create and register a new loopback block device, looping against 'fp'.
+/* Create and register a new loopback block device, looping against `fp'.
  * NOTE: The device is created with a weak binding, meaning that
  *       that when being returned to the caller, they inherit one
  *       reference that, once dropped, will cause the loopback
@@ -190,11 +190,11 @@ FUNDEF struct blkdev *KCALL blkdev_cinit(struct blkdev *self);
  *      (when devfs is loaded).
  * @return: * :         A reference to the newly created block device.
  * @return: -ENOMEM:    Not enough available memory.
- * @return: -EPERM:     The owner instance of the INode opened by 'fp' doesn't allow new references.
+ * @return: -EPERM:     The owner instance of the INode opened by `fp' doesn't allow new references.
  * @return: E_ISERR(*): Failed to create/register the device for some reason. */
 FUNDEF REF struct blkdev *KCALL blkdev_newloop(struct file *__restrict fp);
 /* Same as 'blkdev_newloop', but return a reference to an existing
- * device if one is known to exist for the the INode of 'fp'.
+ * device if one is known to exist for the the INode of `fp'.
  * NOTE: Really, you should always use this function, rather than 'blkdev_newloop()' */
 FUNDEF REF struct blkdev *KCALL blkdev_getloop(struct file *__restrict fp);
 /* Find and return a reference to the first loopback device
@@ -239,7 +239,7 @@ LOCAL errno_t KCALL blkdev_writeall(struct blkdev *__restrict self, pos_t offset
  * @return: E_ISERR(*): Failed to write data for some reason. */
 FUNDEF errno_t KCALL blkdev_sync(struct blkdev *__restrict self);
 
-/* Find the first partition of 'self' matching '(return->dp_device.bd_system & mask) == type'
+/* Find the first partition of `self' matching '(return->dp_device.bd_system & mask) == type'
  * NOTE: In the event that it was impossible to acquire a reference to a matching
  *       partition ('DISKPART_TRYINCREF()' failed), the partition is considered not to
  *       match the given requirements, meaning that the next match, or NULL will be returned.
@@ -280,8 +280,8 @@ struct diskpart {
 #define DISKPART_ID(self) ((MINOR((self)->dp_device.bd_device.d_id)- \
                             MINOR((self)->dp_ref->bd_device.d_id))-1)
 
-/* Create and return a new, unregistered partition within 'self'.
- * NOTE: When 'self' is also a partition device (BLKDEV_ISPART(self) == true),
+/* Create and return a new, unregistered partition within `self'.
+ * NOTE: When `self' is also a partition device (BLKDEV_ISPART(self) == true),
  *       the partition is created within the actual underlying block device.
  * NOTE: Partition start & size are automatically clamped to the limitations
  *       of the underlying block-device, and when out-of-bounds, an empty
@@ -305,8 +305,8 @@ struct diskpart {
  *             NOTE: Since the partition is also allocate within the block-device namespace,
  *                   the caller is safe to decref() this pointer without needing to do
  *                   anything else to finalize its setup.
- * @return: -EEXIST: The given block-device 'self' already contained a partition at 'partid'
- * @return: -EPERM:  The module instance associated with 'self' doesn't permit new references being created.
+ * @return: -EEXIST: The given block-device `self' already contained a partition at 'partid'
+ * @return: -EPERM:  The module instance associated with `self' doesn't permit new references being created.
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF SAFE REF struct diskpart *KCALL
 blkdev_mkpart(struct blkdev *__restrict self, blkaddr_t start,
@@ -422,10 +422,10 @@ FUNDEF SAFE bool KCALL blkdev_delautopart(struct autopart *__restrict self);
 
 /* Automatically create a superblock for the given block-device.
  * @param: name:        The name of the filesystem type to mount, or NULL to use auto-mounting.
- * @param: namelen:     The length of 'name' is characters (Ignored when 'name' is NULL).
- * @return: * :         A new reference to the (newly created) filesystem, now connected to 'self'.
- * @return: -EINVAL:   [name == NULL] The given 'self' contains an invalid, or unknown filesystem
- *                     [name != NULL] The given device 'self' cannot be mounted as filesystem type 'name'.
+ * @param: namelen:     The length of `name' is characters (Ignored when `name' is NULL).
+ * @return: * :         A new reference to the (newly created) filesystem, now connected to `self'.
+ * @return: -EINVAL:   [name == NULL] The given `self' contains an invalid, or unknown filesystem
+ *                     [name != NULL] The given device `self' cannot be mounted as filesystem type `name'.
  * @return: -ENODEV:   [name != NULL] Unknown filesystem type.
  * @return: -ENOMEM:    Not enough available kernel memory.
  * @return: E_ISERR(*): Failed to mount the block device for some reason. */
@@ -435,12 +435,12 @@ blkdev_mksuper(struct blkdev *__restrict self,
 
 
 
-/* Try to create a filesystem superblock that using the given block-device 'dev'.
+/* Try to create a filesystem superblock that using the given block-device `dev'.
  * @param: data:        A user-space data control block passed to 'sys_mount()', or NULL when not given.
  * @param: flags:       A set of 'MS_*', as found in <sys/mount.h>
- * @param: devname:     The name of 'dev' or NULL when not given.
- * @return: * :         A reference to the (newly created) filesystem, now connected to 'self'.
- * @return: -EINVAL:    The given device 'self' cannot be mounted with the implementer's filesystem type.
+ * @param: devname:     The name of `dev' or NULL when not given.
+ * @return: * :         A reference to the (newly created) filesystem, now connected to `self'.
+ * @return: -EINVAL:    The given device `self' cannot be mounted with the implementer's filesystem type.
  * @return: -ENOMEM:    Not enough available kernel memory.
  * @return: E_ISERR(*): Failed to create the filesystem for some reason. */
 typedef SAFE REF struct superblock *(KCALL *fstype_callback)(struct blkdev *__restrict dev, u32 flags,
@@ -455,7 +455,7 @@ struct fstype {
                                         *          should be executed to create a filesystem driver for a block-device. */
  fstype_callback           f_callback; /*< [1..1][const] Automatic partitioning callback. */
 #define FSTYPE_NORMAL      0x00000000  /*< A regular filesystem type used for generating mounting points of block-devices. */
-#define FSTYPE_NODEV       0x00000001  /*< When set, the 'dev' argument passed to 'f_callback' is allowed to be NULL.
+#define FSTYPE_NODEV       0x00000001  /*< When set, the `dev' argument passed to 'f_callback' is allowed to be NULL.
                                         *  NOTE: When set, 'f_sysid' is usually 'BLKSYS_EXPLICIT', with an example being 'procfs'. */
 #define FSTYPE_HIDDEN      0x40000000  /*< Don't enumerate the filesystem type in '/proc/filesystems'. */
 #define FSTYPE_SINGLETON   0x80000000  /*< The filesystem exists as a singleton and flags such as RO should not be applied. */

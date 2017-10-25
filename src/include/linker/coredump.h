@@ -34,7 +34,7 @@ struct instance;
 struct ucontext;
 struct __siginfo_struct;
 
-/* Generate and write a coredump of user-defined format to 'fp'.
+/* Generate and write a coredump of user-defined format to `fp'.
  * HINT: This function is executed in the context of the kernel page
  *       directory, as well as while holding a write-lock on 'VM'
  * @param: fp:          A file opened for writing, to which data should be dumped.
@@ -44,7 +44,7 @@ struct __siginfo_struct;
  * @param: reason:      A 'siginfo_t' structure describing the reason of a dump caused by a signal.
  * @param: flags:       A set of 'COREDUMP_FLAG_*'
  * @param: closure:     The closure argument stored in the associated 'coreformat'.
- * @return: -EOK:       The coredump was successfully written to 'fp'
+ * @return: -EOK:       The coredump was successfully written to `fp'
  * @return: E_ISERR(*): Failed to write the dump for some reason. */
 typedef KPD errno_t (KCALL *coreformat_callback)(struct file *__restrict fp, struct mman *__restrict vm,
                                                  struct task *__restrict thread, struct ucontext *__restrict state,

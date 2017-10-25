@@ -403,7 +403,7 @@ vnode_mknod(struct inode *__restrict dir_node,
  } else {
   REF struct vdev *weak;
   assertf(DEVICE_ISBLK(dev) || DEVICE_ISCHR(dev),"Invalid device");
-  /* Create weakly aliasing proxy node, holding a weak reference to 'dev' */
+  /* Create weakly aliasing proxy node, holding a weak reference to `dev' */
   weak = (REF struct vdev *)inode_new(sizeof(struct vdev));
   if unlikely(!weak) return E_PTR(-ENOMEM);
   weak->v_node.i_ops = &vdev_ops;

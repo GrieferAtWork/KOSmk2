@@ -1310,7 +1310,7 @@ mount_make_superblock(USER char const *dev_name,
  if (!type) goto automount;
 
  { char *host_type; size_t typelen; int state;
-   /* Copy 'type' to kernel-space. */
+   /* Copy `type' to kernel-space. */
    host_type = ACQUIRE_FS_STRING(type,&typelen,&state);
    if (E_ISERR(host_type)) return E_PTR(E_GTERR(host_type));
    error = rwlock_read(&fstype_lock);

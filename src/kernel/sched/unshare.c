@@ -152,7 +152,7 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
    * while replacing all references to them in the new one. */
   pdst = &nm->m_inst;
   assert(!*pdst);
-  /* Must check if there is still a map, in case _everything_ was marked with 'PROT_LOOSE' */
+  /* Must check if there is still a map, in case _everything_ was marked with `PROT_LOOSE' */
   if likely(nm->m_map) MMAN_FOREACH_INST(iter,om) {
    struct mbranch *branch;
    assertf(!INSTANCE_INKERNEL(iter),
@@ -178,7 +178,7 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
    }
 
    if unlikely(!inst_copy->i_branch) {
-    /* Shouldn't happen, but could if a module memory is re-mapped with 'PROT_LOOSE',
+    /* Shouldn't happen, but could if a module memory is re-mapped with `PROT_LOOSE',
      * causing it not to be copied above and leading to the module instance itself
      * being dropped during the process of unsharing. */
     kfree(inst_copy);
@@ -365,7 +365,7 @@ again:
   STACK_DECREF(old_descr);
   assert(!new_descr->s_refcnt);
   if unlikely(!new_descr->s_branch) {
-   /* Again: This can happen when the caller's stack was marked as 'PROT_LOOSE'.
+   /* Again: This can happen when the caller's stack was marked as `PROT_LOOSE'.
     *     >> In this case, the task will be left without a stack. */
    self->t_ustack = NULL;
    free(new_descr);
@@ -375,12 +375,12 @@ again:
   }
  }
 
- /* Remove 'self' from the chain of tasks in the old memory manager. */
+ /* Remove `self' from the chain of tasks in the old memory manager. */
  atomic_rwlock_write(&om->m_tasks_lock);
  LIST_REMOVE(self,t_mman_tasks);
  atomic_rwlock_endwrite(&om->m_tasks_lock);
 
- /* Set 'self' as the sole user of 'mm_clone'. */
+ /* Set `self' as the sole user of 'mm_clone'. */
  nm->m_tasks                 = self;
  self->t_mman_tasks.le_pself = &nm->m_tasks;
  self->t_mman_tasks.le_next  = NULL;

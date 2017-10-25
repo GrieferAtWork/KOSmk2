@@ -59,7 +59,7 @@ typedef __mode_t mode_t;
                             *        can be set like any other protection. */
 #ifdef __KERNEL__
 #define PROT_NOUSER   0x40 /*< Map memory as inaccessible to user-space.
-                            *  WARNING: Not fully enforced for addresses below 'KERNEL_BASE'. */
+                            *  WARNING: Not fully enforced for addresses below `KERNEL_BASE'. */
 #define PROT_CLEAN    0x80 /*< Unset whenever user-space re-maps a page as writable. - Cannot be removed.
                             *  NOTE: This flag is used to prevent rootfork() from working
                             *        when called from an otherwise read-only module after
@@ -77,7 +77,7 @@ typedef __mode_t mode_t;
 
 
 #ifdef __USE_KOS
-#define MAP_AUTOMATIC 0x00000000 /* Use sharing behavior specified by 'PROT_SHARED'. */
+#define MAP_AUTOMATIC 0x00000000 /* Use sharing behavior specified by `PROT_SHARED'. */
 #endif
 
 #define MAP_SHARED        0x00000001 /* Share changes. */
@@ -184,7 +184,7 @@ union{
  size_t     mv_guard; /*< [valid_if(MAP_GROWSDOWN||MAP_GROWSUP)] Size of the guard region in bytes.
                        *   NOTE: When ZERO(0), both the 'MAP_GROWSDOWN' and 'MAP_GROWSUP' flags are ignored.
                        *   NOTE: Clamped to 'mi_size-PAGESIZE' when greater.
-                       *   HINT: mmap() has this field set to 'PAGESIZE'.
+                       *   HINT: mmap() has this field set to `PAGESIZE'.
                        *   HINT: When a guard region that uses file initialization is copied,
                        *         both 'mv_off' and 'mv_len' are updated accordingly!
                        */
@@ -213,10 +213,10 @@ struct mmap_phys {
 #define XMAP_FINDAUTO  0x00000000 /*< [valid_if(!MAP_FIXED)] Find free memory the same way 'mmap()' does:
                                    *   When 'mi_addr' is NULL, find suitable memory within the thread's user heap/stack.
                                    *   Otherwise, do the same as if both 'XMAP_FINDBELOW' and 'XMAP_FINDABOVE' were set. */
-#define XMAP_FINDBELOW 0x00000010 /*< [valid_if(!MAP_FIXED)] Use the nearest unused address range above (considering 'mi_addr...+=mi_size' first and 'CEIL_ALIGN(mi_addr+mi_size,mi_align)...+=mi_size' next). */
-#define XMAP_FINDABOVE 0x00000020 /*< [valid_if(!MAP_FIXED)] Use the nearest unused address range below (considering 'mi_addr...+=mi_size' first and 'FLOOR_ALIGN(mi_addr-mi_size,mi_align)...+=mi_size' next).
+#define XMAP_FINDBELOW 0x00000010 /*< [valid_if(!MAP_FIXED)] Use the nearest unused address range above (considering `mi_addr...+=mi_size' first and 'CEIL_ALIGN(mi_addr+mi_size,mi_align)...+=mi_size' next). */
+#define XMAP_FINDABOVE 0x00000020 /*< [valid_if(!MAP_FIXED)] Use the nearest unused address range below (considering `mi_addr...+=mi_size' first and 'FLOOR_ALIGN(mi_addr-mi_size,mi_align)...+=mi_size' next).
                                    *   NOTE: When both 'XMAP_FINDBELOW' and 'XMAP_FINDABOVE' are set, use whichever
-                                   *         discovered range (if any) is located closer to 'mi_addr...+=mi_size' */
+                                   *         discovered range (if any) is located closer to `mi_addr...+=mi_size' */
 #define XMAP_NOTRYNGAP 0x00000040 /*< [valid_if(!MAP_FIXED)] When the first attempt to find free memory fails, and
                                    *                         'mi_gap' was non-zero, don't try again without any gap. */
 #define XMAP_FORCEGAP  0x00000080 /*< [valid_if(!MAP_FIXED)] Force a gap before & after all types of memory mappings.
@@ -228,7 +228,7 @@ struct mmap_phys {
 #define mmap_info_v1      mmap_info
 
 struct mmap_info_v1 {
- __uint32_t       mi_prot;  /*< Set of 'PROT_*' */
+ __uint32_t       mi_prot;  /*< Set of `PROT_*' */
  __uint32_t       mi_flags; /*< Set of 'MAP_*' */
  __uint32_t       mi_xflag; /*< Set of 'XMAP_*' */
  __VIRT void     *mi_addr;  /*< Base/hint address.
@@ -241,7 +241,7 @@ struct mmap_info_v1 {
                              *  NOTE: This member is always ceil-aligned by PAGESIZE internally. */
  size_t           mi_align; /*< [valid_if(!MAP_FIXED)] Minimum alignment required when searching for free ranges.
                              *   NOTE: This value must be a power-of-2 and is ignored when < PAGESIZE. */
- size_t           mi_gap;   /*< [valid_if(!MAP_FIXED)] When searching for suitable addresses and 'mi_addr...+=mi_size'
+ size_t           mi_gap;   /*< [valid_if(!MAP_FIXED)] When searching for suitable addresses and `mi_addr...+=mi_size'
                              *   was already in use, any address range considered there-after must not be closer to another existing range than 'mi_gap' bytes.
                              *   HINT: This member is useful for discovering free memory while leaving a gap for guard mappings to expand into.
                              *   HINT: mmap() has sets this argument to 16*PAGESIZE, not setting 'XMAP_NOTRYNGAP'. */

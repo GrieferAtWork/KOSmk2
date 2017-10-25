@@ -51,7 +51,7 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
  if (flags&CLONE_SETTLS) newtls = va_arg(args,void *);
  if (flags&CLONE_CHILD_SETTID) ctid = va_arg(args,pid_t *);
  va_end(args);
- (void)newtls; /* Not used by the kernel, and the argument slot is used to pass 'arg'. */
+ (void)newtls; /* Not used by the kernel, and the argument slot is used to pass `arg'. */
 
  /* NOTE: The clone() system call cannot be called safely without custom assembly,
   *       due to the fact that it returns to the same address as the parent thread. */
@@ -64,7 +64,7 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
                       "    testl %%eax, %%eax\n"
                       "    jnz 1f\n" /* Jump if this is the parent thread. */
                       /* Userspace child initialization. */
-                      "    pushl %%ebp\n" /* 'arg' */
+                      "    pushl %%ebp\n" /* `arg' */
                       "    xorl  %%ebp, %%ebp\n" /* ZERO out EBP to terminate tracebacks. */
                       "    call *%[fn]\n" /* Call the user-defined function.  */
                       "    movl  %%eax, %%ebx\n" /* Load the thread's exitcode. */

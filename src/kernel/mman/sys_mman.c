@@ -111,7 +111,7 @@ try_nogap:
 PRIVATE syscall_slong_t KCALL
 user_mmap(struct mmap_info *__restrict info) {
  struct mman *mm = THIS_TASK->t_mman;
- raddr_t region_start = 0; /* Offset into 'region' where mapping starts. */
+ raddr_t region_start = 0; /* Offset into `region' where mapping starts. */
  struct mregion *region;
  syscall_slong_t result;
  bool has_write_lock = false;

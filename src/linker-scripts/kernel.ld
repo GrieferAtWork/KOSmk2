@@ -169,7 +169,7 @@ SECTIONS {
 	DEFINE_HERE(__percpu_template);
 	DEFINE(__percpu_begin = ALIGNED_CPUSIZE); /* Base offset added to any per-cpu symbol. */
 	.cpu __percpu_begin : AT(__percpu_template - KERNEL_BASE) {
-		/* TODO: This stuff should be part of '.free' (Because the per-cpu template can be deleted later) */
+		/* TODO: This stuff should be part of `.free' (Because the per-cpu template can be deleted later) */
 		*(.text.cpu)
 		*(.rodata.cpu)
 		*(.data.cpu)

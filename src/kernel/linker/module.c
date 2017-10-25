@@ -784,7 +784,7 @@ instance_new(struct module *__restrict mod, u32 flags) {
  assert(result->i_deps.is_lock.arw_lock == 0);
 
  /* TODO: Set the 'INSTANCE_FLAG_NOREMAP' flag if the
-  *       application module 'mod' is allowed to root-fork().
+  *       application module `mod' is allowed to root-fork().
   *    >> Required to prevent tampering (and breaking the dirty-bit-check)
   *       when a malicious application loads a root-fork-able module:
   * NOTE: The 'INSTANCE_FLAG_NOUNMAP' flag must be set similarly,

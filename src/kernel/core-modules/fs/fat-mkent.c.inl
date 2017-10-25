@@ -24,7 +24,7 @@
 
 
 /* Search for an existing directory entry 'path->d_name' and return
- * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in 'mode'.
+ * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in `mode'.
  * Otherwise create a new entry and pre-initialize it using 'result_attr',
  * as well as set '*is_new' to true.
  * NOTE: The caller is responsible for holding a write-lock to

@@ -56,7 +56,7 @@ kernel_insmod(struct module *__restrict mod,
  error = mman_write(&mman_kernel);
  if (E_ISERR(error)) return E_PTR(error);
  if ((mode&(INSMOD_REUSE|INSMOD_SECONDARY)) != INSMOD_SECONDARY) {
-  /* Search for existing instances of 'mod'. */
+  /* Search for existing instances of `mod'. */
   struct instance *iter = mman_kernel.m_inst;
   for (; iter; iter = iter->i_chain.le_next) {
    if (iter->i_module != mod) continue;

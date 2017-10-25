@@ -37,10 +37,16 @@ DECL_BEGIN
  * WARNING: The kernel may never map addresses lower than this to itself!
  * All addresses lower than this are usually unmapped, with the exception
  * of special memory regions that encompass physical memory, which
- * maps 1 on 1 to kernel virtual addresses.
+ * map 1 on 1 to kernel virtual addresses.
  * As a consequence of this, KOS is (by default) limited to only using
  * 3GB of physically available memory, as anything higher cannot actually
- * be used (as the associated address space is reserved by the kernel).
+ * be used (due to the associated address space being reserved by the kernel).
+ * TODO: Add a config that still allows use of physical memory above 3Gb,
+ *       adding a new memory zone who's memory cannot be accessed directly,
+ *       and is therefor managed by special code that must be deleted during
+ *       boot when it is detected that no physical memory above 3Gb exists,
+ *       as well as minor changes to mman ALLOA to make use of such memory
+ *       for userspace applications/virtual kernel memory.
  */
 #define KERNEL_BASE     0xc0000000
 
@@ -60,10 +66,10 @@ DECL_BEGIN
 #define PDIR_ATTR_WRITE    0x0002u /* The page is writable. */
 #define PDIR_ATTR_PRESENT  0x0001u /* The page is present (When not set, cause a PAGEFAULT that may be used for allocate/load-on-read). */
 #ifdef __CC__
-typedef u16 pdir_attr_t; /* Set of 'PDIR_ATTR_*|PDIR_FLAG_*' */
+typedef u16 pdir_attr_t; /* Set of `PDIR_ATTR_*|PDIR_FLAG_*' */
 #endif /* __CC__ */
 
-/* Page directory action flags (accepted by 'pdir_mprotect', 'pdir_mmap', 'pdir_mremap' and 'pdir_munmap') */
+/* Page directory action flags (accepted by `pdir_mprotect', `pdir_mmap', `pdir_mremap' and `pdir_munmap') */
 #define PDIR_FLAG_NOFLUSH  0x8000u /* Don't sync the page directory entry - instead, the caller must invalidate it. */
 
 
@@ -198,10 +204,10 @@ LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *
 FUNDEF WUNUSED bool KCALL pdir_init(pdir_t *__restrict self);
 FUNDEF void KCALL pdir_fini(pdir_t *__restrict self);
 
-/* Load 'self' as a copy of 'existing' (NOTE: Called _AFTER_ 'pdir_init(self)' succeeded!) */
+/* Load `self' as a copy of 'existing' (NOTE: Called _AFTER_ 'pdir_init(self)' succeeded!) */
 FUNDEF WUNUSED bool KCALL pdir_load_copy(pdir_t *__restrict self, pdir_t const *__restrict existing);
 
-/* Flush 'n_bytes' starting at `addr' in the currently set page directory. */
+/* Flush `n_bytes' starting at `addr' in the currently set page directory. */
 FUNDEF void FCALL pdir_flush(VIRT void *start, size_t n_bytes);
 LOCAL void FCALL pdir_flushall(void) {
  register u32 temp;
@@ -235,13 +241,13 @@ LOCAL void FCALL pdir_flushall(void) {
 
 
 /* Changes the protection/attributes of page mappings within 'start..+=n_bytes'.
- * NOTE: The given argument 'n_bytes' is ceil-aligned by pages.
- * @return: * :      The amount of bytes modified, following 'start' (always a multiple of PAGESIZE)
+ * NOTE: The given argument `n_bytes' is ceil-aligned by pages.
+ * @return: * :      The amount of bytes modified, following `start' (always a multiple of PAGESIZE)
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF ssize_t KCALL pdir_mprotect(pdir_t *__restrict self, ppage_t start,
                                    size_t n_bytes, pdir_attr_t flags);
 
-/* Returns true if all pages within 'addr...+=n_bytes' have all flags from 'flags' set. */
+/* Returns true if all pages within `addr...+=n_bytes' have all flags from `flags' set. */
 FUNDEF bool KCALL pdir_maccess(pdir_t const *__restrict self,
                                VIRT void const *addr, size_t n_bytes,
                                pdir_attr_t flags);
@@ -249,7 +255,7 @@ FUNDEF bool KCALL pdir_maccess(pdir_t const *__restrict self,
 FUNDEF bool KCALL pdir_maccess_addr(pdir_t *__restrict self, VIRT void const *addr, pdir_attr_t flags);
 
 /* Create a physical mapping for 'target' to 'start..+=n_bytes'
- * NOTE: The given argument 'n_bytes' is ceil-aligned by pages.
+ * NOTE: The given argument `n_bytes' is ceil-aligned by pages.
  * NOTE: Any existing mappings are replaced.
  * @param: start: The starting address where memory mappings should begin.
  * @param: flags: Mapping flags.

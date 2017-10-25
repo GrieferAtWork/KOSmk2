@@ -57,7 +57,7 @@
 #define memmove            libc_memmove
 #define sysconf            libc_sysconf
 #define mremap             libc_mremap
-/* Invoke the system call directly; 'free()' must never modify 'errno'! */
+/* Invoke the system call directly; `free()' must never modify 'errno'! */
 #define munmap(p,s)       (E_ISERR(sys_munmap(p,s)) ? -1 : 0)
 #define mmap               libc_mmap
 #define malloc_getpagesize PAGESIZE

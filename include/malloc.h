@@ -35,7 +35,7 @@ typedef __SIZE_TYPE__ size_t;
  *  - libk use kmalloc from "/src/include/kernel/malloc.h"
  *    All allocation functions will pass 'GFP_NORMAL' for flags,
  *    meaning that malloc() within the kernel will allocate
- *    shared memory above 'KERNEL_BASE', that is visible in
+ *    shared memory above `KERNEL_BASE', that is visible in
  *    all page directories.
  *  - libc use dlmalloc build on top of "/include/sys/mman.h"
  *  - malloc(0) does NOT return NULL, but some small, non-empty block of memory.
@@ -215,7 +215,7 @@ __LIBC __PORT_KOSONLY __NONNULL((1,2)) __SSIZE_TYPE__ (__LIBCCALL _mall_tracebac
  *       a list of all currently allocated pointers, meaning that when
  *       called at application shutdown, everything that wasn't freed
  *       can be dumped (aka. all the memory leaks).
- * @param: CHECKPOINT: Any dynamically allocated pointer (any pointer accepted by 'free()'),
+ * @param: CHECKPOINT: Any dynamically allocated pointer (any pointer accepted by `free()'),
  *                     or NULL. When non-NULL, only memory after the given pointer
  *                     is enumerated (non-inclusive), whereas when NULL, all
  *                     existing mall-pointers are enumerated.
@@ -278,7 +278,7 @@ __LIBC __PORT_KOSONLY __NONNULL((1)) void *(__LIBCCALL _mall_nofree)(void *__mal
  * to be apart of the kernel core-instance itself).
  * But sometimes, modules must allocate data structures that are
  * supposed to be allowed to live longer than the modules themself.
- * e.g.: Some driver that create an 'mregion' within userspace, where
+ * e.g.: Some driver that create an `mregion' within userspace, where
  *       it maps some region of physical memory (e.g.: A display driver)
  * Such types of uses should be marked as '_mall_global', which will
  * suppress the error message emit when the module is unloaded while
@@ -453,7 +453,7 @@ template<class __T> inline __T *__cxx_malloc_global(__T *__mallptr) { return (__
 #define M_MALL_USE_INPLACE_REALLOC (-350000) /*< [D(0)] When disabled, realloc()-calls will always allocate a new block of memory. */
 #define M_MALL_NO_SCRAMBLE_ON_FREE (-350001) /*< [D(1)] When disabled, free() will scramble user-memory by flipping all bits, still allowing
                                               *         the keen eye to read it in logs, but causing problems when continuing to use data. */
-#define M_MALL_CHECK_FREQUENCY     (-350010) /*< [D(1024)] MALL debug check frequency (Periodic, internal calls to '_mall_validate_d'; set to '0' to disable). */
+#define M_MALL_CHECK_FREQUENCY     (-350010) /*< [D(1024)] MALL debug check frequency (Periodic, internal calls to '_mall_validate_d'; set to `0' to disable). */
 
 __LIBC __SAFE int (__LIBCCALL _mallopt_d)(int __parameter_number, int __parameter_value, __DEBUGINFO);
 __LIBC __SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL _memalign_d)(size_t __alignment, size_t __n_bytes, __DEBUGINFO);

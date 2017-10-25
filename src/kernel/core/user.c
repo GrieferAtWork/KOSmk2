@@ -478,7 +478,7 @@ acquire_string(USER char const *str, size_t max_length,
   if unlikely(string_length > max_length) { result = E_PTR(-EINVAL); goto end; }
 #if 0 /* Currently this would have the potential to deadlock.
        * >> Instead, we must introduce a new system that allows 'ERESTART'
-       *    to be returned by 'task_waitfor()' alongside 'EINTR'.
+       *    to be returned by `task_waitfor()' alongside 'EINTR'.
        *    Both should have the same meaning, but 'ERESTART' would
        *    be returned if the task was suspended.
        * >> Essentially, we can't just randomly suspend a task while it is in kernel-space.
@@ -668,7 +668,7 @@ PRIVATE struct mregion usershare_region = {
     .mr_refcnt = 0x80000001,
 #endif
     .mr_type   = MREGION_TYPE_PHYSICAL,
-    .mr_init   = MREGION_INIT_RAND, /* Actually 'MREGION_INIT_FILE', but we don't have the file... */
+    .mr_init   = MREGION_INIT_RAND, /* Actually `MREGION_INIT_FILE', but we don't have the file... */
     .mr_size   = (size_t)__kernel_user_size,
     .mr_futex  = {{0}},
     .mr_plock  = RWLOCK_INIT,

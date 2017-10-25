@@ -605,9 +605,6 @@
     <ClInclude Include="..\..\src\kernel\linker\ksym.h">
       <Filter>kernel\linker</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\exec.h">
-      <Filter>include\kernel</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\include\fs\fs.h">
       <Filter>include\fs</Filter>
     </ClInclude>

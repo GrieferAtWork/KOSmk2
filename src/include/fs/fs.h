@@ -136,7 +136,7 @@ fs_user_xmkreg(struct dentry_walker *__restrict walker,
                REF struct inode **result_inode);
 
 /* Create a new empty directory.
- * NOTE: 'ia_siz' from 'attr' is ignored.
+ * NOTE: 'ia_siz' from `attr' is ignored.
  * $ mkdir "/opt/foo" # dentry_mkdir(DENTRY("/opt"),"foo",...);
  * @param: result_inode: When non-NULL, store a reference to the INode associated
  *                       with the returned directory entry in '*result_inode'.

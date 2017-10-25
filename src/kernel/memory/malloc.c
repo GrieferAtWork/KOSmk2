@@ -56,7 +56,7 @@
 #include <string.h>
 #include <sys/mman.h>
 
-#define MALIGNED /* Annotation for an integral/pointer aligned by 'HEAP_ALIGNMENT' */
+#define MALIGNED /* Annotation for an integral/pointer aligned by `HEAP_ALIGNMENT' */
 
 DECL_BEGIN
 
@@ -79,8 +79,8 @@ DECL_BEGIN
  * 
  * >> [GLOBAL] #define CONFIG_TRACE_LEAKS
  *    When defined, track all dynamically allocated pointers,
- *    based on which 'struct instance' allocated them.
- *    This option must be defined in '.sources', as it affects
+ *    based on which `struct instance' allocated them.
+ *    This option must be defined in `.sources', as it affects
  *    the layout of data structures elsewhere, too.
  *    NOTE: In addition, this option enables validation of a
  *          16-bit checksum whenever an mall-pointer is loaded,
@@ -100,11 +100,11 @@ DECL_BEGIN
  * >> #define CONFIG_MALLOC_FOOTSIZE <SIZE>
  *    DEFAULT: IFDEF(CONFIG_DEBUG_HEAP): HEAP_ALIGNMENT
  *    DEFAULT: ELSE:                     0
- *    Similar to 'CONFIG_MALLOC_HEADSIZE', but located at
+ *    Similar to `CONFIG_MALLOC_HEADSIZE', but located at
  *    the other end, this option is useful for detecting
  *    buffer overflow attacks.
  *    WARNING: Enabling this option guaranties 1-byte alignment
- *             in 'kmalloc_usable_size()', disallowing any
+ *             in `kmalloc_usable_size()', disallowing any
  *             access to trailing data during allocations.
  *
  * >> #define CONFIG_MALLOC_NO_DEBUG_INIT <BOOL>
@@ -113,20 +113,20 @@ DECL_BEGIN
  *    DEFAULT: IFNDEF(CONFIG_MALLOC_NO_DEBUG_INIT)
  *             IFDEF (CONFIG_DEBUG_HEAP): 0xc3
  *    Define the default initialization of heap-allocated memory
- *    to always allocate data pre-initialized to 'CONFIG_DEBUG_HEAP'
- *    This option only affects memory not allocated with 'GFP_CALLOC',
+ *    to always allocate data pre-initialized to `CONFIG_DEBUG_HEAP'
+ *    This option only affects memory not allocated with `GFP_CALLOC',
  *    and is internally implemented by making use of mregion
  *    initialization, meaning that enabling this option will not
  *    increase memory allocation overhead/waste when allocating
  *    virtual (GFP_KERNEL or GFP_SHARED/GFP_NORMAL) memory.
- *    NOTE: '0xc3' was chosen because of its unique binary layout: '0b11000011'
+ *    NOTE: `0xc3' was chosen because of its unique binary layout: `0b11000011'
  * 
  * >> #define CONFIG_MALLOC_TRACEBACK <BOOL>
  *    DEFAULT:  IFDEF(CONFIG_TRACE_LEAKS): 1
  *    REQUIRES: IFDEF(CONFIG_TRACE_LEAKS)
  * >> #define CONFIG_MALLOC_TRACEBACK_MINSIZE <SIZE>
  *    DEFAULT:  IFDEF(CONFIG_MALLOC_TRACEBACK): 4
- *    Store a short traceback of at least 'CONFIG_MALLOC_TRACEBACK_MINSIZE'
+ *    Store a short traceback of at least `CONFIG_MALLOC_TRACEBACK_MINSIZE'
  *    entries within the trailing memory located after every allocated pointer.
  * 
  * >> #define CONFIG_MALLOC_NO_FREQUENCY <BOOL>
@@ -230,8 +230,9 @@ DECL_BEGIN
  *  - strndup
  *  - strdupf
  *  - vstrdupf
- *  - memcdup  // Not really part of the group, but never used since 'memdup' also exists. */
+ *  - memcdup  // Not really part of the group, but never used since `memdup' also exists. */
 #undef CONFIG_HAVE_STRDUP_IN_KERNEL
+/* #define CONFIG_HAVE_STRDUP_IN_KERNEL 1 */
 
 
 /* Memory zone used for physical allocations. */
@@ -246,7 +247,7 @@ DECL_BEGIN
 #define BAD_ALLOC(n_bytes,flags) (void)0
 #define M_ISNONNULL(p) likely((p) != NULL)
 
-#define __GFP_NULL                GFP_NORMAL /* GFP flags for pointers not matching 'M_ISNONNULL' */
+#define __GFP_NULL                GFP_NORMAL /* GFP flags for pointers not matching `M_ISNONNULL' */
 #if 1 /* Use shared memory for malloc()! */
 #define __GFP_MALLOC              GFP_SHARED /* GFP flags for malloc()-allocated memory. */
 #else
@@ -282,7 +283,7 @@ struct PACKED mptr_tail {
 #define MPTR_TAIL_TB_EOF ((void *)-1)
  void        *t_tb[1]; /*< [0..1|null(MPTR_TAIL_TB_EOF)][EOF(MPTR_TAIL_TB_EOF)]
                         *  [0..MPTR_TRACEBACK_SIZE(^self)][const] Malloc traceback instruction pointers.
-                        *   NOTE: May prematurely terminate upon hitting 'MPTR_TAIL_TB_EOF'. */
+                        *   NOTE: May prematurely terminate upon hitting `MPTR_TAIL_TB_EOF'. */
 #endif
 };
 #endif
@@ -300,7 +301,7 @@ struct PACKED mptr {
 #define MPTRFLAG_NOFREE    0x02 /*< The pointer must not be freed or reallocated. */
 #define MPTRFLAG_GLOBAL    0x04 /*< The pointer is intended for global usage. */
 #define MPTRFLAG_MASK      0x07 /*< Mask of recognized flags. */
- u8           m_flag;   /*< [lock(MALLTRACE_LOCK(self))] Mall flags (Set of 'MPTRFLAG_*'). */
+ u8           m_flag;   /*< [lock(MALLTRACE_LOCK(self))] Mall flags (Set of `MPTRFLAG_*'). */
  struct dinfo m_info;   /*< [const] Basic debug information for tracking. */
 #define __1_MPTR_SIZEOF (5*__SIZEOF_POINTER__+4+__SIZEOF_INT__)
 #else /* CONFIG_TRACE_LEAKS */
@@ -356,7 +357,7 @@ union{ size_t m_size; /*< [const][mask(~GFP_MASK_MPTR)][>= HEAP_MIN_MALLOC] Tota
 
 
 #ifdef CONFIG_TRACE_LEAKS
-/* Lock that must be held when reading/writing the 'm_info.i_inst' field of any mptr. */
+/* Lock that must be held when reading/writing the `m_info.i_inst' field of any mptr. */
 PRIVATE DEFINE_ATOMIC_RWLOCK(mptr_inst_lock);
 #define MPTR_TRACE_LOCK(self) ((self)->m_info.i_inst->i_driver.k_tlock)
 #endif
@@ -519,12 +520,12 @@ struct mfree {
                                       *   Size of this free range in bytes (Including this header). */
  pgattr_t                  mf_attr;  /*< [lock(:mh_lock)]
                                       *   Page-attributes for data within this free region.
-                                      *   NOTE: When 'CONFIG_MALLOC_DEBUG_INIT' is defined,
-                                      *         and the 'PAGEATTR_ZERO' flag isn't set, the
+                                      *   NOTE: When `CONFIG_MALLOC_DEBUG_INIT' is defined,
+                                      *         and the `PAGEATTR_ZERO' flag isn't set, the
                                       *         memory described within this free range is
-                                      *         fully initialized to 'CONFIG_MALLOC_DEBUG_INIT'
+                                      *         fully initialized to `CONFIG_MALLOC_DEBUG_INIT'
                                       *        (Excluding this header of course)
-                                      *   >> This behavior mirrors that of 'PAGEATTR_ZERO'-initialized
+                                      *   >> This behavior mirrors that of `PAGEATTR_ZERO'-initialized
                                       *      memory, in that free data is known to be in a specific state.
                                       */
 #else
@@ -534,12 +535,12 @@ union{
                                       *   Size of this free range in bytes (Including this header). */
  pgattr_t                  mf_attr;  /*< [lock(:mh_lock)][mask(MFREE_ATTRMASK)]
                                       *   Page-attributes for data within this free region.
-                                      *   NOTE: When 'CONFIG_MALLOC_DEBUG_INIT' is defined,
-                                      *         and the 'PAGEATTR_ZERO' flag isn't set, the
+                                      *   NOTE: When `CONFIG_MALLOC_DEBUG_INIT' is defined,
+                                      *         and the `PAGEATTR_ZERO' flag isn't set, the
                                       *         memory described within this free range is
-                                      *         fully initialized to 'CONFIG_MALLOC_DEBUG_INIT'
+                                      *         fully initialized to `CONFIG_MALLOC_DEBUG_INIT'
                                       *        (Excluding this header of course)
-                                      *   >> This behavior mirrors that of 'PAGEATTR_ZERO'-initialized
+                                      *   >> This behavior mirrors that of `PAGEATTR_ZERO'-initialized
                                       *      memory, in that free data is known to be in a specific state.
                                       */
 };
@@ -570,7 +571,7 @@ union{
 #endif
 
 
-/* TO-DO: Disable me. NOTE: When disabled, replace start with 'TO-DO' */
+/* TO-DO: Disable me. NOTE: When disabled, replace start with `TO-DO' */
 #define MHEAP_USING_INTERNAL_VALIDATION 0
 
 #if MHEAP_USING_INTERNAL_VALIDATION
@@ -615,9 +616,9 @@ union{
 ../syscall.c() : sys_ccall : [1c] : C01010D9 : EFFFBFC0
 ../??(0) : ?? : [1d] : 0000001B : EFFFBFDC
 
->> Basically: 'free()' might call 'munmap()', which could call another 'free()'
+>> Basically: `free()' might call `munmap()', which could call another `free()'
                of the same magnitude when the kernel memory manager inherited
-               a region, or a region part allocated as 'MMAN_UNIGFP', or for
+               a region, or a region part allocated as `MMAN_UNIGFP', or for
                another manager, meaning that free()-ing that branch as the
                result of unmapping unused memory will in turn call free() again.
 */
@@ -637,7 +638,7 @@ struct mheap {
  size_t                   mh_overalloc; /*< [lock(mh_lock)] Amount (in bytes) by which to over-allocate memory in heaps.
                                          *   NOTE: Set to ZERO(0) to disable overallocation. */
  size_t                   mh_freethresh;/*< [lock(mh_lock)] Threshold that must be reached before any continuous block
-                                         *   of free data is split to free memory. (Should always be '>= PAGESIZE') */
+                                         *   of free data is split to free memory. (Should always be `>= PAGESIZE') */
 };
 
 #if MHEAP_RECURSIVE_LOCK
@@ -884,23 +885,33 @@ check_again:
   } else {
    /* Make sure not to allocate dynamic memory above what is reserved for error-codes.
     * >> Since the reserve is _always_ less than a page, it's impossible
-    *    to encounter this problem in other allocators such as 'page_malloc()'.
-    *    But since 'kmalloc()'s purpose is to get away from page-aligned
+    *    to encounter this problem in other allocators such as `page_malloc()'.
+    *    But since `kmalloc()'s purpose is to get away from page-aligned
     *    allocations, we may actually run into the problem of allocating
-    *    memory above '__ERRNO_THRESHOLD', which in turn may be interpreted
+    *    memory above `__ERRNO_THRESHOLD', which in turn may be interpreted
     *    incorrectly once allocated pointers are transformed, or passed
     *    through various different interfaces.
     * >> So to prevent any of those problems, simply don't allow virtual
     *    address mapping of the last virtual address page, thereby preventing
     *    any collisions that might otherwise arise. */
+#if defined(CONFIG_NO_PDIR_SELFMAP) || (__ERRNO_THRESHOLD < THIS_PDIR_BASE)
    if unlikely(result == PAGE_ERROR ||
-              (uintptr_t)result >= FLOOR_ALIGN(__ERRNO_THRESHOLD,PAGESIZE)) {
+              (uintptr_t)result >= FLOOR_ALIGN(__ERRNO_THRESHOLD,PAGESIZE))
+#else
+   if unlikely(result == PAGE_ERROR)
+#endif
+   {
     /* re-scan the entire shared address space. */
     result = mman_findspace_unlocked(&mman_kernel,(ppage_t)SHARED_VIRT_BEGIN,
                                      n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+#if defined(CONFIG_NO_PDIR_SELFMAP) || (__ERRNO_THRESHOLD < THIS_PDIR_BASE)
     if unlikely(result == PAGE_ERROR ||
                (uintptr_t)result >= FLOOR_ALIGN(__ERRNO_THRESHOLD,PAGESIZE))
                 goto end2;
+#else
+    if unlikely(result == PAGE_ERROR)
+                goto end2;
+#endif
    }
   }
   assert(result != PAGE_ERROR);
@@ -1255,7 +1266,7 @@ mheap_acquire_at(struct mheap *__restrict self, MALIGNED void *p,
   /* Free the unused memory before the slot. */
   mheap_release_nomerge(self,slot,unused_before,slot_flags);
  }
- /* At this point we've allocated 'slot_avail' bytes at 'p'
+ /* At this point we've allocated `slot_avail' bytes at `p'
   * >> Now we must simply try to free as much of the difference as possible. */
  assertf(IS_ALIGNED(slot_avail,HEAP_ALIGNMENT),"slot_avail = %Iu\n",slot_avail);
  assert(IS_ALIGNED(n_bytes,HEAP_ALIGNMENT));
@@ -1531,7 +1542,7 @@ mheap_acquire_al(struct mheap *__restrict self,
  assert(IS_ALIGNED(n_bytes,HEAP_ALIGNMENT));
  if unlikely(n_bytes < HEAP_MIN_MALLOC)
              n_bytes = HEAP_MIN_MALLOC;
- /* Must overallocate by at least 'HEAP_MIN_MALLOC',
+ /* Must overallocate by at least `HEAP_MIN_MALLOC',
   * so we can _always_ free unused lower memory. */
  alloc_base = mheap_acquire(self,n_bytes+alignment+HEAP_MIN_MALLOC,&alloc_size,flags,false);
  if unlikely(alloc_base == PAGE_ERROR) {
@@ -1568,7 +1579,7 @@ priv_resetpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
  assert(n_bytes != 0);
  assert(n_bytes <= PAGESIZE);
  assert((n_bytes%4) == 0);
- /* Check if the page at 'start' is really allocated. */
+ /* Check if the page at `start' is really allocated. */
  if (addr_isvirt(start)) {
   task_nointr();
   mman_read(&mman_kernel);
@@ -1582,13 +1593,13 @@ priv_resetpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
  if (should_clear) memsetl(start,dword,n_bytes/4);
 }
 
-/* Scan 'n_bytes' of memory for any byte not matching 'dword & 0xff',
- * assuming that 'dword == 0x01010101 * (dword & 0xff)'
+/* Scan `n_bytes' of memory for any byte not matching `dword & 0xff',
+ * assuming that `dword == 0x01010101 * (dword & 0xff)'
  * Return NULL when no such byte exists, or the non-matching byte if so.
  * NOTE: Special handling is done to ensure that no new memory after any non-aligned
- *       memory between 'begin...CEIL_ALIGN(begin,PAGESIZE)' is allocated due to
+ *       memory between `begin...CEIL_ALIGN(begin,PAGESIZE)' is allocated due to
  *       access, meaning that system memory isn't strained by accessing unallocated
- *       data, but instead assuming that that data is always equal to 'dword'. */
+ *       data, but instead assuming that that data is always equal to `dword'. */
 PRIVATE void KCALL
 priv_memsetl_noalloc(void *__restrict begin, u32 dword, size_t n_bytes) {
  byte_t *iter,*end,*aligned;
@@ -1741,7 +1752,7 @@ priv_scanpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert(n_bytes != 0);
  assert(n_bytes <= PAGESIZE);
- /* Check if the page at 'start' is really allocated. */
+ /* Check if the page at `start' is really allocated. */
  if (addr_isvirt(start)) {
   task_nointr();
   mman_read(&mman_kernel);
@@ -1756,13 +1767,13 @@ priv_scanpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
  return result;
 }
 
-/* Scan 'n_bytes' of memory for any byte not matching 'dword & 0xff',
- * assuming that 'dword == 0x01010101 * (dword & 0xff)'
+/* Scan `n_bytes' of memory for any byte not matching `dword & 0xff',
+ * assuming that `dword == 0x01010101 * (dword & 0xff)'
  * Return NULL when no such byte exists, or the non-matching byte if so.
  * NOTE: Special handling is done to ensure that no new memory after any non-aligned
- *       memory between 'begin...CEIL_ALIGN(begin,PAGESIZE)' is allocated due to
+ *       memory between `begin...CEIL_ALIGN(begin,PAGESIZE)' is allocated due to
  *       access, meaning that system memory isn't strained by accessing unallocated
- *       data, but instead assuming that that data is always equal to 'dword'. */
+ *       data, but instead assuming that that data is always equal to `dword'. */
 PRIVATE void *KCALL
 priv_memnchr_noalloc(void *__restrict begin, u32 dword, size_t n_bytes) {
  byte_t *iter,*end,*aligned; void *result;
@@ -1915,7 +1926,7 @@ heap_memalign(size_t alignment, size_t offset, size_t n_bytes,
                          palloc_size,flags,true);
 }
 
-/* Free heap memory previously allocated using 'heap_*' functions. */
+/* Free heap memory previously allocated using `heap_*' functions. */
 PUBLIC SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags) {
  struct mheap *heap = MHEAP_GET(flags);
  assert(IS_ALIGNED(size,HEAP_ALIGNMENT));
@@ -2274,8 +2285,8 @@ PRIVATE char   *(KCALL debug_vstrdupf)(struct dsetup *__restrict setup, char con
 
 #ifdef CONFIG_TRACE_LEAKS
 /* Called for all tracked pointers when a driver is unloaded.
- * >> Using this, all pointers not previously tagged with '_mall_untrack()' or
- *    '_mall_nofree()' will be inherited by the kernel, as well as printed as leaks. */
+ * >> Using this, all pointers not previously tagged with `_mall_untrack()' or
+ *    `_mall_nofree()' will be inherited by the kernel, as well as printed as leaks. */
 INTDEF SAFE void (KCALL debug_add2core)(struct instance *__restrict inst);
 #endif
 
@@ -2945,7 +2956,7 @@ PRIVATE ssize_t (KCALL debug_enum)(struct dsetup *__restrict setup, struct insta
  struct mman *old_mm = NULL;
  if unlikely(!callback) return 0;
  if (!inst) {
-  /* TODO: Validate by all drivers + the core when 'inst' is NULL. */
+  /* TODO: Validate by all drivers + the core when `inst' is NULL. */
   inst = THIS_INSTANCE;
  }
  checkpoint_ptr = checkpoint ? mptr_safeload(setup,checkpoint) : KINSTANCE_TRACE_NULL;
@@ -3038,7 +3049,7 @@ INTERN SAFE void (KCALL debug_add2core)(struct instance *__restrict inst) {
 
  /* At this point, nobody is really tracking the pointers from this instance.
   * Note tough, that someone may be attempting to access one of its pointers
-  * right now, which is why we must keep on holding a lock to 'mptr_inst_lock'
+  * right now, which is why we must keep on holding a lock to `mptr_inst_lock'
   * in order to prevent them from doing anything... */
 
  if (chain != KINSTANCE_TRACE_NULL) {

@@ -116,7 +116,7 @@ struct sigset;
  * signal_send:
  *   Send a signal to some unspecified set of receiving threads
  *  (e.g.: all of them, one of them, etc.), waking them and causing
- *   them to resume execution by causing 'task_waitfor()' to return
+ *   them to resume execution by causing `task_waitfor()' to return
  *   a pointer to the signal that was send.
  *
  * === OH! I get it. But I'm spotting a gaping design flaw.
