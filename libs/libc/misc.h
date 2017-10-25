@@ -51,8 +51,12 @@ INTDEF int LIBCCALL libc_mlock(void const *addr, size_t len);
 INTDEF int LIBCCALL libc_munlock(void const *addr, size_t len);
 INTDEF int LIBCCALL libc_mlockall(int flags);
 INTDEF int LIBCCALL libc_munlockall(void);
+INTDEF int LIBCCALL libc_shm_getfd(void); /* Return a lazily allocated descriptor for '/dev/shm' */
 INTDEF int LIBCCALL libc_shm_open(char const *name, int oflag, mode_t mode);
 INTDEF int LIBCCALL libc_shm_unlink(char const *name);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF int LIBCCALL libc_dos_shm_unlink(char const *name);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 INTDEF int LIBCCALL libc_madvise(void *addr, size_t len, int advice);
 INTDEF int LIBCCALL libc_mincore(void *start, size_t len, unsigned char *vec);
 INTDEF int LIBCCALL libc_posix_madvise(void *addr, size_t len, int advice);

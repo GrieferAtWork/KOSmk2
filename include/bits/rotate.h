@@ -25,24 +25,102 @@
 
 __SYSDECL_BEGIN
 
-#define __constant_rol_8(x,shift)  (((x)>>(0x8-((shift)&0x07)))|((x)<<((shift)&0x07)))
-#define __constant_ror_8(x,shift)  (((x)<<(0x8-((shift)&0x07)))|((x)>>((shift)&0x07)))
-#define __constant_rol_16(x,shift) (((x)>>(0x10-((shift)&0x0f)))|((x)<<((shift)&0x0f)))
-#define __constant_ror_16(x,shift) (((x)<<(0x10-((shift)&0x0f)))|((x)>>((shift)&0x0f)))
-#define __constant_rol_32(x,shift) (((x)>>(0x20-((shift)&0x1f)))|((x)<<((shift)&0x1f)))
-#define __constant_ror_32(x,shift) (((x)<<(0x20-((shift)&0x1f)))|((x)>>((shift)&0x1f)))
-#define __constant_rol_64(x,shift) (((x)>>(0x40-((shift)&0x3f)))|((x)<<((shift)&0x3f)))
-#define __constant_ror_64(x,shift) (((x)<<(0x40-((shift)&0x3f)))|((x)>>((shift)&0x3f)))
+#define __rol_constant_8(x,shift)  (((x)>>(0x8-((shift)&0x07)))|((x)<<((shift)&0x07)))
+#define __ror_constant_8(x,shift)  (((x)<<(0x8-((shift)&0x07)))|((x)>>((shift)&0x07)))
+#define __rol_constant_16(x,shift) (((x)>>(0x10-((shift)&0x0f)))|((x)<<((shift)&0x0f)))
+#define __ror_constant_16(x,shift) (((x)<<(0x10-((shift)&0x0f)))|((x)>>((shift)&0x0f)))
+#define __rol_constant_32(x,shift) (((x)>>(0x20-((shift)&0x1f)))|((x)<<((shift)&0x1f)))
+#define __ror_constant_32(x,shift) (((x)<<(0x20-((shift)&0x1f)))|((x)>>((shift)&0x1f)))
+#define __rol_constant_64(x,shift) (((x)>>(0x40-((shift)&0x3f)))|((x)<<((shift)&0x3f)))
+#define __ror_constant_64(x,shift) (((x)<<(0x40-((shift)&0x3f)))|((x)>>((shift)&0x3f)))
 
-/* TODO: Use rol/ror instructions */
-#define __rol_8(x,shift)  __constant_rol_8(x,shift)
-#define __rol_16(x,shift) __constant_rol_16(x,shift)
-#define __rol_32(x,shift) __constant_rol_32(x,shift)
-#define __rol_64(x,shift) __constant_rol_64(x,shift)
-#define __ror_8(x,shift)  __constant_ror_8(x,shift)
-#define __ror_16(x,shift) __constant_ror_16(x,shift)
-#define __ror_32(x,shift) __constant_ror_32(x,shift)
-#define __ror_64(x,shift) __constant_ror_64(x,shift)
+#if defined(__COMPILER_HAVE_GCC_ASM) && \
+   !defined(__NO_XBLOCK)
+/* HINT: 'Ic' means: Prefer constant integer < 32; else use the CX register. */
+#define __GCCASM_ROLR(inst,T,x,shift) \
+__XBLOCK({ register T __rl_res; \
+           __asm__ __volatile__(inst " %b1, %0\n" \
+                                : "=g" (__rl_res) \
+                                : "Ic" (shift)\
+                                , "0" (x) \
+                                : "cc"); \
+           __XRETURN __rl_res; \
+})
+#define __rol_nonconst_8(x,shift)  __GCCASM_ROLR("rolb",__UINT8_TYPE__,x,shift)
+#define __ror_nonconst_8(x,shift)  __GCCASM_ROLR("rorb",__UINT8_TYPE__,x,shift)
+#define __rol_nonconst_16(x,shift) __GCCASM_ROLR("rolw",__UINT16_TYPE__,x,shift)
+#define __ror_nonconst_16(x,shift) __GCCASM_ROLR("rorw",__UINT16_TYPE__,x,shift)
+#define __rol_nonconst_32(x,shift) __GCCASM_ROLR("roll",__UINT32_TYPE__,x,shift)
+#define __ror_nonconst_32(x,shift) __GCCASM_ROLR("rorl",__UINT32_TYPE__,x,shift)
+#ifdef __x86_64__
+#define __rol_nonconst_64(x,shift) __GCCASM_ROLR("rolq",__UINT64_TYPE__,x,shift)
+#define __ror_nonconst_64(x,shift) __GCCASM_ROLR("rorq",__UINT64_TYPE__,x,shift)
+#endif /* __x86_64__ */
+#elif defined(_MSC_VER)
+__NAMESPACE_INT_BEGIN
+extern unsigned char (__cdecl _rotl8)(unsigned char __x, unsigned char __shift);
+extern unsigned short (__cdecl _rotl16)(unsigned short __x, unsigned char __shift);
+extern unsigned int (__cdecl _rotl)(unsigned int __x, int __shift);
+extern unsigned __int64 (__cdecl _rotl64)(unsigned __int64 __x, int __shift);
+extern unsigned char (__cdecl _rotr8)(unsigned char __x, unsigned char __shift);
+extern unsigned short (__cdecl _rotr16)(unsigned short __x, unsigned char __shift);
+extern unsigned int (__cdecl _rotr)(unsigned int __x, int __shift);
+extern unsigned __int64 (__cdecl _rotr64)(unsigned __int64 __x, int __shift);
+#pragma intrinsic(_rotl8)
+#pragma intrinsic(_rotl16)
+#pragma intrinsic(_rotl)
+#pragma intrinsic(_rotl64)
+#pragma intrinsic(_rotr8)
+#pragma intrinsic(_rotr16)
+#pragma intrinsic(_rotr)
+#pragma intrinsic(_rotr64)
+__NAMESPACE_INT_END
+#define __rol_nonconst_8(x,shift)  (__NAMESPACE_INT_SYM _rotl8)(x,shift)
+#define __ror_nonconst_8(x,shift)  (__NAMESPACE_INT_SYM _rotr8)(x,shift)
+#define __rol_nonconst_16(x,shift) (__NAMESPACE_INT_SYM _rotl16)(x,shift)
+#define __ror_nonconst_16(x,shift) (__NAMESPACE_INT_SYM _rotr16)(x,shift)
+#define __rol_nonconst_32(x,shift) (__NAMESPACE_INT_SYM _rotl)(x,shift)
+#define __ror_nonconst_32(x,shift) (__NAMESPACE_INT_SYM _rotr)(x,shift)
+#define __rol_nonconst_64(x,shift) (__NAMESPACE_INT_SYM _rotl64)(x,shift)
+#define __ror_nonconst_64(x,shift) (__NAMESPACE_INT_SYM _rotr64)(x,shift)
+#endif /* Intrin... */
+
+#ifndef __rol_nonconst_8
+#define __rol_nonconst_8(x,shift)  __rol_constant_8(x,shift)
+#define __ror_nonconst_8(x,shift)  __ror_constant_8(x,shift)
+#endif /* !__rol_nonconst_8 */
+#ifndef __rol_nonconst_16
+#define __rol_nonconst_16(x,shift) __rol_constant_16(x,shift)
+#define __ror_nonconst_16(x,shift) __ror_constant_16(x,shift)
+#endif /* !__rol_nonconst_16 */
+#ifndef __rol_nonconst_32
+#define __rol_nonconst_32(x,shift) __rol_constant_32(x,shift)
+#define __ror_nonconst_32(x,shift) __ror_constant_32(x,shift)
+#endif /* !__rol_nonconst_32 */
+#ifndef __rol_nonconst_64
+#define __rol_nonconst_64(x,shift) __rol_constant_64(x,shift)
+#define __ror_nonconst_64(x,shift) __ror_constant_64(x,shift)
+#endif /* !__rol_nonconst_64 */
+
+#ifdef __NO_builtin_constant_p
+#define __rol_8(x,shift)    __rol_nonconst_8(x,shift)
+#define __rol_16(x,shift)   __rol_nonconst_16(x,shift)
+#define __rol_32(x,shift)   __rol_nonconst_32(x,shift)
+#define __rol_64(x,shift)   __rol_nonconst_64(x,shift)
+#define __ror_8(x,shift)    __ror_nonconst_8(x,shift)
+#define __ror_16(x,shift)   __ror_nonconst_16(x,shift)
+#define __ror_32(x,shift)   __ror_nonconst_32(x,shift)
+#define __ror_64(x,shift)   __ror_nonconst_64(x,shift)
+#else /* __NO_builtin_constant_p */
+#define __rol_8(x,shift)  ((__builtin_constant_p(x) && __builtin_constant_p(shift)) ? __rol_constant_8(x,shift)  : __rol_nonconst_8(x,shift))
+#define __rol_16(x,shift) ((__builtin_constant_p(x) && __builtin_constant_p(shift)) ? __rol_constant_16(x,shift) : __rol_nonconst_16(x,shift))
+#define __rol_32(x,shift) ((__builtin_constant_p(x) && __builtin_constant_p(shift)) ? __rol_constant_32(x,shift) : __rol_nonconst_32(x,shift))
+#define __rol_64(x,shift) ((__builtin_constant_p(x) && __builtin_constant_p(shift)) ? __rol_constant_64(x,shift) : __rol_nonconst_64(x,shift))
+#define __ror_8(x,shift)  ((__builtin_constant_p(x) && __builtin_constant_p(shift)) ? __ror_constant_8(x,shift)  : __ror_nonconst_8(x,shift))
+#define __ror_16(x,shift) ((__builtin_constant_p(x) && __builtin_constant_p(shift)) ? __ror_constant_16(x,shift) : __ror_nonconst_16(x,shift))
+#define __ror_32(x,shift) ((__builtin_constant_p(x) && __builtin_constant_p(shift)) ? __ror_constant_32(x,shift) : __ror_nonconst_32(x,shift))
+#define __ror_64(x,shift) ((__builtin_constant_p(x) && __builtin_constant_p(shift)) ? __ror_constant_64(x,shift) : __ror_nonconst_64(x,shift))
+#endif /* !__NO_builtin_constant_p */
 
 __SYSDECL_END
 

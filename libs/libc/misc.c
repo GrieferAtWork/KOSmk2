@@ -33,7 +33,10 @@
 #include "malloc.h"
 #include "unicode.h"
 #include "sysconf.h"
+#include "fcntl.h"
+#include "unistd.h"
 
+#include <fcntl.h>
 #include <hybrid/compiler.h>
 #include <hybrid/atomic.h>
 #include <hybrid/asm.h>
@@ -179,34 +182,94 @@ INTERN int LIBCCALL libc_mlock(void const *addr, size_t len) { NOT_IMPLEMENTED()
 INTERN int LIBCCALL libc_munlock(void const *addr, size_t len) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_mlockall(int flags) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_munlockall(void) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_shm_open(char const *name, int oflag, mode_t mode) { NOT_IMPLEMENTED(); return -1; }
-INTERN int LIBCCALL libc_shm_unlink(char const *name) { NOT_IMPLEMENTED(); return -1; }
+
+INTERN ATTR_RARETEXT int LIBCCALL libc_shm_getfd(void) {
+ int fd,old_fd;
+ PRIVATE int shm_fd = -1;
+ if (shm_fd >= 0) return shm_fd;
+ fd = libc_open(RARESTR("/dev/shm"),O_RDONLY|O_DIRECTORY);
+ if (fd >= 0) {
+  /* Use some high number to not take up (sometimes) more valuable lower numbers. */
+  old_fd = libc_fcntl(fd,F_DUPFD_CLOEXEC,4096);
+  if (old_fd >= 0) libc_close(fd),fd = old_fd;
+  old_fd = ATOMIC_CMPXCH_VAL(shm_fd,-1,fd);
+  if unlikely(old_fd >= 0) libc_close(fd),fd = old_fd;
+ }
+ return fd;
+}
+
+INTERN ATTR_RARETEXT int LIBCCALL
+libc_shm_open(char const *name, int oflag, mode_t mode) {
+ int shm_fd;
+ if unlikely(!name) { SET_ERRNO(EINVAL); return -1; }
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+ while (*name == '/' || (*name == '\\' && oflag&O_DOSPATH)) ++name;
+#else /* !CONFIG_LIBC_NO_DOS_LIBC */
+ while (*name == '/') ++name;
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
+ if ((shm_fd = libc_shm_getfd()) < 0) return -1;
+ /* NOTE: Append 'O_NOFOLLOW' to go along 'AT_SYMLINK_NOFOLLOW' in shm_unlink(). */
+ return libc_openat(shm_fd,name,oflag|O_NOFOLLOW,mode);
+}
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+PRIVATE ATTR_RARETEXT int LIBCCALL
+libc_do_shm_unlink(char const *name, bool dospath) {
+ int shm_fd;
+ if unlikely(!name) { SET_ERRNO(EINVAL); return -1; }
+ while (*name == '/' || (*name == '\\' && dospath)) ++name;
+ if ((shm_fd = libc_shm_getfd()) < 0) return -1;
+ return libc_unlinkat(shm_fd,name,AT_SYMLINK_NOFOLLOW);
+}
+INTERN ATTR_RARETEXT int LIBCCALL
+libc_shm_unlink(char const *name) {
+ return libc_do_shm_unlink(name,false);
+}
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_dos_shm_unlink(char const *name) {
+ return libc_do_shm_unlink(name,true);
+}
+#else /* !CONFIG_LIBC_NO_DOS_LIBC */
+INTERN ATTR_RARETEXT int LIBCCALL
+libc_shm_unlink(char const *name) {
+ int shm_fd;
+ if unlikely(!name) { SET_ERRNO(EINVAL); return -1; }
+ while (*name == '/') ++name;
+ if ((shm_fd = libc_shm_getfd()) < 0) return -1;
+ return libc_unlinkat(shm_fd,name,AT_SYMLINK_NOFOLLOW);
+}
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
+
 INTERN int LIBCCALL libc_madvise(void *addr, size_t len, int advice) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_mincore(void *start, size_t len, unsigned char *vec) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_posix_madvise(void *addr, size_t len, int advice) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_remap_file_pages(void *start, size_t size, int prot, size_t pgoff, int flags) { NOT_IMPLEMENTED(); return -1; }
 
 
-INTERN void *LIBCCALL libc_xdlopen(char const *filename, int flags) {
+INTERN ATTR_RARETEXT void *LIBCCALL
+libc_xdlopen(char const *filename, int flags) {
  void *result = sys_xdlopen(filename,flags);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
-INTERN void *LIBCCALL libc_xfdlopen(int fd, int flags) {
+INTERN ATTR_RARETEXT void *LIBCCALL
+libc_xfdlopen(int fd, int flags) {
  void *result = sys_xfdlopen(fd,flags);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
-INTERN void *LIBCCALL libc_xdlsym(void *handle, char const *symbol) {
+INTERN ATTR_RARETEXT void *LIBCCALL
+libc_xdlsym(void *handle, char const *symbol) {
  void *result = sys_xdlsym(handle,symbol);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return NULL; }
  return result;
 }
-INTERN int LIBCCALL libc_xdlclose(void *handle) {
+INTERN ATTR_RARETEXT int LIBCCALL
+libc_xdlclose(void *handle) {
  return FORWARD_SYSTEM_ERROR(sys_xdlclose(handle));
 }
 
-INTERN ATTR_NORETURN
+
+INTERN ATTR_COLDTEXT ATTR_NORETURN
 void LIBCCALL libc_internal_failure(void) {
  libc_fprintf(stderr,
               "An internal libc error caused the application to be terminated.\n"
@@ -243,6 +306,9 @@ DEFINE_PUBLIC_ALIAS(mlockall,libc_mlockall);
 DEFINE_PUBLIC_ALIAS(munlockall,libc_munlockall);
 DEFINE_PUBLIC_ALIAS(shm_open,libc_shm_open);
 DEFINE_PUBLIC_ALIAS(shm_unlink,libc_shm_unlink);
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(__DSYM(shm_unlink),libc_dos_shm_unlink);
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 DEFINE_PUBLIC_ALIAS(madvise,libc_madvise);
 DEFINE_PUBLIC_ALIAS(mincore,libc_mincore);
 DEFINE_PUBLIC_ALIAS(posix_madvise,libc_posix_madvise);
@@ -327,7 +393,7 @@ PRIVATE ATTR_DOSTEXT void *LIBCCALL libc_getlibm_symbol(char const *name) {
  if (!libm_handle) {
   void *new_handle = libc_xdlopen(libm_name,0);
   if (!new_handle) {
-   libc_syslog(LOG_ERROR,"[LIBC] Failed to open %q: %[errno]\n",
+   libc_syslog(LOG_ERROR,DOSSTR("[LIBC] Failed to open %q: %[errno]\n"),
                libm_name,GET_ERRNO());
    libc_internal_failure();
   }
@@ -336,7 +402,7 @@ PRIVATE ATTR_DOSTEXT void *LIBCCALL libc_getlibm_symbol(char const *name) {
  }
  result = libc_xdlsym(libm_handle,name);
  if (!result) {
-  libc_syslog(LOG_ERROR,"[LIBC] Failed to import libm symbol %q: %[errno]\n",
+  libc_syslog(LOG_ERROR,DOSSTR("[LIBC] Failed to import libm symbol %q: %[errno]\n"),
               libm_name,GET_ERRNO());
   libc_internal_failure();
  }

@@ -122,6 +122,14 @@ PRIVATE errno_t KCALL
 shm_setattr(struct inode *__restrict ino, iattrset_t changed) {
  assertf(rwlock_writing(&ino->i_attr_lock),
          "The specifications of this operator allow this assumption");
+ /* NOTE: Posix wants us to use ftruncate() (Which would end up here) to allocated
+  *       SHM region memory after its creation. But we don't do that. - Instead,
+  *       we ignore such requests and only allocate SHM memory as it is used,
+  *       with every existing SHM region having the maximum theoretical limit
+  *       any user address-space can reach of 3Gb.
+  * >> As a consequence of this, POSIX's mandatory call to `ftruncate()'
+  *    isn't actually required, or enforced in any way, shape or form.
+  */
  if (changed&IATTR_SIZ &&
      ino->i_attr.ia_siz < ino->i_attr_disk.ia_siz) {
   struct mregion *region;

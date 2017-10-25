@@ -74,6 +74,8 @@ int main(int argc, char **argv) {
  symlink("/proc/self/fd/" PP_STR(STDIN_FILENO),"/dev/stdin");
  symlink("/proc/self/fd/" PP_STR(STDOUT_FILENO),"/dev/stdout");
  symlink("/proc/self/fd/" PP_STR(STDERR_FILENO),"/dev/stderr");
+ mkdir("/dev/shm",0777);
+ //mount("tmpfs","/dev/shm","tmpfs",0,NULL); /* Not really required... */
 
  /* Mount the secondary disk passed to QEMU (TODO: Remove me) */
  mount("/dev/dos_hdb1","/mnt",NULL,0,NULL);

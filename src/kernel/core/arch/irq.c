@@ -50,6 +50,7 @@
 #include <string.h>
 #include <sys/io.h>
 #include <sys/syslog.h>
+#include <kernel/boot.h>
 
 DECL_BEGIN
 
@@ -407,9 +408,11 @@ irq_default(int intno, struct cpustate_e *__restrict state) {
 #endif
   intchain_trigger(&this_task->t_ic,(irq_t)intno,
                    &state->com,state->iret.eflags);
- }
-#if !defined(CONFIG_DEBUG) || 0
- else {
+ } else
+#if 1 /* Halt and catch fire when emulating (So I get a better look at why) */
+  if (boot_emulation != BOOT_EMULATION_QEMU)
+#endif
+ {
   /* Handle exceptions in user-space by raising a signal. */
   siginfo_t si;
   memset(&si,0,sizeof(siginfo_t));
@@ -484,7 +487,6 @@ kill_task:
   }
 
  }
-#endif
 
  if (IRQ_ISPIC(intno)) {
   syslog(LOG_IRQ|LOG_WARN,
