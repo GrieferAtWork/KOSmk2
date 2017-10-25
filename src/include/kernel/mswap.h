@@ -141,7 +141,7 @@ FUNDEF KPD errno_t KCALL mswap_reload(struct mswap_ticket const *__restrict tick
 
 /* Delete swap mappings associated with the given ticket.
  * (Same as 'mswap_reload', but without actually loading data) */
-FUNDEF KPD void KCALL mswap_delete(struct mswap_ticket const *__restrict ticket);
+FUNDEF void KCALL mswap_delete(struct mswap_ticket const *__restrict ticket);
 
 
 #ifndef __INTELLISENSE__

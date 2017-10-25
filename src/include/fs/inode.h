@@ -62,12 +62,16 @@ typedef int rdmode_t; /* readdir-mode (One of 'FILE_READDIR_*') */
 typedef int pollmode_t; /* poll()-mode (Set of 'POLLIN|POLLPRI|POLLOUT|POLLERR'). */
 #endif /* !__pollmode_t_defined */
 
+#ifndef __raddr_t_defined
+#define __raddr_t_defined 1
+typedef PAGE_ALIGNED uintptr_t raddr_t; /* Region address. */
+#endif /* !__raddr_t_defined */
+
 #ifndef __fallocmode_t_defined
 #define __fallocmode_t_defined 1
 typedef int fallocmode_t; /* fallocate()-mode. */
 #endif /* !__fallocmode_t_defined */
 #define FALLOCMODE_NORMAL 0 /* ??? */
-
 
 /* INode-changed flags for 'ino_setattr'. */
 #define IATTR_NONE    0
@@ -132,10 +136,18 @@ struct inodeops {
   *       making use of lazy allocation & initialization using 'f_pread/f_read'.
   * >> Only device drivers providing physical memory mappings should ever implement this.
   *    Never implement this for regular files, such as in filesystem drivers!
-  * @param: mode:        One of 'MREGION_FILE_*'
-  * @return: * :         A new reference to the mapped memory region. (Must be properly set up)
-  * @return: E_ISERR(*): Failed to create the new memory region for some reason. */
- REF struct mregion *(KCALL *f_mmap)(struct file *__restrict fp, pos_t pos, size_t size);
+  * @assume(size != 0);
+  * @assume(IS_ALIGNED(size,PAGESIZE));
+  * @param: mode:          One of 'MREGION_FILE_*'
+  * @param: pregion_start: An optional output pointer to override where mapping will start.
+  *                        NOTE: Upon entry, the caller must pre-initialize this field to ZERO(0).
+  *                        Upon successful return, the value stored in this argument will be
+  *                        used by the 'start' parameter in an associated 'mman_map_unlocked()' call.
+  * @return: * :           A new reference to the mapped memory region. (Must be properly set up)
+  * @return: E_ISERR(*):   Failed to create the new memory region for some reason. */
+ REF struct mregion *(KCALL *f_mmap)(struct file *__restrict fp, pos_t pos,
+                                     PAGE_ALIGNED size_t size,
+                                     PAGE_ALIGNED raddr_t *__restrict pregion_start);
 
  /* NOTE: When 'f_seek' is missing, 'ESPIPE' is generated for
   *       'S_ISFIFO', 'S_ISCHR' and 'S_ISSOCK' files. - 'EPERM' otherwise. */

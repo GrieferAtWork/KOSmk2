@@ -140,7 +140,7 @@ mbranch_remap_unlocked(struct mbranch const *__restrict self,
     /* Simple case: Only needing to update permissions, we
      *              can use one call to 'pdir_mprotect'
      *              since we're allowed to assume that the
-     *              mapping already exists, as well as being
+     *              mapping already exists, as well as is
      *              mapped correctly. */
     error = pdir_mprotect(pdir,part_vpage,part_size,part_prot);
    } else

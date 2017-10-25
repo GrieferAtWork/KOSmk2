@@ -34,7 +34,7 @@ FUNDEF size_t (KCALL __copy_in_user)(USER void *dst, USER void const *src, size_
 FUNDEF size_t (KCALL __memset_user)(USER void *dst, int byte, size_t n_bytes) ASMNAME("memset_user");
 FUNDEF char  *(KCALL __strend_user)(USER char const *str) ASMNAME("strend_user"); /* Returns NULL on error */
 FUNDEF char  *(KCALL __stpncpy_from_user)(HOST void *__restrict dst, USER char const *str, size_t max_chars) ASMNAME("stpncpy_from_user"); /* Returns NULL on error */
-FUNDEF bool   (KCALL __addr_isuser)(void const *addr, size_t len) ASMNAME("addr_isuser"); /* Returns true if user-space is allowed access to 'addr'. */
+FUNDEF bool   (KCALL __addr_isuser)(void const *addr, size_t len) ASMNAME("addr_isuser"); /* Returns true if user-space is allowed access to `addr'. */
 
 /* User-buffered I/O functions.
  * @return: 0 : Successfully transferred all data.

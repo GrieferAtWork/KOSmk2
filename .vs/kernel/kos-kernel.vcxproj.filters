@@ -56,6 +56,9 @@
     <None Include="..\..\src\modules\block\ata-io.c.inl">
       <Filter>modules\block</Filter>
     </None>
+    <None Include="..\..\src\kernel\mman\mregion-io.c.inl">
+      <Filter>kernel\mman</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -450,6 +453,9 @@
     <ClCompile Include="..\..\src\modules\video\vga.c">
       <Filter>modules\video</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fs\shm.c">
+      <Filter>kernel\fs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -730,6 +736,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\modules\vga.h">
       <Filter>include\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\fs\shm.h">
+      <Filter>include\fs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

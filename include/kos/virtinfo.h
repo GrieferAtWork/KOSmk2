@@ -98,7 +98,7 @@ struct virtinfo {
 
 #ifndef __KERNEL__
 
-/* Query addr2line-style information about a virtual 'addr' in the caller's VM.
+/* Query addr2line-style information about a virtual `addr' in the caller's VM.
  * @ERRNO: ENODATA: No debug information associated with the given address.
  * NOTE: The relation between 'xvirtinfo' and 'xvirtinfo2' is the same as
  *       for 'xfdname' and 'xfdname2', in that 'xvirtinfo()' behaves according

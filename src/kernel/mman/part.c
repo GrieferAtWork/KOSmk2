@@ -210,68 +210,74 @@ action_do_decref(struct mregion *__restrict region,
          MREGION_PART_BEGIN(self),MREGION_PART_END(self,region));
  if (!--self->mt_refcnt) {
   /* Change the self state to not-allocated, freeing any allocated data. */
-  if (self->mt_flags&MPART_FLAG_CHNG &&
-      region->mr_init == MREGION_INIT_WFILE) {
-   /* TODO: Signal 'MREGION_INITFUN_MODE_SAVE' to user-defined initializers. */
-   /* TODO: Unlock region. */
-   /* Write modified pages back to the file/user-callback. */
-   errno_t error = -EOK;
-   pos_t file_pos = region->mr_setup.mri_start+self->mt_start;
-   pos_t file_end = region->mr_setup.mri_start+region->mr_setup.mri_size;
-   if (self->mt_state == MPART_STATE_INCORE) {
-    struct mscatter *iter = &self->mt_memory;
-    size_t skip_before = 0;
-    /* If the part is located below the mapping start, make sure to shift offsets. */
-    if (self->mt_start < region->mr_setup.mri_begin) {
-     size_t part_size = MREGION_PART_END(self,region)-MREGION_PART_BEGIN(self);
-     skip_before = region->mr_setup.mri_begin-self->mt_start;
-     if (skip_before >= part_size) goto done_write;
-    }
-    do {
-     size_t max_write;
-     uintptr_t start = (uintptr_t)iter->m_start;
-     size_t    size  = iter->m_size;
-     if (file_pos >= file_end) break;
-     max_write = (size_t)(file_end-file_pos);
-     if (max_write > size)
-         max_write = size;
-     /* Make sure to skip leading data */
-     if (skip_before) {
-      if (skip_before >= max_write) {
-       skip_before -= max_write;
-       goto next;
+  if (self->mt_flags&MPART_FLAG_CHNG) {
+   self->mt_flags &= ~(MPART_FLAG_CHNG);
+   if (region->mr_init&MREGION_INIT_WRITETHROUGH) {
+    if (MREGION_INIT_ISFILE(region->mr_init)) {
+     /* TODO: Signal 'MREGION_INITFUN_MODE_SAVE' to user-defined initializers. */
+     /* TODO: Unlock region. */
+     /* Write modified pages back to the file/user-callback. */
+     errno_t error = -EOK;
+     pos_t file_pos = region->mr_setup.mri_start+self->mt_start;
+     pos_t file_end = region->mr_setup.mri_start+region->mr_setup.mri_size;
+     if (self->mt_state == MPART_STATE_INCORE) {
+      struct mscatter *iter = &self->mt_memory;
+      size_t skip_before = 0;
+      /* If the part is located below the mapping start, make sure to shift offsets. */
+      if (self->mt_start < region->mr_setup.mri_begin) {
+       size_t part_size = MREGION_PART_END(self,region)-MREGION_PART_BEGIN(self);
+       skip_before = region->mr_setup.mri_begin-self->mt_start;
+       if (skip_before >= part_size) goto done_write;
       }
-      start     += skip_before;
-      max_write -= skip_before;
-      skip_before = 0;
-     }
-     error = file_kpwriteall(region->mr_setup.mri_file,
-                            (void *)start,max_write,file_pos);
-     if (E_ISERR(error)) break;
+      do {
+       size_t max_write;
+       uintptr_t start = (uintptr_t)iter->m_start;
+       size_t    size  = iter->m_size;
+       if (file_pos >= file_end) break;
+       max_write = (size_t)(file_end-file_pos);
+       if (max_write > size)
+           max_write = size;
+       /* Make sure to skip leading data */
+       if (skip_before) {
+        if (skip_before >= max_write) {
+         skip_before -= max_write;
+         goto next;
+        }
+        start     += skip_before;
+        max_write -= skip_before;
+        skip_before = 0;
+       }
+       error = file_kpwriteall(region->mr_setup.mri_file,
+                              (void *)start,max_write,file_pos);
+       if (E_ISERR(error)) break;
 next:
-     file_pos += max_write;
-    } while ((iter = iter->m_next) != NULL);
-   }
+       file_pos += max_write;
+      } while ((iter = iter->m_next) != NULL);
+     }
 done_write:
-   if (E_ISERR(error)) {
-    syslog(LOG_MEM|LOG_ERROR,
-           "[MEM] Failed to sync file mapping in %[file] at %I64u\n",
-           file_pos);
+     if (E_ISERR(error)) {
+      syslog(LOG_MEM|LOG_ERROR,
+             "[MEM] Failed to sync file mapping in %[file] at %I64u\n",
+             file_pos);
+     }
+    }
    }
   }
   if (region->mr_type == MREGION_TYPE_MEM) {
-   if (self->mt_state == MPART_STATE_INCORE ||
-       self->mt_state == MPART_STATE_INSWAP) {
-    struct mman *old_mm;
-    TASK_PDIR_KERNEL_BEGIN(old_mm);
-    if (self->mt_state == MPART_STATE_INCORE)
-         page_free_scatter(&self->mt_memory,memory_attrib);
-    else mswap_delete(&self->mt_stick);
-    TASK_PDIR_KERNEL_END(old_mm);
+   /* If the keep flag is set, don't deallocate this part (for now). */
+   if (!(self->mt_flags&MPART_FLAG_KEEP)) {
+    if (self->mt_state == MPART_STATE_INCORE) {
+     struct mman *omm;
+     TASK_PDIR_KERNEL_BEGIN(omm);
+     /* Must switch to the kernel memory manager for this part. */
+     page_free_scatter(&self->mt_memory,memory_attrib);
+     TASK_PDIR_KERNEL_END(omm);
+    } else if (self->mt_state == MPART_STATE_INSWAP) {
+     mswap_delete(&self->mt_stick);
+    }
+    /* Fix the part state to mirror what's new. */
+    self->mt_state = MPART_STATE_MISSING;
    }
-   /* Fix the part state to mirror what's new. */
-   self->mt_state  = MPART_STATE_MISSING;
-   self->mt_flags &= ~(MPART_FLAG_CHNG);
   } else {
    assertf(region->mr_type == MREGION_TYPE_PHYSICAL ? (self->mt_state == MPART_STATE_INCORE) :
            MREGION_TYPE_ISGUARD(region->mr_type)    ? (self->mt_state == MPART_STATE_MISSING) :

@@ -377,7 +377,7 @@ search_again:
  return result;
 }
 
-/* Write 'size' bytes of memory starting at 'addr' to 'fp' */
+/* Write 'size' bytes of memory starting at `addr' to 'fp' */
 PRIVATE errno_t KCALL
 mman_memory_writefile(struct mman *__restrict self,
                       struct file *__restrict fp,

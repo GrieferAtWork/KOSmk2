@@ -112,6 +112,7 @@ mregion_destroy(struct mregion *__restrict self) {
 
  /* Free all region parts still allocated. */
  { struct mregion_part *iter,*next;
+   struct mman *omm = NULL;
    iter = self->mr_parts;
    while (iter) {
     next = iter->mt_chain.le_next;
@@ -120,15 +121,15 @@ mregion_destroy(struct mregion *__restrict self) {
     assertf(iter->mt_refcnt == 0,"%d",iter->mt_refcnt);
     if (self->mr_type == MREGION_TYPE_MEM) {
      /* The part may not be in-core if the region is being destroyed after
-      * having been pre-allocated before a call to mmap() fails. */
-     if unlikely(iter->mt_state == MPART_STATE_INCORE ||
-                 iter->mt_state == MPART_STATE_INSWAP) {
-      struct mman *omm;
-      TASK_PDIR_KERNEL_BEGIN(omm);
-      if likely(iter->mt_state == MPART_STATE_INCORE)
-           page_free_scatter(&iter->mt_memory,PAGEATTR_NONE);
-      else mswap_delete(&iter->mt_stick);
-      TASK_PDIR_KERNEL_END(omm);
+      * having been pre-faulted before a call to mmap() fails, or if the
+      * 'MPART_FLAG_KEEP' flag was set on the part, causing its de-allocation
+      * to be prolonged until the death of the surrounding region. */
+     if (iter->mt_state == MPART_STATE_INCORE) {
+      /* Must switch to the kernel memory manager for this part. */
+      if (!omm) TASK_PDIR_KERNEL_BEGIN(omm);
+      page_free_scatter(&iter->mt_memory,PAGEATTR_NONE);
+     } else if (iter->mt_state == MPART_STATE_INSWAP) {
+      mswap_delete(&iter->mt_stick);
      }
     } else {
      assertf(self->mr_type == MREGION_TYPE_PHYSICAL ? (iter->mt_state == MPART_STATE_INCORE) :
@@ -139,6 +140,7 @@ mregion_destroy(struct mregion *__restrict self) {
     if (iter != &self->mr_part0) kffree(iter,GFP_NOFREQ);
     iter = next;
    }
+   if (omm) TASK_PDIR_KERNEL_END(omm);
  }
  if (MREGION_INIT_ISFILE(self->mr_init)) {
   CHECK_HOST_DOBJ(self->mr_setup.mri_file);
@@ -2193,6 +2195,7 @@ mman_merge_branch_unlocked(struct mman *__restrict self,
 DECL_END
 
 #ifndef __INTELLISENSE__
+#include "mregion-io.c.inl"
 #include "environ.c.inl"
 #include "mcore.c.inl"
 #ifndef CONFIG_NO_LDT

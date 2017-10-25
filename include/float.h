@@ -27,9 +27,14 @@
 
 __SYSDECL_BEGIN
 
+/* Because GCC rather stop-drop-and-burn instead of having
+   '__has_include_next()' return 0 when no other include paths can
+   be searched, we sadly can't look for another version of
+   <float.h>, until one of the GCC guys realizes this stupidity.
 #if __has_include_next(<float.h>)
 #include_next <float.h>
 #endif
+*/
 
 /* Mostly taken from GCC's fixinclude <float.h> header, but still
  * required due to several extensions DOS puts in this header.

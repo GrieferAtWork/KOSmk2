@@ -111,6 +111,7 @@ try_nogap:
 PRIVATE syscall_slong_t KCALL
 user_mmap(struct mmap_info *__restrict info) {
  struct mman *mm = THIS_TASK->t_mman;
+ raddr_t region_start = 0; /* Offset into 'region' where mapping starts. */
  struct mregion *region;
  syscall_slong_t result;
  bool has_write_lock = false;
@@ -121,6 +122,8 @@ user_mmap(struct mmap_info *__restrict info) {
  if (info->mi_flags&MAP_FIXED)
      info->mi_size += (uintptr_t)base_addr & (PAGESIZE-1);
  info->mi_size = CEIL_ALIGN(info->mi_size,PAGESIZE);
+ /* Check for address overflow.
+  * HINT: Also handles the case of 'info->mi_size == 0' */
  if unlikely((uintptr_t)base_addr+info->mi_size <=
              (uintptr_t)base_addr) return -EINVAL;
  if unlikely((info->mi_flags&MAP_FIXED) &&
@@ -183,9 +186,20 @@ user_mmap(struct mmap_info *__restrict info) {
    info->mi_virt.mv_len  += info->mi_virt.mv_begin;
    if (info->mi_virt.mv_len < info->mi_size) goto einval; /* Cannot do partial mappings. */
 
+   /* The following assertions should never fail (obviously; they're assertions...),
+    * but they should re-assume implementors of 'f_mmap' if its assumptions, meaning
+    * that they should not feel forced to do them again. */
+   assert(region_start == 0);
+   assert(info->mi_size != 0);
+   assert(IS_ALIGNED(info->mi_size,PAGESIZE));
+
    /* Make use of custom file memory mappings. */
-   region = (*fp->f_ops->f_mmap)(fp,(pos_t)info->mi_virt.mv_off,info->mi_size);
+   region = (*fp->f_ops->f_mmap)(fp,(pos_t)info->mi_virt.mv_off,
+                                 info->mi_size,&region_start);
    if (E_ISERR(fp)) { result = E_GTERR(region); goto end; }
+   assertf(IS_ALIGNED(region_start,PAGESIZE),
+           "'region_size' must remain page-aligned, but is now %Ix",
+           region_start);
    goto got_regions;
   }
  }
@@ -322,23 +336,23 @@ findspc:
   guard_addr = map_addr;
   if (!(info->mi_flags&MAP_GROWSDOWN))
       *(uintptr_t *)&guard_addr += info->mi_size-info->mi_virt.mv_guard;
-  result = mman_mmap_unlocked(mm,guard_addr,info->mi_virt.mv_guard,
-                              0,guard_region,info->mi_prot,NULL,info->mi_tag);
+  result = mman_mmap_unlocked(mm,guard_addr,info->mi_virt.mv_guard,0,
+                              guard_region,info->mi_prot,NULL,info->mi_tag);
   if (E_ISERR(result)) goto end_mm;
 
   if (info->mi_flags&MAP_GROWSDOWN) {
    result = mman_mmap_unlocked(mm,(ppage_t)((uintptr_t)map_addr+info->mi_virt.mv_guard),
-                               info->mi_size-info->mi_virt.mv_guard,
-                               0,region,info->mi_prot,NULL,info->mi_tag);
+                               info->mi_size-info->mi_virt.mv_guard,region_start,
+                               region,info->mi_prot,NULL,info->mi_tag);
   } else {
-   result = mman_mmap_unlocked(mm,map_addr,info->mi_size-info->mi_virt.mv_guard,
-                               0,region,info->mi_prot,NULL,info->mi_tag);
+   result = mman_mmap_unlocked(mm,map_addr,info->mi_size-info->mi_virt.mv_guard,region_start,
+                               region,info->mi_prot,NULL,info->mi_tag);
   }
   if (E_ISERR(result))
       mman_munmap(mm,guard_addr,info->mi_virt.mv_guard,MMAN_MUNMAP_ALL,NULL);
  } else {
-  result = mman_mmap_unlocked(mm,map_addr,info->mi_size,0,region,
-                              info->mi_prot,NULL,info->mi_tag);
+  result = mman_mmap_unlocked(mm,map_addr,info->mi_size,region_start,
+                              region,info->mi_prot,NULL,info->mi_tag);
  }
  if (E_ISERR(result)) goto end_mm;
  result = (syscall_slong_t)base_addr;
@@ -362,9 +376,9 @@ SYSCALL_DEFINE2(xmmap,int,version,USER struct mmap_info const *,data){
  /* KOS eXtended system call. */
  struct mmap_info info;
  if (version != MMAP_INFO_CURRENT)
-     return -EINVAL;
+     return -ENOSYS;
  if (copy_from_user(&info,data,sizeof(struct mmap_info)))
-     return -EINVAL;
+     return -EFAULT;
  return user_mmap(&info);
 }
 

@@ -201,7 +201,7 @@ FUNDEF void KCALL pdir_fini(pdir_t *__restrict self);
 /* Load 'self' as a copy of 'existing' (NOTE: Called _AFTER_ 'pdir_init(self)' succeeded!) */
 FUNDEF WUNUSED bool KCALL pdir_load_copy(pdir_t *__restrict self, pdir_t const *__restrict existing);
 
-/* Flush 'n_bytes' starting at 'addr' in the currently set page directory. */
+/* Flush 'n_bytes' starting at `addr' in the currently set page directory. */
 FUNDEF void FCALL pdir_flush(VIRT void *start, size_t n_bytes);
 LOCAL void FCALL pdir_flushall(void) {
  register u32 temp;

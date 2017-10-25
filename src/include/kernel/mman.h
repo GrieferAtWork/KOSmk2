@@ -48,7 +48,10 @@ DECL_BEGIN
 /* Paging-based memory manager, fully capable of load-on-read
  * and copy-on-write, as well as making use of SWAP memory. */
 
+#ifndef __raddr_t_defined
+#define __raddr_t_defined 1
 typedef PAGE_ALIGNED uintptr_t raddr_t; /* Region address. */
+#endif /* !__raddr_t_defined */
 typedef PAGE_ALIGNED uintptr_t rsize_t; /* Region size. */
 
 struct file;
@@ -98,8 +101,8 @@ struct mfutex {
 FUNDEF SAFE void KCALL mfutex_destroy(struct mfutex *__restrict self);
 
 /* Get/Allocate futex objects.
- * @return: * :   A new reference to the futex associated with 'addr'.
- * @return: NULL: Failed to find/allocate a futex associated with the given 'addr'. */
+ * @return: * :   A new reference to the futex associated with `addr'.
+ * @return: NULL: Failed to find/allocate a futex associated with the given `addr'. */
 FUNDEF SAFE REF struct mfutex *KCALL mfutexptr_get(atomic_rwptr_t *__restrict self, raddr_t addr);
 FUNDEF SAFE REF struct mfutex *KCALL mfutexptr_new(atomic_rwptr_t *__restrict self, raddr_t addr);
 
@@ -108,8 +111,8 @@ FUNDEF SAFE REF struct mfutex *KCALL mfutexptr_new(atomic_rwptr_t *__restrict se
 #define MPART_STATE_MISSING 0 /*< Memory hasn't been allocated/initialized (NOTE: Mandatory for guard regions). */
 #define MPART_STATE_INCORE  1 /*< Memory is loaded into the core (NOTE: Mandatory for physical regions). */
 #define MPART_STATE_INSWAP  2 /*< Memory has been off-loaded into swap. */
-#define MPART_STATE_UNKNOWN 3 /*< The memory state isn't managed by the mman, or not relevant (usually used alongside 'MREGION_TYPE_RESERVED').
-                               *  WARNING: This state may be overwritten when a region type other than 'MREGION_TYPE_RESERVED' is used! */
+#define MPART_STATE_UNKNOWN 3 /*< The memory state isn't managed by the mman, or not relevant (usually used alongside `MREGION_TYPE_RESERVED').
+                               *  WARNING: This state may be overwritten when a region type other than `MREGION_TYPE_RESERVED' is used! */
 /*      MPART_STATE_...     4  */
 
 #define MPART_FLAG_NONE  0x00 /* ... */
@@ -119,7 +122,11 @@ FUNDEF SAFE REF struct mfutex *KCALL mfutexptr_new(atomic_rwptr_t *__restrict se
                                *  NOTE: This flag is set when a page is copied for COW.
                                *  NOTE: This flag is used to implement 'msync()'
                                *  WARNING: Only trust this flag when 'MREGION_INIT_WRITETHROUGH' is used. */
-/*      MPART_FLAG_...   0x02  */
+#define MPART_FLAG_KEEP  0x02 /*< Do not free this part once all mappings to it disappear.
+                               *  Instead, keep it around until the surrounding region is destroyed.
+                               *  This flag is set for parts 
+                               */
+/*      MPART_FLAG_...   0x04  */
 
 struct mregion_part {
  /* Reference counting/state tracking of memory region parts.
@@ -134,8 +141,10 @@ struct mregion_part {
                            mt_chain;  /*< [lock(:mr_plock)][sort(ASCENDING(mt_start))] Chain of more region part. */
  raddr_t                   mt_start;  /*< [lock(:mr_plock)] Starting address of this part. */
  ref_t                     mt_refcnt; /*< [lock(:mr_plock)] Amount of branches that map this part.
-                                       *   NOTE: This memory may be ZERO(0), in which case this part isn't mapped by
-                                       *         anyone, meaning that no memory or stick is ever associated with it.
+                                       *   NOTE: This field may be ZERO(0), in which case this part isn't
+                                       *         mapped by anyone. Though this does not mean that it has no
+                                       *         memory or stick associated, but simply that any associated data
+                                       *         may be freed at any point in time (Unless 'MPART_FLAG_KEEP' is set).
                                        *         aka.: 'mt_state == MPART_STATE_MISSING'. */
  u8                        mt_state;  /*< [lock(:mr_plock)] The current state of this region part.
                                        *   NOTE: Always 'MPART_STATE_INCORE' for 'MREGION_TYPE_PHYSICAL' regions.
@@ -146,8 +155,8 @@ struct mregion_part {
                                        *   NOTE: This field is ignored and considered equal to '1' for 'MREGION_TYPE_PHYSICAL' typed regions.
                                        *   NOTE: This field being non-zero does _NOT_ require mt_state to be 'MPART_STATE_INCORE'!
                                        *         It merely means that once loaded, the part will stay in memory until it is unlocked at a later time. */
-union{ struct mscatter     mt_memory; /*< [lock(:mr_plock)][valid_if(mt_refcnt != 0 && mt_state == MPART_STATE_INCORE)] Physical memory scatter chain for in-core data. */
-       struct mswap_ticket mt_stick;  /*< [lock(:mr_plock)][valid_if(mt_refcnt != 0 && mt_state == MPART_STATE_INSWAP)] Swap ticket describing memory data. */};
+union{ struct mscatter     mt_memory; /*< [lock(:mr_plock)][valid_if(mt_state == MPART_STATE_INCORE)] Physical memory scatter chain for in-core data. */
+       struct mswap_ticket mt_stick;  /*< [lock(:mr_plock)][valid_if(mt_state == MPART_STATE_INSWAP)] Swap ticket describing memory data. */};
 };
 #define MREGION_PART_BEGIN(self)       ((self)->mt_start)
 #define MREGION_PART_END(self,region)  ((self)->mt_chain.le_next ? (self)->mt_chain.le_next->mt_start : (region)->mr_size)
@@ -308,7 +317,7 @@ struct mregion {
                                             *   with 'MNOTIFY_GUARD_END'
                                             *   NOTE: Set to 'MREGION_GFUNDS_INFINITE' to provide infinite funding. */
  union mregion_cinit            mr_setup;  /*< Setup/teardown special-handling information. */
- PAGE_ALIGNED size_t            mr_size;   /*< [const] The size of this region (in bytes). */
+ PAGE_ALIGNED rsize_t           mr_size;   /*< [const] The size of this region (in bytes). */
  atomic_rwptr_t                 mr_futex;  /*< [TYPE(struct mfutex)] Known futex objects within this region. */
  rwlock_t                       mr_plock;  /*< Lock used for accessing region parts. */
  LIST_HEAD(struct mregion_part) mr_parts;  /*< [lock(mr_plock)][1..1] Chain of region parts containing information about different sub-portions of this region. */
@@ -362,6 +371,59 @@ FUNDEF struct mregion *KCALL mregion_cinit(struct mregion *self);
 FUNDEF void KCALL mregion_setup(struct mregion *__restrict self);
 
 
+/* Read data from a given memory-region, at the specified offset `addr'.
+ * NOTES:
+ *   - Attempting to read out-of-bounds will return ZERO(0).
+ *   - Attempting to read past the end will return the max possible read.
+ *   - Attempting to read unmapped/unallocated memory will
+ *     simply use that initializer for load the given buffer
+ *    (such as for fixed-integer initialization, or a file-mapping)
+ * @return: * :         The actual amount of bytes read.
+ * @return: -EFAULT:    The given user-space buffer is faulty.
+ * @return: -EINTR:     The calling thread was interrupted.
+ * @return: E_ISERR(*): Failed to read region data for some reason
+ *                     (can happen for non-loaded file-mappings) */
+FUNDEF SAFE ssize_t KCALL
+mregion_read(struct mregion *__restrict self,
+             USER void *buf, size_t bufsize, raddr_t addr);
+/* Same as 'mregion_read', but the caller must be holding a write-(Yes a write)lock on 'self'. */
+FUNDEF SAFE ssize_t KCALL
+mregion_read_unlocked(struct mregion *__restrict self,
+                      USER void *buf, size_t bufsize, raddr_t addr);
+
+/* Write data to a given memory region, at a specified offset `addr'.
+ * NOTES:
+ *   - Attempting to write out-of-bounds will return ZERO(0).
+ *   - Attempting to write unmapped memory ('mt_refcnt == 0') will
+ *     allocate affected parts at set the 'MPART_FLAG_KEEP' flag.
+ *   - Attempting to write past the end will return the max possible write.
+ *   - Attempting to write unallocated memory will cause that memory
+ *     to become allocated, as well as cause data portions not defined
+ *     by the specified user-space buffer to be initialized.
+ * @return: * :         The actual amount of bytes written.
+ * @return: -EFAULT:    The given user-space buffer is faulty.
+ * @return: -EINTR:     The calling thread was interrupted.
+ * @return: E_ISERR(*): Failed to write region data for some reason
+ *                     (can happen for non-loaded file-mappings, or custom initializers) */
+FUNDEF SAFE ssize_t KCALL
+mregion_write(struct mregion *__restrict self,
+              USER void const *buf, size_t bufsize, raddr_t addr);
+/* Same as 'mregion_write', but the caller must be holding a write-lock on 'self'. */
+FUNDEF SAFE ssize_t KCALL
+mregion_write_unlocked(struct mregion *__restrict self,
+                       USER void const *buf, size_t bufsize, raddr_t addr);
+/* Unload all unmapped, but still allocated parts with the given address range.
+ * Such parts may have been created through calls to 'mregion_write_unlocked',
+ * when the associated part was not mapped in any real VM.
+ * @return: * :     The amount of bytes unloaded (Sum of physical and swap memory).
+ * @return: -EINTR: The calling thread was interrupted. */
+FUNDEF SAFE ssize_t KCALL
+mregion_unload(struct mregion *__restrict self,
+               raddr_t addr, rsize_t size);
+/* Same as 'mregion_unload', but the caller must be holding a write-lock on 'self'. */
+FUNDEF SAFE ssize_t KCALL
+mregion_unload_unlocked(struct mregion *__restrict self,
+                        raddr_t addr, rsize_t size);
 
 
 
@@ -760,11 +822,11 @@ FUNDEF errno_t KCALL
 mman_insbranch_map_unlocked(struct mman *__restrict self,
                             struct mbranch *__restrict branch);
 
-/* Return the branch at a given virtual address 'addr', or NULL if none exists. */
+/* Return the branch at a given virtual address `addr', or NULL if none exists. */
 FUNDEF struct mbranch *KCALL
 mman_getbranch_unlocked(struct mman const *__restrict self, VIRT void *addr);
 
-/* Return the part-state of memory located at the given 'addr'.
+/* Return the part-state of memory located at the given `addr'.
  * NOTE: The caller must hold a read-lock on 'self'
  * @return: * :                  One of 'MPART_STATE_*'
  * @return: MPART_STATE_MISSING: The part is either not loaded, or the address is faulty. */
@@ -776,10 +838,10 @@ FUNDEF u8 KCALL mman_getstate_unlocked(struct mman const *__restrict self, VIRT 
 FUNDEF ssize_t KCALL mman_print_unlocked(struct mman *__restrict self,
                                          pformatprinter printer, void *closure);
 
-/* Get/Allocate-missing futex objects associated with the given 'addr'.
+/* Get/Allocate-missing futex objects associated with the given `addr'.
  * NOTE: [mman_getfutex_unlocked] The caller is responsible for holding a read-lock to 'self->m_lock'
  * NOTE: [mman_newfutex_unlocked] The caller is responsible for holding a write-lock to 'self->m_lock'
- * @return: * :      A new reference to a futex located at 'addr'.
+ * @return: * :      A new reference to a futex located at `addr'.
  * @return: -EFAULT: An invalid address was given.
  * @return: -ENOMEM: [mman_newfutex_unlocked] Failed to allocate a new futex. */
 FUNDEF REF struct mfutex *KCALL mman_getfutex_unlocked(struct mman *__restrict self, VIRT void *addr);
@@ -867,7 +929,7 @@ mman_mmap_stack_unlocked(struct mman *__restrict self, struct stack *__restrict 
 
 
 /* Change the protection for all pages within the range defined by 'addr...+=n_bytes'
- * NOTE: 'addr' must be page-aligned, but 'n_bytes' will be ceil-aligned by PAGESIZE.
+ * NOTE: `addr' must be page-aligned, but 'n_bytes' will be ceil-aligned by PAGESIZE.
  * NOTE: The caller is responsible for holding a write-lock to 'self->m_lock'
  * WARNING: Some pages may have been updated, even when the function fails!
  * @return: * :         The actual number of bytes who's protection got changed.
@@ -876,7 +938,7 @@ mman_mmap_stack_unlocked(struct mman *__restrict self, struct stack *__restrict 
 FUNDEF ssize_t KCALL mman_mprotect_unlocked(struct mman *__restrict self, VIRT ppage_t addr,
                                             size_t n_bytes, u32 prot_amask, u32 prot_omask);
 
-/* Map the given memory region 'region' to 'addr'.
+/* Map the given memory region 'region' to `addr'.
  * NOTE: Any existing mappings are deleted.
  * NOTE: The caller is responsible for holding a write-lock to 'self->m_lock'
  * HINT: Before unlocking the memory manager, the caller should
@@ -913,7 +975,7 @@ FUNDEF errno_t KCALL mman_mmap_unlocked(struct mman *__restrict self, VIRT ppage
                                         u32 prot, mbranch_notity notify, void *closure);
 
 /* Unmaps all memory regions between 'addr...+=size'
- * NOTE: 'addr' must be page-aligned, but 'n_bytes' will be ceil-aligned by PAGESIZE.
+ * NOTE: `addr' must be page-aligned, but 'n_bytes' will be ceil-aligned by PAGESIZE.
  * NOTE: Regions only partially mapped at the corners will be split.
  * NOTE: The caller is responsible for holding a write-lock to 'self->m_lock'
  * @param: addr:        Start address where mappings should be deleted from.
@@ -968,7 +1030,7 @@ FUNDEF errno_t KCALL mman_mrestore_unlocked(struct mman *__restrict self,
 struct mman_maps {
  LIST_HEAD(struct mbranch) mm_maps; /*< [0..1] Ordered list of branches.
                                      *   NOTE: These branches have been unlinked from any address tree,
-                                     *         and their 'a_vmin' is offset from the original 'addr'
+                                     *         and their 'a_vmin' is offset from the original `addr'
                                      *         passed to 'mman_mextract_unlocked'.
                                      */
 };

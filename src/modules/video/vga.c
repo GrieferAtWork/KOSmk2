@@ -809,13 +809,12 @@ vga_ioctl(struct file *__restrict fp, int name, USER void *arg) {
 
 PRIVATE REF struct mregion *KCALL
 vga_mmap(struct file *__restrict UNUSED(fp),
-         pos_t pos, size_t size) {
+         pos_t pos, PAGE_ALIGNED size_t size,
+         raddr_t *__restrict UNUSED(pregion_start)) {
  /* Allow mapping the VGA display to memory. */
  if (!IS_ALIGNED(pos,PAGESIZE)) return E_PTR(-EINVAL);
  if (pos >= vram_size) return E_PTR(-EINVAL);
- size = CEIL_ALIGN(size,PAGESIZE);
  size = MIN(size,vram_size-pos);
- assert(size != 0);
  return mregion_new_phys(MMAN_UNIGFP,(ppage_t)(vram_addr+pos),size);
 }
 

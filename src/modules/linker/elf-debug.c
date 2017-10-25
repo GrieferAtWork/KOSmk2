@@ -168,7 +168,7 @@ PRIVATE ATTR_MALLOC char *KCALL
 debug_name_at(debug_t *__restrict self, Elf_Word addr) {
  char *result,*newres; ssize_t maxlen;
  if (addr >= self->d_strtab.sh_size) return NULL;
- /* Allocate and read a zero-terminated string at 'addr' in 'self->d_strtab' */
+ /* Allocate and read a zero-terminated string at `addr' in 'self->d_strtab' */
  maxlen = MIN((SHSTRTAB_MAXNAM+1)*sizeof(char),
                self->d_strtab.sh_size-addr);
  result = (char *)malloc((size_t)maxlen);
@@ -237,7 +237,7 @@ rewind:
 }
 
 
-/* Search for a symbol containing 'addr' */
+/* Search for a symbol containing `addr' */
 PRIVATE Elf_Sym *KCALL
 debug_scan_symbols(debug_t *__restrict self,
                    maddr_t addr) {
@@ -264,7 +264,7 @@ debug_scan_symbols(debug_t *__restrict self,
 }
 
 
-/* Return a a pointer to the symbol containing 'addr', or NULL of no such symbol exists,
+/* Return a a pointer to the symbol containing `addr', or NULL of no such symbol exists,
  * or an E_PTR() error code if something else goes wrong (such as no available memory, an I/O error, etc.) */
 PRIVATE Elf_Sym *KCALL
 debug_symbol_at(debug_t *__restrict self,

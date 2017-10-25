@@ -85,7 +85,7 @@ mswap_reload(struct mswap_ticket const *__restrict ticket,
  /* TODO */
  return -ENOSYS;
 }
-PUBLIC KPD void KCALL
+PUBLIC void KCALL
 mswap_delete(struct mswap_ticket const *__restrict ticket) {
  CHECK_HOST_DOBJ(ticket);
 }

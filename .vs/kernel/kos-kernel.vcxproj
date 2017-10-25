@@ -24,6 +24,7 @@
     <None Include="..\..\src\kernel\mman\ldt-set-new.c.inl" />
     <None Include="..\..\src\kernel\mman\ldt.c.inl" />
     <None Include="..\..\src\kernel\mman\mcore.c.inl" />
+    <None Include="..\..\src\kernel\mman\mregion-io.c.inl" />
     <None Include="..\..\src\kernel\sched\pid.c.inl" />
     <None Include="..\..\src\kernel\sched\sighand.c.inl" />
     <None Include="..\..\src\linker-scripts\kernel.ld" />
@@ -70,6 +71,7 @@
     <ClCompile Include="..\..\src\kernel\fs\iobuffer.c" />
     <ClCompile Include="..\..\src\kernel\fs\pipe.c" />
     <ClCompile Include="..\..\src\kernel\fs\pty.c" />
+    <ClCompile Include="..\..\src\kernel\fs\shm.c" />
     <ClCompile Include="..\..\src\kernel\fs\sys_fs.c" />
     <ClCompile Include="..\..\src\kernel\fs\textfile.c" />
     <ClCompile Include="..\..\src\kernel\fs\vfs.c" />
@@ -143,6 +145,7 @@
     <ClInclude Include="..\..\src\include\fs\memfile.h" />
     <ClInclude Include="..\..\src\include\fs\pipe.h" />
     <ClInclude Include="..\..\src\include\fs\pty.h" />
+    <ClInclude Include="..\..\src\include\fs\shm.h" />
     <ClInclude Include="..\..\src\include\fs\superblock.h" />
     <ClInclude Include="..\..\src\include\fs\textfile.h" />
     <ClInclude Include="..\..\src\include\fs\vfs.h" />
