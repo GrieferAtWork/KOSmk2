@@ -215,7 +215,7 @@ PRIVATE cell_t  vga_attrib;
 #define HAVE_CURSOR_BLINK_THREAD 0
 #define HAVE_CURSOR_LOCK         1
 #define INVERT_CURSOR_AFTER_MOVE 1
-#define TTY_DEVNAME              "/dev/vga-tty"
+#define TTY_DEVNAME              "/dev/vga"
 #undef TERM_BELL
 
 

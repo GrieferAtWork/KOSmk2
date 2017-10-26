@@ -427,7 +427,6 @@ typedef struct {
  u16             v_crt_d;  /*< CRT Controller Data Register (Either `VGA_CRT_DC' or `VGA_CRT_DM') */
  u16             v_is1_r;  /*< Input Status Register 1 (Either `VGA_IS1_RC' or `VGA_IS1_RM') */
  u16             v_mode;   /*< Current mode (One of 'VIO_MODE_*') */
-
 } vga_t;
 
 

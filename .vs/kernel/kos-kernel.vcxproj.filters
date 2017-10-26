@@ -363,9 +363,6 @@
     <ClCompile Include="..\..\src\modules\block\ata.c">
       <Filter>modules\block</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\modules\video\vga-tty.c">
-      <Filter>modules\video</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\fs\cache.c">
       <Filter>kernel\fs</Filter>
     </ClCompile>

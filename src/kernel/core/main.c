@@ -486,7 +486,7 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/devfs");
  kinsmod("/mod/ps2");
  kinsmod("/mod/memdev");
- kinsmod("/mod/vga-tty");
+ kinsmod("/mod/vga");
 
  PREEMPTION_ENABLE();
 #ifdef CONFIG_DEBUG
@@ -506,7 +506,6 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/elf-debug");
  kinsmod("/mod/pdb-debug");
  //kinsmod("/mod/ne2000");
- kinsmod("/mod/vga");
 
  /* TODO: Actual locale support? */
 

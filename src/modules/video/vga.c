@@ -825,14 +825,22 @@ vga_ioctl(struct file *__restrict fp, int name, USER void *arg) {
 }
 
 PRIVATE REF struct mregion *KCALL
-vga_mmap(struct file *__restrict UNUSED(fp),
+vga_mmap(struct file *__restrict fp,
          pos_t pos, PAGE_ALIGNED size_t size,
          raddr_t *__restrict UNUSED(pregion_start)) {
+ vga_t *vga = container_of(INODE_TOCHR(fp->f_node),vga_t,v_device);
  /* Allow mapping the VGA display to memory. */
  if (!IS_ALIGNED(pos,PAGESIZE)) return E_PTR(-EINVAL);
- if (pos >= vram_size) return E_PTR(-EINVAL);
- size = MIN(size,vram_size-pos);
- return mregion_new_phys(MMAN_UNIGFP,(ppage_t)(vram_addr+pos),size);
+ if (vga->v_mode == VIO_MODE_TEXT_COLOR_80X25) {
+  if (pos != 0 || size != PAGESIZE)
+      return E_PTR(-EINVAL);
+  /* Map VGA text memory for TTY drivers. */
+  return mregion_new_phys(MMAN_UNIGFP,(ppage_t)0xB8000,PAGESIZE);
+ } else {
+  if (pos >= vram_size) return E_PTR(-EINVAL);
+  size = MIN(size,vram_size-pos);
+  return mregion_new_phys(MMAN_UNIGFP,(ppage_t)(vram_addr+pos),size);
+ }
 }
 
 PRIVATE struct inodeops vga_ops = {

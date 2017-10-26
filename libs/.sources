@@ -80,7 +80,7 @@ END
 BEGIN ARCHIVE("_start")
 	SET_ARCHIVER("")
 	SET_OUTPUT("/bin/libs/crt0.o")
-	SET_DISKFILE(none)
+	SET_DISKFILE("/usr/lib/crt1.o")
 	SOURCE("_start/_start.c")
 END
 
