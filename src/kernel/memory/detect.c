@@ -138,6 +138,20 @@ end:
  return result;
 }
 
+PRIVATE ATTR_FREETEXT
+SAFE KPD size_t KCALL detect_8a(void) {
+ struct cpustate16 s;
+ size_t result = 0;
+ memset(&s,0,sizeof(s));
+ s.gp.eax = 0x8a;
+ early_rm_interrupt(&s,0x15); /* Execute realmode interrupt. */
+ if (s.eflags & EFLAGS_CF) goto end;
+ result = ((u32)s.gp.dx | (u32)s.gp.ax << 16)*1024;
+ result = mem_install(0x00100000,result,MEMTYPE_RAM);
+end:
+ return result;
+}
+
 PRIVATE ATTR_FREETEXT SAFE KPD
 size_t KCALL memory_try_detect(void) {
  size_t result;
@@ -145,6 +159,7 @@ size_t KCALL memory_try_detect(void) {
  if (!result) result += detect_e801();
  if (!result) result += detect_da88();
  if (!result) result += detect_88();
+ if (!result) result += detect_8a();
  /* XXX: There are other things we could try... (Other bios calls) */
  return result;
 }
