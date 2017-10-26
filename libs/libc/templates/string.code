@@ -228,8 +228,8 @@ DECL T *LIBCCALL Xstr(chrnul)
 DECL T *LIBCCALL Xstr(chr)
 (T const *__restrict haystack, Tneedle needle) {
 	T *iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == (T)needle) return iter;
-	return NULL;
+	for (; *iter != (T)needle; ++iter) if (!*iter) return NULL;
+	return iter;
 }
 #endif /* WANT_STRCHR */
 
@@ -238,7 +238,8 @@ DECL T *LIBCCALL Xstr(chr)
 DECL T *LIBCCALL Xstr(rchr)
 (T const *__restrict haystack, Tneedle needle) {
 	T *result = NULL,*iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == (T)needle) result = iter;
+	do if (*iter == (T)needle) result = iter;
+	while (*iter++);
 	return result;
 }
 #endif /* WANT_STRRCHR */
@@ -248,7 +249,8 @@ DECL T *LIBCCALL Xstr(rchr)
 DECL T *LIBCCALL Xstr(rchrnul)
 (T const *__restrict haystack, Tneedle needle) {
 	T *result = NULL,*iter = (T *)haystack;
-	for (; *iter; ++iter) if (*iter == (T)needle) result = iter;
+	do if (*iter == (T)needle) result = iter;
+	while (*iter++);
 	return result ? result : (T *)haystack-1;
 }
 #endif /* WANT_STRRCHRNUL */
