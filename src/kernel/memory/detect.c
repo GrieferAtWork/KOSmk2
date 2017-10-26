@@ -164,7 +164,7 @@ SAFE KPD size_t KCALL detect_c7(void) {
  struct cpustate16 s;
  size_t result = 0;
  memset(&s,0,sizeof(s));
- s.gp.si  = (u16)(uint16_t)C7_RECORD;
+ s.gp.si  = (u16)(uintptr_t)C7_RECORD;
  s.gp.eax = 0xc7;
  early_rm_interrupt(&s,0x15); /* Execute realmode interrupt. */
  if (s.eflags & EFLAGS_CF) goto end;
@@ -184,7 +184,15 @@ size_t KCALL memory_try_detect(void) {
  if (!result) result += detect_88();
  if (!result) result += detect_8a();
  if (!result) result += detect_c7();
- /* XXX: There are other things we could try... (Other bios calls) */
+ /* That's all known detection methods.
+  * (Excluding CMOS that can't be used safely due to lack of context,
+  *  and manual probing which we don't dare to do in fear of tripping
+  *  some NVS configuration, or breaking some memory-mapped peripheral)
+  * For example: My test machine (an Asus Netbook from around 2010)
+  *              has some NVS memory just below 3Gb, which actually
+  *              makes me cringe a bit thinking how that's always
+  *              mapped and so close to the actual kernel.
+  *             (Something about APIC configuration...) */
  return result;
 }
 
