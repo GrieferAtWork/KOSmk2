@@ -54,6 +54,7 @@
     <ClCompile Include="..\..\src\kernel\core\sysinfo.c" />
     <ClCompile Include="..\..\src\kernel\core\syslog.c" />
     <ClCompile Include="..\..\src\kernel\core\user.c" />
+    <ClCompile Include="..\..\src\kernel\core\version.c" />
     <ClCompile Include="..\..\src\kernel\dev\blkdev.c" />
     <ClCompile Include="..\..\src\kernel\dev\chrdev.c" />
     <ClCompile Include="..\..\src\kernel\dev\device.c" />
@@ -177,6 +178,7 @@
     <ClInclude Include="..\..\src\include\kernel\syslog.h" />
     <ClInclude Include="..\..\src\include\kernel\test.h" />
     <ClInclude Include="..\..\src\include\kernel\user.h" />
+    <ClInclude Include="..\..\src\include\kernel\version.h" />
     <ClInclude Include="..\..\src\include\linker\coredump.h" />
     <ClInclude Include="..\..\src\include\linker\debug.h" />
     <ClInclude Include="..\..\src\include\linker\module.h" />

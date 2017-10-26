@@ -108,6 +108,7 @@ local executables = dict {
 #include <pipe>
 #include <sys>
 #include <error>
+#include <time>
 
 local root_folder = fs::path::head(__FILE__).replace("\\","/").rstrip("/");
 

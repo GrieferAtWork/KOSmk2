@@ -17,6 +17,7 @@
  * 3. This notice may not be removed or altered from any source distribution. *
  */
 
+
 BEGIN
 	INCLUDE("include")
 	DEFINE("__KERNEL__")
@@ -56,7 +57,10 @@ BEGIN
 		BEGIN PROJECT("kernel")
 			SET_OUTPUT("/"+run_kernel_binary)
 			SET_DISKFILE("/boot/kos.bin")
-			LINKER_SCRIPT("linker-scripts/kernel.ld")
+			BEGIN
+				DEFINE("BUILD_TIME="+str time.now().time_t)
+				LINKER_SCRIPT("linker-scripts/kernel.ld")
+			END
 			__STATIC_LIBGCC
 			__NOSTDLIB
 

@@ -453,6 +453,9 @@
     <ClCompile Include="..\..\src\kernel\fs\shm.c">
       <Filter>kernel\fs</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\version.c">
+      <Filter>kernel\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -733,6 +736,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\fs\shm.h">
       <Filter>include\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\version.h">
+      <Filter>include\kernel</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

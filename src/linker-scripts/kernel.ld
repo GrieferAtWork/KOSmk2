@@ -335,6 +335,10 @@ SECTIONS {
 	DEFINE(__xboot_num_blocks = (__xboot_num_bytes + (XBOOT_ALIGNMENT - 1)) / (XBOOT_ALIGNMENT));
 #endif /* !CONFIG_NO_BOOTLOADER */
 
+
+	DEFINE(__kernel_timestamp_lo = (BUILD_TIME & 0xffffffff));
+	DEFINE(__kernel_timestamp_hi = ((BUILD_TIME >> 32) & 0xffffffff));
+
 	/DISCARD/ : {
 		*(.rel*)
 		*(.discard)

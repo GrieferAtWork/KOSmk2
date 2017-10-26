@@ -34,30 +34,8 @@
 
 DECL_BEGIN
 
-/* Define global kernel information available through 'uname()' in userspace.
- * HINT: This information is shared through the user-share facility,
- *       meaning there is only ever a single instance of this variable! */
-PUBLIC ATTR_USED ATTR_SECTION(".rodata.user")
-struct utsname const uname __ASMNAME("uname") = {
-    .sysname    = "KOS",
-    .release    = "0",
-    .version    = "1",
-#define MACHINE_NAME    "devan" /* Is it pronounced Deven, or Devaaan? */
-    .nodename   = MACHINE_NAME,
-    .domainname = MACHINE_NAME "-net",
-#ifdef __i386__
-    .machine    = "i386",
-#elif defined(__x86_64__)
-    .machine    = "x86-64",
-#else
-#warning "Unknown host architecture"
-    .machine    = "UNKNOWN",
-#endif
-};
-
-
 PUBLIC struct cmdline _kernel_commandline
-__ASMNAME("kernel_commandline") = {
+ASMNAME("kernel_commandline") = {
     .cl_text = NULL,
     .cl_size = 0,
     .cl_argc = 0,
