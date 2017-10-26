@@ -392,13 +392,12 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
    meminfo_load_part_full(prev);
    if (type != MEMTYPE_PRESERVE && prev->mi_next != MEMINFO_EARLY_NULL)
        mem_resolve_part_overlap(prev,(struct meminfo *)prev->mi_next);
-   assertf(type != MEMTYPE_PRESERVE ||
-           prev->mi_next == MEMINFO_EARLY_NULL ||
+   assertf(type != MEMTYPE_PRESERVE || prev->mi_next == MEMINFO_EARLY_NULL ||
          ((uintptr_t)prev->mi_addr+prev->mi_size <= (uintptr_t)prev->mi_next->mi_addr &&
           (uintptr_t)prev->mi_part_addr+prev->mi_part_size <= (uintptr_t)prev->mi_next->mi_part_addr),
-          "PREV %p...%p/%p...%p\n"
-          "NEXT %p...%p/%p...%p\n"
-          "ADD  %p...%p",
+           FREESTR("PREV %p...%p/%p...%p\n"
+                   "NEXT %p...%p/%p...%p\n"
+                   "ADD  %p...%p"),
           (uintptr_t)prev->mi_addr,
           (uintptr_t)prev->mi_addr+prev->mi_size-1,
           (uintptr_t)prev->mi_part_addr,

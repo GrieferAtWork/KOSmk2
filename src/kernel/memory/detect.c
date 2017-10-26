@@ -63,7 +63,8 @@ INTERN ATTR_FREERODATA u8 const memtype_bios_matrix[6] = {
 
 
 
-PRIVATE ATTR_FREETEXT SAFE KPD size_t KCALL try_e820(void) {
+PRIVATE ATTR_FREETEXT
+SAFE KPD size_t KCALL detect_e820(void) {
  struct smap_entry *entry; struct cpustate16 s;
  size_t result = 0;
  memset(&s,0,sizeof(s));
@@ -90,9 +91,30 @@ PRIVATE ATTR_FREETEXT SAFE KPD size_t KCALL try_e820(void) {
  return result;
 }
 
+PRIVATE ATTR_FREETEXT
+SAFE KPD size_t KCALL detect_e801(void) {
+ struct cpustate16 s;
+ size_t result = 0;
+ memset(&s,0,sizeof(s));
+ s.gp.eax = 0xe801;
+ early_rm_interrupt(&s,0x15); /* Execute realmode interrupt. */
+ if (s.eflags & EFLAGS_CF) goto end; /* Check for errors. */
+ /* Fix broken BIOS return registers. */
+ if (!s.gp.cx) s.gp.cx = s.gp.ax;
+ if (!s.gp.dx) s.gp.dx = s.gp.bx;
+ if (s.gp.cx > 0x3c00) s.gp.cx = 0; /* Don't trust a broken value... */
+ result += mem_install(0x00100000,s.gp.cx*1024,MEMTYPE_RAM);
+ result += mem_install(0x01000000,s.gp.dx*64*1024,MEMTYPE_RAM);
+
+end:
+ return result;
+}
+
 PRIVATE ATTR_FREETEXT SAFE KPD
 size_t KCALL memory_try_detect(void) {
- size_t result = try_e820();
+ size_t result;
+ /* ...... */ result  = detect_e820();
+ if (!result) result += detect_e801();
  /* XXX: There are other things we could try... (Other bios calls) */
  return result;
 }
