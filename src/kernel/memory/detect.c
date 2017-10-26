@@ -63,8 +63,9 @@ INTERN ATTR_FREERODATA u8 const memtype_bios_matrix[6] = {
 
 
 
-PRIVATE ATTR_FREETEXT SAFE KPD bool KCALL try_e820(void) {
+PRIVATE ATTR_FREETEXT SAFE KPD size_t KCALL try_e820(void) {
  struct smap_entry *entry; struct cpustate16 s;
+ size_t result = 0;
  memset(&s,0,sizeof(s));
  entry = SMAP_BUFFER;
  s.gp.ebx = 0; /* continue-id. */
@@ -75,39 +76,43 @@ PRIVATE ATTR_FREETEXT SAFE KPD bool KCALL try_e820(void) {
   s.gp.edi = (u32)entry;
   s.gp.sp  = REALMODE_EARLY_STACK;
   early_rm_interrupt(&s,0x15); /* Execute realmode interrupt. */
-  if (s.eflags & EFLAGS_CF) return false; /* Unsupported. */
-  if (s.gp.eax != 0x534d4150) return false; /* Error. */
+  if (s.eflags & EFLAGS_CF) break; /* Unsupported. */
+  if (s.gp.eax != 0x534d4150) break; /* Error. */
   if (s.gp.ecx > 20 && (entry->sm_acpi & 1) == 0) continue; /* Ignored. */
   if (entry->sm_type >= COMPILER_LENOF(memtype_bios_matrix)) entry->sm_type = 0;
   if (memtype_bios_matrix[entry->sm_type] >= MEMTYPE_COUNT) continue;
   if (entry->sm_addr_hi) continue; /* Too large. */
-  mem_install(entry->sm_addr_lo,
-              entry->sm_size_hi ? (0-entry->sm_addr_lo)
-                                :    entry->sm_size_lo,
-              memtype_bios_matrix[entry->sm_type]);
+  result += mem_install(entry->sm_addr_lo,
+                        entry->sm_size_hi ? (0-entry->sm_addr_lo)
+                                          :    entry->sm_size_lo,
+                        memtype_bios_matrix[entry->sm_type]);
  } while (s.gp.ebx);
- return true;
+ return result;
 }
 
 PRIVATE ATTR_FREETEXT SAFE KPD
-bool KCALL memory_try_detect(void) {
- if (try_e820()) return true;
+size_t KCALL memory_try_detect(void) {
+ size_t result = try_e820();
  /* XXX: There are other things we could try... (Other bios calls) */
- return false;
+ return result;
 }
 
 INTDEF ATTR_FREETEXT SAFE KPD
-void KCALL memory_load_detect(void) {
- mem_install(FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE),
-             PAGESIZE,MEMTYPE_PRESERVE);
- if (!memory_try_detect()) {
+size_t KCALL memory_load_detect(void) {
+ size_t result,temp;
+ result = mem_install(FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE),
+                      PAGESIZE,MEMTYPE_PRESERVE);
+ temp = memory_try_detect();
+ result += temp;
+ if (!temp) {
   syslog(LOG_MEM|LOG_WARN,FREESTR("[MEM] Guess available dynamic memory\n"));
-#define RANGE(a,b) mem_install(a,(b-a)+1,MEMTYPE_RAM)
+#define RANGE(a,b) result += mem_install(a,(b-a)+1,MEMTYPE_RAM)
   /* Most likely that at least this memory exists... */
   RANGE(0x00000500,0x0008ffff);
   /* ... */
 #undef RANGE
  }
+ return result;
 }
 
 

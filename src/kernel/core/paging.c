@@ -1045,7 +1045,7 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
   else {
    /* Ignore memory that should not be mapped. */
    if (!MEMTYPE_ISMAP(iter->mi_type)) continue;
-#if 0
+#if 1
    syslog(LOG_MEM|LOG_DEBUG,FREESTR("[PD] CORE_RANGE(%p...%p) (type %d, zone #%d)\n"),
           iter->mi_part_addr,(uintptr_t)iter->mi_part_addr+iter->mi_part_size-1,iter->mi_type,zone_id);
 #endif

@@ -411,6 +411,8 @@ kernel_boot(u32        mb_magic,
  /* Initialize basic data using the information potentially provided by the bootloader. */
  basicdata_initialize(mb_magic,mb_mbt);
 
+ memory_load_detect();
+
  /* Parse the commandline & execute early setup arguments. */
  commandline_initialize_parse();
  commandline_initialize_early();

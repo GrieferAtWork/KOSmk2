@@ -475,7 +475,7 @@ INTDEF INITCALL SAFE KPD size_t KCALL memory_load_mb_lower_upper(u32 mem_lower, 
 INTDEF INITCALL SAFE KPD size_t KCALL memory_load_mb2_mmap(struct mb2_tag_mmap *__restrict info);
 
 /* Try various different ways of detecting memory. */
-INTDEF INITCALL SAFE KPD void KCALL memory_load_detect(void);
+INTDEF INITCALL SAFE KPD size_t KCALL memory_load_detect(void);
 INTDEF INITCALL u8 const memtype_bios_matrix[6];
 
 #endif

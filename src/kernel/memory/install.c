@@ -100,7 +100,9 @@ page_addmemory(mzone_t zone_id, ppage_t start,
  assert(IS_ALIGNED((uintptr_t)n_bytes,PAGESIZE));
  assert(addr_isphys(start));
  assert(mzone_of((void *)start) == zone_id);
- assert(mzone_of((void *)((uintptr_t)start+n_bytes-1)) == zone_id);
+ assertf(mzone_of((void *)((uintptr_t)start+n_bytes-1)) == zone_id,
+         "Different zone at end of %p...%p (Isn't %d)",
+         start,(uintptr_t)start+n_bytes-1,zone_id);
  assertf((uintptr_t)start+(n_bytes-1) >= (uintptr_t)start,
          FREESTR("Pointer overflow while freeing pages: %p + %Id(%Ix) overflows into %p"),
         (uintptr_t)start,n_bytes,n_bytes,(uintptr_t)start+(n_bytes-1));
@@ -287,15 +289,17 @@ mem_overlapping_address_range(PHYS uintptr_t base, size_t num_bytes,
 
 INTERN ATTR_FREETEXT PAGE_ALIGNED size_t KCALL
 mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
-                 memtype_t type, mzone_t zone) {
+                 memtype_t type, mzone_t zone_id) {
  struct meminfo *iter,**piter,*new_info,*prev;
  size_t result = 0; uintptr_t addr_end;
  assert(num_bytes);
- piter = &mem_info_[zone];
+ assert((uintptr_t)base >= MZONE_MIN(zone_id));
+ assert((uintptr_t)base+num_bytes-1 <= MZONE_MAX(zone_id));
+ piter = &mem_info_[zone_id];
  /* Figure out the memory info record before which to insert this zone. */
  while ((iter = *piter) != MEMINFO_EARLY_NULL &&
         (PHYS uintptr_t)iter->mi_addr < base) {
-  assertf(piter == &mem_info_[zone] ||
+  assertf(piter == &mem_info_[zone_id] ||
          (uintptr_t)container_of(piter,struct meminfo,mi_next)->mi_addr+
                     container_of(piter,struct meminfo,mi_next)->mi_size <=
          (uintptr_t)iter->mi_addr,
@@ -315,9 +319,9 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
    uintptr_t iter_end = (uintptr_t)iter->mi_addr+iter->mi_size;
    /* Map memory above the overlap. */
    if (addr_end > iter_end)
-       result += mem_install_zone(iter_end,addr_end-iter_end,type,zone);
+       result += mem_install_zone(iter_end,addr_end-iter_end,type,zone_id);
    mem_overlapping_address_range((uintptr_t)iter->mi_addr,
-                                  MIN(addr_end,iter_end)-base,
+                                  MIN(addr_end,iter_end)-(uintptr_t)iter->mi_addr,
                                   iter->mi_type,type);
    addr_end  = (uintptr_t)iter->mi_addr;
    num_bytes =  addr_end-base;
@@ -333,8 +337,9 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
    old_full_addr  = iter->mi_full_addr;
    meminfo_load_part_full(iter);
    new_full_addr  = iter->mi_full_addr;
+
    /* Check for merging with the previous region. */
-   if (piter != &mem_info_[zone]) {
+   if (piter != &mem_info_[zone_id]) {
     prev = container_of(piter,struct meminfo,mi_next);
     assert((uintptr_t)prev->mi_addr+prev->mi_size <=
            (uintptr_t)iter->mi_addr);
@@ -348,12 +353,17 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
      prev->mi_size      += iter->mi_size;
      prev->mi_part_size += iter->mi_part_size;
      prev->mi_full_size += iter->mi_full_size;
+     assert(type == MEMTYPE_PRESERVE ||
+            prev->mi_next == MEMINFO_EARLY_NULL ||
+           (uintptr_t)prev->mi_part_addr+prev->mi_part_size <=
+           (uintptr_t)prev->mi_next->mi_part_addr);
     }
    }
 
    /* Make the memory available if it is RAM. */
    if (MEMTYPE_ISUSE(type)) {
-    result += page_addmemory(zone,new_full_addr,
+    assert(old_full_addr >= new_full_addr);
+    result += page_addmemory(zone_id,new_full_addr,
                             (uintptr_t)old_full_addr-
                             (uintptr_t)new_full_addr);
    }
@@ -361,7 +371,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
   }
  }
 
- if (piter != &mem_info_[zone]) {
+ if (piter != &mem_info_[zone_id]) {
   uintptr_t prev_end;
   /* Check for extending the with the previous region. */
   prev = container_of(piter,struct meminfo,mi_next);
@@ -380,11 +390,30 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
   if (prev_end == base && prev->mi_type == type) {
    prev->mi_size += num_bytes;
    meminfo_load_part_full(prev);
+   if (type != MEMTYPE_PRESERVE && prev->mi_next != MEMINFO_EARLY_NULL)
+       mem_resolve_part_overlap(prev,(struct meminfo *)prev->mi_next);
+   assertf(type != MEMTYPE_PRESERVE ||
+           prev->mi_next == MEMINFO_EARLY_NULL ||
+         ((uintptr_t)prev->mi_addr+prev->mi_size <= (uintptr_t)prev->mi_next->mi_addr &&
+          (uintptr_t)prev->mi_part_addr+prev->mi_part_size <= (uintptr_t)prev->mi_next->mi_part_addr),
+          "PREV %p...%p/%p...%p\n"
+          "NEXT %p...%p/%p...%p\n"
+          "ADD  %p...%p",
+          (uintptr_t)prev->mi_addr,
+          (uintptr_t)prev->mi_addr+prev->mi_size-1,
+          (uintptr_t)prev->mi_part_addr,
+          (uintptr_t)prev->mi_part_addr+prev->mi_part_size-1,
+          (uintptr_t)prev->mi_next->mi_addr,
+          (uintptr_t)prev->mi_next->mi_addr+(uintptr_t)prev->mi_next->mi_size-1,
+          (uintptr_t)prev->mi_next->mi_part_addr,
+          (uintptr_t)prev->mi_next->mi_part_addr+(uintptr_t)prev->mi_next->mi_part_size-1,
+           base,base+num_bytes-1);
    if (MEMTYPE_ISUSE(type)) {
     uintptr_t aligned_base = CEIL_ALIGN(base,PAGESIZE);
-    uintptr_t aligned_end  = CEIL_ALIGN(base+num_bytes,PAGESIZE)-aligned_base;
-    result += page_addmemory(zone,(ppage_t)aligned_base,
-                             aligned_base-aligned_end);
+    uintptr_t aligned_end  = FLOOR_ALIGN(base+num_bytes,PAGESIZE);
+    if (aligned_end > aligned_base)
+        result += page_addmemory(zone_id,(ppage_t)aligned_base,
+                                 aligned_end-aligned_base);
    }
    return result;
   }
@@ -403,7 +432,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
 
  /* Fix overlaps. */
  if (type != MEMTYPE_PRESERVE) {
-  if (piter != &mem_info_[zone])
+  if (piter != &mem_info_[zone_id])
       mem_resolve_part_overlap(container_of(piter,struct meminfo,mi_next),new_info);
   if (iter != MEMINFO_EARLY_NULL)
       mem_resolve_part_overlap(new_info,iter);
@@ -411,7 +440,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
 
  /* Make the memory available for use by the physical memory allocator. */
  if (MEMTYPE_ISUSE(type)) {
-  result += page_addmemory(zone,
+  result += page_addmemory(zone_id,
                            new_info->mi_full_addr,
                            new_info->mi_full_size);
  }
@@ -438,7 +467,9 @@ mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type) {
  }
  /* Step #4: Check for partial collision with KERNEL_BASE. */
  if unlikely(base+num_bytes > KERNEL_BASE) {
-  mem_unusable_address_range(KERNEL_BASE,KERNEL_BASE-(base+num_bytes),type);
+  mem_unusable_address_range(KERNEL_BASE,
+                            (base+num_bytes)-KERNEL_BASE,
+                             type);
   num_bytes = KERNEL_BASE-base;
  }
 
@@ -503,6 +534,9 @@ PAGE_ALIGNED size_t KCALL mem_unpreserve(void) {
      iter->mi_full_size += next->mi_full_size;
      iter->mi_next       = next->mi_next;
     }
+    assert(next == MEMINFO_EARLY_NULL ||
+          (uintptr_t)iter->mi_part_addr+iter->mi_part_size <=
+          (uintptr_t)next->mi_part_addr);
    }
   }
  }
