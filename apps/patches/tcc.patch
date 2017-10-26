@@ -1,6 +1,6 @@
-diff -Naur tcc-0.9.26/configure new-tcc-0.9.26/configure
+diff -Naur tcc-0.9.26/configure kos-tcc-0.9.26/configure
 --- tcc-0.9.26/configure	2013-02-15 15:24:00.000000000 +0100
-+++ new-tcc-0.9.26/configure	2017-10-26 11:47:58.036275900 +0200
++++ kos-tcc-0.9.26/configure	2017-10-26 11:47:58.036275900 +0200
 @@ -49,13 +49,14 @@
  cpu=`uname -m`
  
@@ -83,9 +83,9 @@ diff -Naur tcc-0.9.26/configure new-tcc-0.9.26/configure
  
  echo "TARGETOS=$targetos" >> config.mak
  
-diff -Naur tcc-0.9.26/lib/Makefile new-tcc-0.9.26/lib/Makefile
+diff -Naur tcc-0.9.26/lib/Makefile kos-tcc-0.9.26/lib/Makefile
 --- tcc-0.9.26/lib/Makefile	2013-02-15 15:24:00.000000000 +0100
-+++ new-tcc-0.9.26/lib/Makefile	2017-10-26 11:51:44.395292400 +0200
++++ kos-tcc-0.9.26/lib/Makefile	2017-10-26 11:51:44.395292400 +0200
 @@ -61,6 +61,11 @@
   TGT = -DTCC_TARGET_I386
   XCC ?= $(TCC) -B$(TOP)
@@ -106,9 +106,9 @@ diff -Naur tcc-0.9.26/lib/Makefile new-tcc-0.9.26/lib/Makefile
  endif
  
  XFLAGS = $(CPPFLAGS) $(CFLAGS) $(TGT)
-diff -Naur tcc-0.9.26/libtcc.c new-tcc-0.9.26/libtcc.c
+diff -Naur tcc-0.9.26/libtcc.c kos-tcc-0.9.26/libtcc.c
 --- tcc-0.9.26/libtcc.c	2013-02-15 15:24:00.000000000 +0100
-+++ new-tcc-0.9.26/libtcc.c	2017-10-26 11:48:47.125482900 +0200
++++ kos-tcc-0.9.26/libtcc.c	2017-10-26 11:48:47.125482900 +0200
 @@ -1347,7 +1347,7 @@
          !s->nostdlib) {
          if (output_type != TCC_OUTPUT_DLL)
@@ -118,9 +118,9 @@ diff -Naur tcc-0.9.26/libtcc.c new-tcc-0.9.26/libtcc.c
      }
  #endif
      return 0;
-diff -Naur tcc-0.9.26/tccelf.c new-tcc-0.9.26/tccelf.c
+diff -Naur tcc-0.9.26/tccelf.c kos-tcc-0.9.26/tccelf.c
 --- tcc-0.9.26/tccelf.c	2013-02-15 15:24:00.000000000 +0100
-+++ new-tcc-0.9.26/tccelf.c	2017-10-26 11:49:26.537570100 +0200
++++ kos-tcc-0.9.26/tccelf.c	2017-10-26 11:49:26.537570100 +0200
 @@ -1367,8 +1367,8 @@
          tcc_add_support(s1, "libtcc1.a");
  #endif

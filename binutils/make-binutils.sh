@@ -1,0 +1,65 @@
+#!/bin/bash
+
+binutils_folder=$(dirname $(readlink -f "$0"))
+binutils_build_folder="$binutils_folder/build-binutils-i686-kos"
+binutils_src_folder="$binutils_folder/src/binutils-2.27"
+binutils_syshook="$binutils_folder/root"
+if ! [ -z "$GCC_PREFIX" ]; then
+	binutils_syshook="$GCC_PREFIX"
+fi
+export PREFIX="$binutils_build_folder"
+export TARGET=i686-kos
+export PATH="$PREFIX/bin:$PATH"
+
+cmd() {
+	$* || {
+		local error=$?
+		echo "Command failed '$*' -> '$error'"
+		exit $error
+	}
+}
+
+cmd cd "$binutils_folder"
+mkdir -p src
+cmd cd src
+
+if ! [ -f "$binutils_src_folder/configure" ]; then
+	if ! [ -f "binutils-2.27.tar" ] && ! gunzip binutils-2.27.tar.gz; then
+		unlink binutils-2.27.tar.gz
+		cmd wget https://ftp.gnu.org/gnu/binutils/binutils-2.27.tar.gz
+		cmd gunzip binutils-2.27.tar.gz
+	fi
+	cmd tar -xf binutils-2.27.tar
+fi
+
+if ! [ -f "$binutils_src_folder/.kos-patched" ]; then
+	# Apply The KOS patch
+	cmd patch -d "$binutils_src_folder" -p1 < "$binutils_folder/../apps/patches/binutils.patch"
+	> $binutils_src_folder/.kos-patched
+fi
+
+exit 0
+
+mkdir -p "$PREFIX"
+cmd cd "$PREFIX"
+
+if ! [ -f "Makefile" ]; then
+	cmd bash "$binutils_src_folder/configure" \
+		--target=$TARGET \
+		--enable-64-bit-bfd \
+		--prefix="$PREFIX" \
+		--with-sysroot="${binutils_syshook}" \
+		--with-headers="${binutils_syshook}/usr/include" \
+		--disable-nls \
+		--disable-werror \
+		--enable-multilib
+fi
+
+cmd make -j 8
+cmd make -j 8 install
+
+# Prevent redundancy: Use a symlink to integrate KOS system headers into binutils!
+rm -rf i686-kos/sys-include
+ln -s "../../include" i686-kos/sys-include
+
+

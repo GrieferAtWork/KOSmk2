@@ -1,0 +1,60 @@
+#!/bin/bash
+
+export CONFIG_PREFIX="$(dirname $(readlink -f "$0"))"
+export CONFIG_BINUTILS="$CONFIG_PREFIX/binutils"
+export CONFIG_GCC_PREFIX="$CONFIG_BINUTILS/root"
+export CONFIG_DEEMON="deemon"
+
+cmd() {
+	$* || {
+		local error=$?
+		echo "Command failed '$*' -> '$error'"
+		exit $error
+	}
+}
+silent() {
+	$* > /dev/null 2>&1
+}
+
+# Make sure that required applications are present in $PATH
+cmd which -- gcc
+cmd which -- git
+cmd which -- patch
+
+# Make sure we've got deemon, and if not create it
+silent which -- "$CONFIG_DEEMON" || {
+	if [[ "$(uname -s)" == "CYGWIN"* ]]; then
+		export CONFIG_DEEMON="$CONFIG_BINUTILS/win32-deemon/deemon"
+		[ -f "$CONFIG_DEEMON" ] || {
+			# Win32-mode deemon can't be compiled using GCC (sorry...)
+			# But since I'm the owner, I can just put in a precompiled binary!
+			cmd cd "$CONFIG_BINUTILS"
+			if ! [ -f "win32-deemon.tar" ]; then
+				cmd gunzip --keep "win32-deemon.tar.gz"
+			fi
+			cmd tar -xf win32-deemon.tar
+			unlink win32-deemon.tar
+			cmd cd "$CONFIG_PREFIX"
+		}
+	else
+		export CONFIG_DEEMON="$CONFIG_BINUTILS/src/deemon/deemon.102.102"
+		[ -f "$CONFIG_DEEMON" ] || cmd bash "$CONFIG_BINUTILS/make-deemon.sh"
+	fi
+}
+
+
+cmd cd "$CONFIG_PREFIX"
+
+# Build all the different toolchain components
+cmd bash "binutils/make-binutils.sh"
+cmd bash "binutils/make-gcc.sh"
+cmd bash "binutils/make-bin.sh"
+cmd bash "binutils/make-mtools.sh"
+
+unlink "binutils/bin/deemon"
+cmd ln -s "$CONFIG_DEEMON" "binutils/bin/deemon"
+
+
+
+
+

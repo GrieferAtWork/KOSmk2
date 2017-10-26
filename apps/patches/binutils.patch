@@ -1,0 +1,178 @@
+diff -Naur binutils-2.27/bfd/config.bfd kos-binutils-2.27/bfd/config.bfd
+--- binutils-2.27/bfd/config.bfd	2016-08-03 09:36:50.000000000 +0200
++++ kos-binutils-2.27/bfd/config.bfd	2017-10-26 12:12:42.765982700 +0200
+@@ -170,6 +170,18 @@
+     ;;
+ 
+ # START OF targmatch.h
++  i[3-7]86-*-kos*)
++    targ_defvec=i386_elf32_vec
++    targ_selvecs="i386_elf32_vec iamcu_elf32_vec i386_pe_vec i386_pei_vec"
++    targ64_selvecs="x86_64_elf64_vec x86_64_pe_vec x86_64_pei_vec x86_64_pe_be_vec l1om_elf64_vec k1om_elf64_vec"
++    ;;
++#ifdef BFD64
++  x86_64-*-kos*)
++    targ_defvec=x86_64_elf64_vec
++    targ_selvecs="x86_64_elf64_vec x86_64_pe_vec x86_64_pei_vec x86_64_pe_be_vec l1om_elf64_vec k1om_elf64_vec i386_pe_vec i386_pei_vec i386_elf32_vec iamcu_elf32_vec"
++    want64=true
++    ;;
++#endif
+ #ifdef BFD64
+   aarch64-*-darwin*)
+     targ_defvec=aarch64_mach_o_vec
+diff -Naur binutils-2.27/config.sub kos-binutils-2.27/config.sub
+--- binutils-2.27/config.sub	2016-08-03 09:36:51.000000000 +0200
++++ kos-binutils-2.27/config.sub	2017-10-26 12:11:14.728613400 +0200
+@@ -1399,7 +1399,7 @@
+ 	      | -morphos* | -superux* | -rtmk* | -rtmk-nova* | -windiss* \
+ 	      | -powermax* | -dnix* | -nx6 | -nx7 | -sei* | -dragonfly* \
+ 	      | -skyos* | -haiku* | -rdos* | -toppers* | -drops* | -es* \
+-	      | -onefs* | -tirtos* | -phoenix*)
++	      | -onefs* | -tirtos* | -phoenix* | -kos*)
+ 	# Remember, each alternative MUST END IN *, to match a version number.
+ 		;;
+ 	-qnx*)
+diff -Naur binutils-2.27/gas/configure.tgt kos-binutils-2.27/gas/configure.tgt
+--- binutils-2.27/gas/configure.tgt	2016-08-03 09:36:51.000000000 +0200
++++ kos-binutils-2.27/gas/configure.tgt	2017-10-26 12:13:52.222177000 +0200
+@@ -120,6 +120,7 @@
+ generic_target=${cpu_type}-$vendor-$os
+ # Note: This table is alpha-sorted, please try to keep it that way.
+ case ${generic_target} in
++  i386-*-kos*)			fmt=elf em=linux ;;
+   aarch64*-*-elf | aarch64*-*-rtems*)	fmt=elf;;
+   aarch64*-*-linux*)			fmt=elf em=linux ;;
+ 
+diff -Naur binutils-2.27/ld/Makefile.am kos-binutils-2.27/ld/Makefile.am
+--- binutils-2.27/ld/Makefile.am	2016-08-03 09:36:54.000000000 +0200
++++ kos-binutils-2.27/ld/Makefile.am	2017-10-26 12:17:16.651474400 +0200
+@@ -287,6 +287,7 @@
+ 	eelf32xstormy16.c \
+ 	eelf32xtensa.c \
+ 	eelf_i386.c \
++	eelf_i386_kos.c \
+ 	eelf_i386_be.c \
+ 	eelf_i386_chaos.c \
+ 	eelf_i386_fbsd.c \
+@@ -503,6 +504,7 @@
+ 	eelf_k1om.c \
+ 	eelf_k1om_fbsd.c \
+ 	eelf_x86_64.c \
++	eelf_x86_64_kos.c \
+ 	eelf_x86_64_cloudabi.c \
+ 	eelf_x86_64_fbsd.c \
+ 	eelf_x86_64_nacl.c \
+@@ -1312,6 +1314,10 @@
+ eelf_i386.c: $(srcdir)/emulparams/elf_i386.sh \
+   $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+ 
++eelf_i386_kos.c: $(srcdir)/emulparams/elf_i386_kos.sh \
++  $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++	${GENSCRIPTS} elf_i386_kos "$(tdir_elf_i386_kos)"
++
+ eelf_i386_be.c: $(srcdir)/emulparams/elf_i386_be.sh \
+   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+ 
+@@ -2005,6 +2011,10 @@
+ eelf_x86_64.c: $(srcdir)/emulparams/elf_x86_64.sh \
+   $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+ 
++eelf_x86_64_kos.c: $(srcdir)/emulparams/elf_x86_64_kos.sh \
++  $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++	${GENSCRIPTS} elf_x86_64_kos "$(tdir_elf_x86_64_kos)"
++
+ eelf_x86_64_cloudabi.c: $(srcdir)/emulparams/elf_x86_64_cloudabi.sh \
+   $(srcdir)/emulparams/elf_x86_64.sh \
+   $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+diff -Naur binutils-2.27/ld/Makefile.in kos-binutils-2.27/ld/Makefile.in
+--- binutils-2.27/ld/Makefile.in	2016-08-03 09:36:54.000000000 +0200
++++ kos-binutils-2.27/ld/Makefile.in	2017-10-26 12:17:52.301996200 +0200
+@@ -655,6 +655,7 @@
+ 	eelf32xstormy16.c \
+ 	eelf32xtensa.c \
+ 	eelf_i386.c \
++	eelf_i386_kos.c \
+ 	eelf_i386_be.c \
+ 	eelf_i386_chaos.c \
+ 	eelf_i386_fbsd.c \
+@@ -870,6 +871,7 @@
+ 	eelf_k1om.c \
+ 	eelf_k1om_fbsd.c \
+ 	eelf_x86_64.c \
++	eelf_x86_64_kos.c \
+ 	eelf_x86_64_cloudabi.c \
+ 	eelf_x86_64_fbsd.c \
+ 	eelf_x86_64_nacl.c \
+@@ -1342,6 +1344,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_be.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_chaos.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_fbsd.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_kos.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_ldso.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_nacl.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_sol2.Po@am__quote@
+@@ -1355,6 +1358,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_cloudabi.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_fbsd.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_kos.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_nacl.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_sol2.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/egld960.Po@am__quote@
+@@ -2900,6 +2904,10 @@
+ eelf_i386.c: $(srcdir)/emulparams/elf_i386.sh \
+   $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+ 
++eelf_i386_kos.c: $(srcdir)/emulparams/elf_i386_kos.sh \
++  $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++	${GENSCRIPTS} elf_i386_kos "$(tdir_elf_i386_kos)"
++
+ eelf_i386_be.c: $(srcdir)/emulparams/elf_i386_be.sh \
+   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+ 
+@@ -3593,6 +3601,10 @@
+ eelf_x86_64.c: $(srcdir)/emulparams/elf_x86_64.sh \
+   $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+ 
++eelf_x86_64_kos.c: $(srcdir)/emulparams/elf_x86_64_kos.sh \
++  $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++	${GENSCRIPTS} elf_x86_64_kos "$(tdir_elf_x86_64_kos)"
++
+ eelf_x86_64_cloudabi.c: $(srcdir)/emulparams/elf_x86_64_cloudabi.sh \
+   $(srcdir)/emulparams/elf_x86_64.sh \
+   $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+diff -Naur binutils-2.27/ld/configure.tgt kos-binutils-2.27/ld/configure.tgt
+--- binutils-2.27/ld/configure.tgt	2016-08-03 09:36:54.000000000 +0200
++++ kos-binutils-2.27/ld/configure.tgt	2017-10-26 12:14:51.825871700 +0200
+@@ -45,6 +45,17 @@
+ # architecture variants should be kept together even if their names
+ # break the alpha sorting.
+ case "${targ}" in
++i[3-7]86-*-kos*)
++			targ_emul=elf_i386_kos
++			targ_extra_emuls="elf_i386 i386pe i386pep"
++			targ64_extra_emuls="elf_x86_64_kos elf_x86_64 i386pe i386pep"
++			targ_extra_ofiles="deffilep.o pep-dll.o pe-dll.o"
++			;;
++x86_64-*-kos*)
++			targ_emul=elf_x86_64_kos
++			targ_extra_emuls="elf_i386_kos elf_x86_64 elf_i386 i386pep i386pe"
++			targ_extra_ofiles="deffilep.o pep-dll.o pe-dll.o"
++			;;
+ aarch64_be-*-elf)	targ_emul=aarch64elfb
+ 			targ_extra_emuls="aarch64elf aarch64elf32 aarch64elf32b armelfb armelf" ;;
+ aarch64-*-elf | aarch64-*-rtems*)
+diff -Naur binutils-2.27/ld/emulparams/elf_i386_kos.sh kos-binutils-2.27/ld/emulparams/elf_i386_kos.sh
+--- binutils-2.27/ld/emulparams/elf_i386_kos.sh	1970-01-01 01:00:00.000000000 +0100
++++ kos-binutils-2.27/ld/emulparams/elf_i386_kos.sh	2017-10-26 12:15:42.170187300 +0200
+@@ -0,0 +1,3 @@
++. ${srcdir}/emulparams/elf_i386.sh
++GENERATE_SHLIB_SCRIPT=yes
++GENERATE_PIE_SCRIPT=yes
+diff -Naur binutils-2.27/ld/emulparams/elf_x86_64_kos.sh kos-binutils-2.27/ld/emulparams/elf_x86_64_kos.sh
+--- binutils-2.27/ld/emulparams/elf_x86_64_kos.sh	1970-01-01 01:00:00.000000000 +0100
++++ kos-binutils-2.27/ld/emulparams/elf_x86_64_kos.sh	2017-10-26 12:16:02.735742700 +0200
+@@ -0,0 +1,3 @@
++. ${srcdir}/emulparams/elf_x86_64.sh
++GENERATE_SHLIB_SCRIPT=yes
++GENERATE_PIE_SCRIPT=yes

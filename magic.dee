@@ -30,9 +30,7 @@ local config_debug                    = true; /* Enable compiling with debug inf
 local config_optimize                 = none; /* Otherwise: A string "0", "1", etc... */
 local config_max_compilers            = 8; /* Max amount of compilers to run in parallel */
 local config_build_path               = "build/i386-elf";
-//local config_build_path               = "build/x86-64-elf";
-local config_usbdisk                  = <"H:\\">; /* If non-existant or older, mirror the KOS disk contents here. */
-//local config_usbdisk = <none>; /* Uncomment this if you have an H: drive, or simply don't wish to use a USB stick for testing on real hardware. */
+local config_usbdisk = <none>; /* Uncomment this if you have an H: drive, or simply don't wish to use a USB stick for testing on real hardware. */
 
 /* Compiler script options. */
 local config_verbose = false;
@@ -55,22 +53,6 @@ local run_kernel_binary = "bin/kos.bin"; /* Output name of the kernel binary. */
 /* Executable used for '#!$addr2line' formating of serial emulator output. */
 local run_addr2line_exe = run_kernel_binary;
 local run_addr2line_base = 0;
-
-//local run_addr2line_exe = "bin/apps/elf_dos_userapp";
-//local run_addr2line_exe = "bin/apps/terminal-vga";
-//local run_addr2line_exe = "bin/mod/libpci.so";
-//local run_addr2line_base = 0xe0061000;
-//local run_addr2line_exe = "bin/mod/elf-debug";
-//local run_addr2line_base = 0xe0060000;
-//local run_addr2line_exe = "bin/mod/ata";
-//local run_addr2line_base = 0xe017d000;
-//local run_addr2line_exe = "bin/mod/pe";
-//local run_addr2line_base = 0xe001f000;
-//local run_addr2line_exe = "bin/libs/libc.so";
-//local run_addr2line_base = 0x20000000;
-//local run_addr2line_exe = "apps/private/build-busybox-1.27.2/busybox_unstripped";
-//local run_addr2line_exe = "libs/private/build-ncurses-5.9/lib/libncurses.so.5.9";
-//local run_addr2line_base = 0x20050000;
 
 /* Default executable names. */
 local const default_mtools    = "mtools";
@@ -111,17 +93,10 @@ local executables = dict {
 	"host-cxx"           : EXE("g++"),
 	"host-addr2line"     : EXE("addr2line"),
 	"host-readelf"       : EXE("readelf"),
-#ifdef __WINDOWS__
-	"bochs"              : "D:\\Bochs-2.6.8\\bochs.exe",
-	"bochsdbg"           : "D:\\Bochs-2.6.8\\bochsdbg.exe",
-	"qemu-system-i386"   : "D:\\qemu\\qemu-system-i386.exe",
-	"qemu-system-x86_64" : "D:\\qemu\\qemu-system-x86_64.exe",
-#else
-	"bochs"              : "bochs",
-	"bochsdbg"           : "bochsdbg",
-	"qemu-system-i386"   : "qemu-system-i386",
-	"qemu-system-x86_64" : "qemu-system-x86_64",
-#endif
+	"bochs"              : EXE("bochs"),
+	"bochsdbg"           : EXE("bochsdbg"),
+	"qemu-system-i386"   : EXE("qemu-system-i386"),
+	"qemu-system-x86_64" : EXE("qemu-system-x86_64"),
 };
 
 #include <file>
@@ -135,6 +110,11 @@ local executables = dict {
 #include <error>
 
 local root_folder = fs::path::head(__FILE__).replace("\\","/").rstrip("/");
+
+#if __has_include("misc/paths.dee")
+#include "misc/paths.dee"
+#endif
+
 function fix_pathstring(path) {
 	local pos;
 	while ((pos = path.find("/..")) != -1) {
@@ -464,20 +444,9 @@ function start_process(proc,proj) {
 						rest = "warning : "+inc_prefix+"here "+rest;
 						filename = filename[#frm_prefix:];
 					}
-#ifdef __WINDOWS__
-					if (filename.startswith("/cygdrive/")) {
-						filename = filename[#"/cygdrive/":];
-						local drive,none,path = filename.partition("/")...;
-						filename = drive.upper()+":/"+path;
-					} else if (filename.startswith("/opt/kos/usr/include/")) {
-						filename = "../../include/"+filename[#"/opt/kos/usr/include/":];
-					} else {
-						filename = "../../"+filename;
-					}
-					//if (filename.startswith("../../include/c++/current/")) {
-					//	filename = "../../binutils/build-binutils-i686-kos/i686-kos/include-c++/6.2.0/"+filename[#"../../include/c++/current/":];
-					//}
-#endif /* __WINDOWS__ */
+#ifdef fix_path
+					filename = fix_path("../../",filename);
+#endif /* fix_path */
 					local msg_class = "warning";
 					if (col && !col.isdigit()) {
 						rest = col.strip()+" : "+rest.strip();
@@ -554,22 +523,10 @@ class Source {
 		text = text.partition(":")[2];
 		for (local part: text.split(" ")) {
 			if (part) {
-#ifdef __WINDOWS__
-				const prefix_1 = "/cygdrive/e/c/kxs/kos/";
-				const prefix_2 = "/opt/kos/usr/";
-				if (part.startswith(prefix_1)) {
-					yield part[#prefix_1:];
-				} else if (part.startswith(prefix_2)) {
-					yield part[#prefix_2:];
-				} else if (part.startswith("/usr/lib")) {
-					yield "D:\\cygwin\\root\\lib"+part[#"/usr/lib":];
-				} else if (part.startswith("/")) {
-					yield "D:\\cygwin\\root"+part;
-				} else
+#ifdef fix_path
+				part = fix_path("",part);
 #endif
-				{
-					yield part;
-				}
+				yield part;
 			}
 		}
 	}

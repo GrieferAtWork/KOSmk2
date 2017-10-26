@@ -116,6 +116,7 @@ __LOCAL int __NOTHROW((__LIBCCALL isascii)(int __c)) { return (__UINT8_TYPE__)__
 #endif /* __USE_KOS || __USE_DOS */
 
 #ifdef __CRT_GLC
+#ifndef __cplusplus
 #define isalnum(c)  __isctype((c),_ISalnum)
 #define isalpha(c)  __isctype((c),_ISalpha)
 #define iscntrl(c)  __isctype((c),_IScntrl)
@@ -130,6 +131,7 @@ __LOCAL int __NOTHROW((__LIBCCALL isascii)(int __c)) { return (__UINT8_TYPE__)__
 #ifdef __USE_ISOC99
 #define isblank(c)  __isctype((c),_ISblank)
 #endif /* __USE_ISOC99 */
+#endif /* !__cplusplus */
 #endif /* __CRT_GLC */
 
 #if defined(__USE_KOS) || defined(__USE_DOS)

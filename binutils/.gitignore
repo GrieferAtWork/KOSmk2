@@ -2,5 +2,6 @@ __ice__/*
 bin/*
 build-*
 src/*
-binutils-2.27
-
+win32-deemon/*
+win32-deemon.tar
+root/*
