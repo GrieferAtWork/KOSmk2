@@ -1,6 +1,6 @@
-diff -Naur gcc-6.2.0/config.sub kos-gcc-6.2.0/config.sub
---- gcc-6.2.0/config.sub	2015-12-31 22:13:28.000000000 +0100
-+++ kos-gcc-6.2.0/config.sub	2017-10-26 12:42:05.014546300 +0200
+diff -Naur orig-gcc-6.2.0/config.sub gcc-6.2.0/config.sub
+--- orig-gcc-6.2.0/config.sub	2015-12-31 22:13:28.000000000 +0100
++++ gcc-6.2.0/config.sub	2017-10-26 14:45:09.372239000 +0200
 @@ -1399,7 +1399,7 @@
  	      | -morphos* | -superux* | -rtmk* | -rtmk-nova* | -windiss* \
  	      | -powermax* | -dnix* | -nx6 | -nx7 | -sei* | -dragonfly* \
@@ -10,9 +10,9 @@ diff -Naur gcc-6.2.0/config.sub kos-gcc-6.2.0/config.sub
  	# Remember, each alternative MUST END IN *, to match a version number.
  		;;
  	-qnx*)
-diff -Naur gcc-6.2.0/fixincludes/mkfixinc.sh kos-gcc-6.2.0/fixincludes/mkfixinc.sh
---- gcc-6.2.0/fixincludes/mkfixinc.sh	2015-04-22 16:18:16.000000000 +0200
-+++ kos-gcc-6.2.0/fixincludes/mkfixinc.sh	2017-10-26 12:55:36.905590500 +0200
+diff -Naur orig-gcc-6.2.0/fixincludes/mkfixinc.sh gcc-6.2.0/fixincludes/mkfixinc.sh
+--- orig-gcc-6.2.0/fixincludes/mkfixinc.sh	2015-04-22 16:18:16.000000000 +0200
++++ gcc-6.2.0/fixincludes/mkfixinc.sh	2017-10-26 14:45:09.387866000 +0200
 @@ -11,6 +11,7 @@
  
  # Check for special fix rules for particular targets
@@ -21,9 +21,9 @@ diff -Naur gcc-6.2.0/fixincludes/mkfixinc.sh kos-gcc-6.2.0/fixincludes/mkfixinc.
      i?86-*-cygwin* | \
      i?86-*-mingw32* | \
      x86_64-*-mingw32* | \
-diff -Naur gcc-6.2.0/gcc/config/kos.h kos-gcc-6.2.0/gcc/config/kos.h
---- gcc-6.2.0/gcc/config/kos.h	1970-01-01 01:00:00.000000000 +0100
-+++ kos-gcc-6.2.0/gcc/config/kos.h	2017-10-26 12:50:41.266828100 +0200
+diff -Naur orig-gcc-6.2.0/gcc/config/kos.h gcc-6.2.0/gcc/config/kos.h
+--- orig-gcc-6.2.0/gcc/config/kos.h	1970-01-01 01:00:00.000000000 +0100
++++ gcc-6.2.0/gcc/config/kos.h	2017-10-26 14:45:09.387866000 +0200
 @@ -0,0 +1,45 @@
 +
 +#undef TARGET_KOS
@@ -70,9 +70,9 @@ diff -Naur gcc-6.2.0/gcc/config/kos.h kos-gcc-6.2.0/gcc/config/kos.h
 +#undef CPP_SPEC
 +#define CPP_SPEC \
 +	"%{Xpe:-D__PE__ } %{!Xpe:-D__ELF__ }"
-diff -Naur gcc-6.2.0/gcc/config/kos.opt kos-gcc-6.2.0/gcc/config/kos.opt
---- gcc-6.2.0/gcc/config/kos.opt	1970-01-01 01:00:00.000000000 +0100
-+++ kos-gcc-6.2.0/gcc/config/kos.opt	2017-10-26 12:48:38.981631300 +0200
+diff -Naur orig-gcc-6.2.0/gcc/config/kos.opt gcc-6.2.0/gcc/config/kos.opt
+--- orig-gcc-6.2.0/gcc/config/kos.opt	1970-01-01 01:00:00.000000000 +0100
++++ gcc-6.2.0/gcc/config/kos.opt	2017-10-26 14:45:09.387866000 +0200
 @@ -0,0 +1,14 @@
 +
 +pe
@@ -88,9 +88,24 @@ diff -Naur gcc-6.2.0/gcc/config/kos.opt kos-gcc-6.2.0/gcc/config/kos.opt
 +Driver
 +
 +; This comment is to ensure we retain the blank line above.
-diff -Naur gcc-6.2.0/gcc/config.gcc kos-gcc-6.2.0/gcc/config.gcc
---- gcc-6.2.0/gcc/config.gcc	2016-06-08 15:34:25.000000000 +0200
-+++ kos-gcc-6.2.0/gcc/config.gcc	2017-10-26 12:52:05.301887900 +0200
+diff -Naur orig-gcc-6.2.0/gcc/config/t-kos gcc-6.2.0/gcc/config/t-kos
+--- orig-gcc-6.2.0/gcc/config/t-kos	1970-01-01 01:00:00.000000000 +0100
++++ gcc-6.2.0/gcc/config/t-kos	2017-10-26 15:58:56.150333800 +0200
+@@ -0,0 +1 @@
++MULTIARCH_DIRNAME = i386-kos
+diff -Naur orig-gcc-6.2.0/gcc/config/t-kos64 gcc-6.2.0/gcc/config/t-kos64
+--- orig-gcc-6.2.0/gcc/config/t-kos64	1970-01-01 01:00:00.000000000 +0100
++++ gcc-6.2.0/gcc/config/t-kos64	2017-09-22 18:11:12.091967700 +0200
+@@ -0,0 +1,6 @@
++MULTIARCH_DIRNAME   = i386-kos
++MULTILIB_OPTIONS    = m32/m64/mx32
++MULTILIB_DIRNAMES   = 32 64 x32
++MULTILIB_OSDIRNAMES = m32=../lib:i386-kos
++MULTILIB_OSDIRNAMES+= m64=../lib64:x86_64-kos
++MULTILIB_OSDIRNAMES+= mx32=../libx32:x86_64-kos-x32
+diff -Naur orig-gcc-6.2.0/gcc/config.gcc gcc-6.2.0/gcc/config.gcc
+--- orig-gcc-6.2.0/gcc/config.gcc	2016-06-08 15:34:25.000000000 +0200
++++ gcc-6.2.0/gcc/config.gcc	2017-10-26 16:02:31.787965900 +0200
 @@ -612,6 +612,12 @@
  
  # Common parts for widely ported systems.
@@ -104,22 +119,24 @@ diff -Naur gcc-6.2.0/gcc/config.gcc kos-gcc-6.2.0/gcc/config.gcc
  *-*-darwin*)
    tmake_file="t-darwin ${cpu_type}/t-darwin"
    tm_file="${tm_file} darwin.h"
-@@ -907,6 +913,12 @@
+@@ -907,6 +913,14 @@
  esac
  
  case ${target} in
 +i[34567]86-*-kos*)
 +    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h kos.h"
++    tmake_file="${tmake_file} t-kos"
 +    ;;
 +x86_64-*-kos*)
 +    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h kos.h"
++    tmake_file="${tmake_file} t-kos64"
 +    ;;
  aarch64*-*-elf | aarch64*-*-rtems*)
  	tm_file="${tm_file} dbxelf.h elfos.h newlib-stdint.h"
  	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-elf-raw.h"
-diff -Naur gcc-6.2.0/libgcc/config.host kos-gcc-6.2.0/libgcc/config.host
---- gcc-6.2.0/libgcc/config.host	2016-05-17 08:15:52.000000000 +0200
-+++ kos-gcc-6.2.0/libgcc/config.host	2017-10-26 12:54:51.159706300 +0200
+diff -Naur orig-gcc-6.2.0/libgcc/config.host gcc-6.2.0/libgcc/config.host
+--- orig-gcc-6.2.0/libgcc/config.host	2016-05-17 08:15:52.000000000 +0200
++++ gcc-6.2.0/libgcc/config.host	2017-10-26 14:45:09.419024200 +0200
 @@ -327,6 +327,14 @@
  esac
  
@@ -135,9 +152,9 @@ diff -Naur gcc-6.2.0/libgcc/config.host kos-gcc-6.2.0/libgcc/config.host
  aarch64*-*-elf | aarch64*-*-rtems*)
  	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
  	extra_parts="$extra_parts crtfastmath.o"
-diff -Naur gcc-6.2.0/libstdc++-v3/configure kos-gcc-6.2.0/libstdc++-v3/configure
---- gcc-6.2.0/libstdc++-v3/configure	2016-04-05 21:03:46.000000000 +0200
-+++ kos-gcc-6.2.0/libstdc++-v3/configure	2017-10-26 12:54:06.241889500 +0200
+diff -Naur orig-gcc-6.2.0/libstdc++-v3/configure gcc-6.2.0/libstdc++-v3/configure
+--- orig-gcc-6.2.0/libstdc++-v3/configure	2016-04-05 21:03:46.000000000 +0200
++++ gcc-6.2.0/libstdc++-v3/configure	2017-10-26 14:45:09.450264500 +0200
 @@ -28813,6 +28813,5984 @@
  
  # Base decisions on target environment.
@@ -6123,9 +6140,9 @@ diff -Naur gcc-6.2.0/libstdc++-v3/configure kos-gcc-6.2.0/libstdc++-v3/configure
    arm*-*-symbianelf*)
      # This is a freestanding configuration; there is nothing to do here.
      ;;
-diff -Naur gcc-6.2.0/libstdc++-v3/crossconfig.m4 kos-gcc-6.2.0/libstdc++-v3/crossconfig.m4
---- gcc-6.2.0/libstdc++-v3/crossconfig.m4	2015-10-12 00:34:28.000000000 +0200
-+++ kos-gcc-6.2.0/libstdc++-v3/crossconfig.m4	2017-10-26 12:53:17.501268600 +0200
+diff -Naur orig-gcc-6.2.0/libstdc++-v3/crossconfig.m4 gcc-6.2.0/libstdc++-v3/crossconfig.m4
+--- orig-gcc-6.2.0/libstdc++-v3/crossconfig.m4	2015-10-12 00:34:28.000000000 +0200
++++ gcc-6.2.0/libstdc++-v3/crossconfig.m4	2017-10-26 14:45:09.465927900 +0200
 @@ -5,6 +5,13 @@
  AC_DEFUN([GLIBCXX_CROSSCONFIG],[
  # Base decisions on target environment.

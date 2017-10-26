@@ -5,9 +5,6 @@ binutils_build_folder="build-binutils-i686-kos"
 binutils_folder=$(dirname $(readlink -f "$0"))
 binutils_syshook="$binutils_folder/root"
 gcc_src_folder="$binutils_folder/src/gcc-6.2.0"
-if ! [ -z "$CONFIG_GCC_PREFIX" ]; then
-	binutils_syshook="$CONFIG_GCC_PREFIX"
-fi
 
 export PREFIX="${binutils_folder}/${binutils_build_folder}"
 export TARGET=i686-kos
@@ -20,6 +17,11 @@ cmd() {
 		exit $error
 	}
 }
+
+cmd cd "$binutils_folder"
+mkdir -p root/usr
+ln -s "../../../include"  root/usr/include
+ln -s "../../../bin/libs" root/usr/lib
 
 if ! [ -f "$gcc_src_folder/configure" ]; then
 	if ! [ -f "gcc-6.2.0.tar" ] && ! gunzip gcc-6.2.0.tar.gz; then

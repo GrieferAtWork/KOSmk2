@@ -4,9 +4,6 @@ binutils_folder=$(dirname $(readlink -f "$0"))
 binutils_build_folder="$binutils_folder/build-binutils-i686-kos"
 binutils_src_folder="$binutils_folder/src/binutils-2.27"
 binutils_syshook="$binutils_folder/root"
-if ! [ -z "$GCC_PREFIX" ]; then
-	binutils_syshook="$GCC_PREFIX"
-fi
 export PREFIX="$binutils_build_folder"
 export TARGET=i686-kos
 export PATH="$PREFIX/bin:$PATH"
@@ -21,6 +18,9 @@ cmd() {
 
 cmd cd "$binutils_folder"
 mkdir -p src
+mkdir -p root/usr
+ln -s "../../../include"  root/usr/include
+ln -s "../../../bin/libs" root/usr/lib
 cmd cd src
 
 if ! [ -f "$binutils_src_folder/configure" ]; then
