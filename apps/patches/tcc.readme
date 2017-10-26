@@ -1,0 +1,29 @@
+
+# Patch, configure and build TCC
+patch ${TCC_PATH} tcc.patch
+cd ${TCC_PATH}
+kos bash configure
+kos make
+
+# Copy TCC and KOS's include folder to a USB disk
+# NOTE: The QEMU virtual disk isn't feasable for this (Too many files == too much overhead)
+mkdir -p ${USB_DISK}/usr/include
+mkdir -p ${USB_DISK}/usr/local/lib/tcc
+
+# Copy KOS system headers
+cp -v -r ${PREFIX}/include  ${USB_DISK}/usr/
+
+# Copy TCC compiler and library
+cp ${TCC_PATH}/tcc ${USB_DISK}/usr/bin/
+cp ${TCC_PATH}/libtcc.a ${USB_DISK}/usr/local/lib/tcc/
+cp ${TCC_PATH}/libtcc1.a ${USB_DISK}/usr/local/lib/tcc/
+
+# And you're done!
+
+IN KOS:
+$ echo "#include <stdio.h>" > foo.c
+$ echo "int main() {" >> foo.c
+$ echo "    printf(\"Hello self-hosting world\\n\");" >> foo.c
+$ echo "    return 0;" >> foo.c
+$ echo "}" >> foo.c
+$ tcc -run foo.c
