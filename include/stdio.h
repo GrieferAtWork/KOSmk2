@@ -399,10 +399,7 @@ __REDIRECT_IFDOS(__LIBC,__WUNUSED,int,__LIBCCALL,fileno_unlocked,(__FILE *__stre
 __REDIRECT_IFDOS(__LIBC,__WUNUSED,int,__LIBCCALL,feof_unlocked,(__FILE *__restrict __stream),feof,(__stream))
 __REDIRECT_IFDOS(__LIBC,__WUNUSED,int,__LIBCCALL,ferror_unlocked,(__FILE *__restrict __stream),ferror,(__stream))
 __REDIRECT_IFDOS_VOID(__LIBC,,__LIBCCALL,clearerr_unlocked,(__FILE *__stream),clearerr,(__stream))
-#ifdef __CRT_GLC
-__LIBC int (__LIBCCALL fgetc_unlocked)(__FILE *__stream);
-__LIBC int (__LIBCCALL fputc_unlocked)(int __ch, __FILE *__stream);
-#elif defined(__CRT_DOS)
+#ifdef __DOS_COMPAT__
 #ifndef ____dos_flsbuf_defined
 #define ____dos_flsbuf_defined 1
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_flsbuf,(int __ch, __FILE *__restrict __file),_flsbuf,(__ch,__file));
@@ -410,7 +407,10 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_flsbuf,(int __ch, __FILE *__restrict __f
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_filbuf,(__FILE *__restrict __file),_filbuf,(__file));
 #define fgetc_unlocked(stream)    (--(stream)->__f_cnt >= 0 ? 0xff & *(stream)->__f_ptr++ : __dos_filbuf(stream))
 #define fputc_unlocked(c,stream)  (--(stream)->__f_cnt >= 0 ? 0xff & (*(stream)->__f_ptr++ = (char)(c)) :  __dos_flsbuf((c),(stream)))
-#endif /* __CRT_GLC */
+#else /* __DOS_COMPAT__ */
+__LIBC int (__LIBCCALL fgetc_unlocked)(__FILE *__stream);
+__LIBC int (__LIBCCALL fputc_unlocked)(int __ch, __FILE *__stream);
+#endif /* __DOS_COMPAT__ */
 #endif /* __USE_MISC */
 #if defined(__USE_MISC) || defined(__USE_XOPEN) || defined(__USE_DOS)
 #ifdef __USE_DOSFS
@@ -434,15 +434,15 @@ __LIBC __PORT_NODOS __WUNUSED __ssize_t (__LIBCCALL getline)(char **__restrict _
 #endif /* __USE_XOPEN2K8 */
 #ifdef __USE_POSIX
 __REDIRECT_IFDOS(__LIBC,,int,__LIBCCALL,getc_unlocked,(__FILE *__stream),_getc_nolock,(__stream))
-#ifdef __CRT_GLC
-__LIBC int (__LIBCCALL putc_unlocked)(int __ch, __FILE *__stream);
-#else /* __CRT_GLC */
+#ifdef __DOS_COMPAT__
 #ifndef ____dos_flsbuf_defined
 #define ____dos_flsbuf_defined 1
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_flsbuf,(int __ch, __FILE *__restrict __file),_flsbuf,(__ch,__file));
 #endif /* !____dos_flsbuf_defined */
 __LOCAL int (__LIBCCALL putc_unlocked)(int __ch, __FILE *__stream) { return (--__stream->__f_cnt >= 0 ? 0xff & (*__stream->__f_ptr++ = (char)__ch) :  __dos_flsbuf(__ch,__stream)); }
-#endif /* !__CRT_GLC */
+#else /* __DOS_COMPAT__ */
+__LIBC int (__LIBCCALL putc_unlocked)(int __ch, __FILE *__stream);
+#endif /* !__DOS_COMPAT__ */
 #ifdef __DOS_COMPAT__
 __LOCAL int (__LIBCCALL getchar_unlocked)(void) { return getc_unlocked(stdin); }
 __LOCAL int (__LIBCCALL putchar_unlocked)(int __ch) { return putc_unlocked(__ch,stdout); }
@@ -729,11 +729,11 @@ __REDIRECT_IFKOS(__LIBC,,__FILE *,__LIBCCALL,_fsopen,(char const *__file, char c
 #else /* __LIBCCALL_CALLER_CLEANUP */
 __LOCAL __FILE *(__LIBCCALL _fsopen)(char const *__file, char const *__mode, int __UNUSED(__shflag)) { return __NAMESPACE_STD_SYM fopen(__file,__mode); }
 #endif /* !__LIBCCALL_CALLER_CLEANUP */
-#ifdef __CRT_DOS
-__LIBC int (__LIBCCALL _flushall)(void);
-#else /* __CRT_DOS */
+#if defined(__GLC_COMPAT__) || !defined(__CRT_DOS)
 __LOCAL int (__LIBCCALL _flushall)(void) { return fflush(NULL); }
-#endif /* !__CRT_DOS */
+#else /* __GLC_COMPAT__ || !__CRT_DOS */
+__LIBC int (__LIBCCALL _flushall)(void);
+#endif /* !__GLC_COMPAT__ && __CRT_DOS */
 __REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_fcloseall,(void),fcloseall,())
 __REDIRECT_IFKOS(__LIBC,,int,__LIBCCALL,_fileno,(__FILE *__restrict __file),fileno,(__file))
 __REDIRECT(__LIBC,,int,__LIBCCALL,_fgetchar,(void),getchar,())

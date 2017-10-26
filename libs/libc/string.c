@@ -391,36 +391,8 @@ INTERN void LIBCCALL
 libc_swab(void const *__restrict from, void *__restrict to, size_t n_bytes) {
  NOT_IMPLEMENTED();
 }
-
-INTERN char *LIBCCALL libc_index(char const *__restrict haystack, int needle) {
- char *iter = (char *)haystack;
- CHECK_HOST_TEXT(iter,1);
- while (*iter != needle) {
-  if (!*iter) return NULL;
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return iter;
-}
-INTERN char *LIBCCALL libc_rindex(char const *__restrict haystack, int needle) {
- char *iter = (char *)haystack;
- char *result = NULL;
- CHECK_HOST_TEXT(iter,1);
- for (;;) {
-  if (*iter == needle) result = iter;
-  if (!*iter) break;
-  ++iter;
-#ifdef CONFIG_DEBUG
-  if (!((uintptr_t)iter & (PAGESIZE-1)))
-         CHECK_HOST_TEXT(iter,1);
-#endif
- }
- return result;
-}
-
+DEFINE_INTERN_ALIAS(libc_index,libc_strchr);
+DEFINE_INTERN_ALIAS(libc_rindex,libc_strrchr);
 INTERN char *LIBCCALL libc_dirname(char *path) {
  char *iter;
  if (!path || !*path) ret_cwd: return ".";

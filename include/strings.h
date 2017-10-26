@@ -58,43 +58,16 @@ __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,bcmp,
 #ifndef __KERNEL__
 #ifndef __index_defined
 #define __index_defined 1
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-char *(__LIBCCALL __local_index)(char const *__haystack, int __needle) {
-    char *__iter = (char *)__haystack;
-    while (*__iter != __needle) { if (!*__iter) return __NULLPTR; ++__iter; }
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-char *(__LIBCCALL __local_rindex)(char const *__restrict __haystack, int __needle) {
-    char *__result = __NULLPTR,*__iter = (char *)__haystack;
-    for (;;) { if (*__iter == __needle) __result = __iter; if (!*__iter) break; ++__iter; }
-    return __result;
-}
-#ifdef __DOS_COMPAT__
-
-#endif /* __DOS_COMPAT__ */
 #ifdef __CORRECT_ISO_CPP_STRINGS_H_PROTO
 extern "C++" {
-#ifdef __DOS_COMPAT__
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL index)(char *__haystack, int __needle) { return __local_index(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL index)(char const *__haystack, int __needle) { return __local_index(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL rindex)(char *__restrict __haystack, int __needle) { return __local_rindex(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL rindex)(char const *__restrict __haystack, int __needle) { return __local_rindex(__haystack,__needle); }
-#else /* __DOS_COMPAT__ */
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,index,(char *__haystack, int __needle),index,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,index,(char const *__haystack, int __needle),index,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,rindex,(char *__restrict __haystack, int __needle),rindex,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,rindex,(char const *__restrict __haystack, int __needle),rindex,(__haystack,__needle))
-#endif /* !__DOS_COMPAT__ */
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,index,(char *__restrict __haystack, int __needle),strchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,index,(char const *__restrict __haystack, int __needle),strchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,rindex,(char *__restrict __haystack, int __needle),strrchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,rindex,(char const *__restrict __haystack, int __needle),strrchr,(__haystack,__needle))
 }
 #else /* __CORRECT_ISO_CPP_STRINGS_H_PROTO */
-#ifdef __DOS_COMPAT__
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL index)(char const *__restrict __haystack, int __needle) { return __local_index(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL rindex)(char const *__restrict __haystack, int __needle) { return __local_rindex(__haystack,__needle); }
-#else /* __DOS_COMPAT__ */
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL index)(char const *__restrict __haystack, int __needle);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL rindex)(char const *__restrict __haystack, int __needle);
-#endif /* !__DOS_COMPAT__ */
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,index,(char const *__restrict __haystack, int __needle),strchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,rindex,(char const *__restrict __haystack, int __needle),strrchr,(__haystack,__needle))
 #endif /* !__CORRECT_ISO_CPP_STRINGS_H_PROTO */
 #endif /* !__index_defined */
 #endif /* !__KERNEL__ */

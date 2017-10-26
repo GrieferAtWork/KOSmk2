@@ -792,9 +792,9 @@ __REDIRECT(__LIBC,__NONNULL((1)),char *,__LIBCCALL,__dos_mktemp,(char *__templat
 #else
 #define __dos_mktemp(template) mktemp(template)
 #endif /* !__mktemp_defined */
-_LOCAL __WUNUSED __NONNULL((1)) int (__LIBCCALL mkstemp)(char *__template) { return __dos_mktemp(__template) ? 0 : -1; }
+__LOCAL __WUNUSED __NONNULL((1)) int (__LIBCCALL mkstemp)(char *__template) { return __dos_mktemp(__template) ? 0 : -1; }
 #ifdef __USE_LARGEFILE64
-_LOCAL __WUNUSED __NONNULL((1)) int (__LIBCCALL mkstemp64)(char *__template) { return __dos_mktemp(__template) ? 0 : -1; }
+__LOCAL __WUNUSED __NONNULL((1)) int (__LIBCCALL mkstemp64)(char *__template) { return __dos_mktemp(__template) ? 0 : -1; }
 #endif /* __USE_LARGEFILE64 */
 #else /* __DOS_COMPAT__ */
 __REDIRECT_FS_FUNC(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,mkstemp,(char *__template),mkstemp,(__template))
@@ -965,9 +965,9 @@ __REDIRECT2(__LIBC,__NONNULL((1,4)),__LONGLONG,__LIBCCALL,__libc_strtoll_l,(char
 #ifdef __DOS_COMPAT__
 __REDIRECT2(__LIBC,__NONNULL((1,3)),double,__LIBCCALL,__libc_strtod_l,(char const *__restrict __nptr, char **__restrict __endptr, __locale_t __loc),strtod_l,_strtod_l,(__nptr,__endptr,__loc))
 __LOCAL double (__LIBCCALL _atof_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtod_l(__nptr,0,__locale); }
-__LOCAL int (__LIBCCALL _atoi_l)(char const *__restrict __nptr, __locale_t __locale) { return (int)__libc_strtol_l(__nptr,0,__locale); }
-__LOCAL long int (__LIBCCALL _atol_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtol_l(__nptr,0,__locale); }
-__LOCAL __LONGLONG (__LIBCCALL _atoll_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtoll_l(__nptr,0,__locale); }
+__LOCAL int (__LIBCCALL _atoi_l)(char const *__restrict __nptr, __locale_t __locale) { return (int)__libc_strtol_l(__nptr,0,10,__locale); }
+__LOCAL long int (__LIBCCALL _atol_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtol_l(__nptr,0,10,__locale); }
+__LOCAL __LONGLONG (__LIBCCALL _atoll_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtoll_l(__nptr,0,10,__locale); }
 #else /* __DOS_COMPAT__ */
 __LIBC double (__LIBCCALL _atof_l)(char const *__restrict __nptr, __locale_t __locale);
 __LIBC int (__LIBCCALL _atoi_l)(char const *__restrict __nptr, __locale_t __locale);

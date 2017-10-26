@@ -453,6 +453,21 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #define __wchar_t_defined 1
 #endif
 
+#ifdef __TINYC__
+/* TCC predefines its own redirect macro incompatible with our's.
+ * That's no good, but there is one pretty neat thing we can take
+ * out of this: It does so when targeting ELF, meaning that while
+ * deleting its predefinition, we can easily detect when compiling
+ * for ELF, and conversely when compiling for PE. */
+#ifdef __REDIRECT
+#   define __ELF__ 1
+#   undef __REDIRECT
+#   undef __REDIRECT_NTH
+#else /* __REDIRECT */
+#   define __PE__  1
+#endif /* !__REDIRECT */
+#endif /* __TINYC__ */
+
 
 /* Define varargs macros expected by system headers. */
 #if __has_builtin(__builtin_va_list) || \

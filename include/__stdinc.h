@@ -247,7 +247,7 @@
 #endif
 #endif
 
-#if defined(__PE__) || defined(_WIN32)
+#ifdef __PE__
 #   define __IMPDEF  extern __ATTR_DLLIMPORT
 #   define __EXPDEF  extern __ATTR_DLLEXPORT
 #   define __PUBDEF  extern
@@ -309,7 +309,7 @@
 #define __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
     decl attr void __NOTHROW((cc name) param);
 #elif !defined(__NO_ASMNAME)
-/* Use GCC families assembly name extension. */
+/* Use GCC family's assembly name extension. */
 #define __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
     decl attr Treturn (cc name) param __ASMNAME(__PP_PRIVATE_STR(asmname));
 #define __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
