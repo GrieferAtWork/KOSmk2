@@ -115,6 +115,36 @@ local root_folder = fs::path::head(__FILE__).replace("\\","/").rstrip("/");
 #include "misc/paths.dee"
 #endif
 
+#ifdef __WINDOWS__
+function fix_path(rel_prefix,filename) {
+	if (filename.startswith("/cygdrive/")) {
+		filename = filename[#"/cygdrive/":];
+		local drive,none,path = filename.partition("/")...;
+		filename = drive.upper()+":/"+path;
+		if (filename.lower().startswith(root_folder.lower())) {
+			filename = rel_prefix+filename[#root_folder:].lstrip("/\\");
+		}
+	}
+	if (filename.startswith("binutils/root/")) {
+		local new_filename = filename[#"binutils/root/":];
+		if (new_filename.startswith("usr/lib/"))
+			filename = rel_prefix+"bin/libs/"+new_filename[#"usr/lib/":];
+		else if (new_filename.startswith("usr/"))
+			filename = rel_prefix+new_filename[#"usr/":];
+		else {
+			filename = rel_prefix+filename;
+		}
+#ifdef CONFIG_CYGWIN_ROOT
+	} else if (filename.startswith("/")) {
+		filename = CONFIG_CYGWIN_ROOT+filename;
+#endif /* CONFIG_CYGWIN_ROOT */
+	} else {
+		filename = rel_prefix+filename;
+	}
+	return filename;
+}
+#endif /* __WINDOWS__ */
+
 function fix_pathstring(path) {
 	local pos;
 	while ((pos = path.find("/..")) != -1) {
@@ -444,9 +474,9 @@ function start_process(proc,proj) {
 						rest = "warning : "+inc_prefix+"here "+rest;
 						filename = filename[#frm_prefix:];
 					}
-#ifdef fix_path
+#ifdef __WINDOWS__
 					filename = fix_path("../../",filename);
-#endif /* fix_path */
+#endif /* __WINDOWS__ */
 					local msg_class = "warning";
 					if (col && !col.isdigit()) {
 						rest = col.strip()+" : "+rest.strip();
@@ -523,9 +553,9 @@ class Source {
 		text = text.partition(":")[2];
 		for (local part: text.split(" ")) {
 			if (part) {
-#ifdef fix_path
+#ifdef __WINDOWS__
 				part = fix_path("",part);
-#endif
+#endif /* __WINDOWS__ */
 				yield part;
 			}
 		}
