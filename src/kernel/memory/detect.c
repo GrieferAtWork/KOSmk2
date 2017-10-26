@@ -103,9 +103,8 @@ SAFE KPD size_t KCALL detect_e801(void) {
  if (!s.gp.cx) s.gp.cx = s.gp.ax;
  if (!s.gp.dx) s.gp.dx = s.gp.bx;
  if (s.gp.cx > 0x3c00) s.gp.cx = 0; /* Don't trust a broken value... */
- result += mem_install(0x00100000,s.gp.cx*1024,MEMTYPE_RAM);
+ result  = mem_install(0x00100000,s.gp.cx*1024,MEMTYPE_RAM);
  result += mem_install(0x01000000,s.gp.dx*64*1024,MEMTYPE_RAM);
-
 end:
  return result;
 }
@@ -152,6 +151,30 @@ end:
  return result;
 }
 
+struct c7_record {
+    u16 r_size; /*< 00h: Number of significant bytes of returned data (excluding this uint16_t). */
+    u32 r_1x;   /*< 02h: Amount of local memory between 1-16MB, in 1KB blocks. */
+    u32 r_16x;  /*< 06h: Amount of local memory between 16MB and 4GB, in 1KB blocks. */
+    /* There are more fields here, but they don't matter to us... */
+};
+#define C7_RECORD ((struct c7_record *)(REALMODE_STARTRELO+0xf00))
+
+PRIVATE ATTR_FREETEXT
+SAFE KPD size_t KCALL detect_c7(void) {
+ struct cpustate16 s;
+ size_t result = 0;
+ memset(&s,0,sizeof(s));
+ s.gp.si  = (u16)(uint16_t)C7_RECORD;
+ s.gp.eax = 0xc7;
+ early_rm_interrupt(&s,0x15); /* Execute realmode interrupt. */
+ if (s.eflags & EFLAGS_CF) goto end;
+ if (C7_RECORD->r_1x > 0x3c00) C7_RECORD->r_1x = 0; /* Don't trust a broken value... */
+ result  = mem_install(0x00100000,C7_RECORD->r_1x,MEMTYPE_RAM);
+ result += mem_install(0x01000000,C7_RECORD->r_16x,MEMTYPE_RAM);
+end:
+ return result;
+}
+
 PRIVATE ATTR_FREETEXT SAFE KPD
 size_t KCALL memory_try_detect(void) {
  size_t result;
@@ -160,9 +183,13 @@ size_t KCALL memory_try_detect(void) {
  if (!result) result += detect_da88();
  if (!result) result += detect_88();
  if (!result) result += detect_8a();
+ if (!result) result += detect_c7();
  /* XXX: There are other things we could try... (Other bios calls) */
  return result;
 }
+
+
+
 
 INTDEF ATTR_FREETEXT SAFE KPD
 size_t KCALL memory_load_detect(void) {
