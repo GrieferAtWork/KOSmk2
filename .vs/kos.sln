@@ -392,7 +392,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys", "sys", "{F7629A83-103
 		..\include\i386-kos\sys\wait.h = ..\include\i386-kos\sys\wait.h
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shm-test", "apps\shm-test.vcxproj", "{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shm-demo", "apps\shm-demo.vcxproj", "{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

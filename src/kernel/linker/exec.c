@@ -555,8 +555,6 @@ SYSCALL_DEFINE5(xfexecveat,int,dfd,USER char const *,filename,
 
  module_dentry = dentry_user_xwalk(cwd,&walker,filename);
 
- syslog(LOG_DEBUG,"module_dentry = %[dentry] (%q) (flags = %x)\n",module_dentry,filename,flags);
-
  DENTRY_DECREF(walker.dw_root);
  DENTRY_DECREF(cwd);
  if (E_ISERR(module_dentry)) { result = E_GTERR(module_dentry); goto end; }

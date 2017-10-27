@@ -59,10 +59,10 @@ BEGIN APPLICATION("dosfs")
 	SOURCE("misc/dosfs.c")
 END
 
-BEGIN APPLICATION("shm-test")
-	SET_OUTPUT("/bin/apps/shm-test")
-	SET_DISKFILE("/bin/shm-test")
-	SOURCE("misc/shm-test.c")
+BEGIN APPLICATION("shm-demo")
+	SET_OUTPUT("/bin/apps/shm-demo")
+	SET_DISKFILE("/bin/shm-demo")
+	SOURCE("misc/shm-demo.c")
 END
 
 BEGIN APPLICATION("playground")

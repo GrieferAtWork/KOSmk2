@@ -49,6 +49,7 @@ shm_region(struct shm_node *__restrict self) {
   if unlikely(!result) return E_PTR(-ENOMEM);
   /* NOTE: We use ZERO-initialized memory for SHM regions. */
   result->mr_size = SHM_REGION_SIZE; /* Yes! This is 3Gb and that's intended. */
+  /* TODO: Add user-space extensions to create SHM nodes with custom initializers. */
   result->mr_init = MREGION_INIT_ZERO;
   assert(result->mr_parts == &result->mr_part0);
   result->mr_part0.mt_flags |= MPART_FLAG_KEEP; /* Keep all parts, even when not mapped. */

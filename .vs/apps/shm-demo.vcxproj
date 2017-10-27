@@ -11,11 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\apps\misc\shm-test.c" />
+    <ClCompile Include="..\..\apps\misc\shm-demo.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E}</ProjectGuid>
-    <RootNamespace>shm-test</RootNamespace>
+    <RootNamespace>shm-demo</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

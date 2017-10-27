@@ -38,10 +38,11 @@ Chaos|KOS - Even more chaotic than last time.
  - Unix-compliant user-space interfaces/APIs
    - ANSI-compliant Terminal
    - <code>fork()</code>/<code>exec()</code>/<code>wait()</code>/<code>pipe()</code>
-   - <code>mmap()</code>/<code>munmap()</code>/<code>mremap()</code>/<code>brk()</code>/<code>sbrk()</code>
+   - <code>shm_open()</code>/<code>mmap()</code>/<code>munmap()</code>/<code>mremap()</code>/<code>brk()</code>/<code>sbrk()</code>
+     - Full support for POSIX shared memory and file to memory mappings
    - <code>signal()</code>/<code>raise()</code>/<code>kill()</code>/<code>sigprocmask()</code>
-     - terminate/suspend/resume support for <code>SIGKILL</code>, <code>SIGSTOP</code>, <code>SIGCONT</code>
-     - signal-based exception handling (<code>SIGSEGV</code>, etc.)
+     - Terminate/suspend/resume support for <code>SIGKILL</code>, <code>SIGSTOP</code>, <code>SIGCONT</code>
+     - Signal-based exception handling (<code>SIGSEGV</code>, etc.)
    - <code>open()</code>/<code>read()</code>/<code>write()</code>/<code>lseek()</code>
    - <code>fcntl()</code>/<code>ioctl()</code>/<code>openpty()</code>
    - <code>mount()</code>/<code>umount()</code>

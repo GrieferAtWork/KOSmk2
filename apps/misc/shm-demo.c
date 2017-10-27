@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_APPS_MISC_SHM_TEST_C
-#define GUARD_APPS_MISC_SHM_TEST_C 1
+#ifndef GUARD_APPS_MISC_SHM_DEMO_C
+#define GUARD_APPS_MISC_SHM_DEMO_C 1
 #define _KOS_SOURCE 1
 
 #include <assert.h>
@@ -38,6 +38,32 @@ int main(int argc, char **argv) {
  volatile u32 *counter;
  int fd = shm_open("/my_shm",O_RDWR|O_CREAT,0644);
  if (fd < 0) err(1,"Failed to open SHM file");
+
+ /* At this point, POSIX would require us to configure the SHM's size
+  * using `ftruncate()', but besides ignoring such requests, the way
+  * KOS tracks the size of memory regions (Which an SHM file is) 
+  * doesn't allow that size to change once the region is registered
+  * and ready for use.
+  * Therefor, KOS will preconfigure the size of every SHM region as
+  * 3Gb (on a 32-bit host). Yes. 3*1024*1024*1024  bytes of memory!
+  * But that's OK because any part of the region will only be allocated
+  * once it is actually accessed, meaning that even though the region
+  * has a size of 3Gb, only what has been accessed is actually mapped.
+  * 
+  * Note however, that you can actually use `ftruncate(fd,0)' to clear
+  * the SHM region the same way it would be if `O_TRUNC' was passed to
+  * `shm_open()', in which case the memory region referenced by the
+  * SHM file is dropped in favor of a newly allocated one.
+  * This basically means that existing mappings of that region will remain
+  * and will continue to be able to communicate with each other, yet it
+  * will be impossible for anyone to address that exact region again, with
+  * the region then addressable under the same name being a different one.
+  * 
+  * >> In the end, `ftruncate()' is usually ignore, except for when
+  *    it is used to truncate a SHM file to ZERO(0) bytes.
+  */
+ ftruncate(fd,4096); /* This line is a complete no-op. */
+
  shm_memory = mmap(NULL,4096,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
  if (shm_memory == MAP_FAILED) err(1,"Failed to map SHM file");
 
@@ -53,4 +79,4 @@ int main(int argc, char **argv) {
 
 DECL_END
 
-#endif /* !GUARD_APPS_MISC_SHM_TEST_C */
+#endif /* !GUARD_APPS_MISC_SHM_DEMO_C */
