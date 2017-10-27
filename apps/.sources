@@ -53,6 +53,12 @@ BEGIN APPLICATION("my_test")
 	SOURCE("test/my_test.c")
 END
 
+BEGIN APPLICATION("dosfs")
+	SET_OUTPUT("/bin/apps/dosfs")
+	SET_DISKFILE("/bin/dosfs")
+	SOURCE("misc/dosfs.c")
+END
+
 BEGIN APPLICATION("playground")
 	SET_OUTPUT("/bin/apps/playground")
 	SET_DISKFILE("/opt/playground")

@@ -138,8 +138,9 @@ struct fdman {
  ATOMIC_DATA u32    fm_fsmask; /*< Filesystem mode mask. */
  ATOMIC_DATA u32    fm_fsmode; /*< Filesystem mode flags (Either 'AT_DOSPATH', or 0). */
  /* Masks of bits that must always be 1 or 0 in 'fm_fsmask' and 'fm_fsmode' respectively. */
-#define FDMAN_FSMASK_ALWAYS1   (0xffffffff & ~(AT_DOSPATH)) /* NOTE: Don't allow no-follow to be disabled (Could otherwise pose a security risk). */
-#define FDMAN_FSMODE_ALWAYS0   (0xffffffff & ~(AT_DOSPATH|AT_SYMLINK_NOFOLLOW))
+ /* NOTE: Don't allow no-follow to be disabled (Could otherwise pose a security risk). */
+#define FDMAN_FSMASK_ALWAYS1   (0xffffffff & ~(AT_DOSPATH))                     /* Mask of bits always 1 in 'fm_fsmask' */
+#define FDMAN_FSMODE_ALWAYS0   (0xffffffff & ~(AT_DOSPATH|AT_SYMLINK_NOFOLLOW)) /* Mask of bits always 0 in 'fm_fsmode' */
 #define FDMAN_FSMASK_DEFAULT    0xffffffff
 #define FDMAN_FSMODE_DEFAULT    0
  ATOMIC_DATA mode_t fm_umask;  /*< File mode creation mask. */

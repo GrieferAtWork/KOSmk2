@@ -280,6 +280,9 @@ __XSYSCALL(__NR_xrenameat,sys_xrenameat)
 __XSYSCALL(__NR_xfsymlinkat,sys_xfsymlinkat)
 #define __NR_xfreadlinkat 0x8000000c
 __XSYSCALL(__NR_xfreadlinkat,sys_xfreadlinkat)
+#define __NR_xfsmask      0x8000000d /* Get/Set the filesystem mask and mode. (e.g.: Force DOS semantics, etc.) */
+#define __SC_ATTRIB_ISLNG_0x8000000d 1
+__XSYSCALL(__NR_xfsmask,sys_xfsmask)
 
 /* Dynamic linker system calls.
  * NOTE: Library handles and simply the instance base pointer,

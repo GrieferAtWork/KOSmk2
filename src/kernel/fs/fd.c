@@ -1041,6 +1041,22 @@ SYSCALL_DEFINE1(umask,mode_t,mask) {
 }
 
 
+#if __SIZEOF_SYSCALL_LONG__ < 8
+SYSCALL_LDEFINE2(xfsmask,u32,mask_hi,u32,mask_lo)
+#define fs_mask  ((u64)mask_hi << 32 | (u64)mask_lo)
+#else
+SYSCALL_LDEFINE1(xfsmask,u64,fs_mask)
+#endif
+{
+ u64 new_mask = fs_mask;
+ /* Make sure to mask any bits that are not allowed to be changed. */
+ ((u32 *)&new_mask)[0] |=  FDMAN_FSMASK_ALWAYS1;
+ ((u32 *)&new_mask)[1] &= ~FDMAN_FSMODE_ALWAYS0;
+ return ATOMIC_XCH(*(u64 *)&THIS_FDMAN->fm_fsmask,new_mask);
+}
+#undef fs_mask
+
+
 DECL_END
 
 #endif /* !GUARD_KERNEL_FS_FD_C */

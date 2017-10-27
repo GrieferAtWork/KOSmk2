@@ -127,6 +127,7 @@ INTDEF int ATTR_CDECL libc_fexecle(int fd, char const *arg, ...);
 INTDEF int LIBCCALL libc_fexecv(int fd, char *const argv[]);
 INTDEF int LIBCCALL libc_fexecve(int fd, char *const argv[], char *const envp[]);
 
+INTDEF struct fsmask LIBCCALL libc_fsmode(struct fsmask new_mode);
 INTDEF int LIBCCALL libc_link(char const *from, char const *to);
 INTDEF int LIBCCALL libc_symlink(char const *from, char const *to);
 INTDEF ssize_t LIBCCALL libc_readlink(char const *__restrict path, char *__restrict buf, size_t len);

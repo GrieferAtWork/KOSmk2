@@ -532,7 +532,8 @@ __LIBC __PORT_KOSONLY_ALT(execv) __NONNULL((2)) int (__LIBCCALL fexecv)(int __fd
 #endif /* __CRT_KOS */
 #endif /* __USE_KOS */
 
-#if defined(__CRT_KOS) && defined(__USE_KOS) && defined(__USE_ATFILE)
+#if defined(__CRT_KOS) && defined(__USE_KOS)
+#ifdef __USE_ATFILE
 /* At-file style exec functions. */
 __LIBC __PORT_KOSONLY_ALT(execl) __ATTR_SENTINEL_O(1) int (__ATTR_CDECL fexeclat)(int __dfd, char const *__path, char const *__args, ... /*, int __flags*/);
 __LIBC __PORT_KOSONLY_ALT(execle) __ATTR_SENTINEL_O(2) int (__ATTR_CDECL fexecleat)(int __dfd, char const *__path, char const *__args, ... /*, char *const ___envp[], int __flags*/);
@@ -542,7 +543,38 @@ __LIBC __PORT_KOSONLY_ALT(execv) __NONNULL((3)) int (__LIBCCALL fexecvat)(int __
 __LIBC __PORT_KOSONLY_ALT(execve) __NONNULL((3)) int (__LIBCCALL fexecveat)(int __dfd, char const *__path, __TARGV, __TENVP, int __flags);
 __LIBC __PORT_KOSONLY_ALT(execvp) __NONNULL((1,2)) int (__LIBCCALL fexecvpat)(char const *__restrict __file, __TARGV, int __flags);
 __LIBC __PORT_KOSONLY_ALT(execvpe) __NONNULL((1,2)) int (__LIBCCALL fexecvpeat)(char const *__restrict __file, __TARGV, __TENVP, int __flags);
-#endif
+#endif /* __USE_ATFILE */
+
+/* The filesystem mode provided by the KOS kernel is used to hard-configure 'AT_*' filesystem flags.
+ * When set, any filesystem-related system call will make use of the filesystem mask/mode to change
+ * its behavior in accordance to what is requested.
+ * The new filesystem mode is calculated as follows:
+ *   >> new_mode = (given_mode & fm_mask) | fm_mode;
+ * With that in mind, the default state is:
+ *   >> fm_mask == -1
+ *   >> fm_mode == 0
+ * Note that not all bits can be configured.
+ *   The masks of immutable bits can be reviewed within the kernel sources
+ *   /src/include/fs/fd.h: FDMAN_FSMASK_ALWAYS1 / FDMAN_FSMODE_ALWAYS0
+ * EXAMPLE:
+ *   >> Force-enable DOS semantics for all file operations,
+ *      regardless of 'AT_DOSPATH' or linked libc function:
+ *      fm_mask = -1;
+ *      fm_mode = AT_DOSPATH;
+ *   >> Force-disable DOS semantics for all file operations,
+ *      regardless of 'AT_DOSPATH' or linked libc function:
+ *      fm_mask = ~(AT_DOSPATH);
+ *      fm_mode = 0;
+ * NOTE: This function never fails and always returns the old mask.
+ * HINT: When prefixed before a command, the utility 'dosfs' will
+ *       set the fsmask to '-1,AT_DOSPATH' before executing the
+ *       remainder of the commandline as another command. */
+struct fsmask {
+ int fm_mask; /*< Filesystem mode mask. (Set of 'AT_*') */
+ int fm_mode; /*< Filesystem mode. (Set of 'AT_*') */
+};
+__LIBC __PORT_KOSONLY struct fsmask (__LIBCCALL fsmode)(struct fsmask new_mode);
+#endif /* __CRT_KOS && _USE_KOS */
 
 #if defined(__USE_MISC) || defined(__USE_XOPEN)
 #ifdef __DOS_COMPAT__

@@ -48,6 +48,7 @@
 #include <grp.h>
 #include <io.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <fnmatch.h>
 #include <hybrid/atomic.h>
 #include <hybrid/sync/atomic-rwlock.h>
@@ -115,6 +116,7 @@ INTERN ssize_t LIBCCALL libc_pwrite(int fd, void const *buf, size_t n_bytes, off
 INTERN ssize_t LIBCCALL libc_pread64(int fd, void *buf, size_t n_bytes, off64_t offset) { return FORWARD_SYSTEM_VALUE(sys_pread64(fd,buf,n_bytes,offset)); }
 INTERN ssize_t LIBCCALL libc_pwrite64(int fd, void const *buf, size_t n_bytes, off64_t offset) { return FORWARD_SYSTEM_VALUE(sys_pwrite64(fd,buf,n_bytes,offset)); }
 
+INTERN struct fsmask LIBCCALL libc_fsmode(struct fsmask new_mode) { struct fsmask result; *(u64 *)&result = sys_xfsmask(*(u64 *)&new_mode); return result; }
 INTERN int LIBCCALL libc_truncate(char const *file, off32_t length) { return FORWARD_SYSTEM_ERROR(sys_truncate32(file,length)); }
 INTERN int LIBCCALL libc_truncate64(char const *file, off64_t length) { return FORWARD_SYSTEM_ERROR(sys_truncate(file,length)); }
 INTERN int LIBCCALL libc_ftruncate(int fd, off32_t length) { return FORWARD_SYSTEM_ERROR(sys_ftruncate32(fd,length)); }
@@ -1027,6 +1029,7 @@ DEFINE_PUBLIC_ALIAS(pread,libc_pread);
 DEFINE_PUBLIC_ALIAS(pwrite,libc_pwrite);
 DEFINE_PUBLIC_ALIAS(pread64,libc_pread64);
 DEFINE_PUBLIC_ALIAS(pwrite64,libc_pwrite64);
+DEFINE_PUBLIC_ALIAS(fsmode,libc_fsmode);
 DEFINE_PUBLIC_ALIAS(truncate,libc_truncate);
 DEFINE_PUBLIC_ALIAS(truncate64,libc_truncate64);
 DEFINE_PUBLIC_ALIAS(ftruncate,libc_ftruncate);
