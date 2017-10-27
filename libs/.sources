@@ -84,6 +84,17 @@ BEGIN ARCHIVE("_start")
 	SOURCE("_start/_start.c")
 END
 
+if (fs::isdir("libs/libX11")) {
+BEGIN LIBRARY("libX11")
+	SET_OUTPUT("/bin/libs/libX11.so")
+	SET_DISKFILE("/lib/libX11.so")
+	LIBPATH("/bin/libs")
+	PROJ_DEP("libc")
+	LIB("c")
+	SOURCE("libX11/*.c")
+END
+}
+
 #if __has_include("private/.sources")
 #include "private/.sources"
 #endif

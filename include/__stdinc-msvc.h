@@ -125,6 +125,14 @@
 #define __ATTR_EXTERNALLY_VISIBLE /* nothing */
 #define __NO_ATTR_VISIBILITY     1
 #define __ATTR_VISIBILITY(vis)   /* Nothing */
+#define __NO_ATTR_FORMAT_PRINTF  1
+#define __ATTR_FORMAT_PRINTF(fmt,args) /* nothing */
+#define __NO_ATTR_FORMAT_SCANF   1
+#define __ATTR_FORMAT_SCANF(fmt,args) /* nothing */
+#define __NO_ATTR_FORMAT_STRFMON 1
+#define __ATTR_FORMAT_STRFMON(fmt,args) /* nothing */
+#define __NO_ATTR_FORMAT_STRFTIME 1
+#define __ATTR_FORMAT_STRFTIME(fmt,args) /* nothing */
 #define __ATTR_DLLIMPORT         __declspec(dllimport)
 #define __ATTR_DLLEXPORT         __declspec(dllexport)
 #define __NO_NONNULL             1
@@ -155,8 +163,10 @@ template<> struct __static_if<true> { bool __is_true__(); };
 #define __builtin_unreachable()  __assume(0)
 #define __COMPILER_ALIGNOF       __alignof
 #define __COMPILER_OFFSETOF(s,m) ((__SIZE_TYPE__)&((s *)0)->m)
-#define __FORCELOCAL             static __forceinline
+#define __ATTR_INLINE            __inline
+#define __ATTR_FORCEINLINE       __forceinline
 #define __LOCAL                  static __inline
+#define __FORCELOCAL             static __forceinline
 #define __LONGLONG               long long
 #define __ULONGLONG              unsigned long long
 #define __NO_builtin_constant_p  1

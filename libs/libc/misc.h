@@ -81,6 +81,7 @@ INTDEF ssize_t LIBCCALL libc_get_phys_pages(void);
 INTDEF ssize_t LIBCCALL libc_get_avphys_pages(void);
 
 /* SYSV semaphore support. */
+struct shmid_ds;
 INTDEF key_t LIBCCALL libc_ftok(const char *pathname, int proj_id);
 INTDEF int   LIBCCALL libc_shmctl(int shmid, int cmd, struct shmid_ds *buf);
 INTDEF int   LIBCCALL libc_shmget(key_t key, size_t size, int shmflg);

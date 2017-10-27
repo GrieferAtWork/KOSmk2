@@ -399,6 +399,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys", "sys", "{F7629A83-103
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shm-demo", "apps\shm-demo.vcxproj", "{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "X11", "X11", "{01D62D59-083D-4459-BC1E-9931C9C2F76E}"
+	ProjectSection(SolutionItems) = preProject
+		..\include\X11\X.h = ..\include\X11\X.h
+		..\include\X11\Xfuncproto.h = ..\include\X11\Xfuncproto.h
+		..\include\X11\Xlib.h = ..\include\X11\Xlib.h
+		..\include\X11\Xosdefs.h = ..\include\X11\Xosdefs.h
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libX11", "libs\libX11.vcxproj", "{41D59951-7FE0-4CFF-B253-F796D6520B7F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -457,6 +467,10 @@ Global
 		{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E}.Debug|Win32.Build.0 = Debug|Win32
 		{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E}.Release|Win32.ActiveCfg = Release|Win32
 		{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E}.Release|Win32.Build.0 = Release|Win32
+		{41D59951-7FE0-4CFF-B253-F796D6520B7F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{41D59951-7FE0-4CFF-B253-F796D6520B7F}.Debug|Win32.Build.0 = Debug|Win32
+		{41D59951-7FE0-4CFF-B253-F796D6520B7F}.Release|Win32.ActiveCfg = Release|Win32
+		{41D59951-7FE0-4CFF-B253-F796D6520B7F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -492,5 +506,7 @@ Global
 		{3EAD7059-08AC-472C-9AB5-432CE93D2545} = {0D640039-A905-4491-9709-DEEC9AAC784E}
 		{F7629A83-1039-48AE-A64B-247F52B17877} = {0D640039-A905-4491-9709-DEEC9AAC784E}
 		{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E} = {2503C059-4B4F-457D-9853-FFA845ED7BF2}
+		{01D62D59-083D-4459-BC1E-9931C9C2F76E} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
+		{41D59951-7FE0-4CFF-B253-F796D6520B7F} = {8C9AB07B-15FA-46B5-B7CC-364910789270}
 	EndGlobalSection
 EndGlobal

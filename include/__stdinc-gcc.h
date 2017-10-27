@@ -64,11 +64,11 @@
 #elif __has_feature(c_static_assert)
 #   define __STATIC_ASSERT(expr) _Static_assert(expr,#expr)
 #elif defined(__TPP_COUNTER)
-#   define __STATIC_ASSERT(expr) extern __attribute__((__unused__)) int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
 #elif defined(__COUNTER__)
-#   define __STATIC_ASSERT(expr) extern __attribute__((__unused__)) int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
 #else
-#   define __STATIC_ASSERT(expr) extern __attribute__((__unused__)) int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
 #endif
 #ifdef __INTELLISENSE__
 #define __ASMNAME(x)   /* Nothing */
@@ -119,7 +119,11 @@
 #   define __NO_ATTR_ALLOC_SIZE     1
 #   define __ATTR_ALLOC_SIZE(ppars) /* Nothing */
 #endif
-#if __GCC_VERSION(2,7,0) /* __GCC_VERSION(3,1,0)? __GCC_VERSION(3,3,0)? */
+#if   __GCC_VERSION(2,5,0)
+/*  - __GCC_VERSION(2,7,0)
+ *  - __GCC_VERSION(3,1,0)
+ *  - __GCC_VERSION(3,3,0)
+ * The Internet isn't unanimous about this one... */
 #   define __ATTR_USED             __attribute__((__used__))
 #   define __ATTR_UNUSED           __attribute__((__unused__))
 #else
@@ -131,7 +135,10 @@
 #ifdef __INTELLISENSE__
 #   define __ATTR_DEPRECATED_      __declspec(deprecated)
 #   define __ATTR_DEPRECATED(text) __declspec(deprecated(text))
-#elif __GCC_VERSION(3,2,0) /* __GCC_VERSION(3,5,0) */
+#elif __GCC_VERSION(3,1,0)
+/*  - __GCC_VERSION(3,2,0)
+ *  - __GCC_VERSION(3,5,0)
+ * The internet isn't unanimous about this one... */
 #   define __ATTR_DEPRECATED_      __attribute__((__deprecated__))
 #if __GCC_VERSION(4,5,0)
 #   define __ATTR_DEPRECATED(text) __attribute__((__deprecated__(text)))
@@ -201,6 +208,26 @@
 #define __ATTR_RETURNS_TWICE     __attribute__((__returns_twice__))
 #define __ATTR_EXTERNALLY_VISIBLE __attribute__((__externally_visible__))
 #define __ATTR_VISIBILITY(vis)   __attribute__((__visibility__(vis)))
+/* format-printer attributes. */
+#if __GCC_VERSION(2,3,0)
+#   define __ATTR_FORMAT_PRINTF(fmt,args) __attribute__((__format__(__printf__,fmt,args)))
+#else
+#   define __NO_ATTR_FORMAT_PRINTF        1
+#   define __ATTR_FORMAT_PRINTF(fmt,args) /* nothing */
+#endif
+#if 1 /* TODO: There were added later. - But when exactly? */
+#   define __ATTR_FORMAT_SCANF(fmt,args)    __attribute__((__format__(__scanf__,fmt,args)))
+#   define __ATTR_FORMAT_STRFMON(fmt,args)  __attribute__((__format__(__strfmon__,fmt,args)))
+#   define __ATTR_FORMAT_STRFTIME(fmt,args) __attribute__((__format__(__strftime__,fmt,args)))
+#else
+#   define __NO_ATTR_FORMAT_SCANF           1
+#   define __NO_ATTR_FORMAT_STRFMON         1
+#   define __NO_ATTR_FORMAT_STRFTIME        1
+#   define __ATTR_FORMAT_SCANF(fmt,args)    /* nothing */
+#   define __ATTR_FORMAT_STRFMON(fmt,args)  /* nothing */
+#   define __ATTR_FORMAT_STRFTIME(fmt,args) /* nothing */
+#endif
+
 #if defined(__PE__) || defined(_WIN32)
 #   define __ATTR_DLLIMPORT      __attribute__((__dllimport__))
 #   define __ATTR_DLLEXPORT      __attribute__((__dllexport__))
@@ -241,9 +268,11 @@ extern "C++" { template<class T> struct __compiler_alignof { char __x; T __y; };
 #else
 #   define __COMPILER_ALIGNOF(T) ((__SIZE_TYPE__)&((struct{ char __x; T __y; } *)0)->__y)
 #endif
-#define __COMPILER_OFFSETOF            __builtin_offsetof
-#define __FORCELOCAL static __inline__ __attribute__((__always_inline__))
-#define __LOCAL      static __inline__
+#define __COMPILER_OFFSETOF __builtin_offsetof
+#define __ATTR_INLINE       __inline__
+#define __ATTR_FORCEINLINE  __inline__ __attribute__((__always_inline__))
+#define __LOCAL             static __inline__
+#define __FORCELOCAL        static __inline__ __attribute__((__always_inline__))
 #ifdef __CC__
 __extension__ typedef long long __longlong_t;
 __extension__ typedef unsigned long long __ulonglong_t;
@@ -252,8 +281,9 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #endif
 
 #ifndef __restrict
-#if  !__GCC_VERSION(2,95,0)
-#if defined(restrict) || __STDC_VERSION__ >= 199901L
+#if !__GCC_VERSION(2,95,0)
+#if defined(restrict) || \
+   (defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 199901L)
 #   define __restrict restrict
 #else
 #   define __restrict /* nothing */

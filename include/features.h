@@ -1106,8 +1106,19 @@
 #undef __USE_DEBUG_HOOK
 #endif
 
-#ifdef __INTELLISENSE__
-/*#undef __USE_DEBUG_HOOK*/
+#if defined(__CRT_KOS) && defined(__USE_KOS)
+/* Don't warn about KOS's extensions to printf and friends. */
+#   define __ATTR_LIBC_PRINTF(fmt,args)   /* nothing */
+#   define __ATTR_LIBC_SCANF(fmt,args)    /* nothing */
+#   define __ATTR_LIBC_STRFMON(fmt,args)  /* nothing */
+#   define __ATTR_LIBC_STRFTIME(fmt,args) /* nothing */
+#else
+#   define __ATTR_LIBC_PRINTF(fmt,args)   __ATTR_FORMAT_PRINTF(fmt,args)
+#   define __ATTR_LIBC_SCANF(fmt,args)    __ATTR_FORMAT_SCANF(fmt,args)
+#   define __ATTR_LIBC_STRFMON(fmt,args)  __ATTR_FORMAT_STRFMON(fmt,args)
+#   define __ATTR_LIBC_STRFTIME(fmt,args) __ATTR_FORMAT_STRFTIME(fmt,args)
 #endif
+
+
 
 #endif /* !_FEATURES_H */

@@ -106,6 +106,8 @@
 #   define __ATTR_NORETURN       __attribute__((__noreturn__))
 #elif __has_declspec_attribute(noreturn)
 #   define __ATTR_NORETURN       __declspec(noreturn)
+#elif (defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590))
+#   define __ATTR_NORETURN       __attribute__((noreturn))
 #else
 #   define __NO_ATTR_NORETURN    1
 #   define __ATTR_NORETURN       /* Nothing */
@@ -238,6 +240,9 @@
 #elif __has_cpp_attribute(deprecated) >= 201309
 #   define __ATTR_DEPRECATED_      [[deprecated]]
 #   define __ATTR_DEPRECATED(text) [[deprecated(text)]]
+#elif defined(__SUNPRO_C) && __SUNPRO_C >= 0x5130
+#   define __ATTR_DEPRECATED_      __attribute__((deprecated))
+#   define __ATTR_DEPRECATED(text) __attribute__((deprecated))
 #else
 #   define __NO_ATTR_DEPRECATED    1
 #   define __ATTR_DEPRECATED(text) /* Nothing */
@@ -323,6 +328,29 @@
 #   define __NO_ATTR_VISIBILITY  1
 #   define __ATTR_VISIBILITY(vis) /* Nothing */
 #endif
+#if __has_attribute(__format__)
+#   define __ATTR_FORMAT_PRINTF(fmt,args) __attribute__((__format__(__printf__,fmt,args)))
+#if 0 /* TODO: Only `printf' is supported by everything implementing `__has_attribute(__format__)' */
+#   define __ATTR_FORMAT_SCANF(fmt,args)    __attribute__((__format__(__scanf__,fmt,args)))
+#   define __ATTR_FORMAT_STRFMON(fmt,args)  __attribute__((__format__(__strfmon__,fmt,args)))
+#   define __ATTR_FORMAT_STRFTIME(fmt,args) __attribute__((__format__(__strftime__,fmt,args)))
+#endif
+#else
+#   define __NO_ATTR_FORMAT_PRINTF          1
+#   define __ATTR_FORMAT_PRINTF(fmt,args)   /* nothing */
+#endif
+#ifndef __ATTR_FORMAT_SCANF
+#   define __NO_ATTR_FORMAT_SCANF           1
+#   define __ATTR_FORMAT_SCANF(fmt,args)    /* nothing */
+#endif /* !__ATTR_FORMAT_SCANF */
+#ifndef __ATTR_FORMAT_STRFMON
+#   define __NO_ATTR_FORMAT_STRFMON         1
+#   define __ATTR_FORMAT_STRFMON(fmt,args)  /* nothing */
+#endif /* !__ATTR_FORMAT_STRFMON */
+#ifndef __ATTR_FORMAT_STRFTIME
+#   define __NO_ATTR_FORMAT_STRFTIME        1
+#   define __ATTR_FORMAT_STRFTIME(fmt,args) /* nothing */
+#endif /* !__ATTR_FORMAT_STRFTIME */
 #if __has_attribute(__dllimport__)
 #   define __ATTR_DLLIMPORT      __attribute__((__dllimport__))
 #   define __ATTR_DLLEXPORT      __attribute__((__dllexport__))
@@ -392,30 +420,46 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #else
 #   define __COMPILER_OFFSETOF(s,m) ((__SIZE_TYPE__)&((s *)0)->m)
 #endif
-#if defined(__cplusplus)
-#   define __LOCAL      static inline
+#if defined(inline) || defined(__cplusplus) || \
+   (defined(__SUNPRO_C) && (__SUNPRO_C >= 0x550)) || \
+   (defined(__STDC_VERSION__) && (__STDC_VERSION__ - 0 >= 199901L))
+#   define __ATTR_INLINE inline
 #elif defined(__BORLANDC__) || defined(__DMC__) || \
       defined(__SC__) || defined(__WATCOMC__) || \
       defined(__LCC__) || defined(__DECC)
-#   define __LOCAL      static __inline
+#   define __ATTR_INLINE __inline
 #elif __has_attribute(__always_inline__) || \
       defined(__DCC_VERSION__) || defined(__TINYC__)
-#   define __LOCAL      static __inline__
+#   define __ATTR_INLINE __inline__
 #else
-#   define __LOCAL      static
+#   define __NO_ATTR_INLINE 1
+#   define __ATTR_INLINE /* nothing */
 #endif
 #if __has_attribute(__always_inline__)
-#   define __FORCELOCAL __LOCAL __attribute__((__always_inline__))
+#   define __ATTR_FORCEINLINE __ATTR_INLINE __attribute__((__always_inline__))
 #else
-#   define __FORCELOCAL __LOCAL
+#   define __NO_ATTR_FORCEINLINE 1
+#   define __ATTR_FORCEINLINE __ATTR_INLINE /* nothing */
 #endif
-#   define __LONGLONG   long long
-#   define __ULONGLONG  unsigned long long
+#define __LOCAL      static __ATTR_INLINE
+#define __FORCELOCAL static __ATTR_FORCEINLINE
+
+#define __LONGLONG   long long
+#define __ULONGLONG  unsigned long long
 #if !__has_builtin(__builtin_prefetch)
 #   define __NO_builtin_prefetch    1
 #   define __builtin_prefetch(...) (void)0
 #endif
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#ifndef __restrict
+#if defined(restrict) || \
+   (defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 199901L)
+#define __restrict  restrict
+#else
+#define __restrict  /* nothing */
+#endif
+#endif /* !__restrict */
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 199901L
 #   define __restrict_arr restrict
 #else
 #   define __restrict_arr /* Not supported.  */
@@ -467,6 +511,14 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #   define __PE__  1
 #endif /* !__REDIRECT */
 #endif /* __TINYC__ */
+
+#ifdef c_plusplus
+#if (c_plusplus+0) != 0
+#   define __cplusplus  (c_plusplus)
+#else
+#   define __cplusplus   0
+#endif
+#endif
 
 
 /* Define varargs macros expected by system headers. */
