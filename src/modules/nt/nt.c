@@ -23,7 +23,7 @@
 #include <hybrid/align.h>
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
-#include <hybrid/debuginfo.h> /* For 'THIS_INSTANCE' */
+#include <hybrid/debuginfo.h> /* For `THIS_INSTANCE' */
 #include <hybrid/host.h>
 #include <kernel/export.h>
 #include <kernel/irq.h>

@@ -105,7 +105,7 @@ struct pidnode {
 
 struct pidfile {
  struct file p_file; /*< Underlying file. */
- size_t      p_dirx; /*< [lock(p_file.f_lock)] Current directory position within 'pid_content'. */
+ size_t      p_dirx; /*< [lock(p_file.f_lock)] Current directory position within `pid_content'. */
 };
 INTDEF struct procnode const pid_content[];
 INTDEF struct inodeops const pidops;
@@ -141,7 +141,7 @@ struct rootfile {
  size_t                    rf_bucket; /*< [lock(rf_file->f_lock)] Current bucket index. */
  size_t                    rf_bucpos; /*< [lock(rf_file->f_lock)] Current position within that bucket. */
  size_t                    rf_pidcnt; /*< [const] == rf_proc->pn_mapc (When the file was opened initially)
-                                       *   HINT: When 'rf_diridx >= rf_pidcnt', read from 'root_content' */
+                                       *   HINT: When `rf_diridx >= rf_pidcnt', read from `root_content' */
 };
 
 struct fdnode {

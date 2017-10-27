@@ -34,13 +34,13 @@ struct module;
 
 #ifndef __maddr_t_defined
 #define __maddr_t_defined 1
-typedef uintptr_t maddr_t; /* An address relative to 'm_load' */
+typedef uintptr_t maddr_t; /* An address relative to `m_load' */
 #endif /* !__maddr_t_defined */
 
 
 struct moddebug_ops {
  /* [0..1] Optional finalizer callback.
-  * WARNING: When called, 'self->md_module' may equal NULL, meaning that this
+  * WARNING: When called, `self->md_module' may equal NULL, meaning that this
   *          callback is exempted from the usual assumptions others can make
   *          about the current module-association-state. */
  void (KCALL *mo_fini)(struct moddebug *__restrict self);
@@ -51,7 +51,7 @@ struct moddebug_ops {
   *        already being mapped in user-space, less extended buffer memory
   *        will be required, as instead of copying those strings to the
   *        provided buffer, they can be directly pointed to that mapping.
-  * @param: flags: Set of 'VIRTINFO_*'
+  * @param: flags: Set of `VIRTINFO_*'
   * @return: * :         The amount of required buffer bytes.
   * @return: -EFAULT:    The given `buf' was located at a faulty address.
   * @return: -ENODATA:   No address information is available.
@@ -59,7 +59,7 @@ struct moddebug_ops {
  ssize_t (KCALL *mo_virtinfo)(struct moddebug *__restrict self,
                               maddr_t addr, USER struct virtinfo *buf,
                               size_t bufsize, u32 flags);
- /* [0..1] Attempt to delete cached data to free up memory. (Called from 'mman_swapmem()')
+ /* [0..1] Attempt to delete cached data to free up memory. (Called from `mman_swapmem()')
   *  TODO: Currently unused. */
  size_t (KCALL *mo_clearcache)(struct moddebug *__restrict self, size_t hint);
 };
@@ -70,7 +70,7 @@ struct moddebug {
  rwlock_t             md_lock;   /*< Lock used to synchronize access to this descriptor. */
  WEAK struct module  *md_module; /*< [0..1][lock(md_lock)] Associated module.
                                   *   NOTE: When NULL or containing no references, no operation callbacks
-                                  *         are executed, meaning that all 'md_ops' callbacks may assume
+                                  *         are executed, meaning that all `md_ops' callbacks may assume
                                   *         that this member is [1..1] */
  WEAK REF struct instance
                      *md_owner;  /*< [1..1][const] Weak reference to the module implementing debug operations. */
@@ -87,7 +87,7 @@ FUNDEF SAFE void KCALL moddebug_destroy(struct moddebug *__restrict self);
  * Upon success, the caller is responsible for initializing:
  *   - md_module
  *   - md_ops
- *   - md_owner (As a weak reference; Use 'moddebug_setup()')
+ *   - md_owner (As a weak reference; Use `moddebug_setup()')
  */
 #define moddebug_new(type_size) \
         moddebug_cinit((struct moddebug *)kmemalign(ATOMIC_RWPTR_ALIGN,type_size,GFP_CALLOC|GFP_SHARED))
@@ -98,7 +98,7 @@ FUNDEF void KCALL moddebug_setup(struct moddebug *__restrict self,
                                  struct instance *__restrict owner);
 
 /* Query address information.
- * @param: flags: Set of 'VIRTINFO_*'
+ * @param: flags: Set of `VIRTINFO_*'
  * @return: * :         The amount of required buffer bytes.
  * @return: -EFAULT:    The given `buf' was located at a faulty address.
  * @return: -EINTR:     The calling thread was interrupted.
@@ -144,10 +144,10 @@ struct moddebug_loader {
  SLIST_NODE(struct moddebug_loader)
                            mdl_chain;  /*< [lock(INTERNAL(::moddebug_loader_lock))] Chain of registered loaders. */
  WEAK REF struct instance *mdl_owner;  /*< [1..1][const] Owner module.
-                                        *   NOTE: Should be set to 'THIS_INSTANCE' before calling 'moddebug_addloader'. */
+                                        *   NOTE: Should be set to `THIS_INSTANCE' before calling `moddebug_addloader'. */
  moddebug_loader_callback  mdl_loader; /*< [1..1][const] Callback for loading a module of this type
                                         *   NOTE: Upon error, return an E_PTR(); don't return NULL!
-                                        *   HINT: Return '-ENOEXEC' if you can't load the binary,
+                                        *   HINT: Return `-ENOEXEC' if you can't load the binary,
                                         *         and the kernel will attempt using another loader.
                                         *   NOTE: When being executed, the file seek position is
                                         *         where the module starts (aka. at the base of magic).
@@ -156,19 +156,19 @@ struct moddebug_loader {
                                         *         access to a file. */
  size_t                    mdl_magsz;  /*< [<= MODLOADER_MAX_MAGIC][const] Amount of significant magic bytes (When ZERO(0), always try). */
  byte_t                    mdl_magic[MODDEBUG_LOADER_MAX_MAGIC]; /*< [0..ml_magsz][const] Magic header bytes. */
- u32                       mdl_flags;  /*< Module loader flags (Set of 'MODDEBUG_LOADER_F*'). */
+ u32                       mdl_flags;  /*< Module loader flags (Set of `MODDEBUG_LOADER_F*'). */
 };
 
 
 /* Add/Delete new module debug loaders, adding the ability for drivers to
  * implement the processing of debug information often stored in executables.
- * WARNING: 'moddebug_addloader' will register the given loader
+ * WARNING: `moddebug_addloader' will register the given loader
  *           structure directly, meaning it must either be
  *           allocated statically, or dynamically, whilst
  *           remaining allocated for at least the duration
  *           of the loader remaining registered.
- * NOTE: The reference stored in 'mdl_owner' is added by this function.
- * @param: mode: A set of 'MODULE_LOADER_*'
+ * NOTE: The reference stored in `mdl_owner' is added by this function.
+ * @param: mode: A set of `MODULE_LOADER_*'
  * WARNING: Do not attempt to call either of these functions
  *          from within a module-debug loader. - You will deadlock!
  *       >> That also includes anything a module-debug loader may call, such
@@ -181,7 +181,7 @@ FUNDEF bool KCALL moddebug_delloader(struct moddebug_loader *__restrict loader);
 #define MODDEBUG_LOADER_PRIMARY   0x00 /*< Register a primary debug loader, overriding a previously existing one. */
 #define MODDEBUG_LOADER_SECONDARY 0x01 /*< When set, register the debug loader as a secondary load
                                         *  option, allowing more than one to respond to the same
-                                        *  magic number (e.g.: 'PE' and PE-16 being individual
+                                        *  magic number (e.g.: `PE' and `PE-16' being individual
                                         *  drivers, with both responding to {0x4d,0x5a}). */
 #define MODDEBUG_LOADER_NORMAL    MODDEBUG_LOADER_SECONDARY
 

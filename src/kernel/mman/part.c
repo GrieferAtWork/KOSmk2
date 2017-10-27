@@ -44,7 +44,7 @@ DECL_BEGIN
 #define NEXT         part->mt_chain.le_next
 
 /* Split the given region part at 'split_addr', updating
- * 'part' to point to the returned part that contains its
+ * `part' to point to the returned part that contains its
  * contents starting at 'split_addr'
  * @return: NULL: Not enough available memory. */
 INTERN struct mregion_part *
@@ -61,7 +61,7 @@ mregion_part_split_lo(struct mregion_part *__restrict part,
                                                            : GFP_MEMORY|GFP_NOFREQ);
  if (!addr_isvirt(part)) (void)_mall_untrack(result);
  if (result) {
-  /* Copy shared data (Including mt_flags which may contain 'MPART_FLAG_KEEP'). */
+  /* Copy shared data (Including mt_flags which may contain `MPART_FLAG_KEEP'). */
   memcpy(&result->mt_refcnt,&part->mt_refcnt,
          offsetafter(struct mregion_part,mt_locked)-
          offsetof(struct mregion_part,mt_refcnt));

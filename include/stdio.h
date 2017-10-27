@@ -331,8 +331,8 @@ __NAMESPACE_STD_USING(gets)
 __LIBC __PORT_KOSONLY __WUNUSED __FILE *(__LIBCCALL fdreopen)(int __fd, char const *__restrict __modes,
                                                               __FILE *__restrict __stream, int __mode);
 #define FDREOPEN_DUP            0x0 /*< Duplicate the given descriptor, creating a private copy for the stream. */
-#define FDREOPEN_INHERIT        0x1 /*< Inherit the given 'fd' on success, using that same number for the stream. */
-#define FDREOPEN_CLOSE_ON_ERROR 0x2 /*< Close 'FD' if an error occurred during the attempt at re-opening it. */
+#define FDREOPEN_INHERIT        0x1 /*< Inherit the given `fd' on success, using that same number for the stream. */
+#define FDREOPEN_CLOSE_ON_ERROR 0x2 /*< Close `FD' if an error occurred during the attempt at re-opening it. */
 #endif /* __USE_KOS */
 
 #ifdef __CRT_GLC

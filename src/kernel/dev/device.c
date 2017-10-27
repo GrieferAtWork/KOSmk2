@@ -66,7 +66,7 @@ INTERN ATTR_FREETEXT void KCALL devfs_mount_initialize(void) {
                           strlen(devfs_path),&dev_fs.v_super);
  if (E_ISERR(_devfs_root)) {
   if (E_GTERR(_devfs_root) == -ENOENT) {
-   /* XXX: Recursively create the directory path described by 'devfs_path'? */
+   /* XXX: Recursively create the directory path described by `devfs_path'? */
   }
   syslog(LOG_DEBUG,
          FREESTR("[DEVFS] Failed to mount dev-fs superblock at %q: %[errno]\n"),
@@ -252,7 +252,7 @@ devns_exec_adddev(struct devns *__restrict self,
    result = (*iter->de_add)(self,dev,id);
    assertef(ATOMIC_DECFETCH(iter->de_owner->i_refcnt) != 0,
             "How can this drop to ZERO(0)? - Attempting to delete the module should "
-            "have required acquiring 'd_elock' on this namespace during the module hook-deletion phase.");
+            "have required acquiring `d_elock' on this namespace during the module hook-deletion phase.");
    if (E_ISERR(result)) {
     /* Undo everything we did so far. */
     SLIST_FOREACH(iter2,self->d_event,de_chain) {
@@ -261,7 +261,7 @@ devns_exec_adddev(struct devns *__restrict self,
       (*iter2->de_del)(self,dev,id);
       assertef(ATOMIC_DECFETCH(iter2->de_owner->i_refcnt) != 0,
                "How can this drop to ZERO(0)? - Attempting to delete the module should "
-               "have required acquiring 'd_elock' on this namespace during the module hook-deletion phase.");
+               "have required acquiring `d_elock' on this namespace during the module hook-deletion phase.");
      }
     }
     break;
@@ -282,7 +282,7 @@ devns_exec_deldev(struct devns *__restrict self,
    (*iter->de_del)(self,dev,id);
    assertef(ATOMIC_DECFETCH(iter->de_owner->i_refcnt) != 0,
             "How can this drop to ZERO(0)? - Attempting to delete the module should "
-            "have required acquiring 'd_elock' on this namespace during the module hook-deletion phase.");
+            "have required acquiring `d_elock' on this namespace during the module hook-deletion phase.");
   }
  }
  rwlock_endread(&self->d_elock);
@@ -498,7 +498,7 @@ devns_delete_unlocked(struct devns *__restrict self,
    if (pdev_tree) major->ma_bvec = pdev_tree;
    devns_major_insert(&self->d_tree,major);
   } else {
-   /* Split the major node in two, leaving out the part originally used by 'id'. */
+   /* Split the major node in two, leaving out the part originally used by `id'. */
    upper_major = omalloc(struct devns_major);
    if unlikely(!upper_major) goto err_upper_fail;
    upper_major->ma_node.a_vmin = MAJOR(id)+1;
@@ -628,7 +628,7 @@ handle_result:
       del_part = devns_delete_unlocked(self,&part->dp_device.bd_device,
                                        part_id,mode&DEVNS_ERASE_RELEASE);
       atomic_rwlock_endwrite(&self->d_lock);
-      /* NOTE: 'del_part' may potentially be NULL due to race conditions. */
+      /* NOTE: `del_part' may potentially be NULL due to race conditions. */
       assert(del_part == NULL ||
              del_part == &part->dp_device.bd_device);
       if (del_part && !(part->dp_device.bd_device.d_flags&DEVICE_FLAG_WEAKID))
@@ -737,7 +737,7 @@ handle_dev:
   delete_default_keyboard(dev);
   delete_default_adapter(dev);
   delete_default_rtc(container_of(dev,struct rtc,r_dev.cd_device));
-  /* Remove any mapping of the device from '/dev' */
+  /* Remove any mapping of the device from `/dev' */
   superblock_remove_inode(&dev_fs.v_super,&dev->d_node);
   DEVICE_DECREF(dev);
   if (has_lock) atomic_rwlock_endwrite(&self->d_lock);

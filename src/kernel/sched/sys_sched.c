@@ -53,7 +53,7 @@ DECL_BEGIN
 
 INTERN ATTR_NORETURN
 void KCALL task_userexit_group(void *exitcode) {
- /* More commonly known as stdlib:'exit()' */
+ /* More commonly known as stdlib:`exit()' */
  struct task *caller = THIS_TASK;
  REF struct task *leader;
  task_crit();
@@ -100,7 +100,7 @@ void KCALL task_userexit_group(void *exitcode) {
 }
 
 INTERN ATTR_NORETURN void KCALL task_userexit(void *exitcode) {
- /* More commonly known as pthread:'pthread_exit()' */
+ /* More commonly known as pthread:`pthread_exit()' */
  task_terminate(THIS_TASK,(void *)__W_EXITCODE((u8)(uintptr_t)exitcode,0));
  __builtin_unreachable();
 }
@@ -184,7 +184,7 @@ stack_init_vm_copy(struct mman *__restrict nm,
         caller->t_ustack,ustack,ustack->s_begin,(uintptr_t)ustack->s_end-1,
         THIS_SYSCALL_USERESP);
 #endif
- ustack->s_refcnt = 1; /* The reference owned by 'result->t_ustack' */
+ ustack->s_refcnt = 1; /* The reference owned by `result->t_ustack' */
  ustack->s_branch = 0;
  MMAN_FOREACH(branch,nm) {
 #ifndef CONFIG_NO_TLB
@@ -249,7 +249,7 @@ PRIVATE REF struct task *KCALL task_do_fork(void) {
 
 #ifndef CONFIG_NO_TLB
  /* Since the TLB would have been copied during
-  * 'mman_init_copy_unlocked()', its address stayed the same. */
+  * `mman_init_copy_unlocked()', its address stayed the same. */
  result->t_tlb = caller->t_tlb;
 #endif /* !CONFIG_NO_TLB */
 
@@ -287,7 +287,7 @@ end_double_lock:
  if (E_ISERR(error)) goto err1;
 
  /* Alright! - User-space memory & files have been fully set up.
-  * >> Now to create a new kernel-stack for 'result'. */
+  * >> Now to create a new kernel-stack for `result'. */
  error = task_mkhstack(result,TASK_HOSTSTACK_DEFAULTSIZE);
  if (E_ISERR(error)) goto err1;
 
@@ -358,10 +358,10 @@ SYSCALL_DEFINE0(fork) {
  child = task_do_fork();
  if (E_ISOK(child)) {
   result = task_start(child);
-  /* Return the pid of 'result'. */
+  /* Return the pid of `result'. */
   if (E_ISOK(result))
       result = child->t_pid.tp_ids[PIDTYPE_PID].tl_pid;
-  /* Drop the reference returned by 'task_do_fork()' */
+  /* Drop the reference returned by `task_do_fork()' */
   TASK_DECREF(child);
  } else {
   result = E_GTERR(child);
@@ -860,7 +860,7 @@ SYSCALL_DEFINE5(clone,
   if (E_ISERR(error)) goto end_double_lock;
 #ifndef CONFIG_NO_TLB
   /* Since the TLB would have been copied during
-   * 'mman_init_copy_unlocked()', its address stayed the same. */
+   * `mman_init_copy_unlocked()', its address stayed the same. */
   result->t_tlb = caller->t_tlb;
 #endif /* !CONFIG_NO_TLB */
   /* KOS Extension: Automatically create a new stack. */
@@ -954,7 +954,7 @@ end_double_lock:
 
  /* Setup the task's parent link. */
  if (flags&CLONE_DETACHED) {
-  /* Setup 'init' as the task's parent, essentially detaching it from the caller. */
+  /* Setup `init' as the task's parent, essentially detaching it from the caller. */
   error = task_set_parent(result,&inittask);
  } else if (flags&CLONE_PARENT) {
   REF struct task *parent;
@@ -993,7 +993,7 @@ end_double_lock:
   * the optional buffers provided, and then we can just kick-start the new thread! */
  child_pid = result->t_pid.tp_ids[PIDTYPE_PID].tl_pid;
  if (flags&CLONE_PARENT_SETTID) {
-  /* XXX: What if the child was created in a new PID namespace? ('CLONE_NEWPID') */
+  /* XXX: What if the child was created in a new PID namespace? (`CLONE_NEWPID') */
   if (copy_to_user(parent_tidptr,&child_pid,sizeof(pid_t))) goto err1_fault;
  }
 
@@ -1014,7 +1014,7 @@ end_double_lock:
 #define __STACKBASE_TASK caller
 #ifdef __i386__
    /* Inherit all registers other than EAX and ESP to-be used for argument passing.
-    * NOTE: 'ESP' is also inherited when an automatic stack is used and the VM was copied. */
+    * NOTE: `ESP' is also inherited when an automatic stack is used and the VM was copied. */
    cs->iret.ss      = THIS_SYSCALL_SS;
    cs->iret.useresp = (u32)newsp;
    cs->gp.eax       = 0; /* The child process returns ZERO(0) in EAX. */

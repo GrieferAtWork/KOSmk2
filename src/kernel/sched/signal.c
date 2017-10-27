@@ -444,7 +444,7 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
  USER struct sigenter_info *user_info;
  struct sigenter_info info;
  /* This is some thread that was pre-empted while in user-space.
-  * >> Therefor, 't_cstate' describes the CPU state before it was pre-empted. */
+  * >> Therefor, `t_cstate' describes the CPU state before it was pre-empted. */
  cs_descr = t->t_cstate;
 
  /* TODO: Use sigaltstack() here, if it was ever set! */
@@ -513,7 +513,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
  /* Copy the original, unmodified IRET tail. */
  if (++t->t_sigenter.se_count == 1) {
   memcpy(&t->t_sigenter.se_eip,&ss_descr->eip,20);
-  /* Setup the register state to not return to user-space, but to 'sigenter()' instead. */
+  /* Setup the register state to not return to user-space, but to `sigenter()' instead. */
 #if 1
   syslog(LOG_DEBUG,"Override system call return EIP %p with sigenter %p\n",
          ss_descr->eip,&sigenter);
@@ -666,7 +666,7 @@ enqueue_later:
 
   /* NOTE: We know the task is running on our CPU, and with interrupts disabled
    *       we are either that task, or know that it won't be running until we've
-   *       re-enabled interrupt, meaning we can full access to 't_sighand', knowing
+   *       re-enabled interrupt, meaning we can full access to `t_sighand', knowing
    *       it will not be exchanged until we're done here.
    * >> In either case, the task isn't actually active in
    *    user-space, and won't randomly change into being! */
@@ -1045,7 +1045,7 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
 
  /* Load the new machine context as register state upon return to user-space.
   * NOTE: We don't jump directly, because that would break execution of
-  *       additional signals that may have been unblocked by 'task_set_sigblock()'. */
+  *       additional signals that may have been unblocked by `task_set_sigblock()'. */
 #if IGNORE_SEGMENT_REGISTERS
  cs->host.sg.gs     = __USER_GS;
  cs->host.sg.fs     = __USER_FS;
@@ -1075,14 +1075,14 @@ INTERN void FCALL SYSC_sigreturn(struct cpustate *__restrict cs) {
   *       have been raised, and even more though: Restoring the old
   *       signal mask may (quite likely) re-raised more signals.
   *       But sadly, the bottom-most signal context is using the address
-  *       of this where 'sys_sigreturn()' was called from, which is quite
+  *       of this where `sys_sigreturn()' was called from, which is quite
   *       incorrect as this function isn't supposed to return to the caller,
   *       but instead return to where the first interrupt was called from.
   *    >> Therefor we must find that bottom-most entry and update it
   *       to mirror the register data we've been passed through the
   *       given user-space CPU context.
   * HINT: We know the exact amount of indirections required, as this
-  *       value is safely stored within 'THIS_TASK->t_sigenter.se_count'.
+  *       value is safely stored within `THIS_TASK->t_sigenter.se_count'.
   */
  PREEMPTION_DISABLE();
  context_indirection = THIS_TASK->t_sigenter.se_count;
@@ -1312,7 +1312,7 @@ killpid_info(pid_t pid, siginfo_t const *__restrict info) {
  REF struct task *target;
  ssize_t result;
  if (pid > 0) {
-  /* Kill The process matching 'pid'. */
+  /* Kill The process matching `pid'. */
   target = pid_namespace_lookup(THIS_NAMESPACE,pid);
   if (!target) result = -ESRCH;
   else {

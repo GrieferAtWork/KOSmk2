@@ -41,7 +41,7 @@ BEGIN LIBRARY("libc")
 	 * >> Without this flag, every function that is called
 	 *    at least once would add some overhead whenever
 	 *    libc is patched, but with it, the only relocations
-	 *    that libc really needs are a few 'R_386_RELATIVE'
+	 *    that libc really needs are a few `R_386_RELATIVE'
 	 *   (last I checked 9) to fix-up its .dynamic section.
 	 */
 	C_FLAGS("-Bsymbolic")

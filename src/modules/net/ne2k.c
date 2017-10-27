@@ -63,7 +63,7 @@ INTERN void KCALL net_reset_high(ne2k_t *__restrict dev) {
  if (!(dev->n_dev.n_flags&IFF_UP)) return;
  { unsigned int i;
    struct { u8 off,val; } reset[] = {
-       {EN0_ISR,   0xff}, /* Acknowledge interrupts. (From 'net_reset_base()') */
+       {EN0_ISR,   0xff}, /* Acknowledge interrupts. (From `net_reset_base()') */
        {E8390_CMD, E8390_PAGE0|E8390_STOP|E8390_NODMA},
        {EN0_DCFG,  ENDCFG_FT1|ENDCFG_LS|ENDCFG_WTS}, /* Set word-wide mode. */
        {EN0_RCNTLO,0}, /* Clear count registers. */
@@ -579,7 +579,7 @@ ne2k_probe(struct pci_device *dev) {
  if (E_ISERR(error)) {
   /* Disable the device. */
   net_reset_base(iobase);
-  outb(iobase+EN0_ISR,0xff); /* Acknowledge interrupts. (From 'net_reset_base()') */
+  outb(iobase+EN0_ISR,0xff); /* Acknowledge interrupts. (From `net_reset_base()') */
   goto end;
  }
 

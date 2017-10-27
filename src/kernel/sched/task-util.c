@@ -234,7 +234,7 @@ task_ldtlb(struct task *__restrict self) {
  TASK_PDIR_END(omm,self->t_mman);
 }
 
-/* '0x18' is a hard-coded number used by various DOS compilers. */
+/* `0x18' is a hard-coded number used by various DOS compilers. */
 STATIC_ASSERT(offsetof(struct tib,ti_self) == 0x18);
 
 PUBLIC void KCALL
@@ -498,7 +498,7 @@ check_again:
   * On real hardware, this will (apparently) try to read memory
   * from above 4Gb, rather than overflowing back to ZERO(0).
   * >> READ: 0xffffffff  --> OK (Part of the page-directory self mapping)
-  * >> READ: 0x100000000 --> ERROR (Outside the %DS segment that ends after '0xffffffff')
+  * >> READ: 0x100000000 --> ERROR (Outside the %DS segment that ends after `0xffffffff')
   * >> READ: 0x100000001 --> ERROR (...)
   * >> READ: 0x100000002 --> ERROR (...)
   * So with that in mind, if a protection fault error occurs and there

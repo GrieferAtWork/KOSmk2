@@ -465,7 +465,7 @@ scan_zone:
    part_attr = best_page->p_free.p_attr;
    result    = (ppage_t)((uintptr_t)best_page+(best_page->p_free.p_size-n_bytes));
    if (result > max) {
-    /* This can happen when 'best_page' includes 'max' */
+    /* This can happen when `best_page' includes `max' */
     assert((uintptr_t)max >= (uintptr_t)best_page);
     assert((uintptr_t)max <= (uintptr_t)best_page+best_page->p_free.p_size);
     result = max;
@@ -721,7 +721,7 @@ page_ffree(ppage_t start, size_t n_bytes, pgattr_t attr) {
          "At least part of address range %p...%p was already marked as free by %p...%p",
          start,(uintptr_t)free_end-1,iter,(uintptr_t)PAGE_END(iter)-1);
 
- /* Insert after 'piter' / before 'iter' */
+ /* Insert after `piter' / before `iter' */
  
  /* Check for extending the previous range. */
  if (piter != &zone->z_root) {

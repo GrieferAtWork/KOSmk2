@@ -304,7 +304,7 @@ early_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
   syslog(LOG_DEBUG,FREESTR("[X86] Loaded early realmode interrupt code to %p...%p\n"),
         (uintptr_t)REALMODE_STARTRELO,
         (uintptr_t)REALMODE_STARTRELO+(size_t)(rm_bios_int_end-rm_bios_int_begin)-1);
-  /* Setup the realmode so-as to indicate 'rm_bios_int_begin' being loaded at 'REALMODE_STARTRELO'. */
+  /* Setup the realmode so-as to indicate `rm_bios_int_begin' being loaded at `REALMODE_STARTRELO'. */
   realmode_base   = REALMODE_STARTRELO-(u16)(rm_bios_int_begin-__rm_core_start);
   early_rm_loaded = true;
  }

@@ -150,9 +150,9 @@ __SYSDECL_BEGIN
 #   define F_SETFL_XCH  5163 /*< Same as 'F_SETFL', but return the old set of flags instead of `-EOK' upon success. */
 #endif
 
-#define FD_CLOEXEC   0x01 /*< FLAG: Close the descriptor on 'exec()'. */
+#define FD_CLOEXEC   0x01 /*< FLAG: Close the descriptor on `exec()'. */
 #ifdef __USE_KOS
-#define FD_CLOFORK   0x02 /*< FLAG: Close the descriptor during unsharing after 'fork()' (Similar to `PROT_LOOSE' for memory). */
+#define FD_CLOFORK   0x02 /*< FLAG: Close the descriptor during unsharing after `fork()' (Similar to `PROT_LOOSE' for memory). */
 #endif /* __USE_KOS */
 
 #ifndef F_RDLCK
@@ -278,15 +278,15 @@ struct file_handle {
 #endif /* __USE_GNU */
 #   define AT_EACCESS           0x0200 /* Test access permitted for effective IDs, not real IDs. */
 #ifdef __USE_KOS
-#   define AT_REMOVEREG        0x40000 /* Explicitly allow removing anything that unlink() removes. (Default; Set in addition to 'AT_REMOVEDIR' to implement 'remove()' semantics). */
+#   define AT_REMOVEREG        0x40000 /* Explicitly allow removing anything that unlink() removes. (Default; Set in addition to `AT_REMOVEDIR' to implement `remove()' semantics). */
 #ifdef __KERNEL__
-#   define AT_REMOVEMNT        0x80000 /* Used internally by the kernel: Delete a mounting point. (Userspace must use 'unmount()') */
+#   define AT_REMOVEMNT        0x80000 /* Used internally by the kernel: Delete a mounting point. (Userspace must use `unmount()') */
 #endif /* __KERNEL__ */
 #   define AT_DOSPATH         0x100000 /* Interpret '\\' as '/', and ignore casing during path resolution. */
 #endif
 
 #ifdef __USE_KOS
-#   define AT_FDROOT        (-101) /*< Same as 'AT_FDCWD' but sets the filesystem root (using this, you can 'chroot()' with 'dup2()'!) */
+#   define AT_FDROOT        (-101) /*< Same as `AT_FDCWD' but sets the filesystem root (using this, you can `chroot()' with 'dup2()'!) */
 /* Special, symbolic file numbers. 
  * These descriptors cannot be overwritten,
  * and their meaning is context-sensible. */

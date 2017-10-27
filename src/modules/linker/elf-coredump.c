@@ -208,7 +208,7 @@ mscatter_find_last_nonzero_byte(struct mscatter *__restrict self,
  assert(IS_ALIGNED((uintptr_t)scan_begin,PAGESIZE));
  assert(IS_ALIGNED((uintptr_t)scan_end,PAGESIZE));
 #if defined(__i386__) && 0
- /* TODO: Assembly solution using 'repe scasl' */
+ /* TODO: Assembly solution using `repe scasl' */
 #else
  while (scan_end-- != scan_begin) {
   if (*scan_end)
@@ -335,7 +335,7 @@ mman_get_page_at(struct mman *__restrict self, PAGE_ALIGNED VIRT uintptr_t addr,
  result = E_PTR(rwlock_read(&region->mr_plock));
  if (E_ISERR(result)) return result;
 search_again:
- /* Find the part containing 'offset' */
+ /* Find the part containing `offset' */
  offset = branch->mb_start+(addr-branch->mb_node.a_vmin);
  MREGION_FOREACH_PART(part,region) {
   raddr_t part_end = MREGION_PART_END(part,region);
@@ -362,7 +362,7 @@ search_again:
    return result;
   }
  }
- /* Find the scatter entry containing 'offset' */
+ /* Find the scatter entry containing `offset' */
  scatter = &part->mt_memory;
  while (offset >= scatter->m_size) {
   assert(scatter->m_next != NULL);
@@ -627,7 +627,7 @@ elfcore_create(struct file *__restrict fp, struct mman *__restrict vm,
    d = (struct data *)notes_alloc(&note_section,sizeof(struct data));
    if unlikely(!d) goto err_nomem;
    memcpy(&d->b,&nhdr_prpsinfo_pattern,sizeof(Elf_NhdrCore));
-   d->p.pr_state         = 0; /* 'thread->t_mode' ??? (KOS uses different codes; which are used here?) */
+   d->p.pr_state         = 0; /* `thread->t_mode' ??? (KOS uses different codes; which are used here?) */
    d->p.pr_sname         = 0; /* ??? What is this? */
    d->p.pr_zomb          = thread->t_refcnt > 0; /* Should always be the case... */
    d->p.pr_nice          = 0; /* ??? Something about process priority... */
@@ -723,8 +723,8 @@ elfcore_create(struct file *__restrict fp, struct mman *__restrict vm,
    if (linux_compat) {
     if (file_ent->fe_off&(PAGESIZE-1)) {
      syslog(LOG_WARN,
-            "[CORE] Forced to store incorrect file offset %Iu rather than %Iu for mapping %p...%p of '%[file]' (%Iu bytes difference)\n"
-            "[CORE] This will cause coredump '%[file]' to break because of BFD's $h1tty ELF design (Try loading 'elf-coredump' with 'linux_compat=0')\n",
+            "[CORE] Forced to store incorrect file offset %Iu rather than %Iu for mapping %p...%p of `%[file]' (%Iu bytes difference)\n"
+            "[CORE] This will cause coredump `%[file]' to break because of BFD's $h1tty ELF design (Try loading 'elf-coredump' with `linux_compat=0')\n",
             file_ent->fe_off&~(PAGESIZE-1),file_ent->fe_off,
             file_ent->fe_begin,file_ent->fe_end-1,
             region->mr_setup.mri_file,file_ent->fe_off&(PAGESIZE-1),fp);

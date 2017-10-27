@@ -265,11 +265,11 @@ FUNDEF SAFE KPD ppage_t KCALL page_memalign(size_t alignment, size_t n_bytes, pg
  *                      start...+=n_bytes is already in use. */
 #define page_malloc_at(start,n_bytes,attr)  page_malloc_in(start,start,n_bytes,attr)
 
-/* Similar to 'page_malloc_at()', but dynamically allocate an
- * available free-range between 'min...(max+n_bytes)'
- * (that is: The greatest valid address to return is 'max')
- * NOTE: When 'max < min', the function always fails.
- * NOTE: When 'min == max', the call is equal to 'page_malloc_at(min,n_bytes,attr)'
+/* Similar to `page_malloc_at()', but dynamically allocate an
+ * available free-range between `min...(max+n_bytes)'
+ * (that is: The greatest valid address to return is `max')
+ * NOTE: When `max < min', the function always fails.
+ * NOTE: When `min == max', the call is equal to `page_malloc_at(min,n_bytes,attr)'
  * @param: min:         The lowest address in which to search for an available free range.
  * @param: max:         The greatest address in which to search for an available free range.
  * @return: * :        [>= min && <= max] The base address of `n_bytes'
@@ -278,17 +278,17 @@ FUNDEF SAFE KPD ppage_t KCALL page_memalign(size_t alignment, size_t n_bytes, pg
 FUNDEF SAFE KPD ppage_t KCALL page_malloc_in(ppage_t min, ppage_t max,
                                              size_t n_bytes, pgattr_t attr);
 
-/* Allocate a page at least 'min_size' bytes large, and at most 'max_size' bytes.
- * Upon success, the real allocated size is stored in '*res_size'.
- * NOTE: 'min_size' is ceil-aligned to PAGESIZE, and 'max_size' is floor-aligned to PAGESIZE.
- * NOTE: When the aligned 'max_size' <= the aligned 'min_size',
- *       'min_size' is used for 'max_size' instead.
+/* Allocate a page at least `min_size' bytes large, and at most `max_size' bytes.
+ * Upon success, the real allocated size is stored in `*res_size'.
+ * NOTE: `min_size' is ceil-aligned to PAGESIZE, and `max_size' is floor-aligned to PAGESIZE.
+ * NOTE: When the aligned `max_size' <= the aligned `min_size',
+ *       `min_size' is used for `max_size' instead.
  * NOTE: This function is implemented by searching for the smallest
- *       free memory region still greater than 'min_size' bytes and
- *       extracting as most 'max_size' bytes that are then returned.
+ *       free memory region still greater than `min_size' bytes and
+ *       extracting as most `max_size' bytes that are then returned.
  *       -> So even though this function is allowed to, it will not
- *          blindly allocate 'min_size' bytes at all times.
- * NOTE: Passing ZERO(0) for 'max_size' will allocate an empty page
+ *          blindly allocate `min_size' bytes at all times.
+ * NOTE: Passing ZERO(0) for `max_size' will allocate an empty page
  *      (that is a page that may be aliasing another pointer and
  *       doesn't have to be freed, or can be freed through `page_free(p,0)')
  *       Though that page is still guarantied to be page-aligned and not be equal to `PAGE_ERROR'.
@@ -299,7 +299,7 @@ FUNDEF SAFE KPD ppage_t KCALL page_malloc_in(ppage_t min, ppage_t max,
  * @param: attr:        Memory attributes required from the region to-be allocated.
  * @param: zone:        The memory zone to allocated from.
  * @return: * :         Base address of the allocated memory block.
- * @return: PAGE_ERROR: Failed to allocate a memory region of at least 'min_size' bytes. */
+ * @return: PAGE_ERROR: Failed to allocate a memory region of at least `min_size' bytes. */
 FUNDEF SAFE KPD ppage_t KCALL page_malloc_part(size_t min_size, size_t max_size,
                                                size_t *__restrict res_size,
                                                pgattr_t attr, mzone_t zone);
@@ -308,11 +308,11 @@ FUNDEF SAFE KPD ppage_t KCALL page_malloc_part(size_t min_size, size_t max_size,
 struct mscatter {
  /* Memory scatter controller. */
  PHYS struct mscatter *m_next;  /*< [0..1][owned] The next scatter link.
-                                 *   NOTE: The sum of 'm_size' from all links is always
-                                 *         >= the `n_bytes' passed to 'page_malloc_scatter' */
- ppage_t               m_start; /*< [1..1][owned(page_free)] Starting address to 'm_size' available bytes. */
- PAGE_ALIGNED size_t   m_size;  /*< Amount of bytes allocated in 'm_start' (page-aligned)
-                                 *  NOTE: This value is always >= the 'min_scatter' passed to 'page_malloc_scatter' */
+                                 *   NOTE: The sum of `m_size' from all links is always
+                                 *         >= the `n_bytes' passed to `page_malloc_scatter' */
+ ppage_t               m_start; /*< [1..1][owned(page_free)] Starting address to `m_size' available bytes. */
+ PAGE_ALIGNED size_t   m_size;  /*< Amount of bytes allocated in `m_start' (page-aligned)
+                                 *  NOTE: This value is always >= the `min_scatter' passed to `page_malloc_scatter' */
 };
 
 /* Take away one from the given memory scatter.
@@ -348,30 +348,30 @@ LOCAL SAFE KPD bool KCALL mscatter_cat(struct mscatter *__restrict dst,
  * During this process, page are allocated in such a way that is meant to
  * counteract address space fragmentation, by preferring to allocate memory
  * from smaller free page clusters, thus hopefully reducing their numbers.
- * NOTE: `n_bytes' and 'min_scatter' are ceil-aligned to PAGESIZE.
- * @param: scatter:     A pointer to a 'mscatter' data-structure to-be filled
+ * NOTE: `n_bytes' and `min_scatter' are ceil-aligned to PAGESIZE.
+ * @param: scatter:     A pointer to a `mscatter' data-structure to-be filled
  *                      with information about the allocated memory upon success.
  * @param: min_scatter: The smallest number of bytes that may be apart of any scatter entry.
- *             WARNING: When this value '>= n_bytes', `n_bytes' is used instead!
+ *             WARNING: When this value `>= n_bytes', `n_bytes' is used instead!
  * @param: n_bytes:     The total number of bytes that should be allocated.
- *                      When this value is ZERO(0), 'scatter->m_start' is
- *                      in an undefined state, 'm_next' is set to NULL,
- *                      'm_size' is set to ZERO(0), and 'true' is returned.
- * @return: true:       Successfully allocated the region (s.a.: 'page_free_scatter{_list}')
+ *                      When this value is ZERO(0), `scatter->m_start' is
+ *                      in an undefined state, `m_next' is set to NULL,
+ *                      `m_size' is set to ZERO(0), and `true' is returned.
+ * @return: true:       Successfully allocated the region (s.a.: `page_free_scatter{_list}')
  * @return: false:      Failed to allocate the scatter region (*scatter is in an undefined state) */
 FUNDEF SAFE KPD bool KCALL page_malloc_scatter(struct mscatter *__restrict scatter,
                                                size_t n_bytes, size_t min_scatter,
                                                pgattr_t attr, mzone_t zone);
 
-/* Allocate all existing free ranges within 'begin...+=n_bytes', storing them
- * as a potentially disconnected chain of scatter entries within 'scatter'.
+/* Allocate all existing free ranges within `begin...+=n_bytes', storing them
+ * as a potentially disconnected chain of scatter entries within `scatter'.
  * >> Unlike other page_malloc()-functions, this one does not require that
  *    the specified amount of bytes are all allocated, but rather is used
  *    to allocate all dynamic memory with a given address range.
- * @return: * :      The total amount of bytes allocated, and now tracked by 'scatter'
+ * @return: * :      The total amount of bytes allocated, and now tracked by `scatter'
  * @return: -ENOMEM: Failed to allocate a sufficient number of mscatter entries.
  *                   All memory regions allocated before this error occurred are
- *                   released again, meaning that 'scatter' is in an invalid state. */
+ *                   released again, meaning that `scatter' is in an invalid state. */
 FUNDEF SAFE KPD ssize_t KCALL
 page_malloc_all(struct mscatter *__restrict scatter, ppage_t begin,
                 size_t n_bytes, pgattr_t attr);
@@ -385,7 +385,7 @@ LOCAL SAFE KPD void KCALL page_free_scatter(struct mscatter *__restrict scatter,
 LOCAL SAFE void KCALL page_free_scatter_list(struct mscatter *__restrict scatter);
 
 
-/* Free a given memory range previous allocated with 'page_(m|c)alloc{at}',
+/* Free a given memory range previous allocated with `page_(m|c)alloc{at}',
  * using the given attributes to identify memory once registered as free.
  * NOTE: The caller is responsible for ensuring that
  *       memory matches the specified attributes.

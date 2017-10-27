@@ -44,13 +44,13 @@ DATDEF time32_t const kernel_timestamp32 ASMNAME("kernel_timestamp");
 DATDEF time64_t const kernel_timestamp64 ASMNAME("kernel_timestamp");
 
 /* Effective kernel version.
- * Usually the same as 'KOS_VERSION_*', but can be used by
+ * Usually the same as `KOS_VERSION_*', but can be used by
  * modules to detect version differences between what they
  * were compiled for and what they are actually running under.
  * HINT: This value changes every time the kernel core is relinked! */
 DATDEF u32 const kernel_version;
 
-/* 'uname -a' style information, identical to what is available from user-space.
+/* `uname -a' style information, identical to what is available from user-space.
  *  NOTE: This block of data is allocated in the user-share segment! */
 DATDEF struct utsname const kernel_uname ASMNAME("uname");
 #endif /* __CC__ */

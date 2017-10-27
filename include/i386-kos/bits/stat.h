@@ -554,7 +554,7 @@ union{
 #endif /* !__USE_KOS */
 #elif defined(__USE_TIME_BITS64)
     __int32_t    __st_pad1;
-union{ /* binary compatibility to 'stat64i32' and 'stat64'. */
+union{ /* binary compatibility to `stat64i32' and `stat64'. */
 #ifdef __USE_KOS
     __UINT32_TYPE__ st_size;
     __UINT32_TYPE__ st_size32;
@@ -648,7 +648,7 @@ union{
     __UINT32_TYPE__ st_size;
     __UINT32_TYPE__ st_size32;
     __INT64_TYPE__ __st_pad2; /* This is what DOS silently does to match the
-                               * binary layout of 'stat64i32' with 'stat64'. */
+                               * binary layout of `stat64i32' with `stat64'. */
 };
 union{__time64_t   st_atime; __time64_t st_atime32; __time64_t st_atime64; };
 union{__time64_t   st_mtime; __time64_t st_mtime32; __time64_t st_mtime64; };
@@ -657,7 +657,7 @@ union{__time64_t   st_ctime; __time64_t st_ctime32; __time64_t st_ctime64; };
 union{
     __dos_off_t    st_size;
     __INT64_TYPE__ __st_pad2; /* This is what DOS silently does to match the
-                               * binary layout of 'stat64i32' with 'stat64'. */
+                               * binary layout of `stat64i32' with `stat64'. */
 };
     __time64_t     st_atime;
     __time64_t     st_mtime;

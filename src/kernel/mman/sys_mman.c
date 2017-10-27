@@ -123,7 +123,7 @@ user_mmap(struct mmap_info *__restrict info) {
      info->mi_size += (uintptr_t)base_addr & (PAGESIZE-1);
  info->mi_size = CEIL_ALIGN(info->mi_size,PAGESIZE);
  /* Check for address overflow.
-  * HINT: Also handles the case of 'info->mi_size == 0' */
+  * HINT: Also handles the case of `info->mi_size == 0' */
  if unlikely((uintptr_t)base_addr+info->mi_size <=
              (uintptr_t)base_addr) return -EINVAL;
  if unlikely((info->mi_flags&MAP_FIXED) &&
@@ -187,7 +187,7 @@ user_mmap(struct mmap_info *__restrict info) {
    if (info->mi_virt.mv_len < info->mi_size) goto einval; /* Cannot do partial mappings. */
 
    /* The following assertions should never fail (obviously; they're assertions...),
-    * but they should re-assume implementors of 'f_mmap' if its assumptions, meaning
+    * but they should re-assume implementors of `f_mmap' if its assumptions, meaning
     * that they should not feel forced to do them again. */
    assert(region_start == 0);
    assert(info->mi_size != 0);

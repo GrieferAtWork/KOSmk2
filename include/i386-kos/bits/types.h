@@ -542,33 +542,33 @@ __SYSDECL_END
  *   - __off_t:              Filesystem type used internally by the kernel
  *                           This type is that used in system calls, which may
  *                           lead to arguments being split among multiple registers.
- *                           The typing of this is determined by 'CONFIG_32BIT_FILESYSTEM'.
- *                           WARNING: This type is _NOT_ necessary identical to 'off_t'!
+ *                           The typing of this is determined by `CONFIG_32BIT_FILESYSTEM'.
+ *                           WARNING: This type is _NOT_ necessary identical to `off_t'!
  *                           NOTE: User-space applications should never use this type.
  *                                 Instead, they may choose their own filesystem bits
- *                                 by defining '_FILE_OFFSET_BITS'.
- *                             >> 'libc' is meant as the interface between kernel and
+ *                                 by defining `_FILE_OFFSET_BITS'.
+ *                             >> `libc' is meant as the interface between kernel and
  *                                 userspace, that is supposed to act as the middle-man
  *                                 for providing an abstract interface that knows how the
- *                                 kernel was compiled in concerns about 'CONFIG_32BIT_FILESYSTEM',
+ *                                 kernel was compiled in concerns about `CONFIG_32BIT_FILESYSTEM',
  *                                 which determines the ~real~ filesystem type used by the kernel
  *                                 and therefor any kind of system call.
- *   - __FS_TYPE:            Linkage controller for filesystem types (depends on '_FILE_OFFSET_BITS=32|64')
+ *   - __FS_TYPE:            Linkage controller for filesystem types (depends on `_FILE_OFFSET_BITS=32|64')
  *   - __FS_TYPE(off):       The effective user-space type.
  *                           This is the implicitly-defined type that headers will
  *                           link c-functions using the type as argument again.
- *   - __REDIRECTFS_FUNC:    Same as '__FS_TYPE', but for assembly symbols linked against c-functions (lseek vs. lseek64)
- *   - off_t:                An alias for '__FS_TYPE(off)' defined by various headers.
- *   - off64_t:              An alias for '__off64_t', defined 
+ *   - __REDIRECTFS_FUNC:    Same as `__FS_TYPE', but for assembly symbols linked against c-functions (lseek vs. lseek64)
+ *   - off_t:                An alias for `__FS_TYPE(off)' defined by various headers.
+ *   - off64_t:              An alias for `__off64_t', defined 
  *   - __ASMNAME("lseek"):   A libc function using __off32_t as argument.
  *   - __ASMNAME("lseek64"): A libc function using __off32_t as argument.
  *   - lseek:                The high-level c-function either linked against
- *                          'lseek' or 'lseek', always taking 'off_t' as argument.
+ *                          'lseek' or 'lseek', always taking `off_t' as argument.
  *   - lseek64:              An optional secondary c-function that always links against
- *                           the 64-bit library function, taking '__off64_t' as argument.
- * Within the kernel rules are similar, except that 'off64_t'
- * is never used, and 'off_t' is always equal to '__off_t'.
- * NOTE: Exactly the same thing is true for 64-bit 'time_t'.
+ *                           the 64-bit library function, taking `__off64_t' as argument.
+ * Within the kernel rules are similar, except that `off64_t'
+ * is never used, and `off_t' is always equal to `__off_t'.
+ * NOTE: Exactly the same thing is true for 64-bit `time_t'.
  */
 
 

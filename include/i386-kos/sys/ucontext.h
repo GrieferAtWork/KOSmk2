@@ -178,7 +178,7 @@ enum { /* Number of each register is the `gregset_t' array. */
 };
 
 /* WARNING: Changes to this order of registers must be mirrored by
- *          'signal_return' in "/src/kernel/sched/signal.c.inl" */
+ *          `signal_return' in "/src/kernel/sched/signal.c.inl" */
 #define REG_GS     0
 #define REG_FS     1
 #define REG_ES     2

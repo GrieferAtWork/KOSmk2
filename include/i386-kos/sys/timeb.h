@@ -59,7 +59,7 @@ typedef __TM_TYPE(time) time_t;
    <http://www.gnu.org/licenses/>.  */
 
 struct timeb {
-    time_t          time;     /*< Seconds since epoch, as from 'time'. */
+    time_t          time;     /*< Seconds since epoch, as from `time'. */
     __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
     __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
     __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
@@ -73,7 +73,7 @@ typedef __time64_t time64_t;
 #endif /* !__time64_t_defined */
 
 struct timeb64 {
-    time64_t        time;     /*< Seconds since epoch, as from 'time'. */
+    time64_t        time;     /*< Seconds since epoch, as from `time'. */
     __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
     __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
     __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
@@ -85,7 +85,7 @@ struct timeb64 {
 #ifndef _TIMEB_DEFINED
 #define _TIMEB_DEFINED 1
 struct __timeb32 {
-    __time32_t      time;     /*< Seconds since epoch, as from 'time'. */
+    __time32_t      time;     /*< Seconds since epoch, as from `time'. */
     __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
     __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
     __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */
@@ -93,7 +93,7 @@ struct __timeb32 {
 };
 
 struct __timeb64 {
-    __time64_t      time;     /*< Seconds since epoch, as from 'time'. */
+    __time64_t      time;     /*< Seconds since epoch, as from `time'. */
     __UINT16_TYPE__ millitm;  /*< Additional milliseconds. */
     __INT16_TYPE__  timezone; /*< Minutes west of GMT. */
     __INT16_TYPE__  dstflag;  /*< Nonzero if Daylight Savings Time used. */

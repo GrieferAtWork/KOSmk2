@@ -66,7 +66,7 @@ DATDEF struct hwcpu smp_hwcpu;
 #ifdef CONFIG_SMP
 /* Activate the given cpu and wait until it has started.
  * NOTE: No-op (returning -EOK) if the CPU is the caller, or is already enable.
- * NOTE: The caller must be holding a write-lock to 'apic_lock'
+ * NOTE: The caller must be holding a write-lock to `apic_lock'
  * @param: self:        The CPU to enable.
  * @return: -EOK:       The given CPU has been enabled.
  *             WARNING: By the time control is returned to the caller,
@@ -77,10 +77,10 @@ DATDEF struct hwcpu smp_hwcpu;
 FUNDEF SAFE errno_t KCALL cpu_enable_unlocked(struct cpu *__restrict self);
 
 /* Disable the given cpu, potentially waiting until it has shut down.
- * NOTE: The caller must be holding a write-lock to 'apic_lock'
+ * NOTE: The caller must be holding a write-lock to `apic_lock'
  * NOTE: No-op (returning -EOK) if the CPU was already deactivated.
  * @param: self:        The CPU to disable.
- * @param: mode:        Set of 'CPU_DISABLE_*' describing how the CPU should be shut down.
+ * @param: mode:        Set of `CPU_DISABLE_*' describing how the CPU should be shut down.
  * @return: -EOK:       The given CPU has been disabled.
  *             WARNING: By the time control is returned to the caller,
  *                      this may already have changed again...
@@ -89,7 +89,7 @@ FUNDEF SAFE errno_t KCALL cpu_enable_unlocked(struct cpu *__restrict self);
  * @return: -ECOMM:     Cannot communicate with the CPU.
  * @return: -EPERM:     Cannot de-activate the boot-CPU (__bootcpu).
  *                   [!(mode&CPU_DISABLE_NOMIGRATE)] The CPU is hosting tasks that cannot be migrated.
- *                                                   Try specifying 'CPU_DISABLE_NOMIGRATE' to force
+ *                                                   Try specifying `CPU_DISABLE_NOMIGRATE' to force
  *                                                   it to shut down, leaving you responsible for
  *                                                   dealing with all of its remaining tasks.
  */
@@ -100,7 +100,7 @@ FUNDEF SAFE errno_t KCALL cpu_disable_unlocked(struct cpu *__restrict self, int 
 
 
 /* Execute an IPC interrupt #intno within the given CPU.
- * NOTE: The caller must be holding a write-lock to 'apic_lock'
+ * NOTE: The caller must be holding a write-lock to `apic_lock'
  * @return: -EOK:   Successfully invoked the given interrupt.
  * @return: -ECOMM: Failed to communicated with the given CPU. */
 FUNDEF SAFE errno_t KCALL cpu_sendipc_unlocked(struct cpu *__restrict self, irq_t intno);
@@ -110,7 +110,7 @@ FUNDEF SAFE errno_t KCALL cpu_sendipc_unlocked(struct cpu *__restrict self, irq_
 /* Shut down the current CPU _NOW_ (Not marked as ATTR_NORETURN,
  * because the caller may be re-scheduled on another CPU).
  * WARNING: Do not use these to deactivate your own CPU.
- *          Call 'cpu_disable_unlocked(THIS_CPU,CPU_DISABLE_SHUTDOWN)' instead. */
+ *          Call `cpu_disable_unlocked(THIS_CPU,CPU_DISABLE_SHUTDOWN)' instead. */
 FUNDEF void KCALL __cpu_shutdown_now(void);
 FUNDEF void KCALL __cpu_shutdown_now_endwrite(void);
 

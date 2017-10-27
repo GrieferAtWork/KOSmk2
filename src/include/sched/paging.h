@@ -38,8 +38,8 @@ do{ \
   COMPILER_BARRIER(); \
   assert((old_mman) != NULL); \
   if ((old_mman) != (new_mman)) { \
-   /* NOTE: Must update 't_mman' first to prevent an \
-    * interrupt from reverting 'PDIR_STCURR' */ \
+   /* NOTE: Must update `t_mman' first to prevent an \
+    * interrupt from reverting `PDIR_STCURR' */ \
    THIS_TASK->t_mman = (new_mman); \
    COMPILER_WRITE_BARRIER(); \
    PDIR_STCURR(new_ppdir); \
@@ -50,8 +50,8 @@ do{ \
 #define TASK_PDIR_END(old_mman,new_mman) \
 do{ \
   if ((old_mman) != (new_mman)) { \
-   /* NOTE: Must update 't_mman' first to prevent an \
-    * interrupt from reverting 'PDIR_STCURR' */ \
+   /* NOTE: Must update `t_mman' first to prevent an \
+    * interrupt from reverting `PDIR_STCURR' */ \
    THIS_TASK->t_mman = (old_mman); \
    COMPILER_WRITE_BARRIER(); \
    PDIR_STCURR((old_mman)->m_ppdir); \
@@ -66,8 +66,8 @@ DATDEF VIRT struct mman mman_kernel;
  * NOTE: Before using this, not that all page-directory related operations
  *       can also be achieved through use of page-directory self mappings.
  *       The only thing that these macros should be used for, is physical
- *       memory allocation using the 'page_*' functions from <kernel/memory.h>
- *       that are marked as 'KPD'.
+ *       memory allocation using the `page_*' functions from <kernel/memory.h>
+ *       that are marked as `KPD'.
  * #endif
  */
 #define TASK_PDIR_KERNEL_BEGIN(old_mman) TASK_PDIR_BEGIN_EX(old_mman,&mman_kernel,&pdir_kernel)

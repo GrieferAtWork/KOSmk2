@@ -32,7 +32,7 @@ DECL_BEGIN
 INTDEF void KCALL mfutexptr_clear(atomic_rwptr_t *__restrict self);
 
 /* Increment/Decrement part reference counters.
- * NOTE: The caller must hold a write-lock to 'self->mr_plock'
+ * NOTE: The caller must hold a write-lock to `self->mr_plock'
  * @return: true:  Successfully incremented the counter.
  * @return: false: Not enough available memory. */
 INTDEF bool KCALL mregion_part_incref(struct mregion *__restrict self, raddr_t start, rsize_t n_bytes);
@@ -40,21 +40,21 @@ INTDEF void KCALL mregion_part_decref(struct mregion *__restrict self, raddr_t s
 INTDEF void KCALL mregion_part_decref_clr(struct mregion *__restrict self, raddr_t start, rsize_t n_bytes);
 
 /* Increment/Decrement part locking counters.
- * NOTE: The caller must hold a write-lock to 'self->mr_plock'
+ * NOTE: The caller must hold a write-lock to `self->mr_plock'
  * @return: true:  Successfully incremented the counter.
  * @return: false: Not enough available memory. */
 INTDEF bool KCALL mregion_part_inclock(struct mregion *__restrict self, raddr_t start, rsize_t n_bytes);
 INTDEF bool KCALL mregion_part_declock(struct mregion *__restrict self, raddr_t start, rsize_t n_bytes);
 
 /* Mark all parts within the given range as changed.
- * NOTE: The caller must hold a write-lock to 'self->mr_plock'
+ * NOTE: The caller must hold a write-lock to `self->mr_plock'
  * @return: true:  Successfully marked as changed.
  * @return: false: Not enough available memory. */
 INTDEF bool KCALL mregion_part_setchng(struct mregion *__restrict self, raddr_t start, rsize_t n_bytes);
 
 
 /* Increment/Decrement both part + region reference reference counters.
- * NOTE: This is the kind of reference held by 'struct mbranch::mb_region'
+ * NOTE: This is the kind of reference held by `struct mbranch::mb_region'
  * NOTE: 'mregion_decref_clr' assumes that all parts that were uniquely
  *        owned by the caller before completion are zero-initialized.
  * @return: -EOK:   Successfully incref/decref'ed the region portion.
@@ -65,7 +65,7 @@ INTDEF errno_t KCALL mregion_decref(struct mregion *__restrict self, raddr_t sta
 INTDEF errno_t KCALL mregion_decref_clr(struct mregion *__restrict self, raddr_t start, rsize_t n_bytes);
 
 /* Split the given region part at 'split_addr', updating
- * 'part' to point to the returned part that contains its
+ * `part' to point to the returned part that contains its
  * contents starting at 'split_addr'
  * @return: NULL: Not enough available memory. */
 INTDEF struct mregion_part *
@@ -76,14 +76,14 @@ mregion_part_split_lo(struct mregion_part *__restrict part,
  * >> This is done for the address begin/end to ensure that the
  *    memory manager is in a proper state before operations such
  *    as mprotect(), mmap(), mremap() and munmap()
- * NOTE: When no branch exists at the given address, 'true' is returned.
+ * NOTE: When no branch exists at the given address, `true' is returned.
  * @param: start:  The address of the branch that should be created.
  * @return: -EOK:       Nothing needed to be done, or a branch was split.
  * @return: -ENOMEM:    Failed to split the branch (not enough memory).
  * @return: E_ISERR(*): Failed to incref() a branch callback for some reason. */
 INTDEF errno_t KCALL mman_split_branch_unlocked(struct mman *__restrict self, PAGE_ALIGNED VIRT uintptr_t start);
 
-/* The opposite of 'mman_split_branch_unlocked':
+/* The opposite of `mman_split_branch_unlocked':
  * Try to merge two branches at `start' and `start-1', so-long as
  * they reference the same region, or both contain unique regions.
  * >> that is regions not mapped anywhere else when 'mr_refcnt == 1'. */
@@ -91,7 +91,7 @@ INTDEF bool KCALL mman_merge_branch_unlocked(struct mman *__restrict self, PAGE_
 
 /* Load the given address range found within `self' into the memory core.
  * @param: mode:        A set of 'MMAN_MCORE_*'
- * @param: did_remap:   Set to true when the branches from 'mspace' were remapped.
+ * @param: did_remap:   Set to true when the branches from `mspace' were remapped.
  * @return: * :         The amount of newly allocated core bytes.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: -ENOMEM:    Not enough available core memory.
@@ -106,7 +106,7 @@ mbranch_mcore(struct mbranch *__restrict self,
 /* Map the given m-branch in the specified page directory,
  * automatically generating tables that are compatible with
  * alloc/load-on-read and copy-on-write semantics.
- * [mbranch_remap_unlocked] The caller must hold a read-only to 'self->mb_region->mr_plock'
+ * [mbranch_remap_unlocked] The caller must hold a read-only to `self->mb_region->mr_plock'
  * @param: update_prot: When true, only update protections
  *                      instead of doing a full re-map.
  * @return: -EOK:    Successfully mapped the branch.

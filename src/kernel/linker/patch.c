@@ -158,9 +158,9 @@ modpatch_host_dlsym(struct modpatch *__restrict self,
  result = kernel_symaddr(name,hash);
  if (result) return result;
 
- /* Resolve special driver symbols like '__this_instance'
+ /* Resolve special driver symbols like `__this_instance'
   * >> Points to the module instance's controller block.
-  * Yes: This is how modules know where 'THIS_INSTANCE' actually is! */
+  * Yes: This is how modules know where `THIS_INSTANCE' actually is! */
  if (hash == HASH_FOR_THIS_INSTANCE &&
     !strcmp(name,NAME_FOR_THIS_INSTANCE))
      return self->p_inst;
@@ -236,7 +236,7 @@ L(    popl  %ebp                                                   )
 #endif
 L(                                                                 )
 L(    /* Cleanup if no error occurred. */                          )
-L(    /* NOTE: 'EBX' is callee-save, meaning it still contains 'THIS_TASK' */ )
+L(    /* NOTE: 'EBX' is callee-save, meaning it still contains `THIS_TASK' */ )
 L(    popl  TASK_OFFSETOF_IC(%ebx)                                 )
 L(    addl  $8, %esp                                               )
 L(                                                                 )
@@ -298,7 +298,7 @@ modpatch_dldep(struct modpatch *__restrict self,
  struct modpatch *existing_check = self;
  struct mman *target_mman = THIS_MMAN;
 
- /* Search for an existing instance of 'dependency'. */
+ /* Search for an existing instance of `dependency'. */
  do { inst = modpatch_find_dep(existing_check,dependency);
       if (inst) return inst;
  } while ((existing_check = existing_check->p_prev) != NULL);
@@ -361,7 +361,7 @@ find_space:
                            iter->ms_msize))
        goto need_custom_base;
   }
-  syslog(LOG_DEBUG,"[PATCH] Preferred range %p...%p of module '%[file]' can be used\n",
+  syslog(LOG_DEBUG,"[PATCH] Preferred range %p...%p of module `%[file]' can be used\n",
          dependency->m_load+dependency->m_begin,
          dependency->m_load+dependency->m_end-1,
          dependency->m_file);
@@ -412,7 +412,7 @@ got_space:
  }
  /* Make sure to map everything as writable if the module uses text-relocations. */
  /* We've tracked down sufficient space. - Now to map to it!
-  * NOTE: Initially, all sections are mapped as 'PROT_CLEAN', indicating
+  * NOTE: Initially, all sections are mapped as `PROT_CLEAN', indicating
   *       that they have not been altered by user-space. */
  error = mman_mmap_instance_unlocked(target_mman,inst,(u32)-1,
                                     (dependency->m_flag&MODFLAG_TEXTREL)
@@ -478,7 +478,7 @@ done:
 
  /* Run initializers for drivers. */
  if (MODPATCH_ISHOST(self)) {
-  syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module '%[file]' at %p...%p\n",
+  syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module `%[file]' at %p...%p\n",
          inst->i_module->m_file,inst->i_base,
         (uintptr_t)inst->i_base+inst->i_module->m_size-1);
   instance_callinit(inst);

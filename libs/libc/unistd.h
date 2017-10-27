@@ -487,7 +487,7 @@ struct __dos_stat64i32;
 struct __dos_stat64;
 
 /* DOS-FS mode + DOS-binary-compatible stat functions.
- * NOTE: These are only used when user-apps are configures as '__PE__' + '__USE_DOS'.
+ * NOTE: These are only used when user-apps are configures as `__PE__' + `__USE_DOS'.
  *       Otherwise, KOS's stat buffer data layout is used instead.  */
 INTDEF void LIBCCALL libc_fill_dos_stat32(struct stat64 const *__restrict src, struct __dos_stat32 *__restrict buf);
 INTDEF void LIBCCALL libc_fill_dos_stat64(struct stat64 const *__restrict src, struct __dos_stat64 *__restrict buf);
@@ -505,7 +505,7 @@ INTDEF int LIBCCALL libc_dos_local_16wstat32(char16_t const *__restrict file, st
 INTDEF int LIBCCALL libc_dos_local_16wstat64(char16_t const *__restrict file, struct __dos_stat64 *__restrict buf);
 INTDEF int LIBCCALL libc_dos_local_16wstat32i64(char16_t const *__restrict file, struct __dos_stat32i64 *__restrict buf);
 //INTDEF int LIBCCALL libc_dos_local_16wstat64i32(char16_t const *__restrict file, struct __dos_stat64i32 *__restrict buf);
-/* NOTE: There are no 'libc_dos_32wstat32' functions, because PE only has 16-bit wide
+/* NOTE: There are no `libc_dos_32wstat32' functions, because PE only has 16-bit wide
  *       characters, and the functions above are only ever used when building in PE-mode. */
 
 

@@ -35,7 +35,7 @@ DECL_BEGIN
 #define MD_RANDOM  MKDEV(1,8)  /*< /dev/random   Nondeterministic random number gen. */
 #define MD_URANDOM MKDEV(1,9)  /*< /dev/urandom  Faster, less secure random number gen. */
 #define MD_AIO     MKDEV(1,10) /*< /dev/aio      Asynchronous I/O notification interface. */
-#define MD_KMSG    MKDEV(1,11) /*< /dev/kmsg     Writes to this come out as printk's. */
+#define MD_KMSG    MKDEV(1,11) /*< /dev/kmsg     Writes to this come out as `syslog()'s. */
 
 DECL_END
 

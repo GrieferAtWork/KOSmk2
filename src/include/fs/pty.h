@@ -67,21 +67,21 @@ DATDEF struct inodeops const ptyslave_ops;
 
 
 /* Create a new PTY master device. The caller must fill in:
- *  - pm_chr.cd_device.d_node.i_super (Use 'device_setup')
+ *  - pm_chr.cd_device.d_node.i_super (Use `device_setup')
  *  - pm_chr.cd_device.d_node.i_data (Optionally)
  *  - pm_size
  *  - pm_ios
  *  - pm_cproc (Optionally; Initialized to NULL)
  *  - pm_fproc (Optionally; Initialized to NULL)
  * NOTE: Once initialization is done, the caller must register a master/slave driver pair.
- *       If the driver pair was allocated for the 'openpty()' systemcall, 'pty_register()'
+ *       If the driver pair was allocated for the `openpty()' systemcall, `pty_register()'
  *       should be used to accomplish this.
  */
 #define ptymaster_new(type_size) ptymaster_cinit((struct ptymaster *)calloc(1,type_size))
 FUNDEF struct ptymaster *KCALL ptymaster_cinit(struct ptymaster *master);
 
 /* Create a new PTY slave device. The caller must fill in:
- *  - ps_chr.cd_device.d_node.i_super (Use 'device_setup')
+ *  - ps_chr.cd_device.d_node.i_super (Use `device_setup')
  *  - ps_chr.cd_device.d_node.i_data (Optionally)
  *  - ps_master (Mandatory; Must be filled with a real reference)
  */
@@ -98,10 +98,10 @@ FUNDEF struct ptymaster *KCALL ptymaster_cinit(struct ptymaster *master);
 
 
 /* PTY device numbers.
- * NOTE: These must only be used for drivers allocated by 'openpty()'.
+ * NOTE: These must only be used for drivers allocated by `openpty()'.
  *       Any other sub-system making use of, or extending upon PTY
  *       terminal drivers must implement its own device numbering system.
- * NOTE: To register a pty master/slave pair for 'openpty()', use 'pty_register' below.
+ * NOTE: To register a pty master/slave pair for `openpty()', use `pty_register' below.
  */
 #define PTY_DEVCNT    256
 #define PTY_MASTER(n) MKDEV(2,n)
@@ -114,20 +114,20 @@ FUNDEF struct ptymaster *KCALL ptymaster_cinit(struct ptymaster *master);
  * @return: -EOK:       Successfully installed
  * @return: -ENOMEM:    Not enough available memory, or too many PTY drivers
  *                     (Not likely the later, as you'd had to exceed a total
- *                      number of 'PTY_EXTCNT' PTY drivers!).
+ *                      number of `PTY_EXTCNT' PTY drivers!).
  * @return: E_ISERR(*): Failed to register the master/slave 
- * NOTE:    The caller should call 'DEVICE_SETWEAK()' on both the
+ * NOTE:    The caller should call `DEVICE_SETWEAK()' on both the
  *          master and slave BEFORE calling this function, meaning
  *          that such changes are illegal upon successful return.
  * WARNING: Do not use this function to register PTY drivers for anything
- *          other than pseudo drivers allocated for 'openpty()'!
+ *          other than pseudo drivers allocated for `openpty()'!
  *       >> Any other sub-system making use of, or extending upon PTY
  *          terminal drivers must implement its own device numbering system. */
 FUNDEF errno_t KCALL pty_register(struct ptymaster *__restrict master,
                                   struct ptyslave *__restrict slave);
 
 
-/* Add the given master/slave PTY driver to '/dev'.
+/* Add the given master/slave PTY driver to `/dev'.
  * @return: * :         A new reference to the directory entry containing the driver.
  * @return: E_ISERR(*): Failed to add the new directory entry for some reason. */
 FUNDEF REF struct dentry *KCALL ptymaster_add2dev(struct ptymaster *__restrict self);

@@ -380,8 +380,8 @@ noapp:
 
   if (!bInheritHandles) {
    /* TODO: KERNEL SUPPORT: closeall(minfd,maxfd);
-    *       Close all handles except for 'confirm[1]'
-    *      (And std handles if 'keep_std_handles' is true) */
+    *       Close all handles except for `confirm[1]'
+    *      (And std handles if `keep_std_handles' is true) */
    (void)keep_std_handles;
   }
 
@@ -665,7 +665,7 @@ INTERN void WINAPI K32_SetLastError(DWORD dwErrCode) { SET_NT_ERRNO(dwErrCode); 
 
 
 /* Environment strings API. */
-/* TODO: Collect all the necessary information from 'environ' */
+/* TODO: Collect all the necessary information from `environ' */
 INTERN LPCH WINAPI K32_GetEnvironmentStringsA(void) { NOT_IMPLEMENTED(); return NULL; }
 INTERN LPWCH WINAPI K32_GetEnvironmentStringsW(void) { NOT_IMPLEMENTED(); return NULL; }
 INTERN WINBOOL WINAPI K32_SetEnvironmentStringsA(LPCH NewEnvironment) { NOT_IMPLEMENTED(); return FALSE; }
@@ -890,7 +890,7 @@ DEFINE_PUBLIC_ALIAS(SetLastError,K32_SetLastError);
 DEFINE_PUBLIC_ALIAS(RestoreLastError,K32_SetLastError);
 
 /* Environment strings API. */
-DEFINE_PUBLIC_ALIAS(GetEnvironmentStrings,K32_GetEnvironmentStringsA); /* Yes! This one is called 'GetEnvironmentStrings', not 'GetEnvironmentStringsA' */
+DEFINE_PUBLIC_ALIAS(GetEnvironmentStrings,K32_GetEnvironmentStringsA); /* Yes! This one is called `GetEnvironmentStrings', not `GetEnvironmentStringsA' */
 DEFINE_PUBLIC_ALIAS(GetEnvironmentStringsW,K32_GetEnvironmentStringsW);
 DEFINE_PUBLIC_ALIAS(SetEnvironmentStringsA,K32_SetEnvironmentStringsA);
 DEFINE_PUBLIC_ALIAS(SetEnvironmentStringsW,K32_SetEnvironmentStringsW);

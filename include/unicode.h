@@ -54,16 +54,16 @@ typedef __CHAR32_TYPE__ char32_t;
 #define UNICODE_MB_MAX    6
 
 #ifndef __KERNEL__
-/* Convert 'utf8chars' utf8-characters  to utf-32, storing up to 'bufchars32' characters
- * (that is 'bufchars32*4' bytes) in 'utf32' and returning the actual amount of stored
+/* Convert 'utf8chars' utf8-characters  to utf-32, storing up to `bufchars32' characters
+ * (that is `bufchars32*4' bytes) in 'utf32' and returning the actual amount of stored
  * characters (including a terminating NUL-character that will automatically be
  * appended with the 'utf32'-buffer is of sufficient length to represent the
  * entirety of the provided 'utf8' buffer).
- * @param: mode: Set of 'UNICODE_F_*' found below (Unicode mode flags)
+ * @param: mode: Set of `UNICODE_F_*' found below (Unicode mode flags)
  * @return: UNICODE_ERROR: [!UNICODE_F_NOFAIL] An encoding error occurred and
- *                          'state' and 'utf32' are left in an undefined state.
- *                          You may pass 'UNICODE_F_NOFAIL' to instead emit a
- *                          'UNICODE_REPLACEMENT' character.
+ *                          `state' and 'utf32' are left in an undefined state.
+ *                          You may pass `UNICODE_F_NOFAIL' to instead emit a
+ *                          `UNICODE_REPLACEMENT' character.
  * >> wchar_t buf[128]; size_t buflen;
  * >> mbstate_t state = MBSTATE_INIT;
  * >> char *text = "Encode this text in UTF-32";
@@ -92,13 +92,13 @@ __LIBC size_t (__LIBCCALL uni_utf16to8)(char16_t const *__restrict __utf16, size
 #define UNICODE_F_ALWAYSZEROTERM 0x0002 /*< Always zero-terminate, even when an incomplete sequence is passed. */
 #define UNICODE_F_STOPONNUL      0x0004 /*< Stop if a NUL-character is encountered in the input string. */
 #define UNICODE_F_DOSINGLE       0x0008 /*< Stop after the first fully encoded character. */
-#define UNICODE_F_UTF16HALF      0x0010 /*< For 'uni_utf8to16': When the target buffer is too small return 'UNICODE_UTF16HALF' and use the shift state and return the second half next call. */
+#define UNICODE_F_UTF16HALF      0x0010 /*< For `uni_utf8to16': When the target buffer is too small return `UNICODE_UTF16HALF' and use the shift state and return the second half next call. */
 #define UNICODE_F_UPDATESRC      0x0020 /*< Treat input arguments (the first two) as pointers and update them before returning upon success.
                                          *  NOTE: When set, the first two arguments are interpreted with one additional indirection. */
-#define UNICODE_F_SETERRNO       0x0040 /*< Set 'errno' to 'EILSEQ' ('ERROR_NO_UNICODE_TRANSLATION')
-                                         *  if a malformed sequence causes 'UNICODE_ERROR' to be returned.
-                                         *  NOTE: This flag is ignored when 'UNICODE_F_NOFAIL' is passed. */
-#define UNICODE_F_NOFAIL         0x0080 /*< Never fail and emit 'UNICODE_REPLACEMENT' for illegal characters. */
+#define UNICODE_F_SETERRNO       0x0040 /*< Set `errno' to `EILSEQ' ('ERROR_NO_UNICODE_TRANSLATION')
+                                         *  if a malformed sequence causes `UNICODE_ERROR' to be returned.
+                                         *  NOTE: This flag is ignored when `UNICODE_F_NOFAIL' is passed. */
+#define UNICODE_F_NOFAIL         0x0080 /*< Never fail and emit `UNICODE_REPLACEMENT' for illegal characters. */
 
 
 /* Helper functions that return a malloc'ed string, or NULL upon error. */

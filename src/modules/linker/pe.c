@@ -48,8 +48,8 @@
 DECL_BEGIN
 
 typedef struct pe_module pe_t;
-typedef DWORD rva_t; /*< Relative virtual address (Offset from 'm_load') */
-typedef DWORD lva_t; /*< Logical virtual address (Absolute in a module loaded at 'm_load') */
+typedef DWORD rva_t; /*< Relative virtual address (Offset from `m_load') */
+typedef DWORD lva_t; /*< Logical virtual address (Absolute in a module loaded at `m_load') */
 
 struct pe_module {
  struct module        p_module; /*< Underlying module. */
@@ -132,14 +132,14 @@ pe_import_symbol_impl(struct instance *__restrict inst,
                       IMAGE_IMPORT_BY_NAME const *__restrict entry) {
  struct modsym sym; size_t name_length;
  if (inst->i_module->m_ops == &pe_ops) {
-  /* Lookup within another PE instance. - we can actually use 'hint'! */
+  /* Lookup within another PE instance. - we can actually use `hint'! */
   return pe_lookup_symbol(container_of(inst->i_module,pe_t,p_module),
                          (uintptr_t)inst->i_base,
                          (char *)entry->Name,entry->Hint);
  }
 
  /* Attempt to lookup the symbol with a '.dos.' prefix first.
-  * >> Used by libraries like 'libc' to provide both unix and windows symbols
+  * >> Used by libraries like `libc' to provide both unix and windows symbols
   *    with the same name, that would normally collide due to different type
   *    sizes such as apparent with 'wchar_t'.
   */
@@ -234,10 +234,10 @@ pe_patch(struct modpatch *__restrict patcher) {
       return -EFAULT;
    filename.dn_size = strnlen(filename.dn_name,address_max-(uintptr_t)filename.dn_name);
    dentryname_loadhash(&filename);
-   PE_DEBUG(syslog(LOG_EXEC|LOG_DEBUG,"[PE] Module '%[file]' needs dependency %$q\n",
+   PE_DEBUG(syslog(LOG_EXEC|LOG_DEBUG,"[PE] Module `%[file]' needs dependency %$q\n",
                    self->p_module.m_file,filename.dn_size,filename.dn_name));
 
-   /* TODO: PE module resolution order (search places like the directory of 'mod->p_module.m_file') */
+   /* TODO: PE module resolution order (search places like the directory of `mod->p_module.m_file') */
    mod = modpatch_dlopen(patcher,&filename);
    if (E_ISERR(mod)) {
     /* Substitute msvcr* libraries with libc. */

@@ -36,7 +36,7 @@ struct timespec {
  __syscall_slong_t tv_nsec; /*< Nano seconds. */
 };
 
-/* Define 64-bit and 32-bit alternatives of 'struct timespec' */
+/* Define 64-bit and 32-bit alternatives of `struct timespec' */
 #ifdef __USE_TIME_BITS64
 #define __timespec64 timespec
 #ifdef __USE_TIME64

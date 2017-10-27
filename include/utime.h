@@ -152,7 +152,7 @@ typedef __WCHAR_TYPE__ wchar_t;
 #endif /* !__wchar_t_defined */
 
 #ifdef __USE_KOS
-/* Fix the const'ness of arguments as a KOS extension. (*sigh*) */
+/* Fix the const`ness of arguments as a KOS extension. (*sigh*) */
 #define __FIXED_CONST const
 #else
 #define __FIXED_CONST

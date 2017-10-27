@@ -56,7 +56,7 @@ DECL_BEGIN
 #define LIST_UNBIND(elem,key) \
  (!LIST_ISUNBOUND(elem,key) ? (LIST_REMOVE(elem,key),LIST_MKUNBOUND(elem,key)) : (void)0)
 
-/* Unlink all elements from 'list' and call 'cleanup(elem)' for each. */
+/* Unlink all elements from `list' and call 'cleanup(elem)' for each. */
 #define LIST_CLEAR(list,key,cleanup) \
 do{ __typeof__(*(list)) *_iter = (list),*_next;\
     (list) = NULL;\
@@ -71,7 +71,7 @@ do{ __typeof__(*(list)) *_iter = (list),*_next;\
 
 #define SLIST_INSERT(list,elem,key) ((elem)->key.le_next = (list),(list) = (elem))
 
-/* Remove 'elem' from a list named 'key'. */
+/* Remove 'elem' from a list named `key'. */
 #define LIST_REMOVE(elem,key) \
  ((*(elem)->key.le_pself = (elem)->key.le_next) != NULL \
   ? (void)((elem)->key.le_next->key.le_pself = (elem)->key.le_pself) \
@@ -81,7 +81,7 @@ do{ __typeof__(*(list)) *_iter = (list),*_next;\
   ? (void)((elem)->key.le_next->key.le_pself = (elem)->key.le_pself) \
   : (void)0)
 
-/* Insert a given element 'elem' at the front of a 'list' described by 'key'. */
+/* Insert a given element 'elem' at the front of a `list' described by `key'. */
 #define LIST_INSERT(list,elem,key) \
  ((((elem)->key.le_next = (list)) != NULL \
   ? (void)((list)->key.le_pself = &(elem)->key.le_next) \
@@ -94,7 +94,7 @@ do{ __typeof__(*(list)) *_iter = (list),*_next;\
  (void)((elem)->key.le_pself = &(list),(list) = (elem)))
 
 
-/* Insert a given element 'elem' after 'link' in a list described by 'key'. */
+/* Insert a given element 'elem' after `link' in a list described by `key'. */
 #define LIST_INSERT_AFTER(link,elem,key) \
  ((((elem)->key.le_next = (link)->key.le_next) != NULL \
   ? (void)((elem)->key.le_next->key.le_pself = &(elem)->key.le_next) \
@@ -108,7 +108,7 @@ do{ __typeof__(*(list)) *_iter = (list),*_next;\
  (void)((elem)->key.le_pself = &(link)->key.le_next, \
         (link)->key.le_next  = (elem)))
 
-/* Insert a given element 'elem' before 'link' in a list described by 'key'. */
+/* Insert a given element 'elem' before `link' in a list described by `key'. */
 #define LIST_INSERT_BEFORE(link,elem,key) \
  (void)((elem)->key.le_pself = (link)->key.le_pself, \
        *(elem)->key.le_pself = (elem), \

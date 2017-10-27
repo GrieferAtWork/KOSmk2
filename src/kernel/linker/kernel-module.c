@@ -40,7 +40,7 @@ DECL_BEGIN
 
 struct symbol {
  u32        s_name; /*< Offset within 'dynstr', pointing at the symbol's name. */
- u32        s_hash; /*< Symbol name hash, complying with 'sym_hashname'. */
+ u32        s_hash; /*< Symbol name hash, complying with `sym_hashname'. */
  VIRT void *s_addr; /*< [1..1] Virtual kernel address of  */
 };
 

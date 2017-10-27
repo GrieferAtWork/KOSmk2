@@ -224,7 +224,7 @@ extern void (__cdecl _ReadWriteBarrier)(void);
 #   define __NULLPTR ((void *)0)
 #endif
 
-/* Emulate the '__OPTIMIZE__' predefined macro, used in various headers. */
+/* Emulate the `__OPTIMIZE__' predefined macro, used in various headers. */
 #if defined(RELEASE) || defined(_RELEASE)
 #ifndef _RELEASE
 #   define _RELEASE  RELEASE

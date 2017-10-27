@@ -69,7 +69,7 @@ FUNDEF ssize_t KCALL atomic_iobuffer_read(struct atomic_iobuffer *__restrict sel
                                          USER void *buf, size_t bufsiz, bool blocking);
 
 /* Write data to a given atomic I/O buffer.
- * NOTE: Unlike 'atomic_iobuffer_read()', this function _only_ acts on kernel memory.
+ * NOTE: Unlike `atomic_iobuffer_read()', this function _only_ acts on kernel memory.
  * WARNING: Try not to write too much data at once.
  *          Any data that there was no space for isn't written...
  * WARNING: The caller is responsible for synchronizing calls to

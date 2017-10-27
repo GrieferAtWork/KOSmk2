@@ -40,8 +40,8 @@ typedef __SIZE_TYPE__ size_t;
  *  - libc use dlmalloc build on top of "/include/sys/mman.h"
  *  - malloc(0) does NOT return NULL, but some small, non-empty block of memory.
  *  - realloc(p,0) does NOT act as free, but return some small, non-empty block of memory.
- *  - free() never modifies the currently set value of 'errno', even when munmap fails.
- *  - Any allocation function failing in libc will set 'errno' to 'ENOMEM' */
+ *  - free() never modifies the currently set value of `errno', even when munmap fails.
+ *  - Any allocation function failing in libc will set `errno' to 'ENOMEM' */
 #ifndef __malloc_stdlib_defined
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC void *(__LIBCCALL malloc)(size_t __n_bytes);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_MALLOC void *(__LIBCCALL calloc)(size_t __count, size_t __n_bytes);
@@ -237,7 +237,7 @@ __LIBC __PORT_KOSONLY __NONNULL((2)) __SSIZE_TYPE__
  * [once] >> {file}({line}) : {func} : Leaked {size} bytes at {addr}
  * [many] >> {file}({line}) : {func} : [{frame_index}] : {instruction_addr}
  * HINT: libc debug-builds automatically hook this function to be
- *       called via 'atexit' when exiting through normal means. */
+ *       called via `atexit' when exiting through normal means. */
 __LIBC __PORT_KOSONLY void (__LIBCCALL _mall_printleaks)(__MALL_MODULE_ARG);
 
 /* Validate the header/footers of all allocated malloc pointers.
@@ -443,7 +443,7 @@ template<class __T> inline __T *__cxx_malloc_global(__T *__mallptr) { return (__
 #if __USE_DEBUG != 0 && defined(__CRT_KOS) && \
   (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
 
-/* Values that may be passed for 'PARAMTER_VALUE' to 'mallopt' in debug-mode.
+/* Values that may be passed for 'PARAMTER_VALUE' to `mallopt' in debug-mode.
  * These values are used by toggle (0/1) options and always return the old state as 0/1. */
 #define M_MALL_OPT_GET             (-1)      /*< Return 0/1 indicating feature state. */
 #define M_MALL_OPT_ENABLE            1       /*< Enable the core operation. */

@@ -29,7 +29,7 @@ DECL_BEGIN
 #ifdef __CC__
 
 DATDEF PHYS u16 realmode_base;   /*< [const] Runtime-generated realmode base address. */
-DATDEF PHYS u16 realmode_stack;  /*< [const] Absolute address of a small realmode stack usable while in realmode, or for 'rm_interrupt'. */
+DATDEF PHYS u16 realmode_stack;  /*< [const] Absolute address of a small realmode stack usable while in realmode, or for `rm_interrupt'. */
 #define REALMODE_STACK_SIZE 0x100
 
 #define REALMODE_PREFERRED 0x7000 /*< Preferred realmode base address. */
@@ -47,8 +47,8 @@ INTDEF u32 __rm_rel_r_16_end[];
 
 struct cpustate16;
 
-/* Perform a bios-interrupt 'intno' from realmode.
- * The given 'state' contains the absolute CPU-state, when
+/* Perform a bios-interrupt `intno' from realmode.
+ * The given `state' contains the absolute CPU-state, when
  * the interrupt is performed, and following its completion
  * will be updated to contain all the new register states. */
 FUNDEF SAFE void KCALL rm_interrupt(struct cpustate16 *__restrict state, irq_t intno);
@@ -57,8 +57,8 @@ FUNDEF SAFE void KCALL rm_interrupt(struct cpustate16 *__restrict state, irq_t i
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 #define REALMODE_EARLY_STACK   REALMODE_STARTRELO
 
-/* Same as 'rm_interrupt', but should be used
- * instead before 'realmode_initialize' was called. */
+/* Same as `rm_interrupt', but should be used
+ * instead before `realmode_initialize' was called. */
 INTDEF INITCALL SAFE void KCALL early_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno);
 /* Allocate & relocate realmode code into low memory. */
 INTDEF INITCALL void KCALL realmode_initialize(void);
@@ -66,7 +66,7 @@ INTDEF INITCALL void KCALL realmode_initialize(void);
 #endif /* __CC__ */
 
 
-/* Return the absolute, runtime address of a given realmode symbol 'x' */
+/* Return the absolute, runtime address of a given realmode symbol `x' */
 #define REALMODE_SYM(x)   ((uintptr_t)realmode_base+((uintptr_t)&(x)-(uintptr_t)__rm_core_start))
 
 #define RM_BEGIN_EX(alignment)  \

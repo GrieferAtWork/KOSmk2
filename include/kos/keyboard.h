@@ -28,8 +28,8 @@ __SYSDECL_BEGIN
 #endif
 
 #ifdef __CC__
-typedef __UINT32_TYPE__ kbstate_t; /*< Set of 'KEYSTATE_*' */
-typedef __UINT16_TYPE__ kbkey_t;   /*< One of 'KEY_*' */
+typedef __UINT32_TYPE__ kbstate_t; /*< Set of `KEYSTATE_*' */
+typedef __UINT16_TYPE__ kbkey_t;   /*< One of `KEY_*' */
 #endif /* __CC__ */
 
 #define KEYSTATE_ADD(x,y) ((x) |= (y))
@@ -273,10 +273,10 @@ typedef __UINT16_TYPE__ kbkey_t;   /*< One of 'KEY_*' */
 
 #define KEYMAP_SIZEOF    1600
 __ATTR_ALIGNED(64) struct keymap {
-    /* NOTE: Use 'KEY_*' constants from '<kos/keyboard.h>' for these arrays. */
+    /* NOTE: Use `KEY_*' constants from '<kos/keyboard.h>' for these arrays. */
     char            km_name[64];   /*< Key map name (ZERO-terminated). */
     /* NOTE: Characters below are encoded in UTF-16 (host-endian)
-     *      (if you're lazy, you can just cast to 'char' and be happy...) */
+     *      (if you're lazy, you can just cast to `char' and be happy...) */
     __UINT16_TYPE__ km_press[256]; /*< Regular key map. */
     __UINT16_TYPE__ km_shift[256]; /*< Key map when case-shifting is active. */
     __UINT16_TYPE__ km_altgr[256]; /*< Key map when RALT or CTRL+ALT is held down. */

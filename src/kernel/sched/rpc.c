@@ -43,7 +43,7 @@ INTERN DEFINE_INT_HANDLER(rpc_irq_handler,rpc_handler);
 
 struct rpc_command {
  struct sig c_done; /*< Signal broadcast when the command is done executing. */
- cpu_rpc_t  c_cmd;  /*< [lock(c_done)] RPC command (NOTE: 'CPU_RPC_NOOP' when no command is being executed). */
+ cpu_rpc_t  c_cmd;  /*< [lock(c_done)] RPC command (NOTE: `CPU_RPC_NOOP' when no command is being executed). */
  void      *c_arg;  /*< [lock(c_done)] RPC command argument. */
 };
 

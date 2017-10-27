@@ -52,10 +52,10 @@ LOCAL SAFE bool KCALL atomic_rwlock_trywrite(atomic_rwlock_t *__restrict self);
 LOCAL SAFE void KCALL atomic_rwlock_read(atomic_rwlock_t *__restrict self);
 LOCAL SAFE void KCALL atomic_rwlock_write(atomic_rwlock_t *__restrict self);
 
-/* Try to upgrade a read-lock to a write-lock. Return 'FALSE' upon failure. */
+/* Try to upgrade a read-lock to a write-lock. Return `FALSE' upon failure. */
 LOCAL SAFE bool KCALL atomic_rwlock_tryupgrade(atomic_rwlock_t *__restrict self);
 
-/* NOTE: The lock is always upgraded, but when 'FALSE' is returned, no lock
+/* NOTE: The lock is always upgraded, but when `FALSE' is returned, no lock
  *       may have been held temporarily, meaning that the caller should
  *       re-load local copies of affected resources. */
 LOCAL SAFE bool KCALL atomic_rwlock_upgrade(atomic_rwlock_t *__restrict self);

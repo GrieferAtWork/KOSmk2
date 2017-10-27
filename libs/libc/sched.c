@@ -68,8 +68,8 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
                       "    xorl  %%ebp, %%ebp\n" /* ZERO out EBP to terminate tracebacks. */
                       "    call *%[fn]\n" /* Call the user-defined function.  */
                       "    movl  %%eax, %%ebx\n" /* Load the thread's exitcode. */
-                      /* NOTE: Don't be confused, the kernel calls 'pthread_exit()'
-                       *       'exit()', and calls stdlib's 'exit()' 'exit_group()'.
+                      /* NOTE: Don't be confused, the kernel calls `pthread_exit()'
+                       *       `exit()', and calls stdlib's `exit()' `exit_group()'.
                        *       The reason for this is historical and lies in the fact
                        *       that multithreading wasn't something you could always do.
                        *      (fork() came before clone(), and exit_group() was an afterthough). */

@@ -29,7 +29,7 @@
  *    short of idly waiting for time to pass, it is impossible
  *    to use scheduling and preemption to be more precise
  *    timings that multiples of seconds/HZ.
- * >> In other words, using 'timespec' for timeouts may seem
+ * >> In other words, using `timespec' for timeouts may seem
  *    the logical choice, but when you think about it, it
  *    doesn't really make sense, because there's no gain on
  *    one side, yet still the problem that would arise when
@@ -92,7 +92,7 @@ struct timespec;
 
 #ifdef CONFIG_SIGNAL_USING_ATOMIC_RWPTR
 /* Task signal slots can and are used as atomic R/W pointers in some places,
- * meaning that any allocated task must aligned by 'TASK_ALIGNMENT' */
+ * meaning that any allocated task must aligned by `TASK_ALIGNMENT' */
 #define TASKSIGSLOT_ALIGN    ATOMIC_RWPTR_ALIGN
 #else
 #define TASKSIGSLOT_ALIGN    __SIZEOF_POINTER__
@@ -116,11 +116,11 @@ struct tasksigslot {
                                 *   broadcasting, in order to improve the first-come-first-serve
                                 *   principle by always appending new signal slots at the end of
                                 *   the chain of signal slots.
-                                *   Technically, this pointer should be placed in 'struct sig',
+                                *   Technically, this pointer should be placed in `struct sig',
                                 *   creating a double-ended, singly-linked list there, but
                                 *   since that structure must exist in _a_ _lot_ of places, it
                                 *   is much more efficient to place the back-end of said list
-                                *   here and only keep its front in 'struct sig'.
+                                *   here and only keep its front in `struct sig'.
                                 *   >> FIRST_RECV = sig->s_task;
                                 *   >> LAST_RECV  = sig->s_task ? sig->s_task->tss_last : NULL;
                                 *   >> ADD_RECV(x) {
@@ -174,7 +174,7 @@ struct tasksig {
 #define HSTACK_SIZE           (__SIZEOF_POINTER__*2)
 #ifdef __CC__
 struct hstack {
- /* Controller for host (kernel) stacks. (mapped in '&mman_kernel')
+ /* Controller for host (kernel) stacks. (mapped in `&mman_kernel')
   * NOTE: The kernel uses this simplified version of a stack, since it is
   *       impossible to create stacks using guard pages in kernel-space,
   *       as the pagefault that accessing such a page causes also requires some
@@ -191,7 +191,7 @@ struct hstack {
   * create any sort of protection that would fault again to end up in a triple fault)
   * WARNING: Kernel stacks must be allocated within `mman_kernel' and have
   *          to be locked + tagged with the address of the associated thread
-  *         (When calling 'mman_mmap_unlocked()', the address of the thread
+  *         (When calling `mman_mmap_unlocked()', the address of the thread
   *          must be passed as argument for `closure', which is later used as
   *          key for ensuring safe unmapping of the stack!)
   */
@@ -202,25 +202,25 @@ struct hstack {
 #endif /* __CC__ */
 
 #define TASKFLAG_NONE        0x0000
-#define TASKFLAG_SUSP_TIMED  0x0002 /*< Set if a task was suspended from 'TASKMODE_SLEEPING' using 'task_suspend()'.
-                                     *  When set, 'task_resume()' must re-schedule the task as sleeping. */
+#define TASKFLAG_SUSP_TIMED  0x0002 /*< Set if a task was suspended from `TASKMODE_SLEEPING' using `task_suspend()'.
+                                     *  When set, `task_resume()' must re-schedule the task as sleeping. */
 #define TASKFLAG_WILLTERM    0x0004 /*< The task currently resides within a critical section,
                                      *  but will terminate as soon as that section is left. */
 #define TASKFLAG_TIMEDOUT    0x0008 /*< The task was awoken, because it timed out (NOTE: Only THIS_TASK may remove this flag once set). */
 #define TASKFLAG_INTERRUPT   0x0010 /*< The task was awoken due to an interrupt (NOTE: Only THIS_TASK may remove this flag once set). */
-#define TASKFLAG_NOSIGNALS   0x2000 /*< [const] Signals cannot be sent to this task (Can only be enforced when all bits in 't_sigblock' is set). */
+#define TASKFLAG_NOSIGNALS   0x2000 /*< [const] Signals cannot be sent to this task (Can only be enforced when all bits in `t_sigblock' is set). */
 #define TASKFLAG_NOTALEADER  0x4000 /*< [const] The task cannot be used as a thread/process group leader. */
 #define TASKFLAG_SIGSTOPCONT 0x8000 /*< [lock(t_cpu->c_lock)] The task has been stopped or continued (NOTE: Not set by forced suspend/resume). */
 #ifdef __CC__
-typedef u16 taskflag_t; /*< Task flags (Set of 'TASKFLAG_*'). */
-typedef u8 taskmode_t;  /*< Task mode (One of 'TASKMODE_*'). */
+typedef u16 taskflag_t; /*< Task flags (Set of `TASKFLAG_*'). */
+typedef u8 taskmode_t;  /*< Task mode (One of `TASKMODE_*'). */
 #endif /* __CC__ */
 
 #define TASKMODE_RUNNING    0x00 /*< [PRIVATE(THIS_CPU)] The task is running (may or may not be in the foreground).
-                                  *   NOTE: Only 'TASK_CPU(self)' may enter/leave 'TASKMODE_RUNNING'-mode */
+                                  *   NOTE: Only `TASK_CPU(self)' may enter/leave `TASKMODE_RUNNING'-mode */
 #define TASKMODE_SLEEPING   0x01 /*< The task is sleeping, but will re-awake once a timeout expires. */
 #define TASKMODE_SUSPENDED  0x02 /*< The task is suspended and is never supplied with a quantum. */
-#define TASKMODE_WAKEUP     0x03 /*< Similar to 'TASKMODE_SLEEPING', but when a timeout expires don't set the timed-out task flag. */
+#define TASKMODE_WAKEUP     0x03 /*< Similar to `TASKMODE_SLEEPING', but when a timeout expires don't set the timed-out task flag. */
 #define TASKMODE_NOTSTARTED 0xfe /*< The thread hasn't started yet. (Some components of the task may be in a less-consistent state; treat the task as terminated) */
 #define TASKMODE_TERMINATED 0xff /*< The thread has terminated (This state cannot be altered, or reverted) */
 
@@ -248,14 +248,14 @@ typedef u8 taskmode_t;  /*< Task mode (One of 'TASKMODE_*'). */
 #define TASKPRIO_ISIDLE(x) (!((x)&0x80))
 /* Not the following situation, explaining why idle
  * tasks may still sometimes run alongside non-idle ones:
- *   - thread #1: Suspending; Waiting for 'TASK_OFFSETOF_EVENT'
+ *   - thread #1: Suspending; Waiting for `TASK_OFFSETOF_EVENT'
  *   - thread #2: Is terminating itself
  *   - thread #3: The IDLE thread
  *  #1: thread #2 removes itself from the CPU (thread #3 is set as running)
  *  #2: The CPU switches context to thread #3
- *  #3: thread #3 broadcasts 'TASK_OFFSETOF_EVENT'
+ *  #3: thread #3 broadcasts `TASK_OFFSETOF_EVENT'
  *  #4: thread #1 is re-added as running, causing thread #3 to be parked.
- *   >> 'sig_send()' returns with an invalid THIS_THREAD set!
+ *   >> `sig_send()' returns with an invalid THIS_THREAD set!
  *  How do we even solve this?
  *   -> We need to relax the whole never-executing IDLE rule:
  *      Tasks can only be parked when they're not critical
@@ -315,7 +315,7 @@ struct intchain {
  HOST struct intchain *ic_prev;       /*< [0..1] Previous interrupt chain entry. */
  /* HINT: The following 3 can be set at once as a dword. */
  irq_t                 ic_irq;        /*< Interrupt number that is handled by this chain entry. */
- u8                    ic_opt;        /*< Interrupt options (Set of 'INTCHAIN_OPT_*') */
+ u8                    ic_opt;        /*< Interrupt options (Set of `INTCHAIN_OPT_*') */
  u16                   ic_padding;    /* ... */
  void        (ASMCALL *ic_int)(void); /*< [1..1] Temporary interrupt handler. */
 };
@@ -356,7 +356,7 @@ FUNDEF void KCALL intchain_trigger(struct intchain **__restrict pchain, irq_t ir
 typedef int pidtype_t;
 #endif
 #define PIDTYPE_GPID  0 /*< Global thread-id. (PID number within the init-pid namespace) */
-#define PIDTYPE_PID   1 /*< Local thread-id. (returned by 'gettid()'; Value of 'tp_leader' returned by 'getpid()') */
+#define PIDTYPE_PID   1 /*< Local thread-id. (returned by `gettid()'; Value of 'tp_leader' returned by `getpid()') */
 #define PIDTYPE_COUNT 2
 
 #define THREAD_LINK_OFFSETOF_PID      0
@@ -381,24 +381,24 @@ struct thread_link {
  pid_t                       tl_pid;  /*< Global/Local thread-id. */
  WEAK LIST_NODE(struct task) tl_link; /*< [0..1][lock(tp_ns->pn_lock)][valid_if(tl_ns != NULL)] PID namespace hash-map entry within 'tl_ns'. */
  REF struct pid_namespace   *tl_ns;   /*< [0..1][lock(WRITE(:t_mode == TASKMODE_TERMINATED))] The pid namespace used to map 'tl_pid'.
-                                       *   NOTE: When 'CLONE_NEWPID' is set during 'clone()' or 'fork()' is
+                                       *   NOTE: When `CLONE_NEWPID' is set during 'clone()' or `fork()' is
                                        *         used, a new PID namespace is created for 'PIDTYPE_PID'.
                                        *   NOTE: 'tl_ns->pn_type == INDEXOF(self,:tp_ids[:])'
                                        *   NOTE: This reference is still valid, even when ':t_refcnt == 0' */
 };
 
 struct thread_pid {
- /* HINT: 'inittask', as well as CPU-idle tasks are their own parent & leader. */
+ /* HINT: `inittask', as well as CPU-idle tasks are their own parent & leader. */
  atomic_rwlock_t             tp_parlock;   /*< Lock for accessing 'tp_parent' */
  REF struct task            *tp_parent;    /*< [lock(tp_parlock)][1..1][REF_IF(!= :self)][valid_if(:t_mode != TASKMODE_NOTSTARTED)]
                                             *   Parent process (Of which we are a child) and receiver of 'SIGCHLD' signals.
-                                            *   NOTE: The parent process if 'fork()' was used, or 'CLONE_PARENT' wasn't
+                                            *   NOTE: The parent process if `fork()' was used, or `CLONE_PARENT' wasn't
                                             *         set during 'clone()'. - Otherwise '== <Parent process>->t_pid.tp_parent'.
                                             *   NOTE: This reference is still valid, even when ':t_refcnt == 0'  */
  atomic_rwlock_t             tp_leadlock;  /*< Lock for accessing 'tp_leader' */
  REF struct task            *tp_leader;    /*< [lock(tp_leadlock)][1..1][REF_IF(!= :self)] Process leader.
-                                            *   NOTE: == 'tp_parent->t_pid.tp_leader', unless 'CLONE_THREAD' wasn't set
-                                            *         during 'clone()' or if 'fork()' was used. - Otherwise '== :self'.
+                                            *   NOTE: == 'tp_parent->t_pid.tp_leader', unless `CLONE_THREAD' wasn't set
+                                            *         during 'clone()' or if `fork()' was used. - Otherwise '== :self'.
                                             *   NOTE: Only a reference when '!= :self' */
  struct thread_link tp_ids[PIDTYPE_COUNT]; /*< [const] Array of process IDs (Index is one of 'PIDTYPE_*'). */
  /* Access to all of this task's children. (This is where zombies life) */
@@ -407,7 +407,7 @@ struct thread_pid {
                                             *  [[*]->t_pid.tp_parent == :self] List of child tasks.
                                             *   NOTE: Children remove themself from this list during
                                             *         free(), meaning that list elements are weakly linked.
-                                            *    YES: This chain of tasks remains valid even after 't_refcnt' drops to ZERO(0).
+                                            *    YES: This chain of tasks remains valid even after `t_refcnt' drops to ZERO(0).
                                             *      >> This is done in order to delete any remaining zombie tasks
                                             *         once a parent task itself is terminated, thus preventing
                                             *   NOTE: This is the list of tasks that will send 'SIGCHLD' to ':self'. */
@@ -487,7 +487,7 @@ struct pid_namespace {
                                 *   NOTE: Used as index into the 'tp_ids' vector of all managed tasks. */
  pid_t              pn_min;    /*< [const] Lowest PID that this namespace should be handing out
                                 *  (To prevent special IDs such as ZERO(0) from being used
-                                *   unless explicitly required, such as by 'inittask') */
+                                *   unless explicitly required, such as by `inittask') */
  pid_t              pn_max;    /*< [const] The greatest valid PID within this namespace. */
  atomic_rwlock_t    pn_lock;   /*< Lock used to access the namespace's PID hash-map. */
  pid_t              pn_next;   /*< [lock(pn_lock)] The next PID to hand out during automatic PID generation. */
@@ -502,8 +502,8 @@ struct pid_namespace {
 FUNDEF REF struct pid_namespace *KCALL pid_namespace_new(pidtype_t type);
 FUNDEF void KCALL pid_namespace_destroy(struct pid_namespace *__restrict self);
 
-/* Lookup a given PID 'id' within the specified PID-namespace.
- * NOTE: 'pid_namespace_lookup()' returns NULL if the task's weak reference cannot be locked.
+/* Lookup a given PID `id' within the specified PID-namespace.
+ * NOTE: `pid_namespace_lookup()' returns NULL if the task's weak reference cannot be locked.
  * @return: NULL: Failed to find a valid task matching the given id. */
 FUNDEF      REF struct task *KCALL pid_namespace_lookup(struct pid_namespace *__restrict self, pid_t id);
 FUNDEF WEAK REF struct task *KCALL pid_namespace_lookup_weak(struct pid_namespace *__restrict self, pid_t id);
@@ -604,10 +604,10 @@ union{
  * used to return to a signal handler instead of the user-space caller's
  * origin.
  * To achieve this, the original user-space iret tail is stored in the
- * current task's 't_sigenter' field, before the system call return
- * information (as available through 'THIS_SYSCALL_*') is overwritten,
- * so-as to stay in kernel-space and call simply 'sigenter()' with
- * all registers except for 'EIP', 'CS', 'EFLAGS', 'USERESP' and 'SS'
+ * current task's `t_sigenter' field, before the system call return
+ * information (as available through `THIS_SYSCALL_*') is overwritten,
+ * so-as to stay in kernel-space and call simply `sigenter()' with
+ * all registers except for `EIP', `CS', `EFLAGS', `USERESP' and `SS'
  * as they are ought to be when returning to user-space is eventually
  * went through with.
  * >> This work-around is required due to the fact that depending on
@@ -716,11 +716,11 @@ union{
 #define TASK_CPU(x) (&__bootcpu)
 #endif /* !CONFIG_SMP */
  taskflag_t              t_flags;     /*< [lock(THIS_TASK || (t_mode != TASKMODE_RUNNING && t_cpu->c_lock))]
-                                       *   Task flags (Set of 'TASKFLAG_*'). */
+                                       *   Task flags (Set of `TASKFLAG_*'). */
  taskmode_t              t_mode;      /*< [lock(TASK_CPU(self)->c_lock)] The current task mode. */
  u8                      t_padding;   /*< ... */
  union {
-  RING_NODE(struct task) sd_running;  /*< [valid_if(t_mode == TASKMODE_RUNNING)][lock(PRIVATE(t_cpu == THIS_CPU))] Ring entry for tasks running on 't_cpu'. */
+  RING_NODE(struct task) sd_running;  /*< [valid_if(t_mode == TASKMODE_RUNNING)][lock(PRIVATE(t_cpu == THIS_CPU))] Ring entry for tasks running on `t_cpu'. */
   LIST_NODE(struct task) sd_sleeping; /*< [valid_if(t_mode == TASKMODE_WAKEUP || t_mode == TASKMODE_SLEEPING)][lock(t_cpu->c_lock)] List entry of wakeup/sleeping tasks. */
   LIST_NODE(struct task) sd_suspended;/*< [valid_if(t_mode == TASKMODE_SUSPENDED)][lock(t_cpu->c_lock)] List entry of suspended tasks. */
  }                       t_sched;     /*< Scheduling chain data. */
@@ -728,18 +728,18 @@ union{
 #ifdef CONFIG_JIFFY_TIMEOUT
  jtime_t                 t_timeout;   /*< [valid_if(t_mode == TASKMODE_WAKEUP ||t_mode == TASKMODE_SLEEPING)][lock(t_cpu->c_lock)]
                                        *  Timeout used when sleeping. When this time expires, the task is re-scheduled during the
-                                       *  next IRQ of the associated CPU, and the last blocking operation will fail with '-ETIMEDOUT'. */
+                                       *  next IRQ of the associated CPU, and the last blocking operation will fail with `-ETIMEDOUT'. */
 #else /* CONFIG_JIFFY_TIMEOUT */
  struct timespec         t_timeout;   /*< [valid_if(t_mode == TASKMODE_WAKEUP ||t_mode == TASKMODE_SLEEPING)][lock(t_cpu->c_lock)]
                                        *  Timeout used when sleeping. When this time expires, the task is re-scheduled during the
-                                       *  next IRQ of the associated CPU, and the last blocking operation will fail with '-ETIMEDOUT'. */
+                                       *  next IRQ of the associated CPU, and the last blocking operation will fail with `-ETIMEDOUT'. */
 #endif /* !CONFIG_JIFFY_TIMEOUT */
  taskprio_t              t_priority;  /*< [lock(t_cpu == THIS_CPU || READ(ATOMIC))] The effective task priority. */
  taskprio_t              t_prioscore; /*< [lock(t_cpu == THIS_CPU)] Current priority score. */
  u16                     t_padding2;  /*< ... */
  void                   *t_exitcode;  /*< [lock(t_cpu->c_lock)] Exitcode of the thread. */
  struct sig              t_event;     /*< Signal send when certain internal events are triggered: 
-                                       *   - after 't_mode' is set to 'TASKMODE_TERMINATED'
+                                       *   - after `t_mode' is set to `TASKMODE_TERMINATED'
                                        *   - XXX: vfork() complete?
                                        */
  u32                     t_critical;  /*< [lock(READ(WEAK),WRITE(THIS_TASK))]
@@ -751,11 +751,11 @@ union{
  s32                     t_suspend[2];/*< [lock(t_cpu->c_lock)] Recursion counter for task_(resume|suspend)
                                        *  NOTE: The lock must only be held when writing in the event that the
                                        *        updated value would require the task's state to be changed.
-                                       *  >> When <= 0, 'TASKMODE_RUNNING' (Or other states, based on)
-                                       *  >> When >  0, 'TASKMODE_SUSPENDED'
+                                       *  >> When <= 0, `TASKMODE_RUNNING' (Or other states, based on)
+                                       *  >> When >  0, `TASKMODE_SUSPENDED'
                                        *  NOTE: When a suspended task receives a signal, this field is
                                        *        checked to confirm that the task should really wake up.
-                                       *        When it isn't allowed to wake up, the 'TASKFLAG_SUSP_NOCONT' flag is deleted.
+                                       *        When it isn't allowed to wake up, the `TASKFLAG_SUSP_NOCONT' flag is deleted.
                                        *  NOTE: The first counter is used for user-space and the second for kernel-space. 
                                        *        In addition, the second element is unsigned and does not allow for running-recursion! */
  /* Thread descriptor/context information. */
@@ -764,11 +764,11 @@ union{
  VIRT void               *t_lastcr2;   /*< [lock(PRIVATE(THIS_TASK))] The exact address of the last unhandled page-fault.
                                         *   >> Stored here, as the register value is volatile and may
                                         *      be overwritten at any time due to preemption or ALLOA/COW. */
- LIST_NODE(struct task)   t_mman_tasks;/*< [lock(t_mman->m_tasks_lock)] Chain of tasks using 't_mman' */
+ LIST_NODE(struct task)   t_mman_tasks;/*< [lock(t_mman->m_tasks_lock)] Chain of tasks using `t_mman' */
  VIRT     struct mman    *t_real_mman; /*< [const][1..1] The real memory manager of this task. */
  VIRT REF struct mman    *t_mman;      /*< [lock(PRIVATE(THIS_TASK))][1..1] The effective memory manager & page directory used by this thread.
                                         *   WARNING: Do _NOT_ try to suspend a task to gain access to this field.
-                                        *   It may not contain the correct value! (s.a.: 'TASK_PDIR_KERNEL_BEGIN') */
+                                        *   It may not contain the correct value! (s.a.: `TASK_PDIR_KERNEL_BEGIN') */
  REF struct fdman        *t_fdman;     /*< [lock(PRIVATE(THIS_TASK))][1..1] This task's file descriptor manager. */
  REF struct stack        *t_ustack;    /*< [0..1][lock(PRIVATE(THIS_TASK))] Userspace stack (if allocated). */
  REF struct sighand      *t_sighand;   /*< [1..1][const] Userspace signal handlers. */
@@ -867,8 +867,8 @@ struct cpu {
  REF RING_HEAD(struct task) c_idling;    /*< [0..1][lock(PRIVATE(THIS_CPU))][sort(DESCENDING(t_priority),DESCENDING(t_mman))] Ring of idle tasks.
                                           *   WARNING: unlike normal rings, one's front/back pointers are set to NULL (making it a direct, doubly-linked list). */
  cpuid_t                    c_id;        /*< [smp_hwcpu.hw_cpuv[c_id] == self] ID of this CPU. */
- taskprio_t                 c_prio_min;  /*< [lock(PRIVATE(THIS_CPU))] Lowest priority of any task in 'c_running'. */
- taskprio_t                 c_prio_max;  /*< [lock(PRIVATE(THIS_CPU))] Greatest priority of any task in 'c_running'. */
+ taskprio_t                 c_prio_min;  /*< [lock(PRIVATE(THIS_CPU))] Lowest priority of any task in `c_running'. */
+ taskprio_t                 c_prio_max;  /*< [lock(PRIVATE(THIS_CPU))] Greatest priority of any task in `c_running'. */
  atomic_rwlock_t            c_lock;      /*< General purpose access lock for this CPU.
                                           *  HINT: During an IRQ switch, the CPU attempts to acquire
                                           *        a write-lock on this primitive. In the event that
@@ -878,8 +878,8 @@ struct cpu {
  REF LIST_HEAD(struct task) c_sleeping;  /*< [0..1][->t_cpu == this][lock(c_lock)][sort(DESCENDING(t_mode == TASKMODE_WAKEUP),t_mode == TASKMODE_WAKEUP
                                           *                                          ?  DESCENDING(t_mman)
                                           *                                          : (DESCENDING(t_timeout),DESCENDING(t_mman)))]
-                                          *   NOTE: This first part of this chain contains all tasks in 'TASKMODE_WAKEUP'-mode, sorted by associated 't_mman'.
-                                          *         The second part contains all tasks in 'TASKMODE_SLEEPING'-mode, first sorted by timeout, then by 't_mman'.
+                                          *   NOTE: This first part of this chain contains all tasks in `TASKMODE_WAKEUP'-mode, sorted by associated `t_mman'.
+                                          *         The second part contains all tasks in `TASKMODE_SLEEPING'-mode, first sorted by timeout, then by `t_mman'.
                                           *   Chain of wakeup/sleeping tasks. */
  u32                        c_padding;   /*< ... */
  struct task                c_idle;      /*< A small, lightweight IDLE task for this CPU.
@@ -899,10 +899,10 @@ struct cpu {
                                           *  available again just before being executed. */
 #endif /* !CONFIG_NO_JOBS */
  struct archcpu             c_arch;      /*< Arch-specific per-cpu information. */
- WEAK size_t                c_n_run;     /*< [lock(PRIVATE(THIS_CPU))][!0] Total amount of tasks within 'c_running' */
- WEAK size_t                c_n_idle;    /*< [lock(PRIVATE(THIS_CPU))] Total amount of tasks within 'c_idling' */
- WEAK size_t                c_n_susp;    /*< [lock(c_lock)] Total amount of tasks within 'c_suspended' */
- WEAK size_t                c_n_sleep;   /*< [lock(c_lock)] Total amount of tasks within 'c_sleeping' */
+ WEAK size_t                c_n_run;     /*< [lock(PRIVATE(THIS_CPU))][!0] Total amount of tasks within `c_running' */
+ WEAK size_t                c_n_idle;    /*< [lock(PRIVATE(THIS_CPU))] Total amount of tasks within `c_idling' */
+ WEAK size_t                c_n_susp;    /*< [lock(c_lock)] Total amount of tasks within `c_suspended' */
+ WEAK size_t                c_n_sleep;   /*< [lock(c_lock)] Total amount of tasks within `c_sleeping' */
 };
 #define CPU_FOREACH_RUNNING_DO(elem,self)    do{elem = (self)->c_running; do
 #define CPU_FOREACH_RUNNING_WHILE(elem,self) while(((elem) = (elem)->t_sched.sd_running.re_next) != (self)->c_running);}while(0)

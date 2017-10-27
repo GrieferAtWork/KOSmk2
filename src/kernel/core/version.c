@@ -40,7 +40,7 @@ kernel_timestamp_ ASMNAME("kernel_timestamp") = {
 
 PUBLIC u32 const kernel_version = KOS_VERSION_CODE;
 
-/* Define global kernel information available through 'uname()' in userspace.
+/* Define global kernel information available through `uname()' in userspace.
  * HINT: This information is shared through the user-share facility,
  *       meaning there is only ever a single instance of this variable! */
 PUBLIC ATTR_USED ATTR_SECTION(".rodata.user")

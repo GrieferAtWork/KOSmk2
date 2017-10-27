@@ -97,7 +97,7 @@ DATDEF struct term_palette const term_palettes[TERM_PALETTES];
 
 struct term_operations {
     void    (TERM_CALL *to_putc)(struct term *term, char ch); /* [MANDATORY] Write a single character/byte. */
-    void    (TERM_CALL *to_putb)(struct term *term, char ch); /* Write a a-z-style box character (NOTE: 'ch' is a lower-case ascii character). */
+    void    (TERM_CALL *to_putb)(struct term *term, char ch); /* Write a a-z-style box character (NOTE: `ch' is a lower-case ascii character). */
     void    (TERM_CALL *to_set_color)(struct term *term, struct term_rgba fg, struct term_rgba bg); /* Set the current text color. */
     void    (TERM_CALL *to_set_cursor)(struct term *term, coord_t x, coord_t y); /* Set the position of the cursor. */
     void    (TERM_CALL *to_get_cursor)(struct term *term, coord_t *x, coord_t *y); /* Returns the position of the cursor. */
@@ -115,14 +115,14 @@ struct term_operations {
     void    (TERM_CALL *to_el)(struct term *term, int mode);
     /* Shift terminal lines by offset, where a negative value shifts
      * lines downwards, and a positive value shifts them up.
-     * e.g.: When the end of the terminal is reached, the driver would call '(*to_scroll)(...,1);' */
+     * e.g.: When the end of the terminal is reached, the driver would call `(*to_scroll)(...,1);' */
     void    (TERM_CALL *to_scroll)(struct term *term, offset_t offset);
     void    (TERM_CALL *to_set_title)(struct term *term, char *text); /*< Set the title of the terminal. */
     /* Direct access to pixels within the current cell (The image array has to_get_cell_size:x*y elements).
      * NOTE: Just like 'to_putc', the cursor is automatically advanced. */
     void    (TERM_CALL *to_putimg)(struct term *term, struct term_rgba image[]);
     void    (TERM_CALL *to_get_cell_size)(struct term *term, size_t *x, size_t *y); /* Returns the size of a cell in pixels. */
-    void    (TERM_CALL *to_output)(struct term *term, char *text); /*< Output 'text' to the slave process ('write(amaster,text,strlen(text))'; amaster from <pty.h>:openpty) */
+    void    (TERM_CALL *to_output)(struct term *term, char *text); /*< Output `text' to the slave process (`write(amaster,text,strlen(text))'; amaster from <pty.h>:openpty) */
 };
 
 struct term {
@@ -147,13 +147,13 @@ struct term {
  char                      *tr_bufend; /*< [1..1] End of the ANSI escape buffer (NOTE: Hint this points to a ZERO-character). */
  size_t                     tr_argc;   /*< Actual amount of arguments (Undefined when not escaping). */
  size_t                     tr_arga;   /*< [!0] Allocated amount of arguments. */
- char                     **tr_argv;   /*< [1..1][0..tr_argc][alloc(tr_arga)] Vector of ZERO-terminated ANSI escape arguments (point into 'tr_buffer'). */
+ char                     **tr_argv;   /*< [1..1][0..tr_argc][alloc(tr_arga)] Vector of ZERO-terminated ANSI escape arguments (point into `tr_buffer'). */
 union{
  struct term_rgba          *tr_image;  /*< [0..1][owned] Buffer for cell images. */
- uint8_t                   *tr_imabg;  /*< [1..1] Image start pointer (Undefined when 'tr_escape' != 6). */
+ uint8_t                   *tr_imabg;  /*< [1..1] Image start pointer (Undefined when `tr_escape' != 6). */
 };
- uint8_t                   *tr_imgps;  /*< [1..1] Image Position (Undefined when 'tr_escape' != 6). */
- uint8_t                   *tr_imgnd;  /*< [1..1] Image end (Undefined when 'tr_escape' != 6). */
+ uint8_t                   *tr_imgps;  /*< [1..1] Image Position (Undefined when `tr_escape' != 6). */
+ uint8_t                   *tr_imgnd;  /*< [1..1] Image end (Undefined when `tr_escape' != 6). */
 };
 
 FUNDEF NONNULL((1,2)) struct term *TERM_API

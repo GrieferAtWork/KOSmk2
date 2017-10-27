@@ -42,13 +42,13 @@ task_getfdman(WEAK struct task *__restrict tsk) {
   struct cpu *task_cpu = ATOMIC_READ(tsk->t_cpu);
   /* NOTE: IDLE tasks cannot be suspended, but also never change their FD-manager.
    *    >> So with that in mind, we can simply read the IDLE task's
-   *       fd-manager directory (Which should always be 'fdman_kernel') */
+   *       fd-manager directory (Which should always be `fdman_kernel') */
   if (task_cpu != THIS_CPU && tsk != &task_cpu->c_idle) {
    assert(tsk != THIS_TASK);
    temp = task_suspend(tsk,TASK_SUSP_HOST);
    if (E_ISERR(temp)) return E_PTR(temp);
    result = ATOMIC_READ(tsk->t_fdman);
-   /* NOTE: 't_fdman' may be NULL if the task was
+   /* NOTE: `t_fdman' may be NULL if the task was
     *       assigned a PID but is still being setup. */
    if (!result) result = E_PTR(-ESRCH);
    else FDMAN_INCREF(result);

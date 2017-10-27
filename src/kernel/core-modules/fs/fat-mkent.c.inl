@@ -23,12 +23,12 @@
 #endif
 
 
-/* Search for an existing directory entry 'path->d_name' and return
- * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in `mode'.
- * Otherwise create a new entry and pre-initialize it using 'result_attr',
- * as well as set '*is_new' to true.
+/* Search for an existing directory entry `path->d_name' and return
+ * it alongside `*is_new' == false, or `-EEXIST' when `IATTR_EXISTS' isn't set in `mode'.
+ * Otherwise create a new entry and pre-initialize it using `result_attr',
+ * as well as set `*is_new' to true.
  * NOTE: The caller is responsible for holding a write-lock to
- *      'dir_node->i_data->i_dirlock', which must be a FAT-directory node.
+ *      `dir_node->i_data->i_dirlock', which must be a FAT-directory node.
  * @return: * :         A reference to either a previously existing, or a newly allocated INode.
  * @return: E_ISERR(*): Failed to create a new directory entry for some reason.
  */
@@ -149,7 +149,7 @@ retry_disambiguation:
    /* Found an existing entry with the same name. */
    if (!(mode&IATTR_EXISTS)) {
     /* If we've not supposed to return existing nodes,
-     * return '-EEXIST' (Already exists) instead. */
+     * return `-EEXIST' (Already exists) instead. */
     INODE_DECREF(&result->f_inode);
     result = E_PTR(-EEXIST);
    }
@@ -162,7 +162,7 @@ retry_disambiguation:
   if (memcmp(short_entry.f_nameext,dirent.f_nameext,
              sizeof(dirent.f_nameext)) == 0) {
    assertf(lfn_count >= 1,
-           "But if this one collides (%$q), how come 'fat_lookup_memory()' didn't pick up on it?",
+           "But if this one collides (%$q), how come `fat_lookup_memory()' didn't pick up on it?",
            sizeof(dirent.f_nameext),dirent.f_nameext);
    /* It does. (Try again with a greater disambiguation) */
    assert(disambiguation <= FAT_8DOT3_MAX_DISAMBIGUATION);
@@ -172,7 +172,7 @@ retry_disambiguation:
     goto end;
    }
 
-   /* Retry with greater 'disambiguation' */
+   /* Retry with greater `disambiguation' */
    ++disambiguation;
    goto retry_disambiguation;
   }

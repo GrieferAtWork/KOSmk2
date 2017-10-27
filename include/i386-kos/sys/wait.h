@@ -23,7 +23,7 @@
 #include <signal.h>
 #include <bits/types.h>
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K8)
-#include <bits/siginfo.h> /* We'd only need 'siginfo_t' */
+#include <bits/siginfo.h> /* We'd only need `siginfo_t' */
 #endif /* __USE_XOPEN || __USE_XOPEN2K8 */
 
 /* Copyright (C) 1991-2016 Free Software Foundation, Inc.

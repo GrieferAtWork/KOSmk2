@@ -298,7 +298,7 @@ handle_clear:
    if (lflags & ECHO) {
     char out_text[2] = {'^','@'+ch};
     HOSTMEMORY_BEGIN {
-#if 1 /* NOTE: We can simply use 'iobuffer_write()' here! */
+#if 1 /* NOTE: We can simply use `iobuffer_write()' here! */
      temp = iobuffer_write(&self->pm_s2m,out_text,sizeof(out_text),
                             PTY_WRITE_BLOCKING_MODE);
 #else
@@ -366,7 +366,7 @@ handle_clear:
 PRIVATE void KCALL master_fini(struct inode *__restrict ino) {
  syslog(LOG_DEBUG,"[PTY] Finalize PTY master controller\n");
  if (ino->i_ops == &ptymaster_ops) {
-  /* Try to re-use this pty's id for the next call to 'openpty()' */
+  /* Try to re-use this pty's id for the next call to `openpty()' */
   minor_t min = MINOR(DEVICE_ID(&M->pm_chr.cd_device));
   ATOMIC_CMPXCH(next_pty_minor_id,min+1,min);
  }
@@ -532,10 +532,10 @@ pty_fclose(struct inode *__restrict UNUSED(ino),
  /* Delete the main associated directory entry. */
  error = dentry_remove(fp->f_dent,&ac,DENTRY_REMOVE_REG);
  if (E_ISOK(error))
-  syslog(LOG_INFO,"[PTY] Deleted PTY device file '%[dentry]'\n",fp->f_dent);
+  syslog(LOG_INFO,"[PTY] Deleted PTY device file `%[dentry]'\n",fp->f_dent);
  else {
   syslog(LOG_WARN,
-         "[PTY] Failed to delete PTY device file '%[dentry]': %[errno]\n",
+         "[PTY] Failed to delete PTY device file `%[dentry]': %[errno]\n",
          fp->f_dent,-error);
  }
 }
@@ -619,7 +619,7 @@ ptymaster_cinit(struct ptymaster *master) {
 }
 
 
-/* Max name sizes (including NUL-characters) for master/slave files under '/dev'. */
+/* Max name sizes (including NUL-characters) for master/slave files under `/dev'. */
 #define PTY_DEVICENAME_MAX 10
 LOCAL size_t KCALL pty_drivername(char prefix, char *buf, minor_t id) {
  size_t result;
@@ -789,7 +789,7 @@ SYSCALL_LDEFINE3(xopenpty,USER char *,name,
   { fd_master = -EFAULT; goto err3; }
  }
 
- /* The devices are now registered and should be accessible through '/dev/pts' */
+ /* The devices are now registered and should be accessible through `/dev/pts' */
 
  /* Create file streams for the master and slave drivers. */
  fd_m.fo_obj.fo_file = inode_fopen_default(&master->pm_chr.cd_device.d_node,master_ent,O_RDWR);

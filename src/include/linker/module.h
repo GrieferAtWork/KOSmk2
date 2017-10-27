@@ -26,7 +26,7 @@
 #include <hybrid/list/list.h>
 #include <kernel/memory.h>
 #include <hybrid/types.h>
-#include <hybrid/debuginfo.h> /* For 'THIS_INSTANCE' */
+#include <hybrid/debuginfo.h> /* For `THIS_INSTANCE' */
 #include <fs/basic_types.h>
 #include <malloc.h>
 #include <hybrid/sync/atomic-rwlock.h>
@@ -43,30 +43,30 @@ struct module;
 #define __SIZEOF_MADDR_T__ __SIZEOF_POINTER__
 #ifndef __maddr_t_defined
 #define __maddr_t_defined 1
-typedef uintptr_t maddr_t; /* An address relative to 'm_load' */
+typedef uintptr_t maddr_t; /* An address relative to `m_load' */
 #endif /* !__maddr_t_defined */
 
 
 #define MODSEG_LOAD     0 /* Regular, old segment that should be loaded somewhere. */
-#define MODSEG_TLS      1 /* Thread-local segment (Loaded identical to 'MODSEG_LOAD', containing the TLS template). */
+#define MODSEG_TLS      1 /* Thread-local segment (Loaded identical to `MODSEG_LOAD', containing the TLS template). */
 /* TODO: Per-thread segments */
 /* XXX: Per-CPU segments? (For drivers?) (Only think about this if you real a point where it would be useful...) */
 
 struct mregion;
 struct modseg {
  /* Module segment descriptor. */
- u32                 ms_type;   /*< [const] Segment type (One of 'MODSEG_*') */
- pos_t               ms_fpos;   /*< [const] File offset in ':m_file' where this segment starts. */
+ u32                 ms_type;   /*< [const] Segment type (One of `MODSEG_*') */
+ pos_t               ms_fpos;   /*< [const] File offset in `:m_file' where this segment starts. */
  maddr_t             ms_vaddr;  /*< [const] Segment virtual address (aka. base address for symbols within the segment). */
  maddr_t             ms_paddr;  /*< [const] Segment physical address (aka. real address in the effective address space). */
- size_t              ms_msize;  /*< [const][!0][>= ms_fsize] Segment memory size (fill diff with 'ms_fsize' with ZERO-bytes) */
+ size_t              ms_msize;  /*< [const][!0][>= ms_fsize] Segment memory size (fill diff with `ms_fsize' with ZERO-bytes) */
  size_t              ms_fsize;  /*< [const] Segment file size (max amount of bytes to read from file) */
  u32                 ms_prot;   /*< [const] Segment protection (Set of `PROT_*' from <sys/mman.h>) */
  u32                 ms_fill;   /*< [const] DWORD repeated to fill bss memory (NOTE: All four bytes of this should be equal!) */
  REF struct mregion *ms_region; /*< [0..1][lock(ms_rlock)][write(ONCE)]
                                  *  Pre-cached, mappable memory region for this segment.
                                  *  NOTE: Lazily create, but kept forever.
-                                 *  NOTE: When mapping this region, use 'FLOOR_ALIGN(ms_paddr,PAGESIZE)'! */
+                                 *  NOTE: When mapping this region, use `FLOOR_ALIGN(ms_paddr,PAGESIZE)'! */
 };
 
 
@@ -80,7 +80,7 @@ struct modseg {
 
 struct modsym {
  void     *ms_addr; /*< [?..?] Symbol address. */
- uintptr_t ms_type; /*< Symbol type (One of 'MODSYM_TYPE_*') */
+ uintptr_t ms_type; /*< Symbol type (One of `MODSYM_TYPE_*') */
 };
 #define MODSYM_TYPE_OK        0 /*< Regular, existing symbol. */
 #define MODSYM_TYPE_WEAK      1 /*< Weakly linked symbol. */
@@ -89,19 +89,19 @@ struct modsym {
 
 /* Flags for enumerating special module functions (in order or execution). */
 #define MODFUN_INIT1   0x01 /*< For elf: .preinit_array */
-#define MODFUN_INIT2   0x02 /*< For elf: .init_array (GCC: '__attribute__((constructor))') */
+#define MODFUN_INIT2   0x02 /*< For elf: .init_array (GCC: `__attribute__((constructor))') */
 #define MODFUN_INIT3   0x04 /*< For elf: .init ($ ld --init foo) */
 /*      MODFUN_INIT4   0x08  */
 #define MODFUN_FINI1   0x10 /*< For elf: .fini ($ ld --fini foo)  */
-#define MODFUN_FINI2   0x20 /*< For elf: .fini_array (GCC: '__attribute__((destructor))') */
+#define MODFUN_FINI2   0x20 /*< For elf: .fini_array (GCC: `__attribute__((destructor))') */
 /*      MODFUN_FINI3   0x40  */
 #define MODFUN_REVERSE 0x80 /*< Reverse enumeration order. */
-typedef u8 modfun_t; /*< Set of 'MODFUN_*' */
+typedef u8 modfun_t; /*< Set of `MODFUN_*' */
 #define MODFUN_INIT    0x0f
 #define MODFUN_FINI    0x70
 
 
-/* Module function enumeration callback. (NOTE: 'single_type' is _ONE_ of 'MODFUN_*') */
+/* Module function enumeration callback. (NOTE: `single_type' is _ONE_ of `MODFUN_*') */
 typedef ssize_t (KCALL *penummodfun)(VIRT void *pfun, modfun_t single_type, void *closure);
 
 struct argvlist;
@@ -112,7 +112,7 @@ struct moduleops {
  /* [1..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
   * Load the module address of a given symbol.
   * WARNING: This function may be called from a user-helper callback.
-  * WARNING: The given 'hash' may not necessarily be correct.
+  * WARNING: The given `hash' may not necessarily be correct.
   * @return: * :   The absolute address of the named symbol.
   * @return: NULL: Unknown symbol. */
  struct modsym (KCALL *o_symaddr)(struct instance *__restrict self,
@@ -120,37 +120,37 @@ struct moduleops {
  /* [1..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
   * Patch relocations after the module was loaded into memory.
   * NOTE: This operator may invoke a PAGEFAULT that the caller should
-  *       interpret the same way as a '-EFAULT' return value.
+  *       interpret the same way as a `-EFAULT' return value.
   *    >> A pagefault may only occurr when an invalid relocation
   *       attempts to write to a read-only text segment.
   * NOTE: This function must be called within the context of
-  *       the page directory that is mapping 'patcher->p_inst'.
-  * >> Simply use 'modpatch_patch()' to call this function!
+  *       the page directory that is mapping `patcher->p_inst'.
+  * >> Simply use `modpatch_patch()' to call this function!
   * @assume(patcher->p_inst != NULL);
   * @param: patcher:     The patching controller.
   * @return: -EOK:       Successfully patched the given module.
   * @return: -EFAULT:    An illegal pointer was encountered during relocations.
-  * @return: -ENOREL:    Failed to lookup a symbol ('patcher->p_dlsym' returned `0').
+  * @return: -ENOREL:    Failed to lookup a symbol (`patcher->p_dlsym' returned `0').
   * @return: E_ISERR(*): Failed to patch the module for some reason. */
  errno_t (KCALL *o_patch)(struct modpatch *__restrict patcher);
  /* [0..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
-  * Enumerate special module functions matching those described by 'types'.
+  * Enumerate special module functions matching those described by `types'.
   * NOTE: This function must be called within the context of
-  *       the page directory that is mapping 'patcher->p_inst'.
+  *       the page directory that is mapping `patcher->p_inst'.
   * WARNING: For safety concerns, the caller should validate that any given
   *          module address is actually apart of user-space, and does not
   *          originate from within the kernel.
-  * NOTE: This operator must be safe to executed as a user-worker callback ('call_user_worker()').
-  * @param: types:        A set of 'MODFUN_*'
+  * NOTE: This operator must be safe to executed as a user-worker callback (`call_user_worker()').
+  * @param: types:        A set of `MODFUN_*'
   * @param: callback:     The callback executed for each function found (in order).
-  * @param: closure:      The closure argument forwarded to 'callback'.
+  * @param: closure:      The closure argument forwarded to `callback'.
   * @return: * :          The sum of all of callback's return values.
-  * @return: E_ISERR(*) : The first error code returned by any call to 'callback'. */
+  * @return: E_ISERR(*) : The first error code returned by any call to `callback'. */
  ssize_t (KCALL *o_modfun)(struct instance *__restrict self,
                            modfun_t types, penummodfun callback, void *closure);
  /* [0..1] An optional operator that returns the pointed-to (real)
   * module, such as when executing shebang scripts.
-  * NOTE: This operator may return '-ENOENT' or '-ENOEXEC' to indicate
+  * NOTE: This operator may return `-ENOENT' or `-ENOEXEC' to indicate
   *       that the associated module `self' itself should be executed
   *       when the ~real~ module could not be found, or is invalid.
   *    >> This behavior allows the implementation of weakly
@@ -159,22 +159,22 @@ struct moduleops {
   *       binary if that file exists (NOTE: No such module type exists
   *       as of right now, but drivers are able to implement one)
   *    >> This behavior is internally triggered only when `self'
-  *       does not have the 'MODFLAG_NOTABIN' flag set.
+  *       does not have the `MODFLAG_NOTABIN' flag set.
   * @return: * :         A new reference to the real module.
   * @return: -ENOENT:    The real module does not exist.
   * @return: -ENOEXEC:   The real module isn't an executable.
   * @return: E_ISERR(*): Failed to load the real module for some reason. */
  REF struct module *(KCALL *o_real_module)(struct module *__restrict self);
  /* [0..1] Transform execution environment before the environment block is initialized.
-  * HINT: This operator should call 'argvlist_insert()' / 'argvlist_append()'
-  *       to add additional arguments either to the given 'head_args' list,
-  *       and/or to the 'tail_args' list, both of which will be prepended/appended
+  * HINT: This operator should call `argvlist_insert()' / `argvlist_append()'
+  *       to add additional arguments either to the given `head_args' list,
+  *       and/or to the `tail_args' list, both of which will be prepended/appended
   *       to the user-space argument vector 'user_args' when the caller will
   *       eventually update the environment block.
   *    >> The simplest use of this operator is to implement a shebang
   *       driver that will simply insert a set of previously parsed
-  *       arguments at the front of 'head_args'.
-  * WARNING: 'argvlist' objects do not copy passed argument strings,
+  *       arguments at the front of `head_args'.
+  * WARNING: `argvlist' objects do not copy passed argument strings,
   *           meaning that a module implementing this operator must
   *           keep track of any string added to either list.
   * @return: -EOK:       Successfully transformed the environment, or did nothing
@@ -214,15 +214,15 @@ FUNDEF errno_t KCALL argvlist_appendv(struct argvlist *__restrict self, char con
 
 
 #define MODFLAG_NONE    0x00000000
-#define MODFLAG_RELO    0x00000001 /*< The module is relocatable when 'm_ops->o_patch != NULL'. */
+#define MODFLAG_RELO    0x00000001 /*< The module is relocatable when `m_ops->o_patch != NULL'. */
 #define MODFLAG_EXEC    0x00000002 /*< The module is an executable, rather than a shared library.
-                                    *  When this flag is set, 'm_entry' is used as entry point. */
+                                    *  When this flag is set, `m_entry' is used as entry point. */
 #define MODFLAG_TEXTREL 0x00000004 /*< Executing relocations requires all segments to be mapped as writable. */
-#define MODFLAG_PREFERR 0x00000008 /*< When set, prefer loading the module at 'm_load' (Implied with consequences upon failure when 'MODFLAG_RELO' isn't set). */
+#define MODFLAG_PREFERR 0x00000008 /*< When set, prefer loading the module at `m_load' (Implied with consequences upon failure when `MODFLAG_RELO' isn't set). */
 #define MODFLAG_TLSSEG  0x00000010 /*< When set, the module contains TLS segments. */
 #define MODFLAG_NODEBUG 0x40000010 /*< [lock(m_debug)] When set, don't attempt to load missing debug information if none exists (Used to prevent repeated attempts of loading debug information). */
 #define MODFLAG_NOTABIN 0x80000000 /*< Not a binary. - When set, the module cannot be loaded directly, but may implement
-                                    * 'o_real_module' and 'o_transform_environ' to proxy another module instead. */
+                                    * `o_real_module' and `o_transform_environ' to proxy another module instead. */
 
 #define MODULE_OFFSETOF_REFCNT   0
 #define MODULE_OFFSETOF_OPS      __SIZEOF_REF_T__
@@ -248,16 +248,16 @@ struct module {
  struct moduleops const *m_ops;    /*< [const][1..1] Generic module operations. */
  REF struct file        *m_file;   /*< [const][1..1] Module executable.
                                     *   NOTE: The module it self is also stored under:
-                                    *        'm_file->f_node->i_file.i_module'
+                                    *        `m_file->f_node->i_file.i_module'
                                     *   Upon deletion of the module, that field is cleared.
                                     *   WARNING: The kernel's core-module has this field set to NULL! */
- struct dentryname      *m_name;   /*< [const][1..1] The effective name of the module (Defaults to '&m_file->f_dent->d_name'; may be set to '&m_namebuf') */
+ struct dentryname      *m_name;   /*< [const][1..1] The effective name of the module (Defaults to `&m_file->f_dent->d_name'; may be set to `&m_namebuf') */
  struct dentryname       m_namebuf;/*< [const][owned] Per-module inline-allocated name buffer. */
  WEAK REF struct instance *m_owner;/*< [const][1..1] Weak reference to the owner driver of this module.
                                     *   NOTE: The linker will attempt to acquire a real reference to this instance
-                                    *         whenever an operation from 'm_ops' must be executed, thus ensuring that
+                                    *         whenever an operation from `m_ops' must be executed, thus ensuring that
                                     *         the associated driver is still loaded and able to serve such requests. */
- u32                     m_flag;   /*< [const] Module flags (Set of 'MODFLAG_*'). */
+ u32                     m_flag;   /*< [const] Module flags (Set of `MODFLAG_*'). */
  VIRT uintptr_t          m_load;   /*< [const] The default load address for which relocations are optimized.
                                     *   NOTE: In ELF binaries, this is always ZERO(0).
                                     *   NOTE: This value is important, as it describes the effective
@@ -265,7 +265,7 @@ struct module {
                                     *         are required when wishing to patch (relocate) the module.
                                     *      >> This value should describe the initial relocation address,
                                     *         as well as the fixed load address for modules that are
-                                    *         not relocatable (aka. when 'MODFLAG_RELO' isn't set) */
+                                    *         not relocatable (aka. when `MODFLAG_RELO' isn't set) */
  size_t                  m_begin;  /*< [const] Start of first segment. */
  size_t                  m_end;    /*< [const] End of last segment. */
  size_t                  m_size;   /*< [const][== m_end-m_begin] The minimum amount of
@@ -275,7 +275,7 @@ struct module {
  maddr_t                 m_entry;  /*< [const][valid_if(MODFLAG_EXEC)] Module entry point. */
  size_t                  m_segc;   /*< [const] Amount of module segments. */
  struct modseg          *m_segv;   /*< [const][0..md_modc][owned] Vector of module segments. */
- atomic_rwlock_t         m_rlock;  /*< Lock for 'ms_region' of individual segments. */
+ atomic_rwlock_t         m_rlock;  /*< Lock for `ms_region' of individual segments. */
  REF atomic_rwptr_t      m_debug;  /*< [TYPE(struct moddebug)][0..1] Optional/lazily allocated debug information. */
  /* TODO: Startup thread stack size. */
 
@@ -288,9 +288,9 @@ struct module {
 
 /* Returns the file stream used to access the given module.
  * NOTE: This function's only purpose is to lazily attempt to open the
- *       kernel-core module's binary file located at 'CONFIG_KERNEL_CORE_BIN',
+ *       kernel-core module's binary file located at `CONFIG_KERNEL_CORE_BIN',
  *       and return an open file stream to that file.
- *       For any other module, it immediately returns 'self->m_file'
+ *       For any other module, it immediately returns `self->m_file'
  * WARNING: In the event that `self' is the kernel, NULL may be
  *          returned if the kernel's core binary couldn't be found. */
 FUNDEF SAFE struct file *KCALL module_file(struct module *__restrict self);
@@ -304,9 +304,9 @@ FUNDEF SAFE void KCALL module_destroy(struct module *__restrict self);
 #define module_new(type_size) ((struct module *)kmalloc(type_size,GFP_SHARED|GFP_CALLOC))
 
 /* Perform final initialization of `self' using `fp'
- * NOTE: This function should be called before a 'modloader_callback' returns.
+ * NOTE: This function should be called before a `modloader_callback' returns.
  * During this phase, the following members are initialized:
- *  - m_name (Set to '&fp->f_dent->d_name' when previously NULL)
+ *  - m_name (Set to `&fp->f_dent->d_name' when previously NULL)
  *  - m_refcnt
  *  - m_ops
  *  - m_file
@@ -329,25 +329,25 @@ FUNDEF SAFE void KCALL module_setup(struct module *__restrict self,
  * @return: * :          A new reference to the loaded module.
  * @return: -ELOOP:      The same module is currently being loaded.
  * @return: -ENOEXEC:    Unknown executable format.
- * @return: -EPERM:     [module_open_d] The INode associated with 'dent' is not executable, but 'require_exec' was true.
+ * @return: -EPERM:     [module_open_d] The INode associated with `dent' is not executable, but `require_exec' was true.
  * @return: -ENOENT:    [module_open_d] The directory entry doesn't point to an INode.
  * @return: E_ISERR(*):  Failed to load the module for some reason. */
 FUNDEF SAFE REF struct module *KCALL module_open(struct file *__restrict fp);
 FUNDEF SAFE REF struct module *KCALL module_open_d(struct dentry *__restrict dent, bool require_exec);
 
-/* Same as 'module_open', but don't consult the module cache. */
+/* Same as `module_open', but don't consult the module cache. */
 FUNDEF SAFE REF struct module *KCALL module_open_new(struct file *__restrict fp);
 
 
-/* Safely open a module 'filename' from any path, given a ':'-separated list in 'paths'.
- * NOTE: This function makes sure that a 'filename' does not contain
- *       inter-directory references, only allowing directory-recursion in 'paths':
+/* Safely open a module `filename' from any path, given a `':'´-separated list in `paths'.
+ * NOTE: This function makes sure that a `filename' does not contain
+ *       inter-directory references, only allowing directory-recursion in `paths':
  *  >> module_open_in_paths("/lib:/usr/lib","libc.so"); // OK
  *  >> module_open_in_paths("/lib:/usr/lib","../../lib/libc.so"); // Not OK
- * @param: use_user_fs: When true, use filesystem root & cwd from 'THIS_FDMAN',
+ * @param: use_user_fs: When true, use filesystem root & cwd from `THIS_FDMAN',
  *                      otherwise use the true filesystem root.
- * @return: * : Same as 'module_open()' and 'dentry_[x]walk()'
- *        NOTE: This function will not return '-ENOEXEC', but '-ENOENT' instead. */
+ * @return: * : Same as `module_open()' and `dentry_[x]walk()'
+ *        NOTE: This function will not return `-ENOEXEC', but `-ENOENT' instead. */
 FUNDEF SAFE REF struct module *KCALL
 module_open_in_paths(HOST char const *__restrict paths,
                      struct dentryname const *__restrict filename,
@@ -359,21 +359,21 @@ module_open_in_path(HOST char const *__restrict path, size_t pathlen,
 
 /* Module scanner function that should be called as a last resort.
  * >> This function scans all default library locations, as can be
- *    configured by the kernel commandline option 'libpath=/foo:/bar/baz'
+ *    configured by the kernel commandline option `libpath=/foo:/bar/baz'
  * NOTE: The default search path defaults to "/lib:/usr/lib:/usr/local/lib"
  * WARNING: Don't call this function from within module patching!
- *          In that situation, use 'modpatch_dlopen()' instead! */
+ *          In that situation, use `modpatch_dlopen()' instead! */
 #define module_open_default(filename,use_user_fs) \
         module_open_in_paths(module_search_path,filename,use_user_fs)
 #define module_open_driver(filename,use_user_fs) \
         module_open_in_paths(driver_search_path,filename,use_user_fs)
 DATDEF char const *const module_search_path;
-DATDEF char const *const driver_search_path; /* Same as 'module_search_path', but used for drivers dependencies. */
+DATDEF char const *const driver_search_path; /* Same as `module_search_path', but used for drivers dependencies. */
 
 
 
 /* High-level helper function for loading modules from disk.
- * NOTE: This function is just a wrapper around 'module_open', calling 'kopen()'
+ * NOTE: This function is just a wrapper around `module_open', calling `kopen()'
  * @param: abs_filename: The absolute filename within root filesystem to load the module from.
  * @return: * :          A new reference to the loaded module.
  * @return: -ELOOP:      The same module is currently being loaded.
@@ -391,7 +391,7 @@ LOCAL SAFE REF struct module *KCALL module_open_s(HOST char const *__restrict ab
 /* Generate missing regions that will be required
  * when creating an instance of the module.
  * NOTE: Calling this function explicitly isn't required, as
- *      'mman_insmod()' will automatically call this.
+ *      `mman_insmod()' will automatically call this.
  * @return: -EOK:    All regions are created and ready for use.
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF SAFE errno_t KCALL module_mkregions(struct module *__restrict self);
@@ -420,10 +420,10 @@ struct modloader {
  SLIST_NODE(struct modloader)
                            ml_chain;  /*< [lock(INTERNAL(::modloader_lock))] Chain of registered loaders. */
  WEAK REF struct instance *ml_owner;  /*< [1..1][const] Owner module.
-                                       *   NOTE: Should be set to 'THIS_INSTANCE' before calling 'module_addloader'. */
+                                       *   NOTE: Should be set to `THIS_INSTANCE' before calling `module_addloader'. */
  modloader_callback        ml_loader; /*< [1..1][const] Callback for loading a module of this type
                                        *   NOTE: Upon error, return an E_PTR(); don't return NULL!
-                                       *   HINT: Return '-ENOEXEC' if you can't load the binary,
+                                       *   HINT: Return `-ENOEXEC' if you can't load the binary,
                                        *         and the kernel will attempt using another loader.
                                        *   NOTE: When being executed, the file seek position is
                                        *         where the module starts (aka. at the base of magic).
@@ -432,18 +432,18 @@ struct modloader {
                                        *         access to a file. */
  size_t                    ml_magsz;  /*< [<= MODLOADER_MAX_MAGIC][const] Amount of significant magic bytes (When ZERO(0), always try). */
  byte_t                    ml_magic[MODLOADER_MAX_MAGIC]; /*< [0..ml_magsz][const] Magic header bytes. */
- u32                       ml_flags;  /*< Module loader flags (Set of 'MODLOADER_F*'). */
+ u32                       ml_flags;  /*< Module loader flags (Set of `MODLOADER_F*'). */
 };
 
 /* Add/Delete new module loaders, adding the ability
  * for drivers to define new binary formats.
- * WARNING: 'module_addloader' will register the given loader
+ * WARNING: `module_addloader' will register the given loader
  *           structure directly, meaning it must either be
  *           allocated statically, or dynamically, whilst
  *           remaining allocated for at least the duration
  *           of the loader remaining registered.
- * NOTE: The reference stored in 'ml_owner' is added by this function.
- * @param: mode: A set of 'MODULE_LOADER_*'
+ * NOTE: The reference stored in `ml_owner' is added by this function.
+ * @param: mode: A set of `MODULE_LOADER_*'
  * WARNING: Do not attempt to call either of these functions
  *          from within a module loader. - You will deadlock!
  *       >> That also includes anything a module loader may call, such
@@ -456,7 +456,7 @@ FUNDEF bool KCALL module_delloader(struct modloader *__restrict loader);
 #define MODULE_LOADER_PRIMARY   0x00 /*< Register a primary loader, overriding a previously existing one. */
 #define MODULE_LOADER_SECONDARY 0x01 /*< When set, register the loader as a secondary load
                                       *  option, allowing more than one to respond to the same
-                                      *  magic number (e.g.: 'PE' and PE-16 being individual
+                                      *  magic number (e.g.: `PE' and PE-16 being individual
                                       *  drivers, with both responding to {0x4d,0x5a}). */
 #define MODULE_LOADER_NORMAL    MODULE_LOADER_SECONDARY
 
@@ -487,7 +487,7 @@ struct kinstance {
   */
 #ifdef CONFIG_TRACE_LEAKS
 #define KINSTANCE_TRACE_NULL ((struct mptr *)-1)
- atomic_rwlock_t k_tlock; /*< Lock for 'k_trace' */
+ atomic_rwlock_t k_tlock; /*< Lock for `k_trace' */
  struct mptr    *k_trace; /*< [0..1|null(KINSTANCE_TRACE_NULL)][lock(k_tlock)] Chain of traced managed memory pointers. */
 #endif
  int             k_placeholder;
@@ -500,18 +500,18 @@ struct kinstance {
 #define INSTANCE_FLAG_NORMAL     0x00000000
 #define INSTANCE_FLAG_KERNEL     0x00000001 /*< [const] The instance is loaded as a kernel driver. */
 #define INSTANCE_FLAG_NOUNMAP    0x00000002 /*< [const] Memory mappings of the instance may not be deleted.
-                                             *   WARNING: Unless 'INSTANCE_FLAG_NOREMAP' is set as well, an unavoidable
+                                             *   WARNING: Unless `INSTANCE_FLAG_NOREMAP' is set as well, an unavoidable
                                              *            work-around for this flag is to extract + delete the instance's
                                              *            mappings, thus essentially unmapping it even when this flag is self.
-                                             *         >> Again: To prevent this, just set the 'INSTANCE_FLAG_NOREMAP'.
+                                             *         >> Again: To prevent this, just set the `INSTANCE_FLAG_NOREMAP'.
                                              *                  (After all: If you don't want the instance to be unmapped,
                                              *                              why would you be OK with it being moved?) */
 #define INSTANCE_FLAG_NOREMAP    0x00000004 /*< [const] Memory mappings of the instance may not be moved. */
-#define INSTANCE_FLAG_NOUNLOAD   0x00000008 /*< [const] May be used for driver: The driver cannot be unloaded unless 'DELMOD_FORCE' is passed. */
+#define INSTANCE_FLAG_NOUNLOAD   0x00000008 /*< [const] May be used for driver: The driver cannot be unloaded unless `DELMOD_FORCE' is passed. */
 #define INSTANCE_FLAG_UNLOAD     0x00010000 /*< [atomic] The instance is currently being unloaded and no new references may be created.
                                              *     NOTE: While also working for user-space modules, only
                                              *           used for safely unloading drivers from kernel space. */
-#define INSTANCE_FLAG_DID_UNLOAD 0x00020000 /*< [atomic] Set during a late phase of unloading to overrule the 'INSTANCE_FLAG_NOUNMAP' flag into
+#define INSTANCE_FLAG_DID_UNLOAD 0x00020000 /*< [atomic] Set during a late phase of unloading to overrule the `INSTANCE_FLAG_NOUNMAP' flag into
                                              *           allowing the kernel to delete driver memory mappings once the driver has been unloaded. */
 #define INSTANCE_FLAG_DID_FINI   0x00040000 /*< [atomic] Atomically set before module fini-functions are called to prevent them being run more than once. */
 #define INSTANCE_FLAG_PERSISTENT INSTANCE_FLAG_NOUNMAP /*< [const] The instance may never be unloaded until the associated mman is destroyed. */
@@ -524,9 +524,9 @@ struct kinstance {
 /* Default instance flags for drivers:
  * @flag: INSTANCE_FLAG_KERNEL:  Drivers run in kernel space.
  * @flag: INSTANCE_FLAG_NOUNMAP: Unlike user-space applications, drivers must not accidentally be
- *                               unloaded using `munmap()'; instead, 'kernel_delmod()' must be used.
- * @flag: INSTANCE_FLAG_NOREMAP: For similar reasons as 'INSTANCE_FLAG_NOUNMAP',
- *                               don't accidentally 'remap()' drivers. */
+ *                               unloaded using `munmap()'; instead, `kernel_delmod()' must be used.
+ * @flag: INSTANCE_FLAG_NOREMAP: For similar reasons as `INSTANCE_FLAG_NOUNMAP',
+ *                               don't accidentally `remap()' drivers. */
 #define INSTANCE_FLAG_DRIVER    \
        (INSTANCE_FLAG_KERNEL|INSTANCE_FLAG_NOUNMAP| \
         INSTANCE_FLAG_NOREMAP)
@@ -575,8 +575,8 @@ struct instanceset {
 /* Operate on a given instance set.
  * NOTE: For all of these, the caller must also be holding the appropriate lock!
  * NOTE: Instance sets are ordered, in that instances added before others
- *       are also enumerated by 'INSTANCESET_FOREACH()' before later ones.
- * NOTE: 'instanceset_insert()' requires the given `inst' to not be apart of the set.
+ *       are also enumerated by `INSTANCESET_FOREACH()' before later ones.
+ * NOTE: `instanceset_insert()' requires the given `inst' to not be apart of the set.
  * @assume(!instanceset_contains(self,inst)); [instanceset_insert]
  * @return: true:   The operation completed successfully.
  * @return: false: [instanceset_insert] Not enough available memory.
@@ -603,32 +603,32 @@ FUNDEF bool KCALL instanceset_contains(struct instanceset *__restrict self, stru
 struct instance {
  /* NOTE: When reading the i_pself/i_next linked list of per-mman module instances,
   *       you must either hold a read-lock on each individual instance pointer,
-  *       or simply acquire a read-lock to 'struct mman::m_lock' beforehand.
+  *       or simply acquire a read-lock to `struct mman::m_lock' beforehand.
   *    >> The later is preferred, as it doesn't require you to create temporary
-  *       references, as returned by 'instance_next()'. */
+  *       references, as returned by `instance_next()'. */
  LIST_NODE(struct instance)
                     i_chain;  /*< [lock(:struct mman::m_lock)][sort(ASCENDING(i_base))]
                                *  [valid_if(i_branch != 0)] Chain of loaded module instances. */
  ref_t              i_branch; /*< [lock(:struct mman::m_lock)] Amount of branches mapping this instance.
-                               *   NOTE: When non-zero, this field also holds a reference to 'i_refcnt'.
+                               *   NOTE: When non-zero, this field also holds a reference to `i_refcnt'.
                                *   NOTE: When non-zero, the instance is considered to be mapped. */
  ATOMIC_DATA ref_t  i_weakcnt;/*< Weak reference counter. */
  ATOMIC_DATA ref_t  i_refcnt; /*< Reference counter for this instance.
-                               *  NOTE: May no longer be incremented when the 'INSTANCE_FLAG_UNLOAD' flag was set.
+                               *  NOTE: May no longer be incremented when the `INSTANCE_FLAG_UNLOAD' flag was set.
                                *  NOTE: While non-zero, keeps this structure as valid,
-                               *        as well as a reference to 'i_weakcnt' */
+                               *        as well as a reference to `i_weakcnt' */
  ATOMIC_DATA ref_t  i_openrec;/*< User-space recursion for dlopen()/dlclose(). */
  REF struct module *i_module; /*< [const][1..1] Reference to the associated module. */
- VIRT ppage_t       i_base;   /*< [const] Instance base address. (Can be added to any 'maddr_t' - 'm_load' from 'i_module' to create an absolute runtime address)
+ VIRT ppage_t       i_base;   /*< [const] Instance base address. (Can be added to any `maddr_t' - `m_load' from `i_module' to create an absolute runtime address)
                                *   NOTE: Unless the instance re-mapped itself, it can be unmapped with
-                               *        'mman_munmap(i_base,i_module->m_size)' within the associated mman. */
+                               *        `mman_munmap(i_base,i_module->m_size)' within the associated mman. */
  /* Tracking of instance dependencies.
   * NOTE: All of these are weakly referenced, meaning that
   *       links are deleted by instances as they are destroyed. */
  struct instanceset i_used;   /*< The set of instances that uses this one (aka. that this instance is a dependency of).
-                               *  HINT: `self' is apart of the 'i_deps' set of each of these. */
+                               *  HINT: `self' is apart of the `i_deps' set of each of these. */
  struct instanceset i_deps;   /*< The set of instances that this one depends on (aka. that are used by this instance).
-                               *  HINT: `self' is apart of the 'i_used' set of each of these. */
+                               *  HINT: `self' is apart of the `i_used' set of each of these. */
  void              *i_temp;   /*< [lock(:struct mman::m_lock)] Temporary pointer used during fork(). */
  u32                i_flags;  /*< Instance flags. */
  struct kinstance   i_driver; /*< Kernel module data (Only allocated for driver modules). */
@@ -650,9 +650,9 @@ FUNDEF SAFE void KCALL instance_destroy_weak(struct instance *__restrict self);
 LOCAL WUNUSED bool KCALL _instance_tryincref(struct instance *__restrict self);
 LOCAL WUNUSED bool KCALL _instance_incref(struct instance *__restrict self);
 
-/* Add the given 'dependency' as a dependency of `self',
- * consequently also adding `self' as a user of 'dependency'.
- * NOTE: This function is a no-op when 'dependency' already was a dependency of `self'.
+/* Add the given `dependency' as a dependency of `self',
+ * consequently also adding `self' as a user of `dependency'.
+ * NOTE: This function is a no-op when `dependency' already was a dependency of `self'.
  * @return: true:  Successfully added both links.
  * @return: false: Not enough available memory. */
 FUNDEF SAFE bool KCALL
@@ -661,19 +661,19 @@ instance_add_dependency(struct instance *__restrict self,
 
 /* Perform a symbol lookup within the given
  * instance, following ELF symbol resolution order.
- * HINT: 'dlsym(NULL,...)' calls this function on 'THIS_MMAN->m_exe'
+ * HINT: `dlsym(NULL,...)' calls this function on `THIS_MMAN->m_exe'
  * NOTE: The instance itself is also searched by this function!
  * NOTE: Kernel symbol resolution is performed by this function as well! */
 FUNDEF SAFE USER void *KCALL instance_dlsym(struct instance *__restrict self, char const *__restrict name, u32 hash);
 
 /* Create a new uninitialized instance from the given module.
  * Once done, the caller should ensure that all memory regions from `mod'
- * are loaded, before filling in 'i_base' (HINT: use 'mman_findspace_unlocked')
- * and calling 'mman_mmap_instance_unlocked' to map the instance into some
+ * are loaded, before filling in `i_base' (HINT: use `mman_findspace_unlocked')
+ * and calling `mman_mmap_instance_unlocked' to map the instance into some
  * address space.
  * The caller must always fill in:
- *   - i_base (Use 'mman_findspace_unlocked')
- * @param: flags: A set of 'INSTANCE_FLAG_*', describing
+ *   - i_base (Use `mman_findspace_unlocked')
+ * @param: flags: A set of `INSTANCE_FLAG_*', describing
  *                type and features of the instance.
  * @return: * :   A new reference to an instance of `mod',
  *                supporting features described by `flags'.
@@ -682,13 +682,13 @@ FUNDEF SAFE REF struct instance *KCALL instance_new(struct module *__restrict mo
 #define instance_new_user(mod)   instance_new(mod,INSTANCE_FLAG_NORMAL)
 #define instance_new_driver(mod) instance_new(mod,INSTANCE_FLAG_DRIVER)
 
-/* Call init/fini functions for the given 'instance'.
+/* Call init/fini functions for the given `instance'.
  * NOTE: These functions should only be called on driver instances,
  *       but to prevent accidental use on non-driver module instances,
  *       these functions act as a no-op on user application instances.
  * >> Each of these functions should be called once during
  *    the lifetime of a driver instance loaded into the kernel.
- * NOTE: 'instance_callfini' is called at the beginning of generic instance
+ * NOTE: `instance_callfini' is called at the beginning of generic instance
  *        termination, before any additional resource classes registered using
  *       `inst' will manually be deleted. */
 FUNDEF SAFE void KCALL instance_callinit(struct instance *__restrict self);
@@ -710,12 +710,12 @@ DATDEF struct module   __this_module;
 
 /* Load a given module as a new instance in kernel-space,
  * as well as execute module initialization, given
- * additional command line options from 'cmdline'
- * @param: mode:     A set of 'INSMOD_*'
+ * additional command line options from `cmdline'
+ * @param: mode:     A set of `INSMOD_*'
  * @param: cmdline:  A user-space pointer to the commandline
  *                   to-be used, or NULL if none is given.
  * @return: * :      A new reference to the (now loaded + initialized) instance of `mod'.
- *             NOTE: When the 'INSMOD_SECONDARY' flag is given and the given module
+ *             NOTE: When the `INSMOD_SECONDARY' flag is given and the given module
  *                   was already loaded, it will be loaded again, and a reference
  *                   to the newly loaded module is returned.
  *                   WARNING: Upon successful completion of such an operation, it will
@@ -723,18 +723,18 @@ DATDEF struct module   __this_module;
  *                            correlation, usually resulting in all instances
  *                   WARNING: When linking module dependencies against each other,
  *                            the exact instance being linked is consistent within
- *                            the same connection (one instance of 'foo_driver'
- *                            won't link against multiple instances of 'bar_vga',
- *                            but if 'foo_driver' links against the 1st instance of
- *                           'bar_vga', 'barbi_cdrom' may later link against the 2nd)
+ *                            the same connection (one instance of `foo_driver'
+ *                            won't link against multiple instances of `bar_vga',
+ *                            but if `foo_driver' links against the 1st instance of
+ *                           `bar_vga', `barboo_cdrom' may later link against the 2nd)
  *                         >> With that in mind, it usually isn't a good idea to
  *                            load a single driver more than once.
- *             NOTE: When 'INSMOD_SECONDARY' isn't, but the 'INSMOD_REUSE' flag is given
+ *             NOTE: When `INSMOD_SECONDARY' isn't, but the `INSMOD_REUSE' flag is given
  *                   and the given module was already loaded, a reference to an existing
- *                   module instance is returned instead of an error code of '-EEXIST'.
- *                   >> When an existing module is returned, 'INSMOD_NOINIT' is ignored.
+ *                   module instance is returned instead of an error code of `-EEXIST'.
+ *                   >> When an existing module is returned, `INSMOD_NOINIT' is ignored.
  *          WARNING: By the time this function returns, the instance may have already
- *                   started unloading itself, meaning that the 'INSTANCE_FLAG_UNLOAD'
+ *                   started unloading itself, meaning that the `INSTANCE_FLAG_UNLOAD'
  *                   flag may have already been set.
  * @return: -EINTR:   The calling thread was interrupted.
  * @return: -EEXIST: [INSMOD_NORMAL] The given module `mod' has already been loaded.
@@ -745,7 +745,7 @@ FUNDEF SAFE REF struct instance *KCALL
 kernel_insmod(struct module *__restrict mod,
               USER char const *cmdline,
               u32 mode);
-#define INSMOD_NORMAL    0x00000000 /*< In the even that `mod' has already been loaded, fail by returning '-EEXIST'. */
+#define INSMOD_NORMAL    0x00000000 /*< In the even that `mod' has already been loaded, fail by returning `-EEXIST'. */
 #define INSMOD_REUSE     0x00000001 /*< In the even that `mod' has already been loaded, return a reference to the existing instance. */
 #define INSMOD_SECONDARY 0x00000002 /*< In the even that `mod' has already been loaded, create and return a secondary instance. */
 #define INSMOD_NOINIT    0x00010000 /*< Do not execute initializers. */
@@ -763,16 +763,16 @@ FUNDEF SAFE REF struct instance *KCALL kernel_getmod(struct module *__restrict m
  * NOTE: If the given instance `inst' is that of the caller,
  *       and the module could successfully be deleted, control
  *       will never return unless an error occurred.
- * WARNING: 'kernel_delmod' will drop one reference from the given `inst'
+ * WARNING: `kernel_delmod' will drop one reference from the given `inst'
  *           upon success; that being a requirement for enabling safe
  *           reference tracking by the caller until they deem the module
  *           safe for unloading.
- *        >> In most cases though, 'kernel_delmod_m' is used instead,
+ *        >> In most cases though, `kernel_delmod_m' is used instead,
  *           which in turn deletes all instances of any given module.
- * @param:  mode:          A set of 'DELMOD_*'
- * @return: * :           [kernel_delmod_m] The actual amount of deleted module instances (In case 'INSMOD_SECONDARY' was used to load a module more than once).
+ * @param:  mode:          A set of `DELMOD_*'
+ * @return: * :           [kernel_delmod_m] The actual amount of deleted module instances (In case `INSMOD_SECONDARY' was used to load a module more than once).
  * @return: -EOK:         [kernel_delmod] Successfully deleted the given module instance.
- * @return: -EPERM:       [kernel_delmod] The module has the 'INSTANCE_FLAG_NOUNLOAD' flag set, but 'DELMOD_FORCE' wasn't given.
+ * @return: -EPERM:       [kernel_delmod] The module has the `INSTANCE_FLAG_NOUNLOAD' flag set, but `DELMOD_FORCE' wasn't given.
  * @return: -EWOULDBLOCK: [!DELMOD_DELDEP && !DELMOD_FORCENOW_ALWAYS]
  *                          The module cannot be unloaded before other dependencies are still loaded.
  * @return: -EWOULDBLOCK: [DELMOD_NOBLOCK] Someone/something is using the module.
@@ -788,20 +788,20 @@ FUNDEF SAFE ssize_t KCALL kernel_delmod_m(struct module *__restrict mod, u32 mod
                                       *        But in the event that it does eventually succeed, a second message is
                                       *        logged, telling anyone reading that everything worked out in the end... */
 #define DELMOD_NOFINI     0x00040000 /*< Do not execute module finalizes (aka. destructors) when destroying the instance.
-                                      *  >> This flag's main reason for existing it to be analogous to 'INSMOD_NOINIT'. */
-#define DELMOD_DELDEP     0x00080000 /*< Instead of failing with 'EWOULDBLOCK', delete all other modules
+                                      *  >> This flag's main reason for existing it to be analogous to `INSMOD_NOINIT'. */
+#define DELMOD_DELDEP     0x00080000 /*< Instead of failing with `EWOULDBLOCK', delete all other modules
                                       *  depending on this one's presence, only failing once at least one
                                       *  of them couldn't be deleted for some reason.
                                       *  NOTE: The module used when recursively deleting
-                                      *        dependencies is calculated by 'mode & DELMOD_DELDEP_MASK'.
-                                      *  NOTE: When the 'DELMOD_IGNORE_DEP' flag is given as well, first
+                                      *        dependencies is calculated by `mode & DELMOD_DELDEP_MASK'.
+                                      *  NOTE: When the `DELMOD_IGNORE_DEP' flag is given as well, first
                                       *        attempt to delete dependencies normally, before ignoring a
                                       *        failure in doing so and blindly deleting the module anyways. */
 
 /* Module unmapping flags that may influence system stability when used unwisely. */
-#define DELMOD_FORCE      0x10000000 /*< Force delete modules, even if they've been equipped with the 'INSTANCE_FLAG_NOUNLOAD' flag.
+#define DELMOD_FORCE      0x10000000 /*< Force delete modules, even if they've been equipped with the `INSTANCE_FLAG_NOUNLOAD' flag.
                                       *  WARNING: NEVER USE THIS FLAG IF YOU DON'T HAVE A GOOD REASON TO! */
-#define DELMOD_FORCENOW   0x40000000 /*< Not to be confused with 'DELMOD_FORCE': force the instance to be deleted _NOW_.
+#define DELMOD_FORCENOW   0x40000000 /*< Not to be confused with `DELMOD_FORCE': force the instance to be deleted _NOW_.
                                       *  When set, the kernel will not block until the module has actually been
                                       *  deleted, but instead assume that the module is ready for unloading
                                       *  despite a potentially non-zero reference counter. */
@@ -810,7 +810,7 @@ FUNDEF SAFE ssize_t KCALL kernel_delmod_m(struct module *__restrict mod, u32 mod
                                       *  >> I can literally not think of any situation where this flag is a good idea... */
 
 /* Mask used to modulate `mode' when recursively
- * deleting dependencies (s.a.: 'DELMOD_DELDEP'). */
+ * deleting dependencies (s.a.: `DELMOD_DELDEP'). */
 #define DELMOD_DELDEP_MASK  \
   (DELMOD_BLOCK|DELMOD_DELDEP|\
    DELMOD_FORCE|DELMOD_FORCENOW|DELMOD_IGNORE_DEP)

@@ -121,7 +121,7 @@ PRIVATE void KCALL ata_sleep(u16 bus) {
  inb(bus+ATA_ALTSTATUS);
 }
 
-/* Wait until '(inb(status_port) & mask) == status' for up to 'timeout' ticks.
+/* Wait until `(inb(status_port) & mask) == status' for up to `timeout' ticks.
  * @return: * :         The latest value of the status register.
  * @return: -ETIMEDOUT: The given timeout has expired.
  * @return: -EIO:       An I/O error occurred.

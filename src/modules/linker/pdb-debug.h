@@ -78,9 +78,9 @@ typedef struct _debug {
   DWORD                 d_psize;   /*< Size of a single in-file page. */
   stream_t              d_root;    /*< Root stream. */
 #define DEBUG_STREAMSOK 0x00000001 /*< Set once streams have been loaded. */
-  u32                   d_flags;   /*< Set of 'DEBUG_*' */
+  u32                   d_flags;   /*< Set of `DEBUG_*' */
   DWORD                 d_streamc; /*< Amount of streams. */
-  DWORD                 s_rootidx; /*< Root stream index page. (Multipy by 'd_psize' to get where 's_pagev' is stored) */
+  DWORD                 s_rootidx; /*< Root stream index page. (Multipy by `d_psize' to get where 's_pagev' is stored) */
   stream_t             *d_streamv; /*< [0..d_streamc] Vector of streams. */
   DWORD                *d_pagetab; /*< [0..1] Stream page table. */
 } debug_t;
@@ -92,11 +92,11 @@ INTDEF ssize_t KCALL stream_kread(stream_t *__restrict self, HOST void *__restri
 INTDEF errno_t KCALL stream_readall(stream_t *__restrict self, USER void *buf, size_t bufsize, DWORD pos);
 INTDEF errno_t KCALL stream_kreadall(stream_t *__restrict self, HOST void *__restrict buf, size_t bufsize, DWORD pos);
 
-/* Return the stream matching 'streamid', potentially
+/* Return the stream matching `streamid', potentially
  * allocating the stream if it wasn't used before.
- * @return: * :         A pointer directed into 'd_streamv'.
- * @return: -EINVAL:    The given 'streamid' is out-of-bounds.
- * @return: -ENOMEM:    Failed to allocate some internal data component, or 'd_streamv'
+ * @return: * :         A pointer directed into `d_streamv'.
+ * @return: -EINVAL:    The given `streamid' is out-of-bounds.
+ * @return: -ENOMEM:    Failed to allocate some internal data component, or `d_streamv'
  * @return: E_ISERR(*): Failed to open the stream for some reason (e.g.: I/O error). */
 INTDEF stream_t *KCALL stream_open(debug_t *__restrict self, DWORD streamid);
 /* Make sure that all streams have been loaded. */

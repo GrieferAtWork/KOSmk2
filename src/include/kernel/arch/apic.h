@@ -33,7 +33,7 @@ DECL_BEGIN
 /* end... */
 
 DATDEF VIRT uintptr_t const apic_base;   /*< Memory-mapped address of local APICs. */
-DATDEF PHYS uintptr_t const apic_base_p; /*< Physical counterpart to 'apic_base'. */
+DATDEF PHYS uintptr_t const apic_base_p; /*< Physical counterpart to `apic_base'. */
 DATDEF rwlock_t             apic_lock;   /*< Lock held while reading from/writing to the LAPIC. */
 
 /* TODO: I/O APIC mappings. */

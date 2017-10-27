@@ -29,7 +29,7 @@
 __SYSDECL_BEGIN
 
 #if defined(__USE_DOSFS) && __SIZEOF_DOS_DEV_T__ != __SIZEOF_DEV_T__
-#warning "<sys/sysmacros.h> uses a different 'dev_t' type than is defined by DOS"
+#warning "<sys/sysmacros.h> uses a different `dev_t' type than is defined by DOS"
 #endif
 
 __LIBC __ATTR_CONST __major_t (__LIBCCALL gnu_dev_major)(__dev_t __dev);

@@ -421,7 +421,7 @@ __LIBC __WUNUSED ssize_t (__LIBCCALL pwrite64)(int __fd, void const *__buf, size
 #undef environ
 #ifdef __DOS_COMPAT__
 /* Try to maintain binary compatibility with DOS.
- * Note though, that LIBC exports 'environ' and '__p__environ' in DOS and KOS mode. */
+ * Note though, that LIBC exports `environ' and `__p__environ' in DOS and KOS mode. */
 __LIBC __WUNUSED char ***__NOTHROW((__LIBCCALL __p__environ)(void));
 #define environ  (*__p__environ())
 #else /* __DOS_COMPAT__ */
@@ -431,8 +431,8 @@ __LIBC char **environ __ASMNAME("_environ");
 __LIBC char **environ;
 #endif /* !__PE__ */
 #if defined(__PE__) || defined(__USE_KOS)
-/* Always defining 'environ' as a macro is a KOS extension.
- * Otherwise, we mimic PE behavior which always defines 'environ' as a macro. */
+/* Always defining `environ' as a macro is a KOS extension.
+ * Otherwise, we mimic PE behavior which always defines `environ' as a macro. */
 #define environ  environ
 #endif /* __PE__ || __USE_KOS */
 #endif /* !__DOS_COMPAT__ */
@@ -515,7 +515,7 @@ __LIBC __PORT_NODOS_ALT(execve) __NONNULL((2)) int (__LIBCCALL fexecve)(int __fd
 #ifdef __GLC_COMPAT__
 __LOCAL __NONNULL((1)) __ATTR_SENTINEL
 int (__ATTR_CDECL execlpe)(char const *__file, char const *__args, ...) {
- /* TODO: Not exported by GLibc. - Must forward call to 'execvpe()' */
+ /* TODO: Not exported by GLibc. - Must forward call to `execvpe()' */
  return 0;
 }
 #else /* __GLC_COMPAT__ */
@@ -545,7 +545,7 @@ __LIBC __PORT_KOSONLY_ALT(execvp) __NONNULL((1,2)) int (__LIBCCALL fexecvpat)(ch
 __LIBC __PORT_KOSONLY_ALT(execvpe) __NONNULL((1,2)) int (__LIBCCALL fexecvpeat)(char const *__restrict __file, __TARGV, __TENVP, int __flags);
 #endif /* __USE_ATFILE */
 
-/* The filesystem mode provided by the KOS kernel is used to hard-configure 'AT_*' filesystem flags.
+/* The filesystem mode provided by the KOS kernel is used to hard-configure `AT_*' filesystem flags.
  * When set, any filesystem-related system call will make use of the filesystem mask/mode to change
  * its behavior in accordance to what is requested.
  * The new filesystem mode is calculated as follows:
@@ -558,11 +558,11 @@ __LIBC __PORT_KOSONLY_ALT(execvpe) __NONNULL((1,2)) int (__LIBCCALL fexecvpeat)(
  *   /src/include/fs/fd.h: FDMAN_FSMASK_ALWAYS1 / FDMAN_FSMODE_ALWAYS0
  * EXAMPLE:
  *   >> Force-enable DOS semantics for all file operations,
- *      regardless of 'AT_DOSPATH' or linked libc function:
+ *      regardless of `AT_DOSPATH' or linked libc function:
  *      fm_mask = -1;
  *      fm_mode = AT_DOSPATH;
  *   >> Force-disable DOS semantics for all file operations,
- *      regardless of 'AT_DOSPATH' or linked libc function:
+ *      regardless of `AT_DOSPATH' or linked libc function:
  *      fm_mask = ~(AT_DOSPATH);
  *      fm_mode = 0;
  * NOTE: This function never fails and always returns the old mask.
@@ -570,8 +570,8 @@ __LIBC __PORT_KOSONLY_ALT(execvpe) __NONNULL((1,2)) int (__LIBCCALL fexecvpeat)(
  *       set the fsmask to '-1,AT_DOSPATH' before executing the
  *       remainder of the commandline as another command. */
 struct fsmask {
- int fm_mask; /*< Filesystem mode mask. (Set of 'AT_*') */
- int fm_mode; /*< Filesystem mode. (Set of 'AT_*') */
+ int fm_mask; /*< Filesystem mode mask. (Set of `AT_*') */
+ int fm_mode; /*< Filesystem mode. (Set of `AT_*') */
 };
 __LIBC __PORT_KOSONLY struct fsmask (__LIBCCALL fsmode)(struct fsmask new_mode);
 #endif /* __CRT_KOS && _USE_KOS */

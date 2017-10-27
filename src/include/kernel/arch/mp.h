@@ -53,8 +53,8 @@ struct PACKED mpcfgtab { /* mp_configuration_table */
  u16  tab_extab_length;   /*< Extended table length. */
  u8   tab_extab_checksum; /*< Extended table checksum. */
  u8   tab_reserved;       /*< Reserved... */
- /* Inlined vector of MP entires, containing 'tab_entryc'
-  * entires in 'tab_length-sizeof(struct mpcfgtab)' bytes. */
+ /* Inlined vector of MP entires, containing `tab_entryc'
+  * entires in `tab_length-sizeof(struct mpcfgtab)' bytes. */
 };
 
 #define MPCFG_PROCESSOR 0
@@ -63,7 +63,7 @@ struct PACKED mpcfgtab { /* mp_configuration_table */
 #define MPCFG_INT_IO    3
 #define MPCFG_INT_LOCAL 4
 struct PACKED mpcfg_common {
- u8  cc_type;    /*< Entry Type (One of 'MPCFG_*'). */
+ u8  cc_type;    /*< Entry Type (One of `MPCFG_*'). */
 };
 
 struct PACKED mpcfg_processor {
@@ -72,7 +72,7 @@ struct PACKED mpcfg_processor {
  u8  cp_lapicver; /*< APIC versions (APICVER_*). */
 #define MP_PROCESSOR_ENABLED       0x01 /*< Processor is available. */
 #define MP_PROCESSOR_BOOTPROCESSOR 0x02 /*< This is the boot processor (The one you're probably running on right now). */
- u8  cp_cpuflag;     /*< Set of 'MP_PROCESSOR_*'. */
+ u8  cp_cpuflag;     /*< Set of `MP_PROCESSOR_*'. */
  u32 cp_cpusig;      /*< Processor Type signature. */
  u32 cp_features;    /*< CPUID feature value. */
  u32 cp_reserved[2];
@@ -89,14 +89,14 @@ struct PACKED mpcfg_ioapic {
  u8  cio_apicid;      /*< ID of this I/O APIC. */
  u8  cio_apicver;     /*< This I/O APIC's version number (APICVER_*). */
 #define MP_IOAPIC_ENABLED    0x01
- u8  cio_flags;       /*< Set of 'MP_IOAPIC_*'. */
+ u8  cio_flags;       /*< Set of `MP_IOAPIC_*'. */
  u32 cio_apicaddr;    /*< Physical address of this I/O APIC. */
 };
 
 struct PACKED mpcfg_int {
  u8  ci_type;         /*< [== MPCFG_INT_IO|MPCFG_INT_LOCAL] Entry Type. */
- u8  ci_irqtype;      /*< One of 'MP_INT_IRQTYPE_*' */
- u16 ci_irqflag;      /*< Or'd together 'MP_INT_IRQPOL' and 'MP_INT_IRQTRIGER'. */
+ u8  ci_irqtype;      /*< One of `MP_INT_IRQTYPE_*' */
+ u16 ci_irqflag;      /*< Or'd together `MP_INT_IRQPOL' and `MP_INT_IRQTRIGER'. */
  u8  ci_srcbus;       /*< Source bus ID number. */
  u8  ci_srcbusirq;    /*< Source bus IRQ signal number. */
  u8  ci_dstapic;      /*< ID number of the connected I/O APIC, or 0xff for all. */

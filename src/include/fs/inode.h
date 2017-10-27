@@ -49,7 +49,7 @@ struct sig;
 
 #ifndef __iattrset_t_defined
 #define __iattrset_t_defined 1
-typedef u32 iattrset_t; /* Set of 'IATTR_*' */
+typedef u32 iattrset_t; /* Set of `IATTR_*' */
 #endif /* !__iattrset_t_defined */
 
 #ifndef __rdmode_t_defined
@@ -73,7 +73,7 @@ typedef int fallocmode_t; /* fallocate()-mode. */
 #endif /* !__fallocmode_t_defined */
 #define FALLOCMODE_NORMAL 0 /* ??? */
 
-/* INode-changed flags for 'ino_setattr'. */
+/* INode-changed flags for `ino_setattr'. */
 #define IATTR_NONE    0
 #define IATTR_MODE   (1 << 0)
 #define IATTR_UID    (1 << 1)
@@ -82,11 +82,11 @@ typedef int fallocmode_t; /* fallocate()-mode. */
 #define IATTR_ATIME  (1 << 4)
 #define IATTR_MTIME  (1 << 5)
 #define IATTR_CTIME  (1 << 6)
-#define IATTR_TRUNC  (1 << 29) /* FLAG: For 'ino_mkreg' - When the named INode already exists, clear its contents and return it instead. */
-#define IATTR_EXISTS (1 << 30) /* FLAG: For 'ino_mkreg' - When the named INode already exists, return it instead. */
-#define IATTR_NOW    (1 << 31) /* FLAG: For 'inode_setattr' - Attributes changes _must_ be mirrored immediately. */
+#define IATTR_TRUNC  (1 << 29) /* FLAG: For `ino_mkreg' - When the named INode already exists, clear its contents and return it instead. */
+#define IATTR_EXISTS (1 << 30) /* FLAG: For `ino_mkreg' - When the named INode already exists, return it instead. */
+#define IATTR_NOW    (1 << 31) /* FLAG: For `inode_setattr' - Attributes changes _must_ be mirrored immediately. */
 
-#define IATTR_MODE_VMASK 07777 /* Mask of bits that may be changed in 'ia_mode' */
+#define IATTR_MODE_VMASK 07777 /* Mask of bits that may be changed in `ia_mode' */
 
 struct iattr {
  /* INode attributes. */
@@ -100,7 +100,7 @@ struct iattr {
  struct timespec ia_ctime; /*< File creation time. */
 };
 
-/* NOTE: Keep these mode constants in sync with 'READDIR_*' from <dirent.h> */
+/* NOTE: Keep these mode constants in sync with `READDIR_*' from <dirent.h> */
 #define FILE_READDIR_DEFAULT  0 /*< Yield to next entry when `buf' was of sufficient size. */
 #define FILE_READDIR_CONTINUE 1 /*< Always yield to next entry. */
 #define FILE_READDIR_PEEK     2 /*< Never yield to next entry. */
@@ -120,10 +120,10 @@ struct inodeops {
  void *o_tag; /* Operations tag (May be used to identify operation groups) */
  /* File operators. (Return negative error codes on failure)
   * NOTE: Read/Write permissions must already be handled by the caller of these functions. */
- u32             f_flags; /*< Set of 'INODE_FILE_*' */
+ u32             f_flags; /*< Set of `INODE_FILE_*' */
 #define INODE_FILE_NORMAL   0x00000000
-#define INODE_FILE_LOCKLESS 0x80000000 /*< Allow for interlocked read/write, meaning that 'f_read', 'f_write',
-                                        * 'f_seek', 'f_readdir' and 'f_sync' are no longer caller-synchronized.
+#define INODE_FILE_LOCKLESS 0x80000000 /*< Allow for interlocked read/write, meaning that `f_read', `f_write',
+                                        * `f_seek', `f_readdir' and `f_sync' are no longer caller-synchronized.
                                         *  WARNING: When this flag is set, the file itself must implement
                                         *           locking capabilities, as well as support for `O_APPEND'. */
  ssize_t (KCALL *f_read)(struct file *__restrict fp, USER void *buf, size_t bufsize); /* NOTE: Caller-synchronized:write */
@@ -133,27 +133,26 @@ struct inodeops {
 
  /* File-level callbacks for creating a new memory region for a given range within a file.
   * NOTE: Set to NULL to use the (much more versatile) generic file mapping,
-  *       making use of lazy allocation & initialization using 'f_pread/f_read'.
+  *       making use of lazy allocation & initialization using `f_pread/f_read'.
   * >> Only device drivers providing physical memory mappings should ever implement this.
   *    Never implement this for regular files, such as in filesystem drivers!
   * @assume(size != 0);
   * @assume(IS_ALIGNED(size,PAGESIZE));
-  * @param: mode:          One of 'MREGION_FILE_*'
   * @param: pregion_start: An optional output pointer to override where mapping will start.
   *                        NOTE: Upon entry, the caller must pre-initialize this field to ZERO(0).
   *                        Upon successful return, the value stored in this argument will be
-  *                        used by the `start' parameter in an associated 'mman_map_unlocked()' call.
+  *                        used by the `start' parameter in an associated `mman_map_unlocked()' call.
   * @return: * :           A new reference to the mapped memory region. (Must be properly set up)
   * @return: E_ISERR(*):   Failed to create the new memory region for some reason. */
  REF struct mregion *(KCALL *f_mmap)(struct file *__restrict fp, pos_t pos,
                                      PAGE_ALIGNED size_t size,
                                      PAGE_ALIGNED raddr_t *__restrict pregion_start);
 
- /* NOTE: When 'f_seek' is missing, 'ESPIPE' is generated for
-  *       'S_ISFIFO', 'S_ISCHR' and 'S_ISSOCK' files. - 'EPERM' otherwise. */
+ /* NOTE: When `f_seek' is missing, `ESPIPE' is generated for
+  *       `S_ISFIFO', `S_ISCHR' and `S_ISSOCK' files. - `EPERM' otherwise. */
  off_t   (KCALL *f_seek)(struct file *__restrict fp, off_t off, int whence); /* NOTE: Caller-synchronized:write */
  errno_t (KCALL *f_ioctl)(struct file *__restrict fp, int name, USER void *arg);
- /* NOTE: 'f_readdir' returns ZERO(0) when the end of the directory is reached (ZERO: no more data can be read) */
+ /* NOTE: `f_readdir' returns ZERO(0) when the end of the directory is reached (ZERO: no more data can be read) */
  ssize_t (KCALL *f_readdir)(struct file *__restrict fp, USER struct dirent *buf, size_t bufsize, rdmode_t mode); /* NOTE: Caller-synchronized:write */
  errno_t (KCALL *f_sync)(struct file *__restrict fp); /* Sync all unwritten data. */ /* NOTE: Caller-synchronized:write */
  errno_t (KCALL *f_allocate)(struct file *__restrict fp, fallocmode_t mode, pos_t start, pos_t size);
@@ -209,16 +208,16 @@ struct inodeops {
  void (KCALL *ino_fini)(struct inode *__restrict ino);
  /* Return a reference to the effective INode.
   *  - When implemented, this operator is used before dereference
-  *    an INode for calling any of the other 'ino_*' operators.
+  *    an INode for calling any of the other `ino_*' operators.
   *  - This operator should be implemented for proxy-nodes meant to weakly alias others, such as a device.
   * NOTE: An INode is at most dereferenced once.
-  * HINT: The general consensus to indicate a dead effective node, is to return a new reference to 'SELF'
+  * HINT: The general consensus to indicate a dead effective node, is to return a new reference to `ino'
   * @return: * : A new reference to the dereferenced, effective INode.
   * @assume(E_ISOK(return));
   * @assume(return != NULL);
   * @assume(result == ino || INODE_ISEFFECTIVE(return)); */
  REF struct inode *(KCALL *ino_effective)(struct inode *__restrict ino);
- /* Allocate memory for a file container + open it as a file stream reading from 'inode'.
+ /* Allocate memory for a file container + open it as a file stream reading from `inode'.
   * @assume(!(oflags&O_CREAT));
   * NOTE: This function may not return NULL, but must return some E_PTR(*) value instead! */
  REF struct file *(KCALL *ino_fopen)(struct inode *__restrict ino,
@@ -226,21 +225,21 @@ struct inodeops {
                                      oflag_t oflags);
  /* Notify an associated inode that a file that had opened it was closed. */
  void (KCALL *ino_fclose)(struct inode *__restrict ino, struct file *__restrict fp);
- /* Free a given file pointer previously opened by 'ino_fopen'.
-  * WARNING: Unlike by the time 'ino_fclose' is called, `fp' is no longer in a valid state! */
+ /* Free a given file pointer previously opened by `ino_fopen'.
+  * WARNING: Unlike by the time `ino_fclose' is called, `fp' is no longer in a valid state! */
  void (KCALL *ino_ffree)(struct inode *__restrict ino, struct file *__restrict fp);
  /* HINT: All operands may be defined as NULL for default behavior. */
- /* Mirror attribute from 'inode->i_attr' on-disk, copying all fields part of 'changed'.
+ /* Mirror attribute from `inode->i_attr' on-disk, copying all fields part of `changed'.
   * @requires: changed != IATTR_NONE
-  * WARNING: A read/write-lock on 'i_attr_lock' is held when this function is called.
-  * NOTE: This operator also implements ftrunc/fallocate semantics using the 'IATTR_SIZ' field.
-  * NOTE: This operator must NOT actually change the contents of 'ino->i_attr_disk'.
+  * WARNING: A read/write-lock on `i_attr_lock' is held when this function is called.
+  * NOTE: This operator also implements ftrunc/fallocate semantics using the `IATTR_SIZ' field.
+  * NOTE: This operator must NOT actually change the contents of `ino->i_attr_disk'.
   *       Doing so is instead the responsibility of the caller. */
  errno_t (KCALL *ino_setattr)(struct inode *__restrict ino, iattrset_t changed);
  /* Copy the text of a symlink to the given user-space
   * buffer `buf', including a terminating \0-character.
   * >> Upon success, and given a buffer of sufficient size,
-  *    the caller can assume that "buf[return/sizeof(char)-1] == '\0'".
+  *    the caller can assume that `buf[return/sizeof(char)-1] == '\0'´.
   * @assume(return != 0);
   * @assume(S_ISLNK(inode->i_attr.ia_mode));
   * @return: * :         The amount of required characters (including the terminating \0-character)
@@ -248,30 +247,30 @@ struct inodeops {
  ssize_t (KCALL *ino_readlink)(struct inode *__restrict ino,
                                USER char *__restrict buf, size_t bufsize);
  /* An optional operator to generate dynamica stat() information, such as a context-dependent INode size.
-  * NOTE: When called, 'statbuf' is filled as it would be used if this operator were not implemented,
+  * NOTE: When called, `statbuf' is filled as it would be used if this operator were not implemented,
   *       meaning that this function must only override stat()-members that it wishes to fill with
   *       custom data. - Note though, that stat information generated by this function _ONLY_ affects
-  *       what is visible when user-space calls 'sys_stat()'. - The data filled in by this is not
+  *       what is visible when user-space calls `sys_stat()'. - The data filled in by this is not
   *       used when the kernel tries to determine INode access permissions, or the likes.
   *    >> So keep in mind that one of the only meaningful uses of this function is for
   *       calculating context-dependent buffer sizes, such as read/write queue size for PTY drivers.
   * @return: -EOK:       Successfully modified the given buffer, or did nothing (same as not implementing this operator).
-  * @return: E_ISERR(*): Failed to generate dynamic stat()-information. - the 'sys_stat()'
+  * @return: E_ISERR(*): Failed to generate dynamic stat()-information. - the `sys_stat()'
   *                      system call will fail with the error returned by this function. */
  errno_t (KCALL *ino_stat)(struct inode *__restrict ino, struct stat64 *__restrict statbuf);
 
- /* Load the inode associated with the directory entry `name' inside of 'dir_node' at 'path':
+ /* Load the inode associated with the directory entry `name' inside of `dir_node' at `path':
   * $ stat "/opt/my_file"
   * >> ino_lookup(EFFECTIVE_INODE("/opt"),DENTRY("/opt/my_file")) -> INODE("/opt/my_file")
-  * NOTE: Don't return NULL if you didn't find a node. - return 'E_PTR(-ENOENT)' instead!
+  * NOTE: Don't return NULL if you didn't find a node. - return `E_PTR(-ENOENT)' instead!
   * @assume(S_ISDIR(inode->i_attr.ia_mode));
-  * @param: flags:       Lookup flags (May contain 'AT_DOSPATH' for case-insensitive lookup)
-  *               NOTE: 'AT_DOSPATH' is never set and can safely be ignored when 'CONFIG_NO_DOSFS' is enabled.
+  * @param: flags:       Lookup flags (May contain `AT_DOSPATH' for case-insensitive lookup)
+  *               NOTE: `AT_DOSPATH' is never set and can safely be ignored when `CONFIG_NO_DOSFS' is enabled.
   *            WARNING:  In the event that the match occurs due to case-insensitivity, this operator
-  *                      is responsible for updating 'result_path->d_name' to the correct casing.
-  *                      For this, simply 'memcpy()' the correct name into it.
-  * @return: * :         A reference to the INode that should be associated with 'result_path'.
-  * @return: -ENOENT:    No INode exists under the name associated with 'result_path'
+  *                      is responsible for updating `result_path->d_name' to the correct casing.
+  *                      For this, simply `memcpy()' the correct name into it.
+  * @return: * :         A reference to the INode that should be associated with `result_path'.
+  * @return: -ENOENT:    No INode exists under the name associated with `result_path'
   * @return: E_ISERR(*): An error occurred. */
  REF struct inode *(KCALL *ino_lookup)(struct inode *__restrict dir_node,
                                        struct dentry *__restrict result_path,
@@ -312,10 +311,10 @@ struct inodeops {
   * @assume(mode&IATTR_ATIME);
   * @assume(mode&IATTR_MTIME);
   * @assume(mode&IATTR_CTIME);
-  * @param: mode: When 'IATTR_TRUNC|IATTR_EXISTS' is set, allow existing files to
+  * @param: mode: When `IATTR_TRUNC|IATTR_EXISTS' is set, allow existing files to
   *               be opened, and mirror attributes specified by this argument.
   *               WARNING: When the file doesn't exists, all attributes specified (except
-  *                        for the node type, which is set to 'S_IFREG') are used as template.
+  *                        for the node type, which is set to `S_IFREG') are used as template.
   * @return: * :         A new reference to the INode for the regular file.
   * @return: E_ISERR(*): An error occurred. */
  REF struct inode *(KCALL *ino_mkreg)(struct inode *__restrict dir_node,
@@ -341,8 +340,8 @@ struct inodeops {
   * @assume(dst_dir->i_super == src_dir->i_super);
   * @assume(src_node != src_dir && src_node != dst_dir);
   * @assume(GET_PARENT_DIRECTORY_NODE(src_node) == src_dir);
-  * @return: * :         A reference to the INode now apart of 'dst_dir'
-  *                     (If the filesystem supports hardlinks, this is likely to be 'src_node')
+  * @return: * :         A reference to the INode now apart of `dst_dir'
+  *                     (If the filesystem supports hardlinks, this is likely to be `src_node')
   * @return: E_ISERR(*): An error occurred. */
  REF struct inode *(KCALL *ino_rename)(struct inode *__restrict dst_dir, struct dentry *__restrict dst_path,
                                        struct inode *__restrict src_dir, struct dentry *__restrict src_path,
@@ -353,15 +352,15 @@ struct inodeops {
   * @assume(S_ISDIR(dir_node->i_attr.ia_mode));
   * @assume(file_node->i_super == dir_node->i_super);
   * @return: -EOK:         Successfully removed the file/directory.
-  * @return: -ENOTEMPTY:   The given 'file_node' is a non-empty directory.
-  * @return: E_ISERR(*):   The given 'file_node' is a non-empty directory.
+  * @return: -ENOTEMPTY:   The given `file_node' is a non-empty directory.
+  * @return: E_ISERR(*):   The given `file_node' is a non-empty directory.
   */
  errno_t (KCALL *ino_remove)(struct inode *__restrict dir_node,
                              struct dentry *__restrict file_path,
                              struct inode *__restrict file_node);
 };
 
-/* May be set as default callback for the 'ino_fopen' function.
+/* May be set as default callback for the `ino_fopen' function.
  * >> This callback simply allocates and initializes an otherwise empty file structure. */
 FUNDEF REF struct file *KCALL
 inode_fopen_default(struct inode *__restrict ino,
@@ -370,9 +369,9 @@ inode_fopen_default(struct inode *__restrict ino,
 
 
 
-typedef u32 istate_t; /*< INode state flags (Set of 'INODE_STATE_*'). */
+typedef u32 istate_t; /*< INode state flags (Set of `INODE_STATE_*'). */
 #define INODE_STATE_GENERIC   0x00000000 /*< No special state behavior. */
-#define INODE_STATE_READONLY  0x00000001 /*< Any attempt at performing a write-operation on the INode will fail with '-EROFS'. */
+#define INODE_STATE_READONLY  0x00000001 /*< Any attempt at performing a write-operation on the INode will fail with `-EROFS'. */
 #define INODE_STATE_CLOSING   0x00000002 /*< The inode is being closed. - No new streams may be opened. */
 #define INODE_STATE_DONTCACHE 0x00000004 /*< Don't cache the INode (Required to prevent weak devices from being kept alive through caches). */
 #define INODE_STATE_NOSUID    0x00004000 /*< Ignore SUID bits (Don't allow root acquisition). */
@@ -401,7 +400,7 @@ struct ilockrange {
  pos_t  lr_start; /*< [lock(:fl_lock)] Starting address of this locking range. */
  pos_t  lr_size;  /*< [lock(:fl_lock)] Length of this lock range (in bytes). */
  size_t lr_locks; /*< [lock(:fl_lock)][!0] The effective locking mode of this range (active read/write locks).
-                   *   NOTE: When 'LOCKRANGE_WFLAG' is set, the range is in write-mode. */
+                   *   NOTE: When `LOCKRANGE_WFLAG' is set, the range is in write-mode. */
 };
 
 struct ifilelock {
@@ -419,7 +418,7 @@ struct ifile {
  LIST_HEAD(struct file)  i_files;      /*< [lock(i_files_lock)] List of files opened on this INode. */
 #define IFILE_MODULE_LOADING  ((struct module *)-1)
  struct module          *i_module;     /*< [0..1][lock(i_files_lock)] A module that can be loaded from this INode.
-                                        *   WARNING: Set to 'IFILE_MODULE_LOADING' while the module is loading. */
+                                        *   WARNING: Set to `IFILE_MODULE_LOADING' while the module is loading. */
  struct ifilelock        i_flock;      /*< File locking information. */
 };
 #define IFILE_FOREACH_OPEN(fp,o) LIST_FOREACH(fp,(o)->i_files,f_open)
@@ -457,15 +456,15 @@ union{
  rwlock_t                i_attr_lock; /*< Lock for updating attributes. */
  struct iattr            i_attr;      /*< [lock(i_attr_lock)] Effective INode attributes. */
  struct iattr            i_attr_disk; /*< [lock(i_attr_lock)] INode attributes, as currently written on-disk.
-                                       *   NOTE: Filesystem device files must not set the 'ia_mode' field of this
-                                       *         to 'S_IFCHR' or 'S_IFBLK', but instead to any other type of mapping.
-                                       *         A value of 'S_IFCHR' or 'S_IFBLK' inside this is used to identify
+                                       *   NOTE: Filesystem device files must not set the `ia_mode' field of this
+                                       *         to `S_IFCHR' or `S_IFBLK', but instead to any other type of mapping.
+                                       *         A value of `S_IFCHR' or `S_IFBLK' inside this is used to identify
                                        *         device driver INodes themself, meaning that setting values as such
                                        *         may lead to kernel panic when code assumes that the inode can be
-                                       *         casted to a 'struct device', 'struct blkdev' or 'struct chrdev'. */
+                                       *         casted to a `struct device', `struct blkdev' or `struct chrdev'. */
  LIST_NODE(struct inode) i_attr_chng; /*< [list(i_super->sb_nodes)][lock(i_super->sb_nodes_lock)]
                                        *   Per-superblock linked list of all loaded INodes. */
- ATOMIC_DATA istate_t    i_state;     /*< INode state flags (Set of 'INODE_STATE_*'). */
+ ATOMIC_DATA istate_t    i_state;     /*< INode state flags (Set of `INODE_STATE_*'). */
  struct ifile            i_file;      /*< Open file data. */
 union{
  dev_t                   i_devproxy;  /*< Device ID referenced by device-proxy INodes. */
@@ -494,8 +493,8 @@ do{ if (!INODE_ISEFFECTIVE(self)) { \
 
 /* Create a new INode.
  * The caller must fill in:
- *  - i_super (Preferably using 'inode_setup')
- *  - i_owner (Preferably using 'inode_setup')
+ *  - i_super (Preferably using `inode_setup')
+ *  - i_owner (Preferably using `inode_setup')
  *  - i_ops
  *  - i_nlink (Pre-initialized to ZERO(0))
  *  - i_attr
@@ -506,9 +505,9 @@ do{ if (!INODE_ISEFFECTIVE(self)) { \
         inode_cinit((struct inode *)kcalloc(sizeof_type,GFP_SHARED))
 FUNDEF struct inode *KCALL inode_cinit(struct inode *self);
 
-/* Setup a given INode `self' to be apart of 'sb'.
+/* Setup a given INode `self' to be apart of `sb'.
  * @return: -EOK:   Successfully added the new filesystem type.
- * @return: -EPERM: The module instance 'self->ap_owner' doesn't permit new references being created. */
+ * @return: -EPERM: The module instance `self->ap_owner' doesn't permit new references being created. */
 FUNDEF WUNUSED errno_t KCALL inode_setup(struct inode *__restrict self,
                                          struct superblock *__restrict sb,
                                          struct instance *__restrict owner);
@@ -525,13 +524,13 @@ FUNDEF errno_t KCALL inode_invalidate_data(struct inode *__restrict self,
 
 struct timespec;
 /* Acquire a read/write locks on a given range within the specified INode.
- * WARNING: All errors returned 'inode_flock_upgrade', except for
+ * WARNING: All errors returned `inode_flock_upgrade', except for
  *         `-ENOMEM' will have released the previously held read-lock.
  * @return: -EOK:        Successfully acquired/upgraded a lock.
  * @return: -ENOMEM:     Failed to allocate controller blocks for locking ranges.
  * @return: -EAGAIN:    [abstime == INODE_FLOCK_TEST] Failed to immediately acquire a lock.
  * @return: -EINTR:     [abstime != INODE_FLOCK_TEST] The calling thread was interrupted.
- * @return: -ETIMEDOUT: [abstime != NULL && abstime != INODE_FLOCK_TEST] The specified 'abstime' has expired.
+ * @return: -ETIMEDOUT: [abstime != NULL && abstime != INODE_FLOCK_TEST] The specified `abstime' has expired.
  * @return: -ERELOAD:   [inode_flock_upgrade][abstime != INODE_FLOCK_TEST]
  *                       No lock may have been held temporarily,
  *                       meaning that the caller should reload
@@ -582,10 +581,10 @@ FUNDEF void KCALL inode_destroy(struct inode *__restrict self);
 #define INODE_ISCLOSING(self)                (INODE_GTSTATE(self)&INODE_STATE_CLOSING)
 #define INODE_ISREADONLY_OR_CLOSING(self)    (INODE_GTSTATE(self)&(INODE_STATE_READONLY|INODE_STATE_CLOSING))
 
-/* Check if 'struct fsaccess *ac' has been granted access to `self'.
+/* Check if `struct fsaccess *ac' has been granted access to `self'.
  * @param: self:        The EFFECTIVE inode to query.
  * @param: ac:          Access permission UID/GID.
- * @param: rwx:         A set of 'R_OK|W_OK|X_OK' (from <unistd.h>), describing requested permissions.
+ * @param: rwx:         A set of `R_OK|W_OK|X_OK' (from <unistd.h>), describing requested permissions.
  * @return: -EOK:       Access granted.
  * @return: -EACCES:    Access denied.
  * @return: -EINTR:     The calling thread was interrupted.
@@ -599,16 +598,16 @@ inode_mayaccess(struct inode *__restrict self,
  * NOTE: Since unspecified, the root directory entry is used as dentry of the file stream.
  * @param: ino:         The EFFECTIVE inode to open.
  * @return: * :         A new reference to the newly opened file stream.
- * @return: -EACCES:   'access' describes insufficient permissions.
+ * @return: -EACCES:   `access' describes insufficient permissions.
  * @return: -EINTR:     The calling thread was interrupted.
- * @return: -ENOENT:    The given 'dir_ent' has no associated INode.
- * @return: -EEXIST:   'oflags' contains 'O_CREAT|O_EXCL', but the file already existed.
+ * @return: -ENOENT:    The given `dir_ent' has no associated INode.
+ * @return: -EEXIST:   `oflags' contains `O_CREAT|O_EXCL', but the file already existed.
  * @return: -ENOMEM:    Failed to allocate directory/file descriptors.
- * @return: -ENOTDIR:  'dir_ent' is not a directory, or doesn't support a required directory interface.
- * @return: -ENOTDIR:  'oflags' contains 'O_DIRECTORY', but the file isn't a directory.
+ * @return: -ENOTDIR:  `dir_ent' is not a directory, or doesn't support a required directory interface.
+ * @return: -ENOTDIR:  `oflags' contains `O_DIRECTORY', but the file isn't a directory.
  * @return: -ENOSTR:    The INode associated with the specified file cannot be opened as a stream.
- * @return: -EROFS:    'oflags' contains 'O_CREAT' and the file didn't exist, or either 'O_WRONLY' or
- *                     'O_RDWR', but the INode or superblock associated with the file is read-only.
+ * @return: -EROFS:    `oflags' contains `O_CREAT' and the file didn't exist, or either `O_WRONLY' or
+ *                     `O_RDWR', but the INode or superblock associated with the file is read-only.
  * @return: -EBUSY:     The INode associated with the file to-be opened is marked for deletion.
  * @return: E_ISERR(*): Failed to open the INode for some reason. */
 FUNDEF REF struct file *KCALL
@@ -622,21 +621,21 @@ inode_kopen(struct inode *__restrict ino, oflag_t oflags);
 
 
 /* Generate stat()-information for the given INode.
- * @return: -EOK:       Successfully generated stat()-information and filled the given 'statbuf'.
+ * @return: -EOK:       Successfully generated stat()-information and filled the given `statbuf'.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: E_ISERR(*): Failed to stat() the given INode for some reason. */
 FUNDEF errno_t KCALL
 inode_stat(struct inode *__restrict self,
            struct stat64 *__restrict statbuf);
 
-/* Update all INode attributes marked in 'valid' to mirror values from `attr'
+/* Update all INode attributes marked in `valid' to mirror values from `attr'
  * @param: self:        The EFFECTIVE inode to update.
  * @return: -EOK:       Successfully updated INode attributes.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: E_ISERR(*): A misc. error caused a failure.
- * NOTE: Unless 'valid&IATTR_NOW' is set, attribute
+ * NOTE: Unless `valid&IATTR_NOW' is set, attribute
  *       changes are allowed to be performed ~later~.
- * NOTE: 'ia_siz' from `attr' is ignored for directories.
+ * NOTE: `ia_siz' from `attr' is ignored for directories.
  */
 FUNDEF errno_t KCALL
 inode_setattr(struct inode *__restrict self,

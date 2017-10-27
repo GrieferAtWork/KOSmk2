@@ -34,7 +34,7 @@ struct cpu;
 #define SEGMENT_OFFSETOF_BASEHI 7
 
 /* Segment Descriptor / GDT (Global Descriptor Table) Entry
- * NOTE: Another valid name of this would be 'gdtentry' or 'ldtentry' */
+ * NOTE: Another valid name of this would be `gdtentry' or `ldtentry' */
 struct PACKED segment {
 union PACKED {
 struct PACKED { u32 ul32,uh32; };

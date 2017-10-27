@@ -51,7 +51,7 @@ DECL_BEGIN
 
 struct blkfile {
  struct file b_file; /*< Underlying file stream. */
- pos_t       b_seek; /*< Current seek position (argument for 'blkdev_read'/'blkdev_write') */
+ pos_t       b_seek; /*< Current seek position (argument for `blkdev_read'/`blkdev_write') */
 };
 
 PRIVATE REF struct file *KCALL
@@ -638,7 +638,7 @@ leading_cache:
   offset             += block_size;
   ++start_block;
  }
- /* Read remaining data specified in 'bufsize'. */
+ /* Read remaining data specified in `bufsize'. */
  if (bufsize) {
   assert(block_size == self->bd_blocksize);
   assert((offset%block_size) == 0);
@@ -844,7 +844,7 @@ leading_cache:
   ++start_block;
  }
 
- /* Write remaining data specified in 'bufsize'. */
+ /* Write remaining data specified in `bufsize'. */
  if (bufsize) {
   assert(bufsize < self->bd_blocksize);
   assert(block_size == self->bd_blocksize);
@@ -1102,7 +1102,7 @@ again:
   if (!atomic_rwlock_upgrade(&boot_lock) &&
        ATOMIC_READ(bootdisk) != NULL)
        goto use_olddisk;
-  /* Shouldn't happen, but let's use 'new_bootdisk' anyways... */
+  /* Shouldn't happen, but let's use `new_bootdisk' anyways... */
   assert(!bootpart);
   bootdisk = new_bootdisk;
   BLKDEV_INCREF(new_bootdisk);
@@ -1226,7 +1226,7 @@ use_olddisk:
   goto again;
  }
 
- /* Create the reference that will be stored in 'bootdisk' */
+ /* Create the reference that will be stored in `bootdisk' */
  BLKDEV_INCREF(new_bootdisk);
 
  /* Actually override the global!! */
@@ -1280,7 +1280,7 @@ blkdev_bootdisk_initialize(void) {
  }
 
  if ((bootdisk = (REF struct blkdev *)bios_find_dev(boot_drive)) != NULL) {
-  /* NOTE: At this point, the boot disk driver is always a 'struct biosblkdev'! */
+  /* NOTE: At this point, the boot disk driver is always a `struct biosblkdev'! */
   /* TODO: Check if we have a proprietary driver for the bootdisk! */
   syslog(LOG_FS|LOG_CONFIRM,FREESTR("[BIOS] Using bios root drive %#.2I8x in %[dev_t]\n"),
          boot_drive,bootdisk->bd_device.d_id);

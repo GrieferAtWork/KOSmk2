@@ -564,7 +564,7 @@ inval:
    /* (re-)allocate an existing buffer. */
    buf = self->if_base;
    /* Make sure the buffer's size has actually changed.
-    * NOTE: As an extension, we accept '(size_t)-1' to keep the old buffer size. */
+    * NOTE: As an extension, we accept `(size_t)-1' to keep the old buffer size. */
    if (n == (size_t)-1) n = (size_t)self->if_bufsiz;
    else if ((size_t)self->if_bufsiz != n) {
     buf = (char *)libc_realloc(buf,n);

@@ -532,7 +532,7 @@ INTERN struct procnode const pid_content[] = {
  { .ino_fini = &pidnode_fini, .ino_fopen = &maps_fopen, TEXTFILE_OPS_INIT
  }},
  /* TODO: map_files */
- /* TODO: modules (Similar to 'map_files', but a KOS extension directory listing
+ /* TODO: modules (Similar to `map_files', but a KOS extension directory listing
   *                all loaded modules as symlinks named by load-address) */
 };
 #undef MKINO

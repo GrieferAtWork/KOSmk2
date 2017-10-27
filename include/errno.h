@@ -222,23 +222,23 @@ typedef int errno_t;
  * KOS/GLC format: (Linux)
  *    errno_t *CDECL __errno(void);           // return a poitner to ERRNO.
  *    errno_t CDECL __get_errno(void);        // Returns the current ERRNO value.
- *    errno_t CDECL __set_errno(errno_t err); // Set ERRNO to 'err' and return 0.
+ *    errno_t CDECL __set_errno(errno_t err); // Set ERRNO to `err' and return 0.
  *
  * DOS format: (MSVC)
  *    errno_t *CDECL _errno(void);            // return a poitner to DOS_ERRNO.
  *    errno_t CDECL __get_doserrno(void);     // Returns the current DOS_ERRNO value.
- *    errno_t CDECL _get_errno(errno_t *err); // Write DOS_ERRNO to 'err' and return 0.
- *    errno_t CDECL _set_errno(errno_t err);  // Set DOS_ERRNO to 'err' and return 0.
+ *    errno_t CDECL _get_errno(errno_t *err); // Write DOS_ERRNO to `err' and return 0.
+ *    errno_t CDECL _set_errno(errno_t err);  // Set DOS_ERRNO to `err' and return 0.
  *
  * NT format: (Windows)
  *    u32    *CDECL __doserrno(void);         // Returns a pointer to NT_ERRNO.
- *    errno_t CDECL _get_doserrno(u32 *err);  // Don't be confused by the name. 'GetLastError()'
- *    errno_t CDECL _set_doserrno(u32 err);   // Don't be confused by the name. 'SetLastError()'
+ *    errno_t CDECL _get_doserrno(u32 *err);  // Don't be confused by the name. `GetLastError()'
+ *    errno_t CDECL _set_doserrno(u32 err);   // Don't be confused by the name. `SetLastError()'
  *    u32     CDECL __get_nterrno(void);      // == GetLastError()
  *    
  *
  * NOTE:   
- *    Internally, KOS's libc only tracks one 'errno' variable, meaning
+ *    Internally, KOS's libc only tracks one `errno' variable, meaning
  *    that all accessor functions always return the same pointer.
  *    Yet in addition, based on which accessor is used, it also tracks
  *    the current format, on-the-fly converting between them.
@@ -374,9 +374,9 @@ __NAMESPACE_INT_END
 #if defined(__USE_KOS) || defined(__KERNEL__)
 
 /* Make sure that the errno-threshold is within a valid range.
- * NOTE: To ensure that 'E_PTR()' works correctly, we reserve part
- *       of the last page of the virtual address space '0xfffff000'
- *       for error codes, excluding the aligned page base '0xfffff000'
+ * NOTE: To ensure that `E_PTR()' works correctly, we reserve part
+ *       of the last page of the virtual address space `0xfffff000'
+ *       for error codes, excluding the aligned page base `0xfffff000'
  *       itself.
  */
 #if ((0-__EMAX) & 0xffffffff) < __ERRNO_THRESHOLD

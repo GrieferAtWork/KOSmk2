@@ -51,10 +51,10 @@ struct device {
 #define DEVICE_FLAG_WEAKID 0x00000001    /*< The device is weakly linked, meaning that the device namespace
                                           *  does not carry a reference and the device will therefor be
                                           *  unloaded once all reference pointing to it are destroyed.
-                                          *  NOTE: This also affects the '/dev' filesystem, causing it
+                                          *  NOTE: This also affects the `/dev' filesystem, causing it
                                           *        to create weak indirection device nodes, rather than
                                           *        strong ones. */
- u32                           d_flags;  /*< [const] Set of 'DEVICE_FLAG_*' */
+ u32                           d_flags;  /*< [const] Set of `DEVICE_FLAG_*' */
  ATOMIC_DATA dev_t             d_id;     /*< [const][valid_if(WAS_REGISTERED(self))] Device ID. */
  /* [0..1][const] Implemented by IRQ-driven devices: Check if an interrupt was lost.
   *  NOTE: Since KOS core drivers uses BIOS interrupts to implement a fundamental
@@ -82,14 +82,14 @@ struct device {
 
 /* Allocate/Initialize a new device.
  * The caller must fill in:
- *  - d_id (Use 'devns_insert')
- *  - d_flags (Optionally; pre-initialized to 'DEVICE_FLAG_NORMAL')
- *  - d_irq_lost (Optionally; pre-initialized to 'NULL')
+ *  - d_id (Use `devns_insert')
+ *  - d_flags (Optionally; pre-initialized to `DEVICE_FLAG_NORMAL')
+ *  - d_irq_lost (Optionally; pre-initialized to `NULL')
  *  - d_node.i_ops
  *  - d_node.i_attr.ia_mode
- *  - d_node.i_attr_disk.ia_mode (Copy of 'd_node.i_attr.ia_mode')
+ *  - d_node.i_attr_disk.ia_mode (Copy of `d_node.i_attr.ia_mode')
  *  - d_node.i_data (Optionally)
- *  - d_node.i_super (Use 'device_setup')
+ *  - d_node.i_super (Use `device_setup')
  */
 #define device_new(type_size) \
         device_cinit((struct device *)calloc(1,type_size))
@@ -97,8 +97,8 @@ FUNDEF struct device *KCALL device_cinit(struct device *self);
 
 /* Mark the given device as weak (That is: The kernel will try to refrain
  * from creating real reference, in favor of weakly aliasing the device).
- * NOTE: This function may only be called after 'device_cinit()',
- *       but before 'device_setup()' */
+ * NOTE: This function may only be called after `device_cinit()',
+ *       but before `device_setup()' */
 #define DEVICE_SETWEAK(self) \
  (void)((self)->d_flags |= DEVICE_FLAG_WEAKID, \
         (self)->d_node.i_state |= INODE_STATE_DONTCACHE)
@@ -106,20 +106,20 @@ FUNDEF struct device *KCALL device_cinit(struct device *self);
 
 /* Perform final initialization on the given device.
  * @return: -EOK:   Successfully initialize the given device.
- * @return: -EPERM: The given instance 'owner' doesn't permit new references being created. */
+ * @return: -EPERM: The given instance `owner' doesn't permit new references being created. */
 FUNDEF WUNUSED errno_t KCALL device_setup(struct device *__restrict self,
                                           struct instance *__restrict owner);
 
 /* Destructor that must be called when destructing a device.
- * NOTE: This function must be called from 'bd_device.d_node.i_ops->ino_fini' */
+ * NOTE: This function must be called from `bd_device.d_node.i_ops->ino_fini' */
 FUNDEF void KCALL device_fini(struct device *__restrict self);
 
 /* Call this function when you think that device IRQs may have been lost.
  * This function will then go through all registered devices and manually
  * check for any new notifications that may have been skipped.
- * NOTE: The caller must be holding a read-lock to 'irqctl_lock'
+ * NOTE: The caller must be holding a read-lock to `irqctl_lock'
  * HINT: This function is called before and after a realmode BIOS interrupt.
- * @param: cmd: One of 'IRQCTL_*' */
+ * @param: cmd: One of `IRQCTL_*' */
 FUNDEF void KCALL device_irqctl(unsigned int cmd);
 
 /* Lock held when icqctl commands are fired. */
@@ -152,7 +152,7 @@ struct devns_major {
 
 
 /* Callbacks executed after devices were added/removed from a given device namespace.
- * NOTE: In the event of 'pdevns_added' returning an error, 'devns_insert()' will fail with that same code. */
+ * NOTE: In the event of `pdevns_added' returning an error, `devns_insert()' will fail with that same code. */
 typedef errno_t (KCALL *pdevns_added)(struct devns *__restrict self, struct device *__restrict dev, dev_t id);
 typedef void    (KCALL *pdevns_deleted)(struct devns *__restrict self, struct device *__restrict dev, dev_t id);
 
@@ -160,7 +160,7 @@ struct devns_event {
  SLIST_NODE(struct devns_event) de_chain; /*< [lock(:d_elock)] Chain of namespace events. (Executed in order) */
  pdevns_added                   de_add;   /*< [0..1][const] Callback executed after devices are added. */
  pdevns_deleted                 de_del;   /*< [0..1][const] Callback executed after devices are removed.
-                                           *   NOTE: This event may also be executed after 'de_add', when
+                                           *   NOTE: This event may also be executed after `de_add', when
                                            *         some later chain callback fails for some reason. */
  WEAK REF struct instance      *de_owner; /*< [1..1][const] The owner instance of this event callback. */
 };
@@ -170,12 +170,12 @@ struct devns {
  atomic_rwlock_t                d_lock;  /*< Lock for this device namespace. */
  ATREE_HEAD(struct devns_major) d_tree;  /*< [KEY(major_t)][lock(d_lock)][0..1][owned] Major-number address tree root. */
  LIST_HEAD(struct devns_major)  d_sort;  /*< [sort(ASCENDING(DEVNS_MAJOR_MIN(*)))][lock(d_lock)][0..1] Ordered list of major device numbers. */
- rwlock_t                       d_elock; /*< Lock for the event chain 'd_event'. */
+ rwlock_t                       d_elock; /*< Lock for the event chain `d_event'. */
  SLIST_HEAD(struct devns_event) d_event; /*< [0..1][lock(d_elock)] Chain of namespace event callbacks. */
 };
 
 /* Add/delete device-namespace event callbacks.
- * NOTE: These functions will add/delete a weak reference to 'e->de_owner'. */
+ * NOTE: These functions will add/delete a weak reference to `e->de_owner'. */
 FUNDEF void KCALL devns_addevent(struct devns *__restrict self, struct devns_event *__restrict e);
 /* @return: true:  Successfully removed the namespace-event callback.
  * @return: false: The given namespace-event callback was never added. */
@@ -199,27 +199,27 @@ DATDEF struct devns ns_chrdev;
  * @return: NULL: No device is associated the the specified ID. */
 FUNDEF REF struct device *KCALL devns_lookup(struct devns *__restrict self, dev_t id);
 
-/* Register a device for the given device ID 'id'.
+/* Register a device for the given device ID `id'.
  * NOTE: Attempting to re-register a device under the same id is a no-op.
- * NOTE: 'devns_insert_r' should be used if the given ID should be reserved first.
- * @return: -EOK:       The given device `dev' is now registered under 'id'.
- * @return: -EEXIST:    Another device was already registered under the given 'id'.
+ * NOTE: `devns_insert_r' should be used if the given ID should be reserved first.
+ * @return: -EOK:       The given device `dev' is now registered under `id'.
+ * @return: -EEXIST:    Another device was already registered under the given `id'.
  * @return: -ENOMEM:    Not enough available kernel memory.
- * @return: E_ISERR(*): A 'pdevns_added'-callback failed for some reason. */
+ * @return: E_ISERR(*): A `pdevns_added'-callback failed for some reason. */
 FUNDEF errno_t KCALL devns_insert(struct devns *__restrict self,
                                   struct device *__restrict dev,
                                   dev_t id);
 
 /* Remove the given device `dev' from the specified device namespace.
- * NOTE: When 'release' is true, delete the associated major id when
+ * NOTE: When `release' is true, delete the associated major id when
  *       when this operation removes the last associated minor device. */
 FUNDEF bool KCALL devns_remove(struct devns *__restrict self,
                                struct device *__restrict dev,
                                bool release);
 
-/* Similar to 'devns_remove', but delete devices by their id.
- * @param:  mode:  Set of 'DEVNS_ERASE_*'
- * @return: true:  Successfully removed the device associated with 'id'.
+/* Similar to `devns_remove', but delete devices by their id.
+ * @param:  mode:  Set of `DEVNS_ERASE_*'
+ * @return: true:  Successfully removed the device associated with `id'.
  * @return: false: Failed to remove the device (no such device). */
 FUNDEF bool KCALL devns_erase(struct devns *__restrict self, dev_t id, u32 mode);
 #define DEVNS_ERASE_DEVICE     0x00 /*< Simply erase the device associated with the given id. */
@@ -228,17 +228,17 @@ FUNDEF bool KCALL devns_erase(struct devns *__restrict self, dev_t id, u32 mode)
 
 
 /* ~normal~ set of flags used to delete a device simply registered by a call
- * to 'devns_insert' without prior reservation of major device numbers.
+ * to `devns_insert' without prior reservation of major device numbers.
  * In addition: Delete any partition devices that may have been created automatically. */
 #define DEVNS_ERASE_NORMAL  (DEVNS_ERASE_DEVICE|DEVNS_ERASE_PARTITIONS|DEVNS_ERASE_RELEASE)
 
 /* A faster set of flags that works for character
- * devices equally as well as 'DEVNS_ERASE_NORMAL'. */
+ * devices equally as well as `DEVNS_ERASE_NORMAL'. */
 #define DEVNS_ERASE_CHRDEV  (DEVNS_ERASE_DEVICE|DEVNS_ERASE_RELEASE)
 
 
 /* Reserve/release major device numbers dynamically.
- * @return: * :                  The first major number of 'n_major' consecutive, reserved IDs.
+ * @return: * :                  The first major number of `n_major' consecutive, reserved IDs.
  * @return: DEVNS_RESERVE_ERROR: Failed to reserve any more ids (no-mem/no-space) */
 FUNDEF major_t KCALL devns_reserve(struct devns *__restrict self, size_t n_major);
 FUNDEF major_t KCALL devns_reserve_at(struct devns *__restrict self, major_t start, size_t n_major);

@@ -63,7 +63,7 @@ __SYSDECL_BEGIN
  *       or be located at a different address and consist of a pre-mapped portion (e.g.: 4K), as well
  *       as a guard page with the potential of extending the stack some number of times (e.g.: 8)
  *       The stack memory itself will be lazily allocated on access and be pre-initialized
- *       to either all ZEROs or a debug constant such as '0xCC'.
+ *       to either all ZEROs or a debug constant such as `0xCC'.
  * NOTE: Of course this auto-generated stack will also be automatically
  *       munmap()'ed once the thread exists, meaning it's the perfect solution
  *       for simple user-space multithreading that doesn't require -pthread. */

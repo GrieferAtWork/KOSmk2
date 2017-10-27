@@ -27,11 +27,11 @@
 DECL_BEGIN
 
 struct biosblkdev {
- /* BIOS Disk Device driver (Used for interfacing with 'int $0x13' bios functions). */ 
+ /* BIOS Disk Device driver (Used for interfacing with `int $0x13' bios functions). */ 
  struct blkdev b_device;            /*< Underlying block device. */
  u8            b_sectors_per_track; /*< [const] Amount of sectors per track. */
  u8            b_number_of_heads;   /*< [const][!0] The number of read/write heads. */
- u8            b_drive;             /*< [const] BIOS Drive number of this device (e.g.: '0x80' for 'C:'). */
+ u8            b_drive;             /*< [const] BIOS Drive number of this device (e.g.: `0x80' for `"C:"'). */
  u8            b_padding;           /*< ... */
 };
 

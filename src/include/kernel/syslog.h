@@ -29,7 +29,7 @@ DECL_BEGIN
 
 
 /* Set a new global system-log printer.
- * HINT: The closure argument for the given 'printer' is generated using 'SYSLOG_PRINTER_CLOSURE()' */
+ * HINT: The closure argument for the given `printer' is generated using `SYSLOG_PRINTER_CLOSURE()' */
 FUNDEF pformatprinter KCALL syslog_set_printer(pformatprinter printer);
 
 /* Builtin system log printers. */

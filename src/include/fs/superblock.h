@@ -46,7 +46,7 @@ struct superblockops {
   *       types and should be set to NULL when not supported, yet
   *       is required for at least the /dev filesystem in order
   *       to delete devices as they get removed on-the-fly.
-  * @return: * :         The amount of instances of 'node' that have been removed.
+  * @return: * :         The amount of instances of `node' that have been removed.
   * @return: E_ISERR(*): Failed to remove all instances for some reason. */
  ssize_t (KCALL *sb_remove_inode)(struct superblock *__restrict sb,
                                   struct inode *__restrict node);
@@ -60,10 +60,10 @@ struct supermount {
 
 struct superblock {
  /* NOTE: A superblock is always implicitly an INode. */
- struct inode            sb_root;       /*< [.i_super == self] Superblock root INode ('.i_super' isn't a reference). */
+ struct inode            sb_root;       /*< [.i_super == self] Superblock root INode (`sb_root.i_super' isn't a reference). */
  struct superblockops const *sb_ops;    /*< [const][1..1] Additional, filesystem-specific superblock operations. */
  atomic_rwlock_t         sb_nodes_lock; /*< R/W-lock for INodes within this superblock. */
- LIST_HEAD(struct inode) sb_nodes;      /*< [lock(sb_nodes_lock)] Linked list of all nodes within this superblock (NOTE: Does not include 'sb_root'). */
+ LIST_HEAD(struct inode) sb_nodes;      /*< [lock(sb_nodes_lock)] Linked list of all nodes within this superblock (NOTE: Does not include `sb_root'). */
  atomic_rwlock_t         sb_achng_lock; /*< [order(AFTER(inode::i_attr_lock))] R/W-lock for INodes with changed attributes. */
  LIST_HEAD(struct inode) sb_achng;      /*< [lock(sb_achng_lock)] Linked list of all INodes with changed attributes. */
  struct supermount       sb_mount;      /*< Superblock mounting point information. */
@@ -87,7 +87,7 @@ FUNDEF SAFE struct superblock *KCALL superblock_cinit(struct superblock *self);
 
 /* Finalize initialization of a given superblock.
  * @return: -EOK:   Successfully setup the given superblock.
- * @return: -EPERM: The module instance 'owner' doesn't permit new references being created. */
+ * @return: -EPERM: The module instance `owner' doesn't permit new references being created. */
 FUNDEF SAFE WUNUSED errno_t KCALL superblock_setup(struct superblock *__restrict self,
                                                    struct instance *__restrict owner);
 
@@ -102,16 +102,16 @@ FUNDEF errno_t KCALL superblock_sync(struct superblock *__restrict self);
  * @requires(node->i_super == self);
  * @requires(node != &self->sb_root);
  * @return: * :         The amount of node instances removed from the superblock.
- *                      This number should be '<=' the old 'i_nlink' value of the
+ *                      This number should be `<=' the old `i_nlink' value of the
  *                      inode. - It is most likely equal to it, but in the event
  *                      that 2 threads call this function on the same node, at
  *                      the same time, one may remove all, or both may remove
  *                      apart of the node's links.
- *                   >> Upon success, the node's 'i_nlink' counter will equal ZERO(0),
+ *                   >> Upon success, the node's `i_nlink' counter will equal ZERO(0),
  *                      a state that the filesystem driver should respect in a way
  *                      that will force it to allocate a new node and no longer use
  *                      the previous, meaning that following a call to this function,
- *                      the only thing still using 'node' are any remaining file
+ *                      the only thing still using `node' are any remaining file
  *                      streams still making use of it.
  * @return: -EPERM:     The superblock doesn't support this feature.
  * @return: E_ISERR(*): Failed to remove all instances. */

@@ -69,8 +69,8 @@
    available, we allow it to use both in ring 3. */
 #define HAVE_MORECORE   0
 #include <errno.h>
-/* The kernel doesn't have an 'errno', so we lie to dlmalloc about this.
- * NOTE: We still pull in <errno.h> for error codes used by 'posix_memalign'.
+/* The kernel doesn't have an `errno', so we lie to dlmalloc about this.
+ * NOTE: We still pull in <errno.h> for error codes used by `posix_memalign'.
  */
 #define LACKS_ERRNO_H
 #define malloc_getpagesize   PAGESIZE
@@ -382,7 +382,7 @@ INSECURE                 default: 0
   If true, omit checks for usage errors and heap space overwrites.
 
 USE_DL_PREFIX            default: NOT defined
-  Causes compiler to prefix all public routines with the string 'dl'.
+  Causes compiler to prefix all public routines with the string `dl'.
   This can be useful when you only want to use this malloc in one part
   of a program, using your regular system malloc elsewhere.
 
@@ -6343,16 +6343,16 @@ History:
     V2.6.6 Sun Dec  5 07:42:19 1999  Doug Lea  (dl at gee)
       * return null for negative arguments
       * Added Several WIN32 cleanups from Martin C. Fong <mcfong at yahoo.com>
-         * Add 'LACKS_SYS_PARAM_H' for those systems without 'sys/param.h'
+         * Add 'LACKS_SYS_PARAM_H' for those systems without `sys/param.h'
           (e.g. WIN32 platforms)
          * Cleanup header file inclusion for WIN32 platforms
          * Cleanup code to avoid Microsoft Visual C++ compiler complaints
-         * Add 'USE_DL_PREFIX' to quickly allow co-existence with existing
+         * Add `USE_DL_PREFIX' to quickly allow co-existence with existing
            memory allocation routines
-         * Set 'malloc_getpagesize' for WIN32 platforms (needs more work)
+         * Set `malloc_getpagesize' for WIN32 platforms (needs more work)
          * Use 'assert' rather than 'ASSERT' in WIN32 code to conform to
            usage of 'assert' in non-WIN32 code
-         * Improve WIN32 'sbrk()' emulation's 'findRegion()' routine to
+         * Improve WIN32 `sbrk()' emulation's `findRegion()' routine to
            avoid infinite loop
       * Always call 'fREe()' rather than `free()'
 

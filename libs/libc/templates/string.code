@@ -20,27 +20,27 @@
 /*
  * #define DECL                  ... <declaration visibility/storage>
  * #define DOS_DECL              ... <declaration visibility/storage for dos extension functions>
- * #define DEFINE_ALIAS(new,old) ... <Define 'new' as an alias for 'old'>
- * #define T                     ... <character type> (e.g.: 'char', 'char32_t')
- * #define Tneedle               ... <needle type> (e.g.: 'int', 'char32_t')
- * #define Ts                    ... <signed type> (e.g.: 'signed char', 's32')
- * #define Tu                    ... <unsigned type> (e.g.: 'unsigned char', 'u32')
- * #define Tn                    ... <needle type> (e.g.: 'int', 'char32_t')
- * #define X(x)                  ... <Symbol name generator> (e.g.: 'libc_##x', 'libc_32w##x') [OPTIONAL] (Used for 'libc_splitpath' / 'libc_32wsplitpath', etc.)
- * #define Xstr(x)               ... <Symbol name generator> (e.g.: 'libc_str##x', 'libc_32wcs##x')
- * #define Xstp(x)               ... <Symbol name generator> (e.g.: 'libc_stp##x', 'libc_32wcp##x')
- * #define Xmb(x)                ... <Symbol name generator> (e.g.: 'libc_32mb##x') [OPTIONAL]
- * #define Xwc(x)                ... <Symbol name generator> (e.g.: 'libc_32wc##x') [OPTIONAL]
- * #define Xa(x)                 ... <Symbol name generator> (e.g.: 'libc_a##x', 'libc_32w##x') [OPTIONAL] (Used for 'libc_ato32', etc.)
- * #define Xxa(x)                ... <Symbol name generator> (e.g.: 'libc_##x##a', 'libc_32##x##w') [OPTIONAL] (Used for 'libc_s32toa', etc.)
- * #define Xxa_s(x)              ... <Symbol name generator> (e.g.: 'libc_##x##a_s', 'libc_32##x##w_s') [OPTIONAL] (Used for 'libc_s32toa_s', etc.)
- * #define S                     ... <Bit-width in bytes> (e.g.: '__SIZEOF_CHAR__', '__SIZEOF_WCHAR_T__')
+ * #define DEFINE_ALIAS(new,old) ... <Define `new' as an alias for 'old'>
+ * #define T                     ... <character type> (e.g.: `char', `char32_t')
+ * #define Tneedle               ... <needle type> (e.g.: `int', `char32_t')
+ * #define Ts                    ... <signed type> (e.g.: `signed char', 's32')
+ * #define Tu                    ... <unsigned type> (e.g.: `unsigned char', 'u32')
+ * #define Tn                    ... <needle type> (e.g.: `int', `char32_t')
+ * #define X(x)                  ... <Symbol name generator> (e.g.: `libc_##x', `libc_32w##x') [OPTIONAL] (Used for `libc_splitpath' / `libc_32wsplitpath', etc.)
+ * #define Xstr(x)               ... <Symbol name generator> (e.g.: `libc_str##x', `libc_32wcs##x')
+ * #define Xstp(x)               ... <Symbol name generator> (e.g.: `libc_stp##x', `libc_32wcp##x')
+ * #define Xmb(x)                ... <Symbol name generator> (e.g.: `libc_32mb##x') [OPTIONAL]
+ * #define Xwc(x)                ... <Symbol name generator> (e.g.: `libc_32wc##x') [OPTIONAL]
+ * #define Xa(x)                 ... <Symbol name generator> (e.g.: `libc_a##x', `libc_32w##x') [OPTIONAL] (Used for `libc_ato32', etc.)
+ * #define Xxa(x)                ... <Symbol name generator> (e.g.: `libc_##x##a', `libc_32##x##w') [OPTIONAL] (Used for `libc_s32toa', etc.)
+ * #define Xxa_s(x)              ... <Symbol name generator> (e.g.: `libc_##x##a_s', `libc_32##x##w_s') [OPTIONAL] (Used for `libc_s32toa_s', etc.)
+ * #define S                     ... <Bit-width in bytes> (e.g.: `__SIZEOF_CHAR__', `__SIZEOF_WCHAR_T__')
  * #define NUL                   ... <\0-character; defaults to ZERO(0)>
  * #define TOLOWER(x)            ... <tolower()-function>
  * #define TOUPPER(x)            ... <toupper()-function>
  * #define TOLOWER_L(x,lc)       ... <locale-dependent tolower()-function>
  * #define TOUPPER_L(x,lc)       ... <locale-dependent toupper()-function>
- * #define DEFINE_ALIAS(new,old) ... <define 'new' as an alias of 'old'>
+ * #define DEFINE_ALIAS(new,old) ... <define `new' as an alias of 'old'>
  */ 
 
 /* OPTIONS:

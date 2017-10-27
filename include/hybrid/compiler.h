@@ -117,8 +117,8 @@
 #define VIRT                __VIRT         /* Annotation for virtual memory (default). */
 #define PHYS                __PHYS         /* Annotation for physical memory. */
 #define MMIO                __MMIO         /* Annotation for memory-mapped I/O-port pointers. */
-#define CRIT                __CRIT         /* Annotation for functions that require 'TASK_ISCRIT()' (When called from within the kernel). */
-#define SAFE                __SAFE         /* Annotation for functions that require 'TASK_ISSAFE()' (When called from within the kernel). */
+#define CRIT                __CRIT         /* Annotation for functions that require `TASK_ISCRIT()' (When called from within the kernel). */
+#define SAFE                __SAFE         /* Annotation for functions that require `TASK_ISSAFE()' (When called from within the kernel). */
 #define NOMP                __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */
 #define PERCPU              __PERCPU       /* Annotation for variables that must be accessed using the per-cpu API. */
 #define ASMCALL             __ASMCALL      /* Annotation for functions that are implemented in assembly and require a custom calling convention. */
@@ -126,7 +126,7 @@
 #ifdef __KERNEL__
 #define KPD                                /* Annotation for functions that may only be called when the active page directory
                                             * maps all dynamic physical memory 1-on-1 (aka. all pointers marked as 'PHYS').
-                                            * HINT: 'pdir_kernel' is (the only?) directory applicable for this. */
+                                            * HINT: `pdir_kernel' is (the only?) directory applicable for this. */
 #endif
 
 #define FUNDEF              __PUBDEF

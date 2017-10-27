@@ -208,7 +208,7 @@ libc_shm_open(char const *name, int oflag, mode_t mode) {
  while (*name == '/') ++name;
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */
  if ((shm_fd = libc_shm_getfd()) < 0) return -1;
- /* NOTE: Append 'O_NOFOLLOW' to go along 'AT_SYMLINK_NOFOLLOW' in shm_unlink(). */
+ /* NOTE: Append `O_NOFOLLOW' to go along `AT_SYMLINK_NOFOLLOW' in shm_unlink(). */
  return libc_openat(shm_fd,name,oflag|O_NOFOLLOW,mode);
 }
 #ifndef CONFIG_LIBC_NO_DOS_LIBC

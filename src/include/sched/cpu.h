@@ -33,7 +33,7 @@ DECL_BEGIN
  *       therefor needs to acquire a write-lock to all
  *       CPUs with tasks waiting for the event, you
  *       must _always_ disable interrupts before acquiring any
- *       kind of lock to your own CPU's 'c_lock' lock.
+ *       kind of lock to your own CPU's `c_lock' lock.
  *    >> In connection to the fact that the scheduler is
  *       allowed to change the CPU you're running on at
  *       any time, you'll probably have to always disable
@@ -128,7 +128,7 @@ typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
  *       All registers will be in an undefined state, except for ESP,
  *       which points to a valid, unique stack that is used by the worker
  *       task held responsible for job completion.
- *       Additionally, the 'j_data' member of 'work' is pushed onto the stack
+ *       Additionally, the 'j_data' member of `work' is pushed onto the stack
  *       before the job function is invoked, which in return can simply
  *       pass execution to either the next scheduled job, or another task
  *       by execution a return-statement.
@@ -148,15 +148,15 @@ FUNDEF errno_t KCALL schedule_work(struct job *__restrict work);
 
 /* Schedule delayed execution of a job, given the absolute point in time when it should run.
  * HINT: Among other things, these functions are used to implement 'alarm()'.
- * NOTE: Internally, these differ from 'schedule_work()' very little.
+ * NOTE: Internally, these differ from `schedule_work()' very little.
  *       Rather than scheduling the per-cpu worker thread as running, it is setup
- *       as sleeping until the lowest 'abs_exectime' passes, as which point is
+ *       as sleeping until the lowest `abs_exectime' passes, as which point is
  *       is rescheduled just like any other thread that timed out, allowing it
  *       to then execute any that with an absolute point in time that has passed.
  * NOTE: In case the job was already scheduled (`-EALREADY' is returned),
  *       its execution time will be updated to 'MIN(*abstime,work->j_time)'
  * WARNING: Attempting to add a delay to a job with that was already scheduled
- *          using 'schedule_work()' is illegal and causes undefined behavior.
+ *          using `schedule_work()' is illegal and causes undefined behavior.
  *          NOTE: This only applies to jobs until they are actually executed,
  *                meaning that a job re-scheduling itself with a delay, after
  *                being scheduled without one the first time is fully allowed.
@@ -183,15 +183,15 @@ INTDEF void KCALL cpu_del_suspended(struct cpu *__restrict c, /*OUT REF*/struct 
  * HINT: You may use 'jmp cpu_sched_setrunning' even when no valid stack is set in %ESP */
 FUNDEF ATTR_NORETURN void KCALL cpu_sched_setrunning(void);
 
-/* Same as 'cpu_sched_setrunning', but saves the previous CPU state inside of 'task'.
+/* Same as `cpu_sched_setrunning', but saves the previous CPU state inside of `task'.
  * NOTE: To ensure that the saved CPU state is that of the caller,
  *       this function must be called using CDECL conventions (call-cleanup),
  *       as self-hosting cleanup would require at least one register
  *       to become clobbered before a CPU state can be generated.
- * NOTE: 'cpu_sched_setrunning_savef()' is the same as 'cpu_sched_setrunning_save()',
+ * NOTE: `cpu_sched_setrunning_savef()' is the same as `cpu_sched_setrunning_save()',
  *       but allows you to specify the EFLAGS that shall be set upon return, thus
  *       allowing you to atomically switch() and enable interrupts upon return.
- * HINT: You can use the 'pflag_t' returned by 'PREEMPTION_PUSH()' for 'eflags'
+ * HINT: You can use the 'pflag_t' returned by `PREEMPTION_PUSH()' for 'eflags'
  * WARNING: The caller is responsible to disable interrupts before calling either of these!
  */
 FUNDEF void ATTR_CDECL cpu_sched_setrunning_save(struct task *__restrict task);
@@ -200,7 +200,7 @@ FUNDEF void ATTR_CDECL cpu_sched_setrunning_savef(struct task *__restrict task, 
 
 /* Perform a regular task rotation, selecting the next appropriate task for execution.
  * NOTE: The caller must disable preemption before calling this function.
- * @return: * : The newly selected task (aka. what 'THIS_TASK' resolves to). */
+ * @return: * : The newly selected task (aka. what `THIS_TASK' resolves to). */
 FUNDEF struct task *FCALL cpu_sched_rotate(void);
 
 /* Remove the current task, causing the caller to inherit a
@@ -230,7 +230,7 @@ INTDEF byte_t __bootstack[];
 #define BOOTSTACK_ADDR  (byte_t *)__bootstack
 #define BOOTSTACK_SIZE            0x4000
 
-struct mb_info; /* From '/proprietary/multiboot.h' */
+struct mb_info; /* From `/proprietary/multiboot.h' */
 
 /* Initialize the scheduler by installing a PIT IRQ
  * handler & enabling PIT interrupts on the boot CPU.

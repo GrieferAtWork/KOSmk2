@@ -324,7 +324,7 @@ register_device(pci_addr_t addr) {
   break;
 
  case PCI_DEVC_HEADER_CARDBUS:
-  /* XXX: 'PCI_CDEV_MEMBASE0' and friends? */
+  /* XXX: `PCI_CDEV_MEMBASE0' and friends? */
   break;
 
  default: break;

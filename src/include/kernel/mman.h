@@ -322,7 +322,7 @@ struct mregion {
  LIST_HEAD(struct mregion_part) mr_parts;  /*< [lock(mr_plock)][1..1] Chain of region parts containing information about different sub-portions of this region. */
  struct mregion_part            mr_part0;  /*< [lock(mr_plock)] Initially allocated region part (may later be re-used for any part). */
  LIST_NODE(struct mregion)      mr_global; /*< [lock(INTERNAL(::mregion_chain_lock))][valid_if(mr_type == MREGION_TYPE_MEM)]
-                                            *  Global chain of memory regions (tracked to move pages to swap when 'mman_swapmem()' is called) */
+                                            *  Global chain of memory regions (tracked to move pages to swap when `mman_swapmem()' is called) */
 };
 #define MREGION_FOREACH_PART(part,self) \
   LIST_FOREACH(part,(self)->mr_parts,mt_chain)
@@ -990,7 +990,7 @@ FUNDEF ssize_t KCALL mman_munmap_unlocked(struct mman *__restrict self,
 #define MMAN_MUNMAP_ALL      0x00000000 /*< Unmap all mappings. */
 #define MMAN_MUNMAP_CLEAR    0x00000001 /*< Indicate that any allocate core memory uniquely owned by this mman is fully zero-initialized.
                                          *  WARNING: Passing this flag without truly knowing that this is true causes undefined behavior. */
-#define MMAN_MUNMAP_TAG      0x00000010 /*< Only unmap branches who's `mb_closure' argument matches the given 'tag' */
+#define MMAN_MUNMAP_TAG      0x00000010 /*< Only unmap branches who's `mb_closure' argument matches the given `tag' */
 
 /* Capture (and potentially delete) all existing mappings within `addr...+=n_bytes'
  * All captured mappings are stored within a chain of branches stored in `*maps'
@@ -1042,7 +1042,7 @@ struct mman_maps {
 FUNDEF void KCALL mman_maps_fini(struct mman_maps *__restrict self);
 
 /* Search for a free address range of at least `n_bytes' bytes,
- * using 'hint' as a hint towards nearby addresses.
+ * using `hint' as a hint towards nearby addresses.
  * NOTE: The caller is responsible for holding a read-lock to `self->m_lock'
  * @return: * :         A page-aligned pointer to the virtual address of available memory.
  *             WARNING: As soon as the caller releases their read-lock, the

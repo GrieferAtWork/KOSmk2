@@ -31,7 +31,7 @@
 #undef __undef_ARG_MAX
 #endif
 
-#define MAXSYMLINKS 20 /* Can be overwritten by the kernel commandline option 'maxsymlinks=N' */
+#define MAXSYMLINKS 20 /* Can be overwritten by the kernel commandline option `maxsymlinks=N' */
 #define NOFILE      256
 #define NCARGS      131072
 

@@ -88,7 +88,7 @@ vfile_dir_readdir(struct file *__restrict fp,
  REF struct inode *parent_inode = NULL;
  atomic_rwlock_read(&data->v_lock);
  if (SELF->vf_didx < 2) {
-  /* Special directory entries for '.' and '..' */
+  /* Special directory entries for `"."' and  `".."' */
   entry.d_node = fp->f_node;
   if (SELF->vf_didx == 0) {
    entry.d_name.dn_name = ".";
@@ -354,7 +354,7 @@ search_again:
       iter->d_name.dn_size == file_path->d_name.dn_size &&
       memcmp(iter->d_name.dn_name,file_path->d_name.dn_name,
              file_path->d_name.dn_size*sizeof(char)) == 0) {
-   /* NOTE: We can't assume that 'iter->d_node == file_node' due to weak links. */
+   /* NOTE: We can't assume that `iter->d_node == file_node' due to weak links. */
 
    /* Found the entry in question. */
    if (!has_write_lock) {
@@ -461,7 +461,7 @@ vnode_mknod(struct inode *__restrict dir_node,
   weak = (REF struct vdev *)inode_new(sizeof(struct vdev));
   if unlikely(!weak) return E_PTR(-ENOMEM);
   weak->v_node.i_ops = &vdev_ops;
-  /* NOTE: We use 'ia_mode' to store the kind of device reference (chr/dev) */
+  /* NOTE: We use `ia_mode' to store the kind of device reference (chr/dev) */
   memcpy(&weak->v_node.i_attr,&dev->d_node.i_attr,sizeof(struct iattr));
   memcpy(&weak->v_node.i_attr_disk,
          &weak->v_node.i_attr,sizeof(struct iattr));
@@ -573,7 +573,7 @@ vnode_rename(struct inode *__restrict dst_dir, struct dentry *__restrict dst_pat
  }
  if (E_ISERR(error))
      return E_PTR(error);
- /* Supporting hard links, we can simply re-return 'src_node' */
+ /* Supporting hard links, we can simply re-return `src_node' */
  INODE_INCREF(src_node);
  return src_node;
 }
@@ -691,7 +691,7 @@ vfs_remove_inode(struct superblock *__restrict sb,
  }
 end: atomic_rwlock_endwrite(&SELF->v_vlock);
 end_now:
- /* Drop the reference originally held by the 'v_chain' linked list. */
+ /* Drop the reference originally held by the `v_chain' linked list. */
  if (is_done) INODE_DECREF(node);
  return result;
 }
@@ -758,7 +758,7 @@ vdev_effective(struct inode *__restrict ino) {
  struct devns *ns = S_ISCHR(ino->i_attr.ia_mode) ? &ns_chrdev : &ns_blkdev;
  REF struct device *result = devns_lookup(ns,id);
  if (result) return &result->d_node;
- /* Re-return 'ino', thus allowing other operations to return '-ENODEV' */
+ /* Re-return `ino', thus allowing other operations to return `-ENODEV' */
  INODE_INCREF(ino);
  return ino;
 }

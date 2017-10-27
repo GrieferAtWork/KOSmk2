@@ -105,7 +105,7 @@ mbr_autopart(struct blkdev *__restrict self,
   }
   /* NOTE: Although MBR partitions don't have names, we can
    *       still use the partitions table entry itself as UUID.
-   *    >> As a matter of fact: 'union part' is 16 bytes long,
+   *    >> As a matter of fact: `union part' is 16 bytes long,
    *       which is the same size of a single EFI guid identifier...
    *       It still won't be perfect, but it sure as hell improves
    *       the odds of identifying duplicate disks once the boot
@@ -126,7 +126,7 @@ mbr_autopart(struct blkdev *__restrict self,
 
   ++result,--max_parts;
   /* Must not read sub-partitions that start where we being ourself.
-   * Without this check, 'blkdev_autopart()' may call us again, causing
+   * Without this check, `blkdev_autopart()' may call us again, causing
    * an infinite loop that'll result in a kernel-level stack overflow,
    * causing a triple fault and the computer to reboot. */
   temp = 0;
@@ -134,7 +134,7 @@ mbr_autopart(struct blkdev *__restrict self,
    /* Automatically sub-partition our new partition. */
    temp = blkdev_autopart(&part->dp_device,max_parts);
   }
-  /* Drop the reference returned by 'blkdev_mkpart()' */
+  /* Drop the reference returned by `blkdev_mkpart()' */
   DISKPART_DECREF(part);
 done_load:
   if (E_ISERR(temp)) goto end;

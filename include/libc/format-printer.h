@@ -117,13 +117,13 @@ __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
 #else /* !__USE_KOS_PRINTF */
 
 #define __PRINTF_FLAG_NONE     0x0000
-#define __PRINTF_FLAG_PREFIX   0x0001 /*< '%#'. */
+#define __PRINTF_FLAG_PREFIX   0x0001 /*< `%#'. */
 #define __PRINTF_FLAG_LJUST    0x0002 /*< '%-'. */
 #define __PRINTF_FLAG_SIGN     0x0004 /*< '%+'. */
 #define __PRINTF_FLAG_SPACE    0x0008 /*< '% '. */
 #define __PRINTF_FLAG_PADZERO  0x0010 /*< '%0'. */
 #define __PRINTF_FLAG_HASWIDTH 0x0020 /*< '%123'. */
-#define __PRINTF_FLAG_HASPREC  0x0040 /*< '%.123'. */
+#define __PRINTF_FLAG_HASPREC  0x0040 /*< `%.123'. */
 #define __PRINTF_FLAG_UPPER    0x0080 /*< Print upper-case hex-characters. */
 #define __PRINTF_FLAG_SIGNED   0x0100
 #define __PRINTF_FLAG_FIXBUF   0x0200
@@ -364,7 +364,7 @@ __have_precision:
    } break;
 
    case 'q': __flags |= __PRINTF_FLAG_QUOTE;
-   case '__s':
+   case `__s':
     __s = __builtin_va_arg(__args,char *);
     if (!__s) __s = "(null)";
     if (!(__flags&__PRINTF_FLAG_HASPREC)) __precision = (__size_t)-1;

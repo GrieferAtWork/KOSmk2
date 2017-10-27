@@ -85,7 +85,7 @@ struct my_node {
 #ifndef ATREE_IMPLEMENTATION_ONLY
 /* Tries to insert_at the given leaf.
  * @return: true:  Successfully inserted the given leaf.
- * @return: false: The key range described by 'newleaf' is already mapped. */
+ * @return: false: The key range described by `newleaf' is already mapped. */
 ATREE_FUN SAFE NOMP ATTR_UNUSED bool ATREE_CALL
 ATREE(tryinsert_at)(T **__restrict proot, T *__restrict newleaf,
                     ATREE_SEMI_T(Tkey) addr_semi, ATREE_LEVEL_T addr_level);
@@ -109,14 +109,14 @@ ATREE(pop_at)(T **__restrict proot,
               ATREE_LEVEL_T addr_level);
 
 /* Remove and return the leaf associated with the given key.
- * >> This is a combination of 'plocate_at' and 'pop_at' */
+ * >> This is a combination of 'plocate_at' and `pop_at' */
 ATREE_FUN SAFE NOMP __NONNULL((1)) ATTR_UNUSED T *ATREE_CALL
 ATREE(remove_at)(T **__restrict proot, Tkey key,
                  ATREE_SEMI_T(Tkey) addr_semi,
                  ATREE_LEVEL_T addr_level);
 
-/* Locate the leaf associated with a given 'key'.
- * @return: ATREE_NULL: No leaf associated with the given 'key'.
+/* Locate the leaf associated with a given `key'.
+ * @return: ATREE_NULL: No leaf associated with the given `key'.
  * NOTE: 'plocate_at' will update 'addr_semi' and 'addr_level'. */
 ATREE_FUN NOMP ATTR_UNUSED T *ATREE_CALL
 ATREE(locate_at)(T *root, Tkey key,

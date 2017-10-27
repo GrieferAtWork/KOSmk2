@@ -49,10 +49,10 @@ struct file;
 /* NOTE: Unknown flags are ignored. */
 
 struct keymap_header {
- char h_magic[SMAGKMAP]; /*< Must equal 'MAGKMAP' */
- u8   h_version;         /*< Must equal 'KEYMAP_VER_CURRENT' */
- u8   h_encoding;        /*< Character map encoding (One of 'KEYMAP_ENCODING_*') */
- u8   h_flags;           /*< Character map flags (Set of 'KEYMAP_FLAG_*'). */
+ char h_magic[SMAGKMAP]; /*< Must equal `MAGKMAP' */
+ u8   h_version;         /*< Must equal `KEYMAP_VER_CURRENT' */
+ u8   h_encoding;        /*< Character map encoding (One of `KEYMAP_ENCODING_*') */
+ u8   h_flags;           /*< Character map flags (Set of `KEYMAP_FLAG_*'). */
  char h_name[KEYMAP_NAMESIZE]; /*< Name of the keyboard map (May only contain isprint()-able characters; ZERO-terminated) */
 #if 0 /* This is what the rest of the file contains. - Quite simple! */
  char km_press[256]; /*< Regular key map. */
@@ -66,8 +66,8 @@ struct keymap_header {
  * NOTE: Access to this map must not be protected,
  *       although changes may occur at any time.
  * NOTE: After booting, this map will initially
- *       contain the 'en_US' keyboard layout.
- * >> A custom keymap can be loaded using 'keymap=/foo/bar.map'
+ *       contain the `en_US' keyboard layout.
+ * >> A custom keymap can be loaded using `keymap=/foo/bar.map'
  * WARNING: This data structure is visible in user-space! */
 DATDEF WEAK struct keymap const active_keymap __ASMNAME("keymap");
 
@@ -89,9 +89,9 @@ XBLOCK({ if (!ATOMIC_XCH(*(struct chrdev **)&default_keyboard,k)) \
 })
 
 /* Load the new active keymap from the given file.
- * NOTE: The layout of a keymap file must follow 'struct keymap_header'
+ * NOTE: The layout of a keymap file must follow `struct keymap_header'
  * @param: log_errors:  If it was impossible to read the keymap file, log an error.
- * @return: -EOK:       Successfully loaded the keyboard mapping file & replaced 'active_keymap'
+ * @return: -EOK:       Successfully loaded the keyboard mapping file & replaced `active_keymap'
  * @return: -EINVAL:    Not a valid keyboard mapping file.
  * @return: E_ISERR(*): Failed to load a keymap file for some reason. */
 FUNDEF errno_t KCALL load_keymap_file(struct file *__restrict fp, bool log_errors);

@@ -532,7 +532,7 @@ vga_getfont(MMIO void *regbase, struct vga_font *__restrict font) {
     while (iter != char_end && *iter) ++iter;
    }
    font->vf_cheight = (u8)(iter-probe_char);
-   /* Ensure sure that character data is at least 'VGA_CHARSIZE_MIN' pixels tall.
+   /* Ensure sure that character data is at least `VGA_CHARSIZE_MIN' pixels tall.
     * NOTE: This also handles the case where we could find information on '_'. */
    if (font->vf_cheight < VGA_CHARSIZE_MIN) font->vf_cheight = VGA_CHARSIZE_MIN;
    if (font->vf_cheight&1) ++font->vf_cheight;

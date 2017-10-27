@@ -33,7 +33,7 @@ struct ethandler {
  SLIST_NODE(struct ethandler) e_chain;    /*< [0..1] Internal list of ethernet handlers. */
  WEAK REF struct instance    *e_owner;    /*< [1..1] Owner instance reference. */
  ethandler_callback           e_callback; /*< [1..1] Handler callback. */
- void                        *e_closure;  /*< [?..?] Closure passed to 'e_callback' during execution. */
+ void                        *e_closure;  /*< [?..?] Closure passed to `e_callback' during execution. */
  be16                         e_proto;    /*< [const] Prototype ID processed by this handler. */
  u16                        __e_pad;      /* ... */
 };

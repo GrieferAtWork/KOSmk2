@@ -248,7 +248,7 @@ run_init(char const *__restrict filename) {
  //mman_print_unlocked(mm,&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_DEBUG));
  //mman_endread(mm);
 
- syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in '%[file]') at %p\n",
+ syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in `%[file]') at %p\n",
         filename,mod->m_file,state->iret.eip);
  syslog(LOG_EXEC|LOG_INFO,"[APP] TLB at %p\n",thrd->t_tlb);
 

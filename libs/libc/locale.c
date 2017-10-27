@@ -134,7 +134,7 @@ PRIVATE ATTR_DOSRODATA int const dos_localmask[] = {
     [__DOS_LC_TIME]     = LC_TIME_MASK,
 };
 INTDEF struct lconv *LIBCCALL libc_dos_localeconv(void) {
- /* TODO: The binary layout of 'struct lconv' is different in DOS. */
+ /* TODO: The binary layout of `struct lconv' is different in DOS. */
  return libc_localeconv();
 }
 

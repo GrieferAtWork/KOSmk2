@@ -173,7 +173,7 @@ SECTIONS {
 		*(.text.cpu)
 		*(.rodata.cpu)
 		*(.data.cpu)
-		. = ALIGN(4); /* Align by 4 to allow for use of 'rep movsl' when initializing */
+		. = ALIGN(4); /* Align by 4 to allow for use of `rep movsl' when initializing */
 		DEFINE(__percpu_datsize = ABSOLUTE(.) - __percpu_begin);
 		*(.bss.cpu)
 		. = ALIGN(4); /* Same reason as above... */

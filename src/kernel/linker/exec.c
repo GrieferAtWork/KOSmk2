@@ -162,7 +162,7 @@ user_do_execve(REF struct module *__restrict mod,
  USER struct envdata *environ;
  struct mman_maps env_maps = {NULL};
  CHECK_HOST_DOBJ(mod);
- syslog(LOG_DEBUG,"Begin exec: '%[file]'\n",mod->m_file);
+ syslog(LOG_DEBUG,"Begin exec: `%[file]'\n",mod->m_file);
  assertf(!(mod->m_flag&MODFLAG_NOTABIN),"This isn't a binary...");
  assertf(mm != &mman_kernel,"You can't exec() with the kernel memory manager set!");
 
@@ -181,7 +181,7 @@ user_do_execve(REF struct module *__restrict mod,
  inst->i_base = (VIRT ppage_t)FLOOR_ALIGN(mod->m_load,PAGESIZE);
 
 relock_tasks_again:
- /* Terminate all threads other than the calling 'mm' */
+ /* Terminate all threads other than the calling `mm' */
  while (!atomic_rwlock_trywrite(&mm->m_tasks_lock)) {
   error = task_testintr();
   if (E_ISERR(error)) goto end;
@@ -385,7 +385,7 @@ endwrite:
 
 #ifndef CONFIG_NO_TLB
  /* Fill in TLB information for the task.
-  * NOTE: We can use 'task_filltlb()' instead of 'task_ldtlb()' here,
+  * NOTE: We can use `task_filltlb()' instead of `task_ldtlb()' here,
   *       because we know that we're the only task using this VM,
   *       also meaning that there should be no way the TLB was
   *       deleted before we got here. */
@@ -432,7 +432,7 @@ endwrite:
      state.iret.useresp = (uintptr_t)data.user_stack;
    }
 
-   syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app '%[file]' at %p\n",
+   syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app `%[file]' at %p\n",
           mod->m_file,state.iret.eip);
 
    /* Last phase: Cleanup stuff the caller gave us. */
@@ -452,7 +452,7 @@ end_too_late:
  /* It's too late to rewind, after failing to start the application.
   * >> Log failure and mark the caller to termination once its critical block ends. */
  syslog(LOG_EXEC|LOG_ERROR,
-        "[EXEC] Failed to execute module '%[file]': %[errno]\n",
+        "[EXEC] Failed to execute module `%[file]': %[errno]\n",
         mod->m_file,-error);
  mman_maps_fini(&env_maps);
  INSTANCE_DECREF(inst);

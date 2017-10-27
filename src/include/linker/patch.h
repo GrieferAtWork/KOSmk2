@@ -49,9 +49,9 @@ struct modpatch {
  struct modpatch      *p_prev;    /*< [0..1] The previous controller (for recursive dependency loading). */
  struct instance      *p_inst;    /*< [0..1] The instance that is being patched (May be null for loading symbolic, fake dependencies). */
 #define MODPATCH_FLAG_NORMAL   0x00000000
-#define MODPATCH_FLAG_DEEPBIND 0x00000008 /*< Patch with deep binding enabled ('p_dlsym' will prefer local symbols over global ones) */
- u32                   p_pflags;  /*< Additional patching flags (Set of 'MODPATCH_FLAG_*'). */
- u32                   p_iflags;  /*< Flags used to created dependency instances (Set of 'INSTANCE_FLAG_*') */
+#define MODPATCH_FLAG_DEEPBIND 0x00000008 /*< Patch with deep binding enabled (`p_dlsym' will prefer local symbols over global ones) */
+ u32                   p_pflags;  /*< Additional patching flags (Set of `MODPATCH_FLAG_*'). */
+ u32                   p_iflags;  /*< Flags used to created dependency instances (Set of `INSTANCE_FLAG_*') */
  size_t                p_depc;    /*< Amount of created dependencies. */
  size_t                p_depa;    /*< Amount of allocated dependency slots. */
  REF struct instance **p_depv;    /*< [1..1][0..p_depc|alloc(p_depa)][owned] Vector of dependencies. */
@@ -60,13 +60,13 @@ struct modpatch {
  PAGE_ALIGNED size_t   p_mapgap;  /*< Set to specify the size of memory gaps between modules. */
  /* [1..1] Lookup a symbol within the context of patching
   *        a module, given the symbol's name and hash.
-  * @param: search_current: Also search the current module ('p_inst') for a suitable symbol.
+  * @param: search_current: Also search the current module (`p_inst') for a suitable symbol.
   * @return: * :   The symbol's absolute load address.
   * @return: NULL: Failed to find the given symbol.
   * HINT: Custom module drivers may hijack this function
   *       to add custom symbol relocations using secret
   *       names, similar to what the kernel already does
-  *       for driver and the '__this_instance' symbol!
+  *       for driver and the `__this_instance' symbol!
   */
  void *(KCALL *p_dlsym)(struct modpatch *__restrict patcher,
                         char const *__restrict name, u32 hash,
@@ -107,10 +107,10 @@ FUNDEF void KCALL modpatch_fini(struct modpatch *__restrict self);
 
 /* Add a new dependency to `self', patching it recursively.
  * NOTE: This function will automatically deduce a suitable location for
- *       mapping 'dependency' within the currently active memory manager.
- * NOTE: Upon success, the instance returned will have its 'i_openrec' counter incremented.
- * @return: * :         A pointer to the added instance hosting 'dependency'
- *                NOTE: In the event that 'dependency' had already been loaded,
+ *       mapping `dependency' within the currently active memory manager.
+ * NOTE: Upon success, the instance returned will have its `i_openrec' counter incremented.
+ * @return: * :         A pointer to the added instance hosting `dependency'
+ *                NOTE: In the event that `dependency' had already been loaded,
  *                      a pointer to the existing instance is returned instead.
  * @return: -ENOMEM:    Not enough available memory.
  * @return: -EINTR:     The calling thread was interrupted.
@@ -122,7 +122,7 @@ FUNDEF struct instance *KCALL modpatch_dldep(struct modpatch *__restrict self,
  * >> This function automatically handles search resolution and secure
  *    driver loading when the caller is patching a kernel module.
  * @return: * :         A new reference to the loaded module.
- * @return: E_ISERR(*): Failed to load the module for some reason (s.a.: 'module_open()'). */
+ * @return: E_ISERR(*): Failed to load the module for some reason (s.a.: `module_open()'). */
 FUNDEF REF struct module *KCALL modpatch_dlopen(struct modpatch const *__restrict self,
                                                 struct dentryname const *__restrict name);
 
@@ -137,7 +137,7 @@ FUNDEF void *KCALL modpatch_user_dlsym(struct modpatch *__restrict patcher, char
  * @return: -EOK:       Successfully patched the given module.
  * @return: -EFAULT:    An illegal pointer was encountered during relocations,
                         or a relocation attempted to modify a read-only text segment.
- * @return: -ENOREL:    Failed to lookup a symbol ('self->p_dlsym' returned 'NULL').
+ * @return: -ENOREL:    Failed to lookup a symbol (`self->p_dlsym' returned `NULL').
  * @return: E_ISERR(*): Failed to patch the module for some reason. */
 FUNDEF errno_t KCALL modpatch_patch(struct modpatch *__restrict self);
 

@@ -67,7 +67,7 @@ DATDEF byte_t __kernel_user_start[];
      (*(__typeof__(&(sym)))(usershare_writable+((uintptr_t)&(sym)-(uintptr_t)__kernel_user_start)))
 
 
-/* Acquire/release access to a given c-style string 'str'.
+/* Acquire/release access to a given c-style string `str'.
  * There are multiple ways this function can behave, which are
  * based on the actual length and context of the calling thread:
  * #1: If the calling thread is the only currently running in the associated VM:
@@ -81,17 +81,17 @@ DATDEF byte_t __kernel_user_start[];
  *     on the kernel heap when the given string isn't absurdly long.
  * #3: If the string is absurdly long, suspend all threads using the the
  *     current VM by the caller and directly re-return the user-space string.
- *    'release_string()' will then later resume all previously suspended threads.
+ *    `release_string()' will then later resume all previously suspended threads.
  *  >> The system will always attempt to refrain from choosing to do this,
  *     due to the overhead associated with doing so.
  *     The string-length threshold that will cause this action to
  *     be taken depends on the number of threads running in the VM.
- * @param: opt_pstrlen:   When non-NULL, filled with 'strlen(return)'
+ * @param: opt_pstrlen:   When non-NULL, filled with `strlen(return)'
  * @param: pstate:        A mandatory pointer to a integer that is filled with opaque data
- *                        describing how 'release_string()' should later perform cleanup.
+ *                        describing how `release_string()' should later perform cleanup.
  * @return: * :      A pointer to some dataset containing the user-string,
  *                   that is now safe for use by the kernel.
- * @return: -EINVAL: The given string is longer than 'max_length' (Only enforced for case #2 and #3)
+ * @return: -EINVAL: The given string is longer than `max_length' (Only enforced for case #2 and #3)
  * @return: -EINTR:  The calling thread was interrupted.
  * @return: -ENOMEM: Not enough available memory.
  * @return: -EFAULT: The given string is faulty. */
@@ -104,10 +104,10 @@ FUNDEF SAFE void KCALL release_string(VIRT char *__restrict virt_str, int state)
 #define RELEASE_STRING(virt_str,state)     release_string(virt_str,state)
 #define ACQUIRE_FS_STRING(str,plen,pstate) acquire_string(str,DEFAULT_MAX_FS_STRING_LENGTH,plen,pstate)
 
-/* Similar to 'acquire_string()', but always create a duplicate in kernel memory.
+/* Similar to `acquire_string()', but always create a duplicate in kernel memory.
  * NOTE: Upon error, an E_PTR(*) error code is returned.
  * @return: * :      The GFP_SHARED heap-allocated copy of the string.
- * @return: -EINVAL: The given string is longer than 'max_length'.
+ * @return: -EINVAL: The given string is longer than `max_length'.
  * @return: -EINTR:  The calling thread was interrupted.
  * @return: -ENOMEM: Not enough available memory.
  * @return: -EFAULT: The given string is faulty. */
@@ -115,9 +115,9 @@ FUNDEF SAFE ATTR_MALLOC char *KCALL
 copy_string(USER char const *str, size_t max_length, size_t *opt_pstrlen);
 
 
-/* Execute 'worker()' and handle illegal user-memory
+/* Execute `worker()' and handle illegal user-memory
  * accesses that occur within by returning -EFAULT.
- * Upon success, the return value of 'worker' is returned.
+ * Upon success, the return value of `worker' is returned.
  * WARNING: The worker is required to user-space, it must
  *          manually validate the user-space pointer's address limit!
  * Worker should look like this:
@@ -130,7 +130,7 @@ copy_string(USER char const *str, size_t max_length, size_t *opt_pstrlen);
  * >> ssize_t KCALL strlen_user(USER char const *s) {
  * >>     return call_user_worker(&my_worker,1,s);
  * >> }
- * @return: -EFAULT: 'worker' failed when a faulty pointer was accessed. */
+ * @return: -EFAULT: `worker' failed when a faulty pointer was accessed. */
 FUNDEF SAFE ssize_t (ATTR_CDECL call_user_worker)(void *__restrict worker, size_t argc, ...);
 
 

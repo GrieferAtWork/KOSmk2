@@ -25,7 +25,7 @@
 __SYSDECL_BEGIN
 
 /* No idea what glibc was up to with this one.
- * I mean: It's 'sigcontext' was even lacking a signal mask,
+ * I mean: It's `sigcontext' was even lacking a signal mask,
  *         meaning it would have been impossible to restore
  *         _everything_ without some questionable trickery
  *         such as hiding more fields at the end of the

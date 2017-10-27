@@ -1190,7 +1190,7 @@ __LIBC __WUNUSED __ATTR_MALLOC char *(__LIBCCALL vstrdupaf)(char const *__restri
  * Or better yet! Add something like: `__attribute__((clobber("%esp")))'
  *
  * Here's what the hacky code below does:
- * We must use '__builtin_alloca' to inform the compiler that the stack pointer
+ * We must use `__builtin_alloca' to inform the compiler that the stack pointer
  * contract has been broken, meaning that %ESP can (no longer) be used for offsets.
  * NOTE: If you don't believe me that this is required, and think this is just me
  *       ranting about missing GCC functionality, try the following code yourself:

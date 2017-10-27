@@ -34,14 +34,14 @@ struct superblock;
 #define FAT12 0
 #define FAT16 1
 #define FAT32 2
-typedef u16 fattype_t; /*< FAT filesystem type (One of 'FAT12', 'FAT16' or 'FAT32'). */
+typedef u16 fattype_t; /*< FAT filesystem type (One of `FAT12', `FAT16' or `FAT32'). */
 
 #define FAT12_MAXCLUSTERS 0xff4      /* 4084 */
 #define FAT16_MAXCLUSTERS 0xfff4     /* 65524 */
 #define FAT32_MAXCLUSTERS 0xfffffff4 /* 4294967284 */
 
 
-/* File attribute flags for 'fat_file_t::f_attr' */
+/* File attribute flags for `fat_file_t::f_attr' */
 #define ATTR_READONLY      0x01
 #define ATTR_HIDDEN        0x02
 #define ATTR_SYSTEM        0x04
@@ -96,7 +96,7 @@ typedef struct PACKED {
  /* FAT directory file entry */
 union PACKED {struct PACKED {
 union PACKED {struct PACKED {union PACKED {
- u8                    f_marker; /*< Special directory entry marker (One of 'MARKER_*'). */
+ u8                    f_marker; /*< Special directory entry marker (One of `MARKER_*'). */
  char                  f_name[FAT_NAMEMAX]; /*< Short (8-character) filename. */};
  char                  f_ext[FAT_EXTMAX]; /*< File extension. */};
  char                  f_nameext[FAT_NAMEMAX+FAT_EXTMAX];/*< Name+extension. */};
@@ -107,7 +107,7 @@ union PACKED {struct PACKED {union PACKED {
 #define NTFLAG_NONE    0x00
 #define NTFLAG_LOWBASE 0x08 /*< Lowercase basename. */
 #define NTFLAG_LOWEXT  0x10 /*< Lowercase extension. */
- u8                    f_ntflags;   /*< NT Flags (Set of 'NTFLAG_*'). */
+ u8                    f_ntflags;   /*< NT Flags (Set of `NTFLAG_*'). */
  filectime_t           f_ctime;     /*< Creation time. */
  fileatime_t           f_atime;     /*< Last access time (or rather date...). */
  le16                  f_clusterhi; /*< High 2 bytes of the file's cluster. */
@@ -125,9 +125,9 @@ union PACKED {struct PACKED {union PACKED {
 #define LFN_NAME3      2
 #define LFN_NAME      (LFN_NAME1+LFN_NAME2+LFN_NAME3)
  usc2ch_t              lfn_name_1[LFN_NAME1];
- u8                    lfn_attr;   /*< Attributes (always 'ATTR_LONGFILENAME') */
+ u8                    lfn_attr;   /*< Attributes (always `ATTR_LONGFILENAME') */
  u8                    lfn_type;   /*< Long directory entry type (set to ZERO(0)) */
- u8                    lfn_csum;   /*< Checksum of DOS filename (s.a.: 'kfat_genlfnchecksum'). */
+ u8                    lfn_csum;   /*< Checksum of DOS filename (s.a.: `fat_LFNchksum'). */
  usc2ch_t              lfn_name_2[LFN_NAME2];
  le16                  lfn_clus;   /*< First cluster (Always 0x0000). */
  usc2ch_t              lfn_name_3[LFN_NAME3];
@@ -145,13 +145,13 @@ typedef struct {
  le16 bpb_reserved_sectors;    /*< Number of reserved sectors. */
  u8   bpb_fatc;                /*< Number of File Allocation Tables (FAT's) on the storage media (1..4). */
  le16 bpb_maxrootsize;         /*< [!FAT32] Max number of entries in the root directory. */
- le16 bpb_shortsectorc;        /*< The total sectors in the logical volume (If 0, use 'bpb_numheads' instead). */
+ le16 bpb_shortsectorc;        /*< The total sectors in the logical volume (If 0, use `bpb_numheads' instead). */
  u8   bpb_mediatype;           /*< Indicates the media descriptor type. */
  le16 bpb_sectors_per_fat;     /*< [!FAT32] Number of sectors per FAT. */
  le16 bpb_sectors_per_track;   /*< Number of sectors per track. */
  le16 bpb_numheads;            /*< Number of heads or sides on the storage media. */
  le32 bpb_hiddensectors;       /*< Absolute sector address of the fat header (lba of the fat partition). */
- le32 bpb_longsectorc;         /*< Large amount of sector on media (Used for more than '65535' sectors) */
+ le32 bpb_longsectorc;         /*< Large amount of sector on media (Used for more than `65535' sectors) */
 } PACKED bios_parameter_block_t;
 
 typedef struct {
@@ -162,7 +162,7 @@ typedef struct {
                                   *  machine and inserted in a drive with a different drive number. */
  u8           f16_ntflags;       /*< Windows NT Flags. (Set to 0) */
  u8           f16_signature;     /*< Signature (Must be 0x28 or 0x29). */
- le32         f16_volid;         /*< VolumeID 'Serial' number. Used for tracking volumes between computers. */
+ le32         f16_volid;         /*< VolumeID ~Serial~ number. Used for tracking volumes between computers. */
  char         f16_label[11];     /*< Volume label string. This field is padded with spaces. */
  char         f16_sysname[8];    /*< System identifier string. This field is a string representation of the FAT file system type.
                                   *  It is padded with spaces. The spec says never to trust the contents of this string for any use. */
@@ -187,7 +187,7 @@ typedef struct {
                                     *  machine and inserted in a drive with a different drive number. */
  u8           f32_ntflags;         /*< Windows NT Flags. (Set to 0) */
  u8           f32_signature;       /*< Signature (Must be 0x28 or 0x29). */
- le32         f32_volid;           /*< VolumeID 'Serial' number. Used for tracking volumes between computers. */
+ le32         f32_volid;           /*< VolumeID ~Serial~ number. Used for tracking volumes between computers. */
  char         f32_label[11];       /*< Volume label string. This field is padded with spaces. */
  char         f32_sysname[8];      /*< System identifier string. This field is a string representation of the FAT file system type.
                                     *  It is padded with spaces. The spec says never to trust the contents of this string for any use. */
@@ -213,9 +213,9 @@ typedef struct _fat fat_t;
 
 struct fatfpos {
  pos_t     fp_namepos; /*< Absolute on-disk location of the first name header. */
- pos_t     fp_headpos; /*< Absolute on-disk location of the file's 'file_t'-header. */
+ pos_t     fp_headpos; /*< Absolute on-disk location of the file's `file_t'-header. */
  cluster_t fp_namecls; /*< The cluster in which the name starts.
-                        *  NOTE: Set to 'f_cluster_eof_marker' for
+                        *  NOTE: Set to `f_cluster_eof_marker' for
                         *        FAT12/16 root directory entries. */
 };
 
@@ -225,7 +225,7 @@ struct idata {
 union{cluster_t i_cluster;    /*< On-disk file starting cluster.
                                *  NOTE:    Set to >= :f_cluster_eof for empty files.
                                *  WARNING: On FAT12/16 filesystems, this field is set to
-                               *           'FAT_CUSTER_FAT16_ROOT' for the root inode (aka. superblock).
+                               *           `FAT_CUSTER_FAT16_ROOT' for the root inode (aka. superblock).
                                *  NOTE: == BSWAP_LE2H16(file_t::f_clusterhi) << 16 | BSWAP_LE2H16(file_t::f_clusterlo)
                                */
       sector_t  i_fat16_root; /*< [const][valid_if(INODE_ISUPERBLOCK(:) && :f_type != FAT32)]
@@ -236,7 +236,7 @@ union{cluster_t i_cluster;    /*< On-disk file starting cluster.
 
 struct fatnode {
  struct inode f_inode; /*< Underlying INode. */
- struct idata f_idata; /*< INode data (Linked in 'f_inode.i_user'). */
+ struct idata f_idata; /*< INode data (Linked in `f_inode.i_user'). */
 };
 
 #define fatnode_new()          ((struct fatnode *)inode_new(sizeof(struct fatnode)))
@@ -245,7 +245,7 @@ struct fatnode {
 
 struct filedata {
  cluster_t fd_cluster; /*< The fat index of the current cluster. */
- size_t    fd_cls_act; /*< The cluster number currently loaded in 'f_cluster'
+ size_t    fd_cls_act; /*< The cluster number currently loaded in `f_cluster'
                         *  NOTE: Set to (size_t)-1 when no valid cluster could be selected. */
  size_t    fd_cls_sel; /*< The selected cluster number to-be loaded when starting to read/write data. */
  pos_t     fd_begin;   /*< [== FAT_SECTORADDR(...,FAT_CLUSTERSTART(...,fd_cluster_id))]
@@ -265,7 +265,7 @@ struct filedata {
         (self)->fd_max = (self)->fd_end = (self)->fd_begin+(fat)->f_clustersize, \
         (self)->fd_pos = (self)->fd_begin)
 
-/* Returns (as a 'pos_t') the absolute, logical in-file position. */
+/* Returns (as a `pos_t') the absolute, logical in-file position. */
 #define FILEDATA_FPOS(self,fs) ((self)->fd_cls_sel*(fs)->f_clustersize+\
                                ((self)->fd_pos-(self)->fd_begin))
 /* Set the absolute, logical in-file position. */
@@ -304,8 +304,8 @@ struct fatfile_root16 {
 typedef fatid_t (KCALL *pgetfat)(fat_t const *__restrict self, fatid_t id);
 typedef void    (KCALL *psetfat)(fat_t       *__restrict self, fatid_t id, fatid_t value);
 
-/* Returns a sector number offset from 'f_fat_start', within
- * which the data associated with the given 'id' is stored. */
+/* Returns a sector number offset from `f_fat_start', within
+ * which the data associated with the given `id' is stored. */
 typedef sector_t (KCALL *pfatsec)(fat_t const *__restrict self, fatid_t id);
 
 #define FAT_METALOAD  0x1 /*< When set, the associated sector has been loaded. */
@@ -314,7 +314,7 @@ typedef sector_t (KCALL *pfatsec)(fat_t const *__restrict self, fatid_t id);
 
 struct _fat {
  struct superblock f_super;         /*< The underlying superblock. */
- struct idata      f_idata;         /*< INode data for the superblock itself (Linked in 'f_super.sb_root.i_user'). */
+ struct idata      f_idata;         /*< INode data for the superblock itself (Linked in `f_super.sb_root.i_user'). */
  mode_t            f_mode;          /*< Default permissions for every file on this filesystem (Defaults to 0777). */
  uid_t             f_uid;           /*< Owner UID for every file on this filesystem (Defaults to 0). */
  gid_t             f_gid;           /*< Owner GID for every file on this filesystem (Defaults to 0). */
@@ -323,9 +323,9 @@ struct _fat {
  char              f_label[12];     /*< [const] Volume label string (zero-terminated). */
  char              f_sysname[9];    /*< [const] System identifier string (zero-terminated). */
  u16               f_fat16_rootmax; /*< [const] Max amount of entries within the root directory (max_size parameter when enumerating the root directory).
-                                     *   NOTE: This field is unused when 'f_type' is 'FATFS_32' */
+                                     *   NOTE: This field is unused when `f_type' is `FATFS_32' */
  u8                f_fat_count;     /*< [const] Amount of redundant FAT copies. */
- bool              f_fat_changed;   /*< [lock(f_fat_lock)] Set to true/false to indicate changes within 'f_fat_meta'. */
+ bool              f_fat_changed;   /*< [lock(f_fat_lock)] Set to true/false to indicate changes within `f_fat_meta'. */
  u8                f_padding[2];    /*< ... */
  size_t            f_sectorsize;    /*< [const] Size of a sector in bytes. */
  size_t            f_clustersize;   /*< [const][== f_sec4clus*f_sectorsize] Size of a cluster in bytes. */
@@ -344,7 +344,7 @@ union{
   *    towards each other, allowing one to create chains of
   *    files that virtually act as one continuous string of data.
   *  - The first cluster of any file is always stored within the
-  *    'file_t' header that can be found by enumerating a directory.
+  *    `file_t' header that can be found by enumerating a directory.
   *  - To read file or directory data, one does the following:
   *    >> fat_t    *fatfs   = (fat_t *)inode->i_super;
   *    >> cluster_t cluster = inode->i_data->i_cluster;
@@ -366,28 +366,28 @@ union{
  void             *f_fat_table;     /*< [lock(f_fat_lock)][1..f_fat_size|LOGICAL_LENGTH(f_fat_length)][const]
                                      *   Memory-cached version of the FAT table.
                                      *   NOTE: The way that entries within this table are read/written depends
-                                     *         on the type of FAT, but 'f_fat_(g|s)et' can be used for convenience.
-                                     *   NOTE: The amount of entries can be read from 'f_fat_length'.
-                                     *   NOTE: The amount of bytes can be read from 'f_fat_size'.
+                                     *         on the type of FAT, but `f_fat_(g|s)et' can be used for convenience.
+                                     *   NOTE: The amount of entries can be read from `f_fat_length'.
+                                     *   NOTE: The amount of bytes can be read from `f_fat_size'.
                                      */
  byte_t           *f_fat_meta;      /*< [lock(f_fat_lock)][1..CEILDIV(f_sec4fat,8/FAT_METABITS)|LOCIAL_LENGTH(f_sec4fat)]
                                      *  [bitset(FAT_METABITS)][const]
-                                     *   A bitset used to track the load/change status of 'f_fat_table'.
+                                     *   A bitset used to track the load/change status of `f_fat_table'.
                                      *   Stored inside this, one can find information about what FAT
                                      *   sectors have already been loaded, and which have changed.
-                                     *   NOTE: This bitset contains one entry of 'FAT_METABITS'
+                                     *   NOTE: This bitset contains one entry of `FAT_METABITS'
                                      *         for each sector within the FAT lookup table.
-                                     *   NOTE: 'f_fat_changed' must be set to 'true' while changed fat entries exist. */
+                                     *   NOTE: `f_fat_changed' must be set to `true' while changed fat entries exist. */
  pgetfat           f_fat_get;       /*< [1..1][const] Read an entry from the FAT table. */
  psetfat           f_fat_set;       /*< [1..1][const] Write an entry to the FAT table. */
- pfatsec           f_fat_sector;    /*< [1..1][const] Return a sector offset from 'f_fat_start' of a given FAT table index.
+ pfatsec           f_fat_sector;    /*< [1..1][const] Return a sector offset from `f_fat_start' of a given FAT table index.
                                      *               (That is the sector in which that part of the the FAT table is stored on-disk).
                                      *   HINT: The number returned by this may be used to interact with the
-                                     *        'f_fat_meta' bitset-vector, preferably using the 'FAT_META_*' macros. */
+                                     *        `f_fat_meta' bitset-vector, preferably using the `FAT_META_*' macros. */
 };
 
 
-/* NOTE: 'fat_sector_index' should be obtained by calling 'f_fat_sector'. */
+/* NOTE: `fat_sector_index' should be obtained by calling `f_fat_sector'. */
 #define FAT_META_GTLOAD(self,fat_sector_index) ((self)->f_fat_meta[(fat_sector_index)/(8/FAT_METABITS)] &   (FAT_METALOAD << (((fat_sector_index)%(8/FAT_METABITS))*FAT_METABITS)))
 #define FAT_META_STLOAD(self,fat_sector_index) ((self)->f_fat_meta[(fat_sector_index)/(8/FAT_METABITS)] |=  (FAT_METALOAD << (((fat_sector_index)%(8/FAT_METABITS))*FAT_METABITS)))
 #define FAT_META_UTLOAD(self,fat_sector_index) ((self)->f_fat_meta[(fat_sector_index)/(8/FAT_METABITS)] &= ~(FAT_METALOAD << (((fat_sector_index)%(8/FAT_METABITS))*FAT_METABITS)))
@@ -401,7 +401,7 @@ union{
  *       that the requested portion of the FAT is loaded.
  *       >> assert(FAT_META_GTLOAD(self,FAT_TABLESECTOR(self,fat_id)));
  *       Similarly, the caller should mark the metadata as
- *       changed after using 'FAT_TABLESET()' to write to the FAT:
+ *       changed after using `FAT_TABLESET()' to write to the FAT:
  *       >> FAT_META_STCHNG(self,FAT_TABLESECTOR(self,fat_id));
  * WARNING: When the intend is to write to the fat, the
  *          caller must still ensure that the associated
@@ -417,7 +417,7 @@ union{
 #define FAT_SECTORADDR(self,sector_num)   \
   ((pos_t)(sector_num)*(self)->f_sectorsize)
 
-/* Returns the sector number of a given cluster, that then spans 'self->f_sec4clus' sectors. */
+/* Returns the sector number of a given cluster, that then spans `self->f_sec4clus' sectors. */
 #define FAT_CLUSTERSTART(self,cluster_id) \
   ((sector_t)((self)->f_dat_start+((cluster_id)-2)*(self)->f_sec4clus))
 

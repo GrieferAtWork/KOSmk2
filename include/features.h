@@ -65,24 +65,24 @@
 #undef __USE_FORTIFY_LEVEL
 #undef __KERNEL_STRICT_NAMES
 
-#undef __USE_KOS         /* '#ifdef _KOS_SOURCE'     Additions added & Changes made by KOS. */
-#undef __USE_KXS         /* '#if _KOS_SOURCE >= 2'   Minor extended functionality that is likely to collide with existing programs. */
-#undef __USE_UTF         /* '#ifdef _UTF_SOURCE'     Enable additional string functions that accept char16_t and char32_t. (Referred to as 'c16/u' and 'c32/U') */
-#undef __USE_DOS         /* '#ifdef _DOS_SOURCE'     Functions usually only found in DOS: spawn, strlwr, etc. */
-#undef __USE_OLD_DOS     /* '#if _DOS_SOURCE >= 2'   Make some old, long deprecated DOS APIs (namely in <dos.h>) available. */
-#undef __USE_DOSFS       /* '#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). - Only when option when linking against __CRT_KOS. */
-#undef __USE_DOS_SLIB    /* '#if _DOS_SOURCE && __STDC_WANT_SECURE_LIB__' Enable prototypes for the so-called ~secure~ DOS library. (They're really just functions that perform additional checks on arguments and such...) */
-#undef __USE_TIME64      /* '#ifdef _TIME64_SOURCE'  Provide 64-bit time functions (e.g.: 'time64()'). - A real implementation of this either requires __CRT_DOS or __CRT_KOS. - __CRT_GLC prototypes are emulated and truncate/zero-extend time arguments. */
-#undef __USE_TIME_BITS64 /* '#if _TIME_T_BITS == 64' Use a 64-bit interger for 'time_t' and replace all functions taking it as argument with 64-bit variations. */
-#undef __USE_DEBUG       /* '#ifdef _DEBUG_SOURCE'   Enable debug function prototypes, either as real debug functions ('_DEBUG_SOURCE' defined as non-zero and '__CRT_KOS' is present), or as stubs/aliases for non-debug version ('_DEBUG_SOURCE' defined as zero or '__CRT_KOS' isn't present) */
-#undef __USE_DEBUG_HOOK  /* '#ifndef NDEBUG'         Redirect functions such as 'malloc()' to their debug counterparts (Implies '_DEBUG_SOURCE=1'). */
-#undef __USE_PORTABLE    /* '#ifdef _PORT_SOURCE'    Mark all non-portable functions as deprecated (So-long as they can't be emulated when linking against any supported LIBC in stand-alone mode). */
+#undef __USE_KOS         /* `#ifdef _KOS_SOURCE'     Additions added & Changes made by KOS. */
+#undef __USE_KXS         /* `#if _KOS_SOURCE >= 2'   Minor extended functionality that is likely to collide with existing programs. */
+#undef __USE_UTF         /* `#ifdef _UTF_SOURCE'     Enable additional string functions that accept `char16_t' and `char32_t'. (Referred to as `c16'/`u' and `c32'/`U') */
+#undef __USE_DOS         /* `#ifdef _DOS_SOURCE'     Functions usually only found in DOS: `spawn', `strlwr', etc. */
+#undef __USE_OLD_DOS     /* `#if _DOS_SOURCE >= 2'   Make some old, long deprecated DOS APIs (namely in `<dos.h>') available. */
+#undef __USE_DOSFS       /* `#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). - Only when option when linking against __CRT_KOS. (s.a.: `fsmode') */
+#undef __USE_DOS_SLIB    /* `#if _DOS_SOURCE && __STDC_WANT_SECURE_LIB__' Enable prototypes for the so-called ~secure~ DOS library. (They're really just functions that perform additional checks on arguments and such...) */
+#undef __USE_TIME64      /* `#ifdef _TIME64_SOURCE'  Provide 64-bit time functions (e.g.: `time64()'). - A real implementation of this either requires `__CRT_DOS' or `__CRT_KOS'. - `__CRT_GLC' prototypes are emulated and truncate/zero-extend time arguments. */
+#undef __USE_TIME_BITS64 /* `#if _TIME_T_BITS == 64' Use a 64-bit interger for `time_t' and replace all functions taking it as argument with 64-bit variations. */
+#undef __USE_DEBUG       /* `#ifdef _DEBUG_SOURCE'   Enable debug function prototypes, either as real debug functions (`_DEBUG_SOURCE' defined as non-zero and `__CRT_KOS' is present), or as stubs/aliases for non-debug version (`_DEBUG_SOURCE' defined as zero or `__CRT_KOS' isn't present) */
+#undef __USE_DEBUG_HOOK  /* `#ifndef NDEBUG'         Redirect functions such as `malloc()' to their debug counterparts (Implies `_DEBUG_SOURCE=1'). */
+#undef __USE_PORTABLE    /* `#ifdef _PORT_SOURCE'    Mark all non-portable functions as deprecated (So-long as they can't be emulated when linking against any supported LIBC in stand-alone mode). */
 
-#undef __USE_KOS_PRINTF  /* '#if __KOS_CRT || _KOS_PRINTF_SOURCE || _KOS_SOURCE >= 2'
-                          *    Always use KOS's printf() function & extension, as provided through 'format_printf()'.
-                          *    When running in dos/glc compatibility mode, functions such as 'printf()' normally link
+#undef __USE_KOS_PRINTF  /* `#if __KOS_CRT || _KOS_PRINTF_SOURCE || _KOS_SOURCE >= 2'
+                          *    Always use KOS's printf() function & extension, as provided through `format_printf()'.
+                          *    When running in dos/glc compatibility mode, functions such as `printf()' normally link
                           *    against the platform's integrated libc function, meaning that KOS-specific extensions
-                          *    such as '%q' are not available normally.
+                          *    such as `%q' are not available normally.
                           * >> Enabling this option forces such functions to pass through some
                           *    emulation of KOS's printf function, re-enabling its extensions. */
 
@@ -102,7 +102,7 @@
  *     _findfirsti64 _findfirst32i64
  *     ... (All other triples follow the same overlap)
  * Not is should be obvious that the old function not affected by
- * this is '_findfirst64' (Which only gained an alias we don't ever use)
+ * this is `_findfirst64' (Which only gained an alias we don't ever use)
  * Yet the pure 32-bit and the 32-bit time/64-bit size versions are
  * impossible to link while maintaining binary compatibility.
  * That is where this switch comes into play.
@@ -120,9 +120,9 @@
 #endif
 
 
-/* '#ifdef __DOS_COMPAT__' Even if CRT-GLC may be available, still emulate extended libc functions using functions also provided by DOS.
+/* `#ifdef __DOS_COMPAT__' Even if CRT-GLC may be available, still emulate extended libc functions using functions also provided by DOS.
  *                         NOTE: Automatically defined when CRT-GLC isn't available, but CRT-DOS is. */
-/* '#ifdef __GLC_COMPAT__' Same as '__DOS_COMPAT__' but for GLibc, rather than DOS. */
+/* `#ifdef __GLC_COMPAT__' Same as `__DOS_COMPAT__' but for GLibc, rather than DOS. */
 
 #undef __CRT_DOS
 #undef __CRT_GLC
@@ -394,8 +394,8 @@
 #endif
 
 /* HINT: You can forceably disable DOS extensions in PE-mode by
- *       defining '_DOS_SOURCE' as an empty macro, or as a
- *       value equal to ZERO(0). */
+ *       defining `_DOS_SOURCE' as an empty macro, or as a value
+ *       equal to ZERO(0). */
 #ifdef _DOS_SOURCE
 #undef __USE_DOS
 #if (_DOS_SOURCE+0) == 0
@@ -410,8 +410,8 @@
 #endif
 #endif
 
-/* HINT: In order to be able to use _DOS_SOURCE or '_DOSFS_SOURCE', 'libc'
- *       must be built with 'CONFIG_LIBC_NO_DOS_LIBC' disabled! */
+/* HINT: In order to be able to use _DOS_SOURCE or `_DOSFS_SOURCE', `libc'
+ *       must be built with `CONFIG_LIBC_NO_DOS_LIBC' disabled! */
 #ifdef _DOSFS_SOURCE
 #undef __USE_DOSFS
 /* Manually enable DOS-FS */
@@ -429,10 +429,10 @@
 #   undef __USE_TIME_BITS64
 #if defined(_FILE_OFFSET_BITS) && \
     ((_FILE_OFFSET_BITS+0) != 32 && (_FILE_OFFSET_BITS+0) != 64)
-#warning "Unrecognized '_FILE_OFFSET_BITS'"
+#warning "Unrecognized `_FILE_OFFSET_BITS'"
 #undef _FILE_OFFSET_BITS
 #endif
-/* Use 'CONFIG_32BIT_FILESYSTEM' to default-configure '_FILE_OFFSET_BITS' */
+/* Use `CONFIG_32BIT_FILESYSTEM' to default-configure `_FILE_OFFSET_BITS' */
 #ifndef _FILE_OFFSET_BITS
 #ifdef CONFIG_32BIT_FILESYSTEM
 #   define _FILE_OFFSET_BITS   32
@@ -440,7 +440,7 @@
 #   define _FILE_OFFSET_BITS   64
 #endif /* !CONFIG_32BIT_FILESYSTEM */
 #endif /* !_FILE_OFFSET_BITS */
-/* Use 'CONFIG_32BIT_TIME' to default-configure '_TIME_T_BITS' */
+/* Use `CONFIG_32BIT_TIME' to default-configure `_TIME_T_BITS' */
 #ifndef _TIME_T_BITS
 #ifdef CONFIG_32BIT_TIME
 #   define _TIME_T_BITS   32
@@ -460,7 +460,7 @@
 
 #if (!defined(__CRT_DOS) && !defined(__CRT_KOS)) && \
     (defined(__USE_TIME64) || defined(__USE_TIME_BITS64))
-#error "The selected CRT does not support 64-bit time() functions (Try building with '-D_TIME_T_BITS=32')"
+#error "The selected CRT does not support 64-bit time() functions (Try building with `-D_TIME_T_BITS=32')"
 #endif
 
 #ifndef __CRT_KOS
@@ -498,7 +498,7 @@
 /*
  * >> extern int execv(char const *file, char **argv) __UFS_FUNC_OLDPEA(execv);
  * >> extern int _execv(char const *file, char **argv) __UFS_FUNC_OLDPEB(execv);
- * Assembly names: 'execv' (KOS), '_execv' (DOS-FS mode)
+ * Assembly names: `execv' (KOS), `_execv' (DOS-FS mode)
  */
 #ifdef __USE_DOSFS
 #   define __UFS_FUNC_OLDPEA(x)  __ASMNAME("_" #x)

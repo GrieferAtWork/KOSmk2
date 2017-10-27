@@ -44,7 +44,7 @@
 
 /* NOTE: This driver does not implement the device filesystem itself.
  *       The device filesystem is just an ordinary 'vsuperblock'
- *      (s.a.: '/src/include/fs/vfs.h'), with the addition of all
+ *      (s.a.: `/src/include/fs/vfs.h'), with the addition of all
  *       device driver nodes being registered within it, meaning that
  *       it is the _only_ superblock in which device nodes can be
  *       allocated directly. - All other superblocks can only create
@@ -53,13 +53,13 @@
  *       at runtime, meaning that a ~real~ filesystem implementing
  *       support for device files must somehow be able to to represent
  *       invalid device ids, whilst the /dev filesystem must not be
- *       able to to this! (s.a.: 'vnode_mknod()' in '/src/kernel/fs/vfs.c')
+ *       able to to this! (s.a.: `vnode_mknod()' in `/src/kernel/fs/vfs.c')
  */
 
 DECL_BEGIN
 
-#define DN_INT 0x0000 /*< Append an integer decimal for the device offset, excluding 'dn_min'. (e.g.: '/dev/hda', '/dev/hda1') */
-#define DN_ALL 0x8000 /*< FLAG: Append the name-suffix to all entries, including 'dn_min' itself. */
+#define DN_INT 0x0000 /*< Append an integer decimal for the device offset, excluding `dn_min'. (e.g.: `/dev/hda', `/dev/hda1') */
+#define DN_ALL 0x8000 /*< FLAG: Append the name-suffix to all entries, including `dn_min' itself. */
 struct devname {
  dev_t       dn_min;  /*< The lowest device number described by this. */
  u32         dn_num;  /*< [!0] The amount of device ids described by this. NOTE: ZERO in this field indicates a sentinel. */

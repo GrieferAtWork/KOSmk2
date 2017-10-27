@@ -1635,7 +1635,7 @@ DEFINE_PUBLIC_ALIAS(_getpid,libc_getpid);
 #if __SIZEOF_SIZE_T__ != 4
 /* Who knew NT is also the world leading in SCREWING UP SIMPLE FU$%#ING A$$ LOGIC?
  * And don't give me that backwards-compatibility bull$h1t, because it doesn't
- * apply to a new architecture that would have a different 'sizeof(size_t) == 8'.
+ * apply to a new architecture that would have a different `sizeof(size_t) == 8'.
  * Because at that point, what are you trying to be backwards-compatible towards? */
 INTERN s32 (__LIBCCALL libc_dos_read)(int fd, void *buf, u32 bufsize) { return (s32)libc_read(fd,buf,(size_t)bufsize); }
 INTERN s32 (__LIBCCALL libc_dos_write)(int fd, void const *buf, u32 bufsize) { return (s32)libc_write(fd,buf,(size_t)bufsize); }
@@ -1880,7 +1880,7 @@ DEFINE_PUBLIC_ALIAS(__DSYMw32(wfstatat64),libc_dos_w32fstatat64);
 
 
 /* DOS-FS mode + DOS-binary-compatible stat functions.
- * NOTE: These are only used when user-apps are configures as '__PE__' + '__USE_DOS'.
+ * NOTE: These are only used when user-apps are configures as `__PE__' + `__USE_DOS'.
  *       Otherwise, KOS's kernel stat buffer data layout is used to maximize performance.  */
 PRIVATE ATTR_DOSTEXT void LIBCCALL
 libc_fill_dos_stat_common(struct stat64 const *__restrict src,
@@ -1968,7 +1968,7 @@ DEFINE_PUBLIC_ALIAS(_wstat64i32,libc_dos_local_16wstat64);
 
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL
 libc_cwait(int *tstat, intptr_t pid, int UNUSED(action)) {
- /* NOTE: Apparently, the 'action' argument is completely ignored... */
+ /* NOTE: Apparently, the `action' argument is completely ignored... */
  /* This one's pretty simple, because it's literally just a waitpid() system call...
   * (It even returns the same thing, that being the PID of the joined process...) */
  return (intptr_t)libc_waitpid((pid_t)pid,tstat,WEXITED);
@@ -2037,7 +2037,7 @@ read_child_errors:
  temp = libc_read(pipes[0],&status,sizeof(status));
  libc_close(pipes[0]); /* Close the reader. */
  if (temp < 0) return -1;
- /* This means that 'libc_fexecve()' above closed the pipe during a successful exec(). */
+ /* This means that `libc_fexecve()' above closed the pipe during a successful exec(). */
  if (!temp) return child;
  /* If something was read, then it is the errno value that caused the failure. */
  SET_ERRNO(status);
@@ -2053,7 +2053,7 @@ do_exec:
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL
 libc_spawnve(int mode, char const *file,
              char *const argv[], char *const envp[]) {
- /* No need to re-implement 'libc_fspawnve()' here. - Just open() and fspawn() instead! */
+ /* No need to re-implement `libc_fspawnve()' here. - Just open() and fspawn() instead! */
  intptr_t result;
  int fd = libc_open(file,O_RDONLY|O_CLOEXEC);
  if (fd < 0) return -1;
@@ -2120,7 +2120,7 @@ read_child_errors:
  temp = libc_read(pipes[0],&status,sizeof(status));
  libc_close(pipes[0]); /* Close the reader. */
  if (temp < 0) return -1;
- /* This means that 'libc_exec_for_spawnvpe()' above closed the pipe during a successful exec(). */
+ /* This means that `libc_exec_for_spawnvpe()' above closed the pipe during a successful exec(). */
  if (!temp) return child;
  /* If something was read, then it is the errno value that caused the failure. */
  SET_ERRNO(status);

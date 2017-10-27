@@ -59,8 +59,8 @@ typedef struct biosblkdev bd_t;
 
 BDISK_DATA DEFINE_RWLOCK(bios_lock);         /*< Global device-access lock. */
 BDISK_DATA ppage_t bios_page_p = PAGE_ERROR; /*< [1..1|null(PAGE_ERROR)][lock(bios_lock)] Buffer page used for data exchange with the bios (allocated below the 1Mb mark). */
-BDISK_DATA ppage_t bios_page_v = PAGE_ERROR; /*< [1..1|null(PAGE_ERROR)][lock(bios_lock)] Virtual mapping of 'bios_page_p'. */
-BDISK_DATA size_t bios_page_sz = 0;          /*< [valid_if(bios_page_p != PAGE_ERROR)][lock(bios_lock)] Allocated amount of bytes starting at 'bios_page_p'. */
+BDISK_DATA ppage_t bios_page_v = PAGE_ERROR; /*< [1..1|null(PAGE_ERROR)][lock(bios_lock)] Virtual mapping of `bios_page_p'. */
+BDISK_DATA size_t bios_page_sz = 0;          /*< [valid_if(bios_page_p != PAGE_ERROR)][lock(bios_lock)] Allocated amount of bytes starting at `bios_page_p'. */
 
 struct PACKED bd_13h42h_buffer {
  u8    b_bufsize;      /*< [== sizeof(struct bd_13h42h_buffer)] */
@@ -437,7 +437,7 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
    return E_PTR(-ENOMEM);
   }
  }
- /* NOTE: The kernel's own 'THIS_INSTANCE' must never get unloaded! */
+ /* NOTE: The kernel's own `THIS_INSTANCE' must never get unloaded! */
  asserte(E_ISOK(device_setup(&result->b_device.bd_device,THIS_INSTANCE)));
  return result;
 }

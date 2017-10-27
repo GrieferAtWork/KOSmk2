@@ -42,7 +42,7 @@ struct iobuffer {
  byte_t              *ib_buffer;  /*< [lock(ib_rwlock)][0..ib_size][owned] Base address of the R/W buffer. */
  ATOMIC_DATA byte_t  *ib_rpos;    /*< [lock(ib_rwlock)][0..1][in(ib_buffer+=ib_size)][cyclic:<=ib_wpos] Read pointer within the cyclic R/W buffer (Note atomic-write is allowed when holding a read-lock). */
  byte_t              *ib_wpos;    /*< [lock(ib_rwlock)][0..1][in(ib_buffer+=ib_size)][cyclic:>=ib_rpos] Write pointer within the cyclic R/W buffer. */
- ATOMIC_DATA u32      ib_mode;    /*< I/O Buffer mode (Set of 'IOBUFFER_*') */
+ ATOMIC_DATA u32      ib_mode;    /*< I/O Buffer mode (Set of `IOBUFFER_*') */
 };
 
 #define IOBUFFER_DEFAULT_MAX_SIZE 0x200 /* 512 */
@@ -107,14 +107,14 @@ FUNDEF SAFE ssize_t KCALL iobuffer_get_write_size(struct iobuffer const *__restr
 
 
 /* Try to reserve (preallocate) memory for write
- * operations with a total of 'write_size' bytes.
+ * operations with a total of `write_size' bytes.
  * This function respects a set max-size, and returns
  * ZERO(0) if the buffer is at its limit, or when
  * it failed to allocate a bigger buffer.
  * @return: 0 :     - Failed to reallocate memory.
  *                  - The buffer is already at its limit
  *                    and not allowed to grow anymore.
- *                  - The given 'write_size' was ZERO(0)
+ *                  - The given `write_size' was ZERO(0)
  * @return: * :     Amount of bytes that were reserved.
  * @return: -EINTR: The calling thread was interrupted. */
 FUNDEF SAFE ssize_t KCALL iobuffer_reserve(struct iobuffer *__restrict self, size_t write_size);
@@ -128,11 +128,11 @@ FUNDEF SAFE size_t KCALL iobuffer_flush(struct iobuffer *__restrict self);
 
 typedef u8 iomode_t;
 /* I/O read/write mode flags.
- * When used, always use exactly one 'IO_BLOCK*' value,
+ * When used, always use exactly one `IO_BLOCK*' value,
  * that may be or'ed together with any of the other flags. */
 #define IO_BLOCKNONE  0x00 /*< Don't block if no (more) data can be read/written. */
 #define IO_BLOCKFIRST 0x01 /*< Only block if no data existed when reading started/buffer was full when writing started. */
-#define IO_BLOCKALL   0x03 /*< Block until the entirety of the provided buffer is filled/written (implies behavior of 'IO_BLOCKFIRST'). */
+#define IO_BLOCKALL   0x03 /*< Block until the entirety of the provided buffer is filled/written (implies behavior of `IO_BLOCKFIRST'). */
 #define IO_NONE       0x00 /*< This flag does nothing... */
 #define IO_PEEK       0x10 /*< Don't advance the read/write-pointer. */
 #define IO_QUICKMOVE  0x20 /*< Don't restart the read/write process if another task operated on the same data (May lead to data being read/written more than once).
@@ -142,18 +142,18 @@ typedef u8 iomode_t;
 /* Read/Write generic memory to/from a given I/O buffer.
  * @param: mode:        I/O read/write configuration to-be used.
  * @param: rsize|wsize: Amount of bytes transferred after a success call.
- * @return: 0 :        [iobuffer_read][IO_BLOCKFIRST] The I/O buffer was interrupted using 'iobuffer_interrupt'.
- * @return: * :         The amount of bytes transferred (<= 'bufsize')
+ * @return: 0 :        [iobuffer_read][IO_BLOCKFIRST] The I/O buffer was interrupted using `iobuffer_interrupt'.
+ * @return: * :         The amount of bytes transferred (<= `bufsize')
  * @return: -EFAULT:    A given pointer was faulty.
  * @return: -EINTR:     The calling thread was interrupted.
- * NOTE: [iobuffer_write] Neither 'IO_PEEK', 'IO_QUICKMOVE' nor 'IO_SKIP' are supported. */
+ * NOTE: [iobuffer_write] Neither `IO_PEEK', `IO_QUICKMOVE' nor `IO_SKIP' are supported. */
 FUNDEF ssize_t KCALL iobuffer_read(struct iobuffer *__restrict self, USER void *buf, size_t bufsize, iomode_t mode);
 FUNDEF ssize_t KCALL iobuffer_write(struct iobuffer *__restrict self, USER void const *buf, size_t bufsize, iomode_t mode);
 #define iobuffer_skip(self,max_skip,mode) iobuffer_read(self,NULL,max_skip,IO_SKIP|(mode))
 
 /* Interrupts the next, or current blocking read operation
- * specifying 'IO_BLOCKFIRST' as its blocking argument.
- * Contrary to the documentation of 'IO_BLOCKFIRST', the
+ * specifying `IO_BLOCKFIRST' as its blocking argument.
+ * Contrary to the documentation of `IO_BLOCKFIRST', the
  * read operation will then return ZERO(0).
  * @return: -EOK:   The I/O interrupt was performed.
  * @return: -EINTR: The calling thread was interrupted. */
@@ -187,12 +187,12 @@ FUNDEF ssize_t KCALL iobuffer_unwrite(struct iobuffer *__restrict self, size_t m
 
 
 /* Seek the r/w pointer within validated restrictions, internally
- * calling 'iobuffer_read+IO_SKIP', 'iobuffer_unread' and 'iobuffer_unwrite'.
+ * calling `iobuffer_read+IO_SKIP', `iobuffer_unread' and `iobuffer_unwrite'.
  * >> These functions can be used to implement a SEEK_CUR-style seek() callback
  *    for pipes and PTY devices, as well as other I/O-buffer-based objects.
- * @param: off: [kiobuf_rseek][off < 0]: Call 'iobuffer_unread' to move the r-pointer backwards (return the amount of unread bytes).
- *              [kiobuf_rseek][off > 0]: Call 'iobuffer_read+IO_SKIP' to move the r-pointer forwards (uses 'IO_BLOCKNONE'; return the amount of skipped bytes).
- *              [kiobuf_wseek][off < 0]: Call 'iobuffer_unwrite' to move the w-pointer backwards (return the amount of unwritten bytes).
+ * @param: off: [kiobuf_rseek][off < 0]: Call `iobuffer_unread' to move the r-pointer backwards (return the amount of unread bytes).
+ *              [kiobuf_rseek][off > 0]: Call `iobuffer_read+IO_SKIP' to move the r-pointer forwards (uses `IO_BLOCKNONE'; return the amount of skipped bytes).
+ *              [kiobuf_wseek][off < 0]: Call `iobuffer_unwrite' to move the w-pointer backwards (return the amount of unwritten bytes).
  *              [kiobuf_wseek][off > 0]: return `0'.
  * @return: * :     See above.
  * @return: -EINTR: The calling thread was interrupted. */

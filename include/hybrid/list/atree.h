@@ -61,7 +61,7 @@ DECL_BEGIN
  *     LEVEL 24; SEMI 0x73000000 <  0x73400000 -> MAX (              set bit 23)
  *     LEVEL 23; SEMI 0x73800000 >= 0x73400000 -> MIN (unset bit 23; set bit 22)
  *     LEVEL 22; SEMI 0x73400000 == 0x73400000 -> STOP SEARCH
- *   >> The key '0x73400000' can be mapped to 10 different leafes,
+ *   >> The key `0x73400000' can be mapped to 10 different leafes,
  *      with the worst case (aka. failure) lookup time for this key
  *      always being O(10).
  *      Note though that for the lookup time to actually be 10, other mapping
@@ -122,11 +122,11 @@ DECL_BEGIN
 #define ATREE_MAPMAX(Tkey,semi,level)  (Tkey)((semi)| (((ATREE_SEMI_T(Tkey))1 << (level))-1))
 #define ATREE_WALKMIN(Tkey,semi,level) ((semi)  = (((semi)&~((ATREE_SEMI_T(Tkey))1 << (level)))| \
                                                    ((ATREE_SEMI_T(Tkey))1 << ((level)-1))), \
-                                        --(level)) /*< unset level'th bit; set level'th-1 bit. */
-#define ATREE_WALKMAX(Tkey,semi,level) (--(level),(semi) |= ((ATREE_SEMI_T(Tkey))1 << (level))) /*< set level'th-1 bit. */
+                                        --(level)) /*< unset level`th bit; set level`th-1 bit. */
+#define ATREE_WALKMAX(Tkey,semi,level) (--(level),(semi) |= ((ATREE_SEMI_T(Tkey))1 << (level))) /*< set level`th-1 bit. */
 #define ATREE_NEXTMIN(Tkey,semi,level) (((semi)&~((ATREE_SEMI_T(Tkey))1 << (level)))| \
-                                       ((ATREE_SEMI_T(Tkey))1 << ((level)-1))) /*< unset level'th bit; set level'th-1 bit. */
-#define ATREE_NEXTMAX(Tkey,semi,level) ((semi)|((ATREE_SEMI_T(Tkey))1 << ((level)-1))) /*< set level'th-1 bit. */
+                                       ((ATREE_SEMI_T(Tkey))1 << ((level)-1))) /*< unset level`th bit; set level`th-1 bit. */
+#define ATREE_NEXTMAX(Tkey,semi,level) ((semi)|((ATREE_SEMI_T(Tkey))1 << ((level)-1))) /*< set level`th-1 bit. */
 #define ATREE_NEXTLEVEL(level)         ((level)-1)
 #define ATREE_SEMILEVEL(semi)          (ATREE_LEVEL_T)(ffs(semi)-1) /*< Get the current level associated with a given semi-key. */
 

@@ -316,10 +316,10 @@ __XSYSCALL(__NR_xdlsym,sys_xdlsym)
  *          through ESP (aka: This function will use your user-space
  *          stack for working its wonders)
  * NOTE: This systemcall is invoked after main() returns,
- *       or when 'exit()' or 'quick_exit()' is called.
- *       It is however not called when '_exit()' or '_Exit()' is invoked,
+ *       or when `exit()' or 'quick_exit()' is called.
+ *       It is however not called when `_exit()' or '_Exit()' is invoked,
  *       or when an unhandled signal causes the application to terminate.
- * NOTE: libc invokes this system-call after 'atexit()' was executed. */
+ * NOTE: libc invokes this system-call after `atexit()' was executed. */
 #define __NR_xdlfini      0x80000024
 #define __SC_ATTRIB_CLOBB_0x80000024 C("memory")
 __XSYSCALL_ASM(__NR_xdlfini,sys_xdlfini)

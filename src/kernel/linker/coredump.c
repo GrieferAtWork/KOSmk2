@@ -167,7 +167,7 @@ end:
   mman_endread(vm);
   task_endnointr();
   /* Log an error message detailing the failure. */
-  syslog(LOG_WARN,"[CORE] Failed to create coredump thread %d executing '%[file]': %[errno]\n",
+  syslog(LOG_WARN,"[CORE] Failed to create coredump thread %d executing `%[file]': %[errno]\n",
          thread->t_pid.tp_ids[PIDTYPE_PID].tl_pid,vm_exe_file,-error);
   FILE_DECREF(vm_exe_file);
  }
@@ -286,7 +286,7 @@ next_normal:
   struct iattr attr; struct dentry_walker walker;
   DENTRY_WALKER_SETKERNEL(walker);
 
-  /* read-only access only by it's owner 'root'. */
+  /* read-only access only by it's owner `root'. */
   attr.ia_mode = 0400;
   attr.ia_uid  = 0;
   attr.ia_gid  = 0;

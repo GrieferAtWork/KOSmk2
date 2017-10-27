@@ -61,7 +61,7 @@ DECL_BEGIN
 
 /* Filesystem root directory entry. */
 PUBLIC struct dentry fs_root = {
-    /* NOTE: Start out with 3 references (+2 for 'fdman_kernel') */
+    /* NOTE: Start out with 3 references (+2 for `fdman_kernel') */
 #ifdef NDEBUG
     .d_refcnt = 0x80000003, /* Be a bit more robust in case something's actually wrong. */
 #else
@@ -218,7 +218,7 @@ superblock_sync(struct superblock *__restrict self) {
   if (!changed) break;
   /* Flush INode attributes.
    * NOTE: Upon success, this will remove the
-   *       node from the 'sb_achng' chain. */
+   *       node from the `sb_achng' chain. */
   error = inode_syncattr(changed);
   INODE_DECREF(changed);
   if (E_ISERR(error)) return error;
@@ -759,11 +759,11 @@ dentry_getdossub_unlocked(struct dentry const *__restrict self,
  }
 #if 1
  if (result) {
-  syslog(LOG_DEBUG|LOG_FS,"[FS] Found cached file entry '%[dentry]'\n",result);
+  syslog(LOG_DEBUG|LOG_FS,"[FS] Found cached file entry `%[dentry]'\n",result);
  }
 #if 0
  else {
-  syslog(LOG_DEBUG|LOG_FS,"[FS] No cached file entry %$q in '%[dentry]'\n",
+  syslog(LOG_DEBUG|LOG_FS,"[FS] No cached file entry %$q in `%[dentry]'\n",
          name->dn_size,name->dn_name,self);
  }
 #endif
@@ -791,11 +791,11 @@ dentry_getsub_unlocked(struct dentry const *__restrict self,
  }
 #if 1
  if (result) {
-  syslog(LOG_DEBUG|LOG_FS,"[FS] Found cached file entry '%[dentry]'\n",result);
+  syslog(LOG_DEBUG|LOG_FS,"[FS] Found cached file entry `%[dentry]'\n",result);
  }
 #if 0
  else {
-  syslog(LOG_DEBUG|LOG_FS,"[FS] No cached file entry %$q in '%[dentry]'\n",
+  syslog(LOG_DEBUG|LOG_FS,"[FS] No cached file entry %$q in `%[dentry]'\n",
          name->dn_size,name->dn_name,self);
  }
 #endif
@@ -803,7 +803,7 @@ dentry_getsub_unlocked(struct dentry const *__restrict self,
  return result;
 }
 
-/* Remove 'sub' from the given directory entry `self'. */
+/* Remove `sub' from the given directory entry `self'. */
 LOCAL void KCALL
 dentry_delsub_unlocked(struct dentry *__restrict self,
                        struct dentry *__restrict sub) {
@@ -894,7 +894,7 @@ again:
   goto again;
  }
  assertf(mbuf[buflen/sizeof(char)-1] == '\0',
-         "Broken symlink operator in node within '%[dentry]'",
+         "Broken symlink operator in node within `%[dentry]'",
          link_dir);
  result = dentry_xwalk_internal(link_dir,walker,mbuf,
                                (size_t)(buflen/sizeof(char))-1);
@@ -1165,7 +1165,7 @@ def_name:default:
        atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
   else atomic_rwlock_endread(&dir_ent->d_subs_lock);
   INODE_DECREF(ino);
-  /* An entry for 'ent_name' already exists. */
+  /* An entry for `ent_name' already exists. */
   if ((oflags&(O_CREAT|O_EXCL)) ==
               (O_CREAT|O_EXCL)) {
    INODE_DECREF(res_ino);
@@ -1244,7 +1244,7 @@ def_name:default:
    res_entry->d_inode = res_ino; /* Inherit reference. */
    DENTRY_ADDSUB_FINALIZE(dir_ent,ino,res_entry,res_ino);
   } else {
-   /* Remove 'res_entry' from the hash-table. */
+   /* Remove `res_entry' from the hash-table. */
    dentry_delsub_unlocked(dir_ent,res_entry);
    atomic_rwlock_endwrite(&dir_ent->d_subs_lock);
    DENTRY_DECREF(res_entry);
@@ -1277,13 +1277,13 @@ got_res_ino:
             res_ino->i_ops->ino_readlink) {
   struct dentry *link_result; /* Follow this symbolic link. */
 #if 0
-  syslog(LOG_DEBUG,"WALK_SYMLINK('%[dentry]')\n",dir_ent);
+  syslog(LOG_DEBUG,"WALK_SYMLINK(`%[dentry]')\n",dir_ent);
 #endif
   dentry_used(res_entry);
   link_result = dentry_walklnk(dir_ent,walker,res_ino);
 #if 0
   if (E_ISOK(link_result))
-       syslog(LOG_DEBUG,"OPEN_SYMLINK('%[dentry]')\n",link_result);
+       syslog(LOG_DEBUG,"OPEN_SYMLINK(`%[dentry]')\n",link_result);
   else syslog(LOG_DEBUG,"OPEN_SYMLINK(?) -> %[errno]\n",-E_GTERR(link_result));
 #endif
   assert(link_result != 0);
@@ -1298,7 +1298,7 @@ got_res_ino:
   /* Make sure the requested access is permitted. */
  } else if ((oflags&O_DIRECTORY) && !INODE_ISDIR(res_ino))
   /* Return ENOTDIR when attempting to open anything
-   * other than a directory with 'O_DIRECTORY'. */
+   * other than a directory with `O_DIRECTORY'. */
   result = E_PTR(-ENOTDIR);
  else if (!res_ino->i_ops->ino_fopen)
   /* Return ENOSTR ??? When the INode cannot be opened? */
@@ -1354,7 +1354,7 @@ dentry_open_with_inode(struct dentry *__restrict dir_ent,
   result = E_PTR(-ENOSYS); /* TODO: read symbolic link. */
  } else if ((oflags&O_DIRECTORY) && !INODE_ISDIR(res_ino))
   /* Return ENOTDIR when attempting to open anything
-   * other than a directory with 'O_DIRECTORY'. */
+   * other than a directory with `O_DIRECTORY'. */
   result = E_PTR(-ENOTDIR);
  else if (!res_ino->i_ops->ino_fopen)
   /* Return ENOSTR ??? When the INode cannot be opened? */

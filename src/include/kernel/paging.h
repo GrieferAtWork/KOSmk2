@@ -74,8 +74,8 @@ typedef u16 pdir_attr_t; /* Set of `PDIR_ATTR_*|PDIR_FLAG_*' */
 
 
 /* Internal/arch-specific attributes. */
-#define PDIR_ATTR_4MIB     0x0080u /* Only used by 'pd_table': Directly map a physical address.
-                                    * NOTE: Use of this requires the 'CR4_PSE' bit to be set. */
+#define PDIR_ATTR_4MIB     0x0080u /* Only used by `pd_table': Directly map a physical address.
+                                    * NOTE: Use of this requires the `CR4_PSE' bit to be set. */
 
 /* Check if 4Mib pages are allowed for the given address.
  * NOTE: They are not allowed for kernel pages, so-as to
@@ -107,7 +107,7 @@ union PACKED pd_table {
       u32             pt_data; /*< Table data. */
 union{
  PHYS union pd_entry *pt_ptev; /*< [0..1=PD_TABLE_ENTRY_COUNT][MASK(~PDIR_ATTR_MASK)]
-                                *  [owned_if((self-pd_directory)*0x400000 < KERNEL_BASE)] // NOTE: '0x400000 == (1 << 32) / PD_TABLE_ENTRY_COUNT' (Aka: The first kernel-page)
+                                *  [owned_if((self-pd_directory)*0x400000 < KERNEL_BASE)] // NOTE: `0x400000 == (1 << 32) / PD_TABLE_ENTRY_COUNT' (Aka: The first kernel-page)
                                 *  [valid_if(PDTABLE_ISVALID(self))]
                                 *  [alloc_if(PDTABLE_ISALLOC(self))]
                                 *   The associated page table entry-vector (Always contains PD_TABLE_ENTRY_COUNT elements).
@@ -118,7 +118,7 @@ union{
 };
       u32             pt_attr; /*< [0..1][MASK(PDIR_ATTR_MASK)]
                                 *   Page directory entry attributes (or'd together attributes of all table entries).
-                                *   NOTE: Also, using 'PDIR_ATTR_PRESENT', indicates the presence of a . */
+                                *   NOTE: Also, using `PDIR_ATTR_PRESENT', indicates the presence of a . */
 };
 #define PDTABLE_GETPTEV(self)   ((PHYS union pd_entry *)((self).pt_data&~PDIR_ATTR_MASK))
 #define PDTABLE_ISMAP(self)     ((self).pt_attr&PDIR_ATTR_4MIB)
@@ -141,7 +141,7 @@ struct _pdir {
 #ifndef __INTELLISENSE__
  ATTR_ALIGNED(PDIR_ALIGN)
 #endif
- /* The page directory itself (this vector is your 'CR3')
+ /* The page directory itself (this vector is your `CR3')
   * NOTE: Index == PDIR_DINDEX(v_ptr). */
  union pd_table pd_directory[PDIR_TABLE_COUNT];
 };
@@ -165,11 +165,11 @@ INTDEF INITCALL void KCALL pdir_initialize(void);
 #define PTTABLE_ARRAYSIZE  (PDTABLE_REPRSIZE/PDENTRY_REPRSIZE)
 #define PDTABLE_ALLOCSIZE  (PTTABLE_ARRAYSIZE*PD_ENTRY_SIZE)
 
-/* Return the directory/table index of a given virtual pointer 'v_ptr'. */
+/* Return the directory/table index of a given virtual pointer `v_ptr'. */
 #define PDIR_DINDEX(v_ptr)  ((u32)(v_ptr) >> 22)
 #define PDIR_TINDEX(v_ptr) (((u32)(v_ptr) >> 12) & 0x3ff)
 
-/* Return the page-local offset of of a given virtual pointer 'v_ptr'. */
+/* Return the page-local offset of of a given virtual pointer `v_ptr'. */
 #define PDIR_OFFSET(v_ptr)  ((u32)(v_ptr) & 0xfff)
 #define PDIR_MOFFSET(v_ptr) ((u32)(v_ptr) & 0x3fffff)
 
@@ -204,7 +204,7 @@ LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *
 FUNDEF WUNUSED bool KCALL pdir_init(pdir_t *__restrict self);
 FUNDEF void KCALL pdir_fini(pdir_t *__restrict self);
 
-/* Load `self' as a copy of 'existing' (NOTE: Called _AFTER_ 'pdir_init(self)' succeeded!) */
+/* Load `self' as a copy of `existing' (NOTE: Called _AFTER_ `pdir_init(self)' succeeded!) */
 FUNDEF WUNUSED bool KCALL pdir_load_copy(pdir_t *__restrict self, pdir_t const *__restrict existing);
 
 /* Flush `n_bytes' starting at `addr' in the currently set page directory. */
@@ -226,7 +226,7 @@ LOCAL void FCALL pdir_flushall(void) {
 #error "Fix the above macros"
 #endif
 
-/* Check if the current page directory matches the 'KPD' annotation. */
+/* Check if the current page directory matches the `KPD' annotation. */
 #define PDIR_ISKPD()  (PDIR_GTCURR() == &pdir_kernel)
 
 #ifdef GUARD_INCLUDE_KERNEL_MALLOC_H
@@ -240,7 +240,7 @@ LOCAL void FCALL pdir_flushall(void) {
 #endif /* GUARD_INCLUDE_KERNEL_MALLOC_H */
 
 
-/* Changes the protection/attributes of page mappings within 'start..+=n_bytes'.
+/* Changes the protection/attributes of page mappings within `start..+=n_bytes'.
  * NOTE: The given argument `n_bytes' is ceil-aligned by pages.
  * @return: * :      The amount of bytes modified, following `start' (always a multiple of PAGESIZE)
  * @return: -ENOMEM: Not enough available memory. */
@@ -251,10 +251,10 @@ FUNDEF ssize_t KCALL pdir_mprotect(pdir_t *__restrict self, ppage_t start,
 FUNDEF bool KCALL pdir_maccess(pdir_t const *__restrict self,
                                VIRT void const *addr, size_t n_bytes,
                                pdir_attr_t flags);
-/* Same as 'pdir_maccess', but optimized for a single address. */
+/* Same as `pdir_maccess', but optimized for a single address. */
 FUNDEF bool KCALL pdir_maccess_addr(pdir_t *__restrict self, VIRT void const *addr, pdir_attr_t flags);
 
-/* Create a physical mapping for 'target' to 'start..+=n_bytes'
+/* Create a physical mapping for `target' to `start..+=n_bytes'
  * NOTE: The given argument `n_bytes' is ceil-aligned by pages.
  * NOTE: Any existing mappings are replaced.
  * @param: start: The starting address where memory mappings should begin.
@@ -273,7 +273,7 @@ pdir_mmap_early(pdir_t *__restrict self, VIRT ppage_t start,
 
 /* Unmap a virtual memory mapping.
  * NOTE: No-op if no mapping exists within the given range.
- * @param: flags:    Only used for 'PDIR_FLAG_NOFLUSH'
+ * @param: flags:    Only used for `PDIR_FLAG_NOFLUSH'
  * @return: -EOK:    No more mappings exist within the given range.
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF errno_t KCALL pdir_munmap(pdir_t *__restrict self, VIRT ppage_t start,

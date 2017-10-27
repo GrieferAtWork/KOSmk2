@@ -34,7 +34,7 @@ INTDEF int LIBCCALL libc_unsetenv(char const *name);
 INTDEF int LIBCCALL libc_putenv(char *string);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-/* Same as 'libc_getenv()', but automatically
+/* Same as `libc_getenv()', but automatically
  * transforms separators in variables such as 'PATH':
  * >> if (name == "PATH")
  * >>     return getenv("PATH").replace(":",";");
@@ -77,23 +77,23 @@ INTDEF errno_t LIBCCALL libc_dos_dupenv_s(char **pbuf, size_t *pbuflen, char con
 INTDEF errno_t LIBCCALL libc_dos_putenv_s(char const *name, char const *value);
 
 
-INTDEF char16_t **libc_16wargv;    /* Internal storage for lazily allocated UTF-16 copy of argv from 'appenv'. */
-INTDEF char32_t **libc_32wargv;    /* Internal storage for lazily allocated UTF-32 copy of argv from 'appenv'. */
-INTDEF char16_t **libc_16wenviron; /* Internal storage for lazily allocated & updated UTF-16 copy of 'environ'. */
-INTDEF char32_t **libc_32wenviron; /* Internal storage for lazily allocated & updated UTF-32 copy of 'environ'. */
-INTDEF char16_t **libc_16winitenv; /* Internal storage for lazily allocated UTF-16 copy of env from 'appenv'. */
-INTDEF char32_t **libc_32winitenv; /* Internal storage for lazily allocated UTF-32 copy of env from 'appenv'. */
+INTDEF char16_t **libc_16wargv;    /* Internal storage for lazily allocated UTF-16 copy of argv from `appenv'. */
+INTDEF char32_t **libc_32wargv;    /* Internal storage for lazily allocated UTF-32 copy of argv from `appenv'. */
+INTDEF char16_t **libc_16wenviron; /* Internal storage for lazily allocated & updated UTF-16 copy of `environ'. */
+INTDEF char32_t **libc_32wenviron; /* Internal storage for lazily allocated & updated UTF-32 copy of `environ'. */
+INTDEF char16_t **libc_16winitenv; /* Internal storage for lazily allocated UTF-16 copy of env from `appenv'. */
+INTDEF char32_t **libc_32winitenv; /* Internal storage for lazily allocated UTF-32 copy of env from `appenv'. */
 
-INTDEF char     **libc_initenv;    /* Unused in KOS/ELF-mode (For DOS compatibility only; use 'appenv' instead) */
-INTDEF char      *libc_pgmptr;     /* Unused in KOS/ELF-mode (For DOS compatibility only; use 'appenv' instead) */
+INTDEF char     **libc_initenv;    /* Unused in KOS/ELF-mode (For DOS compatibility only; use `appenv' instead) */
+INTDEF char      *libc_pgmptr;     /* Unused in KOS/ELF-mode (For DOS compatibility only; use `appenv' instead) */
 INTDEF char16_t  *libc_16wpgmptr;  /* Unused in KOS/ELF-mode (For DOS compatibility only; use '*libc_p_16wpgmptr()' instead) */
-INTDEF int        libc_argc;       /* Unused in KOS/ELF-mode (For DOS compatibility only; use 'appenv' instead) */
-INTDEF char     **libc_argv;       /* Unused in KOS/ELF-mode (For DOS compatibility only; use 'appenv' instead) */
+INTDEF int        libc_argc;       /* Unused in KOS/ELF-mode (For DOS compatibility only; use `appenv' instead) */
+INTDEF char     **libc_argv;       /* Unused in KOS/ELF-mode (For DOS compatibility only; use `appenv' instead) */
 
 
 typedef struct { int newmode; } dos_startupinfo_t;
 /* These are implemented kind-of as the LIBC initializers for DOS-mode.
- * In addition to doing what '_entry' would, they also
+ * In addition to doing what `_entry' would, they also
  * initialize variables marked as 'Unused in KOS' above.
  * NOTE: I have no idea what 'do_wildcard' is about, so it's just ignored. */
 INTDEF int LIBCCALL libc_getmainargs(int *pargc, char ***pargv, char ***penvp, int do_wildcard, dos_startupinfo_t *info);

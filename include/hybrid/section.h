@@ -53,7 +53,7 @@
  *        are either unpredictable and do not often apply.
  *        This type of grouping is used by libc to describe
  *        functions that are not often used, such as obscure
- *        unix-extensions like 'memfrob'. */
+ *        unix-extensions like `memfrob'. */
 #define ATTR_RARETEXT      ATTR_SECTION(".text.rare")
 #define ATTR_RARERODATA    ATTR_SECTION(".rodata.rare")
 #define ATTR_RAREDATA      ATTR_SECTION(".data.rare")
@@ -67,7 +67,7 @@
  *        collecting, its contents may be chosen for swap/unload
  *        sooner than data stored in order section.
  *        This kind of section is mainly meant to house destructor-
- *        related data, or function that never return such as 'exit()',
+ *        related data, or function that never return such as `exit()',
  *        including functions calling it. */
 #define ATTR_COLDTEXT      ATTR_SECTION(".text.cold")
 #define ATTR_COLDRODATA    ATTR_SECTION(".rodata.cold")

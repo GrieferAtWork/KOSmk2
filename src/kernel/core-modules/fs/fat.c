@@ -83,8 +83,8 @@ PRIVATE errno_t KCALL fat_get_unlocked(fat_t *__restrict self, fatid_t id, fatid
 PRIVATE errno_t KCALL fat_set_unlocked(fat_t *__restrict self, fatid_t id, fatid_t value);
 #endif
 
-/* Find an unused FAT table entry, preferably located at 'hint'.
- * @return: -EOK:       Successfully found an unused FAT entry that was stored in '*result'
+/* Find an unused FAT table entry, preferably located at `hint'.
+ * @return: -EOK:       Successfully found an unused FAT entry that was stored in `*result'
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: -ENOSPC:    The disk is full. - There are literally no more unused fat entries...
  * @return: E_ISERR(*): Failed to find an unused entry for some reason. */
@@ -93,7 +93,7 @@ PRIVATE errno_t KCALL fat_get_unused_unlocked(fat_t *__restrict self,
                                               fatid_t *__restrict result);
 /* Given a cluster id, walk the chain it describes while
  * marking all entries along the way as unused, effectively
- * allowing them to be returned by 'fat_get_unused_unlocked'.
+ * allowing them to be returned by `fat_get_unused_unlocked'.
  * @return: * :         The actual amount of deleted entries.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: E_ISERR(*): Failed to delete at least one cluster for some reason. */
@@ -173,12 +173,12 @@ PRIVATE errno_t KCALL fat_setattr(struct inode *__restrict ino, iattrset_t chang
 PRIVATE errno_t KCALL fat_fssync(struct superblock *__restrict sb);
 PRIVATE void    KCALL fat_fsfini(struct superblock *__restrict sb);
 
-/* Search for an existing directory entry 'path->d_name' and return
- * it alongside '*is_new' == false, or '-EEXIST' when 'IATTR_EXISTS' isn't set in `mode'.
- * Otherwise create a new entry and pre-initialize it using 'result_attr',
- * as well as set '*is_new' to true.
+/* Search for an existing directory entry `path->d_name' and return
+ * it alongside `*is_new' == false, or `-EEXIST' when `IATTR_EXISTS' isn't set in `mode'.
+ * Otherwise create a new entry and pre-initialize it using `result_attr',
+ * as well as set `*is_new' to true.
  * NOTE: The caller is responsible for holding a write-lock to
- *      'dir_node->i_data->i_dirlock', which must be a FAT-directory node.
+ *      `dir_node->i_data->i_dirlock', which must be a FAT-directory node.
  * @return: * : A reference to either a previously existing, or a newly allocated INode.
  */
 PRIVATE REF struct fatnode *KCALL
@@ -198,24 +198,24 @@ PRIVATE errno_t KCALL
 fat16_root_rment_unlocked(struct inode *__restrict dir_node,
                           struct fatnode *__restrict file_node);
 
-/* Check if a given directory 'node' is empty.
+/* Check if a given directory `node' is empty.
  * @return: -EOK:       The directory is empty.
  * @return: -ENOTEMPTY: The directory isn't empty.
  * @return: E_ISERR(*): The check failed for some reason. */
 PRIVATE errno_t KCALL fat_is_empty_directory(fat_t *__restrict fs, struct fatnode *__restrict node);
 
-/* Truncate (clear) a given FAT INode, as is done when 'O_TRUNC' is passed to 'open()'. */
+/* Truncate (clear) a given FAT INode, as is done when `O_TRUNC' is passed to `open()'. */
 PRIVATE errno_t KCALL fatnode_truncate_for_open(struct fatnode *__restrict open_node, struct iattr const *__restrict result_attr, iattrset_t mode);
 
 /* Load the correct cluster within the given file when
  * NOTE: In addition, also handles the special case of an empty file
- *       becoming non-empty, when 'fd_cls_act == 0' and 'fd_cluster' is EOF.
+ *       becoming non-empty, when `fd_cls_act == 0' and `fd_cluster' is EOF.
  * @return: 0:          The cluster doesn't exist (the selected position is located past the file's end)
  * @return: 1:          Successfully loaded the cluster.
  * @return: E_ISERR(*): Failed to load the cluster for some reason. */
 PRIVATE errno_t KCALL filedata_load(struct filedata *__restrict self, fat_t *__restrict fs, struct inode *__restrict node);
 
-/* Similar to 'filedata_load', but allocate missing chunks  */
+/* Similar to `filedata_load', but allocate missing chunks  */
 PRIVATE ATTR_UNUSED errno_t KCALL filedata_alloc(struct filedata *__restrict self, fat_t *__restrict fs, struct inode *__restrict node);
 
 /* Perform high-level reading/writing, starting at the file position specified within `self' */
@@ -231,7 +231,7 @@ struct lookupdata {
  size_t            ld_entryc; /*< Amount of long name entries. */
  size_t            ld_entrya; /*< Allocated amount of LFN entries. */
  struct lfn_entry *ld_entryv; /*< [0..ln_entryc|alloc(ld_entrya)][owned]
-                               *  Vector of long name entries (sorted by 'ne_namepos'). */
+                               *  Vector of long name entries (sorted by `ne_namepos'). */
  struct fatfpos    ld_fpos;   /*< File position information about the next entry. */
 };
 #define lookupdata_init(self) memset(self,0,sizeof(struct lookupdata))
@@ -460,7 +460,7 @@ fat_readlink(struct inode *__restrict ino,
 
  /* Skip doing a partial copy if the buffer isn't large enough. */
  /* Never read more than a single block (thus preventing buffer overflow exploits).
-  * HINT: Checking this here also allows us to skip re-checking 'bufsize' below. */
+  * HINT: Checking this here also allows us to skip re-checking `bufsize' below. */
  if unlikely(bufsize < read_total) goto end;
  read_chars = ((size_t)error-sizeof(symlnk_magic))/2;
  utf16_to_utf8_inplace((u16 *)(temp+sizeof(symlnk_magic)),read_chars);
@@ -796,7 +796,7 @@ fat_finvalidate(struct file *__restrict fp,
 
 /* Load the correct cluster within the given file when
  * NOTE: In addition, also handles the special case of an empty file
- *       becoming non-empty, when 'fd_cls_act == 0' and 'fd_cluster' is EOF.
+ *       becoming non-empty, when `fd_cls_act == 0' and `fd_cluster' is EOF.
  * @return: 0:          The cluster doesn't exist (the selected position is located past the file's end)
  * @return: 1:          Successfully loaded the cluster.
  * @return: E_ISERR(*): Failed to load the cluster for some reason. */
@@ -1614,7 +1614,7 @@ keep_prev_clusterid:
  rwlock_endread(&dir_node->i_data->i_dirlock);
 done:
  lookupdata_fini(&data);
- /* Return '-ENOENT' when the entry wasn't found. */
+ /* Return `-ENOENT' when the entry wasn't found. */
  if (!result) result = E_PTR(-ENOENT);
  free(buffer);
  return result;
@@ -1660,7 +1660,7 @@ fat16_root_lookup(struct inode *__restrict dir_node,
  rwlock_endread(&FAT->f_idata.i_dirlock);
 done:
  lookupdata_fini(&data);
- /* Return '-ENOENT' when the entry wasn't found. */
+ /* Return `-ENOENT' when the entry wasn't found. */
  if (!result) result = E_PTR(-ENOENT);
  free(buffer);
  return result;
@@ -1678,9 +1678,9 @@ LOCAL ATTR_CONST int KCALL dos8dot3_isvalid(char ch) {
  * when the entry is written.
  * NOTE: When the filename described by the short directory entry
  *       already exists, the function should be re-called with
- *      'disambiguation' incremented by one (start out with ZERO(0) the first time)
- *       This can be repeated until 'disambiguation' is equal to
- *      'FAT_8DOT3_MAX_DISAMBIGUATION+1', at which point all possible
+ *      `disambiguation' incremented by one (start out with ZERO(0) the first time)
+ *       This can be repeated until `disambiguation' is equal to
+ *      `FAT_8DOT3_MAX_DISAMBIGUATION+1', at which point all possible
  *       filename combination have been taken up and the file cannot
  *       actually be created. */
 #define FAT_8DOT3_MAX_DISAMBIGUATION  (0xffff*9)
@@ -1814,11 +1814,11 @@ PRIVATE u8 KCALL fat_LFNchksum(char const *short_name) {
  return result;
 }
 
-/* To-be used in conjunction with 'fat_make8dot3()', fill in
- * 'f' as the 'number'th' LFN entry for the given filename `name'.
- * WARNING: The caller must not call this function when 'fat_make8dot3()'
+/* To-be used in conjunction with `fat_make8dot3()', fill in
+ * 'f' as the 'number`th' LFN entry for the given filename `name'.
+ * WARNING: The caller must not call this function when `fat_make8dot3()'
  *          returned ZERO(0), or call it with a 'number' greater than
- *          the return value of 'fat_make8dot3()' for the same `name'.
+ *          the return value of `fat_make8dot3()' for the same `name'.
  * @param: chksum: == fat_LFNchksum(DOS83_ENTRY.f_nameext);
  */
 PRIVATE void KCALL fat_makeLFN(file_t *__restrict f,
@@ -1890,7 +1890,7 @@ load_cluster_end:
     goto load_cluster_end;
    }
   }
-  /* TODO: Check if 'file_node's' cluster is now empty. If so,
+  /* TODO: Check if `file_node's' cluster is now empty. If so,
    *       and if it is the last cluster, free now unused clusters. */
  }
  HOSTMEMORY_END;
@@ -1950,7 +1950,7 @@ fat_is_empty_directory(fat_t *__restrict fs,
    * >> This makes sense, because LFN entries are marked as VOLUMEID, but
    *    shouldn't be responsible for keeping a directory from being removed. */
   if (fp.f_attr&ATTR_VOLUMEID) continue;
-  /* Special case: Ignore '.' and '..' entries. */
+  /* Special case: Ignore `"."' and  `".."' entries. */
   if (fp.f_attr&ATTR_DIRECTORY) {
    if (FAT_ISSPACE(fp.f_ext[0])) {
     if (FAT_ISSPACE(fp.f_name[0])) continue;
@@ -2099,7 +2099,7 @@ fat_mkreg(struct inode *__restrict dir_node,
  result = fat_mkent_unlocked(dir_node,path,0,result_attr,mode,&is_new);
  if (E_ISOK(result)) {
   assertf(is_new || (mode&IATTR_EXISTS),
-          "No new entry created when 'IATTR_EXISTS' wasn't set.");
+          "No new entry created when `IATTR_EXISTS' wasn't set.");
   if (!is_new && mode&IATTR_TRUNC) {
    temp = fatnode_truncate_for_open(result,result_attr,mode);
    if (E_ISERR(temp)) goto err;
@@ -2123,7 +2123,7 @@ fat16_root_mkreg(struct inode *__restrict dir_node,
  result = fat16_root_mkent_unlocked(dir_node,path,0,result_attr,mode,&is_new);
  if (E_ISOK(result)) {
   assertf(is_new || (mode&IATTR_EXISTS),
-          "No new entry created when 'IATTR_EXISTS' wasn't set.");
+          "No new entry created when `IATTR_EXISTS' wasn't set.");
   if (!is_new && mode&IATTR_TRUNC) {
    temp = fatnode_truncate_for_open(result,result_attr,mode);
    if (E_ISERR(temp)) goto err;
@@ -2602,7 +2602,7 @@ fat_get_unused_unlocked(fat_t *__restrict self,
                         fatid_t hint,
                         fatid_t *__restrict result) {
  fatid_t candidate,deref; errno_t temp;
- /* Starting at 'hint', search for clusters marked as 'FAT_CUSTER_UNUSED'
+ /* Starting at `hint', search for clusters marked as `FAT_CUSTER_UNUSED'
   * If we can't manage to find anything, wrap around and search lower half.
   * If that half is completely in use as well, return -ENOSPC. */
  for (candidate = hint;
@@ -2673,7 +2673,7 @@ PRIVATE void KCALL trimspecstring(char *__restrict buf, size_t size) {
 
 /* Create a FAT filesystem from the given block device.
  * @return: * :         A reference to a new FAT superblock.
- * @return: -EINVAL:    The given 'blkdev' doesn't contain a FAT filesystem.
+ * @return: -EINVAL:    The given `blkdev' doesn't contain a FAT filesystem.
  * @return: -ENOMEM:    Not enough available kernel memory.
  * @return: E_ISERR(*): Failed to create a FAT superblock for some reason. */
 PRIVATE REF struct superblock *KCALL
@@ -2823,7 +2823,7 @@ fat_mksuper(struct blkdev *__restrict dev, u32 UNUSED(flags),
  result->f_super.sb_blkdev = dev;
  BLKDEV_INCREF(dev);
 
- /* NOTE: The kernel's own 'THIS_INSTANCE' must never get unloaded! */
+ /* NOTE: The kernel's own `THIS_INSTANCE' must never get unloaded! */
  asserte(E_ISOK(superblock_setup(&result->f_super,THIS_INSTANCE)));
 
  return &result->f_super;
@@ -2914,7 +2914,7 @@ PRIVATE struct fstype fat_fshooks[] = {
  HOOK("fat-32",BLKSYS_FAT32_HIDDEN),
  HOOK("fat-32-lba",BLKSYS_FAT32_LBA_HIDDEN),
  HOOK("fat-16-lba",BLKSYS_FAT16_LBA_HIDDEN),
- /* Only mark the generic FAT filesystem type as visible. - Don't clobber '/proc/filesystems' */
+ /* Only mark the generic FAT filesystem type as visible. - Don't clobber `/proc/filesystems' */
  HOOK_V("fat",BLKSYS_MICROSOFT_BASIC_DATA),
 #if 1 /* Given how generic it is, try to use FAT as a default-loader. */
  HOOK("fat",BLKSYS_ANY),

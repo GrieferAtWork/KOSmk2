@@ -410,7 +410,7 @@ buffer_is_full:
   byte_t *new_buffer;
   size_t read_pos,write_pos,new_buffer_size;
   /* Difficult case: Check if we can reallocate the buffer to be large
-   *                 enough, while respecting the buffer's 'max_size'. */
+   *                 enough, while respecting the buffer's `max_size'. */
   read_pos  = (size_t)(self->ib_rpos-self->ib_buffer);
   write_pos = (size_t)(self->ib_wpos-self->ib_buffer);
   new_buffer_size = self->ib_size+(bufsize-max_write);
@@ -424,7 +424,7 @@ buffer_is_full:
    if __unlikely(!new_buffer) { error = -ENOMEM; goto end_write; }
    self->ib_buffer = new_buffer;
    /* Be careful to preserve the an empty-buffer state.
-    * NOTE: The check against the old 'self->ib_size' is required to
+    * NOTE: The check against the old `self->ib_size' is required to
     *       prevent an incorrect empty-buffer state from being detected
     *       when this is the first time the I/O-buffer is written to. */
    self->ib_rpos = new_buffer+((self->ib_rpos == bufend && __likely(self->ib_size)) ? new_buffer_size : read_pos);
@@ -500,7 +500,7 @@ end:
        * always wrapping it when it is out-of-bounds, we do so anyways.
        * NOTE: The condition would assert the w-ptr at start condition,
        *       as defined as part of the empty-buffer state, in the
-       *       description in 'iobuffer_read'. */
+       *       description in `iobuffer_read'. */
    && self->ib_wpos == self->ib_buffer
 #endif
    ) {

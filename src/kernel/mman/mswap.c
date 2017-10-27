@@ -114,8 +114,8 @@ mswapoff_unlocked(struct blkdev *__restrict dev) {
 
 /* Originally created for mount(), we can simply re-use
  * it as it really does the same thing we need to do:
- * >> Open and return a block device available through 'dev_name',
- *    or creating a new loopback device if 'dev_name' describes a
+ * >> Open and return a block device available through `dev_name',
+ *    or creating a new loopback device if `dev_name' describes a
  *    regular file. */
 #define LOOPBACK_OK_ALWAYS   0 /*< Loopback devices can always be created. */
 #define LOOPBACK_OK_NEVER    1 /*< Never create loopback devices (but lookup existing ones). */

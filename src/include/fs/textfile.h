@@ -35,7 +35,7 @@
 DECL_BEGIN
 
 /* Text-files are very simple memory-streams, highly
- * suitable for human-readable files as found under '/proc'.
+ * suitable for human-readable files as found under `/proc'.
  * They differ from regular pipes in that they allow for seeking
  * and don't delete data as it is read, instead opting to enable
  * in-file positions, as well as providing a formatprinter-compatible
@@ -49,10 +49,10 @@ DECL_BEGIN
  *       size when written to using standard file operators, that is
  *       weakly checked to prevent the file growing larger that allowed.
  * NOTE: The max-size limit is not enforced when the file is printed
- *       to using textfile-specific file printers, such as 'textfile_printer'
+ *       to using textfile-specific file printers, such as `textfile_printer'
  */
 struct textfile {
- /* Additional flag for 'tf_file.f_flags'. - When set, text
+ /* Additional flag for `tf_file.f_flags'. - When set, text
   * data is being weakly aliased and my not be freed/relocated. */
 #define TEXTFILE_FLAG_WEAK (FILE_FLAG_LOCKLESS >> 1)
  struct file tf_file;    /*< Underlying file. */
@@ -71,7 +71,7 @@ struct textfile {
 
 #define TEXTFILE_DEFAULT_MAXSIZE 2048
 
-/* Flags to-be assed to the 'f_flags' field of inodeops using textfiles. */
+/* Flags to-be added to the `f_flags' field of inodeops using textfiles. */
 #define TEXTFILE_FLAGS  INODE_FILE_NORMAL
 /* Operators to-be used when creating an INode type that refers to a textfile. */
 FUNDEF ssize_t KCALL textfile_read(struct file *__restrict fp, USER void *buf, size_t bufsize);
@@ -93,9 +93,9 @@ FUNDEF void KCALL textfile_fclose(struct inode *__restrict ino, struct file *__r
 
 /* Create a new text file.
  * Following a successful call to this function, the caller may write data
- * to the text file or override 'tf_maxsize' which has been pre-initialized
- * to 'TEXTFILE_DEFAULT_MAXSIZE'.
- * Once done, 'file_setup()' must be called before
+ * to the text file or override `tf_maxsize' which has been pre-initialized
+ * to `TEXTFILE_DEFAULT_MAXSIZE'.
+ * Once done, `file_setup()' must be called before
  * user-space access to the textfile can be allowed.
  * -> An empty ino_fopen callback that creates a
  *    new textfile would look something like this:
@@ -105,7 +105,7 @@ FUNDEF void KCALL textfile_fclose(struct inode *__restrict ino, struct file *__r
  * >>     struct textfile *fp = textfile_new();
  * >>     if unlikely(!fp) return E_PTR(-ENOMEM);
  * >>     
- * >>     // 'textfile_printer()' could now be used to write initial data...
+ * >>     // `textfile_printer()' could now be used to write initial data...
  * >>     
  * >>     file_setup(&);
  * >>     return &fp->tf_file;
@@ -138,7 +138,7 @@ make_weak_textfile(struct inode *__restrict node,
 /* Helper macros for writing/printing/printf-ing to a textfile.
  * WARNING: Do not expose these functions to userspace, or allow user-space
  *          unbound or unprotected control over what may be written using them!
- * NOTE: These functions may only be used _BEFORE_ the text file has been set up using 'file_setup()'
+ * NOTE: These functions may only be used _BEFORE_ the text file has been set up using `file_setup()'
  * @return: * :      The amount of written bytes.
  * @return: -ENOMEM: Failed to allocate sufficient buffer memory. */
 FUNDEF ssize_t KCALL textfile_printer(char const *__restrict data, size_t datalen, void *closure);
@@ -146,7 +146,7 @@ FUNDEF ssize_t KCALL textfile_printer(char const *__restrict data, size_t datale
 #define textfile_printf(fp,...)          format_printf(&textfile_printer,fp,__VA_ARGS__)
 #define textfile_vprintf(fp,format,args) format_vprintf(&textfile_printer,fp,format,args)
 /* Clear unused data after you're done printing.
- * NOTE: Also called from 'textfile_flush()' when opened for writing. */
+ * NOTE: Also called from `textfile_flush()' when opened for writing. */
 FUNDEF void KCALL textfile_truncate(struct textfile *__restrict self);
 
 

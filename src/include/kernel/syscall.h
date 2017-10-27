@@ -27,18 +27,18 @@
 DECL_BEGIN
 
 /* Low-level, assembly syscall function.
- *  - All registers, (except for 'ESP', 'EFLAGS' and 'CS')
+ *  - All registers, (except for `ESP', `EFLAGS' and `CS')
  *    will match those of the caller in userspace, essentially
  *    mirroring normal IRQ behavior exactly.
- *  - The kernel stack has been installed, and 'IRET' can be used to return to userspace.
- *    With that in mind, 'ESP' will point to an IRET-tail describing the user's EIP, etc.
+ *  - The kernel stack has been installed, and `IRET' can be used to return to userspace.
+ *    With that in mind, `ESP' will point to an IRET-tail describing the user's EIP, etc.
  * NOTE: Executing user-level interrupts from kernel-space is allowed to cause undefined behavior.
  *       Implementors of different system calls may decide for them self if their system
  *       call is allowed to be called from ring#0
  *    -> The lack of this being mentioned in documentations of individual system calls
  *       usually implies that the call is not supported from kernel-space, even when
  *       if might work for some reason.
- * NOTE: When userspace tries to call a missing interrupt, '-ENOSYS' is usually returned.
+ * NOTE: When userspace tries to call a missing interrupt, `-ENOSYS' is usually returned.
  */
 typedef syscall_ulong_t (ASMCALL *syscall_t)(void);
 #define SYSCALL_INT 0x80
@@ -77,7 +77,7 @@ struct syscall_descr {
 #define THIS_SYSCALL_USERESP __STACKBASE_VALUE(void *,-8)
 #define THIS_SYSCALL_EFLAGS  __STACKBASE_VALUE(u32,-12)
 #define THIS_SYSCALL_CS      __STACKBASE_VALUE(u16,-16)
-/* NOTE: 'THIS_SYSCALL_EIP' */
+/* NOTE: `THIS_SYSCALL_EIP' */
 #define THIS_SYSCALL_EIP     __STACKBASE_VALUE(void *,-20)
 /* WARNING: Everything that follows doesn't reliably work in assembly system calls. */
 #define THIS_SYSCALL_DS      __STACKBASE_VALUE(u16,-22)
@@ -115,7 +115,7 @@ struct syscall_descr {
 #define SET_THIS_SYSCALL_REAL_SS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_ss : &THIS_SYSCALL_SS) = (x))
 
 #else
-#error "FIXME: Need at least 'THIS_SYSCALL_EIP'"
+#error "FIXME: Need at least `THIS_SYSCALL_EIP'"
 #endif
 
 

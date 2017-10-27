@@ -48,8 +48,8 @@ DECL_BEGIN
 /* The last page directory table is reserved for
  * self page-directory & table self-mappings,
  * meaning that the current page directory always
- * includes a virtual mapping of itself at '__this_pdir',
- * as well as a mapping of all table entries at '__this_pdir_entries'  */
+ * includes a virtual mapping of itself at `__this_pdir',
+ * as well as a mapping of all table entries at `__this_pdir_entries'  */
 #define THIS_PDIR_BASE    0xffc00000
 #define THIS_PDIR_SIZE    0x00400000
 
@@ -121,7 +121,7 @@ thispdir_undirty(VIRT pdir_t *__restrict self, VIRT void *ptr, size_t n_bytes) {
 
 
 /* TODO: Optimized functions for changing the contents of one's own page directory. */
-/* TODO: Go through all uses of 'TASK_PDIR_KERNEL_BEGIN' and create
+/* TODO: Go through all uses of `TASK_PDIR_KERNEL_BEGIN' and create
  *       custom callbacks that try to use page-directory self-mappings. */
 
 #endif

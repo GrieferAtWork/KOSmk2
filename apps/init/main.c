@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
   * trusty development USB-stick.
   * >> But since the whole of busybox is literally a single binary, we can
   *    execute it in the same matter that a symbolic '/bin/sh' would have done
-  *   (By passing 'sh' through the first argument 'argv[0]') */
+  *   (By passing `sh' through the first argument `argv[0]') */
  execl("/bin/terminal-vga","terminal-vga","/bin/busybox","sh","-i",(char *)NULL);
  error(0,errno,"exec('/bin/terminal-vga') failed");
  /* If the terminal doesn't work for some reason, run directly off of the system log. */

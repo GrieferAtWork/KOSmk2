@@ -345,7 +345,7 @@ done:
 
  /* Unset the dirty bit on all environment pages, thus allowing
   * us to optimize skipping environment re-loading the next time
-  * we're called with a matching pointer for 'envp'. */
+  * we're called with a matching pointer for `envp'. */
  COMPILER_WRITE_BARRIER();
  assert(thispdir_isdirty(&self->m_pdir,new_environ,new_total_pages));
  thispdir_undirty(&self->m_pdir,new_environ,new_total_pages);

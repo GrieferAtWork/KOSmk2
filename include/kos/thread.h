@@ -59,7 +59,7 @@ struct tib {
  struct seh_frame *ti_seh;          /*< [0..1|null(SEH_FRAME_NULL)] Structured exception handlers. */
  void             *ti_stackhi;      /*< [0..1][>= ti_stacklo] Stack base address (greatest address) */
  void             *ti_stacklo;      /*< [0..1][<= ti_stackhi] Stack end address (lowest address)
-                                     *   NOTE: 'ti_stackhi' and this pointer are updated by
+                                     *   NOTE: `ti_stackhi' and this pointer are updated by
                                      *          the kernel when a guard-page is allocated. */
  u32               ti_subsystemtib; /*< ??? */
  u32               ti_fiber;        /*< ??? */
@@ -68,11 +68,11 @@ struct tib {
  /* ---- End of NT subsystem independent part ---- */
  void             *ti_envp;         /*< ??? */
 #if __SIZEOF_PID_T__ == 4
- pid_t             ti_pid;          /*< Only updated on exec()! (Multi-threaded applications should use 'getpid()' instead) */
- pid_t             ti_tid;          /*< Only updated on exec()! (Multi-threaded applications should use 'gettid()' instead) */
+ pid_t             ti_pid;          /*< Only updated on exec()! (Multi-threaded applications should use `getpid()' instead) */
+ pid_t             ti_tid;          /*< Only updated on exec()! (Multi-threaded applications should use `gettid()' instead) */
 #else
- s32               ti_pid;          /*< Only updated on exec()! (Multi-threaded applications should use 'getpid()' instead) */
- s32               ti_tid;          /*< Only updated on exec()! (Multi-threaded applications should use 'gettid()' instead) */
+ s32               ti_pid;          /*< Only updated on exec()! (Multi-threaded applications should use `getpid()' instead) */
+ s32               ti_tid;          /*< Only updated on exec()! (Multi-threaded applications should use `gettid()' instead) */
 #endif
  void             *it_rtc;          /*< ??? */
  void             *it_tls;          /*< ??? */
@@ -132,15 +132,15 @@ struct tlb {
   *       not only generating smaller and faster code by doing so, but also allowing
   *       the kernel to move the TIB anywhere else within the TLB block, potentially
   *       even disconnecting it entirely at some point in the future.
-  *    >> Or in other words: _DONT_ do this: 'THIS_TLB->__tl_tib.<...>',
-  *                     and instead do this: 'THIS_TIB-><...>' */
+  *    >> Or in other words: _DONT_ do this: `THIS_TLB->__tl_tib.<...>',
+  *                     and instead do this: `THIS_TIB-><...>' */
 union{u32      __tl_pad0;
-#define TLB_ERRNO_KOS 0 /* KOS errno format. (The only used format when libc was build with 'CONFIG_LIBC_NO_DOS_LIBC') */
+#define TLB_ERRNO_KOS 0 /* KOS errno format. (The only used format when libc was build with `CONFIG_LIBC_NO_DOS_LIBC') */
 #define TLB_ERRNO_DOS 1 /* DOS errno format. */
-#define TLB_ERRNO_NT  2 /* NT errno format (GetLastError()-style; NOTE: Mirrored in 'it_error_code') */
+#define TLB_ERRNO_NT  2 /* NT errno format (GetLastError()-style; NOTE: Mirrored in `it_error_code') */
  unsigned int    tl_errno_fmt; /* The format of 'tl_errno_val' (One of 'TLB_ERRNO_*') */};
 union{u32      __tl_pad1;
- int             tl_errno_val; /* The thread-local 'errno' value. */};
+ int             tl_errno_val; /* The thread-local `errno' value. */};
 
 #ifdef __KERNEL__
  struct tib      tl_tib;  /*< The TIB block. */
@@ -249,7 +249,7 @@ union{u32      __tl_pad1;
 #   define TIB_T_PEEKI TIB_T_PEEKQ
 #   define TIB_T_POKEI TIB_T_POKEQ
 #else
-#   error "Unsupported 'sizeof(void *)'"
+#   error "Unsupported `sizeof(void *)'"
 #endif
 
 #define TLB_POKEB(off,v) TLB_T_POKEB(u8,off,v)

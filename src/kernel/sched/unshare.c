@@ -348,7 +348,7 @@ again:
    * update stack entries to the caller's stack.
    * NOTE: Technically, the only stack that should be mapped in the new
    *       mman at this point should be 'old_descr', simply because of
-   *       how 'stack_mnotify' responds to 'MNOTIFY_UNSHARE_DROP'
+   *       how `stack_mnotify' responds to 'MNOTIFY_UNSHARE_DROP'
    *      (it will want to drop all stack branches but that of the calling task).
    *       But it still doesn't hurt to be careful and also check
    *      'branch->mb_closure != old_descr' below (even though they
@@ -380,14 +380,14 @@ again:
  LIST_REMOVE(self,t_mman_tasks);
  atomic_rwlock_endwrite(&om->m_tasks_lock);
 
- /* Set `self' as the sole user of 'mm_clone'. */
+ /* Set `self' as the sole user of `mm_clone'. */
  nm->m_tasks                 = self;
  self->t_mman_tasks.le_pself = &nm->m_tasks;
  self->t_mman_tasks.le_next  = NULL;
 
  assert(nm->m_refcnt == 1);
 
- /* NOTE: Theoretically, the old 'mm' may still get destroyed here,
+ /* NOTE: Theoretically, the old `mm' may still get destroyed here,
   *       in the event that all of its other uses got the idea to
   *       unshare it at the same time... */
  MMAN_DECREF(om);

@@ -22,12 +22,12 @@
  *    replacement for the ~joy~ that the original DOS headers are.
  * Yes. This application, when linked against KOS's system headers and compiled
  * using something like msvc will produce a regular old exe that only depends on
- * 'msvcrtXXX.dll', thanks to '__DOS_COMPAT__' mode, which is automatically enabled
+ * `msvcrtXXX.dll', thanks to `__DOS_COMPAT__' mode, which is automatically enabled
  * by <features.h> detecting that the host compiler isn't targeting CRT-KOS.
  * 
  * >> After realizing that doing this is actually feasable, this goal was what drove
  *    me to (successfully) discover a means of redirecting functions to different
- *    assembly names within MSVC, as well as add '__DOS_COMPAT__' and '__GLC_COMPAT__'
+ *    assembly names within MSVC, as well as add `__DOS_COMPAT__' and `__GLC_COMPAT__'
  *    compatibility modes to KOS's system headers, the end-goal here being that
  *    KOS's system headers should be usable cross-platform and cross-compiler,
  *    supporting GLibc, KOS's CRT and DOS (msvcrt).
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
  n = snprintf(buf,sizeof(buf),"foo bar foobar %s\n",
               "This text is too long for the buffer");
  printf("n   = %d\n",n); /* Must not be -1, as would normally be the case in DOS. */
- printf("buf = '%.*s'\n",16,buf); /* Must contain the first 16 characters. */
+ printf("buf = `%.*s'\n",16,buf); /* Must contain the first 16 characters. */
 
  printf("argc = %d\n",argc);
  printf("argv = %p\n",argv);

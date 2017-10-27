@@ -125,7 +125,7 @@ read_again:
   dirp->d_buf   = result;
   dirp->d_bufsz = (size_t)error;
   /* Read the directory entry again.
-   * HINT: Because 'READDIR_DEFAULT' was used, this second
+   * HINT: Because `READDIR_DEFAULT' was used, this second
    *       read-attempt will try to load the same data! */
   goto read_again;
  }

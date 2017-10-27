@@ -172,13 +172,13 @@ process_long_option(int argc, char **argv, char const *optstring,
   if (ambig_set || ambig_fallback) {
    if (print_errors) {
     if (ambig_fallback)
-     fprintf(stderr,"%s: option '%s%s' is ambiguous\n",argv[0],prefix,__nextchar);
+     fprintf(stderr,"%s: option `%s%s' is ambiguous\n",argv[0],prefix,__nextchar);
     else {
      flockfile(stderr);
-     fprintf(stderr,"%s: option '%s%s' is ambiguous; possibilities:",argv[0],prefix,__nextchar);
+     fprintf(stderr,"%s: option `%s%s' is ambiguous; possibilities:",argv[0],prefix,__nextchar);
      for (option_index = 0; option_index < n_options; option_index++) {
       if (ambig_set[option_index])
-          fprintf(stderr," '%s%s'",prefix,longopts[option_index].name);
+          fprintf(stderr," `%s%s'",prefix,longopts[option_index].name);
      }
      fprintf(stderr,"\n");
      funlockfile(stderr);
@@ -196,7 +196,7 @@ process_long_option(int argc, char **argv, char const *optstring,
   if (!long_only || argv[optind][1] == '-' ||
       strchr(optstring,*__nextchar) == NULL) {
    if (print_errors)
-       fprintf(stderr,"%s: unrecognized option '%s%s'\n",argv[0],prefix,__nextchar);
+       fprintf(stderr,"%s: unrecognized option `%s%s'\n",argv[0],prefix,__nextchar);
    __nextchar = NULL;
    ++optind;
    optopt = 0;
@@ -211,7 +211,7 @@ process_long_option(int argc, char **argv, char const *optstring,
    optarg = nameend+1;
   else {
    if (print_errors)
-       fprintf(stderr,"%s: option '%s%s' doesn't allow an argument\n",argv[0],prefix,pfound->name);
+       fprintf(stderr,"%s: option `%s%s' doesn't allow an argument\n",argv[0],prefix,pfound->name);
    optopt = pfound->val;
    return '?';
   }
@@ -220,7 +220,7 @@ process_long_option(int argc, char **argv, char const *optstring,
    optarg = argv[optind++];
   else {
    if (print_errors)
-       fprintf(stderr,"%s: option '%s%s' requires an argument\n",argv[0],prefix,pfound->name);
+       fprintf(stderr,"%s: option `%s%s' requires an argument\n",argv[0],prefix,pfound->name);
    optopt = pfound->val;
    return optstring[0] == ':' ? ':' : '?';
   }

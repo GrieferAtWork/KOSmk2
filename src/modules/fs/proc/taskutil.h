@@ -32,7 +32,7 @@ struct task;
 #define PROC_PID_NUMNODES  256 /* Max amount of nodes under /proc/PID */
 
 /* General purpose utilities to safely load various parts of a given
- * task, that would otherwise be considered 'PRIVATE(THIS_TASK)'.
+ * task, that would otherwise be considered `PRIVATE(THIS_TASK)'.
  * NOTE: These functions all return E_ISERR(*) upon error; NULL is never returned. */
 INTDEF REF struct fdman *KCALL task_getfdman(WEAK struct task *__restrict t);
 INTDEF REF struct mman *KCALL task_getmman(WEAK struct task *__restrict t);

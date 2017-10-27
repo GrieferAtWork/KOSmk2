@@ -191,7 +191,7 @@ PRIVATE void KCALL keyboard_send(kbkey_t k) {
 #if 0
  { char c;
    if (k < 256 && (c = active_keymap.km_press[k]) != '\0') {
-    syslog(LOG_HW|LOG_DEBUG,"Sending key %#.4I16x ('%#:1q')\n",k,&c);
+    syslog(LOG_HW|LOG_DEBUG,"Sending key %#.4I16x (`%#:1q')\n",k,&c);
    } else {
     syslog(LOG_HW|LOG_DEBUG,"Sending key %#.4I16x\n",k);
    }
@@ -280,7 +280,7 @@ ps2_command(struct ps2_cmd *__restrict c) {
   p.p_state  = c->c_port&PS2_NOACK ? STATE_COMMANDACK : STATE_COMMAND;
  }
 
- /* Wait for the interrupt to arrive (HINT: 'sti' only enables interrupts after 'hlt') */
+ /* Wait for the interrupt to arrive (HINT: `sti' only enables interrupts after 'hlt') */
  __asm__ __volatile__("sti\nhlt\ncli\n" : : : "memory");
  if (p.p_cmdb == c) {
   /* To optimize for quick hardware, only setup a
@@ -294,7 +294,7 @@ ps2_command(struct ps2_cmd *__restrict c) {
    if (p.p_cmdb != c) break;
    sysrtc_get(&now);
    COMPILER_BARRIER();
-   /* Check again in case 'sysrtc_get()'
+   /* Check again in case `sysrtc_get()'
     * enabled interrupts momentarily. */
    if (p.p_cmdb != c) break;
    if (TIMESPEC_GREATER_EQUAL(now,tmo)) {
@@ -372,7 +372,7 @@ ps2_handle_interrupt(void) {
 
   if (e == RESEND) {
    if (++p.p_retry > ps2_cmd_maxretry) {
-    /* NOTE: We exceed the response array by 1, so-as to also write 'c_status' */
+    /* NOTE: We exceed the response array by 1, so-as to also write `c_status' */
     memset(p.p_cmdb->c_resp,RESEND,PS2_MAXRESP+1);
     goto remove_cmd;
    }
@@ -418,7 +418,7 @@ send_command:
    }
    p.p_cmdb->c_status = ACK;
 remove_cmd:
-   /* WARNING: We leave the 'c_prev' of the finished command dangling! */
+   /* WARNING: We leave the `c_prev' of the finished command dangling! */
    { struct ps2_cmd *next_cmd = p.p_cmdb->c_prev;
      if (p.p_cmdb->c_port&PS2_FREECMD) free(p.p_cmdb);
      p.p_cmdb = next_cmd;

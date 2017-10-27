@@ -253,7 +253,7 @@ struct icmp6_router_renum {
     uint16_t         rr_maxdelay;
     uint32_t         rr_reserved;
 };
-/* Flags for 'struct icmp6_router_renum::rr_flags' */
+/* Flags for `struct icmp6_router_renum::rr_flags' */
 #define ICMP6_RR_FLAGS_TEST             0x80
 #define ICMP6_RR_FLAGS_REQRESULT        0x40
 #define ICMP6_RR_FLAGS_FORCEAPPLY       0x20
@@ -272,7 +272,7 @@ struct rr_pco_match {
     struct in6_addr     rpm_prefix;
 };
 
-/* Values for 'struct rr_pco_match::rpm_code' */
+/* Values for `struct rr_pco_match::rpm_code' */
 #define RPM_PCO_ADD       1
 #define RPM_PCO_CHANGE    2
 #define RPM_PCO_SETGLOBAL 3

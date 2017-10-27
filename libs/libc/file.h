@@ -31,7 +31,7 @@
 #include <xlocale.h>
 
 
-/* Config: call 'datasync()' on the underlying file
+/* Config: call `datasync()' on the underlying file
  *         descriptor after fflush() was used to write data. */
 #undef CONFIG_FILE_DATASYNC_DURING_FLUSH
 //#define CONFIG_FILE_DATASYNC_DURING_FLUSH
@@ -78,8 +78,8 @@ struct iofile_data {
  atomic_owner_rwlock_t io_lock; /*< Lock for the file. */
  __pos_t               io_pos;  /*< The current in-file position of 'if_fd' */
  size_t                io_read; /*< The amount of bytes within the currently loaded buffer that were read from disk.
-                                 *  When 'IO_R' is set, 'io_pos' is located within the buffer at 'if_base+io_read' */
- LIST_NODE(FILE)       io_link; /*< [lock(libc_ffiles_lock)][0..1] Entry in the global chain of open files. (Used by 'fcloseall()', as well as flushing all open files during 'exit()') */
+                                 *  When `IO_R' is set, `io_pos' is located within the buffer at 'if_base+io_read' */
+ LIST_NODE(FILE)       io_link; /*< [lock(libc_ffiles_lock)][0..1] Entry in the global chain of open files. (Used by `fcloseall()', as well as flushing all open files during `exit()') */
  LIST_NODE(FILE)       io_lnch; /*< [lock(libc_flnchg_lock)][0..1] Chain of line-buffered file that have changed and must be flushed before another line-buffered file is read.
                                  *   NOTE: The standard streams stdin, stdout and stderr are not apart of this list! */
  //mbstate_t           io_mbs;  /*< MB State used for translating unicode data. */
@@ -100,7 +100,7 @@ INTDEF LIST_HEAD(FILE) libc_flnchg;
 #define IO_RW      __IO_FILE_IORW      /*< The file was opened for read+write permissions ('+' flag) */
 #define IO_USERBUF __IO_FILE_IOUSERBUF /*< The buffer was given by the user. */
 #define IO_LNBUF   __IO_FILE_IOLNBUF   /*< NOT DEFINED BY DOS: Use line-buffer mode. */
-#define IO_LNIFTYY __IO_FILE_IOLNIFTYY /*< NOT ORIGINALLY DEFINED IN DOS: Determine 'isatty()' on first access and set '__IO_FILE_IOLNBUF' accordingly. */
+#define IO_LNIFTYY __IO_FILE_IOLNIFTYY /*< NOT ORIGINALLY DEFINED IN DOS: Determine 'isatty()' on first access and set `__IO_FILE_IOLNBUF' accordingly. */
 
 #define FEOF(self)      ((self)->if_flag&IO_EOF)
 #define FERROR(self)    ((self)->if_flag&IO_ERR)
@@ -186,7 +186,7 @@ INTDEF void LIBCCALL libc_flush_changed_lnbuf_files(FILE *__restrict sender);
  * NOTE: Errors that may occur during this act are ignored, so-as to
  *       ensure that attempts at flushing later files are always made. */
 INTDEF void LIBCCALL libc_flushall_nostd(void);
-/* Same as 'libc_flushall_nostd', but also flush standard streams. */
+/* Same as `libc_flushall_nostd', but also flush standard streams. */
 INTDEF void LIBCCALL libc_flushall(void);
 
 INTDEF size_t LIBCCALL libc_fread_unlocked(void *__restrict buf, size_t size, size_t n, FILE *__restrict self);
@@ -534,25 +534,10 @@ INTDEF int LIBCCALL   libc_32vfwscanf_s(FILE *__restrict self, char32_t const *_
 INTDEF int ATTR_CDECL libc_32wscanf_s(char32_t const *__restrict format, ...);
 INTDEF int LIBCCALL   libc_32vwscanf_s(char32_t const *__restrict format, va_list args);
 
-
 /* DOS Console I/O function aliases. */
 /* TODO: Add <conio.h> */
 
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */
-
-
-
-
-
-
-/* FILE-unrelated stdio functions. */
-struct obstack;
-INTDEF void LIBCCALL perror(char const *__s);
-INTDEF char *LIBCCALL ctermid(char *__s);
-INTDEF int LIBCCALL obstack_printf(struct obstack *__restrict __obstack, char const *__restrict format, ...);
-INTDEF int LIBCCALL obstack_vprintf(struct obstack *__restrict __obstack, char const *__restrict format, va_list args);
-INTDEF char *LIBCCALL cuserid(char *__s);
-
 
 DECL_END
 

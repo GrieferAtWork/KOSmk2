@@ -52,7 +52,7 @@ inode_flock_incread(struct inode *__restrict ino,
  pos_t underflow;
  if unlikely(!size) return -EOK; /* nothing to do here! */
 /*
- REFLOG(("+++ incref('%s',%#lx,%lu) x%u\n",self->sc_start.sy_name->k_name,
+ REFLOG(("+++ incref(`%s',%#lx,%lu) x%u\n",self->sc_start.sy_name->k_name,
         (unsigned long)start,(unsigned long)size,1));
 */
  for (prange = &FLOCK.fl_ranges;
@@ -352,7 +352,7 @@ inode_flock_decread(struct inode *__restrict ino,
  bool signal_avail = false;
 #define SIGNAL_UNLOCK(start,size) (signal_avail = true)
 /*
- REFLOG(("--- decref('%s',%#lx,%lu)\n",self->sc_start.sy_name->k_name,
+ REFLOG(("--- decref(`%s',%#lx,%lu)\n",self->sc_start.sy_name->k_name,
         (unsigned long)start,(unsigned long)size));
 */
  /* Search range and only free reference that dropped to ZERO(0). */
@@ -400,7 +400,7 @@ again_rangestart:
     assert(!range || CURR_RANGE.lr_size);
    } else {
     if (overlap != CURR_RANGE.lr_size) {
-     /* Must split the range at 'start+overlap' */
+     /* Must split the range at `start+overlap' */
      assert(CURR_RANGE.lr_size > overlap);
      newrange = omalloc(struct ilockrange);
      if unlikely(!newrange) goto err;
@@ -465,7 +465,7 @@ again_rangestart:
    if (overlap > size) overlap = size;
    assert(overlap < CURR_RANGE.lr_size);
    if (start+overlap == CURR_RANGE_END) {
-    /* Truncate after 'start+overlap' or split the current range into 2 parts. */
+    /* Truncate after `start+overlap' or split the current range into 2 parts. */
     if (CURR_RANGE.lr_locks == 1) {
      SIGNAL_UNLOCK(start,overlap);
     } else {
@@ -547,13 +547,13 @@ next:;
 LOCAL bool KCALL
 inode_flock_setwrite(struct inode *__restrict ino,
                      pos_t start, pos_t size) {
- /* TODO: Create a write-range for 'start..+=size'. */
+ /* TODO: Create a write-range for `start..+=size'. */
  return true;
 }
 LOCAL bool KCALL
 inode_flock_unsetwrite(struct inode *__restrict ino,
                        pos_t start, pos_t size) {
- /* TODO: Delete a write-range for 'start..+=size'. */
+ /* TODO: Delete a write-range for `start..+=size'. */
  sig_broadcast(&FLOCK.fl_unlock);
  return true;
 }
@@ -561,25 +561,25 @@ inode_flock_unsetwrite(struct inode *__restrict ino,
 LOCAL bool KCALL
 inode_flock_setupgrade(struct inode *__restrict ino,
                        pos_t start, pos_t size) {
- /* TODO: Set all locks within 'start..+=size' to 'LOCKRANGE_WFLAG'. */
+ /* TODO: Set all locks within `start..+=size' to `LOCKRANGE_WFLAG'. */
  return true;
 }
 LOCAL bool KCALL
 inode_flock_hasany(struct inode *__restrict ino,
                    pos_t start, pos_t size) {
- /* TODO: Make sure that 'start..+=size' isn't mapped. */
+ /* TODO: Make sure that `start..+=size' isn't mapped. */
  return true;
 }
 LOCAL bool KCALL
 inode_flock_haswrite(struct inode *__restrict ino,
                      pos_t start, pos_t size) {
- /* TODO: Make sure that 'start..+=size' contains no 'lr_locks&LOCKRANGE_WFLAG' */
+ /* TODO: Make sure that `start..+=size' contains no 'lr_locks&LOCKRANGE_WFLAG' */
  return true;
 }
 LOCAL bool KCALL
 inode_flock_canupgrade(struct inode *__restrict ino,
                        pos_t start, pos_t size) {
- /* TODO: Make sure that 'start..+=size' is marked with 'lr_locks == 1' */
+ /* TODO: Make sure that `start..+=size' is marked with 'lr_locks == 1' */
  return true;
 }
 

@@ -183,8 +183,8 @@ do_dlopen(struct module *__restrict mod, int flags) {
  }
 
  modpatch_init_user(&patch,THIS_MMAN->m_exe);
- /* NOTE: Since 'p_inst' is allowed to be NULL, no
-  *       need to handle the case of a missing 'm_exe' */
+ /* NOTE: Since `p_inst' is allowed to be NULL, no
+  *       need to handle the case of a missing `m_exe' */
 #if RTLD_DEEPBIND == MODPATCH_FLAG_DEEPBIND
  patch.p_pflags |= flags&MODPATCH_FLAG_DEEPBIND;
 #else
@@ -220,7 +220,7 @@ got_inst_noload:
    *    return to user-space by executing a long list of custom
    *    callbacks, yet this time we also need to preserve all
    *    user-space registers except for 'EAX'.
-   * HINT: We can determine their values by looking at the 'THIS_SYSCALL_*' macros. */
+   * HINT: We can determine their values by looking at the `THIS_SYSCALL_*' macros. */
   errno_t error = dl_loadinit(inst,result);
   if (E_ISERR(error)) result = E_PTR(error);
  }
@@ -355,7 +355,7 @@ SYSCALL_DEFINE2(xdlsym,USER void *,handle,USER char const *,symbol) {
  struct mman *mm = THIS_MMAN;
  struct instance *inst;
  task_crit();
- /* NOTE: Need a write-lock in case accessing 'symbol' invokes ALLOA. */
+ /* NOTE: Need a write-lock in case accessing `symbol' invokes ALLOA. */
  result = E_PTR(mman_write(mm));
  if (E_ISERR(result)) goto end;
 
@@ -414,7 +414,7 @@ dl_do_loadfini_inst(struct instance *__restrict inst,
  /* Reminder: We must push finalizers in reverse. */
  pmodfun = inst->i_module->m_ops->o_modfun;
  if (pmodfun) {
-  DLFINI_DEBUG(syslog(LOG_DEBUG,"[DLFINI] Scan module '%[file]' for finalizers\n",inst->i_module->m_file));
+  DLFINI_DEBUG(syslog(LOG_DEBUG,"[DLFINI] Scan module `%[file]' for finalizers\n",inst->i_module->m_file));
   (*pmodfun)(inst,MODFUN_FINI|MODFUN_REVERSE,&dl_enum_fini,regs);
  }
 
@@ -470,7 +470,7 @@ GLOBAL_ASM(
 L(.section .text                                                                 )
 L(INTERN_ENTRY(sys_xdlfini)                                                      )
 L(    sti /* Enable interrupts. */                                               )
-L(    movl %esp, %ecx      /* Load IRET registers into ECX (argument to 'dl_loadfini()') */)
+L(    movl %esp, %ecx      /* Load IRET registers into ECX (argument to `dl_loadfini()') */)
 L(    __ASM_PUSH_SEGMENTS                                                        )
 L(    __ASM_LOAD_SEGMENTS(%ax) /* Load kernel segments */                        )
 L(    call dl_loadfini                                                           )

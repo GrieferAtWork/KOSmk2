@@ -231,8 +231,8 @@ typedef __blksize_t blksize_t;
  * >> int CDECL [NEW: _fstat64i32](int fd, struct __dos_stat64i32 *buf) = _fstat64;
  * >> int CDECL [NEW: _stat64i32](char const *dos_file, struct __dos_stat64i32 *buf) = _stat64;
  *
- * NOTE: Since KOS uses a different 'stat' buffer than glibc, but still wants to
- *       maintain binary compatibility, the 'stat()' function provided internally
+ * NOTE: Since KOS uses a different `stat' buffer than glibc, but still wants to
+ *       maintain binary compatibility, the `stat()' function provided internally
  *       accepts a glibc-compatible stat buffer, while the functions making use
  *       of what we (and the kernel) defines as its stat()-buffer are actually
  *       named 'kstat()' */
@@ -241,12 +241,12 @@ typedef __blksize_t blksize_t;
 #undef stat64
 #undef lstat64
 #ifdef __DOS_COMPAT__
-/* 'struct stat' is:
+/* `struct stat' is:
  *    [                                       ] = struct __dos_stat32
  *    [__USE_TIME_BITS64                      ] = struct __dos_stat64i32 == struct __dos_stat64
  *    [__USE_FILE_OFFSET64                    ] = struct __dos_stat32i64
  *    [__USE_TIME_BITS64 + __USE_FILE_OFFSET64] = struct __dos_stat64
- * 'struct stat64' is:
+ * `struct stat64' is:
  *    [                 ] = struct __dos_stat32i64
  *    [__USE_TIME_BITS64] = struct __dos_stat64 */
 #ifdef __USE_TIME_BITS64

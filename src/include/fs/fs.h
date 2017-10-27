@@ -27,7 +27,7 @@ DECL_BEGIN
 
 #ifndef __iattrset_t_defined
 #define __iattrset_t_defined 1
-typedef u32 iattrset_t; /* Set of 'IATTR_*' */
+typedef u32 iattrset_t; /* Set of `IATTR_*' */
 #endif
 
 struct superblock;
@@ -37,7 +37,7 @@ struct dentry_walker;
 struct device;
 struct inode;
 
-/* Kernel option 'autosync=0/1': When enabled (!= 0), automatically
+/* Kernel option `autosync=0/1': When enabled (!= 0), automatically
  * sync filesystems and block-devices after write-operations have
  * been performed (such as creating/deleting a file/dir/link, or
  * closing a file after some data has been written to it).
@@ -55,17 +55,17 @@ DATDEF __BOOL fs_autosync;
 
 
 /* Opens a file, given its relative path name.
- * @return: * :         A new reference to a 'file' object.
- * @return: -ENOENT:    The file itself (when 'O_CREAT' isn't set), or a part of the file path doesn't exists.
+ * @return: * :         A new reference to a `file' object.
+ * @return: -ENOENT:    The file itself (when `O_CREAT' isn't set), or a part of the file path doesn't exists.
  * @return: -EACCES:    The given permissions are insufficient.
  * @return: -EINTR:     The calling thread was interrupted.
  * @return: -ELOOP:     Too many symbolic link indirections.
- * @return: -EEXIST:   'oflags' contains 'O_CREAT|O_EXCL', but the file already existed.
+ * @return: -EEXIST:   `oflags' contains `O_CREAT|O_EXCL', but the file already existed.
  * @return: -ENOMEM:    Failed to allocate directory/file descriptors.
  * @return: -ENOTDIR:   A part of the file's path isn't a directory, or
  *                      doesn't support a required directory interface.
- * @return: -ENOTDIR:  'oflags' contains 'O_DIRECTORY', but the file isn't a directory.
- * @return: -EROFS:    'oflags' contains 'O_CREAT' and the file didn't exist, but the
+ * @return: -ENOTDIR:  `oflags' contains `O_DIRECTORY', but the file isn't a directory.
+ * @return: -EROFS:    `oflags' contains `O_CREAT' and the file didn't exist, but the
  *                      INode or superblock it resides within is marked as read-only.
  * @return: -EBUSY:     The INode associated with the file to-be opened is marked for deletion.
  * @return: E_ISERR(*): Failed to open the file for some reason. */
@@ -110,7 +110,7 @@ fs_user_xinsnod(struct dentry_walker *__restrict walker,
  * NOTE: The underlying INode of the device may not be the INode actually
  *       loaded into the filesystem. - A proxy node may be used instead.
  * @param: result_inode: When non-NULL, store a reference to the INode associated
- *                       with the returned directory entry in '*result_inode'.
+ *                       with the returned directory entry in `*result_inode'.
  *                       HINT: When NULL, the internally generated INode reference is dropped.
  * @return: * :         A reference to the DENTRY of the newly created file.
  * @return: -ENOENT:    A part of the file path doesn't exists.
@@ -121,7 +121,7 @@ fs_user_xinsnod(struct dentry_walker *__restrict walker,
  * @return: -ENOTDIR:   A part of the file's path isn't a directory, or
  *                      doesn't support a required directory interface.
  * @return: -EEXIST:    Another entry with the same name already exists.
- * @return: -EROFS:     The INode or superblock associated with 'dir_ent' is read-only.
+ * @return: -EROFS:     The INode or superblock associated with `dir_ent' is read-only.
  * @return: E_ISERR(*): Failed to create a regular file for some reason. */
 FUNDEF REF struct dentry *KCALL
 fs_xmkreg(struct dentry_walker *__restrict walker,
@@ -136,10 +136,10 @@ fs_user_xmkreg(struct dentry_walker *__restrict walker,
                REF struct inode **result_inode);
 
 /* Create a new empty directory.
- * NOTE: 'ia_siz' from `attr' is ignored.
+ * NOTE: `ia_siz' from `attr' is ignored.
  * $ mkdir "/opt/foo" # dentry_mkdir(DENTRY("/opt"),"foo",...);
  * @param: result_inode: When non-NULL, store a reference to the INode associated
- *                       with the returned directory entry in '*result_inode'.
+ *                       with the returned directory entry in `*result_inode'.
  *                       HINT: When NULL, the internally generated INode reference is dropped.
  * @return: * :         A reference to the DENTRY of the newly created directory.
  * @return: -ENOENT:    A part of the file path doesn't exists.
@@ -150,7 +150,7 @@ fs_user_xmkreg(struct dentry_walker *__restrict walker,
  * @return: -ENOTDIR:   A part of the file's path isn't a directory, or
  *                      doesn't support a required directory interface.
  * @return: -EEXIST:    Another entry with the same name already exists.
- * @return: -EROFS:     The INode or superblock associated with 'dir_ent' is read-only.
+ * @return: -EROFS:     The INode or superblock associated with `dir_ent' is read-only.
  * @return: E_ISERR(*): Failed to create a directory for some reason. */
 FUNDEF REF struct dentry *KCALL
 fs_xmkdir(struct dentry_walker *__restrict walker,
@@ -174,9 +174,9 @@ fs_user_xmkdir(struct dentry_walker *__restrict walker,
  * @return: -ENOMEM:    Failed to allocate directory/file descriptors.
  * @return: -ENOTDIR:   A part of the file's path isn't a directory, or
  *                      doesn't support a required directory interface.
- * @return: -EPERM:     The INode associated with 'dir_ent' doesn't support hard links.
- * @return: -EROFS:     The INode or superblock associated with 'dir_ent' is read-only.
- * @return: -EXDEV:     The given 'dst_node' is apart of a different superblock than that of 'dir_ent'
+ * @return: -EPERM:     The INode associated with `dir_ent' doesn't support hard links.
+ * @return: -EROFS:     The INode or superblock associated with `dir_ent' is read-only.
+ * @return: -EXDEV:     The given `dst_node' is apart of a different superblock than that of `dir_ent'
  * @return: E_ISERR(*): Failed to create a hard link for some reason. */
 FUNDEF REF struct dentry *KCALL
 fs_xhrdlink(struct dentry_walker *__restrict walker,
@@ -218,7 +218,7 @@ fs_user_xsymlink(struct dentry_walker *__restrict walker,
                  REF struct inode **result_inode);
 
 
-/* Rename a given file 'existing_ent' to exist under a new name 'dst_name' within 'dst_dir'.
+/* Rename a given file `existing_ent' to exist under a new name `dst_name' within `dst_dir'.
  * @param: result_inode: When non-NULL, store a reference to the returned INode.
  * @return: * :         A reference to the DENTRY of the newly created link.
  * @return: -ENOENT:    A part of the file path doesn't exists.
@@ -230,7 +230,7 @@ fs_user_xsymlink(struct dentry_walker *__restrict walker,
  *                      doesn't support a required directory interface.
  * @return: -EPERM:     The INode associated with the target directory doesn't support renaming.
  * @return: -EROFS:     The target/source INode is marked as read-only or part of a read-only superblock.
- * @return: -EXDEV:     The target path is part of a different superblock than that of 'existing_ent'
+ * @return: -EXDEV:     The target path is part of a different superblock than that of `existing_ent'
  * @return: E_ISERR(*): Failed to create a directory for some reason. */
 FUNDEF REF struct dentry *KCALL
 fs_xrename(struct dentry_walker *__restrict walker,
@@ -246,7 +246,7 @@ fs_user_xrename(struct dentry_walker *__restrict walker,
 
 
 /* Virtually mount the given superblock, given its relative path name.
- * @return: * :       A new reference to the dentry in which 'filesystem' got mounted.
+ * @return: * :       A new reference to the dentry in which `filesystem' got mounted.
  * @return: -ENOENT:  A part of the file path doesn't exists.
  * @return: -EACCES:  The given permissions are insufficient.
  * @return: -EINTR:   The calling thread was interrupted.
@@ -278,7 +278,7 @@ INTDEF INITCALL void KCALL mount_root_filesystem(void);
 
 /* Synchronize all mounted filesystems and underlying block devices,
  * flushing any unwritten data to disk in the process.
- * >> This is literally the same as the 'sync()' system calls.
+ * >> This is literally the same as the `sync()' system calls.
  * @return: * :         The amount of successfully synchronized filesystems.
  * @return: -ENOMEM:    Not enough available memory.
  * @return: -EINTR:     The calling thread was interrupted.

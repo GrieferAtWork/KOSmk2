@@ -172,7 +172,7 @@ DECL_BEGIN
 #define VGA_ATC_MODE           0x10
 #   define VGA_AT10_RESERVED      0x10 /* Mask of reserved registers (Added by GrieferAtWork). */
 #   define VGA_AT10_GRAPHICS      0x01 /* Enable graphics, rather than alphanumeric mode (Added by GrieferAtWork). */
-#   define VGA_AT10_DUP9          0x04 /* Duplicate the 8'th text dot into the 9'th when 'VGA_SR01_CHAR_CLK_8DOTS' isn't set, instead of filling it with background (Added by GrieferAtWork). */
+#   define VGA_AT10_DUP9          0x04 /* Duplicate the 8`th text dot into the 9`th when `VGA_SR01_CHAR_CLK_8DOTS' isn't set, instead of filling it with background (Added by GrieferAtWork). */
 #   define VGA_AT10_BLINK         0x08 /* Set to cause character attribute bit #7 to be used for blinking text;
                                         * NEVER SET THIS! YOU'LL CAUSE SEIZURES IN PEOPLE (Added by GrieferAtWork).
                                         * WARNING: After boot, a BIOS mode switch, or a video card reset, this flag
@@ -311,7 +311,7 @@ LOCAL void KCALL vga_mm_wattr(MMIO void *regbase, u8 reg, u8 val) { vga_mm_w(reg
 
 struct vgastate {
  MMIO void  *vs_mmio;    /*< [0..1] MMIO Base address, or NULL if not available. */
- u8          vs_saved;   /*< Set of 'VGA_SAVE_*' describing what has been saved. */
+ u8          vs_saved;   /*< Set of `VGA_SAVE_*' describing what has been saved. */
  u8          vs_crt[VGA_CRT_C]; /*< [valid_if(VGA_SAVE_MODE)] Saved CRT Controller registers. */
  u8          vs_att[VGA_ATT_C]; /*< [valid_if(VGA_SAVE_MODE)] Saved Attribute Controller registers. */
  u8          vs_gfx[VGA_GFX_C]; /*< [valid_if(VGA_SAVE_MODE)] Saved Graphics Controller registers. */
@@ -320,15 +320,15 @@ struct vgastate {
  KPD byte_t *vs_data[5]; /*< [0..1][*][owned] Misc. data, the contents of which depend on 'vs_saved' */
 };
 
-/* Initialize 'state' with the current VGA state, saving information listed by 'save' mask.
+/* Initialize `state' with the current VGA state, saving information listed by `save' mask.
  * @param: regbase: [0..1] The MMIO VGA base address, or NULL if not available.
- * @param: save:     A set of 'VGA_SAVE_*' describing what should be saved.
+ * @param: save:     A set of `VGA_SAVE_*' describing what should be saved.
  * @return: -EOK:    Successfully saved the current VGA state.
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF errno_t KCALL save_vga(struct vgastate *__restrict state, MMIO void *regbase, u8 save);
-/* Replace the current VGA state with the one described by 'state'. */
+/* Replace the current VGA state with the one described by `state'. */
 FUNDEF void KCALL load_vga(struct vgastate *__restrict state, bool call_free_vga);
-/* Free a VGA state created by 'save_vga()'. */
+/* Free a VGA state created by `save_vga()'. */
 FUNDEF void KCALL free_vga(struct vgastate *__restrict state);
 
 struct vga_mode {
@@ -400,11 +400,11 @@ PUBLIC void KCALL vga_setmode(MMIO void *regbase, struct vga_mode const *__restr
 PUBLIC void KCALL vga_getmode(MMIO void *regbase, struct vga_mode *__restrict mode);
 
 /* Set/Get the current VGA text-mode font.
- * NOTE: When setting a font, 'vf_current' isn't check
+ * NOTE: When setting a font, `vf_current' isn't check
  *       and the caller must update it upon success.
  * @return: true:   Successfully read/set the font.
- * @return: false: [vga_getfont] Not enough available memory. ('vf_data' is set to NULL)
- * @return: false: [vga_setfont] 'vf_data' was NULL. */
+ * @return: false: [vga_getfont] Not enough available memory. (`vf_data' is set to NULL)
+ * @return: false: [vga_setfont] `vf_data' was NULL. */
 PUBLIC bool KCALL vga_setfont(MMIO void *regbase, struct vga_font const *__restrict font);
 PUBLIC bool KCALL vga_getfont(MMIO void *regbase, struct vga_font *__restrict font);
 
@@ -426,7 +426,7 @@ typedef struct {
  u16             v_crt_i;  /*< CRT Controller Index (Either `VGA_CRT_IC' or `VGA_CRT_IM') */
  u16             v_crt_d;  /*< CRT Controller Data Register (Either `VGA_CRT_DC' or `VGA_CRT_DM') */
  u16             v_is1_r;  /*< Input Status Register 1 (Either `VGA_IS1_RC' or `VGA_IS1_RM') */
- u16             v_mode;   /*< Current mode (One of 'VIO_MODE_*') */
+ u16             v_mode;   /*< Current mode (One of `VIO_MODE_*') */
 } vga_t;
 
 

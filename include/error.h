@@ -32,10 +32,10 @@ __SYSDECL_BEGIN
  * @param: STATUS: When nonzero, exit(STATUS) and never return.  */
 #ifndef __NO_ASMNAME
 __NAMESPACE_INT_BEGIN
-__LIBC void (__LIBCCALL __libc_error)(int __status, int __errnum, char const *__format, ...) __ASMNAME("error");
-__LIBC void (__LIBCCALL __libc_error_at_line)(int __status, int __errnum, char const *__fname, unsigned int __lineno, char const *__format, ...) __ASMNAME("error_at_line");
-__LIBC __ATTR_NORETURN void (__LIBCCALL __nret_error)(int __status, int __errnum, char const *__format, ...) __ASMNAME("error");
-__LIBC __ATTR_NORETURN void (__LIBCCALL __nret_error_at_line)(int __status, int __errnum, char const *__fname, unsigned int __lineno, char const *__format, ...) __ASMNAME("error_at_line");
+__LIBC __ATTR_COLD void (__LIBCCALL __libc_error)(int __status, int __errnum, char const *__format, ...) __ASMNAME("error");
+__LIBC __ATTR_COLD void (__LIBCCALL __libc_error_at_line)(int __status, int __errnum, char const *__fname, unsigned int __lineno, char const *__format, ...) __ASMNAME("error_at_line");
+__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL __nret_error)(int __status, int __errnum, char const *__format, ...) __ASMNAME("error");
+__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL __nret_error_at_line)(int __status, int __errnum, char const *__fname, unsigned int __lineno, char const *__format, ...) __ASMNAME("error_at_line");
 __NAMESPACE_INT_END
 
 /* Inform the compiler when error() won't return. */
@@ -48,8 +48,8 @@ __NAMESPACE_INT_END
       ? __NAMESPACE_INT_SYM __nret_error_at_line(status,errnum,fname,lineno,__VA_ARGS__) \
       : __NAMESPACE_INT_SYM __libc_error_at_line(status,errnum,fname,lineno,__VA_ARGS__))
 #else
-__LIBC void (__LIBCCALL error)(int __status, int __errnum, char const *__format, ...);
-__LIBC void (__LIBCCALL error_at_line)(int __status, int __errnum, char const *__fname, unsigned int __lineno, char const *__format, ...);
+__LIBC __ATTR_COLD void (__LIBCCALL error)(int __status, int __errnum, char const *__format, ...);
+__LIBC __ATTR_COLD void (__LIBCCALL error_at_line)(int __status, int __errnum, char const *__fname, unsigned int __lineno, char const *__format, ...);
 #endif
 
 

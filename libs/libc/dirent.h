@@ -32,7 +32,7 @@ DECL_BEGIN
 struct __dirstream {
  int            d_fd;
  struct dirent *d_buf;   /*< [0..1][owned] Allocated directory entry buffer. */
- size_t         d_bufsz; /*< Allocated buffer size for 'd_buf' */
+ size_t         d_bufsz; /*< Allocated buffer size for `d_buf' */
  /* Inline-allocated directory entry buffer (Used as initial buffer). */
  char           d_inl[offsetof(struct dirent,d_name)+(256+1)*sizeof(char)];
 };

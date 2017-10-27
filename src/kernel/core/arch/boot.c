@@ -346,7 +346,7 @@ GLOBAL_ASM(L(ENTER)
  * CLOBBER: NONE */
 L(PRIVATE_ENTRY(bdsk_read)                                                    )
 #define SECTOR_BUFFER __bootloader_ext_end /* Use memory immediatly after the bootloader as buffer */
-L(    /* Check if EDI can be used as a direct buffer. - If not, use 'SECTOR_BUFFER' */)
+L(    /* Check if EDI can be used as a direct buffer. - If not, use `SECTOR_BUFFER' */)
 L(    pushal                                                                  )
 L(    pushl %edi                                                              )
 L(    cmpl  $(1 << 20), %edi                                                  )
@@ -504,11 +504,11 @@ L(    movw $(0xe9), (boot_emulation_logport - KERNEL_BASE)                    )
 L(__start:                                                                    )
 L(    /* This is the TRUE entry point! */                                     )
 L(    /* This is where the bootloader jumps */                                )
-/* Make sure interrupts are disabled (They'll be re-enabled in 'irq_initialize()'). */
+/* Make sure interrupts are disabled (They'll be re-enabled in `irq_initialize()'). */
 L(    cli                                                                     )
 /* Load the kernel bootstrap page directory.
  * Before this, all virtual/symbol addresses are INCORRECT!
- * REMINDER: The symbol address of 'pdir_kernel' is physical! */
+ * REMINDER: The symbol address of `pdir_kernel' is physical! */
 L(    movl $pdir_kernel, %ecx                                                 )
 L(    movl %ecx, %cr3                                                         )
 

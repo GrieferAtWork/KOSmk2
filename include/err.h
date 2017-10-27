@@ -29,14 +29,14 @@
 __SYSDECL_BEGIN
 
 #ifndef __KERNEL__
-__LIBC void (__LIBCCALL warn)(char const *__format, ...);
-__LIBC void (__LIBCCALL vwarn)(char const *__format, __VA_LIST __args);
-__LIBC void (__LIBCCALL warnx)(char const *__format, ...);
-__LIBC void (__LIBCCALL vwarnx)(char const *__format, __VA_LIST __args);
-__LIBC __ATTR_NORETURN void (__LIBCCALL err)(int __status, char const *__format, ...);
-__LIBC __ATTR_NORETURN void (__LIBCCALL verr)(int __status, char const *__format, __VA_LIST __args);
-__LIBC __ATTR_NORETURN void (__LIBCCALL errx)(int __status, char const *__format, ...);
-__LIBC __ATTR_NORETURN void (__LIBCCALL verrx)(int __status, char const *__format, __VA_LIST __args);
+__LIBC __ATTR_COLD void (__LIBCCALL warn)(char const *__format, ...);
+__LIBC __ATTR_COLD void (__LIBCCALL vwarn)(char const *__format, __VA_LIST __args);
+__LIBC __ATTR_COLD void (__LIBCCALL warnx)(char const *__format, ...);
+__LIBC __ATTR_COLD void (__LIBCCALL vwarnx)(char const *__format, __VA_LIST __args);
+__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL err)(int __status, char const *__format, ...);
+__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL verr)(int __status, char const *__format, __VA_LIST __args);
+__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL errx)(int __status, char const *__format, ...);
+__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL verrx)(int __status, char const *__format, __VA_LIST __args);
 #endif /* !__KERNEL__ */
 
 __SYSDECL_END

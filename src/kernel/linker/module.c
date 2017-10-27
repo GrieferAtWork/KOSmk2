@@ -174,7 +174,7 @@ module_setup(struct module *__restrict self,
  CHECK_HOST_DOBJ(fp->f_dent);
  CHECK_HOST_DOBJ(ops);
  CHECK_HOST_DOBJ(owner);
- assertf(self->m_align != 0,"Forgot to initialize 'm_align'");
+ assertf(self->m_align != 0,"Forgot to initialize `m_align'");
  end = (iter = self->m_segv)+self->m_segc;
  for (; iter != end; ++iter) {
   if (addr_min > iter->ms_paddr)
@@ -182,7 +182,7 @@ module_setup(struct module *__restrict self,
   if (addr_max < iter->ms_paddr+iter->ms_msize)
       addr_max = iter->ms_paddr+iter->ms_msize;
  }
- /* Check for special case: 'self->m_segc == 0' */
+ /* Check for special case: `self->m_segc == 0' */
  if (addr_min > addr_max)
      addr_min = addr_max;
  FILE_INCREF(fp);
@@ -234,11 +234,11 @@ module_destroy(struct module *__restrict self) {
   *       on all modules it created. - We are allowed to do this because fini()
   *       may only touch hidden members added by the specific implementation.
   *       The instance itself can remain in a consistent state. - Only operators
-  *       stored in 'self->m_ops' can no longer be accessed.
-  * NOTE: Also replace 'm_ops', with an empty set of operators, 'm_owner' with
+  *       stored in `self->m_ops' can no longer be accessed.
+  * NOTE: Also replace `m_ops', with an empty set of operators, `m_owner' with
   *       the kernel core instance, and call realloc_in_place(<MODULE>,sizeof(struct module)),
   *       thus essentially transforming the module into an untyped, core module
-  *       that can no longer the used for 'dlsym()', but could still be mapped,
+  *       that can no longer the used for `dlsym()', but could still be mapped,
   *       and executed when linked statically. */
  if (self->m_ops->o_fini)
    (*self->m_ops->o_fini)(self);
@@ -323,8 +323,8 @@ module_open_d(struct dentry *__restrict dent, bool require_exec) {
   INODE_DECREF(node);
   return E_PTR(E_GTERR(module_stream));
  }
- /* NOTE: Upon success (now confirmed), 'dentry_open_with_inode'
-  *       has inherited a reference to 'node'. */
+ /* NOTE: Upon success (now confirmed), `dentry_open_with_inode'
+  *       has inherited a reference to `node'. */
 
  /* Actually open the module's stream. */
  result = module_open(module_stream);
@@ -601,7 +601,7 @@ PUBLIC SAFE void KCALL
 module_addloader(struct modloader *__restrict loader, int mode) {
  CHECK_HOST_DOBJ(loader);
  assert(TASK_ISSAFE());
- assertf(loader->ml_owner,"No loader owner set (Use 'THIS_INSTANCE')");
+ assertf(loader->ml_owner,"No loader owner set (Use `THIS_INSTANCE')");
  CHECK_HOST_DOBJ(loader->ml_owner);
  CHECK_HOST_TEXT(loader->ml_loader,1);
  assert(loader->ml_magsz <= MODLOADER_MAX_MAGIC);
@@ -644,7 +644,7 @@ module_delloader(struct modloader *__restrict loader) {
  struct modloader **piter,*iter;
  bool result = false;
  CHECK_HOST_DOBJ(loader);
- assertf(loader->ml_owner,"No loader owner set (Use 'THIS_INSTANCE')");
+ assertf(loader->ml_owner,"No loader owner set (Use `THIS_INSTANCE')");
  CHECK_HOST_DOBJ(loader->ml_owner);
  CHECK_HOST_TEXT(loader->ml_loader,1);
  assert(ATOMIC_READ(loader->ml_owner->i_refcnt) >= 1);
@@ -722,7 +722,7 @@ module_mkregions(struct module *__restrict self) {
    region->mr_size += page_offset;
    region->mr_size  = CEIL_ALIGN(region->mr_size,PAGESIZE);
 #if 0
-   syslog(LOG_EXEC|LOG_DEBUG,"[MOD] SEGMENT '%[file]' - %p...%p from %I64X + %Ix\n",
+   syslog(LOG_EXEC|LOG_DEBUG,"[MOD] SEGMENT `%[file]' - %p...%p from %I64X + %Ix\n",
           region->mr_setup.mri_file,
           FLOOR_ALIGN(iter->ms_paddr,PAGESIZE)+region->mr_setup.mri_begin,
           FLOOR_ALIGN(iter->ms_paddr,PAGESIZE)+region->mr_size-1,
@@ -788,11 +788,11 @@ instance_new(struct module *__restrict mod, u32 flags) {
  instanceset_init(&result->i_deps);
  assert(result->i_deps.is_lock.arw_lock == 0);
 
- /* TODO: Set the 'INSTANCE_FLAG_NOREMAP' flag if the
+ /* TODO: Set the `INSTANCE_FLAG_NOREMAP' flag if the
   *       application module `mod' is allowed to root-fork().
   *    >> Required to prevent tampering (and breaking the dirty-bit-check)
   *       when a malicious application loads a root-fork-able module:
-  * NOTE: The 'INSTANCE_FLAG_NOUNMAP' flag must be set similarly,
+  * NOTE: The `INSTANCE_FLAG_NOUNMAP' flag must be set similarly,
   *       but unmapping must still be allowed when the entirety
   *       of the instance is being deleted.
   * >> void dirty_code(void) {
@@ -815,7 +815,7 @@ instance_new(struct module *__restrict mod, u32 flags) {
   * >> memcpy(p,&dirty_code,PAGESIZE);
   * >> 
   * >> // Work-around (prevented by disallowing re-map for rootfork()-modules)
-  * >> // >> When it is to do this, 'mremap()' will fail with 'EPERM'
+  * >> // >> When it is to do this, 'mremap()' will fail with `EPERM'
   * >> p = mremap(p,PAGESIZE,PAGESIZE,MREMAP_FIXED,0x10000); // New address must differ from old...
   * >> 
   * >> // Execute the relocated copy of 'dirty_code'
@@ -1045,7 +1045,7 @@ instance_mnotify(unsigned int type, void *__restrict closure,
   break;
 
  case MNOTIFY_UNMAP:
-  /* NOTE: Must allow 'INSTANCE_FLAG_DID_UNLOAD' to overrule no-unmap
+  /* NOTE: Must allow `INSTANCE_FLAG_DID_UNLOAD' to overrule no-unmap
    *       to allow the kernel to delmod() drivers once it determines
    *       that they've been unloaded (by confirming a reference
    *       counter of ONE(2) indicating that only its memory branches

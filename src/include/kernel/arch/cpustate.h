@@ -48,7 +48,7 @@ struct PACKED gpregs {
 struct PACKED sgregs { u16 gs,fs,es,ds; };
 
 /* Interrupt return registers (_MUST_ be iret-compatible). */
-#define IRREGS_ISUSER(x) (((x).cs&3) == 3) /* When true, must use 'struct irregs' */
+#define IRREGS_ISUSER(x) (((x).cs&3) == 3) /* When true, must use `struct irregs' */
 struct PACKED irregs_host   { u32 eip; __SEGMENT32(cs); u32 eflags; };
 struct PACKED irregs        { union PACKED { struct irregs_host host; struct PACKED {
                               u32 eip; __SEGMENT32(cs); u32 eflags; };};

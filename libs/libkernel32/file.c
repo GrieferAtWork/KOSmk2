@@ -77,7 +77,7 @@ __LIBC int LIBCCALL dos_unlinkat(int fd, char const *name, int flags) ASMNAME(".
 STATIC_ASSERT(OF_READ == O_RDONLY);
 STATIC_ASSERT(OF_WRITE == O_WRONLY);
 STATIC_ASSERT(OF_READWRITE == O_RDWR);
-STATIC_ASSERT(HFILE_ERROR == -1); /* _hread() returns this on error, which should be the same as 'read()' */
+STATIC_ASSERT(HFILE_ERROR == -1); /* _hread() returns this on error, which should be the same as `read()' */
 
 
 /* File-api Codepage API. */
@@ -113,7 +113,7 @@ INTERN WINBOOL WINAPI K32_CloseHandle(HANDLE hObject) {
   /* Reap dead child processes.
    * >> Where functions like 'WaitForSingleObject()' will
    *    not cause process handles to be reaped, allowing for
-   *    later calls to something like 'GetExitCodeProcess()',
+   *    later calls to something like `GetExitCodeProcess()',
    *    closing such a handle must actually get rid of the
    *    child process.
    * >> With that in mind, simply reap the given process

@@ -199,7 +199,7 @@ perfect_part:
  * @return: * :         The amount of newly allocate core memory.
  * @return: -ENOMEM:    Not enough available core memory.
  * @return: E_ISERR(*): Failed to allocate+initialize memory for some reason.
- * NOTE: Upon error 'E_ISERR(*)', a write-lock to 'self->mr_plock' will be released.
+ * NOTE: Upon error `E_ISERR(*)', a write-lock to `self->mr_plock' will be released.
  */
 LOCAL ssize_t KCALL
 mregion_load_core(struct mregion *__restrict self,
@@ -612,7 +612,7 @@ err_mapregion:
                                 mode,&holds_region_ref,&old_mman);
  if (E_ISERR(load_bytes)) {
   /* Translate no-data errors to nothing-loaded.
-   * NOTE: '-ENODATA' is returned when a user-initializer has been deleted. */
+   * NOTE: `-ENODATA' is returned when a user-initializer has been deleted. */
   if (load_bytes == -ENODATA)
       load_bytes = 0;
   /* NOTE: When 'mregion_load_core' fails, it unlocks
@@ -653,12 +653,12 @@ err_mapregion:
    /* #1: Find all parts within 'region_begin...+=region_size'
     *     that match 'mt_refcnt > 1', figuring out exactly
     *     how much core memory is required to copy all of them.
-    *     All other parts (with 'mt_refcnt <= 1') are marked with 'MPART_FLAG_CHNG'
+    *     All other parts (with 'mt_refcnt <= 1') are marked with `MPART_FLAG_CHNG'
     * #2: Allocate scattered memory for all of them
     * #3: Figure out which parts are located adjacent to each other.
     * #4: Allocate a region + branches for every group of adjacent parts.
     * #5: Create new parts at the same locations within
-    *     those regions, marking all as 'MPART_FLAG_CHNG'.
+    *     those regions, marking all as `MPART_FLAG_CHNG'.
     * #6: Copy all data into the allocated scatter memory.
     * #7: (re-)map the new branches in the mman.
     * HINT: The number of new parts equals that of new regions. */
@@ -741,7 +741,7 @@ copy_part:
      copy_branch_min = region_base+iter->mt_start;
      copy_branch_max = region_base+iter_end-1;
      if (!*did_remap) {
-      /* Overwrite existing mappings with 'copy_branch' */
+      /* Overwrite existing mappings with `copy_branch' */
       assertf(copy_branch_min >= self->mb_node.a_vmin,"%p < %p",copy_branch_min,self->mb_node.a_vmin);
       assertf(copy_branch_max <= self->mb_node.a_vmax,"%p %p %p > %p",
               region_base,copy_branch_min,copy_branch_max,self->mb_node.a_vmax);
@@ -753,7 +753,7 @@ copy_part:
        assert(inherited_data == (iter->mt_refcnt == 1));
        if (!--iter->mt_refcnt) iter->mt_state = MPART_STATE_MISSING;
        rwlock_endwrite(&region->mr_plock);
-       /* Due to the way we're still holding locks, we're the sole accessor for 'part_copy',
+       /* Due to the way we're still holding locks, we're the sole accessor for `part_copy',
         * meaning we can cheat a bit when it comes to acquiring write-access to its lock. */
        ATOMIC_WRITE(part_copy->mr_plock.rw_lock.arw_lock,ATOMIC_RWLOCK_WFLAG);
        mregion_setup(part_copy);
@@ -762,7 +762,7 @@ copy_part:
        error = mbranch_remap_unlocked(self,&mspace->m_pdir,false);
        rwlock_endwrite(&part_copy->mr_plock);
 
-       MREGION_DECREF(region); /* Drop the old region reference inherited at 'self->mb_region = ...' */
+       MREGION_DECREF(region); /* Drop the old region reference inherited at `self->mb_region = ...' */
        if (E_ISERR(error)) goto err;
        load_bytes = (ssize_t)part_size;
        goto end2;
@@ -811,7 +811,7 @@ err_part_copy_custom:
       holds_notify_ref = true;
      }
 
-     /* Split the original branch before and after 'copy_branch' */
+     /* Split the original branch before and after `copy_branch' */
      if ((error = mman_split_branch_unlocked(mspace,copy_branch_min),E_ISERR(error)) ||
          (error = mman_split_branch_unlocked(mspace,copy_branch_max+1),E_ISERR(error))) {
       if (self_notify) (*self_notify)(MNOTIFY_DECREF,self_closure,NULL,0,0);
@@ -828,7 +828,7 @@ err_part_copy_custom:
      central_branch = mbranch_tree_pop_at(central_override,addr_semi,addr_level);
      assert(central_branch);
 
-     /* Replace 'central_branch' in the ordered chain with 'copy_branch' */
+     /* Replace 'central_branch' in the ordered chain with `copy_branch' */
      LIST_INSERT_REPLACE(central_branch,copy_branch,mb_order);
      /* NOTE: There is a chance that 'central_branch == self', and because
       *       of that, we may no longer access `self' in any way! */
@@ -870,7 +870,7 @@ err_part_copy_custom:
      /* Drop a reference from the original part. */
      if (!--iter->mt_refcnt) iter->mt_state = MPART_STATE_MISSING;
 
-     /* Due to the way we're still holding locks, we're the sole accessor for 'part_copy',
+     /* Due to the way we're still holding locks, we're the sole accessor for `part_copy',
       * meaning we can cheat a bit when it comes to acquiring write-access to its lock. */
      ATOMIC_WRITE(part_copy->mr_plock.rw_lock.arw_lock,ATOMIC_RWLOCK_WFLAG);
      /* Setup the part copy for use by SWAP memory. */

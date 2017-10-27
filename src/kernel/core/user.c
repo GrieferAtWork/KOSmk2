@@ -86,7 +86,7 @@ L(    pushl $(EXC_PAGE_FAULT)                                    )
 L(    pushl TASK_OFFSETOF_IC(%eax)                               )
 L(    movl  %esp, TASK_OFFSETOF_IC(%eax)                         )
 L(                                                               )
-L(    /* Copy memory (s.a.: 'struct intchain') */                )
+L(    /* Copy memory (s.a.: `struct intchain') */                )
 L(    rep   movsb                                                )
 L(                                                               )
 L(    /* Cleanup the custom interrupt handler */                 )
@@ -148,7 +148,7 @@ L(    pushl $(EXC_PAGE_FAULT)                                    )
 L(    pushl TASK_OFFSETOF_IC(%edx)                               )
 L(    movl  %esp, TASK_OFFSETOF_IC(%edx)                         )
 L(                                                               )
-L(    /* Fill memory (s.a.: 'struct intchain') */                )
+L(    /* Fill memory (s.a.: `struct intchain') */                )
 L(    rep   stosb                                                )
 L(                                                               )
 L(    /* Cleanup the custom interrupt handler */                 )
@@ -231,7 +231,7 @@ L(    popl  %esi                                                 )
 L(    ret   $12                                                  )
 L(1:  xorl  %eax, %eax /* return NULL; */                        )
 L(    jmp 2b                                                     )
-L(    /* Check for 'str' apart of user-share */                  )
+L(    /* Check for `str' apart of user-share */                  )
 L(3:  cmpl  $__kernel_user_start, %esi                           )
 L(    jb    1b /* if (esi < __kernel_user_start) return NULL; */ )
 L(    cmpl  $__kernel_user_end, %esi                             )
@@ -478,7 +478,7 @@ acquire_string(USER char const *str, size_t max_length,
   if unlikely(string_length > max_length) { result = E_PTR(-EINVAL); goto end; }
 #if 0 /* Currently this would have the potential to deadlock.
        * >> Instead, we must introduce a new system that allows 'ERESTART'
-       *    to be returned by `task_waitfor()' alongside 'EINTR'.
+       *    to be returned by `task_waitfor()' alongside `EINTR'.
        *    Both should have the same meaning, but 'ERESTART' would
        *    be returned if the task was suspended.
        * >> Essentially, we can't just randomly suspend a task while it is in kernel-space.
@@ -486,7 +486,7 @@ acquire_string(USER char const *str, size_t max_length,
        *    of the task being suspended currently holding some lock that we as the
        *    task having suspended them attempt to acquire at a later point, yet before
        *    we're ready to resume them.
-       * >> As already noted, the solution is to introduce a new flag for 'task_suspend'
+       * >> As already noted, the solution is to introduce a new flag for `task_suspend'
        *    that will interrupt a task that is currently in kernel-space using 'ERESTART', as
        *    well as override its system-call return address similar to how signal handlers work,
        *    with an internal function that will notify the task attempting the suspend that

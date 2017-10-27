@@ -84,9 +84,9 @@ typedef __SSIZE_TYPE__ (__LIBCCALL *__ptbwalker)(void const *__restrict __instru
 /* Malloc API overridable by user-applications, using ELF public symbol linkage.
  * >> If you want to implement your own MALLOC API and have libc use it, you must implement all
  *    of the following functions using these exact function names within the global namespace.
- * Yes: You just code a function 'malloc' with default visibility, and KOS's ELF
+ * Yes: You just code a function `malloc' with default visibility, and KOS's ELF
  *      linker will bind libc in such a way that your function will be called.
- * NOTE: This requires libc having been built with 'CONFIG_LIBC_ALLOW_EXTERN_MALLOC' enabled. */
+ * NOTE: This requires libc having been built with `CONFIG_LIBC_ALLOW_EXTERN_MALLOC' enabled. */
 FUNDEF void  *(LIBCCALL malloc)(size_t n_bytes);
 FUNDEF void   (LIBCCALL free)(void *__restrict ptr);
 FUNDEF void  *(LIBCCALL calloc)(size_t count, size_t n_bytes);
@@ -115,7 +115,7 @@ INTDEF int    (LIBCCALL dlmallopt)(int parameter_number, int parameter_value);
 INTDEF int    (LIBCCALL dlmalloc_trim)(size_t pad);
 INTDEF size_t (LIBCCALL dlmalloc_usable_size)(void *__restrict ptr);
 
-/* Generic malloc functions, linked against MALL or dlmalloc based on 'CONFIG_DEBUG_MALLOC'. */
+/* Generic malloc functions, linked against MALL or dlmalloc based on `CONFIG_DEBUG_MALLOC'. */
 #ifdef CONFIG_DEBUG_MALLOC
 INTDEF SAFE void  *(LIBCCALL libc_malloc)(size_t n_bytes);
 INTDEF SAFE void   (LIBCCALL libc_free)(void *__restrict ptr);
@@ -163,7 +163,7 @@ INTDEF SAFE void  *(LIBCCALL libc_memcdup)(void const *__restrict ptr, int needl
 INTDEF SAFE char  *(LIBCCALL libc_vstrdupf)(char const *__restrict format, va_list args);
 INTDEF SAFE char  *(ATTR_CDECL libc_strdupf)(char const *__restrict format, ...);
 
-/* Mall debug-malloc API overlay. (Implemented using the '__libc_*' macros) */
+/* Mall debug-malloc API overlay. (Implemented using the `__libc_*' macros) */
 #ifdef CONFIG_DEBUG_MALLOC
 INTDEF SAFE void  *(LIBCCALL libc__malloc_d)(size_t n_bytes, DEBUGINFO);
 INTDEF SAFE void   (LIBCCALL libc__free_d)(void *__restrict ptr, DEBUGINFO);

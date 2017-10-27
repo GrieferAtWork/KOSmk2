@@ -19,7 +19,7 @@
 #ifndef _BITS_SYSCALL_H
 #define _BITS_SYSCALL_H 1
 
-/* Alias all system call numbers using the 'SYS_*' notation in favor of '__NR_*' */
+/* Alias all system call numbers using the `SYS_*' notation in favor of `__NR_*' */
 
 /*[[[deemon
 #include <file>

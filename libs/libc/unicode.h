@@ -35,13 +35,13 @@ DECL_BEGIN
 #define ATTR_UNIDATA   ATTR_RAREDATA
 #define ATTR_UNIBSS    ATTR_RAREBSS
 
-/* Convert 'utf8chars' utf8-characters  to utf-32, storing up to 'bufchars32' characters
- * (that is 'bufchars32*4' bytes) in 'utf32' and returning the actual amount of stored
+/* Convert 'utf8chars' utf8-characters  to utf-32, storing up to `bufchars32' characters
+ * (that is `bufchars32*4' bytes) in 'utf32' and returning the actual amount of stored
  * characters (including a terminating NUL-character that will automatically be
  * appended with the 'utf32'-buffer is of sufficient length to represent the
  * entirety of the provided 'utf8' buffer).
- * @param: mode: Set of 'UNICODE_F_*' found below (Unicode mode flags)
- * @return: UNICODE_ERROR: An encoding error occurred and 'state' and 'utf32' are left in an undefined state.
+ * @param: mode: Set of `UNICODE_F_*' found below (Unicode mode flags)
+ * @return: UNICODE_ERROR: An encoding error occurred and `state' and 'utf32' are left in an undefined state.
  * >> wchar_t buf[128]; size_t buflen;
  * >> mbstate_t state = MBSTATE_INIT;
  * >> char *text = "Encode this text in UTF-32";

@@ -51,7 +51,7 @@ struct memfile {
 };
 
 /* Create and return a new memory file.
- * The value returned by this function can be directly returned from 'ino_fopen' operators.
+ * The value returned by this function can be directly returned from `ino_fopen' operators.
  * @return: * :      A reference to the newly created (and set-up) file.
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF REF struct file *KCALL
@@ -61,7 +61,7 @@ make_memfile(struct inode *__restrict node,
              VIRT uintptr_t min, VIRT uintptr_t max);
 
 
-/* Flags to-be assed to the 'f_flags' field of inodeops using memfiles. */
+/* Flags to-be assed to the `f_flags' field of inodeops using memfiles. */
 #define MEMFILE_FLAGS  INODE_FILE_NORMAL
 /* Operators to-be used when creating an INode type that refers to a memfile. */
 FUNDEF ssize_t KCALL memfile_read(struct file *__restrict fp, USER void *buf, size_t bufsize);

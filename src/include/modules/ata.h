@@ -37,7 +37,7 @@ DECL_BEGIN
 #   define ATA_CTRL_HOB    0x80 /* Read back the last high-order byte of the last LBA-48 value sent. */
 
 
-/* Register offsets from 'ATA_SECONDARY' */
+/* Register offsets from `ATA_SECONDARY' */
 #define ATA_PORT(x)    x
 #define ATA_DATA       ATA_PORT(0x00)
 #define ATA_ERROR      ATA_PORT(0x01)

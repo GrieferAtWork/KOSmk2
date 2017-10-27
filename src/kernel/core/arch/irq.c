@@ -88,11 +88,11 @@ FUNDEF void FCALL irq_default(int intno, struct cpustate_e *__restrict state);
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(dirq_ycode)                                                    )
-L(    popl  -44(%esp)  /* Hacky way of shifting 'exc_code' into 'intno32' without polluting any registers. */)
+L(    popl  -44(%esp)  /* Hacky way of shifting `exc_code' into `intno32' without polluting any registers. */)
 L(    jmp 1f                                                                  )
 L(INTERN_ENTRY(dirq_ncode)                                                    )
 L(    popl  -48(%esp)  /* Hacky way of shifting the interrupt number without polluting any registers. */)
-L(    pushl $0         /* Fill 'exc_code' with `0' by default. */             )
+L(    pushl $0         /* Fill `exc_code' with `0' by default. */             )
 L(1:  __ASM_PUSH_SEGMENTS                                                     )
 L(    __ASM_PUSH_REGISTERS                                                    )
 L(    subl  $4, %esp   /* intno */                                            )
@@ -815,7 +815,7 @@ irq_setup(struct cpu *__restrict self) {
 
 /* PIC default initialization.
  * Clear the interrupt masks, thereby enabling all interrupt lines.
- * e.g.: Setting 'outb_p(PIC1_DATA,0x04)' would disable 'IRQ_PIC1(3)'
+ * e.g.: Setting 'outb_p(PIC1_DATA,0x04)' would disable `IRQ_PIC1(3)'
  * NOTE: By default, we disable the 'Programmable Interrupt Timer',
  *       which is later re-enabled as a fallback technology for
  *       implementing preemption.

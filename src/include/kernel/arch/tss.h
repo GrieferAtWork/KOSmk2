@@ -59,7 +59,7 @@ struct PACKED tss {
  u32 esp0; u16 ss0,__reserved2;
  u32 esp1; u16 ss1,__reserved3;
  u32 esp2; u16 ss2,__reserved4;
- /* NOTE: As you can see, there is no 'esp3' (ring #3 is userspace). So with that in mind,
+ /* NOTE: As you can see, there is no `esp3' (ring #3 is userspace). So with that in mind,
   *       the existing stack is re-used when an interrupt happens while inside the kernel,
   *       meaning that kernel-space IRQ recursion is implicitly possible, yet one has to
   *       keep in mind that the stack must always be of sufficient size! */

@@ -85,7 +85,7 @@ PUBLIC void KCALL dentry_used(struct dentry *__restrict self) {
  atomic_rwlock_endread(&self->d_inode_lock);
 
  /* Now to cache this entry!
-  * NOTE: Due to the field behavior of 'd_inode', we can assume
+  * NOTE: Due to the field behavior of `d_inode', we can assume
   *       that the directory entry will not be assigned a
   *       different node that may not be allowed to-be cached,
   *       meaning that at worst, race-conditions may cause us
@@ -192,7 +192,7 @@ PUBLIC size_t KCALL dentry_clearcache_freemem(void) {
  while ((slot = dentry_cache) != NULL) {
   dentry_cache = slot->d_cache.le_next;
   LIST_MKUNBOUND(slot,d_cache);
-  /* The following is just a 'DENTRY_DECREF()'. */
+  /* The following is just a `DENTRY_DECREF()'. */
   if (!ATOMIC_DECFETCH(slot->d_refcnt)) {
    dentry_destroy(slot);
    result += sizeof(struct dentry);

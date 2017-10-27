@@ -335,8 +335,8 @@ PRIVATE u8 const keymap_ps2_scanset_3[256] = {
     [0x41] = KEY_COMMA,
     [0x42] = KEY_K,
 
-    /* CAUTION: The online doc says the break code for this is '0xc0 0x48'.
-     * But why would it be? (Also: It's the usual '0xc0 0x43') */
+    /* CAUTION: The online doc says the break code for this is `0xc0 0x48'.
+     * But why would it be? (Also: It's the usual `0xc0 0x43') */
     [0x43] = KEY_I,
     [0x48] = KEY_I, /* Just in case: Map 0x48 to 'I' as well (most likely wrong) */
 

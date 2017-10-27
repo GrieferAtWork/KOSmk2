@@ -177,7 +177,7 @@ typedef struct PACKED mb_mmap_entry {
 } mb_memory_map_t;
 
 typedef struct mb_mod_list {
-  u32 mod_start; /* the memory used goes from bytes 'mod_start' to 'mod_end-1' inclusive */
+  u32 mod_start; /* the memory used goes from bytes `mod_start' to `mod_end-1' inclusive */
   u32 mod_end;
   u32 cmdline;   /* Module command line */
   u32 pad;       /* padding to take it to 16 bytes (must be zero) */

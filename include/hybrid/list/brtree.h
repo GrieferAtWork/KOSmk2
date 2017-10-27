@@ -101,7 +101,7 @@ void KCALL name(T **pnode) { \
    /* Difficult case: Two child-nodes. */ \
    *pnode = node->path.bt_min; \
    node = node->path.bt_max; \
-   /* Insert 'node' into 'root' */ \
+   /* Insert `node' into `root' */ \
    while ((root = *pnode) != NULL) { \
     if (node->path.bt_vmax < root->path.bt_vmin) \
      pnode = &root->path.bt_min; \

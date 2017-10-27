@@ -52,8 +52,8 @@ struct opacket {
  void           *op_head;       /*< [0..op_hsiz] Package data/header. */
  size_t          op_hsiz;       /*< Package data/header size. */
  struct opacket *op_wrap;       /*< [0..1] Wrapped (inner) package. */
- uintptr_t       op_wrap_start; /*< [valid_if(op_wrap != NULL)] Offset into 'op_wrap', where the package starts. */
- size_t          op_wrap_size;  /*< [valid_if(op_wrap != NULL)] Amount of bytes from 'op_wrap' that should actually be written. */
+ uintptr_t       op_wrap_start; /*< [valid_if(op_wrap != NULL)] Offset into `op_wrap', where the package starts. */
+ size_t          op_wrap_size;  /*< [valid_if(op_wrap != NULL)] Amount of bytes from `op_wrap' that should actually be written. */
  void           *op_tail;       /*< [0..op_tsiz] Package tail data. */
  size_t          op_tsiz;       /*< Package tail data size. */
 };
@@ -72,15 +72,15 @@ typedef void (KCALL *ethandler_callback)(struct netdev *__restrict dev, void *__
 
 struct nethand {
  /* NOTE: All function pointers are [1..1][lock(:n_lock)] */
- ethandler_callback nh_packet;  /*< Ethernet packet handler (Defaults to 'nethand_packet()')
+ ethandler_callback nh_packet;  /*< Ethernet packet handler (Defaults to `nethand_packet()')
                                  *  NOTE: This callback is overwritten when userspace
                                  *        opens a socket for RAW network access. */
  void              *nh_closure; /*< Closure parameter passed to packet callbacks. */
 };
 
 /* Default network handling functions.
- * This function will execute custom handlers registered by 'ethandler_addhandler()'.
- * NOTE: Implemented in '/src/kernel/dev/net-stack.c' */
+ * This function will execute custom handlers registered by `ethandler_addhandler()'.
+ * NOTE: Implemented in `/src/kernel/dev/net-stack.c' */
 FUNDEF void KCALL nethand_packet(struct netdev *__restrict dev, void *__restrict packet,
                                  size_t packet_size, void *UNUSED(closure));
 
@@ -96,13 +96,13 @@ struct netops {
   * @return: -EOK:        Successfully send the packet.
   * @return: -EIO:        Data transmission failed due to an internal adapter error.
   * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having
-  *                       been sent before 'n_send_timeout' has passed.
+  *                       been sent before `n_send_timeout' has passed.
   * @return: E_ISERR(*):  Failed to write the packet to buffer for some reason. */
  errno_t (KCALL *n_send)(struct netdev *__restrict self,
                          struct opacket const *__restrict packet); /* [1..1] */
 
  /* Callbacks for turning the adapter on/off.
-  * NOTE: When called, 'n_flags&IFF_UP' already contains the
+  * NOTE: When called, `n_flags&IFF_UP' already contains the
   *       new card state, which will be reverted when an error is returned.
   * @function n_ifup: assume(!(self->n_flags&IFF_UP));
   * @function n_ifdown: assume(self->n_flags&IFF_UP);
@@ -112,14 +112,14 @@ struct netops {
  errno_t (KCALL *n_ifup)(struct netdev *__restrict self); /* [1..1] */
  errno_t (KCALL *n_ifdown)(struct netdev *__restrict self); /* [1..1] */
 
- /* Set 'self->n_macaddr' as the mac address actively being listened for.
+ /* Set `self->n_macaddr' as the mac address actively being listened for.
   * @assume(self->n_flags&IFF_UP);
   * @assume(netdev_writing(self));
   * @return: -EOK:        Successfully setup the new mac address.
   * @return: E_ISERR(*):  Failed to spoof the mac address for some reason. */
  errno_t (KCALL *n_setmac)(struct netdev *__restrict self); /* [0..1] */
 
- /* Reset 'self->n_macaddr' the the default, hard-wired mac address of
+ /* Reset `self->n_macaddr' the the default, hard-wired mac address of
   * the adapter, and set that address as the one currently listened for.
   * WARNING: This function may be called when the adapter is offline.
   * @return: -EOK:        Successfully reset the mac address.
@@ -138,7 +138,7 @@ struct netdev {
  size_t          n_send_maxsize;  /*< [const] Max package size that can be transmitted. */
 #define NETDEV_DEFAULT_STIMEOUT   SEC_TO_JIFFIES(1)
  jtime32_t       n_send_timeout;  /*< [lock(n_lock)] Timeout when waiting for a package to be commit (In jiffies) */
- u32             n_flags;         /*< [lock(n_lock)] Adapter state & flags (Set of 'IFF_*'). */
+ u32             n_flags;         /*< [lock(n_lock)] Adapter state & flags (Set of `IFF_*'). */
  u16             n_ip_datagram;   /*< [lock(n_lock)] Next IP datagram id. */
 #define NETDEV_DEFAULT_IO_MTU     1480
  u16             n_ip_mtu;        /*< [lock(n_lock)] Max IP packet fragment size. */
@@ -192,7 +192,7 @@ DATDEF struct inodeops netdev_ops;
  *       it must be allowed to preempting to other threads must be allowed
  *       and interrupts (if disabled to being with) are allowed to be
  *       re-enabled temporarily.
- * WARNING: Packet handling code may modify the provided 'packet' buffer! */
+ * WARNING: Packet handling code may modify the provided `packet' buffer! */
 FUNDEF void KCALL
 netdev_recv_unlocked(struct netdev *__restrict self,
                      void *__restrict packet,
@@ -202,7 +202,7 @@ netdev_recv_unlocked(struct netdev *__restrict self,
  * @assume(netdev_writing(self));
  * @return: packet_size: Successfully written the packet into the buffer.
  * @return: -EIO:        Data transmission failed due to an internal adapter error.
- * @return: -ENETDOWN:   The adapter is currently down. (Must call 'netdev_ifup_unlocked()' first)
+ * @return: -ENETDOWN:   The adapter is currently down. (Must call `netdev_ifup_unlocked()' first)
  * @return: -EMSGSIZE:   The package is too large to be transmit in one piece.
  * @return: -ETIMEDOUT:  The adapter failed to acknowledge data having been send in time.
  * @return: E_ISERR(*):  Failed to write the packet to buffer for some reason. */
@@ -210,7 +210,7 @@ FUNDEF errno_t KCALL
 netdev_send_unlocked(struct netdev *__restrict self,
                      struct opacket *__restrict pck);
 
-/* Same as 'netdev_send_unlocked()', but also performs locking.
+/* Same as `netdev_send_unlocked()', but also performs locking.
  * @return: -EINTR: The calling thread was interrupted. */
 FUNDEF errno_t KCALL
 netdev_send(struct netdev *__restrict self,
@@ -220,7 +220,7 @@ netdev_send(struct netdev *__restrict self,
  * @assume(netdev_writing(self));
  * @return: -EOK:       Successfully changed the network device mode.
  * @return: -EPERM:    [netdev_ifup_unlocked] The card may not power on because special features are
- *                                            enabled, such as 'IFF_USERMAC' or 'IFF_PROMISC'.
+ *                                            enabled, such as `IFF_USERMAC' or `IFF_PROMISC'.
  *                                            Clear those bits, then try again.
  *                                   WARNING: This error may also indicate other problems. Disabling
  *                                            special features does not guaranty success the next time.

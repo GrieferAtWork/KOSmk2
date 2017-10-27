@@ -31,12 +31,12 @@
 #include <malloc.h>
 #include <sys/io.h>
 
-/* NOTE: Using this header requires you to link against '/mod/libpci.so' */
+/* NOTE: Using this header requires you to link against `/mod/libpci.so' */
 
 DECL_BEGIN
 
 typedef u8 pci_bus_t; /* PCI Bus number. */
-typedef u8 pci_dev_t; /* PCI Device number. (Aka. 'slot') */
+typedef u8 pci_dev_t; /* PCI Device number. (Aka. `slot') */
 typedef u8 pci_fun_t; /* PCI Function number. */
 typedef u8 pci_reg_t; /* PCI Register number (Lowest 2 bits are always ZERO). */
 #define PCI_ADDR_ENABLED  0x80000000 /* Address-enabled bit (Must always be set) */
@@ -44,7 +44,7 @@ typedef u8 pci_reg_t; /* PCI Register number (Lowest 2 bits are always ZERO). */
 #define PCI_ADDR_DEVMASK  0x0000f800
 #define PCI_ADDR_FUNMASK  0x00000700
 #define PCI_ADDR_FUNCOUNT 8
-#define PCI_ADDR_REGMASK  0x000000ff /* Technically '0x000000fc', but lowest 2 bits must always be ZERO. */
+#define PCI_ADDR_REGMASK  0x000000ff /* Technically `0x000000fc', but lowest 2 bits must always be ZERO. */
 #define PCI_ADDR_BUSSHIFT 16
 #define PCI_ADDR_DEVSHIFT 11
 #define PCI_ADDR_FUNSHIFT 8
@@ -92,17 +92,17 @@ LOCAL void FCALL pci_write(pci_addr_t base, pci_reg_t reg, u32 value) { assert(!
 #define          PCI_CDEV4_STAT_DEVSEL_LO        0x0400 /*< Slow. */
 #define          PCI_CDEV4_STAT_DEVSEL_MD        0x0200 /*< medium. */
 #define          PCI_CDEV4_STAT_DEVSEL_HI        0x0000 /*< Fast. */
-#define       PCI_CDEV4_STAT_PARITY_ERROR        0x0100 /*< Set on parity error when 'PCI_CDEV4_PARITIY_ERROR' is enabled. */
+#define       PCI_CDEV4_STAT_PARITY_ERROR        0x0100 /*< Set on parity error when `PCI_CDEV4_PARITIY_ERROR' is enabled. */
 #define       PCI_CDEV4_STAT_FAST_B2B            0x0080 /*< The device is capable of fast back-to-back transactions. */
 #define       PCI_CDEV4_STAT_66MHZ               0x0020 /*< The device is capable of running at 66 MHZ rather than 33. */
 #define       PCI_CDEV4_STAT_HAVE_CAPLINK_34     0x0010 /*< The device implements a capability list as offset 0x34. */
-#define       PCI_CDEV4_STAT_IRQ_STATUS          0x0004 /*< When set alongside 'PCI_CDEV4_NOIRQ' being disabled, interrupts can be generated. */
+#define       PCI_CDEV4_STAT_IRQ_STATUS          0x0004 /*< When set alongside `PCI_CDEV4_NOIRQ' being disabled, interrupts can be generated. */
 #define    PCI_DEV4_CMDMASK            0x0000ffff
-#define       PCI_DEV4_CMD_DISCONNECT  0 /*< When written to 'PCI_DEV_STATCMD_CMDMASK', disconnect the device from the PCI bus. */
+#define       PCI_DEV4_CMD_DISCONNECT  0 /*< When written to `PCI_DEV_STATCMD_CMDMASK', disconnect the device from the PCI bus. */
 #define       PCI_CDEV4_NOIRQ          0x0400 /*< Interrupt disabled. */
 #define       PCI_CDEV4_FAST_B2B       0x0200 /*< Allow fast back-to-back transactions. */
 #define       PCI_CDEV4_SERR_ENABLED   0x0100 /*< SERR# Enabled. */
-#define       PCI_CDEV4_PARITIY_ERROR  0x0080 /*< Set 'PCI_CDEV4_STAT_PARITY_ERROR' on parity error. */
+#define       PCI_CDEV4_PARITIY_ERROR  0x0080 /*< Set `PCI_CDEV4_STAT_PARITY_ERROR' on parity error. */
 #define       PCI_CDEV4_VGA_PALLSNOOP  0x0020 /*< Don't respond to VGA palette writes, but snoop data. */
 #define       PCI_CDEV4_ALLOW_MEMWRITE 0x0010 /*< Allow the device write-access to main memory. */
 #define       PCI_CDEV4_SPECIAL_CYCLES 0x0008 /*< Allow the device to monitor Special Cycle operations. */
@@ -294,38 +294,38 @@ struct db_device {
  u16 d_pci_vendor_id; /* PCI ID of this device's vendor. */
  u16 d_pci_device_id; /* PCI ID of this device. */
 #define DB_DEVICE_NAME(x) (db_strtab+(x)->d_nameaddr)
- u32 d_nameaddr;      /* Byte-offset into 'db_strtab' containing the device name. */
+ u32 d_nameaddr;      /* Byte-offset into `db_strtab' containing the device name. */
  u16 d_parcount;      /* Number of parent devices (Aka. devices that this one is compatible with). */
  u16 d_subcount;      /* Number of sub-devices (Aka. devices that are compatible with this one). */
 #define DB_DEVICE_PARDEVS(x) ((struct db_ref *)((uintptr_t)db_refs+(x)->d_refs))
 #define DB_DEVICE_SUBDEVS(x) ((struct db_ref *)((uintptr_t)db_refs+(x)->d_refs)+(x)->d_parcount)
- u32 d_refs;          /* Byte-offset into 'db_refs', containing a vector of
-                       * 'd_parcount' 'struct db_ref', followed by 'd_subcount' more. */
+ u32 d_refs;          /* Byte-offset into `db_refs', containing a vector of
+                       * `d_parcount' `struct db_ref', followed by `d_subcount' more. */
 };
 
 struct db_devicebucket {
  u32 db_devicec; /* Amount of devices in this bucket. */
 #define DB_DEVICEBUCKET_DEVICEV(x) ((struct db_device *)((uintptr_t)db_devices+(x)->db_devicev))
- u32 db_devicev; /* Byte-offset from 'db_devices', pointing at the start
-                  * of a 'db_devicec'-long vector of 'struct pci_device'. */
+ u32 db_devicev; /* Byte-offset from `db_devices', pointing at the start
+                  * of a `db_devicec'-long vector of `struct pci_device'. */
 };
 
 struct db_vendor {
  u16   v_pci_id;              /* PCI ID of this vendor. */
  u16 __v_padding;             /* ... */
 #define DB_VENDOR_NAME(x)    (db_strtab+(x)->v_nameaddr)
- u32   v_nameaddr;            /* Byte-offset into 'db_strtab' containing the vendor name. */
+ u32   v_nameaddr;            /* Byte-offset into `db_strtab' containing the vendor name. */
  u32   v_device_count;        /* Amount of known devices of this vendor. */
  u32   v_device_bucket_count; /* Amount of buckets used to track devices. */
 #define DB_VENDOR_DEVICE_BUCKETS(x) ((struct db_devicebucket *)((uintptr_t)db_device_hashmap+(x)->v_device_bucket_start))
- u32   v_device_bucket_start; /* Byte-offset from 'db_device_hashmap', pointing at the start of this vendor's device hash-map. */
+ u32   v_device_bucket_start; /* Byte-offset from `db_device_hashmap', pointing at the start of this vendor's device hash-map. */
 };
 
 struct db_vendorbucket {
  u32 vb_vendorc; /* Amount of vendors in this bucket. */
 #define DB_VENDORBUCKET_VENDORV(x) ((struct db_vendor *)((uintptr_t)db_vendors+(x)->vb_vendorv))
- u32 vb_vendorv; /* Offset from 'db_vendors', pointing at the start of a
-                  * 'vb_vendorc'-long vector of 'struct db_vendor'. */
+ u32 vb_vendorv; /* Offset from `db_vendors', pointing at the start of a
+                  * `vb_vendorc'-long vector of `struct db_vendor'. */
 };
 
 #define DB_HASH_VENDOR(vendor_id) (vendor_id)
@@ -429,12 +429,12 @@ struct pci_device {
  REF LIST_NODE(struct pci_device)
                                pd_link;     /*< [0..1][lock(pci_lock)] Pointer to the next existing device. */
  pci_addr_t                    pd_addr;     /*< [const] The base address of the PCI device. */
- struct db_vendor const       *pd_vendor;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_vendorid'. */
- struct db_device const       *pd_device;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_vendorid' + 'pd_deviceid'. */
+ struct db_vendor const       *pd_vendor;   /*< [0..1][lock(pci_lock)] Database entry for `pd_vendorid'. */
+ struct db_device const       *pd_device;   /*< [0..1][lock(pci_lock)] Database entry for `pd_vendorid' + `pd_deviceid'. */
 #ifndef CONFIG_NO_PCI_CLASSES
- struct db_class const        *pd_class;    /*< [0..1][lock(pci_lock)] Database entry for 'pd_classid'. */
- struct db_subclass const     *pd_subclass; /*< [0..1][lock(pci_lock)] Database entry for 'pd_classid' + 'pd_subclassid'. */
- struct db_progif const       *pd_progif;   /*< [0..1][lock(pci_lock)] Database entry for 'pd_classid' + 'pd_subclassid' + 'pd_progifid'. */
+ struct db_class const        *pd_class;    /*< [0..1][lock(pci_lock)] Database entry for `pd_classid'. */
+ struct db_subclass const     *pd_subclass; /*< [0..1][lock(pci_lock)] Database entry for `pd_classid' + `pd_subclassid'. */
+ struct db_progif const       *pd_progif;   /*< [0..1][lock(pci_lock)] Database entry for `pd_classid' + `pd_subclassid' + `pd_progifid'. */
 #endif /* !CONFIG_NO_PCI_CLASSES */
  struct pci_resource           pd_resources[PD_RESOURCE_COUNT]; /*< [const] Resources. */
 union PACKED { struct PACKED {
@@ -445,20 +445,20 @@ union PACKED { struct PACKED {
  u16                           pd_deviceid; /*< Device ID. */
  u16                           pd_vendorid; /*< Vendor ID. */
 #endif
-}; u32                         pd_dev0; };  /*< Value of the PCI register 'PCI_DEV0' */
+}; u32                         pd_dev0; };  /*< Value of the PCI register `PCI_DEV0' */
 union PACKED { struct PACKED {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
  u8                            pd_revid;      /*< Revision ID. */
  u8                            pd_progifid;   /*< Prog-IF ID. */
- u8                            pd_subclassid; /*< Device sub-class (One of 'PCI_DEV8_CLASS_*') */
- u8                            pd_classid;    /*< Device class (One of 'PCI_DEV8_CLASS_*') */
+ u8                            pd_subclassid; /*< Device sub-class (One of `PCI_DEV8_CLASS_*') */
+ u8                            pd_classid;    /*< Device class (One of `PCI_DEV8_CLASS_*') */
 #else
- u8                            pd_classid;    /*< Device class (One of 'PCI_DEV8_CLASS_*') */
- u8                            pd_subclassid; /*< Device sub-class (One of 'PCI_DEV8_CLASS_*') */
+ u8                            pd_classid;    /*< Device class (One of `PCI_DEV8_CLASS_*') */
+ u8                            pd_subclassid; /*< Device sub-class (One of `PCI_DEV8_CLASS_*') */
  u8                            pd_progifid;   /*< Prog-IF ID. */
  u8                            pd_revid;      /*< Revision ID. */
 #endif
-}; u32                         pd_dev8; };    /*< Value of the PCI register 'PCI_DEV8' */
+}; u32                         pd_dev8; };    /*< Value of the PCI register `PCI_DEV8' */
 union PACKED { struct PACKED {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
  u8                            pd_pad0;   /*< ... */
@@ -471,10 +471,10 @@ union PACKED { struct PACKED {
  u8                            pd_pad1;   /*< ... */
  u8                            pd_pad2;   /*< ... */
 #endif
-}; u32                         pd_devc; };    /*< Value of the PCI register 'PCI_DEVC' */
+}; u32                         pd_devc; };    /*< Value of the PCI register `PCI_DEVC' */
 };
 DATDEF SLIST_HEAD(struct pci_device) pci_list; /*< [0..1][owned] Globally linked list of PCI devices. */
-DATDEF atomic_rwlock_t               pci_lock; /*< Lock for 'pci_list'. */
+DATDEF atomic_rwlock_t               pci_lock; /*< Lock for `pci_list'. */
 #define PCI_FOREACH(dev) LIST_FOREACH(dev,pci_list,pd_link)
 
 /* PCI Locking control. */

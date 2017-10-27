@@ -60,7 +60,7 @@ PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
 #define STATIC_MEMINFO_ONLY (STATIC_MEMINFO_CNT < STATIC_MEMINFO_MAX)
 
 
-/* HINT: 'STATIC_MEMINFO_MAX' currently equates to 510, meaning it's highly unlikely to be insufficient. */
+/* HINT: `STATIC_MEMINFO_MAX' currently equates to 510, meaning it's highly unlikely to be insufficient. */
 enum{_STATIC_MEMINFO_MAX = STATIC_MEMINFO_MAX};
 #undef STATIC_MEMINFO_MAX
 #define STATIC_MEMINFO_MAX  _STATIC_MEMINFO_MAX
@@ -125,7 +125,7 @@ page_addmemory(mzone_t zone_id, ppage_t start,
  assertf(iter == PAGE_ERROR || (uintptr_t)iter >= (uintptr_t)start+n_bytes,
          FREESTR("At least part of address range %p...%p was already marked as free by %p...%p"),
          start,(uintptr_t)free_end-1,iter,(uintptr_t)PAGE_END(iter)-1);
- /* Insert after 'piter' / before 'iter' */
+ /* Insert after `piter' / before `iter' */
 
  /* Check for extending the previous range. */
  if (piter != &zone->z_root) {
@@ -233,7 +233,7 @@ PRIVATE ATTR_FREETEXT void KCALL meminfo_early_freeall(void) {
 }
 
 
-/* Resolve a potential 'mi_part_addr...+=mi_part_size' overlap between 'prev' and 'next' */
+/* Resolve a potential `mi_part_addr...+=mi_part_size' overlap between `prev' and `next' */
 LOCAL void KCALL
 mem_resolve_part_overlap(struct meminfo *__restrict prev,
                          struct meminfo *__restrict next) {
@@ -245,14 +245,14 @@ mem_resolve_part_overlap(struct meminfo *__restrict prev,
   assert((uintptr_t)next->mi_part_addr == (uintptr_t)prev->mi_full_addr+prev->mi_full_size-PAGESIZE);
   /* Figure out which of the regions to truncate. */
   if (next->mi_type == MEMTYPE_RAM) {
-   /* Truncate 'next' */
+   /* Truncate `next' */
    next->mi_size     -= (size_t)((uintptr_t)next->mi_full_addr-
                                  (uintptr_t)next->mi_addr);
    next->mi_addr      = next->mi_full_addr;
    next->mi_part_addr = next->mi_full_addr;
    next->mi_part_size = next->mi_full_size;
   } else {
-   /* Truncate 'prev' */
+   /* Truncate `prev' */
    assert(prev->mi_size > (uintptr_t)next->mi_part_addr-
                           (uintptr_t)prev->mi_addr);
    prev->mi_size = (uintptr_t)next->mi_part_addr-

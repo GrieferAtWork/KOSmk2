@@ -77,7 +77,7 @@ STATIC_ASSERT((uintptr_t)(THIS_PDIR_BASE+THIS_PDIR_SIZE) == 0 ||
 #ifdef CONFIG_PDIR_SELFMAP
 /* Initialize the page-directory self-mappings for all addresses above `KERNEL_BASE'.
  * NOTE: The caller is responsible for allocating the
- *       page table at 'THIS_PDIR_BASE/PDTABLE_REPRSIZE'. */
+ *       page table at `THIS_PDIR_BASE/PDTABLE_REPRSIZE'. */
 PRIVATE void KCALL
 pdir_initialize_selfmap(pdir_t *__restrict self) {
  union pd_entry *selfmap_table;
@@ -98,7 +98,7 @@ pdir_initialize_selfmap(pdir_t *__restrict self) {
   selfmap_table->pe_data  = (iter->pt_data & ~(PDIR_ATTR_MASK));
   selfmap_table->pe_data |= (PDIR_ATTR_DIRTY|PDIR_ATTR_ACCESSED|
                              PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
-  /* NOTE: We enable the 'PDIR_ATTR_GLOBAL' flag, because all
+  /* NOTE: We enable the `PDIR_ATTR_GLOBAL' flag, because all
    *       page directory tables (except for the last) above
    *      `KERNEL_BASE' are still global (the last is the self-map itself). */
   if likely(iter != end-1) selfmap_table->pe_data |= PDIR_ATTR_GLOBAL;
@@ -205,7 +205,7 @@ PRIVATE size_t KCALL pdir_reqbytes_for_change(pdir_t *__restrict self, VIRT ppag
 
 
 #ifdef CONFIG_DEBUG
-/* Check if a given 'page' is mapped with the specified page directory `self' */
+/* Check if a given `page' is mapped with the specified page directory `self' */
 PRIVATE bool KCALL pdir_ismapped(pdir_t *__restrict self, VIRT ppage_t page) {
  union pd_table table;
  union pd_entry entry;
@@ -815,7 +815,7 @@ L(.previous                               )
 GLOBAL_ASM(
 L(.section .text                          )
 L(PUBLIC_ENTRY(pdir_flush)                )
-/* NOTE: When the host is a 386, we'll copy data from 'pdir_flush_386' here. */
+/* NOTE: When the host is a 386, we'll copy data from `pdir_flush_386' here. */
 /* HINT: start   == %ecx */
 /* HINT: n_bytes == %edx */
 L(    cmp $(PAGESIZE*64), %edx            )
@@ -859,7 +859,7 @@ PHYS struct mman __mman_kernel_p = {
             PD(0x60000000) PD(0x68000000) PD(0x70000000) PD(0x78000000) /* 0x78000000 */
             PD(0x80000000) PD(0x88000000) PD(0x90000000) PD(0x98000000) /* 0x98000000 */
             PD(0xa0000000) PD(0xa8000000) PD(0xb0000000) PD(0xb8000000) /* 0xb8000000 */
-            /* Map lower memory a second time. (NOTE: 0x100 is 'PDIR_ATTR_GLOBAL') */
+            /* Map lower memory a second time. (NOTE: 0x100 is `PDIR_ATTR_GLOBAL') */
             PD(0x00000100) PD(0x08000100) PD(0x10000100) PD(0x18000100) /* 0xd8000000 */
             PD(0x20000100) PD(0x28000100) PD(0x30000100) PD(0x38000100) /* 0xf8000000 */
 #if KERNEL_BASE != 0xc0000000
@@ -1076,8 +1076,8 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
  assert(addr_isvirt(&mman_kernel));
 
  if (THIS_CPU->c_arch.ac_flags&CPUFLAG_486) {
-  /* Replace 'pdir_flush' with its fallback counterpart!
-   * (The 'invlpg' instruction is only available starting at 486) */
+  /* Replace `pdir_flush' with its fallback counterpart!
+   * (The `invlpg' instruction is only available starting at 486) */
   memcpy((void *)&pdir_flush,pdir_flush_386,
          (size_t)(pdir_flush_386_end-pdir_flush_386));
  }

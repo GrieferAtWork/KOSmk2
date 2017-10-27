@@ -243,10 +243,10 @@ struct errnotext_entry {
 };
 struct errnotext_data {
  uintptr_t              etd_version; /*< == STRERROR_VERSION (Strerror-data version; will always be backwards-compatible). */
- uintptr_t              etd_strtab;  /*< Offset from 'strerror_data' to a string table. */
- uintptr_t              etd_enotab;  /*< Offset from 'strerror_data' to a vector of 'struct errnotext_entry'. */
- size_t                 etd_enocnt;  /*< Amount of entires in 'etd_enotab'. */
- size_t                 etd_enoent;  /*< Size of a single entry within 'etd_enotab'. */
+ uintptr_t              etd_strtab;  /*< Offset from `strerror_data' to a string table. */
+ uintptr_t              etd_enotab;  /*< Offset from `strerror_data' to a vector of `struct errnotext_entry'. */
+ size_t                 etd_enocnt;  /*< Amount of entires in `etd_enotab'. */
+ size_t                 etd_enoent;  /*< Size of a single entry within `etd_enotab'. */
 };
 
 #ifndef __KERNEL__

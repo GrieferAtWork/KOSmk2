@@ -61,7 +61,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
 
  /* NOTE: Re-enable preemption to allow for better parallelization
   *       of PAGEFAULT handling, but make sure to keep the original
-  *       'fault_addr' around to tell later error handling about it.
+  *       `fault_addr' around to tell later error handling about it.
   * NOTE: In order to always respect the interrupt flag, don't
   *       enable them when the caller had been turned off! */
  assert(!PREEMPTION_ENABLED());

@@ -147,7 +147,7 @@ PUBLIC struct inodeops const pipe_ops = {
 
 
 PUBLIC struct inodeops const pipefs_rootops = {
- /* XXX: Emulate a virtual directory that enumerates 'pipe_fs.sb_nodes' */
+ /* XXX: Emulate a virtual directory that enumerates `pipe_fs.sb_nodes' */
 };
 PUBLIC struct superblockops const pipefs_ops = {
 };

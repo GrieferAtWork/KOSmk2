@@ -30,7 +30,7 @@
 
 __SYSDECL_BEGIN
 
-/* Define 'size_t' */
+/* Define `size_t' */
 #ifndef __std_size_t_defined
 #define __std_size_t_defined 1
 __NAMESPACE_STD_BEGIN

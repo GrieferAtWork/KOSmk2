@@ -417,8 +417,8 @@ INTERN char *LIBCCALL libc_basename(char const *__restrict path) {
  if (*result) return result; /* Last character isn't a '/'. */
  iter = result;
  while (iter != path && iter[-1] == '/') --iter;
- if (iter == path) return result-1; /* Only '/'-characters. */
- *iter = '\0'; /* Trim all ending '/'-characters. */
+ if (iter == path) return result-1; /* Only `'/'"-characters. */
+ *iter = '\0'; /* Trim all ending `'/'"-characters. */
  while (iter != path && iter[-1] != '/') --iter; /* Scan until the previous '/'. */
  return iter; /* Returns string after previous '/'. */
 }
@@ -1408,9 +1408,9 @@ DEFINE_PUBLIC_ALIAS(_i64toa_s,libc_s64toa_s);
 DEFINE_PUBLIC_ALIAS(_ultoa_s,libc_u32toa_s);
 DEFINE_PUBLIC_ALIAS(_ui64toa_s,libc_u64toa_s);
 
-/* NOTE: We intentionally _ALWAYS_ export the 32-bit variants, even when 'sizeof(long) != 4'!
+/* NOTE: We intentionally _ALWAYS_ export the 32-bit variants, even when `sizeof(long) != 4'!
  *    >> This behavior is fixed by the system headers that dynamically link e.g.: '_ltow'
- *       against either '[_]i64tow' when 'sizeof(long) == 8' or '[_]ltow' when 'sizeof(long) == 4'
+ *       against either '[_]i64tow' when `sizeof(long) == 8' or '[_]ltow' when `sizeof(long) == 4'
  */
 DEFINE_PUBLIC_ALIAS(itow,libc_16s32tow);
 DEFINE_PUBLIC_ALIAS(i64tow,libc_16s64tow);

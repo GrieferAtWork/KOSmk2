@@ -98,7 +98,7 @@ local_nomem:
  }
  mman_endwrite(&mman_kernel);
  if (E_ISERR(error)) goto err;
- /* At this point we've completely (and successfully) mapped the module at 'result->i_base'. */
+ /* At this point we've completely (and successfully) mapped the module at `result->i_base'. */
 
  { struct modpatch patch;
    modpatch_init_host(&patch,result,module_loadhint);
@@ -117,13 +117,13 @@ local_nomem:
    module_loadhint = patch.p_dephint;
  }
 
- syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module '%[file]' at %p...%p\n",
+ syslog(LOG_EXEC|LOG_INFO,"[MOD] Loaded kernel module `%[file]' at %p...%p\n",
         mod->m_file,result->i_base,
        (uintptr_t)result->i_base+mod->m_size-1);
 
  /* Run the module initialization function.
   * TODO: Module initializers must somehow be able to return error codes...
-  * TODO: Must somehow pass 'cmdline' to the driver. */
+  * TODO: Must somehow pass `cmdline' to the driver. */
  instance_callinit(result);
 
  return result;
@@ -257,7 +257,7 @@ kernel_delmod_unlocked(REF struct instance *__restrict inst, u32 mode) {
 
  if (mode&DELMOD_DELDEP) {
   /* TODO: Delete module dependencies. */
-  /* NOTE: Ignore failure of deleting dependencies when 'DELMOD_IGNORE_DEP' is set. */
+  /* NOTE: Ignore failure of deleting dependencies when `DELMOD_IGNORE_DEP' is set. */
   if (ATOMIC_READ(inst->i_refcnt) <= ok_refcnt)
       goto can_unload;
  }
@@ -278,8 +278,8 @@ can_unload:
                                       (INSTANCE_FLAG_DID_FINI))) {
      instance_callfini(inst);
      assertf(ATOMIC_READ(inst->i_refcnt) <= refcnt,
-             "Module destructors in '%[file]' shouldn't be able to add new "
-             "references because 'INSTANCE_FLAG_UNLOAD' is set (i_refcnt = %#x)",
+             "Module destructors in `%[file]' shouldn't be able to add new "
+             "references because `INSTANCE_FLAG_UNLOAD' is set (i_refcnt = %#x)",
              mod->m_file,ATOMIC_READ(inst->i_refcnt));
      refcnt = ATOMIC_READ(inst->i_refcnt);
     }
@@ -287,7 +287,7 @@ can_unload:
    /* Log an error message if the reference counter is still too great. */
    if (refcnt > ok_refcnt) {
     syslog(LOG_EXEC|LOG_ERROR,
-           "[MOD] DANGER: Unloading module %.?q (from '%[file]') despite non-zero use counter of %d\n",
+           "[MOD] DANGER: Unloading module %.?q (from `%[file]') despite non-zero use counter of %d\n",
            mod->m_name->dn_size,
            mod->m_name->dn_name,
            mod->m_file,refcnt-ok_refcnt);
@@ -302,7 +302,7 @@ can_unload:
    assert(ATOMIC_READ(inst->i_branch) == 0);
    ATOMIC_WRITE(inst->i_refcnt,0);
    instance_destroy(inst);
-   syslog(LOG_EXEC|LOG_INFO,"[MOD] Unloaded module %.?q from '%[file]'\n",
+   syslog(LOG_EXEC|LOG_INFO,"[MOD] Unloaded module %.?q from `%[file]'\n",
           mod->m_name->dn_size,mod->m_name->dn_name,mod->m_file);
    MODULE_DECREF(mod);
  }
@@ -391,7 +391,7 @@ rechain:
     for (iter = mman_kernel.m_inst; iter;
          iter = iter->i_chain.le_next) {
      if (iter != THIS_INSTANCE) {
-      syslog(LOG_EXEC|LOG_ERROR,"[MOD] Module %.?q (from '%[file]')\n",
+      syslog(LOG_EXEC|LOG_ERROR,"[MOD] Module %.?q (from `%[file]')\n",
              iter->i_module->m_name->dn_size,
              iter->i_module->m_name->dn_name,
              iter->i_module->m_file);

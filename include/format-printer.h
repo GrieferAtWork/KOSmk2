@@ -66,32 +66,32 @@ typedef __ssize_t (__LIBCCALL *pformatungetc)(int __ch, void *__closure);
 
 /* Generic printf implementation
  * Taking a regular printf-style format string and arguments, these
- * functions will call the given 'PRINTER' callback with various strings
+ * functions will call the given `PRINTER' callback with various strings
  * that, when put together, result in the desired formated text.
- *  - 'PRINTER' obviously is called with the text parts in their correct order
- *  - If 'PRINTER' returns '< 0', the function returns immediately,
+ *  - `PRINTER' obviously is called with the text parts in their correct order
+ *  - If `PRINTER' returns '< 0', the function returns immediately,
  *    yielding that same value. Otherwise, format_printf() returns
- *    the sum of all return values from 'PRINTER'.
- *  - The strings passed to 'PRINTER' may not necessarily be zero-terminated, and
+ *    the sum of all return values from `PRINTER'.
+ *  - The strings passed to `PRINTER' may not necessarily be zero-terminated, and
  *    a second argument is passed that indicates the absolute length in characters.
  * Supported extensions:
- *  - '%q'-format mode: Semantics equivalent to '%s', this modifier escapes the string using
- *                        'format_quote' with flags set of 'FORMAT_QUOTE_FLAG_NONE', or
- *                        'PRINTF_FLAG_PREFIX' when the '#' flag was used (e.g.: '%#q').
- *  - '%~s'    [KERNEL-ONLY] Print a string from a user-space pointer (may be combined to something like '%~.?s')
- *  - '%.*s'   Instead of reading an 'int' and dealing with undefined behavior when negative, an 'unsigned int' is read.
- *  - '%.?s'   Similar to '%.*s', but takes an 'size_t' from the argument list instead of an 'unsigned int', as well as define
+ *  - `%q'-format mode: Semantics equivalent to `%s', this modifier escapes the string using
+ *                        `format_quote' with flags set of 'FORMAT_QUOTE_FLAG_NONE', or
+ *                        `PRINTF_FLAG_PREFIX' when the '#' flag was used (e.g.: `%#q').
+ *  - `%~s'    [KERNEL-ONLY] Print a string from a user-space pointer (may be combined to something like `%~.?s')
+ *  - `%.*s'   Instead of reading an `int' and dealing with undefined behavior when negative, an `unsigned int' is read.
+ *  - `%.?s'   Similar to `%.*s', but takes an `size_t' from the argument list instead of an `unsigned int', as well as define
  *             a fixed-length buffer size for string/quote formats (thus allowing you to print '\0' characters after quoting)
- *  - '%$s'    Same as '$.?s'
- *  - '%Qs'    Same as '%q'
- *  - '%Qc'    Print an escaped character.
- *  - '%I'     length modifier: Integral length equivalent to sizeof(size_t).
- *  - '%I8'    length modifier: Integral length equivalent to sizeof(int8_t).
- *  - '%I16'   length modifier: Integral length equivalent to sizeof(int16_t).
- *  - '%I32'   length modifier: Integral length equivalent to sizeof(int32_t).
- *  - '%I64'   length modifier: Integral length equivalent to sizeof(int64_t).
- *  - '%[...]' Extended formating options, allowing for additional formating options:
- *             - '%[errno]': printf("%[errno]",EAGAIN); // Print human-readable information about the error 'EAGAIN'
+ *  - `%$s'    Same as `%.?s'
+ *  - `%Qs'    Same as `%q'
+ *  - `%Qc'    Print an escaped character.
+ *  - `%I'     length modifier: Integral length equivalent to sizeof(size_t).
+ *  - `%I8'    length modifier: Integral length equivalent to sizeof(int8_t).
+ *  - `%I16'   length modifier: Integral length equivalent to sizeof(int16_t).
+ *  - `%I32'   length modifier: Integral length equivalent to sizeof(int32_t).
+ *  - `%I64'   length modifier: Integral length equivalent to sizeof(int64_t).
+ *  - `%[...]' Extended formating options, allowing for additional formating options:
+ *             - `%[errno]': printf("%[errno]",EAGAIN); // Print human-readable information about the error 'EAGAIN'
  * >>> Possible (and actual) uses:
  *  - printf:           Unbuffered output into any kind of stream/file.
  *  - sprintf/snprintf: Unsafe/Counted string formatting into a user-supplied buffer.
@@ -110,20 +110,20 @@ __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
 #ifdef __CRT_KOS
 /* Generic scanf implementation
  * Taking a regular scanf-style format string and argument, these
- * functions will call the given 'SCANNER' function which in
+ * functions will call the given `SCANNER' function which in
  * return should successively yield a character at a time from
  * some kind of input source.
- *  - If 'SCANNER' returns < 0, scanning aborts and that value is returned.
+ *  - If `SCANNER' returns `< 0', scanning aborts and that value is returned.
  *    Otherwise, the function returns the amount of successfully parsed arguments.
- *  - The user may use 'SCANNER' to track the last read character to get
+ *  - The user may use `SCANNER' to track the last read character to get
  *    additional information about what character caused the scan to fail.
- *  - The given 'SCANNER' should also indicate EOF by returning 'NUL'
+ *  - The given `SCANNER' should also indicate EOF by returning `NUL'
  *  - This implementation supports the following extensions:
- *    - '%[A-Z]'   -- Character ranges in scan patterns
- *    - '%[^abc]'  -- Inversion of a scan pattern
- *    - '\n'       -- Skip any kind of linefeed ('\n', '\r', '\r\n')
- *    - '%$s'      -- '$'-modifier, available for any format outputting a string.
- *                    This modifier reads a 'size_t' from the argument list,
+ *    - `%[A-Z]'   -- Character ranges in scan patterns
+ *    - `%[^abc]'  -- Inversion of a scan pattern
+ *    - `"\n"'     -- Skip any kind of linefeed (`"\n"', `"\r"', `"\r\n"')
+ *    - `%$s'      -- `$'-modifier, available for any format outputting a string.
+ *                    This modifier reads a `size_t' from the argument list,
  *                    that specifies the size of the following string buffer:
  *                 >> char buffer[64];
  *                 >> sscanf(data,"My name is %.?s\n",sizeof(buffer),buffer);
@@ -151,29 +151,29 @@ __NAMESPACE_STD_END
  *       that is meant to fix this:
  *       >> format_strftime(...,"%[S:WD], the %[n:D] of %[S:M] %[Y], %[2:H]:%[2:MI]:%[2:S]",time(NULL));
  *       -> Tuesday, the 8th of November 2016, 17:45:38
- *       attribute ::= ('year'|'month'|'mweek'|'yweek'|'wday'|'mday'|
- *                      'yday'|'hour'|'minute'|'second'|'msecond'|
- *                      'Y'|'M'|'MW'|'YW'|'WD'|'MD'|'D'|'YD'|'H'|'MI'|'I'|'S'|'MS');
- *       exftime ::= '%[' ## [('S'|'s'|(['n'|' '] ## ('0'..'9')##...)] ## ':')] ## attribute ## ']';
- *       - The format modifier always starts with '%[' and ends with ']', with the actual text in-between
- *       - Optional representation prefix (before ':'):
- *         - 's': Short representation of the attribute (only allowed for 'wday' and 'month')
- *         - 'S': Long representation of the attribute (only allowed for 'wday' and 'month')
- *         - 'n': nth representation of the attribute (can be prefixed infront of width modifier; (1st, 2nd, 3rd, 4th, 5th, ...))
- *         - ' ': Fill empty space created by a large width modifier with ' ' instead of '0'
- *       - Optional width prefix (before ':'):
- *         - Only allowed without a representation prefix, the 'n' or ' ' prefix.
+ *       attribute ::= ("year"|"month"|"mweek"|"yweek"|"wday"|"mday"|
+ *                      "yday"|"hour"|"minute"|"second"|"msecond"|
+ *                      "Y"|"M"|"MW"|"YW"|"WD"|"MD"|"D"|"YD"|"H"|"MI"|"I"|"S"|"MS");
+ *       exftime ::= "%[" ## [("S"|"s"|(["n"|" "] ## ("0".."9")##...)] ## ":")] ## attribute ## "]";
+ *       - The format modifier always starts with `"%["' and ends with `"]"', with the actual text in-between
+ *       - Optional representation prefix (before `":"'):
+ *         - `"s"': Short representation of the attribute (only allowed for `"wday"' and `"month"')
+ *         - `"S"': Long representation of the attribute (only allowed for `"wday"' and `"month"')
+ *         - `"n"': nth representation of the attribute (can be prefixed infront of width modifier; (1st, 2nd, 3rd, 4th, 5th, ...))
+ *         - `" "': Fill empty space created by a large width modifier with `" "' instead of `"0"'
+ *       - Optional width prefix (before `":"'):
+ *         - Only allowed without a representation prefix, the `"n"' or `" "' prefix.
  *       - Attribute name:
  *         - One of the names listed above, this part describes which attribute to refer to.
- *         - The attributes match the member names of the time object, with the following aliases provided:
- *           - 'Y'      --> 'year'
- *           - 'M'      --> 'month'
- *           - 'WD'     --> 'wday'
- *           - 'MD'|'D' --> 'mday'
- *           - 'YD'     --> 'yday'
- *           - 'H'      --> 'hour'
- *           - 'MI'|'I' --> 'minute'
- *           - 'S'      --> 'second' */
+ *         - Short attributes names alias the following longer names also recognized:
+ *           - `"Y"'        --> `"year"'
+ *           - `"M"'        --> `"month"'
+ *           - `"WD"'       --> `"wday"'
+ *           - `"MD"'|`"D"' --> `"mday"'
+ *           - `"YD"'       --> `"yday"'
+ *           - `"H"'        --> `"hour"'
+ *           - `"MI"'|`"I'  --> `"minute"'
+ *           - `"S"'        --> `"second"' */
 __LIBC __PORT_KOSONLY __NONNULL((1,4))
 __ssize_t (__LIBCCALL format_strftime)(pformatprinter __printer, void *__closure,
                                        char const *__restrict __format,
@@ -188,16 +188,16 @@ __ssize_t (__LIBCCALL format_strftime)(pformatprinter __printer, void *__closure
  * >> hat a great day.
  * Output #1: >> \"Hello \"World\" W\nhat a great day.\"
  * Output #2: >> Hello \"World\" W\nhat a great day.
- * NOTE: Output #2 is generated if the 'FORMAT_QUOTE_FLAG_PRINTRAW' is set.
+ * NOTE: Output #2 is generated if the `FORMAT_QUOTE_FLAG_PRINTRAW' is set.
  * This function escapes all control and non-ascii characters,
  * preferring octal encoding for control characters and hex-encoding
  * for other non-ascii characters, a behavior that may be modified
- * with the 'FORMAT_QUOTE_FLAG_FORCE*' flags.
+ * with the `FORMAT_QUOTE_FLAG_FORCE*' flags.
  * @param: PRINTER: A function called for all quoted portions of the text.
  * @param: MAXTEXT: strnlen-style maxlen for the given TEXT,
- *                  unless the 'FORMAT_QUOTE_FLAG_QUOTEALL' flag is
+ *                  unless the `FORMAT_QUOTE_FLAG_QUOTEALL' flag is
  *                  set, in which case it is the exact amount of characters
- *                  to quote from 'TEXT', including '\0' characters. */
+ *                  to quote from `TEXT', including '\0' characters. */
 __FORMAT_PRINTER_DECL __NONNULL((1,3)) __ssize_t
 (__LIBCCALL format_quote)(pformatprinter __printer, void *__closure,
                           char const *__restrict __text, __size_t __textlen,
@@ -205,11 +205,11 @@ __FORMAT_PRINTER_DECL __NONNULL((1,3)) __ssize_t
 #endif /* __CC__ */
 #define FORMAT_QUOTE_FLAG_NONE     0x00000000
 #define FORMAT_QUOTE_FLAG_PRINTRAW 0x00000001 /*< Don't surround the quoted text with "..."; */
-#define FORMAT_QUOTE_FLAG_FORCEHEX 0x00000002 /*< Force hex encoding of all control characters without special strings ('\n', etc.). */
+#define FORMAT_QUOTE_FLAG_FORCEHEX 0x00000002 /*< Force hex encoding of all control characters without special strings (`"\n"', etc.). */
 #define FORMAT_QUOTE_FLAG_FORCEOCT 0x00000004 /*< Force octal encoding of all non-ascii characters. */
-#define FORMAT_QUOTE_FLAG_NOCTRL   0x00000008 /*< Disable special encoding strings such as '\r', '\n' or '\e' */
+#define FORMAT_QUOTE_FLAG_NOCTRL   0x00000008 /*< Disable special encoding strings such as `"\r"', `"\n"' or `"\e"' */
 #define FORMAT_QUOTE_FLAG_NOASCII  0x00000010 /*< Disable regular ascii-characters and print everything using special encodings. */
-#define FORMAT_QUOTE_FLAG_UPPERHEX 0x00000020 /*< Use uppercase characters for hex (e.g.: '\xAB'). */
+#define FORMAT_QUOTE_FLAG_UPPERHEX 0x00000020 /*< Use uppercase characters for hex (e.g.: `"\xAB"'). */
 
 
 
@@ -221,7 +221,7 @@ __FORMAT_PRINTER_DECL __NONNULL((1,3)) __ssize_t
  * @param: SIZE:     The amount of bytes read starting at DATA.
  * @param: LINESIZE: The max amount of bytes to include per-line.
  *                   HINT: Pass ZERO(0) to use a default size (16)
- * @param: FLAGS:    A set of 'FORMAT_HEXDUMP_FLAG_*'.
+ * @param: FLAGS:    A set of `"FORMAT_HEXDUMP_FLAG_*"'.
  * @return: 0: The given data was successfully hex-dumped.
  * @return: *: The first non-ZERO(0) return value of PRINTER. */
 __LIBC __PORT_KOSONLY __NONNULL((1,3)) __ssize_t
@@ -241,13 +241,13 @@ __LIBC __PORT_KOSONLY __NONNULL((1,3)) __ssize_t
 #ifdef __CC__
 struct stringprinter {
 #if defined(__BUILDING_LIBC) || defined(__KERNEL__)
- char   *sp_bufpos; /*< [1..1][>= sp_buffer][<= sp_bufend] . */
- char   *sp_buffer; /*< [1..1] Allocate buffer base pointer. */
- char   *sp_bufend; /*< [1..1] Buffer end (Pointer to currently allocated '\0'-character). */
+    char   *sp_bufpos; /*< [1..1][>= sp_buffer][<= sp_bufend] . */
+    char   *sp_buffer; /*< [1..1] Allocate buffer base pointer. */
+    char   *sp_bufend; /*< [1..1] Buffer end (Pointer to currently allocated `'\0'´-character). */
 #else /* __BUILDING_LIBC || __KERNEL__ */
- char *__sp_bufpos; /*< [1..1][>= __sp_buffer][<= __sp_bufend] . */
- char *__sp_buffer; /*< [1..1] Allocate buffer base pointer. */
- char *__sp_bufend; /*< [1..1] Buffer end (Pointer to currently allocated '\0'-character). */
+    char *__sp_bufpos; /*< [1..1][>= __sp_buffer][<= __sp_bufend] . */
+    char *__sp_buffer; /*< [1..1] Allocate buffer base pointer. */
+    char *__sp_bufend; /*< [1..1] Buffer end (Pointer to currently allocated `'\0'´-character). */
 #endif /* !__BUILDING_LIBC && !__KERNEL__ */
 };
 
@@ -267,7 +267,7 @@ struct stringprinter {
  * @param: HINT: A hint as to how big the initial buffer should
  *               be allocated as (Pass ZERO if unknown).
  * @return:  0: Successfully printed to/initialized the given string printer.
- * @return: -1: Failed to initialize/print the given text ('errno' is set to ENOMEM) */
+ * @return: -1: Failed to initialize/print the given text (`errno' is set to ENOMEM) */
 __FORMAT_PRINTER_DECL __NONNULL((1)) int  (__LIBCCALL stringprinter_init)(struct stringprinter *__restrict __self, __size_t __hint);
 __FORMAT_PRINTER_DECL __NONNULL((1)) void (__LIBCCALL stringprinter_fini)(struct stringprinter *__restrict __self);
 __FORMAT_PRINTER_DECL __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL stringprinter_pack)(struct stringprinter *__restrict __self, __size_t *__length);
@@ -287,12 +287,12 @@ typedef __CHAR32_TYPE__ char32_t;
 #endif /* !__char16_t_defined */
 
 /* Generic unicode/wide-string to utf8 conversion, using a format-printer as target.
- * NOTE: The given '(C(16|32)|WCS)LEN' is the absolute amount of encoded characters,
+ * NOTE: The given `(C(16|32)|WCS)LEN' is the absolute amount of encoded characters,
  *       meaning that any NUL-characters before then are printed as well.
- *       To use strnlen-style semantics, use 'format_*sntomb' instead.
- * NOTE: Upon encoding error, errno is set to 'EILSEQ' and '-1' is returned.
- * @param: MODE: Set of 'UNICODE_F_*' from '<unicode.h>' (Only 'UNICODE_F_NOFAIL' changes the behavior)
- * HINT: These functions are also used to implement '%ls'. */
+ *       To use strnlen-style semantics, use `format_*sntomb' instead.
+ * NOTE: Upon encoding error, errno is set to `EILSEQ' and '-1' is returned.
+ * @param: MODE: Set of `UNICODE_F_*' from `<unicode.h>' (Only `UNICODE_F_NOFAIL' changes the behavior)
+ * HINT: These functions are also used to implement `"%ls"'. */
 __REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c16sztomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16len, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode),format_wcsztomb,(__printer,__closure,__c16,__c16len,__ps,__mode))
 __REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c32sztomb,(pformatprinter __printer, void *__closure, char32_t const *__restrict __c32, __size_t __c32len, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode),format_wcsztomb,(__printer,__closure,__c32,__c32len,__ps,__mode))
 __REDIRECT_TOPE_ (__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,format_c16sntomb,(pformatprinter __printer, void *__closure, char16_t const *__restrict __c16, __size_t __c16max, mbstate_t *__restrict __ps, __UINT32_TYPE__ __mode),format_wcsntomb,(__printer,__closure,__c16,__c16max,__ps,__mode))
@@ -365,8 +365,8 @@ __REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,c32printer_print,(c
  *
  * >> struct buffer *log_buffer;
  * >> log_buffer = buffer_new(&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_WARNING));
- * >> // 'format_printf' is unbuffered, meaning that normally each component would call
- * >> // 'syslog_printer()', resulting in a total to 7 calls: "a" "foo" ",b" "bar" ",c" "foobar" "\n"
+ * >> // `format_printf' is unbuffered, meaning that normally each component would call
+ * >> // `syslog_printer()', resulting in a total to 7 calls: "a" "foo" ",b" "bar" ",c" "foobar" "\n"
  * >> // Using a buffer, this function returning.
  * >> format_printf(&buffer_print,log_buffer,"a%s,b%s,c%s\n","foo","bar","foobar");
  * 
@@ -375,15 +375,15 @@ __REDIRECT_TOKOS_(__LIBC,__PORT_KOSONLY,__ssize_t,__LIBCCALL,c32printer_print,(c
  */
 struct buffer {
  pformatprinter b_printer; /*< [1..1] The underlying printer. */
- void          *b_closure; /*< [?..?] The closure argument passed to 'b_printer' */
+ void          *b_closure; /*< [?..?] The closure argument passed to `b_printer' */
 union{
  __uintptr_t  __b_align0;  /*< ... */
- __ssize_t      b_state;   /*< The current printer state (< 0: Last error code returned by 'b_printer'; >= 0: Sum of 'b_printer' callbacks). */
+ __ssize_t      b_state;   /*< The current printer state (< 0: Last error code returned by `b_printer'; >= 0: Sum of `b_printer' callbacks). */
 };
  char          *b_buffer;  /*< [0..1][owned] Base-pointer of the allocated buffer. */
  char          *b_bufpos;  /*< [0..1][>= b_buffer && <= b_bufend] The current buffer position (Pointer to the buffer byte written to next). */
  char          *b_bufend;  /*< [0..1] End of the allocated buffer (first byte no longer apart of the buffer). */
- void          *__padding; /*< ... (Forward-compatibility & align to '8*sizeof(void *)', which is quite the pretty number) */
+ void          *__padding; /*< ... (Forward-compatibility & align to `8*sizeof(void *)', which is quite the pretty number) */
 };
 
 /* Static initializer for buffers. */
@@ -391,15 +391,15 @@ union{
 
 /* Initialize the given buffer using the provided PRINTER and CLOSURE.
  * NOTE: Even though possible, it is unwise to chain
- *       multiple buffers, or a buffer and a 'stringprinter' */
+ *       multiple buffers, or a buffer and a `stringprinter' */
 __LIBC __PORT_KOSONLY void (__LIBCCALL buffer_init)(struct buffer *__restrict self,
                                                     pformatprinter __printer, void *__closure);
 
-/* NOTE: 'buffer_fini()' will automatically flush the buffer one last time,
+/* NOTE: `buffer_fini()' will automatically flush the buffer one last time,
  *        and return the total sum of return values from all calls to PRINTER,
  *        or the first error-code generated.
  * NOTE:  This function _MUST_ be called to prevent memory leaks.
- * HINT:  With that in mind and the fact that 'buffer_print' is a no-op after an
+ * HINT:  With that in mind and the fact that `buffer_print' is a no-op after an
  *        error occurred, printer return values can always be ignored safely,
  *        centralizing error handling to this call. */
 __LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_fini)(struct buffer *__restrict __buf);
@@ -415,7 +415,7 @@ __LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_fini)(struct buffer *__restri
 __LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_flush)(struct buffer *__restrict __buf);
 
 /* The main printer callback used for printing to a buffer.
- * Pass a pointer to the buffer for 'CLOSURE' */
+ * Pass a pointer to the buffer for `CLOSURE' */
 __LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_print)(char const *__restrict __data,
                                                           __size_t __datalen, void *__closure);
 

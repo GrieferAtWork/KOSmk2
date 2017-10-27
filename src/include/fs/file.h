@@ -73,7 +73,7 @@ struct file {
                                     *   NOTE: Any non-constant flag may be weakly changed at any point. */
  rwlock_t                f_lock;   /*< File lock for synchronizing various operations (Should not be used by f_ops-implementations).
                                     *  HINT: The state of this lock during operations is documented above,
-                                    *        by the 'NOTE: Caller-synchronized:(read|write)' comments. */
+                                    *        by the `NOTE: Caller-synchronized:(read|write)' comments. */
  struct filelock         f_flock;  /*< Locks in `f_node' owned by this file. */
 #define FILE_FLAG_NONE     0x00000000
 #define FILE_FLAG_BACK     0x00000001 /*< Set when the file pointer is located at the back (Used to implement `O_APPEND' during writing) */
@@ -86,7 +86,7 @@ struct file {
 
 
 /* Simple, streamlined function for easily creating custom
- * file instances within 'struct inodeops::ino_fopen' */
+ * file instances within `struct inodeops::ino_fopen' */
 #define file_new(type_size) ((struct file *)calloc(1,type_size))
 FUNDEF void KCALL file_setup(struct file *__restrict fp,
                              struct inode *__restrict node,
@@ -192,7 +192,7 @@ LOCAL errno_t KCALL file_pwriteall(struct file *__restrict self, USER void const
 
 /* Hint the file-system to pre-allocate `size' bytes within `fp', starting at `start'.
  * NOTE: No-op if the given data area has already been allocated for some reason.
- * @param: mode:        One of 'FALLOCMODE_*'
+ * @param: mode:        One of `FALLOCMODE_*'
  * @return: -EOK:       Data was successfully pre-allocated
  *                      WARNING: Internal re-use semantics may undo this at
  *                               any time before real data is actually written!

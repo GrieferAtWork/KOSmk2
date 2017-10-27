@@ -68,7 +68,7 @@ sb_real_module(struct module *__restrict self) {
  /* Load the named module using user permissions. */
  FSACCESS_SETUSER(walker.dw_access);
  walker.dw_nlink = 0;
- /* TODO: Same as 'AT_DOSPATH' of the current exec() system call! */
+ /* TODO: Same as `AT_DOSPATH' of the current exec() system call! */
  walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
  result = E_PTR(fdman_read(fdm));
  if (E_ISERR(result)) return result;

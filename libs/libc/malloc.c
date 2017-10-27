@@ -57,7 +57,7 @@
 #define memmove            libc_memmove
 #define sysconf            libc_sysconf
 #define mremap             libc_mremap
-/* Invoke the system call directly; `free()' must never modify 'errno'! */
+/* Invoke the system call directly; `free()' must never modify `errno'! */
 #define munmap(p,s)       (E_ISERR(sys_munmap(p,s)) ? -1 : 0)
 #define mmap               libc_mmap
 #define malloc_getpagesize PAGESIZE
@@ -458,7 +458,7 @@ MALLDECL void    LIBCCALL mall_validate(struct dsetup *__restrict setup);
 #define MALL_USE_REALLOC_INPLACE 0x00000001
 #define MALL_NO_SCRABLE_ON_FREE  0x00000002
 PRIVATE DEFINE_ATOMIC_RWLOCK      (mall_lock);            /*< Locking mechanism used by MALL. */
-PRIVATE ATOMIC_DATA u32            mall_config    = 0;    /*< Generic MALL configuration (Set of 'MALL_*'). */
+PRIVATE ATOMIC_DATA u32            mall_config    = 0;    /*< Generic MALL configuration (Set of `MALL_*'). */
 PRIVATE u32                        mall_check     = 1024; /*< Next time MALL is checked for inconsistencies. */
 PRIVATE u32                        mall_checkfreq = 1024; /*< MALL consistency check frequency. */
 PRIVATE LIST_HEAD(struct mallhead) mall_top       = NULL; /*< [0..1] Last allocated pointer. */
@@ -958,7 +958,7 @@ mall_enum(struct dsetup *__restrict setup,
  }
  iter = blocks;
  while (iter) {
-  /* Perform a full validation of 'iter'. */
+  /* Perform a full validation of `iter'. */
   mall_loadptr(setup,mall_head2user(iter));
   next = iter->mh_chain.le_next;
   ++iter->mh_refcnt;
@@ -1005,7 +1005,7 @@ mall_validate(struct dsetup *__restrict setup) {
  atomic_rwlock_read(&mall_lock);
  iter = mall_top;
  while (iter) {
-  /* Perform a full validation of 'iter'. */
+  /* Perform a full validation of `iter'. */
   mall_loadptr(setup,mall_head2user(iter));
   iter = iter->mh_chain.le_next;
  }

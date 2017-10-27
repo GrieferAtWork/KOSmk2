@@ -48,7 +48,7 @@ struct task;
 typedef int rdmode_t;   /* readdir-mode (One of `FILE_READDIR_*') */
 #endif
 
-#define FD_MASK      0x03 /*< Mask of file descriptor flags stored alongside the pointer to 'fdops' ('FD_CLOEXEC', 'FD_CLOFORK', etc...). */
+#define FD_MASK      0x03 /*< Mask of file descriptor flags stored alongside the pointer to `fdops' (`FD_CLOEXEC', `FD_CLOFORK', etc...). */
 #define FDOPS_ALIGN (FD_MASK+1)
 
 
@@ -56,7 +56,7 @@ ATTR_ALIGNED(FDOPS_ALIGN)
 struct fdops {
  /* Common file descriptor operators.
   * NOTE: All operators _MUST_ be implemented!
-  * @param: o: The pointed-to object (e.g.: 'struct inode *__restrict o') */
+  * @param: o: The pointed-to object (e.g.: `struct inode *__restrict o') */
  void    (KCALL *fd_incref)(void *__restrict o);
  void    (KCALL *fd_decref)(void *__restrict o);
  ssize_t (KCALL *fd_read)(void *__restrict o, USER void *buf, size_t bufsize);
@@ -73,7 +73,7 @@ struct fd {
 union {
  uintptr_t              fo_hdata;      /*< File descriptor header data. */
  uintptr_t              fo_flags;      /*< [lock(:fm_lock)][mask(FD_MASK)] File descriptor flags.
-                                        *   HINT: Always ZERO(0) in descriptors returned by 'fdman_get()' */
+                                        *   HINT: Always ZERO(0) in descriptors returned by `fdman_get()' */
  struct fdops const    *fo_ops;        /*< [1..1][const][mask(~FD_MASK)][in(fd_ops)] File descriptor operations
                                         *  NOTE: Also used to track descriptor type ids. */
 };
@@ -88,7 +88,7 @@ union PACKED {
  REF struct file       *fo_file;       /*< [FD_TYPE_FILE][1..1]. */
  REF struct dentry     *fo_dentry;     /*< [FD_TYPE_DENTRY][1..1]. */
  WEAK REF struct task  *fo_task;       /*< [FD_TYPE_TASK][1..1] Must be a weak reference to prevent a reference loop.
-                                        *                       This is OK though, because 'join()' can still be
+                                        *                       This is OK though, because `join()' can still be
                                         *                       executed and simply detect that it can't capture a
                                         *                       new reference to the task, causing it to read the
                                         *                       exitcode field and return immediately. */
@@ -108,7 +108,7 @@ union PACKED {
 #define FD_INCREF(self)                              (*(self).fo_ops->fd_incref)((self).fo_ptr)
 #define FD_DECREF(self)                              (*(self).fo_ops->fd_decref)((self).fo_ptr)
 
-/* File descriptor operator types (Index is one of 'FD_TYPE_*'). */
+/* File descriptor operator types (Index is one of `FD_TYPE_*'). */
 DATDEF struct fdops const fd_ops[FD_TYPE_COUNT];
 
 /* A stub-fd for illegal file numbers. */
@@ -126,21 +126,21 @@ struct fdman {
  rwlock_t           fm_lock;   /*< R/W-lock for accessing this file descriptor manager. */
  REF struct dentry *fm_cwd;    /*< [lock(fm_lock)][1..1] Current working directory. */
  REF struct dentry *fm_root;   /*< [lock(fm_lock)][1..1] Filesystem root directory. */
- unsigned int       fm_hint;   /*< [lock(fm_lock)] Search hint used by 'fdman_put()' (also updated by 'fdman_put_nearby()'). */
+ unsigned int       fm_hint;   /*< [lock(fm_lock)] Search hint used by `fdman_put()' (also updated by `fdman_put_nearby()'). */
  unsigned int       fm_veca;   /*< [lock(fm_lock)] Allocated descriptor vector size. */
  unsigned int       fm_vecc;   /*< [lock(fm_lock)][<= fm_veca] Amount of descriptors currently in use (NOTE: Not necessarily continuous). */
- unsigned int       fm_vecm;   /*< [lock(fm_lock)][<= INT_MAX] Max amount of allowed descriptor numbers (Defaults to 'FDMAN_DEFAULT_VECM'). */
+ unsigned int       fm_vecm;   /*< [lock(fm_lock)][<= INT_MAX] Max amount of allowed descriptor numbers (Defaults to `FDMAN_DEFAULT_VECM'). */
  struct fd         *fm_vecv;   /*< [lock(fm_lock)][0..fm_veca][owned] File descriptor vector. */
  /* Filesystem mask/mode affect the behavior of every filesystem access
-  * in that the 'AT_*' flags provided by the user are manipulated as follows:
+  * in that the `AT_*' flags provided by the user are manipulated as follows:
   * >> used_flags = (given_flags & fm_fsmask) | fm_fsmode;
   */
  ATOMIC_DATA u32    fm_fsmask; /*< Filesystem mode mask. */
- ATOMIC_DATA u32    fm_fsmode; /*< Filesystem mode flags (Either 'AT_DOSPATH', or 0). */
- /* Masks of bits that must always be 1 or 0 in 'fm_fsmask' and 'fm_fsmode' respectively. */
+ ATOMIC_DATA u32    fm_fsmode; /*< Filesystem mode flags (Either `AT_DOSPATH', or 0). */
+ /* Masks of bits that must always be 1 or 0 in `fm_fsmask' and `fm_fsmode' respectively. */
  /* NOTE: Don't allow no-follow to be disabled (Could otherwise pose a security risk). */
-#define FDMAN_FSMASK_ALWAYS1   (0xffffffff & ~(AT_DOSPATH))                     /* Mask of bits always 1 in 'fm_fsmask' */
-#define FDMAN_FSMODE_ALWAYS0   (0xffffffff & ~(AT_DOSPATH|AT_SYMLINK_NOFOLLOW)) /* Mask of bits always 0 in 'fm_fsmode' */
+#define FDMAN_FSMASK_ALWAYS1   (0xffffffff & ~(AT_DOSPATH))                     /* Mask of bits always 1 in `fm_fsmask' */
+#define FDMAN_FSMODE_ALWAYS0   (0xffffffff & ~(AT_DOSPATH|AT_SYMLINK_NOFOLLOW)) /* Mask of bits always 0 in `fm_fsmode' */
 #define FDMAN_FSMASK_DEFAULT    0xffffffff
 #define FDMAN_FSMODE_DEFAULT    0
  ATOMIC_DATA mode_t fm_umask;  /*< File mode creation mask. */
@@ -160,10 +160,10 @@ struct fdman {
 
 /* The kernel's own FD-manager (Set for kernel/IDLE tasks).
  * NOTE: You really should use it, though. - It's just here to keep the
- *      'task::t_fdman != NULL' assumption universal...
+ *      `task::t_fdman != NULL' assumption universal...
  * NOTE: Drivers are not required to respect
- *      'fdman_kernel.fm_root' or 'fdman_kernel.fm_cwd',
- *       and can instead always use 'fs_root' directly! */
+ *      `fdman_kernel.fm_root' or `fdman_kernel.fm_cwd',
+ *       and can instead always use `fs_root' directly! */
 DATDEF struct fdman fdman_kernel;
 
 /* The effect fd-manager of the current thread. */
@@ -183,17 +183,17 @@ DATDEF struct fdman fdman_kernel;
 FUNDEF struct fdman *KCALL fdman_init(struct fdman *self);
 FUNDEF void KCALL fdman_destroy(struct fdman *__restrict self);
 
-/* Lookup and return a new reference to the file descriptor 'no'.
- * NOTE: In the event of an invalid/unused 'no', 'fd_invalid' is returned.
- * NOTE: This function can properly handle 'AT_FDCWD' and 'AT_FDROOT'. */
+/* Lookup and return a new reference to the file descriptor `no'.
+ * NOTE: In the event of an invalid/unused `no', `fd_invalid' is returned.
+ * NOTE: This function can properly handle `AT_FDCWD' and `AT_FDROOT'. */
 FUNDEF SAFE WUNUSED REF struct fd KCALL fdman_get(struct fdman *__restrict self, int no);
 
 /* Helper functions that automatically perform unwrapping on file descriptors.
  * @return: * :        A new reference to the managed kernel object.
  * @return: -EBADF:    Invalid file number / type.
  * @return: -EINTR:    The calling thread was interrupted.
- * @return: -ENOTDIR: [fdman_get_dentry] 'no' doesn't describe a dentry.
- * @return: -ENOTDIR: [fdman_get_inode] 'no' doesn't describe an inode.
+ * @return: -ENOTDIR: [fdman_get_dentry] `no' doesn't describe a dentry.
+ * @return: -ENOTDIR: [fdman_get_inode] `no' doesn't describe an inode.
  * @return: -EINVAL:  [fdman_get_task] The task has been destroyed (it has terminated). */
 FUNDEF SAFE WUNUSED REF struct dentry *KCALL fdman_get_dentry(struct fdman *__restrict self, int no);
 FUNDEF SAFE WUNUSED REF struct inode *KCALL fdman_get_inode(struct fdman *__restrict self, int no);
@@ -202,11 +202,11 @@ FUNDEF SAFE WUNUSED REF struct task *KCALL fdman_get_task(struct fdman *__restri
 FUNDEF SAFE WUNUSED REF struct mman *KCALL fdman_get_mman(struct fdman *__restrict self, int no);
 
 /* Set/Delete a file descriptor.
- * NOTE: 'fdman_set' will overwrite existing descriptors.
- * @return: -EOK:     Successfully set/deleted the given 'no'.
- * @return: -EINVAL:  `fp' is incompatible with the slot described by 'no' (Special 'AT_FD*' slots)
- * @return: -EBADF:  [fdman_set] The given 'no' was too high.
- * @return: -EBADF:  [fdman_del] The given 'no' was not in use.
+ * NOTE: `fdman_set' will overwrite existing descriptors.
+ * @return: -EOK:     Successfully set/deleted the given `no'.
+ * @return: -EINVAL:  `fp' is incompatible with the slot described by `no' (Special `AT_FD*' slots)
+ * @return: -EBADF:  [fdman_set] The given `no' was too high.
+ * @return: -EBADF:  [fdman_del] The given `no' was not in use.
  * @return: -ENFILE:  The given file descriptor number is too large.
  * @return: -EINTR:   The calling thread was interrupted. */
 FUNDEF SAFE errno_t KCALL fdman_set(struct fdman *__restrict self, int no, struct fd const fp);
@@ -216,18 +216,18 @@ FUNDEF SAFE struct fd KCALL fdman_del_unlocked(struct fdman *__restrict self, in
 
 /* Don't auto-use the first 3 descriptors, even when they've been closed.
  * >> This is done, because pretty much all unix applications are
- *    hard-coding use of 0,1 and 2 as STDIN_FILENO, 'STDOUT_FILENO' and 'STDERR_FILENO'.
+ *    hard-coding use of 0,1 and 2 as STDIN_FILENO, `STDOUT_FILENO' and `STDERR_FILENO'.
  * Therefor, automatically re-using them could cause unexpected behavior. */
 #define FDMAN_PUT_RESCAN_START 3
 
 /* Insert `fp' into the fd manager, choosing the next greater,
  * free descriptor number after that chosen during the last call
- * to either 'fdman_put()' or 'fdman_put_nearby()' (starting at ZERO(0)).
+ * to either `fdman_put()' or `fdman_put_nearby()' (starting at ZERO(0)).
  * If attempting to use that greater number would require the
  * fd-vector to be re-allocated, first search for an unused slot
- * between 'FDMAN_PUT_RESCAN_START...'
- * NOTE: 'fdman_put_nearby()' behaves the same as
- *       'fdman_put', using 'hint' as search starting point.
+ * between `FDMAN_PUT_RESCAN_START...'
+ * NOTE: `fdman_put_nearby()' behaves the same as
+ *       `fdman_put', using `hint' as search starting point.
  * @return: * :      The file descriptor number to-be used.
  * @return: -EMFILE: There are too many open file descriptors.
  * @return: -ENOMEM: Not enough available memory to re-allocate the FD-vector. */

@@ -876,7 +876,7 @@ DEFINE_PUBLIC_ALIAS(_difftime64,libc_difftime64);
 DEFINE_PUBLIC_ALIAS(_mktime32,libc_mktime);
 DEFINE_PUBLIC_ALIAS(_mktime64,libc_mktime64);
 #if __SIZEOF_INT__ < 4
-#error "FIXME: DOS's 'libc_sleep' takes a 32-bit integer"
+#error "FIXME: DOS's `libc_sleep' takes a 32-bit integer"
 #endif
 DEFINE_PUBLIC_ALIAS(_sleep,libc_sleep);
 DEFINE_PUBLIC_ALIAS(_time32,libc_time);

@@ -50,7 +50,7 @@ again:
   /* Delete the self-pointer of the first futex. */
   futex->f_pself = NULL;
   atomic_rwptr_endwrite(&futex->f_next);
-  /* Drop the reference we'll inherited from 'self->fp_next' below. */
+  /* Drop the reference we'll inherited from `self->fp_next' below. */
   MFUTEX_DECREF(futex);
  }
  ATOMIC_WRITE(self->ap_data,0);
@@ -62,7 +62,7 @@ mfutex_destroy(struct mfutex *__restrict self) {
  CHECK_HOST_DOBJ(self);
  assert(!self->f_refcnt);
 again:
- atomic_rwptr_write(&self->f_next); /* lock 'f_pself' from being modified. */
+ atomic_rwptr_write(&self->f_next); /* lock `f_pself' from being modified. */
  if (self->f_pself) {
   /* Lock the self-pointer to we can update it to point to our successor. */
   if (!atomic_rwptr_trywrite(self->f_pself)) {
@@ -154,7 +154,7 @@ insert_futex_into_iter:
      next_futex->f_pself = &result->f_next;
      atomic_rwptr_endwrite(&next_futex->f_next);
     }
-    ATOMIC_STORE(iter->ap_data,(uintptr_t)result); /* NOTE: This like also unlocks 'iter'. */
+    ATOMIC_STORE(iter->ap_data,(uintptr_t)result); /* NOTE: This like also unlocks `iter'. */
     return result;
    }
    if unlikely(!MFUTEX_TRYINCREF(result)) {
@@ -251,10 +251,10 @@ wait_check_again:
   val3 = FUTEX_BITSET_MATCH_ANY;
  case FUTEX_WAKE_BITSET:
   //if unlikely(!val3) goto err_inval;
-  /* TODO: Linux only wake threads who's wait bit-sets match 'val3' */
+  /* TODO: Linux only wake threads who's wait bit-sets match `val3' */
   lock = mman_getfutex(mm,uaddr);
   if (E_ISOK(lock)) {
-   /* Wake at most 'val' threads waiting for the associated futex. */
+   /* Wake at most `val' threads waiting for the associated futex. */
    error = (ssize_t)sig_send(&lock->f_sig,(size_t)val);
    MFUTEX_DECREF(lock);
    lock = E_PTR(error);

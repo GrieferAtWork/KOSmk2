@@ -41,23 +41,23 @@ struct task;
 struct stack {
  ATOMIC_DATA ref_t s_refcnt; /*< [!0] Reference counter for the control structure. */
  ATOMIC_DATA ref_t s_branch; /*< Amount of branches mapped to this stack.
-                              *  NOTE: This value is updated using the 'mbranch_notity' facility.
+                              *  NOTE: This value is updated using the `mbranch_notity' facility.
                               *  NOTE: While non-zero, this counter holds a reference to `s_refcnt'. */
  /* NOTE: Locking the following two is a bit complicated:
   *       If the stack was created with a guard page, the caller must
   *       hold a read-lock on the associated mman ([lock(:struct mman::m_lock)])
   *       Otherwise, both members are [const].
   * WARNING: Neither case can guaranty that some part of the stack wasn't un/re-mapped,
-  *          as 'stack_mnotify' doesn't handle the associated events, not is this controller
+  *          as `stack_mnotify' doesn't handle the associated events, not is this controller
   *          capable of representing a stack that's been split into multiple parts.
-  *          Note though, that using the 'struct stack' itself as closure, unmapping
+  *          Note though, that using the `struct stack' itself as closure, unmapping
   *          a stack is always a safe operation, in that no branches not mapped
   *          for the stack, or through guard access will ever be deleted.
   */
  VIRT ppage_t      s_begin;  /*< [1..1][valid_if(s_branch != 0)][<= s_end] Lowest memory address. */
  VIRT ppage_t      s_end;    /*< [1..1][valid_if(s_branch != 0)][>= s_end] First invalid memory address. */
  atomic_rwptr_t    s_task;   /*< [TYPE(struct task)][weak][0..1] The thread associated with this stack.
-                              *   WARNING: This is a weak reference, meaning that 'TASK_TRYINCREF'
+                              *   WARNING: This is a weak reference, meaning that `TASK_TRYINCREF'
                               *            must be used to acquire a reference.
                               *   NOTE: When non-NULL, this is the task that gets signaled with a STACK_OVERFLOW
                               *         error when guard pages run out of funds, or cannot be allocated.

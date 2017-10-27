@@ -109,8 +109,8 @@ __REDIRECT_FS_FUNC_R(__LIBC,__PORT_NODOS __NONNULL((1,2,3)),int,__LIBCCALL,readd
 #ifdef __USE_LARGEFILE64
 /* NOTE: This ~reentrant~ version of readdir() is strongly discouraged from being used in KOS, as the
  *       kernel does not impose a limit on the length of a single directory entry name (s.a. 'xreaddir')
- * >> Instead, simply use 'readdir()'/'readdir64()', which will automatically (re-)allocate an internal,
- *    per-directory buffer of sufficient size to house any directory entry (s.a.: 'READDIR_DEFAULT') */
+ * >> Instead, simply use `readdir()'/`readdir64()', which will automatically (re-)allocate an internal,
+ *    per-directory buffer of sufficient size to house any directory entry (s.a.: `READDIR_DEFAULT') */
 __LIBC __PORT_NODOS __NONNULL((1,2,3)) int (__LIBCCALL readdir64_r)(DIR *__restrict __dirp, struct dirent64 *__restrict __entry, struct dirent64 **__restrict __result);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_POSIX */
@@ -185,12 +185,12 @@ __LIBC __PORT_NODOS __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL versionsort64)
 
 /* The KOS-specific system call for reading a single directory entry
  * from a file descriptor referring to an open directory stream.
- * @param: MODE: One of 'READDIR_*'
+ * @param: MODE: One of `READDIR_*'
  * @return: * : The actually required buffer size for the directory entry (in bytes)
- *              NOTE: When 'READDIR_DEFAULT' was passed for 'MODE', the directory
+ *              NOTE: When `READDIR_DEFAULT' was passed for `MODE', the directory
  *                    stream will only be advanced when this value is >= 'BUFSIZE'
  * @return: 0 : The end of the directory has been reached.
- * @return: -1: Failed to read a directory entry for some reason (s.a.: 'errno') */
+ * @return: -1: Failed to read a directory entry for some reason (s.a.: `errno') */
 __LIBC __PORT_KOSONLY_ALT(readdir) __NONNULL((2))
 __ssize_t (__LIBCCALL xreaddir)(int __fd, struct dirent *__buf, size_t __bufsize, int __mode);
 #endif
@@ -217,7 +217,7 @@ struct dirent {
  __dos_ino_t       d_ino; /* Mandatory */
 #ifndef __INTELLISENSE__
  __UINT16_TYPE__ __d_pad;
- /* Members below are arranged for binary compatibility with 'struct _finddata32_t' */
+ /* Members below are arranged for binary compatibility with `struct _finddata32_t' */
  __UINT32_TYPE__ __d_attrib;
  __UINT32_TYPE__ __d_time_create;
  __UINT32_TYPE__ __d_time_access;

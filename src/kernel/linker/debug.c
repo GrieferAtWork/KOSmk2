@@ -88,7 +88,7 @@ end:
   /* Warn about unexpected problems. */
   if (result != E_PTR(-ENODATA)) {
    syslog(LOG_WARN,
-          COLDSTR("[MODDEBUG] Failed to load debug information for '%[file]': %[errno]\n"),
+          COLDSTR("[MODDEBUG] Failed to load debug information for `%[file]': %[errno]\n"),
           self->m_file,-E_GTERR(result));
   }
   result = NULL;
@@ -171,8 +171,8 @@ moddebug_setup(struct moddebug *__restrict self,
  CHECK_HOST_DOBJ(owner);
  assert(self->md_refcnt >= 1);
  assert(self->md_owner == NULL);
- assertf(self->md_module != NULL,"Forgot to initialize 'md_module'");
- assertf(self->md_ops != NULL,"Forgot to initialize 'md_ops'");
+ assertf(self->md_module != NULL,"Forgot to initialize `md_module'");
+ assertf(self->md_ops != NULL,"Forgot to initialize `md_ops'");
  INSTANCE_WEAK_INCREF(owner);
  self->md_owner = owner;
 }
@@ -310,7 +310,7 @@ PUBLIC SAFE void KCALL
 moddebug_addloader(struct moddebug_loader *__restrict loader, int mode) {
  CHECK_HOST_DOBJ(loader);
  assert(TASK_ISSAFE());
- assertf(loader->mdl_owner,"No loader owner set (Use 'THIS_INSTANCE')");
+ assertf(loader->mdl_owner,"No loader owner set (Use `THIS_INSTANCE')");
  CHECK_HOST_DOBJ(loader->mdl_owner);
  CHECK_HOST_TEXT(loader->mdl_loader,1);
  assert(loader->mdl_magsz <= MODDEBUG_LOADER_MAX_MAGIC);
@@ -354,7 +354,7 @@ moddebug_delloader(struct moddebug_loader *__restrict loader) {
  struct moddebug_loader **piter,*iter;
  bool result = false;
  CHECK_HOST_DOBJ(loader);
- assertf(loader->mdl_owner,"No loader owner set (Use 'THIS_INSTANCE')");
+ assertf(loader->mdl_owner,"No loader owner set (Use `THIS_INSTANCE')");
  CHECK_HOST_DOBJ(loader->mdl_owner);
  CHECK_HOST_TEXT(loader->mdl_loader,1);
  assert(ATOMIC_READ(loader->mdl_owner->i_refcnt) >= 1);

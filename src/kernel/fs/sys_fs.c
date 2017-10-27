@@ -1189,7 +1189,7 @@ mount_open_device(USER char const *dev_name, int access,
  struct dentry *dev_entry;
  struct inode *dev_node;
  REF struct blkdev *result;
- /* XXX: I'm pretty sure 'dev_name' can be more than just a filename.
+ /* XXX: I'm pretty sure `dev_name' can be more than just a filename.
   * >> What if the /dev filesystem isn't mounted? Then how can mount()
   *    even access the block devices required to use as mount source?
   * I'm guessing you're also allowed to use device IDs somehow... */
@@ -1210,7 +1210,7 @@ mount_open_device(USER char const *dev_name, int access,
  DENTRY_DECREF(cwd);
  if (E_ISERR(dev_entry))
      return E_PTR(E_GTERR(dev_entry));
- /* Load the INode from the directory entry described by 'dev_name' */
+ /* Load the INode from the directory entry described by `dev_name' */
  dev_node = dentry_inode(dev_entry);
  if unlikely(!dev_node) { result = E_PTR(-ENOENT); goto end; }
 
@@ -1227,7 +1227,7 @@ mount_open_device(USER char const *dev_name, int access,
  /* Since this isn't actually a block-device, check
   * if it is a regular file that can later be used as
   * a loopback device. (For this we require it at the
-  * very least be implementing 'pread()', as this is
+  * very least be implementing `pread()', as this is
   * what comes the closest to, and is used to emulate
   * the most basic functionality required by any block-device,
   * or filesystem running there-on).  */
@@ -1280,7 +1280,7 @@ mount_make_superblock(USER char const *dev_name,
  REF struct superblock *result;
  struct fstype *ft = NULL;
  if (flags&MS_BIND) {
-  /* Add a secondary mounting point for 'dev_name'. */
+  /* Add a secondary mounting point for `dev_name'. */
   struct dentry_walker walker;
   struct dentry *existing_mount;
   struct dentry *cwd;
@@ -1289,7 +1289,7 @@ mount_make_superblock(USER char const *dev_name,
   FSACCESS_SETUSER(walker.dw_access);
   walker.dw_nlink = 0;
   /* Erm... Security hole? Linux seems to do the same?
-   * At least in KOS, you can disable symlinks using 'fsmask()' */
+   * At least in KOS, you can disable symlinks using `fsmask()' */
   walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
 
   result = E_PTR(fdman_read(fdm));
@@ -1348,7 +1348,7 @@ mount_make_superblock(USER char const *dev_name,
  } else {
   struct blkdev *dev;
 automount:
-  /* XXX: What exactly is 'dev_name?' POSIX doesn't really seem to say.
+  /* XXX: What exactly is `dev_name?' POSIX doesn't really seem to say.
    *    - I know it can be the path-name of a block device.
    *    - I'm also guessing it's allowed to be the name of a regular
    *      file, for which the kernel (us) must automatically generate

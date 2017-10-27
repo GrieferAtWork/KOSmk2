@@ -416,7 +416,7 @@ DEFINE_PUBLIC_ALIAS(_dupenv_s,libc_dos_dupenv_s);
 /* Stub global variables (only here for binary compatibility)
  * NOTE: A regular application linked for DOS will initialize
  *       this variable itself, so this is even correct!
- * HINT: The real initenv is filled in by the kernel and apart of 'appenv' */
+ * HINT: The real initenv is filled in by the kernel and apart of `appenv' */
 INTERN char    **libc_initenv   = NULL;
 INTERN char     *libc_pgmptr    = NULL;
 INTERN char16_t *libc_16wpgmptr = NULL;
@@ -468,9 +468,9 @@ libc_16wgetmainargs(int *pargc, char16_t ***pargv, char16_t ***penvp,
  if (pargc) *pargc = libc_argc;
  if (pargv) *pargv = *libc_p_16wargv();
  if (penvp) *penvp = *libc_p_16wenviron();
- /* Also initialize this one, which in turn will force-setup '__wargv'.
+ /* Also initialize this one, which in turn will force-setup `__wargv'.
   * NOTE: We only do this in wide-mode to improve startup times.
-  * NOTE: Also, when filling in 'pargv', '__wargv' should have already been initialized. */
+  * NOTE: Also, when filling in `pargv', `__wargv' should have already been initialized. */
  libc_16wpgmptr = *libc_p_16wpgmptr();
  return 0;
 }

@@ -68,7 +68,7 @@ __NAMESPACE_STD_USING(FILE)
 typedef __WCHAR_TYPE__ wchar_t;
 #endif /* !__wchar_t_defined */
 
-/* Define 'size_t' */
+/* Define `size_t' */
 __NAMESPACE_STD_BEGIN
 #ifndef __std_size_t_defined
 #define __std_size_t_defined 1
@@ -90,7 +90,7 @@ __NAMESPACE_STD_USING(wint_t)
 #endif /* !__wint_t_defined */
 #endif /* !__CXX_SYSTEM_HEADER */
 
-/* Define 'NULL' */
+/* Define `NULL' */
 #ifndef NULL
 #define NULL __NULLPTR
 #endif
@@ -931,7 +931,7 @@ __REDIRECT_WFS_(__LIBC,__PORT_DOSONLY,int,__LIBCCALL,_wstat64i32,(wchar_t const 
 #ifndef _WCONIO_DEFINED
 #define _WCONIO_DEFINED 1
 /* Since KOS doesn't differentiate for these, they just redirect to stdin/stdout.
- * >> If you really want to operate on a console, open your terminal slave under '/dev/'. */
+ * >> If you really want to operate on a console, open your terminal slave under `/dev/'. */
 __REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,_cgetws_s,(wchar_t *__buffer, size_t __buflen, size_t *__sizeok),_getws_s,())
 __REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,wchar_t *,__LIBCCALL,_cgetws,(wchar_t *__buffer),_getws,(__buffer))
 __REDIRECT_IFKOS(__LIBC,__PORT_DOSONLY,wint_t,__LIBCCALL,_getwch,(void),getwchar,())

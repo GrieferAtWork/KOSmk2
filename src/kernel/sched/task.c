@@ -148,7 +148,7 @@ task_cinit(struct task *t) {
   atomic_rwlock_cinit(&t->t_pid.tp_grouplock);
 
   t->t_addrlimit = KERNEL_BASE;
-  t->t_weakcnt   = 1; /* The initial weak reference owned by 't_refcnt' itself. */
+  t->t_weakcnt   = 1; /* The initial weak reference owned by `t_refcnt' itself. */
   t->t_refcnt    = 1;
 
   assert(t->t_arch.at_ldt_gdt == 0);
@@ -291,8 +291,8 @@ task_start(struct task *__restrict t) {
  assert(t->t_nointr    == 0);
  assert(t->t_ic        == NULL);
  assert(t->t_prioscore == 0);
- assertf(t->t_pid.tp_parent != NULL,"No thread parent set (forgot to call 'task_set_parent()')");
- assertf(t->t_pid.tp_leader != NULL,"No group leader set (forgot to call 'task_set_leader()')");
+ assertf(t->t_pid.tp_parent != NULL,"No thread parent set (forgot to call `task_set_parent()')");
+ assertf(t->t_pid.tp_leader != NULL,"No group leader set (forgot to call `task_set_leader()')");
  assert(t->t_mman != NULL);
  assert(t->t_fdman != NULL);
  assert(t->t_sighand != NULL);
@@ -470,7 +470,7 @@ task_is_terminating(struct task *__restrict t) {
           end,end->t_pid.tp_ids[PIDTYPE_GPID].tl_pid);
 #endif
 
-   /* Create the reference to 'inittask' used below. */
+   /* Create the reference to `inittask' used below. */
    if (end->t_mode != TASKMODE_TERMINATED)
        TASK_INCREF(&inittask);
 
@@ -489,7 +489,7 @@ task_is_terminating(struct task *__restrict t) {
   /* NOTE: Children may have been deleted above. */
   if (t->t_pid.tp_children) {
    atomic_rwlock_write(&inittask.t_pid.tp_childlock);
-   assertf(inittask.t_pid.tp_children != NULL,"What about 'init' itself?");
+   assertf(inittask.t_pid.tp_children != NULL,"What about `init' itself?");
    /* Prepend the list of child processes. */
    *pend = inittask.t_pid.tp_children;
    inittask.t_pid.tp_children->t_pid.tp_siblings.le_pself = pend;
@@ -503,7 +503,7 @@ task_is_terminating(struct task *__restrict t) {
 
  /* Signal our parent process.
   * NOTE: These may still be NULL if the task is
-  *       being destroyed before 'task_start()' is called. */
+  *       being destroyed before `task_start()' is called. */
  atomic_rwlock_write(&t->t_pid.tp_parlock);
  parent = t->t_pid.tp_parent;
  if (t->t_mode == TASKMODE_NOTSTARTED ||
@@ -685,7 +685,7 @@ L(    pushw %es                              )
 L(    pushw %fs                              )
 L(    pushw %gs                              )
 L(    pushal                                 ) /* Push general purpose registers. */
-L(    movl  52(%esp), %eax                   ) /* Load the given 'task' argument into 'EAX' */
+L(    movl  52(%esp), %eax                   ) /* Load the given `task' argument into 'EAX' */
 L(    movl  %esp, TASK_OFFSETOF_CSTATE(%eax) ) /* Save the CPU state that we've just created within the given task. */
 L(PUBLIC_ENTRY(cpu_sched_setrunning)         )
 L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING), %eax) /* Load the running task into EAX */
@@ -728,13 +728,13 @@ L(    pushfl  /* Push eflags (will be restored later) */                      )
        *  - When interrupts have been disabled by the caller, we assume that
        *    they wish to remain in full control over when they'll be re-enabled,
        *    meaning we're not actually allowed to switch to another task even
-       *    though 'task_yield()' got called.
-       *  - This must be done as a precaution, since 'task_yield()' may even
-       *    be called when sending a signal to another task (from within 'cpu_write()') */
+       *    though `task_yield()' got called.
+       *  - This must be done as a precaution, since `task_yield()' may even
+       *    be called when sending a signal to another task (from within `cpu_write()') */
 L(    testl $(EFLAGS_IF), 0(%esp)                                             )
 L(    jz    2f                                                                )
 L(    cli                                  /* Disable pre-emption. */         )
-L(    pushl ASM_CPU(CPU_OFFSETOF_RUNNING)  /* Push the old task (Argument for 'cpu_sched_setrunning_save'). */)
+L(    pushl ASM_CPU(CPU_OFFSETOF_RUNNING)  /* Push the old task (Argument for `cpu_sched_setrunning_save'). */)
       /* TODO: Use a special CPU rotation that tries not to re-schedule the calling task. */
 L(    call  cpu_sched_rotate               /* Rotate running tasks. */        )
 L(    pushl %eax                                                              )
@@ -933,7 +933,7 @@ PRIVATE void KCALL cpu_add_idling(struct task *__restrict t) {
         (iter->t_priority == t->t_priority &&
          iter->t_mman     <  t->t_mman)))
          piter = &iter->t_sched.sd_running.re_next;
- /* Insert the given task 't' before 'iter' / after 'piter'. */
+ /* Insert the given task 't' before `iter' / after `piter'. */
  t->t_sched.sd_running.re_next = iter;
  if (iter) iter->t_sched.sd_running.re_prev = t;
  *piter = t;
@@ -943,23 +943,23 @@ PRIVATE void KCALL cpu_add_idling(struct task *__restrict t) {
 }
 
 
-/* Park all IDLE tasks from 'c_running' into 'c_idling'
- * WARNING: Upon completion, 'c_running' may be set to NULL if all tasks were parked,
+/* Park all IDLE tasks from `c_running' into `c_idling'
+ * WARNING: Upon completion, `c_running' may be set to NULL if all tasks were parked,
  *          meaning it is the caller's responsibility to install at least one new task. */
 PRIVATE SAFE void KCALL cpu_park_idle(void) {
  struct task *iter,*next,*start;
  assert(TASK_ISSAFE());
  /* NOTE: Critical tasks may not be parked
   *    >> In addition, we must never part the calling task to prevent inconsistencies.
-  *       For that reason, 'pit_exc' checks the old task for needing to be parked,
+  *       For that reason, `pit_exc' checks the old task for needing to be parked,
   *       because a task must never be parked when one of the two is true:
   *        - Interrupts are disabled
   *        - The task is critical
   *  Now: Take a look at that 'SAFE' tag of this function.
   *       Yes! A function is only SAFE when the caller ensure one of the same
   *            restrictions: THIS_TASK is critical, or interrupts are disabled!
-  *  >> So essentially, we must guaranty that 'THIS_CPU->c_running'
-  *     is never parked, because the only way to write to 'THIS_CPU->c_running',
+  *  >> So essentially, we must guaranty that `THIS_CPU->c_running'
+  *     is never parked, because the only way to write to `THIS_CPU->c_running',
   *     is to disable interrupts (which in turn would make it illegal to
   *     park said task, also meaning that a task can never part itself,
   *     which makes sense again because there must always be another task
@@ -1271,8 +1271,8 @@ pit_exc(struct cpustate *__restrict state) {
      *       comes to counter overroll!
      * XXX: Don't do this! Remember how sleeping tasks are sorted:
      *  jiffies == 0xffffffffffffffe0
-     *  thread #1: sleep(jiffies+10); (Sleep until '0xffffffffffffffea')
-     *  thread #2: sleep(jiffies+60); (Sleep until '0x000000000000001c') // Overflow
+     *  thread #1: sleep(jiffies+10); (Sleep until `0xffffffffffffffea')
+     *  thread #2: sleep(jiffies+60); (Sleep until `0x000000000000001c') // Overflow
      * Sort order:
      *  thread #2 == CPU->c_sleeping
      *  thread #1 == CPU->c_sleeping->t_sched.sd_sleeping.le_next
@@ -1281,7 +1281,7 @@ pit_exc(struct cpustate *__restrict state) {
      * to be paused until long after the end of the know universe!
      * 
      * TODO: A better solution for this would be to re-schedule all tasks with a
-     *       timeout '>= 0x8000000000000000' when the jiffi counter rolls over,
+     *       timeout `>= 0x8000000000000000' when the jiffi counter rolls over,
      *       but still perform a check using '!=', as this still works for threads
      *       with long timeouts that extend past the end of jiffi's 64-bit timing.
      *      (Notice how thread #2 is still woken at the correct point in time, while
@@ -1325,7 +1325,7 @@ pit_exc(struct cpustate *__restrict state) {
   *       since it is that 'old_task' which we're
   *       originating from, meaning that its
   *       cpustate _must_ have interrupts enabled.
-  *      (Or the task executed an 'int $0' manually?) */
+  *      (Or the task executed an `int $0' manually?) */
 #if 0
  syslog(LOG_SCHED|LOG_WARN,"[IRQ] %#.2I8x, %#.2I8x, %#.2I8x %Iu %Iu\n",
         THIS_CPU->c_prio_min,THIS_CPU->c_prio_max,
@@ -1569,7 +1569,7 @@ sig_vsendone_unlocked(struct sig *__restrict s,
                slot <   t->t_signals.ts_slotv+
                         t->t_signals.ts_slotc))) {
   /* Special case: If the signal isn't targeting the active signal buffer,
-   *              (such as after 'task_pushwait()' was called) simply mark
+   *              (such as after `task_pushwait()' was called) simply mark
    *               it as being send.
    * It is important that signals can still be sent and be considered
    * as such, even when not actively being apart of the target thread's
@@ -2133,7 +2133,7 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
   * fix the deadlock caused by hi-jacking another task. */
 #if 1
  /* NOTE: No need for atomicity: Preemption is disabled, meaning we're holding
-  *       an implicit visibility-based lock on 'termself_chain', as no other
+  *       an implicit visibility-based lock on `termself_chain', as no other
   *       CPU can access it, while we can be certain that no other task can
   *       run on our own CPU. */
  assert(!PREEMPTION_ENABLED());
@@ -2163,7 +2163,7 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
  assert(!PREEMPTION_ENABLED());
 
  /* WARNING: At this point, the cpu-local/THIS_TASK setup is extremely inconsistent.
-  *         'THIS_TASK' does not match what is actually the current chain of execution. */
+  *         `THIS_TASK' does not match what is actually the current chain of execution. */
  ATOMIC_WRITE(t->t_mode,TASKMODE_TERMINATED);
 
  /* Make sure to activate the new task's page directory as early as possible! */
@@ -2257,7 +2257,7 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
   * because if we did so before, the PIC interrupt handler
   * might notice us being terminated and try to remove us
   * before we're done.
-  * HINT: The CPU must lock 'c_lock' before checking
+  * HINT: The CPU must lock `c_lock' before checking
   *       if a task was marked as terminated in SMP-mode. */
  cpu_endwrite(THIS_CPU);
 
@@ -2268,7 +2268,7 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
  assert(t != THIS_CPU->c_idling);
 
  /* WARNING: At this point, the cpu-local/THIS_TASK setup is extremely inconsistent.
-  *         'THIS_TASK' does not match what is actually the current chain of execution. */
+  *         `THIS_TASK' does not match what is actually the current chain of execution. */
  ATOMIC_WRITE(t->t_mode,TASKMODE_TERMINATED);
 
  assert(!PREEMPTION_ENABLED());
@@ -2292,7 +2292,7 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
  __asm__ __volatile__(
      L(    movl ASM_CPU2(CPU_OFFSETOF_RUNNING), %%eax   )
      /* Prevent the new task from being terminated while it's destroying the old.
-      * NOTE: This precaution starts taking effect once 'sti' re-enables interrupts below. */
+      * NOTE: This precaution starts taking effect once `sti' re-enables interrupts below. */
      L(    incl TASK_OFFSETOF_CRITICAL(%%eax)           )
      L(    movl TASK_OFFSETOF_CSTATE(%%eax), %%esp      )
      L(    movl (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%%eax), %%eax) /* Load the base address of the kernel stack. */
@@ -2330,9 +2330,9 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
      /* At this point we've entered the context of the new task, but havn't restored its registers.
       * Doing so later, for now we will instead broadcast the join old task's join signal.
       * NOTE: Broadcasting cannot be done earlier because:
-      *       - The join signal may only be send once the task's state has changed to 'TASKMODE_TERMINATED'
-      *       - The task's state can only change to 'TASKMODE_TERMINATED' after it has been removed from the ring.
-      *       - Since 'sig_send()' may cause the caller to be preempted, a valid 'THIS_TASK' is required.
+      *       - The join signal may only be send once the task's state has changed to `TASKMODE_TERMINATED'
+      *       - The task's state can only change to `TASKMODE_TERMINATED' after it has been removed from the ring.
+      *       - Since `sig_send()' may cause the caller to be preempted, a valid `THIS_TASK' is required.
       *      >> But since we're trying to delete our old context, we can only
       *         broadcast having done so once we've acquired a new once.
       * HINT: '%EBX' need not be saved across this call, because it is a callee-saved register! */
@@ -2347,7 +2347,7 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
      L(                                                 )
      L(    movl $-1, %%edx                              )
      L(    lock; xadd %%edx, TASK_OFFSETOF_REFCNT(%%ebx))
-     /* If the result of the subtraction was non-zero, don't call 'task_destroy()' */
+     /* If the result of the subtraction was non-zero, don't call `task_destroy()' */
      L(    jnz 1f                                       )
      L(    pushl %%ebx                                  )
      L(    call __task_destroy2                         )
@@ -2447,7 +2447,7 @@ task_join(struct task *__restrict t,
  CHECK_HOST_DOBJ(t);
 wait_again: ATTR_UNUSED;
  sig_read(&t->t_event);
- /* Special case: 'TASKMODE_TERMINATED' is written with a write-barrier
+ /* Special case: `TASKMODE_TERMINATED' is written with a write-barrier
   *                before the join signal is broadcast, meaning that
   *                while locking the join-signal, we can read the
   *                task's real state with a write-barrier to confirm
@@ -2462,7 +2462,7 @@ wait_again: ATTR_UNUSED;
 
  result = sig_timedrecv_endwrite(&t->t_event,timeout);
  if (E_ISERR(result)) return result;
- /* NOTE: Since 't_event' is not just send for termination, we
+ /* NOTE: Since `t_event' is not just send for termination, we
   *       must re-check that the thread has really terminated now. */
  goto wait_again;
 end:
@@ -2974,7 +2974,7 @@ PUBLIC ATTR_HOTTEXT CRIT void (KCALL task_endcrit)(void) {
  struct cpu *c; pflag_t was;
  struct task *t = THIS_TASK;
  CHECK_HOST_DOBJ(t);
- assertf(t->t_critical != 0,"Missing 'task_crit()'");
+ assertf(t->t_critical != 0,"Missing `task_crit()'");
  if (t->t_critical > 1) { --t->t_critical; return; }
  /* End of a critical block. */
  was = PREEMPTION_PUSH();
@@ -3181,7 +3181,7 @@ schedule_delayed_work(struct job *__restrict work,
      * Since it is illegal to re-schedule a non-timeout job with a
      * timeout before it has finished, we can assume that the worker
      * task isn't currently suspended because it had to have had
-     * at least one sleeper-job ('work') beforehand. */
+     * at least one sleeper-job (`work') beforehand. */
     assert(THIS_CPU->c_work.t_mode == TASKMODE_RUNNING ||
            THIS_CPU->c_work.t_mode == TASKMODE_WAKEUP ||
            THIS_CPU->c_work.t_mode == TASKMODE_SLEEPING);

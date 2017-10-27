@@ -40,7 +40,7 @@
 #define __IO_FILE_IOCTRLZ   0x2000 /*< ??? */
 #define __IO_FILE_IOCOMMIT  0x4000 /*< ??? */
 #define __IO_FILE_IOLOCKED  0x8000 /*< ??? */
-#define __IO_FILE_IOLNIFTYY 0x80000000 /*< NOT ORIGINALLY DEFINED IN DOS: Determine 'isatty()' on first access and set '__IO_FILE_IOLNBUF' accordingly. */
+#define __IO_FILE_IOLNIFTYY 0x80000000 /*< NOT ORIGINALLY DEFINED IN DOS: Determine 'isatty()' on first access and set `__IO_FILE_IOLNBUF' accordingly. */
 
 
 #ifdef __BUILDING_LIBC
@@ -67,7 +67,7 @@ struct _IO_FILE {
                                         *  NOTE: When this value underflows, then the caller
                                         *        is responsible for loading more data into 'if_ptr' */
     char               *if_base;       /*< [0..if_bufsiz][owned_if(__IO_FILE_IOMALLBUF)] Base pointer to the used buffer. */
-    __UINT32_TYPE__     if_flag;       /*< Set of '__IO_FILE_IO*' */
+    __UINT32_TYPE__     if_flag;       /*< Set of `__IO_FILE_IO*' */
     int                 if_fd;         /*< [valid_if(__IO_FILE_IOSTRG)] Underlying file descriptor.
                                         *  NOTE: When available, this stream's file pointer is assumed
                                         *        to be located at the end of the loaded buffer. */

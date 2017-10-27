@@ -292,7 +292,7 @@ apic_exec_ipc(u32 icr_word, u32 icr2_word) {
 
 INTDEF byte_t cpu_bootstrap_32[];
 
-/* Active the given CPU and stop writing to 'ac_sigonoff'. */
+/* Active the given CPU and stop writing to `ac_sigonoff'. */
 PRIVATE SAFE errno_t KCALL
 cpu_do_activate_endwrite(struct cpu *__restrict self) {
  struct idt_pointer *gdt; bool need_ipi;
@@ -305,7 +305,7 @@ cpu_do_activate_endwrite(struct cpu *__restrict self) {
  /* Fix the CPU's state to allow it to actually start up. */
  ATOMIC_WRITE(self->c_arch.ac_mode,CPUMODE_STARTUP);
 
- /* Fill in the target CPU's GDT (Used to allow for self-identification; s.a.: 'SEG_CPUSELF') */
+ /* Fill in the target CPU's GDT (Used to allow for self-identification; s.a.: `SEG_CPUSELF') */
  gdt = (struct idt_pointer *)REALMODE_SYM(cpu_bootstrap_gdt);
  gdt->ip_limit = sizeof(gdt_builtin)-1;
  gdt->ip_gdt   = VCPU(self,cpu_gdt).ip_gdt;
@@ -352,7 +352,7 @@ cpu_do_activate_endwrite(struct cpu *__restrict self) {
    /* Mark the CPU as offline if we've failed. */
    assert(ATOMIC_READ(self->c_arch.ac_mode) == CPUMODE_STARTUP);
    /* NOTE: The race condition that could arise if startup did actually succeed,
-    *       but the CPU was too slow to respond is handled in 'cpu_bootstrap_c()' */
+    *       but the CPU was too slow to respond is handled in `cpu_bootstrap_c()' */
    ATOMIC_WRITE(self->c_arch.ac_mode,CPUMODE_OFFLINE);
    sig_endwrite(&self->c_arch.ac_sigonoff);
    goto init_fail;
@@ -680,7 +680,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  ldt_endwrite(&ldt_kernel);
 #endif /* !CONFIG_NO_LDT */
 
- /* NOTE: 'task_set_id()' only fails if there are no more IDs to hand out.
+ /* NOTE: `task_set_id()' only fails if there are no more IDs to hand out.
   *        But this function should only be called during early boot when
   *        it should be impossible for all PIDs to already be used up,
   *        meaning we are safe to assert that this always succeeds. */
@@ -798,9 +798,9 @@ cpu_sendipc_unlocked(struct cpu *__restrict self, irq_t intno) {
  assert(rwlock_writing(&apic_lock));
  was = PREEMPTION_PUSH();
  if (self == THIS_CPU) {
-  /* Hacky way of executing 'int $intno; ret' */
+  /* Hacky way of executing `int $intno; ret' */
   char code[3];
-  code[0] = 0xcd; /* 'int ...' */
+  code[0] = 0xcd; /* `int ...' */
   code[1] = intno;
   code[2] = 0xc3; /* 'ret' */
   __asm__ __volatile__("call *%0\n" : : "m" (code[0]) : "memory");

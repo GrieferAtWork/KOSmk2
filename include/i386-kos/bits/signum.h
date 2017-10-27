@@ -50,7 +50,7 @@ __SYSDECL_BEGIN
 #define __DOS_SIG_GET  ((__sighandler_t)2)  /*< Return current value. */
 #define __DOS_SIG_SGE  ((__sighandler_t)3)  /*< Signal gets error. */
 #define __DOS_SIG_ACK  ((__sighandler_t)4)  /*< Acknowledge. */
-#define __DOS_SIG_HOLD ((__sighandler_t)99) /*< Add signal to hold mask. (Needs a different value due to collision with '__DOS_SIG_GET') */
+#define __DOS_SIG_HOLD ((__sighandler_t)99) /*< Add signal to hold mask. (Needs a different value due to collision with `__DOS_SIG_GET') */
 
 #ifdef __USE_DOS
 #define SIG_GET   __DOS_SIG_GET

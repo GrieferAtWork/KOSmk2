@@ -327,7 +327,7 @@ SYSCALL_DEFINE2(nanosleep,USER struct timespec const *,rqtp,
  if (error == E_PTR(-ETIMEDOUT)) {
   /* Return EOK when the timeout expired. */
   error = E_PTR(-EOK);
-  /* If the timeout expired, fill in 'rmtp' with all ZEROes. */
+  /* If the timeout expired, fill in `rmtp' with all ZEROes. */
   if (rmtp) {
 no_remainder:
    if (memset_user(rmtp,0,sizeof(struct timespec)))
@@ -335,7 +335,7 @@ no_remainder:
   }
  } else if (rmtp) {
   /* Assume that an interrupt occurred and
-   * write the time we didn't wait to 'rmtp' */
+   * write the time we didn't wait to `rmtp' */
   now = jiffies;
   /* If the current point in time still lies
    * past the requested, return all ZEROes. */

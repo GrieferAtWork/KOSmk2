@@ -29,7 +29,7 @@ DECL_BEGIN
 
 #ifndef __iattrset_t_defined
 #define __iattrset_t_defined 1
-typedef u32 iattrset_t; /* Set of 'IATTR_*' */
+typedef u32 iattrset_t; /* Set of `IATTR_*' */
 #endif
 
 #ifndef __rdmode_t_defined
@@ -43,9 +43,9 @@ typedef int rdmode_t;   /* readdir-mode (One of `FILE_READDIR_*') */
 #define DENTRYNAME_SIZE          (__SIZEOF_POINTER__+2*__SIZEOF_SIZE_T__)
 struct dentryname {
  char  *dn_name; /*< [1..1|0..dn_size][owned] Name of the directory entry. */
- size_t dn_size; /*< Size of 'dn_name' in characters.
+ size_t dn_size; /*< Size of `dn_name' in characters.
                   *  NOTE: Only NULL for the filesystem root directory entry. */
- size_t dn_hash; /*< Filename hash for 'dn_name'. */
+ size_t dn_hash; /*< Filename hash for `dn_name'. */
 };
 
 #define DENTRYNAME_EMPTY_HASH 0 /* Directory entry hash for an empty filename. */

@@ -331,7 +331,7 @@ load_keymap_file(struct file *__restrict fp, bool log_errors) {
  }
 #else
  /* Now it gets ugly.
-  * >> Because 'active_keymap' is mapped as read-only in user-space,
+  * >> Because `active_keymap' is mapped as read-only in user-space,
   *    it had to be mapped the same way in kernel-space, too.
   *    But unlike other things that are mapped the same way,
   *    attempting to write here will not (and should not) act
@@ -367,19 +367,19 @@ load_keymap_file(struct file *__restrict fp, bool log_errors) {
  }
 #endif
 #endif
- syslog(LOG_IO|LOG_INFO,"[KEYMAP] Loaded new keymap from '%[file]'\n",fp);
+ syslog(LOG_IO|LOG_INFO,"[KEYMAP] Loaded new keymap from `%[file]'\n",fp);
 
  /* Cleanup... */
  free(buffer);
  return -EOK;
 err_invalid_file:
  if (log_errors)
-     syslog(LOG_IO|LOG_ERROR,"[KEYMAP] Invalid keymap file '%[file]'\n",fp);
+     syslog(LOG_IO|LOG_ERROR,"[KEYMAP] Invalid keymap file `%[file]'\n",fp);
  return -EINVAL;
 err:
  if (log_errors) {
   syslog(LOG_IO|LOG_ERROR,
-         "[KEYMAP] Failed to read keymap file '%[file]': %[errno]\n",
+         "[KEYMAP] Failed to read keymap file `%[file]': %[errno]\n",
          fp,-error);
  }
  return error;

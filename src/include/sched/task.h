@@ -62,7 +62,7 @@ DECL_BEGIN
 
 
 /* Switch secondary context registers such as LDT, page-directory or
- * the FPU-state as is required when switching from 'old' to 'new'. */
+ * the FPU-state as is required when switching from 'old' to `new'. */
 #define TASK_SWITCH_CONTEXT(old,new) \
 do{ struct mman *const new_mm = (new)->t_mman; \
     if ((old)->t_mman != new_mm) { \
@@ -86,21 +86,21 @@ do{ struct mman *const new_mm = (new)->t_mman; \
 struct task;
 
 /* Allocate a new task. The caller must initialize the following
- * members before calling 'task_start()' to start the thread:
- *  - t_cstate (Must be apart of 't_hstack')
+ * members before calling `task_start()' to start the thread:
+ *  - t_cstate (Must be apart of `t_hstack')
  *  - t_affinity (The set of CPUs that the task may run on)
  *  - t_ustack (Optional; leave it set to NULL if no kernel-managed user-stack is used)
- *  - t_hstack (Memory must be locked in-core; 'task_mkhstack' may be used for a quick setup)
+ *  - t_hstack (Memory must be locked in-core; `task_mkhstack' may be used for a quick setup)
  *              NOTE: Memory must be allocated as a virtual mapping in shared memory 
- *                    within `mman_kernel', and the address of the 'task' itself must
+ *                    within `mman_kernel', and the address of the `task' itself must
  *                    be used as argument for `closure' in `mman_mmap_unlocked',
  *                    while `notify' must remain NULL!
- *  - t_tlb (Optional; Use 'task_mktlb()'; pre-initialized to `PAGE_ERROR')
+ *  - t_tlb (Optional; Use `task_mktlb()'; pre-initialized to `PAGE_ERROR')
  *  - t_mman (As a real reference)
  *  - t_fdman (As a real reference)
- *  - t_sighand (As a real reference; Set to 'sighand_kernel' for kernel threads)
- *  - t_sigshare (As a real reference; Set to 'sigshare_kernel' for kernel threads')
- *  - t_priority (Optional; pre-initialized to 'TASKPRIO_DEFAULT')
+ *  - t_sighand (As a real reference; Set to `sighand_kernel' for kernel threads)
+ *  - t_sigshare (As a real reference; Set to `sigshare_kernel' for kernel threads')
+ *  - t_priority (Optional; pre-initialized to `TASKPRIO_DEFAULT')
  * @return: * :   A reference to the newly allocated task.
  * @return: NULL: Not enough available memory. */
 #define task_new() task_cinit((struct task *)kmemalign(TASK_ALIGN,sizeof(struct task), \
@@ -132,7 +132,7 @@ FUNDEF SAFE errno_t KCALL task_mkhstack(struct task *__restrict self, size_t n_b
 #endif /* !CONFIG_NO_JOBS */
 #define TASK_HOSTSTACK_ALIGN       16     /*< Alignment hint that should be respected by all host-stack allocators. */
 
-/* Similar to 'task_mkhstack()', but the stack is allocated lazily for user-space. */
+/* Similar to `task_mkhstack()', but the stack is allocated lazily for user-space. */
 FUNDEF SAFE errno_t KCALL task_mkustack(struct task *__restrict self, size_t n_bytes, size_t guard_size, u16 funds);
 #define TASK_USERSTACK_ADDRHINT    0x10000000 /*< Search for suitable memory below this address, but if no space is found, search above as well. */
 #define TASK_USERSTACK_DEFAULTSIZE 0x4000     /*< Default, generic size for user stacks. */
@@ -149,15 +149,15 @@ FUNDEF SAFE errno_t KCALL task_mkustack(struct task *__restrict self, size_t n_b
  * @return: -ENOMEM: Not enough available memory.
  * @return: -EINTR:  The calling thread was interrupted. */
 FUNDEF SAFE errno_t KCALL task_mktlb(struct task *__restrict self);
-/* Same as 'task_mktlb()', but the caller must be holding a write-lock on 'self->t_mman' */
+/* Same as `task_mktlb()', but the caller must be holding a write-lock on `self->t_mman' */
 FUNDEF SAFE errno_t KCALL task_mktlb_unlocked(struct task *__restrict self);
 
 /* mman notification used for tracking TLB mappings.
- * @param: closure: The 'struct task' associated with the TLB block. */
+ * @param: closure: The `struct task' associated with the TLB block. */
 FUNDEF ssize_t KCALL task_tlb_mnotify(unsigned int type, void *__restrict closure,
                                       struct mman *mm, ppage_t addr, size_t size);
 
-/* A safe wrapper around 'task_filltlb()' */
+/* A safe wrapper around `task_filltlb()' */
 FUNDEF void KCALL task_ldtlb(struct task *__restrict self);
 
 /* Fill in the TLB information block of the given task.
@@ -171,18 +171,18 @@ FUNDEF void KCALL task_filltlb(struct task *__restrict self);
 #define TASK_NOTIFY_PID_CHANGED(self) (void)0
 
 
-/* Set the leader/parent of a given task before being started with 'task_start()'
- * NOTE: Both of these functions must be called _exactly_ ONCE before 'task_start()'.
+/* Set the leader/parent of a given task before being started with `task_start()'
+ * NOTE: Both of these functions must be called _exactly_ ONCE before `task_start()'.
  * HINT: The bootstrap task is its own parent/leader.
  * @return: -EOK:    Successfully set the given task as leader/parent.
  * @return: -EINVAL: The given leader/parent task has been terminated.
  * @return: -ESRCH: [task_set_leader] The given 'leader' cannot be used as head of a
- *                                     process group ('TASKFLAG_NOTALEADER' is set). */
+ *                                     process group (`TASKFLAG_NOTALEADER' is set). */
 FUNDEF errno_t KCALL task_set_leader(struct task *__restrict self, struct task *__restrict leader);
 FUNDEF errno_t KCALL task_set_parent(struct task *__restrict self, struct task *__restrict parent);
 
 /* Add the task to the local/global PID namespace.
- * NOTE: Both of these functions must be called _exactly_ ONCE before 'task_start()'.
+ * NOTE: Both of these functions must be called _exactly_ ONCE before `task_start()'.
  * @return: -EOK:    Successfully added the task.
  * @return: -ENOMEM: Not enough available memory. */
 FUNDEF errno_t KCALL task_set_id(struct task *__restrict self, struct pid_namespace *__restrict ns);
@@ -194,20 +194,20 @@ FUNDEF errno_t KCALL task_set_id(struct task *__restrict self, struct pid_namesp
  * @return: -EOK:   Successfully started the task.
  * #ifdef CONFIG_SMP
  * @return: -ENODEV: Failed to find/start an accepting CPU to run `self' under.
- *             NOTE: This error is never returned when either '__bootcpu' (id #0) is allowed.
+ *             NOTE: This error is never returned when either `__bootcpu' (id #0) is allowed.
  * #endif
  * HINT: Even in the event of this function failing, you
- *       may still use 'TASK_DECREF()' to destroy the task.
+ *       may still use `TASK_DECREF()' to destroy the task.
  */
 FUNDEF errno_t KCALL task_start(struct task *__restrict self);
 
 #ifdef CONFIG_SMP
 /* Safely set the CPU that `self' is running on.
  * NOTE: If `self' is the caller's task, it this function will return
- *       in the context of 'new_cpu' (UPON_SUCCESS(THIS_CPU == new_cpu))
- * NOTE: This function is a no-op when 'new_cpu' already was the running CPU.
- * NOTE: The caller is responsible for ensuring that `self' is allowed to be running on 'new_cpu'
- *      (You should be hold a read-lock to 't_affinity_lock' when calling this function)
+ *       in the context of `new_cpu' (UPON_SUCCESS(THIS_CPU == new_cpu))
+ * NOTE: This function is a no-op when `new_cpu' already was the running CPU.
+ * NOTE: The caller is responsible for ensuring that `self' is allowed to be running on `new_cpu'
+ *      (You should be hold a read-lock to `t_affinity_lock' when calling this function)
  * @return: * :         The old CPU that `self' was running under before.
  * @return: -ECOMM:     Failed to communicate with the CPU that `self' was (is) running under.
  * @return: E_ISERR(*): Failed to change the task's CPU for some reason. */
@@ -219,7 +219,7 @@ task_setcpu(struct task *__restrict self,
  * WARNING: By the time this call returns, the task may
  *          have already switched to a different CPU!
  * NOTE: When stable access to the task's cpu is required,
- *      'TASK_CPULOCK_(READ|WRITE)' must be used. */
+ *      `TASK_CPULOCK_(READ|WRITE)' must be used. */
 #define task_getcpu(self) ATOMIC_READ((self)->t_cpu)
 #else
 #define task_getcpu(self) (&__bootcpu)
@@ -258,7 +258,7 @@ FUNDEF void (KCALL task_endnointr)(void);
 
 /* Push/pop the current set of wait-signals.
  * >> Required when a task is forced to allocate more signal-wait
- *    slots, as 'malloc()' uses functions like 'rwlock_write()'
+ *    slots, as `malloc()' uses functions like 'rwlock_write()'
  *    internally, which in turn would normally register new
  *    signals to-be waited for, as well as run `task_waitfor()',
  *    which clears all wait-for signals.
@@ -272,21 +272,21 @@ FUNDEF void (KCALL task_endnointr)(void);
  * HINT: When doing this, transfer signals one at a time while holding
  *       temporary write-locks on each. (Nothing will be able to modify
  *       any of the signal's pointers while you're doing this)
- *       Also make sure to add an exception to 'sig_vsendone_unlocked()'
+ *       Also make sure to add an exception to `sig_vsendone_unlocked()'
  *       for handling signals being sent to tasks not actively having
  *       the signal apart of their wait-for set.
- * NOTE: Calling 'task_pushwait()' will transfer all signals that the
- *       calling thread is currently waiting for to 'sigs', meaning
+ * NOTE: Calling `task_pushwait()' will transfer all signals that the
+ *       calling thread is currently waiting for to `sigs', meaning
  *       that following a call to this function, the caller's set
  *       of wait-for signals will be empty.
- *    >> Similarly, 'task_popwait()' overrides the calling threads
- *       signal set with that inside the given 'sigs', discarding
+ *    >> Similarly, `task_popwait()' overrides the calling threads
+ *       signal set with that inside the given `sigs', discarding
  *       any signal (either pending, or received) that may have been
- *       active at the time the same way '(void)task_clrwait()' would.
+ *       active at the time the same way `(void)task_clrwait()' would.
  * WARNING: Attempting to restore a signal set in a task other than
  *          the one it was created by causes undefined behavior.
  * WARNING: Attempting to restore a signal set not previously created
- *          by another call to 'task_pushwait()' also causes undefined
+ *          by another call to `task_pushwait()' also causes undefined
  *          behavior.
  * WARNING: As far as saving/restoring signal sets goes, unless documented
  *          otherwise, signal sets must be caller-saved around any kind
@@ -306,16 +306,16 @@ FUNDEF SAFE void KCALL task_popwait(struct tasksig *__restrict sigs);
 
 /* Low-level wait for signals with optional timeout.
  * NOTE: During this operation, all signals previously
- *       registered using 'task_addwait' are removed.
+ *       registered using `task_addwait' are removed.
  * HINT: In the event that the caller is not waiting
  *       for any signals, they will become suspended
  *       until being interrupted due to being terminated
  *      (on if the caller was critical at the time), or
- *       by being interrupted ('task_interrupt()'), such
- *       as by being sent a signal ('task_kill()'), both
+ *       by being interrupted (`task_interrupt()'), such
+ *       as by being sent a signal (`task_kill()'), both
  *       of with will result in `-EINTR' being returned,
- *       or finally (only when non-NULL), the given 'abstime'
- *       has expired, causing '-ETIMEDOUT' to be returned.
+ *       or finally (only when non-NULL), the given `abstime'
+ *       has expired, causing `-ETIMEDOUT' to be returned.
  * NOTE: You may imaging this function being implemented as follows:
  *      (But be aware that this is where ~TRUE~ scheduling takes places,
  *       meaning that there actually isn't any busy waiting involved!)
@@ -345,7 +345,7 @@ FUNDEF struct sig *KCALL task_waitfor_t(struct timespec const *abstime);
  * @return: NULL: No signals in the calling thread's waiting-set has been sent. */
 FUNDEF struct sig *KCALL task_trywait(void);
 
-/* Same as 'task_trywait() != NULL', but don't clear the signal-receive
+/* Same as `task_trywait() != NULL', but don't clear the signal-receive
  * vector in the event that a signal has already been sent and received.
  * @return: true:  A pending signal has been received.
  * @return: false: Either the caller is not receiving any signals,
@@ -363,7 +363,7 @@ FUNDEF bool KCALL task_tstwait(void);
  * WARNING: The caller is responsible for holding a write-lock to 's'
  * @param: buffer:   An optional user-space pointer to a buffer to-be
  *                   filled with data sent over the given signal.
- * @param: bufsize:  The size of 'buffer' (in bytes).
+ * @param: bufsize:  The size of `buffer' (in bytes).
  * @return: -EOK:    Successfully added the given signal (guarantied for the first signal)
  * @return: -ENOMEM: Not enough available memory to allocate more signal slots. */
 FUNDEF SAFE errno_t KCALL task_addwait(struct sig *__restrict s, USER void *buffer, size_t bufsize);
@@ -399,11 +399,11 @@ typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
 
 
 /* Recursively suspend/resume the given task.
- * WARNING: '-EINVAL' can only be returned when the
+ * WARNING: `-EINVAL' can only be returned when the
  *          suspension counter of `self' rolls over.
  *          With that in mind, don't rely on the return value
  *          to determine if a task has already terminated!
- * @param: mode:     Set of 'TASK_SUSP_*'
+ * @param: mode:     Set of `TASK_SUSP_*'
  * @return: -EOK:    Successfully suspended the given task.
  * @return: -EINVAL: The given task has terminated.
  * @return: -ECOMM:  Failed to communicate with the CPU the thread is running under.
@@ -415,10 +415,10 @@ FUNDEF errno_t KCALL task_resume_cpu_endwrite(struct task *__restrict self, u32 
 #define TASK_SUSP_REC  0x00 /*< Recursively suspend/resume the task. */
 #define TASK_SUSP_USER 0x00 /*< Use user-level recursion for suspend/resume. */
 #define TASK_SUSP_HOST 0x01 /*< Use host-level recursion for suspend/resume. */
-#define TASK_SUSP_NOW  0x02 /*< NOTE: May only be used with 'TASK_SUSP_USER': Suspend/resume the task _NOW_. */
+#define TASK_SUSP_NOW  0x02 /*< NOTE: May only be used with `TASK_SUSP_USER': Suspend/resume the task _NOW_. */
 
 /* Test for pending interrupts within the calling thread.
- * NOTE: No-op when interrupts are disabled using 'task_nointr()'
+ * NOTE: No-op when interrupts are disabled using `task_nointr()'
  * @return: -EOK:   No pending interrupts were triggered.
  * @return: -EINTR: The calling thread was interrupted. */
 FUNDEF errno_t KCALL task_testintr(void);
@@ -428,7 +428,7 @@ FUNDEF errno_t KCALL task_testintr(void);
 #define task_intr_later() (void)ATOMIC_FETCHOR(THIS_TASK->t_flags,TASKFLAG_INTERRUPT)
 
 /* Terminate the given task using the provided exitcode.
- * NOTE: If 'THIS_TASK' is passed for `self', and the calling
+ * NOTE: If `THIS_TASK' is passed for `self', and the calling
  *       thread isn't executing within a critical section,
  *       this function doesn't return.
  * @return: -EOK:    Successfully terminated the given task.
@@ -439,7 +439,7 @@ FUNDEF errno_t KCALL
 task_terminate(struct task *__restrict self,
                void *exitcode);
 
-/* Same as 'task_terminate()', but allows the caller to terminate
+/* Same as `task_terminate()', but allows the caller to terminate
  * a task while holding a write-lock on a given CPU, that will be
  * dropped by a call to this function.
  * The caller must also disable preemption before calling this function. */
@@ -466,7 +466,7 @@ FUNDEF errno_t KCALL task_join(struct task *__restrict self, jtime_t timeout, vo
 FUNDEF void KCALL task_yield(void);
 
 /* Unlock the associated CPU and pause execution until the task is interrupted.
- * NOTE: The caller must have disabled pre-emption and be holding a write-lock to 'THIS_CPU'
+ * NOTE: The caller must have disabled pre-emption and be holding a write-lock to `THIS_CPU'
  * @return: -EINTR:      The calling thread was interrupted.
  * @return: -ETIMEDOUT: [abstime != NULL || abstime != JTIME_INFINITE] The given timeout has expired. */
 FUNDEF SAFE errno_t KCALL task_pause_cpu_endwrite(jtime_t abstime);
@@ -486,28 +486,28 @@ FUNDEF errno_t KCALL task_get_affinity(struct task *__restrict self, USER __cpu_
 FUNDEF errno_t KCALL task_set_affinity(struct task *__restrict self, USER __cpu_set_t const *affinity);
 
 /* Tries to un-share the memory manager associated with the current
- * task by creating a copy and replacing 'THIS_TASK->t_mman' with it
+ * task by creating a copy and replacing `THIS_TASK->t_mman' with it
  * when its reference counter is greater than 1.
- * WARNING: Don't call this function while inside a 'TASK_PDIR_KERNEL_BEGIN()' block.
+ * WARNING: Don't call this function while inside a `TASK_PDIR_KERNEL_BEGIN()' block.
  * @param: unmap_old_ustack: When true, unmap the user-space stack within the old memory manager.
- *                           This argument is set to 'true' when called because of an 'unshare()'
+ *                           This argument is set to `true' when called because of an `unshare()'
  *                          (causing the stack to disappear from the old VM-space), but kept
- *                           as 'false' when called due to a 'fork()' (to allow for continued
+ *                           as `false' when called due to a `fork()' (to allow for continued
  *                           execution using the original stack).
- * @return: -EOK:       The mman associated with 'THIS_TASK' is now unique.
+ * @return: -EOK:       The mman associated with `THIS_TASK' is now unique.
  * @return: -ENOMEM:    Not enough available memory.
  * @return: -EINTR:     The calling thread was interrupted.
- * @return: E_ISERR(*): Some error code returned by an 'mb_notify(MNOTIFY_UNSHARE_DROP)' callback. */
+ * @return: E_ISERR(*): Some error code returned by an `mb_notify(MNOTIFY_UNSHARE_DROP)' callback. */
 FUNDEF SAFE errno_t KCALL task_unshare_mman(bool unmap_old_ustack);
 
 /* Unshare the calling task's FD-manager.
- * @return: -EOK:    The fdman associated with 'THIS_TASK' is now unique.
+ * @return: -EOK:    The fdman associated with `THIS_TASK' is now unique.
  * @return: -ENOMEM: Not enough available memory.
  * @return: -EINTR:  The calling thread was interrupted. */
 FUNDEF SAFE errno_t KCALL task_unshare_fdman(void);
 
 /* Unshare the calling task's signal handlers.
- * @return: -EOK:    The sighand associated with 'THIS_TASK' is now unique.
+ * @return: -EOK:    The sighand associated with `THIS_TASK' is now unique.
  * @return: -ENOMEM: Not enough available memory.
  * @return: -EINTR:  The calling thread was interrupted. */
 FUNDEF SAFE errno_t KCALL task_unshare_sighand(void);

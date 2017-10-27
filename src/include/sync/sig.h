@@ -203,7 +203,7 @@ struct sigset;
  *     keep our deer reader interested while hopefully getting
  *     them to learn something along the way ===
  * 
- * See you 'round!
+ * See you `round!
  */
 
 
@@ -231,13 +231,13 @@ struct sigset;
  * some special information to be told to who-ever is
  * getting hit by it.
  * 
- * You can use what I call vsend/vrecv (The 'v' stands for 'value') to
+ * You can use what I call vsend/vrecv (The 'v' stands for `value') to
  * include some Impulse-specific data to be transferred to whoever is
  * on the receiving end of said Impulse (Then often referred to as 'v-signal').
  *
  * An extension to signals, these functions allow tasks to wait
  * for a signal that broadcasts/generates a value alongside the Impulse.
- * HINT: To achieve this, KOS uses the 't_sigval' pointer with the ktask structure.
+ * HINT: To achieve this, KOS uses the `t_sigval' pointer with the ktask structure.
  * 
  * - Using vsend/vrecv, you can easily create a signal-subsystem that
  *   is capable of some interesting things, such as knowing which signal
@@ -319,11 +319,11 @@ struct sig {
 #define sig_endwrite(x)    atomic_rwlock_endwrite(&(x)->s_lock)
 #endif
 
-/* Receive a a signal, only returning once it is send, or 'abstime' expires.
+/* Receive a a signal, only returning once it is send, or `abstime' expires.
  * NOTE: '*_endwrite' will unlock an exclusive (write) lock on the
  *       signal, while the other functions are simply wrappers that
  *       acquire said lock before calling the '*_endwrite' versions.
- * HINT: 'JTIME_INFINITE' may be passed for 'abstime' to use an infinite timeout.
+ * HINT: 'JTIME_INFINITE' may be passed for `abstime' to use an infinite timeout.
  * @return: -EOK:       The signal was successfully received.
  * @return: -ETIMEDOUT: The given timeout has expired.
  * @return: -EINTR:     The calling thread was interrupted. */
@@ -343,7 +343,7 @@ FUNDEF errno_t KCALL sig_vrecv_endwrite(struct sig *__restrict sig, USER void *m
 #define sig_vrecv_endwrite(sig,msg_buf,bufsize) sig_vtimedrecv_endwrite(sig,msg_buf,bufsize,JTIME_INFINITE)
 #endif
 
-/* Send the specified signal to at most 'max_threads' threads,
+/* Send the specified signal to at most `max_threads' threads,
  * returning the amount of threads that received the signal. */
 FUNDEF size_t KCALL sig_send(struct sig *__restrict sig, size_t max_threads);
 FUNDEF size_t KCALL sig_send_unlocked(struct sig *__restrict sig, size_t max_threads);
@@ -361,8 +361,8 @@ FUNDEF size_t KCALL sig_vbroadcast_unlocked(struct sig *__restrict sig, void *ms
 #define sig_vbroadcast_unlocked(sig,msg,msgsize) sig_vsend_unlocked(sig,msg,msgsize,(size_t)-1)
 #endif
 
-/* Wake the first task from 'sig'
- * NOTE: The caller is responsible for holding a write-lock on 'sig'.
+/* Wake the first task from `sig'
+ * NOTE: The caller is responsible for holding a write-lock on `sig'.
  * @return: true:  Successfully woken one task.
  * @return: false: No more tasks left to wake. */
 FUNDEF bool KCALL

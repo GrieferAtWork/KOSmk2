@@ -224,7 +224,7 @@ INTERN int LIBCCALL libc_getloadavg(double loadavg[], int nelem) {
 
 
 /* DISCALIMER: The qsort() implementation below has been taken directly
- *             from glibc ('/stdlib/qsort.c'), before being retuned and
+ *             from glibc (`/stdlib/qsort.c'), before being retuned and
  *             formatted to best work with KOS.
  *          >> For better source documentation, consult the original function!
  */

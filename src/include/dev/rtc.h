@@ -32,8 +32,8 @@ struct rtc {
  struct chrdev   r_dev; /*< Underlying character device. */
  struct timespec r_res; /*< [const] Hardware limitation on the max possible resolution. */
  /* Get/Set the time represented by this RTC.
-  * NOTE: Only 'r_get()' is mandatory. - 'r_set()' does not need to be implemented.
-  * NOTE: Upon success, 'r_set()' stores the actualy written time back into 'val' */
+  * NOTE: Only `r_get()' is mandatory. - `r_set()' does not need to be implemented.
+  * NOTE: Upon success, `r_set()' stores the actualy written time back into `val' */
  void    (KCALL *r_get)(struct rtc *__restrict self, struct timespec *__restrict val);
  errno_t (KCALL *r_set)(struct rtc *__restrict self, struct timespec *__restrict val);
 };
@@ -43,7 +43,7 @@ struct rtc {
 
 /* Allocate & initialize a new RTC clock device.
  * The caller must still initialize:
- *   - r_dev.cd_device.d_node.i_super (Use 'device_setup')
+ *   - r_dev.cd_device.d_node.i_super (Use `device_setup')
  *   - r_dev.cd_device.d_node.i_data (Optionally)
  *   - r_res
  *   - r_get
@@ -61,20 +61,20 @@ DATDEF struct inodeops const rtc_ops;
 /* The default system RTC */
 DATDEF struct rtc default_system_rtc;
 
-/* Get/Set the system rtc used by 'sysrtc_get()' and 'sysrtc_set()' */
+/* Get/Set the system rtc used by `sysrtc_get()' and `sysrtc_set()' */
 FUNDEF REF struct rtc *KCALL get_system_rtc(void);
 FUNDEF bool KCALL set_system_rtc(struct rtc *__restrict rtc, bool replace_existing);
 
-/* Get/Set the current time using the active system RTC. (may be used for 'date')
- * NOTE: 'sysrtc_get()' makes use of 'sysrtc_periodic()' to
- *        provide a clock resolution more precise than 'r_res',
- *        meaning that this function does more than 'rtc_get()' would. */
+/* Get/Set the current time using the active system RTC. (may be used for `date')
+ * NOTE: `sysrtc_get()' makes use of `sysrtc_periodic()' to
+ *        provide a clock resolution more precise than `r_res',
+ *        meaning that this function does more than `rtc_get()' would. */
 FUNDEF SAFE void KCALL sysrtc_get(struct timespec *__restrict val);
 FUNDEF SAFE errno_t KCALL sysrtc_set(struct timespec const *__restrict val);
 
 /* Making use of PIT interrupts, this function is called periodically
  * in order to constantly recalibrate the high precision clock to provide
- * better timer resolution than would other be possible by 'r_res'. */
+ * better timer resolution than would other be possible by `r_res'. */
 FUNDEF SAFE void KCALL sysrtc_periodic(void);
 
 
@@ -100,7 +100,7 @@ FUNDEF SAFE void KCALL sysrtc_periodic(void);
 #else
 #define MSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000l/HZ))
 #endif
-/* Assume that 'HZ <= 1000000l' for the entire kernel. */
+/* Assume that `HZ <= 1000000l' for the entire kernel. */
 #define USEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000l/HZ))
 #define NSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000000l/HZ))
 #define FSEC_TO_JIFFIES(n) (jtime_t)((n)/(1000000000000000ll/HZ))

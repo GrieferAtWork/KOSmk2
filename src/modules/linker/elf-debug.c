@@ -90,7 +90,7 @@ DECL_BEGIN
 typedef struct PACKED {
 union PACKED {
   u32   li_length32; /* If this is 0xffffffff, in the file a 64-bit length follows and the header is 64-bit as well. */
-  u64   li_length;   /* WARNING: In-file this describes the chunk-size after this field, but in-mem it is the chunk-size after this header (aka. at 'li_opcodes'). */
+  u64   li_length;   /* WARNING: In-file this describes the chunk-size after this field, but in-mem it is the chunk-size after this header (aka. at `li_opcodes'). */
   size_t li_lengthI;
 };
   u16   li_version;
@@ -120,14 +120,14 @@ union{
   size_t                   c_chid; /*< Unique chunk ID. */
   pos_t                    c_addr; /*< Absolute in-file offset pointing after the DWARF header. */
 #ifdef __INTELLISENSE__
-  size_t                   c_size; /*< Absolute size of the in-file data block located at 'c_addr' */
+  size_t                   c_size; /*< Absolute size of the in-file data block located at `c_addr' */
 #else
 #define c_size c_lnfo.li_lengthI
 #endif
   char                    *c_dtab;  /*< [valid_if(c_data != NULL)] Directory table start. */
-  size_t                   c_dtabc; /*< [valid_if(c_data != NULL)] Amount of ZERO-terminated strings in 'c_dtab'. */
+  size_t                   c_dtabc; /*< [valid_if(c_data != NULL)] Amount of ZERO-terminated strings in `c_dtab'. */
   char                    *c_ftab;  /*< [valid_if(c_data != NULL)] File table start. */
-  size_t                   c_ftabc; /*< [valid_if(c_data != NULL)] Amount of ZERO-terminated strings in 'c_ftab'. */
+  size_t                   c_ftabc; /*< [valid_if(c_data != NULL)] Amount of ZERO-terminated strings in `c_ftab'. */
   u8                      *c_code;  /*< [valid_if(c_data != NULL)] Code start address. */
   u8                      *c_codee; /*< [valid_if(c_data != NULL)] Code end address. */
 } chunk_t;
@@ -135,8 +135,8 @@ union{
 #define SYMTAB_MAXBUFSIZ 0x1000 /* Max buffer size (in bytes) for simultaneously loaded symbols. */
 typedef struct {
   Elf_Off  st_next; /*< Offset into :d_symtab (from :d_symtab.sh_offset) of the next-to-load buffer. */
-  size_t   st_syma; /*< [const][== MIN(SYMTAB_MAXBUFSIZ,:d_symtab.sh_size)/:d_symtab.sh_entsize] Allocated symbol buffer size (Only when 'st_symv != NULL'). */
-  size_t   st_symc; /*< [<= st_syma] Amount of symbol loaded within 'st_symv' */
+  size_t   st_syma; /*< [const][== MIN(SYMTAB_MAXBUFSIZ,:d_symtab.sh_size)/:d_symtab.sh_entsize] Allocated symbol buffer size (Only when `st_symv != NULL'). */
+  size_t   st_symc; /*< [<= st_syma] Amount of symbol loaded within `st_symv' */
   Elf_Sym *st_symv; /*< [0..st_symc|alloc(st_syma)|ELEMSIZE(:d_symtab.sh_entsize)][owned] Vector of loaded ELF symbols. */
 } symtab_t;
 
@@ -150,8 +150,8 @@ typedef struct {
   Elf_Shdr                 d_debugline; /*< The section header for DWARF's `.debug_line' */
   Elf_Shdr                 d_symtab;    /*< The section header for ELF's `.symtab' */
   Elf_Shdr                 d_strtab;    /*< The section header for ELF's `.strtab' (Connected to `.symtab') */
-#define DEBUG_CHUNKSDONE   0x00000001   /*< Set once 'd_chunkv' has been loaded. */
-  u32                      d_flags;     /*< Set of 'DEBUG_*' */
+#define DEBUG_CHUNKSDONE   0x00000001   /*< Set once `d_chunkv' has been loaded. */
+  u32                      d_flags;     /*< Set of `DEBUG_*' */
   size_t                   d_chunkc;    /*< Chunk count. */
   chunk_t                 *d_chunkv;    /*< [0..d_chunkc][owned] */
   pos_t                    d_nextchunk; /*< Absolute in-file address of the next chunk. */
@@ -168,7 +168,7 @@ PRIVATE ATTR_MALLOC char *KCALL
 debug_name_at(debug_t *__restrict self, Elf_Word addr) {
  char *result,*newres; ssize_t maxlen;
  if (addr >= self->d_strtab.sh_size) return NULL;
- /* Allocate and read a zero-terminated string at `addr' in 'self->d_strtab' */
+ /* Allocate and read a zero-terminated string at `addr' in `self->d_strtab' */
  maxlen = MIN((SHSTRTAB_MAXNAM+1)*sizeof(char),
                self->d_strtab.sh_size-addr);
  result = (char *)malloc((size_t)maxlen);
@@ -385,7 +385,7 @@ typedef struct {
   size_t    file;
   ssize_t   line;
   size_t    column;
-  uintptr_t flags; /* Set of 'VIRTINFO_FLAG_*' */
+  uintptr_t flags; /* Set of `VIRTINFO_FLAG_*' */
   uintptr_t isa;
   uintptr_t discriminator;
   u8        op_index;
@@ -777,7 +777,7 @@ fill_missing_ops_per_insn:
   }
  } else {
   header_size -= 8;
-  /* Expand 'li_prologue_length' */
+  /* Expand `li_prologue_length' */
   memmove((byte_t *)&self->c_lnfo+offsetafter(DWARF2_Internal_LineInfo,li_prologue_length),
           (byte_t *)&self->c_lnfo+offsetafter(DWARF2_Internal_LineInfo,li_prologue_length32),
            sizeof(DWARF2_Internal_LineInfo)-offsetafter(DWARF2_Internal_LineInfo,li_prologue_length));

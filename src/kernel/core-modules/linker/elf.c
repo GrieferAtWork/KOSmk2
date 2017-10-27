@@ -55,13 +55,13 @@ DECL_BEGIN
  * to prevent exploiting kernel memory with unchecked limits. */
 #define ELF_PHNUM_MAX    256
 
-/* NOTE: We allow for 'p_flags' and 'p_align' to be missing.
- *    >> 'p_flags' defaults to 'PF_X|PF_W|PF_R' and
- *       'p_align' isn't used to begin with. */
+/* NOTE: We allow for `p_flags' and `p_align' to be missing.
+ *    >> `p_flags' defaults to 'PF_X|PF_W|PF_R' and
+ *       `p_align' isn't used to begin with. */
 #define ELF_ENTSIZE_MIN  offsetafter(Elf_Phdr,p_memsz)
 #define ELF_ENTSIZE_MAX (sizeof(Elf_Phdr)*16)
 
-typedef uintptr_t elf_str_t; /* Offset into the string table 'd_strtab' (when present) */
+typedef uintptr_t elf_str_t; /* Offset into the string table `d_strtab' (when present) */
 
 struct elf_rel {
  maddr_t er_rel;    /*< The address of the relocations table. */
@@ -92,11 +92,11 @@ struct elf_dynamic {
  maddr_t   d_init;             /*< [valid_if(ELF_DYNAMIC_HAS_INIT)] Address of an init-function. */
  maddr_t   d_fini;             /*< [valid_if(ELF_DYNAMIC_HAS_FINI)] Address of an fini-function. */
  maddr_t   d_preinit_array;    /*< [valid_if(d_preinit_array_sz != 0)] Address of an array of init-functions. */
- size_t    d_preinit_array_sz; /*< Amount of init-functions found at 'e_init_array'. */
+ size_t    d_preinit_array_sz; /*< Amount of init-functions found at `e_init_array'. */
  maddr_t   d_init_array;       /*< [valid_if(d_init_array_sz != 0)] Address of an array of init-functions. */
- size_t    d_init_array_sz;    /*< Amount of init-functions found at 'e_init_array'. */
+ size_t    d_init_array_sz;    /*< Amount of init-functions found at `e_init_array'. */
  maddr_t   d_fini_array;       /*< [valid_if(d_fini_array_sz != 0)] Address of an array of fini-functions. */
- size_t    d_fini_array_sz;    /*< Amount of fini-functions found at 'e_fini_array'. */
+ size_t    d_fini_array_sz;    /*< Amount of fini-functions found at `e_fini_array'. */
  /* String table information. */
  elf_str_t d_name;             /*< [valid_if(ELF_DYNAMIC_HAS_NAME)] Module name override. */
  elf_str_t d_runpath;          /*< [valid_if(ELF_DYNAMIC_HAS_RUNPATH)] Search path used when scanning for dependencies. */
@@ -319,7 +319,7 @@ elf_load_dyn(struct elf_module *__restrict self,
   if (dyn->d_tag >= DT_NUM) break;
   /* Warn about unknown core dynamic entries. */
   syslog(LOG_EXEC|LOG_WARN,
-         COLDSTR("[ELF] Unknown 'PT_DYNAMIC' segment entry in '%[file]' taged as %.8x\n"),
+         COLDSTR("[ELF] Unknown `PT_DYNAMIC' segment entry in `%[file]' taged as %.8x\n"),
          fp,dyn->d_tag);
   break;
  }
@@ -483,7 +483,7 @@ log_invalid_addr(struct elf_module *__restrict self,
                  uintptr_t p, size_t s,
                  uintptr_t rp, size_t re) {
  syslog(LOG_EXEC|LOG_ERROR,
-        COLDSTR("[ELF] Faulty address %p...%p outside of %p...%p encountered during relocations in '%[file]'\n"),
+        COLDSTR("[ELF] Faulty address %p...%p outside of %p...%p encountered during relocations in `%[file]'\n"),
         p,p+s-1,rp,re-1,self->e_module.m_file,self->e_module.m_size);
 }
 
@@ -492,7 +492,7 @@ log_invalid_addr(struct elf_module *__restrict self,
 #elif defined(__x86_64__)
 #   define R_RELATIVE  R_X86_64_RELATIVE
 #else
-#   warning "Missing 'R_RELATIVE' for this platform?"
+#   warning "Missing `R_RELATIVE' for this platform?"
 #endif
 
 #define DATA_CHECK(p,s) \
@@ -543,7 +543,7 @@ elf_symaddr(struct instance *__restrict inst,
     /* Nope. - The hash-table is broken. */
 broken_hash:
     syslog(LOG_EXEC|LOG_WARN,
-           COLDSTR("[ELF] Module '%[file]' contains invalid hash table\n"),
+           COLDSTR("[ELF] Module `%[file]' contains invalid hash table\n"),
            self->e_module.m_file);
     ATOMIC_FETCHAND(self->e_dynamic.d_flags,~(ELF_DYNAMIC_HAS_HASH));
    } else {
@@ -588,7 +588,7 @@ next_candidate:
     }
 #if 0
     syslog(LOG_EXEC|LOG_WARN,
-           COLDSTR("[ELF] Failed to find symbol %q in hash table of '%[file]' (hash = %x)\n"),
+           COLDSTR("[ELF] Failed to find symbol %q in hash table of `%[file]' (hash = %x)\n"),
            name,self->m_file,hash);
 #endif
    }
@@ -807,10 +807,10 @@ got_symbol:
       *       because the symbol may be apart of a different module.
       *       But if it is, it would be too expensive to search
       *       the potentially _very_ large chain of loaded modules
-      *       for the one containing 'rel_value'.
+      *       for the one containing `rel_value'.
       * >> So instead we rely on the fact that the caller is capturing
       *    page faults, and simply go ahead and copy the data.
-      *    If it fails, the caller will correctly determine '-EFAULT'
+      *    If it fails, the caller will correctly determine `-EFAULT'
       *    and everything can go on as normal without us having to
       *    waste a whole much of time validating a pointer. */
      if (rel_value+sym->st_size >= KERNEL_BASE) {
@@ -823,7 +823,7 @@ got_symbol:
            sym_name >= string_end)
            sym_name = "??" "?";
        syslog(LOG_EXEC|LOG_ERROR,
-              COLDSTR("[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from '%[file]'\n"),
+              COLDSTR("[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from `%[file]'\n"),
               sym_name,rel_value,rel_value+sym->st_size-1,self->e_module.m_file);
        goto end;
       }
@@ -879,7 +879,7 @@ got_symbol:
 
    default:
     syslog(LOG_EXEC|LOG_WARN,
-           COLDSTR("[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in '%[file]'\n"),
+           COLDSTR("[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in `%[file]'\n"),
          ((uintptr_t)iter-DATAADDR(relgroup_iter->er_rel))/relgroup_iter->er_relent,
            iter->r_offset,type,(unsigned)(ELF_R_SYM(iter->r_info)),self->e_module.m_file);
     break;
@@ -943,7 +943,7 @@ elf_loader(struct file *__restrict fp) {
      goto enoexec;
 
  /* Check some more things concerning the size of headers. */
- /* NOTE: We don't check for anything starting at 'e_shentsize',
+ /* NOTE: We don't check for anything starting at `e_shentsize',
   *       as for all we care, that part of the header doesn't
   *       even need to exist. - This is a PHDR-only loader!
   *      (After writing a compiler, I've learned from the
@@ -962,7 +962,7 @@ elf_loader(struct file *__restrict fp) {
  /* Prevent exploits... */
  if (ehdr.e_phnum > ELF_PHNUM_MAX) {
   syslog(LOG_EXEC|LOG_ERROR,
-         COLDSTR("[ELF] Elf binary '%[file]' PHDR count %u exceeds limit of %u\n"),
+         COLDSTR("[ELF] Elf binary `%[file]' PHDR count %u exceeds limit of %u\n"),
          fp,(unsigned)ehdr.e_phnum,ELF_PHNUM_MAX);
   goto enoexec;
  }
@@ -970,7 +970,7 @@ elf_loader(struct file *__restrict fp) {
  /* Only warn if the binary wasn't compiled for SYSV (which KOS tries to follow) */
  if (ehdr.e_ident[EI_OSABI] != ELFOSABI_SYSV) {
   syslog(LOG_EXEC|LOG_WARN,
-         COLDSTR("[ELF] Loading ELF binary '%[file]' that isn't SYSV (EI_OSABI = %d)\n"),
+         COLDSTR("[ELF] Loading ELF binary `%[file]' that isn't SYSV (EI_OSABI = %d)\n"),
          fp,(int)ehdr.e_ident[EI_OSABI]);
  }
 
@@ -979,7 +979,7 @@ elf_loader(struct file *__restrict fp) {
  if (ehdr.e_version           != EV_CURRENT ||
      ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
   syslog(LOG_EXEC|LOG_WARN,
-         COLDSTR("[ELF] Loading ELF binary '%[file]' that has an unrecognized version (%d/%d)\n"),
+         COLDSTR("[ELF] Loading ELF binary `%[file]' that has an unrecognized version (%d/%d)\n"),
          ehdr.e_version,ehdr.e_ident[EI_VERSION]);
  }
 
@@ -1027,14 +1027,14 @@ elf_loader(struct file *__restrict fp) {
   size_t max_size,n_load_hdr = 0;
   size_t min_alignment = 1;
   end = (iter = phdrv)+ehdr.e_phnum;
-  /* TODO: Handle special case: 'PT_INTERP' */
+  /* TODO: Handle special case: `PT_INTERP' */
   for (; iter != end; ++iter) {
    if (iter->p_type == PT_LOAD &&
        iter->p_memsz) ++n_load_hdr;
   }
   if (!n_load_hdr) {
    syslog(LOG_EXEC|LOG_WARN,
-          COLDSTR("[ELF] ELF binary '%[file]' doesn't contain any PT_LOAD headers\n"),
+          COLDSTR("[ELF] ELF binary `%[file]' doesn't contain any PT_LOAD headers\n"),
           fp);
    goto enoexec;
   }
@@ -1113,7 +1113,7 @@ elf_loader(struct file *__restrict fp) {
 #if ELF_USING_RELA
   result->e_dynamic.d_rela.er_relent   = sizeof(Elf_Rela);
 #endif
-  /* Parse 'PT_DYNAMIC' headers. */
+  /* Parse `PT_DYNAMIC' headers. */
   for (iter = phdrv; iter != end; ++iter) {
    if (iter->p_type != PT_DYNAMIC) continue;
    error = elf_load_dynamic(result,fp,iter);
@@ -1222,7 +1222,7 @@ elf_loader(struct file *__restrict fp) {
                  result->e_module.m_segc;
    for (; iter != end; ++iter) {
     syslog(LOG_EXEC|LOG_DEBUG,
-           COLDSTR("[ELF] SEGMENT '%[file]' - %p...%p %p...%p from %I64X + %Ix\n"),
+           COLDSTR("[ELF] SEGMENT `%[file]' - %p...%p %p...%p from %I64X + %Ix\n"),
            fp,
            iter->ms_vaddr,
            iter->ms_vaddr+iter->ms_msize-1,

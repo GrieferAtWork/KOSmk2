@@ -70,7 +70,7 @@ ATTR_FREEDATA struct task inittask = {
 #else
     .t_refcnt    = 0x80000004,
 #endif
-    .t_weakcnt   = 1, /* Held by the non-zero 't_refcnt' */
+    .t_weakcnt   = 1, /* Held by the non-zero `t_refcnt' */
 #ifdef CONFIG_SMP
     .t_affinity_lock = ATOMIC_RWLOCK_INIT,
     .t_affinity  = CPU_SETALL,
@@ -258,7 +258,7 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
         .iret = {
             .eip    = (uintptr_t)&cpu_idle,
             .cs     = __KERNEL_CS,
-            /* All other flags don't matter, but 'IF' (interrupt flag) must be set.
+            /* All other flags don't matter, but `IF' (interrupt flag) must be set.
              * If it wasn't, the idle task would otherwise block forever! */
             .eflags = EFLAGS_IF|EFLAGS_IOPL(0),
         },
@@ -330,7 +330,7 @@ PUBLIC struct cpu __bootcpu = {
 #else
         .t_refcnt    = 0x80000004,
 #endif
-        .t_weakcnt   = 1, /* Held by the non-zero 't_refcnt' */
+        .t_weakcnt   = 1, /* Held by the non-zero `t_refcnt' */
         /* The location of the bootstrap cpu-state block. */
         .t_cstate    = (struct cpustate *)&__bootidlestack.s_boot,
 #ifdef CONFIG_SMP
@@ -435,7 +435,7 @@ PUBLIC struct cpu __bootcpu = {
 #else
         .t_refcnt    = 0x80000004,
 #endif
-        .t_weakcnt   = 1, /* Held by the non-zero 't_refcnt' */
+        .t_weakcnt   = 1, /* Held by the non-zero `t_refcnt' */
         /* The location of the bootstrap cpu-state block. */
         .t_cstate    = WORKSTATE,
 #ifdef CONFIG_SMP

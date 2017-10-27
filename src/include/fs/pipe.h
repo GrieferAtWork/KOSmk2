@@ -43,8 +43,8 @@ DATDEF struct inodeops const pipe_ops;
 DATDEF struct superblock     pipe_fs; /* A stub filesystem for managing pipes. */
 
 /* Allocate a new pipe INode. - The caller may open the pipe for
- * reading/writing to create the two descriptors returned by 'pipe()'.
- * HINT: Use 'inode_kopen()' to open the pipe.
+ * reading/writing to create the two descriptors returned by `pipe()'.
+ * HINT: Use `inode_kopen()' to open the pipe.
  * @return: * :   A newly allocated pipe INode.
  * @return: NULL: Not enough available memory. */
 FUNDEF REF struct pipe *KCALL pipe_new(void);

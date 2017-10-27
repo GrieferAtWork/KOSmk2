@@ -29,24 +29,27 @@
 
 DECL_BEGIN
 
-/* Virtual filesystem data structures. */
+/* Virtual filesystem data structures.
+ * This is KOS's version of linux's 'tmpfs' filesystem.
+ * NOTE: A static instance of it is mounted under `/dev'
+ *       and is also used to implement `shm_open()' */
 struct vnode_dirent {
  struct dentryname d_name; /*< [const][owned] Node entry name. */
  REF struct inode *d_node; /*< [1..1][const] INode associated with this directory entry (Can be anything).
-                            *   NOTE: This pointer also holds a reference to 'd_node->i_nlink' */
+                            *   NOTE: This pointer also holds a reference to `d_node->i_nlink' */
 };
 
 #define VDATA_DYNAMIC 0x00000000 /*< Set when data is dynamically allocated, rather than statically. */
 #define VDATA_STATIC  0x00000001 /*< Set when the VNode entry vector is allocated statically. */
 #define VDATA_ISSTATIC(x)    ((x)&VDATA_STATIC)
 #define VDATA_ISDYNAMIC(x) (!((x)&VDATA_STATIC))
-typedef u32 vflag_t; /*< A set of 'VDATA_*' */
+typedef u32 vflag_t; /*< A set of `VDATA_*' */
 
 struct vnode_common {
  REF LIST_NODE(struct inode) v_entry; /*< [0..1][lock(vd_node->i_super->v_vlock)]
                                        *  Chain of existing virtual INodes within the associated vsuperblock.
                                        *  >> Used to keep virtually allocated INodes alive, even */
- vflag_t                     v_flag;  /*< A set of 'VDATA_*'. */
+ vflag_t                     v_flag;  /*< A set of `VDATA_*'. */
 };
 
 struct vnode_data {
@@ -57,11 +60,11 @@ struct vnode_data {
 };
 
 struct vfile_dir {
- struct file       vf_file; /*< Underlying file (NOTE: 'f_node->i_data' points to a 'struct vnode_data' object). */
+ struct file       vf_file; /*< Underlying file (NOTE: `f_node->i_data' points to a `struct vnode_data' object). */
  size_t            vf_didx; /*< [lock(vf_file.f_lock)] Current virtual directory index. (f_node->i_data->vf_entv) */
 };
 struct vnode {
- struct inode      v_node;  /*< Underlying INode ('i_data' points at '&v_data') */
+ struct inode      v_node;  /*< Underlying INode (`i_data' points at `&v_data') */
  struct vnode_data v_data;  /*< Virtual directory data. */
 };
 
@@ -72,7 +75,7 @@ struct vlink_data {
  HOST char const     *v_text;   /*< [0..vl_size][owned_if(VDATA_ISDYNAMIC)][const] Vector of directory entries. */
 };
 struct vlink {
- struct inode      v_node; /*< Underlying INode ('i_data' points at '&v_data') */
+ struct inode      v_node; /*< Underlying INode (`i_data' points at `&v_data') */
  struct vlink_data v_data; /*< Virtual link data. */
 };
 
@@ -81,7 +84,7 @@ struct vdev_data {
  dev_t               v_device; /*< [const] device id. (Of same chr/blk-class as the associated node) */
 };
 struct vdev {
- struct inode     v_node; /*< Underlying INode ('i_data' points at '&v_data') */
+ struct inode     v_node; /*< Underlying INode (`i_data' points at `&v_data') */
  struct vdev_data v_data; /*< Virtual device data. */
 };
 
@@ -91,7 +94,7 @@ struct vdev {
 
 /* Virtual filesystem superblock (also a virtual directory). */
 struct vsuperblock {
- struct superblock v_super;  /*< Underlying superblock ('sb_root.i_data' points at '&v_data') */
+ struct superblock v_super;  /*< Underlying superblock (`sb_root.i_data' points at `&v_data') */
  struct vnode_data v_data;   /*< Virtual directory data. */
  atomic_rwlock_t   v_vlock;  /*< Lock for the chain of virtual nodes associated with this superblock. */
  WEAK size_t       v_lnkmax; /*< Max length of a dynamically allocated symbolic link. */
@@ -100,7 +103,7 @@ struct vsuperblock {
   *         ensuring that virtual nodes don't randomly disappear when
   *         no-one is using them anymore, but rather stay until the
   *         superblock is eventually unmounted.
-  *   NOTE: The underlying 'sb_nodes' chain cannot be used, as it
+  *   NOTE: The underlying `sb_nodes' chain cannot be used, as it
   *         is meant to represent ~active~ INodes, not existing ones. */
 #define v_chain   v_data.v_common.v_entry.le_next
 };
@@ -113,7 +116,7 @@ struct vsuperblock {
 DATDEF struct inodeops const vnode_ops;
 DATDEF struct inodeops const vlink_ops;
 DATDEF struct inodeops const vdev_ops;
-/* NOTE: Also used as INode ops tag to indicate 'i_data' pointing to a 'vnode_common' structure. */
+/* NOTE: Also used as INode ops tag to indicate `i_data' pointing to a `vnode_common' structure. */
 DATDEF struct superblockops const vsuperblock_ops;
 #define INODE_ISVNODE(self) ((self)->i_ops->o_tag == &vsuperblock_ops)
 
@@ -121,7 +124,7 @@ DATDEF struct superblockops const vsuperblock_ops;
 
 
 /* Default initializers for virtual filesystem elements.
- * NOTE: The first INode should pass '&v_superblock->v_data' for 'prev_data' */
+ * NOTE: The first INode should pass `&v_superblock->v_data' for `prev_data' */
 #define VNODE_INIT(prev,self_pointer,next,superblock_pointer,mode,ent_c,ent_v) \
         VNODE_INIT_EX((prev)->v_data,self_pointer,(struct inode *)(next),superblock_pointer,mode,ent_c,ent_v)
 #define VNODE_INIT_EX(prev_data,self_pointer,pnext_inode,superblock_pointer,mode,ent_c,ent_v) \

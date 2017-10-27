@@ -71,7 +71,7 @@ ATA_RDWR(struct blkdev *__restrict self, blkaddr_t block,
  /* In write mode, we don't re-validate user-pointer ranges,
   * meaning we must validate them once at the beginning. */
  { uintptr_t buf_end;
-   /* NOTE: 'n_blocks*ATA_BLOCKSIZE' can't overflow because the caller
+   /* NOTE: `n_blocks*ATA_BLOCKSIZE' can't overflow because the caller
     *        is required to validate the counter argument for actually
     *        fitting into the device and the host machine's address space. */
    if (__builtin_add_overflow((uintptr_t)buf,n_blocks*ATA_BLOCKSIZE,&buf_end) ||

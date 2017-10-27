@@ -816,7 +816,7 @@
    (defined(COMPILER_VERSION_GCC_CXX11) && (COMPILER_VERSION_GCC >= 40400)) || \
    (defined(__BORLANDC__) && defined(COMPILER_VERSION_CODEGEAR_0X_SUPPORT) && __BORLANDC__ >= 0x610) || \
    (defined(__IBMCPP_UTF_LITERAL__) && __IBMCPP_UTF_LITERAL__)))
-/* The compiler is pre-defining the 'char16_t' / 'char32_t' types. */
+/* The compiler is pre-defining the `char16_t' / `char32_t' types. */
 #undef __CHAR16_TYPE__
 #undef __CHAR32_TYPE__
 #define __CHAR16_TYPE__ char16_t

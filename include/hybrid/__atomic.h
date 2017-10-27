@@ -282,7 +282,7 @@ __FORCELOCAL __T (__hybrid_atomic_cmpxch_val)(__T &__x, __OV __oldv, __NV __newv
 #define __hybrid_atomic_cmpxch(x,oldv,newv,succ,fail) \
        (__hybrid_atomic_cmpxch_val(x,oldv,newv,succ,fail) == (oldv))
 #else /* __hybrid_atomic_cmpxch_val */
-/* Need at least '__hybrid_atomic_cmpxch()' or '__hybrid_atomic_cmpxch_val()' */
+/* Need at least `__hybrid_atomic_cmpxch()' or `__hybrid_atomic_cmpxch_val()' */
 #ifndef __DEEMON__
 #error "ERROR: Not atomic support by this compiler/on this platform."
 #endif

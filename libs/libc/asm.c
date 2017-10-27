@@ -46,7 +46,7 @@ L(    movl   %esi,              12(%eax)                                      )
 L(    movl   %edi,              16(%eax)                                      )
 L(    movl   %ecx,              20(%eax) /* EIP */                            )
 #if 1 /* Indicate that no signal mask is available (Not really required
-       * but allows the regular 'jmp_buf' to be used with 'sigsetjmp'). */
+       * but allows the regular 'jmp_buf' to be used with `sigsetjmp'). */
 L(    movl   $0,   SAVEMASK_OFFSET(%eax)                                      )
 #endif
 L(    xorl   %eax,                 %eax /* Return ZERO(0) the first time around. */)

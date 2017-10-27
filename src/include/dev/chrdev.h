@@ -33,7 +33,7 @@ struct chrdev {
 #define CHRDEV_DECREF(self)     DEVICE_DECREF(&(self)->cd_device)
 
 /* Create a new block device. The caller must fill in:
- *  - cd_device.d_node.i_super (Use 'device_setup')
+ *  - cd_device.d_node.i_super (Use `device_setup')
  *  - cd_device.d_node.i_data (Optionally)
  *  - cd_device.d_node.i_ops
  */
@@ -41,7 +41,7 @@ struct chrdev {
         chrdev_cinit((struct chrdev *)kcalloc(type_size,GFP_SHARED))
 FUNDEF struct chrdev *KCALL chrdev_cinit(struct chrdev *self);
 
-/* Character device finalization (Must be called from 'cd_device.d_node.i_ops->ino_fini') */
+/* Character device finalization (Must be called from `cd_device.d_node.i_ops->ino_fini') */
 FUNDEF void KCALL chrdev_fini(struct chrdev *__restrict self);
 
 /* Helper macro for opening a character device for reading/writing. */

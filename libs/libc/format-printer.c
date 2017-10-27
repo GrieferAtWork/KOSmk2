@@ -86,13 +86,13 @@ do{ if ((temp = libc_format_hexdump(printer,closure,data,size,linesize,flags)) <
 
 #define PRINTF_EXTENSION_POINTERSIZE 1        /*< Allow pointer-size length modifiers 'I' */
 #define PRINTF_EXTENSION_FIXLENGTH   1        /*< Allow fixed length modifiers 'I8|I16|I32|I64' */
-#define PRINTF_EXTENSION_DOTQUESTION 1        /*< Allow '.?' in place of '.*' to read size_t from the argument list instead of 'unsigned int', as well as force fixed-length buffers. */
-#define PRINTF_EXTENSION_QUOTESTRING 1        /*< Allow '%q' in place of '%s' for quoting a string (escaping all special characters). */
-#define PRINTF_EXTENSION_QUOTEFLAG   1        /*< Allow '%Q' to enable quoting mode, allowing for '%Qc' and '%Qs' (same as '%q'). */
+#define PRINTF_EXTENSION_DOTQUESTION 1        /*< Allow '.?' in place of '.*' to read size_t from the argument list instead of `unsigned int', as well as force fixed-length buffers. */
+#define PRINTF_EXTENSION_QUOTESTRING 1        /*< Allow `%q' in place of `%s' for quoting a string (escaping all special characters). */
+#define PRINTF_EXTENSION_QUOTEFLAG   1        /*< Allow `%Q' to enable quoting mode, allowing for `%Qc' and `%Qs' (same as `%q'). */
 #define PRINTF_EXTENSION_NULLSTRING  "(null)" /*< Replace NULL-arguments to %s and %q with this string (don't define to cause undefined behavior) */
 #define STRFTIME_EXTENSION_LONGNAMES 1        /*< Allow %[...] for long attribute names. */
-#define PRINTF_EXTENSION_VIRTUALPTR  1        /*< Allow '%~' to describe virtual pointers. */
-#define PRINTF_EXTENSION_LONGDESCR   1        /*< Allow '%[...]' for a set of special printf descriptors. */
+#define PRINTF_EXTENSION_VIRTUALPTR  1        /*< Allow `%~' to describe virtual pointers. */
+#define PRINTF_EXTENSION_LONGDESCR   1        /*< Allow `%[...]' for a set of special printf descriptors. */
 #define PRINTF_EXTENSION_ERRORMSG    1        /*< Emit error messages for illegal printf() formats. */
 #define PRINTF_EXTENSION_UNICODE     1        /*< Add 'U16' and 'U32' length modifiers for utf16/32 respectively. */
 #ifndef CONFIG_DEBUG
@@ -220,13 +220,13 @@ typedef union {
 
 
 #define PRINTF_FLAG_NONE     0x0000
-#define PRINTF_FLAG_PREFIX   0x0001 /*< '%#'. */
+#define PRINTF_FLAG_PREFIX   0x0001 /*< `%#'. */
 #define PRINTF_FLAG_LJUST    0x0002 /*< '%-'. */
 #define PRINTF_FLAG_SIGN     0x0004 /*< '%+'. */
 #define PRINTF_FLAG_SPACE    0x0008 /*< '% '. */
 #define PRINTF_FLAG_PADZERO  0x0010 /*< '%0'. */
 #define PRINTF_FLAG_HASWIDTH 0x0020 /*< '%123'. */
-#define PRINTF_FLAG_HASPREC  0x0040 /*< '%.123'. */
+#define PRINTF_FLAG_HASPREC  0x0040 /*< `%.123'. */
 #define PRINTF_FLAG_UPPER    0x0080 /*< Print upper-case hex-characters. */
 #define PRINTF_FLAG_SIGNED   0x0100
 #if PRINTF_EXTENSION_DOTQUESTION
@@ -237,7 +237,7 @@ typedef union {
 #define PRINTF_FLAG_CHQUOTE  0x0800 /*< Quote as character. */
 #endif
 #if PRINTF_EXTENSION_VIRTUALPTR
-#define PRINTF_FLAG_VIRTUAL  0x1000 /*< '%~' (Modifies %s: the pointer referrs to a user-space address). */
+#define PRINTF_FLAG_VIRTUAL  0x1000 /*< `%~' (Modifies %s: the pointer referrs to a user-space address). */
 #endif
 
 #if PRINTF_EXTENSION_LONGDESCR
@@ -577,7 +577,7 @@ libc_xformat_vprintf(bool wch16, pformatprinter printer, void *closure,
  char const *flush_start;
  CHECK_HOST_TEXT(printer,1);
 #ifdef CONFIG_DEBUG
- /* Running strlen() on 'format' implicitly performs CHECK_HOST_TEXT-checks. */
+ /* Running strlen() on `format' implicitly performs CHECK_HOST_TEXT-checks. */
  COMPILER_UNUSED(libc_strlen(format));
 #endif
  flush_start = format;
@@ -1306,7 +1306,7 @@ libc_format_vscanf(pformatgetc pgetc, pformatungetc pungetc,
  CHECK_HOST_TEXT(pgetc,1);
  CHECK_HOST_TEXT(pungetc,1);
 #ifdef CONFIG_DEBUG
- /* Running strlen() on 'format' implicitly performs CHECK_HOST_TEXT-checks. */
+ /* Running strlen() on `format' implicitly performs CHECK_HOST_TEXT-checks. */
  COMPILER_UNUSED(libc_strlen(format));
 #endif
 
@@ -1366,7 +1366,7 @@ libc_format_strftime(pformatprinter printer, void *closure,
  CHECK_HOST_TEXT(printer,1);
  CHECK_HOST_DOBJ(tm);
 #ifdef CONFIG_DEBUG
- /* Running strlen() on 'format' implicitly performs CHECK_HOST_TEXT-checks. */
+ /* Running strlen() on `format' implicitly performs CHECK_HOST_TEXT-checks. */
  COMPILER_UNUSED(libc_strlen(format));
 #endif
  iter = format_begin = format;
@@ -2032,7 +2032,7 @@ INTERN ATTR_RARETEXT ssize_t LIBCCALL
 libc_32vswprintf(char32_t *__restrict buf, size_t buflen,
                  char32_t const *__restrict format, va_list args) {
  ssize_t result = -1; char *utf8_format;
- /* Convert 'format' to utf8. */
+ /* Convert `format' to utf8. */
  utf8_format = libc_utf32to8m(format);
  if likely(utf8_format) {
   struct c32printer printer;
@@ -2115,7 +2115,7 @@ INTERN ATTR_DOSTEXT ssize_t LIBCCALL
 libc_dos_16vswprintf(char16_t *__restrict buf, size_t buflen,
                      char16_t const *__restrict format, va_list args) {
  ssize_t result = -1; char *utf8_format;
- /* Convert 'format' to utf8. */
+ /* Convert `format' to utf8. */
  utf8_format = libc_utf16to8m(format);
  if likely(utf8_format) {
   struct c16printer printer;

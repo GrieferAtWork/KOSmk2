@@ -40,7 +40,7 @@ PUBLIC struct ldt ldt_empty = {
     .l_idt    = {0,{NULL}},
     .l_gdt    = SEG_KERNEL_LDT,
 #ifdef CONFIG_DEBUG
-    .l_refcnt = 2, /* 'ldt_empty', 'mman_kernel.m_ldt' */
+    .l_refcnt = 2, /* `ldt_empty', `mman_kernel.m_ldt' */
 #else
     .l_refcnt = 0x80000002,
 #endif

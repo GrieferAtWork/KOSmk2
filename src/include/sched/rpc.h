@@ -36,13 +36,13 @@ typedef u32 cpu_rpc_t;
 
 /* Execute a given user-callback within the specified CPU.
  * NOTES:
- *   - The return value of the callback is later returned by 'cpu_sendrpc_unlocked()'.
+ *   - The return value of the callback is later returned by `cpu_sendrpc_unlocked()'.
  *   - Interrupts on the target CPU are disabled
  *     for the duration of the given callback.
- *   - Upon execution of 'callback', the kernel-stack of some random
- *     task running under `self' will be used for 'ESP', leaving all
+ *   - Upon execution of `callback', the kernel-stack of some random
+ *     task running under `self' will be used for `ESP', leaving all
  *     other non-segment registers in an undefined state.
- * @return: * : Same as 'c_callback()'. */
+ * @return: * : Same as `c_callback()'. */
 #define CPU_RPC_CALLBACK           0x00000001 /*< [ARG(struct rpc_callback)] */
 
 /* Shutdown the given CPU.
@@ -65,21 +65,21 @@ struct rpc_tlb_shootdown { void *ts_begin; size_t ts_size; };
  * NOTE: When the caller _is_ the given CPU, 
  * WARNING: Data pointed to by `arg' is not copied, meaning that
  *          some command cannot safely be executed asynchronously.
- * @param: command:      One of 'CPU_RPC_*', stating the command name.
- * @param: arg:          Argument passed alongside 'command' (usage/meaning depends on 'command')
- * @return: * :          Dependent on 'command'
+ * @param: command:      One of `CPU_RPC_*', stating the command name.
+ * @param: arg:          Argument passed alongside `command' (usage/meaning depends on `command')
+ * @return: * :          Dependent on `command'
  * @return: -EINVAL:     The given CPU is offline. (NOTE: Not returned if it was starting up)
  * @return: -ECOMM:      Failed to communicated with the given CPU.
  * @return: E_ISERR(*'): Command execution failed for some reason. */
 FUNDEF SAFE ssize_t KCALL cpu_rpc_send(struct cpu *__restrict self, cpu_rpc_t command, void *arg);
 
-/* Similar to 'cpu_rpc_send', but ignores errors and executes the RPC on all running CPUs. */
+/* Similar to `cpu_rpc_send', but ignores errors and executes the RPC on all running CPUs. */
 LOCAL SAFE void KCALL cpu_rpc_broadcast(cpu_rpc_t command, void *arg);
 
 
 
 /* Cross-cpu IRQ setter helper function.
- * >> Behaves the same as 'irq_set', but takes an additional cpu-argument `self'. */
+ * >> Behaves the same as `irq_set', but takes an additional cpu-argument `self'. */
 LOCAL SAFE bool KCALL irq_vset(struct cpu *__restrict self,
                                isr_t const *__restrict new_handler,
                            REF isr_t *old_handler, int mode);

@@ -358,9 +358,9 @@ __LIBC __PORT_NODOS int (__LIBCCALL getloadavg)(double __loadavg[], int __nelem)
  *       keeping redundancy low and eliminating dependency on a second library probably
  *       even more important than libc itself.
  * NOTE: These functions follow usual LIBC semantics, returning -1/NULL and setting errno on error.
- *    >> the 'dlerror()' function you can find in libdl.so is literally just a swapper
- *       around 'strerror()' with the error number internally saved by libdl, so as not
- *       to clobber libc's thread-local 'errno' variable. */
+ *    >> the `dlerror()' function you can find in libdl.so is literally just a swapper
+ *       around `strerror()' with the error number internally saved by libdl, so as not
+ *       to clobber libc's thread-local `errno' variable. */
 #ifdef __CRT_KOS
 __LIBC __PORT_KOSONLY_ALT(dlopen) void *(__LIBCCALL xdlopen)(char const *__filename, int __flags);
 __LIBC __PORT_KOSONLY_ALT(dlopen) void *(__LIBCCALL xfdlopen)(int __fd, int __flags);
@@ -413,7 +413,7 @@ __REDIRECT(__LIBC,__SAFE __PORT_NODOS __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALL
  * >> 
  * >> #define malloc(s) _malloc_d(s,__DEBUGINFO_GEN)
  * >>
- * >> void *p = std::malloc(42); // Expands to 'std::_malloc_d(42,...)'
+ * >> void *p = std::malloc(42); // Expands to `std::_malloc_d(42,...)'
  */
 __NAMESPACE_STD_BEGIN
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC void *(__LIBCCALL _malloc_d)(size_t __n_bytes, __DEBUGINFO);

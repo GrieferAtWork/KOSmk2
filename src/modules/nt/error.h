@@ -25,7 +25,7 @@
 
 DECL_BEGIN
 
-/* Returns the closest 'STATUS_*' matching the given errno code. */
+/* Returns the closest `STATUS_*' matching the given errno code. */
 FUNDEF LONG KCALL errno_kos2nt(errno_t err);
 
 /* Translate negatively encoded error codes, but

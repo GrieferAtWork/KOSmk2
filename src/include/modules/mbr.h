@@ -33,7 +33,7 @@ DECL_BEGIN
 struct PACKED part_com { /*< HDD Partition */
  u8           pt_bootable; /*< Boot indicator bit flag: 0 = no, 0x80 = bootable (or "active"). */
  u8           data1[3];
- u8           pt_sysid;    /*< System ID (s.a.: 'BLKSYS_*'). */
+ u8           pt_sysid;    /*< System ID (s.a.: `BLKSYS_*'). */
  u8           data2[11];
 };
 
@@ -42,7 +42,7 @@ struct PACKED part_32 { /*< HDD Partition */
  u8           pt_headstart;      /*< Starting Head. */
  unsigned int pt_sectstart : 6;  /*< Starting Sector. */
  unsigned int pt_cylistart : 10; /*< Starting Cylinder. */
- u8           pt_sysid;          /*< System ID (s.a.: 'BLKSYS_*'). */
+ u8           pt_sysid;          /*< System ID (s.a.: `BLKSYS_*'). */
  u8           pt_headend;        /*< Ending Head. */
  unsigned int pt_sectend : 6;    /*< Ending Sector. */
  unsigned int pt_cyliend : 10;   /*< Ending Cylinder. */
@@ -58,7 +58,7 @@ struct PACKED part_48 { /*< LBA-48 HDD Partition */
  u8           pt_bootable;   /*< Boot indicator bit flag: 1 = no, 0x81 = bootable (or "active"). */
  u8           pt_sig1;       /*< Signature #1 (== 0x14). */
  u16          pt_lbastarthi; /*< High 2 bytes for pt_lbastart. */
- u8           pt_sysid;      /*< System ID (s.a.: 'BLKSYS_*'). */
+ u8           pt_sysid;      /*< System ID (s.a.: `BLKSYS_*'). */
  u8           pt_sig2;       /*< Signature #2 (== 0xeb). */
  u16          pt_lbasizehi;  /*< High 2 bytes for pt_lbasize. */
  u32          pt_lbastart;   /*< Relative Sector (to start of partition -- also equals the partition's starting LBA value). */

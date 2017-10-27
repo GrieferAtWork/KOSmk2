@@ -82,7 +82,7 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 
-/* NOTE: '__DSYM()' generate an assembly name for a symbol that
+/* NOTE: `__DSYM()' generate an assembly name for a symbol that
  *        the kernel should prefer to link against when the module
  *        being patched was linked using PE, rather than ELF.
  *     >> Used to provide special symbols for use by windows

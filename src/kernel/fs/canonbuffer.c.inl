@@ -53,7 +53,7 @@ scan_again:
    maxsize = ATOMIC_READ(self->cb_maxsize);
    if (newsize >= maxsize) newsize = maxsize;
    if (newsize == oldsize) {
-    /* The buffer is full, if 'bufsize' is ZERO(0). */
+    /* The buffer is full, if `bufsize' is ZERO(0). */
     if (has_write_lock)
          atomic_rwlock_endwrite(&self->cb_lock);
     else atomic_rwlock_endread (&self->cb_lock);

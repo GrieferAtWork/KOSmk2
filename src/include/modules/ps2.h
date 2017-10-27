@@ -47,7 +47,7 @@ DECL_BEGIN
 #define LED_NUMLOCK    (1 << 1)
 #define LED_CAPSLOCK   (1 << 2)
 
-/* PS/2 controller command codes (For use with 'struct ps2_cmd'). */
+/* PS/2 controller command codes (For use with `struct ps2_cmd'). */
 #define PS2_CONTROLLER_RRAM(n)           (0x20+(n))
 #define PS2_CONTROLLER_WRAM(n)           (0x60+(n))
 #define PS2_CONTROLLER_TEST_PORT1         0xaa
@@ -62,7 +62,7 @@ DECL_BEGIN
 #define PS2_CONTROLLER_WRITE_PORT2_OUTPUT 0xd3
 #define PS2_CONTROLLER_WRITE_PORT2_INPUT  0xd4
 
-/* Layout of the 'PS2_CONTROLLER_RRAM(0)' (Controller configuration) byte. */
+/* Layout of the `PS2_CONTROLLER_RRAM(0)' (Controller configuration) byte. */
 #define PS2_CONTROLLER_CFG_PORT1_IRQ       0x01
 #define PS2_CONTROLLER_CFG_PORT2_IRQ       0x02
 #define PS2_CONTROLLER_CFG_SYSTEMFLAG      0x04
@@ -70,9 +70,9 @@ DECL_BEGIN
 #define PS2_CONTROLLER_CFG_PORT2_CLOCK     0x20
 #define PS2_CONTROLLER_CFG_PORT1_TRANSLATE 0x40
 
-/* PS/2 device command codes (For use with 'struct ps2_cmd'). */
-#define KEYBOARD_SETLED     0xed /* PS2_DATA: Set of 'LED_*' */
-#define KEYBOARD_ECHO       0xee /* Responds with '0xee' if a keyboard was found. */
+/* PS/2 device command codes (For use with `struct ps2_cmd'). */
+#define KEYBOARD_SETLED     0xed /* PS2_DATA: Set of `LED_*' */
+#define KEYBOARD_ECHO       0xee /* Responds with `0xee' if a keyboard was found. */
 #define KEYBOARD_SCANSET    0xf0
 #define KEYBOARD_RESET      0xff
 #define KEYBOARD_SETDEFAULT 0xff
@@ -82,23 +82,23 @@ DECL_BEGIN
 
 struct kbdev {
  struct chrdev kb_device;  /*< Underlying character device. */
- u8            kb_port;    /*< The keyboard port (One of 'PS2_PORT*') */
+ u8            kb_port;    /*< The keyboard port (One of `PS2_PORT*') */
 };
 
 
 #define PS2_FREECMD  0x10 /*< free() the cmd once execution is done. */
-#define PS2_NOACK    0x20 /*< Immediately switch to 'STATE_COMMANDACK'. */
+#define PS2_NOACK    0x20 /*< Immediately switch to `STATE_COMMANDACK'. */
 #define PS2_HASACK   0x40 /*< Once an ACK was received, discard the previous response and fill it with new data. */
-#define PS2_HASARG   0x80 /*< After 'c_cmd' is done, discard its response and write 'c_arg' to 'PS2_DATA'. */
+#define PS2_HASARG   0x80 /*< After `c_cmd' is done, discard its response and write `c_arg' to `PS2_DATA'. */
 #define PS2_MAXRESP  15
 struct ps2_cmd {
  struct ps2_cmd *c_prev;              /*< [0..1] Previous command to-be executed after this one. */
  struct ps2_cmd *c_next;              /*< [0..1] Next command that is being executed before this one. */
- u8              c_port;              /*< One of 'PS2_PORT*', or'd with flags (PS2_HASARG, etc.). */
- u8              c_cmd;               /*< Command to execute (One of 'KEYBOARD_*'). */
+ u8              c_port;              /*< One of `PS2_PORT*', or'd with flags (PS2_HASARG, etc.). */
+ u8              c_cmd;               /*< Command to execute (One of `KEYBOARD_*'). */
  u8              c_arg;               /*< [valid_if(PS2_HASARG)] Command argument. */
- u8              c_ackmax;            /*< [valid_if(PS2_HASACK)] Max amount of bytes to receive after the last 'ACK'. */
- u8              c_resp[PS2_MAXRESP]; /*< Response text (terminated by 'ACK'). */
+ u8              c_ackmax;            /*< [valid_if(PS2_HASACK)] Max amount of bytes to receive after the last `ACK'. */
+ u8              c_resp[PS2_MAXRESP]; /*< Response text (terminated by `ACK'). */
  u8              c_status;            /*< The final status byte that completed the command ACK/RESEND. */
 };
 
@@ -143,11 +143,11 @@ struct ps2_cmd {
 #define STATE_INPUT_SET3_F0                   0x60
 
 struct ps2 {
- u8              p_state; /*< Current state of the state machine running under 'IRQ_PIC1_KBD'. */
+ u8              p_state; /*< Current state of the state machine running under `IRQ_PIC1_KBD'. */
  u8              p_state2;/*< State to return to once all commands have been served. */
 #define PS2_SCANSET    0x03 /*< Mask for the keyboard scanset used by the keyboard. */
 #define PS2_HAVE_PORT2 0x80 /*< Set if the second PS/2 is supported by the controller. */
- u8              p_flags; /*< Set of 'PS2_HAVE_*' */
+ u8              p_flags; /*< Set of `PS2_HAVE_*' */
  u8              p_retry; /*< Amount of retry attempts for the current command. */
  struct ps2_cmd *p_cmdf;  /*< [0..1] The first PS/2 command (list head). */
  struct ps2_cmd *p_cmdb;  /*< [0..1] The current PS/2 command (list tail). */

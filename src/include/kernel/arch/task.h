@@ -80,7 +80,7 @@ struct ldt {
 #define ldt_endread(x)     atomic_rwlock_endread(&(x)->l_lock)
 #define ldt_endwrite(x)    atomic_rwlock_endwrite(&(x)->l_lock)
 
-/* NOTE: There is no 'ldt_new()' function.
+/* NOTE: There is no `ldt_new()' function.
  *       Instead, use a memory manager to manipulate a LDT. */
 #define LDT_INCREF(self)     (void)(ATOMIC_FETCHINC((self)->l_refcnt))
 #define LDT_DECREF(self)     (void)(ATOMIC_DECFETCH((self)->l_refcnt) || (ldt_destroy(self),0))
@@ -89,8 +89,8 @@ FUNDEF void KCALL ldt_destroy(struct ldt *__restrict self);
 struct mman;
 /* LDT accessor functions.
  * NOTE: The caller must be holding a read/write-lock on `self' respectively.
- * NOTE: If the given 'id' is invalid, undefined behavior is invoked.
- *       To circumvent this, only pass ids that _you_ have allocated using 'mman_newldt()' */
+ * NOTE: If the given `id' is invalid, undefined behavior is invoked.
+ *       To circumvent this, only pass ids that _you_ have allocated using `mman_newldt()' */
 FUNDEF struct segment KCALL mman_getldt_unlocked(struct mman *__restrict self, ldt_t id);
 FUNDEF errno_t KCALL mman_setldt_unlocked(struct mman *__restrict self, ldt_t id,
                                           struct segment seg, struct segment *oldseg);
@@ -105,7 +105,7 @@ FUNDEF s32 KCALL mman_newldt_unlocked(struct mman *__restrict self, struct segme
 
 
 DATDEF struct ldt ldt_empty;  /*< The default, empty LDT descriptor table. - Used whenever an LDT controller would become empty. */
-DATDEF struct ldt ldt_kernel; /*< The LDT controller used by the kernel (Currently an alias for 'ldt_empty') */
+DATDEF struct ldt ldt_kernel; /*< The LDT controller used by the kernel (Currently an alias for `ldt_empty') */
 
 #endif /* __CC__ */
 #endif /* !CONFIG_NO_LDT */

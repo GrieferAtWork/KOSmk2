@@ -514,12 +514,12 @@ fdman_put_nearby_unlocked(struct fdman *__restrict self,
  unsigned int start_hint = hint;
  CHECK_HOST_DOBJ(self);
  assert(self->fm_vecc <= self->fm_veca);
- /* Do the initial pass, searching at 'hint'. */
+ /* Do the initial pass, searching at `hint'. */
  for (; hint < self->fm_veca; ++hint) {
   if (FD_SAFE_ISNULL(self->fm_vecv[hint])) goto got_slot;
  }
  if (self->fm_vecc != self->fm_veca) {
-  /* Do the second pass, scanning for empty slots below 'hint'. */
+  /* Do the second pass, scanning for empty slots below `hint'. */
   hint       = FDMAN_PUT_RESCAN_START;
   start_hint = MIN(start_hint,self->fm_veca);
   for (; hint < start_hint; ++hint) {
@@ -674,7 +674,7 @@ SYSCALL_DEFINE3(fcntl,int,fd,int,cmd,USER void *,arg) {
       f.fo_flags |= FD_CLOEXEC;
   /* Use the given argument as hint when placing new descriptors. */
   /* TODO: Unix says that this kind of copy _MUST_ use descriptors
-   *       '>= arg', meaning that we must somehow disable
+   *       `>= arg', meaning that we must somehow disable
    *       fdman_put_nearby's behavior of preferring to re-use low-index
    *       descriptors in favor of allocating more high-index ones.
    */
@@ -950,7 +950,7 @@ SYSCALL_DEFINE1(fdatasync,int,fd) {
  struct fd fent; errno_t res;
  task_crit();
  fent = fdman_get(THIS_FDMAN,fd);
- /* XXX: Different implementation from 'fsync?' */
+ /* XXX: Different implementation from `fsync?' */
  res = (*fent.fo_ops->fd_sync)(fent.fo_ptr);
  FD_DECREF(fent);
  task_endcrit();

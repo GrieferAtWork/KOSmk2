@@ -228,7 +228,7 @@
       defined(_WIN32_WCE) || defined(WIN32_WCE)
 #   define __PE__  1
 #else
-#   warning "Target binary format not defined. - Assuming '__ELF__'"
+#   warning "Target binary format not defined. - Assuming `__ELF__'"
 #   define __ELF__ 1
 #endif
 #endif
@@ -434,8 +434,8 @@ struct _IO_FILE;
 #define __VIRT         /* Annotation for virtual memory (default). */
 #define __PHYS         /* Annotation for physical memory. */
 #define __MMIO         /* Annotation for memory-mapped I/O-port pointers. */
-#define __CRIT         /* Annotation for functions that require 'TASK_ISCRIT()' (When called from within the kernel). */
-#define __SAFE         /* Annotation for functions that require 'TASK_ISSAFE()' (When called from within the kernel). */
+#define __CRIT         /* Annotation for functions that require `TASK_ISCRIT()' (When called from within the kernel). */
+#define __SAFE         /* Annotation for functions that require `TASK_ISSAFE()' (When called from within the kernel). */
 #define __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */
 #define __PERCPU       /* Annotation for variables that must be accessed using the per-cpu API. */
 #define __ASMCALL      /* Annotation for functions that are implemented in assembly and require a custom calling convention. */

@@ -66,7 +66,7 @@ typedef struct PACKED efi_part_struct {
 #define EFI_PART_F_READONLY    (1ull << 60)
 #define EFI_PART_F_HIDDEN      (1ull << 62)
 #define EFI_PART_F_NOAUTOMOUNT (1ull << 63)
- le64   p_flags;     /*< Partition flags (Set of 'EFI_PART_F_*'). */
+ le64   p_flags;     /*< Partition flags (Set of `EFI_PART_F_*'). */
  le16   p_name[36];  /*< Partition name. */
 } efi_part_t;
 

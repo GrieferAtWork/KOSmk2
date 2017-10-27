@@ -29,7 +29,7 @@ DECL_BEGIN
 #define RING_HEAD(T)            T *
 #define RING_ISEMPTY(head) (!(head))
 
-/* Insert 'elem' before 'link' in a ring described by 'key' */
+/* Insert 'elem' before `link' in a ring described by `key' */
 #define RING_INSERT_BEFORE(link,elem,key) \
  (void)(assert((link)->key.re_prev->key.re_next == (link)),\
         assert((link)->key.re_next->key.re_prev == (link)),\
@@ -38,7 +38,7 @@ DECL_BEGIN
         (elem)->key.re_next = (link),\
         (link)->key.re_prev = (elem))
 
-/* Insert 'elem' after 'link' in a ring described by 'key' */
+/* Insert 'elem' after `link' in a ring described by `key' */
 #define RING_INSERT_AFTER(link,elem,key) \
  (void)(assert((link)->key.re_prev->key.re_next == (link)),\
         assert((link)->key.re_next->key.re_prev == (link)),\

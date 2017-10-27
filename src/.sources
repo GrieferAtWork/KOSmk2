@@ -23,7 +23,7 @@ BEGIN
 	DEFINE("__KERNEL__")
 	DEFINE("CONFIG_SMP")
 	DEFINE("CONFIG_USE_EXTERNAL_ADDR2LINE")
-	//C_FLAGS("-momit-lock-prefix=no") /* Enable when 'CONFIG_SMP' is disabled. */
+	//C_FLAGS("-momit-lock-prefix=no") /* Enable when `CONFIG_SMP' is disabled. */
 	if (config_debug) {
 		DEFINE("CONFIG_DEBUG")
 		DEFINE("CONFIG_TRACE_LEAKS")

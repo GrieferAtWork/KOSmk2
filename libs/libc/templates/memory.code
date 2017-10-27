@@ -23,10 +23,10 @@
  * #define S     ... <Bit-width in bytes>
  * #define w     ... <Assembly nmemonic>
  * #define W     ... <Assembly nmemonic as string>
- * #define WM(x) ... <Translate 'x' into a size value compatible with 'W'>
- * #define B     ... <Parameter list version of 'T' (memset(... int byte); memsetw(... u16 word))>
- * #define sB    ... <Same as 'B', but signed>
- * #define vB    ... <Same as 'B', but void for smallest width>
+ * #define WM(x) ... <Translate `x' into a size value compatible with `W'>
+ * #define B     ... <Parameter list version of `T' (memset(... int byte); memsetw(... u16 word))>
+ * #define sB    ... <Same as `B', but signed>
+ * #define vB    ... <Same as `B', but void for smallest width>
  * #define n     ... <length name (optional)>
  * #define h     ... <Bit-width name (optional)>
  */ 
@@ -146,40 +146,40 @@ FORCELOCAL void *LIBCCALL X(core_memcpy)
 DECL void *LIBCCALL X(libc_memcpy)
 (void *__restrict dst, void const *__restrict src, size_t n) {
 	assertf(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
-	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
+	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use `memmove' instead)",
 	           dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
 	assertf(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
-	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
+	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use `memmove' instead)",
 	           dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
 	return X(core_memcpy)(dst,src,n);
 }
 DECL void *LIBCCALL PP_CAT2(X(libc__memcpy),_d)
 (void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO) {
 	assertf_d(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
-	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
+	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use `memmove' instead)",
 	             dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
 	assertf_d(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
-	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
+	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use `memmove' instead)",
 	             dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
 	return X(core_memcpy)(dst,src,n);
 }
 DECL void *LIBCCALL X(libc_mempcpy)
 (void *__restrict dst, void const *__restrict src, size_t n) {
 	assertf(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
-	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
+	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use `memmove' instead)",
 	           dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
 	assertf(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
-	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
+	           PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use `memmove' instead)",
 	           dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
 	return (void *)((uintptr_t)X(core_memcpy)(dst,src,n)+n);
 }
 DECL void *LIBCCALL PP_CAT2(X(libc__mempcpy),_d)
 (void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO) {
 	assertf_d(!((uintptr_t)dst > (uintptr_t)src && (uintptr_t)dst < ((uintptr_t)src+n*S)),
-	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use 'memmove' instead)",
+	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from dst are overlapping with src (use `memmove' instead)",
 	             dst,src,n,((uintptr_t)src+n*S)-(uintptr_t)dst);
 	assertf_d(!((uintptr_t)src >(uintptr_t)dst && (uintptr_t)src < ((uintptr_t)dst+n*S)),
-	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use 'memmove' instead)",
+	             DEBUGINFO_FWD,PP_STR(X(memcpy)) "(%p,%p,%Iu) : %Iu bytes from src are overlapping with dst (use `memmove' instead)",
 	             dst,src,n,((uintptr_t)dst+n*S)-(uintptr_t)src);
 	return (void *)((uintptr_t)X(core_memcpy)(dst,src,n)+n);
 }
@@ -294,7 +294,7 @@ DECL vB *LIBCCALL X(libc_memchr)
 DECL vB *LIBCCALL X(libc_memrchr)
 (vB const *__restrict haystack, B needle, size_t n) {
 	T *iter = (T *)haystack+n;
-	/* TODO: 'rep scas' */
+	/* TODO: `rep scas' */
 #ifdef CONFIG_DEBUG
 	if (n) CHECK_HOST_TEXT(iter-1,S);
 #endif
@@ -312,7 +312,7 @@ DECL vB *LIBCCALL X(libc_memrchr)
 DECL vB *LIBCCALL X(libc_memend)
 (vB const *__restrict haystack, B needle, size_t n) {
 	T *iter,*end;
-	/* TODO: 'rep scas' */
+	/* TODO: `rep scas' */
 	end = (iter = (T *)haystack)+n;
 #ifdef CONFIG_DEBUG
 	if (n) CHECK_HOST_TEXT(iter,S);
@@ -359,7 +359,7 @@ DECL size_t LIBCCALL X(libc_memrlen)
 DECL vB *LIBCCALL X(libc_rawmemchr)
 (vB const *__restrict haystack, B needle) {
 	T *iter = (T *)haystack;
-	/* TODO: 'rep scas' */
+	/* TODO: `rep scas' */
 #ifdef CONFIG_DEBUG
 	CHECK_HOST_TEXT(iter,S);
 #endif
