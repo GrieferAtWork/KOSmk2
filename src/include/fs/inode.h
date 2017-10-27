@@ -503,7 +503,7 @@ do{ if (!INODE_ISEFFECTIVE(self)) { \
  *  - i_data (Optionally)
  */
 #define inode_new(sizeof_type) \
-        inode_cinit((struct inode *)calloc(1,sizeof_type))
+        inode_cinit((struct inode *)kcalloc(sizeof_type,GFP_SHARED))
 FUNDEF struct inode *KCALL inode_cinit(struct inode *self);
 
 /* Setup a given INode `self' to be apart of 'sb'.

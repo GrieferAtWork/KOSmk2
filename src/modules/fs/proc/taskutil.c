@@ -82,7 +82,7 @@ task_getmman(WEAK struct task *__restrict t) {
 INTDEF REF struct instance *KCALL
 mman_getexe(struct mman *__restrict mm) {
  REF struct instance *result;
- /* NOTE: We need a write-lock, because code below may need to rely on ALOA. */
+ /* NOTE: We need a write-lock, because code below may need to rely on ALLOA. */
  result = E_PTR(mman_write(mm));
  if (E_ISERR(result)) return result;
 #ifndef CONFIG_NO_VM_EXE

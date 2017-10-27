@@ -68,7 +68,7 @@ struct mregion;
  */
 struct shm_node {
  struct inode        sh_node;   /*< Underlying Inode descriptor. */
- REF struct mregion *sh_region; /*< [1..1][owned][lock(sh_node.i_attr_lock)]
+ REF struct mregion *sh_region; /*< [0..1][owned][lock(sh_node.i_attr_lock)]
                                  *  Shared-memory region used to implement file mappings (See above.)
                                  *  NOTE: This member is exchanged for a new region
                                  *        when the node is truncated ('O_TRUNC'). */

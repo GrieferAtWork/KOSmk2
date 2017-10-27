@@ -32,6 +32,7 @@
 #include <fs/inode.h>
 #include <fs/superblock.h>
 #include <fs/vfs.h>
+#include <fs/shm.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <hybrid/types.h>
@@ -138,7 +139,8 @@ LOCAL void KCALL
 vsuperblock_add_node(struct vsuperblock *__restrict sb,
                      struct inode *__restrict virtual_node) {
  atomic_rwlock_write(&sb->v_vlock);
- if (!virtual_node->__i_nlink++) {
+ if (!virtual_node->__i_nlink++ && INODE_ISVNODE(virtual_node)) {
+  assert(virtual_node->i_data);
   LIST_INSERT(sb->v_chain,virtual_node,i_data->v_entry);
   INODE_INCREF(virtual_node);
  }
@@ -149,7 +151,8 @@ vsuperblock_del_node(struct vsuperblock *__restrict sb,
                      struct inode *__restrict virtual_node) {
  bool must_decref = false;
  atomic_rwlock_write(&sb->v_vlock);
- if (!--virtual_node->__i_nlink) {
+ if (!--virtual_node->__i_nlink && INODE_ISVNODE(virtual_node)) {
+  assert(virtual_node->i_data);
   LIST_REMOVE(virtual_node,i_data->v_entry);
   must_decref = true;
  }
@@ -192,13 +195,13 @@ vnode_fopen(struct inode *__restrict ino,
 #undef DATA
 #define DATA container_of(dir_node->i_data,struct vnode_data,v_common)
 PRIVATE REF struct inode *KCALL
-vnode_lookup(struct inode *__restrict dir_node,
-             struct dentry *__restrict result_path,
-             int flags) {
+vnode_lookup_unlocked(struct inode *__restrict dir_node,
+                      struct dentry *__restrict result_path,
+                      int flags) {
  struct vnode_data *data = DATA;
  struct vnode_dirent *iter,*end;
  REF struct inode *result = E_PTR(-ENOENT);
- atomic_rwlock_read(&data->v_lock);
+ assert(atomic_rwlock_reading(&data->v_lock));
  end = (iter = data->v_entv)+data->v_entc;
  for (; iter != end; ++iter) {
   if (iter->d_name.dn_hash == result_path->d_name.dn_hash &&
@@ -225,6 +228,16 @@ vnode_lookup(struct inode *__restrict dir_node,
 
   }
  }
+ return result;
+}
+PRIVATE REF struct inode *KCALL
+vnode_lookup(struct inode *__restrict dir_node,
+             struct dentry *__restrict result_path,
+             int flags) {
+ struct vnode_data *data = DATA;
+ REF struct inode *result;
+ atomic_rwlock_read(&data->v_lock);
+ result = vnode_lookup_unlocked(dir_node,result_path,flags);
  atomic_rwlock_endread(&data->v_lock);
  return result;
 }
@@ -392,16 +405,42 @@ done:
  }
  return error;
 }
+
 PRIVATE REF struct inode *KCALL
 vnode_mkreg(struct inode *__restrict dir_node,
             struct dentry *__restrict path,
             struct iattr const *__restrict result_attr,
             iattrset_t mode) {
- /* TODO: Create text files? (Yes: This is something we must also simulate!) */
- if (!(mode&IATTR_EXISTS)) return E_PTR(-EROFS);
- return vnode_lookup(dir_node,path,0);
+ errno_t error;
+ REF struct inode *result;
+again:
+ result = vnode_lookup(dir_node,path,0);
+ if (!(mode&IATTR_EXISTS)) {
+  if (E_ISOK(result)) { INODE_DECREF(result); return E_PTR(-EEXIST); }
+  goto create_node;
+ } else if (result == E_PTR(-ENOENT)) {
+create_node:
+  result = inode_new(sizeof(struct shm_node));
+  if (E_ISERR(result)) goto end;
+  result->i_ops  = &shm_ops;
+  memcpy(&result->i_attr,result_attr,sizeof(struct iattr));
+  result->i_attr.ia_mode &= ~__S_IFMT;
+  result->i_attr.ia_mode |= __S_IFREG;
+  memcpy(&result->i_attr_disk,&result->i_attr,sizeof(struct iattr));
+  error = inode_setup(result,dir_node->i_super,dir_node->i_owner);
+  if (E_ISERR(error)) { free(result); return E_PTR(error); }
+  /* Insert the new node into the filesystem. */
+  error = vnode_hrdlink(dir_node,path,result);
+  if (E_ISERR(error)) {
+   INODE_DECREF(result);
+   if (error == -EEXIST)
+       goto again;
+   result = E_PTR(error);
+  }
+ }
+end:
+ return result;
 }
-
 
 PRIVATE REF struct inode *KCALL
 vnode_mknod(struct inode *__restrict dir_node,

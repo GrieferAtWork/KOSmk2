@@ -296,7 +296,7 @@ FUNDEF void (KCALL task_endnointr)(void);
  *          the addition/removing/waiting-for of per-thread signals, as
  *          controlled using the functions below.
  *          It also does NOT include code that may potentially trigger
- *          an ALOA/COW fault, meaning that you are safe to access
+ *          an ALLOA/COW fault, meaning that you are safe to access
  *          memory that isn't locked in-core & pre-faulted, as the
  *          pagefault handler uses these exact functions to save/restore
  *          the calling thread's signal-wait-set. */

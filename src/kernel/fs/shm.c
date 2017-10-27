@@ -31,26 +31,52 @@
 #include <sync/rwlock.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <syslog.h>
 #include <hybrid/align.h>
 #include <hybrid/minmax.h>
 #include <sched/paging.h>
 
 DECL_BEGIN
 
+#define SHM_REGION_SIZE  KERNEL_BASE
+
+PRIVATE struct mregion *KCALL
+shm_region(struct shm_node *__restrict self) {
+ struct mregion *result = self->sh_region;
+ if (!result) {
+  syslog(LOG_DEBUG,"CREATE NEW SHM\n");
+  result = (struct mregion *)mregion_new(MMAN_UNIGFP);
+  if unlikely(!result) return E_PTR(-ENOMEM);
+  /* NOTE: We use ZERO-initialized memory for SHM regions. */
+  result->mr_size = SHM_REGION_SIZE; /* Yes! This is 3Gb and that's intended. */
+  result->mr_init = MREGION_INIT_ZERO;
+  assert(result->mr_parts == &result->mr_part0);
+  result->mr_part0.mt_flags |= MPART_FLAG_KEEP; /* Keep all parts, even when not mapped. */
+  /* Finalize initialization by setting up the region for use. */
+  mregion_setup(result);
+  self->sh_region = result; /* Inherit reference. */
+ }
+ assert(result != NULL);
+ return result;
+}
 
 #define SHM_FILE container_of(fp,struct shm_file,sh_file)
 #define SELF     container_of(fp->f_node,struct shm_node,sh_node)
 PRIVATE ssize_t KCALL
 shm_fread(struct file *__restrict fp, USER void *buf, size_t bufsize) {
  ssize_t result;
- result = mregion_read(SELF->sh_region,buf,bufsize,SHM_FILE->sh_addr);
+ struct mregion *region = shm_region(SELF);
+ if (E_ISERR(region)) return (ssize_t)E_GTERR(region);
+ result = mregion_read(region,buf,bufsize,SHM_FILE->sh_addr);
  if (E_ISOK(result)) SHM_FILE->sh_addr += result;
  return result;
 }
 PRIVATE ssize_t KCALL
 shm_fwrite(struct file *__restrict fp, USER void const *buf, size_t bufsize) {
  ssize_t result;
- result = mregion_write(SELF->sh_region,buf,bufsize,SHM_FILE->sh_addr);
+ struct mregion *region = shm_region(SELF);
+ if (E_ISERR(region)) return (ssize_t)E_GTERR(region);
+ result = mregion_write(region,buf,bufsize,SHM_FILE->sh_addr);
  if (E_ISOK(result)) SHM_FILE->sh_addr += result;
  return result;
 }
@@ -62,7 +88,7 @@ shm_fseek(struct file *__restrict fp, off_t off, int whence) {
  case SEEK_CUR: new_addr = SHM_FILE->sh_addr+(raddr_t)off; break;
  case SEEK_END:
   /* XXX: What does linux do here? */
-  new_addr = SELF->sh_region->mr_size-(raddr_t)off;
+  new_addr = SHM_REGION_SIZE-(raddr_t)off;
   break;
  default: return -EINVAL;
  }
@@ -72,18 +98,24 @@ shm_fseek(struct file *__restrict fp, off_t off, int whence) {
 PRIVATE ssize_t KCALL
 shm_fpread(struct file *__restrict fp,
            USER void *buf, size_t bufsize, pos_t pos) {
+ struct mregion *region;
 #if __SIZEOF_POS_T__ > __SIZEOF_POINTER__
  if (pos > (pos_t)((uintptr_t)-1)) return 0;
 #endif
- return mregion_read(SELF->sh_region,buf,bufsize,(raddr_t)pos);
+ region = shm_region(SELF);
+ if (E_ISERR(region)) return (ssize_t)E_GTERR(region);
+ return mregion_read(region,buf,bufsize,(raddr_t)pos);
 }
 PRIVATE ssize_t KCALL
 shm_fpwrite(struct file *__restrict fp,
             USER void const *buf, size_t bufsize, pos_t pos) {
+ struct mregion *region;
 #if __SIZEOF_POS_T__ > __SIZEOF_POINTER__
  if (pos > (pos_t)((uintptr_t)-1)) return 0;
 #endif
- return mregion_write(SELF->sh_region,buf,bufsize,(raddr_t)pos);
+ region = shm_region(SELF);
+ if (E_ISERR(region)) return (ssize_t)E_GTERR(region);
+ return mregion_write(region,buf,bufsize,(raddr_t)pos);
 }
 PRIVATE errno_t KCALL
 shm_fallocate(struct file *__restrict fp,
@@ -103,8 +135,10 @@ shm_fmmap(struct file *__restrict fp, pos_t pos, size_t size,
   * NOTE: The caller will have already handled matching alignments of fixed-file mappings. */
  if unlikely(!IS_ALIGNED(pos,PAGESIZE))
     return E_PTR(-EINVAL);
- result = SELF->sh_region;
+ result = shm_region(SELF);
+ if (E_ISERR(result)) goto end;
  CHECK_HOST_DOBJ(result);
+
  /* Make sure the end of the requested mapping isn't located out-of-bounds. */
  if unlikely(__builtin_add_overflow(pos,size,&end_addr) ||
              end_addr > result->mr_size)
@@ -112,6 +146,7 @@ shm_fmmap(struct file *__restrict fp, pos_t pos, size_t size,
  /* Simply use the given `pos' as start address within the SHM region. */
  *pregion_start = (raddr_t)pos;
  MREGION_INCREF(result);
+end:
  return result;
 }
 #undef SELF
@@ -137,8 +172,8 @@ shm_setattr(struct inode *__restrict ino, iattrset_t changed) {
    * which case we replace the existing contained region with a new one. */
   if (ino->i_attr.ia_siz != 0) return -EINVAL;
   region = SELF->sh_region;
-
-  if (region->mr_refcnt == 1) {
+  if (!region);
+  else if (region->mr_refcnt == 1) {
    struct mregion_part *iter,*next;
    errno_t error; struct mman *omm = NULL;
    /* We can simply clear out the old region or any allocated data,
@@ -177,6 +212,9 @@ shm_setattr(struct inode *__restrict ino, iattrset_t changed) {
    region->mr_part0.mt_locked         = 0;
    rwlock_endwrite(&region->mr_plock);
   } else {
+   /* Simply delete the region. - It'll be lazily allocated once used. */
+   SELF->sh_region = NULL;
+   MREGION_DECREF(region);
   }
  }
  return -EOK;
@@ -190,7 +228,8 @@ shm_stat(struct inode *__restrict ino,
 }
 PRIVATE void KCALL
 shm_fini(struct inode *__restrict ino) {
- MREGION_DECREF(SELF->sh_region);
+ if (SELF->sh_region)
+     MREGION_DECREF(SELF->sh_region);
 }
 #undef SELF
 

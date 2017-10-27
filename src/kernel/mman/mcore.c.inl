@@ -545,16 +545,16 @@ err_mapregion:
   /* Simply replace the  */
   assert(region == self->mb_region);
   /* Inherit old reference into `region' (dropped below) */
-  /* Inherit new reference from 'mapregion' (Kept valid due to caller-held lock to 'mspace->m_lock') */
+  /* Inherit new reference from `mapregion' (Kept valid due to caller-held lock to `mspace->m_lock') */
   self->mb_region = mapregion;
 
   /* NOTE: Since the guard region must not have any parts associated with
    *       it, we can assume that no page-directory mapping exists within.
    *       So with that in mind, alongside the fact that the guard replacement
-   *      'mapregion' is also empty (as we've yet to allocate its contents
-   *       through use of ALOA semantics), nothing was mapped, and will be
+   *      `mapregion' is also empty (as we've yet to allocate its contents
+   *       through use of ALLOA semantics), nothing was mapped, and will be
    *       mapped for the time being.
-   *       Actual memory will be assigned later, once 'mregion_load_core()' gets called.
+   *       Actual memory will be assigned later, once `mregion_load_core()' gets called.
    * HINT: These facts are asserted above.
    */
   /* mbranch_remap_unlocked(...); */

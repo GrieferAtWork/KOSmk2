@@ -763,7 +763,7 @@ union{
  struct hstack            t_hstack;    /*< [const] Kernel stack. */
  VIRT void               *t_lastcr2;   /*< [lock(PRIVATE(THIS_TASK))] The exact address of the last unhandled page-fault.
                                         *   >> Stored here, as the register value is volatile and may
-                                        *      be overwritten at any time due to preemption or ALOA/COW. */
+                                        *      be overwritten at any time due to preemption or ALLOA/COW. */
  LIST_NODE(struct task)   t_mman_tasks;/*< [lock(t_mman->m_tasks_lock)] Chain of tasks using 't_mman' */
  VIRT     struct mman    *t_real_mman; /*< [const][1..1] The real memory manager of this task. */
  VIRT REF struct mman    *t_mman;      /*< [lock(PRIVATE(THIS_TASK))][1..1] The effective memory manager & page directory used by this thread.

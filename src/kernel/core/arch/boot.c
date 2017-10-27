@@ -517,7 +517,7 @@ L(    orl  $(CR4_PSE), %ecx  /* Required for 4Mib pages. */                   )
 L(    movl %ecx, %cr4                                                         )
 L(                                                                            )
 L(    movl %cr0, %ecx                                                         )
-/* Set paging + write-protect bits. NOTE: WP is required for ALOA/COW in ring#0 */
+/* Set paging + write-protect bits. NOTE: WP is required for ALLOA/COW in ring#0 */
 L(    orl  $(CR0_PG|CR0_WP), %ecx                                             )
 L(    movl %ecx, %cr0 /* This instruction finally enables paging! */          )
 L(                                                                            )

@@ -355,7 +355,7 @@ SYSCALL_DEFINE2(xdlsym,USER void *,handle,USER char const *,symbol) {
  struct mman *mm = THIS_MMAN;
  struct instance *inst;
  task_crit();
- /* NOTE: Need a write-lock in case accessing 'symbol' invokes ALOA. */
+ /* NOTE: Need a write-lock in case accessing 'symbol' invokes ALLOA. */
  result = E_PTR(mman_write(mm));
  if (E_ISERR(result)) goto end;
 
