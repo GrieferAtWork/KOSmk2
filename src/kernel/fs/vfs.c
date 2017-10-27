@@ -193,7 +193,8 @@ vnode_fopen(struct inode *__restrict ino,
 #define DATA container_of(dir_node->i_data,struct vnode_data,v_common)
 PRIVATE REF struct inode *KCALL
 vnode_lookup(struct inode *__restrict dir_node,
-             struct dentry *__restrict result_path) {
+             struct dentry *__restrict result_path,
+             int flags) {
  struct vnode_data *data = DATA;
  struct vnode_dirent *iter,*end;
  REF struct inode *result = E_PTR(-ENOENT);
@@ -201,13 +202,27 @@ vnode_lookup(struct inode *__restrict dir_node,
  end = (iter = data->v_entv)+data->v_entc;
  for (; iter != end; ++iter) {
   if (iter->d_name.dn_hash == result_path->d_name.dn_hash &&
-      iter->d_name.dn_size == result_path->d_name.dn_size &&
-      memcmp(iter->d_name.dn_name,result_path->d_name.dn_name,
-             result_path->d_name.dn_size*sizeof(char)) == 0) {
-   /* Found it! */
-   result = iter->d_node;
-   INODE_INCREF(result);
-   break;
+      iter->d_name.dn_size == result_path->d_name.dn_size) {
+   if (memcmp(iter->d_name.dn_name,result_path->d_name.dn_name,
+              result_path->d_name.dn_size*sizeof(char)) == 0) {
+    /* Found it! */
+    result = iter->d_node;
+    INODE_INCREF(result);
+    break;
+   }
+#ifndef CONFIG_NO_DOSFS
+   if (flags&AT_DOSPATH &&
+       memcasecmp(iter->d_name.dn_name,result_path->d_name.dn_name,
+                  result_path->d_name.dn_size*sizeof(char)) == 0) {
+    /* Case-insensitive match */
+    memcpy(result_path->d_name.dn_name,iter->d_name.dn_name,
+           result_path->d_name.dn_size*sizeof(char));
+    result = iter->d_node;
+    INODE_INCREF(result);
+    break;
+   }
+#endif /* !CONFIG_NO_DOSFS */
+
   }
  }
  atomic_rwlock_endread(&data->v_lock);
@@ -384,7 +399,7 @@ vnode_mkreg(struct inode *__restrict dir_node,
             iattrset_t mode) {
  /* TODO: Create text files? (Yes: This is something we must also simulate!) */
  if (!(mode&IATTR_EXISTS)) return E_PTR(-EROFS);
- return vnode_lookup(dir_node,path);
+ return vnode_lookup(dir_node,path,0);
 }
 
 
@@ -712,7 +727,7 @@ vdev_effective(struct inode *__restrict ino) {
 PRIVATE REF struct file *KCALL vdev_fopen(struct inode *__restrict UNUSED(ino), struct dentry *__restrict UNUSED(node_ent), oflag_t UNUSED(oflags)) { return E_PTR(-ENODEV); }
 PRIVATE errno_t KCALL vdev_setattr(struct inode *__restrict UNUSED(ino), iattrset_t UNUSED(changed)) { return -ENODEV; }
 PRIVATE ssize_t KCALL vdev_readlink(struct inode *__restrict UNUSED(ino), USER char *__restrict UNUSED(buf), size_t UNUSED(bufsize)) { return -ENODEV; }
-PRIVATE REF struct inode *KCALL vdev_lookup(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(result_path)) { return E_PTR(-ENODEV); }
+PRIVATE REF struct inode *KCALL vdev_lookup(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(result_path), int UNUSED(flags)) { return E_PTR(-ENODEV); }
 PRIVATE errno_t KCALL vdev_hrdlink(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(target_ent), struct inode *__restrict UNUSED(dst_node)) { return -ENODEV; }
 PRIVATE REF struct inode *KCALL vdev_symlink(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(target_ent), USER char const *UNUSED(target_text), struct iattr const *__restrict UNUSED(result_attr)) { return E_PTR(-ENODEV); }
 PRIVATE REF struct inode *KCALL vdev_mkdir(struct inode *__restrict UNUSED(dir_node), struct dentry *__restrict UNUSED(target_ent), struct iattr const *__restrict UNUSED(result_attr)) { return E_PTR(-ENODEV); }

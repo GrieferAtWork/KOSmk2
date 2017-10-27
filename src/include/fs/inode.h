@@ -265,11 +265,17 @@ struct inodeops {
   * >> ino_lookup(EFFECTIVE_INODE("/opt"),DENTRY("/opt/my_file")) -> INODE("/opt/my_file")
   * NOTE: Don't return NULL if you didn't find a node. - return 'E_PTR(-ENOENT)' instead!
   * @assume(S_ISDIR(inode->i_attr.ia_mode));
+  * @param: flags:       Lookup flags (May contain 'AT_DOSPATH' for case-insensitive lookup)
+  *               NOTE: 'AT_DOSPATH' is never set and can safely be ignored when 'CONFIG_NO_DOSFS' is enabled.
+  *            WARNING:  In the event that the match occurs due to case-insensitivity, this operator
+  *                      is responsible for updating 'result_path->d_name' to the correct casing.
+  *                      For this, simply 'memcpy()' the correct name into it.
   * @return: * :         A reference to the INode that should be associated with 'result_path'.
   * @return: -ENOENT:    No INode exists under the name associated with 'result_path'
   * @return: E_ISERR(*): An error occurred. */
  REF struct inode *(KCALL *ino_lookup)(struct inode *__restrict dir_node,
-                                       struct dentry *__restrict result_path);
+                                       struct dentry *__restrict result_path,
+                                       int flags);
  /* $ ln "/opt/my_file" "/home/my_link"
   * >> ino_hrdlink(EFFECTIVE_INODE("/home"),
   * >>             DENTRY("/home/my_file"),

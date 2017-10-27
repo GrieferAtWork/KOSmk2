@@ -658,12 +658,13 @@ LOCAL size_t KCALL pty_drivername(char prefix, char *buf, minor_t id) {
 PRIVATE REF struct dentry *KCALL
 pty_add2dev(char prefix, struct device *__restrict self) {
  char buf[PTY_DEVICENAME_MAX];
- struct dentryname name; struct fsaccess ac;
+ struct dentryname name;
+ struct fsaccess access;
  name.dn_name = buf;
  name.dn_size = pty_drivername(prefix,buf,MINOR(DEVICE_ID(self)));
  dentryname_loadhash(&name);
- FSACCESS_SETHOST(ac);
- return dentry_insnod(devfs_root,&name,&ac,self,NULL);
+ FSACCESS_SETHOST(access);
+ return dentry_insnod(devfs_root,&name,&access,self,NULL);
 }
 
 PUBLIC REF struct dentry *KCALL

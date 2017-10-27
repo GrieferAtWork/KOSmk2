@@ -108,11 +108,10 @@ LOCAL void KCALL dentry_clsnode(struct dentry *__restrict self);
  * entry and returning a reference to it when found.
  * $ cd "/opt/my_path" # dentry_open(DENTRY("/"),"opt",...);
  *                     # dentry_open(DENTRY("/opt"),"my_path",...);
- * @param: always_follow_links: When TRUE, always follow symbolic links,
- *                              disregardless of what 'walker->dw_nofollow'
- *                              may want to. (Set to true to follow links
- *                              in all intermediate path components when
- *                              walking a cross-directory filename)
+ * @param: always_follow_links: When TRUE, always follow symbolic links, irregardless of
+ *                              what 'walker->dw_flags&DENTRY_WALK_NOFOLLOW' may want to.
+ *                             (Set to true to follow links in all intermediate path
+ *                              components when walking a cross-directory filename)
  * >> This is where the difference between the following comes to effect:
  *    $ ln -s /  /dev/foo
  *    $ ls -la /dev/foo  # Only prints the symlink "/dev/foo"

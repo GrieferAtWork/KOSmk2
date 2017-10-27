@@ -100,18 +100,33 @@ INTDEF int LIBCCALL libc_removeat(int fd, char const *filename);
 INTDEF int LIBCCALL libc_remove(char const *filename);
 INTDEF int LIBCCALL libc_rename(char const *old, char const *new_);
 INTDEF pid_t LIBCCALL libc_fork(void);
-INTDEF int LIBCCALL libc_execve(char const *path, char *const argv[], char *const envp[]);
-INTDEF int LIBCCALL libc_fexecve(int fd, char *const argv[], char *const envp[]);
+
+/* Universal exec() functions. */
+INTDEF int ATTR_CDECL libc_fexeclat(int dfd, char const *path, char const *arg, ... /*, int flags*/);
+INTDEF int ATTR_CDECL libc_fexecleat(int dfd, char const *path, char const *arg, ... /*, char *const envp[], int flags*/);
+INTDEF int ATTR_CDECL libc_fexeclpat(char const *file, char const *arg, ... /*, int flags*/);
+INTDEF int ATTR_CDECL libc_fexeclpeat(char const *file, char const *arg, ... /*, char *const envp[], int flags*/);
+INTDEF int LIBCCALL libc_fexecvat(int dfd, char const *path, char *const argv[], int flags);
+INTDEF int LIBCCALL libc_fexecveat(int dfd, char const *path, char *const argv[], char *const envp[], int flags);
+INTDEF int LIBCCALL libc_fexecvpat(char const *file, char *const argv[], int flags);
+INTDEF int LIBCCALL libc_fexecvpeat(char const *file, char *const argv[], char *const envp[], int flags);
+
+/* Native linux exec() functions. */
 INTDEF int ATTR_CDECL libc_execl(char const *path, char const *arg, ...);
 INTDEF int ATTR_CDECL libc_execle(char const *path, char const *arg, ...);
 INTDEF int ATTR_CDECL libc_execlp(char const *file, char const *arg, ...);
 INTDEF int ATTR_CDECL libc_execlpe(char const *file, char const *arg, ...);
-INTDEF int ATTR_CDECL libc_fexecl(int fd, char const *arg, ...);
-INTDEF int ATTR_CDECL libc_fexecle(int fd, char const *arg, ...);
-INTDEF int LIBCCALL libc_fexecv(int fd, char *const argv[]);
+INTDEF int LIBCCALL libc_execve(char const *path, char *const argv[], char *const envp[]);
 INTDEF int LIBCCALL libc_execvpe(char const *file, char *const argv[], char *const envp[]);
 INTDEF int LIBCCALL libc_execv(char const *path, char *const argv[]);
 INTDEF int LIBCCALL libc_execvp(char const *file, char *const argv[]);
+
+/* KOS exec() file-descriptor extension functions. */
+INTDEF int ATTR_CDECL libc_fexecl(int fd, char const *arg, ...);
+INTDEF int ATTR_CDECL libc_fexecle(int fd, char const *arg, ...);
+INTDEF int LIBCCALL libc_fexecv(int fd, char *const argv[]);
+INTDEF int LIBCCALL libc_fexecve(int fd, char *const argv[], char *const envp[]);
+
 INTDEF int LIBCCALL libc_link(char const *from, char const *to);
 INTDEF int LIBCCALL libc_symlink(char const *from, char const *to);
 INTDEF ssize_t LIBCCALL libc_readlink(char const *__restrict path, char *__restrict buf, size_t len);

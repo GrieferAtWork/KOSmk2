@@ -69,8 +69,8 @@ SYSCALL_DEFINE2(truncate,USER char const *,path,lpos_t,length)
  struct dentry *cwd; errno_t result;
  struct dentry *truncate_file;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = false;
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
  task_crit();
  result = fdman_read(fdm);
  if (E_ISERR(result)) goto end;
@@ -169,16 +169,16 @@ SYSCALL_DEFINE4(fallocate,int,fd,int,mode,lpos_t,offset,lpos_t,length)
 #undef offset
 
 
-SYSCALL_DEFINE4(faccessat,int,dfd,USER char const *,filename,int,mode,int,flag) {
+SYSCALL_DEFINE4(faccessat,int,dfd,USER char const *,filename,int,mode,u32,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *access_dentry;
  struct dentry *cwd; errno_t result;
- if (!(flag&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) && filename) return -EINVAL;
+ if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) && filename) return -EINVAL;
 
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(flag&AT_SYMLINK_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
 
  cwd = fdman_get_dentry(fdm,dfd);
@@ -218,8 +218,8 @@ user_chfd(int fd, USER char const *path) {
  struct dentry *cwd; errno_t result;
  struct fdman *fdm = THIS_FDMAN;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = false;
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
  task_crit();
 
  result = fdman_read(fdm);
@@ -277,7 +277,7 @@ SYSCALL_DEFINE1(chdir,USER char const *,path) {
 SYSCALL_DEFINE1(chroot,USER char const *,path) {
  return user_chfd(AT_FDROOT,path);
 }
-SYSCALL_DEFINE3(xfchdirat,int,dfd,USER char const *,path,int,flags) {
+SYSCALL_DEFINE3(xfchdirat,int,dfd,USER char const *,path,u32,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *pwd_dentry;
@@ -285,8 +285,8 @@ SYSCALL_DEFINE3(xfchdirat,int,dfd,USER char const *,path,int,flags) {
  if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) && path)
        return -EINVAL;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(flags&AT_SYMLINK_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
 
  cwd = fdman_get_dentry(fdm,dfd);
@@ -402,14 +402,14 @@ user_fsetattr(int fd, struct iattr const *__restrict new_attr,
 PRIVATE errno_t KCALL
 user_fsetattrat(int dfd, USER char const *filename,
                 struct iattr const *__restrict new_attr,
-                iattrset_t attr_valid, bool no_follow) {
+                iattrset_t attr_valid, u32 flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *update_dentry;
  struct dentry *cwd; errno_t result;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = no_follow;
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
 
  cwd = fdman_get_dentry(fdm,dfd);
@@ -458,7 +458,9 @@ SYSCALL_DEFINE3(fchown,int,fd,uid_t,user,gid_t,group) {
 SYSCALL_DEFINE3(fchmodat,int,dfd,USER char const *,filename,mode_t,mode) {
  struct iattr new_attr;
  new_attr.ia_mode = mode;
- return user_fsetattrat(dfd,filename,&new_attr,IATTR_MODE,mode&O_NOFOLLOW);
+ return user_fsetattrat(dfd,filename,&new_attr,IATTR_MODE,
+                       ((mode&O_NOFOLLOW) ? DENTRY_WALK_NOFOLLOW : 0)|
+                       ((mode&O_DOSPATH) ? DENTRY_WALK_DOSPATH : 0));
 }
 SYSCALL_DEFINE5(fchownat,int,dfd,USER char const *,filename,uid_t,user,gid_t,group,int,flag) {
  struct iattr new_attr;
@@ -477,10 +479,11 @@ SYSCALL_DEFINE5(xfreadlinkat,int,dfd,USER char const *,path,
  struct dentry_walker walker;
  struct dentry *cwd; ssize_t result;
  struct dentry *link_file;
- (void)flags; /* TODO: AT_DOSPATH */
+ /* Symlink follow must always be disabled here. */
+ if (flags&AT_SYMLINK_FOLLOW) return -EINVAL;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = true;
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_WALK_NOFOLLOW|DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
  if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
@@ -536,16 +539,16 @@ SYSCALL_DEFINE2(fstat64,int,fd,USER struct stat64 *,statbuf) {
  return result;
 }
 SYSCALL_DEFINE4(fstatat64,int,dfd,USER char const *,filename,
-                USER struct stat64 *,statbuf,int,flag) {
+                USER struct stat64 *,statbuf,int,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *cwd; errno_t result;
  struct dentry *stat_file;
- if (!(flag&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) &&
+ if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) &&
        filename) return -EINVAL;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(flag&AT_SYMLINK_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
  if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
@@ -587,8 +590,11 @@ SYSCALL_DEFINE4(mknodat,int,dfd,USER char const *,filename,mode_t,mode,dev_t,dev
  REF struct dentry *cwd; errno_t result;
  REF struct dentry *result_entry;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(mode&O_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = 0;
+ if (mode&O_NOFOLLOW) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
+ if (mode&O_DOSPATH)  walker.dw_flags |= DENTRY_WALK_DOSPATH;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(walker.dw_flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
  if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
@@ -647,8 +653,11 @@ SYSCALL_DEFINE3(mkdirat,int,dfd,USER char const *,pathname,mode_t,mode) {
  REF struct dentry *cwd; errno_t result;
  REF struct dentry *result_entry;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(mode&O_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = 0;
+ if (mode&O_NOFOLLOW) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
+ if (mode&O_DOSPATH)  walker.dw_flags |= DENTRY_WALK_DOSPATH;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(walker.dw_flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
  if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
@@ -677,18 +686,18 @@ end: task_endcrit();
  return result;
 }
 
-SYSCALL_DEFINE3(unlinkat,int,dfd,USER char const *,pathname,int,flag) {
+SYSCALL_DEFINE3(unlinkat,int,dfd,USER char const *,pathname,u32,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *cwd; errno_t result;
  struct dentry *unlink_file;
- if (!(flag&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) &&
+ if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) &&
        pathname) return -EINVAL;
- if (!(flag&(AT_REMOVEDIR|AT_REMOVEREG)))
-       flag |= AT_REMOVEREG; /* Default: Unlink regular files. */
+ if (!(flags&(AT_REMOVEDIR|AT_REMOVEREG)))
+       flags |= AT_REMOVEREG; /* Default: Unlink regular files. */
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(flag&AT_SYMLINK_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
  if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
@@ -705,7 +714,7 @@ SYSCALL_DEFINE3(unlinkat,int,dfd,USER char const *,pathname,int,flag) {
  else {
   /* Unlink this directory entry. */
   result = dentry_remove(unlink_file,&walker.dw_access,
-                         flag&(AT_REMOVEDIR|AT_REMOVEREG));
+                         flags&(AT_REMOVEDIR|AT_REMOVEREG));
   DENTRY_DECREF(unlink_file);
  }
 end:
@@ -713,16 +722,15 @@ end:
  return result;
 }
 SYSCALL_DEFINE4(xfsymlinkat,USER char const *,oldname,int,newdfd,
-                USER char const *,newname,int,flags) {
+                USER char const *,newname,u32,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct iattr file_attr;
  REF struct dentry *cwd; errno_t result;
  REF struct dentry *result_entry;
- /* TODO: 'flags&AT_DOSPATH' */
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = false;
+ walker.dw_nlink = 0;
+ walker.dw_flags = GET_FSMODE(flags)&(DENTRY_WALK_UMASK&~(DENTRY_WALK_NOFOLLOW));
  task_crit();
  cwd = fdman_get_dentry(fdm,newdfd);
  if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
@@ -755,7 +763,7 @@ SYSCALL_DEFINE3(symlinkat,USER char const *,oldname,int,newdfd,USER char const *
 }
 
 SYSCALL_DEFINE5(linkat,int,olddfd,USER char const *,oldname,
-                       int,newdfd,USER char const *,newname,int,flags) {
+                       int,newdfd,USER char const *,newname,u32,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  REF struct dentry *oldcwd,*newcwd;
@@ -764,8 +772,8 @@ SYSCALL_DEFINE5(linkat,int,olddfd,USER char const *,oldname,
  errno_t result;
  if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW))) return -EINVAL;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(flags&AT_SYMLINK_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
  oldcwd = fdman_get_dentry(fdm,olddfd);
  if (E_ISERR(oldcwd)) { result = E_GTERR(oldcwd); goto end; }
@@ -808,16 +816,17 @@ end:
 }
 SYSCALL_DEFINE5(xrenameat,int,olddfd,USER char const *,oldname,
                           int,newdfd,USER char const *,newname,
-                          int,flags) {
+                          u32,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  REF struct dentry *oldcwd,*newcwd;
  REF struct dentry *rename_file,*result_entry;
  errno_t result;
- if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW))) return -EINVAL;
+ if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) &&
+       oldname) return -EINVAL;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(flags&AT_SYMLINK_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
  oldcwd = fdman_get_dentry(fdm,olddfd);
  if (E_ISERR(oldcwd)) { result = E_GTERR(oldcwd); goto end; }
@@ -866,8 +875,8 @@ SYSCALL_DEFINE4(utimensat,int,dfd,USER char const *,filename,
  if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) &&
        filename) return -EINVAL;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(flags&AT_SYMLINK_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
  if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
@@ -934,8 +943,11 @@ SYSCALL_DEFINE4(openat,int,dfd,USER char const *,filename,oflag_t,flags,mode_t,m
  struct dentry *cwd; union { errno_t e; int f; } result;
  struct iattr file_attr;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(mode&O_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = 0;
+ if (mode&O_NOFOLLOW) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
+ if (mode&O_DOSPATH)  walker.dw_flags |= DENTRY_WALK_DOSPATH;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(walker.dw_flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
  if (E_ISERR(cwd)) { result.e = E_GTERR(cwd); goto end; }
@@ -1184,8 +1196,8 @@ mount_open_device(USER char const *dev_name, int access,
 
  /* Assume a standard filename. */
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = false;
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
  error = fdman_read(fdm);
  if (E_ISERR(error)) return E_PTR(error);;
  walker.dw_root = fdm->fm_root;
@@ -1275,8 +1287,10 @@ mount_make_superblock(USER char const *dev_name,
   struct fdman *fdm = THIS_FDMAN;
 
   FSACCESS_SETUSER(walker.dw_access);
-  walker.dw_nlink    = 0;
-  walker.dw_nofollow = false; /* Erm... Security hole? Linux seems to do the same? */
+  walker.dw_nlink = 0;
+  /* Erm... Security hole? Linux seems to do the same?
+   * At least in KOS, you can disable symlinks using 'fsmask()' */
+  walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
 
   result = E_PTR(fdman_read(fdm));
   if (E_ISERR(result)) return result;
@@ -1410,8 +1424,9 @@ SYSCALL_DEFINE5(mount,USER char const *,dev_name,USER char const *,dir_name,
      return -EPERM;
 
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = false; /* Erm... Security hole? Linux seems to do the same? */
+ walker.dw_nlink = 0;
+ /* Erm... Security hole? Linux seems to do the same? */
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
  task_crit();
 
  result = fdman_read(fdm);
@@ -1454,8 +1469,11 @@ SYSCALL_DEFINE2(umount,USER char const *,name,int,flags) {
      return -EPERM;
 
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = !!(flags&UMOUNT_NOFOLLOW);
+ walker.dw_nlink = 0;
+ walker.dw_flags = 0;
+ if (flags&UMOUNT_NOFOLLOW)
+     walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(walker.dw_flags));
  task_crit();
 
  result = fdman_read(fdm);

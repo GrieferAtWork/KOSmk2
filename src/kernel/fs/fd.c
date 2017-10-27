@@ -169,6 +169,8 @@ PUBLIC struct fdman fdman_kernel = {
                      * >> You better work harder for something
                      *    you're not supposed to do! */
     .fm_vecv   = NULL,
+    .fm_fsmask = FDMAN_FSMASK_DEFAULT,
+    .fm_fsmode = FDMAN_FSMODE_DEFAULT,
 };
 
 
@@ -182,12 +184,14 @@ PUBLIC struct fdman *KCALL fdman_init(struct fdman *self) {
   self->fm_cwd  = &fs_root;
   self->fm_root = &fs_root;
   ATOMIC_FETCHADD(fs_root.d_refcnt,2);
-  self->fm_hint = 0;
-  self->fm_veca = 0;
-  self->fm_vecc = 0;
-  self->fm_vecm = FDMAN_DEFAULT_VECM;
-  self->fm_vecv = NULL;
-  self->fm_umask = 0022;
+  self->fm_hint   = 0;
+  self->fm_veca   = 0;
+  self->fm_vecc   = 0;
+  self->fm_vecm   = FDMAN_DEFAULT_VECM;
+  self->fm_vecv   = NULL;
+  self->fm_umask  = 0022;
+  self->fm_fsmask = FDMAN_FSMASK_DEFAULT;
+  self->fm_fsmode = FDMAN_FSMODE_DEFAULT;
  }
  return self;
 }

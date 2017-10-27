@@ -322,7 +322,7 @@ pdb_debug_loader(struct module *__restrict mod) {
     fdman_endread(THIS_FDMAN);
     FSACCESS_SETUSER(walker.dw_access);
     walker.dw_nlink = 0;
-    walker.dw_nofollow = false;
+    walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
     pdb_file = dentry_open(pdb_folder,&pdb_filename,&walker,
                            &attr,IATTR_NONE,O_RDONLY);
     DENTRY_DECREF(walker.dw_root);

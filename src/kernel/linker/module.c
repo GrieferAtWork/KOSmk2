@@ -341,22 +341,23 @@ module_open_in_path(HOST char const *__restrict path, size_t pathlen,
  struct dentry *module_file;
  struct dentry *cwd;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = false;
+ walker.dw_nlink = 0;
 
  if (use_user_fs) {
   struct fdman *fdm = THIS_FDMAN;
+  walker.dw_flags = DENTRY_FMASK(GET_FSMODE(0));
   result = E_PTR(fdman_read(fdm));
   if (E_ISERR(result)) goto end;
-  cwd            = fdm->fm_cwd;
-  walker.dw_root = fdm->fm_root;
+  cwd             = fdm->fm_cwd;
+  walker.dw_root  = fdm->fm_root;
   DENTRY_INCREF(cwd);
   DENTRY_INCREF(walker.dw_root);
   fdman_endread(fdm);
  } else {
   /* Use the true filesystem root */
-  cwd            = &fs_root;
-  walker.dw_root = &fs_root;
+  walker.dw_flags = 0;
+  cwd             = &fs_root;
+  walker.dw_root  = &fs_root;
   ATOMIC_FETCHADD(fs_root.d_refcnt,2);
  }
 
@@ -478,8 +479,8 @@ module_open(struct file *__restrict fp) {
  /* If it didn't contain a module, simply load a new module! */
  result = module_open_new(fp);
  assert(result);
+ atomic_rwlock_write(&node->i_file.i_files_lock);
  if (E_ISOK(result)) {
-  atomic_rwlock_write(&node->i_file.i_files_lock);
   if likely(node->i_file.i_module == IFILE_MODULE_LOADING ||
            !node->i_file.i_module) { /* May be set to NULL if the node was unloaded? */
    node->i_file.i_module = result;
@@ -499,8 +500,12 @@ module_open(struct file *__restrict fp) {
    *       #2 m_file  ->  REF(f_node)
    *       #3 f_node  ->  i_file.i_module // Can't be a reference to prevent a loop with #1.
    */
-  atomic_rwlock_endwrite(&node->i_file.i_files_lock);
+ } else {
+  /* Undo the loading state of the module in the INode cache. */
+  if likely(node->i_file.i_module == IFILE_MODULE_LOADING)
+     node->i_file.i_module = NULL;
  }
+ atomic_rwlock_endwrite(&node->i_file.i_files_lock);
  return result;
 }
 

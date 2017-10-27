@@ -25,6 +25,7 @@
 #include <dev/blkdev.h>
 #include <dev/rtc.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include <fs/access.h>
 #include <fs/basic_types.h>
 #include <fs/dentry.h>
@@ -50,6 +51,13 @@
 #include <unistd.h>
 
 DECL_BEGIN
+
+#if DENTRY_WALK_NOFOLLOW != AT_SYMLINK_NOFOLLOW
+#error "These must be equal"
+#endif
+#if DENTRY_WALK_DOSPATH != AT_DOSPATH
+#error "These must be equal"
+#endif
 
 /* Filesystem root directory entry. */
 PUBLIC struct dentry fs_root = {
@@ -80,6 +88,9 @@ PUBLIC DEFINE_RWLOCK(fs_mountlock); /*< Lock for the global mounting point list.
 PUBLIC LIST_HEAD(struct superblock) fs_mountlist; /*< [lock(fs_mountlock)] Global mounting point list. */
 
 LOCAL bool KCALL dentry_rehashsubs_unlocked(struct dentry *__restrict self);
+#ifndef CONFIG_NO_DOSFS
+LOCAL struct dentry *KCALL dentry_getdossub_unlocked(struct dentry const *__restrict self, struct dentryname const *__restrict name);
+#endif /* !CONFIG_NO_DOSFS */
 LOCAL struct dentry *KCALL dentry_getsub_unlocked(struct dentry const *__restrict self, struct dentryname const *__restrict name);
 LOCAL void KCALL dentry_delsub_unlocked(struct dentry *__restrict self, struct dentry *__restrict sub);
 LOCAL REF struct dentry *KCALL dentry_addsub_unlocked(struct dentry *__restrict self, struct dentryname const *__restrict name);
@@ -666,21 +677,29 @@ rend: rwlock_endread(&self->i_attr_lock); goto end;
 
 PUBLIC void KCALL
 dentryname_loadhash(struct dentryname *__restrict self) {
+#ifdef CONFIG_NO_DOSFS
+#define CHR_HASHVAL(x)        (x)
+#else
+ /* Only hash uppercase characters so that
+  * hashes are still correct for DOS filenames.
+  * NOTE: This is still OK for KOS-fs mode, only producing additional collisions. */
+#define CHR_HASHVAL(x) tolower(x)
+#endif
  size_t hash = DENTRYNAME_EMPTY_HASH;
  size_t const *iter,*end;
  CHECK_HOST_DOBJ(self);
  end = (iter = (size_t const *)self->dn_name)+(self->dn_size/sizeof(size_t));
- while (iter != end) hash += *iter++,hash *= 9;
+ while (iter != end) hash += CHR_HASHVAL(*iter++),hash *= 9;
  switch (self->dn_size % sizeof(size_t)) {
 #if __SIZEOF_SIZE_T__ > 4
-  case 7:  hash += (size_t)((byte_t *)iter)[6] << 48;
-  case 6:  hash += (size_t)((byte_t *)iter)[5] << 40;
-  case 5:  hash += (size_t)((byte_t *)iter)[4] << 32;
-  case 4:  hash += (size_t)((byte_t *)iter)[3] << 24;
+  case 7:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[6]) << 48;
+  case 6:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[5]) << 40;
+  case 5:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[4]) << 32;
+  case 4:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[3]) << 24;
 #endif
-  case 3:  hash += (size_t)((byte_t *)iter)[2] << 16;
-  case 2:  hash += (size_t)((byte_t *)iter)[1] << 8;
-  case 1:  hash += (size_t)((byte_t *)iter)[0];
+  case 3:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[2]) << 16;
+  case 2:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[1]) << 8;
+  case 1:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[0]);
   default: break;
  }
  self->dn_hash = hash;
@@ -720,6 +739,39 @@ dentry_rehashsubs_unlocked(struct dentry *__restrict self) {
 }
 
 
+#ifndef CONFIG_NO_DOSFS
+/* Find a new child directory entry for the given `name'
+ * @return: NULL: Failed to find an entry. */
+LOCAL struct dentry *KCALL
+dentry_getdossub_unlocked(struct dentry const *__restrict self,
+                          struct dentryname const *__restrict name) {
+ struct dentry *result = NULL;
+ CHECK_HOST_TOBJ(self);
+ CHECK_HOST_TOBJ(name);
+ if (self->d_subs.ht_taba) {
+  result = self->d_subs.ht_tabv[name->dn_hash % self->d_subs.ht_taba];
+  while (result) {
+   if (result->d_name.dn_size == name->dn_size &&
+      !memcasecmp(result->d_name.dn_name,name->dn_name,name->dn_size))
+       break;
+   result = result->d_next;
+  }
+ }
+#if 1
+ if (result) {
+  syslog(LOG_DEBUG|LOG_FS,"[FS] Found cached file entry '%[dentry]'\n",result);
+ }
+#if 0
+ else {
+  syslog(LOG_DEBUG|LOG_FS,"[FS] No cached file entry %$q in '%[dentry]'\n",
+         name->dn_size,name->dn_name,self);
+ }
+#endif
+#endif
+ return result;
+}
+#endif /* !CONFIG_NO_DOSFS */
+
 /* Find a new child directory entry for the given `name'
  * @return: NULL: Failed to find an entry. */
 LOCAL struct dentry *KCALL
@@ -732,9 +784,8 @@ dentry_getsub_unlocked(struct dentry const *__restrict self,
   result = self->d_subs.ht_tabv[name->dn_hash % self->d_subs.ht_taba];
   while (result) {
    if (result->d_name.dn_size == name->dn_size &&
-      !memcmp(result->d_name.dn_name,name->dn_name,name->dn_size)) {
-    break;
-   }
+      !memcmp(result->d_name.dn_name,name->dn_name,name->dn_size))
+       break;
    result = result->d_next;
   }
  }
@@ -870,7 +921,12 @@ dentry_walk(struct dentry *__restrict self,
  if (E_ISERR(result)) goto end;
  atomic_rwlock_read(&self->d_subs_lock);
 reload_subs:
- result = dentry_getsub_unlocked(self,name);
+#ifndef CONFIG_NO_DOSFS
+ if (walker->dw_flags&DENTRY_WALK_DOSPATH) {
+  result = dentry_getdossub_unlocked(self,name);
+ } else
+#endif /* !CONFIG_NO_DOSFS */
+ { result = dentry_getsub_unlocked(self,name); }
  if (result) {
   res_ino = dentry_inode(result);
   if unlikely(!res_ino)
@@ -891,7 +947,11 @@ reload_subs:
    result = E_PTR(-ENOMEM);
   else {
    /* Lookup directory entry in INode. */
-   res_ino = (*ino->i_ops->ino_lookup)(ino,result);
+#ifdef CONFIG_NO_DOSFS
+   res_ino = (*ino->i_ops->ino_lookup)(ino,result,0);
+#else
+   res_ino = (*ino->i_ops->ino_lookup)(ino,result,walker->dw_flags);
+#endif
    assert(res_ino != 0);
    assert(result != 0);
    if likely(E_ISOK(res_ino)) {
@@ -916,7 +976,7 @@ reload_subs:
  else atomic_rwlock_endread(&self->d_subs_lock);
  if (E_ISOK(result)) {
   CHECK_HOST_TOBJ(res_ino);
-  if ((always_follow_links || !walker->dw_nofollow) &&
+  if ((always_follow_links || !DENTRY_WALKER_NOFOLLOW(walker)) &&
        INODE_ISLNK(res_ino) && res_ino->i_ops->ino_readlink) {
    /* Read a symbolic link. */
    struct dentry *link_result;
@@ -981,6 +1041,34 @@ dentry_xwalk(struct dentry *__restrict start,
  if (E_ISOK(result)) dentry_used(result);
  return result;
 }
+
+#ifdef CONFIG_NO_DOSFS
+#define ISSEP(walker,chr)            ((chr) == '/')
+#define FINDSEP(walker,path,pathlen)   memrchr((path),'/',(pathlen))
+#else
+FORCELOCAL bool KCALL
+dos_issep(struct dentry_walker const *__restrict walker, char chr) {
+ return chr == '/' || (chr == '\\' && walker->dw_flags&DENTRY_WALK_DOSPATH);
+}
+FORCELOCAL char *KCALL
+dos_findsep(struct dentry_walker const *__restrict walker,
+            char const *__restrict path, size_t pathlen) {
+ char *result = (char *)memrchr(path,'/',pathlen);
+ if (walker->dw_flags&DENTRY_WALK_DOSPATH) {
+  if (!result)
+   result = (char *)memrchr(path,'\\',pathlen);
+  else {
+   /* Search for a backslash after the forward-slash that we've found. */
+   char *other = (char *)memrchr(result,'\\',(path+pathlen)-result);
+   if (other) result = other;
+  }
+ }
+ return result;
+}
+#define ISSEP(walker,chr)            dos_issep(walker,chr)
+#define FINDSEP(walker,path,pathlen) dos_findsep(walker,path,pathlen)
+#endif
+
 PUBLIC REF struct dentry *KCALL
 dentry_xwalk_internal(struct dentry *__restrict start,
                       struct dentry_walker *__restrict walker,
@@ -994,9 +1082,9 @@ dentry_xwalk_internal(struct dentry *__restrict start,
  CHECK_HOST_DATA(path_str,path_len);
  end = (iter = path_str)+path_len;
  assert(iter <= end);
- if (iter != end && *iter == '/') {
+ if (iter != end && ISSEP(walker,*iter)) {
   /* Root-reference at the front. */
-  do ++iter; while (iter != end && *iter == '/');
+  do ++iter; while (iter != end && ISSEP(walker,*iter));
   start = walker->dw_root;
  }
  assert(iter <= end);
@@ -1005,7 +1093,7 @@ dentry_xwalk_internal(struct dentry *__restrict start,
  DENTRY_INCREF(start),result = start;
  for (;;) {
   assert(iter <= end);
-  if (iter == end || *iter == '/') {
+  if (iter == end || ISSEP(walker,*iter)) {
    part.dn_size = (size_t)((char *)iter-part.dn_name);
    dentryname_loadhash(&part);
    /* Always follow links, except within the last path component. */
@@ -1014,7 +1102,7 @@ dentry_xwalk_internal(struct dentry *__restrict start,
    DENTRY_DECREF(result);
    result = newresult;
    if (E_ISERR(result)) break;
-   while (iter != end) if (*++iter != '/') break;
+   while (iter != end) if (!ISSEP(walker,*++iter)) break;
    if (iter == end) break;
    part.dn_name = (char *)iter;
    continue;
@@ -1063,7 +1151,12 @@ reload_subs:
       res_entry = dir_ent->d_parent;
   break;
 def_name:default:
-  res_entry = dentry_getsub_unlocked(dir_ent,ent_name);
+#ifndef CONFIG_NO_DOSFS
+  if (walker->dw_flags&DENTRY_WALK_DOSPATH) {
+   res_entry = dentry_getdossub_unlocked(dir_ent,ent_name);
+  } else
+#endif /* !CONFIG_NO_DOSFS */
+  { res_entry = dentry_getsub_unlocked(dir_ent,ent_name); }
   break;
  }
  if (res_entry != NULL &&
@@ -1134,7 +1227,11 @@ def_name:default:
    }
   } else {
    /* Lookup existing nodes. */
-   res_ino = (*ino->i_ops->ino_lookup)(ino,res_entry);
+#ifdef CONFIG_NO_DOSFS
+   res_ino = (*ino->i_ops->ino_lookup)(ino,res_entry,0);
+#else
+   res_ino = (*ino->i_ops->ino_lookup)(ino,res_entry,walker->dw_flags);
+#endif
    assert(res_ino);
   }
   /* NOTE: Since we're write-locking the sub-cache of the paring directory,
@@ -1466,6 +1563,8 @@ dentry_insnod(struct dentry *__restrict dir_ent,
  CHECK_HOST_DOBJ(dev);
  ino = dentry_inode(dir_ent);
  if unlikely(!ino) return E_PTR(-ENOENT);
+ result = E_PTR(inode_mayaccess(ino,access,W_OK|X_OK));
+ if (E_ISERR(result)) goto end;
  if unlikely(!S_ISDIR(ino->i_attr.ia_mode)) { result = E_PTR(-ENOTDIR); goto end; }
  if unlikely(INODE_ISREADONLY_OR_CLOSING(ino)) { result = E_PTR(-EROFS); goto end; }
  if unlikely(!ino->i_ops->ino_mknod) { result = E_PTR(-EPERM); goto end; }
@@ -2118,12 +2217,12 @@ fs_xopen(struct dentry_walker *__restrict walker,
          iattrset_t attr_valid, oflag_t oflags) {
  REF struct file *result;
  struct dentryname filename;
- while (pathlen && path[0] == '/')
+ while (pathlen && ISSEP(walker,path[0]))
         cwd = walker->dw_root,--pathlen,++path;
- filename.dn_name = (char *)memrchr(path,'/',pathlen);
+ filename.dn_name = (char *)FINDSEP(walker,path,pathlen);
  if (filename.dn_name) {
   size_t leading_size = (size_t)(filename.dn_name-path);
-  while (leading_size && path[leading_size-1] == '/') --leading_size;
+  while (leading_size && ISSEP(walker,path[leading_size-1])) --leading_size;
   cwd = dentry_xwalk_internal(cwd,walker,path,leading_size);
   if (E_ISERR(cwd)) return E_PTR(E_GTERR(cwd));
   assert(cwd);
@@ -2154,12 +2253,12 @@ fs_xinsnod(struct dentry_walker *__restrict walker,
            REF struct inode **result_inode) {
  REF struct dentry *result;
  struct dentryname filename;
- while (pathlen && path[0] == '/')
+ while (pathlen && ISSEP(walker,path[0]))
         cwd = walker->dw_root,--pathlen,++path;
- filename.dn_name = (char *)memrchr(path,'/',pathlen);
+ filename.dn_name = (char *)FINDSEP(walker,path,pathlen);
  if (filename.dn_name) {
   size_t leading_size = (size_t)(filename.dn_name-path);
-  while (leading_size && path[leading_size-1] == '/') --leading_size;
+  while (leading_size && ISSEP(walker,path[leading_size-1])) --leading_size;
   cwd = dentry_xwalk_internal(cwd,walker,path,leading_size);
   if (E_ISERR(cwd)) return E_PTR(E_GTERR(cwd));
   assert(cwd);
@@ -2185,12 +2284,12 @@ fs_xmkreg(struct dentry_walker *__restrict walker,
           REF struct inode **result_inode) {
  REF struct dentry *result;
  struct dentryname filename;
- while (pathlen && path[0] == '/')
+ while (pathlen && ISSEP(walker,path[0]))
         cwd = walker->dw_root,--pathlen,++path;
- filename.dn_name = (char *)memrchr(path,'/',pathlen);
+ filename.dn_name = (char *)FINDSEP(walker,path,pathlen);
  if (filename.dn_name) {
   size_t leading_size = (size_t)(filename.dn_name-path);
-  while (leading_size && path[leading_size-1] == '/') --leading_size;
+  while (leading_size && ISSEP(walker,path[leading_size-1])) --leading_size;
   cwd = dentry_xwalk_internal(cwd,walker,path,leading_size);
   if (E_ISERR(cwd)) return E_PTR(E_GTERR(cwd));
   assert(cwd);
@@ -2216,12 +2315,12 @@ fs_xmkdir(struct dentry_walker *__restrict walker,
           REF struct inode **result_inode) {
  REF struct dentry *result;
  struct dentryname filename;
- while (pathlen && path[0] == '/')
+ while (pathlen && ISSEP(walker,path[0]))
         cwd = walker->dw_root,--pathlen,++path;
- filename.dn_name = (char *)memrchr(path,'/',pathlen);
+ filename.dn_name = (char *)FINDSEP(walker,path,pathlen);
  if (filename.dn_name) {
   size_t leading_size = (size_t)(filename.dn_name-path);
-  while (leading_size && path[leading_size-1] == '/') --leading_size;
+  while (leading_size && ISSEP(walker,path[leading_size-1])) --leading_size;
   cwd = dentry_xwalk_internal(cwd,walker,path,leading_size);
   if (E_ISERR(cwd)) return E_PTR(E_GTERR(cwd));
   assert(cwd);
@@ -2248,12 +2347,12 @@ fs_xsymlink(struct dentry_walker *__restrict walker,
             REF struct inode **result_inode) {
  REF struct dentry *result;
  struct dentryname filename;
- while (pathlen && path[0] == '/')
+ while (pathlen && ISSEP(walker,path[0]))
         cwd = walker->dw_root,--pathlen,++path;
- filename.dn_name = (char *)memrchr(path,'/',pathlen);
+ filename.dn_name = (char *)FINDSEP(walker,path,pathlen);
  if (filename.dn_name) {
   size_t leading_size = (size_t)(filename.dn_name-path);
-  while (leading_size && path[leading_size-1] == '/') --leading_size;
+  while (leading_size && ISSEP(walker,path[leading_size-1])) --leading_size;
   cwd = dentry_xwalk_internal(cwd,walker,path,leading_size);
   if (E_ISERR(cwd)) return E_PTR(E_GTERR(cwd));
   assert(cwd);
@@ -2278,12 +2377,12 @@ fs_xhrdlink(struct dentry_walker *__restrict walker,
             struct inode *__restrict dst_node) {
  REF struct dentry *result;
  struct dentryname filename;
- while (pathlen && path[0] == '/')
+ while (pathlen && ISSEP(walker,path[0]))
         cwd = walker->dw_root,--pathlen,++path;
- filename.dn_name = (char *)memrchr(path,'/',pathlen);
+ filename.dn_name = (char *)FINDSEP(walker,path,pathlen);
  if (filename.dn_name) {
   size_t leading_size = (size_t)(filename.dn_name-path);
-  while (leading_size && path[leading_size-1] == '/') --leading_size;
+  while (leading_size && ISSEP(walker,path[leading_size-1])) --leading_size;
   cwd = dentry_xwalk_internal(cwd,walker,path,leading_size);
   if (E_ISERR(cwd)) return E_PTR(E_GTERR(cwd));
   assert(cwd);
@@ -2309,12 +2408,12 @@ fs_xrename(struct dentry_walker *__restrict walker,
            REF struct inode **result_inode) {
  REF struct dentry *result;
  struct dentryname filename;
- while (pathlen && path[0] == '/')
+ while (pathlen && ISSEP(walker,path[0]))
         cwd = walker->dw_root,--pathlen,++path;
- filename.dn_name = (char *)memrchr(path,'/',pathlen);
+ filename.dn_name = (char *)FINDSEP(walker,path,pathlen);
  if (filename.dn_name) {
   size_t leading_size = (size_t)(filename.dn_name-path);
-  while (leading_size && path[leading_size-1] == '/') --leading_size;
+  while (leading_size && ISSEP(walker,path[leading_size-1])) --leading_size;
   cwd = dentry_xwalk_internal(cwd,walker,path,leading_size);
   if (E_ISERR(cwd)) return E_PTR(E_GTERR(cwd));
   assert(cwd);

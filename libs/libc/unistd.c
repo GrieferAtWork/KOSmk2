@@ -182,7 +182,7 @@ INTERN int LIBCCALL libc_rename(char const *old, char const *new_) { return libc
 INTERN pid_t LIBCCALL libc_fork(void) { return FORWARD_SYSTEM_VALUE(sys_fork()); }
 
 
-#ifdef __i386__
+#if defined(__i386__) && 1
 #ifdef __KERNEL__
 #define __IFNDEF_KERNEL(x)
 #else
@@ -223,6 +223,115 @@ L(    pushl    %eax  /* argv */                            ) \
 L(    pushl 12(%esp) /* path */                            ) \
 L(    call base                                            ) \
 __IFNDEF_KERNEL(L(addl $12, %esp                           )) \
+L(    ret                                                  ) \
+L(SYM_END(name)                                            ) \
+L(.previous                                                ) \
+);
+
+#define DEFINE_FSPAWNL(section_name,Treturn,Tchar,name,base) \
+        DEFINE_SPAWNL(section_name,Treturn,Tchar,name,base)
+#define DEFINE_SPAWNL(section_name,Treturn,Tchar,name,base) \
+GLOBAL_ASM( \
+L(.section section_name          ) \
+L(INTERN_ENTRY(name)             ) \
+L(    leal  12(%esp), %eax       ) \
+L(    pushl %eax     /* argv */  ) \
+L(    pushl -4(%eax) /* path */  ) \
+L(    pushl -8(%eax) /* mode */  ) \
+L(    call  base                 ) \
+__IFNDEF_KERNEL(L(addl $12, %esp)) \
+L(    ret                        ) \
+L(SYM_END(name)                  ) \
+L(.previous                      ) \
+);
+
+#define DEFINE_FSPAWNLE(section_name,Treturn,Tchar,name,base) \
+        DEFINE_SPAWNLE(section_name,Treturn,Tchar,name,base)
+#define DEFINE_SPAWNLE(section_name,Treturn,Tchar,name,base) \
+GLOBAL_ASM( \
+L(.section section_name                                    ) \
+L(INTERN_ENTRY(name)                                       ) \
+L(    leal  12(%esp), %eax                                 ) \
+L(    /* Scan ahead until the first NULL-pointer */        ) \
+L(1:  addl  $4,       %eax                                 ) \
+L(    testl $-1,   -4(%eax)                                ) \
+L(    jnz 1b                                               ) \
+L(    /* The value after the first NULL-pointer is envp */ ) \
+L(    pushl   (%eax) /* envp */                            ) \
+L(    leal  12(%esp), %eax                                 ) \
+L(    pushl    %eax  /* argv */                            ) \
+L(    pushl 16(%esp) /* path */                            ) \
+L(    pushl 16(%esp) /* mode */                            ) \
+L(    call base                                            ) \
+__IFNDEF_KERNEL(L(addl $16, %esp                           )) \
+L(    ret                                                  ) \
+L(SYM_END(name)                                            ) \
+L(.previous                                                ) \
+);
+
+
+#define DEFINE_FEXECLAT(section_name,Treturn,Tchar,name,base) \
+GLOBAL_ASM( \
+L(.section section_name                                    ) \
+L(INTERN_ENTRY(name)                                       ) \
+L(    leal  12(%esp), %eax                                 ) \
+L(    /* Scan ahead until the first NULL-pointer */        ) \
+L(1:  addl  $4,       %eax                                 ) \
+L(    testl $-1,   -4(%eax)                                ) \
+L(    jnz 1b                                               ) \
+L(    /* The value after the first NULL-pointer is flags */) \
+L(    pushl   (%eax) /* flags */                           ) \
+L(    leal  12(%esp), %eax                                 ) \
+L(    pushl    %eax  /* argv */                            ) \
+L(    pushl 16(%esp) /* path */                            ) \
+L(    pushl 16(%esp) /* dfd */                             ) \
+L(    call base                                            ) \
+__IFNDEF_KERNEL(L(addl $16, %esp                           )) \
+L(    ret                                                  ) \
+L(SYM_END(name)                                            ) \
+L(.previous                                                ) \
+);
+#define DEFINE_FEXECLEAT(section_name,Treturn,Tchar,name,base) \
+GLOBAL_ASM( \
+L(.section section_name                                    ) \
+L(INTERN_ENTRY(name)                                       ) \
+L(    leal  12(%esp), %eax                                 ) \
+L(    /* Scan ahead until the first NULL-pointer */        ) \
+L(1:  addl  $4,       %eax                                 ) \
+L(    testl $-1,   -4(%eax)                                ) \
+L(    jnz 1b                                               ) \
+L(    /* The value after the first NULL-pointer is envp */ ) \
+L(    pushl  4(%eax) /* flags */                           ) \
+L(    pushl   (%eax) /* envp */                            ) \
+L(    leal  12(%esp), %eax                                 ) \
+L(    pushl    %eax  /* argv */                            ) \
+L(    pushl 20(%esp) /* path */                            ) \
+L(    pushl 20(%esp) /* dfd */                             ) \
+L(    call base                                            ) \
+__IFNDEF_KERNEL(L(addl $20, %esp                           )) \
+L(    ret                                                  ) \
+L(SYM_END(name)                                            ) \
+L(.previous                                                ) \
+);
+#define DEFINE_FEXECLPAT(section_name,Treturn,Tchar,name,base) \
+           DEFINE_EXECLE(section_name,Treturn,Tchar,name,base)
+#define DEFINE_FEXECLPEAT(section_name,Treturn,Tchar,name,base) \
+GLOBAL_ASM( \
+L(.section section_name                                    ) \
+L(INTERN_ENTRY(name)                                       ) \
+L(    leal   8(%esp), %eax                                 ) \
+L(    /* Scan ahead until the first NULL-pointer */        ) \
+L(1:  addl  $4,       %eax                                 ) \
+L(    testl $-1,   -4(%eax)                                ) \
+L(    jnz 1b                                               ) \
+L(    /* The value after the first NULL-pointer is envp */ ) \
+L(    pushl  4(%eax) /* flags */                           ) \
+L(    pushl   (%eax) /* envp */                            ) \
+L(    leal   8(%esp), %eax                                 ) \
+L(    pushl    %eax  /* argv */                            ) \
+L(    pushl 16(%esp) /* path */                            ) \
+L(    call base                                            ) \
+__IFNDEF_KERNEL(L(addl $16, %esp                           )) \
 L(    ret                                                  ) \
 L(SYM_END(name)                                            ) \
 L(.previous                                                ) \
@@ -269,7 +378,7 @@ ATTR_CDECL name(Tchar const *path, Tchar const *arg, ...) { \
  va_start(args,arg); \
  argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
  va_end(args); \
- result = libc_execve(path,argv,va_arg(args,Tchar **)); \
+ result = base(path,argv,va_arg(args,Tchar **)); \
  libc_free(argv); \
  return result; \
 }
@@ -288,33 +397,114 @@ ATTR_CDECL name(int fd, Tchar const *arg, ...) { \
 
 #define DEFINE_FEXECLE(section_name,Treturn,Tchar,name,base) \
 INTERN ATTR_SECTION(#section_name) Treturn \
-ATTR_CDECL name(int fd, Tchar const *arg, ...) {
- va_list args; Tchar **argv; Treturn result;
- va_start(args,arg);
- argv = (Tchar **)generic_capture_argv((char *)arg,&args);
- va_end(args);
- result = base(fd,argv,va_arg(args,Tchar **));
- libc_free(argv);
- return result;
+ATTR_CDECL name(int fd, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(fd,argv,va_arg(args,Tchar **)); \
+ libc_free(argv); \
+ return result; \
+}
+
+#define DEFINE_FEXECLAT(section_name,Treturn,Tchar,name,base) \
+INTERN ATTR_SECTION(#section_name) Treturn \
+ATTR_CDECL name(int dfd, char const *path, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(dfd,path,argv,va_arg(args,int)); \
+ libc_free(argv); \
+ return result; \
+}
+
+#define DEFINE_SPAWNL(section_name,Treturn,Tchar,name,base) \
+INTERN ATTR_SECTION(#section_name) Treturn \
+ATTR_CDECL name(int mode, Tchar const *path, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(mode,path,argv); \
+ libc_free(argv); \
+ return result; \
+}
+
+#define DEFINE_SPAWNLE(section_name,Treturn,Tchar,name,base) \
+INTERN ATTR_SECTION(#section_name) Treturn \
+ATTR_CDECL name(int mode, Tchar const *path, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(mode,path,argv,va_arg(args,Tchar **)); \
+ libc_free(argv); \
+ return result; \
+}
+
+#define DEFINE_FSPAWNL(section_name,Treturn,Tchar,name,base) \
+INTERN ATTR_SECTION(#section_name) Treturn \
+ATTR_CDECL name(int mode, int fd, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(mode,fd,argv); \
+ libc_free(argv); \
+ return result; \
+}
+
+#define DEFINE_FSPAWNLE(section_name,Treturn,Tchar,name,base) \
+INTERN ATTR_SECTION(#section_name) Treturn \
+ATTR_CDECL name(int mode, int fd, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(mode,fd,argv,va_arg(args,Tchar **)); \
+ libc_free(argv); \
+ return result; \
+}
+
+
+#define DEFINE_FEXECLEAT(section_name,Treturn,Tchar,name,base) \
+INTERN ATTR_SECTION(#section_name) Treturn \
+ATTR_CDECL name(int dfd, char const *path, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(dfd,path,argv,va_arg(args,Tchar **),va_arg(args,int)); \
+ libc_free(argv); \
+ return result; \
+}
+
+#define DEFINE_FEXECLPAT(section_name,Treturn,Tchar,name,base) \
+INTERN ATTR_SECTION(#section_name) Treturn \
+ATTR_CDECL name(char const *path, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(path,argv,va_arg(args,int)); \
+ libc_free(argv); \
+ return result; \
+}
+
+#define DEFINE_FEXECLPEAT(section_name,Treturn,Tchar,name,base) \
+INTERN ATTR_SECTION(#section_name) Treturn \
+ATTR_CDECL name(char const *path, Tchar const *arg, ...) { \
+ va_list args; Tchar **argv; Treturn result; \
+ va_start(args,arg); \
+ argv = (Tchar **)generic_capture_argv((char *)arg,&args); \
+ va_end(args); \
+ result = base(path,argv,va_arg(args,Tchar **),va_arg(args,int)); \
+ libc_free(argv); \
+ return result; \
 }
 
 #endif
-
-/* NOTE: Place exec-functions in .cold, as they're usually
- *       only called once just before the program terminates. */
-DEFINE_EXECL(.text.cold,int,char,libc_execl,libc_execv)
-DEFINE_EXECL(.text.cold,int,char,libc_execlp,libc_execvp)
-DEFINE_EXECLE(.text.cold,int,char,libc_execle,libc_execve)
-DEFINE_EXECLE(.text.cold,int,char,libc_execlpe,libc_execvpe)
-DEFINE_FEXECL(.text.cold,int,char,libc_fexecl,libc_fexecv)
-DEFINE_FEXECLE(.text.cold,int,char,libc_fexecle,libc_fexecve)
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
-DEFINE_EXECL(.text.dos,int,char,libc_dos_execl,libc_dos_execv)
-DEFINE_EXECL(.text.dos,int,char,libc_dos_execlp,libc_dos_execvp)
-DEFINE_EXECLE(.text.dos,int,char,libc_dos_execle,libc_dos_execve)
-DEFINE_EXECLE(.text.dos,int,char,libc_dos_execlpe,libc_dos_execvpe)
-#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
-
 
 DATDEF char **environ;
 
@@ -331,30 +521,90 @@ DATDEF char **environ;
 #define EXEC_CURRENT_ENVIRON environ
 #endif
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+PRIVATE ATTR_DOSTEXT int LIBCCALL
+libc_ext_execve(int dfd,
+                char const *path, size_t pathlen,
+                char const *ext, size_t extlen,
+                char *const argv[], char *const envp[],
+                int flags) {
+ char *fullpath; size_t fullsize;
+ /* Concat the given path and extension. */
+ fullsize = (pathlen+extlen+1)*sizeof(char);
+ if (fullsize >= __AMALLOC_MAX) {
+  fullpath = (char *)libc_malloc(fullsize);
+  if unlikely(!fullpath) return -1;
+ } else {
+  fullpath = (char *)alloca(fullsize);
+ }
+ libc_memcpy(fullpath,path,pathlen*sizeof(char));
+ libc_memcpy(fullpath+pathlen,ext,extlen*sizeof(char));
+ fullpath[pathlen+extlen] = '\0';
 
-INTERN ATTR_COLDTEXT int LIBCCALL
-libc_execve(char const *path, char *const argv[], char *const envp[]) {
- return SET_SYSTEM_ERROR(sys_execve(path,(char const *const *)argv,(char const *const *)envp));
+ /* Try to execute the path. */
+ SET_SYSTEM_ERROR(sys_xfexecveat(dfd,fullpath,
+                                (char const *const *)argv,
+                                (char const *const *)envp,flags));
+
+ if (fullsize >= __AMALLOC_MAX)
+     libc_free(fullpath);
+ return -1;
 }
-INTERN ATTR_COLDTEXT int LIBCCALL
-libc_fexecve(int fd, char *const argv[], char *const envp[]) {
- return SET_SYSTEM_ERROR(sys_xfexecve(fd,(char const *const *)argv,(char const *const *)envp));
+INTERN ATTR_DOSTEXT int LIBCCALL
+libc_dosext_fexecveat(int dfd, char const *path, char *const argv[],
+                      char *const envp[], int flags) {
+ /* HINT: Remember that a successful call to execve() never returns. */
+ PRIVATE ATTR_DOSRODATA char const default_pathext[] = ".EXE;.CMD;.BAT;.COM";
+ char *pathext,*temp,*ext,*next;
+ size_t path_size1,path_size2;
+ /* Windows allows for various path-extensions, such as '.exe' or '.cmd'.
+  * Those extensions are usually stored in an environment variable 'PATHEXT'. */
+ pathext = libc_getenv(DOSSTR("PATHEXT"));
+ if (!pathext) pathext = (char *)default_pathext;
+ path_size2 = path_size1 = libc_strlen(path);
+ next = (char *)libc_memrchr(path,'/',path_size2);
+ temp = (char *)libc_memrchr(path,'\\',path_size2);
+ if (temp > next) next = temp;
+ temp = (char *)libc_memrchr(path,'.',path_size2);
+ if (temp > next) next = temp;
+ if (next) path_size1 = (size_t)(next-path); /* Override old extension. */
+
+ for (ext = pathext;;) {
+  bool last = *(next = libc_strchrnul(ext,';')) != '\0';
+  size_t extlen = (size_t)(next-ext);
+  /* Try when overriding the extension, and when appending it. */
+  if (path_size1 != path_size2)
+      libc_ext_execve(dfd,path,path_size1,ext,extlen,argv,envp,flags);
+  libc_ext_execve(dfd,path,path_size2,ext,extlen,argv,envp,flags);
+  if (last) break;
+  ext = next+1;
+ }
+ return -1;
 }
+
+#endif 
+
+/* NOTE: Place exec-functions in .cold, as they're usually
+ *       only called once just before the program terminates. */
 INTERN ATTR_COLDTEXT int LIBCCALL
-libc_fexecv(int fd, char *const argv[]) {
- return libc_fexecve(fd,argv,EXEC_CURRENT_ENVIRON);
+libc_fexecveat(int dfd, char const *path, char *const argv[],
+               char *const envp[], int flags) {
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+ SET_SYSTEM_ERROR(sys_xfexecveat(dfd,path,
+                 (char const *const *)argv,
+                 (char const *const *)envp,flags));
+ if (flags&AT_DOSPATH)
+     return libc_dosext_fexecveat(dfd,path,argv,envp,flags);
+ return -1;
+#else /* !CONFIG_LIBC_NO_DOS_LIBC */
+ return SET_SYSTEM_ERROR(sys_xfexecveat(dfd,path,
+                                       (char const *const *)argv,
+                                       (char const *const *)envp,flags));
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
 }
-#ifdef CONFIG_LIBC_NO_DOS_LIBC
 PRIVATE ATTR_COLDTEXT void LIBCCALL
-execvpe_inside(char const *path, char const *file,
-               char *const argv[], char *const envp[])
-#else
-PRIVATE ATTR_COLDTEXT void LIBCCALL
-execvpe_inside(char const *path, char const *file,
-               char *const argv[], char *const envp[],
-               bool dosmode)
-#endif
-{
+fexecveat_inside(char const *path, char const *file,
+                 char *const argv[], char *const envp[], int flags) {
  char *buf; bool use_malloc;
  size_t pathlen = libc_strlen(path);
  size_t filelen = libc_strlen(file);
@@ -371,37 +621,12 @@ execvpe_inside(char const *path, char const *file,
  libc_memcpy(buf+pathlen+1,file,filelen*sizeof(char));
  buf[pathlen+1+filelen] = '\0';
  /* Try to execute the joined path. */
-#ifndef CONFIG_LIBC_NO_DOS_LIBC
- if (dosmode) {
-  libc_dos_execve(buf,argv,envp);
- } else
-#endif
- {
-  libc_execve(buf,argv,envp);
- }
-
+ libc_fexecveat(AT_FDCWD,buf,argv,envp,flags);
  if (use_malloc) libc_free(buf);
 }
-#ifdef CONFIG_LIBC_NO_DOS_LIBC
 INTERN ATTR_COLDTEXT int LIBCCALL
-libc_execvpe(char const *file, char *const argv[], char *const envp[])
-#else
-INTERN ATTR_COLDTEXT int LIBCCALL
-libc_execvpe_impl(char const *file, char *const argv[],
-                  char *const envp[], bool dosmode);
-INTERN ATTR_COLDTEXT int LIBCCALL
-libc_execvpe(char const *file, char *const argv[], char *const envp[]) {
- return libc_execvpe_impl(file,argv,envp,false);
-}
-INTERN ATTR_COLDTEXT int LIBCCALL
-libc_dos_execvpe(char const *file, char *const argv[], char *const envp[]) {
- return libc_execvpe_impl(file,argv,envp,true);
-}
-INTERN ATTR_COLDTEXT int LIBCCALL
-libc_execvpe_impl(char const *file, char *const argv[],
-                  char *const envp[], bool dosmode)
-#endif
-{
+libc_fexecvpeat(char const *file, char *const argv[],
+                char *const envp[], int flags) {
  char *iter,*part,*next,*path;
  bool use_malloc; size_t path_size;
  if unlikely((path = libc_getenv("PATH")) == NULL) { SET_ERRNO(ENOENT); return -1; }
@@ -421,19 +646,51 @@ libc_execvpe_impl(char const *file, char *const argv[],
   bool last = *(next = libc_strchrnul(part,':')) != '\0';
   for (iter = next; iter[-1] == '/'; --iter);
   *iter = '\0';
-#ifdef CONFIG_LIBC_NO_DOS_LIBC
-  execvpe_inside(part,file,argv,envp);
-#else
-  execvpe_inside(part,file,argv,envp,dosmode);
-#endif
+  fexecveat_inside(part,file,argv,envp,flags);
   if (last) break;
   part = next+1;
  }
  if (use_malloc) libc_free(path);
  return -1;
 }
+INTERN ATTR_COLDTEXT int LIBCCALL
+libc_fexecvat(int dfd, char const *path, char *const argv[], int flags) {
+ return libc_fexecveat(dfd,path,argv,EXEC_CURRENT_ENVIRON,flags);
+}
+INTERN ATTR_COLDTEXT int LIBCCALL
+libc_fexecvpat(char const *file, char *const argv[], int flags) {
+ return libc_fexecvpeat(file,argv,EXEC_CURRENT_ENVIRON,flags);
+}
+
+DEFINE_FEXECLAT(.text.cold,int,char,libc_fexeclat,libc_fexecvat)
+DEFINE_FEXECLEAT(.text.cold,int,char,libc_fexecleat,libc_fexecveat)
+DEFINE_FEXECLPAT(.text.cold,int,char,libc_fexeclpat,libc_fexecvpat)
+DEFINE_FEXECLPEAT(.text.cold,int,char,libc_fexeclpeat,libc_fexecvpeat)
+
+INTERN ATTR_COLDTEXT int LIBCCALL
+libc_execve(char const *path, char *const argv[], char *const envp[]) {
+#if 1
+ return libc_fexecveat(AT_FDCWD,path,argv,envp,AT_SYMLINK_FOLLOW);
+#else
+ /* Might as well use the dedicated LINUX-compatible system call... */
+ return SET_SYSTEM_ERROR(sys_execve(path,(char const *const *)argv,(char const *const *)envp));
+#endif
+}
+INTERN ATTR_COLDTEXT int LIBCCALL libc_execvpe(char const *file, char *const argv[], char *const envp[]) { return libc_fexecvpeat(file,argv,envp,AT_SYMLINK_FOLLOW); }
 INTERN ATTR_COLDTEXT int LIBCCALL libc_execv(char const *path, char *const argv[]) { return libc_execve(path,argv,EXEC_CURRENT_ENVIRON); }
 INTERN ATTR_COLDTEXT int LIBCCALL libc_execvp(char const *file, char *const argv[]) { return libc_execvpe(file,argv,EXEC_CURRENT_ENVIRON); }
+
+DEFINE_EXECL(.text.cold,int,char,libc_execl,libc_execv)
+DEFINE_EXECL(.text.cold,int,char,libc_execlp,libc_execvp)
+DEFINE_EXECLE(.text.cold,int,char,libc_execle,libc_execve)
+DEFINE_EXECLE(.text.cold,int,char,libc_execlpe,libc_execvpe)
+
+INTERN ATTR_COLDTEXT int LIBCCALL libc_fexecve(int fd, char *const argv[], char *const envp[]) { return libc_fexecveat(fd,NULL,argv,envp,0); }
+INTERN ATTR_COLDTEXT int LIBCCALL libc_fexecv(int fd, char *const argv[]) { return libc_fexecve(fd,argv,EXEC_CURRENT_ENVIRON); }
+DEFINE_FEXECL(.text.cold,int,char,libc_fexecl,libc_fexecv)
+DEFINE_FEXECLE(.text.cold,int,char,libc_fexecle,libc_fexecve)
+
+
 INTERN int LIBCCALL libc_link(char const *from, char const *to) { return libc_linkat(AT_FDCWD,from,AT_FDCWD,to,AT_SYMLINK_FOLLOW); }
 INTERN int LIBCCALL libc_symlink(char const *from, char const *to) { return libc_symlinkat(from,AT_FDCWD,to); }
 INTERN ssize_t LIBCCALL libc_readlink(char const *__restrict path, char *__restrict buf, size_t len) { return libc_readlinkat(AT_FDCWD,path,buf,len); }
@@ -815,18 +1072,26 @@ DEFINE_PUBLIC_ALIAS(removeat,libc_removeat);
 DEFINE_PUBLIC_ALIAS(remove,libc_remove);
 DEFINE_PUBLIC_ALIAS(rename,libc_rename);
 DEFINE_PUBLIC_ALIAS(fork,libc_fork);
-DEFINE_PUBLIC_ALIAS(execve,libc_execve);
-DEFINE_PUBLIC_ALIAS(fexecve,libc_fexecve);
 DEFINE_PUBLIC_ALIAS(execl,libc_execl);
 DEFINE_PUBLIC_ALIAS(execle,libc_execle);
 DEFINE_PUBLIC_ALIAS(execlp,libc_execlp);
 DEFINE_PUBLIC_ALIAS(execlpe,libc_execlpe);
+DEFINE_PUBLIC_ALIAS(execv,libc_execv);
+DEFINE_PUBLIC_ALIAS(execve,libc_execve);
+DEFINE_PUBLIC_ALIAS(execvp,libc_execvp);
+DEFINE_PUBLIC_ALIAS(execvpe,libc_execvpe);
 DEFINE_PUBLIC_ALIAS(fexecl,libc_fexecl);
 DEFINE_PUBLIC_ALIAS(fexecle,libc_fexecle);
 DEFINE_PUBLIC_ALIAS(fexecv,libc_fexecv);
-DEFINE_PUBLIC_ALIAS(execvpe,libc_execvpe);
-DEFINE_PUBLIC_ALIAS(execv,libc_execv);
-DEFINE_PUBLIC_ALIAS(execvp,libc_execvp);
+DEFINE_PUBLIC_ALIAS(fexecve,libc_fexecve);
+DEFINE_PUBLIC_ALIAS(fexeclat,libc_fexeclat);
+DEFINE_PUBLIC_ALIAS(fexecleat,libc_fexecleat);
+DEFINE_PUBLIC_ALIAS(fexeclpat,libc_fexeclpat);
+DEFINE_PUBLIC_ALIAS(fexeclpeat,libc_fexeclpeat);
+DEFINE_PUBLIC_ALIAS(fexecvat,libc_fexecvat);
+DEFINE_PUBLIC_ALIAS(fexecveat,libc_fexecveat);
+DEFINE_PUBLIC_ALIAS(fexecvpat,libc_fexecvpat);
+DEFINE_PUBLIC_ALIAS(fexecvpeat,libc_fexecvpeat);
 DEFINE_PUBLIC_ALIAS(link,libc_link);
 DEFINE_PUBLIC_ALIAS(symlink,libc_symlink);
 DEFINE_PUBLIC_ALIAS(readlink,libc_readlink);
@@ -1032,8 +1297,6 @@ INTERN ATTR_DOSTEXT ssize_t LIBCCALL libc_dos_readlinkat(int fd, char const *__r
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_removeat(int fd, char const *filename) { return libc_unlinkat(fd,filename,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_remove(char const *name) { return libc_unlinkat(AT_FDCWD,name,AT_DOSPATH|AT_SYMLINK_NOFOLLOW|AT_REMOVEREG|AT_REMOVEDIR); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_rename(char const *old, char const *new_) { return libc_dos_renameat(AT_FDCWD,old,AT_FDCWD,new_); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execv(char const *path, char *const argv[]) { return libc_dos_execve(path,argv,EXEC_CURRENT_ENVIRON); }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execvp(char const *file, char *const argv[]) { return libc_dos_execvpe(file,argv,EXEC_CURRENT_ENVIRON); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_link(char const *from, char const *to) { return libc_linkat(AT_FDCWD,from,AT_FDCWD,to,AT_DOSPATH|AT_SYMLINK_FOLLOW); }
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_symlink(char const *from, char const *to) { return libc_dos_symlinkat(from,AT_FDCWD,to); }
 INTERN ATTR_DOSTEXT ssize_t LIBCCALL libc_dos_readlink(char const *__restrict path, char *__restrict buf, size_t len) { return libc_dos_readlinkat(AT_FDCWD,path,buf,len); }
@@ -1047,62 +1310,16 @@ INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_revoke(char const *file) { NOT_IMPLEME
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_acct(char const *name) { NOT_IMPLEMENTED(); return -1; }
 INTERN ATTR_DOSTEXT FILE *LIBCCALL libc_dos_setmntent(char const *file, char const *mode) { NOT_IMPLEMENTED(); return NULL; }
 
-INTERN ATTR_DOSTEXT int LIBCCALL
-libc_ext_execve(char const *path, size_t pathlen,
-                char const *ext, size_t extlen,
-                char *const argv[], char *const envp[]) {
- char *fullpath; size_t fullsize;
- /* Concat the given path and extension. */
- fullsize = (pathlen+extlen+1)*sizeof(char);
- if (fullsize >= __AMALLOC_MAX) {
-  fullpath = (char *)libc_malloc(fullsize);
-  if unlikely(!fullpath) return -1;
- } else {
-  fullpath = (char *)alloca(fullsize);
- }
- libc_memcpy(fullpath,path,pathlen*sizeof(char));
- libc_memcpy(fullpath+pathlen,ext,extlen*sizeof(char));
- fullpath[pathlen+extlen] = '\0';
-
- /* Try to execute the path. */
- libc_execve(fullpath,argv,envp);
-
- if (fullsize >= __AMALLOC_MAX)
-     libc_free(fullpath);
- return -1;
-}
-
-INTERN ATTR_DOSTEXT int LIBCCALL
-libc_dos_execve(char const *path, char *const argv[], char *const envp[]) {
- PRIVATE ATTR_DOSRODATA char const default_pathext[] = ".EXE;.CMD;.BAT;.COM";
- char *pathext,*temp,*ext,*next;
- size_t path_size1,path_size2;
- /* HINT: Remember that a successful call to execve() never returns. */
- libc_execve(path,argv,envp); /* Try the given path as-is. */
- /* Windows allows for various path-extensions, such as '.exe' or '.cmd'.
-  * Those extensions are usually stored in an environment variable 'PATHEXT'. */
- pathext = libc_getenv(DOSSTR("PATHEXT"));
- if (!pathext) pathext = (char *)default_pathext;
- path_size2 = path_size1 = libc_strlen(path);
- next = (char *)libc_memrchr(path,'/',path_size2);
- temp = (char *)libc_memrchr(path,'\\',path_size2);
- if (temp > next) next = temp;
- temp = (char *)libc_memrchr(path,'.',path_size2);
- if (temp > next) next = temp;
- if (next) path_size1 = (size_t)(next-path); /* Override old extension. */
-
- for (ext = pathext;;) {
-  bool last = *(next = libc_strchrnul(ext,':')) != '\0';
-  size_t extlen = (size_t)(next-ext);
-  /* Try when overriding the extension, and when appending it. */
-  if (path_size1 != path_size2)
-      libc_ext_execve(path,path_size1,ext,extlen,argv,envp);
-  libc_ext_execve(path,path_size2,ext,extlen,argv,envp);
-  if (last) break;
-  ext = next+1;
- }
- return -1;
-}
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execvpe(char const *file, char *const argv[], char *const envp[]) { return libc_fexecvpeat(file,argv,envp,AT_SYMLINK_FOLLOW|AT_DOSPATH); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execvp(char const *file, char *const argv[]) { return libc_dos_execvpe(file,argv,EXEC_CURRENT_ENVIRON); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execve(char const *path, char *const argv[], char *const envp[]) { return libc_fexecveat(AT_FDCWD,path,argv,envp,AT_SYMLINK_FOLLOW|AT_DOSPATH); }
+INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_execv(char const *path, char *const argv[]) { return libc_dos_execve(path,argv,EXEC_CURRENT_ENVIRON); }
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_EXECL(.text.dos,int,char,libc_dos_execl,libc_dos_execv)
+DEFINE_EXECL(.text.dos,int,char,libc_dos_execlp,libc_dos_execvp)
+DEFINE_EXECLE(.text.dos,int,char,libc_dos_execle,libc_dos_execve)
+DEFINE_EXECLE(.text.dos,int,char,libc_dos_execlpe,libc_dos_execvpe)
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 
 /* TODO: Anything now available in true DOS should be
@@ -1133,14 +1350,14 @@ DEFINE_PUBLIC_ALIAS(__DSYM(readlinkat),libc_dos_readlinkat);
 DEFINE_PUBLIC_ALIAS(__DSYM(removeat),libc_dos_removeat);
 DEFINE_PUBLIC_ALIAS(__DSYM(remove),libc_dos_remove);
 DEFINE_PUBLIC_ALIAS(__DSYM(rename),libc_dos_rename);
-DEFINE_PUBLIC_ALIAS(_execve,libc_dos_execve);
 DEFINE_PUBLIC_ALIAS(_execl,libc_dos_execl);
 DEFINE_PUBLIC_ALIAS(_execle,libc_dos_execle);
 DEFINE_PUBLIC_ALIAS(_execlp,libc_dos_execlp);
 DEFINE_PUBLIC_ALIAS(_execlpe,libc_dos_execlpe);
-DEFINE_PUBLIC_ALIAS(_execvpe,libc_dos_execvpe);
 DEFINE_PUBLIC_ALIAS(_execv,libc_dos_execv);
 DEFINE_PUBLIC_ALIAS(_execvp,libc_dos_execvp);
+DEFINE_PUBLIC_ALIAS(_execve,libc_dos_execve);
+DEFINE_PUBLIC_ALIAS(_execvpe,libc_dos_execvpe);
 DEFINE_PUBLIC_ALIAS(__DSYM(link),libc_dos_link);
 DEFINE_PUBLIC_ALIAS(__DSYM(symlink),libc_dos_symlink);
 DEFINE_PUBLIC_ALIAS(__DSYM(readlink),libc_dos_readlink);
@@ -1489,7 +1706,9 @@ libc_impl_16wexecve(int mode, char16_t const *path,
  switch (mode) {
  case WEXEC_F_NORMAL: libc_execve(utf8path,utf8argv,utf8envp); break;
  case WEXEC_F_DOSMODE: libc_dos_execve(utf8path,utf8argv,utf8envp); break;
- default: libc_execvpe_impl(utf8path,utf8argv,utf8envp,mode&WEXEC_F_DOSMODE); break;
+ default: libc_fexecvpeat(utf8path,utf8argv,utf8envp,mode&WEXEC_F_DOSMODE ?
+                          AT_DOSPATH|AT_SYMLINK_FOLLOW : AT_SYMLINK_FOLLOW);
+  break;
  }
  if (envp) libc_argvfree((void **)utf8envp);
 end2: libc_argvfree((void **)utf8argv);
@@ -1508,7 +1727,9 @@ libc_impl_32wexecve(int mode, char32_t const *path,
  switch (mode) {
  case WEXEC_F_NORMAL: libc_execve(utf8path,utf8argv,utf8envp); break;
  case WEXEC_F_DOSMODE: libc_dos_execve(utf8path,utf8argv,utf8envp); break;
- default: libc_execvpe_impl(utf8path,utf8argv,utf8envp,mode&WEXEC_F_DOSMODE); break;
+ default: libc_fexecvpeat(utf8path,utf8argv,utf8envp,mode&WEXEC_F_DOSMODE ?
+                          AT_DOSPATH|AT_SYMLINK_FOLLOW : AT_SYMLINK_FOLLOW);
+  break;
  }
  if (envp) libc_argvfree((void **)utf8envp);
 end2: libc_argvfree((void **)utf8argv);
@@ -1750,16 +1971,16 @@ libc_cwait(int *tstat, intptr_t pid, int UNUSED(action)) {
  return (intptr_t)libc_waitpid((pid_t)pid,tstat,WEXITED);
 }
 
-DEFINE_EXECL(.text.dos,intptr_t,char,libc_spawnl,libc_spawnv)
-DEFINE_EXECL(.text.dos,intptr_t,char,libc_spawnlp,libc_spawnvp)
-DEFINE_EXECLE(.text.dos,intptr_t,char,libc_spawnle,libc_spawnve)
-DEFINE_EXECLE(.text.dos,intptr_t,char,libc_spawnlpe,libc_spawnvpe)
-DEFINE_FEXECL(.text.dos,intptr_t,char,libc_fspawnl,libc_fspawnv)
-DEFINE_FEXECLE(.text.dos,intptr_t,char,libc_fspawnle,libc_fspawnve)
-DEFINE_EXECL(.text.dos,intptr_t,char,libc_dos_spawnl,libc_dos_spawnv)
-DEFINE_EXECL(.text.dos,intptr_t,char,libc_dos_spawnlp,libc_dos_spawnvp)
-DEFINE_EXECLE(.text.dos,intptr_t,char,libc_dos_spawnle,libc_dos_spawnve)
-DEFINE_EXECLE(.text.dos,intptr_t,char,libc_dos_spawnlpe,libc_dos_spawnvpe)
+DEFINE_SPAWNL(.text.dos,intptr_t,char,libc_spawnl,libc_spawnv)
+DEFINE_SPAWNL(.text.dos,intptr_t,char,libc_spawnlp,libc_spawnvp)
+DEFINE_SPAWNLE(.text.dos,intptr_t,char,libc_spawnle,libc_spawnve)
+DEFINE_SPAWNLE(.text.dos,intptr_t,char,libc_spawnlpe,libc_spawnvpe)
+DEFINE_FSPAWNL(.text.dos,intptr_t,char,libc_fspawnl,libc_fspawnv)
+DEFINE_FSPAWNLE(.text.dos,intptr_t,char,libc_fspawnle,libc_fspawnve)
+DEFINE_SPAWNL(.text.dos,intptr_t,char,libc_dos_spawnl,libc_dos_spawnv)
+DEFINE_SPAWNL(.text.dos,intptr_t,char,libc_dos_spawnlp,libc_dos_spawnvp)
+DEFINE_SPAWNLE(.text.dos,intptr_t,char,libc_dos_spawnle,libc_dos_spawnve)
+DEFINE_SPAWNLE(.text.dos,intptr_t,char,libc_dos_spawnlpe,libc_dos_spawnvpe)
 
 #define __P_MODEMASK    0x000f
 #define __P_DOSPATH     0x8000
@@ -1917,22 +2138,22 @@ INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_spawnve(int mode, char const *fil
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_spawnvp(int mode, char const *file, char *const argv[]) { return libc_spawnvp(__P_DOSPATH|mode,file,argv); }
 INTERN ATTR_DOSTEXT intptr_t LIBCCALL libc_dos_spawnvpe(int mode, char const *file, char *const argv[], char *const envp[]) { return libc_spawnvpe(__P_DOSPATH|mode,file,argv,envp); }
 
-DEFINE_EXECL(.text.dos,intptr_t,char16_t,libc_16wspawnl,libc_16wspawnv);
-DEFINE_EXECL(.text.dos,intptr_t,char16_t,libc_16wspawnlp,libc_16wspawnvp);
-DEFINE_EXECL(.text.dos,intptr_t,char32_t,libc_32wspawnl,libc_32wspawnv);
-DEFINE_EXECL(.text.dos,intptr_t,char32_t,libc_32wspawnlp,libc_32wspawnvp);
-DEFINE_EXECLE(.text.dos,intptr_t,char16_t,libc_16wspawnle,libc_16wspawnve);
-DEFINE_EXECLE(.text.dos,intptr_t,char16_t,libc_16wspawnlpe,libc_16wspawnvpe);
-DEFINE_EXECLE(.text.dos,intptr_t,char32_t,libc_32wspawnle,libc_32wspawnve);
-DEFINE_EXECLE(.text.dos,intptr_t,char32_t,libc_32wspawnlpe,libc_32wspawnvpe);
-DEFINE_EXECL(.text.dos,intptr_t,char16_t,libc_dos_16wspawnl,libc_dos_16wspawnv);
-DEFINE_EXECL(.text.dos,intptr_t,char16_t,libc_dos_16wspawnlp,libc_dos_16wspawnvp);
-DEFINE_EXECL(.text.dos,intptr_t,char32_t,libc_dos_32wspawnl,libc_dos_32wspawnv);
-DEFINE_EXECL(.text.dos,intptr_t,char32_t,libc_dos_32wspawnlp,libc_dos_32wspawnvp);
-DEFINE_EXECLE(.text.dos,intptr_t,char16_t,libc_dos_16wspawnle,libc_dos_16wspawnve);
-DEFINE_EXECLE(.text.dos,intptr_t,char16_t,libc_dos_16wspawnlpe,libc_dos_16wspawnvpe);
-DEFINE_EXECLE(.text.dos,intptr_t,char32_t,libc_dos_32wspawnle,libc_dos_32wspawnve);
-DEFINE_EXECLE(.text.dos,intptr_t,char32_t,libc_dos_32wspawnlpe,libc_dos_32wspawnvpe);
+DEFINE_SPAWNL(.text.dos,intptr_t,char16_t,libc_16wspawnl,libc_16wspawnv);
+DEFINE_SPAWNL(.text.dos,intptr_t,char16_t,libc_16wspawnlp,libc_16wspawnvp);
+DEFINE_SPAWNL(.text.dos,intptr_t,char32_t,libc_32wspawnl,libc_32wspawnv);
+DEFINE_SPAWNL(.text.dos,intptr_t,char32_t,libc_32wspawnlp,libc_32wspawnvp);
+DEFINE_SPAWNLE(.text.dos,intptr_t,char16_t,libc_16wspawnle,libc_16wspawnve);
+DEFINE_SPAWNLE(.text.dos,intptr_t,char16_t,libc_16wspawnlpe,libc_16wspawnvpe);
+DEFINE_SPAWNLE(.text.dos,intptr_t,char32_t,libc_32wspawnle,libc_32wspawnve);
+DEFINE_SPAWNLE(.text.dos,intptr_t,char32_t,libc_32wspawnlpe,libc_32wspawnvpe);
+DEFINE_SPAWNL(.text.dos,intptr_t,char16_t,libc_dos_16wspawnl,libc_dos_16wspawnv);
+DEFINE_SPAWNL(.text.dos,intptr_t,char16_t,libc_dos_16wspawnlp,libc_dos_16wspawnvp);
+DEFINE_SPAWNL(.text.dos,intptr_t,char32_t,libc_dos_32wspawnl,libc_dos_32wspawnv);
+DEFINE_SPAWNL(.text.dos,intptr_t,char32_t,libc_dos_32wspawnlp,libc_dos_32wspawnvp);
+DEFINE_SPAWNLE(.text.dos,intptr_t,char16_t,libc_dos_16wspawnle,libc_dos_16wspawnve);
+DEFINE_SPAWNLE(.text.dos,intptr_t,char16_t,libc_dos_16wspawnlpe,libc_dos_16wspawnvpe);
+DEFINE_SPAWNLE(.text.dos,intptr_t,char32_t,libc_dos_32wspawnle,libc_dos_32wspawnve);
+DEFINE_SPAWNLE(.text.dos,intptr_t,char32_t,libc_dos_32wspawnlpe,libc_dos_32wspawnvpe);
 
 PRIVATE ATTR_DOSTEXT intptr_t LIBCCALL
 libc_do_spawnve(int mode, char const *file,

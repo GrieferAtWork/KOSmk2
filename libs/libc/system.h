@@ -179,7 +179,7 @@ LOCAL SYSCALL2(void *,xmmap,(int,version,struct mmap_info const *,data));
 LOCAL SYSCALL4(ssize_t,xmunmap,(void *,addr,size_t,len,int,flags,void *,tag));
 LOCAL SYSCALL1(void *,xsharesym,(USER char const *,name));
 LOCAL SYSCALL1(errno_t,xpaused,(USER char const *,message));
-LOCAL SYSCALL3(errno_t,xfexecve,(int,fd,char const *const *,argv,char const *const *,envp));
+LOCAL SYSCALL5(errno_t,xfexecveat,(int,dfd,char const *,filename,char const *const *,argv,char const *const *,envp,int,flags));
 LOCAL SYSCALL3(errno_t,xfchdirat,(int,dfd,USER char const *,path,int,flags));
 LOCAL SYSCALL5(errno_t,xrenameat,(int,olddfd,USER char const *,oldname,int,newdfd,USER char const *,newname,int,flags));
 LOCAL SYSCALL2(void *,xdlopen,(char const *,filename,int,flags));

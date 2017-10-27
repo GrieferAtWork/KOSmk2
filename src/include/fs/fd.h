@@ -131,6 +131,17 @@ struct fdman {
  unsigned int       fm_vecc;   /*< [lock(fm_lock)][<= fm_veca] Amount of descriptors currently in use (NOTE: Not necessarily continuous). */
  unsigned int       fm_vecm;   /*< [lock(fm_lock)][<= INT_MAX] Max amount of allowed descriptor numbers (Defaults to 'FDMAN_DEFAULT_VECM'). */
  struct fd         *fm_vecv;   /*< [lock(fm_lock)][0..fm_veca][owned] File descriptor vector. */
+ /* Filesystem mask/mode affect the behavior of every filesystem access
+  * in that the 'AT_*' flags provided by the user are manipulated as follows:
+  * >> used_flags = (given_flags & fm_fsmask) | fm_fsmode;
+  */
+ ATOMIC_DATA u32    fm_fsmask; /*< Filesystem mode mask. */
+ ATOMIC_DATA u32    fm_fsmode; /*< Filesystem mode flags (Either 'AT_DOSPATH', or 0). */
+ /* Masks of bits that must always be 1 or 0 in 'fm_fsmask' and 'fm_fsmode' respectively. */
+#define FDMAN_FSMASK_ALWAYS1   (0xffffffff & ~(AT_DOSPATH)) /* NOTE: Don't allow no-follow to be disabled (Could otherwise pose a security risk). */
+#define FDMAN_FSMODE_ALWAYS0   (0xffffffff & ~(AT_DOSPATH|AT_SYMLINK_NOFOLLOW))
+#define FDMAN_FSMASK_DEFAULT    0xffffffff
+#define FDMAN_FSMODE_DEFAULT    0
  ATOMIC_DATA mode_t fm_umask;  /*< File mode creation mask. */
 };
 #define fdman_reading(x)     rwlock_reading(&(x)->fm_lock)
@@ -157,7 +168,11 @@ DATDEF struct fdman fdman_kernel;
 /* The effect fd-manager of the current thread. */
 #define THIS_FDMAN (THIS_TASK->t_fdman)
 
-#define THIS_UMASK (THIS_TASK->t_fdman->fm_umask)
+#define THIS_UMASK        (THIS_TASK->t_fdman->fm_umask)
+#define GET_FSMODE(flags) \
+ __XBLOCK({ struct fdman *const __fdm = THIS_TASK->t_fdman; \
+            __XRETURN ((flags) & __fdm->fm_fsmask) | __fdm->fm_fsmode; \
+ })
 
 
 #define FDMAN_INCREF(self) (void)(ATOMIC_FETCHINC((self)->fm_refcnt))

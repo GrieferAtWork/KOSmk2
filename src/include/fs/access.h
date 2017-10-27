@@ -42,18 +42,27 @@ struct fsaccess {
 struct dentry_walker {
  struct dentry  *dw_root;     /*< [1..1] The effective root directory not escapable and returned to following a '/' link. */
  u32             dw_nlink;    /*< Amount of symbolic links that the walker has already followed. */
+#define DENTRY_WALK_NOFOLLOW 0x000100 /*< [== AT_SYMLINK_NOFOLLOW] When set, don't follow symbolic links. */
+#define DENTRY_WALK_DOSPATH  0x100000 /*< [== AT_DOSPATH] When set, don't follow symbolic links. */
+#define DENTRY_WALK_UMASK    0x100100 /*< Mask of general-purpose flags usable from user-space. */
+#if 0 /* Not really required. */
+#define DENTRY_FMASK(x)    ((x)&DENTRY_WALK_UMASK)
+#else
+#define DENTRY_FMASK(x)     (x)
+#endif
+ u32             dw_flags;    /*< Set of `DENTRY_WALK_*' */
  struct fsaccess dw_access;   /*< Directory access information. */
- bool            dw_nofollow; /*< When true, don't follow symbolic links. */
 };
+#define DENTRY_WALKER_NOFOLLOW(x) ((x)->dw_flags&DENTRY_WALK_NOFOLLOW)
 
 
 DATDEF struct dentry fs_root;
 #define DENTRY_WALKER_SETKERNEL(self) \
  ((self).dw_root          = &fs_root, \
   (self).dw_nlink         = 0, \
+  (self).dw_flags         = 0, \
   (self).dw_access.fa_uid = 0, \
-  (self).dw_access.fa_gid = 0,\
-  (self).dw_nofollow      = false)
+  (self).dw_access.fa_gid = 0)
 
 
 DECL_END

@@ -529,30 +529,33 @@ end:
  return result;
 }
 
-
-SYSCALL_DEFINE3(execve,USER char const *,filename,
+SYSCALL_DEFINE5(xfexecveat,int,dfd,USER char const *,filename,
                 USER char const *const USER *,argv,
-                USER char const *const USER *,envp) {
+                USER char const *const USER *,envp,int,flags) {
  struct fdman *fdm = THIS_FDMAN;
  struct dentry_walker walker;
  struct dentry *module_dentry;
  struct dentry *cwd; errno_t result;
  struct module *mod;
+ if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW)) &&
+       filename) return -EINVAL;
  FSACCESS_SETUSER(walker.dw_access);
- walker.dw_nlink    = 0;
- walker.dw_nofollow = false;
+ walker.dw_nlink = 0;
+ walker.dw_flags = DENTRY_FMASK(GET_FSMODE(flags));
  assert(!task_iscrit());
  task_crit();
 
+ cwd = fdman_get_dentry(fdm,dfd);
+ if (E_ISERR(cwd)) { result = E_GTERR(cwd); goto end; }
  result = fdman_read(fdm);
- if (E_ISERR(result)) goto end;
- cwd            = fdm->fm_cwd;
+ if (E_ISERR(result)) { DENTRY_DECREF(cwd); goto end; }
  walker.dw_root = fdm->fm_root;
- DENTRY_INCREF(cwd);
  DENTRY_INCREF(walker.dw_root);
  fdman_endread(fdm);
 
  module_dentry = dentry_user_xwalk(cwd,&walker,filename);
+
+ syslog(LOG_DEBUG,"module_dentry = %[dentry] (%q) (flags = %x)\n",module_dentry,filename,flags);
 
  DENTRY_DECREF(walker.dw_root);
  DENTRY_DECREF(cwd);
@@ -572,39 +575,11 @@ end:
  return result;
 }
 
-SYSCALL_DEFINE3(xfexecve,int,fd,
+
+SYSCALL_DEFINE3(execve,USER char const *,filename,
                 USER char const *const USER *,argv,
                 USER char const *const USER *,envp) {
- /* Execute a module from a given file descriptor. */
- struct dentry *module_dentry;
- errno_t result; struct module *mod;
- assert(!task_iscrit());
- task_crit();
- module_dentry = fdman_get_dentry(THIS_FDMAN,fd);
- if (E_ISERR(module_dentry)) {
-  result = E_GTERR(module_dentry);
-  /* Translate the not-a-directory error of 'fdman_get_dentry' to
-   * something that makes more sense (ENOEXEC: You can't execute this one). */
-  if (result == -ENOTDIR)
-      result =  -ENOEXEC;
-  goto end;
- }
- mod = module_open_d(module_dentry,true);
- DENTRY_DECREF(module_dentry);
- if (E_ISERR(mod)) { result = E_GTERR(mod); goto end; }
-
- /* We've got the module. - Time to execute it! */
- result = user_execve(mod,argv,envp);
-
- /* At this point, something must have went wrong... */
- MODULE_DECREF(mod);
-end:
- task_endcrit();
- assert(!task_iscrit());
-#if 1
- syslog(LOG_EXEC|LOG_DEBUG,"[EXEC] exec failed: %[errno]\n",-result);
-#endif
- return result;
+ return SYSC_xfexecveat(AT_FDCWD,filename,argv,envp,AT_SYMLINK_FOLLOW);
 }
 
 

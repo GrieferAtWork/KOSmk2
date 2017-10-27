@@ -270,8 +270,8 @@ __XSYSCALL(__NR_xfdname,sys_xfdname)
 #define __SC_ATTRIB_ISLNG_0x80000007 1
 __XSYSCALL(__NR_xpipe,sys_xpipe) /* Returns reader fd in EAX; writer fd in EDX */
 #define __SC_ATTRIB_CLOBB_0x80000008 C("memory")
-#define __NR_xfexecve     0x80000008
-__XSYSCALL(__NR_xfexecve,sys_xfexecve)
+#define __NR_xfexecveat   0x80000008
+__XSYSCALL(__NR_xfexecveat,sys_xfexecveat)
 #define __NR_xfchdirat    0x80000009
 __XSYSCALL(__NR_xfchdirat,sys_xfchdirat)
 #define __NR_xrenameat    0x8000000a

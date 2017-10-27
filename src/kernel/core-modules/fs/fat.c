@@ -146,7 +146,7 @@ PRIVATE off_t   KCALL fat_fseek(struct file *__restrict fp, off_t off, int whenc
 PRIVATE ssize_t KCALL fat_fpread(struct file *__restrict fp, USER void *buf, size_t bufsize, pos_t pos);
 PRIVATE ssize_t KCALL fat_fpwrite(struct file *__restrict fp, USER void const *buf, size_t bufsize, pos_t pos);
 PRIVATE ssize_t KCALL fat_freaddir(struct file *__restrict fp, USER struct dirent *buf, size_t bufsize, rdmode_t mode);
-PRIVATE REF struct inode *KCALL fat_lookup(struct inode *__restrict dir_node, struct dentry *__restrict result_path);
+PRIVATE REF struct inode *KCALL fat_lookup(struct inode *__restrict dir_node, struct dentry *__restrict result_path, int flags);
 PRIVATE REF struct inode *KCALL fat_mkreg(struct inode *__restrict dir_node, struct dentry *__restrict path, struct iattr const *__restrict result_attr, iattrset_t mode);
 PRIVATE REF struct inode *KCALL fat_symlink(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, USER char const *target_text, struct iattr const *__restrict result_attr);
 PRIVATE REF struct inode *KCALL fat_mkdir(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, struct iattr const *__restrict result_attr);
@@ -161,7 +161,7 @@ PRIVATE off_t   KCALL fat16_root_fseek(struct file *__restrict fp, off_t off, in
 PRIVATE ssize_t KCALL fat16_root_fpread(struct file *__restrict fp, USER void *buf, size_t bufsize, pos_t pos);
 PRIVATE ssize_t KCALL fat16_root_fpwrite(struct file *__restrict fp, USER void const *buf, size_t bufsize, pos_t pos);
 PRIVATE ssize_t KCALL fat16_root_freaddir(struct file *__restrict fp, USER struct dirent *buf, size_t bufsize, rdmode_t mode);
-PRIVATE REF struct inode *KCALL fat16_root_lookup(struct inode *__restrict dir_node, struct dentry *__restrict result_path);
+PRIVATE REF struct inode *KCALL fat16_root_lookup(struct inode *__restrict dir_node, struct dentry *__restrict result_path, int flags);
 PRIVATE REF struct inode *KCALL fat16_root_mkreg(struct inode *__restrict dir_node, struct dentry *__restrict path, struct iattr const *__restrict result_attr, iattrset_t mode);
 PRIVATE REF struct inode *KCALL fat16_root_symlink(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, USER char const *target_text, struct iattr const *__restrict result_attr);
 PRIVATE REF struct inode *KCALL fat16_root_mkdir(struct inode *__restrict dir_node, struct dentry *__restrict target_ent, struct iattr const *__restrict result_attr);
@@ -260,10 +260,11 @@ PRIVATE bool KCALL lookupdata_cmplfn(struct lookupdata *__restrict self,
  * @return: !NULL: An E_PTR()-errorcode, or the requested INode. */
 PRIVATE REF struct inode *KCALL
 fat_lookup_memory(struct lookupdata *__restrict lookupdata,
-                  struct dentryname const *__restrict name,
+                  struct dentryname *__restrict name,
                   file_t const *__restrict filev, size_t filec,
                   pos_t filev_pos, cluster_t cluster_id,
-                  fat_t *__restrict fatfs, bool *has_used_entries);
+                  fat_t *__restrict fatfs, bool *has_used_entries,
+                  int flags);
 
 /* Trim whitespace at the front and back of `buf'. */
 PRIVATE void KCALL trimspecstring(char *__restrict buf, size_t size);
@@ -568,12 +569,14 @@ lookupdata_cmplfn(struct lookupdata *__restrict self,
 
 PRIVATE REF struct inode *KCALL
 fat_lookup_memory(struct lookupdata *__restrict data,
-                  struct dentryname const *__restrict name,
+                  struct dentryname *__restrict name,
                   file_t const *__restrict filev, size_t filec,
                   pos_t filev_pos, cluster_t cluster_id,
-                  fat_t *__restrict fatfs, bool *has_used_entries) {
+                  fat_t *__restrict fatfs, bool *has_used_entries,
+                  int flags) {
  file_t const *iter,*end;
  REF struct fatnode *result;
+ (void)flags;
  end = (iter = filev)+filec;
  for (; iter != end; ++iter) {
   if (iter->f_marker == MARKER_DIREND) return E_PTR(-ENOENT);
@@ -595,6 +598,9 @@ fat_lookup_memory(struct lookupdata *__restrict data,
    /* Check against LFN entry. */
    if (lookupdata_cmplfn(data,name))
        goto found_entry;
+#ifndef CONFIG_NO_DOSFS
+   /* TODO: Lookup case-insensitive. */
+#endif /* !CONFIG_NO_DOSFS */
    lookupdata_clrlfn(data);
   }
   if (name->dn_size <= FAT_NAMEMAX+1+FAT_EXTMAX) {
@@ -626,51 +632,63 @@ fat_lookup_memory(struct lookupdata *__restrict data,
    FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Short filename: %$q (Looking for %$q)\n",
                    (size_t)(filenameiter-filename),filename,
                     name->dn_size,name->dn_name));
-   if ((size_t)(filenameiter-filename) == name->dn_size &&
-       !memcmp(filename,name->dn_name,name->dn_size)) {
-    data->ld_fpos.fp_namecls = cluster_id;
-    data->ld_fpos.fp_namepos = filev_pos+((uintptr_t)iter-(uintptr_t)filev);
+   if ((size_t)(filenameiter-filename) == name->dn_size) {
+    if (!memcmp(filename,name->dn_name,name->dn_size*sizeof(char))) {
+#ifndef CONFIG_NO_DOSFS
+found_lfn:
+#endif /* !CONFIG_NO_DOSFS */
+     data->ld_fpos.fp_namecls = cluster_id;
+     data->ld_fpos.fp_namepos = filev_pos+((uintptr_t)iter-(uintptr_t)filev);
 found_entry:
-    /* GOTI! */
-    result = fatnode_new();
-    if unlikely(!result) result = E_PTR(-ENOMEM);
-    else {
-     /* Fill in INode information about the directory entry. */
-     result->f_idata.i_cluster = (BSWAP_LE2H16(iter->f_clusterhi) << 16 |
-                                  BSWAP_LE2H16(iter->f_clusterlo));
-     result->f_idata.i_pos     = data->ld_fpos;
-     rwlock_cinit(&result->f_idata.i_dirlock);
-     result->f_inode.__i_nlink = 1;
-     result->f_inode.i_data    = &result->f_idata;
-     /* We (ab-)use the header position as INode number. (It's better than nothing...) */
-     result->f_inode.i_ino     = (ino_t)data->ld_fpos.fp_headpos;
-     fat_atime_decode(iter->f_atime,&result->f_inode.i_attr.ia_atime);
-     fat_mtime_decode(iter->f_mtime,&result->f_inode.i_attr.ia_mtime);
-     fat_ctime_decode(iter->f_ctime,&result->f_inode.i_attr.ia_ctime);
-     result->f_inode.i_attr.ia_siz  = BSWAP_LE2H32(iter->f_size);
-     result->f_inode.i_attr.ia_uid  = fatfs->f_uid;
-     result->f_inode.i_attr.ia_gid  = fatfs->f_gid;
-     result->f_inode.i_attr.ia_mode = fatfs->f_mode;
-     if (iter->f_attr&ATTR_DIRECTORY) {
-      result->f_inode.i_attr.ia_mode |= S_IFDIR;
-      result->f_inode.i_ops           = &fatops_dir;
-     } else {
-      /* Check if this INode is a cygwin-style symbolic link. */
-      if (result->f_inode.i_attr.ia_siz > sizeof(symlnk_magic) &&
-          fat_cluster_is_symlnk(fatfs,result->f_idata.i_cluster))
-           result->f_inode.i_attr.ia_mode |= S_IFLNK;
-      else result->f_inode.i_attr.ia_mode |= S_IFREG;
-      result->f_inode.i_ops           = &fatops_reg;
+     /* GOTI! */
+     result = fatnode_new();
+     if unlikely(!result) result = E_PTR(-ENOMEM);
+     else {
+      /* Fill in INode information about the directory entry. */
+      result->f_idata.i_cluster = (BSWAP_LE2H16(iter->f_clusterhi) << 16 |
+                                   BSWAP_LE2H16(iter->f_clusterlo));
+      result->f_idata.i_pos     = data->ld_fpos;
+      rwlock_cinit(&result->f_idata.i_dirlock);
+      result->f_inode.__i_nlink = 1;
+      result->f_inode.i_data    = &result->f_idata;
+      /* We (ab-)use the header position as INode number. (It's better than nothing...) */
+      result->f_inode.i_ino     = (ino_t)data->ld_fpos.fp_headpos;
+      fat_atime_decode(iter->f_atime,&result->f_inode.i_attr.ia_atime);
+      fat_mtime_decode(iter->f_mtime,&result->f_inode.i_attr.ia_mtime);
+      fat_ctime_decode(iter->f_ctime,&result->f_inode.i_attr.ia_ctime);
+      result->f_inode.i_attr.ia_siz  = BSWAP_LE2H32(iter->f_size);
+      result->f_inode.i_attr.ia_uid  = fatfs->f_uid;
+      result->f_inode.i_attr.ia_gid  = fatfs->f_gid;
+      result->f_inode.i_attr.ia_mode = fatfs->f_mode;
+      if (iter->f_attr&ATTR_DIRECTORY) {
+       result->f_inode.i_attr.ia_mode |= S_IFDIR;
+       result->f_inode.i_ops           = &fatops_dir;
+      } else {
+       /* Check if this INode is a cygwin-style symbolic link. */
+       if (result->f_inode.i_attr.ia_siz > sizeof(symlnk_magic) &&
+           fat_cluster_is_symlnk(fatfs,result->f_idata.i_cluster))
+            result->f_inode.i_attr.ia_mode |= S_IFLNK;
+       else result->f_inode.i_attr.ia_mode |= S_IFREG;
+       result->f_inode.i_ops = &fatops_reg;
+      }
+      result->f_inode.i_attr_disk    = result->f_inode.i_attr;
+      /* Finally, publish the node into the superblock! */
+      asserte(E_ISOK(inode_setup((struct inode *)result,
+                                 (struct superblock *)fatfs,
+                                  THIS_INSTANCE)));
      }
-     result->f_inode.i_attr_disk    = result->f_inode.i_attr;
-     /* Finally, publish the node into the superblock! */
-     asserte(E_ISOK(inode_setup((struct inode *)result,
-                                (struct superblock *)fatfs,
-                                 THIS_INSTANCE)));
+     FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Found INode for %$q\n",
+                      name->dn_size,name->dn_name));
+     return &result->f_inode;
     }
-    FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] Found INode for %$q\n",
-                     name->dn_size,name->dn_name));
-    return &result->f_inode;
+#ifndef CONFIG_NO_DOSFS
+    if (flags&AT_DOSPATH &&
+       !memcasecmp(filename,name->dn_name,name->dn_size*sizeof(char))) {
+     /* Case-insensitive match. */
+     memcpy(name->dn_name,filename,name->dn_size*sizeof(char));
+     goto found_lfn;
+    }
+#endif /* !CONFIG_NO_DOSFS */
    }
   }
  }
@@ -1486,7 +1504,8 @@ fat_setattr(struct inode *__restrict ino, iattrset_t changed) {
 }
 PRIVATE REF struct inode *KCALL
 fat_lookup(struct inode *__restrict dir_node,
-           struct dentry *__restrict result_path) {
+           struct dentry *__restrict result_path,
+           int flags) {
  struct lookupdata data; pos_t begin,end;
  size_t sector_size,cluster_num = 0; byte_t *buffer;
  struct dentryname *name = &result_path->d_name;
@@ -1498,7 +1517,7 @@ fat_lookup(struct inode *__restrict dir_node,
  sector_size = fat->f_sectorsize;
  /* Special case: Root-directory references on FAT12/16 filesystems. */
  if (cluster_id == FAT_CUSTER_FAT16_ROOT && fat->f_type != FAT32)
-     return fat16_root_lookup(&dir_node->i_super->sb_root,result_path);
+     return fat16_root_lookup(&dir_node->i_super->sb_root,result_path,flags);
  /* XXX: This buffer allocation is very expensive,
   *      but the stack might not be large enough. */
  buffer = (byte_t *)malloc(sector_size);
@@ -1525,7 +1544,7 @@ fat_lookup(struct inode *__restrict dir_node,
    result = fat_lookup_memory(&data,name,(file_t *)buffer,
                               part_size/sizeof(file_t),
                               begin,cluster_id,fat,
-                             &has_used_entries);
+                             &has_used_entries,flags);
    if (result != NULL) break;
    begin += sector_size;
   }
@@ -1606,7 +1625,7 @@ STATIC_ASSERT(offsetof(file_t,f_marker) == 0);
 #define FAT  ((fat_t *)dir_node)
 PRIVATE REF struct inode *KCALL
 fat16_root_lookup(struct inode *__restrict dir_node,
-                  struct dentry *__restrict result_path) {
+                  struct dentry *__restrict result_path, int flags) {
  struct lookupdata data; pos_t begin,end;
  size_t sector_size; byte_t *buffer;
  struct dentryname *name = &result_path->d_name;
@@ -1634,7 +1653,7 @@ fat16_root_lookup(struct inode *__restrict dir_node,
       part_size = sector_size;
   result = fat_lookup_memory(&data,name,(file_t *)buffer,
                              part_size/sizeof(file_t),begin,
-                             FAT->f_cluster_eof_marker,FAT,NULL);
+                             FAT->f_cluster_eof_marker,FAT,NULL,flags);
   if (result != NULL) break;
   begin += sector_size;
  }

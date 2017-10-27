@@ -380,7 +380,8 @@ got_task:
 }
 PRIVATE REF struct inode *KCALL
 root_lookup(struct inode *__restrict dir_node,
-            struct dentry *__restrict result_path) {
+            struct dentry *__restrict result_path,
+            int flags) {
  struct procnode const *iter; errno_t error;
  REF struct inode *result; pid_t refpid;
  for (iter = root_content;
@@ -396,19 +397,32 @@ root_lookup(struct inode *__restrict dir_node,
           iter->n_name.dn_hash,name_copy.dn_hash);
 #endif
   if (iter->n_name.dn_hash == result_path->d_name.dn_hash &&
-      iter->n_name.dn_size == result_path->d_name.dn_size &&
-      memcmp(iter->n_name.dn_name,result_path->d_name.dn_name,
-             result_path->d_name.dn_size*sizeof(char)) == 0) {
-   /* Found it! */
-   result = inode_new(sizeof(struct inode));
-   if unlikely(!result) return E_PTR(-ENOMEM);
-   result->i_ino = iter->n_ino;
-   result->i_ops = &iter->n_ops;
-   result->i_attr.ia_mode = iter->n_mode;
-   result->i_attr_disk.ia_mode = iter->n_mode;
-   error = inode_setup(result,dir_node->i_super,THIS_INSTANCE);
-   if (E_ISERR(error)) { free(result); result = E_PTR(error); }
-   return result;
+      iter->n_name.dn_size == result_path->d_name.dn_size) {
+   if (memcmp(iter->n_name.dn_name,result_path->d_name.dn_name,
+              result_path->d_name.dn_size*sizeof(char)) == 0) {
+#ifndef CONFIG_NO_DOSFS
+found_entry:
+#endif /* !CONFIG_NO_DOSFS */
+    /* Found it! */
+    result = inode_new(sizeof(struct inode));
+    if unlikely(!result) return E_PTR(-ENOMEM);
+    result->i_ino = iter->n_ino;
+    result->i_ops = &iter->n_ops;
+    result->i_attr.ia_mode = iter->n_mode;
+    result->i_attr_disk.ia_mode = iter->n_mode;
+    error = inode_setup(result,dir_node->i_super,THIS_INSTANCE);
+    if (E_ISERR(error)) { free(result); result = E_PTR(error); }
+    return result;
+   }
+#ifndef CONFIG_NO_DOSFS
+   if (flags&AT_DOSPATH &&
+       memcasecmp(iter->n_name.dn_name,result_path->d_name.dn_name,
+                  result_path->d_name.dn_size*sizeof(char)) == 0) {
+    memcpy(result_path->d_name.dn_name,iter->n_name.dn_name,
+           result_path->d_name.dn_size*sizeof(char));
+    goto found_entry;
+   }
+#endif /* !CONFIG_NO_DOSFS */
   }
  }
  /* Decode a decimals PID. */

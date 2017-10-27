@@ -272,7 +272,8 @@ pid_children_readdir(struct file *__restrict fp,
 #define SELF container_of(dir_node,struct pidnode,p_node)
 PRIVATE REF struct inode *KCALL
 pid_task_lookup(struct inode *__restrict dir_node,
-                struct dentry *__restrict result_path) {
+                struct dentry *__restrict result_path,
+                int UNUSED(flags)) {
  pid_t refpid = pid_from_string(result_path->d_name.dn_name,
                                 result_path->d_name.dn_size);
  if (refpid >= 0) {
@@ -283,7 +284,8 @@ pid_task_lookup(struct inode *__restrict dir_node,
 }
 PRIVATE REF struct inode *KCALL
 pid_child_lookup(struct inode *__restrict dir_node,
-                 struct dentry *__restrict result_path) {
+                 struct dentry *__restrict result_path,
+                 int UNUSED(flags)) {
  pid_t refpid = pid_from_string(result_path->d_name.dn_name,
                                 result_path->d_name.dn_size);
  if (refpid >= 0) {
@@ -359,7 +361,8 @@ end:
 #define SELF container_of(dir_node,struct pidnode,p_node)
 PRIVATE REF struct inode *KCALL
 pid_fd_lookup(struct inode *__restrict dir_node,
-              struct dentry *__restrict result_path) {
+              struct dentry *__restrict result_path,
+              int UNUSED(flags)) {
  int fdno = fd_from_string(result_path->d_name.dn_name,
                            result_path->d_name.dn_size);
  if (fdno >= 0) {
@@ -588,7 +591,8 @@ pidnode_readdir(struct file *__restrict fp,
 #define SELF container_of(dir_node,struct pidnode,p_node)
 PRIVATE REF struct inode *KCALL
 pidnode_lookup(struct inode *__restrict dir_node,
-               struct dentry *__restrict result_path) {
+               struct dentry *__restrict result_path,
+               int flags) {
  struct procnode const *iter; errno_t error;
  REF struct pidnode *result;
  for (iter = pid_content;
@@ -603,26 +607,39 @@ pidnode_lookup(struct inode *__restrict dir_node,
           name_copy.dn_hash,iter->n_name.dn_hash);
 #endif
   if (iter->n_name.dn_hash == result_path->d_name.dn_hash &&
-      iter->n_name.dn_size == result_path->d_name.dn_size &&
-      memcmp(iter->n_name.dn_name,result_path->d_name.dn_name,
-             result_path->d_name.dn_size*sizeof(char)) == 0) {
-   /* Found it! */
-   result = (struct pidnode *)inode_new(sizeof(struct pidnode));
-   if unlikely(!result) return E_PTR(-ENOMEM);
-   result->p_task = SELF->p_task;
-   CHECK_HOST_DOBJ(result->p_task);
-   TASK_WEAK_INCREF(result->p_task);
-   { WEAK struct task *t = result->p_task;
-     pid_t pid = t->t_pid.tp_ids[PIDTYPE_PID].tl_ns == THIS_NAMESPACE
-               ? t->t_pid.tp_ids[PIDTYPE_PID].tl_pid : 0;
-     result->p_node.i_ino = iter->n_ino+pid*PROC_PID_NUMNODES;
+      iter->n_name.dn_size == result_path->d_name.dn_size) {
+   if (memcmp(iter->n_name.dn_name,result_path->d_name.dn_name,
+              result_path->d_name.dn_size*sizeof(char)) == 0) {
+#ifndef CONFIG_NO_DOSFS
+found_entry:
+#endif /* !CONFIG_NO_DOSFS */
+    /* Found it! */
+    result = (struct pidnode *)inode_new(sizeof(struct pidnode));
+    if unlikely(!result) return E_PTR(-ENOMEM);
+    result->p_task = SELF->p_task;
+    CHECK_HOST_DOBJ(result->p_task);
+    TASK_WEAK_INCREF(result->p_task);
+    { WEAK struct task *t = result->p_task;
+      pid_t pid = t->t_pid.tp_ids[PIDTYPE_PID].tl_ns == THIS_NAMESPACE
+                ? t->t_pid.tp_ids[PIDTYPE_PID].tl_pid : 0;
+      result->p_node.i_ino = iter->n_ino+pid*PROC_PID_NUMNODES;
+    }
+    result->p_node.i_ops = &iter->n_ops;
+    result->p_node.i_attr.ia_mode = iter->n_mode;
+    result->p_node.i_attr_disk.ia_mode = iter->n_mode;
+    error = inode_setup(&result->p_node,dir_node->i_super,THIS_INSTANCE);
+    if (E_ISERR(error)) { free(result); result = E_PTR(error); }
+    return &result->p_node;
    }
-   result->p_node.i_ops = &iter->n_ops;
-   result->p_node.i_attr.ia_mode = iter->n_mode;
-   result->p_node.i_attr_disk.ia_mode = iter->n_mode;
-   error = inode_setup(&result->p_node,dir_node->i_super,THIS_INSTANCE);
-   if (E_ISERR(error)) { free(result); result = E_PTR(error); }
-   return &result->p_node;
+#ifndef CONFIG_NO_DOSFS
+   if (flags&AT_DOSPATH &&
+       memcasecmp(iter->n_name.dn_name,result_path->d_name.dn_name,
+                  result_path->d_name.dn_size*sizeof(char)) == 0) {
+    memcpy(result_path->d_name.dn_name,iter->n_name.dn_name,
+           result_path->d_name.dn_size*sizeof(char));
+    goto found_entry;
+   }
+#endif /* !CONFIG_NO_DOSFS */
   }
  }
  return E_PTR(-ENOENT);

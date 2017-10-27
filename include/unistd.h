@@ -532,6 +532,18 @@ __LIBC __PORT_KOSONLY_ALT(execv) __NONNULL((2)) int (__LIBCCALL fexecv)(int __fd
 #endif /* __CRT_KOS */
 #endif /* __USE_KOS */
 
+#if defined(__CRT_KOS) && defined(__USE_KOS) && defined(__USE_ATFILE)
+/* At-file style exec functions. */
+__LIBC __PORT_KOSONLY_ALT(execl) __ATTR_SENTINEL_O(1) int (__ATTR_CDECL fexeclat)(int __dfd, char const *__path, char const *__args, ... /*, int __flags*/);
+__LIBC __PORT_KOSONLY_ALT(execle) __ATTR_SENTINEL_O(2) int (__ATTR_CDECL fexecleat)(int __dfd, char const *__path, char const *__args, ... /*, char *const ___envp[], int __flags*/);
+__LIBC __PORT_KOSONLY_ALT(execlp) __NONNULL((1)) __ATTR_SENTINEL_O(1) int (__ATTR_CDECL fexeclpat)(char const *__restrict __file, char const *__args, ... /*, int __flags*/);
+__LIBC __PORT_KOSONLY_ALT(execlpe) __NONNULL((1)) __ATTR_SENTINEL_O(2) int (__ATTR_CDECL fexeclpeat)(char const *__restrict __file, char const *__args, ... /*, char *const ___envp[], int __flags*/);
+__LIBC __PORT_KOSONLY_ALT(execv) __NONNULL((3)) int (__LIBCCALL fexecvat)(int __dfd, char const *__path, __TARGV, int __flags);
+__LIBC __PORT_KOSONLY_ALT(execve) __NONNULL((3)) int (__LIBCCALL fexecveat)(int __dfd, char const *__path, __TARGV, __TENVP, int __flags);
+__LIBC __PORT_KOSONLY_ALT(execvp) __NONNULL((1,2)) int (__LIBCCALL fexecvpat)(char const *__restrict __file, __TARGV, int __flags);
+__LIBC __PORT_KOSONLY_ALT(execvpe) __NONNULL((1,2)) int (__LIBCCALL fexecvpeat)(char const *__restrict __file, __TARGV, __TENVP, int __flags);
+#endif
+
 #if defined(__USE_MISC) || defined(__USE_XOPEN)
 #ifdef __DOS_COMPAT__
 /* It should be sufficient to emulate this is a no-op. */

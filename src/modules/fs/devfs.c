@@ -189,7 +189,7 @@ device_add(struct device *__restrict dev, dev_t id) {
  REF struct dentry *mount_path;
  struct devname const *iter;
  struct dentryname name;
- struct fsaccess ac;
+ struct fsaccess access;
  /* Nothing to do if the device filesystem isn't mounted. */
  if unlikely(!devfs_root) return -EOK;
  if (DEVICE_ISBLK(dev)) {
@@ -213,7 +213,7 @@ device_add(struct device *__restrict dev, dev_t id) {
  assert(iter->dn_min <= id);
  assert(iter->dn_min+iter->dn_num > id);
 
- FSACCESS_SETHOST(ac);
+ FSACCESS_SETHOST(access);
  /* Load the device name string into the directory entry name. */
  name.dn_size = strlen(iter->dn_name);
  if (id == iter->dn_min && !(iter->dn_flag&DN_ALL)) {
@@ -235,7 +235,7 @@ device_add(struct device *__restrict dev, dev_t id) {
 got_name:
  dentryname_loadhash(&name);
  /* Actually insert the device as a node within the virtual device filesystem. */
- mount_path = dentry_insnod(devfs_root,&name,&ac,dev,NULL);
+ mount_path = dentry_insnod(devfs_root,&name,&access,dev,NULL);
 
  if (E_ISERR(mount_path)) {
   syslog(LOG_FS|LOG_ERROR,

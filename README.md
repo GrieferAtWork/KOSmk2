@@ -41,6 +41,7 @@ Chaos|KOS - Even more chaotic than last time.
    - <code>mmap()</code>/<code>munmap()</code>/<code>mremap()</code>/<code>brk()</code>/<code>sbrk()</code>
    - <code>signal()</code>/<code>raise()</code>/<code>kill()</code>/<code>sigprocmask()</code>
      - terminate/suspend/resume support for <code>SIGKILL</code>, <code>SIGSTOP</code>, <code>SIGCONT</code>
+     - signal-based exception handling (<code>SIGSEGV</code>, etc.)
    - <code>open()</code>/<code>read()</code>/<code>write()</code>/<code>lseek()</code>
    - <code>fcntl()</code>/<code>ioctl()</code>/<code>openpty()</code>
    - <code>mount()</code>/<code>umount()</code>
@@ -91,7 +92,6 @@ Chaos|KOS - Even more chaotic than last time.
 
 ## Planned (As not seen in the old KOS) ##
  - <code>/sys</code>
- - signal exception handling
  - pthread library
  - IP-stack
  - WLAN support for "Atheros AR2427 Wireless" (That one's inside my test machine)
