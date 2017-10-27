@@ -105,16 +105,16 @@ __SYSDECL_BEGIN
 #ifndef __ssize_t_defined
 #define __ssize_t_defined 1
 typedef __ssize_t ssize_t;
-#endif
+#endif /* !__ssize_t_defined */
 
 #ifndef __size_t_defined
 #define __size_t_defined 1
 typedef __SIZE_TYPE__ size_t;
-#endif
+#endif /* !__size_t_defined */
 
 #ifndef NULL
 #define NULL __NULLPTR
-#endif
+#endif /* !NULL */
 
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K)
 #ifndef __gid_t_defined

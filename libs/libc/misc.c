@@ -333,6 +333,32 @@ DEFINE_PUBLIC_ALIAS(get_avphys_pages,libc_get_avphys_pages);
 
 
 
+
+/* SYSV semaphore support. */
+INTERN ATTR_COLDTEXT key_t LIBCCALL libc_ftok(const char *pathname, int proj_id) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_COLDTEXT int   LIBCCALL libc_shmctl(int shmid, int cmd, struct shmid_ds *buf) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_COLDTEXT int   LIBCCALL libc_shmget(key_t key, size_t size, int shmflg) { NOT_IMPLEMENTED(); return -1; }
+INTERN ATTR_COLDTEXT void *LIBCCALL libc_shmat(int shmid, const void *shmaddr, int shmflg) { NOT_IMPLEMENTED(); return (void *)-1; }
+INTERN ATTR_COLDTEXT int   LIBCCALL libc_shmdt(const void *shmaddr) { NOT_IMPLEMENTED(); return -1; }
+DEFINE_PUBLIC_ALIAS(ftok,libc_ftok);
+DEFINE_PUBLIC_ALIAS(shmctl,libc_shmctl);
+DEFINE_PUBLIC_ALIAS(shmget,libc_shmget);
+DEFINE_PUBLIC_ALIAS(shmat,libc_shmat);
+DEFINE_PUBLIC_ALIAS(shmdt,libc_shmdt);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 #ifdef CONFIG_LIBCCALL_HAS_CALLER_ARGUMENT_CLEANUP
 DEFINE_INTERN_ALIAS(libc_getdllprocaddr,libc_xdlsym);
@@ -887,9 +913,8 @@ DEFINE_PUBLIC_ALIAS(_except_handler4_common,libc_except_handler4);
 
 INTERN ATTR_DOSTEXT void LIBCCALL libc_vacopy(va_list *pdst, va_list src) { *pdst = src; }
 DEFINE_PUBLIC_ALIAS(_vacopy,libc_vacopy);
-
-
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
+
 
 DECL_END
 

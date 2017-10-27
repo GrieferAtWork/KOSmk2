@@ -28,8 +28,8 @@ __SYSDECL_BEGIN
 #endif
 
 #ifdef __CC__
-typedef __UINT32_TYPE__ keystate_t; /*< Set of 'KEYSTATE_*' */
-typedef __UINT16_TYPE__ key_t;      /*< One of 'KEY_*' */
+typedef __UINT32_TYPE__ kbstate_t; /*< Set of 'KEYSTATE_*' */
+typedef __UINT16_TYPE__ kbkey_t;   /*< One of 'KEY_*' */
 #endif /* __CC__ */
 
 #define KEYSTATE_ADD(x,y) ((x) |= (y))

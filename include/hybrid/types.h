@@ -66,7 +66,7 @@ typedef __UINT64_TYPE__ KTYPE(le64),KTYPE(be64);
 
 #ifndef __byte_t_defined
 #define __byte_t_defined 1
-typedef __BYTE_TYPE__ byte_t;
+typedef __byte_t      byte_t;
 #endif /* !__byte_t_defined */
 
 #ifndef __size_t_defined
@@ -119,6 +119,9 @@ typedef __time32_t time32_t;
 typedef __time64_t time64_t;
 #endif /* !__time64_t_defined */
 
+/* Special jiffi time values. */
+#define JTIME_DONTWAIT   ((jtime_t)0)
+#define JTIME_INFINITE   ((jtime_t)-1)
 #ifndef __jtime_t_defined
 #define __jtime_t_defined 1
 /* Jiffy time (measured in seconds*HZ having passed since booting) */
@@ -290,11 +293,180 @@ typedef __socklen_t socklen_t;
 typedef __WCHAR_TYPE__ wchar_t;
 #endif /* !__wchar_t_defined */
 
+#ifndef __key_t_defined
+#define __key_t_defined 1
+typedef __key_t key_t;
+#endif /* !__key_t_defined */
 
-/* Special jiffi time values. */
-#define JTIME_DONTWAIT   ((jtime_t)0)
-#define JTIME_INFINITE   ((jtime_t)-1)
+#ifndef __blkaddr32_t_defined
+#define __blkaddr32_t_defined 1
+typedef __blkaddr32_t blkaddr32_t;
+#endif /* !__blkaddr32_t_defined */
 
+#ifndef __blkaddr64_t_defined
+#define __blkaddr64_t_defined 1
+typedef __blkaddr64_t blkaddr64_t;
+#endif /* !__blkaddr64_t_defined */
+
+#ifndef __blkcnt32_t_defined
+#define __blkcnt32_t_defined 1
+typedef __blkcnt32_t blkcnt32_t;
+#endif /* !__blkcnt32_t_defined */
+
+#ifndef __blkcnt64_t_defined
+#define __blkcnt64_t_defined 1
+typedef __blkcnt64_t blkcnt64_t;
+#endif /* !__blkcnt64_t_defined */
+
+#ifndef __caddr_t_defined
+#define __caddr_t_defined 1
+typedef __caddr_t caddr_t;
+#endif /* !__caddr_t_defined */
+
+#ifndef __daddr_t_defined
+#define __daddr_t_defined 1
+typedef __daddr_t daddr_t;
+#endif /* !__daddr_t_defined */
+
+#ifndef __fsblkcnt32_t_defined
+#define __fsblkcnt32_t_defined 1
+typedef __fsblkcnt32_t fsblkcnt32_t;
+#endif /* !__fsblkcnt32_t_defined */
+
+#ifndef __fsblkcnt64_t_defined
+#define __fsblkcnt64_t_defined 1
+typedef __fsblkcnt64_t fsblkcnt64_t;
+#endif /* !__fsblkcnt64_t_defined */
+
+#ifndef __fsfilcnt32_t_defined
+#define __fsfilcnt32_t_defined 1
+typedef __fsfilcnt32_t fsfilcnt32_t;
+#endif /* !__fsfilcnt32_t_defined */
+
+#ifndef __fsfilcnt64_t_defined
+#define __fsfilcnt64_t_defined 1
+typedef __fsfilcnt64_t fsfilcnt64_t;
+#endif /* !__fsfilcnt64_t_defined */
+
+#ifndef __fsid_t_defined
+#define __fsid_t_defined 1
+typedef __fsid_t fsid_t;
+#endif /* !__fsid_t_defined */
+
+#ifndef __fsint32_t_defined
+#define __fsint32_t_defined 1
+typedef __fsint32_t fsint32_t;
+#endif /* !__fsint32_t_defined */
+
+#ifndef __fsint64_t_defined
+#define __fsint64_t_defined 1
+typedef __fsint64_t fsint64_t;
+#endif /* !__fsint64_t_defined */
+
+#ifndef __fsuint32_t_defined
+#define __fsuint32_t_defined 1
+typedef __fsuint32_t fsuint32_t;
+#endif /* !__fsuint32_t_defined */
+
+#ifndef __fsuint64_t_defined
+#define __fsuint64_t_defined 1
+typedef __fsuint64_t fsuint64_t;
+#endif /* !__fsuint64_t_defined */
+
+#ifndef __fsword32_t_defined
+#define __fsword32_t_defined 1
+typedef __fsword32_t fsword32_t;
+#endif /* !__fsword32_t_defined */
+
+#ifndef __fsword64_t_defined
+#define __fsword64_t_defined 1
+typedef __fsword64_t fsword64_t;
+#endif /* !__fsword64_t_defined */
+
+#ifndef __ino32_t_defined
+#define __ino32_t_defined 1
+typedef __ino32_t ino32_t;
+#endif /* !__ino32_t_defined */
+
+#ifndef __ino64_t_defined
+#define __ino64_t_defined 1
+typedef __ino64_t ino64_t;
+#endif /* !__ino64_t_defined */
+
+#ifndef __qaddr_t_defined
+#define __qaddr_t_defined 1
+typedef __qaddr_t qaddr_t;
+#endif /* !__qaddr_t_defined */
+
+#ifndef __rlim32_t_defined
+#define __rlim32_t_defined 1
+typedef __rlim32_t rlim32_t;
+#endif /* !__rlim32_t_defined */
+
+#ifndef __rlim64_t_defined
+#define __rlim64_t_defined 1
+typedef __rlim64_t rlim64_t;
+#endif /* !__rlim64_t_defined */
+
+#ifndef __rlim_t_defined
+#define __rlim_t_defined 1
+typedef __FS_TYPE(rlim) rlim_t;
+#endif /* !__rlim_t_defined */
+
+#ifndef __suseconds_t_defined
+#define __suseconds_t_defined 1
+typedef __suseconds_t suseconds_t;
+#endif /* !__suseconds_t_defined */
+
+#ifndef __major_t_defined
+#define __major_t_defined 1
+typedef __major_t major_t;
+#endif /* !__major_t_defined */
+
+#ifndef __minor_t_defined
+#define __minor_t_defined 1
+typedef __minor_t minor_t;
+#endif /* !__minor_t_defined */
+
+#ifndef __fsblkcnt_t_defined
+#define __fsblkcnt_t_defined 1
+typedef __FS_TYPE(fsblkcnt) fsblkcnt_t;
+#endif /* !__fsblkcnt_t_defined */
+#ifndef __fsfilcnt_t_defined
+#define __fsfilcnt_t_defined 1
+typedef __FS_TYPE(fsfilcnt) fsfilcnt_t;
+#endif /* !__fsfilcnt_t_defined */
+#ifndef __fsword_t_defined
+#define __fsword_t_defined 1
+typedef __FS_TYPE(fsword) fsword_t;
+#endif /* !__fsword_t_defined */
+
+#if 0
+#ifndef __u_char_defined
+#define __u_char_defined 1
+typedef __u_char u_char;
+#endif /* !__u_char_defined */
+#ifndef __u_int_defined
+#define __u_int_defined 1
+typedef __u_int u_int;
+#endif /* !__u_int_defined */
+#ifndef __u_long_defined
+#define __u_long_defined 1
+typedef __u_long u_long;
+#endif /* !__u_long_defined */
+#ifndef __u_quad_t_defined
+#define __u_quad_t_defined 1
+typedef __u_quad_t u_quad_t;
+#endif /* !__u_quad_t_defined */
+#ifndef __u_short_defined
+#define __u_short_defined 1
+typedef __u_short u_short;
+#endif /* !__u_short_defined */
+#ifndef __quad_t_defined
+#define __quad_t_defined 1
+typedef __quad_t quad_t;
+#endif /* !__quad_t_defined */
+#endif
 
 DECL_END
 #endif /* __CC__ */

@@ -125,6 +125,7 @@ function fix_path(rel_prefix,filename) {
 		if (filename.lower().startswith(root_folder.lower())) {
 			filename = rel_prefix+filename[#root_folder:].lstrip("/\\");
 		}
+		rel_prefix = "";
 	}
 	if (filename.startswith("binutils/root/")) {
 		local new_filename = filename[#"binutils/root/":];
@@ -142,6 +143,9 @@ function fix_path(rel_prefix,filename) {
 	} else {
 		filename = rel_prefix+filename;
 	}
+#ifdef __WINDOWS__
+	filename = filename.replace("/","\\");
+#endif
 	return filename;
 }
 #endif /* __WINDOWS__ */

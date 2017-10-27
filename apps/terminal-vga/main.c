@@ -567,13 +567,13 @@ usage(char const *name, int exitcode) {
 PRIVATE struct keymap const *current_keymap;
 PRIVATE struct term pty;
 PRIVATE int amaster,aslave;
-PRIVATE keystate_t keystate;
+PRIVATE kbstate_t keystate;
 
 /* Parse and relay keyboard-style inputs from the terminal driver's STDIN */
 PRIVATE ATTR_NORETURN void relay_incoming_threadmain(void) {
- char text[8]; char *iter; key_t key; ssize_t s;
- while ((s = read(STDIN_FILENO,&key,sizeof(key_t))) ==
-                           (ssize_t)sizeof(key_t)) {
+ char text[8]; char *iter; kbkey_t key; ssize_t s;
+ while ((s = read(STDIN_FILENO,&key,sizeof(kbkey_t))) ==
+                           (ssize_t)sizeof(kbkey_t)) {
 rescan:
   switch (key) {
 #define MIRROR(key,state) \

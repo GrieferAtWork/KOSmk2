@@ -177,11 +177,11 @@ union{ struct mscatter     mt_memory; /*< [lock(:mr_plock)][valid_if(mt_state ==
                                  *           split (1 page long regions cannot be split). */
 #define MREGION_TYPE_LOGUARD  2 /*< A guard region that will be replaced with a `MREGION_TYPE_MEM'
                                  *  copy containing the same memory mappings, before re-mapping itself
-                                 *  `mr_size' below its previous position, so long as that address
-                                 *  doesn't underflow and sufficient funds remain available.
+                                 *  `mr_size' below its previous position, so long as that address doesn't
+                                 *  underflow, isn't already in use and sufficient funds remain available.
                                  *  NOTE: If the region is set-up to use `MREGION_INIT_FILE' initialization,
                                  *        the `mri_start' will be decremented by `mr_size' in the new mapping.
-                                 *        In the even that decrementing `mri_start' underflows, the region's
+                                 *        In the event that decrementing `mri_start' underflows, the region's
                                  *        type is changed to `MREGION_INIT_BYTE'. */
 #define MREGION_TYPE_HIGUARD  3 /*< Same as `MREGION_TYPE_LOGUARD', but remap `mr_size' above and increment `mri_start'. */
 #define MREGION_TYPE_RESERVED 4 /*< Used internally: A reserved memory region that may or may not contain data, yet may not be un-mapped,

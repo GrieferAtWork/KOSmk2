@@ -55,7 +55,7 @@
 
 DECL_BEGIN
 
-PRIVATE key_t keyboard_buffer[MAX_INPUT];
+PRIVATE kbkey_t keyboard_buffer[MAX_INPUT];
 PRIVATE struct atomic_iobuffer keyboard_pipe = ATOMIC_IOBUFFER_INIT(keyboard_buffer);
 
 
@@ -116,7 +116,7 @@ PRIVATE struct inodeops const kbd_ops = {
 
 
 
-PRIVATE void KCALL keyboard_send(key_t k) {
+PRIVATE void KCALL keyboard_send(kbkey_t k) {
 #if 1
  if (k == KEY_F12) {
   debug_printf("BOOT_TASK:\n");
@@ -334,7 +334,7 @@ PRIVATE void KCALL unwind_scanset_1(u8 const *keys, u8 last) {
  keyboard_send(KEYMAP_GET_PS2_SCANSET1(last));
  p.p_state = STATE_INPUT_SET1;
 }
-PRIVATE void KCALL unwind_scanset_2(key_t flag, u8 const *keys, u8 last) {
+PRIVATE void KCALL unwind_scanset_2(kbkey_t flag, u8 const *keys, u8 last) {
  syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {");
  for (; *keys; ++keys) syslog(LOG_HW|LOG_WARN,"%.2I8X-",*keys);
  syslog(LOG_HW|LOG_WARN,"%.2I8X}\n",last);
@@ -443,7 +443,7 @@ remove_cmd:
 #define SWITCH_IF(x,s) if (e == x) { p.p_state = s; break; }
 
  {
-  key_t key;
+  kbkey_t key;
  case STATE_INPUT_SET1_E0:
   if (e == 0x2a) { p.p_state = STATE_INPUT_SET1_E0_2A; break; }
   if (e == 0xb7) { p.p_state = STATE_INPUT_SET1_E0_B7; break; }
@@ -499,18 +499,18 @@ remove_cmd:
     break; \
   }
  {
-  key_t key;
+  kbkey_t key;
  case STATE_INPUT_SET2:
   if (e == 0xf0) { p.p_state = STATE_INPUT_SET2_F0; break; }
   if (e == 0xe0) { p.p_state = STATE_INPUT_SET2_E0; break; }
   if (e == 0xe1) { p.p_state = STATE_INPUT_SET2_E1; break; }
-  key = (key_t)keymap_ps2_scanset_2[e];
+  key = (kbkey_t)keymap_ps2_scanset_2[e];
   if (key == KEY_UNKNOWN)
       syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {%.2I8X}\n",e);
   keyboard_send(key);
   break;
  case STATE_INPUT_SET2_F0:
-  key = (key_t)keymap_ps2_scanset_2[e];
+  key = (kbkey_t)keymap_ps2_scanset_2[e];
   if (key == KEY_UNKNOWN)
       syslog(LOG_HW|LOG_WARN,"[PS2] Unknown set-2 keycode {F0-%.2I8X}\n",e);
   keyboard_send(KEY_RELEASED|key);
@@ -563,7 +563,7 @@ remove_cmd:
 #undef UNWIND
 
  {
-  key_t key;
+  kbkey_t key;
  case STATE_INPUT_SET3:
   if (e == 0xf0) { p.p_state = STATE_INPUT_SET3_F0; break; }
   key = keymap_ps2_scanset_3[e];

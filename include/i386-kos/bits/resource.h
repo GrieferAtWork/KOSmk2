@@ -98,13 +98,15 @@ enum __rlimit_resource {
 #define RLIM_SAVED_CUR    RLIM_INFINITY
 
 /* Type for resource quantity measurement. */
-#ifndef __USE_FILE_OFFSET64
-typedef __rlim_t   rlim_t;
-#else
-typedef __rlim64_t rlim_t;
-#endif
+#ifndef __rlim_t_defined
+#define __rlim_t_defined 1
+typedef __FS_TYPE(rlim) rlim_t;
+#endif /* !__rlim_t_defined */
 #ifdef __USE_LARGEFILE64
+#ifndef __rlim64_t_defined
+#define __rlim64_t_defined 1
 typedef __rlim64_t rlim64_t;
+#endif /* !__rlim64_t_defined */
 #endif
 
 
