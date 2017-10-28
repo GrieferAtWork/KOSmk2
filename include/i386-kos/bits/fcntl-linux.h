@@ -30,34 +30,150 @@ __SYSDECL_BEGIN
 //#include <bits/uio.h>
 #endif
 
+/* Open flags that are universal (binary-wise) */
 #define O_ACCMODE     000000003
 #define O_RDONLY      000000000
 #define O_WRONLY      000000001
 #define O_RDWR        000000002
 /*      O_RDWR        000000003 // Implemented as an alias! */
-#define O_CREAT       000000100
-#define O_EXCL        000000200
-#define O_NOCTTY      000000400
-#define O_TRUNC       000001000
-#define O_APPEND      000002000
-#define O_NONBLOCK    000004000
-#define O_SYNC        000010000
-#define __O_DSYNC     000010000
-#define O_ASYNC       000020000
-#define O_NDELAY      O_NONBLOCK
-#define O_FSYNC       O_SYNC
+#define O_TRUNC       000001000 /* This one was probably just a coincidence... */
 
+/* Flags with common binary compatibility between DOS and UNIX. */
+#define __DOS_O_COMMON  (O_TRUNC|O_ACCMODE)
+
+
+
+/* DOS open flag values. */
+#define __DOS_O_APPEND       000000010
+#define __DOS_O_RANDOM       000000020
+#define __DOS_O_SEQUENTIAL   000000040
+#define __DOS_O_TEMPORARY    000000100
+#define __DOS_O_NOINHERIT    000000200
+#define __DOS_O_CREAT        000000400
+#define __DOS_O_TRUNC        000001000
+#define __DOS_O_EXCL         000002000
+#define __DOS_O_SHORT_LIVED  000010000
+#define __DOS_O_OBTAIN_DIR   000020000
+#define __DOS_O_TEXT         000040000
+#define __DOS_O_BINARY       000100000
+#define __DOS_O_WTEXT        000200000
+#define __DOS_O_U16TEXT      000400000
+#define __DOS_O_U8TEXT       001000000
+#define __DOS_O_RAW          __DOS_O_BINARY
+
+#ifdef __USE_DOS
+/* DOS name aliases */
+#define _O_RDONLY       O_RDONLY
+#define _O_WRONLY       O_WRONLY
+#define _O_RDWR         O_RDWR
+#define _O_APPEND       O_APPEND
+#define _O_BINARY       O_BINARY
+#define _O_CREAT        O_CREAT
+#define _O_EXCL         O_EXCL
+#define _O_RANDOM       O_RANDOM
+#define _O_RAW          O_RAW
+#define _O_SEQUENTIAL   O_SEQUENTIAL
+#define _O_TEXT         O_TEXT
+#define _O_TRUNC        O_TRUNC
+#define _O_NOINHERIT    __O_CLOEXEC
+#define _O_TEMPORARY    __O_TMPFILE
+#define _O_OBTAIN_DIR   __O_DIRECTORY
+#define O_NOINHERIT     __O_CLOEXEC
+#define O_TEMPORARY     __O_TMPFILE
+#endif /* __USE_DOS */
+
+#ifdef __USE_DOSFS
+#define __O_DIRECTORY   __DOS_O_OBTAIN_DIR
+#define O_APPEND        __DOS_O_APPEND
+#define O_CREAT         __DOS_O_CREAT
+#define O_EXCL          __DOS_O_EXCL
+#define __O_CLOEXEC     __DOS_O_NOINHERIT
+#define __O_TMPFILE     __DOS_O_TEMPORARY
+/* Unix flags not supported on DOS. */
+#define O_NOCTTY        0
+#define O_NONBLOCK      0
+#define O_SYNC          0
+#define O_ASYNC         0
+#define __O_DSYNC       0
+#define __O_DIRECT      0
+#define __O_LARGEFILE   0
+#define __O_NOFOLLOW    0
+#define __O_NOATIME     0
+#ifdef __USE_DOS
+/* DOS extension flags. */
+#define O_RAW           __DOS_O_RAW
+#define O_TEXT          __DOS_O_TEXT
+#define O_BINARY        __DOS_O_BINARY
+#define O_SEQUENTIAL    __DOS_O_SEQUENTIAL
+#define O_RANDOM        __DOS_O_RANDOM
+#define _O_SHORT_LIVED  __DOS_O_SHORT_LIVED
+#define _O_U16TEXT      __DOS_O_U16TEXT
+#define _O_U8TEXT       __DOS_O_U8TEXT
+#define _O_WTEXT        __DOS_O_WTEXT
+#endif /* __USE_DOS */
+#else /* __USE_DOSFS */
+#define O_CREAT        000000100
+#define O_EXCL         000000200
+#define O_NOCTTY       000000400
+#define O_APPEND       000002000
+#define O_NONBLOCK     000004000
+#define O_SYNC         000010000
+#define __O_DSYNC      000010000
+#define O_ASYNC        000020000
 #define __O_DIRECT     000040000
 #define __O_LARGEFILE  000100000
 #define __O_DIRECTORY  000200000
 #define __O_NOFOLLOW   000400000
 #define __O_NOATIME    001000000
 #define __O_CLOEXEC    002000000
-#define __O_CLOFORK    004000000
 #define __O_PATH       010000000
 #define __O_TMPFILE   (020000000|__O_DIRECTORY)
+#ifdef __CRT_KOS
+#define __O_CLOFORK    004000000
 #define __O_DOSPATH   0400000000 /* Interpret '\\' as '/', and ignore casing during path resolution. */
+#endif /* __CRT_KOS */
 
+#ifdef __USE_DOS
+/* DOS names for some misc./ignored flags. */
+#define O_RAW           0
+#define O_TEXT          0
+#define O_BINARY        0
+#define O_SEQUENTIAL    0
+#define O_RANDOM        0
+#define _O_SHORT_LIVED  0
+#define _O_U16TEXT      0
+#define _O_U8TEXT       0
+#define _O_WTEXT        0
+#endif /* __USE_DOS */
+#endif /* !__USE_DOSFS */
+
+#define O_NDELAY       O_NONBLOCK
+#define O_FSYNC        O_SYNC
+
+#ifdef __USE_LARGEFILE64
+#   define O_LARGEFILE  __O_LARGEFILE
+#endif
+#ifdef __USE_XOPEN2K8
+#   define O_DIRECTORY  __O_DIRECTORY
+#   define O_NOFOLLOW   __O_NOFOLLOW
+#   define O_CLOEXEC    __O_CLOEXEC
+#endif
+#ifdef __USE_KOS
+#   define O_CLOFORK    __O_CLOFORK
+#   define O_DOSPATH    __O_DOSPATH
+#endif
+#ifdef __USE_GNU
+#   define O_DIRECT     __O_DIRECT
+#   define O_NOATIME    __O_NOATIME
+#   define O_PATH       __O_PATH
+#   define O_TMPFILE    __O_TMPFILE
+#endif
+#if defined(__USE_POSIX199309) || defined(__USE_UNIX98)
+#   define O_DSYNC      __O_DSYNC
+#   define O_RSYNC      O_SYNC
+#endif
+
+#ifndef __DOS_COMPAT__
 #ifndef __USE_FILE_OFFSET64
 #   define F_GETLK     5 /*< Get record locking info. */
 #   define F_SETLK     6 /*< Set record locking info (non-blocking). */
@@ -72,36 +188,10 @@ __SYSDECL_BEGIN
 #   define F_SETLK64   13 /*< Set record locking info (non-blocking). */
 #   define F_SETLKW64  14 /*< Set record locking info (blocking).    */
 #endif
-
 #ifdef __USE_GNU
 #   define F_OFD_GETLK  36
 #   define F_OFD_SETLK  37
 #   define F_OFD_SETLKW 38
-#endif
-
-#ifdef __USE_LARGEFILE64
-#   define O_LARGEFILE  __O_LARGEFILE
-#endif
-#ifdef __USE_XOPEN2K8
-#   define O_DIRECTORY  __O_DIRECTORY
-#   define O_NOFOLLOW   __O_NOFOLLOW
-#   define O_CLOEXEC    __O_CLOEXEC
-#endif
-#ifdef __USE_KOS
-#   define O_CLOFORK    __O_CLOFORK
-#   define O_DOSPATH    __O_DOSPATH
-#endif
-
-#ifdef __USE_GNU
-#   define O_DIRECT     __O_DIRECT
-#   define O_NOATIME    __O_NOATIME
-#   define O_PATH       __O_PATH
-#   define O_TMPFILE    __O_TMPFILE
-#endif
-
-#if defined(__USE_POSIX199309) || defined(__USE_UNIX98)
-#   define O_DSYNC      __O_DSYNC
-#   define O_RSYNC      O_SYNC
 #endif
 
 #define F_DUPFD        0 /*< Duplicate file descriptor. */
@@ -239,15 +329,15 @@ struct f_owner_ex {
 #   define SYNC_FILE_RANGE_WRITE       2 /*< Initiate writeout of all those dirty pages in the range which are not presently under writeback. */
 #   define SYNC_FILE_RANGE_WAIT_AFTER  4 /*< Wait upon writeout of all pages in the range after performing the write. */
 
-#   define SPLICE_F_MOVE               1 /* Move pages instead of copying. */
-#   define SPLICE_F_NONBLOCK           2 /* Don't block on the pipe splicing (but we may still block on the fd we splice from/to). */
-#   define SPLICE_F_MORE               4 /* Expect more data. */
-#   define SPLICE_F_GIFT               8 /* Pages passed in are a gift. */
+#   define SPLICE_F_MOVE               1 /*< Move pages instead of copying. */
+#   define SPLICE_F_NONBLOCK           2 /*< Don't block on the pipe splicing (but we may still block on the fd we splice from/to). */
+#   define SPLICE_F_MORE               4 /*< Expect more data. */
+#   define SPLICE_F_GIFT               8 /*< Pages passed in are a gift. */
 
-#   define FALLOC_FL_KEEP_SIZE         1 /* Don't extend size of file even if offset + len is greater than file size. */
-#   define FALLOC_FL_PUNCH_HOLE        2 /* Create a hole in the file. */
-#   define FALLOC_FL_COLLAPSE_RANGE    8 /* Remove a range of a file without leaving a hole. */
-#   define FALLOC_FL_ZERO_RANGE        16 /* Convert a range of a file to zeros. */
+#   define FALLOC_FL_KEEP_SIZE         1 /*< Don't extend size of file even if offset + len is greater than file size. */
+#   define FALLOC_FL_PUNCH_HOLE        2 /*< Create a hole in the file. */
+#   define FALLOC_FL_COLLAPSE_RANGE    8 /*< Remove a range of a file without leaving a hole. */
+#   define FALLOC_FL_ZERO_RANGE        16 /*< Convert a range of a file to zeros. */
 
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma push_macro("handle_bytes")
@@ -295,20 +385,31 @@ struct file_handle {
 #   define AT_THIS_STACK    (-182)
 #endif /* __USE_KOS */
 #endif /* __USE_ATFILE */
+#endif /* !__DOS_COMPAT__ */
 
 #ifdef __USE_GNU
-struct iovec; /* TODO: Dos attributes/compatibility. */
+#ifdef __DOS_COMPAT__
+/* Ignore these as no-ops under DOS. */
+__LOCAL __ssize_t (__LIBCCALL readahead)(int __UNUSED(__fd), __off64_t __UNUSED(__offset), __size_t __count) { return (__size_t)__count; }
+__LOCAL int (__LIBCCALL sync_file_range)(int __UNUSED(__fd), __off64_t __UNUSED(__offset), __off64_t __UNUSED(__count), unsigned int __UNUSED(__flags)) { return 0; }
+__LOCAL int (__LIBCCALL fallocate)(int __UNUSED(__fd), int __UNUSED(__mode), __off_t __UNUSED(__offset), __off_t __UNUSED(__len)) { return 0; }
+#ifdef __USE_LARGEFILE64
+__LOCAL int (__LIBCCALL fallocate64)(int __UNUSED(__fd), int __UNUSED(__mode), __off64_t __UNUSED(__offset), __off64_t __UNUSED(__len)) { return 0; }
+#endif /* __USE_LARGEFILE64 */
+#else /* __DOS_COMPAT__ */
+struct iovec;
 __LIBC __ssize_t (__LIBCCALL readahead)(int __fd, __off64_t __offset, __size_t __count);
 __LIBC int (__LIBCCALL sync_file_range)(int __fd, __off64_t __offset, __off64_t __count, unsigned int __flags);
-__LIBC __ssize_t (__LIBCCALL vmsplice)(int __fdout, struct iovec const *__iov, __size_t __count, unsigned int __flags);
-__LIBC __ssize_t (__LIBCCALL splice)(int __fdin, __off64_t *__offin, int __fdout, __off64_t *__offout, __size_t __len, unsigned int __flags);
-__LIBC __ssize_t (__LIBCCALL tee)(int __fdin, int __fdout, __size_t __len, unsigned int __flags);
-__LIBC int (__LIBCCALL name_to_handle_at)(int __dfd, char const *__name, struct file_handle *__handle, int *__mnt_id, int __flags);
-__LIBC int (__LIBCCALL open_by_handle_at)(int __mountdirfd, struct file_handle *__handle, int __flags);
-__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,fallocate,(int __fd, int __mode, __off_t __offset, __off_t __len),fallocate,(__fd,__mode,__offset,__len))
+__LIBC __PORT_NODOS __ssize_t (__LIBCCALL vmsplice)(int __fdout, struct iovec const *__iov, __size_t __count, unsigned int __flags);
+__LIBC __PORT_NODOS __ssize_t (__LIBCCALL splice)(int __fdin, __off64_t *__offin, int __fdout, __off64_t *__offout, __size_t __len, unsigned int __flags);
+__LIBC __PORT_NODOS __ssize_t (__LIBCCALL tee)(int __fdin, int __fdout, __size_t __len, unsigned int __flags);
+__LIBC __PORT_NODOS int (__LIBCCALL name_to_handle_at)(int __dfd, char const *__name, struct file_handle *__handle, int *__mnt_id, int __flags);
+__LIBC __PORT_NODOS int (__LIBCCALL open_by_handle_at)(int __mountdirfd, struct file_handle *__handle, int __flags);
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,fallocate,(int __fd, int __mode, __FS_TYPE(off) __offset, __FS_TYPE(off) __len),fallocate,(__fd,__mode,__offset,__len))
 #ifdef __USE_LARGEFILE64
 __LIBC int (__LIBCCALL fallocate64)(int __fd, int __mode, __off64_t __offset, __off64_t __len);
 #endif /* __USE_LARGEFILE64 */
+#endif /* !__DOS_COMPAT__ */
 #endif /* __USE_GNU */
 
 __SYSDECL_END

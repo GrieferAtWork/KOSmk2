@@ -25,6 +25,7 @@
 #include <hybrid/types.h>
 #include <hybrid/host.h>
 #include <uchar.h>
+#include <stdarg.h>
 
 DECL_BEGIN
 

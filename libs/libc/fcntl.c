@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_LIBS_LIBC_FCNTL_C
 #define GUARD_LIBS_LIBC_FCNTL_C 1
+#define _GNU_SOURCE       1
 #define _KOS_SOURCE       1
 #define _ATFILE_SOURCE    1
 #define _FILE_OFFSET_BITS 32
@@ -219,6 +220,19 @@ DEFINE_PUBLIC_ALIAS(xvirtinfo2,libc_xvirtinfo2);
 DEFINE_PUBLIC_ALIAS(xvirtinfo,libc_xvirtinfo);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+/* Translate DOS flags to UNIX and append O_DOSPATH. */
+INTERN ATTR_DOSTEXT oflag_t LIBCCALL
+libc_dos_getoflags(oflag_t dos_flags) {
+ oflag_t result = dos_flags & __DOS_O_COMMON;
+ if (dos_flags&__DOS_O_APPEND)     result |= O_APPEND;
+ if (dos_flags&__DOS_O_TEMPORARY)  result |= O_TMPFILE;
+ if (dos_flags&__DOS_O_NOINHERIT)  result |= O_CLOEXEC;
+ if (dos_flags&__DOS_O_CREAT)      result |= O_CREAT;
+ if (dos_flags&__DOS_O_EXCL)       result |= O_EXCL;
+ if (dos_flags&__DOS_O_OBTAIN_DIR) result |= O_DIRECTORY;
+ return result|O_DOSPATH;
+}
+
 INTERN ATTR_DOSTEXT char *LIBCCALL libc_getdcwd(int UNUSED(drive), char *buf, size_t size) { return libc_getcwd(buf,size); }
 INTERN ATTR_DOSTEXT char16_t *LIBCCALL libc_16wgetdcwd(int UNUSED(drive), char16_t *dstbuf, int elemcount) { return libc_16wgetcwd(dstbuf,elemcount); }
 INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32wgetdcwd(int UNUSED(drive), char32_t *dstbuf, int elemcount) { return libc_32wgetcwd(dstbuf,elemcount); }
@@ -239,7 +253,9 @@ INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32wgetcwd(char32_t *dstbuf, int elem
 INTERN ATTR_DOSTEXT int ATTR_CDECL libc_dos_open(char const *file, int oflag, ...) {
  va_list args; int result;
  va_start(args,oflag);
- result = sys_openat(AT_FDCWD,file,O_DOSPATH|oflag,va_arg(args,mode_t));
+ result = sys_openat(AT_FDCWD,file,
+                     libc_dos_getoflags(oflag),
+                     va_arg(args,mode_t));
  va_end(args);
  if (E_ISERR(result)) {
   SET_ERRNO(-result);
@@ -251,7 +267,9 @@ INTERN ATTR_DOSTEXT int ATTR_CDECL
 libc_dos_sopen(char const *file, int oflag, int sflag, ...) {
  va_list args; int result;
  va_start(args,sflag);
- result = sys_openat(AT_FDCWD,file,O_DOSPATH|oflag,va_arg(args,mode_t));
+ result = sys_openat(AT_FDCWD,file,
+                     libc_dos_getoflags(oflag),
+                     va_arg(args,mode_t));
  va_end(args);
  if (E_ISERR(result)) {
   SET_ERRNO(-result);
@@ -261,14 +279,14 @@ libc_dos_sopen(char const *file, int oflag, int sflag, ...) {
 }
 INTERN ATTR_DOSTEXT int LIBCCALL
 libc_dos_creat(char const *file, mode_t mode) {
- return libc_creat(file,mode|O_DOSPATH);
+ return libc_creat(file,libc_dos_getoflags(mode));
 }
 INTERN ATTR_DOSTEXT __errno_t LIBCCALL
 libc_dos_sopen_s(int *fd, char const *file,
                  int oflag, int UNUSED(sflag), int pmode) {
  int result;
  if (!fd) return EINVAL;
- result = sys_openat(AT_FDCWD,file,O_DOSPATH|oflag,pmode);
+ result = sys_openat(AT_FDCWD,file,libc_dos_getoflags(oflag),pmode);
  if (E_ISERR(result)) return -result;
  *fd = result;
  return -EOK;
@@ -291,16 +309,16 @@ INTERN int LIBCCALL libc_dos_16wcreat(char16_t const *file, mode_t mode) { retur
 INTERN int LIBCCALL libc_dos_32wcreat(char32_t const *file, mode_t mode) { return libc_32wopen_impl(file,O_DOSPATH|O_CREAT|O_WRONLY|O_TRUNC,mode); }
 INTERN int ATTR_CDECL libc_16wopen(char16_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_16wopen_impl(file,oflag,va_arg(args,mode_t)); va_end(args); return result; }
 INTERN int ATTR_CDECL libc_32wopen(char32_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_32wopen_impl(file,oflag,va_arg(args,mode_t)); va_end(args); return result; }
-INTERN int ATTR_CDECL libc_dos_16wopen(char16_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_16wopen_impl(file,O_DOSPATH|oflag,va_arg(args,mode_t)); va_end(args); return result; }
-INTERN int ATTR_CDECL libc_dos_32wopen(char32_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_32wopen_impl(file,O_DOSPATH|oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_dos_16wopen(char16_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_16wopen_impl(file,libc_dos_getoflags(oflag),va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_dos_32wopen(char32_t const *file, int oflag, ...) { int result; va_list args; va_start(args,oflag); result = libc_32wopen_impl(file,libc_dos_getoflags(oflag),va_arg(args,mode_t)); va_end(args); return result; }
 INTERN int ATTR_CDECL libc_16wsopen(char16_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_16wopen_impl(file,oflag,va_arg(args,mode_t)); va_end(args); return result; }
 INTERN int ATTR_CDECL libc_32wsopen(char32_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_32wopen_impl(file,oflag,va_arg(args,mode_t)); va_end(args); return result; }
-INTERN int ATTR_CDECL libc_dos_16wsopen(char16_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_16wopen_impl(file,O_DOSPATH|oflag,va_arg(args,mode_t)); va_end(args); return result; }
-INTERN int ATTR_CDECL libc_dos_32wsopen(char32_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_32wopen_impl(file,O_DOSPATH|oflag,va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_dos_16wsopen(char16_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_16wopen_impl(file,libc_dos_getoflags(oflag),va_arg(args,mode_t)); va_end(args); return result; }
+INTERN int ATTR_CDECL libc_dos_32wsopen(char32_t const *file, int oflag, int sflag, ...) { int result; va_list args; va_start(args,sflag); result = libc_32wopen_impl(file,libc_dos_getoflags(oflag),va_arg(args,mode_t)); va_end(args); return result; }
 INTERN int LIBCCALL libc_16wsopen_s(int *fd, char16_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_16wopen_impl(file,oflag,cmode)) >= 0; }
 INTERN int LIBCCALL libc_32wsopen_s(int *fd, char32_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_32wopen_impl(file,oflag,cmode)) >= 0; }
-INTERN int LIBCCALL libc_dos_16wsopen_s(int *fd, char16_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_16wopen_impl(file,O_DOSPATH|oflag,cmode)) >= 0; }
-INTERN int LIBCCALL libc_dos_32wsopen_s(int *fd, char32_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_32wopen_impl(file,O_DOSPATH|oflag,cmode)) >= 0; }
+INTERN int LIBCCALL libc_dos_16wsopen_s(int *fd, char16_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_16wopen_impl(file,libc_dos_getoflags(oflag),cmode)) >= 0; }
+INTERN int LIBCCALL libc_dos_32wsopen_s(int *fd, char32_t const *file, int oflag, int UNUSED(sflag), mode_t cmode) { if (!fd) { SET_ERRNO(EINVAL); return -1; } return (*fd = libc_32wopen_impl(file,libc_dos_getoflags(oflag),cmode)) >= 0; }
 
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wcreat),libc_16wcreat);
 DEFINE_PUBLIC_ALIAS(__KSYMw16(_wopen),libc_16wopen);

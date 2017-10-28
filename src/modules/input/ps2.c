@@ -99,7 +99,7 @@ PRIVATE ssize_t KCALL kbd_read(struct file *__restrict fp,
  while ((result = atomic_iobuffer_read(&keyboard_pipe,buf,bufsize,true)) == 0)
          PREEMPTION_IDLE();
 #else
- result = atomic_iobuffer_read(&keyboard_pipe,buf,bufsize,true);
+ result = atomic_iobuffer_read(&keyboard_pipe,buf,bufsize,!(fp->f_mode&O_NONBLOCK));
 #endif
  SUPPRESS_WAITLOGS_END();
  return result;

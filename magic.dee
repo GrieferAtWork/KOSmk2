@@ -1366,8 +1366,9 @@ on_line_start:
 			for (;;) {
 				part += c;
 				if (c == "/") {
-					outfile.write("../");
-					break;
+					part += r.readline();
+					outfile.write(fix_path("../",part));
+					goto on_line_start;
 				}
 				if (!c || c.isspace()) {
 					break;

@@ -406,7 +406,9 @@ master_read(struct file *__restrict fp, USER void *buf, size_t bufsize) {
  if (master->pm_chr.cd_device.d_node.i_state&INODE_STATE_CLOSING)
   result = 0; /* Don't read any more data if the slave was closed. */
  else {
-  result = iobuffer_read(&M->pm_s2m,buf,bufsize,IO_BLOCKFIRST);
+  result = iobuffer_read(&M->pm_s2m,buf,bufsize,
+                        (fp->f_mode&O_NONBLOCK) ?
+                         IO_BLOCKNONE : IO_BLOCKFIRST);
   assertf(result != 0 ||
          (ATOMIC_READ(master->pm_chr.cd_device.d_node.i_state)&INODE_STATE_CLOSING),
           "The master PTY must only indicate EOF once being closed!");
@@ -475,7 +477,9 @@ PRIVATE ssize_t KCALL
 slave_read(struct file *__restrict fp, USER void *buf, size_t bufsize) {
  ssize_t result;
  SUPPRESS_WAITLOGS_BEGIN();
- result = iobuffer_read(&M->pm_m2s,buf,bufsize,IO_BLOCKFIRST);
+ result = iobuffer_read(&M->pm_m2s,buf,bufsize,
+                       (fp->f_mode&O_NONBLOCK) ?
+                        IO_BLOCKNONE : IO_BLOCKFIRST);
  SUPPRESS_WAITLOGS_END();
  return result;
 }

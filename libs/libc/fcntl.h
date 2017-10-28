@@ -48,6 +48,8 @@ INTERN struct virtinfo *LIBCCALL libc_xvirtinfo(VIRT void *addr, USER struct vir
 
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+INTDEF oflag_t LIBCCALL libc_dos_getoflags(oflag_t unix_flags);
+
 INTDEF char *LIBCCALL libc_getdcwd(int drive, char *buf, size_t size);
 INTDEF char16_t *LIBCCALL libc_16wgetcwd(char16_t *dstbuf, int elemcount);
 INTDEF char32_t *LIBCCALL libc_32wgetcwd(char32_t *dstbuf, int elemcount);
