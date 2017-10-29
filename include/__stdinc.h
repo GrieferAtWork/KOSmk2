@@ -376,10 +376,11 @@ __LOCAL attr void __NOTHROW((cc name) param) { \
 #ifdef __cplusplus
 extern "C++" {
 class __any_ptr {
- void *__p;
+    void *__m_p;
 public:
- __CXX11_CONSTEXPR inline __any_ptr(void *__p) throw(): __p(__p) {}
- template<class T> __CXX11_CONSTEXPR inline operator T *(void) throw() { return (T *)this->__p; }
+    __CXX11_CONSTEXPR __ATTR_INLINE __any_ptr(void *__p) __CXX_NOEXCEPT: __m_p(__p) {}
+    template<class __T> __CXX11_CONSTEXPR __ATTR_INLINE
+    operator __T *(void) __CXX_NOEXCEPT { return (__T *)this->__m_p; }
 };
 }
 #   define __COMPILER_UNIPOINTER(p) __any_ptr((void *)(__UINTPTR_TYPE__)(p))
@@ -425,7 +426,7 @@ struct _IO_FILE;
 
 /* Annotations */
 #define __CLEARED      /* Annotation for allocators returning zero-initialized memory. */
-#define __WEAK         /* Annotation for weakly referenced data. */
+#define __WEAK         /* Annotation for weakly referenced data/data updated randomly with both the old/new state remaining valid forever. */
 #define __REF          /* Annotation for reference holders. */
 #define __ATOMIC_DATA  /* Annotation for atomic data. */
 #define __PAGE_ALIGNED /* Annotation for page-aligned pointers. */

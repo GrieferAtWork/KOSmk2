@@ -195,7 +195,12 @@ typedef struct {
  u8           f32_bootsig[2];      /*< Bootable partition signature (0x55, 0xAA). */
 } PACKED fat32_header_t;
 
-typedef union {
+#ifdef __INTELLISENSE__
+typedef struct
+#else
+typedef union
+#endif
+{
  bios_parameter_block_t bpb;
  fat16_header_t         fat16;
  fat32_header_t         fat32;
@@ -315,9 +320,9 @@ typedef sector_t (KCALL *pfatsec)(fat_t const *__restrict self, fatid_t id);
 struct _fat {
  struct superblock f_super;         /*< The underlying superblock. */
  struct idata      f_idata;         /*< INode data for the superblock itself (Linked in `f_super.sb_root.i_user'). */
- mode_t            f_mode;          /*< Default permissions for every file on this filesystem (Defaults to 0777). */
- uid_t             f_uid;           /*< Owner UID for every file on this filesystem (Defaults to 0). */
- gid_t             f_gid;           /*< Owner GID for every file on this filesystem (Defaults to 0). */
+ WEAK mode_t       f_mode;          /*< Default permissions for every file on this filesystem (Defaults to 0777). */
+ WEAK uid_t        f_uid;           /*< Owner UID for every file on this filesystem (Defaults to 0). */
+ WEAK gid_t        f_gid;           /*< Owner GID for every file on this filesystem (Defaults to 0). */
  fattype_t         f_type;          /*< [const] Fat type. */
  char              f_oem[9];        /*< [const] OEM identifier. */
  char              f_label[12];     /*< [const] Volume label string (zero-terminated). */

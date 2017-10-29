@@ -176,7 +176,7 @@ __LIBC __WUNUSED int __NOTHROW((__LIBCCALL _toupper)(int __c));
 #ifndef _CTYPE_DEFINED
 #define _CTYPE_DEFINED 1
 __REDIRECT_IFKOS_NOTHROW(__LIBC,,int,__LIBCCALL,_isctype,(int __c, int __mask),isctype,(__c,__mask))
-#ifdef __CRT_DOS
+#ifdef __DOS_COMPAT__
 __LIBC __WUNUSED int (__LIBCCALL _isctype_l)(int __c, int __mask, __locale_t __locale);
 __LIBC __WUNUSED int (__LIBCCALL _isalpha_l)(int __c, __locale_t __locale);
 __LIBC __WUNUSED int (__LIBCCALL _isupper_l)(int __c, __locale_t __locale);
@@ -208,7 +208,7 @@ __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_iscntrl_l,(int __c, __locale
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_tolower_l,(int __c, __locale_t __locale),tolower,(__c,__locale))
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_toupper_l,(int __c, __locale_t __locale),toupper,(__c,__locale))
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_isblank_l,(int __c, __locale_t __locale),isblank,(__c,__locale))
-#else /* __CRT_DOS */
+#else /* ... */
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isctype_l)(int __c, int __mask, __locale_t __UNUSED(__locale))) { return __NAMESPACE_INT_SYM __isctype(__c,__mask); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isalpha_l)(int __c, __locale_t __UNUSED(__locale))) { return __NAMESPACE_STD_SYM isalpha(__c); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isupper_l)(int __c, __locale_t __UNUSED(__locale))) { return __NAMESPACE_STD_SYM isupper(__c); }
@@ -229,19 +229,19 @@ __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isblank_l)(int __c, __locale_t __UN
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_isblank,(int __c),isblank,(__c))
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isblank_l)(int __c, __locale_t __UNUSED(__locale))) { return __libc_isblank(__c); }
 #endif /* !__USE_ISOC99 */
-#endif /* !__CRT_DOS */
+#endif /* !... */
 
-#ifdef __CRT_DOS
+#ifdef __DOS_COMPAT__
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL __isascii)(int __c));
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL __toascii)(int __c));
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL __iscsymf)(int __c));
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL __iscsym)(int __c));
-#else /* __CRT_DOS */
+#else /* __DOS_COMPAT__ */
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __isascii)(int __c)) { return __isascii(__c); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __toascii)(int __c)) { return __toascii(__c); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __iscsymf)(int __c)) { return __NAMESPACE_STD_SYM isalpha(__c) || __c == '_'; }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __iscsym)(int __c)) { return __NAMESPACE_STD_SYM isalnum(__c) || __c == '_'; }
-#endif /* !__CRT_DOS */
+#endif /* !__DOS_COMPAT__ */
 
 #ifndef ___tolower_defined
 #define ___tolower_defined 1
@@ -263,17 +263,17 @@ __LIBC __WUNUSED int __NOTHROW((__LIBCCALL _toupper)(int __c));
 #define _iswcsymf_l(c,lc)  (_iswalpha_l(c,lc) || ((c) == '_'))
 #define _iswcsym_l(c,lc)   (_iswalnum_l(c,lc) || ((c) == '_'))
 
-#ifdef __CRT_DOS
+#ifdef __DOS_COMPAT__
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,isascii,(int __c),__isascii,(__c))
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,toascii,(int __c),__toascii,(__c))
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,iscsymf,(int __c),__iscsymf,(__c))
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,iscsym,(int __c),__iscsym,(__c))
-#else /* __CRT_DOS */
+#else /* __DOS_COMPAT__ */
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isascii)(int __c)) { return __isascii(__c); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL toascii)(int __c)) { return __toascii(__c); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL iscsymf)(int __c)) { return __iscsymf(__c); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL iscsym)(int __c)) { return __iscsym(__c); }
-#endif /* !__CRT_DOS */
+#endif /* !__DOS_COMPAT__ */
 #endif /* __USE_DOS */
 
 __SYSDECL_END

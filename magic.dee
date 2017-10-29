@@ -1170,7 +1170,30 @@ if (!run_mode_run_only) {
 				fp.write(" "*512);
 			fp.close();
 			set_file_changed(config_disk_image);
-			mtools("mformat",["-t","8","-h","2","-s","3600"]);
+			function calc_chs(disksize) {
+				local heads = 1;
+				local cylinders = 1;
+				disksize = (disksize+(512-1)) & ~(512-1);
+				local sectors_per_track = disksize / 512;
+				while (sectors_per_track > 63 && heads < 15 && cylinders < 1023) {
+					if (sectors_per_track&1) {
+						++sectors_per_track;
+						//disksize += 512*heads*cylinders;
+					}
+					heads             *= 2;
+					sectors_per_track /= 2;
+					if (heads > cylinders) {
+						heads     /= 2;
+						cylinders *= 2;
+					}
+				}
+				if (sectors_per_track > 63)
+				return cylinders,heads,sectors_per_track;
+			}
+			local c,h,s = calc_chs(config_disk_size)...;
+			print "CHS:",c,h,s;
+			mtools("mformat",["-t",str c,"-h",str h,"-s",str s]);
+			//mtools("mformat",["-t","8","-h","2","-s","3600"]);
 			/* TODO: We should do this more elegantly... */
 			disk_force_mkdir("/dev");
 			disk_force_mkdir("/proc");

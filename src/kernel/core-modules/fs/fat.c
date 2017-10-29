@@ -66,7 +66,9 @@ DECL_BEGIN
 #   define FAT_DEBUG(x) (void)0
 #endif
 
+#ifndef __INTELLISENSE__
 STATIC_ASSERT(sizeof(fat_header_t) == 512);
+#endif
 
 /* Load/Save the given fat-table-sector (that is: The sector associated with the FAT table itself) */
 PRIVATE errno_t KCALL fat_loadtable_unlocked(fat_t *__restrict self, sector_t fat_sector_index, size_t n_sectors);

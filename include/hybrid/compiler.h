@@ -108,7 +108,7 @@
 #define UNUSED              __UNUSED
 
 #define CLEARED             __CLEARED      /* Annotation for allocators returning zero-initialized memory. */
-#define WEAK                __WEAK         /* Annotation for weakly referenced data. */
+#define WEAK                __WEAK         /* Annotation for weakly referenced data/data updated randomly with both the old/new state remaining valid forever. */
 #define REF                 __REF          /* Annotation for reference holders. */
 #define ATOMIC_DATA         __ATOMIC_DATA  /* Annotation for atomic data. */
 #define PAGE_ALIGNED        __PAGE_ALIGNED /* Annotation for page-aligned pointers. */
