@@ -293,8 +293,6 @@ __LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
 #define program_invocation_short_name  (*__p__pgmptr())
 #endif
 #endif /* __USE_GNU */
-#endif /* !__KERNEL__ */
-#endif /* __CC__ */
 
 /* Unified error code access. */
 #ifdef __USE_KOS
@@ -359,6 +357,8 @@ __NAMESPACE_INT_END
 #endif /* !__USE_DOS */
 
 #endif /* __USE_KOS */
+#endif /* !__KERNEL__ */
+#endif /* __CC__ */
 
 #ifdef __KERNEL__
 #define ERELOAD         500 /* Resource must be reloaded (after a lock was temporarily lost). */

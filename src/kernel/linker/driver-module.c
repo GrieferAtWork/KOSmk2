@@ -19,6 +19,7 @@
 #ifndef GUARD_KERNEL_LINKER_DRIVER_MODULE_C
 #define GUARD_KERNEL_LINKER_DRIVER_MODULE_C 1
 #define _KOS_SOURCE 1
+#define _GNU_SOURCE 1
 
 #include <dev/device.h>
 #include <hybrid/align.h>
@@ -413,5 +414,9 @@ done:
 }
 
 DECL_END
+
+#ifndef __INTELLISENSE__
+#include "boot-module.c.inl"
+#endif
 
 #endif /* !GUARD_KERNEL_LINKER_DRIVER_MODULE_C */

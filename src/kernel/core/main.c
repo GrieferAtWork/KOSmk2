@@ -316,6 +316,18 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
   if (info->flags&MB_INFO_MEM_MAP)
       mem_install(info->mmap_addr,info->mmap_length,MEMTYPE_PRESERVE),
       mbt_memory += memory_load_mb_mmap((struct mb_mmap_entry *)info->mmap_addr,info->mmap_length);
+  if (info->flags&MB_INFO_MODS) {
+   PHYS mb_module_t *iter,*end;
+   /* Limit this to 1024 modules just in case the bootloader is broken. */
+   end = (iter = (PHYS mb_module_t *)(uintptr_t)info->mods_addr)+
+         (size_t)MIN(info->mods_count,1024);
+   for (; iter != end; ++iter) {
+    if (iter->mod_start >= iter->mod_end) continue;
+    kernel_bootmod_register(iter->mod_start,
+                            iter->mod_end-iter->mod_start,
+                           (char *)iter->cmdline);
+   }
+  }
  } break;
 
  {
@@ -368,6 +380,16 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
 
    case MB2_TAG_TYPE_MMAP:
     mbt_memory += memory_load_mb2_mmap(TAG(mb2_tag_mmap));
+    break;
+
+   case MB2_TAG_TYPE_MODULE:
+    if (TAG(mb2_tag_module)->mod_end >=
+        TAG(mb2_tag_module)->mod_start)
+        continue;
+    kernel_bootmod_register(TAG(mb2_tag_module)->mod_start,
+                            TAG(mb2_tag_module)->mod_end-
+                            TAG(mb2_tag_module)->mod_start,
+                            TAG(mb2_tag_module)->cmdline);
     break;
 
    case MB2_TAG_TYPE_BOOTDEV:
@@ -423,8 +445,9 @@ kernel_boot(u32        mb_magic,
  pdir_initialize();
  mman_initialize();
 
- /* Transfer the commandline into virtual, swap-able memory. */
+ /* Transfer the commandline and bootloader modules into virtual, swap-able memory. */
  commandline_initialize_repage();
+ kernel_bootmod_repage();
 
  /* Release all physical memory (including the commandline)
   * that was protected from being used as free data. */
@@ -459,9 +482,6 @@ kernel_boot(u32        mb_magic,
  //mallopt(M_MALL_CHECK_FREQUENCY,1); /* Most effective when checked constantly! */
 #endif
 
- /* TODO: Make use of 'ELIB*' error codes in the linker. */
- /* TODO: Add a proper serial module. */
-
  /* Run kernel-level constructors, thereby initializing core modules. */
  KERNEL_RUN_CONSTRUCTORS();
 
@@ -472,6 +492,13 @@ kernel_boot(u32        mb_magic,
   * been loaded, as not to run into synchronization problems related
   * to some of the things being done during core-module initialization! */
  sched_initialize();
+
+ /* Setup bootloader drivers.
+  * NOTE: Must be done before the root filesystem is mounted, in
+  *       case special drivers are required to do exactly that,
+  *       thus allowing a simply addition to the grub boot script
+  *       in order to support booting from such a partition. */
+ kernel_bootmod_setup();
 
  /* Mount the root filesystem. */
  mount_root_filesystem();
@@ -507,6 +534,8 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/pdb-debug");
  //kinsmod("/mod/ne2000");
 
+ /* TODO: Make use of 'ELIB*' error codes in the linker. */
+ /* TODO: Add a proper serial module. */
  /* TODO: Actual locale support? */
 
  /* Load a user-defined boot drive replacement. */

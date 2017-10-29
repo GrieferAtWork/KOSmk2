@@ -243,14 +243,16 @@ module_destroy(struct module *__restrict self) {
  if (self->m_ops->o_fini)
    (*self->m_ops->o_fini)(self);
 
- node = self->m_file->f_node;
- atomic_rwlock_write(&node->i_file.i_files_lock);
- /* NOTE: Must check if we're still the module
-  *       as it's a weak cache pointer! */
- if (node->i_file.i_module == self)
-     node->i_file.i_module = NULL;
- atomic_rwlock_endwrite(&node->i_file.i_files_lock);
- FILE_DECREF(self->m_file);
+ if (self->m_file) {
+  node = self->m_file->f_node;
+  atomic_rwlock_write(&node->i_file.i_files_lock);
+  /* NOTE: Must check if we're still the module
+   *       as it's a weak cache pointer! */
+  if (node->i_file.i_module == self)
+      node->i_file.i_module = NULL;
+  atomic_rwlock_endwrite(&node->i_file.i_files_lock);
+  FILE_DECREF(self->m_file);
+ }
 
  /* Delete segments. */
  { struct modseg *iter,*end;
@@ -425,7 +427,6 @@ module_file(struct module *__restrict self) {
   if (!ATOMIC_CMPXCH(kernel_module.m_file,NULL,stream))
        FILE_DECREF(stream);
  }
- assert(self->m_file);
  return self->m_file;
 }
 
@@ -711,12 +712,12 @@ module_mkregions(struct module *__restrict self) {
      region->mr_init = MREGION_INIT_ZERO;
     }
    } else {
-    region->mr_init             = MREGION_INIT_FILE;
-    region->mr_setup.mri_file   = self->m_file;
-    region->mr_setup.mri_start  = iter->ms_fpos;
-    region->mr_setup.mri_size   = iter->ms_fsize;
-    region->mr_setup.mri_byte   = iter->ms_fill;
-    region->mr_setup.mri_begin  = page_offset;
+    region->mr_init            = MREGION_INIT_FILE;
+    region->mr_setup.mri_file  = self->m_file;
+    region->mr_setup.mri_start = iter->ms_fpos;
+    region->mr_setup.mri_size  = iter->ms_fsize;
+    region->mr_setup.mri_byte  = iter->ms_fill;
+    region->mr_setup.mri_begin = page_offset;
     FILE_INCREF(self->m_file);
    }
    region->mr_size += page_offset;

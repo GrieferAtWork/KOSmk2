@@ -901,103 +901,25 @@ PUBLIC struct moduleops const elf_modops = {
 };
 
 
-PRIVATE REF struct module *KCALL
-elf_loader(struct file *__restrict fp) {
+INTERN REF struct elf_module *KCALL
+elf_loader_impl(struct file *__restrict fp, Elf_Ehdr const *__restrict ehdr) {
  REF struct elf_module *result = NULL;
- errno_t error; Elf_Ehdr ehdr;
- Elf_Phdr *phdrv = NULL;
- CHECK_HOST_DOBJ(fp);
+ errno_t error; Elf_Phdr *phdrv = NULL;
 
- error = file_kreadall(fp,&ehdr,offsetafter(Elf_Ehdr,e_phnum));
-
- if (E_ISERR(error)) goto err;
- /* These should've already been checked, but we'll check them again... */
- if (ehdr.e_ident[EI_MAG0] != ELFMAG0 ||
-     ehdr.e_ident[EI_MAG1] != ELFMAG1 ||
-     ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
-     ehdr.e_ident[EI_MAG3] != ELFMAG3)
-     goto enoexec;
-
- /* Check other settings. */
- if (ehdr.e_ident[EI_CLASS] != ELFCLASS)
-     goto enoexec;
-#if __BYTE_ORDER == __LITTLE_ENDIAN
- if (ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
-     goto enoexec;
-#elif __BYTE_ORDER == __BIG_ENDIAN
- if (ehdr.e_ident[EI_DATA] != ELFDATA2MSB)
-     goto enoexec;
-#endif
-
-#ifdef __x86_64__
- if (ehdr.e_machine != EM_X86_64)
-     goto enoexec;
-#elif defined(__i386__)
- if (ehdr.e_machine != EM_386)
-     goto enoexec;
-#endif
-
- /* We only load executables + shared libraries. */
- if (ehdr.e_type != ET_EXEC &&
-     ehdr.e_type != ET_DYN)
-     goto enoexec;
-
- /* Check some more things concerning the size of headers. */
- /* NOTE: We don't check for anything starting at `e_shentsize',
-  *       as for all we care, that part of the header doesn't
-  *       even need to exist. - This is a PHDR-only loader!
-  *      (After writing a compiler, I've learned from the
-  *       mistakes I've made in the old KOS loader
-  *      '/__ice__/src/kernel/linker/linker-elf32.c') */
- if (ehdr.e_ehsize < offsetafter(Elf_Ehdr,e_phnum))
-     goto enoexec;
- if (ehdr.e_phnum == 0)
-     goto enoexec;
- if (ehdr.e_phentsize < ELF_ENTSIZE_MIN ||
-     ehdr.e_phentsize > ELF_ENTSIZE_MAX)
-     goto enoexec;
- if (ehdr.e_phoff < ehdr.e_ehsize)
-     goto enoexec;
-
- /* Prevent exploits... */
- if (ehdr.e_phnum > ELF_PHNUM_MAX) {
-  syslog(LOG_EXEC|LOG_ERROR,
-         COLDSTR("[ELF] Elf binary `%[file]' PHDR count %u exceeds limit of %u\n"),
-         fp,(unsigned)ehdr.e_phnum,ELF_PHNUM_MAX);
-  goto enoexec;
- }
-
- /* Only warn if the binary wasn't compiled for SYSV (which KOS tries to follow) */
- if (ehdr.e_ident[EI_OSABI] != ELFOSABI_SYSV) {
-  syslog(LOG_EXEC|LOG_WARN,
-         COLDSTR("[ELF] Loading ELF binary `%[file]' that isn't SYSV (EI_OSABI = %d)\n"),
-         fp,(int)ehdr.e_ident[EI_OSABI]);
- }
-
- /* Only warn if the binary has a future version number
-  * (For some reason the version appears twice?) */
- if (ehdr.e_version           != EV_CURRENT ||
-     ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
-  syslog(LOG_EXEC|LOG_WARN,
-         COLDSTR("[ELF] Loading ELF binary `%[file]' that has an unrecognized version (%d/%d)\n"),
-         ehdr.e_version,ehdr.e_ident[EI_VERSION]);
- }
-
- /* All checks are done. - Now to read the program headers. */
- phdrv = tmalloc(Elf_Phdr,ehdr.e_phnum);
+ phdrv = tmalloc(Elf_Phdr,ehdr->e_phnum);
  if unlikely(!phdrv) goto enomem;
- error = (errno_t)file_seek(fp,ehdr.e_phoff,SEEK_SET);
+ error = (errno_t)file_seek(fp,ehdr->e_phoff,SEEK_SET);
  if (E_ISERR(error)) goto err;
 
- if (ehdr.e_phentsize == sizeof(Elf_Phdr)) {
+ if likely(ehdr->e_phentsize == sizeof(Elf_Phdr)) {
   /* Most likely case: We can do a linear read-throu. */
-  error = file_kreadall(fp,phdrv,ehdr.e_phnum*sizeof(Elf_Phdr));
+  error = file_kreadall(fp,phdrv,ehdr->e_phnum*sizeof(Elf_Phdr));
   if (E_ISERR(error)) goto read_error;
- } else if (ehdr.e_phentsize > sizeof(Elf_Phdr)) {
+ } else if (ehdr->e_phentsize > sizeof(Elf_Phdr)) {
   /* Read the headers scattered access the file. */
   Elf_Phdr *iter,*end;
-  off_t seek_diff = (off_t)(ehdr.e_phentsize-sizeof(Elf_Phdr));
-  end = (iter = phdrv)+ehdr.e_phnum;
+  off_t seek_diff = (off_t)(ehdr->e_phentsize-sizeof(Elf_Phdr));
+  end = (iter = phdrv)+ehdr->e_phnum;
   for (; iter != end; ++iter) {
    error = file_kreadall(fp,iter,sizeof(Elf_Phdr));
    if (E_ISERR(error)) goto read_error;
@@ -1007,16 +929,16 @@ elf_loader(struct file *__restrict fp) {
  } else {
   Elf_Phdr *dst_hdr; byte_t *src_hdr;
   /* Read truncated. */
-  error = file_kreadall(fp,phdrv,ehdr.e_phnum*ehdr.e_phentsize);
+  error = file_kreadall(fp,phdrv,ehdr->e_phnum*ehdr->e_phentsize);
   if (E_ISERR(error)) goto read_error;
-  dst_hdr = phdrv+ehdr.e_phnum;
-  src_hdr = (byte_t *)phdrv+(ehdr.e_phnum*ehdr.e_phentsize);
+  dst_hdr = phdrv+ehdr->e_phnum;
+  src_hdr = (byte_t *)phdrv+(ehdr->e_phnum*ehdr->e_phentsize);
   /* Expand the program header chain. */
   while (dst_hdr-- != phdrv) {
-   src_hdr -= ehdr.e_phentsize;
-   memmove(dst_hdr,src_hdr,ehdr.e_phentsize);
-   memset((byte_t *)dst_hdr+ehdr.e_phentsize,0,
-           sizeof(Elf_Phdr)-ehdr.e_phentsize);
+   src_hdr -= ehdr->e_phentsize;
+   memmove(dst_hdr,src_hdr,ehdr->e_phentsize);
+   memset((byte_t *)dst_hdr+ehdr->e_phentsize,0,
+           sizeof(Elf_Phdr)-ehdr->e_phentsize);
   }
  }
 
@@ -1026,7 +948,7 @@ elf_loader(struct file *__restrict fp) {
   struct modseg *seg_iter;
   size_t max_size,n_load_hdr = 0;
   size_t min_alignment = 1;
-  end = (iter = phdrv)+ehdr.e_phnum;
+  end = (iter = phdrv)+ehdr->e_phnum;
   /* TODO: Handle special case: `PT_INTERP' */
   for (; iter != end; ++iter) {
    if (iter->p_type == PT_LOAD &&
@@ -1044,9 +966,9 @@ elf_loader(struct file *__restrict fp) {
   result->e_module.m_segv = tcalloc(struct modseg,n_load_hdr);
   if unlikely(!result->e_module.m_segv) goto enomem;
   result->e_module.m_segc = n_load_hdr;
-  if (ehdr.e_type == ET_EXEC) {
+  if (ehdr->e_type == ET_EXEC) {
    result->e_module.m_flag |= MODFLAG_EXEC;
-   result->e_module.m_entry = ehdr.e_entry;
+   result->e_module.m_entry = ehdr->e_entry;
   }
   iter     = phdrv;
   seg_iter = result->e_module.m_segv;
@@ -1069,7 +991,7 @@ elf_loader(struct file *__restrict fp) {
    seg_iter->ms_fsize = iter->p_filesz;
    if (min_alignment < iter->p_align)
        min_alignment = iter->p_align;
-   if (ehdr.e_phentsize < offsetafter(Elf_Phdr,p_flags))
+   if (ehdr->e_phentsize < offsetafter(Elf_Phdr,p_flags))
        iter->p_flags = PF_X|PF_W|PF_R;
 #if (PROT_EXEC  == PF_X) && \
     (PROT_WRITE == PF_W) && \
@@ -1234,7 +1156,7 @@ elf_loader(struct file *__restrict fp) {
 #endif
 done:
  free(phdrv);
- return (struct module *)result;
+ return result;
 enoexec: error = -ENOEXEC; goto fail;
 enomem:  error = -ENOMEM; goto fail;
 fail: 
@@ -1248,6 +1170,94 @@ read_error:
   *    loader can succeed where we've failed... */
  if (error == -ENOSPC) goto enoexec;
  goto err;
+}
+
+PRIVATE REF struct module *KCALL
+elf_loader(struct file *__restrict fp) {
+ errno_t error; Elf_Ehdr ehdr;
+ CHECK_HOST_DOBJ(fp);
+
+ error = file_kreadall(fp,&ehdr,offsetafter(Elf_Ehdr,e_phnum));
+
+ if (E_ISERR(error)) goto read_error;
+ /* These should've already been checked, but we'll check them again... */
+ if unlikely(ehdr.e_ident[EI_MAG0] != ELFMAG0 ||
+             ehdr.e_ident[EI_MAG1] != ELFMAG1 ||
+             ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
+             ehdr.e_ident[EI_MAG3] != ELFMAG3)
+    goto enoexec;
+
+ /* Check other settings. */
+ if unlikely(ehdr.e_ident[EI_CLASS] != ELFCLASS)
+    goto enoexec;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+ if unlikely(ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
+    goto enoexec;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+ if unlikely(ehdr.e_ident[EI_DATA] != ELFDATA2MSB)
+    goto enoexec;
+#endif
+
+#ifdef __x86_64__
+ if unlikely(ehdr.e_machine != EM_X86_64)
+    goto enoexec;
+#elif defined(__i386__)
+ if unlikely(ehdr.e_machine != EM_386)
+    goto enoexec;
+#endif
+
+ /* We only load executables + shared libraries. */
+ if unlikely(ehdr.e_type != ET_EXEC &&
+             ehdr.e_type != ET_DYN)
+    goto enoexec;
+
+ /* Check some more things concerning the size of headers. */
+ /* NOTE: We don't check for anything starting at `e_shentsize',
+  *       as for all we care, that part of the header doesn't
+  *       even need to exist. - This is a PHDR-only loader!
+  *      (After writing a compiler, I've learned from the
+  *       mistakes I've made in the old KOS loader
+  *      '/__ice__/src/kernel/linker/linker-elf32.c') */
+ if unlikely(ehdr.e_ehsize < offsetafter(Elf_Ehdr,e_phnum))
+    goto enoexec;
+ if unlikely(ehdr.e_phnum == 0)
+    goto enoexec;
+ if unlikely(ehdr.e_phentsize < ELF_ENTSIZE_MIN ||
+             ehdr.e_phentsize > ELF_ENTSIZE_MAX)
+    goto enoexec;
+ if unlikely(ehdr.e_phoff < ehdr.e_ehsize)
+    goto enoexec;
+
+ /* Prevent exploits... */
+ if unlikely(ehdr.e_phnum > ELF_PHNUM_MAX) {
+  syslog(LOG_EXEC|LOG_ERROR,
+         COLDSTR("[ELF] Elf binary `%[file]' PHDR count %u exceeds limit of %u\n"),
+         fp,(unsigned)ehdr.e_phnum,ELF_PHNUM_MAX);
+  goto enoexec;
+ }
+
+ /* Only warn if the binary wasn't compiled for SYSV (which KOS tries to follow) */
+ if unlikely(ehdr.e_ident[EI_OSABI] != ELFOSABI_SYSV) {
+  syslog(LOG_EXEC|LOG_WARN,
+         COLDSTR("[ELF] Loading ELF binary `%[file]' that isn't SYSV (EI_OSABI = %d)\n"),
+         fp,(int)ehdr.e_ident[EI_OSABI]);
+ }
+
+ /* Only warn if the binary has a future version number
+  * (For some reason the version appears twice?) */
+ if unlikely(ehdr.e_version           != EV_CURRENT ||
+             ehdr.e_ident[EI_VERSION] != EV_CURRENT) {
+  syslog(LOG_EXEC|LOG_WARN,
+         COLDSTR("[ELF] Loading ELF binary `%[file]' that has an unrecognized version (%d/%d)\n"),
+         ehdr.e_version,ehdr.e_ident[EI_VERSION]);
+ }
+
+ /* All checks are done. - Now to read the program headers. */
+ return (struct module *)elf_loader_impl(fp,&ehdr);
+enoexec: return E_PTR(-ENOEXEC);
+read_error:
+ if (error == -ENOSPC) goto enoexec;
+ return E_PTR(error);
 }
 
 

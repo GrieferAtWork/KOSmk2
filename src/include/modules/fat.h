@@ -136,7 +136,7 @@ union PACKED {struct PACKED {union PACKED {
 } file_t;
 
 
-typedef struct {
+typedef struct PACKED {
  /* FAT BIOS Parameter Block (common header) */
  u8   bpb_jmp[3];              /*< Jump instructions (executable). */
  char bpb_oem[8];              /*< OEM identifier */
@@ -152,9 +152,9 @@ typedef struct {
  le16 bpb_numheads;            /*< Number of heads or sides on the storage media. */
  le32 bpb_hiddensectors;       /*< Absolute sector address of the fat header (lba of the fat partition). */
  le32 bpb_longsectorc;         /*< Large amount of sector on media (Used for more than `65535' sectors) */
-} PACKED bios_parameter_block_t;
+} bios_parameter_block_t;
 
-typedef struct {
+typedef struct PACKED {
  bios_parameter_block_t f16_bpb; /*< BIOS Parameter Block. */
  u8           f16_driveno;       /*< Drive number. The value here should be identical to the value returned by BIOS interrupt 0x13,
                                   *  or passed in the DL register; i.e. 0x00 for a floppy disk and 0x80 for hard disks.
@@ -168,10 +168,10 @@ typedef struct {
                                   *  It is padded with spaces. The spec says never to trust the contents of this string for any use. */
  u8           f16_bootcode[448]; /*< Boot code. */
  u8           f16_bootsig[2];    /*< Bootable partition signature (0x55, 0xAA). */
-} PACKED fat16_header_t;
+} fat16_header_t;
 
 
-typedef struct {
+typedef struct PACKED {
  /* FAT32 Extended boot record. */
  bios_parameter_block_t f32_bpb;   /*< BIOS Parameter Block. */
  le32         f32_sectors_per_fat; /*< Number of sectors per FAT. */
@@ -193,18 +193,18 @@ typedef struct {
                                     *  It is padded with spaces. The spec says never to trust the contents of this string for any use. */
  u8           f32_bootcode[420];   /*< Boot code. */
  u8           f32_bootsig[2];      /*< Bootable partition signature (0x55, 0xAA). */
-} PACKED fat32_header_t;
+} fat32_header_t;
 
 #ifdef __INTELLISENSE__
-typedef struct
+typedef struct PACKED
 #else
-typedef union
+typedef union PACKED
 #endif
 {
  bios_parameter_block_t bpb;
  fat16_header_t         fat16;
  fat32_header_t         fat32;
-} PACKED fat_header_t;
+} fat_header_t;
 
 typedef u32     sector_t;  /*< Sector number. */
 typedef u32     fatid_t;   /*< FAT table index. */

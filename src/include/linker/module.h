@@ -246,11 +246,12 @@ FUNDEF errno_t KCALL argvlist_appendv(struct argvlist *__restrict self, char con
 struct module {
  ATOMIC_DATA ref_t       m_refcnt; /*< Module reference counter. */
  struct moduleops const *m_ops;    /*< [const][1..1] Generic module operations. */
- REF struct file        *m_file;   /*< [const][1..1] Module executable.
+ REF struct file        *m_file;   /*< [const][0..1] Module executable.
                                     *   NOTE: The module it self is also stored under:
                                     *        `m_file->f_node->i_file.i_module'
                                     *   Upon deletion of the module, that field is cleared.
-                                    *   WARNING: The kernel's core-module has this field set to NULL! */
+                                    *   WARNING: The kernel's core-module has this field set to NULL!
+                                    *   WARNING: Module installed by the bootloaded also have this field set to NULL! */
  struct dentryname      *m_name;   /*< [const][1..1] The effective name of the module (Defaults to `&m_file->f_dent->d_name'; may be set to `&m_namebuf') */
  struct dentryname       m_namebuf;/*< [const][owned] Per-module inline-allocated name buffer. */
  WEAK REF struct instance *m_owner;/*< [const][1..1] Weak reference to the owner driver of this module.
@@ -824,6 +825,21 @@ FUNDEF SAFE void KCALL kernel_unload_all_modules(void);
 /* The symbolic module and instance for the kernel core itself. */
 DATDEF struct module   kernel_module;
 DATDEF struct instance kernel_instance;
+
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+
+/* Bootloader module support (As provided by Multiboot/Multiboot2)
+ * NOTE: The given address range simply points to a raw ELF binary mapped into memory.
+ * NOTE: This function will register the given address range as preserved memory. */
+INTDEF INITCALL void KCALL kernel_bootmod_register(PHYS uintptr_t addr, size_t size, PHYS char const *cmdline);
+/* Transfer boot module data into virtual, swappable memory. */
+INTDEF INITCALL void KCALL kernel_bootmod_repage(void);
+/* Load+setup bootloader modules as regular kernel drivers.
+ * NOTE: This happens just before the root filesystem is mounted, so-as to
+ *       allow custom filesystem drivers to be loaded when KOS's system
+ *       partition is formatted as something other than FAT. */
+INTDEF INITCALL void KCALL kernel_bootmod_setup(void);
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 DECL_END
 

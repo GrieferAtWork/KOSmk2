@@ -90,6 +90,8 @@ PUBLIC void KCALL
 file_destroy(struct file *__restrict self) {
  struct inode *ino;
  CHECK_HOST_DOBJ(self);
+ assert(self->f_node);
+ assert(self->f_open.le_pself);
  ino = self->f_node;
  /* Flush a file that we written to. */
  if (self->f_flag&FILE_FLAG_DIDWRITE &&
@@ -161,7 +163,7 @@ file_write(struct file *__restrict self,
  CHECK_HOST_DOBJ(self);
  CHECK_USER_TEXT(buf,bufsize);
  assert(self);
- assert(self->f_node->i_ops == self->f_ops);
+ /*assert(self->f_node->i_ops == self->f_ops);*/
  if ((self->f_mode&O_ACCMODE) == O_RDONLY ||
      !self->f_ops->f_write) return -EPERM;
  if (FILE_ISLOCKLESS(self)) {
@@ -201,6 +203,7 @@ file_pwrite(struct file *__restrict self,
  ssize_t result;
  CHECK_HOST_DOBJ(self);
  CHECK_USER_TEXT(buf,bufsize);
+ assert(self->f_node);
  if ((self->f_mode&O_ACCMODE) == O_RDONLY ||
      !self->f_ops->f_pwrite) return -EPERM;
  inode_invalidate(self->f_node);

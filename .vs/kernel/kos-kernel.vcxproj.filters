@@ -59,6 +59,9 @@
     <None Include="..\..\src\kernel\mman\mregion-io.c.inl">
       <Filter>kernel\mman</Filter>
     </None>
+    <None Include="..\..\src\kernel\linker\boot-module.c.inl">
+      <Filter>kernel\linker</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

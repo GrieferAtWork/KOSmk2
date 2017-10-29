@@ -279,12 +279,13 @@ mem_overlapping_address_range(PHYS uintptr_t base, size_t num_bytes,
                               memtype_t old_type, memtype_t new_type) {
  /* Don't report overlaps in preserved regions. */
  if (old_type == MEMTYPE_PRESERVE) return;
+ if (new_type == MEMTYPE_PRESERVE && old_type == MEMTYPE_RAM) {
+  /* TODO: Change the old memory type to 'MEMTYPE_PRESERVE'. */
+ }
  syslog(LOG_MEM|LOG_WARN,
         FREESTR("[MEM] Overlapping <%s> address range with <%s> at %p...%p\n"),
         memtype_names[old_type],memtype_names[new_type],base,base+num_bytes-1);
 }
-
-
 
 
 INTERN ATTR_FREETEXT PAGE_ALIGNED size_t KCALL

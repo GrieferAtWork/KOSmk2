@@ -18,6 +18,7 @@
     <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\canonbuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\memfile.c.inl" />
+    <None Include="..\..\src\kernel\linker\boot-module.c.inl" />
     <None Include="..\..\src\kernel\linker\ksym.S" />
     <None Include="..\..\src\kernel\memory\malloc-realign.c.inl" />
     <None Include="..\..\src\kernel\mman\environ.c.inl" />

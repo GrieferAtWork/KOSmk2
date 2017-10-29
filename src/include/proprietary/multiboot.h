@@ -115,7 +115,7 @@ typedef struct mb_info {
   u32 boot_device;       /* "root" partition */
   u32 cmdline;           /* Kernel command line */
   u32 mods_count;        /* Boot-Module list */
-  u32 mods_addr;
+  u32 mods_addr;         /* Pointer to `mods_count' elements long vector of `mb_module_t' */
   union {
     mb_aout_symbol_table_t        aout_sym;
     mb_elf_section_header_table_t elf_sec;
