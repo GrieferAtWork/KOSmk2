@@ -153,7 +153,10 @@ kernel_bootmod_repage(void) {
   }
   iter->bm_cmdline = new_cmdline;
   if (!new_cmdline) iter->bm_cmdsize = 0;
-
+#ifdef MEMTYPE_ALLOCATED
+  mem_install((uintptr_t)iter,iter->bm_size,MEMTYPE_ALLOCATED);
+  piter = &module_copy->bm_next;
+#else
   /* Relocate the module into high memory. */
   module_copy = (bootmod_t *)page_malloc(iter->bm_size,PAGEATTR_NONE,MZONE_ANY);
   if (module_copy == PAGE_ERROR) {
@@ -166,6 +169,7 @@ kernel_bootmod_repage(void) {
    *piter = module_copy;
    piter = &module_copy->bm_next;
   }
+#endif
  }
 }
 
@@ -200,7 +204,7 @@ module_mkregions_phys(struct module *__restrict mod,
   assert(!iter->ms_region);
   region = mregion_new(MMAN_DATAGFP(&mman_kernel));
   if unlikely(!region) return -ENOMEM;
-  region->mr_size = iter->ms_msize;
+  region->mr_size = CEIL_ALIGN(iter->ms_msize,PAGESIZE);
   /* Allocate scattered physical memory for this part. */
   /* NOTE: There would be no point in trying to optimize
    *       this code to use 'PAGEATTR_ZERO'. ZERO-initialized
@@ -269,8 +273,8 @@ kernel_bootmod_setup(void) {
     struct textfile fakefile = {
         .tf_file = {
             .f_refcnt = 1,
-            /* NOTE: We can get away with 'f_node == NULL', but we need to assign
-             *       some directory entry. - We simply use 'fs_root' for that. */
+            /* NOTE: We can get away with `f_node == NULL', but we need to assign
+             *       some directory entry. - We simply use `fs_root' for that. */
             .f_ops  = &fakeops,
             .f_node = NULL,
             .f_dent = &fs_root,
@@ -284,10 +288,20 @@ kernel_bootmod_setup(void) {
         .tf_bufend = (char *)iter+iter->bm_size,
         .tf_bufpos = (char *)iter,
     };
+#ifdef bm_type
     mod = (REF struct module *)elf_loader_impl(&fakefile.tf_file,
                                                &iter->bm_ehdr);
+#else
+    { Elf32_Half old_type;
+      old_type = iter->bm_ehdr.e_type;
+      iter->bm_ehdr.e_type = iter->bm_type;
+      mod = (REF struct module *)elf_loader_impl(&fakefile.tf_file,
+                                                 &iter->bm_ehdr);
+      iter->bm_ehdr.e_type = old_type;
+    }
+#endif
     /* Make sure the fake file's reference counters are as expected.
-     * NOTE: The additional reference-on-success is stored in 'mod->m_file'. */
+     * NOTE: The additional reference-on-success is stored in `mod->m_file'. */
     assert(E_ISOK(mod) ? fakefile.tf_file.f_refcnt == 2
                        : fakefile.tf_file.f_refcnt == 1);
   }
@@ -301,7 +315,8 @@ kernel_bootmod_setup(void) {
    if (E_ISERR(error)) goto err_module;
 
    /* Load the module as a kernel-level driver. */
-   inst = kernel_insmod(mod,iter->bm_cmdline,INSMOD_NORMAL);
+   inst = kernel_insmod(mod,iter->bm_cmdline,
+                        INSMOD_NORMAL|INSMOD_BOOTLOADER);
    MODULE_DECREF(mod);
    if (E_ISERR(inst)) { mod = E_PTR(E_GTERR(inst)); goto mod_failed; }
    INSTANCE_DECREF(inst);
@@ -312,14 +327,14 @@ mod_failed:
           FREESTR("[BOOT] Failed to load bootloader module at %p...%p: %[errno]\n"),
          (uintptr_t)iter,(uintptr_t)iter+iter->bm_size-1,-E_GTERR(mod));
   }
-  page_free((ppage_t)(uintptr_t)iter,iter->bm_size);
+  /* Keep the first page alive (Used one more time when 'kernel_bootmod_locate()'
+   * does some cleanup when trying to find file associated with bootloader modules)
+   * NOTE: Also used when 'kernel_bootmod_locate()' is going to free module command lines. */
+  if (iter->bm_size > PAGESIZE)
+      page_free((ppage_t)((uintptr_t)iter+PAGESIZE),
+                 iter->bm_size-PAGESIZE);
   iter = next;
  }
-
-#ifdef CONFIG_DEBUG
- boot_modules = (bootmod_t *)0xdeadbeef;
- COMPILER_WRITE_BARRIER();
-#endif
  return;
 err_module:
  MODULE_DECREF(mod);

@@ -322,7 +322,7 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
    end = (iter = (PHYS mb_module_t *)(uintptr_t)info->mods_addr)+
          (size_t)MIN(info->mods_count,1024);
    for (; iter != end; ++iter) {
-    if (iter->mod_start >= iter->mod_end) continue;
+    if unlikely(iter->mod_end < iter->mod_start) continue;
     kernel_bootmod_register(iter->mod_start,
                             iter->mod_end-iter->mod_start,
                            (char *)iter->cmdline);
@@ -383,9 +383,9 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
     break;
 
    case MB2_TAG_TYPE_MODULE:
-    if (TAG(mb2_tag_module)->mod_end >=
-        TAG(mb2_tag_module)->mod_start)
-        continue;
+    if unlikely(TAG(mb2_tag_module)->mod_end <
+                TAG(mb2_tag_module)->mod_start)
+                break;
     kernel_bootmod_register(TAG(mb2_tag_module)->mod_start,
                             TAG(mb2_tag_module)->mod_end-
                             TAG(mb2_tag_module)->mod_start,

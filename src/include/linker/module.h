@@ -746,10 +746,19 @@ FUNDEF SAFE REF struct instance *KCALL
 kernel_insmod(struct module *__restrict mod,
               USER char const *cmdline,
               u32 mode);
-#define INSMOD_NORMAL    0x00000000 /*< In the even that `mod' has already been loaded, fail by returning `-EEXIST'. */
-#define INSMOD_REUSE     0x00000001 /*< In the even that `mod' has already been loaded, return a reference to the existing instance. */
-#define INSMOD_SECONDARY 0x00000002 /*< In the even that `mod' has already been loaded, create and return a secondary instance. */
-#define INSMOD_NOINIT    0x00010000 /*< Do not execute initializers. */
+#define INSMOD_NORMAL     0x00000000 /*< In the even that `mod' has already been loaded, fail by returning `-EEXIST'. */
+#define INSMOD_REUSE      0x00000001 /*< In the even that `mod' has already been loaded, return a reference to the existing instance. */
+#define INSMOD_SECONDARY  0x00000002 /*< In the even that `mod' has already been loaded, create and return a secondary instance. */
+#define INSMOD_NOINIT     0x00010000 /*< Do not execute initializers. */
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+#define INSMOD_BOOTLOADER 0x80000000 /*< The module is loaded as per request from the bootloader.
+                                      *  This flag may only be set during early boot in order to
+                                      *  enable the use of a custom driver dependency map linking
+                                      *  different modules by explicitly addressable names, rather
+                                      *  than their actual filenames (Which aren't known yet).
+                                      *  TODO: Implement this flag.
+                                      */
+#endif
 
 LOCAL SAFE REF struct instance *KCALL kernel_insmod_f(struct file *__restrict fp, HOST char const *cmdline, u32 mode);
 LOCAL SAFE REF struct instance *KCALL kernel_insmod_s(HOST char const *__restrict abs_filename, HOST char const *cmdline, u32 mode);
@@ -839,6 +848,20 @@ INTDEF INITCALL void KCALL kernel_bootmod_repage(void);
  *       allow custom filesystem drivers to be loaded when KOS's system
  *       partition is formatted as something other than FAT. */
 INTDEF INITCALL void KCALL kernel_bootmod_setup(void);
+/* Called once the filesystem is initialized and after
+ * bootloader modules have already been loaded+initialized.
+ * This function will go through all loaded modules one more time
+ * and try to figure out what file they are associated with.
+ * The way this is done is by looking at the start of the
+ * individual module's commandlines, and in the even that the first
+ * character is a '/' (Or '\'' / '\"', in which case a string is parsed),
+ * that string is interpreted as the module's filename.
+ * That string is then used to open a file, which is then assigned
+ * as the module file to that driver, thus allowing it to later be re-used
+ * and address under that name.
+ * NOTE: In the event that the file could not be opened, the last path-component
+ *       is used and stored in 'm_name' of the module in question. */
+INTDEF INITCALL void KCALL kernel_bootmod_locate(void);
 #endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 DECL_END

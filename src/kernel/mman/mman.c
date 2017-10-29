@@ -243,6 +243,9 @@ mregion_setup(struct mregion *__restrict self) {
  assertf(self->mr_global.le_pself == NULL,
          "Region %p was already set up",self);
  assertf(self->mr_size != 0,"Regions cannot be empty");
+ assertf(IS_ALIGNED(self->mr_size,PAGESIZE),
+         "The size of a region must be page-aligned (But size %p of region at %p isn't)",
+         self->mr_size,self);
  assert(addr_isvirt(self) || PDIR_ISKPD());
  if (self->mr_type == MREGION_TYPE_MEM) {
   atomic_rwlock_write(&mregion_chain_lock);

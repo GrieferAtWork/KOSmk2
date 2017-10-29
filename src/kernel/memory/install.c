@@ -22,6 +22,12 @@
 
 #include "../debug-config.h"
 
+/* TODO: New memory information system that is similar to an mregion,
+ *       in that all physical memory always has a descriptor assigned.
+ *    >> That way, memory information can easily be changed retroactively,
+ *       and information splitting can be implemented as its own function.
+ */
+
 #include <hybrid/align.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
@@ -84,6 +90,9 @@ meminfo_load_part_full(struct meminfo *__restrict self) {
  self->mi_part_addr = (ppage_t)FLOOR_ALIGN(base,PAGESIZE);
  self->mi_part_size =          CEIL_ALIGN(num_bytes+(base-(uintptr_t)self->mi_part_addr),PAGESIZE);
  self->mi_full_addr = (ppage_t)CEIL_ALIGN(base,PAGESIZE);
+ assertf(CEIL_ALIGN(base+num_bytes,PAGESIZE) >= (uintptr_t)self->mi_full_addr,
+         "base      = %p\n"
+         "num_bytes = %p\n",base,num_bytes);
  self->mi_full_size =          CEIL_ALIGN(base+num_bytes,PAGESIZE)-(uintptr_t)self->mi_full_addr;
 }
 
@@ -241,25 +250,34 @@ mem_resolve_part_overlap(struct meminfo *__restrict prev,
         (uintptr_t)next->mi_full_addr);
  if ((uintptr_t)prev->mi_part_addr+prev->mi_part_size >
      (uintptr_t)next->mi_part_addr) {
+  size_t size_diff;
   assert((uintptr_t)next->mi_part_addr == (uintptr_t)next->mi_full_addr-PAGESIZE);
   assert((uintptr_t)next->mi_part_addr == (uintptr_t)prev->mi_full_addr+prev->mi_full_size-PAGESIZE);
   /* Figure out which of the regions to truncate. */
   if (next->mi_type == MEMTYPE_RAM) {
+   assert((uintptr_t)next->mi_full_addr >= (uintptr_t)next->mi_addr);
    /* Truncate `next' */
-   next->mi_size     -= (size_t)((uintptr_t)next->mi_full_addr-
-                                 (uintptr_t)next->mi_addr);
+   size_diff = (size_t)((uintptr_t)next->mi_full_addr-
+                        (uintptr_t)next->mi_addr);
+   if (size_diff > next->mi_size)
+       size_diff = next->mi_size;
+   next->mi_size     -= size_diff;
    next->mi_addr      = next->mi_full_addr;
    next->mi_part_addr = next->mi_full_addr;
-   next->mi_part_size = next->mi_full_size;
+   next->mi_part_size = CEIL_ALIGN(next->mi_size,PAGESIZE);
   } else {
    /* Truncate `prev' */
-   assert(prev->mi_size > (uintptr_t)next->mi_part_addr-
-                          (uintptr_t)prev->mi_addr);
-   prev->mi_size = (uintptr_t)next->mi_part_addr-
-                   (uintptr_t)prev->mi_addr;
+   size_diff = ((uintptr_t)next->mi_part_addr-
+                (uintptr_t)prev->mi_addr);
+   assertf(prev->mi_size > size_diff,
+           "%p...%p  %p...%p",
+           prev->mi_addr,(uintptr_t)prev->mi_addr+prev->mi_size-1,
+           next->mi_addr,(uintptr_t)next->mi_addr+next->mi_size-1);
+   prev->mi_size = size_diff;
    meminfo_load_part_full(prev);
-   assert((uintptr_t)prev->mi_part_addr+prev->mi_part_size <=
-          (uintptr_t)next->mi_part_addr);
+   assert((uintptr_t)prev->mi_part_addr+prev->mi_part_size <= (uintptr_t)next->mi_part_addr);
+   assert((uintptr_t)prev->mi_part_addr+prev->mi_part_size >= (uintptr_t)prev->mi_part_addr);
+   assert((uintptr_t)prev->mi_full_addr+prev->mi_full_size >= (uintptr_t)prev->mi_full_addr);
   }
  }
  assert((uintptr_t)prev->mi_part_addr+prev->mi_part_size <=
@@ -294,6 +312,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
  struct meminfo *iter,**piter,*new_info,*prev;
  size_t result = 0; uintptr_t addr_end;
  assert(num_bytes);
+ assert((uintptr_t)base+num_bytes > (uintptr_t)base);
  assert((uintptr_t)base >= MZONE_MIN(zone_id));
  assert((uintptr_t)base+num_bytes-1 <= MZONE_MAX(zone_id));
  piter = &mem_info_[zone_id];
@@ -318,15 +337,17 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
   /* Check for overlap above. */
   if (addr_end != (uintptr_t)iter->mi_addr) {
    uintptr_t iter_end = (uintptr_t)iter->mi_addr+iter->mi_size;
-   /* Map memory above the overlap. */
-   if (addr_end > iter_end)
-       result += mem_install_zone(iter_end,addr_end-iter_end,type,zone_id);
    mem_overlapping_address_range((uintptr_t)iter->mi_addr,
                                   MIN(addr_end,iter_end)-(uintptr_t)iter->mi_addr,
                                   iter->mi_type,type);
-   addr_end  = (uintptr_t)iter->mi_addr;
-   num_bytes =  addr_end-base;
-   if unlikely(!num_bytes) return result; /* Full overlap */
+   /* Map memory above the overlap. */
+   if (addr_end > iter_end)
+       result += mem_install_zone(iter_end,addr_end-iter_end,type,zone_id);
+   addr_end = (uintptr_t)iter->mi_addr;
+   if unlikely(base >= addr_end)
+      return result; /* Full overlap */
+   num_bytes = addr_end-base;
+   assert(base+num_bytes > base);
   }
 
   if (iter->mi_type == type) {
@@ -371,6 +392,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
    return result;
   }
  }
+ assert(base+num_bytes > base);
 
  if (piter != &mem_info_[zone_id]) {
   uintptr_t prev_end;
@@ -418,6 +440,7 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
    return result;
   }
  }
+ assert(base+num_bytes > base);
 
 
  /* Create and insert a new info record. */
@@ -427,8 +450,9 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
  new_info->mi_type = type;
  new_info->mi_addr = (PHYS void *)base;
  new_info->mi_size = num_bytes;
- *piter            = new_info;
  meminfo_load_part_full(new_info);
+ if (!new_info->mi_full_size) return result; /* TODO: Incorrect */
+ *piter = new_info;
 
  /* Fix overlaps. */
  if (type != MEMTYPE_PRESERVE) {
@@ -444,7 +468,6 @@ mem_install_zone(PHYS uintptr_t base, size_t num_bytes,
                            new_info->mi_full_addr,
                            new_info->mi_full_size);
  }
-
  return result;
 }
 
@@ -477,9 +500,7 @@ mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type) {
  for (zone = 0; zone < MZONE_COUNT; ++zone) {
   if (base >= MZONE_MIN(zone) &&
       base <= MZONE_MAX(zone)) {
-   size_t zone_bytes = (MZONE_MAX(zone)+1)-base;
-   if (zone_bytes > num_bytes)
-       zone_bytes = num_bytes;
+   size_t zone_bytes = MIN((MZONE_MAX(zone)+1)-base,num_bytes);
    result += mem_install_zone(base,zone_bytes,type,zone);
    num_bytes -= zone_bytes;
    if (!num_bytes) break;

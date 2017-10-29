@@ -74,8 +74,8 @@ textfile_seek(struct file *__restrict fp,
  size_t new_position;
  char *new_pointer;
 #if __SIZEOF_OFF_T__ > __SIZEOF_SIZE_T__
- if (off > (off_t)(ssize_t)(size_t)-1)
-     return -ESPIPE;
+ if ((pos_t)off > (pos_t)(size_t)-1)
+      return -EINVAL;
 #endif
  switch (whence) {
  case SEEK_SET:
@@ -88,13 +88,13 @@ textfile_seek(struct file *__restrict fp,
   new_position = TEXTFILE_BUFTOTAL(TF)-(ssize_t)off;
   break;
  default:
-  return -ESPIPE;
+  return -EINVAL;
  }
  /* Make sure the new pointer doesn't underflow below the allocated buffer. */
  if unlikely(__builtin_add_overflow((uintptr_t)TF->tf_buffer,
                                     (uintptr_t)new_position,
                                     (uintptr_t *)&new_pointer))
-    return -ESPIPE;
+    return -EINVAL;
  TF->tf_bufpos = new_pointer;
  return new_position;
 }

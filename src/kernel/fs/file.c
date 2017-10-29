@@ -233,7 +233,8 @@ file_seek(struct file *__restrict self,
  off_t result;
  CHECK_HOST_DOBJ(self);
  if (!self->f_ops->f_seek) {
-  mode_t mode = self->f_node->i_attr.ia_mode;
+  mode_t mode = (assert(self->f_node),
+                 self->f_node->i_attr.ia_mode);
   if (S_ISFIFO(mode) || S_ISCHR(mode) || S_ISSOCK(mode))
        return -ESPIPE;
   else return -EPERM;
