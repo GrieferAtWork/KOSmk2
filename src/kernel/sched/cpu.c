@@ -205,8 +205,12 @@ INTDEF byte_t __kernel_nofree_size[];
  * NOTE: This stack isn't actually require for the task itself,
  *       but for interrupts such as PIT timer, or others. */
 INTERN ATTR_ALIGNED(16) struct PACKED {
+#ifdef CONFIG_USE_NEW_MEMINFO
+ struct meminfo       s_kmeminfo[6];
+#else
  size_t               s_kernused;
  struct meminfo       s_kmeminfo[2];
+#endif
  byte_t               s_data[TASK_HOSTSTACK_IDLESIZE-
                             (sizeof(struct host_cpustate)+
                              sizeof(struct meminfo)*2+
@@ -215,8 +219,18 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
 } __bootidlestack = {
     /* Bootstrap kernel memory info.
      * >> Used to describe the kernel itself in physical memory. */
-    .s_kernused = 2,
+#ifndef CONFIG_USE_NEW_MEMINFO
+    .s_kernused = COMPILER_LENOF(__bootidlestack.s_kmeminfo),
+#endif /* !CONFIG_USE_NEW_MEMINFO */
     .s_kmeminfo = {
+#ifdef CONFIG_USE_NEW_MEMINFO
+        [0] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0, },
+        [1] = { .mi_type = MEMTYPE_DEVICE, .mi_addr = (void *)0x000A0000, }, /* VGA display buffer (Not defined by BIOS functions) */
+        [2] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0x000C0000, },
+        [3] = { .mi_type = MEMTYPE_KERNEL, .mi_addr = (void *)((uintptr_t)__kernel_start - KERNEL_BASE), },
+        [4] = { .mi_type = MEMTYPE_KFREE,  .mi_addr = (void *)((uintptr_t)__kernel_free_start - KERNEL_BASE), },
+        [5] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)((uintptr_t)__kernel_free_end - KERNEL_BASE), },
+#else /* CONFIG_USE_NEW_MEMINFO */
         [0] = {
             .mi_next      = &__bootidlestack.s_kmeminfo[1],
             .mi_type      = MEMTYPE_KERNEL,
@@ -237,6 +251,7 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
             .mi_part_size = (PAGE_ALIGNED size_t)__kernel_free_size,
             .mi_full_size = (PAGE_ALIGNED size_t)__kernel_free_size,
         },
+#endif /* !CONFIG_USE_NEW_MEMINFO */
     },
 #ifdef CONFIG_DEBUG
     .s_data = {

@@ -34,6 +34,7 @@
 #include <fs/superblock.h>
 #include <fs/vfs.h>
 #include <dev/rtc.h>
+#include <hybrid/align.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
@@ -113,9 +114,12 @@ memory_fopen(struct inode *__restrict ino,
              struct dentry *__restrict node_ent,
              oflag_t oflags) {
  PRIVATE char const head[] = "zone type   begin    end      used free   size\n";
- //                          "0    device 00000000-00000000  52% 10Mb   10Mb\n";
+ //                          "0-0  device 00000000-00000000  52% 10Mb   10Mb\n";
  REF struct textfile *result;
- ssize_t error; mzone_t zone;
+ ssize_t error;
+#ifndef CONFIG_USE_NEW_MEMINFO
+ mzone_t zone;
+#endif
  size_t mem_avail;
  size_t total_usable = 0;
  size_t total_used = 0;
@@ -125,6 +129,36 @@ memory_fopen(struct inode *__restrict ino,
 #define printf(...) { if ((error = textfile_printf(result,__VA_ARGS__)),E_ISERR(error)) goto err; }
  error = textfile_printer(head,sizeof(head)/sizeof(char)-1,result);
  if (E_ISERR(error)) goto err;
+#ifdef CONFIG_USE_NEW_MEMINFO
+ { struct meminfo const *info;
+   MEMINFO_FOREACH(info) {
+    uintptr_t info_begin = CEIL_ALIGN(MEMINFO_BEGIN(info),PAGESIZE);
+    uintptr_t info_end   = FLOOR_ALIGN(MEMINFO_END(info),PAGESIZE);
+    if (info_begin < info_end || !info_end) {
+     info_end -= info_begin;
+     mem_avail = page_available((ppage_t)info_begin,info_end);
+    } else {
+     mem_avail = 0;
+     info_end  = 0;
+    }
+    if (MEMTYPE_ISUSE(info->mi_type)) {
+     total_usable += info_end;
+     total_used   += info_end-mem_avail;
+     total_free   += mem_avail;
+    }
+    if (info->mi_type == MEMTYPE_NDEF) continue; /* Skip undefined memory. */
+    printf("%d-%d  %6s %p-%p %-3d%% %6I[unit] %6I[unit]\n",
+           mzone_of((void *)MEMINFO_MIN(info)),
+           mzone_of((void *)MEMINFO_MAX(info)),memtype_names[info->mi_type],
+           MEMINFO_MIN(info),MEMINFO_MAX(info),
+          (int)(info_end ? ((info_end-mem_avail)*100)/info_end : 0),
+           mem_avail,info_end);
+   }
+ }
+ printf("-    total  -------- -------- %-3d%% %6I[unit] %6I[unit]\n",
+       (total_used*100)/total_usable,
+        total_free,total_usable);
+#else
  for (zone = 0; zone < MZONE_COUNT; ++zone) {
   struct meminfo const *info;
   MEMINFO_FOREACH(info,zone) {
@@ -144,6 +178,7 @@ memory_fopen(struct inode *__restrict ino,
  printf("-    total  -------- -------- %-3d%% %6I[unit] %6I[unit]\n",
        (total_used*100)/total_usable,
         total_free,total_usable);
+#endif
 #undef printf
  textfile_truncate(result);
  file_setup(&result->tf_file,ino,node_ent,oflags);

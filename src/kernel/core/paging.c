@@ -1032,6 +1032,31 @@ pdir_kernel_unmap(VIRT uintptr_t begin, size_t n_bytes) {
  pdir_kernel_do_unmap(begin,n_bytes);
 }
 
+#ifdef CONFIG_USE_NEW_MEMINFO
+INTERN ATTR_FREETEXT void KCALL
+pdir_kernel_unmap_unused(void) {
+ struct meminfo const *iter;
+ uintptr_t last_begin = 0;
+ bool is_mapping = false;
+ MEMINFO_FOREACH(iter) {
+  if ((uintptr_t)iter->mi_addr >= KERNEL_BASE) break;
+  if (MEMTYPE_ISMAP(iter->mi_type) == is_mapping)
+      continue;
+  is_mapping = !is_mapping;
+  if (is_mapping) { /* if (MEMTYPE_ISMAP(iter->mi_type)) */
+   uintptr_t this_begin = FLOOR_ALIGN((uintptr_t)iter->mi_addr,PAGESIZE);
+   if (this_begin > last_begin)
+       pdir_kernel_unmap(last_begin,this_begin-last_begin);
+   last_begin = this_begin;
+  } else {
+   last_begin = CEIL_ALIGN((uintptr_t)iter->mi_addr,PAGESIZE);
+  }
+ }
+ /* Unmap the remainder. */
+ if (!is_mapping)
+      pdir_kernel_unmap(last_begin,KERNEL_BASE-last_begin);
+}
+#else
 INTERN ATTR_FREETEXT void KCALL
 pdir_kernel_unmap_mzone(mzone_t zone_id) {
  /* Use memory information, as not to miss anything. */
@@ -1067,6 +1092,7 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
                          iter->mi_part_size;
  }
 }
+#endif
 
 
 
@@ -1092,10 +1118,15 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
  pdir_initialize_selfmap(&pdir_kernel);
 #endif /* CONFIG_PDIR_SELFMAP */
 
+#ifdef CONFIG_USE_NEW_MEMINFO
+ /* Time to clean up the kernel's own page directory! */
+ pdir_kernel_unmap_unused();
+#else
  /* Time to clean up the kernel's own page directory! */
  pdir_kernel_unmap_mzone(MZONE_1MB);
  pdir_kernel_unmap_mzone(MZONE_SHARE);
  pdir_kernel_unmap_mzone(MZONE_NOSHARE);
+#endif
 
  /* Unmap all virtual memory past the kernel itself. */
  pdir_kernel_unmap(KERNEL_END,KERNEL_AFTER_END);

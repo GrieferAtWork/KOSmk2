@@ -153,23 +153,29 @@ kernel_bootmod_repage(void) {
   }
   iter->bm_cmdline = new_cmdline;
   if (!new_cmdline) iter->bm_cmdsize = 0;
+  /* Try to keep module data where it is if we can pre-allocate its data. */
 #ifdef MEMTYPE_ALLOCATED
-  mem_install((uintptr_t)iter,iter->bm_size,MEMTYPE_ALLOCATED);
-  piter = &module_copy->bm_next;
-#else
-  /* Relocate the module into high memory. */
-  module_copy = (bootmod_t *)page_malloc(iter->bm_size,PAGEATTR_NONE,MZONE_ANY);
-  if (module_copy == PAGE_ERROR) {
-   syslog(LOG_BOOT|LOG_ERROR,
-          FREESTR("[BOOT] Failed to relocate bootloader module at %p...%p: %[errno]\n"),
-          iter,(uintptr_t)iter+iter->bm_size,ENOMEM);
-   *piter = iter->bm_next;
-  } else {
-   memcpy(module_copy,iter,iter->bm_size);
-   *piter = module_copy;
+  if ((uintptr_t)iter >= (1*1024*1024) &&
+       mem_install(FLOOR_ALIGN((uintptr_t)iter,PAGESIZE),
+                   iter->bm_size+((uintptr_t)iter & (PAGESIZE-1)),
+                   MEMTYPE_ALLOCATED) >= iter->bm_size) {
    piter = &module_copy->bm_next;
+  } else
+#endif /* MEMTYPE_ALLOCATED */
+  {
+   /* Relocate the module into high memory. */
+   module_copy = (bootmod_t *)page_malloc(iter->bm_size,PAGEATTR_NONE,MZONE_ANY);
+   if (module_copy == PAGE_ERROR) {
+    syslog(LOG_BOOT|LOG_ERROR,
+           FREESTR("[BOOT] Failed to relocate bootloader module at %p...%p: %[errno]\n"),
+           iter,(uintptr_t)iter+iter->bm_size,ENOMEM);
+    *piter = iter->bm_next;
+   } else {
+    memcpy(module_copy,iter,iter->bm_size);
+    *piter = module_copy;
+    piter = &module_copy->bm_next;
+   }
   }
-#endif
  }
 }
 

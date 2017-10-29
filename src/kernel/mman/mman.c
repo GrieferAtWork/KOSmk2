@@ -2003,6 +2003,29 @@ mman_initialize(void) {
   *       way it got used during fixup initialization of the
   *       kernel page directory.
   * NOTE: Just like the mappings above, these mappings must remain forever! */
+#ifdef CONFIG_USE_NEW_MEMINFO
+ { struct meminfo const *iter;
+   uintptr_t last_begin = 0;
+   bool is_mapping = false;
+   MEMINFO_FOREACH(iter) {
+    if ((uintptr_t)iter->mi_addr >= KERNEL_BASE) break;
+    if (MEMTYPE_ISMAP(iter->mi_type) == is_mapping)
+        continue;
+    is_mapping = !is_mapping;
+    if (is_mapping) { /* if (MEMTYPE_ISMAP(iter->mi_type)) */
+     last_begin = FLOOR_ALIGN((uintptr_t)iter->mi_addr,PAGESIZE);
+    } else {
+     uintptr_t this_begin = CEIL_ALIGN((uintptr_t)iter->mi_addr,PAGESIZE);
+     if (this_begin != last_begin)
+         mman_map_dynmem((ppage_t)last_begin,this_begin-last_begin);
+     last_begin = this_begin;
+    }
+   }
+   /* Install the remainder. */
+   if (is_mapping)
+       mman_map_dynmem((ppage_t)last_begin,KERNEL_BASE-last_begin);
+ }
+#else
  { mzone_t id;
    for (id = 0; id != MZONE_COUNT; ++id) {
     PHYS struct meminfo const *iter = mem_info[id];
@@ -2012,6 +2035,7 @@ mman_initialize(void) {
     }
    }
  }
+#endif
  assert(mman_kernel.m_map != NULL);
  ATOMIC_WRITE(mman_kernel.m_lock.orw_lock.aorw_lock,0);
 
