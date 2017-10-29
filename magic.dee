@@ -37,7 +37,7 @@ local config_verbose = false;
 
 /* Disk configuration */
 local config_disk_image = "disk/kos.img"; /* Output path of the disk image. */
-local config_disk_size  = 16*1024*1024; /* 16Mib */
+local config_disk_size  = 32*1024*1024; /* 32Mib */
 
 /* Runtime/Emulation configuration */
 local run_mode_bochs    = false; /* Use BOCHS as emulator. */

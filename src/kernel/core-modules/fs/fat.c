@@ -1003,7 +1003,9 @@ load_node_again:
     has_fat_lock = true;
 
     /* Allocate the initial cluster. */
-    temp = fat_get_unused_unlocked(fs,node->i_data->i_pos.fp_namecls+1,&file_start);
+    file_start = node->i_data->i_pos.fp_namecls+1;
+    if (file_start >= fs->f_cluster_eof) file_start = 0;
+    temp = fat_get_unused_unlocked(fs,file_start,&file_start);
     if (E_ISERR(temp)) goto err;
 
     /* Mark the cluster as used by pointing it to EOF. */
@@ -2613,8 +2615,8 @@ fat_get_unused_unlocked(fat_t *__restrict self,
 gotit:
    /* Use this one! */
    *result = candidate;
-   FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] GET_UNUSED_SECTOR(%I32u) -> %I32u\n",
-                    hint,candidate));
+   FAT_DEBUG(syslog(LOG_DEBUG,"[FAT] GET_UNUSED_SECTOR(%I32u) -> %I32u (%I32u,%I32u)\n",
+                    hint,candidate,hint,self->f_fat_length));
    return -EOK;
   }
  }
@@ -2623,7 +2625,6 @@ gotit:
   temp = fat_get_unlocked(self,candidate,&deref);
   if (E_ISERR(temp)) return temp;
   if (deref == FAT_CUSTER_UNUSED) {
-   syslog(LOG_DEBUG,"candidate = %I32u,%I32x\n",candidate,candidate);
    goto gotit;
   }
  }
