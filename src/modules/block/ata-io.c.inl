@@ -108,7 +108,9 @@ try_again:
   /* Clear any old event. */
   ATOMIC_WRITE(b->b_signaled.s_ticket,0);
 
-  /* Select our drive. */
+  /* Select our drive.
+   * XXX: The bochs BIOS seems to do this later:
+   *      after 'ATA_LBAHI', but before 'ATA_CMD'... */
 #ifdef LBA48
   outb(SELF->a_iobase+ATA_HDDEVSEL,
        SELF->a_drive-(ATA_DRIVE_MASTER-0x40));
@@ -163,14 +165,14 @@ try_again:
   do {
 #ifdef WRITE
    error = ata_status_wait(SELF->a_ctrl,
-                           ATA_SR_DRQ,ATA_SR_DRQ,
+                           ATA_SR_DRQ|ATA_SR_BSY,ATA_SR_DRQ,
                            SELF->a_io_timeout);
 #else
    size_t copy_error;
    error = sem_timedwait(&b->b_signaled,jiffies+SELF->a_io_timeout);
    if (E_ISOK(error)) {
     error = ata_status_wait(SELF->a_ctrl,
-                            ATA_SR_DRQ,ATA_SR_DRQ,
+                            ATA_SR_DRQ|ATA_SR_BSY,ATA_SR_DRQ,
                             SELF->a_cm_timeout);
    } else if (error == -ETIMEDOUT &&
              (inb(SELF->a_ctrl)&ATA_SR_DRQ)) {

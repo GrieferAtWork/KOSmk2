@@ -35,8 +35,6 @@
 
 __DECL_BEGIN
 
-#define __ASM_CMPXCHGB ""
-
 #if defined(__i386__) || defined(__x86_64__)
 #define __impl_hybrid_atomic_cmpxch_val_seqcst(x,oldv,newv) \
  __XBLOCK({ register __typeof__(x) __ix_res; \

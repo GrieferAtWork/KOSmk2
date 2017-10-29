@@ -129,15 +129,15 @@ __REDIRECT_UFS_FUNCn_OLDPEA(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,creat
 
 #ifdef __USE_LARGEFILE64
 /* TODO: Use redirection */
-#ifdef __PE__
+#ifdef __DOS_COMPAT__
 __LIBC __WUNUSED __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC_(_open);
 __REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,creat64,
                (char const *__file, mode_t __mode),_creat,(__file,__mode))
-#else /* __PE__ */
+#else /* __DOS_COMPAT__ */
 __LIBC __WUNUSED __NONNULL((1)) int (__ATTR_CDECL open64)(char const *__file, int __oflag, ...) __UFS_FUNC(open64);
 __REDIRECT_UFS(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,creat64,
               (char const *__file, mode_t __mode),creat64,(__file,__mode))
-#endif /* !__PE__ */
+#endif /* !__DOS_COMPAT__ */
 #endif /* __USE_LARGEFILE64 */
 
 #ifdef __CRT_GLC

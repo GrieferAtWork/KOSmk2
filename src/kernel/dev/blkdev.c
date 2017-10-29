@@ -378,7 +378,7 @@ fini_dev:
 PRIVATE errno_t KCALL
 blkdev_do_sync_unlocked(struct blkdev *__restrict self) {
  struct blockbuf *iter,*end;
- ssize_t error; bool has_hwlock = false;
+ ssize_t error = -EOK; bool has_hwlock = false;
  CHECK_HOST_DOBJ(self);
  assert(INODE_ISBLK(&self->bd_device.d_node));
  assert(!BLKDEV_ISLOOPBACK(self));
@@ -389,24 +389,23 @@ blkdev_do_sync_unlocked(struct blkdev *__restrict self) {
  end = (iter = self->bd_buffer.bs_bufv)+
                self->bd_buffer.bs_bufc;
  for (; iter != end; ++iter) {
-  if (iter->bb_flag&BLOCKBUF_FLAG_CHNG) {
-   if (!has_hwlock) {
-    error = rwlock_write(&self->bd_hwlock);
-    if (E_ISERR(error)) break;
-    has_hwlock = true;
-   }
-   HOSTMEMORY_BEGIN {
-    error = (*self->bd_write)(self,iter->bb_id,iter->bb_data,1);
-   }
-   HOSTMEMORY_END;
-   if unlikely(!error) error = -ENOSPC;
+  if (!(iter->bb_flag&BLOCKBUF_FLAG_CHNG)) continue;
+  if (!has_hwlock) {
+   error = rwlock_write(&self->bd_hwlock);
    if (E_ISERR(error)) break;
-   iter->bb_flag &= ~(BLOCKBUF_FLAG_CHNG);
+   has_hwlock = true;
   }
+  HOSTMEMORY_BEGIN {
+   error = (*self->bd_write)(self,iter->bb_id,iter->bb_data,1);
+  }
+  HOSTMEMORY_END;
+  if unlikely(!error) error = -ENOSPC;
+  if (E_ISERR(error)) break;
+  iter->bb_flag &= ~(BLOCKBUF_FLAG_CHNG);
  }
  if (has_hwlock)
      rwlock_endwrite(&self->bd_hwlock);
- if (error > 0) error = -EOK;
+ if (E_ISOK(error)) error = -EOK;
  return (errno_t)error;
 }
 
@@ -418,6 +417,9 @@ blkdev_sync(struct blkdev *__restrict self) {
  /* Override: Flush the loopback file descriptor. */
  if (BLKDEV_ISLOOPBACK(self))
      return file_sync(self->bd_loopback);
+ /* Override: Flush the underlying block-device. */
+ if (BLKDEV_ISPART(self))
+     return blkdev_sync(BLKDEV_TOPART(self)->dp_ref);
  assert(self->bd_buffer.bs_bufc <= self->bd_buffer.bs_bufa);
  assert(self->bd_buffer.bs_bufa <= self->bd_buffer.bs_bufm);
 

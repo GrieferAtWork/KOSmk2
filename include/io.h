@@ -133,9 +133,9 @@ __REDIRECT_PE_FUNC_OLDPEA(__LIBC,,__mode_t,__LIBCCALL,umask,(__mode_t __mode),um
 #endif /* !__umask_defined */
 #ifndef __read_defined
 #define __read_defined 1
-#if !defined(__PE__) && __SIZEOF_SIZE_T__ == 4
+#if !defined(__DOS_COMPAT__) && __SIZEOF_SIZE_T__ == 4
 __REDIRECT_PE_FUNC_OLDPEA(__LIBC,__WUNUSED_SUGGESTED __NONNULL((2)),__INT32_TYPE__,__LIBCCALL,read,(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize),read,(__fd,__dstbuf,__bufsize))
-#elif defined(__CRT_DOS)
+#elif defined(__DOS_COMPAT__)
 __REDIRECT(__LIBC,__WUNUSED_SUGGESTED __NONNULL((2)),__INT32_TYPE__,__LIBCCALL,read,(int __fd, void *__dstbuf, __UINT32_TYPE__ __bufsize),_read,(__fd,__dstbuf,__bufsize))
 #else
 __REDIRECT(__LIBC,__WUNUSED_SUGGESTED __NONNULL((2)),__SSIZE_TYPE__,__LIBCCALL,__readsz,(int __fd, void *__dstbuf, size_t __bufsize),read,(__fd,__dstbuf,__bufsize))
@@ -144,9 +144,9 @@ __LOCAL __WUNUSED_SUGGESTED __NONNULL((2)) __INT32_TYPE__ (__LIBCCALL read)(int 
 #endif /* !__read_defined */
 #ifndef __write_defined
 #define __write_defined 1
-#if !defined(__PE__) && __SIZEOF_SIZE_T__ == 4
+#if !defined(__DOS_COMPAT__) && __SIZEOF_SIZE_T__ == 4
 __REDIRECT_PE_FUNC_OLDPEA(__LIBC,__NONNULL((2)),__INT32_TYPE__,__LIBCCALL,write,(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize),write,(__fd,__buf,__bufsize))
-#elif defined(__CRT_DOS)
+#elif defined(__DOS_COMPAT__)
 __REDIRECT(__LIBC,__NONNULL((2)),__INT32_TYPE__,__LIBCCALL,write,(int __fd, void const *__buf, __UINT32_TYPE__ __bufsize),_write,(__fd,__buf,__bufsize))
 #else
 __REDIRECT(__LIBC,__NONNULL((2)),__SSIZE_TYPE__,__LIBCCALL,__writesz,(int __fd, void const *__buf, size_t __bufsize),write,(__fd,__buf,__bufsize))

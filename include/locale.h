@@ -122,7 +122,9 @@ struct lconv {
    * 4 The sign string immediately follows the currency_symbol. */
   char p_sign_posn;
   char n_sign_posn;
-#if defined(__PE__) && defined(__USE_DOS)
+#ifdef __DOS_COMPAT__
+#ifdef __USE_DOS
+  /* WARNING: All of these are DOS_ONLY */
   wchar_t *_W_decimal_point;
   wchar_t *_W_thousands_sep;
   wchar_t *_W_int_curr_symbol;
@@ -131,6 +133,7 @@ struct lconv {
   wchar_t *_W_mon_thousands_sep;
   wchar_t *_W_positive_sign;
   wchar_t *_W_negative_sign;
+#endif /* __USE_DOS */
 #elif defined(__USE_ISOC99)
   char int_p_cs_precedes;  /* 1 if int_curr_symbol precedes a positive value, 0 if succeeds. */
   char int_p_sep_by_space; /* 1 iff a space separates int_curr_symbol from a positive value. */
@@ -152,26 +155,12 @@ struct lconv {
   char __int_p_sign_posn;
   char __int_n_sign_posn;
 #endif
-#if defined(__USE_DOS) && !defined(__PE__)
-  wchar_t *_W_decimal_point;
-  wchar_t *_W_thousands_sep;
-  wchar_t *_W_int_curr_symbol;
-  wchar_t *_W_currency_symbol;
-  wchar_t *_W_mon_decimal_point;
-  wchar_t *_W_mon_thousands_sep;
-  wchar_t *_W_positive_sign;
-  wchar_t *_W_negative_sign;
-#endif
 };
 
 __REDIRECT_DOS_FUNC(__LIBC,,char *,__LIBCCALL,setlocale,
                    (int __category, char const *__locale),
                     setlocale,(__category,__locale))
-#if defined(__PE__) && !defined(__USE_DOS)
-__LIBC struct lconv *(__LIBCCALL localeconv)(void) __ASMNAME(".kos.localeconv");
-#else
-__LIBC struct lconv *(__LIBCCALL localeconv)(void);
-#endif
+__REDIRECT_DOS_FUNC(__LIBC,,struct lconv *,__LIBCCALL,localeconv,(void),localeconv,())
 
 __NAMESPACE_STD_END
 

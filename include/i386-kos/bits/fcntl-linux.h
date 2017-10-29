@@ -23,12 +23,11 @@
 #include <hybrid/typecore.h>
 #include <bits/types.h>
 #include <features.h>
-
-__SYSDECL_BEGIN
-
 #ifdef __USE_GNU
 //#include <bits/uio.h>
-#endif
+#endif /* __USE_GNU */
+
+__SYSDECL_BEGIN
 
 /* Open flags that are universal (binary-wise) */
 #define O_ACCMODE     000000003
@@ -46,19 +45,19 @@ __SYSDECL_BEGIN
 /* DOS open flag values. */
 #define __DOS_O_APPEND       000000010
 #define __DOS_O_RANDOM       000000020
-#define __DOS_O_SEQUENTIAL   000000040
-#define __DOS_O_TEMPORARY    000000100
-#define __DOS_O_NOINHERIT    000000200
+#define __DOS_O_SEQUENTIAL   000000040 /* Ignored */
+#define __DOS_O_TEMPORARY    000000100 /* Same as O_TMPFILE */
+#define __DOS_O_NOINHERIT    000000200 /* Same as O_CLOEXEC */
 #define __DOS_O_CREAT        000000400
 #define __DOS_O_TRUNC        000001000
 #define __DOS_O_EXCL         000002000
-#define __DOS_O_SHORT_LIVED  000010000
-#define __DOS_O_OBTAIN_DIR   000020000
-#define __DOS_O_TEXT         000040000
-#define __DOS_O_BINARY       000100000
-#define __DOS_O_WTEXT        000200000
-#define __DOS_O_U16TEXT      000400000
-#define __DOS_O_U8TEXT       001000000
+#define __DOS_O_SHORT_LIVED  000010000 /* Ignored */
+#define __DOS_O_OBTAIN_DIR   000020000 /* Same as O_DIRECTORY */
+#define __DOS_O_TEXT         000040000 /* Ignored */
+#define __DOS_O_BINARY       000100000 /* Ignored */
+#define __DOS_O_WTEXT        000200000 /* Ignored */
+#define __DOS_O_U16TEXT      000400000 /* Ignored */
+#define __DOS_O_U8TEXT       001000000 /* Ignored */
 #define __DOS_O_RAW          __DOS_O_BINARY
 
 #ifdef __USE_DOS
