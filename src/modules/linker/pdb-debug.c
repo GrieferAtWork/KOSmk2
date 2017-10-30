@@ -46,16 +46,21 @@
 #include <sys/io.h>
 
 #include "pdb-debug.h"
+#include <kernel/boot.h>
 
 /* Microsoft PDB Debug information parser. */
 
 DECL_BEGIN
 
 #if defined(CONFIG_DEBUG) && 1
+#define HAVE_PDB_DEBUG
 #define PDB_DEBUG(x) x
 #else
 #define PDB_DEBUG(x) (void)0
 #endif
+
+PRIVATE bool parse_fpo = true;
+DEFINE_SETUP_VAR("fpo",parse_fpo);
 
 
 INTERN errno_t KCALL
@@ -257,14 +262,17 @@ end:
 
 
 
-
 PRIVATE ssize_t KCALL
 debug_virtinfo(struct moddebug *__restrict self,
                maddr_t addr, USER struct virtinfo *buf,
                size_t bufsize, u32 flags) {
  ssize_t error; stream_t *dbi_stream;
- DBI_HEADER1 dbi_header;
- DBG_HEADER dbg_header; 
+ size_t dbi_header_size;
+ MOD_ENTRY50 *mod_buffer = NULL;
+ DBI_HEADER1 dbi_header; DBG_HEADER dbg_header; 
+ struct virtinfo info; size_t copy_size;
+ memset(&info,0,sizeof(struct virtinfo));
+      
 
  /* Load streams. */
  error = stream_load(SELF);
@@ -276,6 +284,7 @@ debug_virtinfo(struct moddebug *__restrict self,
 
  error = read_dbi(dbi_stream,&dbi_header);
  if (E_ISERR(error)) goto err;
+ dbi_header_size = (size_t)error;
 
  PDB_DEBUG(syslog(LOG_DEBUG,"dh_signature = %x\n",dbi_header.dh_signature));
  PDB_DEBUG(syslog(LOG_DEBUG,"dh_version   = %x\n",dbi_header.dh_version));
@@ -300,16 +309,18 @@ debug_virtinfo(struct moddebug *__restrict self,
  PDB_DEBUG(syslog(LOG_DEBUG,"dh_unused    = %x\n",dbi_header.dh_unused));
  PDB_DEBUG(syslog(LOG_DEBUG,"dh_mach      = %x\n",dbi_header.dh_mach));
 
- /* Truncate to prevent overflow. */
- if (dbi_header.dh_dbghdr > DBG_TYPE_COUNT*2)
-     dbi_header.dh_dbghdr = DBG_TYPE_COUNT*2;
+ /* XXX: Cache some more of this data? */
 #define DBG_HEADER_MAXENT  (dbi_header.dh_dbghdr/2)
- if (DBG_HEADER_MAXENT) {
+ if (parse_fpo && DBG_HEADER_MAXENT) {
+  /* Truncate to prevent overflow. */
+  if (dbi_header.dh_dbghdr > DBG_TYPE_COUNT*2)
+      dbi_header.dh_dbghdr = DBG_TYPE_COUNT*2;
   /* Read the DBG header (Which contains a pointer to addr2line information). */
   error = stream_kreadall(dbi_stream,&dbg_header,DBG_HEADER_MAXENT*2,
-                         (DWORD)(error+dbi_header.dh_gpmodi+dbi_header.dh_sc+
-                                       dbi_header.dh_secmap+dbi_header.dh_fileinfo+
-                                       dbi_header.dh_tsmap+dbi_header.dh_ecinfo));
+                         (DWORD)(dbi_header_size+dbi_header.dh_gpmodi+
+                                 dbi_header.dh_sc+dbi_header.dh_secmap+
+                                 dbi_header.dh_fileinfo+dbi_header.dh_tsmap+
+                                 dbi_header.dh_ecinfo));
   if (E_ISERR(error)) goto err;
 #define HAS_DBG(i) ((i) < DBG_HEADER_MAXENT && dbg_header.dh_streams[i] != DBG_HEADER_STREAM_INVALID)
   if (HAS_DBG(DBG_TYPE_NEWFPO)) {
@@ -333,28 +344,14 @@ debug_virtinfo(struct moddebug *__restrict self,
     PDB_DEBUG(syslog(LOG_DEBUG,"fe_uses_seh    = %x\n",entry.fe_uses_seh));
     PDB_DEBUG(syslog(LOG_DEBUG,"fe_uses_eh     = %x\n",entry.fe_uses_eh));
     PDB_DEBUG(syslog(LOG_DEBUG,"fe_is_function = %x\n",entry.fe_is_function));
-    { struct virtinfo info; size_t copy_size;
-      memset(&info,0,sizeof(struct virtinfo));
-      info.ai_data[VIRTINFO_DATA_SYMADDR] = (uintptr_t)entry.fe_begin;
+    { info.ai_data[VIRTINFO_DATA_SYMADDR] = (uintptr_t)entry.fe_begin;
       info.ai_data[VIRTINFO_DATA_SYMSIZE] = (uintptr_t)entry.fe_size;
       info.ai_data[VIRTINFO_DATA_FLAGS]   = VIRTINFO_FLAG_VALID;
       if (addr < entry.fe_begin+entry.fe_prolog_size)
           info.ai_data[VIRTINFO_DATA_FLAGS] |= VIRTINFO_FLAG_PROLOG;
       if (entry.fe_is_function)
           info.ai_data[VIRTINFO_DATA_FLAGS] |= VIRTINFO_FLAG_INFUNC;
-      /* ----: Now what? - What are we supposed to do with `fe_program'? */
-      /* XXX: $H1T!! Instead, 'dh_gpmodi' contains 'struct MODI50' (PDB\dbi\dbi.h),
-       *             which in turn describe per-module debug informations then
-       *             found in individual streams.
-       * PARSING FPO INFORMATION IS COMPLETELY UNNECESSARY!
-       * (Well... at least this way we also get information
-       *  about the surrounding function and its size...) */
-      error     = sizeof(struct virtinfo);
-      copy_size = MIN(sizeof(struct virtinfo),bufsize);
-      if (copy_to_user(buf,&info,copy_size)) goto err_fault;
-      *(uintptr_t *)&buf += copy_size;
-      bufsize -= copy_size;
-      return error;
+      goto after_fpo;
     }
 next_fpo:
     pos += error;
@@ -362,9 +359,114 @@ next_fpo:
    if (E_ISERR(error)) goto err;
   }
  }
- return -ENODATA;
+after_fpo:
+
+ if (dbi_header.dh_gpmodi) {
+  /* XXX: $H1T!! 'dh_gpmodi' contains 'struct MODI50' (PDB\dbi\dbi.h),
+   *             which in turn describe per-module debug informations then
+   *             found in individual streams.
+   * PARSING FPO INFORMATION IS COMPLETELY UNNECESSARY!
+   * (Well... at least now we also get information
+   *  about the surrounding function and its size...) */
+  size_t modbuf_size; MOD_ENTRY50 *iter,*end;
+  /* Figure out how much module data there is. (Safely) */
+  modbuf_size = dbi_stream->s_size-dbi_header_size;
+  if (__builtin_sub_overflow(modbuf_size,dbi_header.dh_dbghdr,&modbuf_size)) goto after_mod;
+  if (__builtin_sub_overflow(modbuf_size,dbi_header.dh_ecinfo,&modbuf_size)) goto after_mod;
+  if (__builtin_sub_overflow(modbuf_size,dbi_header.dh_tsmap,&modbuf_size)) goto after_mod;
+  if (__builtin_sub_overflow(modbuf_size,dbi_header.dh_fileinfo,&modbuf_size)) goto after_mod;
+  if (__builtin_sub_overflow(modbuf_size,dbi_header.dh_secmap,&modbuf_size)) goto after_mod;
+  if (__builtin_sub_overflow(modbuf_size,dbi_header.dh_sc,&modbuf_size)) goto after_mod;
+  modbuf_size = MIN(modbuf_size,dbi_header.dh_gpmodi);
+  if unlikely(!modbuf_size) goto after_mod;
+  mod_buffer = (MOD_ENTRY50 *)kmalloc(modbuf_size+sizeof(char),GFP_LOCAL);
+  if unlikely(!mod_buffer) { error = -ENOMEM; goto err; }
+  /* Read module data. */
+  error = stream_kreadall(dbi_stream,mod_buffer,modbuf_size,dbi_header_size);
+  if (E_ISERR(error)) goto err;
+  ((char *)mod_buffer)[(modbuf_size/sizeof(char))-1] = '\0'; /* Make sure this is ZERO-terminated. */
+  ((char *)mod_buffer)[(modbuf_size/sizeof(char))] = '\0'; /* Make sure this is ZERO-terminated. */
+  iter = mod_buffer,end = (MOD_ENTRY50 *)((byte_t *)mod_buffer+modbuf_size);
+  for (;;) {
+   MOD_ENTRY60 entry;
+#ifdef HAVE_PDB_DEBUG
+   char *module_name;
+#define MODULE_MODNAME()         (module_name)
+#define MODULE_OBJNAME()  (strend(module_name)+1)
+#endif
+   if (dbi_header.dh_version >= DBI_VERSION_V60) {
+    MOD_ENTRY60 *iter60 = (MOD_ENTRY60 *)iter;
+    if (iter60+1 >= (MOD_ENTRY60 *)end) break;
+    entry = *iter60;
+    /* Seek ahead to the next entry.
+     * NOTE: Because of the double-strend() here, we need
+     *       to double-zero-terminate the buffer above! */
+#ifdef HAVE_PDB_DEBUG
+    module_name = (char *)(iter60+1);
+#endif
+    iter = (MOD_ENTRY50 *)(strend(strend((char *)(iter60+1))+1)+1);
+   } else {
+    entry.me_pmod               = iter->me_pmod;
+    entry.me_contrib_secno      = iter->me_contrib_secno;
+    entry.me_contrib_off        = iter->me_contrib_off;
+    entry.me_contrib_size       = iter->me_contrib_size;
+    entry.me_contrib_flags      = iter->me_contrib_flags;
+    entry.me_module_no          = iter->me_module_no;
+  //entry60.me_contrib_datacrc  = iter->me_contrib_datacrc; /* MISSING */
+  //entry60.me_contrib_reloccrc = iter->me_contrib_reloccrc; /* MISSING */
+  //entry.me_unused             = iter->me_unused; /* UNUSED */
+    entry.me_itsm               = iter->me_itsm;
+    entry.me_debug_info         = iter->me_debug_info;
+    entry.me_num_syms           = iter->me_num_syms;
+    entry.me_num_lines          = iter->me_num_lines;
+    entry.me_num_fpo            = iter->me_num_fpo;
+    entry.me_mod_files          = iter->me_mod_files;
+    entry.me_mpifileichfile     = iter->me_mpifileichfile;
+  //entry60.me_src_file         = iter->me_src_file; /* MISSING */
+  //entry60.me_pdb_file         = iter->me_pdb_file; /* MISSING */
+    /* Seek ahead to the next entry.
+     * NOTE: Because of the double-strend() here, we need
+     *       to double-zero-terminate the buffer above! */
+#ifdef HAVE_PDB_DEBUG
+    module_name = (char *)(iter+1);
+#endif
+    iter = (MOD_ENTRY50 *)(strend(strend((char *)(iter+1))+1)+1);
+   }
+   iter = (MOD_ENTRY50 *)CEIL_ALIGN((uintptr_t)iter,4);
+
+   /* Skip entries with an invalid module number. */
+   if (entry.me_module_no == (USHORT)-1) continue;
+   /* Skip if no stream is associated with this entry. */
+   if (entry.me_debug_info >= SELF->d_streamc ||
+      !SELF->d_streamv[entry.me_debug_info].s_size)
+       continue;
+   /* Skip if there is not debug line information. */
+   //if (!entry.me_num_lines) continue;
+   PDB_DEBUG(syslog(LOG_DEBUG,"MODULE #%d %p...%p (%q, %q)\n",
+                    entry.me_module_no,
+                    entry.me_contrib_off,
+                    entry.me_contrib_off+entry.me_contrib_size-1,
+                    MODULE_MODNAME(),MODULE_OBJNAME()));
+
+   /* TODO: Process module information in stream `#entry.me_debug_info' */
+   (void)entry;
+  }
+  free(mod_buffer);
+ }
+after_mod:
+
+
+ /* If we've collected FPO data, return that at least. */
+ if (!info.ai_data[VIRTINFO_DATA_FLAGS])
+      return -ENODATA;
+ copy_size = MIN(sizeof(struct virtinfo),bufsize);
+ if (copy_to_user(buf,&info,copy_size)) goto err_fault;
+ return sizeof(struct virtinfo);
+
 err_fault: error = -EFAULT;
-err: return error;
+err:
+ free(mod_buffer);
+ return error;
 }
 #undef SELF
 

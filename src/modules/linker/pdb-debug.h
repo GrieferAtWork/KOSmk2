@@ -201,6 +201,54 @@ struct _FPO_ENTRY {
 };
 
 
+typedef struct _MOD_ENTRY50 MOD_ENTRY50;
+typedef struct _MOD_ENTRY60 MOD_ENTRY60;
+struct _MOD_ENTRY50 {
+    UINT32 me_pmod;           /* Currently open mod (Whatever that means...) */
+    USHORT me_contrib_secno;  /* Section number of this module's first contribution. */
+    USHORT __pad0;            /* Hidden padding made visible */
+    LONG   me_contrib_off;    /* Offset of that section (TODO: Is this an address offset?) */
+    ULONG  me_contrib_size;   /* Size of that section. */
+    DWORD  me_contrib_flags;  /* Flags of that section (Set of 'IMAGE_SCN_*'). */
+    USHORT me_module_no;      /* Module number. */
+    USHORT __pad1;            /* Hidden padding made visible */
+    UINT8  me_unused;         /* Unused (By us...) */
+    UINT8  me_itsm;           /* Index within the TSM list for this mod's server (Whatever that means...) */
+    USHORT me_debug_info;     /* Debug information stream for this module. */
+    ULONG  me_num_syms;       /* Size (in bytes) of local symbols debug info within `me_debug_info'. */
+    ULONG  me_num_lines;      /* Size (in bytes) of line number debug info within `me_debug_info'. */
+    ULONG  me_num_fpo;        /* Size (in bytes) of frame pointer opt debug info within `me_debug_info'. */
+    USHORT me_mod_files;      /* Number of files apart of this module. */
+    UINT32 me_mpifileichfile; /* Array of `me_mod_files' offsets for filenames (TODO: Offsets from what?). */
+ // char   me_modnam[...];    /* \0-terminated module name. */
+ // char   me_objnam[...];    /* \0-terminated object file name (Usually the same as 'me_modnam'). */
+};
+struct _MOD_ENTRY60 {
+    UINT32 me_pmod;           /* Currently open mod (Whatever that means...) */
+    USHORT me_contrib_secno;  /* Section number of this module's first contribution. */
+    USHORT __pad0;            /* Hidden padding made visible */
+    LONG   me_contrib_off;    /* Offset of that section (TODO: Is this an address offset?) */
+    ULONG  me_contrib_size;   /* Size of that section. */
+    DWORD  me_contrib_flags;  /* Flags of that section (Set of 'IMAGE_SCN_*'). */
+    USHORT me_module_no;      /* Module number. */
+    USHORT __pad1;            /* Hidden padding made visible */
+    DWORD  me_contrib_datacrc; /* CRC checksum for contribution data. */
+    DWORD  me_contrib_reloccrc; /* CRC checksum for contribution relocations. */
+    UINT8  me_unused;         /* Unused (By us...) */
+    UINT8  me_itsm;           /* Index within the TSM list for this mod's server (Whatever that means...) */
+    USHORT me_debug_info;     /* Debug information stream for this module. */
+    ULONG  me_num_syms;       /* Size (in bytes) of local symbols debug info within `me_debug_info'. */
+    ULONG  me_num_lines;      /* Size (in bytes) of line number debug info within `me_debug_info'. */
+    ULONG  me_num_fpo;        /* Size (in bytes) of frame pointer opt debug info within `me_debug_info'. */
+    USHORT me_mod_files;      /* Number of files apart of this module. */
+    UINT32 me_mpifileichfile; /* Array of `me_mod_files' offsets for filenames (TODO: Offsets from what?). */
+    ULONG  me_src_file;       /* Name index of source filename */
+    ULONG  me_pdb_file;       /* Name index of compiler PDB path */
+ // char   me_modnam[...];    /* \0-terminated module name. */
+ // char   me_objnam[...];    /* \0-terminated object file name (Usually the same as 'me_modnam'). */
+};
+
+
 DECL_END
 
 #endif /* !GUARD_MODULES_LINKER_PDB_DEBUG_H */
