@@ -632,7 +632,7 @@ __LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...) {
     char *__result; __VA_LIST __args; __builtin_va_start(__args,__format);
     __result = vstrdupf(__format,__args);
-    __builtin_va_end(__args,__format);
+    __builtin_va_end(__args);
     return __result;
 }
 #elif defined(__CRT_DOS) && defined(__DOS_COMPAT__)

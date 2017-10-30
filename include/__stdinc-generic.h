@@ -245,6 +245,7 @@
 #   define __ATTR_DEPRECATED(text) __attribute__((deprecated))
 #else
 #   define __NO_ATTR_DEPRECATED    1
+#   define __ATTR_DEPRECATED_      /* Nothing */
 #   define __ATTR_DEPRECATED(text) /* Nothing */
 #endif
 #if __has_attribute(__warning__)

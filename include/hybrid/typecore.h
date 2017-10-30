@@ -783,6 +783,9 @@
 #ifndef __CHAR32_TYPE__
 #define __CHAR32_TYPE__ __UINT32_TYPE__
 #endif
+#ifndef __SIG_ATOMIC_TYPE__
+#define __SIG_ATOMIC_TYPE__ int
+#endif
 
 #if __SIZEOF_LONG__ == __SIZEOF_SIZE_T__
 #   define __LONGSIZE_TYPE__  unsigned long int
