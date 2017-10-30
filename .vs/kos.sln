@@ -131,6 +131,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hybrid", "hybrid", "{17E7DC
 		..\include\hybrid\traceback.h = ..\include\hybrid\traceback.h
 		..\include\hybrid\typecore.h = ..\include\hybrid\typecore.h
 		..\include\hybrid\types.h = ..\include\hybrid\types.h
+		..\include\hybrid\wordbits.h = ..\include\hybrid\wordbits.h
 		..\include\hybrid\xch.h = ..\include\hybrid\xch.h
 	EndProjectSection
 EndProject
@@ -265,6 +266,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkernel32", "libs\libkernel32.vcxproj", "{CB10BC24-64B5-4035-8DB0-423011414723}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "i386-kos", "i386-kos", "{0D640039-A905-4491-9709-DEEC9AAC784E}"
+	ProjectSection(SolutionItems) = preProject
+		..\include\i386-kos\a.out.h = ..\include\i386-kos\a.out.h
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm", "asm", "{E72D1B89-7AE0-456B-A657-BCEA5D9F2BC0}"
 	ProjectSection(SolutionItems) = preProject

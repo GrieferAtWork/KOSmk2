@@ -113,6 +113,7 @@
     <ClCompile Include="..\..\src\modules\fs\proc\procfs.c" />
     <ClCompile Include="..\..\src\modules\fs\proc\taskutil.c" />
     <ClCompile Include="..\..\src\modules\input\ps2.c" />
+    <ClCompile Include="..\..\src\modules\linker\a.out.c" />
     <ClCompile Include="..\..\src\modules\linker\elf-coredump.c" />
     <ClCompile Include="..\..\src\modules\linker\elf-debug.c" />
     <ClCompile Include="..\..\src\modules\linker\pdb-debug.c" />

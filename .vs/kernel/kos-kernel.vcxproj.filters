@@ -459,6 +459,9 @@
     <ClCompile Include="..\..\src\kernel\core\version.c">
       <Filter>kernel\core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\modules\linker\a.out.c">
+      <Filter>modules\linker</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
