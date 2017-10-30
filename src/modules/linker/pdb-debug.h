@@ -31,7 +31,7 @@ DECL_BEGIN
 /* NOTE: The PDB Parser implementation is based on various
  *       information scattered across the Internet:
  *   - https://gist.github.com/Diggsey/cefdbd068c540a4d0daa  (Stream system)
- *   - https://github.com/Microsoft/microsoft-pdb            (Stream number + content)
+ *   - https://github.com/Microsoft/microsoft-pdb            (Stream numbers + content)
  */
 
 typedef struct {
@@ -109,6 +109,97 @@ INTDEF errno_t KCALL stream_load(debug_t *__restrict self);
 #define STREAM_NAMEMAP             4      /*< Hashed string table. */
 #define STREAM_MOD(i)             (4+(i)) /*< symbols + line numbers for one compiland (Compilation unit?). */
 #define STREAM_GLOB_SYM(num_mods) ((num_mods)+4)
+
+typedef struct _DBI_HEADER0 DBI_HEADER0;
+typedef struct _DBI_HEADER1 DBI_HEADER1;
+struct _DBI_HEADER0 {
+ USHORT dh_gssyms;    /* Stream number for GSI (Global symbols <something> (Index?)). */
+ USHORT dh_pssyms;    /* Stream number for PSI (Public symbols <something> (Index?)). */
+ USHORT dh_symrecs;   /* Stream number for symbol records??? */
+ ULONG  dh_gpmodi;    /* Size of rgmodi data block. */
+ ULONG  dh_sc;        /* Size of section contribution data block. */
+ ULONG  dh_secmap;    /* Size of the section map. */
+ ULONG  dh_fileinfo;  /* Size of file information. */
+};
+
+/* Known version numbers (Though differences between these aren't known...) */
+#define DBI_VERSION_V41    930803
+#define DBI_VERSION_V50  19960307
+#define DBI_VERSION_V60  19970606
+#define DBI_VERSION_V70  19990903
+#define DBI_VERSION_V110 20091201
+
+#define DBG_TYPE_FPO            0
+#define DBG_TYPE_EXCEPTION      1
+#define DBG_TYPE_FIXUP          2
+#define DBG_TYPE_OMAPTOSRC      3
+#define DBG_TYPE_OMAPFROMSRC    4
+#define DBG_TYPE_SECTIONHDR     5
+#define DBG_TYPE_TOKENRIDMAP    6
+#define DBG_TYPE_XDATA          7
+#define DBG_TYPE_PDATA          8
+#define DBG_TYPE_NEWFPO         9
+#define DBG_TYPE_SECTIONHDRORIG 10
+#define DBG_TYPE_COUNT          11
+typedef struct _DBG_HEADER {
+#define DBG_HEADER_STREAM_INVALID 0xffff
+ USHORT dh_streams[DBG_TYPE_COUNT]; /* Additional debug information streams.
+                                     * NOTE: 'DBG_HEADER_STREAM_INVALID' is used to denote unused streams.
+                                     * NOTE: The index to this array is one of 'DBG_TYPE_*'
+                                     */
+} DBG_HEADER;
+
+struct _DBI_HEADER1 {
+#define DBI_HEADER1_SIGNATURE 0xffffffffu
+ ULONG  dh_signature; /* Signature indicating new data layout (Unless `DBI_HEADER1_SIGNATURE', `DBI_HEADER0' must be used). */
+ ULONG  dh_version;   /* DBI Version number (One of 'DBI_VERSION_*'). */
+ ULONG  dh_age;       /* Incremented when the header is re-written. */
+ USHORT dh_gssyms;    /* Stream number for GSI (Global symbols <something> (Index?)). */
+ USHORT dh_verall;    /* Another version number (High-bit: major, low-bit: minor) */
+ USHORT dh_pssyms;    /* Stream number for PSI (Public symbols <something> (Index?)). */
+ USHORT dh_buildver;  /* Build number of the pdb generator that last modified this header. */
+ USHORT dh_symrecs;   /* Stream number for symbol records??? */
+ USHORT dh_rbuildver; /* Some other version number of the pdb generator. */
+ ULONG  dh_gpmodi;    /* Size of rgmodi data block. */
+ ULONG  dh_sc;        /* Size of section contribution data block. */
+ ULONG  dh_secmap;    /* Size of the section map. */
+ ULONG  dh_fileinfo;  /* Size of file information. */
+ ULONG  dh_tsmap;     /* Size of the Type Server Map data block. */
+ ULONG  dh_mfc;       /* Index of MFC type server. */
+ ULONG  dh_dbghdr;    /* Size of optional DbgHdr info appended to the end of the data block. */
+ ULONG  dh_ecinfo;    /* Size of the EC data block. */
+ USHORT dh_inclnk : 1;   /* Set if incremental linking was used. */
+ USHORT dh_stripped : 1; /* Set if private data was stripped. */
+ USHORT dh_ctypes : 1;   /* Set if CTypes are used by this PDB. */
+ USHORT dh_unused : 13;  /* Reserved. */
+ USHORT dh_mach;      /* Machine identifier (One of 'IMAGE_FILE_MACHINE_*') */
+ ULONG  dh_reserved[1]; /* Reserved. */
+ /* HERE: Header ??? ('dh_gpmodi' bytes) */
+ /* HERE: Header ??? ('dh_sc' bytes) */
+ /* HERE: Header ??? ('dh_secmap' bytes) */
+ /* HERE: Header ??? ('dh_fileinfo' bytes) */
+ /* HERE: Header ??? ('dh_tsmap' bytes) */
+ /* HERE: Header ??? ('dh_ecinfo' bytes) */
+ /* HERE: Header DBG_HEADER ('dh_dbghdr' bytes) */
+ /* This should mark the end of the DBI stream. */
+};
+
+typedef struct _FPO_ENTRY FPO_ENTRY;
+struct _FPO_ENTRY {
+ ULONG  fe_begin;
+ ULONG  fe_size;
+ ULONG  fe_num_locals;
+ ULONG  fe_num_args;
+ ULONG  fe_stack_max;
+ ULONG  fe_program; /* Addr2line program. */
+ USHORT fe_prolog_size;
+ USHORT fe_regs_saved;
+ ULONG  fe_uses_seh    : 1;
+ ULONG  fe_uses_eh     : 1;
+ ULONG  fe_is_function : 1;
+ ULONG  fe_reserved    : 29;
+};
+
 
 DECL_END
 

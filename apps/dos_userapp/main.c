@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
               "This text is too long for the buffer");
  printf("n   = %d\n",n); /* Must not be -1, as would normally be the case in DOS. */
  printf("buf = `%.*s'\n",16,buf); /* Must contain the first 16 characters. */
-
+ 
  printf("argc = %d\n",argc);
  printf("argv = %p\n",argv);
  while (argc--) printf("argv[%d] = %s\n",argc,argv[argc]);

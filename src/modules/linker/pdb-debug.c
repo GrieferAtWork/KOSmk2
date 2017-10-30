@@ -51,7 +51,7 @@
 
 DECL_BEGIN
 
-#if defined(CONFIG_DEBUG) && 0
+#if defined(CONFIG_DEBUG) && 1
 #define PDB_DEBUG(x) x
 #else
 #define PDB_DEBUG(x) (void)0
@@ -112,7 +112,6 @@ err_1:
     iter->s_pagev = (DWORD *)(total_pages*sizeof(DWORD));
    }
    iter->s_pagec  = CEILDIV(iter->s_size,self->d_psize);
-   iter->s_pagev  = NULL;
    total_pages   += iter->s_pagec;
    ++iter,++psize;
   }
@@ -228,53 +227,144 @@ debug_clearcache(struct moddebug *__restrict self, size_t hint) {
  return 0;
 }
 
-
-#if 0
-#define SERIO_OUT(p,s) outsb(0x3F8,p,s)
-#define SERIO_PRINT(s) SERIO_OUT(s,COMPILER_STRLEN(s))
 PRIVATE ssize_t KCALL
-serial_printer(char const *__restrict data,
-               size_t size, void *UNUSED(closure)) {
- SERIO_OUT(data,size);
- return (ssize_t)size;
+read_dbi(stream_t *__restrict s, DBI_HEADER1 *__restrict header) {
+ ULONG signature; ssize_t error;
+ error = stream_kreadall(s,&signature,sizeof(signature),0);
+ if (E_ISERR(error)) goto end;
+ if (signature == DBI_HEADER1_SIGNATURE) {
+  /* It's the new header. */
+  error = stream_kreadall(s,header,sizeof(DBI_HEADER1),0);
+  if (E_ISERR(error)) goto end;
+  error = sizeof(DBI_HEADER1);
+ } else {
+  DBI_HEADER0 old_header;
+  error = stream_kreadall(s,&old_header,sizeof(DBI_HEADER0),0);
+  if (E_ISERR(error)) goto end;
+  memset(header,0,sizeof(DBI_HEADER1));
+  header->dh_gssyms   = old_header.dh_gssyms;
+  header->dh_pssyms   = old_header.dh_pssyms;
+  header->dh_symrecs  = old_header.dh_symrecs;
+  header->dh_gpmodi   = old_header.dh_gpmodi;
+  header->dh_sc       = old_header.dh_sc;
+  header->dh_secmap   = old_header.dh_secmap;
+  header->dh_fileinfo = old_header.dh_fileinfo;
+  error = sizeof(DBI_HEADER0);
+ }
+end:
+ return error;
 }
-#endif
+
+
+
 
 PRIVATE ssize_t KCALL
 debug_virtinfo(struct moddebug *__restrict self,
                maddr_t addr, USER struct virtinfo *buf,
                size_t bufsize, u32 flags) {
- errno_t error;
+ ssize_t error; stream_t *dbi_stream;
+ DBI_HEADER1 dbi_header;
+ DBG_HEADER dbg_header; 
 
  /* Load streams. */
  error = stream_load(SELF);
- if (E_ISERR(error)) return error;
- syslog(LOG_DEBUG,"Stream count: %I32d\n",
-        SELF->d_streamc);
+ if (E_ISERR(error)) goto err;
+ PDB_DEBUG(syslog(LOG_DEBUG,"Stream count: %I32d\n",SELF->d_streamc));
+ 
+ dbi_stream = stream_open(SELF,STREAM_DBI);
+ if (E_ISERR(dbi_stream)) return E_GTERR(dbi_stream);
 
-#if 0
- ssize_t count;
- stream_t *iter,*end; char buffer[512];
- end = (iter = SELF->d_streamv)+SELF->d_streamc;
- for (; iter != end; ++iter) {
-  DWORD pos = 0;
-  syslog(LOG_DEBUG,"Stream #%I32u (size: %I32u)\n",
-        (DWORD)(iter-SELF->d_streamv),iter->s_size);
-  format_printf(&serial_printer,NULL,"#!$ output(\"%d.pdb\",%Iu)\n",
-               (int)(iter-SELF->d_streamv),iter->s_size);
-  for (;;) {
-   count = stream_kread(iter,buffer,sizeof(buffer),pos);
-   if (!count) break;
-   if (E_ISERR(count)) { syslog(LOG_DEBUG,"ERROR: %[errno]\n",(errno_t)-count); break; }
-   SERIO_OUT(buffer,count);
-   pos += (DWORD)count;
+ error = read_dbi(dbi_stream,&dbi_header);
+ if (E_ISERR(error)) goto err;
+
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_signature = %x\n",dbi_header.dh_signature));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_version   = %x\n",dbi_header.dh_version));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_age       = %x\n",dbi_header.dh_age));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_gssyms    = %x\n",dbi_header.dh_gssyms));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_verall    = %x\n",dbi_header.dh_verall));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_pssyms    = %x\n",dbi_header.dh_pssyms));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_buildver  = %x\n",dbi_header.dh_buildver));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_symrecs   = %x\n",dbi_header.dh_symrecs));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_rbuildver = %x\n",dbi_header.dh_rbuildver));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_gpmodi    = %x\n",dbi_header.dh_gpmodi));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_sc        = %x\n",dbi_header.dh_sc));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_secmap    = %x\n",dbi_header.dh_secmap));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_fileinfo  = %x\n",dbi_header.dh_fileinfo));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_tsmap     = %x\n",dbi_header.dh_tsmap));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_mfc       = %x\n",dbi_header.dh_mfc));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_dbghdr    = %x\n",dbi_header.dh_dbghdr));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_ecinfo    = %x\n",dbi_header.dh_ecinfo));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_inclnk    = %x\n",dbi_header.dh_inclnk));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_stripped  = %x\n",dbi_header.dh_stripped));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_ctypes    = %x\n",dbi_header.dh_ctypes));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_unused    = %x\n",dbi_header.dh_unused));
+ PDB_DEBUG(syslog(LOG_DEBUG,"dh_mach      = %x\n",dbi_header.dh_mach));
+
+ /* Truncate to prevent overflow. */
+ if (dbi_header.dh_dbghdr > DBG_TYPE_COUNT*2)
+     dbi_header.dh_dbghdr = DBG_TYPE_COUNT*2;
+#define DBG_HEADER_MAXENT  (dbi_header.dh_dbghdr/2)
+ if (DBG_HEADER_MAXENT) {
+  /* Read the DBG header (Which contains a pointer to addr2line information). */
+  error = stream_kreadall(dbi_stream,&dbg_header,DBG_HEADER_MAXENT*2,
+                         (DWORD)(error+dbi_header.dh_gpmodi+dbi_header.dh_sc+
+                                       dbi_header.dh_secmap+dbi_header.dh_fileinfo+
+                                       dbi_header.dh_tsmap+dbi_header.dh_ecinfo));
+  if (E_ISERR(error)) goto err;
+#define HAS_DBG(i) ((i) < DBG_HEADER_MAXENT && dbg_header.dh_streams[i] != DBG_HEADER_STREAM_INVALID)
+  if (HAS_DBG(DBG_TYPE_NEWFPO)) {
+   /* This is the one with frame unwinding information (aka. addr2line) */
+   DWORD pos = 0; stream_t *fpo_stream; FPO_ENTRY entry;
+   fpo_stream = stream_open(SELF,dbg_header.dh_streams[DBG_TYPE_NEWFPO]);
+   if (E_ISERR(fpo_stream)) { error = E_GTERR(fpo_stream); goto err; }
+   while ((error = stream_kread(fpo_stream,&entry,sizeof(entry),pos)) == sizeof(entry)) {
+    PDB_DEBUG(syslog(LOG_DEBUG,"FPO at %I32x: (%p...%p; looking for %p)\n",pos,
+                     entry.fe_begin,entry.fe_begin+entry.fe_size-1,addr));
+    if (addr < entry.fe_begin || addr >= entry.fe_begin+entry.fe_size)
+        goto next_fpo;
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_begin       = %x\n",entry.fe_begin));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_size        = %x\n",entry.fe_size));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_num_locals  = %x\n",entry.fe_num_locals));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_num_args    = %x\n",entry.fe_num_args));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_stack_max   = %x\n",entry.fe_stack_max));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_program     = %x\n",entry.fe_program));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_prolog_size = %x\n",entry.fe_prolog_size));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_regs_saved  = %x\n",entry.fe_regs_saved));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_uses_seh    = %x\n",entry.fe_uses_seh));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_uses_eh     = %x\n",entry.fe_uses_eh));
+    PDB_DEBUG(syslog(LOG_DEBUG,"fe_is_function = %x\n",entry.fe_is_function));
+    { struct virtinfo info; size_t copy_size;
+      memset(&info,0,sizeof(struct virtinfo));
+      info.ai_data[VIRTINFO_DATA_SYMADDR] = (uintptr_t)entry.fe_begin;
+      info.ai_data[VIRTINFO_DATA_SYMSIZE] = (uintptr_t)entry.fe_size;
+      info.ai_data[VIRTINFO_DATA_FLAGS]   = VIRTINFO_FLAG_VALID;
+      if (addr < entry.fe_begin+entry.fe_prolog_size)
+          info.ai_data[VIRTINFO_DATA_FLAGS] |= VIRTINFO_FLAG_PROLOG;
+      if (entry.fe_is_function)
+          info.ai_data[VIRTINFO_DATA_FLAGS] |= VIRTINFO_FLAG_INFUNC;
+      /* ----: Now what? - What are we supposed to do with `fe_program'? */
+      /* XXX: $H1T!! Instead, 'dh_gpmodi' contains 'struct MODI50' (PDB\dbi\dbi.h),
+       *             which in turn describe per-module debug informations then
+       *             found in individual streams.
+       * PARSING FPO INFORMATION IS COMPLETELY UNNECESSARY!
+       * (Well... at least this way we also get information
+       *  about the surrounding function and its size...) */
+      error     = sizeof(struct virtinfo);
+      copy_size = MIN(sizeof(struct virtinfo),bufsize);
+      if (copy_to_user(buf,&info,copy_size)) goto err_fault;
+      *(uintptr_t *)&buf += copy_size;
+      bufsize -= copy_size;
+      return error;
+    }
+next_fpo:
+    pos += error;
+   }
+   if (E_ISERR(error)) goto err;
   }
-  assert(pos == iter->s_size);
  }
-#endif
-
- /* TODO */
  return -ENODATA;
+err_fault: error = -EFAULT;
+err: return error;
 }
 #undef SELF
 

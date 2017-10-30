@@ -65,10 +65,10 @@ DECL_BEGIN
 struct virtinfo {
  /* NOTE: Any unknown field is set to 0/ZERO/NULL, meaning that
   *       every member should be considered '[valid_if(this != 0)]' */
-#define VIRTINFO_SOURCE_DRIVE 0 /*< Drive name of the source file. */
-#define VIRTINFO_SOURCE_PATH  1 /*< Source file path name (May already include VIRTINFO_SOURCE_NAME+VIRTINFO_SOURCE_EXT). */
-#define VIRTINFO_SOURCE_NAME  2 /*< Source file name (May already include VIRTINFO_SOURCE_EXT). */
-#define VIRTINFO_SOURCE_EXT   3 /*< Source file extension. */
+#define VIRTINFO_SOURCE_DRIVE  0 /*< Drive name of the source file. */
+#define VIRTINFO_SOURCE_PATH   1 /*< Source file path name (May already include VIRTINFO_SOURCE_NAME+VIRTINFO_SOURCE_EXT). */
+#define VIRTINFO_SOURCE_NAME   2 /*< Source file name (May already include VIRTINFO_SOURCE_EXT). */
+#define VIRTINFO_SOURCE_EXT    3 /*< Source file extension. */
  USER char *ai_source[4]; /*< [0..1][4] Source information. */
  USER char *ai_name;      /*< [0..1] Name of the nearest symbol located at `VIRTINFO_DATA_PREVADDR'. */
  u32        ai_line;      /*< Source line (1-based). */
@@ -82,6 +82,7 @@ struct virtinfo {
 #   define VIRTINFO_FLAG_NONE   0x00000000
 #   define VIRTINFO_FLAG_STMT   0x00000001 /*< The address is part of statement assembly, rather than that of an expression. */
 #   define VIRTINFO_FLAG_BBLOCK 0x00000002 /*< The address is the start of a basic_block. */
+#   define VIRTINFO_FLAG_INFUNC 0x00000004 /*< The address is part of a function, rather than data. */
 #   define VIRTINFO_FLAG_PROLOG 0x00000100 /*< The address is located within an auto-generated function prolog. */
 #   define VIRTINFO_FLAG_EPILOG 0x00000400 /*< The address is located within an auto-generated function epilog. */
 #   define VIRTINFO_FLAG_VALID  0x80000000 /*< Indicates that this field is implemented. */

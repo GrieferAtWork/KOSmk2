@@ -123,7 +123,16 @@ LOCAL mzone_t KCALL mzone_of(PHYS void *ptr) {
  return result;
 }
 
-#define CONFIG_USE_NEW_MEMINFO
+/* TODO: Once it has proven itself (Which it kind-of already has),
+ *       remove all traces of the currently deprecated, old meminfo system.
+ *       Fun fact: Since going public, 'CONFIG_USE_NEW_MEMINFO' is actually
+ *                 the 3rd rendition of meminfo systems created for KOS...
+ *                (Let's hope this one sticks around and doesn't break due
+ *                 to another situation undefined by the system.
+ *                 Although for once, I very much doubt that, simply because given
+ *                 the much simplified design this time around, any addition/change
+ *                 that could come up should be quite straight forward.) */
+#define CONFIG_USE_NEW_MEMINFO 1
 
 /* NOTE: The order of these is important, in that greater
  *       memory types override lower ones during re-definitions. */
@@ -171,7 +180,8 @@ union{
  uintptr_t                __mi_pad0;      /* ... */
 };
 #ifdef CONFIG_USE_NEW_MEMINFO
- PHYS void                 *mi_addr;      /*< [const][<= mi_part_addr && >= mi_full_addr] First associated address. */
+ PHYS void                 *mi_addr;      /*< [const][<= mi_part_addr && >= mi_full_addr] First associated address.
+                                           *   NOTE: This pointer is _NOT_ necessarily page-aligned! */
 #define MEMINFO_BEGIN(x) ((uintptr_t)(x)->mi_addr)
 #define MEMINFO_END(x)   (((x) != __mem_info_last ? (uintptr_t)((x)[1].mi_addr) : 0))
 #define MEMINFO_MIN(x)   ((uintptr_t)(x)->mi_addr)
@@ -198,6 +208,11 @@ union{
 };
 
 #ifdef CONFIG_USE_NEW_MEMINFO
+/* Physical memory information.
+ * Information is stored as a vector sorted ascendingly by start
+ * address, with each entry extending until the next, and the last one
+ * extending into infinity (Or until the end of the addressable memory).
+ */
 DATDEF size_t                const mem_info_c; /* [!0] */
 DATDEF struct meminfo const *const mem_info_v;
 DATDEF struct meminfo const *const __mem_info_last ASMNAME("mem_info_last"); /* == mem_info_v+mem_info_c-1 */

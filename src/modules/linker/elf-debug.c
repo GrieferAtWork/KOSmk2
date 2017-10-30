@@ -453,8 +453,8 @@ chunk_virtinfo(chunk_t *__restrict self,
 #define RESET() \
 (state.address = 0,state.op_index = 0,state.file = 1,state.line = 1, \
  state.column = 0,state.flags = self->c_lnfo.li_default_is_stmt \
-                ? VIRTINFO_FLAG_PROLOG|VIRTINFO_FLAG_VALID|VIRTINFO_FLAG_STMT \
-                : VIRTINFO_FLAG_PROLOG|VIRTINFO_FLAG_VALID, \
+                ? VIRTINFO_FLAG_INFUNC|VIRTINFO_FLAG_PROLOG|VIRTINFO_FLAG_VALID|VIRTINFO_FLAG_STMT \
+                : VIRTINFO_FLAG_INFUNC|VIRTINFO_FLAG_PROLOG|VIRTINFO_FLAG_VALID, \
  state.isa = 0,state.discriminator = 0, \
  prev_state.address = (uintptr_t)-1)
 #define TEST_STATE() \
