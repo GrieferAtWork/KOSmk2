@@ -156,7 +156,9 @@ INTERN int LIBCCALL libc_fchmod(int fd, mode_t mode) { return FORWARD_SYSTEM_ERR
 INTERN int LIBCCALL libc_fchownat(int fd, char const *file, uid_t owner, gid_t group, int flags) { return FORWARD_SYSTEM_ERROR(sys_fchownat(fd,file,owner,group,flags)); }
 INTERN int LIBCCALL libc_fchmodat(int fd, char const *file, mode_t mode, int flags) {
  if (!(flags&(AT_SYMLINK_NOFOLLOW|AT_SYMLINK_FOLLOW))) { SET_ERRNO(EINVAL); return -1; }
- return FORWARD_SYSTEM_ERROR(sys_fchmodat(fd,file,mode|((flags&AT_SYMLINK_NOFOLLOW) ? O_NOFOLLOW : 0)));
+ return FORWARD_SYSTEM_ERROR(sys_fchmodat(fd,file,mode|
+                            ((flags&AT_SYMLINK_NOFOLLOW) ? O_SYMLINK : 0)|
+                            ((flags&AT_DOSPATH) ? O_DOSPATH : 0)));
 }
 
 

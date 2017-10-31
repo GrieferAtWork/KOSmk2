@@ -1273,9 +1273,10 @@ got_res_ino:
  /* Check for proper permissions in the result INode. */
  if (INODE_ISCLOSING(res_ino))
   result = E_PTR(-EBUSY);
- else if (!(oflags&O_NOFOLLOW) && INODE_ISLNK(res_ino) &&
+ else if (!(oflags&O_SYMLINK) && INODE_ISLNK(res_ino) &&
             res_ino->i_ops->ino_readlink) {
   struct dentry *link_result; /* Follow this symbolic link. */
+  if (oflags&O_NOFOLLOW) { result = E_PTR(-ELOOP); goto done; }
 #if 0
   syslog(LOG_DEBUG,"WALK_SYMLINK(`%[dentry]')\n",dir_ent);
 #endif
@@ -1328,6 +1329,7 @@ got_res_ino:
    task_endnointr();
   }
  }
+done:
  INODE_DECREF(res_ino);
  DENTRY_DECREF(res_entry);
 end:
@@ -1349,9 +1351,12 @@ dentry_open_with_inode(struct dentry *__restrict dir_ent,
  if (E_ISERR(result));
  else if (INODE_ISCLOSING(res_ino))
   result = E_PTR(-EBUSY);
- else if (!(oflags&O_NOFOLLOW) && INODE_ISLNK(res_ino) &&
+ else if (!(oflags&O_SYMLINK) && INODE_ISLNK(res_ino) &&
             res_ino->i_ops->ino_readlink) {
-  result = E_PTR(-ENOSYS); /* TODO: read symbolic link. */
+  if (oflags&O_NOFOLLOW) result = E_PTR(-ELOOP);
+  else {
+   result = E_PTR(-ENOSYS); /* TODO: read symbolic link. */
+  }
  } else if ((oflags&O_DIRECTORY) && !INODE_ISDIR(res_ino))
   /* Return ENOTDIR when attempting to open anything
    * other than a directory with `O_DIRECTORY'. */

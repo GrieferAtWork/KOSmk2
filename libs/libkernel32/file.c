@@ -878,7 +878,7 @@ K32_CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD UNUSED(dwShareMo
  oflags |= creation_disk_flags[dwCreationDisposition];
  if (dwFlagsAndAttributes&FILE_FLAG_WRITE_THROUGH)      oflags |= O_DIRECT;
  if (dwFlagsAndAttributes&FILE_FLAG_DELETE_ON_CLOSE)    oflags |= O_TMPFILE;
- if (dwFlagsAndAttributes&FILE_FLAG_OPEN_REPARSE_POINT) oflags |= O_NOFOLLOW;
+ if (dwFlagsAndAttributes&FILE_FLAG_OPEN_REPARSE_POINT) oflags |= O_SYMLINK;
  if (dwFlagsAndAttributes&FILE_ATTRIBUTE_READONLY)      mode &= ~0222; /* Disable write-permissions. */
 
  result = dos_open(lpFileName,oflags,mode);
@@ -1108,7 +1108,7 @@ K32_CopyFileExA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName,
  LARGE_INTEGER buffer_size,part_size = { .QuadPart = 0 };
  struct stat64 source_info; int sfd = -1,dfd = -1;
  int soflag = O_RDONLY,doflag = O_WRONLY|O_CREAT|O_TRUNC;
- if (dwCopyFlags&COPY_FILE_COPY_SYMLINK)          soflag |= O_NOFOLLOW;
+ if (dwCopyFlags&COPY_FILE_COPY_SYMLINK)          soflag |= O_SYMLINK;
  if (dwCopyFlags&COPY_FILE_FAIL_IF_EXISTS)        doflag |= O_EXCL,doflag &= ~O_TRUNC;
  if (dwCopyFlags&COPY_FILE_NO_BUFFERING)          soflag |= O_DIRECT,doflag |= O_DIRECT;
  if (dwCopyFlags&COPY_FILE_OPEN_SOURCE_FOR_WRITE) soflag |= O_RDWR;

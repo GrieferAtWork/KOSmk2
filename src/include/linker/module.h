@@ -71,12 +71,13 @@ struct modseg {
 
 
 #define MODULEOPS_OFFSETOF_FINI                 0
-#define MODULEOPS_OFFSETOF_SYMADDR              __SIZEOF_POINTER__
-#define MODULEOPS_OFFSETOF_PATCH             (2*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_MODFUN            (3*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_REAL_MODULE       (4*__SIZEOF_POINTER__)
-#define MODULEOPS_OFFSETOF_TRANSFORM_ENVIRON (5*__SIZEOF_POINTER__)
-#define MODULEOPS_SIZE                       (6*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_CLEARCACHE           __SIZEOF_POINTER__
+#define MODULEOPS_OFFSETOF_SYMADDR           (2*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_PATCH             (3*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_MODFUN            (4*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_REAL_MODULE       (5*__SIZEOF_POINTER__)
+#define MODULEOPS_OFFSETOF_TRANSFORM_ENVIRON (6*__SIZEOF_POINTER__)
+#define MODULEOPS_SIZE                       (7*__SIZEOF_POINTER__)
 
 struct modsym {
  void     *ms_addr; /*< [?..?] Symbol address. */
@@ -109,6 +110,9 @@ struct moduleops {
  /* [0..1] Additional user-defined destruction.
   * WARNING: May only be used to destroy custom module data! */
  void (KCALL *o_fini)(struct module *__restrict self);
+ /* [0..1] Attempt to delete cached data to free up memory. (Called from `mman_swapmem()')
+  *  TODO: Currently unused. */
+ size_t (KCALL *o_clearcache)(struct module *__restrict self, size_t hint);
  /* [1..1][valid_if(!(:m_flag&MODFLAG_NOTABIN))]
   * Load the module address of a given symbol.
   * WARNING: This function may be called from a user-helper callback.
@@ -225,33 +229,37 @@ FUNDEF errno_t KCALL argvlist_appendv(struct argvlist *__restrict self, char con
                                     * `o_real_module' and `o_transform_environ' to proxy another module instead. */
 
 #define MODULE_OFFSETOF_REFCNT   0
-#define MODULE_OFFSETOF_OPS      __SIZEOF_REF_T__
-#define MODULE_OFFSETOF_FILE    (__SIZEOF_REF_T__+__SIZEOF_POINTER__)
-#define MODULE_OFFSETOF_NAME    (__SIZEOF_REF_T__+2*__SIZEOF_POINTER__)
-#define MODULE_OFFSETOF_NAMEBUF (__SIZEOF_REF_T__+3*__SIZEOF_POINTER__)
-#define MODULE_OFFSETOF_OWNER   (__SIZEOF_REF_T__+3*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
-#define MODULE_OFFSETOF_FLAG    (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
-#define MODULE_OFFSETOF_LOAD    (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
-#define MODULE_OFFSETOF_BEGIN   (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
-#define MODULE_OFFSETOF_END     (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_SIZE    (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+2*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_ALIGN   (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_ENTRY   (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_SEGC    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_OFFSETOF_SEGV    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_OFFSETOF_RLOCK   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_OFFSETOF_DEBUG   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
-#define MODULE_SIZE             (__SIZEOF_REF_T__+8*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
+#define MODULE_OFFSETOF_CHAIN    __SIZEOF_REF_T__
+#define MODULE_OFFSETOF_OPS      __SIZEOF_REF_T__+2*__SIZEOF_POINTER__
+#define MODULE_OFFSETOF_FILE    (__SIZEOF_REF_T__+3*__SIZEOF_POINTER__)
+#define MODULE_OFFSETOF_NAME    (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__)
+#define MODULE_OFFSETOF_NAMEBUF (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__)
+#define MODULE_OFFSETOF_OWNER   (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
+#define MODULE_OFFSETOF_FLAG    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
+#define MODULE_OFFSETOF_LOAD    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
+#define MODULE_OFFSETOF_BEGIN   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
+#define MODULE_OFFSETOF_END     (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_SIZE    (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+2*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_ALIGN   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_ENTRY   (__SIZEOF_REF_T__+8*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_SEGC    (__SIZEOF_REF_T__+8*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_OFFSETOF_SEGV    (__SIZEOF_REF_T__+8*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_OFFSETOF_RLOCK   (__SIZEOF_REF_T__+9*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_OFFSETOF_DEBUG   (__SIZEOF_REF_T__+9*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
+#define MODULE_SIZE             (__SIZEOF_REF_T__+10*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
 
 struct module {
  ATOMIC_DATA ref_t       m_refcnt; /*< Module reference counter. */
+ WEAK LIST_NODE(struct module)
+                         m_chain;  /*< [lock(modules_lock)][LIST(modules_list)][0..1]
+                                    *   Entry in the global chain of known modules. */
  struct moduleops const *m_ops;    /*< [const][1..1] Generic module operations. */
  REF struct file        *m_file;   /*< [const][0..1] Module executable.
                                     *   NOTE: The module it self is also stored under:
                                     *        `m_file->f_node->i_file.i_module'
                                     *   Upon deletion of the module, that field is cleared.
                                     *   WARNING: The kernel's core-module has this field set to NULL!
-                                    *   WARNING: Module installed by the bootloaded also have this field set to NULL! */
+                                    *   WARNING: Module installed by the bootloader may also have this field set to NULL! */
  struct dentryname      *m_name;   /*< [const][1..1] The effective name of the module (Defaults to `&m_file->f_dent->d_name'; may be set to `&m_namebuf') */
  struct dentryname       m_namebuf;/*< [const][owned] Per-module inline-allocated name buffer. */
  WEAK REF struct instance *m_owner;/*< [const][1..1] Weak reference to the owner driver of this module.
@@ -412,8 +420,12 @@ FUNDEF SAFE errno_t KCALL module_restore_readonly(struct module *__restrict self
                                                   ppage_t load_addr);
 
 
-typedef REF struct module *(KCALL *modloader_callback)(struct file *__restrict fp);
+DATDEF atomic_rwlock_t modules_lock;          /*< Lock for the list of known modules. */
+DATDEF LIST_HEAD(struct module) modules_list; /*< [lock(modules_lock)] List of known modules. */
+#define MODULES_FOREACH(mod) LIST_FOREACH(mod,modules_list,m_chain)
 
+
+typedef REF struct module *(KCALL *modloader_callback)(struct file *__restrict fp);
 #define MODLOADER_MAX_MAGIC 12
 #define MODLOADER_FBINARY   0x00000000 /*< Binary, or library module loader. */
 
@@ -802,8 +814,8 @@ FUNDEF SAFE ssize_t KCALL kernel_delmod_m(struct module *__restrict mod, u32 mod
 #define DELMOD_DELDEP     0x00080000 /*< Instead of failing with `EWOULDBLOCK', delete all other modules
                                       *  depending on this one's presence, only failing once at least one
                                       *  of them couldn't be deleted for some reason.
-                                      *  NOTE: The module used when recursively deleting
-                                      *        dependencies is calculated by `mode & DELMOD_DELDEP_MASK'.
+                                      *  NOTE: The flags used when recursively deleting
+                                      *        dependencies is calculated from `mode & DELMOD_DELDEP_MASK'.
                                       *  NOTE: When the `DELMOD_IGNORE_DEP' flag is given as well, first
                                       *        attempt to delete dependencies normally, before ignoring a
                                       *        failure in doing so and blindly deleting the module anyways. */
@@ -822,7 +834,7 @@ FUNDEF SAFE ssize_t KCALL kernel_delmod_m(struct module *__restrict mod, u32 mod
 /* Mask used to modulate `mode' when recursively
  * deleting dependencies (s.a.: `DELMOD_DELDEP'). */
 #define DELMOD_DELDEP_MASK  \
-  (DELMOD_BLOCK|DELMOD_DELDEP|\
+  (DELMOD_BLOCK|DELMOD_DELDEP| \
    DELMOD_FORCE|DELMOD_FORCENOW|DELMOD_IGNORE_DEP)
 
 
@@ -853,12 +865,12 @@ INTDEF INITCALL void KCALL kernel_bootmod_setup(void);
  * This function will go through all loaded modules one more time
  * and try to figure out what file they are associated with.
  * The way this is done is by looking at the start of the
- * individual module's commandlines, and in the even that the first
+ * individual module's commandlines, and in the event that the first
  * character is a '/' (Or '\'' / '\"', in which case a string is parsed),
  * that string is interpreted as the module's filename.
- * That string is then used to open a file, which is then assigned
- * as the module file to that driver, thus allowing it to later be re-used
- * and address under that name.
+ * That string is then used to open a file, which is assigned as the
+ * module file to that driver, thus allowing it to later be re-used
+ * and be addressed under that name.
  * NOTE: In the event that the file could not be opened, the last path-component
  *       is used and stored in 'm_name' of the module in question. */
 INTDEF INITCALL void KCALL kernel_bootmod_locate(void);

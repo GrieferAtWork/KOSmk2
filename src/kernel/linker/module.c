@@ -160,6 +160,8 @@ sym_hashname(char const *__restrict name) {
  return h;
 }
 
+PUBLIC DEFINE_ATOMIC_RWLOCK(modules_lock);
+PUBLIC LIST_HEAD(struct module) modules_list = NULL;
 
 PUBLIC SAFE void KCALL
 module_setup(struct module *__restrict self,
@@ -174,6 +176,7 @@ module_setup(struct module *__restrict self,
  CHECK_HOST_DOBJ(fp->f_dent);
  CHECK_HOST_DOBJ(ops);
  CHECK_HOST_DOBJ(owner);
+ assert(self->m_chain.le_pself == NULL);
  assertf(self->m_align != 0,"Forgot to initialize `m_align'");
  end = (iter = self->m_segv)+self->m_segc;
  for (; iter != end; ++iter) {
@@ -199,6 +202,10 @@ module_setup(struct module *__restrict self,
  /*syslog(LOG_DEBUG,"addr_max = %p\n",addr_max);*/
  if (!self->m_name)
       self->m_name = &fp->f_dent->d_name;
+
+ atomic_rwlock_write(&modules_lock);
+ LIST_INSERT(modules_list,self,m_chain);
+ atomic_rwlock_endwrite(&modules_lock);
 }
 
 PUBLIC SAFE void KCALL
@@ -208,6 +215,12 @@ module_destroy(struct module *__restrict self) {
  CHECK_HOST_DOBJ(self->m_owner);
  assert(self != &__this_module);
  assert(!self->m_refcnt);
+
+ atomic_rwlock_write(&modules_lock);
+ assert(self->m_chain.le_pself != NULL);
+ assert(*self->m_chain.le_pself == self);
+ LIST_REMOVE(self,m_chain);
+ atomic_rwlock_endwrite(&modules_lock);
 
  /* Delete module debug information. */
  { REF struct moddebug *info;

@@ -52,7 +52,7 @@ __SYSDECL_BEGIN
 #define __DOS_O_TRUNC        000001000
 #define __DOS_O_EXCL         000002000
 #define __DOS_O_SHORT_LIVED  000010000 /* Ignored */
-#define __DOS_O_OBTAIN_DIR   000020000 /* Same as O_DIRECTORY */
+#define __DOS_O_OBTAIN_DIR   000020000 /* Same as O_DIRECTORY (Not quite, but effectively the same...) */
 #define __DOS_O_TEXT         000040000 /* Ignored */
 #define __DOS_O_BINARY       000100000 /* Ignored */
 #define __DOS_O_WTEXT        000200000 /* Ignored */
@@ -127,10 +127,6 @@ __SYSDECL_BEGIN
 #define __O_CLOEXEC    002000000
 #define __O_PATH       010000000
 #define __O_TMPFILE   (020000000|__O_DIRECTORY)
-#ifdef __CRT_KOS
-#define __O_CLOFORK    004000000
-#define __O_DOSPATH   0400000000 /* Interpret '\\' as '/', and ignore casing during path resolution. */
-#endif /* __CRT_KOS */
 
 #ifdef __USE_DOS
 /* DOS names for some misc./ignored flags. */
@@ -146,6 +142,37 @@ __SYSDECL_BEGIN
 #endif /* __USE_DOS */
 #endif /* !__USE_DOSFS */
 
+#ifdef __CRT_KOS
+#define __O_CLOFORK    004000000
+#define __O_SYMLINK   0200000000 /* Open a symlink itself, rather than dereferencing it. */
+#define __O_DOSPATH   0400000000 /* Interpret '\\' as '/', and ignore casing during path resolution. */
+#else /* __CRT_KOS */
+#define __O_CLOFORK   0
+#define __O_DOSPATH   0
+#define __O_SYMLINK   0
+#endif /* !__CRT_KOS */
+
+/* Open anything directly (as best as possible). (file, directory or symlink)
+ * KOS: Open a file, directory or symlink directly.
+ * DOS: Open a file or directory directly.
+ * GLC: Open a file or directory directly.
+ */
+#ifdef __CRT_KOS
+#ifdef __USE_DOSFS
+#   define __O_ANYTHING  (__O_SYMLINK|__DOS_O_OBTAIN_DIR)
+#else
+#   define __O_ANYTHING   __O_SYMLINK
+#endif
+#elif defined(__USE_DOSFS)
+#   define __O_ANYTHING   __DOS_O_OBTAIN_DIR
+#else
+#   define __O_ANYTHING   0
+#endif
+#ifdef __USE_KOS
+#   define O_ANYTHING   __O_ANYTHING
+#endif
+
+
 #define O_NDELAY       O_NONBLOCK
 #define O_FSYNC        O_SYNC
 
@@ -157,9 +184,10 @@ __SYSDECL_BEGIN
 #   define O_NOFOLLOW   __O_NOFOLLOW
 #   define O_CLOEXEC    __O_CLOEXEC
 #endif
-#ifdef __USE_KOS
+#if defined(__CRT_KOS) && defined(__USE_KOS)
 #   define O_CLOFORK    __O_CLOFORK
 #   define O_DOSPATH    __O_DOSPATH
+#   define O_SYMLINK    __O_SYMLINK
 #endif
 #ifdef __USE_GNU
 #   define O_DIRECT     __O_DIRECT

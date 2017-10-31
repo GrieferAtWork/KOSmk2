@@ -459,7 +459,7 @@ SYSCALL_DEFINE3(fchmodat,int,dfd,USER char const *,filename,mode_t,mode) {
  struct iattr new_attr;
  new_attr.ia_mode = mode;
  return user_fsetattrat(dfd,filename,&new_attr,IATTR_MODE,
-                       ((mode&O_NOFOLLOW) ? DENTRY_WALK_NOFOLLOW : 0)|
+                       ((mode&O_SYMLINK) ? DENTRY_WALK_NOFOLLOW : 0)|
                        ((mode&O_DOSPATH) ? DENTRY_WALK_DOSPATH : 0));
 }
 SYSCALL_DEFINE5(fchownat,int,dfd,USER char const *,filename,uid_t,user,gid_t,group,int,flag) {
@@ -592,8 +592,8 @@ SYSCALL_DEFINE4(mknodat,int,dfd,USER char const *,filename,mode_t,mode,dev_t,dev
  FSACCESS_SETUSER(walker.dw_access);
  walker.dw_nlink = 0;
  walker.dw_flags = 0;
- if (mode&O_NOFOLLOW) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
- if (mode&O_DOSPATH)  walker.dw_flags |= DENTRY_WALK_DOSPATH;
+ if (mode&O_SYMLINK) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
+ if (mode&O_DOSPATH) walker.dw_flags |= DENTRY_WALK_DOSPATH;
  walker.dw_flags = DENTRY_FMASK(GET_FSMODE(walker.dw_flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
@@ -655,8 +655,8 @@ SYSCALL_DEFINE3(mkdirat,int,dfd,USER char const *,pathname,mode_t,mode) {
  FSACCESS_SETUSER(walker.dw_access);
  walker.dw_nlink = 0;
  walker.dw_flags = 0;
- if (mode&O_NOFOLLOW) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
- if (mode&O_DOSPATH)  walker.dw_flags |= DENTRY_WALK_DOSPATH;
+ if (mode&O_SYMLINK) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
+ if (mode&O_DOSPATH) walker.dw_flags |= DENTRY_WALK_DOSPATH;
  walker.dw_flags = DENTRY_FMASK(GET_FSMODE(walker.dw_flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);
@@ -945,8 +945,8 @@ SYSCALL_DEFINE4(openat,int,dfd,USER char const *,filename,oflag_t,flags,mode_t,m
  FSACCESS_SETUSER(walker.dw_access);
  walker.dw_nlink = 0;
  walker.dw_flags = 0;
- if (mode&O_NOFOLLOW) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
- if (mode&O_DOSPATH)  walker.dw_flags |= DENTRY_WALK_DOSPATH;
+ if (mode&O_SYMLINK) walker.dw_flags |= DENTRY_WALK_NOFOLLOW;
+ if (mode&O_DOSPATH) walker.dw_flags |= DENTRY_WALK_DOSPATH;
  walker.dw_flags = DENTRY_FMASK(GET_FSMODE(walker.dw_flags));
  task_crit();
  cwd = fdman_get_dentry(fdm,dfd);

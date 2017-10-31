@@ -223,7 +223,7 @@ DEFINE_PUBLIC_ALIAS(xvirtinfo,libc_xvirtinfo);
 /* Translate DOS flags to UNIX and append O_DOSPATH. */
 INTERN ATTR_DOSTEXT oflag_t LIBCCALL
 libc_dos_getoflags(oflag_t dos_flags) {
- oflag_t result = dos_flags & __DOS_O_COMMON;
+ oflag_t result = dos_flags & (__DOS_O_COMMON|~(001777777));
  if (dos_flags&__DOS_O_APPEND)     result |= O_APPEND;
  if (dos_flags&__DOS_O_TEMPORARY)  result |= O_TMPFILE;
  if (dos_flags&__DOS_O_NOINHERIT)  result |= O_CLOEXEC;

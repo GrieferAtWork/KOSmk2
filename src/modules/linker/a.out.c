@@ -53,6 +53,8 @@ struct aout_module {
  struct module a_module; /*< Underlying module. */
  u32           a_dreloff,a_drelsiz; /*< File offset/size for .text relocations. */
  u32           a_treloff,a_trelsiz; /*< File offset/size for .data relocations. */
+ u32           a_symoff,a_symsiz;   /*< File offset/size for the a.out symbol table. */
+ u32           a_stroff;            /*< File offset/size for the a.out string table. */
 };
 
 
@@ -66,16 +68,27 @@ aout_symaddr(struct instance *__restrict self,
  return result;
 }
 
-
 PRIVATE errno_t KCALL
 aout_patch(struct modpatch *__restrict patcher) {
  /* TODO */
  return -EOK;
 }
 
+PRIVATE void KCALL
+aout_fini(struct module *__restrict self) {
+}
+PRIVATE size_t KCALL
+aout_clearcache(struct module *__restrict self, size_t hint) {
+
+ return 0;
+}
+
+
 PRIVATE struct moduleops aout_ops = {
-    .o_symaddr = &aout_symaddr,
-    .o_patch   = &aout_patch,
+    .o_fini       = &aout_fini,
+    .o_clearcache = &aout_clearcache,
+    .o_symaddr    = &aout_symaddr,
+    .o_patch      = &aout_patch,
 };
 
 PRIVATE REF struct module *KCALL
@@ -136,6 +149,9 @@ aout_loader(struct file *__restrict fp) {
  /* Store information about text/data relocations. */
  result->a_dreloff = N_DRELOFF(header);
  result->a_treloff = N_TRELOFF(header);
+ result->a_symoff  = N_SYMOFF(header);
+ result->a_symsiz  = N_SYMSIZE(header);
+ result->a_stroff  = N_STROFF(header);
  result->a_drelsiz = header.a_drsize;
  result->a_trelsiz = header.a_trsize;
 
