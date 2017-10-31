@@ -45,14 +45,20 @@
 DECL_BEGIN
 
 PUBLIC REF struct file *KCALL
-inode_fopen_default(struct inode *__restrict ino,
-                    struct dentry *__restrict node_ent,
-                    oflag_t oflags) {
+inode_fopen_sized(struct inode *__restrict ino,
+                  struct dentry *__restrict node_ent,
+                  oflag_t oflags, size_t file_size) {
  REF struct file *result;
- result = file_new(sizeof(struct file));
+ result = file_new(file_size);
  if unlikely(!result) return E_PTR(-ENOMEM);
  file_setup(result,ino,node_ent,oflags);
  return result;
+}
+PUBLIC REF struct file *KCALL
+inode_fopen_default(struct inode *__restrict ino,
+                    struct dentry *__restrict node_ent,
+                    oflag_t oflags) {
+ return inode_fopen_sized(ino,node_ent,oflags,sizeof(struct file));
 }
 
 

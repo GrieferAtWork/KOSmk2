@@ -18,10 +18,12 @@
  */
 #ifndef GUARD_MODULES_RTC_CMOS_C
 #define GUARD_MODULES_RTC_CMOS_C 1
+#define _KOS_SOURCE 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/kdev_t.h>
 #include <hybrid/sync/atomic-rwlock.h>
+#include <hybrid/asm.h>
 #include <kernel/export.h>
 #include <kernel/malloc.h>
 #include <string.h>
@@ -30,6 +32,13 @@
 #include <hybrid/section.h>
 #include <sys/io.h>
 #include <hybrid/timeutil.h>
+#include <fs/file.h>
+#include <kernel/boot.h>
+#include <stddef.h>
+#include <bits/fcntl-linux.h>
+#include <hybrid/minmax.h>
+#include <kernel/user.h>
+#include <unistd.h>
 
 DECL_BEGIN
 
@@ -236,11 +245,161 @@ PRIVATE ATTR_FREETEXT errno_t KCALL cmos_register(void) {
  return error;
 }
 
+/* Enables write-access to all of CMOS memory.
+ * This is disabled by default, because screwing around
+ * with this can LITERALLY BRICK YOUR COMPUTER!
+ * >> CMOS IS WHERE THE BIOS SAVES ITS CONFIGURATION!!!
+ * So don't come crying when you enable this and do something stupid.
+ */
+PRIVATE bool nvs_writeable = false;
+DEFINE_SETUP_VAR("cmos-writeable",nvs_writeable);
+
+
+#define NVS_SIZE 0x7f
+struct nvs_file {
+ struct file nf_file; /*< Underlying file descriptor. */
+ pos_t       nf_pos;  /*< [lock(nf_file.f_lock)] Current NVS file r/w header. */
+};
+
+#define SELF  container_of(fp,struct nvs_file,nf_file)
+PRIVATE ssize_t KCALL
+nvs_pread(struct file *__restrict fp, USER void *buf, size_t bufsize, pos_t pos) {
+ byte_t buffer[NVS_SIZE],*iter = buffer;
+ u8 maxio,i,end;
+ if (pos >= NVS_SIZE) return 0;
+ maxio = (u8)MIN(bufsize,NVS_SIZE-(u8)pos);
+ for (i = (u8)pos|CMOS_ADDR_NONMI,end = i+(u8)maxio; i < end; ++i)
+     *iter++ = cmos_rd(i);
+ assert(iter == buffer+maxio);
+ if (copy_to_user(buf,buffer,(size_t)maxio))
+     return -EFAULT;
+ return (ssize_t)maxio;
+}
+PRIVATE ssize_t KCALL
+nvs_pwrite(struct file *__restrict fp,
+           USER void const *buf, size_t bufsize, pos_t pos) {
+ byte_t buffer[NVS_SIZE]; u8 maxio;
+ if (pos >= NVS_SIZE) return 0;
+ maxio = (u8)MIN(bufsize,NVS_SIZE-(u8)pos);
+ if (copy_from_user(buffer,buf,(size_t)maxio))
+     return -EFAULT;
+ /* Implement the write process in assembly so we can safely modify
+  * the code in the event that write access should not be granted. */
+ __asm__ __volatile__("    jmp 1f\n"
+                      ".section .data\n" /* Store modifyable code in .data so we can override it. */
+                      PP_STR(INTERN_OBJECT(nvs_write_begin)) "\n"
+                      "1:  jecxz 3f\n" /* if (ECX == 0) goto 3f; */
+                      "2:  movw $" PP_STR(CMOS_ADDR) ", %%dx\n"
+                      "    movw %%di, %%ax\n"
+                      "    outb %%al, %%dx\n"
+                      "    movw $" PP_STR(CMOS_DATA) ", %%dx\n"
+                      "    lodsb\n" /* AL = (u8)*ESI++; */
+                      "    outb %%al, %%dx\n"
+                      "    incl %%edi\n"
+                      "    loop 2b\n" /* if (--ECX != 0) goto 2b; */
+                      PP_STR(INTERN_OBJECT(nvs_write_end)) "\n"
+                      "3:  jmp 1f\n"
+                      ".previous\n"
+                      "1:\n"
+                      :
+                      : "S" (buffer)
+                      , "c" (maxio)
+                      , "D" ((u8)pos|CMOS_ADDR_NONMI)
+                      : "memory", "cc", "edx", "eax");
+ return (size_t)maxio;
+}
+PRIVATE ssize_t KCALL
+nvs_read(struct file *__restrict fp, USER void *buf, size_t bufsize) {
+ ssize_t result = nvs_pread(fp,buf,bufsize,SELF->nf_pos);
+ if (E_ISOK(result)) SELF->nf_pos += (u8)result;
+ return result;
+}
+PRIVATE ssize_t KCALL
+nvs_write(struct file *__restrict fp, USER void const *buf, size_t bufsize) {
+ ssize_t result = nvs_pwrite(fp,buf,bufsize,SELF->nf_pos);
+ if (E_ISOK(result)) SELF->nf_pos += (u8)result;
+ return result;
+}
+PRIVATE off_t KCALL
+nvs_seek(struct file *__restrict fp, off_t off, int whence) {
+ off_t new_pos;
+ switch (whence) {
+ case SEEK_SET: new_pos = off; break;
+ case SEEK_CUR: new_pos = (off_t)SELF->nf_pos+off; break;
+ case SEEK_END:
+  if (off > NVS_SIZE) return -EINVAL;
+  new_pos = NVS_SIZE-off;
+  break;
+ default:
+  return -EINVAL;
+ }
+ SELF->nf_pos = new_pos;
+ return (off_t)new_pos;
+}
+
+
+PRIVATE REF struct file *KCALL
+nvs_fopen(struct inode *__restrict ino,
+          struct dentry *__restrict node_ent, oflag_t oflags) {
+ /* Already deny write-access when opening the file.
+  * NOTE: This isn't really the main way through which `nvs_writeable'
+  *       is enforced. - The main way it is, is by deleting the code
+  *       that would normally write to NVS memory, ensuring that nothing
+  *       can accidentally brick the BIOS configuration unless the module
+  *       is loaded while specifying 'cmos-writeable=1' on the commandline.
+  * With that in mind, this check is actually only here to tell the user
+  * that write-access won't be working no matter what they try in a way
+  * other than changing any write attempts to being NOPs. */
+ if ((oflags&O_ACCMODE) != O_RDONLY && !nvs_writeable)
+      return E_PTR(-EPERM);
+ return inode_fopen_sized(ino,node_ent,oflags,sizeof(struct nvs_file));
+}
+PRIVATE struct inodeops nvs_ops = {
+    .ino_fopen = &nvs_fopen,
+    .f_read    = &nvs_read,
+    .f_write   = &nvs_write,
+    .f_pread   = &nvs_pread,
+    .f_pwrite  = &nvs_pwrite,
+    .f_seek    = &nvs_seek,
+};
+
+PRIVATE ATTR_FREETEXT errno_t KCALL cmos_nvs_register(void) {
+ REF struct chrdev *nvs; errno_t error;
+ nvs = chrdev_new(sizeof(struct chrdev));
+ if unlikely(!nvs) return -ENOMEM;
+ nvs->cd_device.d_node.i_ops = &nvs_ops;
+ nvs->cd_device.d_node.i_attr.ia_siz =
+ nvs->cd_device.d_node.i_attr_disk.ia_siz = NVS_SIZE;
+ error = device_setup(&nvs->cd_device,THIS_INSTANCE);
+ if (E_ISERR(error)) { kfree(nvs); return error; }
+ error = CHRDEV_REGISTER(nvs,DV_CMOS_NVS);
+ CHRDEV_DECREF(nvs);
+ return error;
+}
+
+INTDEF byte_t nvs_write_begin[];
+INTDEF byte_t nvs_write_end[];
+
 PRIVATE MODULE_INIT void KCALL cmos_init(void) {
  cmos_state_b = cmos_rd(CMOS_STATE_B);
  //cmos_cent_reg = ...; /* TODO: This can be read from the ACPI descriptor table. */
+ if (!nvs_writeable) {
+  /* Just to be absolutely safe that nothing can go wrong when
+   * the NVS boot option isn't enabled, we delete the code that
+   * would normally access CMOS memory by replacing it with NOPs,
+   * essentially meaning that even if the user was able to trick
+   * the kernel into giving them a file descriptor for the CMOS
+   * boot area that had write-access, all attempts at writing
+   * data would be ignored as it's literally become impossible
+   * for us to even know how to write.
+   */
+  memset(nvs_write_begin,0x90, /* TODO: `ARCH_NOP_OPCODE' */
+        (size_t)(nvs_write_end-nvs_write_begin));
+ }
+
 
  cmos_register();
+ cmos_nvs_register();
 }
 
 DECL_END

@@ -61,8 +61,8 @@
 #endif
 
 
-#define __PP_PRIVATE_STR(x) #x
-#define __PP_STR(x) __PP_PRIVATE_STR(x)
+#define __PP_PRIVATE_STR(...) #__VA_ARGS__
+#define __PP_STR(...) __PP_PRIVATE_STR(__VA_ARGS__)
 #define __PP_PRIVATE_CAT2(a,b)   a##b
 #define __PP_PRIVATE_CAT3(a,b,c) a##b##c
 #define __PP_CAT2(a,b)   __PP_PRIVATE_CAT2(a,b)

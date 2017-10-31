@@ -95,8 +95,9 @@ PRIVATE struct devname const dnam_chr[] = {
     {MD_KMSG,             1, DN_INT,"kmsg"},
     {DV_VGA,              1, DN_INT,"vga"},
     {DV_PS2_KEYBOARD,     1, DN_INT,"keyboard"},
-    {DV_JIFFY_RTC,        1, DN_INT,"rtc-jiffy"},
-    {DV_CMOS,             1, DN_INT,"rtc-cmos"},
+    {DV_JIFFY_RTC,        1, DN_INT,"jfrtc"},
+    {DV_CMOS,             1, DN_INT,"cmrtc"},
+    {DV_CMOS_NVS,         1, DN_INT,"cmnvs"},
     {DV_ETHERNET,         1, DN_INT|DN_ALL,"eth"},
     {0,0,0,NULL},
 };

@@ -367,6 +367,11 @@ inode_fopen_default(struct inode *__restrict ino,
                     struct dentry *__restrict node_ent,
                     oflag_t oflags);
 
+FUNDEF REF struct file *KCALL
+inode_fopen_sized(struct inode *__restrict ino,
+                  struct dentry *__restrict node_ent,
+                  oflag_t oflags, size_t file_size);
+
 
 
 typedef u32 istate_t; /*< INode state flags (Set of `INODE_STATE_*'). */
