@@ -209,6 +209,7 @@ BEGIN
 	BEGIN BASIC_MODULE("elf-coredump") SOURCE("modules/linker/elf-coredump.c") END
 	BEGIN BASIC_MODULE("elf-debug")    SOURCE("modules/linker/elf-debug.c")    END
 	BEGIN BASIC_MODULE("pdb-debug")    SOURCE("modules/linker/pdb-debug.c")    END
+	BEGIN BASIC_MODULE("cmos")         DEFINE("__DATE_YEAR__="+str __DATE_YEAR__) SOURCE("modules/rtc/cmos.c") END
 END
 
 

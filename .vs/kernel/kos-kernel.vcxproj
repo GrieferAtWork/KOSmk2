@@ -125,6 +125,7 @@
     <ClCompile Include="..\..\src\modules\nt\flavor.c" />
     <ClCompile Include="..\..\src\modules\nt\nt.c" />
     <ClCompile Include="..\..\src\modules\pci\pci.c" />
+    <ClCompile Include="..\..\src\modules\rtc\cmos.c" />
     <ClCompile Include="..\..\src\modules\video\vga.c" />
   </ItemGroup>
   <ItemGroup>

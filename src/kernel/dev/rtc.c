@@ -43,6 +43,11 @@
 
 DECL_BEGIN
 
+/* XXX: Why not put jiffies into the user-share section? */
+PUBLIC jtime64_t _jiffies ASMNAME("jiffies") = 1;
+PUBLIC struct timespec _boottime __ASMNAME("boottime") = {0,0};
+
+
 PUBLIC struct inodeops const rtc_ops = {
     /* TODO: There are some ioctl()s we should implement here... */
     .ino_fopen = &inode_fopen_default,
@@ -65,7 +70,7 @@ PUBLIC struct rtc *KCALL rtc_cinit(struct rtc *self) {
 
 
 
-PRIVATE void KCALL
+PRIVATE errno_t KCALL
 drtc_get(struct rtc *__restrict self,
          struct timespec *__restrict val) {
  *val = boottime;
@@ -76,6 +81,7 @@ drtc_get(struct rtc *__restrict self,
   ++val->tv_sec;
   assert(val->tv_nsec < NSEC_PER_SEC);
  }
+ return -EOK;
 }
 PRIVATE errno_t KCALL
 drtc_set(struct rtc *__restrict UNUSED(self),
@@ -171,6 +177,91 @@ delete_default_rtc(struct rtc *__restrict dev) {
  sysrtc_endread();
  PREEMPTION_POP(was);
 }
+
+/* Re-sync the effective system RTC time after 30 seconds. */
+PRIVATE jtime64_t jsync_period = SEC_TO_JIFFIES(30);
+PRIVATE jtime64_t jsync_next = 0;
+PRIVATE struct timespec jsync_time;
+
+PUBLIC SAFE void KCALL
+sysrtc_get(struct timespec *__restrict val) {
+ jtime64_t jnow = jiffies64;
+again:
+ if (jsync_next >= jnow) {
+  /* Use the last synchronization point as basis. */
+  struct timespec addition;
+  memcpy(val,&jsync_time,sizeof(struct timespec));
+  jnow = jsync_period-(jsync_next-jnow);
+  addition.tv_sec  = jnow/HZ;
+  addition.tv_nsec = (jnow % HZ)*(NSEC_PER_SEC / HZ);
+  TIMESPEC_ADD(*val,addition);
+ } else {
+  errno_t error;
+  struct rtc *clock;
+  sysrtc_read();
+  clock = sysrtc;
+  RTC_INCREF(clock);
+  sysrtc_endread();
+
+  /* Read the time without holding a sysrtc lock. */
+  error = rtc_get(clock,val);
+  RTC_DECREF(clock);
+  COMPILER_READ_BARRIER();
+  jnow = jiffies64;
+
+  /* Fallback to reading from the PIC-driven RTC. */
+  if (E_ISERR(error)) {
+   if (error == -EINTR) {
+    struct rtc *new_clock;
+    task_intr_later();
+    task_nointr();
+    sysrtc_read();
+    COMPILER_READ_BARRIER();
+    new_clock = sysrtc;
+    if (new_clock != clock) {
+     /* The clock has changed. - Try again from the beginning. */
+     sysrtc_endread();
+     goto again;
+    }
+    RTC_INCREF(new_clock);
+    sysrtc_endread();
+    error = rtc_get(new_clock,val);
+    RTC_DECREF(new_clock);
+    task_endnointr();
+    assert(error != -EINTR);
+   }
+   if (E_ISERR(error))
+       drtc_get(&drtc,val);
+  }
+  jsync_next = jnow+jsync_period;
+  memcpy(&jsync_time,val,sizeof(struct timespec));
+ }
+ /* TODO: High precision time. */
+
+}
+
+PUBLIC SAFE errno_t KCALL
+sysrtc_set(struct timespec const *__restrict val) {
+ struct timespec set_time;
+ struct rtc *clock; errno_t error;
+ memcpy(&set_time,val,sizeof(struct timespec));
+
+ sysrtc_read();
+ clock = sysrtc;
+ RTC_INCREF(clock);
+
+ /* Read the time without holding a sysrtc lock. */
+ error = rtc_set(clock,&set_time);
+ RTC_DECREF(clock);
+ if (E_ISOK(error)) {
+  jsync_period = 0; /* Force a re-sync. */
+  /* TODO: Adjust high precision time. */
+ }
+ sysrtc_endread();
+
+ return error;
+}
+
 PUBLIC REF struct rtc *KCALL get_system_rtc(void) {
  REF struct rtc *result;
  pflag_t was = PREEMPTION_PUSH();
@@ -184,83 +275,39 @@ PUBLIC REF struct rtc *KCALL get_system_rtc(void) {
 PUBLIC bool KCALL
 set_system_rtc(struct rtc *__restrict rtc,
                bool replace_existing) {
- REF struct rtc *old_device = NULL;
+ REF struct rtc *old_device = &drtc;
  CHECK_HOST_DOBJ(rtc);
  pflag_t was = PREEMPTION_PUSH();
  sysrtc_write();
- if (replace_existing || !sysrtc) {
+ if (replace_existing || sysrtc == &drtc) {
   RTC_INCREF(rtc);
   old_device = sysrtc;
   sysrtc = rtc;
  }
  sysrtc_endwrite();
  PREEMPTION_POP(was);
- if (old_device) RTC_DECREF(old_device);
- return old_device != NULL;
+ RTC_DECREF(old_device);
+ if (old_device == &drtc) {
+  struct timespec now,old;
+  /* Update the system boot timestamp. */
+  if (E_ISOK(rtc_get(rtc,&now))) {
+   drtc_get(&drtc,&old);
+   /* Also store the time we've just read as the first synchronization point. */
+   memcpy(&jsync_time,&now,sizeof(struct timespec));
+   jsync_next = jiffies64+jsync_period;
+   /* Using the time read, re-calculate the time when the machine was booted. */
+   TIMESPEC_SUB(now,old);
+   memcpy(&_boottime,&now,sizeof(struct timespec));
+  }
+ }
+ return old_device != &drtc;
 }
 
 
 
-
-PUBLIC SAFE void KCALL
-sysrtc_get(struct timespec *__restrict val) {
- pflag_t was = PREEMPTION_PUSH();
- if (was&EFLAGS_IF) {
-  struct rtc *clock;
-  sysrtc_read();
-  clock = sysrtc;
-  RTC_INCREF(clock);
-  sysrtc_endread();
-  PREEMPTION_POP(was);
-  /* Read the time without holding a sysrtc lock. */
-  rtc_get(clock,val);
-  RTC_DECREF(clock);
- } else {
-  sysrtc_read();
-  rtc_get(sysrtc,val);
-  sysrtc_endread();
-  PREEMPTION_POP(was);
- }
- /* TODO: High precision time. */
-}
-
-PUBLIC SAFE errno_t KCALL
-sysrtc_set(struct timespec const *__restrict val) {
- struct timespec set_time;
- errno_t error; pflag_t was;
- memcpy(&set_time,val,sizeof(struct timespec));
- was = PREEMPTION_PUSH();
- sysrtc_read();
- if (was&EFLAGS_IF) {
-  struct rtc *clock;
-  sysrtc_read();
-  clock = sysrtc;
-  RTC_INCREF(clock);
-  sysrtc_endread();
-  PREEMPTION_POP(was);
-  /* Read the time without holding a sysrtc lock. */
-  error = rtc_set(clock,&set_time);
-  RTC_DECREF(clock);
- } else {
-  sysrtc_read();
-  error = rtc_set(sysrtc,&set_time);
-  sysrtc_endread();
-  PREEMPTION_POP(was);
- }
- if (E_ISOK(error)) {
-  /* TODO: Adjust high precision time. */
- }
- return error;
-}
-
-
-/* XXX: Why not put jiffies into the user-share section? */
-PUBLIC jtime64_t _jiffies ASMNAME("jiffies") = 1;
-PUBLIC struct timespec _boottime __ASMNAME("boottime") = {0,0};
 
 PUBLIC void KCALL sysrtc_periodic(void) {
  /* TODO: Adjust high-precision time. */
-
  ++_jiffies;
 }
 
@@ -283,7 +330,9 @@ SYSCALL_DEFINE2(gettimeofday,USER struct timeval *,tv,
  if (tv) {
   struct timespec nowspec;
   struct timeval nowval;
+  task_crit();
   sysrtc_get(&nowspec);
+  task_endcrit();
   TIMESPEC_TO_TIMEVAL(&nowval,&nowspec);
   if (copy_to_user(tv,&nowval,sizeof(struct timeval)))
       return -EFAULT;
@@ -307,7 +356,9 @@ SYSCALL_DEFINE2(settimeofday,USER struct timeval const *,tv,
       return -EFAULT;
   TIMEVAL_TO_TIMESPEC(&new_timeval,&new_timespec);
   /* TODO: Check capabilities. */
+  task_crit();
   error = sysrtc_set(&new_timespec);
+  task_endcrit();
   if (E_ISERR(error)) return error;
  }
  (void)tz; /* XXX: Timezones? */

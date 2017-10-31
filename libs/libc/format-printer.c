@@ -477,8 +477,8 @@ PRIVATE ssize_t LIBCCALL
 print_dentry_path_r(pformatprinter printer, void *closure,
                     struct dentry const *__restrict entry,
                     struct dentry const *__restrict fs_root) {
- ssize_t result = 0,temp;
- if (entry == fs_root) goto end;
+ ssize_t result = 0,temp; assert(entry);
+ if (entry == fs_root || !entry->d_parent) goto end;
  CHECK_HOST_DOBJ(entry->d_parent);
  temp = print_dentry_path_r(printer,closure,
                             entry->d_parent,

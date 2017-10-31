@@ -272,7 +272,7 @@ debug_virtinfo(struct moddebug *__restrict self,
  DBI_HEADER1 dbi_header; DBG_HEADER dbg_header; 
  struct virtinfo info; size_t copy_size;
  memset(&info,0,sizeof(struct virtinfo));
-      
+ return -ENODATA;
 
  /* Load streams. */
  error = stream_load(SELF);

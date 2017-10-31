@@ -184,6 +184,9 @@
     <Filter Include="modules\pci">
       <UniqueIdentifier>{71ef776d-68e3-4fd9-b60e-1be43e509a98}</UniqueIdentifier>
     </Filter>
+    <Filter Include="modules\rtc">
+      <UniqueIdentifier>{daf0af0c-bff3-4fef-8875-4064f8d4797d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core\main.c">
@@ -461,6 +464,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\modules\linker\a.out.c">
       <Filter>modules\linker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\rtc\cmos.c">
+      <Filter>modules\rtc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

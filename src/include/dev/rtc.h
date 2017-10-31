@@ -34,7 +34,7 @@ struct rtc {
  /* Get/Set the time represented by this RTC.
   * NOTE: Only `r_get()' is mandatory. - `r_set()' does not need to be implemented.
   * NOTE: Upon success, `r_set()' stores the actualy written time back into `val' */
- void    (KCALL *r_get)(struct rtc *__restrict self, struct timespec *__restrict val);
+ errno_t (KCALL *r_get)(struct rtc *__restrict self, struct timespec *__restrict val);
  errno_t (KCALL *r_set)(struct rtc *__restrict self, struct timespec *__restrict val);
 };
 
@@ -49,7 +49,7 @@ struct rtc {
  *   - r_get
  *   - r_set (Optionally; Pre-initialized to NULL)
  */
-#define rtc_new(type_size) rtc_cinit((struct rtc *)calloc(1,type_size))
+#define rtc_new(type_size) rtc_cinit((struct rtc *)kmalloc(type_size,GFP_SHARED|GFP_CALLOC))
 FUNDEF struct rtc *KCALL rtc_cinit(struct rtc *self);
 DATDEF struct inodeops const rtc_ops;
 

@@ -532,6 +532,7 @@ kernel_boot(u32        mb_magic,
  kinsmod("/mod/elf-coredump");
  kinsmod("/mod/elf-debug");
  kinsmod("/mod/pdb-debug");
+ kinsmod("/mod/cmos");
  //kinsmod("/mod/ne2000");
 
  /* TODO: Make use of 'ELIB*' error codes in the linker. */

@@ -27,8 +27,8 @@
  *    With that in mind, no other mechanism could be more
  *    precise that jiffies, quite simply for the fact that
  *    short of idly waiting for time to pass, it is impossible
- *    to use scheduling and preemption to be more precise
- *    timings that multiples of seconds/HZ.
+ *    to use scheduling and preemption to get more precise
+ *    timings than multiples of seconds/HZ.
  * >> In other words, using `timespec' for timeouts may seem
  *    the logical choice, but when you think about it, it
  *    doesn't really make sense, because there's no gain on

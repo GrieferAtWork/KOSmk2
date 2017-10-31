@@ -217,7 +217,7 @@ libc_gmtime64_r(time64_t const *__restrict timer,
  for (i = 1; i < 12; ++i) if (monthvec[i] >= t) break;
  tp->tm_mon  = i-1;
  t -= monthvec[i-1];
- tp->tm_mday = t+1;
+ tp->tm_mday = t;
  tp->tm_isdst = tm_calc_isdst(tp);
  tp->tm_year -= 1900;
  return tp;

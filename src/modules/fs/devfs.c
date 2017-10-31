@@ -94,9 +94,9 @@ PRIVATE struct devname const dnam_chr[] = {
     {MD_AIO,              1, DN_INT,"aio"},
     {MD_KMSG,             1, DN_INT,"kmsg"},
     {DV_VGA,              1, DN_INT,"vga"},
-    {DV_VGATTY,           1, DN_INT,"vga-tty"},
     {DV_PS2_KEYBOARD,     1, DN_INT,"keyboard"},
-    {DV_JIFFY_RTC,        1, DN_INT,"rtc"},
+    {DV_JIFFY_RTC,        1, DN_INT,"rtc-jiffy"},
+    {DV_CMOS,             1, DN_INT,"rtc-cmos"},
     {DV_ETHERNET,         1, DN_INT|DN_ALL,"eth"},
     {0,0,0,NULL},
 };
@@ -205,10 +205,9 @@ device_add(struct device *__restrict dev, dev_t id) {
  /* Search for the appropriate name and create a new directory entry. */
  for (;; ++iter) {
   if (!iter->dn_num) goto unknown;
-  if (iter->dn_min > id) continue;
-  if (iter->dn_min+iter->dn_num <= id) continue;
-  /* got it! */
-  break;
+  if (id >= iter->dn_min &&
+      id <  iter->dn_min+iter->dn_num)
+      break; /* got it! */
  }
  assert(iter->dn_min <= id);
  assert(iter->dn_min+iter->dn_num > id);
