@@ -709,7 +709,7 @@
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #ifdef __USE_DOSFS
 #ifdef __PE__
-#   define __UFS_FUNCn(x)    /* nothing */
+#   define __UFS_FUNCn(x)    /* Nothing */
 #   define __UFS_FUNCn_(x)   __ASMNAME(#x)
 #   define __REDIRECT_UFS_FUNCn       __NOREDIRECT
 #   define __REDIRECT_UFS_FUNCn_      __REDIRECT
@@ -731,7 +731,7 @@
 #   define __REDIRECT_UFS_FUNCn_R(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##_r,args)
 #else
-#   define __UFS_FUNCn(x)    /* nothing */
+#   define __UFS_FUNCn(x)    /* Nothing */
 #   define __UFS_FUNCn_(x)   __ASMNAME(#x)
 #   define __REDIRECT_UFS_FUNCn       __NOREDIRECT
 #   define __REDIRECT_UFS_FUNCn_      __REDIRECT
@@ -819,15 +819,11 @@
  *    with incompatible prototypes or associated data objects. */
 #if defined(__USE_DOS) || defined(__DOS_COMPAT__)
 #ifdef __PE__
-#   define __DOS_FUNC(x)  /* nothing (linked by default) */
-#   define __DOS_FUNC_(x) __ASMNAME(#x)
-#   define __REDIRECT_DOS_FUNC  __NOREDIRECT
-#   define __REDIRECT_DOS_FUNC_ __REDIRECT
+#   define __REDIRECT_DOS_FUNC          __NOREDIRECT
+#   define __REDIRECT_DOS_FUNC_         __REDIRECT
 #   define __REDIRECT_DOS_FUNC_NOTHROW  __NOREDIRECT_NOTHROW
 #   define __REDIRECT_DOS_FUNC_NOTHROW_ __REDIRECT_NOTHROW
 #else
-#   define __DOS_FUNC(x)  __ASMNAME(".dos." #x)
-#   define __DOS_FUNC_(x) __ASMNAME(".dos." #x)
 #   define __REDIRECT_DOS_FUNC(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
 #   define __REDIRECT_DOS_FUNC_(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -862,14 +858,14 @@
 /* Strictly link against the KOS version of a given function. */
 #ifdef __PE__
 #   define __PE_ASMNAME(x)        __ASMNAME(x)
-#   define __KOS_ASMNAME(x)       /* nothing */
+#   define __KOS_ASMNAME(x)       /* Nothing */
 #else
-#   define __PE_ASMNAME(x)        /* nothing */
+#   define __PE_ASMNAME(x)        /* Nothing */
 #   define __KOS_ASMNAME(x)       __ASMNAME(x)
 #endif
 
 #ifdef __DOS_COMPAT__
-#   define __ASMNAME_IFKOS(x) /* nothing */
+#   define __ASMNAME_IFKOS(x) /* Nothing */
 #else
 #   define __ASMNAME_IFKOS(x) __ASMNAME(x)
 #endif
@@ -1026,21 +1022,21 @@
       __ATTR_DEPRECATED("This function does not behave according to the STD-C standard. " \
                         "Consider using compliant function `" #alt "' instead")
 #else
-#   define __PORT_KOSONLY        /* nothing */
-#   define __PORT_DOSONLY        /* nothing */
-#   define __PORT_NODOS          /* nothing */
-#   define __PORT_KOSONLY_ALT(x) /* nothing */
-#   define __PORT_DOSONLY_ALT(x) /* nothing */
-#   define __PORT_NODOS_ALT(x)   /* nothing */
-#   define __WARN_NONSTD(alt)    /* nothing */
+#   define __PORT_KOSONLY        /* Nothing */
+#   define __PORT_DOSONLY        /* Nothing */
+#   define __PORT_NODOS          /* Nothing */
+#   define __PORT_KOSONLY_ALT(x) /* Nothing */
+#   define __PORT_DOSONLY_ALT(x) /* Nothing */
+#   define __PORT_NODOS_ALT(x)   /* Nothing */
+#   define __WARN_NONSTD(alt)    /* Nothing */
 #endif
 
 
 #ifdef __USE_DOSFS
 #   define __WARN_NODOSFS __ATTR_DEPRECATED("This function does not support DOS filesystem semantics. Try building with `-D_DOSFS_SOURCE=0'")
-#   define __WARN_NOKOSFS /* nothing */
+#   define __WARN_NOKOSFS /* Nothing */
 #else
-#   define __WARN_NODOSFS /* nothing */
+#   define __WARN_NODOSFS /* Nothing */
 #   define __WARN_NOKOSFS __ATTR_DEPRECATED("This function does not support KOS filesystem semantics. Try building with `-D_DOSFS_SOURCE=1'")
 #endif
 
@@ -1048,7 +1044,7 @@
 /* Set on functions like read() that (may) modify some user-provided data,
  * but can only tell how much and if at all something was done by having the
  * caller inspect the return value. */
-#define __WUNUSED_SUGGESTED /* nothing */
+#define __WUNUSED_SUGGESTED /* Nothing */
 #else
 #define __WUNUSED_SUGGESTED __WUNUSED
 #endif
@@ -1106,12 +1102,13 @@
 #undef __USE_DEBUG_HOOK
 #endif
 
-#if defined(__CRT_KOS) && defined(__USE_KOS)
+#if !defined(__USE_PORTABLE) && \
+    (defined(__CRT_KOS) && defined(__USE_KOS))
 /* Don't warn about KOS's extensions to printf and friends. */
-#   define __ATTR_LIBC_PRINTF(fmt,args)   /* nothing */
-#   define __ATTR_LIBC_SCANF(fmt,args)    /* nothing */
-#   define __ATTR_LIBC_STRFMON(fmt,args)  /* nothing */
-#   define __ATTR_LIBC_STRFTIME(fmt,args) /* nothing */
+#   define __ATTR_LIBC_PRINTF(fmt,args)   /* Nothing */
+#   define __ATTR_LIBC_SCANF(fmt,args)    /* Nothing */
+#   define __ATTR_LIBC_STRFMON(fmt,args)  /* Nothing */
+#   define __ATTR_LIBC_STRFTIME(fmt,args) /* Nothing */
 #else
 #   define __ATTR_LIBC_PRINTF(fmt,args)   __ATTR_FORMAT_PRINTF(fmt,args)
 #   define __ATTR_LIBC_SCANF(fmt,args)    __ATTR_FORMAT_SCANF(fmt,args)

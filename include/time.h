@@ -201,7 +201,7 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_ctime64_s,(char *__buf, size_t __bufsize
 #ifdef __USE_KOS
 #define __FIXED_CONST const
 #else
-#define __FIXED_CONST /* nothing */
+#define __FIXED_CONST /* Nothing */
 #endif
 
 #ifndef __KERNEL__

@@ -31,7 +31,7 @@
 DECL_BEGIN
 
 #ifdef CONFIG_NO_LDT
-#define __TASK_SWITCH_LDT(old,new) /* nothing */
+#define __TASK_SWITCH_LDT(old,new) /* Nothing */
 #else
 #define __TASK_SWITCH_LDT(old,new) \
     if ((old)->t_arch.at_ldt_gdt != \
@@ -44,13 +44,13 @@ DECL_BEGIN
 #endif
 
 #ifdef CONFIG_NO_FPU
-#define __TASK_SWITCH_FPU(old,new) /* nothing */
+#define __TASK_SWITCH_FPU(old,new) /* Nothing */
 #else
 #define __TASK_SWITCH_FPU(old,new) FPUSTATE_DISABLE();
 #endif
 
 #ifdef CONFIG_NO_TLB
-#define __TASK_SWITCH_TLB(old,new) /* nothing */
+#define __TASK_SWITCH_TLB(old,new) /* Nothing */
 #else
 /* Update the TLB pointers in the current cpu's GDT. */
 #define __TASK_SWITCH_TLB(old,new) \

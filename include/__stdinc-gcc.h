@@ -75,7 +75,7 @@
 #else
 #define __ASMNAME(x)   __asm__(x)
 #endif
-//#define __NO_ASMNAME 1 /* TODO: Remove me */
+//#define __NO_ASMNAME 1 /* TO-DO: Remove me */
 #if !__GCC_VERSION(2,8,0)
 #define __extension__
 #endif
@@ -91,7 +91,12 @@
 #   define __NO_ATTR_NOINLINE      1
 #   define __ATTR_NOINLINE         /* Nothing */
 #endif
-#define __ATTR_NORETURN            __attribute__((__noreturn__))
+#if __GCC_VERSION(2,5,0)
+#   define __ATTR_NORETURN         __attribute__((__noreturn__))
+#else
+#   define __NO_ATTR_NORETURN      1
+#   define __ATTR_NORETURN         /* Nothing */
+#endif
 #define __ATTR_FASTCALL            __attribute__((__fastcall__))
 #define __ATTR_STDCALL             __attribute__((__stdcall__))
 #define __ATTR_CDECL               __attribute__((__cdecl__))
@@ -101,13 +106,13 @@
 #   define __NO_ATTR_PURE          1
 #   define __ATTR_PURE             /* Nothing */
 #endif
-#if __GCC_VERSION(2,5,0) /* __GCC_VERSION(2,95,0) */
+#if __GCC_VERSION(2,5,0)
 #   define __ATTR_CONST            __attribute__ ((__const__))
 #else
 #   define __NO_ATTR_CONST         1
 #   define __ATTR_CONST            /* Nothing */
 #endif
-#if __GCC_VERSION(2,96,0)
+#if __GCC_VERSION(3,0,0) /* __GCC_VERSION(2,96,0) */
 #   define __ATTR_MALLOC           __attribute__((__malloc__))
 #else
 #   define __NO_ATTR_MALLOC        1
@@ -119,18 +124,17 @@
 #   define __NO_ATTR_ALLOC_SIZE     1
 #   define __ATTR_ALLOC_SIZE(ppars) /* Nothing */
 #endif
-#if   __GCC_VERSION(2,5,0)
-/*  - __GCC_VERSION(2,7,0)
- *  - __GCC_VERSION(3,1,0)
- *  - __GCC_VERSION(3,3,0)
- * The Internet isn't unanimous about this one... */
-#   define __ATTR_USED             __attribute__((__used__))
+#if   __GCC_VERSION(2,7,0)
 #   define __ATTR_UNUSED           __attribute__((__unused__))
+#else
+#   define __NO_ATTR_UNUSED        1
+#   define __ATTR_UNUSED           /* Nothing */
+#endif
+#if   __GCC_VERSION(3,1,0)
+#   define __ATTR_USED             __attribute__((__used__))
 #else
 #   define __NO_ATTR_USED          1
 #   define __ATTR_USED             /* Nothing */
-#   define __NO_ATTR_UNUSED        1
-#   define __ATTR_UNUSED           /* Nothing */
 #endif
 #ifdef __INTELLISENSE__
 #   define __ATTR_DEPRECATED_      __declspec(deprecated)
@@ -199,7 +203,18 @@
 #define __ATTR_WARNING(text)     __attribute__((__warning__(text)))
 #define __ATTR_ERROR(text)       __attribute__((__error__(text)))
 #define __ATTR_SECTION(name)     __attribute__((__section__(name)))
-#define __ATTR_NOTHROW           __attribute__((__nothrow__))
+#if __GCC_VERSION(3,3,0)
+#   define __ATTR_NOTHROW        __attribute__((__nothrow__))
+#else
+#   define __NO_ATTR_NOTHROW     1
+#   define __ATTR_NOTHROW        /* Nothing */
+#endif
+#if __GCC_VERSION(4,4,0)
+#   define __ATTR_OPTIMIZE(opt)  __attribute__((__optimize__(opt)))
+#else
+#   define __NO_ATTR_OPTIMIZE    1
+#   define __ATTR_OPTIMIZE(opt)  /* Nothing */
+#endif
 #define __ATTR_RETNONNULL        __attribute__((__returns_nonnull__))
 #define __ATTR_PACKED            __attribute__((__packed__))
 #define __ATTR_ALIAS(name)       __attribute__((__alias__(name)))
@@ -213,19 +228,19 @@
 #   define __ATTR_FORMAT_PRINTF(fmt,args) __attribute__((__format__(__printf__,fmt,args)))
 #else
 #   define __NO_ATTR_FORMAT_PRINTF        1
-#   define __ATTR_FORMAT_PRINTF(fmt,args) /* nothing */
+#   define __ATTR_FORMAT_PRINTF(fmt,args) /* Nothing */
 #endif
-#if 1 /* TODO: There were added later. - But when exactly? */
+#if !defined(__NO_ATTR_FORMAT_PRINTF) /* TODO: There were added later. - But when exactly? */
 #   define __ATTR_FORMAT_SCANF(fmt,args)    __attribute__((__format__(__scanf__,fmt,args)))
 #   define __ATTR_FORMAT_STRFMON(fmt,args)  __attribute__((__format__(__strfmon__,fmt,args)))
-#   define __ATTR_FORMAT_STRFTIME(fmt,args) __attribute__((__format__(__strftime__,fmt,args)))
+#   define __ATTR_FORMAT_STRFTIME(fmt,args) __attribute__((__format__(__strftime__,fmt,0)))
 #else
 #   define __NO_ATTR_FORMAT_SCANF           1
 #   define __NO_ATTR_FORMAT_STRFMON         1
 #   define __NO_ATTR_FORMAT_STRFTIME        1
-#   define __ATTR_FORMAT_SCANF(fmt,args)    /* nothing */
-#   define __ATTR_FORMAT_STRFMON(fmt,args)  /* nothing */
-#   define __ATTR_FORMAT_STRFTIME(fmt,args) /* nothing */
+#   define __ATTR_FORMAT_SCANF(fmt,args)    /* Nothing */
+#   define __ATTR_FORMAT_STRFMON(fmt,args)  /* Nothing */
+#   define __ATTR_FORMAT_STRFTIME(fmt,args) /* Nothing */
 #endif
 
 #if defined(__PE__) || defined(_WIN32)
@@ -237,8 +252,13 @@
 #   define __NO_ATTR_DLLEXPORT   1
 #   define __ATTR_DLLEXPORT      /* Nothing */
 #endif
-#define __NONNULL(ppars)         __attribute__((__nonnull__ ppars))
-#if __GCC_VERSION(3,4,0)
+#if __GCC_VERSION(3,3,0)
+#   define __NONNULL(ppars)      __attribute__((__nonnull__ ppars))
+#else
+#   define __NO_NONNULL          1
+#   define __NONNULL(ppars)      /* Nothing */
+#endif
+#if __GCC_VERSION(3,3,0) /* __GCC_VERSION(3,4,0) */
 #   define __WUNUSED             __attribute__((__warn_unused_result__))
 #else
 #   define __NO_WUNUSED          1
@@ -249,6 +269,13 @@
 #   define __XRETURN             return
 #   define __builtin_assume(x)   __assume(x)
 #else
+#if __GCC_VERSION(4,4,0) || defined(__TPP_VERSION__)
+#   define __PRIVATE_PRAGMA(...) _Pragma(#__VA_ARGS__)
+#   define __pragma(...) __PRIVATE_PRAGMA(__VA_ARGS__)
+#else
+#   define __NO_pragma   1
+#   define __pragma(...) /* nothing */
+#endif
 #   define __XBLOCK              __extension__
 #   define __XRETURN             /* Nothing */
 #if !__has_builtin(__builtin_unreachable)
@@ -286,7 +313,7 @@ __extension__ typedef unsigned long long __ulonglong_t;
    (defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 199901L)
 #   define __restrict restrict
 #else
-#   define __restrict /* nothing */
+#   define __restrict /* Nothing */
 #endif
 #endif
 #endif /* !__restrict */

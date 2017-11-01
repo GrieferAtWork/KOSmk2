@@ -37,7 +37,7 @@
 //#define _KOS_PRINTF_SOURCE 1
 #define _GNU_SOURCE    1
 #define _KOS_SOURCE    1
-#define _PORT_SOURCE   1
+//#define _PORT_SOURCE   1
 #define _TIME64_SOURCE 1
 
 #ifdef __cplusplus

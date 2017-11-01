@@ -41,7 +41,7 @@
 #define BUF_CONST const
 #else
 #define ATA_RDWR  ATA_RD
-#define BUF_CONST /* nothing */
+#define BUF_CONST /* Nothing */
 #endif
 
 DECL_BEGIN

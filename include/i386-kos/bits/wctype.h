@@ -166,7 +166,7 @@ __LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswspace)(wint_t __wc));
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswupper)(wint_t __wc));
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswxdigit)(wint_t __wc));
 __LIBC __WUNUSED wctype_t __NOTHROW((__LIBCCALL wctype)(char const *__prop));
-__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswctype)(wint_t __wc, wctype_t __desc)) __DOS_FUNC(iswctype);
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswctype)(wint_t __wc, wctype_t __desc));
 #ifdef __USE_ISOC99
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL iswblank)(wint_t __wc));
 #endif /* __USE_ISOC99 */

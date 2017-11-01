@@ -64,8 +64,8 @@ struct term;
 #define TERM_API  __ATTR_STDCALL
 #define TERM_CALL __ATTR_FASTCALL
 #else
-#define TERM_API  /* nothing */
-#define TERM_CALL /* nothing */
+#define TERM_API  /* Nothing */
+#define TERM_CALL /* Nothing */
 #endif
 
 

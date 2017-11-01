@@ -29,7 +29,7 @@
 __DECL_BEGIN
 
 #ifdef __x86_64__
-#define __CDECL_OR_DEFAULT /* nothing */
+#define __CDECL_OR_DEFAULT /* Nothing */
 #else /* __x86_64__ */
 #define __CDECL_OR_DEFAULT __cdecl
 #endif /* !__x86_64__ */

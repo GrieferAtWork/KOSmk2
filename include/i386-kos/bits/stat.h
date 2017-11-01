@@ -135,19 +135,38 @@ __SYSDECL_BEGIN
 #define _STATBUF_ST_BLKSIZE
 #define _STATBUF_ST_RDEV
 
+
+#ifdef _STATBUF_ST_TIM
+#define __STAT_TIMESPEC32_TIM(id,suffix) struct __timespec32 id##tim##suffix;
+#define __STAT_TIMESPEC64_TIM(id,suffix) struct __timespec64 id##tim##suffix;
+#else
+#define __STAT_TIMESPEC32_TIM(id,suffix) /* Nothing */
+#define __STAT_TIMESPEC64_TIM(id,suffix) /* Nothing */
+#endif
+#ifdef _STATBUF_ST_TIMESPEC
+#define __STAT_TIMESPEC32_TIMESPEC(id,suffix) struct __timespec32 id##timespec##suffix;
+#define __STAT_TIMESPEC64_TIMESPEC(id,suffix) struct __timespec64 id##timespec##suffix;
+#else
+#define __STAT_TIMESPEC32_TIMESPEC(id,suffix) /* Nothing */
+#define __STAT_TIMESPEC64_TIMESPEC(id,suffix) /* Nothing */
+#endif
+#ifdef _STATBUF_ST_NSEC
+#define __STAT_TIMESPEC32_TIME(id,suffix) struct{ __time32_t id##time##suffix; __syscall_ulong_t id##timensec##suffix; };
+#define __STAT_TIMESPEC64_TIME(id,suffix) struct{ __time64_t id##time##suffix; __syscall_ulong_t id##timensec##suffix; };
+#else
+#define __STAT_TIMESPEC32_TIME(id,suffix) __time32_t id##time##suffix;
+#define __STAT_TIMESPEC64_TIME(id,suffix) __time64_t id##time##suffix;
+#endif
 #define __STAT_TIMESPEC32_MEMB(id,suffix) \
         struct __timespec32 __##id##tim##suffix; \
-        __IFTHEN(_STATBUF_ST_TIM)(struct __timespec32 id##tim##suffix;) \
-        __IFTHEN(_STATBUF_ST_TIMESPEC)(struct __timespec32 id##timespec##suffix;) \
-struct{ __time32_t id##time##suffix; \
-        __IFTHEN(_STATBUF_ST_NSEC)(__syscall_ulong_t id##timensec##suffix;) };
+        __STAT_TIMESPEC32_TIM(id,suffix) \
+        __STAT_TIMESPEC32_TIMESPEC(id,suffix) \
+        __STAT_TIMESPEC32_TIME(id,suffix)
 #define __STAT_TIMESPEC64_MEMB(id,suffix) \
         struct __timespec64 __##id##tim##suffix; \
-        __IFTHEN(_STATBUF_ST_TIM)(struct __timespec64 id##tim##suffix;) \
-        __IFTHEN(_STATBUF_ST_TIMESPEC)(struct __timespec64 id##timespec##suffix;) \
-struct{ __time64_t id##time##suffix; \
-        __IFTHEN(_STATBUF_ST_NSEC)(__syscall_ulong_t id##timensec##suffix;) };
-
+        __STAT_TIMESPEC64_TIM(id,suffix) \
+        __STAT_TIMESPEC64_TIMESPEC(id,suffix) \
+        __STAT_TIMESPEC64_TIME(id,suffix)
 #ifdef __USE_TIME_BITS64
 #ifdef __USE_KOS
 #   define __STAT_TIMESPEC32(id)     union{ __STAT_TIMESPEC32_MEMB(st_##id,32) }
@@ -282,6 +301,12 @@ union{
 };
 #endif /* __USE_LARGEFILE64 */
 
+#undef __STAT_TIMESPEC64_TIME
+#undef __STAT_TIMESPEC32_TIME
+#undef __STAT_TIMESPEC64_TIMESPEC
+#undef __STAT_TIMESPEC32_TIMESPEC
+#undef __STAT_TIMESPEC64_TIM
+#undef __STAT_TIMESPEC32_TIM
 #undef __STAT_TIMESPEC32_MEMB
 #undef __STAT_TIMESPEC64_MEMB
 #undef __STAT_TIMESPEC64_ALT

@@ -127,7 +127,7 @@ FUNDEF void ASMCALL sysreturn_check_segments(void);
 #define ASM_SYSRETURN_CHECK_SEGMENTS  call sysreturn_check_segments
 #else
 #define SYSRETURN_CHECK_SEGMENTS()    (void)0
-#define ASM_SYSRETURN_CHECK_SEGMENTS  ; /* nothing */
+#define ASM_SYSRETURN_CHECK_SEGMENTS  ; /* Nothing */
 #endif
 
 

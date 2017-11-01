@@ -346,7 +346,7 @@ L(SYM_END(name)                                                  ) \
 L(.previous                                                      ) \
 )
 
-#define I0(x) /* nothing */
+#define I0(x) /* Nothing */
 #define I1(x) x
 /* Define user-buffered I/O string functions. */
 DEFINE_IOS(insb_user,insb,I1,I0,%edi,1);

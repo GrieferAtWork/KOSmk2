@@ -54,7 +54,7 @@
 #   define __CXX_DELETE_COPY(T)                 T(T const&) = delete
 #   define __CXX_DELETE_COPY_ASSIGN(T)          T &operator = (T const&) = delete
 #ifdef _MSC_VER
-#   define __CXX_DELETE_VOLATILE_COPY_ASSIGN(T) /* nothing */
+#   define __CXX_DELETE_VOLATILE_COPY_ASSIGN(T) /* Nothing */
 #else
 #   define __CXX_DELETE_VOLATILE_COPY_ASSIGN(T) T &operator = (T const&) volatile = delete
 #endif
@@ -75,9 +75,9 @@
 #endif
 
 #ifdef __COMPILER_HAVE_CXX11_NOEXCEPT
-#   define __CXX_THROWS(...) /* nothing */
+#   define __CXX_THROWS(...) /* Nothing */
 #elif defined(_MSC_VER) && !defined(__INTELLISENSE__)
-#   define __CXX_THROWS(...) /* nothing */
+#   define __CXX_THROWS(...) /* Nothing */
 #else
 #   define __CXX_THROWS(...) throw(__VA_ARGS__)
 #endif

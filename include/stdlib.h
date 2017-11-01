@@ -1327,7 +1327,7 @@ __REDIRECT_IFKOS(__LIBC,__WUNUSED __NONNULL((3)),char *,__LIBCCALL,_gcvt,(double
 #ifdef __USE_KOS
 #define __FIXED_CONST const
 #else
-#define __FIXED_CONST /* nothing */
+#define __FIXED_CONST /* Nothing */
 #endif
 #ifdef __CRT_DOS
 __LIBC int (__LIBCCALL _atoflt)(float *__restrict __result, char const *__restrict __nptr);

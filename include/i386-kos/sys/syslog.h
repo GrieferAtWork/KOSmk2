@@ -202,9 +202,9 @@ __LIBC void (__LIBCCALL openlog)(char const *__ident, int __option, int __facili
 __LIBC int (__LIBCCALL setlogmask)(int __mask);
 #endif /* !__KERNEL__ */
 
-__LIBC void (__ATTR_CDECL syslog)(int __pri, char const *__fmt, ...);
+__LIBC __ATTR_LIBC_PRINTF(2,3) void (__ATTR_CDECL syslog)(int __level, char const *__format, ...);
 #ifdef __USE_MISC
-__LIBC void (__LIBCCALL vsyslog)(int __pri, char const *__fmt, __VA_LIST __ap);
+__LIBC __ATTR_LIBC_PRINTF(2,0) void (__LIBCCALL vsyslog)(int __level, char const *__format, __VA_LIST __args);
 #endif /* __USE_MISC */
 
 #ifdef __USE_KOS

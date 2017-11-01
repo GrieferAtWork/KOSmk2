@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_KERNEL_CORE_IOMGR_C
 #define GUARD_KERNEL_CORE_IOMGR_C 1
+#define _KOS_SOURCE 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>

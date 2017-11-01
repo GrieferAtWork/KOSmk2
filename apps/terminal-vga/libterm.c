@@ -18,6 +18,7 @@
  */
 #ifndef GUARD_LIBTERM_C
 #define GUARD_LIBTERM_C 1
+#define _KOS_SOURCE 1
 
 #include "libterm.h"
 #include "xterm_256.h"

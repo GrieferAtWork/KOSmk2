@@ -104,6 +104,8 @@
 #define __NO_ATTR_NOTHROW        1
 #define __ATTR_NOTHROW           /* Nothing */
 #endif
+#define __NO_ATTR_OPTIMIZE       1
+#define __ATTR_OPTIMIZE(opt)     /* Nothing */
 #define __NO_ATTR_NOTHROW_SUFFIX 1
 #define __NO_ATTR_RETNONNULL     1
 #define __ATTR_RETNONNULL        /* Nothing */
@@ -119,20 +121,21 @@
 #endif
 #define __ATTR_WEAK_IS_SELECTANY 1
 #define __ATTR_WEAK              __declspec(selectany) /* For all that we care, it's basically the same. */
+#define __ATTR_SELECTANY         __declspec(selectany)
 #define __NO_ATTR_RETURNS_TWICE  1
-#define __ATTR_RETURNS_TWICE     /* nothing */
+#define __ATTR_RETURNS_TWICE     /* Nothing */
 #define __NO_ATTR_EXTERNALLY_VISIBLE 1
-#define __ATTR_EXTERNALLY_VISIBLE /* nothing */
+#define __ATTR_EXTERNALLY_VISIBLE /* Nothing */
 #define __NO_ATTR_VISIBILITY     1
 #define __ATTR_VISIBILITY(vis)   /* Nothing */
 #define __NO_ATTR_FORMAT_PRINTF  1
-#define __ATTR_FORMAT_PRINTF(fmt,args) /* nothing */
+#define __ATTR_FORMAT_PRINTF(fmt,args) /* Nothing */
 #define __NO_ATTR_FORMAT_SCANF   1
-#define __ATTR_FORMAT_SCANF(fmt,args) /* nothing */
+#define __ATTR_FORMAT_SCANF(fmt,args) /* Nothing */
 #define __NO_ATTR_FORMAT_STRFMON 1
-#define __ATTR_FORMAT_STRFMON(fmt,args) /* nothing */
+#define __ATTR_FORMAT_STRFMON(fmt,args) /* Nothing */
 #define __NO_ATTR_FORMAT_STRFTIME 1
-#define __ATTR_FORMAT_STRFTIME(fmt,args) /* nothing */
+#define __ATTR_FORMAT_STRFTIME(fmt,args) /* Nothing */
 #define __ATTR_DLLIMPORT         __declspec(dllimport)
 #define __ATTR_DLLEXPORT         __declspec(dllexport)
 #define __NO_NONNULL             1
@@ -172,7 +175,7 @@ template<> struct __static_if<true> { bool __is_true__(); };
 #define __NO_builtin_constant_p  1
 #define __builtin_constant_p(x)  0
 #define __restrict_arr           __restrict
-#define __attribute__(x)         /* nothing */
+#define __attribute__(x)         /* Nothing */
 
 /* Define intrinsic barrier functions. */
 #ifdef __cplusplus

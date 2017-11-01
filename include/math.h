@@ -68,7 +68,7 @@ __SYSDECL_BEGIN
 #define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
 #ifdef __CXX_SYSTEM_HEADER
-#define __MATHNS_USING(name,r)   /* nothing */
+#define __MATHNS_USING(name,r)   /* Nothing */
 #else
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##r)
 #endif
@@ -90,7 +90,7 @@ __SYSDECL_BEGIN
 #define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
 #ifdef __CXX_SYSTEM_HEADER
-#define __MATHNS_USING(name,r)   /* nothing */
+#define __MATHNS_USING(name,r)   /* Nothing */
 #else
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##f##r)
 #endif
@@ -112,7 +112,7 @@ __SYSDECL_BEGIN
 #define __MATHNS_BEGIN           __NAMESPACE_STD_BEGIN
 #define __MATHNS_END             __NAMESPACE_STD_END
 #ifdef __CXX_SYSTEM_HEADER
-#define __MATHNS_USING(name,r)   /* nothing */
+#define __MATHNS_USING(name,r)   /* Nothing */
 #else
 #define __MATHNS_USING(name,r)   __NAMESPACE_STD_USING(name##l##r)
 #endif

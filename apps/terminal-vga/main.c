@@ -242,8 +242,8 @@ PRIVATE DEFINE_ATOMIC_RWLOCK(cursor_lock);
 #define CURSOR_LOCK   atomic_rwlock_write(&cursor_lock);
 #define CURSOR_UNLOCK atomic_rwlock_endwrite(&cursor_lock);
 #else
-#define CURSOR_LOCK   /* nothing */
-#define CURSOR_UNLOCK /* nothing */
+#define CURSOR_LOCK   /* Nothing */
+#define CURSOR_UNLOCK /* Nothing */
 #endif
 
 

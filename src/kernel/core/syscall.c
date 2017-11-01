@@ -192,11 +192,11 @@ PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
 }
 #define SYS_ENTER pushal; movl %eax, %ecx; call syscall_enter; popal;
 #else
-#define SYS_ENTER /* nothing */
+#define SYS_ENTER /* Nothing */
 #endif
 #define SYS_LEAVE jmp dbg_sysleave
 #else /* CONFIG_DEBUG */
-#define SYS_ENTER /* nothing */
+#define SYS_ENTER /* Nothing */
 #define SYS_LEAVE iret
 #endif /* !CONFIG_DEBUG */
 

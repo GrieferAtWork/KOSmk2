@@ -130,7 +130,7 @@ __SYSDECL_BEGIN
 #define __PRIVATE_SYSCALL_INL3(nr,n,type,id,args)                   __PRIVATE_SYSCALL_INL4_##nr(n,type,id,args)
 #define __PRIVATE_SYSCALL_FUN3(nr,n,cc,post_attr,type,id,name,decl) __PRIVATE_SYSCALL_FUN4_##nr(n,cc,post_attr,type,id,name,decl)
 
-#define __SYSCALL_TRACE(id) /* nothing */
+#define __SYSCALL_TRACE(id) /* Nothing */
 
 #ifdef __INTELLISENSE__
 #define __PRIVATE_SYSCALL_ASM_1(n,id,args) { id; __SYSCALL_LIST##n args; }

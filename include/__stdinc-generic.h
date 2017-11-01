@@ -140,8 +140,8 @@
 #endif
 #if __has_attribute(__const__)
 #   define __ATTR_CONST          __attribute__((__const__))
-#elif __has_declspec_attribute(noalias)
-#   define __ATTR_CONST          __declspec(noalias)
+#elif !defined(__NO_ATTR_PURE)
+#   define __ATTR_CONST          __ATTR_PURE
 #else
 #   define __NO_ATTR_CONST       1
 #   define __ATTR_CONST          /* Nothing */
@@ -158,7 +158,8 @@
 #   define __NO_ATTR_HOT         1
 #   define __ATTR_HOT            /* Nothing */
 #endif
-#if __has_attribute(__cold__)
+#if __has_attribute(__cold__) || \
+   (defined(__ICC) && __ICC+0 > 1110)
 #   define __ATTR_COLD           __attribute__((__cold__))
 #else
 #   define __NO_ATTR_COLD        1
@@ -272,6 +273,12 @@
 #   define __NO_ATTR_NOTHROW     1
 #   define __ATTR_NOTHROW        /* Nothing */
 #endif
+#if __has_attribute(__optimize__)
+#   define __ATTR_OPTIMIZE(opt)  __attribute__((__optimize__(opt)))
+#else
+#   define __NO_ATTR_OPTIMIZE    1
+#   define __ATTR_OPTIMIZE(opt)  /* Nothing */
+#endif
 #if __has_attribute(__returns_nonnull__)
 #   define __ATTR_RETNONNULL     __attribute__((__returns_nonnull__))
 #else
@@ -300,11 +307,19 @@
 #   define __NO_ATTR_ALIGNED     1
 #   define __ATTR_ALIGNED(n)     /* Nothing */
 #endif
+#if __has_attribute(__selectany__)
+#   define __ATTR_SELECTANY      __attribute__((__selectany__))
+#elif __has_declspec_attribute(selectany)
+#   define __ATTR_SELECTANY      __declspec(selectany)
+#else
+#   define __NO_ATTR_SELECTANY   1
+#   define __ATTR_SELECTANY      /* Nothing */
+#endif
 #if __has_attribute(__weak__) || \
    (defined(__ELF__) || defined(__TINYC__))
 #   define __ATTR_WEAK           __attribute__((__weak__))
-#elif __has_declspec_attribute(selectany)
-#   define __ATTR_WEAK           __declspec(selectany)
+#elif !defined(__NO_ATTR_SELECTANY)
+#   define __ATTR_WEAK           __ATTR_SELECTANY
 #   define __ATTR_WEAK_IS_SELECTANY 1
 #else
 #   define __NO_ATTR_WEAK        1
@@ -314,13 +329,13 @@
 #   define __ATTR_RETURNS_TWICE  __attribute__((__returns_twice__))
 #else
 #   define __NO_ATTR_RETURNS_TWICE 1
-#   define __ATTR_RETURNS_TWICE  /* nothing */
+#   define __ATTR_RETURNS_TWICE  /* Nothing */
 #endif
 #if __has_attribute(__externally_visible__)
 #   define __ATTR_EXTERNALLY_VISIBLE __attribute__((__externally_visible__))
 #else
 #   define __NO_ATTR_EXTERNALLY_VISIBLE 1
-#   define __ATTR_EXTERNALLY_VISIBLE /* nothing */
+#   define __ATTR_EXTERNALLY_VISIBLE /* Nothing */
 #endif
 #if __has_attribute(__visibility__) || \
    (defined(__ELF__) || defined(__TINYC__))
@@ -338,19 +353,19 @@
 #endif
 #else
 #   define __NO_ATTR_FORMAT_PRINTF          1
-#   define __ATTR_FORMAT_PRINTF(fmt,args)   /* nothing */
+#   define __ATTR_FORMAT_PRINTF(fmt,args)   /* Nothing */
 #endif
 #ifndef __ATTR_FORMAT_SCANF
 #   define __NO_ATTR_FORMAT_SCANF           1
-#   define __ATTR_FORMAT_SCANF(fmt,args)    /* nothing */
+#   define __ATTR_FORMAT_SCANF(fmt,args)    /* Nothing */
 #endif /* !__ATTR_FORMAT_SCANF */
 #ifndef __ATTR_FORMAT_STRFMON
 #   define __NO_ATTR_FORMAT_STRFMON         1
-#   define __ATTR_FORMAT_STRFMON(fmt,args)  /* nothing */
+#   define __ATTR_FORMAT_STRFMON(fmt,args)  /* Nothing */
 #endif /* !__ATTR_FORMAT_STRFMON */
 #ifndef __ATTR_FORMAT_STRFTIME
 #   define __NO_ATTR_FORMAT_STRFTIME        1
-#   define __ATTR_FORMAT_STRFTIME(fmt,args) /* nothing */
+#   define __ATTR_FORMAT_STRFTIME(fmt,args) /* Nothing */
 #endif /* !__ATTR_FORMAT_STRFTIME */
 #if __has_attribute(__dllimport__)
 #   define __ATTR_DLLIMPORT      __attribute__((__dllimport__))
@@ -389,6 +404,14 @@
 #   define __NO_XBLOCK           1
 #   define __XBLOCK(...)         do __VA_ARGS__ while(0)
 #   define __XRETURN             /* Nothing */
+#endif
+#if defined(__INTELLISENSE__)
+#elif defined(__TPP_VERSION__)
+#   define __PRIVATE_PRAGMA(...) _Pragma(#__VA_ARGS__)
+#   define __pragma(...) __PRIVATE_PRAGMA(__VA_ARGS__)
+#else
+#   define __NO_pragma   1
+#   define __pragma(...) /* nothing */
 #endif
 #if !__has_builtin(__builtin_assume)
 #   define __NO_builtin_assume   1
@@ -434,13 +457,13 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #   define __ATTR_INLINE __inline__
 #else
 #   define __NO_ATTR_INLINE 1
-#   define __ATTR_INLINE /* nothing */
+#   define __ATTR_INLINE /* Nothing */
 #endif
 #if __has_attribute(__always_inline__)
 #   define __ATTR_FORCEINLINE __ATTR_INLINE __attribute__((__always_inline__))
 #else
 #   define __NO_ATTR_FORCEINLINE 1
-#   define __ATTR_FORCEINLINE __ATTR_INLINE /* nothing */
+#   define __ATTR_FORCEINLINE __ATTR_INLINE /* Nothing */
 #endif
 #define __LOCAL      static __ATTR_INLINE
 #define __FORCELOCAL static __ATTR_FORCEINLINE
@@ -456,7 +479,7 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
    (defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 199901L)
 #define __restrict  restrict
 #else
-#define __restrict  /* nothing */
+#define __restrict  /* Nothing */
 #endif
 #endif /* !__restrict */
 

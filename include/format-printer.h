@@ -99,10 +99,10 @@ typedef __ssize_t (__LIBCCALL *pformatungetc)(int __ch, void *__closure);
  *                      increasing the buffer when it gets filled completely.
  *  - k_syslogf:        Unbuffered system-log output.
  *  - ...               There are a _lot_ more... */
-__FORMAT_PRINTER_DECL __NONNULL((1,3))
+__FORMAT_PRINTER_DECL __ATTR_LIBC_PRINTF(3,4) __NONNULL((1,3))
 __ssize_t (__ATTR_CDECL format_printf)(pformatprinter __printer, void *__closure,
                                        char const *__restrict __format, ...);
-__FORMAT_PRINTER_DECL __NONNULL((1,3))
+__FORMAT_PRINTER_DECL __ATTR_LIBC_PRINTF(3,0) __NONNULL((1,3))
 __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
                                       char const *__restrict __format, __VA_LIST __args);
 
@@ -129,10 +129,10 @@ __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
  *                 >> sscanf(data,"My name is %.?s\n",sizeof(buffer),buffer);
  * format -> %[*|?][width][length]specifier
  * @return: * : The total number of successfully scanned arguments. */
-__LIBC __PORT_KOSONLY __NONNULL((1,4))
+__LIBC __PORT_KOSONLY __ATTR_LIBC_SCANF(4,5) __NONNULL((1,4))
 __ssize_t (__ATTR_CDECL format_scanf)(pformatgetc __pgetc, pformatungetc __pungetc,
                                       void *__closure, char const *__restrict __format, ...);
-__LIBC __PORT_KOSONLY __NONNULL((1,4))
+__LIBC __PORT_KOSONLY __ATTR_LIBC_SCANF(4,0) __NONNULL((1,4))
 __ssize_t (__LIBCCALL format_vscanf)(pformatgetc __pgetc, pformatungetc __pungetc,
                                      void *__closure, char const *__restrict __format,
                                      __VA_LIST __args);
@@ -174,7 +174,7 @@ __NAMESPACE_STD_END
  *           - `"H"'        --> `"hour"'
  *           - `"MI"'|`"I'  --> `"minute"'
  *           - `"S"'        --> `"second"' */
-__LIBC __PORT_KOSONLY __NONNULL((1,4))
+__LIBC __PORT_KOSONLY __ATTR_LIBC_STRFTIME(3,4) __NONNULL((1,4))
 __ssize_t (__LIBCCALL format_strftime)(pformatprinter __printer, void *__closure,
                                        char const *__restrict __format,
                                        struct __NAMESPACE_STD_SYM tm const *__tm);
@@ -421,8 +421,8 @@ __LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_print)(char const *__restrict
 
 /* Same as the original functions above, but use a temporary
  * buffer in-between to reduce potential printer overhead. */
-__LIBC __PORT_KOSONLY __NONNULL((1,3)) __ssize_t (__ATTR_CDECL format_bprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, ...);
-__LIBC __PORT_KOSONLY __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vbprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, __VA_LIST __args);
+__LIBC __PORT_KOSONLY __ATTR_LIBC_PRINTF(3,4) __NONNULL((1,3)) __ssize_t (__ATTR_CDECL format_bprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, ...);
+__LIBC __PORT_KOSONLY __ATTR_LIBC_PRINTF(3,0) __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vbprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, __VA_LIST __args);
 #endif /* !__KERNEL__ */
 
 #endif /* __CC__ */

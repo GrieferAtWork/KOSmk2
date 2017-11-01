@@ -26,6 +26,11 @@
 #include <xlocale.h>
 #endif /* __USE_XOPEN2K8 */
 
+#if defined(__DOS_COMPAT__) && defined(__USE_DOS)
+#include <hybrid/typecore.h>
+#endif
+
+
 /* Copyright (C) 1991-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
@@ -125,14 +130,14 @@ struct lconv {
 #ifdef __DOS_COMPAT__
 #ifdef __USE_DOS
   /* WARNING: All of these are DOS_ONLY */
-  wchar_t *_W_decimal_point;
-  wchar_t *_W_thousands_sep;
-  wchar_t *_W_int_curr_symbol;
-  wchar_t *_W_currency_symbol;
-  wchar_t *_W_mon_decimal_point;
-  wchar_t *_W_mon_thousands_sep;
-  wchar_t *_W_positive_sign;
-  wchar_t *_W_negative_sign;
+  __WCHAR_TYPE__ *_W_decimal_point;
+  __WCHAR_TYPE__ *_W_thousands_sep;
+  __WCHAR_TYPE__ *_W_int_curr_symbol;
+  __WCHAR_TYPE__ *_W_currency_symbol;
+  __WCHAR_TYPE__ *_W_mon_decimal_point;
+  __WCHAR_TYPE__ *_W_mon_thousands_sep;
+  __WCHAR_TYPE__ *_W_positive_sign;
+  __WCHAR_TYPE__ *_W_negative_sign;
 #endif /* __USE_DOS */
 #elif defined(__USE_ISOC99)
   char int_p_cs_precedes;  /* 1 if int_curr_symbol precedes a positive value, 0 if succeeds. */
@@ -225,8 +230,8 @@ __REDIRECT_IFKOS_VOID(__LIBC,,__LIBCCALL,_free_locale,(__locale_t __locale),free
 
 #ifndef _WLOCALE_DEFINED
 #define _WLOCALE_DEFINED 1
-__LIBC __PORT_DOSONLY wchar_t *(__LIBCCALL _wsetlocale)(int __category, wchar_t const *__locale);
-__LIBC __PORT_DOSONLY __locale_t (__LIBCCALL _wcreate_locale)(int __category, wchar_t const *__locale);
+__LIBC __PORT_DOSONLY __WCHAR_TYPE__ *(__LIBCCALL _wsetlocale)(int __category, __WCHAR_TYPE__ const *__locale);
+__LIBC __PORT_DOSONLY __locale_t (__LIBCCALL _wcreate_locale)(int __category, __WCHAR_TYPE__ const *__locale);
 #endif /* !_WLOCALE_DEFINED */
 #endif /* __USE_DOS */
 

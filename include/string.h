@@ -623,12 +623,12 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnroff)(char co
 #if defined(__CRT_GLC) && defined(__GLC_COMPAT__)
 /* Implement using `asprintf' */
 __REDIRECT(__LIBC,,__ssize_t,__LIBCCALL,__libc_vasprintf,(char **__restrict __pstr, char const *__restrict __format, __VA_LIST __args),vasprintf,(__ptr,__format,__args));
-__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
+__LOCAL __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
     char *__result;
     return __libc_vasprintf(&__result,__format,__args) >= 0 ? __result : 0;
 }
-__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
+__LOCAL __ATTR_LIBC_PRINTF(1,2) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...) {
     char *__result; __VA_LIST __args; __builtin_va_start(__args,__format);
     __result = vstrdupf(__format,__args);
@@ -648,14 +648,14 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __form
 #define ____libc_vsprintf_defined 1
 __REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
 #endif /* !____libc_vsprintf_defined */
-__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
+__LOCAL __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
     int __resultlen = __dos_vscprintf(__format,__args);
     char *__result = __resultlen >= 0 ? (char *)__hybrid_malloc((__resultlen+1)*sizeof(char)) : 0;
     if (__result) __libc_vsprintf(__result,__format,__args);
     return __result;
 }
-__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
+__LOCAL __ATTR_LIBC_PRINTF(1,2) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...) {
     char *__result; __VA_LIST __args; __builtin_va_start(__args,__format);
     __result = vstrdupf(__format,__args);
@@ -664,8 +664,8 @@ char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...) {
 }
 #else /* ... */
 /* Use actual functions exported from libc. */
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...);
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args);
+__LIBC __ATTR_LIBC_PRINTF(1,2) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...);
+__LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args);
 #endif /* !... */
 #endif /* !__KERNEL__ */
 
@@ -1066,19 +1066,19 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char 
 #endif /* !____libc_vsprintf_defined */
 
 #ifndef __NO_ASMNAME
-__LIBC int (__ATTR_CDECL __dos_scprintf)(char const *__restrict __format, ...) __ASMNAME("_scprintf");
-__LIBC __ssize_t (__ATTR_CDECL __libc_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) __ASMNAME("sprintf");
+__LIBC __ATTR_LIBC_PRINTF(1,2) int (__ATTR_CDECL __dos_scprintf)(char const *__restrict __format, ...) __ASMNAME("_scprintf");
+__LIBC __ATTR_LIBC_PRINTF(2,3) __ssize_t (__ATTR_CDECL __libc_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) __ASMNAME("sprintf");
 #else /* !__NO_ASMNAME */
 #define __dos_scprintf(...) _scprintf(__VA_ARGS__)
 #define __libc_sprintf(...) __NAMESPACE_STD_SYM sprintf(__VA_ARGS__)
 #ifndef ___scprintf_defined
 #define ___scprintf_defined 1
-__LIBC int (__ATTR_CDECL _scprintf)(char const *__restrict __format, ...);
+__LIBC __ATTR_LIBC_PRINTF(1,2) int (__ATTR_CDECL _scprintf)(char const *__restrict __format, ...);
 #endif /* !___scprintf_defined */
 #ifndef __std_sprintf_defined
 #define __std_sprintf_defined
 __NAMESPACE_STD_BEGIN
-__LIBC __ssize_t (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
+__LIBC __ATTR_LIBC_PRINTF(2,3) __ssize_t (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
 __NAMESPACE_STD_END
 #endif /* !__std_sprintf_defined */
 #ifndef __sprintf_defined
@@ -1086,8 +1086,8 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(sprintf)
 #endif /* !__sprintf_defined */
 #endif /* __NO_ASMNAME */
-__LOCAL char *(__ATTR_CDECL __forward_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) { __VA_LIST __args; __builtin_va_start(__args,__format); __libc_vsprintf(__buf,__format,__args); __builtin_va_end(__args); return __buf; }
-__LOCAL char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args) { __libc_vsprintf(__buf,__format,__args); return __buf; }
+__LOCAL __ATTR_LIBC_PRINTF(2,3) char *(__ATTR_CDECL __forward_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) { __VA_LIST __args; __builtin_va_start(__args,__format); __libc_vsprintf(__buf,__format,__args); __builtin_va_end(__args); return __buf; }
+__LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args) { __libc_vsprintf(__buf,__format,__args); return __buf; }
 
 /* Without dedicated Libc functionality, double-evaluation can't be prevented. */
 #define strdupaf(...) \
@@ -1111,30 +1111,30 @@ __SYSDECL_BEGIN
 
 #ifndef ____libc_vsprintf_defined
 #define ____libc_vsprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
+__REDIRECT(__LIBC,__ATTR_LIBC_PRINTF(2,0),int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
 #endif /* !____libc_vsprintf_defined */
 
 #ifndef ____libc_vsnprintf_defined
 #define ____libc_vsnprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+__REDIRECT(__LIBC,__ATTR_LIBC_PRINTF(3,0),int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
 #endif /* !____libc_vsnprintf_defined */
 
 #ifndef __NO_ASMNAME
-__LIBC __ssize_t (__ATTR_CDECL __libc_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) __ASMNAME("sprintf");
-__LIBC __ssize_t (__ATTR_CDECL __libc_snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...) __ASMNAME("snprintf");
+__LIBC __ATTR_LIBC_PRINTF(2,3) __ssize_t (__ATTR_CDECL __libc_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) __ASMNAME("sprintf");
+__LIBC __ATTR_LIBC_PRINTF(3,0) __ssize_t (__ATTR_CDECL __libc_snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...) __ASMNAME("snprintf");
 #else /* !__NO_ASMNAME */
 #define __libc_sprintf(...)   __NAMESPACE_STD_SYM sprintf(__VA_ARGS__)
 #define __libc_snprintf(...)  __NAMESPACE_STD_SYM snprintf(__VA_ARGS__)
 #ifndef __std_sprintf_defined
 #define __std_sprintf_defined
 __NAMESPACE_STD_BEGIN
-__LIBC __ssize_t (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
+__LIBC __ATTR_LIBC_PRINTF(2,3) __ssize_t (__ATTR_CDECL sprintf)(char *__restrict __buf, char const *__restrict __format, ...);
 __NAMESPACE_STD_END
 #endif /* !__std_sprintf_defined */
 #ifndef __std_snprintf_defined
 #define __std_snprintf_defined 1
 __NAMESPACE_STD_BEGIN
-__LIBC __ssize_t (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...);
+__LIBC __ATTR_LIBC_PRINTF(3,4) __ssize_t (__ATTR_CDECL snprintf)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, ...);
 __NAMESPACE_STD_END
 #endif /* !__std_snprintf_defined */
 #ifndef __sprintf_defined
@@ -1147,8 +1147,8 @@ __NAMESPACE_STD_USING(snprintf)
 #endif /* !__snprintf_defined */
 #endif /* __NO_ASMNAME */
 
-__LOCAL char *(__ATTR_CDECL __forward_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) { __VA_LIST __args; __builtin_va_start(__args,__format); __libc_vsprintf(__buf,__format,__args); __builtin_va_end(__args); return __buf; }
-__LOCAL char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args) { __libc_vsprintf(__buf,__format,__args); return __buf; }
+__LOCAL __ATTR_LIBC_PRINTF(2,3) char *(__ATTR_CDECL __forward_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) { __VA_LIST __args; __builtin_va_start(__args,__format); __libc_vsprintf(__buf,__format,__args); __builtin_va_end(__args); return __buf; }
+__LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args) { __libc_vsprintf(__buf,__format,__args); return __buf; }
 
 /* Without dedicated Libc functionality, double-evaluation can't be prevented. */
 #define strdupaf(...) \
@@ -1181,8 +1181,8 @@ __LOCAL char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const
  * >>   return open(strdupaf("%s/%s",folder,file),O_RDONLY);
  * >> }
  */
-__LIBC __WUNUSED __ATTR_MALLOC char *(__ATTR_CDECL strdupaf)(char const *__restrict __format, ...);
-__LIBC __WUNUSED __ATTR_MALLOC char *(__LIBCCALL vstrdupaf)(char const *__restrict __format, __VA_LIST __args);
+__LIBC __ATTR_LIBC_PRINTF(1,2) __WUNUSED __ATTR_MALLOC char *(__ATTR_CDECL strdupaf)(char const *__restrict __format, ...);
+__LIBC __ATTR_LIBC_PRINTF(1,0) __WUNUSED __ATTR_MALLOC char *(__LIBCCALL vstrdupaf)(char const *__restrict __format, __VA_LIST __args);
 
 #ifdef __INTELLISENSE__
 #elif defined(__GNUC__)
@@ -1260,8 +1260,8 @@ __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyw_d)(void *_
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyl_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords, __DEBUGINFO);
 #endif /* __USE_GNU */
 #ifndef __KERNEL__
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__ATTR_CDECL _strdupf_d)(__DEBUGINFO, char const *__restrict __format, ...);
-__LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _vstrdupf_d)(char const *__restrict __format, __VA_LIST __args, __DEBUGINFO);
+__LIBC __ATTR_LIBC_PRINTF(4,5) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__ATTR_CDECL _strdupf_d)(__DEBUGINFO, char const *__restrict __format, ...);
+__LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _vstrdupf_d)(char const *__restrict __format, __VA_LIST __args, __DEBUGINFO);
 #endif /* !__KERNEL__ */
 #endif /* __USE_KOS */
 #else /* __USE_DEBUG != 0 */

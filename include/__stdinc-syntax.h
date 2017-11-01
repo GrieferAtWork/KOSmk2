@@ -430,6 +430,8 @@ typedef bool _Bool;
 #define ____INTELLISENSE_attribute___nonnull__(...)           ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute_noreturn                   __declspec(noreturn)
 #define ____INTELLISENSE_attribute___noreturn__               __declspec(noreturn)
+#define ____INTELLISENSE_attribute_optimize(opt)              ____INTELLISENSE_ATTR_FUNC
+#define ____INTELLISENSE_attribute___optimize__(opt)          ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute_nothrow                    __declspec(nothrow)
 #define ____INTELLISENSE_attribute___nothrow__                __declspec(nothrow)
 #define ____INTELLISENSE_attribute_packed                     /* Nothing */
@@ -507,6 +509,7 @@ enum{ /* Highlight attributes in a different color */
     __nonnull__,            /*< __attribute__((nonnull(...))); */
     __noreturn__,           /*< __attribute__((noreturn)); */
     __nothrow__,            /*< __attribute__((nothrow)); */
+    __optimize__,           /*< __attribute__((optimize(...))); */
     __packed__,             /*< __attribute__((packed)); */
     __pure__,               /*< __attribute__((pure)); */
     __regparm__,            /*< __attribute__((regparm(n))); */
@@ -596,6 +599,8 @@ enum{ /* Highlight attributes in a different color */
 #define ____INTELLISENSE_HASATTR___noreturn__           1
 #define ____INTELLISENSE_HASATTR_nothrow                1
 #define ____INTELLISENSE_HASATTR___nothrow__            1
+#define ____INTELLISENSE_HASATTR_optimize               1
+#define ____INTELLISENSE_HASATTR___optimize__           1
 #define ____INTELLISENSE_HASATTR_packed                 1
 #define ____INTELLISENSE_HASATTR___packed__             1
 #define ____INTELLISENSE_HASATTR_pure                   1

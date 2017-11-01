@@ -46,14 +46,6 @@
 #define __has_include_next(x) 0
 #endif
 
-#ifdef __cplusplus
-#   define __DECL_BEGIN extern "C" {
-#   define __DECL_END   }
-#else
-#   define __DECL_BEGIN /* Nothing */
-#   define __DECL_END   /* Nothing */
-#endif
-
 #if defined(__cplusplus) || defined(__INTELLISENSE__) || \
   (!defined(__LINKER__) && !defined(__ASSEMBLY__) && \
    !defined(__ASSEMBLER__) && !defined(__DEEMON__))
@@ -89,50 +81,19 @@
 #   include "__stdinc-generic.h"
 #endif
 
+#ifdef __cplusplus
+#   include "__stdinc-c++.h"
+#else
+#   include "__stdinc-c.h"
+#endif
+
 #ifndef __SYSDECL_BEGIN
 #define __SYSDECL_BEGIN __DECL_BEGIN
 #define __SYSDECL_END   __DECL_END
 #endif /* !__SYSDECL_BEGIN */
 
-#if defined(__cplusplus) && (__has_feature(cxx_constexpr) || \
-   (defined(__cpp_constexpr) && __cpp_constexpr >= 200704) || \
-   (defined(__IBMCPP__) && defined(__IBMCPP_CONSTEXPR) && (__IBMCPP_CONSTEXPR+0)) || \
-   (defined(__SUNPRO_CC) && __SUNPRO_CC >= 0x5130) || \
-   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,6,0) && !defined(__INTELLISENSE__)) || \
-   (defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023026))
-#   define __COMPILER_HAVE_CXX11_CONSTEXPR 1
-#   define __CXX11_CONSTEXPR          constexpr
-#   define __CXX11_CONSTEXPR_OR_CONST constexpr
-#else
-#   define __CXX11_CONSTEXPR          /* nothing */
-#   define __CXX11_CONSTEXPR_OR_CONST const
-#endif
-#if defined(__cplusplus) && (\
-   (defined(__clang__) && !(!__has_feature(cxx_generic_lambdas) || \
-                           !(__has_feature(cxx_relaxed_constexpr) || \
-                             __has_extension(cxx_relaxed_constexpr)))) || \
-   (defined(__cpp_constexpr) && __cpp_constexpr >= 201304 && !defined(__clang__)))
-#   define __COMPILER_HAVE_CXX14_CONSTEXPR 1
-#   define __CXX14_CONSTEXPR          constexpr
-#   define __CXX14_CONSTEXPR_OR_CONST constexpr
-#else
-#   define __CXX14_CONSTEXPR          /* nothing */
-#   define __CXX14_CONSTEXPR_OR_CONST const
-#endif
-#if defined(__cplusplus) && (__has_feature(cxx_noexcept) || \
-   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,6,0) && !defined(__INTELLISENSE__)) || \
-   (defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190021730))
-#   define __COMPILER_HAVE_CXX11_NOEXCEPT 1
-#   define __CXX_NOEXCEPT noexcept
-#elif defined(__cplusplus)
-#   define __CXX_NOEXCEPT throw()
-#else
-#   define __CXX_NOEXCEPT /* nothing */
-#endif
-
-
 #ifdef __INTELLISENSE__
-#   define __NOTHROW       /* nothing */
+#   define __NOTHROW       /* Nothing */
 #elif defined(__cplusplus)
 #   define __NOTHROW(prot) prot __CXX_NOEXCEPT
 #elif defined(__NO_ATTR_NOTHROW)
@@ -141,28 +102,6 @@
 #   define __NOTHROW(prot) __ATTR_NOTHROW prot
 #else
 #   define __NOTHROW(prot) __ATTR_NOTHROW prot
-#endif
-
-#if defined(__cplusplus) && !defined(__INTELLISENSE__)
-#define __COMPILER_PREFERR_ENUMS 1
-#endif
-
-#ifdef __cplusplus
-#   define __NAMESPACE_STD_BEGIN    namespace std {
-#   define __NAMESPACE_STD_END      }
-#   define __NAMESPACE_STD_SYM      ::std::
-#   define __NAMESPACE_STD_USING(x) using ::std::x;
-#   define __NAMESPACE_INT_BEGIN    namespace __int {
-#   define __NAMESPACE_INT_END      }
-#   define __NAMESPACE_INT_SYM      ::__int::
-#else
-#   define __NAMESPACE_STD_BEGIN    /* nothing */
-#   define __NAMESPACE_STD_END      /* nothing */
-#   define __NAMESPACE_STD_SYM      /* nothing */
-#   define __NAMESPACE_STD_USING(x) /* nothing */
-#   define __NAMESPACE_INT_BEGIN    /* nothing */
-#   define __NAMESPACE_INT_END      /* nothing */
-#   define __NAMESPACE_INT_SYM      /* nothing */
 #endif
 
 #define __FCALL                  __ATTR_FASTCALL
@@ -198,24 +137,6 @@
            __typeof__(old) new __ATTR_ALIAS(#old)
 #endif
 
-
-#define __IFDEF_ARG_PLACEHOLDER_     ,
-#define __IFDEF_ARG_PLACEHOLDER_1    ,
-#define __IFDEF_TAKE_SECOND_ARG_IMPL(x,val,...) val
-#define __IFDEF_TAKE_SECOND_ARG(x) __IFDEF_TAKE_SECOND_ARG_IMPL x
-#define __IFDEF3(x) __IFDEF_TAKE_SECOND_ARG((x 1,0))
-#define __IFDEF2(x) __IFDEF3(__IFDEF_ARG_PLACEHOLDER_##x)
-#define __IFTHEN_0(...) /* nothing */
-#define __IFTHEN_1(...) __VA_ARGS__
-#define __IFTHEN3(x) __IFTHEN_##x
-#define __IFTHEN2(x) __IFTHEN3(x)
-#define __IFTHEN(x)  __IFTHEN2(__IFDEF2(x))
-#define __IFELSE_0(...) __VA_ARGS__
-#define __IFELSE_1(...) /* nothing */
-#define __IFELSE3(x) __IFELSE_##x
-#define __IFELSE2(x) __IFELSE3(x)
-#define __IFELSE(x)  __IFELSE2(__IFDEF2(x))
-
 #if !defined(__PE__) && !defined(__ELF__)
 /* Try to determine current binary format using other platform
  * identifiers. (When KOS headers are used on other systems) */
@@ -230,20 +151,6 @@
 #else
 #   warning "Target binary format not defined. - Assuming `__ELF__'"
 #   define __ELF__ 1
-#endif
-#endif
-
-
-#ifndef __VA_LIST
-#define __VA_LIST  char *
-#endif
-#ifndef __BOOL
-#ifdef __cplusplus
-#   define __BOOL bool
-#elif 1
-#   define __BOOL _Bool
-#else
-#   define __BOOL unsigned char
 #endif
 #endif
 
@@ -373,42 +280,17 @@ __LOCAL attr void __NOTHROW((cc name) param) { \
 #endif /* !__REDIRECT */
 
 
-#ifdef __cplusplus
-extern "C++" {
-class __any_ptr {
-    void *__m_p;
-public:
-    __CXX11_CONSTEXPR __ATTR_INLINE __any_ptr(void *__p) __CXX_NOEXCEPT: __m_p(__p) {}
-    template<class __T> __CXX11_CONSTEXPR __ATTR_INLINE
-    operator __T *(void) __CXX_NOEXCEPT { return (__T *)this->__m_p; }
-};
-}
-#   define __COMPILER_UNIPOINTER(p) __any_ptr((void *)(__UINTPTR_TYPE__)(p))
-#elif defined(__CC__)
-#   define __COMPILER_UNIPOINTER(p)          ((void *)(__UINTPTR_TYPE__)(p))
-#else
-#   define __COMPILER_UNIPOINTER(p)                                     (p)
-#endif
-
 #ifdef __KERNEL__
 #   undef NDEBUG
 #ifndef CONFIG_DEBUG
 #   define NDEBUG 1
 #endif
 #else
-#ifdef __cplusplus
 #ifdef __CC__
-__NAMESPACE_STD_BEGIN
-struct _IO_FILE;
+__NAMESPACE_STD_BEGIN struct _IO_FILE;
 __NAMESPACE_STD_END
-#endif
-#   define __FILE     struct ::std::_IO_FILE
-#else
-#ifdef __CC__
-struct _IO_FILE;
-#endif
-#   define __FILE     struct _IO_FILE
-#endif
+#endif /* __CC__ */
+#define __FILE     struct __NAMESPACE_STD_SYM _IO_FILE
 #endif
 
 #ifndef __LIBCCALL
