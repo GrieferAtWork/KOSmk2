@@ -163,19 +163,24 @@
 
 
 #if S == 1
+#define STR_MEMPCPY(dst,src,n) ((T *)libc_mempcpy(dst,src,n))
 #define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpy(dst,src,n))
 #define STR_MEMSET(dst,fill,n) ((T *)libc_memset(dst,fill,n))
 #elif S == 2
+#define STR_MEMPCPY(dst,src,n) ((T *)libc_mempcpyw(dst,src,n))
 #define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpyw(dst,src,n))
 #define STR_MEMSET(dst,fill,n) ((T *)libc_memsetw(dst,fill,n))
 #elif S == 4
+#define STR_MEMPCPY(dst,src,n) ((T *)libc_mempcpyl(dst,src,n))
 #define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpyl(dst,src,n))
 #define STR_MEMSET(dst,fill,n) ((T *)libc_memsetl(dst,fill,n))
 #elif S == 8 && defined(CONFIG_64BIT_STRING)
+#define STR_MEMPCPY(dst,src,n) ((T *)libc_mempcpyq(dst,src,n))
 #define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpyq(dst,src,n))
 #define STR_MEMSET(dst,fill,n) ((T *)libc_memsetq(dst,fill,n))
 #else
 #define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpy(dst,src,(n)*S))
+#define STR_MEMPCPY(dst,src,n) ((T *)libc_mempcpy(dst,src,(n)*S))
 #define STR_MEMSET(dst,fill,n) ((T *)libc_memset(dst,(fill) & 0xff,(n)*S))
 #endif
 
@@ -331,9 +336,7 @@ DECL size_t LIBCCALL Xstr(nroff)
 #undef WANT_STPCPY
 DECL T *LIBCCALL Xstp(cpy)
 (T *__restrict dst, T const *__restrict src) {
-	size_t len = Xstr(len)(src);
-	STR_MEMCPY(dst,src,len+1);
-	return dst+len;
+	return STR_MEMPCPY(dst,src,Xstr(len)(src));
 }
 #endif /* WANT_STPCPY */
 
@@ -341,9 +344,9 @@ DECL T *LIBCCALL Xstp(cpy)
 #undef WANT_STPNCPY
 DECL T *LIBCCALL Xstp(ncpy)
 (T *__restrict dst, T const *__restrict src, size_t n) {
-	size_t len = Xstr(nlen)(src,n);
-	STR_MEMCPY(dst,src,len+!src[len]);
-	return dst+len;
+	size_t src_len = Xstr(nlen)(src,n);
+	if (src_len < n) ++src_len;
+	return STR_MEMPCPY(dst,src,src_len);
 }
 #endif /* WANT_STPNCPY */
 
@@ -429,7 +432,9 @@ DECL T *LIBCCALL Xstr(cpy)
 #undef WANT_STRNCPY
 DECL T *LIBCCALL Xstr(ncpy)
 (T *__restrict dst, T const *__restrict src, size_t n) {
-	return STR_MEMCPY(dst,src,Xstr(nlen)(src,n)+1);
+	size_t src_len = Xstr(nlen)(src,n);
+	if (src_len < n) ++src_len;
+	return STR_MEMCPY(dst,src,src_len);
 }
 #endif /* WANT_STRNCPY */
 
@@ -1576,6 +1581,7 @@ DECL void LIBCCALL X(splitpath)
 #undef DECL
 #undef UTFXTO8
 #undef UTF8TOX
+#undef STR_MEMPCPY
 #undef STR_MEMCPY
 #undef STR_MEMSET
 #undef NUL

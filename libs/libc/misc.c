@@ -447,7 +447,7 @@ INTERN ATTR_DOSTEXT Treturn (LIBCCALL libc_name) param { \
 
 #define REDIRECT_LIBM(public_name,libc_name,libm_name,Treturn,param,args) \
  DEFINE_INTERN_LIBM_ALIAS(libc_name,libm_name,Treturn,param,args); \
- DEFINE_PUBLIC_ALIAS(public_name,libc_name)
+ DEFINE_PUBLIC_ALIAS(.dos.public_name,libc_name)
 
 /* DOS exports math functions from its libc, but since
  * we follow unix guidelines, we export them from libm.
