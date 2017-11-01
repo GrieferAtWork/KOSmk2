@@ -1269,17 +1269,18 @@ function run_addr2line(addr) {
 	filename = filename.strip();
 	line = line.strip();
 #ifdef __WINDOWS__
-	if (filename.startswith("/cygdrive/")) {
-		filename = filename[#"/cygdrive/":].strip();
-		local drive,none,path = filename.partition("/")...;
-		filename = drive.upper()+":\\"+path.strip().strip("/").replace("/","\\");
-	}
-	if (filename.startswith("/opt/kos/usr/include/")) {
-		filename = filename[#"/opt/kos/usr/":].strip().replace("/","\\");
-	}
-	filename = filename.replace("\\\\","\\");
-	filename = "..\\"+fs::path::rel(filename);
-	filename = filename.replace("\\","/");
+	filename = fix_path("../",filename);
+//	if (filename.startswith("/cygdrive/")) {
+//		filename = filename[#"/cygdrive/":].strip();
+//		local drive,none,path = filename.partition("/")...;
+//		filename = drive.upper()+":\\"+path.strip().strip("/").replace("/","\\");
+//	}
+//	if (filename.startswith("/opt/kos/usr/include/")) {
+//		filename = filename[#"/opt/kos/usr/":].strip().replace("/","\\");
+//	}
+//	filename = filename.replace("\\\\","\\");
+//	filename = "..\\"+fs::path::rel(filename);
+//	filename = filename.replace("\\","/");
 #endif
 	return pack filename,line,func;
 }

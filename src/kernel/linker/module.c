@@ -715,7 +715,6 @@ module_mkregions(struct module *__restrict self) {
    region->mr_size = iter->ms_msize;
    iter->ms_region = region; /* Inherit reference. */
    page_offset = iter->ms_paddr & (PAGESIZE-1);
-   /* XXX: These are incorrect. - We must start mapping the file deeper into the region. */
    if (iter->ms_fsize == 0) {
     /* Pure .bss section. */
     if (iter->ms_fill) {

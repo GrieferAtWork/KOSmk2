@@ -46,7 +46,7 @@ DECL_BEGIN
 PRIVATE errno_t KCALL
 mscatter_kpread(struct mscatter *__restrict scatter,
                 struct file *__restrict fp, pos_t pos,
-                size_t max_read, size_t fill_before,
+                size_t fill_before, size_t max_read,
                 u32 filler_dword) {
  ssize_t temp; size_t part;
 #if 0
@@ -298,30 +298,30 @@ load_swap:
    } break;
 
    { /* Custom/potentially volatile initializations. */
-    size_t check_i; raddr_t part_begin;
+    size_t check_i; raddr_t iter_begin;
     struct mregion_part **pcheck,*check;
    case MREGION_INIT_TYPE(MREGION_INIT_FILE):
    case MREGION_INIT_TYPE(MREGION_INIT_USER):
-    part_begin = iter->mt_start;
+    iter_begin = iter->mt_start;
     /* Keep a reference to the region to prevent it from dying while we're working. */
     if (!*holds_region_ref) { MREGION_INCREF(self); *holds_region_ref = true; }
     rwlock_endwrite(&self->mr_plock);
     if (MREGION_INIT_ISFILE(self->mr_init)) {
-     size_t max_read = self->mr_setup.mri_size;
      /* Figure out how much should be read from the file. */
-     if (max_read > iter_end) max_read = iter_end;
-     if (max_read < part_begin) max_read  = 0;
-     else max_read -= part_begin;
+     raddr_t read_begin = MAX(iter_begin,self->mr_setup.mri_begin);
+     raddr_t read_end = MIN(iter_end,self->mr_setup.mri_begin+self->mr_setup.mri_size);
+     size_t read_size,fill_before; pos_t load_addr;
+     read_size   = read_begin < read_end ? read_end-read_begin : 0;
+     fill_before = read_begin-iter_begin;
+     load_addr   = (pos_t)((read_begin-self->mr_setup.mri_begin)+self->mr_setup.mri_start);
 #if 0
-     syslog(LOG_DEBUG,"SCATTER (%[file]:%I64X - %IX bytes; offset %IX)\n",
-            self->mr_setup.mri_file,
-            self->mr_setup.mri_start+part_begin,
-            max_read,part_begin);
+     syslog(LOG_DEBUG,"SCATTER (%[file]:%I64X - %IX,%IX bytes; offset %IX)\n",
+            self->mr_setup.mri_file,load_addr,
+            fill_before,read_size,iter_begin);
 #endif
      /* Read the file data into the allocated scatter. */
      error = mscatter_kpread(&load_scatter,self->mr_setup.mri_file,
-                              self->mr_setup.mri_start+part_begin,
-                              max_read,self->mr_setup.mri_begin,
+                              load_addr,fill_before,read_size,
                               self->mr_setup.mri_byte);
     } else {
      /* User-defined initialization. */
@@ -329,7 +329,7 @@ load_swap:
      error = (*self->mr_setup.mri_ufunc)(MREGION_INITFUN_MODE_LOAD,
                                          self->mr_setup.mri_uclosure,
                                          self,&load_scatter,
-                                         part_begin,load_size);
+                                         iter_begin,load_size);
     }
     /* Check if an error code was returned. */
     if (E_ISERR(error)) {
@@ -353,7 +353,7 @@ err_load_scatter:
      pcheck = &check->mt_chain.le_next;
     }
     if unlikely(pcheck != piter || check != iter) goto restart_scatter;
-    if unlikely(iter->mt_start != part_begin) goto restart_scatter;
+    if unlikely(iter->mt_start != iter_begin) goto restart_scatter;
     if unlikely(iter_end != (iter->mt_chain.le_next
                            ? iter->mt_chain.le_next->mt_start
                            : self->mr_size)) goto restart_scatter;
