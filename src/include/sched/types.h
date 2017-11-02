@@ -689,11 +689,16 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #endif /* !CONFIG_NO_TLB */
 #ifdef ARCHTASK_SIZE
 #define TASK_OFFSETOF_ARCH         (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
-#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE+ARCHTASK_SIZE)
+#define __TASK_SIZE                (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE+ARCHTASK_SIZE)
 #else
-#define TASK_SIZE                  (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#define __TASK_SIZE                (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
 #endif
 #define TASK_ALIGN                  TASKSIGSLOT_ALIGN
+#if (__TASK_SIZE % TASK_ALIGN) != 0
+#   define TASK_SIZE              ((__TASK_SIZE+(TASK_ALIGN-1))&~(TASK_ALIGN-1))
+#else
+#   define TASK_SIZE                __TASK_SIZE
+#endif
 
 #ifdef __CC__
 struct task {
@@ -786,6 +791,10 @@ union{
 #ifdef ARCHTASK_SIZE
  struct archtask          t_arch;      /*< Arch-specific task information controller. */
 #endif
+#if (__TASK_SIZE % TASK_ALIGN) != 0
+ /* Force proper size-alignment. */
+ byte_t __t_align[TASK_ALIGN-(__TASK_SIZE % TASK_ALIGN)];
+#endif
 };
 #define TASK_ISSUSPENDED(self) ((self)->t_suspend[0] > 0 || (self)->t_suspend[1] != 0)
 
@@ -853,7 +862,13 @@ struct job {
 #define CPU_OFFSETOF_N_IDLE      (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+__SIZEOF_SIZE_T__)
 #define CPU_OFFSETOF_N_SUSP      (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+2*__SIZEOF_SIZE_T__)
 #define CPU_OFFSETOF_N_SLEEP     (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+3*__SIZEOF_SIZE_T__)
-#define CPU_SIZE                 (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+4*__SIZEOF_SIZE_T__)
+#define __CPU_SIZE               (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+4*__SIZEOF_SIZE_T__)
+#define CPU_ALIGN                 TASK_ALIGN
+#if (__CPU_SIZE % CPU_ALIGN) != 0
+#   define CPU_SIZE             ((__CPU_SIZE+(CPU_ALIGN-1))&~(CPU_ALIGN-1))
+#else
+#   define CPU_SIZE               __CPU_SIZE
+#endif
 
 #ifdef __CC__
 struct cpu {
@@ -903,6 +918,9 @@ struct cpu {
  WEAK size_t                c_n_idle;    /*< [lock(PRIVATE(THIS_CPU))] Total amount of tasks within `c_idling' */
  WEAK size_t                c_n_susp;    /*< [lock(c_lock)] Total amount of tasks within `c_suspended' */
  WEAK size_t                c_n_sleep;   /*< [lock(c_lock)] Total amount of tasks within `c_sleeping' */
+#if (__CPU_SIZE % CPU_ALIGN) != 0
+ byte_t __c_align[CPU_ALIGN-(__CPU_SIZE % CPU_ALIGN)]; /* Force proper size-alignment. */
+#endif
 };
 #define CPU_FOREACH_RUNNING_DO(elem,self)    do{elem = (self)->c_running; do
 #define CPU_FOREACH_RUNNING_WHILE(elem,self) while(((elem) = (elem)->t_sched.sd_running.re_next) != (self)->c_running);}while(0)

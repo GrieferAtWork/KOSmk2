@@ -24,6 +24,12 @@
 #include <hybrid/compiler.h>
 #include <hybrid/limits.h>
 #include <hybrid/types.h>
+#include <linux/limits.h>
+#include <sync/sig.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <kernel/malloc.h>
+#include <kos/keyboard.h>
 
 DECL_BEGIN
 
@@ -71,22 +77,60 @@ struct keymap_header {
  * WARNING: This data structure is visible in user-space! */
 DATDEF WEAK struct keymap const active_keymap __ASMNAME("keymap");
 
+
+struct kbfile {
+ struct file              k_file; /*< Underlying file. */
+ LIST_NODE(struct kbfile) k_next; /*< [lock(KBFILE_KEYBOARD(self)->k_lock)][0..1]
+                                   *  [valid_if((k_file.f_mode & O_ACCMODE) != O_WRONLY)]
+                                   *   Keyboard file to set as active next. 
+                                   *   NOTE: Ignored for keyboard files opened for writing. */
+};
+#define KBFILE_KEYBOARD(self) \
+  container_of((self)->k_file.f_node,struct keyboard,k_device.cd_device.d_node)
+
+struct keyboard {
+ struct chrdev                 k_device; /*< Underlying character device. */
+ struct sig                    k_lock;   /*< Lock/change-signal for the active keyboard file. */
+ struct sig                    k_data;   /*< [lock(NOIRQ)][ORDER(AFTER(k_lock))] Lock for buffered keyboard data/signal for data-available. */
+ struct sig                    k_space;  /*< [ORDER(AFTER(k_lock))] Signal boardcast once the buffer is no longer full. */
+ WEAK LIST_HEAD(struct kbfile) k_active; /*< [lock(k_lock)][0..1] Currently active keyboard receiver file. */
+ ATOMIC_DATA kbkey_t          *k_rpos;   /*< [lock(k_data && NOIRQ)][1..1][in(k_buffer)] Pointer to the next key to-be read. */
+ ATOMIC_DATA kbkey_t          *k_wpos;   /*< [lock(k_data && NOIRQ)][1..1][in(k_buffer)] Pointer to the next key to-be written. */
+ kbkey_t                       k_buffer[MAX_INPUT]; /*< Keyboard input buffer. */
+};
+#define KEYBOARD_NEXT(self,ptr) ((ptr) == COMPILER_ENDOF((self)->k_buffer)-1 ? (self)->k_buffer : (ptr)+1)
+#define KEYBOARD_ISEMPTY(self) ((self)->k_rpos == (self)->k_wpos)
+#define KEYBOARD_ISFULL(self)  ((self)->k_rpos == (self)->k_wpos)
+#define KEYBOARD_RSIZE(self)   ((self)->k_rpos <= (self)->k_wpos ? (size_t)((self)->k_wpos-(self)->k_rpos) : (size_t)(MAX_INPUT-((self)->k_rpos-(self)->k_wpos)))
+#define KEYBOARD_TRYINCREF(self) CHRDEV_TRYINCREF(&(self)->k_device)
+#define KEYBOARD_INCREF(self)    CHRDEV_INCREF(&(self)->k_device)
+#define KEYBOARD_DECREF(self)    CHRDEV_DECREF(&(self)->k_device)
+#define keyboard_open(self,oflags) chrdev_open(&(self)->k_device,oflags)
+
+/* Create a new keyboard device.
+ * NOTE: No additional members must be initialized.
+ *       >> The caller must only setup+register the given. */
+#define keyboard_new(type_size) \
+        keyboard_cinit((struct keyboard *)kmalloc(type_size,GFP_CALLOC|GFP_SHARED))
+FUNDEF struct keyboard *KCALL keyboard_cinit(struct keyboard *self);
+DATDEF struct inodeops keyboard_ops;
+
+/* Write a given key to the input queue of the specified keyboard.
+ * WARNING: This function is non-blocking, but must be called with interrupts disabled.
+ * @return: true:  Successfully queued the given key.
+ * @return: false: The keyboard buffer is full. */
+FUNDEF bool KCALL keyboard_putc(struct keyboard *__restrict self, kbkey_t key);
+
+/* Set the given `self' as the active data endpoint of its associated keyboard.
+ * @return: -EOK:      Successfully set the file as active endpoint.
+ * @return: -EALREADY: The given `self' already was the active endpoint. */
+FUNDEF errno_t KCALL keyboard_make_active(struct kbfile *__restrict self);
+
 /* Get/Set the default keyboard device, or NULL if none is installed. */
-FUNDEF REF struct chrdev *KCALL get_default_keyboard(void);
-FUNDEF bool KCALL set_default_keyboard(struct chrdev *__restrict kbd, bool replace_existing);
+FUNDEF REF struct keyboard *KCALL get_default_keyboard(void);
+FUNDEF bool KCALL set_default_keyboard(struct keyboard *__restrict kbd, bool replace_existing);
 
 
-/* Opens a new file object for the default
- * keyboard, for use by the kernel itself.
- * >> Useful for debug commandlines. */
-#define KEYBOARD_OPEN()  chrdev_open(default_keyboard)
-
-/* Install a new keyboard, using the first found as default. */
-#define KEYBOARD_INSTALL(k) \
-XBLOCK({ if (!ATOMIC_XCH(*(struct chrdev **)&default_keyboard,k)) \
-              CHRDEV_INCREF(k); \
-         (void)0; \
-})
 
 /* Load the new active keymap from the given file.
  * NOTE: The layout of a keymap file must follow `struct keymap_header'

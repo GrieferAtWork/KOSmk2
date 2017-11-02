@@ -104,22 +104,22 @@ STATIC_ASSERT(sizeof(sigset_t)            == __SIZEOF_SIGSET_T__);
 STATIC_ASSERT(offsetof(struct cpu,c_idle) == CPU_OFFSETOF_IDLE);
 STATIC_ASSERT(sizeof(struct task)         == TASK_SIZE);
 STATIC_ASSERT(offsetof(struct cpu,c_idle) == CPU_OFFSETOF_IDLE);
+STATIC_ASSERT(IS_ALIGNED(sizeof(struct task),TASK_ALIGN));
 STATIC_ASSERT(IS_ALIGNED(offsetof(struct cpu,c_idle),TASK_ALIGN));
+#ifndef CONFIG_NO_JOBS
+STATIC_ASSERT(IS_ALIGNED(offsetof(struct cpu,c_work),TASK_ALIGN));
+#endif /* !CONFIG_NO_JOBS */
+STATIC_ASSERT(sizeof(struct cpu)                     == CPU_SIZE);
+STATIC_ASSERT(sizeof(atomic_rwptr_t)                 == __SIZEOF_POINTER__);
+STATIC_ASSERT(offsetof(struct cpustate,iret.useresp) == 52);
 
-STATIC_ASSERT(sizeof(struct cpu)                 == CPU_SIZE);
-STATIC_ASSERT(sizeof(atomic_rwptr_t)             == __SIZEOF_POINTER__);
-STATIC_ASSERT(offsetof(struct cpustate,iret.useresp)  == 52);
-
-//enum{
-// x = CPU_OFFSETOF_IDLE+TASK_OFFSETOF_PID,
-// y = 0x000000C0,
-//};
 
 PUBLIC struct task *KCALL
 task_cinit(struct task *t) {
  if (t) {
   CHECK_HOST_DOBJ(t);
   CHECK_HOST_DOBJ(t->t_cstate);
+  assert(IS_ALIGNED((uintptr_t)t,TASK_ALIGN));
   assert(t->t_mode == TASKMODE_RUNNING);
   assert(!t->t_signals.ts_first.tss_sig);
   assert(t->t_refcnt        == 0);
@@ -168,6 +168,7 @@ task_set_leader(struct task *__restrict self,
  errno_t result = -EOK;
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(leader);
+ assert(IS_ALIGNED((uintptr_t)self,TASK_ALIGN));
  assert(self->t_pid.tp_leader == NULL);
  assert(self->t_mode == TASKMODE_NOTSTARTED);
  if unlikely(leader->t_flags&TASKFLAG_NOTALEADER)
@@ -188,6 +189,7 @@ task_set_parent(struct task *__restrict self, struct task *__restrict parent) {
  errno_t result = -EOK;
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(parent);
+ assert(IS_ALIGNED((uintptr_t)self,TASK_ALIGN));
  assert(self->t_pid.tp_parent == NULL);
  assert(self->t_mode == TASKMODE_NOTSTARTED);
  atomic_rwlock_write(&parent->t_pid.tp_childlock);
@@ -218,6 +220,7 @@ task_set_id(struct task *__restrict self,
  pid_t first_attempt,used_pid;
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(ns);
+ assert(IS_ALIGNED((uintptr_t)self,TASK_ALIGN));
 #ifndef CONFIG_NO_JOBS
  assert(self->t_mode == TASKMODE_NOTSTARTED ||
        (self->t_mode == TASKMODE_SUSPENDED &&
@@ -282,6 +285,7 @@ task_start(struct task *__restrict t) {
  pflag_t was; errno_t error = -EOK;
  CHECK_HOST_DOBJ(t);
  CHECK_HOST_DOBJ(t->t_cstate);
+ assert(IS_ALIGNED((uintptr_t)t,TASK_ALIGN));
  assert(t->t_mode == TASKMODE_NOTSTARTED);
  assert(!t->t_signals.ts_first.tss_sig);
  assert(t->t_signals.ts_first.tss_self == t);

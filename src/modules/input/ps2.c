@@ -55,67 +55,7 @@
 
 DECL_BEGIN
 
-PRIVATE kbkey_t keyboard_buffer[MAX_INPUT];
-PRIVATE struct atomic_iobuffer keyboard_pipe = ATOMIC_IOBUFFER_INIT(keyboard_buffer);
-
-
-
-struct kbfile {
-     struct file   f_file; /*< Underlying file. */
- REF struct kbdev *f_kbd;  /*< [1..1] Connected keyboard device. */
-};
-
-#define KBD   container_of(ino,struct kbdev,kb_device.cd_device.d_node)
-PRIVATE REF struct file *KCALL
-kbd_fopen(struct inode *__restrict ino,
-          struct dentry *__restrict node_ent,
-          oflag_t oflags) {
- REF struct kbfile *result;
- if ((oflags&O_ACCMODE) != O_RDONLY)
-      return E_PTR(-EPERM);
- result = (struct kbfile *)file_new(sizeof(struct kbfile));
- if unlikely(!result) return E_PTR(-ENOMEM);
- CHRDEV_INCREF(&KBD->kb_device);
- result->f_kbd = KBD;
- file_setup(&result->f_file,ino,node_ent,oflags);
- return &result->f_file;
-}
-#undef KBD
-
-#define KBD  (container_of(fp,struct kbfile,f_file)->f_kbd)
-PRIVATE void KCALL kbd_fclose(struct inode *__restrict ino,
-                              struct file *__restrict fp) {
- CHRDEV_DECREF(&KBD->kb_device);
-}
-
-
-PRIVATE ssize_t KCALL kbd_read(struct file *__restrict fp,
-                               USER void *buf, size_t bufsize) {
- /* XXX: Use ioctl() to change data format? */
- ssize_t result;
- SUPPRESS_WAITLOGS_BEGIN();
-#if 0
- syslog(LOG_HW|LOG_DEBUG,"READ_KEYBOARD()\n");
- while ((result = atomic_iobuffer_read(&keyboard_pipe,buf,bufsize,true)) == 0)
-         PREEMPTION_IDLE();
-#else
- result = atomic_iobuffer_read(&keyboard_pipe,buf,bufsize,!(fp->f_mode&O_NONBLOCK));
-#endif
- SUPPRESS_WAITLOGS_END();
- return result;
-}
-#undef KBD
-
-PRIVATE struct inodeops const kbd_ops = {
-    .ino_fopen  = &kbd_fopen,
-    .ino_fclose = &kbd_fclose,
-    .ino_fini   = (void (KCALL *)(struct inode *))&chrdev_fini,
-    .f_read     = &kbd_read,
-};
-
-
-
-
+PRIVATE struct kbdev *ps2_keyboard;
 PRIVATE void KCALL keyboard_send(kbkey_t k) {
 #if 1
  if (k == KEY_F12) {
@@ -198,19 +138,9 @@ PRIVATE void KCALL keyboard_send(kbkey_t k) {
  }
 #endif
 
- {
-#if 0
-  char c;
-  if ((k < 256 && (c = active_keymap.km_press[k]) != '\0')
-      ? atomic_iobuffer_kwrite(&keyboard_pipe,&c,sizeof(c)) != sizeof(c)
-      : 0/*atomic_iobuffer_kwrite(&keyboard_pipe,&k,sizeof(k)) != sizeof(k)*/)
-#else
-  if (atomic_iobuffer_kwrite(&keyboard_pipe,&k,sizeof(k)) != sizeof(k))
-#endif
-  {
-   syslog(LOG_HW|LOG_WARN,
-          "[KBD] Failed to queue key press %#.2I16x: buffer is full\n",k);
-  }
+ if (!keyboard_putc(&ps2_keyboard->kb_device,k)) {
+  syslog(LOG_HW|LOG_WARN,
+         "[KBD] Failed to queue key press %#.2I16x: buffer is full\n",k);
  }
 }
 
@@ -630,7 +560,6 @@ PRIVATE ATTR_UNUSED bool KCALL ps2_keyboard_set_scanset(u8 port, u8 v);
 
 PRIVATE MODULE_INIT errno_t ps2_init(void) {
  errno_t error; u8 ps_scanset,ps_syscfg,port;
- struct kbdev *ps2_keyboard;
 
  /* Disable both PS/2 ports */
  ps2_write_cmd(PS2_CONTROLLER_DISABLE_PORT1);
@@ -701,12 +630,11 @@ got_keyboard:
  /* Select the scanset-specific state machine ring. */
  p.p_state = STATE_INPUT_SET1+ps_scanset;
 
- ps2_keyboard = (struct kbdev *)chrdev_new(sizeof(struct kbdev));
+ ps2_keyboard = (struct kbdev *)keyboard_new(sizeof(struct kbdev));
  if unlikely(!ps2_keyboard) return -ENOMEM;
- ps2_keyboard->kb_port                          = port;
- ps2_keyboard->kb_device.cd_device.d_node.i_ops = &kbd_ops;
- ps2_keyboard->kb_device.cd_device.d_irq_ctl    = &keyboard_irqctl;
- error = device_setup(&ps2_keyboard->kb_device.cd_device,THIS_INSTANCE);
+ ps2_keyboard->kb_port                                = port;
+ ps2_keyboard->kb_device.k_device.cd_device.d_irq_ctl = &keyboard_irqctl;
+ error = device_setup(&ps2_keyboard->kb_device.k_device.cd_device,THIS_INSTANCE);
  if (E_ISERR(error)) goto err;
 
  /* Register the PS/2 keyboard driver device file. */
@@ -715,7 +643,7 @@ got_keyboard:
  /* Install a new default keyboard device. */
  set_default_keyboard(&ps2_keyboard->kb_device,false);
 
- CHRDEV_DECREF(&ps2_keyboard->kb_device);
+ KEYBOARD_DECREF(&ps2_keyboard->kb_device);
 
  return -EOK;
 err:

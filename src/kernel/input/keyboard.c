@@ -42,24 +42,345 @@
 #include <kernel/user.h>
 #include <sched/paging.h>
 #include <kernel/mman.h>
+#include <hybrid/minmax.h>
+#include <bits/poll.h>
 
 DECL_BEGIN
 
+
+PUBLIC bool KCALL
+keyboard_putc(struct keyboard *__restrict self, kbkey_t key) {
+ kbkey_t *next; bool result = false;
+ assert(!PREEMPTION_ENABLED());
+#ifdef CONFIG_SMP
+ sig_write(&self->k_data);
+#endif
+ /* Make sure not to overlap with the read-pointer,
+  * which would indicate an empty buffer. */
+ next = KEYBOARD_NEXT(self,self->k_wpos);
+ if (next != self->k_rpos) {
+  *self->k_wpos = key;
+  self->k_wpos = next;
+  if (next == KEYBOARD_NEXT(self,self->k_rpos)) {
+#ifdef CONFIG_SMP
+   sig_broadcast_unlocked(&self->k_data);
+#else
+   asserte(sig_trywrite(&self->k_data));
+   sig_broadcast_unlocked(&self->k_data);
+   sig_endwrite(&self->k_data);
+#endif
+  }
+  result = true;
+ }
+#ifdef CONFIG_SMP
+ sig_endwrite(&self->k_data);
+#endif
+ return result;
+}
+
+PUBLIC errno_t KCALL
+keyboard_make_active(struct kbfile *__restrict self) {
+ errno_t result = -EALREADY;
+ struct keyboard *kb = KBFILE_KEYBOARD(self);
+ sig_write(&kb->k_lock);
+ if (kb->k_active != self) {
+  /* Bring the file to the front of the list. */
+  LIST_REMOVE(self,k_next);
+  LIST_INSERT(kb->k_active,self,k_next);
+  /* Broadcast the lock to indicate that the active keyboard has changed. */
+  sig_broadcast_unlocked(&kb->k_lock);
+  result = -EOK;
+ }
+ sig_endwrite(&kb->k_lock);
+ return result;
+}
+
+#define SELF     container_of(fp,struct kbfile,k_file)
+#define KEYBOARD KBFILE_KEYBOARD(SELF)
+PRIVATE ssize_t KCALL
+keyboard_read(struct file *__restrict fp, USER void *buf, size_t bufsize) {
+ ssize_t result;
+ struct keyboard *kb = KEYBOARD;
+again:
+ sig_read(&kb->k_lock);
+ if (kb->k_active != SELF) {
+  /* This keyboard isn't the selected file. */
+  if (fp->f_mode&O_NONBLOCK) {
+   /* Don't block and indicate that nothing was read. */
+   sig_endread(&kb->k_lock);
+   result = 0;
+  } else {
+   if (!sig_upgrade(&kb->k_lock) &&
+        kb->k_active == SELF) {
+    sig_downgrade(&kb->k_lock);
+    goto i_am_active;
+   }
+   /* Wait for another file to become active, then try again. */
+   result = sig_recv_endwrite(&kb->k_lock);
+   if (E_ISERR(result)) return result;
+   goto again;
+  }
+ } else {
+  /* We are currently the active file. */
+  pflag_t was;
+i_am_active:
+  was = PREEMPTION_PUSH();
+#ifdef CONFIG_SMP
+  sig_write(&kb->k_data);
+#endif
+  result = KEYBOARD_RSIZE(kb);
+  if (!result && !(fp->f_mode&O_NONBLOCK)) {
+#ifndef CONFIG_SMP
+   asserte(sig_trywrite(&kb->k_data));
+#endif
+   /* Guaranty: The first time `task_addwait()' is called, it never fails. */
+   asserte(E_ISOK(task_addwait(&kb->k_data,NULL,0)));
+   sig_endwrite(&kb->k_data);
+   /* Re-enable preemption now that we've started listening for new data.
+    * The order here is _very_ important because only 'k_data' must be
+    * accessed with interrupts disabled. */
+   PREEMPTION_POP(was);
+   sig_endread(&kb->k_lock);
+   /* Wait for data to become available. */
+   result = E_GTERR(task_waitfor(JTIME_INFINITE));
+   if (E_ISERR(result)) goto end;
+   /* Start over now that data has become available. */
+   goto again;
+  } else {
+   /* Copy data to user-space. */
+   size_t temp; kbkey_t *old_rpos;
+   bufsize /= sizeof(kbkey_t);
+   if ((size_t)result > bufsize)
+       result = (ssize_t)bufsize;
+   result *= sizeof(kbkey_t);
+   bufsize = (size_t)result;
+   old_rpos = kb->k_rpos;
+   /* Copy high memory. */
+   if (kb->k_rpos < kb->k_wpos)
+        temp = (size_t)(kb->k_wpos-kb->k_rpos);
+   else temp = (size_t)(COMPILER_ENDOF(kb->k_buffer)-kb->k_rpos);
+   temp = MIN(temp*sizeof(kbkey_t),bufsize);
+   if (copy_to_user(buf,kb->k_rpos,temp)) {efault: result = -EFAULT; goto done_copy; }
+   *(uintptr_t *)&buf += temp;
+   bufsize -= temp;
+   *(uintptr_t *)&kb->k_rpos += temp;
+   if (bufsize) {
+    /* Copy low memory. */
+    if (copy_to_user(buf,kb->k_buffer,bufsize))
+        goto efault;
+    kb->k_rpos = kb->k_buffer+bufsize/sizeof(kbkey_t);
+   } else {
+    if (kb->k_rpos == COMPILER_ENDOF(kb->k_buffer))
+        kb->k_rpos = kb->k_buffer;
+   }
+   /* If the buffer used to be full, broadcast that it no longer is. */
+   if (result && KEYBOARD_NEXT(kb,old_rpos) == kb->k_wpos)
+       sig_broadcast(&kb->k_space);
+done_copy:
+#ifdef CONFIG_SMP
+   sig_endwrite(&kb->k_data);
+#endif
+   PREEMPTION_POP(was);
+   sig_endread(&kb->k_lock);
+  }
+ }
+end:
+ return result;
+}
+PRIVATE ssize_t KCALL
+keyboard_write(struct file *__restrict fp, USER void const *buf, size_t bufsize) {
+ ssize_t result; size_t part;
+ struct keyboard *kb = KEYBOARD;
+ pflag_t was; kbkey_t buffer[64],*iter;
+again:
+ was = PREEMPTION_PUSH();
+#ifdef CONFIG_SMP
+ sig_write(&kb->k_data);
+#endif
+ result = 0;
+ bufsize /= sizeof(kbkey_t);
+ while (bufsize) {
+  part = MIN(bufsize,COMPILER_LENOF(buffer));
+  if (copy_from_user(buffer,buf,part*sizeof(kbkey_t))) { result = -EFAULT; goto done_err; }
+  iter = buffer,*(uintptr_t *)&buf += part,bufsize -= part;
+  while (part--) { if (!keyboard_putc(kb,*iter++)) goto done; result += sizeof(kbkey_t); }
+ }
+done:
+ if (!result && !(fp->f_mode&O_NONBLOCK)) {
+  /* Nothing could be written. - Block until something can. */
+  sig_write(&kb->k_space);
+  asserte(E_ISOK(task_addwait(&kb->k_space,NULL,0)));
+  sig_endwrite(&kb->k_space);
+#ifdef CONFIG_SMP
+  sig_endwrite(&kb->k_data);
+#endif
+  PREEMPTION_POP(was);
+  /* Wait for buffer space to become available. */
+  result = E_GTERR(task_waitfor(JTIME_INFINITE));
+  if (E_ISERR(result)) goto end;
+  /* Try to write more data. */
+  goto again;
+ }
+done_err:
+#ifdef CONFIG_SMP
+ sig_endwrite(&kb->k_data);
+#endif
+ PREEMPTION_POP(was);
+end:
+ return result;
+}
+PRIVATE errno_t KCALL
+keyboard_ioctl(struct file *__restrict fp, int name, USER void *UNUSED(arg)) {
+ switch (name) {
+ case KBIO_ACTIVATE: /* Activate this keyboard. */
+  return keyboard_make_active(container_of(fp,struct kbfile,k_file));
+ default:
+  break;
+ }
+ return -EINVAL;
+}
+PRIVATE pollmode_t KCALL
+keyboard_poll(struct file *__restrict fp, pollmode_t mode) {
+ pollmode_t result = 0; errno_t error;
+ struct keyboard *kb = KEYBOARD; pflag_t was;
+ sig_write(&kb->k_lock);
+ was = PREEMPTION_PUSH();
+#ifdef CONFIG_SMP
+ sig_write(&kb->k_data);
+#endif
+ if (mode&POLLIN) {
+  /* Check for available input data. */
+  if (!KEYBOARD_ISEMPTY(kb))
+   result |= POLLIN;
+  else if (SELF != kb->k_active) {
+   /* Wait for the active data endpoint to change. */
+   error = task_addwait(&kb->k_lock,NULL,0);
+   if (E_ISERR(error)) goto err;
+  } else {
+#ifndef CONFIG_SMP
+   sig_write(&kb->k_data);
+#endif
+   error = task_addwait(&kb->k_data,NULL,0);
+#ifndef CONFIG_SMP
+   sig_endwrite(&kb->k_data);
+#endif
+   if (E_ISERR(error)) goto err;
+  }
+ }
+ if (mode&POLLOUT) {
+  if (!KEYBOARD_ISFULL(kb))
+   result |= POLLOUT;
+  else {
+   sig_write(&kb->k_space);
+   error = task_addwait(&kb->k_space,NULL,0);
+   sig_endwrite(&kb->k_space);
+   if (E_ISERR(error)) goto err;
+  }
+ }
+end:
+#ifdef CONFIG_SMP
+ sig_endwrite(&kb->k_data);
+#endif
+ PREEMPTION_POP(was);
+ sig_endwrite(&kb->k_lock);
+ if (!result && mode&~(POLLIN|POLLOUT))
+      result = -EWOULDBLOCK;
+ return result;
+err: result = error; goto end;
+}
+#undef KEYBOARD
+
+#define KEYBOARD container_of(ino,struct keyboard,k_device.cd_device.d_node)
+PRIVATE void KCALL
+keyboard_fclose(struct inode *__restrict ino,
+                struct file *__restrict fp) {
+ if ((fp->f_mode&O_ACCMODE) != O_WRONLY) {
+  sig_write(&KEYBOARD->k_lock);
+  /* If this keyboard file was the currently active data
+   * endpoint, restore what was the endpoint before then. */
+  if (SELF == KEYBOARD->k_active)
+      sig_broadcast_unlocked(&KEYBOARD->k_lock);
+  LIST_REMOVE(SELF,k_next);
+  sig_endwrite(&KEYBOARD->k_lock);
+ }
+}
+#undef SELF
+PRIVATE REF struct file *KCALL
+keyboard_fopen(struct inode *__restrict ino,
+               struct dentry *__restrict node_ent,
+               oflag_t oflags) {
+ REF struct kbfile *result;
+ if ((oflags & O_ACCMODE) != O_WRONLY) {
+  result = (REF struct kbfile *)file_new(sizeof(struct kbfile));
+  if (!result) return E_PTR(-ENOMEM);
+  sig_write(&KEYBOARD->k_lock);
+  /* Mark the keyboard file as the new active endpoint. */
+  LIST_INSERT(KEYBOARD->k_active,result,k_next);
+  file_setup(&result->k_file,ino,node_ent,oflags);
+  /* Broadcast the change. */
+  sig_broadcast_unlocked(&KEYBOARD->k_lock);
+  sig_endwrite(&KEYBOARD->k_lock);
+ } else {
+  /* Create the file without keyboard read permissions. */
+  result = (REF struct kbfile *)file_new(sizeof(struct file));
+  if (!result) return E_PTR(-ENOMEM);
+  file_setup(&result->k_file,ino,node_ent,oflags);
+ }
+ return &result->k_file;
+}
+PRIVATE errno_t KCALL
+keyboard_stat(struct inode *__restrict ino,
+              struct stat64 *__restrict statbuf) {
+ statbuf->st_blocks = 1;
+ //statbuf->st_size = 0; /* TODO: Available input data. */
+ return -EOK;
+}
+#undef KEYBOARD
+
+PUBLIC struct inodeops keyboard_ops = {
+    .f_flags    = INODE_FILE_LOCKLESS,
+    .f_read     = &keyboard_read,
+    .f_write    = &keyboard_write,
+    .f_ioctl    = &keyboard_ioctl,
+    .f_poll     = &keyboard_poll,
+    .ino_fopen  = &keyboard_fopen,
+    .ino_fclose = &keyboard_fclose,
+    .ino_stat   = &keyboard_stat,
+};
+
+PUBLIC struct keyboard *KCALL
+keyboard_cinit(struct keyboard *self) {
+ if (self) {
+  chrdev_cinit(&self->k_device);
+  sig_cinit(&self->k_lock);
+  sig_cinit(&self->k_data);
+  sig_cinit(&self->k_space);
+  assert(self->k_active == NULL);
+  assert(self->k_rpos == NULL);
+  assert(self->k_wpos == NULL);
+  self->k_rpos = self->k_buffer;
+  self->k_wpos = self->k_buffer;
+  self->k_device.cd_device.d_node.i_ops = &keyboard_ops;
+ }
+ return self;
+}
+
+
 PRIVATE DEFINE_ATOMIC_RWLOCK(keyboard_lock);
-PRIVATE REF struct chrdev *keyboard = NULL;
+PRIVATE REF struct keyboard *default_keyboard = NULL;
 
 INTERN void KCALL
 delete_default_keyboard(struct device *__restrict dev) {
  atomic_rwlock_read(&keyboard_lock);
- if (&keyboard->cd_device == dev) {
+ if (&default_keyboard->k_device.cd_device == dev) {
   if (!atomic_rwlock_upgrade(&keyboard_lock)) {
-   if (&keyboard->cd_device != dev) {
+   if (&default_keyboard->k_device.cd_device != dev) {
     atomic_rwlock_endwrite(&keyboard_lock);
     return;
    }
   }
-  assert(&keyboard->cd_device == dev);
-  keyboard = NULL;
+  assert(&default_keyboard->k_device.cd_device == dev);
+  default_keyboard = NULL;
   atomic_rwlock_endwrite(&keyboard_lock);
   DEVICE_DECREF(dev);
   return;
@@ -67,28 +388,28 @@ delete_default_keyboard(struct device *__restrict dev) {
  atomic_rwlock_endread(&keyboard_lock);
 }
 
-PUBLIC REF struct chrdev *
+PUBLIC REF struct keyboard *
 KCALL get_default_keyboard(void) {
- REF struct chrdev *result;
+ REF struct keyboard *result;
  atomic_rwlock_read(&keyboard_lock);
- result = keyboard;
- if (result) CHRDEV_INCREF(result);
+ result = default_keyboard;
+ if (result) KEYBOARD_INCREF(result);
  atomic_rwlock_endread(&keyboard_lock);
  return result;
 }
 PUBLIC bool KCALL
-set_default_keyboard(struct chrdev *__restrict kbd,
+set_default_keyboard(struct keyboard *__restrict kbd,
                      bool replace_existing) {
- REF struct chrdev *old_device = NULL;
+ REF struct keyboard *old_device = NULL;
  CHECK_HOST_DOBJ(kbd);
  atomic_rwlock_write(&keyboard_lock);
- if (replace_existing || !keyboard) {
-  CHRDEV_INCREF(kbd);
-  old_device = keyboard;
-  keyboard   = kbd;
+ if (replace_existing || !default_keyboard) {
+  KEYBOARD_INCREF(kbd);
+  old_device       = default_keyboard;
+  default_keyboard = kbd;
  }
  atomic_rwlock_endwrite(&keyboard_lock);
- if (old_device) CHRDEV_DECREF(old_device);
+ if (old_device) KEYBOARD_DECREF(old_device);
  return old_device != NULL;
 }
 

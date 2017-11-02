@@ -22,6 +22,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/kdev_t.h>
 #include <dev/chrdev.h>
+#include <input/keyboard.h>
 #include <sync/sig.h>
 
 DECL_BEGIN
@@ -81,8 +82,8 @@ DECL_BEGIN
 #define PS2_PORT2    0x01 /*< Send command to port #2 */
 
 struct kbdev {
- struct chrdev kb_device;  /*< Underlying character device. */
- u8            kb_port;    /*< The keyboard port (One of `PS2_PORT*') */
+ struct keyboard kb_device;  /*< Underlying keyboard. */
+ u8              kb_port;    /*< The keyboard port (One of `PS2_PORT*') */
 };
 
 

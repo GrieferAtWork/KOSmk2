@@ -268,6 +268,10 @@ typedef __UINT16_TYPE__ kbkey_t;   /*< One of `KEY_*' */
 #define KEY_APIC_WAKE   0x1102 		
 
 
+/* ioctl() commands. */
+#define KBIO_ACTIVATE 0x3801 /* Set the associated file descriptor as active data endpoint (Automatically performed upon opening the file). */
+
+
 #ifdef __CC__
 #include <kos/ksym.h>
 

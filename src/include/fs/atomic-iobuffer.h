@@ -46,13 +46,33 @@ struct atomic_iobuffer {
 #endif /* CONFIG_SMP */
 };
 
-#define ATOMIC_IOBUFFER_INIT(buffer)      ATOMIC_IOBUFFER_INIT_EX(buffer,sizeof(buffer))
+#define ATOMIC_IOBUFFER_INIT(buffer)       ATOMIC_IOBUFFER_INIT_EX(buffer,sizeof(buffer))
+#define atomic_iobuffer_init(self,buffer)  atomic_iobuffer_init_ex(self,buffer,sizeof(buffer))
+#define atomic_iobuffer_cinit(self,buffer) atomic_iobuffer_cinit_ex(self,buffer,sizeof(buffer))
 #ifdef CONFIG_SMP
 #define ATOMIC_IOBUFFER_INIT_EX(buf,siz) \
   {SIG_INIT,siz,(byte_t *)(buf),((byte_t *)(buf))+(siz),(byte_t *)(buf),(byte_t *)(buf),ATOMIC_RWLOCK_INIT}
+#define atomic_iobuffer_init_ex(self,buf,siz) \
+  (sig_init(&(self)->aib_avail),(self)->aib_size = (siz), \
+  (self)->aib_buffer = (byte_t *)(buf),(self)->aib_rpos = (byte_t *)(buf)+(siz),\
+  (self)->aib_wpos = (byte_t *)(buf),(self)->aib_apos = (byte_t *)(buf),\
+   atomic_rwlock_init(&(self)->aib_using))
+#define atomic_iobuffer_cinit_ex(self,buf,siz) \
+  (sig_cinit(&(self)->aib_avail),(self)->aib_size = (siz), \
+  (self)->aib_buffer = (byte_t *)(buf),(self)->aib_rpos = (byte_t *)(buf)+(siz),\
+  (self)->aib_wpos = (byte_t *)(buf),(self)->aib_apos = (byte_t *)(buf),\
+   atomic_rwlock_cinit(&(self)->aib_using))
 #else
 #define ATOMIC_IOBUFFER_INIT_EX(buf,siz) \
   {SIG_INIT,siz,(byte_t *)(buf),((byte_t *)(buf))+(siz),(byte_t *)(buf),(byte_t *)(buf)}
+#define atomic_iobuffer_init_ex(self,buf,siz) \
+  (sig_init(&(self)->aib_avail),(self)->aib_size = (siz), \
+  (self)->aib_buffer = (byte_t *)(buf),(self)->aib_rpos = (byte_t *)(buf)+(siz),\
+  (self)->aib_wpos = (byte_t *)(buf),(self)->aib_apos = (byte_t *)(buf))
+#define atomic_iobuffer_cinit_ex(self,buf,siz) \
+  (sig_cinit(&(self)->aib_avail),(self)->aib_size = (siz), \
+  (self)->aib_buffer = (byte_t *)(buf),(self)->aib_rpos = (byte_t *)(buf)+(siz),\
+  (self)->aib_wpos = (byte_t *)(buf),(self)->aib_apos = (byte_t *)(buf))
 #endif
 #define ATOMIC_IOBUFFER_SIZE(self)    (self)->aib_size
 #define ATOMIC_IOBUFFER_MAXREAD(self,rpos,apos) \

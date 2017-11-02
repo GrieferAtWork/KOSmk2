@@ -80,15 +80,10 @@ int main(int argc, char **argv) {
  /* Mount the secondary disk passed to QEMU (TODO: Remove me) */
  mount("/dev/dos_hdb1","/mnt",NULL,0,NULL);
 
-#if 1
+#if 0
  /* Try to exec() an exe (test the PDB debug parser) */
  if (fork() == 0) {
-#if 1
-  chdir("bin");
-  execl("/bin/doom","doom",NULL);
-#else
   fexeclat(AT_FDCWD,"/bin/dos_userapp.exe","dos_userapp.exe",NULL,AT_SYMLINK_FOLLOW);
-#endif
   _exit(127);
  }
  while (wait(NULL) == -1 && errno == EINTR);
