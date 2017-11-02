@@ -342,7 +342,7 @@ __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,access
 #endif /* !__access_defined */
 #ifndef __chdir_defined
 #define __chdir_defined 1
-__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,chdir,(char const *__path),chdir,(__path));
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1)),int,__LIBCCALL,chdir,(char const *__path),chdir,(__path))
 #endif /* !__chdir_defined */
 #ifndef __getcwd_defined
 #define __getcwd_defined 1
@@ -364,11 +364,11 @@ __REDIRECT_UFS(__LIBC,__PORT_KOSONLY_ALT(chdir) __NONNULL((2)),int,__LIBCCALL,fc
 
 #ifdef __USE_GNU
 #ifdef __DOS_COMPAT__
-__REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,euidaccess,(char const *__name, int __type),_access,(__name,__type));
-__REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,eaccess,(char const *__name, int __type),_access,(__name,__type));
+__REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,euidaccess,(char const *__name, int __type),_access,(__name,__type))
+__REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,eaccess,(char const *__name, int __type),_access,(__name,__type))
 #else /* __DOS_COMPAT__ */
-__REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,euidaccess,(char const *__name, int __type),eaccess,(__name,__type));
-__REDIRECT_UFS(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,eaccess,(char const *__name, int __type),eaccess,(__name,__type));
+__REDIRECT_UFS_(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,euidaccess,(char const *__name, int __type),eaccess,(__name,__type))
+__REDIRECT_UFS(__LIBC,__WUNUSED __NONNULL((1)),int,__LIBCCALL,eaccess,(char const *__name, int __type),eaccess,(__name,__type))
 #endif /* !__DOS_COMPAT__ */
 #endif /* __USE_GNU */
 

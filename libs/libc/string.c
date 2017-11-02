@@ -45,7 +45,6 @@
 #include <hybrid/types.h>
 #include <hybrid/minmax.h>
 #include <hybrid/byteswap.h>
-#include <kos/ksym.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

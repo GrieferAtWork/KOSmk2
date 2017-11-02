@@ -71,17 +71,20 @@
 #   define __STATIC_ASSERT(expr) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
 #endif
 #ifdef __INTELLISENSE__
-#define __ASMNAME(x)   /* Nothing */
+#   define __ASMNAME(x)   /* Nothing */
 #else
-#define __ASMNAME(x)   __asm__(x)
+#   define __ASMNAME(x)   __asm__(x)
 #endif
 //#define __NO_ASMNAME 1 /* TO-DO: Remove me */
-#if !__GCC_VERSION(2,8,0)
-#define __extension__
+#if !__GCC_VERSION(2,7,0)
+#ifndef __attribute__
+#   define __attribute__(x) /* Nothing */
+#endif /* !__attribute__ */
 #endif
-#if !__GCC_VERSION(2,92,0)
-#define __restrict     /* Nothing */
-#define __restrict__   /* Nothing */
+#if !__GCC_VERSION(2,8,0)
+#ifndef __extension__
+#   define __extension__
+#endif /* !__extension__ */
 #endif
 #define __VA_LIST      __builtin_va_list
 #define __COMPILER_HAVE_TYPEOF 1
@@ -200,9 +203,6 @@
 #   define __NO_ATTR_ALLOC_ALIGN   1
 #   define __ATTR_ALLOC_ALIGN(pari) /* Nothing */
 #endif
-#define __ATTR_WARNING(text)     __attribute__((__warning__(text)))
-#define __ATTR_ERROR(text)       __attribute__((__error__(text)))
-#define __ATTR_SECTION(name)     __attribute__((__section__(name)))
 #if __GCC_VERSION(3,3,0)
 #   define __ATTR_NOTHROW        __attribute__((__nothrow__))
 #else
@@ -215,14 +215,12 @@
 #   define __NO_ATTR_OPTIMIZE    1
 #   define __ATTR_OPTIMIZE(opt)  /* Nothing */
 #endif
-#define __ATTR_RETNONNULL        __attribute__((__returns_nonnull__))
-#define __ATTR_PACKED            __attribute__((__packed__))
-#define __ATTR_ALIAS(name)       __attribute__((__alias__(name)))
-#define __ATTR_ALIGNED(n)        __attribute__((__aligned__(n)))
-#define __ATTR_WEAK              __attribute__((__weak__))
-#define __ATTR_RETURNS_TWICE     __attribute__((__returns_twice__))
-#define __ATTR_EXTERNALLY_VISIBLE __attribute__((__externally_visible__))
-#define __ATTR_VISIBILITY(vis)   __attribute__((__visibility__(vis)))
+#if __GCC_VERSION(2,0,0) && !defined(__cplusplus)
+#   define __ATTR_TRANSPARENT_UNION __attribute__((__transparent_union__))
+#else
+#   define __NO_ATTR_TRANSPARENT_UNION 1
+#   define __ATTR_TRANSPARENT_UNION    /* nothing */
+#endif
 /* format-printer attributes. */
 #if __GCC_VERSION(2,3,0)
 #   define __ATTR_FORMAT_PRINTF(fmt,args) __attribute__((__format__(__printf__,fmt,args)))
@@ -242,7 +240,6 @@
 #   define __ATTR_FORMAT_STRFMON(fmt,args)  /* Nothing */
 #   define __ATTR_FORMAT_STRFTIME(fmt,args) /* Nothing */
 #endif
-
 #if defined(__PE__) || defined(_WIN32)
 #   define __ATTR_DLLIMPORT      __attribute__((__dllimport__))
 #   define __ATTR_DLLEXPORT      __attribute__((__dllexport__))
@@ -264,6 +261,20 @@
 #   define __NO_WUNUSED          1
 #   define __WUNUSED             /* Nothing */
 #endif
+
+#define __ATTR_WARNING(text)     __attribute__((__warning__(text)))
+#define __ATTR_ERROR(text)       __attribute__((__error__(text)))
+#define __ATTR_SECTION(name)     __attribute__((__section__(name)))
+#define __ATTR_RETNONNULL        __attribute__((__returns_nonnull__))
+#define __ATTR_PACKED            __attribute__((__packed__))
+#define __ATTR_ALIAS(name)       __attribute__((__alias__(name)))
+#define __ATTR_ALIGNED(n)        __attribute__((__aligned__(n)))
+#define __ATTR_WEAK              __attribute__((__weak__))
+#define __ATTR_RETURNS_TWICE     __attribute__((__returns_twice__))
+#define __ATTR_EXTERNALLY_VISIBLE __attribute__((__externally_visible__))
+#define __ATTR_VISIBILITY(vis)   __attribute__((__visibility__(vis)))
+
+
 #ifdef __INTELLISENSE__
 #   define __XBLOCK(...)      (([&]__VA_ARGS__)())
 #   define __XRETURN             return
@@ -274,7 +285,7 @@
 #   define __pragma(...) __PRIVATE_PRAGMA(__VA_ARGS__)
 #else
 #   define __NO_pragma   1
-#   define __pragma(...) /* nothing */
+#   define __pragma(...) /* Nothing */
 #endif
 #   define __XBLOCK              __extension__
 #   define __XRETURN             /* Nothing */
@@ -296,10 +307,28 @@ extern "C++" { template<class T> struct __compiler_alignof { char __x; T __y; };
 #   define __COMPILER_ALIGNOF(T) ((__SIZE_TYPE__)&((struct{ char __x; T __y; } *)0)->__y)
 #endif
 #define __COMPILER_OFFSETOF __builtin_offsetof
-#define __ATTR_INLINE       __inline__
-#define __ATTR_FORCEINLINE  __inline__ __attribute__((__always_inline__))
-#define __LOCAL             static __inline__
-#define __FORCELOCAL        static __inline__ __attribute__((__always_inline__))
+#if defined(__NO_INLINE__) && 0
+#   define __NO_ATTR_INLINE 1
+#   define __ATTR_INLINE    /* nothing */
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ > 199901L
+#   define __ATTR_INLINE    inline
+#elif __GCC_VERSION(2,7,0)
+#   define __ATTR_INLINE    __inline__
+#else
+#   define __NO_ATTR_INLINE 1
+#   define __ATTR_INLINE    /* nothing */
+#endif
+#if __GCC_VERSION(3,0,0)
+#   define __ATTR_FORCEINLINE __inline__ __attribute__((__always_inline__))
+#elif __GCC_VERSION(2,7,0)
+#   define __NO_ATTR_FORCEINLINE 1
+#   define __ATTR_FORCEINLINE __inline__
+#else
+#   define __NO_ATTR_FORCEINLINE 1
+#   define __ATTR_FORCEINLINE /* nothing */
+#endif
+#define __LOCAL       static __ATTR_INLINE
+#define __FORCELOCAL  static __ATTR_FORCEINLINE
 #ifdef __CC__
 __extension__ typedef long long __longlong_t;
 __extension__ typedef unsigned long long __ulonglong_t;
@@ -307,21 +336,29 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #define __ULONGLONG  __ulonglong_t
 #endif
 
+#if !__GCC_VERSION(2,92,0) /* !__GCC_VERSION(2,95,0) */
 #ifndef __restrict
-#if !__GCC_VERSION(2,95,0)
 #if defined(restrict) || \
    (defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 199901L)
 #   define __restrict restrict
 #else
 #   define __restrict /* Nothing */
 #endif
-#endif
 #endif /* !__restrict */
+#ifndef __restrict__
+#define __restrict__   __restrict
+#endif /* !__restrict__ */
+#endif
 
 #if __GCC_VERSION(3,1,0) && !defined(__GNUG__)
 #   define __restrict_arr __restrict
 #else
 #   define __restrict_arr /* Nothing */
+#endif
+#if 1
+#   define __empty_arr(T,x) __extension__ T x[0]
+#else
+#   define __empty_arr(T,x) T x[1]
 #endif
 
 #define __STATIC_IF(x)   if(x)
@@ -342,6 +379,9 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #define __wchar_t_defined 1
 #endif
 
+#ifndef __INTELLISENSE__
+#define __FUNCTION__   __extension__ __FUNCTION__
+#endif
 
 #if 1
 #define __COMPILER_BARRIER()       __atomic_signal_fence(__ATOMIC_ACQ_REL)

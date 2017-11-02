@@ -113,7 +113,7 @@ __LIBC __sighandler_t (__LIBCCALL sysv_signal)(int __sig, __sighandler_t __handl
 #ifdef __USE_MISC
 __NAMESPACE_STD_BEGIN
 __REDIRECT_DOS_FUNC(__LIBC,,__sighandler_t,__LIBCCALL,signal,
-                   (int __sig, __sighandler_t __handler),signal,(__sig,__handler));
+                   (int __sig, __sighandler_t __handler),signal,(__sig,__handler))
 __NAMESPACE_STD_END
 #ifdef __CRT_GLC
 __LIBC __PORT_NODOS __sighandler_t (__LIBCCALL ssignal)(int __sig, __sighandler_t __handler);

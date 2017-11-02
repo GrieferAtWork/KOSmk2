@@ -397,6 +397,12 @@
 #   define __NO_WUNUSED          1
 #   define __WUNUSED             /* Nothing */
 #endif
+#if __has_attribute(__transparent_union__)
+#   define __ATTR_TRANSPARENT_UNION __attribute__((__transparent_union__))
+#else
+#   define __NO_ATTR_TRANSPARENT_UNION 1
+#   define __ATTR_TRANSPARENT_UNION    /* nothing */
+#endif
 #if defined(__DCC_VERSION__) || defined(__TINYC__)
 #   define __XBLOCK              __extension__
 #   define __XRETURN             /* Nothing */
@@ -488,6 +494,7 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #else
 #   define __restrict_arr /* Not supported.  */
 #endif
+#define __empty_arr(T,x) T x[1]
 
 #define __STATIC_IF(x)   if(x)
 #define __STATIC_ELSE(x) if(!(x))

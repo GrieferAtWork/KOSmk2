@@ -835,12 +835,12 @@ struct _wfinddata64_t {
 __LIBC __PORT_NODOS __NONNULL((1)) wchar_t *(__LIBCCALL _wgetcwd)(wchar_t *__restrict __dstbuf, int __dstlen);
 __LIBC __PORT_NODOS __NONNULL((2)) wchar_t *(__LIBCCALL _wgetdcwd)(int __drive, wchar_t *__dstbuf, int __dstlen);
 #define _wgetdcwd_nolock    _wgetdcwd
-__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wchdir,(wchar_t const *__restrict __path),_wchdir,(__path));
-__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wrmdir,(wchar_t const *__restrict __path),_wrmdir,(__path));
+__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wchdir,(wchar_t const *__restrict __path),_wchdir,(__path))
+__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wrmdir,(wchar_t const *__restrict __path),_wrmdir,(__path))
 #ifdef __USE_DOSFS
-__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wmkdir,(wchar_t const *__restrict __path),_wmkdir,(__path));
+__REDIRECT_WFS(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,_wmkdir,(wchar_t const *__restrict __path),_wmkdir,(__path))
 #else /* __USE_DOSFS */
-__REDIRECT_WFS_(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,__libc_wmkdir,(wchar_t const *__restrict __path, int __mode),_wmkdir,(__path,__mode));
+__REDIRECT_WFS_(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,__libc_wmkdir,(wchar_t const *__restrict __path, int __mode),_wmkdir,(__path,__mode))
 __LOCAL __PORT_NODOS __NONNULL((1)) int (__LIBCCALL _wmkdir)(wchar_t const *__restrict __path) { return __libc_wmkdir(__path,0755); }
 #endif /* !__USE_DOSFS */
 #endif /* !_WDIRECT_DEFINED */
@@ -900,12 +900,12 @@ __LIBC __PORT_DOSONLY __ATTR_SENTINEL __NONNULL((2)) intptr_t (__ATTR_CDECL _wsp
 __LIBC __PORT_DOSONLY __ATTR_SENTINEL_O(1) __NONNULL((2)) intptr_t (__ATTR_CDECL _wspawnlpe)(int __mode, wchar_t const *__restrict __file, wchar_t const *__args, ...) __WFS_FUNC(_wspawnlpe);
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1,2)),intptr_t,__LIBCCALL,_wexecv,(wchar_t const *__restrict __path, __TWARGV),wexecv,(__path,___argv))
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1,2,3)),intptr_t,__LIBCCALL,_wexecve,(wchar_t const *__restrict __path, __TWARGV, __TWENVP),wexecve,(__path,___argv,___envp))
-__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1,2)),intptr_t,__LIBCCALL,_wexecvp,(wchar_t const *__restrict __file, __TWARGV),wexecvp,(__file,___argv));
-__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1,2,3)),intptr_t,__LIBCCALL,_wexecvpe,(wchar_t const *__restrict __file, __TWARGV, __TWENVP),wexecvpe,(__file,___argv,___envp));
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1,2)),intptr_t,__LIBCCALL,_wexecvp,(wchar_t const *__restrict __file, __TWARGV),wexecvp,(__file,___argv))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1,2,3)),intptr_t,__LIBCCALL,_wexecvpe,(wchar_t const *__restrict __file, __TWARGV, __TWENVP),wexecvpe,(__file,___argv,___envp))
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((2,3)),intptr_t,__LIBCCALL,_wspawnv,(int __mode, wchar_t const *__restrict __path, __TWARGV),wspawnv,(__mode,__path,___argv))
 __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((2,3,4)),intptr_t,__LIBCCALL,_wspawnve,(int __mode, wchar_t const *__restrict __path, __TWARGV, __TWENVP),wspawnve,(__mode,__path,___argv,___envp))
-__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((2,3)),intptr_t,__LIBCCALL,_wspawnvp,(int __mode, wchar_t const *__restrict __file, __TWARGV),wspawnvp,(__mode,__file,___argv));
-__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((2,3,4)),intptr_t,__LIBCCALL,_wspawnvpe,(int __mode, wchar_t const *__restrict __file, __TWARGV, __TWENVP),wspawnvpe,(__mode,__file,___argv,___envp));
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((2,3)),intptr_t,__LIBCCALL,_wspawnvp,(int __mode, wchar_t const *__restrict __file, __TWARGV),wspawnvp,(__mode,__file,___argv))
+__REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((2,3,4)),intptr_t,__LIBCCALL,_wspawnvpe,(int __mode, wchar_t const *__restrict __file, __TWARGV, __TWENVP),wspawnvpe,(__mode,__file,___argv,___envp))
 #endif /* !_WPROCESS_DEFINED */
 
 #ifndef _CRT_WSYSTEM_DEFINED
@@ -1211,10 +1211,10 @@ __REDIRECT_IFKOS(__LIBC,,double,__LIBCCALL,_wcstod_l,(wchar_t const *__restrict 
 __REDIRECT_IFKOS(__LIBC,,long double,__LIBCCALL,_wcstold_l,(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale),wcstold_l,(__s,__pend,__locale))
 
 #ifdef __CRT_DOS
-__REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol,(wchar_t const *__restrict __s),wtol,(__s));
-__REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol_l,(wchar_t const *__restrict __s, __locale_t __locale),wtol_l,(__s,__locale));
-__REDIRECT2(__LIBC,,__LONGLONG,__LIBCCALL,_wtoll,(wchar_t const *__restrict __s),wtoi64,_wtoi64,(__s));
-__REDIRECT2(__LIBC,,__LONGLONG,__LIBCCALL,_wtoll_l,(wchar_t const *__restrict __s, __locale_t __locale),wtoi64_l,_wtoi64_l,(__s,__locale));
+__REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol,(wchar_t const *__restrict __s),wtol,(__s))
+__REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol_l,(wchar_t const *__restrict __s, __locale_t __locale),wtol_l,(__s,__locale))
+__REDIRECT2(__LIBC,,__LONGLONG,__LIBCCALL,_wtoll,(wchar_t const *__restrict __s),wtoi64,_wtoi64,(__s))
+__REDIRECT2(__LIBC,,__LONGLONG,__LIBCCALL,_wtoll_l,(wchar_t const *__restrict __s, __locale_t __locale),wtoi64_l,_wtoi64_l,(__s,__locale))
 #if __SIZEOF_INT__ == __SIZEOF_LONG__
 __REDIRECT2(__LIBC,,int,__LIBCCALL,_wtoi,(wchar_t const *__restrict __s),wtol,_wtol,(__s))
 __REDIRECT2(__LIBC,,int,__LIBCCALL,_wtoi_l,(wchar_t const *__restrict __s, __locale_t __locale),wtol_l,_wtol_l,(__s,__locale))

@@ -74,14 +74,14 @@ typedef __WCHAR_TYPE__ wchar_t;
 #else
 #   define __WAIT_INT(status) (*(int *)&(status))
 #endif
-#if !defined(__GNUC__) || __GNUC__ < 2 || defined(__cplusplus)
+#ifdef __NO_ATTR_TRANSPARENT_UNION
 #   define __WAIT_STATUS      void *
 #   define __WAIT_STATUS_DEFN void *
 #else
 typedef union {
     union wait *__uptr;
     int        *__iptr;
-} __WAIT_STATUS __attribute__((__transparent_union__));
+} __WAIT_STATUS __ATTR_TRANSPARENT_UNION;
 #   define __WAIT_STATUS_DEFN int *
 #endif
 #else /* __USE_MISC */
@@ -226,7 +226,7 @@ __NAMESPACE_STD_USING(lldiv)
 __REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3)),char *,__LIBCCALL,gcvt,(double __val, int __ndigit, char *__buf),_gcvt,(__val,__ndigit,__buf))
 #endif
 #ifdef __USE_MISC
-__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3)),char *,__LIBCCALL,qgcvt,(long double __val, int __ndigit, char *__buf),_gcvt,(__val,__ndigit,__buf));
+__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3)),char *,__LIBCCALL,qgcvt,(long double __val, int __ndigit, char *__buf),_gcvt,(__val,__ndigit,__buf))
 #ifdef __DOS_COMPAT__
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_ecvt_s,(char *__buf, size_t __buflen, double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_ecvt_s,(__buf,__buflen,__val,__ndigit,__decptr,__sign))
 __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_fcvt_s,(char *__buf, size_t __buflen, double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_fcvt_s,(__buf,__buflen,__val,__ndigit,__decptr,__sign))
@@ -571,7 +571,7 @@ __LIBC __ATTR_NORETURN void (__LIBCCALL quick_exit)(int __status);
 #ifdef __cplusplus
 extern "C++" { __LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func) (void)) __ASMNAME("at_quick_exit"); }
 #else /* __cplusplus */
-__LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func) (void));
+__LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func)(void));
 #endif /* !__cplusplus */
 #endif /* __USE_ISOC11 || __USE_ISOCXX11 */
 #ifdef __USE_ISOC99
@@ -629,7 +629,7 @@ __REDIRECT_IFDOS(__LIBC,__NONNULL((1)),int,__LIBCCALL,putenv,(char *__string),_p
 #if defined(__USE_MISC) || defined(__USE_XOPEN_EXTENDED)
 #if (defined(__CRT_KOS) || !defined(__CRT_GLC))
 #if __SIZEOF_LONG__ == __SIZEOF_INT__
-__REDIRECT(__LIBC,,long,__LIBCCALL,random,(void),rand,());
+__REDIRECT(__LIBC,,long,__LIBCCALL,random,(void),rand,())
 __REDIRECT_VOID(__LIBC,,__LIBCCALL,srandom,(unsigned int __seed),srand,(__seed))
 #else /* __SIZEOF_LONG__ == __SIZEOF_INT__ */
 __LOCAL long (__LIBCCALL random)(void) { return (long)rand(); }
@@ -689,8 +689,8 @@ __LIBC __PORT_NODOS __WUNUSED __NONNULL((1)) int (__LIBCCALL rpmatch)(char const
 __LIBC __PORT_NODOS __WUNUSED __NONNULL((1)) int (__LIBCCALL mkstemps64)(char *__template, int __suffixlen);
 #endif /* __USE_LARGEFILE64 */
 #endif /* __CRT_GLC */
-__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,qecvt,(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_ecvt,(__val,__ndigit,__decptr,__sign));
-__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,qfcvt,(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_fcvt,(__val,__ndigit,__decptr,__sign));
+__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,qecvt,(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_ecvt,(__val,__ndigit,__decptr,__sign))
+__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,qfcvt,(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_fcvt,(__val,__ndigit,__decptr,__sign))
 #endif /* __USE_MISC */
 
 #ifdef __USE_GNU
@@ -777,8 +777,8 @@ __REDIRECT_PE_FUNC_OLDPEA(__LIBC,__NONNULL((1)),char *,__LIBCCALL,mktemp,(char *
 
 #if defined(__USE_MISC) || defined(__USE_DOS) || \
    (defined(__USE_XOPEN_EXTENDED) && !defined(__USE_XOPEN2K8))
-__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,ecvt,(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_ecvt,(__val,__ndigit,__decptr,__sign));
-__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,fcvt,(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_fcvt,(__val,__ndigit,__decptr,__sign));
+__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,ecvt,(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_ecvt,(__val,__ndigit,__decptr,__sign))
+__REDIRECT_IFDOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,fcvt,(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),_fcvt,(__val,__ndigit,__decptr,__sign))
 #endif
 
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
@@ -1031,9 +1031,9 @@ __LIBC __PORT_DOSONLY errno_t (__LIBCCALL _ui64toa_s)(__UINT64_TYPE__ __val, cha
 #endif /* __CRT_DOS */
 
 #if __SIZEOF_LONG__ == 8
-__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64,(char const *__restrict __nptr),atol,(__nptr));
+__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64,(char const *__restrict __nptr),atol,(__nptr))
 #ifdef __CRT_DOS
-__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64_l,(char const *__restrict __nptr, __locale_t __locale),_atol_l,(__nptr,__locale));
+__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64_l,(char const *__restrict __nptr, __locale_t __locale),_atol_l,(__nptr,__locale))
 #else /* __CRT_DOS */
 __LOCAL __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtol_l(__nptr,0,__locale); }
 #endif /* !__CRT_DOS */
@@ -1042,9 +1042,9 @@ __REDIRECT(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64,(char const *__restrict
 __REDIRECT2(__LIBC,,__INT64_TYPE__ ,__LIBCCALL,_strtoi64_l, (char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t __locale),strtol_l,_strtol_l,(__nptr,__endptr,__radix))
 __REDIRECT2(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64_l,(char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t __locale),strtoul_l,_strtoul_l,(__nptr,__endptr,__radix))
 #elif __SIZEOF_LONG_LONG__ == 8
-__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64,(char const *__restrict __nptr),atoll,(__nptr));
+__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64,(char const *__restrict __nptr),atoll,(__nptr))
 #ifdef __CRT_DOS
-__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64_l,(char const *__restrict __nptr, __locale_t __locale),_atoll_l,(__nptr,__locale));
+__REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64_l,(char const *__restrict __nptr, __locale_t __locale),_atoll_l,(__nptr,__locale))
 #else /* __CRT_DOS */
 __LOCAL __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtoll_l(__nptr,0,__locale); }
 #endif /* !__CRT_DOS */
@@ -1052,8 +1052,6 @@ __REDIRECT(__LIBC,,__INT64_TYPE__ ,__LIBCCALL,_strtoi64,(char const *__restrict 
 __REDIRECT(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64,(char const *__restrict __nptr, char **__restrict __endptr, int __radix),strtoull,(__nptr,__endptr,__radix))
 __REDIRECT2(__LIBC,,__INT64_TYPE__ ,__LIBCCALL,_strtoi64_l, (char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t __locale),strtoll_l,_strtoll_l,(__nptr,__endptr,__radix))
 __REDIRECT2(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64_l,(char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t __locale),strtoull_l,_strtoull_l,(__nptr,__endptr,__radix))
-__REDIRECT(__LIBC,,char *,__LIBCCALL,_ltoa,(long __val,  char *__buf, int __radix),_i64toa,(__val,__buf,__radix))
-__REDIRECT(__LIBC,,errno_t,__LIBCCALL,_ltoa_s,(long __val, char *__buf, size_t __buflen, int __radix),_i64toa_s,(__val,__buf,__buflen,__radix))
 #else
 __LIBC __INT64_TYPE__ (__LIBCCALL _atoi64)(char const *__restrict __nptr);
 __LIBC __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __locale_t __locale);
@@ -1193,10 +1191,10 @@ __REDIRECT_IFKOS(__LIBC,,double,__LIBCCALL,_wcstod_l,(wchar_t const *__restrict 
 __REDIRECT_IFKOS(__LIBC,,long double,__LIBCCALL,_wcstold_l,(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale),wcstold_l,(__s,__pend,__locale))
 
 #ifdef __CRT_DOS
-__REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol,(wchar_t const *__restrict __s),wtol,(__s));
-__REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol_l,(wchar_t const *__restrict __s, __locale_t __locale),wtol_l,(__s,__locale));
-__REDIRECT2(__LIBC,,__LONGLONG,__LIBCCALL,_wtoll,(wchar_t const *__restrict __s),wtoi64,_wtoi64,(__s));
-__REDIRECT2(__LIBC,,__LONGLONG,__LIBCCALL,_wtoll_l,(wchar_t const *__restrict __s, __locale_t __locale),wtoi64_l,_wtoi64_l,(__s,__locale));
+__REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol,(wchar_t const *__restrict __s),wtol,(__s))
+__REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol_l,(wchar_t const *__restrict __s, __locale_t __locale),wtol_l,(__s,__locale))
+__REDIRECT2(__LIBC,,__LONGLONG,__LIBCCALL,_wtoll,(wchar_t const *__restrict __s),wtoi64,_wtoi64,(__s))
+__REDIRECT2(__LIBC,,__LONGLONG,__LIBCCALL,_wtoll_l,(wchar_t const *__restrict __s, __locale_t __locale),wtoi64_l,_wtoi64_l,(__s,__locale))
 #if __SIZEOF_INT__ == __SIZEOF_LONG__
 __REDIRECT2(__LIBC,,int,__LIBCCALL,_wtoi,(wchar_t const *__restrict __s),wtol,_wtol,(__s))
 __REDIRECT2(__LIBC,,int,__LIBCCALL,_wtoi_l,(wchar_t const *__restrict __s, __locale_t __locale),wtol_l,_wtol_l,(__s,__locale))
@@ -1320,8 +1318,8 @@ __LIBC __PORT_DOSONLY errno_t (__LIBCCALL _ecvt_s)(char *__buf, size_t __buflen,
 __LIBC __PORT_DOSONLY errno_t (__LIBCCALL _fcvt_s)(char *__buf, size_t __buflen, double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign);
 __LIBC __PORT_DOSONLY errno_t (__LIBCCALL _gcvt_s)(char *__buf, size_t __buflen, double __val, int __ndigit);
 #endif /* __CRT_DOS */
-__REDIRECT_IFKOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,_ecvt,(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),ecvt,(__val,__ndigit,__decptr,__sign));
-__REDIRECT_IFKOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,_fcvt,(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),fcvt,(__val,__ndigit,__decptr,__sign));
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,_ecvt,(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),ecvt,(__val,__ndigit,__decptr,__sign))
+__REDIRECT_IFKOS(__LIBC,__WUNUSED __NONNULL((3,4)),char *,__LIBCCALL,_fcvt,(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign),fcvt,(__val,__ndigit,__decptr,__sign))
 __REDIRECT_IFKOS(__LIBC,__WUNUSED __NONNULL((3)),char *,__LIBCCALL,_gcvt,(double __val, int __ndigit, char *__buf),gcvt,(__val,__ndigit,__buf))
 
 #ifdef __USE_KOS

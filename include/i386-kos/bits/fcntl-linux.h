@@ -375,7 +375,7 @@ struct f_owner_ex {
 struct file_handle {
     unsigned int  handle_bytes;
     int           handle_type;
-    unsigned char f_handle[0]; /* File identifier. */
+    __empty_arr(unsigned char,f_handle); /* File identifier. */
 };
 #define MAX_HANDLE_SZ    128
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO

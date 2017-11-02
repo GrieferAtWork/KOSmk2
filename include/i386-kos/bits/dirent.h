@@ -54,11 +54,7 @@ union {
     unsigned char      d_type;
     unsigned short int d_namlen; /*< == strlen(d_name) */
 #ifdef __USE_KOS
-#if defined(__KERNEL__) && defined(__GNUC__)
-    char               d_name[0]; /*< Allocated as required. */
-#else
-    char               d_name[1]; /*< Allocated as required. */
-#endif
+    __empty_arr(char,  d_name);  /*< Allocated as required. */
 #else
     char               d_name[256];
 #endif

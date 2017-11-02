@@ -43,8 +43,7 @@ __REDIRECT_UFS_FUNC_OLDPEB(__LIBC,__NONNULL((1)),int,__LIBCCALL,_rmdir,(char con
 
 #ifdef __CRT_DOS
 #define _getdcwd_nolock _getdcwd
-__LIBC __PORT_NODOS_ALT(getcwd) __WUNUSED_SUGGESTED
-char *(__LIBCCALL _getdcwd)(int __drive, char *__buf, size_t __size);
+__LIBC __PORT_NODOS_ALT(getcwd) __WUNUSED_SUGGESTED char *(__LIBCCALL _getdcwd)(int __drive, char *__buf, size_t __size);
 __LIBC __PORT_NODOS int (__LIBCCALL _chdrive)(int __drive);
 __LIBC __WUNUSED __PORT_NODOS int (__LIBCCALL _getdrive)(void);
 __LIBC __WUNUSED __PORT_NODOS unsigned long (__LIBCCALL _getdrives)(void);

@@ -384,15 +384,8 @@ __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,rindex,
 __LOCAL __WUNUSED __ATTR_CONST int (__LIBCCALL ffsl)(long __i) ____IMPL_DO_FFS(__i)
 __LOCAL __WUNUSED __ATTR_CONST int (__LIBCCALL ffsll)(__LONGLONG __i) ____IMPL_DO_FFS(__i)
 #else /* __DOS_COMPAT__ */
-#if defined(__CRT_KOS) && !defined(__GLC_COMPAT__)
-__LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL ffsl)(long __i)
-       __ASMNAME("__ffs" __PP_STR(__PP_MUL8(__SIZEOF_LONG__)));
-__LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL ffsll)(__LONGLONG __i)
-       __ASMNAME("__ffs" __PP_STR(__PP_MUL8(__SIZEOF_LONG_LONG__)));
-#else
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL ffsl)(long __i);
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL ffsll)(__LONGLONG __i);
-#endif
 #endif /* !__DOS_COMPAT__ */
 #endif /* __USE_GNU */
 
@@ -413,17 +406,22 @@ __LOCAL __WUNUSED __ATTR_CONST int (__LIBCCALL ffs)(int __i) ____IMPL_DO_FFS(__i
 #ifdef __USE_KOS
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL __ffs8)(__INT8_TYPE__ __i);
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL __ffs16)(__INT16_TYPE__ __i);
+#if __SIZEOF_INT__ == 4
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,int,__LIBCCALL,__ffs32,(__INT32_TYPE__ __i),ffs,(__i))
+#else
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL __ffs32)(__INT32_TYPE__ __i);
+#endif
+#if __SIZEOF_LONG__ == 8
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,int,__LIBCCALL,__ffs64,(__INT64_TYPE__ __i),ffsl,(__i))
+#elif __SIZEOF_LONG_LONG__ == 8
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,int,__LIBCCALL,__ffs64,(__INT64_TYPE__ __i),ffsll,(__i))
+#else
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL __ffs64)(__INT64_TYPE__ __i);
+#endif
 #define ffs(i) (sizeof(i) == 4 ? __ffs32((__INT32_TYPE__)(i)) : sizeof(i) == 8 ? __ffs64((__INT64_TYPE__)(i)) : \
                 sizeof(i) == 2 ? __ffs16((__INT16_TYPE__)(i)) : __ffs8((__INT8_TYPE__)(i)))
 #else /* __USE_KOS */
-#if defined(__CRT_KOS) && !defined(__GLC_COMPAT__)
-__LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL ffs)(int __i)
-         __ASMNAME("__ffs" __PP_STR(__PP_MUL8(__SIZEOF_INT__)));
-#else
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL ffs)(int __i);
-#endif
 #endif /* !__USE_KOS */
 #endif /* !__DOS_COMPAT__ */
 #endif /* !__ffs_defined */
@@ -622,7 +620,7 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnroff)(char co
 #ifndef __KERNEL__
 #if defined(__CRT_GLC) && defined(__GLC_COMPAT__)
 /* Implement using `asprintf' */
-__REDIRECT(__LIBC,,__ssize_t,__LIBCCALL,__libc_vasprintf,(char **__restrict __pstr, char const *__restrict __format, __VA_LIST __args),vasprintf,(__ptr,__format,__args));
+__REDIRECT(__LIBC,,__ssize_t,__LIBCCALL,__libc_vasprintf,(char **__restrict __pstr, char const *__restrict __format, __VA_LIST __args),vasprintf,(__ptr,__format,__args))
 __LOCAL __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
     char *__result;
@@ -646,7 +644,7 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __form
 #endif /* !____dos_vsnprintf_defined */
 #ifndef ____libc_vsprintf_defined
 #define ____libc_vsprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args))
 #endif /* !____libc_vsprintf_defined */
 __LOCAL __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
@@ -1062,7 +1060,7 @@ __REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __form
 #endif /* !____dos_vsnprintf_defined */
 #ifndef ____libc_vsprintf_defined
 #define ____libc_vsprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args))
 #endif /* !____libc_vsprintf_defined */
 
 #ifndef __NO_ASMNAME
@@ -1111,7 +1109,7 @@ __SYSDECL_BEGIN
 
 #ifndef ____libc_vsprintf_defined
 #define ____libc_vsprintf_defined 1
-__REDIRECT(__LIBC,__ATTR_LIBC_PRINTF(2,0),int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
+__REDIRECT(__LIBC,__ATTR_LIBC_PRINTF(2,0),int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args))
 #endif /* !____libc_vsprintf_defined */
 
 #ifndef ____libc_vsnprintf_defined
@@ -1338,7 +1336,7 @@ __REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,str
 __REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strcasecoll_l,(char const *__str1, char const *__str2, __locale_t __locale),_stricoll_l,(__str1,__str2,__locale))
 __REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncoll,(char const *__str1, char const *__str2, size_t __max_chars),_strncoll,(__str1,__str2,__max_chars))
 __REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncoll_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),_strncoll_l,(__str1,__str2,__max_chars,__locale))
-__REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncasecoll,(char const *__str1, char const *__str2, size_t __max_chars),_strnicoll,(__str1,__str2,__max_chars));
+__REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncasecoll,(char const *__str1, char const *__str2, size_t __max_chars),_strnicoll,(__str1,__str2,__max_chars))
 __REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,strncasecoll_l,(char const *__str1, char const *__str2, size_t __max_chars, __locale_t __locale),_strnicoll_l,(__str1,__str2,__max_chars,__locale))
 #endif /* __USE_KOS && __CRT_DOS */
 #if (defined(__USE_KOS) || defined(__USE_DOS)) && defined(__CRT_DOS)

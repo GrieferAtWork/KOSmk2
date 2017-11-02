@@ -36,6 +36,7 @@
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
+#include <__stdinc.h>
 #include <inttypes.h>
 #include <netinet/in.h>
 
@@ -99,7 +100,7 @@ struct ip6_rthdr0 {
  uint8_t  ip6r0_reserved; /*< reserved field */
  uint8_t  ip6r0_slmap[3]; /*< strict/loose bit map */
  /* followed by up to 127 struct in6_addr */
- struct in6_addr ip6r0_addr[0];
+ struct in6_addr ip6r0_addr[__empty_arr];
 };
 
 /* Fragment header */

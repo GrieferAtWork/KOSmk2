@@ -128,7 +128,7 @@ INTDEF void LIBCCALL libc_initterm(term_func *pfbegin, term_func *pfend);
 INTDEF int LIBCCALL libc_initterm_e(term_func_e *pfbegin, term_func_e *pfend);
 
 struct exception;
-INTDEF ATTR_DOSTEXT void LIBCCALL libc_setusermatherr(int (ATTR_CDECL *pf)(struct exception *));;
+INTDEF ATTR_DOSTEXT void LIBCCALL libc_setusermatherr(int (ATTR_CDECL *pf)(struct exception *));
 
 INTDEF s32 libc_dos_crt_dbg_flag;
 INTDEF s32 LIBCCALL libc_dos_crt_set_dbg_flag(s32 val);

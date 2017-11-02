@@ -130,7 +130,7 @@ struct mb2_header_tag_information_request {
   u16 type;
   u16 flags;
   u32 size;
-  u32 requests[0];
+  __empty_arr(u32,requests);
 };
 
 struct mb2_header_tag_address {
@@ -272,7 +272,7 @@ struct mb2_tag_framebuffer {
   union {
     struct {
       u16 framebuffer_palette_num_colors;
-      struct mb2_color framebuffer_palette[0];
+      __empty_arr(struct mb2_color,framebuffer_palette);
     };
     struct {
       u8 framebuffer_red_field_position;

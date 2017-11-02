@@ -142,6 +142,8 @@
 #define __NONNULL(ppars)         /* Nothing */
 #define __NO_WUNUSED             1
 #define __WUNUSED                /* Nothing */
+#define __NO_ATTR_TRANSPARENT_UNION 1
+#define __ATTR_TRANSPARENT_UNION    /* nothing */
 #define __NO_XBLOCK              1
 #define __IF0                    if(__LINE__ == -1)    /* Always false, but not warned about. */
 #define __IF1                    if(__LINE__ != -1)    /* Always true, but not warned about. */
@@ -175,6 +177,7 @@ template<> struct __static_if<true> { bool __is_true__(); };
 #define __NO_builtin_constant_p  1
 #define __builtin_constant_p(x)  0
 #define __restrict_arr           __restrict
+#define __empty_arr(T,x)         T x[1]
 #define __attribute__(x)         /* Nothing */
 
 /* Define intrinsic barrier functions. */

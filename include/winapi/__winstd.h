@@ -125,7 +125,7 @@ typedef __CHAR16_TYPE__ WCHAR;
 
 #define _ANONYMOUS_UNION
 #define _ANONYMOUS_STRUCT
-#define DECLSPEC_NORETURN
+#define DECLSPEC_NORETURN   __ATTR_NORETURN
 #define DECLARE_STDCALL_P(type) __stdcall type
 #define NOCRYPT 1
 #define NOSERVICE 1

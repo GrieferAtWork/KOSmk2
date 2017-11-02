@@ -77,7 +77,7 @@
     <ExcludePath />
     <NMakeCleanCommandLine>
     </NMakeCleanCommandLine>
-    <NMakeForcedIncludes>$(SolutionDir)..\include\__stdinc-syntax.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
@@ -104,7 +104,7 @@
     <ExcludePath />
     <NMakeCleanCommandLine>
     </NMakeCleanCommandLine>
-    <NMakeForcedIncludes>$(SolutionDir)..\include\__stdinc-syntax.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>

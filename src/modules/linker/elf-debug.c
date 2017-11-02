@@ -112,9 +112,9 @@ union PACKED {
 
 typedef struct {
   DWARF2_Internal_LineInfo c_lnfo; /*< DWARF chunk line-info. */
-  u8                       c_opcodec; /* Amount of obcodes. */
+  u8                       c_opcodec; /*< Amount of opcodes. */
 union{
-  u8                      *c_opcodev; /* [0..c_opcodec] Length of custom opcodes. */
+  u8                      *c_opcodev; /*< [0..c_opcodec] Length of custom opcodes. */
   byte_t                  *c_data; /*< [0..0|c_size][owned] Chunk data. */
 };
   size_t                   c_chid; /*< Unique chunk ID. */
@@ -636,13 +636,14 @@ got_state:
     data = (byte_t *)strnend((char *)data,
                             ((char *)end-(char *)data)-1)+1;
     file_len = (size_t)(data-(byte_t *)file);
-    dir_id = parse_uleb128(&data,end);
+    dir_id = (size_t)parse_uleb128(&data,end);
     if (!RESULT_STATE.file--) break;
     parse_uleb128(&data,end); /* time? */
     parse_uleb128(&data,end); /* size? */
    }
-   if (dir_id) --dir_id;
-   if (dir_id < self->c_dtabc) {
+   if (!dir_id);
+   else if (dir_id < self->c_dtabc) {
+    --dir_id;
     data = (byte_t *)self->c_dtab;
     end  = (byte_t *)self->c_ftab;
     for (;;) {

@@ -186,7 +186,7 @@ __SYSDECL_BEGIN
 #define _NL_TIME_CAL_DIRECTION _NL_ITEM(__LC_TIME,105)
 #define _NL_TIME_TIMEZONE      _NL_ITEM(__LC_TIME,106)
 
-#define _DATE_FMT,         _NL_ITEM(__LC_TIME,107) /* strftime format for date. */
+#define _DATE_FMT          _NL_ITEM(__LC_TIME,107) /* strftime format for date. */
 #define _NL_W_DATE_FMT     _NL_ITEM(__LC_TIME,108)
 
 #define _NL_TIME_CODESET   _NL_ITEM(__LC_TIME,109)

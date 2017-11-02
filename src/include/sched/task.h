@@ -250,7 +250,7 @@ FUNDEF void (KCALL task_endnointr)(void);
 #define task_isnointr()  (THIS_TASK->t_nointr != 0)
 /* Increment the critical counter with a write-barrier directly afterwards. */
 #define task_crit()      (void)(++THIS_TASK->t_critical)
-#define task_endcrit()   (void)(THIS_TASK->t_critical > 1 ? --THIS_TASK->t_critical : (task_endcrit)())
+#define task_endcrit()   (void)(THIS_TASK->t_critical > 1 ? (void)--THIS_TASK->t_critical : (task_endcrit)())
 /* Simply increment/decrement the nointr-counter. */
 #define task_nointr()    (void)(++THIS_TASK->t_nointr)
 #define task_endnointr() (void)(assert(THIS_TASK->t_nointr),--THIS_TASK->t_nointr)

@@ -72,19 +72,22 @@
 #define __COMPILER_STRLEN(str)         (sizeof(str)/sizeof(char)-1)
 #define __COMPILER_STREND(str)  ((str)+(sizeof(str)/sizeof(char)-1))
 
+#ifdef __INTELLISENSE__
+#   include "compiler/intellisense.h"
+#endif
 
 #ifdef __GNUC__
-#   include "__stdinc-gcc.h"
+#   include "compiler/gcc.h"
 #elif defined(_MSC_VER)
-#   include "__stdinc-msvc.h"
+#   include "compiler/msvc.h"
 #else
-#   include "__stdinc-generic.h"
+#   include "compiler/generic.h"
 #endif
 
 #ifdef __cplusplus
-#   include "__stdinc-c++.h"
+#   include "compiler/c++.h"
 #else
-#   include "__stdinc-c.h"
+#   include "compiler/c.h"
 #endif
 
 #ifndef __SYSDECL_BEGIN

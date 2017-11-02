@@ -55,19 +55,19 @@ __SYSDECL_BEGIN
 #include <bits/waitstatus.h>
 
 #ifdef __USE_MISC
-#if defined(__GNUC__) && !defined __cplusplus
+#if defined(__GNUC__) && !defined(__cplusplus)
 #   define __WAIT_INT(status) (__extension__(((union{ __typeof__(status) __in; int __i; }) { .__in = (status) }).__i))
 #else
 #   define __WAIT_INT(status) (*(int *)&(status))
 #endif
-#if !defined __GNUC__ || __GNUC__ < 2 || defined __cplusplus
+#ifdef __NO_ATTR_TRANSPARENT_UNION
 #   define __WAIT_STATUS      void *
 #   define __WAIT_STATUS_DEFN void *
 #else
 typedef union {
     union wait *__uptr;
     int        *__iptr;
-} __WAIT_STATUS __attribute__((__transparent_union__));
+} __WAIT_STATUS __ATTR_TRANSPARENT_UNION;
 #   define __WAIT_STATUS_DEFN int *
 #endif
 #else /* __USE_MISC */

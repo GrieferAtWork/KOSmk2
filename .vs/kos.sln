@@ -13,12 +13,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\__amalloc.h = ..\include\__amalloc.h
 		..\include\__malldefs.h = ..\include\__malldefs.h
 		..\include\__stdcxx.h = ..\include\__stdcxx.h
-		..\include\__stdinc-c++.h = ..\include\__stdinc-c++.h
-		..\include\__stdinc-c.h = ..\include\__stdinc-c.h
-		..\include\__stdinc-gcc.h = ..\include\__stdinc-gcc.h
-		..\include\__stdinc-generic.h = ..\include\__stdinc-generic.h
-		..\include\__stdinc-msvc.h = ..\include\__stdinc-msvc.h
-		..\include\__stdinc-syntax.h = ..\include\__stdinc-syntax.h
 		..\include\__stdinc.h = ..\include\__stdinc.h
 		..\include\alloca.h = ..\include\alloca.h
 		..\include\assert.h = ..\include\assert.h
@@ -405,6 +399,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys", "sys", "{F7629A83-103
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shm-demo", "apps\shm-demo.vcxproj", "{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "compiler", "compiler", "{FA72A04B-1E09-4214-88FA-A21B61173886}"
+	ProjectSection(SolutionItems) = preProject
+		..\include\compiler\c++.h = ..\include\compiler\c++.h
+		..\include\compiler\c.h = ..\include\compiler\c.h
+		..\include\compiler\gcc.h = ..\include\compiler\gcc.h
+		..\include\compiler\generic.h = ..\include\compiler\generic.h
+		..\include\compiler\intellisense.h = ..\include\compiler\intellisense.h
+		..\include\compiler\msvc.h = ..\include\compiler\msvc.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -498,5 +502,6 @@ Global
 		{3EAD7059-08AC-472C-9AB5-432CE93D2545} = {0D640039-A905-4491-9709-DEEC9AAC784E}
 		{F7629A83-1039-48AE-A64B-247F52B17877} = {0D640039-A905-4491-9709-DEEC9AAC784E}
 		{F44C03CE-73D3-4CB8-8F19-D2CE1F5D1A8E} = {2503C059-4B4F-457D-9853-FFA845ED7BF2}
+		{FA72A04B-1E09-4214-88FA-A21B61173886} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
 	EndGlobalSection
 EndGlobal

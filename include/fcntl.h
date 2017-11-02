@@ -148,7 +148,7 @@ __LIBC __WUNUSED __PORT_NODOS_ALT(open64) __NONNULL((2)) int (__ATTR_CDECL opena
 #endif /* __USE_LARGEFILE64 */
 #endif /* __USE_ATFILE */
 #ifdef __USE_XOPEN2K
-__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,posix_fadvise,(int __fd, __FS_TYPE(off) __offset, __FS_TYPE(off) __len, int __advise),posix_fadvise,(__fd,__offset,__len,__advise));
+__REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,posix_fadvise,(int __fd, __FS_TYPE(off) __offset, __FS_TYPE(off) __len, int __advise),posix_fadvise,(__fd,__offset,__len,__advise))
 __REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,posix_fallocate,(int __fd, __FS_TYPE(off) __offset, __FS_TYPE(off) __len),posix_fallocate,(__fd,__offset,__len))
 #ifdef __USE_LARGEFILE64
 __LIBC int (__LIBCCALL posix_fadvise64)(int __fd, __off64_t __offset, __off64_t __len, int __advise);

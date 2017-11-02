@@ -201,15 +201,21 @@ BEGIN
 	BEGIN BASIC_MODULE("ata")          SOURCE("modules/block/ata.c")           END
 	BEGIN BASIC_MODULE("procfs")       SOURCE("modules/fs/proc/*.c")           END
 	BEGIN BASIC_MODULE("vga")          SOURCE("modules/video/vga.c")           END
-	BEGIN BASIC_MODULE("pe")           SOURCE("modules/linker/pe.c")           END
 	BEGIN BASIC_MODULE("shebang")      SOURCE("modules/linker/shebang.c")      END
-	BEGIN BASIC_MODULE("nt")           SOURCE("modules/nt/*.c")                END
 	BEGIN LIBRARY_MODULE("pci")        SOURCE("modules/pci/*.c")               END
 	BEGIN DEFAULT_MODULE("ne2000")     SOURCE("modules/net/ne2k.c") USING("pci") END
 	BEGIN BASIC_MODULE("elf-coredump") SOURCE("modules/linker/elf-coredump.c") END
 	BEGIN BASIC_MODULE("elf-debug")    SOURCE("modules/linker/elf-debug.c")    END
-	BEGIN BASIC_MODULE("pdb-debug")    SOURCE("modules/linker/pdb-debug.c")    END
-	BEGIN BASIC_MODULE("cmos")         DEFINE("__DATE_YEAR__="+str __DATE_YEAR__) SOURCE("modules/rtc/cmos.c") END
+	BEGIN
+		_c_flags.remove("-Wsystem-headers");
+		BEGIN BASIC_MODULE("pe") SOURCE("modules/linker/pe.c") END
+		BEGIN BASIC_MODULE("nt") SOURCE("modules/nt/*.c") END
+		BEGIN BASIC_MODULE("pdb-debug") SOURCE("modules/linker/pdb-debug.c") END
+	END
+	BEGIN BASIC_MODULE("cmos")
+		DEFINE("__DATE_YEAR__="+str __DATE_YEAR__)
+		SOURCE("modules/rtc/cmos.c")
+	END
 END
 
 
