@@ -18,8 +18,8 @@
  */
 #define __GCC_VERSION(a,b,c) 0
 
-#define __expect(x,y) (x)
-#define __NO_expect    1
+#define __builtin_expect(x,y) (x)
+#define __NO_builtin_expect    1
 #define __likely      /* Nothing */
 #define __unlikely    /* Nothing */
 
@@ -38,15 +38,22 @@
 #endif
 
 #if __has_feature(cxx_static_assert) || _MSC_VER >= 1600
-#   define __STATIC_ASSERT(expr) static_assert(expr,#expr)
-#elif __has_feature(c_static_assert)
-#   define __STATIC_ASSERT(expr) _Static_assert(expr,#expr)
+#   define __STATIC_ASSERT(expr)         static_assert(expr,#expr)
+#   define __STATIC_ASSERT_MSG(expr,msg) static_assert(expr,msg)
+#elif __has_feature(c_static_assert) || \
+     (defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 201112L)
+/* XXX: Known Visual C/C++, checking for C11 may not actually allow us to assume this one... */
+#   define __STATIC_ASSERT(expr)         _Static_assert(expr,#expr)
+#   define __STATIC_ASSERT_MSG(expr,msg) _Static_assert(expr,msg)
 #elif defined(__TPP_COUNTER)
-#   define __STATIC_ASSERT(expr) typedef int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         typedef int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) typedef int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
 #elif defined(__COUNTER__)
-#   define __STATIC_ASSERT(expr) typedef int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         typedef int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) typedef int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
 #else
-#   define __STATIC_ASSERT(expr) typedef int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         typedef int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) typedef int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
 #endif
 #define __NO_ASMNAME             1
 #define __ASMNAME(x)             /* Nothing */
@@ -158,9 +165,13 @@ template<> struct __static_if<true> { bool __is_true__(); };
      __if_exists(::__int::__static_if<((c))>::__is_true__)
 #define __STATIC_ELSE(c) \
      __if_not_exists(::__int::__static_if<((c))>::__is_true__)
+/* Use our hacky `static_if' to emulate `__builtin_choose_expr' */
+#define __builtin_choose_expr(c,tt,ff) (__STATIC_IF(c){tt} __STATIC_ELSE(c){ff})
 #else
 #define __STATIC_IF(x)           if((x) == (__LINE__ != -1))
 #define __STATIC_ELSE(x)         if((x) != (__LINE__ != -1))
+#define __NO_builtin_choose_expr 1
+#define __builtin_choose_expr(c,tt,ff) ((c)?(tt):(ff))
 #endif
 #define __XBLOCK(...)            do __VA_ARGS__ __WHILE0
 #define __XRETURN                /* Nothing */
@@ -243,6 +254,7 @@ extern void (__cdecl _ReadWriteBarrier)(void);
 #endif
 
 #ifdef _NATIVE_WCHAR_T_DEFINED
+#define __native_wchar_t_defined 1
 #define __wchar_t_defined 1
 #endif
 

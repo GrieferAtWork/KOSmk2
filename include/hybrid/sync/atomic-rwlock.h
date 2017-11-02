@@ -167,11 +167,11 @@ LOCAL SAFE void (KCALL atomic_rwlock_downgrade)(atomic_rwlock_t *__restrict self
 }
 #endif /* __CC__ */
 
-#if !defined(__INTELLISENSE__) && !defined(__NO_expect)
-#define atomic_rwlock_tryread(self)    __expect(atomic_rwlock_tryread(self),true)
-#define atomic_rwlock_trywrite(self)   __expect(atomic_rwlock_trywrite(self),true)
-#define atomic_rwlock_tryupgrade(self) __expect(atomic_rwlock_tryupgrade(self),true)
-#define atomic_rwlock_upgrade(self)    __expect(atomic_rwlock_upgrade(self),true)
+#if !defined(__INTELLISENSE__) && !defined(__NO_builtin_expect)
+#define atomic_rwlock_tryread(self)    __builtin_expect(atomic_rwlock_tryread(self),true)
+#define atomic_rwlock_trywrite(self)   __builtin_expect(atomic_rwlock_trywrite(self),true)
+#define atomic_rwlock_tryupgrade(self) __builtin_expect(atomic_rwlock_tryupgrade(self),true)
+#define atomic_rwlock_upgrade(self)    __builtin_expect(atomic_rwlock_upgrade(self),true)
 #endif
 
 

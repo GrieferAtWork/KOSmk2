@@ -131,7 +131,6 @@
 #define __SIZEOF_DOUBLE__      8
 #define __SIZEOF_LONG_DOUBLE__ 12
 
-
 #define ____INTELLISENSE_MIN_S1  (-127i8-1i8)
 #define ____INTELLISENSE_MAX_S1    127i8
 #define ____INTELLISENSE_MIN_U1    0ui8
@@ -230,6 +229,7 @@
 #define __WCHAR_TYPE__      wchar_t
 #define __WINT_TYPE__       unsigned int
 #define __SIZEOF_WCHAR_T__  2 /* Psht... */
+#define __native_wchar_t_defined 1 /* Psht... */
 #define __wchar_t_defined   1 /* Psht... */
 
 #define __DBL_DECIMAL_DIG__        17
@@ -326,7 +326,7 @@
 #define __STDC_HOSTED__                    1
 #define __STDC_UTF_16__                    1
 #define __STDC_UTF_32__                    1
-#define __STDC_VERSION__                   201112L
+#define __STDC_VERSION__                   199901L
 #define __USER_LABEL_PREFIX__ 
 #define __VERSION__                       "6.2.0"
 
@@ -935,6 +935,12 @@ __UINT16_TYPE__ ____INTELLISENSE_BSWAP_BE2H16(____INTELLISENSE_integer<4321,__UI
 __UINT32_TYPE__ ____INTELLISENSE_BSWAP_BE2H32(____INTELLISENSE_integer<4321,__UINT32_TYPE__> x);
 __UINT64_TYPE__ ____INTELLISENSE_BSWAP_BE2H64(____INTELLISENSE_integer<4321,__UINT64_TYPE__> x);
 }
+
+#ifdef __cplusplus
+typedef __CHAR16_TYPE__ char16_t;
+typedef __CHAR32_TYPE__ char32_t;
+#endif
+
 
 
 /* Sparse emulation */

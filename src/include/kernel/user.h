@@ -197,21 +197,21 @@ FORCELOCAL size_t (KCALL _outsl_user)(u16 port, USER void const *addr, size_t co
 }
 
 
-#define copy_from_user(dst,src,n_bytes)      __expect(_copy_from_user(dst,src,n_bytes),0)
-#define copy_to_user(dst,src,n_bytes)        __expect(_copy_to_user(dst,src,n_bytes),0)
-#define copy_in_user(dst,src,n_bytes)        __expect(_copy_in_user(dst,src,n_bytes),0)
-#define memset_user(dst,byte,n_bytes)        __expect(_memset_user(dst,byte,n_bytes),0)
+#define copy_from_user(dst,src,n_bytes)      __builtin_expect(_copy_from_user(dst,src,n_bytes),0)
+#define copy_to_user(dst,src,n_bytes)        __builtin_expect(_copy_to_user(dst,src,n_bytes),0)
+#define copy_in_user(dst,src,n_bytes)        __builtin_expect(_copy_in_user(dst,src,n_bytes),0)
+#define memset_user(dst,byte,n_bytes)        __builtin_expect(_memset_user(dst,byte,n_bytes),0)
 #define strend_user(str)                              __strend_user(str)
 #define stpncpy_from_user(dst,src,max_chars) _stpncpy_from_user(dst,src,max_chars)
-#define addr_isuser(addr,len)                __expect(_addr_isuser(addr,len),true)
-#define addr_ishost(addr,len)                __expect(!_addr_isuser(addr,len),true)
+#define addr_isuser(addr,len)                __builtin_expect(_addr_isuser(addr,len),true)
+#define addr_ishost(addr,len)                __builtin_expect(!_addr_isuser(addr,len),true)
 
-#define insb_user(port,addr,count)  __expect(_insb_user(port,addr,count),0)
-#define insw_user(port,addr,count)  __expect(_insw_user(port,addr,count),0)
-#define insl_user(port,addr,count)  __expect(_insl_user(port,addr,count),0)
-#define outsb_user(port,addr,count) __expect(_outsb_user(port,addr,count),0)
-#define outsw_user(port,addr,count) __expect(_outsw_user(port,addr,count),0)
-#define outsl_user(port,addr,count) __expect(_outsl_user(port,addr,count),0)
+#define insb_user(port,addr,count)  __builtin_expect(_insb_user(port,addr,count),0)
+#define insw_user(port,addr,count)  __builtin_expect(_insw_user(port,addr,count),0)
+#define insl_user(port,addr,count)  __builtin_expect(_insl_user(port,addr,count),0)
+#define outsb_user(port,addr,count) __builtin_expect(_outsb_user(port,addr,count),0)
+#define outsw_user(port,addr,count) __builtin_expect(_outsw_user(port,addr,count),0)
+#define outsl_user(port,addr,count) __builtin_expect(_outsl_user(port,addr,count),0)
 
 
 /* Begin/End a region of code during which all calls normally accepting

@@ -405,6 +405,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "compiler", "compiler", "{FA
 		..\include\compiler\c.h = ..\include\compiler\c.h
 		..\include\compiler\gcc.h = ..\include\compiler\gcc.h
 		..\include\compiler\generic.h = ..\include\compiler\generic.h
+		..\include\compiler\intel.h = ..\include\compiler\intel.h
 		..\include\compiler\intellisense.h = ..\include\compiler\intellisense.h
 		..\include\compiler\msvc.h = ..\include\compiler\msvc.h
 	EndProjectSection

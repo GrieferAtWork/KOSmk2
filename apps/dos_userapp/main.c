@@ -65,7 +65,9 @@
 
 #ifdef __GNUC__
 #include <syslog.h>
+#ifdef __cplusplus
 #include <c++/current/iostream>
+#endif
 #endif
 
 DECL_BEGIN

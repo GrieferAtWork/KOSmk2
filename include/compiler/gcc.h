@@ -30,16 +30,36 @@
 #define __GCC_VERSION_NUM    (__GNUC__*10000+__GNUC_MINOR__*100+__GNUC_PATCH__)
 #define __GCC_VERSION(a,b,c) (__GCC_VERSION_NUM >= ((a)*10000+(b)*100+(c)))
 
-#if __has_builtin(__builtin_expect) || !defined(__clang__)
-#   define __expect(x,y)  __builtin_expect((x),(y))
+
+#ifndef __INTEL_VERSION__
+#ifdef __INTEL_COMPILER
+#if __INTEL_COMPILER == 9999
+#   define __INTEL_VERSION__ 1200
+#else
+#   define __INTEL_VERSION__ __INTEL_COMPILER
+#endif
+#elif defined(__ICL)
+#   define __INTEL_VERSION__ __ICL
+#elif defined(__ICC)
+#   define __INTEL_VERSION__ __ICC
+#elif defined(__ECC)
+#   define __INTEL_VERSION__ __ECC
+#endif
+#endif /* !__INTEL_VERSION__ */
+
+
+#ifndef __likely
+#if __has_builtin(__builtin_expect) || \
+  (!defined(__clang__) && (!defined(__INTEL_VERSION__) || __INTEL_VERSION__ >= 800))
 #   define __likely(x)   (__builtin_expect(!!(x),1))
 #   define __unlikely(x) (__builtin_expect(!!(x),0))
 #else
-#   define __expect(x,y) (x)
-#   define __NO_expect    1
+#   define __builtin_expect(x,y) (x)
+#   define __NO_builtin_expect 1
 #   define __likely      /* Nothing */
 #   define __unlikely    /* Nothing */
 #endif
+#endif /* !__likely */
 
 #if defined(__clang__) || !defined(__DARWIN_NO_LONG_LONG)
 #define __COMPILER_HAVE_LONGLONG 1
@@ -60,15 +80,23 @@
 
 #if __has_feature(cxx_static_assert) || \
    (__GCC_VERSION(4,3,0) && (defined(__GXX_EXPERIMENTAL_CXX0X__) || __cplusplus >= 201103L))
-#   define __STATIC_ASSERT(expr) static_assert(expr,#expr)
-#elif __has_feature(c_static_assert)
-#   define __STATIC_ASSERT(expr) _Static_assert(expr,#expr)
+#   define __STATIC_ASSERT(expr)         static_assert(expr,#expr)
+#   define __STATIC_ASSERT_MSG(expr,msg) static_assert(expr,msg)
+#elif defined(_Static_assert) || __has_feature(c_static_assert) || \
+     (!defined(__cplusplus) && ( \
+     (defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 201112L) || \
+     (__GCC_VERSION(4,6,0) && !defined(__STRICT_ANSI__))))
+#   define __STATIC_ASSERT(expr)         _Static_assert(expr,#expr)
+#   define __STATIC_ASSERT_MSG(expr,msg) _Static_assert(expr,msg)
 #elif defined(__TPP_COUNTER)
-#   define __STATIC_ASSERT(expr) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
 #elif defined(__COUNTER__)
-#   define __STATIC_ASSERT(expr) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
 #else
-#   define __STATIC_ASSERT(expr) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) extern __ATTR_UNUSED int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
 #endif
 #ifdef __INTELLISENSE__
 #   define __ASMNAME(x)   /* Nothing */
@@ -376,7 +404,11 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #endif
 
 #ifdef __cplusplus
+#if !defined(__INTEL_VERSION__) || __INTEL_VERSION__ >= 600 || \
+    (_WCHAR_T_DEFINED+0 != 0) || (_WCHAR_T+0 != 0)
+#define __native_wchar_t_defined 1
 #define __wchar_t_defined 1
+#endif
 #endif
 
 #ifndef __INTELLISENSE__

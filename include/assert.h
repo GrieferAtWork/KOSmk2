@@ -37,7 +37,7 @@
 
 __SYSDECL_BEGIN
 
-#if defined(__NO_ATTR_COLD) && !defined(__NO_expect)
+#if defined(__NO_ATTR_COLD) && !defined(__NO_builtin_expect)
 /* Without `__attribute__((cold))' to hist branch prediction,
  * use `__builtin_expect' itself to coax the compiler into
  * prediction that the assertion will not fail. */

@@ -17,20 +17,37 @@
  * 3. This notice may not be removed or altered from any source distribution. *
  */
 #define __GCC_VERSION(a,b,c) 0
+#ifndef __option
+#define __option(x) 0
+#endif
 
-#if __has_builtin(__builtin_expect)
-#   define __expect(x,y)  __builtin_expect((x),(y))
+#if __has_builtin(__builtin_expect) || \
+   (defined(__INTEL_VERSION__) && __INTEL_VERSION__ >= 800)
 #   define __likely(x)   (__builtin_expect(!!(x),1))
 #   define __unlikely(x) (__builtin_expect(!!(x),0))
 #else
-#   define __expect(x,y) (x)
-#   define __NO_expect    1
+#   define __builtin_expect(x,y) (x)
+#   define __NO_builtin_expect    1
 #   define __likely      /* Nothing */
 #   define __unlikely    /* Nothing */
 #endif
+#if __has_builtin(__builtin_choose_expr)
+/* Already a builtin. */
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 201112L
+/* Use C11's _Generic keyword. */
+#define __builtin_choose_expr(c,tt,ff) \
+    _Generic((char(*)[1+!!(c)])0,char(*)[1]:(ff),default:(tt))
+#else
+#define __NO_builtin_choose_expr 1
+#define __builtin_choose_expr(c,tt,ff) ((c)?(tt):(ff))
+#endif
 
-#if (defined(__BORLANDC__) && __BORLANDC__ >= 0x561 && !defined(__NO_LONG_LONG)) || \
-     defined(__TINYC__) || defined(__DCC_VERSION__)
+#if !defined(__NO_LONG_LONG) && !defined(__DARWIN_NO_LONG_LONG) && \
+   ((defined(__BORLANDC__) && __BORLANDC__ >= 0x561) || defined(__SUNPRO_CC) || \
+     defined(__TINYC__) || defined(__DCC_VERSION__) || \
+     defined(__CODEGEARC__) || defined(__DMC__) || \
+    (defined(__HP_aCC) && __HP_aCC+0 >= 33900) || \
+    (defined(__PGIC__) && __PGIC__+0 >= 10))
 #   define __COMPILER_HAVE_LONGLONG 1
 #endif
 #define __COMPILER_HAVE_LONGDOUBLE 1
@@ -59,17 +76,26 @@
 #endif
 
 #if __has_feature(cxx_static_assert) || \
-   (defined(__IBMCPP_STATIC_ASSERT) && __IBMCPP_STATIC_ASSERT) || \
-   (defined(__BORLANDC__) && defined(__CODEGEAR_0X_SUPPORT__) && __BORLANDC__ >= 0x610)
-#   define __STATIC_ASSERT(expr) static_assert(expr,#expr)
-#elif __has_feature(c_static_assert)
-#   define __STATIC_ASSERT(expr) _Static_assert(expr,#expr)
+   (defined(__IBMCPP_STATIC_ASSERT) && __IBMCPP_STATIC_ASSERT+0) || (defined(__cplusplus) && (\
+   (defined(__BORLANDC__) && defined(__CODEGEAR_0X_SUPPORT__) && __BORLANDC__ >= 0x610) || \
+   (defined(__CODEGEARC__) && __CODEGEARC__ > 0x620)))
+#   define __STATIC_ASSERT(expr)         static_assert(expr,#expr)
+#   define __STATIC_ASSERT_MSG(expr,msg) static_assert(expr,msg)
+#elif defined(_Static_assert) || __has_feature(c_static_assert) || \
+     (!defined(__cplusplus) && ( \
+     (defined(__STDC_VERSION__) && __STDC_VERSION__+0 >= 201112L) || \
+     (__GCC_VERSION(4,6,0) && !defined(__STRICT_ANSI__))))
+#   define __STATIC_ASSERT(expr)         _Static_assert(expr,#expr)
+#   define __STATIC_ASSERT_MSG(expr,msg) _Static_assert(expr,msg)
 #elif defined(__TPP_COUNTER)
-#   define __STATIC_ASSERT(expr) typedef int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         typedef int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) typedef int __PP_CAT2(__static_assert_,__TPP_COUNTER(__static_assert))[(expr)?1:-1]
 #elif defined(__COUNTER__)
-#   define __STATIC_ASSERT(expr) typedef int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         typedef int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) typedef int __PP_CAT2(__static_assert_,__COUNTER__)[(expr)?1:-1]
 #else
-#   define __STATIC_ASSERT(expr) typedef int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
+#   define __STATIC_ASSERT(expr)         typedef int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
+#   define __STATIC_ASSERT_MSG(expr,msg) typedef int __PP_CAT2(__static_assert_,__LINE__)[(expr)?1:-1]
 #endif
 
 #if defined(__DCC_VERSION__) || defined(__TINYC__)
@@ -108,6 +134,15 @@
 #   define __ATTR_NORETURN       __declspec(noreturn)
 #elif (defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590))
 #   define __ATTR_NORETURN       __attribute__((noreturn))
+#elif defined(_Noreturn) || \
+     (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112) /* __GNUC_VERSION(4,7,0) */
+#   define __ATTR_NORETURN       _Noreturn
+#elif __has_cpp_attribute(noreturn) || \
+     (defined(__cplusplus) && defined(_MSC_VER) && _MSC_VER >= 1900)
+#   undef noreturn
+#   define __ATTR_NORETURN       [[noreturn]]
+#elif defined(noreturn)
+#   define __ATTR_NORETURN       noreturn
 #else
 #   define __NO_ATTR_NORETURN    1
 #   define __ATTR_NORETURN       /* Nothing */
@@ -452,7 +487,7 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #endif
 #if defined(inline) || defined(__cplusplus) || \
    (defined(__SUNPRO_C) && (__SUNPRO_C >= 0x550)) || \
-   (defined(__STDC_VERSION__) && (__STDC_VERSION__ - 0 >= 199901L))
+   (defined(__STDC_VERSION__) && (__STDC_VERSION__-0 >= 199901L))
 #   define __ATTR_INLINE inline
 #elif defined(__BORLANDC__) || defined(__DMC__) || \
       defined(__SC__) || defined(__WATCOMC__) || \
@@ -525,7 +560,10 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 
 /* Mark the wchar_t type as already being defined when pre-defined by the compiler */
 #ifdef __cplusplus
+#if !defined(__MWERKS__) || __option(wchar_type)
+#define __native_wchar_t_defined 1
 #define __wchar_t_defined 1
+#endif
 #endif
 
 #ifdef __TINYC__

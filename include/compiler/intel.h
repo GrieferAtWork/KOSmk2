@@ -16,15 +16,3 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _STDNORETURN_H
-#define _STDNORETURN_H 1
-
-#include "__stdinc.h"
-
-#if !defined(noreturn) && \
-    !defined(__cplusplus) && \
-    !__GNUC_VERSION(4,7,0)
-#define noreturn __ATTR_NORETURN
-#endif /* ... */
-
-#endif /* !_STDNORETURN_H */

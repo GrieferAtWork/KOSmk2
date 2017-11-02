@@ -814,12 +814,12 @@
 #endif
 
 #if defined(_NATIVE_CHAR16_T_DEFINED) || \
-   (defined(__cpp_unicode_characters) && __cpp_unicode_characters >= 200704) || \
-   (defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && (_HAS_CHAR16_T_LANGUAGE_SUPPORT-0)) || \
-   (defined(__cplusplus) && ((defined(_MSC_VER) && _MSC_VER >= 1900) || \
+   (defined(__cpp_unicode_characters) && __cpp_unicode_characters+0 >= 200704) || \
+   (defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && _HAS_CHAR16_T_LANGUAGE_SUPPORT+0) || \
+   (defined(__cplusplus) && (defined(__CODEGEARC__) || (defined(_MSC_VER) && _MSC_VER+0 >= 1900) || \
    (defined(__clang__) && !defined(_MSC_VER) && (defined(__GXX_EXPERIMENTAL_CXX0X__) || __cplusplus >= 201103L)) || \
-   (defined(COMPILER_VERSION_GCC_CXX11) && (COMPILER_VERSION_GCC >= 40400)) || \
-   (defined(__BORLANDC__) && defined(COMPILER_VERSION_CODEGEAR_0X_SUPPORT) && __BORLANDC__ >= 0x610) || \
+   (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GCC_VERSION(4,4,0)) || \
+   (defined(__BORLANDC__) && defined(__CODEGEAR_0X_SUPPORT__) && __BORLANDC__+0 >= 0x610) || \
    (defined(__IBMCPP_UTF_LITERAL__) && __IBMCPP_UTF_LITERAL__)))
 /* The compiler is pre-defining the `char16_t' / `char32_t' types. */
 #undef __CHAR16_TYPE__

@@ -392,7 +392,7 @@ again:
  }
  sig_upgrade(&self->c_arch.ac_sigonoff);
 
- switch (__expect(self->c_arch.ac_mode,CPUMODE_OFFLINE)) {
+ switch (__builtin_expect(self->c_arch.ac_mode,CPUMODE_OFFLINE)) {
 
  case CPUMODE_OFFLINE:
   /* Most common case: It's up to us to activate the CPU. */
@@ -463,7 +463,7 @@ again:
  }
  sig_upgrade(&self->c_arch.ac_sigonoff);
 
- switch (__expect(self->c_arch.ac_mode,CPUMODE_ONLINE)) {
+ switch (__builtin_expect(self->c_arch.ac_mode,CPUMODE_ONLINE)) {
 
  case CPUMODE_ONLINE:
   /* Most common case: It's up to us to disable the CPU. */
