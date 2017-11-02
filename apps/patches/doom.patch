@@ -1,0 +1,362 @@
+diff -Naur orig-linuxdoom-1.10/Makefile linuxdoom-1.10/Makefile
+--- orig-linuxdoom-1.10/Makefile	2012-01-31 22:57:38.000000000 +0100
++++ linuxdoom-1.10/Makefile	2017-11-02 13:05:56.543260700 +0100
+@@ -7,8 +7,8 @@
+ CC=  gcc  # gcc or g++
+ 
+ CFLAGS=-g -Wall -DNORMALUNIX -DLINUX # -DUSEASM 
+-LDFLAGS=-L/usr/X11R6/lib
+-LIBS=-lXext -lX11 -lnsl -lm
++LDFLAGS=
++LIBS=-lm
+ 
+ # subdirectory for objects
+ O=linux
+diff -Naur orig-linuxdoom-1.10/doomdef.h linuxdoom-1.10/doomdef.h
+--- orig-linuxdoom-1.10/doomdef.h	2012-01-31 22:57:38.000000000 +0100
++++ linuxdoom-1.10/doomdef.h	2017-11-02 13:07:15.349509200 +0100
+@@ -247,6 +247,15 @@
+ // This is the stuff configured by Setup.Exe.
+ // Most key data are simple ascii (uppercased).
+ //
++#ifdef __KOS__
++#include <kos/keyboard.h>
++
++#define KEY_RIGHTARROW  KEY_RIGHT
++#define KEY_LEFTARROW   KEY_LEFT
++#define KEY_UPARROW     KEY_UP
++#define KEY_DOWNARROW   KEY_DOWN
++#define KEY_ESCAPE      KEY_ESC
++#else
+ #define KEY_RIGHTARROW	0xae
+ #define KEY_LEFTARROW	0xac
+ #define KEY_UPARROW	0xad
+@@ -278,6 +287,7 @@
+ #define KEY_RALT	(0x80+0x38)
+ 
+ #define KEY_LALT	KEY_RALT
++#endif
+ 
+ 
+ 
+diff -Naur orig-linuxdoom-1.10/f_wipe.c linuxdoom-1.10/f_wipe.c
+--- orig-linuxdoom-1.10/f_wipe.c	2012-01-31 22:57:38.000000000 +0100
++++ linuxdoom-1.10/f_wipe.c	2017-11-02 13:08:31.059877400 +0100
+@@ -184,6 +184,7 @@
+     boolean	done = true;
+ 
+     width/=2;
++	if (ticks < 0) ticks = 1;
+ 
+     while (ticks--)
+     {
+diff -Naur orig-linuxdoom-1.10/i_sound.c linuxdoom-1.10/i_sound.c
+--- orig-linuxdoom-1.10/i_sound.c	2012-01-31 22:57:38.000000000 +0100
++++ linuxdoom-1.10/i_sound.c	2017-10-25 15:01:22.237810000 +0200
+@@ -26,6 +26,7 @@
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <errno.h>
+ #include <stdarg.h>
+ 
+ #include <math.h>
+@@ -42,7 +43,7 @@
+ #include <sys/ioctl.h>
+ 
+ // Linux voxware output.
+-#include <linux/soundcard.h>
++//#include <linux/soundcard.h>
+ 
+ // Timer stuff. Experimental.
+ #include <time.h>
+@@ -163,7 +164,6 @@
+   int*	arg )
+ {   
+     int		rc;
+-    extern int	errno;
+     
+     rc = ioctl(fd, command, arg);  
+     if (rc < 0)
+diff -Naur orig-linuxdoom-1.10/i_video.c linuxdoom-1.10/i_video.c
+--- orig-linuxdoom-1.10/i_video.c	2012-01-31 22:57:38.000000000 +0100
++++ linuxdoom-1.10/i_video.c	2017-11-02 13:16:55.307507800 +0100
+@@ -1,4 +1,4 @@
+-// Emacs style mode select   -*- C++ -*- 
++// Emacs style mode select   -*- C++ -*-
+ //-----------------------------------------------------------------------------
+ //
+ // $Id:$
+@@ -24,6 +24,195 @@
+ static const char
+ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
+ 
++#ifdef __KOS__
++
++#include "doomstat.h"
++#include "i_system.h"
++#include "v_video.h"
++#include "m_argv.h"
++#include "d_main.h"
++
++#include "doomdef.h"
++
++void I_StartFrame(void) { }
++void I_UpdateNoBlit(void) { }
++
++#include <sys/ioctl.h>
++#include <kos/vga.h>
++#include <kos/keyboard.h>
++#include <sys/mman.h>
++#include <sys/wait.h>
++#include <hybrid/compiler.h>
++#include <hybrid/types.h>
++#include <err.h>
++#include <errno.h>
++#include <signal.h>
++#include <stddef.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdbool.h>
++
++PRIVATE int fd_vga = -1;
++PRIVATE int fd_keyboard = -1;
++PRIVATE byte_t *vram_base = NULL;
++PRIVATE struct keymap const *current_keymap = NULL;
++
++unsigned int held_l = 0;
++unsigned int held_r = 0;
++unsigned int held_u = 0;
++unsigned int held_d = 0;
++bool held_space = false;
++
++bool I_GetEvent(void) {
++    event_t event;
++	kbkey_t key;
++	if (read(fd_keyboard,&key,sizeof(key)) < sizeof(key))
++		return false;
++	
++	switch (key) {
++	case KEYDOWN(KEY_A): if (!held_l) held_l = 1; break;
++	case KEYDOWN(KEY_D): if (!held_r) held_r = 1; break;
++	case KEYDOWN(KEY_W): if (!held_u) held_u = 1; break;
++	case KEYDOWN(KEY_S): if (!held_d) held_d = 1; break;
++	case KEYUP(KEY_A): held_l = 0; break;
++	case KEYUP(KEY_D): held_r = 0; break;
++	case KEYUP(KEY_W): held_u = 0; break;
++	case KEYUP(KEY_S): held_d = 0; break;
++	case KEYDOWN(KEY_SPACE):
++		held_space = true;
++		event.type = ev_mouse;
++		event.data1 = 1;
++		event.data2 = 0;
++		event.data3 = 0;
++		D_PostEvent(&event);
++		break;
++	case KEYUP(KEY_SPACE):
++		held_space = false;
++		event.type = ev_mouse;
++		event.data1 = 0;
++		event.data2 = 0;
++		event.data3 = 0;
++		D_PostEvent(&event);
++		break;
++	/* Alias numpad direction keys to arrow keys. */
++	case KEYDOWN(KEY_KP_4): key = KEYDOWN(KEY_LEFT); goto def;
++	case KEYDOWN(KEY_KP_6): key = KEYDOWN(KEY_RIGHT); goto def;
++	case KEYDOWN(KEY_KP_2): key = KEYDOWN(KEY_DOWN); goto def;
++	case KEYDOWN(KEY_KP_8): key = KEYDOWN(KEY_UP); goto def;
++	case KEYUP(KEY_KP_4): key = KEYUP(KEY_LEFT); goto def;
++	case KEYUP(KEY_KP_6): key = KEYUP(KEY_RIGHT); goto def;
++	case KEYUP(KEY_KP_2): key = KEYUP(KEY_DOWN); goto def;
++	case KEYUP(KEY_KP_8): key = KEYUP(KEY_UP); goto def;
++	default:
++		/* Translate characters. */
++		if (!current_keymap) {
++			current_keymap = GET_ACTIVE_KEYMAP();
++		}
++		if (current_keymap && key < 256) {
++			u16 ch = current_keymap->km_press[key];
++			if (ch) key = ch;
++		}
++def:
++		if (key&KEY_RELEASED) {
++			event.type  = ev_keyup;
++			event.data1 = key & ~KEY_RELEASED;
++			D_PostEvent(&event);
++		} else {
++			event.type  = ev_keydown;
++			event.data1 = key;
++			D_PostEvent(&event);
++		}
++		break;
++	}
++		
++	return true;
++}
++void I_StartTic(void) {
++	event_t event;
++	while (I_GetEvent());
++	event.type = ev_mouse;
++	event.data1 = 0;
++	if (held_space) event.data1 |= 1;
++	event.data2 = 0;
++	event.data3 = 0;
++	event.data2 -= held_l;
++	event.data2 += held_r;
++	event.data3 += held_u;
++	event.data3 -= held_d;
++	if (event.data2 || event.data3) {
++		D_PostEvent(&event);
++	}
++	/* Accelerate when kept holding. */
++	if (held_l < 100) held_l *= 2;
++	if (held_r < 100) held_r *= 2;
++	if (held_u < 100) held_u *= 2;
++	if (held_d < 100) held_d *= 2;
++}
++
++void I_FinishUpdate(void) {
++	/* Copy screens[0] onto VGA display. */
++    memcpy(vram_base,screens[0],SCREENWIDTH*SCREENHEIGHT);
++}
++void I_ReadScreen(byte *scr) {
++    memcpy(scr,screens[0],SCREENWIDTH*SCREENHEIGHT);
++}
++void I_SetPalette(byte *palette) {
++	/* palette == byte_t[3*256]; */
++	ioctl(fd_vga,VIO_SETPAL,palette);
++}
++
++void I_ShutdownGraphics(void) {
++	/* Go back into text mode. */
++	if (fd_vga >= 0)
++		ioctl(fd_vga,VIO_SETMODE,VIO_MODE_TEXT_COLOR_80X25);
++}
++void I_InitGraphics(void) {
++	pid_t child;
++	int status;
++
++	fd_keyboard = open("/dev/keyboard",O_RDONLY);
++	if (fd_keyboard < 0) err(1,"Failed to open `/dev/keyboard'");
++	/* Disable blocking of keyboard input. */
++	fcntl(fd_keyboard,F_SETFL,fcntl(fd_keyboard,F_GETFL)|O_NONBLOCK);
++
++	fd_vga = open("/dev/vga",O_RDWR);
++	if (fd_vga < 0) err(1,"Failed to open `/dev/vga'");
++
++	/* Switch to graphics mode. */
++	if (ioctl(fd_vga,VIO_SETMODE,VIO_MODE_GFX_256_320X200) < 0) {
++		I_ShutdownGraphics();
++		err(1,"Failed to enable graphics mode");
++	}
++
++	vram_base = mmap(NULL,SCREENWIDTH*SCREENHEIGHT,PROT_READ|PROT_WRITE,MAP_SHARED,fd_vga,0);
++	if (vram_base == MAP_FAILED) {
++		I_ShutdownGraphics();
++		err(1,"Failed to map VGA display into memory");
++	}
++
++	/* Same trick as used in /opt/playground: Use a second process to ensure cleanup. */
++	child = fork();
++	if (child == 0)
++		return; /* Continue normal in the child. */
++	if (child < 0) {
++		I_ShutdownGraphics();
++		err(1,"Failed to fork child");
++	}
++	while (waitpid(child,&status,WEXITED) == -1) {
++		if (errno == EINTR) continue;
++		kill(child,SIGQUIT);
++		I_ShutdownGraphics();
++		err(1,"Failed to join child");
++	}
++
++	/* This may shutdown graphics twice, but that's OK. */
++	I_ShutdownGraphics();
++	_exit(0);
++}
++
++
++#else
++
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <sys/ipc.h>
+@@ -1048,3 +1237,4 @@
+ }
+ 
+ 
++#endif
+diff -Naur orig-linuxdoom-1.10/w_wad.c linuxdoom-1.10/w_wad.c
+--- orig-linuxdoom-1.10/w_wad.c	2012-01-31 22:57:38.000000000 +0100
++++ linuxdoom-1.10/w_wad.c	2017-11-02 13:19:22.081133300 +0100
+@@ -20,6 +20,10 @@
+ //	Handles WAD file header, directory, lump I/O.
+ //
+ //-----------------------------------------------------------------------------
++#ifdef __KOS__
++#define _KOS_SOURCE 1
++#include <stdlib.h>
++#endif
+ 
+ 
+ static const char
+@@ -66,10 +70,12 @@
+ 
+ #define strcmpi	strcasecmp
+ 
++#ifndef __KOS__
+ void strupr (char* s)
+ {
+     while (*s) { *s = toupper(*s); s++; }
+ }
++#endif
+ 
+ int filelength (int handle) 
+ { 
+@@ -146,7 +152,7 @@
+     int			handle;
+     int			length;
+     int			startlump;
+-    filelump_t*		fileinfo;
++    filelump_t*		fileinfo = NULL;
+     filelump_t		singleinfo;
+     int			storehandle;
+     
+@@ -196,7 +202,11 @@
+ 	header.numlumps = LONG(header.numlumps);
+ 	header.infotableofs = LONG(header.infotableofs);
+ 	length = header.numlumps*sizeof(filelump_t);
++#ifdef __KOS__
++	fileinfo = amalloc(length);
++#else
+ 	fileinfo = alloca (length);
++#endif
+ 	lseek (handle, header.infotableofs, SEEK_SET);
+ 	read (handle, fileinfo, length);
+ 	numlumps += header.numlumps;
+@@ -218,11 +228,15 @@
+ 	lump_p->handle = storehandle;
+ 	lump_p->position = LONG(fileinfo->filepos);
+ 	lump_p->size = LONG(fileinfo->size);
++	memset(lump_p->name,0,8);
+ 	strncpy (lump_p->name, fileinfo->name, 8);
+     }
+ 	
+     if (reloadname)
+ 	close (handle);
++#ifdef __KOS__
++	if (fileinfo) afree(fileinfo);
++#endif
+ }
+ 
+ 
+@@ -361,6 +375,7 @@
+     lumpinfo_t*	lump_p;
+ 
+     // make the name into two integers for easy compares
++	memset(name8.s,0,8);
+     strncpy (name8.s,name,8);
+ 
+     // in case the name was a fill 8 chars

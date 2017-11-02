@@ -50,7 +50,7 @@ Chaos|KOS - Even more chaotic than last time.
    - <code>dlopen()</code>/<code>dlclose()</code>/<code>dlsym()</code>
    - <code>clone()</code>/<code>futex()</code>/<code>exit_group()</code>
      - Linux-compatible multi-threading support
-   - Can run <b>BUSYBOX</b> and <b>NCURSES</b>!
+   - Can run <b>BUSYBOX</b>, <b>NCURSES</b> and <b>DOOM</b>!
  - Custom-made Libc
    - Binary (ABI) compatibility with both MSVCrt and GLibC
    - System headers designed with portability and clean namespaces
