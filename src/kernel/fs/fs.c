@@ -570,12 +570,14 @@ inode_setattr(struct inode *__restrict self,
  changed = valid&iattr_compare(&self->i_attr,attr);
  if (changed == IATTR_NONE) goto rend;
  error = rwlock_upgrade(&self->i_attr_lock);
- if (error == -ERELOAD) {
-  error = -EOK;
-  changed = valid&iattr_compare(&self->i_attr,attr);
-  if (changed == IATTR_NONE) goto wend;
+ if (E_ISERR(error)) {
+  if (error == -ERELOAD) {
+   error = -EOK;
+   changed = valid&iattr_compare(&self->i_attr,attr);
+   if (changed == IATTR_NONE) goto wend;
+  }
+  goto rend;
  }
- if (E_ISERR(error)) goto rend;
  /* Mirror new attributes into cached data. */
  iattr_mirror(&self->i_attr,attr,changed);
  if ((changed&IATTR_SIZ) &&
@@ -650,8 +652,10 @@ again:
   if (changes == IATTR_NONE) goto rend;
   has_write_lock = true;
   error = rwlock_upgrade(&self->i_attr_lock);
-  if (error == -ERELOAD) goto again;
-  if (E_ISERR(error)) goto wend;
+  if (E_ISERR(error)) {
+   if (error == -ERELOAD) goto again;
+   goto wend;
+  }
  } else {
   if (changes == IATTR_NONE) goto wend;
  }

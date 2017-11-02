@@ -60,6 +60,10 @@ __SYSDECL_BEGIN
  *                  usual return value used to indicate success in 'DATALEN'. */
 typedef __ssize_t (__LIBCCALL *pformatprinter)(char const *__restrict __data,
                                                __size_t __datalen, void *__closure);
+/* Read and return one character.
+ * @return: >= 0:  The characrer that was read.
+ * @return: EOF:   The input stream has ended.
+ * @return: < EOF: An error occurred (Return the same value to the caller) */
 typedef __ssize_t (__LIBCCALL *pformatgetc)(void *__closure);
 typedef __ssize_t (__LIBCCALL *pformatungetc)(int __ch, void *__closure);
 #endif /* !__pformatprinter_defined */
@@ -128,7 +132,9 @@ __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
  *                 >> char buffer[64];
  *                 >> sscanf(data,"My name is %.?s\n",sizeof(buffer),buffer);
  * format -> %[*|?][width][length]specifier
- * @return: * : The total number of successfully scanned arguments. */
+ * @return: 0 :  No data could be scanned.
+ * @return: * :  The total number of successfully scanned arguments.
+ * @return: EOF: `PGETC' returned EOF the first time an attempt at reading was made. */
 __LIBC __PORT_KOSONLY __ATTR_LIBC_SCANF(4,5) __NONNULL((1,4))
 __ssize_t (__ATTR_CDECL format_scanf)(pformatgetc __pgetc, pformatungetc __pungetc,
                                       void *__closure, char const *__restrict __format, ...);

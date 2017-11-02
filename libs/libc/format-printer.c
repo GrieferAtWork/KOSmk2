@@ -28,12 +28,14 @@
 #include "string.h"
 #include "fcntl.h"
 #include "malloc.h"
+#include "ctype.h"
 
 #include <alloca.h>
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
 #include <errno.h>
+#include <stdint.h>
 #include <format-printer.h>
 #include <hybrid/align.h>
 #include <hybrid/check.h>
@@ -576,10 +578,6 @@ libc_xformat_vprintf(bool wch16, pformatprinter printer, void *closure,
  ssize_t result = 0,temp; char ch;
  char const *flush_start;
  CHECK_HOST_TEXT(printer,1);
-#ifdef CONFIG_DEBUG
- /* Running strlen() on `format' implicitly performs CHECK_HOST_TEXT-checks. */
- COMPILER_UNUSED(libc_strlen(format));
-#endif
  flush_start = format;
  for (;;) {
 next_normal:
@@ -1273,7 +1271,7 @@ libc_stringprinter_print(char const *__restrict data,
  libc_memcpy(self->sp_bufpos,data,datalen*sizeof(char));
  self->sp_bufpos += datalen;
  assert(self->sp_bufpos <= self->sp_bufend);
- return 0;
+ return (ssize_t)datalen;
 }
 
 
@@ -1303,15 +1301,293 @@ INTERN ssize_t LIBCCALL
 libc_format_vscanf(pformatgetc pgetc, pformatungetc pungetc,
                    void *closure, char const *__restrict format,
                    va_list args) {
+ ssize_t rch,error,nread = 0,stored = 0;
+ char const *iter; char fch;
+#define doload()   do{ if unlikely((rch = (*pgetc)(closure)) < 0) goto end_rch; }while(0)
+#define load()     do{ if (!(stored&1)) { if unlikely((rch = (*pgetc)(closure)) < EOF) goto end_rch; stored = 3; } }while(0)
+#define take()    (stored = 2)
+#define retch(ch)  do{ if unlikely((error = (*pungetc)(ch,closure)) < 0) goto end; }while(0)
+#define peekch()   (*iter)
+#define readch()   (*iter++)
  CHECK_HOST_TEXT(pgetc,1);
  CHECK_HOST_TEXT(pungetc,1);
-#ifdef CONFIG_DEBUG
- /* Running strlen() on `format' implicitly performs CHECK_HOST_TEXT-checks. */
- COMPILER_UNUSED(libc_strlen(format));
-#endif
+ iter = format;
+ for (;;) {
+  fch = readch();
+parsefch:
+  switch (fch) {
+  case '\0': goto done;
 
- /* TODO */
- return 0;
+  case '\n': /* Skip any kind of linefeed */
+   load();
+   if (rch == '\n') take();
+   else if (rch == '\r') {
+    doload();
+    if (rch == '\n') take(); /* '\r\n' */
+   } else goto done;
+   break;
+
+  case ' ': /* Skip whitespace */
+   for (;;) { load(); if (rch == EOF || !libc_isspace(rch)) break; take(); }
+   break;
+
+  {
+   size_t type_size;
+   size_t width,bufsize;
+#define SCANF_FLAG_SIGNED   0x01
+#define SCANF_FLAG_UNSIGNED 0x02
+#define SCANF_FLAG_INSIDE   0x80
+   int ignore_data,flags;
+   unsigned int radix;
+  case '%':
+   fch = readch();
+   ignore_data = (fch == '*');
+   if (ignore_data) fch = readch();
+   /* Parse the buffersize modifier */
+   type_size = sizeof(int);
+   width     = (size_t)-1;
+   bufsize   = (size_t)-1;
+   flags     = 0;
+   radix     = 0;
+next_mod:
+   switch (fch) {
+   case '%': goto def;
+   case '*':
+    ignore_data = 1;
+    fch = readch();
+    goto next_mod;
+   case '$':
+    fch     = readch();
+    bufsize = va_arg(args,size_t);
+    goto next_mod;
+   case 'h': fch = readch();
+             if (fch == 'h') type_size = __SIZEOF_CHAR__,fch = readch();
+             else type_size = __SIZEOF_SHORT__;
+             goto next_mod;
+   case 'l': fch = readch();
+             if (fch == 'l') type_size = __SIZEOF_LONG_LONG__,fch = readch();
+#if __SIZEOF_LONG__ == __SIZEOF_INT__
+             else type_size = 'l';
+#else
+             else type_size = __SIZEOF_LONG__;
+#endif
+             goto next_mod;
+   case 'j': fch = readch(); type_size = __SIZEOF_INTMAX_T__; goto next_mod;
+#if __SIZEOF_SIZE_T__ == __SIZEOF_PTRDIFF_T__
+   case 'z': flags |= SCANF_FLAG_UNSIGNED;
+   case 't': flags |= SCANF_FLAG_SIGNED;
+    fch = readch();
+    type_size = __SIZEOF_SIZE_T__;
+    goto next_mod;
+#else
+   case 'z': fch = readch(); type_size = __SIZEOF_SIZE_T__; goto next_mod;
+   case 't': fch = readch(); type_size = __SIZEOF_PTRDIFF_T__; goto next_mod;
+#endif
+#if __SIZEOF_LONG_DOUBLE__ > __SIZEOF_INTMAX_T__
+   case 'L': type_size = __SIZEOF_LONG_DOUBLE__; goto next_mod;
+#else
+   case 'L': type_size = (size_t)fch; goto next_mod;
+#endif
+   case 'I': {
+    int off; fch = readch();
+    /* */if (fch == '8') type_size = 1,off = 1;
+    else if (fch == '1' && peekch() == '6') type_size = 2,off = 2;
+    else if (fch == '3' && peekch() == '2') type_size = 4,off = 2;
+    else if (fch == '6' && peekch() == '4') type_size = 8,off = 2;
+    else type_size = __SIZEOF_POINTER__,off = 0;
+    iter += off,fch = iter[-1];
+   } goto next_mod;
+
+   {
+    uintmax_t value; unsigned int digit;
+   case 'p': type_size = __SIZEOF_POINTER__;
+   case 'x': radix = 16; /* Pointers and 'x' are written in HEX. */
+   __IF0 { case 'o': radix = 8; } /* Switch to a radix of 8 for 'o' indicating OCT. */
+   case 'u': if (!(flags&SCANF_FLAG_SIGNED)) /* Default to unsigned for 'p', 'x', 'o' and 'u' */
+                   flags |= SCANF_FLAG_UNSIGNED;
+   if (fch == 'u') { case 'd': radix = 10; } /* 'u' and 'd' have a radix of 10 */
+   case 'i':
+#if __SIZEOF_LONG__ == __SIZEOF_INT__
+    if (type_size == 'l') type_size = __SIZEOF_LONG__;
+#endif
+#if __SIZEOF_LONG_DOUBLE__ < __SIZEOF_INTMAX_T__
+    if (type_size == 'L') type_size = __SIZEOF_LONG_DOUBLE__;
+#endif
+    (void)type_size; /* TODO */
+    if (!(flags&SCANF_FLAG_UNSIGNED)) {
+     flags &= ~SCANF_FLAG_SIGNED;
+     /* Process sign prefixes. */
+     for (;;) {
+      load();
+      if (rch != '-') break;
+      flags ^= SCANF_FLAG_SIGNED;
+      take();
+     }
+    }
+    value = 0;
+    /* Parse the integer itself. */
+    if (!radix) {
+     /* Automatically determine the radix. */
+     load();
+     radix = 10;
+     if (rch == '0') {
+      take();
+      load();
+      radix = 8;
+      if (rch == 'x' || rch == 'X') {
+       radix = 16;
+      } else if (rch == 'b' || rch == 'B') {
+       radix = 2;
+      }
+     }
+    }
+    /* Parse the integer. */
+    for (;;) {
+     load(); /* Translate a single digit. */
+     /* */if (rch >= '0' && rch <= '9') digit = rch-'0';
+     else if (rch >= 'a' && rch <= 'f') digit = 10+(rch-'a');
+     else if (rch >= 'A' && rch <= 'F') digit = 10+(rch-'A');
+     else break;
+     if (digit >= radix) break; /* Make sure we allow this kind of digit. */
+     value *= radix;
+     value += digit;
+     flags |= SCANF_FLAG_INSIDE; /* Indicate that we've managed to parse something. */
+     take();
+    }
+    /* Make sure that something was read. */
+    if (!(flags&SCANF_FLAG_INSIDE)) goto done;
+    if (!ignore_data) {
+     void *arg = va_arg(args,void *);
+     if (flags&SCANF_FLAG_SIGNED) value = 0-value;
+     /* */if (type_size >= 8) *(u64 *)arg = (u64)value;
+     else if (type_size >= 4) *(u32 *)arg = (u32)value;
+     else if (type_size >= 2) *(u16 *)arg = (u16)value;
+     else                     *(u8  *)arg = (u8)value;
+    }
+    ++nread;
+   } break;
+
+   {
+    int inverse,found;
+    char const *sel_begin,*sel_iter,*sel_end;
+    char *bufdst,*bufend;
+   case 'c':
+    if (width == (size_t)-1) width = 1;
+    if (ignore_data) {
+     bufdst = bufend = NULL;
+    } else {
+     bufdst = va_arg(args,char *);
+     bufend = bufdst+bufsize;
+    }
+    while (width--) {
+     load();
+     if (rch == EOF) goto done;
+     if (bufdst != bufend) *bufdst++ = rch;
+     take();
+    }
+    ++nread;
+    break;
+   case 's':
+    if (ignore_data) {
+     bufdst = bufend = NULL;
+    } else {
+     bufdst = va_arg(args,char *);
+     bufend = bufdst+bufsize;
+    }
+    /* Read until a whitespace character is found */
+    while (width--) {
+     load();
+     if (rch == EOF || libc_isspace(rch)) break;
+     if (bufdst != bufend) *bufdst++ = rch;
+     take();
+    }
+    if (bufdst != bufend) *bufdst = '\0';
+    ++nread;
+    break;
+
+   case '[':
+    fch = readch();
+    inverse = (fch == '^');
+    if (inverse) fch = readch();
+    sel_begin = iter;
+    while (1) {
+     if (fch == '\\' && peekch()) ++iter; /* escape the following character */
+     else if (fch == ']') { sel_end = iter,fch = readch(); break; }
+     else if (!fch) { sel_end = iter; break; }
+     fch = readch();
+    }
+    --sel_begin;
+    --sel_end;
+    if (ignore_data) {
+     bufdst = bufend = NULL;
+    } else {
+     bufdst = va_arg(args,char *);
+     bufend = bufdst+bufsize;
+    }
+    while (width--) {
+     load();
+     if (rch == EOF) break;
+     sel_iter = sel_begin;
+     found = 0;
+     while (sel_iter != sel_end) {
+      if (sel_iter[1] == '-') { /* range */
+       if (rch >= sel_iter[0] && rch <= sel_iter[2]) goto did_find;
+       sel_iter += 3;
+      } else if (*sel_iter == '\\') {
+       if (rch == sel_iter[1]) goto did_find;
+       sel_iter += 2;
+      } else {
+       if (rch == *sel_iter) {
+did_find: found = 1;
+        break;
+       }
+       ++sel_iter;
+      }
+     }
+     if ((found ^ inverse) == 0) break;
+     if (bufdst != bufend) *bufdst++ = (char)rch;
+     take();
+    }
+    if (bufdst != bufend) *bufdst = '\0';
+    ++nread;
+    if (!fch) goto done;
+    goto parsefch;
+   } break;
+
+   default:
+    if (fch >= '0' && fch <= '9') {
+     width = (size_t)(fch-'0');
+     for (;;) {
+      fch = readch();
+      if (fch < '0' || fch > '9') break;
+      width = width*10+(size_t)(fch-'0');
+     }
+     goto next_mod;
+    }
+    break;
+   }
+  } break;
+
+  default:
+def:
+   load();
+   if (rch != fch) goto done;
+   take();
+   break;
+  }
+ }
+done:
+ /* Return EOF if no data could be read. */
+ error = (nread || (stored&2)) ? nread : EOF;
+ /* Return the last character if it's still stored */
+ if ((stored&1) && rch >= 0) retch(rch);
+end:     return error;
+end_rch: return rch;
+#undef readch
+#undef peekch
+#undef retch
+#undef take
+#undef load
 }
 
 INTERN char const abbr_month_names[12][4] = {
@@ -1946,7 +2222,10 @@ DEFINE_PUBLIC_ALIAS(__DSYM(snprintf),libc_snprintf);
 
 
 #ifndef __KERNEL__
-PRIVATE ssize_t LIBCCALL libc_sscanf_getc(void *data) { return *(*(char **)data)++; }
+PRIVATE ssize_t LIBCCALL libc_sscanf_getc(void *data) {
+ char result = *(*(char **)data)++;
+ return result ? result : EOF;
+}
 PRIVATE ssize_t LIBCCALL libc_sscanf_ungetc(int UNUSED(c), void *data) { --*(char **)data; return 0; }
 INTERN size_t LIBCCALL
 libc_vsscanf(char const *__restrict src,
@@ -2055,7 +2334,10 @@ libc_32vswprintf(char32_t *__restrict buf, size_t buflen,
  return result;
 }
 
-PRIVATE ATTR_RARETEXT ssize_t LIBCCALL libc_32sscanf_getc(void *data) { return (char)*(*(char32_t **)data)++; }
+PRIVATE ATTR_RARETEXT ssize_t LIBCCALL libc_32sscanf_getc(void *data) {
+ char result = (char)*(*(char32_t **)data)++;
+ return result ? result : EOF;
+}
 PRIVATE ATTR_RARETEXT ssize_t LIBCCALL libc_32sscanf_ungetc(int UNUSED(c), void *data) { --*(char32_t **)data; return 0; }
 INTERN ATTR_RARETEXT ssize_t LIBCCALL
 libc_32vswscanf(char32_t const *__restrict src,
@@ -2138,7 +2420,10 @@ libc_dos_16vswprintf(char16_t *__restrict buf, size_t buflen,
  return result;
 }
 
-PRIVATE ATTR_DOSTEXT ssize_t LIBCCALL libc_16sscanf_getc(void *data) { return (char)*(*(char16_t **)data)++; }
+PRIVATE ATTR_DOSTEXT ssize_t LIBCCALL libc_16sscanf_getc(void *data) {
+ char result = (char)*(*(char16_t **)data)++;
+ return result ? result : EOF;
+}
 PRIVATE ATTR_DOSTEXT ssize_t LIBCCALL libc_16sscanf_ungetc(int UNUSED(c), void *data) { --*(char16_t **)data; return 0; }
 INTERN ATTR_DOSTEXT ssize_t LIBCCALL
 libc_16vswscanf(char16_t const *__restrict src,
@@ -2205,7 +2490,7 @@ libc_sscanf_l(char const *__restrict src,
 struct snscanf_data { char const *iter,*end; };
 PRIVATE ATTR_RARETEXT ssize_t LIBCCALL libc_snscanf_getc(void *data) {
  if (((struct snscanf_data *)data)->iter ==
-     ((struct snscanf_data *)data)->end) return 0;
+     ((struct snscanf_data *)data)->end) return EOF;
  return *((struct snscanf_data *)data)->iter++;
 }
 PRIVATE ATTR_RARETEXT ssize_t LIBCCALL

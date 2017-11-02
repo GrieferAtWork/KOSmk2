@@ -33,7 +33,7 @@ __SYSDECL_BEGIN
 #define __gwchar_t __WCHAR_TYPE__
 #endif
 
-#if __SIZEOF_POINTER__ == 8
+#if __SIZEOF_LONG__ == 8
 #   define __PRI64_PREFIX  "l"
 #   define __PRIPTR_PREFIX "l"
 #else
