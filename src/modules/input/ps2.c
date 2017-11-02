@@ -55,77 +55,90 @@
 
 DECL_BEGIN
 
+#if defined(CONFIG_DEBUG) && 1
+#define HAVE_DUMP_TASK_STATES 1
+PRIVATE void KCALL dump_task_states(void *UNUSED(closure)) {
+ debug_printf("BOOT_TASK:\n");
+ debug_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
+ debug_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
+ debug_printf("IDLE_TASK:\n");
+ debug_tbprintl((void *)THIS_CPU->c_idle.t_cstate->iret.eip,NULL,0);
+ debug_tbprint2((void *)THIS_CPU->c_idle.t_cstate->gp.ebp,0);
+ { pflag_t was = PREEMPTION_PUSH();
+   struct task *start,*iter;
+   iter = start = THIS_CPU->c_running;
+   if (start) do {
+    debug_printf("RUNNING TASK %p (PID = %d/%d) - %[file]\n",iter,
+                 iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
+                 iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+                 iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
+    if (iter == THIS_TASK) {
+#undef debug_tbprint
+     debug_tbprint();
+    } else {
+     debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+     debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+    }
+   } while ((iter = iter->t_sched.sd_running.re_next) != start);
+   for (iter = THIS_CPU->c_idling;
+        iter; iter = iter->t_sched.sd_running.re_next) {
+    debug_printf("IDLING TASK %p (PID = %d/%d) - %[file]\n",iter,
+                 iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
+                 iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+                 iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
+    if (iter == THIS_TASK) {
+#undef debug_tbprint
+     debug_tbprint();
+    } else {
+     debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+     debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+    }
+   }
+   task_crit();
+#if 0
+   if (cpu_tryread(THIS_CPU))
+   {
+    cpu_validate_counters(false);
+#endif
+    for (iter = THIS_CPU->c_suspended; iter;
+         iter = iter->t_sched.sd_suspended.le_next) {
+     debug_printf("SUSPENDED TASK %p (PID = %d/%d) - %[file]\n",iter,
+                  iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
+                  iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+                  iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
+     debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+     debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+    }
+    for (iter = THIS_CPU->c_sleeping; iter;
+         iter = iter->t_sched.sd_sleeping.le_next) {
+     debug_printf("SLEEPING TASK %p (PID = %d/%d) - %[file]\n",iter,
+                  iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
+                  iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+                  iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
+     debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+     debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+    }
+#if 0
+    cpu_endread(THIS_CPU);
+   }
+   else {
+    debug_printf("Failed to lock CPU for reading\n");
+    cpu_validate_counters(true);
+   }
+#endif
+   task_endcrit();
+   PREEMPTION_POP(was);
+ }
+ debug_printf("==DONE\n");
+}
+PRIVATE struct job dump_task_states_job = JOB_INIT(&dump_task_states,NULL);
+#endif
+
 PRIVATE struct kbdev *ps2_keyboard;
 PRIVATE void KCALL keyboard_send(kbkey_t k) {
-#if 1
- if (k == KEY_F12) {
-  debug_printf("BOOT_TASK:\n");
-  debug_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
-  debug_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
-  debug_printf("IDLE_TASK:\n");
-  debug_tbprintl((void *)THIS_CPU->c_idle.t_cstate->iret.eip,NULL,0);
-  debug_tbprint2((void *)THIS_CPU->c_idle.t_cstate->gp.ebp,0);
-  { pflag_t was = PREEMPTION_PUSH();
-    struct task *start,*iter;
-    iter = start = THIS_CPU->c_running;
-    if (start) do {
-     debug_printf("RUNNING TASK %p (PID = %d/%d) - %[file]\n",iter,
-                        iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
-                        iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-                        iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-     if (iter == THIS_TASK) {
-#undef debug_tbprint
-      debug_tbprint();
-     } else {
-      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
-     }
-    } while ((iter = iter->t_sched.sd_running.re_next) != start);
-    for (iter = THIS_CPU->c_idling;
-         iter; iter = iter->t_sched.sd_running.re_next) {
-     debug_printf("IDLING TASK %p (PID = %d/%d) - %[file]\n",iter,
-                        iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
-                        iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-                        iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-     if (iter == THIS_TASK) {
-#undef debug_tbprint
-      debug_tbprint();
-     } else {
-      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
-     }
-    }
-    task_crit();
-    if (cpu_tryread(THIS_CPU)) {
-     cpu_validate_counters(false);
-     for (iter = THIS_CPU->c_suspended; iter;
-          iter = iter->t_sched.sd_suspended.le_next) {
-      debug_printf("SUSPENDED TASK %p (PID = %d/%d) - %[file]\n",iter,
-                         iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
-                         iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
-     }
-     for (iter = THIS_CPU->c_sleeping; iter;
-          iter = iter->t_sched.sd_sleeping.le_next) {
-      debug_printf("SLEEPING TASK %p (PID = %d/%d) - %[file]\n",iter,
-                         iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
-                         iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
-     }
-     cpu_endread(THIS_CPU);
-    } else {
-     debug_printf("Failed to lock CPU for reading\n");
-     cpu_validate_counters(true);
-    }
-    task_endcrit();
-    PREEMPTION_POP(was);
-  }
-  debug_printf("==DONE\n");
- }
+#ifdef HAVE_DUMP_TASK_STATES
+ if (k == KEY_F12)
+     schedule_work(&dump_task_states_job);
 #endif
 
 #if 0
@@ -648,6 +661,7 @@ got_keyboard:
  return -EOK;
 err:
  free(ps2_keyboard);
+ ps2_keyboard = NULL;
  return error;
 no_keyboard:
  syslog(LOG_HW|LOG_WARN,"[PS2] No keyboard found (Assuming one is connected to port #1)\n");

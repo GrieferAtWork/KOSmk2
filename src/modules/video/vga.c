@@ -40,6 +40,7 @@
 #include <fs/file.h>
 #include <hybrid/align.h>
 #include <hybrid/minmax.h>
+#include <kernel/user.h>
 
 DECL_BEGIN
 
@@ -802,6 +803,15 @@ PUBLIC struct vga_pal const vp_txt_64 = {
 };
 
 
+PRIVATE ssize_t KCALL
+user_setpal(MMIO void *regbase, byte_t const *__restrict buffer) {
+ unsigned int i;
+ vga_w(regbase,VGA_PEL_MSK,0xff);
+ vga_w(regbase,VGA_PEL_IW,0x00);
+ for (i = 0; i < VGA_CMAP_SIZE; ++i)
+      vga_w(regbase,VGA_PEL_D,buffer[i] >> 2);
+ return -EOK;
+}
 
 PRIVATE errno_t KCALL
 vga_ioctl(struct file *__restrict fp, int name, USER void *arg) {
@@ -820,6 +830,9 @@ vga_ioctl(struct file *__restrict fp, int name, USER void *arg) {
   }
   vga->v_mode = (u16)(uintptr_t)arg;
   return -EOK;
+ case VIO_SETPAL: /* Set a new video palette. */
+  return (errno_t)call_user_worker(&user_setpal,2,vga->v_mmio,(byte_t *)arg);
+ default: break;
  }
  return -EINVAL;
 }

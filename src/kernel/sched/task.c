@@ -344,7 +344,6 @@ task_start(struct task *__restrict t) {
 
 #ifdef CONFIG_SMP
  if (t->t_cpu != THIS_CPU) {
-  PREEMPTION_POP(was);
   cpu_write(t->t_cpu);
   if (TASK_ISSUSPENDED(t)) {
    ATOMIC_WRITE(t->t_mode,TASKMODE_SUSPENDED);
@@ -360,6 +359,7 @@ task_start(struct task *__restrict t) {
    cpu_add_sleeping(t->t_cpu,t);
   }
   cpu_endwrite(t->t_cpu);
+  PREEMPTION_POP(was);
  } else
 #endif
  {

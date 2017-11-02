@@ -45,7 +45,7 @@ DECL_BEGIN
  */
 #define cpu_reading(x)      atomic_rwlock_reading(&(x)->c_lock)
 #define cpu_writing(x)      atomic_rwlock_writing(&(x)->c_lock)
-#if 0 /* Too expensive... */
+#if 1 /* Too expensive... */
 #define cpu_tryread(x)     (assert(!PREEMPTION_ENABLED()),atomic_rwlock_tryread(&(x)->c_lock))
 #define cpu_trywrite(x)    (assert(!PREEMPTION_ENABLED()),atomic_rwlock_trywrite(&(x)->c_lock))
 #define cpu_tryupgrade(x)  (assert(!PREEMPTION_ENABLED()),atomic_rwlock_tryupgrade(&(x)->c_lock))
