@@ -761,7 +761,7 @@
 #define __BYTE_TYPE__    __TYPEFOR_UINTIB1
 #endif
 #ifndef __WCHAR_TYPE__
-#if defined(_NATIVE_WCHAR_T_DEFINED) || defined(__cplusplus)
+#if defined(__native_wchar_t_defined)
 #   define __WCHAR_TYPE__ wchar_t
 #elif defined(__WCHAR_UNSIGNED__)
 #   define __WCHAR_TYPE__ __TYPEFOR_UINTIB(__SIZEOF_WCHAR_T__)

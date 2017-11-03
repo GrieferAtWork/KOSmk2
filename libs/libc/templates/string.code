@@ -253,10 +253,10 @@ DECL T *LIBCCALL Xstr(rchr)
 #undef WANT_STRRCHRNUL
 DECL T *LIBCCALL Xstr(rchrnul)
 (T const *__restrict haystack, Tneedle needle) {
-	T *result = NULL,*iter = (T *)haystack;
+	T *result = (T *)haystack-1,*iter = (T *)haystack;
 	do if (*iter == (T)needle) result = iter;
 	while (*iter++);
-	return result ? result : (T *)haystack-1;
+	return result;
 }
 #endif /* WANT_STRRCHRNUL */
 
@@ -294,9 +294,9 @@ DECL T *LIBCCALL Xstr(nchrnul)
 #undef WANT_STRNRCHRNUL
 DECL T *LIBCCALL Xstr(nrchrnul)
 (T const *__restrict haystack, Tneedle needle, size_t maxlen) {
-	T *iter = (T *)haystack,*end = iter+maxlen,*result = NULL;
+	T *iter = (T *)haystack,*end = iter+maxlen,*result = (T *)haystack-1;
 	for (; iter != end && *iter; ++iter) if (*iter == (T)needle) result = iter;
-	return result ? result : (T *)haystack-1;
+	return result;
 }
 #endif /* WANT_STRNRCHRNUL */
 
@@ -336,7 +336,7 @@ DECL size_t LIBCCALL Xstr(nroff)
 #undef WANT_STPCPY
 DECL T *LIBCCALL Xstp(cpy)
 (T *__restrict dst, T const *__restrict src) {
-	return STR_MEMPCPY(dst,src,Xstr(len)(src));
+	return STR_MEMPCPY(dst,src,Xstr(len)(src)+1)-1;
 }
 #endif /* WANT_STPCPY */
 
@@ -345,8 +345,9 @@ DECL T *LIBCCALL Xstp(cpy)
 DECL T *LIBCCALL Xstp(ncpy)
 (T *__restrict dst, T const *__restrict src, size_t n) {
 	size_t src_len = Xstr(nlen)(src,n);
-	if (src_len < n) ++src_len;
-	return STR_MEMPCPY(dst,src,src_len);
+	STR_MEMCPY(dst,src,src_len);
+	STR_MEMSET(dst+src_len,NUL,n-src_len);
+	return dst+src_len;
 }
 #endif /* WANT_STPNCPY */
 
@@ -433,8 +434,9 @@ DECL T *LIBCCALL Xstr(cpy)
 DECL T *LIBCCALL Xstr(ncpy)
 (T *__restrict dst, T const *__restrict src, size_t n) {
 	size_t src_len = Xstr(nlen)(src,n);
-	if (src_len < n) ++src_len;
-	return STR_MEMCPY(dst,src,src_len);
+	STR_MEMCPY(dst,src,src_len);
+	STR_MEMSET(dst+src_len,NUL,n-src_len);
+	return dst;
 }
 #endif /* WANT_STRNCPY */
 
@@ -449,10 +451,10 @@ DECL T *LIBCCALL Xstr(cat)(T *__restrict dst, T const *__restrict src) {
 #ifdef WANT_STRNCAT
 #undef WANT_STRNCAT
 DECL T *LIBCCALL Xstr(ncat)(T *__restrict dst, T const *__restrict src, size_t n) {
-	size_t maxlen = Xstr(nlen)(src,n);
+	size_t src_len = Xstr(nlen)(src,n);
 	T *target = Xstr(end)(dst);
-	STR_MEMCPY(target,src,maxlen);
-	if (maxlen < n) target[maxlen] = NUL;
+	STR_MEMCPY(target,src,src_len);
+	target[src_len] = NUL;
 	return dst;
 }
 #endif /* WANT_STRNCAT */

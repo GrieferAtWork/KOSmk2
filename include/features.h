@@ -1099,10 +1099,17 @@
 
 #if defined(__OPTIMIZE__) || defined(__KERNEL__)
 #ifndef __NO_builtin_constant_p
-#define __OPTIMIZE_CONST__ 1 /* Use `__builtin_constant_p()' to optimize system headers. */
+#   define __OPTIMIZE_CONST__ 1 /* Use `__builtin_constant_p()' to optimize system headers. */
 #endif /* !__NO_builtin_constant_p */
-#define __OPTIMIZE_ASM__   1 /* Use arch-specific inline assembly to optimize system headers. */
-#define __OPTIMIZE_LIBC__  1 /* Redirect specific lib-C functions to optimized implementations. */
+#ifndef __OPTIMIZE_SIZE__
+#   define __OPTIMIZE_ASM__   1 /* Use arch-specific inline assembly to optimize system headers. */
+#endif /* !__OPTIMIZE_SIZE__ */
+#   define __OPTIMIZE_LIBC__  1 /* Redirect specific lib-C functions to optimized implementations. */
+#endif
+#ifdef __OPTIMIZE_LIBC__
+#   define __OPT_LOCAL __FORCELOCAL
+#else
+#   define __OPT_LOCAL __LOCAL
 #endif
 
 #if defined(__USE_DEBUG) && __USE_DEBUG == 0

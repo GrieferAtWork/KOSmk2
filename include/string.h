@@ -23,9 +23,51 @@
 #include "__malldefs.h"
 #include "features.h"
 #include "hybrid/typecore.h"
+#include "libc/string.h"
 #ifdef __OPTIMIZE_LIBC__
 #include <asm-generic/string.h>
 #endif
+
+/* Memory functions (An optional `[b|w|l]' suffix is a KOS extension):
+ *   [STD] memset[b|w|l]     - Fill memory with the given byte/word/dword
+ *   [STD] memcpy[b|w|l]     - Copy memory between non-overlapping memory blocks.
+ *   [GLC] mempcpy[b|w|l]    - Same as `memcpy[b|w|l]', but return `DST+N_(BYTES|WORDS|DWORDS)', rather than `DST'
+ *   [STD] memmove[b|w|l]    - Move memory between potentially overlapping memory blocks.
+ *   [STD] memchr[b|w|l]     - Ascendingly search for `NEEDLE', starting at `HAYSTACK'. - Return `NULL' if `NEEDLE' wasn't found.
+ *   [GLC] memrchr[b|w|l]    - Descendingly search for `NEEDLE', starting at `HAYSTACK+N_(BYTES|WORDS|DWORDS)'. - Return `NULL' if `NEEDLE' wasn't found.
+ *   [GLC] rawmemchr[b|w|l]  - Same as `memchr[b|w|l]' with a search limit of `(size_t)-1/sizeof(T)'
+ *   [KOS] rawmemrchr[b|w|l] - Same as `memrchr[b|w|l]' without a search limit, starting at `HAYSTACK-sizeof(T)'
+ *   [KOS] memend[b|w|l]     - Same as `memchr[b|w|l]', but return `HAYSTACK+N_(BYTES|WORDS|DWORDS)', rather than `NULL' if `NEEDLE' wasn't found.
+ *   [KOS] memrend[b|w|l]    - Same as `memrchr[b|w|l]', but return `HAYSTACK-1', rather than `NULL' if `NEEDLE' wasn't found.
+ *   [KOS] memlen[b|w|l]     - Same as `memend[b|w|l]', but return the offset from `HAYSTACK', rather than the actual address.
+ *   [KOS] memrlen[b|w|l]    - Same as `memrend[b|w|l]', but return the offset from `HAYSTACK', rather than the actual address.
+ *   [KOS] rawmemlen[b|w|l]  - Same as `rawmemchr[b|w|l]', but return the offset from `HAYSTACK', rather than the actual address.
+ *   [KOS] rawmemrlen[b|w|l] - Same as `rawmemrchr[b|w|l]', but return the offset from `HAYSTACK', rather than the actual address.
+ *   [KOS] mempat[b|w|l]     - Same as `memset', but repeat a multi-byte pattern on aligned addresses.
+ * String functions:
+ *   [STD] strlen            - Return the length of the string in characters (Same as `rawmemlen[...](STR,'\0')´)
+ *   [STD] strnlen           - Same as `strlen', but don't exceed `MAX_CHARS' characters (Same as `memlen[...](STR,'\0',MAX_CHARS)´)
+ *   [KOS] strend            - Same as `STR+strlen(STR)'
+ *   [KOS] strnend           - Same as `STR+strnlen(STR,MAX_CHARS)'
+ *   [STD] strchr            - Return the pointer of the first instance of `NEEDLE', or `NULL' if `NEEDLE' wasn't found.
+ *   [STD] strrchr           - Return the pointer of the last instance of `NEEDLE', or `NULL' if `NEEDLE' wasn't found.
+ *   [KOS] strnchr           - Same as `strchr', but don't exceed `MAX_CHARS' characters.
+ *   [KOS] strnrchr          - Same as `strrchr', but don't exceed `MAX_CHARS' characters.
+ *   [GLC] strchrnul         - Same as `strchr', but return `strend(STR)', rather than `NULL' if `NEEDLE' wasn't found.
+ *   [KOS] strrchrnul        - Same as `strrchr', but return `STR-1', rather than `NULL' if `NEEDLE' wasn't found.
+ *   [KOS] strnchrnul        - Same as `strnchr', but return `strnend(STR,MAX_CHARS)', rather than `NULL' if `NEEDLE' wasn't found.
+ *   [KOS] strnrchrnul       - Same as `strnrchr', but return `STR-1', rather than `NULL' if `NEEDLE' wasn't found.
+ *   [KOS] stroff            - Same as `strchrnul', but return the offset from `STR', rather than the actual address.
+ *   [KOS] strroff           - Same as `strrchrnul', but return the offset from `STR', rather than the actual address.
+ *   [KOS] strnoff           - Same as `strnchrnul', but return the offset from `STR', rather than the actual address.
+ *   [KOS] strnroff          - Same as `strnrchrnul', but return the offset from `STR', rather than the actual address.
+ *   [STD] strcpy            - Same as `memcpy(DST,SRC,(strlen(SRC)+1)*sizeof(char))´
+ *   [STD] strcat            - Same as `memcpy(strend(DST),SRC,(strlen(SRC)+1)*sizeof(char))'
+ *   [STD] strncpy           - Similar to `strcpy', but always write `DSTSIZE' characters, copying from `SRC' and filling the rest with padding ZEROes.
+ *   [STD] strncat           - Same as Copy `strnlen(SRC,MAX_CHARS)' characters to `strned(DST)', then append a NUL-character thereafter. - Return `DST'.
+ *   [GLC] stpcpy            - Same as `mempcpy(DST,SRC,(strlen(SRC)+1)*sizeof(char))-1´
+ *   [GLC] stpncpy           - Same as `strncpy(DST,SRC,DSTSIZE)+strnlen(SRC,DSTSIZE)' (Returns a pointer to the end of `DST', or to the first NUL-character)
+ */
 
 __SYSDECL_BEGIN
 
@@ -45,6 +87,121 @@ __NAMESPACE_STD_USING(size_t)
 #ifndef NULL
 #define NULL __NULLPTR
 #endif
+
+
+#ifdef __OPTIMIZE_LIBC__
+#define __local_memset(dst,byte,n_bytes)                              __opt_memset(dst,byte,n_bytes)
+#define __local_memsetw(dst,word,n_words)                             __opt_memsetw(dst,word,n_words)
+#define __local_memsetl(dst,dword,n_dbytes)                           __opt_memsetl(dst,dword,n_dwords)
+#define __local_memcmp(a,b,n_bytes)                                   __opt_memcmp(a,b,n_bytes)
+#define __local_memcmpw(a,b,n_words)                                  __opt_memcmpw(a,b,n_words)
+#define __local_memcmpl(a,b,n_dbytes)                                 __opt_memcmpl(a,b,n_dwords)
+#define __local_memcpy(dst,src,n_bytes)                               __opt_memcpy(dst,src,n_bytes)
+#define __local_memcpyb(dst,src,n_bytes)                              __opt_memcpy(dst,src,n_bytes)
+#define __local_memcpyw(dst,src,n_words)                              __opt_memcpyw(dst,src,n_words)
+#define __local_memcpyl(dst,src,n_dwords)                             __opt_memcpyl(dst,src,n_dwords)
+#define __local_memmove(dst,src,n_bytes)                              __opt_memmove(dst,src,n_bytes)
+#define __local_memmoveb(dst,src,n_bytes)                             __opt_memmove(dst,src,n_bytes)
+#define __local_memmovew(dst,src,n_words)                             __opt_memmovew(dst,src,n_words)
+#define __local_memmovel(dst,src,n_dwords)                            __opt_memmovel(dst,src,n_dwords)
+#define __local_mempcpy(dst,src,n_bytes)                              __opt_mempcpy(dst,src,n_bytes)
+#define __local_mempcpyb(dst,src,n_bytes)                             __opt_mempcpy(dst,src,n_bytes)
+#define __local_mempcpyw(dst,src,n_words)                             __opt_mempcpyw(dst,src,n_words)
+#define __local_mempcpyl(dst,src,n_dwords)                            __opt_mempcpyl(dst,src,n_dwords)
+#define __local_memchr(haystack,needle,n_bytes)                       __opt_memchr(haystack,needle,n_bytes)
+#define __local_memchrb(haystack,needle,n_bytes)   ((__UINT8_TYPE__ *)__opt_memchr(haystack,needle,n_bytes))
+#define __local_memchrw(haystack,needle,n_words)                      __opt_memchrw(haystack,needle,n_words)
+#define __local_memchrl(haystack,needle,n_dwords)                     __opt_memchrl(haystack,needle,n_dwords)
+#define __local_memrchr(haystack,needle,n_bytes)                      __opt_memrchr(haystack,needle,n_bytes)
+#define __local_memrchrb(haystack,needle,n_bytes)  ((__UINT8_TYPE__ *)__opt_memrchr(haystack,needle,n_bytes))
+#define __local_memrchrw(haystack,needle,n_words)                     __opt_memrchrw(haystack,needle,n_words)
+#define __local_memrchrl(haystack,needle,n_dwords)                    __opt_memrchrl(haystack,needle,n_dwords)
+#define __local_memend(haystack,needle,n_bytes)                       __opt_memend(haystack,needle,n_bytes)
+#define __local_memendb(haystack,needle,n_bytes)   ((__UINT8_TYPE__ *)__opt_memend(haystack,needle,n_bytes))
+#define __local_memendw(haystack,needle,n_words)                      __opt_memendw(haystack,needle,n_words)
+#define __local_memendl(haystack,needle,n_dwords)                     __opt_memendl(haystack,needle,n_dwords)
+#define __local_memrend(haystack,needle,n_bytes)                      __opt_memrend(haystack,needle,n_bytes)
+#define __local_memrendb(haystack,needle,n_bytes)  ((__UINT8_TYPE__ *)__opt_memrend(haystack,needle,n_bytes))
+#define __local_memrendw(haystack,needle,n_words)                     __opt_memrendw(haystack,needle,n_words)
+#define __local_memrendl(haystack,needle,n_dwords)                    __opt_memrendl(haystack,needle,n_dwords)
+#define __local_rawmemchr(haystack,needle)                            __opt_rawmemchr(haystack,needle)
+#define __local_rawmemchrb(haystack,needle)        ((__UINT8_TYPE__ *)__opt_rawmemchr(haystack,needle))
+#define __local_rawmemchrw(haystack,needle)                           __opt_rawmemchrw(haystack,needle)
+#define __local_rawmemchrl(haystack,needle)                           __opt_rawmemchrl(haystack,needle)
+#define __local_rawmemrchr(haystack,needle)                           __opt_rawmemrchr(haystack,needle)
+#define __local_rawmemrchrb(haystack,needle)       ((__UINT8_TYPE__ *)__opt_rawmemrchr(haystack,needle))
+#define __local_rawmemrchrw(haystack,needle)                          __opt_rawmemrchrw(haystack,needle)
+#define __local_rawmemrchrl(haystack,needle)                          __opt_rawmemrchrl(haystack,needle)
+#define __local_memlen(haystack,needle,n_bytes)                       __opt_memlen(haystack,needle,n_bytes)
+#define __local_memlenw(haystack,needle,n_words)                      __opt_memlenw(haystack,needle,n_words)
+#define __local_memlenl(haystack,needle,n_dwords)                     __opt_memlenl(haystack,needle,n_dwords)
+#define __local_memrlen(haystack,needle,n_bytes)                      __opt_memrlen(haystack,needle,n_bytes)
+#define __local_memrlenw(haystack,needle,n_words)                     __opt_memrlenw(haystack,needle,n_words)
+#define __local_memrlenl(haystack,needle,n_dwords)                    __opt_memrlenl(haystack,needle,n_dwords)
+#define __local_rawmemlen(haystack,needle)                            __opt_rawmemlen(haystack,needle)
+#define __local_rawmemlenw(haystack,needle)                           __opt_rawmemlenw(haystack,needle)
+#define __local_rawmemlenl(haystack,needle)                           __opt_rawmemlenl(haystack,needle)
+#define __local_rawmemrlen(haystack,needle)                           __opt_rawmemrlen(haystack,needle)
+#define __local_rawmemrlenw(haystack,needle)                          __opt_rawmemrlenw(haystack,needle)
+#define __local_rawmemrlenl(haystack,needle)                          __opt_rawmemrlenl(haystack,needle)
+#else
+#define __local_memset(dst,byte,n_bytes)                              __libc_memset(dst,byte,n_bytes)
+#define __local_memsetw(dst,word,n_words)                             __libc_memsetw(dst,word,n_words)
+#define __local_memsetl(dst,dword,n_dbytes)                           __libc_memsetl(dst,dword,n_dwords)
+#define __local_memcmp(a,b,n_bytes)                                   __libc_memcmp(a,b,n_bytes)
+#define __local_memcmpw(a,b,n_words)                                  __libc_memcmpw(a,b,n_words)
+#define __local_memcmpl(a,b,n_dbytes)                                 __libc_memcmpl(a,b,n_dwords)
+#define __local_memcpy(dst,src,n_bytes)                               __libc_memcpy(dst,src,n_bytes)
+#define __local_memcpyb(dst,src,n_bytes)                              __libc_memcpy(dst,src,n_bytes)
+#define __local_memcpyw(dst,src,n_words)                              __libc_memcpyw(dst,src,n_words)
+#define __local_memcpyl(dst,src,n_dwords)                             __libc_memcpyl(dst,src,n_dwords)
+#define __local_memmove(dst,src,n_bytes)                              __libc_memmove(dst,src,n_bytes)
+#define __local_memmoveb(dst,src,n_bytes)                             __libc_memmove(dst,src,n_bytes)
+#define __local_memmovew(dst,src,n_words)                             __libc_memmovew(dst,src,n_words)
+#define __local_memmovel(dst,src,n_dwords)                            __libc_memmovel(dst,src,n_dwords)
+#define __local_mempcpy(dst,src,n_bytes)                              __libc_mempcpy(dst,src,n_bytes)
+#define __local_mempcpyb(dst,src,n_bytes)                             __libc_mempcpy(dst,src,n_bytes)
+#define __local_mempcpyw(dst,src,n_words)                             __libc_mempcpyw(dst,src,n_words)
+#define __local_mempcpyl(dst,src,n_dwords)                            __libc_mempcpyl(dst,src,n_dwords)
+#define __local_memchr(haystack,needle,n_bytes)                       __libc_memchr(haystack,needle,n_bytes)
+#define __local_memchrb(haystack,needle,n_bytes)   ((__UINT8_TYPE__ *)__libc_memchr(haystack,needle,n_bytes))
+#define __local_memchrw(haystack,needle,n_words)                      __libc_memchrw(haystack,needle,n_words)
+#define __local_memchrl(haystack,needle,n_dwords)                     __libc_memchrl(haystack,needle,n_dwords)
+#define __local_memrchr(haystack,needle,n_bytes)                      __libc_memrchr(haystack,needle,n_bytes)
+#define __local_memrchrb(haystack,needle,n_bytes)  ((__UINT8_TYPE__ *)__libc_memrchr(haystack,needle,n_bytes))
+#define __local_memrchrw(haystack,needle,n_words)                     __libc_memrchrw(haystack,needle,n_words)
+#define __local_memrchrl(haystack,needle,n_dwords)                    __libc_memrchrl(haystack,needle,n_dwords)
+#define __local_memend(haystack,needle,n_bytes)                       __libc_memend(haystack,needle,n_bytes)
+#define __local_memendb(haystack,needle,n_bytes)   ((__UINT8_TYPE__ *)__libc_memend(haystack,needle,n_bytes))
+#define __local_memendw(haystack,needle,n_words)                      __libc_memendw(haystack,needle,n_words)
+#define __local_memendl(haystack,needle,n_dwords)                     __libc_memendl(haystack,needle,n_dwords)
+#define __local_memrend(haystack,needle,n_bytes)                      __libc_memrend(haystack,needle,n_bytes)
+#define __local_memrendb(haystack,needle,n_bytes)  ((__UINT8_TYPE__ *)__libc_memrend(haystack,needle,n_bytes))
+#define __local_memrendw(haystack,needle,n_words)                     __libc_memrendw(haystack,needle,n_words)
+#define __local_memrendl(haystack,needle,n_dwords)                    __libc_memrendl(haystack,needle,n_dwords)
+#define __local_rawmemchr(haystack,needle)                            __libc_rawmemchr(haystack,needle)
+#define __local_rawmemchrb(haystack,needle)        ((__UINT8_TYPE__ *)__libc_rawmemchr(haystack,needle))
+#define __local_rawmemchrw(haystack,needle)                           __libc_rawmemchrw(haystack,needle)
+#define __local_rawmemchrl(haystack,needle)                           __libc_rawmemchrl(haystack,needle)
+#define __local_rawmemrchr(haystack,needle)                           __libc_rawmemrchr(haystack,needle)
+#define __local_rawmemrchrb(haystack,needle)       ((__UINT8_TYPE__ *)__libc_rawmemrchr(haystack,needle))
+#define __local_rawmemrchrw(haystack,needle)                          __libc_rawmemrchrw(haystack,needle)
+#define __local_rawmemrchrl(haystack,needle)                          __libc_rawmemrchrl(haystack,needle)
+#define __local_memlen(haystack,needle,n_bytes)                       __libc_memlen(haystack,needle,n_bytes)
+#define __local_memlenw(haystack,needle,n_words)                      __libc_memlenw(haystack,needle,n_words)
+#define __local_memlenl(haystack,needle,n_dwords)                     __libc_memlenl(haystack,needle,n_dwords)
+#define __local_memrlen(haystack,needle,n_bytes)                      __libc_memrlen(haystack,needle,n_bytes)
+#define __local_memrlenw(haystack,needle,n_words)                     __libc_memrlenw(haystack,needle,n_words)
+#define __local_memrlenl(haystack,needle,n_dwords)                    __libc_memrlenl(haystack,needle,n_dwords)
+#define __local_rawmemlen(haystack,needle)                            __libc_rawmemlen(haystack,needle)
+#define __local_rawmemlenw(haystack,needle)                           __libc_rawmemlenw(haystack,needle)
+#define __local_rawmemlenl(haystack,needle)                           __libc_rawmemlenl(haystack,needle)
+#define __local_rawmemrlen(haystack,needle)                           __libc_rawmemrlen(haystack,needle)
+#define __local_rawmemrlenw(haystack,needle)                          __libc_rawmemrlenw(haystack,needle)
+#define __local_rawmemrlenl(haystack,needle)                          __libc_rawmemrlenl(haystack,needle)
+#endif
+
+
 
 __NAMESPACE_STD_BEGIN
 #ifndef __std_memcpy_defined
@@ -71,16 +228,13 @@ __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memmove)(void 
 #define __std_strlen_defined 1
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strlen)(char const *__restrict __s);
 #endif /* !__std_strlen_defined */
-#ifndef __OPTIMIZE_LIBC__
+#ifdef __OPTIMIZE_LIBC__
+__OPT_LOCAL __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memset)(void *__dst, int __byte, size_t __n_bytes) { return __local_memset(__dst,__byte,__n_bytes); }
+__OPT_LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcmp)(void const *__a, void const *__b, size_t __n_bytes) { return __local_memcmp(__a,__b,__n_bytes); }
+#else /* __OPTIMIZE_LIBC__ */
 __LIBC __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memset)(void *__dst, int __byte, size_t __n_bytes);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcmp)(void const *__a, void const *__b, size_t __n_bytes);
-#elif defined(__cplusplus)
-__FORCELOCAL __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memset)(void *__dst, int __byte, size_t __n_bytes) { return __opt_memset(__dst,__byte,__n_bytes); }
-__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcmp)(void const *__a, void const *__b, size_t __n_bytes) { return __opt_memcmp(__a,__b,__n_bytes); }
-#else
-#define memset(dst,byte,n_bytes) __opt_memset(dst,byte,n_bytes)
-#define memcmp(a,b,n_bytes)      __opt_memcmp(a,b,n_bytes)
-#endif
+#endif /* !__OPTIMIZE_LIBC__ */
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strcmp)(char const *__s1, char const *__s2);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strncmp)(char const *__s1, char const *__s2, size_t __n);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strstr)(char const *__haystack, char const *__needle);
@@ -109,9 +263,9 @@ __NAMESPACE_STD_USING(strstr)
 #ifndef __KERNEL__
 __NAMESPACE_STD_BEGIN
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strcpy)(char *__restrict __dst, char const *__restrict __src);
-__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strncpy)(char *__restrict __dst, char const *__restrict __src, size_t __n);
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strncpy)(char *__restrict __dst, char const *__restrict __src, size_t __dstsize);
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strcat)(char *__restrict __dst, char const *__restrict __src);
-__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strncat)(char *__restrict __dst, char const *__restrict __src, size_t __n);
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL strncat)(char *__restrict __dst, char const *__restrict __src, size_t __max_chars);
 __LIBC __WUNUSED __NONNULL((1,2)) int (__LIBCCALL strcoll)(char const *__s1, char const *__s2);
 __LIBC __NONNULL((2)) size_t (__LIBCCALL strxfrm)(char *__dst, char const *__restrict __src, size_t __n);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL strcspn)(char const *__s, char const *__reject);
@@ -132,8 +286,8 @@ __NAMESPACE_STD_USING(strpbrk)
 __NAMESPACE_STD_USING(strtok)
 #endif /* !__CXX_SYSTEM_HEADER */
 
-#if defined(__DOS_COMPAT__) || defined(__OPTIMIZE_LIBC__)
-__LOCAL __NONNULL((1)) void (__LIBCCALL __bzero)(void *__s, size_t __n) { __NAMESPACE_STD_SYM memset(__s,0,__n); }
+#if defined(__DOS_COMPAT__) || defined(__OPTIMIZE_LIBC__) || defined(__KERNEL__)
+__LOCAL __NONNULL((1)) void (__LIBCCALL __bzero)(void *__s, size_t __n) { __local_memset(__s,0,__n); }
 #else /* __DOS_COMPAT__ */
 __REDIRECT_VOID(__LIBC,__NONNULL((1)),__LIBCCALL,__bzero,(void *__s, size_t __n),bzero,(__s,__n))
 #endif /* !__DOS_COMPAT__ */
@@ -170,10 +324,8 @@ __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,s
 #else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
 #ifdef __OPTIMIZE_LIBC__
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
-#elif !defined(__NO_ATTR_FORCEINLINE)
-__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __opt_memchr(__haystack,__needle,__n_bytes); }
 #else
-#define memchr(haystack,needle,n_bytes) __opt_memchr(haystack,needle,n_bytes)
+__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __opt_memchr(__haystack,__needle,__n_bytes); }
 #endif
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchr)(char const *__restrict __haystack, int __needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strrchr)(char const *__restrict __haystack, int __needle);
@@ -201,17 +353,17 @@ __NAMESPACE_STD_USING(strerror)
 
 #ifdef __USE_XOPEN2K8
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnlen)(char const *__str, size_t __max_chars);
-#ifdef __CRT_GLC
+#ifndef __DOS_COMPAT__
 __REDIRECT(__LIBC,__ATTR_RETNONNULL __NONNULL((1,2)),char *,__LIBCCALL,__stpcpy,(char *__restrict __dst, char const *__restrict __src),stpcpy,(__dst,__src))
-__REDIRECT(__LIBC,__ATTR_RETNONNULL __NONNULL((1,2)),char *,__LIBCCALL,__stpncpy,(char *__restrict __dst, char const *__restrict __src, size_t __n),stpncpy,(__dst,__src,__n))
+__REDIRECT(__LIBC,__ATTR_RETNONNULL __NONNULL((1,2)),char *,__LIBCCALL,__stpncpy,(char *__restrict __dst, char const *__restrict __src, size_t __dstsize),stpncpy,(__dst,__src,__dstsize))
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL stpcpy)(char *__restrict __dst, char const *__restrict __src);
-__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL stpncpy)(char *__restrict __dst, char const *__restrict __src, size_t __n);
-#else /* __CRT_GLC */
+__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL stpncpy)(char *__restrict __dst, char const *__restrict __src, size_t __dstsize);
+#else /* !__DOS_COMPAT__ */
 __LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL stpcpy)(char *__restrict __dst, char const *__restrict __src) { return __NAMESPACE_STD_SYM strcpy(__dst,__src)+__NAMESPACE_STD_SYM strlen(__dst); }
-__LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL stpncpy)(char *__restrict __dst, char const *__restrict __src, size_t __n) { return __NAMESPACE_STD_SYM strncpy(__dst,__src,__n)+__NAMESPACE_STD_SYM strlen(__dst); }
+__LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL stpncpy)(char *__restrict __dst, char const *__restrict __src, size_t __dstsize) { return __NAMESPACE_STD_SYM strncpy(__dst,__src,__dstsize)+__NAMESPACE_STD_SYM strlen(__dst); }
 __LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL __stpcpy)(char *__restrict __dst, char const *__restrict __src) { return stpcpy(__dst,__src); }
-__LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL __stpncpy)(char *__restrict __dst, char const *__restrict __src, size_t __n) { return stpncpy(__dst,__src,__n); }
-#endif /* !__CRT_GLC */
+__LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL __stpncpy)(char *__restrict __dst, char const *__restrict __src, size_t __dstsize) { return stpncpy(__dst,__src,__dstsize); }
+#endif /* __DOS_COMPAT__ */
 #ifndef __KERNEL__
 __SYSDECL_END
 #include "xlocale.h"
@@ -248,35 +400,60 @@ __REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC __
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 || __USE_DOS */
 #endif /* !__KERNEL__ */
 
-#if (defined(__USE_GNU) || defined(__USE_KOS)) && \
-    (defined(__DOS_COMPAT__) || (defined(__USE_KOS) && !defined(__CRT_KOS)) \
-                             || (defined(__USE_GNU) && !defined(__CRT_GLC)))
-__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1))
-void *(__LIBCCALL __local_rawmemchr)(void const *__restrict __haystack, int __needle) {
-    __BYTE_TYPE__ *__iter = (__BYTE_TYPE__ *)__haystack;
-    while (*__iter != (__BYTE_TYPE__)__needle) ++__iter;
-    return __iter;
+#ifdef __USE_GNU
+#ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
+extern "C++" {
+#if !defined(__DOS_COMPAT__) && !defined(__OPTIMIZE_LIBC__)
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void *,__LIBCCALL,memrchr,(void *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void const *,__LIBCCALL,memrchr,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle))
+#elif defined(__OPTIMIZE_LIBC__)
+__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
+__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void const *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
+#else
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void const *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
+#endif
+#ifndef __DOS_COMPAT__
+__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)),void *,__LIBCCALL,rawmemchr,(void *__restrict __haystack, int __needle),rawmemchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)),void const *,__LIBCCALL,rawmemchr,(void const *__restrict __haystack, int __needle),rawmemchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,strchrnul,(char *__restrict __haystack, int __needle),strchrnul,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,strchrnul,(char const *__restrict __haystack, int __needle),strchrnul,(__haystack,__needle))
+#else /* !__DOS_COMPAT__ */
+__LOCAL __WUNUSED __ATTR_RETNONNULL  __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL rawmemchr)(void *__restrict __haystack, int __needle) { return __local_rawmemchr(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_RETNONNULL  __ATTR_PURE __NONNULL((1)) void const *(__LIBCCALL rawmemchr)(void const *__restrict __haystack, int __needle) { return __local_rawmemchr(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchrnul)(char *__restrict __haystack, int __needle) { return __libc_strchrnul(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL strchrnul)(char const *__restrict __haystack, int __needle) { return __libc_strchrnul(__haystack,__needle); }
+#endif /* __DOS_COMPAT__ */
+#if !defined(basename) && defined(__CRT_GLC)
+__REDIRECT(__LIBC,__PORT_NODOS __WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,basename,(char *__restrict __filename),basename,(__filename))
+__REDIRECT(__LIBC,__PORT_NODOS __WUNUSED __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,basename,(char const *__restrict __filename),basename,(__filename))
+#endif /* !basename && __CRT_GLC */
 }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-void *(__LIBCCALL __local_memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) {
-    __BYTE_TYPE__ *__iter = (__BYTE_TYPE__ *)__haystack+__n_bytes;
-    while (__iter != (__BYTE_TYPE__ *)__haystack)
-        if (*--__iter == (__BYTE_TYPE__)__needle)
-            return (void *)__iter;
-    return __NULLPTR;
-}
-__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1))
-char *(__LIBCCALL __local_strchrnul)(char const *__restrict __haystack, int __needle) {
-    char *__iter = (char *)__haystack;
-    for (; *__iter && *__iter != __needle; ++__iter);
-    return __iter;
-}
-__REDIRECT2(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,__local_strcasecmp,
-           (char const *__s1, char const *__s2),strcasecmp,_stricmp,(__s1,__s2))
+#else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
+#if !defined(__DOS_COMPAT__) && !defined(__OPTIMIZE_LIBC__)
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
+#elif defined(__OPTIMIZE_LIBC__)
+__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
+#else
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
+#endif
+#if !defined(__DOS_COMPAT__) && !defined(__OPTIMIZE_LIBC__)
+__LIBC __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL rawmemchr)(void const *__restrict __haystack, int __needle);
+__LIBC __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchrnul)(char const *__restrict __haystack, int __needle);
+#else /* !__DOS_COMPAT__ */
+__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL rawmemchr)(void const *__restrict __haystack, int __needle) { return __local_rawmemchr(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchrnul)(char const *__restrict __haystack, int __needle) { return __libc_strchrnul(__haystack,__needle); }
+#endif /* __DOS_COMPAT__ */
+#if !defined(basename) && defined(__CRT_GLC)
+__LIBC __PORT_NODOS __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL basename)(char const *__restrict __filename);
+#endif /* !basename && __CRT_GLC */
+#endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
+
+#ifdef __DOS_COMPAT__
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
 char *(__LIBCCALL strcasestr)(char const *__haystack, char const *__needle) {
     for (; *__haystack; ++__haystack) {
-        if (__local_strcasecmp(__haystack,__needle) == 0)
+        if (__libc_strcasecmp(__haystack,__needle) == 0)
             return (char *)__haystack;
     }
     return __NULLPTR;
@@ -292,70 +469,22 @@ void *(__LIBCCALL memmem)(void const *__haystack, size_t __haystacklen,
     }
     return __NULLPTR;
 }
-#ifdef __USE_GNU
-__LOCAL __NONNULL((1,2))
-void *(__LIBCCALL mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n) {
-    return (void *)(((__UINTPTR_TYPE__)__NAMESPACE_STD_SYM memcpy(__dst,__src,__n))+__n);
-}
-__LOCAL __NONNULL((1,2))
-void *(__LIBCCALL __mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n) {
-    return mempcpy(__dst,__src,__n);
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
-int (__LIBCCALL strverscmp)(char const *__s1, char const *__s2) {
-    return __NAMESPACE_STD_SYM strcmp(__s1,__s2); /* TODO. */
-}
-#endif /* __USE_GNU */
-#elif defined(__USE_GNU)
-#define __local_rawmemchr(haystack,needle)       rawmemchr(haystack,needle)
-#define __local_memrchr(haystack,needle,n_bytes) memrchr(haystack,needle,n_bytes)
-#define __local_strchrnul(haystack,needle)       strchrnul(haystack,needle)
-#endif /* ... */
-
-#ifdef __USE_GNU
-#ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
-extern "C++" {
-#ifndef __DOS_COMPAT__
-__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)),void *,__LIBCCALL,rawmemchr,(void *__restrict __haystack, int __needle),rawmemchr,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)),void const *,__LIBCCALL,rawmemchr,(void const *__restrict __haystack, int __needle),rawmemchr,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void *,__LIBCCALL,memrchr,(void *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void const *,__LIBCCALL,memrchr,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,strchrnul,(char *__restrict __haystack, int __needle),strchrnul,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)),char const *,__LIBCCALL,strchrnul,(char const *__restrict __haystack, int __needle),strchrnul,(__haystack,__needle))
-#else /* !__DOS_COMPAT__ */
-__LOCAL __WUNUSED __ATTR_RETNONNULL  __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL rawmemchr)(void *__restrict __haystack, int __needle) { return __local_rawmemchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_RETNONNULL  __ATTR_PURE __NONNULL((1)) void const *(__LIBCCALL rawmemchr)(void const *__restrict __haystack, int __needle) { return __local_rawmemchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void const *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchrnul)(char *__restrict __haystack, int __needle) { return __local_strchrnul(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL strchrnul)(char const *__restrict __haystack, int __needle) { return __local_strchrnul(__haystack,__needle); }
-#endif /* __DOS_COMPAT__ */
-#if !defined(basename) && defined(__CRT_GLC)
-__LIBC __PORT_NODOS __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL basename)(char *__restrict __filename) __ASMNAME("basename");
-__LIBC __PORT_NODOS __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL basename)(char const *__restrict __filename) __ASMNAME("basename");
-#endif /* !basename && __CRT_GLC */
-}
-#else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
-#ifndef __DOS_COMPAT__
-__LIBC __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL rawmemchr)(void const *__restrict __haystack, int __needle);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
-__LIBC __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchrnul)(char const *__restrict __haystack, int __needle);
-#else /* !__DOS_COMPAT__ */
-__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL rawmemchr)(void const *__restrict __haystack, int __needle) { return __local_rawmemchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strchrnul)(char const *__restrict __haystack, int __needle) { return __local_strchrnul(__haystack,__needle); }
-#endif /* __DOS_COMPAT__ */
-#if !defined(basename) && defined(__CRT_GLC)
-__LIBC __PORT_NODOS __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL basename)(char const *__restrict __filename);
-#endif /* !basename && __CRT_GLC */
-#endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
-#ifndef __DOS_COMPAT__
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strverscmp)(char const *__s1, char const *__s2) { return __NAMESPACE_STD_SYM strcmp(__s1,__s2); /* TODO. */ }
+#else /* __DOS_COMPAT__ */
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strcasestr)(char const *__haystack, char const *__needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,3)) void *(__LIBCCALL memmem)(void const *__haystack, size_t __haystacklen, void const *__needle, size_t __needlelen);
-__LIBC __NONNULL((1,2)) void *(__LIBCCALL __mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n) __ASMNAME("mempcpy");
-__LIBC __NONNULL((1,2)) void *(__LIBCCALL mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strverscmp)(char const *__s1, char const *__s2);
 #endif /* !__DOS_COMPAT__ */
+
+
+#if defined(__OPTIMIZE_LIBC__) || defined(__DOS_COMPAT__)
+__LOCAL __NONNULL((1,2)) void *(__LIBCCALL __mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n) { return __local_mempcpy(__dst,__src,__n); }
+__LOCAL __NONNULL((1,2)) void *(__LIBCCALL mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n) { return __local_mempcpy(__dst,__src,__n); }
+#else /* __DOS_COMPAT__ */
+__REDIRECT(__LIBC,__NONNULL((1,2)),void *,__LIBCCALL,__mempcpy,(void *__restrict __dst, void const *__restrict __src, size_t __n),mempcpy,(__dst,__src,__n))
+__LIBC __NONNULL((1,2)) void *(__LIBCCALL mempcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n);
+#endif /* !__DOS_COMPAT__ */
+
 #ifndef __KERNEL__
 #ifdef __CRT_GLC
 __LIBC __PORT_NODOS __NONNULL((1)) char *(__LIBCCALL strfry)(char *__str);
@@ -372,25 +501,18 @@ __LIBC __PORT_NODOS __NONNULL((1,2)) char *(__LIBCCALL strsep)(char **__restrict
 #endif /* __CRT_GLC */
 #ifndef __bstring_defined
 #define __bstring_defined 1
-#ifndef __KERNEL__
-#ifdef __DOS_COMPAT__
-__LOCAL __NONNULL((1,2)) void (__LIBCCALL bcopy)(void const *__src, void *__dst, size_t __n) { __NAMESPACE_STD_SYM memmove(__dst,__src,__n); }
-__LOCAL __NONNULL((1)) void (__LIBCCALL bzero)(void *__s, size_t __n) { __NAMESPACE_STD_SYM memset(__s,0,__n); }
+#if defined(__DOS_COMPAT__) || defined(__KERNEL__)
+__LOCAL __NONNULL((1,2)) void (__LIBCCALL bcopy)(void const *__src, void *__dst, size_t __n) { __local_memmove(__dst,__src,__n); }
+__LOCAL __NONNULL((1)) void (__LIBCCALL bzero)(void *__s, size_t __n) { __local_memset(__s,0,__n); }
 #else /* __DOS_COMPAT__ */
 __LIBC __NONNULL((1,2)) void (__LIBCCALL bcopy)(void const *__src, void *__dst, size_t __n);
 __LIBC __NONNULL((1)) void (__LIBCCALL bzero)(void *__s, size_t __n);
 #endif /* !__DOS_COMPAT__ */
-#else
-#define bcopy(src,dst,n) (void)(__NAMESPACE_STD_SYM memcpy(dst,src,n))
-#define bzero(s,n)       (void)(__NAMESPACE_STD_SYM memset(s,0,n))
-#endif
 #ifndef __OPTIMIZE_LIBC__
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,bcmp,
           (void const *__s1, void const *__s2, size_t __n),memcmp,(__s1,__s2,__n))
-#elif !defined(__NO_ATTR_FORCEINLINE)
-__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL bcmp)(void const *__s1, void const *__s2, size_t __n) { return __opt_memcmp(__s1,__s2,__n); }
 #else
-#define bcmp(s1,s2,n) __opt_memcmp(s1,s2,n)
+__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL bcmp)(void const *__s1, void const *__s2, size_t __n) { return __opt_memcmp(__s1,__s2,__n); }
 #endif
 #endif /* !__bstring_defined */
 #ifndef __KERNEL__
@@ -482,148 +604,62 @@ __REDIRECT_IFDOS(__LIBC,__ATTR_RETNONNULL __NONNULL((1,2)),void *,__LIBCCALL,mem
 
 #ifdef __USE_KOS
 /* KOS String extensions. */
+#if defined(__OPTIMIZE_LIBC__) || !defined(__CRT_KOS) || \
+   (defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__))
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlen)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memlen(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlen)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrlen(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlen)(void const *__restrict __haystack, int __needle) { return __local_rawmemlen(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlen)(void const *__restrict __haystack, int __needle) { return __local_rawmemrlen(__haystack,__needle); }
+#else
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlen)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlen)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlen)(void const *__restrict __haystack, int __needle);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlen)(void const *__restrict __haystack, int __needle);
+#endif
+
 #if !defined(__CRT_KOS) || defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__)
-__SYSDECL_END
-#include "hybrid/string.h"
-__SYSDECL_BEGIN
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-void *(__LIBCCALL __local_memend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) {
-    __BYTE_TYPE__ *__iter,*__end;
-    __end = (__iter = (__BYTE_TYPE__ *)__haystack)+__n_bytes;
-    for (; __iter != __end; ++__iter) if (*__iter == __needle) break;
-    return (void *)__iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-void *(__LIBCCALL __local_memrend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) {
-    __BYTE_TYPE__ *__iter = (__BYTE_TYPE__ *)__haystack+__n_bytes;
-    while (__iter != __haystack) if (*--__iter == __needle) break;
-    return (void *)__iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-char *(__LIBCCALL __local_strend)(char const *__restrict __str) {
-    return (char *)__str+__NAMESPACE_STD_SYM strlen(__str);
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-char *(__LIBCCALL __local_strnend)(char const *__restrict __str, size_t __max_chars) {
-    return (char *)__str+__libc_strnlen(__str,__max_chars);
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-void *(__LIBCCALL __local_rawmemrchr)(void const *__restrict __haystack, int __needle) {
-    __BYTE_TYPE__ *__iter = (__BYTE_TYPE__ *)__haystack;
-    while (*--__iter != __needle);
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-char *(__LIBCCALL __local_strrchrnul)(char const *__restrict __haystack, int __needle) {
-    char *__result = 0,*__iter = (char *)__haystack;
-    for (; *__iter; ++__iter) if (*__iter == __needle) __result = __iter;
-    return __result ? __result : (char *)__haystack-1;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-char *(__LIBCCALL __local_strnchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) {
-    char *__iter = (char *)__haystack,*__end = __iter+__max_chars;
-    for (; __iter != __end && *__iter; ++__iter) if (*__iter == __needle) return __iter;
-    return __NULLPTR;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-char *(__LIBCCALL __local_strnrchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) {
-    char *__iter = (char *)__haystack,*__end = __iter+__max_chars,*__result = 0;
-    for (; __iter != __end && *__iter; ++__iter) if (*__iter == __needle) __result = __iter;
-    return __result;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-char *(__LIBCCALL __local_strnchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) {
-    char *__iter = (char *)__haystack,*__end = __iter+__max_chars;
-    for (; __iter != __end && *__iter && *__iter != __needle; ++__iter);
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-char *(__LIBCCALL __local_strnrchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) {
-    char *__iter = (char *)__haystack,*__end = __iter+__max_chars,*__result = 0;
-    for (; __iter != __end && *__iter; ++__iter) if (*__iter == __needle) __result = __iter;
-    return __result ? __result : (char *)__haystack-1;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-size_t (__LIBCCALL memlen)(void const *__restrict __haystack, int __needle, size_t __n_bytes) {
-    return (__UINTPTR_TYPE__)__local_memend(__haystack,__needle,__n_bytes) - (__UINTPTR_TYPE__)__haystack;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-size_t (__LIBCCALL memrlen)(void const *__restrict __haystack, int __needle, size_t __n_bytes) {
-    return (__UINTPTR_TYPE__)__local_memrend(__haystack,__needle,__n_bytes) - (__UINTPTR_TYPE__)__haystack;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-size_t (__LIBCCALL rawmemlen)(void const *__restrict __haystack, int __needle) {
-    return (__UINTPTR_TYPE__)__local_rawmemchr(__haystack,__needle) - (__UINTPTR_TYPE__)__haystack;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-size_t (__LIBCCALL rawmemrlen)(void const *__restrict __haystack, int __needle) {
-    return (__UINTPTR_TYPE__)__local_rawmemrchr(__haystack,__needle) - (__UINTPTR_TYPE__)__haystack;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-size_t (__LIBCCALL stroff)(char const *__restrict __haystack, int __needle) {
-    return (size_t)(__local_strchrnul(__haystack,__needle)-__haystack);
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-size_t (__LIBCCALL strroff)(char const *__restrict __haystack, int __needle) {
-    return (size_t)(__local_strrchrnul(__haystack,__needle)-__haystack);
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-size_t (__LIBCCALL strnoff)(char const *__restrict __haystack, int __needle, size_t __max_chars) {
-    return (size_t)(__local_strnchrnul(__haystack,__needle,__max_chars)-__haystack);
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-size_t (__LIBCCALL strnroff)(char const *__restrict __haystack, int __needle, size_t __max_chars) {
-    return (size_t)(__local_strnrchrnul(__haystack,__needle,__max_chars)-__haystack);
-}
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL stroff)(char const *__restrict __haystack, int __needle) { return __libc_stroff(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strroff)(char const *__restrict __haystack, int __needle) { return __libc_strroff(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnoff)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnoff(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnroff)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnroff(__haystack,__needle,__max_chars); }
 
 #ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
 extern "C++" {
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memend)(void *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void const *(__LIBCCALL memend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memrend)(void *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void const *(__LIBCCALL memrend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strend)(char *__restrict __str) { return __local_strend(__str); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strend)(char const *__restrict __str) { return __local_strend(__str); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnend)(char *__restrict __str, size_t __max_chars) { return __local_strnend(__str,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strnend)(char const *__restrict __str, size_t __max_chars) { return __local_strnend(__str,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL rawmemrchr)(void *__restrict __haystack, int __needle) { return __local_rawmemrchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void const *(__LIBCCALL rawmemrchr)(void const *__restrict __haystack, int __needle) { return __local_rawmemrchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strrchrnul)(char *__restrict __haystack, int __needle) { return __local_strrchrnul(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strrchrnul)(char const *__restrict __haystack, int __needle) { return __local_strrchrnul(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnchr)(char *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnchr(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL strnchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnchr(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnrchr)(char *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnrchr(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL strnrchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnrchr(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnchrnul)(char *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnchrnul(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strnchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnchrnul(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnrchrnul)(char *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnrchrnul(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strnrchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnrchrnul(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strend)(char *__restrict __str) { return __libc_strend(__str); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strend)(char const *__restrict __str) { return __libc_strend(__str); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnend)(char *__restrict __str, size_t __max_chars) { return __libc_strnend(__str,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strnend)(char const *__restrict __str, size_t __max_chars) { return __libc_strnend(__str,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strrchrnul)(char *__restrict __haystack, int __needle) { return __libc_strrchrnul(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strrchrnul)(char const *__restrict __haystack, int __needle) { return __libc_strrchrnul(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnchr)(char *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnchr(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL strnchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnchr(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnrchr)(char *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnrchr(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char const *(__LIBCCALL strnrchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnrchr(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnchrnul)(char *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnchrnul(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strnchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnchrnul(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnrchrnul)(char *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnrchrnul(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char const *(__LIBCCALL strnrchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnrchrnul(__haystack,__needle,__max_chars); }
 }
 #else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memrend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strend)(char const *__str) { return __local_strend(__str); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnend)(char const *__str, size_t __max_chars) { return __local_strnend(__str,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL rawmemrchr)(void const *__restrict __haystack, int __needle) { return __local_rawmemrchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strrchrnul)(char const *__restrict __haystack, int __needle) { return __local_strrchrnul(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnchr(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnrchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnrchr(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnchrnul(__haystack,__needle,__max_chars); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnrchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __local_strnrchrnul(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strend)(char const *__str) { return __libc_strend(__str); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnend)(char const *__str, size_t __max_chars) { return __libc_strnend(__str,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strrchrnul)(char const *__restrict __haystack, int __needle) { return __libc_strrchrnul(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnchr(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnrchr)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnrchr(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnchrnul(__haystack,__needle,__max_chars); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnrchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnrchrnul(__haystack,__needle,__max_chars); }
 #endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
 #else /* Emulate extensions... */
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL stroff)(char const *__restrict __haystack, int __needle);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strroff)(char const *__restrict __haystack, int __needle);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnoff)(char const *__restrict __haystack, int __needle, size_t __max_chars);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnroff)(char const *__restrict __haystack, int __needle, size_t __max_chars);
 #ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
 extern "C++" {
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void *,__LIBCCALL,memend,(void *__restrict __haystack, int __needle, size_t __n_bytes),memend,(__haystack,__needle,__n_bytes))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void const *,__LIBCCALL,memend,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memend,(__haystack,__needle,__n_bytes))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void *,__LIBCCALL,memrend,(void *__restrict __haystack, int __needle, size_t __n_bytes),memrend,(__haystack,__needle,__n_bytes))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void const *,__LIBCCALL,memrend,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memrend,(__haystack,__needle,__n_bytes))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strend,(char *__restrict __str),strend,(__str))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),char const *,__LIBCCALL,strend,(char const *__restrict __str),strend,(__str))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strnend,(char *__restrict __str, size_t __max_chars),strnend,(__str,__max_chars))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),char const *,__LIBCCALL,strnend,(char const *__restrict __str, size_t __max_chars),strnend,(__str,__max_chars))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void *,__LIBCCALL,rawmemrchr,(void *__restrict __haystack, int __needle),rawmemrchr,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void const *,__LIBCCALL,rawmemrchr,(void const *__restrict __haystack, int __needle),rawmemrchr,(__haystack,__needle))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strrchrnul,(char *__restrict __haystack, int __needle),strrchrnul,(__haystack,__needle))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),char const *,__LIBCCALL,strrchrnul,(char const *__restrict __haystack, int __needle),strrchrnul,(__haystack,__needle))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),char *,__LIBCCALL,strnchr,(char *__restrict __haystack, int __needle, size_t __max_chars),strnchr,(__haystack,__needle,__max_chars))
@@ -636,25 +672,47 @@ __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),char *,
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),char const *,__LIBCCALL,strnrchrnul,(char const *__restrict __haystack, int __needle, size_t __max_chars),strnrchrnul,(__haystack,__needle,__max_chars))
 }
 #else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memend)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memrend)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
 __LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strend)(char const *__restrict __str);
 __LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnend)(char const *__restrict __str, size_t __max_chars);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL rawmemrchr)(void const *__restrict __haystack, int __needle);
 __LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strrchrnul)(char const *__restrict __haystack, int __needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnchr)(char const *__restrict __haystack, int __needle, size_t __max_chars);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) char *(__LIBCCALL strnrchr)(char const *__restrict __haystack, int __needle, size_t __max_chars);
 __LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars);
 __LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL strnrchrnul)(char const *__restrict __haystack, int __needle, size_t __max_chars);
 #endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlen)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlen)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlen)(void const *__restrict __haystack, int __needle);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlen)(void const *__restrict __haystack, int __needle);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL stroff)(char const *__restrict __haystack, int __needle);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strroff)(char const *__restrict __haystack, int __needle);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnoff)(char const *__restrict __haystack, int __needle, size_t __max_chars);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnroff)(char const *__restrict __haystack, int __needle, size_t __max_chars);
+#endif /* !Emulate extensions... */
+
+#if defined(__OPTIMIZE_LIBC__) || !defined(__CRT_KOS) || \
+    defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__)
+#ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
+extern "C++" {
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL rawmemrchr)(void *__restrict __haystack, int __needle) { return __local_rawmemrchr(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void const *(__LIBCCALL rawmemrchr)(void const *__restrict __haystack, int __needle) { return __local_rawmemrchr(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memend)(void *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memend(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void const *(__LIBCCALL memend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memend(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memrend)(void *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrend(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void const *(__LIBCCALL memrend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrend(__haystack,__needle,__n_bytes); }
+}
+#else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL rawmemrchr)(void const *__restrict __haystack, int __needle) { return __local_rawmemrchr(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memend(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memrend)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrend(__haystack,__needle,__n_bytes); }
+#endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
+#else /* Emulate extensions... */
+#ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
+extern "C++" {
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void *,__LIBCCALL,rawmemrchr,(void *__restrict __haystack, int __needle),rawmemrchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void const *,__LIBCCALL,rawmemrchr,(void const *__restrict __haystack, int __needle),rawmemrchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void *,__LIBCCALL,memend,(void *__restrict __haystack, int __needle, size_t __n_bytes),memend,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void const *,__LIBCCALL,memend,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memend,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void *,__LIBCCALL,memrend,(void *__restrict __haystack, int __needle, size_t __n_bytes),memrend,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),void const *,__LIBCCALL,memrend,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memrend,(__haystack,__needle,__n_bytes))
+}
+#else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL rawmemrchr)(void const *__restrict __haystack, int __needle);
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memend)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memrend)(void const *__restrict __haystack, int __needle, size_t __n_bytes);
+#endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
 #endif /* !Emulate extensions... */
 
 #ifndef __KERNEL__
@@ -713,19 +771,13 @@ __REDIRECT(__LIBC,__ATTR_RETNONNULL     __NONNULL((1,2)),void *,__LIBCCALL,memcp
 __REDIRECT(__LIBC,__ATTR_RETNONNULL     __NONNULL((1))  ,void *,__LIBCCALL,memsetb,(void *__restrict __dst, int __byte, size_t __n_bytes),memset,(__dst,__byte,__n_bytes))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int   ,__LIBCCALL,memcmpb,(void const *__a, void const *__b, size_t __n_bytes),memcmp,(__a,__b,__n_bytes))
 __REDIRECT(__LIBC,__ATTR_RETNONNULL     __NONNULL((1,2)),void *,__LIBCCALL,memmoveb,(void *__dst, void const *__src, size_t __n_bytes),memmove,(__dst,__src,__n_bytes))
-#elif !defined(__NO_ATTR_FORCEINLINE)
+#else
 __FORCELOCAL __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memcpyb)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes) { return __opt_memcpy(__dst,__src,__n_bytes); }
 __FORCELOCAL __ATTR_RETNONNULL     __NONNULL((1))   void *(__LIBCCALL memsetb)(void *__restrict __dst, int __byte, size_t __n_bytes) { return __opt_memset(__dst,__byte,__n_bytes); }
 __FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int   (__LIBCCALL memcmpb)(void const *__a, void const *__b, size_t __n_bytes) { return __opt_memcmp(__a,__b,__n_bytes); }
 __FORCELOCAL __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memmoveb)(void *__dst, void const *__src, size_t __n_bytes) { return __opt_memmove(__dst,__src,__n_bytes); }
-#else
-#define memcpyb(dst,src,n_bytes)  __opt_memcpy(dst,src,n_bytes)
-#define memsetb(dst,byte,n_bytes) __opt_memset(dst,byte,n_bytes)
-#define memcmpb(a,b,n_bytes)      __opt_memcmp(a,b,n_bytes)
-#define memmoveb(dst,src,n_bytes) __opt_memmove(dst,src,n_bytes)
 #endif
 #ifdef __OPTIMIZE_LIBC__
-#ifndef __NO_ATTR_FORCEINLINE
 __FORCELOCAL __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memcpyw)(void *__restrict __dst, void const *__restrict __src, size_t __n_words) { return __opt_memcpyw(__dst,__src,__n_words); }
 __FORCELOCAL __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memcpyl)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords) { return __opt_memcpyl(__dst,__src,__n_dwords); }
 __FORCELOCAL __ATTR_RETNONNULL     __NONNULL((1))   void *(__LIBCCALL memsetw)(void *__restrict __dst, __UINT16_TYPE__ __word, size_t __n_words) { return __opt_memsetw(__dst,__word,__n_words); }
@@ -739,23 +791,8 @@ __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL mempcpyb)(void
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL mempcpyw)(void *__restrict __dst, void const *__restrict __src, size_t __n_words) { return __opt_mempcpyw(__dst,__src,__n_words); }
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL mempcpyl)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords) { return __opt_mempcpyl(__dst,__src,__n_dwords); }
 #endif /* __USE_GNU */
-#else /* !__NO_ATTR_FORCEINLINE */
-#define memcpyw(dst,src,n_words)    __opt_memcpyw(dst,src,n_words)
-#define memcpyl(dst,src,n_dwords)   __opt_memcpyl(dst,src,n_dwords)
-#define memsetw(dst,word,n_words)   __opt_memsetw(dst,word,n_words)
-#define memsetl(dst,dword,n_dwords) __opt_memsetl(dst,dword,n_dwords)
-#define memcmpw(a,b,n_words)        __opt_memcmpw(a,b,n_words)
-#define memcmpl(a,b,n_dwords)       __opt_memcmpl(a,b,n_dwords)
-#define memmovew(dst,src,n_words)   __opt_memmovew(dst,src,n_words)
-#define memmovel(dst,src,n_dwords)  __opt_memmovel(dst,src,n_dwords)
-#ifdef __USE_GNU
-#define mempcpyb(dst,src,n_bytes)  __opt_mempcpy(dst,src,n_bytes)
-#define mempcpyw(dst,src,n_words)  __opt_mempcpyw(dst,src,n_words)
-#define mempcpyl(dst,src,n_dwords) __opt_mempcpyl(dst,src,n_dwords)
-#endif /* __USE_GNU */
-#endif /* __NO_ATTR_FORCEINLINE */
 #elif defined(__CRT_KOS) && \
-  (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+    (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
 __LIBC __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memcpyw)(void *__restrict __dst, void const *__restrict __src, size_t __n_words);
 __LIBC __ATTR_RETNONNULL     __NONNULL((1,2)) void *(__LIBCCALL memcpyl)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords);
 __LIBC __ATTR_RETNONNULL     __NONNULL((1))   void *(__LIBCCALL memsetw)(void *__restrict __dst, __UINT16_TYPE__ __word, size_t __n_words);
@@ -837,7 +874,7 @@ void *(__LIBCCALL mempatl)(void *__restrict __dst, __UINT32_TYPE__ __pattern, si
 #endif /* Compat... */
 
 #if !defined(__OPTIMIZE_LIBC__) && defined(__CRT_KOS) && \
-  (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+   (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),size_t,__LIBCCALL,memlenb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memlen,(__haystack,__needle,__n_bytes))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),size_t,__LIBCCALL,memrlenb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memrlen,(__haystack,__needle,__n_bytes))
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),size_t,__LIBCCALL,rawmemlenb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle),rawmemlen,(__haystack,__needle))
@@ -850,189 +887,75 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlenw)(__UIN
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle);
-
-#ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
-extern "C++" {
- /* TODO: Use redirection */
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memchr");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memchr");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memchrw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) __ASMNAME("memchrw");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) __ASMNAME("memchrw");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memchrl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) __ASMNAME("memchrl");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) __ASMNAME("memchrl");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memrchr");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memrchr");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrchrw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) __ASMNAME("memrchrw");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) __ASMNAME("memrchrw");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrchrl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) __ASMNAME("memrchrl");
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) __ASMNAME("memrchrl");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memendb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memend");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memend");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memendw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) __ASMNAME("memendw");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) __ASMNAME("memendw");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memendl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) __ASMNAME("memendl");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) __ASMNAME("memendl");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrendb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memrend");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memrendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) __ASMNAME("memrend");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrendw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) __ASMNAME("memrendw");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memrendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) __ASMNAME("memrendw");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrendl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) __ASMNAME("memrendl");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memrendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) __ASMNAME("memrendl");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle) __ASMNAME("rawmemchr");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL rawmemchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) __ASMNAME("rawmemchr");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemchrw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle) __ASMNAME("rawmemchrw");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL rawmemchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) __ASMNAME("rawmemchrw");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemchrl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle) __ASMNAME("rawmemchrl");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL rawmemchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) __ASMNAME("rawmemchrl");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemrchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle) __ASMNAME("rawmemrchr");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL rawmemrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) __ASMNAME("rawmemrchr");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemrchrw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle) __ASMNAME("rawmemrchrw");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL rawmemrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) __ASMNAME("rawmemrchrw");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemrchrl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle) __ASMNAME("rawmemrchrl");
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL rawmemrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) __ASMNAME("rawmemrchrl");
-}
-#else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memchr,(__haystack,__needle,__n_bytes))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memrchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle,__n_bytes))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memendb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memend,(__haystack,__needle,__n_bytes))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memrendb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memrend,(__haystack,__needle,__n_bytes))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,rawmemchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle),rawmemchr,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,rawmemrchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle),rawmemrchr,(__haystack,__needle))
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words);
-__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle);
-__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle);
-#endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
 #else /* Builtin... */
-
-/* Compatibility multibyte memory functions. */
-#ifndef __OPTIMIZE_LIBC__
-#define __local_memchrb(haystack,needle,n_bytes)  ((__UINT8_TYPE__ *)__opt_memchr(haystack,needle,n_bytes))
-#define __local_memchrw(haystack,needle,n_words)                     __opt_memchrw(haystack,needle,n_words)
-#define __local_memchrl(haystack,needle,n_dwords)                    __opt_memchrl(haystack,needle,n_dwords)
-#else
-#define __local_memchrb(haystack,needle,n_bytes)  ((__UINT8_TYPE__ *)__NAMESPACE_STD_SYM memchr(haystack,needle,n_bytes))
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-__UINT16_TYPE__ *(__LIBCCALL __local_memchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) {
-    __UINT16_TYPE__ *__iter,*__end;
-    __end = (__iter = (__UINT16_TYPE__ *)__haystack)+__n_words;
-    for (; __iter != __end; ++__iter) {
-        if (*__iter == __needle) return (__UINT16_TYPE__ *)__iter;
-    }
-    return __NULLPTR;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-__UINT32_TYPE__ *(__LIBCCALL __local_memchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) {
-    __UINT32_TYPE__ *__iter,*__end;
-    __end = (__iter = (__UINT32_TYPE__ *)__haystack)+__n_dwords;
-    for (; __iter != __end; ++__iter) {
-        if (*__iter == __needle) return (__UINT32_TYPE__ *)__iter;
-    }
-    return __NULLPTR;
-}
-#endif
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-__UINT16_TYPE__ *(__LIBCCALL __local_memrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) {
-    __UINT16_TYPE__ *__iter = (__UINT16_TYPE__ *)__haystack+__n_words;
-    while (__iter != (__UINT16_TYPE__ *)__haystack)
-        if (*--__iter == __needle)
-            return __iter;
-    return __NULLPTR;
-}
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1))
-__UINT32_TYPE__ *(__LIBCCALL __local_memrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) {
-    __UINT32_TYPE__ *__iter = (__UINT32_TYPE__ *)__haystack+__n_dwords;
-    while (__iter != (__UINT32_TYPE__ *)__haystack)
-        if (*--__iter == __needle)
-            return __iter;
-    return __NULLPTR;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-__UINT16_TYPE__ *(__LIBCCALL __local_memendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) {
-    __UINT16_TYPE__ *__iter,*__end;
-    __end = (__iter = (__UINT16_TYPE__ *)__haystack)+__n_words;
-    for (; __iter != __end; ++__iter) if (*__iter == __needle) break;
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-__UINT32_TYPE__ *(__LIBCCALL __local_memendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) {
-    __UINT32_TYPE__ *__iter,*__end;
-    __end = (__iter = (__UINT32_TYPE__ *)__haystack)+__n_dwords;
-    for (; __iter != __end; ++__iter) if (*__iter == __needle) break;
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-__UINT16_TYPE__ *(__LIBCCALL __local_memrendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) {
-    __UINT16_TYPE__ *__iter = (__UINT16_TYPE__ *)__haystack+__n_words;
-    while (__iter != __haystack) if (*--__iter == __needle) break;
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-__UINT32_TYPE__ *(__LIBCCALL __local_memrendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) {
-    __UINT32_TYPE__ *__iter = (__UINT32_TYPE__ *)__haystack+__n_dwords;
-    while (__iter != __haystack) if (*--__iter == __needle) break;
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1))
-__UINT16_TYPE__ *(__LIBCCALL __local_rawmemchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) {
-    __UINT16_TYPE__ *__iter = (__UINT16_TYPE__ *)__haystack;
-    while (*__iter != __needle) ++__iter;
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1))
-__UINT32_TYPE__ *(__LIBCCALL __local_rawmemchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) {
-    __UINT32_TYPE__ *__iter = (__UINT32_TYPE__ *)__haystack;
-    while (*__iter != __needle) ++__iter;
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-__UINT16_TYPE__ *(__LIBCCALL __local_rawmemrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) {
-    __UINT16_TYPE__ *__iter = (__UINT16_TYPE__ *)__haystack;
-    while (*--__iter != __needle);
-    return __iter;
-}
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1))
-__UINT32_TYPE__ *(__LIBCCALL __local_rawmemrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) {
-    __UINT32_TYPE__ *__iter = (__UINT32_TYPE__ *)__haystack;
-    while (*--__iter != __needle);
-    return __iter;
-}
-
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlenb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return memlen(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlenb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return memrlen(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlenb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return rawmemlen(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlenb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return rawmemrlen(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return (size_t)(__local_memendw(__haystack,__needle,__n_words) - __haystack); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return (size_t)(__local_memendl(__haystack,__needle,__n_dwords) - __haystack); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return (size_t)(__local_memrendw(__haystack,__needle,__n_words) - __haystack); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return (size_t)(__local_memrendl(__haystack,__needle,__n_dwords) - __haystack); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) { return (size_t)(__local_rawmemchrw(__haystack,__needle) - __haystack); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) { return (size_t)(__local_rawmemchrl(__haystack,__needle) - __haystack); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) { return (size_t)(__local_rawmemrchrw(__haystack,__needle) - __haystack); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) { return (size_t)(__local_rawmemrchrl(__haystack,__needle) - __haystack); }
+/* Compatibility/optimized multibyte memory functions. */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlenb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memlen(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlenb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrlen(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlenb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return __local_rawmemlen(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlenb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return __local_rawmemrlen(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memlenw(__haystack,__needle,__n_words); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memlenl(__haystack,__needle,__n_dwords); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrlenw(__haystack,__needle,__n_words); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL memrlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrlenl(__haystack,__needle,__n_dwords); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) { return __local_rawmemlenw(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) { return __local_rawmemlenl(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlenw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) { return __local_rawmemrlenw(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlenl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) { return __local_rawmemrlenl(__haystack,__needle); }
+#endif /* Compat... */
 
 #ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
 extern "C++" {
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)__local_memchrb(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)__local_memchrb(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memrchr(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memrchr(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memendb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrendb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memrend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memrendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memrend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)rawmemchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL rawmemchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)rawmemchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemrchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)rawmemrchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL rawmemrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)rawmemrchr(__haystack,__needle); }
+#ifndef __OPTIMIZE_LIBC__
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memchrb,(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes),memchr,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT8_TYPE__ const *,__LIBCCALL,memchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memchr,(__haystack,__needle,__n_bytes))
+#else /* !__OPTIMIZE_LIBC__ */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memchrb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memchrb(__haystack,__needle,__n_bytes); }
+#endif /* __OPTIMIZE_LIBC__ */
+#if !defined(__OPTIMIZE_LIBC__) && defined(__CRT_GLC) && !defined(__DOS_COMPAT__)
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memrchrb,(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT8_TYPE__ const *,__LIBCCALL,memrchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,rawmemchrb,(__UINT8_TYPE__ *__restrict __haystack, int __needle),rawmemchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ const *,__LIBCCALL,rawmemchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle),rawmemchr,(__haystack,__needle))
+#else /* GLC... */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchrb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchrb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)__local_rawmemchr(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL rawmemchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)__local_rawmemchr(__haystack,__needle); }
+#endif /* !GLC... */
+#if !defined(__OPTIMIZE_LIBC__) && defined(__CRT_KOS) && \
+   (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT16_TYPE__ *,__LIBCCALL,memchrw,(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words),memchrw,(__haystack,__needle,__n_words))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT16_TYPE__ const *,__LIBCCALL,memchrw,(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words),memchrw,(__haystack,__needle,__n_words))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT32_TYPE__ *,__LIBCCALL,memchrl,(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords),memchrl,(__haystack,__needle,__n_dwords))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT32_TYPE__ const *,__LIBCCALL,memchrl,(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords),memchrl,(__haystack,__needle,__n_dwords))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT16_TYPE__ *,__LIBCCALL,memrchrw,(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words),memrchrw,(__haystack,__needle,__n_words))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT16_TYPE__ const *,__LIBCCALL,memrchrw,(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words),memrchrw,(__haystack,__needle,__n_words))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT32_TYPE__ *,__LIBCCALL,memrchrl,(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords),memrchrl,(__haystack,__needle,__n_dwords))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT32_TYPE__ const *,__LIBCCALL,memrchrl,(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords),memrchrl,(__haystack,__needle,__n_dwords))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT16_TYPE__ *,__LIBCCALL,rawmemchrw,(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle),rawmemchrw,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT16_TYPE__ const *,__LIBCCALL,rawmemchrw,(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle),rawmemchrw,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT32_TYPE__ *,__LIBCCALL,rawmemchrl,(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle),rawmemchrl,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT32_TYPE__ const *,__LIBCCALL,rawmemchrl,(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle),rawmemchrl,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,rawmemrchrb,(__UINT8_TYPE__ *__restrict __haystack, int __needle),rawmemrchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ const *,__LIBCCALL,rawmemrchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle),rawmemrchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT16_TYPE__ *,__LIBCCALL,rawmemrchrw,(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle),rawmemrchrw,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT16_TYPE__ const *,__LIBCCALL,rawmemrchrw,(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle),rawmemrchrw,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT32_TYPE__ *,__LIBCCALL,rawmemrchrl,(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle),rawmemrchrl,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT32_TYPE__ const *,__LIBCCALL,rawmemrchrl,(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle),rawmemrchrl,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memendb,(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes),memend,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ const *,__LIBCCALL,memendb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memend,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT16_TYPE__ *,__LIBCCALL,memendw,(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words),memendw,(__haystack,__needle,__n_words))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT16_TYPE__ const *,__LIBCCALL,memendw,(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words),memendw,(__haystack,__needle,__n_words))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT32_TYPE__ *,__LIBCCALL,memendl,(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords),memendl,(__haystack,__needle,__n_dwords))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT32_TYPE__ const *,__LIBCCALL,memendl,(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords),memendl,(__haystack,__needle,__n_dwords))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memrendb,(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes),memrend,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ const *,__LIBCCALL,memrendb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memrend,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT16_TYPE__ *,__LIBCCALL,memrendw,(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words),memrendw,(__haystack,__needle,__n_words))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT16_TYPE__ const *,__LIBCCALL,memrendw,(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words),memrendw,(__haystack,__needle,__n_words))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT32_TYPE__ *,__LIBCCALL,memrendl,(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords),memrendl,(__haystack,__needle,__n_dwords))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT32_TYPE__ const *,__LIBCCALL,memrendl,(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords),memrendl,(__haystack,__needle,__n_dwords))
+#else /* KOS... */
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memchrw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memchrw(__haystack,__needle,__n_words); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memchrw(__haystack,__needle,__n_words); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memchrl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memchrl(__haystack,__needle,__n_dwords); }
@@ -1041,14 +964,8 @@ __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrch
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrchrw(__haystack,__needle,__n_words); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrchrl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrchrl(__haystack,__needle,__n_dwords); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrchrl(__haystack,__needle,__n_dwords); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memendw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memendw(__haystack,__needle,__n_words); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memendw(__haystack,__needle,__n_words); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memendl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memendl(__haystack,__needle,__n_dwords); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memendl(__haystack,__needle,__n_dwords); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrendw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrendw(__haystack,__needle,__n_words); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memrendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrendw(__haystack,__needle,__n_words); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrendl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrendl(__haystack,__needle,__n_dwords); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memrendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrendl(__haystack,__needle,__n_dwords); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemrchrb)(__UINT8_TYPE__ *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)__local_rawmemrchr(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL rawmemrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)__local_rawmemrchr(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemchrw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle) { return __local_rawmemchrw(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL rawmemchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) { return __local_rawmemchrw(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemchrl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle) { return __local_rawmemchrl(__haystack,__needle); }
@@ -1057,40 +974,69 @@ __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL rawmemrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) { return __local_rawmemrchrw(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemrchrl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle) { return __local_rawmemrchrl(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL rawmemrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) { return __local_rawmemrchrl(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memendb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memendb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memendb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrendb)(__UINT8_TYPE__ *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrendb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ const *(__LIBCCALL memrendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrendb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memendw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memendw(__haystack,__needle,__n_words); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memendw(__haystack,__needle,__n_words); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memendl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memendl(__haystack,__needle,__n_dwords); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memendl(__haystack,__needle,__n_dwords); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrendw)(__UINT16_TYPE__ *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrendw(__haystack,__needle,__n_words); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ const *(__LIBCCALL memrendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrendw(__haystack,__needle,__n_words); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrendl)(__UINT32_TYPE__ *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrendl(__haystack,__needle,__n_dwords); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ const *(__LIBCCALL memrendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrendl(__haystack,__needle,__n_dwords); }
+#endif /* !KOS... */
 }
 #else /* __CORRECT_ISO_CPP_STRING_H_PROTO */
 #ifndef __OPTIMIZE_LIBC__
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)__local_memchrb(__haystack,__needle,__n_bytes); }
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memchr,(__haystack,__needle,__n_bytes))
+#else /* !__OPTIMIZE_LIBC__ */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memchrb(__haystack,__needle,__n_bytes); }
+#endif /* __OPTIMIZE_LIBC__ */
+#if !defined(__OPTIMIZE_LIBC__) && defined(__CRT_GLC) && !defined(__DOS_COMPAT__)
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memrchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,rawmemchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle),rawmemchr,(__haystack,__needle))
+#else /* GLC... */
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchrb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return __local_rawmemchrb(__haystack,__needle); }
+#endif /* !GLC... */
+#if !defined(__OPTIMIZE_LIBC__) && defined(__CRT_KOS) && \
+   (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words);
+__LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords);
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,rawmemrchrb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle),rawmemrchr,(__haystack,__needle))
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle);
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle);
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle);
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle);
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memendb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memend,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)),__UINT8_TYPE__ *,__LIBCCALL,memrendb,(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes),memrend,(__haystack,__needle,__n_bytes))
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words);
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords);
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words);
+__LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords);
+#else
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memchrw(__haystack,__needle,__n_words); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memchrl(__haystack,__needle,__n_dwords); }
-#elif !defined(__NO_ATTR_FORCEINLINE)
-__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)__local_memchrb(__haystack,__needle,__n_bytes); }
-__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memchrw(__haystack,__needle,__n_words); }
-__FORCELOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memchrl(__haystack,__needle,__n_dwords); }
-#else
-#define memchrb(haystack,needle,n_bytes)  __local_memchrb(haystack,needle,n_bytes)
-#define memchrw(haystack,needle,n_words)  __local_memchrw(haystack,needle,n_words)
-#define memchrl(haystack,needle,n_dwords) __local_memchrl(haystack,needle,n_dwords)
-#endif
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memrchr(__haystack,__needle,__n_bytes); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrchrw(__haystack,__needle,__n_words); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrchrl(__haystack,__needle,__n_dwords); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return (__UINT8_TYPE__ *)memrend(__haystack,__needle,__n_bytes); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)rawmemchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return (__UINT8_TYPE__ *)rawmemrchr(__haystack,__needle); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memendw(__haystack,__needle,__n_words); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memendl(__haystack,__needle,__n_dwords); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrendw(__haystack,__needle,__n_words); }
-__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrendl(__haystack,__needle,__n_dwords); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL rawmemrchrb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle) { return __local_rawmemrchrb(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) { return __local_rawmemchrw(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) { return __local_rawmemchrl(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL rawmemrchrw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle) { return __local_rawmemrchrw(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL rawmemrchrl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle) { return __local_rawmemrchrl(__haystack,__needle); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memendb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT8_TYPE__ *(__LIBCCALL memrendb)(__UINT8_TYPE__ const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrendb(__haystack,__needle,__n_bytes); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memendw(__haystack,__needle,__n_words); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memendl(__haystack,__needle,__n_dwords); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT16_TYPE__ *(__LIBCCALL memrendw)(__UINT16_TYPE__ const *__restrict __haystack, __UINT16_TYPE__ __needle, size_t __n_words) { return __local_memrendw(__haystack,__needle,__n_words); }
+__LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT32_TYPE__ *(__LIBCCALL memrendl)(__UINT32_TYPE__ const *__restrict __haystack, __UINT32_TYPE__ __needle, size_t __n_dwords) { return __local_memrendl(__haystack,__needle,__n_dwords); }
+#endif
 #endif /* !__CORRECT_ISO_CPP_STRING_H_PROTO */
 
-
-#endif /* Compat... */
 
 #ifdef __CRT_KOS
 __SYSDECL_END
@@ -1330,7 +1276,10 @@ __LIBC __ATTR_LIBC_PRINTF(1,0) __WUNUSED __ATTR_MALLOC char *(__LIBCCALL vstrdup
 #include "hybrid/debuginfo.h"
 #if __USE_DEBUG != 0 && defined(__CRT_KOS) && \
   (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+__NAMESPACE_STD_BEGIN
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _memcpy_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO);
+__NAMESPACE_STD_END
+__NAMESPACE_STD_USING(_memcpy_d)
 #ifdef __USE_GNU
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpy_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO);
 #endif /* __USE_GNU */
@@ -1343,11 +1292,11 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _
 #endif /* __USE_XOPEN2K8 */
 #endif /* !__KERNEL__ */
 #ifdef __USE_KOS
-__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _memcpyb_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO) __ASMNAME("_memcpy_d");
+__REDIRECT(__LIBC,__ATTR_RETNONNULL __NONNULL((1,2)),void *,__LIBCCALL,_memcpyb_d,(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO),_memcpy_d,(__dst,__src,__n_bytes,__DEBUGINFO_FWD))
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _memcpyw_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_words, __DEBUGINFO);
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _memcpyl_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords, __DEBUGINFO);
 #ifdef __USE_GNU
-__LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyb_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO) __ASMNAME("_mempcpy_d");
+__REDIRECT(__LIBC,__ATTR_RETNONNULL __NONNULL((1,2)),void *,__LIBCCALL,_mempcpyb_d,(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes, __DEBUGINFO),_mempcpy_d,(__dst,__src,__n_bytes,__DEBUGINFO_FWD))
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyw_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_words, __DEBUGINFO);
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyl_d)(void *__restrict __dst, void const *__restrict __src, size_t __n_dwords, __DEBUGINFO);
 #endif /* __USE_GNU */
@@ -1387,10 +1336,10 @@ __LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MA
 #ifdef __USE_DEBUG_HOOK
 #ifndef __OPTIMIZE_LIBC__
 #   define memcpy(dst,src,n_bytes) _memcpy_d(dst,src,n_bytes,__DEBUGINFO_GEN)
-#endif /* !__OPTIMIZE_LIBC__ */
 #ifdef __USE_GNU
 #   define mempcpy(dst,src,n_bytes) _mempcpy_d(dst,src,n_bytes,__DEBUGINFO_GEN)
 #endif /* __USE_GNU */
+#endif /* !__OPTIMIZE_LIBC__ */
 #ifndef __KERNEL__
 #if defined(__USE_XOPEN_EXTENDED) || defined(__USE_XOPEN2K8)
 #   define strdup(str)             _strdup_d(str,__DEBUGINFO_GEN)
@@ -1400,6 +1349,7 @@ __LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MA
 #endif /* __USE_XOPEN2K8 */
 #endif /* !__KERNEL__ */
 #ifdef __USE_KOS
+#ifndef __OPTIMIZE_LIBC__
 #   undef memcpyb
 #   define memcpyb(dst,src,n_bytes)  _memcpyb_d(dst,src,n_bytes,__DEBUGINFO_GEN)
 #   define memcpyw(dst,src,n_words)  _memcpyw_d(dst,src,n_words,__DEBUGINFO_GEN)
@@ -1410,6 +1360,7 @@ __LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MA
 #   define mempcpyw(dst,src,n_words)  _mempcpyw_d(dst,src,n_words,__DEBUGINFO_GEN)
 #   define mempcpyl(dst,src,n_dwords) _mempcpyl_d(dst,src,n_dwords,__DEBUGINFO_GEN)
 #endif /* __USE_GNU */
+#endif /* !__OPTIMIZE_LIBC__ */
 #ifndef __KERNEL__
 #ifdef _strdupf_d
 #   define strdupf(...)              _strdupf_d(__FILE__,__LINE__,__FUNCTION__,__VA_ARGS__)
@@ -1818,11 +1769,12 @@ __SYSDECL_END
 
 #ifdef __USE_GNU
 #include "hybrid/alloca.h"
-#include "hybrid/string.h"
-#define strdupa(s)	\
+#include "libc/string.h"
+#ifndef __NO_XBLOCK
+#define strdupa(s) \
  __XBLOCK({ \
    char const *const __old = (s); \
-   size_t const __len = __hybrid_strlen(__old)+1; \
+   size_t const __len = __libc_strlen(__old)+1; \
    char *const __new = (char *)__ALLOCA(__len); \
    __XRETURN (char *)memcpy(__new,__old,__len); \
  })
@@ -1832,24 +1784,59 @@ __SYSDECL_END
    size_t const __len = __hybrid_strnlen(__old,(n)); \
    char *const __new = (char *)__ALLOCA(__len+1); \
    __new[__len] = '\0'; \
-   __XRETURN (char *)memcpy(__new,__old,__len); \
+   __XRETURN (char *)__NAMESPACE_STD_SYM memcpy(__new,__old,__len); \
  })
+#else /* !__NO_XBLOCK */
+__NAMESPACE_INT_BEGIN
+__LOCAL char *(__LIBCCALL __strndupa_init)(void *__restrict __buf, char const *__restrict __src, size_t __n) {
+    __n = __libc_strnlen(__src,__n);
+    __NAMESPACE_STD_SYM memcpy(__buf,__src,__n*sizeof(char));
+    ((char *)__buf)[__n] = '\0';
+    return (char *)__buf;
+}
+__NAMESPACE_INT_END
+#define strdupa(s) \
+  (__NAMESPACE_STD_SYM strcpy((char *)__ALLOCA((__libc_strlen(s)+1)*sizeof(char)),(s)))
+#define strndupa(s,n) \
+  (__NAMESPACE_INT_SYM __strndupa_init(__ALLOCA((__libc_strnlen((s),(n))+1)*sizeof(char)),(s),(n)))
+#endif /* __NO_XBLOCK */
 #ifdef __USE_KOS
 #include "__amalloc.h"
+#ifndef __NO_XBLOCK
 #define strdupma(s)	\
  __XBLOCK({ \
    char const *const __old = (s); \
-   size_t const __len = __hybrid_strlen(__old)+1; \
+   size_t const __len = __libc_strlen(__old)+1; \
    char *const __new = (char *)__amalloc(__len); \
-   __XRETURN __new ? (char *)memcpy(__new,__old,__len) : (char *)0; \
+   __XRETURN __new ? (char *)__NAMESPACE_STD_SYM memcpy(__new,__old,__len) : (char *)0; \
  })
 #define strndupma(s,n) \
  __XBLOCK({ \
    char const *const __old = (s); \
    size_t const __len = __hybrid_strnlen(__old,(n)); \
    char *const __new = (char *)__amalloc(__len+1); \
-   __XRETURN __new ? (__new[__len] = '\0',(char *)memcpy(__new,__old,__len)) : (char *)0; \
+   __XRETURN __new ? (__new[__len] = '\0',(char *)__NAMESPACE_STD_SYM memcpy(__new,__old,__len)) : (char *)0; \
  })
+#else /* !__NO_XBLOCK */
+__NAMESPACE_INT_BEGIN
+__LOCAL char *(__LIBCCALL __strdupma_init)(void *__buf, char const *__restrict __src) {
+    if (__buf) __NAMESPACE_STD_SYM strcpy((char *)__buf,__src);
+    return (char *)__buf;
+}
+__LOCAL char *(__LIBCCALL __strndupma_init)(void *__buf, char const *__restrict __src, size_t __n) {
+    if (__buf) {
+        __n = __libc_strnlen(__src,__n);
+        __NAMESPACE_STD_SYM memcpy(__buf,__src,__n*sizeof(char));
+        ((char *)__buf)[__n] = '\0';
+    }
+    return (char *)__buf;
+}
+__NAMESPACE_INT_END
+#define strdupma(s) \
+  (__NAMESPACE_INT_SYM __strdupma_init(__amalloc((__libc_strlen(s)+1)*sizeof(char)),(s)))
+#define strndupma(s,n) \
+  (__NAMESPACE_INT_SYM __strndupma_init(__amalloc((__libc_strnlen((s),(n))+1)*sizeof(char)),(s),(n)))
+#endif /* __NO_XBLOCK */
 #endif /* __USE_KOS */
 #endif /* __USE_GNU */
 

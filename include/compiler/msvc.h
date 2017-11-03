@@ -188,7 +188,7 @@ template<> struct __static_if<true> { bool __is_true__(); };
 #define __LONGLONG               long long
 #define __ULONGLONG              unsigned long long
 #define __NO_builtin_constant_p  1
-#define __builtin_constant_p(x)  0
+#define __builtin_constant_p(x) (__LINE__ == -1)
 #define __restrict_arr           __restrict
 #define __empty_arr(T,x)         T x[1]
 #define __attribute__(x)         /* Nothing */
