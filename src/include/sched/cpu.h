@@ -45,7 +45,7 @@ DECL_BEGIN
  */
 #define cpu_reading(x)      atomic_rwlock_reading(&(x)->c_lock)
 #define cpu_writing(x)      atomic_rwlock_writing(&(x)->c_lock)
-#if 1 /* Too expensive... */
+#if 1
 #define cpu_tryread(x)     (assert(!PREEMPTION_ENABLED()),atomic_rwlock_tryread(&(x)->c_lock))
 #define cpu_trywrite(x)    (assert(!PREEMPTION_ENABLED()),atomic_rwlock_trywrite(&(x)->c_lock))
 #define cpu_tryupgrade(x)  (assert(!PREEMPTION_ENABLED()),atomic_rwlock_tryupgrade(&(x)->c_lock))
@@ -66,22 +66,6 @@ DECL_BEGIN
 #define cpu_endread(x)      atomic_rwlock_endread(&(x)->c_lock)
 #define cpu_endwrite(x)     atomic_rwlock_endwrite(&(x)->c_lock)
 #endif
-
-/* Lock the current CPU for reading/writing, as well as
- * disabling preemption similar to PREEMPTION_PUSH() */
-#define CPU_READTHIS() \
- XBLOCK({ register pflag_t _r = PREEMPTION_PUSH(); \
-          cpu_read(THIS_CPU); \
-          XRETURN _r; \
- })
-#define CPU_WRITETHIS() \
- XBLOCK({ register pflag_t _r = PREEMPTION_PUSH(); \
-          cpu_write(THIS_CPU); \
-          XRETURN _r; \
- })
-#define CPU_ENDREADTHIS(was)  (cpu_endread(THIS_CPU),PREEMPTION_POP(was))
-#define CPU_ENDWRITETHIS(was) (cpu_endwrite(THIS_CPU),PREEMPTION_POP(was))
-
 
 #ifdef CONFIG_SMP
 /* Find the most suitable (least used) CPU allowed by the given affinity.
@@ -166,6 +150,12 @@ FUNDEF errno_t KCALL schedule_work(struct job *__restrict work);
 FUNDEF errno_t KCALL schedule_delayed_work(struct job *__restrict work, struct timespec const *__restrict abs_exectime);
 FUNDEF errno_t KCALL schedule_delayed_work_j(struct job *__restrict work, jtime_t abs_exectime);
 /* TODO: Using jobs, we can easily implement 'alarm()' */
+
+// /* Schedule a job to-be executed the next time the calling CPU switches to IDLE mode.
+//  * @return: -EOK:      The given job was scheduled.
+//  * @return: -EALREADY: The given job had already been scheduled, though had yet to be executed.
+//  * @return: -EPERM:    The module associated with the given job is currently being unloaded. */
+// FUNDEF errno_t KCALL schedule_idle_work(struct job *__restrict work);
 #endif /* !CONFIG_NO_JOBS */
 
 

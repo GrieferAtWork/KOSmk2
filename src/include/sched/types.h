@@ -107,7 +107,7 @@ struct tasksigslot {
  LIST_NODE(struct tasksigslot)
                      tss_chain;/*< [0..1][lock(tss_sig->s_lock)][valid_if(tss_sig != NULL)]
                                 *   Chain of signal slots that where the next was activated after this one. */
- USER void          *tss_buf;  /*< [0..tss_siz][const][valid_if(tss_sig != NULL)] An optional buffer into which received data is written. */
+ void               *tss_buf;  /*< [0..tss_siz][const][valid_if(tss_sig != NULL)] An optional buffer into which received data is written. */
  size_t              tss_siz;  /*< [const][valid_if(tss_sig != NULL)] The size of 'tss_buf' in bytes. */
  struct tasksigslot *tss_last; /*< [1..1][lock(tss_sig->s_lock)][->tss_chain.le_next == NULL]
                                 *  [valid_if(tss_sig != NULL && tss_sig->s_task == this)]

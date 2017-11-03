@@ -813,6 +813,14 @@
 #define __ULONG64_TYPE__ __UINT64_TYPE__
 #endif
 
+/* The max integral type that the target's main address bus is optimized for.
+ * Currently, that is equal to `sizeof(void *)' for all targets. */
+#ifndef __SIZEOF_BUSINT__
+#define __SIZEOF_BUSINT__ __SIZEOF_POINTER__
+#define __BUSINT_TYPE__   __INTPTR_TYPE__
+#define __UBUSIINT_TYPE__ __UINTPTR_TYPE__
+#endif
+
 #if defined(_NATIVE_CHAR16_T_DEFINED) || \
    (defined(__cpp_unicode_characters) && __cpp_unicode_characters+0 >= 200704) || \
    (defined(_HAS_CHAR16_T_LANGUAGE_SUPPORT) && _HAS_CHAR16_T_LANGUAGE_SUPPORT+0) || \

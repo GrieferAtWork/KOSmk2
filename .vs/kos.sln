@@ -199,6 +199,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm-generic", "asm-generic"
 		..\include\asm-generic\posix_types.h = ..\include\asm-generic\posix_types.h
 		..\include\asm-generic\socket.h = ..\include\asm-generic\socket.h
 		..\include\asm-generic\sockios.h = ..\include\asm-generic\sockios.h
+		..\include\asm-generic\string.h = ..\include\asm-generic\string.h
 		..\include\asm-generic\types.h = ..\include\asm-generic\types.h
 	EndProjectSection
 EndProject
@@ -257,6 +258,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libc", "libc", "{C7A7D468-3AA5-4DF8-B5D7-F14F23D76C69}"
 	ProjectSection(SolutionItems) = preProject
 		..\include\libc\format-printer.h = ..\include\libc\format-printer.h
+		..\include\libc\string.h = ..\include\libc\string.h
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkernel32", "libs\libkernel32.vcxproj", "{CB10BC24-64B5-4035-8DB0-423011414723}"
@@ -278,6 +280,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm", "asm", "{E72D1B89-7AE
 		..\include\i386-kos\asm\posix_types_x32.h = ..\include\i386-kos\asm\posix_types_x32.h
 		..\include\i386-kos\asm\socket.h = ..\include\i386-kos\asm\socket.h
 		..\include\i386-kos\asm\sockios.h = ..\include\i386-kos\asm\sockios.h
+		..\include\i386-kos\asm\string.h = ..\include\i386-kos\asm\string.h
 		..\include\i386-kos\asm\syscallno.ci = ..\include\i386-kos\asm\syscallno.ci
 		..\include\i386-kos\asm\types.h = ..\include\i386-kos\asm\types.h
 		..\include\i386-kos\asm\unistd.h = ..\include\i386-kos\asm\unistd.h
@@ -405,7 +408,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "compiler", "compiler", "{FA
 		..\include\compiler\c.h = ..\include\compiler\c.h
 		..\include\compiler\gcc.h = ..\include\compiler\gcc.h
 		..\include\compiler\generic.h = ..\include\compiler\generic.h
-		..\include\compiler\intel.h = ..\include\compiler\intel.h
 		..\include\compiler\intellisense.h = ..\include\compiler\intellisense.h
 		..\include\compiler\msvc.h = ..\include\compiler\msvc.h
 	EndProjectSection

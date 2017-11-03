@@ -128,6 +128,8 @@
 #   define __NO_ATTR_NORETURN      1
 #   define __ATTR_NORETURN         /* Nothing */
 #endif
+#define __NO_ATTR_FALLTHROUGH      1
+#define __ATTR_FALLTHROUGH         /* Nothing */
 #define __ATTR_FASTCALL            __attribute__((__fastcall__))
 #define __ATTR_STDCALL             __attribute__((__stdcall__))
 #define __ATTR_CDECL               __attribute__((__cdecl__))

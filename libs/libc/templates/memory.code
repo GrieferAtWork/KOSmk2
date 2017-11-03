@@ -88,6 +88,8 @@
 
 #	define STRING_LARGE_OP_LIMIT 0x400
 #	define STRING_REPMOVSn_LIMIT 0x100
+#	define STRING_REPSTOSn_LIMIT 0x100
+#	define STRING_REPCMPSn_LIMIT 0x080
 #ifdef CONFIG_64BIT_STRING
 #	define STRING_ALIGNMENT_MASK 7
 #else
@@ -104,6 +106,48 @@
 #else
 #define CHECK_DF() {}
 #endif
+
+FORCELOCAL void *LIBCCALL X(core_memcpy)
+(void *__restrict dst, void const *__restrict src, size_t n) {
+	CHECK_HOST_DATA(dst,n*S);
+	CHECK_HOST_TEXT(src,n*S);
+	CHECK_DF();	
+	if (n >= STRING_REPMOVSn_LIMIT) {
+#if S == 1
+		if (n >= STRING_LARGE_OP_LIMIT) {
+			switch (n & STRING_ALIGNMENT_MASK) {
+			case 0:
+#ifdef CONFIG_64BIT_STRING
+				return core_memcpyq(dst,src,n >> 3);
+			case 4:
+#endif
+				return core_memcpyl(dst,src,n >> 2);
+#ifdef CONFIG_64BIT_STRING
+			case 6:
+#endif
+			case 2:
+				return core_memcpyw(dst,src,n >> 1);
+			default: break;
+			}
+		}
+#endif
+#if defined(__i386__) || defined(__x86_64__)
+		__asm__ __volatile__("rep; movs" W "\n"
+							 :
+							 : "D" (dst)
+							 , "S" (src)
+							 , "c" (WM(n))
+							 : "memory");
+		return dst;
+#endif
+	}
+	{
+		T *_dst = (T *)dst;
+		T *_src = (T *)src;
+		while (n--) *(T *)_dst++ = *_src++;
+	}
+	return dst;
+}
 
 FORCELOCAL void *LIBCCALL X(core_mempcpy)
 (void *__restrict dst, void const *__restrict src, size_t n) {
@@ -135,8 +179,10 @@ FORCELOCAL void *LIBCCALL X(core_mempcpy)
 							 : "S" (src)
 							 , "c" (WM(n))
 							 : "memory");
+		return dst;
 #endif
-	} else {
+	}
+	{
 		T *_dst = (T *)dst;
 		T *_src = (T *)src;
 		while (n--) *(T *)_dst++ = *_src++;
@@ -191,66 +237,72 @@ DECL void *LIBCCALL PP_CAT2(X(libc__mempcpy),_d)
 
 DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
 	CHECK_HOST_DATA(dst,n*S);
+	if (n >= STRING_REPSTOSn_LIMIT) {
 #if S == 1
-	if (n >= STRING_LARGE_OP_LIMIT) {
-		switch (n & STRING_ALIGNMENT_MASK) {
-		case 0:
+		if (n >= STRING_LARGE_OP_LIMIT) {
+			switch (n & STRING_ALIGNMENT_MASK) {
+			case 0:
 #ifdef CONFIG_64BIT_STRING
-			return libc_memsetq(dst,(u64)0x0101010101010101ull*h,n >> 3);
-		case 4:
+				return libc_memsetq(dst,(u64)0x0101010101010101ull*h,n >> 3);
+			case 4:
 #endif
-			return libc_memsetl(dst,(u32)0x01010101u*h,n >> 2);
+				return libc_memsetl(dst,(u32)0x01010101u*h,n >> 2);
 #ifdef CONFIG_64BIT_STRING
-		case 6:
+			case 6:
 #endif
-		case 2:
-			return libc_memsetw(dst,(u16)0x0101u*h,n >> 1);
-		default: break;
+			case 2:
+				return libc_memsetw(dst,(u16)0x0101u*h,n >> 1);
+			default: break;
+			}
 		}
-	}
 #endif
 #if defined(__i386__) || defined(__x86_64__)
-	CHECK_DF();
-	__asm__ __volatile__("rep; stos" W "\n"
-	                     :
-	                     : "D" (dst)
-	                     , "a" (h)
-	                     , "c" (WM(n))
-	                     : "memory", "esi");
-#else
-	{	T *iter = (T *)dst;
+		CHECK_DF();
+		__asm__ __volatile__("rep; stos" W "\n"
+							 :
+							 : "D" (dst)
+							 , "a" (h)
+							 , "c" (WM(n))
+							 : "memory", "esi");
+		return dst;
+#endif
+	}
+	{
+		T *iter = (T *)dst;
 		while (n--) *iter++ = (T)h;
 	}
-#endif
  return dst;
 }
 
 DECL sB LIBCCALL X(libc_memcmp)
 (void const *a, void const *b, size_t n) {
+	if (n >= STRING_REPCMPSn_LIMIT) {
 #if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
-	sB result = 0;
-	CHECK_DF();
-	__asm__ __volatile__("    jcxz 1f\n"
-						 "    repe cmps" W "\n"
-						 "    seta %b0\n"
-						 "    jnb 1f\n"
-						 "    mov $-1, %0\n"
-						 "1:\n"
-						 : "+a" (result)
-						 : "D" (a)
-						 , "S" (b)
-						 , "c" (WM(n))
-						 : "memory", "cc");
-	return result;
-#else
-	T av,bv; T const *aiter,*biter,*end;
-	av = bv = 0;
-	CHECK_HOST_TEXT(a,n*S);
-	CHECK_HOST_TEXT(b,n*S);
-	end = (aiter = (T const *)a)+n,biter = (T const *)b;
-	while (aiter != end && ((av = *aiter++) == (bv = *biter++)));
-	return (sB)(av-bv);
+		sB result = 0;
+		CHECK_DF();
+		__asm__ __volatile__("    jcxz 1f\n"
+							 "    repe cmps" W "\n"
+							 "    seta %b0\n"
+							 "    jnb 1f\n"
+							 "    mov $-1, %0\n"
+							 "1:\n"
+							 : "+a" (result)
+							 : "D" (a)
+							 , "S" (b)
+							 , "c" (WM(n))
+							 : "memory", "cc");
+		return result;
 #endif
+	}
+	{
+		T av,bv; T const *aiter,*biter,*end;
+		av = bv = 0;
+		CHECK_HOST_TEXT(a,n*S);
+		CHECK_HOST_TEXT(b,n*S);
+		end = (aiter = (T const *)a)+n,biter = (T const *)b;
+		while (aiter != end && ((av = *aiter++) == (bv = *biter++)));
+		return (sB)(av-bv);
+	}
 }
 
 DECL vB *LIBCCALL X(libc_memchr)

@@ -1616,8 +1616,7 @@ sig_vsendone_unlocked(struct sig *__restrict s,
 
  /* Copy signal data. */
  if (slot->tss_siz && datasize)
-     copy_to_user(slot->tss_buf,data,
-                  MIN(slot->tss_siz,datasize));
+     memcpy(slot->tss_buf,data,MIN(slot->tss_siz,datasize));
 
  cpu_validate_counters(c != THIS_CPU);
  switch (t->t_mode) {
@@ -1812,7 +1811,7 @@ task_popwait(struct tasksig *__restrict sigs) {
 
 PUBLIC SAFE errno_t KCALL
 task_addwait(struct sig *__restrict s,
-             USER void *buffer, size_t bufsize) {
+             void *buffer, size_t bufsize) {
  struct tasksigslot *slot;
  struct task *t = THIS_TASK;
  assert(IS_ALIGNED((uintptr_t)t,TASK_ALIGN));
@@ -1872,9 +1871,9 @@ realloc_again:
  assert(IS_ALIGNED((uintptr_t)slot,TASKSIGSLOT_ALIGN));
 use_slot:
  assert(slot->tss_self == t);
- slot->tss_buf           = buffer;
- slot->tss_siz           = bufsize;
- slot->tss_sig           = s;
+ slot->tss_buf = buffer;
+ slot->tss_siz = bufsize;
+ slot->tss_sig = s;
  assert(IS_ALIGNED((uintptr_t)slot,TASKSIGSLOT_ALIGN));
  if (!SIG_GETTASK(s)) {
 #ifdef CONFIG_SIGNAL_USING_ATOMIC_RWPTR
@@ -1969,7 +1968,8 @@ task_waitfor_t(struct timespec const *abstime)
 #endif
 
  /* Prevent any of the signals from being send while we're still adding them. */
- was = CPU_WRITETHIS();
+ was = PREEMPTION_PUSH();
+ cpu_write(THIS_CPU);
  assert(TASK_CPU(t) == THIS_CPU);
 
  /* Check for pending interrupts. */

@@ -329,13 +329,13 @@ struct sig {
  * @return: -EINTR:     The calling thread was interrupted. */
 FUNDEF errno_t KCALL sig_timedrecv(struct sig *__restrict sig, jtime_t abstime);
 FUNDEF errno_t KCALL sig_timedrecv_endwrite(struct sig *__restrict sig, jtime_t abstime);
-FUNDEF errno_t KCALL sig_vtimedrecv(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize, jtime_t abstime);
-FUNDEF errno_t KCALL sig_vtimedrecv_endwrite(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize, jtime_t abstime);
+FUNDEF errno_t KCALL sig_vtimedrecv(struct sig *__restrict sig, void *msg_buf, size_t bufsize, jtime_t abstime);
+FUNDEF errno_t KCALL sig_vtimedrecv_endwrite(struct sig *__restrict sig, void *msg_buf, size_t bufsize, jtime_t abstime);
 #ifdef __INTELLISENSE__
 FUNDEF errno_t KCALL sig_recv(struct sig *__restrict sig);
 FUNDEF errno_t KCALL sig_recv_endwrite(struct sig *__restrict sig);
-FUNDEF errno_t KCALL sig_vrecv(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize);
-FUNDEF errno_t KCALL sig_vrecv_endwrite(struct sig *__restrict sig, USER void *msg_buf, size_t bufsize);
+FUNDEF errno_t KCALL sig_vrecv(struct sig *__restrict sig, void *msg_buf, size_t bufsize);
+FUNDEF errno_t KCALL sig_vrecv_endwrite(struct sig *__restrict sig, void *msg_buf, size_t bufsize);
 #else
 #define sig_recv(sig)                           sig_timedrecv(sig,JTIME_INFINITE)
 #define sig_recv_endwrite(sig)                  sig_timedrecv_endwrite(sig,JTIME_INFINITE)

@@ -30,6 +30,9 @@
 #ifdef __USE_DOS
 #include <bits/stat.h>
 #include <bits/io-file.h>
+#ifdef __OPTIMIZE_LIBC__
+#include <asm-generic/string.h>
+#endif /* __OPTIMIZE_LIBC__ */
 #endif /* __USE_DOS */
 
 #if defined(__USE_XOPEN2K8) || defined(__USE_GNU)
@@ -252,11 +255,11 @@ __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),wchar_t const *,__LIBCC
 #endif /* !__std_wcsstr_defined */
 #ifdef __DOS_COMPAT__
 #if __SIZEOF_WCHAR_T__ == 4
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wmemchr)(wchar_t *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchrl(__haystack,(__UINT32_TYPE__)__needle,__n); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchrl(__haystack,(__UINT32_TYPE__)__needle,__n); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wmemchr)(wchar_t *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchrl((__UINT32_TYPE__ *)__haystack,(__UINT32_TYPE__)__needle,__n); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchrl((__UINT32_TYPE__ *)__haystack,(__UINT32_TYPE__)__needle,__n); }
 #elif __SIZEOF_WCHAR_T__ == 2
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wmemchr)(wchar_t *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchrl(__haystack,(__UINT16_TYPE__)__needle,__n); }
-__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchrl(__haystack,(__UINT16_TYPE__)__needle,__n); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wmemchr)(wchar_t *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchrw((__UINT16_TYPE__ *)__haystack,(__UINT16_TYPE__)__needle,__n); }
+__LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchrw((__UINT16_TYPE__ *)__haystack,(__UINT16_TYPE__)__needle,__n); }
 #else /* ... */
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t *(__LIBCCALL wmemchr)(wchar_t *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchr(__haystack,(int)__needle,__n*sizeof(wchar_t)); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) wchar_t const *(__LIBCCALL wmemchr)(wchar_t const *__restrict __haystack, wchar_t __needle, size_t __n) { return (wchar_t *)__libc_memchr(__haystack,(int)__needle,__n*sizeof(wchar_t)); }
@@ -1513,7 +1516,13 @@ __LIBC __PORT_DOSONLY errno_t (__LIBCCALL wcrtomb_s)(size_t *__result, char *__r
 #ifndef __std_memcpy_defined
 #define __std_memcpy_defined 1
 __NAMESPACE_STD_BEGIN
+#ifndef __OPTIMIZE_LIBC__
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes);
+#elif defined(__cplusplus)
+__FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes) { return __opt_memcpy(__dst,__src,__n_bytes); }
+#else
+#define memcpy(dst,src,n_bytes)  __opt_memcpy(dst,src,n_bytes)
+#endif
 __NAMESPACE_STD_END
 #endif /* !__std_memcpy_defined */
 #ifndef __memcpy_defined
@@ -1523,7 +1532,13 @@ __NAMESPACE_STD_USING(memcpy)
 #ifndef __std_memmove_defined
 #define __std_memmove_defined 1
 __NAMESPACE_STD_BEGIN
+#ifndef __OPTIMIZE_LIBC__
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memmove)(void *__dst, void const *__src, size_t __n_bytes);
+#elif defined(__cplusplus)
+__FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memmove)(void *__dst, void const *__src, size_t __n_bytes) { return __opt_memmove(__dst,__src,__n_bytes); }
+#else
+#define memmove(dst,src,n_bytes) __opt_memmove(__dst,__src,__n_bytes)
+#endif
 __NAMESPACE_STD_END
 #endif /* !__std_memmove_defined */
 #ifndef __memmove_defined

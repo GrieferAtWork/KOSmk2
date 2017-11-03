@@ -361,12 +361,12 @@ FUNDEF bool KCALL task_tstwait(void);
  * NOTE:    In the event that 's' is already being received from,
  *          this function is a no-op and simply returns -EOK.
  * WARNING: The caller is responsible for holding a write-lock to 's'
- * @param: buffer:   An optional user-space pointer to a buffer to-be
+ * @param: buffer:   An optional pointer to a buffer to-be
  *                   filled with data sent over the given signal.
  * @param: bufsize:  The size of `buffer' (in bytes).
  * @return: -EOK:    Successfully added the given signal (guarantied for the first signal)
  * @return: -ENOMEM: Not enough available memory to allocate more signal slots. */
-FUNDEF SAFE errno_t KCALL task_addwait(struct sig *__restrict s, USER void *buffer, size_t bufsize);
+FUNDEF SAFE errno_t KCALL task_addwait(struct sig *__restrict s, void *buffer, size_t bufsize);
 
 /* Check for a given signal from the waitfor-set of the calling thread.
  * @return: true:  The given signal was found.

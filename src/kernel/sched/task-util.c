@@ -576,14 +576,14 @@ sig_timedrecv_endwrite(struct sig *__restrict self, jtime_t abstime) {
 }
 PUBLIC errno_t KCALL
 sig_vtimedrecv(struct sig *__restrict self,
-               USER void *msg_buf, size_t bufsize, jtime_t abstime) {
+               void *msg_buf, size_t bufsize, jtime_t abstime) {
  CHECK_HOST_DOBJ(self);
  sig_write(self);
  return sig_vtimedrecv_endwrite(self,msg_buf,bufsize,abstime);
 }
 PUBLIC errno_t KCALL
 sig_vtimedrecv_endwrite(struct sig *__restrict self,
-                        USER void *msg_buf, size_t bufsize,
+                        void *msg_buf, size_t bufsize,
                         jtime_t abstime) {
  struct sig *error;
  CHECK_HOST_DOBJ(self);

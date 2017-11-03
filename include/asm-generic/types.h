@@ -22,7 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
-#ifndef __ASSEMBLY__
+#ifdef __CC__
 
 #ifndef ____suX_defined
 #define ____suX_defined 1
@@ -38,6 +38,6 @@ typedef __UINT64_TYPE__ __u64;
 __SYSDECL_END
 #endif /* !____suX_defined */
 
-#endif /* __ASSEMBLY__ */
+#endif /* __CC__ */
 
 #endif /* !_ASM_GENERIC_TYPES_H */

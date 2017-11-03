@@ -1097,6 +1097,14 @@
 #endif
 #endif
 
+#if defined(__OPTIMIZE__) || defined(__KERNEL__)
+#ifndef __NO_builtin_constant_p
+#define __OPTIMIZE_CONST__ 1 /* Use `__builtin_constant_p()' to optimize system headers. */
+#endif /* !__NO_builtin_constant_p */
+#define __OPTIMIZE_ASM__   1 /* Use arch-specific inline assembly to optimize system headers. */
+#define __OPTIMIZE_LIBC__  1 /* Redirect specific lib-C functions to optimized implementations. */
+#endif
+
 #if defined(__USE_DEBUG) && __USE_DEBUG == 0
 /* No point in hook debug functions if they'll just loop back. */
 #undef __USE_DEBUG_HOOK

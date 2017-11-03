@@ -147,6 +147,8 @@
 #   define __NO_ATTR_NORETURN    1
 #   define __ATTR_NORETURN       /* Nothing */
 #endif
+#define __NO_ATTR_FALLTHROUGH      1
+#define __ATTR_FALLTHROUGH         /* Nothing */
 #if __has_attribute(__fastcall__) || defined(__TINYC__)
 #   define __ATTR_FASTCALL       __attribute__((__fastcall__))
 #else
@@ -313,6 +315,7 @@
 #else
 #   define __NO_ATTR_OPTIMIZE    1
 #   define __ATTR_OPTIMIZE(opt)  /* Nothing */
+#   define   /* Nothing */
 #endif
 #if __has_attribute(__returns_nonnull__)
 #   define __ATTR_RETNONNULL     __attribute__((__returns_nonnull__))

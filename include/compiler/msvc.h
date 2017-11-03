@@ -60,6 +60,8 @@
 #define __extension__            /* Nothing */
 #define __ATTR_NOINLINE          __declspec(noinline)
 #define __ATTR_NORETURN          __declspec(noreturn)
+#define __NO_ATTR_FALLTHROUGH    1
+#define __ATTR_FALLTHROUGH       /* Nothing */
 #define __ATTR_FASTCALL          __fastcall
 #define __ATTR_STDCALL           __stdcall
 #define __ATTR_CDECL             __cdecl
