@@ -458,7 +458,8 @@ void *(__LIBCCALL __constant_memset)(void *__restrict __dst, int __byte, __SIZE_
  case 0: return __dst;
  }
 #if !defined(__NO_builtin_constant_p) && !defined(__nonconst_bzero) && \
-    (defined(__OPTIMIZE_SIZE__) || !defined(__OPTIMIZE_ASM__) || defined(__NO_asm_memset))
+    (defined(__OPTIMIZE_SIZE__) || !defined(__OPTIMIZE_ASM__) || \
+     defined(__NO_asm_memset) || defined(__NO_asm_memset_IF_BYTE_NONCONST))
  if (__builtin_constant_p(__byte) && __byte == 0) {
   __libc_bzero(__dst,__n_bytes);
   return __dst;
@@ -468,7 +469,8 @@ void *(__LIBCCALL __constant_memset)(void *__restrict __dst, int __byte, __SIZE_
 }
 
 #if !defined(__nonconst_bzero) && \
-    (defined(__OPTIMIZE_SIZE__) || !defined(__OPTIMIZE_ASM__) || defined(__NO_asm_memset))
+    (defined(__OPTIMIZE_SIZE__) || !defined(__OPTIMIZE_ASM__) || \
+     defined(__NO_asm_memset) || defined(__NO_asm_memset_IF_BYTE_NONCONST))
 #define __constant_memset2  __constant_memset2
 __FORCELOCAL __NONNULL((1)) __ATTR_RETNONNULL
 void *(__LIBCCALL __constant_memset2)(void *__restrict __dst, int __byte, __SIZE_TYPE__ __n_bytes) {
