@@ -208,20 +208,16 @@ __NAMESPACE_STD_BEGIN
 #define __std_memcpy_defined 1
 #ifndef __OPTIMIZE_LIBC__
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes);
-#elif defined(__cplusplus)
-__OPT_LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes) { return __local_memcpy(__dst,__src,__n_bytes); }
 #else
-#define memcpy(dst,src,n_bytes)  __opt_memcpy(dst,src,n_bytes)
+__OPT_LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memcpy)(void *__restrict __dst, void const *__restrict __src, size_t __n_bytes) { return __local_memcpy(__dst,__src,__n_bytes); }
 #endif
 #endif /* !__std_memcpy_defined */
 #ifndef __std_memmove_defined
 #define __std_memmove_defined 1
 #ifndef __OPTIMIZE_LIBC__
 __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memmove)(void *__dst, void const *__src, size_t __n_bytes);
-#elif defined(__cplusplus)
-__OPT_LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memmove)(void *__dst, void const *__src, size_t __n_bytes) { return __local_memmove(__dst,__src,__n_bytes); }
 #else
-#define memmove(dst,src,n_bytes) __opt_memmove(dst,src,n_bytes)
+__OPT_LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memmove)(void *__dst, void const *__src, size_t __n_bytes) { return __local_memmove(__dst,__src,__n_bytes); }
 #endif
 #endif /* !__std_memmove_defined */
 #ifndef __std_strlen_defined
@@ -1757,7 +1753,7 @@ __SYSDECL_END
    char const *const __old = (s); \
    size_t const __len = __libc_strlen(__old)+1; \
    char *const __new = (char *)__ALLOCA(__len); \
-   __XRETURN (char *)memcpy(__new,__old,__len); \
+   __XRETURN (char *)__NAMESPACE_STD_SYM memcpy(__new,__old,__len); \
  })
 #define strndupa(s,n) \
  __XBLOCK({ \

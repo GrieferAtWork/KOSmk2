@@ -24,6 +24,7 @@
 #include <hybrid/host.h>
 #include <hybrid/typecore.h>
 
+#ifdef __CC__
 __SYSDECL_BEGIN
 
 #if !defined(__NO_ATTR_FORCEINLINE) && \
@@ -358,5 +359,6 @@ __DEFINE_RAWMEMLEN(__asm_rawmemlenl,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYP
 // #define __asm_rawmemrlenl(haystack,needle)       __libc_rawmemrlenl(haystack,needle)
 
 __SYSDECL_END
+#endif /* __CC__ */
 
 #endif /* !_X86_KOS_ASM_STRING_H */

@@ -25,6 +25,7 @@
 #include <asm/string.h>
 #include <libc/string.h>
 
+#ifdef __CC__
 __SYSDECL_BEGIN
 
 #ifndef __asm_memcpy
@@ -389,7 +390,7 @@ void *(__LIBCCALL __constant_memmove)(void *__dst, void const *__src, __SIZE_TYP
  case 0: return __dst;
  default: break;
  }
- if (!(__n_bytes & 2)) return __nonconst_memmovel(__dst,__src,__n_bytes >> 2);
+ if (!(__n_bytes & 3)) return __nonconst_memmovel(__dst,__src,__n_bytes >> 2);
  if (!(__n_bytes & 1)) return __nonconst_memmovew(__dst,__src,__n_bytes >> 1);
  return __nonconst_memmove(__dst,__src,__n_bytes);
 }
@@ -1000,5 +1001,6 @@ __SIZE_TYPE__ (__LIBCCALL __constant_rawmemlenl)(__UINT32_TYPE__ const *__restri
 #endif /* !__OPTIMIZE_CONST__ */
 
 __SYSDECL_END
+#endif /* __CC__ */
 
 #endif /* !_ASM_GENERIC_STRING_H */

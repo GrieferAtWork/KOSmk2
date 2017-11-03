@@ -22,6 +22,7 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
+#ifdef __CC__
 __SYSDECL_BEGIN
 
 #ifdef __BUILDING_LIBC
@@ -175,5 +176,6 @@ __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) __SIZE_TYPE__ (__LIBCCALL __libc_ra
 #undef __LIBC_FUNC
 
 __SYSDECL_END
+#endif /* __CC__ */
 
 #endif /* !_LIBC_STRING_H */
