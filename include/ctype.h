@@ -184,8 +184,18 @@ __LIBC __WUNUSED int (__LIBCCALL _islower_l)(int __c, __locale_t __locale);
 __LIBC __WUNUSED int (__LIBCCALL _isdigit_l)(int __c, __locale_t __locale);
 __LIBC __WUNUSED int (__LIBCCALL _isxdigit_l)(int __c, __locale_t __locale);
 __LIBC __WUNUSED int (__LIBCCALL _isspace_l)(int __c, __locale_t __locale);
-__LIBC __WUNUSED int (__LIBCCALL _ispunct_l)(int __c, __locale_t __locale) /*__ASMNAME("ispunct")*/;
-__LIBC __WUNUSED int (__LIBCCALL _isblank_l)(int __c, __locale_t __locale) /*__ASMNAME("isblank")*/;
+#if defined(__CRT_DOS) && __CRT_DOS < 2
+#ifdef __LIBCCALL_CALLER_CLEANUP
+__REDIRECT(__LIBC,__WUNUSED,int,__LIBCCALL,_ispunct_l,(int __c, __locale_t __locale),ispunct,(__c,__locale))
+__REDIRECT(__LIBC,__WUNUSED,int,__LIBCCALL,_isblank_l,(int __c, __locale_t __locale),isblank,(__c,__locale))
+#else /* __LIBCCALL_CALLER_CLEANUP */
+__LOCAL __WUNUSED int (__LIBCCALL _ispunct_l)(int __c, __locale_t __UNUSED(__locale)) { return __NAMESPACE_STD_SYM ispunct(__c); }
+__LOCAL __WUNUSED int (__LIBCCALL _isblank_l)(int __c, __locale_t __UNUSED(__locale)) { return __NAMESPACE_STD_SYM isblank(__c); }
+#endif /* !__LIBCCALL_CALLER_CLEANUP */
+#else
+__LIBC __WUNUSED int (__LIBCCALL _ispunct_l)(int __c, __locale_t __locale);
+__LIBC __WUNUSED int (__LIBCCALL _isblank_l)(int __c, __locale_t __locale);
+#endif
 __LIBC __WUNUSED int (__LIBCCALL _isalnum_l)(int __c, __locale_t __locale);
 __LIBC __WUNUSED int (__LIBCCALL _isprint_l)(int __c, __locale_t __locale);
 __LIBC __WUNUSED int (__LIBCCALL _isgraph_l)(int __c, __locale_t __locale);

@@ -64,7 +64,7 @@ __REDIRECT_IFDOS(__LIBC,__ATTR_RETURNS_TWICE,int,__LIBCCALL,setjmp,(jmp_buf __bu
 
 #if defined(__OPTIMIZE__) && !defined(__NO_ASMNAME) && \
    (defined(__CRT_KOS) && !defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
-__LIBC __ATTR_NORETURN void (__LIBCCALL __longjmp)(jmp_buf __buf, int __sig) __ASMNAME("longjmp");
+__REDIRECT_VOID(__LIBC,__ATTR_NORETURN,__LIBCCALL,__longjmp,(jmp_buf __buf, int __sig),longjmp,(__buf,__sig))
 __LIBC __ATTR_NORETURN void (__LIBCCALL __longjmp2)(jmp_buf __buf, int __sig);
 __LOCAL __ATTR_NORETURN void (__LIBCCALL longjmp)(jmp_buf __buf, int __sig) {
  if (__builtin_constant_p(__sig != 0) && (__sig != 0))

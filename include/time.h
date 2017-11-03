@@ -307,9 +307,15 @@ __LIBC __WUNUSED struct tm *(__LIBCCALL localtime64)(time64_t const *__timer);
 #undef __tzname
 #undef __daylight
 #undef __timezone
+#ifdef __NO_ASMNAME
+#define __tzname     tzname
+#define __daylight   daylight
+#define __timezone   timezone
+#else /* __NO_ASMNAME */
 __LIBC char *(__tzname)[2] __ASMNAME("tzname");
 __LIBC int (__daylight) __ASMNAME("daylight");
 __LIBC long int (__timezone) __ASMNAME("timezone");
+#endif /* !__NO_ASMNAME */
 #endif /* !__DOS_COMPAT__ */
 
 #ifdef __USE_XOPEN2K8
@@ -382,6 +388,10 @@ __LIBC char *(__LIBCCALL asctime_r)(struct tm const *__restrict __tp, char *__re
 #if defined(__USE_POSIX) || defined(__USE_DOS)
 #undef tzname
 __REDIRECT_IFDOS_VOID(__LIBC,,__LIBCCALL,tzset,(void),_tzset,())
+#endif /* __USE_POSIX || __USE_DOS */
+
+#if defined(__USE_POSIX) || defined(__USE_DOS) || \
+  (!defined(__DOS_COMPAT__) && defined(__NO_ASMNAME))
 #ifdef __DOS_COMPAT__
 #define tzname     __dos_tzname()
 #else /* __DOS_COMPAT__ */
@@ -389,7 +399,8 @@ __LIBC char *tzname[2];
 #endif /* !__DOS_COMPAT__ */
 #endif /* __USE_POSIX || __USE_DOS */
 
-#if defined(__USE_MISC) || defined(__USE_XOPEN) || defined(__USE_DOS)
+#if defined(__USE_MISC) || defined(__USE_XOPEN) || defined(__USE_DOS) || \
+  (!defined(__DOS_COMPAT__) && defined(__NO_ASMNAME))
 #undef daylight
 #undef timezone
 #ifdef __DOS_COMPAT__

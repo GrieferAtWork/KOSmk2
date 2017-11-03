@@ -54,7 +54,7 @@ DECL_BEGIN
 
 /* Define the global device filesystem superblock. */
 PUBLIC struct vsuperblock dev_fs = VSUPERBLOCK_INIT(&dev_fs,NULL,0755,0,NULL);
-PUBLIC REF struct dentry *_devfs_root __ASMNAME("devfs_root") = NULL;
+PUBLIC REF struct dentry *_devfs_root ASMNAME("devfs_root") = NULL;
 PRIVATE ATTR_FREEDATA char const *devfs_path = "/dev";
 DEFINE_EARLY_SETUP("devfs=",set_devfs_path) { devfs_path = arg; return true; }
 

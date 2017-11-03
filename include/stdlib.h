@@ -165,45 +165,47 @@ __LIBC __NONNULL((1,4)) void (__LIBCCALL qsort_r)(void *__base, size_t __nmemb, 
 __NAMESPACE_STD_BEGIN
 __LIBC __NONNULL((1,2,5)) __WUNUSED void *(__LIBCCALL bsearch)(void const *__key, void const *__base, size_t __nmemb, size_t __size, __compar_fn_t __compar);
 __LIBC __NONNULL((1,4)) void (__LIBCCALL qsort)(void *__base, size_t __nmemb, size_t __size, __compar_fn_t __compar);
+
 #ifdef __KERNEL__
-__LOCAL __ATTR_CONST __WUNUSED int (__LIBCCALL abs)(int __x) { return __x < 0 ? -__x : __x; }
-__LOCAL __ATTR_CONST __WUNUSED long (__LIBCCALL labs)(long __x) { return __x < 0 ? -__x : __x; }
+#ifdef __CORRECT_ISO_CPP_STDLIB_H_PROTO
+extern "C++" {
+__LOCAL __ATTR_CONST __WUNUSED int __NOTHROW((__LIBCCALL abs)(int __x)) { return __x < 0 ? -__x : __x; }
+__LOCAL __ATTR_CONST __WUNUSED long __NOTHROW((__LIBCCALL abs)(long __x)) { return __x < 0 ? -__x : __x; }
+__LOCAL __ATTR_CONST __WUNUSED __LONGLONG __NOTHROW((__LIBCCALL abs)(__LONGLONG __x)) { return __x < 0 ? -__x : __x; }
+__LOCAL __ATTR_CONST __WUNUSED div_t __NOTHROW((__LIBCCALL div)(int __numer, int __denom)) { div_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
+__LOCAL __ATTR_CONST __WUNUSED ldiv_t __NOTHROW((__LIBCCALL div)(long __numer, long __denom)) { ldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
+__LOCAL __ATTR_CONST __WUNUSED lldiv_t __NOTHROW((__LIBCCALL div)(__LONGLONG __numer, __LONGLONG __denom)) { lldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
+}
+#else /* __CORRECT_ISO_CPP_STDLIB_H_PROTO */
+__LOCAL __ATTR_CONST __WUNUSED int __NOTHROW((__LIBCCALL abs)(int __x)) { return __x < 0 ? -__x : __x; }
+__LOCAL __ATTR_CONST __WUNUSED div_t __NOTHROW((__LIBCCALL div)(int __numer, int __denom)) { div_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
+#endif /* !__CORRECT_ISO_CPP_STDLIB_H_PROTO */
+__LOCAL __ATTR_CONST __WUNUSED long __NOTHROW((__LIBCCALL labs)(long __x)) { return __x < 0 ? -__x : __x; }
+__LOCAL __ATTR_CONST __WUNUSED ldiv_t __NOTHROW((__LIBCCALL ldiv)(long __numer, long __denom)) { ldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
 #ifdef __USE_ISOC99
-__LOCAL __ATTR_CONST __WUNUSED __LONGLONG (__LIBCCALL llabs)(__LONGLONG __x) { return __x < 0 ? -__x : __x; }
+__LOCAL __ATTR_CONST __WUNUSED __LONGLONG __NOTHROW((__LIBCCALL llabs)(__LONGLONG __x)) { return __x < 0 ? -__x : __x; }
+__LOCAL __ATTR_CONST __WUNUSED lldiv_t __NOTHROW((__LIBCCALL lldiv)(__LONGLONG __numer, __LONGLONG __denom)) { lldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
 #endif /* __USE_ISOC99 */
 
-#if defined(__GNUC__) && !defined(__INTELLISENSE__)
-__LOCAL __ATTR_CONST __WUNUSED div_t (__LIBCCALL div)(int __numer, int __denom) { return (div_t){ __numer/__denom,__numer%__denom }; }
-__LOCAL __ATTR_CONST __WUNUSED ldiv_t (__LIBCCALL ldiv)(long __numer, long __denom) { return (ldiv_t){ __numer/__denom,__numer%__denom }; }
-#ifdef __USE_ISOC99
-__LOCAL __ATTR_CONST __WUNUSED lldiv_t (__LIBCCALL lldiv)(long long __numer, long long __denom) { return (lldiv_t){ __numer/__denom,__numer%__denom }; }
-#endif /* __USE_ISOC99 */
-#else
-__LOCAL __ATTR_CONST __WUNUSED div_t (__LIBCCALL div)(int __numer, int __denom) { div_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
-__LOCAL __ATTR_CONST __WUNUSED ldiv_t (__LIBCCALL ldiv)(long __numer, long __denom) { ldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
-#ifdef __USE_ISOC99
-__LOCAL __ATTR_CONST __WUNUSED lldiv_t (__LIBCCALL lldiv)(__LONGLONG __numer, __LONGLONG __denom) { lldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
-#endif /* __USE_ISOC99 */
-#endif
 #else /* __KERNEL__ */
-#if defined(__cplusplus) && (defined(__USE_KOS) || defined(__USE_DOS))
+#ifdef __CORRECT_ISO_CPP_STDLIB_H_PROTO
 extern "C++" {
-__LIBC __ATTR_CONST __WUNUSED int (__LIBCCALL abs)(int __x) __ASMNAME("abs");
-__LIBC __ATTR_CONST __WUNUSED long (__LIBCCALL abs)(long __x) __ASMNAME("labs");
-__LIBC __ATTR_CONST __WUNUSED __LONGLONG (__LIBCCALL abs)(__LONGLONG __x) __ASMNAME("llabs");
-__LIBC __ATTR_CONST __WUNUSED div_t (__LIBCCALL div)(int __numer, int __denom) __ASMNAME("div");
-__LIBC __ATTR_CONST __WUNUSED ldiv_t (__LIBCCALL div)(long __numer, long __denom) __ASMNAME("ldiv");
-__LIBC __ATTR_CONST __WUNUSED lldiv_t (__LIBCCALL div)(__LONGLONG __numer, __LONGLONG __denom) __ASMNAME("lldiv");
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST __WUNUSED,int,__LIBCCALL,abs,(int __x),abs,(__x))
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST __WUNUSED,long,__LIBCCALL,abs,(long __x),labs,(__x))
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST __WUNUSED,__LONGLONG,__LIBCCALL,abs,(__LONGLONG __x),llabs,(__x))
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST __WUNUSED,div_t,__LIBCCALL,div,(int __numer, int __denom),div,(__numer,__denom))
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST __WUNUSED,ldiv_t,__LIBCCALL,div,(long __numer, long __denom),ldiv,(__numer,__denom))
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST __WUNUSED,lldiv_t,__LIBCCALL,div,(__LONGLONG __numer, __LONGLONG __denom),lldiv,(__numer,__denom))
 }
-#else
-__LIBC __ATTR_CONST __WUNUSED int (__LIBCCALL abs)(int __x);
-__LIBC __ATTR_CONST __WUNUSED div_t (__LIBCCALL div)(int __numer, int __denom);
-#endif
-__LIBC __ATTR_CONST __WUNUSED long (__LIBCCALL labs)(long __x);
-__LIBC __ATTR_CONST __WUNUSED ldiv_t (__LIBCCALL ldiv)(long __numer, long __denom);
+#else /* __CORRECT_ISO_CPP_STDLIB_H_PROTO */
+__LIBC __ATTR_CONST __WUNUSED int __NOTHROW((__LIBCCALL abs)(int __x));
+__LIBC __ATTR_CONST __WUNUSED div_t __NOTHROW((__LIBCCALL div)(int __numer, int __denom));
+#endif /* !__CORRECT_ISO_CPP_STDLIB_H_PROTO */
+__LIBC __ATTR_CONST __WUNUSED long __NOTHROW((__LIBCCALL labs)(long __x));
+__LIBC __ATTR_CONST __WUNUSED ldiv_t __NOTHROW((__LIBCCALL ldiv)(long __numer, long __denom));
 #ifdef __USE_ISOC99
-__LIBC __ATTR_CONST __WUNUSED __LONGLONG (__LIBCCALL llabs)(__LONGLONG __x);
-__LIBC __ATTR_CONST __WUNUSED lldiv_t (__LIBCCALL lldiv)(__LONGLONG __numer, __LONGLONG __denom);
+__LIBC __ATTR_CONST __WUNUSED __LONGLONG __NOTHROW((__LIBCCALL llabs)(__LONGLONG __x));
+__LIBC __ATTR_CONST __WUNUSED lldiv_t __NOTHROW((__LIBCCALL lldiv)(__LONGLONG __numer, __LONGLONG __denom));
 #endif /* __USE_ISOC99 */
 #endif /* !__KERNEL__ */
 __NAMESPACE_STD_END
@@ -234,12 +236,12 @@ __LOCAL __NONNULL((3,4,5)) int (__LIBCCALL ecvt_r)(double __val, int __ndigit, i
 __LOCAL __NONNULL((3,4,5)) int (__LIBCCALL fcvt_r)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len) { return __dos_fcvt_s(__buf,__len,__val,__ndigit,__decptr,__sign); }
 __LOCAL __NONNULL((3,4,5)) int (__LIBCCALL qecvt_r)(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len) { return __dos_ecvt_s(__buf,__len,(double)__val,__ndigit,__decptr,__sign); }
 __LOCAL __NONNULL((3,4,5)) int (__LIBCCALL qfcvt_r)(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len) { return __dos_fcvt_s(__buf,__len,(double)__val,__ndigit,__decptr,__sign); }
-#else
+#else /* __DOS_COMPAT__ */
 __LIBC __NONNULL((3,4,5)) int (__LIBCCALL ecvt_r)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len);
 __LIBC __NONNULL((3,4,5)) int (__LIBCCALL fcvt_r)(double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len);
 __LIBC __NONNULL((3,4,5)) int (__LIBCCALL qecvt_r)(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len);
 __LIBC __NONNULL((3,4,5)) int (__LIBCCALL qfcvt_r)(long double __val, int __ndigit, int *__restrict __decptr, int *__restrict __sign, char *__restrict __buf, size_t __len);
-#endif
+#endif /* !__DOS_COMPAT__ */
 __REDIRECT(__LIBC,__NONNULL((1)),__LONGLONG,__LIBCCALL,strtoq,(char const *__restrict __nptr, char **__restrict __endptr, int __base),strtoll,(__nptr,__endptr,__base))
 __REDIRECT(__LIBC,__NONNULL((1)),__ULONGLONG,__LIBCCALL,strtouq,(char const *__restrict __nptr, char **__restrict __endptr, int __base),strtoull,(__nptr,__endptr,__base))
 #endif /* __USE_MISC */
@@ -420,7 +422,7 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MAL
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_MALLOC void *(__LIBCCALL _calloc_d)(size_t __count, size_t __n_bytes, __DEBUGINFO);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL _realloc_d)(void *__restrict __mallptr, size_t __n_bytes, __DEBUGINFO);
 #ifdef __KERNEL__
-__LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_kfree_d");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,_free_d,(void *__restrict __mallptr, __DEBUGINFO),_kfree_d,(__mallptr,__DEBUGINFO_FWD))
 #else /* __KERNEL__ */
 __LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO);
 #endif /* !__KERNEL__ */
@@ -441,9 +443,9 @@ __NAMESPACE_STD_USING(_free_d)
 #ifndef __cfree_d_defined
 #define __cfree_d_defined 1
 #ifdef __KERNEL__
-__LIBC __SAFE void (__LIBCCALL _cfree_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_kfree_d");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,_cfree_d,(void *__restrict __mallptr, __DEBUGINFO),_kfree_d,(__mallptr,__DEBUGINFO_FWD))
 #else /* __KERNEL__ */
-__LIBC __SAFE void (__LIBCCALL _cfree_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_free_d");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,_cfree_d,(void *__restrict __mallptr, __DEBUGINFO),_free_d,(__mallptr,__DEBUGINFO_FWD))
 #endif /* !__KERNEL__ */
 #endif /* !__cfree_d_defined */
 #endif /* __USE_MISC */
@@ -464,8 +466,8 @@ __LIBC __SAFE __NONNULL((1)) int (__LIBCCALL _posix_memalign_d)(void **__restric
 #endif /* __USE_XOPEN2K */
 
 #ifdef __USE_ISOC11
-__LIBC __SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC
-void *(__LIBCCALL _aligned_alloc_d)(size_t __alignment, size_t __n_bytes) __ASMNAME("_memalign_d");
+__REDIRECT(__LIBC,__SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC,void *,__LIBCCALL,
+           _aligned_alloc_d,(size_t __alignment, size_t __n_bytes, __DEBUGINFO),_memalign_d,(__alignment,__n_bytes,__DEBUGINFO_FWD))
 #endif /* __USE_ISOC11 */
 #else /* __USE_DEBUG != 0 */
 #ifndef __malloc_calloc_d_defined
@@ -567,12 +569,21 @@ __LIBC __ATTR_NORETURN void (__LIBCCALL exit)(int __status);
 #endif /* !__std_exit_defined */
 __LIBC int (__LIBCCALL atexit)(void (*__LIBCCALL __func)(void));
 #if defined(__USE_ISOC11) || defined(__USE_ISOCXX11)
+#ifdef __DOS_COMPAT__
+__REDIRECT_VOID(__LIBC,__ATTR_NORETURN,__LIBCCALL,quick_exit,(int __status),exit,(__status))
+#ifdef __cplusplus
+extern "C++" { __REDIRECT(__LIBC,__NONNULL((1)),int,__LIBCCALL,at_quick_exit,(void (*__LIBCCALL __func)(void)),at_quick_exit,(__func)) }
+#else /* __cplusplus */
+__REDIRECT(__LIBC,__NONNULL((1)),int,__LIBCCALL,at_quick_exit,(void (*__LIBCCALL __func)(void)),atexit,(__func))
+#endif /* !__cplusplus */
+#else /* __DOS_COMPAT__ */
 __LIBC __ATTR_NORETURN void (__LIBCCALL quick_exit)(int __status);
 #ifdef __cplusplus
-extern "C++" { __LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func) (void)) __ASMNAME("at_quick_exit"); }
+extern "C++" { __REDIRECT(__LIBC,__NONNULL((1)),int,__LIBCCALL,at_quick_exit,(void (*__LIBCCALL __func)(void)),at_quick_exit,(__func)) }
 #else /* __cplusplus */
 __LIBC __NONNULL((1)) int (__LIBCCALL at_quick_exit)(void (*__LIBCCALL __func)(void));
 #endif /* !__cplusplus */
+#endif /* !__DOS_COMPAT__ */
 #endif /* __USE_ISOC11 || __USE_ISOCXX11 */
 #ifdef __USE_ISOC99
 __REDIRECT_VOID(__LIBC,__ATTR_NORETURN,__LIBCCALL,_Exit,(int __status),_exit,(__status))
@@ -1345,30 +1356,30 @@ __LOCAL int (__LIBCCALL _atoldbl_l)(long double *__restrict __result, char __FIX
 #undef __FIXED_CONST
 
 #if defined(__CRT_DOS) && defined(__OPTIMIZE_SIZE__)
-__LIBC unsigned int (__LIBCCALL _rotl)(unsigned int __val, int __shift);
-__LIBC unsigned int (__LIBCCALL _rotr)(unsigned int __val, int __shift);
-__LIBC __UINT64_TYPE__ (__LIBCCALL _rotl64)(__UINT64_TYPE__ __val, int __shift);
-__LIBC __UINT64_TYPE__ (__LIBCCALL _rotr64)(__UINT64_TYPE__ __val, int __shift);
+__LIBC __ATTR_CONST unsigned int __NOTHROW((__LIBCCALL _rotl)(unsigned int __val, int __shift));
+__LIBC __ATTR_CONST unsigned int __NOTHROW((__LIBCCALL _rotr)(unsigned int __val, int __shift));
+__LIBC __ATTR_CONST __UINT64_TYPE__ __NOTHROW((__LIBCCALL _rotl64)(__UINT64_TYPE__ __val, int __shift));
+__LIBC __ATTR_CONST __UINT64_TYPE__ __NOTHROW((__LIBCCALL _rotr64)(__UINT64_TYPE__ __val, int __shift));
 #if __SIZEOF_LONG__ == __SIZEOF_INT__
-__LIBC unsigned long int (__LIBCCALL _lrotl)(unsigned long int __val, int __shift) __ASMNAME("_rotl");
-__LIBC unsigned long int (__LIBCCALL _lrotr)(unsigned long int __val, int __shift) __ASMNAME("_rotr");
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST,unsigned long int,__LIBCCALL,_lrotl,(unsigned long int __val, int __shift),_rotl,(__val,__shift))
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST,unsigned long int,__LIBCCALL,_lrotr,(unsigned long int __val, int __shift),_rotr,(__val,__shift))
 #elif __SIZEOF_LONG__ == 8
-__LIBC unsigned long int (__LIBCCALL _lrotl)(unsigned long int __val, int __shift) __ASMNAME("_rotl64");
-__LIBC unsigned long int (__LIBCCALL _lrotr)(unsigned long int __val, int __shift) __ASMNAME("_rotr64");
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST,unsigned long int,__LIBCCALL,_lrotl,(unsigned long int __val, int __shift),_rotl64,(__val,__shift))
+__REDIRECT_NOTHROW(__LIBC,__ATTR_CONST,unsigned long int,__LIBCCALL,_lrotr,(unsigned long int __val, int __shift),_rotr64,(__val,__shift))
 #else
-__LIBC unsigned long int (__LIBCCALL _lrotl)(unsigned long int __val, int __shift);
-__LIBC unsigned long int (__LIBCCALL _lrotr)(unsigned long int __val, int __shift);
+__LIBC __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotl)(unsigned long int __val, int __shift));
+__LIBC __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotr)(unsigned long int __val, int __shift));
 #endif
 #else /* __CRT_DOS */
 __SYSDECL_END
 #include <bits/rotate.h>
 __SYSDECL_BEGIN
-__LOCAL unsigned int (__LIBCCALL _rotl)(unsigned int __val, int __shift) { return __rol_32(__val,__shift); }
-__LOCAL unsigned int (__LIBCCALL _rotr)(unsigned int __val, int __shift) { return __ror_32(__val,__shift); }
-__LOCAL __UINT64_TYPE__ (__LIBCCALL _rotl64)(__UINT64_TYPE__ __val, int __shift) { return __rol_64(__val,__shift); }
-__LOCAL __UINT64_TYPE__ (__LIBCCALL _rotr64)(__UINT64_TYPE__ __val, int __shift) { return __ror_64(__val,__shift); }
-__LOCAL unsigned long int (__LIBCCALL _lrotl)(unsigned long int __val, int __shift) { return __rol_32(__val,__shift); }
-__LOCAL unsigned long int (__LIBCCALL _lrotr)(unsigned long int __val, int __shift) { return __ror_32(__val,__shift); }
+__LOCAL __ATTR_CONST unsigned int __NOTHROW((__LIBCCALL _rotl)(unsigned int __val, int __shift)) { return __rol_32(__val,__shift); }
+__LOCAL __ATTR_CONST unsigned int __NOTHROW((__LIBCCALL _rotr)(unsigned int __val, int __shift)) { return __ror_32(__val,__shift); }
+__LOCAL __ATTR_CONST __UINT64_TYPE__ __NOTHROW((__LIBCCALL _rotl64)(__UINT64_TYPE__ __val, int __shift)) { return __rol_64(__val,__shift); }
+__LOCAL __ATTR_CONST __UINT64_TYPE__ __NOTHROW((__LIBCCALL _rotr64)(__UINT64_TYPE__ __val, int __shift)) { return __ror_64(__val,__shift); }
+__LOCAL __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotl)(unsigned long int __val, int __shift)) { return __rol_32(__val,__shift); }
+__LOCAL __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotr)(unsigned long int __val, int __shift)) { return __ror_32(__val,__shift); }
 #endif /* !__CRT_DOS */
 
 

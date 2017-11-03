@@ -54,8 +54,8 @@
 
 DECL_BEGIN
 
-PUBLIC VIRT uintptr_t __apic_base_rw   __ASMNAME("apic_base") = 0;
-PUBLIC PHYS uintptr_t __apic_base_p_rw __ASMNAME("apic_base_p") = 0;
+PUBLIC VIRT uintptr_t __apic_base_rw   ASMNAME("apic_base") = 0;
+PUBLIC PHYS uintptr_t __apic_base_p_rw ASMNAME("apic_base_p") = 0;
 #if defined(CONFIG_RESERVE_NULL_PAGE) && \
     FLOOR_ALIGN(TRAMPOLINE_PHYS_LOW,PAGESIZE) == 0
 #define HAVE_TRAMPOLINE_JMPPAGE

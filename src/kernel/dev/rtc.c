@@ -45,7 +45,7 @@ DECL_BEGIN
 
 /* XXX: Why not put jiffies into the user-share section? */
 PUBLIC jtime64_t _jiffies ASMNAME("jiffies") = 1;
-PUBLIC struct timespec _boottime __ASMNAME("boottime") = {0,0};
+PUBLIC struct timespec _boottime ASMNAME("boottime") = {0,0};
 
 
 PUBLIC struct inodeops const rtc_ops = {
@@ -97,7 +97,7 @@ drtc_set(struct rtc *__restrict UNUSED(self),
  return -EOK;
 }
 
-PUBLIC struct rtc drtc __ASMNAME("default_system_rtc") = {
+PUBLIC struct rtc drtc ASMNAME("default_system_rtc") = {
     .r_dev = {
         .cd_device = {
             .d_node = {

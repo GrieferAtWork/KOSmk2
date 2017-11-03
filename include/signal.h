@@ -124,8 +124,12 @@ __LIBC __ATTR_DEPRECATED("Using `sigprocmask()' instead") int (__LIBCCALL sigset
 __LIBC __ATTR_DEPRECATED("Using `sigprocmask()' instead") int (__LIBCCALL siggetmask)(void);
 #undef _sys_siglist
 #undef sys_siglist
-__LIBC __PORT_NODOS char const *const (_sys_siglist)[_NSIG] __ASMNAME("sys_siglist");
-__LIBC __PORT_NODOS char const *const (sys_siglist)[_NSIG];
+#ifndef __NO_ASMNAME
+__LIBC __PORT_NODOS char const *const _sys_siglist[_NSIG] __ASMNAME("sys_siglist");
+#else /* !__NO_ASMNAME */
+#define _sys_siglist sys_siglist
+#endif /* __NO_ASMNAME */
+__LIBC __PORT_NODOS char const *const sys_siglist[_NSIG];
 __LIBC __PORT_NODOS __ATTR_NORETURN void (__LIBCCALL sigreturn)(struct sigcontext const *__scp);
 #endif /* __CRT_GLC */
 #else /* __USE_MISC */

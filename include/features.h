@@ -86,6 +86,45 @@
                           * >> Enabling this option forces such functions to pass through some
                           *    emulation of KOS's printf function, re-enabling its extensions. */
 
+/* `#ifdef __DOS_COMPAT__' Even if CRT-GLC may be available, still emulate extended libc functions using functions also provided by DOS.
+ *                         NOTE: Automatically defined when CRT-GLC isn't available, but CRT-DOS is. */
+/* `#ifdef __GLC_COMPAT__' Same as `__DOS_COMPAT__' but for GLibc, rather than DOS. */
+
+#undef __CRT_DOS
+#undef __CRT_GLC
+#undef __CRT_KOS
+#ifdef __KOS__
+#   define __CRT_KOS 1
+#elif defined(__linux__) || defined(__linux) || defined(linux) || \
+      defined(__unix__) || defined(__unix) || defined(unix)
+#   define __CRT_GLC 1
+#elif defined(__WINDOWS__) || defined(_MSC_VER) || \
+      defined(_WIN16) || defined(WIN16) || defined(_WIN32) || defined(WIN32) || \
+      defined(_WIN64) || defined(WIN64) || defined(__WIN32__) || defined(__TOS_WIN__) || \
+      defined(_WIN32_WCE) || defined(WIN32_WCE)
+/* TinyC links against an older version of MSVCRT by default,
+ * so we use the old names by default as well. */
+#ifdef __TINYC__
+#   define __CRT_DOS 1
+#else
+#   define __CRT_DOS 2
+#endif
+#else
+#   define __CRT_KOS 1
+#endif
+#ifdef __CRT_KOS
+#   define __CRT_DOS 1
+#   define __CRT_GLC 1
+#endif
+
+#if defined(__CRT_DOS) && !defined(__CRT_GLC)
+#undef __DOS_COMPAT__
+#define __DOS_COMPAT__ 1
+#elif defined(__CRT_GLC) && !defined(__CRT_DOS)
+#undef __GLC_COMPAT__
+#define __GLC_COMPAT__ 1
+#endif
+
 /* Some DOS exports, such as stdin/stdout/stderr are exported in different ways,
  * some of which are the objects in question themself, while others are indirect
  * functions that simply return that same object.
@@ -110,48 +149,19 @@
  */
 #undef __USE_DOS_LINKOLDFINDSTAT
 
-/* TinyC links against an older version of MSVCRT by default,
- * so we use the old names by default as well. */
-#if defined(_LINK_OLD_FINDSTAT_SOURCE) || defined(__TINYC__)
+#ifdef __CRT_DOS
+#if defined(_LINK_OLD_FINDSTAT_SOURCE) || __CRT_DOS < 2
 #define __USE_DOS_LINKOLDFINDSTAT 1
 #ifdef _LINK_NEW_FINDSTAT_SOURCE
 #undef __USE_DOS_LINKOLDFINDSTAT
 #endif /* _LINK_NEW_FINDSTAT_SOURCE */
 #endif
+#endif /* __CRT_DOS */
 
 
-/* `#ifdef __DOS_COMPAT__' Even if CRT-GLC may be available, still emulate extended libc functions using functions also provided by DOS.
- *                         NOTE: Automatically defined when CRT-GLC isn't available, but CRT-DOS is. */
-/* `#ifdef __GLC_COMPAT__' Same as `__DOS_COMPAT__' but for GLibc, rather than DOS. */
 
-#undef __CRT_DOS
-#undef __CRT_GLC
-#undef __CRT_KOS
-#ifdef __KOS__
-#   define __CRT_KOS 1
-#elif defined(__linux__) || defined(__linux) || defined(linux) || \
-      defined(__unix__) || defined(__unix) || defined(unix)
-#   define __CRT_GLC 1
-#elif defined(__WINDOWS__) || defined(_MSC_VER) || \
-      defined(_WIN16) || defined(WIN16) || defined(_WIN32) || defined(WIN32) || \
-      defined(_WIN64) || defined(WIN64) || defined(__WIN32__) || defined(__TOS_WIN__) || \
-      defined(_WIN32_WCE) || defined(WIN32_WCE)
-#   define __CRT_DOS 1
-#else
-#   define __CRT_KOS 1
-#endif
-#ifdef __CRT_KOS
-#   define __CRT_DOS 1
-#   define __CRT_GLC 1
-#endif
 
-#if defined(__CRT_DOS) && !defined(__CRT_GLC)
-#undef __DOS_COMPAT__
-#define __DOS_COMPAT__ 1
-#elif defined(__CRT_GLC) && !defined(__CRT_DOS)
-#undef __GLC_COMPAT__
-#define __GLC_COMPAT__ 1
-#endif
+
 
 #ifndef _LOOSE_KERNEL_NAMES
 # define __KERNEL_STRICT_NAMES

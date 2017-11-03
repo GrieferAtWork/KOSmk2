@@ -75,7 +75,7 @@ struct keymap_header {
  *       contain the `en_US' keyboard layout.
  * >> A custom keymap can be loaded using `keymap=/foo/bar.map'
  * WARNING: This data structure is visible in user-space! */
-DATDEF WEAK struct keymap const active_keymap __ASMNAME("keymap");
+DATDEF WEAK struct keymap const active_keymap ASMNAME("keymap");
 
 
 struct kbfile {

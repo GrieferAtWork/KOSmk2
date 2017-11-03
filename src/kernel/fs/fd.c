@@ -709,21 +709,34 @@ SYSCALL_DEFINE3(fcntl,int,fd,int,cmd,USER void *,arg) {
 
 #define F_SETFL_MASK  (O_APPEND|O_ASYNC|O_DIRECT|O_NOATIME|O_NONBLOCK)
  {
-  REF struct file *fp;
+  REF struct fd fp;
  case F_GETFL:
  case F_SETFL:
  case F_SETFL_XCH:
-  fp = fdman_get_file(fdm,fd);
-  if (E_ISERR(fp)) { result = E_GTERR(fp); goto end; }
-  if (cmd == F_GETFL) result = ATOMIC_READ(fp->f_mode);
-  else {
-   oflag_t old_mode,new_mode;
-   do old_mode = ATOMIC_READ(fp->f_mode),
-      new_mode = (old_mode&~(F_SETFL_MASK)) | ((oflag_t)arg & F_SETFL_MASK);
-   while (!ATOMIC_CMPXCH_WEAK(fp->f_mode,old_mode,new_mode));
-   result = cmd == F_SETFL_XCH ? old_mode : -EOK;
+  fp = fdman_get(fdm,fd);
+  switch (FD_TYPE(fp)) {
+  case FD_TYPE_DENTRY:
+   if (cmd != F_GETFL) goto getfl_badf;
+   /* LINUX return `O_PATH' if `fd' is a dentry (aka. was opened using `openat(...,O_PATH)') */
+   result = O_PATH;
+   break;
+  case FD_TYPE_FILE:
+   if (cmd == F_GETFL)
+    result = ATOMIC_READ(fp.fo_obj.fo_file->f_mode);
+   else {
+    oflag_t old_mode,new_mode;
+    do old_mode = ATOMIC_READ(fp.fo_obj.fo_file->f_mode),
+       new_mode = (old_mode&~(F_SETFL_MASK)) | ((oflag_t)arg & F_SETFL_MASK);
+    while (!ATOMIC_CMPXCH_WEAK(fp.fo_obj.fo_file->f_mode,old_mode,new_mode));
+    result = cmd == F_SETFL_XCH ? old_mode : -EOK;
+   }
+   break;
+  default:
+getfl_badf:
+   result = -EBADF;
+   break;
   }
-  FILE_DECREF(fp);
+  FD_DECREF(fp);
  } break;
 
  case F_SETPIPE_SZ:

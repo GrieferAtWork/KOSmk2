@@ -534,18 +534,25 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #endif
 #define __empty_arr(T,x) T x[1]
 
-#define __STATIC_IF(x)   if(x)
-#define __STATIC_ELSE(x) if(!(x))
 #ifdef __cplusplus
-#define __IF0     if(false)
-#define __IF1     if(true)
-#define __WHILE0  while(false)
-#define __WHILE1  while(true)
+#if __cplusplus >= 201703L /* C++17 */
+#   define __STATIC_IF(x)   if constexpr(x)
+#   define __STATIC_ELSE(x) if constexpr(!(x))
 #else
-#define __IF0     if(0)
-#define __IF1     if(1)
-#define __WHILE0  while(0)
-#define __WHILE1  while(1)
+#   define __STATIC_IF(x)   if(x)
+#   define __STATIC_ELSE(x) if(!(x))
+#endif
+#   define __IF0     if(false)
+#   define __IF1     if(true)
+#   define __WHILE0  while(false)
+#   define __WHILE1  while(true)
+#else
+#   define __STATIC_IF(x)   if(x)
+#   define __STATIC_ELSE(x) if(!(x))
+#   define __IF0     if(0)
+#   define __IF1     if(1)
+#   define __WHILE0  while(0)
+#   define __WHILE1  while(1)
 #endif
 #define __COMPILER_BARRIER()       (void)0 /* ??? */
 #define __COMPILER_READ_BARRIER()  (void)0 /* ??? */

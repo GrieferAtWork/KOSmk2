@@ -444,8 +444,8 @@ module_file(struct module *__restrict self) {
 }
 
 
-PUBLIC char const *_module_search_path __ASMNAME("module_search_path") = "/lib:/usr/lib:/usr/local/lib";
-PUBLIC char const *_driver_search_path __ASMNAME("driver_search_path") = "/mod";
+PUBLIC char const *_module_search_path ASMNAME("module_search_path") = "/lib:/usr/lib:/usr/local/lib";
+PUBLIC char const *_driver_search_path ASMNAME("driver_search_path") = "/mod";
 DEFINE_SETUP("libpath=",linker_libpath) { _module_search_path = arg; return true; }
 DEFINE_SETUP("drvpath=",linker_drvpath) { _driver_search_path = arg; return true; }
 

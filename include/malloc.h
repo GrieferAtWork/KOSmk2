@@ -486,7 +486,7 @@ __LIBC __SAFE void (__LIBCCALL _free_d)(void *__restrict __mallptr, __DEBUGINFO)
 #ifdef __KERNEL__
 __REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,_cfree_d,(void *__restrict __mallptr, __DEBUGINFO),_kfree_d,(__mallptr,__DEBUGINFO_FWD))
 #else /* __KERNEL__ */
-__LIBC __SAFE void (__LIBCCALL _cfree_d)(void *__restrict __mallptr, __DEBUGINFO) __ASMNAME("_free_d");
+__REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,_cfree_d,(void *__restrict __mallptr, __DEBUGINFO),_free_d,(__mallptr,__DEBUGINFO_FWD))
 #endif /* !__KERNEL__ */
 #endif /* !__cfree_d_defined */
 

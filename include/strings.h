@@ -98,17 +98,22 @@ __LOCAL __WUNUSED __ATTR_CONST int (__LIBCCALL ffs)(int __i) ____IMPL_DO_FFS(__i
 #ifdef __USE_KOS
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL __ffs8)(__INT8_TYPE__ __i);
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL __ffs16)(__INT16_TYPE__ __i);
+#if __SIZEOF_INT__ == 4
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,int,__LIBCCALL,__ffs32,(__INT32_TYPE__ __i),ffs,(__i))
+#else /* __SIZEOF_INT__ == 4 */
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL __ffs32)(__INT32_TYPE__ __i);
+#endif /* __SIZEOF_INT__ != 4 */
+#if __SIZEOF_LONG__ == 8
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,int,__LIBCCALL,__ffs64,(__INT64_TYPE__ __i),ffsl,(__i))
+#elif __SIZEOF_LONG_LONG__ == 8
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,int,__LIBCCALL,__ffs64,(__INT64_TYPE__ __i),ffsll,(__i))
+#else /* ... */
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL __ffs64)(__INT64_TYPE__ __i);
+#endif /* !... */
 #define ffs(i) (sizeof(i) == 4 ? __ffs32((__INT32_TYPE__)(i)) : sizeof(i) == 8 ? __ffs64((__INT64_TYPE__)(i)) : \
                 sizeof(i) == 2 ? __ffs16((__INT16_TYPE__)(i)) : __ffs8((__INT8_TYPE__)(i)))
 #else /* __USE_KOS */
-#if defined(__CRT_KOS) && !defined(__GLC_COMPAT__)
-__LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL ffs)(int __i)
-         __ASMNAME("__ffs" __PP_STR(__PP_MUL8(__SIZEOF_INT__)));
-#else
 __LIBC __WUNUSED __ATTR_CONST int (__LIBCCALL ffs)(int __i);
-#endif
 #endif /* !__USE_KOS */
 #endif /* !__DOS_COMPAT__ */
 #endif /* !__ffs_defined */

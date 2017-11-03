@@ -242,7 +242,7 @@ __LIBC float (__LIBCCALL _scalbf)(float __x, long __y);
 #define _FPCLASS_PN     0x0100 /*< positive normal. */
 #define _FPCLASS_PINF   0x0200 /*< positive infinity. */
 
-__LIBC void (__LIBCCALL fpreset)(void) __ASMNAME("_fpreset");
+__REDIRECT_VOID(__LIBC,,__LIBCCALL,fpreset,(void),_fpreset,())
 #define clear87            _clear87
 #define status87           _status87
 #define control87          _control87

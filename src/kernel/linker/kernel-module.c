@@ -45,10 +45,10 @@ struct symbol {
 };
 
 /* [1..1][dynsym_start...dynsym_end] Compile-time generated kernel symbol table. */
-INTDEF struct symbol const *const dynsym_start[] __ASMNAME("__linker_dynsym_bucket_start");
-INTDEF struct symbol const *const dynsym_end[] __ASMNAME("__linker_dynsym_bucket_end");
+INTDEF struct symbol const *const dynsym_start[] ASMNAME("__linker_dynsym_bucket_start");
+INTDEF struct symbol const *const dynsym_end[] ASMNAME("__linker_dynsym_bucket_end");
 #define                           dynsym_count (size_t)__linker_dynsym_bucket_count
-INTDEF char const                 dynstr[] __ASMNAME("__linker_dynstr");
+INTDEF char const                 dynstr[] ASMNAME("__linker_dynstr");
 INTDEF byte_t                     __linker_dynsym_bucket_count[];
 
 INTERN void *KCALL

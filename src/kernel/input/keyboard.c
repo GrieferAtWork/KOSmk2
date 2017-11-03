@@ -417,7 +417,7 @@ set_default_keyboard(struct keyboard *__restrict kbd,
 
 ATTR_SECTION(".data.user")
 PUBLIC WEAK struct keymap const
-active_keymap __ASMNAME(KSYMNAME_KEYMAP) = {
+active_keymap ASMNAME(KSYMNAME_KEYMAP) = {
     .km_name  = "en_US",
     .km_press = {
         [KEY_DELETE] = '\x7f',
