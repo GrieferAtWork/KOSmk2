@@ -97,11 +97,13 @@ union PACKED {
 }                       fo_obj;        /*< Individual descriptor objects. */
 };};
 #define FD_SAFE_OPS(self)      ((struct fdops const *)((self).fo_hdata&~FD_MASK))
+#define FD_SAFE_TYPE(self,t)                          (FD_SAFE_OPS(self)-fd_ops)
 #define FD_SAFE_ISTYPE(self,t)                        (FD_SAFE_OPS(self) == &fd_ops[t])
 #define FD_SAFE_ISNULL(self)             FD_SAFE_ISTYPE(self,FD_TYPE_NULL)
 #define FD_SAFE_INCREF(self)              (*FD_SAFE_OPS(self)->fd_incref)((self).fo_ptr)
 #define FD_SAFE_DECREF(self)              (*FD_SAFE_OPS(self)->fd_decref)((self).fo_ptr)
 #define FD_IS_CLOFORK(self)                           ((self).fo_flags&FD_CLOFORK)
+#define FD_OPS(self)                                   (self).fo_ops
 #define FD_TYPE(self)                                 ((self).fo_ops-fd_ops)
 #define FD_ISTYPE(self,t)                             ((self).fo_ops == &fd_ops[t])
 #define FD_ISNULL(self)                       FD_ISTYPE(self,FD_TYPE_NULL)

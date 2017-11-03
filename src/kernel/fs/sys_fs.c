@@ -19,6 +19,7 @@
 #ifndef GUARD_KERNEL_FS_SYS_FS_C
 #define GUARD_KERNEL_FS_SYS_FS_C 1
 #define _KOS_SOURCE 1
+#define _GNU_SOURCE 1
 
 #include <dev/blkdev.h>
 #include <dev/rtc.h>
@@ -962,10 +963,31 @@ SYSCALL_DEFINE4(openat,int,dfd,USER char const *,filename,oflag_t,flags,mode_t,m
  file_attr.ia_uid  = walker.dw_access.fa_uid;
  file_attr.ia_gid  = walker.dw_access.fa_gid;
 
- /* Actually open the file. */
- fp.fo_obj.fo_file = fs_user_xopen(&walker,cwd,filename,&file_attr,
-                                   IATTR_MODE|IATTR_UID|IATTR_GID,flags);
-
+ if (flags&O_PATH) {
+  /* Open the file's directory entry, rather than the file itself. */
+  fp.fo_ops = &fd_ops[FD_TYPE_DENTRY];
+  fp.fo_obj.fo_dentry = dentry_user_xwalk(cwd,&walker,filename);
+  /* Confirm that this is a directory if requested to. */
+  if (flags&(O_DIRECTORY|O_NOFOLLOW) && E_ISOK(fp.fo_obj.fo_dentry)) {
+   /*  */
+   atomic_rwlock_read(&fp.fo_obj.fo_dentry->d_inode_lock);
+   if (!fp.fo_obj.fo_dentry->d_inode ||
+      (flags&O_DIRECTORY && !INODE_ISDIR(fp.fo_obj.fo_dentry->d_inode)) ||
+      (flags&O_NOFOLLOW  && INODE_ISLNK(fp.fo_obj.fo_dentry->d_inode))) {
+    atomic_rwlock_endread(&fp.fo_obj.fo_dentry->d_inode_lock);
+    /* Fail with `-ENOTDIR' / `-ELOOP' based on input flags. */
+    DENTRY_DECREF(fp.fo_obj.fo_dentry);
+    fp.fo_ptr = flags&O_DIRECTORY ? E_PTR(-ENOTDIR) : E_PTR(-ELOOP);
+   } else {
+    atomic_rwlock_endread(&fp.fo_obj.fo_dentry->d_inode_lock);
+   }
+  }
+ } else {
+  /* Actually open the file. */
+  fp.fo_ops = &fd_ops[FD_TYPE_FILE];
+  fp.fo_obj.fo_file = fs_user_xopen(&walker,cwd,filename,&file_attr,
+                                    IATTR_MODE|IATTR_UID|IATTR_GID,flags);
+ }
  DENTRY_DECREF(walker.dw_root);
  DENTRY_DECREF(cwd);
 
@@ -976,13 +998,12 @@ SYSCALL_DEFINE4(openat,int,dfd,USER char const *,filename,oflag_t,flags,mode_t,m
  }
 
  /* Setup the descriptor type & flags. */
- fp.fo_ops = &fd_ops[FD_TYPE_FILE];
  if (flags&O_CLOEXEC) fp.fo_flags |= FD_CLOEXEC;
  if (flags&O_CLOFORK) fp.fo_flags |= FD_CLOFORK;
 
  /* At this point we've got the newly opened file. - Time to install it! */
  result.f = fdman_put(fdm,fp);
- FILE_DECREF(fp.fo_obj.fo_file);
+ FD_SAFE_DECREF(fp);
 
 end: task_endcrit();
  return result.f;
