@@ -23,7 +23,7 @@ diff -Naur orig-gcc-6.2.0/fixincludes/mkfixinc.sh gcc-6.2.0/fixincludes/mkfixinc
      x86_64-*-mingw32* | \
 diff -Naur orig-gcc-6.2.0/gcc/config/kos.h gcc-6.2.0/gcc/config/kos.h
 --- orig-gcc-6.2.0/gcc/config/kos.h	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-6.2.0/gcc/config/kos.h	2017-11-04 11:17:42.522021800 +0100
++++ gcc-6.2.0/gcc/config/kos.h	2017-10-26 14:45:09.387866000 +0200
 @@ -0,0 +1,45 @@
 +
 +#undef TARGET_KOS
@@ -72,49 +72,22 @@ diff -Naur orig-gcc-6.2.0/gcc/config/kos.h gcc-6.2.0/gcc/config/kos.h
 +	"%{Xpe:-D__PE__ } %{!Xpe:-D__ELF__ }"
 diff -Naur orig-gcc-6.2.0/gcc/config/kos.opt gcc-6.2.0/gcc/config/kos.opt
 --- orig-gcc-6.2.0/gcc/config/kos.opt	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-6.2.0/gcc/config/kos.opt	2017-11-04 13:57:48.175234300 +0100
-@@ -0,0 +1,8 @@
++++ gcc-6.2.0/gcc/config/kos.opt	2017-10-26 14:45:09.387866000 +0200
+@@ -0,0 +1,14 @@
 +
 +pe
-+Driver
++Driver ALIAS(Xpe)
 +
 +elf
++Driver ALIAS(Xelf)
++
++Xpe
++Driver
++
++Xelf
 +Driver
 +
 +; This comment is to ensure we retain the blank line above.
-diff -Naur orig-gcc-6.2.0/gcc/config/kos64.h gcc-6.2.0/gcc/config/kos64.h
---- orig-gcc-6.2.0/gcc/config/kos64.h	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-6.2.0/gcc/config/kos64.h	2017-11-04 13:57:33.770961000 +0100
-@@ -0,0 +1,29 @@
-+
-+#include "kos.h"
-+
-+#undef MULTILIB_DEFAULTS
-+#define MULTILIB_DEFAULTS { "m64" }
-+
-+/* Use 16-bit wide-characters in PE-mode. */
-+#undef DRIVER_SELF_SPECS
-+#define DRIVER_SELF_SPECS \
-+	"%{pe:-fshort-wchar}"
-+
-+#undef LINK_SPEC
-+#define LINK_SPEC \
-+	"%{pe:%{m64:-m i386pep}%{!m64:-m i386pe}}" \
-+	"%{!pe:%{m64:-m elf_x86_64}%{!m64:-m elf_i386}}" \
-+	"%{shared:-shared}" \
-+	"%{!shared: %{static:-static}}"
-+
-+/* Predefine __PE__ or __ELF__ based on mode. */
-+#undef CPP_SPEC
-+#define CPP_SPEC \
-+	"%{pe:-D__PE__ } %{!pe:-D__ELF__ }"
-+#undef ASM_SPEC
-+#define ASM_SPEC "%{m32:--32} %{m64:--64} %{mx32:--x32}"
-+
-+#undef SIZE_TYPE
-+#define SIZE_TYPE (TARGET_LP64 ? "long unsigned int" : "unsigned int")
-+#undef PTRDIFF_TYPE
-+#define PTRDIFF_TYPE (TARGET_LP64 ? "long int" : "int")
 diff -Naur orig-gcc-6.2.0/gcc/config/t-kos gcc-6.2.0/gcc/config/t-kos
 --- orig-gcc-6.2.0/gcc/config/t-kos	1970-01-01 01:00:00.000000000 +0100
 +++ gcc-6.2.0/gcc/config/t-kos	2017-10-26 15:58:56.150333800 +0200
@@ -122,16 +95,17 @@ diff -Naur orig-gcc-6.2.0/gcc/config/t-kos gcc-6.2.0/gcc/config/t-kos
 +MULTIARCH_DIRNAME = i386-kos
 diff -Naur orig-gcc-6.2.0/gcc/config/t-kos64 gcc-6.2.0/gcc/config/t-kos64
 --- orig-gcc-6.2.0/gcc/config/t-kos64	1970-01-01 01:00:00.000000000 +0100
-+++ gcc-6.2.0/gcc/config/t-kos64	2017-11-04 12:48:14.014681100 +0100
-@@ -0,0 +1,5 @@
-+MULTILIB_OPTIONS    = m64/m32/mx32
-+MULTILIB_DIRNAMES   = 64 32 x32
-+MULTILIB_OSDIRNAMES = m64=../lib64:x86_64-kos
-+MULTILIB_OSDIRNAMES+= m32=/../../usr/lib32,../lib32,../lib:i386-kos
-+MULTILIB_OSDIRNAMES+= mx32=../libx32:x86_64-kosx32
++++ gcc-6.2.0/gcc/config/t-kos64	2017-09-22 18:11:12.091967700 +0200
+@@ -0,0 +1,6 @@
++MULTIARCH_DIRNAME   = i386-kos
++MULTILIB_OPTIONS    = m32/m64/mx32
++MULTILIB_DIRNAMES   = 32 64 x32
++MULTILIB_OSDIRNAMES = m32=../lib:i386-kos
++MULTILIB_OSDIRNAMES+= m64=../lib64:x86_64-kos
++MULTILIB_OSDIRNAMES+= mx32=../libx32:x86_64-kos-x32
 diff -Naur orig-gcc-6.2.0/gcc/config.gcc gcc-6.2.0/gcc/config.gcc
 --- orig-gcc-6.2.0/gcc/config.gcc	2016-06-08 15:34:25.000000000 +0200
-+++ gcc-6.2.0/gcc/config.gcc	2017-11-04 11:31:21.423751700 +0100
++++ gcc-6.2.0/gcc/config.gcc	2017-10-26 16:02:31.787965900 +0200
 @@ -612,6 +612,12 @@
  
  # Common parts for widely ported systems.
@@ -154,7 +128,7 @@ diff -Naur orig-gcc-6.2.0/gcc/config.gcc gcc-6.2.0/gcc/config.gcc
 +    tmake_file="${tmake_file} t-kos"
 +    ;;
 +x86_64-*-kos*)
-+    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h kos64.h"
++    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h kos.h"
 +    tmake_file="${tmake_file} t-kos64"
 +    ;;
  aarch64*-*-elf | aarch64*-*-rtems*)
