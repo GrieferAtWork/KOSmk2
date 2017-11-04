@@ -41,7 +41,7 @@ BEGIN
 
 		/* Minimal LIBC used by the kernel. */
 		BEGIN ARCHIVE("libk")
-			SET_OUTPUT("/bin/libs/libk.a")
+			SET_OUTPUT(CONFIG_LIB_PATH "/libk.a")
 			SET_DISKFILE(none)
 
 			/* LIBK Source files */
@@ -68,7 +68,7 @@ BEGIN
 #define KERNEL_SYMBOL_TABLE "src/kernel/linker/ksym.h"
 			SET_CUSTOM_LINK([](outfile) {
 				/* Generate the kernel's symbol export table using a custom linker step. */
-				local proc = process(executables[default_readelf],["-s","-W",outfile]);
+				local proc = process(executables["readelf"],["-s","-W",outfile]);
 				start_io_process(proc,[](infd) {
 					local kernel_export_symbols = [];
 					for (local l: infd) {
@@ -146,8 +146,8 @@ BEGIN
 #endif
 
 			PROJ_DEP("libk")
-			OBJECT("/bin/libs/libk.a")
-		
+			OBJECT(CONFIG_LIB_PATH "/libk.a")
+
 			/* Kernel core source files */
 			SOURCE("kernel/core/*.c")
 			SOURCE("kernel/core/arch/*.c")

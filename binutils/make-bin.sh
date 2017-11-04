@@ -3,12 +3,16 @@
 ROOT=$(dirname $(readlink -f "$0"))
 cd "$ROOT"
 mkdir "bin"
+export TARGET="x86_64-kos"
+#export TARGET="i686-kos"
 
-BIN="build-binutils-i686-kos/bin"
+BIN="build-binutils-$TARGET/bin"
 
 addbin() {
-	ln -s "../${BIN}/i686-kos-$1"  "bin/$1"
-	#ln -s "${ROOT}/${BIN}/i686-kos-$1"  "/usr/local/bin/i686-kos-$1"
+	unlink "bin/$1"
+	ln -s "../${BIN}/$TARGET-$1"  "bin/$1"
+	#unlink "/usr/local/bin/$TARGET-$1"
+	#ln -s "${ROOT}/${BIN}/$TARGET-$1"  "/usr/local/bin/$TARGET-$1"
 }
 
 addbin "addr2line"

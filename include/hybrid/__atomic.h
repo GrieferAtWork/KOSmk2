@@ -205,7 +205,7 @@ __FORCELOCAL __BOOL (__hybrid_atomic_cmpxch)(__T &__x, __OV __oldv, __NV __newv,
 #define __hybrid_atomic_cmpxch_val(x,oldv,newv,succ,fail) \
  __XBLOCK({ __typeof__(x) __xv_res; \
             int const __order = __MAX(succ,fail); \
-            __xv_res (__order >= __ATOMIC_SEQ_CST) { \
+            if (__order >= __ATOMIC_SEQ_CST) { \
                 __xv_res = (__typeof__(__xv_res))__impl_hybrid_atomic_cmpxch_val_seqcst(x,oldv,newv); \
             } else {\
                 if (__order == __ATOMIC_ACQUIRE || \
@@ -372,7 +372,7 @@ __FORCELOCAL __T (__hybrid_atomic_cmpxch_val)(__T &__x, __V __oldv, __V __newv, 
 #if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_TYPEOF)
 #define __hybrid_atomic_load(x,order) \
  __XBLOCK({ register __typeof__(x) __ld_res; \
-            if (order >= __ATOMIC_SEQ_CST) \
+            if ((order) >= __ATOMIC_SEQ_CST) \
                 __ld_res = __impl_hybrid_atomic_load_seqcst(x); \
             else { \
                 if ((order) == __ATOMIC_ACQUIRE || \

@@ -18,12 +18,13 @@
  */
 
 BEGIN APPLICATION("init")
-	//SET_COMPILER("i686-kos-cxx")
+	//SET_COMPILER("c++")
 	SET_OUTPUT("/bin/apps/init")
 	SET_DISKFILE("/bin/init")
 	SOURCE("init/*.c")
 END
 BEGIN APPLICATION("terminal-vga")
+	DEFINE("CONFIG_LIBTERM_NO_CLOSURE=1")
 	SET_OUTPUT("/bin/apps/terminal-vga")
 	SET_DISKFILE("/bin/terminal-vga")
 	SOURCE("terminal-vga/*.c")
@@ -73,9 +74,9 @@ END
 
 /* Test compiling C++ headers with something other than MSVC. */
 BEGIN PROJECT("gcc_dos_userapp")
-	//SET_COMPILER("i686-kos-cxx")
-	//SET_LINKER("i686-kos-cxx")
-	SET_LINKER("i686-kos-c")
+	//SET_COMPILER("c++")
+	//SET_LINKER("c++")
+	SET_LINKER("c")
 	C_FLAGS("-std=c11")
 	PROJ_DEP("libc")
 

@@ -18,7 +18,7 @@
  */
 
 BEGIN LIBRARY("libc")
-	SET_OUTPUT("/bin/libs/libc.so")
+	SET_OUTPUT(CONFIG_LIB_PATH "/libc.so")
 	SET_DISKFILE("/lib/libc.so")
 	//if (config_debug)
 	//	DEFINE("CONFIG_DEBUG_MALLOC") /* TODO: Requires local exception handling. */
@@ -52,14 +52,14 @@ BEGIN LIBRARY("libc")
 END
 
 BEGIN LIBRARY("libdl")
-	SET_OUTPUT("/bin/libs/libdl.so")
+	SET_OUTPUT(CONFIG_LIB_PATH "/libdl.so")
 	SET_DISKFILE("/lib/libdl.so")
 	_c_flags.remove("-fstack-protector-strong");
 	SOURCE("libdl/dlfcn.c")
 END
 
 BEGIN LIBRARY("libpthread")
-	SET_OUTPUT("/bin/libs/libpthread.so")
+	SET_OUTPUT(CONFIG_LIB_PATH "/libpthread.so")
 	SET_DISKFILE("/lib/libpthread.so")
 	LIBPATH("/bin/libs")
 	PROJ_DEP("libc")
@@ -68,7 +68,7 @@ BEGIN LIBRARY("libpthread")
 END
 
 BEGIN LIBRARY("libkernel32")
-	SET_OUTPUT("/bin/libs/kernel32.so")
+	SET_OUTPUT(CONFIG_LIB_PATH "/kernel32.so")
 	SET_DISKFILE("/lib/KERNEL32.dll")
 	L_FLAGS("-soname","KERNEL32.dll")
 	LIBPATH("/bin/libs")
@@ -79,7 +79,7 @@ END
 
 BEGIN ARCHIVE("_start")
 	SET_ARCHIVER("")
-	SET_OUTPUT("/bin/libs/crt0.o")
+	SET_OUTPUT(CONFIG_LIB_PATH "/crt0.o")
 	SET_DISKFILE("/usr/lib/crt1.o")
 	SOURCE("_start/_start.c")
 END

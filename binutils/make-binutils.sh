@@ -1,11 +1,12 @@
 #!/bin/bash
 
+export TARGET=x86_64-kos
+#export TARGET=i686-kos
 binutils_folder=$(dirname $(readlink -f "$0"))
-binutils_build_folder="$binutils_folder/build-binutils-i686-kos"
+binutils_build_folder="$binutils_folder/build-binutils-$TARGET"
 binutils_src_folder="$binutils_folder/src/binutils-2.27"
 binutils_syshook="$binutils_folder/root"
 export PREFIX="$binutils_build_folder"
-export TARGET=i686-kos
 export PATH="$PREFIX/bin:$PATH"
 
 cmd() {
@@ -19,6 +20,8 @@ cmd() {
 cmd cd "$binutils_folder"
 mkdir -p src
 mkdir -p root/usr
+unlink root/usr/include
+unlink root/usr/lib
 ln -s "../../../include"  root/usr/include
 ln -s "../../../bin/libs" root/usr/lib
 cmd cd src
@@ -37,8 +40,6 @@ if ! [ -f "$binutils_src_folder/.kos-patched" ]; then
 	cmd patch -d "$binutils_src_folder" -p1 < "$binutils_folder/../apps/patches/binutils.patch"
 	> $binutils_src_folder/.kos-patched
 fi
-
-exit 0
 
 mkdir -p "$PREFIX"
 cmd cd "$PREFIX"
@@ -59,7 +60,7 @@ cmd make -j 8
 cmd make -j 8 install
 
 # Prevent redundancy: Use a symlink to integrate KOS system headers into binutils!
-rm -rf i686-kos/sys-include
-ln -s "../../include" i686-kos/sys-include
+rm -rf "$TARGET/sys-include"
+ln -s "../../include" "$TARGET/sys-include"
 
 

@@ -17,6 +17,23 @@
  * 3. This notice may not be removed or altered from any source distribution. *
  */
 
+/* Target configuration */
+#if 0
+#   define CONFIG_TARGET_ARCH  "i686"
+#   define CONFIG_TOOLCHAIN    "i686"
+#   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0"
+#elif 1
+#   define TARGET_I686
+#   define CONFIG_TARGET_ARCH  "i386"
+#   define CONFIG_TOOLCHAIN    "x86_64"
+#   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0/32"
+#else
+#   define CONFIG_TARGET_ARCH  "x86_64"
+#   define CONFIG_TOOLCHAIN    "x86_64"
+#   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0"
+#endif
+#define CONFIG_LIB_PATH        "/bin/libs/" CONFIG_TARGET_ARCH "-kos"
+
 /* Compiler configuration */
 local config_format_compiler_messages = false; /* Format GCC warning/error messages to MSVC format. */
 local config_generate_preprocessor    = false; /* Generate preprocessor output instead of object files. */
@@ -29,7 +46,7 @@ local config_build_only               = false; /* Don't start emulation once com
 local config_debug                    = true; /* Enable compiling with debug information. */
 local config_optimize                 = none; /* Otherwise: A string "0", "1", etc... */
 local config_max_compilers            = 8; /* Max amount of compilers to run in parallel */
-local config_build_path               = "build/i386-elf";
+local config_build_path               = "build/" CONFIG_TARGET_ARCH "-kos";
 local config_usbdisk = <none>; /* Uncomment this if you have an H: drive, or simply don't wish to use a USB stick for testing on real hardware. */
 
 /* Compiler script options. */
@@ -43,28 +60,18 @@ local config_disk_size  = 32*1024*1024; /* 32Mib */
 local run_mode_bochs    = false; /* Use BOCHS as emulator. */
 local run_mode_run_only = false; /* Skip compilation and only run the emulator. */
 local run_bochs_binary  = "bochs"; /* If existing & older, copy generated kernel binary here. */
-local run_qemu_binary   = "qemu-system-i386";
-local run_qemu_binary   = "qemu-system-x86_64";
+local run_qemu_binary   = "qemu-system-" CONFIG_TARGET_ARCH;
 local run_mode_remote   = false; /* --remote */
 local run_mode_usb      = false; /* --usb */
 local run_mode_hosted   = true; /* --hosted */
-local run_kernel_flat   = "bin/flat_kernel.bin";
-local run_kernel_binary = "bin/kos.bin"; /* Output name of the kernel binary. */
+local run_kernel_flat   = "bin/kos-" CONFIG_TARGET_ARCH "-flat.bin";
+local run_kernel_binary = "bin/kos-" CONFIG_TARGET_ARCH ".bin"; /* Output name of the kernel binary. */
 /* Executable used for '#!$addr2line' formating of serial emulator output. */
 local run_addr2line_exe = run_kernel_binary;
 local run_addr2line_base = 0;
 
 /* Default executable names. */
-local const default_mtools    = "mtools";
-local const default_mode      = "i386-kos";
-local const default_c         = "i686-kos-c";
-local const default_nm        = "i686-kos-nm";
-local const default_cpp       = "i686-kos-cpp";
-local const default_ar        = "i686-kos-ar";
-local const default_ld        = "i686-kos-ld";
-local const default_asm       = "i686-kos-asm";
-local const default_readelf   = "i686-kos-readelf";
-local const default_addr2line = "i686-kos-addr2line";
+local const default_mtools = "mtools";
 
 #ifdef __WINDOWS__
 #	define EXE(x) x ".exe"
@@ -75,22 +82,22 @@ local const default_addr2line = "i686-kos-addr2line";
 /* Paths to used executables */
 local executables = dict {
 	"mtools"             : EXE("binutils/build-mtools/mtools"),
-	"i686-kos-asm"       : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-gcc"),
-	"i686-kos-c"         : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-gcc"),
-	"i686-kos-cpp"       : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-cpp"),
-	"i686-kos-ar"        : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-ar"),
-	"i686-kos-ld"        : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-ld"),
-	"i686-kos-nm"        : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-nm"),
-	"i686-kos-cxx"       : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-g++"),
-	"i686-kos-addr2line" : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-addr2line"),
-	"i686-kos-readelf"   : EXE("binutils/build-binutils-i686-kos/bin/i686-kos-readelf"),
+	"asm"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-gcc"),
+	"c"                  : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-gcc"),
+	"c++"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-g++"),
+	"cpp"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-cpp"),
+	"ar"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-ar"),
+	"ld"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-ld"),
+	"nm"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-nm"),
+	"addr2line"          : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-addr2line"),
+	"readelf"            : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-readelf"),
 	"host-asm"           : EXE("gcc"),
 	"host-c"             : EXE("gcc"),
+	"host-c++"           : EXE("g++"),
 	"host-cpp"           : EXE("cpp"),
 	"host-ar"            : EXE("ar"),
 	"host-ld"            : EXE("ld"),
 	"host-nm"            : EXE("nm"),
-	"host-cxx"           : EXE("g++"),
 	"host-addr2line"     : EXE("addr2line"),
 	"host-readelf"       : EXE("readelf"),
 	"bochs"              : EXE("bochs"),
@@ -111,6 +118,9 @@ local executables = dict {
 #include <time>
 
 local root_folder = fs::path::head(__FILE__).replace("\\","/").rstrip("/");
+
+if (run_qemu_binary == "qemu-system-i686")
+	run_qemu_binary = "qemu-system-i386";
 
 #if __has_include("misc/paths.dee")
 #include "misc/paths.dee"
@@ -697,7 +707,6 @@ function files(text,def_file) {
 	}
 }
 
-local user_modes = dict();
 class Project {
 	this(name) {
 		this._name       = name;
@@ -710,12 +719,12 @@ class Project {
 		this._l_jstsym   = []; /* Static link descriptors for '--just-symbols=...'. */
 		this._outfile    = "bin/"+name; /* Binary output path. */
 		this._dskfile    = "bin/"+name; /* Disk output path (or none if not put on disk) */
-		this._exe_c      = default_c; /* Used compiler. */
-		this._exe_cpp    = default_cpp; /* Used preprocessor. */
+		this._exe_c      = "c"; /* Used compiler. */
+		this._exe_cpp    = "cpp"; /* Used preprocessor. */
 		this._exe_a      = none; /* Archiver executable (when 'none', do linking with '_exe_l'). */
-		this._exe_l      = default_ld; /* Used linker. */
+		this._exe_l      = "ld"; /* Used linker. */
 		this._cus_link   = none; /* Custom linker commandline. ("ld -o {output} {objects}") */
-		this._exe_nm     = default_nm; /* Used linker. */
+		this._exe_nm     = "nm"; /* Used linker. */
 		this._modes      = []; /* Active user-modes. */
 		this._relink     = false; /* Set to true if the project must be re-linked. */
 		this._created    = false; /* Set to true when the project was been linked. */
@@ -739,10 +748,6 @@ class Project {
 		for (local f: filename) {
 			this._l_jstsym.append(Source(this._exe_nm,[],[],f));
 		}
-	}
-	set_mode(_p_exe,p_flags,c_flags,name) {
-		user_modes[name](this,_p_exe,p_flags,c_flags);
-		this._modes.append(name);
 	}
 	will_relink() {
 		if (!this._relink) {
@@ -860,6 +865,13 @@ class Project {
 					linker_flags.append("-T",script.get_pp_file(this));
 				}
 				linker_flags.extend(this._l_flags);
+#ifdef TARGET_I686 /* TODO: Dirty hack */
+				if (this._exe_l.endswith("c")) {
+					linker_flags.append("-m32");
+				} else {
+					linker_flags.append("-m","elf_i386");
+				}
+#endif
 				linker_flags.extend(source_objects);
 				/* Make sure that '-lgcc' goes at the end. */
 				if ("gcc" in this._l_deps) {
@@ -1051,13 +1063,6 @@ function disk_sync_file(files,dst) {
 /* Disk synchronization */
 #define DISK_SYNC(src,dst) disk_sync_file(FILES(src),dst);
 
-/* User-defined modes */
-#define ALIAS_MODE(nam,old) user_modes[nam] = user_modes[old];
-#define BEGIN_MODE(nam)  user_modes[nam] = function(_proj,_p_exe,_p_flags,_c_flags) {
-#define MODE(x)          _proj.set_mode(_p_exe,_p_flags,_c_flags,x);
-#define DEL_MODE(x)      _proj._modes.remove(x);
-#define HAS_MODE(x)    ((x) in _proj._modes)
-
 try {
 if (!run_mode_run_only) {
 
@@ -1243,7 +1248,7 @@ local addr2line_inw = <>;
 local addr2line_outr = <>;
 function start_addr2line() {
 	if (!addr2line_proc) {
-		addr2line_proc.set(process(executables[default_addr2line],[
+		addr2line_proc.set(process(executables["addr2line"],[
 			"-e",run_addr2line_exe,"-i","-f"
 		]));
 		local inr,inw = pipe.new()...;

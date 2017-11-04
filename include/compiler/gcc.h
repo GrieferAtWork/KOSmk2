@@ -132,7 +132,11 @@
 #define __ATTR_FALLTHROUGH         /* Nothing */
 #define __ATTR_FASTCALL            __attribute__((__fastcall__))
 #define __ATTR_STDCALL             __attribute__((__stdcall__))
+#ifdef __x86_64__
+#define __ATTR_CDECL               /* Nothing */
+#else
 #define __ATTR_CDECL               __attribute__((__cdecl__))
+#endif
 #if __GCC_VERSION(2,96,0)
 #   define __ATTR_PURE             __attribute__((__pure__))
 #else

@@ -54,6 +54,7 @@
 #ifndef CONFIG_JIFFY_TIMEOUT
 #include <hybrid/timespec.h>
 #endif /* !CONFIG_JIFFY_TIMEOUT */
+#include <hybrid/host.h>
 #include <hybrid/types.h>
 #include <kernel/arch/cpu.h>
 #include <kernel/arch/task.h>

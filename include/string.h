@@ -296,7 +296,7 @@ __REDIRECT_IFDOS(__LIBC,__NONNULL((1,2,3)),char *,__LIBCCALL,strtok_r,(char *__r
 __REDIRECT(__LIBC,__NONNULL((2)),int,__LIBCCALL,strerror_r,(int __errnum, char *__buf, size_t __buflen),__xpg_strerror_r,(__errnum,__buf,__buflen))
 #else /* !__USE_GNU */
 #ifdef __CRT_GLC
-__LIBC __PORT_NODOS_ALT(strerror) __WUNUSED __ATTR_RETNONNULL __NONNULL((2)) char *(__LIBCCALL strerror_r)(int __errnum, char *__buf, size_t __buflen);
+__LIBC __PORT_NODOS_ALT(strerror) __ATTR_RETNONNULL __NONNULL((2)) char *(__LIBCCALL strerror_r)(int __errnum, char *__buf, size_t __buflen);
 #endif /* __CRT_GLC */
 #endif /* __USE_GNU */
 #endif /* __USE_XOPEN2K */

@@ -167,7 +167,7 @@ __LIBC __NONNULL((1,2,5)) __WUNUSED void *(__LIBCCALL bsearch)(void const *__key
 __LIBC __NONNULL((1,4)) void (__LIBCCALL qsort)(void *__base, size_t __nmemb, size_t __size, __compar_fn_t __compar);
 
 #ifdef __KERNEL__
-#ifdef __CORRECT_ISO_CPP_STDLIB_H_PROTO
+#if defined(__CORRECT_ISO_CPP_STDLIB_H_PROTO) && 0
 extern "C++" {
 __LOCAL __ATTR_CONST __WUNUSED int __NOTHROW((__LIBCCALL abs)(int __x)) { return __x < 0 ? -__x : __x; }
 __LOCAL __ATTR_CONST __WUNUSED long __NOTHROW((__LIBCCALL abs)(long __x)) { return __x < 0 ? -__x : __x; }
@@ -188,7 +188,7 @@ __LOCAL __ATTR_CONST __WUNUSED lldiv_t __NOTHROW((__LIBCCALL lldiv)(__LONGLONG _
 #endif /* __USE_ISOC99 */
 
 #else /* __KERNEL__ */
-#ifdef __CORRECT_ISO_CPP_STDLIB_H_PROTO
+#if defined(__CORRECT_ISO_CPP_STDLIB_H_PROTO) && 0
 extern "C++" {
 __REDIRECT_NOTHROW(__LIBC,__ATTR_CONST __WUNUSED,int,__LIBCCALL,abs,(int __x),abs,(__x))
 __REDIRECT_NOTHROW(__LIBC,__ATTR_CONST __WUNUSED,long,__LIBCCALL,abs,(long __x),labs,(__x))

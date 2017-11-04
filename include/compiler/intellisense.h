@@ -819,26 +819,26 @@ template<class T, class S> struct ____INTELLISENSE_enableif_nc { typedef S __typ
 template<class T, class S> struct ____INTELLISENSE_enableif_nc<T const,S> {};
 }
 
-template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_load_n(type const volatile *ptr, int memorder);
-template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,void>::__type __atomic_load(type const volatile *ptr, type *ret, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,void>::__type __atomic_store_n(type volatile *ptr, S val, int memorder);
-template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,void>::__type __atomic_store(type volatile *ptr, type *val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_exchange_n(type volatile *ptr, S val, int memorder);
-template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,void>::__type __atomic_exchange(type volatile *ptr, type *val, type *ret, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,bool>::__type __atomic_compare_exchange_n(type volatile *ptr, type *expected, S desired, bool weak, int success_memorder, int failure_memorder);
-template<class type>          typename ::__int::____INTELLISENSE_enableif_nc<type,bool>::__type __atomic_compare_exchange(type volatile *ptr, type *expected, type *desired, bool weak, int success_memorder, int failure_memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_add_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_sub_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_and_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_xor_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_or_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_nand_fetch(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_add(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_sub(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_and(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_xor(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_or(type volatile *ptr, S val, int memorder);
-template<class type, class S> typename ::__int::____INTELLISENSE_enableif_nc<type,type>::__type __atomic_fetch_nand(type volatile *ptr, S val, int memorder);
+template<class T>          typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_load_n(T const volatile *ptr, int memorder);
+template<class T>          typename ::__int::____INTELLISENSE_enableif_nc<T,void>::__type __atomic_load(T const volatile *ptr, T *ret, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,void>::__type __atomic_store_n(T volatile *ptr, S val, int memorder);
+template<class T>          typename ::__int::____INTELLISENSE_enableif_nc<T,void>::__type __atomic_store(T volatile *ptr, T *val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_exchange_n(T volatile *ptr, S val, int memorder);
+template<class T>          typename ::__int::____INTELLISENSE_enableif_nc<T,void>::__type __atomic_exchange(T volatile *ptr, T *val, T *ret, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,bool>::__type __atomic_compare_exchange_n(T volatile *ptr, T *expected, S desired, bool weak, int success_memorder, int failure_memorder);
+template<class T>          typename ::__int::____INTELLISENSE_enableif_nc<T,bool>::__type __atomic_compare_exchange(T volatile *ptr, T *expected, T *desired, bool weak, int success_memorder, int failure_memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_add_fetch(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_sub_fetch(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_and_fetch(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_xor_fetch(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_or_fetch(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_nand_fetch(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_fetch_add(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_fetch_sub(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_fetch_and(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_fetch_xor(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_fetch_or(T volatile *ptr, S val, int memorder);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __atomic_fetch_nand(T volatile *ptr, S val, int memorder);
 
 bool __atomic_test_and_set(void *ptr, int memorder);
 void __atomic_clear(bool *ptr, int memorder);
@@ -848,23 +848,23 @@ bool __atomic_always_lock_free(size_t size, void const volatile *ptr);
 bool __atomic_is_lock_free(size_t size, void const volatile *ptr);
 
 
-template<class type> type __sync_fetch_and_add(type volatile *ptr, type value, ...);
-template<class type> type __sync_fetch_and_sub(type volatile *ptr, type value, ...);
-template<class type> type __sync_fetch_and_or(type volatile *ptr, type value, ...);
-template<class type> type __sync_fetch_and_and(type volatile *ptr, type value, ...);
-template<class type> type __sync_fetch_and_xor(type volatile *ptr, type value, ...);
-template<class type> type __sync_fetch_and_nand(type volatile *ptr, type value, ...);
-template<class type> type __sync_add_and_fetch(type volatile *ptr, type value, ...);
-template<class type> type __sync_sub_and_fetch(type volatile *ptr, type value, ...);
-template<class type> type __sync_or_and_fetch(type volatile *ptr, type value, ...);
-template<class type> type __sync_and_and_fetch(type volatile *ptr, type value, ...);
-template<class type> type __sync_xor_and_fetch(type volatile *ptr, type value, ...);
-template<class type> type __sync_nand_and_fetch(type volatile *ptr, type value, ...);
-template<class type> bool __sync_bool_compare_and_swap(type volatile *ptr, type oldval, type newval, ...);
-template<class type> type __sync_val_compare_and_swap(type volatile *ptr, type oldval, type newval, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_fetch_and_add(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_fetch_and_sub(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_fetch_and_or(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_fetch_and_and(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_fetch_and_xor(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_fetch_and_nand(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_add_and_fetch(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_sub_and_fetch(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_or_and_fetch(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_and_and_fetch(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_xor_and_fetch(T volatile *ptr, S value, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_nand_and_fetch(T volatile *ptr, S value, ...);
+template<class T, class S, class N> typename ::__int::____INTELLISENSE_enableif_nc<T,bool>::__type __sync_bool_compare_and_swap(T volatile *ptr, S oldval, N newval, ...);
+template<class T, class S, class N> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_val_compare_and_swap(T volatile *ptr, S oldval, N newval, ...);
+template<class T, class S> typename ::__int::____INTELLISENSE_enableif_nc<T,T>::__type __sync_lock_test_and_set(T *ptr, S value, ...);
+template<class T> typename ::__int::____INTELLISENSE_enableif_nc<T,void>::__type __sync_lock_release(T *ptr, ...);
 void __sync_synchronize(...);
-template<class type> type __sync_lock_test_and_set(type *ptr, type value, ...);
-template<class type> void __sync_lock_release(type *ptr, ...);
 
 
 namespace __int {
