@@ -49,6 +49,12 @@
 #   define __P(x) ()
 #endif
 
+/* TODO: Unify use of `__FUNCTION__'
+#if __STDC_VERSION__ >= 199901L
+#define __FUNCTION__ __func__
+#endif
+*/
+
 #if !defined(__NO_LONG_LONG) && !defined(__DARWIN_NO_LONG_LONG) && \
    ((defined(__BORLANDC__) && __BORLANDC__ >= 0x561) || defined(__SUNPRO_CC) || \
      defined(__TINYC__) || defined(__DCC_VERSION__) || \
