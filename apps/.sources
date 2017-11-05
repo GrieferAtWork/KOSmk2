@@ -19,13 +19,13 @@
 
 BEGIN APPLICATION("init")
 	//SET_COMPILER("c++")
-	SET_OUTPUT("/bin/apps/init")
+	SET_OUTPUT(CONFIG_APP_PATH "/init")
 	SET_DISKFILE("/bin/init")
 	SOURCE("init/*.c")
 END
 BEGIN APPLICATION("terminal-vga")
 	DEFINE("CONFIG_LIBTERM_NO_CLOSURE=1")
-	SET_OUTPUT("/bin/apps/terminal-vga")
+	SET_OUTPUT(CONFIG_APP_PATH "/terminal-vga")
 	SET_DISKFILE("/bin/terminal-vga")
 	SOURCE("terminal-vga/*.c")
 END
@@ -49,25 +49,25 @@ END
 #endif
 
 BEGIN APPLICATION("my_test")
-	SET_OUTPUT("/bin/apps/my_test")
+	SET_OUTPUT(CONFIG_APP_PATH "/my_test")
 	SET_DISKFILE("/opt/my_test")
 	SOURCE("test/my_test.c")
 END
 
 BEGIN APPLICATION("dosfs")
-	SET_OUTPUT("/bin/apps/dosfs")
+	SET_OUTPUT(CONFIG_APP_PATH "/dosfs")
 	SET_DISKFILE("/bin/dosfs")
 	SOURCE("misc/dosfs.c")
 END
 
 BEGIN APPLICATION("shm-demo")
-	SET_OUTPUT("/bin/apps/shm-demo")
+	SET_OUTPUT(CONFIG_APP_PATH "/shm-demo")
 	SET_DISKFILE("/bin/shm-demo")
 	SOURCE("misc/shm-demo.c")
 END
 
 BEGIN APPLICATION("playground")
-	SET_OUTPUT("/bin/apps/playground")
+	SET_OUTPUT(CONFIG_APP_PATH "/playground")
 	SET_DISKFILE("/opt/playground")
 	SOURCE("test/playground.c")
 END
@@ -80,12 +80,12 @@ BEGIN PROJECT("gcc_dos_userapp")
 	C_FLAGS("-std=c11")
 	PROJ_DEP("libc")
 
-	SET_OUTPUT("/bin/apps/elf_dos_userapp")
+	SET_OUTPUT(CONFIG_APP_PATH "/elf_dos_userapp")
 	SET_DISKFILE("/bin/elf_dos_userapp")
 	SOURCE("dos_userapp/*.c")
 END
 
-DISK_SYNC("../bin/apps/dos_userapp.*","/bin/")
+DISK_SYNC(CONFIG_APP_PATH "/dos_userapp.*","/bin/")
 DISK_SYNC("hybrid_demo/main.exe","/bin/hybrid-demo.exe")
 
 

@@ -32,7 +32,9 @@
 #   define CONFIG_TOOLCHAIN    "x86_64"
 #   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0"
 #endif
+#define CONFIG_APP_PATH        "/bin/apps/" CONFIG_TARGET_ARCH "-kos"
 #define CONFIG_LIB_PATH        "/bin/libs/" CONFIG_TARGET_ARCH "-kos"
+#define CONFIG_MOD_PATH        "/bin/mods/" CONFIG_TARGET_ARCH "-kos"
 
 /* Compiler configuration */
 local config_format_compiler_messages = false; /* Format GCC warning/error messages to MSVC format. */
@@ -40,7 +42,7 @@ local config_generate_preprocessor    = false; /* Generate preprocessor output i
 local config_generate_assembly        = false; /* Generate assembly instead of object files. */
 local config_compile_single           = <false>; /* Only run one compiler at a time. */
 local config_force_rebuild            = <false>; /* Force a full recompilation. */
-local config_force_disk               = false; /* Force a full disk rebuild. */
+local config_force_disk               = <false>; /* Force a full disk rebuild. */
 local config_force_usb                = false; /* Force a full USB rebuild. */
 local config_build_only               = false; /* Don't start emulation once compilation is done. */
 local config_debug                    = true; /* Enable compiling with debug information. */
@@ -53,7 +55,7 @@ local config_usbdisk = <none>; /* Uncomment this if you have an H: drive, or sim
 local config_verbose = false;
 
 /* Disk configuration */
-local config_disk_image = "disk/kos.img"; /* Output path of the disk image. */
+local config_disk_image = "disk/" CONFIG_TARGET_ARCH "-kos.img"; /* Output path of the disk image. */
 local config_disk_size  = 32*1024*1024; /* 32Mib */
 
 /* Runtime/Emulation configuration */
@@ -185,7 +187,7 @@ while (kernel_args && kernel_args.front().startswith("-")) {
 	case "-fdisk":
 	case "--fdisk":
 	case "--force-disk":
-		::config_force_disk = true;
+		::config_force_disk.set(true);
 		break;
 	case "-fusb":
 	case "--fusb":
@@ -902,7 +904,7 @@ class Project {
 	}
 	must_update_disk() {
 		if (this._dskfile is none) return false;
-		if (this._created || ::config_force_disk) return true;
+		if (this._created || ::config_force_disk.get()) return true;
 		try {
 			if (fast_getmtime(this._outfile) > fast_getmtime(config_disk_image))
 				return true;
@@ -978,7 +980,7 @@ function disk_do_sync_file(src,dst) {
 	disk_ops.append([]{
 		try {
 			local src_mtime = fast_getmtime(src);
-			if (src_mtime > fast_getmtime(config_disk_image) || config_force_disk) {
+			if (src_mtime > fast_getmtime(config_disk_image) || config_force_disk.get()) {
 				print "Updating disk",repr dst;
 				disk_force_mkdir(fs::path::head(dst));
 				mtools("mcopy",["-D","o",src,"::"+dst]);
@@ -1169,8 +1171,9 @@ if (!run_mode_run_only) {
 	}
 	local first_pass = true;
 	function create_missing_disk() {
-		if (config_force_disk || !fs::exists(config_disk_image)) {
+		if (config_force_disk.get() || !fs::exists(config_disk_image)) {
 			local fp = file.open(config_disk_image,"w");
+			config_force_disk.set(true);
 			for (none: util::range(config_disk_size/512))
 				fp.write(" "*512);
 			fp.close();
