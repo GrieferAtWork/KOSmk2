@@ -57,7 +57,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
  struct tasksig old_sigset;
 
  /* Load the address that caused the fault in the first place. */
- __asm__ __volatile__("movl %%cr2, %0\n" : "=r" (fault_addr) : : "memory");
+ __asm__ __volatile__("mov %%cr2, %0\n" : "=r" (fault_addr));
 
  /* NOTE: Re-enable preemption to allow for better parallelization
   *       of PAGEFAULT handling, but make sure to keep the original
@@ -183,14 +183,16 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
    /* XXX: Not really. - We could use page-directory self-mappings here... */
    {
     pflag_t was = PREEMPTION_PUSH();
-    if (user_mman != &mman_kernel) __asm__ __volatile__("movl %0, %%cr3\n" : : "r" (&pdir_kernel.pd_directory) : "memory");
+    if (user_mman != &mman_kernel)
+        __asm__ __volatile__("mov %0, %%cr3\n" : : "r" (&pdir_kernel.pd_directory)/* : "memory"*/);
     if (!pdir_maccess_addr(&user_mman->m_pdir,(void *)fault_page,req_attr)) {
 #if 0
      syslog(LOG_DEBUG,"Faulty address: %p\n",fault_page);
 #endif
      error = -EFAULT;
     }
-    if (user_mman != &mman_kernel) __asm__ __volatile__("movl %0, %%cr3\n" : : "r" (&user_mman->m_ppdir->pd_directory) : "memory");
+    if (user_mman != &mman_kernel)
+        __asm__ __volatile__("mov %0, %%cr3\n" : : "r" (&user_mman->m_ppdir->pd_directory)/* : "memory"*/);
     PREEMPTION_POP(was);
    }
   }

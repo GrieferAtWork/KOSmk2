@@ -1506,7 +1506,7 @@ has_old_lock:
            t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,ENOMEM);
    } else {
     FPUSTATE_ENABLE();
-    FPUSTATE_SAVE(t->t_arch.at_fpu);
+    FPUSTATE_SAVE(*t->t_arch.at_fpu);
    }
    FPUSTATE_DISABLE();
    CPU(fpu_current) = NULL;

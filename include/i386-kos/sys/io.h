@@ -128,32 +128,29 @@ __FORCELOCAL T (__LIBCCALL in##sfx##_p)(__IOPORT_T __port) { \
 __FORCELOCAL void (__LIBCCALL ins##sfx)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { \
  __asm__ __volatile__("rep; ins" #sfx \
                       : "=D" (__addr), "=c" (__count) \
-                      : "d"  (__port), "0"  (__addr), "1"  (__count) \
-                      : "memory"); \
+                      , "=m" (*(struct { __extension__ T __d[__count]; } *)__addr) \
+                      : "d" (__port), "0" (__addr), "1" (__count)); \
 } \
 __FORCELOCAL T (__LIBCCALL __read##sfx)(__MEMPORT_T __addr) { \
  register T __rv; \
  __asm__ __volatile__("mov" #sfx " %1, %0" \
-                      : "=r" (__rv) : "m" (*(T volatile *)__addr) \
-                      : "memory"); \
+                      : "=r" (__rv) : "m" (*(T volatile *)__addr)); \
  return __rv; \
 } \
 __FORCELOCAL T (__LIBCCALL __read##sfx##_p)(__MEMPORT_T __port) { \
  register T __rv; \
  __asm__ __volatile__("mov" #sfx " %1, %0" __IO_SLOWDOWN \
-                      : "=r" (__rv) : "m" (*(T volatile *)__port) \
-                      : "memory"); \
+                      : "=r" (__rv) : "m" (*(T volatile *)__port)); \
  return __rv; \
 } \
 __FORCELOCAL void (__LIBCCALL __reads##sfx)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { \
  if (__count) \
      __asm__ __volatile__("1: mov" #sfx " %0, (%1)\n" \
                           "   addl $" #n ", %1" \
-                          "   loop 1b" : \
-                          : "g" (__port) \
-                          , "m" (__addr) \
-                          , "c" (__count) \
-                          : "memory"); \
+                          "   loop 1b" \
+                          : "=m" (*(struct { __extension__ T __d[__count]; } *)__addr) \
+                          : "g" (__port), "m" (__addr), "c" (__count) \
+                          , "m" (*(struct { __extension__ T __d[__count]; } volatile *)__port)); \
 }
 
 
@@ -170,27 +167,24 @@ __FORCELOCAL void (__LIBCCALL outs##sfx)(__IOPORT_T __port, void const *__addr, 
  __asm__ __volatile__("rep; outs" #sfx \
                       : "=S" (__addr), "=c" (__count) \
                       : "d" (__port), "0" (__addr), "1" (__count) \
-                      : "memory"); \
+                      , "m" (*(struct { __extension__ T __d[__count]; } *)__addr)); \
 } \
-__FORCELOCAL void (__LIBCCALL __write##sfx)(__MEMPORT_T __addr, T __val) { \
+__FORCELOCAL void (__LIBCCALL __write##sfx)(__MEMPORT_T __port, T __val) { \
  __asm__ __volatile__("mov" #sfx " %1, %0" \
-                      : : "m" (*(T volatile *)__addr), "r" (__val) \
-                      : "memory"); \
+                      : : "m" (*(T volatile *)__port), "r" (__val)); \
 } \
 __FORCELOCAL void (__LIBCCALL __write##sfx##_p)(__MEMPORT_T __port, T __val) { \
  __asm__ __volatile__("mov" #sfx " %1, %0" __IO_SLOWDOWN \
-                      : : "m" (*(T volatile *)__port), "r" (__val) \
-                      : "memory"); \
+                      : : "m" (*(T volatile *)__port), "r" (__val)); \
 } \
 __FORCELOCAL void (__LIBCCALL __writes##sfx)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { \
  if (__count) \
      __asm__ __volatile__("1: stos" #sfx "\n" \
                           "   subl $" #n ", %1" \
-                          "   loop 1b" : \
-                          : "edi" (__port) \
-                          , "esi" (__addr) \
-                          , "c" (__count) \
-                          : "memory"); \
+                          "   loop 1b"  \
+                          : "=m" (*(struct { __extension__ T __d[__count]; } volatile *)__port) \
+                          : "D" (__port), "S" (__addr), "c" (__count) \
+                          , "m" (*(struct { __extension__ T __d[__count]; } *)__addr)); \
 }
 
 

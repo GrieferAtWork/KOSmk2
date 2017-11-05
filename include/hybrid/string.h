@@ -32,7 +32,7 @@ __SYSDECL_BEGIN
 #define __hybrid_memset(dst,byte,n_bytes)        __opt_memset(dst,byte,n_bytes)
 #define __hybrid_memcmp(a,b,n_bytes)             __opt_memcmp(a,b,n_bytes)
 #define __hybrid_memchr(haystack,needle,n_bytes) __opt_memchr(haystack,needle,n_bytes)
-#define __hybrid_strlen(s)                       __libc_strlen(s)
+#define __hybrid_strlen(s)                       __opt_strlen(s)
 #define __hybrid_strnlen(s,max_chars)            __libc_strnlen(s,max_chars)
 #define __hybrid_strcmp(s1,s2)                   __libc_strcmp(s1,s2)
 

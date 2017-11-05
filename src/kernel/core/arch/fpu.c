@@ -63,7 +63,7 @@ fpu_irq_nm(struct cpustate *__restrict info) {
     syslog(LOG_ERR,"[FPU] Failed to allocate FPU state (gpid %d): %[errno]\n",
            old_task->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,ENOMEM);
    } else {
-    FPUSTATE_SAVE(old_task->t_arch.at_fpu);
+    FPUSTATE_SAVE(*old_task->t_arch.at_fpu);
    }
   }
   if (new_task->t_arch.at_fpu == FPUSTATE_NULL) {
@@ -72,7 +72,7 @@ fpu_irq_nm(struct cpustate *__restrict info) {
   } else {
    /* Load an existing FPU state. */
    assert(IS_ALIGNED((uintptr_t)new_task->t_arch.at_fpu,FPUSTATE_ALIGN));
-   FPUSTATE_LOAD(new_task->t_arch.at_fpu);
+   FPUSTATE_LOAD(*new_task->t_arch.at_fpu);
   }
   CPU(fpu_current) = new_task;
   /* Continue execution normally. */
@@ -82,15 +82,9 @@ fpu_irq_nm(struct cpustate *__restrict info) {
    * is possible that the calling task is the only actually
    * using the FPU right now. */
   register u32 temp;
-  __asm__ __volatile__("movl %%cr0, %0\n"
-                       : "=r" (temp)
-                       :
-                       : "memory");
+  __asm__ __volatile__("mov %%cr0, %0\n" : "=r" (temp));
   if (temp&CR0_TS) {
-   __asm__ __volatile__("movl %0, %%cr0\n"
-                        :
-                        : "r" (temp&~CR0_TS)
-                        : "memory");
+   __asm__ __volatile__("mov %0, %%cr0\n" : : "r" (temp&~CR0_TS));
    return;
   }
  }
@@ -106,14 +100,14 @@ PRIVATE MODULE_INIT void KCALL fpu_init(void) {
  register u32 temp;
  /* Enable the FPU. */
  __asm__ __volatile__("clts\n"
-                      "movl %%cr0, %0\n"
-                      "andl $(" __PP_STR(~CR0_EM) "), %0\n"
-                      "orl  $(" __PP_STR(CR0_MP) "), %0\n"
-                      "movl %0, %%cr0\n"
-                      "movl %%cr4, %0\n"
-                      "orl  $(" __PP_STR(CR4_OSFXSR) "), %0\n"
-                      "movl %0, %%cr4\n"
-                      : "=r" (temp) : : "memory");
+                      "mov %%cr0, %0\n"
+                      "and $(" __PP_STR(~CR0_EM) "), %0\n"
+                      "or  $(" __PP_STR(CR0_MP) "), %0\n"
+                      "mov %0, %%cr0\n"
+                      "mov %%cr4, %0\n"
+                      "or  $(" __PP_STR(CR4_OSFXSR) "), %0\n"
+                      "mov %0, %%cr4\n"
+                      : "=r" (temp));
  /* Install the IRQ handler used when switching FPU tasks. */
  asserte(irq_set(&fpu_switch,NULL,IRQ_SET_RELOAD));
 }

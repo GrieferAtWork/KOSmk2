@@ -1249,6 +1249,11 @@ __SIZE_TYPE__ (__LIBCCALL __constant_rawmemlenl)(__UINT32_TYPE__ const *__restri
 #define __opt_rawmemrlenw(haystack,needle)       (__builtin_constant_p(needle) ? __constant_rawmemrlenw(haystack,needle) : __nonconst_rawmemrlenw(haystack,needle))
 #define __opt_rawmemrlenl(haystack,needle)       (__builtin_constant_p(needle) ? __constant_rawmemrlenl(haystack,needle) : __nonconst_rawmemrlenl(haystack,needle))
 #define __opt_rawmemrlenq(haystack,needle)       (__builtin_constant_p(needle) ? __constant_rawmemrlenq(haystack,needle) : __nonconst_rawmemrlenq(haystack,needle))
+
+#if __has_builtin(__builtin_strlen) || defined(__GNUC__)
+#define __opt_strlen_needs_macro 1
+#define __opt_strlen(x) (__builtin_constant_p(x) ? __builtin_strlen(x) : __libc_strlen(x))
+#endif
 #else /* __OPTIMIZE_CONST__ */
 #define __opt_memcpy(dst,src,n_bytes)             __nonconst_memcpy(dst,src,n_bytes)
 #define __opt_memcpyw(dst,src,n_words)            __nonconst_memcpyw(dst,src,n_words)
@@ -1311,6 +1316,11 @@ __SIZE_TYPE__ (__LIBCCALL __constant_rawmemlenl)(__UINT32_TYPE__ const *__restri
 #define __opt_rawmemrlenl(haystack,needle)        __nonconst_rawmemrlenl(haystack,needle)
 #define __opt_rawmemrlenq(haystack,needle)        __nonconst_rawmemrlenq(haystack,needle)
 #endif /* !__OPTIMIZE_CONST__ */
+
+#ifndef __opt_strlen
+#define __NO_opt_strlen
+#define __opt_strlen(x) __libc_strlen(x)
+#endif
 
 __SYSDECL_END
 #endif /* __CC__ */

@@ -216,7 +216,7 @@ INTERN ATTR_NORETURN void cpu_bootstrap_c(void) {
  { struct idt_pointer idt;
    idt.ip_idt   = CPU(cpu_idt).i_vector;
    idt.ip_limit = sizeof(cpu_idt.i_vector);
-   __asm__ __volatile__("lidt %0\n" : : "m" (idt) : "memory");
+   __asm__ __volatile__("lidt %0\n" : : "m" (idt));
  }
 
  syslog(LOG_SCHED|LOG_DEBUG,"[SMP] Secondary CPU!\n");
@@ -803,7 +803,8 @@ cpu_sendipc_unlocked(struct cpu *__restrict self, irq_t intno) {
   code[0] = 0xcd; /* `int ...' */
   code[1] = intno;
   code[2] = 0xc3; /* 'ret' */
-  __asm__ __volatile__("call *%0\n" : : "m" (code[0]) : "memory");
+  COMPILER_WRITE_BARRIER();
+  __asm__ __volatile__("call *%0\n" : : "m" (*code));
   error = -EOK;
  } else {
   error = apic_exec_ipc(intno,SET_APIC_DEST_FIELD(self->c_arch.ac_lapic_id));

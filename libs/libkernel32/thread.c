@@ -777,7 +777,7 @@ DEFINE_INTERN_ALIAS(K32_DecodeSystemPointer,K32_EncodePointer);
 
 
 /* Debug APIs. */
-INTERN void    WINAPI K32_DebugBreak(void) { __asm__ __volatile__("int $3\n" : : : "memory"); }
+INTERN void    WINAPI K32_DebugBreak(void) { __asm__ __volatile__("int $3\n"); }
 INTERN WINBOOL WINAPI K32_IsDebuggerPresent(void) { return FALSE; }
 INTERN WINBOOL WINAPI K32_DebugBreakProcess(HANDLE Process) {
  if unlikely(!HANDLE_IS_PID(Process)) { SET_ERRNO(EBADF); return FALSE; }

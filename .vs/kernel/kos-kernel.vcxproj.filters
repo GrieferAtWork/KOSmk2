@@ -764,5 +764,8 @@
     <ClInclude Include="..\..\src\include\kernel\arch\paging64.h">
       <Filter>include\kernel\arch</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\preemption.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

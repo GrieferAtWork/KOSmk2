@@ -642,7 +642,6 @@ load_keymap_file(struct file *__restrict fp, bool log_errors) {
 #endif
  }
 
-#if 1
  { pflag_t was = PREEMPTION_PUSH(); struct mman *omm;
    TASK_PDIR_KERNEL_BEGIN(omm);
    memcpy((void *)&USERSHARE_WRITABLE(active_keymap),
@@ -650,44 +649,6 @@ load_keymap_file(struct file *__restrict fp, bool log_errors) {
    TASK_PDIR_KERNEL_END(omm);
    PREEMPTION_POP(was);
  }
-#else
- /* Now it gets ugly.
-  * >> Because `active_keymap' is mapped as read-only in user-space,
-  *    it had to be mapped the same way in kernel-space, too.
-  *    But unlike other things that are mapped the same way,
-  *    attempting to write here will not (and should not) act
-  *    similar to how copy-on-write works.
-  * >> Instead, changes here _are_ intended to be global immediatly!
-  * NOTE: Other places that work with user-share memory don't run
-  *       into this problem, because they're executed before paging
-  *       is initialized and protecting user-share data. */
-#if 0 /* FIXME: This works, but once finished, real hardware gets super laggy? */
- { register uintptr_t temp;
-   __asm__ __volatile__("pushf\n"
-                        "cli\n" /* Make sure no one else is affected by us breaking the rules. */
-                        "movl %%cr0, %0\n"
-                        "andl $" PP_STR(~CR0_WP) ", %0\n" /* Disable write-protect */
-                        "movl %0, %%cr0\n"
-#if (KEYMAP_SIZEOF % 4) == 0
-                        "rep movsl\n"
-#else
-                        "rep movsb\n"
-#endif
-                        "orl $" PP_STR(~CR0_WP) ", %0\n" /* Re-enable write-protect */
-                        "movl %0, %%cr0\n"
-                        "popf\n" /* Restore EFLAGS (including the #IF) */
-                        : "=r" (temp)
-                        : "S" (buffer)
-                        , "D" (&active_keymap)
-#if (KEYMAP_SIZEOF % 4) == 0
-                        , "c" (KEYMAP_SIZEOF/4)
-#else
-                        , "c" (KEYMAP_SIZEOF)
-#endif
-                        : "memory");
- }
-#endif
-#endif
  syslog(LOG_IO|LOG_INFO,"[KEYMAP] Loaded new keymap from `%[file]'\n",fp);
 
  /* Cleanup... */

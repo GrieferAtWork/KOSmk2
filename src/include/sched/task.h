@@ -36,10 +36,7 @@ DECL_BEGIN
 #define __TASK_SWITCH_LDT(old,new) \
     if ((old)->t_arch.at_ldt_gdt != \
         (new)->t_arch.at_ldt_gdt) { \
-     __asm__ __volatile__("lldt %0\n" \
-                          : \
-                          : "g" ((new)->t_arch.at_ldt_gdt) \
-                          : "memory"); \
+     __asm__ __volatile__("lldt %0\n" : : "g" ((new)->t_arch.at_ldt_gdt)); \
     }
 #endif
 
@@ -67,10 +64,7 @@ DECL_BEGIN
 do{ struct mman *const new_mm = (new)->t_mman; \
     if ((old)->t_mman != new_mm) { \
      /* Switch page directories. */ \
-     __asm__ __volatile__("movl %0, %%cr3\n" \
-                          : \
-                          : "r" (new_mm->m_ppdir) \
-                          : "memory"); \
+     PDIR_STCURR(new_mm->m_ppdir); \
      /* Switch LDT descriptors. (NOTE: Must always \
       * be equal within the same page-directory) */ \
      __TASK_SWITCH_LDT(old,new) \
@@ -394,7 +388,7 @@ FUNDEF errno_t KCALL task_set_priority(struct task *__restrict self,
 
 #ifndef __pflag_t_defined
 #define __pflag_t_defined 1
-typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
+typedef register_t pflag_t; /* Push+disable/Pop preemption-enabled. */
 #endif
 
 

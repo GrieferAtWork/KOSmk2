@@ -186,7 +186,6 @@ __LOCAL __ATTR_CONST __WUNUSED ldiv_t __NOTHROW((__LIBCCALL ldiv)(long __numer, 
 __LOCAL __ATTR_CONST __WUNUSED __LONGLONG __NOTHROW((__LIBCCALL llabs)(__LONGLONG __x)) { return __x < 0 ? -__x : __x; }
 __LOCAL __ATTR_CONST __WUNUSED lldiv_t __NOTHROW((__LIBCCALL lldiv)(__LONGLONG __numer, __LONGLONG __denom)) { lldiv_t __res; __res.quot = __numer/__denom; __res.rem  = __numer%__denom; return __res; }
 #endif /* __USE_ISOC99 */
-
 #else /* __KERNEL__ */
 #if defined(__CORRECT_ISO_CPP_STDLIB_H_PROTO) && 0
 extern "C++" {
@@ -207,6 +206,10 @@ __LIBC __ATTR_CONST __WUNUSED ldiv_t __NOTHROW((__LIBCCALL ldiv)(long __numer, l
 __LIBC __ATTR_CONST __WUNUSED __LONGLONG __NOTHROW((__LIBCCALL llabs)(__LONGLONG __x));
 __LIBC __ATTR_CONST __WUNUSED lldiv_t __NOTHROW((__LIBCCALL lldiv)(__LONGLONG __numer, __LONGLONG __denom));
 #endif /* __USE_ISOC99 */
+#ifdef _MSC_VER
+#pragma intrinsic(abs)
+#pragma intrinsic(labs)
+#endif
 #endif /* !__KERNEL__ */
 __NAMESPACE_STD_END
 

@@ -25,12 +25,12 @@
 
 DECL_BEGIN
 
-#define __COMMON_REG32_2(n) union PACKED { u32 e##n; u16 n; };
-#define __COMMON_REG32_1(n) union PACKED { u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
+#define __COMMON_REG32_2(n) union PACKED { u32 x##n; u32 e##n; u16 n; };
+#define __COMMON_REG32_1(n) union PACKED { u32 x##n##x; u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
 #ifdef __x86_64__
-#define __COMMON_REG3(n)                u64 n;
-#define __COMMON_REG2(n) union PACKED { u64 r##n; u32 e##n; u16 n; };
-#define __COMMON_REG1(n) union PACKED { u64 r##n##x; u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
+#define __COMMON_REG3(n) union PACKED { u64 x##n; u64 r##n; }
+#define __COMMON_REG2(n) union PACKED { u64 x##n; u64 r##n; u32 e##n; u16 n; };
+#define __COMMON_REG1(n) union PACKED { u64 x##n##x; u64 r##n##x; u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
 #else
 #define __COMMON_REG2(n) __COMMON_REG32_2(n)
 #define __COMMON_REG1(n) __COMMON_REG32_1(n)
@@ -46,14 +46,14 @@ DECL_BEGIN
 #ifdef __CC__
 struct PACKED gpregs {
 #ifdef __x86_64__
- __COMMON_REG3(r15)
- __COMMON_REG3(r14)
- __COMMON_REG3(r13)
- __COMMON_REG3(r12)
- __COMMON_REG3(r11)
- __COMMON_REG3(r10)
- __COMMON_REG3(r9)
- __COMMON_REG3(r8)
+ __COMMON_REG3(15)
+ __COMMON_REG3(14)
+ __COMMON_REG3(13)
+ __COMMON_REG3(12)
+ __COMMON_REG3(11)
+ __COMMON_REG3(10)
+ __COMMON_REG3(9)
+ __COMMON_REG3(8)
 #endif
  __COMMON_REG2(di)
  __COMMON_REG2(si)

@@ -218,15 +218,13 @@ LOCAL void FCALL pdir_flushall(void) {
  register u32 temp;
  __asm__ __volatile__("movq %%cr3, %0\n"
                       "movq %0, %%cr3\n"
-                      : "=r" (temp)
-                      :
-                      : "memory");
+                      : "=&r" (temp)/* : : "memory"*/);
 }
 
 /* Get/Set the currently active page directory.
  * NOTE: These functions work with PHYS pointers! */
 #define PDIR_GTCURR()  XBLOCK({ register PHYS pdir_t *_r; __asm__ __volatile__("movq %%cr3, %0" : "=r" (_r)); XRETURN _r; })
-#define PDIR_STCURR(v) XBLOCK({ __asm__ __volatile__("movq %0, %%cr3" : : "r" (v)); (void)0; })
+#define PDIR_STCURR(v) XBLOCK({ __asm__ __volatile__("movq %0, %%cr3" : : "r" (v)/* : "memory"*/); (void)0; })
 #if PDIR_OFFSETOF_DIRECTORY != 0
 #error "Fix the above macros"
 #endif

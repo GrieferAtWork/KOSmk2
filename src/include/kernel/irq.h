@@ -327,30 +327,14 @@ INTDEF PERCPU struct IDT cpu_idt;
 #endif
 
 
-#define __ASM_PUSH_SEGMENTS \
-    pushw %ds; \
-    pushw %es; \
-    pushw %fs; \
-    pushw %gs;
-#define __ASM_POP_SEGMENTS \
-    popw  %gs; \
-    popw  %fs; \
-    popw  %es; \
-    popw  %ds;
-#define __PUSH_SEGMENTS \
-    "pushw %ds\n" \
-    "pushw %es\n" \
-    "pushw %fs\n" \
-    "pushw %gs\n"
-#define __POP_SEGMENTS \
-    "popw  %gs\n" \
-    "popw  %fs\n" \
-    "popw  %es\n" \
-    "popw  %ds\n"
-#define __ASM_PUSH_REGISTERS pushal;
-#define __ASM_POP_REGISTERS  popal;
-#define __PUSH_REGISTERS "pushal\n"
-#define __POP_REGISTERS  "popal\n"
+#define __ASM_PUSH_SEGMENTS  __ASM_PUSH_SREGS
+#define __ASM_POP_SEGMENTS   __ASM_POP_SREGS
+#define __PUSH_SEGMENTS      PP_STR(__ASM_PUSH_SREGS)
+#define __POP_SEGMENTS       PP_STR(__ASM_POP_SREGS)
+#define __ASM_PUSH_REGISTERS __ASM_PUSH_GPREGS
+#define __ASM_POP_REGISTERS  __ASM_POP_GPREGS
+#define __PUSH_REGISTERS     PP_STR(__ASM_PUSH_GPREGS)
+#define __POP_REGISTERS      PP_STR(__ASM_POP_GPREGS)
 
 #ifdef __x86_64__
 #define __ASM_LOAD_SEGMENTS(temp) \

@@ -138,10 +138,7 @@ PRIVATE ATTR_USED void FCALL syscall_leave(void) {
   { struct idt_pointer p;
     p.ip_idt   = CPU(cpu_idt).i_vector;
     p.ip_limit = sizeof(cpu_idt.i_vector);
-    __asm__ __volatile__("lidt %0\n"
-                         :
-                         : "g" (p)
-                         : "memory");
+    __asm__ __volatile__("lidt %0\n" : : "m" (p));
   }
   { struct idtentry e;
     e = CPU(cpu_idt).i_vector[0x80];

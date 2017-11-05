@@ -1735,7 +1735,8 @@ priv_scandata(void *start, u32 dword, size_t n_bytes) {
                       , "=g" (is_ok)
                       : "a" (dword)
                       , "c" ((end-iter)/4)
-                      : "memory");
+                      , "m" (*(struct { __extension__ u32 val[n_bytes]; } *)start)
+                      : "cc");
  if (!is_ok) {
   iter -= 4;
   assert(*(u32 *)iter != dword);
@@ -2677,24 +2678,45 @@ mptr_setup(struct mptr *__restrict self,
        *    of the traceback (it is either corrupted, was customized, or has terminated) */
       __asm__ __volatile__("    \n"
                            /* BEGIN_EXCEPTION_HANDLER(EXC_PAGE_FAULT) */
+#ifdef __x86_64__
+                           "    pushq $3f\n"
+                           "    pushq $" PP_STR(EXC_PAGE_FAULT) "\n"
+                           "    pushq " PP_STR(TASK_OFFSETOF_IC) "(%[task])\n"
+                           "    movq  %%esp, " PP_STR(TASK_OFFSETOF_IC) "(%[task])\n"
+                           "    \n"
+                           "1:  testq %[frame], %[frame]\n"    /* >> if (!frame) break; */
+                           "    jz    2f\n"
+                           "    movq  8(%[frame]), %[temp]\n"  /* >> *iter++ = frame->f_return; */
+                           "    movq  %[temp], 0(%[iter])\n"
+                           "    addq  $8, %[iter]\n"
+                           "    subq  $1, %[size]\n"           /* >> if (!--size) break; */
+                           "    jz    2f\n"
+                           "    movq  0(%[frame]), %[frame]\n" /* >> frame = frame->f_return; */
+                           "    jmp   1b\n"                    /* >> continue; */
+                           /* END_EXCEPTION_HANDLER(EXC_PAGE_FAULT) */
+                           "2:  popq  " PP_STR(TASK_OFFSETOF_IC) "(%[task])\n"
+                           "    addq  $16, %%esp\n"
+                           "3:  \n" /* This is where execution jumps when something went wrong. */
+#else
                            "    pushl $3f\n"
                            "    pushl $" PP_STR(EXC_PAGE_FAULT) "\n"
                            "    pushl " PP_STR(TASK_OFFSETOF_IC) "(%[task])\n"
                            "    movl  %%esp, " PP_STR(TASK_OFFSETOF_IC) "(%[task])\n"
                            "    \n"
-                           "1:  test %[frame], %[frame]\n"    /* >> if (!frame) break; */
-                           "    jz   2f\n"
-                           "    movl 4(%[frame]), %[temp]\n"  /* >> *iter++ = frame->f_return; */
-                           "    movl %[temp], 0(%[iter])\n"
-                           "    addl $4, %[iter]\n"
-                           "    sub  $1, %[size]\n"           /* >> if (!--size) break; */
-                           "    jz   2f\n"
-                           "    movl 0(%[frame]), %[frame]\n" /* >> frame = frame->f_return; */
-                           "    jmp  1b\n"                    /* >> continue; */
+                           "1:  testl %[frame], %[frame]\n"    /* >> if (!frame) break; */
+                           "    jz    2f\n"
+                           "    movl  4(%[frame]), %[temp]\n"  /* >> *iter++ = frame->f_return; */
+                           "    movl  %[temp], 0(%[iter])\n"
+                           "    addl  $4, %[iter]\n"
+                           "    subl  $1, %[size]\n"           /* >> if (!--size) break; */
+                           "    jz    2f\n"
+                           "    movl  0(%[frame]), %[frame]\n" /* >> frame = frame->f_return; */
+                           "    jmp   1b\n"                    /* >> continue; */
                            /* END_EXCEPTION_HANDLER(EXC_PAGE_FAULT) */
-                           "2:  popl " PP_STR(TASK_OFFSETOF_IC) "(%[task])\n"
-                           "    addl $8, %%esp\n"
+                           "2:  popl  " PP_STR(TASK_OFFSETOF_IC) "(%[task])\n"
+                           "    addl  $8, %%esp\n"
                            "3:  \n" /* This is where execution jumps when something went wrong. */
+#endif
                            : [iter]  "+D" (iter)
                            , [size]  "+c" (tail_size)
                            , [temp]  "=a" (temp)

@@ -19,6 +19,7 @@
 #ifndef __GUARD_HYBRID_MALLOC_H
 #define __GUARD_HYBRID_MALLOC_H 1
 
+#include <__stdinc.h>
 #include <hybrid/typecore.h>
 #include <bits/types.h>
 #include <features.h>
@@ -30,6 +31,8 @@
 
 #ifdef __CC__
 __SYSDECL_BEGIN
+
+/* TODO: Transfer to /include/libc/malloc.h */
 
 __REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC,
            void *,__LIBCCALL,__libc_malloc,(__SIZE_TYPE__ __n_bytes),malloc,(__n_bytes))

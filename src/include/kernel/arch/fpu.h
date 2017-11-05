@@ -23,12 +23,11 @@
 #ifndef CONFIG_NO_FPU
 #include <hybrid/typecore.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 #include <hybrid/arch/eflags.h>
-#endif /* !CONFIG_NO_LDT */
 
 DECL_BEGIN
 
-#ifndef CONFIG_NO_FPU
 #define FPUSTATE_SIZE  512
 #define FPUSTATE_ALIGN 16
 
@@ -40,16 +39,16 @@ struct fpu_reg {
  u8 f_pad[6];
 };
 
-#define FPUSTATE_LOAD(s)   __asm__ __volatile__("fxrstor (%0)" : : "r" (s) : "memory")
-#define FPUSTATE_SAVE(s)   __asm__ __volatile__("fxsave (%0)" : : "r" (s) : "memory")
-#define FPUSTATE_INIT()    __asm__ __volatile__("fninit" : : : "memory")
-#define FPUSTATE_ENABLE()  __asm__ __volatile__("clts" : : : "memory")
+#define FPUSTATE_LOAD(s)   __asm__ __volatile__("fxrstor %0" : : "m" (*(struct fpustate *)&(s)))
+#define FPUSTATE_SAVE(s)   __asm__ __volatile__("fxsave %0" : "=m" (*(struct fpustate *)&(s)))
+#define FPUSTATE_INIT()    __asm__ __volatile__("fninit")
+#define FPUSTATE_ENABLE()  __asm__ __volatile__("clts")
 #define FPUSTATE_DISABLE() \
- XBLOCK({ register u32 _temp; \
-          __asm__ __volatile__("movl %%cr0, %0\n" \
-                               "orl  $(" __PP_STR(CR0_TS) "), %0\n" \
-                               "movl %0, %%cr0\n" \
-                               : "=r" (_temp) : : "memory"); \
+ XBLOCK({ register register_t _temp; \
+          __asm__ __volatile__("mov %%cr0, %0\n" \
+                               "or  $(" __PP_STR(CR0_TS) "), %0\n" \
+                               "mov %0, %%cr0\n" \
+                               : "=r" (_temp)); \
           (void)0; })
 
 ATTR_ALIGNED(FPUSTATE_ALIGN)
@@ -90,8 +89,9 @@ struct task;
 DATDEF PERCPU struct task *fpu_current;
 
 #endif /* __CC__ */
-#endif /* !CONFIG_NO_FPU */
 
 DECL_END
+
+#endif /* !CONFIG_NO_FPU */
 
 #endif /* !GUARD_INCLUDE_KERNEL_ARCH_FPU_H */

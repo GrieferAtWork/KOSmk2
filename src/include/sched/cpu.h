@@ -21,11 +21,17 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 #include <sched/percpu.h>
 #include <sched/types.h>
 #include <stdbool.h>
+#include <kernel/arch/preemption.h>
 
 DECL_BEGIN
+
+#ifndef cpu_relax
+#define cpu_relax() (void)0
+#endif
 
 /* CPU locking control.
  * NOTE: To prevent dead-locks when a hardware-interrupt
@@ -81,25 +87,6 @@ FUNDEF struct cpu *KCALL cpu_get_suitable(__cpu_set_t const *__restrict affinity
 #else
 #define cpu_get_suitable(affinity)       (&__bootcpu)
 #endif
-
-
-/* Thread/CPU-local preemption control. */
-#define PREEMPTION_ENABLE()  XBLOCK({ __asm__ __volatile__("sti" : : : "memory"); (void)0; })
-#define PREEMPTION_DISABLE() XBLOCK({ __asm__ __volatile__("cli" : : : "memory"); (void)0; })
-#define PREEMPTION_ENABLED() XBLOCK({ u32 _efl; __asm__ __volatile__("pushfl\npopl %0" : "=g" (_efl)); XRETURN !!(_efl&0x00000200); })
-#define PREEMPTION_IDLE()    XBLOCK({ __asm__ __volatile__("hlt\n" : : : "memory"); })
-#define PREEMPTION_FREEZE()  XBLOCK({ __asm__ __volatile__("1: cli\nhlt\njmp 1b" : : : "memory"); __builtin_unreachable(); (void)0; })
-
-/* Relax the calling CPU. */
-#define cpu_relax()   XBLOCK({ __asm__("pause"); (void)0; })
-
-#ifndef __pflag_t_defined
-#define __pflag_t_defined 1
-typedef u32 pflag_t; /* Push+disable/Pop preemption-enabled. */
-#endif
-#define PREEMPTION_PUSH()   XBLOCK({ register pflag_t _r; __asm__ __volatile__("pushfl\npopl %0\ncli" : "=g" (_r)); XRETURN _r; })
-#define PREEMPTION_PUSHON() XBLOCK({ register pflag_t _r; __asm__ __volatile__("pushfl\npopl %0\nsti" : "=g" (_r)); XRETURN _r; })
-#define PREEMPTION_POP(f)   XBLOCK({ __asm__ __volatile__("pushl %0\npopfl\n" : : "g" (f) : "memory", "cc"); (void)0; })
 
 /* Special CPU ID reserved for the boot CPU. */
 #define CPUID_BOOTCPU 0 /* NOTE: Always ZERO(0). */

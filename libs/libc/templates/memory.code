@@ -102,13 +102,13 @@
 #ifdef __x86_64__
 #define CHECK_DF() \
 {	register u64 temp; \
-	__asm__ __volatile__("pushfq\npopq %0\n" : "=g" (temp) : : "memory"); \
+	__asm__ __volatile__("pushfq\npopq %0\n" : "=g" (temp)); \
 	assertf(!(temp&EFLAGS_DF),"Direction flag is set (%x)\n",temp); \
 }
 #else
 #define CHECK_DF() \
 {	register u32 temp; \
-	__asm__ __volatile__("pushfl\npopl %0\n" : "=g" (temp) : : "memory"); \
+	__asm__ __volatile__("pushfl\npopl %0\n" : "=g" (temp)); \
 	assertf(!(temp&EFLAGS_DF),"Direction flag is set (%x)\n",temp); \
 }
 #endif
@@ -146,11 +146,9 @@ FORCELOCAL void *LIBCCALL X(core_memcpy)
 #if (defined(__i386__) || defined(__x86_64__)) && \
 	(defined(CONFIG_NATIVE_64BIT_STRING) || S < 8)
 		__asm__ __volatile__("rep; movs" W "\n"
-		                     :
-		                     : "D" (dst)
-		                     , "S" (src)
-		                     , "c" (WM(n))
-		                     : "memory");
+		                     : "=m" (*(struct { __extension__ T val[n]; } *)dst)
+		                     : "D" (dst), "S" (src), "c" (WM(n))
+		                     , "m" (*(struct { __extension__ T val[n]; } *)src));
 		return dst;
 #endif
 	}
@@ -193,10 +191,9 @@ FORCELOCAL void *LIBCCALL X(core_mempcpy)
 #if (defined(__i386__) || defined(__x86_64__)) && \
 	(defined(CONFIG_NATIVE_64BIT_STRING) || S < 8)
 		__asm__ __volatile__("rep; movs" W "\n"
-		                     : "+D" (dst)
-		                     : "S" (src)
-		                     , "c" (WM(n))
-		                     : "memory");
+		                     : "+D" (dst), "=m" (*(struct { __extension__ T val[n]; } *)dst)
+		                     : "S" (src), "m" (*(struct { __extension__ T val[n]; } *)src)
+		                     , "c" (WM(n)));
 		return dst;
 #endif
 	}
@@ -279,15 +276,14 @@ DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
 	(defined(CONFIG_NATIVE_64BIT_STRING) || S < 8)
 		CHECK_DF();
 		__asm__ __volatile__("rep; stos" W "\n"
-		                     :
+		                     : "=m" (*(struct { __extension__ T val[n]; } *)dst)
 		                     : "D" (dst)
 		                     , "a" (h)
 		                     , "c" (WM(n))
-		                     : "memory"
 #ifdef __x86_64__
-		                     , "rsi"
+		                     : "rsi"
 #else
-		                     , "esi"
+		                     : "esi"
 #endif
 		                     );
 		return dst;
@@ -314,10 +310,10 @@ DECL int LIBCCALL X(libc_memcmp)
 		                     "    mov $-1, %0\n"
 		                     "1:\n"
 		                     : "+a" (result)
-		                     : "D" (a)
-		                     , "S" (b)
-		                     , "c" (WM(n))
-		                     : "memory", "cc");
+		                     : "D" (a), "S" (b), "c" (WM(n))
+		                     , "m" (*(struct { __extension__ T val[n]; } *)a)
+		                     , "m" (*(struct { __extension__ T val[n]; } *)b)
+		                     : "cc");
 		return result;
 #endif
 	}
@@ -355,10 +351,9 @@ DECL vB *LIBCCALL X(libc_memchr)
 	                     "1:  sub $" PP_STR(S) ", %0\n"
 #endif
 	                     : "=a" (result)
-	                     : "D" (haystack)
-	                     , "a" (needle)
-	                     , "c" (WM(n))
-	                     : "memory", "cc");
+	                     : "D" (haystack), "a" (needle), "c" (WM(n))
+	                     , "m" (*(struct { __extension__ T val[n]; } *)haystack)
+	                     : "cc");
 	return result;
 #else
 	T *iter,*end;

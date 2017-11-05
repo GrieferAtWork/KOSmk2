@@ -142,11 +142,10 @@ gdt_set(segid_t id, struct segment seg,
  }
 
  GDT_SEGMENT(id) = seg;
+ COMPILER_WRITE_BARRIER();
+
  /* Reload the GDT table, thus forcing changes to become effective. */
- __asm__ __volatile__("lgdt %0\n"
-                      :
-                      : "g" (GDT)
-                      : "memory");
+ __asm__ __volatile__("lgdt %0\n" : : "g" (GDT));
  PREEMPTION_POP(was);
  return -EOK;
 }

@@ -816,9 +816,7 @@ DEFINE_PUBLIC_ALIAS(__p__crtDbgFlag,libc_dos_p_crt_dbg_flag);
 DEFINE_PUBLIC_ALIAS(_crtBreakAlloc,libc_dos_crt_break_alloc);
 DEFINE_PUBLIC_ALIAS(_crtDbgFlag,libc_dos_crt_dbg_flag);
 
-INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_crt_dbg_break(void) {
- __asm__ __volatile__("int $3" : : : "memory");
-}
+INTERN ATTR_DOSTEXT void LIBCCALL libc_dos_crt_dbg_break(void) { __asm__ __volatile__("int $3\n"); }
 DEFINE_PUBLIC_ALIAS(_CrtDbgBreak,libc_dos_crt_dbg_break);
 INTERN ATTR_DOSTEXT int LIBCCALL libc_dos_crt_set_report_mode(int type, int mode) { NOT_IMPLEMENTED(); return 0; }
 DEFINE_PUBLIC_ALIAS(_CrtSetReportMode,libc_dos_crt_set_report_mode);

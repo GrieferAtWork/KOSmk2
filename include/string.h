@@ -233,17 +233,34 @@ __OPT_LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL memmove)(void *
 #endif /* !__std_memmove_defined */
 #ifndef __std_strlen_defined
 #define __std_strlen_defined 1
+#if defined(_MSC_VER) || (defined(__NO_opt_strlen) || !defined(__OPTIMIZE_LIBC__))
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strlen)(char const *__restrict __s);
+#ifdef _MSC_VER
+#pragma intrinsic(strlen)
+#endif
+#else /* Builtin... */
+__OPT_LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strlen)(char const *__restrict __s) { return __opt_strlen(__s); }
+#ifdef __opt_strlen_needs_macro
+#define strlen(s)  __opt_strlen(s)
+#endif /* __opt_strlen_needs_macro */
+#endif /* Optimized... */
 #endif /* !__std_strlen_defined */
-#ifdef __OPTIMIZE_LIBC__
+#if defined(__OPTIMIZE_LIBC__) && !defined(_MSC_VER)
 __OPT_LOCAL __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memset)(void *__dst, int __byte, size_t __n_bytes) { return __local_memset(__dst,__byte,__n_bytes); }
 __OPT_LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcmp)(void const *__a, void const *__b, size_t __n_bytes) { return __local_memcmp(__a,__b,__n_bytes); }
 #else /* __OPTIMIZE_LIBC__ */
 __LIBC __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL memset)(void *__dst, int __byte, size_t __n_bytes);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL memcmp)(void const *__a, void const *__b, size_t __n_bytes);
+#ifdef _MSC_VER
+#pragma intrinsic(memset)
+#pragma intrinsic(memcmp)
+#endif
 #endif /* !__OPTIMIZE_LIBC__ */
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strcmp)(char const *__s1, char const *__s2);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL strncmp)(char const *__s1, char const *__s2, size_t __n);
+#ifdef _MSC_VER
+#pragma intrinsic(strcmp)
+#endif
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strstr)(char const *__haystack, char const *__needle);
 __NAMESPACE_STD_END
 
@@ -279,6 +296,10 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL strcspn)(char c
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) size_t (__LIBCCALL strspn)(char const *__s, char const *__accept);
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1,2)) char *(__LIBCCALL strpbrk)(char const *__s, char const *__accept);
 __LIBC __NONNULL((2)) char *(__LIBCCALL strtok)(char *__restrict __s, char const *__restrict __delim);
+#ifdef _MSC_VER
+#pragma intrinsic(strcpy)
+#pragma intrinsic(strcat)
+#endif
 __NAMESPACE_STD_END
 #ifndef __CXX_SYSTEM_HEADER
 __NAMESPACE_STD_USING(strcpy)
@@ -1452,7 +1473,14 @@ __REDIRECT(__LIBC,__ATTR_PURE __PORT_DOSONLY __NONNULL((1,2)),int,__LIBCCALL,str
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strlwr,(char *__restrict __str),_strlwr,(__str))
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strnset,(char *__restrict __str, int __char, size_t __max_chars),_strnset,(__str,__char,__max_chars))
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strrev,(char *__restrict __str),_strrev,(__str))
+#ifdef _MSC_VER
+#define ___strset_defined 1
+__LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strset)(char *__restrict __str, int __char);
+#pragma intrinsic(_strset)
+#define strset  _strset
+#else
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strset,(char *__restrict __str, int __char),_strset,(__str,__char))
+#endif
 __REDIRECT(__LIBC,__PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)),char *,__LIBCCALL,strupr,(char *__restrict __str),_strupr,(__str))
 #endif /* (__USE_KOS || __USE_DOS) && __CRT_DOS */
 
@@ -1480,7 +1508,13 @@ int (__LIBCCALL _memicmp_l)(void const *__a, void const *__b,
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strlwr)(char *__restrict __str);
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strnset)(char *__restrict __str, int __char, size_t __max_chars);
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strrev)(char *__restrict __str);
+#ifndef ___strset_defined
+#define ___strset_defined 1
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strset)(char *__restrict __str, int __char);
+#ifdef _MSC_VER
+#pragma intrinsic(_strset)
+#endif /* _MSC_VER */
+#endif /* !___strset_defined */
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strupr)(char *__restrict __str);
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strlwr_l)(char *__restrict __str, __locale_t __locale);
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strupr_l)(char *__restrict __str, __locale_t __locale);

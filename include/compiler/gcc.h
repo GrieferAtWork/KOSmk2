@@ -431,18 +431,18 @@ __extension__ typedef unsigned long long __ulonglong_t;
 #define __FUNCTION__   __extension__ __FUNCTION__
 #endif
 
-#if 1
-#define __COMPILER_BARRIER()       __atomic_signal_fence(__ATOMIC_ACQ_REL)
-#define __COMPILER_READ_BARRIER()  __atomic_signal_fence(__ATOMIC_ACQUIRE)
-#define __COMPILER_WRITE_BARRIER() __atomic_signal_fence(__ATOMIC_RELEASE)
-#elif 1
-#define __COMPILER_BARRIER()       __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
-#define __COMPILER_READ_BARRIER()  __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
-#define __COMPILER_WRITE_BARRIER() __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
+#if __GCC_VERSION(4,7,0)
+#   define __COMPILER_BARRIER()       __atomic_signal_fence(__ATOMIC_ACQ_REL)
+#   define __COMPILER_READ_BARRIER()  __atomic_signal_fence(__ATOMIC_ACQUIRE)
+#   define __COMPILER_WRITE_BARRIER() __atomic_signal_fence(__ATOMIC_RELEASE)
+#elif defined(__COMPILER_HAVE_GCC_ASM)
+#   define __COMPILER_BARRIER()       __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
+#   define __COMPILER_READ_BARRIER()  __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
+#   define __COMPILER_WRITE_BARRIER() __XBLOCK({ __asm__ __volatile__("" : : : "memory"); (void)0; })
 #else
-#define __COMPILER_BARRIER()       __sync_synchronize()
-#define __COMPILER_READ_BARRIER()  __sync_synchronize()
-#define __COMPILER_WRITE_BARRIER() __sync_synchronize()
+#   define __COMPILER_BARRIER()       __sync_synchronize()
+#   define __COMPILER_READ_BARRIER()  __sync_synchronize()
+#   define __COMPILER_WRITE_BARRIER() __sync_synchronize()
 #endif
 
 #ifdef __cplusplus

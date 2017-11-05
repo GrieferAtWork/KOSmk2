@@ -357,8 +357,8 @@ struct irqname const irq_excname[32] = {
 PRIVATE ATTR_UNUSED ATTR_COLDTEXT void KCALL
 print_segment_register(char const *__restrict name, u16 value) {
  struct idt_pointer idt; size_t entry_count,entry_id;
- if (value&4) __asm__ __volatile__("sldt %0" : : "m" (idt) : "memory");
- else         __asm__ __volatile__("sgdt %0" : : "m" (idt) : "memory");
+ if (value&4) __asm__ __volatile__("sldt %0" : : "m" (idt));
+ else         __asm__ __volatile__("sgdt %0" : : "m" (idt));
  entry_id = (value&~7) >> 3;
  debug_printf("%s %.4X (%s:%.2d RPL#%d - ",
                     name,value,(value&4) ? "LDT" : "GDT",
@@ -730,8 +730,8 @@ done_stack:
 #if IRQPANIC_DISP_GDT_LDT
  { struct idt_pointer dt; int i;
    for (i = 0; i < 2; ++i) {
-    if (i) __asm__ __volatile__("sgdt %0\n" : : "m" (dt) : "memory");
-    else   __asm__ __volatile__("sldt %0\n" : : "m" (dt) : "memory");
+    if (i) __asm__ __volatile__("sgdt %0\n" : : "m" (dt));
+    else   __asm__ __volatile__("sldt %0\n" : : "m" (dt));
     if (dt.ip_limit) {
      struct segment *iter,*end,seg;
      char const *name = i ? "gdt" : "ldt";
@@ -909,10 +909,7 @@ INTERN ATTR_FREETEXT void KCALL irq_initialize(void) {
  /* Load the interrupt descriptor table and enable interrupts for the first time! */
  idt.ip_idt   = VCPU(&__bootcpu,cpu_idt).i_vector;
  idt.ip_limit = sizeof(cpu_idt.i_vector);
- __asm__ __volatile__("lidt %0\n"
-                      :
-                      : "g" (idt)
-                      : "memory");
+ __asm__ __volatile__("lidt %0\n" : : "m" (idt));
 }
 
 PRIVATE void KCALL irq_get_default(isr_t *__restrict handler) {
