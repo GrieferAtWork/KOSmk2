@@ -244,16 +244,18 @@ typedef union {
 
 #if PRINTF_EXTENSION_LONGDESCR
 #define LONGPRINT_NAMEMAX 8
+struct va_cont { va_list args; };
+
 struct longprint {
  char const         lp_name[LONGPRINT_NAMEMAX];
  ssize_t (LIBCCALL *lp_func)(pformatprinter printer, void *closure,
                              char const *cmd, enum printf_length length,
-                             u16 flags, size_t precision, va_list *args);
+                             u16 flags, size_t precision, struct va_cont *args);
 };
 #define LONG_PRINTER(name) \
  PRIVATE ssize_t LIBCCALL name(pformatprinter printer, void *closure, \
                                char const *cmd, enum printf_length length, \
-                               u16 flags, size_t precision, va_list *args)
+                               u16 flags, size_t precision, struct va_cont *args)
 
 #if defined(__KERNEL__) || 1
 #define HAVE_LONGPRINTER_MAC   /*< AA:BB:CC:DD:EE:FF */
@@ -278,7 +280,7 @@ LONG_PRINTER(fdpath_printer);
 
 #ifdef HAVE_LONGPRINTER_MAC
 LONG_PRINTER(mac_printer) {
- u8 *bytes = va_arg(*args,u8 *);
+ u8 *bytes = va_arg(args->args,u8 *);
  char buffer[64],*iter = buffer; size_t n = 6;
  while (n--) iter += libc_sprintf(iter,"%.2I8X:",*bytes++);
  return (*printer)(buffer,(size_t)(iter-buffer)-1,closure);
@@ -286,7 +288,7 @@ LONG_PRINTER(mac_printer) {
 #endif
 #ifdef HAVE_LONGPRINTER_IP
 LONG_PRINTER(ip_printer) {
- u8 *bytes = va_arg(*args,u8 *);
+ u8 *bytes = va_arg(args->args,u8 *);
  char buffer[64],*iter = buffer; size_t n = 4;
  while (n--) iter += libc_sprintf(iter,"%I8d.",*bytes++);
  return (*printer)(buffer,(size_t)(iter-buffer)-1,closure);
@@ -294,7 +296,7 @@ LONG_PRINTER(ip_printer) {
 #endif
 #ifdef HAVE_LONGPRINTER_UNIT
 LONG_PRINTER(unit_printer) {
- fint_t val; FINT_LOAD(val,length,flags,*args);
+ fint_t val; FINT_LOAD(val,length,flags,args->args);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
  if (val.u_32_64[1])
 #else
@@ -320,7 +322,7 @@ LONG_PRINTER(vinfo_printer) {
  char const *flush_start; void *addr;
  char ch,buffer[256]; ssize_t temp,result = 0;
 #define VI  (*(struct virtinfo *)buffer)
- addr = va_arg(*args,void *);
+ addr = va_arg(args->args,void *);
 #ifdef __KERNEL__
  temp = kern_virtinfo(addr,&VI,sizeof(buffer),VIRTINFO_NORMAL);
 #else
@@ -421,7 +423,7 @@ unknown:
  return result;
 #else
  /* It may not be pretty, but it should do the job if our own system fails. */
- return printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : '\n",va_arg(*args,void *));
+ return printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : '\n",va_arg(args->args,void *));
 #endif
 }
 #endif
@@ -454,20 +456,20 @@ PRIVATE struct longprint const ext_printers[] = {
 };
 
 LONG_PRINTER(errno_printer) {
- errno_t error = va_arg(*args,errno_t);
+ errno_t error = va_arg(args->args,errno_t);
  char const *msg = libc_strerror_s(error);
  (void)length,(void)precision,(void)flags;
  if (!msg) return libc_format_printf(printer,closure,"Unknown error %d",error);
  return libc_format_printf(printer,closure,"%s(%s)",libc_strerrorname_s(error),msg);
 }
 LONG_PRINTER(dev_t_printer) {
- dev_t dev = va_arg(*args,dev_t);
+ dev_t dev = va_arg(args->args,dev_t);
  (void)length,(void)precision,(void)flags;
  return libc_format_printf(printer,closure,"%.2x:%.2x",
                            MAJOR(dev),MINOR(dev));
 }
 LONG_PRINTER(hex_printer) {
- void *p = va_arg(*args,void *);
+ void *p = va_arg(args->args,void *);
  (void)length;
  if (!(flags&PRINTF_FLAG_FIXBUF))
        precision = libc_strnlen((char *)p,precision);
@@ -507,7 +509,7 @@ print_dentry_path(pformatprinter printer, void *closure,
  return print_dentry_path_r(printer,closure,entry,root);
 }
 LONG_PRINTER(dentrypath_printer) {
- struct dentry *p = va_arg(*args,struct dentry *);
+ struct dentry *p = va_arg(args->args,struct dentry *);
  (void)length,(void)precision,(void)flags;
 #ifdef PRINTF_EXTENSION_NULLSTRING
  if (!p) return (*printer)(PRINTF_EXTENSION_NULLSTRING,
@@ -517,7 +519,7 @@ LONG_PRINTER(dentrypath_printer) {
  return print_dentry_path(printer,closure,p);
 }
 LONG_PRINTER(filepath_printer) {
- struct file *p = va_arg(*args,struct file *);
+ struct file *p = va_arg(args->args,struct file *);
  (void)length,(void)precision,(void)flags;
 #ifdef PRINTF_EXTENSION_NULLSTRING
  if (!p) return (*printer)(PRINTF_EXTENSION_NULLSTRING,
@@ -529,7 +531,7 @@ LONG_PRINTER(filepath_printer) {
 #else /* __KERNEL__ */
 LONG_PRINTER(fdpath_printer) {
  char buf[256],*bufp; ssize_t result;
- int fd = va_arg(*args,int);
+ int fd = va_arg(args->args,int);
  (void)length,(void)precision,(void)flags;
  bufp = libc_xfdname(fd,FDNAME_PATH,buf,sizeof(buf));
  if (!bufp) bufp = libc_xfdname(fd,FDNAME_PATH,NULL,0);
@@ -647,7 +649,7 @@ use_precision:
 #endif
      precision = (size_t)va_arg(args,unsigned int); /* Technically int, but come on... */
 #if PRINTF_EXTENSION_DOTQUESTION && (__SIZEOF_INT__ != __SIZEOF_SIZE_T__)
-have_precision:
+have_precision:;
 #endif
     } else if (ch >= '0' && ch <= '9') {
      for (;;) {
@@ -903,7 +905,8 @@ quote_string:
           printers->lp_func; ++printers) {
       if (!libc_memcmp(printers->lp_name,format,format_len)) {
        temp = (*printers->lp_func)(printer,closure,cmd,length,
-                                   flags,precision,&args);
+                                   flags,precision,
+                                  (struct va_cont *)&args);
        if (temp < 0) return temp;
        result += temp;
        format = cmd;

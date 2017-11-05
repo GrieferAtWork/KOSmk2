@@ -709,15 +709,15 @@ __LIBC __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) void *(__LIBCCALL 
 #ifndef __KERNEL__
 #if defined(__CRT_GLC) && defined(__GLC_COMPAT__)
 /* Implement using `asprintf' */
-__REDIRECT(__LIBC,,__ssize_t,__LIBCCALL,__libc_vasprintf,(char **__restrict __pstr, char const *__restrict __format, __VA_LIST __args),vasprintf,(__ptr,__format,__args))
+__REDIRECT(__LIBC,,__ssize_t,__LIBCCALL,__libc_vasprintf,(char **__restrict __pstr, char const *__restrict __format, __builtin_va_list __args),vasprintf,(__ptr,__format,__args))
 __LOCAL __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
-char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
+char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __builtin_va_list __args) {
     char *__result;
     return __libc_vasprintf(&__result,__format,__args) >= 0 ? __result : 0;
 }
 __LOCAL __ATTR_LIBC_PRINTF(1,2) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...) {
-    char *__result; __VA_LIST __args; __builtin_va_start(__args,__format);
+    char *__result; __builtin_va_list __args; __builtin_va_start(__args,__format);
     __result = vstrdupf(__format,__args);
     __builtin_va_end(__args);
     return __result;
@@ -729,14 +729,14 @@ __SYSDECL_END
 __SYSDECL_BEGIN
 #ifndef ____dos_vscprintf_defined
 #define ____dos_vscprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __VA_LIST __args),_vscprintf,(__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __builtin_va_list __args),_vscprintf,(__format,__args))
 #endif /* !____dos_vsnprintf_defined */
 #ifndef ____libc_vsprintf_defined
 #define ____libc_vsprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __builtin_va_list __args),vsprintf,(__buf,__format,__args))
 #endif /* !____libc_vsprintf_defined */
 __LOCAL __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
-char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
+char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __builtin_va_list __args) {
     int __resultlen = __dos_vscprintf(__format,__args);
     char *__result = __resultlen >= 0 ? (char *)__hybrid_malloc((__resultlen+1)*sizeof(char)) : 0;
     if (__result) __libc_vsprintf(__result,__format,__args);
@@ -744,7 +744,7 @@ char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args) {
 }
 __LOCAL __ATTR_LIBC_PRINTF(1,2) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC
 char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...) {
-    char *__result; __VA_LIST __args; __builtin_va_start(__args,__format);
+    char *__result; __builtin_va_list __args; __builtin_va_start(__args,__format);
     __result = vstrdupf(__format,__args);
     __builtin_va_end(__args);
     return __result;
@@ -752,7 +752,7 @@ char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...) {
 #else /* ... */
 /* Use actual functions exported from libc. */
 __LIBC __ATTR_LIBC_PRINTF(1,2) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__ATTR_CDECL strdupf)(char const *__restrict __format, ...);
-__LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __VA_LIST __args);
+__LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL vstrdupf)(char const *__restrict __format, __builtin_va_list __args);
 #endif /* !... */
 #endif /* !__KERNEL__ */
 
@@ -1073,11 +1073,11 @@ __SYSDECL_END
 __SYSDECL_BEGIN
 #ifndef ____dos_vscprintf_defined
 #define ____dos_vscprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __VA_LIST __args),_vscprintf,(__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __builtin_va_list __args),_vscprintf,(__format,__args))
 #endif /* !____dos_vsnprintf_defined */
 #ifndef ____libc_vsprintf_defined
 #define ____libc_vsprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __builtin_va_list __args),vsprintf,(__buf,__format,__args))
 #endif /* !____libc_vsprintf_defined */
 
 #ifndef __NO_ASMNAME
@@ -1101,8 +1101,8 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(sprintf)
 #endif /* !__sprintf_defined */
 #endif /* __NO_ASMNAME */
-__LOCAL __ATTR_LIBC_PRINTF(2,3) char *(__ATTR_CDECL __forward_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) { __VA_LIST __args; __builtin_va_start(__args,__format); __libc_vsprintf(__buf,__format,__args); __builtin_va_end(__args); return __buf; }
-__LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args) { __libc_vsprintf(__buf,__format,__args); return __buf; }
+__LOCAL __ATTR_LIBC_PRINTF(2,3) char *(__ATTR_CDECL __forward_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) { __builtin_va_list __args; __builtin_va_start(__args,__format); __libc_vsprintf(__buf,__format,__args); __builtin_va_end(__args); return __buf; }
+__LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const *__restrict __format, __builtin_va_list __args) { __libc_vsprintf(__buf,__format,__args); return __buf; }
 
 /* Without dedicated Libc functionality, double-evaluation can't be prevented. */
 #define strdupaf(...) \
@@ -1113,7 +1113,7 @@ __LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__re
 #else /* __NO_XBLOCK */
 #define vstrdupaf(format,args) \
   __XBLOCK({ char const *const __format = (format); \
-             __VA_LIST __args = (args); \
+             __builtin_va_list __args = (args); \
              __XRETURN __forward_vsprintf((char *)__ALLOCA(((size_t) \
                        __dos_vscprintf(__format,__args)+1)*sizeof(char)),__format,__args); \
   })
@@ -1126,12 +1126,12 @@ __SYSDECL_BEGIN
 
 #ifndef ____libc_vsprintf_defined
 #define ____libc_vsprintf_defined 1
-__REDIRECT(__LIBC,__ATTR_LIBC_PRINTF(2,0),int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args))
+__REDIRECT(__LIBC,__ATTR_LIBC_PRINTF(2,0),int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __builtin_va_list __args),vsprintf,(__buf,__format,__args))
 #endif /* !____libc_vsprintf_defined */
 
 #ifndef ____libc_vsnprintf_defined
 #define ____libc_vsnprintf_defined 1
-__REDIRECT(__LIBC,__ATTR_LIBC_PRINTF(3,0),int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+__REDIRECT(__LIBC,__ATTR_LIBC_PRINTF(3,0),int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __builtin_va_list __args),vsnprintf,(__buf,__buflen,__format,__args))
 #endif /* !____libc_vsnprintf_defined */
 
 #ifndef __NO_ASMNAME
@@ -1162,8 +1162,8 @@ __NAMESPACE_STD_USING(snprintf)
 #endif /* !__snprintf_defined */
 #endif /* __NO_ASMNAME */
 
-__LOCAL __ATTR_LIBC_PRINTF(2,3) char *(__ATTR_CDECL __forward_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) { __VA_LIST __args; __builtin_va_start(__args,__format); __libc_vsprintf(__buf,__format,__args); __builtin_va_end(__args); return __buf; }
-__LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args) { __libc_vsprintf(__buf,__format,__args); return __buf; }
+__LOCAL __ATTR_LIBC_PRINTF(2,3) char *(__ATTR_CDECL __forward_sprintf)(char *__restrict __buf, char const *__restrict __format, ...) { __builtin_va_list __args; __builtin_va_start(__args,__format); __libc_vsprintf(__buf,__format,__args); __builtin_va_end(__args); return __buf; }
+__LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__restrict __buf, char const *__restrict __format, __builtin_va_list __args) { __libc_vsprintf(__buf,__format,__args); return __buf; }
 
 /* Without dedicated Libc functionality, double-evaluation can't be prevented. */
 #define strdupaf(...) \
@@ -1174,7 +1174,7 @@ __LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__re
 #else /* __NO_XBLOCK */
 #define vstrdupaf(format,args) \
   __XBLOCK({ char const *const __format = (format); \
-             __VA_LIST __args = (args); \
+             __builtin_va_list __args = (args); \
              __XRETURN __forward_vsprintf((char *)__ALLOCA(((size_t) \
                        __libc_snprintf(NULL,0,__format,__args)+1)*sizeof(char)),__format,__args); \
   })
@@ -1197,7 +1197,7 @@ __LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__re
  * >> }
  */
 __LIBC __ATTR_LIBC_PRINTF(1,2) __WUNUSED __ATTR_MALLOC char *(__ATTR_CDECL strdupaf)(char const *__restrict __format, ...);
-__LIBC __ATTR_LIBC_PRINTF(1,0) __WUNUSED __ATTR_MALLOC char *(__LIBCCALL vstrdupaf)(char const *__restrict __format, __VA_LIST __args);
+__LIBC __ATTR_LIBC_PRINTF(1,0) __WUNUSED __ATTR_MALLOC char *(__LIBCCALL vstrdupaf)(char const *__restrict __format, __builtin_va_list __args);
 
 #ifdef __INTELLISENSE__
 #elif defined(__GNUC__)
@@ -1279,7 +1279,7 @@ __LIBC __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL _mempcpyl_d)(void *_
 #endif /* __USE_GNU */
 #ifndef __KERNEL__
 __LIBC __ATTR_LIBC_PRINTF(4,5) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__ATTR_CDECL _strdupf_d)(__DEBUGINFO, char const *__restrict __format, ...);
-__LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _vstrdupf_d)(char const *__restrict __format, __VA_LIST __args, __DEBUGINFO);
+__LIBC __ATTR_LIBC_PRINTF(1,0) __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL _vstrdupf_d)(char const *__restrict __format, __builtin_va_list __args, __DEBUGINFO);
 #endif /* !__KERNEL__ */
 #endif /* __USE_KOS */
 #else /* __USE_DEBUG != 0 */

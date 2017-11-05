@@ -204,7 +204,7 @@ __LIBC int (__LIBCCALL setlogmask)(int __mask);
 
 __LIBC __ATTR_LIBC_PRINTF(2,3) void (__ATTR_CDECL syslog)(int __level, char const *__format, ...);
 #ifdef __USE_MISC
-__LIBC __ATTR_LIBC_PRINTF(2,0) void (__LIBCCALL vsyslog)(int __level, char const *__format, __VA_LIST __args);
+__LIBC __ATTR_LIBC_PRINTF(2,0) void (__LIBCCALL vsyslog)(int __level, char const *__format, __builtin_va_list __args);
 #endif /* __USE_MISC */
 
 #ifdef __USE_KOS

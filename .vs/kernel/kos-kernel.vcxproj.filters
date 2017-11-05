@@ -62,6 +62,12 @@
     <None Include="..\..\src\kernel\linker\boot-module.c.inl">
       <Filter>kernel\linker</Filter>
     </None>
+    <None Include="..\..\src\kernel\core\arch\paging32.c.inl">
+      <Filter>kernel\core\arch</Filter>
+    </None>
+    <None Include="..\..\src\kernel\core\arch\paging64.c.inl">
+      <Filter>kernel\core\arch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -206,9 +212,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core\arch\irq.c">
       <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\paging.c">
-      <Filter>kernel\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\mman\mman.c">
       <Filter>kernel\mman</Filter>
@@ -467,6 +470,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\modules\rtc\cmos.c">
       <Filter>modules\rtc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\paging.c">
+      <Filter>kernel\core\arch</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -751,6 +757,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\version.h">
       <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\paging32.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\paging64.h">
+      <Filter>include\kernel\arch</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -21,6 +21,7 @@
 
 #include <__stdinc.h>
 #include <hybrid/check.h>
+#include <hybrid/host.h>
 
 __SYSDECL_BEGIN
 
@@ -28,11 +29,19 @@ __SYSDECL_BEGIN
 __LIBC void (__LIBCCALL debug_tbprintl)(void const *__eip, void const *__frame, __SIZE_TYPE__ __tb_id);
 __LIBC void (__LIBCCALL debug_tbprint2)(void const *__ebp, __SIZE_TYPE__ __n_skip);
 __LIBC void (__LIBCCALL debug_tbprint)(void);
+
 #undef debug_tbprint
+#ifdef __x86_64__
+#define debug_tbprint(__n_skip) \
+  __XBLOCK({ register void *__ebp; \
+             __asm__ __volatile__("movq %%rbp, %0\n" : "=g" (__ebp)); \
+             debug_tbprint2(__ebp,__n_skip); })
+#else /* __x86_64__ */
 #define debug_tbprint(__n_skip) \
   __XBLOCK({ register void *__ebp; \
              __asm__ __volatile__("movl %%ebp, %0\n" : "=g" (__ebp)); \
              debug_tbprint2(__ebp,__n_skip); })
+#endif /* !__x86_64__ */
 
 __SYSDECL_END
 

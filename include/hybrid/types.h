@@ -89,6 +89,16 @@ typedef __intptr_t    intptr_t;
 typedef __uintptr_t   uintptr_t;
 #endif /* !__uintptr_t_defined */
 
+#ifndef __register_t_defined
+#define __register_t_defined 1
+typedef __register_t register_t;
+#endif /* !__register_t_defined */
+
+#ifndef __sregister_t_defined
+#define __sregister_t_defined 1
+typedef __sregister_t sregister_t;
+#endif /* !__sregister_t_defined */
+
 #ifndef __cpuid_t_defined
 #define __cpuid_t_defined 1
 typedef __cpuid_t   cpuid_t;

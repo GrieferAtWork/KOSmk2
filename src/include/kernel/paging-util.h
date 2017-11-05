@@ -23,7 +23,10 @@
 #include <kernel/paging.h>
 #include <stdbool.h>
 
-//#define CONFIG_NO_PDIR_SELFMAP
+#ifdef __x86_64__
+/* TODO: Implement later */
+#define CONFIG_NO_PDIR_SELFMAP 1
+#endif
 
 #ifndef CONFIG_NO_PDIR_SELFMAP
 #define CONFIG_PDIR_SELFMAP 1
@@ -47,9 +50,8 @@ DECL_BEGIN
 
 /* The last page directory table is reserved for
  * self page-directory & table self-mappings,
- * meaning that the current page directory always
- * includes a virtual mapping of itself at `__this_pdir',
- * as well as a mapping of all table entries at `__this_pdir_entries'  */
+ * meaning that the current page directory always includes
+ * a virtual mapping of all table entries at `THIS_PDIR_ENTRIES'  */
 #define THIS_PDIR_BASE    0xffc00000
 #define THIS_PDIR_SIZE    0x00400000
 

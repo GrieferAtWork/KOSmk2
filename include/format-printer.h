@@ -108,7 +108,7 @@ __ssize_t (__ATTR_CDECL format_printf)(pformatprinter __printer, void *__closure
                                        char const *__restrict __format, ...);
 __FORMAT_PRINTER_DECL __ATTR_LIBC_PRINTF(3,0) __NONNULL((1,3))
 __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
-                                      char const *__restrict __format, __VA_LIST __args);
+                                      char const *__restrict __format, __builtin_va_list __args);
 
 
 #ifdef __CRT_KOS
@@ -141,7 +141,7 @@ __ssize_t (__ATTR_CDECL format_scanf)(pformatgetc __pgetc, pformatungetc __punge
 __LIBC __PORT_KOSONLY __ATTR_LIBC_SCANF(4,0) __NONNULL((1,4))
 __ssize_t (__LIBCCALL format_vscanf)(pformatgetc __pgetc, pformatungetc __pungetc,
                                      void *__closure, char const *__restrict __format,
-                                     __VA_LIST __args);
+                                     __builtin_va_list __args);
 
 #ifndef __KERNEL__
 __NAMESPACE_STD_BEGIN
@@ -428,7 +428,7 @@ __LIBC __PORT_KOSONLY __ssize_t (__LIBCCALL buffer_print)(char const *__restrict
 /* Same as the original functions above, but use a temporary
  * buffer in-between to reduce potential printer overhead. */
 __LIBC __PORT_KOSONLY __ATTR_LIBC_PRINTF(3,4) __NONNULL((1,3)) __ssize_t (__ATTR_CDECL format_bprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, ...);
-__LIBC __PORT_KOSONLY __ATTR_LIBC_PRINTF(3,0) __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vbprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, __VA_LIST __args);
+__LIBC __PORT_KOSONLY __ATTR_LIBC_PRINTF(3,0) __NONNULL((1,3)) __ssize_t (__LIBCCALL format_vbprintf)(pformatprinter __printer, void *__closure, char const *__restrict __format, __builtin_va_list __args);
 #endif /* !__KERNEL__ */
 
 #endif /* __CC__ */

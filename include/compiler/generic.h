@@ -108,7 +108,7 @@
 #   define __extension__
 #endif
 #if __has_builtin(__builtin_va_list)
-#   define __VA_LIST      __builtin_va_list
+#   define __builtin_va_list      __builtin_va_list
 #endif
 #if !defined(__DCC_VERSION__) && !defined(__FUNCTION__)
 #if defined(__TINYC__) || 1
@@ -603,28 +603,28 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 /* Define varargs macros expected by system headers. */
 #if __has_builtin(__builtin_va_list) || \
     __has_builtin(__builtin_va_start)
-#define __VA_LIST                  __builtin_va_list
+#define __builtin_va_list                  __builtin_va_list
 #elif defined(__TINYC__)
 #ifdef __x86_64__
 #ifndef _WIN64
-#define __VA_LIST                    void *
+#define __builtin_va_list                    void *
 #define __builtin_va_start(ap,last) (void)((ap)=__va_start(__builtin_frame_address(0)))
 #define __builtin_va_arg(ap,type)   (*(type *)__va_arg(ap,__builtin_va_arg_types(type),sizeof(type)))
 #define __builtin_va_copy(dest,src) (void)((dest)=__va_copy(src))
 #define __builtin_va_end(ap)         __va_end(ap)
-extern __VA_LIST (__va_start)(void *fp);
-extern __VA_LIST (__va_copy)(__VA_LIST src);
-extern void *(__va_arg)(__VA_LIST ap, int arg_type, int size);
-extern void (__va_end)(__VA_LIST ap);
+extern __builtin_va_list (__va_start)(void *fp);
+extern __builtin_va_list (__va_copy)(__builtin_va_list src);
+extern void *(__va_arg)(__builtin_va_list ap, int arg_type, int size);
+extern void (__va_end)(__builtin_va_list ap);
 #else /* _WIN64 */
-#define __VA_LIST                    char *
+#define __builtin_va_list                    char *
 #define __builtin_va_start(ap,last) (void)((ap)=((char *)&(last))+((sizeof(last)+7)&~7))
 #define __builtin_va_arg(ap,type)   ((ap)+=(sizeof(type)+7)&~7,*(type *)((ap)-((sizeof(type)+7)&~7)))
 #define __builtin_va_copy(dest,src) (void)((dest)=(src))
 #define __builtin_va_end(ap)        (void)0
 #endif /* !_WIN64 */
 #else
-#define __VA_LIST                    char *
+#define __builtin_va_list                    char *
 #define __builtin_va_start(ap,last) (void)((ap)=((char *)&(last))+((sizeof(last)+3)&~3))
 #define __builtin_va_arg(ap,type)   ((ap)+=(sizeof(type)+3)&~3,*(type *)((ap)-((sizeof(type)+3)&~3)))
 #define __builtin_va_copy(dest,src) (void)((dest)=(src))
@@ -632,10 +632,10 @@ extern void (__va_end)(__VA_LIST ap);
 #endif
 #else /* ... */
 /* Just guess some generic implementation... */
-#define __VA_LIST                    char *
+#define __builtin_va_list                    char *
 #define __VA_ADDROF(v)              &(v)
 #define __VA_SIZEOF(n)              ((sizeof(n)+3)&~3)
-#define __builtin_va_start(ap,v)    (ap = (__VA_LIST)__VA_ADDROF(v)+__VA_SIZEOF(v))
+#define __builtin_va_start(ap,v)    (ap = (__builtin_va_list)__VA_ADDROF(v)+__VA_SIZEOF(v))
 #define __builtin_va_arg(ap,T)      (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
 #define __builtin_va_end(ap)        (void)0
 #endif

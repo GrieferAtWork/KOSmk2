@@ -22,8 +22,8 @@
 #   define CONFIG_TARGET_ARCH  "i686"
 #   define CONFIG_TOOLCHAIN    "i686"
 #   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0"
-#elif 1
-#   define TARGET_I686
+#elif !defined(TARGET_X86_64)
+#   define TARGET_I686		   1
 #   define CONFIG_TARGET_ARCH  "i386"
 #   define CONFIG_TOOLCHAIN    "x86_64"
 #   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0/32"

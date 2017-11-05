@@ -701,7 +701,7 @@ L(    popw %gs                               ) /* Pop segment registers. */
 L(    popw %fs                               )
 L(    popw %es                               )
 L(    popw %ds                               )
-L(    iret                                   ) /* Iret -> pop EIP, CS + EFLAGS */
+L(    __ASM_IRET                             ) /* Iret -> pop EIP, CS + EFLAGS */
 L(SYM_END(cpu_sched_setrunning)              )
 L(SYM_END(cpu_sched_setrunning_save)         )
 L(SYM_END(cpu_sched_setrunning_savef)        )
@@ -2370,7 +2370,7 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
      L(    popw %%fs                                    )
      L(    popw %%es                                    )
      L(    popw %%ds                                    )
-     L(    iret                                         )
+     L(    __ASM_IRET                                   )
      :
      : "b" (t)
      : "memory"

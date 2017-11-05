@@ -197,12 +197,12 @@ __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL uprintf)(char16_t const *__restrict __
 __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL Uprintf)(char32_t const *__restrict __format, ...) __C32_DECL(wprintf);
 __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL suprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, ...) __ASMNAME("_swprintf_c");
 __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL sUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, ...) __ASMNAME("swprintf");
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfuprintf)(__FILE *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vfwprintf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfUprintf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwprintf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vuprintf)(char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vwprintf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vUprintf)(char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vwprintf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vsuprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("_vswprintf_c");
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vsUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("vswprintf");
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfuprintf)(__FILE *__restrict __s, char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vfwprintf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfUprintf)(__FILE *__restrict __s, char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vfwprintf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vuprintf)(char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vwprintf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vUprintf)(char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vwprintf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vsuprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, __builtin_va_list __arg) __ASMNAME("_vswprintf_c");
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vsUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, __builtin_va_list __arg) __ASMNAME("vswprintf");
 __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL fuscanf)(__FILE *__restrict __stream, char16_t const *__restrict __format, ...) __C16_DECL(fwscanf);
 __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL fUscanf)(__FILE *__restrict __stream, char32_t const *__restrict __format, ...) __C32_DECL(fwscanf);
 __LIBC __PORT_KOSONLY ssize_t (__LIBCCALL uscanf)(char16_t const *__restrict __format, ...) __C16_DECL(wscanf);
@@ -216,12 +216,12 @@ __LIBC __PORT_KOSONLY int (__LIBCCALL uprintf)(char16_t const *__restrict __form
 __LIBC __PORT_KOSONLY int (__LIBCCALL Uprintf)(char32_t const *__restrict __format, ...) __C32_DECL(wprintf);
 __LIBC __PORT_KOSONLY int (__LIBCCALL suprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, ...) __ASMNAME("_swprintf_c");
 __LIBC __PORT_KOSONLY int (__LIBCCALL sUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, ...) __ASMNAME("swprintf");
-__LIBC __PORT_KOSONLY int (__LIBCCALL vfuprintf)(__FILE *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vfwprintf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vfUprintf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwprintf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vuprintf)(char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vwprintf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vUprintf)(char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vwprintf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vsuprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("_vswprintf_c");
-__LIBC __PORT_KOSONLY int (__LIBCCALL vsUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, __VA_LIST __arg) __ASMNAME("vswprintf");
+__LIBC __PORT_KOSONLY int (__LIBCCALL vfuprintf)(__FILE *__restrict __s, char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vfwprintf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vfUprintf)(__FILE *__restrict __s, char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vfwprintf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vuprintf)(char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vwprintf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vUprintf)(char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vwprintf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vsuprintf)(char16_t *__restrict __s, size_t __n, char16_t const *__restrict __format, __builtin_va_list __arg) __ASMNAME("_vswprintf_c");
+__LIBC __PORT_KOSONLY int (__LIBCCALL vsUprintf)(char32_t *__restrict __s, size_t __n, char32_t const *__restrict __format, __builtin_va_list __arg) __ASMNAME("vswprintf");
 __LIBC __PORT_KOSONLY int (__LIBCCALL fuscanf)(__FILE *__restrict __stream, char16_t const *__restrict __format, ...) __C16_DECL(fwscanf);
 __LIBC __PORT_KOSONLY int (__LIBCCALL fUscanf)(__FILE *__restrict __stream, char32_t const *__restrict __format, ...) __C32_DECL(fwscanf);
 __LIBC __PORT_KOSONLY int (__LIBCCALL uscanf)(char16_t const *__restrict __format, ...) __C16_DECL(wscanf);
@@ -250,19 +250,19 @@ __LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c16toull)(char16_t const *__restri
 __LIBC __PORT_KOSONLY __LONGLONG (__LIBCCALL c32toll)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_DECL(wcstoll);
 __LIBC __PORT_KOSONLY __ULONGLONG (__LIBCCALL c32toull)(char32_t const *__restrict __nptr, char32_t **__restrict __endptr, int __base) __C32_DECL(wcstoull);
 #ifdef __USE_KOS
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfuscanf)(__FILE *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vfwscanf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfUscanf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwscanf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vuscanf)(char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vwscanf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vUscanf)(char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vwscanf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vsuscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vswscanf);
-__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vsUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vswscanf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfuscanf)(__FILE *__restrict __s, char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vfwscanf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vfUscanf)(__FILE *__restrict __s, char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vfwscanf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vuscanf)(char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vwscanf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vUscanf)(char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vwscanf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vsuscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vswscanf);
+__LIBC __PORT_KOSONLY ssize_t (__LIBCCALL vsUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vswscanf);
 #else /* __USE_KOS */
-__LIBC __PORT_KOSONLY int (__LIBCCALL vfuscanf)(__FILE *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vfwscanf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vfUscanf)(__FILE *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vfwscanf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vuscanf)(char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vwscanf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vUscanf)(char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vwscanf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vsuscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, __VA_LIST __arg) __C16_DECL(vswscanf);
-__LIBC __PORT_KOSONLY int (__LIBCCALL vsUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, __VA_LIST __arg) __C32_DECL(vswscanf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vfuscanf)(__FILE *__restrict __s, char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vfwscanf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vfUscanf)(__FILE *__restrict __s, char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vfwscanf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vuscanf)(char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vwscanf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vUscanf)(char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vwscanf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vsuscanf)(char16_t const *__restrict __s, char16_t const *__restrict __format, __builtin_va_list __arg) __C16_DECL(vswscanf);
+__LIBC __PORT_KOSONLY int (__LIBCCALL vsUscanf)(char32_t const *__restrict __s, char32_t const *__restrict __format, __builtin_va_list __arg) __C32_DECL(vswscanf);
 #endif /* !__USE_KOS */
 #endif /* __USE_ISOC99 */
 

@@ -50,8 +50,8 @@ FUNDEF size_t (KCALL __outsl_user)(u16 port, USER void const *addr, size_t count
  * Returns -EFAULT on error, or the total amount to required characters. */
 FUNDEF ssize_t (ATTR_CDECL sprintf_user)(USER char *dst, char const *format, ...);
 FUNDEF ssize_t (ATTR_CDECL snprintf_user)(USER char *dst, size_t dst_max, char const *format, ...);
-FUNDEF ssize_t (KCALL vsprintf_user)(USER char *dst, char const *format, __VA_LIST args);
-FUNDEF ssize_t (KCALL vsnprintf_user)(USER char *dst, size_t dst_max, char const *format, __VA_LIST args);
+FUNDEF ssize_t (KCALL vsprintf_user)(USER char *dst, char const *format, __builtin_va_list args);
+FUNDEF ssize_t (KCALL vsnprintf_user)(USER char *dst, size_t dst_max, char const *format, __builtin_va_list args);
 
 
 /* Base address of a secondary, writable mapping for user-share segment.

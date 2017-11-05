@@ -35,6 +35,7 @@
 #include "sysconf.h"
 #include "fcntl.h"
 #include "unistd.h"
+#include "string.h"
 
 #include <fcntl.h>
 #include <hybrid/compiler.h>
@@ -138,7 +139,7 @@ INTERN void *LIBCCALL libc_mmap(void *addr, size_t len, int prot,
 INTERN void *LIBCCALL libc_mmap64(void *addr, size_t len, int prot,
                                   int flags, int fd, off64_t offset) {
 #if __SIZEOF_SYSCALL_LONG__ >= 8
- void *rresult = sys_mmap(addr,len,prot,flags,fd,offset);
+ void *result = sys_mmap(addr,len,prot,flags,fd,offset);
  if (E_ISERR(result)) { SET_ERRNO(-E_GTERR(result)); return MAP_FAILED; }
  return result;
 #else
@@ -911,7 +912,7 @@ DEFINE_PUBLIC_ALIAS(_except_handler4,libc_except_handler4); /* XXX: Are all the 
 DEFINE_PUBLIC_ALIAS(_except_handler4_common,libc_except_handler4);
 
 
-INTERN ATTR_DOSTEXT void LIBCCALL libc_vacopy(va_list *pdst, va_list src) { *pdst = src; }
+INTERN ATTR_DOSTEXT void LIBCCALL libc_vacopy(char **pdst, char *src) { *pdst = src; }
 DEFINE_PUBLIC_ALIAS(_vacopy,libc_vacopy);
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 

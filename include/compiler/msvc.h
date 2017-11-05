@@ -154,10 +154,18 @@
 #define __NO_ATTR_TRANSPARENT_UNION 1
 #define __ATTR_TRANSPARENT_UNION    /* nothing */
 #define __NO_XBLOCK              1
-#define __IF0                    if(__LINE__ == -1)    /* Always false, but not warned about. */
-#define __IF1                    if(__LINE__ != -1)    /* Always true, but not warned about. */
-#define __WHILE0                 while(__LINE__ == -1) /* ... */
-#define __WHILE1                 while(__LINE__ != -1) /* ... */
+#ifdef _M_X64
+/* For some reason, the __LINE__ == -1 trick doesn't work on x86-64... */
+#   define __IF0                 __pragma(warning(suppress: 4127)) if(0)
+#   define __IF1                 __pragma(warning(suppress: 4127)) if(0)
+#   define __WHILE0              __pragma(warning(suppress: 4127)) while(0)
+#   define __WHILE1              __pragma(warning(suppress: 4127)) while(0)
+#else
+#   define __IF0                 if(__LINE__ == -1)    /* Always false, but not warned about. */
+#   define __IF1                 if(__LINE__ != -1)    /* Always true, but not warned about. */
+#   define __WHILE0              while(__LINE__ == -1) /* ... */
+#   define __WHILE1              while(__LINE__ != -1) /* ... */
+#endif
 #ifdef __cplusplus
 namespace __int {
 template<bool> struct __static_if {};
@@ -262,23 +270,23 @@ extern void (__cdecl _ReadWriteBarrier)(void);
 
 
 /* Define varargs macros expected by system headers. */
-#define __VA_LIST        char *
+#define __builtin_va_list  char *
 #define __VA_ADDROF(v)   &(v)
 #if defined(__i386__) || defined(__i386) || defined(i386) || \
     defined(__I86__) || defined(_M_IX86) || defined(__X86__) || \
     defined(_X86_) || defined(__THW_INTEL__) || defined(__INTEL__)
 #define __VA_SIZEOF(n)                 ((sizeof(n)+3)&~3)
-#define __builtin_va_start(ap,last_arg) (void)(ap = (__VA_LIST)__VA_ADDROF(last_arg)+__VA_SIZEOF(last_arg))
+#define __builtin_va_start(ap,last_arg) (void)(ap = (__builtin_va_list)__VA_ADDROF(last_arg)+__VA_SIZEOF(last_arg))
 #define __builtin_va_arg(ap,T)          (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
 #define __builtin_va_end(ap)            (void)0
 #elif defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
       defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64) || \
       defined(_WIN64) || defined(WIN64)
 #ifdef __cplusplus
-namespace __int { extern "C" { extern void (__cdecl __va_start)(__VA_LIST *, ...); } }
+namespace __int { extern "C" { extern void (__cdecl __va_start)(__builtin_va_list *, ...); } }
 #define __builtin_va_start(ap,x) ::__int::__va_start(&ap,x)
 #else
-extern void (__cdecl __va_start)(__VA_LIST *, ...);
+extern void (__cdecl __va_start)(__builtin_va_list *, ...);
 #define __builtin_va_start(ap,x) __va_start(&ap,x)
 #endif
 #define __builtin_va_arg(ap,T) \
@@ -286,7 +294,7 @@ extern void (__cdecl __va_start)(__VA_LIST *, ...);
 #define __builtin_va_end(ap)    (void)0
 #else /* ... */
 #define __VA_SIZEOF(n)            ((sizeof(n)+3)&~3)
-#define __builtin_va_start(ap,v)  (ap = (__VA_LIST)__VA_ADDROF(v)+__VA_SIZEOF(v))
+#define __builtin_va_start(ap,v)  (ap = (__builtin_va_list)__VA_ADDROF(v)+__VA_SIZEOF(v))
 #define __builtin_va_arg(ap,T)    (*(T *)((ap += __VA_SIZEOF(T))-__VA_SIZEOF(T)))
 #define __builtin_va_end(ap)      (void)0
 #endif /* !... */

@@ -20,42 +20,13 @@
 #define _SETJMP_H 1
 
 #include <__stdinc.h>
-#include <hybrid/typecore.h>
-#include <hybrid/host.h>
+#include <bits/setjmp.h>
 #include <bits/sigset.h>
 #include <features.h>
 
 /* TODO: Compatibility with GLibc */
 
 #ifndef __KERNEL__
-__SYSDECL_BEGIN
-
-#ifdef __DOS_COMPAT__
-#if defined(__x86_64__)
-#define __JMP_BUF_ALIGN 16
-#define __JMP_BUF_SIZE  256
-#elif defined(__i386__)
-#define __JMP_BUF_SIZE  64
-#elif defined(__arm__)
-#define __JMP_BUF_SIZE  112
-#endif
-
-#ifdef __JMP_BUF_ALIGN
-__ATTR_ALIGNED(__JMP_BUF_ALIGN)
-#else
-__ATTR_ALIGNED(__SIZEOF_POINTER__)
-#endif
-struct __jmp_buf {
- __BYTE_TYPE__ __data[__JMP_BUF_SIZE];
-};
-#else
-struct __jmp_buf {
- __UINTPTR_TYPE__ __ebx,__esp,__ebp;
- __UINTPTR_TYPE__ __esi,__edi,__eip;
- __UINTPTR_TYPE__ __padding[2];
-};
-#define __JMP_BUF_STATIC_INIT  {{0,0,0,0,0,0,0,0}}
-#endif
 
 __NAMESPACE_STD_BEGIN
 typedef struct __jmp_buf jmp_buf[1];
@@ -85,6 +56,11 @@ __NAMESPACE_STD_USING(longjmp)
 struct __sigjmp_buf {
  struct __jmp_buf __jmp;
 #ifndef __DOS_COMPAT__
+#ifdef __x86_64__
+ int          __has_sig; /* If non-zero, `__sig' is valid.
+                          * NOTE: On i386, one of the padding registers is
+                          *       used for this, but on x86_64, there are none... */
+#endif /* __x86_64__ */
  __sigset_t       __sig;
 #endif /* !__DOS_COMPAT__ */
 };

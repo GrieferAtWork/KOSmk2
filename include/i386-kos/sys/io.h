@@ -21,6 +21,7 @@
 
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
+#include <hybrid/host.h>
 #include <features.h>
 
 __SYSDECL_BEGIN
@@ -243,7 +244,11 @@ __NAMESPACE_INT_END
 #undef al
 
 /* Using the same trick as the linux kernel... */
+#ifdef __x86_64__
+#define __IO_SLOWDOWN_IMPL (__NAMESPACE_INT_SYM __outbyte)(0x80,0);
+#else
 #define __IO_SLOWDOWN_IMPL __asm { out 0x80, al }
+#endif
 #if 0
 #define __IO_SLOWDOWN  __IO_SLOWDOWN_IMPL \
                        __IO_SLOWDOWN_IMPL \

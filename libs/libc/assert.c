@@ -27,15 +27,18 @@
 #include <assert.h>
 #include <hybrid/asm.h>
 #include <hybrid/atomic.h>
+#include <hybrid/host.h>
 #include <hybrid/debug.h>
 #include <hybrid/compiler.h>
 #include <hybrid/debuginfo.h>
 #include <hybrid/traceback.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/syslog.h>
+#include <asm/registers.h>
 
 #ifdef __KERNEL__
 #include <sched/percpu.h>
@@ -60,11 +63,19 @@ DECL_BEGIN
 GLOBAL_ASM(
 L(.section .text                                    )
 L(INTERN_ENTRY(libc_debug_tbprint)                  )
-L(    pushal /* Preserve registers */               )
+L(    __ASM_PUSH_SCRATCH /* Preserve registers */   )
+#ifdef __x86_64__
+L(    xorq   %rdi, %rdi                             )
+L(    movq   %rbp, %rsi                             )
+L(    call PLT_SYM(libc_debug_tbprint2)             )
+#elif defined(__i386__)
 L(    pushl  $0                                     )
 L(    pushl  %ebp                                   )
 L(    call PLT_SYM(libc_debug_tbprint2)             )
-L(    popal /* Restore registers */                 )
+#else
+#error "Unsupported arch"
+#endif
+L(    __ASM_POP_SCRATCH /* Restore registers */     )
 L(    ret                                           )
 L(SYM_END(libc_debug_tbprint)                       )
 L(.previous                                         )
@@ -105,7 +116,7 @@ libc_debug_print(char const *data, size_t datalen,
 #endif
 }
 
-INTERN void (LIBCCALL libc_debug_vprintf)(char const *format, __VA_LIST args) {
+INTERN void (LIBCCALL libc_debug_vprintf)(char const *format, __builtin_va_list args) {
  libc_format_vprintf(&libc_debug_print,NULL,format,args);
 }
 INTERN void (ATTR_CDECL libc_debug_printf)(char const *format, ...) {
@@ -188,7 +199,11 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
  } else if (ATOMIC_XCH(in_core,2) == 1) {
   uintptr_t return_address; char buffer[__SIZEOF_POINTER__*2],*iter;
   debug_print("\n\nASSERTION CORE RECURSION\n",27,NULL);
+#ifdef __x86_64__
+  __asm__ __volatile__("movq 8(%%rbp), %0\n" : "=r" (return_address) : : "memory");
+#else
   __asm__ __volatile__("movl 4(%%ebp), %0\n" : "=r" (return_address) : : "memory");
+#endif
   iter = COMPILER_ENDOF(buffer);
   while (iter-- != buffer) {
    uintptr_t temp;

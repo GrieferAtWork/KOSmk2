@@ -38,13 +38,13 @@ DECL_BEGIN
 #define PAGE_ERROR        COMPILER_UNIPOINTER(-1)
 
 #ifdef __CC__
-typedef u32 pgattr_t; /* Page attributes (Set of `PAGEATTR_*') */
+typedef register_t pgattr_t; /* Page attributes (Set of `PAGEATTR_*') */
 #endif /* __CC__ */
-#define PAGEATTR_NONE     0x00000000
-#define PAGEATTR_ZERO     0x00000001 /* Page memory (except for the free block) is zero-initialized. */
+#define PAGEATTR_NONE     0x0000
+#define PAGEATTR_ZERO     0x0001 /* Page memory (except for the free block) is zero-initialized. */
 
 /* Attributes returned by `page_query()' */
-#define PAGEATTR_FREE     0x00000100 /* The page is currently marked as free. */
+#define PAGEATTR_FREE     0x0100 /* The page is currently marked as free. */
 #define PAGEATTR_ALLSHIFT 16
 #define PAGEATTR_ALLZERO (PAGEATTR_ZERO << PAGEATTR_ALLSHIFT)
 #define PAGEATTR_ALLFREE (PAGEATTR_FREE << PAGEATTR_ALLSHIFT)

@@ -207,6 +207,18 @@ union{u32      __tl_pad1;
  })
 #endif
 
+#ifdef __x86_64__
+#define TLB_ADDR(off) \
+ XBLOCK({ register void *__res = (void *)(uintptr_t)(off); \
+          __asm__ __volatile__("addq {%%" __TLB_SEGMENT_S ":0, %0|%0, [" __TLB_SEGMENT_S ":0]}\n" : "+r" (__res)); \
+          XRETURN __res; \
+ })
+#define TIB_ADDR(off) \
+ XBLOCK({ register void *__res = (void *)(uintptr_t)(off); \
+          __asm__ __volatile__("addq {%%" __TIB_SEGMENT_S ":0x18, %0|%0, [" __TIB_SEGMENT_S ":0x18]}\n" : "+r" (__res)); \
+          XRETURN __res; \
+ })
+#else
 #define TLB_ADDR(off) \
  XBLOCK({ register void *__res = (void *)(uintptr_t)(off); \
           __asm__ __volatile__("addl {%%" __TLB_SEGMENT_S ":0, %0|%0, [" __TLB_SEGMENT_S ":0]}\n" : "+r" (__res)); \
@@ -217,6 +229,7 @@ union{u32      __tl_pad1;
           __asm__ __volatile__("addl {%%" __TIB_SEGMENT_S ":0x18, %0|%0, [" __TIB_SEGMENT_S ":0x18]}\n" : "+r" (__res)); \
           XRETURN __res; \
  })
+#endif
 
 
 #define TLB_T_PEEKB(T,off)     __TLB_PEEK(T,"b",off)

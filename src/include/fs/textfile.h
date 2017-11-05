@@ -126,7 +126,7 @@ make_textfilef(struct inode *__restrict node,
 LOCAL REF struct textfile *KCALL
 make_vtextfilef(struct inode *__restrict node,
                 struct dentry *__restrict dent, oflag_t oflags,
-                char const *__restrict format, __VA_LIST args);
+                char const *__restrict format, __builtin_va_list args);
 LOCAL REF struct textfile *KCALL
 make_weak_textfile(struct inode *__restrict node,
                    struct dentry *__restrict dent, oflag_t oflags,

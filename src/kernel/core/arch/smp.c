@@ -562,7 +562,7 @@ L(    pushl %edi                                        )
 L(    movl apic_base, %edi                              )
 L(    movl $(APIC_EOI_ACK), APIC_EOI(%edi)              )
 L(    popl  %edi                                        )
-L(    iret                                              )
+L(    __ASM_IRET                                        )
 L(SYM_END(lapic_spurious_irq_handler)                   )
 L(.previous                                             )
 );

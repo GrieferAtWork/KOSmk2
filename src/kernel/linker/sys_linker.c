@@ -475,7 +475,7 @@ L(    __ASM_PUSH_SEGMENTS                                                       
 L(    __ASM_LOAD_SEGMENTS(%ax) /* Load kernel segments */                        )
 L(    call dl_loadfini                                                           )
 L(    __ASM_POP_SEGMENTS                                                         )
-L(    iret                                                                       )
+L(    __ASM_IRET                                                                 )
 L(SYM_END(sys_xdlfini)                                                           )
 L(.previous                                                                      )
 );

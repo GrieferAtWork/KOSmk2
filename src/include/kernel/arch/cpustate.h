@@ -21,58 +21,145 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 
 DECL_BEGIN
 
-#define __COMMON_REG1(n) union PACKED { u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
-#define __COMMON_REG2(n) union PACKED { u32 e##n; u16 n; };
+#define __COMMON_REG32_2(n) union PACKED { u32 e##n; u16 n; };
+#define __COMMON_REG32_1(n) union PACKED { u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
+#ifdef __x86_64__
+#define __COMMON_REG3(n)                u64 n;
+#define __COMMON_REG2(n) union PACKED { u64 r##n; u32 e##n; u16 n; };
+#define __COMMON_REG1(n) union PACKED { u64 r##n##x; u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
+#else
+#define __COMMON_REG2(n) __COMMON_REG32_2(n)
+#define __COMMON_REG1(n) __COMMON_REG32_1(n)
+#endif
+
+
+#ifdef __x86_64__
+#else
+#endif
 
 /* General purpose registers. */
-/* HINT: pushad/popad-compatible */
+/* HINT: Use `__ASM_PUSH_GPREGS' / `__ASM_POP_GPREGS' to push/pop this structure. */
+#ifdef __CC__
 struct PACKED gpregs {
+#ifdef __x86_64__
+ __COMMON_REG3(r15)
+ __COMMON_REG3(r14)
+ __COMMON_REG3(r13)
+ __COMMON_REG3(r12)
+ __COMMON_REG3(r11)
+ __COMMON_REG3(r10)
+ __COMMON_REG3(r9)
+ __COMMON_REG3(r8)
+#endif
  __COMMON_REG2(di)
  __COMMON_REG2(si)
  __COMMON_REG2(bp)
+#ifndef __x86_64__
  __COMMON_REG2(sp)
+#endif
  __COMMON_REG1(b)
  __COMMON_REG1(d)
  __COMMON_REG1(c)
  __COMMON_REG1(a)
 };
+struct PACKED gpregs32 {
+ __COMMON_REG32_2(di)
+ __COMMON_REG32_2(si)
+ __COMMON_REG32_2(bp)
+ __COMMON_REG32_2(sp)
+ __COMMON_REG32_1(b)
+ __COMMON_REG32_1(d)
+ __COMMON_REG32_1(c)
+ __COMMON_REG32_1(a)
+};
+#endif /* __CC__ */
 #undef __COMMON_REG2
 #undef __COMMON_REG1
 
-#define __SEGMENT32(x) union PACKED { struct PACKED { u16 x##16,__##x##16hi; }; u32 x; }
+#ifdef __x86_64__
+#define __ASM_PUSH_GPREGS \
+    pushq %rax; pushq %rcx; pushq %rdx; pushq %rbx; \
+                pushq %rbp; pushq %rsi; pushq %rdi; \
+    pushq %r8;  pushq %r9;  pushq %r10; pushq %r11; \
+    pushq %r12; pushq %r13; pushq %r14; pushq %r15;
+#define __ASM_POP_GPREGS \
+    popq %r15; popq %r14; popq %r13; popq %r12; \
+    popq %r11; popq %r10; popq %r9;  popq %r8;  \
+    popq %rdi; popq %rsi; popq %rbp;            \
+    popq %rbx; popq %rdx; popq %rcx; popq %rax;
+#else
+#define __ASM_PUSH_GPREGS   pushal;
+#define __ASM_POP_GPREGS    popal;
+#endif
+#define __ASM_PUSH_GPREGS32 pushal;
+#define __ASM_POP_GPREGS32  popal;
 
 /* Segment registers */
+#ifdef __x86_64__
+#ifdef __CC__
+struct PACKED sgregs { u64 gs,fs; }; /* Use 64-bit types to preserve 8-byte alignment. (There is no `pushl %fs'. - Else we could use that) */
+#endif /* __CC__ */
+#define __ASM_PUSH_SREGS pushq %fs; pushq %gs;
+#define __ASM_POP_SREGS  popq %gs;  popq %fs;
+#else
+#ifdef __CC__
 struct PACKED sgregs { u16 gs,fs,es,ds; };
+#endif /* __CC__ */
+#define __ASM_PUSH_SREGS   pushw %ds; pushw %es; pushw %fs; pushw %gs;
+#define __ASM_POP_SREGS    popw  %gs; popw  %fs; popw  %es; popw  %ds;
+#endif
+#ifdef __CC__
+struct PACKED sgregs32 { u16 gs,fs,es,ds; };
+#endif /* __CC__ */
+#define __ASM_PUSH_SREGS32 pushw %ds; pushw %es; pushw %fs; pushw %gs;
+#define __ASM_POP_SREGS32  popw  %gs; popw  %fs; popw  %es; popw  %ds;
+
+
+#ifdef __x86_64__
+#define IRET_SEGMENT(x)   union PACKED { struct PACKED { u16 x##16,__##x##16hi; }; struct PACKED { u32 x##32,__##x##32hi; }; u64 x; }
+#else
+#define IRET_SEGMENT(x)   union PACKED { struct PACKED { u16 x##16,__##x##16hi; }; u32 x##32; u32 x; }
+#endif
 
 /* Interrupt return registers (_MUST_ be iret-compatible). */
 #define IRREGS_ISUSER(x) (((x).cs&3) == 3) /* When true, must use `struct irregs' */
-struct PACKED irregs_host   { u32 eip; __SEGMENT32(cs); u32 eflags; };
-struct PACKED irregs        { union PACKED { struct irregs_host host; struct PACKED {
-                              u32 eip; __SEGMENT32(cs); u32 eflags; };};
-                              u32 useresp; __SEGMENT32(ss); };
-struct PACKED irregs_host_e { u32 exc_code; union PACKED { struct irregs_host tail; struct PACKED {
-                              u32 eip; __SEGMENT32(cs); u32 eflags; };};};
-struct PACKED irregs_e      { union PACKED { struct irregs_host_e host; struct PACKED {
-                              u32 exc_code; union PACKED { struct irregs tail; struct PACKED {
-                              u32 eip; __SEGMENT32(cs); u32 eflags;
-                              u32 useresp; __SEGMENT32(ss); };};};};};
-#undef __SEGMENT32
+#ifdef __CC__
+struct PACKED irregs_host     { register_t eip; IRET_SEGMENT(cs); register_t eflags; };
+struct PACKED irregs          { union PACKED { struct irregs_host host; struct PACKED {
+                                register_t eip; IRET_SEGMENT(cs); register_t eflags; };};
+                                register_t useresp; IRET_SEGMENT(ss); };
+struct PACKED irregs_host_e   { register_t exc_code; union PACKED { struct irregs_host tail; struct PACKED {
+                                register_t eip; IRET_SEGMENT(cs); register_t eflags; };};};
+struct PACKED irregs_e        { union PACKED { struct irregs_host_e host; struct PACKED {
+                                register_t exc_code; union PACKED { struct irregs tail; struct PACKED {
+                                register_t eip; IRET_SEGMENT(cs); register_t eflags;
+                                register_t useresp; IRET_SEGMENT(ss); };};};};};
+#ifdef __x86_64__
+#define __ASM_IRET   iretq
+#else
+#define __ASM_IRET   iret
+#endif
 
 /* CPU state for 16-bit realmode interrupts. */
 struct PACKED cpustate16 {
- struct gpregs gp;
- struct sgregs sg;
- u16           ss;
- u32           eflags;
+ struct gpregs32 gp;
+ struct sgregs32 sg;
+ u16             ss;
+ u32             eflags;
 };
 
 /* Common CPU state. */
 struct PACKED comregs {
  struct gpregs gp;
  struct sgregs sg;
+};
+struct PACKED comregs32 {
+ struct gpregs32 gp;
+ struct sgregs32 sg;
 };
 
 
@@ -107,7 +194,6 @@ struct PACKED {
 };};
  struct irregs_host_e iret;
 };
-
 struct PACKED cpustate_e {union PACKED {
  struct host_cpustate_e host; /* host CPU state. */
 struct PACKED {
@@ -127,6 +213,7 @@ struct PACKED {
 #define CPUSTATE_E_TO_CPUSTATE(cse,cs) \
  ((cs).com = (cse).com, \
   (cs).iret.tail = (cse).iret)
+#endif /* __CC__ */
 
 DECL_END
 

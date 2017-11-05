@@ -25,6 +25,9 @@
 #include <c++/current/exception>
 #else /* __USE_GLIBCXX */
 
+#include <hybrid/host.h>
+#include <hybrid/typecore.h>
+
 __CXXDECL_BEGIN
 __NAMESPACE_STD_BEGIN
 
@@ -52,6 +55,9 @@ private:
     const char *__what;
     bool        __dofree;
     bool        __pad[3];
+#ifdef __x86_64__
+    __INT32_TYPE__ __pad2;
+#endif
 };
 
 class bad_exception: public exception {

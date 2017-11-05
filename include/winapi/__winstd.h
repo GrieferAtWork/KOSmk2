@@ -30,14 +30,14 @@
 #include <hybrid/typecore.h>
 #include <hybrid/host.h>
 #include <hybrid/types.h>
-#if __SIZEOF_LONG__ != 4
-#if __SIZEOF_INT__ == 4
-/* Windows headers assume that 'long' is 32 bit. */
-#define long  int
-#else
-#error "Unknown 32-bit base type"
-#endif
-#endif /* __SIZEOF_LONG__ != 4 */
+// #if __SIZEOF_LONG__ != 4
+// #if __SIZEOF_INT__ == 4
+// /* Windows headers assume that 'long' is 32 bit. */
+// #define long  int
+// #else
+// #error "Unknown 32-bit base type"
+// #endif
+// #endif /* __SIZEOF_LONG__ != 4 */
 #endif
 
 #undef __cdecl

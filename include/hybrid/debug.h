@@ -25,7 +25,7 @@ __SYSDECL_BEGIN
 
 __LIBC __SSIZE_TYPE__ (__LIBCCALL debug_print)(char const *__restrict __data, __SIZE_TYPE__ __datalen, void *__ignored_closure);
 __LIBC void (__ATTR_CDECL debug_printf)(char const *__restrict __format, ...);
-__LIBC void (__LIBCCALL debug_vprintf)(char const *__restrict __format, __VA_LIST args);
+__LIBC void (__LIBCCALL debug_vprintf)(char const *__restrict __format, __builtin_va_list args);
 
 __SYSDECL_END
 

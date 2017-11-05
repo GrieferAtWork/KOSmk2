@@ -16,29 +16,48 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ERR_H
-#define _ERR_H 1
+#ifndef _X86_KOS_BITS_SETJMP_H
+#define _X86_KOS_BITS_SETJMP_H 1
 
 #include <__stdinc.h>
-#include <features.h>
-
-#ifndef __CRT_GLC
-#error "<err.h> is not supported by the linked libc"
-#endif /* __CRT_GLC */
+#include <hybrid/host.h>
+#include <hybrid/typecore.h>
 
 __SYSDECL_BEGIN
 
-#ifndef __KERNEL__
-__LIBC __ATTR_COLD void (__LIBCCALL warn)(char const *__format, ...);
-__LIBC __ATTR_COLD void (__LIBCCALL vwarn)(char const *__format, __builtin_va_list __args);
-__LIBC __ATTR_COLD void (__LIBCCALL warnx)(char const *__format, ...);
-__LIBC __ATTR_COLD void (__LIBCCALL vwarnx)(char const *__format, __builtin_va_list __args);
-__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL err)(int __status, char const *__format, ...);
-__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL verr)(int __status, char const *__format, __builtin_va_list __args);
-__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL errx)(int __status, char const *__format, ...);
-__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL verrx)(int __status, char const *__format, __builtin_va_list __args);
-#endif /* !__KERNEL__ */
+#ifdef __DOS_COMPAT__
+#if defined(__x86_64__)
+#define __JMP_BUF_ALIGN 16
+#define __JMP_BUF_SIZE  256
+#elif defined(__i386__)
+#define __JMP_BUF_SIZE  64
+#elif defined(__arm__)
+#define __JMP_BUF_SIZE  112
+#endif
+
+#ifdef __JMP_BUF_ALIGN
+__ATTR_ALIGNED(__JMP_BUF_ALIGN)
+#else
+__ATTR_ALIGNED(__SIZEOF_POINTER__)
+#endif
+struct __jmp_buf {
+ __BYTE_TYPE__ __data[__JMP_BUF_SIZE];
+};
+#elif defined(__x86_64__)
+struct __jmp_buf {
+ __UINTPTR_TYPE__ __rbx,__rbp,__r12,__r13;
+ __UINTPTR_TYPE__ __r14,__r15,__rsp,__rip;
+};
+#define __JMP_BUF_STATIC_INIT  {{0,0,0,0,0,0,0,0}}
+#else
+struct __jmp_buf {
+ __UINTPTR_TYPE__ __ebx,__esp,__ebp;
+ __UINTPTR_TYPE__ __esi,__edi,__eip;
+ __UINTPTR_TYPE__ __padding[2];
+};
+#define __JMP_BUF_STATIC_INIT  {{0,0,0,0,0,0,0,0}}
+#endif
 
 __SYSDECL_END
 
-#endif /* !_ERR_H */
+#endif /* !_X86_KOS_BITS_SETJMP_H */

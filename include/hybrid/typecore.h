@@ -80,6 +80,27 @@
 #endif /* ... */
 #endif /* !__INT8_C */
 
+#ifndef __CC__
+/* Don't append anything when not hosting by a
+ * C-compiler (e.g.: A linker script, or assembler) */
+#undef __INT8_C
+#undef __INT16_C
+#undef __INT32_C
+#undef __INT64_C
+#undef __UINT8_C
+#undef __UINT16_C
+#undef __UINT32_C
+#undef __UINT64_C
+#define __INT8_C(c)    c
+#define __INT16_C(c)   c
+#define __INT32_C(c)   c
+#define __INT64_C(c)   c
+#define __UINT8_C(c)   c
+#define __UINT16_C(c)  c
+#define __UINT32_C(c)  c
+#define __UINT64_C(c)  c
+#endif
+
 #define __PRIVATE_MIN_S1  (-__INT8_C(127)-__INT8_C(1))
 #define __PRIVATE_MAX_S1    __INT8_C(127)
 #define __PRIVATE_MIN_U1    __UINT8_C(0)
@@ -820,6 +841,15 @@
 #define __BUSINT_TYPE__   __INTPTR_TYPE__
 #define __UBUSIINT_TYPE__ __UINTPTR_TYPE__
 #endif
+
+/* General-purpose register type.
+ * Currently, that is equal to `sizeof(void *)' for all targets. */
+#ifndef __SIZEOF_REGISTER__
+#define __SIZEOF_REGISTER__  __SIZEOF_POINTER__
+#define __REGISTER_TYPE__    __ULONGPTR_TYPE__
+#define __SREGISTER_TYPE__   __LONGPTR_TYPE__
+#endif
+
 
 #if defined(_NATIVE_CHAR16_T_DEFINED) || \
    (defined(__cpp_unicode_characters) && __cpp_unicode_characters+0 >= 200704) || \

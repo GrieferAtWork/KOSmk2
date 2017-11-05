@@ -95,12 +95,21 @@ INTERN ATTR_COLDTEXT void LIBCCALL libc_run_at_quick_exit(void) {
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc__exit(int status) { sys_exit_group(status); }
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_abort(void) { libc__exit(EXIT_FAILURE); }
 
+#ifdef __x86_64__
+#define xdlfini_exit(status) \
+ __asm__ __volatile__("int $0x80\n" \
+                      "movq %1, %%rdi\n" \
+                      "call libc__exit\n" \
+                      : : "a" (__NR_xdlfini), "m" (status) \
+                      : "memory")
+#else
 #define xdlfini_exit(status) \
  __asm__ __volatile__("int $0x80\n" \
                       "pushl %1\n" \
                       "call libc__exit\n" \
                       : : "a" (__NR_xdlfini), "m" (status) \
                       : "memory")
+#endif
 
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_exit(int status) {
  atomic_rwptr_read(&onexit_n);
@@ -563,8 +572,8 @@ DEFINE_PUBLIC_ALIAS(srandom,libc_srand);
 DEFINE_PUBLIC_ALIAS(random,libc_rand);
 #endif
 #if __SIZEOF_LONG__ == __SIZEOF_LONG_LONG__
-DEFINE_PUBLIC_ALIAS(strtoll,libc_strtol)
-DEFINE_PUBLIC_ALIAS(strtoull,libc_strtoul)
+DEFINE_PUBLIC_ALIAS(strtoll,libc_strtol);
+DEFINE_PUBLIC_ALIAS(strtoull,libc_strtoul);
 #endif
 DEFINE_PUBLIC_ALIAS(mkostemp64,libc_mkostemp);
 DEFINE_PUBLIC_ALIAS(mkostemps64,libc_mkostemps);

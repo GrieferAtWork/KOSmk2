@@ -147,7 +147,7 @@ L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
 L(    call task_yield                                                         )
 L(    __ASM_POP_SEGMENTS                                                      )
 L(    xorl %eax, %eax                                                         )
-L(    iret                                                                    )
+L(    __ASM_IRET                                                              )
 L(SYM_END(sys_sched_yield)                                                    )
 L(.previous                                                                   )
 );

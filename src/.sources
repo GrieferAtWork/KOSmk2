@@ -19,6 +19,11 @@
 
 
 BEGIN
+#ifdef TARGET_X86_64
+	/* Don't use the `red zone' in kernel mode. */
+	C_FLAGS("-mno-red-zone")
+#endif
+
 	INCLUDE("include")
 	DEFINE("__KERNEL__")
 	DEFINE("CONFIG_SMP")

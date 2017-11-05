@@ -22,6 +22,10 @@
 #include <__stdinc.h>
 #include <features.h>
 #include <asm/unistd.h>
+#include <hybrid/host.h>
+#ifdef __x86_64__
+#include <hybrid/typecore.h>
+#endif
 
 __SYSDECL_BEGIN
 
@@ -31,10 +35,21 @@ __SYSDECL_BEGIN
 #define __PRIVATE_SYSCALL_ATTR4(x)    __PRIVATE_SYSCALL_ATTR5 x
 #define __PRIVATE_SYSCALL_ATTR3(x)    __PRIVATE_SYSCALL_ATTR4((__PRIVATE_SYSCALL_ATTR6_##x 1,0))
 #define __PRIVATE_SYSCALL_ATTR2(x)    __PRIVATE_SYSCALL_ATTR3(x)
+#ifdef __x86_64__
+#define __PRIVATE_IMPL__CLOB_0
+#define __PRIVATE_IMPL__CLOB_1(x)    ,x
+#define __PRIVATE_IMPL_CLOB2(x) __PRIVATE_IMPL##x
+#define __PRIVATE_IMPL_CLOB(x) __PRIVATE_IMPL_CLOB2(x)
+#define __PRIVATE_SYSCALL_CLOB6_C(x) ,__CLOB_1(x)
+#define __PRIVATE_SYSCALL_CLOB3(x)    __PRIVATE_IMPL_CLOB(__PRIVATE_SYSCALL_ATTR4((__PRIVATE_SYSCALL_CLOB6_##x,__PRIVATE_SYSCALL_CLOB0)))
+#define __PRIVATE_SYSCALL_CLOB2(x)    __PRIVATE_SYSCALL_CLOB3(x)
+#define __PRIVATE_SYSCALL_CLOB0       __CLOB_0
+#else
 #define __PRIVATE_SYSCALL_CLOB6_C(x) ,x
 #define __PRIVATE_SYSCALL_CLOB3(x)    __PRIVATE_SYSCALL_ATTR4((__PRIVATE_SYSCALL_CLOB6_##x,__PRIVATE_SYSCALL_CLOB0))
 #define __PRIVATE_SYSCALL_CLOB2(x)    __PRIVATE_SYSCALL_CLOB3(x)
 #define __PRIVATE_SYSCALL_CLOB0      /* Default clobber list. */
+#endif
 
 #define __PRIVATE_SYSCALL_ISASM(nr) __PRIVATE_SYSCALL_ATTR2(__SC_ATTRIB_ISASM_##nr)
 #define __PRIVATE_SYSCALL_ISNRT(nr) __PRIVATE_SYSCALL_ATTR2(__SC_ATTRIB_ISNRT_##nr)
@@ -73,6 +88,45 @@ __SYSDECL_BEGIN
 #define __SYSCALL_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       t5 a5, __SYSCALL_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)
 #define __SYSCALL_DECL6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) t6 a6, __SYSCALL_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
 
+/* i386:   IN(ebx, ecx, edx, esi, edi, ebp) OUT(eax[,edx]) */
+/* x86_64: IN(rdi, rsi, rdx, r10, r8,  r9)  OUT(rax[,rdx]) */
+
+/* x86_64 (CDECL): rdi, rsi, rdx, rcx, r8, r9 */
+
+#ifdef __x86_64__
+#define __SYSCALL_ASMREG0(...)                                                 /* Nothing */
+#define __SYSCALL_ASMREG1(a1)                                                  , "D" (a1)
+#define __SYSCALL_ASMREG2(a1,a2)              __SYSCALL_ASMREG1(a1)            , "S" (a2)
+#define __SYSCALL_ASMREG3(a1,a2,a3)           __SYSCALL_ASMREG2(a1,a2)         , "d" (a3)
+#define __SYSCALL_ASMREG4(a1,a2,a3,a4)        __SYSCALL_ASMREG3(a1,a2,a3)      , "r" (__sc_r10)
+#define __SYSCALL_ASMREG5(a1,a2,a3,a4,a5)     __SYSCALL_ASMREG4(a1,a2,a3,a4)   , "r" (__sc_r8)
+#define __SYSCALL_ASMREG6(a1,a2,a3,a4,a5,a6)  __SYSCALL_ASMREG5(a1,a2,a3,a4,a5), "r" (__sc_r9)
+#ifdef __INTELLISENSE__
+#define __PRIVATE_SYSCALL_ASM_0(n,res,id,args) { res,id; __SYSCALL_LIST##n args; }
+#define __PRIVATE_SYSCALL_ASM_1(n,id,args)     { id; __SYSCALL_LIST##n args; }
+#else
+#define __SYSCALL_ASMLOC0(...)
+#define __SYSCALL_ASMLOC1(a1)
+#define __SYSCALL_ASMLOC2(a1,a2)
+#define __SYSCALL_ASMLOC3(a1,a2,a3)
+#define __SYSCALL_ASMLOC4(a1,a2,a3,a4)                                          register __UINTPTR_TYPE__ __sc_r10 asm("r10") = (__UINTPTR_TYPE__)(a4);
+#define __SYSCALL_ASMLOC5(a1,a2,a3,a4,a5)     __SYSCALL_ASMLOC4(a1,a2,a3,a4)    register __UINTPTR_TYPE__ __sc_r8 asm("r8") = (__UINTPTR_TYPE__)(a5);
+#define __SYSCALL_ASMLOC6(a1,a2,a3,a4,a5,a6)  __SYSCALL_ASMLOC5(a1,a2,a3,a4,a5) register __UINTPTR_TYPE__ __sc_r9 asm("r9") = (__UINTPTR_TYPE__)(a6);
+#define __PRIVATE_SYSCALL_ASM_0(n,res,id,args) \
+  { __SYSCALL_ASMLOC##n args \
+    __asm__ __volatile__("int {$}0x80\n" \
+                         : "=a" (res) \
+                         : "a" (id) __SYSCALL_ASMREG##n args \
+                         : "r11" __SYSCALL_CLOBB(id)); \
+  }
+#define __PRIVATE_SYSCALL_ASM_1(n,id,args) \
+  { __SYSCALL_ASMLOC##n args \
+    __asm__ __volatile__("int {$}0x80\n" \
+                         : : "a" (id) __SYSCALL_ASMREG##n args \
+                         : "r11" __SYSCALL_CLOBB(id)); \
+  }
+#endif
+#elif defined(__i386__)
 #define __SYSCALL_ASMREG0(...)                                                 /* Nothing */
 #define __SYSCALL_ASMREG1(a1)                                                  , "b" (a1)
 #define __SYSCALL_ASMREG2(a1,a2)              __SYSCALL_ASMREG1(a1)            , "c" (a2)
@@ -103,25 +157,29 @@ __SYSDECL_BEGIN
 #define __SYSCALL_ASMTXT_2(rt,n) __SYSCALL_ASMTXT##rt##n
 #define __SYSCALL_ASMTXT(rt,n) __SYSCALL_ASMTXT_2(rt,n)
 
-#if __SIZEOF_SYSCALL_LONG__ < 8
 #define __SYSCALL_ASMRET0     "=a"
 #define __SYSCALL_ASMRET1     "=A"
-#else
-#define __SYSCALL_ASMRET0     "=a"
-#define __SYSCALL_ASMRET1     "=a"
-#endif
 #define __SYSCALL_ASMRET2(lg) __SYSCALL_ASMRET##lg
 #define __SYSCALL_ASMRET(lg)  __SYSCALL_ASMRET2(lg)
 
 #ifdef __INTELLISENSE__
 #define __PRIVATE_SYSCALL_ASM_0(n,res,id,args) { res,id; __SYSCALL_LIST##n args; }
+#define __PRIVATE_SYSCALL_ASM_1(n,id,args)     { id; __SYSCALL_LIST##n args; }
 #else
 #define __PRIVATE_SYSCALL_ASM_0(n,res,id,args) \
         __asm__ __volatile__(__SYSCALL_ASMTXT(__SYSCALL_ISNRT(id),n) \
                              : __SYSCALL_ASMRET(__SYSCALL_ISLNG(id)) (res) \
                              : "a" (id) __SYSCALL_ASMREG##n args \
                              : __SYSCALL_CLOBB(id))
+#define __PRIVATE_SYSCALL_ASM_1(n,id,args) \
+        __asm__ __volatile__(__SYSCALL_ASMTXT(__SYSCALL_ISNRT(id),n) \
+                             : : "a" (id) __SYSCALL_ASMREG##n args \
+                             : __SYSCALL_CLOBB(id))
 #endif
+#else
+#error "Unsupported arch"
+#endif
+
 #define __SYSCALL_INL(n,type,id,args)                   __PRIVATE_SYSCALL_INL2(__SYSCALL_ISNRT(id),n,type,id,args)
 #define __SYSCALL_FUN(n,cc,post_attr,type,id,name,decl) __PRIVATE_SYSCALL_FUN2(__SYSCALL_ISNRT(id),n,cc,post_attr,type,id,name,decl)
 
@@ -132,14 +190,6 @@ __SYSDECL_BEGIN
 
 #define __SYSCALL_TRACE(id) /* Nothing */
 
-#ifdef __INTELLISENSE__
-#define __PRIVATE_SYSCALL_ASM_1(n,id,args) { id; __SYSCALL_LIST##n args; }
-#else
-#define __PRIVATE_SYSCALL_ASM_1(n,id,args) \
-        __asm__ __volatile__(__SYSCALL_ASMTXT(__SYSCALL_ISNRT(id),n) \
-                             : : "a" (id) __SYSCALL_ASMREG##n args \
-                             : __SYSCALL_CLOBB(id))
-#endif
 #define __PRIVATE_SYSCALL_INL4_1(n,type,id,args) \
         __XBLOCK({ __SYSCALL_TRACE(id) \
                    __PRIVATE_SYSCALL_ASM_1(n,id,args); \

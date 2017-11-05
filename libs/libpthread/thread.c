@@ -47,13 +47,16 @@ thread_create(pthread_t *__restrict newthread,
  *newthread = child;
  return 0;
 }
-INTERN ATTR_NORETURN void LIBPCALL thread_exit(void *retval) { sys_exit((int)retval); }
+INTERN ATTR_NORETURN
+void LIBPCALL thread_exit(void *retval) {
+ sys_exit((int)(uintptr_t)retval);
+}
 INTERN int LIBPCALL
 thread_join(pthread_t th, void **thread_return) {
  int status; pid_t error;
  error = waitpid((pid_t)th,&status,WEXITED);
  if (error < 0) return __get_errno();
- if (thread_return) *thread_return = (void *)WEXITSTATUS(status);
+ if (thread_return) *thread_return = (void *)(uintptr_t)WEXITSTATUS(status);
  return 0;
 }
 INTERN pthread_t LIBPCALL thread_self(void) {

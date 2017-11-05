@@ -5,9 +5,17 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
@@ -15,6 +23,8 @@
     <None Include="..\..\src\kernel\core-modules\autopart\efi.c.inl" />
     <None Include="..\..\src\kernel\core-modules\fs\fat-mkent.c.inl" />
     <None Include="..\..\src\kernel\core-modules\fs\fat-readdir.c.inl" />
+    <None Include="..\..\src\kernel\core\arch\paging32.c.inl" />
+    <None Include="..\..\src\kernel\core\arch\paging64.c.inl" />
     <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\canonbuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\memfile.c.inl" />
@@ -43,13 +53,13 @@
     <ClCompile Include="..\..\src\kernel\core\arch\fpu.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\gdt.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\irq.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\paging.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\realmode.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp.c" />
     <ClCompile Include="..\..\src\kernel\core\boot.c" />
     <ClCompile Include="..\..\src\kernel\core\iomgr.c" />
     <ClCompile Include="..\..\src\kernel\core\main.c" />
-    <ClCompile Include="..\..\src\kernel\core\paging.c" />
     <ClCompile Include="..\..\src\kernel\core\stack.c" />
     <ClCompile Include="..\..\src\kernel\core\syscall.c" />
     <ClCompile Include="..\..\src\kernel\core\sysinfo.c" />
@@ -162,6 +172,8 @@
     <ClInclude Include="..\..\src\include\kernel\arch\gdt.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\mp.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\paging32.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\paging64.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\realmode.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\task.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\tss.h" />
@@ -236,7 +248,22 @@
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -250,7 +277,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -280,6 +313,24 @@
     <NMakeIncludeSearchPath>
     </NMakeIncludeSearchPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include;$(SolutionDir)..\src\include\</IncludePath>
+    <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
+    <NMakeReBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" -DTARGET_X86_64 $(SolutionDir)..\magic.dee --build-only --format-error-messages --force</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" -DTARGET_X86_64 $(SolutionDir)..\magic.dee --build-only --format-error-messages</NMakeBuildCommandLine>
+    <ReferencePath />
+    <LibraryPath />
+    <LibraryWPath />
+    <SourcePath />
+    <ExcludePath />
+    <NMakeCleanCommandLine />
+    <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <AdditionalOptions>/TP</AdditionalOptions>
+    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1;CONFIG_DEBUG=1;CONFIG_TRACE_LEAKS=1</NMakePreprocessorDefinitions>
+    <NMakeOutput />
+    <NMakeIncludeSearchPath />
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
     <OutDir>$(SolutionDir)..\</OutDir>
@@ -306,6 +357,24 @@
     <NMakeIncludeSearchPath>
     </NMakeIncludeSearchPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include;$(SolutionDir)..\src\include\</IncludePath>
+    <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
+    <NMakeReBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" -DTARGET_X86_64 $(SolutionDir)..\magic.dee --build-only --format-error-messages --force --optimize</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" -DTARGET_X86_64 $(SolutionDir)..\magic.dee --build-only --format-error-messages --optimize</NMakeBuildCommandLine>
+    <ReferencePath />
+    <LibraryPath />
+    <LibraryWPath />
+    <SourcePath />
+    <ExcludePath />
+    <NMakeCleanCommandLine />
+    <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <AdditionalOptions>/TP</AdditionalOptions>
+    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1</NMakePreprocessorDefinitions>
+    <NMakeOutput />
+    <NMakeIncludeSearchPath />
+    <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>
@@ -325,7 +394,48 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <Optimization>Full</Optimization>

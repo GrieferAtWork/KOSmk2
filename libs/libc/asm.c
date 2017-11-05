@@ -30,7 +30,82 @@
 
 DECL_BEGIN
 
-#ifdef __i386__
+#ifdef __x86_64__
+#define SAVEMASK_OFFSET 64
+
+GLOBAL_ASM(
+L(.section .text                                                              )
+/*INTERN int (LIBCCALL libc_setjmp)(jmp_buf buf); */
+L(INTERN_ENTRY(libc_setjmp)                                                   )
+L(    movq   %rbx,  0(%rdi)                                                   )
+L(    movq   %rbp,  8(%rdi)                                                   )
+L(    movq   %r12, 16(%rdi)                                                   )
+L(    movq   %r13, 24(%rdi)                                                   )
+L(    movq   %r14, 32(%rdi)                                                   )
+L(    movq   %r15, 40(%rdi)                                                   )
+L(    leaq  8(%rsp),  %rax  /* RSP */                                         )
+L(    movq   %rsp, 48(%rdi)                                                   )
+L(    movq  0(%rsp),  %rax  /* RIP */                                         )
+L(    movq   %rcx, 56(%rdi)                                                   )
+L(    xorq   %rax,    %rax /* Return ZERO(0) the first time around. */        )
+L(    ret                                                                     )
+L(SYM_END(libc_setjmp)                                                        )
+L(.previous                                                                   )
+);
+
+GLOBAL_ASM(
+L(.section .text                                                              )
+/*INTERN int (LIBCCALL libc_sigsetjmp)(sigjmp_buf buf, int savemask); */
+L(INTERN_ENTRY(libc_sigsetjmp)                                                )
+L(    /* TODO */                                                              )
+L(SYM_END(libc_sigsetjmp)                                                     )
+L(.previous                                                                   )
+);
+
+GLOBAL_ASM(
+L(.section .text                                                              )
+/*INTERN void (LIBCCALL libc_siglongjmp)(sigjmp_buf buf, int sig); */
+L(INTERN_ENTRY(libc_siglongjmp)                                               )
+L(    movq    SAVEMASK_OFFSET(%rdi), %rax                                     )
+L(    testq   %rax, %rax                                                      )
+L(    jz      1f                                                              )
+L(    /* TODO: Restore signal mask */                                         )
+/*INTERN ATTR_NORETURN void (LIBCCALL libc_longjmp)(jmp_buf buf, int sig); */
+L(INTERN_ENTRY(libc_longjmp)                                                  )
+L(1:  testq   %rsi, %rsi                                                      )
+L(    jnz     1f                                                              )
+L(    incq    %rsi /* Return 1 instead! */                                    )
+/*INTERN ATTR_NORETURN void (LIBCCALL libc___longjmp2)(jmp_buf buf, int sig); */
+L(INTERN_ENTRY(libc___longjmp2)                                               )
+L(1:  movq    %rsi,  %rax                                                     )
+L(    movq  0(%rdi), %rbx                                                     )
+L(    movq  8(%rdi), %rbp                                                     )
+L(    movq 16(%rdi), %r12                                                     )
+L(    movq 24(%rdi), %r13                                                     )
+L(    movq 32(%rdi), %r14                                                     )
+L(    movq 40(%rdi), %r15                                                     )
+L(    movq 48(%rdi), %rsp                                                     )
+L(    jmpq *56(%rdi)                                                          )
+L(SYM_END(libc___longjmp2)                                                    )
+L(SYM_END(libc_longjmp)                                                       )
+L(SYM_END(libc_siglongjmp)                                                    )
+L(.previous                                                                   )
+);
+
+
+GLOBAL_ASM(
+L(.section .text                                                              )
+L(INTERN_ENTRY(libc_alloca)                                                   )
+L(    /* XXX: Stack probing? */                                               )
+L(    popq  %rcx                                                              )
+L(    subq  %rdi, %rsp                                                        )
+L(    movq  %rsp, %rax                                                        )
+L(    jmpq *%rcx                                                              )
+L(SYM_END(libc_alloca)                                                        )
+L(.previous                                                                   )
+);
+
+#elif defined(__i386__)
 #define SAVEMASK_OFFSET 28
 
 GLOBAL_ASM(
@@ -116,6 +191,7 @@ L(    jmp    1f                                                               )
 L(INTERN_ENTRY(libc___longjmp2)                                               )
 L(    movl   8(%esp), %eax                                                    )
 L(    movl   4(%esp), %esp                                                    )
+/* XXX: This isn't signal-safe! */
 L(1:  popl   %ebx                                                             )
 L(    popl   %edx /* ESP */                                                   )
 L(    popl   %ebp                                                             )

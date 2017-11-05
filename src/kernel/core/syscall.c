@@ -182,7 +182,7 @@ L(    popw  %gs                                                               )
 L(    testl $(EFLAGS_IF), 0(%esp)                                             )
 L(    jz    preemption_not_enabled_leave                                      )
 L(    addl  $4, %esp                                                          )
-L(    iret                                                                    )
+L(    __ASM_IRET                                                              )
 L(SYM_END(dbg_sysleave)                                                       )
 L(.previous                                                                   )
 );
@@ -197,7 +197,7 @@ PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
 #define SYS_LEAVE jmp dbg_sysleave
 #else /* CONFIG_DEBUG */
 #define SYS_ENTER /* Nothing */
-#define SYS_LEAVE iret
+#define SYS_LEAVE __ASM_IRET
 #endif /* !CONFIG_DEBUG */
 
 

@@ -1002,7 +1002,7 @@ L(    movl  %esp, %ecx                                                          
 L(    call  SYSC_sigreturn                                                       )
 L(    __ASM_POP_REGISTERS                                                        )
 L(    __ASM_POP_SEGMENTS                                                         )
-L(    iret                                                                       )
+L(    __ASM_IRET                                                                 )
 L(SYM_END(sys_sigreturn)                                                         )
 L(.previous                                                                      )
 );

@@ -66,7 +66,24 @@ DECL_BEGIN
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(libc_syscall)                                                  )
-#ifdef __i386__
+#ifdef __x86_64__
+/* Must transform registers as follows:
+ * %rdi, %rsi, %rdx, %rcx, %r8,  %r9, 8(%rsp)
+ *   v     v      v    v     v    v    v
+ * %rax, %rdi, %rsi, %rdx, %r10, %r8, %r9
+ * NOTE: No registers must be saved, because none that are
+ *       callee-save ones are used for system calls arguments.
+ * XXX: Why linux didn't just mirror SYSV x86_64 CDECL for system calls is beyond me... */
+L(    movq  %rdi,    %rax /* SYSNO */                                         )
+L(    movq  %rsi,    %rdi /* ARG #1 */                                        )
+L(    movq  %rdx,    %rsi /* ARG #2 */                                        )
+L(    movq  %rcx,    %rdx /* ARG #3 */                                        )
+L(    movq  %r8,     %r10 /* ARG #4 */                                        )
+L(    movq  %r9,     %r8  /* ARG #5 */                                        )
+L(    movq  8(%rsp), %r9  /* ARG #6 */                                        )
+L(    int   $0x80         /* Invoke the system call. */                       )
+L(    ret                                                                     )
+#elif defined(__i386__)
 L(    /* Save callee-save registers */                                        )
 L(    pushl %ebx                                                              )
 L(    pushl %edi                                                              )
@@ -93,7 +110,7 @@ L(    popl %edi                                                               )
 L(    popl %ebx                                                               )
 L(    ret                                                                     )
 #else
-#error FIXME
+#error "Unsupported arch"
 #endif
 L(SYM_END(libc_syscall)                                                       )
 L(.previous                                                                   )

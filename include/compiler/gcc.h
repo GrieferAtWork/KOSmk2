@@ -114,7 +114,6 @@
 #   define __extension__
 #endif /* !__extension__ */
 #endif
-#define __VA_LIST      __builtin_va_list
 #define __COMPILER_HAVE_TYPEOF 1
 #if __GCC_VERSION(3,1,0)
 #   define __ATTR_NOINLINE         __attribute__((__noinline__))
@@ -130,12 +129,18 @@
 #endif
 #define __NO_ATTR_FALLTHROUGH      1
 #define __ATTR_FALLTHROUGH         /* Nothing */
-#define __ATTR_FASTCALL            __attribute__((__fastcall__))
-#define __ATTR_STDCALL             __attribute__((__stdcall__))
-#ifdef __x86_64__
-#define __ATTR_CDECL               /* Nothing */
+#if defined(__x86_64__) || defined(__x86_64)
+#   define __VA_LIST_IS_ARRAY      1
+#   define __NO_ATTR_FASTCALL      1
+#   define __ATTR_FASTCALL         /* Nothing */
+#   define __NO_ATTR_STDCALL       1
+#   define __ATTR_STDCALL          /* Nothing */
+#   define __NO_ATTR_CDECL         1
+#   define __ATTR_CDECL            /* Nothing */
 #else
-#define __ATTR_CDECL               __attribute__((__cdecl__))
+#   define __ATTR_FASTCALL         __attribute__((__fastcall__))
+#   define __ATTR_STDCALL          __attribute__((__stdcall__))
+#   define __ATTR_CDECL            __attribute__((__cdecl__))
 #endif
 #if __GCC_VERSION(2,96,0)
 #   define __ATTR_PURE             __attribute__((__pure__))

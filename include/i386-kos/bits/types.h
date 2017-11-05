@@ -131,6 +131,7 @@ __SYSDECL_BEGIN
 #undef  __ptrdiff_t
 #undef  __qaddr_t
 #undef  __quad_t
+#undef  __register_t
 #undef  __rlim32_t
 #undef  __rlim64_t
 #undef  __rlim_t
@@ -154,6 +155,7 @@ __SYSDECL_BEGIN
 #undef  __uint64_t
 #undef  __uint8_t
 #undef  __uintptr_t
+#undef  __uregister_t
 #undef  __useconds_t
 
 typedef __INT16_TYPE__          __int16_t;
@@ -177,7 +179,9 @@ typedef __INT64_TYPE__          __time64_t;
 typedef __INT8_TYPE__           __int8_t;
 typedef __INTPTR_TYPE__         __intptr_t;
 typedef __PTRDIFF_TYPE__        __ptrdiff_t;
+typedef __REGISTER_TYPE__       __register_t;
 typedef __SIZE_TYPE__           __size_t;
+typedef __SREGISTER_TYPE__      __sregister_t;
 typedef __SSIZE_TYPE__          __ssize_t;
 typedef __SYSCALL_SLONG_TYPE    __clock_t;
 typedef __SYSCALL_SLONG_TYPE    __suseconds_t;
@@ -277,11 +281,13 @@ typedef void                   *__timer_t;
 #define __ptrdiff_t             __ptrdiff_t
 #define __qaddr_t               __qaddr_t
 #define __quad_t                __quad_t
+#define __register_t            __register_t
 #define __rlim32_t              __rlim32_t
 #define __rlim64_t              __rlim64_t
 #define __rlim_t                __rlim_t
 #define __size_t                __size_t
 #define __socklen_t             __socklen_t
+#define __sregister_t           __sregister_t
 #define __ssize_t               __ssize_t
 #define __suseconds_t           __suseconds_t
 #define __syscall_slong_t       __syscall_slong_t

@@ -41,7 +41,6 @@
 #undef WIN32
 #undef WIN64
 #undef _WIN32
-#undef _WIN64
 #undef _M_IX86
 #undef _M_IX86_FP
 #undef _MSC_VER
@@ -51,9 +50,24 @@
 #undef __BOOL_DEFINED
 
 
-#define __KOS__           1
-#define __STDC__          1
-/*#define __x86_64__      1*/
+#ifdef _WIN64
+#define _LP64                1
+#define __FXSR__             1
+#define __LP64__             1
+#define __MMX__              1
+#define __SIZEOF_INT128__    16
+#define __SSE2_MATH__        1
+#define __SSE2__             1
+#define __SSE_MATH__         1
+#define __SSE__              1
+#define __amd64              1
+#define __amd64__            1
+#define __code_model_small__ 1
+#define __k8                 1
+#define __k8__               1
+#define __x86_64             1
+#define __x86_64__           1
+#else
 #define i386              1
 #define __i386            1
 #define __i386__          1
@@ -62,8 +76,20 @@
 #define __pentiumpro      1
 #define __pentiumpro__    1
 #define __code_model_32__ 1
-#define __ELF__           1
+#endif
+
+#define __STDC__ 1
+#define __KOS__  1
+#ifdef __KOS__
+#define __kos    1
+#define __kos__  1
+#define __unix   1
+#define __unix__ 1
+#define __ELF__  1
+#endif /* __KOS__ */
+
 #define ____INTELLISENSE_ENDIAN  1234
+#undef _WIN64
 
 #define __DATE_DAY__   1
 #define __DATE_WDAY__  0
@@ -333,7 +359,7 @@
 
 
 enum{__asm__};
-#define asm                __asm__
+#define asm(...)           /* Nothing (Used for register variables) */
 #define __asm              __asm__
 #define __asm__(...)       enum{}
 #define __attribute        __attribute__
@@ -783,7 +809,11 @@ template<> struct ____INTELLISENSE_static_if_helper<true> { bool __is_true__(); 
  __if_not_exists(::__int::____INTELLISENSE_static_if_helper<((c))>::__is_true__){ff}
 #endif
 
+#ifdef __x86_64__
+typedef char *__builtin_va_list[1],*__gnuc_va_list[1];
+#else
 typedef char *__builtin_va_list,*__gnuc_va_list;
+#endif
 template<class T> void __builtin_va_start(__builtin_va_list &ap, T &before_start);
 void __builtin_va_end(__builtin_va_list &ap);
 void __builtin_va_copy(__builtin_va_list &dst_ap, __builtin_va_list &src_ap);

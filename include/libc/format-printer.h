@@ -77,31 +77,31 @@ do{ if ((__temp = format_quote(__printer,__closure,s,n,flags)) < 0) return __tem
 #ifndef __USE_KOS_PRINTF
 #ifndef ____libc_vsprintf_defined
 #define ____libc_vsprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __VA_LIST __args),vsprintf,(__buf,__format,__args));
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsprintf,(char *__restrict __buf, char const *__restrict __format, __builtin_va_list __args),vsprintf,(__buf,__format,__args));
 #endif /* !____libc_vsprintf_defined */
 #ifndef ____libc_vsnprintf_defined
 #define ____libc_vsnprintf_defined 1
 #ifdef __DOS_COMPAT__
-__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vsnprintf,(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vsnprintf,(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __builtin_va_list __args),vsnprintf,(__buf,__buflen,__format,__args))
 #ifndef ____dos_vscprintf_defined
 #define ____dos_vscprintf_defined 1
-__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __VA_LIST __args),_vscprintf,(__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__dos_vscprintf,(char const *__restrict __format, __builtin_va_list __args),_vscprintf,(__format,__args))
 #endif /* !____dos_vsnprintf_defined */
-__LOCAL int (__LIBCCALL __libc_vsnprintf)(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args) {
+__LOCAL int (__LIBCCALL __libc_vsnprintf)(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __builtin_va_list __args) {
  /* Workaround for DOS's broken vsnprintf() implementation. */
  int __result = __dos_vsnprintf(__buf,__buflen,__format,__args);
  if (__result < 0) __result = __dos_vscprintf(__format,__args);
  return __result;
 }
 #else /* __DOS_COMPAT__ */
-__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __VA_LIST __args),vsnprintf,(__buf,__buflen,__format,__args))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__libc_vsnprintf,(char *__restrict __buf, __size_t __buflen, char const *__restrict __format, __builtin_va_list __args),vsnprintf,(__buf,__buflen,__format,__args))
 #endif /* !__DOS_COMPAT__ */
 #endif /* !____libc_vsnprintf_defined */
 
 
 __FORMAT_PRINTER_IMPL
 __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
-                                      char const *__restrict __format, __VA_LIST __args) {
+                                      char const *__restrict __format, __builtin_va_list __args) {
  char *__buffer; __size_t __reqlen; __ssize_t __result;
 #ifdef __DOS_COMPAT__
  __reqlen = (__size_t)__dos_vscprintf(__format,__args);
@@ -185,7 +185,7 @@ __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
 
 __FORMAT_PRINTER_IMPL
 __ssize_t (__LIBCCALL format_vprintf)(pformatprinter __printer, void *__closure,
-                                      char const *__restrict __format, __VA_LIST __args) {
+                                      char const *__restrict __format, __builtin_va_list __args) {
  typedef union {
   __INT8_TYPE__  __s_8; __INT16_TYPE__  __s_16; __INT32_TYPE__  __s_32; __INT64_TYPE__  __s_64;
   __UINT8_TYPE__ __u_8; __UINT16_TYPE__ __u_16; __UINT32_TYPE__ __u_32; __UINT64_TYPE__ __u_64;
@@ -480,7 +480,7 @@ end:
 __FORMAT_PRINTER_IMPL
 __ssize_t (__ATTR_CDECL format_printf)(pformatprinter __printer, void *__closure,
                                        char const *__restrict __format, ...) {
- __VA_LIST __args; __ssize_t __result;
+ __builtin_va_list __args; __ssize_t __result;
  __builtin_va_start(__args,__format);
  __result = format_vprintf(__printer,__closure,__format,__args);
  __builtin_va_end(__args);

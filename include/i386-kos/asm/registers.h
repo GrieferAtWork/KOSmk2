@@ -16,29 +16,36 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ERR_H
-#define _ERR_H 1
+#ifndef _X86_KOS_ASM_REGISTERS_H
+#define _X86_KOS_ASM_REGISTERS_H 1
 
-#include <__stdinc.h>
-#include <features.h>
+#include <hybrid/host.h>
 
-#ifndef __CRT_GLC
-#error "<err.h> is not supported by the linked libc"
-#endif /* __CRT_GLC */
+#ifdef __x86_64__
+#define __ASM_PUSH_SCRATCH \
+        pushq %rax; pushq %rcx; pushq %rdx; pushq %rsi; \
+        pushq %rdi; pushq %r8;  pushq %r9;  pushq %r10; \
+        pushq %r11;
+#define __ASM_POP_SCRATCH \
+        popq %r11; popq %r10; popq %r9;  popq %r8;  \
+        popq %rdi; popq %rsi; popq %rdx; popq %rcx; \
+        popq %rax;
+#define __ASM_PUSH_PRESERVE \
+        pushq %rbx; pushq %rbp; pushq %r12; pushq %r13; \
+        pushq %r14; pushq %r15;
+#define __ASM_POP_PRESERVE \
+        pushq %r15; pushq %r14; pushq %r13; pushq %r12; \
+        pushq %rbp; pushq %rbx;
+#elif defined(__OPTIMIZE_SIZE__)
+#define __ASM_PUSH_SCRATCH  pushal;
+#define __ASM_POP_SCRATCH   popal;
+#define __ASM_PUSH_PRESERVE pushal;
+#define __ASM_POP_PRESERVE  popal;
+#else
+#define __ASM_PUSH_SCRATCH  pushl %eax; pushl %ecx; pushl %edx;
+#define __ASM_POP_SCRATCH   popl %edx; popl %ecx; popl %eax;
+#define __ASM_PUSH_PRESERVE pushl %ebx; pushl %ebp; pushl %edi; pushl %esi;
+#define __ASM_POP_PRESERVE  popl %esi; popl %edi; popl %ebp; popl %ebx;
+#endif
 
-__SYSDECL_BEGIN
-
-#ifndef __KERNEL__
-__LIBC __ATTR_COLD void (__LIBCCALL warn)(char const *__format, ...);
-__LIBC __ATTR_COLD void (__LIBCCALL vwarn)(char const *__format, __builtin_va_list __args);
-__LIBC __ATTR_COLD void (__LIBCCALL warnx)(char const *__format, ...);
-__LIBC __ATTR_COLD void (__LIBCCALL vwarnx)(char const *__format, __builtin_va_list __args);
-__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL err)(int __status, char const *__format, ...);
-__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL verr)(int __status, char const *__format, __builtin_va_list __args);
-__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL errx)(int __status, char const *__format, ...);
-__LIBC __ATTR_COLD __ATTR_NORETURN void (__LIBCCALL verrx)(int __status, char const *__format, __builtin_va_list __args);
-#endif /* !__KERNEL__ */
-
-__SYSDECL_END
-
-#endif /* !_ERR_H */
+#endif /* !_X86_KOS_ASM_REGISTERS_H */

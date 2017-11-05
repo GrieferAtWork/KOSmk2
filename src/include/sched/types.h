@@ -56,6 +56,7 @@
 #endif /* !CONFIG_JIFFY_TIMEOUT */
 #include <hybrid/host.h>
 #include <hybrid/types.h>
+#include <kernel/arch/cpustate.h>
 #include <kernel/arch/cpu.h>
 #include <kernel/arch/task.h>
 #include <kernel/memory.h>
@@ -567,14 +568,14 @@ FUNDEF void KCALL sigpending_fini(struct sigpending *__restrict self);
 #endif
 
 
-#ifdef __i386__
-#   define SIGENTER_OFFSETOF_COUNT   0
-#   define SIGENTER_OFFSETOF_EIP     4
-#   define SIGENTER_OFFSETOF_CS      8
-#   define SIGENTER_OFFSETOF_EFLAGS  12
-#   define SIGENTER_OFFSETOF_USERESP 16
-#   define SIGENTER_OFFSETOF_SS      20
-#   define SIGENTER_SIZE             24
+#if defined(__x86_64__) || defined(__i386__)
+#   define SIGENTER_OFFSETOF_COUNT      0
+#   define SIGENTER_OFFSETOF_EIP        __SIZEOF_POINTER__
+#   define SIGENTER_OFFSETOF_CS      (2*__SIZEOF_POINTER__)
+#   define SIGENTER_OFFSETOF_EFLAGS  (3*__SIZEOF_POINTER__)
+#   define SIGENTER_OFFSETOF_USERESP (4*__SIZEOF_POINTER__)
+#   define SIGENTER_OFFSETOF_SS      (5*__SIZEOF_POINTER__)
+#   define SIGENTER_SIZE             (6*__SIZEOF_POINTER__)
 #else
 #   error FIXME
 #endif
@@ -583,12 +584,13 @@ FUNDEF void KCALL sigpending_fini(struct sigpending *__restrict self);
 struct sigenter_info;
 
 struct sigenter {
+#if defined(__x86_64__) || defined(__i386__)
  size_t     se_count; /*< Amount of Signals that need handling. */
  /* Return register values (These were overwritten near the kernel stack base).
   * NOTE: Basically, this is the original iret tail that was used when the kernel was entered. */
  void      *se_eip;
- u16        se_cs,__n0;
- u32        se_eflags;
+ IRET_SEGMENT(se_cs);
+ register_t se_eflags;
 union{
  USER void *se_useresp;
  /* NOTE: 'useresp' has been manipulated to point to
@@ -597,7 +599,10 @@ union{
  USER struct sigenter_info
            *se_siginfo; /*< Either located on the user-stack, or the signal-alt-stack. */
 };
- u16        se_ss,__n1;
+ IRET_SEGMENT(se_ss);
+#else
+#error "Unsupported arch"
+#endif
 };
 
 

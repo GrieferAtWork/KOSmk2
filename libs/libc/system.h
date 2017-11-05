@@ -190,19 +190,19 @@ LOCAL SYSCALL4(errno_t,xfsymlinkat,(USER char const *,oldname,int,newdfd,USER ch
 LOCAL SYSCALL5(ssize_t,xfreadlinkat,(int,dfd,USER char const *,path,USER char *,buf,size_t,len,int,flags));
 LOCAL SYSCALL4(ssize_t,xvirtinfo,(VIRT void *,addr,USER struct virtinfo *,buf,size_t,bufsize,u32,flags));
 
-#undef SYSCALL_NAME
-#define SYSCALL_NAME(name) __sys_##name
 
 #if __SIZEOF_SYSCALL_LONG__ < 8
+#undef SYSCALL_NAME
+#define SYSCALL_NAME(name) __sys_##name
 LOCAL SYSCALL2(u64,xfsmask,(u32,mask_hi,u32,mask_lo));
 #define sys_xfsmask(mask) __sys_xfsmask((u32)((u64)(mask) >> 32),(u32)(mask))
 #else
 LOCAL SYSCALL1(u64,xfsmask,(u64,mask));
-#define sys_xfsmask(mask) __sys_xfsmask(mask)
 #endif
 
-
 #ifdef __ARCH_EXTENDED_FS_SYSCALLS
+#undef SYSCALL_NAME
+#define SYSCALL_NAME(name) __sys_##name
 LOCAL SYSCALL4(s64,lseek,(int,fd,syscall_slong_t,off_hi,syscall_slong_t,off_lo,int,whence));
 LOCAL SYSCALL5(ssize_t,pread64,(int,fd,USER void *,buf,size_t,bufsize,syscall_ulong_t,pos_hi,syscall_ulong_t,pos_lo));
 LOCAL SYSCALL5(ssize_t,pwrite64,(int,fd,USER void const *,buf,size_t,bufsize,syscall_ulong_t,pos_hi,syscall_ulong_t,pos_lo));

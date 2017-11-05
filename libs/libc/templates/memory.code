@@ -97,12 +97,21 @@
 #endif
 
 
-#ifdef CONFIG_DEBUG
+#if defined(CONFIG_DEBUG) && \
+   (defined(__i386__) || defined(__x86_64__))
+#ifdef __x86_64__
+#define CHECK_DF() \
+{	register u64 temp; \
+	__asm__ __volatile__("pushfq\npopq %0\n" : "=g" (temp) : : "memory"); \
+	assertf(!(temp&EFLAGS_DF),"Direction flag is set (%x)\n",temp); \
+}
+#else
 #define CHECK_DF() \
 {	register u32 temp; \
 	__asm__ __volatile__("pushfl\npopl %0\n" : "=g" (temp) : : "memory"); \
 	assertf(!(temp&EFLAGS_DF),"Direction flag is set (%x)\n",temp); \
 }
+#endif
 #else
 #define CHECK_DF() {}
 #endif

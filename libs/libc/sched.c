@@ -30,6 +30,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 #include <sched.h>
 #include <sys/syscall.h>
 
@@ -55,6 +56,41 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
 
  /* NOTE: The clone() system call cannot be called safely without custom assembly,
   *       due to the fact that it returns to the same address as the parent thread. */
+#ifdef __x86_64__
+ { register uintptr_t r10 __asm__("r10") = (uintptr_t)ctid;
+   register uintptr_t r8  __asm__("r8") = (uintptr_t)newtls;
+   __asm__ __volatile__("    int   $0x80\n"
+                        /* This is where (presumably) two threads are going to show up,
+                         * the only difference between the two being the value of EAX,
+                         * which is supposed to be ZERO(0) for the child. */
+                        "    testq %%rax, %%rax\n"
+                        "    jnz 1f\n" /* Jump if this is the parent thread. */
+                        /* Userspace child initialization. */
+                        "    movq %[arg], %%rdi\n" /* `arg' */
+                        "    xorq  %%rbp, %%rbp\n" /* ZERO out EBP to terminate tracebacks. */
+                        "    call *%[fn]\n" /* Call the user-defined function.  */
+                        "    movq  %%rax, %%rdi\n" /* Load the thread's exitcode. */
+                        /* NOTE: Don't be confused, the kernel calls `pthread_exit()'
+                         *       `exit()', and calls stdlib's `exit()' `exit_group()'.
+                         *       The reason for this is historical and lies in the fact
+                         *       that multithreading wasn't something you could always do.
+                         *      (fork() came before clone(), and exit_group() was an afterthough). */
+                        "    movq  $(" PP_STR(SYS_exit) "), %%rax\n"
+                        "    int   $0x80\n" /* Exit the thread. */
+                        /* unreachable */
+                        "1:\n" /* This is where the parent jumps */
+                        : "=a" (result)
+                        : "a" (SYS_clone)
+                        , "D" (flags)
+                        , "S" (child_stack)
+                        , "d" (ptid)
+                        , "r" (r10)
+                        , "r" (r8)
+                        , [fn] "r" (fn)
+                        , [arg] "r" (arg)
+                        : "memory", "r11");
+ }
+#elif defined(__i386__)
  __asm__ __volatile__("    pushl %%ebp\n"
                       "    movl  %[arg], %%ebp\n" /* Safe the argument in EBP */
                       "    int   $0x80\n"
@@ -88,9 +124,11 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
                       , [arg] "m" (arg)
 #else
                       , "D" (newtls)
-                      , [stp] "m" (stp)
 #endif
                       : "memory");
+#else
+#error "Unsupport arch"
+#endif
  /* Check for errors. */
  if (E_ISERR(result)) { SET_ERRNO(-result); return -1; }
  /* Return the child thread PID. */

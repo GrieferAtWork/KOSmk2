@@ -577,12 +577,12 @@ INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
  WORKSTATE->iret.eflags = EFLAGS_IF|EFLAGS_IOPL(3);
  WORKSTATE->iret.eip    = (u32)&cpu_jobworker;
  memset(&WORKSTATE->gp,0,sizeof(WORKSTATE->gp));
- WORKSTATE->sg.ds       = __KERNEL_DS;
- WORKSTATE->sg.es       = __KERNEL_DS;
 #ifdef __x86_64__
  WORKSTATE->sg.fs       = __KERNEL_DS;
  WORKSTATE->sg.gs       = __KERNEL_PERCPU;
 #else /* __x86_64__ */
+ WORKSTATE->sg.ds       = __KERNEL_DS;
+ WORKSTATE->sg.es       = __KERNEL_DS;
  WORKSTATE->sg.fs       = __KERNEL_PERCPU;
  WORKSTATE->sg.gs       = __KERNEL_DS;
 #endif /* !__x86_64__ */
