@@ -16,6 +16,11 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
+#ifdef __NO_PROTOTYPES
+#undef __NO_PROTOTYPES
+#undef __P
+#define __P(x) x
+#endif
 
 #define __DECL_BEGIN extern "C" {
 #define __DECL_END   }

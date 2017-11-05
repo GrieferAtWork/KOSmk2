@@ -21,6 +21,8 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/host.h>
+
+#ifdef __x86_64__
 #include <hybrid/types.h>
 #include <hybrid/limits.h>
 #include <hybrid/typecore.h>
@@ -174,6 +176,9 @@ struct _pdir { /* Controller structure for a page directory. */
  /* The page directory itself (this vector is your `CR3') */
  ATTR_ALIGNED(4096) union pdir_e4 pd_directory[PDIR_E4_COUNT];
 };
+#define PDIR_KERNELSHARE_STARTINDEX \
+     (((KERNEL_BASE&(PDIR_E4_TOTALSIZE-1))*PDIR_E4_COUNT)/PDIR_E4_TOTALSIZE)
+#define PDIR_ROOTENTRY_REPRSIZE   PDIR_E4_TOTALSIZE
 
 
 LOCAL KPD PHYS void *KCALL pdir_translate(pdir_t *__restrict self, VIRT void *ptr) {
@@ -228,7 +233,7 @@ LOCAL void FCALL pdir_flushall(void) {
 
 #endif /* __CC__ */
 
-
 DECL_END
+#endif /* __x86_64__ */
 
 #endif /* !GUARD_INCLUDE_KERNEL_ARCH_PAGING64_H */

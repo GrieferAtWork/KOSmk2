@@ -21,6 +21,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/host.h>
+#ifndef __x86_64__
 #include <hybrid/types.h>
 #include <hybrid/limits.h>
 #include <hybrid/typecore.h>
@@ -146,6 +147,9 @@ struct _pdir {
 };
 #endif /* __CC__ */
 
+#define PDIR_KERNELSHARE_STARTINDEX  (KERNEL_BASE/PDTABLE_REPRSIZE)
+#define PDIR_ROOTENTRY_REPRSIZE       PDTABLE_REPRSIZE
+
 #define PDENTRY_REPRSIZE    PAGESIZE /* 1 << 12 */
 #define PDTABLE_REPRSIZE    0x400000 /* 1 << 22 */
 
@@ -202,5 +206,6 @@ LOCAL void FCALL pdir_flushall(void) {
 
 
 DECL_END
+#endif /* !__x86_64__ */
 
 #endif /* !GUARD_INCLUDE_KERNEL_ARCH_PAGING32_H */

@@ -177,6 +177,22 @@
 #endif
 
 
+#if __SIZEOF_POINTER__ == 8
+#   define __INTPTR_C(x)   __INT64_C(x)
+#   define __UINTPTR_C(x)  __UINT64_C(x)
+#elif __SIZEOF_POINTER__ == 4
+#   define __INTPTR_C(x)   __INT32_C(x)
+#   define __UINTPTR_C(x)  __UINT32_C(x)
+#elif __SIZEOF_POINTER__ == 2
+#   define __INTPTR_C(x)   __INT16_C(x)
+#   define __UINTPTR_C(x)  __UINT16_C(x)
+#elif __SIZEOF_POINTER__ == 1
+#   define __INTPTR_C(x)   __INT8_C(x)
+#   define __UINTPTR_C(x)  __UINT8_C(x)
+#else
+#   error "Unsupported sizeof(void *)"
+#endif
+
 
 
 #ifndef __SIZEOF_INTMAX_T__

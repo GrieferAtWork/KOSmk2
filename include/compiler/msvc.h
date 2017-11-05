@@ -22,6 +22,7 @@
 #define __NO_builtin_expect    1
 #define __likely      /* Nothing */
 #define __unlikely    /* Nothing */
+#define __P(x)                 x
 
 #if defined(_MSC_EXTENSIONS) || _MSC_VER >= 1400
 #   define __COMPILER_HAVE_LONGLONG 1
@@ -178,17 +179,22 @@ template<> struct __static_if<true> { bool __is_true__(); };
 /* Use our hacky `static_if' to emulate `__builtin_choose_expr' */
 #define __builtin_choose_expr(c,tt,ff) (__STATIC_IF(c){tt} __STATIC_ELSE(c){ff})
 #else
-#define __STATIC_IF(x)           if((x) == (__LINE__ != -1))
-#define __STATIC_ELSE(x)         if((x) != (__LINE__ != -1))
-#define __NO_builtin_choose_expr 1
-#define __builtin_choose_expr(c,tt,ff) ((c)?(tt):(ff))
+#ifdef _M_X64
+#   define __STATIC_IF(x)           __pragma(warning(suppress: 4127)) if(x)
+#   define __STATIC_ELSE(x)         __pragma(warning(suppress: 4127)) if(x)
+#else
+#   define __STATIC_IF(x)           if((x) == (__LINE__ != -1))
+#   define __STATIC_ELSE(x)         if((x) != (__LINE__ != -1))
+#endif
+#   define __NO_builtin_choose_expr 1
+#   define __builtin_choose_expr(c,tt,ff) ((c)?(tt):(ff))
 #endif
 #define __XBLOCK(...)            do __VA_ARGS__ __WHILE0
 #define __XRETURN                /* Nothing */
 #define __builtin_assume(x)      __assume(x)
 #define __builtin_unreachable()  __assume(0)
 #define __COMPILER_ALIGNOF       __alignof
-#define __COMPILER_OFFSETOF(s,m) ((__SIZE_TYPE__)&((s *)0)->m)
+#define __builtin_offsetof(s,m) ((__SIZE_TYPE__)&((s *)0)->m)
 #define __ATTR_INLINE            __inline
 #define __ATTR_FORCEINLINE       __forceinline
 #define __LOCAL                  static __inline

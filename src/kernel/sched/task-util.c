@@ -138,18 +138,18 @@ again_findspace:
                                        tlb_size,MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
                                        128*PAGESIZE,MMAN_FINDSPACE_BELOW);
  if (tlb_address != PAGE_ERROR &&
-    (uintptr_t)tlb_address+tlb_size < KERNEL_BASE) goto got_space;
+    (uintptr_t)tlb_address+tlb_size < USER_END) goto got_space;
  /* Try without a gap. */
  tlb_address = mman_findspace_unlocked(mm,(ppage_t)(TASK_USERSTACK_ADDRHINT-tlb_size),
                                        tlb_size,MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
                                        0,MMAN_FINDSPACE_BELOW);
  if (tlb_address != PAGE_ERROR &&
-    (uintptr_t)tlb_address+tlb_size < KERNEL_BASE) goto got_space;
+    (uintptr_t)tlb_address+tlb_size < USER_END) goto got_space;
  tlb_address = mman_findspace_unlocked(mm,(ppage_t)0,tlb_size,
                                        MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
                                        0,MMAN_FINDSPACE_ABOVE);
  if (tlb_address != PAGE_ERROR &&
-    (uintptr_t)tlb_address+tlb_size < KERNEL_BASE) goto got_space;
+    (uintptr_t)tlb_address+tlb_size < USER_END) goto got_space;
  /* Failed to find sufficient space. */
  if (!caller_locked) mman_endread(mm);
  error = -ENOMEM;
@@ -241,7 +241,7 @@ PUBLIC void KCALL
 task_filltlb(struct task *__restrict self) {
  USER struct tlb *info = self->t_tlb;
  /* Fill in TLB information. */
- assert((uintptr_t)info+CEIL_ALIGN(sizeof(struct tlb),PAGESIZE) <= KERNEL_BASE);
+ assert((uintptr_t)info+CEIL_ALIGN(sizeof(struct tlb),PAGESIZE) <= USER_END);
  assert(THIS_TASK->t_mman == self->t_mman);
  info->tl_self        = info;
  info->tl_env         = self->t_mman->m_environ;
@@ -363,17 +363,17 @@ again_findspace:
                                            n_bytes+guard_size,MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
                                            gap_size,MMAN_FINDSPACE_BELOW);
  if (ustack->s_begin != PAGE_ERROR &&
-    (uintptr_t)ustack->s_begin+n_bytes < KERNEL_BASE) goto got_space;
+    (uintptr_t)ustack->s_begin+n_bytes < USER_END) goto got_space;
  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(TASK_USERSTACK_ADDRHINT-n_bytes),
                                            n_bytes+guard_size,MIN(PAGESIZE,TASK_USERSTACK_ALIGN),0,
                                            MMAN_FINDSPACE_BELOW);
  if (ustack->s_begin != PAGE_ERROR &&
-    (uintptr_t)ustack->s_begin+n_bytes < KERNEL_BASE) goto got_space;
+    (uintptr_t)ustack->s_begin+n_bytes < USER_END) goto got_space;
  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)0,n_bytes+guard_size,
                                            MIN(PAGESIZE,TASK_USERSTACK_ALIGN),
                                            0,MMAN_FINDSPACE_ABOVE);
  if (ustack->s_begin != PAGE_ERROR &&
-    (uintptr_t)ustack->s_begin+n_bytes < KERNEL_BASE) goto got_space;
+    (uintptr_t)ustack->s_begin+n_bytes < USER_END) goto got_space;
  /* Failed to find sufficient space. */
  mman_endread(mm);
  error = -ENOMEM;

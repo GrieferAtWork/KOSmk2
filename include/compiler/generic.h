@@ -42,6 +42,13 @@
 #define __builtin_choose_expr(c,tt,ff) ((c)?(tt):(ff))
 #endif
 
+#ifdef __STDC__
+#   define __P(x) x
+#else
+#   define __NO_PROTOTYPES 1
+#   define __P(x) ()
+#endif
+
 #if !defined(__NO_LONG_LONG) && !defined(__DARWIN_NO_LONG_LONG) && \
    ((defined(__BORLANDC__) && __BORLANDC__ >= 0x561) || defined(__SUNPRO_CC) || \
      defined(__TINYC__) || defined(__DCC_VERSION__) || \
@@ -478,15 +485,13 @@
        defined(__DCC_VERSION__) || defined(__TINYC__)
 #   define __COMPILER_ALIGNOF __alignof__
 #elif defined(__cplusplus)
-template<class T> struct __compiler_alignof { char __x; T __y; };
-#   define __COMPILER_ALIGNOF(T) (sizeof(__compiler_alignof< T >)-sizeof(T))
+namespace __int { template<class T> struct __compiler_alignof { char __x; T __y; }; }
+#   define __COMPILER_ALIGNOF(T) (sizeof(::__int::__compiler_alignof< T >)-sizeof(T))
 #else
 #   define __COMPILER_ALIGNOF(T) ((__SIZE_TYPE__)&((struct{ char __x; T __y; } *)0)->__y)
 #endif
-#if __has_builtin(__builtin_offsetof)
-#   define __COMPILER_OFFSETOF       __builtin_offsetof
-#else
-#   define __COMPILER_OFFSETOF(s,m) ((__SIZE_TYPE__)&((s *)0)->m)
+#if !__has_builtin(__builtin_offsetof)
+#   define __builtin_offsetof(s,m) ((__SIZE_TYPE__)&((s *)0)->m)
 #endif
 #if defined(inline) || defined(__cplusplus) || \
    (defined(__SUNPRO_C) && (__SUNPRO_C >= 0x550)) || \
@@ -512,8 +517,14 @@ template<class T> struct __compiler_alignof { char __x; T __y; };
 #define __LOCAL      static __ATTR_INLINE
 #define __FORCELOCAL static __ATTR_FORCEINLINE
 
-#define __LONGLONG   long long
-#define __ULONGLONG  unsigned long long
+#ifdef __COMPILER_HAVE_LONGLONG
+#   define __LONGLONG   signed long long
+#   define __ULONGLONG  unsigned long long
+#else
+/* XXX: What if the compiler doesn't support __int64 either? */
+#   define __LONGLONG   signed __int64
+#   define __ULONGLONG  unsigned __int64
+#endif
 #if !__has_builtin(__builtin_prefetch)
 #   define __NO_builtin_prefetch    1
 #   define __builtin_prefetch(...) (void)0

@@ -38,7 +38,7 @@
 
 DECL_BEGIN
 
-#define SHM_REGION_SIZE  KERNEL_BASE
+#define SHM_REGION_SIZE  USER_END
 
 PRIVATE struct mregion *KCALL
 shm_region(struct shm_node *__restrict self) {

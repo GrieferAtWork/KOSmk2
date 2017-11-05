@@ -281,7 +281,7 @@ PUBLIC SAFE ssize_t KCALL
 user_virtinfo(VIRT void *addr, USER struct virtinfo *buf,
               size_t bufsize, u32 flags) {
  /* Don't allow access to kernel-level data. */
- if ((uintptr_t)addr >= KERNEL_BASE) return -ENODATA;
+ if ((uintptr_t)addr >= USER_END) return -ENODATA;
  return mman_virtinfo(THIS_TASK->t_real_mman,addr,buf,bufsize,flags);
 }
 

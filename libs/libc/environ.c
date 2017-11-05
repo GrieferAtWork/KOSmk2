@@ -68,9 +68,9 @@ PRIVATE DEFINE_ATOMIC_RWLOCK(env_lock);
 #endif
 
 /* Allocate/Free strings for the environment table.
- * NOTE: 'ENVIRON_FREE()' is special in that it must never free
+ * NOTE: `ENVIRON_FREE()' is special in that it must never free
  *        pointers that have not been previously returned by
- *       'ENVIRON_MALLOC()', instead silently ignoring all
+ *       `ENVIRON_MALLOC()', instead silently ignoring all
  *        that weren't, or simply ignoring everything.
  */
 #define ENVIRON_MALLOC(s)  libc__mall_untrack(libc_malloc(s))

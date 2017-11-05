@@ -343,7 +343,7 @@ endwrite:
  if (!mman_inuse_unlocked(mm,environ,mm->m_envsize)) {
   error = (errno_t)mman_mrestore_unlocked(mm,&env_maps,(ppage_t)environ,true);
  } else {
-  environ = (USER struct envdata *)mman_findspace_unlocked(mm,(ppage_t)((KERNEL_BASE-(4*PAGESIZE))-mm->m_envsize),
+  environ = (USER struct envdata *)mman_findspace_unlocked(mm,(ppage_t)((USER_END-(4*PAGESIZE))-mm->m_envsize),
                                                            mm->m_envsize,PAGESIZE,0,MMAN_FINDSPACE_BELOW);
   if unlikely(environ == PAGE_ERROR) error = -ENOMEM;
   else error = (errno_t)mman_mrestore_unlocked(mm,&env_maps,

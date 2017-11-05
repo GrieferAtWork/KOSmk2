@@ -316,6 +316,9 @@ pdir_mprotect_tbl(struct mscatter *dynmem, pdir_t *__restrict self,
  }
 }
 
+#define PDIR_ISKERNEL(self) ((self) == &pdir_kernel || (self) == &pdir_kernel_v)
+
+#if 1
 PRIVATE size_t
 pdir_reqbytes_for_mprotect(pdir_t *__restrict self, VIRT ppage_t start,
                            PAGE_ALIGNED size_t n_bytes, pdir_attr_t flags) {
@@ -342,9 +345,7 @@ pdir_reqbytes_for_mprotect(pdir_t *__restrict self, VIRT ppage_t start,
  return result;
 }
 
-#define PDIR_ISKERNEL(self) ((self) == &pdir_kernel || (self) == &pdir_kernel_v)
-
-FUNDEF ssize_t KCALL
+PUBLIC ssize_t KCALL
 pdir_mprotect(pdir_t *__restrict self, VIRT ppage_t start,
               size_t n_bytes, pdir_attr_t flags) {
  ssize_t result; size_t reqmem;
@@ -389,6 +390,7 @@ pdir_mprotect(pdir_t *__restrict self, VIRT ppage_t start,
        pdir_flush(base_start,result);
  return (size_t)result;
 }
+#endif
 
 PUBLIC bool KCALL
 pdir_maccess(pdir_t const *__restrict self,
@@ -396,6 +398,7 @@ pdir_maccess(pdir_t const *__restrict self,
              pdir_attr_t flags) {
  union pd_table table;
  union pd_entry entry;
+ assert(flags&PDIR_ATTR_PRESENT);
  /* Align to full pages. */
  n_bytes += (uintptr_t)addr & (PAGESIZE-1);
  *(uintptr_t *)&addr &= PAGESIZE-1;
@@ -425,10 +428,11 @@ next_page:
 }
 
 PUBLIC bool KCALL
-pdir_maccess_addr(pdir_t *__restrict self,
+pdir_maccess_addr(pdir_t const *__restrict self,
                   VIRT void const *addr, pdir_attr_t flags) {
  union pd_table table;
  union pd_entry entry;
+ assert(flags&PDIR_ATTR_PRESENT);
  table = self->pd_directory[PDIR_DINDEX(addr)];
  if ((table.pt_attr&flags) != flags) return false;
  if (PDTABLE_ISMAP(table)) return true;
@@ -769,42 +773,6 @@ pdir_enum(pdir_t *__restrict self,
 }
 
 
-INTDEF byte_t pdir_flush_386[];
-INTDEF byte_t pdir_flush_386_end[];
-
-GLOBAL_ASM(
-L(.section .text.free                     )
-L(PRIVATE_ENTRY(pdir_flush_386)           )
-L(    movl %cr3, %eax                     )
-L(    movl %eax, %cr3                     )
-L(    ret                                 )
-L(SYM_END(pdir_flush_386)                 )
-L(pdir_flush_386_end:                     )
-L(.previous                               )
-);
-
-GLOBAL_ASM(
-L(.section .text                          )
-L(PUBLIC_ENTRY(pdir_flush)                )
-/* NOTE: When the host is a 386, we'll copy data from `pdir_flush_386' here. */
-/* HINT: start   == %ecx */
-/* HINT: n_bytes == %edx */
-L(    cmpl $(PAGESIZE*256), %edx          )
-L(    jae 1f                              )
-L(    invlpg (%ecx)                       )
-L(    subl $(PAGESIZE), %edx              )
-L(    jo 2f                               ) /* Stop if n_bytes underflowed. */
-L(    addl $(PAGESIZE), %ecx              )
-L(    jmp pdir_flush                      )
-L(1:  movl %cr3, %eax                     ) /* Do a regular, full flush for larger quantities. */
-L(    movl %eax, %cr3                     )
-L(2:  ret                                 )
-L(SYM_END(pdir_flush)                     )
-L(.previous                               )
-);
-
-
-
 INTERN ATTR_FREETEXT void KCALL
 pdir_kernel_transform_tables(void) {
  union pd_table *iter; uintptr_t addr_iter;
@@ -895,7 +863,7 @@ pdir_kernel_do_unmap(VIRT uintptr_t begin, size_t n_bytes) {
 
 INTERN ATTR_FREETEXT void KCALL
 pdir_kernel_unmap(VIRT uintptr_t begin, size_t n_bytes) {
-#if 1
+#if 0
  /* Special behavior for physical kernel data, which is
   * unmapped in virtual memory, but kept in physical! */
  if (begin < PDIR_KERNEL_PHYS_BEGIN) {
@@ -987,102 +955,38 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
 #endif
 
 
-
-INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
- assert(addr_isphys(&pdir_kernel));
- assert(addr_isvirt(&pdir_kernel_v));
- assert(addr_isvirt(&mman_kernel));
-
- if (THIS_CPU->c_arch.ac_flags&CPUFLAG_486) {
-  /* Replace `pdir_flush' with its fallback counterpart!
-   * (The `invlpg' instruction is only available starting at 486) */
-  memcpy((void *)&pdir_flush,pdir_flush_386,
-         (size_t)(pdir_flush_386_end-pdir_flush_386));
- }
-
- /* Transform kernel tables, ensuring level#1 indirection for
-  * pages, which in return allow for page sharing with user-space. */
- pdir_kernel_transform_tables();
-
-#ifdef CONFIG_PDIR_SELFMAP
- /* With all page-tables allocated, setup the
-  * page-directory self-map for the kernel itself. */
- pdir_initialize_selfmap(&pdir_kernel);
-#endif /* CONFIG_PDIR_SELFMAP */
+/* Define initialization hooks. */
+#define PDIR_KERNEL_TRANSFORM_TABLES() \
+        pdir_kernel_transform_tables()
+#define PDIR_KERNEL_INITIALIZE_SELFMAP() \
+        pdir_initialize_selfmap(&pdir_kernel)
 
 #ifdef CONFIG_USE_NEW_MEMINFO
- /* Time to clean up the kernel's own page directory! */
- pdir_kernel_unmap_unused();
+#define PDIR_KERNEL_UNMAP_UNUSED() \
+        pdir_kernel_unmap_unused()
 #else
- /* Time to clean up the kernel's own page directory! */
- pdir_kernel_unmap_mzone(MZONE_1MB);
- pdir_kernel_unmap_mzone(MZONE_SHARE);
- pdir_kernel_unmap_mzone(MZONE_NOSHARE);
+#define PDIR_KERNEL_UNMAP_UNUSED() \
+       (pdir_kernel_unmap_mzone(MZONE_1MB), \
+        pdir_kernel_unmap_mzone(MZONE_SHARE), \
+        pdir_kernel_unmap_mzone(MZONE_NOSHARE))
 #endif
-
- /* Unmap all virtual memory past the kernel core. */
- pdir_kernel_unmap(KERNEL_END,KERNEL_AFTER_END);
-
- /* Unmap the virtual copy of physical memory before device data.
-  * NOTE: Device memory itself must not be unmapped,
-  *       as the TTY driver wouldn't work otherwise. */
- pdir_kernel_unmap(KERNEL_BASE,0x000a0000);
-
+#define PDIR_KERNEL_UNMAP_AFTEREND() \
+        pdir_kernel_unmap(KERNEL_END,KERNEL_AFTER_END);
+#define PDIR_KERNEL_UNMAP_BEFOREBEGIN() \
+        pdir_kernel_unmap(KERNEL_BASE,0x000a0000)
 #ifdef CONFIG_DEBUG
- /* Make sure that all virtual kernel pages are still allocated! */
- { union pd_table *iter,*end;
-   iter = &pdir_kernel.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE];
-   end  = COMPILER_ENDOF(pdir_kernel.pd_directory);
-   for (; iter != end; ++iter) {
-    assertf(PDTABLE_ISALLOC(*iter),
-            FREESTR("Page table at %p should be allocated"),
-           (iter-pdir_kernel.pd_directory)*
-            PDTABLE_REPRSIZE);
-   }
+#define PDIR_KERNEL_CHECK_INTEGRITY_AFTER_SETUP() \
+ { union pd_table *iter,*end; \
+   iter = &pdir_kernel.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE]; \
+   end  = COMPILER_ENDOF(pdir_kernel.pd_directory); \
+   for (; iter != end; ++iter) { \
+    assertf(PDTABLE_ISALLOC(*iter), \
+            FREESTR("Page table at %p should be allocated"), \
+           (iter-pdir_kernel.pd_directory)* \
+            PDTABLE_REPRSIZE); \
+   } \
  }
 #endif
-
-#if 1
- { ssize_t error;
-   /* Change the protection of the kernel's text/rodata segment to read-only. */
-   error = pdir_mprotect(&pdir_kernel,
-                        (ppage_t)KERNEL_RO_BEGIN,KERNEL_RO_SIZE,
-                         PDIR_ATTR_PRESENT|PDIR_ATTR_GLOBAL|PDIR_FLAG_NOFLUSH);
-   if (E_ISERR(error)) {
-    syslog(LOG_MEM|LOG_ERROR,
-           FREESTR("[PD] Failed to mark kernel text %p...%p as read-only: %[errno]\n"),
-           KERNEL_RO_BEGIN,KERNEL_RO_END-1,-error);
-   }
-#if 1
-   error = pdir_mprotect(&pdir_kernel,
-                        (ppage_t)__kernel_user_start,(size_t)__kernel_user_size,
-                         PDIR_ATTR_USER|PDIR_ATTR_GLOBAL|PDIR_ATTR_PRESENT|PDIR_FLAG_NOFLUSH);
-   if (E_ISERR(error)) {
-    syslog(LOG_MEM|LOG_ERROR,
-           FREESTR("[PD] Failed to mark user-data %p...%p as shared: %[errno]\n"),
-          (uintptr_t)__kernel_user_start,(uintptr_t)__kernel_user_end-1,-error);
-   }
-#endif
- }
-#endif
-
-#if 0
- { union pd_table *iter; uintptr_t addr_iter;
-   iter = &pdir_kernel.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE];
-   for (addr_iter = 0; addr_iter < (0-KERNEL_BASE);
-        addr_iter += PDTABLE_REPRSIZE,++iter) {
-    syslog(LOG_MEM|LOG_DEBUG,FREESTR("KERNEL_PD[%p] = %p\n"),
-           addr_iter,PDTABLE_GETPTEV(*iter));
-   }
- }
-#endif
-
- /* Reload the kernel page directory completely. */
- pdir_flushall();
-
- assert(PDIR_TRANSLATE(&pdir_kernel_v,&pdir_kernel_v) == &pdir_kernel);
- assert(PDIR_TRANSLATE(&pdir_kernel  ,&pdir_kernel_v) == &pdir_kernel);
-}
 
 DECL_END
 #endif /* !__x86_64__ */

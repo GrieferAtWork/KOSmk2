@@ -20,6 +20,8 @@
 #define GUARD_KERNEL_CORE_ARCH_PAGING64_C_INL 1
 #define _KOS_SOURCE 1
 
+#include <hybrid/host.h>
+#ifdef __x86_64__
 #include <assert.h>
 #include <hybrid/align.h>
 #include <hybrid/arch/cpu.h>
@@ -55,7 +57,7 @@ typedef union pdir_e4 e4_t;
 
 /* Starting index within the level #4 (pdir) vector,
  * where sharing of level #3 entries starts. */
-#define PDIR_E4_SHARESTART   (((KERNEL_BASE&(PDIR_E4_TOTALSIZE-1))*PDIR_E4_COUNT)/PDIR_E4_TOTALSIZE)
+#define PDIR_E4_SHARESTART   PDIR_KERNELSHARE_STARTINDEX
 
 /* Assert some relations that are assumed by code below. */
 STATIC_ASSERT(PDIR_E1_SIZE == PAGESIZE);
@@ -77,7 +79,6 @@ STATIC_ASSERT(~PDIR_ADDR_MASK == PAGESIZE-1);
 
 
 PUBLIC KPD bool KCALL pdir_init(pdir_t *__restrict self) {
- /* TODO: memsetq() / memcpyq() */
  /* Fill lower memory with unallocated pages. */
  memsetq(self->pd_directory,PDIR_ADDR_MASK,PDIR_E4_SHARESTART);
  memcpyq(&self->pd_directory[PDIR_E4_SHARESTART],
@@ -200,33 +201,61 @@ PUBLIC KPD void KCALL pdir_fini(pdir_t *__restrict self) {
 }
 
 
-PUBLIC ssize_t KCALL
-pdir_mprotect(pdir_t *__restrict self, VIRT ppage_t start,
-              size_t n_bytes, pdir_attr_t flags) {
- n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
- /* TODO */
- return (size_t)n_bytes;
-}
-
 PUBLIC bool KCALL
 pdir_maccess(pdir_t const *__restrict self,
              VIRT void const *addr, size_t n_bytes,
              pdir_attr_t flags) {
+ assert(flags&PDIR_ATTR_PRESENT);
  /* Align to full pages. */
  n_bytes += (uintptr_t)addr & (PAGESIZE-1);
  *(uintptr_t *)&addr &= PAGESIZE-1;
-
- /* TODO */
-
+ if (n_bytes) for (;;) {
+  if (!pdir_maccess_addr(self,addr,flags))
+       return false;
+  if (n_bytes <= PAGESIZE) break;
+  n_bytes -= PAGESIZE;
+  *(uintptr_t *)&addr += n_bytes;
+ }
  return true;
 }
 
 PUBLIC bool KCALL
-pdir_maccess_addr(pdir_t *__restrict self,
+pdir_maccess_addr(pdir_t const *__restrict self,
                   VIRT void const *addr, pdir_attr_t flags) {
- /* TODO */
- return true;
+ union pdir_e e;
+ assert(flags&PDIR_ATTR_PRESENT);
+ e.e4 = self->pd_directory[PDIR_E4_INDEX(addr)];
+ if ((e.e4.e4_attr&flags) != flags) return false;
+ e.e3 = PDIR_E4_RDLINK(e.e4)[PDIR_E3_INDEX(addr)];
+ if ((e.e3.e3_attr&flags) != flags) return flags;
+ e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(addr)];
+ if ((e.e2.e2_attr&flags) != flags) return false;
+ e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(addr)];
+ return (e.e1.e1_attr&flags) == flags;
 }
+
+
+PUBLIC ssize_t KCALL
+pdir_mprotect(pdir_t *__restrict self, ppage_t start,
+              size_t n_bytes, pdir_attr_t flags) {
+ ssize_t result; size_t reqmem;
+ struct mscatter dynmem;
+ ppage_t base_start = start;
+ pdir_attr_t prot_flags;
+ CHECK_HOST_DOBJ(self);
+ assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
+ result = n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
+ assertf(PDIR_ISKERNEL(self) || !n_bytes || !addr_isvirt((uintptr_t)start+n_bytes-1),
+         "Virtual addresses may only be mapped within the kernel page directory (%p...%p)",
+        (uintptr_t)start,(uintptr_t)start+n_bytes-1);
+ assert((uintptr_t)start+n_bytes == 0 ||
+        (uintptr_t)start+n_bytes >= (uintptr_t)start);
+
+ /* TODO */
+
+ return result;
+}
+
 
 PUBLIC errno_t KCALL
 pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
@@ -262,64 +291,7 @@ pdir_enum(pdir_t *__restrict self,
  return 0;
 }
 
-
-INTDEF byte_t pdir_flush_386[];
-INTDEF byte_t pdir_flush_386_end[];
-
-GLOBAL_ASM(
-L(.section .text.free                     )
-L(PRIVATE_ENTRY(pdir_flush_386)           )
-L(    movq %cr3, %rax                     )
-L(    movq %rax, %cr3                     )
-L(    ret                                 )
-L(SYM_END(pdir_flush_386)                 )
-L(pdir_flush_386_end:                     )
-L(.previous                               )
-);
-
-GLOBAL_ASM(
-L(.section .text                          )
-L(PUBLIC_ENTRY(pdir_flush)                )
-/* NOTE: When the host is a 386, we'll copy data from `pdir_flush_386' here. */
-/* HINT: start   == %rdi */
-/* HINT: n_bytes == %rsi */
-L(    cmpq $(PAGESIZE*256), %rsi          )
-L(    jae  1f                             )
-L(    invlpg (%rdi)                       )
-L(    subq $(PAGESIZE), %rsi              )
-L(    jo   2f                             ) /* Stop if n_bytes underflowed. */
-L(    addq $(PAGESIZE), %rdi              )
-L(    jmp  pdir_flush                     )
-L(1:  movl %cr3, %rax                     ) /* Do a regular, full flush for larger quantities. */
-L(    movl %rax, %cr3                     )
-L(2:  ret                                 )
-L(SYM_END(pdir_flush)                     )
-L(.previous                               )
-);
-
-
-INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
- assert(addr_isphys(&pdir_kernel));
- assert(addr_isvirt(&pdir_kernel_v));
- assert(addr_isvirt(&mman_kernel));
-
- if (THIS_CPU->c_arch.ac_flags&CPUFLAG_486) {
-  /* Replace `pdir_flush' with its fallback counterpart!
-   * (The `invlpg' instruction is only available starting at 486) */
-  memcpy((void *)&pdir_flush,pdir_flush_386,
-         (size_t)(pdir_flush_386_end-pdir_flush_386));
- }
-
- /* TODO */
-
-
- /* Reload the kernel page directory completely. */
- pdir_flushall();
-
- assert(PDIR_TRANSLATE(&pdir_kernel_v,&pdir_kernel_v) == &pdir_kernel);
- assert(PDIR_TRANSLATE(&pdir_kernel  ,&pdir_kernel_v) == &pdir_kernel);
-}
-
 DECL_END
+#endif /* __x86_64__ */
 
 #endif /* !GUARD_KERNEL_CORE_ARCH_PAGING64_C_INL */

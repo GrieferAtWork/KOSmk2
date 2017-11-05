@@ -77,7 +77,7 @@ typedef __WCHAR_TYPE__ wchar_t;
 #endif /* !__wchar_t_defined */
 #endif /* __CC__ */
 
-#define offsetof(s,m) __COMPILER_OFFSETOF(s,m)
+#define offsetof(s,m) __builtin_offsetof(s,m)
 
 #ifdef __USE_KOS
 #define offsetafter(s,m)              __COMPILER_OFFSETAFTER(s,m)

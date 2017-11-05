@@ -39,6 +39,7 @@
 #include <hybrid/sync/atomic-owner-rwlock.h>
 #include <hybrid/sync/atomic-rwlock.h>
 #include <hybrid/traceback.h>
+#include <hybrid/typecore.h>
 #include <kernel/irq.h>
 #include <kernel/malloc.h>
 #include <kernel/memory.h>
@@ -239,10 +240,10 @@ DECL_BEGIN
 #define MEMORY_PHYS_ZONE          MZONE_ANY
 
 /* Address ranges used by virtual kernel/shared memory allocations. */
-#define KERNEL_VIRT_BEGIN         0x00000000  /* 0x00000000...0xbfffffff */
-#define KERNEL_VIRT_END           KERNEL_BASE /* 0x00000000...0xbfffffff */
-#define SHARED_VIRT_BEGIN         KERNEL_BASE /* 0xc0000000...0xffffffff */
-#define SHARED_VIRT_END           0x00000000  /* 0xc0000000...0xffffffff */
+#define KERNEL_VIRT_BEGIN         __UINTPTR_C(0x00000000)  /* 0x00000000...0xbfffffff */
+#define KERNEL_VIRT_END           KERNEL_BASE              /* 0x00000000...0xbfffffff */
+#define SHARED_VIRT_BEGIN         KERNEL_BASE              /* 0xc0000000...0xffffffff */
+#define SHARED_VIRT_END           __UINTPTR_C(0x00000000)  /* 0xc0000000...0xffffffff */
 
 #define BAD_ALLOC(n_bytes,flags) (void)0
 #define M_ISNONNULL(p) likely((p) != NULL)

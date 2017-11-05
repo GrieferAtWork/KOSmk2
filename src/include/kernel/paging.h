@@ -102,7 +102,7 @@ FUNDEF bool KCALL pdir_maccess(pdir_t const *__restrict self,
                                VIRT void const *addr, size_t n_bytes,
                                pdir_attr_t flags);
 /* Same as `pdir_maccess', but optimized for a single address. */
-FUNDEF bool KCALL pdir_maccess_addr(pdir_t *__restrict self, VIRT void const *addr, pdir_attr_t flags);
+FUNDEF bool KCALL pdir_maccess_addr(pdir_t const *__restrict self, VIRT void const *addr, pdir_attr_t flags);
 
 /* Create a physical mapping for `target' to `start..+=n_bytes'
  * NOTE: The given argument `n_bytes' is ceil-aligned by pages.

@@ -30,6 +30,12 @@
 #define __GCC_VERSION_NUM    (__GNUC__*10000+__GNUC_MINOR__*100+__GNUC_PATCH__)
 #define __GCC_VERSION(a,b,c) (__GCC_VERSION_NUM >= ((a)*10000+(b)*100+(c)))
 
+#ifdef __STDC__
+#   define __P(x) x
+#else
+#   define __NO_PROTOTYPES 1
+#   define __P(x) ()
+#endif
 
 #ifndef __INTEL_VERSION__
 #ifdef __INTEL_COMPILER
@@ -345,7 +351,6 @@ extern "C++" { template<class T> struct __compiler_alignof { char __x; T __y; };
 #else
 #   define __COMPILER_ALIGNOF(T) ((__SIZE_TYPE__)&((struct{ char __x; T __y; } *)0)->__y)
 #endif
-#define __COMPILER_OFFSETOF __builtin_offsetof
 #if defined(__NO_INLINE__) && 0
 #   define __NO_ATTR_INLINE 1
 #   define __ATTR_INLINE    /* nothing */

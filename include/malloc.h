@@ -32,16 +32,16 @@ typedef __SIZE_TYPE__ size_t;
 #endif
 
 /* Malloc implementation notes:
- *  - libk use kmalloc from "/src/include/kernel/malloc.h"
- *    All allocation functions will pass 'GFP_NORMAL' for flags,
- *    meaning that malloc() within the kernel will allocate
+ *  - libk use `kmalloc()' from `/src/include/kernel/malloc.h'
+ *    All allocation functions will pass `GFP_NORMAL' for flags,
+ *    meaning that `malloc()' within the kernel will allocate
  *    shared memory above `KERNEL_BASE', that is visible in
  *    all page directories.
- *  - libc use dlmalloc build on top of "/include/sys/mman.h"
- *  - malloc(0) does NOT return NULL, but some small, non-empty block of memory.
- *  - realloc(p,0) does NOT act as free, but return some small, non-empty block of memory.
- *  - free() never modifies the currently set value of `errno', even when munmap fails.
- *  - Any allocation function failing in libc will set `errno' to 'ENOMEM' */
+ *  - libc use dlmalloc build on top of `<sys/mman.h>'
+ *  - `malloc(0)' does NOT return `NULL', but some small, non-empty block of memory.
+ *  - `realloc(p,0)' does NOT act as `free(p)', but return some small, non-empty block of memory.
+ *  - `free()' never modifies the currently set value of `errno', even when an underlying `munmap()' fails.
+ *  - Any allocation function failing in libc will set `errno' to `ENOMEM' */
 #ifndef __malloc_stdlib_defined
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC void *(__LIBCCALL malloc)(size_t __n_bytes);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_MALLOC void *(__LIBCCALL calloc)(size_t __count, size_t __n_bytes);

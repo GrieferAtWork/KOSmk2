@@ -166,7 +166,8 @@ FORCELOCAL bool (KCALL _addr_isuser)(void const *addr, size_t len) {
  if (__builtin_constant_p(len)) {
   if (!len) return true;
   if (__builtin_constant_p(addr)) {
-   if ((uintptr_t)addr+len <= KERNEL_BASE) return true;
+   if ((uintptr_t)addr+len <= USER_END)
+        return true;
   }  
  }
  return __addr_isuser(addr,len);

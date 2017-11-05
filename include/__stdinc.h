@@ -116,7 +116,7 @@
 
 #define __COMPILER_OFFSETAFTER(s,m) ((__SIZE_TYPE__)(&((s *)0)->m+1))
 #define __COMPILER_CONTAINER_OF(ptr,type,member) \
-  ((type *)((__UINTPTR_TYPE__)(ptr)-__COMPILER_OFFSETOF(type,member)))
+  ((type *)((__UINTPTR_TYPE__)(ptr)-__builtin_offsetof(type,member)))
 #   define __DEFINE_ALIAS_STR(x) #x
 #   define __DEFINE_PRIVATE_ALIAS(new,old) __asm__(".local " __DEFINE_ALIAS_STR(new) "\n.set " __DEFINE_ALIAS_STR(new) "," __DEFINE_ALIAS_STR(old) "\n")
 #   define __DEFINE_PUBLIC_ALIAS(new,old)  __asm__(".global " __DEFINE_ALIAS_STR(new) "\n.set " __DEFINE_ALIAS_STR(new) "," __DEFINE_ALIAS_STR(old) "\n")
@@ -194,13 +194,13 @@
 #define __IGNORE_REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
 #define __IGNORE_REDIRECT_VOID(decl,attr,Treturn,cc,name,param,asmname,args)
 #define __NOREDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
-    decl attr Treturn (cc name) param;
+    decl attr Treturn (cc name) __P(param);
 #define __NOREDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
-    decl attr Treturn __NOTHROW((cc name) param);
+    decl attr Treturn __NOTHROW((cc name) __P(param));
 #define __NOREDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
-    decl attr void (cc name) param;
+    decl attr void (cc name) __P(param);
 #define __NOREDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
-    decl attr void __NOTHROW((cc name) param);
+    decl attr void __NOTHROW((cc name) __P(param));
 
 /* General purpose redirection implementation. */
 #ifndef __REDIRECT
@@ -217,13 +217,13 @@
 #elif !defined(__NO_ASMNAME)
 /* Use GCC family's assembly name extension. */
 #define __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
-    decl attr Treturn (cc name) param __ASMNAME(__PP_PRIVATE_STR(asmname));
+    decl attr Treturn (cc name) __P(param) __ASMNAME(__PP_PRIVATE_STR(asmname));
 #define __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \
-    decl attr Treturn __NOTHROW((cc name) param) __ASMNAME(__PP_PRIVATE_STR(asmname));
+    decl attr Treturn __NOTHROW((cc name) __P(param)) __ASMNAME(__PP_PRIVATE_STR(asmname));
 #define __REDIRECT_VOID(decl,attr,cc,name,param,asmname,args) \
-    decl attr void (cc name) param __ASMNAME(__PP_PRIVATE_STR(asmname));
+    decl attr void (cc name) __P(param) __ASMNAME(__PP_PRIVATE_STR(asmname));
 #define __REDIRECT_VOID_NOTHROW(decl,attr,cc,name,param,asmname,args) \
-    decl attr void __NOTHROW((cc name) param) __ASMNAME(__PP_PRIVATE_STR(asmname));
+    decl attr void __NOTHROW((cc name) __P(param)) __ASMNAME(__PP_PRIVATE_STR(asmname));
 #elif defined(__cplusplus)
 /* In C++, we can use use namespaces to prevent collisions with incompatible prototypes. */
 #define __REDIRECT_UNIQUE  __PP_CAT2(__u,__LINE__)

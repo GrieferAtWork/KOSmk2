@@ -59,7 +59,7 @@ typedef __mode_t mode_t;
                             *        can be set like any other protection. */
 #ifdef __KERNEL__
 #define PROT_NOUSER   0x40 /*< Map memory as inaccessible to user-space.
-                            *  WARNING: Not fully enforced for addresses below `KERNEL_BASE'. */
+                            *  WARNING: Not fully enforced for addresses below `USER_END'. */
 #define PROT_CLEAN    0x80 /*< Unset whenever user-space re-maps a page as writable. - Cannot be removed.
                             *  NOTE: This flag is used to prevent rootfork() from working
                             *        when called from an otherwise read-only module after

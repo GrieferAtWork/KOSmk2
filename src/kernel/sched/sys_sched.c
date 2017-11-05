@@ -794,11 +794,11 @@ find_space:
  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(CLONE_AUTOSTACK_HINT-CLONE_AUTOSTACK_SIZE),
                                            CLONE_AUTOSTACK_SIZE,8,gap_size,MMAN_FINDSPACE_BELOW);
  if (ustack->s_begin == PAGE_ERROR ||
-    (uintptr_t)ustack->s_begin+CLONE_AUTOSTACK_SIZE >= KERNEL_BASE) {
+    (uintptr_t)ustack->s_begin+CLONE_AUTOSTACK_SIZE > USER_END) {
   ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)CLONE_AUTOSTACK_HINT,
                                             CLONE_AUTOSTACK_SIZE,8,gap_size,MMAN_FINDSPACE_ABOVE);
   if (ustack->s_begin == PAGE_ERROR ||
-     (uintptr_t)ustack->s_begin+CLONE_AUTOSTACK_SIZE >= KERNEL_BASE) {
+     (uintptr_t)ustack->s_begin+CLONE_AUTOSTACK_SIZE > USER_END) {
    if (gap_size) { gap_size = 0; goto find_space; } /* Try without a gap. */
    mman_endwrite(mm);
    error = -ENOMEM;

@@ -648,11 +648,11 @@ elf_patch(struct modpatch *__restrict patcher) {
   *    of the module's data, as well as prior check for
   *    all table points being within that block of data,
   *    as well as the caller being required to map user-space
-  *    module instances below KERNEL_BASE
+  *    module instances below USER_END
   */
- assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)string_end   <= KERNEL_BASE);
- assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)data_end     <= KERNEL_BASE);
- assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)symtab_end   <= KERNEL_BASE);
+ assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)string_end   <= USER_END);
+ assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)data_end     <= USER_END);
+ assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)symtab_end   <= USER_END);
 
  /* Load all module dependencies. */
  { Elf_Word *dep_iter,*dep_begin;
@@ -813,7 +813,7 @@ got_symbol:
       *    If it fails, the caller will correctly determine `-EFAULT'
       *    and everything can go on as normal without us having to
       *    waste a whole much of time validating a pointer. */
-     if (rel_value+sym->st_size >= KERNEL_BASE) {
+     if (rel_value+sym->st_size >= USER_END) {
       char *sym_name = string_table+sym->st_name;
       /* Special case: Allow relocations against user-share symbols */
       if (rel_value             >= (uintptr_t)__kernel_user_start &&

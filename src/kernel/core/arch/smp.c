@@ -599,7 +599,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_idle.t_signals.ts_first.tss_self = &__bootcpu.c_idle;
  vcpu->c_idle.t_critical                  = 1;
  vcpu->c_idle.t_nointr                    = 1;
- vcpu->c_idle.t_addrlimit                 = KERNEL_BASE;
+ vcpu->c_idle.t_addrlimit                 = USER_END;
  atomic_rwlock_cinit(&vcpu->c_idle.t_pid.tp_parlock);
  atomic_rwlock_cinit(&vcpu->c_idle.t_pid.tp_leadlock);
  atomic_rwlock_cinit(&vcpu->c_idle.t_pid.tp_childlock);
@@ -640,7 +640,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  vcpu->c_work.t_signals.ts_first.tss_self = &__bootcpu.c_work;
  vcpu->c_work.t_critical                  = 1;
  vcpu->c_work.t_nointr                    = 1;
- vcpu->c_work.t_addrlimit                 = KERNEL_BASE;
+ vcpu->c_work.t_addrlimit                 = USER_END;
  atomic_rwlock_cinit(&vcpu->c_work.t_pid.tp_parlock);
  atomic_rwlock_cinit(&vcpu->c_work.t_pid.tp_leadlock);
  atomic_rwlock_cinit(&vcpu->c_work.t_pid.tp_childlock);

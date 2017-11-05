@@ -147,7 +147,7 @@ task_cinit(struct task *t) {
   atomic_rwlock_cinit(&t->t_pid.tp_childlock);
   atomic_rwlock_cinit(&t->t_pid.tp_grouplock);
 
-  t->t_addrlimit = KERNEL_BASE;
+  t->t_addrlimit = USER_END;
   t->t_weakcnt   = 1; /* The initial weak reference owned by `t_refcnt' itself. */
   t->t_refcnt    = 1;
 
@@ -309,8 +309,8 @@ task_start(struct task *__restrict t) {
          (t->t_cstate->iret.eflags&EFLAGS_IF),
          "User-level tasks must run with the #IF flag enabled\n"
          "Either change the task CPL to non-3, or set EFLAGS_IF in eflags.");
+ /* assert(t->t_addrlimit != USER_END); */
  t->t_real_mman = t->t_mman;
- t->t_addrlimit = KERNEL_BASE;
  COMPILER_WRITE_BARRIER();
 
  /* Schedule the task for its first time. */
@@ -2172,9 +2172,10 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
 
  /* Make sure to activate the new task's page directory as early as possible! */
  assert(t->t_mman == new_task->t_mman ||
-        memcmp(&       t->t_mman->m_pdir.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
-               &new_task->t_mman->m_pdir.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
-              ((THIS_PDIR_BASE-KERNEL_BASE)/PDTABLE_REPRSIZE)*4) == 0);
+        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+              ((THIS_PDIR_BASE-KERNEL_BASE)/PDIR_ROOTENTRY_REPRSIZE)*
+                sizeof(t->t_mman->m_pdir.pd_directory[0])) == 0);
  TASK_SWITCH_CONTEXT(t,new_task);
 
 #if 0
@@ -2279,9 +2280,10 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
 
  /* Make sure to activate the new task's page directory as early as possible! */
  assert(t->t_mman == new_task->t_mman ||
-        memcmp(&       t->t_mman->m_pdir.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
-               &new_task->t_mman->m_pdir.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
-              ((THIS_PDIR_BASE-KERNEL_BASE)/PDTABLE_REPRSIZE)*4) == 0);
+        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+              ((THIS_PDIR_BASE-KERNEL_BASE)/PDIR_ROOTENTRY_REPRSIZE)*
+                sizeof(t->t_mman->m_pdir.pd_directory[0])) == 0);
  TASK_SWITCH_CONTEXT(t,new_task);
 
 #if 0

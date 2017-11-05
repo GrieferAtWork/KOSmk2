@@ -150,6 +150,146 @@ pdir_print(pdir_t *__restrict self,
  return pdir_enum(self,&pdir_println,&pck);
 }
 
+
+
+INTDEF byte_t pdir_flush_386[];
+INTDEF byte_t pdir_flush_386_end[];
+
+GLOBAL_ASM(
+L(.section .text.free                     )
+L(PRIVATE_ENTRY(pdir_flush_386)           )
+#ifdef __x86_64__
+L(    movq %cr3, %rax                     )
+L(    movq %rax, %cr3                     )
+#else
+L(    movl %cr3, %eax                     )
+L(    movl %eax, %cr3                     )
+#endif
+L(    ret                                 )
+L(SYM_END(pdir_flush_386)                 )
+L(pdir_flush_386_end:                     )
+L(.previous                               )
+);
+
+GLOBAL_ASM(
+L(.section .text                          )
+L(PUBLIC_ENTRY(pdir_flush)                )
+/* NOTE: When the host is a 386, we'll copy data from `pdir_flush_386' here. */
+#ifdef __x86_64__
+/* HINT: start   == %rdi */
+/* HINT: n_bytes == %rsi */
+L(    cmpq $(PAGESIZE*256), %rsi          )
+L(    jae  1f                             )
+L(    invlpg (%rdi)                       )
+L(    subq $(PAGESIZE), %rsi              )
+L(    jo   2f                             ) /* Stop if n_bytes underflowed. */
+L(    addq $(PAGESIZE), %rdi              )
+L(    jmp  pdir_flush                     )
+L(1:  movq %cr3, %rax                     ) /* Do a regular, full flush for larger quantities. */
+L(    movq %rax, %cr3                     )
+L(2:  ret                                 )
+#else
+/* HINT: start   == %ecx */
+/* HINT: n_bytes == %edx */
+L(    cmpl $(PAGESIZE*256), %edx          )
+L(    jae 1f                              )
+L(    invlpg (%ecx)                       )
+L(    subl $(PAGESIZE), %edx              )
+L(    jo 2f                               ) /* Stop if n_bytes underflowed. */
+L(    addl $(PAGESIZE), %ecx              )
+L(    jmp pdir_flush                      )
+L(1:  movl %cr3, %eax                     ) /* Do a regular, full flush for larger quantities. */
+L(    movl %eax, %cr3                     )
+L(2:  ret                                 )
+L(SYM_END(pdir_flush)                     )
+L(.previous                               )
+#endif
+L(SYM_END(pdir_flush)                     )
+L(.previous                               )
+);
+
+INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
+ assert(addr_isphys(&pdir_kernel));
+ assert(addr_isvirt(&pdir_kernel_v));
+ assert(addr_isvirt(&mman_kernel));
+
+ if (THIS_CPU->c_arch.ac_flags&CPUFLAG_486) {
+  /* Replace `pdir_flush' with its fallback counterpart!
+   * (The `invlpg' instruction is only available starting at 486) */
+  memcpy((void *)&pdir_flush,pdir_flush_386,
+         (size_t)(pdir_flush_386_end-pdir_flush_386));
+ }
+
+#ifdef PDIR_KERNEL_TRANSFORM_TABLES
+ /* Transform kernel tables, ensuring level#1 indirection for
+  * pages, which in return allow for page sharing with user-space. */
+ PDIR_KERNEL_TRANSFORM_TABLES();
+#endif
+
+#ifdef CONFIG_PDIR_SELFMAP
+#ifdef PDIR_KERNEL_INITIALIZE_SELFMAP
+ /* With all page-tables allocated, setup the
+  * page-directory self-map for the kernel itself. */
+ PDIR_KERNEL_INITIALIZE_SELFMAP();
+#endif
+#endif /* CONFIG_PDIR_SELFMAP */
+
+#ifdef PDIR_KERNEL_UNMAP_UNUSED
+ /* Time to clean up the kernel's own page directory! */
+ PDIR_KERNEL_UNMAP_UNUSED();
+#endif
+
+#ifdef PDIR_KERNEL_UNMAP_AFTEREND
+ /* Unmap all virtual memory past the kernel core. */
+ PDIR_KERNEL_UNMAP_AFTEREND();
+#endif
+
+#ifdef PDIR_KERNEL_UNMAP_BEFOREBEGIN
+ /* Unmap the virtual copy of physical memory before device data.
+  * NOTE: Device memory itself must not be unmapped,
+  *       as the TTY driver wouldn't work otherwise. */
+ PDIR_KERNEL_UNMAP_BEFOREBEGIN();
+#endif
+
+#ifdef PDIR_KERNEL_CHECK_INTEGRITY_AFTER_SETUP
+ /* Make sure that all virtual kernel pages are still allocated! */
+ PDIR_KERNEL_CHECK_INTEGRITY_AFTER_SETUP();
+#endif
+
+#if 1
+ /* Change the protection of the kernel's text/rodata segment to read-only. */
+ { ssize_t error;
+   error = pdir_mprotect(&pdir_kernel,
+                        (ppage_t)KERNEL_RO_BEGIN,KERNEL_RO_SIZE,
+                         PDIR_ATTR_PRESENT|PDIR_ATTR_GLOBAL|PDIR_FLAG_NOFLUSH);
+   if (E_ISERR(error)) {
+    syslog(LOG_MEM|LOG_ERROR,
+           FREESTR("[PD] Failed to mark kernel text %p...%p as read-only: %[errno]\n"),
+           KERNEL_RO_BEGIN,KERNEL_RO_END-1,-error);
+   }
+#if 1
+   /* Make the kernel's user-share segment readable from user-space. */
+   error = pdir_mprotect(&pdir_kernel,
+                        (ppage_t)__kernel_user_start,(size_t)__kernel_user_size,
+                         PDIR_ATTR_USER|PDIR_ATTR_GLOBAL|PDIR_ATTR_PRESENT|PDIR_FLAG_NOFLUSH);
+   if (E_ISERR(error)) {
+    syslog(LOG_MEM|LOG_ERROR,
+           FREESTR("[PD] Failed to mark user-share %p...%p as readable: %[errno]\n"),
+          (uintptr_t)__kernel_user_start,(uintptr_t)__kernel_user_end-1,-error);
+   }
+#endif
+ }
+#endif
+
+ /* Reload the kernel page directory completely. */
+ pdir_flushall();
+
+ assert(PDIR_TRANSLATE(&pdir_kernel_v,&pdir_kernel_v) == &pdir_kernel);
+ assert(PDIR_TRANSLATE(&pdir_kernel  ,&pdir_kernel_v) == &pdir_kernel);
+}
+
+
+
 DECL_END
 
 #endif /* !GUARD_KERNEL_CORE_ARCH_PAGING_C */

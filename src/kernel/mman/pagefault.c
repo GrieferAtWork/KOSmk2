@@ -68,7 +68,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
  if (info->iret.eflags&EFLAGS_IF) {
   PREEMPTION_ENABLE();
  } else {
-#if 1 /* TODO: Re-enable me */
+#if 1 /* TO-DO: Re-enable me */
   assertf((info->iret.cs&3) != 3,"User-level task with interrupts disabled");
   assertf(info->iret.eip >= KERNEL_BASE &&
          (info->iret.eip <  (uintptr_t)__kernel_user_start ||

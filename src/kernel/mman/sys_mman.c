@@ -58,10 +58,10 @@ mman_userspace_unlocked(struct mman *__restrict self, bool below, bool above,
 try_again:
  assert(n_bytes);
  assert(IS_ALIGNED(n_bytes,PAGESIZE));
- if ((uintptr_t)hint+n_bytes > KERNEL_BASE) {
+ if ((uintptr_t)hint+n_bytes > USER_END) {
   if (!below) return PAGE_ERROR;
   above = false;
-  hint  = (ppage_t)((uintptr_t)KERNEL_BASE-n_bytes);
+  hint  = (ppage_t)((uintptr_t)USER_END-n_bytes);
  }
  if (above && below) {
   ppage_t result_below,result_above;
@@ -69,11 +69,11 @@ try_again:
                                          info->mi_align,gap,
                                          MMAN_FINDSPACE_ABOVE|flags);
   if (result_above == hint) return result_above;
-  if ((uintptr_t)result_above+n_bytes > KERNEL_BASE) result_above = PAGE_ERROR;
+  if ((uintptr_t)result_above+n_bytes > USER_END) result_above = PAGE_ERROR;
   result_below = mman_findspace_unlocked(self,hint,n_bytes,
                                          info->mi_align,gap,
                                          MMAN_FINDSPACE_BELOW|flags);
-  if ((uintptr_t)result_below+n_bytes > KERNEL_BASE) result_below = PAGE_ERROR;
+  if ((uintptr_t)result_below+n_bytes > USER_END) result_below = PAGE_ERROR;
   /* Select whatever free space is closer. */
   if (result_below == PAGE_ERROR) { if (result_above == PAGE_ERROR) goto try_nogap; return result_above; }
   if (result_above == PAGE_ERROR) { return result_below; }
@@ -87,16 +87,16 @@ try_again:
                                   above ? MMAN_FINDSPACE_ABOVE|flags
                                         : MMAN_FINDSPACE_BELOW|flags);
  if (result == hint) return result;
- if ((uintptr_t)result+info->mi_size > KERNEL_BASE) result = PAGE_ERROR;
+ if ((uintptr_t)result+info->mi_size > USER_END) result = PAGE_ERROR;
  if (result != PAGE_ERROR) return result;
  /* Wrap around & search the entire address space! */
  result = mman_findspace_unlocked(self,
                                   above ? (ppage_t)((uintptr_t)0x00000000)
-                                        : (ppage_t)((uintptr_t)KERNEL_BASE-n_bytes),
+                                        : (ppage_t)((uintptr_t)USER_END-n_bytes),
                                   n_bytes,info->mi_align,gap,
                                   above ? MMAN_FINDSPACE_ABOVE|flags
                                         : MMAN_FINDSPACE_BELOW|flags);
- if ((uintptr_t)result+info->mi_size > KERNEL_BASE) result = PAGE_ERROR;
+ if ((uintptr_t)result+info->mi_size > USER_END) result = PAGE_ERROR;
  if (result != PAGE_ERROR) return result;
 try_nogap:
  if (gap && !(info->mi_flags&XMAP_NOTRYNGAP)) {
@@ -128,7 +128,7 @@ user_mmap(struct mmap_info *__restrict info) {
              (uintptr_t)base_addr) return -EINVAL;
  if unlikely((info->mi_flags&MAP_FIXED) &&
              (uintptr_t)base_addr+info->mi_size >
-             (uintptr_t)KERNEL_BASE) return -EINVAL;
+             (uintptr_t)USER_END) return -EINVAL;
  if (info->mi_xflag&XMAP_PHYSICAL) {
   if (!capable(CAP_SYS_ADMIN))
        return -EPERM;
@@ -439,12 +439,12 @@ SYSCALL_DEFINE5(mremap,VIRT void *,addr,size_t,old_len,size_t,new_len,
  if (!IS_ALIGNED((uintptr_t)addr,PAGESIZE)) return -EINVAL;
  /* Make sure neither the old, nor the new memory regions overflow. */
  if ((uintptr_t)addr+old_len < (uintptr_t)addr ||
-     (uintptr_t)addr+old_len > KERNEL_BASE)
+     (uintptr_t)addr+old_len > USER_END)
       return -EFAULT;
  /* Make sure a fixed target mapping is valid. */
  if (flags&MREMAP_FIXED &&
     ((uintptr_t)new_addr+new_len < (uintptr_t)new_addr ||
-     (uintptr_t)new_addr+new_len > KERNEL_BASE))
+     (uintptr_t)new_addr+new_len > USER_END))
      return -EFAULT;
 
  task_crit();
@@ -500,10 +500,10 @@ maybe_remap:
    result = mman_findspace_unlocked(mm,(ppage_t)((uintptr_t)result+old_len),new_len,
                                     PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
    if unlikely(result == PAGE_ERROR ||
-              (uintptr_t)result+new_len > KERNEL_BASE) {
+              (uintptr_t)result+new_len > USER_END) {
     result = mman_findspace_unlocked(mm,(ppage_t)((uintptr_t)result-new_len),new_len,
                                      PAGESIZE,0,MMAN_FINDSPACE_BELOW);
-    if unlikely((uintptr_t)result+new_len > KERNEL_BASE) result = PAGE_ERROR;
+    if unlikely((uintptr_t)result+new_len > USER_END) result = PAGE_ERROR;
    }
    if unlikely(result == PAGE_ERROR) { result = E_PTR(-ENOMEM); goto end2; }
   }

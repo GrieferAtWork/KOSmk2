@@ -210,7 +210,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
    new_environ = (VIRT struct envdata *)((uintptr_t)old_environ+old_total_pages);
    if (!mman_inuse_unlocked(self,(void *)new_environ,missing_bytes) &&
       (uintptr_t)new_environ+missing_bytes > (uintptr_t)new_environ &&
-      (uintptr_t)new_environ+missing_bytes <= KERNEL_BASE) {
+      (uintptr_t)new_environ+missing_bytes <= USER_END) {
     /* Simple case: Can re-use the old environment block. */
     new_region->mr_size = missing_bytes;
     mregion_setup(new_region);
@@ -226,7 +226,7 @@ mman_setenviron_unlocked(struct mman *__restrict self,
   new_region->mr_size = new_total_pages;
   mregion_setup(new_region);
   /* Prefer using the last four pages of user-space to store the environment block. */
-  new_environ = (VIRT struct envdata *)mman_findspace_unlocked(self,(ppage_t)((KERNEL_BASE-(4*PAGESIZE))-new_total_pages),
+  new_environ = (VIRT struct envdata *)mman_findspace_unlocked(self,(ppage_t)((USER_END-(4*PAGESIZE))-new_total_pages),
                                                                new_total_pages,PAGESIZE,0,MMAN_FINDSPACE_BELOW);
   if unlikely(new_environ == PAGE_ERROR) { MREGION_DECREF(new_region); goto enomem; }
   /* Now just map the new environment region. */

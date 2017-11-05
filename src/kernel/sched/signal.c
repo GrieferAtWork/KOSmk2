@@ -222,7 +222,7 @@ L(1:  pushl %edi                                                                
 L(    movl  %ebx, %edi                                                           )
 L(    addl  $(__UCONTEXT_SIZE), %edi                                             )
 L(    jo    9f                                                                   )
-L(    cmpl  $(KERNEL_BASE), %edi                                                 )
+L(    cmpl  $(USER_END), %edi                                                    )
 L(    ja    10f                                                                  )
 L(    popl  %edi                                                                 )
 L(    movw  24(%esp), %dx     /* GS */                                           )
