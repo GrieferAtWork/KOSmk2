@@ -1,0 +1,378 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+#ifndef _CXX_TYPE_TRAITS
+#define _CXX_TYPE_TRAITS 1
+
+#include "__stdcxx.h"
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("new")
+#pragma push_macro("delete")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef new
+#undef delete
+
+#if defined(__USE_GLIBCXX) && 0
+#include <c++/current/type_traits>
+#else /* __USE_GLIBCXX */
+
+#include <features.h>
+#include <hybrid/typecore.h>
+
+__CXXDECL_BEGIN
+__NAMESPACE_STD_BEGIN
+
+template<typename __T, __T __val> struct integral_constant {
+    static __CXX11_CONSTEXPR_OR_CONST __T value = __val;
+    typedef integral_constant<__T,__val> type;
+    typedef __T                          value_type;
+    __CXX11_CONSTEXPR operator __T() { return __val; }
+#ifdef __USE_ISOCXX14
+#define __cpp_lib_integral_constant_callable 201304
+    __CXX14_CONSTEXPR value_type operator()() const { return value; }
+#endif /* __USE_ISOCXX14 */
+};
+template<typename __T, __T __val>
+__CXX11_CONSTEXPR_OR_CONST __T integral_constant<__T,__val>::value;
+
+
+typedef integral_constant<bool,true>  true_type;
+typedef integral_constant<bool,false> false_type;
+
+template<typename __T> struct remove_const { typedef __T type; };
+template<typename __T> struct remove_const<__T const> { typedef __T type; };
+template<typename __T> struct remove_volatile { typedef __T type; };
+template<typename __T> struct remove_volatile<__T volatile> { typedef __T type; };
+template<typename __T> struct remove_cv: remove_const<__CXX_DEDUCE_TYPENAME remove_volatile<__T>::type> {};
+template<typename __T> struct remove_reference { typedef __T type; };
+template<typename __T> struct remove_reference<__T &> { typedef __T type; };
+#ifdef __COMPILER_HAVE_CXX_RVALUE_REFERENCE
+template<typename __T> struct remove_reference<__T &&> { typedef __T type; };
+#endif /* !__COMPILER_HAVE_CXX_RVALUE_REFERENCE */
+
+
+#ifdef __BORLANDC__
+template<typename __T> struct is_function: integral_constant<bool,__is_function(__T)> {};
+template<typename __T> struct is_array: integral_constant<bool,__is_array(__T)> {};
+template<typename __T> struct is_pointer: integral_constant<bool,__is_pointer(__T)> {};
+template<typename __T> struct is_lvalue_reference: integral_constant<bool,__is_lvalue_reference(__T)> {};
+template<typename __T> struct is_rvalue_reference: integral_constant<bool,__is_rvalue_reference(__T)> {};
+template<typename __T> struct is_reference: integral_constant<bool,__is_reference(__T)> {};
+template<typename __T> struct is_const: integral_constant<bool,__is_const(__T)> {};
+template<typename __T> struct is_volatile: integral_constant<bool,__is_volatile(__T)> {};
+#elif defined(__COMPILER_HAVE_CXX_PARTIAL_TPL_SPEC)
+__NAMESPACE_INT_BEGIN
+template<typename    > struct __is_fcn: false_type {};
+template<typename __rt, typename ...__args> struct __is_fcn<__rt(__args...)>: true_type {};
+template<typename __rt, typename ...__args> struct __is_fcn<__rt(__args...,...)>: true_type {};
+template<typename    > struct __is_ptr: false_type {};
+template<typename __T> struct __is_ptr<__T *>: true_type {};
+__NAMESPACE_INT_END
+template<typename __T> struct is_function: __int::__is_fcn<__CXX_DEDUCE_TYPENAME remove_cv<__CXX_DEDUCE_TYPENAME remove_reference<__T>::type>::type> {};
+template<typename    > struct is_array: false_type {};
+template<typename __T> struct is_array<__T[]>: true_type {};
+template<typename __T, __SIZE_TYPE__ __size> struct is_array<__T[__size]>: true_type {};
+template<typename __T> struct is_pointer: __int::__is_ptr<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+template<typename    > struct is_const: false_type {};
+template<typename __T> struct is_const<__T const>: true_type {};
+template<typename    > struct is_volatile: false_type {};
+template<typename __T> struct is_volatile<__T volatile>: true_type {};
+template<typename    > struct is_lvalue_reference: false_type {};
+template<typename __T> struct is_lvalue_reference<__T &>: true_type {};
+template<typename    > struct is_rvalue_reference: false_type {};
+#ifdef __COMPILER_HAVE_CXX_RVALUE_REFERENCE
+template<typename __T> struct is_rvalue_reference<__T &>: true_type {};
+template<typename    > struct is_reference: false_type {};
+template<typename __T> struct is_reference<__T &>: true_type {};
+template<typename __T> struct is_reference<__T &&>: true_type {};
+#else
+template<typename __T> struct is_reference: is_lvalue_reference<__T> {};
+#endif
+#endif /* ... */
+
+__NAMESPACE_INT_BEGIN
+template<typename> struct __is_vod: false_type {};
+template<> struct __is_vod<void>: true_type {};
+template<typename> struct __is_nlp: false_type {};
+#if defined(__COMPILER_HAVE_CXX_DECLTYPE) && \
+    defined(__COMPILER_HAVE_CXX_NULLPTR)
+template<> struct __is_nlp<decltype(nullptr)>: true_type {};
+#endif
+__NAMESPACE_INT_END
+template<typename __T> struct is_void:
+  __int::__is_vod<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+template<typename __T> struct is_null_pointer:
+  __int::__is_nlp<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+
+
+#ifdef __COMPILER_HAVE_CXX_PARTIAL_TPL_SPEC
+__NAMESPACE_INT_BEGIN
+template<typename> struct __is_fpt: false_type {};
+template<typename> struct __is_int: false_type {};
+template<typename> struct __is_sig: false_type {};
+template<typename> struct __is_usg: false_type {};
+template<bool,typename __T> struct __is_art2: __is_fpt<__T> {};
+template<typename __T> struct __is_art: __is_art2<__is_int<__T>::value,__T> {};
+template<typename __T> struct __is_art2<true,__T>: true_type {};
+
+template<bool,typename __T> struct __is_fun3: __is_nlp<__T> {};
+template<typename __T> struct __is_fun3<true,__T>: true_type {};
+template<bool,typename __T> struct __is_fun2: __is_fun3<__is_vod<__T>::value,__T> {};
+template<typename __T> struct __is_fun2<true,__T>: true_type {};
+template<typename __T> struct __is_fun:  __is_fun2<__is_art<__T>::value,__T> {};
+#define __DEFINE_FUND(T)     /* nothing */
+#define __DEFINE_INTEGRAL(T)                      template<> struct __is_int<T>: true_type {};
+#define __DEFINE_SIGNED(T)   __DEFINE_INTEGRAL(T) template<> struct __is_sig<T>: true_type {};
+#define __DEFINE_UNSIGNED(T) __DEFINE_INTEGRAL(T) template<> struct __is_usg<T>: true_type {};
+#define __DEFINE_FLOAT(T)                         template<> struct __is_fpt<T>: true_type {};
+#else
+template<typename> struct is_fundamental: false_type {};
+template<typename> struct is_arithmetic: false_type {};
+template<typename> struct is_floating_point: false_type {};
+template<typename> struct is_integral: false_type {};
+template<typename> struct is_signed: false_type {};
+template<typename> struct is_unsigned: false_type {};
+#define __IMPL_DEFINE_FUND(T)                                 template<> struct is_fundamental<T>: true_type {};
+#define __IMPL_DEFINE_ARITH(T)      __IMPL_DEFINE_FUND(T)     template<> struct is_arithmetic<T>: true_type {};
+#define __IMPL_DEFINE_INTEGRAL(T)   __IMPL_DEFINE_ARITH(T)    template<> struct is_integral<T>: true_type {};
+#define __IMPL_DEFINE_SIGNED(T)     __IMPL_DEFINE_INTEGRAL(T) template<> struct is_signed<T>: true_type {};
+#define __IMPL_DEFINE_UNSIGNED(T)   __IMPL_DEFINE_INTEGRAL(T) template<> struct is_unsigned<T>: true_type {};
+#define __IMPL_DEFINE_FLOAT(T)      __IMPL_DEFINE_ARITH(T)    template<> struct is_floating_point<T>: true_type {};
+#define __DEFINE_FUND(T)     __IMPL_DEFINE_FUND(T)     __IMPL_DEFINE_FUND(T const)      __IMPL_DEFINE_FUND(T volatile)     __IMPL_DEFINE_FUND(T const volatile)
+#define __DEFINE_INTEGRAL(T) __IMPL_DEFINE_INTEGRAL(T) __IMPL_DEFINE_INTEGRAL(T const)  __IMPL_DEFINE_INTEGRAL(T volatile) __IMPL_DEFINE_INTEGRAL(T const volatile)
+#define __DEFINE_SIGNED(T)   __IMPL_DEFINE_SIGNED(T)   __IMPL_DEFINE_SIGNED(T const)    __IMPL_DEFINE_SIGNED(T volatile)   __IMPL_DEFINE_SIGNED(T const volatile)
+#define __DEFINE_UNSIGNED(T) __IMPL_DEFINE_UNSIGNED(T) __IMPL_DEFINE_UNSIGNED(T const)  __IMPL_DEFINE_UNSIGNED(T volatile) __IMPL_DEFINE_UNSIGNED(T const volatile)
+#define __DEFINE_FLOAT(T)    __IMPL_DEFINE_FLOAT(T)    __IMPL_DEFINE_FLOAT(T const)     __IMPL_DEFINE_FLOAT(T volatile)    __IMPL_DEFINE_FLOAT(T const volatile)
+#endif
+__DEFINE_FUND(void)
+#if defined(__COMPILER_HAVE_CXX_DECLTYPE) && \
+    defined(__COMPILER_HAVE_CXX_NULLPTR)
+__DEFINE_FUND(decltype(nullptr))
+#endif
+__DEFINE_FLOAT(float)
+__DEFINE_FLOAT(double)
+#ifdef __COMPILER_HAVE_LONGDOUBLE
+__DEFINE_FLOAT(long double)
+#endif /* __COMPILER_HAVE_LONGDOUBLE */
+__DEFINE_INTEGRAL(bool)
+#ifdef __CHAR_UNSIGNED__
+__DEFINE_UNSIGNED(char)
+#else /* __CHAR_UNSIGNED__ */
+__DEFINE_SIGNED(char)
+#endif /* !__CHAR_UNSIGNED__ */
+__DEFINE_SIGNED(signed char)
+__DEFINE_UNSIGNED(unsigned char)
+#ifdef __native_wchar_t_defined
+#ifdef __WCHAR_UNSIGNED__
+__DEFINE_UNSIGNED(wchar_t)
+#else /* __WCHAR_UNSIGNED__ */
+__DEFINE_SIGNED(wchar_t)
+#endif /* !__WCHAR_UNSIGNED__ */
+#endif /* __native_wchar_t_defined */
+#ifdef __native_char16_t_defined
+__DEFINE_UNSIGNED(char16_t)
+__DEFINE_UNSIGNED(char32_t)
+#endif /* __native_char16_t_defined */
+__DEFINE_SIGNED(short)
+__DEFINE_UNSIGNED(unsigned short)
+__DEFINE_SIGNED(int)
+__DEFINE_UNSIGNED(unsigned int)
+__DEFINE_SIGNED(long)
+__DEFINE_UNSIGNED(unsigned long)
+#ifdef __COMPILER_HAVE_LONGLONG
+__DEFINE_SIGNED(long long)
+__DEFINE_UNSIGNED(unsigned long long)
+#endif /* __COMPILER_HAVE_LONGLONG */
+#if (defined(__INTEL_VERSION__) && defined(_MSC_VER) && (__INTEL_VERSION__ <= 600)) || \
+    (defined(__BORLANDC__) && __BORLANDC__ == 0x600 && _MSC_VER < 1300)
+__DEFINE_SIGNED(__int8)
+__DEFINE_UNSIGNED(unsigned __int8)
+__DEFINE_SIGNED(__int16)
+__DEFINE_UNSIGNED(unsigned __int16)
+__DEFINE_SIGNED(__int32)
+__DEFINE_UNSIGNED(unsigned __int32)
+#endif
+#if (defined(__INTEL_VERSION__) && defined(_MSC_VER) && __INTEL_VERSION__ <= 600) || \
+    (defined(__BORLANDC__) && __BORLANDC__ == 0x600 && _MSC_VER < 1300) || \
+    (defined(_MSC_VER) && !defined(__COMPILER_HAVE_LONGLONG))
+__DEFINE_SIGNED(__int64)
+__DEFINE_UNSIGNED(unsigned __int64)
+#endif
+
+#undef __DEFINE_INTEGRAL
+#undef __DEFINE_SIGNED
+#undef __DEFINE_UNSIGNED
+#undef __DEFINE_FLOAT
+#ifdef __COMPILER_HAVE_CXX_PARTIAL_TPL_SPEC
+__NAMESPACE_INT_END
+template<typename __T> struct is_fundamental:    __int::__is_fun<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+template<typename __T> struct is_arithmetic:     __int::__is_art<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+template<typename __T> struct is_floating_point: __int::__is_fpt<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+template<typename __T> struct is_integral:       __int::__is_int<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+template<typename __T> struct is_signed:         __int::__is_sig<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+template<typename __T> struct is_unsigned:       __int::__is_usg<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+#endif /* __COMPILER_HAVE_CXX_PARTIAL_TPL_SPEC */
+
+
+#if (defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 140050215) || \
+    (defined(__INTEL__) && defined(_MSC_VER) && _MSC_VER >= 1500) || \
+    (__GCC_VERSION(4,3,0) && !defined(__GCCXML__) && !defined(__clang__)) || \
+    (defined(__ghs__) && __GHS_VERSION_NUMBER >= 600) || defined(__CODEGEARC__) || \
+    (!defined(__CUDACC__) && __has_feature(is_class))
+template<typename __T> struct is_class: integral_constant<bool,__is_class(__T)> {};
+template<typename __T> struct is_enum: integral_constant<bool,__is_enum(__T)> {};
+template<typename __T> struct is_union: integral_constant<bool,__is_union(__T)> {};
+#elif defined(__SUNPRO_CC) && __SUNPRO_CC >= 0x5130
+template<typename __T> struct is_class: integral_constant<bool,__oracle_is_class(__T)> {};
+template<typename __T> struct is_enum: integral_constant<bool,__oracle_is_enum(__T)> {};
+template<typename __T> struct is_union: integral_constant<bool,__oracle_is_union(__T)> {};
+#elif defined(__DMC__) && __DMC__ >= 0x848
+#define __define_is_class_later
+#define __define_is_enum_later
+template<typename __T> struct is_union: integral_constant<bool,(__typeinfo(__T)&0x400) != 0> {};
+#else
+#define __define_is_class_later
+#define __define_is_union_later
+#define __define_is_enum_later
+#endif
+
+#ifdef __define_is_class_later
+#undef __define_is_class_later
+__NAMESPACE_INT_BEGIN
+typedef int __yes[1],__no[2];
+template<class __S> __yes __cls_check(void(__S::*)(void));
+template<class __S> __no __cls_check(...);
+template<class __T> struct __is_class: integral_constant<bool,sizeof(__cls_check<T>(0)) == sizeof(__yes)> {};
+__NAMESPACE_INT_END
+template<typename __T> struct is_class: __int::__is_class<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> {};
+#endif
+
+#ifdef __define_is_union_later
+#undef __define_is_union_later /* This is the best we can do... */
+template<typename __T> struct is_union: is_class<__t> {};
+#endif
+
+#ifdef __define_is_enum_later
+#undef __define_is_enum_later
+__NAMESPACE_INT_BEGIN
+struct __int_convertible { __int_convertible(int); };
+__NAMESPACE_INT_END
+template<typename __T> struct is_enum: integral_constant<bool,
+  !is_arithmetic<__T>::value && !is_array<__T>::value &&
+  !is_class<__T>::value && !is_function<__T>::value &&
+  !is_reference<__T>::value && !is_union<__T>::value &&
+   is_convertible<__T,__int::__int_convertible>::value> {};
+#endif
+
+#ifdef __BORLANDC__
+template<typename __T> struct is_member_object_pointer:
+  integral_constant<bool,__is_member_object_pointer(__T)> { };
+template<typename __T> struct is_member_function_pointer:
+  integral_constant<bool,__is_member_function_pointer(__T)> { };
+#else
+__NAMESPACE_INT_BEGIN
+template<typename> struct __is_mop: false_type { };
+template<typename> struct __is_mfp: false_type { };
+template<typename __T, typename __C> struct __is_mop<__T __C::*>:
+  integral_constant<bool,!is_function<__T>::value> {};
+template<typename __T, typename __C> struct __is_mfp<__T __C::*>:
+  integral_constant<bool,is_function<__T>::value> {};
+__NAMESPACE_INT_END
+template<typename __T> struct is_member_object_pointer:
+  __int::__is_mop<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> { };
+template<typename __T> struct is_member_function_pointer:
+  __int::__is_mfp<__CXX_DEDUCE_TYPENAME remove_cv<__T>::type> { };
+#endif
+template<typename __T> struct is_compound:
+  integral_constant<bool,!is_fundamental<__T>::value> { };
+
+
+template<bool __cond, class __tt, class __ff> struct conditional { typedef __tt type; };
+template<class __tt, class __ff> struct conditional<true,__tt,__ff> { typedef __ff type; };
+
+#if 0 /* TODO */
+is_member_pointer
+is_object
+is_scalar
+is_abstract
+is_empty
+is_literal_type
+is_pod
+is_polymorphic
+is_standard_layout
+is_trivial
+is_trivially_copyable
+has_virtual_destructor
+is_assignable
+is_constructible
+is_copy_assignable
+is_copy_constructible
+is_destructible
+is_default_constructible
+is_move_assignable
+is_move_constructible
+is_trivially_assignable
+is_trivially_constructible
+is_trivially_copy_assignable
+is_trivially_copy_constructible
+is_trivially_destructible
+is_trivially_default_constructible
+is_trivially_move_assignable
+is_trivially_move_constructible
+is_nothrow_assignable
+is_nothrow_constructible
+is_nothrow_copy_assignable
+is_nothrow_copy_constructible
+is_nothrow_destructible
+is_nothrow_default_constructible
+is_nothrow_move_assignable
+is_nothrow_move_constructible
+is_base_of
+is_convertible
+is_same
+alignment_of
+extent
+rank
+add_const
+add_cv
+add_volatile
+add_pointer
+add_lvalue_reference
+add_rvalue_reference
+decay
+make_signed
+make_unsigned
+remove_all_extents
+remove_extent
+remove_pointer
+underlying_type
+aligned_storage
+aligned_union
+common_type
+enable_if
+result_of
+#endif
+
+
+__NAMESPACE_STD_END
+__CXXDECL_END
+
+#endif /* !__USE_GLIBCXX */
+
+#endif /* !_CXX_TYPE_TRAITS */

@@ -44,6 +44,7 @@
 #undef __USE_ISOC99
 #undef __USE_ISOC95
 #undef __USE_ISOCXX11
+#undef __USE_ISOCXX14
 #undef __USE_POSIX
 #undef __USE_POSIX2
 #undef __USE_POSIX199309
@@ -218,9 +219,14 @@
     (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199409L))
 # define __USE_ISOC95 1
 #endif
-#if defined(__GXX_EXPERIMENTAL_CXX0X__) || \
+#if (defined(_ISOCXX11_SOURCE) || defined(_ISOCXX14_SOURCE)) || \
+     defined(__GXX_EXPERIMENTAL_CXX0X__) || \
+    (defined(__cplusplus) && __cplusplus >= 201103L)
+# define __USE_ISOCXX11 1
+#endif
+#if defined(_ISOCXX14_SOURCE) || \
    (defined(__cplusplus) && __cplusplus >= 201103L)
-# define __USE_ISOCXX11	1
+#   define __USE_ISOCXX14 1
 #endif
 #if defined(__cplusplus) && \
   (!defined(__GNUC__) || __GCC_VERSION(4,4,0))

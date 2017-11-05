@@ -70,6 +70,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{EA6E
 		..\include\termio.h = ..\include\termio.h
 		..\include\termios.h = ..\include\termios.h
 		..\include\time.h = ..\include\time.h
+		..\include\type_traits = ..\include\type_traits
 		..\include\uchar.h = ..\include\uchar.h
 		..\include\unicode.h = ..\include\unicode.h
 		..\include\unistd.h = ..\include\unistd.h

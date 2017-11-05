@@ -45,6 +45,7 @@
 #include <cwchar>
 #include <atomic>
 #include <new>
+#include <type_traits>
 #endif
 
 #include <string.h>

@@ -25,6 +25,13 @@
 #error "A C++ compiler is required"
 #endif
 
+/* TODO: Determine support for these */
+#define __COMPILER_HAVE_CXX_RVALUE_REFERENCE 1
+#define __COMPILER_HAVE_CXX_PARTIAL_TPL_SPEC 1
+#define __COMPILER_HAVE_CXX_DECLTYPE 1
+#define __COMPILER_HAVE_CXX_NULLPTR 1
+#define __CXX_DEDUCE_TYPENAME typename
+
 #if __has_feature(defaulted_functions) || \
    (defined(__cplusplus) && defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 180020827) || \
    (defined(__GNUC__) /* TODO: Which version? */)
@@ -87,6 +94,12 @@
 #ifndef __CXXDECL_BEGIN
 #define __CXXDECL_BEGIN
 #define __CXXDECL_END
+#endif
+
+#include <features.h>
+#undef __USE_GLIBCXX
+#ifdef __CRT_GLC
+#define __USE_GLIBCXX 1
 #endif
 
 #endif /* !___STDCXX_H */

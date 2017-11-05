@@ -20,14 +20,19 @@
 #define _CXX_ATOMIC 1
 
 #include "__stdcxx.h"
-#include <features.h>
-#include <hybrid/typecore.h>
-#include <hybrid/__atomic.h>
 
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma push_macro("atomic")
 #endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #undef atomic
+
+#ifdef __USE_GLIBCXX
+#include <c++/current/atomic>
+#else /* __USE_GLIBCXX */
+
+#include <features.h>
+#include <hybrid/typecore.h>
+#include <hybrid/__atomic.h>
 
 __CXXDECL_BEGIN
 
@@ -420,10 +425,10 @@ template<class __T> __LOCAL __T (atomic_fetch_nand)(atomic<__T> volatile *__ato,
 
 __NAMESPACE_STD_END
 __CXXDECL_END
+#endif /* !__USE_GLIBCXX */
 
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma pop_macro("atomic")
 #endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
-
 
 #endif /* !_CXX_ATOMIC */

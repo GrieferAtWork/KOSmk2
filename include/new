@@ -20,7 +20,6 @@
 #define _CXX_NEW 1
 
 #include "__stdcxx.h"
-#include "exception"
 
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma push_macro("new")
@@ -29,9 +28,11 @@
 #undef new
 #undef delete
 
-#ifdef __CRT_GLC
+#ifdef __USE_GLIBCXX
 #include <c++/current/new>
-#else /* __CRT_GLC */
+#else /* __USE_GLIBCXX */
+
+#include <exception>
 
 __CXXDECL_BEGIN
 __NAMESPACE_STD_BEGIN
@@ -85,7 +86,7 @@ __LOCAL void operator delete[](void *, void *) __CXX_NOEXCEPT {}
 
 __CXXDECL_END
 
-#endif /* !__CRT_GLC */
+#endif /* !__USE_GLIBCXX */
 
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma pop_macro("delete")
