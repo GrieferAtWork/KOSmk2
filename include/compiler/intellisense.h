@@ -134,14 +134,14 @@
 #define __INTMAX_TYPE__         signed __int64
 #define __UINTMAX_TYPE__      unsigned __int64
 
-#if defined(__i386__)
-#   define __INTPTR_TYPE__    signed __int32
-#   define __UINTPTR_TYPE__   unsigned __int32
-#   define __SIZEOF_POINTER__ 4
-#else
+#if defined(__x86_64__)
 #   define __INTPTR_TYPE__    signed __int64
 #   define __UINTPTR_TYPE__   unsigned __int64
 #   define __SIZEOF_POINTER__ 8
+#else
+#   define __INTPTR_TYPE__    signed __int32
+#   define __UINTPTR_TYPE__   unsigned __int32
+#   define __SIZEOF_POINTER__ 4
 #endif
 #define __SIZE_TYPE__         __UINTPTR_TYPE__
 #define __PTRDIFF_TYPE__      __INTPTR_TYPE__

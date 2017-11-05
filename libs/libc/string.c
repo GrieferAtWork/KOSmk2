@@ -65,9 +65,11 @@
 DECL_BEGIN
 
 #define DECL INTERN
-#ifdef CONFIG_64BIT_STRING
+#ifndef CONFIG_NO_64BIT_STRING
+#ifdef CONFIG_NATIVE_64BIT_STRING
 #define BITS 64
 #include "templates/memory.code"
+#endif
 #endif
 #define BITS 32
 #include "templates/memory.code"
@@ -75,6 +77,12 @@ DECL_BEGIN
 #include "templates/memory.code"
 #define BITS 8
 #include "templates/memory.code"
+#ifndef CONFIG_NO_64BIT_STRING
+#ifndef CONFIG_NATIVE_64BIT_STRING
+#define BITS 64
+#include "templates/memory.code"
+#endif
+#endif
 #undef DECL
 
 #define T            char
@@ -685,7 +693,7 @@ DEFINE_PUBLIC_ALIAS(rawmemchrl,libc_rawmemchrl);
 DEFINE_PUBLIC_ALIAS(rawmemrchrl,libc_rawmemrchrl);
 DEFINE_PUBLIC_ALIAS(rawmemlenl,libc_rawmemlenl);
 DEFINE_PUBLIC_ALIAS(rawmemrlenl,libc_rawmemrlenl);
-#ifdef CONFIG_64BIT_STRING
+#ifndef CONFIG_NO_64BIT_STRING
 #undef memcpyq
 #undef mempcpyq
 DEFINE_PUBLIC_ALIAS(memcpyq,libc_memcpyq);
@@ -705,7 +713,8 @@ DEFINE_PUBLIC_ALIAS(rawmemchrq,libc_rawmemchrq);
 DEFINE_PUBLIC_ALIAS(rawmemrchrq,libc_rawmemrchrq);
 DEFINE_PUBLIC_ALIAS(rawmemlenq,libc_rawmemlenq);
 DEFINE_PUBLIC_ALIAS(rawmemrlenq,libc_rawmemrlenq);
-#endif /* CONFIG_64BIT_STRING */
+DEFINE_PUBLIC_ALIAS(mempatq,libc_mempatq);
+#endif /* !CONFIG_NO_64BIT_STRING */
 DEFINE_PUBLIC_ALIAS(mempatw,libc_mempatw);
 DEFINE_PUBLIC_ALIAS(mempatl,libc_mempatl);
 DEFINE_PUBLIC_ALIAS(strend,libc_strend);

@@ -29,78 +29,149 @@ __SYSDECL_BEGIN
 
 #if !defined(__NO_ATTR_FORCEINLINE) && \
      defined(__COMPILER_HAVE_GCC_ASM)
+#ifdef __NO_SYSV__
+#   define __ASM_ENTER_CLD   "cld\n"
+#   define __ASM_LEAVE_STD   /* nothing */
+#else
+#   define __ASM_ENTER_CLD   /* nothing */
+#   define __ASM_LEAVE_STD   "cld\n"
+#endif
 #ifdef __x86_64__
-#else /* __x86_64__ */
+#   define __ASM_SHR_RCX  "shrq $1, %%rcx\n"
+#else
+#   define __ASM_SHR_RCX  "shrl $1, %%ecx\n"
+#endif
+
 #define __asm_memcpy(dst,src,n_bytes)   __asm_memcpy(dst,src,n_bytes)
-#define __asm_memcpyw(dst,src,n_words)  __asm_memcpyw(dst,src,n_words)
-#define __asm_memcpyl(dst,src,n_words)  __asm_memcpyl(dst,src,n_words)
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_memcpy)
 (void *__restrict __dst, void const *__restrict __src, __SIZE_TYPE__ __n_bytes) {
-    __asm__ __volatile__("    shrl $1, %%ecx\n"
+    __asm__ __volatile__(__ASM_ENTER_CLD
+                         __ASM_SHR_RCX
                          "    jnc 1f\n"
                          "    movsb\n"
-                         "1:  shrl $1, %%ecx\n"
+                         "1:  " __ASM_SHR_RCX
                          "    jnc 1f\n"
                          "    movsw\n"
+#ifdef __x86_64__
+                         "1:  " __ASM_SHR_RCX
+                         "    jnc 1f\n"
+                         "    movsl\n"
+                         "1:  rep; movsq\n"
+#else
                          "1:  rep; movsl\n"
+#endif
                          : "=m" (*(struct { __extension__ __BYTE_TYPE__ __d[__n_bytes]; } *)__dst)
                          : "m" (*(struct { __extension__ __BYTE_TYPE__ __d[__n_bytes]; } *)__src)
                          , "D" (__dst), "S" (__src), "c" (__n_bytes) : "cc");
     return __dst;
 }
+#define __asm_memcpyw(dst,src,n_words)  __asm_memcpyw(dst,src,n_words)
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_memcpyw)
 (void *__restrict __dst, void const *__restrict __src, __SIZE_TYPE__ __n_words) {
-    __asm__ __volatile__("    shrl $1, %%ecx\n"
+    __asm__ __volatile__(__ASM_ENTER_CLD
+                         __ASM_SHR_RCX
                          "    jnc 1f\n"
                          "    movsw\n"
+#ifdef __x86_64__
+                         "1:  " __ASM_SHR_RCX
+                         "    jnc 1f\n"
+                         "    movsl\n"
+                         "1:  rep; movsq\n"
+#else
                          "1:  rep; movsl\n"
+#endif
                          : "=m" (*(struct { __extension__ __UINT16_TYPE__ __d[__n_words]; } *)__dst)
                          : "m" (*(struct { __extension__ __UINT16_TYPE__ __d[__n_words]; } *)__src)
                          , "D" (__dst), "S" (__src), "c" (__n_words) : "cc");
     return __dst;
 }
+#define __asm_memcpyl(dst,src,n_words)  __asm_memcpyl(dst,src,n_words)
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_memcpyl)
 (void *__restrict __dst, void const *__restrict __src, __SIZE_TYPE__ __n_dwords) {
-    __asm__ __volatile__("rep; movsl\n"
+    __asm__ __volatile__(__ASM_ENTER_CLD
+#ifdef __x86_64__
+                         __ASM_SHR_RCX
+                         "    jnc 1f\n"
+                         "    movsl\n"
+                         "1:  rep; movsq\n"
+#else
+                         "rep; movsl\n"
+#endif
                          : "=m" (*(struct { __extension__ __UINT32_TYPE__ __d[__n_dwords]; } *)__dst)
                          : "m" (*(struct { __extension__ __UINT32_TYPE__ __d[__n_dwords]; } *)__src)
                          , "D" (__dst), "S" (__src), "c" (__n_dwords) : "cc");
     return __dst;
 }
+#ifdef __x86_64__
+#define __asm_memcpyq(dst,src,n_qwords)  __asm_memcpyq(dst,src,n_qwords)
+__FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_memcpyq)
+(void *__restrict __dst, void const *__restrict __src, __SIZE_TYPE__ __n_qwords) {
+    __asm__ __volatile__(__ASM_ENTER_CLD
+                         "rep; movsq\n"
+                         : "=m" (*(struct { __extension__ __UINT64_TYPE__ __d[__n_qwords]; } *)__dst)
+                         : "m" (*(struct { __extension__ __UINT64_TYPE__ __d[__n_qwords]; } *)__src)
+                         , "D" (__dst), "S" (__src), "c" (__n_qwords) : "cc");
+    return __dst;
+}
+#endif
 
 #define __asm_mempcpy(dst,src,n_bytes)  __asm_mempcpy(dst,src,n_bytes)
-#define __asm_mempcpyw(dst,src,n_words) __asm_mempcpyw(dst,src,n_words)
-#define __asm_mempcpyl(dst,src,n_words) __asm_mempcpyl(dst,src,n_words)
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_mempcpy)
 (void *__restrict __dst, void const *__restrict __src, __SIZE_TYPE__ __n_bytes) {
-    __asm__ __volatile__("    shrl $1, %%ecx\n"
+    __asm__ __volatile__(__ASM_ENTER_CLD
+                         __ASM_SHR_RCX
                          "    jnc 1f\n"
                          "    movsb\n"
-                         "1:  shrl $1, %%ecx\n"
+                         "1:  " __ASM_SHR_RCX
                          "    jnc 1f\n"
                          "    movsw\n"
+#ifdef __x86_64__
+                         "1:  " __ASM_SHR_RCX
+                         "    jnc 1f\n"
+                         "    movsl\n"
+                         "1:  rep; movsq\n"
+#else
                          "1:  rep; movsl\n"
+#endif
                          : "=m" (*(struct { __extension__ __BYTE_TYPE__ __d[__n_bytes]; } *)__dst)
                          , "+D" (__dst)
                          : "m" (*(struct { __extension__ __BYTE_TYPE__ __d[__n_bytes]; } *)__src)
                          , "S" (__src), "c" (__n_bytes) : "cc");
     return __dst;
 }
+#define __asm_mempcpyw(dst,src,n_words) __asm_mempcpyw(dst,src,n_words)
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_mempcpyw)
 (void *__restrict __dst, void const *__restrict __src, __SIZE_TYPE__ __n_words) {
-    __asm__ __volatile__("    shrl $1, %%ecx\n"
+    __asm__ __volatile__(__ASM_ENTER_CLD
+                         __ASM_SHR_RCX
                          "    jnc 1f\n"
                          "    movsw\n"
+#ifdef __x86_64__
+                         "1:  " __ASM_SHR_RCX
+                         "    jnc 1f\n"
+                         "    movsl\n"
+                         "1:  rep; movsq\n"
+#else
                          "1:  rep; movsl\n"
+#endif
                          : "=m" (*(struct { __extension__ __UINT16_TYPE__ __d[__n_words]; } *)__dst)
                          , "+D" (__dst)
                          : "m" (*(struct { __extension__ __UINT16_TYPE__ __d[__n_words]; } *)__src)
                          , "S" (__src), "c" (__n_words) : "cc");
     return __dst;
 }
+#define __asm_mempcpyl(dst,src,n_words) __asm_mempcpyl(dst,src,n_words)
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_mempcpyl)
 (void *__restrict __dst, void const *__restrict __src, __SIZE_TYPE__ __n_dwords) {
-    __asm__ __volatile__("rep; movsl\n"
+    __asm__ __volatile__(__ASM_ENTER_CLD
+#ifdef __x86_64__
+                         __ASM_SHR_RCX
+                         "    jnc 1f\n"
+                         "    movsl\n"
+                         "1:  rep; movsq\n"
+#else
+                         "rep; movsl\n"
+#endif
                          : "=m" (*(struct { __extension__ __UINT32_TYPE__ __d[__n_dwords]; } *)__dst)
                          , "+D" (__dst)
                          : "m" (*(struct { __extension__ __UINT32_TYPE__ __d[__n_dwords]; } *)__src)
@@ -108,21 +179,48 @@ __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_mempcpyl
     return __dst;
 }
 
+#ifdef __x86_64__
+#define __asm_mempcpyq(dst,src,n_words) __asm_mempcpyq(dst,src,n_words)
+__FORCELOCAL __ATTR_RETNONNULL __NONNULL((1,2)) void *(__LIBCCALL __asm_mempcpyq)
+(void *__restrict __dst, void const *__restrict __src, __SIZE_TYPE__ __n_qwords) {
+    __asm__ __volatile__(__ASM_ENTER_CLD
+                         "rep; movsq\n"
+                         : "=m" (*(struct { __extension__ __UINT64_TYPE__ __d[__n_qwords]; } *)__dst)
+                         , "+D" (__dst)
+                         : "m" (*(struct { __extension__ __UINT64_TYPE__ __d[__n_qwords]; } *)__src)
+                         , "S" (__src), "c" (__n_qwords) : "cc");
+    return __dst;
+}
+#endif
+
 #ifndef __NO_builtin_constant_p
 #define __NO_asm_memset_IF_BYTE_NONCONST 1
 #define __asm_memset(dst,byte,n_bytes)    __asm_memset(dst,byte,n_bytes)
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1))
 void *(__LIBCCALL __asm_memset)(void *__restrict __dst, int __byte, __SIZE_TYPE__ __n_bytes) {
     if (__builtin_constant_p(__byte)) {
-         __asm__ __volatile__("    shrl $1, %%ecx\n"
+         __asm__ __volatile__(__ASM_ENTER_CLD
+                              __ASM_SHR_RCX
                               "    jnc 1f\n"
                               "    stosb\n"
-                              "1:  shrl $1, %%ecx\n"
+                              "1:  " __ASM_SHR_RCX
                               "    jnc 1f\n"
                               "    stosw\n"
+#ifdef __x86_64__
+                              "1:  " __ASM_SHR_RCX
+                              "    jnc 1f\n"
+                              "    stosl\n"
+                              "1:  rep; stosq\n"
+#else
                               "1:  rep; stosl\n"
+#endif
                               : "=m" (*(struct { __extension__ __BYTE_TYPE__ __d[__n_bytes]; } *)__dst)
-                              : "D" (__dst), "a" (0x01010101*(__byte & 0xff))
+                              : "D" (__dst)
+#ifdef __x86_64__
+                              , "a" (__UINT64_C(0x0101010101010101)*(__byte & 0xff))
+#else
+                              , "a" (__UINT32_C(0x01010101)*(__byte & 0xff))
+#endif
                               , "c" (__n_bytes) : "cc", "esi");
         return __dst;
     }
@@ -133,12 +231,25 @@ void *(__LIBCCALL __asm_memset)(void *__restrict __dst, int __byte, __SIZE_TYPE_
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1))
 void *(__LIBCCALL __asm_memsetw)(void *__restrict __dst, __UINT16_TYPE__ __word, __SIZE_TYPE__ __n_words) {
     if (__builtin_constant_p(__word)) {
-         __asm__ __volatile__("    shrl $1, %%ecx\n"
+         __asm__ __volatile__(__ASM_ENTER_CLD
+                              __ASM_SHR_RCX
                               "    jnc 1f\n"
                               "    stosw\n"
+#ifdef __x86_64__
+                              "1:  " __ASM_SHR_RCX
+                              "    jnc 1f\n"
+                              "    stosl\n"
+                              "1:  rep; stosq\n"
+#else
                               "1:  rep; stosl\n"
+#endif
                               : "=m" (*(struct { __extension__ __UINT16_TYPE__ __d[__n_words]; } *)__dst)
-                              : "D" (__dst), "a" (0x00010001*__word)
+                              : "D" (__dst)
+#ifdef __x86_64__
+                              , "a" (__UINT64_C(0x0001000100010001)*__word)
+#else
+                              , "a" (__UINT32_C(0x00010001)*__word)
+#endif
                               , "c" (__n_words) : "cc", "esi");
         return __dst;
     }
@@ -148,18 +259,48 @@ void *(__LIBCCALL __asm_memsetw)(void *__restrict __dst, __UINT16_TYPE__ __word,
 #define __asm_memsetl(dst,dword,n_dwords) __asm_memsetl(dst,dword,n_dwords)
 __FORCELOCAL __ATTR_RETNONNULL __NONNULL((1))
 void *(__LIBCCALL __asm_memsetl)(void *__restrict __dst, __UINT32_TYPE__ __dword, __SIZE_TYPE__ __n_dwords) {
-     __asm__ __volatile__("rep; stosl\n"
+#ifdef __x86_64__
+    if (__builtin_constant_p(__dword)) {
+         __asm__ __volatile__(__ASM_ENTER_CLD
+                              __ASM_SHR_RCX
+                              "    jnc 1f\n"
+                              "    stosl\n"
+                              "1:  rep; stosq\n"
+                              : "=m" (*(struct { __extension__ __UINT32_TYPE__ __d[__n_dwords]; } *)__dst)
+                              : "D" (__dst)
+                              , "a" (__UINT64_C(0x0000000100000001)*__dword)
+                              , "c" (__n_dwords) : "cc", "esi");
+        return __dst;
+    }
+    return __libc_memsetl(__dst,__dword,__n_dwords);
+#else
+     __asm__ __volatile__(__ASM_ENTER_CLD
+                          "rep; stosl\n"
                           : "=m" (*(struct { __extension__ __UINT32_TYPE__ __d[__n_dwords]; } *)__dst)
                           : "D" (__dst), "a" (__dword)
                           , "c" (__n_dwords) : "cc", "esi");
     return __dst;
+#endif
 }
+#ifdef __x86_64__
+#define __asm_memsetq(dst,qword,n_qwords) __asm_memsetq(dst,qword,n_qwords)
+__FORCELOCAL __ATTR_RETNONNULL __NONNULL((1))
+void *(__LIBCCALL __asm_memsetq)(void *__restrict __dst, __UINT64_TYPE__ __qword, __SIZE_TYPE__ __n_qwords) {
+     __asm__ __volatile__(__ASM_ENTER_CLD
+                          "rep; stosq\n"
+                          : "=m" (*(struct { __extension__ __UINT64_TYPE__ __d[__n_qwords]; } *)__dst)
+                          : "D" (__dst), "a" (__qword)
+                          , "c" (__n_qwords) : "cc", "esi");
+    return __dst;
+}
+#endif
 
 #define __DEFINE_MEMCMP(name,n,T,width) \
 __FORCELOCAL __ATTR_PURE __NONNULL((1,2)) \
 int (__LIBCCALL name)(void const *__a, void const *__b, __SIZE_TYPE__ n) { \
      register int __result; \
-     __asm__ __volatile__("    testl %%ecx, %%ecx\n" /* if (!size) SET_STATE(EQUAL); */ \
+     __asm__ __volatile__(__ASM_ENTER_CLD \
+                          "    test %6, %6\n" /* if (!size) SET_STATE(EQUAL); */ \
                           "    repe; cmps" width "\n" \
                           "    seta %b0\n"     /* result = (a > b) ? 1 : 0; */ \
                           "    jnb 1f\n"       /* if (a < b) */ \
@@ -172,14 +313,18 @@ int (__LIBCCALL name)(void const *__a, void const *__b, __SIZE_TYPE__ n) { \
                           , "c" (n) : "cc"); \
     return __result; \
 }
+#define __asm_memcmp(a,b,n_bytes)   __asm_memcmp(a,b,n_bytes)
 __DEFINE_MEMCMP(__asm_memcmp,__n_bytes,__BYTE_TYPE__,"b")
+#define __asm_memcmpw(a,b,n_words)  __asm_memcmpw(a,b,n_words)
 __DEFINE_MEMCMP(__asm_memcmpw,__n_words,__UINT16_TYPE__,"w")
+#define __asm_memcmpl(a,b,n_dwords) __asm_memcmpl(a,b,n_dwords)
 __DEFINE_MEMCMP(__asm_memcmpl,__n_dwords,__UINT32_TYPE__,"l")
+#ifdef __x86_64__
+#define __asm_memcmpq(a,b,n_qwords) __asm_memcmpq(a,b,n_qwords)
+__DEFINE_MEMCMP(__asm_memcmpq,__n_qwords,__UINT64_TYPE__,"q")
+#endif
 #undef __DEFINE_MEMCMP
 
-#define __asm_memcmp(a,b,n_bytes)   __asm_memcmp(a,b,n_bytes)
-#define __asm_memcmpw(a,b,n_words)  __asm_memcmpw(a,b,n_words)
-#define __asm_memcmpl(a,b,n_dwords) __asm_memcmpl(a,b,n_dwords)
 
 #ifdef __i686__
 #define __DEFINE_MEMCHR(name,n,rT,nT,T,width) \
@@ -187,7 +332,8 @@ __FORCELOCAL __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) \
 rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
     register __UINTPTR_TYPE__ __result,__temp; \
     if (!n) return __NULLPTR; \
-    __asm__ __volatile__("    repne; scas" width "\n" \
+    __asm__ __volatile__(__ASM_ENTER_CLD \
+                         "    repne; scas" width "\n" \
                          "    cmovne %1, %0\n" \
                          : "=D" (__result), "=&r" (__temp) \
                          : "0" (__haystack), "a" (__needle), "c" (n), "1" (1) \
@@ -203,7 +349,7 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
     __asm__ __volatile__("    std\n" \
                          "    repne; scas" width "\n" \
                          "    cmovne %1, %0\n" \
-                         "    cld\n" \
+                         __ASM_LEAVE_STD \
                          : "=D" (__result), "=&r" (__temp) \
                          : "0" ((T *)__haystack+n-1), "a" (__needle), "c" (n), "1" (-1) \
                          , "m" (*(struct { __extension__ T __d[n]; } *)__haystack) \
@@ -216,7 +362,8 @@ __FORCELOCAL __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) \
 rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
     register __UINTPTR_TYPE__ __result; \
     if (!n) return __NULLPTR; \
-    __asm__ __volatile__("    repne; scas" width "\n" \
+    __asm__ __volatile__(__ASM_ENTER_CLD \
+                         "    repne; scas" width "\n" \
                          "    je 1f\n" \
                          "    movl $1, %0\n" \
                          "1:\n" \
@@ -235,7 +382,7 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
                          "    repne; scas" width "\n" \
                          "    je 1f\n" \
                          "    movl $-1, %0\n" \
-                         "1:  cld\n" \
+                         "1:\n" __ASM_LEAVE_STD \
                          : "=D" (__result) \
                          : "0" ((T *)__haystack+n-1), "a" (__needle), "c" (n) \
                          , "m" (*(struct { __extension__ T __d[n]; } *)__haystack) \
@@ -244,26 +391,35 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
 }
 #endif
 #define __asm_memchr(haystack,needle,n_bytes)   __asm_memchr(haystack,needle,n_bytes)
-#define __asm_memchrw(haystack,needle,n_words)  __asm_memchrw(haystack,needle,n_words)
-#define __asm_memchrl(haystack,needle,n_dwords) __asm_memchrl(haystack,needle,n_dwords)
 __DEFINE_MEMCHR(__asm_memchr,n_bytes,void,int,__BYTE_TYPE__,"b")
+#define __asm_memchrw(haystack,needle,n_words)  __asm_memchrw(haystack,needle,n_words)
 __DEFINE_MEMCHR(__asm_memchrw,n_words,__UINT16_TYPE__,__UINT16_TYPE__,__UINT16_TYPE__,"w")
+#define __asm_memchrl(haystack,needle,n_dwords) __asm_memchrl(haystack,needle,n_dwords)
 __DEFINE_MEMCHR(__asm_memchrl,n_dwords,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYPE__,"l")
+#ifdef __x86_64__
+#define __asm_memchrq(haystack,needle,n_qwords) __asm_memchrq(haystack,needle,n_qwords)
+__DEFINE_MEMCHR(__asm_memchrq,n_qwords,__UINT64_TYPE__,__UINT64_TYPE__,__UINT64_TYPE__,"q")
+#endif
 #undef __DEFINE_MEMCHR
 
 #define __asm_memrchr(haystack,needle,n_bytes)   __asm_memrchr(haystack,needle,n_bytes)
-#define __asm_memrchrw(haystack,needle,n_words)  __asm_memrchrw(haystack,needle,n_words)
-#define __asm_memrchrl(haystack,needle,n_dwords) __asm_memrchrl(haystack,needle,n_dwords)
 __DEFINE_MEMRCHR(__asm_memrchr,n_bytes,void,int,__BYTE_TYPE__,"b")
+#define __asm_memrchrw(haystack,needle,n_words)  __asm_memrchrw(haystack,needle,n_words)
 __DEFINE_MEMRCHR(__asm_memrchrw,n_words,__UINT16_TYPE__,__UINT16_TYPE__,__UINT16_TYPE__,"w")
+#define __asm_memrchrl(haystack,needle,n_dwords) __asm_memrchrl(haystack,needle,n_dwords)
 __DEFINE_MEMRCHR(__asm_memrchrl,n_dwords,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYPE__,"l")
+#ifdef __x86_64__
+#define __asm_memrchrq(haystack,needle,n_qwords) __asm_memrchrq(haystack,needle,n_qwords)
+__DEFINE_MEMRCHR(__asm_memrchrq,n_qwords,__UINT64_TYPE__,__UINT64_TYPE__,__UINT64_TYPE__,"q")
+#endif
 #undef __DEFINE_MEMRCHR
 
 #define __DEFINE_MEMEND(name,n,rT,nT,T,width,dec) \
 __FORCELOCAL __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) \
 rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
     register rT *__result; \
-    __asm__ __volatile__("    jcxz 1f\n" \
+    __asm__ __volatile__(__ASM_ENTER_CLD \
+                         "    jcxz 1f\n" \
                          "    repne; scas" width "\n" \
                          "    jne 1f\n" \
                          "    " dec " %%edi\n" \
@@ -275,11 +431,15 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
     return __result; \
 }
 #define __asm_memend(haystack,needle,n_bytes)   __asm_memend(haystack,needle,n_bytes)
-#define __asm_memendw(haystack,needle,n_words)  __asm_memendw(haystack,needle,n_words)
-#define __asm_memendl(haystack,needle,n_dwords) __asm_memendl(haystack,needle,n_dwords)
 __DEFINE_MEMEND(__asm_memend,n_bytes,void,int,__BYTE_TYPE__,"b","dec")
-__DEFINE_MEMEND(__asm_memendw,n_words,__UINT16_TYPE__,__UINT16_TYPE__,__UINT16_TYPE__,"w","subl $2,")
-__DEFINE_MEMEND(__asm_memendl,n_dwords,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYPE__,"l","subl $4,")
+#define __asm_memendw(haystack,needle,n_words)  __asm_memendw(haystack,needle,n_words)
+__DEFINE_MEMEND(__asm_memendw,n_words,__UINT16_TYPE__,__UINT16_TYPE__,__UINT16_TYPE__,"w","sub $2,")
+#define __asm_memendl(haystack,needle,n_dwords) __asm_memendl(haystack,needle,n_dwords)
+__DEFINE_MEMEND(__asm_memendl,n_dwords,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYPE__,"l","sub $4,")
+#ifdef __x86_64__
+#define __asm_memendq(haystack,needle,n_qwords) __asm_memendq(haystack,needle,n_qwords)
+__DEFINE_MEMEND(__asm_memendq,n_qwords,__UINT64_TYPE__,__UINT64_TYPE__,__UINT64_TYPE__,"q","sub $8,")
+#endif
 #undef __DEFINE_MEMEND
 
 #define __DEFINE_MEMLEN(name,n,rT,nT,T,alt) \
@@ -288,47 +448,59 @@ __SIZE_TYPE__ (__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__
     return (T *)alt(__haystack,__needle,n) - (T *)__haystack; \
 }
 #define __asm_memlen(haystack,needle,n_bytes)   __asm_memlen(haystack,needle,n_bytes)
-#define __asm_memlenw(haystack,needle,n_words)  __asm_memlenw(haystack,needle,n_words)
-#define __asm_memlenl(haystack,needle,n_dwords) __asm_memlenl(haystack,needle,n_dwords)
 __DEFINE_MEMLEN(__asm_memlen,n_bytes,void,int,__BYTE_TYPE__,__asm_memend)
+#define __asm_memlenw(haystack,needle,n_words)  __asm_memlenw(haystack,needle,n_words)
 __DEFINE_MEMLEN(__asm_memlenw,n_words,__UINT16_TYPE__,__UINT16_TYPE__,__UINT16_TYPE__,__asm_memendw)
+#define __asm_memlenl(haystack,needle,n_dwords) __asm_memlenl(haystack,needle,n_dwords)
 __DEFINE_MEMLEN(__asm_memlenl,n_dwords,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYPE__,__asm_memendl)
+#ifdef __x86_64__
+#define __asm_memlenq(haystack,needle,n_qwords) __asm_memlenq(haystack,needle,n_qwords)
+__DEFINE_MEMLEN(__asm_memlenq,n_qwords,__UINT64_TYPE__,__UINT64_TYPE__,__UINT64_TYPE__,__asm_memendq)
+#endif
 #undef __DEFINE_MEMLEN
 
 #define __DEFINE_RAWMEMCHR(name,rT,nT,T,width) \
 __FORCELOCAL __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) \
 rT *(__LIBCCALL name)(rT const *__haystack, nT __needle) { \
     register rT *__result; \
-    __asm__ __volatile__("repne; scas" width "\n" \
+    __asm__ __volatile__(__ASM_ENTER_CLD \
+                         "repne; scas" width "\n" \
                          : "=D" (__result) \
                          : "0" (__haystack), "a" (__needle), "c" (-1) \
                          : "memory", "cc"); \
     return (rT *)((T *)__result-1); \
 }
 #define __asm_rawmemchr(haystack,needle)  __asm_rawmemchr(haystack,needle)
-#define __asm_rawmemchrw(haystack,needle) __asm_rawmemchrw(haystack,needle)
-#define __asm_rawmemchrl(haystack,needle) __asm_rawmemchrl(haystack,needle)
 __DEFINE_RAWMEMCHR(__asm_rawmemchr,void,int,__BYTE_TYPE__,"b")
+#define __asm_rawmemchrw(haystack,needle) __asm_rawmemchrw(haystack,needle)
 __DEFINE_RAWMEMCHR(__asm_rawmemchrw,__UINT16_TYPE__,__UINT16_TYPE__,__UINT16_TYPE__,"w")
-__DEFINE_RAWMEMCHR(__asm_rawmemchrl,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYPE__,"l")
+#ifdef __x86_64__
+#define __asm_rawmemchrq(haystack,needle) __asm_rawmemchrq(haystack,needle)
+__DEFINE_RAWMEMCHR(__asm_rawmemchrq,__UINT64_TYPE__,__UINT64_TYPE__,__UINT64_TYPE__,"q")
+#endif
 #undef __DEFINE_RAWMEMCHR
 
 #define __DEFINE_RAWMEMLEN(name,rT,nT,T,width) \
 __FORCELOCAL __ATTR_PURE __NONNULL((1)) \
 __SIZE_TYPE__ (__LIBCCALL name)(rT const *__haystack, nT __needle) { \
     __SIZE_TYPE__ __result; \
-    __asm__ __volatile__("repne; scas" width "\n" \
+    __asm__ __volatile__(__ASM_ENTER_CLD \
+                         "repne; scas" width "\n" \
                          : "=c" (__result) \
                          : "D" (__haystack), "a" (__needle), "0" (-1) \
                          : "memory", "cc"); \
     return (~__result) - 1; \
 }
 #define __asm_rawmemlen(haystack,needle)  __asm_rawmemlen(haystack,needle)
-#define __asm_rawmemlenw(haystack,needle) __asm_rawmemlenw(haystack,needle)
-#define __asm_rawmemlenl(haystack,needle) __asm_rawmemlenl(haystack,needle)
 __DEFINE_RAWMEMLEN(__asm_rawmemlen,void,int,__BYTE_TYPE__,"b")
+#define __asm_rawmemlenw(haystack,needle) __asm_rawmemlenw(haystack,needle)
 __DEFINE_RAWMEMLEN(__asm_rawmemlenw,__UINT16_TYPE__,__UINT16_TYPE__,__UINT16_TYPE__,"w")
+#define __asm_rawmemlenl(haystack,needle) __asm_rawmemlenl(haystack,needle)
 __DEFINE_RAWMEMLEN(__asm_rawmemlenl,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYPE__,"l")
+#ifdef __x86_64__
+#define __asm_rawmemlenq(haystack,needle) __asm_rawmemlenq(haystack,needle)
+__DEFINE_RAWMEMLEN(__asm_rawmemlenq,__UINT64_TYPE__,__UINT64_TYPE__,__UINT64_TYPE__,"q")
+#endif
 #undef __DEFINE_RAWMEMLEN
 
 #define __asm_strlen(str)            __asm_rawmemlen(str,'\0')
@@ -336,7 +508,10 @@ __DEFINE_RAWMEMLEN(__asm_rawmemlenl,__UINT32_TYPE__,__UINT32_TYPE__,__UINT32_TYP
 #define __asm_strnlen(str,max_chars) __asm_memlen(str,'\0',max_chars)
 #define __asm_strnend(str,max_chars) __asm_memend(str,'\0',max_chars)
 
-#endif /* !__x86_64__ */
+#undef __ASM_SHR_RCX
+#undef __ASM_ENTER_CLD
+#undef __ASM_LEAVE_STD
+
 #endif
 
 // #define __asm_memrend(haystack,needle,n_bytes)   __libc_memrend(haystack,needle,n_bytes)

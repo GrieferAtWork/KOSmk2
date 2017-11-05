@@ -45,6 +45,10 @@ __NAMESPACE_STD_END
 __NAMESPACE_STD_USING(tm)
 #endif /* !__tm_defined */
 
+#if !defined(CONFIG_NO_64BIT_STRING) && __SIZEOF_POINTER__ >= 8
+#define CONFIG_NATIVE_64BIT_STRING 1
+#endif
+
 INTDEF void *LIBCCALL libc_memcpy(void *__restrict dst, void const *__restrict src, size_t n);
 INTDEF void *LIBCCALL libc__memcpy_d(void *__restrict dst, void const *__restrict src, size_t n, DEBUGINFO);
 INTDEF void *LIBCCALL libc_mempcpy(void *__restrict dst, void const *__restrict src, size_t n);
@@ -69,7 +73,7 @@ INTDEF void *LIBCCALL libc_mempcpyw(void *__restrict dst, void const *__restrict
 INTDEF void *LIBCCALL libc__mempcpyw_d(void *__restrict dst, void const *__restrict src, size_t n_words, DEBUGINFO);
 INTDEF void *LIBCCALL libc_memmovew(void *dst, void const *src, size_t n_words);
 INTDEF void *LIBCCALL libc_memsetw(void *__restrict dst, u16 word, size_t n_words);
-INTDEF s16 LIBCCALL libc_memcmpw(void const *a, void const *b, size_t n_words);
+INTDEF int LIBCCALL libc_memcmpw(void const *a, void const *b, size_t n_words);
 INTDEF u16 *LIBCCALL libc_memchrw(u16 const *__restrict haystack, u16 needle, size_t n_words);
 INTDEF u16 *LIBCCALL libc_memrchrw(u16 const *__restrict haystack, u16 needle, size_t n_words);
 INTDEF u16 *LIBCCALL libc_memendw(u16 const *__restrict haystack, u16 needle, size_t n_words);
@@ -87,7 +91,7 @@ INTDEF void *LIBCCALL libc_mempcpyl(void *__restrict dst, void const *__restrict
 INTDEF void *LIBCCALL libc__mempcpyl_d(void *__restrict dst, void const *__restrict src, size_t n_dwords, DEBUGINFO);
 INTDEF void *LIBCCALL libc_memmovel(void *dst, void const *src, size_t n_dwords);
 INTDEF void *LIBCCALL libc_memsetl(void *__restrict dst, u32 dword, size_t n_dwords);
-INTDEF s32 LIBCCALL libc_memcmpl(void const *a, void const *b, size_t n_dwords);
+INTDEF int LIBCCALL libc_memcmpl(void const *a, void const *b, size_t n_dwords);
 INTDEF u32 *LIBCCALL libc_memchrl(u32 const *__restrict haystack, u32 needle, size_t n_dwords);
 INTDEF u32 *LIBCCALL libc_memrchrl(u32 const *__restrict haystack, u32 needle, size_t n_dwords);
 INTDEF u32 *LIBCCALL libc_memendl(u32 const *__restrict haystack, u32 needle, size_t n_dwords);
@@ -99,14 +103,14 @@ INTDEF u32 *LIBCCALL libc_rawmemrchrl(u32 const *__restrict haystack, u32 needle
 INTDEF size_t LIBCCALL libc_rawmemlenl(u32 const *__restrict haystack, u32 needle);
 INTDEF size_t LIBCCALL libc_rawmemrlenl(u32 const *__restrict haystack, u32 needle);
 
-#ifdef CONFIG_64BIT_STRING
+#ifndef CONFIG_NO_64BIT_STRING
 INTDEF void *LIBCCALL libc_memcpyq(void *__restrict dst, void const *__restrict src, size_t n_qwords);
 INTDEF void *LIBCCALL libc__memcpyq_d(void *__restrict dst, void const *__restrict src, size_t n_qwords, DEBUGINFO);
 INTDEF void *LIBCCALL libc_mempcpyq(void *__restrict dst, void const *__restrict src, size_t n_qwords);
 INTDEF void *LIBCCALL libc__mempcpyq_d(void *__restrict dst, void const *__restrict src, size_t n_qwords, DEBUGINFO);
 INTDEF void *LIBCCALL libc_memmoveq(void *dst, void const *src, size_t n_dwords);
 INTDEF void *LIBCCALL libc_memsetq(void *__restrict dst, u64 qword, size_t n_qwords);
-INTDEF s64 LIBCCALL libc_memcmpq(void const *a, void const *b, size_t n_qwords);
+INTDEF int LIBCCALL libc_memcmpq(void const *a, void const *b, size_t n_qwords);
 INTDEF u64 *LIBCCALL libc_memchrq(u64 const *__restrict haystack, u64 needle, size_t n_qwords);
 INTDEF u64 *LIBCCALL libc_memrchrq(u64 const *__restrict haystack, u64 needle, size_t n_qwords);
 INTDEF u64 *LIBCCALL libc_memendq(u64 const *__restrict haystack, u64 needle, size_t n_qwords);
@@ -117,7 +121,8 @@ INTDEF u64 *LIBCCALL libc_rawmemchrq(u64 const *__restrict haystack, u64 needle)
 INTDEF u64 *LIBCCALL libc_rawmemrchrq(u64 const *__restrict haystack, u64 needle);
 INTDEF size_t LIBCCALL libc_rawmemlenq(u64 const *__restrict haystack, u64 needle);
 INTDEF size_t LIBCCALL libc_rawmemrlenq(u64 const *__restrict haystack, u64 needle);
-#endif /* CONFIG_64BIT_STRING */
+INTDEF void *LIBCCALL libc_mempatq(void *__restrict dst, u64 pattern, size_t n_bytes);
+#endif /* !CONFIG_NO_64BIT_STRING */
 
 INTDEF void *LIBCCALL libc_mempatw(void *__restrict dst, u16 pattern, size_t n_bytes);
 INTDEF void *LIBCCALL libc_mempatl(void *__restrict dst, u32 pattern, size_t n_bytes);

@@ -90,14 +90,14 @@
 #	define STRING_REPMOVSn_LIMIT 0x100
 #	define STRING_REPSTOSn_LIMIT 0x100
 #	define STRING_REPCMPSn_LIMIT 0x080
-#ifdef CONFIG_64BIT_STRING
+#ifndef CONFIG_NO_64BIT_STRING
 #	define STRING_ALIGNMENT_MASK 7
 #else
 #	define STRING_ALIGNMENT_MASK 3
 #endif
 
 
-#if defined(CONFIG_DEBUG) && \
+#if defined(CONFIG_DEBUG) && !defined(__NO_SYSV__) && \
    (defined(__i386__) || defined(__x86_64__))
 #ifdef __x86_64__
 #define CHECK_DF() \
@@ -118,6 +118,9 @@
 
 FORCELOCAL void *LIBCCALL X(core_memcpy)
 (void *__restrict dst, void const *__restrict src, size_t n) {
+#if !defined(CONFIG_NATIVE_64BIT_STRING) && S >= 8
+	return core_memcpyl(dst,src,n*(S/4));
+#else
 	CHECK_HOST_DATA(dst,n*S);
 	CHECK_HOST_TEXT(src,n*S);
 	CHECK_DF();	
@@ -126,12 +129,12 @@ FORCELOCAL void *LIBCCALL X(core_memcpy)
 		if (n >= STRING_LARGE_OP_LIMIT) {
 			switch (n & STRING_ALIGNMENT_MASK) {
 			case 0:
-#ifdef CONFIG_64BIT_STRING
+#ifdef CONFIG_NATIVE_64BIT_STRING
 				return core_memcpyq(dst,src,n >> 3);
 			case 4:
 #endif
 				return core_memcpyl(dst,src,n >> 2);
-#ifdef CONFIG_64BIT_STRING
+#ifdef CONFIG_NATIVE_64BIT_STRING
 			case 6:
 #endif
 			case 2:
@@ -140,13 +143,14 @@ FORCELOCAL void *LIBCCALL X(core_memcpy)
 			}
 		}
 #endif
-#if defined(__i386__) || defined(__x86_64__)
+#if (defined(__i386__) || defined(__x86_64__)) && \
+	(defined(CONFIG_NATIVE_64BIT_STRING) || S < 8)
 		__asm__ __volatile__("rep; movs" W "\n"
-							 :
-							 : "D" (dst)
-							 , "S" (src)
-							 , "c" (WM(n))
-							 : "memory");
+		                     :
+		                     : "D" (dst)
+		                     , "S" (src)
+		                     , "c" (WM(n))
+		                     : "memory");
 		return dst;
 #endif
 	}
@@ -156,10 +160,14 @@ FORCELOCAL void *LIBCCALL X(core_memcpy)
 		while (n--) *(T *)_dst++ = *_src++;
 	}
 	return dst;
+#endif
 }
 
 FORCELOCAL void *LIBCCALL X(core_mempcpy)
 (void *__restrict dst, void const *__restrict src, size_t n) {
+#if !defined(CONFIG_NATIVE_64BIT_STRING) && S >= 8
+	return core_mempcpyl(dst,src,n*(S/4));
+#else
 	CHECK_HOST_DATA(dst,n*S);
 	CHECK_HOST_TEXT(src,n*S);
 	CHECK_DF();	
@@ -168,12 +176,12 @@ FORCELOCAL void *LIBCCALL X(core_mempcpy)
 		if (n >= STRING_LARGE_OP_LIMIT) {
 			switch (n & STRING_ALIGNMENT_MASK) {
 			case 0:
-#ifdef CONFIG_64BIT_STRING
+#ifdef CONFIG_NATIVE_64BIT_STRING
 				return core_mempcpyq(dst,src,n >> 3);
 			case 4:
 #endif
 				return core_mempcpyl(dst,src,n >> 2);
-#ifdef CONFIG_64BIT_STRING
+#ifdef CONFIG_NATIVE_64BIT_STRING
 			case 6:
 #endif
 			case 2:
@@ -182,12 +190,13 @@ FORCELOCAL void *LIBCCALL X(core_mempcpy)
 			}
 		}
 #endif
-#if defined(__i386__) || defined(__x86_64__)
+#if (defined(__i386__) || defined(__x86_64__)) && \
+	(defined(CONFIG_NATIVE_64BIT_STRING) || S < 8)
 		__asm__ __volatile__("rep; movs" W "\n"
-							 : "+D" (dst)
-							 : "S" (src)
-							 , "c" (WM(n))
-							 : "memory");
+		                     : "+D" (dst)
+		                     : "S" (src)
+		                     , "c" (WM(n))
+		                     : "memory");
 		return dst;
 #endif
 	}
@@ -198,6 +207,7 @@ FORCELOCAL void *LIBCCALL X(core_mempcpy)
 		dst = _dst;
 	}
 	return dst;
+#endif
 }
 
 DECL void *LIBCCALL X(libc_memcpy)
@@ -251,12 +261,12 @@ DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
 		if (n >= STRING_LARGE_OP_LIMIT) {
 			switch (n & STRING_ALIGNMENT_MASK) {
 			case 0:
-#ifdef CONFIG_64BIT_STRING
+#ifdef CONFIG_NATIVE_64BIT_STRING
 				return libc_memsetq(dst,(u64)0x0101010101010101ull*h,n >> 3);
 			case 4:
 #endif
 				return libc_memsetl(dst,(u32)0x01010101u*h,n >> 2);
-#ifdef CONFIG_64BIT_STRING
+#ifdef CONFIG_NATIVE_64BIT_STRING
 			case 6:
 #endif
 			case 2:
@@ -265,14 +275,21 @@ DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
 			}
 		}
 #endif
-#if defined(__i386__) || defined(__x86_64__)
+#if (defined(__i386__) || defined(__x86_64__)) && \
+	(defined(CONFIG_NATIVE_64BIT_STRING) || S < 8)
 		CHECK_DF();
 		__asm__ __volatile__("rep; stos" W "\n"
-							 :
-							 : "D" (dst)
-							 , "a" (h)
-							 , "c" (WM(n))
-							 : "memory", "esi");
+		                     :
+		                     : "D" (dst)
+		                     , "a" (h)
+		                     , "c" (WM(n))
+		                     : "memory"
+#ifdef __x86_64__
+		                     , "rsi"
+#else
+		                     , "esi"
+#endif
+		                     );
 		return dst;
 #endif
 	}
@@ -283,23 +300,24 @@ DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
  return dst;
 }
 
-DECL sB LIBCCALL X(libc_memcmp)
+DECL int LIBCCALL X(libc_memcmp)
 (void const *a, void const *b, size_t n) {
 	if (n >= STRING_REPCMPSn_LIMIT) {
-#if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
-		sB result = 0;
+#if defined(CONFIG_NATIVE_64BIT_STRING) && \
+   (defined(__i386__) || defined(__x86_64__))
+		int result = 0;
 		CHECK_DF();
 		__asm__ __volatile__("    jcxz 1f\n"
-							 "    repe cmps" W "\n"
-							 "    seta %b0\n"
-							 "    jnb 1f\n"
-							 "    mov $-1, %0\n"
-							 "1:\n"
-							 : "+a" (result)
-							 : "D" (a)
-							 , "S" (b)
-							 , "c" (WM(n))
-							 : "memory", "cc");
+		                     "    repe cmps" W "\n"
+		                     "    seta %b0\n"
+		                     "    jnb 1f\n"
+		                     "    mov $-1, %0\n"
+		                     "1:\n"
+		                     : "+a" (result)
+		                     : "D" (a)
+		                     , "S" (b)
+		                     , "c" (WM(n))
+		                     : "memory", "cc");
 		return result;
 #endif
 	}
@@ -310,18 +328,23 @@ DECL sB LIBCCALL X(libc_memcmp)
 		CHECK_HOST_TEXT(b,n*S);
 		end = (aiter = (T const *)a)+n,biter = (T const *)b;
 		while (aiter != end && ((av = *aiter++) == (bv = *biter++)));
-		return (sB)(av-bv);
+		return (int)(av-bv);
 	}
 }
 
 DECL vB *LIBCCALL X(libc_memchr)
 (vB const *__restrict haystack, B needle, size_t n) {
-#if (defined(__i386__) && BITS != 64) || defined(__x86_64__)
+#if defined(CONFIG_NATIVE_64BIT_STRING) && \
+   (defined(__i386__) || defined(__x86_64__))
 	vB *result;
 	CHECK_DF();
 	__asm__ __volatile__("    jcxz 2f\n"
 	                     "    repne scas" W "\n"
+#ifdef __x86_64__
+	                     "    mov %%rdi, %0\n"
+#else
 	                     "    mov %%edi, %0\n"
+#endif
 	                     "    je 1f\n"
 	                     "2:  xor %0, %0\n"
 #if S == 1
@@ -516,6 +539,7 @@ DECL void *LIBCCALL X(libc_memmove)(void *dst, void const *src, size_t n) {
 #undef STRING_LARGE_OP_LIMIT
 #undef STRING_ALIGNMENT_MASK
 #undef CHECK_DF
+#undef WM
 #undef h
 #undef n
 #undef vB

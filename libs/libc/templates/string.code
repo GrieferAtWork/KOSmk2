@@ -174,7 +174,7 @@
 #define STR_MEMPCPY(dst,src,n) ((T *)libc_mempcpyl(dst,src,n))
 #define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpyl(dst,src,n))
 #define STR_MEMSET(dst,fill,n) ((T *)libc_memsetl(dst,fill,n))
-#elif S == 8 && defined(CONFIG_64BIT_STRING)
+#elif S == 8 && !defined(CONFIG_NO_64BIT_STRING)
 #define STR_MEMPCPY(dst,src,n) ((T *)libc_mempcpyq(dst,src,n))
 #define STR_MEMCPY(dst,src,n)  ((T *)libc_memcpyq(dst,src,n))
 #define STR_MEMSET(dst,fill,n) ((T *)libc_memsetq(dst,fill,n))
