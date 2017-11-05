@@ -186,16 +186,14 @@ BEGIN
 
 #define BASIC_MODULE(name) \
 		MODULE_NOSTDLIB(name) \
-		SET_OUTPUT("/bin/mod/" name) \
+		SET_OUTPUT(CONFIG_MOD_PATH "/" name) \
 		SET_DISKFILE("/mod/" name)
 #define DEFAULT_MODULE(name) \
-		MODULE_NOSTDLIB(name) \
-		LIBPATH("/bin/mod") \
-		SET_OUTPUT("/bin/mod/" name) \
-		SET_DISKFILE("/mod/" name)
+		BASIC_MODULE(name) \
+		LIBPATH(CONFIG_MOD_PATH)
 #define LIBRARY_MODULE(name) \
 		MODULE(name) \
-		SET_OUTPUT("/bin/mod/lib" name ".so") \
+		SET_OUTPUT(CONFIG_MOD_PATH "/lib" name ".so") \
 		SET_DISKFILE("/mod/lib" name ".so")
 #define USING(name) PROJ_DEP(name) LIB(name.lsstrip("lib"))
 
