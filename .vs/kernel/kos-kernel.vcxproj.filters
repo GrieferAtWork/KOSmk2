@@ -68,6 +68,12 @@
     <None Include="..\..\src\kernel\core\arch\paging64.c.inl">
       <Filter>kernel\core\arch</Filter>
     </None>
+    <None Include="..\..\src\kernel\core\arch\user32.c.inl">
+      <Filter>kernel\core\arch</Filter>
+    </None>
+    <None Include="..\..\src\kernel\core\arch\user64.c.inl">
+      <Filter>kernel\core\arch</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -472,6 +478,9 @@
       <Filter>modules\rtc</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core\arch\paging.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\user.c">
       <Filter>kernel\core\arch</Filter>
     </ClCompile>
   </ItemGroup>

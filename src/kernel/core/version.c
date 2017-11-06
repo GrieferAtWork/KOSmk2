@@ -28,15 +28,21 @@
 
 DECL_BEGIN
 
+/* Kernel build time is powered by magic(.dee) and the linker script. */
+#if __SIZEOF_POINTER__ >= 8
+INTDEF byte_t __kernel_timestamp[];
+PUBLIC uintptr_t
+kernel_timestamp_ ASMNAME("kernel_timestamp") =
+    (uintptr_t)__kernel_timestamp;
+#else
 INTDEF byte_t __kernel_timestamp_lo[];
 INTDEF byte_t __kernel_timestamp_hi[];
-
-/* Kernel build time is powered by magic(.dee) and the linker script. */
 PUBLIC struct { u32 lo,hi; }
 kernel_timestamp_ ASMNAME("kernel_timestamp") = {
     .lo = (u32)(uintptr_t)__kernel_timestamp_lo,
     .hi = (u32)(uintptr_t)__kernel_timestamp_hi,
 };
+#endif
 
 PUBLIC u32 const kernel_version = KOS_VERSION_CODE;
 

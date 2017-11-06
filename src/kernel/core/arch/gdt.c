@@ -39,12 +39,22 @@
 #include <hybrid/bitset.h>
 
 DECL_BEGIN
+
+#ifdef __x86_64__
+STATIC_ASSERT(sizeof(struct segment) == 16);
+#else
 STATIC_ASSERT(sizeof(struct segment) == 8);
+#endif
+
+
+/* Code below relies on this fact. */
+STATIC_ASSERT(sizeof(struct segment) == SEG_INDEX_MULTIPLIER);
+
 
 /* Bitset of allocated GDT segments. (ZERO-bits indicate free).
  * NOTE: Despite looking excessive, this entire vector is only
  *       1024 bytes large, making it quite feasible for use here. */
-PRIVATE ATTR_COLDBSS u8 gdt_allocated[((SEG_MAX+1)/sizeof(struct segment))/8];
+PRIVATE ATTR_COLDBSS u8 gdt_allocated[((SEG_MAX+1)/SEG_INDEX_MULTIPLIER)/8];
 
 /* Allocate/Free/Update a (new) descriptor index within global descriptor table.
  * These are mainly used to implement the higher-level LDT table and its functions.
@@ -93,8 +103,8 @@ gdt_get(segid_t id) {
  assertf(SMP_COUNT <= 1 || !PREEMPTION_ENABLED(),
          "What if your CPU suddenly changes?");
 #endif
- assert((id%8) == 0);
- assert(((GDT.ip_limit+1) % 8) == 0);
+ assert((id%SEG_INDEX_MULTIPLIER) == 0);
+ assert(((GDT.ip_limit+1) % sizeof(struct segment)) == 0);
  /* Return an empty segment for an out-of-bounds index. */
  if (id >= GDT.ip_limit+1)
      return make_segment(0,0,0);
@@ -109,8 +119,8 @@ gdt_set(segid_t id, struct segment seg,
  assertf(SMP_COUNT <= 1 || !PREEMPTION_ENABLED(),
          "What if your CPU suddenly changes?");
 #endif
- assert((id%8) == 0);
- assert(((GDT.ip_limit+1) % 8) == 0);
+ assert((id%SEG_INDEX_MULTIPLIER) == 0);
+ assert(((GDT.ip_limit+1) % sizeof(struct segment)) == 0);
  was = PREEMPTION_PUSH();
  if (oldseg) {
   *oldseg = id < GDT.ip_limit+1
@@ -194,8 +204,8 @@ PUBLIC struct segment gdt_builtin[SEG_BUILTIN] = {
     [SEG_USER_DATA]   = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL3), /* User data */
     [SEG_HOST_CODE16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_CODE_PL0_16), /* 16-bit kernel code segment. */
     [SEG_HOST_DATA16] = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL0_16), /* 16-bit kernel data segment. */
-    [SEG_CPUSELF]     = {{{(u32)__kernel_seg_cpuself_lo,(u32)__kernel_seg_cpuself_hi}}}, /* CPU-self */
-    [SEG_CPUTSS]      = {{{(u32)__kernel_seg_cputss_lo,(u32)__kernel_seg_cputss_hi}}}, /* CPU TSS */
+    [SEG_CPUSELF]     = {{{(uintptr_t)__kernel_seg_cpuself_lo,(uintptr_t)__kernel_seg_cpuself_hi}}}, /* CPU-self */
+    [SEG_CPUTSS]      = {{{(uintptr_t)__kernel_seg_cputss_lo,(uintptr_t)__kernel_seg_cputss_hi}}}, /* CPU TSS */
     [SEG_KERNEL_LDT]  = SEGMENT_INIT(0,0,SEG_LDT), /* Kernel LDT table. */
     [SEG_USER_TLB]    = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL3),
     [SEG_USER_TIB]    = SEGMENT_INIT(0,SEG_LIMIT_MAX,SEG_DATA_PL3),

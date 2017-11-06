@@ -21,10 +21,15 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 
 DECL_BEGIN
 
+#ifdef __x86_64__
+#define MB2_ARCHITECTURE  MB2_ARCHITECTURE_I386 /* XXX: Is there no `MB2_ARCHITECTURE_X86_64'? */
+#else
 #define MB2_ARCHITECTURE  MB2_ARCHITECTURE_I386
+#endif
 
 /* Disclaimer: Modifications were made to the below code! */
 
@@ -116,8 +121,12 @@ DECL_BEGIN
 struct mb2_header {
   u32 magic;         /* Must be MB2_MAGIC - see above.  */
   u32 architecture;  /* ISA */
+union PACKED {
+  u64 header_length_and_checksum;
+struct PACKED {
   u32 header_length; /* Total header length.  */
   u32 checksum;      /* The above fields plus this one must equal 0 mod 2^32. */
+};};
 };
 
 struct mb2_header_tag {

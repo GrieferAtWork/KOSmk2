@@ -178,6 +178,7 @@ typedef __socklen_t socklen_t;
 #ifdef __USE_MISC
 #ifndef L_SET
 #   define L_SET  SEEK_SET
+#   define L_CURR SEEK_CUR
 #   define L_INCR SEEK_CUR
 #   define L_XTND SEEK_END
 #endif /* !L_SET */

@@ -106,7 +106,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
  assert(addr_isvirt(user_mman));
 #ifdef CONFIG_DEBUG
  { PHYS pdir_t *cr3;
-   __asm__ __volatile__("movl %%cr3, %0\n" : "=r" (cr3));
+   __asm__ __volatile__("mov %%cr3, %0\n" : "=r" (cr3));
    assertf(user_mman->m_ppdir == cr3,
            "Incorrect page directory set (%p != %p) (fault_addr = %p at %p)",
            user_mman->m_ppdir,cr3,fault_addr,info->iret.eip);
@@ -161,7 +161,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
 
 #ifdef CONFIG_DEBUG
   { PHYS pdir_t *cr3;
-    __asm__ __volatile__("movl %%cr3, %0\n" : "=r" (cr3));
+    __asm__ __volatile__("mov %%cr3, %0\n" : "=r" (cr3));
     assertf(user_mman->m_ppdir == cr3,
             "Incorrect page directory set (%p != %p)",
             user_mman->m_ppdir,cr3);

@@ -179,6 +179,8 @@ FUNDEF void ATTR_CDECL cpu_sched_setrunning_savef(struct task *__restrict task, 
  * NOTE: The caller must disable preemption before calling this function.
  * @return: * : The newly selected task (aka. what `THIS_TASK' resolves to). */
 FUNDEF struct task *FCALL cpu_sched_rotate(void);
+/* Same as `cpu_sched_rotate', but try not to return the previously running task. */
+FUNDEF struct task *FCALL cpu_sched_rotate_yield(void);
 
 /* Remove the current task, causing the caller to inherit a
  * reference to it, before switching to the next available task.

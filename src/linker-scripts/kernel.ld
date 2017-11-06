@@ -129,8 +129,14 @@ SECTIONS {
 		KEEP(*(.multiboot2.tag.end))
 		DEFINE_HERE(__multiboot2_end);
 		DEFINE(__multiboot2_size = ABSOLUTE(__multiboot2_end - __multiboot2_begin));
+#if __SIZEOF_POINTER__ >= 8
+		DEFINE(__multiboot2_hdrlen_chksum =
+				(ABSOLUTE(__multiboot2_size) |
+				(ABSOLUTE(0 - (MB2_HEADER_MAGIC + MB2_ARCHITECTURE + __multiboot2_size)) << 32)));
+#else
 		DEFINE(__multiboot2_hdrlen = ABSOLUTE(__multiboot2_size));
 		DEFINE(__multiboot2_chksum = ABSOLUTE(0 - (MB2_HEADER_MAGIC + MB2_ARCHITECTURE + __multiboot2_size)));
+#endif
 
 		*(.text.hot)
 		*(.text)
@@ -336,8 +342,12 @@ SECTIONS {
 #endif /* !CONFIG_NO_BOOTLOADER */
 
 
+#if __SIZEOF_POINTER__ >= 8
+	DEFINE(__kernel_timestamp = BUILD_TIME);
+#else
 	DEFINE(__kernel_timestamp_lo = (BUILD_TIME & 0xffffffff));
 	DEFINE(__kernel_timestamp_hi = ((BUILD_TIME >> 32) & 0xffffffff));
+#endif
 
 	/DISCARD/ : {
 		*(.rel*)

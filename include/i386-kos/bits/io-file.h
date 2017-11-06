@@ -20,7 +20,7 @@
 #define _BITS_IO_FILE_H 1
 
 #include <__stdinc.h>
-#include <hybrid/host.h>
+#include <hybrid/typecore.h>
 
 
 /* I/O buffer flags (DOS-compatible)
@@ -67,8 +67,8 @@ struct _IO_FILE {
     __UINT32_TYPE__     if_cnt;        /*< Amount of characters available in 'if_ptr'.
                                         *  NOTE: When this value underflows, then the caller
                                         *        is responsible for loading more data into 'if_ptr' */
-#ifdef __x86_64__
-    __UINT32_TYPE__   __if_pad0;
+#if __SIZEOF_POINTER__ >= 8
+    __INT32_TYPE__    __if_pad0;
 #endif
     char               *if_base;       /*< [0..if_bufsiz][owned_if(__IO_FILE_IOMALLBUF)] Base pointer to the used buffer. */
     __UINT32_TYPE__     if_flag;       /*< Set of `__IO_FILE_IO*' */
@@ -94,7 +94,7 @@ struct _IO_FILE {
     /* Use names that are protected by the C standard. */
     char          *__f_ptr;
     __INT32_TYPE__ __f_cnt;
-#ifdef __x86_64__
+#if __SIZEOF_POINTER__ >= 8
     __INT32_TYPE__ __f_pad0;
 #endif
     char          *__f_base;
@@ -129,7 +129,7 @@ struct _IO_FILE {
 #ifdef __COMPILER_HAVE_TRANSPARENT_UNION
     union { char          *__f_ptr;      char          *_ptr;      };
     union { __INT32_TYPE__ __f_cnt;      __INT32_TYPE__ _cnt;      };
-#ifdef __x86_64__
+#if __SIZEOF_POINTER__ >= 8
     __INT32_TYPE__         __f_pad0;
 #endif
     union { char          *__f_base;     char          *_base;     };
@@ -141,7 +141,7 @@ struct _IO_FILE {
 #else /* __COMPILER_HAVE_TRANSPARENT_UNION */
     char          *_ptr;
     __INT32_TYPE__ _cnt;
-#ifdef __x86_64__
+#if __SIZEOF_POINTER__ >= 8
     __INT32_TYPE__ __f_pad0;
 #endif
     char          *_base;

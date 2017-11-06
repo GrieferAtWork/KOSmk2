@@ -163,11 +163,11 @@ PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
 
 #ifdef CONFIG_USE_NEW_MEMINFO
 #define STATIC_MEMINFO_MAX ((TASK_HOSTSTACK_IDLESIZE- \
-                            (sizeof(struct host_cpustate)))/ \
+                            (sizeof(struct cpustate_host)))/ \
                              sizeof(struct meminfo))
 #else
 #define STATIC_MEMINFO_MAX ((TASK_HOSTSTACK_IDLESIZE- \
-                            (sizeof(struct host_cpustate)+sizeof(size_t)))/ \
+                            (sizeof(struct cpustate_host)+sizeof(size_t)))/ \
                              sizeof(struct meminfo))
 #endif
 

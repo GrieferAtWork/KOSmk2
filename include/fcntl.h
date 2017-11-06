@@ -102,9 +102,11 @@ typedef __pid_t pid_t;
 #endif /* __USE_MISC */
 
 #if defined(__USE_XOPEN) || defined(__USE_XOPEN2K8)
+#ifndef SEEK_SET
 #   define SEEK_SET 0 /*< Seek from beginning of file. */
 #   define SEEK_CUR 1 /*< Seek from current position. */
 #   define SEEK_END 2 /*< Seek from end of file. */
+#endif /* !SEEK_SET */
 #endif
 
 #ifndef __KERNEL__

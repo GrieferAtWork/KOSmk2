@@ -25,10 +25,32 @@ DECL_BEGIN
 
 #ifdef __CC__
 #ifdef __KERNEL__
-/* Yield execution to another task.
- * NOTE: Illegal on single-core host when interrupts are disabled. */
-FUNDEF void (KCALL task_yield)(void);
-#   define SCHED_YIELD() task_yield()
+
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
+#ifndef __task_yield_defined
+#define __task_yield_defined 1
+/* Yield the remainder of the caller's quantum to the next
+ * scheduled task (no-op if no task to switch to exists).
+ * HINT: All registers but EAX are preserved across a call to this function.
+ * @return: -EOK:       Another task was executed before this function returned.
+ * @return: -EAGAIN:    There was no other task to switch to. */
+FUNDEF errno_t (KCALL task_yield)(void);
+
+#if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_GCC_ASM)
+/* Take advantage of the fact that `task_yield()' doesn't clobber anything. */
+#define task_yield() \
+ __XBLOCK({ register errno_t __y_err; \
+            __asm__ __volatile__("call task_yield\n" : "=a" (__y_err)); \
+            __XRETURN __y_err; \
+ })
+#endif
+#endif /* !__task_yield_defined */
+
+#define SCHED_YIELD() task_yield()
 #else
 __LIBC int (LIBCCALL sched_yield)(void);
 #   define SCHED_YIELD() sched_yield()

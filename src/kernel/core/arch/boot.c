@@ -70,15 +70,24 @@ ATTR_USED struct mb2_header_tag tag_empty = {
     .type = MB2_HEADER_TAG_END,
     .size = sizeof(struct mb2_header_tag),
 };
+
+#if __SIZEOF_POINTER__ >= 8
+INTDEF byte_t __multiboot2_hdrlen_chksum[];
+#else
 INTDEF byte_t __multiboot2_hdrlen[];
 INTDEF byte_t __multiboot2_chksum[];
+#endif
 PRIVATE ATTR_SECTION(".multiboot2")
         ATTR_ALIGNED(MB2_HEADER_ALIGN)
 ATTR_USED struct mb2_header mb_multiboot2 = {
     .magic         =  MB2_HEADER_MAGIC,
     .architecture  =  MB2_ARCHITECTURE,
-    .header_length = (u32)(uintptr_t)__multiboot2_hdrlen,
-    .checksum      = (u32)(uintptr_t)__multiboot2_chksum,
+#if __SIZEOF_POINTER__ >= 8
+    .header_length_and_checksum = (u64)__multiboot2_hdrlen_chksum,
+#else
+    .header_length = (u32)__multiboot2_hdrlen,
+    .checksum      = (u32)__multiboot2_chksum,
+#endif
 };
 
 #define HIDE(x) __asm__(".hidden " #x "\n")
@@ -86,8 +95,12 @@ HIDE(__multiboot2_begin);
 HIDE(__multiboot2_tag_begin);
 HIDE(__multiboot2_end);
 HIDE(__multiboot2_size);
+#if __SIZEOF_POINTER__ >= 8
+HIDE(__multiboot2_hdrlen_chksum);
+#else
 HIDE(__multiboot2_hdrlen);
 HIDE(__multiboot2_chksum);
+#endif
 
 
 /* Statically allocate the initial boot stack. */

@@ -642,7 +642,7 @@ int (__LIBCCALL name)(void const *__a, void const *__b, __SIZE_TYPE__ n) { \
   case 4: if ((__temp = *__pa++-*__pb++) != 0) return (int)__temp; __ATTR_FALLTHROUGH \
   case 3: if ((__temp = *__pa++-*__pb++) != 0) return (int)__temp; __ATTR_FALLTHROUGH \
   case 2: if ((__temp = *__pa++-*__pb++) != 0) return (int)__temp; __ATTR_FALLTHROUGH \
-  case 1: return *__pa-*__pb; \
+  case 1: return (int)(*__pa-*__pb); \
   case 0: return 0; \
   } \
  } \

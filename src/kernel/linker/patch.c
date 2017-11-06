@@ -38,6 +38,8 @@
 #include <malloc.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <asm/instx.h>
+#include <asm/registers.h>
 
 DECL_BEGIN
 
@@ -203,51 +205,55 @@ STATIC_ASSERT(sizeof(struct modpatch)          == MODPATCH_SIZE);
 GLOBAL_ASM(
 L(.section .text                                                   )
 L(PUBLIC_ENTRY(modpatch_patch)                                     )
-L(    movl 4(%esp), %edx /* Load `self' */                         )
-L(    movl MODPATCH_OFFSETOF_INST(%edx),   %eax /* ->p_inst */     )
-L(    testl %eax, %eax                                             )
+#ifdef __x86_64__
+L(    movq MODPATCH_OFFSETOF_INST(%rdi),   %rax /* self->p_inst */ )
+#else
+L(    movx XSZ(%xsp), %xdx /* Load `self' */                       )
+L(    movx MODPATCH_OFFSETOF_INST(%xdx),   %xax /* ->p_inst */     )
+#endif
+L(    testx %xax, %xax                                             )
 L(    jz   3f /* No-op if no instance is set (NOTE: Return -EOK == 0). */)
-L(    movl INSTANCE_OFFSETOF_MODULE(%eax), %eax /* ->i_module */   )
-L(    movl MODULE_OFFSETOF_OPS(%eax),      %eax /* ->m_ops */      )
-L(    movl MODULEOPS_OFFSETOF_PATCH(%eax), %eax /* ->o_patch */    )
+L(    movx INSTANCE_OFFSETOF_MODULE(%xax), %xax /* ->i_module */   )
+L(    movx MODULE_OFFSETOF_OPS(%xax),      %xax /* ->m_ops */      )
+L(    movx MODULEOPS_OFFSETOF_PATCH(%xax), %xax /* ->o_patch */    )
 L(                                                                 )
 L(    /* Save calle-safe register (may be corrupted when a fault occurrs) */)
-L(    pushl %edi                                                   )
-L(    pushl %esi                                                   )
-L(    pushl %ebx                                                   )
-L(    pushl %ebp                                                   )
+L(    __ASM_PUSH_PRESERVE                                                   )
 L(                                                                 )
 L(    /* Now to push a page-fault handler! */                      )
-L(    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %ebx                    )
-L(    pushl $1f                                                    )
-L(    pushl $(EXC_PAGE_FAULT)                                      )
-L(    pushl TASK_OFFSETOF_IC(%ebx)                                 )
-L(    movl  %esp, TASK_OFFSETOF_IC(%ebx)                           )
+L(    movx  ASM_CPU(CPU_OFFSETOF_RUNNING), %xbx                    )
+L(    pushx $1f                                                    )
+L(    pushx $(EXC_PAGE_FAULT)                                      )
+L(    pushx TASK_OFFSETOF_IC(%xbx)                                 )
+L(    movx  %xsp, TASK_OFFSETOF_IC(%xbx)                           )
 L(                                                                 )
 #ifdef CONFIG_DEBUG
 L(    /* Preserve traceback integrity */                           )
-L(    pushl %ebp                                                   )
-L(    movl  %esp, %ebp                                             )
+L(    pushx %xbp                                                   )
+L(    movx  %xsp, %xbp                                             )
 #endif
-L(    pushl %edx                                                   )
-L(    call *%eax /* o_patch(self) */                               )
+#ifndef __x86_64__
+L(    pushx %xdx                                                   )
+#endif /* !__x86_64__ */
+L(    callx *%xax /* o_patch(self) */                              )
 #ifdef CONFIG_DEBUG
-L(    popl  %ebp                                                   )
+L(    popx  %xbp                                                   )
 #endif
 L(                                                                 )
 L(    /* Cleanup if no error occurred. */                          )
 L(    /* NOTE: 'EBX' is callee-save, meaning it still contains `THIS_TASK' */ )
-L(    popl  TASK_OFFSETOF_IC(%ebx)                                 )
-L(    addl  $8, %esp                                               )
+L(    popx  TASK_OFFSETOF_IC(%xbx)                                 )
+L(    addx  $(2*XSZ), %xsp                                         )
 L(                                                                 )
 L(2:  /* Restore calle-safe register */                            )
-L(    popl %ebp                                                    )
-L(    popl %ebx                                                    )
-L(    popl %esi                                                    )
-L(    popl %edi                                                    )
+L(    __ASM_POP_PRESERVE                                           )
+#ifdef __x86_64__
+L(3:  ret                                                          )
+#else
 L(3:  ret  $4                                                      )
-L(1:  movl $(-EFAULT), %eax /* Simply return -EFAULT */            )
-L(    jmp 2b                                                       )
+#endif
+L(1:  movx $(-EFAULT), %xax /* Simply return -EFAULT */            )
+L(    jmp  2b                                                      )
 L(SYM_END(modpatch_patch)                                          )
 L(.previous                                                        )
 );

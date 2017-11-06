@@ -293,32 +293,34 @@ typedef u8 taskprio_t;
  * - Mainly designed for use from assembly:
  *   >>
  *   >>    # Create a new INTCHAIN link.
- *   >>    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %eax
- *   >>    pushl $handler
- *   >>    pushl $(EXC_PAGE_FAULT)
- *   >>    pushl TASK_OFFSETOF_IC(%eax)
- *   >>    movl  %esp, TASK_OFFSETOF_IC(%eax)
+ *   >>    movx  ASM_CPU(CPU_OFFSETOF_RUNNING), %xax
+ *   >>    pushx $handler
+ *   >>    pushx $(EXC_PAGE_FAULT)
+ *   >>    pushx TASK_OFFSETOF_IC(%xax)
+ *   >>    movx  %xsp, TASK_OFFSETOF_IC(%xax)
  *   >> 
  *   >>    # Potentially dangerous code that wants
  *   >>    # to handle 'EXC_PAGE_FAULT' locally
  *   >>    ...
  *   >> 
  *   >>    # Cleanup if no error occurred.
- *   >>    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %eax
- *   >>    popl  TASK_OFFSETOF_IC(%eax)
- *   >>    addl  $8, %esp
+ *   >>    movx  ASM_CPU(CPU_OFFSETOF_RUNNING), %xax
+ *   >>    popx  TASK_OFFSETOF_IC(%xax)
+ *   >>    addx  $(2*XSZ), %xsp
  *   >>    
  *   >>handler:
  *   >>    # Code that is executed if an interrupt did occurr
  *   >>    ...
  */
 #ifdef __CC__
-struct intchain {
+struct PACKED intchain {
  HOST struct intchain *ic_prev;       /*< [0..1] Previous interrupt chain entry. */
  /* HINT: The following 3 can be set at once as a dword. */
+union PACKED { struct PACKED {
  irq_t                 ic_irq;        /*< Interrupt number that is handled by this chain entry. */
  u8                    ic_opt;        /*< Interrupt options (Set of `INTCHAIN_OPT_*') */
- u16                   ic_padding;    /* ... */
+ u16                 __ic_padding;    /* ... */
+}; uintptr_t         __ic_align; };   /* Force pointer alignment. */
  void        (ASMCALL *ic_int)(void); /*< [1..1] Temporary interrupt handler. */
 };
 #endif /* __CC__ */
@@ -338,7 +340,8 @@ struct comregs;
  * @param: cstate: CPU state used for loading general purpose registers
  *                 before execution ('GET_EXCEPTION_CPUSTATE'). */
 FUNDEF void KCALL intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
-                                   struct comregs const *__restrict cstate, u32 eflags);
+                                   struct comregs const *__restrict cstate,
+                                   register_t eflags);
 #endif /* __CC__ */
 
 
@@ -588,11 +591,11 @@ struct sigenter {
  size_t     se_count; /*< Amount of Signals that need handling. */
  /* Return register values (These were overwritten near the kernel stack base).
   * NOTE: Basically, this is the original iret tail that was used when the kernel was entered. */
- void      *se_eip;
+ void      *se_xip;
  IRET_SEGMENT(se_cs);
- register_t se_eflags;
+ __COMMON_REG2_EX(se_,flags);
 union{
- USER void *se_useresp;
+ USER void *se_userxsp;
  /* NOTE: 'useresp' has been manipulated to point to
   *        the kernel-generated signal information, compatible
   *        with a user-level call to a sigaction handler. */

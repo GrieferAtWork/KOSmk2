@@ -51,8 +51,8 @@
 #define _WIN32      1
 #ifdef __x86_64__
 #   define _AMD64_  1
-#   undef  __x86_64
-#   define __x86_64 1
+//#   undef  __x86_64
+//#   define __x86_64 1
 #   define WIN64    1
 #   define _WIN64   1
 #else

@@ -65,7 +65,7 @@
 #define __code_model_small__ 1
 #define __k8                 1
 #define __k8__               1
-#define __x86_64             1
+//#define __x86_64             1
 #define __x86_64__           1
 #else
 #define i386              1

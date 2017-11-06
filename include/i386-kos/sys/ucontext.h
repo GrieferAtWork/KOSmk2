@@ -50,12 +50,16 @@ __SYSDECL_BEGIN
 
 #ifdef __x86_64__
 #define __SIZEOF_GREG_T__  8
-typedef __LONGLONG greg_t;
 #define NGREG  23 /*< Number of general registers. */
+
+#ifdef __CC__
+typedef __SREGISTER_TYPE__ greg_t;
 typedef greg_t gregset_t[NGREG]; /*< Container for all general registers. */
+#endif /* __CC__ */
 
 #ifdef __USE_GNU
 /* Number of each register in the `gregset_t' array. */
+#ifdef __CC__
 enum {
     REG_R8 = 0,
     REG_R9,
@@ -81,39 +85,112 @@ enum {
     REG_OLDMASK,
     REG_CR2
 };
-#define REG_R8      REG_R8
-#define REG_R9      REG_R9
-#define REG_R10     REG_R10
-#define REG_R11     REG_R11
-#define REG_R12     REG_R12
-#define REG_R13     REG_R13
-#define REG_R14     REG_R14
-#define REG_R15     REG_R15
-#define REG_RDI     REG_RDI
-#define REG_RSI     REG_RSI
-#define REG_RBP     REG_RBP
-#define REG_RBX     REG_RBX
-#define REG_RDX     REG_RDX
-#define REG_RAX     REG_RAX
-#define REG_RCX     REG_RCX
-#define REG_RSP     REG_RSP
-#define REG_RIP     REG_RIP
-#define REG_EFL     REG_EFL
-#define REG_CSGSFS  REG_CSGSFS
-#define REG_ERR     REG_ERR
-#define REG_TRAPNO  REG_TRAPNO
-#define REG_OLDMASK REG_OLDMASK
-#define REG_CR2     REG_CR2
+#endif /* __CC__ */
+#define REG_R8      0
+#define REG_R9      1
+#define REG_R10     2
+#define REG_R11     3
+#define REG_R12     4
+#define REG_R13     5
+#define REG_R14     6
+#define REG_R15     7
+#define REG_RDI     8
+#define REG_RSI     9
+#define REG_RBP     10
+#define REG_RBX     11
+#define REG_RDX     12
+#define REG_RAX     13
+#define REG_RCX     14
+#define REG_RSP     15
+#define REG_RIP     16
+#define REG_EFL     17
+#define REG_CSGSFS  18
+#define REG_ERR     19
+#define REG_TRAPNO  20
+#define REG_OLDMASK 21
+#define REG_CR2     22
 #endif /* __USE_GNU */
 
+#define __LIBC_FPXREG_OFFSETOF_SIGNIFICAND 0
+#define __LIBC_FPXREG_OFFSETOF_EXPONENT    8
+#define __LIBC_FPXREG_OFFSETOF_PADDING     10
+#define __LIBC_FPXREG_SIZE                 16
+
+
+#ifdef __CC__
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("significand")
+#pragma push_macro("exponent")
+#pragma push_macro("padding")
+#endif
+#undef significand
+#undef exponent
+#undef padding
 struct _libc_fpxreg {
-    unsigned short int significand[4];
-    unsigned short int exponent;
-    unsigned short int padding[3];
+    __UINT16_TYPE__ significand[4];
+    __UINT16_TYPE__ exponent;
+    __UINT16_TYPE__ padding[3];
 };
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("padding")
+#pragma pop_macro("exponent")
+#pragma pop_macro("significand")
+#endif
+#endif /* __CC__ */
+
+#define __LIBC_XMMREG_OFFSETOF_ELEMENT     0
+#define __LIBC_XMMREG_SIZE                 16
+#ifdef __CC__
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("element")
+#endif
+#undef element
 struct _libc_xmmreg {
     __uint32_t element[4];
 };
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("element")
+#endif
+#endif /* __CC__ */
+
+#define __LIBC_FPSTATE_OFFSETOF_CWD        0
+#define __LIBC_FPSTATE_OFFSETOF_SWD        2
+#define __LIBC_FPSTATE_OFFSETOF_FTW        4
+#define __LIBC_FPSTATE_OFFSETOF_FOP        6
+#define __LIBC_FPSTATE_OFFSETOF_RIP        8
+#define __LIBC_FPSTATE_OFFSETOF_RDP        16
+#define __LIBC_FPSTATE_OFFSETOF_MXCSR      24
+#define __LIBC_FPSTATE_OFFSETOF_MXCR_MASK  28
+#define __LIBC_FPSTATE_OFFSETOF_ST         32
+#define __LIBC_FPSTATE_OFFSETOF_XMM        160
+#define __LIBC_FPSTATE_OFFSETOF_PADDING    416
+#define __LIBC_FPSTATE_SIZE                512
+
+#ifdef __CC__
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("cwd")
+#pragma push_macro("swd")
+#pragma push_macro("ftw")
+#pragma push_macro("fop")
+#pragma push_macro("rip")
+#pragma push_macro("rdp")
+#pragma push_macro("mxcsr")
+#pragma push_macro("mxcr_mask")
+#pragma push_macro("_st")
+#pragma push_macro("_xmm")
+#pragma push_macro("padding")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef cwd
+#undef swd
+#undef ftw
+#undef fop
+#undef rip
+#undef rdp
+#undef mxcsr
+#undef mxcr_mask
+#undef _st
+#undef _xmm
+#undef padding
 struct _libc_fpstate {
     /* 64-bit FXSAVE format. */
     __uint16_t          cwd;
@@ -128,29 +205,72 @@ struct _libc_fpstate {
     struct _libc_xmmreg _xmm[16];
     __uint32_t          padding[24];
 };
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("padding")
+#pragma pop_macro("_xmm")
+#pragma pop_macro("_st")
+#pragma pop_macro("mxcr_mask")
+#pragma pop_macro("mxcsr")
+#pragma pop_macro("rdp")
+#pragma pop_macro("rip")
+#pragma pop_macro("fop")
+#pragma pop_macro("ftw")
+#pragma pop_macro("swd")
+#pragma pop_macro("cwd")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
 /* Structure to describe FPU registers. */
 typedef struct _libc_fpstate *fpregset_t;
+#endif
 
+
+#define __MCONTEXT_OFFSETOF_GREGS      0
+#define __MCONTEXT_OFFSETOF_FPREGS    (__SIZEOF_GREG_T__*NGREG)
+#define __MCONTEXT_SIZE               (__SIZEOF_GREG_T__*NGREG+9*__SIZEOF_POINTER__)
+#ifdef __CC__
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("gregs")
+#pragma push_macro("fpregs")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef gregs
+#undef fpregs
 /* Context to describe whole processor state. */
 typedef struct {
-    gregset_t   gregs;
-    fpregset_t  fpregs; /* Note that fpregs is a pointer. */
-    __ULONGLONG __reserved1[8];
+    gregset_t        gregs;
+    fpregset_t       fpregs; /* Note that fpregs is a pointer. */
+    __UINTPTR_TYPE__ __reserved1[8];
 } mcontext_t;
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("fpregs")
+#pragma pop_macro("gregs")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#endif
 
+
+#define __UCONTEXT_OFFSETOF_FLAGS        0
+#define __UCONTEXT_OFFSETOF_LINK         __SIZEOF_POINTER__
+#define __UCONTEXT_OFFSETOF_STACK     (2*__SIZEOF_POINTER__)
+#define __UCONTEXT_OFFSETOF_MCONTEXT  (2*__SIZEOF_POINTER__+__STACK_SIZE)
+#define __UCONTEXT_OFFSETOF_SIGMASK   (2*__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE)
+#define __UCONTEXT_OFFSETOF_FPREGS    (2*__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE+__SIZEOF_SIGSET_T__)
+#define __UCONTEXT_SIZE               (2*__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE+__SIZEOF_SIGSET_T__+__LIBC_FPSTATE_SIZE)
+
+#ifdef __CC__
 /* Userlevel context. */
 typedef struct ucontext {
-    unsigned long int    uc_flags;
+    __ULONGPTR_TYPE__    uc_flags;
     struct ucontext     *uc_link;
     stack_t              uc_stack;
     mcontext_t           uc_mcontext;
     __sigset_t           uc_sigmask;
     struct _libc_fpstate __fpregs_mem;
 } ucontext_t;
+#endif /* __CC__ */
+
 #else /* __x86_64__ */
 
 #define __SIZEOF_GREG_T__  4
-typedef int greg_t; /*< Type for general register. */
+typedef __SREGISTER_TYPE__ greg_t; /*< Type for general register. */
 #define NGREG    19 /*< Number of general registers. */
 typedef greg_t gregset_t[NGREG]; /* Container for all general registers. */
 
@@ -203,11 +323,24 @@ enum { /* Number of each register is the `gregset_t' array. */
 #define __LIBC_FPREG_OFFSETOF_SIGNIFICAND 0
 #define __LIBC_FPREG_OFFSETOF_EXPONENT    8
 #define __LIBC_FPREG_SIZE                 10
+
+#ifdef __CC__
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("significand")
+#pragma push_macro("exponent")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef significand
+#undef exponent
 struct _libc_fpreg {
     /* Definitions taken from the kernel headers. */
     unsigned short int significand[4];
     unsigned short int exponent;
 };
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("exponent")
+#pragma pop_macro("significand")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#endif /* __CC__ */
 
 #define __LIBC_FPSTATE_OFFSETOF_CW       0
 #define __LIBC_FPSTATE_OFFSETOF_SW       4
@@ -219,19 +352,54 @@ struct _libc_fpreg {
 #define __LIBC_FPSTATE_OFFSETOF_ST       28
 #define __LIBC_FPSTATE_OFFSETOF_STATUS   108
 #define __LIBC_FPSTATE_SIZE              112
+
+#ifdef __CC__
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("cw")
+#pragma push_macro("sw")
+#pragma push_macro("tag")
+#pragma push_macro("ipoff")
+#pragma push_macro("cssel")
+#pragma push_macro("dataoff")
+#pragma push_macro("datasel")
+#pragma push_macro("_st")
+#pragma push_macro("status")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef cw
+#undef sw
+#undef tag
+#undef ipoff
+#undef cssel
+#undef dataoff
+#undef datasel
+#undef _st
+#undef status
 struct _libc_fpstate {
-    unsigned long int  cw;
-    unsigned long int  sw;
-    unsigned long int  tag;
-    unsigned long int  ipoff;
-    unsigned long int  cssel;
-    unsigned long int  dataoff;
-    unsigned long int  datasel;
+    __ULONGPTR_TYPE__  cw;
+    __ULONGPTR_TYPE__  sw;
+    __ULONGPTR_TYPE__  tag;
+    __ULONGPTR_TYPE__  ipoff;
+    __ULONGPTR_TYPE__  cssel;
+    __ULONGPTR_TYPE__  dataoff;
+    __ULONGPTR_TYPE__  datasel;
     struct _libc_fpreg _st[8];
-    unsigned long int  status;
+    __ULONGPTR_TYPE__  status;
 };
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("status")
+#pragma pop_macro("_st")
+#pragma pop_macro("datasel")
+#pragma pop_macro("dataoff")
+#pragma pop_macro("cssel")
+#pragma pop_macro("ipoff")
+#pragma pop_macro("tag")
+#pragma pop_macro("sw")
+#pragma pop_macro("cw")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
 /* Structure to describe FPU registers. */
 typedef struct _libc_fpstate *fpregset_t;
+#endif /* __CC__ */
 
 
 #define __MCONTEXT_OFFSETOF_GREGS      0
@@ -239,33 +407,53 @@ typedef struct _libc_fpstate *fpregset_t;
 #define __MCONTEXT_OFFSETOF_OLDMASK   (__SIZEOF_GREG_T__*NGREG+4)
 #define __MCONTEXT_OFFSETOF_CR2       (__SIZEOF_GREG_T__*NGREG+8)
 #define __MCONTEXT_SIZE               (__SIZEOF_GREG_T__*NGREG+12)
+#ifdef __CC__
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("gregs")
+#pragma push_macro("fpregs")
+#pragma push_macro("oldmask")
+#pragma push_macro("cr2")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#undef gregs
+#undef fpregs
+#undef oldmask
+#undef cr2
 typedef struct {
     /* Context to describe whole processor state. */
     gregset_t gregs;
     /* Due to Linux's history we have to use a pointer here.
      * The SysV/i386 ABI requires a struct with the values. */
     fpregset_t fpregs;
-    unsigned long int oldmask;
-    unsigned long int cr2;
+    __ULONGPTR_TYPE__ oldmask;
+    __ULONGPTR_TYPE__ cr2;
 } mcontext_t;
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("cr2")
+#pragma pop_macro("oldmask")
+#pragma pop_macro("fpregs")
+#pragma pop_macro("gregs")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+#endif /* __CC__ */
 
-#define __UCONTEXT_OFFSETOF_FLAGS      0
-#define __UCONTEXT_OFFSETOF_LINK       __SIZEOF_LONG__
-#define __UCONTEXT_OFFSETOF_STACK     (__SIZEOF_LONG__+__SIZEOF_POINTER__)
-#define __UCONTEXT_OFFSETOF_MCONTEXT  (__SIZEOF_LONG__+__SIZEOF_POINTER__+__STACK_SIZE)
-#define __UCONTEXT_OFFSETOF_SIGMASK   (__SIZEOF_LONG__+__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE)
-#define __UCONTEXT_OFFSETOF_FPREGS    (__SIZEOF_LONG__+__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE+__SIZEOF_SIGSET_T__)
-#define __UCONTEXT_SIZE               (__SIZEOF_LONG__+__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE+__SIZEOF_SIGSET_T__+__LIBC_FPSTATE_SIZE)
+#define __UCONTEXT_OFFSETOF_FLAGS        0
+#define __UCONTEXT_OFFSETOF_LINK         __SIZEOF_POINTER__
+#define __UCONTEXT_OFFSETOF_STACK     (2*__SIZEOF_POINTER__)
+#define __UCONTEXT_OFFSETOF_MCONTEXT  (2*__SIZEOF_POINTER__+__STACK_SIZE)
+#define __UCONTEXT_OFFSETOF_SIGMASK   (2*__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE)
+#define __UCONTEXT_OFFSETOF_FPREGS    (2*__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE+__SIZEOF_SIGSET_T__)
+#define __UCONTEXT_SIZE               (2*__SIZEOF_POINTER__+__STACK_SIZE+__MCONTEXT_SIZE+__SIZEOF_SIGSET_T__+__LIBC_FPSTATE_SIZE)
 
+#ifdef __CC__
 /* Userlevel context. */
 typedef struct ucontext {
-    unsigned long int    uc_flags;
+    __ULONGPTR_TYPE__    uc_flags;
     struct ucontext     *uc_link;
     stack_t              uc_stack;
     mcontext_t           uc_mcontext;
     __sigset_t           uc_sigmask;
     struct _libc_fpstate __fpregs_mem;
 } ucontext_t;
+#endif /* __CC__ */
 #endif /* !__x86_64__ */
 
 __SYSDECL_END

@@ -273,6 +273,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm", "asm", "{E72D1B89-7AE0-456B-A657-BCEA5D9F2BC0}"
 	ProjectSection(SolutionItems) = preProject
 		..\include\i386-kos\asm\bitsperlong.h = ..\include\i386-kos\asm\bitsperlong.h
+		..\include\i386-kos\asm\instx.h = ..\include\i386-kos\asm\instx.h
 		..\include\i386-kos\asm\ioctl.h = ..\include\i386-kos\asm\ioctl.h
 		..\include\i386-kos\asm\ioctls.h = ..\include\i386-kos\asm\ioctls.h
 		..\include\i386-kos\asm\param.h = ..\include\i386-kos\asm\param.h

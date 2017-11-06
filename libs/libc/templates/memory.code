@@ -303,17 +303,27 @@ DECL int LIBCCALL X(libc_memcmp)
    (defined(__i386__) || defined(__x86_64__))
 		int result = 0;
 		CHECK_DF();
-		__asm__ __volatile__("    jcxz 1f\n"
-		                     "    repe cmps" W "\n"
-		                     "    seta %b0\n"
-		                     "    jnb 1f\n"
-		                     "    mov $-1, %0\n"
-		                     "1:\n"
-		                     : "+a" (result)
-		                     : "D" (a), "S" (b), "c" (WM(n))
-		                     , "m" (*(struct { __extension__ T val[n]; } *)a)
-		                     , "m" (*(struct { __extension__ T val[n]; } *)b)
-		                     : "cc");
+#ifdef __x86_64__
+		if (n != 0)
+#endif
+		{
+			__asm__ __volatile__(
+#ifndef __x86_64__
+			                     "    jcxz 1f\n"
+#endif
+			                     "    repe cmps" W "\n"
+			                     "    seta %b0\n"
+			                     "    jnb 1f\n"
+			                     "    mov $-1, %0\n"
+#ifndef __x86_64__
+			                     "1:\n"
+#endif
+			                     : "+a" (result)
+			                     : "D" (a), "S" (b), "c" (WM(n))
+			                     , "m" (*(struct { __extension__ T val[n]; } *)a)
+			                     , "m" (*(struct { __extension__ T val[n]; } *)b)
+			                     : "cc");
+		}
 		return result;
 #endif
 	}
@@ -334,13 +344,15 @@ DECL vB *LIBCCALL X(libc_memchr)
    (defined(__i386__) || defined(__x86_64__))
 	vB *result;
 	CHECK_DF();
-	__asm__ __volatile__("    jcxz 2f\n"
-	                     "    repne scas" W "\n"
+	__asm__ __volatile__(
 #ifdef __x86_64__
-	                     "    mov %%rdi, %0\n"
+	                     "    testq %%rax, %%rax\n"
+	                     "    jz   2f\n"
 #else
-	                     "    mov %%edi, %0\n"
+	                     "    jcxz 2f\n"
 #endif
+	                     "    repne scas" W "\n"
+	                     "    mov %1, %0\n"
 	                     "    je 1f\n"
 	                     "2:  xor %0, %0\n"
 #if S == 1

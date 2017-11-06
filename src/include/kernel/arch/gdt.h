@@ -21,6 +21,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/typecore.h>
 #include <hybrid/host.h>
 #include <assert.h>
 #include <errno.h>
@@ -32,18 +33,29 @@ struct cpu;
 
 #define SEGMENT_OFFSETOF_BASELO 2
 #define SEGMENT_OFFSETOF_BASEHI 7
+#ifdef __x86_64__
+#define SEGMENT_OFFSETOF_BASEUP 8
+#endif
 
 /* Segment Descriptor / GDT (Global Descriptor Table) Entry
  * NOTE: Another valid name of this would be `gdtentry' or `ldtentry' */
+
 struct PACKED segment {
 union PACKED {
-struct PACKED { u32 ul32,uh32; };
-struct PACKED { s32 sl32,sh32; };
+#ifdef __x86_64__
+struct PACKED { u64 ul,uh; };
+struct PACKED { s64 sl,sh; };
+#else
+struct PACKED { u32 ul,uh; };
+struct PACKED { s32 sl,sh; };
  s64          s;
  u64          u;
+#endif
+struct PACKED { u32 ul32,uh32; };
+struct PACKED { s32 sl32,sh32; };
 struct PACKED {
  u16          sizelow;
- unsigned int baselow:    24;
+ unsigned int baselow:    24; /* Bits 0..23 of the base address. */
 union PACKED {
  u8           access;
 struct PACKED {
@@ -97,7 +109,14 @@ struct PACKED {
   * If 1: segments can be 4KB to 4GB in length. */
  unsigned int granularity: 1;
 };};
- u8           basehigh;
+ u8           basehigh;  /* Bits 24..31 of the base address. */
+#ifdef __x86_64__
+ /* NOTE: Documentation on additions in 64-bit mode can be found here:
+  * https://xem.github.io/minix86/manual/intel-x86-and-64-manual-vol3/o_fe12b1e2a880e0ce-245.html
+  */
+ u32          baseupper; /* Bits 32..64 of the base address. */
+ u32          reserved;  /* ??? (Bit #8 Must be zero...) */
+#endif /* __x86_64__ */
 };};
 };
 #endif /* __CC__ */
@@ -142,20 +161,16 @@ struct PACKED {
 /* Useful predefined segment configurations
  * NOTE: The following configs match what is described here: http://wiki.osdev.org/Getting_to_Ring_3
  *    >> THIS IS CONFIRMED! */
-#define SEG_CODE_PL0_32 (SEG_FLAG_32BIT|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(0)|SEG_CODE_EXRD)
-#define SEG_DATA_PL0_32 (SEG_FLAG_32BIT|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(0)|SEG_DATA_RDWR)
-#define SEG_CODE_PL3_32 (SEG_FLAG_32BIT|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(3)|SEG_CODE_EXRD)
-#define SEG_DATA_PL3_32 (SEG_FLAG_32BIT|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(3)|SEG_DATA_RDWR)
 #ifdef __x86_64__
 #define SEG_CODE_PL0    (SEG_FLAG_LONGMODE|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(0)|SEG_CODE_EXRD)
 #define SEG_DATA_PL0    (SEG_FLAG_LONGMODE|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(0)|SEG_DATA_RDWR)
 #define SEG_CODE_PL3    (SEG_FLAG_LONGMODE|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(3)|SEG_CODE_EXRD)
 #define SEG_DATA_PL3    (SEG_FLAG_LONGMODE|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(3)|SEG_DATA_RDWR)
 #else
-#define SEG_CODE_PL0     SEG_CODE_PL0_32
-#define SEG_DATA_PL0     SEG_DATA_PL0_32
-#define SEG_CODE_PL3     SEG_CODE_PL3_32
-#define SEG_DATA_PL3     SEG_DATA_PL3_32
+#define SEG_CODE_PL0    (SEG_FLAG_32BIT|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(0)|SEG_CODE_EXRD)
+#define SEG_DATA_PL0    (SEG_FLAG_32BIT|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(0)|SEG_DATA_RDWR)
+#define SEG_CODE_PL3    (SEG_FLAG_32BIT|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(3)|SEG_CODE_EXRD)
+#define SEG_DATA_PL3    (SEG_FLAG_32BIT|SEG_FLAG_AVAILABLE|SEG_FLAG_GRAN|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(3)|SEG_DATA_RDWR)
 #endif
 #define SEG_CODE_PL0_16 (                             SEG_FLAG_AVAILABLE|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(0)|SEG_CODE_EXRD)
 #define SEG_DATA_PL0_16 (                             SEG_FLAG_AVAILABLE|SEG_ACCESS_SYSTEM|SEG_ACCESS_PRESENT|SEG_ACCESS_PRIVL(0)|SEG_DATA_RDWR)
@@ -165,54 +180,76 @@ struct PACKED {
 #define SEG_LIMIT_MAX  0x000fffff
 
 
-#ifdef __CC__
+#define __SEG_ENCODELO_32(base,size,config) \
+ (__CCAST(u32,(size)&__UINT16_C(0xffff))|       /* 0x0000ffff */\
+ (__CCAST(u32,(base)&__UINT16_C(0xffff)) << 16) /* 0xffff0000 */)
+#define __SEG_ENCODEHI_32(base,size,config) \
+ ((__CCAST(u32,(base)&__UINT32_C(0x00ff0000)) >> 16)| /* 0x000000ff */\
+   __CCAST(u32,(config)&__UINT32_C(0x00f0ff00))|      /* 0x00f0ff00 */\
+   __CCAST(u32,(size)&__UINT32_C(0x000f0000))|        /* 0x000f0000 */\
+   __CCAST(u32,(base)&__UINT32_C(0xff000000))         /* 0xff000000 */)
+
+#ifdef __x86_64__
 #define __SEG_ENCODELO(base,size,config) \
- (((u32)((size)&0xffff))|      /* 0x0000ffff */\
-  ((u32)((base)&0xffff) << 16) /* 0xffff0000 */)
+       (__CCAST(u64,__SEG_ENCODEHI_32(base,size,config)) << 32 | \
+        __CCAST(u64,__SEG_ENCODELO_32(base,size,config)))
 #define __SEG_ENCODEHI(base,size,config) \
- ((((u32)(base)&0x00ff0000) >> 16)| /* 0x000000ff */\
-   ((u32)(config)&0x00f0ff00)|      /* 0x00f0ff00 */\
-   ((u32)(size)&0x000f0000)|        /* 0x000f0000 */\
-   ((u32)(base)&0xff000000)         /* 0xff000000 */)
-#define SEGMENT_GTBASE(seg)      ((seg).ul32 >> 16 | ((seg).uh32&0xff000000) | ((seg).uh32&0xff) << 16)
-#define SEGMENT_GTSIZE(seg)      (((seg).ul32 & 0xffff) | ((seg).uh32&0x000f0000))
+      ((__CCAST(u64,base) >> 32) & __UINT64_C(0x00000000ffffffff))
+#else
+#define __SEG_ENCODELO(base,size,config) __SEG_ENCODELO_32(base,size,config)
+#define __SEG_ENCODEHI(base,size,config) __SEG_ENCODEHI_32(base,size,config)
+#endif
+
+
+#ifdef __CC__
+#define __SEGMENT_GTBASE32(seg) \
+      ((seg).ul32 >> 16 | ((seg).uh32&__UINT32_C(0xff000000)) | ((seg).uh32&__UINT32_C(0xff)) << 16)
+#define __SEGMENT_STBASE32(seg,addr) \
+ (*(u32 *)(&(seg).sizelow+1) &=              __UINT32_C(0xff000000), \
+  *(u32 *)(&(seg).sizelow+1) |=  (u32)(addr)&__UINT32_C(0x00ffffff), \
+            (seg).basehigh    = ((u32)(addr)&__UINT32_C(0xff000000)) >> 24)
+
+#ifdef __x86_64__
+#define SEGMENT_GTBASE(seg) \
+   ((u64)__SEGMENT_GTBASE32(seg) | ((u64)(seg).baseupper << 32))
 #define SEGMENT_STBASE(seg,addr) \
- (*(u32 *)(&(seg).sizelow+1) &=                    0xff000000, \
-  *(u32 *)(&(seg).sizelow+1) |=  (uintptr_t)(addr)&0x00ffffff, \
-            (seg).basehigh    = ((uintptr_t)(addr)&0xff000000) >> 24)
+   (__SEGMENT_STBASE32(seg,addr),(seg).baseupper = (u32)((u64)(addr) >> 32)))
+#else
+#define SEGMENT_GTBASE(seg)      __SEGMENT_GTBASE32(seg)
+#define SEGMENT_STBASE(seg,addr) __SEGMENT_STBASE32(seg,addr)
+#endif
+#define SEGMENT_GTSIZE(seg)   (((seg).ul32 & __UINT32_C(0xffff)) | ((seg).uh32&__UINT32_C(0x000f0000)))
 
 #define SEGMENT_INIT(base,size,config) \
  {{{ __SEG_ENCODELO(base,size,config), \
      __SEG_ENCODEHI(base,size,config) }}}
 
 LOCAL struct segment KCALL
-make_segment(u32 base, u32 size, u32 config) {
+make_segment(uintptr_t base, size_t size, u32 config) {
  struct segment result;
- __assertf(size <= SEG_LIMIT_MAX,"Size %I32x is too large",size);
- result.ul32 = __SEG_ENCODELO(base,size,config);
- result.uh32 = __SEG_ENCODEHI(base,size,config);
+ __assertf(size <= SEG_LIMIT_MAX,"Size %#Ix is too large",size);
+ result.ul = __SEG_ENCODELO(base,size,config);
+ result.uh = __SEG_ENCODEHI(base,size,config);
  return result;
 }
 
 #ifndef __segid_t_defined
 #define __segid_t_defined 1
-typedef u16 segid_t; /* == Segment index*8 */
+typedef u16 segid_t; /* == Segment index*SEG_INDEX_MULTIPLIER */
 #endif /* !__segid_t_defined */
+#endif /* __CC__ */
 
-#else /* __CC__ */
-#define __SEG_ENCODELO(base,size,config) \
- ((((size)&0xffff))|      /* 0x0000ffff */\
-  (((base)&0xffff) << 16) /* 0xffff0000 */)
-#define __SEG_ENCODEHI(base,size,config) \
- ((((base)&0x00ff0000) >> 16)| /* 0x000000ff */\
-   ((config)&0x00f0ff00)|      /* 0x00f0ff00 */\
-   ((size)&0x000f0000)|        /* 0x000f0000 */\
-   ((base)&0xff000000)         /* 0xff000000 */)
-#endif /* !__CC__ */
+#ifdef __x86_64__
+/* XXX: Is the segment index still multiplied by 8, or is it 16 on x86_64? */
+#define SEGMENT_SIZE         16
+#define SEG_INDEX_MULTIPLIER 16
+#else
+#define SEGMENT_SIZE         8
+#define SEG_INDEX_MULTIPLIER 8
+#endif
 
-
-#define SEG(id)     ((id)*8)
-#define SEG_ID(seg) ((seg)/8)
+#define SEG(id)     ((id)*SEG_INDEX_MULTIPLIER)
+#define SEG_ID(seg) ((seg)/SEG_INDEX_MULTIPLIER)
 
 /* When the third bit of a segment index is set,
  * it's referencing the LDT instead of the GDT. */
@@ -223,6 +260,7 @@ typedef u16 segid_t; /* == Segment index*8 */
 
 /* Hard-coded, special segments ids. */
 #define SEG_NULL         0 /*< [0x00] NULL Segment. */
+/* XXX: Do we still need code/data segments on x86_64? (I don't think so, but I'm not sure yet...) */
 #define SEG_HOST_CODE    1 /*< [0x08] Ring #0 code segment. */
 #define SEG_HOST_DATA    2 /*< [0x10] Ring #0 data segment. */
 #define SEG_USER_CODE    3 /*< [0x18] Ring #3 code segment. */         

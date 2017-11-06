@@ -48,6 +48,7 @@
 #include <alloca.h>
 #include <kernel/irq.h>
 #include <sys/mman.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
@@ -111,8 +112,10 @@ L(INTERN_ENTRY(sys_exit_group)                                                )
 L(    sti                                                                     )
 L(    /* Load segment registers */                                            )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
+#ifndef __x86_64__
 L(    pushl %ebx                                                              )
-L(    call task_userexit_group                                                )
+#endif /* !__x86_64__ */
+L(    call  task_userexit_group                                               )
 #ifdef CONFIG_DEBUG
 L(.global __assertion_unreachable                                             )
 L(    call __assertion_unreachable                                            )
@@ -127,7 +130,9 @@ L(INTERN_ENTRY(sys_exit)                                                      )
 L(    sti                                                                     )
 L(    /* Load segment registers */                                            )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
+#ifndef __x86_64__
 L(    pushl %ebx                                                              )
+#endif /* !__x86_64__ */
 L(    call task_userexit                                                      )
 #ifdef CONFIG_DEBUG
 L(.global __assertion_unreachable                                             )
@@ -146,7 +151,7 @@ L(    __ASM_PUSH_SEGMENTS                                                     )
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
 L(    call task_yield                                                         )
 L(    __ASM_POP_SEGMENTS                                                      )
-L(    xorl %eax, %eax                                                         )
+L(    xorx %xax, %xax                                                         )
 L(    __ASM_IRET                                                              )
 L(SYM_END(sys_sched_yield)                                                    )
 L(.previous                                                                   )

@@ -49,11 +49,13 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <sys/ucontext.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
 STATIC_ASSERT(sizeof(siginfo_t)                      <= __SI_MAX_SIZE);
 STATIC_ASSERT(sizeof(ucontext_t)                     == __UCONTEXT_SIZE);
+STATIC_ASSERT(sizeof(struct sigenter)                == SIGENTER_SIZE);
 STATIC_ASSERT(sizeof(struct sigenter_info)           == SIGENTER_INFO_SIZE);
 STATIC_ASSERT(offsetof(struct sigenter_info,ei_info) == SIGENTER_INFO_OFFSETOF_INFO);
 STATIC_ASSERT(offsetof(struct sigenter_info,ei_ctx)  == SIGENTER_INFO_OFFSETOF_CTX);
@@ -80,7 +82,7 @@ coredump_host_task(struct task *__restrict t,
                    siginfo_t const *__restrict reason,
                    greg_t reg_trapno, greg_t reg_err) {
  ucontext_t ctx;
-#ifdef __i386__
+#if defined(__i386__) || defined(__x86_64__)
 #undef __STACKBASE_TASK
 #define __STACKBASE_TASK     t
  ctx.uc_flags = 0; /* ??? */
@@ -91,12 +93,27 @@ coredump_host_task(struct task *__restrict t,
                            (uintptr_t)t->t_ustack->s_begin);
   ctx.uc_stack.ss_flags = 0;
  } else {
-  ctx.uc_stack.ss_sp    = THIS_SYSCALL_REAL_USERESP;
+  ctx.uc_stack.ss_sp    = THIS_SYSCALL_REAL_USERXSP;
   ctx.uc_stack.ss_size  = 0;
   ctx.uc_stack.ss_flags = 0;
  }
  /* Fill in what we still know about user-space registers.
-  * XXX: The may this function acquires user-space registers isn't quite safe... */
+  * XXX: The way this function acquires user-space registers isn't quite safe... */
+#ifdef __x86_64__
+ ctx.uc_mcontext.gregs[REG_CSGSFS] = ((greg_t)THIS_SYSCALL_REAL_CS |
+                                     ((greg_t)THIS_SYSCALL_GS << 16) |
+                                     ((greg_t)THIS_SYSCALL_FS << 24));
+ /* TODO: What about all the other registers? */
+ ctx.uc_mcontext.gregs[REG_R9]     = THIS_SYSCALL_R9;
+ ctx.uc_mcontext.gregs[REG_R8]     = THIS_SYSCALL_R8;
+ ctx.uc_mcontext.gregs[REG_R10]    = THIS_SYSCALL_R10;
+ ctx.uc_mcontext.gregs[REG_RDX]    = THIS_SYSCALL_RDX;
+ ctx.uc_mcontext.gregs[REG_RSI]    = THIS_SYSCALL_RSI;
+ ctx.uc_mcontext.gregs[REG_RDI]    = THIS_SYSCALL_RDI;
+ ctx.uc_mcontext.gregs[REG_RSP]    = (greg_t)THIS_SYSCALL_REAL_USERXSP;
+ ctx.uc_mcontext.gregs[REG_RAX]    = -EOK; /* Simulate an OK system call. */
+ ctx.uc_mcontext.gregs[REG_RIP]    = (greg_t)THIS_SYSCALL_REAL_XIP;
+#else
  ctx.uc_mcontext.cr2               = (unsigned long int)t->t_lastcr2;
  ctx.uc_mcontext.oldmask           = 0; /* ??? */
  ctx.uc_mcontext.gregs[REG_GS]     = (greg_t)THIS_SYSCALL_GS;
@@ -106,18 +123,19 @@ coredump_host_task(struct task *__restrict t,
  ctx.uc_mcontext.gregs[REG_EDI]    = THIS_SYSCALL_EDI;
  ctx.uc_mcontext.gregs[REG_ESI]    = THIS_SYSCALL_ESI;
  ctx.uc_mcontext.gregs[REG_EBP]    = THIS_SYSCALL_EBP;
- ctx.uc_mcontext.gregs[REG_ESP]    = (greg_t)THIS_SYSCALL_REAL_USERESP;
+ ctx.uc_mcontext.gregs[REG_ESP]    = (greg_t)THIS_SYSCALL_REAL_USERXSP;
  ctx.uc_mcontext.gregs[REG_EBX]    = THIS_SYSCALL_EBX;
  ctx.uc_mcontext.gregs[REG_EDX]    = THIS_SYSCALL_EDX;
  ctx.uc_mcontext.gregs[REG_ECX]    = THIS_SYSCALL_ECX;
  ctx.uc_mcontext.gregs[REG_EAX]    = -EOK; /* Simulate an OK system call. */
- ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
- ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
- ctx.uc_mcontext.gregs[REG_EIP]    = (greg_t)THIS_SYSCALL_REAL_EIP;
+ ctx.uc_mcontext.gregs[REG_EIP]    = (greg_t)THIS_SYSCALL_REAL_XIP;
  ctx.uc_mcontext.gregs[REG_CS]     = THIS_SYSCALL_REAL_CS;
- ctx.uc_mcontext.gregs[REG_EFL]    = THIS_SYSCALL_REAL_EFLAGS;
  ctx.uc_mcontext.gregs[REG_UESP]   = ctx.uc_mcontext.gregs[REG_ESP];
  ctx.uc_mcontext.gregs[REG_SS]     = THIS_SYSCALL_REAL_SS;
+#endif
+ ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
+ ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
+ ctx.uc_mcontext.gregs[REG_EFL]    = THIS_SYSCALL_REAL_XFLAGS;
  ctx.uc_mcontext.fpregs = &ctx.__fpregs_mem;
  fpstate_from_task(&ctx.__fpregs_mem,t);
  memcpy(&ctx.uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
@@ -166,7 +184,7 @@ INTERN ATTR_NORETURN void KCALL sigill(char const *__restrict format, ...) {
 
 FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 STATIC_ASSERT(offsetof(struct task,t_sigenter.se_count)   == TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_COUNT);
-STATIC_ASSERT(offsetof(struct task,t_sigenter.se_useresp) == TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERESP);
+STATIC_ASSERT(offsetof(struct task,t_sigenter.se_userxsp) == TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERESP);
 
 GLOBAL_ASM(
 L(.section .text                                                                 )
@@ -175,31 +193,23 @@ L(PUBLIC_ENTRY(sigenter)                                                        
        * we're still in kernel-space and that accessing per-cpu data will be OK.
        * In addition, all main registers have been restored to what they're ought
        * to be once we enventually do return to user-space. */
-L(    pushw %ds                                                                  )
-L(    pushw %es                                                                  )
-L(    pushw %fs                                                                  )
-L(    pushw %gs                                                                  )
-L(    pushl %eax                                                                 )
-L(    pushl %ebx                                                                 )
-L(    pushl %ecx                                                                 )
+L(    __ASM_PUSH_SGREGS                                                          )
+L(    pushx %xax                                                                 )
+L(    pushx %xbx                                                                 )
+L(    pushx %xcx                                                                 )
 L(                                                                               )
 L(    /* Re-load kernel segment registers */                                     )
-L(    movw  $(__USER_DS), %ax                                                    )
-L(    movw  %ax, %ds                                                             )
-L(    movw  %ax, %es                                                             )
-L(    movw  %ax, %gs                                                             )
-L(    movw  $(__KERNEL_PERCPU), %ax                                              )
-L(    movw  %ax, %fs                                                             )
+L(    __ASM_LOAD_SEGMENTS(%ax)                                                   )
 L(                                                                               )
-L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING), %eax                                   )
+L(    movx ASM_CPU(CPU_OFFSETOF_RUNNING), %xax                                   )
 L(                                                                               )
       /* Load the address of the user-space stack containing the signal-enter
        * descriptor, as well as how many recursive signal contexts we must fill in. */
-L(    movl  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERESP)(%eax), %ebx       )
-L(    movl  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_COUNT)(%eax), %ecx         )
-L(    movl  $0, (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_COUNT)(%eax)           )
+L(    movx  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERESP)(%xax), %xbx       )
+L(    movx  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_COUNT)(%xax), %xcx         )
+L(    movx  $0, (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_COUNT)(%xax)           )
 #ifdef CONFIG_DEBUG
-L(    testl %ecx, %ecx                                                           )
+L(    testx %xcx, %xcx                                                           )
 L(    jnz   1f                                                                   )
 L(    int   $3 /* ASSERTION_FAILURE: 'Signal recursion was ZERO(0)' */           )
 L(2:  hlt                                                                        )
@@ -209,81 +219,78 @@ L(1:                                                                            
 L(                                                                               )
       /* As we're about to start working with the user-space stack, filling in
        * remaining register data may cause a segfault which we must handle. */
-L(    pushl $sigfault                                                            )
-L(    pushl $(EXC_PAGE_FAULT)                                                    )
-L(    pushl $0  /*TASK_OFFSETOF_IC(%eax) -- There mustn't be any more */         )
-L(    movl  %esp, TASK_OFFSETOF_IC(%eax)                                         )
+L(    pushx $sigfault                                                            )
+L(    pushx $(EXC_PAGE_FAULT)                                                    )
+L(    pushx $0 /* TASK_OFFSETOF_IC(%xax) -- There mustn't be any more */         )
+L(    movx  %xsp, TASK_OFFSETOF_IC(%xax)                                         )
 L(                                                                               )
       /* Fill in all the missing user-space registers. */
 #define REG(i) (SIGENTER_INFO_OFFSETOF_CTX + \
                    __UCONTEXT_OFFSETOF_MCONTEXT + \
-                   __MCONTEXT_OFFSETOF_GREGS+(i)*4)(%ebx)
-L(1:  pushl %edi                                                                 )
-L(    movl  %ebx, %edi                                                           )
-L(    addl  $(__UCONTEXT_SIZE), %edi                                             )
+                   __MCONTEXT_OFFSETOF_GREGS+(i)*XSZ)(%xbx)
+L(1:  pushx %xdi                                                                 )
+L(    movx  %xbx, %xdi                                                           )
+L(    addx  $(__UCONTEXT_SIZE), %xdi                                             )
 L(    jo    9f                                                                   )
-L(    cmpl  $(USER_END), %edi                                                    )
+L(    cmpx  $(USER_END), %xdi                                                    )
 L(    ja    10f                                                                  )
-L(    popl  %edi                                                                 )
-L(    movw  24(%esp), %dx     /* GS */                                           )
+L(    popx  %xdi                                                                 )
+L(    movw  24(%xsp), %dx     /* GS */                                           )
 L(    movw  %dx,  REG(REG_GS)                                                    )
-L(    movw  26(%esp), %dx     /* FS */                                           )
+L(    movw  26(%xsp), %dx     /* FS */                                           )
 L(    movw  %dx,  REG(REG_FS)                                                    )
-L(    movw  28(%esp), %dx     /* ES */                                           )
+L(    movw  28(%xsp), %dx     /* ES */                                           )
 L(    movw  %dx,  REG(REG_ES)                                                    )
-L(    movw  30(%esp), %dx     /* DS */                                           )
+L(    movw  30(%xsp), %dx     /* DS */                                           )
 L(    movw  %dx,  REG(REG_DS)                                                    )
-L(    movl  %edi, REG(REG_EDI)                                                   )
-L(    movl  %esi, REG(REG_ESI)                                                   )
-L(    movl  %ebp, REG(REG_EBP)                                                   )
-L(    movl  %edx, REG(REG_EDX)                                                   )
-L(    movl  12(%esp), %edx  /* ECX */                                            )
-L(    movl  %edx, REG(REG_ECX)                                                   )
-L(    movl  16(%esp), %edx  /* EBX */                                            )
-L(    movl  %edx, REG(REG_EBX)                                                   )
-L(    movl  20(%esp), %edx  /* EAX */                                            )
-L(    movl  %edx, REG(REG_EAX)                                                   )
+L(    movx  %xdi, REG(REG_EDI)                                                   )
+L(    movx  %xsi, REG(REG_ESI)                                                   )
+L(    movx  %xbp, REG(REG_EBP)                                                   )
+L(    movx  %xdx, REG(REG_EDX)                                                   )
+L(    movx  12(%xsp), %xdx    /* XCX */                                          )
+L(    movx  %xdx, REG(REG_ECX)                                                   )
+L(    movx  16(%xsp), %xdx    /* XBX */                                          )
+L(    movx  %xdx, REG(REG_EBX)                                                   )
+L(    movx  20(%xsp), %xdx    /* XAX */                                          )
+L(    movx  %xdx, REG(REG_EAX)                                                   )
       /* Already filled: REG_EIP */
       /* Already filled: REG_CS */
       /* Already filled: REG_EFL */
       /* Already filled: REG_UESP */
       /* Already filled: REG_SS */
-L(    movl  %ebp, SIGENTER_INFO_OFFSETOF_OLD_EBP(%ebx)                           )
-L(    subl  $1, %ecx                                                             )
+L(    movx  %xbp, SIGENTER_INFO_OFFSETOF_OLD_EBP(%xbx)                           )
+L(    subx  $1, %xcx                                                             )
 L(    jz    2f                                                                   )
       /* Recursively fill secondary context structures. */
-L(    movl  REG(REG_UESP), %ebx                                                  )
+L(    movx  REG(REG_UESP), %xbx                                                  )
 L(    jmp   1b                                                                   )
 #undef REG                   
-L(2:  movl  $0, TASK_OFFSETOF_IC(%eax)                                           )
+L(2:  movx  $0, TASK_OFFSETOF_IC(%xax)                                           )
       /* At this point, all context structures are in a valid state.
        * >> Now it's time to setup the last jump to the first signal handler! */
-#define SIGENTER(x) (TASK_OFFSETOF_SIGENTER+x)(%eax)
-L(    pushl SIGENTER(SIGENTER_OFFSETOF_SS)                                       )
-L(    pushl SIGENTER(SIGENTER_OFFSETOF_USERESP)                                  )
-L(    pushl SIGENTER(SIGENTER_OFFSETOF_EFLAGS)                                   )
-L(    pushl SIGENTER(SIGENTER_OFFSETOF_CS)                                       )
-L(    pushl SIGENTER(SIGENTER_OFFSETOF_EIP)                                      )
+#define SIGENTER(x) (TASK_OFFSETOF_SIGENTER+x)(%xax)
+L(    pushx SIGENTER(SIGENTER_OFFSETOF_SS)                                       )
+L(    pushx SIGENTER(SIGENTER_OFFSETOF_USERESP)                                  )
+L(    pushx SIGENTER(SIGENTER_OFFSETOF_EFLAGS)                                   )
+L(    pushx SIGENTER(SIGENTER_OFFSETOF_CS)                                       )
+L(    pushx SIGENTER(SIGENTER_OFFSETOF_EIP)                                      )
 #undef SIGENTER
       /* To prevent kernel data leaks, we must re-initialize all registers we've modified.
        * Also: Store a pointer to 'ei_old_ebp' in EBP to fix user-space tracebacks. */
-L(    movl  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERESP)(%eax), %ebx       )
-L(    leal  SIGENTER_INFO_OFFSETOF_OLD_EBP(%ebx), %ebp                           )
-L(    movl  32(%esp), %ecx                                                       )
-L(    movl  36(%esp), %ebx                                                       )
-L(    movl  40(%esp), %eax                                                       )
-L(    movw  44(%esp), %gs                                                        )
-L(    movw  46(%esp), %fs                                                        )
-L(    movw  48(%esp), %es                                                        )
-L(    movw  50(%esp), %ds                                                        )
+L(    movx  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERESP)(%xax), %xbx       )
+L(    leax  SIGENTER_INFO_OFFSETOF_OLD_EBP(%xbx), %xbp                           )
+L(    movx   (8*XSZ)(%xsp), %xcx                                                 )
+L(    movx   (9*XSZ)(%xsp), %xbx                                                 )
+L(    movx  (10*XSZ)(%xsp), %xax                                                 )
+L(    __ASM_LOAD_SGREGS32((11*XSZ)(%xsp))                                        )
 L(                                                                               )
 L(    /* Now just jump back to user-space. */                                    )
-L(    iret                                                                       )
+L(    __ASM_IRET                                                                 )
 L(                                                                               )
 L(    /* Handle illegal-user-stack errors. */                                    )
-L(9:  movl %ebx, TASK_OFFSETOF_LASTCR2(%eax)                                     )
+L(9:  movx %xbx, TASK_OFFSETOF_LASTCR2(%xax)                                     )
 L(    call sigfault                                                              )
-L(10: movl %edi, TASK_OFFSETOF_LASTCR2(%eax)                                     )
+L(10: movx %xdi, TASK_OFFSETOF_LASTCR2(%xax)                                     )
 L(    call sigfault                                                              )
 L(SYM_END(sigenter)                                                              )
 L(.previous                                                                      )
@@ -512,25 +519,27 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
 
  /* Copy the original, unmodified IRET tail. */
  if (++t->t_sigenter.se_count == 1) {
-  memcpy(&t->t_sigenter.se_eip,&ss_descr->eip,20);
+  memcpy(&t->t_sigenter.se_xip,&ss_descr->xip,
+         sizeof(struct sigenter)-
+         offsetof(struct sigenter,se_xip));
   /* Setup the register state to not return to user-space, but to `sigenter()' instead. */
 #if 1
-  syslog(LOG_DEBUG,"Override system call return EIP %p with sigenter %p\n",
-         ss_descr->eip,&sigenter);
+  syslog(LOG_DEBUG,"Override system call return " REGISTER_PREFIX "IP %p with sigenter %p\n",
+         ss_descr->xip,&sigenter);
 #endif
-  ss_descr->eip    = (u32)&sigenter;
+  ss_descr->xip    = (uintptr_t)&sigenter;
   ss_descr->cs     = __KERNEL_CS;
-  ss_descr->eflags = EFLAGS_IF|EFLAGS_IOPL(3);
+  ss_descr->xflags = EFLAGS_IF|EFLAGS_IOPL(3);
   /* TODO: Use sigaltstack() here, if it was ever set! */
-  user_info = ((USER struct sigenter_info *)ss_descr->useresp)-1;
+  user_info = ((USER struct sigenter_info *)ss_descr->userxsp)-1;
  } else {
   /* Allocate an additional entry on the signal stack already in use. */
-  assert(ss_descr->eip == (u32)&sigenter);
-  user_info = ((USER struct sigenter_info *)t->t_sigenter.se_useresp)-1;
+  assert(ss_descr->xip == (uintptr_t)&sigenter);
+  user_info = ((USER struct sigenter_info *)t->t_sigenter.se_userxsp)-1;
  }
 
 
-#ifdef __i386__
+#if defined(__i386__) || defined(__x86_64__)
  info.ei_ctx.uc_flags = 0; /* ??? */
  info.ei_ctx.uc_link  = NULL;
  if (t->t_ustack) {
@@ -543,12 +552,31 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
   info.ei_ctx.uc_stack.ss_size  = 0;
   info.ei_ctx.uc_stack.ss_flags = 0;
  }
- info.ei_ctx.uc_mcontext.cr2     = (unsigned long int)t->t_lastcr2;
- info.ei_ctx.uc_mcontext.oldmask = 0; /* ??? */
- info.ei_ctx.uc_mcontext.gregs[REG_GS] = 0; /* Clear upper 16 bit. */
- info.ei_ctx.uc_mcontext.gregs[REG_FS] = 0; /* *ditto* */
- info.ei_ctx.uc_mcontext.gregs[REG_ES] = 0; /* *ditto* */
- info.ei_ctx.uc_mcontext.gregs[REG_DS] = 0; /* *ditto* */
+#ifdef __x86_64__
+ memset(&info.ei_ctx.uc_mcontext.__reserved1,0,
+        sizeof(info.ei_ctx.uc_mcontext.__reserved1));
+#if 0
+ info.ei_ctx.uc_mcontext.gregs[REG_R8]      = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_R9]      = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_R10]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_R11]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_R12]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_R13]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_R14]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_R15]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_RDI]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_RSI]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_RBP]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_RBX]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_RDX]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_RAX]     = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_RCX]     = /* Filled later... */;
+#endif
+ info.ei_ctx.uc_mcontext.gregs[REG_RSP]     = (greg_t)t->t_sigenter.se_userxsp;
+ info.ei_ctx.uc_mcontext.gregs[REG_RIP]     = (greg_t)t->t_sigenter.se_xip;
+ info.ei_ctx.uc_mcontext.gregs[REG_CSGSFS]  = (greg_t)t->t_sigenter.se_cs;
+ info.ei_ctx.uc_mcontext.gregs[REG_OLDMASK] = 0; /* ??? */
+ info.ei_ctx.uc_mcontext.gregs[REG_CR2]     = (unsigned long int)t->t_lastcr2;
 #if 0
  info.ei_ctx.uc_mcontext.gregs[REG_EDI] = /* Filled later... */;
  info.ei_ctx.uc_mcontext.gregs[REG_ESI] = /* Filled later... */;
@@ -558,22 +586,39 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
  info.ei_ctx.uc_mcontext.gregs[REG_ECX] = /* Filled later... */;
  info.ei_ctx.uc_mcontext.gregs[REG_EAX] = /* Filled later... */;
 #endif
- info.ei_ctx.uc_mcontext.gregs[REG_ESP]    = (greg_t)t->t_sigenter.se_useresp;
- info.ei_ctx.uc_mcontext.gregs[REG_EIP]    = (greg_t)t->t_sigenter.se_eip;
- info.ei_ctx.uc_mcontext.gregs[REG_CS]     = t->t_sigenter.se_cs;
- info.ei_ctx.uc_mcontext.gregs[REG_EFL]    = t->t_sigenter.se_eflags;
- info.ei_ctx.uc_mcontext.gregs[REG_UESP]   = (greg_t)t->t_sigenter.se_useresp;
- info.ei_ctx.uc_mcontext.gregs[REG_SS]     = t->t_sigenter.se_ss;
+#else
+ info.ei_ctx.uc_mcontext.cr2             = (unsigned long int)t->t_lastcr2;
+ info.ei_ctx.uc_mcontext.oldmask         = 0; /* ??? */
+ info.ei_ctx.uc_mcontext.gregs[REG_GS]   = 0; /* Clear upper 16 bit. */
+ info.ei_ctx.uc_mcontext.gregs[REG_FS]   = 0; /* *ditto* */
+ info.ei_ctx.uc_mcontext.gregs[REG_ES]   = 0; /* *ditto* */
+ info.ei_ctx.uc_mcontext.gregs[REG_DS]   = 0; /* *ditto* */
+ info.ei_ctx.uc_mcontext.gregs[REG_ESP]  = (greg_t)t->t_sigenter.se_userxsp;
+ info.ei_ctx.uc_mcontext.gregs[REG_EIP]  = (greg_t)t->t_sigenter.se_xip;
+ info.ei_ctx.uc_mcontext.gregs[REG_CS]   = t->t_sigenter.se_cs;
+ info.ei_ctx.uc_mcontext.gregs[REG_UESP] = (greg_t)t->t_sigenter.se_userxsp;
+ info.ei_ctx.uc_mcontext.gregs[REG_SS]   = t->t_sigenter.se_ss;
+#if 0
+ info.ei_ctx.uc_mcontext.gregs[REG_EDI]  = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_ESI]  = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_EBP]  = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_EBX]  = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_EDX]  = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_ECX]  = /* Filled later... */;
+ info.ei_ctx.uc_mcontext.gregs[REG_EAX]  = /* Filled later... */;
+#endif
+#endif
+ info.ei_ctx.uc_mcontext.gregs[REG_EFL]    = t->t_sigenter.se_xflags;
  info.ei_ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
  info.ei_ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
  info.ei_ctx.uc_mcontext.fpregs = &user_info->ei_ctx.__fpregs_mem;
- info.ei_old_eip = (USER void *)t->t_sigenter.se_eip;
+ info.ei_old_eip = (USER void *)t->t_sigenter.se_xip;
  fpstate_from_task(&info.ei_ctx.__fpregs_mem,t);
  memcpy(&info.ei_ctx.uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
 
  /* Fixup execution of the signal handler itself. */
- t->t_sigenter.se_useresp = (void *)user_info;
- t->t_sigenter.se_eip     = (void *)action->sa_handler;
+ t->t_sigenter.se_userxsp = (void *)user_info;
+ t->t_sigenter.se_xip     = (void *)action->sa_handler;
 
 #else
 #error FIXME
@@ -610,10 +655,13 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
 
 
 #define SIGSET_WORDS (__SIZEOF_SIGSET_T__ / SIGWORD_SIZE)
-#if (__SIZEOF_SIGSET_T__ % 4) == 0
+#if ((__SIZEOF_SIGSET_T__ % 8) == 0) && __SIZEOF_BUSINT__ >= 8
+typedef u64 sigword_t;
+#define SIGWORD_SIZE 8
+#elif ((__SIZEOF_SIGSET_T__ % 4) == 0) && __SIZEOF_BUSINT__ >= 4
 typedef u32 sigword_t;
 #define SIGWORD_SIZE 4
-#elif (__SIZEOF_SIGSET_T__ % 2) == 0
+#elif ((__SIZEOF_SIGSET_T__ % 2) == 0) && __SIZEOF_BUSINT__ >= 2
 typedef u16 sigword_t;
 #define SIGWORD_SIZE 2
 #else
@@ -984,10 +1032,15 @@ task_set_sigblock(sigset_t *__restrict newset) {
 GLOBAL_ASM(
 L(.section .text.user                                                            )
 L(PRIVATE_ENTRY(signal_return)                                                   )
-L(    movl $(__NR_sigreturn), %eax                                               )
+L(    movx $(__NR_sigreturn), %xax                                               )
+#ifdef __x86_64__
+L(    leaq (SIGENTER_INFO_OFFSETOF_CTX - \
+            SIGENTER_INFO_OFFSETOF_OLD_EBP)(%rbp), %rdi                          )
+#else
 L(    leal (SIGENTER_INFO_OFFSETOF_CTX - \
             SIGENTER_INFO_OFFSETOF_OLD_EBP)(%ebp), %ebx                          )
-L(    int $0x80                                                                  )
+#endif
+L(    int  $0x80                                                                 )
 L(SYM_END(signal_return)                                                         )
 L(.previous                                                                      )
 );
@@ -998,7 +1051,11 @@ L(PUBLIC_ENTRY(sys_sigreturn)                                                   
 L(    __ASM_PUSH_SEGMENTS                                                        )
 L(    __ASM_PUSH_REGISTERS                                                       )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                   )
+#ifdef __x86_64__
+L(    movq  %rsp, %rdi                                                           )
+#else
 L(    movl  %esp, %ecx                                                           )
+#endif
 L(    call  SYSC_sigreturn                                                       )
 L(    __ASM_POP_REGISTERS                                                        )
 L(    __ASM_POP_SEGMENTS                                                         )

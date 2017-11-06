@@ -31,6 +31,9 @@
 #define __COMPILER_HAVE_TRANSPARENT_STRUCT 1
 #define __COMPILER_HAVE_TRANSPARENT_UNION 1
 #define __COMPILER_HAVE_PRAGMA_PUSHMACRO 1
+#ifdef __CC__
+#define __COMPILER_HAVE_PRAGMA_PACK 1
+#endif
 
 #if __has_feature(cxx_auto_type) || \
    (defined(__cplusplus) && _MSC_VER >= 1600)

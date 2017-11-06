@@ -46,6 +46,7 @@
 #include <string.h>
 #include <sync/sig.h>
 #include <sys/mman.h>
+#include <asm/instx.h>
 #ifndef CONFIG_NO_TLB
 #include <kos/thread.h>
 #endif /* !CONFIG_NO_TLB */
@@ -404,9 +405,11 @@ got_space:
 
 PUBLIC void KCALL
 intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
-                 struct comregs const *__restrict cstate, u32 eflags) {
+                 struct comregs const *__restrict cstate,
+                 register_t eflags) {
  struct intchain *iter;
  CHECK_HOST_DOBJ(pchain);
+ assert(!PREEMPTION_ENABLED());
 check_again:
  iter = *pchain;
  for (; iter; iter = iter->ic_prev) {
@@ -416,15 +419,12 @@ check_again:
       (iter->ic_opt&INTCHAIN_OPT_USR && IRQ_ISUSR(irq))) {
    struct {
     struct comregs state;
-    u32            eflag;
+    register_t     eflag;
    union{
     byte_t        *esp_minus_4;
     void         **p_eip;
    };
    } data;
-#ifndef __i386__
-#error FIXME
-#endif
    /* Trigger this handler! */
    memcpy(&data.state,cstate,sizeof(struct comregs));
    data.eflag = eflags;
@@ -436,15 +436,25 @@ check_again:
     static int inside = 0;
     __asm__ __volatile__("pushf; sti; hlt; popf\n");
     if (ATOMIC_XCH(inside,1) == 0) {
-     syslog(LOG_DEBUG,"[INT] Execuring local interrupt handler: %p, %p, %p, %p (CR2 = %p)\n",
+     syslog(LOG_DEBUG,"[INT] Executing local interrupt handler: %p, %p, %p, %p (CR2 = %p)\n",
             iter,iter->ic_prev,*(void **)&iter->ic_irq,iter->ic_int,
             THIS_TASK->t_lastcr2);
-     syslog(LOG_DEBUG,"EAX %p ECX %p EDX %p EBX %p\n",
-            data.state.eax,data.state.ecx,data.state.edx,data.state.ebx);
-     syslog(LOG_DEBUG,"ESP %p EBP %p ESI %p EDI %p\n",
-            data.esp_minus_4+4,data.state.ebp,data.state.esi,data.state.edi);
+     syslog(LOG_DEBUG,REGISTER_PREFIX "AX %p " REGISTER_PREFIX "CX %p "
+                      REGISTER_PREFIX "DX %p " REGISTER_PREFIX "BX %p\n",
+            data.state.gp.xax,data.state.gp.xcx,
+            data.state.gp.xdx,data.state.gp.xbx);
+     syslog(LOG_DEBUG,REGISTER_PREFIX "SP %p " REGISTER_PREFIX "BP %p "
+                      REGISTER_PREFIX "SI %p " REGISTER_PREFIX "DI %p\n",
+            data.esp_minus_4+4,data.state.gp.xbp,
+            data.state.gp.xsi, data.state.gp.xdi);
+#ifdef __x86_64__
+     syslog(LOG_DEBUG,"FS %.4I16X GS %.4I16X\n",
+            data.state.sg.fs,data.state.sg.gs);
+#else
      syslog(LOG_DEBUG,"DS %.4I16X ES %.4I16X FS %.4I16X GS %.4I16X\n",
-            data.state.ds,data.state.es,data.state.fs,data.state.gs);
+            data.state.sg.ds,data.state.sg.es,
+            data.state.sg.fs,data.state.sg.gs);
+#endif
      debug_tbprint(0);
      struct mman *omm;
      TASK_PDIR_KERNEL_BEGIN(omm);
@@ -462,14 +472,22 @@ check_again:
 #endif
 
    *pchain = iter->ic_prev;
-   __asm__ __volatile__("movl %0, %%esp\n"
-                        "popal\n" /* state */
-                        "popw %%gs\n"
-                        "popw %%fs\n"
-                        "popw %%es\n"
-                        "popw %%ds\n"
-                        "popfl\n" /* eflag */
+   assert(!PREEMPTION_ENABLED());
+   __asm__ __volatile__(/* "cli\n" */
+                        "movl %0, %%esp\n"
+                        PP_STR(__ASM_IPOP_GPREGS) "\n" /* state */
+                        PP_STR(__ASM_IPOP_SGREGS) "\n" /* ... */
+                        /* eflags
+                         * NOTE: Interrupts are only re-enabled after XSP is loaded, as
+                         *       enabling the #IF flag will only become active after the next
+                         *       instruction finishes (Except when that instruction is `hlt'). */
+#ifdef __x86_64__
+                        "popfq\n"
+                        "popq %%rsp\n"
+#else
+                        "popfl\n"
                         "popl %%esp\n"
+#endif
                         "ret\n"
                         :
                         : "g" (&data)
@@ -488,8 +506,8 @@ check_again:
   *     a protection fault to be raised.
   * Now you might say that shouldn't affect anything, since the KOS
   * kernel uses a flat memory model, but as it turns out (and this is
-  * another one of those things that only happen on real hardware),
-  * attempting to access member above 4Gb will (rightfully so) raise
+  * another one of those things that only happens on real hardware),
+  * attempting to access memory above 4Gb will (rightfully so) raise
   * a general protection fault.
   * How does one access memory in that range?
   * This is how it can easily happen:
@@ -504,7 +522,7 @@ check_again:
   * So with that in mind, if a protection fault error occurs and there
   * is no local exception handler specifically for this purpose, also try to
   * handle it as a pagefault error.
-  * NOTE: Only affect kernel-level local exception handlers.
+  * NOTE: Only affects kernel-level local exception handlers.
   */
  if (irq == EXC_PROTECTION_FAULT) {
   irq = EXC_PAGE_FAULT;

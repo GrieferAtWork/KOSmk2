@@ -41,6 +41,7 @@
 #include <kernel/irq.h>
 #include <kernel/arch/cpustate.h>
 #include <sched/cpu.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
@@ -65,12 +66,10 @@ L(.section .text.user                                                           
  * to the caller after the xdlopen() system call was executed.
  * @ENTRY: ESP is `struct dl_saved_registers *' */
 L(PRIVATE_ENTRY(dl_restore_regs)                                                 )
-#ifdef __x86_64__
-#error TODO
-#elif defined(__i386__)
-L(    popal /* gpregs */                                                         )
-L(    popfl /* eflags */                                                         )
-L(    ret   /* eip */                                                            )
+#if defined(__x86_64__) || defined(__i386__)
+L(    __ASM_POP_GPREGS /* gpregs */                                              )
+L(    popfx            /* eflags */                                              )
+L(    ret              /* eip */                                                 )
 #else
 #error "ERROR: Unsupported architecture."
 #endif
@@ -85,33 +84,33 @@ dl_do_pushinit(VIRT void *pfun,
                modfun_t UNUSED(single_type),
                void *closure) {
  void HOST *HOST *pbase_return_value = (void **)closure;
- byte_t USER *user_stack = (byte_t USER *)THIS_SYSCALL_REAL_USERESP;
+ byte_t USER *user_stack = (byte_t USER *)THIS_SYSCALL_REAL_USERXSP;
  if (*pbase_return_value != (void *)-1) {
   USER struct dl_saved_registers *regs;
   /* Special handling after the last initializer: restore registers. */
   user_stack -= sizeof(struct dl_saved_registers);
   regs = (struct dl_saved_registers *)user_stack;
-  regs->eip    = (uintptr_t)THIS_SYSCALL_REAL_EIP;
-  regs->eflags = THIS_SYSCALL_REAL_EFLAGS;
+  regs->eip    = (uintptr_t)THIS_SYSCALL_REAL_XIP;
+  regs->eflags = THIS_SYSCALL_REAL_XFLAGS;
   regs->gp.edi = THIS_SYSCALL_EDI;
   regs->gp.esi = THIS_SYSCALL_ESI;
   regs->gp.ebp = THIS_SYSCALL_EBP;
-  regs->gp.esp = (uintptr_t)THIS_SYSCALL_REAL_USERESP; /* Could really be anything... */
+  regs->gp.esp = (uintptr_t)THIS_SYSCALL_REAL_USERXSP; /* Could really be anything... */
   regs->gp.ebx = THIS_SYSCALL_EDX;
   regs->gp.edx = THIS_SYSCALL_EBX;
   regs->gp.ecx = THIS_SYSCALL_ECX;
   /* Return the base address of the first module to the original caller. */
   regs->gp.eax = (uintptr_t)*pbase_return_value;
   /* Return to this special location. */
-  SET_THIS_SYSCALL_REAL_EIP((void *)dl_restore_regs);
+  SET_THIS_SYSCALL_REAL_XIP((void *)dl_restore_regs);
   *pbase_return_value = (void *)-1;
  }
 
  /* Now just push the given callback onto the user-stack. */
  user_stack -= sizeof(USER void *);
- *(USER void **)user_stack = THIS_SYSCALL_REAL_EIP;
- SET_THIS_SYSCALL_REAL_EIP(pfun);
- SET_THIS_SYSCALL_REAL_USERESP(user_stack);
+ *(USER void **)user_stack = THIS_SYSCALL_REAL_XIP;
+ SET_THIS_SYSCALL_REAL_XIP(pfun);
+ SET_THIS_SYSCALL_REAL_USERXSP(user_stack);
 
  return 0;
 }
@@ -144,8 +143,8 @@ dl_loadinit(struct instance *__restrict inst,
  /* Disable preemption to prevent the signal delivery from
   * interfering with us modifying system-call return information. */
  pflag_t was = PREEMPTION_PUSH();
- safed_esp = THIS_SYSCALL_REAL_USERESP;
- safed_eip = THIS_SYSCALL_REAL_EIP;
+ safed_esp = THIS_SYSCALL_REAL_USERXSP;
+ safed_eip = THIS_SYSCALL_REAL_XIP;
  /* Make sure to lock the memory manager to prevent
   * changes to the instance's dependency tree. */
  error = mman_write(mm);
@@ -154,8 +153,8 @@ dl_loadinit(struct instance *__restrict inst,
  mman_endwrite(mm);
  if (E_ISERR(error)) {
   /* Restore the saved system call registers */
-  SET_THIS_SYSCALL_REAL_USERESP(safed_esp);
-  SET_THIS_SYSCALL_REAL_EIP(safed_eip);
+  SET_THIS_SYSCALL_REAL_USERXSP(safed_esp);
+  SET_THIS_SYSCALL_REAL_XIP(safed_eip);
  }
  PREEMPTION_POP(was);
  return error;
@@ -469,13 +468,17 @@ SYSCALL_DEFINE4(xvirtinfo,VIRT void *,addr,
 GLOBAL_ASM(
 L(.section .text                                                                 )
 L(INTERN_ENTRY(sys_xdlfini)                                                      )
+#if defined(__x86_64__) || defined(__i386__)
 L(    sti /* Enable interrupts. */                                               )
-L(    movl %esp, %ecx      /* Load IRET registers into ECX (argument to `dl_loadfini()') */)
+L(    movx %xsp, %xcx      /* Load IRET registers into ECX (argument to `dl_loadfini()') */)
 L(    __ASM_PUSH_SEGMENTS                                                        )
 L(    __ASM_LOAD_SEGMENTS(%ax) /* Load kernel segments */                        )
 L(    call dl_loadfini                                                           )
 L(    __ASM_POP_SEGMENTS                                                         )
 L(    __ASM_IRET                                                                 )
+#else
+#error "ERROR: Unsupported architecture."
+#endif
 L(SYM_END(sys_xdlfini)                                                           )
 L(.previous                                                                      )
 );

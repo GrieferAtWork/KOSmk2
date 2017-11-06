@@ -39,6 +39,7 @@
 #include <stdint.h>
 #include <sys/syslog.h>
 #include <asm/registers.h>
+#include <asm/instx.h>
 
 #ifdef __KERNEL__
 #include <sched/percpu.h>
@@ -153,7 +154,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
       libc_debug_tbprint();
      } else {
       debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
     } while ((iter = iter->t_sched.sd_running.re_next) != start);
     for (iter = THIS_CPU->c_idling;
@@ -167,7 +168,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
       libc_debug_tbprint();
      } else {
       debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
     }
     task_crit();
@@ -179,7 +180,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
       debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
      for (iter = THIS_CPU->c_sleeping; iter;
           iter = iter->t_sched.sd_sleeping.le_next) {
@@ -188,7 +189,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
       debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-      debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+      debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
      cpu_endread(THIS_CPU);
     }
@@ -235,15 +236,37 @@ struct stackframe {
 PRIVATE ATTR_USED
 void (ATTR_STDCALL libc___assertion_tbprint2_impl)(void const *ebp, size_t n_skip);
 
-#ifndef __i386__
-#error FIXME
-#endif
+#ifdef __x86_64__
 GLOBAL_ASM(
 L(.section .text                                                 )
-L(INTERN_ENTRY(libc_debug_tbprint2)                        )
+L(INTERN_ENTRY(libc_debug_tbprint2)                              )
+L(    pushq %rbp                                                 )
+L(    movq  %rsp, %rbp                                           )
+L(    __ASM_PUSH_SCRATCH                                         )
+L(    movq  ASM_CPU(CPU_OFFSETOF_RUNNING), %rax                  )
+L(    pushq $1f                                                  )
+L(    pushq $(EXC_PAGE_FAULT)                                    )
+L(    pushq TASK_OFFSETOF_IC(%rax)                               )
+L(    movl  %rsp, TASK_OFFSETOF_IC(%rax)                         )
+L(                                                               )
+L(    call  libc___assertion_tbprint2_impl                       )
+L(                                                               )
+L(    movq  ASM_CPU(CPU_OFFSETOF_RUNNING), %rax                  )
+L(    popq  TASK_OFFSETOF_IC(%rax)                               )
+L(    addq  $16, %rsp                                            )
+L(1:  __ASM_POP_SCRATCH                                          )
+L(    leave                                                      )
+L(    ret                                                        )
+L(SYM_END(libc_debug_tbprint2)                                   )
+L(.previous                                                      )
+);
+#elif defined(__i386__)
+GLOBAL_ASM(
+L(.section .text                                                 )
+L(INTERN_ENTRY(libc_debug_tbprint2)                              )
 L(    pushl %ebp                                                 )
 L(    movl  %esp, %ebp                                           )
-L(    pushal                                                     )
+L(    __ASM_PUSH_SCRATCH                                         )
 L(    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %eax                  )
 L(    pushl $1f                                                  )
 L(    pushl $(EXC_PAGE_FAULT)                                    )
@@ -257,12 +280,16 @@ L(                                                               )
 L(    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %eax                  )
 L(    popl  TASK_OFFSETOF_IC(%eax)                               )
 L(    addl  $8, %esp                                             )
-L(1:  popal                                                      )
+L(1:  __ASM_POP_SCRATCH                                          )
 L(    leave                                                      )
 L(    ret $8                                                     )
-L(SYM_END(libc_debug_tbprint2)                             )
+L(SYM_END(libc_debug_tbprint2)                                   )
 L(.previous                                                      )
 );
+#else
+#error "Unsupported arch"
+#endif
+
 PRIVATE void (ATTR_STDCALL libc___assertion_tbprint2_impl)(void const *ebp, size_t n_skip)
 #else
 INTERN void (LIBCCALL libc_debug_tbprint2)(void const *ebp, size_t n_skip)

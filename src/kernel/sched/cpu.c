@@ -50,6 +50,7 @@
 #include <kernel/memory.h>
 #include <kernel/export.h>
 #include <kos/thread.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
@@ -177,13 +178,13 @@ GLOBAL_ASM(
  * >> hlt forever, automatically serving
  *    interrupts as they arrive. */
 L(.section .text                                   )
-L(cpu_idle:                                        )
+L(PRIVATE_ENTRY(cpu_idle)                          )
 #ifdef CONFIG_DEBUG
-L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING), %eax     )
-L(    movl ASM_CPU(CPU_OFFSETOF_SELF),    %ebx     )
-L(    addl $(CPU_OFFSETOF_IDLE),          %ebx     )
-L(    cmp %ebx, %eax                               )
-L(    je 1f                                        )
+L(    movx ASM_CPU(CPU_OFFSETOF_RUNNING), %xax     )
+L(    movx ASM_CPU(CPU_OFFSETOF_SELF),    %xbx     )
+L(    addx $(CPU_OFFSETOF_IDLE),          %xbx     )
+L(    cmpx %xbx, %xax                              )
+L(    je   1f                                      )
 L(    call invalid_idle_task                       )
 L(1:                                               )
 #endif
@@ -194,7 +195,7 @@ L(    call switch_before_idle                      )
 L(    hlt                                          )
 #endif /* !CONFIG_NO_IDLE */
 L(    jmp cpu_idle                                 )
-L(.size cpu_idle, . - cpu_idle                     )
+L(SYM_END(cpu_idle)                                )
 L(.previous                                        )
 );
 
@@ -212,10 +213,10 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
  struct meminfo       s_kmeminfo[2];
 #endif
  byte_t               s_data[TASK_HOSTSTACK_IDLESIZE-
-                            (sizeof(struct host_cpustate)+
+                            (sizeof(struct cpustate_host)+
                              sizeof(struct meminfo)*2+
                              sizeof(size_t))];
- struct host_cpustate s_boot;
+ struct cpustate_host s_boot;
 } __bootidlestack = {
     /* Bootstrap kernel memory info.
      * >> Used to describe the kernel itself in physical memory. */
@@ -283,7 +284,7 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
 #ifndef CONFIG_NO_JOBS
 INTERN ATTR_RAREBSS ATTR_ALIGNED(16) u8 __bootworkstack[TASK_HOSTSTACK_WORKSIZE];
 #define WORKSTATE \
-  ((struct cpustate *)(__bootworkstack+(TASK_HOSTSTACK_WORKSIZE-sizeof(struct host_cpustate))))
+  ((struct cpustate *)(__bootworkstack+(TASK_HOSTSTACK_WORKSIZE-sizeof(struct cpustate_host))))
 
 #endif /* !CONFIG_NO_JOBS */
 

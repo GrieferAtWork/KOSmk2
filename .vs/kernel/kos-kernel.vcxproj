@@ -25,6 +25,8 @@
     <None Include="..\..\src\kernel\core-modules\fs\fat-readdir.c.inl" />
     <None Include="..\..\src\kernel\core\arch\paging32.c.inl" />
     <None Include="..\..\src\kernel\core\arch\paging64.c.inl" />
+    <None Include="..\..\src\kernel\core\arch\user32.c.inl" />
+    <None Include="..\..\src\kernel\core\arch\user64.c.inl" />
     <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\canonbuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\memfile.c.inl" />
@@ -57,6 +59,7 @@
     <ClCompile Include="..\..\src\kernel\core\arch\realmode.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\user.c" />
     <ClCompile Include="..\..\src\kernel\core\boot.c" />
     <ClCompile Include="..\..\src\kernel\core\iomgr.c" />
     <ClCompile Include="..\..\src\kernel\core\main.c" />

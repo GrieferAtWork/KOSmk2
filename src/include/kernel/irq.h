@@ -268,7 +268,11 @@ struct PACKED {
  u8  ie_zero;  /*< Always ZERO(0). */
  u8  ie_flags; /*< Set of `IDTFLAG_*|IDTTYPE_*' */
  u16 ie_off2;  /*< Upper 16 bits of an `irq_handler' pointer. */
-};};};
+};};
+#ifdef __x86_64__
+#error "TODO: Something must have been added here..."
+#endif
+};
 
 #define IDTFLAG_PRESENT                 0x80 /*< Set to 0 for unused interrupts. */
 /* Descriptor Privilege LevelGate call protection.
@@ -291,7 +295,8 @@ struct PACKED {
  * - syslog() a warning for unhandled PIC interrupts (hardware interrupts)
  * - log all it can and cause kernel panic
  * NOTE: When calling this function from assembly, make sure to
- *       notice that the fastcall calling-convention is used. */
+ *       notice that the fastcall calling-convention is used.
+ */
 FUNDEF void FCALL irq_default(int intno, struct cpustate_e *__restrict state);
 
 
@@ -327,10 +332,10 @@ INTDEF PERCPU struct IDT cpu_idt;
 #endif
 
 
-#define __ASM_PUSH_SEGMENTS  __ASM_PUSH_SREGS
-#define __ASM_POP_SEGMENTS   __ASM_POP_SREGS
-#define __PUSH_SEGMENTS      PP_STR(__ASM_PUSH_SREGS)
-#define __POP_SEGMENTS       PP_STR(__ASM_POP_SREGS)
+#define __ASM_PUSH_SEGMENTS  __ASM_PUSH_SGREGS
+#define __ASM_POP_SEGMENTS   __ASM_POP_SGREGS
+#define __PUSH_SEGMENTS      PP_STR(__ASM_PUSH_SGREGS)
+#define __POP_SEGMENTS       PP_STR(__ASM_POP_SGREGS)
 #define __ASM_PUSH_REGISTERS __ASM_PUSH_GPREGS
 #define __ASM_POP_REGISTERS  __ASM_POP_GPREGS
 #define __PUSH_REGISTERS     PP_STR(__ASM_PUSH_GPREGS)

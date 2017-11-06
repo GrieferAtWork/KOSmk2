@@ -16,47 +16,15 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_LIBS_START_START_C
-#define GUARD_LIBS_START_START_C 1
+#ifndef GUARD_KERNEL_CORE_ARCH_USER_C
+#define GUARD_KERNEL_CORE_ARCH_USER_C 1
 
-#include <hybrid/compiler.h>
-#include <stdlib.h>
-#include <hybrid/asm.h>
 #include <hybrid/host.h>
-#include <kos/environ.h>
 
-DECL_BEGIN
-
-typedef int (*pmain)(int argc, char **argv, char **envp);
-
-__ATTR_VISIBILITY("hidden") ATTR_USED
-extern int main(int argc, char **argv, char **envp);
-__LIBC ATTR_NORETURN void FCALL __entry(struct envdata *__restrict env, pmain m);
-
-#if defined(__i386__) || defined(__x86_64__)
-GLOBAL_ASM(
-L(.section .data.free        ) /* Initialization (part of .free) */
-L(INTERN_ENTRY(_start)       )
-/* NOTE: The kernel will have initialized 'ECX' to point at `appenv' */
-/* We let libc deal with all startup. (Keeps executables small) */
 #ifdef __x86_64__
-L(    movq $main, %rdi       )
+#include "user64.c.inl"
 #else
-L(    movl $main, %edx       )
-#endif
-L(.global __entry            )
-L(    jmp __entry            )
-L(SYM_END(_start)            )
-L(.previous                  )
-);
-#else
-__ATTR_VISIBILITY("hidden") ATTR_SECTION(".text.free")
-void FCALL _start(struct envdata *__restrict env) {
- __entry(env,&main);
-}
+#include "user32.c.inl"
 #endif
 
-
-DECL_END
-
-#endif /* !GUARD_LIBS_START_START_C */
+#endif /* !GUARD_KERNEL_CORE_ARCH_USER_C */

@@ -32,6 +32,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <format-printer.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
@@ -156,56 +157,32 @@ INTDEF byte_t pdir_flush_386[];
 INTDEF byte_t pdir_flush_386_end[];
 
 GLOBAL_ASM(
-L(.section .text.free                     )
-L(PRIVATE_ENTRY(pdir_flush_386)           )
-#ifdef __x86_64__
-L(    movq %cr3, %rax                     )
-L(    movq %rax, %cr3                     )
-#else
-L(    movl %cr3, %eax                     )
-L(    movl %eax, %cr3                     )
-#endif
-L(    ret                                 )
-L(SYM_END(pdir_flush_386)                 )
-L(pdir_flush_386_end:                     )
-L(.previous                               )
+L(.section .text.free                                                         )
+L(PRIVATE_ENTRY(pdir_flush_386)                                               )
+L(    movx %cr3, %xax                                                         )
+L(    movx %xax, %cr3                                                         )
+L(    ret                                                                     )
+L(SYM_END(pdir_flush_386)                                                     )
+L(pdir_flush_386_end:                                                         )
+L(.previous                                                                   )
 );
 
 GLOBAL_ASM(
-L(.section .text                          )
-L(PUBLIC_ENTRY(pdir_flush)                )
+L(.section .text                                                              )
+L(PUBLIC_ENTRY(pdir_flush)                                                    )
 /* NOTE: When the host is a 386, we'll copy data from `pdir_flush_386' here. */
-#ifdef __x86_64__
-/* HINT: start   == %rdi */
-/* HINT: n_bytes == %rsi */
-L(    cmpq $(PAGESIZE*256), %rsi          )
-L(    jae  1f                             )
-L(    invlpg (%rdi)                       )
-L(    subq $(PAGESIZE), %rsi              )
-L(    jo   2f                             ) /* Stop if n_bytes underflowed. */
-L(    addq $(PAGESIZE), %rdi              )
-L(    jmp  pdir_flush                     )
-L(1:  movq %cr3, %rax                     ) /* Do a regular, full flush for larger quantities. */
-L(    movq %rax, %cr3                     )
-L(2:  ret                                 )
-#else
-/* HINT: start   == %ecx */
-/* HINT: n_bytes == %edx */
-L(    cmpl $(PAGESIZE*256), %edx          )
-L(    jae 1f                              )
-L(    invlpg (%ecx)                       )
-L(    subl $(PAGESIZE), %edx              )
-L(    jo 2f                               ) /* Stop if n_bytes underflowed. */
-L(    addl $(PAGESIZE), %ecx              )
-L(    jmp pdir_flush                      )
-L(1:  movl %cr3, %eax                     ) /* Do a regular, full flush for larger quantities. */
-L(    movl %eax, %cr3                     )
-L(2:  ret                                 )
-L(SYM_END(pdir_flush)                     )
-L(.previous                               )
-#endif
-L(SYM_END(pdir_flush)                     )
-L(.previous                               )
+L(    cmpx   $(PAGESIZE*256), %FASTCALL_REG2                                  )
+L(    jae    1f                                                               )
+L(    invlpg (%FASTCALL_REG1)                                                 )
+L(    subx   $(PAGESIZE), %FASTCALL_REG2                                      )
+L(    jo     2f  /* Stop if n_bytes underflowed. */                           )
+L(    addx   $(PAGESIZE), %FASTCALL_REG1                                      )
+L(    jmp    pdir_flush                                                       )
+L(1:  movx   %cr3, %xax  /* Do a regular, full flush for larger quantities. */)
+L(    movx   %xax, %cr3                                                       )
+L(2:  ret                                                                     )
+L(SYM_END(pdir_flush)                                                         )
+L(.previous                                                                   )
 );
 
 INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
@@ -213,7 +190,7 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
  assert(addr_isvirt(&pdir_kernel_v));
  assert(addr_isvirt(&mman_kernel));
 
- if (THIS_CPU->c_arch.ac_flags&CPUFLAG_486) {
+ if (!(THIS_CPU->c_arch.ac_flags&CPUFLAG_486)) {
   /* Replace `pdir_flush' with its fallback counterpart!
    * (The `invlpg' instruction is only available starting at 486) */
   memcpy((void *)&pdir_flush,pdir_flush_386,

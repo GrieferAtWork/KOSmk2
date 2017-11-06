@@ -455,9 +455,31 @@ FUNDEF SAFE errno_t KCALL task_interrupt_cpu_endwrite(struct task *__restrict se
  * @return: -EINTR:     The calling thread was interrupted. */
 FUNDEF errno_t KCALL task_join(struct task *__restrict self, jtime_t timeout, void **exitcode);
 
+#ifndef __task_yield_defined
+#define __task_yield_defined 1
 /* Yield the remainder of the caller's quantum to the next
- * scheduled task (no-op if no task to switch to exists). */
-FUNDEF void KCALL task_yield(void);
+ * scheduled task (no-op if no task to switch to exists).
+ * HINT: All registers but EAX are preserved across a call to this function.
+ * @return: -EOK:       Another task was executed before this function returned.
+ * @return: -EPERM:     Interrupts are disabled. (Yielding isn't allowed)
+ *                      This error is only returned when more than one CPU is online.
+ *                      If only one is, it is assumed that the CPU has entered a
+ *                      deadlock state, in which case kernel panic is invoked, rather
+ *                      than returning this error to the caller.
+ * @return: -EAGAIN:    There was no other task to switch to.
+ */
+FUNDEF errno_t (KCALL task_yield)(void);
+
+#if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_GCC_ASM)
+/* Take advantage of the fact that `task_yield()' doesn't clobber anything. */
+#define task_yield() \
+ __XBLOCK({ register errno_t __y_err; \
+            __asm__ __volatile__("call task_yield\n" : "=a" (__y_err)); \
+            __XRETURN __y_err; \
+ })
+#endif
+#endif /* !__task_yield_defined */
+
 
 /* Unlock the associated CPU and pause execution until the task is interrupted.
  * NOTE: The caller must have disabled pre-emption and be holding a write-lock to `THIS_CPU'
