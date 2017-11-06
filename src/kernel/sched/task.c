@@ -52,6 +52,7 @@
 #include <stdalign.h>
 #include <string.h>
 #include <sys/io.h>
+#include <asm/instx.h>
 #ifndef CONFIG_NO_TLB
 #include <kernel/arch/gdt.h>
 #include <kos/thread.h>
@@ -63,6 +64,26 @@ DECL_BEGIN
 //#undef CONFIG_SMP
 //#define CONFIG_LOG_WAITING 1
 
+
+/* Assert CPU-state/register pack sizes. */
+STATIC_ASSERT(sizeof(struct gpregs)          == GPREGS_SIZE);
+STATIC_ASSERT(sizeof(struct gpregs32)        == GPREGS32_SIZE);
+STATIC_ASSERT(sizeof(struct sgregs)          == SGREGS_SIZE);
+STATIC_ASSERT(sizeof(struct sgregs32)        == SGREGS32_SIZE);
+STATIC_ASSERT(sizeof(struct irregs_host)     == IRREGS_HOST_SIZE);
+STATIC_ASSERT(sizeof(struct irregs)          == IRREGS_SIZE);
+STATIC_ASSERT(sizeof(struct irregs_host_e)   == IRREGS_HOST_E_SIZE);
+STATIC_ASSERT(sizeof(struct irregs_e)        == IRREGS_E_SIZE);
+STATIC_ASSERT(sizeof(struct cpustate16)      == CPUSTATE16_SIZE);
+STATIC_ASSERT(sizeof(struct comregs)         == COMREGS_SIZE);
+STATIC_ASSERT(sizeof(struct comregs32)       == COMREGS32_SIZE);
+STATIC_ASSERT(sizeof(struct cpustate_host)   == CPUSTATE_HOST_SIZE);
+STATIC_ASSERT(sizeof(struct cpustate)        == CPUSTATE_SIZE);
+STATIC_ASSERT(sizeof(struct cpustate_host_e) == CPUSTATE_HOST_E_SIZE);
+STATIC_ASSERT(sizeof(struct cpustate_e)      == CPUSTATE_E_SIZE);
+                        
+
+/* Assert cpu/task offsets. */
 STATIC_ASSERT(IS_ALIGNED(offsetof(struct task,t_signals.ts_first),TASKSIGSLOT_ALIGN));
 STATIC_ASSERT(sizeof(struct tasksigslot)           == TASKSIGSLOT_SIZE);
 STATIC_ASSERT(offsetof(struct tasksig,ts_first)    == TASKSIG_OFFSETOF_FIRST);
@@ -87,7 +108,7 @@ STATIC_ASSERT(offsetof(struct task,t_sigblock)     == TASK_OFFSETOF_SIGBLOCK);
 STATIC_ASSERT(offsetof(struct task,t_sigpend)      == TASK_OFFSETOF_SIGPEND);
 STATIC_ASSERT(offsetof(struct task,t_sigshare)     == TASK_OFFSETOF_SIGSHARE);
 STATIC_ASSERT(offsetof(struct task,t_tlb)          == TASK_OFFSETOF_TLB);
-STATIC_ASSERT(offsetof(struct sigenter,se_eip)     == SIGENTER_OFFSETOF_EIP);
+STATIC_ASSERT(offsetof(struct sigenter,se_xip)     == SIGENTER_OFFSETOF_EIP);
 
 #ifdef ARCHTASK_SIZE
 STATIC_ASSERT(offsetof(struct task,t_arch) == TASK_OFFSETOF_ARCH);
@@ -671,55 +692,68 @@ task_destroy(struct task *__restrict t) {
 
 
 GLOBAL_ASM(
-L(.section .text                             )
-L(PUBLIC_ENTRY(cpu_sched_setrunning_savef)   )
-//L(    cli                                  ) /* Prevent interrupts from breaking our stack structures below. (Must already be disabled!) */
-L(    popl -12(%esp)                         ) /* EIP (return address). */
-L(    pushl 4(%esp)                          ) /* eflags. */
-L(    jmp 1f                                 )
-L(PUBLIC_ENTRY(cpu_sched_setrunning_save)    ) /* Generate an on-stack CPU state. */
-//L(    cli                                  ) /* Prevent interrupts from breaking our stack structures below. (Must already be disabled!) */
-L(    popl -12(%esp)                         ) /* EIP (return address). */
-L(    pushfl                                 ) /* iret-compatible return block. */
-L(1:  pushw $0                               )
-L(    pushw %cs                              )
-L(    subl $4, %esp                          ) /* Skip EIP (saved above) */
-L(    pushw %ds                              ) /* Push segment registers. */
-L(    pushw %es                              )
-L(    pushw %fs                              )
-L(    pushw %gs                              )
-L(    pushal                                 ) /* Push general purpose registers. */
-L(    movl  52(%esp), %eax                   ) /* Load the given `task' argument into 'EAX' */
-L(    movl  %esp, TASK_OFFSETOF_CSTATE(%eax) ) /* Save the CPU state that we've just created within the given task. */
-L(PUBLIC_ENTRY(cpu_sched_setrunning)         )
-L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING), %eax) /* Load the running task into EAX */
-L(    movl TASK_OFFSETOF_CSTATE(%eax),    %esp) /* Load the new CPU state into ESP */
-L(    movl (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%eax), %eax) /* Load the base address of the kernel stack. */
-L(    movl %eax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_ESP0)) /* Save the proper kernel stack address in the CPU's TSS. */
-L(    popal                                  ) /* Pop general purpose registers. */
-L(    popw %gs                               ) /* Pop segment registers. */
-L(    popw %fs                               )
-L(    popw %es                               )
-L(    popw %ds                               )
-L(    __ASM_IRET                             ) /* Iret -> pop EIP, CS + EFLAGS */
-L(SYM_END(cpu_sched_setrunning)              )
-L(SYM_END(cpu_sched_setrunning_save)         )
-L(SYM_END(cpu_sched_setrunning_savef)        )
-L(.previous                                  )
+L(.section .text                                                              )
+L(PUBLIC_ENTRY(cpu_sched_setrunning_savef)                                    )
+/* Prevent interrupts from breaking our stack structures below. (Must already be disabled!) */
+//L(    cli                                                                   )
+L(    popx -(3*XSZ)(%xsp)  /* XIP (return address). */                        )
+L(    pushx XSZ(%xsp)      /* xflags. */                                      )
+L(    jmp   1f                                                                )
+L(PUBLIC_ENTRY(cpu_sched_setrunning_save)                                     )
+L(    /* Generate an on-stack CPU state. */                                   )
+ /* Prevent interrupts from breaking our stack structures below. (Must already be disabled!) */
+//L(    cli                                                                   )
+L(    popx -(3*XSZ)(%xsp)  /* EIP (return address). */                        )
+L(    pushfx  /* iret-compatible return block. */                             )
+L(1:  pushx %cs                                                               )
+L(    subx $(XSZ), %xsp /* Skip EIP (already saved above) */                  )
+L(    __ASM_PUSH_SGREGS /* Push segment registers. */                         )
+L(    __ASM_PUSH_GPREGS /* Push general purpose registers. */                 )
+      /* Load the given `task' argument into 'EAX'
+       * NOTE: Use use `CPUSTATE_HOST_SIZE' as offset because that's
+       *       the data structure we've just created on-stack, and
+       *       now we want to access the first XWORD that follows.
+       */
+L(    movx CPUSTATE_HOST_SIZE(%xsp), %xax                                     )
+L(    /* Save the CPU state that we've just created within the given task. */ )
+L(    movx  %xsp, TASK_OFFSETOF_CSTATE(%xax)                                  )
+L(PUBLIC_ENTRY(cpu_sched_setrunning)                                          )
+L(    /* Load the running task into EAX */                                    )
+L(    movx ASM_CPU(CPU_OFFSETOF_RUNNING), %xax                                )
+L(    /* Load the new CPU state into ESP */                                   )
+L(    movx TASK_OFFSETOF_CSTATE(%xax),    %xsp                                )
+L(    /* Load the base address of the kernel stack. */                        )
+L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
+L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
+L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_ESP0))
+L(    __ASM_POP_GPREGS /* Pop general purpose registers. */                   )
+L(    __ASM_POP_SGREGS /* Pop segment registers. */                           )
+L(    __ASM_IRET       /* Iret -> pop XIP, CS + XFLAGS */                     )
+L(SYM_END(cpu_sched_setrunning)                                               )
+L(SYM_END(cpu_sched_setrunning_save)                                          )
+L(SYM_END(cpu_sched_setrunning_savef)                                         )
+L(.previous                                                                   )
 );
 
 #ifdef CONFIG_LOG_WAITING
 PUBLIC u8 dont_log_waiting = 0;
 #endif
 
-PUBLIC void KCALL task_yield(void);
+
+
+/* PUBLIC errno_t KCALL task_yield(void); */
+
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(PUBLIC_ENTRY(task_yield)                                                    )
-#ifdef CONFIG_DEBUG
-L(    pushl %ebp                                                              )
-L(    movl  %esp, %ebp                                                        )
-#endif
+L(    popx %xax  /* XIP (return address). (Currently, only XAX may be clobbered) */)
+L(    pushfx     /* iret-compatible return block. */                          )
+L(    pushx %cs                                                               )
+L(    pushx %xax /* XIP */                                                    )
+L(    __ASM_PUSH_SGREGS /* Push segment registers. */                         )
+L(    __ASM_PUSH_GPREGS /* Push general purpose registers. */                 )
+L(    /* All registers and segments are now saved. */                         )
+L(                                                                            )
 #if CONFIG_LOG_WAITING
 L(    testb $0xff, dont_log_waiting                                           )
 L(    jnz   1f                                                                )
@@ -727,107 +761,120 @@ L(    call  debug_tbprint                                                     )
 L(1:                                                                          )
 #endif
 L(                                                                            )
-L(    pushfl  /* Push eflags (will be restored later) */                      )
-      /* Special handling:
-       *  - When interrupts have been disabled by the caller, we assume that
-       *    they wish to remain in full control over when they'll be re-enabled,
-       *    meaning we're not actually allowed to switch to another task even
-       *    though `task_yield()' got called.
-       *  - This must be done as a precaution, since `task_yield()' may even
-       *    be called when sending a signal to another task (from within `cpu_write()') */
-L(    testl $(EFLAGS_IF), 0(%esp)                                             )
-L(    jz    2f                                                                )
-L(    cli                                  /* Disable pre-emption. */         )
-L(    pushl ASM_CPU(CPU_OFFSETOF_RUNNING)  /* Push the old task (Argument for `cpu_sched_setrunning_save'). */)
-      /* TODO: Use a special CPU rotation that tries not to re-schedule the calling task. */
-L(    call  cpu_sched_rotate               /* Rotate running tasks. */        )
-L(    pushl %eax                                                              )
-L(    pushl %ecx                                                              )
-L(    movl 8(%esp), %eax                                                      )
-L(    movl ASM_CPU(CPU_OFFSETOF_RUNNING), %ecx                                )
-#if !defined(CONFIG_NO_LDT) || !defined(CONFIG_NO_FPU) || !defined(CONFIG_NO_TLB)
-L(    pushl %ebx                                                              )
-#endif
-#ifndef CONFIG_NO_LDT
+L(    /* Make sure that the caller has interrupts enabled. */                 )
+L(    testx $(EFLAGS_IF), CPUSTATE_HOST_OFFSETOF_IRET+IRREGS_OFFSETOF_FLAGS(%xsp))
+L(    jz    99f                                                               )
+L(                                                                            )
+L(    cli /* Disable interrupts while switching context */                    )
+L(                                                                            )
+L(    /* Load the calling task into XBX and the next one into XAX. */         )
+L(    movx ASM_CPU(CPU_OFFSETOF_RUNNING), %xbx                                )
+L(    call cpu_sched_rotate_yield                                             )
+L(    cmpx %xax, %xbx /* Check if we're actually yielding */                  )
+L(    je   98f                                                                )
+L(                                                                            )
+L(    /* Set the caller's return register to `-EOK'. */                       )
+L(    movx $-EOK,    CPUSTATE_HOST_OFFSETOF_GP+GPREGS_OFFSETOF_XAX(%xsp)      )
+L(                                                                            )
+/* OLD: XBX; NEW: XAX */
+L(                                                                            )
+L(    /* Save the CPU state that we've just created within the calling task. */)
+L(    movx  %xsp, TASK_OFFSETOF_CSTATE(%xbx)                                  )
+L(                                                                            )
 L(    /* Switch the LDT if it changed */                                      )
-L(    movl (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%eax), %ebx         )
-L(    cmpl  %ebx, (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%ecx)        )
+#ifndef CONFIG_NO_LDT
+L(    movw (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%xax), %cx          )
+L(    cmpw  %cx, (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%xbx)         )
 L(    je    1f /* No change required */                                       )
-L(    /* Load the new LDT table. */                                           )
-L(    lldt (TASK_OFFSETOF_ARCH+ARCHTASK_OFFSETOF_LDT_GDT)(%ecx)               )
+L(    lldt  %cx                                                               )
 L(1:                                                                          )
 #endif /* !CONFIG_NO_LDT */
+L(                                                                            )
 #ifndef CONFIG_NO_FPU
 L(    /* Disable the FPU for lazy context switching */                        )
-L(    movl  %cr0, %ebx                                                        )
-L(    orl   $(CR0_TS), %ebx                                                   )
-L(    movl  %ebx, %cr0                                                        )
+L(    movx  %cr0, %xcx                                                        )
+L(    orx   $(CR0_TS), %xcx                                                   )
+L(    movx  %xcx, %cr0                                                        )
 #endif /* !CONFIG_NO_FPU */
+L(                                                                            )
 #ifndef CONFIG_NO_TLB
 L(    /* Switch TIB/TLB pointers */                                           )
-L(    pushl %edx                                                              )
-L(    pushl %esi                                                              )
-L(    movl  ASM_CPU(cpu_gdt+IDT_POINTER_OFFSETOF_GDT), %ebx                   )
-L(    movl  TASK_OFFSETOF_TLB(%ecx),                   %esi                   )
-#define TLB(off) ((off)+SEG_USER_TLB*8)(%ebx)
-#define TIB(off) ((off)+SEG_USER_TIB*8)(%ebx)
+L(    movx  TASK_OFFSETOF_TLB(%eax), %xsi                                     )
+#if 1 /* OPTIMIZATION? Don't switch TIB pointers if no change is required. */
+L(    cmpx  %xsi, TASK_OFFSETOF_TLB(%ebx)                                     )
+L(    je    1f /* Same address. - No change required. */                      )
+#endif
+L(    movx  ASM_CPU(cpu_gdt+IDT_POINTER_OFFSETOF_GDT), %xdi                   )
+#define TLB(off) ((off)+SEG_USER_TLB*SEGMENT_SIZE)(%xdi)
+#define TIB(off) ((off)+SEG_USER_TIB*SEGMENT_SIZE)(%xdi)
 L(                                                                            )
 L(    /* Update the TLB pointer */                                            )
-L(    movl  %esi,        %edx                                                 )
-L(    shrl  $24,         %edx                                                 )
+L(    movx  %xsi,        %xdx                                                 )
+L(    shrx  $24,         %xdx                                                 )
 L(    movb  %dl,         TLB(SEGMENT_OFFSETOF_BASEHI)                         )
+#ifdef __x86_64__
+L(    shrq  $8,          %rdx                                                 )
+L(    movl  %edx,        TLB(SEGMENT_OFFSETOF_BASEUP)                         )
+#endif
 L(    andl  $0xff000000, TLB(SEGMENT_OFFSETOF_BASELO)                         )
-L(    movl  %esi,        %edx                                                 )
-L(    andl  $0x00ffffff, %edx                                                 )
+L(    movx  %xsi,        %xdx                                                 )
+L(    andx  $0x00ffffff, %xdx                                                 )
 L(    orl   %edx,        TLB(SEGMENT_OFFSETOF_BASELO)                         )
 L(                                                                            )
 L(    /* Update the TIB pointer */                                            )
-L(    movl  %esi,        %edx                                                 )
-L(    shrl  $24,         %edx                                                 )
+L(    addx  $(TLB_OFFSETOF_TIB), %xsi                                         )
+L(    movx  %xsi,        %xdx                                                 )
+L(    shrx  $24,         %xdx                                                 )
 L(    movb  %dl,         TIB(SEGMENT_OFFSETOF_BASEHI)                         )
+#ifdef __x86_64__
+L(    shrq  $8,          %rdx                                                 )
+L(    movl  %edx,        TIB(SEGMENT_OFFSETOF_BASEUP)                         )
+#endif
 L(    andl  $0xff000000, TIB(SEGMENT_OFFSETOF_BASELO)                         )
-L(    andl  $0x00ffffff, %esi                                                 )
+L(    andx  $0x00ffffff, %xsi                                                 )
 L(    orl   %esi,        TIB(SEGMENT_OFFSETOF_BASELO)                         )
 #undef TIB
 #undef TLB
-L(    popl  %esi                                                              )
-L(    popl  %edx                                                              )
+L(1:                                                                          )
 #endif /* !CONFIG_NO_TLB */
-#if !defined(CONFIG_NO_LDT) || !defined(CONFIG_NO_FPU) || !defined(CONFIG_NO_TLB)
-L(    popl  %ebx                                                              )
+L(                                                                            )
+L(    /* Switch memory managers. */                                           )
+L(    movx TASK_OFFSETOF_MMAN(%xax),  %xcx                                    )
+L(    movx TASK_OFFSETOF_MMAN(%xbx),  %xdx                                    )
+L(    cmpx %xdx, %xcx /* Check if memory managers (and thereby page directories) changed. */)
+L(    je   71f /* No switch required. */                                      )
+L(    movx MMAN_OFFSETOF_PPDIR(%xcx), %xcx                                    )
+#if defined(PDIR_OFFSETOF_DIRECTORY) && PDIR_OFFSETOF_DIRECTORY != 0
+L(    addx $(PDIR_OFFSETOF_DIRECTORY),%xcx                                    )
 #endif
-L(    movl TASK_OFFSETOF_MMAN(%eax),  %eax                                    )
-L(    movl TASK_OFFSETOF_MMAN(%ecx),  %ecx                                    )
-L(    cmpl %eax, %ecx /* Check if memory managers (and thereby page directories) changed. */)
-L(    je   1f                                                                 )
-L(    movl MMAN_OFFSETOF_PPDIR(%ecx), %ecx                                    )
-#if PDIR_OFFSETOF_DIRECTORY
-L(    addl $(PDIR_OFFSETOF_DIRECTORY),%ecx                                    )
-#endif
-L(    movl %ecx, %cr3 /* Switch to the new task's page directory. */          )
-L(1:  popl %ecx                                                               )
-L(    popl %eax                                                               )
-#if 1
-L(    call cpu_sched_setrunning_savef /* Switch to the next task. */          )
-L(    addl $8, %esp                                                           )
+L(    movx %xcx, %cr3 /* Switch to the new task's page directory. */          )
+L(                                                                            )
+L(    /* Load general purpose registers */                                    )
+L(71: movx TASK_OFFSETOF_CSTATE(%xax), %xsp                                   )
+L(    /* Load the base address of the kernel stack. */                        )
+L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
+L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
+L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_ESP0))
+L(70: __ASM_POP_GPREGS /* Pop general purpose registers. */                   )
+L(    __ASM_POP_SGREGS /* Pop segment registers. */                           )
+L(    __ASM_IRET       /* Iret -> pop XIP, CS + XFLAGS */                     )
+L(98: sti   /* Re-enable interrupts. */                                       )
+L(    pause /* Dispite all, still allow the CPU to relax a bit when not yielding. */)
+L(    movx $-EAGAIN, CPUSTATE_HOST_OFFSETOF_GP+GPREGS_OFFSETOF_XAX(%xsp)      )
+L(    jmp  70b                                                                )
+L(99: pause                                                                   )
+#ifdef CONFIG_DEBUG
+#ifdef __x86_64__
+L(    movl  %eax, %edi                                                        )
+L(    call  noyield_without_irq                                               )
 #else
-L(    call cpu_sched_setrunning_save /* Switch to the next task. */           )
-L(    addl $4, %esp                                                           )
-L(    popfl                                                                   )
-#endif
-L(3:                                                                          )
-#ifdef CONFIG_DEBUG
-L(    leave                                                                   )
-#endif
-L(    ret                                                                     )
-L(2:  pause                                                                   )
-#ifdef CONFIG_DEBUG
-L(    pushl 8(%esp)                                                           )
+L(    pushl %eax                                                              )
 L(    call  noyield_without_irq                                               )
 L(    addl  $4, %esp                                                          )
 #endif
-L(    popfl                                                                   )
-L(    jmp 3b                                                                  )
+#endif
+L(    movx $-EPERM, CPUSTATE_HOST_OFFSETOF_GP+GPREGS_OFFSETOF_XAX(%xsp)       )
+L(    jmp  70b                                                                )
 L(SYM_END(task_yield)                                                         )
 L(.previous                                                                   )
 );
@@ -1167,6 +1214,20 @@ PUBLIC struct task *FCALL cpu_sched_rotate(void) {
  new_task = THIS_CPU->c_running->t_sched.sd_running.re_next;
  while (new_task->t_prioscore--) new_task = new_task->t_sched.sd_running.re_next;
  new_task->t_prioscore = THIS_CPU->c_prio_max-new_task->t_priority;
+ THIS_CPU->c_running = new_task;
+ COMPILER_WRITE_BARRIER();
+ cpu_validate_counters(true);
+ return new_task;
+}
+PUBLIC struct task *FCALL cpu_sched_rotate_yield(void) {
+ struct task *old_task,*new_task;
+ assert(!PREEMPTION_ENABLED());
+ assert(THIS_CPU->c_running);
+ old_task = THIS_CPU->c_running;
+ new_task = old_task->t_sched.sd_running.re_next;
+ while (new_task->t_prioscore--) new_task = new_task->t_sched.sd_running.re_next;
+ new_task->t_prioscore = THIS_CPU->c_prio_max-new_task->t_priority;
+ if (new_task == old_task) new_task = old_task->t_sched.sd_running.re_next;
  THIS_CPU->c_running = new_task;
  COMPILER_WRITE_BARRIER();
  cpu_validate_counters(true);
