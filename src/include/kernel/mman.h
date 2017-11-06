@@ -544,6 +544,7 @@ struct mman {
  PHYS PAGE_ALIGNED pdir_t
                   *m_ppdir;  /*< [1..1|null(~)][const][== PHYSICAL(&m_pdir)] The physical address of `m_pdir' */
  ATOMIC_DATA ref_t m_refcnt; /*< Memory manager reference counter. (Amount of threads using this manager; aka: Amount of relevant uses of `m_pdir') */
+ size_t            m_size;   /*< [const] Allocated memory size for this data structure. */
  owner_rwlock_t    m_lock;   /*< Lock for accessing anything mman-related.
                               *  NOTE: Use an r/w lock with write-recursion here,
                               *        as an easy way of supporting load-on-read

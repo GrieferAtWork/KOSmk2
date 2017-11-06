@@ -20,6 +20,7 @@
 #define _BITS_ENDIAN_H 1
 
 #include <__stdinc.h>
+#include <hybrid/byteorder.h>
 
 #ifndef __BYTE_ORDER
 #ifdef __BYTE_ORDER__

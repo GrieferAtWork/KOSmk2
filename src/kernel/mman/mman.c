@@ -297,34 +297,39 @@ again:
 
 PUBLIC SAFE struct mman *KCALL mman_new(void) {
  VIRT struct mman *result,*old_mm;
- ssize_t lock_error;
+ hptr_t heap_result; ssize_t lock_error;
  assert(alignof(struct mman) >= PDIR_ALIGN);
- result = (struct mman *)kmemalign(MMAN_ALIGN,
-                                   sizeof(struct mman),
-                                   GFP_SHARED|GFP_CALLOC);
- if unlikely(!result) return NULL;
+ task_nointr();
+ TASK_PDIR_KERNEL_BEGIN(old_mm);
+ heap_result = heap_memalign(MMAN_ALIGN,0,sizeof(struct mman),
+                             GFP_SHARED|GFP_CALLOC);
+ if (HPTR_ISERR(heap_result)) goto err;
+ result = (VIRT struct mman *)HPTR_ADDR(heap_result);
+ assert(IS_ALIGNED((uintptr_t)result,MMAN_ALIGN));
+ assertf(HPTR_SIZE(heap_result) >= sizeof(struct mman),
+         "Size is too small: %Iu < %Iu",
+         HPTR_SIZE(heap_result),sizeof(struct mman));
 #if PDIR_ALIGN != PAGESIZE
 #error FIXME
 #endif
- assert(IS_ALIGNED((uintptr_t)result,PAGESIZE));
  /* Lock the data for the page directory, and load it into the core.
   * NOTE: We don't use `GFP_LOCKED' for this, because on the first
   *       page needs to be locked for the page directory itself. */
- task_nointr();
- TASK_PDIR_KERNEL_BEGIN(old_mm);
  lock_error = mman_mlock(&mman_kernel,(ppage_t)&result->m_pdir,sizeof(result->m_pdir),
                           MMAN_MLOCK_LOCK|MMAN_MLOCK_INCORE|MMAN_MLOCK_WRITE);
  assert(lock_error != -EINTR);
- task_endnointr();
- if (E_ISERR(lock_error) ||
-    !pdir_init(&result->m_pdir)) {
+ if (E_ISERR(lock_error) || !pdir_init(&result->m_pdir)) {
+  heap_ffree(heap_result,GFP_SHARED|GFP_CALLOC|GFP_NOFREQ);
   kffree(result,GFP_NOFREQ);
+err:
   result = NULL;
   goto end;
  }
+ result->m_size   = HPTR_SIZE(heap_result);
  result->m_refcnt = 1;
  /* Figure out where the physical page directory is located at. */
- result->m_ppdir = (PHYS PAGE_ALIGNED pdir_t *)PDIR_TRANSLATE(&pdir_kernel_v,&result->m_pdir);
+ result->m_ppdir = (PHYS PAGE_ALIGNED pdir_t *)PDIR_TRANSLATE(&pdir_kernel_v,
+                                                              &result->m_pdir);
  assert(IS_ALIGNED((uintptr_t)result->m_ppdir,PDIR_ALIGN));
  assertf(!result->m_map,"%p: %p",result,result->m_map);
  owner_rwlock_cinit(&result->m_lock);
@@ -335,6 +340,7 @@ PUBLIC SAFE struct mman *KCALL mman_new(void) {
  result->m_ldt = &ldt_empty;
 end:
  TASK_PDIR_KERNEL_END(old_mm);
+ task_endnointr();
  return result;
 }
 
@@ -352,6 +358,9 @@ mman_destroy(struct mman *__restrict self) {
  assertf(self != old_mman,
          "You can't destroy your own memory manager! "
          "Switch to another first");
+ assertf(self->m_size >= sizeof(struct mman),
+         "Size is too small: %Iu < %Iu",
+         self->m_size,sizeof(struct mman));
  if (self->m_map) mbranch_delete(self->m_map);
  pdir_fini(&self->m_pdir);
 #if PDIR_ALIGN != PAGESIZE || (PDIR_SIZE % PAGESIZE) != 0
@@ -372,7 +381,7 @@ mman_destroy(struct mman *__restrict self) {
    }
  }
  LDT_DECREF(self->m_ldt);
- kfree(self);
+ heap_ffree(HPTR(self,self->m_size),GFP_SHARED);
  TASK_PDIR_KERNEL_END(old_mman);
 }
 

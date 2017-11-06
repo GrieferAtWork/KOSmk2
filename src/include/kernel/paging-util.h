@@ -65,7 +65,7 @@ struct pdir_entries { union pd_entry _e[PDIR_TABLE_COUNT][PD_TABLE_ENTRY_COUNT];
 #define THIS_PDIR_ENTRIES                 ((struct pdir_entries *)THIS_PDIR_BASE)->_e
 #define THIS_PDIR_ENTRY(d_index,t_index)    THIS_PDIR_ENTRIES[d_index][t_index]
 
-LOCAL KPD PHYS bool KCALL
+LOCAL PHYS bool KCALL
 thispdir_test_writable(VIRT pdir_t *__restrict self, VIRT void *ptr) {
  union pd_table table = self->pd_directory[PDIR_DINDEX(ptr)];
  union pd_entry entry;
@@ -77,7 +77,7 @@ thispdir_test_writable(VIRT pdir_t *__restrict self, VIRT void *ptr) {
                        (PDIR_ATTR_PRESENT|PDIR_ATTR_WRITE);
 }
 
-LOCAL KPD PHYS bool KCALL
+LOCAL PHYS bool KCALL
 thispdir_isdirty(VIRT pdir_t *__restrict self, VIRT void *ptr, size_t n_bytes) {
  union pd_table table;
  union pd_entry entry;
@@ -96,7 +96,7 @@ thispdir_isdirty(VIRT pdir_t *__restrict self, VIRT void *ptr, size_t n_bytes) {
  return false;
 }
 
-LOCAL KPD PHYS void KCALL
+LOCAL PHYS void KCALL
 thispdir_undirty(VIRT pdir_t *__restrict self, VIRT void *ptr, size_t n_bytes) {
  union pd_table *ptable;
  union pd_entry *pentry;
@@ -132,7 +132,7 @@ thispdir_undirty(VIRT pdir_t *__restrict self, VIRT void *ptr, size_t n_bytes) {
 #define KERNEL_GLOBAL_END 0 /* 0xffffffff+1 */
 
 #ifdef __CC__
-LOCAL KPD PHYS bool KCALL
+LOCAL PHYS bool KCALL
 thispdir_test_writable(VIRT pdir_t *__restrict self, VIRT void *ptr) {
  bool result; struct mman *old_mman;
  TASK_PDIR_KERNEL_BEGIN(old_mman);

@@ -115,7 +115,7 @@ DATDEF struct ldt ldt_kernel; /*< The LDT controller used by the kernel (Current
 #ifndef CONFIG_NO_LDT
 #   define ARCHTASK_OFFSETOF_LDT_TASKS  0
 #   define ARCHTASK_OFFSETOF_LDT_GDT   (2*__SIZEOF_POINTER__)
-#   define __ARCHTASK_OFFSETAFTER_LDT  (2*__SIZEOF_POINTER__+4)
+#   define __ARCHTASK_OFFSETAFTER_LDT  (3*__SIZEOF_POINTER__)
 #else
 #   define __ARCHTASK_OFFSETAFTER_LDT   0
 #endif
@@ -131,8 +131,9 @@ DATDEF struct ldt ldt_kernel; /*< The LDT controller used by the kernel (Current
 struct archtask {
 #ifndef CONFIG_NO_LDT
  WEAK LIST_NODE(struct task) at_ldt_tasks; /*< [0..1][lock(:t_mman->m_ldt->l_lock)] Linked list of tasks using the associated LDT descriptor. */
+union PACKED { struct PACKED {
  WEAK segid_t                at_ldt_gdt;   /*< [== :t_mman->m_ldt->l_gdt][valid_if(:t_mode != TASKMODE_NOTSTARTED)] Local copy of this task's LDT index. */
- u16                         at_padding;   /*< ... */
+}; uintptr_t               __at_align;};   /* Ensure pointer-alignment. */
 #endif /* !CONFIG_NO_LDT */
 #ifndef CONFIG_NO_FPU
  struct fpustate            *at_fpu;       /*< [lock(PRIVATE(THIS_TASK))][0..1][owned]

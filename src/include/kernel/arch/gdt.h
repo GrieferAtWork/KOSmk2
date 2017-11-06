@@ -224,7 +224,7 @@ struct PACKED {
  {{{ __SEG_ENCODELO(base,size,config), \
      __SEG_ENCODEHI(base,size,config) }}}
 
-LOCAL struct segment KCALL
+LOCAL ATTR_CONST struct segment KCALL
 make_segment(uintptr_t base, size_t size, u32 config) {
  struct segment result;
  __assertf(size <= SEG_LIMIT_MAX,"Size %#Ix is too large",size);

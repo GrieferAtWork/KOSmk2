@@ -28,8 +28,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <hybrid/compiler.h>
+#include <hybrid/types.h>
 #include <features.h>
 #include <__malldefs.h>
+#include <bits/endian.h>
 #ifdef __USE_DEBUG
 #include <hybrid/debuginfo.h>
 #endif
@@ -98,16 +100,74 @@ FUNDEF WUNUSED NONNULL((1)) gfp_t (KCALL __kmalloc_flags)(void *ptr) ASMNAME("km
 
 /* Allocation helper functions. */
 FUNDEF SAFE WUNUSED NONNULL((1)) __MALL_DEFAULT_ALIGNED ATTR_ALLOC_SIZE((2))
-ATTR_MALLOC void *(KCALL __kmemdup)(void const *__restrict ptr, size_t size,
+ATTR_MALLOC void *(KCALL __kmemdup)(void const *__restrict ptr, size_t n_bytes,
                                     gfp_t flags) ASMNAME("kmemdup");
 FUNDEF SAFE WUNUSED NONNULL((1)) ATTR_ALLOC_ALIGN(2) ATTR_ALLOC_SIZE((3))
 ATTR_MALLOC void *(KCALL __kmemadup)(void const *__restrict ptr, size_t alignment,
-                                     size_t size, gfp_t flags) ASMNAME("kmemadup");
+                                     size_t n_bytes, gfp_t flags) ASMNAME("kmemadup");
 
 /* Define system-wide malloc-options:
  *  - M_TRIM_THRESHOLD: Threshold of the size of blocks, before they are returned to the system.
  *  - M_GRANULARITY:    Amount to overallocate by when allocating memory from lower-level APIs. */
 FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t flags) ASMNAME("kmallopt");
+
+// /* Allocate full pages of dynamic memory.
+//  * These functions basically act as a high-level re-implementation
+//  * of the physical memory allocator, in that they always allocate in
+//  * multiples of `PAGESIZE', CEIL_ALIGN()-ing the given `n_bytes' if necessary.
+//  * @return: * :         Physical/virtual base address of the newly allocated block of memory.
+//  * @return: PAGE_ERROR: Failed to allocate memory. */
+// FUNDEF SAFE WUNUSED ppage_t (KCALL kpage_malloc)(size_t n_bytes, gfp_t flags);
+// FUNDEF SAFE WUNUSED ppage_t (KCALL kpage_memalign)(size_t alignment, size_t n_bytes, gfp_t flags);
+// FUNDEF SAFE WUNUSED ppage_t (KCALL kpage_malloc_in)(ppage_t min, ppage_t max, size_t n_bytes, gfp_t flags);
+// FUNDEF SAFE WUNUSED ppage_t (KCALL kpage_realloc)(ppage_t addr, size_t old_n_bytes, size_t new_n_bytes, gfp_t flags);
+// FUNDEF SAFE WUNUSED ppage_t (KCALL kpage_realign)(ppage_t addr, size_t alignment, size_t old_n_bytes, size_t new_n_bytes, gfp_t flags);
+// FUNDEF SAFE void (KCALL kpage_free)(ppage_t addr, size_t n_bytes, gfp_t flags);
+
+
+/* Heap pointer definitions. */
+#if __SIZEOF_POINTER__ == 8
+#ifdef __SIZEOF_INT128__
+typedef unsigned __int128 hptr_t;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#   define HPTR(addr,size) ((hptr_t)(uintptr_t)(addr)|((heaptr_t)(size) << 64))
+#   define HPTR_ADDR(p)    ((HOST void *)(uintptr_t)(p))
+#   define HPTR_SIZE(p)    ((size_t)((p) >> 64))
+#else
+#   define HPTR(addr,size) (((hptr_t)(uintptr_t)(addr) << 64)|(heaptr_t)(size))
+#   define HPTR_ADDR(p)    ((HOST void *)((uintptr_t)(p) >> 64))
+#   define HPTR_SIZE(p)    ((size_t)(p))
+#endif
+#else /* __SIZEOF_INT128__ */
+typedef struct { HOST void *__hp_base; size_t __hp_size; } hptr_t;
+#ifdef __GNUC__
+#define HPTR(addr,size) ((hptr_t){addr,size})
+#else /* __GNUC__ */
+FORCELOCAL hptr_t (KCALL __make_hptr)(HOST void *addr, size_t size) { hptr_t result = {addr,size}; return result; }
+#define HPTR(addr,size) __make_hptr(addr,size)
+#endif /* !__GNUC__ */
+#define HPTR_ADDR(p)    ((p).__hp_base)
+#define HPTR_SIZE(p)    ((p).__hp_size)
+#endif /* !__SIZEOF_INT128__ */
+#elif __SIZEOF_POINTER__ == 4
+typedef u64 hptr_t;
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#   define HPTR(addr,size) ((hptr_t)(uintptr_t)(addr) | ((hptr_t)(size) << 32))
+#   define HPTR_ADDR(p)    ((HOST void *)(uintptr_t)(p))
+#   define HPTR_SIZE(p)    ((size_t)((p) >> 32))
+#else
+#   define HPTR(addr,size) (((hptr_t)(uintptr_t)(addr) << 32) | (hptr_t)(size))
+#   define HPTR_ADDR(p)    ((HOST void *)(uintptr_t)((p) >> 32))
+#   define HPTR_SIZE(p)    ((size_t)(p))
+#endif
+#else
+#error "Unsupported sizeof(void *)"
+#endif
+
+/* Special heap pointer values. */
+#define HPTR_ERROR     HPTR(0,0)
+#define HPTR_ISOK(x)  (HPTR_SIZE(x) != 0)
+#define HPTR_ISERR(x) (HPTR_SIZE(x) == 0)
 
 
 /* Low-level, heap memory alloc/free.
@@ -120,23 +180,20 @@ FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t f
  *          The specialty of heap memory is that there is no control block that
  *          tracks the allocated size, allowing for much more efficient allocation
  *          of special memory that must be (e.g.) page-aligned.
- * @assume_on_success(IS_ALIGNED(*palloc_size,HEAP_ALIGNMENT));
- * @param: palloc_size: Pointer to a size_t that is filled with
- *                      the actually allocates size on success.
- * @return: * :         Base pointer.
- * @return: HEAP_ERROR: Failed to allocate memory. */
-FUNDEF SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_MALLOC void *KCALL heap_malloc(size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags);
-FUNDEF SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_MALLOC void *KCALL heap_malloc_at(void *ptr, size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags);
-FUNDEF SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_MALLOC void *KCALL heap_memalign(size_t alignment, size_t offset, size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags);
-#define HEAP_ERROR    ((void *)-1)
+ * @assume_on_success(IS_ALIGNED(HPTR_SIZE(return)));
+ * @return: * :            Base pointer and associated size.
+ * @return: HPTR_ISERR(*): Failed to allocate memory. */
+FUNDEF SAFE WUNUSED hptr_t KCALL heap_malloc(size_t n_bytes, gfp_t flags);
+FUNDEF SAFE WUNUSED hptr_t KCALL heap_malloc_at(HOST void *ptr, size_t n_bytes, gfp_t flags);
+FUNDEF SAFE WUNUSED hptr_t KCALL heap_memalign(size_t alignment, size_t offset, size_t n_bytes, gfp_t flags);
 
 /* Free heap memory previously allocated using `heap_*' functions.
  * NOTE: The caller is responsible for passing the same heap
  *       ID as was specified when `heap_malloc()' was called.
- * @assume(IS_ALIGNED(size,HEAP_ALIGNMENT));
+ * @assume(IS_ALIGNED(n_bytes,HEAP_ALIGNMENT));
  * @return: true:  Successfully freed the given heap range.
- * @return: false: Failed to free memory, because `size' is too small. */
-FUNDEF SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags);
+ * @return: false: Failed to free memory, because `n_bytes' is too small. */
+FUNDEF SAFE bool KCALL heap_ffree(hptr_t ptr, gfp_t flags);
 
 #endif /* __CC__ */
 
@@ -240,48 +297,48 @@ FUNDEF SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_ALLOC_SIZE((2)) NONNULL((1)) ATT
 FUNDEF SAFE WUNUSED ATTR_ALLOC_ALIGN(2) ATTR_ALLOC_SIZE((3)) NONNULL((1)) ATTR_MALLOC void *(KCALL _kmemadup_d)(void const *__restrict ptr, size_t alignment, size_t size, gfp_t flags, DEBUGINFO);
 FUNDEF int (KCALL _kmallopt_d)(int parameter_number, int parameter_value, gfp_t flags, DEBUGINFO);
 #else
-#   define _kmalloc_d(size,flags,...)                              __kmalloc(size,flags)
-#   define _kmemalign_d(alignment,size,flags,...)                  __kmemalign(alignment,size,flags)
-#   define _krealloc_d(ptr,size,flags,...)                         __krealloc(ptr,size,flags)
-#   define _krealign_d(ptr,alignment,size,flags,...)               __krealign(ptr,alignment,size,flags)
+#   define _kmalloc_d(n_bytes,flags,...)                           __kmalloc(n_bytes,flags)
+#   define _kmemalign_d(alignment,n_bytes,flags,...)               __kmemalign(alignment,n_bytes,flags)
+#   define _krealloc_d(ptr,n_bytes,flags,...)                      __krealloc(ptr,n_bytes,flags)
+#   define _krealign_d(ptr,alignment,n_bytes,flags,...)            __krealign(ptr,alignment,n_bytes,flags)
 #   define _kfree_d(ptr,...)                                       __kfree(ptr)
 #   define _kffree_d(ptr,flags,...)                                __kffree(ptr,flags)
 #   define _kmalloc_usable_size_d(ptr,...)                         __kmalloc_usable_size(ptr)
 #   define _kmalloc_flags_d(ptr,...)                               __kmalloc_flags(ptr)
-#   define _kmemdup_d(ptr,size,flags,...)                          __kmemdup(ptr,size,flags)
-#   define _kmemadup_d(ptr,alignment,size,flags,...)               __kmemadup(ptr,alignment,size,flags)
+#   define _kmemdup_d(ptr,n_bytes,flags,...)                       __kmemdup(ptr,n_bytes,flags)
+#   define _kmemadup_d(ptr,alignment,n_bytes,flags,...)            __kmemadup(ptr,alignment,n_bytes,flags)
 #   define _kmallopt_d(parameter_number,parameter_value,flags,...) __kmallopt(parameter_number,parameter_value,flags)
 #endif
 #endif /* __USE_DEBUG */
 
 #ifdef __OPTIMIZE__
-#define _kmalloc(size,flags)                __kmalloc(size,flags)
+#define _kmalloc(n_bytes,flags)                __kmalloc(n_bytes,flags)
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
-ATTR_MALLOC void *(KCALL _kmemalign)(size_t alignment, size_t size, gfp_t flags) {
+ATTR_MALLOC void *(KCALL _kmemalign)(size_t alignment, size_t n_bytes, gfp_t flags) {
  if (__builtin_constant_p(alignment)) {
   if (alignment <= HEAP_ALIGNMENT)
-      return _kmalloc(size,flags);
+      return _kmalloc(n_bytes,flags);
  } 
- return __kmemalign(alignment,size,flags);
+ return __kmemalign(alignment,n_bytes,flags);
 }
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
-ATTR_MALLOC void *(KCALL _krealloc)(void *ptr, size_t size, gfp_t flags) {
+ATTR_MALLOC void *(KCALL _krealloc)(void *ptr, size_t n_bytes, gfp_t flags) {
  if (__builtin_constant_p(ptr)) {
-  if (!ptr) return _kmalloc(size,flags);
+  if (!ptr) return _kmalloc(n_bytes,flags);
  }
- return __krealloc(ptr,size,flags);
+ return __krealloc(ptr,n_bytes,flags);
 }
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
 ATTR_MALLOC void *(KCALL _krealign)(void *ptr, size_t alignment,
-                                    size_t size, gfp_t flags) {
+                                    size_t n_bytes, gfp_t flags) {
  if (__builtin_constant_p(ptr)) {
-  if (!ptr) return _kmemalign(alignment,size,flags);
+  if (!ptr) return _kmemalign(alignment,n_bytes,flags);
  }
  if (__builtin_constant_p(alignment)) {
   if (alignment <= HEAP_ALIGNMENT)
-      return _krealloc(ptr,size,flags);
+      return _krealloc(ptr,n_bytes,flags);
  }
- return __krealign(ptr,alignment,size,flags);
+ return __krealign(ptr,alignment,n_bytes,flags);
 }
 FORCELOCAL SAFE void (KCALL _kfree)(void *ptr) {
  if (__builtin_constant_p(ptr)) { if (!ptr) return; }
@@ -304,26 +361,26 @@ FORCELOCAL WUNUSED gfp_t (KCALL _kmalloc_flags)(void *ptr) {
 }
 
 FORCELOCAL SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_ALLOC_SIZE((1))
-ATTR_MALLOC void *(KCALL _kmemdup)(void const *__restrict ptr, size_t size,
+ATTR_MALLOC void *(KCALL _kmemdup)(void const *__restrict ptr, size_t n_bytes,
                                    gfp_t flags) {
  if (__builtin_constant_p(flags) ||
-     __builtin_constant_p(size)) {
-  register void *result = _kmalloc(size,flags);
-  if (result) memcpy(result,ptr,size);
+     __builtin_constant_p(n_bytes)) {
+  register void *result = _kmalloc(n_bytes,flags);
+  if (result) memcpy(result,ptr,n_bytes);
   return result;
  }
- return __kmemdup(ptr,size,flags);
+ return __kmemdup(ptr,n_bytes,flags);
 }
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
 ATTR_MALLOC void *(KCALL _kmemadup)(void const *__restrict ptr, size_t alignment,
-                                    size_t size, gfp_t flags) {
+                                    size_t n_bytes, gfp_t flags) {
  if (__builtin_constant_p(flags) ||
-     __builtin_constant_p(size)) {
-  register void *result = _kmemalign(alignment,size,flags);
-  if (result) memcpy(result,ptr,size);
+     __builtin_constant_p(n_bytes)) {
+  register void *result = _kmemalign(alignment,n_bytes,flags);
+  if (result) memcpy(result,ptr,n_bytes);
   return result;
  }
- return __kmemadup(ptr,alignment,size,flags);
+ return __kmemadup(ptr,alignment,n_bytes,flags);
 }
 #define _kmallopt(parameter_number,parameter_value,flags) \
        __kmallopt(parameter_number,parameter_value,flags)
@@ -331,33 +388,33 @@ ATTR_MALLOC void *(KCALL _kmemadup)(void const *__restrict ptr, size_t alignment
 #if __USE_DEBUG != 0
 #define __kmallopt_d(parameter_number,parameter_value,flags,...) \
          _kmallopt_d(parameter_number,parameter_value,flags,__VA_ARGS__)
-#define __kmalloc_d(size,flags,...) _kmalloc_d(size,flags,__VA_ARGS__)
+#define __kmalloc_d(n_bytes,flags,...) _kmalloc_d(n_bytes,flags,__VA_ARGS__)
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
-ATTR_MALLOC void *(KCALL __kmemalign_d)(size_t alignment, size_t size, gfp_t flags, DEBUGINFO) {
+ATTR_MALLOC void *(KCALL __kmemalign_d)(size_t alignment, size_t n_bytes, gfp_t flags, DEBUGINFO) {
  if (__builtin_constant_p(alignment)) {
   if (alignment <= HEAP_ALIGNMENT)
-      return _kmalloc_d(size,flags,DEBUGINFO_FWD);
+      return _kmalloc_d(n_bytes,flags,DEBUGINFO_FWD);
  } 
- return _kmemalign_d(alignment,size,flags,DEBUGINFO_FWD);
+ return _kmemalign_d(alignment,n_bytes,flags,DEBUGINFO_FWD);
 }
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
-ATTR_MALLOC void *(KCALL __krealloc_d)(void *ptr, size_t size, gfp_t flags, DEBUGINFO) {
+ATTR_MALLOC void *(KCALL __krealloc_d)(void *ptr, size_t n_bytes, gfp_t flags, DEBUGINFO) {
  if (__builtin_constant_p(ptr)) {
-  if (!ptr) return _kmalloc_d(size,flags,DEBUGINFO_FWD);
+  if (!ptr) return _kmalloc_d(n_bytes,flags,DEBUGINFO_FWD);
  }
- return _krealloc_d(ptr,size,flags,DEBUGINFO_FWD);
+ return _krealloc_d(ptr,n_bytes,flags,DEBUGINFO_FWD);
 }
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
 ATTR_MALLOC void *(KCALL __krealign_d)(void *ptr, size_t alignment,
-                                       size_t size, gfp_t flags, DEBUGINFO) {
+                                       size_t n_bytes, gfp_t flags, DEBUGINFO) {
  if (__builtin_constant_p(ptr)) {
-  if (!ptr) return _kmemalign_d(alignment,size,flags,DEBUGINFO_FWD);
+  if (!ptr) return _kmemalign_d(alignment,n_bytes,flags,DEBUGINFO_FWD);
  }
  if (__builtin_constant_p(alignment)) {
   if (alignment <= HEAP_ALIGNMENT)
-      return _krealloc_d(ptr,size,flags,DEBUGINFO_FWD);
+      return _krealloc_d(ptr,n_bytes,flags,DEBUGINFO_FWD);
  }
- return _krealign_d(ptr,alignment,size,flags,DEBUGINFO_FWD);
+ return _krealign_d(ptr,alignment,n_bytes,flags,DEBUGINFO_FWD);
 }
 FORCELOCAL SAFE void (KCALL __kfree_d)(void *ptr, DEBUGINFO) {
  if (__builtin_constant_p(ptr)) { if (!ptr) return; }
@@ -380,80 +437,80 @@ FORCELOCAL WUNUSED gfp_t (KCALL __kmalloc_flags_d)(void *ptr, DEBUGINFO) {
 }
 
 FORCELOCAL SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_ALLOC_SIZE((1))
-ATTR_MALLOC void *(KCALL __kmemdup_d)(void const *__restrict ptr, size_t size,
+ATTR_MALLOC void *(KCALL __kmemdup_d)(void const *__restrict ptr, size_t n_bytes,
                                       gfp_t flags, DEBUGINFO) {
  if (__builtin_constant_p(flags) ||
-     __builtin_constant_p(size)) {
-  register void *result = _kmalloc_d(size,flags,DEBUGINFO_FWD);
-  if (result) memcpy(result,ptr,size);
+     __builtin_constant_p(n_bytes)) {
+  register void *result = _kmalloc_d(n_bytes,flags,DEBUGINFO_FWD);
+  if (result) memcpy(result,ptr,n_bytes);
   return result;
  }
- return _kmemdup_d(ptr,size,flags,DEBUGINFO_FWD);
+ return _kmemdup_d(ptr,n_bytes,flags,DEBUGINFO_FWD);
 }
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
 ATTR_MALLOC void *(KCALL __kmemadup_d)(void const *__restrict ptr, size_t alignment,
-                                       size_t size, gfp_t flags, DEBUGINFO) {
+                                       size_t n_bytes, gfp_t flags, DEBUGINFO) {
  if (__builtin_constant_p(flags) ||
-     __builtin_constant_p(size)) {
-  register void *result = _kmemalign_d(alignment,size,flags,DEBUGINFO_FWD);
-  if (result) memcpy(result,ptr,size);
+     __builtin_constant_p(n_bytes)) {
+  register void *result = _kmemalign_d(alignment,n_bytes,flags,DEBUGINFO_FWD);
+  if (result) memcpy(result,ptr,n_bytes);
   return result;
  }
- return _kmemadup_d(ptr,alignment,size,flags,DEBUGINFO_FWD);
+ return _kmemadup_d(ptr,alignment,n_bytes,flags,DEBUGINFO_FWD);
 }
 #else /* __USE_DEBUG != 0 */
-#   define __kmalloc_d(size,flags,...)                _kmalloc(size,flags)
-#   define __kmemalign_d(alignment,size,flags,...)    _kmemalign(alignment,size,flags)
-#   define __krealloc_d(ptr,size,flags,...)           _krealloc(ptr,size,flags)
-#   define __krealign_d(ptr,alignment,size,flags,...) _krealign(ptr,alignment,size,flags)
-#   define __kfree_d(ptr,...)                         _kfree(ptr)
-#   define __kffree_d(ptr,flags,...)                  _kffree(ptr,flags)
-#   define __kmalloc_usable_size_d(ptr,...)           _kmalloc_usable_size(ptr)
-#   define __kmalloc_flags_d(ptr,...)                 _kmalloc_flags(ptr)
-#   define __kmemdup_d(ptr,size,flags,...)            _kmemdup(ptr,size,flags)
-#   define __kmemadup_d(ptr,alignment,size,flags,...) _kmemadup(ptr,alignment,size,flags)
+#   define __kmalloc_d(n_bytes,flags,...)                _kmalloc(n_bytes,flags)
+#   define __kmemalign_d(alignment,n_bytes,flags,...)    _kmemalign(alignment,n_bytes,flags)
+#   define __krealloc_d(ptr,n_bytes,flags,...)           _krealloc(ptr,n_bytes,flags)
+#   define __krealign_d(ptr,alignment,n_bytes,flags,...) _krealign(ptr,alignment,n_bytes,flags)
+#   define __kfree_d(ptr,...)                            _kfree(ptr)
+#   define __kffree_d(ptr,flags,...)                     _kffree(ptr,flags)
+#   define __kmalloc_usable_size_d(ptr,...)              _kmalloc_usable_size(ptr)
+#   define __kmalloc_flags_d(ptr,...)                    _kmalloc_flags(ptr)
+#   define __kmemdup_d(ptr,n_bytes,flags,...)            _kmemdup(ptr,n_bytes,flags)
+#   define __kmemadup_d(ptr,alignment,n_bytes,flags,...) _kmemadup(ptr,alignment,n_bytes,flags)
 #   define __kmallopt_d(parameter_number,parameter_value,flags,...) \
             _kmallopt(parameter_number,parameter_value,flags)
 #endif /* __USE_DEBUG == 0 */
 #endif /* __USE_DEBUG */
 #else /* __OPTIMIZE__ */
-#   define _kmalloc(size,flags)                __kmalloc(size,flags)
-#   define _kmemalign(alignment,size,flags)    __kmemalign(alignment,size,flags)
-#   define _krealloc(ptr,size,flags)           __krealloc(ptr,size,flags)
-#   define _krealign(ptr,alignment,size,flags) __krealign(ptr,alignment,size,flags)
-#   define _kfree(ptr)                         __kfree(ptr)
-#   define _kffree(ptr,flags)                  __kffree(ptr,flags)
-#   define _kmalloc_usable_size(ptr)           __kmalloc_usable_size(ptr)
-#   define _kmalloc_flags(ptr)                 __kmalloc_flags(ptr)
-#   define _kmemdup(ptr,size,flags)            __kmemdup(ptr,size,flags)
-#   define _kmemadup(ptr,alignment,size,flags) __kmemadup(ptr,alignment,size,flags)
+#   define _kmalloc(n_bytes,flags)                __kmalloc(n_bytes,flags)
+#   define _kmemalign(alignment,n_bytes,flags)    __kmemalign(alignment,n_bytes,flags)
+#   define _krealloc(ptr,n_bytes,flags)           __krealloc(ptr,n_bytes,flags)
+#   define _krealign(ptr,alignment,n_bytes,flags) __krealign(ptr,alignment,n_bytes,flags)
+#   define _kfree(ptr)                            __kfree(ptr)
+#   define _kffree(ptr,flags)                     __kffree(ptr,flags)
+#   define _kmalloc_usable_size(ptr)              __kmalloc_usable_size(ptr)
+#   define _kmalloc_flags(ptr)                    __kmalloc_flags(ptr)
+#   define _kmemdup(ptr,n_bytes,flags)            __kmemdup(ptr,n_bytes,flags)
+#   define _kmemadup(ptr,alignment,n_bytes,flags) __kmemadup(ptr,alignment,n_bytes,flags)
 #   define _kmallopt(parameter_number,parameter_value,flags) \
           __kmallopt(parameter_number,parameter_value,flags)
 #ifdef __USE_DEBUG
 #if __USE_DEBUG != 0
-#   define __kmalloc_d(size,flags,...)                _kmalloc_d(size,flags,__VA_ARGS__)
-#   define __kmemalign_d(alignment,size,flags,...)    _kmemalign_d(alignment,size,flags,__VA_ARGS__)
-#   define __krealloc_d(ptr,size,flags,...)           _krealloc_d(ptr,size,flags,__VA_ARGS__)
-#   define __krealign_d(ptr,alignment,size,flags,...) _krealign_d(ptr,alignment,size,flags,__VA_ARGS__)
-#   define __kfree_d(ptr,...)                         _kfree_d(ptr,__VA_ARGS__)
-#   define __kffree_d(ptr,flags,...)                  _kffree_d(ptr,flags,__VA_ARGS__)
-#   define __kmalloc_usable_size_d(ptr,...)           _kmalloc_usable_size_d(ptr,__VA_ARGS__)
-#   define __kmalloc_flags_d(ptr,...)                 _kmalloc_flags_d(ptr,__VA_ARGS__)
-#   define __kmemdup_d(ptr,size,flags,...)            _kmemdup_d(ptr,size,flags,__VA_ARGS__)
-#   define __kmemadup_d(ptr,alignment,size,flags,...) _kmemadup_d(ptr,alignment,size,flags,__VA_ARGS__)
+#   define __kmalloc_d(n_bytes,flags,...)                _kmalloc_d(n_bytes,flags,__VA_ARGS__)
+#   define __kmemalign_d(alignment,n_bytes,flags,...)    _kmemalign_d(alignment,n_bytes,flags,__VA_ARGS__)
+#   define __krealloc_d(ptr,n_bytes,flags,...)           _krealloc_d(ptr,n_bytes,flags,__VA_ARGS__)
+#   define __krealign_d(ptr,alignment,n_bytes,flags,...) _krealign_d(ptr,alignment,n_bytes,flags,__VA_ARGS__)
+#   define __kfree_d(ptr,...)                            _kfree_d(ptr,__VA_ARGS__)
+#   define __kffree_d(ptr,flags,...)                     _kffree_d(ptr,flags,__VA_ARGS__)
+#   define __kmalloc_usable_size_d(ptr,...)              _kmalloc_usable_size_d(ptr,__VA_ARGS__)
+#   define __kmalloc_flags_d(ptr,...)                    _kmalloc_flags_d(ptr,__VA_ARGS__)
+#   define __kmemdup_d(ptr,n_bytes,flags,...)            _kmemdup_d(ptr,n_bytes,flags,__VA_ARGS__)
+#   define __kmemadup_d(ptr,alignment,n_bytes,flags,...) _kmemadup_d(ptr,alignment,n_bytes,flags,__VA_ARGS__)
 #   define __kmallopt_d(parameter_number,parameter_value,flags,...) \
             _kmallopt_d(parameter_number,parameter_value,flags,__VA_ARGS__)
 #else /* __USE_DEBUG != 0 */
-#   define __kmalloc_d(size,flags,...)                __kmalloc(size,flags)
-#   define __kmemalign_d(alignment,size,flags,...)    __kmemalign(alignment,size,flags)
-#   define __krealloc_d(ptr,size,flags,...)           __krealloc(ptr,size,flags)
-#   define __krealign_d(ptr,alignment,size,flags,...) __krealign(ptr,alignment,size,flags)
-#   define __kfree_d(ptr,...)                         __kfree(ptr)
-#   define __kffree_d(ptr,flags,...)                  __kffree(ptr,flags)
-#   define __kmalloc_usable_size_d(ptr,...)           __kmalloc_usable_size(ptr)
-#   define __kmalloc_flags_d(ptr,...)                 __kmalloc_flags(ptr)
-#   define __kmemdup_d(ptr,size,flags,...)            __kmemdup(ptr,size,flags)
-#   define __kmemadup_d(ptr,alignment,size,flags,...) __kmemadup(ptr,alignment,size,flags)
+#   define __kmalloc_d(n_bytes,flags,...)                __kmalloc(n_bytes,flags)
+#   define __kmemalign_d(alignment,n_bytes,flags,...)    __kmemalign(alignment,n_bytes,flags)
+#   define __krealloc_d(ptr,n_bytes,flags,...)           __krealloc(ptr,n_bytes,flags)
+#   define __krealign_d(ptr,alignment,n_bytes,flags,...) __krealign(ptr,alignment,n_bytes,flags)
+#   define __kfree_d(ptr,...)                            __kfree(ptr)
+#   define __kffree_d(ptr,flags,...)                     __kffree(ptr,flags)
+#   define __kmalloc_usable_size_d(ptr,...)              __kmalloc_usable_size(ptr)
+#   define __kmalloc_flags_d(ptr,...)                    __kmalloc_flags(ptr)
+#   define __kmemdup_d(ptr,n_bytes,flags,...)            __kmemdup(ptr,n_bytes,flags)
+#   define __kmemadup_d(ptr,alignment,n_bytes,flags,...) __kmemadup(ptr,alignment,n_bytes,flags)
 #   define __kmallopt_d(parameter_number,parameter_value,flags,...) \
            __kmallopt(parameter_number,parameter_value,flags)
 #endif /* __USE_DEBUG == 0 */
@@ -461,39 +518,39 @@ ATTR_MALLOC void *(KCALL __kmemadup_d)(void const *__restrict ptr, size_t alignm
 #endif /* !__OPTIMIZE__ */
 
 #ifdef __USE_DEBUG_HOOK
-#   define kmalloc(size,flags)                __kmalloc_d(size,flags,DEBUGINFO_GEN)
-#   define kmemalign(alignment,size,flags)    __kmemalign_d(alignment,size,flags,DEBUGINFO_GEN)
-#   define krealloc(ptr,size,flags)           __krealloc_d(ptr,size,flags,DEBUGINFO_GEN)
-#   define krealign(ptr,alignment,size,flags) __krealign_d(ptr,alignment,size,flags,DEBUGINFO_GEN)
-#   define kfree(ptr)                         __kfree_d(ptr,DEBUGINFO_GEN)
-#   define kffree(ptr,flags)                  __kffree_d(ptr,flags,DEBUGINFO_GEN)
-#   define kmalloc_usable_size(ptr)           __kmalloc_usable_size_d(ptr,DEBUGINFO_GEN)
-#   define kmalloc_flags(ptr)                 __kmalloc_flags_d(ptr,DEBUGINFO_GEN)
-#   define kmemdup(ptr,size,flags)            __kmemdup_d(ptr,size,flags,DEBUGINFO_GEN)
-#   define kmemadup(ptr,alignment,size,flags) __kmemadup_d(ptr,alignment,size,flags,DEBUGINFO_GEN)
+#   define kmalloc(n_bytes,flags)                __kmalloc_d(n_bytes,flags,DEBUGINFO_GEN)
+#   define kmemalign(alignment,n_bytes,flags)    __kmemalign_d(alignment,n_bytes,flags,DEBUGINFO_GEN)
+#   define krealloc(ptr,n_bytes,flags)           __krealloc_d(ptr,n_bytes,flags,DEBUGINFO_GEN)
+#   define krealign(ptr,alignment,n_bytes,flags) __krealign_d(ptr,alignment,n_bytes,flags,DEBUGINFO_GEN)
+#   define kfree(ptr)                            __kfree_d(ptr,DEBUGINFO_GEN)
+#   define kffree(ptr,flags)                     __kffree_d(ptr,flags,DEBUGINFO_GEN)
+#   define kmalloc_usable_size(ptr)              __kmalloc_usable_size_d(ptr,DEBUGINFO_GEN)
+#   define kmalloc_flags(ptr)                    __kmalloc_flags_d(ptr,DEBUGINFO_GEN)
+#   define kmemdup(ptr,n_bytes,flags)            __kmemdup_d(ptr,n_bytes,flags,DEBUGINFO_GEN)
+#   define kmemadup(ptr,alignment,n_bytes,flags) __kmemadup_d(ptr,alignment,n_bytes,flags,DEBUGINFO_GEN)
 #   define kmallopt(parameter_number,parameter_value,flags) \
        __kmallopt_d(parameter_number,parameter_value,flags,DEBUGINFO_GEN)
 #else
-#   define kmalloc(size,flags)                _kmalloc(size,flags)
-#   define kmemalign(alignment,size,flags)    _kmemalign(alignment,size,flags)
-#   define krealloc(ptr,size,flags)           _krealloc(ptr,size,flags)
-#   define krealign(ptr,alignment,size,flags) _krealign(ptr,alignment,size,flags)
-#   define kfree(ptr)                         _kfree(ptr)
-#   define kffree(ptr,flags)                  _kffree(ptr,flags)
-#   define kmalloc_usable_size(ptr)           _kmalloc_usable_size(ptr)
-#   define kmalloc_flags(ptr)                 _kmalloc_flags(ptr)
-#   define kmemdup(ptr,size,flags)            _kmemdup(ptr,size,flags)
-#   define kmemadup(ptr,alignment,size,flags) _kmemadup(ptr,alignment,size,flags)
+#   define kmalloc(n_bytes,flags)                _kmalloc(n_bytes,flags)
+#   define kmemalign(alignment,n_bytes,flags)    _kmemalign(alignment,n_bytes,flags)
+#   define krealloc(ptr,n_bytes,flags)           _krealloc(ptr,n_bytes,flags)
+#   define krealign(ptr,alignment,n_bytes,flags) _krealign(ptr,alignment,n_bytes,flags)
+#   define kfree(ptr)                            _kfree(ptr)
+#   define kffree(ptr,flags)                     _kffree(ptr,flags)
+#   define kmalloc_usable_size(ptr)              _kmalloc_usable_size(ptr)
+#   define kmalloc_flags(ptr)                    _kmalloc_flags(ptr)
+#   define kmemdup(ptr,n_bytes,flags)            _kmemdup(ptr,n_bytes,flags)
+#   define kmemadup(ptr,alignment,n_bytes,flags) _kmemadup(ptr,alignment,n_bytes,flags)
 #   define kmallopt(parameter_number,parameter_value,flags) \
           _kmallopt(parameter_number,parameter_value,flags)
 #endif
 
 /* Helper macros for intrinsic functionality. */
-#define kcalloc(size,flags)                 kmalloc((size),(flags)|GFP_CALLOC)
-#define krecalign(ptr,alignment,size,flags) krealign(ptr,alignment,size,(flags)|GFP_CALLOC)
-#define krecalloc(ptr,size,flags)           krealloc(ptr,size,(flags)|GFP_CALLOC)
-#define krealloc_in_place(ptr,size,flags)   krealloc(ptr,size,(flags)|GFP_NOMOVE)
-#define krecalloc_in_place(ptr,size,flags)  krealloc(ptr,size,(flags)|GFP_NOMOVE|GFP_CALLOC)
+#define kcalloc(n_bytes,flags)                 kmalloc((n_bytes),(flags)|GFP_CALLOC)
+#define krecalign(ptr,alignment,n_bytes,flags) krealign(ptr,alignment,n_bytes,(flags)|GFP_CALLOC)
+#define krecalloc(ptr,n_bytes,flags)           krealloc(ptr,n_bytes,(flags)|GFP_CALLOC)
+#define krealloc_in_place(ptr,n_bytes,flags)   krealloc(ptr,n_bytes,(flags)|GFP_NOMOVE)
+#define krecalloc_in_place(ptr,n_bytes,flags)  krealloc(ptr,n_bytes,(flags)|GFP_NOMOVE|GFP_CALLOC)
 
 #endif /* __CC__ */
 

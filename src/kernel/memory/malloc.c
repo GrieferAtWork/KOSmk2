@@ -1899,45 +1899,52 @@ mheap_validate(struct dsetup *setup,
 }
 #endif
 
+/* TODO: Use `hptr_t' internally! */
+
 /* Public kernel heap API. */
-PUBLIC SAFE void *KCALL
-heap_malloc(size_t n_bytes, size_t *__restrict palloc_size, gfp_t flags) {
+PUBLIC SAFE hptr_t KCALL
+heap_malloc(size_t n_bytes, gfp_t flags) {
+ void *result; size_t heap_size = 0;
  struct mheap *heap = MHEAP_GET(flags);
  n_bytes = CEIL_ALIGN(n_bytes,HEAP_ALIGNMENT);
  mheap_write(heap);
- return mheap_acquire(heap,n_bytes,palloc_size,flags,true);
+ result = mheap_acquire(heap,n_bytes,&heap_size,flags,true);
+ return HPTR(result,heap_size);
 }
-PUBLIC SAFE void *KCALL
-heap_malloc_at(void *ptr, size_t n_bytes,
-               size_t *__restrict palloc_size,
-               gfp_t flags) {
- void *result;
+PUBLIC SAFE hptr_t KCALL
+heap_malloc_at(void *ptr, size_t n_bytes, gfp_t flags) {
+ void *result; size_t heap_size = 0;
  struct mheap *heap = MHEAP_GET(flags);
  n_bytes = CEIL_ALIGN(n_bytes,HEAP_ALIGNMENT);
  mheap_write(heap);
- result = mheap_acquire_at(heap,ptr,n_bytes,palloc_size,flags);
+ result = mheap_acquire_at(heap,ptr,n_bytes,&heap_size,flags);
  mheap_endwrite(heap);
- return result;
+ return HPTR(result,heap_size);
 }
-PUBLIC SAFE void *KCALL
-heap_memalign(size_t alignment, size_t offset, size_t n_bytes,
-              size_t *__restrict palloc_size, gfp_t flags) {
+PUBLIC SAFE hptr_t KCALL
+heap_memalign(size_t alignment, size_t offset,
+              size_t n_bytes, gfp_t flags) {
+ void *result; size_t heap_size = 0;
  struct mheap *heap = MHEAP_GET(flags);
  if (alignment < HEAP_ALIGNMENT)
       alignment = HEAP_ALIGNMENT;
  else alignment = CEIL_ALIGN(alignment,HEAP_ALIGNMENT);
  n_bytes = CEIL_ALIGN(n_bytes,HEAP_ALIGNMENT);
  mheap_write(heap);
- return mheap_acquire_al(heap,alignment,offset,n_bytes,
-                         palloc_size,flags,true);
+ result = mheap_acquire_al(heap,alignment,offset,n_bytes,
+                           &heap_size,flags,true);
+ return HPTR(result,heap_size);
 }
 
 /* Free heap memory previously allocated using `heap_*' functions. */
-PUBLIC SAFE bool KCALL heap_ffree(void *ptr, size_t size, gfp_t flags) {
+PUBLIC SAFE bool KCALL heap_ffree(hptr_t ptr, gfp_t flags) {
  struct mheap *heap = MHEAP_GET(flags);
- assert(IS_ALIGNED(size,HEAP_ALIGNMENT));
+ assert(IS_ALIGNED(HPTR_SIZE(ptr),HEAP_ALIGNMENT));
+ assert(!HPTR_SIZE(ptr) || IS_ALIGNED((uintptr_t)HPTR_ADDR(ptr),HEAP_ALIGNMENT));
+ /* Revert the contents of the given memory range to their defaults. */
+ mheap_resetdebug(HPTR_ADDR(ptr),HPTR_SIZE(ptr),flags);
  mheap_write(heap);
- return mheap_release(heap,ptr,size,flags,true);
+ return mheap_release(heap,HPTR_ADDR(ptr),HPTR_SIZE(ptr),flags,true);
 }
 
 
