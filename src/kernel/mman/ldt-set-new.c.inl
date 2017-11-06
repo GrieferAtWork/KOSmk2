@@ -198,7 +198,7 @@ err_delgdt:
     /* If the calling thread was apart of the set,
      * we must make sure to update them as well! */
     if (i_am_apart)
-        __asm__ __volatile__("lldt %0\n" : : "g" (nldt->l_gdt));
+        __asm__ __volatile__("lldt %w0\n" : : "g" (nldt->l_gdt));
   }
   ldt_endread(nldt);
  } else {

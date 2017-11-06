@@ -36,7 +36,7 @@ DECL_BEGIN
 #define __TASK_SWITCH_LDT(old,new) \
     if ((old)->t_arch.at_ldt_gdt != \
         (new)->t_arch.at_ldt_gdt) { \
-     __asm__ __volatile__("lldt %0\n" : : "g" ((new)->t_arch.at_ldt_gdt)); \
+     __asm__ __volatile__("lldt %w0\n" : : "g" ((new)->t_arch.at_ldt_gdt)); \
     }
 #endif
 
