@@ -27,6 +27,7 @@
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
+#include <hybrid/host.h>
 #include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/paging-util.h>
@@ -39,50 +40,62 @@
 #include <sys/mman.h>
 #include <stdlib.h>
 #include <kernel/arch/hints.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
 /* Counter pointers until NULL, returning that
  * number or -EFAULT if a fault occurred. */
 INTDEF ssize_t FCALL count_pointers(USER char *USER *vec);
-#ifdef __i386__
+#if defined(__x86_64__) || defined(__i386__)
 GLOBAL_ASM(
 L(PRIVATE_ENTRY(count_pointers)                           )
+#ifndef __x86_64__
 L(    pushl %esi                                          )
-L(    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %edx           )
+#endif /* !__x86_64__ */
+L(    movx  ASM_CPU(CPU_OFFSETOF_RUNNING), %xdx           )
+#ifdef __x86_64__
+L(    movq $3f, %r8; pushq %r8                            )
+L(    movq $(EXC_PAGE_FAULT), %r8; pushq %r8              )
+#else
 L(    pushl $3f                                           )
 L(    pushl $(EXC_PAGE_FAULT)                             )
-L(    pushl TASK_OFFSETOF_IC(%edx)                        )
-L(    movl  %esp, TASK_OFFSETOF_IC(%edx)                  )
-L(    movl  %ecx, %esi                                    )
-L(    movl  TASK_OFFSETOF_ADDRLIMIT(%edx), %ecx           )
-L(    xorl  %edx, %edx                                    )
-L(    /* Do the main loop (ECX == addrlimit, EDX == result, ESI == vec) */)
-L(1:  cmpl  %ecx, %esi                                    )
+#endif
+L(    pushx TASK_OFFSETOF_IC(%xdx)                        )
+L(    movx  %xsp, TASK_OFFSETOF_IC(%xdx)                  )
+L(    movx  %FASTCALL_REG1, %xsi                          )
+L(    movx  TASK_OFFSETOF_ADDRLIMIT(%xdx), %xcx           )
+L(    xorx  %xdx, %xdx                                    )
+L(    /* Do the main loop (XCX == addrlimit, XDX == result, XSI == vec) */)
+L(1:  cmpx  %xcx, %xsi                                    )
 L(    jae   4f /* Validate the address limit. */          )
-L(6:  lodsl    /* EAX = *ESI++; */                        )
-L(    testl %eax, %eax                                    )
+L(6:  lodsx    /* XAX = *XSI++; */                        )
+L(    testx %xax, %xax                                    )
 L(    jz    7f /* if (EAX == 0) break; */                 )
-L(    incl  %edx /* ++result; */                          )
+L(    incx  %xdx /* ++result; */                          )
 L(    jmp   1b                                            )
-L(7:  movl  %edx, %eax                                    )
-L(5:  movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %edx           )
-L(    popl  TASK_OFFSETOF_IC(%edx)                        )
-L(    addl  $8, %esp                                      )
+L(7:  movx  %xdx, %xax                                    )
+L(5:  movx  ASM_CPU(CPU_OFFSETOF_RUNNING), %xdx           )
+L(    popx  TASK_OFFSETOF_IC(%xdx)                        )
+L(    addx  $(2*XSZ), %xsp                                )
+#ifdef __x86_64__
+L(2:  ret                                                 )
+#else
 L(2:  popl  %esi                                          )
 L(    ret                                                 )
-L(3:  movl $(-EFAULT), %eax                               )
-L(    jmp  2b                                             )
-L(4:  movl $(-EFAULT), %eax                               )
-L(    cmpl $__kernel_user_start, %esi                     )
-L(    jb   5b                                             )
-L(    cmpl $__kernel_user_end, %esi                       )
-L(    jae  5b                                             )
-L(    jmp  6b /* Allow points apart of user-share */      )
+#endif /* !__x86_64__ */
+L(3:  movx  $(-EFAULT), %xax                              )
+L(    jmp   2b                                            )
+L(4:  movx  $(-EFAULT), %xax                              )
+L(    cmpx  $__kernel_user_start, %xsi                    )
+L(    jb    5b                                            )
+L(    cmpx  $__kernel_user_end, %xsi                      )
+L(    jae   5b                                            )
+L(    jmp   6b /* Allow points apart of user-share */     )
 L(SYM_END(count_pointers)                                 )
 );
 #else
-#error FIXME
+#error "Error: Unsupported Architecture"
 #endif
 
 #define CONFIG_ENVIRON_USE_TEMPORARY_BUFFER 1
@@ -120,7 +133,9 @@ mman_setenviron_unlocked(struct mman *__restrict self,
                                        PROT_READ|PROT_WRITE,
                                        PROT_READ|PROT_WRITE);
  if (!has_env) old_total_pages = 0;
-#if 1
+#ifndef CONFIG_PDIR_SELFMAP
+ keep_environ    = has_env && !envp;
+#elif 1
  /* Linux also allows NULL for keeping the old environment block (but doing so is an extension). */
  keep_environ    = has_env && (!envp || (envp == ENVDATA_ENVV(*old_environ) &&
                   !thispdir_isdirty(&self->m_pdir,old_environ,old_total_pages)));
@@ -344,6 +359,7 @@ done:
  syslog(LOG_DEBUG,"Environment block:\n%.?[hex]\n",new_total_size,new_environ);
 #endif
 
+#ifdef CONFIG_PDIR_SELFMAP
  /* Unset the dirty bit on all environment pages, thus allowing
   * us to optimize skipping environment re-loading the next time
   * we're called with a matching pointer for `envp'. */
@@ -351,6 +367,7 @@ done:
  assert(thispdir_isdirty(&self->m_pdir,new_environ,new_total_pages));
  thispdir_undirty(&self->m_pdir,new_environ,new_total_pages);
  assert(!thispdir_isdirty(&self->m_pdir,new_environ,new_total_pages));
+#endif
  
  /* Update environment tracking variables. */
  self->m_envsize = new_total_pages;

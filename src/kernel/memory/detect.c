@@ -74,7 +74,7 @@ SAFE KPD size_t KCALL detect_e820(void) {
   s.gp.eax = 0xe820;
   s.gp.ecx = sizeof(struct smap_entry);
   s.gp.edx = 0x534d4150;
-  s.gp.edi = (u32)entry;
+  s.gp.edi = (u32)(uintptr_t)entry;
   s.gp.sp  = REALMODE_EARLY_STACK;
   early_rm_interrupt(&s,0x15); /* Execute realmode interrupt. */
   if (s.eflags & EFLAGS_CF) break; /* Unsupported. */

@@ -765,81 +765,47 @@ got_symbol:
 #endif
    switch (type) {
 
-#ifdef __i386__
-   case R_386_NONE: break;
 
-   case R_386_32:
-    DATA_CHECK(rel_addr,4);
-    *(u32 *)rel_addr += (u32)rel_value;
-    break;
-   case R_386_PC32:
-    DATA_CHECK(rel_addr,4);
-    *(u32 *)rel_addr += (u32)((uintptr_t)rel_value-
-                              (uintptr_t)rel_addr);
-    break;
+#ifdef __x86_64__
+#define R_NONE      R_X86_64_NONE
+#define R_8         R_X86_64_8
+#define R_PC8       R_X86_64_PC8
+#define R_16        R_X86_64_16
+#define R_PC16      R_X86_64_PC16
+#define R_32        R_X86_64_32
+#define R_32_ALT    R_X86_64_32S
+#define R_PC32      R_X86_64_PC32
+#define R_64        R_X86_64_64
+#define R_COPY      R_X86_64_COPY
+#define R_GLOB_DATA R_X86_64_GLOB_DAT
+#define R_JUMP_SLOT R_X86_64_JUMP_SLOT
 
-   case R_386_16:
-    DATA_CHECK(rel_addr,2);
-    *(u16 *)rel_addr += (u16)rel_value;
-    break;
-   case R_386_PC16:
-    DATA_CHECK(rel_addr,2);
-    *(u16 *)rel_addr += (u16)((uintptr_t)rel_value-
-                              (uintptr_t)rel_addr);
-    break;
+ //case R_X86_64_DTPMOD64: /* TODO */ break;
+ //case R_X86_64_DTPOFF64: /* TODO */ break;
+ //case R_X86_64_TPOFF64:  /* TODO */ break;
+ //case R_X86_64_TLSGD:    /* TODO */ break;
+ //case R_X86_64_TLSLD:    /* TODO */ break;
+ //case R_X86_64_DTPOFF32: /* TODO */ break;
+ //case R_X86_64_GOTTPOFF: /* TODO */ break;
+ //case R_X86_64_TPOFF32:  /* TODO */ break;
 
-   case R_386_8:
-    DATA_CHECK(rel_addr,1);
-    *(u8 *)rel_addr += (u8)rel_value;
-    break;
-   case R_386_PC8:
-    DATA_CHECK(rel_addr,1);
-    *(u8 *)rel_addr += (u8)((uintptr_t)rel_value-
-                            (uintptr_t)rel_addr);
-    break;
-
-   case R_386_COPY:
-    if (!extern_sym) goto find_extern;
-    DATA_CHECK(rel_addr,sym->st_size);
-    if (!(patcher->p_iflags&INSTANCE_FLAG_DRIVER)) {
-     /* Make sure not to copy kernel data.
-      * NOTE: We can't just do 'DATA_CHECK(rel_value,sym->st_size)',
-      *       because the symbol may be apart of a different module.
-      *       But if it is, it would be too expensive to search
-      *       the potentially _very_ large chain of loaded modules
-      *       for the one containing `rel_value'.
-      * >> So instead we rely on the fact that the caller is capturing
-      *    page faults, and simply go ahead and copy the data.
-      *    If it fails, the caller will correctly determine `-EFAULT'
-      *    and everything can go on as normal without us having to
-      *    waste a whole much of time validating a pointer. */
-     if (rel_value+sym->st_size >= USER_END) {
-      char *sym_name = string_table+sym->st_name;
-      /* Special case: Allow relocations against user-share symbols */
-      if (rel_value             >= (uintptr_t)__kernel_user_start &&
-          rel_value+sym->st_size < (uintptr_t)__kernel_user_end) {
-      } else {
-       if (sym_name < string_table ||
-           sym_name >= string_end)
-           sym_name = "??" "?";
-       syslog(LOG_EXEC|LOG_ERROR,
-              COLDSTR("[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from `%[file]'\n"),
-              sym_name,rel_value,rel_value+sym->st_size-1,self->e_module.m_file);
-       goto end;
-      }
-     }
-    }
-    memcpy((void *)rel_addr,
-           (void *)rel_value,
-            sym->st_size);
-    break;
-
-   case R_386_GLOB_DAT:
-    if (!extern_sym) goto find_extern;
-   case R_386_JMP_SLOT:
-    DATA_CHECK(rel_addr,__SIZEOF_POINTER__);
-    *(uintptr_t *)rel_addr = (uintptr_t)rel_value;
-    break;
+    /* Linker-driven relocations.
+     * >> Can be ignored unless GrieferAtWork one day decides (again) that the
+     *    kernel should be able to execute ELF files that are not fully linked. */
+ //case R_X86_64_GOT32: break;
+ //case R_X86_64_PLT32: break;
+ //case R_X86_64_GOTPCREL: break;
+#elif defined(__i386__)
+#define R_NONE      R_386_NONE
+#define R_8         R_386_8
+#define R_PC8       R_386_PC8
+#define R_16        R_386_16
+#define R_PC16      R_386_PC16
+#define R_32        R_386_32
+#define R_PC32      R_386_PC32
+#define R_COPY      R_386_COPY
+#define R_GLOB_DATA R_386_GLOB_DAT
+#define R_JUMP_SLOT R_386_JMP_SLOT
 
  //case R_386_32PLT    : /* TODO */ break;
  //case R_386_TLS_TPOFF: /* TODO */ break;
@@ -876,6 +842,116 @@ got_symbol:
 #else
 #error FIXME
 #endif
+
+#ifdef R_NONE
+   case R_NONE: break;
+#endif
+#ifdef R_8
+   case R_8:
+    DATA_CHECK(rel_addr,1);
+    *(u8 *)rel_addr += (u8)rel_value;
+    break;
+#endif
+#ifdef R_PC8
+   case R_PC8:
+    DATA_CHECK(rel_addr,1);
+    *(u8 *)rel_addr += (u8)((uintptr_t)rel_value-
+                            (uintptr_t)rel_addr);
+    break;
+#endif
+#ifdef R_16
+   case R_16:
+    DATA_CHECK(rel_addr,2);
+    *(u16 *)rel_addr += (u16)rel_value;
+    break;
+#endif
+#ifdef R_PC16
+   case R_PC16:
+    DATA_CHECK(rel_addr,2);
+    *(u16 *)rel_addr += (u16)((uintptr_t)rel_value-
+                              (uintptr_t)rel_addr);
+    break;
+#endif
+#ifdef R_32
+   case R_32:
+#ifdef R_32_ALT
+   case R_32_ALT:
+#endif
+    DATA_CHECK(rel_addr,4);
+    *(u32 *)rel_addr += (u32)rel_value;
+    break;
+#endif
+#ifdef R_PC32
+   case R_PC32:
+    DATA_CHECK(rel_addr,4);
+    *(u32 *)rel_addr += (u32)((uintptr_t)rel_value-
+                              (uintptr_t)rel_addr);
+    break;
+#endif
+#ifdef R_64
+   case R_64:
+    DATA_CHECK(rel_addr,8);
+    *(u64 *)rel_addr += (u64)rel_value;
+    break;
+#endif
+#ifdef R_PC64
+   case R_PC64:
+    DATA_CHECK(rel_addr,8);
+    *(u64 *)rel_addr += (u64)((uintptr_t)rel_value-
+                              (uintptr_t)rel_addr);
+    break;
+#endif
+#ifdef R_COPY
+   case R_COPY:
+    if (!extern_sym) goto find_extern;
+    DATA_CHECK(rel_addr,sym->st_size);
+    if (!(patcher->p_iflags&INSTANCE_FLAG_DRIVER)) {
+     /* Make sure not to copy kernel data.
+      * NOTE: We can't just do 'DATA_CHECK(rel_value,sym->st_size)',
+      *       because the symbol may be apart of a different module.
+      *       But if it is, it would be too expensive to search
+      *       the potentially _very_ large chain of loaded modules
+      *       for the one containing `rel_value'.
+      * >> So instead we rely on the fact that the caller is capturing
+      *    page faults, and simply go ahead and copy the data.
+      *    If it fails, the caller will correctly determine `-EFAULT'
+      *    and everything can go on as normal without us having to
+      *    waste a whole much of time validating a pointer. */
+     if (rel_value+sym->st_size >= USER_END) {
+      char *sym_name = string_table+sym->st_name;
+      /* Special case: Allow relocations against user-share symbols */
+      if (rel_value             >= (uintptr_t)__kernel_user_start &&
+          rel_value+sym->st_size < (uintptr_t)__kernel_user_end) {
+      } else {
+       if (sym_name < string_table ||
+           sym_name >= string_end)
+           sym_name = "??" "?";
+       syslog(LOG_EXEC|LOG_ERROR,
+              COLDSTR("[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from `%[file]'\n"),
+              sym_name,rel_value,rel_value+sym->st_size-1,self->e_module.m_file);
+       goto end;
+      }
+     }
+    }
+    memcpy((void *)rel_addr,
+           (void *)rel_value,
+            sym->st_size);
+    break;
+#endif /* R_COPY */
+#ifdef R_GLOB_DATA
+   case R_GLOB_DATA:
+    if (!extern_sym) goto find_extern;
+    ATTR_FALLTHROUGH
+#endif
+#ifdef R_JUMP_SLOT
+   case R_JUMP_SLOT:
+#endif
+#if defined(R_JUMP_SLOT) || defined(R_GLOB_DATA)
+    DATA_CHECK(rel_addr,__SIZEOF_POINTER__);
+    *(uintptr_t *)rel_addr = (uintptr_t)rel_value;
+    break;
+#endif
+
 
    default:
     syslog(LOG_EXEC|LOG_WARN,

@@ -268,16 +268,16 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
 #else
             .gs = __KERNEL_DS,
             .fs = __KERNEL_PERCPU,
-#endif
             .es = __KERNEL_DS,
             .ds = __KERNEL_DS,
+#endif
         },
         .iret = {
-            .eip    = (uintptr_t)&cpu_idle,
+            .xip    = (uintptr_t)&cpu_idle,
             .cs     = __KERNEL_CS,
             /* All other flags don't matter, but `IF' (interrupt flag) must be set.
              * If it wasn't, the idle task would otherwise block forever! */
-            .eflags = EFLAGS_IF|EFLAGS_IOPL(0),
+            .xflags = EFLAGS_IF|EFLAGS_IOPL(0),
         },
     },
 };
@@ -576,8 +576,8 @@ INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
 #ifndef CONFIG_NO_JOBS
  /* Initialize the stack of the boot CPU's worker task. */
  WORKSTATE->iret.cs     = __KERNEL_CS;
- WORKSTATE->iret.eflags = EFLAGS_IF|EFLAGS_IOPL(3);
- WORKSTATE->iret.eip    = (u32)&cpu_jobworker;
+ WORKSTATE->iret.xflags = EFLAGS_IF|EFLAGS_IOPL(3);
+ WORKSTATE->iret.xip    = (uintptr_t)&cpu_jobworker;
  memset(&WORKSTATE->gp,0,sizeof(WORKSTATE->gp));
 #ifdef __x86_64__
  WORKSTATE->sg.fs       = __KERNEL_DS;

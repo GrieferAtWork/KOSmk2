@@ -319,6 +319,20 @@ SECTIONS {
 
 	DEFINE_HERE(__kernel_end);
 
+#ifdef __x86_64__
+	/* Define physical alternatives of symbols used by x86_64 bootstrap code. */
+	DEFINE(boot_enter_longmode_p = boot_enter_longmode - KERNEL_BASE);
+	DEFINE(boot_error_p = boot_error - KERNEL_BASE);
+	DEFINE(boot_erstr0_p = boot_erstr0 - KERNEL_BASE);
+	DEFINE(boot_erstr1_p = boot_erstr1 - KERNEL_BASE);
+	DEFINE(boot_erstr2_p = boot_erstr2 - KERNEL_BASE);
+	DEFINE(boot_erstr3_p = boot_erstr3 - KERNEL_BASE);
+	DEFINE(boot_print_p = boot_print - KERNEL_BASE);
+	DEFINE(__bootstack_p = __bootstack - KERNEL_BASE);
+	DEFINE(__bootcpu_gdt_p = __bootcpu_gdt - KERNEL_BASE);
+#endif
+
+
 	DEFINE(__kernel_size      = ABSOLUTE(__kernel_end - __kernel_start));
 	DEFINE(__kernel_ro_size   = ABSOLUTE(__kernel_ro_end - __kernel_start));
 	DEFINE(__kernel_rw_size   = ABSOLUTE(__kernel_end - __kernel_rw_start));

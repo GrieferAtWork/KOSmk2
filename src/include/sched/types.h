@@ -103,7 +103,7 @@ struct timespec;
 
 #ifdef __CC__
 ATTR_ALIGNED(TASKSIGSLOT_ALIGN)
-struct tasksigslot {
+struct PACKED tasksigslot {
  struct task        *tss_self; /*< [1..1][const][== :.:this] Task-self pointer. */
  struct sig         *tss_sig;  /*< [0..1][lock(PRIVATE(THIS_TASK))] When non-NULL, pointer to the signal this slot is receiving. */
  LIST_NODE(struct tasksigslot)
@@ -154,8 +154,9 @@ struct tasksigslot {
 #define TASKSIG_OFFSETOF_SLOTV  (TASKSIGSLOT_SIZE+2*__SIZEOF_SIZE_T__)
 #define TASKSIG_OFFSETOF_RECV   (TASKSIGSLOT_SIZE+2*__SIZEOF_SIZE_T__+__SIZEOF_POINTER__)
 #define TASKSIG_SIZE            (TASKSIGSLOT_SIZE+2*__SIZEOF_SIZE_T__+2*__SIZEOF_POINTER__)
+#define TASKSIG_ALIGN            TASKSIGSLOT_ALIGN
 #ifdef __CC__
-struct tasksig {
+struct PACKED tasksig {
  struct tasksigslot  ts_first; /*< A single task slot behaving identical to 'ts_slotv',
                                 *  that is used to prevent allocation errors/overhead when
                                 *  only receiving a single signal (as is the case most often)
@@ -175,7 +176,7 @@ struct tasksig {
 #define HSTACK_OFFSETOF_END    __SIZEOF_POINTER__
 #define HSTACK_SIZE           (__SIZEOF_POINTER__*2)
 #ifdef __CC__
-struct hstack {
+struct PACKED hstack {
  /* Controller for host (kernel) stacks. (mapped in `&mman_kernel')
   * NOTE: The kernel uses this simplified version of a stack, since it is
   *       impossible to create stacks using guard pages in kernel-space,
@@ -382,7 +383,7 @@ typedef int pidtype_t;
 #define THREAD_PID_OFFSETOF_GROUPLINK (6*__SIZEOF_POINTER__+4*ATOMIC_RWLOCK_SIZE+PIDTYPE_COUNT*THREAD_LINK_SIZE)
 #define THREAD_PID_SIZE               (8*__SIZEOF_POINTER__+4*ATOMIC_RWLOCK_SIZE+PIDTYPE_COUNT*THREAD_LINK_SIZE)
 #ifdef __CC__
-struct thread_link {
+struct PACKED thread_link {
  pid_t                       tl_pid;  /*< Global/Local thread-id. */
  WEAK LIST_NODE(struct task) tl_link; /*< [0..1][lock(tp_ns->pn_lock)][valid_if(tl_ns != NULL)] PID namespace hash-map entry within 'tl_ns'. */
  REF struct pid_namespace   *tl_ns;   /*< [0..1][lock(WRITE(:t_mode == TASKMODE_TERMINATED))] The pid namespace used to map 'tl_pid'.
@@ -392,7 +393,7 @@ struct thread_link {
                                        *   NOTE: This reference is still valid, even when ':t_refcnt == 0' */
 };
 
-struct thread_pid {
+struct PACKED thread_pid {
  /* HINT: `inittask', as well as CPU-idle tasks are their own parent & leader. */
  atomic_rwlock_t             tp_parlock;   /*< Lock for accessing 'tp_parent' */
  REF struct task            *tp_parent;    /*< [lock(tp_parlock)][1..1][REF_IF(!= :self)][valid_if(:t_mode != TASKMODE_NOTSTARTED)]
@@ -483,10 +484,10 @@ LOCAL pid_t KCALL thread_pid_getppid(struct thread_pid *__restrict self, pidtype
 #define TASK_GETSID(self)   0 /* TODO */
 
 
-struct pid_bucket {
+struct PACKED pid_bucket {
  WEAK REF LIST_HEAD(struct task) pb_chain; /*< [0..1][lock(:pn_lock)] Linked list of tasks sharing this modulated PID-hash. */
 };
-struct pid_namespace {
+struct PACKED pid_namespace {
  ATOMIC_DATA ref_t  pn_refcnt; /*< Reference counter for this PID namespace. */
  pidtype_t          pn_type;   /*< [const] The type of process identifier managed by this namespace.
                                 *   NOTE: Used as index into the 'tp_ids' vector of all managed tasks. */
@@ -573,10 +574,10 @@ FUNDEF void KCALL sigpending_fini(struct sigpending *__restrict self);
 
 #if defined(__x86_64__) || defined(__i386__)
 #   define SIGENTER_OFFSETOF_COUNT      0
-#   define SIGENTER_OFFSETOF_EIP        __SIZEOF_POINTER__
+#   define SIGENTER_OFFSETOF_XIP        __SIZEOF_POINTER__
 #   define SIGENTER_OFFSETOF_CS      (2*__SIZEOF_POINTER__)
-#   define SIGENTER_OFFSETOF_EFLAGS  (3*__SIZEOF_POINTER__)
-#   define SIGENTER_OFFSETOF_USERESP (4*__SIZEOF_POINTER__)
+#   define SIGENTER_OFFSETOF_XFLAGS  (3*__SIZEOF_POINTER__)
+#   define SIGENTER_OFFSETOF_USERXSP (4*__SIZEOF_POINTER__)
 #   define SIGENTER_OFFSETOF_SS      (5*__SIZEOF_POINTER__)
 #   define SIGENTER_SIZE             (6*__SIZEOF_POINTER__)
 #else
@@ -586,7 +587,7 @@ FUNDEF void KCALL sigpending_fini(struct sigpending *__restrict self);
 #ifdef __CC__
 struct sigenter_info;
 
-struct sigenter {
+struct PACKED sigenter {
 #if defined(__x86_64__) || defined(__i386__)
  size_t     se_count; /*< Amount of Signals that need handling. */
  /* Return register values (These were overwritten near the kernel stack base).
@@ -662,47 +663,65 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #else
 #define TASK_OFFSETOF_FLAGS        (2*__SIZEOF_REF_T__+__SIZEOF_POINTER__)
 #endif
-#define TASK_OFFSETOF_STATE        (TASK_OFFSETOF_FLAGS+2)
-#define TASK_OFFSETOF_SCHED        (TASK_OFFSETOF_FLAGS+4)
-#define TASK_OFFSETOF_SIGNALS      (TASK_OFFSETOF_FLAGS+4+2*__SIZEOF_POINTER__)
-#define TASK_OFFSETOF_TIMEOUT      (TASK_OFFSETOF_FLAGS+4+2*__SIZEOF_POINTER__+TASKSIG_SIZE)
+#define TASK_OFFSETOF_MODE         (TASK_OFFSETOF_FLAGS+2)
+#define TASK_OFFSETOF_SCHED        (TASK_OFFSETOF_FLAGS+__SIZEOF_POINTER__)
+#define __CN_TASK_OFFSETOF_SIGNALS (TASK_OFFSETOF_FLAGS+3*__SIZEOF_POINTER__)
 #ifdef CONFIG_JIFFY_TIMEOUT
-#define __TASK_SIZEOF_TIMEOUT       __SIZEOF_JTIME_T__
+#   define __TASK_SIZEOF_TIMEOUT       __SIZEOF_JTIME_T__
 #else /* CONFIG_JIFFY_TIMEOUT */
-#define __TASK_SIZEOF_TIMEOUT       __SIZEOF_TIMESPEC
+#   define __TASK_SIZEOF_TIMEOUT       __SIZEOF_TIMESPEC
 #endif /* !CONFIG_JIFFY_TIMEOUT */
-#define TASK_OFFSETOF_PRIORITY     (TASK_OFFSETOF_FLAGS+4+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT)
-#define TASK_OFFSETOF_PRIOSCORE    (TASK_OFFSETOF_FLAGS+5+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT)
-#define TASK_OFFSETOF_EXITCODE     (TASK_OFFSETOF_FLAGS+8+2*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT)
-#define TASK_OFFSETOF_EVENT        (TASK_OFFSETOF_FLAGS+8+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT)
-#define TASK_OFFSETOF_CRITICAL     (TASK_OFFSETOF_FLAGS+8+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
-#define TASK_OFFSETOF_NOINTR       (TASK_OFFSETOF_FLAGS+12+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
-#define TASK_OFFSETOF_ADDRLIMIT    (TASK_OFFSETOF_FLAGS+16+3*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
-#define TASK_OFFSETOF_IC           (TASK_OFFSETOF_FLAGS+16+4*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
-#define TASK_OFFSETOF_SUSPEND      (TASK_OFFSETOF_FLAGS+16+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
-#define TASK_OFFSETOF_PID          (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE)
-#define TASK_OFFSETOF_HSTACK       (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE)
-#define TASK_OFFSETOF_LASTCR2      (TASK_OFFSETOF_FLAGS+24+5*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_MMAN_TASKS   (TASK_OFFSETOF_FLAGS+24+6*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_REAL_MMAN    (TASK_OFFSETOF_FLAGS+24+8*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_MMAN         (TASK_OFFSETOF_FLAGS+24+9*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_FDMAN        (TASK_OFFSETOF_FLAGS+24+10*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_USTACK       (TASK_OFFSETOF_FLAGS+24+11*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGHAND      (TASK_OFFSETOF_FLAGS+24+12*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGBLOCK     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
-#define TASK_OFFSETOF_SIGPEND      (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__)
-#define TASK_OFFSETOF_SIGSHARE     (TASK_OFFSETOF_FLAGS+24+13*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
-#define TASK_OFFSETOF_SIGENTER     (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__)
-#ifndef CONFIG_NO_TLB
-#define TASK_OFFSETOF_TLB          (TASK_OFFSETOF_FLAGS+24+14*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
-#endif /* !CONFIG_NO_TLB */
-#ifdef ARCHTASK_SIZE
-#define TASK_OFFSETOF_ARCH         (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
-#define __TASK_SIZE                (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE+ARCHTASK_SIZE)
+#if (__CN_TASK_OFFSETOF_SIGNALS % TASKSIG_ALIGN) == 0
+#   define TASK_OFFSETOF_SIGNALS      __CN_TASK_OFFSETOF_SIGNALS
+#   define TASK_OFFSETOF_TIMEOUT     (TASK_OFFSETOF_FLAGS+3*__SIZEOF_POINTER__+TASKSIG_SIZE)
+#   define __TASK_OFFSETAFTER_TMSIGS (TASK_OFFSETOF_TIMEOUT+__TASK_SIZEOF_TIMEOUT)
 #else
-#define __TASK_SIZE                (TASK_OFFSETOF_FLAGS+24+15*__SIZEOF_POINTER__+TASKSIG_SIZE+__TASK_SIZEOF_TIMEOUT+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+SIGPENDING_SIZE+__SIZEOF_SIGSET_T__+SIGENTER_SIZE)
+#   define __TASK_SIGNALS_AFTER_TIMEOUT 1
+#   undef __CN_TASK_OFFSETOF_SIGNALS
+#   define TASK_OFFSETOF_TIMEOUT      (TASK_OFFSETOF_FLAGS+3*__SIZEOF_POINTER__)
+#   define TASK_OFFSETOF_SIGNALS      (TASK_OFFSETOF_FLAGS+3*__SIZEOF_POINTER__+__TASK_SIZEOF_TIMEOUT)
+#   define __TASK_OFFSETAFTER_TMSIGS  (TASK_OFFSETOF_SIGNALS+TASKSIG_SIZE)
 #endif
-#define TASK_ALIGN                  TASKSIGSLOT_ALIGN
+#define TASK_OFFSETOF_PRIORITY      __TASK_OFFSETAFTER_TMSIGS
+#define TASK_OFFSETOF_PRIOSCORE    (__TASK_OFFSETAFTER_TMSIGS+1)
+#define TASK_OFFSETOF_EXITCODE     (__TASK_OFFSETAFTER_TMSIGS+__SIZEOF_POINTER__)
+#define TASK_OFFSETOF_EVENT        (__TASK_OFFSETAFTER_TMSIGS+2*__SIZEOF_POINTER__)
+#define TASK_OFFSETOF_CRITICAL     (__TASK_OFFSETAFTER_TMSIGS+2*__SIZEOF_POINTER__+SIG_SIZE)
+#define TASK_OFFSETOF_NOINTR       (__TASK_OFFSETAFTER_TMSIGS+4+2*__SIZEOF_POINTER__+SIG_SIZE)
+#define TASK_OFFSETOF_ADDRLIMIT    (__TASK_OFFSETAFTER_TMSIGS+8+2*__SIZEOF_POINTER__+SIG_SIZE)
+#define TASK_OFFSETOF_IC           (__TASK_OFFSETAFTER_TMSIGS+8+3*__SIZEOF_POINTER__+SIG_SIZE)
+#define TASK_OFFSETOF_SUSPEND      (__TASK_OFFSETAFTER_TMSIGS+8+4*__SIZEOF_POINTER__+SIG_SIZE)
+#define TASK_OFFSETOF_PID          (__TASK_OFFSETAFTER_TMSIGS+16+4*__SIZEOF_POINTER__+SIG_SIZE)
+#define TASK_OFFSETOF_HSTACK       (__TASK_OFFSETAFTER_TMSIGS+16+4*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE)
+#define TASK_OFFSETOF_LASTCR2      (__TASK_OFFSETAFTER_TMSIGS+16+4*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_MMAN_TASKS   (__TASK_OFFSETAFTER_TMSIGS+16+5*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_REAL_MMAN    (__TASK_OFFSETAFTER_TMSIGS+16+7*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_MMAN         (__TASK_OFFSETAFTER_TMSIGS+16+8*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_FDMAN        (__TASK_OFFSETAFTER_TMSIGS+16+9*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_USTACK       (__TASK_OFFSETAFTER_TMSIGS+16+10*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#ifndef CONFIG_NO_SIGNALS
+#define TASK_OFFSETOF_SIGHAND      (__TASK_OFFSETAFTER_TMSIGS+16+11*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_SIGBLOCK     (__TASK_OFFSETAFTER_TMSIGS+16+12*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE)
+#define TASK_OFFSETOF_SIGPEND      (__TASK_OFFSETAFTER_TMSIGS+16+12*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__)
+#define TASK_OFFSETOF_SIGSHARE     (__TASK_OFFSETAFTER_TMSIGS+16+12*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__+SIGPENDING_SIZE)
+#define TASK_OFFSETOF_SIGENTER     (__TASK_OFFSETAFTER_TMSIGS+16+13*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__+SIGPENDING_SIZE)
+#define __TASK_OFFSETAFTER_SIGENTER (__TASK_OFFSETAFTER_TMSIGS+16+13*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__+SIGPENDING_SIZE+SIGENTER_SIZE)
+#else /* !CONFIG_NO_SIGNALS */
+#define __TASK_OFFSETAFTER_SIGENTER TASK_OFFSETOF_USTACK
+#endif /* CONFIG_NO_SIGNALS */
+#ifndef CONFIG_NO_TLB
+#define TASK_OFFSETOF_TLB           __TASK_OFFSETAFTER_SIGENTER
+#define __TASK_OFFSETAFTER_TLB     (__TASK_OFFSETAFTER_SIGENTER+__SIZEOF_POINTER__)
+#else /* !CONFIG_NO_TLB */
+#define __TASK_OFFSETAFTER_TLB      __TASK_OFFSETAFTER_SIGENTER
+#endif /* CONFIG_NO_TLB */
+#ifdef ARCHTASK_SIZE
+#define TASK_OFFSETOF_ARCH          __TASK_OFFSETAFTER_TLB
+#define __TASK_SIZE                (__TASK_OFFSETAFTER_TLB+ARCHTASK_SIZE)
+#else
+#define __TASK_SIZE                 __TASK_OFFSETAFTER_TLB
+#endif
+#define TASK_ALIGN                  TASKSIG_ALIGN
 #if (__TASK_SIZE % TASK_ALIGN) != 0
 #   define TASK_SIZE              ((__TASK_SIZE+(TASK_ALIGN-1))&~(TASK_ALIGN-1))
 #else
@@ -710,10 +729,10 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #endif
 
 #ifdef __CC__
-struct task {
+struct PACKED task {
  ATOMIC_DATA ref_t       t_refcnt;    /*< Task reference counter. */
  ATOMIC_DATA ref_t       t_weakcnt;   /*< Task weak reference counter. */
-union{
+union PACKED {
  HOST struct cpustate   *t_cstate;    /*< [1..1][in(t_hstack)][lock(PRIVATE(THIS_CPU))]
                                        *  [valid_if(t_mode != TASKMODE_RUNNING || t_cpu->c_running != this)]
                                        *  Pointer to a location on the host stack, describing the CPU state to return to when switching to the task. */
@@ -729,16 +748,21 @@ union{
 #else /* CONFIG_SMP */
 #define TASK_CPU(x) (&__bootcpu)
 #endif /* !CONFIG_SMP */
+union PACKED {
+ uintptr_t             __t_align0;    /* Align by pointers. */
+struct PACKED {
  taskflag_t              t_flags;     /*< [lock(THIS_TASK || (t_mode != TASKMODE_RUNNING && t_cpu->c_lock))]
                                        *   Task flags (Set of `TASKFLAG_*'). */
  taskmode_t              t_mode;      /*< [lock(TASK_CPU(self)->c_lock)] The current task mode. */
- u8                      t_padding;   /*< ... */
- union {
+};};
+ union PACKED {
   RING_NODE(struct task) sd_running;  /*< [valid_if(t_mode == TASKMODE_RUNNING)][lock(PRIVATE(t_cpu == THIS_CPU))] Ring entry for tasks running on `t_cpu'. */
   LIST_NODE(struct task) sd_sleeping; /*< [valid_if(t_mode == TASKMODE_WAKEUP || t_mode == TASKMODE_SLEEPING)][lock(t_cpu->c_lock)] List entry of wakeup/sleeping tasks. */
   LIST_NODE(struct task) sd_suspended;/*< [valid_if(t_mode == TASKMODE_SUSPENDED)][lock(t_cpu->c_lock)] List entry of suspended tasks. */
  }                       t_sched;     /*< Scheduling chain data. */
+#ifndef __TASK_SIGNALS_AFTER_TIMEOUT
  struct tasksig          t_signals;   /*< [lock(THIS_TASK || (t_mode != TASKMODE_RUNNING && t_cpu->c_lock))] Signal wait controller. */
+#endif /* !__TASK_SIGNALS_AFTER_TIMEOUT */
 #ifdef CONFIG_JIFFY_TIMEOUT
  jtime_t                 t_timeout;   /*< [valid_if(t_mode == TASKMODE_WAKEUP ||t_mode == TASKMODE_SLEEPING)][lock(t_cpu->c_lock)]
                                        *  Timeout used when sleeping. When this time expires, the task is re-scheduled during the
@@ -748,9 +772,15 @@ union{
                                        *  Timeout used when sleeping. When this time expires, the task is re-scheduled during the
                                        *  next IRQ of the associated CPU, and the last blocking operation will fail with `-ETIMEDOUT'. */
 #endif /* !CONFIG_JIFFY_TIMEOUT */
+#ifdef __TASK_SIGNALS_AFTER_TIMEOUT
+ struct tasksig          t_signals;   /*< [lock(THIS_TASK || (t_mode != TASKMODE_RUNNING && t_cpu->c_lock))] Signal wait controller. */
+#endif /* __TASK_SIGNALS_AFTER_TIMEOUT */
+union PACKED {
+ uintptr_t             __t_align1;    /* Align by pointers. */
+struct PACKED {
  taskprio_t              t_priority;  /*< [lock(t_cpu == THIS_CPU || READ(ATOMIC))] The effective task priority. */
  taskprio_t              t_prioscore; /*< [lock(t_cpu == THIS_CPU)] Current priority score. */
- u16                     t_padding2;  /*< ... */
+};};
  void                   *t_exitcode;  /*< [lock(t_cpu->c_lock)] Exitcode of the thread. */
  struct sig              t_event;     /*< Signal send when certain internal events are triggered: 
                                        *   - after `t_mode' is set to `TASKMODE_TERMINATED'
@@ -785,11 +815,13 @@ union{
                                         *   It may not contain the correct value! (s.a.: `TASK_PDIR_KERNEL_BEGIN') */
  REF struct fdman        *t_fdman;     /*< [lock(PRIVATE(THIS_TASK))][1..1] This task's file descriptor manager. */
  REF struct stack        *t_ustack;    /*< [0..1][lock(PRIVATE(THIS_TASK))] Userspace stack (if allocated). */
+#ifndef CONFIG_NO_SIGNALS
  REF struct sighand      *t_sighand;   /*< [1..1][const] Userspace signal handlers. */
  __sigset_t               t_sigblock;  /*< [lock(PRIVATE(THIS_TASK))] Set of signals currently being blocked by this task. */
  struct sigpending        t_sigpend;   /*< Controller for pending signals. */
  REF struct sigshare     *t_sigshare;  /*< [1..1] Controller for shared signal data (Including the shared pending-signal list). */
  struct sigenter          t_sigenter;  /*< Signal enter controller. */
+#endif /* !CONFIG_NO_SIGNALS */
 #ifndef CONFIG_NO_TLB
  PAGE_ALIGNED USER struct tlb *t_tlb;  /*< [0..1|null(PAGE_ERROR)][owned] A user-space memory mapping for this task's thread-local information block.
                                         *  NOTE: During context switching, the calling CPU's GDT is updated to the new task's tlb and tib.
@@ -826,15 +858,18 @@ LOCAL SAFE pid_t KCALL thread_pid_getppid(struct thread_pid *__restrict self, pi
 
 #ifndef CONFIG_NO_JOBS
 #ifdef __CC__
-struct job {
+struct PACKED job {
  LIST_NODE(struct job) j_next;  /*< [lock(:c_lock)] Next job to-be performed. */
  void          (KCALL *j_work)(void *data); /*< [const][1..1] The job function to-be called. */
  void                 *j_data;  /*< [const] Data argument passed to 'j_work' */
  struct instance      *j_owner; /*< [const][1..1] The owner module of this job. */
 #ifdef CONFIG_JIFFY_TIMEOUT
+union PACKED {
  jtime_t               j_time;  /*< [INTERN] Point in time when a delayed job should be executed.
                                  *   NOTE: Delayed jobs are tack independently of regular jobs,
                                  *         and are sorted ascendingly by time of execution. */
+ uintptr_t           __j_align;
+};
 #else /* CONFIG_JIFFY_TIMEOUT */
  struct timespec       j_time;  /*< [INTERN] Point in time when a delayed job should be executed.
                                  *   NOTE: Delayed jobs are tack independently of regular jobs,
@@ -857,15 +892,15 @@ struct job {
 #define CPU_OFFSETOF_ID          (3*__SIZEOF_POINTER__)
 #define CPU_OFFSETOF_PRIO_MIN    (3*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__)
 #define CPU_OFFSETOF_PRIO_MAX    (3*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+1)
-#define CPU_OFFSETOF_LOCK        (3*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2)
-#define CPU_OFFSETOF_SUSPENDED   (3*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE)
-#define CPU_OFFSETOF_SLEEPING    (4*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+2+ATOMIC_RWLOCK_SIZE)
-#define CPU_OFFSETOF_IDLE        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE)
+#define CPU_OFFSETOF_LOCK        (4*__SIZEOF_POINTER__)
+#define CPU_OFFSETOF_SUSPENDED   (4*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE)
+#define CPU_OFFSETOF_SLEEPING    (5*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE)
+#define CPU_OFFSETOF_IDLE        (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE)
 #ifndef CONFIG_NO_JOBS
-#define CPU_OFFSETOF_WORK        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
-#define CPU_OFFSETOF_ARCH        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
+#define CPU_OFFSETOF_WORK        (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
+#define CPU_OFFSETOF_ARCH        (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
 #else
-#define CPU_OFFSETOF_ARCH        (5*__SIZEOF_POINTER__+__SIZEOF_CPUID_T__+6+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
+#define CPU_OFFSETOF_ARCH        (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
 #endif
 #define CPU_OFFSETOF_N_RUN       (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE)
 #define CPU_OFFSETOF_N_IDLE      (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+__SIZEOF_SIZE_T__)
@@ -880,7 +915,7 @@ struct job {
 #endif
 
 #ifdef __CC__
-struct cpu {
+struct PACKED cpu {
  /* NOTE: This data structure is stored at '0(%CPU_BASEREGISTER)'
   *       per-cpu data is stored at negative offsets. */
  struct cpu                *c_self;      /*< [1..1][== self] CPU self-pointer. */
@@ -890,9 +925,13 @@ struct cpu {
                                           *   NOTE: This ring is never empty, as a special IDLE-task is always apart of it. */
  REF RING_HEAD(struct task) c_idling;    /*< [0..1][lock(PRIVATE(THIS_CPU))][sort(DESCENDING(t_priority),DESCENDING(t_mman))] Ring of idle tasks.
                                           *   WARNING: unlike normal rings, one's front/back pointers are set to NULL (making it a direct, doubly-linked list). */
+union PACKED {
+ uintptr_t                __c_align0;
+struct PACKED {
  cpuid_t                    c_id;        /*< [smp_hwcpu.hw_cpuv[c_id] == self] ID of this CPU. */
  taskprio_t                 c_prio_min;  /*< [lock(PRIVATE(THIS_CPU))] Lowest priority of any task in `c_running'. */
  taskprio_t                 c_prio_max;  /*< [lock(PRIVATE(THIS_CPU))] Greatest priority of any task in `c_running'. */
+};};
  atomic_rwlock_t            c_lock;      /*< General purpose access lock for this CPU.
                                           *  HINT: During an IRQ switch, the CPU attempts to acquire
                                           *        a write-lock on this primitive. In the event that
@@ -905,7 +944,7 @@ struct cpu {
                                           *   NOTE: This first part of this chain contains all tasks in `TASKMODE_WAKEUP'-mode, sorted by associated `t_mman'.
                                           *         The second part contains all tasks in `TASKMODE_SLEEPING'-mode, first sorted by timeout, then by `t_mman'.
                                           *   Chain of wakeup/sleeping tasks. */
- u32                        c_padding;   /*< ... */
+ uintptr_t                  c_padding;   /*< ... */
  struct task                c_idle;      /*< A small, lightweight IDLE task for this CPU.
                                           *  HINT: This task is also (ab-)used when booting up a cpu. */
 #ifndef CONFIG_NO_JOBS

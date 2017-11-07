@@ -37,9 +37,17 @@
 DECL_BEGIN
 
 #ifndef CONFIG_NO_LDT
-#define LDT_OFFSETOF_IDT    0
-#define LDT_OFFSETOF_GDT    6
-#define LDT_OFFSETOF_REFCNT 8
+#define LDT_OFFSETOF_GDT     0
+#define LDT_OFFSETOF_IDT     2
+#define LDT_OFFSETOF_REFCNT (IDT_POINTER_SIZE+2)
+#define LDT_OFFSETOF_LOCK   (IDT_POINTER_SIZE+2+__SIZEOF_REF_T__)
+#ifdef CONFIG_SMP
+#define LDT_OFFSETOF_VALID  (IDT_POINTER_SIZE+2+__SIZEOF_REF_T__+ATOMIC_RWLOCK_SIZE)
+#define LDT_OFFSETOF_TASKS  (IDT_POINTER_SIZE+2+__SIZEOF_REF_T__+ATOMIC_RWLOCK_SIZE+__SIZEOF_CPU_SET_T__)
+#else
+#define LDT_OFFSETOF_TASKS  (IDT_POINTER_SIZE+2+__SIZEOF_REF_T__+ATOMIC_RWLOCK_SIZE)
+#endif
+#define LDT_SIZE            (LDT_OFFSETOF_TASKS+__SIZEOF_POINTER__)
 
 #ifdef __CC__
 
@@ -52,11 +60,13 @@ typedef u16 segid_t;
 typedef segid_t ldt_t;
 #define LDT_ERROR ((ldt_t)-1)
 
+#pragma pack(push,1)
+
 struct segment;
-struct ldt {
- struct idt_pointer          l_idt;    /*< [lock(l_lock && l_refcnt == 1)]
-                                        *   IDT pointer (Keep at offset ZERO(0) to allow for better optimizations) */
+struct PACKED ldt {
  segid_t                     l_gdt;    /*< [const] GDT segment index*8 */
+ struct PACKED idt_pointer   l_idt;    /*< [lock(l_lock && l_refcnt == 1)]
+                                        *   IDT pointer (Keep at offset ZERO(0) to allow for better optimizations) */
  ATOMIC_DATA ref_t           l_refcnt; /*< Reference counter. */
  atomic_rwlock_t             l_lock;   /*< Lock for this LDT controller. */
 #ifdef CONFIG_SMP
@@ -64,6 +74,9 @@ struct ldt {
 #endif
  WEAK LIST_HEAD(struct task) l_tasks;  /*< [lock(l_lock)][0..1] The list of tasks currently using this LDT. */
 };
+
+#pragma pack(pop)
+
 #define LDT_FOREACH_TASK(t,self) \
        LIST_FOREACH(t,(self)->l_tasks,t_arch.at_ldt_tasks)
 

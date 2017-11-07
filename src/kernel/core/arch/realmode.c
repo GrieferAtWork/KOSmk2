@@ -55,9 +55,12 @@ L(rm_stack:                                       )
 L(    .space REALMODE_STACK_SIZE                  )
 L(.size rm_stack, . - rm_stack                    )
 L(.previous                                       )
+#ifdef __x86_64__
+L(.code64                                         )
+#else
 L(.code32                                         )
+#endif
 );
-
 
 GLOBAL_ASM(
 L(RM_BEGIN                                        )
@@ -66,13 +69,13 @@ L(SYM_PRIVATE(rm_bios_int_num)                    )
 L(SYM_PRIVATE(rm_bios_int)                        )
 L(SYM_PRIVATE(rm_bios_int_end)                    )
 L(rm_bios_int_begin:                              )
-L(DEFINE_BSS(rm_bios_int_cpu,46)                  )
-L(DEFINE_BSS(rm_bios_int_cr0,4)                   )
-L(DEFINE_BSS(rm_bios_int_cr3,4)                   )
-L(DEFINE_BSS(rm_bios_int_esp,4)                   )
-L(DEFINE_BSS(rm_bios_int_gdt,6)                   )
+L(DEFINE_BSS(rm_bios_int_cpu,CPUSTATE16_SIZE)     )
+L(DEFINE_BSS(rm_bios_int_cr0,__SIZEOF_REGISTER__) )
+L(DEFINE_BSS(rm_bios_int_cr3,__SIZEOF_REGISTER__) )
+L(DEFINE_BSS(rm_bios_int_esp,__SIZEOF_REGISTER__) )
+L(DEFINE_BSS(rm_bios_int_gdt,IDT_POINTER_SIZE)    )
 L(rm_bios_int:                                    )
-L(    movw $(SEG(SEG_HOST_DATA16)), %ax        )
+L(    movw $(SEG(SEG_HOST_DATA16)), %ax           )
 L(    movw %ax, %ds                               )
 L(    movw %ax, %es                               )
 L(    movw %ax, %fs                               )
@@ -147,9 +150,9 @@ L(RM_END                                          )
 PRIVATE DEFINE_ATOMIC_RWLOCK(realmode_intlock);
 INTDEF irq_t              rm_bios_int_num;
 INTDEF struct cpustate16  rm_bios_int_cpu;
-INTDEF u32                rm_bios_int_cr0;
-INTDEF u32                rm_bios_int_cr3;
-INTDEF u32                rm_bios_int_esp;
+INTDEF register_t         rm_bios_int_cr0;
+INTDEF register_t         rm_bios_int_cr3;
+INTDEF register_t         rm_bios_int_esp;
 INTDEF struct idt_pointer rm_bios_int_gdt;
 INTERN struct idt_pointer rm_bios_int_idt = { .ip_limit = 0x03ff, .ip_idt = NULL, };
 
@@ -172,8 +175,12 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
 #endif
      L(    pushfx                                      )
      L(    cli                                         )
-     L(    pushx %%ebp                                 )
-     L(    subx $(2*XSZ), %%xsp                        )
+     L(    pushx %%xbp                                 )
+#ifdef __x86_64__
+     /* TODO: Switch to realmode and perform the interrupt. */
+     L(                                                )
+#else
+     L(    subl $8, %%esp                              )
      L(    sidt (%%esp)                                )
      L(                                                )
      L(    call pic_bios_begin                         )
@@ -253,6 +260,7 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    addl $8, %%esp                              )
      L(    call pic_bios_end                           )
      L(                                                )
+#endif
      L(    popx %%xbp                                  )
      L(    popfx                                       )
 #ifdef RM_SAFE_SEGMENTS

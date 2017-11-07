@@ -341,7 +341,11 @@ typedef void                   *__timer_t;
 #define __SIZEOF_KERNEL_OFF_T__      __SIZEOF_FS_LONG__
 #define __SIZEOF_KERNEL_OFLAG_T__    4
 #define __SIZEOF_KERNEL_POS_T__      __SIZEOF_FS_LONG__
+#if 1
+#define __SIZEOF_KERNEL_REF_T__      4
+#else
 #define __SIZEOF_KERNEL_REF_T__      __SIZEOF_POINTER__
+#endif
 #define __SIZEOF_KERNEL_SYSNO_T__    __SIZEOF_SYSCALL_LONG__
 #ifdef CONFIG_32BIT_TIME
 #   define __SIZEOF_KERNEL_TIME_T__  __SIZEOF_TIME32_T__
@@ -387,7 +391,11 @@ typedef __UINT32_TYPE__      __dev_t;
 typedef __UINT32_TYPE__      __minor_t;
 typedef __UINT32_TYPE__      __oflag_t;
 typedef __UINT8_TYPE__       __irq_t; /* Processor interrupt number. */
+#if __SIZEOF_KERNEL_REF_T__ == __SIZEOF_POINTER__
 typedef __UINTPTR_TYPE__     __ref_t; /* Reference counter. */
+#else
+typedef __UINT32_TYPE__      __ref_t; /* Reference counter. */
+#endif
 #ifdef CONFIG_32BIT_TIME
 typedef __time32_t           __time_t;
 typedef __jtime32_t          __jtime_t;

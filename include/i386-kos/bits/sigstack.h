@@ -60,15 +60,18 @@ enum { /* Possible values for `ss_flags.'. */
 #define SIGSTKSZ    8192 /*< System default stack size. */
 
 
-#define __STACK_OFFSETOF_SP     0
-#define __STACK_OFFSETOF_FLAGS  __SIZEOF_POINTER__
-#define __STACK_OFFSETOF_SIZE  (__SIZEOF_POINTER__+__SIZEOF_INT__)
-#define __STACK_SIZE           (__SIZEOF_POINTER__+__SIZEOF_INT__+__SIZEOF_SIZE_T__)
+#define __STACK_OFFSETOF_SP       0
+#define __STACK_OFFSETOF_FLAGS    __SIZEOF_POINTER__
+#define __STACK_OFFSETOF_SIZE  (2*__SIZEOF_POINTER__)
+#define __STACK_SIZE           (2*__SIZEOF_POINTER__+__SIZEOF_SIZE_T__)
 
 /* Alternate, preferred interface. */
 typedef struct sigaltstack {
     void         *ss_sp;
     int           ss_flags;
+#if __SIZEOF_POINTER__ > __SIZEOF_INT__
+    __BYTE_TYPE__ __ss_pad[__SIZEOF_POINTER__-__SIZEOF_INT__];
+#endif
     __SIZE_TYPE__ ss_size;
 } stack_t;
 

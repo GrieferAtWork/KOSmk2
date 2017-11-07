@@ -130,11 +130,11 @@ FUNDEF int (KCALL __kmallopt)(int parameter_number, int parameter_value, gfp_t f
 #ifdef __SIZEOF_INT128__
 typedef unsigned __int128 hptr_t;
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-#   define HPTR(addr,size) ((hptr_t)(uintptr_t)(addr)|((heaptr_t)(size) << 64))
+#   define HPTR(addr,size) ((hptr_t)(uintptr_t)(addr)|((hptr_t)(size) << 64))
 #   define HPTR_ADDR(p)    ((HOST void *)(uintptr_t)(p))
 #   define HPTR_SIZE(p)    ((size_t)((p) >> 64))
 #else
-#   define HPTR(addr,size) (((hptr_t)(uintptr_t)(addr) << 64)|(heaptr_t)(size))
+#   define HPTR(addr,size) (((hptr_t)(uintptr_t)(addr) << 64)|(hptr_t)(size))
 #   define HPTR_ADDR(p)    ((HOST void *)((uintptr_t)(p) >> 64))
 #   define HPTR_SIZE(p)    ((size_t)(p))
 #endif

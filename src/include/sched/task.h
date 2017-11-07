@@ -202,7 +202,8 @@ task_setcpu(struct task *__restrict self,
  *      `TASK_CPULOCK_(READ|WRITE)' must be used. */
 #define task_getcpu(self) ATOMIC_READ((self)->t_cpu)
 #else
-#define task_getcpu(self) (&__bootcpu)
+#define task_setcpu(self,new_cpu) (&__bootcpu)
+#define task_getcpu(self)         (&__bootcpu)
 #endif
 
 #define task_checkcap(self,cap) 1
@@ -489,7 +490,11 @@ FUNDEF SAFE errno_t KCALL task_pause_cpu_endwrite_t(struct timespec const *absti
  * @return: -ENODEV: [task_set_affinity] No CPU matching 'affinity' found.
  * @return: -EINVAL: [task_set_affinity] The given task has been terminated. */
 FUNDEF errno_t KCALL task_get_affinity(struct task *__restrict self, USER __cpu_set_t *affinity);
+#ifndef CONFIG_SMP
+#define task_set_affinity(self,affinity) (-EOK)
+#else
 FUNDEF errno_t KCALL task_set_affinity(struct task *__restrict self, USER __cpu_set_t const *affinity);
+#endif
 
 /* Tries to un-share the memory manager associated with the current
  * task by creating a copy and replacing `THIS_TASK->t_mman' with it

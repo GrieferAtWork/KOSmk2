@@ -40,6 +40,7 @@
 #define incx     __INSTX(inc)
 #define jmpx     __INSTX(jmp)
 #define leax     __INSTX(lea)
+#define lodsx    __INSTX(lods)
 #define movsbx   __INSTX(movsb)
 #define movswx   __INSTX(movsw)
 #define movsx    __INSTX(movs)

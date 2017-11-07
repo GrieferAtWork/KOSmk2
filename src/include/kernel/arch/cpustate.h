@@ -38,6 +38,7 @@ DECL_BEGIN
 #define __COMMON_REG2_32(n)           union PACKED { u32 e##n; u16 n; };
 #define __COMMON_REG1_32(n)           union PACKED { u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
 #endif
+#define __SEGMENT32(x)             union PACKED { struct PACKED { u16 x##16,__##x##16hi; }; u32 x##32; u32 x; }
 #ifdef __x86_64__
 #define __COMMON_REG3_EX(prefix,n) union PACKED { u64 prefix##x##n; u64 prefix##r##n; };
 #define __COMMON_REG2_EX(prefix,n) union PACKED { u64 prefix##x##n; u64 prefix##r##n; u32 prefix##e##n; u16 prefix##n; };
@@ -51,13 +52,14 @@ DECL_BEGIN
 #define __COMMON_REG2(n)           union PACKED { u64 r##n; u32 e##n; u16 n; };
 #define __COMMON_REG1(n)           union PACKED { u64 r##n##x; u32 e##n##x; u16 n##x; struct PACKED { u8 n##l,n##h; }; };
 #endif
-#define IRET_SEGMENT(x)            union PACKED { struct PACKED { u16 x##16,__##x##16hi; }; struct PACKED { u32 x##32,__##x##32hi; }; u64 x; }
+#define __SEGMENT64(x)             union PACKED { struct PACKED { u16 x##16,__##x##16hi; }; struct PACKED { u32 x##32,__##x##32hi; }; u64 x; }
+#define IRET_SEGMENT               __SEGMENT64
 #else
 #define __COMMON_REG2_EX(prefix,n) __COMMON_REG2_EX_32(prefix,n)
 #define __COMMON_REG1_EX(prefix,n) __COMMON_REG1_EX_32(prefix,n)
 #define __COMMON_REG2(n)           __COMMON_REG2_32(n)
 #define __COMMON_REG1(n)           __COMMON_REG1_32(n)
-#define IRET_SEGMENT(x)            union PACKED { struct PACKED { u16 x##16,__##x##16hi; }; u32 x##32; u32 x; }
+#define IRET_SEGMENT               __SEGMENT32
 #endif
 
 
@@ -350,16 +352,16 @@ struct PACKED sgregs32 { u16 gs,fs,es,ds; };
 #define SGREGS_OFFSETOF_FS 8
 #define SGREGS_SIZE        16
 #ifdef __CC__
-struct PACKED sgregs { u64 gs,fs; }; /* Use 64-bit types to preserve 8-byte alignment. (There is no `pushl %fs'. - Else we could use that) */
+struct PACKED sgregs { __SEGMENT64(gs); __SEGMENT64(fs); };
 #endif /* __CC__ */
 #define __ASM_PUSH_SGREGS       pushq %fs; pushq %gs;
 #define __ASM_LOAD_SGREGS(src)  movw SGREGS_OFFSETOF_FS+src, %gs; \
                                 movw SGREGS_OFFSETOF_GS+src, %fs;
-#define __ASM_POP_SGREGS        popq %gs;  popq %fs;
+#define __ASM_POP_SGREGS        popq %gs; popq %fs;
 #define __ASM_IPUSH_SGREGS      pushq %%fs; pushq %%gs;
 #define __ASM_ILOAD_SGREGS(src) movw SGREGS_OFFSETOF_FS+src, %%gs; \
                                 movw SGREGS_OFFSETOF_GS+src, %%fs;
-#define __ASM_IPOP_SGREGS       popq %%gs;  popq %%fs;
+#define __ASM_IPOP_SGREGS       popq %%gs; popq %%fs;
 #else
 #define SGREGS_OFFSETOF_GS 0
 #define SGREGS_OFFSETOF_FS 2

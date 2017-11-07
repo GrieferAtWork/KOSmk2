@@ -50,6 +50,7 @@
 #include <sys/io.h>
 #include <linux/limits.h> /* MAX_INPUT */
 #include <kernel/mman.h>
+#include <asm/instx.h>
 
 #include "ps2_keymaps.h"
 
@@ -59,11 +60,11 @@ DECL_BEGIN
 #define HAVE_DUMP_TASK_STATES 1
 PRIVATE void KCALL dump_task_states(void *UNUSED(closure)) {
  debug_printf("BOOT_TASK:\n");
- debug_tbprintl((void *)inittask.t_cstate->iret.eip,NULL,0);
- debug_tbprint2((void *)inittask.t_cstate->gp.ebp,0);
+ debug_tbprintl((void *)inittask.t_cstate->iret.xip,NULL,0);
+ debug_tbprint2((void *)inittask.t_cstate->gp.xbp,0);
  debug_printf("IDLE_TASK:\n");
- debug_tbprintl((void *)THIS_CPU->c_idle.t_cstate->iret.eip,NULL,0);
- debug_tbprint2((void *)THIS_CPU->c_idle.t_cstate->gp.ebp,0);
+ debug_tbprintl((void *)THIS_CPU->c_idle.t_cstate->iret.xip,NULL,0);
+ debug_tbprint2((void *)THIS_CPU->c_idle.t_cstate->gp.xbp,0);
  { pflag_t was = PREEMPTION_PUSH();
    struct task *start,*iter;
    iter = start = THIS_CPU->c_running;
@@ -76,8 +77,8 @@ PRIVATE void KCALL dump_task_states(void *UNUSED(closure)) {
 #undef debug_tbprint
      debug_tbprint();
     } else {
-     debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-     debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+     debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
+     debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
     }
    } while ((iter = iter->t_sched.sd_running.re_next) != start);
    for (iter = THIS_CPU->c_idling;
@@ -90,14 +91,13 @@ PRIVATE void KCALL dump_task_states(void *UNUSED(closure)) {
 #undef debug_tbprint
      debug_tbprint();
     } else {
-     debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-     debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+     debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
+     debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
     }
    }
    task_crit();
 #if 0
-   if (cpu_tryread(THIS_CPU))
-   {
+   if (cpu_tryread(THIS_CPU)) {
     cpu_validate_counters(false);
 #endif
     for (iter = THIS_CPU->c_suspended; iter;
@@ -106,8 +106,8 @@ PRIVATE void KCALL dump_task_states(void *UNUSED(closure)) {
                   iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                   iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                   iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-     debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-     debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+     debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
+     debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
     }
     for (iter = THIS_CPU->c_sleeping; iter;
          iter = iter->t_sched.sd_sleeping.le_next) {
@@ -115,8 +115,8 @@ PRIVATE void KCALL dump_task_states(void *UNUSED(closure)) {
                   iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                   iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                   iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-     debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
-     debug_tbprint2((void *)iter->t_cstate->gp.ebp,0);
+     debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
+     debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
     }
 #if 0
     cpu_endread(THIS_CPU);

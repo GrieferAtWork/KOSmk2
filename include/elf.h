@@ -2692,8 +2692,8 @@ typedef Elf32_Addr Elf32_Conflict;
 #   define ELF(x) ELF32_##x
 #   define ELFCLASS ELFCLASS32
 #elif ELF_POINTER_SIZE == 8
-#   define Elf(x) Elf16_##x
-#   define ELF(x) ELF16_##x
+#   define Elf(x) Elf64_##x
+#   define ELF(x) ELF64_##x
 #   define ELFCLASS ELFCLASS64
 #else
 #   error "Unsupported ELF pointer size"

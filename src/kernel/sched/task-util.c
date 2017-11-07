@@ -54,17 +54,24 @@
 
 DECL_BEGIN
 
+#ifdef CONFIG_SMP
 PUBLIC struct cpu *KCALL
 cpu_get_suitable(__cpu_set_t const *__restrict affinity) {
  CHECK_HOST_DOBJ(affinity);
  /* TODO */
  return &__bootcpu;
 }
+#endif /* CONFIG_SMP */
 
 
 PUBLIC errno_t KCALL
 task_get_affinity(struct task *__restrict self,
                   USER cpu_set_t *affinity) {
+#ifndef CONFIG_SMP
+ CHECK_HOST_DOBJ(self);
+ (void)self;
+ return memset_user(affinity,0xff,sizeof(cpu_set_t)) ? -EFAULT : -EOK;
+#else
  errno_t error = -EOK;
  CHECK_HOST_DOBJ(self);
  atomic_rwlock_read(&self->t_affinity_lock);
@@ -72,7 +79,10 @@ task_get_affinity(struct task *__restrict self,
      error = -EFAULT;
  atomic_rwlock_endread(&self->t_affinity_lock);
  return error;
+#endif
 }
+
+#ifdef CONFIG_SMP
 PUBLIC errno_t KCALL
 task_set_affinity(struct task *__restrict self,
                   USER cpu_set_t const *affinity) {
@@ -89,9 +99,6 @@ task_set_affinity(struct task *__restrict self,
  } else {
   cpuid_t id = ATOMIC_READ(self->t_cpu)->c_id;
   if (!CPU_ISSET(id,&self->t_affinity)) {
-#ifndef CONFIG_SMP
-   error = -ENODEV;
-#else
    /* Must migrate the task to a different CPU. */
    struct cpu *c = cpu_get_suitable(&self->t_affinity);
    if unlikely(!c) {
@@ -102,9 +109,7 @@ task_set_affinity(struct task *__restrict self,
     if (E_ISERR(c)) error = E_GTERR(c);
    }
    /* Restore the old CPU affinity if an error occurred. */
-   if (E_ISERR(error))
-#endif
-   {
+   if (E_ISERR(error)) {
     memcpy(&self->t_affinity,&old_affinity,sizeof(cpu_set_t));
    }
   }
@@ -112,6 +117,7 @@ task_set_affinity(struct task *__restrict self,
  atomic_rwlock_endwrite(&self->t_affinity_lock);
  return error;
 }
+#endif /* CONFIG_SMP */
 
 
 #ifndef CONFIG_NO_TLB
@@ -236,8 +242,12 @@ task_ldtlb(struct task *__restrict self) {
  TASK_PDIR_END(omm,self->t_mman);
 }
 
+#ifdef __x86_64__
+/* TODO: Assert the correct offset for x86_64 */
+#else
 /* `0x18' is a hard-coded number used by various DOS compilers. */
 STATIC_ASSERT(offsetof(struct tib,ti_self) == 0x18);
+#endif
 
 PUBLIC void KCALL
 task_filltlb(struct task *__restrict self) {
@@ -473,15 +483,24 @@ check_again:
 #endif
 
    *pchain = iter->ic_prev;
-   assert(!PREEMPTION_ENABLED());
+   assertf(!PREEMPTION_ENABLED(),
+           "We need interrupts disabled because we're going "
+           "to hijack the stack in a way that is not IRQ-safe");
    __asm__ __volatile__(/* "cli\n" */
+#ifdef __x86_64__
+                        "movq %0, %%rsp\n"
+#else
                         "movl %0, %%esp\n"
+#endif
                         PP_STR(__ASM_IPOP_GPREGS) "\n" /* state */
                         PP_STR(__ASM_IPOP_SGREGS) "\n" /* ... */
-                        /* eflags
+                        /* xflags
                          * NOTE: Interrupts are only re-enabled after XSP is loaded, as
                          *       enabling the #IF flag will only become active after the next
-                         *       instruction finishes (Except when that instruction is `hlt'). */
+                         *       instruction finishes (Except when that instruction is `hlt').
+                         *    >> Therefor, we remain IRQ-safe because interrupts can only
+                         *       occurr once we're back above safe grounds, using a proper stack.
+                         */
 #ifdef __x86_64__
                         "popfq\n"
                         "popq %%rsp\n"

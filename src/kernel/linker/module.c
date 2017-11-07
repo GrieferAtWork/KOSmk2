@@ -52,13 +52,45 @@
 
 DECL_BEGIN
 
+/* Assert proper offsets. */
 STATIC_ASSERT(offsetof(struct moduleops,o_patch) == MODULEOPS_OFFSETOF_PATCH);
-STATIC_ASSERT(sizeof(struct moduleops)           == MODULEOPS_SIZE);
-STATIC_ASSERT(offsetof(struct module,m_ops)      == MODULE_OFFSETOF_OPS);
-STATIC_ASSERT(offsetof(struct module,m_align)    == MODULE_OFFSETOF_ALIGN);
-STATIC_ASSERT(sizeof(struct module)              == MODULE_SIZE);
+STATIC_ASSERT(sizeof(struct moduleops) == MODULEOPS_SIZE);
+
+STATIC_ASSERT(offsetof(struct module,m_refcnt) == MODULE_OFFSETOF_REFCNT);
+STATIC_ASSERT(offsetof(struct module,m_chain) == MODULE_OFFSETOF_CHAIN);
+STATIC_ASSERT(offsetof(struct module,m_ops) == MODULE_OFFSETOF_OPS);
+STATIC_ASSERT(offsetof(struct module,m_file) == MODULE_OFFSETOF_FILE);
+STATIC_ASSERT(offsetof(struct module,m_name) == MODULE_OFFSETOF_NAME);
+STATIC_ASSERT(offsetof(struct module,m_namebuf) == MODULE_OFFSETOF_NAMEBUF);
+STATIC_ASSERT(offsetof(struct module,m_owner) == MODULE_OFFSETOF_OWNER);
+STATIC_ASSERT(offsetof(struct module,m_flag) == MODULE_OFFSETOF_FLAG);
+STATIC_ASSERT(offsetof(struct module,m_load) == MODULE_OFFSETOF_LOAD);
+STATIC_ASSERT(offsetof(struct module,m_begin) == MODULE_OFFSETOF_BEGIN);
+STATIC_ASSERT(offsetof(struct module,m_end) == MODULE_OFFSETOF_END);
+STATIC_ASSERT(offsetof(struct module,m_size) == MODULE_OFFSETOF_SIZE);
+STATIC_ASSERT(offsetof(struct module,m_align) == MODULE_OFFSETOF_ALIGN);
+STATIC_ASSERT(offsetof(struct module,m_entry) == MODULE_OFFSETOF_ENTRY);
+STATIC_ASSERT(offsetof(struct module,m_segc) == MODULE_OFFSETOF_SEGC);
+STATIC_ASSERT(offsetof(struct module,m_segv) == MODULE_OFFSETOF_SEGV);
+STATIC_ASSERT(offsetof(struct module,m_rlock) == MODULE_OFFSETOF_RLOCK);
+STATIC_ASSERT(offsetof(struct module,m_debug) == MODULE_OFFSETOF_DEBUG);
+STATIC_ASSERT(sizeof(struct module) == MODULE_SIZE);
+
+STATIC_ASSERT(offsetof(struct instance,i_chain) == INSTANCE_OFFSETOF_CHAIN);
+STATIC_ASSERT(offsetof(struct instance,i_branch) == INSTANCE_OFFSETOF_BRANCH);
+STATIC_ASSERT(offsetof(struct instance,i_weakcnt) == INSTANCE_OFFSETOF_WEAKCNT);
+STATIC_ASSERT(offsetof(struct instance,i_refcnt) == INSTANCE_OFFSETOF_REFCNT);
+STATIC_ASSERT(offsetof(struct instance,i_openrec) == INSTANCE_OFFSETOF_OPENREC);
 STATIC_ASSERT(offsetof(struct instance,i_module) == INSTANCE_OFFSETOF_MODULE);
-STATIC_ASSERT(sizeof(struct instance)            == INSTANCE_SIZE);
+STATIC_ASSERT(offsetof(struct instance,i_base) == INSTANCE_OFFSETOF_BASE);
+STATIC_ASSERT(offsetof(struct instance,i_used) == INSTANCE_OFFSETOF_USED);
+STATIC_ASSERT(offsetof(struct instance,i_deps) == INSTANCE_OFFSETOF_DEPS);
+STATIC_ASSERT(offsetof(struct instance,i_temp) == INSTANCE_OFFSETOF_TEMP);
+STATIC_ASSERT(offsetof(struct instance,i_flags) == INSTANCE_OFFSETOF_FLAGS);
+#ifdef INSTANCE_OFFSETOF_DRIVER
+STATIC_ASSERT(offsetof(struct instance,i_driver) == INSTANCE_OFFSETOF_DRIVER);
+#endif
+STATIC_ASSERT(sizeof(struct instance) == INSTANCE_SIZE);
 
 PRIVATE errno_t KCALL
 argvlist_mkspc(struct argvlist *__restrict self, size_t n) {

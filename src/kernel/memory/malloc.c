@@ -267,11 +267,15 @@ DECL_BEGIN
 #endif
 
 
-
 #ifdef MALLOC_DEBUG_API
-struct dinfo {
+struct PACKED dinfo {
  char const      *i_file;
+ char const      *i_func;
+ struct instance *i_inst;
  int              i_line;
+};
+struct PACKED stored_dinfo {
+ char const      *i_file;
  char const      *i_func;
  struct instance *i_inst;
 };
@@ -297,19 +301,24 @@ struct PACKED mptr_tail {
 struct PACKED mptr {
  /* Trace header */
 #ifdef CONFIG_TRACE_LEAKS
+#define MPTR_FILE(x) ((x)->m_info.i_file)
+#define MPTR_FUNC(x) ((x)->m_info.i_func)
+#define MPTR_INST(x) ((x)->m_info.i_inst)
+#define MPTR_LINE(x) ((x)->m_line)
  LIST_NODE(struct mptr)
-              m_chain;  /*< [lock(MALLTRACE_LOCK(self))][null(KINSTANCE_TRACE_NULL)]
-                         *   Chain of all other MALL headers. */
- u16          m_chksum; /*< [const] Checksum of m_flag...:m_data + mt_tb. */
- u8           m_refcnt; /*< [lock(MPTR_TRACE_LOCK(self))] Reference counter (required for handling free() while enumerating). */
+                     m_chain;  /*< [lock(MALLTRACE_LOCK(self))][null(KINSTANCE_TRACE_NULL)]
+                                *   Chain of all other MALL headers. */
+ struct stored_dinfo m_info;   /*< [const] Basic debug information for tracking. */
+ s32                 m_line;   /*< [const] Source line where this pointer was allocated at. */
+ u16                 m_chksum; /*< [const] Checksum of m_flag...:m_data + mt_tb. */
+ u8                  m_refcnt; /*< [lock(MPTR_TRACE_LOCK(self))] Reference counter (required for handling free() while enumerating). */
 #define MPTRFLAG_NONE      0x00
 #define MPTRFLAG_UNTRACKED 0x01 /*< The pointer was untracked. */
 #define MPTRFLAG_NOFREE    0x02 /*< The pointer must not be freed or reallocated. */
 #define MPTRFLAG_GLOBAL    0x04 /*< The pointer is intended for global usage. */
 #define MPTRFLAG_MASK      0x07 /*< Mask of recognized flags. */
- u8           m_flag;   /*< [lock(MALLTRACE_LOCK(self))] Mall flags (Set of `MPTRFLAG_*'). */
- struct dinfo m_info;   /*< [const] Basic debug information for tracking. */
-#define __1_MPTR_SIZEOF (5*__SIZEOF_POINTER__+4+__SIZEOF_INT__)
+ u8                  m_flag;   /*< [lock(MALLTRACE_LOCK(self))] Mall flags (Set of `MPTRFLAG_*'). */
+#define __1_MPTR_SIZEOF (5*__SIZEOF_POINTER__+8)
 #else /* CONFIG_TRACE_LEAKS */
 #define __1_MPTR_SIZEOF  0
 #endif /* !CONFIG_TRACE_LEAKS */
@@ -346,7 +355,7 @@ struct PACKED mptr {
 #define MPTR_UNALIGNED_SIZE (__4_MPTR_SIZEOF+__SIZEOF_SIZE_T__)
 #if (MPTR_UNALIGNED_SIZE % HEAP_ALIGNMENT) != 0
 #define MPTR_HAVE_PAD
- byte_t       m_pad[MPTR_UNALIGNED_SIZE % HEAP_ALIGNMENT];
+ byte_t       m_pad[HEAP_ALIGNMENT-(MPTR_UNALIGNED_SIZE % HEAP_ALIGNMENT)];
 #endif
 #ifdef MPTR_HAVE_TYPE
  size_t       m_size; /*< [const][mask(~GFP_MASK_MPTR)][>= HEAP_MIN_MALLOC] Total memory size (including this header). */
@@ -457,7 +466,6 @@ PRIVATE byte_t mall_header_seed[4] = {0x65,0xB6,0xBD,0x5A};
 PRIVATE byte_t mall_footer_seed[4] = {0xCF,0x6A,0xB7,0x97};
 #define MALL_FOOTERBYTE(i) (mall_footer_seed[(i) % 4]^(byte_t)((0xff >> (i) % 7)*((i)+1))) /* Returns the i-th control byte for mall-footers. */
 #endif
-
 
 STATIC_ASSERT(IS_ALIGNED(MPTR_SIZEOF(0),HEAP_ALIGNMENT));
 STATIC_ASSERT(IS_ALIGNED(sizeof(struct mptr),HEAP_ALIGNMENT));
@@ -1990,17 +1998,17 @@ malloc_panic(struct dsetup *setup,
   bool ok_module;
 #ifdef CONFIG_TRACE_LEAKS
   atomic_rwlock_read(&mptr_inst_lock);
-  ok_module = (OK_HOST_TEXT(info_header->m_info.i_inst,sizeof(struct instance)) &&
-               OK_HOST_TEXT(info_header->m_info.i_inst->i_module,sizeof(struct module)) &&
-               OK_HOST_TEXT(info_header->m_info.i_inst->i_module->m_name,sizeof(struct dentryname)) &&
-               OK_HOST_TEXT(info_header->m_info.i_inst->i_module->m_name->dn_name,
-                            info_header->m_info.i_inst->i_module->m_name->dn_size));
+  ok_module = (OK_HOST_TEXT(MPTR_INST(info_header),sizeof(struct instance)) &&
+               OK_HOST_TEXT(MPTR_INST(info_header)->i_module,sizeof(struct module)) &&
+               OK_HOST_TEXT(MPTR_INST(info_header)->i_module->m_name,sizeof(struct dentryname)) &&
+               OK_HOST_TEXT(MPTR_INST(info_header)->i_module->m_name->dn_name,
+                            MPTR_INST(info_header)->i_module->m_name->dn_size));
   debug_printf("%s(%d) : %s : [%.?s] : See reference to associated allocation\n",
-               OK_HOST_TEXT(info_header->m_info.i_file,1) ? info_header->m_info.i_file : NULL,
-               info_header->m_info.i_line,
-               OK_HOST_TEXT(info_header->m_info.i_func,1) ? info_header->m_info.i_func : NULL,
-               ok_module ? info_header->m_info.i_inst->i_module->m_name->dn_size : 0,
-               ok_module ? info_header->m_info.i_inst->i_module->m_name->dn_name : NULL);
+               OK_HOST_TEXT(MPTR_FILE(info_header),1) ? MPTR_FILE(info_header) : NULL,
+               MPTR_LINE(info_header),
+               OK_HOST_TEXT(MPTR_FUNC(info_header),1) ? MPTR_FUNC(info_header) : NULL,
+               ok_module ? MPTR_INST(info_header)->i_module->m_name->dn_size : 0,
+               ok_module ? MPTR_INST(info_header)->i_module->m_name->dn_name : NULL);
   atomic_rwlock_endread(&mptr_inst_lock);
 #endif
 #ifdef CONFIG_MALLOC_TRACEBACK
@@ -2658,9 +2666,12 @@ mptr_setup(struct mptr *__restrict self,
  assert(MPTR_SIZEOF(user_size) <= MPTR_SIZE(self));
  (void)user_size;
 #ifdef CONFIG_TRACE_LEAKS
- self->m_refcnt = 1;
- self->m_flag   = MPTRFLAG_NONE;
- self->m_info   = setup->s_info;
+ self->m_refcnt      = 1;
+ self->m_flag        = MPTRFLAG_NONE;
+ self->m_line        = (s32)setup->s_info.i_line;
+ self->m_info.i_file = setup->s_info.i_file;
+ self->m_info.i_func = setup->s_info.i_func;
+ self->m_info.i_inst = setup->s_info.i_inst;
 #endif /* !CONFIG_TRACE_LEAKS */
 #ifdef MPTR_HAVE_PAD
  memset(self->m_pad,0xaa,sizeof(self->m_pad));
@@ -2939,15 +2950,15 @@ PRIVATE void *(KCALL debug_getattrib)(struct dsetup *__restrict setup,
  p = mptr_safeload(setup,mallptr);
  switch (attrib) {
 #ifdef CONFIG_TRACE_LEAKS
- case __MALL_ATTRIB_FILE: result = (void *)p->m_info.i_file; break;
- case __MALL_ATTRIB_LINE: result = (void *)(intptr_t)p->m_info.i_line; break;
- case __MALL_ATTRIB_FUNC: result = (void *)p->m_info.i_func; break;
+ case __MALL_ATTRIB_FILE: result = (void *)MPTR_FILE(p); break;
+ case __MALL_ATTRIB_LINE: result = (void *)(intptr_t)MPTR_LINE(p); break;
+ case __MALL_ATTRIB_FUNC: result = (void *)MPTR_FUNC(p); break;
  case __MALL_ATTRIB_INST:
   atomic_rwlock_read(&mptr_inst_lock);
-  result = (void *)p->m_info.i_inst;
+  result = (void *)MPTR_INST(p);
   if (!INSTANCE_TRYINCREF((struct instance *)result)) {
+   assertef(INSTANCE_INCREF(THIS_INSTANCE),"But we're the core...");
    result = THIS_INSTANCE;
-   if (!INSTANCE_INCREF(THIS_INSTANCE)) result = NULL;
   }
   atomic_rwlock_endread(&mptr_inst_lock);
 
@@ -3045,8 +3056,8 @@ PRIVATE ssize_t (KCALL mptr_printleak)(struct mptr *__restrict self,
  ssize_t temp,result = 0;
  F_PRINTF("##################################################\n"
           "%s(%d) : %s : Leaked %Iu bytes at %p\n",
-          self->m_info.i_file,self->m_info.i_line,
-          self->m_info.i_func,MPTR_USERSIZE(self),
+          MPTR_FILE(self),MPTR_LINE(self),
+          MPTR_FUNC(self),MPTR_USERSIZE(self),
           MPTR_USERADDR(self));
 #ifdef CONFIG_MALLOC_TRACEBACK
  { void **iter,**end; size_t pos = 0;
@@ -3188,7 +3199,11 @@ PRIVATE void *(KCALL debug_setflag)(struct dsetup *__restrict setup,
 }
 
 
+#ifdef __x86_64__
+#define GET_EBP(r) __asm__ __volatile__("movq %%rbp, %0" : "=g" (r))
+#else
 #define GET_EBP(r) __asm__ __volatile__("movl %%ebp, %0" : "=g" (r))
+#endif
 
 #define DEF_SETUP(name) \
   struct dsetup name; \

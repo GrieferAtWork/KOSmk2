@@ -428,7 +428,7 @@ void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
 "" PP_STR(h_irq) ":\n" \
 __INT_ENTER \
-"    movl  %rsp, %rdi\n" \
+"    movq  %rsp, %rdi\n" \
 __DEBUG_CODE("pushq 88(%esp)\n") \
 __DEBUG_CODE("pushq %rbp\n") \
 __DEBUG_CODE("movq %rsp, %rbp\n") \

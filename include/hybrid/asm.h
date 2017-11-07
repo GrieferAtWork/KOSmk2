@@ -54,6 +54,9 @@ DECL_BEGIN
 #define INTERN_ENTRY(x)          .hidden x; .globl x; .type x, @function; x:
 #define PUBLIC_ENTRY(x)                     .globl x; .type x, @function; x:
 #define DEFINE_BSS(name,n_bytes) name: .skip (n_bytes); .size name, . - name
+#define PRIVATE_STRING(x,str)    PRIVATE_OBJECT(x) .string str; SYM_END(x)
+#define INTERN_STRING(x,str)     INTERN_OBJECT(x)  .string str; SYM_END(x)
+#define PUBLIC_STRING(x,str)     PUBLIC_OBJECT(x)  .string str; SYM_END(x)
 
 #ifdef __PIC__
 #   define PLT_SYM(x) x@PLT

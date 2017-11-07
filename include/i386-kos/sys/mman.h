@@ -164,12 +164,12 @@ struct mmap_virt {
   * X: Initialized using 'mv_fill' */
  __uintptr_t mv_begin; /*< [valid_if(!MAP_ANONYMOUS)] The address within the region where the file mapping starts. */
 union{
- __FS_TYPE(off)
+ __FS_TYPE(pos)
             mv_off;   /*< [valid_if(!MAP_ANONYMOUS)] Offset into 'mv_file' where mapping starts. */
 #ifdef __USE_LARGEFILE64
- __off64_t  mv_off64; /*< [valid_if(!MAP_ANONYMOUS)] Offset into 'mv_file' where mapping starts (64-bit field). */
+ __pos64_t  mv_off64; /*< [valid_if(!MAP_ANONYMOUS)] Offset into 'mv_file' where mapping starts (64-bit field). */
 #endif
- __off64_t  __mv_off; /*< Force 64-bit alignment. */
+ __pos64_t  __mv_off; /*< Force 64-bit alignment. */
 };
  size_t     mv_len;   /*< [valid_if(!MAP_ANONYMOUS)] Max amount of bytes to read from 'mv_file', starting at 'mv_off/mv_off64'.
                        *   Clamped to `mi_size' when greater; when lower, difference is

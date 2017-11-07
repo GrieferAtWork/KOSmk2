@@ -53,7 +53,6 @@ PUBLIC struct ldt ldt_empty = {
 };
 
 PUBLIC void KCALL ldt_destroy(struct ldt *__restrict self) {
- cpuid_t cid;
  CHECK_HOST_DOBJ(self);
  assert(self != &ldt_empty);
  assertf(self->l_tasks == NULL,
@@ -63,6 +62,7 @@ PUBLIC void KCALL ldt_destroy(struct ldt *__restrict self) {
   * >> Doing this prevents dangling (and therefor illegal)
   *    pointers from causing undefined behavior. */
  { struct segment empty_seg = SEGMENT_INIT(0,0,0);
+   cpuid_t cid;
    for (cid = 0; cid < SMP_COUNT; ++cid) {
     if (CPU_ISSET(cid,&self->l_valid))
         vgdt_set(CPUI(cid),self->l_gdt,empty_seg,NULL);

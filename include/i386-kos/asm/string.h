@@ -326,7 +326,7 @@ __DEFINE_MEMCMP(__asm_memcmpq,__n_qwords,__UINT64_TYPE__,"q")
 #undef __DEFINE_MEMCMP
 
 
-#ifdef __i686__
+#if defined(__x86_64__) || defined(__i686__)
 #define __DEFINE_MEMCHR(name,n,rT,nT,T,width) \
 __FORCELOCAL __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) \
 rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
@@ -365,7 +365,7 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
     __asm__ __volatile__(__ASM_ENTER_CLD \
                          "    repne; scas" width "\n" \
                          "    je 1f\n" \
-                         "    movl $1, %0\n" \
+                         "    mov $1, %0\n" \
                          "1:\n" \
                          : "=D" (__result) \
                          : "0" (__haystack), "a" (__needle), "c" (n) \
@@ -381,7 +381,7 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
     __asm__ __volatile__("    std\n" \
                          "    repne; scas" width "\n" \
                          "    je 1f\n" \
-                         "    movl $-1, %0\n" \
+                         "    mov $-1, %0\n" \
                          "1:\n" __ASM_LEAVE_STD \
                          : "=D" (__result) \
                          : "0" ((T *)__haystack+n-1), "a" (__needle), "c" (n) \
@@ -414,6 +414,25 @@ __DEFINE_MEMRCHR(__asm_memrchrq,n_qwords,__UINT64_TYPE__,__UINT64_TYPE__,__UINT6
 #endif
 #undef __DEFINE_MEMRCHR
 
+#ifdef __x86_64__
+#define __DEFINE_MEMEND(name,n,rT,nT,T,width,dec) \
+__FORCELOCAL __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) \
+rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
+    register rT *__result; \
+    __asm__ __volatile__(__ASM_ENTER_CLD \
+                         "    test %3, %3\n" \
+                         "    jz 1f\n" \
+                         "    repne; scas" width "\n" \
+                         "    jne 1f\n" \
+                         "    " dec " %%edi\n" \
+                         "1:\n" \
+                         : "=D" (__result) \
+                         : "0" (__haystack), "a" (__needle), "c" (n)\
+                         , "m" (*(struct { __extension__ T __d[n]; } *)__haystack) \
+                         : "cc"); \
+    return __result; \
+}
+#else
 #define __DEFINE_MEMEND(name,n,rT,nT,T,width,dec) \
 __FORCELOCAL __ATTR_RETNONNULL __ATTR_PURE __NONNULL((1)) \
 rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
@@ -430,6 +449,7 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
                          : "cc"); \
     return __result; \
 }
+#endif
 #define __asm_memend(haystack,needle,n_bytes)   __asm_memend(haystack,needle,n_bytes)
 __DEFINE_MEMEND(__asm_memend,n_bytes,void,int,__BYTE_TYPE__,"b","dec")
 #define __asm_memendw(haystack,needle,n_words)  __asm_memendw(haystack,needle,n_words)

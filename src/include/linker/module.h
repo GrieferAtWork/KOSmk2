@@ -229,27 +229,30 @@ FUNDEF errno_t KCALL argvlist_appendv(struct argvlist *__restrict self, char con
                                     * `o_real_module' and `o_transform_environ' to proxy another module instead. */
 
 #define MODULE_OFFSETOF_REFCNT   0
-#define MODULE_OFFSETOF_CHAIN    __SIZEOF_REF_T__
-#define MODULE_OFFSETOF_OPS      __SIZEOF_REF_T__+2*__SIZEOF_POINTER__
-#define MODULE_OFFSETOF_FILE    (__SIZEOF_REF_T__+3*__SIZEOF_POINTER__)
-#define MODULE_OFFSETOF_NAME    (__SIZEOF_REF_T__+4*__SIZEOF_POINTER__)
-#define MODULE_OFFSETOF_NAMEBUF (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__)
-#define MODULE_OFFSETOF_OWNER   (__SIZEOF_REF_T__+5*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
-#define MODULE_OFFSETOF_FLAG    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
-#define MODULE_OFFSETOF_LOAD    (__SIZEOF_REF_T__+6*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
-#define MODULE_OFFSETOF_BEGIN   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4)
-#define MODULE_OFFSETOF_END     (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_SIZE    (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+2*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_ALIGN   (__SIZEOF_REF_T__+7*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_ENTRY   (__SIZEOF_REF_T__+8*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__)
-#define MODULE_OFFSETOF_SEGC    (__SIZEOF_REF_T__+8*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+3*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_OFFSETOF_SEGV    (__SIZEOF_REF_T__+8*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_OFFSETOF_RLOCK   (__SIZEOF_REF_T__+9*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
-#define MODULE_OFFSETOF_DEBUG   (__SIZEOF_REF_T__+9*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
-#define MODULE_SIZE             (__SIZEOF_REF_T__+10*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
+#define MODULE_OFFSETOF_CHAIN    __SIZEOF_POINTER__
+#define MODULE_OFFSETOF_OPS     (3*__SIZEOF_POINTER__)
+#define MODULE_OFFSETOF_FILE    (4*__SIZEOF_POINTER__)
+#define MODULE_OFFSETOF_NAME    (5*__SIZEOF_POINTER__)
+#define MODULE_OFFSETOF_NAMEBUF (6*__SIZEOF_POINTER__)
+#define MODULE_OFFSETOF_OWNER   (6*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
+#define MODULE_OFFSETOF_FLAG    (7*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
+#define MODULE_OFFSETOF_LOAD    (8*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
+#define MODULE_OFFSETOF_BEGIN   (9*__SIZEOF_POINTER__+DENTRYNAME_SIZE)
+#define MODULE_OFFSETOF_END     (9*__SIZEOF_POINTER__+DENTRYNAME_SIZE+__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_SIZE    (9*__SIZEOF_POINTER__+DENTRYNAME_SIZE+2*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_ALIGN   (9*__SIZEOF_POINTER__+DENTRYNAME_SIZE+3*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_ENTRY   (10*__SIZEOF_POINTER__+DENTRYNAME_SIZE+3*__SIZEOF_SIZE_T__)
+#define MODULE_OFFSETOF_SEGC    (10*__SIZEOF_POINTER__+DENTRYNAME_SIZE+3*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_OFFSETOF_SEGV    (10*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_OFFSETOF_RLOCK   (11*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__)
+#define MODULE_OFFSETOF_DEBUG   (11*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
+#define MODULE_SIZE             (12*__SIZEOF_POINTER__+DENTRYNAME_SIZE+4*__SIZEOF_SIZE_T__+__SIZEOF_MADDR_T__+ATOMIC_RWLOCK_SIZE)
 
 struct module {
+union PACKED {
  ATOMIC_DATA ref_t       m_refcnt; /*< Module reference counter. */
+ uintptr_t             __m_align0; /*< Align by pointers. */
+};
  WEAK LIST_NODE(struct module)
                          m_chain;  /*< [lock(modules_lock)][LIST(modules_list)][0..1]
                                     *   Entry in the global chain of known modules. */
@@ -266,7 +269,10 @@ struct module {
                                     *   NOTE: The linker will attempt to acquire a real reference to this instance
                                     *         whenever an operation from `m_ops' must be executed, thus ensuring that
                                     *         the associated driver is still loaded and able to serve such requests. */
+union PACKED {
  u32                     m_flag;   /*< [const] Module flags (Set of `MODFLAG_*'). */
+ uintptr_t             __m_align1; /*< Align by pointers. */
+};
  VIRT uintptr_t          m_load;   /*< [const] The default load address for which relocations are optimized.
                                     *   NOTE: In ELF binaries, this is always ZERO(0).
                                     *   NOTE: This value is important, as it describes the effective
@@ -484,11 +490,12 @@ struct mptr;
 #ifdef CONFIG_TRACE_LEAKS
 #define KINSTANCE_OFFSETOF_TLOCK  0
 #define KINSTANCE_OFFSETOF_TRACE  ATOMIC_RWLOCK_SIZE
-#define KINSTANCE_SIZE           (ATOMIC_RWLOCK_SIZE+__SIZEOF_POINTER__+__SIZEOF_INT__)
+#define KINSTANCE_SIZE           (ATOMIC_RWLOCK_SIZE+__SIZEOF_POINTER__)
 #else
-#define KINSTANCE_SIZE            __SIZEOF_INT__
+#define KINSTANCE_SIZE            0
 #endif
 
+#if KINSTANCE_SIZE != 0
 struct kinstance {
  /* TODO: Add using/depends tracking information for related module instances:
   * >> "/bin/ls"
@@ -503,8 +510,8 @@ struct kinstance {
  atomic_rwlock_t k_tlock; /*< Lock for `k_trace' */
  struct mptr    *k_trace; /*< [0..1|null(KINSTANCE_TRACE_NULL)][lock(k_tlock)] Chain of traced managed memory pointers. */
 #endif
- int             k_placeholder;
 };
+#endif /* KINSTANCE_SIZE */
 
 
 
@@ -610,8 +617,10 @@ FUNDEF bool KCALL instanceset_contains(struct instanceset *__restrict self, stru
 #define INSTANCE_OFFSETOF_DEPS    (4*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+INSTANCESET_SIZE)
 #define INSTANCE_OFFSETOF_TEMP    (4*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE)
 #define INSTANCE_OFFSETOF_FLAGS   (5*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE)
-#define INSTANCE_OFFSETOF_DRIVER  (5*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE+4)
-#define INSTANCE_SIZE             (5*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE+4+KINSTANCE_SIZE)
+#if KINSTANCE_SIZE != 0
+#define INSTANCE_OFFSETOF_DRIVER  (6*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE)
+#endif
+#define INSTANCE_SIZE             (6*__SIZEOF_POINTER__+4*__SIZEOF_REF_T__+2*INSTANCESET_SIZE+KINSTANCE_SIZE)
 
 struct instance {
  /* NOTE: When reading the i_pself/i_next linked list of per-mman module instances,
@@ -643,8 +652,13 @@ struct instance {
  struct instanceset i_deps;   /*< The set of instances that this one depends on (aka. that are used by this instance).
                                *  HINT: `self' is apart of the `i_used' set of each of these. */
  void              *i_temp;   /*< [lock(:struct mman::m_lock)] Temporary pointer used during fork(). */
+union{
+ uintptr_t        __i_align;  /*< Align by pointers. */
  u32                i_flags;  /*< Instance flags. */
+};
+#if KINSTANCE_SIZE != 0
  struct kinstance   i_driver; /*< Kernel module data (Only allocated for driver modules). */
+#endif
 };
 
 

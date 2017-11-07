@@ -19,9 +19,11 @@
 #ifndef GUARD_INCLUDE_SCHED_SIGNAL_H
 #define GUARD_INCLUDE_SCHED_SIGNAL_H 1
 
+#include <hybrid/compiler.h>
+
+#ifndef CONFIG_NO_SIGNALS
 #include <errno.h>
 #include <hybrid/atomic.h>
-#include <hybrid/compiler.h>
 #include <hybrid/list/list.h>
 #include <hybrid/types.h>
 #include <sched/types.h>
@@ -97,7 +99,7 @@ sigpending_try_dequeue_unlocked(struct sigpending *__restrict self,
                                 bool *__restrict has_write_lock);
 #define SIGPENDING_IS_UNDEFINED(p)    ((uintptr_t)(p) < _NSIG)
 #define SIGPENDING_GT_UNDEFINED(p)    ((int)(p))
-#define SIGPENDING_UNDEFINED(signum)  ((struct sigqueue *)(signum))
+#define SIGPENDING_UNDEFINED(signum)  ((struct sigqueue *)(uintptr_t)(signum))
 
 
 struct sigshare {
@@ -205,27 +207,24 @@ FUNDEF errno_t KCALL task_kill2_ok(struct task *__restrict target,
 FUNDEF errno_t KCALL task_kill(struct task *__restrict self, int signo);
 
 
-
-
-
-
-
-
 #define SIGENTER_INFO_OFFSETOF_RETURN     0
 #define SIGENTER_INFO_OFFSETOF_SIGNO      __SIZEOF_POINTER__
-#define SIGENTER_INFO_OFFSETOF_PINFO     (__SIZEOF_POINTER__+__SIZEOF_INT__)
-#define SIGENTER_INFO_OFFSETOF_PCTX    (2*__SIZEOF_POINTER__+__SIZEOF_INT__)
-#define SIGENTER_INFO_OFFSETOF_OLD_EBP (3*__SIZEOF_POINTER__+__SIZEOF_INT__)
-#define SIGENTER_INFO_OFFSETOF_OLD_EIP (4*__SIZEOF_POINTER__+__SIZEOF_INT__)
-#define SIGENTER_INFO_OFFSETOF_INFO    (5*__SIZEOF_POINTER__+__SIZEOF_INT__)
-#define SIGENTER_INFO_OFFSETOF_CTX     (5*__SIZEOF_POINTER__+__SIZEOF_INT__+__SI_MAX_SIZE)
-#define SIGENTER_INFO_SIZE             (5*__SIZEOF_POINTER__+__SIZEOF_INT__+__SI_MAX_SIZE+__UCONTEXT_SIZE)
+#define SIGENTER_INFO_OFFSETOF_PINFO   (2*__SIZEOF_POINTER__)
+#define SIGENTER_INFO_OFFSETOF_PCTX    (3*__SIZEOF_POINTER__)
+#define SIGENTER_INFO_OFFSETOF_OLD_XBP (4*__SIZEOF_POINTER__)
+#define SIGENTER_INFO_OFFSETOF_OLD_XIP (5*__SIZEOF_POINTER__)
+#define SIGENTER_INFO_OFFSETOF_INFO    (6*__SIZEOF_POINTER__)
+#define SIGENTER_INFO_OFFSETOF_CTX     (6*__SIZEOF_POINTER__+__SI_MAX_SIZE)
+#define SIGENTER_INFO_SIZE             (6*__SIZEOF_POINTER__+__SI_MAX_SIZE+__UCONTEXT_SIZE)
 
 /* Signal delivery implementation */
-struct sigenter_info {
+struct PACKED sigenter_info {
  /* All the data that is pushed onto the user-space stack, or sigalt-stack. */
  USER void       *ei_return;  /*< Signal handler return address. */
+union PACKED {
  int              ei_signo;   /*< Signal number. */
+ uintptr_t      __ei_align;   /*< Align to pointer. */
+};
  USER siginfo_t  *ei_pinfo;   /*< == &ei_info. */
  USER ucontext_t *ei_pctx;    /*< == &ei_ctx. */
  /* SPLIT: The following is used to create a fake stack-frame to fix tracebacks
@@ -238,10 +237,14 @@ struct sigenter_info {
 union{ siginfo_t  ei_info;
  int            __ei_info_pad[__SI_MAX_SIZE/sizeof(int)]; };
  ucontext_t       ei_ctx;
+#ifdef __x86_64__
+#define           ei_next  ei_ctx.uc_mcontext.gregs[REG_RSP]
+#else
 #define           ei_next  ei_ctx.uc_mcontext.gregs[REG_UESP]
+#endif
 };
 
-
 DECL_END
+#endif /* !CONFIG_NO_SIGNALS */
 
 #endif /* !GUARD_INCLUDE_SCHED_SIGNAL_H */

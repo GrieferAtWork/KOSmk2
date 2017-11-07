@@ -46,23 +46,23 @@ __SYSDECL_BEGIN
 
 #ifndef _SIGSET_H_types
 #define _SIGSET_H_types 1
-#define _SIGSET_NWORDS    (1024/(8*__SIZEOF_LONG__))
+#define _SIGSET_NWORDS    (1024/(8*__SIZEOF_POINTER__))
 #ifdef __CC__
 #ifndef ____sig_atomic_t_defined
 #define ____sig_atomic_t_defined 1
 typedef __SIG_ATOMIC_TYPE__ __sig_atomic_t;
 #endif /* !____sig_atomic_t_defined */
-typedef struct { unsigned long int __val[_SIGSET_NWORDS]; } __sigset_t;
+typedef struct { __ULONGPTR_TYPE__ __val[_SIGSET_NWORDS]; } __sigset_t;
 #ifdef __USE_KOS
 #define __SIGSET_INIT_NONE    {{ [0 ... _SIGSET_NWORDS-1] = 0 }}
-#define __SIGSET_INIT_FULL    {{ [0 ... _SIGSET_NWORDS-1] = (unsigned long int)-1 }}
+#define __SIGSET_INIT_FULL    {{ [0 ... _SIGSET_NWORDS-1] = (__ULONGPTR_TYPE__)-1 }}
 #endif
 #endif /* __CC__ */
 #endif
 
 #ifdef __CC__
-#define __sigmask(sig) (((unsigned long int)1)<<(((sig)-1)%(8*sizeof(unsigned long int))))
-#define __sigword(sig) (((sig)-1)/(8*sizeof(unsigned long int)))
+#define __sigmask(sig) (((__ULONGPTR_TYPE__)1)<<(((sig)-1)%(8*sizeof(__ULONGPTR_TYPE__))))
+#define __sigword(sig) (((sig)-1)/(8*sizeof(__ULONGPTR_TYPE__)))
 #define __sigemptyset(set) \
   __XBLOCK({ int __cnt = _SIGSET_NWORDS; \
              __sigset_t *__set = (set); \
@@ -109,8 +109,8 @@ __LIBC int (__LIBCCALL __sigdelset)(__sigset_t *__set, int __sig);
 #else /* !__KERNEL__ */
 #define __SIGSETFN(name,body,const) \
 __LOCAL int (__LIBCCALL name)(const __sigset_t *__set, int __sig) { \
- unsigned long int __mask = __sigmask(__sig); \
- unsigned long int __word = __sigword(__sig); \
+ __ULONGPTR_TYPE__ __mask = __sigmask(__sig); \
+ __ULONGPTR_TYPE__ __word = __sigword(__sig); \
  return body; \
 }
 __SIGSETFN(__sigismember,(__set->__val[__word] & __mask) ? 1 : 0, const)

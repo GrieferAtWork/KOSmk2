@@ -169,6 +169,7 @@ __SYSCALL(__NR_nanosleep,sys_nanosleep)
 #define __NR_sched_yield  124
 __SYSCALL_ASM(__NR_sched_yield,sys_sched_yield)
 
+#if !defined(__KERNEL__) || !defined(CONFIG_NO_SIGNALS)
 #define __NR_kill         129
 __SYSCALL(__NR_kill,sys_kill)
 #define __NR_tkill        130
@@ -187,7 +188,8 @@ __SYSCALL(__NR_sigpending,sys_sigpending)
 __SYSCALL(__NR_sigtimedwait,sys_sigtimedwait)
 #define __NR_sigreturn    139
 #define __SC_ATTRIB_ISNRT_139 1
-__SYSCALL_ASM(__NR_sigreturn,sys_sigreturn)
+__RSYSCALL(__NR_sigreturn,sys_sigreturn)
+#endif
 
 #define __NR_setpgid      154
 __SYSCALL(__NR_setpgid,sys_setpgid)
@@ -222,7 +224,7 @@ __SYSCALL(__NR_mremap,sys_mremap)
 
 #define __SC_ATTRIB_CLOBB_220 C("memory")
 #define __NR_clone        220
-__SYSCALL(__NR_clone,sys_clone)
+__RSYSCALL(__NR_clone,sys_clone)
 #define __SC_ATTRIB_CLOBB_221 C("memory")
 #define __NR_execve       221
 __SYSCALL(__NR_execve,sys_execve)
@@ -248,7 +250,7 @@ __SYSCALL(__NR_syncfs,sys_syncfs)
 
 #define __SC_ATTRIB_CLOBB_1079 C("memory")
 #define __NR_fork         1079
-__SYSCALL(__NR_fork,sys_fork)
+__RSYSCALL(__NR_fork,sys_fork)
 #define __NR_syscall_max  1079
 
 

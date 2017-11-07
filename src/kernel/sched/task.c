@@ -64,75 +64,144 @@ DECL_BEGIN
 //#undef CONFIG_SMP
 //#define CONFIG_LOG_WAITING 1
 
+STATIC_ASSERT(sizeof(sigset_t) == __SIZEOF_SIGSET_T__);
+STATIC_ASSERT(sizeof(atomic_rwptr_t) == __SIZEOF_POINTER__);
 
 /* Assert CPU-state/register pack sizes. */
-STATIC_ASSERT(sizeof(struct gpregs)          == GPREGS_SIZE);
-STATIC_ASSERT(sizeof(struct gpregs32)        == GPREGS32_SIZE);
-STATIC_ASSERT(sizeof(struct sgregs)          == SGREGS_SIZE);
-STATIC_ASSERT(sizeof(struct sgregs32)        == SGREGS32_SIZE);
-STATIC_ASSERT(sizeof(struct irregs_host)     == IRREGS_HOST_SIZE);
-STATIC_ASSERT(sizeof(struct irregs)          == IRREGS_SIZE);
-STATIC_ASSERT(sizeof(struct irregs_host_e)   == IRREGS_HOST_E_SIZE);
-STATIC_ASSERT(sizeof(struct irregs_e)        == IRREGS_E_SIZE);
-STATIC_ASSERT(sizeof(struct cpustate16)      == CPUSTATE16_SIZE);
-STATIC_ASSERT(sizeof(struct comregs)         == COMREGS_SIZE);
-STATIC_ASSERT(sizeof(struct comregs32)       == COMREGS32_SIZE);
-STATIC_ASSERT(sizeof(struct cpustate_host)   == CPUSTATE_HOST_SIZE);
-STATIC_ASSERT(sizeof(struct cpustate)        == CPUSTATE_SIZE);
+STATIC_ASSERT(sizeof(struct gpregs) == GPREGS_SIZE);
+STATIC_ASSERT(sizeof(struct gpregs32) == GPREGS32_SIZE);
+STATIC_ASSERT(sizeof(struct sgregs) == SGREGS_SIZE);
+STATIC_ASSERT(sizeof(struct sgregs32) == SGREGS32_SIZE);
+STATIC_ASSERT(sizeof(struct irregs_host) == IRREGS_HOST_SIZE);
+STATIC_ASSERT(sizeof(struct irregs) == IRREGS_SIZE);
+STATIC_ASSERT(sizeof(struct irregs_host_e) == IRREGS_HOST_E_SIZE);
+STATIC_ASSERT(sizeof(struct irregs_e) == IRREGS_E_SIZE);
+STATIC_ASSERT(sizeof(struct cpustate16) == CPUSTATE16_SIZE);
+STATIC_ASSERT(sizeof(struct comregs) == COMREGS_SIZE);
+STATIC_ASSERT(sizeof(struct comregs32) == COMREGS32_SIZE);
+STATIC_ASSERT(sizeof(struct cpustate_host) == CPUSTATE_HOST_SIZE);
+STATIC_ASSERT(sizeof(struct cpustate) == CPUSTATE_SIZE);
 STATIC_ASSERT(sizeof(struct cpustate_host_e) == CPUSTATE_HOST_E_SIZE);
-STATIC_ASSERT(sizeof(struct cpustate_e)      == CPUSTATE_E_SIZE);
-                        
+STATIC_ASSERT(sizeof(struct cpustate_e) == CPUSTATE_E_SIZE);
+
+#ifndef CONFIG_NO_LDT
+STATIC_ASSERT(offsetof(struct ldt,l_gdt) == LDT_OFFSETOF_GDT);
+STATIC_ASSERT(offsetof(struct ldt,l_idt) == LDT_OFFSETOF_IDT);
+STATIC_ASSERT(offsetof(struct ldt,l_refcnt) == LDT_OFFSETOF_REFCNT);
+STATIC_ASSERT(offsetof(struct ldt,l_lock) == LDT_OFFSETOF_LOCK);
+#ifdef CONFIG_SMP
+STATIC_ASSERT(offsetof(struct ldt,l_valid) == LDT_OFFSETOF_VALID);
+#endif
+STATIC_ASSERT(offsetof(struct ldt,l_tasks) == LDT_OFFSETOF_TASKS);
+STATIC_ASSERT(sizeof(struct ldt) == LDT_SIZE);
+#endif
 
 /* Assert cpu/task offsets. */
-STATIC_ASSERT(IS_ALIGNED(offsetof(struct task,t_signals.ts_first),TASKSIGSLOT_ALIGN));
-STATIC_ASSERT(sizeof(struct tasksigslot)           == TASKSIGSLOT_SIZE);
-STATIC_ASSERT(offsetof(struct tasksig,ts_first)    == TASKSIG_OFFSETOF_FIRST);
-STATIC_ASSERT(sizeof(struct tasksig)               == TASKSIG_SIZE);
-STATIC_ASSERT(offsetof(struct task,t_affinity)     == TASK_OFFSETOF_AFFINITY);
-STATIC_ASSERT(offsetof(struct task,t_flags)        == TASK_OFFSETOF_FLAGS);
-STATIC_ASSERT(offsetof(struct task,t_priority)     == TASK_OFFSETOF_PRIORITY);
-STATIC_ASSERT(offsetof(struct task,t_prioscore)    == TASK_OFFSETOF_PRIOSCORE);
-STATIC_ASSERT(offsetof(struct task,t_timeout)      == TASK_OFFSETOF_TIMEOUT);
-STATIC_ASSERT(offsetof(struct task,t_signals)      == TASK_OFFSETOF_SIGNALS);
-STATIC_ASSERT(offsetof(struct task,t_exitcode)     == TASK_OFFSETOF_EXITCODE);
-STATIC_ASSERT(offsetof(struct task,t_ic)           == TASK_OFFSETOF_IC);
-STATIC_ASSERT(offsetof(struct task,t_addrlimit)    == TASK_OFFSETOF_ADDRLIMIT);
-STATIC_ASSERT(offsetof(struct task,t_event)        == TASK_OFFSETOF_EVENT);
-STATIC_ASSERT(offsetof(struct task,t_hstack)       == TASK_OFFSETOF_HSTACK);
-STATIC_ASSERT(offsetof(struct task,t_lastcr2)      == TASK_OFFSETOF_LASTCR2);
-STATIC_ASSERT(offsetof(struct task,t_mman_tasks)   == TASK_OFFSETOF_MMAN_TASKS);
-STATIC_ASSERT(offsetof(struct task,t_mman)         == TASK_OFFSETOF_MMAN);
-STATIC_ASSERT(offsetof(struct task,t_fdman)        == TASK_OFFSETOF_FDMAN);
-STATIC_ASSERT(offsetof(struct task,t_ustack)       == TASK_OFFSETOF_USTACK);
-STATIC_ASSERT(offsetof(struct task,t_sigblock)     == TASK_OFFSETOF_SIGBLOCK);
-STATIC_ASSERT(offsetof(struct task,t_sigpend)      == TASK_OFFSETOF_SIGPEND);
-STATIC_ASSERT(offsetof(struct task,t_sigshare)     == TASK_OFFSETOF_SIGSHARE);
-STATIC_ASSERT(offsetof(struct task,t_tlb)          == TASK_OFFSETOF_TLB);
-STATIC_ASSERT(offsetof(struct sigenter,se_xip)     == SIGENTER_OFFSETOF_EIP);
+STATIC_ASSERT(offsetof(struct tasksigslot,tss_self) == TASKSIGSLOT_OFFSETOF_SELF);
+STATIC_ASSERT(offsetof(struct tasksigslot,tss_sig) == TASKSIGSLOT_OFFSETOF_SIG);
+STATIC_ASSERT(offsetof(struct tasksigslot,tss_chain) == TASKSIGSLOT_OFFSETOF_CHAIN);
+STATIC_ASSERT(offsetof(struct tasksigslot,tss_buf) == TASKSIGSLOT_OFFSETOF_BUF);
+STATIC_ASSERT(offsetof(struct tasksigslot,tss_siz) == TASKSIGSLOT_OFFSETOF_SIZ);
+STATIC_ASSERT(offsetof(struct tasksigslot,tss_last) == TASKSIGSLOT_OFFSETOF_LAST);
+STATIC_ASSERT(IS_ALIGNED(sizeof(struct tasksigslot),TASKSIGSLOT_ALIGN));
+STATIC_ASSERT(sizeof(struct tasksigslot) == TASKSIGSLOT_SIZE);
+
+STATIC_ASSERT(offsetof(struct tasksig,ts_first) == TASKSIG_OFFSETOF_FIRST);
+STATIC_ASSERT(offsetof(struct tasksig,ts_slotc) == TASKSIG_OFFSETOF_SLOTC);
+STATIC_ASSERT(offsetof(struct tasksig,ts_slota) == TASKSIG_OFFSETOF_SLOTA);
+STATIC_ASSERT(offsetof(struct tasksig,ts_slotv) == TASKSIG_OFFSETOF_SLOTV);
+STATIC_ASSERT(offsetof(struct tasksig,ts_recv) == TASKSIG_OFFSETOF_RECV);
+STATIC_ASSERT(IS_ALIGNED(offsetof(struct tasksig,ts_first),TASKSIG_ALIGN));
+STATIC_ASSERT(IS_ALIGNED(sizeof(struct tasksig),TASKSIG_ALIGN));
+STATIC_ASSERT(sizeof(struct tasksig) == TASKSIG_SIZE);
+STATIC_ASSERT(IS_ALIGNED(offsetof(struct task,t_signals),TASKSIG_ALIGN));
+
+STATIC_ASSERT(offsetof(struct sigenter,se_count) == SIGENTER_OFFSETOF_COUNT);
+STATIC_ASSERT(offsetof(struct sigenter,se_xip) == SIGENTER_OFFSETOF_XIP);
+STATIC_ASSERT(offsetof(struct sigenter,se_cs) == SIGENTER_OFFSETOF_CS);
+STATIC_ASSERT(offsetof(struct sigenter,se_xflags) == SIGENTER_OFFSETOF_XFLAGS);
+STATIC_ASSERT(offsetof(struct sigenter,se_userxsp) == SIGENTER_OFFSETOF_USERXSP);
+STATIC_ASSERT(offsetof(struct sigenter,se_ss) == SIGENTER_OFFSETOF_SS);
+STATIC_ASSERT(sizeof(struct sigenter) == SIGENTER_SIZE);
 
 #ifdef ARCHTASK_SIZE
-STATIC_ASSERT(offsetof(struct task,t_arch) == TASK_OFFSETOF_ARCH);
+#ifndef CONFIG_NO_LDT
+STATIC_ASSERT(offsetof(struct archtask,at_ldt_tasks) == ARCHTASK_OFFSETOF_LDT_TASKS);
+STATIC_ASSERT(offsetof(struct archtask,at_ldt_gdt) == ARCHTASK_OFFSETOF_LDT_GDT);
+#endif /* !CONFIG_NO_LDT */
 #ifndef CONFIG_NO_FPU
 STATIC_ASSERT(offsetof(struct archtask,at_fpu) == ARCHTASK_OFFSETOF_FPU);
 #endif /* !CONFIG_NO_FPU */
-#ifndef CONFIG_NO_LDT
-STATIC_ASSERT(offsetof(struct archtask,at_ldt_tasks) == ARCHTASK_OFFSETOF_LDT_TASKS);
-STATIC_ASSERT(offsetof(struct archtask,at_ldt_gdt)   == ARCHTASK_OFFSETOF_LDT_GDT);
-#endif /* !CONFIG_NO_LDT */
 #endif /* ARCHTASK_SIZE */
 
-STATIC_ASSERT(sizeof(sigset_t)            == __SIZEOF_SIGSET_T__);
-STATIC_ASSERT(offsetof(struct cpu,c_idle) == CPU_OFFSETOF_IDLE);
-STATIC_ASSERT(sizeof(struct task)         == TASK_SIZE);
-STATIC_ASSERT(offsetof(struct cpu,c_idle) == CPU_OFFSETOF_IDLE);
+STATIC_ASSERT(offsetof(struct task,t_refcnt) == TASK_OFFSETOF_REFCNT);
+STATIC_ASSERT(offsetof(struct task,t_weakcnt) == TASK_OFFSETOF_WEAKCNT);
+STATIC_ASSERT(offsetof(struct task,t_cstate) == TASK_OFFSETOF_CSTATE);
+#ifdef CONFIG_SMP
+STATIC_ASSERT(offsetof(struct task,t_affinity_lock) == TASK_OFFSETOF_AFFINITY_LOCK);
+STATIC_ASSERT(offsetof(struct task,t_affinity) == TASK_OFFSETOF_AFFINITY);
+STATIC_ASSERT(offsetof(struct task,t_cpu) == TASK_OFFSETOF_CPU);
+#endif /* CONFIG_SMP */
+STATIC_ASSERT(offsetof(struct task,t_flags) == TASK_OFFSETOF_FLAGS);
+STATIC_ASSERT(offsetof(struct task,t_mode) == TASK_OFFSETOF_MODE);
+STATIC_ASSERT(offsetof(struct task,t_sched) == TASK_OFFSETOF_SCHED);
+STATIC_ASSERT(offsetof(struct task,t_timeout) == TASK_OFFSETOF_TIMEOUT);
+STATIC_ASSERT(offsetof(struct task,t_signals) == TASK_OFFSETOF_SIGNALS);
+STATIC_ASSERT(offsetof(struct task,t_priority) == TASK_OFFSETOF_PRIORITY);
+STATIC_ASSERT(offsetof(struct task,t_prioscore) == TASK_OFFSETOF_PRIOSCORE);
+STATIC_ASSERT(offsetof(struct task,t_exitcode) == TASK_OFFSETOF_EXITCODE);
+STATIC_ASSERT(offsetof(struct task,t_event) == TASK_OFFSETOF_EVENT);
+STATIC_ASSERT(offsetof(struct task,t_critical) == TASK_OFFSETOF_CRITICAL);
+STATIC_ASSERT(offsetof(struct task,t_nointr) == TASK_OFFSETOF_NOINTR);
+STATIC_ASSERT(offsetof(struct task,t_addrlimit) == TASK_OFFSETOF_ADDRLIMIT);
+STATIC_ASSERT(offsetof(struct task,t_ic) == TASK_OFFSETOF_IC);
+STATIC_ASSERT(offsetof(struct task,t_suspend) == TASK_OFFSETOF_SUSPEND);
+STATIC_ASSERT(offsetof(struct task,t_pid) == TASK_OFFSETOF_PID);
+STATIC_ASSERT(offsetof(struct task,t_hstack) == TASK_OFFSETOF_HSTACK);
+STATIC_ASSERT(offsetof(struct task,t_lastcr2) == TASK_OFFSETOF_LASTCR2);
+STATIC_ASSERT(offsetof(struct task,t_mman_tasks) == TASK_OFFSETOF_MMAN_TASKS);
+STATIC_ASSERT(offsetof(struct task,t_real_mman) == TASK_OFFSETOF_REAL_MMAN);
+STATIC_ASSERT(offsetof(struct task,t_mman) == TASK_OFFSETOF_MMAN);
+STATIC_ASSERT(offsetof(struct task,t_fdman) == TASK_OFFSETOF_FDMAN);
+STATIC_ASSERT(offsetof(struct task,t_ustack) == TASK_OFFSETOF_USTACK);
+#ifndef CONFIG_NO_SIGNALS
+STATIC_ASSERT(offsetof(struct task,t_sighand) == TASK_OFFSETOF_SIGHAND);
+STATIC_ASSERT(offsetof(struct task,t_sigblock) == TASK_OFFSETOF_SIGBLOCK);
+STATIC_ASSERT(offsetof(struct task,t_sigpend) == TASK_OFFSETOF_SIGPEND);
+STATIC_ASSERT(offsetof(struct task,t_sigshare) == TASK_OFFSETOF_SIGSHARE);
+STATIC_ASSERT(offsetof(struct task,t_sigenter) == TASK_OFFSETOF_SIGENTER);
+#endif /* !CONFIG_NO_SIGNALS */
+#ifndef CONFIG_NO_TLB
+STATIC_ASSERT(offsetof(struct task,t_tlb) == TASK_OFFSETOF_TLB);
+#endif /* !CONFIG_NO_TLB */
+#ifdef ARCHTASK_SIZE
+STATIC_ASSERT(offsetof(struct task,t_arch) == TASK_OFFSETOF_ARCH);
+#endif /* ARCHTASK_SIZE */
 STATIC_ASSERT(IS_ALIGNED(sizeof(struct task),TASK_ALIGN));
+STATIC_ASSERT(sizeof(struct task) == TASK_SIZE);
+
+STATIC_ASSERT(offsetof(struct cpu,c_self) == CPU_OFFSETOF_SELF);
+STATIC_ASSERT(offsetof(struct cpu,c_running) == CPU_OFFSETOF_RUNNING);
+STATIC_ASSERT(offsetof(struct cpu,c_idling) == CPU_OFFSETOF_IDLING);
+STATIC_ASSERT(offsetof(struct cpu,c_id) == CPU_OFFSETOF_ID);
+STATIC_ASSERT(offsetof(struct cpu,c_prio_min) == CPU_OFFSETOF_PRIO_MIN);
+STATIC_ASSERT(offsetof(struct cpu,c_prio_max) == CPU_OFFSETOF_PRIO_MAX);
+STATIC_ASSERT(offsetof(struct cpu,c_lock) == CPU_OFFSETOF_LOCK);
+STATIC_ASSERT(offsetof(struct cpu,c_suspended) == CPU_OFFSETOF_SUSPENDED);
+STATIC_ASSERT(offsetof(struct cpu,c_sleeping) == CPU_OFFSETOF_SLEEPING);
 STATIC_ASSERT(IS_ALIGNED(offsetof(struct cpu,c_idle),TASK_ALIGN));
+STATIC_ASSERT(offsetof(struct cpu,c_idle) == CPU_OFFSETOF_IDLE);
 #ifndef CONFIG_NO_JOBS
 STATIC_ASSERT(IS_ALIGNED(offsetof(struct cpu,c_work),TASK_ALIGN));
+STATIC_ASSERT(offsetof(struct cpu,c_work) == CPU_OFFSETOF_WORK);
 #endif /* !CONFIG_NO_JOBS */
-STATIC_ASSERT(sizeof(struct cpu)                     == CPU_SIZE);
-STATIC_ASSERT(sizeof(atomic_rwptr_t)                 == __SIZEOF_POINTER__);
-STATIC_ASSERT(offsetof(struct cpustate,iret.useresp) == 52);
+STATIC_ASSERT(offsetof(struct cpu,c_arch) == CPU_OFFSETOF_ARCH);
+STATIC_ASSERT(offsetof(struct cpu,c_n_run) == CPU_OFFSETOF_N_RUN);
+STATIC_ASSERT(offsetof(struct cpu,c_n_idle) == CPU_OFFSETOF_N_IDLE);
+STATIC_ASSERT(offsetof(struct cpu,c_n_susp) == CPU_OFFSETOF_N_SUSP);
+STATIC_ASSERT(offsetof(struct cpu,c_n_sleep) == CPU_OFFSETOF_N_SLEEP);
+STATIC_ASSERT(IS_ALIGNED(sizeof(struct cpu),CPU_ALIGN));
+STATIC_ASSERT(sizeof(struct cpu) == CPU_SIZE);
 
 
 PUBLIC struct task *KCALL
@@ -245,7 +314,7 @@ task_set_id(struct task *__restrict self,
 #ifndef CONFIG_NO_JOBS
  assert(self->t_mode == TASKMODE_NOTSTARTED ||
        (self->t_mode == TASKMODE_SUSPENDED &&
-        self == &self->t_cpu->c_work));
+        self == &TASK_CPU(self)->c_work));
 #else /* !CONFIG_NO_JOBS */
  assert(self->t_mode == TASKMODE_NOTSTARTED);
 #endif /* CONFIG_NO_JOBS */
@@ -577,13 +646,17 @@ task_destroy(struct task *__restrict t) {
  assert(IS_ALIGNED((uintptr_t)t->t_hstack.hs_begin,PAGESIZE));
  assert(IS_ALIGNED((uintptr_t)t->t_hstack.hs_end,  PAGESIZE));
  assertf(t != &inittask,"Cannot destroy boot task");
- assertf(t->t_cpu != NULL,"Task has no associated CPU");
- assertf(t != &t->t_cpu->c_idle,"Cannot destroy cpu IDLE-task");
+#ifdef CONFIG_SMP
+ assertf(TASK_CPU(t) != NULL,"Task has no associated CPU");
+#endif /* CONFIG_SMP */
+ assertf(t != &TASK_CPU(t)->c_idle,"Cannot destroy cpu IDLE-task");
 #ifndef CONFIG_NO_JOBS
- assertf(t != &t->t_cpu->c_work,"Cannot destroy cpu WORK-task");
+ assertf(t != &TASK_CPU(t)->c_work,"Cannot destroy cpu WORK-task");
 #endif /* !CONFIG_NO_JOBS */
  /* Validate the consistency of the task's state. */
- assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_cpu != NULL));
+#ifdef CONFIG_SMP
+ assert(t->t_mode == TASKMODE_NOTSTARTED || (TASK_CPU(t) != NULL));
+#endif /* CONFIG_SMP */
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_mman != NULL));
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_mman == t->t_real_mman));
  assert(t->t_mode == TASKMODE_NOTSTARTED || (t->t_fdman != NULL));
@@ -1472,7 +1545,7 @@ pit_exc(struct cpustate *__restrict state) {
 
 
 /* Tasking API */
-
+#ifdef CONFIG_SMP
 PUBLIC struct cpu *KCALL
 task_setcpu(struct task *__restrict t,
             struct cpu *__restrict new_cpu) {
@@ -1610,6 +1683,7 @@ end:
  PREEMPTION_POP(was);
  return result;
 }
+#endif /* CONFIG_SMP */
 
 
 
@@ -2232,11 +2306,19 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
  ATOMIC_WRITE(t->t_mode,TASKMODE_TERMINATED);
 
  /* Make sure to activate the new task's page directory as early as possible! */
+#ifdef THIS_PDIR_BASE
  assert(t->t_mman == new_task->t_mman ||
         memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
                &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
               ((THIS_PDIR_BASE-KERNEL_BASE)/PDIR_ROOTENTRY_REPRSIZE)*
                 sizeof(t->t_mman->m_pdir.pd_directory[0])) == 0);
+#else
+ assert(t->t_mman == new_task->t_mman ||
+        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+              ((0-KERNEL_BASE)/PDIR_ROOTENTRY_REPRSIZE)*
+                sizeof(t->t_mman->m_pdir.pd_directory[0])) == 0);
+#endif
  TASK_SWITCH_CONTEXT(t,new_task);
 
 #if 0
@@ -2676,7 +2758,9 @@ task_signal_stop_cpu_endwrite(struct cpu *__restrict c,
   info.si_pid   = THIS_NAMESPACE == t->t_pid.tp_ids[PIDTYPE_PID].tl_ns ? GET_THIS_PID() : 0;
   info.si_uid   = GET_THIS_UID();
   info.si_code  = CLD_STOPPED;
+#ifdef CONFIG_SMP
   assertf(parent->t_cpu == c,"TODO: Signal to different CPU");
+#endif
 
   /* Raise the SIGCHLD in the parent process. */
   task_kill2_cpu_endwrite(parent,&info,0,0,was);
@@ -2713,7 +2797,9 @@ task_signal_cont_cpu_endwrite(struct cpu *__restrict c,
   info.si_pid   = THIS_NAMESPACE == t->t_pid.tp_ids[PIDTYPE_PID].tl_ns ? GET_THIS_PID() : 0;
   info.si_uid   = GET_THIS_UID();
   info.si_code  = CLD_CONTINUED;
+#ifdef CONFIG_SMP
   assertf(parent->t_cpu == c,"TODO: Signal to different CPU");
+#endif
 
   /* Raise the SIGCHLD in the parent process. */
   task_kill2_cpu_endwrite(parent,&info,0,0,was);

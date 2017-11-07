@@ -21,21 +21,26 @@
 #define _KOS_SOURCE 2
 #define _GNU_SOURCE 1
 
+#include <alloca.h>
+#include <asm/instx.h>
 #include <bits/resource.h>
 #include <bits/sched.h>
 #include <bits/waitflags.h>
 #include <bits/waitstatus.h>
+#include <dev/rtc.h>
 #include <fs/fd.h>
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
+#include <hybrid/minmax.h>
 #include <hybrid/types.h>
+#include <kernel/arch/cpustate.h>
+#include <kernel/arch/hints.h>
+#include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
 #include <kernel/stack.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <sys/syslog.h>
-#include <dev/rtc.h>
 #include <malloc.h>
 #include <sched.h>
 #include <sched/cpu.h>
@@ -45,12 +50,8 @@
 #include <sched/task.h>
 #include <sched/types.h>
 #include <string.h>
-#include <alloca.h>
-#include <kernel/irq.h>
 #include <sys/mman.h>
-#include <asm/instx.h>
-#include <kernel/arch/hints.h>
-#include <hybrid/minmax.h>
+#include <sys/syslog.h>
 
 DECL_BEGIN
 
@@ -60,7 +61,7 @@ void KCALL task_userexit_group(void *exitcode) {
  struct task *caller = THIS_TASK;
  REF struct task *leader;
  task_crit();
- exitcode = (void *)__W_EXITCODE((u8)(uintptr_t)exitcode,0);
+ exitcode = (void *)(uintptr_t)__W_EXITCODE((u8)(uintptr_t)exitcode,0);
  atomic_rwlock_read(&caller->t_pid.tp_leadlock);
  leader = caller->t_pid.tp_leader,TASK_INCREF(leader);
  atomic_rwlock_endread(&caller->t_pid.tp_leadlock);
@@ -104,7 +105,7 @@ void KCALL task_userexit_group(void *exitcode) {
 
 INTERN ATTR_NORETURN void KCALL task_userexit(void *exitcode) {
  /* More commonly known as pthread:`pthread_exit()' */
- task_terminate(THIS_TASK,(void *)__W_EXITCODE((u8)(uintptr_t)exitcode,0));
+ task_terminate(THIS_TASK,(void *)(uintptr_t)__W_EXITCODE((u8)(uintptr_t)exitcode,0));
  __builtin_unreachable();
 }
 
@@ -218,7 +219,8 @@ stack_init_vm_copy(struct mman *__restrict nm,
 }
 
 
-PRIVATE REF struct task *KCALL task_do_fork(void) {
+PRIVATE REF struct task *KCALL
+task_do_fork(struct cpustate *__restrict state) {
  struct task *caller = THIS_TASK;
  REF struct task *result; errno_t error;
  REF struct stack *ustack = NULL;
@@ -300,10 +302,12 @@ end_double_lock:
 
  /* NOTE: From this point onwards, all remaining setup operation are noexcept! */
 
+#ifdef CONFIG_SMP
  /* Inherit CPU-affinity from the calling thread. */
  atomic_rwlock_read(&caller->t_affinity_lock);
  memcpy(&result->t_affinity,&caller->t_affinity,sizeof(cpu_set_t));
  atomic_rwlock_endread(&caller->t_affinity_lock);
+#endif /* CONFIG_SMP */
 
  /* Inherit thread-priority from the calling thread. */
  result->t_priority = ATOMIC_READ(caller->t_priority);
@@ -313,39 +317,24 @@ end_double_lock:
  { HOST struct cpustate *cs;
    result->t_cstate = cs = ((HOST struct cpustate *)result->t_hstack.hs_end-1);
    /* Inherit practically all registers from the calling thread. */
-#undef __STACKBASE_TASK
-#define __STACKBASE_TASK caller
-#ifdef __i386__
-   cs->iret.ss      = THIS_SYSCALL_SS;
-   cs->iret.useresp = (u32)THIS_SYSCALL_USERESP;
-   cs->gp.eax       = 0; /* The child process returns ZERO(0) in EAX. */
-   cs->gp.ecx       = THIS_SYSCALL_ECX;
-   cs->gp.edx       = THIS_SYSCALL_EDX;
-   cs->gp.ebx       = THIS_SYSCALL_EBX;
-   cs->gp.esi       = THIS_SYSCALL_ESI;
-   cs->gp.edi       = THIS_SYSCALL_EDI;
-   cs->gp.ebp       = THIS_SYSCALL_EBP;
-   cs->iret.eip     = (u32)THIS_SYSCALL_EIP;
-   cs->iret.cs      = THIS_SYSCALL_CS;
-   cs->iret.eflags  = THIS_SYSCALL_EFLAGS;
-   cs->sg.gs        = THIS_SYSCALL_GS;
-   cs->sg.fs        = THIS_SYSCALL_FS;
-   cs->sg.es        = THIS_SYSCALL_ES;
-   cs->sg.ds        = THIS_SYSCALL_DS;
+   memcpy(cs,state,sizeof(struct cpustate));
+   cs->gp.xax = 0; /* The child process returns ZERO(0) in EAX. */
 #if 0
-   syslog(LOG_DEBUG,"FORK at %p\n",cs->iret.eip);
-   syslog(LOG_DEBUG,"EAX %p  ECX %p  EDX %p  EBX %p EFLAGS %p\n",
-                     cs->gp.eax,cs->gp.ecx,cs->gp.edx,
-                     cs->gp.ebx,cs->iret.eflags);
-   syslog(LOG_DEBUG,"ESP %p  EBP %p  ESI %p  EDI %p\n",
-                     cs->iret.eip,cs->iret.useresp,
-                     cs->gp.ebp,cs->gp.esi,cs->gp.edi);
+   syslog(LOG_DEBUG,"FORK at %p\n",cs->iret.xip);
+   syslog(LOG_DEBUG,REGISTER_PREFIX "AX %p "
+                    REGISTER_PREFIX "CX %p "
+                    REGISTER_PREFIX "DX %p "
+                    REGISTER_PREFIX "BX %p "
+                    REGISTER_PREFIX "FLAGS %p\n",
+                    cs->gp.xax,cs->gp.xcx,cs->gp.xdx,
+                    cs->gp.xbx,cs->iret.xflags);
+   syslog(LOG_DEBUG,REGISTER_PREFIX "SP %p "
+                    REGISTER_PREFIX "BP %p "
+                    REGISTER_PREFIX "SI %p "
+                    REGISTER_PREFIX "DI %p\n",
+                    cs->iret.xip,cs->iret.userxsp,
+                    cs->gp.xbp,cs->gp.xsi,cs->gp.xdi);
 #endif
-#else
-#error FIXME
-#endif
-#undef __STACKBASE_TASK
-#define __STACKBASE_TASK THIS_TASK
  }
 
  /* And we're done! */
@@ -358,11 +347,11 @@ err0: result = E_PTR(error);
 }
 
 
-SYSCALL_DEFINE0(fork) {
+SYSCALL_RDEFINE(fork,regs) {
  pid_t result;
  REF struct task *child;
  task_crit();
- child = task_do_fork();
+ child = task_do_fork(regs);
  if (E_ISOK(child)) {
   result = task_start(child);
   /* Return the pid of `result'. */
@@ -375,7 +364,7 @@ SYSCALL_DEFINE0(fork) {
  }
  task_endcrit();
  assert(!THIS_TASK->t_critical);
- return result;
+ GPREGS_SYSCALL_RET1(regs->gp) = result;
 }
 
 PRIVATE SAFE errno_t KCALL
@@ -831,22 +820,22 @@ find_space:
 
 
 /* clone() system call. */
-SYSCALL_DEFINE5(clone,
-                syscall_ulong_t,flags,
-                USER void *,newsp,
-                USER pid_t *,parent_tidptr,
-                USER pid_t *,child_tidptr,
-                USER void *,tls_val) {
+SYSCALL_RDEFINE(clone,regs) {
+#define CLONE_FLAGS         ((syscall_ulong_t)GPREGS_SYSCALL_ARG1(regs->gp))
+#define CLONE_NEWSP         ((USER void *)GPREGS_SYSCALL_ARG2(regs->gp))
+#define CLONE_PARENT_TIDPTR ((USER pid_t *)GPREGS_SYSCALL_ARG3(regs->gp))
+#define CLONE_CHILD_TIDPTR  ((USER pid_t *)GPREGS_SYSCALL_ARG4(regs->gp))
+#define CLONE_TLS_VAL       ((USER void *)GPREGS_SYSCALL_ARG5(regs->gp))
  REF struct task *result; pid_t child_pid,error;
  struct task *caller = THIS_TASK;
  bool result_needs_stack = true;
- (void)tls_val; /* Not used in the current implementation... */
+ USER void *newsp = CLONE_NEWSP;
  task_crit();
  /* Start out my creating the new task. */
  if unlikely((result = task_new()) == NULL) { error = -ENOMEM; goto end; }
 
  /* Clone the VM first, so we get the new thread's address space all figured out. */
- if (flags&CLONE_VM) {
+ if (CLONE_FLAGS&CLONE_VM) {
   /* Inherit the calling thread's VM. */
   result->t_mman = caller->t_mman;
   MMAN_INCREF(result->t_mman);
@@ -914,7 +903,7 @@ end_double_lock:
  /* All right! Everything memory-related has been cloned/inherited.
   * >> Now it's time to do all the other things... */
 
- if (flags&CLONE_FILES) {
+ if (CLONE_FLAGS&CLONE_FILES) {
   /* Re-use the same file descriptors. */
   result->t_fdman = caller->t_fdman;
   FDMAN_INCREF(result->t_fdman);
@@ -928,7 +917,7 @@ end_double_lock:
   if (E_ISERR(error)) goto err1;
  }
 
- if (flags&CLONE_SIGHAND) {
+ if (CLONE_FLAGS&CLONE_SIGHAND) {
   /* Re-use the same signal handlers. */
   result->t_sighand = caller->t_sighand;
   SIGHAND_INCREF(result->t_sighand);
@@ -937,7 +926,7 @@ end_double_lock:
   if unlikely(!result->t_sighand) goto err1_nomem;
  }
 
- if (flags&CLONE_THREAD) {
+ if (CLONE_FLAGS&CLONE_THREAD) {
   REF struct task *leader;
   /* Create as a thread apart of the caller's thread-group. */
   result->t_sigshare = caller->t_sigshare;
@@ -960,10 +949,10 @@ end_double_lock:
  }
 
  /* Setup the task's parent link. */
- if (flags&CLONE_DETACHED) {
+ if (CLONE_FLAGS&CLONE_DETACHED) {
   /* Setup `init' as the task's parent, essentially detaching it from the caller. */
   error = task_set_parent(result,&inittask);
- } else if (flags&CLONE_PARENT) {
+ } else if (CLONE_FLAGS&CLONE_PARENT) {
   REF struct task *parent;
   /* Re-use the caller's parent as the new task's parent, essentially creating a sibling. */
   atomic_rwlock_read(&caller->t_pid.tp_parlock);
@@ -978,7 +967,7 @@ end_double_lock:
  }
  if (E_ISERR(error)) goto err1;
 
- if (flags&CLONE_NEWPID) {
+ if (CLONE_FLAGS&CLONE_NEWPID) {
   REF struct pid_namespace *result_ns;
   /* Create a new PID namespace for the new thread. */
   result_ns = pid_namespace_new(PIDTYPE_PID);
@@ -999,15 +988,17 @@ end_double_lock:
   * Now all we need to do, is to store the new task's TID in
   * the optional buffers provided, and then we can just kick-start the new thread! */
  child_pid = result->t_pid.tp_ids[PIDTYPE_PID].tl_pid;
- if (flags&CLONE_PARENT_SETTID) {
+ if (CLONE_FLAGS&CLONE_PARENT_SETTID) {
   /* XXX: What if the child was created in a new PID namespace? (`CLONE_NEWPID') */
-  if (copy_to_user(parent_tidptr,&child_pid,sizeof(pid_t))) goto err1_fault;
+  if (copy_to_user(CLONE_PARENT_TIDPTR,&child_pid,sizeof(pid_t))) goto err1_fault;
  }
 
+#ifdef CONFIG_SMP
  /* Inherit CPU-affinity from the calling thread. */
  atomic_rwlock_read(&caller->t_affinity_lock);
  memcpy(&result->t_affinity,&caller->t_affinity,sizeof(cpu_set_t));
  atomic_rwlock_endread(&caller->t_affinity_lock);
+#endif /* CONFIG_SMP */
 
  /* Inherit thread-priority from the calling thread. */
  result->t_priority = ATOMIC_READ(caller->t_priority);
@@ -1016,49 +1007,27 @@ end_double_lock:
   * return to user-space. (i.e.: we need to set up its registers) */
  { HOST struct cpustate *cs;
    result->t_cstate = cs = ((HOST struct cpustate *)result->t_hstack.hs_end-1);
-   /* Inherit practically all registers from the calling thread. */
-#undef __STACKBASE_TASK
-#define __STACKBASE_TASK caller
-#ifdef __i386__
-   /* Inherit all registers other than EAX and ESP to-be used for argument passing.
-    * NOTE: `ESP' is also inherited when an automatic stack is used and the VM was copied. */
-   cs->iret.ss      = THIS_SYSCALL_SS;
-   cs->iret.useresp = (u32)newsp;
-   cs->gp.eax       = 0; /* The child process returns ZERO(0) in EAX. */
-   cs->gp.ecx       = THIS_SYSCALL_ECX;
-   cs->gp.edx       = THIS_SYSCALL_EDX;
-   cs->gp.ebx       = THIS_SYSCALL_EBX;
-   cs->gp.esi       = THIS_SYSCALL_ESI;
-   cs->gp.edi       = THIS_SYSCALL_EDI;
-   cs->gp.ebp       = THIS_SYSCALL_EBP;
-   cs->iret.eip     = (u32)THIS_SYSCALL_EIP;
-   cs->iret.cs      = THIS_SYSCALL_CS;
-   cs->iret.eflags  = THIS_SYSCALL_EFLAGS;
-   cs->sg.gs        = THIS_SYSCALL_GS;
-   cs->sg.fs        = THIS_SYSCALL_FS;
-   cs->sg.es        = THIS_SYSCALL_ES;
-   cs->sg.ds        = THIS_SYSCALL_DS;
+   /* Inherit all registers from the calling thread. */
+   memcpy(cs,regs,sizeof(struct cpustate));
+   /* Override special registers indicative of the child thread. */
+   cs->iret.userxsp = (uintptr_t)newsp;
+   cs->gp.xax = 0; /* The child process returns ZERO(0) in EAX. */
 #if 0
-   syslog(LOG_DEBUG,"FORK at %p\n",cs->iret.eip);
+   syslog(LOG_DEBUG,"FORK at %p\n",cs->iret.xip);
    syslog(LOG_DEBUG,"EAX %p  ECX %p  EDX %p  EBX %p EFLAGS %p\n",
-                     cs->gp.eax,cs->gp.ecx,cs->gp.edx,
-                     cs->gp.ebx,cs->iret.eflags);
+                     cs->gp.xax,cs->gp.xcx,cs->gp.xdx,
+                     cs->gp.xbx,cs->iret.xflags);
    syslog(LOG_DEBUG,"ESP %p  EBP %p  ESI %p  EDI %p\n",
-                     cs->iret.eip,cs->iret.useresp,
-                     cs->gp.ebp,cs->gp.esi,cs->gp.edi);
+                     cs->iret.xip,cs->iret.userxsp,
+                     cs->gp.xbp,cs->gp.xsi,cs->gp.xdi);
 #endif
-#else
-#error FIXME
-#endif
-#undef __STACKBASE_TASK
-#define __STACKBASE_TASK THIS_TASK
  }
 
  { struct mman *omm;
-   if (flags&CLONE_CHILD_SETTID) {
+   if (CLONE_FLAGS&CLONE_CHILD_SETTID) {
     size_t copy_error;
     TASK_PDIR_BEGIN(omm,result->t_mman);
-    copy_error = copy_to_user(child_tidptr,&child_pid,sizeof(pid_t));
+    copy_error = copy_to_user(CLONE_CHILD_TIDPTR,&child_pid,sizeof(pid_t));
     TASK_PDIR_END(omm,result->t_mman);
     if (copy_error) goto err1_fault;
    }
@@ -1066,7 +1035,7 @@ end_double_lock:
     * NOTE: If the VM was cloned, we must be careful doing this,
     *       because another thread may have unmap()-ed its memory
     *       in the mean time. */
-   if (flags&CLONE_VM)
+   if (CLONE_FLAGS&CLONE_VM)
         task_ldtlb(result);
    else task_filltlb(result);
  }
@@ -1082,10 +1051,16 @@ end_double_lock:
  TASK_DECREF(result); /* Drop our working reference. */
 end:
  task_endcrit();
- return error;
+ GPREGS_SYSCALL_RET1(regs->gp) = error;
+ return;
 err1_fault: error = -EFAULT; goto err1;
 err1_nomem: error = -ENOMEM;
 err1: TASK_DECREF(result); goto end;
+#undef CLONE_TLS_VAL
+#undef CLONE_CHILD_TIDPTR
+#undef CLONE_PARENT_TIDPTR
+#undef CLONE_NEWSP
+#undef CLONE_FLAGS
 }
 
 DECL_END

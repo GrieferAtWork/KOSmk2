@@ -31,7 +31,7 @@ ldt_find_empty_slot(struct ldt const *__restrict self) {
  iter = self->l_idt.ip_ldt;
  end  = (struct segment *)((byte_t *)iter+self->l_idt.ip_limit);
  for (; iter < end; ++iter) {
-  if (!iter->u) {
+  if (!iter->ul && !iter->uh) {
    /* Found an empty slot! */
    return (ldt_t)((byte_t *)iter-
                   (byte_t *)self->l_idt.ip_ldt);

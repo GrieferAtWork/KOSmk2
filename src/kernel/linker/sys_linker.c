@@ -67,8 +67,8 @@ L(.section .text.user                                                           
 L(PRIVATE_ENTRY(dl_restore_regs)                                                 )
 #if defined(__x86_64__) || defined(__i386__)
 L(    __ASM_POP_GPREGS /* gpregs */                                              )
-L(    popfx            /* eflags */                                              )
-L(    ret              /* eip */                                                 )
+L(    popfx            /* xflags */                                              )
+L(    ret              /* xip */                                                 )
 #else
 #error "ERROR: Unsupported architecture."
 #endif
@@ -139,12 +139,12 @@ PRIVATE errno_t KCALL
 dl_loadinit(struct instance *__restrict inst,
             struct init_closure *arg) {
  errno_t error; struct mman *mm = THIS_MMAN;
- void *safed_esp,*safed_eip;
+ void *safed_xsp,*safed_xip;
  /* Disable preemption to prevent the signal delivery from
   * interfering with us modifying system-call return information. */
  pflag_t was = PREEMPTION_PUSH();
- safed_esp = THIS_SYSCALL_REAL_USERXSP;
- safed_eip = THIS_SYSCALL_REAL_XIP;
+ safed_xsp = THIS_SYSCALL_REAL_USERXSP;
+ safed_xip = THIS_SYSCALL_REAL_XIP;
  /* Make sure to lock the memory manager to prevent
   * changes to the instance's dependency tree. */
  error = mman_write(mm);
@@ -153,8 +153,8 @@ dl_loadinit(struct instance *__restrict inst,
  mman_endwrite(mm);
  if (E_ISERR(error)) {
   /* Restore the saved system call registers */
-  SET_THIS_SYSCALL_REAL_USERXSP(safed_esp);
-  SET_THIS_SYSCALL_REAL_XIP(safed_eip);
+  SET_THIS_SYSCALL_REAL_USERXSP(safed_xsp);
+  SET_THIS_SYSCALL_REAL_XIP(safed_xip);
  }
  PREEMPTION_POP(was);
  return error;
@@ -398,9 +398,9 @@ dl_enum_fini(VIRT void *pfun,
  struct irregs *regs = (struct irregs *)closure;
  /* Push the previous return address and replace it with the finalizer. */
  DLFINI_DEBUG(syslog(LOG_DEBUG,"[DLFINI] Push finalizer at %p\n",pfun));
- regs->useresp -= sizeof(USER void *);
- (*(USER void *USER *)regs->useresp) = (USER void *)regs->eip;
- regs->eip = (uintptr_t)pfun;
+ regs->userxsp -= sizeof(USER void *);
+ (*(USER void *USER *)regs->userxsp) = (USER void *)regs->xip;
+ regs->xip = (uintptr_t)pfun;
  return 0;
 }
 

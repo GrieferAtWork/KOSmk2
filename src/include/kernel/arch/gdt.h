@@ -213,7 +213,7 @@ struct PACKED {
 #define SEGMENT_GTBASE(seg) \
    ((u64)__SEGMENT_GTBASE32(seg) | ((u64)(seg).baseupper << 32))
 #define SEGMENT_STBASE(seg,addr) \
-   (__SEGMENT_STBASE32(seg,addr),(seg).baseupper = (u32)((u64)(addr) >> 32)))
+   (__SEGMENT_STBASE32(seg,(u64)(addr)),(seg).baseupper = (u32)((u64)(addr) >> 32))
 #else
 #define SEGMENT_GTBASE(seg)      __SEGMENT_GTBASE32(seg)
 #define SEGMENT_STBASE(seg,addr) __SEGMENT_STBASE32(seg,addr)

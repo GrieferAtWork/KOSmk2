@@ -31,11 +31,12 @@ DECL_BEGIN
 
 #define ATOMIC_RWLOCK_RMASK 0x7fffffff
 #define ATOMIC_RWLOCK_WFLAG 0x80000000
-#define ATOMIC_RWLOCK_SIZE  4
+#define ATOMIC_RWLOCK_SIZE  __SIZEOF_POINTER__
 
 #ifdef __CC__
-typedef struct atomic_rwlock {
- u32 arw_lock;
+typedef union PACKED {
+ u32         arw_lock;
+ uintptr_t __arw_align;
 } atomic_rwlock_t;
 
 #define ATOMIC_RWLOCK_INIT         {0}

@@ -641,11 +641,11 @@ SYSCALL_DEFINE3(fcntl,int,fd,int,cmd,USER void *,arg) {
   result = fdman_read(fdm);
   if (E_ISERR(result)) goto end;
   assert(result == 0);
-  if ((unsigned int)arg < fdm->fm_veca) {
-   result = FD_SAFE_OPS(fdm->fm_vecv[(unsigned int)arg])-fd_ops;
+  if ((unsigned int)(uintptr_t)arg < fdm->fm_veca) {
+   result = FD_SAFE_OPS(fdm->fm_vecv[(unsigned int)(uintptr_t)arg])-fd_ops;
   } else {
    /* Special/symbolic file descriptor types. */
-   switch ((int)arg) {
+   switch ((int)(uintptr_t)arg) {
    case AT_FDCWD:
    case AT_FDROOT:
     result = FD_TYPE_DENTRY;
@@ -726,7 +726,7 @@ SYSCALL_DEFINE3(fcntl,int,fd,int,cmd,USER void *,arg) {
    else {
     oflag_t old_mode,new_mode;
     do old_mode = ATOMIC_READ(fp.fo_obj.fo_file->f_mode),
-       new_mode = (old_mode&~(F_SETFL_MASK)) | ((oflag_t)arg & F_SETFL_MASK);
+       new_mode = (old_mode&~(F_SETFL_MASK)) | ((oflag_t)(uintptr_t)arg & F_SETFL_MASK);
     while (!ATOMIC_CMPXCH_WEAK(fp.fo_obj.fo_file->f_mode,old_mode,new_mode));
     result = cmd == F_SETFL_XCH ? old_mode : -EOK;
    }

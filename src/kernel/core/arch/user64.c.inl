@@ -289,7 +289,7 @@ L(    popq  TASK_OFFSETOF_IC(%r11)                               )
 L(    addq  $16, %rsp                                            )
 L(                                                               )
 L(2:  ret                                                        )
-L(1:  movl $-EFAULT, %eax                                        )
+L(1:  movq $-EFAULT, %rax                                        )
 L(    jmp 2b                                                     )
 L(98:                                                            )
 L(    /* TODO: Transmute stack-based argument vector. */         )
@@ -307,49 +307,37 @@ L(.previous                                                      )
 
 
 /* IOS stands for InOutString... */
-#define DEFINE_IOS(name,io_ins,ifb,ifl,preg,n) \
+#define DEFINE_IOS(name,io_ins,ifi,ifo,ifb,ifl,n) \
 GLOBAL_ASM( \
 L(.section .text                                                 ) \
 L(PUBLIC_ENTRY(name)                                             ) \
-L(    pushl %esi                                                 ) \
-L(    pushl %edi                                                 ) \
-L(    movl 20(%esp), %ecx /* count */                            ) \
-L(                                                               ) \
-L(    /* Validate limits */                                      ) \
-ifb(L(movl 16(%esp), preg /* addr */                             )) \
-ifb(L(addl  %ecx, preg                                           )) \
+L(    movq  %rdx, %rcx /* count */                               ) \
+L(    movq  %rdi, %rdx /* port */                                ) \
+ifb(L(movq  %rsi, %rdi /* addr */                                )) \
+ifb(L(addq  %rcx, %rdi                                           )) \
 ifb(L(jo    1f /* if (DOES_OVERFLOW(addr+count)) return count; */)) \
-ifl(L(movl 16(%esp), %edx /* addr */                             )) \
-ifl(L(leal  0(%edx,%ecx,n), preg /* EDI = addr+count*n; */       )) \
-ifl(L(cmpl  %edx, preg                                           )) \
+ifl(L(leaq  0(%rsi,%rcx,n), %rdi                                 )) \
+ifl(L(cmpq  %rdx, %rsi                                           )) \
 ifl(L(jbe   1f /* if (addr+count*n >= addr) return count; */     )) \
-L(    movl  ASM_CPU(CPU_OFFSETOF_RUNNING), %eax                  ) \
-L(    movl  TASK_OFFSETOF_ADDRLIMIT(%eax), %edx                  ) \
-L(    cmpl  %edx, preg                                           ) \
-L(    jae   1f /* if (addr+count >= addr_limit) return count; */ ) \
-L(                                                               ) \
-L(    /* (re-)load remaining registers */                        ) \
-L(    movl  16(%esp), preg /* addr */                            ) \
-L(    movw  12(%esp), %dx  /* port */                            ) \
+ifi(L(movq  %rsi, %rdi /* addr */                                )) \
 L(                                                               ) \
 L(    /* Push an exception handler. */                           ) \
-L(    pushl $1f                                                  ) \
-L(    pushl $(EXC_PAGE_FAULT)                                    ) \
-L(    pushl TASK_OFFSETOF_IC(%eax)                               ) \
-L(    movl  %esp, TASK_OFFSETOF_IC(%eax)                         ) \
+L(    movq  ASM_CPU(CPU_OFFSETOF_RUNNING), %rax                  ) \
+L(    movq  $1f, %r8; pushq %r8;                                 ) \
+L(    movq  $(EXC_PAGE_FAULT), %r8; pushq %r8;                   ) \
+L(    pushq TASK_OFFSETOF_IC(%rax)                               ) \
+L(    movq  %rsp, TASK_OFFSETOF_IC(%rax)                         ) \
 L(                                                               ) \
 L(    /* while (count--) *addr++ = inN(port); */                 ) \
 L(    /* while (count--) outN(port,*addr++); */                  ) \
 L(    rep io_ins                                                 ) \
 L(                                                               ) \
 L(    /* Cleanup on success */                                   ) \
-L(    popl  TASK_OFFSETOF_IC(%eax)                               ) \
-L(    addl  $8, %esp                                             ) \
+L(    popq  TASK_OFFSETOF_IC(%rax)                               ) \
+L(    addq  $16, %rsp                                            ) \
 L(                                                               ) \
-L(1:  popl %edi                                                  ) \
-L(    popl %esi                                                  ) \
-L(    movl %ecx, %eax /* Return the number of bytes not transferred */) \
-L(    ret $12                                                    ) \
+L(1:  movq %rcx, %rax /* Return the number of bytes not transferred */) \
+L(    ret                                                        ) \
 L(SYM_END(name)                                                  ) \
 L(.previous                                                      ) \
 )
@@ -357,12 +345,12 @@ L(.previous                                                      ) \
 #define I0(x) /* Nothing */
 #define I1(x) x
 /* Define user-buffered I/O string functions. */
-DEFINE_IOS(insb_user,insb,I1,I0,%edi,1);
-DEFINE_IOS(insw_user,insw,I0,I1,%edi,2);
-DEFINE_IOS(insl_user,insl,I0,I1,%edi,4);
-DEFINE_IOS(outsb_user,outsb,I1,I0,%esi,1);
-DEFINE_IOS(outsw_user,outsw,I0,I1,%esi,2);
-DEFINE_IOS(outsl_user,outsl,I0,I1,%esi,4);
+DEFINE_IOS(insb_user,insb,I1,I0,I1,I0,1);
+DEFINE_IOS(insw_user,insw,I1,I0,I0,I1,2);
+DEFINE_IOS(insl_user,insl,I1,I0,I0,I1,4);
+DEFINE_IOS(outsb_user,outsb,I0,I1,I1,I0,1);
+DEFINE_IOS(outsw_user,outsw,I0,I1,I0,I1,2);
+DEFINE_IOS(outsl_user,outsl,I0,I1,I0,I1,4);
 #undef DEFINE_IOS
 #undef I1
 #undef I0

@@ -34,7 +34,8 @@ DECL_BEGIN
 #ifdef __CC__
 struct idtentry;
 struct segment;
-struct PACKED idt_pointer {
+
+ATTR_ALIGNED(2) struct PACKED idt_pointer {
  /* Interrupt/GDT descriptor pointer. */
  u16              ip_limit;
 union PACKED {

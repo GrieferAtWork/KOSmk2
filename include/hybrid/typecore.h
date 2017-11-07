@@ -784,7 +784,8 @@
 #define __UINTMAX_TYPE__ __UINT64_TYPE__
 #endif
 
-#if __SIZEOF_LONG__ == __SIZEOF_POINTER__
+#if (__SIZEOF_LONG__ == __SIZEOF_POINTER__) && \
+    (!defined(__x86_64__) || !defined(__INTELLISENSE__))
 #define __LONGPTR_TYPE__  signed long
 #define __ULONGPTR_TYPE__ unsigned long
 #else
