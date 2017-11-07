@@ -32,12 +32,13 @@
 #include <linker/patch.h>
 #include <sched/task.h>
 #include <sys/mman.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
 /* [lock(mman_kernel.m_lock)] Module load hint to speed up
  *                            installation of new kernel modules. */
-PRIVATE ppage_t module_loadhint = (ppage_t)0xe0000000;
+PRIVATE ppage_t module_loadhint = (ppage_t)HOST_DRIVER_ADDRHINT;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
@@ -346,18 +347,18 @@ kernel_delmod(REF struct instance *__restrict inst, u32 mode) {
 
 PRIVATE ATTR_COLDRODATA
 u32 const delmod_cleanup_modes[] = {
- /* Mode combinations used for module cleanup (ranked from least to most severe). */
- DELMOD_NOBLOCK,
- DELMOD_NOBLOCK|DELMOD_DELDEP,
- DELMOD_NOBLOCK|DELMOD_FORCE,
- DELMOD_NOBLOCK|DELMOD_FORCE|DELMOD_DELDEP,
+    /* Mode combinations used for module cleanup (ranked from least to most severe). */
+    DELMOD_NOBLOCK,
+    DELMOD_NOBLOCK|DELMOD_DELDEP,
+    DELMOD_NOBLOCK|DELMOD_FORCE,
+    DELMOD_NOBLOCK|DELMOD_FORCE|DELMOD_DELDEP,
 #define DELMOD_CLEANUP_MODEOK(i) ((i) < 4)
- DELMOD_BLOCK|DELMOD_FORCENOW,
- DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_DELDEP,
- DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_FORCE,
- DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_FORCE|DELMOD_DELDEP,
- DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_IGNORE_DEP,
- DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_IGNORE_DEP|DELMOD_FORCE,
+    DELMOD_BLOCK|DELMOD_FORCENOW,
+    DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_DELDEP,
+    DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_FORCE,
+    DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_FORCE|DELMOD_DELDEP,
+    DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_IGNORE_DEP,
+    DELMOD_BLOCK|DELMOD_FORCENOW|DELMOD_IGNORE_DEP|DELMOD_FORCE,
 };
 
 

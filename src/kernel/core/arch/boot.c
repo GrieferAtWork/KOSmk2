@@ -36,6 +36,7 @@
 #include <sched/cpu.h>
 #include <sched/percpu.h>
 #include <sched/types.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
@@ -500,37 +501,39 @@ INTDEF int a20_get_enabled(void);
 
 
 GLOBAL_ASM(
+L(.code32                                                                     )
 L(.section .text.free                                                         )
 L(.global pdir_kernel                                                         )
-L(.hidden _start                                                              )
-L(.hidden __start                                                             )
-L(.global _start                                                              )
-L(.global __start                                                             )
-L(.type _start, @function                                                     )
-L(.type __start, @function                                                    )
-L(_start = __start                                                            )
 #if 0
 L(__bochs_start:                                                              )
 L(    movb $(BOOT_EMULATION_BOCHS), (boot_emulation - KERNEL_BASE)            )
 L(    movw $(0xe9), (boot_emulation_logport - KERNEL_BASE)                    )
 #endif
-L(__start:                                                                    )
+L(INTERN_ENTRY(_start)                                                        )
+L(INTERN_ENTRY(__start)                                                       )
 L(    /* This is the TRUE entry point! */                                     )
 L(    /* This is where the bootloader jumps */                                )
 /* Make sure interrupts are disabled (They'll be re-enabled in `irq_initialize()'). */
 L(    cli                                                                     )
+#ifdef __x86_64__
+/* TODO */
+L(                                                                            )
+L(                                                                            )
+L(                                                                            )
+L(.code64                                                                     )
+#else /* __x86_64__ */
 /* Load the kernel bootstrap page directory.
  * Before this, all virtual/symbol addresses are INCORRECT!
  * REMINDER: The symbol address of `pdir_kernel' is physical! */
 L(    movl $pdir_kernel, %ecx                                                 )
 L(    movl %ecx, %cr3                                                         )
-
+L(                                                                            )
 L(    movl %cr4, %ecx                                                         )
 L(    orl  $(CR4_PSE), %ecx  /* Required for 4Mib pages. */                   )
 L(    movl %ecx, %cr4                                                         )
 L(                                                                            )
 L(    movl %cr0, %ecx                                                         )
-/* Set paging + write-protect bits. NOTE: WP is required for ALLOA/COW in ring#0 */
+L(    /* Set paging + write-protect bits. NOTE: WP is required for ALLOA/COW in ring#0 */)
 L(    orl  $(CR0_PG|CR0_WP), %ecx                                             )
 L(    movl %ecx, %cr0 /* This instruction finally enables paging! */          )
 L(                                                                            )
@@ -548,8 +551,8 @@ L(    leal  (__bootcpu_begin - KERNEL_BASE),   %edi                           )
 L(    movl $__percpu_dat_dwords, %ecx                                         )
 L(    rep; movsl                                                              )
 #endif
-L(    movl  %eax, %ecx  /* mb_magic */                                        )
-L(    movl  %ebx, %edx  /* mb_mbt */                                          )
+L(    movl  %eax, %FASTCALL_REG1  /* mb_magic */                              )
+L(    movl  %ebx, %FASTCALL_REG2  /* mb_mbt */                                )
 
 /* Temporary registers used below! */
 #define ETX eax
@@ -562,19 +565,19 @@ L(    movl  %ebx, %edx  /* mb_mbt */                                          )
 #define SH   bh
 
 #if 1
-/* Load our custom boot GDT. */
+L(    /* Load our custom boot GDT. */                                         )
 L(    lgdt __bootcpu_gdt                                                      )
-/* Load segment registers now configured via the GDT. */
+L(    /* Load segment registers now configured via the GDT. */                )
 L(    movw  $(__KERNEL_DS),     %SX                                           )
 L(    movw  $(__KERNEL_PERCPU), %TX                                           )
 L(    movw  %SX, %ds                                                          )
 L(    movw  %SX, %es                                                          )
-#ifdef __i386__
-L(    movw  %TX, %fs                                                          )
-L(    movw  %SX, %gs                                                          )
-#else
+#ifdef __x86_64__
 L(    movw  %SX, %fs                                                          )
 L(    movw  %TX, %gs                                                          )
+#else
+L(    movw  %TX, %fs                                                          )
+L(    movw  %SX, %gs                                                          )
 #endif
 L(    movw  %SX, %ss                                                          )
 L(    ljmp  $(__KERNEL_CS), $1f                                               )
@@ -585,16 +588,20 @@ L(1:                                                                          )
 L(    movw  $(SEG(SEG_CPUTSS)|3), %SX                                         )
 L(    ltr   %SX                                                               )
 #endif
+L(                                                                            )
 #ifndef CONFIG_NO_LDT
 L(    movw  $(SEG(SEG_KERNEL_LDT)), %SX                                       )
 L(    lldt  %SX                                                               )
 #endif /* !CONFIG_NO_LDT */
+#endif /* !__x86_64__ */
+L(                                                                            )
 #ifdef CONFIG_DEBUG
-L(    xorl  %ebp, %ebp                                                        )
-L(    pushl $0                                                                )
+L(    xorx  %xbp, %xbp                                                        )
+L(    pushx $0                                                                )
 #endif /* CONFIG_DEBUG */
-
-/* Figure out if we're running on a 486 */
+L(                                                                            )
+#ifndef __x86_64__
+L(     /* Figure out if we're running on a 486 */                             )
 L(    pushf                                                                   )
 L(    movl  0(%esp), %eax                                                     )
 L(    xorl  $(EFLAGS_AC), 0(%esp)                                             )
@@ -607,17 +614,23 @@ L(    andl  $(EFLAGS_AC), %eax                                                )
 L(    andl  $(EFLAGS_AC), %ebx                                                )
 L(    cmpl  %eax, %ebx                                                        )
 L(    je    1f /* No CPUID - Not running on a 486 */                          )
+#endif /* !__x86_64__ */
 L(                                                                            )
 L(    /* It's official. - We're running on a 486 */                                                                        )
-L(    pushl %ecx                                                              )
-L(    pushl %edx                                                              )
+L(    pushx %FASTCALL_REG1                                                    )
+L(    pushx %FASTCALL_REG2                                                    )
 L(                                                                            )
 L(    /* Load some strategic CPUIDs to figure out who's hosting us */         )
-L(    movl $0, %eax                                                           )
+L(    xorx %xax, %xax                                                         )
 L(    cpuid                                                                   )
 L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+0      )
 L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+4      )
 L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+8      )
+#ifndef CONFIG_SMP
+L(    movl $1, %eax                                                           )
+L(    cpuid                                                                   )
+L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_FEATURES        )
+#endif /* !CONFIG_SMP */
 L(    movl $0x80000000, %eax                                                  )
 L(    cpuid                                                                   )
 L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_CPUID_MAX       )
@@ -649,26 +662,29 @@ L(    /* Detect if we're running under QEMU emulation */                      )
 #define QUAD(a,b,c,d) ((a) << 24 | (b) << 16 | (c) << 8 | (d))
 #endif
 L(    cmpl $(QUAD('Q','E','M','U')), %eax                                     )
-L(    jne 2f                                                                  )
+L(    jne  2f                                                                 )
 L(    cmpl $(QUAD(' ','V','i','r')), %ebx                                     )
-L(    jne 2f                                                                  )
+L(    jne  2f                                                                 )
 L(    cmpl $(QUAD('t','u','a','l')), %ecx                                     )
-L(    jne 2f                                                                  )
+L(    jne  2f                                                                 )
 L(    cmpl $(QUAD(' ','C','P','U')), %edx                                     )
-L(    jne 2f                                                                  )
+L(    jne  2f                                                                 )
 L(                                                                            )
 L(    /* Yes, we are. - Retain that information */                            )
-L(    movl $(BOOT_EMULATION_QEMU), boot_emulation                             )
-L(    movl $(0x3F8),               boot_emulation_logport                     )
+L(    movb $(BOOT_EMULATION_QEMU), boot_emulation                             )
+L(    movw $(0x3F8),               boot_emulation_logport                     )
 #undef QUAD
-L(2:  popl  %edx                                                              )
-L(    popl  %ecx                                                              )
+L(2:  popx  %FASTCALL_REG2                                                    )
+L(    popx  %FASTCALL_REG1                                                    )
 
 /* Jump to the high-level C kernel-boot function. */
 L(    jmp   kernel_boot                                                       )
+#ifndef __x86_64__
 L(1:  andb  $(~CPUFLAG_486), __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_FLAGS)
 L(    jmp   kernel_boot                                                       )
-L(.size __start, . - __start                                                  )
+#endif /* !__x86_64__ */
+L(SYM_END(__start)                                                            )
+L(SYM_END(_start)                                                             )
 L(.previous                                                                   )
 );
 

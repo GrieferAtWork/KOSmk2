@@ -741,49 +741,46 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  irq_setup(vcpu);
 
  /* Define the sporadic interrupt handler used by LAPIC. */
+#ifdef __x86_64__
+#define INIT_VECTOR(vec,ptr) \
+ ((vec)->ie_off1  = (u16)((uintptr_t)(ptr)), \
+  (vec)->ie_sel   = __KERNEL_CS, \
+  (vec)->ie_ist   = 0, \
+  (vec)->ie_flags = (IDTFLAG_PRESENT| \
+                     IDTTYPE_80386_32_INTERRUPT_GATE), \
+  (vec)->ie_off2  = (u16)((uintptr_t)(ptr) >> 16), \
+  (vec)->ie_off3  = (u32)((uintptr_t)(ptr) >> 32))
+#else
+#define INIT_VECTOR(vec,ptr) \
+ ((vec)->ie_off1  = (u16)((uintptr_t)(ptr)), \
+  (vec)->ie_sel   = __KERNEL_CS, \
+  (vec)->ie_zero  = 0, \
+  (vec)->ie_flags = (IDTFLAG_PRESENT| \
+                     IDTTYPE_80386_32_INTERRUPT_GATE), \
+  (vec)->ie_off2  = (u16)((uintptr_t)(ptr) >> 16))
+#endif
  if (vcpu->c_arch.ac_flags&CPUFLAG_LAPIC) {
   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+IRQ_LAPIC_SPURIOUS;
-  idt->ie_off1  = (u16)((uintptr_t)&lapic_spurious_irq_handler);
-  idt->ie_sel   = __KERNEL_CS;
-  idt->ie_zero  = 0;
-  idt->ie_flags = (IDTFLAG_PRESENT|
-                   IDTTYPE_80386_32_INTERRUPT_GATE);
-  idt->ie_off2  = (u16)((uintptr_t)&lapic_spurious_irq_handler >> 16);
+  INIT_VECTOR(idt,&lapic_spurious_irq_handler);
  }
 
  /* Install the page-fault handler. */
  { INTDEF void ASMCALL mman_asm_pf(void);
    struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+EXC_PAGE_FAULT;
-   idt->ie_off1 = (u16)((uintptr_t)&mman_asm_pf);
-   idt->ie_sel   = __KERNEL_CS;
-   idt->ie_zero  = 0;
-   idt->ie_flags = (IDTFLAG_PRESENT|
-                    IDTTYPE_80386_32_INTERRUPT_GATE);
-   idt->ie_off2 = (u16)((uintptr_t)&mman_asm_pf >> 16);
+   INIT_VECTOR(idt,&mman_asm_pf);
  }
 
  /* Install the system-call interrupt handler. */
  { INTDEF void ASMCALL syscall_irq(void);
    struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+SYSCALL_INT;
-   idt->ie_off1 = (u16)((uintptr_t)&syscall_irq);
-   idt->ie_sel   = __KERNEL_CS;
-   idt->ie_zero  = 0;
-   idt->ie_flags = (IDTFLAG_PRESENT|
-                    IDTTYPE_80386_32_INTERRUPT_GATE|
-                    IDTFLAG_DPL(3));
-   idt->ie_off2 = (u16)((uintptr_t)&syscall_irq >> 16);
+   INIT_VECTOR(idt,&syscall_irq);
  }
 
 #ifndef CONFIG_NO_FPU
  /* Install the FPU context switch handler. */
  { INTDEF void (ASMCALL fpu_asm_nm)(void);
    struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+IRQ_EXC_NM;
-   idt->ie_off1 = (u16)((uintptr_t)&fpu_asm_nm);
-   idt->ie_sel   = __KERNEL_CS;
-   idt->ie_zero  = 0;
-   idt->ie_flags = (IDTFLAG_PRESENT|
-                    IDTTYPE_80386_32_INTERRUPT_GATE);
-   idt->ie_off2 = (u16)((uintptr_t)&fpu_asm_nm >> 16);
+   INIT_VECTOR(idt,&fpu_asm_nm);
  }
 #endif /* !CONFIG_NO_FPU */
 

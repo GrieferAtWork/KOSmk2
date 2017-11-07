@@ -796,7 +796,11 @@ done:;
 
 
 INTERN CPU_DATA struct IDT cpu_idt;
+#ifdef __x86_64__
+STATIC_ASSERT(sizeof(struct idtentry) == 12);
+#else
 STATIC_ASSERT(sizeof(struct idtentry) == 8);
+#endif
 
 INTERN ATTR_FREETEXT void KCALL
 irq_setup(struct cpu *__restrict self) {
@@ -810,10 +814,17 @@ irq_setup(struct cpu *__restrict self) {
   isr_fun_t handler = *hiter;
   iter->ie_off1  = (u16)((uintptr_t)handler);
   iter->ie_sel   = __KERNEL_CS;
+#ifdef __x86_64__
+  iter->ie_ist   = 0; /* ??? */
+#else
   iter->ie_zero  = 0;
+#endif
   iter->ie_flags = (IDTFLAG_PRESENT|
                     IDTTYPE_80386_32_INTERRUPT_GATE);
   iter->ie_off2  = (u16)((uintptr_t)handler >> 16);
+#ifdef __x86_64__
+  iter->ie_off3  = (u32)((uintptr_t)handler >> 32);
+#endif
  }
  end = (iter = begin)+32;
  /* Enable ring#3 access to all exception interrupts by default. */
@@ -940,8 +951,14 @@ PUBLIC void KCALL irq_get(irq_t num, isr_t *__restrict handler) {
  idt              = &CPU(cpu_idt);
  entry.ie_data    = idt->i_vector[num].ie_data;
  handler->i_owner = idt->i_owners[num];
+#ifdef __x86_64__
+ handler->i_func  = (isr_fun_t)((uintptr_t)entry.ie_off1 |
+                                (uintptr_t)entry.ie_off2 << 16 |
+                                (uintptr_t)entry.ie_off3 << 32);
+#else
  handler->i_func  = (isr_fun_t)((uintptr_t)entry.ie_off1 |
                                 (uintptr_t)entry.ie_off2 << 16);
+#endif
  handler->i_flags = entry.ie_flags;
  if (!handler->i_owner) handler->i_owner = THIS_INSTANCE;
  if (!INSTANCE_INCREF(handler->i_owner)) {
@@ -985,19 +1002,34 @@ PUBLIC SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
   CHECK_HOST_DOBJ(old_handler);
   old_handler->i_num   = used_handler.i_num;
   old_handler->i_flags = idt_slot->ie_flags;
+#ifdef __x86_64__
+  old_handler->i_func  = (isr_fun_t)((uintptr_t)idt_slot->ie_off1 |
+                                     (uintptr_t)idt_slot->ie_off2 << 16 |
+                                     (uintptr_t)idt_slot->ie_off3 << 32);
+#else
   old_handler->i_func  = (isr_fun_t)((uintptr_t)idt_slot->ie_off1 |
                                      (uintptr_t)idt_slot->ie_off2 << 16);
+#endif
   if (!old_owner) { old_owner = THIS_INSTANCE; asserte(INSTANCE_INCREF(old_owner)); }
   old_handler->i_owner = old_owner;
   old_owner            = NULL;
  }
  idt_slot->ie_sel   = __KERNEL_CS;
+#ifdef __x86_64__
+ idt_slot->ie_ist   = 0;
+#else
  idt_slot->ie_zero  = 0;
+#endif
  idt_slot->ie_flags = used_handler.i_flags;
  idt_slot->ie_off1  = (u16)((uintptr_t)used_handler.i_func);
  idt_slot->ie_off2  = (u16)((uintptr_t)used_handler.i_func >> 16);
+#ifdef __x86_64__
+ idt_slot->ie_off3  = (u32)((uintptr_t)used_handler.i_func >> 32);
+#endif
  assert(idt_slot->ie_sel  == __KERNEL_CS);
+#ifndef __x86_64__
  assert(idt_slot->ie_zero == 0);
+#endif
 
  if (mode&IRQ_SET_RELOAD) {
   struct idt_pointer idt_ptr;

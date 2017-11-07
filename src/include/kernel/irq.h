@@ -24,6 +24,7 @@
 #include <hybrid/types.h>
 #include <stdbool.h>
 #include <kernel/arch/gdt.h>
+#include <kernel/arch/cpustate.h>
 
 DECL_BEGIN
 
@@ -258,19 +259,28 @@ FUNDEF SAFE void KCALL irq_del(irq_t num, bool reload);
 #define IDTENTRY_OFFSETOF_ZERO  4
 #define IDTENTRY_OFFSETOF_FLAGS 5
 #define IDTENTRY_OFFSETOF_OFF2  6
+#ifdef __x86_64__
+#define IDTENTRY_OFFSETOF_OFF3  8
+#define IDTENTRY_SIZE           12
+#else
 #define IDTENTRY_SIZE           8
+#endif
 struct PACKED idtentry {
 union PACKED {
  u64 ie_data;
 struct PACKED {
  u16 ie_off1;  /*< Lower 16 bits of an `irq_handler' pointer. */
  u16 ie_sel;   /*< Kernel code segment (always `__KERNEL_CS') */
+#ifdef __x86_64__
+ u8  ie_ist;   /*< Nits 0..2 hold Interrupt Stack Table offset, rest of bits zero. */
+#else
  u8  ie_zero;  /*< Always ZERO(0). */
+#endif
  u8  ie_flags; /*< Set of `IDTFLAG_*|IDTTYPE_*' */
  u16 ie_off2;  /*< Upper 16 bits of an `irq_handler' pointer. */
 };};
 #ifdef __x86_64__
-#error "TODO: Something must have been added here..."
+ u32 ie_off3;  /*< Bits 32..63 of the vector offset. */
 #endif
 };
 
@@ -380,8 +390,18 @@ INTDEF PERCPU struct IDT cpu_idt;
 #define __INT_ENTER \
    __PUSH_SEGMENTS \
    __PUSH_REGISTERS \
-   __LOAD_SEGMENTS("%dx") \
-   "movl 16(%esp), %edx\n"
+   __LOAD_SEGMENTS("%dx")
+#ifdef __x86_64__
+#define __INT_LEAVE \
+   __POP_REGISTERS \
+   __POP_SEGMENTS \
+   "iretq\n"
+#define __INT_LEAVE_E \
+   __POP_REGISTERS \
+   __POP_SEGMENTS \
+   "addq $8, %rsp\n" /* Error code */ \
+   "iretq\n"
+#else
 #define __INT_LEAVE \
    __POP_REGISTERS \
    __POP_SEGMENTS \
@@ -391,6 +411,7 @@ INTDEF PERCPU struct IDT cpu_idt;
    __POP_SEGMENTS \
    "addl $4, %esp\n" /* Error code */ \
    "iret\n"
+#endif
 
 
 
@@ -401,6 +422,23 @@ typedef void int_handler(void);
 
 /* Define an interrupt handler wrapper `h_irq' that
  * calls an int_handler-compatible `h_int' */
+#ifdef __x86_64__
+#define DEFINE_INT_HANDLER(h_irq,h_int) \
+void (ASMCALL h_irq)(void); __asm__( \
+".section .text\n" \
+"" PP_STR(h_irq) ":\n" \
+__INT_ENTER \
+"    movl  %rsp, %rdi\n" \
+__DEBUG_CODE("pushq 88(%esp)\n") \
+__DEBUG_CODE("pushq %rbp\n") \
+__DEBUG_CODE("movq %rsp, %rbp\n") \
+"    call " PP_STR(h_int) "\n" \
+__DEBUG_CODE("addq $16, %rsp\n") \
+__INT_LEAVE \
+".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
+".previous\n" \
+)
+#else
 #define DEFINE_INT_HANDLER(h_irq,h_int) \
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
@@ -416,6 +454,7 @@ __INT_LEAVE \
 ".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
 ".previous\n" \
 )
+#endif
 
 
 /* A higher-level interrupt handler, capable of
@@ -427,6 +466,23 @@ typedef void FCALL exc_handler(struct cpustate *__restrict state);
 
 /* Define an exception handler wrapper `h_irq' that
  * calls an exc_handler-compatible `h_exc' */
+#ifdef __x86_64__
+#define DEFINE_EXC_HANDLER(h_irq,h_exc) \
+void (ASMCALL h_irq)(void); __asm__( \
+".section .text\n" \
+"" PP_STR(h_irq) ":\n" \
+__INT_ENTER \
+"    movq  %rsp, %rdi\n" \
+__DEBUG_CODE("pushq 88(%rsp)\n") \
+__DEBUG_CODE("pushq %rbp\n") \
+__DEBUG_CODE("movq %rsp, %rbp\n") \
+"    call " PP_STR(h_exc) "\n" \
+__DEBUG_CODE("addq $16, %rsp\n") \
+__INT_LEAVE \
+".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
+".previous\n" \
+)
+#else
 #define DEFINE_EXC_HANDLER(h_irq,h_exc) \
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
@@ -442,6 +498,7 @@ __INT_LEAVE \
 ".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
 ".previous\n" \
 )
+#endif
 
 /* An even higher-level version specifically designed
  * to swapping cpu-states by-pointer with the ability
@@ -452,6 +509,24 @@ task_handler(struct cpustate *__restrict old_state);
 
 /* Define a task handler wrapper `h_irq' that
  * calls an task_handler-compatible `h_task' */
+#ifdef __x86_64__
+#define DEFINE_TASK_HANDLER(h_irq,h_task) \
+void (ASMCALL h_irq)(void); __asm__( \
+".section .text\n" \
+"" PP_STR(h_irq) ":\n" \
+__INT_ENTER \
+"    movl  %rsp, %rdi\n" \
+__DEBUG_CODE("pushq 88(%rsp)\n") \
+__DEBUG_CODE("pushq %rbp\n") \
+__DEBUG_CODE("movq %rsp, %rbp\n") \
+"    call " PP_STR(h_task) "\n" \
+/*__DEBUG_CODE("addq $16, %rsp\n")*/ \
+"    movq  %rax, %rsp\n" \
+__INT_LEAVE \
+".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
+".previous\n" \
+)
+#else
 #define DEFINE_TASK_HANDLER(h_irq,h_task) \
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
@@ -468,6 +543,7 @@ __INT_LEAVE \
 ".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
 ".previous\n" \
 )
+#endif
 
 /* A high-level interrupt handler meant to be used
  * for messages carrying an additional exception code,
@@ -483,6 +559,23 @@ typedef void FCALL code_handler(struct cpustate_e *__restrict info);
 
 /* Define a task handler wrapper `h_irq' that
  * calls an code_handler-compatible `h_code' */
+#ifdef __x86_64__
+#define DEFINE_CODE_HANDLER(h_irq,h_code) \
+void (ASMCALL h_irq)(void); __asm__( \
+".section .text\n" \
+"" PP_STR(h_irq) ":\n" \
+__INT_ENTER \
+"    movq  %rsp, %rdi\n" \
+__DEBUG_CODE("pushq 96(%rsp)\n") \
+__DEBUG_CODE("pushq %rbp\n") \
+__DEBUG_CODE("movq %rsp, %rbp\n") \
+"    call " PP_STR(h_code) "\n" \
+__DEBUG_CODE("addq $16, %rsp\n") \
+__INT_LEAVE_E \
+".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
+".previous\n" \
+)
+#else
 #define DEFINE_CODE_HANDLER(h_irq,h_code) \
 void (ASMCALL h_irq)(void); __asm__( \
 ".section .text\n" \
@@ -498,6 +591,7 @@ __INT_LEAVE_E \
 ".size " PP_STR(h_irq) ", . - " PP_STR(h_irq) "\n" \
 ".previous\n" \
 )
+#endif
 
 DECL_END
 

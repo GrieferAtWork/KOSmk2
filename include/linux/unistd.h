@@ -53,13 +53,17 @@ __SYSDECL_BEGIN
 
 #define __PRIVATE_SYSCALL_ISASM(nr) __PRIVATE_SYSCALL_ATTR2(__SC_ATTRIB_ISASM_##nr)
 #define __PRIVATE_SYSCALL_ISNRT(nr) __PRIVATE_SYSCALL_ATTR2(__SC_ATTRIB_ISNRT_##nr)
+#ifndef __x86_64__
 #define __PRIVATE_SYSCALL_ISLNG(nr) __PRIVATE_SYSCALL_ATTR2(__SC_ATTRIB_ISLNG_##nr)
+#endif /* !__x86_64__ */
 #define __PRIVATE_SYSCALL_CLOBB(nr) __PRIVATE_SYSCALL_CLOB2(__SC_ATTRIB_CLOBB_##nr)
 
 /* Query system call attributes */
 #define __SYSCALL_ISASM(nr) __PRIVATE_SYSCALL_ISASM(nr)
 #define __SYSCALL_ISNRT(nr) __PRIVATE_SYSCALL_ISNRT(nr)
+#ifndef __x86_64__
 #define __SYSCALL_ISLNG(nr) __PRIVATE_SYSCALL_ISLNG(nr)
+#endif /* !__x86_64__ */
 
 /* Query system call additional clobber data. */
 #define __SYSCALL_CLOBB(nr) __PRIVATE_SYSCALL_CLOBB(nr)

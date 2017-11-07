@@ -41,6 +41,8 @@
 #include <sys/mman.h>
 #include <sched/paging.h>
 #include <sched/cpu.h>
+#include <asm/instx.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
@@ -166,15 +168,12 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
 #define RM_SAFE_SEGMENTS
  __asm__ __volatile__(
 #ifdef RM_SAFE_SEGMENTS
-     L(    pushw %%ds                                  )
-     L(    pushw %%es                                  )
-     L(    pushw %%fs                                  )
-     L(    pushw %%gs                                  )
+     L(    __ASM_IPUSH_SGREGS                          )
 #endif
-     L(    pushfl                                      )
+     L(    pushfx                                      )
      L(    cli                                         )
-     L(    pushl %%ebp                                 )
-     L(    subl $8, %%esp                              )
+     L(    pushx %%ebp                                 )
+     L(    subx $(2*XSZ), %%xsp                        )
      L(    sidt (%%esp)                                )
      L(                                                )
      L(    call pic_bios_begin                         )
@@ -254,17 +253,18 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    addl $8, %%esp                              )
      L(    call pic_bios_end                           )
      L(                                                )
-     L(    popl %%ebp                                  )
-     L(    popfl                                       )
+     L(    popx %%xbp                                  )
+     L(    popfx                                       )
 #ifdef RM_SAFE_SEGMENTS
-     L(    popw %%gs                                   )
-     L(    popw %%fs                                   )
-     L(    popw %%es                                   )
-     L(    popw %%ds                                   )
+     L(    __ASM_IPOP_SGREGS                           )
 #endif
      :
      :
+#ifdef __x86_64__
+     : "memory", "rax", "rbx", "rcx", "rdx", "rsi", "rdi"
+#else
      : "memory", "eax", "ebx", "ecx", "edx", "esi", "edi"
+#endif
  );
  *state = *(struct cpustate16 *)REALMODE_SYM(rm_bios_int_cpu);
  TASK_PDIR_KERNEL_END(old_mm);

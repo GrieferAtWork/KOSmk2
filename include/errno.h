@@ -368,8 +368,13 @@ __NAMESPACE_INT_END
 
 #define __EMAX          502
 
-#define __ERRNO_THRESHOLD            0xfffffc00
+#define __ERRNO_THRESHOLD32          0xfffffc00
 #define __ERRNO_THRESHOLD64  0xfffffffffffffc00ull
+#if __SIZEOF_POINTER__ >= 8
+#   define __ERRNO_THRESHOLD __ERRNO_THRESHOLD64
+#else
+#   define __ERRNO_THRESHOLD __ERRNO_THRESHOLD32
+#endif
 
 #if defined(__USE_KOS) || defined(__KERNEL__)
 
@@ -379,9 +384,9 @@ __NAMESPACE_INT_END
  *       for error codes, excluding the aligned page base `0xfffff000'
  *       itself.
  */
-#if ((0-__EMAX) & 0xffffffff) < __ERRNO_THRESHOLD
+#if ((0-__EMAX) & 0xffffffff) < __ERRNO_THRESHOLD32
 #   error "`__ERRNO_THRESHOLD' is too large"
-#elif (((0-(4096-1)) & 0xffffffff) > __ERRNO_THRESHOLD)
+#elif (((0-(4096-1)) & 0xffffffff) > __ERRNO_THRESHOLD32)
 #   error "`__ERRNO_THRESHOLD' is too small"
 #endif
 
@@ -397,8 +402,8 @@ __NAMESPACE_INT_END
 #   define E_ISOK(x)     __likely(((unsigned int)(x)) < __ERRNO_THRESHOLD)
 #elif __SIZEOF_POINTER__ <= 4
 #   define E_GTERR(x)  (int)(__INTPTR_TYPE__)(__UINTPTR_TYPE__)(x)
-#   define E_ISERR(x)  __unlikely(((__UINTPTR_TYPE__)(x)) >= __ERRNO_THRESHOLD)
-#   define E_ISOK(x)     __likely(((__UINTPTR_TYPE__)(x)) < __ERRNO_THRESHOLD)
+#   define E_ISERR(x)  __unlikely(((__UINTPTR_TYPE__)(x)) >= __ERRNO_THRESHOLD32)
+#   define E_ISOK(x)     __likely(((__UINTPTR_TYPE__)(x)) < __ERRNO_THRESHOLD32)
 #else
 #   define E_GTERR(x)  (int)(__INTPTR_TYPE__)(__UINTPTR_TYPE__)(x)
 #   define E_ISERR(x)  __unlikely(((__UINTPTR_TYPE__)(x)) >= __ERRNO_THRESHOLD64)

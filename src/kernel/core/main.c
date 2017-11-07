@@ -78,6 +78,8 @@
 #include <dev/net-stack.h>
 #include <hybrid/byteswap.h>
 #include <netinet/in.h>
+#include <asm/instx.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
@@ -126,7 +128,7 @@ alloc_user_stack(struct task *thread, struct mman *mm, size_t n_bytes) {
  ustack = omalloc(struct stack);
  assert(ustack);
  mman_write(mm);
- ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(0x10000000-n_bytes),
+ ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(USER_STCK_ADDRHINT-n_bytes),
                                            n_bytes,8,0,MMAN_FINDSPACE_BELOW);
  assert(ustack->s_begin != PAGE_ERROR);
  thread->t_ustack      = ustack; /* Inherit reference. */
@@ -169,6 +171,7 @@ run_init(char const *__restrict filename) {
  { struct mman *old_mm;
    struct modpatch patch;
    errno_t error;
+
    TASK_PDIR_BEGIN(old_mm,mm);
    modpatch_init_user(&patch,inst);
    error = modpatch_patch(&patch);
@@ -210,18 +213,20 @@ run_init(char const *__restrict filename) {
  thrd->t_sigshare = sigshare_new();
  assertf(thrd->t_sigshare,"TODO");
 
+#ifdef CONFIG_SMP
  CPU_FILL(&thrd->t_affinity);
+#endif
  thrd->t_priority = TASKPRIO_DEFAULT;
  MMAN_INCREF(mm); /* Create reference. */
  thrd->t_mman = mm; /* Inherit reference. */
 #ifdef CONFIG_SMP
  thrd->t_cpu = THIS_CPU;
 #endif
- assertef(E_ISOK(task_mkhstack(thrd,0x4000)),"TODO");
+ assertef(E_ISOK(task_mkhstack(thrd,HOST_STCK_SIZE)),"TODO");
  thrd->t_cstate = state = ((HOST struct cpustate *)thrd->t_hstack.hs_end)-1;
 
  /* Allocate the user-stack. */
- alloc_user_stack(thrd,mm,0x4000);
+ alloc_user_stack(thrd,mm,USER_STCK_BASESIZE);
 
 #ifndef CONFIG_NO_TLB
  /* Allocate the thread local block. */
@@ -229,19 +234,25 @@ run_init(char const *__restrict filename) {
  task_ldtlb(thrd);
 #endif /* !CONFIG_NO_TLB */
 
+#ifndef __x86_64__
  state->host.sg.ds   = __USER_DS;
  state->host.sg.es   = __USER_DS;
+#endif /* !__x86_64__ */
  state->host.sg.fs   = __USER_FS;
  state->host.sg.gs   = __USER_GS;
- state->host.gp.ecx  = (uintptr_t)penviron; /* Pass the environment block through ECX. */
- state->iret.cs      = __USER_CS;
- state->iret.useresp = (uintptr_t)thrd->t_ustack->s_end;
- state->iret.ss      = __USER_DS;
- state->iret.eip     = (uintptr_t)inst->i_base+mod->m_entry;
-#ifdef CONFIG_ALLOW_USER_IO
- state->iret.eflags  = EFLAGS_IF|EFLAGS_IOPL(3);
+#ifdef __x86_64__
+ state->host.gp.rdi  = (uintptr_t)penviron; /* Pass the environment block through RDI. */
 #else
- state->iret.eflags  = EFLAGS_IF;
+ state->host.gp.ecx  = (uintptr_t)penviron; /* Pass the environment block through ECX. */
+#endif
+ state->iret.cs      = __USER_CS;
+ state->iret.userxsp = (uintptr_t)thrd->t_ustack->s_end;
+ state->iret.ss      = __USER_DS;
+ state->iret.xip     = (uintptr_t)inst->i_base+mod->m_entry;
+#ifdef CONFIG_ALLOW_USER_IO
+ state->iret.xflags  = EFLAGS_IF|EFLAGS_IOPL(3);
+#else
+ state->iret.xflags  = EFLAGS_IF;
 #endif
 
  //asserte(E_ISOK(mman_read(mm)));
@@ -249,7 +260,7 @@ run_init(char const *__restrict filename) {
  //mman_endread(mm);
 
  syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in `%[file]') at %p\n",
-        filename,mod->m_file,state->iret.eip);
+        filename,mod->m_file,state->iret.xip);
  syslog(LOG_EXEC|LOG_INFO,"[APP] TLB at %p\n",thrd->t_tlb);
 
  assert(mm == thrd->t_mman);
@@ -303,8 +314,8 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
   if (info->flags&MB_INFO_BOOTDEV)
       boot_drive = (u8)(info->boot_device >> 24);
   if (info->flags&MB_INFO_CMDLINE &&
-     (KERNEL_COMMANDLINE.cl_size = strlen((char *)info->cmdline)) != 0) {
-   KERNEL_COMMANDLINE.cl_text = (char *)info->cmdline;
+     (KERNEL_COMMANDLINE.cl_size = strlen((char *)(uintptr_t)info->cmdline)) != 0) {
+   KERNEL_COMMANDLINE.cl_text = (char *)(uintptr_t)info->cmdline;
    /* Protect the kernel commandline from touchies. */
    mem_install((uintptr_t)kernel_commandline.cl_text,
                           kernel_commandline.cl_size,
@@ -315,17 +326,17 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
       mbt_memory += memory_load_mb_lower_upper(info->mem_lower,info->mem_upper);
   if (info->flags&MB_INFO_MEM_MAP)
       mem_install(info->mmap_addr,info->mmap_length,MEMTYPE_PRESERVE),
-      mbt_memory += memory_load_mb_mmap((struct mb_mmap_entry *)info->mmap_addr,info->mmap_length);
+      mbt_memory += memory_load_mb_mmap((struct mb_mmap_entry *)(uintptr_t)info->mmap_addr,info->mmap_length);
   if (info->flags&MB_INFO_MODS) {
    PHYS mb_module_t *iter,*end;
-   /* Limit this to 1024 modules just in case the bootloader is broken. */
+   /* Limit the module count just in case the bootloader is broken. */
    end = (iter = (PHYS mb_module_t *)(uintptr_t)info->mods_addr)+
-         (size_t)MIN(info->mods_count,1024);
+         (size_t)MIN(info->mods_count,BOOTLOADER_MAX_MODULE_COUNT);
    for (; iter != end; ++iter) {
     if unlikely(iter->mod_end < iter->mod_start) continue;
     kernel_bootmod_register(iter->mod_start,
                             iter->mod_end-iter->mod_start,
-                           (char *)iter->cmdline);
+                           (char *)(uintptr_t)iter->cmdline);
    }
   }
  } break;
@@ -437,9 +448,11 @@ kernel_boot(u32        mb_magic,
  commandline_initialize_parse();
  commandline_initialize_early();
 
+#ifdef CONFIG_SMP
  /* Perform early SMP initialization (do this while we're
   * still mapping the whole of the 3Gb physical address space). */
  smp_initialize();
+#endif
 
  /* Initialize paging & advanced memory management. */
  pdir_initialize();
@@ -467,10 +480,12 @@ kernel_boot(u32        mb_magic,
   * start attempting to do so. */
  pid_initialize();
 
+#ifdef CONFIG_SMP
  /* Transfer physical SMP memory mappings into virtual address space,
   * in the process also initializing per-cpu data from templates. */
  smp_initialize_repage();
  smp_initialize_lapic();
+#endif
 
 #ifdef M_MALL_CHECK_FREQUENCY
  /* Validate memory every 4 allocations (For now this is still acceptable)

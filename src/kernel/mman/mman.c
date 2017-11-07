@@ -68,6 +68,7 @@ DECL_BEGIN
  *       memory, and those allocated in physical memory. */
 PRIVATE VIRT LIST_HEAD(struct mregion) mregion_chain_v = NULL;
 PRIVATE PHYS LIST_HEAD(struct mregion) mregion_chain_p = NULL;
+#include <kernel/arch/hints.h>
 PRIVATE DEFINE_ATOMIC_RWLOCK(mregion_chain_lock);
 
 
@@ -333,8 +334,8 @@ err:
  assert(IS_ALIGNED((uintptr_t)result->m_ppdir,PDIR_ALIGN));
  assertf(!result->m_map,"%p: %p",result,result->m_map);
  owner_rwlock_cinit(&result->m_lock);
- result->m_uheap = MMAN_UHEAP_DEFAULT_ADDR;
- result->m_ustck = MMAN_USTCK_DEFAULT_ADDR;
+ result->m_uheap = (ppage_t)USER_HEAP_ADDRHINT;
+ result->m_ustck = (ppage_t)USER_STCK_ADDRHINT;
  /* Start out with an empty LDT. */
  LDT_INCREF(&ldt_empty);
  result->m_ldt = &ldt_empty;
@@ -348,7 +349,6 @@ PUBLIC SAFE void KCALL
 mman_destroy(struct mman *__restrict self) {
  struct mman *old_mman;
  CHECK_HOST_DOBJ(self);
- assert(self != THIS_MMAN);
  assert(self->m_refcnt == 0);
  assertf(addr_isvirt(self),
          "Memory managers must be allocated as shared memory");

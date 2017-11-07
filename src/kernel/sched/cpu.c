@@ -51,6 +51,7 @@
 #include <kernel/export.h>
 #include <kos/thread.h>
 #include <asm/instx.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
@@ -212,7 +213,7 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
  size_t               s_kernused;
  struct meminfo       s_kmeminfo[2];
 #endif
- byte_t               s_data[TASK_HOSTSTACK_IDLESIZE-
+ byte_t               s_data[HOST_IDLE_STCKSIZE-
                             (sizeof(struct cpustate_host)+
                              sizeof(struct meminfo)*2+
                              sizeof(size_t))];
@@ -282,9 +283,9 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
 };
 
 #ifndef CONFIG_NO_JOBS
-INTERN ATTR_RAREBSS ATTR_ALIGNED(16) u8 __bootworkstack[TASK_HOSTSTACK_WORKSIZE];
+INTERN ATTR_RAREBSS ATTR_ALIGNED(16) u8 __bootworkstack[HOST_WOKER_STCKSIZE];
 #define WORKSTATE \
-  ((struct cpustate *)(__bootworkstack+(TASK_HOSTSTACK_WORKSIZE-sizeof(struct cpustate_host))))
+  ((struct cpustate *)(__bootworkstack+(HOST_WOKER_STCKSIZE-sizeof(struct cpustate_host))))
 
 #endif /* !CONFIG_NO_JOBS */
 
@@ -402,7 +403,7 @@ PUBLIC struct cpu __bootcpu = {
         },
         .t_hstack = {
             .hs_begin = (ppage_t)((uintptr_t)&__bootidlestack),
-            .hs_end   = (ppage_t)((uintptr_t)&__bootidlestack+TASK_HOSTSTACK_IDLESIZE),
+            .hs_end   = (ppage_t)((uintptr_t)&__bootidlestack+HOST_IDLE_STCKSIZE),
         },
         /* NOTE: Technically, IDLE tasks can run under any page directory,
          *       but adding an exception just for them may already negate
@@ -507,7 +508,7 @@ PUBLIC struct cpu __bootcpu = {
         },
         .t_hstack = {
             .hs_begin = (ppage_t)((uintptr_t)&__bootworkstack),
-            .hs_end   = (ppage_t)((uintptr_t)&__bootworkstack+TASK_HOSTSTACK_WORKSIZE),
+            .hs_end   = (ppage_t)((uintptr_t)&__bootworkstack+HOST_WOKER_STCKSIZE),
         },
         /* NOTE: Technically, IDLE tasks can run under any page directory,
          *       but adding an exception just for them may already negate

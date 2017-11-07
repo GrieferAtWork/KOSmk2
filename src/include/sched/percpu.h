@@ -139,6 +139,7 @@ extern byte_t __bootcpu_end[];
 #define THISCPU_T_PUTQ(T,offset,val) __THISCPU_PUT(T,"q",offset,val)
 #endif
 #else
+DATDEF uintptr_t __percpu_begin[];
 #define THISCPU_ADDR(offset)           (__percpu_begin+(offset))
 #endif
 

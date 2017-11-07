@@ -36,6 +36,14 @@
 #define __XSYSCALL_ASM(id,sym)
 #endif
 
+/* System call with full register state. */
+#ifndef __RSYSCALL
+#define __RSYSCALL __SYSCALL_ASM
+#endif
+#ifndef __RXSYSCALL
+#define __RXSYSCALL __XSYSCALL_ASM
+#endif
+
 #define __NR_syscall_min  0
 
 #define __NR_getcwd       17
@@ -293,9 +301,9 @@ __XSYSCALL(__NR_xfsmask,sys_xfsmask)
  *    cannot be shared between different processes (or rather VMs)
  */
 #define __NR_xdlopen      0x80000020
-__XSYSCALL(__NR_xdlopen,sys_xdlopen)
+__RXSYSCALL(__NR_xdlopen,sys_xdlopen)
 #define __NR_xfdlopen     0x80000021
-__XSYSCALL(__NR_xfdlopen,sys_xfdlopen)
+__RXSYSCALL(__NR_xfdlopen,sys_xfdlopen)
 #define __NR_xdlclose     0x80000022
 __XSYSCALL(__NR_xdlclose,sys_xdlclose)
 #define __NR_xdlsym       0x80000023
@@ -334,6 +342,8 @@ __XSYSCALL(__NR_xpaused,sys_xpaused)
 #define __NR_xsyscall_max 0x80000080
 
 
+#undef __RXSYSCALL
+#undef __RSYSCALL
 #undef __XSYSCALL_ASM
 #undef __XSYSCALL
 #undef __SYSCALL_ASM

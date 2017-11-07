@@ -51,19 +51,22 @@ DECL_BEGIN
  * Mb of physical memory intact (Which is used by e.g.: The core's VGA-TTY driver)
  * HINT: In this configuration, user and kernel-space are of equal size.
  */
-#define USER_MAX      __UINT64_C(0x00007fffffffffff)
-#define USER_END      __UINT64_C(0x0000800000000000)
-#define KERNEL_BASE   __UINT64_C(0xffff800000000000)
+#define ASM_USER_MAX               0x00007fffffffffff
+#define ASM_USER_END               0x0000800000000000
+#define ASM_KERNEL_BASE            0xffff800000000000
+#define USER_MAX        __UINT64_C(0x00007fffffffffff)
+#define USER_END        __UINT64_C(0x0000800000000000)
+#define KERNEL_BASE     __UINT64_C(0xffff800000000000)
 
 /* Mask of all address bits that can actually be used.
  * NOTE: On x86_64, this is 48 bits. */
-#define VIRT_MASK     __UINT64_C(0x0000ffffffffffff)
+#define VIRT_MASK       __UINT64_C(0x0000ffffffffffff)
 
 /* Pagesizes of different page directory levels. */
-#define PDIR_E1_SIZE  __UINT64_C(0x0000000000001000) /* 4 KiB (Same as `PAGESIZE') */
-#define PDIR_E2_SIZE  __UINT64_C(0x0000000000200000) /* 2 MiB */
-#define PDIR_E3_SIZE  __UINT64_C(0x0000000040000000) /* 1 GiB */
-#define PDIR_E4_SIZE  __UINT64_C(0x0000008000000000) /* 512 GiB */
+#define PDIR_E1_SIZE     __UINT64_C(0x0000000000001000) /* 4 KiB (Same as `PAGESIZE') */
+#define PDIR_E2_SIZE     __UINT64_C(0x0000000000200000) /* 2 MiB */
+#define PDIR_E3_SIZE     __UINT64_C(0x0000000040000000) /* 1 GiB */
+#define PDIR_E4_SIZE     __UINT64_C(0x0000008000000000) /* 512 GiB */
 
 /* The amount of sub-level entries contained within any given level. */
 #define PDIR_E1_COUNT 512 /* Amount of level #0 entries (pages). */
@@ -215,7 +218,7 @@ LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *
 }
 
 LOCAL void FCALL pdir_flushall(void) {
- register u32 temp;
+ register register_t temp;
  __asm__ __volatile__("movq %%cr3, %0\n"
                       "movq %0, %%cr3\n"
                       : "=&r" (temp)/* : : "memory"*/);
@@ -223,8 +226,8 @@ LOCAL void FCALL pdir_flushall(void) {
 
 /* Get/Set the currently active page directory.
  * NOTE: These functions work with PHYS pointers! */
-#define PDIR_GTCURR()  XBLOCK({ register PHYS pdir_t *_r; __asm__ __volatile__("movq %%cr3, %0" : "=r" (_r)); XRETURN _r; })
-#define PDIR_STCURR(v) XBLOCK({ __asm__ __volatile__("movq %0, %%cr3" : : "r" (v)/* : "memory"*/); (void)0; })
+#define PDIR_GTCURR()  XBLOCK({ register PHYS pdir_t *_r; __asm__ __volatile__("movq %%cr3, %0\n" : "=r" (_r)); XRETURN _r; })
+#define PDIR_STCURR(v) XBLOCK({ __asm__ __volatile__("movq %0, %%cr3\n" : : "r" (v)/* : "memory"*/); (void)0; })
 #if PDIR_OFFSETOF_DIRECTORY != 0
 #error "Fix the above macros"
 #endif

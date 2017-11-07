@@ -43,6 +43,7 @@
 #include <sys/mman.h>
 #include <sched/signal.h>
 #include <bits/waitstatus.h>
+#include <kernel/arch/hints.h>
 #ifndef CONFIG_NO_TLB
 #include <kos/thread.h>
 #endif /* !CONFIG_NO_TLB */
@@ -115,14 +116,14 @@ reloc_again:
 
 struct user_collect_data {
  void USER *USER *user_stack;
- void USER       *last_eip;
+ void USER       *last_xip;
 };
 
 PRIVATE ssize_t KCALL
 user_collect_push(VIRT void *pfun, modfun_t UNUSED(single_type), void *closure) {
  struct user_collect_data *data = (struct user_collect_data *)closure;
- *--data->user_stack = data->last_eip;
- data->last_eip = pfun;
+ *--data->user_stack = data->last_xip;
+ data->last_xip = pfun;
  return 0;
 }
 PRIVATE ssize_t KCALL
@@ -275,8 +276,8 @@ relock_tasks_again:
  assert(!mm->m_map);
  assert(!mm->m_order);
  assert(!mm->m_inst);
- mm->m_uheap = MMAN_UHEAP_DEFAULT_ADDR;
- mm->m_ustck = MMAN_USTCK_DEFAULT_ADDR;
+ mm->m_uheap = (ppage_t)USER_HEAP_ADDRHINT;
+ mm->m_ustck = (ppage_t)USER_STCK_ADDRHINT;
 
  /* Map the new instance into the (currently) empty address space. */
  error = mman_mmap_instance_unlocked(mm,inst,(u32)-1,
@@ -343,11 +344,10 @@ endwrite:
  if (!mman_inuse_unlocked(mm,environ,mm->m_envsize)) {
   error = (errno_t)mman_mrestore_unlocked(mm,&env_maps,(ppage_t)environ,true);
  } else {
-  environ = (USER struct envdata *)mman_findspace_unlocked(mm,(ppage_t)((USER_END-(4*PAGESIZE))-mm->m_envsize),
+  environ = (USER struct envdata *)mman_findspace_unlocked(mm,(ppage_t)(USER_ENVIRON_ADDRHINT-mm->m_envsize),
                                                            mm->m_envsize,PAGESIZE,0,MMAN_FINDSPACE_BELOW);
   if unlikely(environ == PAGE_ERROR) error = -ENOMEM;
-  else error = (errno_t)mman_mrestore_unlocked(mm,&env_maps,
-                                              (ppage_t)environ,true);
+  else error = (errno_t)mman_mrestore_unlocked(mm,&env_maps,(ppage_t)environ,true);
  }
 
  if (unlikely(environ != mm->m_environ) && E_ISOK(error)) {
@@ -378,9 +378,9 @@ endwrite:
 
  /* Allocate a new user-space stack. */
  error = task_mkustack(exec_task,
-                       TASK_USERSTACK_DEFAULTSIZE,
-                       TASK_USERSTACK_GUARDSIZE,
-                       TASK_USERSTACK_FUNDS);
+                       USER_STCK_BASESIZE,
+                       USER_STCK_GUARDSIZE,
+                       USER_STCK_FUNDS);
  if (E_ISERR(error)) goto end_too_late;
 
 #ifndef CONFIG_NO_TLB
@@ -405,16 +405,18 @@ endwrite:
    memset(&state,0,sizeof(struct cpustate));
    state.sg.gs        = __USER_GS;
    state.sg.fs        = __USER_FS;
+#ifndef __x86_64__
    state.sg.es        = __USER_DS;
    state.sg.ds        = __USER_DS;
+#endif
    state.iret.cs      = __USER_CS;
-   state.gp.ecx       = (uintptr_t)environ; /* Pass the environment block through ECX. */
-   state.iret.useresp = (uintptr_t)exec_task->t_ustack->s_end;
+   state.gp.xcx       = (uintptr_t)environ; /* Pass the environment block through ECX. */
+   state.iret.userxsp = (uintptr_t)exec_task->t_ustack->s_end;
    state.iret.ss      = __USER_DS;
 #ifdef CONFIG_ALLOW_USER_IO
-   state.iret.eflags  = EFLAGS_IF|EFLAGS_IOPL(3);
+   state.iret.xflags  = EFLAGS_IF|EFLAGS_IOPL(3);
 #else
-   state.iret.eflags  = EFLAGS_IF;
+   state.iret.xflags  = EFLAGS_IF;
 #endif
    /* Call module constructors. (Push the real entry point and all
     * constructors but the first in reverse order on the user-stack,
@@ -424,16 +426,16 @@ endwrite:
     *       environment block to a callee-save register such as EBX.
     */
    { struct user_collect_data data;
-     data.last_eip = (void *)((uintptr_t)inst->i_base+mod->m_entry);
+     data.last_xip = (void *)((uintptr_t)inst->i_base+mod->m_entry);
      data.user_stack = (void **)exec_task->t_ustack->s_end;
      error = (errno_t)call_user_worker(user_collect_init,2,inst,&data);
      if (E_ISERR(error)) goto end_too_late;
-     state.iret.eip     = (uintptr_t)data.last_eip;
-     state.iret.useresp = (uintptr_t)data.user_stack;
+     state.iret.xip     = (uintptr_t)data.last_xip;
+     state.iret.userxsp = (uintptr_t)data.user_stack;
    }
 
    syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app `%[file]' at %p\n",
-          mod->m_file,state.iret.eip);
+          mod->m_file,state.iret.xip);
 
    /* Last phase: Cleanup stuff the caller gave us. */
    moduleset_fini(free_modules);

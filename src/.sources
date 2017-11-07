@@ -22,11 +22,13 @@ BEGIN
 #ifdef TARGET_X86_64
 	/* Don't use the `red zone' in kernel mode. */
 	C_FLAGS("-mno-red-zone")
+	DEFINE("CONFIG_NO_BOOTLOADER=1")
+#else
+	DEFINE("CONFIG_SMP")
 #endif
 
 	INCLUDE("include")
 	DEFINE("__KERNEL__")
-	DEFINE("CONFIG_SMP")
 	//DEFINE("CONFIG_USE_EXTERNAL_ADDR2LINE")
 	//C_FLAGS("-momit-lock-prefix=no") /* Enable when `CONFIG_SMP' is disabled. */
 	if (config_debug) {

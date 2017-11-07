@@ -38,6 +38,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <syslog.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
@@ -372,6 +373,11 @@ PRIVATE struct mregion usershare_region = {
     .mr_global = {NULL,NULL},
 };
 
+/* Make sure that the writable user-share segment is located
+ * below the kernel in what would otherwise be user-space.
+ * (Though the writable copy is only mapped in the kernel's page directory) */
+STATIC_ASSERT(HOST_USHARE_WRITE_ADDRHINT <= USER_END);
+
 PRIVATE MODULE_INIT void KCALL
 usershare_writable_initialize(void) {
  ppage_t map_address; errno_t error;
@@ -382,7 +388,7 @@ usershare_writable_initialize(void) {
  task_nointr();
  mman_write(&mman_kernel);
  map_address = mman_findspace_unlocked(&mman_kernel,
-                                      (ppage_t)(USER_END-(uintptr_t)__kernel_user_size),
+                                      (ppage_t)(HOST_USHARE_WRITE_ADDRHINT-(uintptr_t)__kernel_user_size),
                                       (uintptr_t)__kernel_user_size,PAGESIZE,0,
                                        MMAN_FINDSPACE_BELOW);
  if unlikely(map_address == PAGE_ERROR) {

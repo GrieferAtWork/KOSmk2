@@ -19,6 +19,7 @@
 #ifndef GUARD_KERNEL_CORE_ARCH_PAGING_C
 #define GUARD_KERNEL_CORE_ARCH_PAGING_C 1
 
+#include <hybrid/compiler.h>
 #include <hybrid/host.h>
 
 #ifdef __x86_64__
@@ -26,13 +27,12 @@
 #else
 #include "paging32.c.inl"
 #endif
-
 #include <kernel/paging.h>
 #include <kernel/mman.h>
-#include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <format-printer.h>
 #include <asm/instx.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
@@ -45,11 +45,49 @@ PHYS struct mman __mman_kernel_p = {
      * Aka: Physical memory pointers is mirrored in upper memory.
      * Once paging has been fully initialized, the lower
      * mappings from 0x00000000 to 0xbfffffff are deleted.
-     * HINT: 0x83 == PDIR_ATTR_4MIB|PDIR_ATTR_PRESENT|PDIR_ATTR_WRITE */
+     * HINT: 0x83 == [PDIR_ATTR_4MIB/PDIR_ATTR_ISADDR]|PDIR_ATTR_PRESENT|PDIR_ATTR_WRITE */
+#ifndef __INTELLISENSE__
     .m_pdir = {
         .pd_directory = {
 #ifdef __x86_64__
-            /* TODO */
+#define P4(phys) \
+           {phys+__UINT64_C(0x0000008000000083)},{phys+__UINT64_C(0x0000010000000083)}, \
+           {phys+__UINT64_C(0x0000018000000083)},{phys+__UINT64_C(0x0000020000000083)}, \
+           {phys+__UINT64_C(0x0000028000000083)},{phys+__UINT64_C(0x0000030000000083)}, \
+           {phys+__UINT64_C(0x0000038000000083)},{phys+__UINT64_C(0x0000040000000083)}, \
+           {phys+__UINT64_C(0x0000048000000083)},{phys+__UINT64_C(0x0000050000000083)}, \
+           {phys+__UINT64_C(0x0000058000000083)},{phys+__UINT64_C(0x0000060000000083)}, \
+           {phys+__UINT64_C(0x0000068000000083)},{phys+__UINT64_C(0x0000070000000083)}, \
+           {phys+__UINT64_C(0x0000078000000083)},{phys+__UINT64_C(0x0000080000000083)}, \
+           {phys+__UINT64_C(0x0000088000000083)},{phys+__UINT64_C(0x0000090000000083)}, \
+           {phys+__UINT64_C(0x0000098000000083)},{phys+__UINT64_C(0x00000a0000000083)}, \
+           {phys+__UINT64_C(0x00000a8000000083)},{phys+__UINT64_C(0x00000b0000000083)}, \
+           {phys+__UINT64_C(0x00000b8000000083)},{phys+__UINT64_C(0x00000c0000000083)}, \
+           {phys+__UINT64_C(0x00000c8000000083)},{phys+__UINT64_C(0x00000d0000000083)}, \
+           {phys+__UINT64_C(0x00000d8000000083)},{phys+__UINT64_C(0x00000e0000000083)}, \
+           {phys+__UINT64_C(0x00000e8000000083)},{phys+__UINT64_C(0x00000f0000000083)}, \
+           {phys+__UINT64_C(0x00000f8000000083)},{phys+__UINT64_C(0x0000800000000000)},
+            P4(__UINT64_C(0x0000000000000000))
+            P4(__UINT64_C(0x0000100000000000))
+            P4(__UINT64_C(0x0000200000000000))
+            P4(__UINT64_C(0x0000300000000000))
+            P4(__UINT64_C(0x0000400000000000))
+            P4(__UINT64_C(0x0000500000000000))
+            P4(__UINT64_C(0x0000600000000000))
+            P4(__UINT64_C(0x0000700000000000))
+            /* Map lower memory a second time. (NOTE: 0x100 is `PDIR_ATTR_GLOBAL') */
+            P4(__UINT64_C(0x0000000000000100))
+            P4(__UINT64_C(0x0000100000000100))
+            P4(__UINT64_C(0x0000200000000100))
+            P4(__UINT64_C(0x0000300000000100))
+            P4(__UINT64_C(0x0000400000000100))
+            P4(__UINT64_C(0x0000500000000100))
+            P4(__UINT64_C(0x0000600000000100))
+            P4(__UINT64_C(0x0000700000000100))
+#if (KERNEL_BASE & PDIR_E4_TOTALSIZE-1) != __UINT64_C(0x0000800000000000)
+#error "FIXME: Fix the bootstrap page table above"
+#endif
+#undef P4
 #else /* __x86_64__ */
 #define PD(phys) \
            {phys+0x00000083},{phys+0x00400083},{phys+0x00800083},{phys+0x00c00083}, \
@@ -76,6 +114,7 @@ PHYS struct mman __mman_kernel_p = {
 #endif /* !__x86_64__ */
         },
     },
+#endif /* !__INTELLISENSE__ */
     .m_ppdir  = &pdir_kernel,
     /* Reference counter:
      *   - mman_kernel
@@ -103,8 +142,8 @@ PHYS struct mman __mman_kernel_p = {
 #ifndef CONFIG_NO_LDT
     .m_ldt    = &ldt_empty,
 #endif
-    .m_uheap  = MMAN_UHEAP_DEFAULT_ADDR,
-    .m_ustck  = MMAN_USTCK_DEFAULT_ADDR,
+    .m_uheap  = (ppage_t)USER_HEAP_ADDRHINT,
+    .m_ustck  = (ppage_t)USER_STCK_ADDRHINT,
 #ifndef CONFIG_NO_VM_EXE
     .m_exe    = THIS_INSTANCE, /* The kernel is its own executable. - mind=blown; */
 #endif /* !CONFIG_NO_VM_EXE */
@@ -112,10 +151,10 @@ PHYS struct mman __mman_kernel_p = {
 
 GLOBAL_ASM(
 /* Define physical/virtual versions of the kernel mman/pdir. */
-L(.global mman_kernel, pdir_kernel, pdir_kernel_v               )
-L(mman_kernel   = __mman_kernel_p+KERNEL_BASE                   )
-L(pdir_kernel   = __mman_kernel_p+MMAN_OFFSETOF_PDIR            )
-L(pdir_kernel_v = __mman_kernel_p+KERNEL_BASE+MMAN_OFFSETOF_PDIR)
+L(.global mman_kernel, pdir_kernel, pdir_kernel_v                   )
+L(mman_kernel   = __mman_kernel_p+ASM_KERNEL_BASE                   )
+L(pdir_kernel   = __mman_kernel_p+MMAN_OFFSETOF_PDIR                )
+L(pdir_kernel_v = __mman_kernel_p+ASM_KERNEL_BASE+MMAN_OFFSETOF_PDIR)
 );
 
 
@@ -264,8 +303,6 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
  assert(PDIR_TRANSLATE(&pdir_kernel_v,&pdir_kernel_v) == &pdir_kernel);
  assert(PDIR_TRANSLATE(&pdir_kernel  ,&pdir_kernel_v) == &pdir_kernel);
 }
-
-
 
 DECL_END
 

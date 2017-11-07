@@ -56,6 +56,7 @@
 #define __LP64__             1
 #define __MMX__              1
 #define __SIZEOF_INT128__    16
+#define __int128             long long
 #define __SSE2_MATH__        1
 #define __SSE2__             1
 #define __SSE_MATH__         1

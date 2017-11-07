@@ -776,5 +776,8 @@
     <ClInclude Include="..\..\src\include\kernel\arch\preemption.h">
       <Filter>include\kernel\arch</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\hints.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -49,6 +49,8 @@
 #include <kernel/irq.h>
 #include <sys/mman.h>
 #include <asm/instx.h>
+#include <kernel/arch/hints.h>
+#include <hybrid/minmax.h>
 
 DECL_BEGIN
 
@@ -293,7 +295,7 @@ end_double_lock:
 
  /* Alright! - User-space memory & files have been fully set up.
   * >> Now to create a new kernel-stack for `result'. */
- error = task_mkhstack(result,TASK_HOSTSTACK_DEFAULTSIZE);
+ error = task_mkhstack(result,HOST_STCK_SIZE);
  if (E_ISERR(error)) goto err1;
 
  /* NOTE: From this point onwards, all remaining setup operation are noexcept! */
@@ -778,9 +780,6 @@ end:
 }
 
 
-#define CLONE_AUTOSTACK_HINT  0x10000000
-#define CLONE_AUTOSTACK_SIZE  0x4000
-#define CLONE_AUTOSTACK_FUNDS 8
 PRIVATE errno_t KCALL
 clone_create_auto_stack(struct task *__restrict thread) {
  REF struct stack *ustack; errno_t error;
@@ -794,16 +793,18 @@ err_stack:
   free(ustack);
   return error;
  }
- gap_size = 16*PAGESIZE;
+ gap_size = USER_STCK_ADDRGAP;
 find_space:
- ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(CLONE_AUTOSTACK_HINT-CLONE_AUTOSTACK_SIZE),
-                                           CLONE_AUTOSTACK_SIZE,8,gap_size,MMAN_FINDSPACE_BELOW);
+ ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(USER_STCK_ADDRHINT-USER_STCK_BASESIZE),
+                                           USER_STCK_BASESIZE,MAX(PAGESIZE,USER_STCK_ALIGN),
+                                           gap_size,MMAN_FINDSPACE_BELOW);
  if (ustack->s_begin == PAGE_ERROR ||
-    (uintptr_t)ustack->s_begin+CLONE_AUTOSTACK_SIZE > USER_END) {
-  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)CLONE_AUTOSTACK_HINT,
-                                            CLONE_AUTOSTACK_SIZE,8,gap_size,MMAN_FINDSPACE_ABOVE);
+    (uintptr_t)ustack->s_begin+USER_STCK_BASESIZE > USER_END) {
+  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)USER_STCK_ADDRHINT,
+                                            USER_STCK_BASESIZE,MAX(PAGESIZE,USER_STCK_ALIGN),
+                                            gap_size,MMAN_FINDSPACE_ABOVE);
   if (ustack->s_begin == PAGE_ERROR ||
-     (uintptr_t)ustack->s_begin+CLONE_AUTOSTACK_SIZE > USER_END) {
+     (uintptr_t)ustack->s_begin+USER_STCK_BASESIZE > USER_END) {
    if (gap_size) { gap_size = 0; goto find_space; } /* Try without a gap. */
    mman_endwrite(mm);
    error = -ENOMEM;
@@ -815,10 +816,11 @@ find_space:
  ustack->s_refcnt      = 1;
  ustack->s_branch      = 0;
  ustack->s_task.ap_ptr = thread;
- ustack->s_end = (VIRT ppage_t)((uintptr_t)ustack->s_begin+CLONE_AUTOSTACK_SIZE);
- /* Now actuall map the stack! */
+ ustack->s_end = (VIRT ppage_t)((uintptr_t)ustack->s_begin+USER_STCK_BASESIZE);
+ /* Now actually map the stack! */
  error = mman_mmap_stack_unlocked(mm,ustack,PROT_READ|PROT_WRITE,
-                                  MREGION_TYPE_LOGUARD,8,PAGESIZE,NULL);
+                                  MREGION_TYPE_LOGUARD,
+                                  USER_STCK_FUNDS,PAGESIZE,NULL);
  mman_endwrite(mm);
  if (E_ISERR(error)) {
   thread->t_ustack = NULL;
@@ -906,7 +908,7 @@ end_double_lock:
  }
 
  /* We also need a new kernel-stack for the thread. */
- error = task_mkhstack(result,TASK_HOSTSTACK_DEFAULTSIZE);
+ error = task_mkhstack(result,HOST_STCK_SIZE);
  if (E_ISERR(error)) goto err1;
 
  /* All right! Everything memory-related has been cloned/inherited.

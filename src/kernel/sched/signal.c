@@ -276,7 +276,7 @@ L(    pushx SIGENTER(SIGENTER_OFFSETOF_CS)                                      
 L(    pushx SIGENTER(SIGENTER_OFFSETOF_EIP)                                      )
 #undef SIGENTER
       /* To prevent kernel data leaks, we must re-initialize all registers we've modified.
-       * Also: Store a pointer to 'ei_old_ebp' in EBP to fix user-space tracebacks. */
+       * Also: Store a pointer to 'ei_old_xbp' in EBP to fix user-space tracebacks. */
 L(    movx  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERESP)(%xax), %xbx       )
 L(    leax  SIGENTER_INFO_OFFSETOF_OLD_EBP(%xbx), %xbp                           )
 L(    movx   (8*XSZ)(%xsp), %xcx                                                 )
@@ -466,8 +466,8 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
  info.ei_signo   = signal_info->si_signo;
  info.ei_pinfo   = &user_info->ei_info;
  info.ei_pctx    = &user_info->ei_ctx;
- info.ei_old_ebp = (USER void *)cs_descr->host.gp.ebp;
- info.ei_old_eip = (USER void *)cs_descr->iret.eip;
+ info.ei_old_xbp = (USER void *)cs_descr->host.gp.ebp;
+ info.ei_old_xip = (USER void *)cs_descr->iret.eip;
  /* Copy all the information we've gathered onto the user-space stack. */
  { struct mman *omm;
    size_t copy_error;
@@ -486,7 +486,7 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
  /* Setup the register state to-be used when the task will execute.
   * NOTE: We keep all registers but EBP, EIP and ESP
   *       as they were before the interrupt occurred. */
- cs_descr->host.gp.ebp   = (u32)&user_info->ei_old_ebp;
+ cs_descr->host.gp.ebp   = (u32)&user_info->ei_old_xbp;
  cs_descr->host.iret.eip = (u32)action->sa_handler;
  cs_descr->iret.useresp  = (u32)user_info;
 
@@ -612,7 +612,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
  info.ei_ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
  info.ei_ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
  info.ei_ctx.uc_mcontext.fpregs = &user_info->ei_ctx.__fpregs_mem;
- info.ei_old_eip = (USER void *)t->t_sigenter.se_xip;
+ info.ei_old_xip = (USER void *)t->t_sigenter.se_xip;
  fpstate_from_task(&info.ei_ctx.__fpregs_mem,t);
  memcpy(&info.ei_ctx.uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
 

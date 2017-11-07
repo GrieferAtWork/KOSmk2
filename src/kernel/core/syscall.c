@@ -48,8 +48,10 @@ INTERN void ASMCALL syscall_irq(void);
 INTERN syscall_ulong_t ASMCALL sys_nosys(void);
 INTERN syscall_ulong_t ASMCALL sys_ccall(void);
 INTERN syscall_ulong_t ASMCALL sys_xcall(void);
+#ifndef __x86_64__
 INTERN syscall_ulong_t ASMCALL sys_lccall(void);
 INTERN syscall_ulong_t ASMCALL sys_lxcall(void);
+#endif /* !__x86_64__ */
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverride-init"
@@ -67,7 +69,11 @@ INTERN syscall_ulong_t ASMCALL sys_lxcall(void);
 PUBLIC CACHELINE_ALIGNED ATTR_HOTDATA ATTR_USED
 syscall_t syscall_table[(__NR_syscall_max-__NR_syscall_min)+1] = {
     [0 ... (__NR_syscall_max-__NR_syscall_min)] = &sys_nosys,
+#ifdef __x86_64__
+#define __SYSCALL(x,y)     [ x-__NR_syscall_min ] = &sys_ccall,
+#else /* __x86_64__ */
 #define __SYSCALL(x,y)     [ x-__NR_syscall_min ] = __SYSCALL_ISLNG(x) ? &sys_lccall : &sys_ccall,
+#endif /* !__x86_64__ */
 #define __SYSCALL_ASM(x,y) [ x-__NR_syscall_min ] = &y,
 #include <asm/syscallno.ci>
 };
@@ -75,7 +81,11 @@ syscall_t syscall_table[(__NR_syscall_max-__NR_syscall_min)+1] = {
 PUBLIC CACHELINE_ALIGNED ATTR_HOTDATA ATTR_USED
 syscall_t xsyscall_table[(__NR_xsyscall_max-__NR_xsyscall_min)+1] = {
     [0 ... (__NR_xsyscall_max-__NR_xsyscall_min)] = &sys_nosys,
+#ifdef __x86_64__
+#define __XSYSCALL(x,y)     [ x-__NR_xsyscall_min ] = &sys_xcall,
+#else /* __x86_64__ */
 #define __XSYSCALL(x,y)     [ x-__NR_xsyscall_min ] = __SYSCALL_ISLNG(x) ? &sys_lxcall : &sys_xcall,
+#endif /* !__x86_64__ */
 #define __XSYSCALL_ASM(x,y) [ x-__NR_xsyscall_min ] = &y,
 #include <asm/syscallno.ci>
 };
@@ -311,48 +321,57 @@ L(INTERN_ENTRY(syscall_irq)                                                   )
 L(    SYS_ENTER                                                               )
 L(    /* Check for underflow in system call ID */                             )
 #if __NR_syscall_min != 0
-L(    cmpx  $(__NR_syscall_min), %xax                                         )
+L(    cmpl  $(__NR_syscall_min), %eax                                         )
 L(    jb    1f                                                                )
 #endif
 L(                                                                            )
 L(    /* Check for overflow in system call ID */                              )
-L(    cmpx  $(__NR_syscall_max), %xax                                         )
+L(    cmpl  $(__NR_syscall_max), %eax                                         )
 L(    ja    1f                                                                )
 L(                                                                            )
 L(    /* Simply jump to the address of the system call. */                    )
-L(    jmpx *(syscall_table-__NR_syscall_min*XSZ)(,%xax,XSZ)                   )
+L(    jmpx *(syscall_table-__NR_syscall_min*XSZ)(,%eax,XSZ)                   )
 L(1:                                                                          )
 L(                                                                            )
 L(    /* Extended (x) system call handling. */                                )
 #if __NR_xsyscall_min != 0
-L(    cmpx  $(__NR_xsyscall_min), %xax                                        )
+L(    cmpl  $(__NR_xsyscall_min), %eax                                        )
 L(    jb    sys_nosys                                                         )
 #endif
-L(    cmpx  $(__NR_xsyscall_max), %xax                                        )
+L(    cmpl  $(__NR_xsyscall_max), %eax                                        )
 L(    ja    sys_nosys                                                         )
 L(    /* Jump to the extended system call handler. */                         )
-#if __SIZEOF_POINTER__ >= 8
-L(    jmpx *(xsyscall_table-((__NR_xsyscall_min*XSZ) & 0xffffffffffffffff))(,%xax,XSZ))
-#else
-L(    jmpx *(xsyscall_table-((__NR_xsyscall_min*XSZ) & 0xffffffff))(,%xax,XSZ))
-#endif
+L(    jmpx *(xsyscall_table-((__NR_xsyscall_min*XSZ) & 0xffffffff))(,%eax,XSZ))
 L(SYM_END(syscall_irq)                                                        )
 L(.previous                                                                   )
 );
 
 
-
+#ifdef __x86_64__
+#define SYSCALL_SAFEREGISTERS \
+    sti; /* Enable interrupts */ \
+    __DEBUG_CODE(pushq %rbp; /* __initial_rbp */) \
+    __ASM_PUSH_SEGMENTS \
+    pushq %r9; \
+    pushq %r8; \
+    pushq %r10; \
+    pushq %rdx; \
+    pushq %rsi; \
+    pushq %rdi; \
+    xchgq %rcx, %r10;
+#else
 #define SYSCALL_SAFEREGISTERS \
     sti; /* Enable interrupts */ \
     __ASM_PUSH_SEGMENTS \
-    __DEBUG_CODE(pushx (3*XSZ)(%xsp); /* __initial_eip */) \
-    pushx %xbp; \
-    __DEBUG_CODE(movx %xsp, %xbp;) \
-    pushx %xdi; \
-    pushx %xsi; \
-    pushx %xdx; \
-    pushx %xcx; \
-    pushx %xbx;
+    __DEBUG_CODE(pushl 12(%esp); /* __initial_eip */) \
+    pushl %ebp; \
+    __DEBUG_CODE(movl %esp, %ebp;) \
+    pushl %edi; \
+    pushl %esi; \
+    pushl %edx; \
+    pushl %ecx; \
+    pushl %ebx;
+#endif
 #define SYSCALL_LOADSEGMENTS \
     __ASM_LOAD_SEGMENTS(%dx)
 
@@ -364,17 +383,29 @@ L(PRIVATE_ENTRY(sys_ccall)                                                    )
 L(    SYSCALL_SAFEREGISTERS                                                   )
 L(    SYSCALL_LOADSEGMENTS                                                    )
 L(                                                                            )
-L(    callx *(syscall_c_table-__NR_syscall_min*XSZ)(,%xax,XSZ)                )
+L(    callx *(syscall_c_table-__NR_syscall_min*XSZ)(,%eax,XSZ)                )
 L(                                                                            )
-L(1:  popx  %xbx                                                              )
-L(    popx  %xcx                                                              )
-L(    popx  %xdx                                                              )
-L(2:  popx  %xsi                                                              )
-L(    popx  %xdi                                                              )
-L(    popx  %xbp                                                              )
-__DEBUG_CODE(L(addx $(XSZ), %xsp /* __initial_eip */))
+#ifdef __x86_64__
+L(1:  popq  %rdi                                                              )
+L(    popq  %rsi                                                              )
+L(    popq  %rdx                                                              )
+L(    popq  %r10                                                              )
+L(    popq  %r8                                                               )
+L(    popq  %r9                                                               )
+#else
+L(1:  popl  %ebx                                                              )
+L(    popl  %ecx                                                              )
+L(    popl  %edx                                                              )
+L(2:  popl  %esi                                                              )
+L(    popl  %edi                                                              )
+L(    popl  %ebp                                                              )
+__DEBUG_CODE(L(addl $4, %esp /* __initial_eip */))
+#endif
 L(    ASM_SYSRETURN_CHECK_SEGMENTS                                            )
 L(    __ASM_POP_SEGMENTS                                                      )
+#ifdef __x86_64__
+__DEBUG_CODE(L(addq $8, %rsp /* __initial_rbp */))
+#endif
 L(    SYS_LEAVE                                                               )
 L(SYM_END(sys_ccall)                                                          )
 L(.previous                                                                   )
@@ -385,23 +416,20 @@ L(    SYSCALL_SAFEREGISTERS                                                   )
 L(    SYSCALL_LOADSEGMENTS                                                    )
 L(                                                                            )
 L(    pushx $1b /* Push the cleanup return address of the system call */      )
-#if __SIZEOF_POINTER__ >= 8
-L(    jmpx *(xsyscall_c_table-((__NR_xsyscall_min*XSZ) & 0xffffffffffffffff))(,%xax,XSZ))
-#else
-L(    jmpx *(xsyscall_c_table-((__NR_xsyscall_min*XSZ) & 0xffffffff))(,%xax,XSZ))
-#endif
+L(    jmpx *(xsyscall_c_table-((__NR_xsyscall_min*XSZ) & 0xffffffff))(,%eax,XSZ))
 L(SYM_END(sys_xcall)                                                          )
 L(.previous                                                                   )
 L(                                                                            )
+#ifndef __x86_64__
 L(.section .text.hot                                                          )
 L(PRIVATE_ENTRY(sys_lccall)                                                   )
 L(    SYSCALL_SAFEREGISTERS                                                   )
 L(    SYSCALL_LOADSEGMENTS                                                    )
 L(                                                                            )
-L(    callx *(syscall_c_table-__NR_syscall_min*XSZ)(,%xax,XSZ)                )
-L(1:  popx  %xbx                                                              )
-L(    popx  %xcx                                                              )
-L(    addx  $(XSZ), %xsp /* Don't restore EDX */                              )
+L(    calll *(syscall_c_table-__NR_syscall_min*4)(,%eax,4)                    )
+L(1:  popl  %ebx                                                              )
+L(    popl  %ecx                                                              )
+L(    addl  $4, %esp /* Don't restore EDX */                                  )
 L(    jmp   2b                                                                )
 L(SYM_END(sys_lccall)                                                         )
 L(.previous                                                                   )
@@ -411,14 +439,11 @@ L(PRIVATE_ENTRY(sys_lxcall)                                                   )
 L(    SYSCALL_SAFEREGISTERS                                                   )
 L(    SYSCALL_LOADSEGMENTS                                                    )
 L(                                                                            )
-L(    pushx $1b                                                               )
-#if __SIZEOF_POINTER__ >= 8
-L(    jmpx *(xsyscall_c_table-((__NR_xsyscall_min*XSZ) & 0xffffffffffffffff))(,%xax,XSZ))
-#else
-L(    jmpx *(xsyscall_c_table-((__NR_xsyscall_min*XSZ) & 0xffffffff))(,%xax,XSZ))
-#endif
+L(    pushl $1b                                                               )
+L(    jmpl *(xsyscall_c_table-((__NR_xsyscall_min*4) & 0xffffffff))(,%eax,4)  )
 L(SYM_END(sys_lxcall)                                                         )
 L(.previous                                                                   )
+#endif /* !__x86_64__ */
 L(                                                                            )
 L(.section .text.hot                                                          )
 L(PRIVATE_ENTRY(sys_nosys)                                                    )

@@ -179,6 +179,30 @@ DECL_BEGIN
 #define GPREGS_SIZE         GPREGS32_SIZE
 #endif
 
+
+/* lvalue-access to the nth system call argument. */
+#ifdef __x86_64__
+/* x86_64: IN(rdi, rsi, rdx, r10, r8,  r9)  OUT(rax[,rdx]) */
+#define GPREGS_SYSCALL_ARG1(x) ((x).rdi)
+#define GPREGS_SYSCALL_ARG2(x) ((x).rsi)
+#define GPREGS_SYSCALL_ARG3(x) ((x).rdx)
+#define GPREGS_SYSCALL_ARG4(x) ((x).r10)
+#define GPREGS_SYSCALL_ARG5(x) ((x).r8)
+#define GPREGS_SYSCALL_ARG6(x) ((x).r9)
+#define GPREGS_SYSCALL_RET1(x) ((x).rax)
+#define GPREGS_SYSCALL_RET2(x) ((x).rdx)
+#else
+/* i386:   IN(ebx, ecx, edx, esi, edi, ebp) OUT(eax[,edx]) */
+#define GPREGS_SYSCALL_ARG1(x) ((x).ebx)
+#define GPREGS_SYSCALL_ARG2(x) ((x).ecx)
+#define GPREGS_SYSCALL_ARG3(x) ((x).edx)
+#define GPREGS_SYSCALL_ARG4(x) ((x).esi)
+#define GPREGS_SYSCALL_ARG5(x) ((x).edi)
+#define GPREGS_SYSCALL_ARG6(x) ((x).ebp)
+#define GPREGS_SYSCALL_RET1(x) ((x).eax)
+#define GPREGS_SYSCALL_RET2(x) ((x).edx)
+#endif
+
 #ifdef __CC__
 struct PACKED gpregs {
 #ifdef __x86_64__

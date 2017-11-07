@@ -39,16 +39,16 @@ struct fpu_reg {
  u8 f_pad[6];
 };
 
-#define FPUSTATE_LOAD(s)   __asm__ __volatile__("fxrstor %0" : : "m" (*(struct fpustate *)&(s)))
-#define FPUSTATE_SAVE(s)   __asm__ __volatile__("fxsave %0" : "=m" (*(struct fpustate *)&(s)))
-#define FPUSTATE_INIT()    __asm__ __volatile__("fninit")
-#define FPUSTATE_ENABLE()  __asm__ __volatile__("clts")
+#define FPUSTATE_LOAD(s)   __asm__ __volatile__("fxrstor %0\n" : : "m" (*(struct fpustate *)&(s)))
+#define FPUSTATE_SAVE(s)   __asm__ __volatile__("fxsave %0\n" : "=m" (*(struct fpustate *)&(s)))
+#define FPUSTATE_INIT()    __asm__ __volatile__("fninit\n")
+#define FPUSTATE_ENABLE()  __asm__ __volatile__("clts\n")
 #define FPUSTATE_DISABLE() \
  XBLOCK({ register register_t _temp; \
           __asm__ __volatile__("mov %%cr0, %0\n" \
                                "or  $(" __PP_STR(CR0_TS) "), %0\n" \
                                "mov %0, %%cr0\n" \
-                               : "=r" (_temp)); \
+                               : "=&r" (_temp)); \
           (void)0; })
 
 ATTR_ALIGNED(FPUSTATE_ALIGN)

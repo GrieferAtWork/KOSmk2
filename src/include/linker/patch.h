@@ -23,6 +23,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <kernel/memory.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
@@ -72,8 +73,6 @@ struct modpatch {
                         char const *__restrict name, u32 hash,
                         bool search_current);
 };
-#define MODPATCH_USER_INIT (ppage_t)0x08000000 /* Default base address of the initial user-space module (When not fixed). */
-#define MODPATCH_USER_HINT (ppage_t)0x20000000
 #define MODPATCH_USER_GAP  (PAGESIZE*16)
 #define MODPATCH_ISUSER(x) (!((x)->p_iflags&INSTANCE_FLAG_DRIVER))
 #define MODPATCH_ISHOST(x)   ((x)->p_iflags&INSTANCE_FLAG_DRIVER)
@@ -100,7 +99,7 @@ struct modpatch {
        (self)->p_depc    = 0, \
        (self)->p_depa    = 0, \
        (self)->p_depv    = NULL, \
-       (self)->p_dephint = MODPATCH_USER_HINT, \
+       (self)->p_dephint = (ppage_t)USER_MODULE_DYNAMIC_ADDRHINT, \
        (self)->p_mapgap  = MODPATCH_USER_GAP, \
        (self)->p_dlsym   = &modpatch_user_dlsym)
 FUNDEF void KCALL modpatch_fini(struct modpatch *__restrict self);

@@ -285,8 +285,8 @@ typedef u8 taskprio_t;
  *   >>    if (!SHOULD_EXECUTE_IC(ic)) continue; // Search for an IC that should be executed.
  *   >>    state           = GET_EXCEPTION_CPUSTATE();
  *   >>    THIS_TASK->t_ic = ic->ic_prev; // Restore the previous IC
- *   >>    state.host.esp  = (uintptr_t)ic; // Use the address of the IC itself as value for ESP
- *   >>    state.host.eip  = (uintptr_t)ic->ic_int;
+ *   >>    state.host.xsp  = (uintptr_t)ic; // Use the address of the IC itself as value for ESP
+ *   >>    state.host.xip  = (uintptr_t)ic->ic_int;
  *   >>    return EXECUTE_CPU_STATE(&state);
  *   >> }
  *   >> UNHANDLED_EXCEPTION(GET_EXCEPTION_CPUSTATE());

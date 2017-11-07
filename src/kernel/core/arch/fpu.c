@@ -81,7 +81,7 @@ fpu_irq_nm(struct cpustate *__restrict info) {
   /* If the task-switched flag is set, unset it because it
    * is possible that the calling task is the only actually
    * using the FPU right now. */
-  register u32 temp;
+  register register_t temp;
   __asm__ __volatile__("mov %%cr0, %0\n" : "=r" (temp));
   if (temp&CR0_TS) {
    __asm__ __volatile__("mov %0, %%cr0\n" : : "r" (temp&~CR0_TS));
@@ -97,7 +97,7 @@ fpu_irq_nm(struct cpustate *__restrict info) {
 }
 
 PRIVATE MODULE_INIT void KCALL fpu_init(void) {
- register u32 temp;
+ register register_t temp;
  /* Enable the FPU. */
  __asm__ __volatile__("clts\n"
                       "mov %%cr0, %0\n"

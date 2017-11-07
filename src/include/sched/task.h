@@ -24,9 +24,11 @@
 #ifdef __CC__
 #include <errno.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 #include <kernel/malloc.h>
 #include <sched/percpu.h>
 #include <sched/types.h>
+#include <hybrid/typecore.h>
 
 DECL_BEGIN
 
@@ -116,25 +118,9 @@ FUNDEF struct task *KCALL task_cinit(struct task *self);
  * @return: -ENOMEM: Not enough available memory / address space.
  * @return: -EINTR:  The calling thread was interrupted. */
 FUNDEF SAFE errno_t KCALL task_mkhstack(struct task *__restrict self, size_t n_bytes);
-#define TASK_HOSTSTACK_ADDRHINT    0xf0000000 /*< Search for suitable memory below this address,
-                                               *  but if no space is found, search above as well. */
-#define TASK_HOSTSTACK_DEFAULTSIZE 0x4000 /*< Default, generic size for host stacks. */
-#define TASK_HOSTSTACK_BOOTSIZE    0x4000 /*< For reference: The size of the boot stack. */
-#define TASK_HOSTSTACK_IDLESIZE    0x4000 /*< For reference: The size of IDLE-thread stacks. */
-#ifndef CONFIG_NO_JOBS
-#define TASK_HOSTSTACK_WORKSIZE    0x4000 /*< For reference: The size of WORK-thread stacks. */
-#endif /* !CONFIG_NO_JOBS */
-#define TASK_HOSTSTACK_ALIGN       16     /*< Alignment hint that should be respected by all host-stack allocators. */
 
 /* Similar to `task_mkhstack()', but the stack is allocated lazily for user-space. */
 FUNDEF SAFE errno_t KCALL task_mkustack(struct task *__restrict self, size_t n_bytes, size_t guard_size, u16 funds);
-#define TASK_USERSTACK_ADDRHINT    0x10000000 /*< Search for suitable memory below this address, but if no space is found, search above as well. */
-#define TASK_USERSTACK_DEFAULTSIZE 0x4000     /*< Default, generic size for user stacks. */
-#define TASK_USERSTACK_FUNDS       8          /*< Default amount of funding for guard-pages in user-space stacks. */
-#define TASK_USERSTACK_ALIGN       16         /*< Alignment hint that should be respected by all user-stack allocators. */
-#define TASK_USERSTACK_GUARDSIZE   PAGESIZE   /*< Default user-space stack guard size. */
-#define TASK_USERTLB_ADDRHINT      0xa0000000 /*< Search for suitable memory below this address, but if no space is found, search above as well. */
-
 
 #ifndef CONFIG_NO_TLB
 /* Allocate the Thread local block for the given task.
@@ -240,7 +226,11 @@ FUNDEF void (KCALL task_nointr)(void);
 FUNDEF void (KCALL task_endnointr)(void);
 #else
 #define task_iscrit()    (THIS_TASK->t_critical != 0)
-#define task_issafe()    (task_iscrit() || !XBLOCK({ register u32 __efl; __asm__ __volatile__("pushf; popl %0" : "=g" (__efl)); XRETURN __efl&0x200; }))
+#ifdef __x86_64__
+#define task_issafe()    (task_iscrit() || !XBLOCK({ register register_t __efl; __asm__ __volatile__("pushfq; popq %0" : "=g" (__efl)); XRETURN __efl&0x200; }))
+#else
+#define task_issafe()    (task_iscrit() || !XBLOCK({ register register_t __efl; __asm__ __volatile__("pushfl; popl %0" : "=g" (__efl)); XRETURN __efl&0x200; }))
+#endif
 #define task_isnointr()  (THIS_TASK->t_nointr != 0)
 /* Increment the critical counter with a write-barrier directly afterwards. */
 #define task_crit()      (void)(++THIS_TASK->t_critical)

@@ -47,6 +47,8 @@
 
 DECL_BEGIN
 
+#define PDIR_ISKERNEL(self) ((self) == &pdir_kernel || (self) == &pdir_kernel_v)
+
 typedef union pdir_e1 e1_t;
 typedef union pdir_e2 e2_t;
 typedef union pdir_e3 e3_t;
@@ -117,14 +119,14 @@ PRIVATE KPD void KCALL pdir_e4_free(e4_t *__restrict dst) {
 
 PRIVATE KPD bool KCALL
 pdir_e2_copy(e2_t *__restrict dst) {
- e1_t *iter,*end;
+ e1_t *data;
  if (PDIR_E2_ISLINK(*dst)) {
-  iter = (e1_t *)page_malloc(sizeof(e1_t)*PDIR_E1_COUNT,
+  data = (e1_t *)page_malloc(sizeof(e1_t)*PDIR_E1_COUNT,
                              PAGEATTR_NONE,PDIR_PAGEZONE);
-  if unlikely(iter == PAGE_ERROR) return false;
+  if unlikely(data == PAGE_ERROR) return false;
   /* Copy data from the old vector. */
-  memcpyq(iter,PDIR_E2_RDLINK(*dst),PDIR_E1_COUNT);
-  dst->e2_data = (dst->e2_data&PDIR_ATTR_MASK)|(uintptr_t)iter;
+  memcpyq(data,PDIR_E2_RDLINK(*dst),PDIR_E1_COUNT);
+  dst->e2_data = (dst->e2_data&PDIR_ATTR_MASK)|(uintptr_t)data;
  }
  return true;
 }
@@ -238,10 +240,7 @@ pdir_maccess_addr(pdir_t const *__restrict self,
 PUBLIC ssize_t KCALL
 pdir_mprotect(pdir_t *__restrict self, ppage_t start,
               size_t n_bytes, pdir_attr_t flags) {
- ssize_t result; size_t reqmem;
- struct mscatter dynmem;
- ppage_t base_start = start;
- pdir_attr_t prot_flags;
+ ssize_t result;
  CHECK_HOST_DOBJ(self);
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  result = n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);

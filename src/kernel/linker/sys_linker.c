@@ -50,11 +50,10 @@ DECL_BEGIN
 
 
 struct dl_saved_registers {
-#ifdef __x86_64__
-#error TODO
-#elif defined(__i386__)
+#if defined(__x86_64__) || defined(__i386__)
  struct gpregs gp;
- u32 eflags,eip;
+ __COMMON_REG2(flags);
+ __COMMON_REG2(ip);
 #else
 #error "ERROR: Unsupported architecture."
 #endif
@@ -78,32 +77,33 @@ L(.previous                                                                     
 
 INTDEF byte_t dl_restore_regs[];
 
+struct init_closure {
+ void HOST       *pbase_return_value;
+ struct cpustate *state;
+};
 
 PRIVATE ssize_t KCALL
 dl_do_pushinit(VIRT void *pfun,
                modfun_t UNUSED(single_type),
                void *closure) {
- void HOST *HOST *pbase_return_value = (void **)closure;
+ struct init_closure *arg = (struct init_closure *)closure;
  byte_t USER *user_stack = (byte_t USER *)THIS_SYSCALL_REAL_USERXSP;
- if (*pbase_return_value != (void *)-1) {
+ if (arg->pbase_return_value != (void *)-1) {
   USER struct dl_saved_registers *regs;
   /* Special handling after the last initializer: restore registers. */
   user_stack -= sizeof(struct dl_saved_registers);
   regs = (struct dl_saved_registers *)user_stack;
-  regs->eip    = (uintptr_t)THIS_SYSCALL_REAL_XIP;
-  regs->eflags = THIS_SYSCALL_REAL_XFLAGS;
-  regs->gp.edi = THIS_SYSCALL_EDI;
-  regs->gp.esi = THIS_SYSCALL_ESI;
-  regs->gp.ebp = THIS_SYSCALL_EBP;
-  regs->gp.esp = (uintptr_t)THIS_SYSCALL_REAL_USERXSP; /* Could really be anything... */
-  regs->gp.ebx = THIS_SYSCALL_EDX;
-  regs->gp.edx = THIS_SYSCALL_EBX;
-  regs->gp.ecx = THIS_SYSCALL_ECX;
+  regs->xip    = arg->state->iret.xip;
+  regs->xflags = arg->state->iret.xflags;
+  memcpy(&regs->gp,&arg->state->gp,sizeof(struct gpregs));
+#ifndef __x86_64__
+  regs->gp.esp = arg->state->iret.useresp;
   /* Return the base address of the first module to the original caller. */
-  regs->gp.eax = (uintptr_t)*pbase_return_value;
+  regs->gp.eax = (uintptr_t)arg->pbase_return_value;
+#endif
   /* Return to this special location. */
   SET_THIS_SYSCALL_REAL_XIP((void *)dl_restore_regs);
-  *pbase_return_value = (void *)-1;
+  arg->pbase_return_value = (void *)-1;
  }
 
  /* Now just push the given callback onto the user-stack. */
@@ -117,7 +117,7 @@ dl_do_pushinit(VIRT void *pfun,
 
 PRIVATE ssize_t KCALL
 dl_do_loadinit(struct instance *__restrict inst,
-               void **pbase_return_value) {
+               struct init_closure *arg) {
  struct instance **begin,**end;
  ssize_t (KCALL *pmodfun)(struct instance *__restrict self,
                           modfun_t types, penummodfun callback, void *closure);
@@ -126,18 +126,18 @@ dl_do_loadinit(struct instance *__restrict inst,
      return 0;
  pmodfun = inst->i_module->m_ops->o_modfun;
  if (pmodfun) (*pmodfun)(inst,MODFUN_INIT|MODFUN_REVERSE,
-                        &dl_do_pushinit,pbase_return_value);
+                        &dl_do_pushinit,arg);
 
  /* Recursively load initializers for dependencies. */
  end = (begin = inst->i_deps.is_setv)+inst->i_deps.is_setc;
- while (end-- != begin) dl_do_loadinit(*end,pbase_return_value);
+ while (end-- != begin) dl_do_loadinit(*end,arg);
 
  return 0;
 }
 
 PRIVATE errno_t KCALL
 dl_loadinit(struct instance *__restrict inst,
-            void *base_return_value) {
+            struct init_closure *arg) {
  errno_t error; struct mman *mm = THIS_MMAN;
  void *safed_esp,*safed_eip;
  /* Disable preemption to prevent the signal delivery from
@@ -149,7 +149,7 @@ dl_loadinit(struct instance *__restrict inst,
   * changes to the instance's dependency tree. */
  error = mman_write(mm);
  if (E_ISERR(error)) return error;
- error = (errno_t)call_user_worker(&dl_do_loadinit,2,inst,&base_return_value);
+ error = (errno_t)call_user_worker(&dl_do_loadinit,2,inst,arg);
  mman_endwrite(mm);
  if (E_ISERR(error)) {
   /* Restore the saved system call registers */
@@ -163,7 +163,8 @@ dl_loadinit(struct instance *__restrict inst,
 
 
 PRIVATE SAFE USER void *KCALL
-do_dlopen(struct module *__restrict mod, int flags) {
+do_dlopen(struct module *__restrict mod, int flags,
+          struct cpustate *__restrict state) {
  struct instance *inst;
  struct modpatch patch;
  void *result;
@@ -220,7 +221,11 @@ got_inst_noload:
    *    callbacks, yet this time we also need to preserve all
    *    user-space registers except for 'EAX'.
    * HINT: We can determine their values by looking at the `THIS_SYSCALL_*' macros. */
-  errno_t error = dl_loadinit(inst,result);
+  struct init_closure arg = {
+      .pbase_return_value = result,
+      .state              = state,
+  };
+  errno_t error = dl_loadinit(inst,&arg);
   if (E_ISERR(error)) result = E_PTR(error);
  }
 
@@ -229,12 +234,12 @@ got_inst_noload:
  return result;
 }
 
-SYSCALL_DEFINE2(xdlopen,USER char *,name,int,flags) {
+SYSCALL_RDEFINE(xdlopen,regs) {
  struct dentryname dname; int state;
  REF struct module *mod; void *result;
  task_crit();
  /* Copy `name' from userspace */
- dname.dn_name = ACQUIRE_FS_STRING(name,&dname.dn_size,&state);
+ dname.dn_name = ACQUIRE_FS_STRING((char *)GPREGS_SYSCALL_ARG1(regs->gp),&dname.dn_size,&state);
  if (E_ISERR(dname.dn_name)) { result = E_PTR(E_GTERR(dname.dn_name)); goto end; }
  dentryname_loadhash(&dname);
 
@@ -246,30 +251,30 @@ SYSCALL_DEFINE2(xdlopen,USER char *,name,int,flags) {
  if (E_ISERR(mod)) { result = E_PTR(E_GTERR(mod)); goto end; }
 
  /* Now simply open the module. */
- result = do_dlopen(mod,flags);
+ result = do_dlopen(mod,(int)GPREGS_SYSCALL_ARG2(regs->gp),regs);
  MODULE_DECREF(mod);
 end:
  task_endcrit();
- return (syscall_slong_t)result;
+ GPREGS_SYSCALL_RET1(regs->gp) = (syscall_slong_t)result;
 }
 
-SYSCALL_DEFINE2(xfdlopen,int,fd,int,flags) {
+SYSCALL_RDEFINE(xfdlopen,regs) {
  REF struct dentry *module_dent;
  REF struct module *mod; void *result;
  task_crit();
  /* Simply request a directory entry from the FD-manager. */
- module_dent = fdman_get_dentry(THIS_FDMAN,fd);
+ module_dent = fdman_get_dentry(THIS_FDMAN,(int)GPREGS_SYSCALL_ARG1(regs->gp));
  if (E_ISERR(module_dent)) { result = E_PTR(E_GTERR(module_dent)); goto end; }
  mod = module_open_d(module_dent,false);
  DENTRY_DECREF(module_dent);
  if (E_ISERR(mod)) { result = E_PTR(E_GTERR(mod)); goto end; }
 
  /* Now simply open the module. */
- result = do_dlopen(mod,flags);
+ result = do_dlopen(mod,(int)GPREGS_SYSCALL_ARG2(regs->gp),regs);
  MODULE_DECREF(mod);
 end:
  task_endcrit();
- return (syscall_slong_t)result;
+ GPREGS_SYSCALL_RET1(regs->gp) = (syscall_slong_t)result;
 }
 
 SYSCALL_DEFINE1(xdlclose,USER void *,handle) {

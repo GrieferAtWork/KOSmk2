@@ -231,9 +231,9 @@ struct sigenter_info {
  /* SPLIT: The following is used to create a fake stack-frame to fix tracebacks
   *        generated from signal handlers, as well as provide a fixed base-line
   *        for restoring the stack-pointer after the signal handler has finished. */
- USER void       *ei_old_ebp; /*< Holds the value of the old EBP (stackframe pointer);
+ USER void       *ei_old_xbp; /*< Holds the value of the old EBP (stackframe pointer);
                                *  When the signal handler is called, this is also where the new EBP points to! */
- USER void       *ei_old_eip; /*< Second part of the stackframe: The return address */
+ USER void       *ei_old_xip; /*< Second part of the stackframe: The return address */
  /* SPLIT: Everything above is setup for arguments to the signal handler. */
 union{ siginfo_t  ei_info;
  int            __ei_info_pad[__SI_MAX_SIZE/sizeof(int)]; };

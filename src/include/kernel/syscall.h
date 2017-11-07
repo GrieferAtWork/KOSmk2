@@ -129,22 +129,22 @@ struct syscall_descr {
 #define __STACKBASE_TASK     THIS_TASK
 /* x86_64: IN(rdi, rsi, rdx, r10, r8,  r9)  OUT(rax[,rdx]) */
 struct syscall_descr {
- __COMMON_REG2(di);
- __COMMON_REG2(si);
- __COMMON_REG1(d);
- __COMMON_REG3(10);
- __COMMON_REG3(8);
- __COMMON_REG3(9);
- u64 gs,fs;
+    __COMMON_REG2(di);
+    __COMMON_REG2(si);
+    __COMMON_REG1(d);
+    __COMMON_REG3(10);
+    __COMMON_REG3(8);
+    __COMMON_REG3(9);
+    u64 gs,fs;
 #ifdef CONFIG_DEBUG
- __COMMON_REG2_EX(__initial_,bp);
+    __COMMON_REG2_EX(__initial_,bp);
 #endif /* CONFIG_DEBUG */
- __COMMON_REG2(ip);
- IRET_SEGMENT(cs);
- __COMMON_REG2(flags);
- /* Only for system-calls originating from user-space. */
- __COMMON_REG2_EX(user,sp);
- IRET_SEGMENT(ss);
+    __COMMON_REG2(ip);
+    IRET_SEGMENT(cs);
+    __COMMON_REG2(flags);
+    /* Only for system-calls originating from user-space. */
+    __COMMON_REG2_EX(user,sp);
+    IRET_SEGMENT(ss);
 };
 
 #define __STACKBASE_VALUE(type,off) \
@@ -255,6 +255,7 @@ FUNDEF void ASMCALL sysreturn_check_segments(void);
 #define SYSCALL_DEFINE5(name,...) __SYSCALL_DEFINEx(5,_##name,(__VA_ARGS__))
 #define SYSCALL_DEFINE6(name,...) __SYSCALL_DEFINEx(6,_##name,(__VA_ARGS__))
 
+
 #if __SIZEOF_SYSCALL_LONG__ < 8
 #define __LSYSCALL_DEFINEx(n,name,args) \
   FORCELOCAL s64 ATTR_CDECL SYSC##name(__SC_DECL##n args); \
@@ -277,6 +278,33 @@ FUNDEF void ASMCALL sysreturn_check_segments(void);
 #define SYSCALL_LDEFINE5(name,...) __SYSCALL_DEFINEx(5,_##name,(__VA_ARGS__))
 #define SYSCALL_LDEFINE6(name,...) __SYSCALL_DEFINEx(6,_##name,(__VA_ARGS__))
 #endif
+
+DECL_END
+
+#include <hybrid/host.h>
+#include <kernel/arch/cpustate.h>
+#include <hybrid/asm.h>
+#include <asm/instx.h>
+#include <kernel/irq.h>
+
+DECL_BEGIN
+
+/* System call with full register state. */
+#define SYSCALL_RDEFINE(name,regs) \
+PRIVATE ATTR_USED void FCALL SYSC_##name(struct cpustate *__restrict regs); \
+GLOBAL_ASM(L(.section .text                                                       ) \
+           L(INTERN_ENTRY(sys_##name)                                             ) \
+           L(    __ASM_PUSH_SGREGS                                                ) \
+           L(    __ASM_PUSH_GPREGS                                                ) \
+           L(    __ASM_LOAD_SEGMENTS(%dx)                                         ) \
+           L(    movx %xsp, %FASTCALL_REG1                                        ) \
+           L(    call SYSC_##name                                                 ) \
+           L(    __ASM_POP_GPREGS                                                 ) \
+           L(    __ASM_POP_SGREGS                                                 ) \
+           L(    __ASM_IRET                                                       ) \
+           L(SYM_END(sys_##name)                                                  ) \
+           L(.previous)); \
+PRIVATE ATTR_USED void FCALL SYSC_##name(struct cpustate *__restrict regs)
 
 
 DECL_END

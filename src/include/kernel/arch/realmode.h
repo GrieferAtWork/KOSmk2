@@ -88,10 +88,17 @@ INTDEF INITCALL void KCALL realmode_initialize(void);
  __rm_local_begin:
 
 #define RM_BEGIN RM_BEGIN_EX(1)
+#ifdef __x86_64__
+#define RM_END \
+ .previous; \
+ .section .realmode_rel.data; __rm_local_rel_end:; .previous; \
+ .code64;
+#else
 #define RM_END \
  .previous; \
  .section .realmode_rel.data; __rm_local_rel_end:; .previous; \
  .code32;
+#endif
 
 
 #define RM_R_16(v) \
@@ -102,7 +109,7 @@ INTDEF INITCALL void KCALL realmode_initialize(void);
   .word    REALMODE_STARTRELO + (v) - __rm_local_begin
 
 
-#if defined(__i386__)
+#if defined(__i386__) || 1
 #define __RM_REGID_al   0
 #define __RM_REGID_ax   0
 #define __RM_REGID_eax  0

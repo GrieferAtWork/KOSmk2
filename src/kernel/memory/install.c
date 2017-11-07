@@ -43,6 +43,7 @@
 #include <sys/syslog.h>
 #include <kernel/arch/cpustate.h>
 #include <kernel/paging.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
@@ -162,11 +163,11 @@ PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
 };
 
 #ifdef CONFIG_USE_NEW_MEMINFO
-#define STATIC_MEMINFO_MAX ((TASK_HOSTSTACK_IDLESIZE- \
+#define STATIC_MEMINFO_MAX ((HOST_IDLE_STCKSIZE- \
                             (sizeof(struct cpustate_host)))/ \
                              sizeof(struct meminfo))
 #else
-#define STATIC_MEMINFO_MAX ((TASK_HOSTSTACK_IDLESIZE- \
+#define STATIC_MEMINFO_MAX ((HOST_IDLE_STCKSIZE- \
                             (sizeof(struct cpustate_host)+sizeof(size_t)))/ \
                              sizeof(struct meminfo))
 #endif

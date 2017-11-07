@@ -588,8 +588,6 @@ struct mman {
                                   *   Total size of the argument vector text (in bytes). */
  /* XXX: Tracking information about the total number of mapped bytes? */
 };
-#define MMAN_UHEAP_DEFAULT_ADDR  ((ppage_t)0x40000000) /* Initial value for `m_uheap' */
-#define MMAN_USTCK_DEFAULT_ADDR  ((ppage_t)0x80000000) /* Initial value for `m_ustck' */
 
 /* Access to user-space environment argument vectors/text buffers. */
 #define MMAN_ENVIRON_ARGC(self) ((self)->m_envargc)

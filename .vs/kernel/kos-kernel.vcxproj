@@ -173,6 +173,7 @@
     <ClInclude Include="..\..\src\include\kernel\arch\cpustate.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\fpu.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\gdt.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\hints.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\mp.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\paging32.h" />
@@ -321,7 +322,7 @@
     <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include;$(SolutionDir)..\src\include\</IncludePath>
     <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
     <NMakeReBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" -DTARGET_X86_64 $(SolutionDir)..\magic.dee --build-only --format-error-messages --force</NMakeReBuildCommandLine>
-    <NMakeBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" -DTARGET_X86_64 $(SolutionDir)..\magic.dee --build-only --format-error-messages</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>"E:\c\deemon\deemon\deemon.exe" -DTARGET_X86_64 $(SolutionDir)..\magic.dee --build-only --format-error-messages --single</NMakeBuildCommandLine>
     <ReferencePath />
     <LibraryPath />
     <LibraryWPath />

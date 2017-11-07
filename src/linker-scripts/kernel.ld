@@ -26,6 +26,7 @@
 #include <proprietary/multiboot2.h>
 #include <sched/percpu.h>
 #include <sched/types.h>
+#include <kernel/arch/hints.h>
 
 #define DEFAULT_SECTION(name) \
   name BLOCK(PAGESIZE) : AT(ADDR(name) - KERNEL_BASE)
@@ -317,6 +318,7 @@ SECTIONS {
 	} P_FREE
 
 	DEFINE_HERE(__kernel_end);
+
 	DEFINE(__kernel_size      = ABSOLUTE(__kernel_end - __kernel_start));
 	DEFINE(__kernel_ro_size   = ABSOLUTE(__kernel_ro_end - __kernel_start));
 	DEFINE(__kernel_rw_size   = ABSOLUTE(__kernel_end - __kernel_rw_start));
@@ -367,3 +369,7 @@ SECTIONS {
 #endif
 	}
 }
+
+ASSERT(HOST_DRIVER_ADDRHINT >= __kernel_end,
+"The driver start address hint must be located past the kernel core. \
+ Please increase `HOST_DRIVER_ADDRHINT' accordingly");

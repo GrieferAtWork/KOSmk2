@@ -83,20 +83,20 @@ L(.previous                                         )
 );
 
 
-INTERN void (LIBCCALL libc_debug_tbprintl)(void const *eip, void const *frame, size_t tb_id) {
+INTERN void (LIBCCALL libc_debug_tbprintl)(void const *xip, void const *frame, size_t tb_id) {
  if (frame) {
 #ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
   debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p : %p'\n",
-                    (uintptr_t)eip-1,tb_id,eip,frame);
+                    (uintptr_t)xip-1,tb_id,xip,frame);
 #else /* CONFIG_USE_EXTERNAL_ADDR2LINE */
-  debug_printf("%[vinfo] : [%Ix] : %p : %p\n",(uintptr_t)eip-1,tb_id,eip,frame);
+  debug_printf("%[vinfo] : [%Ix] : %p : %p\n",(uintptr_t)xip-1,tb_id,xip,frame);
 #endif /* !CONFIG_USE_EXTERNAL_ADDR2LINE */
  } else {
 #ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
   debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : [%Ix] : %p'\n",
-              (uintptr_t)eip-1,tb_id,eip);
+              (uintptr_t)xip-1,tb_id,xip);
 #else
-  debug_printf("%[vinfo] : [%Ix] : %p\n",(uintptr_t)eip-1,tb_id,eip);
+  debug_printf("%[vinfo] : [%Ix] : %p\n",(uintptr_t)xip-1,tb_id,xip);
 #endif
  }
 }
@@ -153,7 +153,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
 #undef debug_tbprint
       libc_debug_tbprint();
      } else {
-      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
       debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
     } while ((iter = iter->t_sched.sd_running.re_next) != start);
@@ -167,7 +167,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
 #undef debug_tbprint
       libc_debug_tbprint();
      } else {
-      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
       debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
     }
@@ -179,7 +179,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
       debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
      for (iter = THIS_CPU->c_sleeping; iter;
@@ -188,7 +188,7 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
                          iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
                          iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
                          iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
-      debug_tbprintl((void *)iter->t_cstate->iret.eip,NULL,0);
+      debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
       debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
      cpu_endread(THIS_CPU);
@@ -198,7 +198,8 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
   debug_printf("==DONE\n");
 #endif
  } else if (ATOMIC_XCH(in_core,2) == 1) {
-  uintptr_t return_address; char buffer[__SIZEOF_POINTER__*2],*iter;
+  char buffer[__SIZEOF_POINTER__*2],*iter;
+  uintptr_t return_address;
   debug_print("\n\nASSERTION CORE RECURSION\n",27,NULL);
 #ifdef __x86_64__
   __asm__ __volatile__("movq 8(%%rbp), %0\n" : "=r" (return_address) : : "memory");
@@ -244,10 +245,10 @@ L(    pushq %rbp                                                 )
 L(    movq  %rsp, %rbp                                           )
 L(    __ASM_PUSH_SCRATCH                                         )
 L(    movq  ASM_CPU(CPU_OFFSETOF_RUNNING), %rax                  )
-L(    pushq $1f                                                  )
-L(    pushq $(EXC_PAGE_FAULT)                                    )
+L(    movq  $1f, %r8; pushq %r8                                  )
+L(    movq  $(EXC_PAGE_FAULT), %r8; pushq %r8                    )
 L(    pushq TASK_OFFSETOF_IC(%rax)                               )
-L(    movl  %rsp, TASK_OFFSETOF_IC(%rax)                         )
+L(    movq  %rsp, TASK_OFFSETOF_IC(%rax)                         )
 L(                                                               )
 L(    call  libc___assertion_tbprint2_impl                       )
 L(                                                               )

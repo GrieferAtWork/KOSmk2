@@ -48,6 +48,9 @@ DECL_BEGIN
  *       as well as minor changes to mman ALLOA to make use of such memory
  *       for userspace applications/virtual kernel memory.
  */
+#define ASM_USER_MAX               0xbfffffff
+#define ASM_USER_END               0xc0000000
+#define ASM_KERNEL_BASE            0xc0000000
 #define USER_MAX        __UINT32_C(0xbfffffff)
 #define USER_END        __UINT32_C(0xc0000000)
 #define KERNEL_BASE     __UINT32_C(0xc0000000)

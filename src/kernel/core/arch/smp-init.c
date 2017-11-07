@@ -49,6 +49,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/syslog.h>
+#include <kernel/arch/hints.h>
 
 #include "../../mman/intern.h"
 
@@ -340,7 +341,7 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
  if unlikely(!newvec) goto enomem;
  *dst_iter++ = &__bootcpu;
  /* Start mapping addition CPUs directly after the kernel. */
- smp_hint = (VIRT ppage_t)CEIL_ALIGN(KERNEL_END,PAGESIZE);
+ smp_hint = (VIRT ppage_t)CEIL_ALIGN(HOST_SMPCPU_ADDRHINT,PAGESIZE);
  do {
   struct mregion *region;
   struct mbranch *branch;
@@ -421,10 +422,10 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
   *dst_iter++ = vcpu,++iter;
   /* Now that the CPU has been mapped, we can safely
    * access it to allocate the IDLE stack. */
-  error = task_mkhstack(&vcpu->c_idle,TASK_HOSTSTACK_IDLESIZE);
+  error = task_mkhstack(&vcpu->c_idle,HOST_IDLE_STCKSIZE);
   if (E_ISERR(error)) goto err;
 #ifndef CONFIG_NO_JOBS
-  error = task_mkhstack(&vcpu->c_work,TASK_HOSTSTACK_WORKSIZE);
+  error = task_mkhstack(&vcpu->c_work,HOST_WOKER_STCKSIZE);
   if (E_ISERR(error)) goto err;
 #endif /* !CONFIG_NO_JOBS */
 
@@ -467,9 +468,14 @@ done_cpu:
    lapic_region = mregion_new_phys(MMAN_DATAGFP(&mman_kernel),
                                    lapic_ppage,lapic_size);
    if (E_ISERR(lapic_region)) { error = E_GTERR(lapic_region); goto err;}
-   lapic_vpage = mman_findspace_unlocked(&mman_kernel,(ppage_t)(0-lapic_size),
-                                         lapic_size,PAGESIZE,0,MMAN_FINDSPACE_BELOW);
-   if unlikely(lapic_vpage == PAGE_ERROR) error = -ENOMEM;
+   lapic_vpage = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_MEMORY_ADDRHINT,
+                                         lapic_size,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+   if unlikely(lapic_vpage == PAGE_ERROR)
+      lapic_vpage = mman_findspace_unlocked(&mman_kernel,(ppage_t)(0-lapic_size),
+                                            lapic_size,PAGESIZE,0,MMAN_FINDSPACE_BELOW);
+   if unlikely(lapic_vpage == PAGE_ERROR ||
+              (uintptr_t)lapic_vpage < KERNEL_BASE)
+               error = -ENOMEM;
    else error = mman_mmap_unlocked(&mman_kernel,lapic_vpage,lapic_size,0,
                                    lapic_region,PROT_READ|PROT_WRITE|PROT_NOUSER,
                                    NULL,NULL);
