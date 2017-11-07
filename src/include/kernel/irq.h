@@ -266,21 +266,17 @@ FUNDEF SAFE void KCALL irq_del(irq_t num, bool reload);
 #define IDTENTRY_SIZE           8
 #endif
 struct PACKED idtentry {
-union PACKED {
- u64 ie_data;
-struct PACKED {
- u16 ie_off1;  /*< Lower 16 bits of an `irq_handler' pointer. */
- u16 ie_sel;   /*< Kernel code segment (always `__KERNEL_CS') */
+    u16 ie_off1;  /*< Lower 16 bits of an `irq_handler' pointer. */
+    u16 ie_sel;   /*< Kernel code segment (always `__KERNEL_CS') */
 #ifdef __x86_64__
- u8  ie_ist;   /*< Nits 0..2 hold Interrupt Stack Table offset, rest of bits zero. */
+    u8  ie_ist;   /*< Nits 0..2 hold Interrupt Stack Table offset, rest of bits zero. */
 #else
- u8  ie_zero;  /*< Always ZERO(0). */
+    u8  ie_zero;  /*< Always ZERO(0). */
 #endif
- u8  ie_flags; /*< Set of `IDTFLAG_*|IDTTYPE_*' */
- u16 ie_off2;  /*< Upper 16 bits of an `irq_handler' pointer. */
-};};
+    u8  ie_flags; /*< Set of `IDTFLAG_*|IDTTYPE_*' */
+    u16 ie_off2;  /*< Upper 16 bits of an `irq_handler' pointer. */
 #ifdef __x86_64__
- u32 ie_off3;  /*< Bits 32..63 of the vector offset. */
+    u32 ie_off3;  /*< Bits 32..63 of the vector offset. */
 #endif
 };
 

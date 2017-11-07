@@ -949,7 +949,7 @@ PUBLIC void KCALL irq_get(irq_t num, isr_t *__restrict handler) {
  handler->i_num = num;
  was = PREEMPTION_PUSH();
  idt              = &CPU(cpu_idt);
- entry.ie_data    = idt->i_vector[num].ie_data;
+ memcpy(&entry,&idt->i_vector[num],sizeof(struct idtentry));
  handler->i_owner = idt->i_owners[num];
 #ifdef __x86_64__
  handler->i_func  = (isr_fun_t)((uintptr_t)entry.ie_off1 |

@@ -44,91 +44,23 @@ typedef syscall_ulong_t (ASMCALL *syscall_t)(void);
 #define SYSCALL_INT 0x80
 
 
+#ifdef CONFIG_DEBUG
+#undef  CONFIG_SYSCALL_CHECK_SEGMENTS
+#ifndef CONFIG_NO_SYSCALL_CHECK_SEGMENTS
+#define CONFIG_SYSCALL_CHECK_SEGMENTS
+#endif
+#endif
+#define __STACKBASE_TASK     THIS_TASK
+
 /* While inside a system-call, these helper macros can be used
  * for accessing saved user-space registers (for reading & writing),
  * such as the user-space return address (EIP)
  * WARNING: These macros only work for system-calls originating from user-space!
  */
-#ifdef __i386__
-#ifdef CONFIG_DEBUG
-#undef  CONFIG_SYSCALL_CHECK_SEGMENTS
-#ifndef CONFIG_NO_SYSCALL_CHECK_SEGMENTS
-#define CONFIG_SYSCALL_CHECK_SEGMENTS
-#endif
-#endif
-
-#define __STACKBASE_TASK     THIS_TASK
-/* i386:   IN(ebx, ecx, edx, esi, edi, ebp) OUT(eax[,edx]) */
-struct syscall_descr {
- __COMMON_REG1(b);
- __COMMON_REG1(c);
- __COMMON_REG1(d);
- __COMMON_REG2(si);
- __COMMON_REG2(di);
- __COMMON_REG2(bp);
-#ifdef CONFIG_DEBUG
- __COMMON_REG2_EX(__initial_,ip);
-#endif /* CONFIG_DEBUG */
- u16 gs,fs,es,ds;
- __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags);
- /* Only for system-calls originating from user-space. */
- __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss);
-};
-
-#define __STACKBASE_VALUE(type,off) \
-     (*(type *)((uintptr_t)__STACKBASE_TASK->t_hstack.hs_end+(off)))
-
-#define THIS_SYSCALL_SS      __STACKBASE_VALUE(u16,-4)
-#define THIS_SYSCALL_USERESP __STACKBASE_VALUE(void *,-8)
-#define THIS_SYSCALL_EFLAGS  __STACKBASE_VALUE(u32,-12)
-#define THIS_SYSCALL_CS      __STACKBASE_VALUE(u16,-16)
-#define THIS_SYSCALL_EIP     __STACKBASE_VALUE(void *,-20)
-/* WARNING: Everything that follows doesn't reliably work in assembly system calls. */
-#define THIS_SYSCALL_DS      __STACKBASE_VALUE(u16,-22)
-#define THIS_SYSCALL_ES      __STACKBASE_VALUE(u16,-24)
-#define THIS_SYSCALL_FS      __STACKBASE_VALUE(u16,-26)
-#define THIS_SYSCALL_GS      __STACKBASE_VALUE(u16,-28)
-#ifdef CONFIG_DEBUG
-#define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-36)
-#define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-40)
-#define THIS_SYSCALL_ESI     __STACKBASE_VALUE(u32,-44)
-#define THIS_SYSCALL_EDX     __STACKBASE_VALUE(u32,-48)
-#define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-52)
-#define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-56)
-#else /* CONFIG_DEBUG */
-#define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-32)
-#define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-36)
-#define THIS_SYSCALL_ESI     __STACKBASE_VALUE(u32,-40)
-#define THIS_SYSCALL_EDX     __STACKBASE_VALUE(u32,-44)
-#define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-48)
-#define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-52)
-#endif /* !CONFIG_DEBUG */
-
-/* ~Real~ system call return values.
- * >> Still point into user-space after a signal
- *    handler overwrote the return address. */
-#define THIS_SYSCALL_REAL_XIP     (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xip : THIS_SYSCALL_EIP)
-#define THIS_SYSCALL_REAL_CS      (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_cs : THIS_SYSCALL_CS)
-#define THIS_SYSCALL_REAL_XFLAGS  (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xflags : THIS_SYSCALL_EFLAGS)
-#define THIS_SYSCALL_REAL_USERXSP (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_userxsp : THIS_SYSCALL_USERESP)
-#define THIS_SYSCALL_REAL_SS      (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_ss : THIS_SYSCALL_SS)
-#define SET_THIS_SYSCALL_REAL_XIP(x)     (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xip : &THIS_SYSCALL_EIP) = (x))
-#define SET_THIS_SYSCALL_REAL_CS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_cs : &THIS_SYSCALL_CS) = (x))
-#define SET_THIS_SYSCALL_REAL_XFLAGS(x)  (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xflags : &THIS_SYSCALL_EFLAGS) = (x))
-#define SET_THIS_SYSCALL_REAL_USERXSP(x) (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_userxsp : &THIS_SYSCALL_USERESP) = (x))
-#define SET_THIS_SYSCALL_REAL_SS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_ss : &THIS_SYSCALL_SS) = (x))
-
-#elif defined(__x86_64__)
-#ifdef CONFIG_DEBUG
-#undef  CONFIG_SYSCALL_CHECK_SEGMENTS
-#ifndef CONFIG_NO_SYSCALL_CHECK_SEGMENTS
-#define CONFIG_SYSCALL_CHECK_SEGMENTS
-#endif
-#endif
-
-#define __STACKBASE_TASK     THIS_TASK
+#ifdef __x86_64__
 /* x86_64: IN(rdi, rsi, rdx, r10, r8,  r9)  OUT(rax[,rdx]) */
 struct syscall_descr {
+    /* TODO: Don't actually safe these on the stack! - This isn't i386 any more. */
     __COMMON_REG2(di);
     __COMMON_REG2(si);
     __COMMON_REG1(d);
@@ -184,6 +116,68 @@ struct syscall_descr {
 #define THIS_SYSCALL_REAL_XFLAGS  (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xflags : THIS_SYSCALL_EFLAGS)
 #define THIS_SYSCALL_REAL_USERXSP (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_userxsp : THIS_SYSCALL_USERESP)
 #define THIS_SYSCALL_REAL_SS      (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_ss : THIS_SYSCALL_SS)
+#define SET_THIS_SYSCALL_REAL_XIP(x)     (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xip : &THIS_SYSCALL_EIP) = (x))
+#define SET_THIS_SYSCALL_REAL_CS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_cs : &THIS_SYSCALL_CS) = (x))
+#define SET_THIS_SYSCALL_REAL_XFLAGS(x)  (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xflags : &THIS_SYSCALL_EFLAGS) = (x))
+#define SET_THIS_SYSCALL_REAL_USERXSP(x) (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_userxsp : &THIS_SYSCALL_USERESP) = (x))
+#define SET_THIS_SYSCALL_REAL_SS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_ss : &THIS_SYSCALL_SS) = (x))
+
+#elif defined(__i386__)
+
+/* i386:   IN(ebx, ecx, edx, esi, edi, ebp) OUT(eax[,edx]) */
+struct syscall_descr {
+ __COMMON_REG1(b);
+ __COMMON_REG1(c);
+ __COMMON_REG1(d);
+ __COMMON_REG2(si);
+ __COMMON_REG2(di);
+ __COMMON_REG2(bp);
+#ifdef CONFIG_DEBUG
+ __COMMON_REG2_EX(__initial_,ip);
+#endif /* CONFIG_DEBUG */
+ u16 gs,fs,es,ds;
+ __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags);
+ /* Only for system-calls originating from user-space. */
+ __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss);
+};
+
+#define __STACKBASE_VALUE(type,off) \
+     (*(type *)((uintptr_t)__STACKBASE_TASK->t_hstack.hs_end+(off)))
+
+#define THIS_SYSCALL_SS      __STACKBASE_VALUE(u16,-4)
+#define THIS_SYSCALL_USERESP __STACKBASE_VALUE(void *,-8)
+#define THIS_SYSCALL_EFLAGS  __STACKBASE_VALUE(u32,-12)
+#define THIS_SYSCALL_CS      __STACKBASE_VALUE(u16,-16)
+#define THIS_SYSCALL_EIP     __STACKBASE_VALUE(void *,-20)
+/* WARNING: Everything that follows doesn't reliably work in assembly system calls. */
+#define THIS_SYSCALL_DS      __STACKBASE_VALUE(u16,-22)
+#define THIS_SYSCALL_ES      __STACKBASE_VALUE(u16,-24)
+#define THIS_SYSCALL_FS      __STACKBASE_VALUE(u16,-26)
+#define THIS_SYSCALL_GS      __STACKBASE_VALUE(u16,-28)
+#ifdef CONFIG_DEBUG
+#define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-36)
+#define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-40)
+#define THIS_SYSCALL_ESI     __STACKBASE_VALUE(u32,-44)
+#define THIS_SYSCALL_EDX     __STACKBASE_VALUE(u32,-48)
+#define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-52)
+#define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-56)
+#else /* CONFIG_DEBUG */
+#define THIS_SYSCALL_EBP     __STACKBASE_VALUE(u32,-32)
+#define THIS_SYSCALL_EDI     __STACKBASE_VALUE(u32,-36)
+#define THIS_SYSCALL_ESI     __STACKBASE_VALUE(u32,-40)
+#define THIS_SYSCALL_EDX     __STACKBASE_VALUE(u32,-44)
+#define THIS_SYSCALL_ECX     __STACKBASE_VALUE(u32,-48)
+#define THIS_SYSCALL_EBX     __STACKBASE_VALUE(u32,-52)
+#endif /* !CONFIG_DEBUG */
+
+/* ~Real~ system call return values.
+ * >> Still point into user-space after a signal
+ *    handler overwrote the return address. */
+#define THIS_SYSCALL_REAL_XIP              (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xip : THIS_SYSCALL_EIP)
+#define THIS_SYSCALL_REAL_CS               (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_cs : THIS_SYSCALL_CS)
+#define THIS_SYSCALL_REAL_XFLAGS           (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xflags : THIS_SYSCALL_EFLAGS)
+#define THIS_SYSCALL_REAL_USERXSP          (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_userxsp : THIS_SYSCALL_USERESP)
+#define THIS_SYSCALL_REAL_SS               (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_ss : THIS_SYSCALL_SS)
 #define SET_THIS_SYSCALL_REAL_XIP(x)     (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xip : &THIS_SYSCALL_EIP) = (x))
 #define SET_THIS_SYSCALL_REAL_CS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_cs : &THIS_SYSCALL_CS) = (x))
 #define SET_THIS_SYSCALL_REAL_XFLAGS(x)  (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xflags : &THIS_SYSCALL_EFLAGS) = (x))

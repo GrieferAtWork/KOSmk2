@@ -155,7 +155,6 @@ PRIVATE ATTR_USED void FCALL syscall_leave(void) {
   }
   { struct idtentry e;
     e = CPU(cpu_idt).i_vector[0x80];
-    syslog(LOG_DEBUG,"e.ie_data  = %p\n",e.ie_data);
     syslog(LOG_DEBUG,"e.ie_off1  = %p\n",e.ie_off1);
     syslog(LOG_DEBUG,"e.ie_sel   = %p\n",e.ie_sel);
     syslog(LOG_DEBUG,"e.ie_zero  = %p\n",e.ie_zero);

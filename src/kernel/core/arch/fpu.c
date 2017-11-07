@@ -39,7 +39,12 @@
 #ifndef CONFIG_NO_FPU
 DECL_BEGIN
 
+
 STATIC_ASSERT(sizeof(struct fpustate) == FPUSTATE_SIZE);
+STATIC_ASSERT(IS_ALIGNED(FPUSTATE_SIZE,FPUSTATE_ALIGN));
+
+/* [0..1][lock(PRIVATE(THIS_CPU))]
+ *  The task that the currently loaded FPU state belongs to. */
 PUBLIC CPU_BSS struct task *fpu_current;
 
 PRIVATE ATTR_USED void FCALL fpu_irq_nm(struct cpustate *__restrict info);
@@ -53,6 +58,9 @@ PRIVATE void FCALL
 fpu_irq_nm(struct cpustate *__restrict info) {
  struct task *old_task = CPU(fpu_current);
  struct task *new_task = THIS_TASK;
+ assertf((info->iret.cs&3) == 3,
+         "Kernel code isn't allowed to use floating point registers.");
+
  if (new_task != old_task) {
   syslog(LOG_DEBUG,"[FPU] Switch context %p -> %p\n",old_task,new_task);
   FPUSTATE_ENABLE();

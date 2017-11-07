@@ -31,13 +31,18 @@
 
 DECL_BEGIN
 
-struct task;
 
-
+#define STACK_OFFSETOF_REFCNT     0
+#define STACK_OFFSETOF_BRANCH     __SIZEOF_REF_T__
+#define STACK_OFFSETOF_BEGIN   (2*__SIZEOF_REF_T__)
+#define STACK_OFFSETOF_END     (2*__SIZEOF_REF_T__+__SIZEOF_POINTER__)
+#define STACK_OFFSETOF_TASK    (2*__SIZEOF_REF_T__+2*__SIZEOF_POINTER__)
+#define STACK_SIZE             (2*__SIZEOF_REF_T__+3*__SIZEOF_POINTER__)
 
 
 /* Fully automatic stack controller, including
  * support for automatic growth by use of guard pages. */
+struct task;
 struct stack {
  ATOMIC_DATA ref_t s_refcnt; /*< [!0] Reference counter for the control structure. */
  ATOMIC_DATA ref_t s_branch; /*< Amount of branches mapped to this stack.

@@ -78,6 +78,8 @@ struct fpustate {
  u8             fp_res3[224];
 #endif
 };
+
+/* Allocate/discard FPU states. */
 #define FPUSTATE_ALLOC() \
       ((struct fpustate *)kmemalign(FPUSTATE_ALIGN,FPUSTATE_SIZE,GFP_SHARED))
 #define FPUSTATE_FREE(p) free(p)

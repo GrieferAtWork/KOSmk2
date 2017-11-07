@@ -35,6 +35,7 @@
 #include <hybrid/traceback.h>
 #include <kernel/arch/cpustate.h>
 #include <kernel/irq.h>
+#include <hybrid/host.h>
 #include <kernel/mman.h>
 #include <kernel/paging-util.h>
 #include <kernel/paging.h>
@@ -94,6 +95,13 @@ STATIC_ASSERT(offsetof(struct ldt,l_valid) == LDT_OFFSETOF_VALID);
 #endif
 STATIC_ASSERT(offsetof(struct ldt,l_tasks) == LDT_OFFSETOF_TASKS);
 STATIC_ASSERT(sizeof(struct ldt) == LDT_SIZE);
+#endif
+
+/* Assert tss offsets. */
+#if defined(__x86_64__) || defined(__i386__)
+STATIC_ASSERT(offsetof(struct tss,eflags) == TSS_OFFSETOF_EFLAGS);
+STATIC_ASSERT(offsetof(struct tss,iomap_base) == TSS_OFFSETOF_IOMAP);
+STATIC_ASSERT(sizeof(struct tss) == TSS_SIZE);
 #endif
 
 /* Assert cpu/task offsets. */

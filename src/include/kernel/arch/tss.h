@@ -21,9 +21,60 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/host.h>
 
 DECL_BEGIN
 
+#ifdef __x86_64__
+
+#ifdef __CC__
+struct PACKED tss {
+ u32 __reserved1;
+ /* Very important: The stack that is switched to when an
+  *                 interrupt switches to the kernel (Ring #0) */
+ u64 rsp0,rsp1,rsp2;
+ u64 __reserved2;
+ u64 ist[7]; /* Interrupt stack table.
+              * Alternative stacks used for handling interrupts when
+              * the vector's `ie_ist' member is initialized as non-ZERO.
+              * To illustrate, the cpu does the following in 64-bit mode:
+              * >> void *target_stack;
+              * >> struct idtentry vector;
+              * >>
+              * >> vector = GET_VECTOR_FOR_INTERRUPT(GET_CURRENT_INTERRUPT());
+              * >>
+              * >> if (vector.ie_ist != 0) {
+              * >>     target_stack = THIS_CPU->c_arch.ac_tss.ist[vector.ie_ist-1];
+              * >> } else if (COMES_FROM_USERSPACE()) {
+              * >>     // rsp1/rsp2  not used because KOS only uses ring #0 and #3
+              * >>     target_stack = THIS_CPU->c_arch.ac_tss.rsp0;
+              * >> } else {
+              * >>     target_stack = caller->%RSP;
+              * >> }
+              * >>
+              * >> if (vector.ie_ist != 0 || COMES_FROM_USERSPACE()) {
+              * >>     // NOTE: `3' is the old privilege level (AGAIN: KOS doesn't use 1, or 2).
+              * >>     PUSHQ(target_stack,caller->%SS|3);
+              * >>     PUSHQ(target_stack,caller->%RSP);
+              * >> }
+              * >>
+              * >> PUSHQ(target_stack,caller->%RFLAGS);
+              * >> PUSHQ(target_stack,caller->%CS);
+              * >> PUSHQ(target_stack,caller->%RIP);
+              * >>
+              * >> if (HAS_EXC_CODE(GET_CURRENT_INTERRUPT()))
+              * >>     PUSHQ(target_stack,GET_EXC_CODE(GET_CURRENT_INTERRUPT()));
+              * >>
+              * >> %RSP = target_stack;
+              * >> goto GET_VECTOR_TARGET(vector);
+              * >>
+              */
+ u64 __reserved3;
+ u16 __reserved4;
+ u16 iomap_base;
+};
+#endif /* __CC__ */
+#else
 #define TSS_OFFSETOF_LINK    0
 #define TSS_OFFSETOF_ESP0    4
 #define TSS_OFFSETOF_SS0     8
@@ -75,10 +126,9 @@ struct PACKED tss {
  u16 ldtr,__reservedB;
  u16 __reservedC,iomap_base;
 };
-
-STATIC_ASSERT(offsetof(struct tss,eflags) == TSS_OFFSETOF_EFLAGS);
-STATIC_ASSERT(offsetof(struct tss,iomap_base) == TSS_OFFSETOF_IOMAP);
 #endif /* __CC__ */
+#endif
+
 
 DECL_END
 
