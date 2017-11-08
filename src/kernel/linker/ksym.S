@@ -54,6 +54,6 @@ _empty_bucket:
 
 #ifdef __x86_64__
 #   include "ksym-x86_64-kos.h"
-#elif deifned(__i386__)
+#elif defined(__i386__)
 #   include "ksym-i386-kos.h"
 #endif
