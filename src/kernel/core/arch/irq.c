@@ -558,6 +558,12 @@ kill_task:
  debug_printf(REGISTER_PREFIX "SP %p  " REGISTER_PREFIX "BP %p  "
               REGISTER_PREFIX "SI %p  " REGISTER_PREFIX "DI %p  ---\n",
               xsp,state->gp.xbp,state->gp.xsi,state->gp.xdi);
+#ifdef __x86_64__
+ debug_printf("R8  %p  R9  %p  R10 %p  R11 %p  ---\n"
+              "R12 %p  R13 %p  R14 %p  R15 %p  ---\n",
+              state->gp.r8, state->gp.r9, state->gp.r10,state->gp.r11,
+              state->gp.r12,state->gp.r13,state->gp.r14,state->gp.r15);
+#endif
  iter = buffer,temp = state->iret.xflags;
  if (temp&EFLAGS_CF) iter = stpcpy(iter,"+CF");
  if (temp&EFLAGS_PF) iter = stpcpy(iter,"+PF");

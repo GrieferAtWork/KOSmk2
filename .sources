@@ -60,6 +60,7 @@
 		__STATIC_LIBGCC \
 		__NOSTDLIB \
 		L_FLAGS("--shared") \
+		C_FLAGS("-fPIC") \
 		LINKER_SCRIPT("linker-scripts/module.ld")
 #define STATIC_MODULE(name) \
 		MODULE_NOSTDLIB(name) \

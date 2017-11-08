@@ -34,7 +34,7 @@ DECL_BEGIN
 
 INTERN REF struct fdman *KCALL
 task_getfdman(WEAK struct task *__restrict tsk) {
- REF struct fdman *result; pflag_t was; errno_t temp;
+ REF struct fdman *result; pflag_t was;
  if (!TASK_TRYINCREF(tsk)) return E_PTR(-ESRCH);
  was = PREEMPTION_PUSH();
  {
@@ -44,6 +44,7 @@ task_getfdman(WEAK struct task *__restrict tsk) {
    *    >> So with that in mind, we can simply read the IDLE task's
    *       fd-manager directory (Which should always be `fdman_kernel') */
   if (task_cpu != THIS_CPU && tsk != &task_cpu->c_idle) {
+   errno_t temp;
    assert(tsk != THIS_TASK);
    temp = task_suspend(tsk,TASK_SUSP_HOST);
    if (E_ISERR(temp)) return E_PTR(temp);

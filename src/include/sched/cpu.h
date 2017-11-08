@@ -196,7 +196,10 @@ FUNDEF void KCALL cpu_validate_counters(bool private_only);
 #endif
 
 /* The initial boot cpu (Always has id #0; same as 'smp_hwcpu.hw_cpuv[0]') */
+#ifndef ____bootcpu_defined
+#define ____bootcpu_defined 1
 DATDEF struct cpu __bootcpu;
+#endif /* !____bootcpu_defined */
 #define BOOTCPU (&__bootcpu)
 
 /* The original BOOT-task, as well as host for '/bin/init'. */

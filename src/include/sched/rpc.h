@@ -19,8 +19,10 @@
 #ifndef GUARD_INCLUDE_KERNEL_RPC_H
 #define GUARD_INCLUDE_KERNEL_RPC_H 1
 
-#include <errno.h>
 #include <hybrid/compiler.h>
+
+#ifdef CONFIG_SMP
+#include <errno.h>
 #include <hybrid/types.h>
 #include <kernel/irq.h>
 
@@ -116,5 +118,10 @@ LOCAL SAFE void KCALL cpu_rpc_broadcast(cpu_rpc_t command, void *arg) {
 
 DECL_END
 #endif
+#else /* CONFIG_SMP */
+#include <kernel/irq.h>
+#define irq_vset(self,new_handler,old_handler,mode) irq_set(new_handler,old_handler,mode)
+#define irq_vdel(self,num)                          irq_del(num,true)
+#endif /* !CONFIG_SMP */
 
 #endif /* !GUARD_INCLUDE_KERNEL_RPC_H */

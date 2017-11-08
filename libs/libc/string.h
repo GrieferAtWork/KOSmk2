@@ -207,6 +207,12 @@ INTDEF char *ATTR_CDECL libc_strdupaf(char const *__restrict format, ...);
 INTDEF char *LIBCCALL libc_vstrdupaf(char const *__restrict format, va_list args);
 #endif /* !__KERNEL__ */
 
+INTDEF s32 LIBCCALL libc_strto32(char const *__restrict nptr, char **__restrict endptr, int base);
+INTDEF u32 LIBCCALL libc_strtou32(char const *__restrict nptr, char **__restrict endptr, int base);
+INTDEF s64 LIBCCALL libc_strto64(char const *__restrict nptr, char **__restrict endptr, int base);
+INTDEF u64 LIBCCALL libc_strtou64(char const *__restrict nptr, char **__restrict endptr, int base);
+
+#ifndef __KERNEL__
 INTDEF char *LIBCCALL libc_gcvt(double value, int ndigit, char *buf);
 INTDEF char *LIBCCALL libc_qgcvt(long double value, int ndigit, char *buf);
 INTDEF int LIBCCALL libc_ecvt_r(double value, int ndigit, int *__restrict decptr, int *__restrict sign, char *__restrict buf, size_t len);
@@ -216,11 +222,6 @@ INTDEF int LIBCCALL libc_qfcvt_r(long double value, int ndigit, int *__restrict 
 INTDEF float LIBCCALL libc_strtof(char const *__restrict nptr, char **__restrict endptr);
 INTDEF double LIBCCALL libc_strtod(char const *__restrict nptr, char **__restrict endptr);
 INTDEF long double LIBCCALL libc_strtold(char const *__restrict nptr, char **__restrict endptr);
-INTDEF s32 LIBCCALL libc_strto32(char const *__restrict nptr, char **__restrict endptr, int base);
-INTDEF u32 LIBCCALL libc_strtou32(char const *__restrict nptr, char **__restrict endptr, int base);
-INTDEF s64 LIBCCALL libc_strto64(char const *__restrict nptr, char **__restrict endptr, int base);
-INTDEF u64 LIBCCALL libc_strtou64(char const *__restrict nptr, char **__restrict endptr, int base);
-#ifndef __KERNEL__
 INTDEF char *LIBCCALL libc_qecvt(long double value, int ndigit, int *__restrict decptr, int *__restrict sign);
 INTDEF char *LIBCCALL libc_qfcvt(long double value, int ndigit, int *__restrict decptr, int *__restrict sign);
 INTDEF char *LIBCCALL libc_ecvt(double value, int ndigit, int *__restrict decptr, int *__restrict sign);

@@ -19,9 +19,11 @@
 #ifndef GUARD_KERNEL_SCHED_RPC_C
 #define GUARD_KERNEL_SCHED_RPC_C 1
 
+#include <hybrid/compiler.h>
+
+#ifdef CONFIG_SMP
 #include <errno.h>
 #include <hybrid/check.h>
-#include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <kernel/arch/apic.h>
 #include <kernel/paging.h>
@@ -166,7 +168,7 @@ end2: PREEMPTION_POP(was);
 }
 #undef RPC
 
-
 DECL_END
+#endif /* CONFIG_SMP */
 
 #endif /* !GUARD_KERNEL_SCHED_RPC_C */

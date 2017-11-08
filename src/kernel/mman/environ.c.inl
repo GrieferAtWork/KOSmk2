@@ -55,12 +55,11 @@ L(    pushl %esi                                          )
 #endif /* !__x86_64__ */
 L(    movx  ASM_CPU(CPU_OFFSETOF_RUNNING), %xdx           )
 #ifdef __x86_64__
-L(    movq $3f, %r8; pushq %r8                            )
-L(    movq $(EXC_PAGE_FAULT), %r8; pushq %r8              )
+L(    leaq 3f(%rip), %rax; pushq %rax                     )
 #else
 L(    pushl $3f                                           )
-L(    pushl $(EXC_PAGE_FAULT)                             )
 #endif
+L(    pushx $(EXC_PAGE_FAULT)                             )
 L(    pushx TASK_OFFSETOF_IC(%xdx)                        )
 L(    movx  %xsp, TASK_OFFSETOF_IC(%xdx)                  )
 L(    movx  %FASTCALL_REG1, %xsi                          )
@@ -87,9 +86,19 @@ L(    ret                                                 )
 L(3:  movx  $(-EFAULT), %xax                              )
 L(    jmp   2b                                            )
 L(4:  movx  $(-EFAULT), %xax                              )
-L(    cmpx  $__kernel_user_start, %xsi                    )
+#ifdef __x86_64__
+L(    leaq  __kernel_user_start(%rip), %r10               )
+L(    cmpq  %r10, %rsi                                    )
+#else
+L(    cmpl  $__kernel_user_start, %esi                    )
+#endif
 L(    jb    5b                                            )
-L(    cmpx  $__kernel_user_end, %xsi                      )
+#ifdef __x86_64__
+L(    leaq  __kernel_user_end(%rip), %r10                 )
+L(    cmpq  %r10, %rsi                                    )
+#else
+L(    cmpl  $__kernel_user_end, %esi                      )
+#endif
 L(    jae   5b                                            )
 L(    jmp   6b /* Allow points apart of user-share */     )
 L(SYM_END(count_pointers)                                 )

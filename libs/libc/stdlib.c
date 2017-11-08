@@ -571,10 +571,6 @@ DEFINE_PUBLIC_ALIAS(_Exit,libc__exit);
 DEFINE_PUBLIC_ALIAS(srandom,libc_srand);
 DEFINE_PUBLIC_ALIAS(random,libc_rand);
 #endif
-#if __SIZEOF_LONG__ == __SIZEOF_LONG_LONG__
-DEFINE_PUBLIC_ALIAS(strtoll,libc_strtol);
-DEFINE_PUBLIC_ALIAS(strtoull,libc_strtoul);
-#endif
 DEFINE_PUBLIC_ALIAS(mkostemp64,libc_mkostemp);
 DEFINE_PUBLIC_ALIAS(mkostemps64,libc_mkostemps);
 DEFINE_PUBLIC_ALIAS(mkstemp64,libc_mkstemp);

@@ -211,6 +211,12 @@ L(    __ASM_PUSH_SGREGS                                                         
 L(    pushx %xax                                                                 )
 L(    pushx %xbx                                                                 )
 L(    pushx %xcx                                                                 )
+L(    pushx %xdx                                                                 )
+#ifdef __x86_64__
+#define __SREGS_OFFSET 32
+#else
+#define __SREGS_OFFSET 16
+#endif
 L(                                                                               )
 L(    /* Re-load kernel segment registers */                                     )
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                   )
@@ -233,9 +239,18 @@ L(1:                                                                            
 L(                                                                               )
       /* As we're about to start working with the user-space stack, filling in
        * remaining register data may cause a segfault which we must handle. */
-L(    pushx $sigfault                                                            )
-L(    pushx $(EXC_PAGE_FAULT)                                                    )
-L(    pushx $0 /* TASK_OFFSETOF_IC(%xax) -- There mustn't be any more */         )
+#ifdef __x86_64__
+L(    leaq  sigfault(%rip), %rdx                                                 )
+L(    pushq %rdx                                                                 )
+L(    movq  $(EXC_PAGE_FAULT), %rdx                                              )
+L(    pushq %rdx                                                                 )
+L(    xorq  %rdx, %rdx                                                           )
+L(    pushq %rdx /* TASK_OFFSETOF_IC(%xax) -- There mustn't be any more */       )
+#else
+L(    pushl $sigfault                                                            )
+L(    pushl $(EXC_PAGE_FAULT)                                                    )
+L(    pushl $0 /* TASK_OFFSETOF_IC(%xax) -- There mustn't be any more */         )
+#endif
 L(    movx  %xsp, TASK_OFFSETOF_IC(%xax)                                         )
 L(                                                                               )
       /* Fill in all the missing user-space registers. */
@@ -246,37 +261,75 @@ L(1:  pushx %xdi                                                                
 L(    movx  %xbx, %xdi                                                           )
 L(    addx  $(__UCONTEXT_SIZE), %xdi                                             )
 L(    jo    9f                                                                   )
-L(    cmpx  $(USER_END), %xdi                                                    )
+#ifdef __x86_64__
+L(    movq  $(ASM_USER_END), %rdx                                                )
+L(    cmpq  %rdx, %rdi                                                           )
+#else
+L(    cmpl  $(ASM_USER_END), %edi                                                )
+#endif
 L(    ja    10f                                                                  )
 L(    popx  %xdi                                                                 )
-L(    movw  24(%xsp), %dx     /* GS */                                           )
+#ifdef __x86_64__
+L(    movw  (7*XSZ+SGREGS_OFFSETOF_GS)(%rsp), %dx /* GS */                       )
+L(    movw  %dx,  2+REG(REG_CSGSFS)                                              )
+L(    movw  (7*XSZ+SGREGS_OFFSETOF_FS)(%rsp), %dx /* FS */                       )
+L(    movw  %dx,  4+REG(REG_CSGSFS)                                              )
+L(    movq  %r15, REG(REG_R15)                                                   )
+L(    movq  %r14, REG(REG_R14)                                                   )
+L(    movq  %r13, REG(REG_R13)                                                   )
+L(    movq  %r12, REG(REG_R12)                                                   )
+L(    movq  %r11, REG(REG_R11)                                                   )
+L(    movq  %r10, REG(REG_R10)                                                   )
+L(    movq  %r9,  REG(REG_R9)                                                    )
+L(    movq  %r8,  REG(REG_R8)                                                    )
+L(    movq  %rdi, REG(REG_RDI)                                                   )
+L(    movq  %rsi, REG(REG_RSI)                                                   )
+L(    movq  %rbp, REG(REG_RBP)                                                   )
+L(    movq  (3*XSZ)(%rsp), %rdx    /* RDX */                                     )
+L(    movq  %rdx, REG(REG_RDX)                                                   )
+L(    movq  (4*XSZ)(%rsp), %rdx    /* RCX */                                     )
+L(    movq  %rdx, REG(REG_RCX)                                                   )
+L(    movq  (5*XSZ)(%rsp), %rdx    /* RBX */                                     )
+L(    movq  %rdx, REG(REG_RBX)                                                   )
+L(    movq  (6*XSZ)(%rsp), %rdx    /* RAX */                                     )
+L(    movq  %rdx, REG(REG_RAX)                                                   )
+      /* Already filled: REG_RIP */
+      /* Already filled: REG_EFL */
+#else
+L(    movw  (7*XSZ+SGREGS_OFFSETOF_GS)(%esp), %dx /* GS */                       )
 L(    movw  %dx,  REG(REG_GS)                                                    )
-L(    movw  26(%xsp), %dx     /* FS */                                           )
+L(    movw  (7*XSZ+SGREGS_OFFSETOF_FS)(%esp), %dx /* FS */                       )
 L(    movw  %dx,  REG(REG_FS)                                                    )
-L(    movw  28(%xsp), %dx     /* ES */                                           )
+L(    movw  (7*XSZ+SGREGS_OFFSETOF_ES)(%esp), %dx /* ES */                       )
 L(    movw  %dx,  REG(REG_ES)                                                    )
-L(    movw  30(%xsp), %dx     /* DS */                                           )
+L(    movw  (7*XSZ+SGREGS_OFFSETOF_DS)(%esp), %dx /* DS */                       )
 L(    movw  %dx,  REG(REG_DS)                                                    )
-L(    movx  %xdi, REG(REG_EDI)                                                   )
-L(    movx  %xsi, REG(REG_ESI)                                                   )
-L(    movx  %xbp, REG(REG_EBP)                                                   )
-L(    movx  %xdx, REG(REG_EDX)                                                   )
-L(    movx  12(%xsp), %xdx    /* XCX */                                          )
-L(    movx  %xdx, REG(REG_ECX)                                                   )
-L(    movx  16(%xsp), %xdx    /* XBX */                                          )
-L(    movx  %xdx, REG(REG_EBX)                                                   )
-L(    movx  20(%xsp), %xdx    /* XAX */                                          )
-L(    movx  %xdx, REG(REG_EAX)                                                   )
+L(    movl  %edi, REG(REG_EDI)                                                   )
+L(    movl  %esi, REG(REG_ESI)                                                   )
+L(    movl  %ebp, REG(REG_EBP)                                                   )
+L(    movl  (3*XSZ)(%esp), %edx    /* EDX */                                     )
+L(    movl  %edx, REG(REG_EDX)                                                   )
+L(    movl  (4*XSZ)(%esp), %edx    /* ECX */                                     )
+L(    movl  %edx, REG(REG_ECX)                                                   )
+L(    movl  (5*XSZ)(%xsp), %edx    /* EBX */                                     )
+L(    movl  %edx, REG(REG_EBX)                                                   )
+L(    movl  (6*XSZ)(%xsp), %edx    /* EAX */                                     )
+L(    movl  %edx, REG(REG_EAX)                                                   )
       /* Already filled: REG_EIP */
       /* Already filled: REG_CS */
       /* Already filled: REG_EFL */
       /* Already filled: REG_UESP */
       /* Already filled: REG_SS */
+#endif
 L(    movx  %xbp, SIGENTER_INFO_OFFSETOF_OLD_XBP(%xbx)                           )
 L(    subx  $1, %xcx                                                             )
 L(    jz    2f                                                                   )
       /* Recursively fill secondary context structures. */
+#ifdef __x86_64__
+L(    movx  REG(REG_RSP), %xbx                                                   )
+#else
 L(    movx  REG(REG_UESP), %xbx                                                  )
+#endif
 L(    jmp   1b                                                                   )
 #undef REG                   
 L(2:  movx  $0, TASK_OFFSETOF_IC(%xax)                                           )
@@ -293,10 +346,11 @@ L(    pushx SIGENTER(SIGENTER_OFFSETOF_XIP)                                     
        * Also: Store a pointer to 'ei_old_xbp' in EBP to fix user-space tracebacks. */
 L(    movx  (TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_USERXSP)(%xax), %xbx       )
 L(    leax  SIGENTER_INFO_OFFSETOF_OLD_XBP(%xbx), %xbp                           )
-L(    movx   (8*XSZ)(%xsp), %xcx                                                 )
-L(    movx   (9*XSZ)(%xsp), %xbx                                                 )
-L(    movx  (10*XSZ)(%xsp), %xax                                                 )
-L(    __ASM_LOAD_SGREGS32((11*XSZ)(%xsp))                                        )
+L(    movx   (8*XSZ)(%xsp), %xdx                                                 )
+L(    movx   (9*XSZ)(%xsp), %xcx                                                 )
+L(    movx  (10*XSZ)(%xsp), %xbx                                                 )
+L(    movx  (11*XSZ)(%xsp), %xax                                                 )
+L(    __ASM_LOAD_SGREGS32((12*XSZ)(%xsp))                                        )
 L(                                                                               )
 L(    /* Now just jump back to user-space. */                                    )
 L(    __ASM_IRET                                                                 )
@@ -319,7 +373,7 @@ L(.previous                                                                     
 
 /* Signal default actions. */
 typedef u8 dact_t; enum{
-    DA_TERM, /* Terminate application immediatly. */
+    DA_TERM, /* Terminate application immediately. */
     DA_CORE, /* Terminate + generate core dump. */
     DA_IGN,  /* Ignore signal. */
     DA_STOP, /* Suspend application. */

@@ -100,11 +100,11 @@
 #define DEVICE_SUBDEVS_BEGIN(device_sub_count) ".section " S_REFS "\n"
 #define DEVICE_SUBDEVS_END                     ".section " S_DEVICES "\n"
 #define DEVICE_PARENT(vendor_pci_id,device_pci_id) \
-	/* r_pci_vendor_id */ASM_U16 PP_STR(vendor) "\n" \
-	/* r_pci_device_id */ASM_U16 PP_STR(device) "\n"
+	/* r_pci_vendor_id */ASM_U16 PP_STR(vendor_pci_id) "\n" \
+	/* r_pci_device_id */ASM_U16 PP_STR(device_pci_id) "\n"
 #define DEVICE_SUBDEV(vendor_pci_id,device_pci_id) \
-	/* r_pci_vendor_id */ASM_U16 PP_STR(vendor) "\n" \
-	/* r_pci_device_id */ASM_U16 PP_STR(device) "\n"
+	/* r_pci_vendor_id */ASM_U16 PP_STR(vendor_pci_id) "\n" \
+	/* r_pci_device_id */ASM_U16 PP_STR(device_pci_id) "\n"
 
 #ifndef CONFIG_NO_PCI_CLASSES
 #define CLASSES_BEGIN  __asm__(".section " S_CLASSES "\n"
@@ -112,7 +112,7 @@
 #define CLASS_MISSING(class_id) /* nothing */
 #define CLASS_EMPTY(class_id,class_name_addr,class_name) \
 	/*   c_id             */ASM_U8  PP_STR(class_id) "\n" \
-	/*   c_subclass_count */ASM_U8  PP_STR(subclass_count) "\n" \
+	/*   c_subclass_count */ASM_U8  "0\n" \
 	/*   c_subclass_addr  */ASM_U16 "0\n" \
 	/*   c_name           */ASM_U32 PP_STR(class_name_addr) "\n"
 #define CLASS_BEGIN(class_id,class_name_addr,class_name,subclass_count,subclass_max) \

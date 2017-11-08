@@ -541,10 +541,14 @@ PUBLIC struct cpu __bootcpu = {
 #if defined(__i386__) || defined(__x86_64__)
         .ac_tss = {
             /* Define initial boot-cpu TSS data. */
+#ifdef __x86_64__
+            .rsp0       = (uintptr_t)(BOOTSTACK_ADDR+BOOTSTACK_SIZE),
+#else
             .esp0       = (uintptr_t)(BOOTSTACK_ADDR+BOOTSTACK_SIZE),
             .ss0        = __KERNEL_DS,
-            .iomap_base = sizeof(struct tss),
             .eflags     = EFLAGS_IF,
+#endif
+            .iomap_base = sizeof(struct tss),
         },
         .ac_mode          = CPUMODE_ONLINE,
         /* These flags are deleted if the opposite is proven during early boot. */

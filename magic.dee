@@ -56,7 +56,11 @@ local config_verbose = false;
 
 /* Disk configuration */
 local config_disk_image = "disk/" CONFIG_TARGET_ARCH "-kos.img"; /* Output path of the disk image. */
+#ifdef TARGET_X86_64
+local config_disk_size  = 64*1024*1024; /* 64Mib */
+#else
 local config_disk_size  = 32*1024*1024; /* 32Mib */
+#endif
 
 /* Runtime/Emulation configuration */
 local run_mode_bochs    = false; /* Use BOCHS as emulator. */

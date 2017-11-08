@@ -210,7 +210,11 @@ L(.fill (512 - 2) - (. - .boot_loader), 1, 0xcc                               )
 L(.byte  0x55                                                                 )
 L(.byte  0xaa                                                                 )
 L(.previous                                                                   )
+#ifdef __x86_64__
+L(.code64                                                                     )
+#else
 L(.code32                                                                     )
+#endif
 );
 
 #define TEXT   ATTR_SECTION(".text.boot_loader_ext")
@@ -231,7 +235,11 @@ struct idt_pointer const bl_gdt = {
 };
 
 #define ENTER .code16; .section .text.boot_loader_ext
+#ifdef __x86_64__
+#define LEAVE .previous; .code64;
+#else
 #define LEAVE .previous; .code32;
+#endif
 
 /* BIOS BOOT DISK DRIVER */
 PRIVATE ATTR_USED BSS u8 xboot_stack[128];
@@ -483,12 +491,12 @@ L(.section .text.phys                                                         )
 L(INTERN_ENTRY(a20_get_enabled)                                               )
 L(    xor %eax, %eax                                                          )
 L(    movl   PROBE_ADDR, %ecx                                                 )
-L(    cmpl  %ecx, (PROBE_ADDR|0x00100000)                                     )
+L(    cmpl  %ecx, (PROBE_ADDR^0x00100000)                                     )
 L(    jne    1f /* Different values mean that A20 is on */                    )
 L(    pushl  PROBE_ADDR                                                       )
 L(    movl $(PROBE_DATA),  PROBE_ADDR                                         )
 L(    invd  /* Invalidate caches to force a re-read */                        )
-L(    cmpl $(PROBE_DATA), (PROBE_ADDR|0x00100000)                             )
+L(    cmpl $(PROBE_DATA), (PROBE_ADDR^0x00100000)                             )
 L(    popl   PROBE_ADDR                                                       )
 L(1:  setne %al                                                               )
 L(    ret                                                                     )
@@ -539,7 +547,7 @@ L(    popf                                                                    )
 L(    andl  $(EFLAGS_AC), %eax                                                )
 L(    andl  $(EFLAGS_AC), %ebx                                                )
 L(    cmpl  %eax, %ebx                                                        )
-L(    je    76 /* CPUID is not supported */                                   )
+L(    je    76f /* CPUID is not supported */                                  )
 L(                                                                            )
 L(    /* Check for the availability of long mode. */                          )
 L(    movl  $0x80000000, %eax                                                 )
@@ -628,6 +636,7 @@ L(    stosw                                                                   )
 L(    jmp 1b                                                                  )
 L(2:  ret                                                                     )
 L(SYM_END(boot_print)                                                         )
+L(.previous                                                                   )
 L(                                                                            )
 L(.section .rodata.free                                                       )
 L(INTERN_STRING(boot_erstr0,"Booting failed:")                                )
@@ -636,6 +645,7 @@ L(INTERN_STRING(boot_erstr2,"No <long mode> support (Not an x86_64 machine)") )
 L(INTERN_STRING(boot_erstr3,"No <SSE> support")                               )
 L(.previous                                                                   )
 L(                                                                            )
+L(.section .text.free                                                         )
 #else /* __x86_64__ */
 /* Load the kernel bootstrap page directory.
  * Before this, all virtual/symbol addresses are INCORRECT!
@@ -714,7 +724,7 @@ L(                                                                            )
 L(.code64                                                                     )
 L(INTERN_LABEL(boot_enter_longmode)                                           )
 L(    /* Load correct address of the boot stack. */                           )
-L(    movq   $(__bootstack+BOOTSTACK_SIZE), %rsp                              )
+L(    movabs $(__bootstack+BOOTSTACK_SIZE), %rsp                              )
 L(    /* Zero-extend bootloader parameters to 64 bits. */                     )
 L(    /* NOTE: Usually, writing to a 32-bit register will zero our the */     )
 L(    /*       upper bits. But since I didn't find anything saying that */    )
@@ -748,44 +758,50 @@ L(    cmpl  %eax, %ebx                                                        )
 L(    je    1f /* No CPUID - Not running on a 486 */                          )
 #endif /* !__x86_64__ */
 L(                                                                            )
-L(    /* It's official. - We're running on a 486 */                                                                        )
+L(    /* It's official. - We're running on a 486 */                           )
+#undef BOOTCPU
+#ifndef __x86_64__
 L(    pushx %FASTCALL_REG1                                                    )
 L(    pushx %FASTCALL_REG2                                                    )
+#define BOOTCPU(x)  (__bootcpu-KERNEL_BASE+(x))
+#else /* !__x86_64__ */
+#define BOOTCPU(x)  (__bootcpu_p+(x))
+#endif /* __x86_64__ */
 L(                                                                            )
 L(    /* Load some strategic CPUIDs to figure out who's hosting us */         )
 L(    xorx %xax, %xax                                                         )
 L(    cpuid                                                                   )
-L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+0      )
-L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+4      )
-L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+8      )
+L(    movl %ebx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+0)       )
+L(    movl %edx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+4)       )
+L(    movl %ecx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_VENDORID+8)       )
 #ifndef CONFIG_SMP
 L(    movl $1, %eax                                                           )
 L(    cpuid                                                                   )
-L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_FEATURES        )
+L(    movl %ebx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_FEATURES)         )
 #endif /* !CONFIG_SMP */
 L(    movl $0x80000000, %eax                                                  )
 L(    cpuid                                                                   )
-L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_CPUID_MAX       )
+L(    movl %eax, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_CPUID_MAX)        )
 L(    cmpl $0x80000004, %eax                                                  )
 L(    jb   2f                                                                 )
 L(    movl $0x80000004, %eax                                                  )
 L(    cpuid                                                                   )
-L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+32     )
-L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+36     )
-L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+40     )
-L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+44     )
+L(    movl %edx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+44)      )
+L(    movl %ecx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+40)      )
+L(    movl %ebx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+36)      )
+L(    movl %eax, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+32)      )
 L(    movl $0x80000003, %eax                                                  )
 L(    cpuid                                                                   )
-L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+16     )
-L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+20     )
-L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+24     )
-L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+28     )
+L(    movl %edx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+28)      )
+L(    movl %ecx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+24)      )
+L(    movl %ebx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+20)      )
+L(    movl %eax, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+16)      )
 L(    movl $0x80000002, %eax                                                  )
 L(    cpuid                                                                   )
-L(    movl %eax, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+0      )
-L(    movl %ebx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+4      )
-L(    movl %ecx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+8      )
-L(    movl %edx, __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+12     )
+L(    movl %edx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+12)      )
+L(    movl %ecx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+8)       )
+L(    movl %ebx, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+4)       )
+L(    movl %eax, BOOTCPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_BRANDSTR+0)       )
 L(                                                                            )
 L(    /* Detect if we're running under QEMU emulation */                      )
 L(    cmpl $(DWORD4('Q','E','M','U')), %eax                                   )
@@ -798,10 +814,18 @@ L(    cmpl $(DWORD4(' ','C','P','U')), %edx                                   )
 L(    jne  2f                                                                 )
 L(                                                                            )
 L(    /* Yes, we are. - Retain that information */                            )
+#ifdef __x86_64__
+L(    movb $(BOOT_EMULATION_QEMU),   boot_emulation_p                         )
+L(    movw $(0x3F8),                 boot_emulation_logport_p                 )
+#else
 L(    movb $(BOOT_EMULATION_QEMU), boot_emulation                             )
 L(    movw $(0x3F8),               boot_emulation_logport                     )
-L(2:  popx  %FASTCALL_REG2                                                    )
+#endif
+L(2:                                                                          )
+#ifndef __x86_64__
+L(    popx  %FASTCALL_REG2                                                    )
 L(    popx  %FASTCALL_REG1                                                    )
+#endif /* !__x86_64__ */
 
 /* Jump to the high-level C kernel-boot function. */
 L(    jmp   kernel_boot                                                       )

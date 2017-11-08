@@ -51,6 +51,11 @@ DATDEF struct hwcpu smp_hwcpu;
 
 #else /* CONFIG_SMP */
 
+#ifndef ____bootcpu_defined
+#define ____bootcpu_defined 1
+DATDEF struct cpu __bootcpu;
+#endif /* !____bootcpu_defined */
+
 #define CPU_OK(i)  ((i) == 0)
 #define CPUI(i)    ((void)(i),&__bootcpu)
 #define SMP_COUNT    1

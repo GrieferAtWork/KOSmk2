@@ -99,7 +99,9 @@ STATIC_ASSERT(sizeof(struct ldt) == LDT_SIZE);
 
 /* Assert tss offsets. */
 #if defined(__x86_64__) || defined(__i386__)
+#ifndef __x86_64__
 STATIC_ASSERT(offsetof(struct tss,eflags) == TSS_OFFSETOF_EFLAGS);
+#endif
 STATIC_ASSERT(offsetof(struct tss,iomap_base) == TSS_OFFSETOF_IOMAP);
 STATIC_ASSERT(sizeof(struct tss) == TSS_SIZE);
 #endif
@@ -786,7 +788,11 @@ L(    /* Generate an on-stack CPU state. */                                   )
 //L(    cli                                                                   )
 L(    popx -(3*XSZ)(%xsp)  /* EIP (return address). */                        )
 L(    pushfx  /* iret-compatible return block. */                             )
-L(1:  pushx %cs                                                               )
+#ifdef __x86_64__
+L(1:  pushq $(__KERNEL_CS)                                                    )
+#else
+L(1:  pushl %cs                                                               )
+#endif
 L(    subx $(XSZ), %xsp /* Skip EIP (already saved above) */                  )
 L(    __ASM_PUSH_SGREGS /* Push segment registers. */                         )
 L(    __ASM_PUSH_GPREGS /* Push general purpose registers. */                 )
@@ -806,7 +812,7 @@ L(    movx TASK_OFFSETOF_CSTATE(%xax),    %xsp                                )
 L(    /* Load the base address of the kernel stack. */                        )
 L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
 L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
-L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_ESP0))
+L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_XSP0))
 L(    __ASM_POP_GPREGS /* Pop general purpose registers. */                   )
 L(    __ASM_POP_SGREGS /* Pop segment registers. */                           )
 L(    __ASM_IRET       /* Iret -> pop XIP, CS + XFLAGS */                     )
@@ -829,7 +835,11 @@ L(.section .text                                                              )
 L(PUBLIC_ENTRY(task_yield)                                                    )
 L(    popx %xax  /* XIP (return address). (Currently, only XAX may be clobbered) */)
 L(    pushfx     /* iret-compatible return block. */                          )
-L(    pushx %cs                                                               )
+#ifdef __x86_64__
+L(    pushq $(__KERNEL_CS)                                                    )
+#else
+L(    pushl %cs                                                               )
+#endif
 L(    pushx %xax /* XIP */                                                    )
 L(    __ASM_PUSH_SGREGS /* Push segment registers. */                         )
 L(    __ASM_PUSH_GPREGS /* Push general purpose registers. */                 )
@@ -935,7 +945,7 @@ L(71: movx TASK_OFFSETOF_CSTATE(%xax), %xsp                                   )
 L(    /* Load the base address of the kernel stack. */                        )
 L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
 L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
-L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_ESP0))
+L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_XSP0))
 L(70: __ASM_POP_GPREGS /* Pop general purpose registers. */                   )
 L(    __ASM_POP_SGREGS /* Pop segment registers. */                           )
 L(    __ASM_IRET       /* Iret -> pop XIP, CS + XFLAGS */                     )
@@ -1514,7 +1524,7 @@ pit_exc(struct cpustate *__restrict state) {
 
  /* Update the CPU's TSS with the new task's kernel stack.
   * NOTE: We're only safe to do so, because interrupts are still disabled! */
- THIS_CPU->c_arch.ac_tss.esp0 = (uintptr_t)new_task->t_hstack.hs_end;
+ THIS_CPU->c_arch.ac_tss.xsp0 = (uintptr_t)new_task->t_hstack.hs_end;
  old_task->t_cstate = state;
  COMPILER_BARRIER(); /* Make sure that everything above has been done. */
 
@@ -3516,7 +3526,7 @@ loop:
  for (;;) {
   struct job exec_job;
   assert(THIS_TASK == &THIS_CPU->c_work);
-  assert(THIS_TASK->t_cpu == THIS_CPU);
+  assert(TASK_CPU(THIS_TASK) == THIS_CPU);
   assert(PREEMPTION_ENABLED());
 
   PREEMPTION_DISABLE();

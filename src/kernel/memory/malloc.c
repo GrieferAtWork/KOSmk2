@@ -2718,7 +2718,12 @@ mptr_setup(struct mptr *__restrict self,
        * >> If a pagefault occurrs while accessing a frame pointer, stop creation
        *    of the traceback (it is either corrupted, was customized, or has terminated) */
       __asm__ __volatile__(/* BEGIN_EXCEPTION_HANDLER(EXC_PAGE_FAULT) */
-                           L(    pushx $3f                                                  )
+#ifdef __x86_64__
+                           L(    leaq  3f(%%rip), %[temp]                                   )
+                           L(    pushq %[temp]                                              )
+#else
+                           L(    pushl $3f                                                  )
+#endif
                            L(    pushx $(EXC_PAGE_FAULT)                                    )
                            L(    pushx TASK_OFFSETOF_IC(%[task])                            )
                            L(    movx  %%xsp, TASK_OFFSETOF_IC(%[task])                     )

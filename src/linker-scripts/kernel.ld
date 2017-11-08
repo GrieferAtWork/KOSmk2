@@ -329,7 +329,10 @@ SECTIONS {
 	DEFINE(boot_erstr3_p = boot_erstr3 - KERNEL_BASE);
 	DEFINE(boot_print_p = boot_print - KERNEL_BASE);
 	DEFINE(__bootstack_p = __bootstack - KERNEL_BASE);
+	DEFINE(__bootcpu_p = __bootcpu - KERNEL_BASE);
 	DEFINE(__bootcpu_gdt_p = __bootcpu_gdt - KERNEL_BASE);
+	DEFINE(boot_emulation_p = boot_emulation - KERNEL_BASE);
+	DEFINE(boot_emulation_logport_p = boot_emulation_logport - KERNEL_BASE);
 #endif
 
 

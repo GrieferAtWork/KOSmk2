@@ -461,7 +461,8 @@ FUNDEF errno_t KCALL task_join(struct task *__restrict self, jtime_t timeout, vo
  */
 FUNDEF errno_t (KCALL task_yield)(void);
 
-#if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_GCC_ASM)
+#if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_GCC_ASM) && \
+   (!defined(__x86_64__) || defined(CONFIG_BUILDING_KERNEL_CORE))
 /* Take advantage of the fact that `task_yield()' doesn't clobber anything. */
 #define task_yield() \
  __XBLOCK({ register errno_t __y_err; \

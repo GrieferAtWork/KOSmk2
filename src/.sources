@@ -55,6 +55,13 @@ BEGIN
 
 	BEGIN
 		DEFINE("CONFIG_BUILDING_KERNEL_CORE")
+
+#ifdef TARGET_X86_64
+		/* Required because KOS is a higher-half kernel. */
+		C_FLAGS("-mcmodel=large")
+		//C_FLAGS("-mcmodel=kernel")
+#endif
+
 		if (!config_debug)
 			DEFINE("CONFIG_NO_MODULE_CLEANUP")
 
@@ -84,7 +91,7 @@ BEGIN
 			__NOSTDLIB
 
 #if 1
-#define KERNEL_SYMBOL_TABLE "src/kernel/linker/ksym.h"
+#define KERNEL_SYMBOL_TABLE "src/kernel/linker/ksym-" CONFIG_TARGET_ARCH "-kos.h"
 			SET_CUSTOM_LINK([](outfile) {
 				/* Generate the kernel's symbol export table using a custom linker step. */
 				local proc = process(executables["readelf"],["-s","-W",outfile]);
@@ -151,7 +158,12 @@ BEGIN
 						tempfd.write("BUCKET_END\n");
 					}
 					local outtext = tempfd.pack();
-					if (outtext != file.open(KERNEL_SYMBOL_TABLE,"r").read()) {
+					local oldtext = "";
+					try {
+						oldtext = file.open(KERNEL_SYMBOL_TABLE,"r").read();
+					} catch (...) {
+					}
+					if (outtext != oldtext) {
 						local outfd = file.open(KERNEL_SYMBOL_TABLE,"w");
 						outfd.write(outtext);
 						outfd.close();
@@ -179,10 +191,12 @@ BEGIN
 			SOURCE("kernel/linker/*.c")
 			if (config_debug)
 				SOURCE("kernel/test/*.c")
-			BEGIN
-				DEFINE("__ASSEMBLY__")
-				SOURCE("kernel/linker/ksym.S")
-			END
+			if (fs::exists(KERNEL_SYMBOL_TABLE)) {
+				BEGIN
+					DEFINE("__ASSEMBLY__")
+					SOURCE("kernel/linker/ksym.S")
+				END
+			}
 
 			/* Builtin modules
 			 * >> Bare minimum required to get disk + filesystem working,
@@ -226,7 +240,9 @@ BEGIN
 	BEGIN
 		_c_flags.remove("-Wsystem-headers");
 		BEGIN BASIC_MODULE("pe") SOURCE("modules/linker/pe.c") END
+#ifndef TARGET_X86_64
 		BEGIN BASIC_MODULE("nt") SOURCE("modules/nt/*.c") END
+#endif
 		BEGIN BASIC_MODULE("pdb-debug") SOURCE("modules/linker/pdb-debug.c") END
 	END
 	BEGIN BASIC_MODULE("cmos")

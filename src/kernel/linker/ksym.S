@@ -21,30 +21,39 @@
 #define STRING_BEGIN .section .linker.strings
 #define STRING_END	 /* Nothing */
 #define STR(n)       .string n
+#ifdef __x86_64__
+#define ASM_PTR   .quad
+#else
+#define ASM_PTR   .long
+#endif
 #define BUCKET_BEGIN \
 		.section .linker.buckets; \
-		.long 912f; \
+		ASM_PTR 912f; \
 		.section .linker.symbols; \
 	912:
 #define BUCKET_END \
-		.int  0; \
-		.int  0; \
-		.long 0
+		.int    0; \
+		.int    0; \
+		ASM_PTR 0
 #define EMPTY_BUCKET \
 		.section .linker.buckets; \
-		.long _empty_bucket
+		ASM_PTR _empty_bucket
 #define SYM(off,hash,name,addr) \
-		.int  off; \
-		.int  hash; \
-		.long addr
+		.int    off; \
+		.int    hash; \
+		ASM_PTR addr
 
 .section .linker.symbols
 .hidden _empty_bucket
 .local _empty_bucket
 _empty_bucket:
-	.int  0 /* offset */
-	.int  0 /* hash */
-	.long 0 /* address */
+	.int    0 /* offset */
+	.int    0 /* hash */
+	ASM_PTR 0 /* address */
 .size _empty_bucket, . - _empty_bucket
 
-#include "ksym.h"
+#ifdef __x86_64__
+#   include "ksym-x86_64-kos.h"
+#elif deifned(__i386__)
+#   include "ksym-i386-kos.h"
+#endif

@@ -69,6 +69,12 @@ INTDEF INITCALL void KCALL realmode_initialize(void);
 /* Return the absolute, runtime address of a given realmode symbol `x' */
 #define REALMODE_SYM(x)   ((uintptr_t)realmode_base+((uintptr_t)&(x)-(uintptr_t)__rm_core_start))
 
+#ifdef __x86_64__
+#define __RM_ASM_PUTPTR(x)  .quad x
+#else
+#define __RM_ASM_PUTPTR(x)  .long x
+#endif
+
 #define RM_BEGIN_EX(alignment)  \
  .code16; \
  .hidden __rm_local_rel_end; .local __rm_local_rel_end; \
@@ -79,9 +85,9 @@ INTDEF INITCALL void KCALL realmode_initialize(void);
      __rm_local_rel:; \
  .previous; \
  .section .realmode_rel; \
-     .long __rm_local_begin; \
-     .long __rm_local_rel; \
-     .long __rm_local_rel_end; \
+     __RM_ASM_PUTPTR(__rm_local_begin); \
+     __RM_ASM_PUTPTR(__rm_local_rel); \
+     __RM_ASM_PUTPTR(__rm_local_rel_end); \
  .previous; \
  .section .realmode; \
  .align alignment; \

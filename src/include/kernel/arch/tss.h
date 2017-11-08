@@ -27,12 +27,23 @@ DECL_BEGIN
 
 #ifdef __x86_64__
 
+#define TSS_OFFSETOF_RSP0  4
+#define TSS_OFFSETOF_RSP1  12
+#define TSS_OFFSETOF_RSP2  20
+#define TSS_OFFSETOF_IST   36
+#define TSS_OFFSETOF_IOMAP 102
+#define TSS_SIZE           104
+#define TSS_OFFSETOF_XSP0  TSS_OFFSETOF_RSP0
+#define TSS_OFFSETOF_XSP1  TSS_OFFSETOF_RSP1
+#define TSS_OFFSETOF_XSP2  TSS_OFFSETOF_RSP2
 #ifdef __CC__
 struct PACKED tss {
  u32 __reserved1;
  /* Very important: The stack that is switched to when an
   *                 interrupt switches to the kernel (Ring #0) */
- u64 rsp0,rsp1,rsp2;
+union PACKED {
+struct PACKED { u64 xsp0,xsp1,xsp2; };
+struct PACKED { u64 rsp0,rsp1,rsp2; }; };
  u64 __reserved2;
  u64 ist[7]; /* Interrupt stack table.
               * Alternative stacks used for handling interrupts when
@@ -102,14 +113,17 @@ struct PACKED tss {
 #define TSS_OFFSETOF_LDTR    96
 #define TSS_OFFSETOF_IOMAP   102
 #define TSS_SIZE             104
+#define TSS_OFFSETOF_XSP0    TSS_OFFSETOF_ESP0
+#define TSS_OFFSETOF_XSP1    TSS_OFFSETOF_ESP1
+#define TSS_OFFSETOF_XSP2    TSS_OFFSETOF_ESP2
 
 #ifdef __CC__
 struct PACKED tss {
  u16 link,__reserved1;
  /* Very important: The stack that is switched to when an interrupt switches to the kernel (Ring #0) */
- u32 esp0; u16 ss0,__reserved2;
- u32 esp1; u16 ss1,__reserved3;
- u32 esp2; u16 ss2,__reserved4;
+ union PACKED { u32 xsp0; u32 esp0; }; u16 ss0,__reserved2;
+ union PACKED { u32 xsp1; u32 esp1; }; u16 ss1,__reserved3;
+ union PACKED { u32 xsp2; u32 esp2; }; u16 ss2,__reserved4;
  /* NOTE: As you can see, there is no `esp3' (ring #3 is userspace). So with that in mind,
   *       the existing stack is re-used when an interrupt happens while inside the kernel,
   *       meaning that kernel-space IRQ recursion is implicitly possible, yet one has to

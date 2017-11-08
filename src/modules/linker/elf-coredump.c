@@ -44,6 +44,7 @@
 #include <linker/module.h>
 #include <fs/basic_types.h>
 #include <kos/environ.h>
+#include <kos/thread.h>
 
 DECL_BEGIN
 
@@ -595,7 +596,38 @@ elfcore_create(struct file *__restrict fp, struct mman *__restrict vm,
    d->p.pr_cutime        = d->p.pr_utime;
    d->p.pr_cstime        = d->p.pr_utime;
 #if defined(__x86_64__)
-#error TODO
+   d->p.pr_reg.r15       = state->uc_mcontext.gregs[REG_R15];
+   d->p.pr_reg.r14       = state->uc_mcontext.gregs[REG_R14];
+   d->p.pr_reg.r13       = state->uc_mcontext.gregs[REG_R13];
+   d->p.pr_reg.r12       = state->uc_mcontext.gregs[REG_R12];
+   d->p.pr_reg.rbp       = state->uc_mcontext.gregs[REG_RBP];
+   d->p.pr_reg.rbx       = state->uc_mcontext.gregs[REG_RBX];
+   d->p.pr_reg.r11       = state->uc_mcontext.gregs[REG_R11];
+   d->p.pr_reg.r10       = state->uc_mcontext.gregs[REG_R10];
+   d->p.pr_reg.r9        = state->uc_mcontext.gregs[REG_R9];
+   d->p.pr_reg.r8        = state->uc_mcontext.gregs[REG_R8];
+   d->p.pr_reg.rax       = state->uc_mcontext.gregs[REG_RAX];
+   d->p.pr_reg.rcx       = state->uc_mcontext.gregs[REG_RCX];
+   d->p.pr_reg.rdx       = state->uc_mcontext.gregs[REG_RDX];
+   d->p.pr_reg.rsi       = state->uc_mcontext.gregs[REG_RSI];
+   d->p.pr_reg.rdi       = state->uc_mcontext.gregs[REG_RDI];
+   d->p.pr_reg.orig_rax  = state->uc_mcontext.gregs[REG_RAX]; /* XXX: System call number? */
+   d->p.pr_reg.rip       = state->uc_mcontext.gregs[REG_RIP];
+   d->p.pr_reg.cs        = (state->uc_mcontext.gregs[REG_CSGSFS] & 0xffff);
+   d->p.pr_reg.eflags    = state->uc_mcontext.gregs[REG_EFL];
+   d->p.pr_reg.rsp       = state->uc_mcontext.gregs[REG_RSP];
+   d->p.pr_reg.ss        = __USER_DS;
+#ifdef CONFIG_NO_TLB
+   d->p.pr_reg.fs_base   = 0;
+   d->p.pr_reg.gs_base   = 0;
+#else
+   d->p.pr_reg.fs_base   = (Elf64_greg_t)thread->t_tlb;
+   d->p.pr_reg.gs_base   = (Elf64_greg_t)&thread->t_tlb->tl_tib;
+#endif
+   d->p.pr_reg.ds        = __USER_DS;
+   d->p.pr_reg.es        = __USER_DS;
+   d->p.pr_reg.fs        = (u16)(state->uc_mcontext.gregs[REG_CSGSFS] >> 32);
+   d->p.pr_reg.gs        = (u16)(state->uc_mcontext.gregs[REG_CSGSFS] >> 16);
 #elif defined(__i386__)
    d->p.pr_reg.ebx      = state->uc_mcontext.gregs[REG_EBX];
    d->p.pr_reg.ecx      = state->uc_mcontext.gregs[REG_ECX];
@@ -775,7 +807,8 @@ elfcore_create(struct file *__restrict fp, struct mman *__restrict vm,
     if unlikely(!d) goto err_nomem;
     memcpy(&d->b,&nhdr_fpregset_pattern,sizeof(Elf_NhdrCore));
 #ifdef __x86_64__
-#error TODO
+    { STATIC_ASSERT(sizeof(Elf64_Fpregset) == sizeof(struct fpustate)); }
+    memcpy(&d->p,thread->t_arch.at_fpu,sizeof(struct fpustate));
 #elif defined(__i386__)
     d->p.cwd = thread->t_arch.at_fpu->fp_fcw;
     d->p.swd = thread->t_arch.at_fpu->fp_fsw;

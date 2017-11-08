@@ -76,7 +76,6 @@ extern byte_t __bootcpu_end[];
 #define CPUTMPL_ADDR(offset)     (__percpu_template+((offset)))
 #define THATCPU_ADDR(cpu,offset) ((byte_t *)(cpu)+(offset))
 
-#ifdef CONFIG_SMP
 #ifdef __INTELLISENSE__
 #define THISCPU_ADDR(offset)            ((byte_t *)(offset))
 #define __THISCPU_GET(T,s,offset)           (*(T *)(offset))
@@ -138,10 +137,6 @@ extern byte_t __bootcpu_end[];
 #define THISCPU_T_GETQ(T,offset)     __THISCPU_GET(T,"q",offset)
 #define THISCPU_T_PUTQ(T,offset,val) __THISCPU_PUT(T,"q",offset,val)
 #endif
-#else
-DATDEF uintptr_t __percpu_begin[];
-#define THISCPU_ADDR(offset)           (__percpu_begin+(offset))
-#endif
 
 #ifndef THISCPU_T_GETB
 #define THISCPU_T_GETB(T,offset)           (*(T *)THISCPU_ADDR(offset))
@@ -184,26 +179,18 @@ DATDEF uintptr_t __percpu_begin[];
 #define THISCPU_PUTQ(offset,val) THISCPU_T_PUTQ(u64,offset,val)
 #define THISCPU_PUTI(offset,val) THISCPU_T_PUTI(uintptr_t,offset,val)
 
-#ifdef CONFIG_SMP
 #ifdef __i386__
 #   define CPU_BASEREGISTER fs
 #else
 #   define CPU_BASEREGISTER gs
-#endif
 #endif
 
 
 /* taking a register, memory location, or integral constant without
  * '$'-prefix as argument describing an offset from '', generate a valid operand describing the given
  * offset as a cpu-local memory location. */
-
-#ifdef CONFIG_SMP
-#   define ASM_CPU(o)   %CPU_BASEREGISTER:o
-#   define ASM_CPU2(o) %%CPU_BASEREGISTER:o
-#else
-#   define ASM_CPU(o)    __bootcpu+o
-#   define ASM_CPU2(o)   __bootcpu+o
-#endif
+#define ASM_CPU(o)   %CPU_BASEREGISTER:o
+#define ASM_CPU2(o) %%CPU_BASEREGISTER:o
 
 
 /* >> T &CPU(T &x);

@@ -144,13 +144,16 @@ __FORCELOCAL T (__LIBCCALL __read##sfx##_p)(__MEMPORT_T __port) { \
  return __rv; \
 } \
 __FORCELOCAL void (__LIBCCALL __reads##sfx)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { \
- if (__count) \
-     __asm__ __volatile__("1: mov" #sfx " %0, (%1)\n" \
-                          "   addl $" #n ", %1" \
-                          "   loop 1b" \
-                          : "=m" (*(struct { __extension__ T __d[__count]; } *)__addr) \
-                          : "g" (__port), "m" (__addr), "c" (__count) \
-                          , "m" (*(struct { __extension__ T __d[__count]; } volatile *)__port)); \
+ if (__count) { \
+  register T __temp; \
+  __asm__ __volatile__("1:  mov" #sfx " (%2), %1\n" \
+                       "    stos" #sfx "\n" \
+                       "    loop 1b\n" \
+                       : "=m" (*(struct { __extension__ T __d[__count]; } *)__addr) \
+                       , "=&a" (__temp) \
+                       : "r" (__port), "D" (__addr), "c" (__count) \
+                       , "m" (*(struct { __extension__ T __d[__count]; } volatile *)__port)); \
+ }\
 }
 
 
@@ -178,13 +181,16 @@ __FORCELOCAL void (__LIBCCALL __write##sfx##_p)(__MEMPORT_T __port, T __val) { \
                       : : "m" (*(T volatile *)__port), "r" (__val)); \
 } \
 __FORCELOCAL void (__LIBCCALL __writes##sfx)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { \
- if (__count) \
-     __asm__ __volatile__("1: stos" #sfx "\n" \
-                          "   subl $" #n ", %1" \
-                          "   loop 1b"  \
-                          : "=m" (*(struct { __extension__ T __d[__count]; } volatile *)__port) \
-                          : "D" (__port), "S" (__addr), "c" (__count) \
-                          , "m" (*(struct { __extension__ T __d[__count]; } *)__addr)); \
+ if (__count) { \
+  register T __temp; \
+  __asm__ __volatile__("1:  lods" #sfx "\n" \
+                       "    mov" #sfx " %1, (%2)\n" \
+                       "    loop 1b\n" \
+                       : "=m" (*(struct { __extension__ T __d[__count]; } *)__addr) \
+                       , "=&a" (__temp) \
+                       : "r" (__port), "S" (__addr), "c" (__count) \
+                       , "m" (*(struct { __extension__ T __d[__count]; } volatile *)__port)); \
+ }\
 }
 
 
