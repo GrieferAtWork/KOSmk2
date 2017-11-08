@@ -89,6 +89,7 @@ BEGIN
 			END
 			__STATIC_LIBGCC
 			__NOSTDLIB
+			L_FLAGS("--nmagic")
 
 #if 1
 #define KERNEL_SYMBOL_TABLE "src/kernel/linker/ksym-" CONFIG_TARGET_ARCH "-kos.h"

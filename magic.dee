@@ -1306,13 +1306,13 @@ function run_bochs() {
 	bochs.join();
 }
 
-function run_qemu(tap) {
+function run_qemu(bin,tap) {
 	local qemu = process(executables[run_qemu_binary],[
 		(run_mode_hosted ? ["-no-reboot","-no-shutdown"] : [])...,
 		"-serial","stdio","-d","debug","-smp","2",
 		(run_mode_remote ? ["-s","-S"] : [])...,
 		(run_mode_usb ? ["-hda","\\\\.\\PhysicalDrive2"]
-		              : ["-kernel",run_kernel_binary,
+		              : ["-kernel",bin,
 		                 "-drive","file="+config_disk_image+",format=raw,index=0,media=disk",
 		                 "-drive","file=disk/kos.img2,format=raw,index=3,media=disk",
 		                 ])...,
@@ -1427,9 +1427,34 @@ if (!config_build_only) {
 			run_bochs();
 		} else {
 			start_addr2line();
+#ifdef TARGET_X86_64
+			/* QEMU doesn't realize that it _CAN_ load a 64-bit kernel and
+			 * instead decides to not even try when loading a 64-bit image.
+			 * Sadly, this fix breaks tools like addr2line, meaning we must
+			 * create a copy of the kernel binary just for qemu...
+			 */
+			local fixed =
+				fs::path::head(run_kernel_binary)+
+				fs::path::file(run_kernel_binary)+"-qemu"+
+				fs::path::ext(run_kernel_binary);
+			local fixed_time;
+			try {
+				fixed_time = fast_getmtime(fixed);
+			} catch (...) {
+				fixed_time = time.years(0);
+			}
+			if (fixed_time < fast_getmtime(run_kernel_binary)) {
+				fs::copy_(run_kernel_binary,fixed);
+				local fp = file.open(fixed,"r+");
+				fp.seek(18);         /* offsetof(Elf64_Ehdr,e_machine); */
+				fp.writeo(int16(3)); /* (Elf64_Half)EM_386; */
+				fp.close();
+			}
+			run_kernel_binary = fixed;
+#endif
 			/* Try to run with tap enabled, but if that fails, still run without. */
-			if (run_qemu(true))
-				run_qemu(false);
+			if (run_qemu(run_kernel_binary,true))
+				run_qemu(run_kernel_binary,false);
 		}
 	} finally {
 		if (addr2line_proc) {

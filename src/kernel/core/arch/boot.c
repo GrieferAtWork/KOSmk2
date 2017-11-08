@@ -468,7 +468,7 @@ L(    movw %ax,        %gs                                                    )
 L(    movw %ax,        %ss                                                    )
 L(                                                                            )
 /* Jump to the main kernel's entry point. */
-L(    ljmpl $0x8, $__start                                                    )
+L(    ljmpl $0x8, $_start                                                     )
 L(SYM_END(__bl_start)                                                         )
 L(LEAVE));
 
@@ -524,7 +524,7 @@ L(    movb $(BOOT_EMULATION_BOCHS), (boot_emulation - KERNEL_BASE)            )
 L(    movw $(0xe9), (boot_emulation_logport - KERNEL_BASE)                    )
 #endif
 L(INTERN_ENTRY(_start)                                                        )
-L(INTERN_ENTRY(__start)                                                       )
+//L(INTERN_ENTRY(__start)                                                       )
 L(    /* This is the TRUE entry point! */                                     )
 L(    /* This is where the bootloader jumps */                                )
 /* Make sure interrupts are disabled (They'll be re-enabled in `irq_initialize()'). */
@@ -624,6 +624,8 @@ L(    call boot_print /* Print `Booting failed:' */                           )
 L(    leal 0xb80a0, %edi                                                      )
 L(    movl %ebp, %esi                                                         )
 L(    call boot_print /* Print the custom error message. */                   )
+L(1:  hlt                                                                     )
+L(    jmp 1b                                                                  )
 L(SYM_END(boot_error)                                                         )
 L(                                                                            )
 L(    /* Print a zero-terminated string. */                                   )
@@ -833,7 +835,7 @@ L(    jmp   kernel_boot                                                       )
 L(1:  andb  $(~CPUFLAG_486), __bootcpu+CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_FLAGS)
 L(    jmp   kernel_boot                                                       )
 #endif /* !__x86_64__ */
-L(SYM_END(__start)                                                            )
+//L(SYM_END(__start)                                                            )
 L(SYM_END(_start)                                                             )
 L(.previous                                                                   )
 );

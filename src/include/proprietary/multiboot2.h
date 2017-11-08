@@ -25,11 +25,7 @@
 
 DECL_BEGIN
 
-#ifdef __x86_64__
-#define MB2_ARCHITECTURE  MB2_ARCHITECTURE_I386 /* XXX: Is there no `MB2_ARCHITECTURE_X86_64'? */
-#else
 #define MB2_ARCHITECTURE  MB2_ARCHITECTURE_I386
-#endif
 
 /* Disclaimer: Modifications were made to the below code! */
 
