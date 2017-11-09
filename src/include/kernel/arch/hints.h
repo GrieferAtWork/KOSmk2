@@ -36,8 +36,9 @@ DECL_BEGIN
 #define HOST_WOKER_STCKSIZE                         __SIZE_C(0x8000) /* For reference: The size of per-cpu WORK-thread stacks. */
 #endif /* !CONFIG_NO_JOBS */
 
-#define USER_MODULE_STATIC_ADDRHINT  __UINTPTR_C(0x0000000008000000) /* Default base address of user-space applications. */
-#define USER_MODULE_DYNAMIC_ADDRHINT __UINTPTR_C(0x0000020000000000) /* Address hint for mapping relocatable user-space modules. */
+#define USER_MODULE_STATIC_ADDRHINT  __UINTPTR_C(0x0000000008000000) /* Default base address of user-space applications. (Grows up) */
+#define USER_MODULE_DYNAMIC_ADDRHINT_GROWS_DOWN 1
+#define USER_MODULE_DYNAMIC_ADDRHINT __UINTPTR_C(0x0000000100000000) /* Address hint for mapping relocatable user-space modules. (Grows down) */
 #define USER_HEAP_ADDRHINT           __UINTPTR_C(0x0000100000000000) /* Initial value for `struct man::m_uheap' (Grows up) */
 #define USER_STCK_ADDRHINT           __UINTPTR_C(0x00007ff000000000) /* Initial value for `struct man::m_ustck' (Grows down) */
 #define USER_TASK_TLB_ADDRHINT       __UINTPTR_C(0x00007fff00000000) /* Address hint for the per-thread TLB/TIB block. (Grows down) */

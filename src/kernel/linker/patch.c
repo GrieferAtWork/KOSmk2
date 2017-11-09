@@ -384,11 +384,22 @@ need_custom_base:
  /* Determine a suitable location to map the new module dependency. */
  inst->i_base = mman_findspace_unlocked(target_mman,inst_patcher.p_dephint,
                                         dependency->m_size,MIN(dependency->m_align,PAGESIZE),
-                                        inst_patcher.p_mapgap,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_FORCEGAP);
+                                        inst_patcher.p_mapgap,
+#if MODPATCH_FLAG_DOWNHINT == MMAN_FINDSPACE_BELOW && !MMAN_FINDSPACE_ABOVE
+                                       (inst_patcher.p_pflags&MODPATCH_FLAG_DOWNHINT)|
+#else
+                                       (inst_patcher.p_pflags&MODPATCH_FLAG_DOWNHINT ? MMAN_FINDSPACE_BELOW : MMAN_FINDSPACE_ABOVE)|
+#endif
+                                        MMAN_FINDSPACE_FORCEGAP);
  if (inst->i_base != PAGE_ERROR) goto got_space;
  inst->i_base = mman_findspace_unlocked(target_mman,inst_patcher.p_dephint,
-                                        dependency->m_size,MIN(dependency->m_align,PAGESIZE),
-                                        0,MMAN_FINDSPACE_ABOVE);
+                                        dependency->m_size,MIN(dependency->m_align,PAGESIZE),0,
+#if MODPATCH_FLAG_DOWNHINT == MMAN_FINDSPACE_BELOW && !MMAN_FINDSPACE_ABOVE
+                                       (inst_patcher.p_pflags&MODPATCH_FLAG_DOWNHINT)
+#else
+                                       (inst_patcher.p_pflags&MODPATCH_FLAG_DOWNHINT ? MMAN_FINDSPACE_BELOW : MMAN_FINDSPACE_ABOVE)
+#endif
+                                        );
  if (inst->i_base != PAGE_ERROR) goto got_space;
  inst->i_base = mman_findspace_unlocked(target_mman,(ppage_t)0,
                                         dependency->m_size,MIN(dependency->m_align,PAGESIZE),

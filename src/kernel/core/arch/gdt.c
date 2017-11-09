@@ -39,16 +39,7 @@
 #include <hybrid/bitset.h>
 
 DECL_BEGIN
-
-#ifdef __x86_64__
-STATIC_ASSERT(sizeof(struct segment) == 16);
-#else
-STATIC_ASSERT(sizeof(struct segment) == 8);
-#endif
-
-
-/* Code below relies on this fact. */
-STATIC_ASSERT(sizeof(struct segment) == SEG_INDEX_MULTIPLIER);
+STATIC_ASSERT(sizeof(struct segment) == SEGMENT_SIZE);
 
 
 /* Bitset of allocated GDT segments. (ZERO-bits indicate free).
@@ -95,7 +86,16 @@ PUBLIC SAFE void KCALL gdt_del(segid_t id) {
 }
 
 #define GDT                CPU(cpu_gdt)
-#define GDT_SEGMENT(id) (*(struct segment *)((uintptr_t)GDT.ip_gdt+(id)))
+#if SEGMENT_SIZE == SEG_INDEX_MULTIPLIER
+#   define GDT_SEGMENT(id) (*(struct segment *)((uintptr_t)GDT.ip_gdt+(id)))
+#   define TRANSLATE_ID(x)   (x)
+#elif SEGMENT_SIZE == SEG_INDEX_MULTIPLIER*2
+#   define GDT_SEGMENT(id) (*(struct segment *)((uintptr_t)GDT.ip_gdt+((id) << 1)))
+#   define TRANSLATE_ID(x)  ((x) << 1)
+#else
+#   define GDT_SEGMENT(id) (GDT.ip_gdt[(id)/SEG_INDEX_MULTIPLIER])
+#   define TRANSLATE_ID(x) (((x)/SEG_INDEX_MULTIPLIER)*SEGMENT_SIZE)
+#endif
 
 PUBLIC SAFE struct segment KCALL
 gdt_get(segid_t id) {
@@ -106,10 +106,11 @@ gdt_get(segid_t id) {
  assert((id%SEG_INDEX_MULTIPLIER) == 0);
  assert(((GDT.ip_limit+1) % sizeof(struct segment)) == 0);
  /* Return an empty segment for an out-of-bounds index. */
- if (id >= GDT.ip_limit+1)
+ if (TRANSLATE_ID(id) >= GDT.ip_limit+1)
      return make_segment(0,0,0);
  return GDT_SEGMENT(id);
 }
+
 
 PUBLIC SAFE errno_t KCALL
 gdt_set(segid_t id, struct segment seg,
@@ -123,19 +124,21 @@ gdt_set(segid_t id, struct segment seg,
  assert(((GDT.ip_limit+1) % sizeof(struct segment)) == 0);
  was = PREEMPTION_PUSH();
  if (oldseg) {
-  *oldseg = id < GDT.ip_limit+1
+  *oldseg = TRANSLATE_ID(id) < GDT.ip_limit+1
           ? GDT_SEGMENT(id)
           : make_segment(0,0,0);
  }
- if (id >= GDT.ip_limit+1) {
+ if (TRANSLATE_ID(id) >= GDT.ip_limit+1) {
   struct segment *new_vector;
   /* Must relocate the GDT vector. */
   if (was&EFLAGS_IF) PREEMPTION_ENABLE();
-  new_vector = (struct segment *)kmalloc(id+sizeof(struct segment),GFP_SHARED);
+  new_vector = (struct segment *)kmalloc(TRANSLATE_ID(id)+
+                                         sizeof(struct segment),
+                                         GFP_SHARED);
   if unlikely(!new_vector) return -ENOMEM;
   if (was&EFLAGS_IF) PREEMPTION_DISABLE();
   COMPILER_READ_BARRIER();
-  if (id >= GDT.ip_limit+1) {
+  if (TRANSLATE_ID(id) >= GDT.ip_limit+1) {
    _mall_untrack(new_vector);
    memcpy(new_vector,
           GDT.ip_gdt,
@@ -145,7 +148,7 @@ gdt_set(segid_t id, struct segment seg,
        free(GDT.ip_gdt);
    /* Override the GDT-pointer (will be reloaded below). */
    GDT.ip_gdt   = new_vector;
-   GDT.ip_limit = id+sizeof(struct segment)-1;
+   GDT.ip_limit = TRANSLATE_ID(id)+sizeof(struct segment)-1;
   } else {
    free(new_vector);
   }

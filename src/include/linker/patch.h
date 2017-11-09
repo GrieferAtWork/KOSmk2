@@ -51,6 +51,7 @@ struct modpatch {
  struct instance      *p_inst;    /*< [0..1] The instance that is being patched (May be null for loading symbolic, fake dependencies). */
 #define MODPATCH_FLAG_NORMAL   0x00000000
 #define MODPATCH_FLAG_DEEPBIND 0x00000008 /*< Patch with deep binding enabled (`p_dlsym' will prefer local symbols over global ones) */
+#define MODPATCH_FLAG_DOWNHINT 0x00000001 /*< `p_dephint' grows down, rather than up. */
  u32                   p_pflags;  /*< Additional patching flags (Set of `MODPATCH_FLAG_*'). */
  u32                   p_iflags;  /*< Flags used to created dependency instances (Set of `INSTANCE_FLAG_*') */
  size_t                p_depc;    /*< Amount of created dependencies. */
@@ -90,11 +91,16 @@ struct modpatch {
        (self)->p_dephint = (hint), \
        (self)->p_mapgap  = 0, \
        (self)->p_dlsym   = &modpatch_host_dlsym)
+#ifdef USER_MODULE_DYNAMIC_ADDRHINT_GROWS_DOWN
+#   define __MODPATCH_USER_DEFAULT_FLAGS (MODPATCH_FLAG_NORMAL|MODPATCH_FLAG_DOWNHINT)
+#else
+#   define __MODPATCH_USER_DEFAULT_FLAGS  MODPATCH_FLAG_NORMAL
+#endif
 #define modpatch_init_user(self,inst) \
       ((self)->p_root    = (self), \
        (self)->p_prev    = NULL, \
        (self)->p_inst    = (inst), \
-       (self)->p_pflags  = MODPATCH_FLAG_NORMAL, \
+       (self)->p_pflags  = __MODPATCH_USER_DEFAULT_FLAGS, \
        (self)->p_iflags  = INSTANCE_FLAG_NORMAL, \
        (self)->p_depc    = 0, \
        (self)->p_depa    = 0, \

@@ -67,6 +67,16 @@ DECL_BEGIN
 #define PDIR_E2_SIZE     __UINT64_C(0x0000000000200000) /* 2 MiB */
 #define PDIR_E3_SIZE     __UINT64_C(0x0000000040000000) /* 1 GiB */
 #define PDIR_E4_SIZE     __UINT64_C(0x0000008000000000) /* 512 GiB */
+#define ASM_PDIR_E1_SIZE            0x0000000000001000  /* 4 KiB (Same as `PAGESIZE') */
+#define ASM_PDIR_E2_SIZE            0x0000000000200000  /* 2 MiB */
+#define ASM_PDIR_E3_SIZE            0x0000000040000000  /* 1 GiB */
+#define ASM_PDIR_E4_SIZE            0x0000008000000000  /* 512 GiB */
+
+/* Physical address masks of different page directory levels. */
+#define PDIR_E1_MASK     __UINT64_C(0x0000ffffffff1000)
+#define PDIR_E2_MASK     __UINT64_C(0x0000ffffff200000)
+#define PDIR_E3_MASK     __UINT64_C(0x0000ffff40000000)
+#define PDIR_E4_MASK     __UINT64_C(0x0000ff8000000000)
 
 /* The amount of sub-level entries contained within any given level. */
 #define PDIR_E1_COUNT 512 /* Amount of level #0 entries (pages). */
@@ -97,24 +107,24 @@ DECL_BEGIN
 
 #define PDIR_ADDR_MASK     __UINT64_C(0xfffffffffffff000)
 #define PDIR_LINK_MASK     __UINT64_C(0xfffffffffffff000)
-#define PDIR_ATTR_MASK     __UINT64_C(0x0fff)
-#define PDIR_ATTR_GLOBAL   __UINT64_C(0x0100) /* Set to optimize mappings that appear at the same location in all
-                                               * directories it appears inside of (aka: Kernel-allocated stack/memory). */
-#define PDIR_ATTR_DIRTY    __UINT64_C(0x0040) /* The page was written to. */
-#define PDIR_ATTR_ACCESSED __UINT64_C(0x0020) /* The page was read from, or written to. */
-#define PDIR_ATTR_USER     __UINT64_C(0x0004) /* User-space may access this page (read, or write). */
-#define PDIR_ATTR_WRITE    __UINT64_C(0x0002) /* The page is writable. */
-#define PDIR_ATTR_PRESENT  __UINT64_C(0x0001) /* The page is present (When not set, cause a PAGEFAULT that may be used for allocate/load-on-read). */
+#define PDIR_ATTR_MASK     __UINT64_C(0x0000000000000fff)
+#define PDIR_ATTR_GLOBAL              0x0100 /* Set to optimize mappings that appear at the same location in all
+                                              * directories it appears inside of (aka: Kernel-allocated stack/memory). */
+#define PDIR_ATTR_DIRTY               0x0040 /* The page was written to. */
+#define PDIR_ATTR_ACCESSED            0x0020 /* The page was read from, or written to. */
+#define PDIR_ATTR_USER                0x0004 /* User-space may access this page (read, or write). */
+#define PDIR_ATTR_WRITE               0x0002 /* The page is writable. */
+#define PDIR_ATTR_PRESENT             0x0001 /* The page is present (When not set, cause a PAGEFAULT that may be used for allocate/load-on-read). */
 /* Page directory action flags (accepted by `pdir_mprotect', `pdir_mmap', `pdir_mremap' and `pdir_munmap') */
-#define PDIR_FLAG_NOFLUSH  __UINT64_C(0x8000) /* Don't sync the page directory entry - instead, the caller must invalidate it. */
+#define PDIR_FLAG_NOFLUSH             0x8000 /* Don't sync the page directory entry - instead, the caller must invalidate it. */
 /* Internal/arch-specific attributes. */
-#define PDIR_ATTR_ISADDR   __UINT64_C(0x0080) /* The entry describes an address endpoint, rather than a link. */
+#define PDIR_ATTR_4MIB                0x0080 /* The entry describes an address endpoint, rather than a link. */
 
 /* Check if 4Mib pages are allowed for the given address.
  * NOTE: They are not allowed for kernel pages, so-as to
  *       keep the indirection required for sharing pages.
  * NOTE: This check applies to levels #1, #2 and #3 */
-#define PDIR_ALLOW_ISADDR(addr) ((u64)(addr) < KERNEL_BASE)
+#define PDIR_ALLOW_4MIB(addr) ((u64)(addr) < KERNEL_BASE)
 
 
 
@@ -162,22 +172,21 @@ union PACKED pdir_e {
 #define PDIR_E1_ISADDR(x)                   ((x).e1_data&PDIR_ATTR_PRESENT)
 #define PDIR_E2_RDLINK(x) ((union pdir_e1 *)((x).e2_data&PDIR_LINK_MASK))
 #define PDIR_E2_RDADDR(x)                   ((x).e2_data&PDIR_ADDR_MASK)
-#define PDIR_E2_ISLINK(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) == (PDIR_ATTR_PRESENT))
-#define PDIR_E2_ISADDR(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) == (PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR))
+#define PDIR_E2_ISLINK(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB)) == (PDIR_ATTR_PRESENT))
+#define PDIR_E2_ISADDR(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB)) == (PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB))
 #define PDIR_E3_RDLINK(x) ((union pdir_e2 *)((x).e3_data&PDIR_LINK_MASK))
-#define PDIR_E3_RDADDR(x)                   ((x).e3_data&PDIR_ADDR_MASK)
-#define PDIR_E3_ISLINK(x)                  (((x).e3_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) == (PDIR_ATTR_PRESENT))
-#define PDIR_E3_ISADDR(x)                  (((x).e3_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) == (PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR))
+#define PDIR_E3_ISLINK(x)                   ((x).e3_attr&PDIR_ATTR_PRESENT)
 #define PDIR_E4_RDLINK(x) ((union pdir_e3 *)((x).e4_data&PDIR_LINK_MASK))
-#define PDIR_E4_RDADDR(x)                   ((x).e4_data&PDIR_ADDR_MASK)
-#define PDIR_E4_ISLINK(x)                  (((x).e4_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) == (PDIR_ATTR_PRESENT))
-#define PDIR_E4_ISADDR(x)                  (((x).e4_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) == (PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR))
+#define PDIR_E4_ISLINK(x)                   ((x).e4_attr&PDIR_ATTR_PRESENT)
 
 
 typedef struct _pdir pdir_t;
 struct _pdir { /* Controller structure for a page directory. */
  /* The page directory itself (this vector is your `CR3') */
- ATTR_ALIGNED(4096) union pdir_e4 pd_directory[PDIR_E4_COUNT];
+#ifndef __INTELLISENSE__
+ ATTR_ALIGNED(4096)
+#endif
+ union pdir_e4 pd_directory[PDIR_E4_COUNT];
 };
 #define PDIR_KERNELSHARE_STARTINDEX \
      (((KERNEL_BASE&(PDIR_E4_TOTALSIZE-1))*PDIR_E4_COUNT)/PDIR_E4_TOTALSIZE)
@@ -188,15 +197,11 @@ LOCAL KPD PHYS void *KCALL pdir_translate(pdir_t *__restrict self, VIRT void *pt
  union pdir_e e;
  e.e4 = self->pd_directory[PDIR_E4_INDEX(ptr)];
  __assertf(e.e4.e4_attr&PDIR_ATTR_PRESENT,"Faulty address %p",ptr);
- if (e.e4.e4_attr&PDIR_ATTR_ISADDR)
-     return (PHYS void *)(PDIR_E4_RDADDR(e.e4)+PDIR_E4_OFFSET(ptr));
  e.e3 = PDIR_E4_RDLINK(e.e4)[PDIR_E3_INDEX(ptr)];
  __assertf(e.e3.e3_attr&PDIR_ATTR_PRESENT,"Faulty address %p",ptr);
- if (e.e3.e3_attr&PDIR_ATTR_ISADDR)
-     return (PHYS void *)(PDIR_E3_RDADDR(e.e3)+PDIR_E3_OFFSET(ptr));
  e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(ptr)];
  __assertf(e.e2.e2_attr&PDIR_ATTR_PRESENT,"Faulty address %p",ptr);
- if (e.e2.e2_attr&PDIR_ATTR_ISADDR)
+ if (e.e2.e2_attr&PDIR_ATTR_4MIB)
      return (PHYS void *)(PDIR_E2_RDADDR(e.e2)+PDIR_E2_OFFSET(ptr));
  e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(ptr)];
  __assertf(PDIR_E1_ISADDR(e.e1),"Faulty address %p",ptr);
@@ -205,13 +210,11 @@ LOCAL KPD PHYS void *KCALL pdir_translate(pdir_t *__restrict self, VIRT void *pt
 LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *ptr) {
  union pdir_e e;
  e.e4 = self->pd_directory[PDIR_E4_INDEX(ptr)];
- if ((e.e4.e4_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) != PDIR_ATTR_PRESENT)
-      return (e.e4.e4_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == PDIR_ATTR_WRITE;
+ if (!(e.e4.e4_attr&PDIR_ATTR_PRESENT)) return 0;
  e.e3 = PDIR_E4_RDLINK(e.e4)[PDIR_E3_INDEX(ptr)];
- if ((e.e3.e3_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) != PDIR_ATTR_PRESENT)
-      return (e.e3.e3_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == PDIR_ATTR_WRITE;
+ if (!(e.e3.e3_attr&PDIR_ATTR_PRESENT)) return 0;
  e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(ptr)];
- if ((e.e2.e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_ISADDR)) != PDIR_ATTR_PRESENT)
+ if ((e.e2.e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB)) != PDIR_ATTR_PRESENT)
       return (e.e2.e2_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == PDIR_ATTR_WRITE;
  e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(ptr)];
  return (e.e1.e1_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == PDIR_ATTR_WRITE;

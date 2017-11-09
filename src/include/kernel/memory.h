@@ -521,9 +521,9 @@ INTDEF INITCALL SAFE KPD size_t KCALL memory_load_mb2_mmap(struct mb2_tag_mmap *
 
 /* Try various different ways of detecting memory. */
 INTDEF INITCALL SAFE KPD size_t KCALL memory_load_detect(void);
-INTDEF INITCALL u8 const memtype_bios_matrix[6];
+INTDEF INITDATA u8 const memtype_bios_matrix[6];
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
-#endif
 #endif /* __CC__ */
 
 DECL_END

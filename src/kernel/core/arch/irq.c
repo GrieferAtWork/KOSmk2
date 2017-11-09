@@ -99,7 +99,7 @@ L(    popx  -(GPREGS_SIZE+SGREGS_SIZE+2*XSZ)(%xsp)                            )
 L(    pushx $0         /* Fill `exc_code' with `0' by default. */             )
 L(1:  __ASM_PUSH_SEGMENTS                                                     )
 L(    __ASM_PUSH_REGISTERS                                                    )
-L(    subx  $4, %xsp   /* intno */                                            )
+L(    subx  $(XSZ), %xsp   /* intno */                                        )
 L(    /* Load the proper kernel segment registers */                          )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
 L(                                                                            )
@@ -364,11 +364,11 @@ print_segment_register(char const *__restrict name, u16 value) {
  struct idt_pointer idt; size_t entry_count,entry_id;
  if (value&4) __asm__ __volatile__("sldt %0" : : "m" (idt));
  else         __asm__ __volatile__("sgdt %0" : : "m" (idt));
- entry_id = (value&~7) >> 3;
- debug_printf("%s %.4X (%s:%.2d RPL#%d - ",
-                    name,value,(value&4) ? "LDT" : "GDT",
-                    entry_id,value&3);
- entry_count = (idt.ip_limit+1)/8;
+ entry_id = value/SEG_INDEX_MULTIPLIER;
+ debug_printf("%s %.4I16X (%s:%.2Iu RPL#%d - ",
+              name,value,(value&4) ? "LDT" : "GDT",
+              entry_id,(int)(value&3));
+ entry_count = (idt.ip_limit+1)/SEGMENT_SIZE;
  if (entry_id >= entry_count) {
   debug_printf("INVALID INDEX >= %Iu)\n",entry_count);
  } else {
@@ -376,14 +376,13 @@ print_segment_register(char const *__restrict name, u16 value) {
   size_t seg_size = SEGMENT_GTSIZE(seg);
   if (seg.granularity) seg_size <<= 12,seg_size |= 0xfff;
   debug_printf("%p, %p DPL#%d %c%c%c%c%c%c)\n",
-                     SEGMENT_GTBASE(seg),seg_size,
-                     seg.privl,
-                     seg.present  ? 'P' : '-',
-                     seg.system   ? 'S' : '-',
-                     seg.execute  ? 'X' : '-',
-                     seg.dc       ? 'D' : '-',
-                     seg.rw       ? 'W' : '-',
-                     seg.accessed ? 'A' : '-');
+               SEGMENT_GTBASE(seg),seg_size,seg.privl,
+               seg.present  ? 'P' : '-',
+               seg.system   ? 'S' : '-',
+               seg.execute  ? 'X' : '-',
+               seg.dc       ? 'D' : '-',
+               seg.rw       ? 'W' : '-',
+               seg.accessed ? 'A' : '-');
  }
 }
 
@@ -802,11 +801,7 @@ done:;
 
 
 INTERN CPU_DATA struct IDT cpu_idt;
-#ifdef __x86_64__
-STATIC_ASSERT(sizeof(struct idtentry) == 12);
-#else
-STATIC_ASSERT(sizeof(struct idtentry) == 8);
-#endif
+STATIC_ASSERT(sizeof(struct idtentry) == IDTENTRY_SIZE);
 
 INTERN ATTR_FREETEXT void KCALL
 irq_setup(struct cpu *__restrict self) {
@@ -935,7 +930,7 @@ INTERN ATTR_FREETEXT void KCALL irq_initialize(void) {
 
  /* Load the interrupt descriptor table and enable interrupts for the first time! */
  idt.ip_idt   = VCPU(&__bootcpu,cpu_idt).i_vector;
- idt.ip_limit = sizeof(cpu_idt.i_vector);
+ idt.ip_limit = sizeof(cpu_idt.i_vector)-1;
  __asm__ __volatile__("lidt %0\n" : : "m" (idt));
 }
 

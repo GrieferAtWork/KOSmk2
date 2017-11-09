@@ -33,6 +33,7 @@
 #include <format-printer.h>
 #include <asm/instx.h>
 #include <kernel/arch/hints.h>
+#include <kernel/export.h>
 
 DECL_BEGIN
 
@@ -45,49 +46,19 @@ PHYS struct mman __mman_kernel_p = {
      * Aka: Physical memory pointers is mirrored in upper memory.
      * Once paging has been fully initialized, the lower
      * mappings from 0x00000000 to 0xbfffffff are deleted.
-     * HINT: 0x83 == [PDIR_ATTR_4MIB/PDIR_ATTR_ISADDR]|PDIR_ATTR_PRESENT|PDIR_ATTR_WRITE */
+     * HINT: 0x83 == PDIR_ATTR_4MIB|PDIR_ATTR_PRESENT|PDIR_ATTR_WRITE */
 #ifndef __INTELLISENSE__
     .m_pdir = {
         .pd_directory = {
 #ifdef __x86_64__
-#define P4(phys) \
-           {phys+__UINT64_C(0x0000008000000083)},{phys+__UINT64_C(0x0000010000000083)}, \
-           {phys+__UINT64_C(0x0000018000000083)},{phys+__UINT64_C(0x0000020000000083)}, \
-           {phys+__UINT64_C(0x0000028000000083)},{phys+__UINT64_C(0x0000030000000083)}, \
-           {phys+__UINT64_C(0x0000038000000083)},{phys+__UINT64_C(0x0000040000000083)}, \
-           {phys+__UINT64_C(0x0000048000000083)},{phys+__UINT64_C(0x0000050000000083)}, \
-           {phys+__UINT64_C(0x0000058000000083)},{phys+__UINT64_C(0x0000060000000083)}, \
-           {phys+__UINT64_C(0x0000068000000083)},{phys+__UINT64_C(0x0000070000000083)}, \
-           {phys+__UINT64_C(0x0000078000000083)},{phys+__UINT64_C(0x0000080000000083)}, \
-           {phys+__UINT64_C(0x0000088000000083)},{phys+__UINT64_C(0x0000090000000083)}, \
-           {phys+__UINT64_C(0x0000098000000083)},{phys+__UINT64_C(0x00000a0000000083)}, \
-           {phys+__UINT64_C(0x00000a8000000083)},{phys+__UINT64_C(0x00000b0000000083)}, \
-           {phys+__UINT64_C(0x00000b8000000083)},{phys+__UINT64_C(0x00000c0000000083)}, \
-           {phys+__UINT64_C(0x00000c8000000083)},{phys+__UINT64_C(0x00000d0000000083)}, \
-           {phys+__UINT64_C(0x00000d8000000083)},{phys+__UINT64_C(0x00000e0000000083)}, \
-           {phys+__UINT64_C(0x00000e8000000083)},{phys+__UINT64_C(0x00000f0000000083)}, \
-           {phys+__UINT64_C(0x00000f8000000083)},{phys+__UINT64_C(0x0000800000000000)},
-            P4(__UINT64_C(0x0000000000000000))
-            P4(__UINT64_C(0x0000100000000000))
-            P4(__UINT64_C(0x0000200000000000))
-            P4(__UINT64_C(0x0000300000000000))
-            P4(__UINT64_C(0x0000400000000000))
-            P4(__UINT64_C(0x0000500000000000))
-            P4(__UINT64_C(0x0000600000000000))
-            P4(__UINT64_C(0x0000700000000000))
-            /* Map lower memory a second time. (NOTE: 0x100 is `PDIR_ATTR_GLOBAL') */
-            P4(__UINT64_C(0x0000000000000100))
-            P4(__UINT64_C(0x0000100000000100))
-            P4(__UINT64_C(0x0000200000000100))
-            P4(__UINT64_C(0x0000300000000100))
-            P4(__UINT64_C(0x0000400000000100))
-            P4(__UINT64_C(0x0000500000000100))
-            P4(__UINT64_C(0x0000600000000100))
-            P4(__UINT64_C(0x0000700000000100))
-#if (KERNEL_BASE & PDIR_E4_TOTALSIZE-1) != __UINT64_C(0x0000800000000000)
-#error "FIXME: Fix the bootstrap page table above"
-#endif
-#undef P4
+            /* The x86_64 bootstrap code identity-maps the first Gb of physical memory
+             * within a level #4 entry past the physical end of the kernel core.
+             * Here, we simply hook those entries so that the bootstrap process is not
+             * required to re-write the associated page directory entries afterwards.
+             * NOTE: This assumes that the kernel core won't ever be larger than
+             *       1Gb, but I think that's a pretty safe assumption to make (right?) */
+            [0]                           = { ((uintptr_t)KERNEL_END - KERNEL_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+            [PDIR_KERNELSHARE_STARTINDEX] = { ((uintptr_t)KERNEL_END - KERNEL_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
 #else /* __x86_64__ */
 #define PD(phys) \
            {phys+0x00000083},{phys+0x00400083},{phys+0x00800083},{phys+0x00c00083}, \

@@ -306,15 +306,20 @@ INTDEF u8 boot_drive;
 PRIVATE ATTR_FREETEXT void KCALL
 basicdata_initialize(u32 mb_magic, mb_info_t *info) {
  size_t mbt_memory = 0;
+ syslog(LOG_DEBUG,"info         = %p\n",info);
+ syslog(LOG_DEBUG,"KERNEL_BEGIN = %p\n",KERNEL_BEGIN);
+ syslog(LOG_DEBUG,"KERNEL_END   = %p\n",KERNEL_END);
  switch (mb_magic) {
 
  {
   /* Multiboot information. */
  case MB_BOOTLOADER_MAGIC:
+  early_map_identity(info,sizeof(mb_info_t));
   if (info->flags&MB_INFO_BOOTDEV)
       boot_drive = (u8)(info->boot_device >> 24);
   if (info->flags&MB_INFO_CMDLINE &&
-     (KERNEL_COMMANDLINE.cl_size = strlen((char *)(uintptr_t)info->cmdline)) != 0) {
+     (early_map_identity((void *)(uintptr_t)info->cmdline,0x10000000),
+      KERNEL_COMMANDLINE.cl_size = strlen((char *)(uintptr_t)info->cmdline)) != 0) {
    KERNEL_COMMANDLINE.cl_text = (char *)(uintptr_t)info->cmdline;
    /* Protect the kernel commandline from touchies. */
    mem_install((uintptr_t)kernel_commandline.cl_text,
@@ -324,7 +329,9 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
   /* Use multiboot memory information. */
   if (info->flags&MB_MEMORY_INFO)
       mbt_memory += memory_load_mb_lower_upper(info->mem_lower,info->mem_upper);
+
   if (info->flags&MB_INFO_MEM_MAP)
+      early_map_identity((void *)(uintptr_t)info->mmap_addr,info->mmap_length),
       mem_install(info->mmap_addr,info->mmap_length,MEMTYPE_PRESERVE),
       mbt_memory += memory_load_mb_mmap((struct mb_mmap_entry *)(uintptr_t)info->mmap_addr,info->mmap_length);
   if (info->flags&MB_INFO_MODS) {
@@ -332,8 +339,12 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
    /* Limit the module count just in case the bootloader is broken. */
    end = (iter = (PHYS mb_module_t *)(uintptr_t)info->mods_addr)+
          (size_t)MIN(info->mods_count,BOOTLOADER_MAX_MODULE_COUNT);
+   early_map_identity(iter,(end-iter)*sizeof(mb_module_t));
    for (; iter != end; ++iter) {
     if unlikely(iter->mod_end < iter->mod_start) continue;
+    early_map_identity((void *)(uintptr_t)iter->mod_start,
+                       (uintptr_t)iter->mod_end-
+                       (uintptr_t)iter->mod_start);
     kernel_bootmod_register(iter->mod_start,
                             iter->mod_end-iter->mod_start,
                            (char *)(uintptr_t)iter->cmdline);
@@ -348,6 +359,8 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
   struct mb2_tag *tag_end;
   size_t mbt_min_size,temp;
  case MB2_BOOTLOADER_MAGIC:
+  /* Should be sufficient for anything that might come. */
+  early_map_identity(info,0x10000000);
   mbt_min_size = *(u32 *)info;
   tag_begin    = (struct mb2_tag *)((uintptr_t)info+8);
   /* Make sure that we're not protecting too little amount of data. */
@@ -397,6 +410,9 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
     if unlikely(TAG(mb2_tag_module)->mod_end <
                 TAG(mb2_tag_module)->mod_start)
                 break;
+    early_map_identity((void *)(uintptr_t)TAG(mb2_tag_module)->mod_start,
+                       (uintptr_t)TAG(mb2_tag_module)->mod_end-
+                       (uintptr_t)TAG(mb2_tag_module)->mod_start);
     kernel_bootmod_register(TAG(mb2_tag_module)->mod_start,
                             TAG(mb2_tag_module)->mod_end-
                             TAG(mb2_tag_module)->mod_start,

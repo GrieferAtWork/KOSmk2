@@ -203,6 +203,11 @@ SECTIONS {
 	DEFINE(__percpu_dat_dwords = ABSOLUTE(__percpu_datsize / 4));
 	DEFINE(__percpu_bss_dwords = ABSOLUTE(__percpu_bsssize / 4));
 	DEFINE(__percpu_all_dwords = ABSOLUTE(__percpu_allsize / 4));
+#ifdef __x86_64__
+	DEFINE(__percpu_dat_qwords = ABSOLUTE(__percpu_datsize / 8));
+	DEFINE(__percpu_bss_qwords = ABSOLUTE(__percpu_bsssize / 8));
+	DEFINE(__percpu_all_qwords = ABSOLUTE(__percpu_allsize / 8));
+#endif
 
 	/* A spection part of kernel data that is mapped as read-only,
 	 * yet still accessible in every user-space page directory.
@@ -330,9 +335,11 @@ SECTIONS {
 	DEFINE(boot_print_p = boot_print - KERNEL_BASE);
 	DEFINE(__bootstack_p = __bootstack - KERNEL_BASE);
 	DEFINE(__bootcpu_p = __bootcpu - KERNEL_BASE);
-	DEFINE(__bootcpu_gdt_p = __bootcpu_gdt - KERNEL_BASE);
 	DEFINE(boot_emulation_p = boot_emulation - KERNEL_BASE);
 	DEFINE(boot_emulation_logport_p = boot_emulation_logport - KERNEL_BASE);
+	DEFINE(boot_gdt_p = boot_gdt - KERNEL_BASE);
+	DEFINE(boot_gdt_vector_p = boot_gdt_vector - KERNEL_BASE);
+	DEFINE(__kernel_end_p = __kernel_end - KERNEL_BASE);
 #endif
 
 

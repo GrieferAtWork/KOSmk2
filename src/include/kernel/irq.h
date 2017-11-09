@@ -261,7 +261,7 @@ FUNDEF SAFE void KCALL irq_del(irq_t num, bool reload);
 #define IDTENTRY_OFFSETOF_OFF2  6
 #ifdef __x86_64__
 #define IDTENTRY_OFFSETOF_OFF3  8
-#define IDTENTRY_SIZE           12
+#define IDTENTRY_SIZE           16
 #else
 #define IDTENTRY_SIZE           8
 #endif
@@ -277,6 +277,7 @@ struct PACKED idtentry {
     u16 ie_off2;  /*< Upper 16 bits of an `irq_handler' pointer. */
 #ifdef __x86_64__
     u32 ie_off3;  /*< Bits 32..63 of the vector offset. */
+    u32 ie_unused;/* Unused ata. */
 #endif
 };
 

@@ -80,6 +80,46 @@ STATIC_ASSERT(~PDIR_ADDR_MASK == PAGESIZE-1);
 /* STATIC_ASSERT(PDIR_E4_SHARESTART == 256); */
 
 
+/* NOTE: Add 2 pages to the end, which are always allocated by
+ *       bootup code when the kernel core itself it identity-mapped. */
+INTERN ATTR_FREEDATA ppage_t early_page_end = (ppage_t)(KERNEL_END+2*PAGESIZE);
+INTERN ATTR_FREETEXT ppage_t early_page_malloc(void) {
+ /* Try to use actual physical memory, but if that fails, allocate
+  * past the kernel core, assuming that there is memory there. */
+ syslog(LOG_DEBUG,"HERE\n");
+ ppage_t result = page_malloc(PAGESIZE,PAGEATTR_NONE,MZONE_ANY);
+ if (result == PAGE_ERROR) result = early_page_end++;
+ return result;
+}
+INTERN ATTR_FREETEXT void early_map_identity(PHYS void *addr, size_t n_bytes) {
+ union pdir_e *ent;
+ n_bytes += ((uintptr_t)addr & PDIR_E3_SIZE);
+ *(uintptr_t *)&addr &= ~(PDIR_E3_SIZE-1);
+ for (;;) {
+  ent = (union pdir_e *)&pdir_kernel.pd_directory[PDIR_E4_INDEX(addr)];
+  /* Ensure level #4 presence. */
+  if (!PDIR_E4_ISLINK(ent->e4))
+       ent->e4.e4_data = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|
+              (uintptr_t)memset(early_page_malloc(),0,PAGESIZE);
+  ent = (union pdir_e *)&PDIR_E4_RDLINK(ent->e4)[PDIR_E3_INDEX(addr)];
+  if (!PDIR_E3_ISLINK(ent->e3)) {
+   // Allocate a new level #3 entry.
+   uintptr_t base; size_t i;
+   union pdir_e2 *e2 = (union pdir_e2 *)early_page_malloc();
+   base = ((uintptr_t)addr & PDIR_E2_MASK) | PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT;
+   for (i = 0; i < PDIR_E2_COUNT; ++i)
+        e2[i].e2_data = (base+i*PDIR_E2_SIZE);
+   ent->e3.e3_data = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|(uintptr_t)e2;
+  }
+  if (n_bytes < PDIR_E3_SIZE) break;
+  n_bytes             -= PDIR_E3_SIZE;
+  *(uintptr_t *)&addr += PDIR_E3_SIZE;
+ }
+}
+
+
+
+
 PUBLIC KPD bool KCALL pdir_init(pdir_t *__restrict self) {
  /* Fill lower memory with unallocated pages. */
  memsetq(self->pd_directory,PDIR_ADDR_MASK,PDIR_E4_SHARESTART);

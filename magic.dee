@@ -1273,7 +1273,11 @@ function start_addr2line() {
 // -> (string filename,string line,string function)
 function run_addr2line(addr) {
 	start_addr2line();
-	addr = "%X" % (long("0x"+addr)-run_addr2line_base);
+#ifdef TARGET_X86_64
+	addr = "%I64X" % (unsigned long long("0x"+addr)-run_addr2line_base);
+#else
+	addr = "%X" % (unsigned long("0x"+addr)-run_addr2line_base);
+#endif
 	addr2line_inw.get().write(addr+"\n");
 	local func = addr2line_outr.get().readline();
 	local data = addr2line_outr.get().read();
@@ -1444,6 +1448,7 @@ if (!config_build_only) {
 				fixed_time = time.years(0);
 			}
 			if (fixed_time < fast_getmtime(run_kernel_binary)) {
+				try fs::unlink(fixed); catch (...);
 				fs::copy_(run_kernel_binary,fixed);
 				local fp = file.open(fixed,"r+");
 				fp.seek(18);         /* offsetof(Elf64_Ehdr,e_machine); */

@@ -202,6 +202,7 @@ size_t KCALL memory_try_detect(void) {
 INTDEF ATTR_FREETEXT SAFE KPD
 size_t KCALL memory_load_detect(void) {
  size_t result,temp;
+ /* XXX: Assume that realmode physical memory is already identity mapped. */
  result = mem_install(FLOOR_ALIGN(REALMODE_STARTRELO,PAGESIZE),
                       PAGESIZE,MEMTYPE_PRESERVE);
  temp = memory_try_detect();

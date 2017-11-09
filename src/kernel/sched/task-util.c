@@ -516,6 +516,8 @@ check_again:
   }
  }
 
+ /* XXX: Can this still happen on x86_64? (considering it doesn't really enforce segment limits) */
+#if !defined(__x86_64__) || 1
  /* A lot of code assumes that it is enough to handle page-faults
   * in order to safely access a potentially faulty pointer, such
   * as may be given to the kernel from userspace, or when creating
@@ -548,6 +550,7 @@ check_again:
   irq = EXC_PAGE_FAULT;
   goto check_again;
  }
+#endif
 }
 
 

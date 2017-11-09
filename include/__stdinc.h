@@ -324,6 +324,7 @@ __NAMESPACE_STD_END
 #define __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */
 #define __PERCPU       /* Annotation for variables that must be accessed using the per-cpu API. */
 #define __ASMCALL      /* Annotation for functions that are implemented in assembly and require a custom calling convention. */
-#define __INITCALL     /* Annotation for functions that apart of .free sections, meaning that calling them is illegal after some specific point in time. */
+#define __INITDATA     /* Annotation for data that apart of .free sections, meaning that accessing it is illegal after some specific point in time. */
+#define __INITCALL     /* Annotation for functions that apart of .free sections, meaning that calling it is illegal after some specific point in time. */
 
 #endif /* !___STDINC_H */
