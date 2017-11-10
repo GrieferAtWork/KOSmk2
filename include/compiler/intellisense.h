@@ -812,15 +812,14 @@ template<> struct ____INTELLISENSE_static_if_helper<true> { bool __is_true__(); 
 
 #ifdef __x86_64__
 typedef char *__builtin_va_list[1],*__gnuc_va_list[1];
+namespace __int { template<class T> T ____INTELLISENSE_va_arg_heper(char **&); }
 #else
 typedef char *__builtin_va_list,*__gnuc_va_list;
+namespace __int { template<class T> T ____INTELLISENSE_va_arg_heper(__builtin_va_list &); }
 #endif
 template<class T> void __builtin_va_start(__builtin_va_list &ap, T &before_start);
 void __builtin_va_end(__builtin_va_list &ap);
 void __builtin_va_copy(__builtin_va_list &dst_ap, __builtin_va_list &src_ap);
-namespace __int {
-template<class T> T ____INTELLISENSE_va_arg_heper(__builtin_va_list &);
-}
 #define __builtin_va_arg(ap,T)   (::__int::____INTELLISENSE_va_arg_heper< T >(ap))
 
 

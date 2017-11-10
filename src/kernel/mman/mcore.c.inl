@@ -103,7 +103,8 @@ mscatter_memset(struct mscatter *__restrict scatter,
 LOCAL SAFE KPD bool KCALL
 page_malloc_scatter_with_hint(struct mscatter *__restrict scatter,
                               size_t n_bytes, size_t min_scatter,
-                              pgattr_t attr, mzone_t zone, ppage_t hint) {
+                              pgattr_t attr, mzone_t zone,
+                              gfp_t scatter_extension, ppage_t hint) {
  CHECK_HOST_DOBJ(scatter);
  /* Try to allocate at the hinted address to improve
   * physical/virtual coherency & cache locality. */
@@ -115,7 +116,8 @@ page_malloc_scatter_with_hint(struct mscatter *__restrict scatter,
   return true;
  }
  /* Ok... Lets try it the normal way... */
- return page_malloc_scatter(scatter,n_bytes,min_scatter,attr,zone);
+ return page_malloc_scatter(scatter,n_bytes,min_scatter,attr,
+                            zone,scatter_extension);
 }
 
 LOCAL SAFE KPD bool KCALL
@@ -126,10 +128,9 @@ page_malloc_scatter_in_region_part(struct mscatter *__restrict scatter,
                                    struct mregion_part *__restrict part,
                                    bool hint_unique_parts) {
  struct mregion_part *nearby_part;
- uintptr_t malloc_hint;
+ uintptr_t malloc_hint; gfp_t scatter_gfp;
  rsize_t malloc_hint_distance;
  CHECK_HOST_DOBJ(part);
-
  malloc_hint          = (uintptr_t)(void *)PAGE_ERROR;
  malloc_hint_distance = (rsize_t)-1;
 
@@ -139,8 +140,8 @@ again:
  while (nearby_part != region->mr_parts) {
   assert(*nearby_part->mt_chain.le_pself == nearby_part);
   nearby_part = container_of(nearby_part->mt_chain.le_pself,
-                           struct mregion_part,
-                           mt_chain.le_next);
+                             struct mregion_part,
+                             mt_chain.le_next);
   CHECK_HOST_DOBJ(nearby_part);
   if (nearby_part->mt_state == MPART_STATE_INCORE &&
      (!hint_unique_parts || nearby_part->mt_refcnt == 1)) {
@@ -189,9 +190,10 @@ perfect_part:
 
  assert(malloc_hint == (uintptr_t)(void *)PAGE_ERROR ||
         IS_ALIGNED(malloc_hint,PAGESIZE));
+ scatter_gfp = addr_isvirt(region) ? GFP_SHARED : GFP_MEMORY;
  return (malloc_hint != (uintptr_t)(void *)PAGE_ERROR)
-  ? page_malloc_scatter_with_hint(scatter,n_bytes,min_scatter,attr,zone,(ppage_t)malloc_hint)
-  : page_malloc_scatter          (scatter,n_bytes,min_scatter,attr,zone);
+  ? page_malloc_scatter_with_hint(scatter,n_bytes,min_scatter,attr,zone,scatter_gfp,(ppage_t)malloc_hint)
+  : page_malloc_scatter          (scatter,n_bytes,min_scatter,attr,zone,scatter_gfp);
 }
 
 

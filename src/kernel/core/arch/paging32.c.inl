@@ -64,6 +64,7 @@ STATIC_ASSERT(PTTABLE_ARRAYSIZE*PDENTRY_REPRSIZE == PDTABLE_REPRSIZE);
 STATIC_ASSERT(PDIR_SIZE                        == PDIR_TABLE_COUNT*PD_TABLE_SIZE);
 STATIC_ASSERT(PDIR_TABLE_COUNT                   == PD_TABLE_ENTRY_COUNT);
 STATIC_ASSERT(IS_ALIGNED(KERNEL_BASE,PDTABLE_REPRSIZE));
+STATIC_ASSERT(IS_ALIGNED(CORE_BASE,PDTABLE_REPRSIZE));
 STATIC_ASSERT(sizeof(union pd_entry) == 4);
 STATIC_ASSERT(sizeof(union pd_table) == 4);
 
@@ -368,7 +369,7 @@ pdir_mprotect(pdir_t *__restrict self, VIRT ppage_t start,
 #endif
  prot_flags = (flags&PDIR_ATTR_MASK);
  reqmem = pdir_reqbytes_for_mprotect(self,start,n_bytes,prot_flags);
- if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE))
+ if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE,GFP_MEMORY))
       return -ENOMEM;
  while (n_bytes && !IS_ALIGNED((uintptr_t)start,PDTABLE_REPRSIZE)) {
   pdir_mprotect_one(&dynmem,self,start,prot_flags);
@@ -506,7 +507,7 @@ pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
  assertf(PDIR_ISKERNEL(self) || !addr_isvirt((uintptr_t)start+n_bytes-1),
          "Virtual addresses may only be mapped within the kernel page directory");
  reqmem = pdir_reqbytes_for_change(self,start,n_bytes);
- if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE))
+ if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE,GFP_MEMORY))
       return -ENOMEM;
  while (n_bytes && !IS_ALIGNED((uintptr_t)virt_iter,PDTABLE_REPRSIZE)) {
   pdir_mmap_one(&dynmem,self,virt_iter,target,prot_flags);
@@ -561,7 +562,7 @@ pdir_mmap_early(pdir_t *__restrict self, VIRT ppage_t start,
  assertf(PDIR_ISKERNEL(self) || !addr_isvirt((uintptr_t)start+n_bytes-1),
          FREESTR("Virtual addresses may only be mapped within the kernel page directory"));
  reqmem = pdir_reqbytes_for_change(self,start,n_bytes);
- if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE))
+ if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE,GFP_MEMORY))
       return -ENOMEM;
  while (n_bytes && !IS_ALIGNED((uintptr_t)virt_iter,PDTABLE_REPRSIZE)) {
   pdir_mmap_one(&dynmem,self,virt_iter,target,prot_flags);
@@ -677,7 +678,7 @@ pdir_munmap(pdir_t *__restrict self, VIRT ppage_t start,
           "n_bytes = %p\n",
           start,n_bytes);
  reqmem = pdir_reqbytes_for_change(self,start,n_bytes);
- if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE))
+ if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE,GFP_MEMORY))
       return -ENOMEM;
  while (n_bytes && !IS_ALIGNED((uintptr_t)start,PDTABLE_REPRSIZE)) {
   assert(IS_ALIGNED(n_bytes,PAGESIZE));
@@ -973,11 +974,11 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
 #define PDIR_KERNEL_UNMAP_AFTEREND() \
         pdir_kernel_unmap(KERNEL_END,KERNEL_AFTER_END);
 #define PDIR_KERNEL_UNMAP_BEFOREBEGIN() \
-        pdir_kernel_unmap(KERNEL_BASE,0x000a0000)
+        pdir_kernel_unmap(CORE_BASE,0x000a0000)
 #ifdef CONFIG_DEBUG
 #define PDIR_KERNEL_CHECK_INTEGRITY_AFTER_SETUP() \
  { union pd_table *iter,*end; \
-   iter = &pdir_kernel.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE]; \
+   iter = &pdir_kernel.pd_directory[CORE_BASE/PDTABLE_REPRSIZE]; \
    end  = COMPILER_ENDOF(pdir_kernel.pd_directory); \
    for (; iter != end; ++iter) { \
     assertf(PDTABLE_ISALLOC(*iter), \

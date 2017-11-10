@@ -54,12 +54,12 @@ DECL_BEGIN
 #define HOST_HEAPEND_KERNEL_LOCKED   __UINTPTR_C(0x0000500000000000) /* Start address of the GFP_KERNEL|GFP_LOCKED heap. (Grows up) */
 #define HOST_HEAPEND_KERNEL          __UINTPTR_C(0x0000510000000000) /* Start address of the GFP_KERNEL heap. (Grows up) */
 #define HOST_USHARE_WRITE_ADDRHINT   __UINTPTR_C(0x0000800000000000) /* Address hint for mapping the writable copy of the user-share segment. (Grows down) */
-#define HOST_DRIVER_ADDRHINT         __UINTPTR_C(0xffff810000000000) /* Address hint for mapping drivers in kernel-space. (Grows up) */
-#define HOST_DEVICE_ADDRHINT         __UINTPTR_C(0xffffb00000000000) /* Address hint for device memory mappings. (Grows up) */
-#define HOST_MEMORY_ADDRHINT         __UINTPTR_C(0xffffc00000000000) /* Address hint for misc. memory mappings. (Grows up) */
-#define HOST_HEAPEND_SHARED_LOCKED   __UINTPTR_C(0xffffd00000000000) /* Start address of the GFP_SHARED|GFP_LOCKED heap. KERNEL_BASE+0x0000500000000000 (Grows up) */
-#define HOST_HEAPEND_SHARED          __UINTPTR_C(0xffffd10000000000) /* Start address of the GFP_SHARED heap. KERNEL_BASE+0x0000510000000000 (Grows up) */
+#define HOST_DEVICE_ADDRHINT         __UINTPTR_C(0xffffa00000000000) /* Address hint for device memory mappings. (Grows up) */
+#define HOST_MEMORY_ADDRHINT         __UINTPTR_C(0xffffb00000000000) /* Address hint for misc. memory mappings. (Grows up) */
+#define HOST_HEAPEND_SHARED_LOCKED   __UINTPTR_C(0xffffc00000000000) /* Start address of the GFP_SHARED|GFP_LOCKED heap. KERNEL_BASE+0x0000500000000000 (Grows up) */
+#define HOST_HEAPEND_SHARED          __UINTPTR_C(0xffffc10000000000) /* Start address of the GFP_SHARED heap. KERNEL_BASE+0x0000510000000000 (Grows up) */
 #define HOST_STCK_ADDRHINT           __UINTPTR_C(0xfffff00000000000) /* Address hint for allocating kernel stacks. (HINT: Corresponds with the start of the page-directory self-mapping) (Grows down) */
+#define HOST_DRIVER_ADDRHINT         __UINTPTR_C(0xfffff00000000000) /* Address hint for mapping drivers in kernel-space. (Grows up) */
 /* TODO: Once pdir self-mappings are re-implemented, update `HOST_STCK_ADDRHINT' */
 
 #else /* __x86_64__ */

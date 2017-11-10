@@ -52,7 +52,10 @@ DECL_BEGIN
 #endif /* !HEAP_ALIGNMENT */
 
 #ifdef __CC__
+#ifndef __gfp_t_defined
+#define __gfp_t_defined 1
 typedef __UINT16_TYPE__ gfp_t;
+#endif /* !__gfp_t_defined */
 
 /* Truncate unused memory, pre-allocated memory from
  * all heaps, at most releasing `max_free' bytes of mapped

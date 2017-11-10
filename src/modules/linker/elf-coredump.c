@@ -176,7 +176,8 @@ mregion_part_loadswap(struct mregion_part *__restrict part,
  struct mscatter scatter; errno_t error;
  assert(part->mt_state == MPART_STATE_INSWAP);
  /* Allocate scattered memory of sufficient size. */
- if (!page_malloc_scatter(&scatter,part_size,PAGESIZE,PAGEATTR_NONE,MZONE_ANY))
+ if (!page_malloc_scatter(&scatter,part_size,PAGESIZE,PAGEATTR_NONE,MZONE_ANY,
+                           addr_isvirt(part) ? GFP_SHARED : GFP_MEMORY))
       return -ENOMEM;
  /* Reload data from swap. */
  error = mswap_reload(&part->mt_stick,&scatter);

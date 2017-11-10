@@ -191,7 +191,7 @@ mregion_new_anon(gfp_t region_gfp, PAGE_ALIGNED size_t n_bytes, u32 mode) {
 #else
                             mode&MREGION_ANON_CALLOC ? PAGEATTR_ZERO : 0,
 #endif
-                            MZONE_ANY)) {
+                            MZONE_ANY,region_gfp)) {
    /* Failed to pre-fault the region. */
    if (!(mode&MREGION_ANON_TRY_PREFAULT))
          goto fail;

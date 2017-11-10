@@ -389,6 +389,12 @@ FUNDEF SAFE KPD bool KCALL mscatter_split_lo(struct mscatter *__restrict dst,
 LOCAL SAFE KPD bool KCALL mscatter_cat(struct mscatter *__restrict dst,
                                        struct mscatter const *__restrict src);
 
+
+#ifndef __gfp_t_defined
+#define __gfp_t_defined 1
+typedef __UINT16_TYPE__ gfp_t;
+#endif /* !__gfp_t_defined */
+
 /* Dynamically allocate physical memory scattered across the address space.
  * During this process, page are allocated in such a way that is meant to
  * counteract address space fragmentation, by preferring to allocate memory
@@ -402,11 +408,17 @@ LOCAL SAFE KPD bool KCALL mscatter_cat(struct mscatter *__restrict dst,
  *                      When this value is ZERO(0), `scatter->m_start' is
  *                      in an undefined state, `m_next' is set to NULL,
  *                      `m_size' is set to ZERO(0), and `true' is returned.
+ * @param: scatter_extension: The kernel heap used for allocating extended scatter entries.
  * @return: true:       Successfully allocated the region (s.a.: `page_free_scatter{_list}')
  * @return: false:      Failed to allocate the scatter region (*scatter is in an undefined state) */
 FUNDEF SAFE KPD bool KCALL page_malloc_scatter(struct mscatter *__restrict scatter,
                                                size_t n_bytes, size_t min_scatter,
-                                               pgattr_t attr, mzone_t zone);
+                                               pgattr_t attr, mzone_t zone,
+                                               gfp_t scatter_extension);
+#ifndef __INTELLISENSE__
+#define page_malloc_scatter(scatter,n_bytes,min_scatter,attr,zone,scatter_extension) \
+    __likely(page_malloc_scatter(scatter,n_bytes,min_scatter,attr,zone,scatter_extension))
+#endif
 
 /* Allocate all existing free ranges within `begin...+=n_bytes', storing them
  * as a potentially disconnected chain of scatter entries within `scatter'.

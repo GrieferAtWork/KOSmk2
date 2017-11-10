@@ -267,8 +267,8 @@ relock_tasks_again:
  if (E_ISERR(error)) goto endwrite;
 
  /* Unmap _EVERYTHING_ from the calling process.
-  * NOTE: This this isn't the kernel page directory,
-  *       only mappings below KERNEL_BASE should exist. */
+  * NOTE: Since this isn't the kernel page directory,
+  *       only mappings below `KERNEL_BASE' should exist. */
  mman_munmap_unlocked(mm,(ppage_t)0,(size_t)-1,
                       MMAN_MUNMAP_ALL,NULL);
 

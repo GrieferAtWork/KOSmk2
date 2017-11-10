@@ -39,14 +39,21 @@
 
 DECL_BEGIN
 
-#define phys_to_virt(ptr)  ((VIRT void *)((uintptr_t)(ptr)+KERNEL_BASE))
-#define virt_to_phys(ptr)  ((PHYS void *)((uintptr_t)(ptr)-KERNEL_BASE))
-#define addr_isphys(ptr)   ((uintptr_t)(ptr) <  KERNEL_BASE)
-#define addr_isvirt(ptr)   ((uintptr_t)(ptr) >= KERNEL_BASE)
+#ifdef __CC__
+#define phys_to_virt(ptr)  ((VIRT void *)((uintptr_t)(ptr)+CORE_BASE))
+#define virt_to_phys(ptr)  ((PHYS void *)((uintptr_t)(ptr)-CORE_BASE))
+#define addr_isphys(ptr)   ((uintptr_t)(ptr) <  CORE_BASE)
+#define addr_isvirt(ptr)   ((uintptr_t)(ptr) >= CORE_BASE)
+#else
+#define phys_to_virt(ptr)  ((ptr)+CORE_BASE)
+#define virt_to_phys(ptr)  ((ptr)-CORE_BASE)
+#define addr_isphys(ptr)   ((ptr) <  CORE_BASE)
+#define addr_isvirt(ptr)   ((ptr) >= CORE_BASE)
+#endif
 
 #ifdef __CC__
 /* The global kernel page directory.
- * NOTE: All data above KERNEL_BASE is mirrored in all user-space directories. */
+ * NOTE: All data above `KERNEL_BASE' is mirrored in all user-space directories. */
 DATDEF PHYS pdir_t pdir_kernel;
 DATDEF VIRT pdir_t pdir_kernel_v;
 
@@ -192,6 +199,7 @@ INTDEF INITCALL ppage_t early_page_malloc(void);
  * >> }
  */
 INTDEF INITCALL void early_map_identity(PHYS void *addr, size_t n_bytes);
+
 #else
 /* The entirety of the physical address space is already identity-mapped. */
 #define early_map_identity(addr,n_bytes) (void)0

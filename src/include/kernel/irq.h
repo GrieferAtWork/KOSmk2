@@ -351,20 +351,12 @@ INTDEF PERCPU struct IDT cpu_idt;
 #ifdef __x86_64__
 #define __ASM_LOAD_SEGMENTS(temp) \
     /* Load the proper kernel segment registers */ \
-    movw  $(__USER_DS), temp; \
+  /*movw  $(__USER_DS), temp; \
     movw  temp, %ds; \
     movw  temp, %es; \
     movw  temp, %fs; \
     movw  $(__KERNEL_PERCPU), temp; \
-    movw  temp, %gs;
-#define __LOAD_SEGMENTS(temp) \
-    /* Load the proper kernel segment registers */ \
-    "movw  $(" __PP_STR(__USER_DS) "), " temp "\n" \
-    "movw  " temp ", %ds\n" \
-    "movw  " temp ", %es\n" \
-    "movw  " temp ", %fs\n" \
-    "movw  $(" __PP_STR(__KERNEL_PERCPU) "), " temp "\n" \
-    "movw  " temp ", %gs\n"
+    movw  temp, %gs; */
 #else
 #define __ASM_LOAD_SEGMENTS(temp) \
     /* Load the proper kernel segment registers */ \
@@ -374,20 +366,14 @@ INTDEF PERCPU struct IDT cpu_idt;
     movw  temp, %gs; \
     movw  $(__KERNEL_PERCPU), temp; \
     movw  temp, %fs;
-#define __LOAD_SEGMENTS(temp) \
-    /* Load the proper kernel segment registers */ \
-    "movw  $(" __PP_STR(__USER_DS) "), " temp "\n" \
-    "movw  " temp ", %ds\n" \
-    "movw  " temp ", %es\n" \
-    "movw  " temp ", %gs\n" \
-    "movw  $(" __PP_STR(__KERNEL_PERCPU) "), " temp "\n" \
-    "movw  " temp ", %fs\n"
 #endif
+#define __LOAD_SEGMENTS(temp) \
+    __PP_STR(__ASM_LOAD_SEGMENTS(temp))
 
 #define __INT_ENTER \
    __PUSH_SEGMENTS \
    __PUSH_REGISTERS \
-   __LOAD_SEGMENTS("%dx")
+   __LOAD_SEGMENTS(%dx)
 #ifdef __x86_64__
 #define __INT_LEAVE \
    __POP_REGISTERS \

@@ -46,6 +46,7 @@ __LIBC pid_t (__LIBCCALL __gettid)(void);
 #define THREADID_SELF()        __gettid()
 #endif /* !__BUILDING_LIBC */
 
+#define THREADID_SIZE  __SIZEOF_PID_T__
 typedef pid_t threadid_t;
 #if 0
 #define THREADID_INVALID       (-1)

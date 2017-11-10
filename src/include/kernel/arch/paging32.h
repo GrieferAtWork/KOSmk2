@@ -51,9 +51,11 @@ DECL_BEGIN
 #define ASM_USER_MAX               0xbfffffff
 #define ASM_USER_END               0xc0000000
 #define ASM_KERNEL_BASE            0xc0000000
+#define ASM_CORE_BASE              0xc0000000
 #define USER_MAX        __UINT32_C(0xbfffffff)
 #define USER_END        __UINT32_C(0xc0000000)
 #define KERNEL_BASE     __UINT32_C(0xc0000000)
+#define CORE_BASE       __UINT32_C(0xc0000000)
 
 /* Mask of all address bits that can actually be used.
  * NOTE: On i386, that simply is every bit there is (All 32). */
@@ -150,7 +152,7 @@ struct _pdir {
 };
 #endif /* __CC__ */
 
-#define PDIR_KERNELSHARE_STARTINDEX  (KERNEL_BASE/PDTABLE_REPRSIZE)
+#define PDIR_KERNELBASE_STARTINDEX  (KERNEL_BASE/PDTABLE_REPRSIZE)
 #define PDIR_ROOTENTRY_REPRSIZE       PDTABLE_REPRSIZE
 
 #define PDENTRY_REPRSIZE    PAGESIZE /* 1 << 12 */

@@ -2326,14 +2326,14 @@ task_terminate_self_unlock_cpu(struct task *__restrict t) {
  /* Make sure to activate the new task's page directory as early as possible! */
 #ifdef THIS_PDIR_BASE
  assert(t->t_mman == new_task->t_mman ||
-        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
-               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELBASE_STARTINDEX],
+               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELBASE_STARTINDEX],
               ((THIS_PDIR_BASE-KERNEL_BASE)/PDIR_ROOTENTRY_REPRSIZE)*
                 sizeof(t->t_mman->m_pdir.pd_directory[0])) == 0);
 #else
  assert(t->t_mman == new_task->t_mman ||
-        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
-               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELBASE_STARTINDEX],
+               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELBASE_STARTINDEX],
               ((0-KERNEL_BASE)/PDIR_ROOTENTRY_REPRSIZE)*
                 sizeof(t->t_mman->m_pdir.pd_directory[0])) == 0);
 #endif
@@ -2441,8 +2441,8 @@ RUNNING TASK C01A101C (PID = 0/0) - (null)
 
  /* Make sure to activate the new task's page directory as early as possible! */
  assert(t->t_mman == new_task->t_mman ||
-        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
-               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELSHARE_STARTINDEX],
+        memcmp(&       t->t_mman->m_pdir.pd_directory[PDIR_KERNELBASE_STARTINDEX],
+               &new_task->t_mman->m_pdir.pd_directory[PDIR_KERNELBASE_STARTINDEX],
               ((THIS_PDIR_BASE-KERNEL_BASE)/PDIR_ROOTENTRY_REPRSIZE)*
                 sizeof(t->t_mman->m_pdir.pd_directory[0])) == 0);
  TASK_SWITCH_CONTEXT(t,new_task);

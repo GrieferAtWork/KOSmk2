@@ -36,7 +36,7 @@ struct mregion;
  * exactly 0 bytes of that are already allocated.
  * To accomplish what they do, SHM INode/Files override the following operators:
  *    - struct mregion *INODE::f_mmap(struct file *fp, pos_t pos, size_t size, raddr_t *pregion_start):
- *       #1 Ensure that `pos+size' are located in-bounds of the file (below 3Gb; aka KERNEL_BASE)
+ *       #1 Ensure that `pos+size' are located in-bounds of the file (below 3Gb; aka CORE_BASE)
  *       #2 Fill '*pregion_start' with `pos', thus causing the SHM region's mapping to start
  *          at the desired address, while still pointing into the same underlying memory region.
  *          This way, SHM regions are natively shared by means of using the same underlying

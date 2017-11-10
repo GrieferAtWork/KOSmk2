@@ -46,6 +46,10 @@
 
 DECL_BEGIN
 
+#ifdef __x86_64__
+#define LOG_PHYSICAL_ALLOCATIONS 1
+#endif
+
 /* Define to non-zero to add syslog entries for physical memory allocation. */
 #ifndef LOG_PHYSICAL_ALLOCATIONS
 #define LOG_PHYSICAL_ALLOCATIONS 0
@@ -859,11 +863,12 @@ mscatter_memcpy(struct mscatter const *__restrict dst,
 }
 
 
-
+#undef page_malloc_scatter
 PUBLIC SAFE KPD bool KCALL
 page_malloc_scatter(struct mscatter *__restrict scatter,
                     size_t n_bytes, size_t min_scatter,
-                    pgattr_t attr, mzone_t zone) {
+                    pgattr_t attr, mzone_t zone,
+                    gfp_t scatter_extension) {
  struct mscatter *s_next;
  CHECK_HOST_DOBJ(scatter);
 #if 1
@@ -892,7 +897,7 @@ page_malloc_scatter(struct mscatter *__restrict scatter,
   /* Allocate another scatter link. */
   n_bytes -= scatter->m_size;
   s_next   = (struct mscatter *)kmalloc(sizeof(struct mscatter),
-                                        GFP_SHARED|GFP_NOFREQ);
+                                        scatter_extension|GFP_NOFREQ);
   if unlikely(!s_next) goto nomem;
   *s_next  = *scatter;
   scatter->m_next = s_next;
@@ -1009,35 +1014,6 @@ memory_load_mb_lower_upper(u32 mem_lower, u32 mem_upper) {
         "TODO: memory_load_mb_lower_upper: %I32u / %I32u\n",
         mem_lower,mem_upper);
  return 0;
-}
-
-INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
-memory_load_mb_mmap(struct mb_mmap_entry *__restrict iter, u32 info_len) {
- mb_memory_map_t *end; size_t result = 0;
- for (end  = (mb_memory_map_t *)((uintptr_t)iter+info_len); iter < end;
-      iter = (mb_memory_map_t *)((uintptr_t)&iter->addr+iter->size)) {
-  if (iter->type >= COMPILER_LENOF(memtype_bios_matrix)) iter->type = 0;
-  if (memtype_bios_matrix[iter->type] >= MEMTYPE_COUNT) continue;
-  result += mem_install64(iter->addr,iter->len,
-                          memtype_bios_matrix[iter->type]);
- }
- return result;
-}
-
-INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
-memory_load_mb2_mmap(struct mb2_tag_mmap *__restrict info) {
- mb2_memory_map_t *iter,*end; size_t result = 0;
- iter = info->entries;
- end  = (mb2_memory_map_t *)((uintptr_t)info+info->size);
- if unlikely(!info->entry_size) goto done;
- for (; iter < end; *(uintptr_t *)&iter += info->entry_size) {
-  if (iter->type >= COMPILER_LENOF(memtype_bios_matrix)) iter->type = 0;
-  if (memtype_bios_matrix[iter->type] >= MEMTYPE_COUNT) continue;
-  result += mem_install64(iter->addr,iter->len,
-                          memtype_bios_matrix[iter->type]);
- }
-done:
- return result;
 }
 
 DECL_END

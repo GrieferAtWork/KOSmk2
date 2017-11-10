@@ -19,28 +19,37 @@
 #ifndef __GUARD_HYBRID_SYNC_ATOMIC_OWNER_RWLOCK_H
 #define __GUARD_HYBRID_SYNC_ATOMIC_OWNER_RWLOCK_H 1
 
-#include <hybrid/compiler.h>
-#include <stdbool.h>
 #include <assert.h>
 #include <hybrid/atomic.h>
-#include <hybrid/types.h>
+#include <hybrid/compiler.h>
 #include <hybrid/critical.h>
 #include <hybrid/sched/yield.h>
 #include <hybrid/sync/threadid.h>
+#include <hybrid/types.h>
+#include <stdbool.h>
 
 DECL_BEGIN
 
-#define ATOMIC_OWNER_RWLOCK_NMASK  0x7fffffff
-#define ATOMIC_OWNER_RWLOCK_WFLAG  0x80000000 /*  */
-#define ATOMIC_OWNER_RWLOCK_SIZE  (4+THREADID_SIZE)
-typedef struct atomic_owner_rwlock {
+#define ATOMIC_OWNER_RWLOCK_NMASK    0x7fffffff
+#define ATOMIC_OWNER_RWLOCK_WFLAG    0x80000000 /*  */
+#define ATOMIC_OWNER_RWLOCK_OFFSETOF_LOCK  0
+#define ATOMIC_OWNER_RWLOCK_OFFSETOF_OWNER THREADID_SIZE
+#define ATOMIC_OWNER_RWLOCK_SIZE        (2*THREADID_SIZE)
+typedef struct PACKED {
  /* Similar to a regular rwlock, but allow for owner write-recursion: */
- u32        aorw_lock;  /*< The underlying synchronization atomic. */
- threadid_t aorw_owner; /*< [valid_if(ATOMIC_READ(self->aorw_lock)&ATOMIC_OWNER_RWLOCK_WFLAG)]
-                         *  A unique identifier for the thread owning this lock. */
+union PACKED {
+ u32         aorw_lock;  /*< The underlying synchronization atomic. */
+#if THREADID_SIZE == __SIZEOF_POINTER__
+ uintptr_t __aorw_align; /*< Force threadid alignment. */
+#else
+ byte_t    __aorw_align[THREADID_SIZE]; /*< Force threadid alignment. */
+#endif
+};
+ threadid_t  aorw_owner; /*< [valid_if(ATOMIC_READ(self->aorw_lock)&ATOMIC_OWNER_RWLOCK_WFLAG)]
+                          *  A unique identifier for the thread owning this lock. */
 } atomic_owner_rwlock_t;
 
-#define ATOMIC_OWNER_RWLOCK_INIT         {0,THREADID_INVALID}
+#define ATOMIC_OWNER_RWLOCK_INIT         {{0},THREADID_INVALID}
 #ifdef THREADID_INVALID_IS_ZERO
 #define atomic_owner_rwlock_cinit(self)  (void)(assert((self)->aorw_lock == 0),assert((self)->aorw_owner == THREADID_INVALID))
 #else

@@ -223,7 +223,7 @@ module_mkregions_phys(struct module *__restrict mod,
    *       needs to be copied over. */
   if (!page_malloc_scatter(&region->mr_part0.mt_memory,
                             iter->ms_msize,PAGESIZE,PAGEATTR_NONE,
-                            MZONE_ANY)) {
+                            MZONE_ANY,MMAN_DATAGFP(&mman_kernel))) {
    MREGION_DECREF(region);
    return -ENOMEM;
   }

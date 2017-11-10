@@ -146,9 +146,9 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
     iter = start = THIS_CPU->c_running;
     if (start) do {
      debug_printf("RUNNING TASK %p (PID = %d/%d) - %[file]\n",iter,
-                        iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
-                        iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-                        iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
+                  iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
+                  iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+                  iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
      if (iter == THIS_TASK) {
 #undef debug_tbprint
       libc_debug_tbprint();
@@ -160,9 +160,9 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
     for (iter = THIS_CPU->c_idling;
          iter; iter = iter->t_sched.sd_running.re_next) {
      debug_printf("IDLING TASK %p (PID = %d/%d) - %[file]\n",iter,
-                        iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
-                        iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-                        iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
+                  iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
+                  iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+                  iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
      if (iter == THIS_TASK) {
 #undef debug_tbprint
       libc_debug_tbprint();
@@ -176,18 +176,18 @@ assertion_corefail(char const *expr, DEBUGINFO_MUNUSED,
      for (iter = THIS_CPU->c_suspended; iter;
           iter = iter->t_sched.sd_suspended.le_next) {
       debug_printf("SUSPENDED TASK %p (PID = %d/%d) - %[file]\n",iter,
-                         iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
-                         iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
+                   iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
+                   iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+                   iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
       debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
       debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }
      for (iter = THIS_CPU->c_sleeping; iter;
           iter = iter->t_sched.sd_sleeping.le_next) {
       debug_printf("SLEEPING TASK %p (PID = %d/%d) - %[file]\n",iter,
-                         iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
-                         iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
-                         iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
+                   iter->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,
+                   iter->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+                   iter->t_real_mman->m_inst ? iter->t_real_mman->m_inst->i_module->m_file : NULL);
       debug_tbprintl((void *)iter->t_cstate->iret.xip,NULL,0);
       debug_tbprint2((void *)iter->t_cstate->gp.xbp,0);
      }

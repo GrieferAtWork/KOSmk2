@@ -246,8 +246,8 @@ DECL_BEGIN
 
 /* Address ranges used by virtual kernel/shared memory allocations. */
 #define KERNEL_VIRT_BEGIN         __UINTPTR_C(0x00000000)  /* 0x00000000...0xbfffffff */
-#define KERNEL_VIRT_END           KERNEL_BASE              /* 0x00000000...0xbfffffff */
-#define SHARED_VIRT_BEGIN         KERNEL_BASE              /* 0xc0000000...0xffffffff */
+#define KERNEL_VIRT_END           KERNEL_BASE                /* 0x00000000...0xbfffffff */
+#define SHARED_VIRT_BEGIN         KERNEL_BASE                /* 0xc0000000...0xffffffff */
 #define SHARED_VIRT_END           __UINTPTR_C(0x00000000)  /* 0xc0000000...0xffffffff */
 
 #define BAD_ALLOC(n_bytes,flags) (void)0
@@ -642,8 +642,10 @@ union{
 
 struct mheap {
 #if MHEAP_RECURSIVE_LOCK
+#define __MHEAP_LOCK_INIT ATOMIC_OWNER_RWLOCK_INIT
  atomic_owner_rwlock_t    mh_lock;      /*< Lock for this heap. */
 #else
+#define __MHEAP_LOCK_INIT ATOMIC_RWLOCK_INIT
  atomic_rwlock_t          mh_lock;      /*< Lock for this heap. */
 #endif
  ATREE_HEAD(struct mfree) mh_addr;      /*< [lock(mh_lock)][0..1|null(PAGE_ERROR)] Heap sorted by address. */
@@ -711,13 +713,13 @@ PRIVATE SAFE struct mptr *KCALL mheap_realign(struct mheap *__restrict self, str
 
 #define MHEAP_INIT(name) \
 { \
-    .mh_lock = ATOMIC_RWLOCK_INIT, \
+    .mh_lock = __MHEAP_LOCK_INIT, \
     .mh_addr = PAGE_ERROR, \
     .mh_size = { \
         [0 ... HEAP_BUCKET_COUNT-1] = PAGE_ERROR, \
     }, \
-    .mh_overalloc  = HEAP_DEFAULT_OVERALLOC(name),\
-    .mh_freethresh = HEAP_DEFAULT_FREETHRESH(name),\
+    .mh_overalloc  = HEAP_DEFAULT_OVERALLOC(name), \
+    .mh_freethresh = HEAP_DEFAULT_FREETHRESH(name), \
 }
 
 /* The different memory heaps used by the kernel. */
@@ -795,7 +797,7 @@ again:
   /* Preallocate core memory for the region. */
   if (!page_malloc_scatter(&region->mr_part0.mt_memory,n_bytes,
                             PAGESIZE,GFP_GTPAGEATTR(flags),
-                            MZONE_ANY)) {
+                            MZONE_ANY,GFP_MEMORY)) {
    kfree(region);
    goto swapmem;
   }

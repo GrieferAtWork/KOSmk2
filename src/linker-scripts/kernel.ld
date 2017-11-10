@@ -29,7 +29,7 @@
 #include <kernel/arch/hints.h>
 
 #define DEFAULT_SECTION(name) \
-  name BLOCK(PAGESIZE) : AT(ADDR(name) - KERNEL_BASE)
+  name BLOCK(PAGESIZE) : AT(ADDR(name) - CORE_BASE)
 #define PHYSICAL_SECTION(name) \
   name BLOCK(PAGESIZE) : AT(ADDR(name))
 
@@ -68,14 +68,19 @@ PHDRS {
 #define P_FREE    /* Nothing (Determine automatically) */
 #endif
 #define DEFINE                PROVIDE_HIDDEN
+#if 1
+#define DEFINE_HERE(x)        PROVIDE_HIDDEN(x = .)
+#define DEFINE_PUBLIC_HERE(x) PROVIDE(x = .)
+#else
 #define DEFINE_HERE(x)        PROVIDE_HIDDEN(x = ABSOLUTE(.))
 #define DEFINE_PUBLIC_HERE(x) PROVIDE(x = ABSOLUTE(.))
+#endif
 
 
 ENTRY(_start)
 SECTIONS {
 
-	. = KERNEL_BASE + 1M;
+	. = CORE_BASE + 1M;
 	DEFINE(__kernel_start = .);
 
 #ifndef CONFIG_NO_BOOTLOADER
@@ -83,7 +88,7 @@ SECTIONS {
 #define XBOOT_ALIGNMENT   XBOOT_BLOCKSIZE
 	. = ALIGN(XBOOT_ALIGNMENT);
 	DEFINE_HERE(__bootloader_start);
-	.boot 0x7c00 : AT(__bootloader_start - KERNEL_BASE) {
+	.boot 0x7c00 : AT(__bootloader_start - CORE_BASE) {
 		KEEP(*(.boot_loader))
 		ASSERT(ABSOLUTE(.) <= (0x7c00 + XBOOT_BLOCKSIZE), \
 		       "The boot loader is larger than a single sector");
@@ -159,7 +164,7 @@ SECTIONS {
 	} P_KERNEL
 
 	/* Physical-mirror section. */
-	. -= KERNEL_BASE;
+	. -= CORE_BASE;
 	.phys BLOCK(PAGESIZE) : AT(ADDR(.phys)){
 		DEFINE_HERE(__kernel_phys_start);
 		*(.text.phys)
@@ -169,13 +174,13 @@ SECTIONS {
 		. = ALIGN(PAGESIZE);
 		DEFINE_HERE(__kernel_phys_end);
 	} P_PHYS
-	. += KERNEL_BASE;
+	. += CORE_BASE;
 
 	/* Per-cpu template data. */
 	. = ALIGN(__SIZEOF_POINTER__);
 	DEFINE_HERE(__percpu_template);
 	DEFINE(__percpu_begin = ALIGNED_CPUSIZE); /* Base offset added to any per-cpu symbol. */
-	.cpu __percpu_begin : AT(__percpu_template - KERNEL_BASE) {
+	.cpu __percpu_begin : AT(__percpu_template - CORE_BASE) {
 		/* TODO: This stuff should be part of `.free' (Because the per-cpu template can be deleted later) */
 		*(.text.cpu)
 		*(.rodata.cpu)
@@ -326,20 +331,23 @@ SECTIONS {
 
 #ifdef __x86_64__
 	/* Define physical alternatives of symbols used by x86_64 bootstrap code. */
-	DEFINE(boot_enter_longmode_p = boot_enter_longmode - KERNEL_BASE);
-	DEFINE(boot_error_p = boot_error - KERNEL_BASE);
-	DEFINE(boot_erstr0_p = boot_erstr0 - KERNEL_BASE);
-	DEFINE(boot_erstr1_p = boot_erstr1 - KERNEL_BASE);
-	DEFINE(boot_erstr2_p = boot_erstr2 - KERNEL_BASE);
-	DEFINE(boot_erstr3_p = boot_erstr3 - KERNEL_BASE);
-	DEFINE(boot_print_p = boot_print - KERNEL_BASE);
-	DEFINE(__bootstack_p = __bootstack - KERNEL_BASE);
-	DEFINE(__bootcpu_p = __bootcpu - KERNEL_BASE);
-	DEFINE(boot_emulation_p = boot_emulation - KERNEL_BASE);
-	DEFINE(boot_emulation_logport_p = boot_emulation_logport - KERNEL_BASE);
-	DEFINE(boot_gdt_p = boot_gdt - KERNEL_BASE);
-	DEFINE(boot_gdt_vector_p = boot_gdt_vector - KERNEL_BASE);
-	DEFINE(__kernel_end_p = __kernel_end - KERNEL_BASE);
+	DEFINE(boot_enter_longmode_p = boot_enter_longmode - CORE_BASE);
+	DEFINE(boot_error_p = boot_error - CORE_BASE);
+	DEFINE(boot_erstr0_p = boot_erstr0 - CORE_BASE);
+	DEFINE(boot_erstr1_p = boot_erstr1 - CORE_BASE);
+	DEFINE(boot_erstr2_p = boot_erstr2 - CORE_BASE);
+	DEFINE(boot_erstr3_p = boot_erstr3 - CORE_BASE);
+	DEFINE(boot_print_p = boot_print - CORE_BASE);
+	DEFINE(__bootstack_p = __bootstack - CORE_BASE);
+	DEFINE(__bootcpu_p = __bootcpu - CORE_BASE);
+	DEFINE(boot_emulation_p = boot_emulation - CORE_BASE);
+	DEFINE(boot_emulation_logport_p = boot_emulation_logport - CORE_BASE);
+	DEFINE(boot_gdt_p = boot_gdt - CORE_BASE);
+	DEFINE(boot_gdt_vector_p = boot_gdt_vector - CORE_BASE);
+	DEFINE(__kernel_end_p = __kernel_end - CORE_BASE);
+	DEFINE(coreboot_e3_p = coreboot_e3 - CORE_BASE);
+	DEFINE(coreboot_e2_80000000_p = coreboot_e2_80000000 - CORE_BASE);
+	DEFINE(coreboot_e2_c0000000_p = coreboot_e2_c0000000 - CORE_BASE);
 #endif
 
 
@@ -364,7 +372,7 @@ SECTIONS {
 
 #ifndef CONFIG_NO_BOOTLOADER
 	DEFINE(__xboot_num_bytes  = __kernel_data_end - __kernel_start);
-	DEFINE(__xboot_num_blocks = (__xboot_num_bytes + (XBOOT_ALIGNMENT - 1)) / (XBOOT_ALIGNMENT));
+	DEFINE(__xboot_num_blocks = (__xboot_num_bytes + (XBOOT_ALIGNMENT - 1)) / XBOOT_BLOCKSIZE);
 #endif /* !CONFIG_NO_BOOTLOADER */
 
 
@@ -394,6 +402,3 @@ SECTIONS {
 	}
 }
 
-ASSERT(HOST_DRIVER_ADDRHINT >= __kernel_end,
-"The driver start address hint must be located past the kernel core. \
- Please increase `HOST_DRIVER_ADDRHINT' accordingly");

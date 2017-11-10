@@ -44,6 +44,7 @@
 #include <kernel/arch/cpustate.h>
 #include <kernel/paging.h>
 #include <kernel/arch/hints.h>
+#include <kernel/export.h>
 
 DECL_BEGIN
 
@@ -150,16 +151,16 @@ done:
 
 PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
     [MEMTYPE_NDEF]      = "-",
+    [MEMTYPE_PRESERVE]  = "presrv",
     [MEMTYPE_RAM]       = "ram",
+#ifdef MEMTYPE_ALLOCATED
+    [MEMTYPE_ALLOCATED] = "alloc",
+#endif
     [MEMTYPE_KFREE]     = "kfree",
     [MEMTYPE_KERNEL]    = "kernel",
     [MEMTYPE_NVS]       = "nvs",
     [MEMTYPE_DEVICE]    = "device",
     [MEMTYPE_BADRAM]    = "badram",
-    [MEMTYPE_PRESERVE]  = "presrv",
-#ifdef MEMTYPE_ALLOCATED
-    [MEMTYPE_ALLOCATED] = "alloc",
-#endif
 };
 
 #ifdef CONFIG_USE_NEW_MEMINFO
@@ -217,7 +218,38 @@ page_do_addmemory(PAGE_ALIGNED uintptr_t base, PAGE_ALIGNED size_t n_bytes) {
   if (base >= MZONE_MIN(zone) &&
       base <= MZONE_MAX(zone)) {
    size_t zone_bytes = MIN((MZONE_MAX(zone)+1)-base,n_bytes);
+   early_map_identity((void *)base,zone_bytes);
+#ifdef __x86_64__
+   /* Make sure not to install memory already in use by `early_map_identity()'.
+    * If we didn't check this, early identity mappings of physical memory would
+    * break as pages already in use by the kernel page directory were registered
+    * as available RAM despite not being available as such.
+    * NOTE: During initialization of the kernel page directory, any memory
+    *       that we didn't install here will get re-added as available RAM.
+    * NOTE: Additional overlapping after memory has already been installed
+    *       should be impossible because `early_page_malloc()' always tries
+    *       to allocate memory using `page_malloc()' first, before falling back
+    *       to blindly assuming available RAM past `KERNEL_END'
+    */
+#define EARLY_PAGE_BEGIN                 (KERNEL_END-CORE_BASE)
+#define EARLY_PAGE_END    ((uintptr_t)early_page_end-CORE_BASE)
+   if (base < EARLY_PAGE_END &&
+       base+zone_bytes > EARLY_PAGE_BEGIN) {
+    /* Overlap! */
+    syslog(LOG_DEBUG,"[MEM] Skipping early_page_malloc-overlap %p...%p\n",
+           MAX(base,EARLY_PAGE_BEGIN),MIN(base+zone_bytes,EARLY_PAGE_END)-1);
+    if (base < EARLY_PAGE_BEGIN)
+        page_addmemory(zone,(ppage_t)base,EARLY_PAGE_BEGIN-base);
+    if (base+zone_bytes > EARLY_PAGE_END)
+        page_addmemory(zone,(ppage_t)EARLY_PAGE_END,
+                      (base+zone_bytes)-EARLY_PAGE_END);
+   } else {
+    /* Just some regular, old memory. */
+    page_addmemory(zone,(ppage_t)base,zone_bytes);
+   }
+#else
    page_addmemory(zone,(ppage_t)base,zone_bytes);
+#endif
    n_bytes -= zone_bytes;
    if (!n_bytes) break;
    base += zone_bytes;
@@ -226,7 +258,7 @@ page_do_addmemory(PAGE_ALIGNED uintptr_t base, PAGE_ALIGNED size_t n_bytes) {
 }
 PRIVATE ATTR_FREETEXT bool KCALL
 page_do_delmemory(PAGE_ALIGNED uintptr_t base, PAGE_ALIGNED size_t n_bytes) {
- /* TODO: This call should could towards memory statistics! */
+ /* TODO: This call should not count towards memory statistics! */
  return page_malloc_at((ppage_t)base,n_bytes,PAGEATTR_NONE) != PAGE_ERROR;
 }
 
@@ -830,6 +862,35 @@ mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type) {
                      type);
 }
 #endif
+
+INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
+memory_load_mb_mmap(struct mb_mmap_entry *__restrict iter, u32 info_len) {
+ mb_memory_map_t *end; size_t result = 0;
+ for (end  = (mb_memory_map_t *)((uintptr_t)iter+info_len); iter < end;
+      iter = (mb_memory_map_t *)((uintptr_t)&iter->addr+iter->size)) {
+  if (iter->type >= COMPILER_LENOF(memtype_bios_matrix)) iter->type = 0;
+  if (memtype_bios_matrix[iter->type] >= MEMTYPE_COUNT) continue;
+  result += mem_install64(iter->addr,iter->len,
+                          memtype_bios_matrix[iter->type]);
+ }
+ return result;
+}
+
+INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
+memory_load_mb2_mmap(struct mb2_tag_mmap *__restrict info) {
+ mb2_memory_map_t *iter,*end; size_t result = 0;
+ iter = info->entries;
+ end  = (mb2_memory_map_t *)((uintptr_t)info+info->size);
+ if unlikely(!info->entry_size) goto done;
+ for (; iter < end; *(uintptr_t *)&iter += info->entry_size) {
+  if (iter->type >= COMPILER_LENOF(memtype_bios_matrix)) iter->type = 0;
+  if (memtype_bios_matrix[iter->type] >= MEMTYPE_COUNT) continue;
+  result += mem_install64(iter->addr,iter->len,
+                          memtype_bios_matrix[iter->type]);
+ }
+done:
+ return result;
+}
 
 DECL_END
 

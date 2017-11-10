@@ -41,11 +41,10 @@ DECL_BEGIN
  * this address to that same address, meaning that on x86_64, usable RAM is limited
  * to a maximum of 2^47 bytes (or `65536' (`0x10000') Terrabyte, so we're good in that department)
  * Usage:
- * 0000000000000000 - 00007FFFFFFFFFFF  USERSPACE
+ * 0000000000000000 - 00007FFFFFFFFFFF  USER
  * --- Hole due to bit#48 -> 49..63 sign extension.
- * FFFF800000000000 - FFFFFFFFFFFFFFFF  KERNELSPACE (Heap, file mappings, modules, etc.)
- * During early boot, the following range is mapped to the first 512 of physical memory:
- * FFFF800000000000 - FFFF807FFFFFFFFF
+ * FFFF800000000000 - FFFFFFFF7FFFFFFF  HOST (Extended Heap, file mappings, modules, etc)
+ * FFFFFFFF80000000 - FFFFFFFFFFFFFFFF  CORE (Core, Heap, drivers. Permanently mapped to the first 2Gb of physical memory)
  * This range contains the kernel core and is later truncated to end past the
  * core itself (`__kernel_end'), leaving a one-on-one physical mappings of the first
  * Mb of physical memory intact (Which is used by e.g.: The core's VGA-TTY driver)
@@ -54,9 +53,12 @@ DECL_BEGIN
 #define ASM_USER_MAX               0x00007fffffffffff
 #define ASM_USER_END               0x0000800000000000
 #define ASM_KERNEL_BASE            0xffff800000000000
+#define ASM_CORE_BASE              0xffffffff80000000
 #define USER_MAX        __UINT64_C(0x00007fffffffffff)
 #define USER_END        __UINT64_C(0x0000800000000000)
 #define KERNEL_BASE     __UINT64_C(0xffff800000000000)
+#define CORE_BASE       __UINT64_C(0xffffffff80000000) /* -2Gb */
+
 
 /* Mask of all address bits that can actually be used.
  * NOTE: On x86_64, this is 48 bits. */
@@ -170,14 +172,20 @@ union PACKED pdir_e {
 /* Entry accessors. */
 #define PDIR_E1_RDADDR(x)                   ((x).e1_data&PDIR_ADDR_MASK)
 #define PDIR_E1_ISADDR(x)                   ((x).e1_data&PDIR_ATTR_PRESENT)
+
 #define PDIR_E2_RDLINK(x) ((union pdir_e1 *)((x).e2_data&PDIR_LINK_MASK))
 #define PDIR_E2_RDADDR(x)                   ((x).e2_data&PDIR_ADDR_MASK)
 #define PDIR_E2_ISLINK(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB)) == (PDIR_ATTR_PRESENT))
 #define PDIR_E2_ISADDR(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB)) == (PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB))
+#define PDIR_E2_ISALLOC(x)                 (((x).e2_data&PDIR_LINK_MASK) != PDIR_LINK_MASK && !((x).e2_attr&PDIR_ATTR_4MIB))
+
 #define PDIR_E3_RDLINK(x) ((union pdir_e2 *)((x).e3_data&PDIR_LINK_MASK))
 #define PDIR_E3_ISLINK(x)                   ((x).e3_attr&PDIR_ATTR_PRESENT)
+#define PDIR_E3_ISALLOC(x)                 (((x).e3_data&PDIR_LINK_MASK) != PDIR_LINK_MASK)
+
 #define PDIR_E4_RDLINK(x) ((union pdir_e3 *)((x).e4_data&PDIR_LINK_MASK))
 #define PDIR_E4_ISLINK(x)                   ((x).e4_attr&PDIR_ATTR_PRESENT)
+#define PDIR_E4_ISALLOC(x)                 (((x).e4_data&PDIR_LINK_MASK) != PDIR_LINK_MASK)
 
 
 typedef struct _pdir pdir_t;
@@ -188,7 +196,7 @@ struct _pdir { /* Controller structure for a page directory. */
 #endif
  union pdir_e4 pd_directory[PDIR_E4_COUNT];
 };
-#define PDIR_KERNELSHARE_STARTINDEX \
+#define PDIR_KERNELBASE_STARTINDEX \
      (((KERNEL_BASE&(PDIR_E4_TOTALSIZE-1))*PDIR_E4_COUNT)/PDIR_E4_TOTALSIZE)
 #define PDIR_ROOTENTRY_REPRSIZE   PDIR_E4_TOTALSIZE
 
@@ -196,15 +204,15 @@ struct _pdir { /* Controller structure for a page directory. */
 LOCAL KPD PHYS void *KCALL pdir_translate(pdir_t *__restrict self, VIRT void *ptr) {
  union pdir_e e;
  e.e4 = self->pd_directory[PDIR_E4_INDEX(ptr)];
- __assertf(e.e4.e4_attr&PDIR_ATTR_PRESENT,"Faulty address %p",ptr);
+ __assertf(e.e4.e4_attr&PDIR_ATTR_PRESENT,"Faulty address %p (%p)",ptr,e.e4.e4_attr);
  e.e3 = PDIR_E4_RDLINK(e.e4)[PDIR_E3_INDEX(ptr)];
- __assertf(e.e3.e3_attr&PDIR_ATTR_PRESENT,"Faulty address %p",ptr);
+ __assertf(e.e3.e3_attr&PDIR_ATTR_PRESENT,"Faulty address %p (%p)",ptr,e.e3.e3_attr);
  e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(ptr)];
- __assertf(e.e2.e2_attr&PDIR_ATTR_PRESENT,"Faulty address %p",ptr);
+ __assertf(e.e2.e2_attr&PDIR_ATTR_PRESENT,"Faulty address %p (%p)",ptr,e.e2.e2_attr);
  if (e.e2.e2_attr&PDIR_ATTR_4MIB)
      return (PHYS void *)(PDIR_E2_RDADDR(e.e2)+PDIR_E2_OFFSET(ptr));
  e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(ptr)];
- __assertf(PDIR_E1_ISADDR(e.e1),"Faulty address %p",ptr);
+ __assertf(PDIR_E1_ISADDR(e.e1),"Faulty address %p (%p)",ptr,e.e1.e1_attr);
  return (PHYS void *)(PDIR_E1_RDADDR(e.e1)+PDIR_E1_OFFSET(ptr));
 }
 LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *ptr) {

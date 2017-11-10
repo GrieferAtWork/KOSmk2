@@ -80,6 +80,29 @@ extern byte_t __bootcpu_end[];
 #define THISCPU_ADDR(offset)            ((byte_t *)(offset))
 #define __THISCPU_GET(T,s,offset)           (*(T *)(offset))
 #define __THISCPU_PUT(T,s,offset,val) (void)(*(T *)(offset) = (val))
+#elif defined(__x86_64__)
+#define THISCPU_ADDR(offset)  \
+ XBLOCK({ register byte_t *__res; \
+          __asm__ __volatile__("add {%%gs:" PP_STR(CPU_OFFSETOF_SELF) ", %0|%0, gs:" PP_STR(CPU_OFFSETOF_SELF) "}\n" \
+                               : "=r" (__res) : "0" (offset)); \
+          XRETURN __res; \
+ })
+#ifdef __SEG_GS
+#define __THISCPU_GET(T,s,offset)           (*(T __seg_gs *)(offset))
+#define __THISCPU_PUT(T,s,offset,val) (void)(*(T __seg_gs *)(offset) = (val))
+#else
+#define __THISCPU_GET(T,s,offset) \
+ XBLOCK({ register T __res; \
+          __asm__ __volatile__("mov" s " {%%gs:%c1, %0|%0, gs:%c1}\n" \
+                               : "=g" (__res) : "ir" (offset)); \
+          XRETURN __res; \
+ })
+#define __THISCPU_PUT(T,s,offset,val) \
+ XBLOCK({ __asm__ __volatile__("mov" s " {%0, %%gs:%c1|gs:%c1, %0}\n" \
+                               : : "g" (val), "ir" (offset)); \
+          (void)0; \
+ })
+#endif
 #elif defined(__i386__)
 #define THISCPU_ADDR(offset)  \
  XBLOCK({ register byte_t *__res; \
@@ -104,28 +127,7 @@ extern byte_t __bootcpu_end[];
  })
 #endif
 #else
-#define THISCPU_ADDR(offset)  \
- XBLOCK({ register byte_t *__res; \
-          __asm__ __volatile__("add {%%gs:" PP_STR(CPU_OFFSETOF_SELF) ", %0|%0, gs:" PP_STR(CPU_OFFSETOF_SELF) "}\n" \
-                               : "=r" (__res) : "0" (offset)); \
-          XRETURN __res; \
- })
-#ifdef __SEG_GS
-#define __THISCPU_GET(T,s,offset)           (*(T __seg_gs *)(offset))
-#define __THISCPU_PUT(T,s,offset,val) (void)(*(T __seg_gs *)(offset) = (val))
-#else
-#define __THISCPU_GET(T,s,offset) \
- XBLOCK({ register T __res; \
-          __asm__ __volatile__("mov" s " {%%gs:%c1, %0|%0, gs:%c1}\n" \
-                               : "=g" (__res) : "ir" (offset)); \
-          XRETURN __res; \
- })
-#define __THISCPU_PUT(T,s,offset,val) \
- XBLOCK({ __asm__ __volatile__("mov" s " {%0, %%gs:%c1|gs:%c1, %0}\n" \
-                               : : "g" (val), "ir" (offset)); \
-          (void)0; \
- })
-#endif
+#error "ERROR: Unsupported Architecture"
 #endif
 #define THISCPU_T_GETB(T,offset)     __THISCPU_GET(T,"b",offset)
 #define THISCPU_T_GETW(T,offset)     __THISCPU_GET(T,"w",offset)

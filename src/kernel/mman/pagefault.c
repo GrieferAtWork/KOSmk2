@@ -35,6 +35,7 @@
 #include <sched/percpu.h>
 #include <sched/task.h>
 #include <sched/types.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
@@ -70,15 +71,15 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
  } else {
 #if 1 /* TO-DO: Re-enable me */
   assertf((info->iret.cs&3) != 3,"User-level task with interrupts disabled");
-  assertf(info->iret.eip >= KERNEL_BASE &&
-         (info->iret.eip <  (uintptr_t)__kernel_user_start ||
-          info->iret.eip >= (uintptr_t)__kernel_user_end),
+  assertf(info->iret.xip >= KERNEL_BASE &&
+         (info->iret.xip <  (uintptr_t)__kernel_user_start ||
+          info->iret.xip >= (uintptr_t)__kernel_user_end),
          "User-space address %p with interrupts disabled & ring-0 permissions");
 #endif
  }
 #if defined(CONFIG_DEBUG) && 0
  syslog(LOG_DEBUG,"#PF at %p (IF=%d)\n",
-        info->iret.eip,!!(info->iret.eflags&EFLAGS_IF));
+        info->iret.xip,!!(info->iret.xflags&EFLAGS_IF));
 #endif
 
 #if PF_W == MMAN_MCORE_WRITE && \
@@ -93,12 +94,12 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
 #if 0
  syslog(LOG_MEM|LOG_DEBUG,
         "[MEM] Checking to load core memory after PAGEFAULT near %p %p %p\n",
-        fault_addr,&fault_addr,info->iret.eip);
+        fault_addr,&fault_addr,info->iret.xip);
 #endif
 
 #if 0
  syslog(LOG_DEBUG,"#!$ addr2line(%Ix) '{file}({line}) : {func} : %p #PF at %p'\n",
-       (uintptr_t)info->iret.eip-1,info->iret.eip,fault_addr);
+       (uintptr_t)info->iret.xip-1,info->iret.xip,fault_addr);
 #endif
 
  fault_page = FLOOR_ALIGN(fault_addr,PAGESIZE);
@@ -109,7 +110,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
    __asm__ __volatile__("mov %%cr3, %0\n" : "=r" (cr3));
    assertf(user_mman->m_ppdir == cr3,
            "Incorrect page directory set (%p != %p) (fault_addr = %p at %p)",
-           user_mman->m_ppdir,cr3,fault_addr,info->iret.eip);
+           user_mman->m_ppdir,cr3,fault_addr,info->iret.xip);
  }
 #endif
 

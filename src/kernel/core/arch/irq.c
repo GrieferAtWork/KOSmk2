@@ -680,7 +680,7 @@ kill_task:
  if (((byte_t *)&state->gp.xbp)[0] != ((byte_t *)&state->gp.xbp)[1]
   || ((byte_t *)&state->gp.xbp)[0] != ((byte_t *)&state->gp.xbp)[2]
   || ((byte_t *)&state->gp.xbp)[0] != ((byte_t *)&state->gp.xbp)[3]
-#if __SIZEOF_POINTER__ == 8
+#if __SIZEOF_POINTER__ >= 8
   || ((byte_t *)&state->gp.xbp)[0] != ((byte_t *)&state->gp.xbp)[4]
   || ((byte_t *)&state->gp.xbp)[0] != ((byte_t *)&state->gp.xbp)[5]
   || ((byte_t *)&state->gp.xbp)[0] != ((byte_t *)&state->gp.xbp)[6]

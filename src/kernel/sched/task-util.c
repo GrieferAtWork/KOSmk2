@@ -294,9 +294,9 @@ task_mkhstack(struct task *__restrict self, size_t n_bytes) {
  stack_region->mr_part0.mt_state  = MPART_STATE_INCORE;
  stack_region->mr_part0.mt_locked = 1;
  /* Allocate the initial physical memory for the stack region. */
- if unlikely(!page_malloc_scatter(&stack_region->mr_part0.mt_memory,
-                                   n_bytes,PAGESIZE,PAGEATTR_NONE,
-                                   MZONE_ANY)) {
+ if (!page_malloc_scatter(&stack_region->mr_part0.mt_memory,
+                           n_bytes,PAGESIZE,PAGEATTR_NONE,
+                           MZONE_ANY,MMAN_DATAGFP(&mman_kernel))) {
   free(stack_region);
   goto nomem;
  }

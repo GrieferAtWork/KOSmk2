@@ -37,6 +37,20 @@
 
 DECL_BEGIN
 
+#ifdef __x86_64__
+/* Page directory entries for mapping the last 2Gb of virtual memory to the first physical 2. */
+INTERN ATTR_ALIGNED(PAGESIZE) ATTR_SECTION(".bss") e3_t coreboot_e2_80000000[PDIR_E2_COUNT];
+INTERN ATTR_ALIGNED(PAGESIZE) ATTR_SECTION(".bss") e3_t coreboot_e2_c0000000[PDIR_E2_COUNT];
+INTERN ATTR_ALIGNED(PAGESIZE) ATTR_SECTION(".bss") e4_t coreboot_e3[PDIR_E3_COUNT]
+#if 0
+= {
+    [PDIR_E3_COUNT-2] = { ((uintptr_t)coreboot_e2_80000000 - CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+    [PDIR_E3_COUNT-1] = { ((uintptr_t)coreboot_e2_c0000000 - CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+}
+#endif
+;
+#endif
+
 INTERN ATTR_SECTION(".data.phys")
        ATTR_ALIGNED(MMAN_ALIGN)
 PHYS struct mman __mman_kernel_p = {
@@ -57,8 +71,8 @@ PHYS struct mman __mman_kernel_p = {
              * required to re-write the associated page directory entries afterwards.
              * NOTE: This assumes that the kernel core won't ever be larger than
              *       1Gb, but I think that's a pretty safe assumption to make (right?) */
-            [0]                           = { ((uintptr_t)KERNEL_END - KERNEL_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
-            [PDIR_KERNELSHARE_STARTINDEX] = { ((uintptr_t)KERNEL_END - KERNEL_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+            [0] = { ((uintptr_t)KERNEL_END - CORE_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+            [PDIR_E4_COUNT-1] = { ((uintptr_t)coreboot_e3 - CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
 #else /* __x86_64__ */
 #define PD(phys) \
            {phys+0x00000083},{phys+0x00400083},{phys+0x00800083},{phys+0x00c00083}, \
@@ -78,7 +92,7 @@ PHYS struct mman __mman_kernel_p = {
             /* Map lower memory a second time. (NOTE: 0x100 is `PDIR_ATTR_GLOBAL') */
             PD(0x00000100) PD(0x08000100) PD(0x10000100) PD(0x18000100) /* 0xd8000000 */
             PD(0x20000100) PD(0x28000100) PD(0x30000100) PD(0x38000100) /* 0xf8000000 */
-#if KERNEL_BASE != 0xc0000000
+#if CORE_BASE != 0xc0000000
 #error "FIXME: Fix the bootstrap page table above"
 #endif
 #undef PD
@@ -123,9 +137,9 @@ PHYS struct mman __mman_kernel_p = {
 GLOBAL_ASM(
 /* Define physical/virtual versions of the kernel mman/pdir. */
 L(.global mman_kernel, pdir_kernel, pdir_kernel_v                   )
-L(mman_kernel   = __mman_kernel_p+ASM_KERNEL_BASE                   )
+L(mman_kernel   = __mman_kernel_p+ASM_CORE_BASE                   )
 L(pdir_kernel   = __mman_kernel_p+MMAN_OFFSETOF_PDIR                )
-L(pdir_kernel_v = __mman_kernel_p+ASM_KERNEL_BASE+MMAN_OFFSETOF_PDIR)
+L(pdir_kernel_v = __mman_kernel_p+ASM_CORE_BASE+MMAN_OFFSETOF_PDIR)
 );
 
 
@@ -206,6 +220,16 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
   memcpy((void *)&pdir_flush,pdir_flush_386,
          (size_t)(pdir_flush_386_end-pdir_flush_386));
  }
+
+#ifdef PDIR_KERNEL_REMAP_EARLY_IDENTITY
+ /* Remap all early identity mappings in general purpose physical memory. */
+ PDIR_KERNEL_REMAP_EARLY_IDENTITY();
+#endif
+
+#ifdef PDIR_KERNEL_MAP_IDENTITY
+ /* Create identity mappings for all physical memory below KERNEL_BASE. */
+ PDIR_KERNEL_MAP_IDENTITY();
+#endif
 
 #ifdef PDIR_KERNEL_TRANSFORM_TABLES
  /* Transform kernel tables, ensuring level#1 indirection for

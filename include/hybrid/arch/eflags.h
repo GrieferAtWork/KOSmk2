@@ -67,6 +67,9 @@ DECL_BEGIN
 #define CR4_OSXMMEXCPT     0x00000400 /*< [bit(10)] OS support for unmasked SIMD floating point Exceptions. */
 #define CR4_VMXE           0x00002000 /*< [bit(13)] Virtual Machine extensions enable. */
 #define CR4_SMXE           0x00004000 /*< [bit(14)] Safer mode extensions enable. */
+#ifdef __x86_64__
+#define CR4_FSGSBASE       0x00010000 /*< [bit(16)] Enable wr(fs|gs)base instructions. */
+#endif
 #define CR4_PCIDE          0x00020000 /*< [bit(17)] PCID enable. */
 #define CR4_OSXSAVE        0x00040000 /*< [bit(18)] XSAVE and Processor extended states enable. */
 #define CR4_SMEP           0x00100000 /*< [bit(20)] Supervisor Mode executions Protection enable. */
@@ -88,6 +91,11 @@ DECL_BEGIN
 #define DR7_S2             0x0C000000 /*< [bit(26..27)] size of DR2 breakpoint. */
 #define DR7_C3             0x30000000 /*< [bit(28..29)] conditions for DR3. */
 #define DR7_S3             0xC0000000 /*< [bit(30..31)] size of DR3 breakpoint . */
+
+#ifdef __x86_64__
+#define MSR_FS_BASE        0xc0000100
+#define MSR_GS_BASE        0xc0000101
+#endif
 
 DECL_END
 

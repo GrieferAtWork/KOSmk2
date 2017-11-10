@@ -64,13 +64,7 @@ typedef int cpusig_t; /* Signals data object (sometimes) broadcast through `ac_s
 
 #ifdef __CC__
 struct archcpu {
-#ifdef __x86_64__
- /* TODO: How does this one change? (I've heard it gets removed,
-  *       but then how does the CPU know the ring #0 stack?) */
  struct tss      ac_tss;           /*< [lock(PRIVATE(THIS_CPU))] The TSS segment associated with this CPU. */
-#else
- struct tss      ac_tss;           /*< [lock(PRIVATE(THIS_CPU))] The TSS segment associated with this CPU. */
-#endif
  struct sig      ac_sigonoff;      /*< Signal broadcast when the CPU starts up, or shuts down. */
  ATOMIC_DATA u32 ac_spurious_irq;  /*< Amount of spurious interrupts (IRQ_LAPIC_SPURIOUS) received. */
  u8              ac_mode;          /*< [lock(ac_sigonoff)] Current CPU mode (One of `CPUMODE_*'). */

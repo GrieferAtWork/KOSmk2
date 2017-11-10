@@ -40,20 +40,23 @@ DECL_BEGIN
  */
 typedef bool (KCALL *setup_fun_t)(char *__restrict arg);
 
-struct setup_opt {
- char const *so_name; /*< [1..1][const] Option name (aka. setup prefix; e.g.: `root=' for `root=/dev/hda'). */
- setup_fun_t so_func; /*< [0..1][const] Setup function. */
- u32         so_flag; /*< [const] Set of `SETUP_*' */
-};
+ATTR_ALIGNED(__SIZEOF_POINTER__)
+struct PACKED setup_opt {
+ char const *so_name;  /*< [1..1][const] Option name (aka. setup prefix; e.g.: `root=' for `root=/dev/hda'). */
+ setup_fun_t so_func;  /*< [0..1][const] Setup function. */
+union PACKED {
 #define SETUP_ARG   0x00
 #define SETUP_NOARG 0x01
+ u32         so_flag;  /*< [const] Set of `SETUP_*' */
+ uintptr_t __so_align; /*< Force pointer alignment. */
+};};
 
 
 #define SETUPSTR    FREESTR
 #define __DEFINE_SETUP(section,opt_name,id,fun,f) \
  PRIVATE ATTR_FREERODATA char const __optname##id[] = opt_name; \
- PRIVATE ATTR_USED ATTR_SECTION(section) \
- struct setup_opt const __optdecl##id = {__optname##id,fun,f}
+ PRIVATE ATTR_ALIGNED(__SIZEOF_POINTER__) ATTR_USED ATTR_SECTION(section) \
+ struct setup_opt const __optdecl##id = {__optname##id,fun,{f}}
 
 /* Define an option receiver for a prefix of `opt_name'. */
 #define DEFINE_SETUP(opt_name,fun) \

@@ -60,8 +60,8 @@ BEGIN
 
 #ifdef TARGET_X86_64
 		/* Required because KOS is a higher-half kernel. */
-		C_FLAGS("-mcmodel=large")
-		//C_FLAGS("-mcmodel=kernel")
+		//C_FLAGS("-mcmodel=large")
+		C_FLAGS("-mcmodel=kernel")
 #endif
 
 		if (!config_debug)

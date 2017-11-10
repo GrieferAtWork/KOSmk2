@@ -629,6 +629,16 @@ have_width:
 
     /* Precision */
 #ifdef PRINTF_FLAG_FIXBUF
+#if __SIZEOF_INT__ != __SIZEOF_SIZE_T__
+   case '$':
+    flags |= PRINTF_FLAG_FIXBUF;
+    precision = va_arg(args,size_t);
+    goto have_precision;
+#else
+   case '$':
+    flags |= PRINTF_FLAG_FIXBUF;
+    goto use_precision;
+#endif
    case ':':
     flags |= PRINTF_FLAG_FIXBUF;
 #endif
@@ -636,9 +646,9 @@ have_width:
     ch = *format++;
 #if PRINTF_EXTENSION_DOTQUESTION
 #if __SIZEOF_INT__ != __SIZEOF_SIZE_T__
-    if (ch == '?') { case '$': width = va_arg(args,size_t); goto have_precision; }
+    if (ch == '?') { precision = va_arg(args,size_t); goto have_precision; }
 #else
-    if (ch == '?') { case '$': flags |= PRINTF_FLAG_FIXBUF; goto use_precision; }
+    if (ch == '?') { goto use_precision; }
 #endif
     else
 #endif
@@ -906,7 +916,12 @@ quote_string:
       if (!libc_memcmp(printers->lp_name,format,format_len)) {
        temp = (*printers->lp_func)(printer,closure,cmd,length,
                                    flags,precision,
-                                  (struct va_cont *)&args);
+#ifdef __VA_LIST_IS_ARRAY
+                                  (struct va_cont *)args
+#else
+                                  (struct va_cont *)&args
+#endif
+                                  );
        if (temp < 0) return temp;
        result += temp;
        format = cmd;

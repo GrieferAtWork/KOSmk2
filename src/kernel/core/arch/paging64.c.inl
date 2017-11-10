@@ -59,7 +59,7 @@ typedef union pdir_e4 e4_t;
 
 /* Starting index within the level #4 (pdir) vector,
  * where sharing of level #3 entries starts. */
-#define PDIR_E4_SHARESTART   PDIR_KERNELSHARE_STARTINDEX
+#define PDIR_E4_SHARESTART   PDIR_KERNELBASE_STARTINDEX
 
 /* Assert some relations that are assumed by code below. */
 STATIC_ASSERT(PDIR_E1_SIZE == PAGESIZE);
@@ -86,29 +86,35 @@ INTERN ATTR_FREEDATA ppage_t early_page_end = (ppage_t)(KERNEL_END+2*PAGESIZE);
 INTERN ATTR_FREETEXT ppage_t early_page_malloc(void) {
  /* Try to use actual physical memory, but if that fails, allocate
   * past the kernel core, assuming that there is memory there. */
- syslog(LOG_DEBUG,"HERE\n");
  ppage_t result = page_malloc(PAGESIZE,PAGEATTR_NONE,MZONE_ANY);
  if (result == PAGE_ERROR) result = early_page_end++;
  return result;
 }
-INTERN ATTR_FREETEXT void early_map_identity(PHYS void *addr, size_t n_bytes) {
+
+
+INTERN ATTR_FREETEXT void
+early_map_identity(PHYS void *addr, size_t n_bytes) {
  union pdir_e *ent;
+ if (!n_bytes) return;
  n_bytes += ((uintptr_t)addr & PDIR_E3_SIZE);
  *(uintptr_t *)&addr &= ~(PDIR_E3_SIZE-1);
  for (;;) {
   ent = (union pdir_e *)&pdir_kernel.pd_directory[PDIR_E4_INDEX(addr)];
   /* Ensure level #4 presence. */
-  if (!PDIR_E4_ISLINK(ent->e4))
-       ent->e4.e4_data = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|
-              (uintptr_t)memset(early_page_malloc(),0,PAGESIZE);
+  if (!PDIR_E4_ISLINK(ent->e4)) {
+   uintptr_t page = (uintptr_t)memsetq(early_page_malloc(),0,PAGESIZE/8);
+   if (addr_isvirt(page)) page = (uintptr_t)virt_to_phys(page);
+   ent->e4.e4_data = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|page;
+  }
   ent = (union pdir_e *)&PDIR_E4_RDLINK(ent->e4)[PDIR_E3_INDEX(addr)];
   if (!PDIR_E3_ISLINK(ent->e3)) {
    // Allocate a new level #3 entry.
    uintptr_t base; size_t i;
    union pdir_e2 *e2 = (union pdir_e2 *)early_page_malloc();
-   base = ((uintptr_t)addr & PDIR_E2_MASK) | PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT;
+   base = ((uintptr_t)addr & PDIR_E2_MASK) | (PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
    for (i = 0; i < PDIR_E2_COUNT; ++i)
         e2[i].e2_data = (base+i*PDIR_E2_SIZE);
+   if (addr_isvirt(e2)) e2 = (union pdir_e2 *)virt_to_phys(e2);
    ent->e3.e3_data = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|(uintptr_t)e2;
   }
   if (n_bytes < PDIR_E3_SIZE) break;
@@ -281,6 +287,7 @@ PUBLIC ssize_t KCALL
 pdir_mprotect(pdir_t *__restrict self, ppage_t start,
               size_t n_bytes, pdir_attr_t flags) {
  ssize_t result;
+ pdir_attr_t attr = flags & PDIR_ATTR_MASK;
  CHECK_HOST_DOBJ(self);
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  result = n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
@@ -291,6 +298,7 @@ pdir_mprotect(pdir_t *__restrict self, ppage_t start,
         (uintptr_t)start+n_bytes >= (uintptr_t)start);
 
  /* TODO */
+ (void)attr;
 
  return result;
 }
@@ -299,8 +307,16 @@ pdir_mprotect(pdir_t *__restrict self, ppage_t start,
 PUBLIC errno_t KCALL
 pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
           size_t n_bytes, PHYS ppage_t target, pdir_attr_t flags) {
-
+ pdir_attr_t attr = flags & PDIR_ATTR_MASK;
+ CHECK_HOST_DOBJ(self);
+ assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
+ n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
+ assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
+ assert(IS_ALIGNED((uintptr_t)target,PAGESIZE));
+ assert((uintptr_t)start+n_bytes == 0 ||
+        (uintptr_t)start+n_bytes >= (uintptr_t)start);
  /* TODO */
+ (void)attr;
 
  /* Flush modified TLB entries. */
  if (!(flags&PDIR_FLAG_NOFLUSH))
@@ -329,6 +345,90 @@ pdir_enum(pdir_t *__restrict self,
  /* TODO */
  return 0;
 }
+
+
+#define PDIR_KERNEL_REMAP_EARLY_IDENTITY() \
+        pdir_kernel_remap_early_identity()
+
+PRIVATE ATTR_FREETEXT
+void KCALL pdir_kernel_remap_early_identity(void) {
+ /* Remap all early identity mappings in general purpose physical memory. */
+ PHYS ppage_t early_begin,early_end;
+ struct mscatter replacement; ppage_t temp;
+ union pdir_e4 *e4_iter;
+ union pdir_e3 *e3_iter,*e3_end;
+ union pdir_e2 *e2_iter;
+ early_begin = (PHYS ppage_t)virt_to_phys(KERNEL_END);
+ early_end   = (PHYS ppage_t)virt_to_phys(early_page_end);
+ /* Allocate replacement pages for early identity mappings. */
+ if (!page_malloc_scatter(&replacement,
+                         (uintptr_t)early_end-(uintptr_t)early_begin,
+                          PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE,
+                          GFP_MEMORY)) {
+  syslog(LOG_ERROR,
+         FREESTR("[PDIR] Failed to replace early identity mappings: %[errno]\n"),
+         ENOMEM);
+  return;
+ }
+ assert(IS_ALIGNED((uintptr_t)early_begin,PAGESIZE));
+ assert(IS_ALIGNED((uintptr_t)early_end,PAGESIZE));
+
+ /* Find the kernel page directory entry for this page.
+  * NOTE: At this point, we can assume that no level #1 entries exist yet. */
+ for (e4_iter  = pdir_kernel.pd_directory;
+      e4_iter != &pdir_kernel.pd_directory[PDIR_KERNELBASE_STARTINDEX]; ++e4_iter) {
+  assert(PDIR_E4_ISLINK(*e4_iter) == PDIR_E4_ISALLOC(*e4_iter));
+  if (!PDIR_E4_ISLINK(*e4_iter)) continue;
+  e3_iter = PDIR_E4_RDLINK(*e4_iter);
+  assert(IS_ALIGNED((uintptr_t)e3_iter,PAGESIZE));
+  if ((ppage_t)e3_iter >= early_begin &&
+      (ppage_t)e3_iter <  early_end) {
+   /* Found one! */
+   temp = mscatter_takeone(&replacement);
+   assert(temp != PAGE_ERROR);
+   memcpyq(temp,e3_iter,PAGESIZE/8);
+   e4_iter->e4_data &= PDIR_ATTR_MASK;
+   e4_iter->e4_data |= (uintptr_t)temp;
+   e3_iter = (union pdir_e3 *)temp;
+  }
+  e3_end = e3_iter+PDIR_E3_COUNT;
+  for (; e3_iter != e3_end; ++e3_iter) {
+   assert(PDIR_E3_ISLINK(*e3_iter) == PDIR_E3_ISALLOC(*e3_iter));
+   if (!PDIR_E3_ISLINK(*e3_iter)) continue;
+   e2_iter = PDIR_E3_RDLINK(*e3_iter);
+   assert(IS_ALIGNED((uintptr_t)e2_iter,PAGESIZE));
+   if ((ppage_t)e2_iter >= early_begin &&
+       (ppage_t)e2_iter <  early_end) {
+    /* Found one! */
+    temp = mscatter_takeone(&replacement);
+    assert(temp != PAGE_ERROR);
+    memcpyq(temp,e2_iter,PAGESIZE/8);
+    e3_iter->e3_data &= PDIR_ATTR_MASK;
+    e3_iter->e3_data |= (uintptr_t)temp;
+   }
+  }
+ }
+
+ assertf(replacement.m_size == 0,
+         "%Iu unused replacement bytes (Desynchronization of `early_page_malloc()'?)",
+         replacement.m_size);
+ assert(!replacement.m_next);
+
+ /* Mark the memory as free. */
+ /* TODO: Only free up pages that turned out to be RAM. */
+ page_free(early_begin,(uintptr_t)early_end-(uintptr_t)early_begin);
+}
+
+
+#define PDIR_KERNEL_MAP_IDENTITY() \
+        pdir_kernel_map_identity()
+PRIVATE ATTR_FREETEXT
+void KCALL pdir_kernel_map_identity(void) {
+ /* Create identity mappings for all physical memory below KERNEL_BASE. */
+
+
+}
+
 
 DECL_END
 #endif /* __x86_64__ */
