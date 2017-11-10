@@ -71,8 +71,9 @@ PHYS struct mman __mman_kernel_p = {
              * required to re-write the associated page directory entries afterwards.
              * NOTE: This assumes that the kernel core won't ever be larger than
              *       1Gb, but I think that's a pretty safe assumption to make (right?) */
-            [0] = { ((uintptr_t)KERNEL_END - CORE_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
-            [PDIR_E4_COUNT-1] = { ((uintptr_t)coreboot_e3 - CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+            [0] = { (EARLY_PAGE_BEGIN-CORE_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+            [1 ... PDIR_E4_COUNT-2] = { PDIR_LINK_MASK },
+            [PDIR_E4_COUNT-1] = { ((uintptr_t)coreboot_e3-CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
 #else /* __x86_64__ */
 #define PD(phys) \
            {phys+0x00000083},{phys+0x00400083},{phys+0x00800083},{phys+0x00c00083}, \
@@ -177,6 +178,7 @@ pdir_print(pdir_t *__restrict self,
 
 
 
+#ifndef __x86_64__
 INTDEF byte_t pdir_flush_386[];
 INTDEF byte_t pdir_flush_386_end[];
 
@@ -190,6 +192,7 @@ L(SYM_END(pdir_flush_386)                                                     )
 L(pdir_flush_386_end:                                                         )
 L(.previous                                                                   )
 );
+#endif
 
 GLOBAL_ASM(
 L(.section .text                                                              )
@@ -214,12 +217,14 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
  assert(addr_isvirt(&pdir_kernel_v));
  assert(addr_isvirt(&mman_kernel));
 
+#ifndef __x86_64__
  if (!(THIS_CPU->c_arch.ac_flags&CPUFLAG_486)) {
   /* Replace `pdir_flush' with its fallback counterpart!
    * (The `invlpg' instruction is only available starting at 486) */
   memcpy((void *)&pdir_flush,pdir_flush_386,
          (size_t)(pdir_flush_386_end-pdir_flush_386));
  }
+#endif
 
 #ifdef PDIR_KERNEL_REMAP_EARLY_IDENTITY
  /* Remap all early identity mappings in general purpose physical memory. */

@@ -45,6 +45,14 @@ __SYSDECL_BEGIN
 #define __writesb  writesb
 #define __writesw  writesw
 #define __writesl  writesl
+#ifdef __x86_64__
+#define __readq    readq
+#define __readq_p  readq_p
+#define __readsq   readsq
+#define __writeq   writeq
+#define __writeq_p writeq_p
+#define __writesq  writesq
+#endif /* __x86_64__ */
 #endif
 
 #define __IOPORT_T    __UINT16_TYPE__
@@ -79,6 +87,14 @@ __NAMESPACE_INT_END
 #   define writesb(port,addr,count) writesb((__UINTPTR_TYPE__)(port),addr,count)
 #   define writesw(port,addr,count) writesw((__UINTPTR_TYPE__)(port),addr,count)
 #   define writesl(port,addr,count) writesl((__UINTPTR_TYPE__)(port),addr,count)
+#ifdef __x86_64__
+#   define readq(port)              readq((__UINTPTR_TYPE__)(port))
+#   define readq_p(port)            readq_p((__UINTPTR_TYPE__)(port))
+#   define readsq(port,addr,count)  readsq((__UINTPTR_TYPE__)(port),addr,count)
+#   define writeq(port,val)         writeq((__UINTPTR_TYPE__)(port),val)
+#   define writeq_p(port,val)       writeq_p((__UINTPTR_TYPE__)(port),val)
+#   define writesq(port,addr,count) writesq((__UINTPTR_TYPE__)(port),addr,count)
+#endif
 #else
 #   define __readb(port)              __readb((__UINTPTR_TYPE__)(port))
 #   define __readw(port)              __readw((__UINTPTR_TYPE__)(port))
@@ -98,6 +114,14 @@ __NAMESPACE_INT_END
 #   define __writesb(port,addr,count) __writesb((__UINTPTR_TYPE__)(port),addr,count)
 #   define __writesw(port,addr,count) __writesw((__UINTPTR_TYPE__)(port),addr,count)
 #   define __writesl(port,addr,count) __writesl((__UINTPTR_TYPE__)(port),addr,count)
+#ifdef __x86_64__
+#   define __readq(port)              __readq((__UINTPTR_TYPE__)(port))
+#   define __readq_p(port)            __readq_p((__UINTPTR_TYPE__)(port))
+#   define __readsq(port,addr,count)  __readsq((__UINTPTR_TYPE__)(port),addr,count)
+#   define __writeq(port,val)         __writeq((__UINTPTR_TYPE__)(port),val)
+#   define __writeq_p(port,val)       __writeq_p((__UINTPTR_TYPE__)(port),val)
+#   define __writesq(port,addr,count) __writesq((__UINTPTR_TYPE__)(port),addr,count)
+#endif
 #endif
 
 #ifdef __COMPILER_HAVE_GCC_ASM
@@ -146,14 +170,14 @@ __FORCELOCAL T (__LIBCCALL __read##sfx##_p)(__MEMPORT_T __port) { \
 __FORCELOCAL void (__LIBCCALL __reads##sfx)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { \
  if (__count) { \
   register T __temp; \
-  __asm__ __volatile__("1:  mov" #sfx " (%2), %1\n" \
+  __asm__ __volatile__("1:  mov" #sfx " %2, %1\n" \
                        "    stos" #sfx "\n" \
                        "    loop 1b\n" \
                        : "=m" (*(struct { __extension__ T __d[__count]; } *)__addr) \
                        , "=&a" (__temp) \
-                       : "r" (__port), "D" (__addr), "c" (__count) \
-                       , "m" (*(struct { __extension__ T __d[__count]; } volatile *)__port)); \
- }\
+                       : "m" (*(T volatile *)__port) \
+                       , "D" (__addr), "c" (__count)); \
+ } \
 }
 
 
@@ -174,23 +198,25 @@ __FORCELOCAL void (__LIBCCALL outs##sfx)(__IOPORT_T __port, void const *__addr, 
 } \
 __FORCELOCAL void (__LIBCCALL __write##sfx)(__MEMPORT_T __port, T __val) { \
  __asm__ __volatile__("mov" #sfx " %1, %0" \
-                      : : "m" (*(T volatile *)__port), "r" (__val)); \
+                      : "=m" (*(T volatile *)__port) \
+                      : "r" (__val)); \
 } \
 __FORCELOCAL void (__LIBCCALL __write##sfx##_p)(__MEMPORT_T __port, T __val) { \
  __asm__ __volatile__("mov" #sfx " %1, %0" __IO_SLOWDOWN \
-                      : : "m" (*(T volatile *)__port), "r" (__val)); \
+                      : "=m" (*(T volatile *)__port)\
+                      : "r" (__val)); \
 } \
 __FORCELOCAL void (__LIBCCALL __writes##sfx)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { \
  if (__count) { \
   register T __temp; \
   __asm__ __volatile__("1:  lods" #sfx "\n" \
-                       "    mov" #sfx " %1, (%2)\n" \
+                       "    mov" #sfx " %1, %2\n" \
                        "    loop 1b\n" \
                        : "=m" (*(struct { __extension__ T __d[__count]; } *)__addr) \
                        , "=&a" (__temp) \
-                       : "r" (__port), "S" (__addr), "c" (__count) \
-                       , "m" (*(struct { __extension__ T __d[__count]; } volatile *)__port)); \
- }\
+                       : "m" (*(T volatile *)__port) \
+                       , "S" (__addr), "c" (__count)); \
+ } \
 }
 
 
@@ -200,6 +226,57 @@ __MAKEIN(__UINT32_TYPE__,l,4)
 __MAKEOUT(__UINT8_TYPE__, b,"b",1)
 __MAKEOUT(__UINT16_TYPE__,w,"w",2)
 __MAKEOUT(__UINT32_TYPE__,l,"",4)
+
+#ifdef __x86_64__
+__FORCELOCAL __UINT64_TYPE__ (__LIBCCALL __readq)(__MEMPORT_T __port) {
+ register __UINT64_TYPE__ __result;
+ __asm__ __volatile__("movq %1, %0"
+                      : "=r" (__result)
+                      : "m" (*(__UINT64_TYPE__ volatile *)__port));
+ return __result;
+}
+__FORCELOCAL __UINT64_TYPE__ (__LIBCCALL __readq_p)(__MEMPORT_T __port) {
+ register __UINT64_TYPE__ __result;
+ __asm__ __volatile__("movq %1, %0" __IO_SLOWDOWN
+                      : "=r" (__result)
+                      : "m" (*(__UINT64_TYPE__ volatile *)__port));
+ return __result;
+}
+__FORCELOCAL void (__LIBCCALL __readsq)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count) {
+ if (__count) {
+  register __UINT64_TYPE__ __temp;
+  __asm__ __volatile__("1:  movq %2, %1\n"
+                       "    stosq\n"
+                       "    loop 1b\n"
+                       : "=m" (*(struct { __extension__ __UINT64_TYPE__ __d[__count]; } *)__addr)
+                       , "=&a" (__temp)
+                       : "m" (*(__UINT64_TYPE__ volatile *)__port)
+                       , "D" (__addr), "c" (__count));
+ }
+}
+__FORCELOCAL void (__LIBCCALL __writeq)(__MEMPORT_T __port, __UINT64_TYPE__ __val) {
+ __asm__ __volatile__("movq %1, %0"
+                      : "=m" (*(__UINT64_TYPE__ volatile *)__port)
+                      : "r" (__val));
+}
+__FORCELOCAL void (__LIBCCALL __writeq_p)(__MEMPORT_T __port, __UINT64_TYPE__ __val) {
+ __asm__ __volatile__("movq %1, %0" __IO_SLOWDOWN
+                      : "=m" (*(__UINT64_TYPE__ volatile *)__port)
+                      : "r" (__val));
+}
+__FORCELOCAL void (__LIBCCALL __writesq)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) {
+ if (__count) {
+  register __UINT64_TYPE__ __temp;
+  __asm__ __volatile__("1:  lodsq\n"
+                       "    movq %1, %2\n"
+                       "    loop 1b\n"
+                       : "=m" (*(struct { __extension__ __UINT64_TYPE__ __d[__count]; } *)__addr)
+                       , "=&a" (__temp)
+                       : "m" (*(__UINT64_TYPE__ volatile *)__port)
+                       , "S" (__addr), "c" (__count));
+ }
+}
+#endif /* __x86_64__ */
 
 #if defined(__USE_KOS) || defined(__KERNEL__)
 __FORCELOCAL void (__LIBCCALL io_delay)(void) {

@@ -54,12 +54,12 @@ page_addmemory(mzone_t zone_id, ppage_t start,
 #if 1
  ppage_t *piter,iter,free_end;
  struct mzone *zone;
- if unlikely(!n_bytes) return 0;
 #ifdef CONFIG_USE_NEW_MEMINFO
  if unlikely((uintptr_t)start >= KERNEL_BASE) return 0;
  if unlikely((uintptr_t)start+n_bytes > KERNEL_BASE)
     n_bytes = KERNEL_BASE-(uintptr_t)start;
 #endif
+ if unlikely(!n_bytes) return 0;
  syslog(LOG_DEBUG,FREESTR("[MEM] Using dynamic memory range %p...%p\n"),
        (uintptr_t)start,(uintptr_t)start+n_bytes-1);
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
@@ -214,7 +214,7 @@ PUBLIC struct meminfo const *_mem_info_last ASMNAME("mem_info_last") = __bootidl
 PRIVATE ATTR_FREETEXT void KCALL
 page_do_addmemory(PAGE_ALIGNED uintptr_t base, PAGE_ALIGNED size_t n_bytes) {
  mzone_t zone;
- for (zone = 0; zone < MZONE_COUNT; ++zone) {
+ for (zone = 0; zone < MZONE_REAL_COUNT; ++zone) {
   if (base >= MZONE_MIN(zone) &&
       base <= MZONE_MAX(zone)) {
    size_t zone_bytes = MIN((MZONE_MAX(zone)+1)-base,n_bytes);
@@ -231,18 +231,18 @@ page_do_addmemory(PAGE_ALIGNED uintptr_t base, PAGE_ALIGNED size_t n_bytes) {
     *       to allocate memory using `page_malloc()' first, before falling back
     *       to blindly assuming available RAM past `KERNEL_END'
     */
-#define EARLY_PAGE_BEGIN                 (KERNEL_END-CORE_BASE)
-#define EARLY_PAGE_END    ((uintptr_t)early_page_end-CORE_BASE)
-   if (base < EARLY_PAGE_END &&
-       base+zone_bytes > EARLY_PAGE_BEGIN) {
+#define EARLY_PAGE_BEGIN_P  (EARLY_PAGE_BEGIN-CORE_BASE)
+#define EARLY_PAGE_END_P      (EARLY_PAGE_END-CORE_BASE)
+   if (base < EARLY_PAGE_END_P &&
+       base+zone_bytes > EARLY_PAGE_BEGIN_P) {
     /* Overlap! */
     syslog(LOG_DEBUG,"[MEM] Skipping early_page_malloc-overlap %p...%p\n",
-           MAX(base,EARLY_PAGE_BEGIN),MIN(base+zone_bytes,EARLY_PAGE_END)-1);
-    if (base < EARLY_PAGE_BEGIN)
-        page_addmemory(zone,(ppage_t)base,EARLY_PAGE_BEGIN-base);
-    if (base+zone_bytes > EARLY_PAGE_END)
-        page_addmemory(zone,(ppage_t)EARLY_PAGE_END,
-                      (base+zone_bytes)-EARLY_PAGE_END);
+           MAX(base,EARLY_PAGE_BEGIN_P),MIN(base+zone_bytes,EARLY_PAGE_END_P)-1);
+    if (base < EARLY_PAGE_BEGIN_P)
+        page_addmemory(zone,(ppage_t)base,EARLY_PAGE_BEGIN_P-base);
+    if (base+zone_bytes > EARLY_PAGE_END_P)
+        page_addmemory(zone,(ppage_t)EARLY_PAGE_END_P,
+                      (base+zone_bytes)-EARLY_PAGE_END_P);
    } else {
     /* Just some regular, old memory. */
     page_addmemory(zone,(ppage_t)base,zone_bytes);
@@ -408,11 +408,10 @@ enum{_STATIC_MEMINFO_MAX = STATIC_MEMINFO_MAX};
 #undef STATIC_MEMINFO_MAX
 #define STATIC_MEMINFO_MAX  _STATIC_MEMINFO_MAX
 
-PUBLIC PHYS struct meminfo *mem_info_[MZONE_COUNT] ASMNAME("mem_info") = {
-    [MZONE_1MB]     = MEMINFO_EARLY_NULL,
-    [MZONE_DEV]     = MEMINFO_EARLY_NULL,
-    [MZONE_SHARE]   = &__bootidlestack.s_kerninfo[0],
-    [MZONE_NOSHARE] = MEMINFO_EARLY_NULL,
+PUBLIC PHYS struct meminfo *mem_info_[MZONE_REAL_COUNT] ASMNAME("mem_info") = {
+    [MZONE_1MB]   = MEMINFO_EARLY_NULL,
+    [MZONE_DEV]   = MEMINFO_EARLY_NULL,
+    [MZONE_HIMEM] = &__bootidlestack.s_kerninfo[0],
 };
 
 #define INFOPAGE_MAX  ((PAGESIZE/sizeof(struct meminfo))-1)
@@ -733,7 +732,7 @@ mem_install(PHYS uintptr_t base, size_t num_bytes, memtype_t type) {
  }
 
  /* Step #5: Enumerate all zones that the range is apart of and install it in each. */
- for (zone = 0; zone < MZONE_COUNT; ++zone) {
+ for (zone = 0; zone < MZONE_REAL_COUNT; ++zone) {
   if (base >= MZONE_MIN(zone) &&
       base <= MZONE_MAX(zone)) {
    size_t zone_bytes = MIN((MZONE_MAX(zone)+1)-base,num_bytes);
@@ -752,7 +751,7 @@ INTERN ATTR_FREETEXT
 PAGE_ALIGNED size_t KCALL mem_unpreserve(void) {
  size_t result = 0; mzone_t zone;
  struct meminfo *iter,*prev,*next;
- for (zone = 0; zone < MZONE_COUNT; ++zone) {
+ for (zone = 0; zone < MZONE_REAL_COUNT; ++zone) {
   prev = MEMINFO_EARLY_NULL;
   for (iter = mem_info_[zone];
        iter != MEMINFO_EARLY_NULL;
@@ -807,7 +806,7 @@ INTERN ATTR_FREETEXT void KCALL mem_relocate_info(void) {
  struct meminfo const *info;
  struct meminfo *new_info;
  struct meminfo **piter;
- struct meminfo *new_info_vec[MZONE_COUNT];
+ struct meminfo *new_info_vec[MZONE_REAL_COUNT];
  /* Allocate a chunk of continuous memory within
   * which we're going to re-build memory information. */
  new_info = (struct meminfo *)kmalloc(STATIC_MEMINFO_CNT*sizeof(struct meminfo),GFP_SHARED);
@@ -815,7 +814,7 @@ INTERN ATTR_FREETEXT void KCALL mem_relocate_info(void) {
                               STATIC_MEMINFO_CNT*sizeof(struct meminfo));
  _mall_nofree(new_info); /* This one's never supposed to be freed. */
 
- for (zone = 0; zone < MZONE_COUNT; ++zone) {
+ for (zone = 0; zone < MZONE_REAL_COUNT; ++zone) {
   piter = &new_info_vec[zone];
   MEMINFO_EARLY_FOREACH(info,zone) {
    *piter = new_info;
@@ -832,7 +831,7 @@ INTERN ATTR_FREETEXT void KCALL mem_relocate_info(void) {
 
  /* Copy the new memory information vector into the global meminfo data vector. */
  memcpy(mem_info_,new_info_vec,
-        MZONE_COUNT*sizeof(struct meminfo *));
+        MZONE_REAL_COUNT*sizeof(struct meminfo *));
 
  /* Free any additional physical pages that were allocated for memory information. */
  meminfo_early_freeall();

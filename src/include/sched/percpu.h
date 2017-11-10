@@ -34,15 +34,15 @@ extern byte_t const __percpu_template[]; /*< Per-cpu data template, containing `
 extern byte_t __percpu_datsize[];        /*< [size_t] Amount of data bytes that should be copied from `__percpu_template'. */
 extern byte_t __percpu_bsssize[];        /*< [size_t] Amount of zero-initialized bytes following `__percpu_datsize'. */
 extern byte_t __percpu_allsize[];        /*< [size_t] == __percpu_datsize + __percpu_bsssize. */
-extern byte_t __percpu_dat_dwords[];     /*< == __percpu_datsize / 4 */
-extern byte_t __percpu_bss_dwords[];     /*< == __percpu_bsssize / 4 */
-extern byte_t __percpu_all_dwords[];     /*< == __percpu_allsize / 4 */
+extern byte_t __percpu_dat_xwords[];     /*< == __percpu_datsize / __SIZEOF_POINTER__ */
+extern byte_t __percpu_bss_xwords[];     /*< == __percpu_bsssize / __SIZEOF_POINTER__ */
+extern byte_t __percpu_all_xwords[];     /*< == __percpu_allsize / __SIZEOF_POINTER__ */
 #endif /* __CC__ */
 
 #define PERCPU_TEMPLATE   __percpu_template   /*< The starting address of the per-cpu data template. */
-#define PERCPU_DAT_DWORDS __percpu_dat_dwords /*< Amount of DWORDs that must be copied from `PERCPU_TEMPLATE'. */
-#define PERCPU_BSS_DWORDS __percpu_bss_dwords /*< After `PERCPU_DAT_DWORDS': Amount of DWORDs that must be ZERO-initialized. */
-#define PERCPU_ALL_DWORDS __percpu_all_dwords /*< The sum of `PERCPU_DAT_DWORDS' and `PERCPU_BSS_DWORDS' */
+#define PERCPU_DAT_XWORDS __percpu_dat_xwords /*< Amount of XWORDs that must be copied from `PERCPU_TEMPLATE'. */
+#define PERCPU_BSS_XWORDS __percpu_bss_xwords /*< After `PERCPU_DAT_DWORDS': Amount of XWORDs that must be ZERO-initialized. */
+#define PERCPU_ALL_XWORDS __percpu_all_xwords /*< The sum of `PERCPU_DAT_DWORDS' and `PERCPU_BSS_DWORDS' */
 
 #ifdef __CC__
 #ifdef CONFIG_BUILDING_KERNEL_CORE

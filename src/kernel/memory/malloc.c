@@ -710,6 +710,26 @@ PRIVATE SAFE struct mptr *KCALL mheap_realloc(struct mheap *__restrict self, str
 PRIVATE SAFE struct mptr *KCALL mheap_realign(struct mheap *__restrict self, struct mptr *ptr, size_t alignment, size_t new_size, gfp_t flags);
 #endif
 
+#if __SIZEOF_POINTER__ == 8
+#   define MEMSETX   memsetq
+#   define MEMCPYX   memcpyq
+#   define MEMPATX   mempatq
+#elif __SIZEOF_POINTER__ == 4
+#   define MEMSETX   memsetl
+#   define MEMCPYX   memcpyl
+#   define MEMPATX   mempatl
+#elif __SIZEOF_POINTER__ == 2
+#   define MEMSETX   memsetw
+#   define MEMCPYX   memcpyw
+#   define MEMPATX   mempatw
+#elif __SIZEOF_POINTER__ == 1
+#   define MEMSETX   memsetb
+#   define MEMCPYX   memcpyb
+#   define MEMPATX   mempatb
+#else
+#   error "Unsupported sizeof(void *)"
+#endif
+
 
 #define MHEAP_INIT(name) \
 { \
@@ -806,7 +826,7 @@ again:
   if (!(flags&GFP_CALLOC)) {
    struct mscatter *iter = &region->mr_part0.mt_memory;
    while (iter) {
-    mempatl(iter->m_start,
+    MEMPATX(iter->m_start,
             CONFIG_MALLOC_DEBUG_INIT,
             iter->m_size);
     iter = iter->m_next;
@@ -855,7 +875,7 @@ core_page_alloc(size_t n_bytes, gfp_t flags) {
   while (result == PAGE_ERROR && MMAN_SWAPOK(mman_swapmem(n_bytes,flags)));
 #ifdef CONFIG_MALLOC_DEBUG_INIT
   if (result != PAGE_ERROR && !(flags&GFP_CALLOC))
-      mempatl(result,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
+      MEMPATX(result,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
 #endif
  } else {
   PHYS struct mman *old_mman; bool has_write_lock = false;
@@ -998,7 +1018,7 @@ core_page_allocat(PAGE_ALIGNED void *start,
   result = page_malloc_at((ppage_t)start,n_bytes,GFP_GTPAGEATTR(flags));
 #ifdef CONFIG_MALLOC_DEBUG_INIT
   if (result != PAGE_ERROR && !(flags&GFP_CALLOC))
-      mempatl(result,CONFIG_MALLOC_DEBUG_INIT,PAGESIZE);
+      MEMPATX(result,CONFIG_MALLOC_DEBUG_INIT,PAGESIZE);
 #endif
  } else {
   bool has_write_lock = false;
@@ -1158,7 +1178,7 @@ mheap_acquire(struct mheap *__restrict self, MALIGNED size_t n_bytes,
    }
 #ifdef CONFIG_MALLOC_DEBUG_INIT
    else if (chain_attr&PAGEATTR_ZERO) {
-    mempatl(result,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
+    MEMPATX(result,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
    }
 #endif
    *alloc_bytes = n_bytes;
@@ -1269,7 +1289,7 @@ mheap_acquire_at(struct mheap *__restrict self, MALIGNED void *p,
   if (slot_attr&PAGEATTR_ZERO)
        memset(slot,0,sizeof(struct mfree));
 #ifdef CONFIG_MALLOC_DEBUG_INIT
-  else mempatl(slot,CONFIG_MALLOC_DEBUG_INIT,sizeof(struct mfree));
+  else MEMPATX(slot,CONFIG_MALLOC_DEBUG_INIT,sizeof(struct mfree));
 #endif
   slot_flags = (flags&~GFP_CALLOC)|GFP_STPAGEATTR(slot_attr);
  }
@@ -1320,7 +1340,7 @@ mheap_acquire_at(struct mheap *__restrict self, MALIGNED void *p,
  }
 #ifdef CONFIG_MALLOC_DEBUG_INIT
  else if (slot_flags&GFP_CALLOC) {
-  mempatl(p,CONFIG_MALLOC_DEBUG_INIT,slot_avail);
+  MEMPATX(p,CONFIG_MALLOC_DEBUG_INIT,slot_avail);
  }
 #endif
  *alloc_bytes = slot_avail;
@@ -1391,10 +1411,10 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
   mfree_tree_pop_at(pslot,addr_semi,addr_level);
 #ifdef CONFIG_MALLOC_DEBUG_INIT
   if (slot->mf_attr&PAGEATTR_ZERO && !(flags&GFP_CALLOC))
-      mempatl(slot+1,CONFIG_MALLOC_DEBUG_INIT,
+      MEMPATX(slot+1,CONFIG_MALLOC_DEBUG_INIT,
               MFREE_SIZE(slot)-sizeof(struct mfree));
   if (flags&GFP_CALLOC && !(slot->mf_attr&PAGEATTR_ZERO))
-      mempatl(p,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
+      MEMPATX(p,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
 #endif
   if (!(slot->mf_attr&PAGEATTR_ZERO)) flags &= ~(GFP_CALLOC);
 #ifdef MFREE_HAVE_ATTR
@@ -1436,10 +1456,10 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
   *free_slot = *slot;
 #ifdef CONFIG_MALLOC_DEBUG_INIT
   if (free_slot->mf_attr&PAGEATTR_ZERO && !(flags&GFP_CALLOC))
-      mempatl(slot+1,CONFIG_MALLOC_DEBUG_INIT,
+      MEMPATX(slot+1,CONFIG_MALLOC_DEBUG_INIT,
               MFREE_SIZE(slot)-sizeof(struct mfree));
   if (flags&GFP_CALLOC && !(free_slot->mf_attr&PAGEATTR_ZERO))
-      mempatl(free_slot+1,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
+      MEMPATX(free_slot+1,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
 #endif
   if (!(free_slot->mf_attr&PAGEATTR_ZERO)) flags &= ~(GFP_CALLOC);
 #ifdef MFREE_HAVE_ATTR
@@ -1460,9 +1480,9 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
 #ifdef CONFIG_MALLOC_DEBUG_INIT
   else {
    if (n_bytes < sizeof(struct mfree))
-        mempatl((void *)((uintptr_t)slot+(sizeof(struct mfree)-n_bytes)),
+        MEMPATX((void *)((uintptr_t)slot+(sizeof(struct mfree)-n_bytes)),
                  CONFIG_MALLOC_DEBUG_INIT,n_bytes);
-   else mempatl(slot,CONFIG_MALLOC_DEBUG_INIT,sizeof(struct mfree));
+   else MEMPATX(slot,CONFIG_MALLOC_DEBUG_INIT,sizeof(struct mfree));
   }
 #endif
   assert(IS_ALIGNED(MFREE_SIZE(free_slot),HEAP_ALIGNMENT));
@@ -1607,7 +1627,7 @@ mheap_acquire_al(struct mheap *__restrict self,
 
 #ifdef CONFIG_MALLOC_DEBUG_INIT
 PRIVATE void KCALL
-priv_resetpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
+priv_resetpage(PAGE_ALIGNED void *start, uintptr_t xword, size_t n_bytes) {
  bool should_clear;
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert(n_bytes != 0);
@@ -1624,25 +1644,25 @@ priv_resetpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
   should_clear = true;
  }
  /* Only reset the page when it has been allocated. */
- if (should_clear) memsetl(start,dword,n_bytes/4);
+ if (should_clear) MEMSETX(start,xword,n_bytes/__SIZEOF_POINTER__);
 }
 
-/* Scan `n_bytes' of memory for any byte not matching `dword & 0xff',
- * assuming that `dword == 0x01010101 * (dword & 0xff)'
+/* Scan `n_bytes' of memory for any byte not matching `xword & 0xff',
+ * assuming that `xword == 0x01010101 * (xword & 0xff)'
  * Return NULL when no such byte exists, or the non-matching byte if so.
  * NOTE: Special handling is done to ensure that no new memory after any non-aligned
  *       memory between `begin...CEIL_ALIGN(begin,PAGESIZE)' is allocated due to
  *       access, meaning that system memory isn't strained by accessing unallocated
- *       data, but instead assuming that that data is always equal to `dword'. */
+ *       data, but instead assuming that that data is always equal to `xword'. */
 PRIVATE void KCALL
-priv_memsetl_noalloc(void *__restrict begin, u32 dword, size_t n_bytes) {
+priv_memsetx_noalloc(void *__restrict begin, uintptr_t xword, size_t n_bytes) {
  byte_t *iter,*end,*aligned;
  size_t fill_bytes;
  end = (iter = (byte_t *)begin)+n_bytes;
  assert(iter <= end);
- while (iter != end && (uintptr_t)iter&3)
-       *iter = ((u8 *)&dword)[(uintptr_t)iter&3];
- assert(((end-iter) % 4) == 0);
+ while (iter != end && (uintptr_t)iter&(__SIZEOF_POINTER__-1))
+       *iter = ((u8 *)&xword)[(uintptr_t)iter&(__SIZEOF_POINTER__-1)];
+ assert(((end-iter) % __SIZEOF_POINTER__) == 0);
  aligned    = (byte_t *)CEIL_ALIGN((uintptr_t)iter,PAGESIZE);
  fill_bytes = (size_t)(aligned-iter);
  n_bytes    = (size_t)(end-iter);
@@ -1650,7 +1670,7 @@ priv_memsetl_noalloc(void *__restrict begin, u32 dword, size_t n_bytes) {
      fill_bytes = n_bytes;
  if (fill_bytes) {
   /* Set unaligned data in the first (allocated) page. */
-  memsetl(iter,dword,fill_bytes/4);
+  MEMSETX(iter,xword,fill_bytes/__SIZEOF_POINTER__);
   n_bytes -= fill_bytes;
  }
  /* TODO: Tell the memory manager to unload all full pages,
@@ -1660,7 +1680,7 @@ priv_memsetl_noalloc(void *__restrict begin, u32 dword, size_t n_bytes) {
   if (fill_bytes > PAGESIZE)
       fill_bytes = PAGESIZE;
   /* Set unaligned data in other (potentially unallocated) pages. */
-  priv_resetpage(aligned,dword,fill_bytes);
+  priv_resetpage(aligned,xword,fill_bytes);
   n_bytes -= fill_bytes;
   aligned += fill_bytes;
  }
@@ -1670,7 +1690,7 @@ priv_memsetl_noalloc(void *__restrict begin, u32 dword, size_t n_bytes) {
 PRIVATE void KCALL mheap_resetdebug(MALIGNED void *__restrict begin,
                                     MALIGNED size_t n_bytes, gfp_t flags) {
  if (flags&GFP_CALLOC) return;
- priv_memsetl_noalloc(begin,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
+ priv_memsetx_noalloc(begin,CONFIG_MALLOC_DEBUG_INIT,n_bytes);
 }
 #else
 #define mheap_resetdebug(begin,n_bytes,flags) (void)0
@@ -1758,23 +1778,28 @@ mheap_validate_addr(struct dsetup *setup, struct mfree *node) {
 }
 
 PRIVATE void *KCALL
-priv_scandata(void *start, u32 dword, size_t n_bytes) {
+priv_scandata(void *start, uintptr_t xword, size_t n_bytes) {
  byte_t *iter,*end; bool is_ok;
  assert(n_bytes);
  end = (iter = (byte_t *)start)+n_bytes;
- __asm__ __volatile__("repe; scasl\n"
+ __asm__ __volatile__(
+#if __SIZEOF_POINTER__ >= 8
+                      "repe; scasq\n"
+#else
+                      "repe; scasl\n"
+#endif
                       "sete %1\n"
                       : "+D" (iter)
                       , "=g" (is_ok)
-                      : "a" (dword)
-                      , "c" ((end-iter)/4)
-                      , "m" (*(struct { __extension__ u32 val[n_bytes]; } *)start)
+                      : "a" (xword)
+                      , "c" ((end-iter)/__SIZEOF_POINTER__)
+                      , "m" (*(struct { __extension__ byte_t val[n_bytes]; } *)start)
                       : "cc");
  if (!is_ok) {
-  iter -= 4;
-  assert(*(u32 *)iter != dword);
+  iter -= __SIZEOF_POINTER__;
+  assert(*(uintptr_t *)iter != xword);
   while ((assert(iter < end),
-         *iter == ((u8 *)&dword)[(uintptr_t)iter & 3]))
+         *iter == ((u8 *)&xword)[(uintptr_t)iter & (__SIZEOF_POINTER__-1)]))
          ++iter;
   return iter;
  }
@@ -1782,7 +1807,7 @@ priv_scandata(void *start, u32 dword, size_t n_bytes) {
 }
 
 PRIVATE void *KCALL
-priv_scanpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
+priv_scanpage(PAGE_ALIGNED void *start, uintptr_t xword, size_t n_bytes) {
  void *result = NULL; bool should_scan;
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert(n_bytes != 0);
@@ -1798,7 +1823,7 @@ priv_scanpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
   should_scan = true;
  }
  /* Only scan the page when it has been allocated. */
- if (should_scan) result = priv_scandata(start,dword,n_bytes);
+ if (should_scan) result = priv_scandata(start,xword,n_bytes);
  return result;
 }
 
@@ -1810,16 +1835,16 @@ priv_scanpage(PAGE_ALIGNED void *start, u32 dword, size_t n_bytes) {
  *       access, meaning that system memory isn't strained by accessing unallocated
  *       data, but instead assuming that that data is always equal to `dword'. */
 PRIVATE void *KCALL
-priv_memnchr_noalloc(void *__restrict begin, u32 dword, size_t n_bytes) {
+priv_memnchr_noalloc(void *__restrict begin, uintptr_t dword, size_t n_bytes) {
  byte_t *iter,*end,*aligned; void *result;
  size_t scan_bytes;
  end = (iter = (byte_t *)begin)+n_bytes;
  //syslog(LOG_MEM|LOG_ERROR,"CHECK: %p...%p\n",iter,end-1);
  assert(iter <= end);
- while (iter != end && (uintptr_t)iter&3) {
-  if (*iter != ((u8 *)&dword)[(uintptr_t)iter&3]) return iter;
+ while (iter != end && (uintptr_t)iter&(__SIZEOF_POINTER__-1)) {
+  if (*iter != ((u8 *)&dword)[(uintptr_t)iter&(__SIZEOF_POINTER__-1)]) return iter;
  }
- assert(((end-iter) % 4) == 0);
+ assert(((end-iter) % __SIZEOF_POINTER__) == 0);
  aligned    = (byte_t *)CEIL_ALIGN((uintptr_t)iter,PAGESIZE);
  scan_bytes = (size_t)(aligned-iter);
  n_bytes    = (size_t)(end-iter);
@@ -1890,10 +1915,10 @@ mheap_validate(struct dsetup *setup,
     /* Make sure that node data is really zero/debug-initialized. */
     byte_t *begin,*error; size_t n_bytes;
 #ifdef CONFIG_MALLOC_DEBUG_INIT
-    u32 init_dword = CONFIG_MALLOC_DEBUG_INIT;
-    if (MFREE_ATTR(node)&PAGEATTR_ZERO) init_dword = 0;
+    uintptr_t init_xword = CONFIG_MALLOC_DEBUG_INIT;
+    if (MFREE_ATTR(node)&PAGEATTR_ZERO) init_xword = 0;
 #else
-#define init_dword 0
+#define init_xword 0
 #endif
 #define HEX_OFFSET   32
 #define HEX_SIZE    (16+HEX_OFFSET*2)
@@ -1903,7 +1928,7 @@ mheap_validate(struct dsetup *setup,
     begin   += sizeof(struct mfree);
     n_bytes -= sizeof(struct mfree);
     if (n_bytes &&
-       (error = (byte_t *)priv_memnchr_noalloc(begin,init_dword,n_bytes)) != NULL) {
+       (error = (byte_t *)priv_memnchr_noalloc(begin,init_xword,n_bytes)) != NULL) {
      size_t hex_size; byte_t *hex_begin;
      hex_begin = error-HEX_OFFSET;
      if (hex_begin < begin)
@@ -1915,12 +1940,12 @@ mheap_validate(struct dsetup *setup,
                   "> Offset %Id bytes into heap free range %p...%p\n"
                   "> Offset %Id bytes into heap data range %p...%p\n"
                   "%.?[hex]",
-                  error,((u8 *)&init_dword)[(uintptr_t)error & 3],
+                  error,((u8 *)&init_xword)[(uintptr_t)error & (__SIZEOF_POINTER__-1)],
                  (uintptr_t)error-MFREE_BEGIN(node),MFREE_MIN(node),MFREE_MAX(node),
                  (uintptr_t)error-(uintptr_t)begin,(uintptr_t)begin,MFREE_MAX(node),
                   hex_size,hex_begin);
     }
-#undef init_dword
+#undef init_xword
    }
   }
  }
@@ -2894,7 +2919,7 @@ mptr_mvtail(struct mptr *__restrict self,
 #ifdef CONFIG_MALLOC_DEBUG_INIT
   if (flags&GFP_CALLOC)
        memset(release_addr,0,release_size);
-  else mempatl(release_addr,CONFIG_MALLOC_DEBUG_INIT,release_size);
+  else MEMPATX(release_addr,CONFIG_MALLOC_DEBUG_INIT,release_size);
 #else
   if (flags&GFP_CALLOC)
       memset(release_addr,0,release_size);

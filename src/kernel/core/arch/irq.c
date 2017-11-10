@@ -613,13 +613,18 @@ kill_task:
  if (temp&CR0_PG) iter = stpcpy(iter,"+PG");
  {
   uintptr_t cr3 = GET_REG("cr3");
+  uintptr_t cr2 = (uintptr_t)this_task->t_lastcr2;
+  isr_t pf_handler;
+  /* Can only use `t_lastcr2', once the pagefault handler is set up. */
+  irq_get(EXC_PAGE_FAULT,&pf_handler);
+  if (pf_handler.i_func == dirq[EXC_PAGE_FAULT])
+      cr2 = GET_REG("cr2");
   if (iter != buffer) {
    *iter = '\0';
    debug_printf("CR0 %p (%s)\n",temp,buffer+1);
-   debug_printf("CR2 %p  CR3 %p",this_task->t_lastcr2,cr3);
+   debug_printf("CR2 %p  CR3 %p",cr2,cr3);
   } else {
-   debug_printf("CR0 %p  CR2 %p  CR3 %p",
-                      temp,this_task->t_lastcr2,cr3);
+   debug_printf("CR0 %p  CR2 %p  CR3 %p",temp,cr2,cr3);
   }
   debug_printf("%s\n",cr3 == (uintptr_t)&pdir_kernel ? " (PDIR_KERNEL)" : "");
  }

@@ -205,14 +205,9 @@ SECTIONS {
 		DEFINE_HERE(__bootcpu_end);
 	} P_BOOTCPU
 	DEFINE(__bootcpu_gdt       = ABSOLUTE(__bootcpu + cpu_gdt));
-	DEFINE(__percpu_dat_dwords = ABSOLUTE(__percpu_datsize / 4));
-	DEFINE(__percpu_bss_dwords = ABSOLUTE(__percpu_bsssize / 4));
-	DEFINE(__percpu_all_dwords = ABSOLUTE(__percpu_allsize / 4));
-#ifdef __x86_64__
-	DEFINE(__percpu_dat_qwords = ABSOLUTE(__percpu_datsize / 8));
-	DEFINE(__percpu_bss_qwords = ABSOLUTE(__percpu_bsssize / 8));
-	DEFINE(__percpu_all_qwords = ABSOLUTE(__percpu_allsize / 8));
-#endif
+	DEFINE(__percpu_dat_xwords = ABSOLUTE(__percpu_datsize / __SIZEOF_POINTER__));
+	DEFINE(__percpu_bss_xwords = ABSOLUTE(__percpu_bsssize / __SIZEOF_POINTER__));
+	DEFINE(__percpu_all_xwords = ABSOLUTE(__percpu_allsize / __SIZEOF_POINTER__));
 
 	/* A spection part of kernel data that is mapped as read-only,
 	 * yet still accessible in every user-space page directory.

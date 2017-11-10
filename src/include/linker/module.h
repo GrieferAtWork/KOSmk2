@@ -56,13 +56,13 @@ struct mregion;
 struct modseg {
  /* Module segment descriptor. */
  u32                 ms_type;   /*< [const] Segment type (One of `MODSEG_*') */
+ u32                 ms_prot;   /*< [const] Segment protection (Set of `PROT_*' from <sys/mman.h>) */
  pos_t               ms_fpos;   /*< [const] File offset in `:m_file' where this segment starts. */
  maddr_t             ms_vaddr;  /*< [const] Segment virtual address (aka. base address for symbols within the segment). */
  maddr_t             ms_paddr;  /*< [const] Segment physical address (aka. real address in the effective address space). */
  size_t              ms_msize;  /*< [const][!0][>= ms_fsize] Segment memory size (fill diff with `ms_fsize' with ZERO-bytes) */
  size_t              ms_fsize;  /*< [const] Segment file size (max amount of bytes to read from file) */
- u32                 ms_prot;   /*< [const] Segment protection (Set of `PROT_*' from <sys/mman.h>) */
- u32                 ms_fill;   /*< [const] DWORD repeated to fill bss memory (NOTE: All four bytes of this should be equal!) */
+ uintptr_t           ms_fill;   /*< [const] DWORD repeated to fill bss memory (NOTE: All four bytes of this should be equal!) */
  REF struct mregion *ms_region; /*< [0..1][lock(ms_rlock)][write(ONCE)]
                                  *  Pre-cached, mappable memory region for this segment.
                                  *  NOTE: Lazily create, but kept forever.

@@ -152,59 +152,10 @@ typedef ssize_t (KCALL *pdirwalker)(VIRT ppage_t v_addr, PHYS ppage_t p_addr,
 FUNDEF ssize_t KCALL pdir_enum(pdir_t *__restrict self,
                                pdirwalker walker, void *closure);
 
-
-#ifdef CONFIG_BUILDING_KERNEL_CORE
-#ifdef __x86_64__
-
-/* Used during early booting to allocate page directory identity pages
- * required for accessing physical memory before we actually know what
- * RAM can be used for ~real~ physical memory management.
- * Technically, this isn't a very good system, because it basically
- * assumes that there is ~sufficient~ memory following the kernel core's
- * position in the physical address space, but before we can start figuring
- * out what the real RAM ranges are (For which we must access memory provided
- * by the bootloader, which may not yet be mapped at that point), we need
- * ~some~ mechanism for allocating pages we can use for mapping that memory.
- * NOTE: Once physical memory management is set up and we've moved on to
- *       initializing the kernel page directory, 
- * HINT: Concerning the multiboot information data structures, a special
- *       check is performed that will move this pointer to the back of that
- *       structure in the event that they should overlap, though normally
- *       multiboot will just place its information structures in low memory. */
-INTDEF INITDATA ppage_t early_page_end;
-INTDEF INITCALL ppage_t early_page_malloc(void);
-
-/* Ensure that the given address is identity-mapped in the
- * kernel page directory during _very_ early booting.
- * Since x86_64 has the absurdly humongous address space is has,
- * together with the fact that there is no way of using a single
- * page to map its entirety (as is possible by using the PSE
- * extension on i386), this acts as a work-around for accessing
- * any physical memory address before paging has been initialized,
- * or RAM has been detected.
- * Internally, the function does the following:
- * >> e4 = &pdir_kernel.pd_directory[PDIR_E4_INDEX(addr)];
- * >> if (!PDIR_E4_ISLINK(*e4)) // Ensure level #4 presence.
- * >>     *e4 = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|memset(early_page_malloc(),0,PAGESIZE);
- * >> e3 = &PDIR_E4_RDLINK(*e4)[PDIR_E3_INDEX(addr)];
- * >> if (!PDIR_E3_ISLINK(*e3)) {
- * >>    // Allocate a new level #3 entry.
- * >>    uintptr_t base; size_t i;
- * >>    union pdir_e2 *e2 = early_page_malloc();
- * >>    base = (addr & PDIR_E2_MASK) | PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT;
- * >>    for (i = 0; i < PDIR_E2_COUNT; ++i) {
- * >>         e2[i] = (base+i*PDIR_E2_SIZE);
- * >>    }
- * >>    *e3 = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|e2;
- * >> }
- */
-INTDEF INITCALL void early_map_identity(PHYS void *addr, size_t n_bytes);
-
-#else
+#ifndef early_map_identity
 /* The entirety of the physical address space is already identity-mapped. */
 #define early_map_identity(addr,n_bytes) (void)0
 #endif
-#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 #endif /* __CC__ */
 

@@ -303,7 +303,11 @@ task_mkhstack(struct task *__restrict self, size_t n_bytes) {
 #ifdef CONFIG_HOST_STACKINIT
  { struct mscatter *iter = &stack_region->mr_part0.mt_memory;
    while (iter) {
+#if __SIZEOF_POINTER__ >= 8
+    memsetq(iter->m_start,CONFIG_HOST_STACKINIT,iter->m_size/8);
+#else
     memsetl(iter->m_start,CONFIG_HOST_STACKINIT,iter->m_size/4);
+#endif
     iter = iter->m_next;
    }
  }

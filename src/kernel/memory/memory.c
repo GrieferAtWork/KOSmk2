@@ -55,6 +55,23 @@ DECL_BEGIN
 #define LOG_PHYSICAL_ALLOCATIONS 0
 #endif
 
+
+#if __SIZEOF_POINTER__ == 8
+#   define MEMSETX   memsetq
+#   define MEMCPYX   memcpyq
+#elif __SIZEOF_POINTER__ == 4
+#   define MEMSETX   memsetl
+#   define MEMCPYX   memcpyl
+#elif __SIZEOF_POINTER__ == 2
+#   define MEMSETX   memsetw
+#   define MEMCPYX   memcpyw
+#elif __SIZEOF_POINTER__ == 1
+#   define MEMSETX   memsetb
+#   define MEMCPYX   memcpyb
+#else
+#   error "Unsupported sizeof(void *)"
+#endif
+
 #if defined(CONFIG_DEBUG) && 1
 #define HAVE_VERIFY_MEMORY_M
 #define HAVE_VERIFY_MEMORY_F
@@ -80,7 +97,8 @@ debug_verify_memory(ppage_t start, PAGE_ALIGNED size_t n_bytes,
  }
 #if 1
  else if (after_malloc) {
-  memsetl(start,KERNEL_DEBUG_MEMPAT_PAGE_MALLOC,n_bytes/4);
+  MEMSETX(start,KERNEL_DEBUG_MEMPAT_PAGE_MALLOC,
+          n_bytes/__SIZEOF_POINTER__);
  }
 #endif
 }
@@ -94,10 +112,10 @@ debug_verify_memory(ppage_t start, PAGE_ALIGNED size_t n_bytes,
 
 
 INTERN ATTR_HOTDATA
-struct mzone page_zones[MZONE_COUNT] = {
+struct mzone page_zones[MZONE_REAL_COUNT] = {
     /* Pre-initialize all zones as empty.
      * NOTE: All zones use physical pointers */
-    [0 ... MZONE_COUNT-1] = {
+    [0 ... MZONE_REAL_COUNT-1] = {
         .z_lock  = ATOMIC_RWLOCK_INIT,
         .z_root  = PAGE_ERROR,
         .z_inuse = 0,
@@ -105,22 +123,40 @@ struct mzone page_zones[MZONE_COUNT] = {
     },
 };
 
-#define DEVICE_BEGIN  0x000a0000
-#define DEVICE_END    0x00100000
-
 PUBLIC struct mzonespec const mzone_spec = {
+#ifdef __x86_64__
     .ms_min = {
-        [MZONE_1MB]     = (uintptr_t)(0x00000000),
-        [MZONE_DEV]     = (uintptr_t)(DEVICE_BEGIN),
-        [MZONE_SHARE]   = (uintptr_t)(DEVICE_END),
-        [MZONE_NOSHARE] = (uintptr_t)(0-KERNEL_BASE),
+        [MZONE_1MB]                  = __UINTPTR_C(0x0000000000000000),
+        [MZONE_DEV]                  = __UINTPTR_C(0x00000000000a0000),
+        [MZONE_STATIC]               = __UINTPTR_C(0x0000000000100000),
+        [MZONE_HIMEM]                = __UINTPTR_C(0x0000000080000000),
+        [MZONE_VIRTUAL|MZONE_1MB]    = __UINTPTR_C(0xffffffff80000000),
+        [MZONE_VIRTUAL|MZONE_DEV]    = __UINTPTR_C(0xffffffff800a0000),
+        [MZONE_VIRTUAL|MZONE_STATIC] = __UINTPTR_C(0xffffffff80100000),
+        [MZONE_VIRTUAL|MZONE_HIMEM]  = __UINTPTR_C(0xffffffffffffffff), /* Doesn't exist. */
     },
     .ms_max = {
-        [MZONE_1MB]     = (uintptr_t)(DEVICE_BEGIN-1),
-        [MZONE_DEV]     = (uintptr_t)(DEVICE_END-1),
-        [MZONE_SHARE]   = (uintptr_t)((0-KERNEL_BASE)-1),
-        [MZONE_NOSHARE] = (uintptr_t)(KERNEL_BASE-1),
+        [MZONE_1MB]                  = __UINTPTR_C(0x000000000009ffff),
+        [MZONE_DEV]                  = __UINTPTR_C(0x00000000000fffff),
+        [MZONE_STATIC]               = __UINTPTR_C(0x000000007fffffff),
+        [MZONE_HIMEM]                = __UINTPTR_C(0x00007fffffffffff),
+        [MZONE_VIRTUAL|MZONE_1MB]    = __UINTPTR_C(0xffffffff8009ffff),
+        [MZONE_VIRTUAL|MZONE_DEV]    = __UINTPTR_C(0xffffffff800fffff),
+        [MZONE_VIRTUAL|MZONE_STATIC] = __UINTPTR_C(0xffffffffffffffff),
+        [MZONE_VIRTUAL|MZONE_HIMEM]  = __UINTPTR_C(0x0000000000000000), /* Doesn't exist. */
     },
+#else
+    .ms_min = {
+        [MZONE_1MB]   = __UINTPTR_C(0x00000000),
+        [MZONE_DEV]   = __UINTPTR_C(0x000a0000),
+        [MZONE_HIMEM] = __UINTPTR_C(0x00100000),
+    },
+    .ms_max = {
+        [MZONE_1MB]   = __UINTPTR_C(0x0009ffff),
+        [MZONE_DEV]   = __UINTPTR_C(0x000fffff),
+        [MZONE_HIMEM] = __UINTPTR_C(0xbfffffff),
+    },
+#endif
 };
 
 
@@ -132,7 +168,7 @@ mov_pages_lo(void *dst, void const *src, size_t n_bytes) {
  CHECK_HOST_TEXT(src,n_bytes);
  n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
  while (n_bytes) {
-  memcpyl(dst,src,PAGESIZE/4);
+  MEMCPYX(dst,src,PAGESIZE/__SIZEOF_POINTER__);
   n_bytes            -= PAGESIZE;
   *(uintptr_t *)&dst += PAGESIZE;
   *(uintptr_t *)&src += PAGESIZE;
@@ -150,7 +186,7 @@ mov_pages_hi(void *dst, void const *src, size_t n_bytes) {
  while (n_bytes) {
   *(uintptr_t *)&dst -= PAGESIZE;
   *(uintptr_t *)&src -= PAGESIZE;
-  memcpyl(dst,src,PAGESIZE/4);
+  MEMCPYX(dst,src,PAGESIZE/__SIZEOF_POINTER__);
   n_bytes            -= PAGESIZE;
  }
 }
@@ -240,7 +276,7 @@ page_available(ppage_t start, PAGE_ALIGNED size_t n_bytes) {
  struct mman *omm = NULL;
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert(IS_ALIGNED(n_bytes,PAGESIZE));
- for (zone = 0; zone < MZONE_COUNT; ++zone) {
+ for (zone = 0; zone < MZONE_REAL_COUNT; ++zone) {
   if ((uintptr_t)start >= MZONE_MIN(zone) &&
       (uintptr_t)start <= MZONE_MAX(zone)) {
    size_t zone_bytes = (MZONE_MAX(zone)+1)-(uintptr_t)start;
@@ -373,10 +409,9 @@ search_zone:
           "[MEM] Allocated memory %p...%p from zone #%d (#%d)\n",
           result,(uintptr_t)result+(n_bytes-1),
          (int)(zone-page_zones),zone_id);
-   if (zone_id == 0) debug_tbprint(0);
 #endif /* LOG_PHYSICAL_ALLOCATIONS */
 
-   if (must_clear) memsetl(result,0,n_bytes/4);
+   if (must_clear) MEMSETX(result,0,n_bytes/__SIZEOF_POINTER__);
    VERIFY_MEMORY_M(result,n_bytes,attr);
    return result;
   }
@@ -541,7 +576,7 @@ scan_zone:
  }
  assert(result == PAGE_ERROR ||
        (result >= min && result <= max));
- if (must_clear) memsetl(result,0,n_bytes/4);
+ if (must_clear) MEMSETX(result,0,n_bytes/__SIZEOF_POINTER__);
 #ifdef HAVE_VERIFY_MEMORY_M
  if (result != PAGE_ERROR)
      VERIFY_MEMORY_M(result,n_bytes,attr);
@@ -650,10 +685,9 @@ search_zone:
           "[MEM] Allocated memory %p...%p from zone #%d (#%d)\n",
           result,(uintptr_t)result+(alloc_size-1),
          (int)(zone-page_zones),zone_id);
-   if (zone_id == 0) debug_tbprint(0);
 #endif /* LOG_PHYSICAL_ALLOCATIONS */
 
-   if (must_clear) memsetl(result,0,alloc_size/4);
+   if (must_clear) MEMSETX(result,0,alloc_size/__SIZEOF_POINTER__);
    VERIFY_MEMORY_M(result,alloc_size,attr);
    return result;
   }
@@ -848,7 +882,8 @@ mscatter_memcpy(struct mscatter const *__restrict dst,
  dst_size = dst->m_size;
  for (;;) {
   size_t cpy_size = MIN(src_size,dst_size);
-  memcpyl((void *)dst_iter,(void *)src_iter,cpy_size/4);
+  MEMCPYX((void *)dst_iter,(void *)src_iter,
+           cpy_size/__SIZEOF_POINTER__);
   if ((dst_size -= cpy_size) == 0) {
    if ((dst = dst->m_next) == 0) break;
    dst_iter = (PAGE_ALIGNED uintptr_t)dst->m_start;
@@ -966,20 +1001,23 @@ page_realloc(ppage_t start, size_t old_bytes,
                            attr&~(PAGEATTR_ZERO));
   if (result != PAGE_ERROR) {
    mov_pages_lo(result,start,old_bytes);
-   if (attr&PAGEATTR_ZERO) memsetl((void *)((uintptr_t)result+old_bytes),0,diff/4);
+   if (attr&PAGEATTR_ZERO)
+       MEMSETX((void *)((uintptr_t)result+old_bytes),0,
+                diff/__SIZEOF_POINTER__);
    return result;
   }
   /* Allocate a whole new region. */
   if (attr&PAGEATTR_ZERO && diff < old_bytes) {
    result = page_malloc(new_bytes,attr&~(PAGEATTR_ZERO),zone);
    if unlikely(result == PAGE_ERROR) return PAGE_ERROR;
-   memsetl((void *)((uintptr_t)result+old_bytes),0,diff/4);
+   MEMSETX((void *)((uintptr_t)result+old_bytes),
+            0,diff/__SIZEOF_POINTER__);
   } else {
    result = page_malloc(new_bytes,attr,zone);
    if unlikely(result == PAGE_ERROR) return PAGE_ERROR;
   }
   assert(IS_ALIGNED(old_bytes,PAGESIZE));
-  memcpyl(result,start,old_bytes/4);
+  MEMCPYX(result,start,old_bytes/__SIZEOF_POINTER__);
   page_free(start,old_bytes);
   return result;
  }

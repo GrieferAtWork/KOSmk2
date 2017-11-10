@@ -52,10 +52,12 @@ DECL_BEGIN
  */
 #define ASM_USER_MAX               0x00007fffffffffff
 #define ASM_USER_END               0x0000800000000000
+#define ASM_PHYS_END               0x0000800000000000
 #define ASM_KERNEL_BASE            0xffff800000000000
 #define ASM_CORE_BASE              0xffffffff80000000
 #define USER_MAX        __UINT64_C(0x00007fffffffffff)
 #define USER_END        __UINT64_C(0x0000800000000000)
+#define PHYS_END        __UINT64_C(0x0000800000000000) /* The end of the physical identity-mapping in the kernel page directory. */
 #define KERNEL_BASE     __UINT64_C(0xffff800000000000)
 #define CORE_BASE       __UINT64_C(0xffffffff80000000) /* -2Gb */
 
@@ -120,13 +122,13 @@ DECL_BEGIN
 /* Page directory action flags (accepted by `pdir_mprotect', `pdir_mmap', `pdir_mremap' and `pdir_munmap') */
 #define PDIR_FLAG_NOFLUSH             0x8000 /* Don't sync the page directory entry - instead, the caller must invalidate it. */
 /* Internal/arch-specific attributes. */
-#define PDIR_ATTR_4MIB                0x0080 /* The entry describes an address endpoint, rather than a link. */
+#define PDIR_ATTR_2MIB                0x0080 /* The entry describes an address endpoint, rather than a link. */
 
-/* Check if 4Mib pages are allowed for the given address.
+/* Check if 2Mib pages are allowed for the given address.
  * NOTE: They are not allowed for kernel pages, so-as to
  *       keep the indirection required for sharing pages.
  * NOTE: This check applies to levels #1, #2 and #3 */
-#define PDIR_ALLOW_4MIB(addr) ((u64)(addr) < KERNEL_BASE)
+#define PDIR_ALLOW_2MIB(addr) ((u64)(addr) < KERNEL_BASE)
 
 
 
@@ -175,9 +177,9 @@ union PACKED pdir_e {
 
 #define PDIR_E2_RDLINK(x) ((union pdir_e1 *)((x).e2_data&PDIR_LINK_MASK))
 #define PDIR_E2_RDADDR(x)                   ((x).e2_data&PDIR_ADDR_MASK)
-#define PDIR_E2_ISLINK(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB)) == (PDIR_ATTR_PRESENT))
-#define PDIR_E2_ISADDR(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB)) == (PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB))
-#define PDIR_E2_ISALLOC(x)                 (((x).e2_data&PDIR_LINK_MASK) != PDIR_LINK_MASK && !((x).e2_attr&PDIR_ATTR_4MIB))
+#define PDIR_E2_ISLINK(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_2MIB)) == (PDIR_ATTR_PRESENT))
+#define PDIR_E2_ISADDR(x)                  (((x).e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_2MIB)) == (PDIR_ATTR_PRESENT|PDIR_ATTR_2MIB))
+#define PDIR_E2_ISALLOC(x)                 (((x).e2_data&PDIR_LINK_MASK) != PDIR_LINK_MASK && !((x).e2_attr&PDIR_ATTR_2MIB))
 
 #define PDIR_E3_RDLINK(x) ((union pdir_e2 *)((x).e3_data&PDIR_LINK_MASK))
 #define PDIR_E3_ISLINK(x)                   ((x).e3_attr&PDIR_ATTR_PRESENT)
@@ -209,7 +211,7 @@ LOCAL KPD PHYS void *KCALL pdir_translate(pdir_t *__restrict self, VIRT void *pt
  __assertf(e.e3.e3_attr&PDIR_ATTR_PRESENT,"Faulty address %p (%p)",ptr,e.e3.e3_attr);
  e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(ptr)];
  __assertf(e.e2.e2_attr&PDIR_ATTR_PRESENT,"Faulty address %p (%p)",ptr,e.e2.e2_attr);
- if (e.e2.e2_attr&PDIR_ATTR_4MIB)
+ if (e.e2.e2_attr&PDIR_ATTR_2MIB)
      return (PHYS void *)(PDIR_E2_RDADDR(e.e2)+PDIR_E2_OFFSET(ptr));
  e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(ptr)];
  __assertf(PDIR_E1_ISADDR(e.e1),"Faulty address %p (%p)",ptr,e.e1.e1_attr);
@@ -222,7 +224,7 @@ LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *
  e.e3 = PDIR_E4_RDLINK(e.e4)[PDIR_E3_INDEX(ptr)];
  if (!(e.e3.e3_attr&PDIR_ATTR_PRESENT)) return 0;
  e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(ptr)];
- if ((e.e2.e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_4MIB)) != PDIR_ATTR_PRESENT)
+ if ((e.e2.e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_2MIB)) != PDIR_ATTR_PRESENT)
       return (e.e2.e2_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == PDIR_ATTR_WRITE;
  e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(ptr)];
  return (e.e1.e1_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == PDIR_ATTR_WRITE;
@@ -242,6 +244,61 @@ LOCAL void FCALL pdir_flushall(void) {
 #if PDIR_OFFSETOF_DIRECTORY != 0
 #error "Fix the above macros"
 #endif
+
+
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+/* Used during early booting to allocate page directory identity pages
+ * required for accessing physical memory before we actually know what
+ * RAM can be used for ~real~ physical memory management.
+ * Technically, this isn't a very good system, because it basically
+ * assumes that there is ~sufficient~ memory following the kernel core's
+ * position in the physical address space, but before we can start figuring
+ * out what the real RAM ranges are (For which we must access memory provided
+ * by the bootloader, which may not yet be mapped at that point), we need
+ * ~some~ mechanism for allocating pages we can use for mapping that memory.
+ * NOTE: Once physical memory management is set up and we've moved on to
+ *       initializing the kernel page directory, 
+ * HINT: Concerning the multiboot information data structures, a special
+ *       check is performed that will move this pointer to the back of that
+ *       structure in the event that they should overlap, though normally
+ *       multiboot will just place its information structures in low memory. */
+INTDEF INITDATA VIRT ppage_t early_page_end;
+/* Leave an unused gap in case the bootloader places setup data past the kernel. */
+#define EARLY_PAGE_GAP    (8*PAGESIZE)
+#define EARLY_PAGE_BEGIN  (KERNEL_END+EARLY_PAGE_GAP)
+#define EARLY_PAGE_END    ((uintptr_t)early_page_end)
+
+/* WARNING: The returned pointer may be either virtual, or physical.
+ *          Use `addr_is_virt' / `addr_is_phys' to check its association. */
+INTDEF INITCALL ppage_t KCALL early_page_malloc(void);
+
+/* Ensure that the given address is identity-mapped in the
+ * kernel page directory during _very_ early booting.
+ * Since x86_64 has the absurdly humongous address space is has,
+ * together with the fact that there is no way of using a single
+ * page to map its entirety (as is possible by using the PSE
+ * extension on i386), this acts as a work-around for accessing
+ * any physical memory address before paging has been initialized,
+ * or RAM has been detected.
+ * Internally, the function does the following:
+ * >> e4 = &pdir_kernel.pd_directory[PDIR_E4_INDEX(addr)];
+ * >> if (!PDIR_E4_ISLINK(*e4)) // Ensure level #4 presence.
+ * >>     *e4 = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|memset(early_page_malloc(),0,PAGESIZE);
+ * >> e3 = &PDIR_E4_RDLINK(*e4)[PDIR_E3_INDEX(addr)];
+ * >> if (!PDIR_E3_ISLINK(*e3)) {
+ * >>    // Allocate a new level #3 entry.
+ * >>    uintptr_t base; size_t i;
+ * >>    union pdir_e2 *e2 = early_page_malloc();
+ * >>    base = (addr & PDIR_E2_MASK) | PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT;
+ * >>    for (i = 0; i < PDIR_E2_COUNT; ++i) {
+ * >>         e2[i] = (base+i*PDIR_E2_SIZE);
+ * >>    }
+ * >>    *e3 = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|e2;
+ * >> }
+ */
+INTDEF INITCALL void KCALL early_map_identity(PHYS void *addr, size_t n_bytes);
+#define early_map_identity(addr,n_bytes)  early_map_identity(addr,n_bytes)
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 #endif /* __CC__ */
 

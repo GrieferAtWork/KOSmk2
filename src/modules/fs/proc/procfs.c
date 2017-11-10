@@ -159,7 +159,7 @@ memory_fopen(struct inode *__restrict ino,
        (total_used*100)/total_usable,
         total_free,total_usable);
 #else
- for (zone = 0; zone < MZONE_COUNT; ++zone) {
+ for (zone = 0; zone != MZONE_REAL_COUNT; ++zone) {
   struct meminfo const *info;
   MEMINFO_FOREACH(info,zone) {
    mem_avail = page_available(info->mi_full_addr,info->mi_full_size);

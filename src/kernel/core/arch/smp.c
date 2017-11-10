@@ -57,6 +57,23 @@
 
 DECL_BEGIN
 
+#if __SIZEOF_POINTER__ == 8
+#   define MEMSETX   memsetq
+#   define MEMCPYX   memcpyq
+#elif __SIZEOF_POINTER__ == 4
+#   define MEMSETX   memsetl
+#   define MEMCPYX   memcpyl
+#elif __SIZEOF_POINTER__ == 2
+#   define MEMSETX   memsetw
+#   define MEMCPYX   memcpyw
+#elif __SIZEOF_POINTER__ == 1
+#   define MEMSETX   memsetb
+#   define MEMCPYX   memcpyb
+#else
+#   error "Unsupported sizeof(void *)"
+#endif
+
+
 #define I8253_IOPORT_CMD  0x43
 #define I8253_IOPORT_DATA 0x40
 
@@ -711,15 +728,17 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  /* Setup initial TSS information. */
  sig_init(&vcpu->c_arch.ac_sigonoff);
  vcpu->c_arch.ac_mode           = CPUMODE_OFFLINE;
- vcpu->c_arch.ac_tss.esp0       = (uintptr_t)vcpu->c_idle.t_hstack.hs_end;
+ vcpu->c_arch.ac_tss.xsp0       = (uintptr_t)vcpu->c_idle.t_hstack.hs_end;
+#ifndef __x86_64__
  vcpu->c_arch.ac_tss.ss0        = __KERNEL_DS;
+#endif
  vcpu->c_arch.ac_tss.iomap_base = sizeof(struct tss);
 
  /* Finally, initialize per-cpu memory. */
- memcpyl((void *)((uintptr_t)vcpu+ALIGNED_CPUSIZE),
-         (void *)PERCPU_TEMPLATE,(size_t)PERCPU_DAT_DWORDS);
- memsetl((void *)((uintptr_t)vcpu+ALIGNED_CPUSIZE+(size_t)__percpu_datsize),
-          0x00000000,(size_t)PERCPU_BSS_DWORDS);
+ MEMCPYX((void *)((uintptr_t)vcpu+ALIGNED_CPUSIZE),
+         (void *)PERCPU_TEMPLATE,(size_t)PERCPU_DAT_XWORDS);
+ MEMSETX((void *)((uintptr_t)vcpu+ALIGNED_CPUSIZE+(size_t)__percpu_datsize),
+          0x00000000,(size_t)PERCPU_BSS_XWORDS);
 
  /* Encode TSS & CPU-SELF segments in the new CPU's address space.
   * NOTE: This is what the CPU will later use to identify itself! */

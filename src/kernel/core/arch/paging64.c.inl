@@ -39,8 +39,11 @@
 #include <sys/syslog.h>
 #include <sched/cpu.h>
 #include <sched/task.h>
+#include <stdbool.h>
 #include <stdalign.h>
 #include <string.h>
+#include <hybrid/panic.h>
+#include <sys/io.h>
 #ifndef CONFIG_NO_LDT
 #include <kernel/arch/task.h>
 #endif
@@ -80,10 +83,17 @@ STATIC_ASSERT(~PDIR_ADDR_MASK == PAGESIZE-1);
 /* STATIC_ASSERT(PDIR_E4_SHARESTART == 256); */
 
 
+#define pdir_readq(addr)         readq(addr)
+#if 1
+#define pdir_writeq(addr,value)  writeq(addr,value)
+#else
+#define pdir_writeq(addr,value) (syslog(LOG_DEBUG,"WRITE(%d):%p=%p\n",__LINE__,addr,value),writeq(addr,value))
+#endif
+
 /* NOTE: Add 2 pages to the end, which are always allocated by
  *       bootup code when the kernel core itself it identity-mapped. */
-INTERN ATTR_FREEDATA ppage_t early_page_end = (ppage_t)(KERNEL_END+2*PAGESIZE);
-INTERN ATTR_FREETEXT ppage_t early_page_malloc(void) {
+INTERN ATTR_FREEDATA ppage_t early_page_end = (ppage_t)(EARLY_PAGE_BEGIN+2*PAGESIZE);
+INTERN ATTR_FREETEXT ppage_t KCALL early_page_malloc(void) {
  /* Try to use actual physical memory, but if that fails, allocate
   * past the kernel core, assuming that there is memory there. */
  ppage_t result = page_malloc(PAGESIZE,PAGEATTR_NONE,MZONE_ANY);
@@ -91,9 +101,21 @@ INTERN ATTR_FREETEXT ppage_t early_page_malloc(void) {
  return result;
 }
 
+PRIVATE ATTR_NORETURN ATTR_FREETEXT void KCALL page_panic(void) {
+ PANIC(FREESTR("Failed to allocate memory for physical identity mapping"));
+}
 
-INTERN ATTR_FREETEXT void
-early_map_identity(PHYS void *addr, size_t n_bytes) {
+PRIVATE ATTR_FREETEXT ppage_t KCALL do_page_malloc(bool early) {
+ ppage_t result;
+ if (early) return early_page_malloc();
+ result = page_malloc(PAGESIZE,PAGEATTR_NONE,MZONE_ANY);
+ if unlikely(result == PAGE_ERROR) page_panic();
+ return result;
+}
+
+
+PRIVATE ATTR_FREETEXT void KCALL
+kernel_do_map_identity(PHYS void *addr, size_t n_bytes, bool early) {
  union pdir_e *ent;
  if (!n_bytes) return;
  n_bytes += ((uintptr_t)addr & PDIR_E3_SIZE);
@@ -102,25 +124,36 @@ early_map_identity(PHYS void *addr, size_t n_bytes) {
   ent = (union pdir_e *)&pdir_kernel.pd_directory[PDIR_E4_INDEX(addr)];
   /* Ensure level #4 presence. */
   if (!PDIR_E4_ISLINK(ent->e4)) {
-   uintptr_t page = (uintptr_t)memsetq(early_page_malloc(),0,PAGESIZE/8);
+   uintptr_t page = (uintptr_t)memsetq(do_page_malloc(early),
+                                       PDIR_LINK_MASK,PAGESIZE/8);
    if (addr_isvirt(page)) page = (uintptr_t)virt_to_phys(page);
-   ent->e4.e4_data = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|page;
+   pdir_writeq(&ent->e4.e4_data,PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|page);
   }
   ent = (union pdir_e *)&PDIR_E4_RDLINK(ent->e4)[PDIR_E3_INDEX(addr)];
+  assert(PDIR_E3_ISLINK(ent->e3) == PDIR_E3_ISALLOC(ent->e3));
   if (!PDIR_E3_ISLINK(ent->e3)) {
-   // Allocate a new level #3 entry.
-   uintptr_t base; size_t i;
-   union pdir_e2 *e2 = (union pdir_e2 *)early_page_malloc();
-   base = ((uintptr_t)addr & PDIR_E2_MASK) | (PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
+   /* Allocate a new level #3 entry. */
+   uintptr_t base; size_t i; union pdir_e2 *e2;
+   e2 = (union pdir_e2 *)do_page_malloc(early);
+   /* Fill the level #3 entry with 512*2Mib mappings,
+    * covering a total of 1Gib (== `PDIR_E3_SIZE'). */
+   base = ((uintptr_t)addr & PDIR_E3_MASK) | (PDIR_ATTR_2MIB|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
    for (i = 0; i < PDIR_E2_COUNT; ++i)
         e2[i].e2_data = (base+i*PDIR_E2_SIZE);
    if (addr_isvirt(e2)) e2 = (union pdir_e2 *)virt_to_phys(e2);
-   ent->e3.e3_data = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|(uintptr_t)e2;
+   pdir_writeq(&ent->e3.e3_data,PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|(uintptr_t)e2);
   }
   if (n_bytes < PDIR_E3_SIZE) break;
   n_bytes             -= PDIR_E3_SIZE;
   *(uintptr_t *)&addr += PDIR_E3_SIZE;
  }
+}
+
+
+#undef early_map_identity
+INTERN ATTR_FREETEXT void KCALL
+early_map_identity(PHYS void *addr, size_t n_bytes) {
+ kernel_do_map_identity(addr,n_bytes,true);
 }
 
 
@@ -138,28 +171,26 @@ PUBLIC KPD bool KCALL pdir_init(pdir_t *__restrict self) {
  return true;
 }
 
+#define pdir_e1_free(vector) \
+  page_free((ppage_t)(vector),sizeof(e1_t)*PDIR_E1_COUNT)
 
-PRIVATE KPD void KCALL pdir_e2_free(e2_t *__restrict dst) {
- if (PDIR_E2_ISLINK(*dst)) {
-  page_free((ppage_t)PDIR_E2_RDLINK(*dst),
-             sizeof(e1_t)*PDIR_E1_COUNT);
+PRIVATE KPD void KCALL pdir_e2_free(e2_t *__restrict vector) {
+ e2_t *iter,*end;
+ end = (iter = vector)+PDIR_E2_COUNT;
+ for (; iter != end; ++iter) {
+  if (PDIR_E2_ISALLOC(*iter))
+      pdir_e1_free(PDIR_E2_RDLINK(*iter));
  }
+ page_free((ppage_t)vector,sizeof(e2_t)*PDIR_E2_COUNT);
 }
-PRIVATE KPD void KCALL pdir_e3_free(e3_t *__restrict dst) {
- if (PDIR_E3_ISLINK(*dst)) {
-  e2_t *begin,*iter,*end;
-  end = (iter = begin = PDIR_E3_RDLINK(*dst))+PDIR_E2_COUNT;
-  for (; iter != end; ++iter) pdir_e2_free(iter);
-  page_free((ppage_t)begin,sizeof(e2_t)*PDIR_E2_COUNT);
+PRIVATE KPD void KCALL pdir_e3_free(e3_t *__restrict vector) {
+ e3_t *iter,*end;
+ end = (iter = vector)+PDIR_E3_COUNT;
+ for (; iter != end; ++iter) {
+  if (PDIR_E3_ISALLOC(*iter))
+      pdir_e2_free(PDIR_E3_RDLINK(*iter));
  }
-}
-PRIVATE KPD void KCALL pdir_e4_free(e4_t *__restrict dst) {
- if (PDIR_E4_ISLINK(*dst)) {
-  e3_t *begin,*iter,*end;
-  end = (iter = begin = PDIR_E4_RDLINK(*dst))+PDIR_E3_COUNT;
-  for (; iter != end; ++iter) pdir_e3_free(iter);
-  page_free((ppage_t)begin,sizeof(e3_t)*PDIR_E3_COUNT);
- }
+ page_free((ppage_t)vector,sizeof(e3_t)*PDIR_E3_COUNT);
 }
 
 
@@ -194,7 +225,10 @@ pdir_e3_copy(e3_t *__restrict dst) {
 err:
  /* Free what we've already duplicated. */
  end = PDIR_E3_RDLINK(*dst);
- while (iter-- != end) pdir_e2_free(iter);
+ while (iter-- != end) {
+  if (PDIR_E2_ISALLOC(*iter))
+      pdir_e1_free(PDIR_E2_RDLINK(*iter));
+ }
  page_free((ppage_t)end,sizeof(e2_t)*PDIR_E2_COUNT);
  return false;
 }
@@ -216,7 +250,10 @@ pdir_e4_copy(e4_t *__restrict dst) {
 err:
  /* Free what we've already duplicated. */
  end = PDIR_E4_RDLINK(*dst);
- while (iter-- != end) pdir_e3_free(iter);
+ while (iter-- != end) {
+  if (PDIR_E3_ISALLOC(*iter))
+      pdir_e2_free(PDIR_E3_RDLINK(*iter));
+ }
  page_free((ppage_t)end,sizeof(e3_t)*PDIR_E3_COUNT);
  return false;
 }
@@ -236,7 +273,10 @@ pdir_load_copy(pdir_t *__restrict self, pdir_t const *__restrict existing) {
  return true;
 err:
  /* Free what we've already duplicated. */
- while (iter-- != self->pd_directory) pdir_e4_free(iter);
+ while (iter-- != self->pd_directory) {
+  if (PDIR_E4_ISALLOC(*iter))
+      pdir_e3_free(PDIR_E4_RDLINK(*iter));
+ }
  return false;
 }
 
@@ -245,7 +285,10 @@ PUBLIC KPD void KCALL pdir_fini(pdir_t *__restrict self) {
  assert(self != &pdir_kernel_v && self != &pdir_kernel);
  /* Free all levels not apart of the kernel-share segment. */
  end = (iter = self->pd_directory)+PDIR_E4_SHARESTART;
- for (; iter != end; ++iter) pdir_e4_free(iter);
+ for (; iter != end; ++iter) {
+  if (PDIR_E4_ISALLOC(*iter))
+      pdir_e3_free(PDIR_E4_RDLINK(*iter));
+ }
 }
 
 
@@ -358,8 +401,8 @@ void KCALL pdir_kernel_remap_early_identity(void) {
  union pdir_e4 *e4_iter;
  union pdir_e3 *e3_iter,*e3_end;
  union pdir_e2 *e2_iter;
- early_begin = (PHYS ppage_t)virt_to_phys(KERNEL_END);
- early_end   = (PHYS ppage_t)virt_to_phys(early_page_end);
+ early_begin = (PHYS ppage_t)virt_to_phys(EARLY_PAGE_BEGIN);
+ early_end   = (PHYS ppage_t)virt_to_phys(EARLY_PAGE_END);
  /* Allocate replacement pages for early identity mappings. */
  if (!page_malloc_scatter(&replacement,
                          (uintptr_t)early_end-(uintptr_t)early_begin,
@@ -387,13 +430,14 @@ void KCALL pdir_kernel_remap_early_identity(void) {
    temp = mscatter_takeone(&replacement);
    assert(temp != PAGE_ERROR);
    memcpyq(temp,e3_iter,PAGESIZE/8);
-   e4_iter->e4_data &= PDIR_ATTR_MASK;
-   e4_iter->e4_data |= (uintptr_t)temp;
+   pdir_writeq(&e4_iter->e4_data,(e4_iter->e4_data&PDIR_ATTR_MASK)|(u64)temp);
    e3_iter = (union pdir_e3 *)temp;
   }
   e3_end = e3_iter+PDIR_E3_COUNT;
   for (; e3_iter != e3_end; ++e3_iter) {
-   assert(PDIR_E3_ISLINK(*e3_iter) == PDIR_E3_ISALLOC(*e3_iter));
+   assertf(PDIR_E3_ISLINK(*e3_iter) == PDIR_E3_ISALLOC(*e3_iter),"%p...%p",
+          (e4_iter-pdir_kernel.pd_directory)*PDIR_E4_SIZE+((e3_iter  )-PDIR_E4_RDLINK(*e4_iter))*PDIR_E3_SIZE,
+          (e4_iter-pdir_kernel.pd_directory)*PDIR_E4_SIZE+((e3_iter+1)-PDIR_E4_RDLINK(*e4_iter))*PDIR_E3_SIZE);
    if (!PDIR_E3_ISLINK(*e3_iter)) continue;
    e2_iter = PDIR_E3_RDLINK(*e3_iter);
    assert(IS_ALIGNED((uintptr_t)e2_iter,PAGESIZE));
@@ -403,8 +447,9 @@ void KCALL pdir_kernel_remap_early_identity(void) {
     temp = mscatter_takeone(&replacement);
     assert(temp != PAGE_ERROR);
     memcpyq(temp,e2_iter,PAGESIZE/8);
-    e3_iter->e3_data &= PDIR_ATTR_MASK;
-    e3_iter->e3_data |= (uintptr_t)temp;
+    COMPILER_WRITE_BARRIER();
+    pdir_writeq(&e3_iter->e3_data,
+          (e3_iter->e3_data&PDIR_ATTR_MASK)|(u64)temp);
    }
   }
  }
@@ -420,13 +465,204 @@ void KCALL pdir_kernel_remap_early_identity(void) {
 }
 
 
+PRIVATE ATTR_FREETEXT void KCALL
+pdir_kernel_alloc_level_1(PHYS PAGE_ALIGNED uintptr_t addr) {
+ union pdir_e e; union pdir_e2 *e2;
+ e.e4 = pdir_kernel.pd_directory[PDIR_E4_INDEX(addr)];
+ assertf(e.e4.e4_attr&PDIR_ATTR_PRESENT,"Faulty address %p (%p)",addr,e.e4.e4_attr);
+ e.e3 = PDIR_E4_RDLINK(e.e4)[PDIR_E3_INDEX(addr)];
+ assertf(e.e3.e3_attr&PDIR_ATTR_PRESENT,"Faulty address %p (%p)",addr,e.e3.e3_attr);
+ e2 = &PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(addr)];
+ assertf(e2->e2_attr&PDIR_ATTR_PRESENT,"Faulty address %p (%p)",addr,e2->e2_attr);
+ if (e2->e2_attr&PDIR_ATTR_2MIB) {
+  union pdir_e1 *e1; uintptr_t i;
+  /* Replace this mapping with a level-1 table. */
+  e1 = (union pdir_e1 *)page_malloc(sizeof(union pdir_e1)*PDIR_E2_COUNT,
+                                    PAGEATTR_NONE,PDIR_PAGEZONE);
+  if unlikely(e1 == PAGE_ERROR) page_panic();
+  addr = (addr&PDIR_E2_MASK)|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT;
+  for (i = 0; i < PDIR_E1_COUNT; ++i)
+       e1[i].e1_attr = addr+i*PDIR_E1_SIZE;
+  /* Update the page table entry. */
+  COMPILER_WRITE_BARRIER();
+  pdir_writeq(&e2->e2_data,(e2->e2_data&(PDIR_ATTR_MASK & ~(PDIR_ATTR_2MIB)))|(u64)e1);
+ }
+}
+
+PRIVATE ATTR_FREETEXT void KCALL
+pdir_kernel_alloc_identity(PHYS PAGE_ALIGNED uintptr_t base,
+                                PAGE_ALIGNED size_t size) {
+ /* Create/override identity mappings for `base...size' */
+ assert(IS_ALIGNED(base,PAGESIZE));
+ assert(IS_ALIGNED(size,PAGESIZE));
+ /* Step #1: Ensure that level #3 and #2 vectors exist
+  *          for any inclusive address of the given range. */
+ kernel_do_map_identity((void *)base,size,false);
+ /* Step #2: If the begin/end are not aligned by 4Mib, create
+  *          level #1 mappings for PAGESIZE-level precision. */
+ if (base&(PDIR_E2_SIZE-1)) pdir_kernel_alloc_level_1(base);
+ base += size;
+ if (base&(PDIR_E2_SIZE-1)) pdir_kernel_alloc_level_1(base);
+}
+
+PRIVATE ATTR_FREETEXT void KCALL
+pdir_kernel_e1_trunc(e1_t *__restrict vector,
+                     uintptr_t reladdr_base,
+                     uintptr_t reladdr_size) {
+ assert(reladdr_base+reladdr_size >= reladdr_base);
+ assert(reladdr_base+reladdr_size <= PDIR_E1_TOTALSIZE);
+ /* if (!reladdr_size) return; */
+ /* Simply override all affected vector pages with `PDIR_ADDR_MASK' */
+ memsetq(vector+PDIR_E1_INDEX(reladdr_base),
+         PDIR_ADDR_MASK,reladdr_size/PDIR_E1_SIZE);
+}
+
+PRIVATE ATTR_FREETEXT void KCALL
+pdir_kernel_e2_trunc(e2_t *__restrict vector,
+                     uintptr_t reladdr_base,
+                     uintptr_t reladdr_size) {
+ unsigned int e2_index;
+ e2_t *e2; uintptr_t e2_begin;
+ assert(reladdr_base+reladdr_size >= reladdr_base);
+ assert(reladdr_base+reladdr_size <= PDIR_E2_TOTALSIZE);
+ if (reladdr_size) for (;;) {
+  e2_index = PDIR_E2_INDEX(reladdr_base);
+  e2       = &vector[e2_index];
+  e2_begin = e2_index*PDIR_E2_SIZE;
+  if (PDIR_E2_ISALLOC(*e2)) {
+   uintptr_t trunc_rel_begin = reladdr_base-e2_begin;
+   uintptr_t trunc_rel_end   = MIN(reladdr_base+reladdr_size,(e2_index+1)*PDIR_E2_SIZE)-e2_begin;
+   assertf(trunc_rel_begin <= trunc_rel_end,"%p > %p\n",trunc_rel_begin,trunc_rel_end);
+   if (trunc_rel_begin == 0 && trunc_rel_end == PDIR_E2_SIZE) {
+    /* Delete this entire entry. */
+    e1_t *deltab = PDIR_E2_RDLINK(*e2);
+    pdir_writeq(&e2->e2_data,PDIR_ADDR_MASK);
+    pdir_e1_free(deltab);
+   } else if (PDIR_E2_ISLINK(*e2)) {
+    /* Truncate the linked table. */
+    pdir_kernel_e1_trunc(PDIR_E2_RDLINK(*e2),trunc_rel_begin,
+                         trunc_rel_end-trunc_rel_begin);
+   }
+  }
+  if (reladdr_size <= PDIR_E2_SIZE) break;
+  reladdr_size -= PDIR_E2_SIZE;
+  reladdr_base += PDIR_E2_SIZE;
+ }
+}
+
+PRIVATE ATTR_FREETEXT void KCALL
+pdir_kernel_e3_trunc(e3_t *__restrict vector,
+                     uintptr_t reladdr_base,
+                     uintptr_t reladdr_size) {
+ unsigned int e3_index;
+ e3_t *e3; uintptr_t e3_begin;
+ assert(reladdr_base+reladdr_size >= reladdr_base);
+ assert(reladdr_base+reladdr_size <= PDIR_E3_TOTALSIZE);
+ if (reladdr_size) for (;;) {
+  e3_index = PDIR_E3_INDEX(reladdr_base);
+  e3       = &vector[e3_index];
+  e3_begin = e3_index*PDIR_E3_SIZE;
+  if (PDIR_E3_ISALLOC(*e3)) {
+   uintptr_t trunc_rel_begin = reladdr_base-e3_begin;
+   uintptr_t trunc_rel_end   = MIN(reladdr_base+reladdr_size,(e3_index+1)*PDIR_E3_SIZE)-e3_begin;
+   assertf(trunc_rel_begin <= trunc_rel_end,"%p > %p\n",trunc_rel_begin,trunc_rel_end);
+   if (trunc_rel_begin == 0 && trunc_rel_end == PDIR_E3_SIZE) {
+    /* Delete this entire entry. */
+    e2_t *deltab = PDIR_E3_RDLINK(*e3);
+    pdir_writeq(&e3->e3_data,PDIR_ADDR_MASK);
+    pdir_e2_free(deltab);
+   } else if (PDIR_E3_ISLINK(*e3)) {
+    /* Truncate the linked table. */
+    pdir_kernel_e2_trunc(PDIR_E3_RDLINK(*e3),trunc_rel_begin,
+                         trunc_rel_end-trunc_rel_begin);
+   }
+  }
+  if (reladdr_size <= PDIR_E3_SIZE) break;
+  reladdr_size -= PDIR_E3_SIZE;
+  reladdr_base += PDIR_E3_SIZE;
+ }
+}
+
+PRIVATE ATTR_FREETEXT void KCALL
+pdir_kernel_trunc_identity(PHYS PAGE_ALIGNED uintptr_t base,
+                                PAGE_ALIGNED size_t size) {
+ unsigned int e4_index;
+ e4_t *e4; uintptr_t e4_begin;
+ assertf(base+size >= base,"%p...%p",base,base+size-1);
+ assertf(base+size <= PDIR_E4_TOTALSIZE,"%p...%p",base,base+size-1);
+ /* Delete all mappings within `base...size' */
+ if (size) for (;;) {
+  e4_index = PDIR_E4_INDEX(base);
+  e4       = &pdir_kernel.pd_directory[e4_index];
+  e4_begin = e4_index*PDIR_E4_SIZE;
+  if (PDIR_E4_ISALLOC(*e4)) {
+   uintptr_t trunc_rel_begin = base-e4_begin;
+   uintptr_t trunc_rel_end   = MIN(base+size,(e4_index+1)*PDIR_E4_SIZE)-e4_begin;
+   assertf(trunc_rel_begin <= trunc_rel_end,"%p > %p\n",trunc_rel_begin,trunc_rel_end);
+   if (trunc_rel_begin == 0 && trunc_rel_end == PDIR_E4_SIZE) {
+    /* Delete this entire entry. */
+    e3_t *deltab = PDIR_E4_RDLINK(*e4);
+    pdir_writeq(&e4->e4_data,PDIR_ADDR_MASK);
+    pdir_e3_free(deltab);
+   } else if (PDIR_E4_ISLINK(*e4)) {
+    /* Truncate the linked table. */
+    pdir_kernel_e3_trunc(PDIR_E4_RDLINK(*e4),trunc_rel_begin,
+                         trunc_rel_end-trunc_rel_begin);
+   }
+  }
+  if (size <= PDIR_E4_SIZE) break;
+  size -= PDIR_E4_SIZE;
+  base += PDIR_E4_SIZE;
+ }
+}
+
+
+
 #define PDIR_KERNEL_MAP_IDENTITY() \
         pdir_kernel_map_identity()
 PRIVATE ATTR_FREETEXT
 void KCALL pdir_kernel_map_identity(void) {
- /* Create identity mappings for all physical memory below KERNEL_BASE. */
+ /* Create identity mappings for all physical memory below PHYS_END. */
+ struct meminfo const *iter;
+ uintptr_t last_begin = 0;
+ bool is_mapping = false;
+ MEMINFO_FOREACH(iter) {
+  if ((uintptr_t)iter->mi_addr >= PHYS_END) break;
+  if (MEMTYPE_ISMAP(iter->mi_type) == is_mapping)
+      continue;
+  is_mapping = !is_mapping;
+  if (is_mapping) { /* if (MEMTYPE_ISMAP(iter->mi_type)) */
+   last_begin = FLOOR_ALIGN((uintptr_t)iter->mi_addr,PAGESIZE);
+  } else {
+   uintptr_t this_begin = CEIL_ALIGN((uintptr_t)iter->mi_addr,PAGESIZE);
+   if (this_begin != last_begin)
+       pdir_kernel_alloc_identity(last_begin,this_begin-last_begin);
+   last_begin = this_begin;
+  }
+ }
+ /* Allocate memory for the remainder (If there is one). */
+ if (is_mapping)
+     pdir_kernel_alloc_identity(last_begin,PHYS_END-last_begin);
 
-
+ /* Second pass: Unmap any overflow that may (most definitely)
+  *              have been created by `early_map_identity' */
+ MEMINFO_FOREACH(iter) {
+  if ((uintptr_t)iter->mi_addr >= PHYS_END) break;
+  if (MEMTYPE_ISMAP(iter->mi_type) == is_mapping)
+      continue;
+  is_mapping = !is_mapping;
+  if (is_mapping) { /* if (MEMTYPE_ISMAP(iter->mi_type)) */
+   uintptr_t this_begin = FLOOR_ALIGN((uintptr_t)iter->mi_addr,PAGESIZE);
+   if (this_begin > last_begin)
+       pdir_kernel_trunc_identity(last_begin,this_begin-last_begin);
+   last_begin = this_begin;
+  } else {
+   last_begin = CEIL_ALIGN((uintptr_t)iter->mi_addr,PAGESIZE);
+  }
+ }
+ /* Unmap the remainder. */
+ if (!is_mapping)
+      pdir_kernel_trunc_identity(last_begin,PHYS_END-last_begin);
 }
 
 

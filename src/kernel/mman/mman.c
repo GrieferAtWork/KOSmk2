@@ -2036,7 +2036,7 @@ mman_initialize(void) {
  }
 #else
  { mzone_t id;
-   for (id = 0; id != MZONE_COUNT; ++id) {
+   for (id = 0; id != MZONE_REAL_COUNT; ++id) {
     PHYS struct meminfo const *iter = mem_info[id];
     for (; iter != MEMINFO_EARLY_NULL; iter = iter->mi_next) {
      if (!MEMTYPE_ISMAP(iter->mi_type)) continue;

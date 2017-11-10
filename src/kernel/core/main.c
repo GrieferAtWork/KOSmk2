@@ -455,19 +455,17 @@ kernel_boot(u32        mb_magic,
   * to dump exceptions resulting in kernel panic during early booting. */
  irq_initialize();
 
-#ifdef __x86_64__
- assertf(pdir_translate(&pdir_kernel,(void *)0) == (void *)0,
-         "BROKEN: %p",pdir_translate(&pdir_kernel,(void *)0));
- assertf(pdir_translate(&pdir_kernel,(void *)CORE_BASE) == (void *)0,
-         "BROKEN: %p",pdir_translate(&pdir_kernel,(void *)CORE_BASE));
-#endif
  /* Initialize basic data using the information potentially provided by the bootloader. */
  basicdata_initialize(mb_magic,mb_mbt);
 
-#ifdef __x86_64__
- assertf(pdir_translate(&pdir_kernel,kernel_commandline.cl_text) == kernel_commandline.cl_text,
-         "BROKEN: %p != %p",kernel_commandline.cl_text,pdir_translate(&pdir_kernel,kernel_commandline.cl_text));
-#endif
+ {
+  struct meminfo const *iter;
+  MEMINFO_FOREACH(iter) {
+   syslog(LOG_DEBUG,"MEMORY: %8s %p...%p\n",
+          memtype_names[iter->mi_type],
+          MEMINFO_MIN(iter),MEMINFO_MAX(iter));
+  }
+ }
 
  /* Parse the commandline & execute early setup arguments. */
  commandline_initialize_parse();

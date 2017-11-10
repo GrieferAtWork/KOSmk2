@@ -175,12 +175,12 @@ union{
                        *   Clamped to `mi_size' when greater; when lower, difference is
                        *   _always_ initialized with `mi_fill' (ignoring `MAP_UNINITIALIZED').
                        *   >> Very useful when mapping program headers with a smaller memory-size than file-size. */
- __uint32_t mv_fill;  /*< [valid_if(MAP_ANONYMOUS ? !MAP_UNINITIALIZED : mv_len < mi_size)]
+ __uintptr_t mv_fill; /*< [valid_if(MAP_ANONYMOUS ? !MAP_UNINITIALIZED : mv_len < mi_size)]
                        *   Filler double-word for any undefined memory.
                        *   On some platforms, a multi-byte pattern described by this may be
                        *   used to initialize memory, but KOS only guaranties that the lowest byte
                        *  (that is `mi_fill & 0xff') will always be used, meaning that a consistent
-                       *   initialization of memory is only guarantied when `mi_fill == 0x01010101*(mi_fill & 0xff)'. */
+                       *   initialization of memory is only guarantied when `mi_fill == [0x0101010101010101|0x01010101]*(mi_fill & 0xff)'. */
  size_t     mv_guard; /*< [valid_if(MAP_GROWSDOWN||MAP_GROWSUP)] Size of the guard region in bytes.
                        *   NOTE: When ZERO(0), both the `MAP_GROWSDOWN' and `MAP_GROWSUP' flags are ignored.
                        *   NOTE: Clamped to `mi_size-PAGESIZE' when greater.

@@ -43,11 +43,28 @@
 
 DECL_BEGIN
 
+#if __SIZEOF_POINTER__ == 8
+#   define MEMSETX   memsetq
+#   define MEMCPYX   memcpyq
+#elif __SIZEOF_POINTER__ == 4
+#   define MEMSETX   memsetl
+#   define MEMCPYX   memcpyl
+#elif __SIZEOF_POINTER__ == 2
+#   define MEMSETX   memsetw
+#   define MEMCPYX   memcpyw
+#elif __SIZEOF_POINTER__ == 1
+#   define MEMSETX   memsetb
+#   define MEMCPYX   memcpyb
+#else
+#   error "Unsupported sizeof(void *)"
+#endif
+
+
 PRIVATE errno_t KCALL
 mscatter_kpread(struct mscatter *__restrict scatter,
                 struct file *__restrict fp, pos_t pos,
                 size_t fill_before, size_t max_read,
-                u32 filler_dword) {
+                uintptr_t filler_xword) {
  ssize_t temp; size_t part;
 #if 0
  /* Log a debug message describing how we're going to load this scatter tab. */
@@ -65,7 +82,7 @@ mscatter_kpread(struct mscatter *__restrict scatter,
    if (part > fill_before)
        part = fill_before;
    assert(part);
-   memsetl((void *)start,filler_dword,part/4);
+   MEMSETX((void *)start,filler_xword,part/__SIZEOF_POINTER__);
    start += part;
    size  -= part;
    if (!size) continue;
@@ -85,17 +102,17 @@ mscatter_kpread(struct mscatter *__restrict scatter,
    if (!size) continue;
   }
   /* Fill the remainder using the filler byte. */
-  memsetl((void *)start,filler_dword,size/4);
+  MEMSETX((void *)start,filler_xword,size/__SIZEOF_POINTER__);
  }
  return -EOK;
 }
 
 PRIVATE void KCALL
 mscatter_memset(struct mscatter *__restrict scatter,
-                u32 filler_dword) {
+                uintptr_t filler_xword) {
  while (scatter) {
-  memsetl(scatter->m_start,filler_dword,
-          scatter->m_size/4);
+  MEMSETX(scatter->m_start,filler_xword,
+          scatter->m_size/__SIZEOF_POINTER__);
   scatter = scatter->m_next;
  }
 }

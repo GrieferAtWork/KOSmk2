@@ -276,11 +276,11 @@ typedef errno_t (KCALL *mregion_initfun)(u32 mode, void *closure,
 union mregion_cinit {struct{
  mregion_initfun                mri_ufunc; /*< [const][1..1][valid_if(MREGION_INIT_ISUSER(:mr_init))] User-defined memory initialization callback. */
  void                          *mri_uclosure; /*< [const][?..?] Closure parameter used when calling `mri_ufunc' */
- byte_t                         mri_udata[((sizeof(u32)+sizeof(pos_t)+sizeof(size_t))-
+ byte_t                         mri_udata[((sizeof(uintptr_t)+sizeof(pos_t)+sizeof(size_t))-
                                             sizeof(mregion_initfun))]; /* Padding user-data. */
 };struct{
  /* Initialization info for memory regions. */
- u32                            mri_byte;  /*< [const][valid_if(:mr_init&MREGION_INIT_TYPEMASK != MREGION_INIT_RAND &&
+ uintptr_t                      mri_byte;  /*< [const][valid_if(:mr_init&MREGION_INIT_TYPEMASK != MREGION_INIT_RAND &&
                                             *                   :mr_init&MREGION_INIT_TYPEMASK != MREGION_INIT_ZERO)]
                                             *       Initialization DWORD used to fill newly allocated memory.
                                             * NOTE: set using `mi_byte = byte*0x01010101;'

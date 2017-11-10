@@ -942,7 +942,7 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
                   "del_end   = %p"),
           del_begin,del_end);
   if (del_begin != del_end) {
-   //if (zone_id < MZONE_SHARE) {
+   //if (zone_id < MZONE_HIMEM) {
    // pdir_kernel_unmap((uintptr_t)phys_to_virt(del_begin),
    //                    del_end-del_begin);
    //}
@@ -968,8 +968,7 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
 #else
 #define PDIR_KERNEL_UNMAP_UNUSED() \
        (pdir_kernel_unmap_mzone(MZONE_1MB), \
-        pdir_kernel_unmap_mzone(MZONE_SHARE), \
-        pdir_kernel_unmap_mzone(MZONE_NOSHARE))
+        pdir_kernel_unmap_mzone(MZONE_HIMEM))
 #endif
 #define PDIR_KERNEL_UNMAP_AFTEREND() \
         pdir_kernel_unmap(KERNEL_END,KERNEL_AFTER_END);
