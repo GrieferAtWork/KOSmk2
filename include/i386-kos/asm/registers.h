@@ -22,6 +22,8 @@
 #include <hybrid/host.h>
 
 #ifdef __x86_64__
+#define __ASM_SCRATCH_SIZE  72
+#define __ASM_PERSERVE_SIZE 48
 #define __ASM_PUSH_SCRATCH \
         pushq %rax; pushq %rcx; pushq %rdx; pushq %rsi; \
         pushq %rdi; pushq %r8;  pushq %r9;  pushq %r10; \
@@ -37,11 +39,15 @@
         pushq %r15; pushq %r14; pushq %r13; pushq %r12; \
         pushq %rbp; pushq %rbx;
 #elif defined(__OPTIMIZE_SIZE__)
+#define __ASM_SCRATCH_SIZE  32
+#define __ASM_PERSERVE_SIZE 32
 #define __ASM_PUSH_SCRATCH  pushal;
 #define __ASM_POP_SCRATCH   popal;
 #define __ASM_PUSH_PRESERVE pushal;
 #define __ASM_POP_PRESERVE  popal;
 #else
+#define __ASM_SCRATCH_SIZE  12
+#define __ASM_PERSERVE_SIZE 16
 #define __ASM_PUSH_SCRATCH  pushl %eax; pushl %ecx; pushl %edx;
 #define __ASM_POP_SCRATCH   popl %edx; popl %ecx; popl %eax;
 #define __ASM_PUSH_PRESERVE pushl %ebx; pushl %ebp; pushl %edi; pushl %esi;

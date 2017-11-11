@@ -62,7 +62,6 @@ DATDEF struct cpu __bootcpu;
 #define SMP_ONLINE   1
 
 #define FOREACH_CPU(cpu) \
- for (bool _inside = true; _inside; _inside = false) \
  if (((cpu) = &__bootcpu,0)); else
 
 #endif /* !CONFIG_SMP */

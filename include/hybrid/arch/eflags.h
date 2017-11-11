@@ -93,8 +93,9 @@ DECL_BEGIN
 #define DR7_S3             0xC0000000 /*< [bit(30..31)] size of DR3 breakpoint . */
 
 #ifdef __x86_64__
-#define MSR_FS_BASE        0xc0000100
-#define MSR_GS_BASE        0xc0000101
+#define IA32_FS_BASE        0xc0000100
+#define IA32_GS_BASE        0xc0000101
+#define IA32_KERNEL_GS_BASE 0xc0000102
 #endif
 
 DECL_END

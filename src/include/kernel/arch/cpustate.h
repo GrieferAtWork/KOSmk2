@@ -348,26 +348,26 @@ struct PACKED sgregs32 { u16 gs,fs,es,ds; };
 
 /* Segment registers */
 #ifdef __x86_64__
-#define SGREGS_OFFSETOF_GS 0
-#define SGREGS_OFFSETOF_FS 8
-#define SGREGS_SIZE        16
+#define SGREGS_OFFSETOF_GS 0 /* TODO: Remove me. */
+#define SGREGS_OFFSETOF_FS 8 /* TODO: Remove me. */
+#define SGREGS_SIZE        16 /* TODO: Remove me. */
 #ifdef __CC__
-struct PACKED sgregs { __SEGMENT64(gs); __SEGMENT64(fs); };
+struct PACKED sgregs { __SEGMENT64(gs); __SEGMENT64(fs); }; /* TODO: Remove me. */
 #endif /* __CC__ */
-#define __ASM_PUSH_SGREGS       pushq %fs; pushq %gs;
-#define __ASM_IPUSH_SGREGS      pushq %%fs; pushq %%gs;
+#define __ASM_PUSH_SGREGS       pushq %fs; pushq %gs; /* TODO: Remove me. */
+#define __ASM_IPUSH_SGREGS      pushq %%fs; pushq %%gs; /* TODO: Remove me. */
 #if 1 /* TODO: Redesign this one (Segment cannot ~really~ be used on x86_64) */
-#define __ASM_LOAD_SGREGS(src)  /* nothing */
-#define __ASM_ILOAD_SGREGS(src) /* nothing */
-#define __ASM_POP_SGREGS        addq $16, %rsp;
-#define __ASM_IPOP_SGREGS       addq $16, %%rsp;
+#define __ASM_LOAD_SGREGS(src)  /* nothing */ /* TODO: Remove me. */
+#define __ASM_ILOAD_SGREGS(src) /* nothing */ /* TODO: Remove me. */
+#define __ASM_POP_SGREGS        addq $16, %rsp; /* TODO: Remove me. */
+#define __ASM_IPOP_SGREGS       addq $16, %%rsp; /* TODO: Remove me. */
 #else
 #define __ASM_LOAD_SGREGS(src)  movw SGREGS_OFFSETOF_FS+src, %gs; \
-                                movw SGREGS_OFFSETOF_GS+src, %fs;
+                                movw SGREGS_OFFSETOF_GS+src, %fs; /* TODO: Remove me. */
 #define __ASM_ILOAD_SGREGS(src) movw SGREGS_OFFSETOF_FS+src, %%gs; \
-                                movw SGREGS_OFFSETOF_GS+src, %%fs;
-#define __ASM_POP_SGREGS        popq %gs; popq %fs;
-#define __ASM_IPOP_SGREGS       popq %%gs; popq %%fs;
+                                movw SGREGS_OFFSETOF_GS+src, %%fs; /* TODO: Remove me. */
+#define __ASM_POP_SGREGS        popq %gs; popq %fs; /* TODO: Remove me. */
+#define __ASM_IPOP_SGREGS       popq %%gs; popq %%fs; /* TODO: Remove me. */
 #endif
 #else
 #define SGREGS_OFFSETOF_GS 0
@@ -392,59 +392,123 @@ struct PACKED sgregs { u16 gs,fs,es,ds; };
 
 
 #ifdef __x86_64__
-#define IRREGS_HOST_OFFSETOF_IP         0
-#define IRREGS_HOST_OFFSETOF_CS         8
-#define IRREGS_HOST_OFFSETOF_FLAGS      16
-#define IRREGS_HOST_SIZE                24
-#define IRREGS_OFFSETOF_HOST            0 /* + IRREGS_HOST_OFFSETOF_* */
-#define IRREGS_OFFSETOF_IP              0
-#define IRREGS_OFFSETOF_CS              8
-#define IRREGS_OFFSETOF_FLAGS           16
-#define IRREGS_OFFSETOF_USERSP          24
-#define IRREGS_OFFSETOF_SS              32
-#define IRREGS_SIZE                     40
-#define IRREGS_HOST_E_OFFSETOF_ECX_CODE 0
-#define IRREGS_HOST_E_OFFSETOF_TAIL     8 /* + IRREGS_HOST_OFFSETOF_* */
-#define IRREGS_HOST_E_OFFSETOF_IP       8
-#define IRREGS_HOST_E_OFFSETOF_CS       16
-#define IRREGS_HOST_E_OFFSETOF_FLAGS    24
-#define IRREGS_HOST_E_SIZE              32
-#define IRREGS_E_OFFSETOF_HOST          0 /* + IRREGS_HOST_E_OFFSETOF_* */
-#define IRREGS_E_OFFSETOF_EXC_CODE      0
-#define IRREGS_E_OFFSETOF_TAIL          8 /* + IRREGS_OFFSETOF_* */
-#define IRREGS_E_OFFSETOF_IP            8
-#define IRREGS_E_OFFSETOF_CS            16
-#define IRREGS_E_OFFSETOF_FLAGS         24
-#define IRREGS_E_OFFSETOF_USERSP        32
-#define IRREGS_E_OFFSETOF_SS            40
-#define IRREGS_E_SIZE                   48
+#define IRREGS_HOST_OFFSETOF_IP          0
+#define IRREGS_HOST_OFFSETOF_CS          8
+#define IRREGS_HOST_OFFSETOF_FLAGS       16
+#define IRREGS_HOST_SIZE                 24
+#define IRREGS_OFFSETOF_HOST             0 /* + IRREGS_HOST_OFFSETOF_* */
+#define IRREGS_OFFSETOF_IP               0
+#define IRREGS_OFFSETOF_CS               8
+#define IRREGS_OFFSETOF_FLAGS            16
+#define IRREGS_OFFSETOF_USERSP           24
+#define IRREGS_OFFSETOF_SS               32
+#define IRREGS_SIZE                      40
+#define IRREGS_HOST_E_OFFSETOF_ECX_CODE  0
+#define IRREGS_HOST_E_OFFSETOF_TAIL      8 /* + IRREGS_HOST_OFFSETOF_* */
+#define IRREGS_HOST_E_OFFSETOF_IP        8
+#define IRREGS_HOST_E_OFFSETOF_CS        16
+#define IRREGS_HOST_E_OFFSETOF_FLAGS     24
+#define IRREGS_HOST_E_SIZE               32
+#define IRREGS_E_OFFSETOF_HOST           0 /* + IRREGS_HOST_E_OFFSETOF_* */
+#define IRREGS_E_OFFSETOF_EXC_CODE       0
+#define IRREGS_E_OFFSETOF_TAIL           8 /* + IRREGS_OFFSETOF_* */
+#define IRREGS_E_OFFSETOF_IP             8
+#define IRREGS_E_OFFSETOF_CS             16
+#define IRREGS_E_OFFSETOF_FLAGS          24
+#define IRREGS_E_OFFSETOF_USERSP         32
+#define IRREGS_E_OFFSETOF_SS             40
+#define IRREGS_E_SIZE                    48
+#define IRREGS_HOST_I_OFFSETOF_INTNO     0
+#define IRREGS_HOST_I_OFFSETOF_TAIL      8 /* + IRREGS_HOST_OFFSETOF_* */
+#define IRREGS_HOST_I_OFFSETOF_IP        8
+#define IRREGS_HOST_I_OFFSETOF_CS        16
+#define IRREGS_HOST_I_OFFSETOF_FLAGS     24
+#define IRREGS_HOST_I_SIZE               32
+#define IRREGS_I_OFFSETOF_HOST           0 /* + IRREGS_HOST_I_OFFSETOF_* */
+#define IRREGS_I_OFFSETOF_INTNO          0
+#define IRREGS_I_OFFSETOF_TAIL           8 /* + IRREGS_OFFSETOF_* */
+#define IRREGS_I_OFFSETOF_IP             8
+#define IRREGS_I_OFFSETOF_CS             16
+#define IRREGS_I_OFFSETOF_FLAGS          24
+#define IRREGS_I_OFFSETOF_USERSP         32
+#define IRREGS_I_OFFSETOF_SS             40
+#define IRREGS_I_SIZE                    48
+#define IRREGS_HOST_IE_OFFSETOF_INTNO    0
+#define IRREGS_HOST_IE_OFFSETOF_ECX_CODE 8
+#define IRREGS_HOST_IE_OFFSETOF_TAIL     16 /* + IRREGS_HOST_OFFSETOF_* */
+#define IRREGS_HOST_IE_OFFSETOF_IP       16
+#define IRREGS_HOST_IE_OFFSETOF_CS       24
+#define IRREGS_HOST_IE_OFFSETOF_FLAGS    32
+#define IRREGS_HOST_IE_SIZE              40
+#define IRREGS_IE_OFFSETOF_HOST          0 /* + IRREGS_HOST_IE_OFFSETOF_* */
+#define IRREGS_IE_OFFSETOF_INTNO         0
+#define IRREGS_IE_OFFSETOF_EXC_CODE      8
+#define IRREGS_IE_OFFSETOF_TAIL          16 /* + IRREGS_OFFSETOF_* */
+#define IRREGS_IE_OFFSETOF_IP            16
+#define IRREGS_IE_OFFSETOF_CS            24
+#define IRREGS_IE_OFFSETOF_FLAGS         32
+#define IRREGS_IE_OFFSETOF_USERSP        40
+#define IRREGS_IE_OFFSETOF_SS            48
+#define IRREGS_IE_SIZE                   56
 #else
-#define IRREGS_HOST_OFFSETOF_IP         0
-#define IRREGS_HOST_OFFSETOF_CS         4
-#define IRREGS_HOST_OFFSETOF_FLAGS      8
-#define IRREGS_HOST_SIZE                12
-#define IRREGS_OFFSETOF_HOST            0 /* + IRREGS_HOST_OFFSETOF_* */
-#define IRREGS_OFFSETOF_IP              0
-#define IRREGS_OFFSETOF_CS              4
-#define IRREGS_OFFSETOF_FLAGS           8
-#define IRREGS_OFFSETOF_USERSP          12
-#define IRREGS_OFFSETOF_SS              16
-#define IRREGS_SIZE                     20
-#define IRREGS_HOST_E_OFFSETOF_ECX_CODE 0
-#define IRREGS_HOST_E_OFFSETOF_TAIL     4 /* + IRREGS_HOST_OFFSETOF_* */
-#define IRREGS_HOST_E_OFFSETOF_IP       4
-#define IRREGS_HOST_E_OFFSETOF_CS       8
-#define IRREGS_HOST_E_OFFSETOF_FLAGS    12
-#define IRREGS_HOST_E_SIZE              16
-#define IRREGS_E_OFFSETOF_HOST          0 /* + IRREGS_HOST_E_OFFSETOF_* */
-#define IRREGS_E_OFFSETOF_EXC_CODE      0
-#define IRREGS_E_OFFSETOF_TAIL          4 /* + IRREGS_OFFSETOF_* */
-#define IRREGS_E_OFFSETOF_IP            4
-#define IRREGS_E_OFFSETOF_CS            8
-#define IRREGS_E_OFFSETOF_FLAGS         12
-#define IRREGS_E_OFFSETOF_USERSP        16
-#define IRREGS_E_OFFSETOF_SS            20
-#define IRREGS_E_SIZE                   24
+#define IRREGS_HOST_OFFSETOF_IP          0
+#define IRREGS_HOST_OFFSETOF_CS          4
+#define IRREGS_HOST_OFFSETOF_FLAGS       8
+#define IRREGS_HOST_SIZE                 12
+#define IRREGS_OFFSETOF_HOST             0 /* + IRREGS_HOST_OFFSETOF_* */
+#define IRREGS_OFFSETOF_IP               0
+#define IRREGS_OFFSETOF_CS               4
+#define IRREGS_OFFSETOF_FLAGS            8
+#define IRREGS_OFFSETOF_USERSP           12
+#define IRREGS_OFFSETOF_SS               16
+#define IRREGS_SIZE                      20
+#define IRREGS_HOST_E_OFFSETOF_ECX_CODE  0
+#define IRREGS_HOST_E_OFFSETOF_TAIL      4 /* + IRREGS_HOST_OFFSETOF_* */
+#define IRREGS_HOST_E_OFFSETOF_IP        4
+#define IRREGS_HOST_E_OFFSETOF_CS        8
+#define IRREGS_HOST_E_OFFSETOF_FLAGS     12
+#define IRREGS_HOST_E_SIZE               16
+#define IRREGS_E_OFFSETOF_HOST           0 /* + IRREGS_HOST_E_OFFSETOF_* */
+#define IRREGS_E_OFFSETOF_EXC_CODE       0
+#define IRREGS_E_OFFSETOF_TAIL           4 /* + IRREGS_OFFSETOF_* */
+#define IRREGS_E_OFFSETOF_IP             4
+#define IRREGS_E_OFFSETOF_CS             8
+#define IRREGS_E_OFFSETOF_FLAGS          12
+#define IRREGS_E_OFFSETOF_USERSP         16
+#define IRREGS_E_OFFSETOF_SS             20
+#define IRREGS_E_SIZE                    24
+#define IRREGS_HOST_I_OFFSETOF_INTNO     0
+#define IRREGS_HOST_I_OFFSETOF_TAIL      4 /* + IRREGS_HOST_OFFSETOF_* */
+#define IRREGS_HOST_I_OFFSETOF_IP        4
+#define IRREGS_HOST_I_OFFSETOF_CS        8
+#define IRREGS_HOST_I_OFFSETOF_FLAGS     12
+#define IRREGS_HOST_I_SIZE               16
+#define IRREGS_I_OFFSETOF_HOST           0 /* + IRREGS_HOST_I_OFFSETOF_* */
+#define IRREGS_I_OFFSETOF_INTNO          0
+#define IRREGS_I_OFFSETOF_TAIL           4 /* + IRREGS_OFFSETOF_* */
+#define IRREGS_I_OFFSETOF_IP             4
+#define IRREGS_I_OFFSETOF_CS             8
+#define IRREGS_I_OFFSETOF_FLAGS          12
+#define IRREGS_I_OFFSETOF_USERSP         16
+#define IRREGS_I_OFFSETOF_SS             20
+#define IRREGS_I_SIZE                    24
+#define IRREGS_HOST_IE_OFFSETOF_INTNO    0
+#define IRREGS_HOST_IE_OFFSETOF_ECX_CODE 4
+#define IRREGS_HOST_IE_OFFSETOF_TAIL     8 /* + IRREGS_HOST_OFFSETOF_* */
+#define IRREGS_HOST_IE_OFFSETOF_IP       8
+#define IRREGS_HOST_IE_OFFSETOF_CS       12
+#define IRREGS_HOST_IE_OFFSETOF_FLAGS    16
+#define IRREGS_HOST_IE_SIZE              20
+#define IRREGS_IE_OFFSETOF_HOST          0 /* + IRREGS_HOST_IE_OFFSETOF_* */
+#define IRREGS_IE_OFFSETOF_INTNO         0
+#define IRREGS_IE_OFFSETOF_EXC_CODE      4
+#define IRREGS_IE_OFFSETOF_TAIL          8 /* + IRREGS_OFFSETOF_* */
+#define IRREGS_IE_OFFSETOF_IP            8
+#define IRREGS_IE_OFFSETOF_CS            12
+#define IRREGS_IE_OFFSETOF_FLAGS         16
+#define IRREGS_IE_OFFSETOF_USERSP        20
+#define IRREGS_IE_OFFSETOF_SS            24
+#define IRREGS_IE_SIZE                   28
 #endif
 
 #ifdef __CC__
@@ -458,7 +522,27 @@ struct PACKED irregs_e        { union PACKED { struct irregs_host_e host; struct
                                 register_t exc_code; union PACKED { struct irregs tail; struct PACKED {
                                 __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags);
                                 __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss); };};};};};
+/* NOTE: `intno' isn't actually the ~real~ interrupt number,
+ *        but is encoded/decoded using the macros below.
+ * HINT: `INTERRUPT_SIZE' is defined in <kernel/interrupt.h>
+ */
+struct PACKED irregs_host_i   { register_t intno; __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };
+struct PACKED irregs_i        { union PACKED { struct irregs_host_i host; struct PACKED {
+                                register_t intno; __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };};
+                                __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss); };
+struct PACKED irregs_host_ie  { register_t intno; register_t exc_code; union PACKED { struct irregs_host tail; struct PACKED {
+                                __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };};};
+struct PACKED irregs_ie       { union PACKED { struct irregs_host_ie host; struct PACKED {
+                                register_t intno; register_t exc_code; union PACKED { struct irregs tail; struct PACKED {
+                                __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags);
+                                __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss); };};};};};
+DATDEF byte_t intno_offset[];
 #endif /* __CC__ */
+
+#define IRREGS_ENCODE_INTNO(x)     (__CCAST(uintptr_t,intno_offset)+((x)*INTERRUPT_SIZE))
+#define IRREGS_DECODE_INTNO(x)     (((x)-__CCAST(uintptr_t,intno_offset))/INTERRUPT_SIZE)
+#define ASM_IRREGS_ENCODE_INTNO(x) (intno_offset+(x)*INTERRUPT_SIZE)
+#define ASM_IRREGS_DECODE_INTNO(x) (((x)-intno_offset)/INTERRUPT_SIZE)
 
 #ifdef __x86_64__
 #define __ASM_IRET   iretq
@@ -490,7 +574,7 @@ struct PACKED cpustate16 {
 /* Common CPU state. */
 struct PACKED comregs {
     struct gpregs gp;
-    struct sgregs sg;
+    struct sgregs sg; /* TODO: Remove on x86_64 */
 };
 #endif /* __CC__ */
 
@@ -516,7 +600,7 @@ union PACKED {
     struct comregs com;
 struct PACKED {
     struct gpregs gp;
-    struct sgregs sg;
+    struct sgregs sg; /* TODO: Remove on x86_64 */
 };};
     struct irregs_host iret;
 };
@@ -535,7 +619,7 @@ union PACKED {
     struct comregs com;
 struct PACKED {
     struct gpregs gp;
-    struct sgregs sg;
+    struct sgregs sg; /* TODO: Remove on x86_64 */
 };};
     struct irregs iret;
 };};};
@@ -553,7 +637,7 @@ union PACKED {
     struct comregs com;
 struct PACKED {
     struct gpregs gp;
-    struct sgregs sg;
+    struct sgregs sg; /* TODO: Remove on x86_64 */
 };};
     struct irregs_host_e iret;
 };
@@ -573,18 +657,94 @@ union PACKED {
  struct comregs  com;
 struct PACKED {
  struct gpregs   gp;
- struct sgregs   sg;
+ struct sgregs   sg; /* TODO: Remove on x86_64 */
 };};
  struct irregs_e iret;
 };};};
+#endif /* __CC__ */
 
-#define CPUSTATE_TO_CPUSTATE_E(cs,cse,ecode) \
- ((cse).com = (cs).com, \
-  (cse).iret.tail = (cs).iret, \
-  (cse).iret.exc_code = (ecode))
-#define CPUSTATE_E_TO_CPUSTATE(cse,cs) \
- ((cs).com = (cse).com, \
-  (cs).iret.tail = (cse).iret)
+#define CPUSTATE_HOST_I_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_I_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_I_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_I_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_HOST_I_OFFSETOF_* */
+#define CPUSTATE_HOST_I_SIZE         (COMREGS_SIZE+IRREGS_HOST_I_SIZE)
+#ifdef __CC__
+struct PACKED cpustate_host_i {
+union PACKED {
+    struct comregs com;
+struct PACKED {
+    struct gpregs gp;
+    struct sgregs sg; /* TODO: Remove on x86_64 */
+};};
+    struct irregs_host_i iret;
+};
+#endif /* __CC__ */
+
+#define CPUSTATE_I_OFFSETOF_HOST 0 /* +CPUSTATE_HOST_I_OFFSETOF_* */
+#define CPUSTATE_I_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
+#define CPUSTATE_I_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
+#define CPUSTATE_I_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_I_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_I_OFFSETOF_* */
+#define CPUSTATE_I_SIZE         (COMREGS_SIZE+IRREGS_I_SIZE)
+#ifdef __CC__
+struct PACKED cpustate_i {union PACKED {
+ struct cpustate_host_i host; /* host CPU state. */
+struct PACKED {
+union PACKED {
+ struct comregs  com;
+struct PACKED {
+ struct gpregs   gp;
+ struct sgregs   sg; /* TODO: Remove on x86_64 */
+};};
+ struct irregs_i iret;
+};};};
+#endif /* __CC__ */
+
+#define CPUSTATE_HOST_IE_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_IE_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_IE_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_IE_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_HOST_IE_OFFSETOF_* */
+#define CPUSTATE_HOST_IE_SIZE         (COMREGS_SIZE+IRREGS_HOST_IE_SIZE)
+#ifdef __CC__
+struct PACKED cpustate_host_ie {
+union PACKED {
+    struct comregs com;
+struct PACKED {
+    struct gpregs  gp;
+    struct sgregs  sg; /* TODO: Remove on x86_64 */
+};};
+    struct irregs_host_ie iret;
+};
+#endif /* __CC__ */
+
+#define CPUSTATE_IE_OFFSETOF_HOST 0 /* +CPUSTATE_HOST_IE_OFFSETOF_* */
+#define CPUSTATE_IE_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
+#define CPUSTATE_IE_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
+#define CPUSTATE_IE_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_IE_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_IE_OFFSETOF_* */
+#define CPUSTATE_IE_SIZE         (COMREGS_SIZE+IRREGS_IE_SIZE)
+#ifdef __CC__
+struct PACKED cpustate_ie {union PACKED {
+ struct cpustate_host_ie host; /* host CPU state. */
+struct PACKED {
+union PACKED {
+ struct comregs   com;
+struct PACKED {
+ struct gpregs    gp;
+ struct sgregs    sg; /* TODO: Remove on x86_64 */
+};};
+ struct irregs_ie iret;
+};};};
+#endif /* __CC__ */
+
+#ifdef __CC__
+#define CPUSTATE_TO_CPUSTATE_E(cs,cse,exc_code_)          ((cse).com = (cs).com,(cse).iret.tail = (cs).iret,(cse).iret.exc_code = (exc_code_))
+#define CPUSTATE_TO_CPUSTATE_I(cs,csi,intno_)             ((csi).com = (cs).com,(csi).iret.tail = (cs).iret,(csi).iret.intno = (intno_))
+#define CPUSTATE_TO_CPUSTATE_IE(cs,csie,intno_,exc_code_) ((csie).com = (cs).com,(csie).iret.tail = (cs).iret,(csie).iret.intno = (intno_),(csie).iret.exc_code = (exc_code_))
+#define CPUSTATE_E_TO_CPUSTATE(cse,cs)                    ((cs).com = (cse).com,(cs).iret.tail = (cse).iret)
+#define CPUSTATE_I_TO_CPUSTATE(csi,cs)                    ((cs).com = (csi).com,(cs).iret.tail = (csi).iret)
+#define CPUSTATE_IE_TO_CPUSTATE(csie,cs)                  ((cs).com = (csie).com,(cs).iret.tail = (csie).iret)
+/* TODO: Missing convertion functions. */
 #endif /* __CC__ */
 
 #ifdef __COMPILER_HAVE_PRAGMA_PACK

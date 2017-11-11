@@ -671,11 +671,13 @@ union{
 #define INSTANCE_LOCKWEAK(self)       likely(_instance_tryincref(self)) /* Try to create a full reference, given only a weak one. */
 #define INSTANCE_TRYINCREF(self)      likely(_instance_tryincref(self))
 #define INSTANCE_INCREF(self)            likely(_instance_incref(self))
+#define INSTANCE_INCREF_N(self,n)        likely(_instance_incref_n(self,n))
 #define INSTANCE_DECREF(self)            (void)(ATOMIC_DECFETCH((self)->i_refcnt) || (instance_destroy(self),0))
 FUNDEF SAFE void KCALL instance_destroy(struct instance *__restrict self);
 FUNDEF SAFE void KCALL instance_destroy_weak(struct instance *__restrict self);
 LOCAL WUNUSED bool KCALL _instance_tryincref(struct instance *__restrict self);
 LOCAL WUNUSED bool KCALL _instance_incref(struct instance *__restrict self);
+LOCAL WUNUSED bool KCALL _instance_incref_n(struct instance *__restrict self, ref_t n);
 
 /* Add the given `dependency' as a dependency of `self',
  * consequently also adding `self' as a user of `dependency'.
@@ -913,6 +915,20 @@ LOCAL bool KCALL _instance_incref(struct instance *__restrict self) {
    return false;
   }
  } while (!ATOMIC_CMPXCH_WEAK(self->i_refcnt,temp,temp+1));
+ return temp != 0;
+}
+LOCAL bool KCALL _instance_incref_n(struct instance *__restrict self, ref_t n) {
+ register ref_t temp;
+ do {
+  temp = ATOMIC_READ(self->i_refcnt);
+  assert(temp != 0);
+  if (INSTANCE_ISUNLOADING(self)) {
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+   assert(self != THIS_INSTANCE);
+#endif
+   return false;
+  }
+ } while (!ATOMIC_CMPXCH_WEAK(self->i_refcnt,temp,temp+n));
  return temp != 0;
 }
 LOCAL bool KCALL _instance_tryincref(struct instance *__restrict self) {

@@ -138,18 +138,28 @@
 #endif
 #define __NO_ATTR_FALLTHROUGH      1
 #define __ATTR_FALLTHROUGH         /* Nothing */
-#if defined(__x86_64__) || defined(__x86_64)
-#   define __VA_LIST_IS_ARRAY      1
+#if (defined(__i386__) || defined(__i386)) && \
+    !defined(__x86_64__) && !defined(__x86_64)
+#   define __ATTR_FASTCALL         __attribute__((__fastcall__))
+#   define __ATTR_STDCALL          __attribute__((__stdcall__))
+#   define __ATTR_CDECL            __attribute__((__cdecl__))
+#else
 #   define __NO_ATTR_FASTCALL      1
 #   define __ATTR_FASTCALL         /* Nothing */
 #   define __NO_ATTR_STDCALL       1
 #   define __ATTR_STDCALL          /* Nothing */
 #   define __NO_ATTR_CDECL         1
 #   define __ATTR_CDECL            /* Nothing */
+#endif
+#if defined(__x86_64__) || defined(__x86_64)
+#   define __VA_LIST_IS_ARRAY      1
+#   define __ATTR_MSABI            __attribute__((__ms_abi__))
+#   define __ATTR_SYSVABI          __attribute__((__sysv_abi__))
 #else
-#   define __ATTR_FASTCALL         __attribute__((__fastcall__))
-#   define __ATTR_STDCALL          __attribute__((__stdcall__))
-#   define __ATTR_CDECL            __attribute__((__cdecl__))
+#   define __NO_ATTR_MSABI         1
+#   define __ATTR_MSABI            /* Nothing */
+#   define __NO_ATTR_SYSVABI       1
+#   define __ATTR_SYSVABI          /* Nothing */
 #endif
 #if __GCC_VERSION(2,96,0)
 #   define __ATTR_PURE             __attribute__((__pure__))

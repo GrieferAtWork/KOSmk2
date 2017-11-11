@@ -421,8 +421,6 @@ typedef bool _Bool;
 #define ____INTELLISENSE_attribute___always_inline__          ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute_assume_aligned(...)        __declspec(restrict)
 #define ____INTELLISENSE_attribute___assume_aligned__(...)    __declspec(restrict)
-#define ____INTELLISENSE_attribute_cdecl                      __cdecl
-#define ____INTELLISENSE_attribute___cdecl__                  __cdecl
 #define ____INTELLISENSE_attribute_cold                       ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute___cold__                   ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute_const                      __declspec(noalias)
@@ -437,8 +435,6 @@ typedef bool _Bool;
 #define ____INTELLISENSE_attribute___error__                  ____INTELLISENSE_ATTR_FUNC_STR
 #define ____INTELLISENSE_attribute_externally_visible         ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute___externally_visible__     ____INTELLISENSE_ATTR_FUNC
-#define ____INTELLISENSE_attribute_fastcall                   __fastcall
-#define ____INTELLISENSE_attribute___fastcall__               __fastcall
 #define ____INTELLISENSE_attribute_format(name,fmt_idx,varargs_idx) ____INTELLISENSE_ATTR_FORMAT_##name
 #define ____INTELLISENSE_attribute___format__(name,fmt_idx,varargs_idx) ____INTELLISENSE_ATTR_FORMAT_##name
 #define ____INTELLISENSE_attribute_format_arg(argi)           ____INTELLISENSE_ATTR_FUNC
@@ -475,8 +471,6 @@ typedef bool _Bool;
 #define ____INTELLISENSE_attribute___section__(name)          ____INTELLISENSE_ATTR_FUNCORVAR
 #define ____INTELLISENSE_attribute_sentinel                   ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute___sentinel__               ____INTELLISENSE_ATTR_FUNC
-#define ____INTELLISENSE_attribute_stdcall                    __stdcall
-#define ____INTELLISENSE_attribute___stdcall__                __stdcall
 #define ____INTELLISENSE_attribute_transaction_pure           ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute___transaction_pure__       ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_attribute_unused                     /* Nothing */
@@ -491,7 +485,6 @@ typedef bool _Bool;
 #define ____INTELLISENSE_attribute___warning__                ____INTELLISENSE_ATTR_FUNC_STR
 #define ____INTELLISENSE_attribute_weak                       ____INTELLISENSE_ATTR_FUNCORVAR
 #define ____INTELLISENSE_attribute___weak__                   ____INTELLISENSE_ATTR_FUNCORVAR
-
 #define ____INTELLISENSE_ATTR_FORMAT_asm_fprintf              ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_ATTR_FORMAT___asm_fprintf__          ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_ATTR_FORMAT_gcc_cdiag                ____INTELLISENSE_ATTR_FUNC
@@ -509,6 +502,21 @@ typedef bool _Bool;
 #define ____INTELLISENSE_ATTR_FORMAT_strftime                 ____INTELLISENSE_ATTR_FUNC
 #define ____INTELLISENSE_ATTR_FORMAT___strftime__             ____INTELLISENSE_ATTR_FUNC
 
+#ifdef __x86_64__
+#define ____INTELLISENSE_attribute_ms_abi                     __cdecl
+#define ____INTELLISENSE_attribute___ms_abi__                 __cdecl
+#define ____INTELLISENSE_attribute_sysv_abi                   __cdecl
+#define ____INTELLISENSE_attribute___sysv_abi__               __cdecl
+#else
+#define ____INTELLISENSE_attribute_cdecl                      __cdecl
+#define ____INTELLISENSE_attribute___cdecl__                  __cdecl
+#define ____INTELLISENSE_attribute_fastcall                   __fastcall
+#define ____INTELLISENSE_attribute___fastcall__               __fastcall
+#define ____INTELLISENSE_attribute_stdcall                    __stdcall
+#define ____INTELLISENSE_attribute___stdcall__                __stdcall
+#endif
+
+
 #if 1
 enum{ /* Highlight attributes in a different color */
     __alias__,              /*< __attribute__((alias(target))); */
@@ -517,7 +525,6 @@ enum{ /* Highlight attributes in a different color */
     __alloc_size__,         /*< __attribute__((alloc_size(...))); */
     __always_inline__,      /*< __attribute__((always_inline)); */
     __assume_aligned__,     /*< __attribute__((assume_aligned(...))); */
-    __cdecl__,              /*< __attribute__((cdecl)); */
     __cold__,               /*< __attribute__((cold)); */
     __const__,              /*< __attribute__((const)); */
     __constructor__,        /*< __attribute__((constructor)); */
@@ -525,7 +532,6 @@ enum{ /* Highlight attributes in a different color */
     __destructor__,         /*< __attribute__((destructor)); */
     __error__,              /*< __attribute__((error)); */
     __externally_visible__, /*< __attribute__((externally_visible)); */
-    __fastcall__,           /*< __attribute__((fastcall)); */
     __format__,             /*< __attribute__((format(...,1,2))); */
     __format_arg__,         /*< __attribute__((format_arg(2))); */
     __hot__,                /*< __attribute__((hot)); */
@@ -544,7 +550,6 @@ enum{ /* Highlight attributes in a different color */
     __returns_twice__,      /*< __attribute__((returns_twice)); */
     __section__,            /*< __attribute__((section(name))); */
     __sentinel__,           /*< __attribute__((sentinel)); */
-    __stdcall__,            /*< __attribute__((stdcall)); */
     __transaction_pure__,   /*< __attribute__((transaction_pure)); */
     __unused__,             /*< __attribute__((unused)); */
     __used__,               /*< __attribute__((used)); */
@@ -552,7 +557,14 @@ enum{ /* Highlight attributes in a different color */
     __warn_unused_result__, /*< __attribute__((warn_unused_result)); */
     __warning__,            /*< __attribute__((warning)); */
     __weak__,               /*< __attribute__((weak)); */
-
+#ifdef __x86_64__
+    __ms_abi__,             /*< __attribute__((ms_abi)); */
+    __sysv_abi__,           /*< __attribute__((sysv_abi)); */
+#else
+    __cdecl__,              /*< __attribute__((cdecl)); */
+    __fastcall__,           /*< __attribute__((fastcall)); */
+    __stdcall__,            /*< __attribute__((stdcall)); */
+#endif
     __printf__,             /*< __attribute__((format(printf,1,2))); */
     __scanf__,              /*< __attribute__((format(scanf,1,2))); */
     __strftime__,           /*< __attribute__((format(strftime,1,1))); */
@@ -588,8 +600,6 @@ enum{ /* Highlight attributes in a different color */
 #define ____INTELLISENSE_HASATTR___always_inline__      1
 #define ____INTELLISENSE_HASATTR_assume_aligned         1
 #define ____INTELLISENSE_HASATTR___assume_aligned__     1
-#define ____INTELLISENSE_HASATTR_cdecl                  1
-#define ____INTELLISENSE_HASATTR___cdecl__              1
 #define ____INTELLISENSE_HASATTR_cold                   1
 #define ____INTELLISENSE_HASATTR___cold__               1
 #define ____INTELLISENSE_HASATTR_const                  1
@@ -604,8 +614,6 @@ enum{ /* Highlight attributes in a different color */
 #define ____INTELLISENSE_HASATTR___error__              1
 #define ____INTELLISENSE_HASATTR_externally_visible     1
 #define ____INTELLISENSE_HASATTR___externally_visible__ 1
-#define ____INTELLISENSE_HASATTR_fastcall               1
-#define ____INTELLISENSE_HASATTR___fastcall__           1
 #define ____INTELLISENSE_HASATTR_format                 1
 #define ____INTELLISENSE_HASATTR___format__             1
 #define ____INTELLISENSE_HASATTR_format_arg             1
@@ -642,8 +650,6 @@ enum{ /* Highlight attributes in a different color */
 #define ____INTELLISENSE_HASATTR___section__            1
 #define ____INTELLISENSE_HASATTR_sentinel               1
 #define ____INTELLISENSE_HASATTR___sentinel__           1
-#define ____INTELLISENSE_HASATTR_stdcall                1
-#define ____INTELLISENSE_HASATTR___stdcall__            1
 #define ____INTELLISENSE_HASATTR_transaction_pure       1
 #define ____INTELLISENSE_HASATTR___transaction_pure__   1
 #define ____INTELLISENSE_HASATTR_unused                 1
@@ -658,6 +664,19 @@ enum{ /* Highlight attributes in a different color */
 #define ____INTELLISENSE_HASATTR___warning__            1
 #define ____INTELLISENSE_HASATTR_weak                   1
 #define ____INTELLISENSE_HASATTR___weak__               1
+#ifdef __x86_64__
+#define ____INTELLISENSE_HASATTR_ms_abi                 1
+#define ____INTELLISENSE_HASATTR___ms_abi__             1
+#define ____INTELLISENSE_HASATTR_sysv_abi               1
+#define ____INTELLISENSE_HASATTR___sysv_abi__           1
+#else
+#define ____INTELLISENSE_HASATTR_cdecl                  1
+#define ____INTELLISENSE_HASATTR___cdecl__              1
+#define ____INTELLISENSE_HASATTR_fastcall               1
+#define ____INTELLISENSE_HASATTR___fastcall__           1
+#define ____INTELLISENSE_HASATTR_stdcall                1
+#define ____INTELLISENSE_HASATTR___stdcall__            1
+#endif
 #define __has_attribute(x) ____INTELLISENSE_IS_DEFINED(____INTELLISENSE_HASATTR_##x)
 
 namespace __int {

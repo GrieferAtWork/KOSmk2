@@ -54,6 +54,7 @@
     <ClCompile Include="..\..\src\kernel\core\arch\boot.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\fpu.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\gdt.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\interrupt.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\irq.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\paging.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\realmode.c" />
@@ -175,6 +176,7 @@
     <ClInclude Include="..\..\src\include\kernel\arch\gdt.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\hints.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\interrupt.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\mp.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\paging32.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\paging64.h" />
@@ -184,6 +186,7 @@
     <ClInclude Include="..\..\src\include\kernel\arch\tss.h" />
     <ClInclude Include="..\..\src\include\kernel\boot.h" />
     <ClInclude Include="..\..\src\include\kernel\export.h" />
+    <ClInclude Include="..\..\src\include\kernel\interrupt.h" />
     <ClInclude Include="..\..\src\include\kernel\iomgr.h" />
     <ClInclude Include="..\..\src\include\kernel\irq.h" />
     <ClInclude Include="..\..\src\include\kernel\malloc.h" />

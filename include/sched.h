@@ -39,6 +39,7 @@ typedef __cpu_set_t    cpu_set_t;
 #define CPU_SETNONE                 __CPU_SETNONE
 #define CPU_SETALL                  __CPU_SETALL
 #define CPU_SETONE(i)               __CPU_SETONE(i)
+#define CPU_ISEMPTY(cpusetp)        __CPU_ISEMPTY_S(sizeof(cpu_set_t),cpusetp)
 #define CPU_FILL(cpusetp)           __CPU_FILL_S(sizeof(cpu_set_t),cpusetp)
 #define CPU_FILL_S(setsize,cpusetp) __CPU_FILL_S(setsize,cpusetp)
 #endif

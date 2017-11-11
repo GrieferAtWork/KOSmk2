@@ -183,6 +183,18 @@
 #   define __NO_ATTR_CDECL       1
 #   define __ATTR_CDECL          /* Nothing */
 #endif
+#if __has_attribute(__ms_abi__) || defined(__TINYC__)
+#   define __ATTR_MSABI          __attribute__((__ms_abi__))
+#else
+#   define __NO_ATTR_MSABI       1
+#   define __ATTR_MSABI          /* Nothing */
+#endif
+#if __has_attribute(__sysv_abi__) || defined(__TINYC__)
+#   define __ATTR_SYSVABI        __attribute__((__sysv_abi__))
+#else
+#   define __NO_ATTR_SYSVABI     1
+#   define __ATTR_SYSVABI        /* Nothing */
+#endif
 #if __has_attribute(__pure__)
 #   define __ATTR_PURE           __attribute__((__pure__))
 #elif __has_declspec_attribute(noalias)

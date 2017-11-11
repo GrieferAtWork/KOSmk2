@@ -483,6 +483,9 @@
     <ClCompile Include="..\..\src\kernel\core\arch\user.c">
       <Filter>kernel\core\arch</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\interrupt.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -777,6 +780,12 @@
       <Filter>include\kernel\arch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\arch\hints.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\interrupt.h">
+      <Filter>include\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\interrupt.h">
       <Filter>include\kernel\arch</Filter>
     </ClInclude>
   </ItemGroup>

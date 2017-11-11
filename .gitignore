@@ -27,8 +27,3 @@ include/term_entry.h
 include/termcap.h
 include/tic.h
 include/unctrl.h
-
-# Hide my work on an X11 port until it starts being functional.
-# It might proove too difficult and I may have to scrap it.
-include/X11/*
-libs/libX11/*

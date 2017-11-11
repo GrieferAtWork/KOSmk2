@@ -159,6 +159,13 @@ typedef struct { __cpu_mask __bits[__CPU_SETSIZE/__NCPUBITS]; } __cpu_set_t;
             for (; __iter < __end; ++__iter) __res += __CPUMASK_POPCOUNT(*__iter); \
             __XRETURN __res; \
  })
+#define __CPU_ISEMPTY_S(setsize,cpusetp) \
+ __XBLOCK({ int __res = 1; \
+            __cpu_mask const *__iter,*__end; \
+            __end = (__iter = (cpusetp)->__bits)+((setsize)/sizeof(__cpu_mask)); \
+            for (; __iter < __end; ++__iter) if (*__iter) { __res = 0; break; } \
+            __XRETURN __res; \
+ })
 
 #define __CPU_EQUAL_S(setsize,cpusetp1,cpusetp2) (!__hybrid_memcmp(cpusetp1,cpusetp2,setsize))
 #define __CPU_OP_S(setsize,destset,srcset1,srcset2,op) \

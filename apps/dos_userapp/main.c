@@ -70,6 +70,7 @@
 #include <c++/current/iostream>
 #endif
 #endif
+#include <stddef.h>
 
 DECL_BEGIN
 

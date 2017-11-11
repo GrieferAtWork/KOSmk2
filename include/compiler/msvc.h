@@ -69,6 +69,15 @@
 #define __ATTR_FASTCALL          __fastcall
 #define __ATTR_STDCALL           __stdcall
 #define __ATTR_CDECL             __cdecl
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
+    defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
+#define __ATTR_MSABI            /* Nothing (default) */
+#else
+#define __ATTR_MSABI            /* Nothing */
+#define __NO_ATTR_MSABI         1
+#endif
+#define __ATTR_SYSVABI          /* Nothing */
+#define __NO_ATTR_SYSVABI       1
 #define __ATTR_PURE              __declspec(noalias)
 #define __ATTR_CONST             __declspec(noalias)
 #define __ATTR_MALLOC            __declspec(restrict)

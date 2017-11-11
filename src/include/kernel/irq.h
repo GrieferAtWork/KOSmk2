@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <kernel/arch/gdt.h>
 #include <kernel/arch/cpustate.h>
+#include <kernel/arch/interrupt.h>
 
 DECL_BEGIN
 
@@ -247,51 +248,6 @@ FUNDEF SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
 /* Delete the custom interrupt handler for `num', restoring the default/fallback handler. */
 FUNDEF SAFE void KCALL irq_del(irq_t num, bool reload);
 
-
-
-
-
-/* Amount of `struct idtentry' that make up a full IDT table. */
-#define IDT_TABLESIZE 256
-
-#define IDTENTRY_OFFSETOF_OFF1  0
-#define IDTENTRY_OFFSETOF_SEL   2
-#define IDTENTRY_OFFSETOF_ZERO  4
-#define IDTENTRY_OFFSETOF_FLAGS 5
-#define IDTENTRY_OFFSETOF_OFF2  6
-#ifdef __x86_64__
-#define IDTENTRY_OFFSETOF_OFF3  8
-#define IDTENTRY_SIZE           16
-#else
-#define IDTENTRY_SIZE           8
-#endif
-struct PACKED idtentry {
-    u16 ie_off1;  /*< Lower 16 bits of an `irq_handler' pointer. */
-    u16 ie_sel;   /*< Kernel code segment (always `__KERNEL_CS') */
-#ifdef __x86_64__
-    u8  ie_ist;   /*< Nits 0..2 hold Interrupt Stack Table offset, rest of bits zero. */
-#else
-    u8  ie_zero;  /*< Always ZERO(0). */
-#endif
-    u8  ie_flags; /*< Set of `IDTFLAG_*|IDTTYPE_*' */
-    u16 ie_off2;  /*< Upper 16 bits of an `irq_handler' pointer. */
-#ifdef __x86_64__
-    u32 ie_off3;  /*< Bits 32..63 of the vector offset. */
-    u32 ie_unused;/* Unused ata. */
-#endif
-};
-
-#define IDTFLAG_PRESENT                 0x80 /*< Set to 0 for unused interrupts. */
-/* Descriptor Privilege LevelGate call protection.
- * Specifies which privilege Level the calling Descriptor minimum should have.
- * So hardware and CPU interrupts can be protected from being called out of userspace. */
-#define IDTFLAG_DPL(n)          (((n)&3)<<5) /*< Mask: 0x60 */
-#define IDTFLAG_STORAGE_SEGMENT         0x10 /*< Set to 0 for interrupt gates. */
-#define IDTTYPE_80386_32_TASK_GATE      0x05
-#define IDTTYPE_80286_16_INTERRUPT_GATE 0x06
-#define IDTTYPE_80286_16_TRAP_GATE      0x07
-#define IDTTYPE_80386_32_INTERRUPT_GATE 0x0E
-#define IDTTYPE_80386_32_TRAP_GATE      0x0F
 
 
 
