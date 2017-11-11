@@ -109,7 +109,7 @@
 #define __ATTR_ERROR(text)       /* Nothing */
 #define __NO_ATTR_WARNING        1
 #define __ATTR_ERROR(text)       /* Nothing */
-#define __NO_ATTR_TSECTION       1
+#define __NO_ATTR_SECTION        1
 #define __ATTR_SECTION(name)     /* Nothing */
 #ifdef __cplusplus
 #define __ATTR_NOTHROW           __declspec(nothrow)

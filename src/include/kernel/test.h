@@ -38,7 +38,7 @@ struct testrecord {
 #define ATTR_TESTRODATA ATTR_SECTION(".rodata.test")
 #define ATTR_TESTDATA   ATTR_SECTION(".data.test")
 #define ATTR_TESTBSS    ATTR_SECTION(".bss.test")
-#define TESTSTR(s)    SECTION_STRING(".rodata.test",s)
+#define TESTSTR(s)    SECTION_STRING(".rodata.str.test",s)
 
 #define DEFINE_TEST(id,name,func) \
  PRIVATE ATTR_TESTRODATA char const _testrec_##id##_name[] = (name); \

@@ -355,13 +355,20 @@ struct PACKED sgregs32 { u16 gs,fs,es,ds; };
 struct PACKED sgregs { __SEGMENT64(gs); __SEGMENT64(fs); };
 #endif /* __CC__ */
 #define __ASM_PUSH_SGREGS       pushq %fs; pushq %gs;
+#define __ASM_IPUSH_SGREGS      pushq %%fs; pushq %%gs;
+#if 1 /* TODO: Redesign this one (Segment cannot ~really~ be used on x86_64) */
+#define __ASM_LOAD_SGREGS(src)  /* nothing */
+#define __ASM_ILOAD_SGREGS(src) /* nothing */
+#define __ASM_POP_SGREGS        addq $16, %rsp;
+#define __ASM_IPOP_SGREGS       addq $16, %%rsp;
+#else
 #define __ASM_LOAD_SGREGS(src)  movw SGREGS_OFFSETOF_FS+src, %gs; \
                                 movw SGREGS_OFFSETOF_GS+src, %fs;
-#define __ASM_POP_SGREGS        popq %gs; popq %fs;
-#define __ASM_IPUSH_SGREGS      pushq %%fs; pushq %%gs;
 #define __ASM_ILOAD_SGREGS(src) movw SGREGS_OFFSETOF_FS+src, %%gs; \
                                 movw SGREGS_OFFSETOF_GS+src, %%fs;
+#define __ASM_POP_SGREGS        popq %gs; popq %fs;
 #define __ASM_IPOP_SGREGS       popq %%gs; popq %%fs;
+#endif
 #else
 #define SGREGS_OFFSETOF_GS 0
 #define SGREGS_OFFSETOF_FS 2

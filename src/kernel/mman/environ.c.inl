@@ -54,11 +54,7 @@ L(PRIVATE_ENTRY(count_pointers)                           )
 L(    pushl %esi                                          )
 #endif /* !__x86_64__ */
 L(    movx  ASM_CPU(CPU_OFFSETOF_RUNNING), %xdx           )
-#ifdef __x86_64__
-L(    leaq 3f(%rip), %rax; pushq %rax                     )
-#else
-L(    pushl $3f                                           )
-#endif
+L(    pushx_sym(%xax,3f)                                  )
 L(    pushx $(EXC_PAGE_FAULT)                             )
 L(    pushx TASK_OFFSETOF_IC(%xdx)                        )
 L(    movx  %xsp, TASK_OFFSETOF_IC(%xdx)                  )
@@ -86,19 +82,9 @@ L(    ret                                                 )
 L(3:  movx  $(-EFAULT), %xax                              )
 L(    jmp   2b                                            )
 L(4:  movx  $(-EFAULT), %xax                              )
-#ifdef __x86_64__
-L(    leaq  __kernel_user_start(%rip), %r10               )
-L(    cmpq  %r10, %rsi                                    )
-#else
-L(    cmpl  $__kernel_user_start, %esi                    )
-#endif
+L(    cmpx_sym(%r10,__kernel_user_start,%xsi)             )
 L(    jb    5b                                            )
-#ifdef __x86_64__
-L(    leaq  __kernel_user_end(%rip), %r10                 )
-L(    cmpq  %r10, %rsi                                    )
-#else
-L(    cmpl  $__kernel_user_end, %esi                      )
-#endif
+L(    cmpx_sym(%r10,__kernel_user_end,%xsi)               )
 L(    jae   5b                                            )
 L(    jmp   6b /* Allow points apart of user-share */     )
 L(SYM_END(count_pointers)                                 )

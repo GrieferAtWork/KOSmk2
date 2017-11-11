@@ -122,6 +122,11 @@ mbranch_remap_unlocked(struct mbranch const *__restrict self,
   if (part->mt_state == MPART_STATE_INCORE) {
    /* Only map in-core parts as present. */
    part_prot |= PDIR_ATTR_PRESENT;
+#ifdef PDIR_ATTR_NXE
+   /* Disable execution permissions if not allowed. */
+   if (!(self->mb_prot&PROT_EXEC))
+         part_prot |= PDIR_ATTR_NXE;
+#endif
    /* Map with write-access if that protection is required,
     * or when COW isn't used when `PROT_SHARED' is set, or
     * when the part is only used by us! */

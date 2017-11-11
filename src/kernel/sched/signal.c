@@ -235,22 +235,13 @@ L(    int   $3 /* ASSERTION_FAILURE: 'Signal recursion was ZERO(0)' */          
 L(2:  hlt                                                                        )
 L(    jmp 2b                                                                     )
 L(1:                                                                             )
-#endif
+#endif /* CONFIG_DEBUG */
 L(                                                                               )
       /* As we're about to start working with the user-space stack, filling in
        * remaining register data may cause a segfault which we must handle. */
-#ifdef __x86_64__
-L(    leaq  sigfault(%rip), %rdx                                                 )
-L(    pushq %rdx                                                                 )
-L(    movq  $(EXC_PAGE_FAULT), %rdx                                              )
-L(    pushq %rdx                                                                 )
-L(    xorq  %rdx, %rdx                                                           )
-L(    pushq %rdx /* TASK_OFFSETOF_IC(%xax) -- There mustn't be any more */       )
-#else
-L(    pushl $sigfault                                                            )
-L(    pushl $(EXC_PAGE_FAULT)                                                    )
-L(    pushl $0 /* TASK_OFFSETOF_IC(%xax) -- There mustn't be any more */         )
-#endif
+L(    pushx_sym(%rdx,sigfault)                                                   )
+L(    pushx $(EXC_PAGE_FAULT)                                                    )
+L(    pushx $0 /* TASK_OFFSETOF_IC(%xax) -- There mustn't be any more */         )
 L(    movx  %xsp, TASK_OFFSETOF_IC(%xax)                                         )
 L(                                                                               )
       /* Fill in all the missing user-space registers. */
@@ -262,7 +253,7 @@ L(    movx  %xbx, %xdi                                                          
 L(    addx  $(__UCONTEXT_SIZE), %xdi                                             )
 L(    jo    9f                                                                   )
 #ifdef __x86_64__
-L(    movq  $(ASM_USER_END), %rdx                                                )
+L(    movabs $(ASM_USER_END), %rdx                                               )
 L(    cmpq  %rdx, %rdi                                                           )
 #else
 L(    cmpl  $(ASM_USER_END), %edi                                                )

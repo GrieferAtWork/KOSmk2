@@ -510,6 +510,11 @@ kernel_boot(u32        mb_magic,
  smp_initialize_lapic();
 #endif
 
+#ifdef __x86_64__
+ pdir_print(&pdir_kernel,&syslog_printer,
+             SYSLOG_PRINTER_CLOSURE(LOG_INFO));
+#endif
+
 #ifdef M_MALL_CHECK_FREQUENCY
  /* Validate memory every 4 allocations (For now this is still acceptable)
   * NOTE: If you're wondering why KOS might be lagging, this option is why.

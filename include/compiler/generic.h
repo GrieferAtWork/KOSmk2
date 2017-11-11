@@ -317,7 +317,7 @@
 #if __has_attribute(__section__) || defined(__TINYC__)
 #   define __ATTR_SECTION(name)  __attribute__((__section__(name)))
 #else
-#   define __NO_ATTR_TSECTION    1
+#   define __NO_ATTR_SECTION     1
 #   define __ATTR_SECTION(name)  /* Nothing */
 #endif
 #if __has_attribute(__nothrow__)

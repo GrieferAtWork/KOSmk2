@@ -37,20 +37,6 @@
 
 DECL_BEGIN
 
-#ifdef __x86_64__
-/* Page directory entries for mapping the last 2Gb of virtual memory to the first physical 2. */
-INTERN ATTR_ALIGNED(PAGESIZE) ATTR_SECTION(".bss") e3_t coreboot_e2_80000000[PDIR_E2_COUNT];
-INTERN ATTR_ALIGNED(PAGESIZE) ATTR_SECTION(".bss") e3_t coreboot_e2_c0000000[PDIR_E2_COUNT];
-INTERN ATTR_ALIGNED(PAGESIZE) ATTR_SECTION(".bss") e4_t coreboot_e3[PDIR_E3_COUNT]
-#if 0
-= {
-    [PDIR_E3_COUNT-2] = { ((uintptr_t)coreboot_e2_80000000 - CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
-    [PDIR_E3_COUNT-1] = { ((uintptr_t)coreboot_e2_c0000000 - CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
-}
-#endif
-;
-#endif
-
 INTERN ATTR_SECTION(".data.phys")
        ATTR_ALIGNED(MMAN_ALIGN)
 PHYS struct mman __mman_kernel_p = {
@@ -272,22 +258,25 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
  PDIR_KERNEL_CHECK_INTEGRITY_AFTER_SETUP();
 #endif
 
-#if 1
+
+#ifdef PDIR_ATTR_WRITE
  /* Change the protection of the kernel's text/rodata segment to read-only. */
  { ssize_t error;
    error = pdir_mprotect(&pdir_kernel,
                         (ppage_t)KERNEL_RO_BEGIN,KERNEL_RO_SIZE,
-                         PDIR_ATTR_PRESENT|PDIR_ATTR_GLOBAL|PDIR_FLAG_NOFLUSH);
+                         PDIR_ATTR_ACCESSED|PDIR_ATTR_PRESENT|
+                         PDIR_ATTR_GLOBAL|PDIR_FLAG_NOFLUSH);
    if (E_ISERR(error)) {
     syslog(LOG_MEM|LOG_ERROR,
            FREESTR("[PD] Failed to mark kernel text %p...%p as read-only: %[errno]\n"),
            KERNEL_RO_BEGIN,KERNEL_RO_END-1,-error);
    }
-#if 1
+#ifdef PDIR_ATTR_USER
    /* Make the kernel's user-share segment readable from user-space. */
    error = pdir_mprotect(&pdir_kernel,
                         (ppage_t)__kernel_user_start,(size_t)__kernel_user_size,
-                         PDIR_ATTR_USER|PDIR_ATTR_GLOBAL|PDIR_ATTR_PRESENT|PDIR_FLAG_NOFLUSH);
+                         PDIR_ATTR_ACCESSED|PDIR_ATTR_USER|
+                         PDIR_ATTR_GLOBAL|PDIR_ATTR_PRESENT|PDIR_FLAG_NOFLUSH);
    if (E_ISERR(error)) {
     syslog(LOG_MEM|LOG_ERROR,
            FREESTR("[PD] Failed to mark user-share %p...%p as readable: %[errno]\n"),

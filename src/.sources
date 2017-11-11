@@ -18,6 +18,7 @@
  */
 
 
+#define KERNEL_CONFIG_STRALIGN 1
 BEGIN
 #ifdef TARGET_X86_64
 	/* Don't use the `red zone' in kernel mode. */
@@ -26,6 +27,7 @@ BEGIN
 #else
 	DEFINE("CONFIG_SMP")
 #endif
+	DEFINE("CONFIG_STRALIGN="+KERNEL_CONFIG_STRALIGN)
 
 	/* Disable generation of code that uses floating point registers.
 	 * It would be too expensive for kernel code to make use of floating

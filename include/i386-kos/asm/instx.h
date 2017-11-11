@@ -19,6 +19,7 @@
 #ifndef _X86_KOS_ASM_INSTX_H
 #define _X86_KOS_ASM_INSTX_H 1
 
+#include <__stdinc.h>
 #include <hybrid/host.h>
 
 #ifdef __x86_64__
@@ -120,5 +121,34 @@
 #   define xip    xip
 #   define xflags xflags
 #endif /* !__INTELLISENSE__ */
+
+#if defined(__KERNEL__) && defined(__x86_64__) && 0
+#if 0
+#   define ASM_USE_MOVABS 1
+#   define pushx_sym(clobber,sym)          movabs $(sym), clobber; pushq clobber
+#   define ipushx_sym(clobber,sym)         movabs $(sym), clobber; pushq clobber
+#   define asmx_sym(clobber,inst,sym,reg)  movabs $(sym), clobber; inst clobber, reg
+#   define iasmx_sym(clobber,inst,sym,reg) movabs $(sym), clobber; inst clobber, reg
+#else
+#   define ASM_USE_LEAIP 1
+#   define pushx_sym(clobber,sym)          leaq sym(%rip),  clobber; clobber
+#   define ipushx_sym(clobber,sym)         leaq sym(%%rip), clobber; clobber
+#   define asmx_sym(clobber,inst,sym,reg)  leaq sym(%rip),  clobber; inst clobber, reg
+#   define iasmx_sym(clobber,inst,sym,reg) leaq sym(%%rip), clobber; inst clobber, reg
+#endif
+#else
+#   define pushx_sym(clobber,sym)          pushx $(sym)
+#   define ipushx_sym(clobber,sym)         pushx $(sym)
+#   define asmx_sym(clobber,inst,sym,reg)  inst $(sym), reg
+#   define iasmx_sym(clobber,inst,sym,reg) inst $(sym), reg
+#endif
+
+#define cmpx_sym(clobber,sym,reg)   asmx_sym(clobber,cmpx,sym,reg)
+#define icmpx_sym(clobber,sym,reg)  asmx_sym(clobber,cmpx,sym,reg)
+#define addx_sym(clobber,sym,reg)   asmx_sym(clobber,addx,sym,reg)
+#define iaddx_sym(clobber,sym,reg)  asmx_sym(clobber,addx,sym,reg)
+#define subx_sym(clobber,sym,reg)   asmx_sym(clobber,subx,sym,reg)
+#define isubx_sym(clobber,sym,reg)  asmx_sym(clobber,subx,sym,reg)
+
 
 #endif /* !_X86_KOS_ASM_INSTX_H */

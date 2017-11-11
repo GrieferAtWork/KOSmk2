@@ -78,7 +78,7 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 #define ATTR_DOSRODATA  ATTR_SECTION(".rodata.dos")
 #define ATTR_DOSDATA    ATTR_SECTION(".data.dos")
 #define ATTR_DOSBSS     ATTR_SECTION(".bss.dos")
-#define DOSSTR(s)       SECTION_STRING(".rodata.dos",s)
+#define DOSSTR(s)     SECTION_STRING(".rodata.str.dos",s)
 #endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 

@@ -102,7 +102,9 @@ SECTIONS {
 		*(.text.free)
 		TEST_SECTION(.text.test) 
 		*(.rodata.free)
+		*(.rodata.str.free)
 		TEST_SECTION(.rodata.test)
+		TEST_SECTION(.rodata.str.test)
 #ifndef CONFIG_NO_TESTS
 		. = ALIGN(__SIZEOF_POINTER__);
 		PROVIDE_HIDDEN(__testrec_start = .);
@@ -137,6 +139,7 @@ SECTIONS {
 #ifdef CONFIG_NO_TESTS
 		*(.text.test)
 		*(.rodata.test)
+		*(.rodata.str.test)
 		*(.data.test)
 		*(.bss.test)
 		*(.test_records)

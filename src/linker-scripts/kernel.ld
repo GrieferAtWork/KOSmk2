@@ -100,6 +100,7 @@ SECTIONS {
 		DEFINE_HERE(__bootloader_ext_start);
 		KEEP(*(.text.boot_loader_ext))
 		KEEP(*(.rodata.boot_loader_ext))
+		KEEP(*(.rodata.str.boot_loader_ext))
 		KEEP(*(.data.boot_loader_ext))
 		. = ALIGN(XBOOT_ALIGNMENT);
 		DEFINE_HERE(__bootloader_ext_end);
@@ -149,6 +150,7 @@ SECTIONS {
 
 		*(.rodata.hot)
 		*(.rodata)
+		*(.rodata.str)
 
 		. = ALIGN(PAGESIZE);
 		DEFINE_HERE(__kernel_ro_end);
@@ -169,6 +171,7 @@ SECTIONS {
 		DEFINE_HERE(__kernel_phys_start);
 		*(.text.phys)
 		*(.rodata.phys)
+		*(.rodata.str.phys)
 		*(.data.phys)
 		*(.bss.phys)
 		. = ALIGN(PAGESIZE);
@@ -184,6 +187,7 @@ SECTIONS {
 		/* TODO: This stuff should be part of `.free' (Because the per-cpu template can be deleted later) */
 		*(.text.cpu)
 		*(.rodata.cpu)
+		*(.rodata.str.cpu)
 		*(.data.cpu)
 		. = ALIGN(4); /* Align by 4 to allow for use of `rep movsl' when initializing */
 		DEFINE(__percpu_datsize = ABSOLUTE(.) - __percpu_begin);
@@ -219,6 +223,7 @@ SECTIONS {
 		DEFINE_PUBLIC_HERE(__kernel_user_start);
 		*(.text.user)
 		*(.rodata.user)
+		*(.rodata.str.user)
 		*(.data.user)
 		*(.bss.user)
 		. = ALIGN(PAGESIZE);
@@ -233,6 +238,8 @@ SECTIONS {
 		*(.text.cold)
 		*(.rodata.rare)
 		*(.rodata.cold)
+		*(.rodata.str.rare)
+		*(.rodata.str.cold)
 
 		. = ALIGN(__SIZEOF_POINTER__);
 		DEFINE_HERE(__fini_array_start);
@@ -268,7 +275,9 @@ SECTIONS {
 		TEST_SECTION(.text.test)
 
 		*(.rodata.free)
+		*(.rodata.str.free)
 		TEST_SECTION(.rodata.test)
+		TEST_SECTION(.rodata.str.test)
 
 		. = ALIGN(__SIZEOF_POINTER__);
 		DEFINE_HERE(__setup_early_start);
@@ -390,6 +399,7 @@ SECTIONS {
 #ifdef CONFIG_NO_TESTS
 		*(.text.test)
 		*(.rodata.test)
+		*(.rodata.str.test)
 		*(.data.test)
 		*(.bss.test)
 		*(.test_records)

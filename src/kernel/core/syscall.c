@@ -340,11 +340,15 @@ L(    /* Check for overflow in system call ID */                              )
 L(    cmpx  $(__NR_syscall_max), %xax                                         )
 L(    ja    1f                                                                )
 L(                                                                            )
-#ifdef __x86_64__
+#if defined(__x86_64__) && (defined(ASM_USE_MOVABS) || defined(ASM_USE_LEAIP))
 L(    /* This is a bit more complicated because we're a higher-half kernel. */)
 L(    pushq %rax                                                              )
 L(    pushq %rbp                                                              )
+#ifdef ASM_USE_MOVABS
+L(    movabs $(syscall_table-__NR_syscall_min*8), %rbp                        )
+#else
 L(    leaq (syscall_table-__NR_syscall_min*8)(%rip), %rbp                     )
+#endif
 L(    shrq  $3,   %rax                                                        )
 L(    addq  %rbp, %rax                                                        )
 L(    popq  %rbp                                                              )
@@ -352,7 +356,7 @@ L(    xchgq %rax, 0(%rsp)                                                     )
 L(    ret                                                                     )
 #else
 L(    /* Simply jump to the address of the system call. */                    )
-L(    jmpl *(syscall_table-__NR_syscall_min*4)(,%eax,4)                       )
+L(    jmpx *(syscall_table-__NR_syscall_min*4)(,%xax,4)                       )
 #endif
 L(1:                                                                          )
 #ifdef __x86_64__
@@ -366,11 +370,15 @@ L(    jb    sys_nosys                                                         )
 #endif
 L(    cmpl  $(__NR_xsyscall_max), %eax                                        )
 L(    ja    sys_nosys                                                         )
-#ifdef __x86_64__
+#if defined(__x86_64__) && (defined(ASM_USE_MOVABS) || defined(ASM_USE_LEAIP))
 L(    /* This is a bit more complicated because we're a higher-half kernel. */)
 L(    pushq %rax                                                              )
 L(    pushq %rbp                                                              )
+#ifdef ASM_USE_MOVABS
+L(    movabs $(xsyscall_table-((__NR_xsyscall_min*8) & 0xffffffff)), %rbp     )
+#else
 L(    leaq (xsyscall_table-((__NR_xsyscall_min*8) & 0xffffffff))(%rip), %rbp  )
+#endif
 L(    shrq  $3,   %rax                                                        )
 L(    addq  %rbp, %rax                                                        )
 L(    popq  %rbp                                                              )
@@ -378,7 +386,7 @@ L(    xchgq %rax, 0(%rsp)                                                     )
 L(    ret                                                                     )
 #else
 L(    /* Jump to the extended system call handler. */                         )
-L(    jmpl *(xsyscall_table-((__NR_xsyscall_min*4) & 0xffffffff))(,%eax,4)    )
+L(    jmpx *(xsyscall_table-((__NR_xsyscall_min*4) & 0xffffffff))(,%xax,4)    )
 #endif
 L(SYM_END(syscall_irq)                                                        )
 L(.previous                                                                   )
@@ -421,16 +429,20 @@ L(PRIVATE_ENTRY(sys_ccall)                                                    )
 L(    SYSCALL_SAFEREGISTERS                                                   )
 L(    SYSCALL_LOADSEGMENTS                                                    )
 L(                                                                            )
-#ifdef __x86_64__
+#if defined(__x86_64__) && (defined(ASM_USE_MOVABS) || defined(ASM_USE_LEAIP))
 L(    /* This is a bit more complicated because we're a higher-half kernel. */)
 L(    pushq %rbp                                                              )
+#ifdef ASM_USE_MOVABS
+L(    movabs $(syscall_c_table-(__NR_syscall_min*8)), %rbp                    )
+#else
 L(    leaq (syscall_c_table-(__NR_syscall_min*8))(%rip), %rbp                 )
+#endif
 L(    shrq  $3, %rax                                                          )
 L(    addq  %rbp, %rax                                                        )
 L(    popq  %rbp                                                              )
 L(    callq *%rax                                                             )
 #else
-L(    calll *(syscall_c_table-__NR_syscall_min*4)(,%eax,4)                    )
+L(    callx *(syscall_c_table-__NR_syscall_min*4)(,%xax,4)                    )
 #endif
 L(                                                                            )
 #ifdef __x86_64__
@@ -461,18 +473,22 @@ L(PRIVATE_ENTRY(sys_xcall)                                                    )
 L(    SYSCALL_SAFEREGISTERS                                                   )
 L(    SYSCALL_LOADSEGMENTS                                                    )
 L(                                                                            )
-#ifdef __x86_64__
+#if defined(__x86_64__) && (defined(ASM_USE_MOVABS) || defined(ASM_USE_LEAIP))
 L(    /* This is a bit more complicated because we're a higher-half kernel. */)
 L(    pushq %rbp                                                              )
+#ifdef ASM_USE_MOVABS
+L(    movabs $(xsyscall_c_table-((__NR_xsyscall_min*8) & 0xffffffff)), %rbp   )
+#else
 L(    leaq (xsyscall_c_table-((__NR_xsyscall_min*8) & 0xffffffff))(%rip), %rbp)
+#endif
 L(    shrq  $3, %rax                                                          )
 L(    addq  %rbp, %rax                                                        )
 L(    popq  %rbp                                                              )
 L(    callq *%rax                                                             )
 L(    jmp   1b                                                                )
 #else
-L(    pushl $1b /* Push the cleanup return address of the system call */      )
-L(    jmpl *(xsyscall_c_table-((__NR_xsyscall_min*4) & 0xffffffff))(,%eax,4)  )
+L(    pushx $1b /* Push the cleanup return address of the system call */      )
+L(    jmpx *(xsyscall_c_table-((__NR_xsyscall_min*4) & 0xffffffff))(,%xax,4)  )
 #endif
 L(SYM_END(sys_xcall)                                                          )
 L(                                                                            )

@@ -121,13 +121,6 @@ FUNDEF bool KCALL pdir_maccess_addr(pdir_t const *__restrict self, VIRT void con
 FUNDEF errno_t KCALL pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
                                size_t n_bytes, PHYS ppage_t target, pdir_attr_t flags);
 
-#ifdef CONFIG_BUILDING_KERNEL_CORE
-/* Used for mapping virtual memory during early booting (before paging is initialized). */
-INTDEF INITCALL errno_t KCALL
-pdir_mmap_early(pdir_t *__restrict self, VIRT ppage_t start,
-                size_t n_bytes, PHYS ppage_t target, pdir_attr_t flags);
-#endif /* CONFIG_BUILDING_KERNEL_CORE */
-
 /* Unmap a virtual memory mapping.
  * NOTE: No-op if no mapping exists within the given range.
  * @param: flags:    Only used for `PDIR_FLAG_NOFLUSH'

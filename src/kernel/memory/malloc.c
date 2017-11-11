@@ -328,7 +328,7 @@ struct PACKED mptr {
  struct mptr_tail *m_tail; /*< [const][1..1][>= self] Pointer to the end of user-data. */
 #define __2_MPTR_SIZEOF (__1_MPTR_SIZEOF+__SIZEOF_POINTER__)
 #else
-#define __2_MPTR_SIZEOF __1_MPTR_SIZEOF
+#define __2_MPTR_SIZEOF  __1_MPTR_SIZEOF
 #endif
 
  /* Underflow safe-area header. */
@@ -2745,12 +2745,7 @@ mptr_setup(struct mptr *__restrict self,
        * >> If a pagefault occurrs while accessing a frame pointer, stop creation
        *    of the traceback (it is either corrupted, was customized, or has terminated) */
       __asm__ __volatile__(/* BEGIN_EXCEPTION_HANDLER(EXC_PAGE_FAULT) */
-#ifdef __x86_64__
-                           L(    leaq  3f(%%rip), %[temp]                                   )
-                           L(    pushq %[temp]                                              )
-#else
-                           L(    pushl $3f                                                  )
-#endif
+                           L(    ipushx_sym(%[temp],3f)                                     )
                            L(    pushx $(EXC_PAGE_FAULT)                                    )
                            L(    pushx TASK_OFFSETOF_IC(%[task])                            )
                            L(    movx  %%xsp, TASK_OFFSETOF_IC(%[task])                     )

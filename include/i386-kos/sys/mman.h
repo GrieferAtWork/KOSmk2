@@ -176,7 +176,7 @@ union{
                        *   _always_ initialized with `mi_fill' (ignoring `MAP_UNINITIALIZED').
                        *   >> Very useful when mapping program headers with a smaller memory-size than file-size. */
  __uintptr_t mv_fill; /*< [valid_if(MAP_ANONYMOUS ? !MAP_UNINITIALIZED : mv_len < mi_size)]
-                       *   Filler double-word for any undefined memory.
+                       *   Filler double/quad-word for any undefined memory.
                        *   On some platforms, a multi-byte pattern described by this may be
                        *   used to initialize memory, but KOS only guaranties that the lowest byte
                        *  (that is `mi_fill & 0xff') will always be used, meaning that a consistent

@@ -54,7 +54,7 @@ union PACKED {
 
 #define SETUPSTR    FREESTR
 #define __DEFINE_SETUP(section,opt_name,id,fun,f) \
- PRIVATE ATTR_FREERODATA char const __optname##id[] = opt_name; \
+ PRIVATE ATTR_STR char const __optname##id[] = opt_name; \
  PRIVATE ATTR_ALIGNED(__SIZEOF_POINTER__) ATTR_USED ATTR_SECTION(section) \
  struct setup_opt const __optdecl##id = {__optname##id,fun,{f}}
 

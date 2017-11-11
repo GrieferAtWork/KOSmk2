@@ -65,6 +65,8 @@ DECL_BEGIN
 /* Mask of all address bits that can actually be used.
  * NOTE: On x86_64, this is 48 bits. */
 #define VIRT_MASK       __UINT64_C(0x0000ffffffffffff)
+#define PDIR_SIGN_BIT   __UINT64_C(0x0000800000000000)
+#define PDIR_SIGN_EXT   __UINT64_C(0xffff000000000000)
 
 /* Pagesizes of different page directory levels. */
 #define PDIR_E1_SIZE     __UINT64_C(0x0000000000001000) /* 4 KiB (Same as `PAGESIZE') */
@@ -77,16 +79,16 @@ DECL_BEGIN
 #define ASM_PDIR_E4_SIZE            0x0000008000000000  /* 512 GiB */
 
 /* Physical address masks of different page directory levels. */
-#define PDIR_E1_MASK     __UINT64_C(0x0000ffffffff1000)
-#define PDIR_E2_MASK     __UINT64_C(0x0000ffffff200000)
-#define PDIR_E3_MASK     __UINT64_C(0x0000ffff40000000)
-#define PDIR_E4_MASK     __UINT64_C(0x0000ff8000000000)
+#define PDIR_E1_MASK     __UINT64_C(0x0000fffffffff000) /* == (~(PDIR_E1_SIZE-1) & VIRT_MASK) */
+#define PDIR_E2_MASK     __UINT64_C(0x0000ffffffe00000) /* == (~(PDIR_E2_SIZE-1) & VIRT_MASK) */
+#define PDIR_E3_MASK     __UINT64_C(0x0000ffffc0000000) /* == (~(PDIR_E3_SIZE-1) & VIRT_MASK) */
+#define PDIR_E4_MASK     __UINT64_C(0x0000ff8000000000) /* == (~(PDIR_E4_SIZE-1) & VIRT_MASK) */
 
 /* The amount of sub-level entries contained within any given level. */
-#define PDIR_E1_COUNT 512 /* Amount of level #0 entries (pages). */
-#define PDIR_E2_COUNT 512 /* Amount of level #1 entries. */
-#define PDIR_E3_COUNT 512 /* Amount of level #2 entries. */
-#define PDIR_E4_COUNT 512 /* Amount of level #3 entries. */
+#define PDIR_E1_COUNT    512 /* Amount of level #0 entries (pages). */
+#define PDIR_E2_COUNT    512 /* Amount of level #1 entries. */
+#define PDIR_E3_COUNT    512 /* Amount of level #2 entries. */
+#define PDIR_E4_COUNT    512 /* Amount of level #3 entries. */
 
 /* Total amount of representable addresses of individual levels. */
 #define PDIR_E1_TOTALSIZE  __UINT64_C(0x0000000000200000) /* 2 MiB */
@@ -123,12 +125,7 @@ DECL_BEGIN
 #define PDIR_FLAG_NOFLUSH             0x8000 /* Don't sync the page directory entry - instead, the caller must invalidate it. */
 /* Internal/arch-specific attributes. */
 #define PDIR_ATTR_2MIB                0x0080 /* The entry describes an address endpoint, rather than a link. */
-
-/* Check if 2Mib pages are allowed for the given address.
- * NOTE: They are not allowed for kernel pages, so-as to
- *       keep the indirection required for sharing pages.
- * NOTE: This check applies to levels #1, #2 and #3 */
-#define PDIR_ALLOW_2MIB(addr) ((u64)(addr) < KERNEL_BASE)
+//#define PDIR_ATTR_NXE      __UINT64_C(0x8000000000000000) /* No-execute. */
 
 
 
@@ -263,7 +260,18 @@ LOCAL void FCALL pdir_flushall(void) {
  *       structure in the event that they should overlap, though normally
  *       multiboot will just place its information structures in low memory. */
 INTDEF INITDATA VIRT ppage_t early_page_end;
-/* Leave an unused gap in case the bootloader places setup data past the kernel. */
+/* Leave an unused gap in case the bootloader places setup data past the kernel.
+ * XXX: At least QEMU's `-kernel ...' option places the commandline past the
+ *      loaded kernel in memory (aka. Starting at `KERNEL_END'), even though doing
+ *      so was probably just an oversight by the developers, as what we're doing
+ *      here could easily be interpreted as a low-level implementation of `brk()/sbrk()'.
+ *     (In that we're allocating heap memory behind the executable image), leave a gap of
+ *      8 pages for bootloaders that may decide to put stuff there without considering
+ *      that the kernel may claim that memory for use by a HEAP implementation.
+ *      NOTE: 8 pages is probably too much in any case, but as long as we don't leave
+ *            a gap of multiple gigabytes, it's always a game of luck to assume that
+ *            memory is available, just as the bootloader must assume that physical
+ *            RAM is available where we're try to load the core itself into. */
 #define EARLY_PAGE_GAP    (8*PAGESIZE)
 #define EARLY_PAGE_BEGIN  (KERNEL_END+EARLY_PAGE_GAP)
 #define EARLY_PAGE_END    ((uintptr_t)early_page_end)
@@ -295,6 +303,7 @@ INTDEF INITCALL ppage_t KCALL early_page_malloc(void);
  * >>    }
  * >>    *e3 = PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|e2;
  * >> }
+ * WARNING: Only available in 64-bit mode, use `pdir_mmap_early' in 32-bit mode. 
  */
 INTDEF INITCALL void KCALL early_map_identity(PHYS void *addr, size_t n_bytes);
 #define early_map_identity(addr,n_bytes)  early_map_identity(addr,n_bytes)

@@ -205,6 +205,15 @@ LOCAL void FCALL pdir_flushall(void) {
 #if PDIR_OFFSETOF_DIRECTORY != 0
 #error "Fix the above macros"
 #endif
+
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+/* Used for mapping virtual memory during early booting (before paging is initialized).
+ * WARNING: Only available in 32-bit mode, use `early_map_identity' in 64-bit mode. */
+INTDEF INITCALL errno_t KCALL
+pdir_mmap_early(pdir_t *__restrict self, VIRT ppage_t start,
+                size_t n_bytes, PHYS ppage_t target, pdir_attr_t flags);
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
+
 #endif /* __CC__ */
 
 

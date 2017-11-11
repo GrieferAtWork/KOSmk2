@@ -23,15 +23,23 @@
 
 /* Special section attributes (NOTE: Must be supported by the linker script) */
 
+#define ATTR_TEXT           ATTR_SECTION(".text")
+#define ATTR_RODATA         ATTR_SECTION(".rodata")
+#define ATTR_DATA           ATTR_SECTION(".data")
+#define ATTR_BSS            ATTR_SECTION(".bss")
+#define ATTR_STR            ATTR_SECTION(".rodata.str") ATTR_STRALIGN
+#define STR(s)            SECTION_STRING(".rodata.str",s)
+
 /* .free: Binary components only used during self-initialization.
  *        Once initialization is done, the user may choose to release
  *        all data from .free section, allowing the system to re-use
  *        that memory for other purposes (heavily used by the kernel core) */
-#define ATTR_FREETEXT      ATTR_SECTION(".text.free")
-#define ATTR_FREERODATA    ATTR_SECTION(".rodata.free")
-#define ATTR_FREEDATA      ATTR_SECTION(".data.free")
-#define ATTR_FREEBSS       ATTR_SECTION(".bss.free")
-#define FREESTR(s)       SECTION_STRING(".rodata.free",s)
+#define ATTR_FREETEXT       ATTR_SECTION(".text.free")
+#define ATTR_FREERODATA     ATTR_SECTION(".rodata.free")
+#define ATTR_FREEDATA       ATTR_SECTION(".data.free")
+#define ATTR_FREEBSS        ATTR_SECTION(".bss.free")
+#define ATTR_FREESTR        ATTR_SECTION(".rodata.str.free") ATTR_STRALIGN
+#define FREESTR(s)        SECTION_STRING(".rodata.str.free",s)
 
 /* .hot: Data that is very likely to be used often, instructing the linker
  *       to place it in easy-to-reach places (memory), and group them
@@ -43,22 +51,24 @@
  *       used heavily.
  * WARNING: Don't overuse hot-data attributes. - Doing so would defeat their purpose!
  */
-#define ATTR_HOTTEXT       ATTR_SECTION(".text.hot")
-#define ATTR_HOTRODATA     ATTR_SECTION(".rodata.hot")
-#define ATTR_HOTDATA       ATTR_SECTION(".data.hot")
-#define ATTR_HOTBSS        ATTR_SECTION(".bss.hot")
-#define HOTSTR(s)        SECTION_STRING(".rodata.hot",s)
+#define ATTR_HOTTEXT        ATTR_SECTION(".text.hot")
+#define ATTR_HOTRODATA      ATTR_SECTION(".rodata.hot")
+#define ATTR_HOTDATA        ATTR_SECTION(".data.hot")
+#define ATTR_HOTBSS         ATTR_SECTION(".bss.hot")
+#define ATTR_HOTRODATA_STR  ATTR_SECTION(".rodata.str.hot") ATTR_STRALIGN
+#define HOTSTR(s)         SECTION_STRING(".rodata.str.hot",s)
 
 /* .rare: Data that could eventually be used, but the chances of this
  *        are either unpredictable and do not often apply.
  *        This type of grouping is used by libc to describe
  *        functions that are not often used, such as obscure
  *        unix-extensions like `memfrob'. */
-#define ATTR_RARETEXT      ATTR_SECTION(".text.rare")
-#define ATTR_RARERODATA    ATTR_SECTION(".rodata.rare")
-#define ATTR_RAREDATA      ATTR_SECTION(".data.rare")
-#define ATTR_RAREBSS       ATTR_SECTION(".bss.rare")
-#define RARESTR(s)       SECTION_STRING(".rodata.rare",s)
+#define ATTR_RARETEXT       ATTR_SECTION(".text.rare")
+#define ATTR_RARERODATA     ATTR_SECTION(".rodata.rare")
+#define ATTR_RAREDATA       ATTR_SECTION(".data.rare")
+#define ATTR_RAREBSS        ATTR_SECTION(".bss.rare")
+#define ATTR_RARESTR        ATTR_SECTION(".rodata.str.rare")
+#define RARESTR(s)        SECTION_STRING(".rodata.str.rare",s)
 
 /* .cold: Data is likely to never be used, or in the event that it
  *        does actually find use, unlikely to get treated with more
@@ -69,11 +79,12 @@
  *        This kind of section is mainly meant to house destructor-
  *        related data, or function that never return such as `exit()',
  *        including functions calling it. */
-#define ATTR_COLDTEXT      ATTR_SECTION(".text.cold")
-#define ATTR_COLDRODATA    ATTR_SECTION(".rodata.cold")
-#define ATTR_COLDDATA      ATTR_SECTION(".data.cold")
-#define ATTR_COLDBSS       ATTR_SECTION(".bss.cold")
-#define COLDSTR(s)       SECTION_STRING(".rodata.cold",s)
+#define ATTR_COLDTEXT       ATTR_SECTION(".text.cold")
+#define ATTR_COLDRODATA     ATTR_SECTION(".rodata.cold")
+#define ATTR_COLDDATA       ATTR_SECTION(".data.cold")
+#define ATTR_COLDBSS        ATTR_SECTION(".bss.cold")
+#define ATTR_COLDSTR        ATTR_SECTION(".rodata.str.cold") ATTR_STRALIGN
+#define COLDSTR(s)        SECTION_STRING(".rodata.str.cold",s)
 
 
 #endif /* !__GUARD_HYBRID_SECTION_H */

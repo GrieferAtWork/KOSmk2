@@ -98,6 +98,9 @@ mpfps_locate_at(uintptr_t base, size_t bytes) {
 
 PRIVATE ATTR_FREETEXT struct mpfps *KCALL mpfps_locate(void) {
  struct mpfps *result;
+ /* NOTE: No need to identity-map these, as they're all part of the
+  *       first 1Gb of physical memory, which is fully mapped at this
+  *       point, both in 32-bit and 64-bit mode. */
               result = mpfps_locate_at((uintptr_t)*(__u16 volatile *)0x40E,1024);
  if (!result) result = mpfps_locate_at((uintptr_t)((*(__u16 volatile *)0x413)*1024),1024);
  if (!result) result = mpfps_locate_at((uintptr_t)0x0F0000,64*1024);
@@ -132,6 +135,7 @@ PRIVATE ATTR_FREETEXT bool KCALL smp_init_default(u8 cfg) {
  }
  boot_apic_id = readl(VIRT_ID);
 #else
+ early_map_identity((void *)(APIC_DEFAULT_PHYS_BASE+APIC_ID),4);
  boot_apic_id = readl(APIC_DEFAULT_PHYS_BASE+APIC_ID);
 #endif
  __bootcpu.c_arch.ac_lapic_id      = (u8)(boot_apic_id >> 24);

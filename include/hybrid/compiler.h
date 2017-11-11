@@ -141,9 +141,15 @@
 #define LOCAL               __LOCAL
 #define LIBCCALL            __LIBCCALL
 
+
+#ifdef CONFIG_STRALIGN
+#   define ATTR_STRALIGN    __ATTR_ALIGNED(CONFIG_STRALIGN)
+#else
+#   define ATTR_STRALIGN    /* nothing */
+#endif
 #define SECTION_STRING(section,str) \
  (*(char(*)[sizeof(str)/sizeof(char)])XBLOCK({ \
-    static ATTR_SECTION(section) char const _s[] = str; \
+    PRIVATE ATTR_STRALIGN ATTR_SECTION(section) char const _s[] = str; \
     XRETURN &_s; }))
 
 #define __PRIVATE_ARG_PLACEHOLDER_1    ,
