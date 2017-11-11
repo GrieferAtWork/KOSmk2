@@ -127,33 +127,31 @@ PUBLIC struct mzonespec const mzone_spec = {
 #ifdef __x86_64__
     .ms_min = {
         [MZONE_1MB]                  = __UINTPTR_C(0x0000000000000000),
-        [MZONE_DEV]                  = __UINTPTR_C(0x00000000000a0000),
         [MZONE_STATIC]               = __UINTPTR_C(0x0000000000100000),
-        [MZONE_HIMEM]                = __UINTPTR_C(0x0000000080000000),
+        [MZONE_32BIT]                = __UINTPTR_C(0x0000000080000000),
+        [MZONE_HIMEM]                = __UINTPTR_C(0x0000000100000000),
         [MZONE_VIRTUAL|MZONE_1MB]    = __UINTPTR_C(0xffffffff80000000),
-        [MZONE_VIRTUAL|MZONE_DEV]    = __UINTPTR_C(0xffffffff800a0000),
         [MZONE_VIRTUAL|MZONE_STATIC] = __UINTPTR_C(0xffffffff80100000),
+        [MZONE_VIRTUAL|MZONE_32BIT]  = __UINTPTR_C(0xffffffffffffffff), /* Doesn't exist. */
         [MZONE_VIRTUAL|MZONE_HIMEM]  = __UINTPTR_C(0xffffffffffffffff), /* Doesn't exist. */
     },
     .ms_max = {
-        [MZONE_1MB]                  = __UINTPTR_C(0x000000000009ffff),
-        [MZONE_DEV]                  = __UINTPTR_C(0x00000000000fffff),
+        [MZONE_1MB]                  = __UINTPTR_C(0x00000000000fffff),
         [MZONE_STATIC]               = __UINTPTR_C(0x000000007fffffff),
+        [MZONE_32BIT]                = __UINTPTR_C(0x00000000ffffffff),
         [MZONE_HIMEM]                = __UINTPTR_C(0x00007fffffffffff),
         [MZONE_VIRTUAL|MZONE_1MB]    = __UINTPTR_C(0xffffffff8009ffff),
-        [MZONE_VIRTUAL|MZONE_DEV]    = __UINTPTR_C(0xffffffff800fffff),
         [MZONE_VIRTUAL|MZONE_STATIC] = __UINTPTR_C(0xffffffffffffffff),
+        [MZONE_VIRTUAL|MZONE_32BIT]  = __UINTPTR_C(0x0000000000000000), /* Doesn't exist. */
         [MZONE_VIRTUAL|MZONE_HIMEM]  = __UINTPTR_C(0x0000000000000000), /* Doesn't exist. */
     },
 #else
     .ms_min = {
         [MZONE_1MB]   = __UINTPTR_C(0x00000000),
-        [MZONE_DEV]   = __UINTPTR_C(0x000a0000),
         [MZONE_HIMEM] = __UINTPTR_C(0x00100000),
     },
     .ms_max = {
-        [MZONE_1MB]   = __UINTPTR_C(0x0009ffff),
-        [MZONE_DEV]   = __UINTPTR_C(0x000fffff),
+        [MZONE_1MB]   = __UINTPTR_C(0x000fffff),
         [MZONE_HIMEM] = __UINTPTR_C(0xbfffffff),
     },
 #endif
@@ -738,7 +736,6 @@ page_ffree(ppage_t start, size_t n_bytes, pgattr_t attr) {
  assert((uintptr_t)free_end-1 <= MZONE_MAX(zone_id));
 
  assert(n_bytes);
- assert(zone_id != MZONE_DEV);
 #if LOG_PHYSICAL_ALLOCATIONS
  syslog(LOG_MEM|LOG_DEBUG,
         "[MEM] Feeing memory %p...%p from zone #%d\n",

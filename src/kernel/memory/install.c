@@ -73,13 +73,6 @@ page_addmemory(mzone_t zone_id, ppage_t start,
          FREESTR("Pointer overflow while freeing pages: %p + %Id(%Ix) overflows into %p"),
         (uintptr_t)start,n_bytes,n_bytes,(uintptr_t)start+(n_bytes-1));
  free_end = (ppage_t)((uintptr_t)start+n_bytes);
- if (zone_id == MZONE_DEV) {
-  /* Special case: Ignore free requested for the DEV memory zone. */
-  syslog(LOG_MEM|LOG_WARN,
-         FREESTR("[MEM] Ignoring RAM %p..%p apart of the device memory zone\n"),
-        (uintptr_t)start,(uintptr_t)free_end-1);
-  return 0;
- }
  /* Load the zone this pointer is apart of. */
  zone = PAGEZONE(zone_id);
  piter = &zone->z_root;
@@ -410,7 +403,6 @@ enum{_STATIC_MEMINFO_MAX = STATIC_MEMINFO_MAX};
 
 PUBLIC PHYS struct meminfo *mem_info_[MZONE_REAL_COUNT] ASMNAME("mem_info") = {
     [MZONE_1MB]   = MEMINFO_EARLY_NULL,
-    [MZONE_DEV]   = MEMINFO_EARLY_NULL,
     [MZONE_HIMEM] = &__bootidlestack.s_kerninfo[0],
 };
 

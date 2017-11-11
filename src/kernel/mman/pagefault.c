@@ -91,7 +91,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
  if (info->iret.exc_code&PF_U) core_mode |= MMAN_MCORE_USER;
 #endif
 
-#if 1
+#if 0
  syslog(LOG_MEM|LOG_DEBUG,
         "[MEM] Checking to load core memory after PAGEFAULT near %p %p %p\n",
         fault_addr,&fault_addr,info->iret.xip);

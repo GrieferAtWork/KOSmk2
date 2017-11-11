@@ -89,24 +89,23 @@ FUNDEF KPD pgattr_t KCALL page_query(PHYS void *start, size_t n_bytes);
  *       another starts after the other, meaning that zones can be
  *       searched linearly to figure out the origin of any given pointer.
  */
-#define MZONE_1MB          0x00 /* [0x00000000..0x0009ffff] Physical, dynamic memory within the first 1Mb of memory.
+#define MZONE_1MB          0x00 /* [0x00000000..0x000fffff] Physical, dynamic memory within the first 1Mb of memory.
                                  *  HINT: This is where 16-bit/realmode code running in ring#0 must be loaded to. */
-/* TODO: Get rid of the `MZONE_DEV' zone. - `meminfo' is now responsible for managing that kind of stuff. */
-#define MZONE_DEV          0x01 /* [0x000a0000..0x000fffff] Device memory mappings. This zone is always empty, as it cannot be used for dynamic allocations. */
 #ifdef __x86_64__
-#define MZONE_STATIC       0x02 /* [0x0000000000100000..0x000000007fffffff] Physical memory that is statically mapped at -2Gb in every existing page directory. */
-#define MZONE_HIMEM        0x03 /* [0x0000000080000000..0x00007fffffffffff] The main physical memory zone containing all to-called ~high~ memory. */
+#define MZONE_STATIC       0x01 /* [0x0000000000100000..0x000000007fffffff] Physical memory that is statically mapped at -2Gb in every existing page directory. */
+#define MZONE_32BIT        0x02 /* [0x0000000080000000..0x00000000ffffffff] The remainder of the 32-bit address space. */
+#define MZONE_HIMEM        0x03 /* [0x0000000100000000..0x00007fffffffffff] The main physical memory zone containing all to-called ~high~ memory. */
 #define MZONE_FAST         0x06 /* [0xffffffff80100000..0xffffffffffffffff] Alias for `MZONE_VIRTUAL|MZONE_STATIC' */
 #define MZONE_VIRTUAL      0x04 /* FLAG: Set to allocate virtual memory, rather than physical. */
 #define MZONE_COUNT        0x08 /* The amount of zones there are (including aliases). */
-#define MZONE_MAXNONEMPTY  0x07 /* The greatest non-empty memory zone (`MZONE_VIRTUAL|MZONE_HIMEM' doesn't exist and is ignored). */
+#define MZONE_MAXNONEMPTY  0x06 /* The greatest non-empty memory zone (`MZONE_VIRTUAL|MZONE_32BIT' or `MZONE_VIRTUAL|MZONE_HIMEM' doesn't exist and is ignored). */
 #define MZONE_REAL_COUNT   0x04 /* The real amount of zones there are. */
 #define MZONE_GETREAL(x) ((x)&0x3) /* Return the ~real~ zone id of the given zone. */
 #else
-#define MZONE_HIMEM        0x02 /* [0x00100000..0xbfffffff] The main physical memory zone containing all to-called ~high~ memory. */
-#define MZONE_COUNT        0x03 /* The amount of zones there are. */
-#define MZONE_MAXNONEMPTY  0x02 /* The greatest non-empty memory zone. */
-#define MZONE_REAL_COUNT   0x03 /* The real amount of zones there are. */
+#define MZONE_HIMEM        0x01 /* [0x00100000..0xbfffffff] The main physical memory zone containing all to-called ~high~ memory. */
+#define MZONE_COUNT        0x02 /* The amount of zones there are. */
+#define MZONE_MAXNONEMPTY  0x01 /* The greatest non-empty memory zone. */
+#define MZONE_REAL_COUNT   0x02 /* The real amount of zones there are. */
 #define MZONE_GETREAL(x)  (x)   /* Return the ~real~ zone id of the given zone. */
 #endif
 #define MZONE_INVALID    ((mzone_t)-1) /* Invalid memory zone. */
