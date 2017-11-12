@@ -35,10 +35,11 @@
 #include <string.h>
 #include <syslog.h>
 #include <hybrid/align.h>
+#include <kernel/arch/pic.h>
 
 #include "ne2k.h"
 
-#define NE2K_IRQ IRQ_PIC2_FREE3 /* TODO: Dynamically allocate. */
+#define NE2K_IRQ INTNO_PIC2_FREE3 /* TODO: Dynamically allocate. */
 DECL_BEGIN
 
 INTERN errno_t KCALL net_reset_base(u16 iobase) {
@@ -285,8 +286,27 @@ end:
 
 
 
-DEFINE_INT_HANDLER(ne2k_irq,ne2k_int);
+#ifdef CONFIG_USE_OLD_INTERRUPTS
+DEFINE_INT_HANDLER(ne2k_irq,ne2k_interrupt_handler);
 PRIVATE isr_t ne2k_isr = ISR_DEFAULT(NE2K_IRQ,&ne2k_irq);
+#else
+INTERN void ne2k_interrupt_handler(void);
+/* TODO: Use the interrupt handler to pass the ne2k_t device as closure. */
+/* TODO: Extend to allow interrupt sharing.
+ *      (When `EN0_ISR' returns nothing, an interrupt wasn't meant for us...). */
+PRIVATE struct interrupt ne2k_interrupt = {
+    .i_intno = INTNO_PIC2_ATA1,
+    .i_mode  = INTMODE_HOST,
+    .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
+    .i_prio  = INTPRIO_MAX,
+    .i_flags = INTFLAG_PRIMARY,
+    .i_proto = {
+        .p_noshare_fast = &ne2k_interrupt_handler,
+    },
+    .i_owner = THIS_INSTANCE,
+};
+#endif
+
 INTERN void ne2k_do_int(ne2k_t *dev) {
  u8 status; u16 iobase;
  iobase = dev->n_iobase;
@@ -342,11 +362,11 @@ INTERN void ne2k_do_int(ne2k_t *dev) {
  if (status)
      outb(iobase+EN0_ISR,status);
 }
-INTERN void ne2k_int(void) {
+INTERN void ne2k_interrupt_handler(void) {
  if (IRQ_PIC_SPURIOUS(NE2K_IRQ)) return;
  ne2k_do_int((ne2k_t *)ne2k_recv_job.j_data);
  /* Acknowledge the interrupt within the PIC. */
- IRQ_PIC_EOI(NE2K_IRQ);
+ PIC_EOI(NE2K_IRQ);
 }
 
 
@@ -549,11 +569,16 @@ ne2k_probe(struct pci_device *dev) {
  /* Setup an IRQ handler for incoming packages. */
  { u32 v = pci_read(dev->pd_addr,PCI_GDEV3C);
    ne2k_recv_job.j_data = self; /* TODO: This is unsafe */
+#ifdef CONFIG_USE_OLD_INTERRUPTS
+   irq_vset(BOOTCPU,&ne2k_isr,NULL,IRQ_SET_RELOAD);
+#else
+   /* TODO: Allocate the interrupt vector dynamically. */
+   int_addboot(&ne2k_interrupt);
+#endif
    pci_write(dev->pd_addr,PCI_GDEV3C,
             (v & ~(PCI_GDEV3C_IRQLINEMASK|PCI_GDEV3C_IRQPINMASK))|
-            ((NE2K_IRQ >= IRQ_PIC2_BASE ? 1 : 0) << PCI_GDEV3C_IRQPINSHIFT)|
-            ((NE2K_IRQ-IRQ_PIC1_BASE) << PCI_GDEV3C_IRQLINESHIFT));
-   irq_vset(BOOTCPU,&ne2k_isr,NULL,IRQ_SET_RELOAD);
+            ((NE2K_IRQ >= INTNO_PIC2_BASE ? 1 : 0) << PCI_GDEV3C_IRQPINSHIFT)|
+            ((NE2K_IRQ-INTNO_PIC1_BASE) << PCI_GDEV3C_IRQLINESHIFT));
  }
 
  atomic_owner_rwlock_write(&irqctl_lock);

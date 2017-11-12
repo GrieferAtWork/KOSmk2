@@ -1970,8 +1970,23 @@ mman_map_dynmem(PHYS ppage_t start, size_t n_bytes) {
 
 
 /* The low-level assembly handler for PAGEFAULTs */
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 INTDEF void ASMCALL mman_asm_pf(void);
 PRIVATE ATTR_FREERODATA isr_t const pf_isr = ISR_DEFAULT(EXC_PAGE_FAULT,&mman_asm_pf);
+#else
+INTDEF int FCALL mman_interrupt_pf_handler(struct irregs_ie *__restrict info);
+PRIVATE struct interrupt mman_interrupt_pf = {
+    .i_intno = EXC_PAGE_FAULT,
+    .i_mode  = INTMODE_HOST,
+    .i_type  = INTTYPE_BASIC,
+    .i_prio  = INTPRIO_MAX,
+    .i_flags = INTFLAG_PRIMARY,
+    .i_proto = {
+        .p_baseexcept = &mman_interrupt_pf_handler,
+    },
+    .i_owner = THIS_INSTANCE,
+};
+#endif
 
 INTERN ATTR_FREETEXT void KCALL
 mman_initialize(void) {
@@ -2048,8 +2063,12 @@ mman_initialize(void) {
  assert(mman_kernel.m_map != NULL);
  ATOMIC_WRITE(mman_kernel.m_lock.orw_lock.aorw_lock,0);
 
- /* Register an ISR service routine for pagefault handling. */
- irq_set(&pf_isr,NULL,IRQ_SET_RELOAD);
+ /* Register an interrupt handler for pagefaults. */
+#ifdef CONFIG_USE_OLD_INTERRUPTS
+ asserte(irq_set(&pf_isr,NULL,IRQ_SET_RELOAD));
+#else
+ asserte(E_ISOK(int_addall(&mman_interrupt_pf)));
+#endif
 }
 
 

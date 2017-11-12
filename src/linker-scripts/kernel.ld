@@ -189,10 +189,10 @@ SECTIONS {
 		*(.rodata.cpu)
 		*(.rodata.str.cpu)
 		*(.data.cpu)
-		. = ALIGN(4); /* Align by 4 to allow for use of `rep movsl' when initializing */
+		. = ALIGN(__SIZEOF_POINTER__); /* Align by `XSZ' to allow for use of `rep movsx' when initializing */
 		DEFINE(__percpu_datsize = ABSOLUTE(.) - __percpu_begin);
 		*(.bss.cpu)
-		. = ALIGN(4); /* Same reason as above... */
+		. = ALIGN(__SIZEOF_POINTER__); /* Same reason as above... */
 	} P_CPU
 	DEFINE(__percpu_allsize = SIZEOF(.cpu));
 	. = ABSOLUTE(__percpu_template) + SIZEOF(.cpu);

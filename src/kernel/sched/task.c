@@ -54,6 +54,7 @@
 #include <string.h>
 #include <sys/io.h>
 #include <asm/instx.h>
+#include <kernel/arch/pic.h>
 #ifndef CONFIG_NO_TLB
 #include <kernel/arch/gdt.h>
 #include <kos/thread.h>
@@ -1089,7 +1090,7 @@ PRIVATE SAFE void KCALL cpu_park_idle(void) {
  assert(TASK_ISSAFE());
  /* NOTE: Critical tasks may not be parked
   *    >> In addition, we must never part the calling task to prevent inconsistencies.
-  *       For that reason, `pit_exc' checks the old task for needing to be parked,
+  *       For that reason, `pit_interrupt_handler' checks the old task for needing to be parked,
   *       because a task must never be parked when one of the two is true:
   *        - Interrupts are disabled
   *        - The task is critical
@@ -1391,11 +1392,11 @@ PUBLIC REF struct task *FCALL cpu_sched_remove_current(void) {
 
 
 INTERN ATTR_NOINLINE struct cpustate *FCALL
-pit_exc(struct cpustate *__restrict state) {
+pit_interrupt_handler(struct cpustate *__restrict state) {
  struct task *old_task;
  struct task *new_task;
  assert(!PREEMPTION_ENABLED());
- if (IRQ_PIC_SPURIOUS(IRQ_PIC1_PIT)) return state;
+ if (IRQ_PIC_SPURIOUS(INTNO_PIC1_PIT)) return state;
 
 #if 0
  debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : PIT Trigger: %p'\n",
@@ -1515,7 +1516,7 @@ pit_exc(struct cpustate *__restrict state) {
   * NOTE: Actual new signals will only be received once iret turns interrupts back on.
   *       And in the event that the new task didn't have interrupts
   *       enabled, they wont turn back on for a while. */
- IRQ_PIC_EOI(IRQ_PIC1_PIT);
+ PIC_EOI(INTNO_PIC1_PIT);
  assert(!PREEMPTION_ENABLED());
 
  /* Update the CPU's TSS with the new task's kernel stack.

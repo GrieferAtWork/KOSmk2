@@ -144,7 +144,7 @@ struct ps2_cmd {
 #define STATE_INPUT_SET3_F0                   0x60
 
 struct ps2 {
- u8              p_state; /*< Current state of the state machine running under `IRQ_PIC1_KBD'. */
+ u8              p_state; /*< Current state of the state machine running under `INTNO_PIC1_KBD'. */
  u8              p_state2;/*< State to return to once all commands have been served. */
 #define PS2_SCANSET    0x03 /*< Mask for the keyboard scanset used by the keyboard. */
 #define PS2_HAVE_PORT2 0x80 /*< Set if the second PS/2 is supported by the controller. */

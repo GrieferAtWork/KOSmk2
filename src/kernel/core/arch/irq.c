@@ -22,6 +22,9 @@
 #define _XOPEN_SOURCE          700
 #define _XOPEN_SOURCE_EXTENDED 1
 
+#include <kernel/irq.h>
+
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 #include <assert.h>
 #include <bits/siginfo.h>
 #include <bits/signum.h>
@@ -37,7 +40,6 @@
 #include <kernel/arch/cpustate.h>
 #include <kernel/arch/gdt.h>
 #include <kernel/arch/idt_pointer.h>
-#include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>
 #include <kernel/syscall.h>
@@ -52,6 +54,7 @@
 #include <sys/syslog.h>
 #include <kernel/boot.h>
 #include <asm/instx.h>
+#include <kernel/arch/pic.h>
 
 DECL_BEGIN
 
@@ -62,23 +65,22 @@ union{irq_t intno;   /* Interrupt number. */
 };
 
 
-PUBLIC struct spurious_pic irq_pic_spurious = {0,0};
 PUBLIC bool KCALL irq_pic_1_spurious(void) {
- if unlikely(!(IRQ_PIC1_ISR()&0x80)) {
-  u32 num = ATOMIC_INCFETCH(irq_pic_spurious.sp_pic1);
+ if unlikely(!(PIC1_ISR()&0x80)) {
+  u32 num = ATOMIC_INCFETCH(pic_spurious.sp_pic1);
   syslog(LOG_HW|LOG_ERROR,"[IRQ] Ignoring spurious interrupt on PIC #1 (#%I32u)\n",num);
   return true;
  }
  return false;
 }
 PUBLIC bool KCALL irq_pic_2_spurious(void) {
- if unlikely(!(IRQ_PIC2_ISR()&0x80)) {
-  u32 num = ATOMIC_INCFETCH(irq_pic_spurious.sp_pic2);
+ if unlikely(!(PIC2_ISR()&0x80)) {
+  u32 num = ATOMIC_INCFETCH(pic_spurious.sp_pic2);
   syslog(LOG_HW|LOG_ERROR,"[IRQ] Ignoring spurious interrupt on PIC #2 (#%I32u)\n",num);
   /* Since the spurious interrupt came from the slave, we must still send
    * an EOI to the master, as it doesn't know that it was spurious after
    * being notified by the slave. */
-  outb(PIC1_CMD,PIC_EOI);
+  outb(PIC1_CMD,PIC_CMD_EOI);
   return true;
  }
  return false;
@@ -327,27 +329,27 @@ struct irqname { char const *mn,*descr; };
 PRIVATE ATTR_COLDRODATA
 struct irqname const irq_excname[32] = {
 #define S(x) x
-   [IRQ_EXC_DE]  = {S("#DE"),    S("Divide-by-zero")},
-   [IRQ_EXC_DB]  = {S("#DB"),    S("Debug")},
-   [IRQ_EXC_NMI] = {S("-"),      S("Non-maskable Interrupt")},
-   [IRQ_EXC_BP]  = {S("#BP"),    S("Breakpoint")},
-   [IRQ_EXC_OF]  = {S("#OF"),    S("Overflow")},
-   [IRQ_EXC_BR]  = {S("#BR"),    S("Bound Range Exceeded")},
-   [IRQ_EXC_UD]  = {S("#UD"),    S("Invalid Opcode")},
-   [IRQ_EXC_NM]  = {S("#NM"),    S("Device Not Available")},
-   [IRQ_EXC_DF]  = {S("#DF"),    S("Double Fault")},
+   [INTNO_EXC_DE]  = {S("#DE"),    S("Divide-by-zero")},
+   [INTNO_EXC_DB]  = {S("#DB"),    S("Debug")},
+   [INTNO_EXC_NMI] = {S("-"),      S("Non-maskable Interrupt")},
+   [INTNO_EXC_BP]  = {S("#BP"),    S("Breakpoint")},
+   [INTNO_EXC_OF]  = {S("#OF"),    S("Overflow")},
+   [INTNO_EXC_BR]  = {S("#BR"),    S("Bound Range Exceeded")},
+   [INTNO_EXC_UD]  = {S("#UD"),    S("Invalid Opcode")},
+   [INTNO_EXC_NM]  = {S("#NM"),    S("Device Not Available")},
+   [INTNO_EXC_DF]  = {S("#DF"),    S("Double Fault")},
    [9]           = {S("-"),      S("Coprocessor Segment Overrun")},
-   [IRQ_EXC_TS]  = {S("#TS"),    S("Invalid TSS")},
-   [IRQ_EXC_NP]  = {S("#NP"),    S("Segment Not Present")},
-   [IRQ_EXC_SS]  = {S("#SS"),    S("Stack-Segment Fault")},
-   [IRQ_EXC_GP]  = {S("#GP"),    S("General Protection Fault")},
-   [IRQ_EXC_PF]  = {S("#PF"),    S("Page Fault")},
-   [IRQ_EXC_MF]  = {S("#MF"),    S("x87 Floating-Point Exception")},
-   [IRQ_EXC_AC]  = {S("#AC"),    S("Alignment Check")},
-   [IRQ_EXC_MC]  = {S("#MC"),    S("Machine Check")},
-   [IRQ_EXC_XM]  = {S("#XM/#XF"),S("SIMD Floating-Point Exception")},
-   [IRQ_EXC_VE]  = {S("#VE"),    S("Virtualization Exception")},
-   [IRQ_EXC_SX]  = {S("#SX"),    S("Security Exception")},
+   [INTNO_EXC_TS]  = {S("#TS"),    S("Invalid TSS")},
+   [INTNO_EXC_NP]  = {S("#NP"),    S("Segment Not Present")},
+   [INTNO_EXC_SS]  = {S("#SS"),    S("Stack-Segment Fault")},
+   [INTNO_EXC_GP]  = {S("#GP"),    S("General Protection Fault")},
+   [INTNO_EXC_PF]  = {S("#PF"),    S("Page Fault")},
+   [INTNO_EXC_MF]  = {S("#MF"),    S("x87 FPU Exception")},
+   [INTNO_EXC_AC]  = {S("#AC"),    S("Alignment Check")},
+   [INTNO_EXC_MC]  = {S("#MC"),    S("Machine Check")},
+   [INTNO_EXC_XM]  = {S("#XM/#XF"),S("SIMD FPU Exception")},
+   [INTNO_EXC_VE]  = {S("#VE"),    S("Virtualization Exception")},
+   [INTNO_EXC_SX]  = {S("#SX"),    S("Security Exception")},
 #undef S
 };
 
@@ -421,66 +423,66 @@ irq_default(int intno, struct cpustate_e *__restrict state) {
   si.si_addr = (void *)state->iret.xip;
   switch (intno) {
 
-  case IRQ_EXC_DE: /*< Divide-by-zero. */
+  case INTNO_EXC_DE: /*< Divide-by-zero. */
    si.si_signo = SIGFPE;
    si.si_code  = FPE_INTDIV;
    goto kill_task;
 
-  case IRQ_EXC_DB: /*< Debug. */
-  case IRQ_EXC_BP: /*< Breakpoint. */
+  case INTNO_EXC_DB: /*< Debug. */
+  case INTNO_EXC_BP: /*< Breakpoint. */
    si.si_signo = SIGTRAP;
    si.si_code  = TRAP_BRKPT;
    goto kill_task;
 
-  case IRQ_EXC_OF: /*< Overflow. */
+  case INTNO_EXC_OF: /*< Overflow. */
    si.si_signo = SIGFPE;
    si.si_code  = FPE_INTOVF;
    goto kill_task;
 
-  case IRQ_EXC_BR: /*< Bound Range Exceeded. */
+  case INTNO_EXC_BR: /*< Bound Range Exceeded. */
    /* XXX: Find out what we must really do here... */
    si.si_signo = SIGSEGV;
    goto kill_task;
 
-  case IRQ_EXC_UD: /*< Invalid Opcode. */
+  case INTNO_EXC_UD: /*< Invalid Opcode. */
    si.si_signo = SIGILL;
    si.si_code = ILL_ILLOPN;
    goto kill_task;
 
-  case IRQ_EXC_NP: /*< Segment Not Present. */
-  case IRQ_EXC_SS: /*< Stack-Segment Fault. */
+  case INTNO_EXC_NP: /*< Segment Not Present. */
+  case INTNO_EXC_SS: /*< Stack-Segment Fault. */
    si.si_signo = SIGBUS;
    goto kill_task;
 
-  case IRQ_EXC_TS: /*< Invalid TSS. */
-  case IRQ_EXC_GP: /*< General Protection Fault. */
+  case INTNO_EXC_TS: /*< Invalid TSS. */
+  case INTNO_EXC_GP: /*< General Protection Fault. */
    si.si_signo = SIGSEGV;
    goto kill_task;
 
-  case IRQ_EXC_PF: /*< Page Fault. */
+  case INTNO_EXC_PF: /*< Page Fault. */
    si.si_signo = SIGSEGV;
    si.si_lower = THIS_TASK->t_lastcr2;
    si.si_upper = THIS_TASK->t_lastcr2;
    goto kill_task;
 
-  case IRQ_EXC_AC: /*< Alignment Check. */
+  case INTNO_EXC_AC: /*< Alignment Check. */
    si.si_signo = SIGBUS;
    si.si_code  = BUS_ADRALN;
    goto kill_task;
 
-  case IRQ_EXC_MF: /*< x87 Floating-Point Exception. */
-  case IRQ_EXC_XF: /*< SIMD Floating-Point Exception. */
+  case INTNO_EXC_MF: /*< x87 Floating-Point Exception. */
+  case INTNO_EXC_XF: /*< SIMD Floating-Point Exception. */
    si.si_signo = SIGFPE;
    si.si_code  = FPE_FLTINV; /* TODO: Must be based on FPU state registers. */
    goto kill_task;
 
 /* XXX: Can any of the following be caused by usercode? */
-//case IRQ_EXC_NMI: /*< Non-maskable Interrupt. */
-//case IRQ_EXC_NM:  /*< Device Not Available. */
-//case IRQ_EXC_DF:  /*< Double Fault. */
-//case IRQ_EXC_MC:  /*< Machine Check. */
-//case IRQ_EXC_VE:  /*< Virtualization Exception. */
-//case IRQ_EXC_SX:  /*< Security Exception. */
+//case INTNO_EXC_NMI: /*< Non-maskable Interrupt. */
+//case INTNO_EXC_NM:  /*< Device Not Available. */
+//case INTNO_EXC_DF:  /*< Double Fault. */
+//case INTNO_EXC_MC:  /*< Machine Check. */
+//case INTNO_EXC_VE:  /*< Virtualization Exception. */
+//case INTNO_EXC_SX:  /*< Security Exception. */
 
 kill_task:
    /* XXX: Pass register info? */
@@ -491,12 +493,12 @@ kill_task:
 
  }
 
- if (IRQ_ISPIC(intno)) {
+ if (INTNO_ISPIC(intno)) {
   syslog(LOG_IRQ|LOG_WARN,
          "[IRQ] Unmapped PIC interrupt %#.2I8x (%I8d) (%s pin #%d)\n",
          intno,intno,
-         intno >= IRQ_PIC2_BASE ? "Slave" : "Master",
-        (intno-IRQ_PIC1_BASE) % 8);
+         intno >= INTNO_PIC2_BASE ? "Slave" : "Master",
+        (intno-INTNO_PIC1_BASE) % 8);
 #if 0
 #if 1
   debug_tbprintl((void *)inittask.t_cstate->iret.xip,NULL,0);
@@ -506,7 +508,7 @@ kill_task:
   debug_tbprint2((void *)state->gp.xbp,0);
 #endif
 #endif
-  IRQ_PIC_EOI(intno);
+  PIC_EOI(intno);
   goto done;
  }
 #define IRQ_RECURSION_MIN 2
@@ -521,9 +523,9 @@ kill_task:
  ++in_ireq_default;
  debug_printf("\n\n<RING #%d(%s) FAULT> Unhandled %s %#.2I8x (%I8d)\n",
               state->iret.cs & 3,is_user ? "USER" : "KERNEL",
-              IRQ_ISEXC(intno) ? "Exception" : "Interrupt",
+              INTNO_ISEXC(intno) ? "Exception" : "Interrupt",
               intno,intno);
- if (IRQ_ISEXC(intno) &&
+ if (INTNO_ISEXC(intno) &&
     (unsigned int)intno < COMPILER_LENOF(irq_excname)) {
   debug_printf("<%s> - %s - ECODE %#Ix (%Id)",
                irq_excname[intno].mn,
@@ -847,7 +849,7 @@ irq_setup(struct cpu *__restrict self) {
 
 /* PIC default initialization.
  * Clear the interrupt masks, thereby enabling all interrupt lines.
- * e.g.: Setting 'outb_p(PIC1_DATA,0x04)' would disable `IRQ_PIC1(3)'
+ * e.g.: Setting 'outb_p(PIC1_DATA,0x04)' would disable `INTNO_PIC1(3)'
  * NOTE: By default, we disable the 'Programmable Interrupt Timer',
  *       which is later re-enabled as a fallback technology for
  *       implementing preemption.
@@ -857,7 +859,7 @@ irq_setup(struct cpu *__restrict self) {
  *      (Which may actually take some time, as we initialize core
  *       modules, such as our ATA driver first, which in turn may
  *       take a moment to spin up the disk) */
-PRIVATE ATTR_COLDDATA u8 pic_bios_mask1 = 1 << (IRQ_PIC1_PIT-IRQ_PIC1_BASE);
+PRIVATE ATTR_COLDDATA u8 pic_bios_mask1 = 1 << (INTNO_PIC1_PIT-INTNO_PIC1_BASE);
 PRIVATE ATTR_COLDDATA u8 pic_bios_mask2 = 0;
 
 #define GET_RELOAD_VALUE(hz) ((3579545/(hz))/3)
@@ -887,14 +889,14 @@ INTERN ATTR_COLDTEXT void KCALL pic_bios_begin(void) {
  outb_p(PIC2_DATA,ICW4_8086);
 
  /* Mask all interrupts while inside the bios, except for some that may actually be used. */
- outb_p(PIC1_DATA,0xff & ~((IRQ_PIC1_PIT-IRQ_PIC1_BASE)|    /* PIT Timer (may be used for timeouts...) */
-                           (IRQ_PIC1_KBD-IRQ_PIC1_BASE)|    /* Keyboard (user input?) */
-                           (IRQ_PIC1_CAS-IRQ_PIC1_BASE)|    /* Cascade (Needed to talk to PIC #2) */
-                           (IRQ_PIC1_LPT1-IRQ_PIC1_BASE)|   /* Spurious interrupt vector (Better keep this enabled) */
-                           (IRQ_PIC1_FLOP-IRQ_PIC1_BASE))); /* Floppy (Drive I/O) */
- outb_p(PIC2_DATA,0xff & ~((IRQ_PIC2_ATA1-IRQ_PIC2_BASE)|   /* ATA (Drive I/O) */
-                           (IRQ_PIC2_ATA2-IRQ_PIC2_BASE)|   /* ATA (Drive I/O) */
-                           (IRQ_PIC2_PS2M-IRQ_PIC2_BASE))); /* PS/2 mouse (user input?) */
+ outb_p(PIC1_DATA,0xff & ~((INTNO_PIC1_PIT-INTNO_PIC1_BASE)|    /* PIT Timer (may be used for timeouts...) */
+                           (INTNO_PIC1_KBD-INTNO_PIC1_BASE)|    /* Keyboard (user input?) */
+                           (INTNO_PIC1_CAS-INTNO_PIC1_BASE)|    /* Cascade (Needed to talk to PIC #2) */
+                           (INTNO_PIC1_LPT1-INTNO_PIC1_BASE)|   /* Spurious interrupt vector (Better keep this enabled) */
+                           (INTNO_PIC1_FLOP-INTNO_PIC1_BASE))); /* Floppy (Drive I/O) */
+ outb_p(PIC2_DATA,0xff & ~((INTNO_PIC2_ATA1-INTNO_PIC2_BASE)|   /* ATA (Drive I/O) */
+                           (INTNO_PIC2_ATA2-INTNO_PIC2_BASE)|   /* ATA (Drive I/O) */
+                           (INTNO_PIC2_PS2M-INTNO_PIC2_BASE))); /* PS/2 mouse (user input?) */
 
  /* Restore the original PIC crystal speed set by the BIOS.
   * XXX: Is this required? */
@@ -910,8 +912,8 @@ INTERN ATTR_COLDTEXT void KCALL pic_bios_end(void) {
  /* Word #1: Define the IRQ offsets.
   *          We map the master to 0x20..0x27,
   *          and the slave to 0x28..0x2f. */
- outb_p(PIC1_DATA,IRQ_PIC1_BASE);
- outb_p(PIC2_DATA,IRQ_PIC2_BASE);
+ outb_p(PIC1_DATA,INTNO_PIC1_BASE);
+ outb_p(PIC2_DATA,INTNO_PIC2_BASE);
 
  /* Word #2: Tell the master and slave how they are wired to each other. */
  outb_p(PIC1_DATA,4);
@@ -1059,14 +1061,12 @@ PUBLIC SAFE void KCALL irq_del(irq_t num, bool reload) {
  asserte(irq_set(&handler,NULL,reload ? IRQ_SET_RELOAD : IRQ_SET_QUICK));
 }
 
-
-
 INTERN void KCALL
 irq_delete_from_instance(struct instance *__restrict inst) {
  /* TODO */
 }
 
-
 DECL_END
+#endif /* CONFIG_USE_OLD_INTERRUPTS */
 
 #endif /* !GUARD_KERNEL_CORE_ARCH_IRQ_C */

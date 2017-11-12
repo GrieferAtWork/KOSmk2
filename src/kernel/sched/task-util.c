@@ -429,9 +429,9 @@ check_again:
  iter = *pchain;
  for (; iter; iter = iter->ic_prev) {
   if ((iter->ic_irq == irq) ||
-      (iter->ic_opt&INTCHAIN_OPT_EXC && IRQ_ISEXC(irq)) ||
-      (iter->ic_opt&INTCHAIN_OPT_PIC && IRQ_ISPIC(irq)) ||
-      (iter->ic_opt&INTCHAIN_OPT_USR && IRQ_ISUSR(irq))) {
+      (iter->ic_opt&INTCHAIN_OPT_EXC && INTNO_ISEXC(irq)) ||
+      (iter->ic_opt&INTCHAIN_OPT_PIC && INTNO_ISPIC(irq)) ||
+      (iter->ic_opt&INTCHAIN_OPT_USR && INTNO_ISUSR(irq))) {
    struct {
     struct comregs state;
     register_t     eflag;

@@ -89,6 +89,15 @@ LOCAL void KCALL asm_wrgsbase(u64 base) { register u64 baseval __ASMNAME("r10") 
 
 #endif /* __x86_64__ */
 
+
+#define ASM_LOCK  lock;
+#ifdef __x86_64__
+#define ASM_IRET  iretq;
+#else
+#define ASM_IRET  iret;
+#endif
+
+
 DECL_END
 
 #endif /* !GUARD_INCLUDE_KERNEL_ARCH_ASM_H */

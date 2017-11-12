@@ -76,7 +76,7 @@
 
 #ifdef __x86_64__
 /* x86_64 doesn't have FASTCALL, so we alias
- * CDECL registers for arguments #1, #2. */
+ * SYSV_ABI registers for arguments #1, #2. */
 #define FASTCALL_REG1  rdi
 #define FASTCALL_REG2  rsi
 #else

@@ -16,18 +16,28 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef __GUARD_HYBRID_DEBUG_H
-#define __GUARD_HYBRID_DEBUG_H 1
+#ifndef GUARD_KERNEL_CORE_ARCH_INTERRUPT_INTERN_H
+#define GUARD_KERNEL_CORE_ARCH_INTERRUPT_INTERN_H 1
 
-#include <__stdinc.h>
-#include <hybrid/typecore.h>
+#include <hybrid/compiler.h>
+#include <hybrid/list/list.h>
+#include <kernel/arch/interrupt.h>
 
-__SYSDECL_BEGIN
+DECL_BEGIN
 
-__LIBC __SSIZE_TYPE__ (__LIBCCALL debug_print)(char const *__restrict __data, __SIZE_TYPE__ __datalen, void *__ignored_closure);
-__LIBC void (__ATTR_CDECL debug_printf)(char const *__restrict __format, ...);
-__LIBC void (__LIBCCALL debug_vprintf)(char const *__restrict __format, __builtin_va_list args);
+struct interrupt;
+struct entry {
+ LIST_HEAD(struct interrupt) e_head; /*< [0..1] Chain of interrupt handlers in this entry. */
+};
+struct PACKED interrupt_table {
+ struct PACKED idtentry it_idt[256]; /* Internal CPU Interrupt Descriptor Table. */
+ struct entry           it_tab[256]; /* Per-cpu + per-vector descriptors. */
+};
 
-__SYSDECL_END
 
-#endif /* !__GUARD_HYBRID_DEBUG_H */
+INTDEF PERCPU struct PACKED interrupt_table inttab;
+INTDEF INITCALL void KCALL cpu_interrupt_initialize(struct cpu *__restrict c);
+
+DECL_END
+
+#endif /* !GUARD_KERNEL_CORE_ARCH_INTERRUPT_INTERN_H */

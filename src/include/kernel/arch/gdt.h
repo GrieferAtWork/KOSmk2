@@ -276,8 +276,7 @@ typedef u16 segid_t; /* == Segment index*SEG_INDEX_MULTIPLIER */
 #define SEG_USER_DATA    4 /*< [0x20] Ring #3 data segment. */
 #define SEG_HOST_CODE16  5 /*< [0x28] Ring #0 16-bit code segment. */
 #define SEG_HOST_DATA16  6 /*< [0x30] Ring #0 16-bit data segment. */
-#define SEG_CPUSELF      7 /*< [0x38] CPU-self segment (stored in %fs/%gs while in kernel-space).
-                            *         TODO: Remove on x86_64. */
+#define SEG_CPUSELF      7 /*< [0x38] CPU-self segment (stored in %fs/%gs while in kernel-space). */
 #define SEG_CPUTSS       8 /*< [0x40] TSS segment of the current CPU. */
 #define SEG_KERNEL_LDT   9 /*< [0x48] Symbolic kernel LDT (Usually empty). */
 #define SEG_USER_TIB    10 /*< [0x50] Ring #3 thread-information block (KOS/ELF). */
@@ -289,7 +288,7 @@ typedef u16 segid_t; /* == Segment index*SEG_INDEX_MULTIPLIER */
 
 #define __KERNEL_DS      SEG(SEG_HOST_DATA)
 #define __KERNEL_CS      SEG(SEG_HOST_CODE)
-#define __KERNEL_PERCPU  SEG(SEG_CPUSELF) /* TODO: Remove on x86_64. */
+#define __KERNEL_PERCPU  SEG(SEG_CPUSELF)
 #define __USER_DS       (SEG(SEG_USER_DATA)|3)
 #define __USER_CS       (SEG(SEG_USER_CODE)|3)
 #define __USER_TIB      (SEG(SEG_USER_TIB)|3)

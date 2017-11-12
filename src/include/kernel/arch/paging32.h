@@ -180,6 +180,13 @@ LOCAL KPD PHYS void *KCALL pdir_translate(pdir_t *__restrict self, VIRT void *pt
  assert(entry.pe_attr&PDIR_ATTR_PRESENT);
  return (void *)((uintptr_t)PDENTRY_GETMAP(entry)+PDIR_OFFSET(ptr));
 }
+LOCAL KPD PHYS int KCALL pdir_test_readable(pdir_t *__restrict self, VIRT void *ptr) {
+ union pd_entry entry;
+ union pd_table table = self->pd_directory[PDIR_DINDEX(ptr)];
+ if (PDTABLE_ISMAP(table)) return (table.pt_attr&PDIR_ATTR_PRESENT);
+ entry = PDTABLE_GETPTEV(table)[PDIR_TINDEX(ptr)];
+ return (entry.pe_attr&PDIR_ATTR_PRESENT);
+}
 LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *ptr) {
  union pd_entry entry;
  union pd_table table = self->pd_directory[PDIR_DINDEX(ptr)];

@@ -48,9 +48,9 @@
 #include <stddef.h>
 #include <sync/sig.h>
 #include <sys/io.h>
-#include <linux/limits.h> /* MAX_INPUT */
 #include <kernel/mman.h>
 #include <asm/instx.h>
+#include <kernel/arch/pic.h>
 
 #include "ps2_keymaps.h"
 
@@ -157,10 +157,38 @@ PRIVATE void KCALL keyboard_send(kbkey_t k) {
  }
 }
 
-INTERN DEFINE_INT_HANDLER(ps2_irq_1,ps2_int_1);
-INTERN DEFINE_INT_HANDLER(ps2_irq_c,ps2_int_c);
-PRIVATE isr_t ps2_isr_1 = ISR_DEFAULT(IRQ_PIC1_KBD,&ps2_irq_1);
-PRIVATE isr_t ps2_isr_c = ISR_DEFAULT(IRQ_PIC2_PS2M,&ps2_irq_c);
+#ifdef CONFIG_USE_OLD_INTERRUPTS
+INTERN DEFINE_INT_HANDLER(ps2_irq_1,ps2_interrupt1_handler);
+INTERN DEFINE_INT_HANDLER(ps2_irq_c,ps2_interruptc_handler);
+PRIVATE isr_t ps2_isr_1 = ISR_DEFAULT(INTNO_PIC1_KBD,&ps2_irq_1);
+PRIVATE isr_t ps2_isr_c = ISR_DEFAULT(INTNO_PIC2_PS2M,&ps2_irq_c);
+#else
+/* TODO: Use the interrupt controller to hold a reference to `ps2_keyboard' */
+PRIVATE void ps2_interrupt1_handler(void);
+PRIVATE void ps2_interruptc_handler(void);
+PRIVATE struct interrupt ps2_interrupt1 = {
+    .i_intno = INTNO_PIC1_KBD,
+    .i_mode  = INTMODE_HOST,
+    .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
+    .i_prio  = INTPRIO_MAX,
+    .i_flags = INTFLAG_PRIMARY,
+    .i_proto = {
+        .p_noshare_fast = &ps2_interrupt1_handler,
+    },
+    .i_owner = THIS_INSTANCE,
+};
+PRIVATE struct interrupt ps2_interruptc = {
+    .i_intno = INTNO_PIC2_PS2M,
+    .i_mode  = INTMODE_HOST,
+    .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
+    .i_prio  = INTPRIO_MAX,
+    .i_flags = INTFLAG_PRIMARY,
+    .i_proto = {
+        .p_noshare_fast = &ps2_interruptc_handler,
+    },
+    .i_owner = THIS_INSTANCE,
+};
+#endif
 PRIVATE u8 ps2_cmd_maxretry = 3; /* TODO: Commandline option? */
 PRIVATE struct timespec ps2_cmd_timeout = {3,0}; /* TODO: Commandline option? */
 
@@ -540,16 +568,16 @@ keyboard_irqctl(struct device *__restrict dev, unsigned int cmd) {
 }
 
 
-PRIVATE ATTR_USED void ps2_int_1(void) {
- if (IRQ_PIC_SPURIOUS(IRQ_PIC1_KBD)) return;
+PRIVATE ATTR_USED void ps2_interrupt1_handler(void) {
+ if (IRQ_PIC_SPURIOUS(INTNO_PIC1_KBD)) return;
  ps2_handle_interrupt();
- IRQ_PIC_EOI(IRQ_PIC1_KBD);
+ PIC_EOI(INTNO_PIC1_KBD);
 }
-PRIVATE ATTR_USED void ps2_int_c(void) {
- if (IRQ_PIC_SPURIOUS(IRQ_PIC2_PS2M)) return;
+PRIVATE ATTR_USED void ps2_interruptc_handler(void) {
+ if (IRQ_PIC_SPURIOUS(INTNO_PIC2_PS2M)) return;
  /* TODO: PS/2 mouse event? */
 
- IRQ_PIC_EOI(IRQ_PIC2_PS2M);
+ PIC_EOI(INTNO_PIC2_PS2M);
 }
 
 
@@ -579,9 +607,14 @@ PRIVATE MODULE_INIT errno_t ps2_init(void) {
  if (p.p_flags&PS2_HAVE_PORT2)
      ps2_write_cmd(PS2_CONTROLLER_DISABLE_PORT2);
 
- /* Install the PS/2 IRQ handlers. */
+ /* Install the PS/2 interrupt handlers. */
+#ifdef CONFIG_USE_OLD_INTERRUPTS
  irq_vset(BOOTCPU,&ps2_isr_1,NULL,IRQ_SET_QUICK);
  irq_vset(BOOTCPU,&ps2_isr_c,NULL,IRQ_SET_RELOAD);
+#else
+ int_addboot(&ps2_interrupt1);
+ int_addboot(&ps2_interruptc);
+#endif
 
  ps_syscfg = (PS2_CONTROLLER_CFG_PORT1_IRQ|
               PS2_CONTROLLER_CFG_SYSTEMFLAG);
@@ -669,12 +702,6 @@ no_keyboard:
  port = PS2_PORT1;
  goto got_keyboard;
 }
-
-PRIVATE MODULE_FINI void ps2_fini(void) {
- irq_vdel(BOOTCPU,IRQ_PIC2_PS2M);
- irq_vdel(BOOTCPU,IRQ_PIC1_KBD);
-}
-
 
 PRIVATE bool KCALL ps2_keyboard_echo(u8 port) {
  struct ps2_cmd c;

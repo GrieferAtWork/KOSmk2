@@ -39,10 +39,17 @@
 
 DECL_BEGIN
 
+
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 PRIVATE ATTR_USED void FCALL mman_irq_pf(struct cpustate_e *__restrict info);
 __asm__(".global mman_asm_pf\n"
         ".hidden mman_asm_pf\n");
 INTERN DEFINE_CODE_HANDLER(mman_asm_pf,mman_irq_pf);
+#else
+INTERN int FCALL mman_interrupt_pf_handler(struct irregs_ie *__restrict info);
+#endif
+
+
 
 #define PF_P (1 << 0) /*< Present. */
 #define PF_W (1 << 1) /*< Write. */
@@ -50,9 +57,16 @@ INTERN DEFINE_CODE_HANDLER(mman_asm_pf,mman_irq_pf);
 #define PF_R (1 << 3) /*< Reserved write. */
 #define PF_I (1 << 4) /*< Instruction Fetch. */
 
-
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 PRIVATE ATTR_USED void FCALL
-mman_irq_pf(struct cpustate_e *__restrict info) {
+mman_irq_pf(struct cpustate_e *__restrict info)
+#define IRET_INFO    info->iret
+#else
+INTERN int FCALL
+mman_interrupt_pf_handler(struct irregs_ie *__restrict info)
+#define IRET_INFO  (*info)
+#endif
+{
  u32 core_mode; VIRT uintptr_t fault_addr,fault_page;
  VIRT struct mman *user_mman; ssize_t error;
  struct tasksig old_sigset;
@@ -66,40 +80,40 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
   * NOTE: In order to always respect the interrupt flag, don't
   *       enable them when the caller had been turned off! */
  assert(!PREEMPTION_ENABLED());
- if (info->iret.eflags&EFLAGS_IF) {
+ if (IRET_INFO.xflags&EFLAGS_IF) {
   PREEMPTION_ENABLE();
  } else {
 #if 1 /* TO-DO: Re-enable me */
-  assertf((info->iret.cs&3) != 3,"User-level task with interrupts disabled");
-  assertf(info->iret.xip >= KERNEL_BASE &&
-         (info->iret.xip <  (uintptr_t)__kernel_user_start ||
-          info->iret.xip >= (uintptr_t)__kernel_user_end),
+  assertf((IRET_INFO.cs&3) != 3,"User-level task with interrupts disabled");
+  assertf(IRET_INFO.xip >= KERNEL_BASE &&
+         (IRET_INFO.xip <  (uintptr_t)__kernel_user_start ||
+          IRET_INFO.xip >= (uintptr_t)__kernel_user_end),
          "User-space address %p with interrupts disabled & ring-0 permissions");
 #endif
  }
 #if defined(CONFIG_DEBUG) && 0
  syslog(LOG_DEBUG,"#PF at %p (IF=%d)\n",
-        info->iret.xip,!!(info->iret.xflags&EFLAGS_IF));
+        IRET_INFO.xip,!!(IRET_INFO.xflags&EFLAGS_IF));
 #endif
 
 #if PF_W == MMAN_MCORE_WRITE && \
     PF_U == MMAN_MCORE_USER
- core_mode = info->iret.exc_code&(PF_W|PF_U);
+ core_mode = IRET_INFO.exc_code&(PF_W|PF_U);
 #else
  core_mode = MMAN_MCORE_READ;
- if (info->iret.exc_code&PF_W) core_mode |= MMAN_MCORE_WRITE;
- if (info->iret.exc_code&PF_U) core_mode |= MMAN_MCORE_USER;
+ if (IRET_INFO.exc_code&PF_W) core_mode |= MMAN_MCORE_WRITE;
+ if (IRET_INFO.exc_code&PF_U) core_mode |= MMAN_MCORE_USER;
 #endif
 
 #if 0
  syslog(LOG_MEM|LOG_DEBUG,
         "[MEM] Checking to load core memory after PAGEFAULT near %p %p %p\n",
-        fault_addr,&fault_addr,info->iret.xip);
+        fault_addr,&fault_addr,IRET_INFO.xip);
 #endif
 
 #if 0
  syslog(LOG_DEBUG,"#!$ addr2line(%Ix) '{file}({line}) : {func} : %p #PF at %p'\n",
-       (uintptr_t)info->iret.xip-1,info->iret.xip,fault_addr);
+       (uintptr_t)IRET_INFO.xip-1,IRET_INFO.xip,fault_addr);
 #endif
 
  fault_page = FLOOR_ALIGN(fault_addr,PAGESIZE);
@@ -110,7 +124,7 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
    __asm__ __volatile__("mov %%cr3, %0\n" : "=r" (cr3));
    assertf(user_mman->m_ppdir == cr3,
            "Incorrect page directory set (%p != %p) (fault_addr = %p at %p)",
-           user_mman->m_ppdir,cr3,fault_addr,info->iret.xip);
+           user_mman->m_ppdir,cr3,fault_addr,IRET_INFO.xip);
  }
 #endif
 
@@ -175,10 +189,10 @@ mman_irq_pf(struct cpustate_e *__restrict info) {
   if (!error) {
    pdir_attr_t req_attr = PDIR_ATTR_PRESENT;
 #if PF_W == PDIR_ATTR_WRITE && PF_U == PDIR_ATTR_USER
-   req_attr |= info->iret.exc_code&(PF_W|PF_U);
+   req_attr |= IRET_INFO.exc_code&(PF_W|PF_U);
 #else
-   if (info->iret.exc_code&PF_W) req_attr |= PDIR_ATTR_WRITE;
-   if (info->iret.exc_code&PF_U) req_attr |= PDIR_ATTR_USER;
+   if (IRET_INFO.exc_code&PF_W) req_attr |= PDIR_ATTR_WRITE;
+   if (IRET_INFO.exc_code&PF_U) req_attr |= PDIR_ATTR_USER;
 #endif
    /* Sadly, this lookup must be performed in the context of the kernel page directory! */
    /* XXX: Not really. - We could use page-directory self-mappings here... */
@@ -214,9 +228,16 @@ end_mcore: ATTR_UNUSED;
   /* Save the latest fault address in the current task, thus preserving it
    * throughout preemption, as well as allowing later handling code to refer to it. */
   THIS_TASK->t_lastcr2 = (VIRT void *)fault_addr;
+#ifdef CONFIG_USE_OLD_INTERRUPTS
   /* Propagate the pagefault if no data was loaded. */
   irq_default(EXC_PAGE_FAULT,info);
+#else
+  return INTCODE_SEARCH;
+#endif
  }
+#ifndef CONFIG_USE_OLD_INTERRUPTS
+ return INTCODE_HANDLED;
+#endif
 }
 
 

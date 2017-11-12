@@ -149,7 +149,7 @@ cpu_rpc_send(struct cpu *__restrict self,
  RPC.c_cmd = command;
  RPC.c_arg = arg;
  /* Actually send the IPC interrupt. */
- result = cpu_sendipc_unlocked(self,IRQ_LAPIC_RPC);
+ result = cpu_sendipc_unlocked(self,INTNO_LAPIC_RPC);
  rwlock_endwrite(&apic_lock);
  if (E_ISERR(result)) goto end;
  HOSTMEMORY_BEGIN {

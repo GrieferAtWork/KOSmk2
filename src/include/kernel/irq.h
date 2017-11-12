@@ -21,195 +21,35 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
-#include <hybrid/types.h>
 #include <stdbool.h>
 #include <kernel/arch/gdt.h>
 #include <kernel/arch/cpustate.h>
 #include <kernel/arch/interrupt.h>
+
+#undef CONFIG_USE_OLD_INTERRUPTS
+#ifndef __x86_64__
+#define CONFIG_USE_OLD_INTERRUPTS 1
+#endif
+
+#ifndef CONFIG_USE_OLD_INTERRUPTS
+#include "interrupt.h"
+
+#define IRQ_PIC_SPURIOUS(id)  0
+#define IRQ_PIC1_SPURIOUS(id) 0
+#define IRQ_PIC2_SPURIOUS(id) 0
+
+#else /* !CONFIG_USE_OLD_INTERRUPTS */
 
 DECL_BEGIN
 
 struct cpustate;
 struct cpustate_e;
 
-
-
-/* PIC (Programmable Interrupt Controller) API. */
-#define PIC1       0x20 /* IO base address for master PIC */
-#define PIC2       0xA0 /* IO base address for slave PIC */
-#define PIC1_CMD   PIC1
-#define PIC1_DATA (PIC1+1)
-#define PIC2_CMD   PIC2
-#define PIC2_DATA (PIC2+1)
-
-#define PIC_EOI         0x20 /* End-of-interrupt command code */
-#define ICW1_ICW4       0x01 /* ICW4 (not) needed */
-#define ICW1_SINGLE     0x02 /* Single (cascade) mode */
-#define ICW1_INTERVAL4  0x04 /* Call address interval 4 (8) */
-#define ICW1_LEVEL      0x08 /* Level triggered (edge) mode */
-#define ICW1_INIT       0x10 /* Initialization - required! */
-#define ICW4_8086       0x01 /* 8086/88 (MCS-80/85) mode */
-#define ICW4_AUTO       0x02 /* Auto (normal) EOI */
-#define ICW4_BUF_SLAVE  0x08 /* Buffered mode/slave */
-#define ICW4_BUF_MASTER 0x0C /* Buffered mode/master */
-#define ICW4_SFNM       0x10 /* Special fully nested (not) */
-#define PIC_READ_IRR    0x0a /* OCW3 irq ready next CMD read */
-#define PIC_READ_ISR    0x0b /* OCW3 irq service next CMD read */
- 
-#define IRQ_PIC1_IRR()  (outb(PIC1_CMD,PIC_READ_IRR),inb(PIC2_CMD))
-#define IRQ_PIC2_IRR()  (outb(PIC2_CMD,PIC_READ_IRR),inb(PIC2_CMD))
-#define IRQ_PIC1_ISR()  (outb(PIC1_CMD,PIC_READ_ISR),inb(PIC2_CMD))
-#define IRQ_PIC2_ISR()  (outb(PIC2_CMD,PIC_READ_ISR),inb(PIC2_CMD))
-
-/* Signal EOI (End of interrupt) to the
- * first (master), or second (slave) PIC. */
-#define IRQ_PIC_EOI(id) ((id) >= IRQ_PIC2_BASE ? outb(PIC2_CMD,PIC_EOI) : (void)0,outb(PIC1_CMD,PIC_EOI))
-#define IRQ_PIC1_EOI()  (outb(PIC1_CMD,PIC_EOI))
-#define IRQ_PIC2_EOI()  (outb(PIC2_CMD,PIC_EOI),outb(PIC1_CMD,PIC_EOI))
-
-/* Check if a given IRQ number is spurious.
- * NOTE: This is done by checking the ISR register of the associated PIC
- *       controller to see if the 7th interrupt pin has been raised.
- *       A spurious interrupt was raised if it is up, in which case
- *       no EOI must be send.
- * NOTE: This function must be called at the start of any PIC hardware
- *       interrupt handler (aka. when `IRQ_ISPIC(irq_t)' is true):
- * >>
- * >> #define MY_INTNO  0x2e // Same behavior for 0x27 as well
- * >>
- * >> PRIVATE void my_inthandler(void);
- * >> DEFINE_INT_HANDLER(my_irqhandler,my_inthandler);
- * >>
- * >> PRIVATE void my_inthandler(void) {
- * >>     if (IRQ_PIC_SPURIOUS(MY_INTNO)) return;
- * >>     
- * >>     syslog(LOG_DEBUG,"[IRQ] Interrupt #%d fired\n",MY_INTNO);
- * >>     
- * >>     IRQ_PIC_EOI(MY_INTNO);
- * >> }
- * >> 
- * >> INTERN MODULE_INIT void KCALL mymodule_init(void) {
- * >>     isr_t handler;
- * >>     handler.i_num   = MY_INTNO;
- * >>     handler.i_flags = IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE;
- * >>     handler.i_func  = &my_irqhandler;
- * >>     irq_set(&handler,NULL,true);
- * >> }
- * >> 
- * HINT: When a non-hardware interrupt number is passed, this function behaves as a no-op.
- * NOTE: In the event of a spurious slave interrupt, this function
- *       will automatically send an EOI command to the master PIC.
- */
-#define IRQ_PIC_SPURIOUS(id)  ((id) >= IRQ_PIC2_BASE ? IRQ_PIC2_SPURIOUS(id) : IRQ_PIC1_SPURIOUS(id))
-#define IRQ_PIC1_SPURIOUS(id) ((id) == IRQ_PIC1(7) && irq_pic_1_spurious())
-#define IRQ_PIC2_SPURIOUS(id) ((id) == IRQ_PIC2(7) && irq_pic_2_spurious())
-
+#define IRQ_PIC_SPURIOUS(id)  ((id) >= INTNO_PIC2_BASE ? IRQ_PIC2_SPURIOUS(id) : IRQ_PIC1_SPURIOUS(id))
+#define IRQ_PIC1_SPURIOUS(id) ((id) == INTNO_PIC1(7) && irq_pic_1_spurious())
+#define IRQ_PIC2_SPURIOUS(id) ((id) == INTNO_PIC2(7) && irq_pic_2_spurious())
 FUNDEF bool KCALL irq_pic_1_spurious(void);
 FUNDEF bool KCALL irq_pic_2_spurious(void);
-
-struct spurious_pic {
- u32 sp_pic1; /*< Amount of spurious interrupts that occurred on PIC #1. */
- u32 sp_pic2; /*< Amount of spurious interrupts that occurred on PIC #2. */
-};
-
-/* Tracking information about spurious interrupts.
- * >> Useful for detecting faulty software that sends EOI commands at the
- *    wrong time, or for tracking problems in hardware, such as line noise. */
-DATDEF struct spurious_pic irq_pic_spurious;
-
-
-/* Get/Set the mask of disabled interrupt lines.
- * >> `IRQ_PIC1_STMASK()' disables irq_t: 0x20...0x27
- * >> `IRQ_PIC2_STMASK()' disables irq_t: 0x28...0x2f
- */
-#define IRQ_PIC1_GTMASK()   inb_p(PIC1_DATA)
-#define IRQ_PIC1_STMASK(m) outb_p(PIC1_DATA,m)
-#define IRQ_PIC2_GTMASK()   inb_p(PIC2_DATA)
-#define IRQ_PIC2_STMASK(m) outb_p(PIC2_DATA,m)
-
-
-
-/* IRQ number. */
-
-#define IRQ_PIC1_BASE 0x20
-#define IRQ_PIC2_BASE 0x28
-
-/* Return the IRQ numbers of hardware interrupt
- * lines wired either to the master, or slave PIC.
- * @param: i :  The line number (0..7)
- * @return: * : The IRQ number. */
-#define IRQ_PIC1(i) (IRQ_PIC1_BASE+(i))
-#define IRQ_PIC2(i) (IRQ_PIC2_BASE+(i))
-
-/* Check the type of interrupt, given its IRQ number. */
-#define IRQ_ISEXC(i) ((i) < 0x20)                /* Exception. */
-#define IRQ_ISPIC(i) ((i) >= 0x20 && (i) < 0x30) /* Hardware, PIC interrupt. */
-#define IRQ_ISUSR(i) ((i) >= 0x30)               /* Custom interrupts. */
-
-
-/* Standard ISA IRQs.
- * >> This is the default wireing of hardware interrupts. */
-#define IRQ_PIC1_PIT   IRQ_PIC1(0) /*< Programmable Interrupt Timer Interrupt. */
-#define IRQ_PIC1_KBD   IRQ_PIC1(1) /*< Keyboard Interrupt. */
-#define IRQ_PIC1_CAS   IRQ_PIC1(2) /*< Cascade (used internally by the two PICs. never raised). */
-#define IRQ_PIC1_COM2  IRQ_PIC1(3) /*< COM2 (if enabled). */
-#define IRQ_PIC1_COM1  IRQ_PIC1(4) /*< COM1 (if enabled). */
-#define IRQ_PIC1_LPT2  IRQ_PIC1(5) /*< LPT2 (if enabled). */
-#define IRQ_PIC1_FLOP  IRQ_PIC1(6) /*< Floppy Disk. */
-#define IRQ_PIC1_LPT1  IRQ_PIC1(7) /*< LPT1 / Unreliable "spurious" interrupt (usually). */
-#define IRQ_PIC2_CMOS  IRQ_PIC2(0) /*< CMOS real-time clock (if enabled). */
-#define IRQ_PIC2_FREE1 IRQ_PIC2(1) /*< Free for peripherals / legacy SCSI / NIC. */
-#define IRQ_PIC2_FREE2 IRQ_PIC2(2) /*< Free for peripherals / SCSI / NIC. */
-#define IRQ_PIC2_FREE3 IRQ_PIC2(3) /*< Free for peripherals / SCSI / NIC. */
-#define IRQ_PIC2_PS2M  IRQ_PIC2(4) /*< PS2 Mouse. */
-#define IRQ_PIC2_FPU   IRQ_PIC2(5) /*< FPU / Coprocessor / Inter-processor. */
-#define IRQ_PIC2_ATA1  IRQ_PIC2(6) /*< Primary ATA Hard Disk. */
-#define IRQ_PIC2_ATA2  IRQ_PIC2(7) /*< Secondary ATA Hard Disk. */
-
-/* X86 exception IRQ numbers. */
-#define IRQ_EXC(x)  x
-#define IRQ_EXC_DE  IRQ_EXC(0)  /*< Divide-by-zero. */
-#define IRQ_EXC_DB  IRQ_EXC(1)  /*< Debug. */
-#define IRQ_EXC_NMI IRQ_EXC(2)  /*< Non-maskable Interrupt. */
-#define IRQ_EXC_BP  IRQ_EXC(3)  /*< Breakpoint. */
-#define IRQ_EXC_OF  IRQ_EXC(4)  /*< Overflow. */
-#define IRQ_EXC_BR  IRQ_EXC(5)  /*< Bound Range Exceeded. */
-#define IRQ_EXC_UD  IRQ_EXC(6)  /*< Invalid Opcode. */
-#define IRQ_EXC_NM  IRQ_EXC(7)  /*< Device Not Available. */
-#define IRQ_EXC_DF  IRQ_EXC(8)  /*< Double Fault. */
-#define IRQ_EXC_TS  IRQ_EXC(10) /*< Invalid TSS. */
-#define IRQ_EXC_NP  IRQ_EXC(11) /*< Segment Not Present. */
-#define IRQ_EXC_SS  IRQ_EXC(12) /*< Stack-Segment Fault. */
-#define IRQ_EXC_GP  IRQ_EXC(13) /*< General Protection Fault. */
-#define IRQ_EXC_PF  IRQ_EXC(14) /*< Page Fault. */
-#define IRQ_EXC_MF  IRQ_EXC(16) /*< x87 Floating-Point Exception. */
-#define IRQ_EXC_AC  IRQ_EXC(17) /*< Alignment Check. */
-#define IRQ_EXC_MC  IRQ_EXC(18) /*< Machine Check. */
-#define IRQ_EXC_XM  IRQ_EXC(19) /*< SIMD Floating-Point Exception. */
-#define IRQ_EXC_XF  IRQ_EXC_XM  /*< SIMD Floating-Point Exception. */
-#define IRQ_EXC_VE  IRQ_EXC(20) /*< Virtualization Exception. */
-#define IRQ_EXC_SX  IRQ_EXC(30) /*< Security Exception. */
-
-#define EXC_DIVIDE_BY_ZERO   IRQ_EXC_DE
-#define EXC_BREAKPOINT       IRQ_EXC_BP
-#define EXC_INTEGER_OVERFLOW IRQ_EXC_OF
-#define EXC_OUT_OF_BOUNDS    IRQ_EXC_BR
-#define EXC_INVALID_OPCODE   IRQ_EXC_UD
-#define EXC_DOUBLE_FAULT     IRQ_EXC_DF
-#define EXC_PROTECTION_FAULT IRQ_EXC_GP
-#define EXC_PAGE_FAULT       IRQ_EXC_PF
-#define EXC_FPU_EXCEPTION    IRQ_EXC_MF
-#define EXC_ALIGNMENT_ERROR  IRQ_EXC_AC
-
-/* Additional, KOS-specific IRQ vector numbers. */
-#define IRQ_SYSCALL        0x80 /*< Interrupt vector used for linux-compatible & kos-specific system calls. */
-#ifdef CONFIG_SMP
-#define IRQ_LAPIC_RPC      0xfe /*< Interrupt slot for inter-processor communication. */
-#define IRQ_LAPIC_SPURIOUS 0xff /*< Spurious LAPIC IRQ handler. */
-#endif
-
-
-
 
 typedef void (ASMCALL *isr_fun_t)(void);
 
@@ -249,10 +89,6 @@ FUNDEF SAFE bool KCALL irq_set(isr_t const *__restrict new_handler,
 FUNDEF SAFE void KCALL irq_del(irq_t num, bool reload);
 
 
-
-
-
-
 /* The default IRQ handler that will either:
  * - cause user-space applications to terminate (unless they provide appropriate handlers)
  * - syslog() a warning for unhandled PIC interrupts (hardware interrupts)
@@ -285,60 +121,11 @@ INTDEF PERCPU struct IDT cpu_idt;
 
 #endif
 
-
-
-
 #ifdef CONFIG_DEBUG
 #define __DEBUG_CODE(...) __VA_ARGS__
 #else
 #define __DEBUG_CODE(...) 
 #endif
-
-
-#ifdef __x86_64__
-#define __ASM_LOAD_SEGMENTS(temp) \
-    /* Load the proper kernel segment registers */ \
-  /*movw  $(__USER_DS), temp; \
-    movw  temp, %ds; \
-    movw  temp, %es; \
-    movw  temp, %fs; \
-    movw  $(__KERNEL_PERCPU), temp; \
-    movw  temp, %gs; */
-#else
-#define __ASM_LOAD_SEGMENTS(temp) \
-    /* Load the proper kernel segment registers */ \
-    movw  $(__USER_DS), temp; \
-    movw  temp, %ds; \
-    movw  temp, %es; \
-    movw  temp, %gs; \
-    movw  $(__KERNEL_PERCPU), temp; \
-    movw  temp, %fs;
-#endif
-#define __LOAD_SEGMENTS(temp) \
-    __PP_STR(__ASM_LOAD_SEGMENTS(temp))
-
-#define __INT_ENTER \
-   PP_STR(__ASM_PUSH_COMREGS) \
-   __LOAD_SEGMENTS(%dx)
-#ifdef __x86_64__
-#define __INT_LEAVE \
-   PP_STR(__ASM_POP_COMREGS) \
-   "iretq\n"
-#define __INT_LEAVE_E \
-   PP_STR(__ASM_POP_COMREGS) \
-   "addq $8, %rsp\n" /* Error code */ \
-   "iretq\n"
-#else
-#define __INT_LEAVE \
-   PP_STR(__ASM_POP_COMREGS) \
-   "iret\n"
-#define __INT_LEAVE_E \
-   PP_STR(__ASM_POP_COMREGS) \
-   "addl $4, %esp\n" /* Error code */ \
-   "iret\n"
-#endif
-
-
 
 
 /* A higher-level interrupt handler that can safely
@@ -519,5 +306,51 @@ __INT_LEAVE_E \
 #endif
 
 DECL_END
+#endif /* CONFIG_USE_OLD_INTERRUPTS */
+
+
+#ifdef __x86_64__
+#define __ASM_LOAD_SEGMENTS(temp) \
+    /* Load the proper kernel segment registers */ \
+  /*movw  $(__USER_DS), temp; \
+    movw  temp, %ds; \
+    movw  temp, %es; \
+    movw  temp, %fs; \
+    movw  $(__KERNEL_PERCPU), temp; \
+    movw  temp, %gs; */
+#else
+#define __ASM_LOAD_SEGMENTS(temp) \
+    /* Load the proper kernel segment registers */ \
+    movw  $(__USER_DS), temp; \
+    movw  temp, %ds; \
+    movw  temp, %es; \
+    movw  temp, %gs; \
+    movw  $(__KERNEL_PERCPU), temp; \
+    movw  temp, %fs;
+#endif
+#define __LOAD_SEGMENTS(temp) \
+    __PP_STR(__ASM_LOAD_SEGMENTS(temp))
+
+#define __INT_ENTER \
+   PP_STR(__ASM_PUSH_COMREGS) \
+   __LOAD_SEGMENTS(%dx)
+#ifdef __x86_64__
+#define __INT_LEAVE \
+   PP_STR(__ASM_POP_COMREGS) \
+   "iretq\n"
+#define __INT_LEAVE_E \
+   PP_STR(__ASM_POP_COMREGS) \
+   "addq $8, %rsp\n" /* Error code */ \
+   "iretq\n"
+#else
+#define __INT_LEAVE \
+   PP_STR(__ASM_POP_COMREGS) \
+   "iret\n"
+#define __INT_LEAVE_E \
+   PP_STR(__ASM_POP_COMREGS) \
+   "addl $4, %esp\n" /* Error code */ \
+   "iret\n"
+#endif
+
 
 #endif /* !GUARD_INCLUDE_KERNEL_IRQ_H */

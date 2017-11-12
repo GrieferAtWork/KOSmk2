@@ -57,6 +57,7 @@
     <ClCompile Include="..\..\src\kernel\core\arch\interrupt.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\irq.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\paging.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\panic.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\realmode.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp.c" />
@@ -181,6 +182,7 @@
     <ClInclude Include="..\..\src\include\kernel\arch\mp.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\paging32.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\paging64.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\pic.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\preemption.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\realmode.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\task.h" />
@@ -233,6 +235,7 @@
     <ClInclude Include="..\..\src\include\sync\rwlock.h" />
     <ClInclude Include="..\..\src\include\sync\sem.h" />
     <ClInclude Include="..\..\src\include\sync\sig.h" />
+    <ClInclude Include="..\..\src\kernel\core\arch\interrupt_intern.h" />
     <ClInclude Include="..\..\src\kernel\debug-config.h" />
     <ClInclude Include="..\..\src\kernel\linker\ksym.h" />
     <ClInclude Include="..\..\src\kernel\mman\intern.h" />

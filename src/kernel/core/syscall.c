@@ -41,8 +41,11 @@
 #include <sched/task.h>
 #include <stdlib.h>
 #include <asm/instx.h>
+#include <hybrid/panic.h>
 
 DECL_BEGIN
+
+/* TODO: This entire file is a complete mess. - Scrap it all and rewrite it! */
 
 INTERN void ASMCALL syscall_irq(void);
 INTERN syscall_ulong_t ASMCALL sys_nosys(void);
@@ -106,6 +109,7 @@ syscall_t xsyscall_c_table[(__NR_xsyscall_max-__NR_xsyscall_min)+1] = {
 };
 
 #pragma GCC diagnostic pop
+
 
 #if defined(CONFIG_DEBUG) && 1
 PRIVATE ATTR_NORETURN ATTR_USED void FCALL preemption_not_enabled_leave(void) {
@@ -391,6 +395,11 @@ L(SYM_END(syscall_irq)                                                        )
 L(.previous                                                                   )
 );
 
+#ifdef CONFIG_DEBUG
+#define __DEBUG_CODE(...) __VA_ARGS__
+#else
+#define __DEBUG_CODE(...) /* nothing */
+#endif
 
 #ifdef __x86_64__
 #define SYSCALL_SAFEREGISTERS \
@@ -523,6 +532,7 @@ L(.previous                                                                   )
 );
 
 
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 PRIVATE ATTR_FREERODATA isr_t const syscall_isr = {
     .i_num   = SYSCALL_INT,
     .i_flags = IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(3),
@@ -530,10 +540,26 @@ PRIVATE ATTR_FREERODATA isr_t const syscall_isr = {
     .i_owner = THIS_INSTANCE
 };
 
-
 PRIVATE MODULE_INIT void syscall_init(void) {
  irq_set(&syscall_isr,NULL,IRQ_SET_RELOAD);
 }
+#else
+PRIVATE struct interrupt syscall_interrupt = {
+    .i_intno = SYSCALL_INT,
+    .i_mode  = INTMODE_USER,
+    .i_type  = INTTYPE_ASM,
+    .i_prio  = INTPRIO_MAX,
+    .i_flags = INTFLAG_PRIMARY,
+    .i_proto = {
+        .p_asm = &syscall_irq,
+    },
+    .i_owner = THIS_INSTANCE,
+};
+
+PRIVATE MODULE_INIT void syscall_init(void) {
+ asserte(E_ISOK(int_addall(&syscall_interrupt)));
+}
+#endif
 
 
 DECL_END

@@ -55,6 +55,11 @@
 #include <sys/syslog.h>
 #include <malloc.h>
 
+#ifndef CONFIG_USE_OLD_INTERRUPTS
+#include "interrupt_intern.h"
+#endif
+
+
 DECL_BEGIN
 
 #if __SIZEOF_POINTER__ == 8
@@ -231,8 +236,13 @@ INTERN ATTR_NORETURN void cpu_bootstrap_c(void) {
 
  /* Load our own IDT table. */
  { struct idt_pointer idt;
+#ifdef CONFIG_USE_OLD_INTERRUPTS
    idt.ip_idt   = CPU(cpu_idt).i_vector;
-   idt.ip_limit = sizeof(cpu_idt.i_vector);
+   idt.ip_limit = sizeof(cpu_idt.i_vector)-1;
+#else
+   idt.ip_idt   = CPU(inttab).it_idt;
+   idt.ip_limit = sizeof(inttab.it_idt)-1;
+#endif
    __asm__ __volatile__("lidt %0\n" : : "m" (idt));
  }
 
@@ -240,7 +250,7 @@ INTERN ATTR_NORETURN void cpu_bootstrap_c(void) {
 
  if (THIS_CPU->c_arch.ac_flags&CPUFLAG_LAPIC) {
   /* Enable LAPIC before turning on interrupts! */
-  apic_write(APIC_SPIV,IRQ_LAPIC_SPURIOUS|APIC_SPIV_APIC_ENABLED);
+  apic_write(APIC_SPIV,INTNO_LAPIC_SPURIOUS|APIC_SPIV_APIC_ENABLED);
  }
 
  /* TODO: Switch to the currently scheduled task. */
@@ -757,7 +767,11 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  }
 
  /* Initialize the CPU's Interrupt Descriptor Table (IDT) */
+#ifdef CONFIG_USE_OLD_INTERRUPTS
  irq_setup(vcpu);
+#else
+ cpu_interrupt_initialize(vcpu);
+#endif
 
  /* Define the sporadic interrupt handler used by LAPIC. */
 #ifdef __x86_64__
@@ -779,7 +793,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
   (vec)->ie_off2  = (u16)((uintptr_t)(ptr) >> 16))
 #endif
  if (vcpu->c_arch.ac_flags&CPUFLAG_LAPIC) {
-  struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+IRQ_LAPIC_SPURIOUS;
+  struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+INTNO_LAPIC_SPURIOUS;
   INIT_VECTOR(idt,&lapic_spurious_irq_handler);
  }
 
@@ -798,7 +812,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
 #ifndef CONFIG_NO_FPU
  /* Install the FPU context switch handler. */
  { INTDEF void (ASMCALL fpu_asm_nm)(void);
-   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+IRQ_EXC_NM;
+   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+INTNO_EXC_NM;
    INIT_VECTOR(idt,&fpu_asm_nm);
  }
 #endif /* !CONFIG_NO_FPU */
@@ -831,8 +845,8 @@ cpu_sendipc_unlocked(struct cpu *__restrict self, irq_t intno) {
 
 
 INTDEF void ASMCALL rpc_irq_handler(void);
-PRIVATE ATTR_FREERODATA isr_t const lapic_spurious = ISR_DEFAULT(IRQ_LAPIC_SPURIOUS,&lapic_spurious_irq_handler);
-PRIVATE ATTR_FREERODATA isr_t const lapic_rpc      = ISR_DEFAULT(IRQ_LAPIC_RPC,&rpc_irq_handler);
+PRIVATE ATTR_FREERODATA isr_t const lapic_spurious = ISR_DEFAULT(INTNO_LAPIC_SPURIOUS,&lapic_spurious_irq_handler);
+PRIVATE ATTR_FREERODATA isr_t const lapic_rpc      = ISR_DEFAULT(INTNO_LAPIC_RPC,&rpc_irq_handler);
 
 INTERN void KCALL smp_initialize_lapic(void) {
  if (!APIC_SUPPORTED()) return;
@@ -841,7 +855,7 @@ INTERN void KCALL smp_initialize_lapic(void) {
  irq_set(&lapic_spurious,NULL,IRQ_SET_QUICK);
  irq_set(&lapic_rpc,NULL,IRQ_SET_RELOAD);
 
- apic_write(APIC_SPIV,IRQ_LAPIC_SPURIOUS|
+ apic_write(APIC_SPIV,INTNO_LAPIC_SPURIOUS|
             APIC_SPIV_DIRECTED_EOI|
             APIC_SPIV_APIC_ENABLED);
 }

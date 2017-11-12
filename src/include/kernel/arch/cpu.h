@@ -66,7 +66,7 @@ typedef int cpusig_t; /* Signals data object (sometimes) broadcast through `ac_s
 struct archcpu {
  struct tss      ac_tss;           /*< [lock(PRIVATE(THIS_CPU))] The TSS segment associated with this CPU. */
  struct sig      ac_sigonoff;      /*< Signal broadcast when the CPU starts up, or shuts down. */
- ATOMIC_DATA u32 ac_spurious_irq;  /*< Amount of spurious interrupts (IRQ_LAPIC_SPURIOUS) received. */
+ ATOMIC_DATA u32 ac_spurious_irq;  /*< Amount of spurious interrupts (INTNO_LAPIC_SPURIOUS) received. */
  u8              ac_mode;          /*< [lock(ac_sigonoff)] Current CPU mode (One of `CPUMODE_*'). */
  u8              ac_flags;         /*< [const] Set of `CPUFLAG_*' */
  u8              ac_lapic_id;      /*< [const][valid_if(CPUFLAG_LAPIC)] LAPIC id. */

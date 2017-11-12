@@ -530,15 +530,18 @@ struct PACKED irregs_ie       { union PACKED { struct irregs_host_ie host; struc
                                 register_t intno; register_t exc_code; union PACKED { struct irregs tail; struct PACKED {
                                 __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags);
                                 __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss); };};};};};
+/* Return true if `no' is one of `8,10,11,12,13,14,17,30' */
+#define INTNO_HAS_EXC_CODE(no) ((no) < 32 && 0x40027d00&(1<<(no)))
 DATDEF byte_t intno_offset[];
 #endif /* __CC__ */
 
-#define IRREGS_ENCODE_INTNO(x)     (__CCAST(uintptr_t,intno_offset)+((x)*INTERRUPT_SIZE))
-#define IRREGS_DECODE_INTNO(x)     (((x)-__CCAST(uintptr_t,intno_offset))/INTERRUPT_SIZE)
-#define ASM_IRREGS_ENCODE_INTNO(x) (intno_offset+(x)*INTERRUPT_SIZE)
-#define ASM_IRREGS_DECODE_INTNO(x) (((x)-intno_offset)/INTERRUPT_SIZE)
+#define IRREGS_ENCODE_INTNO(x)     (__CCAST(uintptr_t,intno_offset)+((x)*__SIZEOF_POINTER__))
+#define IRREGS_DECODE_INTNO(x)     (((x)-__CCAST(uintptr_t,intno_offset))/__SIZEOF_POINTER__)
+#define ASM_IRREGS_ENCODE_INTNO(x) (intno_offset+((x)*__SIZEOF_POINTER__))
+#define ASM_IRREGS_DECODE_INTNO(x) (((x)-intno_offset)/__SIZEOF_POINTER__)
 
 #ifdef __x86_64__
+/* TODO: Remove. - Use `ASM_IRET' from <kernel/arch/asm.h> instead. */
 #define __ASM_IRET   iretq
 #else
 #define __ASM_IRET   iret

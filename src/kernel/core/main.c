@@ -456,9 +456,18 @@ INTERN ATTR_FREETEXT void ATTR_FASTCALL
 kernel_boot(u32        mb_magic,
             mb_info_t *mb_mbt) {
 
+#ifdef KERNEL_PERFORM_FIXUPS
+ /* Perform cpu-dependent code fixups. */
+ KERNEL_PERFORM_FIXUPS();
+#endif
+
  /* Install the default IDT table as soon as possible, so-as to be able
   * to dump exceptions resulting in kernel panic during early booting. */
+#ifdef CONFIG_USE_OLD_INTERRUPTS
  irq_initialize();
+#else
+ interrupt_initialize();
+#endif
 
  /* Initialize basic data using the information potentially provided by the bootloader. */
  basicdata_initialize(mb_magic,mb_mbt);
@@ -471,11 +480,6 @@ kernel_boot(u32        mb_magic,
           MEMINFO_MIN(iter),MEMINFO_MAX(iter));
   }
  }
-
-#ifdef KERNEL_PERFORM_FIXUPS
- /* Perform cpu-dependent code fixups. */
- KERNEL_PERFORM_FIXUPS();
-#endif
 
  /* Parse the commandline & execute early setup arguments. */
  commandline_initialize_parse();

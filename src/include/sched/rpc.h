@@ -59,7 +59,9 @@ typedef u32 cpu_rpc_t;
 
 
 struct rpc_callback { ssize_t (KCALL *c_callback)(void *closure); void *c_closure; };
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 struct rpc_update_idt { REF isr_t ui_isr; }; /* NOTE: 'ui_isr' contains a reference to the associated instance _BOTH_ on entry & exit. */
+#endif /* CONFIG_USE_OLD_INTERRUPTS */
 struct rpc_tlb_shootdown { void *ts_begin; size_t ts_size; };
 
 
@@ -79,13 +81,14 @@ FUNDEF SAFE ssize_t KCALL cpu_rpc_send(struct cpu *__restrict self, cpu_rpc_t co
 LOCAL SAFE void KCALL cpu_rpc_broadcast(cpu_rpc_t command, void *arg);
 
 
-
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 /* Cross-cpu IRQ setter helper function.
  * >> Behaves the same as `irq_set', but takes an additional cpu-argument `self'. */
 LOCAL SAFE bool KCALL irq_vset(struct cpu *__restrict self,
                                isr_t const *__restrict new_handler,
                            REF isr_t *old_handler, int mode);
 LOCAL SAFE void KCALL irq_vdel(struct cpu *__restrict self, irq_t num);
+#endif
 
 DECL_END
 
@@ -120,8 +123,10 @@ DECL_END
 #endif
 #else /* CONFIG_SMP */
 #include <kernel/irq.h>
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 #define irq_vset(self,new_handler,old_handler,mode) irq_set(new_handler,old_handler,mode)
 #define irq_vdel(self,num)                          irq_del(num,true)
+#endif
 #endif /* !CONFIG_SMP */
 
 #endif /* !GUARD_INCLUDE_KERNEL_RPC_H */

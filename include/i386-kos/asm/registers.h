@@ -32,6 +32,12 @@
         popq %r11; popq %r10; popq %r9;  popq %r8;  \
         popq %rdi; popq %rsi; popq %rdx; popq %rcx; \
         popq %rax;
+#define __ASM_PUSH_SCRATCH_NOXAX \
+        pushq %rcx; pushq %rdx; pushq %rsi; pushq %rdi; \
+        pushq %r8;  pushq %r9;  pushq %r10; pushq %r11;
+#define __ASM_POP_SCRATCH_NOXAX \
+        popq %r11; popq %r10; popq %r9;  popq %r8;  \
+        popq %rdi; popq %rsi; popq %rdx; popq %rcx;
 #define __ASM_PUSH_PRESERVE \
         pushq %rbx; pushq %rbp; pushq %r12; pushq %r13; \
         pushq %r14; pushq %r15;
@@ -39,19 +45,23 @@
         pushq %r15; pushq %r14; pushq %r13; pushq %r12; \
         pushq %rbp; pushq %rbx;
 #elif defined(__OPTIMIZE_SIZE__)
-#define __ASM_SCRATCH_SIZE  32
-#define __ASM_PERSERVE_SIZE 32
-#define __ASM_PUSH_SCRATCH  pushal;
-#define __ASM_POP_SCRATCH   popal;
-#define __ASM_PUSH_PRESERVE pushal;
-#define __ASM_POP_PRESERVE  popal;
+#define __ASM_SCRATCH_SIZE       32
+#define __ASM_PERSERVE_SIZE      32
+#define __ASM_PUSH_SCRATCH       pushal;
+#define __ASM_POP_SCRATCH        popal;
+#define __ASM_PUSH_SCRATCH_NOXAX pushal;
+#define __ASM_POP_SCRATCH_NOXAX  popal;
+#define __ASM_PUSH_PRESERVE      pushal;
+#define __ASM_POP_PRESERVE       popal;
 #else
-#define __ASM_SCRATCH_SIZE  12
-#define __ASM_PERSERVE_SIZE 16
-#define __ASM_PUSH_SCRATCH  pushl %eax; pushl %ecx; pushl %edx;
-#define __ASM_POP_SCRATCH   popl %edx; popl %ecx; popl %eax;
-#define __ASM_PUSH_PRESERVE pushl %ebx; pushl %ebp; pushl %edi; pushl %esi;
-#define __ASM_POP_PRESERVE  popl %esi; popl %edi; popl %ebp; popl %ebx;
+#define __ASM_SCRATCH_SIZE       12
+#define __ASM_PERSERVE_SIZE      16
+#define __ASM_PUSH_SCRATCH       pushl %eax; pushl %ecx; pushl %edx;
+#define __ASM_POP_SCRATCH        popl %edx; popl %ecx; popl %eax;
+#define __ASM_PUSH_SCRATCH_NOXAX pushl %ecx; pushl %edx;
+#define __ASM_POP_SCRATCH_NOXAX  popl %edx; popl %ecx;
+#define __ASM_PUSH_PRESERVE      pushl %ebx; pushl %ebp; pushl %edi; pushl %esi;
+#define __ASM_POP_PRESERVE       popl %esi; popl %edi; popl %ebp; popl %ebx;
 #endif
 
 #endif /* !_X86_KOS_ASM_REGISTERS_H */
