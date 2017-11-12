@@ -20,7 +20,7 @@
 #define __GUARD_HYBRID_ARCH_CPU_H 1
 
 #include <hybrid/compiler.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <stdbool.h>
 
 DECL_BEGIN

@@ -30,7 +30,7 @@
 #include <fs/fs.h>
 #include <fs/superblock.h>
 #include <hybrid/align.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <hybrid/sched/yield.h>
@@ -80,6 +80,8 @@
 #include <netinet/in.h>
 #include <asm/instx.h>
 #include <kernel/arch/hints.h>
+#include <kos/thread.h>
+#include <kernel/arch/asm.h>
 
 DECL_BEGIN
 
@@ -234,12 +236,15 @@ run_init(char const *__restrict filename) {
  task_ldtlb(thrd);
 #endif /* !CONFIG_NO_TLB */
 
-#ifndef __x86_64__
+#ifdef __x86_64__
+ state->host.sg.fs_base = TASK_DEFAULT_FS_BASE(thrd);
+ state->host.sg.gs_base = TASK_DEFAULT_GS_BASE(thrd);
+#else /* __x86_64__ */
  state->host.sg.ds   = __USER_DS;
  state->host.sg.es   = __USER_DS;
-#endif /* !__x86_64__ */
  state->host.sg.fs   = __USER_FS;
  state->host.sg.gs   = __USER_GS;
+#endif /* !__x86_64__ */
 #ifdef __x86_64__
  state->host.gp.rdi  = (uintptr_t)penviron; /* Pass the environment block through RDI. */
 #else
@@ -466,6 +471,11 @@ kernel_boot(u32        mb_magic,
           MEMINFO_MIN(iter),MEMINFO_MAX(iter));
   }
  }
+
+#ifdef KERNEL_PERFORM_FIXUPS
+ /* Perform cpu-dependent code fixups. */
+ KERNEL_PERFORM_FIXUPS();
+#endif
 
  /* Parse the commandline & execute early setup arguments. */
  commandline_initialize_parse();

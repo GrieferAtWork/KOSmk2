@@ -58,8 +58,6 @@ DECL_BEGIN
                                  *  NOTE: This is the only interrupt callback type that
                                  *        must be exited using `__ASM_IRET', rather than `ret'
                                  *  >> GLOBAL_ASM(L(my_int: ...; __ASM_IRET)); */
-#define INTTYPE_ASM_SHARED 0x00 /*< A special kind of assembly handler that can be shared.
-                                 *  WARNING: No other handler can be executed after this one. */
 #define INTTYPE_ASM_SEG    0x81 /*< Similar to `INTTYPE_ASM', but segment registers are
                                  *  saved and the kernel per-cpu base address is loaded.
                                  *  NOTE: On x86_64, this one barely differs from `INTTYPE_ASM'

@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <fs/fd.h>
 #include <hybrid/align.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>

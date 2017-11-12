@@ -33,7 +33,7 @@
 #include <bits/signum.h>
 #include <hybrid/section.h>
 #include <errno.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/atomic.h>
 #include <hybrid/byteorder.h>
@@ -546,9 +546,9 @@ INTERN char const *LIBCCALL strerror_get(uintptr_t kind, int no) {
  data = &errnotext;
 #endif
  if unlikely(no < 0 || (size_t)no >= data->etd_enocnt) goto unknown;
- entry   = (struct errnotext_entry const *)((uintptr_t)data+data->etd_enotab+
-                                            (size_t)no*data->etd_enoent);
- string  = (char const *)((uintptr_t)data+data->etd_strtab);
+ entry   = (struct errnotext_entry const *)((uintptr_t)data+(intptr_t)data->etd_enotab+
+                                            (uintptr_t)((size_t)no*data->etd_enoent));
+ string  = (char const *)((uintptr_t)data+(intptr_t)data->etd_strtab);
  string += *(u16 *)((uintptr_t)entry+kind);
  return string;
 unknown:

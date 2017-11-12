@@ -295,15 +295,6 @@ INTDEF PERCPU struct IDT cpu_idt;
 #endif
 
 
-#define __ASM_PUSH_SEGMENTS  __ASM_PUSH_SGREGS
-#define __ASM_POP_SEGMENTS   __ASM_POP_SGREGS
-#define __PUSH_SEGMENTS      PP_STR(__ASM_PUSH_SGREGS)
-#define __POP_SEGMENTS       PP_STR(__ASM_POP_SGREGS)
-#define __ASM_PUSH_REGISTERS __ASM_PUSH_GPREGS
-#define __ASM_POP_REGISTERS  __ASM_POP_GPREGS
-#define __PUSH_REGISTERS     PP_STR(__ASM_PUSH_GPREGS)
-#define __POP_REGISTERS      PP_STR(__ASM_POP_GPREGS)
-
 #ifdef __x86_64__
 #define __ASM_LOAD_SEGMENTS(temp) \
     /* Load the proper kernel segment registers */ \
@@ -327,27 +318,22 @@ INTDEF PERCPU struct IDT cpu_idt;
     __PP_STR(__ASM_LOAD_SEGMENTS(temp))
 
 #define __INT_ENTER \
-   __PUSH_SEGMENTS \
-   __PUSH_REGISTERS \
+   PP_STR(__ASM_PUSH_COMREGS) \
    __LOAD_SEGMENTS(%dx)
 #ifdef __x86_64__
 #define __INT_LEAVE \
-   __POP_REGISTERS \
-   __POP_SEGMENTS \
+   PP_STR(__ASM_POP_COMREGS) \
    "iretq\n"
 #define __INT_LEAVE_E \
-   __POP_REGISTERS \
-   __POP_SEGMENTS \
+   PP_STR(__ASM_POP_COMREGS) \
    "addq $8, %rsp\n" /* Error code */ \
    "iretq\n"
 #else
 #define __INT_LEAVE \
-   __POP_REGISTERS \
-   __POP_SEGMENTS \
+   PP_STR(__ASM_POP_COMREGS) \
    "iret\n"
 #define __INT_LEAVE_E \
-   __POP_REGISTERS \
-   __POP_SEGMENTS \
+   PP_STR(__ASM_POP_COMREGS) \
    "addl $4, %esp\n" /* Error code */ \
    "iret\n"
 #endif

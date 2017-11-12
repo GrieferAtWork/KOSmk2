@@ -23,7 +23,7 @@
 #include <assert.h>
 #include <dev/blkdev.h>
 #include <errno.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
 #include <hybrid/limits.h>
@@ -176,11 +176,10 @@ L(.align CACHELINE                                                            )
 L(PRIVATE_ENTRY(dbg_sysleave)                                                 )
 L(    pushfx                                                                  )
 #if 0
-L(    __ASM_PUSH_SGREGS                                                       )
-L(    __ASM_PUSH_GPREGS                                                       )
+L(    __ASM_PUSH_COMREGS                                                      )
+L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
 L(    call  syscall_leave                                                     )
-L(    __ASM_POP_GPREGS                                                        )
-L(    __ASM_POP_SGREGS                                                        )
+L(    __ASM_POP_COMREGS                                                       )
 #endif
 L(    testx $(EFLAGS_IF), 0(%xsp)                                             )
 L(    jz    preemption_not_enabled_leave                                      )
@@ -397,7 +396,7 @@ L(.previous                                                                   )
 #define SYSCALL_SAFEREGISTERS \
     sti; /* Enable interrupts */ \
     __DEBUG_CODE(pushq %rbp; /* __initial_rbp */) \
-    __ASM_PUSH_SEGMENTS \
+    __ASM_PUSH_SGREGS \
     pushq %r9; \
     pushq %r8; \
     pushq %r10; \
@@ -408,7 +407,7 @@ L(.previous                                                                   )
 #else
 #define SYSCALL_SAFEREGISTERS \
     sti; /* Enable interrupts */ \
-    __ASM_PUSH_SEGMENTS \
+    __ASM_PUSH_SGREGS \
     __DEBUG_CODE(pushl 12(%esp); /* __initial_eip */) \
     pushl %ebp; \
     __DEBUG_CODE(movl %esp, %ebp;) \
@@ -462,7 +461,7 @@ L(    popl  %ebp                                                              )
 __DEBUG_CODE(L(addl $4, %esp /* __initial_eip */))
 #endif
 L(    ASM_SYSRETURN_CHECK_SEGMENTS                                            )
-L(    __ASM_POP_SEGMENTS                                                      )
+L(    __ASM_POP_SGREGS                                                      )
 #ifdef __x86_64__
 __DEBUG_CODE(L(addq $8, %rsp /* __initial_rbp */))
 #endif

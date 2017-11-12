@@ -40,6 +40,7 @@ BEGIN
 	C_FLAGS("-mno-mmx")
 	C_FLAGS("-mno-3dnow")
 	C_FLAGS("-mno-avx")
+	C_FLAGS("-mtls-direct-seg-refs")
 
 	INCLUDE("include")
 	DEFINE("__KERNEL__")

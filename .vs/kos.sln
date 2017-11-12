@@ -160,7 +160,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "arch", "arch", "{216EA1E4-5CAC-420E-8085-F1689E0DD8FF}"
 	ProjectSection(SolutionItems) = preProject
 		..\include\hybrid\arch\cpu.h = ..\include\hybrid\arch\cpu.h
-		..\include\hybrid\arch\eflags.h = ..\include\hybrid\arch\eflags.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "linux", "linux", "{61261588-8EFF-4B0A-90AE-7AEF2A7DD4DB}"
@@ -273,6 +272,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm", "asm", "{E72D1B89-7AE0-456B-A657-BCEA5D9F2BC0}"
 	ProjectSection(SolutionItems) = preProject
 		..\include\i386-kos\asm\bitsperlong.h = ..\include\i386-kos\asm\bitsperlong.h
+		..\include\i386-kos\asm\cpu-flags.h = ..\include\i386-kos\asm\cpu-flags.h
 		..\include\i386-kos\asm\instx.h = ..\include\i386-kos\asm\instx.h
 		..\include\i386-kos\asm\ioctl.h = ..\include\i386-kos\asm\ioctl.h
 		..\include\i386-kos\asm\ioctls.h = ..\include\i386-kos\asm\ioctls.h

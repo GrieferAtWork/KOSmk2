@@ -25,7 +25,7 @@
 #include <dev/rtc.h>
 #include <fs/fd.h>
 #include <hybrid/align.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
@@ -793,9 +793,8 @@ L(1:  pushq $(__KERNEL_CS)                                                    )
 #else
 L(1:  pushl %cs                                                               )
 #endif
-L(    subx $(XSZ), %xsp /* Skip EIP (already saved above) */                  )
-L(    __ASM_PUSH_SGREGS /* Push segment registers. */                         )
-L(    __ASM_PUSH_GPREGS /* Push general purpose registers. */                 )
+L(    subx $(XSZ), %xsp  /* Skip EIP (already saved above) */                 )
+L(    __ASM_PUSH_COMREGS /* Push registers. */                                )
       /* Load the given `task' argument into 'EAX'
        * NOTE: Use use `CPUSTATE_HOST_SIZE' as offset because that's
        *       the data structure we've just created on-stack, and
@@ -813,9 +812,8 @@ L(    /* Load the base address of the kernel stack. */                        )
 L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
 L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
 L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_XSP0))
-L(    __ASM_POP_GPREGS /* Pop general purpose registers. */                   )
-L(    __ASM_POP_SGREGS /* Pop segment registers. */                           )
-L(    __ASM_IRET       /* Iret -> pop XIP, CS + XFLAGS */                     )
+L(    __ASM_POP_COMREGS /* Pop registers. */                                  )
+L(    __ASM_IRET        /* Iret -> pop XIP, CS + XFLAGS */                    )
 L(SYM_END(cpu_sched_setrunning)                                               )
 L(SYM_END(cpu_sched_setrunning_save)                                          )
 L(SYM_END(cpu_sched_setrunning_savef)                                         )
@@ -841,8 +839,7 @@ L(    pushq $(__KERNEL_CS)                                                    )
 L(    pushl %cs                                                               )
 #endif
 L(    pushx %xax /* XIP */                                                    )
-L(    __ASM_PUSH_SGREGS /* Push segment registers. */                         )
-L(    __ASM_PUSH_GPREGS /* Push general purpose registers. */                 )
+L(    __ASM_PUSH_COMREGS /* Push registers. */                                )
 L(    /* All registers and segments are now saved. */                         )
 L(                                                                            )
 #if CONFIG_LOG_WAITING
@@ -946,9 +943,8 @@ L(    /* Load the base address of the kernel stack. */                        )
 L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
 L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
 L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_XSP0))
-L(70: __ASM_POP_GPREGS /* Pop general purpose registers. */                   )
-L(    __ASM_POP_SGREGS /* Pop segment registers. */                           )
-L(    __ASM_IRET       /* Iret -> pop XIP, CS + XFLAGS */                     )
+L(70: __ASM_POP_COMREGS /* Pop registers. */                                  )
+L(    __ASM_IRET        /* Iret -> pop XIP, CS + XFLAGS */                    )
 L(98: sti   /* Re-enable interrupts. */                                       )
 L(    pause /* Dispite all, still allow the CPU to relax a bit when not yielding. */)
 L(    movx $-EAGAIN, CPUSTATE_HOST_OFFSETOF_GP+GPREGS_OFFSETOF_XAX(%xsp)      )

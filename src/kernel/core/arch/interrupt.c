@@ -310,7 +310,13 @@ L(    __ASM_IRET                                                              )
 L(SYM_END(fast_irq_ycode)                                                     )
 L(                                                                            )
 L(PRIVATE_ENTRY(stat_irq_ncode)                                               )
+L(    __ASM_PUSH_COMREGS                                                      )
+#ifdef __x86_64__
+L(    testq $3, COMREGS_SIZE(%rsp)                                            )
+#else
 L(                                                                            )
+#endif
+L(    __ASM_POP_COMREGS                                                       )
 L(    addx $(XSZ), %xsp                                                       )
 L(    __ASM_IRET                                                              )
 L(SYM_END(stat_irq_ncode)                                                     )

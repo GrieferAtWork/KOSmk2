@@ -837,6 +837,12 @@ struct PACKED {
  byte_t __t_align[TASK_ALIGN-(__TASK_SIZE % TASK_ALIGN)];
 #endif
 };
+
+#ifdef __x86_64__
+#define TASK_DEFAULT_FS_BASE(x)  ((uintptr_t)(x)->t_tlb)
+#define TASK_DEFAULT_GS_BASE(x) ((uintptr_t)&(x)->t_tlb->tl_tib)
+#endif
+
 #define TASK_ISSUSPENDED(self) ((self)->t_suspend[0] > 0 || (self)->t_suspend[1] != 0)
 
 LOCAL SAFE pid_t KCALL thread_pid_getpgid(struct thread_pid *__restrict self, pidtype_t type) {

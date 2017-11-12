@@ -30,10 +30,12 @@
 #include <kernel/paging.h>
 #include <kernel/mman.h>
 #include <hybrid/types.h>
+#include <hybrid/asm.h>
 #include <format-printer.h>
 #include <asm/instx.h>
 #include <kernel/arch/hints.h>
 #include <kernel/export.h>
+#include <sched/cpu.h>
 
 DECL_BEGIN
 
@@ -143,10 +145,17 @@ pdir_println(VIRT ppage_t v_addr, PHYS ppage_t p_addr,
       n_bytes = 0-(uintptr_t)p_addr;
  return format_printf(((struct pdr_print_pck *)data)->printer,
                       ((struct pdr_print_pck *)data)->closure,
+#ifdef PDIR_ATTR_NXE
+                      "%p...%p --> %p...%p [%c%c%c%c] (%.3Ix)\n",
+#else
                       "%p...%p --> %p...%p [%c%c%c] (%.3Ix)\n",
+#endif
                       v_addr,(uintptr_t)v_addr+n_bytes-1,
                       p_addr,(uintptr_t)p_addr+n_bytes-1,
                       attr&PDIR_ATTR_USER ? 'U' : '-',
+#ifdef PDIR_ATTR_NXE
+                      attr&PDIR_ATTR_NXE ? '-' : 'X',
+#endif
                       attr&PDIR_ATTR_WRITE ? 'W' : '-',
                       attr&PDIR_ATTR_PRESENT ? 'P' : '-',
                       attr);
@@ -186,11 +195,11 @@ L(PUBLIC_ENTRY(pdir_flush)                                                    )
 /* NOTE: When the host is a 386, we'll copy data from `pdir_flush_386' here. */
 L(    cmpx   $(PAGESIZE*256), %FASTCALL_REG2                                  )
 L(    jae    1f                                                               )
-L(    invlpg (%FASTCALL_REG1)                                                 )
+L(3:  invlpg (%FASTCALL_REG1)                                                 )
 L(    subx   $(PAGESIZE), %FASTCALL_REG2                                      )
-L(    jo     2f  /* Stop if n_bytes underflowed. */                           )
+L(    jbe    2f  /* Stop if n_bytes underflowed. */                           )
 L(    addx   $(PAGESIZE), %FASTCALL_REG1                                      )
-L(    jmp    pdir_flush                                                       )
+L(    jmp    3b                                                               )
 L(1:  movx   %cr3, %xax  /* Do a regular, full flush for larger quantities. */)
 L(    movx   %xax, %cr3                                                       )
 L(2:  ret                                                                     )

@@ -788,5 +788,8 @@
     <ClInclude Include="..\..\src\include\kernel\arch\interrupt.h">
       <Filter>include\kernel\arch</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\asm.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

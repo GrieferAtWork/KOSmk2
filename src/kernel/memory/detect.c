@@ -21,7 +21,7 @@
 #define _KOS_SOURCE 1
 
 #include <hybrid/align.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>

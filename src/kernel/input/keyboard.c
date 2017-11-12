@@ -24,7 +24,7 @@
 #include <fcntl.h>
 #include <fs/file.h>
 #include <fs/fs.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/byteorder.h>
 #include <hybrid/byteswap.h>
 #include <hybrid/check.h>
@@ -418,6 +418,9 @@ set_default_keyboard(struct keyboard *__restrict kbd,
 ATTR_SECTION(".data.user")
 PUBLIC WEAK struct keymap const
 active_keymap ASMNAME(KSYMNAME_KEYMAP) = {
+    /* XXX: I don't actually own a en_US-layout keyboard,
+     *      so these mappings may not be 100%
+     *      If you notice anything that's wrong, please tell me... */
     .km_name  = "en_US",
     .km_press = {
         [KEY_DELETE] = '\x7f',

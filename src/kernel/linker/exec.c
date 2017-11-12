@@ -24,7 +24,7 @@
 #include <fs/dentry.h>
 #include <fs/fd.h>
 #include <hybrid/align.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -403,9 +403,12 @@ endwrite:
   * >> The last thing remaining now, is to actually start execution of the module! */
  { struct cpustate state;
    memset(&state,0,sizeof(struct cpustate));
+#ifdef __x86_64__
+   state.sg.gs_base   = TASK_DEFAULT_GS_BASE(exec_task);
+   state.sg.fs_base   = TASK_DEFAULT_FS_BASE(exec_task);
+#else
    state.sg.gs        = __USER_GS;
    state.sg.fs        = __USER_FS;
-#ifndef __x86_64__
    state.sg.es        = __USER_DS;
    state.sg.ds        = __USER_DS;
 #endif

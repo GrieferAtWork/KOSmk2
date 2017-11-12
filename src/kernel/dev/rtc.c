@@ -39,7 +39,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <sched/cpu.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 
 DECL_BEGIN
 

@@ -20,33 +20,26 @@
 #define GUARD_KERNEL_CORE_ARCH_PAGING64_C_INL 1
 #define _KOS_SOURCE 1
 
+#include <hybrid/compiler.h>
 #include <hybrid/host.h>
 #ifdef __x86_64__
-#include <assert.h>
-#include <hybrid/align.h>
-#include <hybrid/arch/cpu.h>
-#include <hybrid/arch/eflags.h>
-#include <hybrid/asm.h>
-#include <hybrid/check.h>
-#include <hybrid/compiler.h>
-#include <hybrid/minmax.h>
-#include <hybrid/section.h>
-#include <kernel/export.h>
-#include <kernel/memory.h>
-#include <kernel/mman.h>
-#include <kernel/paging-util.h>
 #include <kernel/paging.h>
-#include <sys/syslog.h>
-#include <sched/cpu.h>
-#include <sched/task.h>
-#include <stdbool.h>
-#include <stdalign.h>
-#include <string.h>
-#include <hybrid/panic.h>
+#include <kernel/memory.h>
+#include <kernel/arch/paging64.h>
 #include <sys/io.h>
-#ifndef CONFIG_NO_LDT
-#include <kernel/arch/task.h>
-#endif
+#include <syslog.h>
+#include <hybrid/section.h>
+#include <hybrid/types.h>
+#include <hybrid/limits.h>
+#include <hybrid/panic.h>
+#include <string.h>
+#include <hybrid/align.h>
+#include <hybrid/minmax.h>
+#include <errno.h>
+#include <assert.h>
+#include <hybrid/check.h>
+#include <kernel/export.h>
+#include <kernel/malloc.h>
 
 DECL_BEGIN
 

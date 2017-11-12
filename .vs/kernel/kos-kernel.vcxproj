@@ -169,6 +169,7 @@
     <ClInclude Include="..\..\src\include\input\keyboard.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\apic.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\apicdef.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\asm.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\cpu.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\cpufeatures.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\cpustate.h" />

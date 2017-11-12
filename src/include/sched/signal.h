@@ -223,7 +223,7 @@ struct PACKED sigenter_info {
  USER void       *ei_return;  /*< Signal handler return address. */
 union PACKED {
  int              ei_signo;   /*< Signal number. */
- uintptr_t      __ei_align;   /*< Align to pointer. */
+ uintptr_t      __ei_align;   /*< Align by pointers. */
 };
  USER siginfo_t  *ei_pinfo;   /*< == &ei_info. */
  USER ucontext_t *ei_pctx;    /*< == &ei_ctx. */

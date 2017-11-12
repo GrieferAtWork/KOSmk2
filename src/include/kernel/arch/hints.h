@@ -46,10 +46,12 @@ DECL_BEGIN
 #define USER_STCK_BASESIZE                          __SIZE_C(0x8000) /* Default, generic size for user stacks. */
 #define USER_STCK_ALIGN                                 __SIZE_C(32) /* Alignment hint that should be respected by all user-stack allocators. */
 #define USER_STCK_ADDRGAP                              (64*PAGESIZE) /* Allocation gap size when initially reserving space for a user-space stack.
-                                                                      * NOTE: If no free memory region can be found taht fits this gap, the search
+                                                                      * NOTE: If no free memory region can be found that fits this gap, the search
                                                                       *       is attempted a second time while ignoring this hint. */
 #define USER_STCK_FUNDS                                 __SIZE_C(16) /* Default amount of funding for guard-pages in user-space stacks. */
 #define USER_STCK_GUARDSIZE                                PAGESIZE  /* Default user-space stack guard size. */
+#define USER_REDZONE_SIZE                              __SIZE_C(128) /* Size of the so-called `red' zone (Basically, a memory gap left on user-stacks when a signal handler is executed)
+                                                                      * The 128 bytes specified here are mandated by the SysV ABI standard (Which KOS tries to be compatible with). */
 
 #define HOST_HEAPEND_KERNEL_LOCKED   __UINTPTR_C(0x0000500000000000) /* Start address of the GFP_KERNEL|GFP_LOCKED heap. (Grows up) */
 #define HOST_HEAPEND_KERNEL          __UINTPTR_C(0x0000510000000000) /* Start address of the GFP_KERNEL heap. (Grows up) */
@@ -81,10 +83,11 @@ DECL_BEGIN
 #define USER_STCK_BASESIZE                  __SIZE_C(0x4000) /* Default, generic size for user stacks. */
 #define USER_STCK_ALIGN                         __SIZE_C(16) /* Alignment hint that should be respected by all user-stack allocators. */
 #define USER_STCK_ADDRGAP                      (16*PAGESIZE) /* Allocation gap size when initially reserving space for a user-space stack.
-                                                              * NOTE: If no free memory region can be found taht fits this gap, the search
+                                                              * NOTE: If no free memory region can be found that fits this gap, the search
                                                               *       is attempted a second time while ignoring this hint. */
 #define USER_STCK_FUNDS                          __SIZE_C(8) /* Default amount of funding for guard-pages in user-space stacks. */
 #define USER_STCK_GUARDSIZE                        PAGESIZE  /* Default user-space stack guard size. */
+#define USER_REDZONE_SIZE                        __SIZE_C(0) /* Size of the so-called `red' zone (Basically, a memory gap left on user-stacks when a signal handler is executed) */
 
 #define HOST_HEAPEND_KERNEL_LOCKED   __UINTPTR_C(0x10000000) /* Start address of the GFP_KERNEL|GFP_LOCKED heap. (Grows up) */
 #define HOST_HEAPEND_KERNEL          __UINTPTR_C(0x14000000) /* Start address of the GFP_KERNEL heap. (Grows up) */

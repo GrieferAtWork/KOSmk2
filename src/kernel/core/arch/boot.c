@@ -18,9 +18,11 @@
  */
 #ifndef GUARD_KERNEL_CORE_ARCH_BOOT_C
 #define GUARD_KERNEL_CORE_ARCH_BOOT_C 1
+#define _KOS_SOURCE 1
 
+#include <assert.h>
 #include <endian.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/byteorder.h>
 #include <hybrid/byteswap.h>
@@ -37,6 +39,7 @@
 #include <sched/percpu.h>
 #include <sched/types.h>
 #include <asm/instx.h>
+#include <syslog.h>
 
 DECL_BEGIN
 
@@ -614,7 +617,7 @@ L(    movl $pdir_kernel, %eax                                                 )
 L(    movl %eax, %cr3                                                         )
 L(    movl %cr4, %eax                                                         )
 L(    /* Required for large pages (Also enable wr(fs|gs)base instructions). */)
-L(    orl  $(/*CR4_PSE|*/CR4_PAE|CR4_FSGSBASE), %eax                          )
+L(    orl  $(/*CR4_PSE|*/CR4_PAE), %eax                                       )
 L(    movl %eax, %cr4                                                         )
 L(                                                                            )
 L(    /* Enable long mode in EFER */                                          )
@@ -960,6 +963,129 @@ L(    jmp   kernel_boot                                                       )
 L(SYM_END(_start)                                                             )
 L(.previous                                                                   )
 );
+
+#ifdef __x86_64__
+
+GLOBAL_ASM(
+L(.section .text                                                              )
+L(PRIVATE_ENTRY(rdfsbase_r10)                                                 )
+L(    pushq %rax                                                              )
+L(    pushq %rcx                                                              )
+L(    pushq %rdx                                                              )
+L(    movl  $(IA32_FS_BASE), %ecx                                             )
+L(    rdmsr                                                                   )
+L(    shlq  $32, %rdx                                                         )
+L(    movq  %rdx, %r10                                                        )
+L(    orq   %rax, %r10                                                        )
+L(    popq  %rdx                                                              )
+L(    popq  %rcx                                                              )
+L(    popq  %rax                                                              )
+L(    ret                                                                     )
+L(SYM_END(rdfsbase_r10)                                                       )
+L(PRIVATE_ENTRY(wrfsbase_r10)                                                 )
+L(    pushq %rax                                                              )
+L(    pushq %rcx                                                              )
+L(    pushq %rdx                                                              )
+L(    movl  $(IA32_FS_BASE), %ecx                                             )
+L(    movq  %r10, %rax                                                        )
+L(    movq  %r10, %rdx                                                        )
+L(    shrq  $32,  %rdx                                                        )
+L(    wrmsr                                                                   )
+L(    popq %rdx                                                               )
+L(    popq %rcx                                                               )
+L(    popq %rax                                                               )
+L(    ret                                                                     )
+L(SYM_END(wrfsbase_r10)                                                       )
+L(PRIVATE_ENTRY(rdgsbase_r10)                                                 )
+L(    pushq %rax                                                              )
+L(    pushq %rcx                                                              )
+L(    pushq %rdx                                                              )
+L(    movl  $(IA32_GS_BASE), %ecx                                             )
+L(    rdmsr                                                                   )
+L(    shlq  $32, %rdx                                                         )
+L(    movq  %rdx, %r10                                                        )
+L(    orq   %rax, %r10                                                        )
+L(    popq  %rdx                                                              )
+L(    popq  %rcx                                                              )
+L(    popq  %rax                                                              )
+L(    ret                                                                     )
+L(SYM_END(rdgsbase_r10)                                                       )
+L(PRIVATE_ENTRY(wrgsbase_r10)                                                 )
+L(    pushq %rax                                                              )
+L(    pushq %rcx                                                              )
+L(    pushq %rdx                                                              )
+L(    movl  $(IA32_GS_BASE), %ecx                                             )
+L(    movq  %r10, %rax                                                        )
+L(    movq  %r10, %rdx                                                        )
+L(    shrq  $32,  %rdx                                                        )
+L(    wrmsr                                                                   )
+L(    popq %rdx                                                               )
+L(    popq %rcx                                                               )
+L(    popq %rax                                                               )
+L(    ret                                                                     )
+L(SYM_END(wrgsbase_r10)                                                       )
+L(.previous                                                                   )
+);
+
+INTDEF byte_t rdfsbase_r10[];
+INTDEF byte_t rdgsbase_r10[];
+INTDEF byte_t wrfsbase_r10[];
+INTDEF byte_t wrgsbase_r10[];
+
+#define GEN_CALL(code,target) \
+ (*(code)++ = 0xe8,(code) += 4,((u32 *)(code))[-1] = (u32)(uintptr_t)(target)-(u32)(uintptr_t)(code))
+
+INTDEF u32 __fsgsbase_fixup_start[];
+INTDEF u32 __fsgsbase_fixup_end[];
+INTERN ATTR_FREETEXT
+void KCALL fixup_fsgsbase(void) {
+ u32 *iter = __fsgsbase_fixup_start;
+ syslog(LOG_DEBUG,"[X86] Fixup missing support for `FSGSBASE'\n");
+ for (; iter != __fsgsbase_fixup_end; ++iter) {
+  byte_t *code; uintptr_t target;
+  assert(iter < __fsgsbase_fixup_end);
+  code = (byte_t *)((uintptr_t)CORE_BASE+*iter);
+  assertf(code[0] == 0xf3 &&
+         (code[1] == 0x48 || code[1] == 0x49) &&
+          code[2] == 0x0f && code[3] == 0xae &&
+          code[4] >= 0xc0 && code[4] <= 0xdf,
+          "Not an `(rd|wr)(gs|gs)base' instruction");
+  assertf(code[1] == 0x49 &&
+         (code[4] == 0xc2 || code[4] == 0xca ||
+          code[4] == 0xd2 || code[4] == 0xda),
+          "`(rd|wr)(gs|gs)base' is currently only implemented for `%r10'");
+  switch (code[4]) {
+  case 0xc2:          target = (uintptr_t)rdfsbase_r10; break;
+  case 0xca:          target = (uintptr_t)rdgsbase_r10; break;
+  case 0xd2:          target = (uintptr_t)wrfsbase_r10; break;
+  case 0xda: default: target = (uintptr_t)wrgsbase_r10; break;
+  }
+  /* Replace with a call to one of the functions that use `(rd|wr)msr' */
+  GEN_CALL(code,target);
+ }
+}
+
+
+INTERN ATTR_FREETEXT void KCALL kernel_perform_fixups(void) {
+ u32 cpuid_flag;
+ /* If the CPU doesn't support fsgsbase instructions, replace
+  * all of its kernel uses with MSR read/write operations.  */
+ __asm__ __volatile__("cpuid\n"
+                      : "=b" (cpuid_flag)
+                      : "a" (7)
+                      : "ecx", "edx");
+ if (!(cpuid_flag&CPUID_7B_FSGSBASE))
+  fixup_fsgsbase();
+ else {
+  register register_t temp;
+  /* Enable user-space access to these instructions. */
+  __asm__ __volatile__("movq %%cr4, %0\n"
+                       "orq  $(" PP_STR(CR4_FSGSBASE) "), %0\n"
+                       "movq %0, %%cr4\n"
+                       : "=&r" (temp));
+ }
+}
+#endif
 
 
 

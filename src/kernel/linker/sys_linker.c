@@ -476,10 +476,10 @@ L(INTERN_ENTRY(sys_xdlfini)                                                     
 #if defined(__x86_64__) || defined(__i386__)
 L(    sti /* Enable interrupts. */                                               )
 L(    movx %xsp, %xcx      /* Load IRET registers into ECX (argument to `dl_loadfini()') */)
-L(    __ASM_PUSH_SEGMENTS                                                        )
+L(    __ASM_PUSH_SGREGS                                                          )
 L(    __ASM_LOAD_SEGMENTS(%ax) /* Load kernel segments */                        )
 L(    call dl_loadfini                                                           )
-L(    __ASM_POP_SEGMENTS                                                         )
+L(    __ASM_POP_SGREGS                                                         )
 L(    __ASM_IRET                                                                 )
 #else
 #error "ERROR: Unsupported architecture."

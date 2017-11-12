@@ -137,6 +137,11 @@ DATDEF u16 boot_emulation_logport; /*< A port that ASCII strings may be written 
                                     *  NOTE: Only valid when `BOOT_EMULATION_HASLOGPORT(boot_emulation) == true' */
 
 
+#ifdef __x86_64__
+#define KERNEL_PERFORM_FIXUPS() \
+        kernel_perform_fixups()
+INTDEF INITCALL void KCALL kernel_perform_fixups(void);
+#endif
 
 DECL_END
 

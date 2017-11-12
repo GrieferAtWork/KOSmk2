@@ -288,13 +288,11 @@ DECL_BEGIN
 PRIVATE ATTR_USED void FCALL SYSC_##name(struct cpustate *__restrict regs); \
 GLOBAL_ASM(L(.section .text                                                       ) \
            L(INTERN_ENTRY(sys_##name)                                             ) \
-           L(    __ASM_PUSH_SGREGS                                                ) \
-           L(    __ASM_PUSH_GPREGS                                                ) \
+           L(    __ASM_PUSH_COMREGS                                               ) \
            L(    __ASM_LOAD_SEGMENTS(%dx)                                         ) \
            L(    movx %xsp, %FASTCALL_REG1                                        ) \
            L(    call SYSC_##name                                                 ) \
-           L(    __ASM_POP_GPREGS                                                 ) \
-           L(    __ASM_POP_SGREGS                                                 ) \
+           L(    __ASM_POP_COMREGS                                                ) \
            L(    __ASM_IRET                                                       ) \
            L(SYM_END(sys_##name)                                                  ) \
            L(.previous)); \

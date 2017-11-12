@@ -24,7 +24,7 @@
 #include <hybrid/typecore.h>
 #include <hybrid/types.h>
 #include <hybrid/host.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 
 DECL_BEGIN
 

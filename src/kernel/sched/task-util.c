@@ -496,8 +496,7 @@ check_again:
 #else
                         "movl %0, %%esp\n"
 #endif
-                        PP_STR(__ASM_IPOP_GPREGS) "\n" /* state */
-                        PP_STR(__ASM_IPOP_SGREGS) "\n" /* ... */
+                        PP_STR(__ASM_IPOP_COMREGS) "\n" /* state */
                         /* xflags
                          * NOTE: Interrupts are only re-enabled after XSP is loaded, as
                          *       enabling the #IF flag will only become active after the next

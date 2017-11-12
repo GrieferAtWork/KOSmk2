@@ -279,6 +279,14 @@ SECTIONS {
 		TEST_SECTION(.rodata.test)
 		TEST_SECTION(.rodata.str.test)
 
+#ifdef __x86_64__
+		. = ALIGN(4);
+		DEFINE_HERE(__fsgsbase_fixup_start);
+		KEEP(*(.rodata.fixup.fsgsbase))
+		. = ALIGN(4);
+		DEFINE_HERE(__fsgsbase_fixup_end);
+#endif
+
 		. = ALIGN(__SIZEOF_POINTER__);
 		DEFINE_HERE(__setup_early_start);
 		KEEP(*(.init.early_setup))

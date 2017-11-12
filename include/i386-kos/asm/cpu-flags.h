@@ -16,12 +16,10 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef __GUARD_HYBRID_ARCH_EFLAGS_H
-#define __GUARD_HYBRID_ARCH_EFLAGS_H 1
+#ifndef _X86_KOS_ASM_CPU_FLAGS_H
+#define _X86_KOS_ASM_CPU_FLAGS_H 1
 
-#include <hybrid/compiler.h>
-
-DECL_BEGIN
+#include <hybrid/host.h>
 
 #define EFLAGS_CF          0x00000001 /*< [bit(0)] Carry Flag Status. */
 #define EFLAGS_PF          0x00000004 /*< [bit(2)] Parity Flag Status. */
@@ -98,6 +96,8 @@ DECL_BEGIN
 #define IA32_KERNEL_GS_BASE 0xc0000102
 #endif
 
-DECL_END
+/* CPU flags. FORMAT: CPUID_<INPUT_EAX><OUTPUT_E?X>_<NAME>  */
+#define CPUID_7B_FSGSBASE   0x00000001 /*< Set if the cpu supports the `(rd|wr)(fs|gs)base' instructions. */
 
-#endif /* !__GUARD_HYBRID_ARCH_EFLAGS_H */
+
+#endif /* !_X86_KOS_ASM_CPU_FLAGS_H */

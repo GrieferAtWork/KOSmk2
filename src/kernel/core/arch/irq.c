@@ -26,7 +26,7 @@
 #include <bits/siginfo.h>
 #include <bits/signum.h>
 #include <dev/rtc.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/atomic.h>
 #include <hybrid/debug.h>
@@ -97,8 +97,7 @@ L(INTERN_ENTRY(dirq_ncode)                                                    )
 /* Hacky way of shifting `exc_code' into `intno' without polluting any registers. */
 L(    popx  -(GPREGS_SIZE+SGREGS_SIZE+2*XSZ)(%xsp)                            )
 L(    pushx $0         /* Fill `exc_code' with `0' by default. */             )
-L(1:  __ASM_PUSH_SEGMENTS                                                     )
-L(    __ASM_PUSH_REGISTERS                                                    )
+L(1:  __ASM_PUSH_COMREGS                                                      )
 L(    subx  $(XSZ), %xsp   /* intno */                                        )
 L(    /* Load the proper kernel segment registers */                          )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
@@ -111,8 +110,7 @@ __DEBUG_CODE(L(pushx %xbp                                                    ))
 __DEBUG_CODE(L(movx %xsp, %xbp                                               ))
 L(    call  irq_default                                                       )
 __DEBUG_CODE(L(addx $(2*XSZ), %xsp                                           ))
-L(    __ASM_POP_REGISTERS                                                     )
-L(    __ASM_POP_SEGMENTS                                                      )
+L(    __ASM_POP_COMREGS                                                       )
 L(    addx $(XSZ), %xsp /* exc_code */                                        )
 L(    __ASM_IRET                                                              )
 L(SYM_END(dirq_ycode)                                                         )
@@ -525,7 +523,8 @@ kill_task:
               state->iret.cs & 3,is_user ? "USER" : "KERNEL",
               IRQ_ISEXC(intno) ? "Exception" : "Interrupt",
               intno,intno);
- if (IRQ_ISEXC(intno)) {
+ if (IRQ_ISEXC(intno) &&
+    (unsigned int)intno < COMPILER_LENOF(irq_excname)) {
   debug_printf("<%s> - %s - ECODE %#Ix (%Id)",
                irq_excname[intno].mn,
                irq_excname[intno].descr,
@@ -591,9 +590,15 @@ kill_task:
 #ifndef __x86_64__
   print_segment_register("DS",state->sg.ds);
   print_segment_register("ES",state->sg.es);
-#endif
   print_segment_register("FS",(u16)state->sg.fs);
   print_segment_register("GS",(u16)state->sg.gs);
+#else
+  debug_printf("FS_BASE %p GS_BASE %p\n",
+               state->sg.fs_base,
+               state->sg.gs_base);
+  print_segment_register("FS",(u16)GET_REG("fs"));
+  print_segment_register("GS",(u16)GET_REG("gs"));
+#endif
   print_segment_register("CS",(u16)state->iret.cs);
   print_segment_register("SS",seg_ss);
  }

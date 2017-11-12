@@ -22,7 +22,7 @@
 
 #include "intern.h"
 #include <hybrid/align.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/traceback.h>

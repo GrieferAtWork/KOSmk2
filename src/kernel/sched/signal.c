@@ -29,7 +29,7 @@
 #include <bits/waitstatus.h>
 #include <dev/rtc.h>
 #include <errno.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/traceback.h>
@@ -51,6 +51,8 @@
 #include <stdarg.h>
 #include <sys/syslog.h>
 #include <sys/ucontext.h>
+#include <kos/thread.h>
+#include <kernel/arch/hints.h>
 
 DECL_BEGIN
 
@@ -261,10 +263,12 @@ L(    cmpl  $(ASM_USER_END), %edi                                               
 L(    ja    10f                                                                  )
 L(    popx  %xdi                                                                 )
 #ifdef __x86_64__
+#if 0 /* XXX: FS/GS base? */
 L(    movw  (7*XSZ+SGREGS_OFFSETOF_GS)(%rsp), %dx /* GS */                       )
 L(    movw  %dx,  2+REG(REG_CSGSFS)                                              )
 L(    movw  (7*XSZ+SGREGS_OFFSETOF_FS)(%rsp), %dx /* FS */                       )
 L(    movw  %dx,  4+REG(REG_CSGSFS)                                              )
+#endif
 L(    movq  %r15, REG(REG_R15)                                                   )
 L(    movq  %r14, REG(REG_R14)                                                   )
 L(    movq  %r13, REG(REG_R13)                                                   )
@@ -497,8 +501,8 @@ ucontext_from_usertask(ucontext_t *__restrict result,
  result->uc_mcontext.gregs[REG_RIP]     = cs_descr->iret.rip;
  result->uc_mcontext.gregs[REG_EFL]     = cs_descr->iret.eflags;
  result->uc_mcontext.gregs[REG_CSGSFS]  = (((u64)cs_descr->iret.cs) |
-                                           ((u64)cs_descr->sg.gs << 16) |
-                                           ((u64)cs_descr->sg.fs << 32));
+                                           ((u64)__USER_GS << 16) |
+                                           ((u64)__USER_FS << 32));
  result->uc_mcontext.gregs[REG_ERR]     = reg_err;
  result->uc_mcontext.gregs[REG_TRAPNO]  = reg_trapno;
  result->uc_mcontext.gregs[REG_OLDMASK] = 0; /* ??? */
@@ -547,8 +551,13 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
   * >> Therefor, `t_cstate' describes the CPU state before it was pre-empted. */
  cs_descr = t->t_cstate;
 
+
  /* TODO: Use sigaltstack() here, if it was ever set! */
  user_info = ((USER struct sigenter_info *)cs_descr->iret.userxsp)-1;
+#if USER_REDZONE_SIZE != 0
+ /* Skip memory required for a `red' zone. */
+ *(uintptr_t *)&user_info -= USER_REDZONE_SIZE;
+#endif
 
  ucontext_from_usertask(&info.ei_ctx,t,reg_trapno,reg_err);
  info.ei_ctx.uc_mcontext.fpregs = &user_info->ei_ctx.__fpregs_mem;
@@ -625,6 +634,10 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
   ss_descr->xflags = EFLAGS_IF|EFLAGS_IOPL(3);
   /* TODO: Use sigaltstack() here, if it was ever set! */
   user_info = ((USER struct sigenter_info *)ss_descr->userxsp)-1;
+#if USER_REDZONE_SIZE != 0
+  /* Skip memory required for a `red' zone. */
+  *(uintptr_t *)&user_info -= USER_REDZONE_SIZE;
+#endif
  } else {
   /* Allocate an additional entry on the signal stack already in use. */
   assert(ss_descr->xip == (uintptr_t)&sigenter);
@@ -1181,24 +1194,23 @@ SYSCALL_RDEFINE(sigreturn,cs) {
  /* Load the new machine context as register state upon return to user-space.
   * NOTE: We don't jump directly, because that would break execution of
   *       additional signals that may have been unblocked by `task_set_sigblock()'. */
+#ifdef __x86_64__
+ /* XXX: Context-based? */
+ cs->host.sg.fs_base = TASK_DEFAULT_FS_BASE(THIS_TASK);
+ cs->host.sg.gs_base = TASK_DEFAULT_GS_BASE(THIS_TASK);
+#else /* __x86_64__ */
 #if IGNORE_SEGMENT_REGISTERS
  cs->host.sg.gs     = __USER_GS;
  cs->host.sg.fs     = __USER_FS;
-#ifndef __x86_64__
  cs->host.sg.es     = __USER_DS;
  cs->host.sg.ds     = __USER_DS;
-#endif
 #else /* IGNORE_SEGMENT_REGISTERS */
-#ifdef __x86_64__
- cs->host.sg.gs     = (u16)(ctx.uc_mcontext.gregs[REG_CSGSFS] >> 16);
- cs->host.sg.fs     = (u16)(ctx.uc_mcontext.gregs[REG_CSGSFS] >> 32);
-#else
  cs->host.sg.gs     = ctx.uc_mcontext.gregs[REG_GS];
  cs->host.sg.fs     = ctx.uc_mcontext.gregs[REG_FS];
  cs->host.sg.es     = ctx.uc_mcontext.gregs[REG_ES];
  cs->host.sg.ds     = ctx.uc_mcontext.gregs[REG_DS];
-#endif
 #endif /* !IGNORE_SEGMENT_REGISTERS */
+#endif /* !__x86_64__ */
 
 #ifdef __x86_64__
  cs->host.gp.r8     = ctx.uc_mcontext.gregs[REG_R8];

@@ -22,6 +22,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <hybrid/host.h>
+#include <kernel/arch/asm.h>
 
 DECL_BEGIN
 
@@ -348,27 +349,20 @@ struct PACKED sgregs32 { u16 gs,fs,es,ds; };
 
 /* Segment registers */
 #ifdef __x86_64__
-#define SGREGS_OFFSETOF_GS 0 /* TODO: Remove me. */
-#define SGREGS_OFFSETOF_FS 8 /* TODO: Remove me. */
-#define SGREGS_SIZE        16 /* TODO: Remove me. */
+#define SGREGS_OFFSETOF_GS_BASE 0
+#define SGREGS_OFFSETOF_FS_BASE 8
+#define SGREGS_SIZE             16
 #ifdef __CC__
-struct PACKED sgregs { __SEGMENT64(gs); __SEGMENT64(fs); }; /* TODO: Remove me. */
+struct PACKED sgregs { u64 gs_base; u64 fs_base; };
 #endif /* __CC__ */
-#define __ASM_PUSH_SGREGS       pushq %fs; pushq %gs; /* TODO: Remove me. */
-#define __ASM_IPUSH_SGREGS      pushq %%fs; pushq %%gs; /* TODO: Remove me. */
-#if 1 /* TODO: Redesign this one (Segment cannot ~really~ be used on x86_64) */
-#define __ASM_LOAD_SGREGS(src)  /* nothing */ /* TODO: Remove me. */
-#define __ASM_ILOAD_SGREGS(src) /* nothing */ /* TODO: Remove me. */
-#define __ASM_POP_SGREGS        addq $16, %rsp; /* TODO: Remove me. */
-#define __ASM_IPOP_SGREGS       addq $16, %%rsp; /* TODO: Remove me. */
-#else
-#define __ASM_LOAD_SGREGS(src)  movw SGREGS_OFFSETOF_FS+src, %gs; \
-                                movw SGREGS_OFFSETOF_GS+src, %fs; /* TODO: Remove me. */
-#define __ASM_ILOAD_SGREGS(src) movw SGREGS_OFFSETOF_FS+src, %%gs; \
-                                movw SGREGS_OFFSETOF_GS+src, %%fs; /* TODO: Remove me. */
-#define __ASM_POP_SGREGS        popq %gs; popq %fs; /* TODO: Remove me. */
-#define __ASM_IPOP_SGREGS       popq %%gs; popq %%fs; /* TODO: Remove me. */
-#endif
+#define __ASM_PUSH_SGREGS       ASM_RDFSBASE(r10); pushq  %r10; ASM_RDGSBASE(r10); pushq  %r10;
+#define __ASM_IPUSH_SGREGS      ASM_RDFSBASE(r10); pushq %%r10; ASM_RDGSBASE(r10); pushq %%r10;
+#define __ASM_LOAD_SGREGS(src)  movq SGREGS_OFFSETOF_GS_BASE+src,  %r10; ASM_WRGSBASE(r10); \
+                                movq SGREGS_OFFSETOF_FS_BASE+src,  %r10; ASM_WRFSBASE(r10);
+#define __ASM_ILOAD_SGREGS(src) movq SGREGS_OFFSETOF_GS_BASE+src, %%r10; ASM_WRGSBASE(r10); \
+                                movq SGREGS_OFFSETOF_FS_BASE+src, %%r10; ASM_WRFSBASE(r10);
+#define __ASM_POP_SGREGS        popq  %r10; ASM_WRGSBASE(r10); popq  %r10; ASM_WRFSBASE(r10);
+#define __ASM_IPOP_SGREGS       popq %%r10; ASM_WRGSBASE(r10); popq %%r10; ASM_WRFSBASE(r10);
 #else
 #define SGREGS_OFFSETOF_GS 0
 #define SGREGS_OFFSETOF_FS 2
@@ -551,11 +545,11 @@ DATDEF byte_t intno_offset[];
 #endif
 
 
-#define CPUSTATE16_OFFSETOF_GP     0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE16_OFFSETOF_SG     GPREGS32_SIZE /* +SGREGS_OFFSETOF_* */
-#define CPUSTATE16_OFFSETOF_SS    (GPREGS32_SIZE+SGREGS32_SIZE)
-#define CPUSTATE16_OFFSETOF_FLAGS (GPREGS32_SIZE+SGREGS32_SIZE+2)
-#define CPUSTATE16_SIZE           (GPREGS32_SIZE+SGREGS32_SIZE+6)
+#define CPUSTATE16_OFFSETOF_SG     0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE16_OFFSETOF_GP     SGREGS32_SIZE /* +GPREGS_OFFSETOF_* */
+#define CPUSTATE16_OFFSETOF_SS    (SGREGS32_SIZE+GPREGS32_SIZE)
+#define CPUSTATE16_OFFSETOF_FLAGS (SGREGS32_SIZE+GPREGS32_SIZE+2)
+#define CPUSTATE16_SIZE           (SGREGS32_SIZE+GPREGS32_SIZE+6)
 #ifdef __CC__
 /* CPU state for 16-bit realmode interrupts. */
 struct PACKED cpustate16 {
@@ -567,20 +561,28 @@ struct PACKED cpustate16 {
 #endif /* __CC__ */
 
 
-#define COMREGS_OFFSETOF_GP  0 /* +GPREGS_OFFSETOF_* */
-#define COMREGS_OFFSETOF_SG  GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define COMREGS_OFFSETOF_SG  0 /* +SGREGS_OFFSETOF_* */
+#define COMREGS_OFFSETOF_GP  SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define COMREGS_SIZE        (GPREGS_SIZE+SGREGS_SIZE)
 #ifdef __CC__
 /* Common CPU state. */
 struct PACKED comregs {
+    struct sgregs sg;
     struct gpregs gp;
-    struct sgregs sg; /* TODO: Remove on x86_64 */
 };
 #endif /* __CC__ */
+#define __ASM_PUSH_COMREGS       __ASM_PUSH_GPREGS __ASM_PUSH_SGREGS
+#define __ASM_LOAD_COMREGS(src)  __ASM_LOAD_SGREGS(src) __ASM_LOAD_GPREGS(src)
+#define __ASM_POP_COMREGS        __ASM_POP_SGREGS __ASM_POP_GPREGS
+#define __ASM_IPUSH_COMREGS      __ASM_IPUSH_GPREGS __ASM_IPUSH_SGREGS
+#define __ASM_ILOAD_COMREGS(src) __ASM_ILOAD_SGREGS(src) __ASM_ILOAD_GPREGS(src)
+#define __ASM_IPOP_COMREGS       __ASM_IPOP_SGREGS __ASM_IPOP_GPREGS
 
-#define COMREGS32_OFFSETOF_GP  0 /* +GPREGS_OFFSETOF_* */
-#define COMREGS32_OFFSETOF_SG  GPREGS32_SIZE /* +SGREGS_OFFSETOF_* */
-#define COMREGS32_SIZE        (GPREGS32_SIZE+SGREGS32_SIZE)
+
+
+#define COMREGS32_OFFSETOF_SG  0 /* +SGREGS_OFFSETOF_* */
+#define COMREGS32_OFFSETOF_GP  SGREGS32_SIZE /* +GPREGS_OFFSETOF_* */
+#define COMREGS32_SIZE        (SGREGS32_SIZE+GPREGS32_SIZE)
 #ifdef __CC__
 struct PACKED comregs32 {
     struct gpregs32 gp;
@@ -590,8 +592,8 @@ struct PACKED comregs32 {
 
 
 #define CPUSTATE_HOST_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
-#define CPUSTATE_HOST_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE_HOST_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_OFFSETOF_SG   0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_OFFSETOF_GP   SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define CPUSTATE_HOST_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_OFFSETOF_* */
 #define CPUSTATE_HOST_SIZE         (COMREGS_SIZE+IRREGS_HOST_SIZE)
 #ifdef __CC__
@@ -599,16 +601,16 @@ struct PACKED cpustate_host {
 union PACKED {
     struct comregs com;
 struct PACKED {
+    struct sgregs sg;
     struct gpregs gp;
-    struct sgregs sg; /* TODO: Remove on x86_64 */
 };};
     struct irregs_host iret;
 };
 #endif /* __CC__ */
 
 #define CPUSTATE_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
-#define CPUSTATE_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_OFFSETOF_SG   0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_OFFSETOF_GP   SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define CPUSTATE_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_OFFSETOF_* */
 #define CPUSTATE_SIZE         (COMREGS_SIZE+IRREGS_SIZE)
 #ifdef __CC__
@@ -618,8 +620,8 @@ struct PACKED {
 union PACKED {
     struct comregs com;
 struct PACKED {
+    struct sgregs sg;
     struct gpregs gp;
-    struct sgregs sg; /* TODO: Remove on x86_64 */
 };};
     struct irregs iret;
 };};};
@@ -627,8 +629,8 @@ struct PACKED {
 
 
 #define CPUSTATE_HOST_E_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
-#define CPUSTATE_HOST_E_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE_HOST_E_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_E_OFFSETOF_SG   0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_E_OFFSETOF_GP   SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define CPUSTATE_HOST_E_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_HOST_E_OFFSETOF_* */
 #define CPUSTATE_HOST_E_SIZE         (COMREGS_SIZE+IRREGS_HOST_E_SIZE)
 #ifdef __CC__
@@ -636,8 +638,8 @@ struct PACKED cpustate_host_e {
 union PACKED {
     struct comregs com;
 struct PACKED {
+    struct sgregs sg;
     struct gpregs gp;
-    struct sgregs sg; /* TODO: Remove on x86_64 */
 };};
     struct irregs_host_e iret;
 };
@@ -645,8 +647,8 @@ struct PACKED {
 
 #define CPUSTATE_E_OFFSETOF_HOST 0 /* +CPUSTATE_HOST_E_OFFSETOF_* */
 #define CPUSTATE_E_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
-#define CPUSTATE_E_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE_E_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_E_OFFSETOF_SG   0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_E_OFFSETOF_GP   SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define CPUSTATE_E_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_E_OFFSETOF_* */
 #define CPUSTATE_E_SIZE         (COMREGS_SIZE+IRREGS_E_SIZE)
 #ifdef __CC__
@@ -656,16 +658,16 @@ struct PACKED {
 union PACKED {
  struct comregs  com;
 struct PACKED {
+ struct sgregs   sg;
  struct gpregs   gp;
- struct sgregs   sg; /* TODO: Remove on x86_64 */
 };};
  struct irregs_e iret;
 };};};
 #endif /* __CC__ */
 
 #define CPUSTATE_HOST_I_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
-#define CPUSTATE_HOST_I_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE_HOST_I_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_I_OFFSETOF_SG   0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_I_OFFSETOF_GP   SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define CPUSTATE_HOST_I_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_HOST_I_OFFSETOF_* */
 #define CPUSTATE_HOST_I_SIZE         (COMREGS_SIZE+IRREGS_HOST_I_SIZE)
 #ifdef __CC__
@@ -673,8 +675,8 @@ struct PACKED cpustate_host_i {
 union PACKED {
     struct comregs com;
 struct PACKED {
+    struct sgregs sg;
     struct gpregs gp;
-    struct sgregs sg; /* TODO: Remove on x86_64 */
 };};
     struct irregs_host_i iret;
 };
@@ -682,8 +684,8 @@ struct PACKED {
 
 #define CPUSTATE_I_OFFSETOF_HOST 0 /* +CPUSTATE_HOST_I_OFFSETOF_* */
 #define CPUSTATE_I_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
-#define CPUSTATE_I_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE_I_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_I_OFFSETOF_SG   0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_I_OFFSETOF_GP   SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define CPUSTATE_I_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_I_OFFSETOF_* */
 #define CPUSTATE_I_SIZE         (COMREGS_SIZE+IRREGS_I_SIZE)
 #ifdef __CC__
@@ -693,16 +695,16 @@ struct PACKED {
 union PACKED {
  struct comregs  com;
 struct PACKED {
+ struct sgregs   sg;
  struct gpregs   gp;
- struct sgregs   sg; /* TODO: Remove on x86_64 */
 };};
  struct irregs_i iret;
 };};};
 #endif /* __CC__ */
 
 #define CPUSTATE_HOST_IE_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
-#define CPUSTATE_HOST_IE_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE_HOST_IE_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_IE_OFFSETOF_SG   0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_HOST_IE_OFFSETOF_GP   SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define CPUSTATE_HOST_IE_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_HOST_IE_OFFSETOF_* */
 #define CPUSTATE_HOST_IE_SIZE         (COMREGS_SIZE+IRREGS_HOST_IE_SIZE)
 #ifdef __CC__
@@ -710,8 +712,8 @@ struct PACKED cpustate_host_ie {
 union PACKED {
     struct comregs com;
 struct PACKED {
+    struct sgregs  sg;
     struct gpregs  gp;
-    struct sgregs  sg; /* TODO: Remove on x86_64 */
 };};
     struct irregs_host_ie iret;
 };
@@ -719,8 +721,8 @@ struct PACKED {
 
 #define CPUSTATE_IE_OFFSETOF_HOST 0 /* +CPUSTATE_HOST_IE_OFFSETOF_* */
 #define CPUSTATE_IE_OFFSETOF_COM  0 /* +COMREGS_OFFSETOF_* */
-#define CPUSTATE_IE_OFFSETOF_GP   0 /* +GPREGS_OFFSETOF_* */
-#define CPUSTATE_IE_OFFSETOF_SG   GPREGS_SIZE /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_IE_OFFSETOF_SG   0 /* +SGREGS_OFFSETOF_* */
+#define CPUSTATE_IE_OFFSETOF_GP   SGREGS_SIZE /* +GPREGS_OFFSETOF_* */
 #define CPUSTATE_IE_OFFSETOF_IRET COMREGS_SIZE /* +IRREGS_IE_OFFSETOF_* */
 #define CPUSTATE_IE_SIZE         (COMREGS_SIZE+IRREGS_IE_SIZE)
 #ifdef __CC__
@@ -730,8 +732,8 @@ struct PACKED {
 union PACKED {
  struct comregs   com;
 struct PACKED {
+ struct sgregs    sg;
  struct gpregs    gp;
- struct sgregs    sg; /* TODO: Remove on x86_64 */
 };};
  struct irregs_ie iret;
 };};};

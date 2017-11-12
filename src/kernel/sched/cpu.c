@@ -25,7 +25,7 @@
 
 #include <assert.h>
 #include <fs/fd.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
@@ -263,8 +263,8 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
     .s_boot = {
         .sg = {
 #ifdef __x86_64__
-            .gs = __KERNEL_PERCPU,
-            .fs = __KERNEL_DS,
+            .gs_base = (uintptr_t)&__bootcpu,
+            .fs_base = 0,
 #else
             .gs = __KERNEL_DS,
             .fs = __KERNEL_PERCPU,
@@ -576,7 +576,6 @@ INTDEF ATTR_USED struct cpustate *FCALL pit_exc(struct cpustate *__restrict stat
 INTERN DEFINE_TASK_HANDLER(pit_irq,pit_exc);
 PRIVATE ATTR_FREERODATA isr_t const pit_isr = ISR_DEFAULT(IRQ_PIC1_PIT,&pit_irq);
 INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
-
 #ifndef CONFIG_NO_JOBS
  /* Initialize the stack of the boot CPU's worker task. */
  WORKSTATE->iret.cs     = __KERNEL_CS;
@@ -584,8 +583,8 @@ INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
  WORKSTATE->iret.xip    = (uintptr_t)&cpu_jobworker;
  memset(&WORKSTATE->gp,0,sizeof(WORKSTATE->gp));
 #ifdef __x86_64__
- WORKSTATE->sg.fs       = __KERNEL_DS;
- WORKSTATE->sg.gs       = __KERNEL_PERCPU;
+ WORKSTATE->sg.gs_base  = (uintptr_t)&__bootcpu;
+ WORKSTATE->sg.fs_base  = 0;
 #else /* __x86_64__ */
  WORKSTATE->sg.ds       = __KERNEL_DS;
  WORKSTATE->sg.es       = __KERNEL_DS;

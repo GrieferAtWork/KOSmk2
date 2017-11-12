@@ -29,7 +29,7 @@
 #include <string.h>
 #include <sys/syslog.h>
 #include <hybrid/asm.h>
-#include <hybrid/arch/eflags.h>
+#include <asm/cpu-flags.h>
 #include <kernel/arch/gdt.h>
 #include <kernel/arch/cpustate.h>
 #include <kernel/paging.h>
