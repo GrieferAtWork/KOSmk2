@@ -25,7 +25,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <hybrid/align.h>
-#include <hybrid/arch/cpu.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>

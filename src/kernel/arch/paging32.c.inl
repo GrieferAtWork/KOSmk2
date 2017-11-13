@@ -24,7 +24,6 @@
 #ifndef __x86_64__
 #include <assert.h>
 #include <hybrid/align.h>
-#include <hybrid/arch/cpu.h>
 #include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/check.h>

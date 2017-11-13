@@ -31,7 +31,8 @@ BEGIN
 
 	/* Disable generation of code that uses floating point registers.
 	 * It would be too expensive for kernel code to make use of floating
-	 * point registers in a way that preserves the original user-space content. */
+	 * point registers in a way that preserves the original user-space
+	 * content, so we simply don't use it, and won't run into problems. */
 	C_FLAGS("-mno-sse")
 	C_FLAGS("-mno-sse2")
 	C_FLAGS("-mno-sse3")

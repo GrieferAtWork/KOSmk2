@@ -344,6 +344,7 @@
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+    <OutDir>$(SolutionDir)..\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
@@ -388,6 +389,7 @@
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
+    <OutDir>$(SolutionDir)..\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
