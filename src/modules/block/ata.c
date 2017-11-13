@@ -113,13 +113,13 @@ PRIVATE ATTR_USED void ata1_inthandler(void) {
  sem_release(&SECONDARY_BUS.b_signaled,1);
 }
 #else
-PRIVATE void ata0_interrupt_handler(void) {
+PRIVATE void INTCALL ata0_interrupt_handler(void) {
  /* Primary ATA interrupt */
  inb(ATA_PRIMARY+ATA_STATUS);
  PIC_EOI(INTNO_PIC2_ATA1);
  sem_release(&PRIMARY_BUS.b_signaled,1);
 }
-PRIVATE void ata1_interrupt_handler(void) {
+PRIVATE void INTCALL ata1_interrupt_handler(void) {
  /* Secondary ATA interrupt */
  inb(ATA_SECONDARY+ATA_STATUS);
  PIC_EOI(INTNO_PIC2_ATA2);
@@ -127,7 +127,7 @@ PRIVATE void ata1_interrupt_handler(void) {
 }
 PRIVATE struct interrupt ata0_interrupt = {
     .i_intno = INTNO_PIC2_ATA1,
-    .i_mode  = INTMODE_HOST,
+    .i_mode  = INTMODE_HW,
     .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
     .i_prio  = INTPRIO_MAX,
     .i_flags = INTFLAG_PRIMARY,
@@ -138,7 +138,7 @@ PRIVATE struct interrupt ata0_interrupt = {
 };
 PRIVATE struct interrupt ata1_interrupt = {
     .i_intno = INTNO_PIC2_ATA2,
-    .i_mode  = INTMODE_HOST,
+    .i_mode  = INTMODE_HW,
     .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
     .i_prio  = INTPRIO_MAX,
     .i_flags = INTFLAG_PRIMARY,

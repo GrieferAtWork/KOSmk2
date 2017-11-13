@@ -97,6 +97,7 @@ DECL_END
 #include <sched/smp.h>
 DECL_BEGIN
 
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 LOCAL SAFE bool KCALL irq_vset(struct cpu *__restrict self,
                                isr_t const *__restrict new_handler,
                            REF isr_t *old_handler, int mode) {
@@ -113,6 +114,7 @@ LOCAL SAFE bool KCALL irq_vset(struct cpu *__restrict self,
 LOCAL SAFE void KCALL irq_vdel(struct cpu *__restrict self, irq_t num) {
  cpu_rpc_send(self,CPU_RPC_IDT_DEL,&num);
 }
+#endif /* CONFIG_USE_OLD_INTERRUPTS */
 
 LOCAL SAFE void KCALL cpu_rpc_broadcast(cpu_rpc_t command, void *arg) {
  struct cpu *c;
@@ -121,6 +123,7 @@ LOCAL SAFE void KCALL cpu_rpc_broadcast(cpu_rpc_t command, void *arg) {
 
 DECL_END
 #endif
+
 #else /* CONFIG_SMP */
 #include <kernel/irq.h>
 #ifdef CONFIG_USE_OLD_INTERRUPTS

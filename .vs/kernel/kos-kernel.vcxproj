@@ -58,6 +58,7 @@
     <ClCompile Include="..\..\src\kernel\core\arch\irq.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\paging.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\panic.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\pic.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\realmode.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\smp.c" />

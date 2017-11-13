@@ -611,7 +611,7 @@ L(.previous                                                                   )
 );
 PRIVATE struct interrupt pit_interrupt = {
     .i_intno = INTNO_PIC1_PIT,
-    .i_mode  = INTMODE_HOST,
+    .i_mode  = INTMODE_HW,
     .i_type  = INTTYPE_ASM,
     .i_prio  = INTPRIO_MAX,
     .i_flags = INTFLAG_PRIMARY,

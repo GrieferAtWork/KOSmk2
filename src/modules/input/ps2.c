@@ -164,11 +164,11 @@ PRIVATE isr_t ps2_isr_1 = ISR_DEFAULT(INTNO_PIC1_KBD,&ps2_irq_1);
 PRIVATE isr_t ps2_isr_c = ISR_DEFAULT(INTNO_PIC2_PS2M,&ps2_irq_c);
 #else
 /* TODO: Use the interrupt controller to hold a reference to `ps2_keyboard' */
-PRIVATE void ps2_interrupt1_handler(void);
-PRIVATE void ps2_interruptc_handler(void);
+PRIVATE void INTCALL ps2_interrupt1_handler(void);
+PRIVATE void INTCALL ps2_interruptc_handler(void);
 PRIVATE struct interrupt ps2_interrupt1 = {
     .i_intno = INTNO_PIC1_KBD,
-    .i_mode  = INTMODE_HOST,
+    .i_mode  = INTMODE_HW,
     .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
     .i_prio  = INTPRIO_MAX,
     .i_flags = INTFLAG_PRIMARY,
@@ -179,7 +179,7 @@ PRIVATE struct interrupt ps2_interrupt1 = {
 };
 PRIVATE struct interrupt ps2_interruptc = {
     .i_intno = INTNO_PIC2_PS2M,
-    .i_mode  = INTMODE_HOST,
+    .i_mode  = INTMODE_HW,
     .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
     .i_prio  = INTPRIO_MAX,
     .i_flags = INTFLAG_PRIMARY,
@@ -568,12 +568,12 @@ keyboard_irqctl(struct device *__restrict dev, unsigned int cmd) {
 }
 
 
-PRIVATE ATTR_USED void ps2_interrupt1_handler(void) {
+PRIVATE ATTR_USED void INTCALL ps2_interrupt1_handler(void) {
  if (IRQ_PIC_SPURIOUS(INTNO_PIC1_KBD)) return;
  ps2_handle_interrupt();
  PIC_EOI(INTNO_PIC1_KBD);
 }
-PRIVATE ATTR_USED void ps2_interruptc_handler(void) {
+PRIVATE ATTR_USED void INTCALL ps2_interruptc_handler(void) {
  if (IRQ_PIC_SPURIOUS(INTNO_PIC2_PS2M)) return;
  /* TODO: PS/2 mouse event? */
 

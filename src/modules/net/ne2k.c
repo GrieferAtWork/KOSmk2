@@ -290,13 +290,13 @@ end:
 DEFINE_INT_HANDLER(ne2k_irq,ne2k_interrupt_handler);
 PRIVATE isr_t ne2k_isr = ISR_DEFAULT(NE2K_IRQ,&ne2k_irq);
 #else
-INTERN void ne2k_interrupt_handler(void);
+INTERN void INTCALL ne2k_interrupt_handler(void);
 /* TODO: Use the interrupt handler to pass the ne2k_t device as closure. */
 /* TODO: Extend to allow interrupt sharing.
  *      (When `EN0_ISR' returns nothing, an interrupt wasn't meant for us...). */
 PRIVATE struct interrupt ne2k_interrupt = {
     .i_intno = INTNO_PIC2_ATA1,
-    .i_mode  = INTMODE_HOST,
+    .i_mode  = INTMODE_HW,
     .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
     .i_prio  = INTPRIO_MAX,
     .i_flags = INTFLAG_PRIMARY,
@@ -362,7 +362,13 @@ INTERN void ne2k_do_int(ne2k_t *dev) {
  if (status)
      outb(iobase+EN0_ISR,status);
 }
-INTERN void ne2k_interrupt_handler(void) {
+
+#ifdef CONFIG_USE_OLD_INTERRUPTS
+INTERN void ne2k_interrupt_handler(void)
+#else
+INTERN void INTCALL ne2k_interrupt_handler(void)
+#endif
+{
  if (IRQ_PIC_SPURIOUS(NE2K_IRQ)) return;
  ne2k_do_int((ne2k_t *)ne2k_recv_job.j_data);
  /* Acknowledge the interrupt within the PIC. */

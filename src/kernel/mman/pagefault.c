@@ -79,7 +79,8 @@ mman_interrupt_pf_handler(struct irregs_ie *__restrict info)
   *       `fault_addr' around to tell later error handling about it.
   * NOTE: In order to always respect the interrupt flag, don't
   *       enable them when the caller had been turned off! */
- assert(!PREEMPTION_ENABLED());
+ assertf(!PREEMPTION_ENABLED(),"%p",
+         XBLOCK({ register register_t _efl; __asm__ __volatile__("pushfl\npopl %0" : "=g" (_efl)); XRETURN _efl; }));
  if (IRET_INFO.xflags&EFLAGS_IF) {
   PREEMPTION_ENABLE();
  } else {

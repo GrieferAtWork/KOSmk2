@@ -62,18 +62,27 @@ struct PACKED idtentry {
  * Specifies which privilege Level the calling Descriptor minimum should have.
  * So hardware and CPU interrupts can be protected from being called out of userspace. */
 #define IDTFLAG_DPL(n)          (((n)&3)<<5) /*< Mask: 0x60 */
+#define IDTFLAG_DPL_MASK                0x60
 #define IDTFLAG_STORAGE_SEGMENT         0x10 /*< Set to 0 for interrupt gates. */
+#define IDTTYPE_MASK                    0x0f
 #define IDTTYPE_80386_32_TASK_GATE      0x05
 #define IDTTYPE_80286_16_INTERRUPT_GATE 0x06
 #define IDTTYPE_80286_16_TRAP_GATE      0x07
-#define IDTTYPE_80386_32_INTERRUPT_GATE 0x0E
-#define IDTTYPE_80386_32_TRAP_GATE      0x0F
+#define IDTTYPE_80386_32_INTERRUPT_GATE 0x0e
+#define IDTTYPE_80386_32_TRAP_GATE      0x0f
+/* NOTE: Difference trap/interrupt:
+ *     - trap:      Do not modify `XFLAGS.IF'
+ *     - interrupt: Disable further interrupts by clearing `XFLAGS.IF'
+ */
 
 
 /* Default interrupt descriptor flags for host-private
  * callbacks and callbacks available from user-space. */
-#define INTMODE_HOST  (IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(0)) /* Regular interrupt handler only callable by hardware or from within the kernel. */
-#define INTMODE_USER  (IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(3)) /* Interrupt handler accessible by anyone (including userspace). */
+#define INTMODE_HW           (IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(0)) /* Interrupt that is triggered by hardware. */
+#define INTMODE_HOST         (IDTFLAG_PRESENT|IDTTYPE_80386_32_TRAP_GATE|IDTFLAG_DPL(0))      /* Regular interrupt handler only callable by hardware or from within the kernel. */
+#define INTMODE_USER         (IDTFLAG_PRESENT|IDTTYPE_80386_32_TRAP_GATE|IDTFLAG_DPL(3))      /* Interrupt handler accessible by anyone (including userspace). */
+#define INTMODE_EXCEPT        INTMODE_HOST /* Interrupt that is triggered by exceptions. */
+#define INTMODE_EXCEPT_NOINT  INTMODE_HW   /* Same as to `INTMODE_EXCEPT', but disable further interrupts before executing the handler. */
 typedef u8 intmode_t;
 
 /* Returns the suggested default interrupt mode, given the interrupt's number.
@@ -154,7 +163,7 @@ DATDEF struct interrupt_name const exception_names[32];
 
 struct cpu;
 struct task;
-struct cpustate_i;
+struct cpustate_ie;
 
 #define PANIC_GPREGS    0x0001 /* Dump general purpose registers. */
 #define PANIC_XFLAGS    0x0002 /* Dump xflags. */
@@ -179,11 +188,12 @@ struct cpustate_i;
  * HINT: Pass `kernel_panic_mask' for `panic_mask' to dump an information mask
  *       that can be configured via the `panic_mask' boot option.
  * @param: panic_mask: Set of `PANIC_*'
+ * @param: state:      Either a `struct cpustate_ie *', or a `struct cpustate_i *'.
  */
 FUNDEF ssize_t KCALL
 kernel_panic_process(struct cpu *__restrict this_cpu,
                      struct task *__restrict this_task,
-                     struct cpustate_i *__restrict state, u32 panic_mask,
+                     struct cpustate_ie *__restrict state, u32 panic_mask,
                      pformatprinter printer, void *closure);
 DATDEF u32 kernel_panic_mask;
 

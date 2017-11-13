@@ -546,7 +546,11 @@ PRIVATE MODULE_INIT void syscall_init(void) {
 #else
 PRIVATE struct interrupt syscall_interrupt = {
     .i_intno = SYSCALL_INT,
+#if 1 /* TODO: Some system calls falsely rely on interrupts being disabled. */
+    .i_mode  = IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(3),
+#else
     .i_mode  = INTMODE_USER,
+#endif
     .i_type  = INTTYPE_ASM,
     .i_prio  = INTPRIO_MAX,
     .i_flags = INTFLAG_PRIMARY,

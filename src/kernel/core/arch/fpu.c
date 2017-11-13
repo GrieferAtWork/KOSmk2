@@ -63,7 +63,13 @@ PRIVATE int FCALL fpu_interrupt_nm_handler(void);
 
 PRIVATE struct interrupt fpu_interrupt_nm = {
     .i_intno = INTNO_EXC_NM,
-    .i_mode  = INTMODE_HOST,
+    /* NOTE: Since the FPU context switch is indirectly apart of preemption,
+     *       we must not allow the current execution context to change while
+     *       inside the handler (Otherwise another task could trigger another
+     *       FPU context switch which would lead to the wrong state being saved).
+     *       Therefore, we must use `INTMODE_EXCEPT_NOINT' to disable interrupts
+     *       before executing the FPU context switching interrupt. */
+    .i_mode  = INTMODE_EXCEPT_NOINT,
 #ifdef CONFIG_DEBUG
     .i_type  = INTTYPE_BASIC,
 #else

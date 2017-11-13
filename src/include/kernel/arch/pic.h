@@ -115,7 +115,7 @@ typedef int (INTCALL *pic_handler_t)(void *closure);
  * @param: closure: The closure that should be passed  */
 #define PIC_INTERRUPT(intno,handler,closure) \
  { .i_intno = (intno), \
-   .i_mode  = INTMODE_HOST, \
+   .i_mode  = INTMODE_HW, \
    .i_type  = INTTYPE_FAST_ARG, \
    .i_prio  = INTPRIO_NORMAL, \
    .i_flags = INTFLAG_NORMAL, \
@@ -135,8 +135,8 @@ pic_interrupt(struct interrupt *__restrict self,
               void *closure) {
  memset(self,0,sizeof(struct interrupt));
  self->i_intno = intno;
-#if INTMODE_HOST != 0
- self->i_mode  = INTMODE_HOST;
+#if INTMODE_HW != 0
+ self->i_mode  = INTMODE_HW;
 #endif
 #if INTTYPE_FAST_ARG != 0
  self->i_type  = INTTYPE_FAST_ARG;

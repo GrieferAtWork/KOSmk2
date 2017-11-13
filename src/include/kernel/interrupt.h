@@ -56,8 +56,8 @@ DECL_BEGIN
 #define INTTYPE_ASM        0x80 /*< Raw, low-level interrupt handler called
                                  *  directly without any register modifications:
                                  *  NOTE: This is the only interrupt callback type that
-                                 *        must be exited using `__ASM_IRET', rather than `ret'
-                                 *  >> GLOBAL_ASM(L(my_int: ...; __ASM_IRET)); */
+                                 *        must be exited using `ASM_IRET', rather than `ret'
+                                 *  >> GLOBAL_ASM(L(my_int: ...; ASM_IRET)); */
 #define INTTYPE_ASM_SEG    0x81 /*< Similar to `INTTYPE_ASM', but segment registers are
                                  *  saved and the kernel per-cpu base address is loaded.
                                  *  ADDITIONAL SETUP:
@@ -147,10 +147,12 @@ typedef u8 intflag_t; /* Interrupt handler flags (Set of `INTFLAG_*'). */
 #define INTERRUPT_OFFSETOF_LINK         (16+5*__SIZEOF_POINTER__)
 #define INTERRUPT_SIZE                  (16+7*__SIZEOF_POINTER__)
 
+struct irregs_i;
+struct irregs_ie;
 struct cpustate_i;
 struct cpustate_ie;
 
-/* Returns true if `a' should be executed before `s' */
+/* Returns true if `a' should be executed before `b' */
 #define INTERRUPT_BEFORE(a,b) \
   ((a)->i_prio >  (b)->i_prio || \
   ((a)->i_prio == (b)->i_prio && \
@@ -163,36 +165,43 @@ struct cpustate_ie;
 struct PACKED interrupt {
     irq_t                i_intno;       /*< [const][owned_if(IS_LINKED && INTFLAG_DYNINTNO)]
                                          *   Interrupt vector number used by this handler. */
-    intmode_t            i_mode;        /*< [const] Interrupt mode (One of `INTMODE_*'; `INTMODE_USER, INTMODE_HOST') */
+    intmode_t            i_mode;        /*< [const] Interrupt mode (One of `INTMODE_*') */
     inttype_t            i_type;        /*< [const] Interrupt callback type (One of `INTTYPE_*'). */
     intprio_t            i_prio;        /*< [const] Interrupt priority (One of `INTPRIO_*') */
     intflag_t            i_flags;       /*< [const] Interrupt handler flags (Set of `INTFLAG_*'). */
+#ifdef __x86_64__
+    u8                   i_ist;         /*< [const] Alternative interrupt execution stack. (Set to ZERO to use the primary stack)
+                                         *   NOTE:  Only used if all interrupt handlers of any given vector use the same
+                                         *          IST, which can easily be achieved by installing a non-sharable handler. */
+    u8                 __i_pad[2];      /* Pad up to an offset of 8. */
+#else
     u8                 __i_pad[3];      /* Pad up to an offset of 8. */
+#endif
 union PACKED {
     void                *i_callback;    /*< [1..1][const] Interrupt handler entry point. (exact prototype depends on `i_type') */
 union PACKED {
-    void       (ASMCALL *p_asm)(void);     /*< [valid_if(i_type == INTTYPE_ASM)] Returns using `__ASM_IRET'. */
-    void       (ASMCALL *p_asm_seg)(void); /*< [valid_if(i_type == INTTYPE_ASM_SEG)] Returns using `ret'. */
-    int        (INTCALL *p_fast)(void);                                                               /*< [valid_if(i_type == INTTYPE_FAST)]. */
-    int        (INTCALL *p_fast_arg)(void *closure);                                                  /*< [valid_if(i_type == INTTYPE_FAST_ARG)]. */
-    int        (INTCALL *p_basic)(struct irregs_i *__restrict info);                                  /*< [valid_if(i_type == INTTYPE_BASIC)]. */
-    int        (INTCALL *p_basic_arg)(struct irregs_i *__restrict info, void *closure);               /*< [valid_if(i_type == INTTYPE_BASIC_ARG)]. */
-    int        (INTCALL *p_baseexcept)(struct irregs_ie *__restrict info);                            /*< [valid_if(i_type == INTTYPE_BASIC)]. */
-    int        (INTCALL *p_baseexcept_arg)(struct irregs_ie *__restrict info, void *closure);         /*< [valid_if(i_type == INTTYPE_BASIC_ARG)]. */
-    int        (INTCALL *p_state)(struct cpustate_i *__restrict state);                               /*< [valid_if(i_type == INTTYPE_STATE)]. */
-    int        (INTCALL *p_state_arg)(struct cpustate_i *__restrict state, void *closure);            /*< [valid_if(i_type == INTTYPE_STATE_ARG)]. */
-    int        (INTCALL *p_except)(struct cpustate_ie *__restrict state);                             /*< [valid_if(i_type == INTTYPE_STATE)]. */
-    int        (INTCALL *p_except_arg)(struct cpustate_ie *__restrict state, void *closure);          /*< [valid_if(i_type == INTTYPE_STATE_ARG)]. */
-    void       (INTCALL *p_noshare_fast)(void);                                                       /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_FAST)]. */
-    void       (INTCALL *p_noshare_fast_arg)(void *closure);                                          /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_FAST_ARG)]. */
-    void       (INTCALL *p_noshare_basic)(struct irregs_i *__restrict info);                          /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_BASIC)]. */
-    void       (INTCALL *p_noshare_basic_arg)(struct irregs_i *__restrict info, void *closure);       /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_BASIC_ARG)]. */
-    void       (INTCALL *p_noshare_baseexcept)(struct irregs_ie *__restrict info);                    /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_BASIC)]. */
-    void       (INTCALL *p_noshare_baseexcept_arg)(struct irregs_ie *__restrict info, void *closure); /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_BASIC_ARG)]. */
-    void       (INTCALL *p_noshare_state)(struct cpustate_i *__restrict state);                       /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_STATE)]. */
-    void       (INTCALL *p_noshare_state_arg)(struct cpustate_i *__restrict state, void *closure);    /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_STATE_ARG)]. */
-    void       (INTCALL *p_noshare_except)(struct cpustate_ie *__restrict state);                     /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_STATE)]. */
-    void       (INTCALL *p_noshare_except_arg)(struct cpustate_ie *__restrict state, void *closure);  /*< [valid_if(i_type == INTTYPE_NOSHARE|INTTYPE_STATE_ARG)]. */
+    void       (ASMCALL *p_asm)(void);     /*< [valid_if(:i_type == INTTYPE_ASM)] Returns using `ASM_IRET'. */
+    void       (ASMCALL *p_asm_seg)(void); /*< [valid_if(:i_type == INTTYPE_ASM_SEG)] Returns using `ret'. */
+    int        (INTCALL *p_fast)(void);                                                               /*< [valid_if(:i_type == INTTYPE_FAST)]. */
+    int        (INTCALL *p_fast_arg)(void *closure);                                                  /*< [valid_if(:i_type == INTTYPE_FAST_ARG)]. */
+    int        (INTCALL *p_basic)(struct irregs_i *__restrict info);                                  /*< [valid_if(:i_type == INTTYPE_BASIC)]. */
+    int        (INTCALL *p_basic_arg)(struct irregs_i *__restrict info, void *closure);               /*< [valid_if(:i_type == INTTYPE_BASIC_ARG)]. */
+    int        (INTCALL *p_baseexcept)(struct irregs_ie *__restrict info);                            /*< [valid_if(:i_type == INTTYPE_BASIC)]. */
+    int        (INTCALL *p_baseexcept_arg)(struct irregs_ie *__restrict info, void *closure);         /*< [valid_if(:i_type == INTTYPE_BASIC_ARG)]. */
+    int        (INTCALL *p_state)(struct cpustate_i *__restrict state);                               /*< [valid_if(:i_type == INTTYPE_STATE)]. */
+    int        (INTCALL *p_state_arg)(struct cpustate_i *__restrict state, void *closure);            /*< [valid_if(:i_type == INTTYPE_STATE_ARG)]. */
+    int        (INTCALL *p_except)(struct cpustate_ie *__restrict state);                             /*< [valid_if(:i_type == INTTYPE_STATE)]. */
+    int        (INTCALL *p_except_arg)(struct cpustate_ie *__restrict state, void *closure);          /*< [valid_if(:i_type == INTTYPE_STATE_ARG)]. */
+    void       (INTCALL *p_noshare_fast)(void);                                                       /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_FAST)]. */
+    void       (INTCALL *p_noshare_fast_arg)(void *closure);                                          /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_FAST_ARG)]. */
+    void       (INTCALL *p_noshare_basic)(struct irregs_i *__restrict info);                          /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_BASIC)]. */
+    void       (INTCALL *p_noshare_basic_arg)(struct irregs_i *__restrict info, void *closure);       /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_BASIC_ARG)]. */
+    void       (INTCALL *p_noshare_baseexcept)(struct irregs_ie *__restrict info);                    /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_BASIC)]. */
+    void       (INTCALL *p_noshare_baseexcept_arg)(struct irregs_ie *__restrict info, void *closure); /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_BASIC_ARG)]. */
+    void       (INTCALL *p_noshare_state)(struct cpustate_i *__restrict state);                       /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_STATE)]. */
+    void       (INTCALL *p_noshare_state_arg)(struct cpustate_i *__restrict state, void *closure);    /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_STATE_ARG)]. */
+    void       (INTCALL *p_noshare_except)(struct cpustate_ie *__restrict state);                     /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_STATE)]. */
+    void       (INTCALL *p_noshare_except_arg)(struct cpustate_ie *__restrict state, void *closure);  /*< [valid_if(:i_type == INTTYPE_NOSHARE|INTTYPE_STATE_ARG)]. */
 }                        i_proto; };    /*< Callback prototypes. */
     void                *i_closure;     /*< [valid_if(i_type&INTTYPE_WITHARG)] Closure argument passed to `i_callback' */
     REF struct instance *i_owner;       /*< [1..1] Owner of this interrupt handler. */
@@ -206,11 +215,16 @@ union PACKED{uintptr_t __i_align;       /* Align by pointers. */
     ATOMIC_DATA u32      i_miss;        /*< [valid_if(!INTTYPE_NOSHARE)] Amount of times an interrupt could not be processed by this handler. */};
 #endif
     LIST_NODE(struct interrupt)
-                         i_link;        /*< [0..1][lock(PREEMPTION_DISABLED && (CONFIG_SMP ? INTERNAL(...) : NONE))] Chain of shared interrupt handlers. */
+                         i_link;        /*< [0..1][lock(PREEMPTION_DISABLED && (CONFIG_SMP ? INTERNAL(...) : NONE))]
+                                         *  Chain of shared interrupt handlers. (HINT: `NULL' if this handler cannot be shared) */
 };
 
 /* Register/delete an interrupt handler.
  * NOTE: Interrupt handlers are automatically deleted when their module is unloaded.
+ * NOTE: Assembly-level interrupt handlers (such as `INTTYPE_ASM' and `INTTYPE_ASM_SEG')
+ *       must always be `INTPRIO_MAX' + `INTFLAG_PRIMARY', so-as to ensure that they
+ *       are execute before all others.
+ *       This behavior is asserted internally.
  * @param: affinity: Set of CPUs on which the interrupt should be executed.
  *             HINT: If this set is empty or `int_add()' is called, or `CONFIG_SMP'
  *                   is disabled, the vector is only registered in the calling CPU. 

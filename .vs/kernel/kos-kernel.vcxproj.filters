@@ -489,6 +489,9 @@
     <ClCompile Include="..\..\src\kernel\core\arch\panic.c">
       <Filter>kernel\core\arch</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\pic.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">

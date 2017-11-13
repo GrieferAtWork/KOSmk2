@@ -54,6 +54,7 @@
 #include <sys/io.h>
 #include <sys/syslog.h>
 #include <malloc.h>
+#include <kernel/arch/asm.h>
 
 #ifndef CONFIG_USE_OLD_INTERRUPTS
 #include "interrupt_intern.h"
@@ -583,13 +584,13 @@ L(.section .text.cold                                   )
 L(SYM_PRIVATE(lapic_spurious_irq_handler)               )
 L(lapic_spurious_irq_handler:                           )
 L(    /* Atomically increment the sporadic IRQ counter */)
-L(    lock incl ASM_CPU(CPU_OFFSETOF_ARCH+ \
-                        ARCHCPU_OFFSETOF_SPURIOUS_IRQ)  )
-L(    pushl %edi                                        )
-L(    movl apic_base, %edi                              )
-L(    movl $(APIC_EOI_ACK), APIC_EOI(%edi)              )
-L(    popl  %edi                                        )
-L(    __ASM_IRET                                        )
+L(    ASM_LOCK incl ASM_CPU(CPU_OFFSETOF_ARCH+ \
+                            ARCHCPU_OFFSETOF_SPURIOUS_IRQ))
+L(    pushx %xdi                                        )
+L(    movx  apic_base, %xdi                             )
+L(    movl  $(APIC_EOI_ACK), APIC_EOI(%xdi)             )
+L(    popx  %xdi                                        )
+L(    ASM_IRET                                          )
 L(SYM_END(lapic_spurious_irq_handler)                   )
 L(.previous                                             )
 );
@@ -769,9 +770,6 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  /* Initialize the CPU's Interrupt Descriptor Table (IDT) */
 #ifdef CONFIG_USE_OLD_INTERRUPTS
  irq_setup(vcpu);
-#else
- cpu_interrupt_initialize(vcpu);
-#endif
 
  /* Define the sporadic interrupt handler used by LAPIC. */
 #ifdef __x86_64__
@@ -816,6 +814,9 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
    INIT_VECTOR(idt,&fpu_asm_nm);
  }
 #endif /* !CONFIG_NO_FPU */
+#else
+ cpu_interrupt_initialize(vcpu);
+#endif
 
  return -EOK;
 }
@@ -844,16 +845,47 @@ cpu_sendipc_unlocked(struct cpu *__restrict self, irq_t intno) {
 }
 
 
+#ifdef CONFIG_USE_OLD_INTERRUPTS
 INTDEF void ASMCALL rpc_irq_handler(void);
 PRIVATE ATTR_FREERODATA isr_t const lapic_spurious = ISR_DEFAULT(INTNO_LAPIC_SPURIOUS,&lapic_spurious_irq_handler);
 PRIVATE ATTR_FREERODATA isr_t const lapic_rpc      = ISR_DEFAULT(INTNO_LAPIC_RPC,&rpc_irq_handler);
+#else
+INTDEF void INTCALL rpc_interrupt_handler(void);
+PRIVATE struct interrupt lapic_spurious_interrupt = {
+    .i_intno = INTNO_LAPIC_SPURIOUS,
+    .i_mode  = INTMODE_HW,
+    .i_type  = INTTYPE_ASM,
+    .i_prio  = INTPRIO_MAX,
+    .i_flags = INTFLAG_PRIMARY,
+    .i_proto = {
+        .p_asm = &lapic_spurious_irq_handler,
+    },
+    .i_owner = THIS_INSTANCE,
+};
+PRIVATE struct interrupt lapic_rpc_interrupt = {
+    .i_intno = INTNO_LAPIC_RPC,
+    .i_mode  = INTMODE_HOST,
+    .i_type  = INTTYPE_FAST|INTTYPE_NOSHARE,
+    .i_prio  = INTPRIO_MAX,
+    .i_flags = INTFLAG_PRIMARY,
+    .i_proto = {
+        .p_noshare_fast = &rpc_interrupt_handler,
+    },
+    .i_owner = THIS_INSTANCE,
+};
+#endif
 
 INTERN void KCALL smp_initialize_lapic(void) {
  if (!APIC_SUPPORTED()) return;
 
- /* Define the sporadic IRQ handler used by LAPIC. */
+ /* Define the sporadic interrupt handler used by LAPIC. */
+#ifdef CONFIG_USE_OLD_INTERRUPTS
  irq_set(&lapic_spurious,NULL,IRQ_SET_QUICK);
  irq_set(&lapic_rpc,NULL,IRQ_SET_RELOAD);
+#else
+ int_addall(&lapic_spurious_interrupt);
+ int_addall(&lapic_rpc_interrupt);
+#endif
 
  apic_write(APIC_SPIV,INTNO_LAPIC_SPURIOUS|
             APIC_SPIV_DIRECTED_EOI|

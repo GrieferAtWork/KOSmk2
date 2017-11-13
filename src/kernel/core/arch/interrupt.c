@@ -56,6 +56,7 @@
 #include <sched/types.h>
 
 #include "interrupt_intern.h"
+#include <hybrid/minmax.h>
 
 DECL_BEGIN
 
@@ -231,7 +232,7 @@ L(    call exec_deflirq                                                       )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
 L(    addq $8, %rsp /* intno */                                               )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(1:  call exec_deflirq                                                       )
 #else
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
@@ -239,7 +240,7 @@ L(    call exec_deflirq                                                       )
 #endif
 L(    __ASM_POP_COMREGS                                                       )
 L(    addx $(XSZ), %xsp /* intno */                                           )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(SYM_END(default_irq_ncode)                                                  )
 L(SYM_END(default_irq_spuri)                                                  )
 L(                                                                            )
@@ -255,7 +256,7 @@ L(    call exec_deflirq                                                       )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
 L(    addq $8, %rsp /* intno */                                               )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(1:  call exec_deflirq                                                       )
 #else
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
@@ -263,7 +264,7 @@ L(    call exec_deflirq                                                       )
 #endif
 L(    __ASM_POP_COMREGS                                                       )
 L(    addx $(2*XSZ), %xsp /* exc_code + intno */                              )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(SYM_END(default_irq_ycode)                                                  )
 L(                                                                            )
 L(.previous                                                                   )
@@ -288,7 +289,7 @@ L(    xchgq 0(%rsp), %rax /* Restore original XAX and safe interrupt entry point
 L(    ret /* ~return~ to the interrupt handler. */                            )
 L(4:  swapgs /* Restore the user-space GS */                                  )
 L(    addq $8, %rsp /* intno */                                               )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(1:  pushq $4f /* } else { ... */                                            )
 L(    pushq %rax                                                              )
 L(    movq 16(%rsp), %rax /* intno*INTERRUPT_SIZE */                          )
@@ -297,7 +298,7 @@ L(    movq  INTERRUPT_OFFSETOF_CALLBACK(%rax), %rax /* RAX now contains the inte
 L(    xchgq 0(%rsp), %rax /* Restore original RAX and safe interrupt entry point on-stack. */)
 L(    ret /* ~return~ to the interrupt handler. */                            )
 L(4:  addq $8, %rsp /* intno */                                               )
-L(    __ASM_IRET /*  } */                                                     )
+L(    ASM_IRET /*  } */                                                     )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
 L(    pushl $4f /* return_address */                                          )
@@ -310,7 +311,7 @@ L(    xchgl 0(%esp), %eax /* Restore original EAX and safe interrupt entry point
 L(    ret /* ~return~ to the interrupt handler. */                            )
 L(4:  __ASM_POP_SGREGS                                                        )
 L(    addl $4, %esp /* intno */                                               )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 #endif
 L(SYM_END(user_irq_ncode)                                                     )
 L(SYM_END(user_irq_spuri)                                                     )
@@ -329,7 +330,7 @@ L(    xchgq 0(%rsp), %rax /* Restore original XAX and safe interrupt entry point
 L(    ret /* ~return~ to the interrupt handler. */                            )
 L(4:  swapgs /* Restore the user-space GS */                                  )
 L(    addq $16, %rsp /* ecx_code + intno */                                   )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(1:  pushq $4f /* } else { ... */                                            )
 L(    pushq %rax                                                              )
 L(    movq 16(%rsp), %rax /* intno*INTERRUPT_SIZE */                          )
@@ -338,7 +339,7 @@ L(    movq  INTERRUPT_OFFSETOF_CALLBACK(%rax), %rax /* RAX now contains the inte
 L(    xchgq 0(%rsp), %rax /* Restore original RAX and safe interrupt entry point on-stack. */)
 L(    ret /* ~return~ to the interrupt handler. */                            )
 L(4:  addq $16, %rsp /* ecx_code + intno */                                   )
-L(    __ASM_IRET /*  } */                                                     )
+L(    ASM_IRET /*  } */                                                     )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
 L(    pushl $4f /* return_address */                                          )
@@ -351,7 +352,7 @@ L(    xchgl 0(%esp), %eax /* Restore original EAX and safe interrupt entry point
 L(    ret /* ~return~ to the interrupt handler. */                            )
 L(4:  __ASM_POP_SGREGS                                                        )
 L(    addl $8, %esp /* ecx_code + intno */                                    )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 #endif
 L(SYM_END(user_irq_ycode)                                                     )
 L(.previous                                                                   )
@@ -376,7 +377,7 @@ L(    jz     2f                                                               )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addq   $8, %rsp /* intno */                                             )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(2:  swapgs /* Restore the user-space GS */                                  )
 L(3:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ncode                                                 )
@@ -395,7 +396,7 @@ L(    jz    1f                                                                )
 #endif
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addx $(XSZ), %xsp                                                       )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 #ifndef __x86_64__
 L(1:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ncode                                                 )
@@ -419,7 +420,7 @@ L(    jz     2f                                                               )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addq $16, %rsp /* intno */                                              )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(2:  swapgs /* Restore the user-space GS */                                  )
 L(3:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ycode                                                 )
@@ -438,7 +439,7 @@ L(    jz    1f                                                                )
 #endif
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addx $(2*XSZ), %xsp                                                     )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 #ifndef __x86_64__
 L(1:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ycode                                                 )
@@ -467,7 +468,7 @@ L(    jz     2f                                                               )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addq   $8, %rsp /* intno */                                             )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(2:  swapgs /* Restore the user-space GS */                                  )
 L(3:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ncode                                                 )
@@ -486,7 +487,7 @@ L(    jz    1f                                                                )
 #endif
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addx $(XSZ), %xsp                                                       )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 #ifndef __x86_64__
 L(1:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ncode                                                 )
@@ -511,7 +512,7 @@ L(    jz     2f                                                               )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addq   $16, %rsp /* intno */                                            )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(2:  swapgs /* Restore the user-space GS */                                  )
 L(3:  __ASM_POP_SCRATCH                                                       )
 L(    jmp    default_irq_ycode                                                )
@@ -530,7 +531,7 @@ L(    jz    1f                                                                )
 #endif
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addx $(2*XSZ), %xsp                                                     )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 #ifndef __x86_64__
 L(1:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ycode                                                 )
@@ -558,7 +559,7 @@ L(    call exec_statirq                                                       )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
 L(    addq $8, %rsp /* intno */                                               )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(1:  ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call exec_statirq                                                       )
 #else
@@ -568,7 +569,7 @@ L(    call exec_statirq                                                       )
 #endif
 L(    __ASM_POP_COMREGS                                                       )
 L(    addx $(XSZ), %xsp /* intno */                                           )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(SYM_END(stat_irq_ncode)                                                     )
 L(SYM_END(stat_irq_spuri)                                                     )
 L(                                                                            )
@@ -587,7 +588,7 @@ L(    call exec_statirq                                                       )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
 L(    addq $8, %rsp /* intno */                                               )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(1:  ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call exec_statirq                                                       )
 #else
@@ -597,7 +598,7 @@ L(    call exec_statirq                                                       )
 #endif
 L(    __ASM_POP_COMREGS                                                       )
 L(    addx $(2*XSZ), %xsp /* exc_code + intno */                              )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(SYM_END(stat_irq_ycode)                                                     )
 L(                                                                            )
 L(.previous                                                                   )
@@ -650,7 +651,7 @@ L(    call pic2_is_spurious                                                   )
 L(    __ASM_POP_SCRATCH_NOXAX                                                 )
 L(99: popx  %xax                                                              )
 L(    addx $(2*XSZ), %xsp /* return_addr + intno */                           )
-L(    __ASM_IRET                                                              )
+L(    ASM_IRET                                                                )
 L(SYM_END(check_spuri)                                                        )
 L(.previous                                                                   )
 );
@@ -711,7 +712,9 @@ exec_basiirq(struct interrupt *__restrict handler,
  for (;;) {
   int handler_code;
   assert((iter->i_type&INTTYPE_MASK) != (INTTYPE_ASM&INTTYPE_MASK));
-  handler_code = (*iter->i_proto.p_basic_arg)(info,iter->i_closure);
+  if likely((iter->i_type&INTTYPE_MASK) == INTTYPE_FAST)
+       handler_code = (*iter->i_proto.p_fast_arg)(iter->i_closure);
+  else handler_code = (*iter->i_proto.p_basic_arg)(info,iter->i_closure);
   if (iter->i_type&INTTYPE_NOSHARE) goto ignored;
   switch (__builtin_expect(handler_code,INTCODE_HANDLED)) {
   case INTCODE_HANDLED:
@@ -744,17 +747,22 @@ ignored:
 
 
 PRIVATE ATTR_USED void FCALL
-exec_deflirq(struct cpustate_i *__restrict state);
+exec_deflirq(struct cpustate_ie *__restrict state);
 PRIVATE ATTR_HOTTEXT ATTR_USED void FCALL
 exec_statirq(struct interrupt *__restrict handler,
-             struct cpustate_i *__restrict state) {
+             struct cpustate_ie *__restrict state) {
  /* C-level IRQ handler with full CPU-state. */
  struct interrupt *iter = handler;
  for (;;) {
   int handler_code;
   assert(iter);
-  assert((iter->i_type&INTTYPE_MASK) != (INTTYPE_ASM&INTTYPE_MASK));
-  handler_code = (*iter->i_proto.p_state_arg)(state,iter->i_closure);
+  assertf((iter->i_type&INTTYPE_MASK) != (INTTYPE_ASM&INTTYPE_MASK),
+          "%d",IRREGS_INTNO(&state->iret));
+  switch (__builtin_expect(iter->i_type&INTTYPE_MASK,INTTYPE_STATE)) {
+  case INTTYPE_FAST:  handler_code = (*iter->i_proto.p_fast_arg)(iter->i_closure); break;
+  case INTTYPE_BASIC: handler_code = (*iter->i_proto.p_baseexcept_arg)(&state->iret,iter->i_closure); break;
+  default:            handler_code = (*iter->i_proto.p_except_arg)(state,iter->i_closure); break;
+  }
   if unlikely(iter->i_type&INTTYPE_NOSHARE) goto ignored;
   switch (__builtin_expect(handler_code,INTCODE_HANDLED)) {
   case INTCODE_HANDLED:
@@ -788,11 +796,12 @@ ignored:
 
 #ifdef CONFIG_DEBUG
 PRIVATE ATTR_NORETURN void KCALL
-deflirq_illegal_recursion(struct cpustate_i *__restrict state, irq_t intno) {
+deflirq_illegal_recursion(struct cpustate_ie *__restrict state, irq_t intno) {
  PRIVATE int in_illegal_recursion = 0;
  if (ATOMIC_FETCHINC(in_illegal_recursion) == 0) {
   debug_printf("\n\nPANIC!!! IRQ HANDLER RECURSION!\n");
-  debug_printf(REGISTER_PREFIX "IP = %p\n",state->iret.xip);
+  debug_printf(REGISTER_PREFIX "IP   = %p\n",IRREGS_TAIL(&state->iret)->xip);
+  debug_printf("I"             "NTNO = %d\n",intno);
  }
  /* Freeze the CPU */
  PREEMPTION_FREEZE();
@@ -817,7 +826,7 @@ PRIVATE ATTR_RAREBSS uintptr_t deflirq_recursion[256/(8*sizeof(uintptr_t))];
    deflirq_recursion[addr] &= ~mask; \
  }
 #ifdef CONFIG_SMP
-LOCAL bool KCALL deflirq_enter_early(struct cpustate_i *__restrict state, irq_t intno) {
+LOCAL bool KCALL deflirq_enter_early(struct cpustate_ie *__restrict state, irq_t intno) {
  if (SMP_COUNT == 1) {
   /* Easy! We're the boot cpu. */
   uintptr_t addr = intno/(8*sizeof(uintptr_t));
@@ -829,13 +838,19 @@ LOCAL bool KCALL deflirq_enter_early(struct cpustate_i *__restrict state, irq_t 
  }
  return false;
 }
+#if defined(CONFIG_DEBUG) && defined(__x86_64__)
 #define DEFLIRQ_DECLARE_VARS \
    bool __irq_did_enter;
 #define DEFLIRQ_ENTER_EARLY(intno) \
  { __irq_did_enter = deflirq_enter_early(state,intno); }
 #define DEFLIRQ_ENTER_LATER(intno) \
  { if (!__irq_did_enter) DEFLIRQ_DO_ENTER(intno) }
-#define DEFLIRQ_LEAVE(intno)
+#else
+#define DEFLIRQ_DECLARE_VARS       /* nothing */
+#define DEFLIRQ_ENTER_EARLY(intno) /* nothing */
+#define DEFLIRQ_ENTER_LATER(intno) DEFLIRQ_DO_ENTER(intno)
+#endif
+#define DEFLIRQ_LEAVE(intno)       DEFLIRQ_DO_LEAVE(intno)
 #else
 #define DEFLIRQ_DECLARE_VARS       /* nothing */
 #define DEFLIRQ_ENTER_EARLY(intno) DEFLIRQ_DO_ENTER(intno)
@@ -850,17 +865,82 @@ LOCAL bool KCALL deflirq_enter_early(struct cpustate_i *__restrict state, irq_t 
 #endif
 
 
+LOCAL void KCALL
+exec_local_exception_handler(struct task *__restrict this_task,
+                             struct cpustate_ie *__restrict state,
+                             struct irregs *__restrict tail, irq_t intno) {
+ struct intchain *iter;
+check_again: ATTR_UNUSED;
+ for (iter = this_task->t_ic; iter;
+      iter = iter->ic_prev) {
+  if ((iter->ic_irq == intno) ||
+      (iter->ic_opt&INTCHAIN_OPT_EXC && INTNO_ISEXC(intno)) ||
+      (iter->ic_opt&INTCHAIN_OPT_PIC && INTNO_ISPIC(intno)) ||
+      (iter->ic_opt&INTCHAIN_OPT_USR && INTNO_ISUSR(intno))) {
+   /* Trigger this exception handler. */
+   this_task->t_ic = iter->ic_prev; /* Restore the handler before this one. */
+   /* PREEMPTION_DISABLE(); // Not required. - At no point is our stack damaged. */
+   DEFLIRQ_LEAVE(intno); /* Indicate that we have left this handler. */
+   ((register_t *)&state->iret)[0] = tail->xflags;
+   ((register_t *)&state->iret)[1] = (register_t)&iter->ic_int; /* p_eip (Load using `pop %esp; ret;') */
+   __asm__ __volatile__(
+    L(    movx %0, %%xsp     /* (ab-)use the CPU state as stack. */               )
+    L(    __ASM_IPOP_COMREGS /* Restore common registers (We're now as xflags) */ )
+    L(    popfx              /* Restore XFLAGS. */                                )
+    L(    popx %%xsp         /* Restore XSP. */                                   )
+    L(    ret                /* Jump to the exception handler. */                 )
+    :
+    : "g" (state)
+    : "memory", "cc");
+   __builtin_unreachable();
+  }
+ }
+ /* XXX: Can this still happen on x86_64? (considering it doesn't really enforce segment limits) */
+#if !defined(__x86_64__) || 1
+ /* A lot of code assumes that it is enough to handle page-faults
+  * in order to safely access a potentially faulty pointer, such
+  * as may be given to the kernel from userspace, or when creating
+  * a traceback, or when relocating a module.
+  * Yet there exists a small problem with this idea:
+  *     X86 has segmentation, and attempting to access memory that
+  *     lies outside the associated segment (usually '%ds'), causes
+  *     a protection fault to be raised.
+  * Now you might say that shouldn't affect anything, since the KOS
+  * kernel uses a flat memory model, but as it turns out (and this is
+  * another one of those things that only happens on real hardware),
+  * attempting to access memory above 4Gb will (rightfully so) raise
+  * a general protection fault.
+  * How does one access memory in that range?
+  * This is how it can easily happen:
+  * >> movl $0xffffffff, %esi // Pointer is given from user-space
+  * >> movl 0(%esi),     %eax // Load data (This instruction would be guarded by 'EXC_PAGE_FAULT')
+  * On real hardware, this will (apparently) try to read memory
+  * from above 4Gb, rather than overflowing back to ZERO(0).
+  * >> READ: 0xffffffff  --> OK (Part of the page-directory self mapping)
+  * >> READ: 0x100000000 --> ERROR (Outside the %DS segment that ends after `0xffffffff')
+  * >> READ: 0x100000001 --> ERROR (...)
+  * >> READ: 0x100000002 --> ERROR (...)
+  * So with that in mind, if a protection fault error occurs and there
+  * is no local exception handler specifically for this purpose, also try to
+  * handle it as a pagefault error.
+  * NOTE: Only affects kernel-level local exception handlers.
+  */
+ if (intno == EXC_PROTECTION_FAULT) {
+  intno    = EXC_PAGE_FAULT;
+  goto check_again;
+ }
+#endif
+}
+
 
 /* Default/fallback IRQ handler. */
 PRIVATE ATTR_USED void FCALL
-exec_deflirq(struct cpustate_i *__restrict state) {
- struct cpu *this_cpu; struct task *this_task;
+exec_deflirq(struct cpustate_ie *__restrict state) {
  DEFLIRQ_DECLARE_VARS
+ struct cpu *this_cpu; struct task *this_task;
  irq_t intno = (IRREGS_DECODE_INTNO(state->iret.intno) & 0xff);
- bool has_exc_code = INTNO_HAS_EXC_CODE(intno);
- struct irregs *iret_tail = has_exc_code
-  ? (struct irregs *)((byte_t *)&state->iret+IRREGS_IE_OFFSETOF_TAIL)
-  : (struct irregs *)((byte_t *)&state->iret+IRREGS_I_OFFSETOF_TAIL);
+ struct irregs *iret_tail = INTNO_HAS_EXC_CODE(intno)
+  ? &state->iret.tail : &state->iret.__tail_noxcode;
 
  if (INTNO_ISPIC(intno)) {
   syslog(LOG_IRQ|LOG_WARN,
@@ -875,10 +955,6 @@ exec_deflirq(struct cpustate_i *__restrict state) {
          COLDSTR("[INT] Unmapped interrupt %#.2Ix triggered in ring #%d at %p\n"),
          intno,(int)(iret_tail->cs&3),iret_tail->xip);
   return;
- }
-
- if (iret_tail->cs&3) {
-  /* TODO: Exception doesn't originate from kernel-space. */
  }
 
  DEFLIRQ_ENTER_EARLY(intno);
@@ -950,10 +1026,12 @@ set_default_gs_base:
  this_cpu  = THIS_CPU;
  this_task = this_cpu->c_running;
 
- if (!(iret_tail->cs&3)) {
+ if (iret_tail->cs&3) {
+  /* TODO: Exception doesn't originate from kernel-space.
+   *    >> Send a signal to the calling task. */
+ } else {
   /* Try to run for local exception handlers. */
-  intchain_trigger(&this_task->t_ic,(irq_t)intno,
-                   &state->com,iret_tail->xflags);
+  exec_local_exception_handler(this_task,state,iret_tail,intno);
  }
 
  /* Process the kernel panic and dump debug information. */
@@ -975,29 +1053,53 @@ set_default_gs_base:
 /* Update the interrupt descriptor table entry for `intno' */
 PRIVATE void KCALL
 receive_rpc_update_idt(irq_t intno) {
- struct idt_pointer idt_ptr;
+ struct idt_pointer idt_ptr; u8 mode;
  struct idtentry *idt; struct interrupt *ent;
  uintptr_t handler_eip = DIRQ_ENTRY(intno);
  pflag_t was = PREEMPTION_PUSH();
+#ifdef __x86_64__
+ u8 ist = 0;
+#endif
  IFDEF_SMP(atomic_rwlock_read(&inttab_lock));
  idt = &CPU(inttab).it_idt[intno];
  ent = CPU(inttab).it_tab[intno].e_head;
- if (ent) {
-  struct interrupt *other = ent;
-  inttype_t min_level = (ent->i_type&INTTYPE_MASK);
-  inttype_t max_level = (ent->i_type&INTTYPE_MASK);
+  /* Let's face it: Interrupt handlers are registered
+   *                more often than they are deleted.
+   *             >> Ergo: `ent != NULL' is fairly likely. */
+ if likely(ent) {
+  struct interrupt *other;
+  inttype_t min_level,max_level;
+  min_level = (ent->i_type&INTTYPE_MASK);
+  mode      = ent->i_mode; /* Start out with the hardware-mode of the first handler. */
+#ifdef __x86_64__
+  ist       = ent->i_ist;
+#endif
+  if (min_level == (INTTYPE_ASM&INTTYPE_MASK)) {
+   handler_eip = (uintptr_t)ent->i_callback;
+   goto got_eip; /* Directly bind a primary assembly handler. */
+  }
+  max_level = min_level,other = ent;
   while ((other = other->i_link.le_next) != NULL) {
    inttype_t other_level = (other->i_type&INTTYPE_MASK);
-   if (other_level == (INTTYPE_ASM&INTTYPE_MASK)) {
-    /* Special case: Directly bind an assembly interrupt handler. */
-    handler_eip = (uintptr_t)other->i_callback;
-    ent = other; /* Use arch-flags of this handler. */
-    goto got_eip;
-   }
+   /* Merge hardware modes to be more restrictive:
+    * >> REQUIRED_PRIVILEGE_LEVEL = MIN(OLD_REQUIRED_PRIVILEGE_LEVEL,NEW_REQUIRED_PRIVILEGE_LEVEL);
+    * >> IS_RECURSION_DISABLED    = OLD_IS_RECURSION_DISABLED || NEW_IS_RECURSION_DISABLED;
+    */
+   mode = (MIN(mode&IDTTYPE_MASK,other->i_mode&IDTTYPE_MASK)|
+           MIN(mode&IDTFLAG_DPL_MASK,other->i_mode&IDTFLAG_DPL_MASK)|
+           IDTFLAG_PRESENT);
+#ifdef __x86_64__
+   if (ist != other->i_ist) ist = 0;
+#endif
+   assertf(other_level != (INTTYPE_ASM&INTTYPE_MASK),
+           "Assembly handlers _must_ always come first");
    if (min_level > other_level) min_level = other_level;
    if (max_level < other_level) max_level = other_level;
   }
   if (min_level == (INTTYPE_ASM_SEG&INTTYPE_MASK)) {
+   assertf((ent->i_type&INTTYPE_MASK) == (INTTYPE_ASM_SEG&INTTYPE_MASK),
+            "The first handler must be the asm-segment callback.\n"
+            "This should have been enforced by assembly-handlers being required to be INTFLAG_PRIMARY + INTPRIO_MAX");
    /* Bind a segment-safe assembly handler. */
    handler_eip = ASEG_ENTRY(intno);
    ent = other; /* Use arch-flags of this handler. */
@@ -1008,19 +1110,29 @@ receive_rpc_update_idt(irq_t intno) {
    /* Bind a fast c-function handler if no handlers need the full CPU-state. */
    handler_eip = FAST_ENTRY(intno);
   } else {
+   assertf(max_level == (INTTYPE_STATE&INTTYPE_MASK),
+           "Invalid interrupt handler type: %x",max_level);
    /* Bind a full cpu-state handler. */
    handler_eip = STAT_ENTRY(intno);
   }
+ } else {
+  mode = INTMODE_DEFAULT(intno);
  }
 got_eip:
+ assertf(mode&IDTFLAG_PRESENT,
+         "All interrupt vectors must always be present.\n"
+         "And that includes #%d\n",intno);
+ assertf(!(mode&IDTFLAG_STORAGE_SEGMENT),
+         "KOS doesn't support storage segment interrupt "
+         "vectors (intno = %d)\n",intno);
  idt->ie_off1 = (u16)handler_eip;
- idt->ie_sel = __KERNEL_CS;
+ idt->ie_sel  = __KERNEL_CS;
 #ifdef __x86_64__
- idt->ie_ist = 0;
+ idt->ie_ist  = ist;
 #else
  idt->ie_zero = 0;
 #endif
- idt->ie_flags = ent ? ent->i_mode : INTMODE_DEFAULT(intno);
+ idt->ie_flags = mode;
  idt->ie_off2 = (u16)(handler_eip >> 16);
 #ifdef __x86_64__
  idt->ie_off3 = (u32)(handler_eip >> 32);
@@ -1035,6 +1147,47 @@ got_eip:
  IFDEF_SMP(atomic_rwlock_endread(&inttab_lock));
  PREEMPTION_POP(was);
 }
+
+
+
+INTERN ATTR_FREETEXT void KCALL
+cpu_interrupt_initialize(struct cpu *__restrict c) {
+ struct idtentry *iter,*end; uintptr_t entry;
+ struct interrupt_table *tab = &VCPU(c,inttab);
+ end = (iter = tab->it_idt)+COMPILER_LENOF(tab->it_idt);
+ entry = DIRQ_ENTRY(0);
+ for (; iter != end; ++iter,entry += sizeof(struct dirq_asm)) {
+  iter->ie_off1 = (u16)entry;
+  iter->ie_sel = __KERNEL_CS;
+#ifdef __x86_64__
+  iter->ie_ist = 0;
+#else
+  iter->ie_zero = 0;
+#endif
+  iter->ie_flags = INTMODE_DEFAULT((irq_t)(iter-tab->it_idt));
+  iter->ie_off2  = (u16)(entry >> 16);
+#ifdef __x86_64__
+  iter->ie_off3  = (u32)(entry >> 32);
+  iter->ie_unused = 0;
+#endif
+ }
+}
+
+
+INTERN ATTR_FREETEXT void KCALL interrupt_initialize(void) {
+ struct idt_pointer idt_ptr;
+ /* Initialize the default IDT vector. */
+ cpu_interrupt_initialize(BOOTCPU);
+ /* Simply set the  */
+ idt_ptr.ip_idt   = VCPU(BOOTCPU,inttab).it_idt;
+ idt_ptr.ip_limit = sizeof(inttab.it_idt)-1;
+ COMPILER_WRITE_BARRIER();
+ __asm__ __volatile__("lidt %0\n" : : "m" (idt_ptr));
+
+ /* Setup the initial PIC state. */
+ pic_bios_end();
+}
+
 
 
 
@@ -1097,6 +1250,9 @@ int_add(struct interrupt *__restrict entry)
  pflag_t was = PREEMPTION_PUSH();
  IFDEF_SMP(atomic_rwlock_write(&inttab_lock));
  assertf(entry->i_owner,"No interrupt owner assigned");
+ assertf((entry->i_type&INTTYPE_MASK) <= (INTTYPE_ASM_SEG&INTTYPE_MASK)
+         ? (entry->i_flags&INTFLAG_PRIMARY) && (entry->i_prio == INTPRIO_MAX) : 1,
+         "Assembly-level interrupt handler _must_ always be `INTFLAG_PRIMARY' + `INTPRIO_MAX'");
 
 #ifdef CONFIG_SMP
  if (CPU_ISEMPTY(affinity))
@@ -1202,15 +1358,14 @@ got_intno:
  }
 
 #ifdef CONFIG_SMP
+ atomic_rwlock_endwrite(&inttab_lock);
  /* TODO: Send an RPC command to all CPUs apart of `affinity' */
  if (CPU_ISSET(THIS_CPU->c_id,affinity))
 #endif
  {
   receive_rpc_update_idt(entry->i_intno);
  }
-
-end:
- IFDEF_SMP(atomic_rwlock_endwrite(&inttab_lock));
+done:
  PREEMPTION_POP(was);
  /* Delete any interrupts that were overwritten. */
  while (delete_chain) {
@@ -1220,7 +1375,8 @@ end:
  }
  return result;
 err_eperm:  result = -EPERM; goto end;
-err_eexist: result = -EEXIST; goto end;
+err_eexist: result = -EEXIST; /*goto end;*/
+end: IFDEF_SMP(atomic_rwlock_endwrite(&inttab_lock)); goto done;
 }
 
 PUBLIC ssize_t KCALL
@@ -1268,42 +1424,6 @@ int_register(struct interrupt const *__restrict entry)
  else result = copy->i_intno;
  return (int)result;
 }
-
-INTERN ATTR_FREETEXT void KCALL
-cpu_interrupt_initialize(struct cpu *__restrict c) {
- struct idtentry *iter,*end; uintptr_t entry;
- struct interrupt_table *tab = &VCPU(c,inttab);
- end = (iter = tab->it_idt)+COMPILER_LENOF(tab->it_idt);
- entry = DIRQ_ENTRY(0);
- for (; iter != end; ++iter,entry += sizeof(struct dirq_asm)) {
-  iter->ie_off1 = (u16)entry;
-  iter->ie_sel = __KERNEL_CS;
-#ifdef __x86_64__
-  iter->ie_ist = 0;
-#else
-  iter->ie_zero = 0;
-#endif
-  iter->ie_flags = INTMODE_DEFAULT((irq_t)(iter-tab->it_idt));
-  iter->ie_off2  = (u16)(entry >> 16);
-#ifdef __x86_64__
-  iter->ie_off3  = (u32)(entry >> 32);
-  iter->ie_unused = 0;
-#endif
- }
-}
-
-
-INTERN ATTR_FREETEXT void KCALL interrupt_initialize(void) {
- struct idt_pointer idt_ptr;
- /* Initialize the default IDT vector. */
- cpu_interrupt_initialize(BOOTCPU);
- /* Simply set the  */
- idt_ptr.ip_idt   = VCPU(BOOTCPU,inttab).it_idt;
- idt_ptr.ip_limit = sizeof(inttab.it_idt)-1;
- COMPILER_WRITE_BARRIER();
- __asm__ __volatile__("lidt %0\n" : : "m" (idt_ptr));
-}
-
 
 
 DECL_END

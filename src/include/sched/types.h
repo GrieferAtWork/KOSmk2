@@ -332,19 +332,6 @@ union PACKED { struct PACKED {
 #define INTCHAIN_OPT_USR 0x04 /*< Ignore 'ic_irq' and handle all user interrupts. */
 #define INTCHAIN_OPT_ALL 0x07 /*< Ignore 'ic_irq' and handle all interrupts. */
 
-#ifdef __CC__
-struct comregs;
-/* Trigger & execute a local interrupt.
- * NOTE: When executed, this function will not return.
- * @param: pchain: The pointer to an intchain head. - When a handler is
- *                 found, update this pointer with the next older handler.
- * @param: cstate: CPU state used for loading general purpose registers
- *                 before execution ('GET_EXCEPTION_CPUSTATE'). */
-FUNDEF void KCALL intchain_trigger(struct intchain **__restrict pchain, irq_t irq,
-                                   struct comregs const *__restrict cstate,
-                                   register_t eflags);
-#endif /* __CC__ */
-
 
 
 

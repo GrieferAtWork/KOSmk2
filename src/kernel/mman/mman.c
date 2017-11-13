@@ -1977,7 +1977,12 @@ PRIVATE ATTR_FREERODATA isr_t const pf_isr = ISR_DEFAULT(EXC_PAGE_FAULT,&mman_as
 INTDEF int FCALL mman_interrupt_pf_handler(struct irregs_ie *__restrict info);
 PRIVATE struct interrupt mman_interrupt_pf = {
     .i_intno = EXC_PAGE_FAULT,
-    .i_mode  = INTMODE_HOST,
+    /* Must disable interrupts due to recursive page fault handling
+     * that may happen when driver callbacks trigger additional faults.
+     * ALSO: If a context switch happens before CR2 was saved, the wrong
+     *       fault address may be used, causing a non-recoverable PAGEFAULT
+     *       wherever the original one arose. */
+    .i_mode  = INTMODE_EXCEPT_NOINT,
     .i_type  = INTTYPE_BASIC,
     .i_prio  = INTPRIO_MAX,
     .i_flags = INTFLAG_PRIMARY,

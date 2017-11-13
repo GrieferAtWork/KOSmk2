@@ -133,7 +133,7 @@ print_segment_register(pformatprinter printer, void *closure,
 FUNDEF ssize_t KCALL
 kernel_panic_process(struct cpu *__restrict this_cpu,
                      struct task *__restrict this_task,
-                     struct cpustate_i *__restrict state, u32 panic_mask,
+                     struct cpustate_ie *__restrict state, u32 panic_mask,
                      pformatprinter printer, void *closure) {
  ssize_t result = 0,temp;
  char buffer[64],*iter; register_t reg,xsp,ss;

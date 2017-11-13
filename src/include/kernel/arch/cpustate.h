@@ -428,6 +428,7 @@ struct PACKED sgregs { u16 gs,fs,es,ds; };
 #define IRREGS_I_OFFSETOF_SS             40
 #define IRREGS_I_SIZE                    48
 #define IRREGS_HOST_IE_OFFSETOF_INTNO    0
+#define IRREGS_HOST_IE_OFFSETOF_BASE     8 /* + IRREGS_HOST_E_OFFSETOF_* */
 #define IRREGS_HOST_IE_OFFSETOF_ECX_CODE 8
 #define IRREGS_HOST_IE_OFFSETOF_TAIL     16 /* + IRREGS_HOST_OFFSETOF_* */
 #define IRREGS_HOST_IE_OFFSETOF_IP       16
@@ -436,6 +437,7 @@ struct PACKED sgregs { u16 gs,fs,es,ds; };
 #define IRREGS_HOST_IE_SIZE              40
 #define IRREGS_IE_OFFSETOF_HOST          0 /* + IRREGS_HOST_IE_OFFSETOF_* */
 #define IRREGS_IE_OFFSETOF_INTNO         0
+#define IRREGS_IE_OFFSETOF_BASE          8 /* + IRREGS_E_OFFSETOF_* */
 #define IRREGS_IE_OFFSETOF_EXC_CODE      8
 #define IRREGS_IE_OFFSETOF_TAIL          16 /* + IRREGS_OFFSETOF_* */
 #define IRREGS_IE_OFFSETOF_IP            16
@@ -487,6 +489,7 @@ struct PACKED sgregs { u16 gs,fs,es,ds; };
 #define IRREGS_I_OFFSETOF_SS             20
 #define IRREGS_I_SIZE                    24
 #define IRREGS_HOST_IE_OFFSETOF_INTNO    0
+#define IRREGS_HOST_IE_OFFSETOF_BASE     4 /* + IRREGS_HOST_E_OFFSETOF_* */
 #define IRREGS_HOST_IE_OFFSETOF_ECX_CODE 4
 #define IRREGS_HOST_IE_OFFSETOF_TAIL     8 /* + IRREGS_HOST_OFFSETOF_* */
 #define IRREGS_HOST_IE_OFFSETOF_IP       8
@@ -495,6 +498,7 @@ struct PACKED sgregs { u16 gs,fs,es,ds; };
 #define IRREGS_HOST_IE_SIZE              20
 #define IRREGS_IE_OFFSETOF_HOST          0 /* + IRREGS_HOST_IE_OFFSETOF_* */
 #define IRREGS_IE_OFFSETOF_INTNO         0
+#define IRREGS_IE_OFFSETOF_BASE          4 /* + IRREGS_E_OFFSETOF_* */
 #define IRREGS_IE_OFFSETOF_EXC_CODE      4
 #define IRREGS_IE_OFFSETOF_TAIL          8 /* + IRREGS_OFFSETOF_* */
 #define IRREGS_IE_OFFSETOF_IP            8
@@ -506,6 +510,9 @@ struct PACKED sgregs { u16 gs,fs,es,ds; };
 #endif
 
 #ifdef __CC__
+/* NOTE: `intno' isn't actually the ~real~ interrupt number,
+ *        but is encoded/decoded using the macros below. */
+
 struct PACKED irregs_host     { __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };
 struct PACKED irregs          { union PACKED { struct irregs_host host; struct PACKED {
                                 __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };};
@@ -516,20 +523,43 @@ struct PACKED irregs_e        { union PACKED { struct irregs_host_e host; struct
                                 register_t exc_code; union PACKED { struct irregs tail; struct PACKED {
                                 __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags);
                                 __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss); };};};};};
-/* NOTE: `intno' isn't actually the ~real~ interrupt number,
- *        but is encoded/decoded using the macros below.
- * HINT: `INTERRUPT_SIZE' is defined in <kernel/interrupt.h>
- */
-struct PACKED irregs_host_i   { register_t intno; __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };
-struct PACKED irregs_i        { union PACKED { struct irregs_host_i host; struct PACKED {
-                                register_t intno; __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };};
-                                __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss); };
-struct PACKED irregs_host_ie  { register_t intno; register_t exc_code; union PACKED { struct irregs_host tail; struct PACKED {
+struct PACKED irregs_host_i   { register_t intno; union PACKED { struct irregs_host tail; struct PACKED {
                                 __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };};};
-struct PACKED irregs_ie       { union PACKED { struct irregs_host_ie host; struct PACKED {
-                                register_t intno; register_t exc_code; union PACKED { struct irregs tail; struct PACKED {
+struct PACKED irregs_i        { union PACKED { struct irregs_host_i host; struct PACKED {
+                                register_t intno; union PACKED { struct irregs tail; struct PACKED {
                                 __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags);
                                 __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss); };};};};};
+struct PACKED irregs_host_ie  { register_t intno; union PACKED { struct irregs_host_e base;
+                                struct irregs_host __tail_noxcode; struct PACKED {
+                                register_t exc_code; union PACKED { struct irregs_host tail; struct PACKED {
+                                __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags); };};};};};
+struct PACKED irregs_ie       { union PACKED { struct irregs_host_ie host; struct PACKED {
+                                register_t intno; union PACKED { struct irregs_e base;
+                                struct irregs __tail_noxcode; struct PACKED {
+                                register_t exc_code; union PACKED { struct irregs tail; struct PACKED {
+                                __COMMON_REG2(ip); IRET_SEGMENT(cs); __COMMON_REG2(flags);
+                                __COMMON_REG2_EX(user,sp); IRET_SEGMENT(ss); };};};};};};};
+
+#ifdef __INTELLISENSE__
+#define IRREGS_INTNO  IRREGS_INTNO
+#define IRREGS_TAIL   IRREGS_TAIL
+/* Return the decoded interrupt number contained in the iret-descriptor. */
+extern "C++" {
+FUNDEF irq_t IRREGS_INTNO(struct irregs_host_i const *x);
+FUNDEF irq_t IRREGS_INTNO(struct irregs_i const *x);
+FUNDEF irq_t IRREGS_INTNO(struct irregs_host_ie const *x);
+FUNDEF irq_t IRREGS_INTNO(struct irregs_ie const *x);
+/* Return the proper tail structure of the given IRRegs structure. */
+FUNDEF struct irregs *IRREGS_TAIL(struct irregs_ie *x);
+FUNDEF struct irregs const *IRREGS_TAIL(struct irregs_ie const *x);
+FUNDEF struct irregs_host *IRREGS_TAIL(struct irregs_host_ie *x);
+FUNDEF struct irregs_host const *IRREGS_TAIL(struct irregs_host_ie const *x);
+}
+#else
+#define IRREGS_INTNO(x) ((irq_t)IRREGS_DECODE_INTNO((x)->intno))
+#define IRREGS_TAIL(x)  (INTNO_HAS_EXC_CODE(IRREGS_INTNO(x)) ? &(x)->tail : &(x)->__tail_noxcode)
+#endif
+
 /* Return true if `no' is one of `8,10,11,12,13,14,17,30' */
 #define INTNO_HAS_EXC_CODE(no) ((no) < 32 && 0x40027d00&(1<<(no)))
 DATDEF byte_t intno_offset[];
@@ -743,13 +773,31 @@ struct PACKED {
 #endif /* __CC__ */
 
 #ifdef __CC__
-#define CPUSTATE_TO_CPUSTATE_E(cs,cse,exc_code_)          ((cse).com = (cs).com,(cse).iret.tail = (cs).iret,(cse).iret.exc_code = (exc_code_))
-#define CPUSTATE_TO_CPUSTATE_I(cs,csi,intno_)             ((csi).com = (cs).com,(csi).iret.tail = (cs).iret,(csi).iret.intno = (intno_))
-#define CPUSTATE_TO_CPUSTATE_IE(cs,csie,intno_,exc_code_) ((csie).com = (cs).com,(csie).iret.tail = (cs).iret,(csie).iret.intno = (intno_),(csie).iret.exc_code = (exc_code_))
-#define CPUSTATE_E_TO_CPUSTATE(cse,cs)                    ((cs).com = (cse).com,(cs).iret.tail = (cse).iret)
-#define CPUSTATE_I_TO_CPUSTATE(csi,cs)                    ((cs).com = (csi).com,(cs).iret.tail = (csi).iret)
-#define CPUSTATE_IE_TO_CPUSTATE(csie,cs)                  ((cs).com = (csie).com,(cs).iret.tail = (csie).iret)
-/* TODO: Missing convertion functions. */
+/* iret/cpustate conversion functions. */
+#define IRREGS_TO_IRREGS_E(irr,irre,exc_code_)            (void)((irre).tail = (irr),(irre).exc_code = (exc_code_))
+#define IRREGS_TO_IRREGS_I(irr,irri,intno_)               (void)((irri).tail = (irr),(irri).intno = (intno_))
+#define IRREGS_TO_IRREGS_IE(irr,irrie,intno_,exc_code_)   (void)((irrie).tail = (irr),(irrie).intno = (intno_),(irrie).exc_code = (exc_code_))
+#define IRREGS_E_TO_IRREGS(irre,irr)                      (void)((irr) = (irre).tail)
+#define IRREGS_E_TO_IRREGS_I(irre,irri,intno_)            (void)((irri).tail = (irre).tail,(irri).intno = (intno_))
+#define IRREGS_E_TO_IRREGS_IE(irre,irrie,intno_)          (void)((irrie).base = (irre),(irrie).intno = (intno_))
+#define IRREGS_I_TO_IRREGS(irri,irr)                      (void)((irr) = (irri).tail)
+#define IRREGS_I_TO_IRREGS_E(irri,irre,exc_code_)         (void)((irre).tail = (irri).tail,(irre).exc_code = (exc_code_))
+#define IRREGS_I_TO_IRREGS_IE(irri,irrie,exc_code_)       (void)((irrie).tail = (irri).tail,(irrie).intno = (irri).intno,(irrie).exc_code = (exc_code_))
+#define IRREGS_IE_TO_IRREGS(irrie,irr)                    (void)((irr) = (irrie).tail)
+#define IRREGS_IE_TO_IRREGS_E(irrie,irre)                 (void)((irre) = (irrie).base)
+#define IRREGS_IE_TO_IRREGS_I(irrie,irri)                 (void)((irri).tail = (irrie).tail,(irri).intno = (irrie).intno)
+#define CPUSTATE_TO_CPUSTATE_E(cs,cse,exc_code_)          (void)((cse).com = (cs).com,IRREGS_TO_IRREGS_E((cs).iret,(cse).iret,exc_code_))
+#define CPUSTATE_TO_CPUSTATE_I(cs,csi,intno_)             (void)((csi).com = (cs).com,IRREGS_TO_IRREGS_I((cs).iret,(csi).iret,intno_))
+#define CPUSTATE_TO_CPUSTATE_IE(cs,csie,intno_,exc_code_) (void)((csie).com = (cs).com,IRREGS_TO_IRREGS_IE((cs).iret,(csie).iret,intno_,exc_code_))
+#define CPUSTATE_E_TO_CPUSTATE(cse,cs)                    (void)((cs).com = (cse).com,IRREGS_E_TO_IRREGS((cse).iret,(cs).iret))
+#define CPUSTATE_E_TO_CPUSTATE_I(cse,csi,intno_)          (void)((csi).com = (cse).com,IRREGS_E_TO_IRREGS_I((cse).iret,(csi).iret,intno_))
+#define CPUSTATE_E_TO_CPUSTATE_IE(cse,csie,intno_)        (void)((csie).com = (cse).com,IRREGS_E_TO_IRREGS_IE((cse).iret,(csie).iret,intno_))
+#define CPUSTATE_I_TO_CPUSTATE(csi,cs)                    (void)((cs).com = (csi).com,IRREGS_I_TO_IRREGS((csi).iret,(cs).iret))
+#define CPUSTATE_I_TO_CPUSTATE_E(csi,cse,exc_code_)       (void)((cse).com = (csi).com,IRREGS_I_TO_IRREGS_E((csi).iret,(cse).iret,exc_code_))
+#define CPUSTATE_I_TO_CPUSTATE_IE(csi,csie,exc_code_)     (void)((csie).com = (csi).com,IRREGS_I_TO_IRREGS_IE((csi).iret,(csie).iret,exc_code_))
+#define CPUSTATE_IE_TO_CPUSTATE(csie,cs)                  (void)((cs).com = (csie).com,IRREGS_IE_TO_IRREGS((csie).iret,(cs).iret))
+#define CPUSTATE_IE_TO_CPUSTATE_E(csie,cse)               (void)((cse).com = (csie).com,IRREGS_IE_TO_IRREGS_E((csie).iret,(cse).iret))
+#define CPUSTATE_IE_TO_CPUSTATE_I(csie,csi)               (void)((csi).com = (csie).com,IRREGS_IE_TO_IRREGS_I((csie).iret,(csi).iret))
 #endif /* __CC__ */
 
 #ifdef __COMPILER_HAVE_PRAGMA_PACK

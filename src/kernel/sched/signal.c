@@ -53,6 +53,7 @@
 #include <sys/ucontext.h>
 #include <kos/thread.h>
 #include <kernel/arch/hints.h>
+#include <kernel/arch/asm.h>
 
 DECL_BEGIN
 
@@ -348,7 +349,7 @@ L(    movx  (11*XSZ)(%xsp), %xax                                                
 L(    __ASM_LOAD_SGREGS32((12*XSZ)(%xsp))                                        )
 L(                                                                               )
 L(    /* Now just jump back to user-space. */                                    )
-L(    __ASM_IRET                                                                 )
+L(    ASM_IRET                                                                   )
 L(                                                                               )
 L(    /* Handle illegal-user-stack errors. */                                    )
 L(9:  movx %xbx, TASK_OFFSETOF_LASTCR2(%xax)                                     )

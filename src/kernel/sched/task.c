@@ -58,6 +58,7 @@
 #ifndef CONFIG_NO_TLB
 #include <kernel/arch/gdt.h>
 #include <kos/thread.h>
+#include <kernel/arch/asm.h>
 #endif /* !CONFIG_NO_TLB */
 
 DECL_BEGIN
@@ -814,7 +815,7 @@ L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
 L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
 L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_XSP0))
 L(    __ASM_POP_COMREGS /* Pop registers. */                                  )
-L(    __ASM_IRET        /* Iret -> pop XIP, CS + XFLAGS */                    )
+L(    ASM_IRET          /* Iret -> pop XIP, CS + XFLAGS */                    )
 L(SYM_END(cpu_sched_setrunning)                                               )
 L(SYM_END(cpu_sched_setrunning_save)                                          )
 L(SYM_END(cpu_sched_setrunning_savef)                                         )
@@ -945,7 +946,7 @@ L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
 L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
 L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_XSP0))
 L(70: __ASM_POP_COMREGS /* Pop registers. */                                  )
-L(    __ASM_IRET        /* Iret -> pop XIP, CS + XFLAGS */                    )
+L(    ASM_IRET          /* Iret -> pop XIP, CS + XFLAGS */                    )
 L(98: sti   /* Re-enable interrupts. */                                       )
 L(    pause /* Dispite all, still allow the CPU to relax a bit when not yielding. */)
 L(    movx $-EAGAIN, CPUSTATE_HOST_OFFSETOF_GP+GPREGS_OFFSETOF_XAX(%xsp)      )

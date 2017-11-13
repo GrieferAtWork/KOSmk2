@@ -138,14 +138,14 @@ L(.previous                                                                   )
 
 
 /* XXX: These interrupt numbers collide with the PIC vectors... */
-INTDEF void (ASMCALL _KiGetTickCount)(void);
-INTDEF void (ASMCALL _KiSystemService)(void);
-PRIVATE isr_t nt_tickcount_isr = ISR_DEFAULT_DPL3(0x2a,&_KiGetTickCount);
-PRIVATE isr_t nt_syscall_isr   = ISR_DEFAULT_DPL3(0x2e,&_KiSystemService);
+// INTDEF void (ASMCALL _KiGetTickCount)(void);
+// INTDEF void (ASMCALL _KiSystemService)(void);
+// PRIVATE isr_t nt_tickcount_isr = ISR_DEFAULT_DPL3(0x2a,&_KiGetTickCount);
+// PRIVATE isr_t nt_syscall_isr   = ISR_DEFAULT_DPL3(0x2e,&_KiSystemService);
 
 
 PRIVATE void MODULE_INIT KCALL pe_init(void) {
- struct cpu *c;
+ //struct cpu *c;
  /* NOTE: Re assert the alignment of 'nt_current_flavor', because
   *       only pointer-aligned addresses are intrinsically atomic. */
  assertf(IS_ALIGNED((uintptr_t)&nt_current_flavor,__SIZEOF_POINTER__),
@@ -154,10 +154,10 @@ PRIVATE void MODULE_INIT KCALL pe_init(void) {
  /* TODO: Kernel commandline switch to change NT flavor. */
 
  /* Install the NT IRQ handler on all CPUs. */
- FOREACH_CPU(c) {
-  irq_vset(c,&nt_tickcount_isr,NULL,IRQ_SET_QUICK);
-  irq_vset(c,&nt_syscall_isr,NULL,IRQ_SET_RELOAD);
- }
+//  FOREACH_CPU(c) {
+//   irq_vset(c,&nt_tickcount_isr,NULL,IRQ_SET_QUICK);
+//   irq_vset(c,&nt_syscall_isr,NULL,IRQ_SET_RELOAD);
+//  }
 }
 
 DECL_END

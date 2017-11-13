@@ -30,13 +30,16 @@ struct entry {
  LIST_HEAD(struct interrupt) e_head; /*< [0..1] Chain of interrupt handlers in this entry. */
 };
 struct PACKED interrupt_table {
- struct PACKED idtentry it_idt[256]; /* Internal CPU Interrupt Descriptor Table. */
- struct entry           it_tab[256]; /* Per-cpu + per-vector descriptors. */
+ struct PACKED idtentry it_idt[256]; /*< Internal CPU Interrupt Descriptor Table. */
+ struct entry           it_tab[256]; /*< Per-cpu + per-vector descriptors. */
 };
 
 
 INTDEF PERCPU struct PACKED interrupt_table inttab;
 INTDEF INITCALL void KCALL cpu_interrupt_initialize(struct cpu *__restrict c);
+
+INTDEF void KCALL pic_bios_begin(void);
+INTDEF void KCALL pic_bios_end(void);
 
 DECL_END
 

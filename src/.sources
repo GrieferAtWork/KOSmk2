@@ -44,7 +44,7 @@ BEGIN
 
 	INCLUDE("include")
 	DEFINE("__KERNEL__")
-#if defined(TARGET_X86_64) || 0
+#if defined(TARGET_X86_64) || 1
 	DEFINE("CONFIG_USE_EXTERNAL_ADDR2LINE")
 #endif
 	//C_FLAGS("-momit-lock-prefix=no") /* Enable when `CONFIG_SMP' is disabled. */
