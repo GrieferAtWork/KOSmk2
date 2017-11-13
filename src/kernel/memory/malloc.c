@@ -749,6 +749,11 @@ PRIVATE struct mheap mheaps[__GFP_HEAPCOUNT] = {
     [GFP_KERNEL]            = MHEAP_INIT(GFP_KERNEL),
     [GFP_KERNEL|GFP_LOCKED] = MHEAP_INIT(GFP_KERNEL|GFP_LOCKED),
     [GFP_MEMORY]            = MHEAP_INIT(GFP_MEMORY),
+#ifdef MZONE_FAST
+    /* TODO: Make use the permanent mapping of 0-2Gib at -2Gib.
+     *    >> Allocating physical memory from `MZONE_FAST'
+     *       doesn't require memory to be re-mapped! */
+#endif
 };
 
 #define MHEAP_GET(flags)  \

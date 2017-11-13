@@ -46,9 +46,11 @@
 
 DECL_BEGIN
 
+/*
 #ifdef __x86_64__
 #define LOG_PHYSICAL_ALLOCATIONS 1
 #endif
+*/
 
 /* Define to non-zero to add syslog entries for physical memory allocation. */
 #ifndef LOG_PHYSICAL_ALLOCATIONS

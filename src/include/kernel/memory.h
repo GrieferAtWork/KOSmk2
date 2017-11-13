@@ -93,6 +93,7 @@ FUNDEF KPD pgattr_t KCALL page_query(PHYS void *start, size_t n_bytes);
                                  *  HINT: This is where 16-bit/realmode code running in ring#0 must be loaded to. */
 #ifdef __x86_64__
 #define MZONE_STATIC       0x01 /* [0x0000000000100000..0x000000007fffffff] Physical memory that is statically mapped at -2Gb in every existing page directory. */
+#define MZONE_2GIB         0x01 /* [0x0000000000100000..0x000000007fffffff] An alias for `MZONE_STATIC' that better describes what this is. */
 #define MZONE_32BIT        0x02 /* [0x0000000080000000..0x00000000ffffffff] The remainder of the 32-bit address space. */
 #define MZONE_HIMEM        0x03 /* [0x0000000100000000..0x00007fffffffffff] The main physical memory zone containing all to-called ~high~ memory. */
 #define MZONE_FAST         0x06 /* [0xffffffff80100000..0xffffffffffffffff] Alias for `MZONE_VIRTUAL|MZONE_STATIC' */

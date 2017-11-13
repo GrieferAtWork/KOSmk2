@@ -841,6 +841,7 @@ pdir_munmap(pdir_t *__restrict self, VIRT ppage_t start,
          "I can't let you do that, dave.\n"
          "Unmapping %p...%p overlapping the core at %p...%p will most certainly crash",
         (uintptr_t)start,(uintptr_t)start+n_bytes-1,KERNEL_BEGIN,KERNEL_END-1);
+ *(uintptr_t *)&start &= VIRT_MASK; /* Mask out sign extension bits. */
 
  /* Make sure that level #3, #2 and #1 vectors are split at
   * the begin and end of the range we'll be unmapping. */
@@ -1130,6 +1131,7 @@ pdir_kernel_trunc_identity(PHYS PAGE_ALIGNED uintptr_t base,
  e4_t *e4; uintptr_t e4_begin;
  assertf(base+size >= base,"%p...%p",base,base+size-1);
  assertf(base+size <= PDIR_E4_TOTALSIZE,"%p...%p",base,base+size-1);
+ assertf(!(base&~VIRT_MASK),"The given `base' address %p isn't masked by `VIRT_MASK'!",base);
  /* Delete all mappings within `base...size' */
  if (size) for (;;) {
   e4_index = PDIR_E4_INDEX(base);
