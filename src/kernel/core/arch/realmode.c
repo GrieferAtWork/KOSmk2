@@ -245,6 +245,11 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    lidt rm_bios_int_idt                        )
      L(                                                )
 #ifdef __x86_64__
+     L(    ASM_RDFSBASE(r10)                           )
+     L(    pushq %%r10                                 )
+     L(    ASM_RDGSBASE(r10)                           )
+     L(    pushq %%r10                                 )
+     L(                                                )
      L(                                                )
      L(    movzwq realmode_base, %%rdi                 )
      L(    subq $__rm_core_start, %%rdi                )
@@ -269,6 +274,10 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    addq $(ASM_CORE_BASE), rm_bios_int_gdt+2(%%rdi))
      L(    lgdt rm_bios_int_gdt(%%rdi)                 ) /* Reload our own GDT with a virtual base address. */
      L(                                                )
+     L(    popq %%r10                                  )
+     L(    ASM_WRGSBASE(r10)                           )
+     L(    popq %%r10                                  )
+     L(    ASM_WRFSBASE(r10)                           )
 #else
      L(                                                )
      L(    jmp 1f                                      )
