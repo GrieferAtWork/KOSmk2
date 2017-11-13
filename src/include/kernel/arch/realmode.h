@@ -146,11 +146,13 @@ INTDEF INITCALL void KCALL realmode_initialize(void);
 
 /* Assembly helper macros for generating instructions using our custom relocations. */
 #define RM_LGDT(sym)        /* lgdt  REL(sym)        */ .byte 0x0f; .byte 0x01; .byte 0x16; RM_R_16(sym)
-#define RM_LLDT(sym)        /* lldt  REL(sym)        */ .byte 0x0f; .byte 0x00; .byte 0x16; RM_R_16(sym)
 #define RM_LIDT(sym)        /* lidt  REL(sym)        */ .byte 0x0f; .byte 0x01; .byte 0x1e; RM_R_16(sym)
+#define RM_SGDT(sym)        /* sgdt  REL(sym)        */ .byte 0x0f; .byte 0x01; .byte 0x06; RM_R_16(sym)
+#define RM_SIDT(sym)        /* sidt  REL(sym)        */ .byte 0x0f; .byte 0x01; .byte 0x0e; RM_R_16(sym)
 #define RM_LGDTL(sym)       /* lgdtl REL(sym)        */ .byte 0x66; RM_LGDT(sym)
-#define RM_LLDTL(sym)       /* lldtl REL(sym)        */ .byte 0x66; RM_LLDT(sym)
 #define RM_LIDTL(sym)       /* lidtl REL(sym)        */ .byte 0x66; RM_LIDT(sym)
+#define RM_SGDTL(sym)       /* sgdtl REL(sym)        */ .byte 0x66; RM_SGDT(sym)
+#define RM_SIDTL(sym)       /* sidtl REL(sym)        */ .byte 0x66; RM_SIDT(sym)
 #define RM_LJMPW(seg,sym)   /* ljmpw $seg, REL(sym)  */ .byte 0xea; RM_R_16(sym); .word seg
 #define RM_LEAW(sym,reg)    /* movw  $REL(sym), %reg */ .byte 0xb8|__RM_REGID(reg); RM_R_16(sym)
 #define RM_LEAL(sym,reg)    /* movl  $REL(sym), %reg */ .byte 0x66; RM_LEAW(sym,reg); .word 0x0000

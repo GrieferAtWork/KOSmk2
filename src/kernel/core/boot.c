@@ -207,11 +207,6 @@ parse_opt(struct setup_opt *setup_begin,
   if (((iter->so_flag&SETUP_NOARG) ? optlen == setup_len : optlen >= setup_len) &&
        !memcmp(opt,iter->so_name,setup_len*sizeof(char))) {
    /* Found a matching option. */
-   syslog(LOG_DEBUG,"HERE: %p/%p/%p/%p/%p, %q, %p %p\n",
-          iter,setup_begin,setup_end,
-          __setup_early_start,__setup_early_end,
-          iter->so_name,
-          iter->so_func,iter->so_flag);
    if (iter->so_func) {
     if ((*iter->so_func)(opt+setup_len)) return;
    } else {

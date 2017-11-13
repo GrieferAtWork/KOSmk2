@@ -219,6 +219,7 @@ bd_access_lba(bd_t *__restrict self, blkaddr_t block,
 
   /* Execute the BIOS interrupt. */
   rm_interrupt(&c,0x13);
+//  syslog(LOG_DEBUG,"%d\n",__LINE__);
   if (c.eflags&EFLAGS_CF) {
    /* Stop on error. */
 #if 1
@@ -347,6 +348,7 @@ PRIVATE ATTR_FREETEXT bd_t *KCALL bd_new(u8 drive) {
   c.gp.ah = 0x41;
   c.gp.bx = 0x55aa;
   c.gp.dl = drive;
+  c.gp.sp = realmode_stack;
   rm_interrupt(&c,0x13);
   /* If 'CF' isn't set, the bios does support the extensions. */
   has_extensions = !(c.eflags&EFLAGS_CF);
