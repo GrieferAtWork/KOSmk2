@@ -23,7 +23,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <kernel/memory.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 

@@ -30,7 +30,7 @@
 #include <hybrid/minmax.h>
 #include <hybrid/sync/atomic-rwlock.h>
 #include <hybrid/traceback.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <kernel/irq.h>
 #include <kernel/memory.h>
 #include <kernel/mman.h>
@@ -47,7 +47,7 @@
 #include <sync/sig.h>
 #include <sys/mman.h>
 #include <asm/instx.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 #ifndef CONFIG_NO_TLB
 #include <kos/thread.h>
 #endif /* !CONFIG_NO_TLB */

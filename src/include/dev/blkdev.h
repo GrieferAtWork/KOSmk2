@@ -41,7 +41,7 @@ typedef u32 blksys_t; /*< s.a.: `BLKSYS_*' */
 #define BLKSYS_MASK    0x0000ffff /*< Mask for the filesystem type. */
 #define BLKSYS_GET(x)  ((x)&BLKSYS_MASK)
 
-/* See full list: 'http://www.win.tue.nl/~aeb/partitions/partition_types-1.html' */
+/* See full list: `http://www.win.tue.nl/~aeb/partitions/partition_types-1.html' */
 #define BLKSYS_ANY              0x00 /*< Any system type (May be used to register an MBR parser with `autopart_register'). */
 #define BLKSYS_UNKNOWN          0x00
 #define BLKSYS_EMPTY            0x00

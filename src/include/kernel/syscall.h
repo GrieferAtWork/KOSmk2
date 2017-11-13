@@ -21,7 +21,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <sched/percpu.h>
 
 DECL_BEGIN
@@ -276,7 +276,7 @@ FUNDEF void ASMCALL sysreturn_check_segments(void);
 DECL_END
 
 #include <hybrid/host.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <hybrid/asm.h>
 #include <asm/instx.h>
 #include <kernel/irq.h>

@@ -41,9 +41,9 @@
 #include <sched/task.h>
 #include <string.h>
 #include <sys/syslog.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <kernel/paging.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 #include <kernel/export.h>
 
 DECL_BEGIN

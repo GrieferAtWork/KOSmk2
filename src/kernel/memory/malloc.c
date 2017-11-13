@@ -59,7 +59,7 @@
 #include <sys/mman.h>
 #if defined(__i386__) || defined(__x86_64__)
 #include <asm/instx.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 #endif
 
 #define MALIGNED /* Annotation for an integral/pointer aligned by `HEAP_ALIGNMENT' */

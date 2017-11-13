@@ -187,7 +187,7 @@ BEGIN
 
 			/* Kernel core source files */
 			SOURCE("kernel/core/*.c")
-			SOURCE("kernel/core/arch/*.c")
+			SOURCE("kernel/arch/*.c")
 			SOURCE("kernel/dev/*.c")
 			SOURCE("kernel/fs/*.c")
 			SOURCE("kernel/memory/*.c")

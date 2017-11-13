@@ -57,9 +57,9 @@
 
 #ifdef _MSC_VER
 #ifndef __cplusplus
-#pragma warning(push) /* Keep '4197' disabled in C */
+#pragma warning(push) /* Keep `4197' disabled in C because of its use in macros. */
 #endif /* __cplusplus */
-#pragma warning(disable: 4197) /* Casting away 'volatile' */
+#pragma warning(disable: 4197) /* Casting away `volatile' */
 
 #include "__atomic-msvc.h"
 #endif
@@ -88,7 +88,7 @@ __SYSDECL_BEGIN
 #define __hybrid_atomic_fetchor(x,v,order)                     __atomic_fetch_or(&(x),v,order)
 #define __hybrid_atomic_fetchxor(x,v,order)                    __atomic_fetch_xor(&(x),v,order)
 #define __hybrid_atomic_fetchnand(x,v,order)                   __atomic_fetch_nand(&(x),v,order)
-#else /* GCC... */
+#else /* Modern GCC... */
 
 #if defined(__GNUC__) || defined(__DCC_VERSION__)
 #define __impl_hybrid_atomic_addfetch_seqcst(x,v)           __sync_add_and_fetch(&(x),v)

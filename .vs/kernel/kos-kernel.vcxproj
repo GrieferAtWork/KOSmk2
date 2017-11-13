@@ -20,13 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\.sources" />
+    <None Include="..\..\src\kernel\arch\paging32.c.inl" />
+    <None Include="..\..\src\kernel\arch\paging64.c.inl" />
+    <None Include="..\..\src\kernel\arch\user32.c.inl" />
+    <None Include="..\..\src\kernel\arch\user64.c.inl" />
     <None Include="..\..\src\kernel\core-modules\autopart\efi.c.inl" />
     <None Include="..\..\src\kernel\core-modules\fs\fat-mkent.c.inl" />
     <None Include="..\..\src\kernel\core-modules\fs\fat-readdir.c.inl" />
-    <None Include="..\..\src\kernel\core\arch\paging32.c.inl" />
-    <None Include="..\..\src\kernel\core\arch\paging64.c.inl" />
-    <None Include="..\..\src\kernel\core\arch\user32.c.inl" />
-    <None Include="..\..\src\kernel\core\arch\user64.c.inl" />
     <None Include="..\..\src\kernel\fs\atomic-iobuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\canonbuffer.c.inl" />
     <None Include="..\..\src\kernel\fs\memfile.c.inl" />
@@ -46,24 +46,23 @@
     <None Include="..\..\src\modules\nt\flavor-link.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\kernel\arch\boot.c" />
+    <ClCompile Include="..\..\src\kernel\arch\fpu.c" />
+    <ClCompile Include="..\..\src\kernel\arch\gdt.c" />
+    <ClCompile Include="..\..\src\kernel\arch\interrupt.c" />
+    <ClCompile Include="..\..\src\kernel\arch\irq.c" />
+    <ClCompile Include="..\..\src\kernel\arch\paging.c" />
+    <ClCompile Include="..\..\src\kernel\arch\panic.c" />
+    <ClCompile Include="..\..\src\kernel\arch\pic.c" />
+    <ClCompile Include="..\..\src\kernel\arch\realmode.c" />
+    <ClCompile Include="..\..\src\kernel\arch\smp-init.c" />
+    <ClCompile Include="..\..\src\kernel\arch\smp.c" />
+    <ClCompile Include="..\..\src\kernel\arch\user.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\autopart\mbr.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\disk\bios-disk.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\fs\fat.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\linker\elf.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\boot.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\emulations.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\fpu.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\gdt.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\interrupt.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\irq.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\paging.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\panic.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\pic.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\realmode.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\smp.c" />
-    <ClCompile Include="..\..\src\kernel\core\arch\user.c" />
     <ClCompile Include="..\..\src\kernel\core\boot.c" />
     <ClCompile Include="..\..\src\kernel\core\iomgr.c" />
     <ClCompile Include="..\..\src\kernel\core\main.c" />
@@ -147,6 +146,25 @@
     <ClCompile Include="..\..\src\modules\video\vga.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\include\arch\apic.h" />
+    <ClInclude Include="..\..\src\include\arch\apicdef.h" />
+    <ClInclude Include="..\..\src\include\arch\asm.h" />
+    <ClInclude Include="..\..\src\include\arch\cpu.h" />
+    <ClInclude Include="..\..\src\include\arch\cpufeatures.h" />
+    <ClInclude Include="..\..\src\include\arch\cpustate.h" />
+    <ClInclude Include="..\..\src\include\arch\fpu.h" />
+    <ClInclude Include="..\..\src\include\arch\gdt.h" />
+    <ClInclude Include="..\..\src\include\arch\hints.h" />
+    <ClInclude Include="..\..\src\include\arch\idt_pointer.h" />
+    <ClInclude Include="..\..\src\include\arch\interrupt.h" />
+    <ClInclude Include="..\..\src\include\arch\mp.h" />
+    <ClInclude Include="..\..\src\include\arch\paging32.h" />
+    <ClInclude Include="..\..\src\include\arch\paging64.h" />
+    <ClInclude Include="..\..\src\include\arch\pic.h" />
+    <ClInclude Include="..\..\src\include\arch\preemption.h" />
+    <ClInclude Include="..\..\src\include\arch\realmode.h" />
+    <ClInclude Include="..\..\src\include\arch\task.h" />
+    <ClInclude Include="..\..\src\include\arch\tss.h" />
     <ClInclude Include="..\..\src\include\dev\blkdev.h" />
     <ClInclude Include="..\..\src\include\dev\chrdev.h" />
     <ClInclude Include="..\..\src\include\dev\device.h" />
@@ -171,26 +189,6 @@
     <ClInclude Include="..\..\src\include\fs\textfile.h" />
     <ClInclude Include="..\..\src\include\fs\vfs.h" />
     <ClInclude Include="..\..\src\include\input\keyboard.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\apic.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\apicdef.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\asm.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\cpu.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\cpufeatures.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\cpustate.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\emulations.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\fpu.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\gdt.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\hints.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\interrupt.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\mp.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\paging32.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\paging64.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\pic.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\preemption.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\realmode.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\task.h" />
-    <ClInclude Include="..\..\src\include\kernel\arch\tss.h" />
     <ClInclude Include="..\..\src\include\kernel\boot.h" />
     <ClInclude Include="..\..\src\include\kernel\export.h" />
     <ClInclude Include="..\..\src\include\kernel\interrupt.h" />
@@ -239,7 +237,7 @@
     <ClInclude Include="..\..\src\include\sync\rwlock.h" />
     <ClInclude Include="..\..\src\include\sync\sem.h" />
     <ClInclude Include="..\..\src\include\sync\sig.h" />
-    <ClInclude Include="..\..\src\kernel\core\arch\interrupt_intern.h" />
+    <ClInclude Include="..\..\src\kernel\arch\interrupt_intern.h" />
     <ClInclude Include="..\..\src\kernel\debug-config.h" />
     <ClInclude Include="..\..\src\kernel\linker\ksym.h" />
     <ClInclude Include="..\..\src\kernel\mman\intern.h" />

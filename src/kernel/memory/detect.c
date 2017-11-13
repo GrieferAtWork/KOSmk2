@@ -25,10 +25,10 @@
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>
-#include <kernel/arch/cpustate.h>
-#include <kernel/arch/gdt.h>
-#include <kernel/arch/idt_pointer.h>
-#include <kernel/arch/realmode.h>
+#include <arch/cpustate.h>
+#include <arch/gdt.h>
+#include <arch/idt_pointer.h>
+#include <arch/realmode.h>
 #include <kernel/boot.h>
 #include <kernel/irq.h>
 #include <kernel/memory.h>

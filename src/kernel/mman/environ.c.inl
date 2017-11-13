@@ -39,7 +39,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <stdlib.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 #include <asm/instx.h>
 
 DECL_BEGIN

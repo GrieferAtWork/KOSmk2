@@ -38,7 +38,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <syslog.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 

@@ -56,9 +56,9 @@
 #endif /* !CONFIG_JIFFY_TIMEOUT */
 #include <hybrid/host.h>
 #include <hybrid/types.h>
-#include <kernel/arch/cpustate.h>
-#include <kernel/arch/cpu.h>
-#include <kernel/arch/task.h>
+#include <arch/cpustate.h>
+#include <arch/cpu.h>
+#include <arch/task.h>
 #include <kernel/memory.h>
 #include <sched.h>
 #include <sync/sig.h>

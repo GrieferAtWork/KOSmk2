@@ -33,7 +33,7 @@
 #include <hybrid/minmax.h>
 #include <hybrid/section.h>
 #include <hybrid/traceback.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <kernel/irq.h>
 #include <hybrid/host.h>
 #include <kernel/mman.h>
@@ -54,11 +54,11 @@
 #include <string.h>
 #include <sys/io.h>
 #include <asm/instx.h>
-#include <kernel/arch/pic.h>
+#include <arch/pic.h>
 #ifndef CONFIG_NO_TLB
-#include <kernel/arch/gdt.h>
+#include <arch/gdt.h>
 #include <kos/thread.h>
-#include <kernel/arch/asm.h>
+#include <arch/asm.h>
 #endif /* !CONFIG_NO_TLB */
 
 DECL_BEGIN

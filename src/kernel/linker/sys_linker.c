@@ -39,7 +39,7 @@
 #include <sys/mman.h>
 #include <syslog.h>
 #include <kernel/irq.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <sched/cpu.h>
 #include <asm/instx.h>
 

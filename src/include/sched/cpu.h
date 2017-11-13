@@ -25,7 +25,7 @@
 #include <sched/percpu.h>
 #include <sched/types.h>
 #include <stdbool.h>
-#include <kernel/arch/preemption.h>
+#include <arch/preemption.h>
 
 DECL_BEGIN
 

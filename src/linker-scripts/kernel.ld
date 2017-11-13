@@ -21,12 +21,12 @@
 #include <hybrid/limits.h>
 #include <kernel/paging.h>
 #include <kernel/paging-util.h>
-#include <kernel/arch/gdt.h>
-#include <kernel/arch/tss.h>
+#include <arch/gdt.h>
+#include <arch/tss.h>
 #include <proprietary/multiboot2.h>
 #include <sched/percpu.h>
 #include <sched/types.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 
 #define DEFAULT_SECTION(name) \
   name BLOCK(PAGESIZE) : AT(ADDR(name) - CORE_BASE)

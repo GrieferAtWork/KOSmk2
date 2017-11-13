@@ -28,8 +28,8 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/section.h>
-#include <kernel/arch/cpustate.h>
-#include <kernel/arch/realmode.h>
+#include <arch/cpustate.h>
+#include <arch/realmode.h>
 #include <kernel/boot.h>
 #include <kernel/export.h>
 #include <kernel/malloc.h>
@@ -44,7 +44,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <hybrid/minmax.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 

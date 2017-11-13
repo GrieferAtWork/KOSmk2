@@ -35,7 +35,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <hybrid/align.h>
-#include <kernel/arch/pic.h>
+#include <arch/pic.h>
 
 #include "ne2k.h"
 

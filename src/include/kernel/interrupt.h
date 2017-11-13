@@ -22,7 +22,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <hybrid/list/list.h>
-#include <kernel/arch/interrupt.h>
+#include <arch/interrupt.h>
 #include <errno.h>
 #include <stdbool.h>
 #ifdef CONFIG_SMP

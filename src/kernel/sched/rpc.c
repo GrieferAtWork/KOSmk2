@@ -25,7 +25,7 @@
 #include <errno.h>
 #include <hybrid/check.h>
 #include <hybrid/types.h>
-#include <kernel/arch/apic.h>
+#include <arch/apic.h>
 #include <kernel/paging.h>
 #include <kernel/user.h>
 #include <sys/syslog.h>

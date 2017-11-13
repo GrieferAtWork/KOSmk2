@@ -30,7 +30,7 @@
 #include <hybrid/debug.h>
 #include <hybrid/traceback.h>
 #include <input/keyboard.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <kernel/export.h>
 #include <kernel/irq.h>
 #include <dev/rtc.h>
@@ -50,7 +50,7 @@
 #include <sys/io.h>
 #include <kernel/mman.h>
 #include <asm/instx.h>
-#include <kernel/arch/pic.h>
+#include <arch/pic.h>
 
 #include "ps2_keymaps.h"
 

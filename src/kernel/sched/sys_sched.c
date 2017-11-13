@@ -33,8 +33,8 @@
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <hybrid/types.h>
-#include <kernel/arch/cpustate.h>
-#include <kernel/arch/hints.h>
+#include <arch/cpustate.h>
+#include <arch/hints.h>
 #include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>

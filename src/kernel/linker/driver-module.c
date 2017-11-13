@@ -32,7 +32,7 @@
 #include <linker/patch.h>
 #include <sched/task.h>
 #include <sys/mman.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 

@@ -23,7 +23,7 @@
 
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
-#include <kernel/arch/gdt.h>
+#include <arch/gdt.h>
 #include <kernel/mman.h>
 #include <sched.h>
 #include <sched/cpu.h>

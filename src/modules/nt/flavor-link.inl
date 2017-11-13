@@ -22,7 +22,7 @@
 #endif
 #endif /* !__DEEMON__ */
 
-/* NOTE: IDs are taken from 'http://j00ru.vexillium.org/syscalls/nt/32/' */
+/* NOTE: IDs are taken from `http://j00ru.vexillium.org/syscalls/nt/32/' */
 
 /* XXX: Some argument counts are too high due to prototypes including code like this:
  *     `PTOKEN_PRIVILEGES PreviousState, _When_(PreviousState!=NULL, _Out_) PULONG ReturnLength'

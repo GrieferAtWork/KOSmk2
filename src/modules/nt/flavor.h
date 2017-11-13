@@ -25,7 +25,7 @@
 DECL_BEGIN
 
 /* NOTE: System call numbers are taken from
- *      'http://j00ru.vexillium.org/syscalls/nt/32/' */
+ *      `http://j00ru.vexillium.org/syscalls/nt/32/' */
 
 /* The system call flavor version that should be emulated. */
 #define NT_FLAVOR_WINDOWS_NT_SP3             0

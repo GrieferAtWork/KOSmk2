@@ -37,11 +37,11 @@
 #include <hybrid/section.h>
 #include <hybrid/traceback.h>
 #include <hybrid/types.h>
-#include <kernel/arch/apic.h>
-#include <kernel/arch/cpustate.h>
-#include <kernel/arch/gdt.h>
-#include <kernel/arch/idt_pointer.h>
-#include <kernel/arch/realmode.h>
+#include <arch/apic.h>
+#include <arch/cpustate.h>
+#include <arch/gdt.h>
+#include <arch/idt_pointer.h>
+#include <arch/realmode.h>
 #include <kernel/boot.h>
 #include <kernel/export.h>
 #include <kernel/irq.h>
@@ -79,9 +79,9 @@
 #include <hybrid/byteswap.h>
 #include <netinet/in.h>
 #include <asm/instx.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 #include <kos/thread.h>
-#include <kernel/arch/asm.h>
+#include <arch/asm.h>
 
 DECL_BEGIN
 
@@ -487,7 +487,7 @@ kernel_boot(u32        mb_magic,
 
 #ifdef CONFIG_SMP
  /* Perform early SMP initialization (do this while we're
-  * still mapping the whole of the 3Gb physical address space). */
+  * still mapping the whole of the (3Gb on i386) physical address space). */
  smp_initialize();
 #endif
 

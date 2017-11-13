@@ -26,7 +26,7 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/traceback.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <kernel/export.h>
 #include <kernel/irq.h>
 #include <sys/syslog.h>

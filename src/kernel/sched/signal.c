@@ -33,7 +33,7 @@
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/traceback.h>
-#include <kernel/arch/gdt.h>
+#include <arch/gdt.h>
 #include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>
@@ -52,8 +52,8 @@
 #include <sys/syslog.h>
 #include <sys/ucontext.h>
 #include <kos/thread.h>
-#include <kernel/arch/hints.h>
-#include <kernel/arch/asm.h>
+#include <arch/hints.h>
+#include <arch/asm.h>
 
 DECL_BEGIN
 

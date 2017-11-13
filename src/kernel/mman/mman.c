@@ -68,7 +68,7 @@ DECL_BEGIN
  *       memory, and those allocated in physical memory. */
 PRIVATE VIRT LIST_HEAD(struct mregion) mregion_chain_v = NULL;
 PRIVATE PHYS LIST_HEAD(struct mregion) mregion_chain_p = NULL;
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 PRIVATE DEFINE_ATOMIC_RWLOCK(mregion_chain_lock);
 
 

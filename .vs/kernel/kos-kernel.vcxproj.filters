@@ -62,17 +62,17 @@
     <None Include="..\..\src\kernel\linker\boot-module.c.inl">
       <Filter>kernel\linker</Filter>
     </None>
-    <None Include="..\..\src\kernel\core\arch\paging32.c.inl">
-      <Filter>kernel\core\arch</Filter>
+    <None Include="..\..\src\kernel\arch\paging32.c.inl">
+      <Filter>kernel\arch</Filter>
     </None>
-    <None Include="..\..\src\kernel\core\arch\paging64.c.inl">
-      <Filter>kernel\core\arch</Filter>
+    <None Include="..\..\src\kernel\arch\paging64.c.inl">
+      <Filter>kernel\arch</Filter>
     </None>
-    <None Include="..\..\src\kernel\core\arch\user32.c.inl">
-      <Filter>kernel\core\arch</Filter>
+    <None Include="..\..\src\kernel\arch\user32.c.inl">
+      <Filter>kernel\arch</Filter>
     </None>
-    <None Include="..\..\src\kernel\core\arch\user64.c.inl">
-      <Filter>kernel\core\arch</Filter>
+    <None Include="..\..\src\kernel\arch\user64.c.inl">
+      <Filter>kernel\arch</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -81,9 +81,6 @@
     </Filter>
     <Filter Include="include\kernel">
       <UniqueIdentifier>{bdae1602-365a-4620-aeed-e8f28ccab9c5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\kernel\arch">
-      <UniqueIdentifier>{cb5682d3-1349-49fa-aab4-929bb45d5026}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\sync">
       <UniqueIdentifier>{3e4c52a8-e8c1-4e00-b5a4-bad94742d3b5}</UniqueIdentifier>
@@ -102,9 +99,6 @@
     </Filter>
     <Filter Include="kernel\core">
       <UniqueIdentifier>{842e262f-30cc-4af9-adf4-a583770df1be}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="kernel\core\arch">
-      <UniqueIdentifier>{e682f747-44f4-4597-b188-c944bd2d98da}</UniqueIdentifier>
     </Filter>
     <Filter Include="kernel\sched">
       <UniqueIdentifier>{9d6fdc92-fa22-4fef-92dc-58ed32c0ca3a}</UniqueIdentifier>
@@ -202,6 +196,12 @@
     <Filter Include="modules\cpu">
       <UniqueIdentifier>{208e0b0e-1902-46e6-bb41-754d7fee65fb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\arch">
+      <UniqueIdentifier>{83cef432-7958-41cb-9d94-c9d13f6085bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\arch">
+      <UniqueIdentifier>{584686ea-7154-450c-a4cd-151900d58408}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core\main.c">
@@ -215,12 +215,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\sched\task.c">
       <Filter>kernel\sched</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\gdt.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\irq.c">
-      <Filter>kernel\core\arch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\mman\mman.c">
       <Filter>kernel\mman</Filter>
@@ -279,15 +273,6 @@
     <ClCompile Include="..\..\src\kernel\sched\sys_sched.c">
       <Filter>kernel\sched</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\smp.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\realmode.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\smp-init.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\dev\diskpart.c">
       <Filter>kernel\dev</Filter>
     </ClCompile>
@@ -308,9 +293,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\dev\fstype.c">
       <Filter>kernel\dev</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\boot.c">
-      <Filter>kernel\core\arch</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core\boot.c">
       <Filter>kernel\core</Filter>
@@ -408,9 +390,6 @@
     <ClCompile Include="..\..\src\modules\fs\proc\pidnode.c">
       <Filter>modules\fs\proc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\fpu.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\modules\linker\shebang.c">
       <Filter>modules\linker</Filter>
     </ClCompile>
@@ -480,26 +459,44 @@
     <ClCompile Include="..\..\src\modules\rtc\cmos.c">
       <Filter>modules\rtc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\paging.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\user.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\interrupt.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\panic.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\pic.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\arch\emulations.c">
-      <Filter>kernel\core\arch</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\modules\cpu\x86_emu.c">
       <Filter>modules\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\interrupt.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\irq.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\paging.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\panic.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\pic.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\realmode.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\smp.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\smp-init.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\user.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\boot.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\fpu.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\gdt.c">
+      <Filter>kernel\arch</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -529,18 +526,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\export.h">
       <Filter>include\kernel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\idt_pointer.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\tss.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\cpustate.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\gdt.h">
-      <Filter>include\kernel\arch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\modules\fat.h">
       <Filter>include\modules</Filter>
@@ -592,24 +577,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\stack.h">
       <Filter>include\kernel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\mp.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\cpu.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\apicdef.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\apic.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\realmode.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\cpufeatures.h">
-      <Filter>include\kernel\arch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\modules\bios-disk.h">
       <Filter>include\modules</Filter>
@@ -713,9 +680,6 @@
     <ClInclude Include="..\..\src\include\dev\rtc.h">
       <Filter>include\dev</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\task.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\include\fs\pipe.h">
       <Filter>include\fs</Filter>
     </ClInclude>
@@ -727,9 +691,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\modules\fs\proc\procfs.h">
       <Filter>modules\fs\proc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\fpu.h">
-      <Filter>include\kernel\arch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\sched\cred.h">
       <Filter>include\sched</Filter>
@@ -785,35 +746,68 @@
     <ClInclude Include="..\..\src\include\kernel\version.h">
       <Filter>include\kernel</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\paging32.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\paging64.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\preemption.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\hints.h">
-      <Filter>include\kernel\arch</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\interrupt.h">
       <Filter>include\kernel</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\interrupt.h">
-      <Filter>include\kernel\arch</Filter>
+    <ClInclude Include="..\..\src\kernel\arch\interrupt_intern.h">
+      <Filter>kernel\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\asm.h">
-      <Filter>include\kernel\arch</Filter>
+    <ClInclude Include="..\..\src\include\arch\gdt.h">
+      <Filter>include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\core\arch\interrupt_intern.h">
-      <Filter>kernel\core\arch</Filter>
+    <ClInclude Include="..\..\src\include\arch\hints.h">
+      <Filter>include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\pic.h">
-      <Filter>include\kernel\arch</Filter>
+    <ClInclude Include="..\..\src\include\arch\idt_pointer.h">
+      <Filter>include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\arch\emulations.h">
-      <Filter>include\kernel\arch</Filter>
+    <ClInclude Include="..\..\src\include\arch\interrupt.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\mp.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\paging32.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\paging64.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\pic.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\preemption.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\realmode.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\task.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\tss.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\apic.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\apicdef.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\asm.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\cpu.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\cpufeatures.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\cpustate.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\fpu.h">
+      <Filter>include\arch</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

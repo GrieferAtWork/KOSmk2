@@ -32,10 +32,10 @@
 #include <hybrid/section.h>
 #include <hybrid/sync/atomic-rwlock.h>
 #include <hybrid/traceback.h>
-#include <kernel/arch/cpu.h>
-#include <kernel/arch/cpustate.h>
-#include <kernel/arch/gdt.h>
-#include <kernel/arch/mp.h>
+#include <arch/cpu.h>
+#include <arch/cpustate.h>
+#include <arch/gdt.h>
+#include <arch/mp.h>
 #include <kernel/boot.h>
 #include <kernel/irq.h>
 #include <kernel/mman.h>
@@ -51,9 +51,9 @@
 #include <kernel/export.h>
 #include <kos/thread.h>
 #include <asm/instx.h>
-#include <kernel/arch/hints.h>
-#include <kernel/arch/pic.h>
-#include <kernel/arch/asm.h>
+#include <arch/hints.h>
+#include <arch/pic.h>
+#include <arch/asm.h>
 
 DECL_BEGIN
 

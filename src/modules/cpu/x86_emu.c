@@ -22,15 +22,16 @@
 #include <hybrid/compiler.h>
 #include <kernel/export.h>
 #include <kernel/interrupt.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #include <kernel/user.h>
 #include <sched/types.h>
-#include <kernel/arch/cpu.h>
+#include <arch/cpu.h>
 #include <sched/signal.h>
 #include <sched/task.h>
 #include <asm/instx.h>
 #include <stdlib.h>
 #include <dev/rtc.h>
+#include <bits/byteswap.h>
 
 /* Emulate specific x86 instructions that may not be supported by the CPU:
  * i386 / x86_64:
@@ -39,7 +40,10 @@
  *   - rdtsc     (kernel+user)
  *   - cli       (user -- s.a.: `TASKFLAG_DELAYSIGS')
  *   - sti       (user -- s.a.: `TASKFLAG_DELAYSIGS')
+ *   - TODO:rorx
  * i386:
+ *   - bswap
+ *   - TODO:cmov
  *   ...
  * x86_64:
  *   - rdfsbase  (kernel+user)
@@ -57,7 +61,11 @@ DECL_BEGIN
 
 
 STATIC_ASSERT(!INTNO_HAS_EXC_CODE(EXC_INVALID_OPCODE));
+STATIC_ASSERT(INTNO_HAS_EXC_CODE(EXC_PROTECTION_FAULT));
 
+
+/* No need to emulate CPUID on x86_64. - It being available is one of the requirements. */
+#ifndef __x86_64__
 PRIVATE char const vendor_id[12] = {'G','e','n','u','i','n','e','I','n','t','e','l'};
 PRIVATE char const brand_str[48] = "KOS CPUID Emulation";
 
@@ -100,6 +108,7 @@ emu_cpuid(struct cpustate_i *__restrict state) {
   break;
  }
 }
+#endif /* !__x86_64__ */
 
 struct instr {
  byte_t    bytes[16];
@@ -190,6 +199,7 @@ next:
 
 #define HAS_BYTE()  (code.length != 0)
 #define READ_BYTE() (--code.length,*code.start++)
+#define PEEK_BYTE() (*code.start)
 #define LAST_BYTE() (code.start[-1])
 
 PRIVATE int INTCALL
@@ -206,9 +216,11 @@ invop_interrupt_handler(struct cpustate_i *__restrict state) {
   if (!HAS_BYTE()) break;
   switch (READ_BYTE()) {
 
+#ifndef __x86_64__
   case 0xa2: /* `cpuid' */
    emu_cpuid(state);
    goto ok;
+#endif /* !__x86_64__ */
 
   {
    jtime64_t timestamp;
@@ -222,18 +234,22 @@ invop_interrupt_handler(struct cpustate_i *__restrict state) {
    goto ok;
   }
 
-#ifdef __x86_64__
   case 0xae:
    if (!HAS_BYTE()) break;
-   if (code.flags&INSTR_REP) switch (READ_BYTE()) {
-   case 0xc0 ... 0xc7: GP_SETI(LAST_BYTE()&0x7,state->sg.fs_base);   goto ok; /* rdfsbase r32 / r64 */
-   case 0xc8 ... 0xcf: GP_SETI(LAST_BYTE()&0x7,state->sg.gs_base);   goto ok; /* rdgsbase r32 / r64 */
-   case 0xd0 ... 0xd7: state->sg.fs_base = GP_GETI(LAST_BYTE()&0x7); goto ok; /* wrfsbase r32 / r64 */
-   case 0xd8 ... 0xdf: state->sg.gs_base = GP_GETI(LAST_BYTE()&0x7); goto ok; /* wrgsbase r32 / r64 */
+   switch (READ_BYTE()) {
+#ifdef __x86_64__
+   case 0xc0 ... 0xc7: if (code.flags&INSTR_REP) { GP_SETI(LAST_BYTE()&0x7,state->sg.fs_base);   goto ok; } break; /* rdfsbase r32 / r64 */
+   case 0xc8 ... 0xcf: if (code.flags&INSTR_REP) { GP_SETI(LAST_BYTE()&0x7,state->sg.gs_base);   goto ok; } break; /* rdgsbase r32 / r64 */
+   case 0xd0 ... 0xd7: if (code.flags&INSTR_REP) { state->sg.fs_base = GP_GETI(LAST_BYTE()&0x7); goto ok; } break; /* wrfsbase r32 / r64 */
+   case 0xd8 ... 0xdf: if (code.flags&INSTR_REP) { state->sg.gs_base = GP_GETI(LAST_BYTE()&0x7); goto ok; } break; /* wrgsbase r32 / r64 */
+#endif
+   case 0xe8: goto ok; /* lfence */
+   case 0xf0: goto ok; /* mfence */
+   case 0xf8: goto ok; /* sfence */
    default: break;
    }
+   /* TODO: clflush: `0F AE /7' */
    break;
-#endif
 
   case 0xc7:
    if (!HAS_BYTE()) break;
@@ -257,6 +273,16 @@ invop_interrupt_handler(struct cpustate_i *__restrict state) {
    }
    break;
 
+#ifndef __x86_64__
+  {
+   u32 *temp;
+  case 0xc8 ... 0xcf: /* bswap */
+   temp  = &GP_EiX(LAST_BYTE()&0x7);
+   *temp = __bswap_constant_32(*temp);
+   goto ok;
+  } break;
+#endif
+
   default: break;
   }
   break;
@@ -271,7 +297,7 @@ ok: /* Adjust the program counter to return after the emulated instruction. */
 }
 
 PRIVATE int INTCALL
-gpf_interrupt_handler(struct cpustate_i *__restrict state) {
+gpf_interrupt_handler(struct cpustate_ie *__restrict state) {
  struct instr code;
  /* Don't try to do anything if this originates from the kernel. */
  if (!(state->iret.cs&3)) goto end;
@@ -332,7 +358,7 @@ PRIVATE struct interrupt gpf_interrupt = {
     .i_prio  = INTPRIO_MIN, /* Execute this handler last. */
     .i_flags = INTFLAG_SECONDARY,
     .i_proto = {
-        .p_state = &gpf_interrupt_handler,
+        .p_except = &gpf_interrupt_handler,
     },
 };
 

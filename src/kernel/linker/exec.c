@@ -28,7 +28,7 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
-#include <kernel/arch/gdt.h>
+#include <arch/gdt.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>
 #include <kernel/syscall.h>
@@ -43,7 +43,7 @@
 #include <sys/mman.h>
 #include <sched/signal.h>
 #include <bits/waitstatus.h>
-#include <kernel/arch/hints.h>
+#include <arch/hints.h>
 #ifndef CONFIG_NO_TLB
 #include <kos/thread.h>
 #endif /* !CONFIG_NO_TLB */

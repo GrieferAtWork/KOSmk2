@@ -43,7 +43,7 @@
 #include <sys/syslog.h>
 #include <kernel/paging.h>
 #include <kernel/user.h>
-#include <kernel/arch/pic.h>
+#include <arch/pic.h>
 
 DECL_BEGIN
 

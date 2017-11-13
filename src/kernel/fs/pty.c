@@ -339,7 +339,7 @@ handle_clear:
    canon_start = iter;
   }
   /* XXX: Implement the following special characters.
-   *     (s.a.: 'https://linux.die.net/man/3/termios') */
+   *     (s.a.: `https://linux.die.net/man/3/termios') */
 //#define VTIME    5
 //#define VMIN     6
 //#define VSWTC    7

@@ -33,8 +33,8 @@
 #include <sched/cpu.h>
 #include <hybrid/section.h>
 #include <kernel/boot.h>
-#include <kernel/arch/realmode.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/realmode.h>
+#include <arch/cpustate.h>
 #include <kos/vga.h>
 #include <fs/inode.h>
 #include <fs/file.h>

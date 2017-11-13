@@ -22,9 +22,9 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <stdbool.h>
-#include <kernel/arch/gdt.h>
-#include <kernel/arch/cpustate.h>
-#include <kernel/arch/interrupt.h>
+#include <arch/gdt.h>
+#include <arch/cpustate.h>
+#include <arch/interrupt.h>
 
 #undef CONFIG_USE_OLD_INTERRUPTS
 #ifndef __x86_64__

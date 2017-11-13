@@ -29,8 +29,8 @@
 #include <hybrid/limits.h>
 #include <hybrid/section.h>
 #include <hybrid/types.h>
-#include <kernel/arch/gdt.h>
-#include <kernel/arch/idt_pointer.h>
+#include <arch/gdt.h>
+#include <arch/idt_pointer.h>
 #include <kernel/export.h>
 #include <kernel/irq.h>
 #include <kernel/syscall.h>

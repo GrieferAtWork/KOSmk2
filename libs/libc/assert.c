@@ -49,7 +49,7 @@
 #include <kernel/irq.h>
 #include <kernel/mman.h>
 #include <linker/module.h>
-#include <kernel/arch/cpustate.h>
+#include <arch/cpustate.h>
 #else /* __KERNEL__ */
 #include "system.h"
 #ifndef CONFIG_LIBC_NO_DOS_LIBC

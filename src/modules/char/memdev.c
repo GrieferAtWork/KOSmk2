@@ -38,7 +38,7 @@
 #include <kernel/mman.h>
 #include <fs/memfile.h>
 
-/* Miscellaneous character devices, such as /dev/null, /dev/random, etc. */
+/* Miscellaneous character devices, such as `/dev/null', `/dev/random', etc. */
 
 DECL_BEGIN
 
@@ -56,17 +56,17 @@ INTDEF struct inodeops const md_kmsg;
 struct mdev_setup {
  dev_t                  ms_dev;  /*< Device ID. */
  struct inodeops const *ms_ops;  /*< [1..1] INode operation for the device. */
- mode_t                 ms_mode; /*< Device mode & permissions. (NOTE: Must always contain S_IFCHR) */
+ mode_t                 ms_mode; /*< Device mode & permissions. (NOTE: Must always contain `S_IFCHR') */
  pos_t                  ms_size; /*< Device size. */
 };
 
-PRIVATE struct mdev_setup const mdev[] = {
+PRIVATE ATTR_FREEDATA struct mdev_setup mdev[] = {
     {MD_MEM,    &md_mem,    S_IFCHR|0640,((pos_t)(size_t)-1)+1},
     {MD_KMEM,   &md_kmem,   S_IFCHR|0640,((pos_t)(size_t)-1)+1},
     {MD_NULL,   &md_null,   S_IFCHR|0666,0},
     {MD_PORT,   &md_port,   S_IFCHR|0640,((pos_t)(u16)-1)+1},
     {MD_ZERO,   &md_zero,   S_IFCHR|0666,0},
-    {MD_CORE,   &md_mem,    S_IFCHR|0400,0}, /* XXX: Is this being an alias for 'MD_MEM' correct? */
+    {MD_CORE,   &md_mem,    S_IFCHR|0400,0}, /* XXX: Is this being an alias for `MD_MEM' correct? */
     {MD_FULL,   &md_full,   S_IFCHR|0666,0},
     {MD_RANDOM, &md_random, S_IFCHR|0666,0},
     {MD_URANDOM,&md_urandom,S_IFCHR|0666,0},
@@ -76,13 +76,13 @@ PRIVATE struct mdev_setup const mdev[] = {
 };
 
 PRIVATE void KCALL memdev_mkdev(struct mdev_setup const *__restrict setup);
-PRIVATE void MODULE_INIT KCALL memdev_init(void) {
+PRIVATE MODULE_INIT void KCALL memdev_init(void) {
  struct mdev_setup const *iter;
  /* Register _all_ the memory devices! */
  for (iter = mdev; iter->ms_ops; ++iter)
       memdev_mkdev(iter);
 }
-PRIVATE void MODULE_FINI KCALL memdev_fini(void) {
+PRIVATE MODULE_FINI void KCALL memdev_fini(void) {
  struct mdev_setup const *iter;
  /* Delete all memory devices again. */
  for (iter = mdev; iter->ms_ops; ++iter)
