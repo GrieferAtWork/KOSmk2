@@ -86,7 +86,7 @@ C_FLAGS("-Wno-nonnull-compare")
 C_FLAGS("-Wno-comment")
 C_FLAGS("-Wno-strict-aliasing")
 C_FLAGS("-Wno-unused-parameter") /* TODO: Remove me */
-#ifdef TARGET_I686
+#ifdef TARGET_I386
 C_FLAGS("-m32")
 P_FLAGS("-m32")
 #endif

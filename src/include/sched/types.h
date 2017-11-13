@@ -211,7 +211,8 @@ struct PACKED hstack {
                                      *  but will terminate as soon as that section is left. */
 #define TASKFLAG_TIMEDOUT    0x0008 /*< The task was awoken, because it timed out (NOTE: Only THIS_TASK may remove this flag once set). */
 #define TASKFLAG_INTERRUPT   0x0010 /*< The task was awoken due to an interrupt (NOTE: Only THIS_TASK may remove this flag once set). */
-#define TASKFLAG_NOSIGNALS   0x2000 /*< [const] Signals cannot be sent to this task (Can only be enforced when all bits in `t_sigblock' is set). */
+#define TASKFLAG_DELAYSIGS   0x1000 /*< [lock(PRIVATE(THIS_TASK))] Delay the delivery of signals to this task. (Used for emulating `cli' / `sti' instructions in user-space) */
+#define TASKFLAG_NOSIGNALS   0x2000 /*< [const] Signals cannot be sent to this task (Can only be enforced when all bits in `t_sigblock', or `TASKFLAG_DELAYSIGS' is set). */
 #define TASKFLAG_NOTALEADER  0x4000 /*< [const] The task cannot be used as a thread/process group leader. */
 #define TASKFLAG_SIGSTOPCONT 0x8000 /*< [lock(t_cpu->c_lock)] The task has been stopped or continued (NOTE: Not set by forced suspend/resume). */
 #ifdef __CC__
@@ -805,6 +806,9 @@ struct PACKED {
 #ifndef CONFIG_NO_SIGNALS
  REF struct sighand      *t_sighand;   /*< [1..1][const] Userspace signal handlers. */
  __sigset_t               t_sigblock;  /*< [lock(PRIVATE(THIS_TASK))] Set of signals currently being blocked by this task. */
+#define TASK_ISBLOCKING(t,signo) \
+  (sigismember(&(t)->t_sigblock,(signo)) || \
+  ((t)->t_flags&TASKFLAG_DELAYSIGS && (signo) != SIGKILL && (signo) != SIGSTOP))
  struct sigpending        t_sigpend;   /*< Controller for pending signals. */
  REF struct sigshare     *t_sigshare;  /*< [1..1] Controller for shared signal data (Including the shared pending-signal list). */
  struct sigenter          t_sigenter;  /*< Signal enter controller. */

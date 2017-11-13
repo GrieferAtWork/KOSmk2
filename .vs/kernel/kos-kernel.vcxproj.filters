@@ -199,6 +199,9 @@
     <Filter Include="modules\rtc">
       <UniqueIdentifier>{daf0af0c-bff3-4fef-8875-4064f8d4797d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="modules\cpu">
+      <UniqueIdentifier>{208e0b0e-1902-46e6-bb41-754d7fee65fb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core\main.c">
@@ -491,6 +494,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core\arch\pic.c">
       <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\core\arch\emulations.c">
+      <Filter>kernel\core\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\modules\cpu\x86_emu.c">
+      <Filter>modules\cpu</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -801,6 +810,9 @@
       <Filter>kernel\core\arch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\arch\pic.h">
+      <Filter>include\kernel\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\kernel\arch\emulations.h">
       <Filter>include\kernel\arch</Filter>
     </ClInclude>
   </ItemGroup>

@@ -206,6 +206,12 @@ FUNDEF errno_t KCALL task_kill2_ok(struct task *__restrict target,
 /* A simplified version of `task_kill2()', resemblant of `raise()' */
 FUNDEF errno_t KCALL task_kill(struct task *__restrict self, int signo);
 
+/* Check for pending signals in the calling task.
+ * @param: changes: The set of signals to check (Updated to mask out signals that are being blocked).
+ * @return: -EOK:   No signals were raised.
+ * @return: -EINTR: At least one signal was raised and the caller got interrupted. */
+FUNDEF SAFE errno_t KCALL task_check_signals(sigset_t *__restrict changes);
+
 
 #define SIGENTER_INFO_OFFSETOF_RETURN     0
 #define SIGENTER_INFO_OFFSETOF_SIGNO      __SIZEOF_POINTER__

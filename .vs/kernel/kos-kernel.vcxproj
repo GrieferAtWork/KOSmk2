@@ -52,6 +52,7 @@
     <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\linker\elf.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\boot.c" />
+    <ClCompile Include="..\..\src\kernel\core\arch\emulations.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\fpu.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\gdt.c" />
     <ClCompile Include="..\..\src\kernel\core\arch\interrupt.c" />
@@ -124,6 +125,7 @@
     <ClCompile Include="..\..\src\kernel\test\string.c" />
     <ClCompile Include="..\..\src\modules\block\ata.c" />
     <ClCompile Include="..\..\src\modules\char\memdev.c" />
+    <ClCompile Include="..\..\src\modules\cpu\x86_emu.c" />
     <ClCompile Include="..\..\src\modules\fs\devfs.c" />
     <ClCompile Include="..\..\src\modules\fs\proc\pidnode.c" />
     <ClCompile Include="..\..\src\modules\fs\proc\procfs.c" />
@@ -175,6 +177,7 @@
     <ClInclude Include="..\..\src\include\kernel\arch\cpu.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\cpufeatures.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\cpustate.h" />
+    <ClInclude Include="..\..\src\include\kernel\arch\emulations.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\fpu.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\gdt.h" />
     <ClInclude Include="..\..\src\include\kernel\arch\hints.h" />

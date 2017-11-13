@@ -23,7 +23,7 @@
 #   define CONFIG_TOOLCHAIN    "i686"
 #   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0"
 #elif !defined(TARGET_X86_64)
-#   define TARGET_I686		   1
+#   define TARGET_I386         1
 #   define CONFIG_TARGET_ARCH  "i386"
 #   define CONFIG_TOOLCHAIN    "x86_64"
 #   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0/32"
@@ -871,7 +871,7 @@ class Project {
 					linker_flags.append("-T",script.get_pp_file(this));
 				}
 				linker_flags.extend(this._l_flags);
-#ifdef TARGET_I686 /* TODO: Dirty hack */
+#ifdef TARGET_I386 /* TODO: Dirty hack */
 				if (this._exe_l.endswith("c")) {
 					linker_flags.append("-m32");
 				} else {

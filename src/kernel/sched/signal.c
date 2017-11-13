@@ -802,7 +802,7 @@ task_kill2_cpu_endwrite(struct task *__restrict t,
   struct sigaction *action;
   struct sighand *hand;
   /* Check if the signal is currently being blocked. */
-  if (sigismember(&t->t_sigblock,signo+1)) {
+  if (TASK_ISBLOCKING(t,signo+1)) {
 enqueue_later:
    /* Enqueue the signal to be send at a later time. */
    cpu_endwrite(c);
@@ -1001,8 +1001,8 @@ end:
  return error;
 }
 
-PRIVATE SAFE errno_t KCALL
-sig_deque_changes(sigset_t *__restrict changes) {
+PUBLIC SAFE errno_t KCALL
+task_check_signals(sigset_t *__restrict changes) {
  siginfo_t return_info; ssize_t num_signals = 0;
  struct sigqueue *return_signal; struct task *t = THIS_TASK;
  sigword_t *iter,*end,*dst;
@@ -1088,7 +1088,7 @@ SYSCALL_DEFINE4(sigprocmask,int,how,USER sigset_t const *,set,
     *src = changed;
    }
 deque_changes:
-   error = sig_deque_changes(&new_set);
+   error = task_check_signals(&new_set);
    break;
 
    /* Difficult: Must return to the first signal that gets unblocked. */
@@ -1126,7 +1126,7 @@ task_set_sigblock(sigset_t *__restrict newset) {
  }
  COMPILER_WRITE_BARRIER();
  task_crit();
- error = sig_deque_changes(newset);
+ error = task_check_signals(newset);
  task_endcrit();
  return error;
 }

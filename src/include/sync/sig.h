@@ -43,7 +43,6 @@ DECL_BEGIN
 #ifdef __CC__
 struct sig;
 struct task;
-struct sigset;
 #endif /* !__CC__ */
 
 #ifdef CONFIG_SIGNAL_USING_ATOMIC_RWPTR

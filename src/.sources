@@ -251,6 +251,9 @@ BEGIN
 #endif
 		BEGIN BASIC_MODULE("pdb-debug") SOURCE("modules/linker/pdb-debug.c") END
 	END
+#if defined(TARGET_I386) || defined(TARGET_X86_64)
+	BEGIN BASIC_MODULE("x86-emu") SOURCE("modules/cpu/x86_emu.c") END
+#endif
 	BEGIN BASIC_MODULE("cmos")
 		DEFINE("__DATE_YEAR__="+str __DATE_YEAR__)
 		SOURCE("modules/rtc/cmos.c")
