@@ -618,7 +618,7 @@ L(    movl $pdir_kernel, %eax                                                 )
 L(    movl %eax, %cr3                                                         )
 L(    movl %cr4, %eax                                                         )
 L(    /* Required for large pages (Also enable wr(fs|gs)base instructions). */)
-L(    orl  $(/*CR4_PSE|*/CR4_PAE), %eax                                       )
+L(    orl  $(/*CR4_PSE|*/CR4_PAE|CR4_PGE), %eax                               )
 L(    movl %eax, %cr4                                                         )
 L(                                                                            )
 L(    /* Enable long mode in EFER */                                          )
@@ -726,7 +726,7 @@ L(    movl $pdir_kernel, %ecx                                                 )
 L(    movl %ecx, %cr3                                                         )
 L(                                                                            )
 L(    movl %cr4, %ecx                                                         )
-L(    orl  $(CR4_PSE), %ecx  /* Required for 4Mib pages. */                   )
+L(    orl  $(CR4_PSE|CR4_PGE), %ecx  /* Required for 4Mib pages. */           )
 L(    movl %ecx, %cr4                                                         )
 L(                                                                            )
 L(    movl %cr0, %ecx                                                         )
@@ -964,6 +964,18 @@ L(    jmp   kernel_boot                                                       )
 L(SYM_END(_start)                                                             )
 L(.previous                                                                   )
 );
+
+/* Boot option: `nopge' - Disable the PGE bit in CR4, and the associated global-page optimization.
+ * >> Mainly here because I havn't tested it on real hardware, which may behave differently than QEMU.
+ *    It's also possible that I've completely misunderstood how to use it properly... */
+DEFINE_EARLY_SETUP("nopge",disable_pge) {
+ register register_t temp;
+ __asm__ __volatile__(L(movx %%cr4, %0)
+                      L(andx $(~CR4_PGE), %0)
+                      L(movx %0, %%cr4)
+                      : "=&r" (temp));
+ return true;
+}
 
 #ifdef __x86_64__
 
