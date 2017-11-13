@@ -641,7 +641,7 @@ pdir_mprotect(pdir_t *__restrict self, ppage_t start,
  assert(!(attr&PDIR_ATTR_2MIB));
  result = n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
  if unlikely(!n_bytes) goto end;
- assertf(PDIR_ISKERNEL(self) || !n_bytes || !addr_isvirt((uintptr_t)start+n_bytes-1),
+ assertf(PDIR_ISKERNEL(self) || !n_bytes || !addr_isglob((uintptr_t)start+n_bytes-1),
          "Virtual addresses may only be mapped within the kernel page directory (%p...%p)",
         (uintptr_t)start,(uintptr_t)start+n_bytes-1);
  assert((uintptr_t)start+n_bytes == 0 ||

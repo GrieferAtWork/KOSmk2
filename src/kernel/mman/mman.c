@@ -90,8 +90,8 @@ end:
 PUBLIC void KCALL
 mregion_destroy(struct mregion *__restrict self) {
  CHECK_HOST_DOBJ(self);
- assertf(addr_isvirt(self) || PDIR_ISKPD(),
-         "Non-virtual memory region may only be operated upon within KPD");
+ assertf(addr_isglob(self) || PDIR_ISKPD(),
+         "Non-global memory region may only be operated upon within KPD");
  assert(self->mr_refcnt == 0);
  if (self->mr_type == MREGION_TYPE_MEM) {
   if (self->mr_global.le_pself) {
@@ -247,13 +247,13 @@ mregion_setup(struct mregion *__restrict self) {
  assertf(IS_ALIGNED(self->mr_size,PAGESIZE),
          "The size of a region must be page-aligned (But size %p of region at %p isn't)",
          self->mr_size,self);
- assert(addr_isvirt(self) || PDIR_ISKPD());
+ assert(addr_isglob(self) || PDIR_ISKPD());
  if (self->mr_type == MREGION_TYPE_MEM) {
   atomic_rwlock_write(&mregion_chain_lock);
   /* Similarly to when regions are destroyed,
    * we must make sure to access non-shared pointers
    * in the context of the kernel page directory. */
-  if (addr_isvirt(self))
+  if (addr_isglob(self))
        LIST_INSERT(mregion_chain_v,self,mr_global);
   else LIST_INSERT(mregion_chain_p,self,mr_global);
   atomic_rwlock_endwrite(&mregion_chain_lock);
@@ -350,7 +350,7 @@ mman_destroy(struct mman *__restrict self) {
  struct mman *old_mman;
  CHECK_HOST_DOBJ(self);
  assert(self->m_refcnt == 0);
- assertf(addr_isvirt(self),
+ assertf(addr_isglob(self),
          "Memory managers must be allocated as shared memory");
  assertf(self != &mman_kernel,
          "The kernel mman must never be destroyed!");
@@ -418,7 +418,7 @@ PUBLIC SAFE void KCALL
 mman_assert_unlocked(struct mman *__restrict self) {
  CHECK_HOST_DOBJ(self);
  assert(mman_reading(self));
- assertf(addr_isvirt(self),"Memory managers must exist in virtual memory");
+ assertf(addr_isglob(self),"Memory managers must exist in virtual memory");
  assertf((self->m_map != NULL) == (self->m_order != NULL),
          "Broken map <---> order associativity");
  if (self->m_map) mman_assert_branch(self,self->m_map);

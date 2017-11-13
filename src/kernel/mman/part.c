@@ -54,12 +54,12 @@ mregion_part_split_lo(struct mregion_part *__restrict part,
  CHECK_HOST_DOBJ(part);
  assert(split_addr > part->mt_start);
  assert(!HAS_NEXT || split_addr < NEXT->mt_start);
- assert(addr_isvirt(part) || PDIR_ISKPD());
+ assert(addr_isglob(part) || PDIR_ISKPD());
  /* Mirror physical/virtual allocation behavior from the existing part. */
  result = (struct mregion_part *)kmalloc(sizeof(struct mregion_part),
-                                         addr_isvirt(part) ? GFP_SHARED|GFP_NOFREQ
+                                         addr_isglob(part) ? GFP_SHARED|GFP_NOFREQ
                                                            : GFP_MEMORY|GFP_NOFREQ);
- if (!addr_isvirt(part)) (void)_mall_untrack(result);
+ if (!addr_isglob(part)) (void)_mall_untrack(result);
  if (result) {
   /* Copy shared data (Including mt_flags which may contain `MPART_FLAG_KEEP'). */
   memcpy(&result->mt_refcnt,&part->mt_refcnt,

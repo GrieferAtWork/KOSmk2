@@ -44,11 +44,15 @@ DECL_BEGIN
 #define virt_to_phys(ptr)  ((PHYS void *)((uintptr_t)(ptr)-CORE_BASE))
 #define addr_isphys(ptr)   ((uintptr_t)(ptr) <  CORE_BASE)
 #define addr_isvirt(ptr)   ((uintptr_t)(ptr) >= CORE_BASE)
+#define addr_isglob(ptr)   ((uintptr_t)(ptr) >= KERNEL_BASE)
+#define addr_ispriv(ptr)   ((uintptr_t)(ptr) <  KERNEL_BASE)
 #else
 #define phys_to_virt(ptr)  ((ptr)+CORE_BASE)
 #define virt_to_phys(ptr)  ((ptr)-CORE_BASE)
 #define addr_isphys(ptr)   ((ptr) <  CORE_BASE)
 #define addr_isvirt(ptr)   ((ptr) >= CORE_BASE)
+#define addr_isglob(ptr)   ((ptr) >= KERNEL_BASE)
+#define addr_ispriv(ptr)   ((ptr) <  KERNEL_BASE)
 #endif
 
 #ifdef __CC__

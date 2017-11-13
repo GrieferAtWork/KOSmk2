@@ -651,7 +651,7 @@ struct mman {
 #define MMAN_UNIGFP           GFP_SHARED
 
 /* Check if a given region/branch address can be used with the specified memory manager. */
-#define MMAN_DATAOK(self,p) ((self) == &mman_kernel || addr_isvirt(p))
+#define MMAN_DATAOK(self,p) ((self) == &mman_kernel || addr_isglob(p))
 
 /* The memory manager associated with the kernel (also contains `pdir_kernel_v')
  * NOTE: Remember that anything mapped in here above 4Mib will

@@ -118,7 +118,7 @@ mman_interrupt_pf_handler(struct irregs_ie *__restrict info)
 
  fault_page = FLOOR_ALIGN(fault_addr,PAGESIZE);
  user_mman = THIS_TASK->t_mman;
- assert(addr_isvirt(user_mman));
+ assert(addr_isglob(user_mman));
 #ifdef CONFIG_DEBUG
  { PHYS pdir_t *cr3;
    __asm__ __volatile__("mov %%cr3, %0\n" : "=r" (cr3));

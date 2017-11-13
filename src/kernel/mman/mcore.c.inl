@@ -207,7 +207,7 @@ perfect_part:
 
  assert(malloc_hint == (uintptr_t)(void *)PAGE_ERROR ||
         IS_ALIGNED(malloc_hint,PAGESIZE));
- scatter_gfp = addr_isvirt(region) ? GFP_SHARED : GFP_MEMORY;
+ scatter_gfp = addr_isglob(region) ? GFP_SHARED : GFP_MEMORY;
  return (malloc_hint != (uintptr_t)(void *)PAGE_ERROR)
   ? page_malloc_scatter_with_hint(scatter,n_bytes,min_scatter,attr,zone,scatter_gfp,(ppage_t)malloc_hint)
   : page_malloc_scatter          (scatter,n_bytes,min_scatter,attr,zone,scatter_gfp);

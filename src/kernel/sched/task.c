@@ -781,37 +781,52 @@ L(.section .text                                                              )
 L(PUBLIC_ENTRY(cpu_sched_setrunning_savef)                                    )
 /* Prevent interrupts from breaking our stack structures below. (Must already be disabled!) */
 //L(    cli                                                                   )
+#ifdef __x86_64__
+L(    popq -(5*8)(%rsp)    /* RIP (return address). */                        )
+L(    pushq $(__KERNEL_DS) /* %ss */                                          )
+L(    pushq %rsp           /* %userrsp */                                     )
+L(    addq $8, (%rsp)      /* Adjust to point to the ~real~ userrsp */        )
+L(    pushq %FASTCALL_REG2 /* iret-compatible return block. */                )
+#else
 L(    popx -(3*XSZ)(%xsp)  /* XIP (return address). */                        )
 L(    pushx XSZ(%xsp)      /* xflags. */                                      )
+#endif
 L(    jmp   1f                                                                )
 L(PUBLIC_ENTRY(cpu_sched_setrunning_save)                                     )
 L(    /* Generate an on-stack CPU state. */                                   )
- /* Prevent interrupts from breaking our stack structures below. (Must already be disabled!) */
+/* Prevent interrupts from breaking our stack structures below. (Must already be disabled!) */
 //L(    cli                                                                   )
-L(    popx -(3*XSZ)(%xsp)  /* EIP (return address). */                        )
-L(    pushfx  /* iret-compatible return block. */                             )
 #ifdef __x86_64__
+L(    popq -(5*8)(%rsp)    /* RIP (return address). */                        )
+L(    pushq $(__KERNEL_DS) /* %ss */                                          )
+L(    pushq %rsp           /* %userrsp */                                     )
+L(    addq $8, (%rsp)      /* Adjust to point to the ~real~ userrsp */        )
+L(    pushfq               /* iret-compatible return block. */                )
 L(1:  pushq $(__KERNEL_CS)                                                    )
 #else
+L(    popl -(3*4)(%esp)    /* EIP (return address). */                        )
+L(    pushfl               /* iret-compatible return block. */                )
 L(1:  pushl %cs                                                               )
 #endif
 L(    subx $(XSZ), %xsp  /* Skip EIP (already saved above) */                 )
 L(    __ASM_PUSH_COMREGS /* Push registers. */                                )
+#ifndef __x86_64__
       /* Load the given `task' argument into 'EAX'
        * NOTE: Use use `CPUSTATE_HOST_SIZE' as offset because that's
        *       the data structure we've just created on-stack, and
        *       now we want to access the first XWORD that follows.
        */
-L(    movx CPUSTATE_HOST_SIZE(%xsp), %xax                                     )
+L(    movx CPUSTATE_HOST_SIZE(%xsp), %FASTCALL_REG1                           )
+#endif
 L(    /* Save the CPU state that we've just created within the given task. */ )
-L(    movx  %xsp, TASK_OFFSETOF_CSTATE(%xax)                                  )
+L(    movx  %xsp, TASK_OFFSETOF_CSTATE(%FASTCALL_REG1)                        )
 L(PUBLIC_ENTRY(cpu_sched_setrunning)                                          )
 L(    /* Load the running task into EAX */                                    )
-L(    movx ASM_CPU(CPU_OFFSETOF_RUNNING), %xax                                )
+L(    movx ASM_CPU(CPU_OFFSETOF_RUNNING), %FASTCALL_REG1                      )
 L(    /* Load the new CPU state into ESP */                                   )
-L(    movx TASK_OFFSETOF_CSTATE(%xax),    %xsp                                )
+L(    movx TASK_OFFSETOF_CSTATE(%FASTCALL_REG1), %xsp                         )
 L(    /* Load the base address of the kernel stack. */                        )
-L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
+L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%FASTCALL_REG1), %xax   )
 L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
 L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_XSP0))
 L(    __ASM_POP_COMREGS /* Pop registers. */                                  )
@@ -834,6 +849,11 @@ GLOBAL_ASM(
 L(.section .text                                                              )
 L(PUBLIC_ENTRY(task_yield)                                                    )
 L(    popx %xax  /* XIP (return address). (Currently, only XAX may be clobbered) */)
+#ifdef __x86_64__ /* x86_64 always requires the full IRET tail. */
+L(    pushq $(__KERNEL_DS) /* %ss */                                          )
+L(    pushq %rsp           /* %userrsp */                                     )
+L(    addq $8, (%rsp)      /* Adjust to point to the ~real~ userrsp */        )
+#endif
 L(    pushfx     /* iret-compatible return block. */                          )
 #ifdef __x86_64__
 L(    pushq $(__KERNEL_CS)                                                    )

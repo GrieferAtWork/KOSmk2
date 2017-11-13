@@ -1639,7 +1639,7 @@ priv_resetpage(PAGE_ALIGNED void *start, uintptr_t xword, size_t n_bytes) {
  assert(n_bytes <= PAGESIZE);
  assert((n_bytes%4) == 0);
  /* Check if the page at `start' is really allocated. */
- if (addr_isvirt(start)) {
+ if (addr_isglob(start)) {
   task_nointr();
   mman_read(&mman_kernel);
   should_clear = thispdir_test_writable(&pdir_kernel_v,start);
@@ -1818,7 +1818,7 @@ priv_scanpage(PAGE_ALIGNED void *start, uintptr_t xword, size_t n_bytes) {
  assert(n_bytes != 0);
  assert(n_bytes <= PAGESIZE);
  /* Check if the page at `start' is really allocated. */
- if (addr_isvirt(start)) {
+ if (addr_isglob(start)) {
   task_nointr();
   mman_read(&mman_kernel);
   should_scan = thispdir_test_writable(&pdir_kernel_v,start);
@@ -2569,14 +2569,14 @@ mptr_safeload(struct dsetup *__restrict setup,
      !OK_HOST_DATA(head,sizeof(struct mptr)))
       goto invptr;
  /* Check if the given pointer is already apart of a free heap. */
- if (addr_isvirt(head)) {
+ if (addr_isglob(head)) {
   bool is_mapped,is_free = false;
   TASK_PDIR_KERNEL_BEGIN(m);
   is_mapped = mman_inuse(&mman_kernel,
                         (ppage_t)FLOOR_ALIGN((uintptr_t)head,PAGESIZE),
                          PAGESIZE);
-  if (is_mapped) is_free = mheap_isfree_l(&mheaps[GFP_KERNEL],head) ||
-                           mheap_isfree_l(&mheaps[GFP_KERNEL|GFP_LOCKED],head);
+  if (is_mapped) is_free = (mheap_isfree_l(&mheaps[GFP_KERNEL],head) ||
+                            mheap_isfree_l(&mheaps[GFP_KERNEL|GFP_LOCKED],head));
   TASK_PDIR_KERNEL_END(m);
   if (!is_mapped) goto invptr;
   if (is_free) goto freeptr;
@@ -2650,7 +2650,7 @@ mptr_safeload(struct dsetup *__restrict setup,
     if (!(head->m_flag&MPTRFLAG_UNTRACKED)) {
      struct mptr *linked_self;
      struct mman *old_mm = NULL;
-     if (addr_isphys(head->m_chain.le_pself))
+     if (addr_ispriv(head->m_chain.le_pself))
          TASK_PDIR_KERNEL_BEGIN(old_mm);
      if (!OK_HOST_DATA(head->m_chain.le_pself,sizeof(void *))) {
       malloc_panic(setup,head,"Broken chain self-pointer (%p at &p, offset %Id) in %p",
@@ -2665,7 +2665,7 @@ mptr_safeload(struct dsetup *__restrict setup,
      }
      if (head->m_chain.le_next != KINSTANCE_TRACE_NULL) {
       struct mptr *next = head->m_chain.le_next;
-      if (!old_mm && addr_isphys(next)) TASK_PDIR_KERNEL_BEGIN(old_mm);
+      if (!old_mm && addr_ispriv(next)) TASK_PDIR_KERNEL_BEGIN(old_mm);
       if (!OK_HOST_DATA(next,sizeof(struct mptr))) {
        malloc_panic(setup,head,"Broken chain next-pointer (%p at %p, offset %Id) in %p",
                     next,&head->m_chain.le_next,
@@ -2807,7 +2807,7 @@ mptr_setup(struct mptr *__restrict self,
    assert(inst);
    assert(inst->i_module);
    atomic_rwlock_write(&inst->i_driver.k_tlock);
-   if (addr_isphys(inst->i_driver.k_trace) &&
+   if (addr_ispriv(inst->i_driver.k_trace) &&
        inst->i_driver.k_trace != KINSTANCE_TRACE_NULL)
        TASK_PDIR_KERNEL_BEGIN(old_mm);
    LIST_INSERT_EX(inst->i_driver.k_trace,self,m_chain,
@@ -2944,9 +2944,9 @@ mptr_unlink(struct dsetup *setup,
  }
  if (!(self->m_flag&MPTRFLAG_UNTRACKED)) {
   struct mman *old_mm = NULL;
-  if (addr_isphys(self->m_chain.le_pself) ||
+  if (addr_ispriv(self->m_chain.le_pself) ||
      (self->m_chain.le_next != KINSTANCE_TRACE_NULL &&
-      addr_isphys(self->m_chain.le_next)))
+      addr_ispriv(self->m_chain.le_next)))
       TASK_PDIR_KERNEL_BEGIN(old_mm);
   LIST_REMOVE_EX(self,m_chain,KINSTANCE_TRACE_NULL);
   if (old_mm) TASK_PDIR_KERNEL_END(old_mm);
@@ -2964,7 +2964,7 @@ mptr_relink(struct dsetup *setup,
  atomic_rwlock_write(&inst->i_driver.k_tlock);
  if (!(self->m_flag&MPTRFLAG_UNTRACKED)) {
   struct mman *old_mm = NULL;
-  if (addr_isphys(inst->i_driver.k_trace) &&
+  if (addr_ispriv(inst->i_driver.k_trace) &&
       inst->i_driver.k_trace != KINSTANCE_TRACE_NULL)
       TASK_PDIR_KERNEL_BEGIN(old_mm);
   LIST_INSERT_EX(inst->i_driver.k_trace,self,m_chain,KINSTANCE_TRACE_NULL);
@@ -3216,9 +3216,9 @@ PRIVATE void *(KCALL debug_setflag)(struct dsetup *__restrict setup,
  if (flags&MPTRFLAG_UNTRACKED &&
    !(p->m_flag&MPTRFLAG_UNTRACKED)) {
   struct mman *old_mm = NULL;
-  if (addr_isphys(p->m_chain.le_pself) ||
+  if (addr_ispriv(p->m_chain.le_pself) ||
      (p->m_chain.le_next != KINSTANCE_TRACE_NULL &&
-      addr_isphys(p->m_chain.le_next)))
+      addr_ispriv(p->m_chain.le_next)))
       TASK_PDIR_KERNEL_BEGIN(old_mm);
   LIST_REMOVE_EX(p,m_chain,KINSTANCE_TRACE_NULL);
   if (old_mm) TASK_PDIR_KERNEL_END(old_mm);

@@ -282,7 +282,7 @@ pdir_mprotect_one(struct mscatter *dynmem, pdir_t *__restrict self,
                   VIRT ppage_t addr, pdir_attr_t flags) {
  union pd_table *table;
  union pd_entry *entry;
- if (addr_isvirt(addr)) flags |= PDIR_ATTR_GLOBAL;
+ if (addr_isglob(addr)) flags |= PDIR_ATTR_GLOBAL;
  assert(!(flags&~PDIR_ATTR_MASK));
  table = &self->pd_directory[PDIR_DINDEX(addr)];
  if (PDTABLE_ISMAP(*table)) {
@@ -298,7 +298,7 @@ PRIVATE void KCALL
 pdir_mprotect_tbl(struct mscatter *dynmem, pdir_t *__restrict self,
                   VIRT ptable_t addr, pdir_attr_t flags) {
  union pd_table *table;
- if (addr_isvirt(addr)) flags |= PDIR_ATTR_GLOBAL;
+ if (addr_isglob(addr)) flags |= PDIR_ATTR_GLOBAL;
  assert(!(flags&~PDIR_ATTR_MASK));
  table = &self->pd_directory[PDIR_DINDEX(addr)];
  if (PDTABLE_ISMAP(*table)) {
@@ -356,7 +356,7 @@ pdir_mprotect(pdir_t *__restrict self, VIRT ppage_t start,
  CHECK_HOST_DOBJ(self);
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  result = n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
- assertf(PDIR_ISKERNEL(self) || !n_bytes || !addr_isvirt((uintptr_t)start+n_bytes-1),
+ assertf(PDIR_ISKERNEL(self) || !n_bytes || !addr_isglob((uintptr_t)start+n_bytes-1),
          "Virtual addresses may only be mapped within the kernel page directory (%p...%p)",
         (uintptr_t)start,(uintptr_t)start+n_bytes-1);
  assert((uintptr_t)start+n_bytes == 0 ||
@@ -448,7 +448,7 @@ pdir_mmap_one(struct mscatter *dynmem, pdir_t *__restrict self,
               VIRT ppage_t addr, PHYS ppage_t target, pdir_attr_t flags) {
  union pd_table *table;
  union pd_entry *entry;
- if (addr_isvirt(addr)) flags |= PDIR_ATTR_GLOBAL;
+ if (addr_isglob(addr)) flags |= PDIR_ATTR_GLOBAL;
  assert(!(flags&~PDIR_ATTR_MASK));
  table = &self->pd_directory[PDIR_DINDEX(addr)];
  if (PDTABLE_ISMAP(*table)) {
@@ -456,7 +456,7 @@ pdir_mmap_one(struct mscatter *dynmem, pdir_t *__restrict self,
   pdir_table_changed(self,PDIR_DINDEX(addr));
  } else if (!PDTABLE_ISALLOC(*table)) {
   PHYS ppage_t map_page = mscatter_takeone(dynmem);
-  assert(!addr_isvirt(addr));
+  assert(!addr_isglob(addr));
   memsetl(map_page,~PDIR_ATTR_MASK,PTTABLE_ARRAYSIZE);
   table->pt_data = (u32)map_page | flags;
   pdir_table_changed(self,PDIR_DINDEX(addr));
@@ -484,7 +484,7 @@ pdir_mmap_tbl(pdir_t *__restrict self, VIRT ppage_t addr,
  } else {
   union pd_entry *iter,*end;
   assert(PDTABLE_ISALLOC(*table));
-  assert(addr_isvirt(addr));
+  assert(addr_isglob(addr));
   assert(!(flags&PDIR_ATTR_4MIB));
   flags |= PDIR_ATTR_GLOBAL;
   /* Map each individual entry. */
@@ -504,7 +504,7 @@ pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert(IS_ALIGNED((uintptr_t)target,PAGESIZE));
  if unlikely(!n_bytes) return -EOK;
- assertf(PDIR_ISKERNEL(self) || !addr_isvirt((uintptr_t)start+n_bytes-1),
+ assertf(PDIR_ISKERNEL(self) || !addr_isglob((uintptr_t)start+n_bytes-1),
          "Virtual addresses may only be mapped within the kernel page directory");
  reqmem = pdir_reqbytes_for_change(self,start,n_bytes);
  if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE,GFP_MEMORY))
@@ -559,7 +559,7 @@ pdir_mmap_early(pdir_t *__restrict self, VIRT ppage_t start,
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert(IS_ALIGNED((uintptr_t)target,PAGESIZE));
  if unlikely(!n_bytes) return -EOK;
- assertf(PDIR_ISKERNEL(self) || !addr_isvirt((uintptr_t)start+n_bytes-1),
+ assertf(PDIR_ISKERNEL(self) || !addr_isglob((uintptr_t)start+n_bytes-1),
          FREESTR("Virtual addresses may only be mapped within the kernel page directory"));
  reqmem = pdir_reqbytes_for_change(self,start,n_bytes);
  if (!page_malloc_scatter(&dynmem,reqmem,PAGESIZE,PAGEATTR_NONE,PDIR_PAGEZONE,GFP_MEMORY))
@@ -670,7 +670,7 @@ pdir_munmap(pdir_t *__restrict self, VIRT ppage_t start,
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
  if unlikely(!n_bytes) return -EOK;
- assertf(PDIR_ISKERNEL(self) || !addr_isvirt((uintptr_t)start+n_bytes-1),
+ assertf(PDIR_ISKERNEL(self) || !addr_isglob((uintptr_t)start+n_bytes-1),
          "Virtual addresses may only be mapped within the kernel page directory");
  assertf((uintptr_t)start+n_bytes == 0 ||
          (uintptr_t)start+n_bytes > (uintptr_t)start,
