@@ -190,7 +190,7 @@ PRIVATE struct interrupt ps2_interruptc = {
 };
 #endif
 PRIVATE u8 ps2_cmd_maxretry = 3; /* TODO: Commandline option? */
-PRIVATE struct timespec ps2_cmd_timeout = {3,0}; /* TODO: Commandline option? */
+PRIVATE jtime_t ps2_cmd_timeout = MSEC_TO_JIFFIES(100); /* TODO: Commandline option? */
 
 PRIVATE struct ps2 p = {
     /* Start out by ignoring all input events. */
@@ -257,21 +257,22 @@ ps2_command(struct ps2_cmd *__restrict c) {
   /* To optimize for quick hardware, only setup a
    * timeout after the first interrupt-wait failed.
    * >> This way we reduce load from the RTC chip. */
-  struct timespec tmo,now;
-  sysrtc_get(&tmo);
-  TIMESPEC_ADD(tmo,ps2_cmd_timeout);
+  jtime_t start;
+wait_again:
+  start = jiffies;
   for (;;) {
    __asm__ __volatile__("sti\nhlt\ncli\n" : : : "memory");
    if (p.p_cmdb != c) break;
-   sysrtc_get(&now);
-   COMPILER_BARRIER();
-   /* Check again in case `sysrtc_get()'
-    * enabled interrupts momentarily. */
-   if (p.p_cmdb != c) break;
-   if (TIMESPEC_GREATER_EQUAL(now,tmo)) {
-    /* Delete the command. */
+   if ((jiffies-start) >= ps2_cmd_timeout) {
     assert(p.p_cmdb == c);
-    p.p_cmdb = p.p_cmdb->c_prev;
+    if (++p.p_retry < ps2_cmd_maxretry) {
+     /* Try to send the command again (I've seen it never arriving before...) */
+     ps2_start_command(p.p_cmdb);
+     goto wait_again;
+    }
+    /* Delete the command. */
+    p.p_cmdb  = p.p_cmdb->c_prev;
+    p.p_retry = 0;
     if (p.p_cmdb) {
      p.p_cmdb->c_next = NULL;
      /* Send the next command. */
@@ -393,6 +394,7 @@ remove_cmd:
    { struct ps2_cmd *next_cmd = p.p_cmdb->c_prev;
      if (p.p_cmdb->c_port&PS2_FREECMD) free(p.p_cmdb);
      p.p_cmdb = next_cmd;
+     p.p_retry = 0; /* Reset the retry counter. */
      if (p.p_cmdb) {
       p.p_cmdb->c_next = NULL;
       /* Send the next command. */

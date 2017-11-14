@@ -180,7 +180,8 @@ device_del(struct device *__restrict dev, dev_t id) {
                                  &dev->d_node);
  if (E_ISERR(error)) {
   syslog(LOG_DEBUG,
-        FREESTR("[DEVFS] Failed to remove superblock at %q: %[errno]\n"),-error);
+         "[DEVFS] Failed to remove superblock at `%q': %[errno]\n",
+         -error);
  }
 }
 
@@ -239,12 +240,12 @@ got_name:
 
  if (E_ISERR(mount_path)) {
   syslog(LOG_FS|LOG_ERROR,
-         "[DEVFS] Failed to install %s-device %[dev_t] (%q): %[errno]\n",
+         "[DEVFS] Failed to install %s-device %[dev_t] (`%q'): %[errno]\n",
          DEVICE_ISBLK(dev) ? "block" : "character",id,name.dn_name,
          -E_GTERR(mount_path));
  } else {
   syslog(LOG_FS|LOG_MESSAGE,
-         "[DEVFS] Added %s-device %[dev_t] as %[dentry]\n",
+         "[DEVFS] Added %s-device %[dev_t] as `%[dentry]'\n",
          DEVICE_ISBLK(dev) ? "block" : "character",id,mount_path);
   DENTRY_DECREF(mount_path);
  }
