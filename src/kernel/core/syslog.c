@@ -89,19 +89,51 @@ GLOBAL_ASM(
 L(.section .data                                                              )
 L(PUBLIC_ENTRY(syslog_printer)                                                )
 L(    jmp syslog_print_default                                                )
-L(syslog_target_rel_addr = . - __SIZEOF_POINTER__                             )
+L(syslog_target_rel_addr = . - 4                                              )
 L(syslog_target_rel_base = .                                                  )
 L(SYM_END(syslog_printer)                                                     )
 L(.previous                                                                   )
 );
-INTDEF uintptr_t syslog_target_rel_addr;
-INTDEF byte_t    syslog_target_rel_base[];
+INTDEF u32    syslog_target_rel_addr;
+INTDEF byte_t syslog_target_rel_base[];
+
+#ifdef __x86_64__
+PRIVATE ATTR_USED ATOMIC_DATA u64 syslog_printer_target;
+INTDEF  byte_t far_syslog_printer[];
+GLOBAL_ASM(
+L(.section .text                                                              )
+L(PRIVATE_ENTRY(far_syslog_printer)                                           )
+L(    jmp *syslog_printer_target(%rip)                                        )
+L(SYM_END(far_syslog_printer)                                                 )
+L(.previous                                                                   )
+);
+PRIVATE DEFINE_ATOMIC_RWLOCK(syslog_redirection_lock);
+#endif
 
 PUBLIC pformatprinter KCALL syslog_set_printer(pformatprinter printer) {
- uintptr_t rel_addr;
- rel_addr = (uintptr_t)printer-(uintptr_t)syslog_target_rel_base;
- rel_addr = ATOMIC_XCH(syslog_target_rel_addr,rel_addr);
+ uintptr_t rel_addr = (uintptr_t)printer-(uintptr_t)syslog_target_rel_base;
+#ifdef __x86_64__
+#define EXTENDED_RELADDR  ((uintptr_t)far_syslog_printer-(uintptr_t)syslog_target_rel_base)
+ uintptr_t old_faraddr;
+ atomic_rwlock_write(&syslog_redirection_lock);
+ if (rel_addr >= 0x7fffffff) {
+  /* Special case: Setup an extended (64-bit) system-log target. */
+  old_faraddr = ATOMIC_XCH(syslog_printer_target,(u64)printer);
+  rel_addr    = ATOMIC_XCH(syslog_target_rel_addr,EXTENDED_RELADDR);
+ } else {
+  /* Setup a 32-bit system-log target. */
+  rel_addr    = ATOMIC_XCH(syslog_target_rel_addr,(u32)rel_addr);
+  old_faraddr = ATOMIC_READ(syslog_printer_target);
+ }
+ atomic_rwlock_endwrite(&syslog_redirection_lock);
+ /* Figure out what the old system log printer used to be. */
+ if (rel_addr == EXTENDED_RELADDR) rel_addr = old_faraddr;
+ else rel_addr += (uintptr_t)syslog_target_rel_base;
+ return (pformatprinter)rel_addr;
+#else
+ rel_addr = ATOMIC_XCH(syslog_target_rel_addr,(u32)rel_addr);
  return (pformatprinter)((uintptr_t)syslog_target_rel_base+rel_addr);
+#endif
 }
 #else
 PRIVATE pformatprinter syslog_target = &syslog_print_default;

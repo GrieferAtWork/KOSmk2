@@ -46,7 +46,7 @@ PUBLIC ATTR_NORETURN
 void (FCALL __entry)(struct envdata *__restrict env, pmain main) {
 #if 1
  /* With module initializer now a thing, we can no longer rely
-  * on the original ECX passed by the kernel to be correct...
+  * on the original ECX/RDI passed by the kernel to be correct...
   * XXX: Find a better solution? */
  env = (struct envdata *)TLB_PEEKI(offsetof(struct tlb,tl_env));
 #endif

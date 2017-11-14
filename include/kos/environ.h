@@ -41,7 +41,7 @@ DECL_BEGIN
 ATTR_ALIGNED(PAGESIZE)
 struct envdata {
     /* NOTE: This data structure exists exclusively in userspace, and is always page-aligned.
-     * HINT: A pointer to this data structure is passed through ECX to '_start()' */
+     * HINT: A pointer to this data structure is passed through ECX/RDI to '_start()' */
     struct envdata *e_self;    /*< [1..1][== self] Original self pointer. */
     size_t          e_size;    /*< Total size of this data structure (in bytes).
                                 *  NOTE: This kernel internally limits this value to prevent
