@@ -471,7 +471,7 @@ PUBLIC struct cpu __bootcpu = {
 #endif
         .t_weakcnt   = 1, /* Held by the non-zero `t_refcnt' */
         /* The location of the bootstrap cpu-state block. */
-        .t_cstate    = WORKSTATE,
+        .t_cstate    = (struct cpustate *)WORKSTATE,
 #ifdef CONFIG_SMP
         .t_affinity_lock = ATOMIC_RWLOCK_INIT,
         .t_affinity  = CPU_SETONE(CPUID_BOOTCPU),

@@ -122,6 +122,21 @@
 #   define xflags xflags
 #endif /* !__INTELLISENSE__ */
 
+#ifdef __x86_64__
+#   define leax_rel(sym,reg)  leaq sym(%rip), reg
+#   define ileax_rel(sym,reg) leaq sym(%%rip), reg
+#   define movx_rel(sym,reg)  movq sym(%rip), reg
+#   define imovx_rel(sym,reg) movq sym(%%rip), reg
+#else
+#   define leax_rel(sym,reg)  leal sym, reg
+#   define ileax_rel(sym,reg) leal sym, reg
+#   define movx_rel(sym,reg)  movl sym, reg
+#   define imovx_rel(sym,reg) movl sym, reg
+#endif
+
+/* TODO: Get rid of all of this stuff and everything that is below.
+ *       The kernel is stay at -2Gb which always allows for the best
+ *       code to be generated that doesn't need any of these work-arounds. */
 #if defined(__KERNEL__) && defined(__x86_64__) && 0
 #if 0
 #   define ASM_USE_MOVABS 1

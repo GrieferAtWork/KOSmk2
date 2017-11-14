@@ -229,6 +229,7 @@ L(    testq $3, CPUSTATE_I_OFFSETOF_IRET+IRREGS_I_OFFSETOF_CS(%rsp)           )
 L(    jz 1f                                                                   )
 L(    swapgs                                                                  )
 L(    call exec_deflirq                                                       )
+L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
 L(    addq $8, %rsp /* intno */                                               )
@@ -253,6 +254,7 @@ L(    testq $3, CPUSTATE_IE_OFFSETOF_IRET+IRREGS_IE_OFFSETOF_CS(%rsp)         )
 L(    jz 1f                                                                   )
 L(    swapgs                                                                  )
 L(    call exec_deflirq                                                       )
+L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
 L(    addq $8, %rsp /* intno */                                               )
@@ -287,7 +289,8 @@ L(    ADJUST_INTNO_TO_INTERRUPT(%rax)                                         )
 L(    movq  INTERRUPT_OFFSETOF_CALLBACK(%rax), %rax /* XAX now contains the interrupt entry point */)
 L(    xchgq 0(%rsp), %rax /* Restore original XAX and safe interrupt entry point on-stack. */)
 L(    ret /* ~return~ to the interrupt handler. */                            )
-L(4:  swapgs /* Restore the user-space GS */                                  )
+L(4:  cli    /* Prevent race-condition involving `swapgs' */                  )
+L(    swapgs /* Restore the user-space GS */                                  )
 L(    addq $8, %rsp /* intno */                                               )
 L(    ASM_IRET                                                                )
 L(1:  pushq $4f /* } else { ... */                                            )
@@ -328,7 +331,8 @@ L(    ADJUST_INTNO_TO_INTERRUPT(%rax)                                         )
 L(    movq  INTERRUPT_OFFSETOF_CALLBACK(%rax), %rax /* XAX now contains the interrupt entry point */)
 L(    xchgq 0(%rsp), %rax /* Restore original XAX and safe interrupt entry point on-stack. */)
 L(    ret /* ~return~ to the interrupt handler. */                            )
-L(4:  swapgs /* Restore the user-space GS */                                  )
+L(4:  cli    /* Prevent race-condition involving `swapgs' */                  )
+L(    swapgs /* Restore the user-space GS */                                  )
 L(    addq $16, %rsp /* ecx_code + intno */                                   )
 L(    ASM_IRET                                                                )
 L(1:  pushq $4f /* } else { ... */                                            )
@@ -372,6 +376,7 @@ L(    jz    1f /* if (ORIGINATES_FROM_USERSPACE()) { ... */                   )
 L(    swapgs                                                                  )
 L(    ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call   exec_fastirq                                                     )
+L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    testq  %rax, %rax                                                       )
 L(    jz     2f                                                               )
@@ -414,19 +419,19 @@ L(    jz    1f /* if (ORIGINATES_FROM_USERSPACE()) { ... */                   )
 L(    swapgs                                                                  )
 L(    ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call exec_fastirq                                                       )
+L(    cli    /* Prevent race-condition involving `swapgs' */                  )
+L(    swapgs /* Restore the user-space GS */                                  )
 L(    testq  %rax, %rax                                                       )
 L(    jz     2f                                                               )
-L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addq $16, %rsp /* intno */                                              )
 L(    ASM_IRET                                                                )
-L(2:  swapgs /* Restore the user-space GS */                                  )
-L(3:  __ASM_POP_SCRATCH                                                       )
+L(2:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ycode                                                 )
 L(1:  ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call exec_fastirq                                                       )
 L(    testq  %rax, %rax                                                       )
-L(    jz     3b                                                               )
+L(    jz     2b                                                               )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
@@ -462,19 +467,19 @@ L(    jz 1f /* if (ORIGINATES_FROM_USERSPACE()) { ... */                      )
 L(    swapgs                                                                  )
 L(    ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call   exec_basiirq                                                     )
+L(    cli    /* Prevent race-condition involving `swapgs' */                  )
+L(    swapgs /* Restore the user-space GS */                                  )
 L(    testq  %rax, %rax                                                       )
 L(    jz     2f                                                               )
-L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addq   $8, %rsp /* intno */                                             )
 L(    ASM_IRET                                                                )
-L(2:  swapgs /* Restore the user-space GS */                                  )
-L(3:  __ASM_POP_SCRATCH                                                       )
+L(2:  __ASM_POP_SCRATCH                                                       )
 L(    jmp   default_irq_ncode                                                 )
 L(1:  ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call  exec_basiirq                                                      )
 L(    testq %rax, %rax                                                        )
-L(    jz    3b                                                                )
+L(    jz    2b                                                                )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
@@ -506,19 +511,19 @@ L(    jz     1f /* if (ORIGINATES_FROM_USERSPACE()) { ... */                  )
 L(    swapgs                                                                  )
 L(    ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call   exec_basiirq                                                     )
+L(    cli    /* Prevent race-condition involving `swapgs' */                  )
+L(    swapgs /* Restore the user-space GS */                                  )
 L(    testq  %rax, %rax                                                       )
 L(    jz     2f                                                               )
-L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_SCRATCH                                                       )
 L(    addq   $16, %rsp /* intno */                                            )
 L(    ASM_IRET                                                                )
-L(2:  swapgs /* Restore the user-space GS */                                  )
-L(3:  __ASM_POP_SCRATCH                                                       )
+L(2:  __ASM_POP_SCRATCH                                                       )
 L(    jmp    default_irq_ycode                                                )
 L(1:  ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call   exec_basiirq                                                     )
 L(    testq  %rax, %rax                                                       )
-L(    jz     3b                                                               )
+L(    jz     2b                                                               )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
@@ -555,6 +560,7 @@ L(    jz 1f                                                                   )
 L(    swapgs                                                                  )
 L(    ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call exec_statirq                                                       )
+L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
 L(    addq $8, %rsp /* intno */                                               )
@@ -584,6 +590,7 @@ L(    jz 1f                                                                   )
 L(    swapgs                                                                  )
 L(    ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call exec_statirq                                                       )
+L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
 L(    addq $8, %rsp /* intno */                                               )
@@ -966,6 +973,7 @@ exec_deflirq(struct cpustate_ie *__restrict state) {
 #endif
    {
     u64 new_gs_base;
+    PREEMPTION_DISABLE();
     __asm__ __volatile__("swapgs\n" : : : "memory"); /* Likely just a missing swapgs */
     new_gs_base = asm_rdgsbase();
 #ifdef CONFIG_SMP
@@ -1082,11 +1090,16 @@ receive_rpc_update_idt(irq_t intno) {
     * >> REQUIRED_PRIVILEGE_LEVEL = MIN(OLD_REQUIRED_PRIVILEGE_LEVEL,NEW_REQUIRED_PRIVILEGE_LEVEL);
     * >> IS_RECURSION_DISABLED    = OLD_IS_RECURSION_DISABLED || NEW_IS_RECURSION_DISABLED;
     */
+#ifdef __x86_64__
+   assertf((other->i_mode&IDTTYPE_MASK) == IDTTYPE_80386_32_INTERRUPT_GATE,
+           "No interrupt types other than `IDTTYPE_80386_32_INTERRUPT_GATE' can safely be used on x86_64");
+   mode = (MIN(mode&IDTFLAG_DPL_MASK,other->i_mode&IDTFLAG_DPL_MASK)|
+          (IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_PRESENT));
+   if (ist != other->i_ist) ist = 0;
+#else
    mode = (MIN(mode&IDTTYPE_MASK,other->i_mode&IDTTYPE_MASK)|
            MIN(mode&IDTFLAG_DPL_MASK,other->i_mode&IDTFLAG_DPL_MASK)|
            IDTFLAG_PRESENT);
-#ifdef __x86_64__
-   if (ist != other->i_ist) ist = 0;
 #endif
    assertf(other_level != (INTTYPE_ASM&INTTYPE_MASK),
            "Assembly handlers _must_ always come first");
@@ -1122,6 +1135,10 @@ got_eip:
  assertf(!(mode&IDTFLAG_STORAGE_SEGMENT),
          "KOS doesn't support storage segment interrupt "
          "vectors (intno = %d)\n",intno);
+#ifdef __x86_64__
+ assertf((mode&IDTTYPE_MASK) == IDTTYPE_80386_32_INTERRUPT_GATE,
+         "No interrupt types other than `IDTTYPE_80386_32_INTERRUPT_GATE' can safely be used on x86_64");
+#endif
  idt->ie_off1 = (u16)handler_eip;
  idt->ie_sel  = __KERNEL_CS;
 #ifdef __x86_64__

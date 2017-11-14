@@ -260,7 +260,7 @@ LOCAL ssize_t KCALL int_addboot(struct interrupt *__restrict entry) {
 
 /* Delete an interrupt handler.
  * @return: * :      The actual amount of CPUs that the handler was deleted from.
- * @return: -EINVAL: The handler was never added.
+ * @return: -ENXIO:  The handler was never added.
  * @return: -ECOMM: [CONFIG_SMP] Failed to communicate with at least one of the CPUs contained in `affinity' */
 FUNDEF ssize_t KCALL int_del(struct interrupt *__restrict entry);
 

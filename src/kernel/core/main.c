@@ -51,6 +51,7 @@
 #include <kernel/stack.h>
 #include <kernel/syslog.h>
 #include <kernel/test.h>
+#include <kernel/syscall.h>
 #include <kernel/user.h>
 #include <sys/syslog.h>
 #include <linker/module.h>
@@ -537,6 +538,10 @@ kernel_boot(u32        mb_magic,
   *       be skipped! */
  //mallopt(M_MALL_CHECK_FREQUENCY,4);
  //mallopt(M_MALL_CHECK_FREQUENCY,1); /* Most effective when checked constantly! */
+#endif
+
+#ifndef CONFIG_USE_OLD_SYSCALL
+ syscall_initialize();
 #endif
 
  /* Run kernel-level constructors, thereby initializing core modules. */

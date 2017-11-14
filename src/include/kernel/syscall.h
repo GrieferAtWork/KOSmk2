@@ -23,9 +23,178 @@
 #include <hybrid/types.h>
 #include <arch/cpustate.h>
 #include <sched/percpu.h>
+#include <kernel/interrupt.h>
+#include <arch/syscall.h>
+
+#undef CONFIG_USE_OLD_SYSCALL
+#ifndef __x86_64__
+#define CONFIG_USE_OLD_SYSCALL 1
+#endif
+
+
+#define __SC_DECL0(v)                                   v
+#define __SC_DECL1(t1,a1)                               t1 a1
+#define __SC_DECL2(t2,a2,t1,a1)                         t2 a2, __SC_DECL1(t1,a1)
+#define __SC_DECL3(t3,a3,t2,a2,t1,a1)                   t3 a3, __SC_DECL2(t2,a2,t1,a1)
+#define __SC_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)             t4 a4, __SC_DECL3(t3,a3,t2,a2,t1,a1)
+#define __SC_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       t5 a5, __SC_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_DECL6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) t6 a6, __SC_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_LONG0(v)                                   v
+#define __SC_LONG1(t1,a1)                               syscall_slong_t a1
+#define __SC_LONG2(t2,a2,t1,a1)                         syscall_slong_t a2, __SC_LONG1(t1,a1)
+#define __SC_LONG3(t3,a3,t2,a2,t1,a1)                   syscall_slong_t a3, __SC_LONG2(t2,a2,t1,a1)
+#define __SC_LONG4(t4,a4,t3,a3,t2,a2,t1,a1)             syscall_slong_t a4, __SC_LONG3(t3,a3,t2,a2,t1,a1)
+#define __SC_LONG5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       syscall_slong_t a5, __SC_LONG4(t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_LONG6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) syscall_slong_t a6, __SC_LONG5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_CAST0(v)                                   /* Nothing */
+#define __SC_CAST1(t1,a1)                               (t1)a1
+#define __SC_CAST2(t2,a2,t1,a1)                         (t2)a2, __SC_CAST1(t1,a1)
+#define __SC_CAST3(t3,a3,t2,a2,t1,a1)                   (t3)a3, __SC_CAST2(t2,a2,t1,a1)
+#define __SC_CAST4(t4,a4,t3,a3,t2,a2,t1,a1)             (t4)a4, __SC_CAST3(t3,a3,t2,a2,t1,a1)
+#define __SC_CAST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       (t5)a5, __SC_CAST4(t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_CAST6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) (t6)a6, __SC_CAST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_TEST(type)        STATIC_ASSERT(sizeof(type) <= sizeof(syscall_slong_t))
+#define __SC_TEST0(v)                                    /* Nothing */
+#define __SC_TEST1(t1,a1)                                __SC_TEST(t1)
+#define __SC_TEST2(t2,a2,t1,a1)                          __SC_TEST(t2); __SC_TEST1(t1,a1)
+#define __SC_TEST3(t3,a3,t2,a2,t1,a1)                    __SC_TEST(t3); __SC_TEST2(t2,a2,t1,a1)
+#define __SC_TEST4(t4,a4,t3,a3,t2,a2,t1,a1)              __SC_TEST(t4); __SC_TEST3(t3,a3,t2,a2,t1,a1)
+#define __SC_TEST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)        __SC_TEST(t5); __SC_TEST4(t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_TEST6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)  __SC_TEST(t6); __SC_TEST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
 
 DECL_BEGIN
 
+#define SYSCALL_TYPE_ARG       0x80
+#define SYSCALL_TYPE_MASK      0x0f
+/* NOTE: All custom system-call handlers _MUST_ always return normally!
+ * HINT: But since these handlers are called while `task_iscrit()' is true,
+ *       operations such as `task_terminate(THIS_TASK,...)' are still allowed. */
+#define SYSCALL_TYPE_ASM       0x00 /* An assembly-level system call handler.
+                                     * This type of handler is equivalent to `INTTYPE_ASM_SEG', in
+                                     * that user-space segments are saved and the kernel segments
+                                     * have been loaded.
+                                     * Additionally, all registers except for `XAX' will contain
+                                     * the same values, as were given through user-space.
+                                     * To return from this type of system call, `ret' must be used.
+                                     * Upon entry to the system call handler, the stack looks as follows:
+                                     * >>     0(%xsp) - System caller cleanup return address (Popped by `ret')
+                                     * >>   XSZ(%xsp) - ORIG_EAX
+                                     * >> 2*XSZ(%xsp) - %xip
+                                     * >> 3*XSZ(%xsp) - %cs
+                                     * >> 4*XSZ(%xsp) - %xflags
+                                     * >> 5*XSZ(%xsp) - %userxsp
+                                     * >> 6*XSZ(%xsp) - %ss
+                                     * HINT: This kind of stack-layout can easily be
+                                     *       addressed using `struct irregs_syscall'. */
+#define SYSCALL_TYPE_FAST      0x01 /* The most widely used type of system call, suitable for c-level callbacks.
+                                     * Registers are passed according to the `SYSCALL_HANDLER' calling convention.
+                                     * To define a system call of this type, use the `SYSCALL_DEFINE*' macros below. */
+#if !defined(__x86_64__) || 0 /* XXX: Enable if we ever need a system call that returns 128 bits. */
+#define __SYSCALL_TYPE_LONGBIT 0x02
+#define SYSCALL_TYPE_LONG      0x03 /* Same as `SYSCALL_TYPE_FAST', but allows the interrupt handler to return a 64/128-bit value in XAX:XDX. */
+#ifdef __x86_64__
+#define SYSCALL_TYPE_128BIT    SYSCALL_TYPE_LONG
+#define SYSCALL_TYPE_64BIT     SYSCALL_TYPE_FAST
+#else
+#define SYSCALL_TYPE_64BIT     SYSCALL_TYPE_LONG
+#endif
+#else
+#define SYSCALL_TYPE_64BIT     SYSCALL_TYPE_FAST
+#endif
+#define SYSCALL_TYPE_STATE     0x04 /* The most expensive type of system call: All user-space registers are
+                                     * saved in a `struct cpustate', a pointer to which is passed as the first argument.
+                                     * WARNING: This type of system call is invoked using the `SYSCALL_STATE_HANDLER' calling convention.
+                                     * >> void SYSCALL_STATE_HANDLER my_syscall(struct cpustate *__restrict state) { ... }
+                                     * HINT: Yes this type of handler still conforms to `struct irregs_syscall', because
+                                     *       `struct cpustate' and `struct irregs_syscall' share binary compatibility
+                                     *       due to `XAX' being the first register saved after past the CPU iret-tail. */
+#define SYSCALL_TYPE_STATE_ARG 0x84 /* Same as `SYSCALL_TYPE_STATE', but also pass an additional closure-argument.
+                                     * >> void SYSCALL_STATE_HANDLER my_syscall(struct cpustate *__restrict state, void *ext) { ... } */
+
+
+
+#define SYSCALL_FLAG_NORMAL    0x00 /* Just a regular, old system-call. */
+
+#ifdef __CC__
+typedef u8 syscall_type_t; /* One of `SYSCALL_TYPE_*' */
+typedef u8 syscall_flag_t; /* Set of `SYSCALL_FLAG_*' */
+#endif /* __CC__ */
+
+
+#define SYSCALL_OFFSETOF_NUMBER      0
+#define SYSCALL_OFFSETOF_TYPE        __SIZEOF_REGISTER__
+#define SYSCALL_OFFSETOF_FLAGS      (__SIZEOF_REGISTER__+1)
+#define SYSCALL_OFFSETOF_CALLBACK (2*__SIZEOF_REGISTER__)
+#define SYSCALL_OFFSETOF_CLOSURE  (2*__SIZEOF_REGISTER__+__SIZEOF_POINTER__)
+#define SYSCALL_OFFSETOF_HITS     (2*__SIZEOF_REGISTER__+2*__SIZEOF_POINTER__)
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+#define SYSCALL_OFFSETOF_REGS     (2*__SIZEOF_REGISTER__+3*__SIZEOF_POINTER__)
+#endif
+#define SYSCALL_OFFSETOF_FINI     (2*__SIZEOF_REGISTER__+4*__SIZEOF_POINTER__)
+#define SYSCALL_OFFSETOF_OWNER    (2*__SIZEOF_REGISTER__+5*__SIZEOF_POINTER__)
+#define SYSCALL_SIZE              (2*__SIZEOF_REGISTER__+6*__SIZEOF_POINTER__)
+#ifdef __CC__
+struct syscall {
+    register_t              sc_number;   /*< System call number. */
+union PACKED {
+    register_t            __sc_align;    /*< Align by registers. */
+struct PACKED {
+    syscall_type_t          sc_type;     /*< The type of system-call handler (One of `SYSCALL_TYPE_*'). */
+    syscall_flag_t          sc_flags;    /*< Set of `SYSCALL_FLAG_*'. */
+};};
+union PACKED {
+    void                   *sc_callback; /*< [1..1] System call callback pointer. */
+union PACKED {
+    CRIT void                          (ASMCALL *p_asm)(void);                                                   /*< [valid_if(:sc_type == SYSCALL_TYPE_ASM)] */
+    CRIT syscall_slong_t       (SYSCALL_HANDLER *p_fast)(void);                                                  /*< [valid_if(:sc_type == SYSCALL_TYPE_FAST)] */
+    CRIT void            (SYSCALL_STATE_HANDLER *p_state)(struct cpustate *__restrict state);                    /*< [valid_if(:sc_type == SYSCALL_TYPE_STATE)] */
+    CRIT void            (SYSCALL_STATE_HANDLER *p_state_arg)(struct cpustate *__restrict state, void *closure); /*< [valid_if(:sc_type == SYSCALL_TYPE_STATE_ARG)] */
+}                           sc_proto; };
+    void                   *sc_closure;  /*< [?..?][const] Closure argument potentially passed to `p_state_arg'. */
+    ATOMIC_DATA uintptr_t   sc_hits;     /*< Amount of times that this system-call was executed. */
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+    ATOMIC_DATA uintptr_t   sc_refs;     /*< Reference counter. */
+#else
+    ATOMIC_DATA uintptr_t __sc_refs;     /*< Reference counter. */
+#endif
+    void                  (*sc_fini)(void *closure); /*< [0..1] Optional closure finalizer. */
+    REF struct instance    *sc_owner;    /*< [1..1] Owner module of this system-call. */
+};
+
+
+/* Add/Delete a given system call descriptor.
+ * @return: -EOK:    Successfully registered the given descriptor.
+ * @return: -ENOMEM: Not enough available memory.
+ * @return: -EPERM:  Failed to increment the reference counter of `descriptor->sc_owner'
+ * @return: -EINVAL: The given `descriptor->sc_number' is reserved by the kernel and cannot be modified.
+ *                   For a list of reserved system call numbers, see `<asm/syscallno.ci>'
+ * TODO: Document all return values.
+ */
+FUNDEF errno_t KCALL syscall_add(struct syscall *__restrict descriptor);
+/* Delete a system call descriptor associated with `number'.
+ * @return: -EOK:    Successfully deleted the descriptor associated with `number'.
+ * @return: -ENXIO:  No system call was associated with the given `number'.
+ * @return: -EINVAL: The given `number' is reserved by the kernel and cannot be modified.
+ *                   For a list of reserved system call numbers, see `<asm/syscallno.ci>'
+ * TODO: Document all return values.
+ */
+FUNDEF errno_t KCALL syscall_del(register_t number);
+
+/* Same as `syscall_add', but register a copy of the given `descriptor'.
+ * @return: -EOK:    Successfully registered the given descriptor.
+ * @return: -ENOMEM: Not enough available memory.
+ * @return: -EPERM:  Failed to increment the reference counter of `descriptor->sc_owner'
+ * @return: -EINVAL: The given `number' is reserved by the kernel and cannot be modified.
+ *                   For a list of reserved system call numbers, see <asm/syscallno.ci>
+ * TODO: Document all return values.
+ */
+FUNDEF errno_t KCALL syscall_register(struct syscall const *__restrict descriptor);
+
+#endif /* __CC__ */
+
+
+
+#if !defined(CONFIG_USE_OLD_SYSCALL) || 1
 /* Low-level, assembly syscall function.
  *  - All registers, (except for `ESP', `EFLAGS' and `CS')
  *    will match those of the caller in userspace, essentially
@@ -40,7 +209,7 @@ DECL_BEGIN
  *       if might work for some reason.
  * NOTE: When userspace tries to call a missing interrupt, `-ENOSYS' is usually returned.
  */
-typedef syscall_ulong_t (ASMCALL *syscall_t)(void);
+typedef syscall_slong_t (ASMCALL *syscall_t)(void);
 #define SYSCALL_INT 0x80
 
 
@@ -200,38 +369,6 @@ FUNDEF void ASMCALL sysreturn_check_segments(void);
 #define ASM_SYSRETURN_CHECK_SEGMENTS  ; /* Nothing */
 #endif
 
-
-#define __VA_ARGS(...) __VA_ARGS__
-#define __SC_DECL0(v)                                   v
-#define __SC_DECL1(t1,a1)                               t1 a1
-#define __SC_DECL2(t2,a2,t1,a1)                         t2 a2, __SC_DECL1(t1,a1)
-#define __SC_DECL3(t3,a3,t2,a2,t1,a1)                   t3 a3, __SC_DECL2(t2,a2,t1,a1)
-#define __SC_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)             t4 a4, __SC_DECL3(t3,a3,t2,a2,t1,a1)
-#define __SC_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       t5 a5, __SC_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_DECL6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) t6 a6, __SC_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_LONG0(v)                                   v
-#define __SC_LONG1(t1,a1)                               syscall_slong_t a1
-#define __SC_LONG2(t2,a2,t1,a1)                         syscall_slong_t a2, __SC_LONG1(t1,a1)
-#define __SC_LONG3(t3,a3,t2,a2,t1,a1)                   syscall_slong_t a3, __SC_LONG2(t2,a2,t1,a1)
-#define __SC_LONG4(t4,a4,t3,a3,t2,a2,t1,a1)             syscall_slong_t a4, __SC_LONG3(t3,a3,t2,a2,t1,a1)
-#define __SC_LONG5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       syscall_slong_t a5, __SC_LONG4(t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_LONG6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) syscall_slong_t a6, __SC_LONG5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_CAST0(v)                                   /* Nothing */
-#define __SC_CAST1(t1,a1)                               (t1)a1
-#define __SC_CAST2(t2,a2,t1,a1)                         (t2)a2, __SC_CAST1(t1,a1)
-#define __SC_CAST3(t3,a3,t2,a2,t1,a1)                   (t3)a3, __SC_CAST2(t2,a2,t1,a1)
-#define __SC_CAST4(t4,a4,t3,a3,t2,a2,t1,a1)             (t4)a4, __SC_CAST3(t3,a3,t2,a2,t1,a1)
-#define __SC_CAST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       (t5)a5, __SC_CAST4(t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_CAST6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) (t6)a6, __SC_CAST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_TEST(type)        STATIC_ASSERT(sizeof(type) <= sizeof(syscall_slong_t))
-#define __SC_TEST0(v)                                    /* Nothing */
-#define __SC_TEST1(t1,a1)                                __SC_TEST(t1)
-#define __SC_TEST2(t2,a2,t1,a1)                          __SC_TEST(t2); __SC_TEST1(t1,a1)
-#define __SC_TEST3(t3,a3,t2,a2,t1,a1)                    __SC_TEST(t3); __SC_TEST2(t2,a2,t1,a1)
-#define __SC_TEST4(t4,a4,t3,a3,t2,a2,t1,a1)              __SC_TEST(t4); __SC_TEST3(t3,a3,t2,a2,t1,a1)
-#define __SC_TEST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)        __SC_TEST(t5); __SC_TEST4(t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_TEST6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)  __SC_TEST(t6); __SC_TEST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
-
 #define __SYSCALL_DEFINEx(n,name,args) \
   FORCELOCAL syscall_slong_t ATTR_CDECL SYSC##name(__SC_DECL##n args); \
   INTERN syscall_slong_t ATTR_CDECL sys##name(__SC_LONG##n args) { \
@@ -297,7 +434,7 @@ GLOBAL_ASM(L(.section .text                                                     
            L(SYM_END(sys_##name)                                                  ) \
            L(.previous)); \
 PRIVATE ATTR_USED void FCALL SYSC_##name(struct cpustate *__restrict regs)
-
+#endif
 
 DECL_END
 

@@ -43,17 +43,18 @@
 #include <asm/instx.h>
 #include <hybrid/panic.h>
 
+#ifdef CONFIG_USE_OLD_SYSCALL
 DECL_BEGIN
 
 /* TODO: This entire file is a complete mess. - Scrap it all and rewrite it! */
 
 INTERN void ASMCALL syscall_irq(void);
-INTERN syscall_ulong_t ASMCALL sys_nosys(void);
-INTERN syscall_ulong_t ASMCALL sys_ccall(void);
-INTERN syscall_ulong_t ASMCALL sys_xcall(void);
+INTERN syscall_slong_t ASMCALL sys_nosys(void);
+INTERN syscall_slong_t ASMCALL sys_ccall(void);
+INTERN syscall_slong_t ASMCALL sys_xcall(void);
 #ifndef __x86_64__
-INTERN syscall_ulong_t ASMCALL sys_lccall(void);
-INTERN syscall_ulong_t ASMCALL sys_lxcall(void);
+INTERN syscall_slong_t ASMCALL sys_lccall(void);
+INTERN syscall_slong_t ASMCALL sys_lxcall(void);
 #endif /* !__x86_64__ */
 
 #pragma GCC diagnostic push
@@ -63,10 +64,10 @@ INTERN syscall_ulong_t ASMCALL sys_lxcall(void);
 
 #undef __SYSCALL
 
-#define __SYSCALL(x,y)      INTDEF syscall_ulong_t y(void);
-#define __XSYSCALL(x,y)     INTDEF syscall_ulong_t y(void);
-#define __SYSCALL_ASM(x,y)  INTDEF syscall_ulong_t ASMCALL y(void);
-#define __XSYSCALL_ASM(x,y) INTDEF syscall_ulong_t ASMCALL y(void);
+#define __SYSCALL(x,y)      INTDEF syscall_slong_t y(void);
+#define __XSYSCALL(x,y)     INTDEF syscall_slong_t y(void);
+#define __SYSCALL_ASM(x,y)  INTDEF syscall_slong_t ASMCALL y(void);
+#define __XSYSCALL_ASM(x,y) INTDEF syscall_slong_t ASMCALL y(void);
 #include <asm/syscallno.ci>
 
 PUBLIC CACHELINE_ALIGNED ATTR_HOTDATA ATTR_USED
@@ -118,7 +119,7 @@ PRIVATE ATTR_NORETURN ATTR_USED void FCALL preemption_not_enabled_leave(void) {
 }
 
 #if 0
-PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
+PRIVATE ATTR_USED void FCALL syscall_enter(syscall_slong_t sysno) {
  if (1) {
   syslog(LOG_DEBUG,"SYSCALL_ENTER:0x%.8I32X (%I32u) (EIP: %p)\n",
          sysno,sysno,THIS_SYSCALL_EIP);
@@ -193,7 +194,7 @@ L(SYM_END(dbg_sysleave)                                                       )
 L(.previous                                                                   )
 );
 #if 0
-PRIVATE ATTR_USED void FCALL syscall_enter(syscall_ulong_t sysno) {
+PRIVATE ATTR_USED void FCALL syscall_enter(syscall_slong_t sysno) {
  syslog(LOG_DEBUG,"SYSCALL:%Iu\n",sysno);
 }
 #define SYS_ENTER pushal; movl %eax, %ecx; call syscall_enter; popal;
@@ -565,7 +566,7 @@ PRIVATE MODULE_INIT void syscall_init(void) {
 }
 #endif
 
-
 DECL_END
+#endif /* CONFIG_USE_OLD_SYSCALL */
 
 #endif /* !GUARD_KERNEL_CORE_SYSCALL_C */

@@ -309,28 +309,9 @@ DECL_END
 #endif /* CONFIG_USE_OLD_INTERRUPTS */
 
 
-#ifdef __x86_64__
-#define __ASM_LOAD_SEGMENTS(temp) \
-    /* Load the proper kernel segment registers */ \
-  /*movw  $(__USER_DS), temp; \
-    movw  temp, %ds; \
-    movw  temp, %es; \
-    movw  temp, %fs; \
-    movw  $(__KERNEL_PERCPU), temp; \
-    movw  temp, %gs; */
-#else
-#define __ASM_LOAD_SEGMENTS(temp) \
-    /* Load the proper kernel segment registers */ \
-    movw  $(__USER_DS), temp; \
-    movw  temp, %ds; \
-    movw  temp, %es; \
-    movw  temp, %gs; \
-    movw  $(__KERNEL_PERCPU), temp; \
-    movw  temp, %fs;
-#endif
+/* TODO: Remove all the macros below! */
 #define __LOAD_SEGMENTS(temp) \
     __PP_STR(__ASM_LOAD_SEGMENTS(temp))
-
 #define __INT_ENTER \
    PP_STR(__ASM_PUSH_COMREGS) \
    __LOAD_SEGMENTS(%dx)

@@ -26,6 +26,8 @@
 #define ATTR_FASTCALL       __ATTR_FASTCALL
 #define ATTR_STDCALL        __ATTR_STDCALL
 #define ATTR_CDECL          __ATTR_CDECL
+#define ATTR_SYSVABI        __ATTR_SYSVABI
+#define ATTR_MSABI          __ATTR_MSABI
 #define ATTR_PURE           __ATTR_PURE
 #define ATTR_CONST          __ATTR_CONST
 #define ATTR_MALLOC         __ATTR_MALLOC

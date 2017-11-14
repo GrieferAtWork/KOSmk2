@@ -57,6 +57,7 @@
     <ClCompile Include="..\..\src\kernel\arch\realmode.c" />
     <ClCompile Include="..\..\src\kernel\arch\smp-init.c" />
     <ClCompile Include="..\..\src\kernel\arch\smp.c" />
+    <ClCompile Include="..\..\src\kernel\arch\syscall.c" />
     <ClCompile Include="..\..\src\kernel\arch\user.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\autopart\mbr.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\disk\bios-disk.c" />
@@ -163,6 +164,7 @@
     <ClInclude Include="..\..\src\include\arch\pic.h" />
     <ClInclude Include="..\..\src\include\arch\preemption.h" />
     <ClInclude Include="..\..\src\include\arch\realmode.h" />
+    <ClInclude Include="..\..\src\include\arch\syscall.h" />
     <ClInclude Include="..\..\src\include\arch\task.h" />
     <ClInclude Include="..\..\src\include\arch\tss.h" />
     <ClInclude Include="..\..\src\include\dev\blkdev.h" />

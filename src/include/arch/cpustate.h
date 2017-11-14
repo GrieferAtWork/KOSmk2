@@ -222,7 +222,8 @@ struct PACKED gpregs {
     __COMMON_REG2(si)
     __COMMON_REG2(bp)
 #ifndef __x86_64__
-    __COMMON_REG2(sp)
+    __COMMON_REG2(sp) /* Don't use this value! - Instead, take a look at how
+                       * `kernel_panic_process' calculates the correct ESP. */
 #endif
     __COMMON_REG1(b)
     __COMMON_REG1(d)
@@ -263,12 +264,14 @@ struct PACKED gpregs32 {
 #define __ASM_IPOP_GPREGS32  popal;
 
 #ifdef __x86_64__
-#define __ASM_PUSH_GPREGS \
-    pushq %rax; pushq %rcx; pushq %rdx; pushq %rbx; \
+#define __ASM_PUSH_GPREGS_NOXAX \
+                pushq %rcx; pushq %rdx; pushq %rbx; \
                 pushq %rbp; pushq %rsi; pushq %rdi; \
     pushq %r8;  pushq %r9;  pushq %r10; pushq %r11; \
     pushq %r12; pushq %r13; pushq %r14; pushq %r15;
-#define __ASM_LOAD_GPREGS(src) \
+#define __ASM_PUSH_GPREGS \
+    pushq %rax; __ASM_PUSH_GPREGS_NOXAX
+#define __ASM_LOAD_GPREGS_NOXAX(src) \
     movq GPREGS_OFFSETOF_R15+src, %r15; \
     movq GPREGS_OFFSETOF_R14+src, %r14; \
     movq GPREGS_OFFSETOF_R13+src, %r13; \
@@ -282,19 +285,25 @@ struct PACKED gpregs32 {
     movq GPREGS_OFFSETOF_RBP+src, %rbp; \
     movq GPREGS_OFFSETOF_RBX+src, %rbx; \
     movq GPREGS_OFFSETOF_RDX+src, %rdx; \
-    movq GPREGS_OFFSETOF_RCX+src, %rcx; \
+    movq GPREGS_OFFSETOF_RCX+src, %rcx;
+#define __ASM_LOAD_GPREGS(src) \
+    __ASM_LOAD_GPREGS_NOXAX(src) \
     movq GPREGS_OFFSETOF_RAX+src, %rax;
-#define __ASM_POP_GPREGS \
+#define __ASM_POP_GPREGS_NOXAX \
     popq %r15; popq %r14; popq %r13; popq %r12; \
     popq %r11; popq %r10; popq %r9;  popq %r8;  \
     popq %rdi; popq %rsi; popq %rbp;            \
-    popq %rbx; popq %rdx; popq %rcx; popq %rax;
-#define __ASM_IPUSH_GPREGS \
-    pushq %%rax; pushq %%rcx; pushq %%rdx; pushq %%rbx; \
+    popq %rbx; popq %rdx; popq %rcx;
+#define __ASM_POP_GPREGS \
+    __ASM_POP_GPREGS_NOXAX popq %rax;
+#define __ASM_IPUSH_GPREGS_NOXAX \
+                 pushq %%rcx; pushq %%rdx; pushq %%rbx; \
                  pushq %%rbp; pushq %%rsi; pushq %%rdi; \
     pushq %%r8;  pushq %%r9;  pushq %%r10; pushq %%r11; \
     pushq %%r12; pushq %%r13; pushq %%r14; pushq %%r15;
-#define __ASM_ILOAD_GPREGS(src) \
+#define __ASM_IPUSH_GPREGS \
+    pushq %%rax; __ASM_IPUSH_GPREGS_NOXAX
+#define __ASM_ILOAD_GPREGS_NOXAX(src) \
     movq GPREGS_OFFSETOF_R15+src, %%r15; \
     movq GPREGS_OFFSETOF_R14+src, %%r14; \
     movq GPREGS_OFFSETOF_R13+src, %%r13; \
@@ -308,13 +317,17 @@ struct PACKED gpregs32 {
     movq GPREGS_OFFSETOF_RBP+src, %%rbp; \
     movq GPREGS_OFFSETOF_RBX+src, %%rbx; \
     movq GPREGS_OFFSETOF_RDX+src, %%rdx; \
-    movq GPREGS_OFFSETOF_RCX+src, %%rcx; \
+    movq GPREGS_OFFSETOF_RCX+src, %%rcx;
+#define __ASM_ILOAD_GPREGS(src) \
+    __ASM_ILOAD_GPREGS_NOXAX(src) \
     movq GPREGS_OFFSETOF_RAX+src, %%rax;
-#define __ASM_IPOP_GPREGS \
+#define __ASM_IPOP_GPREGS_NOXAX \
     popq %%r15; popq %%r14; popq %%r13; popq %%r12; \
     popq %%r11; popq %%r10; popq %%r9;  popq %%r8;  \
-    popq %%rdi; popq %%rsi; popq %%rbp;            \
-    popq %%rbx; popq %%rdx; popq %%rcx; popq %%rax;
+    popq %%rdi; popq %%rsi; popq %%rbp;             \
+    popq %%rbx; popq %%rdx; popq %%rcx;
+#define __ASM_IPOP_GPREGS \
+    __ASM_IPOP_GPREGS_NOXAX popq %%rax;
 #else
 #define __ASM_PUSH_GPREGS   __ASM_PUSH_GPREGS32
 #define __ASM_LOAD_GPREGS   __ASM_LOAD_GPREGS32
@@ -363,6 +376,7 @@ struct PACKED sgregs { u64 gs_base; u64 fs_base; };
                                 movq SGREGS_OFFSETOF_FS_BASE+src, %%r10; ASM_WRFSBASE(r10);
 #define __ASM_POP_SGREGS        popq  %r10; ASM_WRGSBASE(r10); popq  %r10; ASM_WRFSBASE(r10);
 #define __ASM_IPOP_SGREGS       popq %%r10; ASM_WRGSBASE(r10); popq %%r10; ASM_WRFSBASE(r10);
+#define __ASM_LOAD_SEGMENTS(temp) /* TODO: Remove this macro on x86_64 */
 #else
 #define SGREGS_OFFSETOF_GS 0
 #define SGREGS_OFFSETOF_FS 2
@@ -372,6 +386,14 @@ struct PACKED sgregs { u64 gs_base; u64 fs_base; };
 #ifdef __CC__
 struct PACKED sgregs { u16 gs,fs,es,ds; };
 #endif /* __CC__ */
+#define __ASM_LOAD_SEGMENTS(temp) \
+    /* Load the proper kernel segment registers */ \
+    movw  $(__USER_DS), temp; \
+    movw  temp, %ds; \
+    movw  temp, %es; \
+    movw  temp, %gs; \
+    movw  $(__KERNEL_PERCPU), temp; \
+    movw  temp, %fs;
 #define __ASM_PUSH_SGREGS   __ASM_PUSH_SGREGS32
 #define __ASM_LOAD_SGREGS   __ASM_LOAD_SGREGS32
 #define __ASM_POP_SGREGS    __ASM_POP_SGREGS32

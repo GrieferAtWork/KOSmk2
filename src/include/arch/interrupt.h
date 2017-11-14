@@ -69,9 +69,22 @@ struct PACKED idtentry {
 #define IDTTYPE_80286_16_INTERRUPT_GATE 0x06
 #define IDTTYPE_80286_16_TRAP_GATE      0x07
 #define IDTTYPE_80386_32_INTERRUPT_GATE 0x0e
+#ifndef __x86_64__
 #define IDTTYPE_80386_32_TRAP_GATE      0x0f
+#endif
 /* NOTE: Difference trap/interrupt:
  *     - trap:      Do not modify `XFLAGS.IF'
+ *       WARNING:   This type of interrupt can't really be used
+ *                  in KOS because it interferes with the operation
+ *                  of the `swapgs' instruction.
+ *               >> If we were to use it and another interrupt occurrs
+ *                  before `swapgs' was execute in the event that the
+ *                  CPU was in user-space before, then the second handler
+ *                  would think that GS had already been adjusted to
+ *                  contain the kernel's GS base address.
+ *                  But since that isn't the case, we're left with only two choices:
+ *                    #1: Never use traps and always use interrupts instead
+ *                    #2: 
  *     - interrupt: Disable further interrupts by clearing `XFLAGS.IF'
  */
 
@@ -79,8 +92,8 @@ struct PACKED idtentry {
 /* Default interrupt descriptor flags for host-private
  * callbacks and callbacks available from user-space. */
 #define INTMODE_HW           (IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(0)) /* Interrupt that is triggered by hardware. */
-#define INTMODE_HOST         (IDTFLAG_PRESENT|IDTTYPE_80386_32_TRAP_GATE|IDTFLAG_DPL(0))      /* Regular interrupt handler only callable by hardware or from within the kernel. */
-#define INTMODE_USER         (IDTFLAG_PRESENT|IDTTYPE_80386_32_TRAP_GATE|IDTFLAG_DPL(3))      /* Interrupt handler accessible by anyone (including userspace). */
+#define INTMODE_HOST         (IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(0)) /* Regular interrupt handler only callable by hardware or from within the kernel. */
+#define INTMODE_USER         (IDTFLAG_PRESENT|IDTTYPE_80386_32_INTERRUPT_GATE|IDTFLAG_DPL(3)) /* Interrupt handler accessible by anyone (including userspace). */
 #define INTMODE_EXCEPT        INTMODE_HOST /* Interrupt that is triggered by exceptions. */
 #define INTMODE_EXCEPT_NOINT  INTMODE_HW   /* Same as to `INTMODE_EXCEPT', but disable further interrupts before executing the handler. */
 typedef u8 intmode_t;

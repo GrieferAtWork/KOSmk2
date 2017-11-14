@@ -92,10 +92,10 @@ __SYSDECL_BEGIN
 #define __SYSCALL_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       t5 a5, __SYSCALL_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)
 #define __SYSCALL_DECL6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) t6 a6, __SYSCALL_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
 
-/* i386:   IN(ebx, ecx, edx, esi, edi, ebp) OUT(eax[,edx]) */
-/* x86_64: IN(rdi, rsi, rdx, r10, r8,  r9)  OUT(rax[,rdx]) */
+/* i386:        IN(ebx, ecx, edx, esi, edi, ebp) OUT(eax[,edx]) */
+/* x86_64:      IN(rdi, rsi, rdx, r10, r8,  r9)  OUT(rax[,rdx]) */
 
-/* x86_64 (CDECL): rdi, rsi, rdx, rcx, r8, r9 */
+/* x86_64 (CDECL): rdi, rsi, rdx, rcx, r8,  r9 */
 
 #ifdef __x86_64__
 #define __SYSCALL_ASMREG0(...)                                                 /* Nothing */

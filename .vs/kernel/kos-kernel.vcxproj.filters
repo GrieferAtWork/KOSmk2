@@ -498,6 +498,9 @@
     <ClCompile Include="..\..\src\kernel\arch\gdt.c">
       <Filter>kernel\arch</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\arch\syscall.c">
+      <Filter>kernel\arch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -807,6 +810,9 @@
       <Filter>include\arch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\arch\fpu.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\syscall.h">
       <Filter>include\arch</Filter>
     </ClInclude>
   </ItemGroup>

@@ -37,12 +37,12 @@ __LIBC ATTR_NORETURN void FCALL __entry(struct envdata *__restrict env, pmain m)
 GLOBAL_ASM(
 L(.section .data.free        ) /* Initialization (part of .free) */
 L(INTERN_ENTRY(_start)       )
-/* NOTE: The kernel will have initialized 'ECX' to point at `appenv' */
+/* NOTE: The kernel will have initialized `ECX' / `RDI' to point at `appenv' */
 /* We let libc deal with all startup. (Keeps executables small) */
 #ifdef __x86_64__
-L(    movq $main, %rdi       )
+L(    leaq main(%rip), %rsi  )
 #else
-L(    movl $main, %edx       )
+L(    leal main,       %edx  )
 #endif
 L(.global __entry            )
 L(    jmp __entry            )

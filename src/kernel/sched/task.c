@@ -909,9 +909,9 @@ L(    movx  %xcx, %cr0                                                        )
 L(                                                                            )
 #ifndef CONFIG_NO_TLB
 L(    /* Switch TIB/TLB pointers */                                           )
-L(    movx  TASK_OFFSETOF_TLB(%eax), %xsi                                     )
+L(    movx  TASK_OFFSETOF_TLB(%xax), %xsi                                     )
 #if 1 /* OPTIMIZATION? Don't switch TIB pointers if no change is required. */
-L(    cmpx  %xsi, TASK_OFFSETOF_TLB(%ebx)                                     )
+L(    cmpx  %xsi, TASK_OFFSETOF_TLB(%xbx)                                     )
 L(    je    1f /* Same address. - No change required. */                      )
 #endif
 L(    movx  ASM_CPU(cpu_gdt+IDT_POINTER_OFFSETOF_GDT), %xdi                   )
@@ -974,7 +974,7 @@ L(    jmp  70b                                                                )
 L(99: pause                                                                   )
 #ifdef CONFIG_DEBUG
 #ifdef __x86_64__
-L(    movl  %eax, %edi                                                        )
+L(    movq  %rax, %rdi                                                        )
 L(    call  noyield_without_irq                                               )
 #else
 L(    pushl %eax                                                              )
@@ -990,24 +990,24 @@ L(.previous                                                                   )
 
 #ifdef CONFIG_DEBUG
 INTERN bool interrupts_enabled_initial = false;
-INTERN void ATTR_CDECL noyield_without_irq(void *eip) {
+INTERN void ATTR_CDECL noyield_without_irq(void *xip) {
  if (!interrupts_enabled_initial) return;
 #ifdef CONFIG_SMP
  if (SMP_ONLINE > 1) {
   PRIVATE CPU_DATA void *noyield_last_eip = (void *)-1;
 #ifdef CONFIG_NO_IDLE
-  if (eip == CPU(noyield_last_eip)) return;
+  if (xip == CPU(noyield_last_eip)) return;
 #endif /* CONFIG_NO_IDLE */
 #ifdef CONFIG_USE_EXTERNAL_ADDR2LINE
   syslog(LOG_SCHED|LOG_WARN,
          "#!$ addr2line(%Ix) '{file}({line}) : {func} : %p : Cannot yield while interrupts are disabled'\n",
-        (uintptr_t)eip-1,eip);
+        (uintptr_t)xip-1,xip);
 #else
   syslog(LOG_SCHED|LOG_WARN,"%[vinfo] : %p : Cannot yield while interrupts are disabled'\n",
-        (uintptr_t)eip-1,eip);
+        (uintptr_t)xip-1,xip);
 #endif
   debug_tbprint(0);
-  CPU(noyield_last_eip) = eip;
+  CPU(noyield_last_eip) = xip;
  } else
 #endif
  {
