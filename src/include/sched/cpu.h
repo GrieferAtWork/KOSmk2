@@ -172,7 +172,9 @@ FUNDEF ATTR_NORETURN void KCALL cpu_sched_setrunning(void);
  * WARNING: The caller is responsible to disable interrupts before calling either of these!
  */
 FUNDEF void ATTR_CDECL cpu_sched_setrunning_save(struct task *__restrict task);
-FUNDEF void ATTR_CDECL cpu_sched_setrunning_savef(struct task *__restrict task, u32 eflags);
+#if defined(__i386__) || defined(__x86_64__)
+FUNDEF void ATTR_CDECL cpu_sched_setrunning_savef(struct task *__restrict task, register_t xflags);
+#endif
 
 
 /* Perform a regular task rotation, selecting the next appropriate task for execution.

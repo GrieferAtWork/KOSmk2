@@ -181,7 +181,7 @@ struct cpustate_ie;
  * `panic_mask' isn't passed on the commandline. */
 #define PANIC_DEFAULT_MASK (PANIC_GPREGS|PANIC_XFLAGS| \
                             PANIC_SGREGS|PANIC_CRREGS| \
-                            PANIC_TRACEBACK)
+                            PANIC_TRACEBACK|PANIC_STACK)
 
 /* Process kernel-panic by dumping information
  * described by `panic_mask' to `printer'

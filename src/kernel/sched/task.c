@@ -785,11 +785,11 @@ L(PUBLIC_ENTRY(cpu_sched_setrunning_savef)                                    )
 L(    popq -(5*8)(%rsp)    /* RIP (return address). */                        )
 L(    pushq $(__KERNEL_DS) /* %ss */                                          )
 L(    pushq %rsp           /* %userrsp */                                     )
-L(    addq $8, (%rsp)      /* Adjust to point to the ~real~ userrsp */        )
+L(    addq  $8, (%rsp)     /* Adjust to point to the ~real~ userrsp */        )
 L(    pushq %FASTCALL_REG2 /* iret-compatible return block. */                )
 #else
-L(    popx -(3*XSZ)(%xsp)  /* XIP (return address). */                        )
-L(    pushx XSZ(%xsp)      /* xflags. */                                      )
+L(    popl  -(3*4)(%esp)   /* XIP (return address). */                        )
+L(    pushl XSZ(%esp)      /* xflags. */                                      )
 #endif
 L(    jmp   1f                                                                )
 L(PUBLIC_ENTRY(cpu_sched_setrunning_save)                                     )
@@ -800,7 +800,7 @@ L(    /* Generate an on-stack CPU state. */                                   )
 L(    popq -(5*8)(%rsp)    /* RIP (return address). */                        )
 L(    pushq $(__KERNEL_DS) /* %ss */                                          )
 L(    pushq %rsp           /* %userrsp */                                     )
-L(    addq $8, (%rsp)      /* Adjust to point to the ~real~ userrsp */        )
+L(    addq  $8, (%rsp)     /* Adjust to point to the ~real~ userrsp */        )
 L(    pushfq               /* iret-compatible return block. */                )
 L(1:  pushq $(__KERNEL_CS)                                                    )
 #else
@@ -808,8 +808,8 @@ L(    popl -(3*4)(%esp)    /* EIP (return address). */                        )
 L(    pushfl               /* iret-compatible return block. */                )
 L(1:  pushl %cs                                                               )
 #endif
-L(    subx $(XSZ), %xsp  /* Skip EIP (already saved above) */                 )
-L(    __ASM_PUSH_COMREGS /* Push registers. */                                )
+L(    subx  $(XSZ), %xsp   /* Skip EIP (already saved above) */               )
+L(    __ASM_PUSH_COMREGS   /* Push registers. */                              )
 #ifndef __x86_64__
       /* Load the given `task' argument into 'EAX'
        * NOTE: Use use `CPUSTATE_HOST_SIZE' as offset because that's
@@ -2166,7 +2166,7 @@ task_waitfor_t(struct timespec const *abstime)
    /* Check for signals/flags. */
    if (ATOMIC_READ(t->t_signals.ts_recv) != NULL ||
        ATOMIC_READ(t->t_flags)&(TASKFLAG_INTERRUPT|TASKFLAG_TIMEDOUT)) {
-    if (!(was&EFLAGS_IF)) PREEMPTION_DISABLE();
+    PREEMPTION_POP(was);
     goto got_signal;
    }
 
@@ -2238,11 +2238,14 @@ task_waitfor_t(struct timespec const *abstime)
  cpu_endwrite(THIS_CPU);
  TASK_SWITCH_CONTEXT(t,THIS_CPU->c_running);
  cpu_validate_counters(true);
+#ifdef CONFIG_DEBUG
  cpu_sched_setrunning_save(t); /* Switch to the new task. */
  cpu_validate_counters(true);
-
-got_signal:
  PREEMPTION_POP(was);
+#else
+ cpu_sched_setrunning_savef(t,was); /* Switch to the new task. */
+#endif
+got_signal:
  task_waitfor_clr(t);
 
  if unlikely(t->t_flags&(TASKFLAG_INTERRUPT|TASKFLAG_TIMEDOUT)) {

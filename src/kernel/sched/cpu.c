@@ -215,11 +215,19 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
  size_t               s_kernused;
  struct meminfo       s_kmeminfo[2];
 #endif
+#ifdef __x86_64__
+ byte_t               s_data[HOST_IDLE_STCKSIZE-
+                            (sizeof(struct cpustate)+
+                             sizeof(struct meminfo)*2+
+                             sizeof(size_t))];
+ struct cpustate      s_boot;
+#else
  byte_t               s_data[HOST_IDLE_STCKSIZE-
                             (sizeof(struct cpustate_host)+
                              sizeof(struct meminfo)*2+
                              sizeof(size_t))];
  struct cpustate_host s_boot;
+#endif
 } __bootidlestack = {
     /* Bootstrap kernel memory info.
      * >> Used to describe the kernel itself in physical memory. */
@@ -280,14 +288,21 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
             /* All other flags don't matter, but `IF' (interrupt flag) must be set.
              * If it wasn't, the idle task would otherwise block forever! */
             .xflags = EFLAGS_IF|EFLAGS_IOPL(0),
+#ifdef __x86_64__
+            .userxsp = (uintptr_t)&__bootidlestack+HOST_IDLE_STCKSIZE,
+            .ss      = __KERNEL_DS,
+#endif
         },
     },
 };
 
 #ifndef CONFIG_NO_JOBS
 INTERN ATTR_RAREBSS ATTR_ALIGNED(16) u8 __bootworkstack[HOST_WOKER_STCKSIZE];
-#define WORKSTATE \
-  ((struct cpustate *)(__bootworkstack+(HOST_WOKER_STCKSIZE-sizeof(struct cpustate_host))))
+#ifdef __x86_64__
+#define WORKSTATE ((struct cpustate *)(__bootworkstack+(HOST_WOKER_STCKSIZE-sizeof(struct cpustate))))
+#else
+#define WORKSTATE ((struct cpustate_host *)(__bootworkstack+(HOST_WOKER_STCKSIZE-sizeof(struct cpustate_host))))
+#endif
 
 #endif /* !CONFIG_NO_JOBS */
 
@@ -630,8 +645,10 @@ INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
  WORKSTATE->iret.xip    = (uintptr_t)&cpu_jobworker;
  memset(&WORKSTATE->gp,0,sizeof(WORKSTATE->gp));
 #ifdef __x86_64__
- WORKSTATE->sg.gs_base  = (uintptr_t)&__bootcpu;
- WORKSTATE->sg.fs_base  = 0;
+ WORKSTATE->iret.userxsp = (uintptr_t)__bootworkstack+HOST_WOKER_STCKSIZE;
+ WORKSTATE->iret.ss      = __KERNEL_DS;
+ WORKSTATE->sg.gs_base   = (uintptr_t)&__bootcpu;
+ WORKSTATE->sg.fs_base   = 0;
 #else /* __x86_64__ */
  WORKSTATE->sg.ds       = __KERNEL_DS;
  WORKSTATE->sg.es       = __KERNEL_DS;
