@@ -55,10 +55,18 @@
 		PROJ_DEP("_start") \
 		OBJECT(CONFIG_LIB_PATH "/crt0.o")
 
+#ifdef TARGET_X86_64
+/* XXX: Technically, `--nmagic' would work better (because KOS doesn't care for
+ *      segment alignments), but that seems to break compile-time dynamic linking... */
+#	define __MODULE_FIX L_FLAGS("-z","max-page-size=0x1000")
+#else
+#	define __MODULE_FIX /* nothing */
+#endif
 #define MODULE_NOSTDLIB(name) \
 		PROJECT(name) \
 		__STATIC_LIBGCC \
 		__NOSTDLIB \
+		__MODULE_FIX \
 		L_FLAGS("--shared") \
 		C_FLAGS("-fPIC") \
 		LINKER_SCRIPT("linker-scripts/module.ld")

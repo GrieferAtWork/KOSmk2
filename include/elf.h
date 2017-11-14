@@ -2595,7 +2595,27 @@ typedef Elf32_Addr Elf32_Conflict;
                                            to GOT entry for IE symbol */
 #define R_X86_64_TPOFF32        23      /* Offset in initial TLS block */
 
-#define R_X86_64_NUM            24
+#define R_X86_64_PC64           24      /* word64 S + A - P */
+#define R_X86_64_GOTOFF64       25      /* word64 S + A - GOT */
+#define R_X86_64_GOTPC32        26      /* word32 GOT + A - P */
+#define R_X86_64_GOT64          27      /* word64 G + A */
+#define R_X86_64_GOTPCREL64     28      /* word64 G + GOT - P + A */
+#define R_X86_64_GOTPC64        29      /* word64 GOT - P + A */
+#define R_X86_64_GOTPLT64       30      /* word64 G + A */
+#define R_X86_64_PLTOFF64       31      /* word64 L - GOT + A */
+#define R_X86_64_SIZE32         32      /* word32 Z + A */
+#define R_X86_64_SIZE64         33      /* word64 Z + A */
+#define R_X86_64_GOTPC32_TLSDESC 34     /* word32 */
+#define R_X86_64_GOTPC32_TLSDEC R_X86_64_GOTPC32_TLSDESC
+#define R_X86_64_TLSDESC_CALL   35      /* none */
+#define R_X86_64_TLSDESC        36      /* word64,word64 */
+#define R_X86_64_IRELATIVE      37
+#define R_X86_64_RELATIVE64     38      /* 64-bit adjust by program base */
+#define R_X86_64_PC32_BND       39
+#define R_X86_64_PLT32_BND      40
+#define R_X86_64_GOTPCRELX      41
+#define R_X86_64_REX_GOTPCRELX	42
+#define R_X86_64_NUM            43
 
 
 /* AM33 relocations. */

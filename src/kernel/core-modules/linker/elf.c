@@ -49,7 +49,14 @@
 
 DECL_BEGIN
 
+#ifdef __x86_64__
+#define ELF_USING_RELA 1
+#endif
+
+
+#ifndef ELF_USING_RELA
 #define ELF_USING_RELA 0
+#endif
 
 /* These limits are supposed to be very generous, but are required
  * to prevent exploiting kernel memory with unchecked limits. */
@@ -111,14 +118,18 @@ struct elf_dynamic {
  size_t    d_syment;           /*< The size of a single symbol table entry. */
  /* Relocation information. */
 union {
+#if ELF_USING_RELA
+ struct elf_rel d_relv[3];     /*< Mandatory relocations. */
+#else
  struct elf_rel d_relv[2];     /*< Mandatory relocations. */
+#endif
 struct {
  struct elf_rel d_rel;         /*< [valid_if(ELF_DYNAMIC_HAS_REL)] Regular relocations. */
  struct elf_rel d_jmprel;      /*< [valid_if(ELF_DYNAMIC_HAS_JMPREL)] Jump relocations. */
-};};
 #if ELF_USING_RELA
- struct elf_rel d_rela;        /*< [valid_if(ELF_DYNAMIC_HAS_REL)] Relocations with added. */
+ struct elf_rel d_rela;        /*< [valid_if(ELF_DYNAMIC_HAS_RELA)] Relocations with added. */
 #endif
+};};
  /* File offsets of different headers. */
  pos_t      d_strtab_off;      /*< [valid_if(ELF_DYNAMIC_HAS_STRTAB)] The file-offset of the string table. */
 
@@ -248,6 +259,8 @@ elf_load_dyn(struct elf_module *__restrict self,
   break;
  case DT_RELAENT:
   self->e_dynamic.d_rela.er_relent = dyn->d_un.d_val;
+  if (self->e_dynamic.d_flags&ELF_DYNAMIC_JMPREL_ISRELA)
+      self->e_dynamic.d_jmprel.er_relent = dyn->d_un.d_val;
   break;
 #endif
  case DT_REL:
@@ -274,8 +287,10 @@ elf_load_dyn(struct elf_module *__restrict self,
   break;
 #if ELF_USING_RELA
  case DT_PLTREL:
-  if (dyn->d_un.d_val == DT_RELA)
-      self->e_dynamic.d_flags |= ELF_DYNAMIC_JMPREL_ISRELA;
+  if (dyn->d_un.d_val == DT_RELA) {
+   self->e_dynamic.d_flags |= ELF_DYNAMIC_JMPREL_ISRELA;
+   self->e_dynamic.d_jmprel.er_relent = self->e_dynamic.d_rela.er_relent;
+  }
   break;
 #else
  case DT_PLTREL:
@@ -487,14 +502,6 @@ log_invalid_addr(struct elf_module *__restrict self,
         p,p+s-1,rp,re-1,self->e_module.m_file,self->e_module.m_size);
 }
 
-#ifdef __i386__
-#   define R_RELATIVE  R_386_RELATIVE
-#elif defined(__x86_64__)
-#   define R_RELATIVE  R_X86_64_RELATIVE
-#else
-#   warning "Missing `R_RELATIVE' for this platform?"
-#endif
-
 #define DATA_CHECK(p,s) \
  { if unlikely((uintptr_t)(p)     < (uintptr_t)data_begin || \
                (uintptr_t)(p)+(s) > data_end) \
@@ -700,6 +707,12 @@ got_module:
 
  /* Load all module relocations. */
  for (; relgroup_iter != relgroup_end; ++relgroup_iter) {
+#if ELF_USING_RELA
+  bool is_rela = (relgroup_iter->er_relent >= sizeof(Elf_Rela) &&
+                 (relgroup_iter == relgroup_end-1 ||
+                 (relgroup_iter == relgroup_end-2 &&
+                  self->e_dynamic.d_flags&ELF_DYNAMIC_JMPREL_ISRELA)));
+#endif
   iter = (Elf_Rel *)DATAADDR(relgroup_iter->er_rel);
   end  = (Elf_Rel *)((uintptr_t)iter+relgroup_iter->er_relsz);
   for (; iter < end; *(uintptr_t *)&iter += relgroup_iter->er_relent) {
@@ -708,11 +721,25 @@ got_module:
    u8  type     = ELF_R_TYPE(iter->r_info);
    u8 *rel_addr = (u8 *)DATAADDR(iter->r_offset);
    bool extern_sym = false;
-#ifdef R_RELATIVE
    /* Special case: Relative relocations. */
-   if (type == R_RELATIVE) {
-    DATA_CHECK(rel_addr,sizeof(uintptr_t));
-    *(uintptr_t *)rel_addr += (uintptr_t)load_addr;
+#ifdef __x86_64__
+   if (type == R_X86_64_RELATIVE) {
+    DATA_CHECK(rel_addr,8);
+    rel_value = load_addr;
+    if (is_rela) rel_value += ((Elf_Rela *)iter)->r_addend;
+    *(u64 *)rel_addr = (u64)rel_value;
+    continue;
+   } else if (type == R_X86_64_RELATIVE64) {
+    DATA_CHECK(rel_addr,8);
+    rel_value = load_addr;
+    if (is_rela) rel_value += ((Elf_Rela *)iter)->r_addend;
+    *(u64 *)rel_addr = (u64)rel_value;
+    continue;
+   }
+#elif defined(__i386__)
+   if (type == R_386_RELATIVE) {
+    DATA_CHECK(rel_addr,4);
+    *(u32 *)rel_addr += (u32)load_addr;
     continue;
    }
 #endif
@@ -734,6 +761,7 @@ find_extern:
 
     sym_name = string_table+sym->st_name;
     STRING_CHECK(sym_name);
+
     /* Find the symbol within shared libraries. */
     sym_hash  = sym_hashname(sym_name);
     /* NOTE: Don't search the module itself. - We already know its
@@ -757,28 +785,63 @@ find_extern:
 got_symbol:
     extern_sym = true;
    }
+#if ELF_USING_RELA
+   /* Add relocation addend. */
+   if (is_rela)
+       rel_value += ((Elf_Rela *)iter)->r_addend;
+#endif
 
 #if 0
    syslog(LOG_EXEC|LOG_DEBUG,
           COLDSTR("REL: %I8u -> %p:%p\n"),
           type,rel_addr,rel_value);
 #endif
+
+   /* TODO: Add config option to check for address overflows. */
    switch (type) {
 
-
 #ifdef __x86_64__
-#define R_NONE      R_X86_64_NONE
-#define R_8         R_X86_64_8
-#define R_PC8       R_X86_64_PC8
-#define R_16        R_X86_64_16
-#define R_PC16      R_X86_64_PC16
-#define R_32        R_X86_64_32
-#define R_32_ALT    R_X86_64_32S
-#define R_PC32      R_X86_64_PC32
-#define R_64        R_X86_64_64
 #define R_COPY      R_X86_64_COPY
 #define R_GLOB_DATA R_X86_64_GLOB_DAT
 #define R_JUMP_SLOT R_X86_64_JUMP_SLOT
+   case R_X86_64_NONE: break;
+   case R_X86_64_8:
+    DATA_CHECK(rel_addr,1);
+    *(u8 *)rel_addr = (u8)rel_value;
+    break;
+   case R_X86_64_PC8:
+    DATA_CHECK(rel_addr,1);
+    *(u8 *)rel_addr = (u8)((uintptr_t)rel_value-
+                           (uintptr_t)rel_addr);
+    break;
+   case R_X86_64_16:
+    DATA_CHECK(rel_addr,2);
+    *(u16 *)rel_addr = (u16)rel_value;
+    break;
+   case R_X86_64_PC16:
+    DATA_CHECK(rel_addr,2);
+    *(u16 *)rel_addr = (u16)((uintptr_t)rel_value-
+                             (uintptr_t)rel_addr);
+    break;
+   case R_X86_64_32:
+   case R_X86_64_32S:
+    DATA_CHECK(rel_addr,4);
+    *(u32 *)rel_addr = (u32)rel_value;
+    break;
+   case R_X86_64_PC32:
+    DATA_CHECK(rel_addr,4);
+    *(u32 *)rel_addr = (u32)((uintptr_t)rel_value-
+                             (uintptr_t)rel_addr);
+    break;
+   case R_X86_64_64:
+    DATA_CHECK(rel_addr,8);
+    *(u64 *)rel_addr = (u64)rel_value;
+    break;
+   case R_X86_64_PC64:
+    DATA_CHECK(rel_addr,8);
+    *(u64 *)rel_addr = (u64)((uintptr_t)rel_value-
+                             (uintptr_t)rel_addr);
+    break;
 
  //case R_X86_64_DTPMOD64: /* TODO */ break;
  //case R_X86_64_DTPOFF64: /* TODO */ break;
@@ -796,16 +859,37 @@ got_symbol:
  //case R_X86_64_PLT32: break;
  //case R_X86_64_GOTPCREL: break;
 #elif defined(__i386__)
-#define R_NONE      R_386_NONE
-#define R_8         R_386_8
-#define R_PC8       R_386_PC8
-#define R_16        R_386_16
-#define R_PC16      R_386_PC16
-#define R_32        R_386_32
-#define R_PC32      R_386_PC32
 #define R_COPY      R_386_COPY
 #define R_GLOB_DATA R_386_GLOB_DAT
 #define R_JUMP_SLOT R_386_JMP_SLOT
+   case R_386_NONE: break;
+   case R_386_8:
+    DATA_CHECK(rel_addr,1);
+    *(u8 *)rel_addr += (u8)rel_value;
+    break;
+   case R_386_PC8:
+    DATA_CHECK(rel_addr,1);
+    *(u8 *)rel_addr += (u8)((uintptr_t)rel_value-
+                            (uintptr_t)rel_addr);
+    break;
+   case R_386_16:
+    DATA_CHECK(rel_addr,2);
+    *(u16 *)rel_addr += (u16)rel_value;
+    break;
+   case R_386_PC16:
+    DATA_CHECK(rel_addr,2);
+    *(u16 *)rel_addr += (u16)((uintptr_t)rel_value-
+                              (uintptr_t)rel_addr);
+    break;
+   case R_386_32:
+    DATA_CHECK(rel_addr,4);
+    *(u32 *)rel_addr += (u32)rel_value;
+    break;
+   case R_386_PC32:
+    DATA_CHECK(rel_addr,4);
+    *(u32 *)rel_addr += (u32)((uintptr_t)rel_value-
+                              (uintptr_t)rel_addr);
+    break;
 
  //case R_386_32PLT    : /* TODO */ break;
  //case R_386_TLS_TPOFF: /* TODO */ break;
@@ -842,65 +926,6 @@ got_symbol:
 #else
 #error FIXME
 #endif
-
-#ifdef R_NONE
-   case R_NONE: break;
-#endif
-#ifdef R_8
-   case R_8:
-    DATA_CHECK(rel_addr,1);
-    *(u8 *)rel_addr += (u8)rel_value;
-    break;
-#endif
-#ifdef R_PC8
-   case R_PC8:
-    DATA_CHECK(rel_addr,1);
-    *(u8 *)rel_addr += (u8)((uintptr_t)rel_value-
-                            (uintptr_t)rel_addr);
-    break;
-#endif
-#ifdef R_16
-   case R_16:
-    DATA_CHECK(rel_addr,2);
-    *(u16 *)rel_addr += (u16)rel_value;
-    break;
-#endif
-#ifdef R_PC16
-   case R_PC16:
-    DATA_CHECK(rel_addr,2);
-    *(u16 *)rel_addr += (u16)((uintptr_t)rel_value-
-                              (uintptr_t)rel_addr);
-    break;
-#endif
-#ifdef R_32
-   case R_32:
-#ifdef R_32_ALT
-   case R_32_ALT:
-#endif
-    DATA_CHECK(rel_addr,4);
-    *(u32 *)rel_addr += (u32)rel_value;
-    break;
-#endif
-#ifdef R_PC32
-   case R_PC32:
-    DATA_CHECK(rel_addr,4);
-    *(u32 *)rel_addr += (u32)((uintptr_t)rel_value-
-                              (uintptr_t)rel_addr);
-    break;
-#endif
-#ifdef R_64
-   case R_64:
-    DATA_CHECK(rel_addr,8);
-    *(u64 *)rel_addr += (u64)rel_value;
-    break;
-#endif
-#ifdef R_PC64
-   case R_PC64:
-    DATA_CHECK(rel_addr,8);
-    *(u64 *)rel_addr += (u64)((uintptr_t)rel_value-
-                              (uintptr_t)rel_addr);
-    break;
-#endif
 #ifdef R_COPY
    case R_COPY:
     if (!extern_sym) goto find_extern;
@@ -916,19 +941,24 @@ got_symbol:
       *    page faults, and simply go ahead and copy the data.
       *    If it fails, the caller will correctly determine `-EFAULT'
       *    and everything can go on as normal without us having to
-      *    waste a whole much of time validating a pointer. */
-     if (rel_value+sym->st_size >= USER_END) {
-      char *sym_name = string_table+sym->st_name;
+      *    waste a whole bunch of time validating a pointer. */
+     uintptr_t sym_end;
+     if (__builtin_add_overflow(rel_value,sym->st_size,&sym_end))
+         goto symend_overflow;
+     if (sym_end > USER_END) {
       /* Special case: Allow relocations against user-share symbols */
-      if (rel_value             >= (uintptr_t)__kernel_user_start &&
-          rel_value+sym->st_size < (uintptr_t)__kernel_user_end) {
+      if (rel_value >= (uintptr_t)__kernel_user_start &&
+          sym_end   <= (uintptr_t)__kernel_user_end) {
       } else {
+       char *sym_name;
+symend_overflow:
+       sym_name = string_table+sym->st_name;
        if (sym_name < string_table ||
            sym_name >= string_end)
            sym_name = "??" "?";
        syslog(LOG_EXEC|LOG_ERROR,
               COLDSTR("[ELF] Faulty copy-relocation against %q targeting %p...%p in kernel space from `%[file]'\n"),
-              sym_name,rel_value,rel_value+sym->st_size-1,self->e_module.m_file);
+              sym_name,rel_value,sym_end-1,self->e_module.m_file);
        goto end;
       }
      }
@@ -953,12 +983,19 @@ got_symbol:
 #endif
 
 
+   {
+    char *sym_name;
    default:
+    sym_name = string_table+sym->st_name;
+    if (sym_name < string_table ||
+        sym_name >= string_end)
+        sym_name = "??" "?";
     syslog(LOG_EXEC|LOG_WARN,
-           COLDSTR("[ELF] Unknown relocation #%u at %p (%#I8x with symbol %#x) in `%[file]'\n"),
+           COLDSTR("[ELF] Unknown relocation #%u at %p(%p) = %q (%#I8x with symbol %#x; %q) in `%[file]'\n"),
          ((uintptr_t)iter-DATAADDR(relgroup_iter->er_rel))/relgroup_iter->er_relent,
-           iter->r_offset,type,(unsigned)(ELF_R_SYM(iter->r_info)),self->e_module.m_file);
-    break;
+           rel_addr,iter->r_offset,rel_value,type,(unsigned)(ELF_R_SYM(iter->r_info)),
+           sym_name,self->e_module.m_file);
+   } break;
    }
   }
  }
