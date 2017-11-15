@@ -24,15 +24,10 @@
 
 __SYSDECL_BEGIN
 
-#if defined(__x86_64__) && defined(__ILP32__)
-#   define __SIZEOF_SYSCALL_LONG__ 8
-#	define __SYSCALL_SLONG_TYPE    __INT64_TYPE__
-#	define __SYSCALL_ULONG_TYPE    __UINT64_TYPE__
-#else
-#   define __SIZEOF_SYSCALL_LONG__ __SIZEOF_POINTER__
-#	define __SYSCALL_SLONG_TYPE    __INTPTR_TYPE__
-#	define __SYSCALL_ULONG_TYPE    __UINTPTR_TYPE__
-#endif
+#define __SIZEOF_SYSCALL_LONG__ __SIZEOF_POINTER__
+#define __SYSCALL_SLONG_TYPE    __LONGPTR_TYPE__
+#define __SYSCALL_ULONG_TYPE    __ULONGPTR_TYPE__
+
 
 #define __SIZEOF_BLKADDR32_T__  4
 #define __SIZEOF_BLKADDR64_T__  8
@@ -159,25 +154,25 @@ __SYSDECL_BEGIN
 #undef  __useconds_t
 
 typedef __INT16_TYPE__          __int16_t;
-typedef __INT32_TYPE__          __blkcnt32_t;
 typedef __INT32_TYPE__          __clockid_t;
 typedef __INT32_TYPE__          __daddr_t;
-typedef __INT32_TYPE__          __fsint32_t;
-typedef __INT32_TYPE__          __fsword32_t;
 typedef __INT32_TYPE__          __int32_t;
 typedef __INT32_TYPE__          __key_t;
-typedef __INT32_TYPE__          __off32_t;
 typedef __INT32_TYPE__          __pid_t;
 typedef __INT32_TYPE__          __time32_t;
-typedef __INT64_TYPE__          __blkcnt64_t;
-typedef __INT64_TYPE__          __fsint64_t;
-typedef __INT64_TYPE__          __fsword64_t;
 typedef __INT64_TYPE__          __int64_t;
-typedef __INT64_TYPE__          __off64_t;
 typedef __INT64_TYPE__          __quad_t;
 typedef __INT64_TYPE__          __time64_t;
 typedef __INT8_TYPE__           __int8_t;
 typedef __INTPTR_TYPE__         __intptr_t;
+typedef __LONG32_TYPE__         __blkcnt32_t;
+typedef __LONG32_TYPE__         __fsint32_t;
+typedef __LONG32_TYPE__         __fsword32_t;
+typedef __LONG32_TYPE__         __off32_t;
+typedef __LONG64_TYPE__         __blkcnt64_t;
+typedef __LONG64_TYPE__         __fsint64_t;
+typedef __LONG64_TYPE__         __fsword64_t;
+typedef __LONG64_TYPE__         __off64_t;
 typedef __PTRDIFF_TYPE__        __ptrdiff_t;
 typedef __REGISTER_TYPE__       __register_t;
 typedef __SIZE_TYPE__           __size_t;
@@ -191,14 +186,14 @@ typedef __SYSCALL_ULONG_TYPE    __rlim_t;
 typedef __SYSCALL_ULONG_TYPE    __syscall_ulong_t;
 typedef __UINT16_TYPE__         __cpuid_t;
 typedef __UINT16_TYPE__         __uint16_t;
-typedef __UINT32_TYPE__         __blkaddr32_t;
-typedef __UINT32_TYPE__         __fsblkcnt32_t;
-typedef __UINT32_TYPE__         __fsfilcnt32_t;
-typedef __UINT32_TYPE__         __fsuint32_t;
 typedef __UINT32_TYPE__         __gid_t;
 typedef __UINT32_TYPE__         __id_t;
-typedef __UINT32_TYPE__         __ino32_t;
 typedef __UINT32_TYPE__         __jtime32_t;
+typedef __ULONG32_TYPE__        __blkaddr32_t;
+typedef __ULONG32_TYPE__        __fsblkcnt32_t;
+typedef __ULONG32_TYPE__        __fsfilcnt32_t;
+typedef __ULONG32_TYPE__        __fsuint32_t;
+typedef __ULONG32_TYPE__        __ino32_t;
 #ifdef __USE_DOS
 /* Simple enough: DOS defines this one as signed, rather than unsigned. */
 typedef __INT32_TYPE__          __mode_t;
@@ -206,25 +201,25 @@ typedef __INT32_TYPE__          __mode_t;
 typedef __UINT32_TYPE__         __mode_t;
 #endif /* !__DOS_COMPAT__ */
 typedef __UINT32_TYPE__         __nlink_t;
-typedef __UINT32_TYPE__         __pos32_t;
 typedef __UINT32_TYPE__         __rlim32_t;
 typedef __UINT32_TYPE__         __socklen_t;
 typedef __UINT32_TYPE__         __uid_t;
 typedef __UINT32_TYPE__         __uint32_t;
 typedef __UINT32_TYPE__         __useconds_t;
-typedef __UINT64_TYPE__         __blkaddr64_t;
-typedef __UINT64_TYPE__         __fsblkcnt64_t;
-typedef __UINT64_TYPE__         __fsfilcnt64_t;
-typedef __UINT64_TYPE__         __fsuint64_t;
-typedef __UINT64_TYPE__         __ino64_t;
 typedef __UINT64_TYPE__         __jtime64_t;
-typedef __UINT64_TYPE__         __pos64_t;
 typedef __UINT64_TYPE__         __rlim64_t;
 typedef __UINT64_TYPE__         __u_quad_t;
 typedef __UINT64_TYPE__         __uint64_t;
 typedef __UINT8_TYPE__          __byte_t;
 typedef __UINT8_TYPE__          __uint8_t;
 typedef __UINTPTR_TYPE__        __uintptr_t;
+typedef __ULONG32_TYPE__        __pos32_t;
+typedef __ULONG64_TYPE__        __blkaddr64_t;
+typedef __ULONG64_TYPE__        __fsblkcnt64_t;
+typedef __ULONG64_TYPE__        __fsfilcnt64_t;
+typedef __ULONG64_TYPE__        __fsuint64_t;
+typedef __ULONG64_TYPE__        __ino64_t;
+typedef __ULONG64_TYPE__        __pos64_t;
 typedef __off64_t               __loff_t;
 typedef __pos64_t               __lpos_t;
 typedef __quad_t                __qaddr_t;
@@ -319,12 +314,12 @@ typedef void                   *__timer_t;
 #if 1
 #ifdef CONFIG_32BIT_FILESYSTEM
 #   define __SIZEOF_FS_LONG__ 4
-#   define __FS_SLONG_TYPE    __INT32_TYPE__
-#   define __FS_ULONG_TYPE    __UINT32_TYPE__
+#   define __FS_SLONG_TYPE    __LONG32_TYPE__
+#   define __FS_ULONG_TYPE    __ULONG32_TYPE__
 #else
 #   define __SIZEOF_FS_LONG__ 8
-#   define __FS_SLONG_TYPE    __INT64_TYPE__
-#   define __FS_ULONG_TYPE    __UINT64_TYPE__
+#   define __FS_SLONG_TYPE    __LONG64_TYPE__
+#   define __FS_ULONG_TYPE    __ULONG64_TYPE__
 #endif
 #define __SIZEOF_KERNEL_BLKCNT_T__   __SIZEOF_FS_LONG__
 #define __SIZEOF_KERNEL_BLKADDR_T__  __SIZEOF_FS_LONG__
@@ -438,7 +433,7 @@ typedef __jtime64_t          __jtime_t;
 
 #ifndef __KERNEL__
 #include <features.h>
-#ifdef __USE_FILE_OFFSET64
+#if defined(__USE_FILE_OFFSET64) || defined(__x86_64__)
 #   define __SIZEOF_BLKCNT_T__   __SIZEOF_BLKCNT64_T__
 #   define __SIZEOF_BLKADDR_T__  __SIZEOF_BLKADDR64_T__
 #   define __SIZEOF_FSBLKCNT_T__ __SIZEOF_FSBLKCNT64_T__
@@ -497,7 +492,7 @@ __SYSDECL_END
 
 #ifndef __KERNEL__
 #include <features.h>
-#ifdef __USE_FILE_OFFSET64
+#if defined(__USE_FILE_OFFSET64) || defined(__x86_64__)
 #   define __FS_TYPE(x)   __##x##64_t
 #   define __FS_SIZEOF(x) __SIZEOF_##x##64_T__
 #else

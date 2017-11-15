@@ -63,6 +63,10 @@
 
 DECL_BEGIN
 
+#ifdef __USE_FILE_OFFSET64
+#error "This must not be enabled when building Lib-C"
+#endif
+
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(libc_syscall)                                                  )
@@ -124,20 +128,38 @@ INTERN major_t LIBCCALL libc_gnu_dev_major(dev_t dev) { return MAJOR(dev); }
 INTERN minor_t LIBCCALL libc_gnu_dev_minor(dev_t dev) { return MINOR(dev); }
 INTERN dev_t LIBCCALL libc_gnu_dev_makedev(major_t major, minor_t minor) { return MKDEV(major,minor); }
 
-INTERN off32_t LIBCCALL libc_lseek(int fd, off32_t offset, int whence) { return FORWARD_SYSTEM_VALUE(sys_lseek32(fd,offset,whence)); }
 INTERN ssize_t LIBCCALL libc_read(int fd, void *buf, size_t n_bytes) { return FORWARD_SYSTEM_VALUE(sys_read(fd,buf,n_bytes)); }
 INTERN ssize_t LIBCCALL libc_write(int fd, void const *buf, size_t n_bytes) { return FORWARD_SYSTEM_VALUE(sys_write(fd,buf,n_bytes)); }
+
+#if __SIZEOF_OFF_T__ == 4
+INTERN off_t LIBCCALL libc_lseek(int fd, off_t offset, int whence) { return FORWARD_SYSTEM_VALUE(sys_lseek32(fd,offset,whence)); }
+INTERN ssize_t LIBCCALL libc_pread(int fd, void *buf, size_t n_bytes, off_t offset) { return FORWARD_SYSTEM_VALUE(sys_pread32(fd,buf,n_bytes,offset)); }
+INTERN ssize_t LIBCCALL libc_pwrite(int fd, void const *buf, size_t n_bytes, off_t offset) { return FORWARD_SYSTEM_VALUE(sys_pwrite32(fd,buf,n_bytes,offset)); }
+INTERN int LIBCCALL libc_truncate(char const *file, off_t length) { return FORWARD_SYSTEM_ERROR(sys_truncate32(file,length)); }
+INTERN int LIBCCALL libc_ftruncate(int fd, off_t length) { return FORWARD_SYSTEM_ERROR(sys_ftruncate32(fd,length)); }
+#else
+INTERN off_t LIBCCALL libc_lseek(int fd, off_t offset, int whence) { return FORWARD_SYSTEM_VALUE(sys_lseek(fd,offset,whence)); }
+INTERN ssize_t LIBCCALL libc_pread(int fd, void *buf, size_t n_bytes, off_t offset) { return FORWARD_SYSTEM_VALUE(sys_pread64(fd,buf,n_bytes,offset)); }
+INTERN ssize_t LIBCCALL libc_pwrite(int fd, void const *buf, size_t n_bytes, off_t offset) { return FORWARD_SYSTEM_VALUE(sys_pwrite64(fd,buf,n_bytes,offset)); }
+INTERN int LIBCCALL libc_truncate(char const *file, off_t length) { return FORWARD_SYSTEM_ERROR(sys_truncate(file,length)); }
+INTERN int LIBCCALL libc_ftruncate(int fd, off_t length) { return FORWARD_SYSTEM_ERROR(sys_ftruncate(fd,length)); }
+#endif
+
+#if __SIZEOF_OFF_T__ == __SIZEOF_OFF64_T__
+DEFINE_INTERN_ALIAS(libc_truncate64,libc_truncate);
+DEFINE_INTERN_ALIAS(libc_ftruncate64,libc_ftruncate);
+DEFINE_INTERN_ALIAS(libc_lseek64,libc_lseek);
+DEFINE_INTERN_ALIAS(libc_pread64,libc_pread);
+DEFINE_INTERN_ALIAS(libc_pwrite64,libc_pwrite);
+#else
+INTERN int LIBCCALL libc_truncate64(char const *file, off64_t length) { return FORWARD_SYSTEM_ERROR(sys_truncate(file,length)); }
+INTERN int LIBCCALL libc_ftruncate64(int fd, off64_t length) { return FORWARD_SYSTEM_ERROR(sys_ftruncate(fd,length)); }
 INTERN off64_t LIBCCALL libc_lseek64(int fd, off64_t offset, int whence) { return FORWARD_SYSTEM_VALUE(sys_lseek(fd,offset,whence)); }
-INTERN ssize_t LIBCCALL libc_pread(int fd, void *buf, size_t n_bytes, off32_t offset) { return FORWARD_SYSTEM_VALUE(sys_pread32(fd,buf,n_bytes,offset)); }
-INTERN ssize_t LIBCCALL libc_pwrite(int fd, void const *buf, size_t n_bytes, off32_t offset) { return FORWARD_SYSTEM_VALUE(sys_pwrite32(fd,buf,n_bytes,offset)); }
 INTERN ssize_t LIBCCALL libc_pread64(int fd, void *buf, size_t n_bytes, off64_t offset) { return FORWARD_SYSTEM_VALUE(sys_pread64(fd,buf,n_bytes,offset)); }
 INTERN ssize_t LIBCCALL libc_pwrite64(int fd, void const *buf, size_t n_bytes, off64_t offset) { return FORWARD_SYSTEM_VALUE(sys_pwrite64(fd,buf,n_bytes,offset)); }
+#endif
 
 INTERN struct fsmask LIBCCALL libc_fsmode(struct fsmask new_mode) { struct fsmask result; *(u64 *)&result = sys_xfsmask(*(u64 *)&new_mode); return result; }
-INTERN int LIBCCALL libc_truncate(char const *file, off32_t length) { return FORWARD_SYSTEM_ERROR(sys_truncate32(file,length)); }
-INTERN int LIBCCALL libc_truncate64(char const *file, off64_t length) { return FORWARD_SYSTEM_ERROR(sys_truncate(file,length)); }
-INTERN int LIBCCALL libc_ftruncate(int fd, off32_t length) { return FORWARD_SYSTEM_ERROR(sys_ftruncate32(fd,length)); }
-INTERN int LIBCCALL libc_ftruncate64(int fd, off64_t length) { return FORWARD_SYSTEM_ERROR(sys_ftruncate(fd,length)); }
 INTERN int LIBCCALL libc_fsync(int fd) { return FORWARD_SYSTEM_ERROR(sys_fsync(fd)); }
 INTERN int LIBCCALL libc_syncfs(int fd) { return FORWARD_SYSTEM_ERROR(sys_syncfs(fd)); }
 INTERN void LIBCCALL libc_sync(void) { sys_sync(); }
@@ -527,12 +549,13 @@ ATTR_CDECL name(char const *path, Tchar const *arg, ...) { \
 
 #endif
 
+#undef environ
 DATDEF char **environ;
 
 /* Kernel extension also supported by linux: NULL -> leave environ unchanged. */
 #undef KERNEL_HAVE_EXEC_ENVPNULL_IS_CURRENT
 
-/* That's not how this works! Passing NULL re-uses the original
+/* That's not how this works! Passing NULL re-uses the _original_
  * environ, meaning that changes made by the user would be lost! */
 //#define KERNEL_HAVE_EXEC_ENVPNULL_IS_CURRENT 1
 
@@ -824,8 +847,14 @@ INTERN char *LIBCCALL libc_crypt(char const *key, char const *salt) { NOT_IMPLEM
 INTERN void LIBCCALL libc_encrypt(char *glibc_block, int edflag) { NOT_IMPLEMENTED(); }
 INTERN char *LIBCCALL libc_ctermid(char *s) { NOT_IMPLEMENTED(); return NULL; }
 INTERN char *LIBCCALL libc_cuserid(char *s) { NOT_IMPLEMENTED(); return NULL; }
+
 INTERN int LIBCCALL libc_lockf(int fd, int cmd, off_t len) { NOT_IMPLEMENTED(); return -1; }
+#if __SIZEOF_OFF_T__ == __SIZEOF_OFF64_T__
+DEFINE_INTERN_ALIAS(libc_lockf64,libc_lockf);
+#else
 INTERN int LIBCCALL libc_lockf64(int fd, int cmd, off64_t len) { NOT_IMPLEMENTED(); return -1; }
+#endif
+
 #if 0
 PRIVATE struct passwd test = {
    .pw_name   = "root",

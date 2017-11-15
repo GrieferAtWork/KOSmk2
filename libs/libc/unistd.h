@@ -38,12 +38,12 @@ INTDEF long int ATTR_CDECL libc_syscall(long int sysno, ...);
 INTDEF major_t LIBCCALL libc_gnu_dev_major(dev_t dev);
 INTDEF minor_t LIBCCALL libc_gnu_dev_minor(dev_t dev);
 INTDEF dev_t LIBCCALL libc_gnu_dev_makedev(major_t major, minor_t minor);
-INTDEF off32_t LIBCCALL libc_lseek(int fd, off32_t offset, int whence);
+INTDEF off_t LIBCCALL libc_lseek(int fd, off_t offset, int whence);
 INTDEF ssize_t LIBCCALL libc_read(int fd, void *buf, size_t n_bytes);
 INTDEF ssize_t LIBCCALL libc_write(int fd, void const *buf, size_t n_bytes);
 INTDEF off64_t LIBCCALL libc_lseek64(int fd, off64_t offset, int whence);
-INTDEF ssize_t LIBCCALL libc_pread(int fd, void *buf, size_t n_bytes, off32_t offset);
-INTDEF ssize_t LIBCCALL libc_pwrite(int fd, void const *buf, size_t n_bytes, off32_t offset);
+INTDEF ssize_t LIBCCALL libc_pread(int fd, void *buf, size_t n_bytes, off_t offset);
+INTDEF ssize_t LIBCCALL libc_pwrite(int fd, void const *buf, size_t n_bytes, off_t offset);
 INTDEF ssize_t LIBCCALL libc_pread64(int fd, void *buf, size_t n_bytes, off64_t offset);
 INTDEF ssize_t LIBCCALL libc_pwrite64(int fd, void const *buf, size_t n_bytes, off64_t offset);
 #if __SIZEOF_POINTER__ == 8
@@ -55,9 +55,9 @@ INTDEF ssize_t LIBCCALL libc_pwrite64(int fd, void const *buf, size_t n_bytes, o
 #define libc_preadI  libc_pread
 #define libc_pwriteI libc_pwrite
 #endif
-INTDEF int LIBCCALL libc_truncate(char const *file, off32_t length);
+INTDEF int LIBCCALL libc_truncate(char const *file, off_t length);
 INTDEF int LIBCCALL libc_truncate64(char const *file, off64_t length);
-INTDEF int LIBCCALL libc_ftruncate(int fd, off32_t length);
+INTDEF int LIBCCALL libc_ftruncate(int fd, off_t length);
 INTDEF int LIBCCALL libc_ftruncate64(int fd, off64_t length);
 INTDEF int LIBCCALL libc_fsync(int fd);
 INTDEF int LIBCCALL libc_syncfs(int fd);
@@ -205,7 +205,7 @@ INTDEF char *LIBCCALL libc_crypt(char const *key, char const *salt);
 INTDEF void LIBCCALL libc_encrypt(char *glibc_block, int edflag);
 INTDEF char *LIBCCALL libc_ctermid(char *s);
 INTDEF char *LIBCCALL libc_cuserid(char *s);
-INTDEF int LIBCCALL libc_lockf(int fd, int cmd, off32_t len);
+INTDEF int LIBCCALL libc_lockf(int fd, int cmd, off_t len);
 INTDEF int LIBCCALL libc_lockf64(int fd, int cmd, off64_t len);
 INTDEF struct passwd *LIBCCALL libc_getpwuid(uid_t uid);
 INTDEF struct passwd *LIBCCALL libc_getpwnam(char const *name);
@@ -285,7 +285,7 @@ INTDEF int LIBCCALL libc_getdrive(void);
 INTDEF unsigned long LIBCCALL libc_getdrives(void);
 INTDEF unsigned LIBCCALL libc_getdiskfree(unsigned drive, struct _diskfree_t *diskfree);
 
-INTDEF int LIBCCALL libc_dos_truncate(char const *file, off32_t length);
+INTDEF int LIBCCALL libc_dos_truncate(char const *file, off_t length);
 INTDEF int LIBCCALL libc_dos_truncate64(char const *file, off64_t length);
 INTDEF int LIBCCALL libc_dos_chroot(char const *path);
 INTDEF int LIBCCALL libc_dos_chdir(char const *path);

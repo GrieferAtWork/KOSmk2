@@ -831,7 +831,10 @@ template<> struct ____INTELLISENSE_static_if_helper<true> { bool __is_true__(); 
 
 #ifdef __x86_64__
 typedef char *__builtin_va_list[1],*__gnuc_va_list[1];
-namespace __int { template<class T> T ____INTELLISENSE_va_arg_heper(char **&); }
+namespace __int {
+template<class T> T ____INTELLISENSE_va_arg_heper(char *(&)[1]);
+template<class T> T ____INTELLISENSE_va_arg_heper(char **&);
+}
 #else
 typedef char *__builtin_va_list,*__gnuc_va_list;
 namespace __int { template<class T> T ____INTELLISENSE_va_arg_heper(__builtin_va_list &); }

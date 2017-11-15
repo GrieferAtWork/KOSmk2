@@ -24,6 +24,7 @@ Chaos|KOS - Even more chaotic than last time.
  - i486+ (Yes. Your machine can't be older than time itself...)
    - Protected-mode ring #3
    - Can run on <b>real hardware</b>
+   - x86_64 (64-bit/longmode support)
  - QEMU
  - multiboot/multiboot2
    - Kernel commandline support
@@ -85,15 +86,15 @@ Chaos|KOS - Even more chaotic than last time.
      - Supports all scansets (#1, #2 and #3)
    - Ne2000 ethernet driver
    - PCI enumeration & database
+   - CMOS Real-time-clock
  - Modular kernel design (New features are loaded by drivers)
 
 ## Planned (As seen in the old KOS) ##
- - cmos rtc driver (Currently 'date' uses PIT interrupts and is reset during boot)
  - local exception handling in user-space
 
 ## Planned (As not seen in the old KOS) ##
  - <code>/sys</code>
- - pthread library
+ - pthread library (Although threading can already be done using <code>fork()</code> and <code>clone()</code>)
  - IP-stack
  - WLAN support for "Atheros AR2427 Wireless" (That one's inside my test machine)
 

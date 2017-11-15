@@ -101,7 +101,7 @@ INTERN UINT  WINAPI K32_lwrite(HFILE hFile, LPCCH lpBuffer, UINT uBytes) { s32 r
 INTERN LONG  WINAPI K32_hread(HFILE hFile, LPVOID lpBuffer, LONG lBytes) { return (LONG)read(hFile,lpBuffer,(u32)lBytes); }
 INTERN LONG  WINAPI K32_hwrite(HFILE hFile, LPCCH lpBuffer, LONG lBytes) { return (LONG)write(hFile,lpBuffer,(u32)lBytes); }
 INTERN HFILE WINAPI K32_lclose(HFILE hFile) { close(hFile); return hFile; }
-INTERN LONG  WINAPI K32_llseek(HFILE hFile, LONG lOffset, int iOrigin) { return (LONG)lseek(hFile,(off32_t)lOffset,iOrigin); }
+INTERN LONG  WINAPI K32_llseek(HFILE hFile, LONG lOffset, int iOrigin) { return (LONG)lseek(hFile,(off_t)lOffset,iOrigin); }
 
 
 
