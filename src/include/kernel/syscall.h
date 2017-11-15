@@ -32,21 +32,21 @@
 #endif
 
 
-#define __SC_DECL0(v)                                   v
-#define __SC_DECL1(t1,a1)                               t1 a1
-#define __SC_DECL2(t2,a2,t1,a1)                         t2 a2, __SC_DECL1(t1,a1)
-#define __SC_DECL3(t3,a3,t2,a2,t1,a1)                   t3 a3, __SC_DECL2(t2,a2,t1,a1)
-#define __SC_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)             t4 a4, __SC_DECL3(t3,a3,t2,a2,t1,a1)
-#define __SC_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       t5 a5, __SC_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_DECL6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) t6 a6, __SC_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_LONG0(v)                                   v
-#define __SC_LONG1(t1,a1)                               syscall_slong_t a1
-#define __SC_LONG2(t2,a2,t1,a1)                         syscall_slong_t a2, __SC_LONG1(t1,a1)
-#define __SC_LONG3(t3,a3,t2,a2,t1,a1)                   syscall_slong_t a3, __SC_LONG2(t2,a2,t1,a1)
-#define __SC_LONG4(t4,a4,t3,a3,t2,a2,t1,a1)             syscall_slong_t a4, __SC_LONG3(t3,a3,t2,a2,t1,a1)
-#define __SC_LONG5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       syscall_slong_t a5, __SC_LONG4(t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_LONG6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) syscall_slong_t a6, __SC_LONG5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_CAST0(v)                                   /* Nothing */
+#define __SC_DECL0(v)                                    v
+#define __SC_DECL1(t1,a1)                                t1 a1
+#define __SC_DECL2(t2,a2,t1,a1)                          t2 a2, __SC_DECL1(t1,a1)
+#define __SC_DECL3(t3,a3,t2,a2,t1,a1)                    t3 a3, __SC_DECL2(t2,a2,t1,a1)
+#define __SC_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)              t4 a4, __SC_DECL3(t3,a3,t2,a2,t1,a1)
+#define __SC_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)        t5 a5, __SC_DECL4(t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_DECL6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)  t6 a6, __SC_DECL5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_LONG0(v)                                    v
+#define __SC_LONG1(t1,a1)                                syscall_slong_t a1
+#define __SC_LONG2(t2,a2,t1,a1)                          syscall_slong_t a2, __SC_LONG1(t1,a1)
+#define __SC_LONG3(t3,a3,t2,a2,t1,a1)                    syscall_slong_t a3, __SC_LONG2(t2,a2,t1,a1)
+#define __SC_LONG4(t4,a4,t3,a3,t2,a2,t1,a1)              syscall_slong_t a4, __SC_LONG3(t3,a3,t2,a2,t1,a1)
+#define __SC_LONG5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)        syscall_slong_t a5, __SC_LONG4(t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_LONG6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)  syscall_slong_t a6, __SC_LONG5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
+#define __SC_CAST0(v)                                    /* Nothing */
 #define __SC_CAST1(t1,a1)                               (t1)a1
 #define __SC_CAST2(t2,a2,t1,a1)                         (t2)a2, __SC_CAST1(t1,a1)
 #define __SC_CAST3(t3,a3,t2,a2,t1,a1)                   (t3)a3, __SC_CAST2(t2,a2,t1,a1)

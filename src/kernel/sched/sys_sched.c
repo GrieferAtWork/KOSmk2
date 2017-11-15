@@ -55,8 +55,8 @@
 
 DECL_BEGIN
 
-INTERN ATTR_NORETURN
-void KCALL task_userexit_group(void *exitcode) {
+INTERN ATTR_NORETURN void KCALL
+task_userexit_group(void *exitcode) {
  /* More commonly known as stdlib:`exit()' */
  struct task *caller = THIS_TASK;
  REF struct task *leader;
@@ -112,6 +112,7 @@ INTERN ATTR_NORETURN void KCALL task_userexit(void *exitcode) {
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(sys_exit_group)                                                )
+#ifdef CONFIG_USE_OLD_SYSCALL
 L(    sti                                                                     )
 L(    /* Load segment registers */                                            )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
@@ -122,6 +123,9 @@ L(    call  task_userexit_group                                               )
 #ifdef CONFIG_DEBUG
 L(.global __assertion_unreachable                                             )
 L(    call __assertion_unreachable                                            )
+#endif
+#else
+L(    jmp  task_userexit                                                      )
 #endif
 L(SYM_END(sys_exit_group)                                                     )
 L(.previous                                                                   )

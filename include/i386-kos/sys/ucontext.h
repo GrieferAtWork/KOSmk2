@@ -238,7 +238,7 @@ typedef struct _libc_fpstate *fpregset_t;
 typedef struct {
     gregset_t        gregs;
     fpregset_t       fpregs; /* Note that fpregs is a pointer. */
-    __UINTPTR_TYPE__ __reserved1[8];
+    __UINTPTR_TYPE__ __reserved1[8]; /* XXX: Maybe fit fs/gs_base in here? */
 } mcontext_t;
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma pop_macro("fpregs")

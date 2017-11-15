@@ -230,10 +230,20 @@ PRIVATE ATTR_USED asm_syscall_t xsyscall_table[NR_xsyscalls] = {
 
 
 #ifdef CONFIG_DEBUG
-#define DBG(...) __VA_ARGS__
+#define DBG(...)               __VA_ARGS__
+#define FRAME_SIZE          (2*XSZ)
+#define PUSH_FRAME(xip_offset) pushx xip_offset(%xsp); pushx %xbp; movx %xsp, %xbp
+#define POP_FRAME              popx %xbp; addx $(XSZ), %xsp
+#define SKIP_FRAME             addx $(2*XSZ), %xsp
 #else
-#define DBG(...) /* nothing */
+#define DBG(...)               /* nothing */
+#define FRAME_SIZE             0
+#define PUSH_FRAME(xip_offset) /* nothing */
+#define POP_FRAME              /* nothing */
+#define SKIP_FRAME             /* nothing */
 #endif
+
+
 
 GLOBAL_ASM(
 L(.section .text.hot                                                          )
@@ -263,12 +273,9 @@ L(                                                                            )
 #ifdef __x86_64__
 L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL64_DEFINE/__SYSCALL_SDEFINE' depends on this */)
 L(    movq   %r10, %rcx                                                       )
-DBG(L(pushq  IRREGS_SYSCALL_OFFSETOF_IP(%rsp)                                 ))
-DBG(L(pushq  %rbp                                                             ))
-DBG(L(movq   %rsp, %rbp                                                       ))
+L(    PUSH_FRAME(__ASM_SCRATCH_NOXAX_SIZE+IRREGS_SYSCALL_OFFSETOF_IP)         )
 L(    callq *syscall_table(,%rax,8)                                           )
-DBG(L(popq   %rbp                                                             ))
-DBG(L(addq   $8, %rsp                                                         ))
+L(    POP_FRAME                                                               )
 L(    __ASM_POP_SCRATCH_NOXAX                                                 )
 L(    addq   $8, %rsp  /* Don't restore RAX. */                               )
 L(    cli                                                                     )
@@ -313,12 +320,9 @@ L(    cmpq   $(__NR_xsyscall_max), %rax                                       )
 L(    ja    .check_extensions                                                 )
 L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL64_DEFINE/__SYSCALL_SDEFINE' depends on this */)
 L(    movq   %r10, %rcx                                                       )
-DBG(L(pushq  IRREGS_SYSCALL_OFFSETOF_IP(%rsp)                                 ))
-DBG(L(pushq  %rbp                                                             ))
-DBG(L(movq   %rsp, %rbp                                                       ))
+L(    PUSH_FRAME(__ASM_SCRATCH_NOXAX_SIZE+IRREGS_SYSCALL_OFFSETOF_IP)         )
 L(    callq *(xsyscall_table-((__NR_xsyscall_min*8) & 0xffffffff))(,%rax,8)   )
-DBG(L(popq   %rbp                                                             ))
-DBG(L(addq   $8, %rsp                                                         ))
+L(    POP_FRAME                                                               )
 L(    __ASM_POP_SCRATCH_NOXAX                                                 )
 L(    addq   $8, %rsp  /* Don't restore RAX. */                               )
 L(    cli                                                                     )
