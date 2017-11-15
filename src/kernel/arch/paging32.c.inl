@@ -137,7 +137,7 @@ PUBLIC bool KCALL pdir_init(pdir_t *__restrict self) {
 #endif /* CONFIG_PDIR_SELFMAP */
 
 #if 0
- syslog(LOG_DEBUG,"%.?[hex]\n",
+ syslog(LOG_DEBUG,"%$[hex]\n",
       ((KERNEL_GLOBAL_END-KERNEL_BASE)/PDTABLE_REPRSIZE)*sizeof(union pd_table),
         &self->pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE]);
 #endif

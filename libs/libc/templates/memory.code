@@ -298,32 +298,22 @@ DECL void *LIBCCALL X(libc_memset)(void *dst, B h, size_t n) {
 
 DECL int LIBCCALL X(libc_memcmp)
 (void const *a, void const *b, size_t n) {
-	if (n >= STRING_REPCMPSn_LIMIT) {
-#if defined(CONFIG_NATIVE_64BIT_STRING) && \
-   (defined(__i386__) || defined(__x86_64__))
-		int result = 0;
+	if (n >= STRING_REPCMPSn_LIMIT || 1) {
+#if (defined(CONFIG_NATIVE_64BIT_STRING)  || S < 8) && \
+	(defined(__i386__) || defined(__x86_64__))
+		register int result;
 		CHECK_DF();
-#ifdef __x86_64__
-		if (n != 0)
-#endif
-		{
-			__asm__ __volatile__(
-#ifndef __x86_64__
-			                     "    jcxz 1f\n"
-#endif
-			                     "    repe cmps" W "\n"
-			                     "    seta %b0\n"
-			                     "    jnb 1f\n"
-			                     "    mov $-1, %0\n"
-#ifndef __x86_64__
-			                     "1:\n"
-#endif
-			                     : "+a" (result)
-			                     : "D" (a), "S" (b), "c" (WM(n))
-			                     , "m" (*(struct { __extension__ T val[n]; } *)a)
-			                     , "m" (*(struct { __extension__ T val[n]; } *)b)
-			                     : "cc");
-		}
+		__asm__ __volatile__("    test %3, %3\n"
+		                     "    repe; cmps" W "\n"
+		                     "    seta %b0\n"
+		                     "    jnb 1f\n"
+		                     "    mov $-1, %0\n"
+		                     "1:\n"
+		                     : "=g" (result)
+		                     : "D" (a), "S" (b), "c" (WM(n)), "0" (0)
+		                     , "m" (*(struct { __extension__ T val[n]; } *)a)
+		                     , "m" (*(struct { __extension__ T val[n]; } *)b)
+		                     : "cc");
 		return result;
 #endif
 	}
@@ -351,7 +341,7 @@ DECL vB *LIBCCALL X(libc_memchr)
 #else
 	                     "    jcxz 2f\n"
 #endif
-	                     "    repne scas" W "\n"
+	                     "    repne; scas" W "\n"
 	                     "    mov %1, %0\n"
 	                     "    je 1f\n"
 	                     "2:  xor %0, %0\n"

@@ -726,7 +726,7 @@ kill_task:
     uintptr_t max_stack = (uintptr_t)stack_end-xsp;
     if (max_stack > MAX_PRINT) max_stack = MAX_PRINT;
     debug_printf("STACK: %p...%p (%Iu bytes)\n"
-                 "%.?[hex]\n",xsp,xsp+max_stack-1,
+                 "%$[hex]\n",xsp,xsp+max_stack-1,
                  max_stack,max_stack,xsp);
    } else if (xsp < (uintptr_t)stack_begin) {
     debug_printf("STACK: Overflow by %Iu bytes (%p < %p...%p)\n",

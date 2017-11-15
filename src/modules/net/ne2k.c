@@ -619,7 +619,7 @@ ne2k_probe(struct pci_device *dev) {
 
  syslog(LOG_INFO,"[NE2K] Found network card (I/O %.4I16x; MAC: %[mac])\n",
         iobase,&self->n_dev.n_macaddr);
- syslog(LOG_DEBUG,"%.?[hex]\n",32,prom);
+ syslog(LOG_DEBUG,"%$[hex]\n",32,prom);
 end:
  NETDEV_DECREF(&self->n_dev);
  return error;

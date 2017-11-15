@@ -1770,13 +1770,13 @@ mheap_validate_addr(struct dsetup *setup, struct mfree *node) {
       malloc_panic(setup,NULL,"Invalid heap address-space space node %p",node);
  if (!IS_ALIGNED(MFREE_BEGIN(node),HEAP_ALIGNMENT) ||
      !IS_ALIGNED(MFREE_END(node),HEAP_ALIGNMENT))
-      malloc_panic(setup,NULL,"Miss-aligned heap address-space node %p...%p (size %p)\n%.?[hex]",
+      malloc_panic(setup,NULL,"Miss-aligned heap address-space node %p...%p (size %p)\n%$[hex]",
                    MFREE_MIN(node),MFREE_MAX(node),MFREE_SIZE(node),sizeof(struct mfree),node);
  if (MFREE_BEGIN(node) >= MFREE_END(node))
-     malloc_panic(setup,NULL,"Unordered heap address-space node %p...%p\n%.?[hex]",
+     malloc_panic(setup,NULL,"Unordered heap address-space node %p...%p\n%$[hex]",
                   MFREE_MIN(node),MFREE_MAX(node),sizeof(struct mfree),node);
  if (MFREE_SIZE(node) < HEAP_MIN_MALLOC)
-     malloc_panic(setup,NULL,"Heap address-space node %p...%p is too small (%Iu < %Iu)\n%.?[hex]",
+     malloc_panic(setup,NULL,"Heap address-space node %p...%p is too small (%Iu < %Iu)\n%$[hex]",
                   MFREE_MIN(node),MFREE_MAX(node),MFREE_SIZE(node),HEAP_MIN_MALLOC,sizeof(struct mfree),node);
  mheap_validate_addr(setup,node->mf_laddr.a_min);
  mheap_validate_addr(setup,node->mf_laddr.a_max);
@@ -1893,23 +1893,23 @@ mheap_validate(struct dsetup *setup,
         malloc_panic(setup,NULL,"Invalid heap size node %p",node);
    if (!IS_ALIGNED(MFREE_BEGIN(node),HEAP_ALIGNMENT) ||
        !IS_ALIGNED(MFREE_END(node),HEAP_ALIGNMENT))
-        malloc_panic(setup,NULL,"Miss-aligned heap sized node %p...%p\n%.?[hex]",
+        malloc_panic(setup,NULL,"Miss-aligned heap sized node %p...%p\n%$[hex]",
                      MFREE_MIN(node),MFREE_MAX(node),sizeof(struct mfree),node);
    if (MFREE_BEGIN(node) >= MFREE_END(node))
-       malloc_panic(setup,NULL,"Unordered heap sized node %p...%p\n%.?[hex]",
+       malloc_panic(setup,NULL,"Unordered heap sized node %p...%p\n%$[hex]",
                     MFREE_MIN(node),MFREE_MAX(node),sizeof(struct mfree),node);
    if (MFREE_SIZE(node) < min_size)
-       malloc_panic(setup,NULL,"Heap sized node %p...%p is too small (%Iu < %Iu)\n%.?[hex]",
+       malloc_panic(setup,NULL,"Heap sized node %p...%p is too small (%Iu < %Iu)\n%$[hex]",
                     MFREE_MIN(node),MFREE_MAX(node),MFREE_SIZE(node),
                     min_size,sizeof(struct mfree),node);
    if (node->mf_lsize.le_pself != pnode)
-       malloc_panic(setup,NULL,"Heap sized node %p...%p is incorrectly linked (%p != %p)\n%.?[hex]",
+       malloc_panic(setup,NULL,"Heap sized node %p...%p is incorrectly linked (%p != %p)\n%$[hex]",
                     MFREE_MIN(node),MFREE_MAX(node),node->mf_lsize.le_pself,
                     pnode,sizeof(struct mfree),node);
    pnode = &node->mf_lsize.le_next;
    if (*pnode != PAGE_ERROR && OK_HOST_DATA(*pnode,sizeof(struct mfree)) &&
         MFREE_SIZE(*pnode) < MFREE_SIZE(node))
-       malloc_panic(setup,NULL,"Heap sized node %p...%p is incorrectly ordered (%Iu is larger than next node %p...%p with %Iu bytes)\n%.?[hex]",
+       malloc_panic(setup,NULL,"Heap sized node %p...%p is incorrectly ordered (%Iu is larger than next node %p...%p with %Iu bytes)\n%$[hex]",
                     MFREE_MIN(node),MFREE_MAX(node),MFREE_SIZE(node),
                     MFREE_MIN(*pnode),MFREE_MAX(*pnode),MFREE_SIZE(*pnode),
                     sizeof(struct mfree),node);
@@ -1944,7 +1944,7 @@ mheap_validate(struct dsetup *setup,
                   "Memory at %p modified after it was freed isn't %#.2I8x\n"
                   "> Offset %Id bytes into heap free range %p...%p\n"
                   "> Offset %Id bytes into heap data range %p...%p\n"
-                  "%.?[hex]",
+                  "%$[hex]",
                   error,((u8 *)&init_xword)[(uintptr_t)error & (__SIZEOF_POINTER__-1)],
                  (uintptr_t)error-MFREE_BEGIN(node),MFREE_MIN(node),MFREE_MAX(node),
                  (uintptr_t)error-(uintptr_t)begin,(uintptr_t)begin,MFREE_MAX(node),
@@ -2600,7 +2600,7 @@ mptr_safeload(struct dsetup *__restrict setup,
  i = CONFIG_MALLOC_HEADSIZE; while (i--) {
   if (head->m_head[i] != MALL_HEADERBYTE(i)) {
    malloc_panic(setup,head,"Header corruption (%#.2I8x != %#.2I8x) at %p of %p (at offset %Id; header index %d)\n"
-                           "%.?[hex]",
+                           "%$[hex]",
                 head->m_head[i],MALL_HEADERBYTE(i),&head->m_head[i],p,
                (intptr_t)&head->m_head[i]-(intptr_t)p,i,
                 CONFIG_MALLOC_HEADSIZE,head->m_head);
@@ -2612,7 +2612,7 @@ mptr_safeload(struct dsetup *__restrict setup,
  for (i = 0; i < CONFIG_MALLOC_FOOTSIZE; ++i) {
   if (tail->t_foot[i] != MALL_FOOTERBYTE(i)) {
    malloc_panic(setup,head,"Footer corruption (%#.2I8x != %#.2I8x) at %p of %p (at offset %Id; footer index %d)\n"
-                           "%.?[hex]",
+                           "%$[hex]",
                 tail->t_foot[i],MALL_FOOTERBYTE(i),&tail->t_foot[i],p,
                (intptr_t)&tail->t_foot[i]-(intptr_t)p,i,
                 CONFIG_MALLOC_FOOTSIZE,tail->t_foot);

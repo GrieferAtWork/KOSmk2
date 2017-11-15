@@ -92,7 +92,7 @@ debug_verify_memory(ppage_t start, PAGE_ALIGNED size_t n_bytes,
    u8 *addr = (u8 *)iter;
    while (!*addr) ++addr;
    assertf(!*iter,"%p (in %p...%p; offset %Id) should be 0x00, but is %#.2I8x\n"
-                  "%.?[hex]",
+                  "%$[hex]",
            addr,start,(uintptr_t)start+n_bytes-1,(uintptr_t)addr-(uintptr_t)start,*addr,
            MIN((uintptr_t)end-(uintptr_t)addr,64),addr);
   }

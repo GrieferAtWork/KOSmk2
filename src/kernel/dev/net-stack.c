@@ -169,7 +169,7 @@ nethand_packet(struct netdev *__restrict dev, void *__restrict packet,
  CHECK_HOST_DATA(packet,packet_size);
  if (packet_size < sizeof(struct ethhdr)) return;
  header = (struct ethhdr *)packet;
- syslog(LOG_DEBUG,"NET: %[mac] -> %[mac]: proto %.4I16x; size: %Iu\n%.?[hex]\n",
+ syslog(LOG_DEBUG,"NET: %[mac] -> %[mac]: proto %.4I16x; size: %Iu\n%$[hex]\n",
        &header->h_source_mac,&header->h_dest_mac,
         BSWAP_N2H16(header->h_proto),
         packet_size,packet_size,packet);

@@ -2453,7 +2453,7 @@ fat_synctable(fat_t *__restrict self) {
  /* Let's do this! */
  changed_begin = 0;
 #if 0
- FAT_DEBUG(syslog(LOG_DEBUG,"FAT_META\n%.?[hex]\n",
+ FAT_DEBUG(syslog(LOG_DEBUG,"FAT_META\n%$[hex]\n",
                   CEILDIV(self->f_sec4fat,8/FAT_METABITS),
                   self->f_fat_meta));
 #endif

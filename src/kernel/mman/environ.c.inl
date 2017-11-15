@@ -351,7 +351,7 @@ done:
   self->m_environ = new_environ;
  }
 #if 0
- syslog(LOG_DEBUG,"Environment block:\n%.?[hex]\n",new_total_size,new_environ);
+ syslog(LOG_DEBUG,"Environment block:\n%$[hex]\n",new_total_size,new_environ);
 #endif
 
 #ifdef CONFIG_PDIR_SELFMAP
