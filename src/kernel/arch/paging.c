@@ -192,6 +192,11 @@ L(.previous                                                                   )
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(PUBLIC_ENTRY(pdir_flush)                                                    )
+#if 0
+L(    movx %cr3, %xax                                                         )
+L(    movx %xax, %cr3                                                         )
+L(    ret                                                                     )
+#else
 /* NOTE: When the host is a 386, we'll copy data from `pdir_flush_386' here. */
 L(    cmpx   $(PAGESIZE*256), %FASTCALL_REG2                                  )
 L(    jae    1f                                                               )
@@ -203,6 +208,7 @@ L(    jmp    3b                                                               )
 L(1:  movx   %cr3, %xax  /* Do a regular, full flush for larger quantities. */)
 L(    movx   %xax, %cr3                                                       )
 L(2:  ret                                                                     )
+#endif
 L(SYM_END(pdir_flush)                                                         )
 L(.previous                                                                   )
 );

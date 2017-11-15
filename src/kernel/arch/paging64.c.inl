@@ -326,9 +326,10 @@ pdir_maccess_addr(pdir_t const *__restrict self,
  e.e4 = self->pd_directory[PDIR_E4_INDEX(addr)];
  if ((e.e4.e4_attr&flags) != flags) return false;
  e.e3 = PDIR_E4_RDLINK(e.e4)[PDIR_E3_INDEX(addr)];
- if ((e.e3.e3_attr&flags) != flags) return flags;
+ if ((e.e3.e3_attr&flags) != flags) return false;
  e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(addr)];
  if ((e.e2.e2_attr&flags) != flags) return false;
+ if (e.e2.e2_attr&PDIR_ATTR_2MIB) return true;
  e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(addr)];
  return (e.e1.e1_attr&flags) == flags;
 }
