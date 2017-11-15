@@ -302,7 +302,7 @@ SYSCALL_DEFINE2(pipe2,USER int *,fildes,int,flags) {
  return result;
 }
 
-SYSCALL_LDEFINE1(xpipe,int,flags) {
+SYSCALL64_DEFINE1(xpipe,int,flags) {
  union pipefd fd;
  /* Much simpler & doesn't suffer from potential FAULT errors. */
  task_crit();

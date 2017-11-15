@@ -55,6 +55,7 @@
 #include <sys/syslog.h>
 #include <malloc.h>
 #include <arch/asm.h>
+#include <asm/instx.h>
 
 #ifndef CONFIG_USE_OLD_INTERRUPTS
 #include "interrupt_intern.h"

@@ -817,7 +817,7 @@ SYSCALL_DEFINE1(close,int,fd) {
 
 
 #ifdef __ARCH_EXTENDED_FS_SYSCALLS
-SYSCALL_LDEFINE4(lseek,int,fd,syscall_ulong_t,off_hi,
+SYSCALL64_DEFINE4(lseek,int,fd,syscall_ulong_t,off_hi,
                               syscall_ulong_t,off_lo,
                        int,whence)
 #define offset  ((loff_t)off_hi << 32 | (loff_t)off_lo)
@@ -1055,10 +1055,10 @@ SYSCALL_DEFINE1(umask,mode_t,mask) {
 
 
 #if __SIZEOF_SYSCALL_LONG__ < 8
-SYSCALL_LDEFINE2(xfsmask,u32,mask_hi,u32,mask_lo)
+SYSCALL64_DEFINE2(xfsmask,u32,mask_hi,u32,mask_lo)
 #define fs_mask  ((u64)mask_hi << 32 | (u64)mask_lo)
 #else
-SYSCALL_LDEFINE1(xfsmask,u64,fs_mask)
+SYSCALL64_DEFINE1(xfsmask,u64,fs_mask)
 #endif
 {
  u64 new_mask = fs_mask;

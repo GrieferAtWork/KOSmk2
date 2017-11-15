@@ -148,7 +148,7 @@ PRIVATE struct syscall syscall_nosys = {
  * it with a reference held on `return->sc_refs' and `return->sc_owner'
  * If no system call extension exists, return a reference to `syscall_nosys'
  */
-PRIVATE ATTR_USED ATTR_RETNONNULL REF struct syscall *
+INTERN ATTR_USED ATTR_RETNONNULL REF struct syscall *
 FCALL lookup_syscall_extension(register_t sysno) {
  struct syscall_table *prev,*curr;
  REF struct syscall *result;
@@ -182,11 +182,7 @@ fail:
  goto end;
 }
 
-#ifdef __x86_64__
-PRIVATE ATTR_USED void ATTR_SYSVABI
-#else
-PRIVATE ATTR_USED void ATTR_FASTCALL
-#endif
+INTERN ATTR_USED void FCALL
 syscall_decref(REF struct syscall *__restrict syscall_descr) {
  /* Do the reverse of `lookup_syscall_extension' */
  INSTANCE_DECREF(syscall_descr->sc_owner);
@@ -198,9 +194,39 @@ syscall_decref(REF struct syscall *__restrict syscall_descr) {
 
 
 #define NR_xsyscalls    ((__NR_xsyscall_max-__NR_xsyscall_min)+1)
-typedef syscall_slong_t ASMCALL asm_syscall_t(void);
-PRIVATE ATTR_USED asm_syscall_t const *syscall_table[NR_syscalls];
-PRIVATE ATTR_USED asm_syscall_t const *xsyscall_table[NR_xsyscalls];
+typedef syscall_slong_t (*ASMCALL asm_syscall_t)(void);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverride-init"
+#define __SYSCALL(x,y)      INTDEF syscall_slong_t SYSCALL_HANDLER y(void);
+#define __XSYSCALL(x,y)     INTDEF syscall_slong_t SYSCALL_HANDLER y(void);
+#define __SYSCALL_ASM(x,y)  INTDEF syscall_slong_t SYSCALL_HANDLER y(void);
+#define __XSYSCALL_ASM(x,y) INTDEF syscall_slong_t SYSCALL_HANDLER y(void);
+#include <asm/syscallno.ci>
+
+PRIVATE ATTR_USED asm_syscall_t syscall_table[NR_syscalls] = {
+    [0 ... NR_syscalls-1] = &sys_nosys,
+#if __NR_syscall_min != 0
+#define __SYSCALL(x,y)     [x - __NR_syscall_min] = &y,
+#define __SYSCALL_ASM(x,y) [x - __NR_syscall_min] = &y,
+#else
+#define __SYSCALL(x,y)     [x] = &y,
+#define __SYSCALL_ASM(x,y) [x] = &y,
+#endif
+#include <asm/syscallno.ci>
+};
+PRIVATE ATTR_USED asm_syscall_t xsyscall_table[NR_xsyscalls] = {
+    [0 ... NR_xsyscalls-1] = &sys_nosys,
+#if __NR_xsyscall_min != 0
+#define __XSYSCALL(x,y)     [x - __NR_xsyscall_min] = &y,
+#define __XSYSCALL_ASM(x,y) [x - __NR_xsyscall_min] = &y,
+#else
+#define __XSYSCALL(x,y)     [x] = &y,
+#define __XSYSCALL_ASM(x,y) [x] = &y,
+#endif
+#include <asm/syscallno.ci>
+};
+#pragma GCC diagnostic pop
 
 
 #ifdef CONFIG_DEBUG
@@ -216,11 +242,11 @@ L(1:  int    $3 /* ASSERTION_FAILURE: syscall doesn't originate from kernel-spac
 L(2:  cli;   hlt; jmp 2b                                                      )
 L(INTERN_ENTRY(syscall_interrupt_handler)                                     )
 #ifdef __x86_64__
-L(    testx  $3,     IRREGS_OFFSETOF_CS(%xsp)                                 )
+L(    testb  $3,     IRREGS_OFFSETOF_CS(%xsp)                                 )
 #else
-L(    testx  $3, %ss:IRREGS_OFFSETOF_CS(%xsp)                                 )
+L(    testb  $3, %ss:IRREGS_OFFSETOF_CS(%xsp)                                 )
 #endif
-L(    jz 1b                                                                   )
+L(    jz     1b                                                               )
 #else
 L(INTERN_ENTRY(syscall_interrupt_handler)                                     )
 #endif
@@ -235,20 +261,23 @@ L(    cmpx   $(NR_syscalls), %xax                                             )
 L(    jae   .check_xsyscall                                                   )
 L(                                                                            )
 #ifdef __x86_64__
-L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL_LDEFINE/__SYSCALL_SDEFINE' depends on this */)
+L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL64_DEFINE/__SYSCALL_SDEFINE' depends on this */)
 L(    movq   %r10, %rcx                                                       )
-DBG(L(pushq (8+IRREGS_SYSCALL_OFFSETOF_IP)(%rsp)                              ))
+DBG(L(pushq  IRREGS_SYSCALL_OFFSETOF_IP(%rsp)                                 ))
 DBG(L(pushq  %rbp                                                             ))
+DBG(L(movq   %rsp, %rbp                                                       ))
 L(    callq *syscall_table(,%rax,8)                                           )
-DBG(L(addq   $16, %rsp                                                        ))
+DBG(L(popq   %rbp                                                             ))
+DBG(L(addq   $8, %rsp                                                         ))
 L(    __ASM_POP_SCRATCH_NOXAX                                                 )
 L(    addq   $8, %rsp  /* Don't restore RAX. */                               )
 L(    cli                                                                     )
 L(    swapgs                                                                  )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
-DBG(L(pushl (4+SGREGS_SIZE+IRREGS_SYSCALL_OFFSETOF_IP)(%esp)                  ))
+DBG(L(pushl  SGREGS_SIZE+IRREGS_SYSCALL_OFFSETOF_IP(%esp)                     ))
 L(    pushl  %ebp                                                             )
+DBG(L(movl   %esp, %ebp                                                       ))
 L(    pushl  %edi                                                             )
 L(    pushl  %esi                                                             )
 L(    pushl  %edx                                                             )
@@ -282,29 +311,32 @@ L(    popq   %rcx                                                             )
 L(    cmpq   $(__NR_xsyscall_max), %rax                                       )
 #endif
 L(    ja    .check_extensions                                                 )
-L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL_LDEFINE/__SYSCALL_SDEFINE' depends on this */)
+L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL64_DEFINE/__SYSCALL_SDEFINE' depends on this */)
 L(    movq   %r10, %rcx                                                       )
-DBG(L(pushq (8+IRREGS_SYSCALL_OFFSETOF_IP)(%rsp)                              ))
+DBG(L(pushq  IRREGS_SYSCALL_OFFSETOF_IP(%rsp)                                 ))
 DBG(L(pushq  %rbp                                                             ))
-L(    callq *xsyscall_table(,%rax,8)                                          )
-DBG(L(addq   $16, %rsp                                                        ))
+DBG(L(movq   %rsp, %rbp                                                       ))
+L(    callq *(xsyscall_table-((__NR_xsyscall_min*8) & 0xffffffff))(,%rax,8)   )
+DBG(L(popq   %rbp                                                             ))
+DBG(L(addq   $8, %rsp                                                         ))
 L(    __ASM_POP_SCRATCH_NOXAX                                                 )
 L(    addq   $8, %rsp  /* Don't restore RAX. */                               )
 L(    cli                                                                     )
 L(    swapgs                                                                  )
 #else
 L(    cmpl   $(__NR_xsyscall_max), %eax                                       )
-L(    ja   .check_extensions                                                  )
+L(    ja    .check_extensions                                                 )
 L(    __ASM_PUSH_SGREGS                                                       )
-DBG(L(pushl (4+SGREGS_SIZE+IRREGS_SYSCALL_OFFSETOF_IP)(%esp)                  ))
+DBG(L(pushl  SGREGS_SIZE+IRREGS_SYSCALL_OFFSETOF_IP(%esp)                     ))
 L(    pushl  %ebp                                                             )
+DBG(L(movl   %esp, %ebp                                                       ))
 L(    pushl  %edi                                                             )
 L(    pushl  %esi                                                             )
 L(    pushl  %edx                                                             )
 L(    pushl  %ecx                                                             )
 L(    pushl  %ebx                                                             )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
-L(    calll *xsyscall_table(,%eax,4)                                          )
+L(    calll *(xsyscall_table-((__NR_xsyscall_min*4) & 0xffffffff))(,%eax,4)   )
 L(    popl   %ebx                                                             )
 L(    popl   %ecx                                                             )
 L(    popl   %edx                                                             )
@@ -522,7 +554,11 @@ PRIVATE struct interrupt syscall_interrupt = {
 
 INTERN ATTR_FREETEXT void KCALL syscall_initialize(void) {
  /* Register the system-call interrupt handler. */
- asserte(E_ISOK(int_addall(&syscall_interrupt)));
+ errno_t error = int_addall(&syscall_interrupt);
+ if (E_ISERR(error)) {
+  PANIC(FREESTR("[SYSCALL] Failed to register interrupt handler: %[errno]\n"),
+        -error);
+ }
 
  /* XXX: Support for the `sysenter' instruction? */
 }

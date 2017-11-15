@@ -28,7 +28,7 @@
 
 #undef CONFIG_USE_OLD_SYSCALL
 #ifndef __x86_64__
-#define CONFIG_USE_OLD_SYSCALL 1
+//#define CONFIG_USE_OLD_SYSCALL 1
 #endif
 
 
@@ -53,7 +53,7 @@
 #define __SC_CAST4(t4,a4,t3,a3,t2,a2,t1,a1)             (t4)a4, __SC_CAST3(t3,a3,t2,a2,t1,a1)
 #define __SC_CAST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)       (t5)a5, __SC_CAST4(t4,a4,t3,a3,t2,a2,t1,a1)
 #define __SC_CAST6(t6,a6,t5,a5,t4,a4,t3,a3,t2,a2,t1,a1) (t6)a6, __SC_CAST5(t5,a5,t4,a4,t3,a3,t2,a2,t1,a1)
-#define __SC_TEST(type)        STATIC_ASSERT(sizeof(type) <= sizeof(syscall_slong_t))
+#define __SC_TEST(type)                                  STATIC_ASSERT(sizeof(type) <= sizeof(syscall_slong_t))
 #define __SC_TEST0(v)                                    /* Nothing */
 #define __SC_TEST1(t1,a1)                                __SC_TEST(t1)
 #define __SC_TEST2(t2,a2,t1,a1)                          __SC_TEST(t2); __SC_TEST1(t1,a1)
@@ -189,12 +189,44 @@ FUNDEF errno_t KCALL syscall_del(register_t number);
  * TODO: Document all return values.
  */
 FUNDEF errno_t KCALL syscall_register(struct syscall const *__restrict descriptor);
-
 #endif /* __CC__ */
 
 
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+#ifndef CONFIG_USE_OLD_SYSCALL
 
-#if !defined(CONFIG_USE_OLD_SYSCALL) || 1
+#define SYSCALL_SDEFINE(name,state) __SYSCALL_SDEFINE(INTERN,_##name,state)
+#define SYSCALL_DEFINE0(name)       __SYSCALL_NDEFINE(INTERN,0,_##name,(void))
+#define SYSCALL_DEFINE1(name,...)   __SYSCALL_NDEFINE(INTERN,1,_##name,(__VA_ARGS__))
+#define SYSCALL_DEFINE2(name,...)   __SYSCALL_NDEFINE(INTERN,2,_##name,(__VA_ARGS__))
+#define SYSCALL_DEFINE3(name,...)   __SYSCALL_NDEFINE(INTERN,3,_##name,(__VA_ARGS__))
+#define SYSCALL_DEFINE4(name,...)   __SYSCALL_NDEFINE(INTERN,4,_##name,(__VA_ARGS__))
+#define SYSCALL_DEFINE5(name,...)   __SYSCALL_NDEFINE(INTERN,5,_##name,(__VA_ARGS__))
+#define SYSCALL_DEFINE6(name,...)   __SYSCALL_NDEFINE(INTERN,6,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE0(name)     __SYSCALL_DEFINE64(INTERN,0,_##name,(void))
+#define SYSCALL64_DEFINE1(name,...) __SYSCALL_DEFINE64(INTERN,1,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE2(name,...) __SYSCALL_DEFINE64(INTERN,2,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE3(name,...) __SYSCALL_DEFINE64(INTERN,3,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE4(name,...) __SYSCALL_DEFINE64(INTERN,4,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE5(name,...) __SYSCALL_DEFINE64(INTERN,5,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE6(name,...) __SYSCALL_DEFINE64(INTERN,6,_##name,(__VA_ARGS__))
+
+/* TODO: Get rid of these macros. */
+#define THIS_SYSCALL_EIP                    THIS_SYSCALL_GETIP()
+/* TODO: Get rid of these macros. */
+#define THIS_SYSCALL_REAL_XIP              (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xip : THIS_SYSCALL_EIP)
+#define THIS_SYSCALL_REAL_CS               (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_cs : IRREGS_SYSCALL_GET()->cs)
+#define THIS_SYSCALL_REAL_XFLAGS           (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xflags : IRREGS_SYSCALL_GET()->xflags)
+#define THIS_SYSCALL_REAL_USERXSP          (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_userxsp : (void *)IRREGS_SYSCALL_GET()->userxsp)
+#define THIS_SYSCALL_REAL_SS               (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_ss : IRREGS_SYSCALL_GET()->ss)
+#define SET_THIS_SYSCALL_REAL_XIP(x)     (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xip : (void **)&IRREGS_SYSCALL_GET()->xip) = (x))
+#define SET_THIS_SYSCALL_REAL_CS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_cs : &IRREGS_SYSCALL_GET()->cs) = (x))
+#define SET_THIS_SYSCALL_REAL_XFLAGS(x)  (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xflags : &IRREGS_SYSCALL_GET()->xflags) = (x))
+#define SET_THIS_SYSCALL_REAL_USERXSP(x) (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_userxsp : (void **)&IRREGS_SYSCALL_GET()->userxsp) = (x))
+#define SET_THIS_SYSCALL_REAL_SS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_ss : &IRREGS_SYSCALL_GET()->ss) = (x))
+
+
+#else
 /* Low-level, assembly syscall function.
  *  - All registers, (except for `ESP', `EFLAGS' and `CS')
  *    will match those of the caller in userspace, essentially
@@ -395,19 +427,19 @@ FUNDEF void ASMCALL sysreturn_check_segments(void);
     return (s64)SYSC##name(__SC_CAST##n args); \
   } \
   FORCELOCAL s64 ATTR_CDECL SYSC##name(__SC_DECL##n args)
-#define SYSCALL_LDEFINE1(name,...) __SYSCALL_DEFINEx(1,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE2(name,...) __SYSCALL_DEFINEx(2,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE3(name,...) __SYSCALL_DEFINEx(3,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE4(name,...) __SYSCALL_DEFINEx(4,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE5(name,...) __SYSCALL_DEFINEx(5,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE6(name,...) __SYSCALL_DEFINEx(6,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE1(name,...) __SYSCALL_DEFINEx(1,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE2(name,...) __SYSCALL_DEFINEx(2,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE3(name,...) __SYSCALL_DEFINEx(3,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE4(name,...) __SYSCALL_DEFINEx(4,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE5(name,...) __SYSCALL_DEFINEx(5,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE6(name,...) __SYSCALL_DEFINEx(6,_##name,(__VA_ARGS__))
 #else
-#define SYSCALL_LDEFINE1(name,...) __SYSCALL_DEFINEx(1,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE2(name,...) __SYSCALL_DEFINEx(2,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE3(name,...) __SYSCALL_DEFINEx(3,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE4(name,...) __SYSCALL_DEFINEx(4,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE5(name,...) __SYSCALL_DEFINEx(5,_##name,(__VA_ARGS__))
-#define SYSCALL_LDEFINE6(name,...) __SYSCALL_DEFINEx(6,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE1(name,...) __SYSCALL_DEFINEx(1,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE2(name,...) __SYSCALL_DEFINEx(2,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE3(name,...) __SYSCALL_DEFINEx(3,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE4(name,...) __SYSCALL_DEFINEx(4,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE5(name,...) __SYSCALL_DEFINEx(5,_##name,(__VA_ARGS__))
+#define SYSCALL64_DEFINE6(name,...) __SYSCALL_DEFINEx(6,_##name,(__VA_ARGS__))
 #endif
 
 DECL_END
@@ -421,7 +453,7 @@ DECL_END
 DECL_BEGIN
 
 /* System call with full register state. */
-#define SYSCALL_RDEFINE(name,regs) \
+#define SYSCALL_SDEFINE(name,regs) \
 PRIVATE ATTR_USED void FCALL SYSC_##name(struct cpustate *__restrict regs); \
 GLOBAL_ASM(L(.section .text                                                       ) \
            L(INTERN_ENTRY(sys_##name)                                             ) \
@@ -435,6 +467,7 @@ GLOBAL_ASM(L(.section .text                                                     
            L(.previous)); \
 PRIVATE ATTR_USED void FCALL SYSC_##name(struct cpustate *__restrict regs)
 #endif
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 DECL_END
 

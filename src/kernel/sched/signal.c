@@ -116,22 +116,26 @@ coredump_host_task(struct task *__restrict t,
  /* Fill in what we still know about user-space registers.
   * XXX: The way this function acquires user-space registers isn't quite safe... */
 #ifdef __x86_64__
+ /* TODO: Override the return address to get all registers. */
+#ifdef CONFIG_USE_OLD_SYSCALL
  ctx.uc_mcontext.gregs[REG_CSGSFS] = ((greg_t)THIS_SYSCALL_REAL_CS |
                                      ((greg_t)THIS_SYSCALL_GS << 16) |
                                      ((greg_t)THIS_SYSCALL_FS << 24));
- /* TODO: What about all the other registers? */
  ctx.uc_mcontext.gregs[REG_R9]     = THIS_SYSCALL_R9;
  ctx.uc_mcontext.gregs[REG_R8]     = THIS_SYSCALL_R8;
  ctx.uc_mcontext.gregs[REG_R10]    = THIS_SYSCALL_R10;
  ctx.uc_mcontext.gregs[REG_RDX]    = THIS_SYSCALL_RDX;
  ctx.uc_mcontext.gregs[REG_RSI]    = THIS_SYSCALL_RSI;
  ctx.uc_mcontext.gregs[REG_RDI]    = THIS_SYSCALL_RDI;
+#endif
  ctx.uc_mcontext.gregs[REG_RSP]    = (greg_t)THIS_SYSCALL_REAL_USERXSP;
  ctx.uc_mcontext.gregs[REG_RAX]    = -EOK; /* Simulate an OK system call. */
  ctx.uc_mcontext.gregs[REG_RIP]    = (greg_t)THIS_SYSCALL_REAL_XIP;
 #else
  ctx.uc_mcontext.cr2               = (unsigned long int)t->t_lastcr2;
  ctx.uc_mcontext.oldmask           = 0; /* ??? */
+ /* TODO: Override the return address to get all registers. */
+#ifdef CONFIG_USE_OLD_SYSCALL
  ctx.uc_mcontext.gregs[REG_GS]     = (greg_t)THIS_SYSCALL_GS;
  ctx.uc_mcontext.gregs[REG_FS]     = (greg_t)THIS_SYSCALL_FS;
  ctx.uc_mcontext.gregs[REG_ES]     = (greg_t)THIS_SYSCALL_ES;
@@ -149,9 +153,12 @@ coredump_host_task(struct task *__restrict t,
  ctx.uc_mcontext.gregs[REG_UESP]   = ctx.uc_mcontext.gregs[REG_ESP];
  ctx.uc_mcontext.gregs[REG_SS]     = THIS_SYSCALL_REAL_SS;
 #endif
+#endif
  ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
  ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
+#ifdef CONFIG_USE_OLD_SYSCALL
  ctx.uc_mcontext.gregs[REG_EFL]    = THIS_SYSCALL_REAL_XFLAGS;
+#endif
  ctx.uc_mcontext.fpregs = &ctx.__fpregs_mem;
  fpstate_from_task(&ctx.__fpregs_mem,t);
  memcpy(&ctx.uc_sigmask,&t->t_sigblock,sizeof(sigset_t));
@@ -606,7 +613,11 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
                                struct sigaction const *__restrict action,
                                siginfo_t const *__restrict signal_info,
                                greg_t reg_trapno, greg_t reg_err) {
+#ifdef CONFIG_USE_OLD_SYSCALL
  struct syscall_descr *ss_descr;
+#else
+ struct irregs_syscall *ss_descr;
+#endif
  USER struct sigenter_info *user_info;
  struct sigenter_info info;
 
@@ -618,7 +629,11 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
 #endif
 
  /* This is us, or the task was pre-empted while in kernel-space. */
+#ifdef CONFIG_USE_OLD_SYSCALL
  ss_descr = (struct syscall_descr *)t->t_hstack.hs_end-1;
+#else
+ ss_descr = IRREGS_SYSCALL_GET_FOR(t);
+#endif
 
  /* Copy the original, unmodified IRET tail. */
  if (++t->t_sigenter.se_count == 1) {
@@ -1158,7 +1173,7 @@ L(.previous                                                                     
 #define IGNORE_SEGMENT_REGISTERS 0
 #endif
 
-SYSCALL_RDEFINE(sigreturn,cs) {
+SYSCALL_SDEFINE(sigreturn,cs) {
  ucontext_t ctx; size_t context_indirection;
  USER struct sigenter_info *last_context;
  if (copy_from_user(&ctx,(ucontext_t *)GPREGS_SYSCALL_ARG1(cs->host.gp),sizeof(ucontext_t)))

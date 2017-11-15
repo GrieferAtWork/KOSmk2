@@ -44,6 +44,7 @@
 #include <sched/signal.h>
 #include <bits/waitstatus.h>
 #include <arch/hints.h>
+#include <asm/instx.h>
 #ifndef CONFIG_NO_TLB
 #include <kos/thread.h>
 #endif /* !CONFIG_NO_TLB */

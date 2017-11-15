@@ -87,7 +87,16 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
  *       the system-call return address, a behavior that is used by
  *       KOS's POSIX-signal() implementation to capture user-space
  *       register values. */
-#define IRREGS_SYSCALL_GET() (((struct irregs_syscall *)THIS_CPU->c_arch.ac_tss.xsp0)-1)
+#define IRREGS_SYSCALL_GET()         (((struct irregs_syscall *)THIS_CPU->c_arch.ac_tss.xsp0)-1)
+#define IRREGS_SYSCALL_GET_FOR(task) (((struct irregs_syscall *)(task)->t_hstack.hs_end)-1)
+
+/* Standardized: The current system-call return address. */
+#ifdef __x86_64__
+#define THIS_SYSCALL_GETIP() ((void *)IRREGS_SYSCALL_GET()->rip)
+#else
+#define THIS_SYSCALL_GETIP() ((void *)IRREGS_SYSCALL_GET()->eip)
+#endif
+
 #endif /* __CC__ */
 
 
@@ -98,14 +107,26 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
  *  - __SYSCALL_SDEFINE: Define a c-level system call handler that takes a full `struct cpustate *' as argument.
  */
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-#define __SYSCALL_NDEFINE(visibility,n,id,name,args) \
-  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args; \
-  visibility syscall_slong_t (SYSCALL_HANDLER sys_##name) __SC_LONG##n args { \
-    __SC_TEST##n args; \
-    return SYSC_##name(__SC_CAST##n args); \
+#if 0
+#include <syslog.h>
+#define __SYSCALL_NDEFINE(visibility,n,name,args) \
+  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args); \
+  visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
+    __SC_TEST##n args; syscall_slong_t __res; \
+    __res = (SYSC##name)(__SC_CAST##n args); \
+    syslog(LOG_DEBUG,"[SYSCALL] sys" #name "() -> %p\n",(void *)__res); \
+    return __res; \
   } \
-  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args
-
+  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
+#else
+#define __SYSCALL_NDEFINE(visibility,n,name,args) \
+  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args); \
+  visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
+    __SC_TEST##n args; \
+    return (SYSC##name)(__SC_CAST##n args); \
+  } \
+  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
+#endif
 
 /* Because the kernel doesn't make use of system-call extensions, but rather
  * hard-codes it's system calls, optimizing them for default usage, we need
@@ -126,49 +147,66 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
 #define __PRIVATE_IRREGS_SYSCALL_GET_R10()  (*(u64 *)((u64)IRREGS_SYSCALL_GET()-(__ASM_SCRATCH_NOXAX_SIZE-__ASM_SCRATCH_NOXAX_OFFSETOF_R10)))
 #define __PRIVATE_IRREGS_SYSCALL_GET_R11()  (*(u64 *)((u64)IRREGS_SYSCALL_GET()-(__ASM_SCRATCH_NOXAX_SIZE-__ASM_SCRATCH_NOXAX_OFFSETOF_R11)))
 
-#define __SYSCALL_LDEFINE(visibility,n,id,name,args) \
-  LOCAL __int128 (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args; \
-  visibility syscall_slong_t (SYSCALL_HANDLER sys_##name) __SC_LONG##n args { \
-    register __int128 __result = SYSC_##name(__SC_CAST##n args); \
+#define __SYSCALL_LDEFINE(visibility,n,name,args) \
+  LOCAL __int128 (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args); \
+  visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
+    __SC_TEST##n args; \
+    register __int128 __result = SYSC##name(__SC_CAST##n args); \
     /* Save the upper 64 bits in RDX (By overwriting the caller's scratch area) */ \
     __PRIVATE_IRREGS_SYSCALL_GET_RDX() = (u64)((unsigned __int128)__result >> 32); \
     return (syscall_slong_t)__result; \
   } \
-  LOCAL s64 (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args
+  LOCAL __int128 (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
 #ifdef CONFIG_DEBUG
 #define __PRIVATE_SYSCALL_RSPOFF  24 /* RAX, RIP, RBP; For tracebacks. */
 #else
 #define __PRIVATE_SYSCALL_RSPOFF  8  /* RAX */
 #endif
-#define __SYSCALL_SDEFINE(visibility,n,id,name,state) \
-  GLOBAL_ASM(L(visibility##_ENTRY(sys_##name)                                              ) \
+#define __SYSCALL_SDEFINE(visibility,name,state) \
+  GLOBAL_ASM(L(.section .text                                                              ) \
+             L(visibility##_ENTRY(sys##name)                                               ) \
              L(    addq $(__PRIVATE_SYSCALL_RSPOFF), %rsp /* Adjust stack offset */        ) \
              L(    __ASM_SCRACH_XSP_TO_GPREGS(%rcx)                                        ) \
              L(    __ASM_PUSH_SGREGS                                                       ) \
              L(    movq  %rsp, %rdi /* `struct cpustate *state' */                         ) \
-             L(    call  SYSC_##name                                                       ) \
+             L(    call  SYSC##name                                                        ) \
              L(    cli                                                                     ) \
              L(    swapgs                                                                  ) \
              L(    __ASM_POP_COMREGS                                                       ) \
              L(    ASM_IRET                                                                ) \
-             L(SYM_END(sys_##name)                                                         )); \
-  PRIVATE ATTR_USED s64 (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args
+             L(SYM_END(sys##name)                                                          ) \
+             L(.previous                                                                   )); \
+  PRIVATE ATTR_USED void (SYSCALL_HANDLER SYSC##name)(struct cpustate *__restrict state)
 
-#else
+#else /* __x86_64__ */
 
 /* NEVER USE THE FOLLOWING MACROS FOR ANYTHING BUT THE HACKS USED IN THIS HEADER! */
-#define __PRIVATE_IRREGS_SYSCALL_GET_ECX()  (*(u64 *)((u64)IRREGS_SYSCALL_GET()-(__ASM_SCRATCH_NOXAX_SIZE-__ASM_SCRATCH_NOXAX_OFFSETOF_ECX)))
-#define __PRIVATE_IRREGS_SYSCALL_GET_EDX()  (*(u64 *)((u64)IRREGS_SYSCALL_GET()-(__ASM_SCRATCH_NOXAX_SIZE-__ASM_SCRATCH_NOXAX_OFFSETOF_EDX)))
+#ifdef CONFIG_DEBUG
+#define __PRIVATE_IRREGS_SYSCALL_GET_EIP()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+4)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_EBP()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+8)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_EDI()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+12)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_ESI()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+16)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_EDX()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+20)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_ECX()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+24)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_EBX()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+28)))
+#else
+#define __PRIVATE_IRREGS_SYSCALL_GET_EBP()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+4)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_EDI()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+8)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_ESI()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+12)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_EDX()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+16)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_ECX()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+20)))
+#define __PRIVATE_IRREGS_SYSCALL_GET_EBX()  (*(u32 *)((u32)IRREGS_SYSCALL_GET()-(SGREGS_SIZE+24)))
+#endif
 
-#define __SYSCALL_LDEFINE(visibility,n,id,name,args) \
-  LOCAL s64 (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args; \
-  visibility syscall_slong_t (SYSCALL_HANDLER sys_##name) __SC_LONG##n args { \
-    register s64 __result = SYSC_##name(__SC_CAST##n args); \
+#define __SYSCALL_LDEFINE(visibility,n,name,args) \
+  LOCAL s64 (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args); \
+  visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
+    register s64 __result = SYSC##name(__SC_CAST##n args); \
     /* Save the upper 32 bits in EDX (By overwriting the caller's scratch area) */ \
-    __PRIVATE_IRREGS_SYSCALL_GET_EDX() = (u32)(__result >> 32); \
+    __PRIVATE_IRREGS_SYSCALL_GET_EDX() = (u32)((u64)__result >> 32); \
     return (syscall_slong_t)__result; \
   } \
-  LOCAL s64 (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args
+  LOCAL s64 (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
 
 #ifdef CONFIG_DEBUG
 /* i386 system-call stack transformation:
@@ -188,8 +226,9 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
 #if SGREGS_SIZE != 8 /* Make sure that the transformation below can work. */
 #error "Must adjust temporary register storage below!"
 #endif
-#define __SYSCALL_SDEFINE(visibility,n,id,name,state) \
-  GLOBAL_ASM(L(visibility##_ENTRY(sys_##name)                                              ) \
+#define __SYSCALL_SDEFINE(visibility,name,state) \
+  GLOBAL_ASM(L(.section .text                                                              ) \
+             L(visibility##_ENTRY(sys##name)                                               ) \
              L(/* This is a bit complicated, so I'd suggest to look at the digram above. */) \
              L(    movl 28-4(%esp), %eax; pushl %eax         /* ebp */                     ) \
              L(                         xchgl %eax, 24(%esp) /* ebp -> edi */              ) \
@@ -200,16 +239,15 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
              L(                         movl  %eax,  4(%esp) /* eip */                     ) \
              L(    movl 12(%esp), %eax; xchgl %eax, 40(%esp) /* ecx -> sg_b */             ) \
              L(                         movl  %eax, 12(%esp) /* sg_b */                    ) \
-             L(    movl 12(%esp), %eax; xchgl %eax, 32(%esp) /* ecx -> eip */              ) \
-             L(                         movl  %eax,  4(%esp) /* eip */                     ) \
              L(    leal  8(%esp), %ecx /* `struct cpustate *state' */                      ) \
-             L(    call  SYSC_##name                                                       ) \
+             L(    call  SYSC##name                                                        ) \
              L(    addl  $8, %esp /* SKIP EBP, EIP  */                                     ) \
              L(    __ASM_POP_COMREGS                                                       ) \
              L(    ASM_IRET                                                                ) \
-             L(SYM_END(sys_##name)                                                         )); \
-  PRIVATE ATTR_USED s64 (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args
-#else
+             L(SYM_END(sys##name)                                                          ) \
+             L(.previous                                                                   )); \
+  INTERN void (SYSCALL_STATE_HANDLER SYSC##name)(struct cpustate *__restrict state)
+#else /* CONFIG_DEBUG */
 /* i386 system-call stack transformation:
  *   0(%esp):   u32 ---  -> sg_a -
  *   4(%esp):   u32 ebx  -> sg_b -
@@ -225,8 +263,9 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
 #if SGREGS_SIZE != 8 /* Make sure that the transformation below can work. */
 #error "Must adjust temporary register storage below!"
 #endif
-#define __SYSCALL_SDEFINE(visibility,n,id,name,state) \
-  GLOBAL_ASM(L(visibility##_ENTRY(sys_##name)                                              ) \
+#define __SYSCALL_SDEFINE(visibility,name,state) \
+  GLOBAL_ASM(L(.section .text                                                              ) \
+             L(visibility##_ENTRY(sys##name)                                               ) \
              L(/* This is a bit complicated, so I'd suggest to look at the digram above. */) \
              L(    pushl 28(%esp)                            /* sg_a */                    ) \
              L(    movl 32(%esp), %eax; xchgl %eax,  4(%esp) /* sg_b -> ebx */             ) \
@@ -238,24 +277,15 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
              L(    movl 20(%esp), %eax; movl  %eax,  8(%esp) /* edi */                     ) \
              L(                                                                            ) \
              L(    leal  8(%esp), %ecx /* `struct cpustate *state' */                      ) \
-             L(    call  SYSC_##name                                                       ) \
+             L(    call  SYSC##name                                                        ) \
              L(    __ASM_POP_COMREGS                                                       ) \
              L(    ASM_IRET                                                                ) \
-             L(SYM_END(sys_##name)                                                         )); \
-  PRIVATE ATTR_USED s64 (SYSCALL_HANDLER SYSC_##name) __SC_DECL##n args
-#endif
-
-#endif
-
-
-
-
-
-#else
-#define __SYSCALL_NDEFINE(n,id,name,args)
-#define __SYSCALL_LDEFINE(n,id,name,args)
-#define __SYSCALL_SDEFINE(n,id,name,state)
-#endif
+             L(SYM_END(sys##name)                                                          ) \
+             L(.previous                                                                   )); \
+  INTERN void (SYSCALL_STATE_HANDLER SYSC##name)(struct cpustate *__restrict state)
+#endif /* !CONFIG_DEBUG */
+#endif /* !__x86_64__ */
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 #ifdef __x86_64__
 #define __SYSCALL_DEFINE64  __SYSCALL_NDEFINE

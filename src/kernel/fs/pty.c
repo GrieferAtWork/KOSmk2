@@ -718,9 +718,9 @@ pty_register(struct ptymaster *__restrict master,
 
 
 
-SYSCALL_LDEFINE3(xopenpty,USER char *,name,
-                 USER struct termios const *,termp,
-                 USER struct winsize const *,winp) {
+SYSCALL64_DEFINE3(xopenpty,USER char *,name,
+                  USER struct termios const *,termp,
+                  USER struct winsize const *,winp) {
  int fd_master,fd_slave = 0;
  REF struct ptymaster *master;
  REF struct ptyslave *slave;

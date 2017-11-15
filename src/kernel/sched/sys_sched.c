@@ -22,6 +22,7 @@
 #define _GNU_SOURCE 1
 
 #include <alloca.h>
+#include <arch/cpustate.h>
 #include <asm/instx.h>
 #include <bits/resource.h>
 #include <bits/sched.h>
@@ -33,7 +34,6 @@
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <hybrid/types.h>
-#include <arch/cpustate.h>
 #include <arch/hints.h>
 #include <kernel/irq.h>
 #include <kernel/mman.h>
@@ -130,6 +130,7 @@ L(.previous                                                                   )
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(sys_exit)                                                      )
+#ifdef CONFIG_USE_OLD_SYSCALL
 L(    sti                                                                     )
 L(    /* Load segment registers */                                            )
 L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
@@ -141,6 +142,9 @@ L(    call task_userexit                                                      )
 L(.global __assertion_unreachable                                             )
 L(    call __assertion_unreachable                                            )
 #endif
+#else
+L(    jmp  task_userexit                                                      )
+#endif
 L(SYM_END(sys_exit)                                                           )
 L(.previous                                                                   )
 );
@@ -148,6 +152,7 @@ L(.previous                                                                   )
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(sys_sched_yield)                                               )
+#ifdef CONFIG_USE_OLD_SYSCALL
 L(    sti                                                                     )
 L(    /* Safe & load segment registers */                                     )
 L(    __ASM_PUSH_SGREGS                                                       )
@@ -156,6 +161,10 @@ L(    call task_yield                                                         )
 L(    __ASM_POP_SGREGS                                                        )
 L(    xorx %xax, %xax                                                         )
 L(    __ASM_IRET                                                              )
+#else
+L(    call task_yield                                                         )
+L(    ret                                                                     )
+#endif
 L(SYM_END(sys_sched_yield)                                                    )
 L(.previous                                                                   )
 );
@@ -347,7 +356,7 @@ err0: result = E_PTR(error);
 }
 
 
-SYSCALL_RDEFINE(fork,regs) {
+SYSCALL_SDEFINE(fork,regs) {
  pid_t result;
  REF struct task *child;
  task_crit();
@@ -604,6 +613,7 @@ again:
  if (!n_candidates) result = -ECHILD;
  if (result == -EAGAIN) {
   if (options&WNOHANG) { result = -EOK; goto unlock_cpu; }
+  /* Make sure not to wait for something to happen more than once. */
   if (second_pass) { result = -EINTR; goto unlock_cpu; }
   second_pass = true;
   /* Wait for a child process to deliver a signal. */
@@ -820,7 +830,7 @@ find_space:
 
 
 /* clone() system call. */
-SYSCALL_RDEFINE(clone,regs) {
+SYSCALL_SDEFINE(clone,regs) {
 #define CLONE_FLAGS         ((syscall_ulong_t)GPREGS_SYSCALL_ARG1(regs->gp))
 #define CLONE_NEWSP         ((USER void *)GPREGS_SYSCALL_ARG2(regs->gp))
 #define CLONE_PARENT_TIDPTR ((USER pid_t *)GPREGS_SYSCALL_ARG3(regs->gp))
@@ -868,7 +878,11 @@ SYSCALL_RDEFINE(clone,regs) {
     if unlikely(!result->t_ustack) { error = -ENOMEM; goto end_double_lock; }
    }
    result_needs_stack = false;
+#ifdef CONFIG_USE_OLD_SYSCALL
    newsp = (void *)THIS_SYSCALL_USERESP;
+#else
+   newsp = (void *)IRREGS_SYSCALL_GET()->userxsp;
+#endif
   }
 end_double_lock:
   mman_endwrite(caller->t_mman);

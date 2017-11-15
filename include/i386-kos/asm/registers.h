@@ -164,13 +164,12 @@
 #define __ASM_POP_SCRATCH_BEFORE_XDX /* nothing */
 #define __ASM_POP_SCRATCH_AFTER_XDX  popl %ecx; popl %eax;
 /* Transform a scratch-safe in `0(%esp)' into a full `struct gpregs' structure:
- *
- *                         %edi  <- %rsp
+ *                         %edi  <- %esp
  *                         %esi
  *                         %ebp
  *                         %---
  *                         %ebx
- * %rsp -> %edx ---------- %edx
+ * %esp -> %edx ---------- %edx
  *         %ecx ---------- %ecx
  *         %eax ---------- %eax
  */
