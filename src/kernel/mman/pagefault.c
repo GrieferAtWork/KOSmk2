@@ -49,8 +49,6 @@ INTERN DEFINE_CODE_HANDLER(mman_asm_pf,mman_irq_pf);
 INTERN int FCALL mman_interrupt_pf_handler(struct irregs_ie *__restrict info);
 #endif
 
-
-
 #define PF_P (1 << 0) /*< Present. */
 #define PF_W (1 << 1) /*< Write. */
 #define PF_U (1 << 2) /*< User. */

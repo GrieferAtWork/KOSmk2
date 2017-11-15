@@ -1029,7 +1029,7 @@ exec_deflirq(struct cpustate_ie *__restrict state) {
      syslog(LOG_IRQ|LOG_ERROR,
             COLDSTR("[INT] Invalid `gs_base' set. - `swapgs' remained invalid for %p and %p\n"),
             old_gs_base,new_gs_base);
-     __asm__ __volatile__("swapgs\n" : : : "memory"); /* Undo the swapgs. - Assume that  */
+     __asm__ __volatile__("swapgs\n" : : : "memory"); /* Undo the swapgs. */
 #ifdef CONFIG_SMP
      /* Use the GDT to fixup the correct GS base address. */
      { struct idt_pointer gdt; struct mman *omm;

@@ -407,15 +407,15 @@ endwrite:
 #ifdef __x86_64__
    state.sg.gs_base   = TASK_DEFAULT_GS_BASE(exec_task);
    state.sg.fs_base   = TASK_DEFAULT_FS_BASE(exec_task);
+   state.gp.rdi       = (uintptr_t)environ; /* Pass the environment block through ECX. */
 #else
    state.sg.gs        = __USER_GS;
    state.sg.fs        = __USER_FS;
    state.sg.es        = __USER_DS;
    state.sg.ds        = __USER_DS;
+   state.gp.ecx       = (uintptr_t)environ; /* Pass the environment block through ECX. */
 #endif
    state.iret.cs      = __USER_CS;
-   state.gp.xcx       = (uintptr_t)environ; /* Pass the environment block through ECX. */
-   state.iret.userxsp = (uintptr_t)exec_task->t_ustack->s_end;
    state.iret.ss      = __USER_DS;
 #ifdef CONFIG_ALLOW_USER_IO
    state.iret.xflags  = EFLAGS_IF|EFLAGS_IOPL(3);

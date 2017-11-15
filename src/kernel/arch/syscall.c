@@ -157,6 +157,7 @@ FCALL lookup_syscall_extension(register_t sysno) {
  atomic_rwlock_read(&prev->st_lock);
  for (;;) {
   curr = prev->st_next;
+  if (!curr) break;
   /* Switch locks to the next table. */
   atomic_rwlock_read(&curr->st_lock);
   atomic_rwlock_endread(&prev->st_lock);
@@ -271,7 +272,7 @@ L(    cmpx   $(NR_syscalls), %xax                                             )
 L(    jae   .check_xsyscall                                                   )
 L(                                                                            )
 #ifdef __x86_64__
-L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL64_DEFINE/__SYSCALL_SDEFINE' depends on this */)
+L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL_LDEFINE/__SYSCALL_SDEFINE' depends on this */)
 L(    movq   %r10, %rcx                                                       )
 L(    PUSH_FRAME(__ASM_SCRATCH_NOXAX_SIZE+IRREGS_SYSCALL_OFFSETOF_IP)         )
 L(    callq *syscall_table(,%rax,8)                                           )
@@ -280,6 +281,7 @@ L(    __ASM_POP_SCRATCH_NOXAX                                                 )
 L(    addq   $8, %rsp  /* Don't restore RAX. */                               )
 L(    cli                                                                     )
 L(    swapgs                                                                  )
+L(    ASM_IRET                                                                )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
 DBG(L(pushl  SGREGS_SIZE+IRREGS_SYSCALL_OFFSETOF_IP(%esp)                     ))
@@ -301,17 +303,21 @@ L(    popl   %ebp                                                             )
 DBG(L(addl   $4, %esp /* orig_eip */                                          ))
 L(    __ASM_POP_SGREGS                                                        )
 L(    addl   $4, %esp /* orig_eax */                                          )
-#endif
 L(    ASM_IRET                                                                )
+#endif
 L(                                                                            )
 L(.check_xsyscall:                                                            )
 L(    /* Fast-callahead to extended KOS-system calls. */                      )
 L(    cmpl   $(__NR_xsyscall_min), %eax                                       )
 L(    jb    .check_extensions                                                 )
 #ifdef __x86_64__
-#if __NR_xsyscall_max >= (1 << 31)
+#if __NR_xsyscall_max >= (__UINT64_C(1) << 31)
 L(    pushq  %rcx /* Sadly, this has to be done to preserve _all_ registers */)
+#if __NR_xsyscall_max >= (__UINT64_C(1) << 32)
 L(    movabs $(__NR_xsyscall_max), %rcx                                       )
+#else
+L(    movl   $(__NR_xsyscall_max), %ecx                                       )
+#endif
 L(    cmpq   %rcx,                 %rax                                       )
 L(    popq   %rcx                                                             )
 #else
@@ -321,12 +327,14 @@ L(    ja    .check_extensions                                                 )
 L(    __ASM_PUSH_SCRATCH_NOXAX /* WARNING: `__SYSCALL64_DEFINE/__SYSCALL_SDEFINE' depends on this */)
 L(    movq   %r10, %rcx                                                       )
 L(    PUSH_FRAME(__ASM_SCRATCH_NOXAX_SIZE+IRREGS_SYSCALL_OFFSETOF_IP)         )
-L(    callq *(xsyscall_table-((__NR_xsyscall_min*8) & 0xffffffff))(,%rax,8)   )
+L(    subl   $(__NR_xsyscall_min), %eax                                       )
+L(    callq *xsyscall_table(,%rax,8)                                          )
 L(    POP_FRAME                                                               )
 L(    __ASM_POP_SCRATCH_NOXAX                                                 )
 L(    addq   $8, %rsp  /* Don't restore RAX. */                               )
 L(    cli                                                                     )
 L(    swapgs                                                                  )
+L(    ASM_IRET                                                                )
 #else
 L(    cmpl   $(__NR_xsyscall_max), %eax                                       )
 L(    ja    .check_extensions                                                 )
@@ -350,8 +358,8 @@ L(    popl   %ebp                                                             )
 DBG(L(addl   $4, %esp /* orig_eip */                                          ))
 L(    __ASM_POP_SGREGS                                                        )
 L(    addl   $4, %esp /* orig_eax */                                          )
-#endif
 L(    ASM_IRET                                                                )
+#endif
 L(                                                                            )
 L(.check_extensions:                                                          )
 L(    /* Fallback: Callahead to an extension system call, or `syscall_nosys'. */)
