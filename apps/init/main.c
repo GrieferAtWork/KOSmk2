@@ -62,7 +62,7 @@ void my_action(int signo, siginfo_t *info, void *ctx) {
 int main(int argc, char **argv) {
  open2(STDIN_FILENO,"/dev/keyboard",O_RDONLY);
  open2(STDOUT_FILENO,"/dev/kmsg",O_WRONLY);
- open2(STDERR_FILENO,"/dev/kmsg",O_WRONLY);
+ dup2(STDOUT_FILENO,STDERR_FILENO);
 
  /* Setup some volatile components of a regular linux filesystem environment. */
  if (mount("proc","/proc","proc",0,NULL) &&
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
 #if 1
  /* Since mtools can't copy cygwin's symbolic link (because it thinks they're real links),
-  * the only place that we can currently create (and handle) those fake links in on my
+  * the only place that we can currently create (and handle) those fake links is on my
   * trusty development USB-stick.
   * >> But since the whole of busybox is literally a single binary, we can
   *    execute it in the same matter that a symbolic '/bin/sh' would have done
