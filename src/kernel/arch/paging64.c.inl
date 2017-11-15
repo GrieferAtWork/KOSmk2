@@ -272,14 +272,6 @@ pdir_load_copy(pdir_t *__restrict self, pdir_t const *__restrict existing) {
  /* Copy the entire page directory. */
  memcpyq(self->pd_directory,existing->pd_directory,PDIR_E4_COUNT);
  /* Make sure the kernel-share segment is intact. */
-#if 0
- { u64 *a,*b,*stop;
-   a = (u64 *)&self->pd_directory[PDIR_E4_SHARESTART];
-   b = (u64 *)&pdir_kernel_v.pd_directory[PDIR_E4_SHARESTART];
-   stop = a+(PDIR_E4_COUNT-PDIR_E4_SHARESTART);
-   for (; a != stop; ++a,++b) assertf(*a == *b,"Broken kernel-share %d",a-(u64 *)&self->pd_directory[0]);
- }
-#else
  assertf(memcmpq(&self->pd_directory[PDIR_E4_SHARESTART],
                  &pdir_kernel_v.pd_directory[PDIR_E4_SHARESTART],
                   PDIR_E4_COUNT-PDIR_E4_SHARESTART) == 0,
@@ -287,7 +279,6 @@ pdir_load_copy(pdir_t *__restrict self, pdir_t const *__restrict existing) {
          "KERNEL:\n%$[hex]\n",
         (PDIR_E4_COUNT-PDIR_E4_SHARESTART)*8,&self->pd_directory[PDIR_E4_SHARESTART],
         (PDIR_E4_COUNT-PDIR_E4_SHARESTART)*8,&pdir_kernel_v.pd_directory[PDIR_E4_SHARESTART]);
-#endif
  /* Duplicate everything leading up to the kernel-share segment. */
  end = (iter = self->pd_directory)+PDIR_E4_SHARESTART;
  for (; iter != end; ++iter) if (!pdir_e4_copy(iter)) goto err;

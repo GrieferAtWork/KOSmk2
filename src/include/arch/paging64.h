@@ -221,10 +221,9 @@ LOCAL KPD PHYS int KCALL pdir_test_readable(pdir_t *__restrict self, VIRT void *
  e.e3 = PDIR_E4_RDLINK(e.e4)[PDIR_E3_INDEX(ptr)];
  if (!(e.e3.e3_attr&PDIR_ATTR_PRESENT)) return 0;
  e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(ptr)];
- if ((e.e2.e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_2MIB)) != PDIR_ATTR_PRESENT)
-      return (e.e2.e2_attr&PDIR_ATTR_PRESENT);
+ if (e.e2.e2_attr&PDIR_ATTR_2MIB) return e.e2.e2_attr&PDIR_ATTR_PRESENT;
  e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(ptr)];
- return (e.e1.e1_attr&PDIR_ATTR_PRESENT);
+ return e.e1.e1_attr&PDIR_ATTR_PRESENT;
 }
 LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *ptr) {
  union pdir_e e;
@@ -234,9 +233,9 @@ LOCAL KPD PHYS int KCALL pdir_test_writable(pdir_t *__restrict self, VIRT void *
  if (!(e.e3.e3_attr&PDIR_ATTR_PRESENT)) return 0;
  e.e2 = PDIR_E3_RDLINK(e.e3)[PDIR_E2_INDEX(ptr)];
  if ((e.e2.e2_attr&(PDIR_ATTR_PRESENT|PDIR_ATTR_2MIB)) != PDIR_ATTR_PRESENT)
-      return (e.e2.e2_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == PDIR_ATTR_WRITE;
+      return (e.e2.e2_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == (PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
  e.e1 = PDIR_E2_RDLINK(e.e2)[PDIR_E1_INDEX(ptr)];
- return (e.e1.e1_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == PDIR_ATTR_WRITE;
+ return (e.e1.e1_attr&(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT)) == (PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
 }
 
 LOCAL void FCALL pdir_flushall(void) {

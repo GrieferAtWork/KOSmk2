@@ -589,11 +589,11 @@ union{
 #define MHEAP_USING_INTERNAL_VALIDATION 0
 
 #if MHEAP_USING_INTERNAL_VALIDATION
-#define MHEAP_RECURSIVE_LOCK        1
-#define MHEAP_INTERNAL_VALIDATE()   _mall_validate(NULL)
+#define MHEAP_RECURSIVE_LOCK              1
+#define MHEAP_INTERNAL_VALIDATE(flags) (((flags)&GFP_NOFREQ) ? (void)0 : _mall_validate(NULL))
 #else
-#define MHEAP_RECURSIVE_LOCK        0
-#define MHEAP_INTERNAL_VALIDATE()  (void)0
+#define MHEAP_RECURSIVE_LOCK              0
+#define MHEAP_INTERNAL_VALIDATE(flags)   (void)0
 #endif
 
 
@@ -851,6 +851,7 @@ swapmem:
   BAD_ALLOC(n_bytes,flags);
   return PAGE_ERROR;
  }
+ MHEAP_INTERNAL_VALIDATE(flags);
  return start;
 }
 LOCAL KPD VIRT void KCALL
@@ -1141,6 +1142,7 @@ mheap_acquire(struct mheap *__restrict self, MALIGNED size_t n_bytes,
              n_bytes = HEAP_MIN_MALLOC;
  iter = &self->mh_size[HEAP_BUCKET_OF(n_bytes)];
  end  =  COMPILER_ENDOF(self->mh_size);
+ MHEAP_INTERNAL_VALIDATE(flags);
  for (; iter != end; ++iter) {
   chain = *iter,assert(chain);
   while (chain != PAGE_ERROR && MFREE_SIZE(chain) < n_bytes)
@@ -1162,15 +1164,16 @@ mheap_acquire(struct mheap *__restrict self, MALIGNED size_t n_bytes,
    mfree_tree_remove(&self->mh_addr,MFREE_BEGIN(chain));
 #endif
    LIST_REMOVE_EX(chain,mf_lsize,PAGE_ERROR);
-   unused_size  = MFREE_SIZE(chain)-n_bytes;
+   unused_size = MFREE_SIZE(chain)-n_bytes;
    if (unused_size < HEAP_MIN_MALLOC) {
     /* Remainder is too small. - Allocate it as well. */
     n_bytes += unused_size;
    } else {
     MALIGNED void *unused_begin = (void *)((uintptr_t)chain+n_bytes);
-    /* Align the remainder. */
+    /* Make sure the the remainder is properly aligned. */
     assert(IS_ALIGNED((uintptr_t)unused_begin,HEAP_ALIGNMENT));
     assert(IS_ALIGNED(unused_size,HEAP_ALIGNMENT));
+    assert(unused_size < MFREE_SIZE(chain));
     mheap_release_nomerge(self,unused_begin,unused_size,
                          (flags&~(GFP_CALLOC))|
                           GFP_STPAGEATTR(chain_attr));
@@ -1188,16 +1191,17 @@ mheap_acquire(struct mheap *__restrict self, MALIGNED size_t n_bytes,
 #endif
    *alloc_bytes = n_bytes;
    assert(IS_ALIGNED((uintptr_t)result,HEAP_ALIGNMENT));
-   goto end;
+   goto done;
   }
  }
+ MHEAP_INTERNAL_VALIDATE(flags);
  /* Allocate whole pages. */
  page_bytes  = CEIL_ALIGN(n_bytes,PAGESIZE);
  page_bytes += self->mh_overalloc; /* Overallocate a bit. */
 core_again:
  result = core_page_alloc(page_bytes,flags);
  if (result == PAGE_ERROR) {
-  if (page_bytes == CEIL_ALIGN(n_bytes,PAGESIZE)) goto end;
+  if (page_bytes == CEIL_ALIGN(n_bytes,PAGESIZE)) goto done;
   /* Try again without overallocation. */
   page_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
   goto core_again;
@@ -1210,7 +1214,8 @@ core_again:
   unlock_heap = false;
  }
  *alloc_bytes = n_bytes;
-end:
+done:
+ MHEAP_INTERNAL_VALIDATE(flags);
 #if LOG_MANAGED_ALLOCATIONS
  if (result != PAGE_ERROR) {
   syslog(LOG_MEM|LOG_ERROR,"[MEM] ALLOC(%p...%p) (%Iu/%Iu)\n",
@@ -1351,6 +1356,7 @@ mheap_acquire_at(struct mheap *__restrict self, MALIGNED void *p,
  *alloc_bytes = slot_avail;
  return p;
 }
+
 PRIVATE void KCALL
 mheap_release_nomerge(struct mheap *__restrict self, MALIGNED void *p,
                       MALIGNED size_t n_bytes, gfp_t flags) {
@@ -1372,11 +1378,13 @@ mheap_release_nomerge(struct mheap *__restrict self, MALIGNED void *p,
  while ((iter = *piter) != PAGE_ERROR &&
          MFREE_SIZE(iter) < n_bytes)
          piter = &iter->mf_lsize.le_next;
+//  syslog(LOG_DEBUG,"HERE: %p...%p (%x)\n",p,(uintptr_t)p+n_bytes-1,flags);
  NEW_SLOT->mf_lsize.le_pself = piter;
  NEW_SLOT->mf_lsize.le_next  = iter;
  if (iter != PAGE_ERROR) iter->mf_lsize.le_pself = &NEW_SLOT->mf_lsize.le_next;
  *piter = NEW_SLOT;
  assert(NEW_SLOT->mf_lsize.le_next);
+ MHEAP_INTERNAL_VALIDATE(flags);
 #undef NEW_SLOT
 }
 PRIVATE bool KCALL
@@ -1402,6 +1410,7 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
  syslog(LOG_MEM|LOG_ERROR,"[MEM] FREE(%p...%p)\n",
         p,(uintptr_t)p+n_bytes-1);
 #endif
+ MHEAP_INTERNAL_VALIDATE(flags);
 
  /* Check for extending a free range above. */
  addr_semi  = ATREE_SEMI0(uintptr_t);
@@ -1441,7 +1450,7 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
    LIST_INSERT_AFTER_EX(iter,slot,mf_lsize,PAGE_ERROR);
   }
   mheap_unmapfree(self,pslot,addr_semi,addr_level,flags,unlock_heap);
-  MHEAP_INTERNAL_VALIDATE();
+  MHEAP_INTERNAL_VALIDATE(flags);
   return true;
  }
  /* Check for extending a free range below. */
@@ -1505,15 +1514,15 @@ mheap_release(struct mheap *__restrict self, MALIGNED void *p,
   }
   mheap_unmapfree(self,pslot,addr_semi,
                   addr_level,flags,unlock_heap);
-  MHEAP_INTERNAL_VALIDATE();
+  MHEAP_INTERNAL_VALIDATE(flags);
   return true;
  }
- MHEAP_INTERNAL_VALIDATE();
+ MHEAP_INTERNAL_VALIDATE(flags);
  /* Make sure the heap part wouldn't shrink too small. */
  if (n_bytes < HEAP_MIN_MALLOC) goto too_small;
  mheap_release_nomerge(self,p,n_bytes,flags);
  if (unlock_heap) mheap_endwrite(self);
- MHEAP_INTERNAL_VALIDATE();
+ MHEAP_INTERNAL_VALIDATE(flags);
  return true;
 too_small:
  if (unlock_heap) mheap_endwrite(self);
@@ -1818,36 +1827,32 @@ priv_scanpage(PAGE_ALIGNED void *start, uintptr_t xword, size_t n_bytes) {
  assert(n_bytes != 0);
  assert(n_bytes <= PAGESIZE);
  /* Check if the page at `start' is really allocated. */
- if (addr_isglob(start)) {
-  task_nointr();
-  mman_read(&mman_kernel);
-  should_scan = thispdir_test_writable(&pdir_kernel_v,start);
-  mman_endread(&mman_kernel);
-  task_endnointr();
- } else {
-  should_scan = true;
- }
+ task_nointr();
+ mman_read(&mman_kernel);
+ should_scan = thispdir_test_writable(&pdir_kernel_v,start);
+ mman_endread(&mman_kernel);
+ task_endnointr();
  /* Only scan the page when it has been allocated. */
  if (should_scan) result = priv_scandata(start,xword,n_bytes);
  return result;
 }
 
-/* Scan `n_bytes' of memory for any byte not matching `dword & 0xff',
- * assuming that `dword == 0x01010101 * (dword & 0xff)'
+/* Scan `n_bytes' of memory for any byte not matching `xword'.
  * Return NULL when no such byte exists, or the non-matching byte if so.
  * NOTE: Special handling is done to ensure that no new memory after any non-aligned
  *       memory between `begin...CEIL_ALIGN(begin,PAGESIZE)' is allocated due to
  *       access, meaning that system memory isn't strained by accessing unallocated
- *       data, but instead assuming that that data is always equal to `dword'. */
+ *       data, but instead assuming that that data is always equal to `xword'. */
 PRIVATE void *KCALL
-priv_memnchr_noalloc(void *__restrict begin, uintptr_t dword, size_t n_bytes) {
+priv_memnchr_noalloc(void *__restrict begin, uintptr_t xword, size_t n_bytes) {
  byte_t *iter,*end,*aligned; void *result;
  size_t scan_bytes;
  end = (iter = (byte_t *)begin)+n_bytes;
  //syslog(LOG_MEM|LOG_ERROR,"CHECK: %p...%p\n",iter,end-1);
  assert(iter <= end);
  while (iter != end && (uintptr_t)iter&(__SIZEOF_POINTER__-1)) {
-  if (*iter != ((u8 *)&dword)[(uintptr_t)iter&(__SIZEOF_POINTER__-1)]) return iter;
+  if (*iter != ((u8 *)&xword)[(uintptr_t)iter&(__SIZEOF_POINTER__-1)]) return iter;
+  ++iter;
  }
  assert(((end-iter) % __SIZEOF_POINTER__) == 0);
  aligned    = (byte_t *)CEIL_ALIGN((uintptr_t)iter,PAGESIZE);
@@ -1857,16 +1862,17 @@ priv_memnchr_noalloc(void *__restrict begin, uintptr_t dword, size_t n_bytes) {
      scan_bytes = n_bytes;
  if (scan_bytes) {
   /* Scan unaligned data in the first (allocated) page. */
-  result = priv_scandata(iter,dword,scan_bytes);
+  result = priv_scandata(iter,xword,scan_bytes);
   if (result) return result;
   n_bytes -= scan_bytes;
  }
  while (n_bytes) {
+  //syslog(LOG_DEBUG,"SCAN_PAGE: %p\n",aligned);
   scan_bytes = n_bytes;
   if (scan_bytes > PAGESIZE)
       scan_bytes = PAGESIZE;
   /* Scan unaligned data in other (potentially unallocated) pages. */
-  result = priv_scanpage(aligned,dword,scan_bytes);
+  result = priv_scanpage(aligned,xword,scan_bytes);
   if (result) return result;
   n_bytes -= scan_bytes;
   aligned += scan_bytes;
@@ -1884,7 +1890,7 @@ mheap_validate(struct dsetup *setup,
  mheap_read(self);
 #endif
  mheap_validate_addr(setup,self->mh_addr);
- end = (iter = self->mh_size)+HEAP_BUCKET_COUNT;
+ end = (iter = self->mh_size)+COMPILER_LENOF(self->mh_size);
  for (; iter != end; ++iter) {
   size_t min_size = HEAP_BUCKET_MINSIZE(iter-self->mh_size);
   pnode = iter;
