@@ -24,9 +24,11 @@
 #include <alloca.h>
 #include <hybrid/asm.h>
 #include <hybrid/compiler.h>
+#include <hybrid/limits.h>
 #include <setjmp.h>
 #include <unistd.h>
 #include <bits/sigaction.h>
+#include <asm/instx.h>
 
 DECL_BEGIN
 
@@ -92,18 +94,6 @@ L(SYM_END(libc_siglongjmp)                                                    )
 L(.previous                                                                   )
 );
 
-
-GLOBAL_ASM(
-L(.section .text                                                              )
-L(INTERN_ENTRY(libc_alloca)                                                   )
-L(    /* XXX: Stack probing? */                                               )
-L(    popq  %rcx                                                              )
-L(    subq  %rdi, %rsp                                                        )
-L(    movq  %rsp, %rax                                                        )
-L(    jmpq *%rcx                                                              )
-L(SYM_END(libc_alloca)                                                        )
-L(.previous                                                                   )
-);
 
 #elif defined(__i386__)
 #define SAVEMASK_OFFSET 28
@@ -205,59 +195,49 @@ L(SYM_END(libc_longjmp)                                                       )
 L(SYM_END(libc_siglongjmp)                                                    )
 L(.previous                                                                   )
 );
+#else
+#error "FIXME: Architecture not implemented"
+#endif
 
-
+#if defined(__x86_64__) || defined(__i386__)
 GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(libc_alloca)                                                   )
-L(    popl     %edx  /* Return address. */                                    )
-L(    popl     %eax  /* Allocation count. */                                  )
-#ifdef CONFIG_DEBUG
-L(    cmpl     $8,  %eax                                                      )
-L(    jl       1f                                                             )
-L(    pushfl                                                                  )
-L(    pushl    %edi                                                           )
-L(    leal  -8(%eax), %ecx                                                    )
-L(    movl     %esp,  %edi                                                    )
-L(    decl     %edi                                                           )
-L(    movb     $(CRTDBG_INIT_ALLOCA), %al                                     )
-L(    std                                                                     )
-L(    rep stosb                                                               )
-L(    incl     %edi                                                           )
-L(    movl     %edi,  %eax                                                    )
-L(    popl	   %edi                                                           )
-L(    popfl                                                                   )
-L(    movl     $(CRTDBG_INIT_ALLOCA4), -4(%esp)                               )
-L(    movl     $(CRTDBG_INIT_ALLOCA4), -8(%esp)                               )
-L(    movl     %eax,  %esp                                                    )
-L(    jmp      2f                                                             )
-L(1:  decl     %esp                                                           )
-L(    movb     $(CRTDBG_INIT_ALLOCA), (%esp)                                  )
-L(    dec      %eax                                                           )
-L(    test	   %eax, %eax                                                     )
-L(    jnz      1b                                                             )
-L(    movl     %esp, %eax                                                     )
-L(2:                                                                          )
-#elif 1
-L(    subl     %eax,    %esp                                                  )
-L(    movl     %esp,    %eax                                                  )
+L(    popx  %xdx        /* Return address. */                                 )
+#ifdef __x86_64__
+#define COUNT  %rdi
 #else
-L(    cmpl $(PAGESIZE), %eax                                                  )
-L(    jl       2f                                                             )
-L(1:  subl $(PAGESIZE), %esp   /* Advance to the next page. */                )
-L(    testb    $0,     (%esp)  /* Touch the page. */                          )
-L(    subl $(PAGESIZE), %eax   /* Advance the size counter. */                )
-L(    jg       1b              /* ZF == 0 && OF == SF */                      )
-L(2:  subl     %eax,    %esp                                                  )
-L(    movl     %esp,    %eax                                                  )
+#define COUNT  %ecx
+L(    popl  %ecx        /* Allocation count. */                               )
 #endif
-L(    jmpl    *%edx                                                           )
+#if 1
+L(    cmpx  $(PAGESIZE), COUNT                                                )
+L(    jbe   70f                                                               )
+L(    /* Align ESP by `PAGESIZE' */                                           )
+L(    movx  %xsp, %xax                                                        )
+L(    andx  $(~(PAGESIZE-1)), %xsp                                            )
+L(    andx  $( (PAGESIZE-1)), %xax                                            )
+L(    subx  %xax, COUNT                                                       )
+L(1:  cmpx  $(PAGESIZE), COUNT                                                )
+L(    jbe   70f                                                               )
+L(    subx  $(PAGESIZE), %xsp                                                 )
+L(    subx  $(PAGESIZE), COUNT                                                )
+L(    testb $0,  (%xsp) /* Probe the next page. */                            )
+L(    jmp   1b                                                                )
+L(70: subx  COUNT, %xsp                                                       )
+L(    testb $0,  (%xsp) /* Probe the last page. */                            )
+#else
+L(    subx  COUNT, %xsp                                                       )
+#endif
+L(    movx  %xsp, %xax                                                        )
+L(    jmpx *%xdx                                                              )
 L(SYM_END(libc_alloca)                                                        )
 L(.previous                                                                   )
 );
 #else
-#error FIXME
+#error "FIXME: Architecture not implemented"
 #endif
+
 
 #undef setjmp
 #undef sigsetjmp
