@@ -647,10 +647,10 @@ rescan:
   case KEY_F10   : iter = stpcpy(text,TERM_ESCAPE_S "[21~"); break;
   case KEY_F11   : iter = stpcpy(text,TERM_ESCAPE_S "[23~"); break;
   case KEY_F12   : iter = stpcpy(text,TERM_ESCAPE_S "[24~"); break;
-  case KEY_UP    : iter = KEYSTATE_ISCTRL(keystate) ? stpcpy(text,TERM_ESCAPE_S "OA") : stpcpy(text,TERM_ESCAPE_S "[A"); break;
-  case KEY_DOWN  : iter = KEYSTATE_ISCTRL(keystate) ? stpcpy(text,TERM_ESCAPE_S "OB") : stpcpy(text,TERM_ESCAPE_S "[B"); break;
-  case KEY_RIGHT : iter = KEYSTATE_ISCTRL(keystate) ? stpcpy(text,TERM_ESCAPE_S "OC") : stpcpy(text,TERM_ESCAPE_S "[C"); break;
-  case KEY_LEFT  : iter = KEYSTATE_ISCTRL(keystate) ? stpcpy(text,TERM_ESCAPE_S "OD") : stpcpy(text,TERM_ESCAPE_S "[D"); break;
+  case KEY_UP    : iter = stpcpy(text,KEYSTATE_ISCTRL(keystate) ? TERM_ESCAPE_S "OA" : TERM_ESCAPE_S "[A"); break;
+  case KEY_DOWN  : iter = stpcpy(text,KEYSTATE_ISCTRL(keystate) ? TERM_ESCAPE_S "OB" : TERM_ESCAPE_S "[B"); break;
+  case KEY_RIGHT : iter = stpcpy(text,KEYSTATE_ISCTRL(keystate) ? TERM_ESCAPE_S "OC" : TERM_ESCAPE_S "[C"); break;
+  case KEY_LEFT  : iter = stpcpy(text,KEYSTATE_ISCTRL(keystate) ? TERM_ESCAPE_S "OD" : TERM_ESCAPE_S "[D"); break;
   case KEY_PGUP  : iter = stpcpy(text,TERM_ESCAPE_S "[5~"); break;
   case KEY_PGDOWN: iter = stpcpy(text,TERM_ESCAPE_S "[6~"); break;
   case KEY_HOME  : iter = stpcpy(text,TERM_ESCAPE_S "OH"); break;
