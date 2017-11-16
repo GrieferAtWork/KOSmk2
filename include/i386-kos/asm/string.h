@@ -217,9 +217,9 @@ void *(__LIBCCALL __asm_memset)(void *__restrict __dst, int __byte, __SIZE_TYPE_
                               : "=m" (*(struct { __extension__ __BYTE_TYPE__ __d[__n_bytes]; } *)__dst)
                               : "D" (__dst)
 #ifdef __x86_64__
-                              , "a" (__UINT64_C(0x0101010101010101)*(__byte & 0xff))
+                              , "a" ((__UINT64_TYPE__)(__UINT64_C(0x0101010101010101)*(__byte & 0xff)))
 #else
-                              , "a" (__UINT32_C(0x01010101)*(__byte & 0xff))
+                              , "a" ((__UINT32_TYPE__)(__UINT32_C(0x01010101)*(__byte & 0xff)))
 #endif
                               , "c" (__n_bytes) : "cc", "esi");
         return __dst;
@@ -246,9 +246,9 @@ void *(__LIBCCALL __asm_memsetw)(void *__restrict __dst, __UINT16_TYPE__ __word,
                               : "=m" (*(struct { __extension__ __UINT16_TYPE__ __d[__n_words]; } *)__dst)
                               : "D" (__dst)
 #ifdef __x86_64__
-                              , "a" (__UINT64_C(0x0001000100010001)*__word)
+                              , "a" ((__UINT64_TYPE__)(__UINT64_C(0x0001000100010001)*__word))
 #else
-                              , "a" (__UINT32_C(0x00010001)*__word)
+                              , "a" ((__UINT32_TYPE__)(__UINT32_C(0x00010001)*__word))
 #endif
                               , "c" (__n_words) : "cc", "esi");
         return __dst;
@@ -268,7 +268,7 @@ void *(__LIBCCALL __asm_memsetl)(void *__restrict __dst, __UINT32_TYPE__ __dword
                               "1:  rep; stosq\n"
                               : "=m" (*(struct { __extension__ __UINT32_TYPE__ __d[__n_dwords]; } *)__dst)
                               : "D" (__dst)
-                              , "a" (__UINT64_C(0x0000000100000001)*__dword)
+                              , "a" ((__UINT64_TYPE__)(__UINT64_C(0x0000000100000001)*__dword))
                               , "c" (__n_dwords) : "cc", "esi");
         return __dst;
     }
@@ -307,7 +307,7 @@ int (__LIBCCALL name)(void const *__a, void const *__b, __SIZE_TYPE__ n) { \
                           "    mov $-1, %0\n"  /*     result = -1; */ \
                           "1:\n" \
                           : "=g" (__result) \
-                          : "S" (__a), "D" (__b), "0" (0) \
+                          : "S" (__a), "D" (__b), "0" ((__UINTPTR_TYPE__)0) \
                           , "m" (*(struct { __extension__ T __d[n]; } *)__a) \
                           , "m" (*(struct { __extension__ T __d[n]; } *)__b) \
                           , "c" (n) : "cc"); \
@@ -335,8 +335,8 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
     __asm__ __volatile__(__ASM_ENTER_CLD \
                          "    repne; scas" width "\n" \
                          "    cmovne %1, %0\n" \
-                         : "=D" (__result), "=&r" (__temp) \
-                         : "0" (__haystack), "a" (__needle), "c" (n), "1" (1) \
+                         : "=D" (__result), "=r" (__temp) \
+                         : "0" (__haystack), "a" (__needle), "c" (n), "1" ((__UINTPTR_TYPE__)1) \
                          , "m" (*(struct { __extension__ T __d[n]; } *)__haystack) \
                          : "cc"); \
     return (rT *)((T *)__result-1); \
@@ -350,8 +350,8 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle, __SIZE_TYPE__ n) { \
                          "    repne; scas" width "\n" \
                          "    cmovne %1, %0\n" \
                          __ASM_LEAVE_STD \
-                         : "=D" (__result), "=&r" (__temp) \
-                         : "0" ((T *)__haystack+n-1), "a" (__needle), "c" (n), "1" (-1) \
+                         : "=D" (__result), "=r" (__temp) \
+                         : "0" ((T *)__haystack+n-1), "a" (__needle), "c" (n), "1" ((__UINTPTR_TYPE__)-1) \
                          , "m" (*(struct { __extension__ T __d[n]; } *)__haystack) \
                          : "cc"); \
     return (rT *)((T *)__result+1); \
@@ -486,7 +486,7 @@ rT *(__LIBCCALL name)(rT const *__haystack, nT __needle) { \
     __asm__ __volatile__(__ASM_ENTER_CLD \
                          "repne; scas" width "\n" \
                          : "=D" (__result) \
-                         : "0" (__haystack), "a" (__needle), "c" (-1) \
+                         : "0" (__haystack), "a" (__needle), "c" ((__SIZE_TYPE__)-1) \
                          : "memory", "cc"); \
     return (rT *)((T *)__result-1); \
 }
@@ -507,7 +507,7 @@ __SIZE_TYPE__ (__LIBCCALL name)(rT const *__haystack, nT __needle) { \
     __asm__ __volatile__(__ASM_ENTER_CLD \
                          "repne; scas" width "\n" \
                          : "=c" (__result) \
-                         : "D" (__haystack), "a" (__needle), "0" (-1) \
+                         : "D" (__haystack), "a" (__needle), "0" ((__SIZE_TYPE__)-1) \
                          : "memory", "cc"); \
     return (~__result) - 1; \
 }
