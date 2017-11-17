@@ -226,6 +226,64 @@ LOCAL struct irregs *KCALL signal_irregs_of(struct task *__restrict t) {
  return &t->t_cstate->iret;
 }
 
+
+#ifndef CONFIG_NO_FPU
+PRIVATE void KCALL
+load_fpu(struct _libc_fpstate const *__restrict state,
+         struct fpustate *fpu) {
+#ifdef __x86_64__
+ STATIC_ASSERT(sizeof(struct fpustate) == sizeof(struct _libc_fpstate));
+ memcpy(fpu,state,sizeof(struct fpustate));
+#else
+ struct fpu_reg *dst,*end; struct _libc_fpreg const *src;
+ STATIC_ASSERT(sizeof(struct _libc_fpreg) <= sizeof(struct fpu_reg));
+ fpu->fp_fcw   = state->cw;
+ fpu->fp_fsw   = state->sw;
+ fpu->fp_ftw   = state->tag;
+ fpu->fp_fpuip = state->ipoff;
+ fpu->fp_fpucs = state->cssel;
+ fpu->fp_fpudp = state->dataoff;
+ fpu->fp_fpuds = state->datasel;
+ fpu->fp_mxcsr = state->status; /* ??? Is this correct? */
+ src = state->_st;
+ end = (dst = fpu->fp_regs)+COMPILER_LENOF(fpu->fp_regs);
+ for (; dst != end; ++dst,++src)
+        memcpy(dst,src,sizeof(struct _libc_fpreg));
+#endif
+}
+PRIVATE void KCALL
+safe_fpu(struct _libc_fpstate *__restrict state,
+         struct fpustate const *fpu) {
+ if (fpu != FPUSTATE_NULL) {
+#ifdef __x86_64__
+  STATIC_ASSERT(sizeof(struct fpustate) == sizeof(struct _libc_fpstate));
+  memcpy(state,fpu,sizeof(struct fpustate));
+#else
+  struct fpu_reg const *src; struct _libc_fpreg *dst,*end;
+  STATIC_ASSERT(sizeof(struct _libc_fpreg) <= sizeof(struct fpu_reg));
+  state->cw      = (__ULONGPTR_TYPE__)fpu->fp_fcw;
+  state->sw      = (__ULONGPTR_TYPE__)fpu->fp_fsw;
+  state->tag     = (__ULONGPTR_TYPE__)fpu->fp_ftw;
+  state->ipoff   = (__ULONGPTR_TYPE__)fpu->fp_fpuip;
+  state->cssel   = (__ULONGPTR_TYPE__)fpu->fp_fpucs;
+  state->dataoff = (__ULONGPTR_TYPE__)fpu->fp_fpudp;
+  state->datasel = (__ULONGPTR_TYPE__)fpu->fp_fpuds;
+  state->status  = (__ULONGPTR_TYPE__)fpu->fp_mxcsr; /* ??? Is this correct? */
+  src = fpu->fp_regs;
+  end = (dst = state->_st)+COMPILER_LENOF(state->_st);
+  for (; dst != end; ++dst,++src)
+         memcpy(dst,src,sizeof(struct _libc_fpreg));
+#endif
+ } else {
+  memset(state,0,sizeof(struct _libc_fpstate));
+ }
+}
+#else
+#define load_fpu(state,fpu) (void)0
+#define safe_fpu(state,fpu)  memset((state),0,sizeof(struct _libc_fpstate));
+#endif
+
+
 #define RFLAGS_USER_MASK  (EFLAGS_CF|EFLAGS_PF|EFLAGS_AF|EFLAGS_ZF|EFLAGS_SF)
 
 SYSCALL_SDEFINE(sigreturn,state) {
@@ -300,7 +358,19 @@ SYSCALL_SDEFINE(sigreturn,state) {
  /* TODO: Restore segment registers. */
 #endif
 #endif /* !__x86_64__ */
- /* TODO: Restore FPU state. */
+#ifndef CONFIG_NO_FPU
+ /* Restore FPU state. */
+ if (caller->t_arch.at_fpu != FPUSTATE_NULL) {
+  load_fpu(&ctx.__fpregs_mem,caller->t_arch.at_fpu);
+
+  /* Invalidate the FPU context if it was associated with the
+   * caller (Force a register reload from modified information). */
+  if (CPU(fpu_current) == caller) {
+   CPU(fpu_current) = NULL;
+   FPUSTATE_DISABLE();
+  }
+ }
+#endif
 
  /* Restore the old signal mask.
   * NOTE: This may raise more signals, but that's ok.
@@ -317,39 +387,6 @@ SYSCALL_SDEFINE(sigreturn,state) {
 end:
  PREEMPTION_ENABLE();
 }
-
-#ifndef CONFIG_NO_FPU
-PRIVATE void KCALL
-safe_fpu(struct _libc_fpstate *__restrict state,
-         struct fpustate const *fpu) {
- if (fpu != FPUSTATE_NULL) {
-#ifdef __x86_64__
-  STATIC_ASSERT(sizeof(struct fpustate) == sizeof(struct _libc_fpstate));
-  memcpy(state,fpu,sizeof(struct fpustate));
-#else
-  struct fpu_reg const *src; struct _libc_fpreg *dst,*end;
-  STATIC_ASSERT(sizeof(struct _libc_fpreg) <= sizeof(struct fpu_reg));
-  state->cw      = (__ULONGPTR_TYPE__)fpu->fp_fcw;
-  state->sw      = (__ULONGPTR_TYPE__)fpu->fp_fsw;
-  state->tag     = (__ULONGPTR_TYPE__)fpu->fp_ftw;
-  state->ipoff   = (__ULONGPTR_TYPE__)fpu->fp_fpuip;
-  state->cssel   = (__ULONGPTR_TYPE__)fpu->fp_fpucs;
-  state->dataoff = (__ULONGPTR_TYPE__)fpu->fp_fpudp;
-  state->datasel = (__ULONGPTR_TYPE__)fpu->fp_fpuds;
-  state->status  = (__ULONGPTR_TYPE__)fpu->fp_mxcsr; /* ??? Is this correct? */
-  src = fpu->fp_regs;
-  end = (dst = state->_st)+COMPILER_LENOF(state->_st);
-  for (; dst != end; ++dst,++src)
-         memcpy(dst,src,sizeof(struct _libc_fpreg));
-#endif
- } else {
-  memset(state,0,sizeof(struct _libc_fpstate));
- }
-}
-#else
-#define safe_fpu(state,fpu) memset((state),0,sizeof(struct _libc_fpstate));
-#endif
-
 
 PRIVATE errno_t KCALL
 deliver_signal_to_task_in_user(struct task *__restrict t,
@@ -768,7 +805,7 @@ L(.pointer_out_of_bounds:                                                       
 L(    movx   ITER, TASK_OFFSETOF_LASTCR2(CALLER)                                 )
 L(    jmp    sigfault                                                            )
 L(SYM_END(sigenter_restore)                                                      )
-L(SYM_END(sigenter)                                                    )
+L(SYM_END(sigenter)                                                              )
 L(.previous                                                                      )
 #undef GS_BASE
 #undef FS_BASE

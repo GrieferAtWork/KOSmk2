@@ -32,7 +32,7 @@
 
 #undef CONFIG_USE_OLD_SIGNALS
 #ifndef __x86_64__
-#define CONFIG_USE_OLD_SIGNALS 1
+//#define CONFIG_USE_OLD_SIGNALS 1
 #endif
 
 #ifndef CONFIG_USE_OLD_SIGNALS

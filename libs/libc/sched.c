@@ -57,8 +57,8 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
  /* NOTE: The clone() system call cannot be called safely without custom assembly,
   *       due to the fact that it returns to the same address as the parent thread. */
 #ifdef __x86_64__
- { register uintptr_t r10 __asm__("r10") = (uintptr_t)ctid;
-   register uintptr_t r8  __asm__("r8") = (uintptr_t)newtls;
+ { register uintptr_t r10 ASMNAME("r10") = (uintptr_t)ctid;
+   register uintptr_t r8  ASMNAME("r8") = (uintptr_t)newtls;
    __asm__ __volatile__("    int   $0x80\n"
                         /* This is where (presumably) two threads are going to show up,
                          * the only difference between the two being the value of EAX,
@@ -134,10 +134,7 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
  /* Return the child thread PID. */
  return result;
 }
-INTERN int LIBCCALL libc_sched_yield(void) {
- /*__asm__("int $3\n");*/
- return sys_sched_yield();
-}
+INTERN int LIBCCALL libc_sched_yield(void) { return sys_sched_yield(); }
 INTERN int LIBCCALL libc_sched_getcpu(void) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_setns(int fd, int nstype) { NOT_IMPLEMENTED(); return -1; }
 INTERN int LIBCCALL libc_sched_setparam(pid_t pid, struct sched_param const *param) { NOT_IMPLEMENTED(); return -1; }

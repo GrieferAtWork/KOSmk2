@@ -562,7 +562,7 @@ FUNDEF void KCALL sigpending_fini(struct sigpending *__restrict self);
 
 #undef CONFIG_USE_OLD_SIGNALS
 #ifndef __x86_64__
-#define CONFIG_USE_OLD_SIGNALS 1
+//#define CONFIG_USE_OLD_SIGNALS 1
 #endif
 
 #if defined(__x86_64__) || defined(__i386__)

@@ -693,18 +693,41 @@ dentryname_loadhash(struct dentryname *__restrict self) {
  size_t const *iter,*end;
  CHECK_HOST_DOBJ(self);
  end = (iter = (size_t const *)self->dn_name)+(self->dn_size/sizeof(size_t));
+#ifdef CONFIG_NO_DOSFS
  while (iter != end) hash += CHR_HASHVAL(*iter++),hash *= 9;
+#else
+ while (iter != end) {
+  STATIC_ASSERT((sizeof(size_t) % sizeof(char)) == 0);
+  union{
+   size_t size;
+   char   chrs[sizeof(size_t)/sizeof(char)];
+  } value;
+  value.size = *iter++;
+  value.chrs[0] = tolower(value.chrs[0]);
+  value.chrs[1] = tolower(value.chrs[1]);
+  value.chrs[2] = tolower(value.chrs[2]);
+  value.chrs[3] = tolower(value.chrs[3]);
+#if __SIZEOF_SIZE_T__ > 4
+  value.chrs[4] = tolower(value.chrs[4]);
+  value.chrs[5] = tolower(value.chrs[5]);
+  value.chrs[6] = tolower(value.chrs[6]);
+  value.chrs[7] = tolower(value.chrs[7]);
+#endif
+  hash += value.size;
+  hash *= 9;
+ }
+#endif
  switch (self->dn_size % sizeof(size_t)) {
 #if __SIZEOF_SIZE_T__ > 4
-  case 7:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[6]) << 48;
-  case 6:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[5]) << 40;
-  case 5:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[4]) << 32;
-  case 4:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[3]) << 24;
+ case 7:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[6]) << 48;
+ case 6:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[5]) << 40;
+ case 5:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[4]) << 32;
+ case 4:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[3]) << 24;
 #endif
-  case 3:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[2]) << 16;
-  case 2:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[1]) << 8;
-  case 1:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[0]);
-  default: break;
+ case 3:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[2]) << 16;
+ case 2:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[1]) << 8;
+ case 1:  hash += (size_t)CHR_HASHVAL(((byte_t *)iter)[0]);
+ default: break;
  }
  self->dn_hash = hash;
 }
