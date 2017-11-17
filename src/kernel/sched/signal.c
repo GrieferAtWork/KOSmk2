@@ -54,6 +54,7 @@
 #include <kos/thread.h>
 #include <arch/hints.h>
 #include <arch/asm.h>
+#include <bits/sigstack.h>
 
 DECL_BEGIN
 
@@ -495,12 +496,21 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
 
  tail.t_ctx.uc_link = NULL; /* XXX: Are we supposed to fill this with something? */
 
- /* TODO: Use sigaltstack() here, if it was ever set! */
- //state->iret.userxsp = GET_SIGALT_STACK();
+ /* Use sigaltstack() if requested to.
+  * NOTE: If the calling stack pointer is already apart of the
+  *       sigaltstack, don't actually switch, so-as to prevent
+  *       overwriting already running signal handlers. */
+ if (action->sa_flags&SA_ONSTACK &&
+     KERNEL_SIGSTACK_ISVALID(t->t_sigstack) &&
+    !KERNEL_SIGSTACK_CONTAINS(t->t_sigstack,state->iret.userxsp)) {
+  state->iret.userxsp = ((uintptr_t)t->t_sigstack.ss_base+
+                                    t->t_sigstack.ss_size);
+ } else {
 #if USER_REDZONE_SIZE != 0
- /* Skip memory required for a `red' zone. */
- *(uintptr_t *)&state->iret.userxsp -= USER_REDZONE_SIZE;
+  /* Skip memory required for a `red' zone. */
+  *(uintptr_t *)&state->iret.userxsp -= USER_REDZONE_SIZE;
 #endif
+ }
 
  if (action->sa_flags&SA_SIGINFO) {
   byte_t head_data[offsetof(struct sigenter_fhead,sh_info)];
@@ -569,21 +579,33 @@ STATIC_ASSERT(offsetof(struct sigenter_tail,t_oldip) == SIGENTER_TAIL_OFFSETOF_O
 STATIC_ASSERT(sizeof(struct sigenter_tail) == SIGENTER_TAIL_SIZE);
 
 
+#undef SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR
+/* XXX: I don't actually think that the kernel
+ *      is ever supposed to return -ERESTART, right?
+ *      I mean, the return value shouldn't change ~just~
+ *      because a user-space signal handler got invoked. */
+//#define SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR 1
+
 /* Enter a signal handler without register modifications.
  * NOTE: This is the only sigenter function that must be executed with interrupts enabled. */
 INTDEF void ASMCALL sigenter(void);
 INTDEF void ASMCALL sigenter_restore(void);
+#ifdef SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR
 INTDEF void ASMCALL sigenter_restart(void); /* Return -ERESTART instead of -EINTR */
+#endif /* SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR */
 #ifdef __SYSCALL_TYPE_LONGBIT
 /* Also restore XDX with `struct sigenter::se_xdx' */
 INTDEF void ASMCALL sigenter_restore_long(void);
+#ifdef SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR
 INTDEF void ASMCALL sigenter_restart_long(void); /* Return -ERESTART instead of -EINTR */
+#endif /* SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR */
 #endif
 
 
 GLOBAL_ASM(
 L(.section .text                                                                 )
 #ifdef __SYSCALL_TYPE_LONGBIT
+#ifdef SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR
 L(PRIVATE_ENTRY(sigenter_restart_long)                                           )
 L(    cmpx   $(-EINTR),    %xax                                                  )
 L(    jne    sigenter_restore_long                                               )
@@ -591,19 +613,24 @@ L(    cmpx   $(-1),        %xdx                                                 
 L(    jne    sigenter_restore_long                                               )
 L(    movx   $(-ERESTART), %xax                                                  )
 L(    movx   $(-1),        %xdx                                                  )
+#endif /* SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR */
 L(PRIVATE_ENTRY(sigenter_restore_long)                                           )
 L(    pushx  $(SIGENTER_MODE_RESTORE_LONG)                                       )
 L(    jmp    1f                                                                  )
 L(SYM_END(sigenter_restore_long)                                                 )
+#ifdef SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR
 L(SYM_END(sigenter_restart_long)                                                 )
+#endif /* SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR */
 #endif /* __SYSCALL_TYPE_LONGBIT */
 L(PRIVATE_ENTRY(sigenter_restore)                                                )
 L(    pushx  $(SIGENTER_MODE_RESTORE)                                            )
 L(    jmp    1f                                                                  )
+#ifdef SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR
 L(PRIVATE_ENTRY(sigenter_restart)                                                )
 L(    cmpx   $(-EINTR),    %xax                                                  )
 L(    jne    sigenter                                                            )
 L(    movx   $(-ERESTART), %xax                                                  )
+#endif /* SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR */
 L(PRIVATE_ENTRY(sigenter)                                                        )
 L(    pushx  $(SIGENTER_MODE_NORMAL)                                             )
 L(1:                                                                             )
@@ -804,8 +831,11 @@ L(    ASM_IRET                                                                  
 L(.pointer_out_of_bounds:                                                        )
 L(    movx   ITER, TASK_OFFSETOF_LASTCR2(CALLER)                                 )
 L(    jmp    sigfault                                                            )
-L(SYM_END(sigenter_restore)                                                      )
 L(SYM_END(sigenter)                                                              )
+#ifdef SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR
+L(SYM_END(sigenter_restart)                                                      )
+#endif /* SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR */
+L(SYM_END(sigenter_restore)                                                      )
 L(.previous                                                                      )
 #undef GS_BASE
 #undef FS_BASE
@@ -895,7 +925,9 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
        * >> ORIG_EAX = IRREGS_SYSCALL_GET_FOR(t)->sysno; */
       used_sigenter = &sigenter_restore;
      }
-    } else {
+    }
+#ifdef SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR
+    else {
 #ifdef __SYSCALL_TYPE_LONGBIT
      if (syscall_is_long(return_registers->sysno)) {
       used_sigenter = &sigenter_restart_long;
@@ -905,6 +937,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
       used_sigenter = &sigenter_restart;
      }
     }
+#endif /* SIGENTER_RESTORE_RESTART_INSTEAD_OF_INTR */
    } else {
     /* After not finding `int $0x80', or something equivalent, we must assume
      * that the task isn't actually executing a system-call, meaning we must
@@ -982,12 +1015,18 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
 #endif
 
  if (t->t_sigenter.se_count == 1) {
-  /* TODO: Use sigaltstack() here, if it was ever set! */
-  //t->t_sigenter.se_xsp = GET_SIGALT_STACK();
+  /* Use sigaltstack() if it requested to. */
+  if (action->sa_flags&SA_ONSTACK &&
+      KERNEL_SIGSTACK_ISVALID(t->t_sigstack) &&
+     !KERNEL_SIGSTACK_CONTAINS(t->t_sigstack,t->t_sigenter.se_xsp)) {
+   t->t_sigenter.se_xsp = ((uintptr_t)t->t_sigstack.ss_base+
+                                      t->t_sigstack.ss_size);
+  } else {
 #if USER_REDZONE_SIZE != 0
-  /* Skip memory required for the `red' zone when pushing the first handler. */
-  t->t_sigenter.se_xsp -= USER_REDZONE_SIZE;
+   /* Skip memory required for the `red' zone when pushing the first handler. */
+   t->t_sigenter.se_xsp -= USER_REDZONE_SIZE;
 #endif
+  }
  }
 
 #define NEXT_SIGNAL \
@@ -2550,9 +2589,35 @@ end:
  return result;
 }
 
+
+SYSCALL_DEFINE2(sigaltstack,USER stack_t const *,new_stack,
+                            USER stack_t *,old_stack) {
+ stack_t stack;
+ struct task *caller = THIS_TASK;
+ /* No need for locking, because all data is effectively accessed weakly. */
+ if (old_stack) {
+  stack.ss_sp    = caller->t_sigstack.ss_base;
+  stack.ss_size  = caller->t_sigstack.ss_size;
+  stack.ss_flags = !stack.ss_size
+                  ? SS_DISABLE
+                  : KERNEL_SIGSTACK_CONTAINS(caller->t_sigstack,
+                                             IRREGS_SYSCALL_GET()->userxsp)
+                  ? SS_ONSTACK
+                  : 0;
+  if (copy_to_user(old_stack,&stack,sizeof(stack_t)))
+      return -EFAULT;
+ }
+ if (new_stack) {
+  if (copy_from_user(&stack,new_stack,sizeof(stack_t)))
+      return -EFAULT;
+  if (!stack.ss_size) stack.ss_sp = NULL;
+  caller->t_sigstack.ss_base = stack.ss_sp;
+  caller->t_sigstack.ss_size = stack.ss_size;
+ }
+ return -EOK;
+}
+
 /*
-#define __NR_sigaltstack  132
-__SYSCALL(__NR_sigaltstack,sys_sigaltstack)
 #define __NR_sigqueueinfo 138
 __SYSCALL(__NR_sigqueueinfo,sys_sigqueueinfo)
 */

@@ -540,7 +540,7 @@ INTDEF void KCALL pid_initialize(void);
 
 
 
-
+#ifndef CONFIG_NO_SIGNALS
 #define SIGPENDING_OFFSETOF_NEWSIG  0
 #define SIGPENDING_OFFSETOF_QUEUE   SIG_SIZE
 #define SIGPENDING_OFFSETOF_MASK   (SIG_SIZE+__SIZEOF_POINTER__)
@@ -558,7 +558,30 @@ struct sigpending {
 #define sigpending_init(self)  (void)(sig_init(&(self)->sp_newsig),(self)->sp_queue = NULL,memset(&(self)->sp_mask,0,sizeof(__sigset_t)))
 #define sigpending_cinit(self)       (sig_cinit(&(self)->sp_newsig),assert((self)->sp_queue == NULL))
 FUNDEF void KCALL sigpending_fini(struct sigpending *__restrict self);
+#endif /* __CC__ */
+
+#define SIGSTACK_OFFSETOF_BASE  0
+#define SIGSTACK_OFFSETOF_SIZE  __SIZEOF_POINTER__
+#define SIGSTACK_SIZE          (__SIZEOF_POINTER__+__SIZEOF_SIZE_T__)
+#ifdef __CC__
+struct kernel_sigstack { /* XXX: `struct sigstack' is already taken by userspace. */
+ USER void *ss_base; /*< [?..?][lock(PRIVATE(THIS_TASK))][valid_if(ss_size != 0)] Alternative signal stack base address. */
+ size_t     ss_size; /*< [lock(PRIVATE(THIS_TASK))] Size of the alternative signal stack (in bytes). */
+};
+#define KERNEL_SIGSTACK_ISVALID(self) \
+  ((self).ss_size != 0)
+#if 1 /* CONFIG_STACK_GROWS_DOWN? */
+#define KERNEL_SIGSTACK_CONTAINS(self,p) \
+  ((uintptr_t)(p) >  (uintptr_t)(self).ss_base && \
+   (uintptr_t)(p)-(uintptr_t)(self).ss_base <= (self).ss_size)
+#else
+#define KERNEL_SIGSTACK_CONTAINS(self,p) \
+  ((uintptr_t)(p) >= (uintptr_t)(self).ss_base && \
+   (uintptr_t)(p)-(uintptr_t)(self).ss_base < (self).ss_size)
 #endif
+
+#endif /* __CC__ */
+
 
 #undef CONFIG_USE_OLD_SIGNALS
 #ifndef __x86_64__
@@ -659,6 +682,7 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #endif
 
 #endif /* __CC__ */
+#endif /* !CONFIG_NO_SIGNALS */
 
 
 
@@ -729,15 +753,16 @@ FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #define TASK_OFFSETOF_SIGPEND      (__TASK_OFFSETAFTER_TMSIGS+16+12*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__)
 #define TASK_OFFSETOF_SIGSHARE     (__TASK_OFFSETAFTER_TMSIGS+16+12*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__+SIGPENDING_SIZE)
 #define TASK_OFFSETOF_SIGENTER     (__TASK_OFFSETAFTER_TMSIGS+16+13*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__+SIGPENDING_SIZE)
-#define __TASK_OFFSETAFTER_SIGENTER (__TASK_OFFSETAFTER_TMSIGS+16+13*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__+SIGPENDING_SIZE+SIGENTER_SIZE)
+#define TASK_OFFSETOF_SIGSTACK     (__TASK_OFFSETAFTER_TMSIGS+16+13*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__+SIGPENDING_SIZE+SIGENTER_SIZE)
+#define __TASK_OFFSETAFTER_SIGSTACK (__TASK_OFFSETAFTER_TMSIGS+16+13*__SIZEOF_POINTER__+SIG_SIZE+THREAD_PID_SIZE+HSTACK_SIZE+__SIZEOF_SIGSET_T__+SIGPENDING_SIZE+SIGENTER_SIZE+SIGSTACK_SIZE)
 #else /* !CONFIG_NO_SIGNALS */
-#define __TASK_OFFSETAFTER_SIGENTER TASK_OFFSETOF_USTACK
+#define __TASK_OFFSETAFTER_SIGSTACK TASK_OFFSETOF_USTACK
 #endif /* CONFIG_NO_SIGNALS */
 #ifndef CONFIG_NO_TLB
-#define TASK_OFFSETOF_TLB           __TASK_OFFSETAFTER_SIGENTER
-#define __TASK_OFFSETAFTER_TLB     (__TASK_OFFSETAFTER_SIGENTER+__SIZEOF_POINTER__)
+#define TASK_OFFSETOF_TLB           __TASK_OFFSETAFTER_SIGSTACK
+#define __TASK_OFFSETAFTER_TLB     (__TASK_OFFSETAFTER_SIGSTACK+__SIZEOF_POINTER__)
 #else /* !CONFIG_NO_TLB */
-#define __TASK_OFFSETAFTER_TLB      __TASK_OFFSETAFTER_SIGENTER
+#define __TASK_OFFSETAFTER_TLB      __TASK_OFFSETAFTER_SIGSTACK
 #endif /* CONFIG_NO_TLB */
 #ifdef ARCHTASK_SIZE
 #define TASK_OFFSETOF_ARCH          __TASK_OFFSETAFTER_TLB
@@ -848,6 +873,7 @@ struct PACKED {
  struct sigpending        t_sigpend;   /*< Controller for pending signals. */
  REF struct sigshare     *t_sigshare;  /*< [1..1] Controller for shared signal data (Including the shared pending-signal list). */
  struct sigenter          t_sigenter;  /*< Signal enter controller. */
+ struct kernel_sigstack   t_sigstack;  /*< Alternative userspace signal stack. */
 #endif /* !CONFIG_NO_SIGNALS */
 #ifndef CONFIG_NO_TLB
  PAGE_ALIGNED USER struct tlb *t_tlb;  /*< [0..1|null(PAGE_ERROR)][owned] A user-space memory mapping for this task's thread-local information block.

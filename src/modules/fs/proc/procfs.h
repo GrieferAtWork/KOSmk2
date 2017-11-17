@@ -64,7 +64,7 @@ DECL_BEGIN
 #define DNAME_HASH64(x) \
 ({ local hash = uint64(0); \
    local temp = (uint64 *)(char *)x; \
-   for (local i = 0; i < #(x) / 8; ++i) { hash += ()temp[i]; hash *= 9; } \
+   for (local i = 0; i < #(x) / 8; ++i) { hash += temp[i]; hash *= 9; } \
    local temp = x[#(x) - #(x) % 8 : #(x)]; \
    switch (#temp) { \
    case 7:  hash += (uint64)temp[6].ord() << 48; \

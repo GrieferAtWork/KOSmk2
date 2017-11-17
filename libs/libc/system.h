@@ -46,6 +46,7 @@ struct pollfd;
 struct timezone;
 struct sysinfo;
 struct virtinfo;
+struct sigaltstack;
 
 #ifndef __errno_t_defined
 #define __errno_t_defined 1
@@ -172,6 +173,7 @@ LOCAL SYSCALL1(errno_t,swapoff,(char const *,specialfile));
 LOCAL SYSCALL6(syscall_slong_t,futex,(USER u32 *,uaddr,int,op,u32,val,USER struct timespec *,utime,USER u32 *,uaddr2,u32,val3));
 LOCAL SYSCALL5(pid_t,clone,(syscall_ulong_t,flags,USER void *,newsp,USER pid_t *,parent_tidptr,USER pid_t *,child_tidptr,USER void *,tls_val));
 LOCAL SYSCALL1(errno_t,sysinfo,(USER struct sysinfo *,info));
+LOCAL SYSCALL2(errno_t,sigaltstack,(USER struct sigaltstack const *,new_stack,USER struct sigaltstack *,old_stack));
 
 /* KOS system-call extensions. */
 LOCAL SYSCALL3(ssize_t,xsyslog,(int,type,char const *,p,size_t,len));

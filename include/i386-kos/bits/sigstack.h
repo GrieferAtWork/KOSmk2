@@ -42,19 +42,26 @@ __SYSDECL_BEGIN
    License along with the GNU C Library; if not, see
    <http://www.gnu.org/licenses/>.  */
 
-
+#ifdef __CC__
 /* Structure describing a signal stack (obsolete). */
 struct sigstack {
     void *ss_sp;      /*< Signal stack pointer. */
     int   ss_onstack; /*< Nonzero if executing on this stack. */
 };
+#endif /* __CC__ */
 
+#ifdef __COMPILER_PREFERR_ENUMS
 enum { /* Possible values for `ss_flags.'. */
     SS_ONSTACK = 1,
     SS_DISABLE = 2
 #define SS_ONSTACK SS_ONSTACK
 #define SS_DISABLE SS_DISABLE
 };
+#else
+/* Possible values for `ss_flags.'. */
+#define SS_ONSTACK 1
+#define SS_DISABLE 2
+#endif
 
 #define MINSIGSTKSZ 2048 /*< Minimum stack size for a signal handler. */
 #define SIGSTKSZ    8192 /*< System default stack size. */
@@ -65,6 +72,7 @@ enum { /* Possible values for `ss_flags.'. */
 #define __STACK_OFFSETOF_SIZE  (2*__SIZEOF_POINTER__)
 #define __STACK_SIZE           (2*__SIZEOF_POINTER__+__SIZEOF_SIZE_T__)
 
+#ifdef __CC__
 /* Alternate, preferred interface. */
 typedef struct sigaltstack {
     void         *ss_sp;
@@ -74,6 +82,9 @@ typedef struct sigaltstack {
 #endif
     __SIZE_TYPE__ ss_size;
 } stack_t;
+
+#endif /* __CC__ */
+
 
 __SYSDECL_END
 
