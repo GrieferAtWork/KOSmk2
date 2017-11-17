@@ -341,28 +341,6 @@ SECTIONS {
 
 	DEFINE_HERE(__kernel_end);
 
-#ifdef __x86_64__
-	/* Define physical alternatives of symbols used by x86_64 bootstrap code. */
-	DEFINE(boot_enter_longmode_p = boot_enter_longmode - CORE_BASE);
-	DEFINE(boot_error_p = boot_error - CORE_BASE);
-	DEFINE(boot_erstr0_p = boot_erstr0 - CORE_BASE);
-	DEFINE(boot_erstr1_p = boot_erstr1 - CORE_BASE);
-	DEFINE(boot_erstr2_p = boot_erstr2 - CORE_BASE);
-	DEFINE(boot_erstr3_p = boot_erstr3 - CORE_BASE);
-	DEFINE(boot_print_p = boot_print - CORE_BASE);
-	DEFINE(__bootstack_p = __bootstack - CORE_BASE);
-	DEFINE(__bootcpu_p = __bootcpu - CORE_BASE);
-	DEFINE(boot_emulation_p = boot_emulation - CORE_BASE);
-	DEFINE(boot_emulation_logport_p = boot_emulation_logport - CORE_BASE);
-	DEFINE(boot_gdt_p = boot_gdt - CORE_BASE);
-	DEFINE(boot_gdt_vector_p = boot_gdt_vector - CORE_BASE);
-	DEFINE(__kernel_end_p = __kernel_end - CORE_BASE);
-	DEFINE(coreboot_e3_p = coreboot_e3 - CORE_BASE);
-	DEFINE(coreboot_e2_80000000_p = coreboot_e2_80000000 - CORE_BASE);
-	DEFINE(coreboot_e2_c0000000_p = coreboot_e2_c0000000 - CORE_BASE);
-#endif
-
-
 	DEFINE(__kernel_size      = ABSOLUTE(__kernel_end - __kernel_start));
 	DEFINE(__kernel_ro_size   = ABSOLUTE(__kernel_ro_end - __kernel_start));
 	DEFINE(__kernel_rw_size   = ABSOLUTE(__kernel_end - __kernel_rw_start));

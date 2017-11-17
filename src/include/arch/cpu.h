@@ -72,7 +72,7 @@ struct archcpu {
  u8              ac_lapic_id;      /*< [const][valid_if(CPUFLAG_LAPIC)] LAPIC id. */
  u8              ac_lapic_version; /*< [const][valid_if(CPUFLAG_LAPIC)] LAPIC version (One of `APICVER_*'). */
  u32             ac_cpusig;        /*< [const] Processor Type signature. */
- u32             ac_features;      /*< [const] CPUID feature value. */
+ u32             ac_features;      /*< [const] CPUID feature value. (Set of `CPUID_1D_*') */
  u32             ac_cpuid_max;     /*< [valid_if(CPUFLAG_IINIT)][const] Max supported CPUid (NOTE: This is the max allowed value to pass as in EAX to the `cpuid' instruction). */
  char            ac_vendorid[12];  /*< [valid_if(ARCHCPU_HAS_VENDORID(self))][const]
                                     *   Vendor ID (e.g.: `GenuineIntel'; MAY NOT ZERO-TERMINATED!) */

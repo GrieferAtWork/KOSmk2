@@ -187,7 +187,11 @@ PRIVATE ATTR_FREETEXT bool KCALL smp_init_table(uintptr_t table_addr) {
      __bootcpu.c_arch.ac_lapic_id      = iter->mc_processor.cp_lapicid;
      __bootcpu.c_arch.ac_lapic_version = iter->mc_processor.cp_lapicver;
      __bootcpu.c_arch.ac_cpusig        = iter->mc_processor.cp_cpusig;
-     __bootcpu.c_arch.ac_features      = iter->mc_processor.cp_features;
+     if (!(__bootcpu.c_arch.ac_flags&CPUFLAG_CPUID))
+      __bootcpu.c_arch.ac_features = iter->mc_processor.cp_features;
+     else if (__bootcpu.c_arch.ac_features != iter->mc_processor.cp_features)
+      syslog(LOG_WARN,"[BOOT] MP headers indicate different features %x than cpuid %x\n",
+             iter->mc_processor.cp_features,__bootcpu.c_arch.ac_features);
     } else {
 normal_cpu:
      /* Register a new CPU. */
@@ -262,14 +266,7 @@ invalid_mptab:
   goto nocfg;
  }
 scan_bootcpu:
- if ((__bootcpu.c_arch.ac_flags&
-     (CPUFLAG_LAPIC|CPUFLAG_486)) == CPUFLAG_486) {
-  /* Figure out CPU features for the boot CPU. */
-  __asm__ __volatile__("cpuid\n"
-                       : "=b" (__bootcpu.c_arch.ac_features)
-                       : "a" (1)
-                       : "ecx", "edx");
- }
+ ;
 }
 
 
