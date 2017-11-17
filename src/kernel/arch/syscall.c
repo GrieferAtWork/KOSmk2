@@ -405,11 +405,11 @@ end:
 }
 
 #if defined(CONFIG_HAVE_SYSCALL_LONGBIT) || defined(__DEEMON__)
-PUBLIC bool KCALL syscall_is_long(register_t number) {
+PUBLIC bool KCALL syscall_is_long(register_t sysno) {
  bool result = true;
  struct syscall_table *prev,*curr;
  REF struct syscall *entry;
- switch (number) {
+ switch (sysno) {
 #ifndef __x86_64__
 /*[[[deemon
 #include <file>
