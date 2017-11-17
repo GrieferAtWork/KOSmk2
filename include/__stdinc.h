@@ -75,7 +75,9 @@
 #define __COMPILER_STRLEN(str)         (sizeof(str)/sizeof(char)-1)
 #define __COMPILER_STREND(str)  ((str)+(sizeof(str)/sizeof(char)-1))
 
-#ifdef __GNUC__
+#if !defined(__CC__)
+#   include "compiler/other.h"
+#elif defined(__GNUC__)
 #   include "compiler/gcc.h"
 #elif defined(_MSC_VER)
 #   include "compiler/msvc.h"

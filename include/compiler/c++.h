@@ -60,7 +60,7 @@
 #   define __CXX_NOEXCEPT throw()
 #endif
 
-#ifndef __INTELLISENSE__
+#if !defined(__INTELLISENSE__) && !defined(__KERNEL__)
 #define __COMPILER_PREFERR_ENUMS 1
 #endif
 

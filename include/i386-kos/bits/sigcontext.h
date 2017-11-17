@@ -31,8 +31,10 @@ __SYSDECL_BEGIN
  *         such as hiding more fields at the end of the
  *         structure...
  */
+#ifdef __CC__
 #define sigcontext ucontext
 struct sigcontext;
+#endif
 
 __SYSDECL_END
 

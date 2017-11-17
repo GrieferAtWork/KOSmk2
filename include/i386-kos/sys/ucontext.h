@@ -48,12 +48,19 @@
 
 __SYSDECL_BEGIN
 
+#ifdef __CC__
+#ifndef __greg_t_defined
+#define __greg_t_defined 1
+typedef __SREGISTER_TYPE__ greg_t;
+#endif /* !__greg_t_defined */
+#endif /* __CC__ */
+#define __SIZEOF_GREG_T__  __SIZEOF_REGISTER__
+
+
 #ifdef __x86_64__
-#define __SIZEOF_GREG_T__  8
 #define NGREG  23 /*< Number of general registers. */
 
 #ifdef __CC__
-typedef __SREGISTER_TYPE__ greg_t;
 typedef greg_t gregset_t[NGREG]; /*< Container for all general registers. */
 #endif /* __CC__ */
 
@@ -291,36 +298,56 @@ typedef struct ucontext {
 
 #else /* __x86_64__ */
 
-#define __SIZEOF_GREG_T__  4
-typedef __SREGISTER_TYPE__ greg_t; /*< Type for general register. */
 #define NGREG    19 /*< Number of general registers. */
+#ifdef __CC__
 typedef greg_t gregset_t[NGREG]; /* Container for all general registers. */
+#endif
 
 #ifdef __USE_GNU
-enum { /* Number of each register is the `gregset_t' array. */
-    REG_GS = 0,
-    REG_FS,
-    REG_ES,
-    REG_DS,
-    REG_EDI,
-    REG_ESI,
-    REG_EBP,
-    REG_ESP,
-    REG_EBX,
-    REG_EDX,
-    REG_ECX,
-    REG_EAX,
-    REG_TRAPNO,
-    REG_ERR,
-    REG_EIP,
-    REG_CS,
-    REG_EFL,
-    REG_UESP,
-    REG_SS
+#ifdef __COMPILER_PREFERR_ENUMS
+/* Number of each register is the `gregset_t' array. */
+enum {
+    REG_GS     = 0,
+    REG_FS     = 1,
+    REG_ES     = 2,
+    REG_DS     = 3,
+    REG_EDI    = 4,
+    REG_ESI    = 5,
+    REG_EBP    = 6,
+    REG_ESP    = 7,
+    REG_EBX    = 8,
+    REG_EDX    = 9,
+    REG_ECX    = 10,
+    REG_EAX    = 11,
+    REG_TRAPNO = 12,
+    REG_ERR    = 13,
+    REG_EIP    = 14,
+    REG_CS     = 15,
+    REG_EFL    = 16,
+    REG_UESP   = 17,
+    REG_SS     = 18
 };
-
-/* WARNING: Changes to this order of registers must be mirrored by
- *          `signal_return' in "/src/kernel/sched/signal.c.inl" */
+#define REG_GS     REG_GS
+#define REG_FS     REG_FS
+#define REG_ES     REG_ES
+#define REG_DS     REG_DS
+#define REG_EDI    REG_EDI
+#define REG_ESI    REG_ESI
+#define REG_EBP    REG_EBP
+#define REG_ESP    REG_ESP
+#define REG_EBX    REG_EBX
+#define REG_EDX    REG_EDX
+#define REG_ECX    REG_ECX
+#define REG_EAX    REG_EAX
+#define REG_TRAPNO REG_TRAPNO
+#define REG_ERR    REG_ERR
+#define REG_EIP    REG_EIP
+#define REG_CS     REG_CS
+#define REG_EFL    REG_EFL
+#define REG_UESP   REG_UESP
+#define REG_SS     REG_SS
+#else /* __COMPILER_PREFERR_ENUMS */
+/* Number of each register is the `gregset_t' array. */
 #define REG_GS     0
 #define REG_FS     1
 #define REG_ES     2
@@ -340,6 +367,7 @@ enum { /* Number of each register is the `gregset_t' array. */
 #define REG_EFL    16
 #define REG_UESP   17
 #define REG_SS     18
+#endif /* !__COMPILER_PREFERR_ENUMS */
 #endif
 
 #define __LIBC_FPREG_OFFSETOF_SIGNIFICAND 0

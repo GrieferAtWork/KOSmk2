@@ -109,7 +109,7 @@ PUBLIC bool KCALL syscall_is_norestart(register_t number) {
  /* TODO */
  return false;
 }
-#if defined(__SYSCALL_TYPE_LONGBIT) || defined(__DEEMON__)
+#if defined(CONFIG_HAVE_SYSCALL_LONGBIT) || defined(__DEEMON__)
 PUBLIC bool KCALL syscall_is_long(register_t number) {
  switch (number) {
 /*[[[deemon
@@ -422,10 +422,10 @@ L(    movq   __ASM_SCRATCH_NOXAX_OFFSETOF_R8(%rsp),  %r8                      )
 L(    movq   __ASM_SCRATCH_NOXAX_OFFSETOF_R9(%rsp),  %r9                      )
 L(                                                                            )
 L(    pushq  %rax /* PUSH(SYSCALL_DESCR) */                                   )
-#ifdef __SYSCALL_TYPE_LONGBIT
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
 L(    testb  $(__SYSCALL_TYPE_LONGBIT), SYSCALL_OFFSETOF_TYPE(%rax)           )
 L(    jnz    1f                                                               )
-#endif /* __SYSCALL_TYPE_LONGBIT */
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
 L(    callq *SYSCALL_OFFSETOF_CALLBACK(%rax)                                  )
 L(    popq   %rdi /* POP(SYSCALL_DESCR) */                                    )
 L(    call   syscall_decref /* DECREF(SYSCALL_DESCR) */                       )
@@ -436,7 +436,7 @@ L(    addq   $8, %rsp  /* Don't restore RAX. */                               )
 L(    cli                                                                     )
 L(    swapgs                                                                  )
 L(    ASM_IRET                                                                )
-#ifdef __SYSCALL_TYPE_LONGBIT
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
 L(1:  callq *SYSCALL_OFFSETOF_CALLBACK(%rax)                                  )
 L(    popq   %rdi /* POP(SYSCALL_DESCR) */                                    )
 L(    call   syscall_decref /* DECREF(SYSCALL_DESCR) */                       )
@@ -448,7 +448,7 @@ L(    addq   $8, %rsp  /* Don't restore RAX. */                               )
 L(    cli                                                                     )
 L(    swapgs                                                                  )
 L(    ASM_IRET                                                                )
-#endif /* __SYSCALL_TYPE_LONGBIT */
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
 #else /* __x86_64__ */
 L(    /* Push system-call arguments onto the stack. */                        )
 L(    pushl  %eax /* PUSH(SYSCALL_DESCR) */                                   )
@@ -459,10 +459,10 @@ L(    pushl  %esi                                                             )
 L(    pushl  %edi                                                             )
 L(    pushl  %ebp                                                             )
 L(                                                                            )
-#ifdef __SYSCALL_TYPE_LONGBIT
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
 L(    testb  $(__SYSCALL_TYPE_LONGBIT), SYSCALL_OFFSETOF_TYPE(%eax)           )
 L(    jnz    1f                                                               )
-#endif
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
 L(    calll *SYSCALL_OFFSETOF_CALLBACK(%eax)                                  )
 L(    popl   %ebp                                                             )
 L(    popl   %edi                                                             )
@@ -477,7 +477,7 @@ L(    addl   $4, %esp /* SYSCALL_DESCR */                                     )
 L(    __ASM_POP_SGREGS                                                        )
 L(    addl   $(__ASM_SCRATCH_NOXAX_SIZE+4), %esp                              )
 L(    ASM_IRET                                                                )
-#ifdef __SYSCALL_TYPE_LONGBIT
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
 L(1:  calll *SYSCALL_OFFSETOF_CALLBACK(%eax)                                  )
 L(    popl   %ebp                                                             )
 L(    popl   %edi                                                             )
@@ -492,7 +492,7 @@ L(    addl   $4, %esp /* SYSCALL_DESCR */                                     )
 L(    __ASM_POP_SGREGS                                                        )
 L(    addl   $(__ASM_SCRATCH_NOXAX_SIZE+4), %esp                              )
 L(    ASM_IRET                                                                )
-#endif /* __SYSCALL_TYPE_LONGBIT */
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
 #endif /* !__x86_64__ */
 L(                                                                            )
 L(.ext_notfast:                                                               )

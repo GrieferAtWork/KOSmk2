@@ -51,6 +51,7 @@ __SYSDECL_BEGIN
 #   define __SIGEV_PAD_SIZE    ((__SIGEV_MAX_SIZE/sizeof(int))-3)
 #endif
 
+#ifdef __CC__
 #ifndef __have_sigval_t
 #define __have_sigval_t 1
 /* Type for data associated with a signal. */
@@ -109,7 +110,7 @@ typedef struct sigevent {
 #define sigev_notify_attributes _sigev_un._sigev_thread._attribute
 #endif
 } sigevent_t;
-
+#endif /* __CC__ */
 
 /* `sigev_notify' values. */
 #ifdef __COMPILER_PREFERR_ENUMS

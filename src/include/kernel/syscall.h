@@ -20,11 +20,11 @@
 #define GUARD_INCLUDE_KERNEL_SYSCALL_H 1
 
 #include <hybrid/compiler.h>
-#include <hybrid/types.h>
 #include <arch/cpustate.h>
-#include <sched/percpu.h>
-#include <kernel/interrupt.h>
 #include <arch/syscall.h>
+#include <hybrid/types.h>
+#include <kernel/interrupt.h>
+#include <sched/percpu.h>
 #include <stdbool.h>
 
 #undef CONFIG_USE_OLD_SYSCALL
@@ -90,18 +90,30 @@ DECL_BEGIN
 #define SYSCALL_TYPE_FAST      0x01 /* The most widely used type of system call, suitable for c-level callbacks.
                                      * Registers are passed according to the `SYSCALL_HANDLER' calling convention.
                                      * To define a system call of this type, use the `SYSCALL_DEFINE*' macros below. */
-#if !defined(__x86_64__) || 0 /* XXX: Enable if we ever need a system call that returns 128 bits. */
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
 #define __SYSCALL_TYPE_LONGBIT 0x02
-#define SYSCALL_TYPE_LONG      0x03 /* Same as `SYSCALL_TYPE_FAST', but allows the interrupt handler to return a 64/128-bit value in XAX:XDX. */
-#ifdef __x86_64__
-#define SYSCALL_TYPE_128BIT    SYSCALL_TYPE_LONG
-#define SYSCALL_TYPE_64BIT     SYSCALL_TYPE_FAST
-#else
-#define SYSCALL_TYPE_64BIT     SYSCALL_TYPE_LONG
+#define SYSCALL_TYPE_LONG      0x03 /* Same as `SYSCALL_TYPE_FAST', but allows the interrupt
+                                     * handler to return a 64/128-bit value in XAX:XDX (on x86). */
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
+
+#if __SIZEOF_REGISTER__ >= 8
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
+#   define SYSCALL_TYPE_128BIT    SYSCALL_TYPE_LONG
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
+#   define SYSCALL_TYPE_64BIT     SYSCALL_TYPE_FAST
+#   define SYSCALL_TYPE_32BIT     SYSCALL_TYPE_FAST
+#elif __SIZEOF_REGISTER__ >= 4
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
+#   define SYSCALL_TYPE_64BIT     SYSCALL_TYPE_LONG
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
+#   define SYSCALL_TYPE_32BIT     SYSCALL_TYPE_FAST
+#elif __SIZEOF_REGISTER__ >= 2
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
+#   define SYSCALL_TYPE_32BIT     SYSCALL_TYPE_LONG
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
 #endif
-#else
-#define SYSCALL_TYPE_64BIT     SYSCALL_TYPE_FAST
-#endif
+
+
 #define SYSCALL_TYPE_STATE     0x04 /* The most expensive type of system call: All user-space registers are
                                      * saved in a `struct cpustate', a pointer to which is passed as the first argument.
                                      * WARNING: This type of system call is invoked using the `SYSCALL_STATE_HANDLER' calling convention.
@@ -194,12 +206,13 @@ FUNDEF errno_t KCALL syscall_register(struct syscall const *__restrict descripto
 
 /* Check if a given system call behaves as `norestart' */
 FUNDEF bool KCALL syscall_is_norestart(register_t number);
-#ifdef __SYSCALL_TYPE_LONGBIT
+
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
 /* Check if a given system call returns in 2 registers. */
 FUNDEF bool KCALL syscall_is_long(register_t number);
-#else
+#else /* CONFIG_HAVE_SYSCALL_LONGBIT */
 #define syscall_is_long(number) false
-#endif
+#endif /* !CONFIG_HAVE_SYSCALL_LONGBIT */
 
 #endif /* __CC__ */
 

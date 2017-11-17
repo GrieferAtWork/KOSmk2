@@ -44,6 +44,7 @@
 
 __SYSDECL_BEGIN
 
+#ifdef __CC__
 #ifndef __have_sigval_t
 #define __have_sigval_t 1
 /* Type for data associated with a signal. */
@@ -67,7 +68,46 @@ typedef __typedef_clock_t __ATTR_ALIGNED(4) __sigchld_clock_t;
 #else /* ... */
 typedef __typedef_clock_t __sigchld_clock_t;
 #endif /* !... */
+#endif /* __CC__ */
+#define __SIZEOF_SIGCHLD_CLOCK_T__ __SIZEOF_CLOCK_T__
 
+
+
+#define __SIGINFO_OFFSETOF_SIGNO        0
+#define __SIGINFO_OFFSETOF_ERRNO        __SIZEOF_INT__
+#define __SIGINFO_OFFSETOF_CODE      (2*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_PID       (4*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_UID       (4*__SIZEOF_INT__+__SIZEOF_PID_T__)
+#define __SIGINFO_OFFSETOF_TIMERID   (4*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_OVERRUN   (5*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_VALUE     (6*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_INT       (6*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_PTR       (6*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_STATUS    (4*__SIZEOF_INT__+2*__SIZEOF_PID_T__)
+#if __SIZEOF_SIGCHLD_CLOCK_T__ >= 8
+#define __SIGINFO_OFFSETOF_UTIME     (4*__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_STIME     (4*__SIZEOF_POINTER__+__SIZEOF_SIGCHLD_CLOCK_T__)
+#else
+#define __SIGINFO_OFFSETOF_UTIME     (5*__SIZEOF_INT__+2*__SIZEOF_PID_T__)
+#define __SIGINFO_OFFSETOF_STIME     (5*__SIZEOF_INT__+2*__SIZEOF_PID_T__+__SIZEOF_SIGCHLD_CLOCK_T__)
+#endif
+#define __SIGINFO_OFFSETOF_ADDR      (4*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_ADDR_LSB  (4*__SIZEOF_INT__+__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_LOWER     (4*__SIZEOF_INT__+2*__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_UPPER     (4*__SIZEOF_INT__+3*__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_BAND      (4*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_FD        (4*__SIZEOF_INT__+__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_CALL_ADDR (4*__SIZEOF_INT__)
+#define __SIGINFO_OFFSETOF_SYSCALL   (4*__SIZEOF_INT__+__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_ARCH      (5*__SIZEOF_INT__+__SIZEOF_POINTER__)
+#ifdef __KERNEL__
+#define __SIGINFO_SIZE               (__SIGINFO_OFFSETOF_STIME+__SIZEOF_SIGCHLD_CLOCK_T__)
+#else
+#define __SIGINFO_SIZE                __SI_MAX_SIZE
+#endif
+
+
+#ifdef __CC__
 #if defined(__x86_64__) && __SIZEOF_POINTER__ == 4
 __ATTR_ALIGNED(8)
 #endif
@@ -75,6 +115,7 @@ typedef struct __siginfo_struct {
     int si_signo; /*< Signal number. */
     int si_errno; /*< If non-zero, an errno value associated with this signal, as defined in <errno.h>. */
     int si_code;  /*< Signal code. */
+    int __si_pad0; /*< Invisible padding made visible. */
 #if defined(__COMPILER_HAVE_TRANSPARENT_STRUCT) && \
     defined(__COMPILER_HAVE_TRANSPARENT_UNION)
 #ifndef __USE_KOS
@@ -100,21 +141,25 @@ typedef struct __siginfo_struct {
             sigval_t __sig_si_sigval; /*< Signal value. */
         };
         struct { /* SIGCHLD. */
-            __pid_t     __cld_si_pid;    /*< Which child. */
-            __uid_t     __cld_si_uid;    /*< Real user ID of sending process. */
-            int               si_status; /*< Exit value or signal. */
-            __sigchld_clock_t si_utime;
-            __sigchld_clock_t si_stime;
+            __pid_t      __cld_si_pid;    /*< Which child. */
+            __uid_t      __cld_si_uid;    /*< Real user ID of sending process. */
+            int                si_status; /*< Exit value or signal. */
+#if __SIZEOF_SIGCHLD_CLOCK_T__ >= 8
+            __UINT32_TYPE__  __si_pad1;   /*< Invisible padding made visible. */
+#endif
+            __sigchld_clock_t  si_utime;
+            __sigchld_clock_t  si_stime;
         };
         struct { /* SIGILL, SIGFPE, SIGSEGV, SIGBUS. */
-            void     *si_addr;     /*< Faulting insn/memory ref. */
-            short int si_addr_lsb; /*< Valid LSB of the reported address. */
-            void     *si_lower;
-            void     *si_upper;
+            void          *si_addr;     /*< Faulting insn/memory ref. */
+            __INT16_TYPE__ si_addr_lsb; /*< Valid LSB of the reported address. */
+            __INT16_TYPE__ __si_pad2[(sizeof(void *)/sizeof(__INT16_TYPE__))-1];
+            void          *si_lower;
+            void          *si_upper;
         };
         struct { /* SIGPOLL. */
-            long int si_band; /*< Band event for SIGPOLL. */
-            int      si_fd;
+            __LONGPTR_TYPE__ si_band; /*< Band event for SIGPOLL. */
+            int              si_fd;
         };
         struct { /* SIGSYS. */
             void        *si_call_addr; /*< Calling user insn. */
@@ -148,20 +193,24 @@ typedef struct __siginfo_struct {
             __pid_t           si_pid;    /*< Which child. */
             __uid_t           si_uid;    /*< Real user ID of sending process. */
             int               si_status; /*< Exit value or signal. */
+#if __SIZEOF_POINTER__ >= 8
+            __UINT32_TYPE__  __si_pad1;   /*< Invisible padding made visible. */
+#endif
             __sigchld_clock_t si_utime;
             __sigchld_clock_t si_stime;
         } _sigchld;
         struct { /* SIGILL, SIGFPE, SIGSEGV, SIGBUS. */
-            void     *si_addr;     /*< Faulting insn/memory ref. */
-            short int si_addr_lsb; /*< Valid LSB of the reported address. */
+            void          *si_addr;     /*< Faulting insn/memory ref. */
+            __INT16_TYPE__ si_addr_lsb; /*< Valid LSB of the reported address. */
+            __INT16_TYPE__ __si_pad2[(sizeof(void *)/sizeof(__INT16_TYPE__))-1];
             struct {
                 void *_lower;
                 void *_upper;
             } si_addr_bnd;
         } _sigfault;
         struct { /* SIGPOLL. */
-            long int si_band; /*< Band event for SIGPOLL. */
-            int      si_fd;
+            __LONGPTR_TYPE__ si_band; /*< Band event for SIGPOLL. */
+            int              si_fd;
         } _sigpoll;
         struct { /* SIGSYS. */
             void        *_call_addr; /*< Calling user insn. */
@@ -197,6 +246,7 @@ typedef struct __siginfo_struct {
 #define si_arch      _sifields._sigsys._arch
 #endif /* !__COMPILER_HAVE_TRANSPARENT_UNION */
 } siginfo_t;
+#endif /* __CC__ */
 
 
 

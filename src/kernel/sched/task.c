@@ -129,27 +129,6 @@ STATIC_ASSERT(IS_ALIGNED(sizeof(struct tasksig),TASKSIG_ALIGN));
 STATIC_ASSERT(sizeof(struct tasksig) == TASKSIG_SIZE);
 STATIC_ASSERT(IS_ALIGNED(offsetof(struct task,t_signals),TASKSIG_ALIGN));
 
-#ifdef CONFIG_USE_OLD_SIGNALS
-STATIC_ASSERT(offsetof(struct sigenter,se_count) == SIGENTER_OFFSETOF_COUNT);
-STATIC_ASSERT(offsetof(struct sigenter,se_xip) == SIGENTER_OFFSETOF_XIP);
-STATIC_ASSERT(offsetof(struct sigenter,se_cs) == SIGENTER_OFFSETOF_CS);
-STATIC_ASSERT(offsetof(struct sigenter,se_xflags) == SIGENTER_OFFSETOF_XFLAGS);
-STATIC_ASSERT(offsetof(struct sigenter,se_userxsp) == SIGENTER_OFFSETOF_USERXSP);
-STATIC_ASSERT(offsetof(struct sigenter,se_ss) == SIGENTER_OFFSETOF_SS);
-STATIC_ASSERT(sizeof(struct sigenter) == SIGENTER_SIZE);
-#else
-STATIC_ASSERT(offsetof(struct sigenter,se_count) == SIGENTER_OFFSETOF_COUNT);
-STATIC_ASSERT(offsetof(struct sigenter,se_next) == SIGENTER_OFFSETOF_NEXT);
-STATIC_ASSERT(offsetof(struct sigenter,se_xip) == SIGENTER_OFFSETOF_XIP);
-STATIC_ASSERT(offsetof(struct sigenter,se_xax) == SIGENTER_OFFSETOF_XAX);
-STATIC_ASSERT(offsetof(struct sigenter,se_xflags) == SIGENTER_OFFSETOF_XFLAGS);
-STATIC_ASSERT(offsetof(struct sigenter,se_xsp) == SIGENTER_OFFSETOF_XSP);
-#ifdef __SYSCALL_TYPE_LONGBIT
-STATIC_ASSERT(offsetof(struct sigenter,se_xdx) == SIGENTER_OFFSETOF_XDX);
-#endif /* __SYSCALL_TYPE_LONGBIT */
-STATIC_ASSERT(sizeof(struct sigenter) == SIGENTER_SIZE);
-#endif
-
 #ifdef ARCHTASK_SIZE
 #ifndef CONFIG_NO_LDT
 STATIC_ASSERT(offsetof(struct archtask,at_ldt_tasks) == ARCHTASK_OFFSETOF_LDT_TASKS);

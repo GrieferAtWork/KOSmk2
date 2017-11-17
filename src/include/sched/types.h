@@ -59,6 +59,7 @@
 #include <arch/cpustate.h>
 #include <arch/cpu.h>
 #include <arch/task.h>
+#include <arch/signal.h>
 #include <kernel/memory.h>
 #include <sched.h>
 #include <sync/sig.h>
@@ -578,107 +579,6 @@ struct kernel_sigstack { /* XXX: `struct sigstack' is already taken by userspace
 #define KERNEL_SIGSTACK_CONTAINS(self,p) \
   ((uintptr_t)(p) >= (uintptr_t)(self).ss_base && \
    (uintptr_t)(p)-(uintptr_t)(self).ss_base < (self).ss_size)
-#endif
-
-#endif /* __CC__ */
-
-
-#undef CONFIG_USE_OLD_SIGNALS
-#ifndef __x86_64__
-//#define CONFIG_USE_OLD_SIGNALS 1
-#endif
-
-#if defined(__x86_64__) || defined(__i386__)
-#ifdef CONFIG_USE_OLD_SIGNALS
-#   define SIGENTER_OFFSETOF_COUNT      0
-#   define SIGENTER_OFFSETOF_XIP        __SIZEOF_POINTER__
-#   define SIGENTER_OFFSETOF_CS      (2*__SIZEOF_POINTER__)
-#   define SIGENTER_OFFSETOF_XFLAGS  (3*__SIZEOF_POINTER__)
-#   define SIGENTER_OFFSETOF_USERXSP (4*__SIZEOF_POINTER__)
-#   define SIGENTER_OFFSETOF_SS      (5*__SIZEOF_POINTER__)
-#   define SIGENTER_SIZE             (6*__SIZEOF_POINTER__)
-#else
-#   define SIGENTER_OFFSETOF_COUNT     0
-#   define SIGENTER_OFFSETOF_NEXT      __SIZEOF_POINTER__
-#   define SIGENTER_OFFSETOF_XIP    (2*__SIZEOF_POINTER__)
-#   define SIGENTER_OFFSETOF_XAX    (3*__SIZEOF_POINTER__)
-#   define SIGENTER_OFFSETOF_XFLAGS (4*__SIZEOF_POINTER__)
-#   define SIGENTER_OFFSETOF_XSP    (5*__SIZEOF_POINTER__)
-#ifndef __x86_64__ /* TODO: #ifdef __SYSCALL_TYPE_LONGBIT */
-#   define SIGENTER_OFFSETOF_XDX    (6*__SIZEOF_POINTER__)
-#   define SIGENTER_SIZE            (7*__SIZEOF_POINTER__)
-#else
-#   define SIGENTER_SIZE            (6*__SIZEOF_POINTER__)
-#endif
-#endif
-#else
-#   error FIXME
-#endif
-
-#ifdef __CC__
-#ifdef CONFIG_USE_OLD_SIGNALS
-struct sigenter_info;
-#else
-struct sigenter_tail;
-#endif
-
-struct PACKED sigenter {
-#if defined(__x86_64__) || defined(__i386__)
-#ifndef CONFIG_USE_OLD_SIGNALS
- size_t                     se_count;  /* The amount of signals current raised. */
- USER struct sigenter_tail *se_next;   /* [0..1][valid_if(se_count != 0)] Next user-space signal handler context. */
- register_t                 se_xip;    /* offsetof(this) == offsetof(struct irregs,xip) */
- register_t                 se_xax;
- register_t                 se_xflags; /* offsetof(this) == offsetof(struct irregs,xflags) */
- register_t                 se_xsp;    /* offsetof(this) == offsetof(struct irregs,xsp) */
-#ifndef __x86_64__ /* TODO: #ifdef __SYSCALL_TYPE_LONGBIT */
- register_t                 se_xdx;
-#endif
-#else
- size_t     se_count; /*< Amount of Signals that need handling. */
- /* Return register values (These were overwritten near the kernel stack base).
-  * NOTE: Basically, this is the original iret tail that was used when the kernel was entered. */
- void      *se_xip;
- IRET_SEGMENT(se_cs);
- __COMMON_REG2_EX(se_,flags);
-union{
- USER void *se_userxsp;
- /* NOTE: 'useresp' has been manipulated to point to
-  *        the kernel-generated signal information, compatible
-  *        with a user-level call to a sigaction handler. */
- USER struct sigenter_info
-           *se_siginfo; /*< Either located on the user-stack, or the signal-alt-stack. */
-};
- IRET_SEGMENT(se_ss);
-#endif
-#else
-#error "Unsupported arch"
-#endif
-};
-
-#if 0
-/* Special in-assembly implementation of the user-space return override
- * used to return to a signal handler instead of the user-space caller's
- * origin.
- * To achieve this, the original user-space iret tail is stored in the
- * current task's `t_sigenter' field, before the system call return
- * information (as available through `THIS_SYSCALL_*') is overwritten,
- * so-as to stay in kernel-space and call simply `sigenter()' with
- * all registers except for `EIP', `CS', `EFLAGS', `USERESP' and `SS'
- * as they are ought to be when returning to user-space is eventually
- * went through with.
- * >> This work-around is required due to the fact that depending on
- *    which system-call is used (if it even is a system-call that
- *    caused the CPU to switch from user-space to the kernel), there
- *    is (intentionally) no standardized way of determining how
- *    user-space registers are saved (if at all), meaning that the
- *    only thing that persistently is consistent, are the low-level
- *    data fields pushed by the CPU during entry (aka. the iret-tail)
- * >> And it is exactly that tail which we (ab-)use to hack universal
- *    signal enter support for any kind of system interrupt, be it a
- *    system call, an exception, or something different such as a
- *    hardware interrupt. */
-FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
 #endif
 
 #endif /* __CC__ */

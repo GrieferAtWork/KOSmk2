@@ -384,7 +384,7 @@ FUNDEF errno_t KCALL task_set_priority(struct task *__restrict self,
 #ifndef __pflag_t_defined
 #define __pflag_t_defined 1
 typedef register_t pflag_t; /* Push+disable/Pop preemption-enabled. */
-#endif
+#endif /* !__pflag_t_defined */
 
 
 /* Recursively suspend/resume the given task.

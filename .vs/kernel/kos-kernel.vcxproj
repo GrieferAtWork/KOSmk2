@@ -55,6 +55,7 @@
     <ClCompile Include="..\..\src\kernel\arch\panic.c" />
     <ClCompile Include="..\..\src\kernel\arch\pic.c" />
     <ClCompile Include="..\..\src\kernel\arch\realmode.c" />
+    <ClCompile Include="..\..\src\kernel\arch\signal.c" />
     <ClCompile Include="..\..\src\kernel\arch\smp-init.c" />
     <ClCompile Include="..\..\src\kernel\arch\smp.c" />
     <ClCompile Include="..\..\src\kernel\arch\syscall.c" />

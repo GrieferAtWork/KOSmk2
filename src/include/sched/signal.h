@@ -29,15 +29,7 @@
 #include <sched/types.h>
 #include <signal.h>
 #include <stdbool.h>
-
-#undef CONFIG_USE_OLD_SIGNALS
-#ifndef __x86_64__
-//#define CONFIG_USE_OLD_SIGNALS 1
-#endif
-
-#ifndef CONFIG_USE_OLD_SIGNALS
 #include <arch/signal.h>
-#endif /* !CONFIG_USE_OLD_SIGNALS */
 
 DECL_BEGIN
 
@@ -174,7 +166,7 @@ FUNDEF errno_t KCALL task_set_sigblock(sigset_t *__restrict newset);
 #ifndef __pflag_t_defined
 #define __pflag_t_defined 1
 typedef register_t pflag_t; /* Push+disable/Pop preemption-enabled. */
-#endif
+#endif /* !__pflag_t_defined */
 
 /* Raise a signal `signal_info->si_signo' within the given task `self',
  * using its latest user-space CPU state as exception context.
@@ -221,45 +213,6 @@ FUNDEF errno_t KCALL task_kill(struct task *__restrict self, int signo);
  * @return: -EINTR: At least one signal was raised and the caller got interrupted. */
 FUNDEF SAFE errno_t KCALL task_check_signals(sigset_t *__restrict changes);
 
-
-#ifdef CONFIG_USE_OLD_SIGNALS
-#define SIGENTER_INFO_OFFSETOF_RETURN     0
-#define SIGENTER_INFO_OFFSETOF_SIGNO      __SIZEOF_POINTER__
-#define SIGENTER_INFO_OFFSETOF_PINFO   (2*__SIZEOF_POINTER__)
-#define SIGENTER_INFO_OFFSETOF_PCTX    (3*__SIZEOF_POINTER__)
-#define SIGENTER_INFO_OFFSETOF_OLD_XBP (4*__SIZEOF_POINTER__)
-#define SIGENTER_INFO_OFFSETOF_OLD_XIP (5*__SIZEOF_POINTER__)
-#define SIGENTER_INFO_OFFSETOF_INFO    (6*__SIZEOF_POINTER__)
-#define SIGENTER_INFO_OFFSETOF_CTX     (6*__SIZEOF_POINTER__+__SI_MAX_SIZE)
-#define SIGENTER_INFO_SIZE             (6*__SIZEOF_POINTER__+__SI_MAX_SIZE+__UCONTEXT_SIZE)
-
-/* Signal delivery implementation */
-struct PACKED sigenter_info {
- /* All the data that is pushed onto the user-space stack, or sigalt-stack. */
- USER void       *ei_return;  /*< Signal handler return address. */
-union PACKED {
- int              ei_signo;   /*< Signal number. */
- uintptr_t      __ei_align;   /*< Align by pointers. */
-};
- USER siginfo_t  *ei_pinfo;   /*< == &ei_info. */
- USER ucontext_t *ei_pctx;    /*< == &ei_ctx. */
- /* SPLIT: The following is used to create a fake stack-frame to fix tracebacks
-  *        generated from signal handlers, as well as provide a fixed base-line
-  *        for restoring the stack-pointer after the signal handler has finished. */
- USER void       *ei_old_xbp; /*< Holds the value of the old EBP (stackframe pointer);
-                               *  When the signal handler is called, this is also where the new EBP points to! */
- USER void       *ei_old_xip; /*< Second part of the stackframe: The return address */
- /* SPLIT: Everything above is setup for arguments to the signal handler. */
-union{ siginfo_t  ei_info;
- int            __ei_info_pad[__SI_MAX_SIZE/sizeof(int)]; };
- ucontext_t       ei_ctx;
-#ifdef __x86_64__
-#define           ei_next  ei_ctx.uc_mcontext.gregs[REG_RSP]
-#else
-#define           ei_next  ei_ctx.uc_mcontext.gregs[REG_UESP]
-#endif
-};
-#endif
 
 DECL_END
 #endif /* !CONFIG_NO_SIGNALS */

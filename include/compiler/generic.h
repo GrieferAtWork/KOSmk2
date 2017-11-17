@@ -68,9 +68,7 @@
 #define __COMPILER_HAVE_TRANSPARENT_UNION 1
 #if defined(__DCC_VERSION__) || defined(__TINYC__)
 #define __COMPILER_HAVE_GCC_ASM 1
-#ifdef __CC__
 #define __COMPILER_HAVE_PRAGMA_PACK 1 /* XXX: So many more compilers support this... */
-#endif /* __CC__ */
 #endif
 #if __has_feature(__tpp_pragma_push_macro__) || \
    (defined(__TPP_VERSION__) && __TPP_VERSION__ == 103)

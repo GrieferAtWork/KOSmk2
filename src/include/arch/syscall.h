@@ -32,6 +32,12 @@
 
 DECL_BEGIN
 
+#undef CONFIG_HAVE_SYSCALL_LONGBIT
+#if !defined(__x86_64__) || 0 /* XXX: Enable if we ever need a system call that returns 128 bits. */
+#define CONFIG_HAVE_SYSCALL_LONGBIT 1
+#endif
+
+
 #define NR_syscalls     (__NR_syscall_max+1)
 
 /* The calling convention used by all
@@ -305,7 +311,6 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
   INTERN void (SYSCALL_STATE_HANDLER SYSC##name)(struct cpustate *__restrict state)
 #endif /* !CONFIG_DEBUG */
 #endif /* !__x86_64__ */
-#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 #ifdef __x86_64__
 #define __SYSCALL_DEFINE64  __SYSCALL_NDEFINE
@@ -314,10 +319,11 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
 #endif
 
 
-#ifdef CONFIG_BUILDING_KERNEL_CORE
+#ifdef __CC__
 /* Initialize system-call facilities. */
 INTDEF INITCALL void KCALL syscall_initialize(void);
-#endif
+#endif /* __CC__ */
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 DECL_END
 
