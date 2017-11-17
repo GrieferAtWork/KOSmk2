@@ -112,11 +112,11 @@
 #define __KCALL                  __ATTR_STDCALL
 
 #if defined(__COMPILER_HAVE_AUTOTYPE) && !defined(__NO_XBLOCK)
-#   define __COMPILER_UNUSED(expr) __XBLOCK({ __auto_type __expr = (expr); (void)__expr; })
+#   define __COMPILER_UNUSED(expr)  __XBLOCK({ __auto_type __expr = (expr); __expr; })
 #elif defined(__COMPILER_HAVE_TYPEOF) && !defined(__NO_XBLOCK)
-#   define __COMPILER_UNUSED(expr) __XBLOCK({ __typeof__(expr) __expr = (expr); (void)__expr; })
+#   define __COMPILER_UNUSED(expr)  __XBLOCK({ __typeof__(expr) __expr = (expr); __expr; })
 #else
-#   define __COMPILER_UNUSED(expr) (void)(expr)
+#   define __COMPILER_UNUSED(expr) (expr)
 #endif
 
 #define __COMPILER_OFFSETAFTER(s,m) ((__SIZE_TYPE__)(&((s *)0)->m+1))

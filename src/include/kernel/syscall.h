@@ -136,21 +136,21 @@ typedef u8 syscall_flag_t; /* Set of `SYSCALL_FLAG_*' */
 #endif /* __CC__ */
 
 
-#define SYSCALL_OFFSETOF_NUMBER      0
+#define SYSCALL_OFFSETOF_SYSNO       0
 #define SYSCALL_OFFSETOF_TYPE        __SIZEOF_REGISTER__
 #define SYSCALL_OFFSETOF_FLAGS      (__SIZEOF_REGISTER__+1)
 #define SYSCALL_OFFSETOF_CALLBACK (2*__SIZEOF_REGISTER__)
 #define SYSCALL_OFFSETOF_CLOSURE  (2*__SIZEOF_REGISTER__+__SIZEOF_POINTER__)
 #define SYSCALL_OFFSETOF_HITS     (2*__SIZEOF_REGISTER__+2*__SIZEOF_POINTER__)
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-#define SYSCALL_OFFSETOF_REGS     (2*__SIZEOF_REGISTER__+3*__SIZEOF_POINTER__)
+#define SYSCALL_OFFSETOF_REFCNT   (2*__SIZEOF_REGISTER__+3*__SIZEOF_POINTER__)
 #endif
 #define SYSCALL_OFFSETOF_FINI     (2*__SIZEOF_REGISTER__+4*__SIZEOF_POINTER__)
 #define SYSCALL_OFFSETOF_OWNER    (2*__SIZEOF_REGISTER__+5*__SIZEOF_POINTER__)
 #define SYSCALL_SIZE              (2*__SIZEOF_REGISTER__+6*__SIZEOF_POINTER__)
 #ifdef __CC__
 struct syscall {
-    register_t              sc_number;   /*< System call number. */
+    register_t              sc_sysno;    /*< System call number. */
 union PACKED {
     register_t            __sc_align;    /*< Align by registers. */
 struct PACKED {
@@ -168,9 +168,9 @@ union PACKED {
     void                   *sc_closure;  /*< [?..?][const] Closure argument potentially passed to `p_state_arg'. */
     ATOMIC_DATA uintptr_t   sc_hits;     /*< Amount of times that this system-call was executed. */
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-    ATOMIC_DATA uintptr_t   sc_refs;     /*< Reference counter. */
+    ATOMIC_DATA uintptr_t   sc_refcnt;   /*< Reference counter. */
 #else
-    ATOMIC_DATA uintptr_t __sc_refs;     /*< Reference counter. */
+    ATOMIC_DATA uintptr_t __sc_refcnt;   /*< Reference counter. */
 #endif
     void                  (*sc_fini)(void *closure); /*< [0..1] Optional closure finalizer. */
     REF struct instance    *sc_owner;    /*< [1..1] Owner module of this system-call. */
@@ -181,37 +181,34 @@ union PACKED {
  * @return: -EOK:    Successfully registered the given descriptor.
  * @return: -ENOMEM: Not enough available memory.
  * @return: -EPERM:  Failed to increment the reference counter of `descriptor->sc_owner'
- * @return: -EINVAL: The given `descriptor->sc_number' is reserved by the kernel and cannot be modified.
- *                   For a list of reserved system call numbers, see `<asm/syscallno.ci>'
- * TODO: Document all return values.
- */
+ * @return: -EEXIST: Another descriptor has already been registered as `descriptor->sc_sysno'
+ * @return: -EINVAL: The given `descriptor->sc_sysno' is used/reserved by the kernel and cannot be modified.
+ *                   For a list of reserved system call numbers, see `<asm/syscallno.ci>' */
 FUNDEF errno_t KCALL syscall_add(struct syscall *__restrict descriptor);
-/* Delete a system call descriptor associated with `number'.
- * @return: -EOK:    Successfully deleted the descriptor associated with `number'.
- * @return: -ENXIO:  No system call was associated with the given `number'.
- * @return: -EINVAL: The given `number' is reserved by the kernel and cannot be modified.
- *                   For a list of reserved system call numbers, see `<asm/syscallno.ci>'
- * TODO: Document all return values.
- */
-FUNDEF errno_t KCALL syscall_del(register_t number);
+/* Delete a system call descriptor associated with `sysno'.
+ * @return: -EOK:    Successfully deleted the descriptor associated with `sysno'.
+ * @return: -ENXIO:  No system call was associated with the given `sysno'.
+ * @return: -EINVAL: The given `sysno' is reserved by the kernel and cannot be modified.
+ *                   For a list of reserved system call numbers, see `<asm/syscallno.ci>' */
+FUNDEF errno_t KCALL syscall_del(register_t sysno);
 
 /* Same as `syscall_add', but register a copy of the given `descriptor'.
  * @return: -EOK:    Successfully registered the given descriptor.
  * @return: -ENOMEM: Not enough available memory.
  * @return: -EPERM:  Failed to increment the reference counter of `descriptor->sc_owner'
- * @return: -EINVAL: The given `number' is reserved by the kernel and cannot be modified.
- *                   For a list of reserved system call numbers, see <asm/syscallno.ci>
- * TODO: Document all return values. */
+ * @return: -EEXIST: Another descriptor has already been registered as `descriptor->sc_sysno'
+ * @return: -EINVAL: The given `descriptor->sc_sysno' is used/reserved by the kernel and cannot be modified.
+ *                   For a list of reserved system call numbers, see <asm/syscallno.ci> */
 FUNDEF errno_t KCALL syscall_register(struct syscall const *__restrict descriptor);
 
 /* Check if a given system call behaves as `norestart' */
-FUNDEF bool KCALL syscall_is_norestart(register_t number);
+FUNDEF bool KCALL syscall_is_norestart(register_t sysno);
 
 #ifdef CONFIG_HAVE_SYSCALL_LONGBIT
 /* Check if a given system call returns in 2 registers. */
-FUNDEF bool KCALL syscall_is_long(register_t number);
+FUNDEF bool KCALL syscall_is_long(register_t sysno);
 #else /* CONFIG_HAVE_SYSCALL_LONGBIT */
-#define syscall_is_long(number) false
+#define syscall_is_long(sysno)    false
 #endif /* !CONFIG_HAVE_SYSCALL_LONGBIT */
 
 #endif /* __CC__ */

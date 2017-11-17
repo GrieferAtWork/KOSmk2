@@ -552,8 +552,8 @@ ATTR_MALLOC void *(KCALL __kmemadup_d)(void const *__restrict ptr, size_t alignm
 #define kcalloc(n_bytes,flags)                 kmalloc((n_bytes),(flags)|GFP_CALLOC)
 #define krecalign(ptr,alignment,n_bytes,flags) krealign(ptr,alignment,n_bytes,(flags)|GFP_CALLOC)
 #define krecalloc(ptr,n_bytes,flags)           krealloc(ptr,n_bytes,(flags)|GFP_CALLOC)
-#define krealloc_in_place(ptr,n_bytes,flags)   krealloc(ptr,n_bytes,(flags)|GFP_NOMOVE)
-#define krecalloc_in_place(ptr,n_bytes,flags)  krealloc(ptr,n_bytes,(flags)|GFP_NOMOVE|GFP_CALLOC)
+#define krealloc_in_place(ptr,n_bytes,flags)   COMPILER_UNUSED(krealloc(ptr,n_bytes,(flags)|GFP_NOMOVE))
+#define krecalloc_in_place(ptr,n_bytes,flags)  COMPILER_UNUSED(krealloc(ptr,n_bytes,(flags)|GFP_NOMOVE|GFP_CALLOC))
 
 #endif /* __CC__ */
 
