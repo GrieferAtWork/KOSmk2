@@ -348,6 +348,7 @@ __REDIRECT(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,__nt_seterrno,(__UINT32_TYPE
 __NAMESPACE_INT_END
 #endif /* !__GLC_COMPAT__ */
 
+#ifndef GET_ERRNO
 #ifdef __USE_DOS
 #define GET_ERRNO()  GET_DOS_ERRNO()
 #define SET_ERRNO(v) SET_DOS_ERRNO(v)
@@ -355,6 +356,7 @@ __NAMESPACE_INT_END
 #define GET_ERRNO()  GET_KOS_ERRNO()
 #define SET_ERRNO(v) SET_KOS_ERRNO(v)
 #endif /* !__USE_DOS */
+#endif /* !GET_ERRNO */
 
 #endif /* __USE_KOS */
 #endif /* !__KERNEL__ */

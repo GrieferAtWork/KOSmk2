@@ -815,5 +815,8 @@
     <ClInclude Include="..\..\src\include\arch\syscall.h">
       <Filter>include\arch</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\include\arch\signal.h">
+      <Filter>include\arch</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

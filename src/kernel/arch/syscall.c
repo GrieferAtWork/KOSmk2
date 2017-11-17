@@ -51,7 +51,7 @@ DECL_BEGIN
 #   define SYSCALL_SIZE_FFS   5
 #elif CONSTANT_FFS(SYSCALL_SIZE) == 4
 #   define SYSCALL_SIZE_FFS   4
-#else
+#elif !defined(__DEEMON__)
 #error FIME
 #endif
 
@@ -84,7 +84,7 @@ do_syscall_add(REF struct syscall *__restrict descriptor) {
  PANIC("Not implemented");
 }
 
-FUNDEF errno_t KCALL syscall_add(struct syscall *__restrict descriptor) {
+PUBLIC errno_t KCALL syscall_add(struct syscall *__restrict descriptor) {
  CHECK_HOST_DOBJ(descriptor);
  assertf(descriptor->sc_owner,
          "No owner assigned to system call descriptor %p",
@@ -96,12 +96,48 @@ FUNDEF errno_t KCALL syscall_add(struct syscall *__restrict descriptor) {
  descriptor->sc_refs = 2;
  return do_syscall_add(descriptor);
 }
-FUNDEF errno_t KCALL syscall_del(register_t number) {
+PUBLIC errno_t KCALL
+syscall_del(register_t number) {
  PANIC("Not implemented");
 }
-FUNDEF errno_t KCALL syscall_register(struct syscall const *__restrict descriptor) {
+PUBLIC errno_t KCALL
+syscall_register(struct syscall const *__restrict descriptor) {
  PANIC("Not implemented");
 }
+
+PUBLIC bool KCALL syscall_is_norestart(register_t number) {
+ /* TODO */
+ return false;
+}
+#if defined(__SYSCALL_TYPE_LONGBIT) || defined(__DEEMON__)
+PUBLIC bool KCALL syscall_is_long(register_t number) {
+ switch (number) {
+/*[[[deemon
+#include <file>
+#include <fs>
+fs::chdir(fs::path::head(__FILE__));
+local fp = file.open("../../../include/i386-kos/asm/syscallno.ci");
+for (local line: fp) {
+    local num;
+    try num = line.scanf(" # define __SC_ATTRIB_ISLNG_%[^ ]")...;
+    catch (...) continue;
+    print " case {}:".format({ num });
+}
+]]]*/
+ case 62:
+ case 67:
+ case 68:
+ case 0x80000005:
+ case 0x80000007:
+ case 0x8000000d:
+//[[[end]]]
+  return true;
+ default: break;
+ }
+ /* TODO: Search extension system calls */
+ return false;
+}
+#endif
 
 
 

@@ -137,9 +137,11 @@ ATTR_FREEDATA struct task inittask = {
     .t_real_mman = &mman_kernel,
     .t_mman = &mman_kernel,
     .t_fdman = &fdman_kernel,
+#ifndef CONFIG_NO_SIGNALS
     .t_sighand = &sighand_kernel,
     .t_sigpend = SIGPENDING_INIT,
     .t_sigshare = &sigshare_kernel,
+#endif /* !CONFIG_NO_SIGNALS */
 #ifndef CONFIG_NO_LDT
     .t_arch = {
         .at_ldt_tasks = {
@@ -438,10 +440,12 @@ PUBLIC struct cpu __bootcpu = {
         .t_real_mman = &mman_kernel,
         .t_mman = &mman_kernel,
         .t_fdman = &fdman_kernel,
+#ifndef CONFIG_NO_SIGNALS
         .t_sighand = &sighand_kernel,
         .t_sigpend = SIGPENDING_INIT,
         .t_sigblock = __SIGSET_INIT_FULL,
         .t_sigshare = &sigshare_kernel,
+#endif /* !CONFIG_NO_SIGNALS */
 #ifndef CONFIG_NO_LDT
         .t_arch = {
             .at_ldt_tasks = {
@@ -539,10 +543,12 @@ PUBLIC struct cpu __bootcpu = {
         .t_real_mman = &mman_kernel,
         .t_mman = &mman_kernel,
         .t_fdman = &fdman_kernel,
+#ifndef CONFIG_NO_SIGNALS
         .t_sighand = &sighand_kernel,
         .t_sigpend = SIGPENDING_INIT,
         .t_sigblock = __SIGSET_INIT_FULL,
         .t_sigshare = &sigshare_kernel,
+#endif /* !CONFIG_NO_SIGNALS */
 #ifndef CONFIG_NO_LDT
         .t_arch = {
             .at_ldt_tasks = {

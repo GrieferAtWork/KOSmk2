@@ -740,7 +740,7 @@ SYSCALL_DEFINE4(wait4,pid_t,upid,USER int *,stat_addr,
   which = P_PGID;
   upid  = THREAD_PID_GLOBAL_GETTGID(&THIS_TASK->t_pid);
  } else {
-  /* meaning wait for the child whose process ID is equal to the value of pid. */
+  /* wait for the child whose process ID is equal to the value of pid. */
   t = pid_namespace_lookup_weak(THIS_NAMESPACE,upid);
   if unlikely(!t) { result = -ECHILD; goto end; }
   if (TASK_TRYINCREF(t)) {

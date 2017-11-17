@@ -30,6 +30,15 @@
 #include <signal.h>
 #include <stdbool.h>
 
+#undef CONFIG_USE_OLD_SIGNALS
+#ifndef __x86_64__
+#define CONFIG_USE_OLD_SIGNALS 1
+#endif
+
+#ifndef CONFIG_USE_OLD_SIGNALS
+#include <arch/signal.h>
+#endif /* !CONFIG_USE_OLD_SIGNALS */
+
 DECL_BEGIN
 
 struct task;
@@ -213,6 +222,7 @@ FUNDEF errno_t KCALL task_kill(struct task *__restrict self, int signo);
 FUNDEF SAFE errno_t KCALL task_check_signals(sigset_t *__restrict changes);
 
 
+#ifdef CONFIG_USE_OLD_SIGNALS
 #define SIGENTER_INFO_OFFSETOF_RETURN     0
 #define SIGENTER_INFO_OFFSETOF_SIGNO      __SIZEOF_POINTER__
 #define SIGENTER_INFO_OFFSETOF_PINFO   (2*__SIZEOF_POINTER__)
@@ -249,6 +259,7 @@ union{ siginfo_t  ei_info;
 #define           ei_next  ei_ctx.uc_mcontext.gregs[REG_UESP]
 #endif
 };
+#endif
 
 DECL_END
 #endif /* !CONFIG_NO_SIGNALS */

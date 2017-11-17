@@ -58,6 +58,14 @@
 DECL_BEGIN
 
 STATIC_ASSERT(sizeof(siginfo_t) <= __SI_MAX_SIZE);
+
+STATIC_ASSERT(offsetof(mcontext_t,gregs) == __MCONTEXT_OFFSETOF_GREGS);
+STATIC_ASSERT(offsetof(mcontext_t,fpregs) == __MCONTEXT_OFFSETOF_FPREGS);
+#ifdef __MCONTEXT_OFFSETOF_FS_BASE
+STATIC_ASSERT(offsetof(mcontext_t,fs_base) == __MCONTEXT_OFFSETOF_FS_BASE);
+STATIC_ASSERT(offsetof(mcontext_t,gs_base) == __MCONTEXT_OFFSETOF_GS_BASE);
+#endif
+STATIC_ASSERT(sizeof(mcontext_t) == __MCONTEXT_SIZE);
 STATIC_ASSERT(offsetof(ucontext_t,uc_flags) == __UCONTEXT_OFFSETOF_FLAGS);
 STATIC_ASSERT(offsetof(ucontext_t,uc_link) == __UCONTEXT_OFFSETOF_LINK);
 STATIC_ASSERT(offsetof(ucontext_t,uc_stack) == __UCONTEXT_OFFSETOF_STACK);
@@ -66,6 +74,948 @@ STATIC_ASSERT(offsetof(ucontext_t,uc_sigmask) == __UCONTEXT_OFFSETOF_SIGMASK);
 STATIC_ASSERT(offsetof(ucontext_t,__fpregs_mem) == __UCONTEXT_OFFSETOF_FPREGS);
 STATIC_ASSERT(sizeof(ucontext_t) == __UCONTEXT_SIZE);
 STATIC_ASSERT(sizeof(struct sigenter) == SIGENTER_SIZE);
+
+
+
+/* Signal default actions. */
+typedef u8 dact_t; enum{
+    DA_TERM, /* Terminate application immediately. */
+    DA_CORE, /* Terminate + generate core dump. */
+    DA_IGN,  /* Ignore signal. */
+    DA_STOP, /* Suspend application. */
+    DA_CONT, /* Continue application. */
+};
+
+PRIVATE dact_t const default_actions[_NSIG-1] = {
+#define ENTRY(i) [i-1]
+    ENTRY(SIGHUP)    = DA_TERM,
+    ENTRY(SIGINT)    = DA_TERM,
+    ENTRY(SIGQUIT)   = DA_CORE,
+    ENTRY(SIGILL)    = DA_CORE,
+    ENTRY(SIGABRT)   = DA_CORE,
+    ENTRY(SIGFPE)    = DA_CORE,
+    ENTRY(SIGKILL)   = DA_TERM,
+    ENTRY(SIGSEGV)   = DA_CORE,
+    ENTRY(SIGPIPE)   = DA_TERM,
+    ENTRY(SIGALRM)   = DA_TERM,
+    ENTRY(SIGTERM)   = DA_TERM,
+    ENTRY(SIGUSR1)   = DA_TERM,
+    ENTRY(SIGUSR2)   = DA_TERM,
+    ENTRY(SIGCHLD)   = DA_IGN,
+    ENTRY(SIGCONT)   = DA_CONT,
+    ENTRY(SIGSTOP)   = DA_STOP,
+    ENTRY(SIGTSTP)   = DA_STOP,
+    ENTRY(SIGTTIN)   = DA_STOP,
+    ENTRY(SIGTTOU)   = DA_STOP,
+    ENTRY(SIGBUS)    = DA_CORE,
+    ENTRY(SIGPOLL)   = DA_TERM,
+    ENTRY(SIGPROF)   = DA_TERM,
+    ENTRY(SIGSYS)    = DA_CORE,
+    ENTRY(SIGTRAP)   = DA_CORE,
+    ENTRY(SIGURG)    = DA_IGN,
+    ENTRY(SIGVTALRM) = DA_TERM,
+    ENTRY(SIGXCPU)   = DA_CORE,
+    ENTRY(SIGXFSZ)   = DA_CORE,
+#if defined(SIGIOT) && SIGIOT != SIGABRT
+    ENTRY(SIGIOT)    = DA_CORE,
+#endif
+#ifdef SIGEMT
+    ENTRY(SIGEMT)    = DA_TERM,
+#endif
+    ENTRY(SIGSTKFLT) = DA_TERM,
+#if defined(SIGIO) && SIGIO != SIGPOLL
+    ENTRY(SIGIO)     = DA_TERM,
+#endif
+#if defined(SIGCLD) && SIGCLD != SIGCHLD
+    ENTRY(SIGCLD)    = DA_IGN,
+#endif
+    ENTRY(SIGPWR)    = DA_TERM,
+#ifdef SIGLOST
+    ENTRY(SIGLOST)   = DA_TERM,
+#endif
+    ENTRY(SIGWINCH)  = DA_IGN,
+#if defined(SIGUNUSED) && SIGUNUSED != SIGSYS
+    ENTRY(SIGUNUSED) = DA_CORE,
+#endif
+#undef ENTRY
+};
+
+#define SIGSET_WORDS (__SIZEOF_SIGSET_T__ / SIGWORD_SIZE)
+#if ((__SIZEOF_SIGSET_T__ % 8) == 0) && __SIZEOF_BUSINT__ >= 8
+typedef u64 sigword_t;
+#define SIGWORD_SIZE 8
+#elif ((__SIZEOF_SIGSET_T__ % 4) == 0) && __SIZEOF_BUSINT__ >= 4
+typedef u32 sigword_t;
+#define SIGWORD_SIZE 4
+#elif ((__SIZEOF_SIGSET_T__ % 2) == 0) && __SIZEOF_BUSINT__ >= 2
+typedef u16 sigword_t;
+#define SIGWORD_SIZE 2
+#else
+typedef u8  sigword_t;
+#define SIGWORD_SIZE 1
+#endif
+
+
+
+
+
+
+
+#ifndef CONFIG_USE_OLD_SIGNALS
+
+PRIVATE void KCALL
+coredump_user_task(struct task *__restrict t,
+                   siginfo_t const *__restrict reason,
+                   greg_t reg_trapno, greg_t reg_err) {
+ /* TODO */
+}
+
+PRIVATE void KCALL
+coredump_host_task(struct task *__restrict t,
+                   siginfo_t const *__restrict reason,
+                   greg_t reg_trapno, greg_t reg_err) {
+ /* TODO */
+}
+
+
+
+/* Apart of the user-share segment:
+ * >> This function is called to return from a signal handler.
+ * AKA: This is our signal trampoline code. */
+INTDEF ATTR_NORETURN void ASMCALL signal_return(void);
+GLOBAL_ASM(
+L(.section .text.user                                                            )
+L(PRIVATE_ENTRY(signal_return)                                                   )
+#ifdef __x86_64__ /* Load `struct sigenter_tail' into the first syscal register. */
+L(    leaq -SIGENTER_TAIL_OFFSETOF_OLDBP(%rbp), %rdi                             )
+#else
+L(    leal -SIGENTER_TAIL_OFFSETOF_OLDBP(%ebp), %ebx                             )
+#endif
+L(1:  movx $(__NR_sigreturn),      %xax                                          )
+L(    int  $0x80                                                                 )
+L(    jmp  1b /* Keep repeating in case of recursion. */                         )
+L(SYM_END(signal_return)                                                         )
+L(.previous                                                                      )
+);
+
+PRIVATE errno_t KCALL raise_segfault(void *fault_addr) {
+ siginfo_t info;
+ THIS_TASK->t_lastcr2 = fault_addr;
+ memset(&info,0,sizeof(siginfo_t));
+ info.si_signo = SIGSEGV;
+ info.si_code  = SI_KERNEL;
+ info.si_addr  = fault_addr;
+ info.si_lower = fault_addr;
+ info.si_upper = fault_addr;
+ /* XXX: exc_code is hard-coded as `0' - That shouldn't be. */
+ return task_kill2(THIS_TASK,&info,EXC_PAGE_FAULT,0);
+}
+
+/* Return the real IRET tail active in the given task/caller. */
+LOCAL struct irregs *KCALL signal_irregs(void) {
+ struct task *t = THIS_TASK;
+ assertf(!PREEMPTION_ENABLED(),"The real IRET may change when preemption is enabled.");
+ if (t->t_sigenter.se_count) return (struct irregs *)&t->t_sigenter.se_xip;
+ return &IRREGS_SYSCALL_GET()->tail;
+}
+LOCAL struct irregs *KCALL signal_irregs_of(struct task *__restrict t) {
+ assertf(!PREEMPTION_ENABLED(),"The real IRET may change when preemption is enabled.");
+ assertf(TASK_CPU(t) == THIS_CPU,"The given task isn't hosted by the current CPU.");
+ if (t->t_sigenter.se_count) return (struct irregs *)&t->t_sigenter;
+ if (t == THIS_TASK) return &IRREGS_SYSCALL_GET()->tail;
+ return &t->t_cstate->iret;
+}
+
+#define RFLAGS_USER_MASK  (EFLAGS_CF|EFLAGS_PF|EFLAGS_AF|EFLAGS_ZF|EFLAGS_SF)
+
+SYSCALL_SDEFINE(sigreturn,state) {
+ ucontext_t ctx; size_t copy_error;
+ struct task *caller = THIS_TASK;
+ assert(&state->iret == &IRREGS_SYSCALL_GET()->tail);
+
+ /* Copy the context into kernel-space. */
+ if ((copy_error = copy_from_user(&ctx,
+     (void *)(GPREGS_SYSCALL_ARG1(state->gp)+SIGENTER_TAIL_OFFSETOF_CTX),
+                                  sizeof(ucontext_t))) != 0) {
+  raise_segfault((byte_t *)(GPREGS_SYSCALL_ARG1(state->gp)+SIGENTER_TAIL_OFFSETOF_CTX)+
+                 (sizeof(ucontext_t)-copy_error));
+  return;
+ }
+ assert(PREEMPTION_ENABLED());
+ PREEMPTION_DISABLE();
+
+ /* Check for other signals, which can happen in cases where another one was raised
+  * during the time that `signal_return' invoked the system call and us getting here.
+  * In that case, don't restore anything until the other signal hander was executed. */
+ if unlikely(caller->t_sigenter.se_count) {
+  /* Assert that our effective return address was overwritten (by `sigenter'). */
+  assert(!(state->iret.cs&3));
+  assert(addr_isglob(state->iret.xip));
+  goto end;
+ }
+
+ /* With interrupts disabled, */
+
+ state->iret.xflags &= ~(RFLAGS_USER_MASK);
+ state->iret.xflags |= ctx.uc_mcontext.gregs[REG_EFL];
+ caller->t_flags &= ~(TASKFLAG_DELAYSIGS);
+ if (!(ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IF))
+       caller->t_flags |= TASKFLAG_DELAYSIGS;
+#ifdef __x86_64__
+ state->iret.rip     = ctx.uc_mcontext.gregs[REG_RIP];
+ state->iret.userrsp = ctx.uc_mcontext.gregs[REG_RSP];
+ state->gp.r8        = ctx.uc_mcontext.gregs[REG_R8];
+ state->gp.r9        = ctx.uc_mcontext.gregs[REG_R9];
+ state->gp.r10       = ctx.uc_mcontext.gregs[REG_R10];
+ state->gp.r11       = ctx.uc_mcontext.gregs[REG_R11];
+ state->gp.r12       = ctx.uc_mcontext.gregs[REG_R12];
+ state->gp.r13       = ctx.uc_mcontext.gregs[REG_R13];
+ state->gp.r14       = ctx.uc_mcontext.gregs[REG_R14];
+ state->gp.r15       = ctx.uc_mcontext.gregs[REG_R15];
+ state->gp.rdi       = ctx.uc_mcontext.gregs[REG_RDI];
+ state->gp.rsi       = ctx.uc_mcontext.gregs[REG_RSI];
+ state->gp.rbp       = ctx.uc_mcontext.gregs[REG_RBP];
+ state->gp.rbx       = ctx.uc_mcontext.gregs[REG_RBX];
+ state->gp.rdx       = ctx.uc_mcontext.gregs[REG_RDX];
+ state->gp.rax       = ctx.uc_mcontext.gregs[REG_RAX];
+ state->gp.rcx       = ctx.uc_mcontext.gregs[REG_RCX];
+ state->sg.fs_base   = ctx.uc_mcontext.fs_base;
+ state->sg.gs_base   = ctx.uc_mcontext.gs_base;
+#else /* __x86_64__ */
+ state->iret.eip     = ctx.uc_mcontext.gregs[REG_EIP];
+ state->iret.useresp = ctx.uc_mcontext.gregs[REG_UESP];
+#if GPREGS_OFFSETOF_EDI == (REG_EDI-REG_EDI)*4 && GPREGS_OFFSETOF_ESI == (REG_ESI-REG_EDI)*4 && \
+    GPREGS_OFFSETOF_EBP == (REG_EBP-REG_EDI)*4 && GPREGS_OFFSETOF_ESP == (REG_ESP-REG_EDI)*4 && \
+    GPREGS_OFFSETOF_EBX == (REG_EBX-REG_EDI)*4 && GPREGS_OFFSETOF_EDX == (REG_EDX-REG_EDI)*4 && \
+    GPREGS_OFFSETOF_ECX == (REG_ECX-REG_EDI)*4 && GPREGS_OFFSETOF_EAX == (REG_EAX-REG_EDI)*4
+ memcpy(&state->gp,&ctx.uc_mcontext.gregs[REG_EDI],sizeof(struct gpregs));
+#else
+ state->gp.edi       = ctx.uc_mcontext.gregs[REG_EDI];
+ state->gp.esi       = ctx.uc_mcontext.gregs[REG_ESI];
+ state->gp.ebp       = ctx.uc_mcontext.gregs[REG_EBP];
+ state->gp.ebx       = ctx.uc_mcontext.gregs[REG_EBX];
+ state->gp.edx       = ctx.uc_mcontext.gregs[REG_EDX];
+ state->gp.eax       = ctx.uc_mcontext.gregs[REG_EAX];
+ state->gp.ecx       = ctx.uc_mcontext.gregs[REG_ECX];
+ /* TODO: Restore segment registers. */
+#endif
+#endif /* !__x86_64__ */
+ /* TODO: Restore FPU state. */
+
+ /* Restore the old signal mask.
+  * NOTE: This may raise more signals, but that's ok.
+  * >> Due to the quite high chance of this raising more signals, this part
+  *    is done _AFTER_ we've updated registers, quite simply to keep the
+  *    number of required indirections when reloading return registers to
+  *    a bare minimum, as is the case when this is done last, with the only
+  *    possibility of additional signals occurring before preemption is disabled
+  *    above, being from sporadic interrupts that may occur until then. */
+ sigdelset(&ctx.uc_sigmask,SIGKILL);
+ sigdelset(&ctx.uc_sigmask,SIGSTOP);
+ task_set_sigblock(&ctx.uc_sigmask);
+
+end:
+ PREEMPTION_ENABLE();
+}
+
+#ifndef CONFIG_NO_FPU
+PRIVATE void KCALL
+safe_fpu(struct _libc_fpstate *__restrict state,
+         struct fpustate const *fpu) {
+ if (fpu != FPUSTATE_NULL) {
+#ifdef __x86_64__
+  STATIC_ASSERT(sizeof(struct fpustate) == sizeof(struct _libc_fpstate));
+  memcpy(state,fpu,sizeof(struct fpustate));
+#else
+  struct fpu_reg const *src; struct _libc_fpreg *dst,*end;
+  STATIC_ASSERT(sizeof(struct _libc_fpreg) <= sizeof(struct fpu_reg));
+  state->cw      = (__ULONGPTR_TYPE__)fpu->fp_fcw;
+  state->sw      = (__ULONGPTR_TYPE__)fpu->fp_fsw;
+  state->tag     = (__ULONGPTR_TYPE__)fpu->fp_ftw;
+  state->ipoff   = (__ULONGPTR_TYPE__)fpu->fp_fpuip;
+  state->cssel   = (__ULONGPTR_TYPE__)fpu->fp_fpucs;
+  state->dataoff = (__ULONGPTR_TYPE__)fpu->fp_fpudp;
+  state->datasel = (__ULONGPTR_TYPE__)fpu->fp_fpuds;
+  state->status  = (__ULONGPTR_TYPE__)fpu->fp_mxcsr; /* ??? Is this correct? */
+  src = fpu->fp_regs;
+  end = (dst = state->_st)+COMPILER_LENOF(state->_st);
+  for (; dst != end; ++dst,++src)
+         memcpy(dst,src,sizeof(struct _libc_fpreg));
+#endif
+ } else {
+  memset(state,0,sizeof(struct _libc_fpstate));
+ }
+}
+#else
+#define safe_fpu(state,fpu) memset((state),0,sizeof(struct _libc_fpstate));
+#endif
+
+
+PRIVATE errno_t KCALL
+deliver_signal_to_task_in_user(struct task *__restrict t,
+                               struct sigaction const *__restrict action,
+                               siginfo_t const *__restrict signal_info,
+                               greg_t reg_trapno, greg_t reg_err) {
+ USER struct sigenter_info *dst; struct mman *omm;
+ struct cpustate *state = t->t_cstate;
+ struct sigenter_tail tail; size_t copy_error;
+ assert(!PREEMPTION_ENABLED());
+ assert(TASK_CPU(t) == THIS_CPU);
+ assert(t != THIS_TASK);
+ assertf(state->iret.cs&3,"The task isn't running in user-space.");
+
+ tail.t_oldbp = (USER void *)state->gp.xbp;
+ tail.t_oldip = (USER void *)state->iret.xip;
+ tail.t_ctx.uc_flags = 0;
+
+ /* Save stack information. */
+ if (t->t_ustack) {
+  tail.t_ctx.uc_stack.ss_sp    = t->t_ustack->s_begin;
+  tail.t_ctx.uc_stack.ss_size  = ((uintptr_t)t->t_ustack->s_end-
+                                  (uintptr_t)t->t_ustack->s_begin);
+  tail.t_ctx.uc_stack.ss_flags = SS_ONSTACK;
+ } else {
+  tail.t_ctx.uc_stack.ss_sp    = (void *)state->iret.userxsp;
+  tail.t_ctx.uc_stack.ss_size  = 0;
+  tail.t_ctx.uc_stack.ss_flags = SS_DISABLE;
+ }
+
+ /* Save signal masking information. */
+ memcpy(&tail.t_ctx.uc_sigmask,
+        &t->t_sigblock,sizeof(sigset_t));
+
+ /* Save FPU information. */
+ safe_fpu(&tail.t_ctx.__fpregs_mem,t->t_arch.at_fpu);
+
+ /* Save general purpose registers. */
+#ifdef __x86_64__
+ tail.t_signo = signal_info->si_signo;
+ tail.t_ctx.uc_mcontext.gregs[REG_R8]      = state->gp.r8;
+ tail.t_ctx.uc_mcontext.gregs[REG_R9]      = state->gp.r9;
+ tail.t_ctx.uc_mcontext.gregs[REG_R10]     = state->gp.r10;
+ tail.t_ctx.uc_mcontext.gregs[REG_R11]     = state->gp.r11;
+ tail.t_ctx.uc_mcontext.gregs[REG_R12]     = state->gp.r12;
+ tail.t_ctx.uc_mcontext.gregs[REG_R13]     = state->gp.r13;
+ tail.t_ctx.uc_mcontext.gregs[REG_R14]     = state->gp.r14;
+ tail.t_ctx.uc_mcontext.gregs[REG_R15]     = state->gp.r15;
+ tail.t_ctx.uc_mcontext.gregs[REG_RDI]     = state->gp.rdi;
+ tail.t_ctx.uc_mcontext.gregs[REG_RSI]     = state->gp.rsi;
+ tail.t_ctx.uc_mcontext.gregs[REG_RBP]     = state->gp.rbp;
+ tail.t_ctx.uc_mcontext.gregs[REG_RBX]     = state->gp.rbx;
+ tail.t_ctx.uc_mcontext.gregs[REG_RDX]     = state->gp.rdx;
+ tail.t_ctx.uc_mcontext.gregs[REG_RAX]     = state->gp.rax;
+ tail.t_ctx.uc_mcontext.gregs[REG_RCX]     = state->gp.rcx;
+ tail.t_ctx.uc_mcontext.gregs[REG_RSP]     = state->iret.userrsp;
+ tail.t_ctx.uc_mcontext.gregs[REG_RIP]     = state->iret.rip;
+ tail.t_ctx.uc_mcontext.gregs[REG_CSGSFS]  = (((u64)__USER_CS)|
+                                              ((u64)__USER_GS << 16)|
+                                              ((u64)__USER_FS << 32));
+ tail.t_ctx.uc_mcontext.gregs[REG_OLDMASK] = *(s64 *)&t->t_sigblock;
+ tail.t_ctx.uc_mcontext.gregs[REG_CR2]     = (u64)t->t_lastcr2;
+ tail.t_ctx.uc_mcontext.fs_base            = state->sg.fs_base;
+ tail.t_ctx.uc_mcontext.gs_base            = state->sg.gs_base;
+#else
+ tail.t_ctx.uc_mcontext.gregs[REG_GS]     = (u32)state->sg.gs;
+ tail.t_ctx.uc_mcontext.gregs[REG_FS]     = (u32)state->sg.fs;
+ tail.t_ctx.uc_mcontext.gregs[REG_ES]     = (u32)state->sg.es;
+ tail.t_ctx.uc_mcontext.gregs[REG_DS]     = (u32)state->sg.ds;
+#if GPREGS_OFFSETOF_EDI == (REG_EDI-REG_EDI)*4 && GPREGS_OFFSETOF_ESI == (REG_ESI-REG_EDI)*4 && \
+    GPREGS_OFFSETOF_EBP == (REG_EBP-REG_EDI)*4 && GPREGS_OFFSETOF_ESP == (REG_ESP-REG_EDI)*4 && \
+    GPREGS_OFFSETOF_EBX == (REG_EBX-REG_EDI)*4 && GPREGS_OFFSETOF_EDX == (REG_EDX-REG_EDI)*4 && \
+    GPREGS_OFFSETOF_ECX == (REG_ECX-REG_EDI)*4 && GPREGS_OFFSETOF_EAX == (REG_EAX-REG_EDI)*4
+ memcpy(&tail.t_ctx.uc_mcontext.gregs[REG_EDI],&state->gp,sizeof(struct gpregs));
+#else
+ tail.t_ctx.uc_mcontext.gregs[REG_EDI]    = state->gp.edi;
+ tail.t_ctx.uc_mcontext.gregs[REG_ESI]    = state->gp.esi;
+ tail.t_ctx.uc_mcontext.gregs[REG_EBP]    = state->gp.ebp;
+ tail.t_ctx.uc_mcontext.gregs[REG_EBX]    = state->gp.ebx;
+ tail.t_ctx.uc_mcontext.gregs[REG_EDX]    = state->gp.edx;
+ tail.t_ctx.uc_mcontext.gregs[REG_EAX]    = state->gp.eax;
+ tail.t_ctx.uc_mcontext.gregs[REG_ECX]    = state->gp.ecx;
+#endif
+ tail.t_ctx.uc_mcontext.gregs[REG_ESP]    = state->iret.userxsp;
+ tail.t_ctx.uc_mcontext.gregs[REG_EIP]    = state->iret.xip;
+#if 1 /* KOS doesn't allow secondary user-space code segments! */
+ tail.t_ctx.uc_mcontext.gregs[REG_CS]     = __USER_CS;
+#else
+ tail.t_ctx.uc_mcontext.gregs[REG_CS]     = state->iret.cs;
+#endif
+ tail.t_ctx.uc_mcontext.gregs[REG_UESP]   = state->iret.userxsp;
+ tail.t_ctx.uc_mcontext.gregs[REG_SS]     = state->iret.ss;
+ tail.t_ctx.uc_mcontext.cr2               = (__ULONGPTR_TYPE__)t->t_lastcr2;
+#endif
+ tail.t_ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
+ tail.t_ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
+ tail.t_ctx.uc_mcontext.gregs[REG_EFL]    = state->iret.xflags;
+ assert(tail.t_ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IF);
+ if (t->t_flags&TASKFLAG_DELAYSIGS)
+     tail.t_ctx.uc_mcontext.gregs[REG_EFL] &= ~(EFLAGS_IF);
+
+#ifdef __x86_64__
+ /* Setup the first argument for the signal handler. */
+ GPREGS_SYSV_ARG1(state->gp) = signal_info->si_signo;
+#endif
+
+ tail.t_ctx.uc_link = NULL; /* XXX: Are we supposed to fill this with something? */
+
+ /* TODO: Use sigaltstack() here, if it was ever set! */
+ //state->iret.userxsp = GET_SIGALT_STACK();
+#if USER_REDZONE_SIZE != 0
+ /* Skip memory required for a `red' zone. */
+ *(uintptr_t *)&state->iret.userxsp -= USER_REDZONE_SIZE;
+#endif
+
+ if (action->sa_flags&SA_SIGINFO) {
+  byte_t head_data[offsetof(struct sigenter_fhead,sh_info)];
+#define HEAD  (*(struct sigenter_fhead *)head_data)
+  state->iret.userxsp -= SIGENTER_FULL_SIZE;
+  dst                  = (USER struct sigenter_info *)state->iret.userxsp;
+  state->gp.xbp        = (uintptr_t)&dst->se_full.f_tail.t_oldbp;
+  HEAD.sh_return       = (void *)&signal_return;
+  tail.t_ctx.uc_mcontext.fpregs = &dst->se_full.f_tail.t_ctx.__fpregs_mem;
+#ifdef __x86_64__
+  GPREGS_SYSV_ARG2(state->gp) = (u64)&dst->se_full.f_info;
+  GPREGS_SYSV_ARG3(state->gp) = (u64)&dst->se_full.f_tail.t_ctx;
+#else
+  HEAD.sh_signo  = signal_info->si_signo;
+  HEAD.sh_pinfo  = &dst->se_full.f_info;
+  HEAD.sh_pctx   = &dst->se_full.f_tail.t_ctx;
+#endif
+#undef HEAD
+  /* Copy all the collected data onto the user-space stack. */
+  TASK_PDIR_BEGIN(omm,t->t_real_mman);
+  copy_error = (copy_to_user(&dst->se_full.f_tail,&tail,sizeof(struct sigenter_tail))+
+                copy_to_user(&dst->se_full.f_info,signal_info,sizeof(siginfo_t))+
+                copy_to_user(dst,head_data,sizeof(head_data)));
+  TASK_PDIR_END(omm,t->t_real_mman);
+  if (copy_error) goto err_fault;
+ } else {
+  struct sigenter_bhead head;
+  state->iret.userxsp -= SIGENTER_BASE_SIZE;
+  dst                  = (USER struct sigenter_info *)state->iret.userxsp;
+  state->gp.xbp        = (uintptr_t)&dst->se_base.b_tail.t_oldbp;
+  head.sh_return       = (void *)&signal_return; /* Assign the trampoline address. */
+  tail.t_ctx.uc_mcontext.fpregs = &dst->se_base.b_tail.t_ctx.__fpregs_mem;
+#ifndef __x86_64__
+  head.sh_signo  = signal_info->si_signo;
+#endif
+  /* Copy all the collected data onto the user-space stack. */
+  TASK_PDIR_BEGIN(omm,t->t_real_mman);
+  copy_error = (copy_to_user(&dst->se_base.b_tail,&tail,sizeof(struct sigenter_tail)) ||
+                copy_to_user(dst,&head,sizeof(struct sigenter_bhead)));
+  TASK_PDIR_END(omm,t->t_real_mman);
+  if (copy_error) goto err_fault;
+ }
+
+ /* Finally, redirect the task's XIP pointer to the signal handler. */
+ state->iret.xip = (uintptr_t)action->sa_handler;
+
+ return -EOK;
+err_fault:
+ syslog(LOG_WARN,
+        "[SIG] Failed to deliver signal to process %d/%d: Target stack at %p is faulty\n",
+       (int)t->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+       (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,dst);
+ return -EFAULT;
+}
+
+#define SIGENTER_MODE_NORMAL       0 /* Don't modify any registers. */
+#define SIGENTER_MODE_RESTORE      1 /* Fill `XAX' with `struct sigenter::se_xax' */
+#ifdef __SYSCALL_TYPE_LONGBIT
+#define SIGENTER_MODE_RESTORE_LONG 3 /* Fill `XAX' with `struct sigenter::se_xax' and 
+                                      * fill `XDX' with `struct sigenter::se_xdx' */
+#endif /* __SYSCALL_TYPE_LONGBIT */
+
+STATIC_ASSERT(offsetof(struct sigenter_tail,t_ctx) == SIGENTER_TAIL_OFFSETOF_CTX);
+STATIC_ASSERT(offsetof(struct sigenter_tail,t_oldbp) == SIGENTER_TAIL_OFFSETOF_OLDBP);
+STATIC_ASSERT(offsetof(struct sigenter_tail,t_oldip) == SIGENTER_TAIL_OFFSETOF_OLDIP);
+STATIC_ASSERT(sizeof(struct sigenter_tail) == SIGENTER_TAIL_SIZE);
+
+
+/* Enter a signal handler without register modifications.
+ * NOTE: This is the only sigenter function that must be executed with interrupts enabled. */
+INTDEF void ASMCALL sigenter(void);
+INTDEF void ASMCALL sigenter_restore(void);
+INTDEF void ASMCALL sigenter_restart(void); /* Return -ERESTART instead of -EINTR */
+#ifdef __SYSCALL_TYPE_LONGBIT
+/* Also restore XDX with `struct sigenter::se_xdx' */
+INTDEF void ASMCALL sigenter_restore_long(void);
+INTDEF void ASMCALL sigenter_restart_long(void); /* Return -ERESTART instead of -EINTR */
+#endif
+
+
+GLOBAL_ASM(
+L(.section .text                                                                 )
+#ifdef __SYSCALL_TYPE_LONGBIT
+L(PRIVATE_ENTRY(sigenter_restart_long)                                           )
+L(    cmpx   $(-EINTR),    %xax                                                  )
+L(    jne    sigenter_restore_long                                               )
+L(    cmpx   $(-1),        %xdx                                                  )
+L(    jne    sigenter_restore_long                                               )
+L(    movx   $(-ERESTART), %xax                                                  )
+L(    movx   $(-1),        %xdx                                                  )
+L(PRIVATE_ENTRY(sigenter_restore_long)                                           )
+L(    pushx  $(SIGENTER_MODE_RESTORE_LONG)                                       )
+L(    jmp    1f                                                                  )
+L(SYM_END(sigenter_restore_long)                                                 )
+L(SYM_END(sigenter_restart_long)                                                 )
+#endif /* __SYSCALL_TYPE_LONGBIT */
+L(PRIVATE_ENTRY(sigenter_restore)                                                )
+L(    pushx  $(SIGENTER_MODE_RESTORE)                                            )
+L(    jmp    1f                                                                  )
+L(PRIVATE_ENTRY(sigenter_restart)                                                )
+L(    cmpx   $(-EINTR),    %xax                                                  )
+L(    jne    sigenter                                                            )
+L(    movx   $(-ERESTART), %xax                                                  )
+L(PRIVATE_ENTRY(sigenter)                                                        )
+L(    pushx  $(SIGENTER_MODE_NORMAL)                                             )
+L(1:                                                                             )
+#ifdef __x86_64__
+L(    swapgs                                                                     )
+L(    sti                                                                        )
+#endif
+L(    pushx  %xax                                                                )
+L(    pushx  %xcx                                                                )
+L(    pushx  %xdi                                                                )
+L(    pushx  %xsi                                                                )
+#ifdef __x86_64__
+L(    pushx  %r10                                                                )
+L(    pushx  %r11                                                                )
+L(    ASM_RDFSBASE(r10)                                                          )
+L(    movl   $(IA32_KERNEL_GS_BASE), %ecx                                        )
+L(    pushq  %rdx                                                                )
+L(    rdmsr                                                                      )
+L(    shlq   $32,  %rdx                                                          )
+L(    movq   %rdx, %r11                                                          )
+L(    orq    %rax, %r11                                                          )
+L(    popq   %rdx                                                                )
+#define FS_BASE  %r10
+#define GS_BASE  %r11
+#else
+L(    __ASM_PUSH_SGREGS                                                          )
+L(    __ASM_LOAD_SEGMENTS(%ax)                                                   )
+#endif
+L(                                                                               )
+#define CALLER     %xsi
+#define ITER       %xdi
+#define COUNT      %xcx
+L(    /* Fill all entires in the chain of raised signals with data. */           )
+L(    movx   ASM_CPU(CPU_OFFSETOF_RUNNING),                          CALLER      )
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_NEXT(CALLER),  ITER        )
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_COUNT(CALLER), COUNT       )
+L(                                                                               )
+L(    /* Use a local exception handler to guard against invalid pointers. */     )
+L(    pushx  $sigfault                                                           )
+L(    pushx  $(EXC_PAGE_FAULT)                                                   )
+L(    pushx  $0 /* There musn't been any other handlers left. */                 )
+L(    movx   %xsp, TASK_OFFSETOF_IC(CALLER)                                      )
+L(                                                                               )
+#ifdef __x86_64__
+#   define L_OFFSETOF_MODE   (3*XSZ+6*XSZ)
+#   define L_OFFSETOF_XAX    (3*XSZ+5*XSZ)
+#   define L_OFFSETOF_XCX    (3*XSZ+4*XSZ)
+#   define L_OFFSETOF_XDI    (3*XSZ+3*XSZ)
+#   define L_OFFSETOF_XSI    (3*XSZ+2*XSZ)
+#   define L_OFFSETOF_R10    (3*XSZ+1*XSZ)
+#   define L_OFFSETOF_R11    (3*XSZ+0*XSZ)
+#else
+#   define L_OFFSETOF_SS     (3*XSZ+SGREGS_SIZE+6*XSZ)
+/* #define L_OFFSETOF_USERSP (3*XSZ+SGREGS_SIZE+5*XSZ) // Original useresp. - Redundant information left by the original IRET tail. */
+#   define L_OFFSETOF_MODE   (3*XSZ+SGREGS_SIZE+4*XSZ)
+#   define L_OFFSETOF_XAX    (3*XSZ+SGREGS_SIZE+3*XSZ)
+#   define L_OFFSETOF_XCX    (3*XSZ+SGREGS_SIZE+2*XSZ)
+#   define L_OFFSETOF_XDI    (3*XSZ+SGREGS_SIZE+1*XSZ)
+#   define L_OFFSETOF_XSI    (3*XSZ+SGREGS_SIZE+0*XSZ)
+#   define L_OFFSETOF_SGREGS (3*XSZ)
+#endif
+L(                                                                               )
+L(    testb $(SIGENTER_MODE_RESTORE), L_OFFSETOF_MODE(%xsp)                      )
+L(    jz    1f                                                                   )
+L(    movx  TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XAX(CALLER), %xax           )
+L(    movx  %xax, L_OFFSETOF_XAX(%xsp)                                           )
+L(1:                                                                             )
+#ifdef __SYSCALL_TYPE_LONGBIT
+L(    testb $(SIGENTER_MODE_RESTORE_LONG&~(SIGENTER_MODE_RESTORE)), L_OFFSETOF_MODE(%xsp))
+L(    jz    1f                                                                   )
+L(    movx  TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XDX(CALLER), %xdx           )
+L(1:                                                                             )
+#endif /* __SYSCALL_TYPE_LONGBIT */
+L(    /* Assert that the number of raised signals isn't ZERO(0). */              )
+#ifdef CONFIG_DEBUG
+L(    testx  %xcx, %xcx                                                          )
+L(    jnz    1f                                                                  )
+L(    int    $3 /* ASSERTION_FAILURE: 'Signal recursion was ZERO(0)' */          )
+L(2:  hlt;   jmp 2b                                                              )
+L(1:                                                                             )
+#endif /* CONFIG_DEBUG */
+L(77:                                                                            )
+#ifdef __x86_64__
+L(    movabs $(ASM_USER_END - SIGENTER_TAIL_SIZE), %rax                          )
+L(    cmpq   %rax,                                 ITER                          )
+#else
+L(    cmpx   $(ASM_USER_END - SIGENTER_TAIL_SIZE), ITER                          )
+#endif
+L(    ja     .pointer_out_of_bounds                                              )
+L(                                                                               )
+#define MCONTEXT(offset) (SIGENTER_TAIL_OFFSETOF_CTX+__UCONTEXT_OFFSETOF_MCONTEXT+offset)(ITER)
+#define UCONTEXT_REG(i)   MCONTEXT(__MCONTEXT_OFFSETOF_GREGS+(i)*__SIZEOF_GREG_T__)
+L(    movx   %xbp, SIGENTER_TAIL_OFFSETOF_OLDBP(ITER)                            )
+L(                                                                               )
+#ifdef __x86_64__
+L(    movq   FS_BASE, MCONTEXT(__MCONTEXT_OFFSETOF_FS_BASE)                      )
+L(    movq   GS_BASE, MCONTEXT(__MCONTEXT_OFFSETOF_GS_BASE)                      )
+L(    movq   %r8,  UCONTEXT_REG(REG_R8)  /* R8 */                                )
+L(    movq   %r9,  UCONTEXT_REG(REG_R9)  /* R9 */                                )
+L(    movx   L_OFFSETOF_R10(%xsp), %xax                                          )
+L(    movq   %rax, UCONTEXT_REG(REG_R10) /* R10 */                               )
+L(    movx   L_OFFSETOF_R11(%xsp), %xax                                          )
+L(    movq   %rax, UCONTEXT_REG(REG_R11) /* R11 */                               )
+L(    movq   %r12, UCONTEXT_REG(REG_R12) /* R12 */                               )
+L(    movq   %r13, UCONTEXT_REG(REG_R13) /* R13 */                               )
+L(    movq   %r14, UCONTEXT_REG(REG_R14) /* R14 */                               )
+L(    movq   %r15, UCONTEXT_REG(REG_R15) /* R15 */                               )
+L(    movx   L_OFFSETOF_XDI(%xsp), %xax                                          )
+L(    movq   %rax, UCONTEXT_REG(REG_RDI) /* RDI */                               )
+L(    movx   L_OFFSETOF_XSI(%xsp), %xax                                          )
+L(    movq   %rax, UCONTEXT_REG(REG_RSI) /* RSI */                               )
+L(    movq   %rbp, UCONTEXT_REG(REG_RBP) /* RBP */                               )
+L(    movq   %rbx, UCONTEXT_REG(REG_RBX) /* RBX */                               )
+L(    movx   L_OFFSETOF_XCX(%xsp), %xax                                          )
+L(    movq   %rax, UCONTEXT_REG(REG_RCX) /* RCX */                               )
+L(    movq   %rdx, UCONTEXT_REG(REG_RDX) /* RDX */                               )
+L(    movx   L_OFFSETOF_XAX(%xsp), %xax                                          )
+L(    movq   %rax, UCONTEXT_REG(REG_RAX) /* RAX */                               )
+#else
+L(    xorx   %xax, %xax                                                          )
+L(    movw   L_OFFSETOF_SGREGS+SGREGS_OFFSETOF_DS(%xsp), %ax                     )
+L(    movl   %eax, UCONTEXT_REG(REG_DS)  /* DS */                                )
+L(    movw   L_OFFSETOF_SGREGS+SGREGS_OFFSETOF_ES(%xsp), %ax                     )
+L(    movl   %eax, UCONTEXT_REG(REG_ES)  /* ES */                                )
+L(    movw   L_OFFSETOF_SGREGS+SGREGS_OFFSETOF_FS(%xsp), %ax                     )
+L(    movl   %eax, UCONTEXT_REG(REG_FS)  /* FS */                                )
+L(    movw   L_OFFSETOF_SGREGS+SGREGS_OFFSETOF_GS(%xsp), %ax                     )
+L(    movl   %eax, UCONTEXT_REG(REG_GS)  /* GS */                                )
+L(    movx   L_OFFSETOF_XDI(%xsp), %xax                                          )
+L(    movl   %eax, UCONTEXT_REG(REG_EDI) /* EDI */                               )
+L(    movx   L_OFFSETOF_XSI(%xsp), %xax                                          )
+L(    movl   %eax, UCONTEXT_REG(REG_ESI) /* ESI */                               )
+L(    movl   %ebp, UCONTEXT_REG(REG_EBP) /* EBP */                               )
+L(    movl   %ebx, UCONTEXT_REG(REG_EBX) /* EBX */                               )
+L(    movx   L_OFFSETOF_XCX(%xsp), %xax                                          )
+L(    movl   %eax, UCONTEXT_REG(REG_ECX) /* ECX */                               )
+L(                                                                               )
+L(    /* Since we've got redirected to the kernel and this is i386 mode,
+       * the bottom of the stack still contains the desired SS value. */         )
+L(    movx   L_OFFSETOF_SS(%xsp), %xax                                           )
+L(    movl   %eax, UCONTEXT_REG(REG_SS)  /* SS */                                )
+L(    movl   %edx, UCONTEXT_REG(REG_EDX) /* EDX */                               )
+L(    movx   L_OFFSETOF_XAX(%xsp), %xax                                          )
+L(    movl   %eax, UCONTEXT_REG(REG_EAX) /* EAX */                               )
+#endif
+L(                                                                               )
+L(    leax   SIGENTER_TAIL_OFFSETOF_OLDBP(ITER), %xbp                            )
+L(    movx   SIGENTER_TAIL_OFFSETOF_CTX+__UCONTEXT_OFFSETOF_LINK(ITER), ITER     )
+#if 1
+L(    subx   $1, %xcx                                                            )
+L(    jnz    77b /* if (--XCX != 0) continue; */                                 )
+#else
+L(    loop   77b                                                                 )
+#endif
+L(                                                                               )
+L(    /* Reset the number of raised signals now that they're all setup. */       )
+L(    movx   $0, TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_COUNT(CALLER)          )
+L(    movx   $0, TASK_OFFSETOF_IC(CALLER)                                        )
+L(                                                                               )
+L(    /* Create an IRET-tail to jump to the top-level signal handler. */         )
+L(    pushx  $(__USER_DS)                                            /* ss */    )
+L(    pushx  TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XSP(CALLER)    /* userxsp */)
+L(    pushx  TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XFLAGS(CALLER) /* xflags */)
+L(    pushx  $(__USER_CS)                                            /* cs */    )
+L(    pushx  TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XIP(CALLER)    /* xip */   )
+L(                                                                               )
+L(    /* Load the proper base address. */                                        )
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_NEXT(CALLER), ITER         )
+L(    leax   SIGENTER_TAIL_OFFSETOF_OLDBP(ITER),                    %xbp         )
+L(                                                                               )
+L(    /* Restore our own working registers. */                                   )
+#ifdef __x86_64__
+#define SIGENTER_TAIL(offset) ((offset)-SIGENTER_TAIL_OFFSETOF_OLDBP)(%xbp)
+L(    movx   SIGENTER_TAIL(SIGENTER_TAIL_OFFSETOF_SIGNO), %xdi /* signo */       )
+L(    leax   SIGENTER_TAIL(-__SI_MAX_SIZE),               %xsi /* siginfo_t */   )
+L(    leax   SIGENTER_TAIL(SIGENTER_TAIL_OFFSETOF_CTX),   %xdx /* ucontext_t */  )
+#else
+L(    movx   ((5*XSZ)+L_OFFSETOF_XSI)(%xsp), %xsi                                )
+L(    movx   ((5*XSZ)+L_OFFSETOF_XDI)(%xsp), %xdi                                )
+#endif
+L(    movx   ((5*XSZ)+L_OFFSETOF_XCX)(%xsp), %xcx                                )
+L(    movx   ((5*XSZ)+L_OFFSETOF_XAX)(%xsp), %xax                                )
+L(                                                                               )
+L(    /* Switch segment register values back to user-space mode. */              )
+#ifndef __x86_64__
+L(    __ASM_LOAD_SGREGS((5*XSZ)+L_OFFSETOF_SGREGS(%xsp))                         )
+#else
+L(    cli                                                                        )
+L(    swapgs                                                                     )
+L(    movx   GS_BASE, %r10                                                       )
+L(    ASM_WRGSBASE(r10)                                                          )
+L(    movq   ((5*XSZ)+L_OFFSETOF_R11)(%rsp), %r11                                )
+L(    movq   ((5*XSZ)+L_OFFSETOF_R10)(%rsp), %r10                                )
+#endif
+L(                                                                               )
+L(    /* Finally, perform the IRET to the first signal handler. */               )
+L(    ASM_IRET                                                                   )
+L(.pointer_out_of_bounds:                                                        )
+L(    movx   ITER, TASK_OFFSETOF_LASTCR2(CALLER)                                 )
+L(    jmp    sigfault                                                            )
+L(SYM_END(sigenter_restore)                                                      )
+L(SYM_END(sigenter)                                                    )
+L(.previous                                                                      )
+#undef GS_BASE
+#undef FS_BASE
+#undef COUNT
+#undef ITER
+#undef CALLER
+);
+
+INTERN ATTR_NORETURN void KCALL sigfault(void) {
+ siginfo_t info;
+ assert(!THIS_TASK->t_critical);
+ task_crit();
+ syslog(LOG_ERROR,"[SIG] Terminating thread %d:%d with faulty signal stack pointer at %p\n",
+        GET_THIS_PID(),GET_THIS_TID(),THIS_TASK->t_lastcr2);
+ memset(&info,0,sizeof(siginfo_t));
+ info.si_signo = SIGSEGV;
+ info.si_code  = SEGV_MAPERR;
+ coredump_host_task(THIS_TASK,&info,0,0);
+ task_endcrit();
+ task_terminate(THIS_TASK,(void *)(__WCOREFLAG|__W_EXITCODE(1,0)));
+ __builtin_unreachable();
+}
+
+
+PRIVATE errno_t KCALL
+deliver_signal_to_task_in_host(struct task *__restrict t,
+                               struct sigaction const *__restrict action,
+                               siginfo_t const *__restrict signal_info,
+                               greg_t reg_trapno, greg_t reg_err) {
+ /* XXX: Assume that `t' is currently executing a system-call. */
+ USER struct sigenter_info *dst; struct mman *omm;
+ struct irregs_syscall *return_registers;
+ struct sigenter_tail tail; size_t copy_error;
+ assert(!PREEMPTION_ENABLED());
+ assert(TASK_CPU(t) == THIS_CPU);
+ if (++t->t_sigenter.se_count == 1) {
+  /* The first signal enter. */
+  void (ASMCALL *used_sigenter)(void);
+  byte_t code[2];
+  /* Terminate the chain of user-space signal handler contexts.
+   * (Thus allowing userspace to detect invocation recursion) */
+  t->t_sigenter.se_next = container_of((ucontext_t *)NULL,struct sigenter_tail,t_ctx);
+  return_registers = IRREGS_SYSCALL_GET_FOR(t);
+  /* Check if the task is currently attempting to execute a system call. */
+  used_sigenter = &sigenter;
+  if (syscall_is_norestart(return_registers->sysno));
+  else {
+   TASK_PDIR_BEGIN(omm,t->t_real_mman);
+   copy_error = copy_from_user(code,(void *)(return_registers->xip-2),sizeof(code));
+   TASK_PDIR_END(omm,t->t_real_mman);
+   if (!copy_error && code[0] == 0xcd && code[1] == INTNO_SYSCALL /* int $0x80 */
+        /* XXX: Must also detect other ways of invoking system calls here! */) {
+    if (action->sa_flags&SA_RESTART) {
+     t->t_sigenter.se_xax = return_registers->sysno;
+     /* Adjust the instruction pointer to repeat the system-call. */
+     return_registers->xip -= 2;
+#ifdef __SYSCALL_TYPE_LONGBIT
+     if (syscall_is_long(return_registers->sysno)) {
+      /* Reverse engineer the original XDX value. (This one's utterly ugly...)
+       * NOTE: Because we only do this for long system-calls, which have a very
+       *       unique (and most importantly unanimously) calling convention,
+       *       we can break the mold by accessing the implementation-specific
+       *       scratch-safe register area. */
+#ifdef __x86_64__
+      t->t_sigenter.se_xdx = *(u64 *)(((uintptr_t)return_registers-__ASM_SCRATCH_NOXAX_SIZE)+
+                                                                   __ASM_SCRATCH_NOXAX_OFFSETOF_RDX);
+#else
+      /* NOTE: The offsets used here reference system-call
+       *       stack offsets documented in `__SYSCALL_SDEFINE()' */
+#ifdef CONFIG_DEBUG
+      /* 5*sizeof(u32) == offsetof(sg_a) - offsetof(edx) */
+      t->t_sigenter.se_xdx = *(u32 *)((uintptr_t)return_registers-(SGREGS_SIZE+5*sizeof(u32)));
+#else
+      /* 4*sizeof(u32) == offsetof(sg_a) - offsetof(edx) */
+      t->t_sigenter.se_xdx = *(u32 *)((uintptr_t)return_registers-(SGREGS_SIZE+4*sizeof(u32)));
+#endif
+#endif
+      used_sigenter = &sigenter_restore_long;
+     } else
+#endif /* __SYSCALL_TYPE_LONGBIT */
+     {
+      /* Don't attempt to restore long return registers here.
+       * Without knowing for certain that the current system-call is actually a long-call,
+       * we have no way of knowing where the XDX value is located, it it was even saved at all!
+       * Instead, assume that the system call _only_ returns on XAX, which has already been
+       * saved above as the lookup process for that register actually is standardized:
+       * >> ORIG_EAX = IRREGS_SYSCALL_GET_FOR(t)->sysno; */
+      used_sigenter = &sigenter_restore;
+     }
+    } else {
+#ifdef __SYSCALL_TYPE_LONGBIT
+     if (syscall_is_long(return_registers->sysno)) {
+      used_sigenter = &sigenter_restart_long;
+     } else
+#endif
+     {
+      used_sigenter = &sigenter_restart;
+     }
+    }
+   } else {
+    /* After not finding `int $0x80', or something equivalent, we must assume
+     * that the task isn't actually executing a system-call, meaning we must
+     * not attempt to modify any registers once the kernel attempts to switch
+     * back to running the signal-handler.
+     * This likely easily happens the the we got here because the task threw an
+     * exception such as `EXC_DIVIDE_BY_ZERO', in which case we obviously wouldn't
+     * find `int $0x80' at the source assembly, and just as well must not attempt
+     * to ~restart~ a system call, or modify any registers accordingly. */
+    used_sigenter = &sigenter;
+   }
+  }
+  /* Safe the relevant parts of the original IRET tail. */
+  t->t_sigenter.se_xip      = return_registers->xip;
+  t->t_sigenter.se_xflags   = return_registers->xflags;
+  t->t_sigenter.se_xsp      = return_registers->userxsp;
+  return_registers->xip     = (uintptr_t)used_sigenter;
+  return_registers->cs      = __KERNEL_CS;
+#ifdef __x86_64__
+  /* x86_64 always requires the full IRET tail,
+   * meaning we must update these members, too. */
+  return_registers->userrsp = (u64)(return_registers+1);
+  return_registers->ss      = __KERNEL_DS;
+#endif
+
+#ifdef __x86_64__ /* Must disable interrupts before `swapgs' is called. */
+  return_registers->xflags = 0;
+#else
+  return_registers->xflags = EFLAGS_IF;
+#endif
+ } else {
+  /* Secondary signal. */
+ }
+
+ tail.t_oldip = (USER void *)t->t_sigenter.se_xip;
+ tail.t_ctx.uc_flags = 0;
+
+ /* Save stack information. */
+ if (t->t_ustack) {
+  tail.t_ctx.uc_stack.ss_sp    = t->t_ustack->s_begin;
+  tail.t_ctx.uc_stack.ss_size  = ((uintptr_t)t->t_ustack->s_end-
+                                  (uintptr_t)t->t_ustack->s_begin);
+  tail.t_ctx.uc_stack.ss_flags = SS_ONSTACK;
+ } else {
+  tail.t_ctx.uc_stack.ss_sp    = (void *)t->t_sigenter.se_xsp;
+  tail.t_ctx.uc_stack.ss_size  = 0;
+  tail.t_ctx.uc_stack.ss_flags = SS_DISABLE;
+ }
+
+ /* Save signal masking information. */
+ memcpy(&tail.t_ctx.uc_sigmask,
+        &t->t_sigblock,sizeof(sigset_t));
+
+ /* Save FPU information. */
+ safe_fpu(&tail.t_ctx.__fpregs_mem,t->t_arch.at_fpu);
+
+ /* Fill in registers that we already know about. */
+ tail.t_ctx.uc_mcontext.gregs[REG_EFL]    = t->t_sigenter.se_xflags;
+ tail.t_ctx.uc_mcontext.gregs[REG_ERR]    = reg_err;
+ tail.t_ctx.uc_mcontext.gregs[REG_TRAPNO] = reg_trapno;
+#ifdef __x86_64__
+ tail.t_ctx.uc_mcontext.gregs[REG_RIP]    = t->t_sigenter.se_xip;
+ tail.t_ctx.uc_mcontext.gregs[REG_RSP]    = t->t_sigenter.se_xsp;
+ tail.t_ctx.uc_mcontext.gregs[REG_CSGSFS] = (((u64)__USER_CS)|
+                                             ((u64)__USER_GS << 16)|
+                                             ((u64)__USER_FS << 32));
+ tail.t_ctx.uc_mcontext.gregs[REG_OLDMASK] = *(s64 *)&t->t_sigblock;
+ tail.t_ctx.uc_mcontext.gregs[REG_CR2]     = (u64)t->t_lastcr2;
+#else
+ tail.t_ctx.uc_mcontext.gregs[REG_EIP]  = t->t_sigenter.se_xip;
+ tail.t_ctx.uc_mcontext.gregs[REG_ESP]  = t->t_sigenter.se_xsp;
+ tail.t_ctx.uc_mcontext.gregs[REG_UESP] = t->t_sigenter.se_xsp;
+ tail.t_ctx.uc_mcontext.gregs[REG_CS]   = __USER_CS;
+ tail.t_ctx.uc_mcontext.cr2             = (__ULONGPTR_TYPE__)t->t_lastcr2;
+#endif
+
+ if (t->t_sigenter.se_count == 1) {
+  /* TODO: Use sigaltstack() here, if it was ever set! */
+  //t->t_sigenter.se_xsp = GET_SIGALT_STACK();
+#if USER_REDZONE_SIZE != 0
+  /* Skip memory required for the `red' zone when pushing the first handler. */
+  t->t_sigenter.se_xsp -= USER_REDZONE_SIZE;
+#endif
+ }
+
+#define NEXT_SIGNAL \
+  container_of(t->t_sigenter.se_next,struct sigenter_tail,t_ctx)
+
+#ifdef __x86_64__
+ tail.t_signo = signal_info->si_signo;
+#endif /* __x86_64__ */
+
+ /* Link the ucontext structures together. */
+ tail.t_ctx.uc_link = &t->t_sigenter.se_next->t_ctx;
+ if (action->sa_flags&SA_SIGINFO) {
+  byte_t head_data[offsetof(struct sigenter_fhead,sh_info)];
+#define HEAD  (*(struct sigenter_fhead *)head_data)
+  t->t_sigenter.se_xsp         -= SIGENTER_FULL_SIZE;
+  dst                           = (USER struct sigenter_info *)t->t_sigenter.se_xsp;
+  tail.t_ctx.uc_mcontext.fpregs = &dst->se_full.f_tail.t_ctx.__fpregs_mem;
+  t->t_sigenter.se_next         = &dst->se_full.f_tail;
+  HEAD.sh_return                = (void *)&signal_return;
+#ifndef __x86_64__
+  HEAD.sh_signo  = signal_info->si_signo;
+  HEAD.sh_pinfo  = &dst->se_full.f_info;
+  HEAD.sh_pctx   = &dst->se_full.f_tail.t_ctx;
+#endif
+#undef HEAD
+  /* Copy all the collected data onto the user-space stack. */
+  TASK_PDIR_BEGIN(omm,t->t_real_mman);
+  copy_error = (copy_to_user(&dst->se_full.f_tail,&tail,sizeof(struct sigenter_tail))+
+                copy_to_user(&dst->se_full.f_info,signal_info,sizeof(siginfo_t))+
+                copy_to_user(dst,head_data,sizeof(head_data)));
+  TASK_PDIR_END(omm,t->t_real_mman);
+  if (copy_error) goto err_fault;
+ } else {
+  struct sigenter_bhead head;
+  t->t_sigenter.se_xsp         -= SIGENTER_BASE_SIZE;
+  dst                           = (USER struct sigenter_info *)t->t_sigenter.se_xsp;
+  head.sh_return                = (void *)&signal_return; /* Assign the trampoline address. */
+  tail.t_ctx.uc_mcontext.fpregs = &dst->se_base.b_tail.t_ctx.__fpregs_mem;
+  t->t_sigenter.se_next         = &dst->se_base.b_tail;
+#ifndef __x86_64__
+  head.sh_signo = signal_info->si_signo;
+#endif
+  /* Copy all the collected data onto the user-space stack. */
+  TASK_PDIR_BEGIN(omm,t->t_real_mman);
+  copy_error = (copy_to_user(&dst->se_base.b_tail,&tail,sizeof(struct sigenter_tail)) ||
+                copy_to_user(dst,&head,sizeof(struct sigenter_bhead)));
+  TASK_PDIR_END(omm,t->t_real_mman);
+  if (copy_error) goto err_fault;
+ }
+
+ /* Userspace will return to the handler of this action. */
+ t->t_sigenter.se_xip = (register_t)action->sa_handler;
+
+ return -EOK;
+err_fault:
+ syslog(LOG_WARN,
+        "[SIG] Failed to deliver signal to process %d/%d: Target stack at %p is faulty\n",
+       (int)t->t_pid.tp_ids[PIDTYPE_PID].tl_pid,
+       (int)t->t_pid.tp_ids[PIDTYPE_GPID].tl_pid,dst);
+ return -EFAULT;
+}
+
+
+
+#else /* !CONFIG_USE_OLD_SIGNALS */
 STATIC_ASSERT(offsetof(struct sigenter_info,ei_return) == SIGENTER_INFO_OFFSETOF_RETURN);
 STATIC_ASSERT(offsetof(struct sigenter_info,ei_signo) == SIGENTER_INFO_OFFSETOF_SIGNO);
 STATIC_ASSERT(offsetof(struct sigenter_info,ei_pinfo) == SIGENTER_INFO_OFFSETOF_PINFO);
@@ -169,7 +1119,6 @@ coredump_host_task(struct task *__restrict t,
 #endif
  core_dodump(t->t_real_mman,t,&ctx,reason,COREDUMP_FLAG_NORMAL);
 }
-
 
 
 /* Exception handler for managing broken signal stacks. */
@@ -369,74 +1318,6 @@ L(.previous                                                                     
 
 
 
-
-
-
-
-
-/* Signal default actions. */
-typedef u8 dact_t; enum{
-    DA_TERM, /* Terminate application immediately. */
-    DA_CORE, /* Terminate + generate core dump. */
-    DA_IGN,  /* Ignore signal. */
-    DA_STOP, /* Suspend application. */
-    DA_CONT, /* Continue application. */
-};
-
-PRIVATE dact_t const default_actions[_NSIG-1] = {
-#define ENTRY(i) [i-1]
-    ENTRY(SIGHUP)    = DA_TERM,
-    ENTRY(SIGINT)    = DA_TERM,
-    ENTRY(SIGQUIT)   = DA_CORE,
-    ENTRY(SIGILL)    = DA_CORE,
-    ENTRY(SIGABRT)   = DA_CORE,
-    ENTRY(SIGFPE)    = DA_CORE,
-    ENTRY(SIGKILL)   = DA_TERM,
-    ENTRY(SIGSEGV)   = DA_CORE,
-    ENTRY(SIGPIPE)   = DA_TERM,
-    ENTRY(SIGALRM)   = DA_TERM,
-    ENTRY(SIGTERM)   = DA_TERM,
-    ENTRY(SIGUSR1)   = DA_TERM,
-    ENTRY(SIGUSR2)   = DA_TERM,
-    ENTRY(SIGCHLD)   = DA_IGN,
-    ENTRY(SIGCONT)   = DA_CONT,
-    ENTRY(SIGSTOP)   = DA_STOP,
-    ENTRY(SIGTSTP)   = DA_STOP,
-    ENTRY(SIGTTIN)   = DA_STOP,
-    ENTRY(SIGTTOU)   = DA_STOP,
-    ENTRY(SIGBUS)    = DA_CORE,
-    ENTRY(SIGPOLL)   = DA_TERM,
-    ENTRY(SIGPROF)   = DA_TERM,
-    ENTRY(SIGSYS)    = DA_CORE,
-    ENTRY(SIGTRAP)   = DA_CORE,
-    ENTRY(SIGURG)    = DA_IGN,
-    ENTRY(SIGVTALRM) = DA_TERM,
-    ENTRY(SIGXCPU)   = DA_CORE,
-    ENTRY(SIGXFSZ)   = DA_CORE,
-#if defined(SIGIOT) && SIGIOT != SIGABRT
-    ENTRY(SIGIOT)    = DA_CORE,
-#endif
-#ifdef SIGEMT
-    ENTRY(SIGEMT)    = DA_TERM,
-#endif
-    ENTRY(SIGSTKFLT) = DA_TERM,
-#if defined(SIGIO) && SIGIO != SIGPOLL
-    ENTRY(SIGIO)     = DA_TERM,
-#endif
-#if defined(SIGCLD) && SIGCLD != SIGCHLD
-    ENTRY(SIGCLD)    = DA_IGN,
-#endif
-    ENTRY(SIGPWR)    = DA_TERM,
-#ifdef SIGLOST
-    ENTRY(SIGLOST)   = DA_TERM,
-#endif
-    ENTRY(SIGWINCH)  = DA_IGN,
-#if defined(SIGUNUSED) && SIGUNUSED != SIGSYS
-    ENTRY(SIGUNUSED) = DA_CORE,
-#endif
-#undef ENTRY
-};
-
 INTDEF void (ASMCALL signal_return)(void);
 
 PRIVATE void KCALL
@@ -603,9 +1484,6 @@ deliver_signal_to_task_in_user(struct task *__restrict t,
  /* Interrupt (wake) the task, so-as to execute the signal handler. */
  return -EOK;
 }
-
-
-
 
 
 PRIVATE errno_t KCALL
@@ -776,20 +1654,195 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
 
 
 
-#define SIGSET_WORDS (__SIZEOF_SIGSET_T__ / SIGWORD_SIZE)
-#if ((__SIZEOF_SIGSET_T__ % 8) == 0) && __SIZEOF_BUSINT__ >= 8
-typedef u64 sigword_t;
-#define SIGWORD_SIZE 8
-#elif ((__SIZEOF_SIGSET_T__ % 4) == 0) && __SIZEOF_BUSINT__ >= 4
-typedef u32 sigword_t;
-#define SIGWORD_SIZE 4
-#elif ((__SIZEOF_SIGSET_T__ % 2) == 0) && __SIZEOF_BUSINT__ >= 2
-typedef u16 sigword_t;
-#define SIGWORD_SIZE 2
+/* Apart of the user-share segment:
+ * >> This function is called to return from a signal handler.
+ * AKA: This is our signal trampoline code. */
+GLOBAL_ASM(
+L(.section .text.user                                                            )
+L(PRIVATE_ENTRY(signal_return)                                                   )
+L(    movx $(__NR_sigreturn), %xax                                               )
+#ifdef __x86_64__
+L(    leaq (SIGENTER_INFO_OFFSETOF_CTX - \
+            SIGENTER_INFO_OFFSETOF_OLD_XBP)(%rbp), %rdi                          )
 #else
-typedef u8  sigword_t;
-#define SIGWORD_SIZE 1
+L(    leal (SIGENTER_INFO_OFFSETOF_CTX - \
+            SIGENTER_INFO_OFFSETOF_OLD_XBP)(%ebp), %ebx                          )
 #endif
+L(    int  $0x80                                                                 )
+L(SYM_END(signal_return)                                                         )
+L(.previous                                                                      )
+);
+
+#ifdef __x86_64__
+#define IGNORE_SEGMENT_REGISTERS 1
+#else
+#define IGNORE_SEGMENT_REGISTERS 0
+#endif
+
+SYSCALL_SDEFINE(sigreturn,cs) {
+ ucontext_t ctx; size_t context_indirection;
+ USER struct sigenter_info *last_context;
+ if (copy_from_user(&ctx,(ucontext_t *)GPREGS_SYSCALL_ARG1(cs->host.gp),sizeof(ucontext_t)))
+     sigfault();
+#if !IGNORE_SEGMENT_REGISTERS
+#if 1
+#define CHECK_SEGMENT(id,name,value) \
+ if ((ctx.uc_mcontext.gregs[id]&3) != 3) \
+     sigill("%%%s (Illegal RPL privilege level)", \
+            name,ctx.uc_mcontext.gregs[id])
+#else
+#define CHECK_SEGMENT(id,name,value) \
+ if (ctx.uc_mcontext.gregs[id] != (value)) \
+     sigill("%%" name " (%.4I16x != %.4I16x)", \
+            ctx.uc_mcontext.gregs[id],value)
+#endif
+ CHECK_SEGMENT(REG_GS,"gs",__USER_GS);
+ CHECK_SEGMENT(REG_FS,"fs",__USER_FS);
+ CHECK_SEGMENT(REG_ES,"es",__USER_DS);
+ CHECK_SEGMENT(REG_DS,"ds",__USER_DS);
+ CHECK_SEGMENT(REG_CS,"cs",__USER_CS);
+ CHECK_SEGMENT(REG_SS,"ss",__USER_DS);
+#undef CHECK_SEGMENT
+#endif /* !IGNORE_SEGMENT_REGISTERS */
+ if (!(ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IF))
+       sigill("EFLAGS (%.8I32x misses EFLAGS_IF:%.8I32x)",
+               ctx.uc_mcontext.gregs[REG_EFL],EFLAGS_IF);
+#ifndef CONFIG_ALLOW_USER_IO
+ if (ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IOPL(3))
+     sigill("EFLAGS (%.8I32x contains EFLAGS_IOPL:%.8I32x)",
+             ctx.uc_mcontext.gregs[REG_EFL],EFLAGS_IOPL(3));
+#endif
+
+ /* Load the new machine context as register state upon return to user-space.
+  * NOTE: We don't jump directly, because that would break execution of
+  *       additional signals that may have been unblocked by `task_set_sigblock()'. */
+#ifdef __x86_64__
+ /* XXX: Context-based? */
+ cs->host.sg.fs_base = TASK_DEFAULT_FS_BASE(THIS_TASK);
+ cs->host.sg.gs_base = TASK_DEFAULT_GS_BASE(THIS_TASK);
+#else /* __x86_64__ */
+#if IGNORE_SEGMENT_REGISTERS
+ cs->host.sg.gs     = __USER_GS;
+ cs->host.sg.fs     = __USER_FS;
+ cs->host.sg.es     = __USER_DS;
+ cs->host.sg.ds     = __USER_DS;
+#else /* IGNORE_SEGMENT_REGISTERS */
+ cs->host.sg.gs     = ctx.uc_mcontext.gregs[REG_GS];
+ cs->host.sg.fs     = ctx.uc_mcontext.gregs[REG_FS];
+ cs->host.sg.es     = ctx.uc_mcontext.gregs[REG_ES];
+ cs->host.sg.ds     = ctx.uc_mcontext.gregs[REG_DS];
+#endif /* !IGNORE_SEGMENT_REGISTERS */
+#endif /* !__x86_64__ */
+
+#ifdef __x86_64__
+ cs->host.gp.r8     = ctx.uc_mcontext.gregs[REG_R8];
+ cs->host.gp.r9     = ctx.uc_mcontext.gregs[REG_R9];
+ cs->host.gp.r10    = ctx.uc_mcontext.gregs[REG_R10];
+ cs->host.gp.r11    = ctx.uc_mcontext.gregs[REG_R11];
+ cs->host.gp.r12    = ctx.uc_mcontext.gregs[REG_R12];
+ cs->host.gp.r13    = ctx.uc_mcontext.gregs[REG_R13];
+ cs->host.gp.r14    = ctx.uc_mcontext.gregs[REG_R14];
+ cs->host.gp.r15    = ctx.uc_mcontext.gregs[REG_R15];
+ cs->host.gp.rdi    = ctx.uc_mcontext.gregs[REG_RDI];
+ cs->host.gp.rsi    = ctx.uc_mcontext.gregs[REG_RSI];
+ cs->host.gp.rbp    = ctx.uc_mcontext.gregs[REG_RBP];
+ cs->host.gp.rbx    = ctx.uc_mcontext.gregs[REG_RBX];
+ cs->host.gp.rdx    = ctx.uc_mcontext.gregs[REG_RDX];
+ cs->host.gp.rcx    = ctx.uc_mcontext.gregs[REG_RCX];
+ cs->host.gp.rax    = ctx.uc_mcontext.gregs[REG_RAX];
+#else
+ cs->host.gp.edi    = ctx.uc_mcontext.gregs[REG_EDI];
+ cs->host.gp.esi    = ctx.uc_mcontext.gregs[REG_ESI];
+ cs->host.gp.ebp    = ctx.uc_mcontext.gregs[REG_EBP];
+ cs->host.gp.esp    = ctx.uc_mcontext.gregs[REG_ESP];
+ cs->host.gp.ebx    = ctx.uc_mcontext.gregs[REG_EBX];
+ cs->host.gp.edx    = ctx.uc_mcontext.gregs[REG_EDX];
+ cs->host.gp.ecx    = ctx.uc_mcontext.gregs[REG_ECX];
+ cs->host.gp.eax    = ctx.uc_mcontext.gregs[REG_EAX];
+#endif
+ 
+ /* NOTE: Disable preemption to prevent more signals from being raised,
+  *       now that we'll be attempting to update the bottom-most entry
+  *       of the signal-handler-execution chain.
+  *    >> Having had interrupts enabled until now, more signals may
+  *       have been raised, and even more though: Restoring the old
+  *       signal mask may (quite likely) re-raised more signals.
+  *       But sadly, the bottom-most signal context is using the address
+  *       of this where `sys_sigreturn()' was called from, which is quite
+  *       incorrect as this function isn't supposed to return to the caller,
+  *       but instead return to where the first interrupt was called from.
+  *    >> Therefor we must find that bottom-most entry and update it
+  *       to mirror the register data we've been passed through the
+  *       given user-space CPU context.
+  * HINT: We know the exact amount of indirections required, as this
+  *       value is safely stored within `THIS_TASK->t_sigenter.se_count'.
+  */
+ PREEMPTION_DISABLE();
+ context_indirection = THIS_TASK->t_sigenter.se_count;
+ if (context_indirection) {
+  last_context = THIS_TASK->t_sigenter.se_siginfo;
+  while (--context_indirection) {
+   if (copy_from_user(&last_context,&last_context->ei_next,
+                       sizeof(USER struct sigenter_info *)))
+       sigfault();
+  }
+#ifdef __x86_64__
+  if (copy_to_user(&last_context->ei_ctx.uc_mcontext.gregs[REG_RIP],
+                   &ctx.uc_mcontext.gregs[REG_RIP],
+                 ((REG_CSGSFS-REG_RIP)+1)*sizeof(greg_t)))
+      sigfault();
+#else
+  if (copy_to_user(&last_context->ei_ctx.uc_mcontext.gregs[REG_EIP],
+                   &ctx.uc_mcontext.gregs[REG_EIP],
+                 ((REG_SS-REG_EIP)+1)*sizeof(greg_t)))
+      sigfault();
+#endif
+ } else {
+  /* Simple case: no indirection. - This signal will
+   * switch back to regular user-space code flow. */
+#ifdef __x86_64__
+  cs->iret.rip     = ctx.uc_mcontext.gregs[REG_RIP];
+#else
+  cs->iret.eip     = ctx.uc_mcontext.gregs[REG_EIP];
+#endif
+#if IGNORE_SEGMENT_REGISTERS
+  cs->iret.cs      = __USER_CS;
+#else
+  cs->iret.cs      = ctx.uc_mcontext.gregs[REG_CS];
+#endif
+  cs->iret.xflags  = ctx.uc_mcontext.gregs[REG_EFL];
+#ifdef __x86_64__
+  cs->iret.userrsp = ctx.uc_mcontext.gregs[REG_RSP];
+#else
+  cs->iret.useresp = ctx.uc_mcontext.gregs[REG_UESP];
+#endif
+#if IGNORE_SEGMENT_REGISTERS
+  cs->iret.ss      = __USER_DS;
+#else
+  cs->iret.ss      = ctx.uc_mcontext.gregs[REG_SS];
+#endif
+ }
+ /* NOTE: Technically, we don't have to re-enable interrupts now.
+  *       But let's try to be as pre-emptive as possible... */
+ PREEMPTION_ENABLE();
+
+ /* Restore the old signal mask.
+  * NOTE: This may raise more signals, but that's ok.
+  * >> Due to the quite high chance of this raising more signals, this part
+  *    is done _AFTER_ we've updated registers, quite simply to keep the
+  *    number of required indirections when reloading return registers to
+  *    a bare minimum, as is the case when this is done last, with the only
+  *    possibility of additional signals occurring before preemption is disabled
+  *    above, being from sporadic interrupts that may occur until then.
+  */
+ sigdelset(&ctx.uc_sigmask,SIGKILL);
+ sigdelset(&ctx.uc_sigmask,SIGSTOP);
+ task_set_sigblock(&ctx.uc_sigmask);
+}
+
+#endif /* CONFIG_USE_OLD_SIGNALS */
+
+
 
 
 PUBLIC errno_t KCALL
@@ -893,7 +1946,9 @@ ignore_signal:;
   } else {
    sigword_t *dst,*end,*src;
 
-   if (t != THIS_TASK && (t->t_cstate->iret.cs&3) == 3) {
+   if (t != THIS_TASK &&
+      !t->t_sigenter.se_count &&
+      (t->t_cstate->iret.cs&3)) {
     /* The task isn't active, and currently running in user-space. */
     error = deliver_signal_to_task_in_user(t,action,signal_info,reg_trapno,reg_err);
    } else {
@@ -917,6 +1972,7 @@ ppop_end:
  PREEMPTION_POP(was);
  return error;
 }
+
 
 PUBLIC errno_t KCALL
 task_kill2(struct task *__restrict t,
@@ -1145,195 +2201,6 @@ task_set_sigblock(sigset_t *__restrict newset) {
  task_endcrit();
  return error;
 }
-
-
-
-/* Apart of the user-share segment:
- * >> This function is called to return from a signal handler.
- * AKA: This is our signal trampoline code. */
-GLOBAL_ASM(
-L(.section .text.user                                                            )
-L(PRIVATE_ENTRY(signal_return)                                                   )
-L(    movx $(__NR_sigreturn), %xax                                               )
-#ifdef __x86_64__
-L(    leaq (SIGENTER_INFO_OFFSETOF_CTX - \
-            SIGENTER_INFO_OFFSETOF_OLD_XBP)(%rbp), %rdi                          )
-#else
-L(    leal (SIGENTER_INFO_OFFSETOF_CTX - \
-            SIGENTER_INFO_OFFSETOF_OLD_XBP)(%ebp), %ebx                          )
-#endif
-L(    int  $0x80                                                                 )
-L(SYM_END(signal_return)                                                         )
-L(.previous                                                                      )
-);
-
-#ifdef __x86_64__
-#define IGNORE_SEGMENT_REGISTERS 1
-#else
-#define IGNORE_SEGMENT_REGISTERS 0
-#endif
-
-SYSCALL_SDEFINE(sigreturn,cs) {
- ucontext_t ctx; size_t context_indirection;
- USER struct sigenter_info *last_context;
- if (copy_from_user(&ctx,(ucontext_t *)GPREGS_SYSCALL_ARG1(cs->host.gp),sizeof(ucontext_t)))
-     sigfault();
-#if !IGNORE_SEGMENT_REGISTERS
-#if 1
-#define CHECK_SEGMENT(id,name,value) \
- if ((ctx.uc_mcontext.gregs[id]&3) != 3) \
-     sigill("%%%s (Illegal RPL privilege level)", \
-            name,ctx.uc_mcontext.gregs[id])
-#else
-#define CHECK_SEGMENT(id,name,value) \
- if (ctx.uc_mcontext.gregs[id] != (value)) \
-     sigill("%%" name " (%.4I16x != %.4I16x)", \
-            ctx.uc_mcontext.gregs[id],value)
-#endif
- CHECK_SEGMENT(REG_GS,"gs",__USER_GS);
- CHECK_SEGMENT(REG_FS,"fs",__USER_FS);
- CHECK_SEGMENT(REG_ES,"es",__USER_DS);
- CHECK_SEGMENT(REG_DS,"ds",__USER_DS);
- CHECK_SEGMENT(REG_CS,"cs",__USER_CS);
- CHECK_SEGMENT(REG_SS,"ss",__USER_DS);
-#undef CHECK_SEGMENT
-#endif /* !IGNORE_SEGMENT_REGISTERS */
- if (!(ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IF))
-       sigill("EFLAGS (%.8I32x misses EFLAGS_IF:%.8I32x)",
-               ctx.uc_mcontext.gregs[REG_EFL],EFLAGS_IF);
-#ifndef CONFIG_ALLOW_USER_IO
- if (ctx.uc_mcontext.gregs[REG_EFL]&EFLAGS_IOPL(3))
-     sigill("EFLAGS (%.8I32x contains EFLAGS_IOPL:%.8I32x)",
-             ctx.uc_mcontext.gregs[REG_EFL],EFLAGS_IOPL(3));
-#endif
-
- /* Load the new machine context as register state upon return to user-space.
-  * NOTE: We don't jump directly, because that would break execution of
-  *       additional signals that may have been unblocked by `task_set_sigblock()'. */
-#ifdef __x86_64__
- /* XXX: Context-based? */
- cs->host.sg.fs_base = TASK_DEFAULT_FS_BASE(THIS_TASK);
- cs->host.sg.gs_base = TASK_DEFAULT_GS_BASE(THIS_TASK);
-#else /* __x86_64__ */
-#if IGNORE_SEGMENT_REGISTERS
- cs->host.sg.gs     = __USER_GS;
- cs->host.sg.fs     = __USER_FS;
- cs->host.sg.es     = __USER_DS;
- cs->host.sg.ds     = __USER_DS;
-#else /* IGNORE_SEGMENT_REGISTERS */
- cs->host.sg.gs     = ctx.uc_mcontext.gregs[REG_GS];
- cs->host.sg.fs     = ctx.uc_mcontext.gregs[REG_FS];
- cs->host.sg.es     = ctx.uc_mcontext.gregs[REG_ES];
- cs->host.sg.ds     = ctx.uc_mcontext.gregs[REG_DS];
-#endif /* !IGNORE_SEGMENT_REGISTERS */
-#endif /* !__x86_64__ */
-
-#ifdef __x86_64__
- cs->host.gp.r8     = ctx.uc_mcontext.gregs[REG_R8];
- cs->host.gp.r9     = ctx.uc_mcontext.gregs[REG_R9];
- cs->host.gp.r10    = ctx.uc_mcontext.gregs[REG_R10];
- cs->host.gp.r11    = ctx.uc_mcontext.gregs[REG_R11];
- cs->host.gp.r12    = ctx.uc_mcontext.gregs[REG_R12];
- cs->host.gp.r13    = ctx.uc_mcontext.gregs[REG_R13];
- cs->host.gp.r14    = ctx.uc_mcontext.gregs[REG_R14];
- cs->host.gp.r15    = ctx.uc_mcontext.gregs[REG_R15];
- cs->host.gp.rdi    = ctx.uc_mcontext.gregs[REG_RDI];
- cs->host.gp.rsi    = ctx.uc_mcontext.gregs[REG_RSI];
- cs->host.gp.rbp    = ctx.uc_mcontext.gregs[REG_RBP];
- cs->host.gp.rbx    = ctx.uc_mcontext.gregs[REG_RBX];
- cs->host.gp.rdx    = ctx.uc_mcontext.gregs[REG_RDX];
- cs->host.gp.rcx    = ctx.uc_mcontext.gregs[REG_RCX];
- cs->host.gp.rax    = ctx.uc_mcontext.gregs[REG_RAX];
-#else
- cs->host.gp.edi    = ctx.uc_mcontext.gregs[REG_EDI];
- cs->host.gp.esi    = ctx.uc_mcontext.gregs[REG_ESI];
- cs->host.gp.ebp    = ctx.uc_mcontext.gregs[REG_EBP];
- cs->host.gp.esp    = ctx.uc_mcontext.gregs[REG_ESP];
- cs->host.gp.ebx    = ctx.uc_mcontext.gregs[REG_EBX];
- cs->host.gp.edx    = ctx.uc_mcontext.gregs[REG_EDX];
- cs->host.gp.ecx    = ctx.uc_mcontext.gregs[REG_ECX];
- cs->host.gp.eax    = ctx.uc_mcontext.gregs[REG_EAX];
-#endif
- 
- /* NOTE: Disable preemption to prevent more signals from being raised,
-  *       now that we'll be attempting to update the bottom-most entry
-  *       of the signal-handler-execution chain.
-  *    >> Having had interrupts enabled until now, more signals may
-  *       have been raised, and even more though: Restoring the old
-  *       signal mask may (quite likely) re-raised more signals.
-  *       But sadly, the bottom-most signal context is using the address
-  *       of this where `sys_sigreturn()' was called from, which is quite
-  *       incorrect as this function isn't supposed to return to the caller,
-  *       but instead return to where the first interrupt was called from.
-  *    >> Therefor we must find that bottom-most entry and update it
-  *       to mirror the register data we've been passed through the
-  *       given user-space CPU context.
-  * HINT: We know the exact amount of indirections required, as this
-  *       value is safely stored within `THIS_TASK->t_sigenter.se_count'.
-  */
- PREEMPTION_DISABLE();
- context_indirection = THIS_TASK->t_sigenter.se_count;
- if (context_indirection) {
-  last_context = THIS_TASK->t_sigenter.se_siginfo;
-  while (--context_indirection) {
-   if (copy_from_user(&last_context,&last_context->ei_next,
-                       sizeof(USER struct sigenter_info *)))
-       sigfault();
-  }
-#ifdef __x86_64__
-  if (copy_to_user(&last_context->ei_ctx.uc_mcontext.gregs[REG_RIP],
-                   &ctx.uc_mcontext.gregs[REG_RIP],
-                 ((REG_CSGSFS-REG_RIP)+1)*sizeof(greg_t)))
-      sigfault();
-#else
-  if (copy_to_user(&last_context->ei_ctx.uc_mcontext.gregs[REG_EIP],
-                   &ctx.uc_mcontext.gregs[REG_EIP],
-                 ((REG_SS-REG_EIP)+1)*sizeof(greg_t)))
-      sigfault();
-#endif
- } else {
-  /* Simple case: no indirection. - This signal will
-   * switch back to regular user-space code flow. */
-#ifdef __x86_64__
-  cs->iret.rip     = ctx.uc_mcontext.gregs[REG_RIP];
-#else
-  cs->iret.eip     = ctx.uc_mcontext.gregs[REG_EIP];
-#endif
-#if IGNORE_SEGMENT_REGISTERS
-  cs->iret.cs      = __USER_CS;
-#else
-  cs->iret.cs      = ctx.uc_mcontext.gregs[REG_CS];
-#endif
-  cs->iret.xflags  = ctx.uc_mcontext.gregs[REG_EFL];
-#ifdef __x86_64__
-  cs->iret.userrsp = ctx.uc_mcontext.gregs[REG_RSP];
-#else
-  cs->iret.useresp = ctx.uc_mcontext.gregs[REG_UESP];
-#endif
-#if IGNORE_SEGMENT_REGISTERS
-  cs->iret.ss      = __USER_DS;
-#else
-  cs->iret.ss      = ctx.uc_mcontext.gregs[REG_SS];
-#endif
- }
- /* NOTE: Technically, we don't have to re-enable interrupts now.
-  *       But let's try to be as pre-emptive as possible... */
- PREEMPTION_ENABLE();
-
- /* Restore the old signal mask.
-  * NOTE: This may raise more signals, but that's ok.
-  * >> Due to the quite high chance of this raising more signals, this part
-  *    is done _AFTER_ we've updated registers, quite simply to keep the
-  *    number of required indirections when reloading return registers to
-  *    a bare minimum, as is the case when this is done last, with the only
-  *    possibility of additional signals occurring before preemption is disabled
-  *    above, being from sporadic interrupts that may occur until then.
-  */
- sigdelset(&ctx.uc_sigmask,SIGKILL);
- sigdelset(&ctx.uc_sigmask,SIGSTOP);
- task_set_sigblock(&ctx.uc_sigmask);
-}
-
 
 
 

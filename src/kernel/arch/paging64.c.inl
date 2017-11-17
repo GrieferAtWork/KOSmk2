@@ -721,12 +721,12 @@ pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
  size_t orig_size = n_bytes; bool use_2mib;
  if unlikely(!n_bytes) return -EOK;
 #if 0
- syslog(LOG_DEBUG,"MMAP: %p...%p --> %p...%p (%c%c%c)\n",
+ syslog(LOG_DEBUG,"MMAP: %p...%p --> %p...%p (%c%c%c, %x)\n",
        (uintptr_t)start,(uintptr_t)start+n_bytes-1,
        (uintptr_t)target,(uintptr_t)target+n_bytes-1,
         flags&PDIR_ATTR_USER ? 'U' : '-',
         flags&PDIR_ATTR_WRITE ? 'W' : '-',
-        flags&PDIR_ATTR_PRESENT ? 'P' : '-');
+        flags&PDIR_ATTR_PRESENT ? 'P' : '-',flags);
 #endif
 
  CHECK_HOST_DOBJ(self);
@@ -738,7 +738,8 @@ pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
  assert((uintptr_t)start+n_bytes == 0 ||
         (uintptr_t)start+n_bytes >= (uintptr_t)start);
  /* Make sure we're not accidentally remapping the core. */
- assertf(!((uintptr_t)start < KERNEL_END && (uintptr_t)start+n_bytes > KERNEL_BEGIN),
+ assertf(!((uintptr_t)start < KERNEL_END && (uintptr_t)start+n_bytes > KERNEL_BEGIN) ||
+          ((uintptr_t)target == (uintptr_t)virt_to_phys(start)),
          "Remapping %p...%p overlapping the core at %p...%p to %p...%p will most certainly crash",
         (uintptr_t)start,(uintptr_t)start+n_bytes-1,KERNEL_BEGIN,KERNEL_END-1,
         (uintptr_t)target,(uintptr_t)target+n_bytes-1);
@@ -902,7 +903,7 @@ pdir_munmap(pdir_t *__restrict self, VIRT ppage_t start,
  return -EOK;
 }
 
-#define PDIR_ENUM_MASK  (PDIR_ATTR_MASK&~(PDIR_ATTR_DIRTY|PDIR_ATTR_ACCESSED))
+#define PDIR_ENUM_MASK  (PDIR_ATTR_MASK&~(/*PDIR_ATTR_DIRTY|*/PDIR_ATTR_ACCESSED))
 
 PUBLIC ssize_t KCALL
 pdir_enum(pdir_t *__restrict self,
@@ -1275,7 +1276,7 @@ PRIVATE void KCALL pdir_kernel_transform_tables(void) {
                                          *       so that the CPU won't need to set the bits, and
                                          *       to prevent redundant and potentially dangerous
                                          *       data from being copied into user page directories. */
-                                        PDIR_ATTR_DIRTY|PDIR_ATTR_ACCESSED|
+                                        /*PDIR_ATTR_DIRTY|*/PDIR_ATTR_ACCESSED|
                                         /* Must set the global bit for all high pages! */
                                         PDIR_ATTR_GLOBAL));
  }

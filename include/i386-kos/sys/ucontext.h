@@ -226,21 +226,43 @@ typedef struct _libc_fpstate *fpregset_t;
 
 #define __MCONTEXT_OFFSETOF_GREGS      0
 #define __MCONTEXT_OFFSETOF_FPREGS    (__SIZEOF_GREG_T__*NGREG)
+#if defined(__USE_KOS) || defined(__KERNEL__)
+#define __MCONTEXT_OFFSETOF_FS_BASE   (__SIZEOF_GREG_T__*NGREG+__SIZEOF_POINTER__)
+#define __MCONTEXT_OFFSETOF_GS_BASE   (__SIZEOF_GREG_T__*NGREG+2*__SIZEOF_POINTER__)
+#endif
 #define __MCONTEXT_SIZE               (__SIZEOF_GREG_T__*NGREG+9*__SIZEOF_POINTER__)
 #ifdef __CC__
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
 #pragma push_macro("gregs")
 #pragma push_macro("fpregs")
+#if defined(__USE_KOS) || defined(__KERNEL__)
+#pragma push_macro("fs_base")
+#pragma push_macro("gs_base")
+#endif
 #endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #undef gregs
 #undef fpregs
+#if defined(__USE_KOS) || defined(__KERNEL__)
+#undef fs_base
+#undef gs_base
+#endif
 /* Context to describe whole processor state. */
 typedef struct {
     gregset_t        gregs;
-    fpregset_t       fpregs; /* Note that fpregs is a pointer. */
-    __UINTPTR_TYPE__ __reserved1[8]; /* XXX: Maybe fit fs/gs_base in here? */
+    fpregset_t       fpregs;  /* Note that fpregs is a pointer. */
+#if defined(__USE_KOS) || defined(__KERNEL__)
+    __UINTPTR_TYPE__ fs_base; /* User-space `fs_base' address. */
+    __UINTPTR_TYPE__ gs_base; /* User-space `gs_base' address. */
+    __UINTPTR_TYPE__ __reserved1[6];
+#else
+    __UINTPTR_TYPE__ __reserved1[8];
+#endif
 } mcontext_t;
 #ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#if defined(__USE_KOS) || defined(__KERNEL__)
+#pragma pop_macro("gs_base")
+#pragma pop_macro("fs_base")
+#endif
 #pragma pop_macro("fpregs")
 #pragma pop_macro("gregs")
 #endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */

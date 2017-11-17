@@ -851,6 +851,56 @@ deflirq_illegal_recursion(struct cpustate_ie *__restrict state, irq_t intno) {
  PREEMPTION_FREEZE();
 }
 
+struct irq_frame {
+ struct irq_frame *if_prev;
+ uintptr_t         if_xip;
+ uintptr_t         if_cr2;
+ irq_t             if_intno;
+};
+
+#ifdef CONFIG_SMP
+PRIVATE CPU_BSS struct irq_frame *smp_irq_frames;
+#define irq_frames  CPU(smp_irq_frames)
+#else
+PRIVATE struct irq_frame *irq_frames;
+#endif
+
+PRIVATE void KCALL
+deflirq_check_recursion(struct irq_frame *__restrict caller_frame,
+                        struct cpustate_ie *__restrict state,
+                        irq_t intno) {
+#if 1
+ struct irq_frame *iter;
+ caller_frame->if_xip  = IRREGS_TAIL(&state->iret)->xip;
+ caller_frame->if_prev = iter = irq_frames;
+ caller_frame->if_cr2  = 0;
+ if (intno == EXC_PAGE_FAULT)
+      __asm__ __volatile__("mov %%cr2, %0\n" : "=g" (caller_frame->if_cr2));
+ /* Check if the combination of IRQ instruction pointer,
+  * CR2 and interrupt number are already being handled.
+  * This check is required to filter valid interrupt recursion,
+  * such as what may happen when KERNEL_PANIC is invoked on #PF,
+  * which then attempts to generate a traceback, which in turn uses
+  * local exception handlers which cause another (but different) #PF. */
+ for (; iter; iter = iter->if_prev) {
+  if (iter->if_intno == caller_frame->if_intno &&
+      iter->if_xip   == caller_frame->if_xip &&
+      iter->if_cr2   == caller_frame->if_cr2)
+      deflirq_illegal_recursion(state,intno);
+ }
+ irq_frames = caller_frame;
+#else
+ deflirq_illegal_recursion(state,intno);
+#endif
+}
+
+PRIVATE void KCALL
+deflirq_delete_frame(struct irq_frame *__restrict caller_frame) {
+ if (caller_frame == irq_frames)
+     irq_frames = caller_frame->if_prev;
+}
+
+
 #ifdef CONFIG_SMP
 PRIVATE CPU_BSS  uintptr_t smp_deflirq_recursion[256/(8*sizeof(uintptr_t))];
 #define deflirq_recursion  CPU(smp_deflirq_recursion)
@@ -861,42 +911,46 @@ PRIVATE ATTR_RAREBSS uintptr_t deflirq_recursion[256/(8*sizeof(uintptr_t))];
  { uintptr_t addr = (intno)/(8*sizeof(uintptr_t)); \
    uintptr_t mask = (uintptr_t)1 << ((intno)%(8*sizeof(uintptr_t))); \
    if unlikely(deflirq_recursion[addr]&mask) \
-      deflirq_illegal_recursion(state,intno); \
+      deflirq_check_recursion(&__irq_frame,state,intno); \
    deflirq_recursion[addr] |= mask; \
  }
 #define DEFLIRQ_DO_LEAVE(intno) \
  { uintptr_t addr = (intno)/(8*sizeof(uintptr_t)); \
    uintptr_t mask = (uintptr_t)1 << ((intno)%(8*sizeof(uintptr_t))); \
    deflirq_recursion[addr] &= ~mask; \
+   deflirq_delete_frame(&__irq_frame); \
  }
 #ifdef CONFIG_SMP
-LOCAL bool KCALL deflirq_enter_early(struct cpustate_ie *__restrict state, irq_t intno) {
+LOCAL bool KCALL
+deflirq_enter_early(struct irq_frame *__restrict caller_frame,
+                    struct cpustate_ie *__restrict state, irq_t intno) {
  if (SMP_COUNT == 1) {
   /* Easy! We're the boot cpu. */
   uintptr_t addr = intno/(8*sizeof(uintptr_t));
   uintptr_t mask = (uintptr_t)1 << (intno%(8*sizeof(uintptr_t)));
   if unlikely(VCPU(BOOTCPU,smp_deflirq_recursion)[addr]&mask)
-     deflirq_illegal_recursion(state,intno);
+     deflirq_check_recursion(caller_frame,state,intno);
   VCPU(BOOTCPU,smp_deflirq_recursion)[addr] |= mask;
   return true; /* Don't try to enter again. */
  }
  return false;
 }
+
 #if defined(CONFIG_DEBUG) && defined(__x86_64__)
 #define DEFLIRQ_DECLARE_VARS \
-   bool __irq_did_enter;
+   struct irq_frame __irq_frame; bool __irq_did_enter;
 #define DEFLIRQ_ENTER_EARLY(intno) \
- { __irq_did_enter = deflirq_enter_early(state,intno); }
+ { __irq_did_enter = deflirq_enter_early(&__irq_frame,state,intno); }
 #define DEFLIRQ_ENTER_LATER(intno) \
  { if (!__irq_did_enter) DEFLIRQ_DO_ENTER(intno) }
 #else
-#define DEFLIRQ_DECLARE_VARS       /* nothing */
+#define DEFLIRQ_DECLARE_VARS       struct irq_frame __irq_frame;
 #define DEFLIRQ_ENTER_EARLY(intno) /* nothing */
 #define DEFLIRQ_ENTER_LATER(intno) DEFLIRQ_DO_ENTER(intno)
 #endif
 #define DEFLIRQ_LEAVE(intno)       DEFLIRQ_DO_LEAVE(intno)
 #else
-#define DEFLIRQ_DECLARE_VARS       /* nothing */
+#define DEFLIRQ_DECLARE_VARS       struct irq_frame __irq_frame;
 #define DEFLIRQ_ENTER_EARLY(intno) DEFLIRQ_DO_ENTER(intno)
 #define DEFLIRQ_ENTER_LATER(intno) /* nothing */
 #define DEFLIRQ_LEAVE(intno)       DEFLIRQ_DO_LEAVE(intno)
@@ -912,7 +966,11 @@ LOCAL bool KCALL deflirq_enter_early(struct cpustate_ie *__restrict state, irq_t
 LOCAL void KCALL
 exec_local_exception_handler(struct task *__restrict this_task,
                              struct cpustate_ie *__restrict state,
-                             struct irregs *__restrict tail, irq_t intno) {
+                             struct irregs *__restrict tail, irq_t intno
+#ifdef CONFIG_DEBUG
+                             , struct irq_frame *__restrict __pirq_frame
+#endif
+                              ) {
  struct intchain *iter;
 check_again: ATTR_UNUSED;
  for (iter = this_task->t_ic; iter;
@@ -924,9 +982,13 @@ check_again: ATTR_UNUSED;
    /* Trigger this exception handler. */
    this_task->t_ic = iter->ic_prev; /* Restore the handler before this one. */
    /* PREEMPTION_DISABLE(); // Not required. - At no point is our stack damaged. */
+#define __irq_frame  (*__pirq_frame)
    DEFLIRQ_LEAVE(intno); /* Indicate that we have left this handler. */
+#undef __irq_frame
    ((register_t *)&state->iret)[0] = tail->xflags;
    ((register_t *)&state->iret)[1] = (register_t)&iter->ic_int; /* p_eip (Load using `pop %esp; ret;') */
+   syslog(LOG_IRQ|LOG_DEBUG,"[IC] Execute local handler: %p -> %p\n",
+          IRREGS_TAIL(&state->iret)->xip,iter->ic_int);
    __asm__ __volatile__(
     L(    movx %0, %%xsp     /* (ab-)use the CPU state as stack. */               )
     L(    __ASM_IPOP_COMREGS /* Restore common registers (We're now as xflags) */ )
@@ -1076,7 +1138,11 @@ set_default_gs_base:
    *    >> Send a signal to the calling task. */
  } else {
   /* Try to run for local exception handlers. */
-  exec_local_exception_handler(this_task,state,iret_tail,intno);
+  exec_local_exception_handler(this_task,state,iret_tail,intno
+#ifdef CONFIG_DEBUG
+                               ,&__irq_frame
+#endif
+                               );
  }
 
  /* Process the kernel panic and dump debug information. */

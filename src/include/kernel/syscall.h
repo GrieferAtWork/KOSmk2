@@ -25,6 +25,7 @@
 #include <sched/percpu.h>
 #include <kernel/interrupt.h>
 #include <arch/syscall.h>
+#include <stdbool.h>
 
 #undef CONFIG_USE_OLD_SYSCALL
 #ifndef __x86_64__
@@ -114,6 +115,8 @@ DECL_BEGIN
 
 
 #define SYSCALL_FLAG_NORMAL    0x00 /* Just a regular, old system-call. */
+#define SYSCALL_FLAG_NORESTART 0x01 /* The system-call should not be restarted if interrupted, regardless of
+                                     * `SA_RESTART' potentially being set in the user-space signal handler. */
 
 #ifdef __CC__
 typedef u8 syscall_type_t; /* One of `SYSCALL_TYPE_*' */
@@ -186,9 +189,18 @@ FUNDEF errno_t KCALL syscall_del(register_t number);
  * @return: -EPERM:  Failed to increment the reference counter of `descriptor->sc_owner'
  * @return: -EINVAL: The given `number' is reserved by the kernel and cannot be modified.
  *                   For a list of reserved system call numbers, see <asm/syscallno.ci>
- * TODO: Document all return values.
- */
+ * TODO: Document all return values. */
 FUNDEF errno_t KCALL syscall_register(struct syscall const *__restrict descriptor);
+
+/* Check if a given system call behaves as `norestart' */
+FUNDEF bool KCALL syscall_is_norestart(register_t number);
+#ifdef __SYSCALL_TYPE_LONGBIT
+/* Check if a given system call returns in 2 registers. */
+FUNDEF bool KCALL syscall_is_long(register_t number);
+#else
+#define syscall_is_long(number) false
+#endif
+
 #endif /* __CC__ */
 
 
@@ -214,6 +226,7 @@ FUNDEF errno_t KCALL syscall_register(struct syscall const *__restrict descripto
 /* TODO: Get rid of these macros. */
 #define THIS_SYSCALL_EIP                    THIS_SYSCALL_GETIP()
 /* TODO: Get rid of these macros. */
+#ifdef CONFIG_USE_OLD_SIGNALS
 #define THIS_SYSCALL_REAL_XIP              (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xip : THIS_SYSCALL_EIP)
 #define THIS_SYSCALL_REAL_CS               (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_cs : IRREGS_SYSCALL_GET()->cs)
 #define THIS_SYSCALL_REAL_XFLAGS           (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xflags : IRREGS_SYSCALL_GET()->xflags)
@@ -224,6 +237,14 @@ FUNDEF errno_t KCALL syscall_register(struct syscall const *__restrict descripto
 #define SET_THIS_SYSCALL_REAL_XFLAGS(x)  (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xflags : &IRREGS_SYSCALL_GET()->xflags) = (x))
 #define SET_THIS_SYSCALL_REAL_USERXSP(x) (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_userxsp : (void **)&IRREGS_SYSCALL_GET()->userxsp) = (x))
 #define SET_THIS_SYSCALL_REAL_SS(x)      (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_ss : &IRREGS_SYSCALL_GET()->ss) = (x))
+#else
+#define THIS_SYSCALL_REAL_XIP              (THIS_TASK->t_sigenter.se_count ? (void *)THIS_TASK->t_sigenter.se_xip : THIS_SYSCALL_EIP)
+#define THIS_SYSCALL_REAL_XFLAGS           (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xflags : IRREGS_SYSCALL_GET()->xflags)
+#define THIS_SYSCALL_REAL_USERXSP          (THIS_TASK->t_sigenter.se_count ? (void *)THIS_TASK->t_sigenter.se_xsp : (void *)IRREGS_SYSCALL_GET()->userxsp)
+#define SET_THIS_SYSCALL_REAL_XIP(x)     (*(THIS_TASK->t_sigenter.se_count ? (void **)&THIS_TASK->t_sigenter.se_xip : (void **)&IRREGS_SYSCALL_GET()->xip) = (x))
+#define SET_THIS_SYSCALL_REAL_XFLAGS(x)  (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xflags : &IRREGS_SYSCALL_GET()->xflags) = (x))
+#define SET_THIS_SYSCALL_REAL_USERXSP(x) (*(THIS_TASK->t_sigenter.se_count ? (void **)&THIS_TASK->t_sigenter.se_xsp : (void **)&IRREGS_SYSCALL_GET()->userxsp) = (x))
+#endif
 
 
 #else

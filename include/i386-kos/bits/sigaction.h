@@ -21,6 +21,7 @@
 
 #include <__stdinc.h>
 #include <bits/siginfo.h>
+#include <bits/sigset.h>
 
 __SYSDECL_BEGIN
 

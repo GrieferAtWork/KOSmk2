@@ -218,7 +218,7 @@ kernel_panic_process(struct cpu *__restrict this_cpu,
   if (reg&EFLAGS_VIP) iter = stpcpy(iter,S("+VIP"));
   if (reg&EFLAGS_ID)  iter = stpcpy(iter,S("+ID"));
   *iter = '\0';
-  printf(S("EFLAGS %.8IX (IOPL(%d)%s)\n"),reg,
+  printf(S(REGISTER_PREFIX "FLAGS %.8IX (IOPL(%d)%s)\n"),reg,
         (int)EFLAGS_GTIOPL(reg),buffer);
  }
  if (kernel_panic_mask&PANIC_SGREGS) {

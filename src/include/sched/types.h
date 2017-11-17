@@ -211,7 +211,8 @@ struct PACKED hstack {
                                      *  but will terminate as soon as that section is left. */
 #define TASKFLAG_TIMEDOUT    0x0008 /*< The task was awoken, because it timed out (NOTE: Only THIS_TASK may remove this flag once set). */
 #define TASKFLAG_INTERRUPT   0x0010 /*< The task was awoken due to an interrupt (NOTE: Only THIS_TASK may remove this flag once set). */
-#define TASKFLAG_DELAYSIGS   0x1000 /*< [lock(PRIVATE(THIS_TASK))] Delay the delivery of signals to this task. (Used for emulating `cli' / `sti' instructions in user-space) */
+#define TASKFLAG_DELAYSIGS   0x1000 /*< [lock(PRIVATE(THIS_TASK))] Delay the delivery of signals to this task. (Used for emulating `cli' / `sti' instructions in user-space)
+                                     *   TODO: Add a CONFIG_* option for this. */
 #define TASKFLAG_NOSIGNALS   0x2000 /*< [const] Signals cannot be sent to this task (Can only be enforced when all bits in `t_sigblock', or `TASKFLAG_DELAYSIGS' is set). */
 #define TASKFLAG_NOTALEADER  0x4000 /*< [const] The task cannot be used as a thread/process group leader. */
 #define TASKFLAG_SIGSTOPCONT 0x8000 /*< [lock(t_cpu->c_lock)] The task has been stopped or continued (NOTE: Not set by forced suspend/resume). */
@@ -559,8 +560,13 @@ struct sigpending {
 FUNDEF void KCALL sigpending_fini(struct sigpending *__restrict self);
 #endif
 
+#undef CONFIG_USE_OLD_SIGNALS
+#ifndef __x86_64__
+#define CONFIG_USE_OLD_SIGNALS 1
+#endif
 
 #if defined(__x86_64__) || defined(__i386__)
+#ifdef CONFIG_USE_OLD_SIGNALS
 #   define SIGENTER_OFFSETOF_COUNT      0
 #   define SIGENTER_OFFSETOF_XIP        __SIZEOF_POINTER__
 #   define SIGENTER_OFFSETOF_CS      (2*__SIZEOF_POINTER__)
@@ -569,14 +575,43 @@ FUNDEF void KCALL sigpending_fini(struct sigpending *__restrict self);
 #   define SIGENTER_OFFSETOF_SS      (5*__SIZEOF_POINTER__)
 #   define SIGENTER_SIZE             (6*__SIZEOF_POINTER__)
 #else
+#   define SIGENTER_OFFSETOF_COUNT     0
+#   define SIGENTER_OFFSETOF_NEXT      __SIZEOF_POINTER__
+#   define SIGENTER_OFFSETOF_XIP    (2*__SIZEOF_POINTER__)
+#   define SIGENTER_OFFSETOF_XAX    (3*__SIZEOF_POINTER__)
+#   define SIGENTER_OFFSETOF_XFLAGS (4*__SIZEOF_POINTER__)
+#   define SIGENTER_OFFSETOF_XSP    (5*__SIZEOF_POINTER__)
+#ifndef __x86_64__ /* TODO: #ifdef __SYSCALL_TYPE_LONGBIT */
+#   define SIGENTER_OFFSETOF_XDX    (6*__SIZEOF_POINTER__)
+#   define SIGENTER_SIZE            (7*__SIZEOF_POINTER__)
+#else
+#   define SIGENTER_SIZE            (6*__SIZEOF_POINTER__)
+#endif
+#endif
+#else
 #   error FIXME
 #endif
 
 #ifdef __CC__
+#ifdef CONFIG_USE_OLD_SIGNALS
 struct sigenter_info;
+#else
+struct sigenter_tail;
+#endif
 
 struct PACKED sigenter {
 #if defined(__x86_64__) || defined(__i386__)
+#ifndef CONFIG_USE_OLD_SIGNALS
+ size_t                     se_count;  /* The amount of signals current raised. */
+ USER struct sigenter_tail *se_next;   /* [0..1][valid_if(se_count != 0)] Next user-space signal handler context. */
+ register_t                 se_xip;    /* offsetof(this) == offsetof(struct irregs,xip) */
+ register_t                 se_xax;
+ register_t                 se_xflags; /* offsetof(this) == offsetof(struct irregs,xflags) */
+ register_t                 se_xsp;    /* offsetof(this) == offsetof(struct irregs,xsp) */
+#ifndef __x86_64__ /* TODO: #ifdef __SYSCALL_TYPE_LONGBIT */
+ register_t                 se_xdx;
+#endif
+#else
  size_t     se_count; /*< Amount of Signals that need handling. */
  /* Return register values (These were overwritten near the kernel stack base).
   * NOTE: Basically, this is the original iret tail that was used when the kernel was entered. */
@@ -592,12 +627,13 @@ union{
            *se_siginfo; /*< Either located on the user-stack, or the signal-alt-stack. */
 };
  IRET_SEGMENT(se_ss);
+#endif
 #else
 #error "Unsupported arch"
 #endif
 };
 
-
+#if 0
 /* Special in-assembly implementation of the user-space return override
  * used to return to a signal handler instead of the user-space caller's
  * origin.
@@ -620,7 +656,7 @@ union{
  *    system call, an exception, or something different such as a
  *    hardware interrupt. */
 FUNDEF ATTR_NORETURN void ASMCALL sigenter(void);
-
+#endif
 
 #endif /* __CC__ */
 
@@ -921,7 +957,7 @@ struct PACKED cpu {
                                           *         Exceptions to this only apply when the CPU isn't running.
                                           *   NOTE: This ring is never empty, as a special IDLE-task is always apart of it. */
  REF RING_HEAD(struct task) c_idling;    /*< [0..1][lock(PRIVATE(THIS_CPU))][sort(DESCENDING(t_priority),DESCENDING(t_mman))] Ring of idle tasks.
-                                          *   WARNING: unlike normal rings, one's front/back pointers are set to NULL (making it a direct, doubly-linked list). */
+                                          *   WARNING: unlike normal rings, this one's front->prev/back->next pointers are set to NULL (making it a direct, doubly-linked list). */
 union PACKED {
  uintptr_t                __c_align0;
 struct PACKED {

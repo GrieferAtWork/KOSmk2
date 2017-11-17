@@ -22,8 +22,6 @@
 #include <hybrid/compiler.h>
 #include <arch/cpustate.h>
 #include <hybrid/list/list.h>
-#include <sched/percpu.h>
-#include <sched/types.h>
 #include <asm/unistd.h>
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
@@ -48,12 +46,12 @@ DECL_BEGIN
 
 
 #define IRREGS_SYSCALL_OFFSETOF_ORIG_EAX  0
-#define IRREGS_SYSCALL_OFFSETOF_ORIG_RAX  0
 #define IRREGS_SYSCALL_OFFSETOF_ORIG_AX   0
 #define IRREGS_SYSCALL_OFFSETOF_ORIG_AL   0
 #define IRREGS_SYSCALL_OFFSETOF_ORIG_AH   1
 #define IRREGS_SYSCALL_OFFSETOF_SYSNO     0
 #ifdef __x86_64__
+#define IRREGS_SYSCALL_OFFSETOF_ORIG_RAX  0
 #define IRREGS_SYSCALL_OFFSETOF_TAIL      8 /* +IRREGS_OFFSETOF_* */
 #define IRREGS_SYSCALL_OFFSETOF_HOST      8 /* +IRREGS_HOST_OFFSETOF_* */
 #define IRREGS_SYSCALL_OFFSETOF_IP        8
@@ -114,7 +112,7 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
   visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
     __SC_TEST##n args; syscall_slong_t __res; \
     __res = (SYSC##name)(__SC_CAST##n args); \
-    syslog(LOG_DEBUG,"[SYSCALL] sys" #name "() -> %p\n",(void *)__res); \
+    syslog(LOG_DEBUG,"[SYSCALL] END sys" #name "() -> %p\n",(void *)__res); \
     return __res; \
   } \
   LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
@@ -162,10 +160,31 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
 #else
 #define __PRIVATE_SYSCALL_RSPOFF  8  /* RAX */
 #endif
+#ifdef CONFIG_DEBUG
 #define __SYSCALL_SDEFINE(visibility,name,state) \
   GLOBAL_ASM(L(.section .text                                                              ) \
              L(visibility##_ENTRY(sys##name)                                               ) \
-             L(    addq $(__PRIVATE_SYSCALL_RSPOFF), %rsp /* Adjust stack offset */        ) \
+             L(    addq  $(__PRIVATE_SYSCALL_RSPOFF), %rsp /* Adjust stack offset */       ) \
+             L(    __ASM_SCRACH_XSP_TO_GPREGS(%rcx)                                        ) \
+             L(    __ASM_PUSH_SGREGS                                                       ) \
+             L(    movq  %rsp, %rdi /* `struct cpustate *state' */                         ) \
+             L(    pushq CPUSTATE_OFFSETOF_IRET+IRREGS_OFFSETOF_IP(%rdi)                   ) \
+             L(    pushq CPUSTATE_OFFSETOF_GP+GPREGS_OFFSETOF_RBP(%rdi)                    ) \
+             L(    movq  %rsp, %rbp                                                        ) \
+             L(    call  SYSC##name                                                        ) \
+             L(    addq  $16,  %rsp                                                        ) \
+             L(    cli                                                                     ) \
+             L(    swapgs                                                                  ) \
+             L(    __ASM_POP_COMREGS                                                       ) \
+             L(    ASM_IRET                                                                ) \
+             L(SYM_END(sys##name)                                                          ) \
+             L(.previous                                                                   )); \
+  PRIVATE ATTR_USED void (SYSCALL_STATE_HANDLER SYSC##name)(struct cpustate *__restrict state)
+#else
+#define __SYSCALL_SDEFINE(visibility,name,state) \
+  GLOBAL_ASM(L(.section .text                                                              ) \
+             L(visibility##_ENTRY(sys##name)                                               ) \
+             L(    addq  $(__PRIVATE_SYSCALL_RSPOFF), %rsp /* Adjust stack offset */       ) \
              L(    __ASM_SCRACH_XSP_TO_GPREGS(%rcx)                                        ) \
              L(    __ASM_PUSH_SGREGS                                                       ) \
              L(    movq  %rsp, %rdi /* `struct cpustate *state' */                         ) \
@@ -176,7 +195,8 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
              L(    ASM_IRET                                                                ) \
              L(SYM_END(sys##name)                                                          ) \
              L(.previous                                                                   )); \
-  PRIVATE ATTR_USED void (SYSCALL_HANDLER SYSC##name)(struct cpustate *__restrict state)
+  PRIVATE ATTR_USED void (SYSCALL_STATE_HANDLER SYSC##name)(struct cpustate *__restrict state)
+#endif
 
 #else /* __x86_64__ */
 

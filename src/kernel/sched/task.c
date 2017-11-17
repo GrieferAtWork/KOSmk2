@@ -54,6 +54,7 @@
 #include <string.h>
 #include <sys/io.h>
 #include <asm/instx.h>
+#include <kernel/syscall.h>
 #include <arch/pic.h>
 #ifndef CONFIG_NO_TLB
 #include <arch/gdt.h>
@@ -128,6 +129,7 @@ STATIC_ASSERT(IS_ALIGNED(sizeof(struct tasksig),TASKSIG_ALIGN));
 STATIC_ASSERT(sizeof(struct tasksig) == TASKSIG_SIZE);
 STATIC_ASSERT(IS_ALIGNED(offsetof(struct task,t_signals),TASKSIG_ALIGN));
 
+#ifdef CONFIG_USE_OLD_SIGNALS
 STATIC_ASSERT(offsetof(struct sigenter,se_count) == SIGENTER_OFFSETOF_COUNT);
 STATIC_ASSERT(offsetof(struct sigenter,se_xip) == SIGENTER_OFFSETOF_XIP);
 STATIC_ASSERT(offsetof(struct sigenter,se_cs) == SIGENTER_OFFSETOF_CS);
@@ -135,6 +137,18 @@ STATIC_ASSERT(offsetof(struct sigenter,se_xflags) == SIGENTER_OFFSETOF_XFLAGS);
 STATIC_ASSERT(offsetof(struct sigenter,se_userxsp) == SIGENTER_OFFSETOF_USERXSP);
 STATIC_ASSERT(offsetof(struct sigenter,se_ss) == SIGENTER_OFFSETOF_SS);
 STATIC_ASSERT(sizeof(struct sigenter) == SIGENTER_SIZE);
+#else
+STATIC_ASSERT(offsetof(struct sigenter,se_count) == SIGENTER_OFFSETOF_COUNT);
+STATIC_ASSERT(offsetof(struct sigenter,se_next) == SIGENTER_OFFSETOF_NEXT);
+STATIC_ASSERT(offsetof(struct sigenter,se_xip) == SIGENTER_OFFSETOF_XIP);
+STATIC_ASSERT(offsetof(struct sigenter,se_xax) == SIGENTER_OFFSETOF_XAX);
+STATIC_ASSERT(offsetof(struct sigenter,se_xflags) == SIGENTER_OFFSETOF_XFLAGS);
+STATIC_ASSERT(offsetof(struct sigenter,se_xsp) == SIGENTER_OFFSETOF_XSP);
+#ifdef __SYSCALL_TYPE_LONGBIT
+STATIC_ASSERT(offsetof(struct sigenter,se_xdx) == SIGENTER_OFFSETOF_XDX);
+#endif /* __SYSCALL_TYPE_LONGBIT */
+STATIC_ASSERT(sizeof(struct sigenter) == SIGENTER_SIZE);
+#endif
 
 #ifdef ARCHTASK_SIZE
 #ifndef CONFIG_NO_LDT
@@ -973,6 +987,14 @@ L(    movx (TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_END)(%xax), %xax             )
 L(    /* Save the proper kernel stack address in the CPU's TSS. */            )
 L(    movx %xax, ASM_CPU(CPU_OFFSETOF_ARCH+ARCHCPU_OFFSETOF_TSS+TSS_OFFSETOF_XSP0))
 L(70:                                                                         )
+#if defined(CONFIG_DEBUG) && 0
+#ifdef __x86_64__
+L(    movq  $1, %rdi                                                          )
+#else
+L(    pushl $1                                                                )
+#endif
+L(    call cpu_validate_counters                                              )
+#endif
 #ifdef __x86_64__
 L(    /* Must swap GS base addresses if we're about to jump to user-space. */ )
 L(    testb $3, CPUSTATE_HOST_OFFSETOF_IRET+IRREGS_OFFSETOF_CS(%rsp)          )
@@ -985,6 +1007,9 @@ L(    ASM_IRET          /* Iret -> pop XIP, CS + XFLAGS */                    )
 L(98: sti   /* Re-enable interrupts. */                                       )
 L(    pause /* Dispite all, still allow the CPU to relax a bit when not yielding. */)
 L(    movx $-EAGAIN, CPUSTATE_HOST_OFFSETOF_GP+GPREGS_OFFSETOF_XAX(%xsp)      )
+#ifdef __x86_64__
+L(    cli                                                                     )
+#endif
 L(    jmp  70b                                                                )
 L(99: pause                                                                   )
 #ifdef CONFIG_DEBUG
@@ -998,6 +1023,9 @@ L(    addl  $4, %esp                                                          )
 #endif
 #endif
 L(    movx $-EPERM, CPUSTATE_HOST_OFFSETOF_GP+GPREGS_OFFSETOF_XAX(%xsp)       )
+#ifdef __x86_64__
+L(    cli                                                                     )
+#endif
 L(    jmp  70b                                                                )
 L(SYM_END(task_yield)                                                         )
 L(.previous                                                                   )
@@ -1393,7 +1421,12 @@ PUBLIC REF struct task *FCALL cpu_sched_remove_current(void) {
   }
   /* Update the idling task chain to contain what's
    * left after we've inherited one priority level. */
+#if 0
   THIS_CPU->c_idling = last_idle->t_sched.sd_running.re_next;
+#else
+  if ((THIS_CPU->c_idling = last_idle->t_sched.sd_running.re_next) != NULL)
+       THIS_CPU->c_idling->t_sched.sd_running.re_prev = NULL;
+#endif
   /* Close the ring of new idle tasks. */
   last_idle->t_sched.sd_running.re_next  = first_idle;
   first_idle->t_sched.sd_running.re_prev = last_idle;
@@ -1551,7 +1584,7 @@ pit_interrupt_handler(struct cpustate *__restrict state) {
  /* Signal completion of the PIT interrupt.
   * NOTE: Actual new signals will only be received once iret turns interrupts back on.
   *       And in the event that the new task didn't have interrupts
-  *       enabled, they wont turn back on for a while. */
+  *       enabled, they won't turn back on for a while. */
  PIC_EOI(INTNO_PIC1_PIT);
  assert(!PREEMPTION_ENABLED());
 
@@ -1737,6 +1770,32 @@ end:
 #endif /* CONFIG_SMP */
 
 
+/* If a faulty task points manages to sneak into
+ * one of the cpu-cpu task execution chains, then
+ * attempting to validate it will cause a pagefault.
+ * That pagefault will then lock the memory manager,
+ * which will notice that there is no ALLOA
+ * descriptor for that address, before unlocking
+ * the memory manager again, which will call
+ * `sig_broadcast()' -> [...] -> `sig_vsendone_unlocked()'
+ * So essentially, we end up in an infinite loop that's
+ * only broken after the second iteration when attempting
+ * to re-lock an already locked signal causes `task_yield()'
+ * to fail because interrupts will be disabled.
+ * >> So instead of going through all of that and
+ *    ending with the waaay too generic error of 
+ *   `Cannot yield while interrupts are disabled',
+ *    we can simply pass on validating counters here
+ *    and let it fail during the next PIC preemption.
+ *   (Which will actually result in a regular #PF pointing
+ *    at the broken task chain in `cpu_validate_counters()')
+ */
+#if 0
+#define CPU_VALIDATE_COUNTERS_DANGER(private_only) \
+        cpu_validate_counters(private_only)
+#else
+#define CPU_VALIDATE_COUNTERS_DANGER(private_only) (void)0
+#endif
 
 PUBLIC SAFE bool KCALL
 sig_vsendone_unlocked(struct sig *__restrict s,
@@ -1746,7 +1805,7 @@ sig_vsendone_unlocked(struct sig *__restrict s,
  CHECK_HOST_DOBJ(s);
  assert(TASK_ISSAFE());
  assert(sig_writing(s));
- cpu_validate_counters(true);
+ CPU_VALIDATE_COUNTERS_DANGER(true);
  /* Pop one signal slot and update links to the next. */
  slot = SIG_GETTASK(s);
  if (!slot) return false;
@@ -1777,7 +1836,7 @@ sig_vsendone_unlocked(struct sig *__restrict s,
   if likely(TASK_CPU(t) == c) break;
   cpu_endwrite(c);
  }
- cpu_validate_counters(c != THIS_CPU);
+ CPU_VALIDATE_COUNTERS_DANGER(c != THIS_CPU);
 
  next = slot->tss_chain.le_next;
  assert(IS_ALIGNED((uintptr_t)next,TASKSIGSLOT_ALIGN));
@@ -1804,7 +1863,7 @@ sig_vsendone_unlocked(struct sig *__restrict s,
  if (slot->tss_siz && datasize)
      memcpy(slot->tss_buf,data,MIN(slot->tss_siz,datasize));
 
- cpu_validate_counters(c != THIS_CPU);
+ CPU_VALIDATE_COUNTERS_DANGER(c != THIS_CPU);
  switch (t->t_mode) {
 
  case TASKMODE_SUSPENDED:
@@ -1826,7 +1885,7 @@ sig_vsendone_unlocked(struct sig *__restrict s,
  }
 
 done:
- cpu_validate_counters(false);
+ CPU_VALIDATE_COUNTERS_DANGER(false);
  cpu_endwrite(c);
  PREEMPTION_POP(was);
  return true;

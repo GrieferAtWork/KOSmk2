@@ -60,9 +60,9 @@ void my_action(int signo, siginfo_t *info, void *ctx) {
 
 
 int main(int argc, char **argv) {
- open2(STDIN_FILENO,"/dev/keyboard",O_RDONLY);
  open2(STDOUT_FILENO,"/dev/kmsg",O_WRONLY);
  dup2(STDOUT_FILENO,STDERR_FILENO);
+ open2(STDIN_FILENO,"/dev/keyboard",O_RDONLY);
 
  /* Setup some volatile components of a regular linux filesystem environment. */
  if (mount("proc","/proc","proc",0,NULL) &&

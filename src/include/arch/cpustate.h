@@ -194,16 +194,39 @@ DECL_BEGIN
 #define GPREGS_SYSCALL_ARG6(x) ((x).r9)
 #define GPREGS_SYSCALL_RET1(x) ((x).rax)
 #define GPREGS_SYSCALL_RET2(x) ((x).rdx)
+
+#define GPREGS_SYSV_ARG1(x)    ((x).rdi)
+#define GPREGS_SYSV_ARG2(x)    ((x).rsi)
+#define GPREGS_SYSV_ARG3(x)    ((x).rdx)
+#define GPREGS_SYSV_ARG4(x)    ((x).rcx)
+#define GPREGS_SYSV_ARG5(x)    ((x).r8)
+#define GPREGS_SYSV_ARG6(x)    ((x).r9)
+#define GPREGS_SYSV_RET1(x)    ((x).rax)
+#define GPREGS_SYSV_RET2(x)    ((x).rdx)
+
+/* Just an alias for `SYSV' as this point. */
+#define GPREGS_FASTCALL_ARG1(x) ((x).rdi)
+#define GPREGS_FASTCALL_ARG2(x) ((x).rsi)
+#define GPREGS_FASTCALL_RET1(x) ((x).rax)
+#define GPREGS_FASTCALL_RET2(x) ((x).rdx)
+
 #else
 /* i386:   IN(ebx, ecx, edx, esi, edi, ebp) OUT(eax[,edx]) */
-#define GPREGS_SYSCALL_ARG1(x) ((x).ebx)
-#define GPREGS_SYSCALL_ARG2(x) ((x).ecx)
-#define GPREGS_SYSCALL_ARG3(x) ((x).edx)
-#define GPREGS_SYSCALL_ARG4(x) ((x).esi)
-#define GPREGS_SYSCALL_ARG5(x) ((x).edi)
-#define GPREGS_SYSCALL_ARG6(x) ((x).ebp)
-#define GPREGS_SYSCALL_RET1(x) ((x).eax)
-#define GPREGS_SYSCALL_RET2(x) ((x).edx)
+#define GPREGS_SYSCALL_ARG1(x)  ((x).ebx)
+#define GPREGS_SYSCALL_ARG2(x)  ((x).ecx)
+#define GPREGS_SYSCALL_ARG3(x)  ((x).edx)
+#define GPREGS_SYSCALL_ARG4(x)  ((x).esi)
+#define GPREGS_SYSCALL_ARG5(x)  ((x).edi)
+#define GPREGS_SYSCALL_ARG6(x)  ((x).ebp)
+#define GPREGS_SYSCALL_RET1(x)  ((x).eax)
+#define GPREGS_SYSCALL_RET2(x)  ((x).edx)
+
+#define GPREGS_FASTCALL_ARG1(x) ((x).ecx)
+#define GPREGS_FASTCALL_ARG2(x) ((x).edx)
+#define GPREGS_FASTCALL_RET1(x) ((x).eax)
+#define GPREGS_FASTCALL_RET2(x) ((x).edx)
+#define GPREGS_CDECL_RET1(x)    ((x).eax)
+#define GPREGS_CDECL_RET2(x)    ((x).edx)
 #endif
 
 #ifdef __CC__

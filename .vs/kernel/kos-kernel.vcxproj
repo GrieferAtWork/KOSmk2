@@ -164,6 +164,7 @@
     <ClInclude Include="..\..\src\include\arch\pic.h" />
     <ClInclude Include="..\..\src\include\arch\preemption.h" />
     <ClInclude Include="..\..\src\include\arch\realmode.h" />
+    <ClInclude Include="..\..\src\include\arch\signal.h" />
     <ClInclude Include="..\..\src\include\arch\syscall.h" />
     <ClInclude Include="..\..\src\include\arch\task.h" />
     <ClInclude Include="..\..\src\include\arch\tss.h" />

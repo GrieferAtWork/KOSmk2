@@ -116,7 +116,7 @@ DECL_BEGIN
 #define PDIR_ATTR_MASK     __UINT64_C(0x0000000000000fff)
 #define PDIR_ATTR_GLOBAL              0x0100 /* Set to optimize mappings that appear at the same location in all
                                               * directories it appears inside of (aka: Kernel-allocated stack/memory). */
-#define PDIR_ATTR_DIRTY               0x0040 /* The page was written to. */
+//#define PDIR_ATTR_DIRTY             0x0040 /* The page was written to. XXX: Aparently this doesn't exist in x86_64's page structure? */
 #define PDIR_ATTR_ACCESSED            0x0020 /* The page was read from, or written to. */
 #define PDIR_ATTR_USER                0x0004 /* User-space may access this page (read, or write). */
 #define PDIR_ATTR_WRITE               0x0002 /* The page is writable. */

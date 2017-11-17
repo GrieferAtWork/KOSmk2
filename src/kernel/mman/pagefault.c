@@ -49,11 +49,11 @@ INTERN DEFINE_CODE_HANDLER(mman_asm_pf,mman_irq_pf);
 INTERN int FCALL mman_interrupt_pf_handler(struct irregs_ie *__restrict info);
 #endif
 
-#define PF_P (1 << 0) /*< Present. */
-#define PF_W (1 << 1) /*< Write. */
-#define PF_U (1 << 2) /*< User. */
-#define PF_R (1 << 3) /*< Reserved write. */
-#define PF_I (1 << 4) /*< Instruction Fetch. */
+#define PF_P (1 << 0) /*< 0x01: Present. */
+#define PF_W (1 << 1) /*< 0x02: Write. */
+#define PF_U (1 << 2) /*< 0x04: User. */
+#define PF_R (1 << 3) /*< 0x08: Reserved write. */
+#define PF_I (1 << 4) /*< 0x10: Instruction Fetch. */
 
 #ifdef CONFIG_USE_OLD_INTERRUPTS
 PRIVATE ATTR_USED void FCALL
@@ -110,8 +110,8 @@ mman_interrupt_pf_handler(struct irregs_ie *__restrict info)
 #endif
 
 #if 0
- syslog(LOG_DEBUG,"#!$ addr2line(%Ix) '{file}({line}) : {func} : %p #PF at %p'\n",
-       (uintptr_t)IRET_INFO.xip-1,IRET_INFO.xip,fault_addr);
+ syslog(LOG_DEBUG,"#!$ addr2line(%Ix) '{file}({line}) : {func} : %p #PF at %p (%x)'\n",
+       (uintptr_t)IRET_INFO.xip-1,IRET_INFO.xip,fault_addr,IRET_INFO.exc_code);
 #endif
 
  fault_page = FLOOR_ALIGN(fault_addr,PAGESIZE);

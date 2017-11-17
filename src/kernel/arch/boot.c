@@ -1066,7 +1066,7 @@ void KCALL fixup_fsgsbase(void) {
   assertf(code[1] == 0x49 &&
          (code[4] == 0xc2 || code[4] == 0xca ||
           code[4] == 0xd2 || code[4] == 0xda),
-          "`(rd|wr)(gs|gs)base' is currently only implemented for `%r10'");
+          "`(rd|wr)(gs|gs)base' is currently only implemented for `%%r10'");
   switch (code[4]) {
   case 0xc2:          target = (uintptr_t)rdfsbase_r10; break;
   case 0xca:          target = (uintptr_t)rdgsbase_r10; break;
