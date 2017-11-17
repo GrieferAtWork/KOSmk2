@@ -399,7 +399,6 @@ struct PACKED sgregs { u64 gs_base; u64 fs_base; };
                                 movq SGREGS_OFFSETOF_FS_BASE+src, %%r10; ASM_WRFSBASE(r10);
 #define __ASM_POP_SGREGS        popq  %r10; ASM_WRGSBASE(r10); popq  %r10; ASM_WRFSBASE(r10);
 #define __ASM_IPOP_SGREGS       popq %%r10; ASM_WRGSBASE(r10); popq %%r10; ASM_WRFSBASE(r10);
-#define __ASM_LOAD_SEGMENTS(temp) /* TODO: Remove this macro on x86_64 */
 #else
 #define SGREGS_OFFSETOF_GS 0
 #define SGREGS_OFFSETOF_FS 2

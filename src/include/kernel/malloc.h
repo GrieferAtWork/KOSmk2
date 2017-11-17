@@ -366,8 +366,7 @@ FORCELOCAL WUNUSED gfp_t (KCALL _kmalloc_flags)(void *ptr) {
 FORCELOCAL SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_ALLOC_SIZE((1))
 ATTR_MALLOC void *(KCALL _kmemdup)(void const *__restrict ptr, size_t n_bytes,
                                    gfp_t flags) {
- if (__builtin_constant_p(flags) ||
-     __builtin_constant_p(n_bytes)) {
+ if (__builtin_constant_p(n_bytes)) {
   register void *result = _kmalloc(n_bytes,flags);
   if (result) memcpy(result,ptr,n_bytes);
   return result;
@@ -377,8 +376,7 @@ ATTR_MALLOC void *(KCALL _kmemdup)(void const *__restrict ptr, size_t n_bytes,
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
 ATTR_MALLOC void *(KCALL _kmemadup)(void const *__restrict ptr, size_t alignment,
                                     size_t n_bytes, gfp_t flags) {
- if (__builtin_constant_p(flags) ||
-     __builtin_constant_p(n_bytes)) {
+ if (__builtin_constant_p(n_bytes)) {
   register void *result = _kmemalign(alignment,n_bytes,flags);
   if (result) memcpy(result,ptr,n_bytes);
   return result;
@@ -442,8 +440,7 @@ FORCELOCAL WUNUSED gfp_t (KCALL __kmalloc_flags_d)(void *ptr, DEBUGINFO) {
 FORCELOCAL SAFE WUNUSED __MALL_DEFAULT_ALIGNED ATTR_ALLOC_SIZE((1))
 ATTR_MALLOC void *(KCALL __kmemdup_d)(void const *__restrict ptr, size_t n_bytes,
                                       gfp_t flags, DEBUGINFO) {
- if (__builtin_constant_p(flags) ||
-     __builtin_constant_p(n_bytes)) {
+ if (__builtin_constant_p(n_bytes)) {
   register void *result = _kmalloc_d(n_bytes,flags,DEBUGINFO_FWD);
   if (result) memcpy(result,ptr,n_bytes);
   return result;
@@ -453,8 +450,7 @@ ATTR_MALLOC void *(KCALL __kmemdup_d)(void const *__restrict ptr, size_t n_bytes
 FORCELOCAL SAFE WUNUSED ATTR_ALLOC_ALIGN(1) ATTR_ALLOC_SIZE((2))
 ATTR_MALLOC void *(KCALL __kmemadup_d)(void const *__restrict ptr, size_t alignment,
                                        size_t n_bytes, gfp_t flags, DEBUGINFO) {
- if (__builtin_constant_p(flags) ||
-     __builtin_constant_p(n_bytes)) {
+ if (__builtin_constant_p(n_bytes)) {
   register void *result = _kmemalign_d(alignment,n_bytes,flags,DEBUGINFO_FWD);
   if (result) memcpy(result,ptr,n_bytes);
   return result;

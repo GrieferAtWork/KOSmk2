@@ -305,11 +305,6 @@ __INT_LEAVE_E \
 )
 #endif
 
-DECL_END
-#endif /* CONFIG_USE_OLD_INTERRUPTS */
-
-
-/* TODO: Remove all the macros below! */
 #define __LOAD_SEGMENTS(temp) \
     __PP_STR(__ASM_LOAD_SEGMENTS(temp))
 #define __INT_ENTER \
@@ -332,6 +327,11 @@ DECL_END
    "addl $4, %esp\n" /* Error code */ \
    "iret\n"
 #endif
+
+
+DECL_END
+#endif /* CONFIG_USE_OLD_INTERRUPTS */
+
 
 
 #endif /* !GUARD_INCLUDE_KERNEL_IRQ_H */
