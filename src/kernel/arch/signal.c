@@ -126,13 +126,13 @@ GLOBAL_ASM(
 L(.section .text.user                                                            )
 L(PRIVATE_ENTRY(signal_return)                                                   )
 #ifdef __x86_64__ /* Load `struct sigenter_tail' into the first syscal register. */
-L(    leaq -SIGENTER_TAIL_OFFSETOF_OLDBP(%rbp), %rdi                             )
+L(    leaq  -SIGENTER_TAIL_OFFSETOF_OLDBP(%rbp), %rdi                            )
 #else
-L(    leal -SIGENTER_TAIL_OFFSETOF_OLDBP(%ebp), %ebx                             )
+L(    leal  -SIGENTER_TAIL_OFFSETOF_OLDBP(%ebp), %ebx                            )
 #endif
-L(1:  movx $(__NR_sigreturn),                   %xax                                         )
-L(    int  $0x80                                                                 )
-L(    jmp  1b /* Keep repeating in case of recursion. */                         )
+L(1:  movx   $(__NR_sigreturn),                  %xax                            )
+L(    int    $0x80                                                               )
+L(    jmp    1b /* Keep repeating in case of recursion. */                       )
 L(SYM_END(signal_return)                                                         )
 L(.previous                                                                      )
 );
@@ -576,6 +576,11 @@ L(    shlq   $32,  %rdx                                                         
 L(    movq   %rdx, %r11                                                          )
 L(    orq    %rax, %r11                                                          )
 L(    popq   %rdx                                                                )
+/* TODO: For some reason, GS_BASE is correct at this point
+ *      (containing the kernel's GS_BASE rather than the user's)
+ *       The only reason this isn't a critical bug is because nothing's
+ *       really using the GS_BASE register in userspace, yet. But this
+ *       should really be invenstigated and fixed ASAP! */
 #define FS_BASE  %r10
 #define GS_BASE  %r11
 #else
@@ -616,15 +621,15 @@ L(                                                                              
 #   define L_OFFSETOF_SGREGS (3*XSZ)
 #endif
 L(                                                                               )
-L(    testb $(SIGENTER_MODE_RESTORE), L_OFFSETOF_MODE(%xsp)                      )
-L(    jz    1f                                                                   )
-L(    movx  TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XAX(CALLER), %xax           )
-L(    movx  %xax, L_OFFSETOF_XAX(%xsp)                                           )
+L(    testb  $(SIGENTER_MODE_RESTORE), L_OFFSETOF_MODE(%xsp)                     )
+L(    jz     1f                                                                  )
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XAX(CALLER), %xax          )
+L(    movx   %xax, L_OFFSETOF_XAX(%xsp)                                          )
 L(1:                                                                             )
 #ifdef CONFIG_HAVE_SYSCALL_LONGBIT
-L(    testb $(SIGENTER_MODE_RESTORE_LONG&~(SIGENTER_MODE_RESTORE)), L_OFFSETOF_MODE(%xsp))
-L(    jz    1f                                                                   )
-L(    movx  TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XDX(CALLER), %xdx           )
+L(    testb  $(SIGENTER_MODE_RESTORE_LONG&~(SIGENTER_MODE_RESTORE)), L_OFFSETOF_MODE(%xsp))
+L(    jz     1f                                                                  )
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XDX(CALLER), %xdx          )
 L(1:                                                                             )
 #endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
 L(    /* Assert that the number of raised signals isn't ZERO(0). */              )
