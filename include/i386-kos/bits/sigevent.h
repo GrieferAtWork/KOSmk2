@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BIT_SIGEVENT_H
+#ifndef _I386_KOS_BIT_SIGEVENT_H
+#define _I386_KOS_BIT_SIGEVENT_H 1
 #define _BIT_SIGEVENT_H 1
 
 #include <__stdinc.h>
@@ -133,4 +134,4 @@ enum {
 
 __SYSDECL_END
 
-#endif /* !_BIT_SIGEVENT_H */
+#endif /* !_I386_KOS_BIT_SIGEVENT_H */

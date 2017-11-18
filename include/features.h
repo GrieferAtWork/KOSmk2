@@ -114,10 +114,13 @@
 #   define __CRT_KOS 1
 #endif
 #ifdef __CRT_KOS
+#ifndef __arm__
 #   define __CRT_DOS 1
+#endif /* !__arm__ */
 #   define __CRT_GLC 1
 #endif
 
+#ifndef __CRT_KOS
 #if defined(__CRT_DOS) && !defined(__CRT_GLC)
 #undef __DOS_COMPAT__
 #define __DOS_COMPAT__ 1
@@ -125,6 +128,7 @@
 #undef __GLC_COMPAT__
 #define __GLC_COMPAT__ 1
 #endif
+#endif /* !__CRT_KOS */
 
 /* Some DOS exports, such as stdin/stdout/stderr are exported in different ways,
  * some of which are the objects in question themself, while others are indirect

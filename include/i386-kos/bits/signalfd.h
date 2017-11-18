@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_SIGNALFD_H
+#ifndef _I386_KOS_BITS_SIGNALFD_H
+#define _I386_KOS_BITS_SIGNALFD_H 1
 #define _BITS_SIGNALFD_H 1
 
 #include <__stdinc.h>
@@ -32,4 +33,4 @@ enum {
 
 __SYSDECL_END
 
-#endif /* !_BITS_SIGNALFD_H */
+#endif /* !_I386_KOS_BITS_SIGNALFD_H */

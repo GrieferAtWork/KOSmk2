@@ -16,10 +16,10 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _X86_KOS_ASM_UNISTD_H
-#define _X86_KOS_ASM_UNISTD_H 1
+#ifndef _I386_KOS_ASM_UNISTD_H
+#define _I386_KOS_ASM_UNISTD_H 1
 
 #include <bits/types.h>
 #include "syscallno.ci"
 
-#endif /* !_X86_KOS_ASM_UNISTD_H */
+#endif /* !_I386_KOS_ASM_UNISTD_H */

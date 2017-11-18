@@ -19,12 +19,15 @@
 #ifndef _WCTYPE_H
 #define _WCTYPE_H 1
 
+#include <__stdinc.h>
 #include <features.h>
 #include <bits/types.h>
-#include <bits/dos-ctype.h>
 #include <hybrid/typecore.h>
 #include <hybrid/byteorder.h>
 #include <bits/wctype.h>
+#ifdef __CRT_DOS
+#include <bits/dos-ctype.h>
+#endif /* __CRT_DOS */
 #ifdef __USE_XOPEN2K8
 #include <xlocale.h>
 #endif /* __USE_XOPEN2K8 */

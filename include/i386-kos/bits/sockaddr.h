@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_SOCKADDR_H
+#ifndef _I386_KOS_BITS_SOCKADDR_H
+#define _I386_KOS_BITS_SOCKADDR_H 1
 #define _BITS_SOCKADDR_H 1
 
 #include <__stdinc.h>
@@ -31,4 +32,4 @@ typedef unsigned short int sa_family_t;
 
 __SYSDECL_END
 
-#endif /* !_BITS_SOCKADDR_H */
+#endif /* !_I386_KOS_BITS_SOCKADDR_H */

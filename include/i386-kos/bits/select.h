@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_SELECT_H
+#ifndef _I386_KOS_BITS_SELECT_H
+#define _I386_KOS_BITS_SELECT_H 1
 #define _BITS_SELECT_H 1
 
 #include <hybrid/host.h>
@@ -52,4 +53,4 @@ do{ __size_t __i; fd_set *const __arr = (set); \
 #define __FD_CLR(d,set)   ((void)(__FDS_BITS(set)[__FD_ELT(d)] &= ~__FD_MASK(d)))
 #define __FD_ISSET(d,set) ((__FDS_BITS(set)[__FD_ELT(d)]&__FD_MASK(d))!=0)
 
-#endif /* !_BITS_SELECT_H */
+#endif /* !_I386_KOS_BITS_SELECT_H */

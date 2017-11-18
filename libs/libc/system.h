@@ -19,6 +19,7 @@
 #ifndef GUARD_LIBS_LIBC_SYSTEM_H
 #define GUARD_LIBS_LIBC_SYSTEM_H 1
 
+#include "libc.h"
 #include <bits/siginfo.h>
 #include <bits/sigset.h>
 #include <hybrid/compiler.h>

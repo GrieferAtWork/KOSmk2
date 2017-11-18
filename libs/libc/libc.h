@@ -19,10 +19,11 @@
 #ifndef GUARD_LIBS_LIBC_LIBC_H
 #define GUARD_LIBS_LIBC_LIBC_H 1
 
+
+#if defined(__KERNEL__) || defined(__BUILDING_LIBC)
 #ifdef __KERNEL__
 #define CONFIG_LIBC_NO_DOS_LIBC 1
 #endif
-
 #define debug_print    libc_debug_print
 #define debug_printf   libc_debug_printf
 #define debug_vprintf  libc_debug_vprintf
@@ -33,6 +34,7 @@
 #define debug_tbprint  libc_debug_tbprint
 #define __chattr       libc___chattr
 #define __LIBC         extern
+#endif /* __BUILDING_LIBC */
 
 #include <__stdinc.h>
 #include <assert.h>
@@ -102,7 +104,7 @@ INTDEF void ATTR_CDECL libc_syslog(int level, char const *format, ...);
 #endif
 
 #undef CONFIG_LIBCCALL_HAS_RETURN_64_IS_32
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(__arm__)
 /* A function returning a 64-bit integer can safely be called as though
  * it only returned a 32-bit integer, causing the aparent return value
  * to simply equal the truncated 64-bit value. */

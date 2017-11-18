@@ -1,0 +1,354 @@
+/* Copyright (c) 2017 Griefer@Work                                            *
+ *                                                                            *
+ * This software is provided 'as-is', without any express or implied          *
+ * warranty. In no event will the authors be held liable for any damages      *
+ * arising from the use of this software.                                     *
+ *                                                                            *
+ * Permission is granted to anyone to use this software for any purpose,      *
+ * including commercial applications, and to alter it and redistribute it     *
+ * freely, subject to the following restrictions:                             *
+ *                                                                            *
+ * 1. The origin of this software must not be misrepresented; you must not    *
+ *    claim that you wrote the original software. If you use this software    *
+ *    in a product, an acknowledgement in the product documentation would be  *
+ *    appreciated but is not required.                                        *
+ * 2. Altered source versions must be plainly marked as such, and must not be *
+ *    misrepresented as being the original software.                          *
+ * 3. This notice may not be removed or altered from any source distribution. *
+ */
+
+/* System call attributes:
+ *  - __SC_ATTRIB_CLOBB_{N}: A list of clobber operands, wrapped within 'C(...)'
+ *  - __SC_ATTRIB_ISNRT_{N}: The system call does not return normally.
+ *  - __SC_ATTRIB_ISLNG_{N}: The system call return in both EAX and EDX.
+ */
+
+#ifndef __SYSCALL
+#define __SYSCALL(id,sym)
+#endif
+#ifndef __SYSCALL_ASM
+#define __SYSCALL_ASM(id,sym)
+#endif
+#ifndef __XSYSCALL
+#define __XSYSCALL(id,sym)
+#endif
+#ifndef __XSYSCALL_ASM
+#define __XSYSCALL_ASM(id,sym)
+#endif
+
+/* System call with full register state. */
+#ifndef __RSYSCALL
+#define __RSYSCALL __SYSCALL_ASM
+#endif
+#ifndef __RXSYSCALL
+#define __RXSYSCALL __XSYSCALL_ASM
+#endif
+
+#define __NR_syscall_min  0
+
+#define __NR_getcwd       17
+__SYSCALL(__NR_getcwd,sys_getcwd)
+
+#define __NR_dup          23
+__SYSCALL(__NR_dup,sys_dup)
+#define __NR_dup3         24
+__SYSCALL(__NR_dup3,sys_dup3)
+#define __NR_fcntl        25
+__SYSCALL(__NR_fcntl,sys_fcntl)
+#define __NR_ioctl        29
+__SYSCALL(__NR_ioctl,sys_ioctl)
+
+#define __NR_mknodat      33
+__SYSCALL(__NR_mknodat,sys_mknodat)
+#define __NR_mkdirat      34
+__SYSCALL(__NR_mkdirat,sys_mkdirat)
+#define __NR_unlinkat     35
+__SYSCALL(__NR_unlinkat,sys_unlinkat)
+#define __NR_symlinkat    36
+__SYSCALL(__NR_symlinkat,sys_symlinkat)
+#define __NR_linkat       37
+__SYSCALL(__NR_linkat,sys_linkat)
+#define __NR_renameat     38
+__SYSCALL(__NR_renameat,sys_renameat)
+#define __NR_umount2      39
+__SYSCALL(__NR_umount2,sys_umount)
+#define __NR_mount        40
+__SYSCALL(__NR_mount,sys_mount)
+
+#define __NR_truncate     45
+__SYSCALL(__NR_truncate,sys_truncate)
+#define __NR_ftruncate    46
+__SYSCALL(__NR_ftruncate,sys_ftruncate)
+
+#define __NR_fallocate    47
+__SYSCALL(__NR_fallocate,sys_fallocate)
+#define __NR_faccessat    48
+__SYSCALL(__NR_faccessat,sys_faccessat)
+#define __NR_chdir        49
+__SYSCALL(__NR_chdir, sys_chdir)
+#define __NR_fchdir       50
+__SYSCALL(__NR_fchdir,sys_fchdir)
+#define __NR_chroot       51
+__SYSCALL(__NR_chroot,sys_chroot)
+#define __NR_fchmod       52
+__SYSCALL(__NR_fchmod,sys_fchmod)
+#define __NR_fchmodat     53
+__SYSCALL(__NR_fchmodat,sys_fchmodat)
+#define __NR_fchownat     54
+__SYSCALL(__NR_fchownat,sys_fchownat)
+#define __NR_fchown       55
+__SYSCALL(__NR_fchown,sys_fchown)
+
+#define __NR_openat       56
+__SYSCALL(__NR_openat,sys_openat)
+#define __NR_close        57
+__SYSCALL(__NR_close,sys_close)
+#define __NR_pipe2        59
+__SYSCALL(__NR_pipe2,sys_pipe2)
+#define __SC_ATTRIB_ISLNG_62 1
+#define __NR_lseek        62
+__SYSCALL(__NR_lseek,sys_lseek)
+#define __NR_read         63
+__SYSCALL(__NR_read,sys_read)
+#define __NR_write        64
+__SYSCALL(__NR_write,sys_write)
+#define __SC_ATTRIB_ISLNG_67 1
+#define __NR_pread64      67
+__SYSCALL(__NR_pread64,sys_pread64)
+#define __SC_ATTRIB_ISLNG_68 1
+#define __NR_pwrite64     68
+__SYSCALL(__NR_pwrite64,sys_pwrite64)
+
+#define __SC_ATTRIB_CLOBB_72 C("memory")
+#define __NR_pselect6     72
+__SYSCALL(__NR_pselect6,sys_pselect6)
+#define __SC_ATTRIB_CLOBB_73 C("memory")
+#define __NR_ppoll        73
+__SYSCALL(__NR_ppoll,sys_ppoll)
+
+#define __NR_readlinkat   78
+__SYSCALL(__NR_readlinkat,sys_readlinkat)
+#define __NR_fstatat64    79
+__SYSCALL(__NR_fstatat64,sys_fstatat64)
+#define __NR_fstat64      80
+__SYSCALL(__NR_fstat64,sys_fstat64)
+
+
+#define __NR_sync         81
+__SYSCALL(__NR_sync,sys_sync)
+#define __NR_fsync        82
+__SYSCALL(__NR_fsync,sys_fsync)
+#define __NR_fdatasync    83
+__SYSCALL(__NR_fdatasync,sys_fdatasync)
+
+#define __NR_utimensat    88
+__SYSCALL(__NR_utimensat,sys_utimensat)
+
+#define __SC_ATTRIB_CLOBB_93 C("memory")
+#define __SC_ATTRIB_ISNRT_93 1
+#define __NR_exit         93
+__SYSCALL_ASM(__NR_exit,sys_exit)
+#define __SC_ATTRIB_CLOBB_94 C("memory")
+#define __SC_ATTRIB_ISNRT_94 1
+#define __NR_exit_group   94
+__SYSCALL_ASM(__NR_exit_group,sys_exit_group)
+#define __SC_ATTRIB_CLOBB_95 C("memory")
+#define __NR_waitid       95
+__SYSCALL(__NR_waitid,sys_waitid)
+#define __SC_ATTRIB_CLOBB_97 C("memory")
+#define __NR_unshare      97
+__SYSCALL(__NR_unshare,sys_unshare)
+#define __SC_ATTRIB_CLOBB_98 C("memory")
+#define __NR_futex        98
+__SYSCALL(__NR_futex,sys_futex)
+
+#define __NR_nanosleep    101
+__SYSCALL(__NR_nanosleep,sys_nanosleep)
+
+#define __SC_ATTRIB_CLOBB_124 C("memory")
+#define __NR_sched_yield  124
+__SYSCALL_ASM(__NR_sched_yield,sys_sched_yield)
+
+#if !defined(__KERNEL__) || !defined(CONFIG_NO_SIGNALS)
+#define __NR_kill         129
+__SYSCALL(__NR_kill,sys_kill)
+#define __NR_tkill        130
+__SYSCALL(__NR_tkill,sys_tkill)
+#define __NR_tgkill       131
+__SYSCALL(__NR_tgkill,sys_tgkill)
+#define __NR_sigaltstack  132
+__SYSCALL(__NR_sigaltstack,sys_sigaltstack)
+#define __NR_sigsuspend   133
+__SYSCALL(__NR_sigsuspend,sys_sigsuspend)
+#define __NR_sigaction    134
+__SYSCALL(__NR_sigaction,sys_sigaction)
+#define __NR_sigprocmask  135
+__SYSCALL(__NR_sigprocmask,sys_sigprocmask)
+#define __NR_sigpending   136
+__SYSCALL(__NR_sigpending,sys_sigpending)
+#define __NR_sigtimedwait 137
+__SYSCALL(__NR_sigtimedwait,sys_sigtimedwait)
+#define __NR_sigreturn    139
+#define __SC_ATTRIB_ISNRT_139 1
+__RSYSCALL(__NR_sigreturn,sys_sigreturn)
+#endif
+
+#define __NR_setpgid      154
+__SYSCALL(__NR_setpgid,sys_setpgid)
+#define __NR_getpgid      155
+__SYSCALL(__NR_getpgid,sys_getpgid)
+
+#define __NR_umask        166
+__SYSCALL(__NR_umask,sys_umask)
+
+#define __NR_gettimeofday 169
+__SYSCALL(__NR_gettimeofday,sys_gettimeofday)
+#define __SC_ATTRIB_CLOBB_170 C("memory")
+#define __NR_settimeofday 170
+__SYSCALL(__NR_settimeofday,sys_settimeofday)
+
+#define __NR_getpid       172
+__SYSCALL(__NR_getpid,sys_getpid)
+#define __NR_getppid      173
+__SYSCALL(__NR_getppid,sys_getppid)
+#define __NR_gettid       178
+__SYSCALL(__NR_gettid,sys_gettid)
+#define __NR_sysinfo      179
+__SYSCALL(__NR_sysinfo,sys_sysinfo)
+
+
+#define __SC_ATTRIB_CLOBB_215 C("memory")
+#define __NR_munmap       215
+__SYSCALL(__NR_munmap,sys_munmap)
+#define __SC_ATTRIB_CLOBB_216 C("memory")
+#define __NR_mremap       216
+__SYSCALL(__NR_mremap,sys_mremap)
+
+#define __SC_ATTRIB_CLOBB_220 C("memory")
+#define __NR_clone        220
+__RSYSCALL(__NR_clone,sys_clone)
+#define __SC_ATTRIB_CLOBB_221 C("memory")
+#define __NR_execve       221
+__SYSCALL(__NR_execve,sys_execve)
+
+#define __SC_ATTRIB_CLOBB_222 C("memory")
+#define __NR_mmap         222
+__SYSCALL(__NR_mmap,sys_mmap)
+
+#define __NR_swapon       224
+__SYSCALL(__NR_swapon,sys_swapon)
+#define __NR_swapoff      225
+__SYSCALL(__NR_swapoff,sys_swapoff)
+#define __SC_ATTRIB_CLOBB_226 C("memory")
+#define __NR_mprotect     226
+__SYSCALL(__NR_mprotect,sys_mprotect)
+
+#define __SC_ATTRIB_CLOBB_260 C("memory")
+#define __NR_wait4        260
+__SYSCALL(__NR_wait4,sys_wait4)
+
+#define __NR_syncfs       267
+__SYSCALL(__NR_syncfs,sys_syncfs)
+
+#define __SC_ATTRIB_CLOBB_1079 C("memory")
+#define __NR_fork         1079
+__RSYSCALL(__NR_fork,sys_fork)
+#define __NR_syscall_max  1079
+
+
+
+
+
+/* Extended system calls (added by KOS). */
+#define __NR_xsyscall_min 0x80000000
+#define __NR_xsyslog      0x80000000
+__XSYSCALL(__NR_xsyslog,sys_xsyslog)
+#define __SC_ATTRIB_CLOBB_0x80000001 C("memory")
+#define __NR_xmmap        0x80000001
+__XSYSCALL(__NR_xmmap,sys_xmmap)
+#define __SC_ATTRIB_CLOBB_0x80000002 C("memory")
+#define __NR_xmunmap      0x80000002
+__XSYSCALL(__NR_xmunmap,sys_xmunmap)
+#define __NR_xsharesym    0x80000003
+__XSYSCALL(__NR_xsharesym,sys_xsharesym)
+#define __NR_xreaddir     0x80000004
+__XSYSCALL(__NR_xreaddir,sys_xreaddir)
+#define __SC_ATTRIB_ISLNG_0x80000005 1
+#define __NR_xopenpty     0x80000005
+__XSYSCALL(__NR_xopenpty,sys_xopenpty)
+#define __NR_xfdname      0x80000006
+__XSYSCALL(__NR_xfdname,sys_xfdname)
+#define __NR_xpipe        0x80000007
+#define __SC_ATTRIB_ISLNG_0x80000007 1
+__XSYSCALL(__NR_xpipe,sys_xpipe) /* Returns reader fd in EAX; writer fd in EDX */
+#define __SC_ATTRIB_CLOBB_0x80000008 C("memory")
+#define __NR_xfexecveat   0x80000008
+__XSYSCALL(__NR_xfexecveat,sys_xfexecveat)
+#define __NR_xfchdirat    0x80000009
+__XSYSCALL(__NR_xfchdirat,sys_xfchdirat)
+#define __NR_xrenameat    0x8000000a
+__XSYSCALL(__NR_xrenameat,sys_xrenameat)
+#define __NR_xfsymlinkat  0x8000000b
+__XSYSCALL(__NR_xfsymlinkat,sys_xfsymlinkat)
+#define __NR_xfreadlinkat 0x8000000c
+__XSYSCALL(__NR_xfreadlinkat,sys_xfreadlinkat)
+#define __NR_xfsmask      0x8000000d /* Get/Set the filesystem mask and mode. (e.g.: Force DOS semantics, etc.) */
+#define __SC_ATTRIB_ISLNG_0x8000000d 1
+__XSYSCALL(__NR_xfsmask,sys_xfsmask)
+
+/* Dynamic linker system calls.
+ * NOTE: Library handles and simply the instance base pointer,
+ *       which can be used to lookup an associated module by
+ *       handing the address to the mman's addr-tree.
+ * >> This also means that library access is only possible
+ *    within one's own memory manager, as instance handles
+ *    cannot be shared between different processes (or rather VMs)
+ */
+#define __NR_xdlopen      0x80000020
+__RXSYSCALL(__NR_xdlopen,sys_xdlopen)
+#define __NR_xfdlopen     0x80000021
+__RXSYSCALL(__NR_xfdlopen,sys_xfdlopen)
+#define __NR_xdlclose     0x80000022
+__XSYSCALL(__NR_xdlclose,sys_xdlclose)
+#define __NR_xdlsym       0x80000023
+__XSYSCALL(__NR_xdlsym,sys_xdlsym)
+/* Push a list of all non-executed module finalizers onto the stack
+ * and start executing the in order, returning to the caller once all
+ * have been run.
+ * WARNING: Since most of this system-call operates in user-space,
+ *          the kernel has no control over preservation of registers.
+ *       >> The caller should therefor assume that all registers except
+ *          for ESP may be clobbered (although EBP, EBX, ESI and EDI)
+ *          should also be preserved under normal circumstances.
+ * NOTE: Since registers such as EAX and EDX are clobbered as well,
+ *       there is no way of testing for a potential error during
+ *       execution, meaning that the caller must only
+ * WARNING: The caller is responsible for providing a buffer of
+ *          sufficient size to hold any potential number of finalizers
+ *          through ESP (aka: This function will use your user-space
+ *          stack for working its wonders)
+ * NOTE: This systemcall is invoked after main() returns,
+ *       or when `exit()' or 'quick_exit()' is called.
+ *       It is however not called when `_exit()' or '_Exit()' is invoked,
+ *       or when an unhandled signal causes the application to terminate.
+ * NOTE: libc invokes this system-call after `atexit()' was executed. */
+#define __NR_xdlfini      0x80000024
+#define __SC_ATTRIB_CLOBB_0x80000024 C("memory")
+__XSYSCALL_ASM(__NR_xdlfini,sys_xdlfini)
+#define __NR_xvirtinfo    0x8000002a /* Query information on a virtual address (addr2line). */
+__XSYSCALL(__NR_xvirtinfo,sys_xvirtinfo)
+
+#define __NR_xpaused      0x80000080
+#if !defined(__KERNEL__) || defined(CONFIG_DEBUG)
+/* Pause execution for a moment, while displaying a string. */
+__XSYSCALL(__NR_xpaused,sys_xpaused)
+#endif
+#define __NR_xsyscall_max 0x80000080
+
+
+#undef __RXSYSCALL
+#undef __RSYSCALL
+#undef __XSYSCALL_ASM
+#undef __XSYSCALL
+#undef __SYSCALL_ASM
+#undef __SYSCALL

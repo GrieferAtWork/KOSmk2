@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_SIGSTACK_H
+#ifndef _I386_KOS_BITS_SIGSTACK_H
+#define _I386_KOS_BITS_SIGSTACK_H 1
 #define _BITS_SIGSTACK_H 1
 
 #include <__stdinc.h>
@@ -88,4 +89,4 @@ typedef struct sigaltstack {
 
 __SYSDECL_END
 
-#endif /* !_BITS_SIGSTACK_H */
+#endif /* !_I386_KOS_BITS_SIGSTACK_H */

@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_NAN_H
+#ifndef _I386_KOS_BITS_NAN_H
+#define _I386_KOS_BITS_NAN_H 1
 #define _BITS_NAN_H 1
 
 /* `NAN' constant for IEEE 754 machines.
@@ -59,4 +60,4 @@ __PRIVATE __ATTR_UNUSED union{ unsigned char __c[4]; float __d; } const __qnan_u
 
 __SYSDECL_END
 
-#endif /* !_BITS_NAN_H */
+#endif /* !_I386_KOS_BITS_NAN_H */

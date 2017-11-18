@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_POSIX_OPT_H
+#ifndef _I386_KOS_BITS_POSIX_OPT_H
+#define _I386_KOS_BITS_POSIX_OPT_H 1
 #define _BITS_POSIX_OPT_H 1
 
 #include <__stdinc.h>
@@ -105,4 +106,4 @@
 #define _POSIX_TRACE_LOG                   (-1)
 #define _POSIX_TYPED_MEMORY_OBJECTS        (-1)      /*< Typed memory objects are not available. */
 
-#endif /* !_BITS_POSIX_OPT_H */
+#endif /* !_I386_KOS_BITS_POSIX_OPT_H */

@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_INF_H
+#ifndef _I386_KOS_BITS_INF_H
+#define _I386_KOS_BITS_INF_H 1
 #define _BITS_INF_H 1
 
 /* `INFINITY' constant for IEEE 754 machines.
@@ -47,4 +48,4 @@
 #   define INFINITY    HUGE_VALF
 #endif
 
-#endif /* !_BITS_INF_H */
+#endif /* !_I386_KOS_BITS_INF_H */

@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_PTHREADTYPES_H
+#ifndef _I386_KOS_BITS_PTHREADTYPES_H
+#define _I386_KOS_BITS_PTHREADTYPES_H 1
 #define _BITS_PTHREADTYPES_H 1
 
 #include <__stdinc.h>
@@ -229,4 +230,4 @@ typedef union {
 
 __SYSDECL_END
 
-#endif /* !_BITS_PTHREADTYPES_H */
+#endif /* !_I386_KOS_BITS_PTHREADTYPES_H */

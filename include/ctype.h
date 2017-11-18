@@ -24,7 +24,9 @@
 #include <hybrid/typecore.h>
 #include <hybrid/byteorder.h>
 #include <bits/endian.h>
+#ifdef __CRT_DOS
 #include <bits/dos-ctype.h>
+#endif /* __CRT_DOS */
 #ifdef __USE_DOS
 #include <bits/wctype.h>
 #include <xlocale.h>

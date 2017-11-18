@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_UTSNAME_H
+#ifndef _I386_KOS_BITS_UTSNAME_H
+#define _I386_KOS_BITS_UTSNAME_H 1
 #define _BITS_UTSNAME_H 1
 
 #include <__stdinc.h>
@@ -24,4 +25,4 @@
 #define _UTSNAME_LENGTH        65
 #define _UTSNAME_DOMAIN_LENGTH _UTSNAME_LENGTH
 
-#endif /* !_BITS_UTSNAME_H */
+#endif /* !_I386_KOS_BITS_UTSNAME_H */

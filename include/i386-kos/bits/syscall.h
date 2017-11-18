@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_SYSCALL_H
+#ifndef _I386_KOS_BITS_SYSCALL_H
+#define _I386_KOS_BITS_SYSCALL_H 1
 #define _BITS_SYSCALL_H 1
 
 /* Alias all system call numbers using the `SYS_*' notation in favor of `__NR_*' */
@@ -133,4 +134,4 @@ for (local line: fp) {
 #define SYS_xpaused __NR_xpaused
 //[[[end]]]
 
-#endif /* !_BITS_SYSCALL_H */
+#endif /* !_I386_KOS_BITS_SYSCALL_H */

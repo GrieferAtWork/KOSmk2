@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_IPCTYPES_H
+#ifndef _I386_KOS_BITS_IPCTYPES_H
+#define _I386_KOS_BITS_IPCTYPES_H 1
 #define _BITS_IPCTYPES_H 1
 
 #include <hybrid/host.h>
@@ -29,4 +30,4 @@ typedef __INT32_TYPE__ __ipc_pid_t;
 typedef __INT16_TYPE__ __ipc_pid_t;
 #endif /* !__x86_64__ */
 
-#endif /* !_BITS_IPCTYPES_H */
+#endif /* !_I386_KOS_BITS_IPCTYPES_H */

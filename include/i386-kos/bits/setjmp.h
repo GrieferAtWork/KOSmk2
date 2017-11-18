@@ -16,8 +16,9 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _X86_KOS_BITS_SETJMP_H
-#define _X86_KOS_BITS_SETJMP_H 1
+#ifndef _I386_KOS_BITS_SETJMP_H
+#define _I386_KOS_BITS_SETJMP_H 1
+#define _BITS_SETJMP_H 1
 
 #include <__stdinc.h>
 #include <hybrid/host.h>
@@ -60,4 +61,4 @@ struct __jmp_buf {
 
 __SYSDECL_END
 
-#endif /* !_X86_KOS_BITS_SETJMP_H */
+#endif /* !_I386_KOS_BITS_SETJMP_H */

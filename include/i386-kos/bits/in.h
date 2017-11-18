@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_IN_H
+#ifndef _I386_KOS_BITS_IN_H
+#define _I386_KOS_BITS_IN_H 1
 #define _BITS_IN_H 1
 
 #include <__stdinc.h>
@@ -236,4 +237,4 @@ struct in_pktinfo {
 
 __SYSDECL_END
 
-#endif /* !_BITS_IN_H */
+#endif /* !_I386_KOS_BITS_IN_H */

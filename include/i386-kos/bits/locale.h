@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_LOCALE_H
+#ifndef _I386_KOS_BITS_LOCALE_H
+#define _I386_KOS_BITS_LOCALE_H 1
 #define _BITS_LOCALE_H 1
 
 #define __LC_CTYPE          0
@@ -33,4 +34,4 @@
 #define __LC_MEASUREMENT    11
 #define __LC_IDENTIFICATION 12
 
-#endif /* !_BITS_LOCALE_H */
+#endif /* !_I386_KOS_BITS_LOCALE_H */

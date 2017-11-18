@@ -16,9 +16,9 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_SOCKET_H
+#ifndef _I386_KOS_BITS_SOCKET_H
+#define _I386_KOS_BITS_SOCKET_H 1
 #define _BITS_SOCKET_H 1
-#ifndef __BITS_SOCKET_H
 #define __BITS_SOCKET_H 1
 
 /* System-specific socket constants and types.  Linux version.
@@ -312,5 +312,4 @@ struct linger {
 
 __SYSDECL_END
 
-#endif /* !__BITS_SOCKET_H */
-#endif /* !_BITS_SOCKET_H */
+#endif /* !_I386_KOS_BITS_SOCKET_H */

@@ -16,8 +16,9 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef	_BITS_LOCAL_LIM_H
-#define	_BITS_LOCAL_LIM_H	1
+#ifndef	_I386_KOS_BITS_LOCAL_LIM_H
+#define	_I386_KOS_BITS_LOCAL_LIM_H 1
+#define	_BITS_LOCAL_LIM_H 1
 
 /* DISCLAIMER: _STRONGLY_ Based on '/usr/include/i386-linux-gnu/bits/local_lim.h' */
 
@@ -88,4 +89,4 @@
 #define MQ_PRIO_MAX                         32768       /* Maximum message queue priority level. */
 #define SEM_VALUE_MAX                      (2147483647) /* Maximum value the semaphore can have. */
 
-#endif /* !_BITS_LOCAL_LIM_H */
+#endif /* !_I386_KOS_BITS_LOCAL_LIM_H */

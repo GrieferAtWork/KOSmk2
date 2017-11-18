@@ -217,6 +217,7 @@ __SYSDECL_BEGIN
            return __res; \
        }
 
+
 /* Call a system-call in-line, or define a wrapper function. */
 #define __SYSCALL_INL0(type,id,...) __SYSCALL_INL(0,type,id,(__VA_ARGS__))
 #define __SYSCALL_INL1(type,id,...) __SYSCALL_INL(1,type,id,(__VA_ARGS__))

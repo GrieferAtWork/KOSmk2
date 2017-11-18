@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_DLFCN_H
+#ifndef _I386_KOS_BITS_DLFCN_H
+#define _I386_KOS_BITS_DLFCN_H 1
 #define _BITS_DLFCN_H 1
 
 #include <__stdinc.h>
@@ -96,4 +97,4 @@ extern void (_dl_mcount_wrapper_check)(void *__selfpc);
 
 __SYSDECL_END
 
-#endif /* !_BITS_DLFCN_H */
+#endif /* !_I386_KOS_BITS_DLFCN_H */

@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_MATH_VECTOR_H
+#ifndef _I386_KOS_BITS_MATH_VECTOR_H
+#define _I386_KOS_BITS_MATH_VECTOR_H 1
 #define _BITS_MATH_VECTOR_H 1
 
 /* Platform-specific SIMD declarations of math functions.
@@ -73,4 +74,4 @@
 #endif
 #endif
 
-#endif /* !_BITS_MATH_VECTOR_H */
+#endif /* !_I386_KOS_BITS_MATH_VECTOR_H */

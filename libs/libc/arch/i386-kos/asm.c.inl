@@ -197,6 +197,7 @@ L(.previous                                                                   )
 );
 #endif
 
+GLOBAL_ASM(
 L(.section .text                                                              )
 L(INTERN_ENTRY(libc_alloca)                                                   )
 L(    popx  %xdx        /* Return address. */                                 )

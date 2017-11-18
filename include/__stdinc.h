@@ -197,7 +197,7 @@
 #endif
 
 #define __IGNORE_REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
-#define __IGNORE_REDIRECT_VOID(decl,attr,Treturn,cc,name,param,asmname,args)
+#define __IGNORE_REDIRECT_VOID(decl,attr,cc,name,param,asmname,args)
 #define __NOREDIRECT(decl,attr,Treturn,cc,name,param,asmname,args) \
     decl attr Treturn (cc name) __P(param);
 #define __NOREDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,asmname,args) \

@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_RESOURCE_H
+#ifndef _I386_KOS_BITS_RESOURCE_H
+#define _I386_KOS_BITS_RESOURCE_H 1
 #define _BITS_RESOURCE_H 1
 
 /* Bit values & structures for resource limits.  Linux version.
@@ -188,4 +189,4 @@ __LIBC int (__LIBCCALL prlimit64)(__pid_t __pid, enum __rlimit_resource __resour
 
 __SYSDECL_END
 
-#endif /* !_BITS_RESOURCE_H */
+#endif /* !_I386_KOS_BITS_RESOURCE_H */

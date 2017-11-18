@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_IPC_H
+#ifndef _I386_KOS_BITS_IPC_H
+#define _I386_KOS_BITS_IPC_H 1
 #define _BITS_IPC_H 1
 
 #include <__stdinc.h>
@@ -98,4 +99,4 @@ struct ipc_perm {
 
 __SYSDECL_END
 
-#endif /* !_BITS_IPC_H */
+#endif /* !_I386_KOS_BITS_IPC_H */

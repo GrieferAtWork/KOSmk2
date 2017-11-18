@@ -978,10 +978,10 @@ __REDIRECT2(__LIBC,__NONNULL((1,4)),long,__LIBCCALL,__libc_strtol_l,(char const 
 __REDIRECT2(__LIBC,__NONNULL((1,4)),__LONGLONG,__LIBCCALL,__libc_strtoll_l,(char const *__restrict __nptr, char **__restrict __endptr, int __base, __locale_t __loc),strtoll_l,_strtoi64_l,(__nptr,__endptr,__base,__loc))
 #ifdef __DOS_COMPAT__
 __REDIRECT2(__LIBC,__NONNULL((1,3)),double,__LIBCCALL,__libc_strtod_l,(char const *__restrict __nptr, char **__restrict __endptr, __locale_t __loc),strtod_l,_strtod_l,(__nptr,__endptr,__loc))
-__LOCAL double (__LIBCCALL _atof_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtod_l(__nptr,0,__locale); }
-__LOCAL int (__LIBCCALL _atoi_l)(char const *__restrict __nptr, __locale_t __locale) { return (int)__libc_strtol_l(__nptr,0,10,__locale); }
-__LOCAL long int (__LIBCCALL _atol_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtol_l(__nptr,0,10,__locale); }
-__LOCAL __LONGLONG (__LIBCCALL _atoll_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtoll_l(__nptr,0,10,__locale); }
+__LOCAL double (__LIBCCALL _atof_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtod_l(__nptr,__NULLPTR,__locale); }
+__LOCAL int (__LIBCCALL _atoi_l)(char const *__restrict __nptr, __locale_t __locale) { return (int)__libc_strtol_l(__nptr,__NULLPTR,10,__locale); }
+__LOCAL long int (__LIBCCALL _atol_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtol_l(__nptr,__NULLPTR,10,__locale); }
+__LOCAL __LONGLONG (__LIBCCALL _atoll_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtoll_l(__nptr,__NULLPTR,10,__locale); }
 #else /* __DOS_COMPAT__ */
 __LIBC double (__LIBCCALL _atof_l)(char const *__restrict __nptr, __locale_t __locale);
 __LIBC int (__LIBCCALL _atoi_l)(char const *__restrict __nptr, __locale_t __locale);
@@ -1060,7 +1060,7 @@ __REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64,(char const *__restrict __n
 #ifdef __CRT_DOS
 __REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64_l,(char const *__restrict __nptr, __locale_t __locale),_atoll_l,(__nptr,__locale))
 #else /* __CRT_DOS */
-__LOCAL __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtoll_l(__nptr,0,__locale); }
+__LOCAL __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtoll_l(__nptr,__NULLPTR,0,__locale); }
 #endif /* !__CRT_DOS */
 __REDIRECT(__LIBC,,__INT64_TYPE__ ,__LIBCCALL,_strtoi64,(char const *__restrict __nptr, char **__restrict __endptr, int __radix),strtoll,(__nptr,__endptr,__radix))
 __REDIRECT(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64,(char const *__restrict __nptr, char **__restrict __endptr, int __radix),strtoull,(__nptr,__endptr,__radix))
@@ -1204,6 +1204,56 @@ __REDIRECT_IFKOS(__LIBC,,float,__LIBCCALL,_wcstof_l,(wchar_t const *__restrict _
 __REDIRECT_IFKOS(__LIBC,,double,__LIBCCALL,_wcstod_l,(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale),wcstod_l,(__s,__pend,__locale))
 __REDIRECT_IFKOS(__LIBC,,long double,__LIBCCALL,_wcstold_l,(wchar_t const *__restrict __s, wchar_t **__pend, __locale_t __locale),wcstold_l,(__s,__pend,__locale))
 
+#ifndef __std_wcstol_defined
+#define __std_wcstol_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC __NONNULL((1)) long int (__LIBCCALL wcstol)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
+__LIBC __NONNULL((1)) unsigned long int (__LIBCCALL wcstoul)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
+__NAMESPACE_STD_END
+#endif /* !__std_wcstol_defined */
+#ifndef __wcstol_defined
+#define __wcstol_defined 1
+__NAMESPACE_STD_USING(wcstol)
+__NAMESPACE_STD_USING(wcstoul)
+#endif /* !__wcstol_defined */
+
+#ifndef __std_wcstoll_defined
+#define __std_wcstoll_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC __LONGLONG (__LIBCCALL wcstoll)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
+__LIBC __ULONGLONG (__LIBCCALL wcstoull)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
+__NAMESPACE_STD_END
+#endif /* !__std_wcstoll_defined */
+#ifndef __wcstoll_defined
+#define __wcstoll_defined 1
+__NAMESPACE_STD_USING(wcstoll)
+__NAMESPACE_STD_USING(wcstoull)
+#endif /* !__wcstoll_defined */
+
+#ifndef __std_wcstod_defined
+#define __std_wcstod_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC __NONNULL((1)) double (__LIBCCALL wcstod)(wchar_t const *__restrict __s, wchar_t **__pend);
+__NAMESPACE_STD_END
+#endif /* !__std_wcstod_defined */
+#ifndef __wcstod_defined
+#define __wcstod_defined 1
+__NAMESPACE_STD_USING(wcstod)
+#endif /* !__wcstod_defined */
+
+#ifndef __std_wcstof_defined
+#define __std_wcstof_defined 1
+__NAMESPACE_STD_BEGIN
+__LIBC float (__LIBCCALL wcstof)(wchar_t const *__restrict __s, wchar_t **__pend);
+__LIBC long double (__LIBCCALL wcstold)(wchar_t const *__restrict __s, wchar_t **__pend);
+__NAMESPACE_STD_END
+#endif /* !__std_wcstof_defined */
+#ifndef __wcstof_defined
+#define __wcstof_defined 1
+__NAMESPACE_STD_USING(wcstof)
+__NAMESPACE_STD_USING(wcstold)
+#endif /* !__wcstof_defined */
+
 #ifdef __CRT_DOS
 __REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol,(wchar_t const *__restrict __s),wtol,(__s))
 __REDIRECT_IFKOS(__LIBC,,long int,__LIBCCALL,_wtol_l,(wchar_t const *__restrict __s, __locale_t __locale),wtol_l,(__s,__locale))
@@ -1269,55 +1319,6 @@ __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) { ret
 __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) { return _wcstoi64_l(__s,0,10,__locale); }
 #endif
 
-#ifndef __std_wcstol_defined
-#define __std_wcstol_defined 1
-__NAMESPACE_STD_BEGIN
-__LIBC __NONNULL((1)) long int (__LIBCCALL wcstol)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__LIBC __NONNULL((1)) unsigned long int (__LIBCCALL wcstoul)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__NAMESPACE_STD_END
-#endif /* !__std_wcstol_defined */
-#ifndef __wcstol_defined
-#define __wcstol_defined 1
-__NAMESPACE_STD_USING(wcstol)
-__NAMESPACE_STD_USING(wcstoul)
-#endif /* !__wcstol_defined */
-
-#ifndef __std_wcstoll_defined
-#define __std_wcstoll_defined 1
-__NAMESPACE_STD_BEGIN
-__LIBC __LONGLONG (__LIBCCALL wcstoll)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__LIBC __ULONGLONG (__LIBCCALL wcstoull)(wchar_t const *__restrict __s, wchar_t **__pend, int __radix);
-__NAMESPACE_STD_END
-#endif /* !__std_wcstoll_defined */
-#ifndef __wcstoll_defined
-#define __wcstoll_defined 1
-__NAMESPACE_STD_USING(wcstoll)
-__NAMESPACE_STD_USING(wcstoull)
-#endif /* !__wcstoll_defined */
-
-#ifndef __std_wcstod_defined
-#define __std_wcstod_defined 1
-__NAMESPACE_STD_BEGIN
-__LIBC __NONNULL((1)) double (__LIBCCALL wcstod)(wchar_t const *__restrict __s, wchar_t **__pend);
-__NAMESPACE_STD_END
-#endif /* !__std_wcstod_defined */
-#ifndef __wcstod_defined
-#define __wcstod_defined 1
-__NAMESPACE_STD_USING(wcstod)
-#endif /* !__wcstod_defined */
-
-#ifndef __std_wcstof_defined
-#define __std_wcstof_defined 1
-__NAMESPACE_STD_BEGIN
-__LIBC float (__LIBCCALL wcstof)(wchar_t const *__restrict __s, wchar_t **__pend);
-__LIBC long double (__LIBCCALL wcstold)(wchar_t const *__restrict __s, wchar_t **__pend);
-__NAMESPACE_STD_END
-#endif /* !__std_wcstof_defined */
-#ifndef __wcstof_defined
-#define __wcstof_defined 1
-__NAMESPACE_STD_USING(wcstof)
-__NAMESPACE_STD_USING(wcstold)
-#endif /* !__wcstof_defined */
 #endif /* !_WSTDLIB_DEFINED */
 
 #ifdef __CRT_DOS

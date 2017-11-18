@@ -422,11 +422,70 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm", "asm", "{0DA22AB6-242E-4446-8DE9-CC22C3752ED2}"
 	ProjectSection(SolutionItems) = preProject
 		..\include\arm-kos\asm\registers.h = ..\include\arm-kos\asm\registers.h
+		..\include\arm-kos\asm\string.h = ..\include\arm-kos\asm\string.h
+		..\include\arm-kos\asm\syscallno.ci = ..\include\arm-kos\asm\syscallno.ci
+		..\include\arm-kos\asm\unistd.h = ..\include\arm-kos\asm\unistd.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bits", "bits", "{33C0798A-C58B-4074-9D04-703EE0B9DC7C}"
 	ProjectSection(SolutionItems) = preProject
+		..\include\arm-kos\bits\byteswap.h = ..\include\arm-kos\bits\byteswap.h
+		..\include\arm-kos\bits\confname.h = ..\include\arm-kos\bits\confname.h
+		..\include\arm-kos\bits\endian.h = ..\include\arm-kos\bits\endian.h
+		..\include\arm-kos\bits\environments.h = ..\include\arm-kos\bits\environments.h
+		..\include\arm-kos\bits\fcntl-linux.h = ..\include\arm-kos\bits\fcntl-linux.h
+		..\include\arm-kos\bits\fcntl.h = ..\include\arm-kos\bits\fcntl.h
+		..\include\arm-kos\bits\local_lim.h = ..\include\arm-kos\bits\local_lim.h
+		..\include\arm-kos\bits\mbstate.h = ..\include\arm-kos\bits\mbstate.h
+		..\include\arm-kos\bits\posix1_lim.h = ..\include\arm-kos\bits\posix1_lim.h
+		..\include\arm-kos\bits\posix2_lim.h = ..\include\arm-kos\bits\posix2_lim.h
+		..\include\arm-kos\bits\posix_opt.h = ..\include\arm-kos\bits\posix_opt.h
+		..\include\arm-kos\bits\rotate.h = ..\include\arm-kos\bits\rotate.h
+		..\include\arm-kos\bits\sched.h = ..\include\arm-kos\bits\sched.h
+		..\include\arm-kos\bits\setjmp.h = ..\include\arm-kos\bits\setjmp.h
+		..\include\arm-kos\bits\sigevent.h = ..\include\arm-kos\bits\sigevent.h
+		..\include\arm-kos\bits\siginfo.h = ..\include\arm-kos\bits\siginfo.h
+		..\include\arm-kos\bits\sigset.h = ..\include\arm-kos\bits\sigset.h
+		..\include\arm-kos\bits\stat.h = ..\include\arm-kos\bits\stat.h
+		..\include\arm-kos\bits\stdio_lim.h = ..\include\arm-kos\bits\stdio_lim.h
+		..\include\arm-kos\bits\syslog-path.h = ..\include\arm-kos\bits\syslog-path.h
 		..\include\arm-kos\bits\types.h = ..\include\arm-kos\bits\types.h
+		..\include\arm-kos\bits\waitflags.h = ..\include\arm-kos\bits\waitflags.h
+		..\include\arm-kos\bits\waitstatus.h = ..\include\arm-kos\bits\waitstatus.h
+		..\include\arm-kos\bits\wctype.h = ..\include\arm-kos\bits\wctype.h
+		..\include\arm-kos\bits\xopen_lim.h = ..\include\arm-kos\bits\xopen_lim.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bits-generic", "bits-generic", "{344B9E37-4C1D-4F52-B671-C7D7AECDAAF9}"
+	ProjectSection(SolutionItems) = preProject
+		..\include\bits-generic\byteswap.h = ..\include\bits-generic\byteswap.h
+		..\include\bits-generic\fcntl-linux.h = ..\include\bits-generic\fcntl-linux.h
+		..\include\bits-generic\mbstate.h = ..\include\bits-generic\mbstate.h
+		..\include\bits-generic\posix1_lim.h = ..\include\bits-generic\posix1_lim.h
+		..\include\bits-generic\posix2_lim.h = ..\include\bits-generic\posix2_lim.h
+		..\include\bits-generic\rotate.h = ..\include\bits-generic\rotate.h
+		..\include\bits-generic\sched.h = ..\include\bits-generic\sched.h
+		..\include\bits-generic\sigaction.h = ..\include\bits-generic\sigaction.h
+		..\include\bits-generic\sigset.h = ..\include\bits-generic\sigset.h
+		..\include\bits-generic\stat.h = ..\include\bits-generic\stat.h
+		..\include\bits-generic\stdio_lim.h = ..\include\bits-generic\stdio_lim.h
+		..\include\bits-generic\types.h = ..\include\bits-generic\types.h
+		..\include\bits-generic\waitflags.h = ..\include\bits-generic\waitflags.h
+		..\include\bits-generic\waitstatus.h = ..\include\bits-generic\waitstatus.h
+		..\include\bits-generic\wctype.h = ..\include\bits-generic\wctype.h
+		..\include\bits-generic\xopen_lim.h = ..\include\bits-generic\xopen_lim.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys-generic", "sys-generic", "{4D48A6D4-6FE3-40B7-99ED-31BF0A41FA66}"
+	ProjectSection(SolutionItems) = preProject
+		..\include\sys-generic\mman.h = ..\include\sys-generic\mman.h
+		..\include\sys-generic\syslog.h = ..\include\sys-generic\syslog.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys", "sys", "{BF3163DE-5364-401E-9939-60D4D1FC0A1B}"
+	ProjectSection(SolutionItems) = preProject
+		..\include\arm-kos\sys\mman.h = ..\include\arm-kos\sys\mman.h
+		..\include\arm-kos\sys\syslog.h = ..\include\arm-kos\sys\syslog.h
 	EndProjectSection
 EndProject
 Global
@@ -633,5 +692,8 @@ Global
 		{985BD14A-CD5A-4A68-B131-A3691BCA62CF} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
 		{0DA22AB6-242E-4446-8DE9-CC22C3752ED2} = {985BD14A-CD5A-4A68-B131-A3691BCA62CF}
 		{33C0798A-C58B-4074-9D04-703EE0B9DC7C} = {985BD14A-CD5A-4A68-B131-A3691BCA62CF}
+		{344B9E37-4C1D-4F52-B671-C7D7AECDAAF9} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
+		{4D48A6D4-6FE3-40B7-99ED-31BF0A41FA66} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
+		{BF3163DE-5364-401E-9939-60D4D1FC0A1B} = {985BD14A-CD5A-4A68-B131-A3691BCA62CF}
 	EndGlobalSection
 EndGlobal

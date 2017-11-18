@@ -16,20 +16,18 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_ENDIAN_H
+#ifndef _I386_KOS_BITS_ENDIAN_H
+#define _I386_KOS_BITS_ENDIAN_H 1
 #define _BITS_ENDIAN_H 1
 
 #include <__stdinc.h>
-#include <hybrid/byteorder.h>
 
 #ifndef __BYTE_ORDER
 #ifdef __BYTE_ORDER__
 #   define __BYTE_ORDER       __BYTE_ORDER__
-#elif defined(__i386__) || defined(__x86_64__)
-#   define __BYTE_ORDER       __LITTLE_ENDIAN
 #else
-#   error FIXME
+#   define __BYTE_ORDER       __LITTLE_ENDIAN
 #endif
 #endif /* !__BYTE_ORDER */
 
-#endif /* !_BITS_ENDIAN_H */
+#endif /* !_I386_KOS_BITS_ENDIAN_H */

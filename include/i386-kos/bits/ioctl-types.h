@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_IOCTL_TYPES_H
+#ifndef _I386_KOS_BITS_IOCTL_TYPES_H
+#define _I386_KOS_BITS_IOCTL_TYPES_H 1
 #define _BITS_IOCTL_TYPES_H 1
 
 /* DISCLAIMER: _STRONGLY_ Based on '/usr/include/i386-linux-gnu/bits/ioctl-types.h' */
@@ -96,4 +97,4 @@ struct termio {
 
 __SYSDECL_END
 
-#endif /* !_BITS_IOCTL_TYPES_H */
+#endif /* !_I386_KOS_BITS_IOCTL_TYPES_H */

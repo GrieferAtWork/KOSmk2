@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_HUGE_VALF_H
+#ifndef _I386_KOS_BITS_HUGE_VALF_H
+#define _I386_KOS_BITS_HUGE_VALF_H 1
 #define _BITS_HUGE_VALF_H 1
 
 #include <__stdinc.h>
@@ -64,4 +65,4 @@ __PRIVATE __huge_valf_t const __huge_valf = { __HUGE_VALF_bytes };
 
 __SYSDECL_END
 
-#endif /* !_BITS_HUGE_VALF_H */
+#endif /* !_I386_KOS_BITS_HUGE_VALF_H */

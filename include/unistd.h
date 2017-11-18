@@ -54,20 +54,20 @@ __SYSDECL_BEGIN
 
 #ifdef __USE_XOPEN2K8
 #   define _POSIX_VERSION    200809L
-#elif defined __USE_XOPEN2K
+#elif defined(__USE_XOPEN2K)
 #   define _POSIX_VERSION    200112L
-#elif defined __USE_POSIX199506
+#elif defined(__USE_POSIX199506)
 #   define _POSIX_VERSION    199506L
-#elif defined __USE_POSIX199309
+#elif defined(__USE_POSIX199309)
 #   define _POSIX_VERSION    199309L
 #else
 #   define _POSIX_VERSION    199009L
 #endif
 #ifdef __USE_XOPEN2K8
 #   define __POSIX2_THIS_VERSION    200809L
-#elif defined __USE_XOPEN2K
+#elif defined(__USE_XOPEN2K)
 #   define __POSIX2_THIS_VERSION    200112L
-#elif defined __USE_POSIX199506
+#elif defined(__USE_POSIX199506)
 #   define __POSIX2_THIS_VERSION    199506L
 #else
 #   define __POSIX2_THIS_VERSION    199209L
@@ -82,9 +82,9 @@ __SYSDECL_BEGIN
 
 #ifdef __USE_XOPEN2K8
 #   define _XOPEN_VERSION    700
-#elif defined __USE_XOPEN2K
+#elif defined(__USE_XOPEN2K)
 #   define _XOPEN_VERSION    600
-#elif defined __USE_UNIX98
+#elif defined(__USE_UNIX98)
 #   define _XOPEN_VERSION    500
 #else
 #   define _XOPEN_VERSION    4

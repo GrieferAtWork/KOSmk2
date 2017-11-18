@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_CONFNAME_H
+#ifndef _I386_KOS_BITS_CONFNAME_H
+#define _I386_KOS_BITS_CONFNAME_H 1
 #define _BITS_CONFNAME_H 1
 
 #include <__stdinc.h>
@@ -356,4 +357,4 @@ __SYSDECL_BEGIN
 
 __SYSDECL_END
 
-#endif /* !_BITS_CONFNAME_H */
+#endif /* !_I386_KOS_BITS_CONFNAME_H */

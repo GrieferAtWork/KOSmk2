@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_MATHDEF_H
+#ifndef _I386_KOS_BITS_MATHDEF_H
+#define _I386_KOS_BITS_MATHDEF_H 1
 #define _BITS_MATHDEF_H 1
 
 /* Copyright (C) 2001-2016 Free Software Foundation, Inc.
@@ -66,4 +67,4 @@ typedef long double double_t; /*< `double' expressions are evaluated as `long do
 __SYSDECL_END
 #endif /* __USE_ISOC99 */
 
-#endif /* !_BITS_MATHDEF_H */
+#endif /* !_I386_KOS_BITS_MATHDEF_H */

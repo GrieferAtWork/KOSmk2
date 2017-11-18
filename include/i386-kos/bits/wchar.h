@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_WCHAR_H
+#ifndef _I386_KOS_BITS_WCHAR_H
+#define _I386_KOS_BITS_WCHAR_H 1
 #define _BITS_WCHAR_H 1
 
 #include <__stdinc.h>
@@ -25,4 +26,4 @@
 #define __WCHAR_MAX  __WCHAR_MAX__
 #define __WCHAR_MIN  __WCHAR_MIN__
 
-#endif /* !_BITS_WCHAR_H */
+#endif /* !_I386_KOS_BITS_WCHAR_H */

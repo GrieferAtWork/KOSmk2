@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_LIBM_SIMD_DECL_STUBS_H
+#ifndef _I386_KOS_BITS_LIBM_SIMD_DECL_STUBS_H
+#define _I386_KOS_BITS_LIBM_SIMD_DECL_STUBS_H 1
 #define _BITS_LIBM_SIMD_DECL_STUBS_H 1
 
 #define __DECL_SIMD_cos     /* Nothing */
@@ -38,4 +39,4 @@
 #define __DECL_SIMD_powf    /* Nothing */
 #define __DECL_SIMD_powl    /* Nothing */
 
-#endif /* !_BITS_LIBM_SIMD_DECL_STUBS_H */
+#endif /* !_I386_KOS_BITS_LIBM_SIMD_DECL_STUBS_H */

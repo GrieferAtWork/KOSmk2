@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_DIRENT_H
+#ifndef _I386_KOS_BITS_DIRENT_H
+#define _I386_KOS_BITS_DIRENT_H 1
 #define _BITS_DIRENT_H 1
 
 #include "__stdinc.h"
@@ -105,4 +106,4 @@ union {
 
 __SYSDECL_END
 
-#endif /* !_BITS_DIRENT_H */
+#endif /* !_I386_KOS_BITS_DIRENT_H */

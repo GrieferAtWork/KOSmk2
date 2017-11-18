@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_DOS_ERRNO_H
+#ifndef _I386_KOS_BITS_DOS_ERRNO_H
+#define _I386_KOS_BITS_DOS_ERRNO_H 1
 #define _BITS_DOS_ERRNO_H 1
 
 #include <__stdinc.h>
@@ -194,4 +195,4 @@ __SYSDECL_BEGIN
 
 __SYSDECL_END
 
-#endif /* !_BITS_DOS_ERRNO_H */
+#endif /* !_I386_KOS_BITS_DOS_ERRNO_H */

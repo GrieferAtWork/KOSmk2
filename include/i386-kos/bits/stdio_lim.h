@@ -16,35 +16,11 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _BITS_STDIO_LIM_H
+#ifndef _I386_KOS_BITS_STDIO_LIM_H
+#define _I386_KOS_BITS_STDIO_LIM_H 1
 #define _BITS_STDIO_LIM_H 1
 
-#include <features.h>
+#undef FOPEN_MAX
+#include <bits-generic/stdio_lim.h>
 
-#ifdef __USE_DOS
-#define L_tmpnam     14
-#define FILENAME_MAX 260
-#define TMP_MAX      32767
-#else
-#define L_tmpnam     20
-#define FILENAME_MAX 4096
-#define TMP_MAX      238328
-#endif
-
-#ifdef __USE_POSIX
-#   define L_ctermid 9
-#if !defined(__USE_XOPEN2K) || defined(__USE_GNU)
-#   define L_cuserid 9
-#endif
-#endif
-#undef  FOPEN_MAX
-#ifdef __USE_DOS
-#define FOPEN_MAX 20
-#else
-#define FOPEN_MAX 16
-#endif
-#ifndef IOV_MAX
-#define IOV_MAX   1024
-#endif
-
-#endif /* !_BITS_STDIO_LIM_H */
+#endif /* !_I386_KOS_BITS_STDIO_LIM_H */
