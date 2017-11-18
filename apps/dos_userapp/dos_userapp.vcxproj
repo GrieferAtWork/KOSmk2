@@ -103,7 +103,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
-    <OutDir>$(SolutionDir)..\</OutDir>
+    <OutDir>$(SolutionDir)..\bin\apps\i386-kos\</OutDir>
     <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include</IncludePath>
     <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
     <NMakeReBuildCommandLine>rundll32</NMakeReBuildCommandLine>
@@ -142,7 +142,7 @@
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
-    <OutDir>$(SolutionDir)..\</OutDir>
+    <OutDir>$(SolutionDir)..\bin\apps\arm-kos\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include</IncludePath>
@@ -160,11 +160,11 @@
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
-    <OutDir>$(SolutionDir)..\</OutDir>
+    <OutDir>$(SolutionDir)..\bin\apps\x86_64-kos\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
-    <OutDir>$(SolutionDir)..\</OutDir>
+    <OutDir>$(SolutionDir)..\bin\apps\i386-kos\</OutDir>
     <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include</IncludePath>
     <IntDir>$(SolutionDir)..\build\.vs\$(ProjectName)\$(Platform)-$(Configuration)\</IntDir>
     <NMakeReBuildCommandLine>rundll32</NMakeReBuildCommandLine>
@@ -206,7 +206,7 @@
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
-    <OutDir>$(SolutionDir)..\</OutDir>
+    <OutDir>$(SolutionDir)..\bin\apps\arm-kos\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)..\include\i386-kos;$(SolutionDir)..\include</IncludePath>
@@ -225,7 +225,7 @@
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
-    <OutDir>$(SolutionDir)..\</OutDir>
+    <OutDir>$(SolutionDir)..\bin\apps\x86_64-kos\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
