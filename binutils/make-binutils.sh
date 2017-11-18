@@ -2,6 +2,11 @@
 
 export TARGET=x86_64-kos
 #export TARGET=i686-kos
+#export TARGET=arm-none-eabi
+if (($# >= 1)); then
+	export TARGET=$1
+fi
+
 binutils_folder=$(dirname $(readlink -f "$0"))
 binutils_build_folder="$binutils_folder/build-binutils-$TARGET"
 binutils_src_folder="$binutils_folder/src/binutils-2.27"
@@ -45,9 +50,13 @@ mkdir -p "$PREFIX"
 cmd cd "$PREFIX"
 
 if ! [ -f "Makefile" ]; then
+	options=""
+	if [[ "$TARGET" == "x86_64"* ]]; then
+		options="$options --enable-64-bit-bfd"
+	fi
 	cmd bash "$binutils_src_folder/configure" \
 		--target=$TARGET \
-		--enable-64-bit-bfd \
+		$options \
 		--prefix="$PREFIX" \
 		--with-sysroot="${binutils_syshook}" \
 		--with-headers="${binutils_syshook}/usr/include" \

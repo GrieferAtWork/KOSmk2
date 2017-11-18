@@ -37,4 +37,9 @@
 #define __i386__   1
 #endif
 
+#if !defined(__arm__) && \
+    (defined(_M_ARM) || defined(_M_ARMT) || defined(_M_ARM_NT))
+#define __arm__ 1
+#endif
+
 #endif /* !__GUARD_HYBRID_HOST_H */

@@ -21,7 +21,9 @@
 
 #include <hybrid/host.h>
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || \
+    defined(__x86_64__) || \
+    defined(__arm__)
 #   define __PAGESIZE        4096
 #else
 #   error FIXME

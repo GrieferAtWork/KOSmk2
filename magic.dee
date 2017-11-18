@@ -18,23 +18,39 @@
  */
 
 /* Target configuration */
-#if 0
-#   define CONFIG_TARGET_ARCH  "i686"
-#   define CONFIG_TOOLCHAIN    "i686"
-#   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0"
-#elif !defined(TARGET_X86_64)
-#   define TARGET_I386         1
-#   define CONFIG_TARGET_ARCH  "i386"
-#   define CONFIG_TOOLCHAIN    "x86_64"
-#   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0/32"
+#ifndef CONFIG_TARGET_NAME
+#if defined(TARGET_ARM)
+#   define CONFIG_TOOLCHAIN    "arm-none-eabi"
+#   define CONFIG_TARGET_ARCH  "arm-kos"
+#elif defined(TARGET_X86_64)
+#   define CONFIG_TARGET_ARCH  "x86_64-kos"
+#   define CONFIG_TARGET_NAME  "i386-kos"
+#elif defined(TARGET)
+#   define __TARGET_PP_STR2(x) #x
+#   define __TARGET_PP_STR(x)  __TARGET_PP_STR2(x)
+#   define CONFIG_TARGET_ARCH  __TARGET_PP_STR(TARGET)
 #else
-#   define CONFIG_TARGET_ARCH  "x86_64"
-#   define CONFIG_TOOLCHAIN    "x86_64"
-#   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/lib/gcc/" CONFIG_TOOLCHAIN "-kos/6.2.0"
+#   define TARGET_I386         1
+#   define CONFIG_TARGET_ARCH  "i386-kos"
+#   define CONFIG_TOOLCHAIN    "x86_64-kos"
+#   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "/lib/gcc/" CONFIG_TOOLCHAIN "/6.2.0/32"
 #endif
-#define CONFIG_APP_PATH        "/bin/apps/" CONFIG_TARGET_ARCH "-kos"
-#define CONFIG_LIB_PATH        "/bin/libs/" CONFIG_TARGET_ARCH "-kos"
-#define CONFIG_MOD_PATH        "/bin/mods/" CONFIG_TARGET_ARCH "-kos"
+#endif /* !CONFIG_TARGET_NAME */
+
+
+#ifndef CONFIG_TARGET_NAME
+#   define CONFIG_TARGET_NAME  CONFIG_TARGET_ARCH
+#endif /* !CONFIG_TARGET_NAME */
+#ifndef CONFIG_TOOLCHAIN
+#   define CONFIG_TOOLCHAIN    CONFIG_TARGET_ARCH
+#endif /* !CONFIG_TOOLCHAIN */
+#ifndef CONFIG_GCC_LIBPATH
+#   define CONFIG_GCC_LIBPATH  "/binutils/build-binutils-" CONFIG_TOOLCHAIN "/lib/gcc/" CONFIG_TOOLCHAIN "/6.2.0"
+#endif /* !CONFIG_GCC_LIBPATH */
+
+#define CONFIG_APP_PATH        "/bin/apps/" CONFIG_TARGET_ARCH
+#define CONFIG_LIB_PATH        "/bin/libs/" CONFIG_TARGET_ARCH
+#define CONFIG_MOD_PATH        "/bin/mods/" CONFIG_TARGET_ARCH
 
 /* Compiler configuration */
 local config_format_compiler_messages = false; /* Format GCC warning/error messages to MSVC format. */
@@ -48,14 +64,14 @@ local config_build_only               = false; /* Don't start emulation once com
 local config_debug                    = true; /* Enable compiling with debug information. */
 local config_optimize                 = none; /* Otherwise: A string "0", "1", etc... */
 local config_max_compilers            = 8; /* Max amount of compilers to run in parallel */
-local config_build_path               = "build/" CONFIG_TARGET_ARCH "-kos";
+local config_build_path               = "build/" CONFIG_TARGET_ARCH;
 local config_usbdisk = <none>; /* Uncomment this if you have an H: drive, or simply don't wish to use a USB stick for testing on real hardware. */
 
 /* Compiler script options. */
 local config_verbose = false;
 
 /* Disk configuration */
-local config_disk_image = "disk/" CONFIG_TARGET_ARCH "-kos.img"; /* Output path of the disk image. */
+local config_disk_image = "disk/" CONFIG_TARGET_ARCH ".img"; /* Output path of the disk image. */
 #ifdef TARGET_X86_64
 local config_disk_size  = 64*1024*1024; /* 64Mib */
 #else
@@ -66,12 +82,12 @@ local config_disk_size  = 32*1024*1024; /* 32Mib */
 local run_mode_bochs    = false; /* Use BOCHS as emulator. */
 local run_mode_run_only = false; /* Skip compilation and only run the emulator. */
 local run_bochs_binary  = "bochs"; /* If existing & older, copy generated kernel binary here. */
-local run_qemu_binary   = "qemu-system-" CONFIG_TARGET_ARCH;
+local run_qemu_binary   = "qemu-system-"+CONFIG_TARGET_ARCH.partition("-")[0];
 local run_mode_remote   = false; /* --remote */
 local run_mode_usb      = false; /* --usb */
 local run_mode_hosted   = true; /* --hosted */
-local run_kernel_flat   = "bin/kos-" CONFIG_TARGET_ARCH "-flat.bin";
-local run_kernel_binary = "bin/kos-" CONFIG_TARGET_ARCH ".bin"; /* Output name of the kernel binary. */
+local run_kernel_flat   = "bin/kernel-" CONFIG_TARGET_ARCH "-flat.bin";
+local run_kernel_binary = "bin/kernel-" CONFIG_TARGET_ARCH ".bin"; /* Output name of the kernel binary. */
 /* Executable used for '#!$addr2line' formating of serial emulator output. */
 local run_addr2line_exe = run_kernel_binary;
 local run_addr2line_base = 0;
@@ -88,15 +104,15 @@ local const default_mtools = "mtools";
 /* Paths to used executables */
 local executables = dict {
 	"mtools"             : EXE("binutils/build-mtools/mtools"),
-	"asm"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-gcc"),
-	"c"                  : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-gcc"),
-	"c++"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-g++"),
-	"cpp"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-cpp"),
-	"ar"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-ar"),
-	"ld"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-ld"),
-	"nm"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-nm"),
-	"addr2line"          : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-addr2line"),
-	"readelf"            : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "-kos/bin/" CONFIG_TOOLCHAIN "-kos-readelf"),
+	"asm"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-gcc"),
+	"c"                  : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-gcc"),
+	"c++"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-g++"),
+	"cpp"                : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-cpp"),
+	"ar"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-ar"),
+	"ld"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-ld"),
+	"nm"                 : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-nm"),
+	"addr2line"          : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-addr2line"),
+	"readelf"            : EXE("binutils/build-binutils-" CONFIG_TOOLCHAIN "/bin/" CONFIG_TOOLCHAIN "-readelf"),
 	"host-asm"           : EXE("gcc"),
 	"host-c"             : EXE("gcc"),
 	"host-c++"           : EXE("g++"),
@@ -110,6 +126,7 @@ local executables = dict {
 	"bochsdbg"           : EXE("bochsdbg"),
 	"qemu-system-i386"   : EXE("qemu-system-i386"),
 	"qemu-system-x86_64" : EXE("qemu-system-x86_64"),
+	"qemu-system-arm"    : EXE("qemu-system-arm"),
 };
 
 #include <file>
@@ -704,8 +721,11 @@ function files(text,def_file) {
 		text = text.replace("\\","/");
 		if ("*" in text) {
 			local head = fs::path::head(text);
-			for (local q: fs::query(text)) {
-				yield head+q;
+			try {
+				for (local q: fs::query(text)) {
+					yield head+q;
+				}
+			} catch (...) {
 			}
 		} else {
 			yield text;
@@ -1074,7 +1094,13 @@ if (!run_mode_run_only) {
 
 	/* Include project definition files. */
 	BEGIN_NEW
+#ifdef SOURCES
+#define __SOURCE_STR2(x) #x
+#define __SOURCE_STR(x) __SOURCE_STR2(x)
+#		include __SOURCE_STR(SOURCES)
+#else
 #		include ".sources"
+#endif
 	END
 
 	function link_and_compile_everything() {
@@ -1324,8 +1350,12 @@ function run_qemu(bin,tap) {
 		"-display","gtk",
 		//"-net","nic,model=rtl8139","-net","user",
 		//"-net","nic,model=ne2k_pci","-net","user",
+#ifdef CONFIG_QEMU_FLAGS
+		CONFIG_QEMU_FLAGS,
+#else
 		"-netdev",tap ? "tap,ifname=tap0,id=u1" : "user,id=u1","-device","ne2k_pci,netdev=u1",
 		"-object","filter-dump,id=f1,netdev=u1,file=dump.dat",
+#endif
 		//"-vga","std",
 		(kernel_args ? ["-append","\""+
 			" ".join(for (local a: kernel_args) if (a) a)

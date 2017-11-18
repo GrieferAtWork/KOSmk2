@@ -43,6 +43,7 @@ BEGIN
 	C_FLAGS("-mno-avx")
 	C_FLAGS("-mtls-direct-seg-refs")
 
+	INCLUDE("arch/" CONFIG_TARGET_NAME "/include")
 	INCLUDE("include")
 	DEFINE("__KERNEL__")
 #if defined(TARGET_X86_64) && 0
@@ -98,7 +99,7 @@ BEGIN
 			L_FLAGS("--nmagic")
 
 #if 1
-#define KERNEL_SYMBOL_TABLE "src/kernel/linker/ksym-" CONFIG_TARGET_ARCH "-kos.h"
+#define KERNEL_SYMBOL_TABLE "src/kernel/linker/ksym-" CONFIG_TARGET_ARCH ".h"
 			SET_CUSTOM_LINK([](outfile) {
 				/* Generate the kernel's symbol export table using a custom linker step. */
 				local proc = process(executables["readelf"],["-s","-W",outfile]);
@@ -187,8 +188,9 @@ BEGIN
 			OBJECT(CONFIG_LIB_PATH "/libk.a")
 
 			/* Kernel core source files */
+			SOURCE("arch/" CONFIG_TARGET_NAME "/kernel/*.c")
+			
 			SOURCE("kernel/core/*.c")
-			SOURCE("kernel/arch/*.c")
 			SOURCE("kernel/dev/*.c")
 			SOURCE("kernel/fs/*.c")
 			SOURCE("kernel/memory/*.c")

@@ -50,7 +50,7 @@
 #include <sys/syslog.h>
 #include <arch/hints.h>
 
-#include "../mman/intern.h"
+#include "../../../kernel/mman/intern.h"
 
 DECL_BEGIN
 

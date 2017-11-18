@@ -2,6 +2,11 @@
 
 export TARGET=x86_64-kos
 #export TARGET=i686-kos
+#export TARGET=arm-none-eabi
+if (($# >= 1)); then
+	export TARGET=$1
+fi
+
 gcc_build_folder="build-gcc-$TARGET"
 binutils_build_folder="build-binutils-$TARGET"
 binutils_folder=$(dirname $(readlink -f "$0"))
@@ -48,20 +53,28 @@ mkdir "$binutils_folder/$gcc_build_folder"
 cmd cd "$binutils_folder/$gcc_build_folder"
 
 if ! [ -f "Makefile" ]; then
+	options=""
+	if [[ "$TARGET" == "x86_64"* ]]; then
+		options="$options --with-cpu-32=i686"
+		options="$options --with-arch-32=i686"
+		options="$options --with-tune-32=i686"
+		options="$options --with-cpu-64=x86-64"
+		options="$options --with-arch-64=x86-64"
+		options="$options --with-tune-64=x86-64"
+		options="$options --enable-64-bit-bfd"
+		options="$options --with-multilib-list=m32,m64,mx32"
+		options="$options --with-tune=generic"
+		options="$options --enable-multilib"
+		options="$options --with-sysroot=$binutils_syshook"
+	fi
+
 	cmd bash "$gcc_src_folder/configure" \
 		--target=$TARGET \
 		--prefix="$PREFIX" \
-		--with-sysroot="$binutils_syshook" \
-		--with-tune=generic \
 		--with-gnu-ld \
 		--with-gnu-as \
 		--with-dwarf2 \
-		--with-cpu-32=i686 \
-		--with-arch-32=i686 \
-		--with-tune-32=i686 \
-		--with-cpu-64=x86-64 \
-		--with-arch-64=x86-64 \
-		--with-tune-64=x86-64 \
+		$options \
 		--enable-gnu-unique-object \
 		--disable-vtable-verify \
 		--enable-threads=single \
@@ -69,9 +82,6 @@ if ! [ -f "Makefile" ]; then
 		--enable-languages=c,c++ \
 		--disable-nls \
 		--enable-multiarch \
-		--enable-multilib \
-		--enable-64-bit-bfd \
-		--with-multilib-list=m32,m64,mx32 \
 		--enable-initfini-array \
 		--enable-__cxa_atexit
 fi

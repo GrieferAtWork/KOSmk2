@@ -3036,7 +3036,7 @@ PRIVATE ssize_t (KCALL debug_enum)(struct dsetup *__restrict setup, struct insta
  struct mman *old_mm = NULL;
  if unlikely(!callback) return 0;
  if (!inst) {
-  /* TODO: Validate by all drivers + the core when `inst' is NULL. */
+  /* TODO: Validate all drivers + the core when `inst' is NULL. */
   inst = THIS_INSTANCE;
  }
  checkpoint_ptr = checkpoint ? mptr_safeload(setup,checkpoint) : KINSTANCE_TRACE_NULL;

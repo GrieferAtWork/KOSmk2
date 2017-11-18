@@ -74,6 +74,18 @@
     <None Include="..\..\src\kernel\arch\user64.c.inl">
       <Filter>kernel\arch</Filter>
     </None>
+    <None Include="..\..\src\arch\i386-kos\kernel\paging32.c.inl">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </None>
+    <None Include="..\..\src\arch\i386-kos\kernel\paging64.c.inl">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </None>
+    <None Include="..\..\src\arch\i386-kos\kernel\user32.c.inl">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </None>
+    <None Include="..\..\src\arch\i386-kos\kernel\user64.c.inl">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -196,11 +208,32 @@
     <Filter Include="modules\cpu">
       <UniqueIdentifier>{208e0b0e-1902-46e6-bb41-754d7fee65fb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\arch">
-      <UniqueIdentifier>{83cef432-7958-41cb-9d94-c9d13f6085bf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="kernel\arch">
       <UniqueIdentifier>{584686ea-7154-450c-a4cd-151900d58408}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch">
+      <UniqueIdentifier>{463cf469-e56c-4ad7-9513-fb221bf3ff9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch\i386-kos">
+      <UniqueIdentifier>{e309a6e3-c6b9-4ef9-8a80-a06d7d09c574}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch\i386-kos\include">
+      <UniqueIdentifier>{7d6254fe-463d-44f4-9315-eae756349b83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch\i386-kos\include\arch">
+      <UniqueIdentifier>{647e378b-8693-4b75-8688-1218ab853dbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch\arm-kos">
+      <UniqueIdentifier>{62496c7b-1841-4ed0-acf0-e23e4b430795}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch\i386-kos\kernel">
+      <UniqueIdentifier>{e7ef5eb9-77b0-4116-b04f-7ed5d8cd036b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch\arm-kos\include">
+      <UniqueIdentifier>{969c8867-9117-4328-8e9f-6f5d02875b25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch\arm-kos\kernel">
+      <UniqueIdentifier>{22cbd034-f24e-45ce-8204-26d90ff201e1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -498,6 +531,45 @@
     <ClCompile Include="..\..\src\kernel\arch\signal.c">
       <Filter>kernel\arch</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\interrupt.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\paging.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\panic.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\pic.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\realmode.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\signal.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\smp.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\smp-init.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\syscall.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\user.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\boot.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\fpu.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\gdt.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
@@ -746,71 +818,74 @@
     <ClInclude Include="..\..\src\kernel\arch\interrupt_intern.h">
       <Filter>kernel\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\gdt.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\apicdef.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\hints.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\asm.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\idt_pointer.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\cpu.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\interrupt.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\cpufeatures.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\mp.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\cpustate.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\paging32.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\current_context.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\paging64.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\fpu.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\pic.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\gdt.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\preemption.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\hints.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\realmode.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\idt_pointer.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\task.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\interrupt.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\tss.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\mp.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\apic.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging32.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\apicdef.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging64.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\asm.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\pic.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\cpu.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\preemption.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\cpufeatures.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\realmode.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\cpustate.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\signal.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\fpu.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\syscall.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\syscall.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\task.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\signal.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\tss.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\include\arch\current_context.h">
-      <Filter>include\arch</Filter>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\apic.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\i386-kos\kernel\interrupt_intern.h">
+      <Filter>arch\i386-kos\kernel</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

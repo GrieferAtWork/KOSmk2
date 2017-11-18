@@ -82,7 +82,7 @@
 DEFINE("__KOS__")
 DEFINE("__ELF__")
 INCLUDE("/include")
-INCLUDE("/include/i386-kos")
+INCLUDE("/include/" CONFIG_TARGET_NAME)
 C_FLAGS("-nostdlib")
 P_FLAGS("-nostdlib")
 

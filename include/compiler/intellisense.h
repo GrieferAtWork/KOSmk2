@@ -50,33 +50,35 @@
 #undef __BOOL_DEFINED
 
 
-#ifdef _WIN64
-#define _LP64                1
-#define __FXSR__             1
-#define __LP64__             1
-#define __MMX__              1
-#define __SIZEOF_INT128__    16
-#define __int128             long long
-#define __SSE2_MATH__        1
-#define __SSE2__             1
-#define __SSE_MATH__         1
-#define __SSE__              1
-#define __amd64              1
-#define __amd64__            1
-#define __code_model_small__ 1
-#define __k8                 1
-#define __k8__               1
-//#define __x86_64             1
-#define __x86_64__           1
+#ifdef _M_ARM
+#   define __arm__              1
+#elif defined(_WIN64)
+#   define _LP64                1
+#   define __FXSR__             1
+#   define __LP64__             1
+#   define __MMX__              1
+#   define __SIZEOF_INT128__    16
+#   define __int128             long long
+#   define __SSE2_MATH__        1
+#   define __SSE2__             1
+#   define __SSE_MATH__         1
+#   define __SSE__              1
+#   define __amd64              1
+#   define __amd64__            1
+#   define __code_model_small__ 1
+#   define __k8                 1
+#   define __k8__               1
+//# define __x86_64             1
+#   define __x86_64__           1
 #else
-#define i386              1
-#define __i386            1
-#define __i386__          1
-#define __i686            1
-#define __i686__          1
-#define __pentiumpro      1
-#define __pentiumpro__    1
-#define __code_model_32__ 1
+#   define i386              1
+#   define __i386            1
+#   define __i386__          1
+#   define __i686            1
+#   define __i686__          1
+#   define __pentiumpro      1
+#   define __pentiumpro__    1
+#   define __code_model_32__ 1
 #endif
 
 #define __STDC__ 1
@@ -152,11 +154,18 @@
 #define __SIZEOF_LONG__        __SIZEOF_POINTER__
 #define __SIZEOF_LONG_LONG__   8
 #define __SIZEOF_SIZE_T__      __SIZEOF_POINTER__
-#define __SIZEOF_FLOAT128__    16
-#define __SIZEOF_FLOAT80__     12
+#define __SIZEOF_PTRDIFF_T__   __SIZEOF_POINTER__
 #define __SIZEOF_FLOAT__       4
 #define __SIZEOF_DOUBLE__      8
+#define __SIZEOF_WINT_T__      4
+
+#ifndef __arm__
 #define __SIZEOF_LONG_DOUBLE__ 12
+#define __SIZEOF_FLOAT128__    16
+#define __SIZEOF_FLOAT80__     12
+#else
+#define __SIZEOF_LONG_DOUBLE__ 8
+#endif
 
 #define ____INTELLISENSE_MIN_S1  (-127i8-1i8)
 #define ____INTELLISENSE_MAX_S1    127i8
@@ -327,13 +336,154 @@
 #define __LDBL_MIN_EXP__         (-16381)
 #define __LDBL_MIN__               3.36210314311209350626e-4932L
 
+#ifdef __arm__
+#define __ACCUM_EPSILON__ 0x1P-15K
+#define __ACCUM_FBIT__ 15
+#define __ACCUM_IBIT__ 16
+#define __ACCUM_MAX__ 0X7FFFFFFFP-15K
+#define __ACCUM_MIN__ (-0X1P15K-0X1P15K)
+#define __APCS_32__ 1
+#define __ARMEL__ 1
+#define __ARM_32BIT_STATE 1
+#define __ARM_ARCH 4
+#define __ARM_ARCH_4T__ 1
+#define __ARM_ARCH_ISA_ARM 1
+#define __ARM_ARCH_ISA_THUMB 1
+#define __ARM_EABI__ 1
+#define __ARM_PCS 1
+#define __ARM_SIZEOF_MINIMAL_ENUM 1
+#define __ARM_SIZEOF_WCHAR_T 4
+#define __CHAR_UNSIGNED__ 1
+#define __DA_FBIT__ 31
+#define __DA_IBIT__ 32
+#define __DQ_FBIT__ 63
+#define __DQ_IBIT__ 0
+#define __FRACT_EPSILON__ 0x1P-15R
+#define __FRACT_FBIT__ 15
+#define __FRACT_IBIT__ 0
+#define __FRACT_MAX__ 0X7FFFP-15R
+#define __FRACT_MIN__ (-0.5R-0.5R)
+#define __GXX_TYPEINFO_EQUALITY_INLINE 0
+#define __HA_FBIT__ 7
+#define __HA_IBIT__ 8
+#define __HQ_FBIT__ 15
+#define __HQ_IBIT__ 0
+#define __LACCUM_EPSILON__ 0x1P-31LK
+#define __LACCUM_FBIT__ 31
+#define __LACCUM_IBIT__ 32
+#define __LACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LK
+#define __LACCUM_MIN__ (-0X1P31LK-0X1P31LK)
+#define __LFRACT_EPSILON__ 0x1P-31LR
+#define __LFRACT_FBIT__ 31
+#define __LFRACT_IBIT__ 0
+#define __LFRACT_MAX__ 0X7FFFFFFFP-31LR
+#define __LFRACT_MIN__ (-0.5LR-0.5LR)
+#define __LLACCUM_EPSILON__ 0x1P-31LLK
+#define __LLACCUM_FBIT__ 31
+#define __LLACCUM_IBIT__ 32
+#define __LLACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LLK
+#define __LLACCUM_MIN__ (-0X1P31LLK-0X1P31LLK)
+#define __LLFRACT_EPSILON__ 0x1P-63LLR
+#define __LLFRACT_FBIT__ 63
+#define __LLFRACT_IBIT__ 0
+#define __LLFRACT_MAX__ 0X7FFFFFFFFFFFFFFFP-63LLR
+#define __LLFRACT_MIN__ (-0.5LLR-0.5LLR)
+#define __QQ_FBIT__ 7
+#define __QQ_IBIT__ 0
+#define __REGISTER_PREFIX__ 
+#define __SACCUM_EPSILON__ 0x1P-7HK
+#define __SACCUM_FBIT__ 7
+#define __SACCUM_IBIT__ 8
+#define __SACCUM_MAX__ 0X7FFFP-7HK
+#define __SACCUM_MIN__ (-0X1P7HK-0X1P7HK)
+#define __SA_FBIT__ 15
+#define __SA_IBIT__ 16
+#define __SCHAR_MAX__ 0x7f
+#define __SFRACT_EPSILON__ 0x1P-7HR
+#define __SFRACT_FBIT__ 7
+#define __SFRACT_IBIT__ 0
+#define __SFRACT_MAX__ 0X7FP-7HR
+#define __SFRACT_MIN__ (-0.5HR-0.5HR)
+#define __SOFTFP__ 1
+#define __SQ_FBIT__ 31
+#define __SQ_IBIT__ 0
+#define __TA_FBIT__ 63
+#define __TA_IBIT__ 64
+#define __THUMB_INTERWORK__ 1
+#define __TQ_FBIT__ 127
+#define __TQ_IBIT__ 0
+#define __UACCUM_EPSILON__ 0x1P-16UK
+#define __UACCUM_FBIT__ 16
+#define __UACCUM_IBIT__ 16
+#define __UACCUM_MAX__ 0XFFFFFFFFP-16UK
+#define __UACCUM_MIN__ 0.0UK
+#define __UDA_FBIT__ 32
+#define __UDA_IBIT__ 32
+#define __UDQ_FBIT__ 64
+#define __UDQ_IBIT__ 0
+#define __UFRACT_EPSILON__ 0x1P-16UR
+#define __UFRACT_FBIT__ 16
+#define __UFRACT_IBIT__ 0
+#define __UFRACT_MAX__ 0XFFFFP-16UR
+#define __UFRACT_MIN__ 0.0UR
+#define __UHA_FBIT__ 8
+#define __UHA_IBIT__ 8
+#define __UHQ_FBIT__ 16
+#define __UHQ_IBIT__ 0
+#define __ULACCUM_EPSILON__ 0x1P-32ULK
+#define __ULACCUM_FBIT__ 32
+#define __ULACCUM_IBIT__ 32
+#define __ULACCUM_MAX__ 0XFFFFFFFFFFFFFFFFP-32ULK
+#define __ULACCUM_MIN__ 0.0ULK
+#define __ULFRACT_EPSILON__ 0x1P-32ULR
+#define __ULFRACT_FBIT__ 32
+#define __ULFRACT_IBIT__ 0
+#define __ULFRACT_MAX__ 0XFFFFFFFFP-32ULR
+#define __ULFRACT_MIN__ 0.0ULR
+#define __ULLACCUM_EPSILON__ 0x1P-32ULLK
+#define __ULLACCUM_FBIT__ 32
+#define __ULLACCUM_IBIT__ 32
+#define __ULLACCUM_MAX__ 0XFFFFFFFFFFFFFFFFP-32ULLK
+#define __ULLACCUM_MIN__ 0.0ULLK
+#define __ULLFRACT_EPSILON__ 0x1P-64ULLR
+#define __ULLFRACT_FBIT__ 64
+#define __ULLFRACT_IBIT__ 0
+#define __ULLFRACT_MAX__ 0XFFFFFFFFFFFFFFFFP-64ULLR
+#define __ULLFRACT_MIN__ 0.0ULLR
+#define __UQQ_FBIT__ 8
+#define __UQQ_IBIT__ 0
+#define __USACCUM_EPSILON__ 0x1P-8UHK
+#define __USACCUM_FBIT__ 8
+#define __USACCUM_IBIT__ 8
+#define __USACCUM_MAX__ 0XFFFFP-8UHK
+#define __USACCUM_MIN__ 0.0UHK
+#define __USA_FBIT__ 16
+#define __USA_IBIT__ 16
+#define __USES_INITFINI__ 1
+#define __USFRACT_EPSILON__ 0x1P-8UHR
+#define __USFRACT_FBIT__ 8
+#define __USFRACT_IBIT__ 0
+#define __USFRACT_MAX__ 0XFFP-8UHR
+#define __USFRACT_MIN__ 0.0UHR
+#define __USQ_FBIT__ 32
+#define __USQ_IBIT__ 0
+#define __UTA_FBIT__ 64
+#define __UTA_IBIT__ 64
+#define __UTQ_FBIT__ 128
+#define __UTQ_IBIT__ 0
+#endif
+
 #define __BYTE_ORDER__             __ORDER_LITTLE_ENDIAN__
 #define __FLOAT_WORD_ORDER__       __ORDER_LITTLE_ENDIAN__
 #define __ORDER_BIG_ENDIAN__       4321
 #define __ORDER_LITTLE_ENDIAN__    1234
 #define __ORDER_PDP_ENDIAN__       3412
 
+#ifdef __arm__
+#define __BIGGEST_ALIGNMENT__      8
+#else
 #define __BIGGEST_ALIGNMENT__      16
+#endif
 
 #define __GCC_ASM_FLAG_OUTPUTS__           1
 #define __GCC_HAVE_DWARF2_CFI_ASM          1
