@@ -234,9 +234,6 @@
     <ClCompile Include="..\..\src\kernel\mman\pagefault.c">
       <Filter>kernel\mman</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core\syscall.c">
-      <Filter>kernel\core</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\core\user.c">
       <Filter>kernel\core</Filter>
     </ClCompile>
@@ -465,9 +462,6 @@
     <ClCompile Include="..\..\src\kernel\arch\interrupt.c">
       <Filter>kernel\arch</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\arch\irq.c">
-      <Filter>kernel\arch</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\arch\paging.c">
       <Filter>kernel\arch</Filter>
     </ClCompile>
@@ -508,9 +502,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">
       <Filter>kernel\mman</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\irq.h">
-      <Filter>include\kernel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\memory.h">
       <Filter>include\kernel</Filter>
@@ -576,9 +567,6 @@
       <Filter>include\sync</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\test.h">
-      <Filter>include\kernel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\include\kernel\syscall-table.h">
       <Filter>include\kernel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\kernel\stack.h">

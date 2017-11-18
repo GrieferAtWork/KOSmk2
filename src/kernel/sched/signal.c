@@ -34,7 +34,7 @@
 #include <hybrid/check.h>
 #include <hybrid/traceback.h>
 #include <arch/gdt.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>
 #include <kernel/syscall.h>

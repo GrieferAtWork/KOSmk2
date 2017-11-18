@@ -29,7 +29,7 @@
 #include <hybrid/minmax.h>
 #include <hybrid/types.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/mman.h>
 #include <kernel/test.h>
 #include <kos/ksym.h>

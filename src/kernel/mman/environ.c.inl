@@ -28,7 +28,7 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/host.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/mman.h>
 #include <kernel/paging-util.h>
 #include <kernel/paging.h>

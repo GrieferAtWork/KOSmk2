@@ -30,7 +30,7 @@
 #include <arch/idt_pointer.h>
 #include <arch/realmode.h>
 #include <kernel/boot.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/memory.h>
 #include <kernel/paging.h>
 #include <sys/syslog.h>

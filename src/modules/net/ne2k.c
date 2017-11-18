@@ -27,7 +27,7 @@
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <modules/pci.h>
 #include <sched/cpu.h>
 #include <sched/rpc.h>
@@ -286,10 +286,6 @@ end:
 
 
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-DEFINE_INT_HANDLER(ne2k_irq,ne2k_interrupt_handler);
-PRIVATE isr_t ne2k_isr = ISR_DEFAULT(NE2K_IRQ,&ne2k_irq);
-#else
 INTERN void INTCALL ne2k_interrupt_handler(void);
 /* TODO: Use the interrupt handler to pass the ne2k_t device as closure. */
 /* TODO: Extend to allow interrupt sharing.
@@ -305,7 +301,6 @@ PRIVATE struct interrupt ne2k_interrupt = {
     },
     .i_owner = THIS_INSTANCE,
 };
-#endif
 
 INTERN void ne2k_do_int(ne2k_t *dev) {
  u8 status; u16 iobase;
@@ -363,13 +358,7 @@ INTERN void ne2k_do_int(ne2k_t *dev) {
      outb(iobase+EN0_ISR,status);
 }
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-INTERN void ne2k_interrupt_handler(void)
-#else
-INTERN void INTCALL ne2k_interrupt_handler(void)
-#endif
-{
- if (IRQ_PIC_SPURIOUS(NE2K_IRQ)) return;
+INTERN void INTCALL ne2k_interrupt_handler(void) {
  ne2k_do_int((ne2k_t *)ne2k_recv_job.j_data);
  /* Acknowledge the interrupt within the PIC. */
  PIC_EOI(NE2K_IRQ);
@@ -575,12 +564,8 @@ ne2k_probe(struct pci_device *dev) {
  /* Setup an IRQ handler for incoming packages. */
  { u32 v = pci_read(dev->pd_addr,PCI_GDEV3C);
    ne2k_recv_job.j_data = self; /* TODO: This is unsafe */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-   irq_vset(BOOTCPU,&ne2k_isr,NULL,IRQ_SET_RELOAD);
-#else
    /* TODO: Allocate the interrupt vector dynamically. */
    int_addboot(&ne2k_interrupt);
-#endif
    pci_write(dev->pd_addr,PCI_GDEV3C,
             (v & ~(PCI_GDEV3C_IRQLINEMASK|PCI_GDEV3C_IRQPINMASK))|
             ((NE2K_IRQ >= INTNO_PIC2_BASE ? 1 : 0) << PCI_GDEV3C_IRQPINSHIFT)|

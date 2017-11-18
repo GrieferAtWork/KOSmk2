@@ -26,7 +26,7 @@
 #include <hybrid/debuginfo.h> /* For `THIS_INSTANCE' */
 #include <hybrid/host.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <sched/percpu.h>
 #include <sched/rpc.h>
 #include <sched/smp.h>

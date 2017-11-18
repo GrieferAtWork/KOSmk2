@@ -34,7 +34,7 @@
 #include <hybrid/section.h>
 #include <hybrid/traceback.h>
 #include <arch/cpustate.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <hybrid/host.h>
 #include <kernel/mman.h>
 #include <kernel/paging-util.h>
@@ -1444,7 +1444,6 @@ pit_interrupt_handler(struct cpustate *__restrict state) {
  struct task *old_task;
  struct task *new_task;
  assert(!PREEMPTION_ENABLED());
- if (IRQ_PIC_SPURIOUS(INTNO_PIC1_PIT)) return state;
 
 #if 0
  debug_printf("#!$ addr2line(%Ix) '{file}({line}) : {func} : PIT Trigger: %p'\n",

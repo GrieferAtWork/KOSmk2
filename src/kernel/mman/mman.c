@@ -37,7 +37,7 @@
 #include <hybrid/list/atree.h>
 #include <hybrid/section.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/mman.h>
 #include <kernel/paging-util.h>
 #include <kernel/stack.h>
@@ -1971,10 +1971,6 @@ mman_map_dynmem(PHYS ppage_t start, size_t n_bytes) {
 
 
 /* The low-level assembly handler for PAGEFAULTs */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-INTDEF void ASMCALL mman_asm_pf(void);
-PRIVATE ATTR_FREERODATA isr_t const pf_isr = ISR_DEFAULT(EXC_PAGE_FAULT,&mman_asm_pf);
-#else
 INTDEF int FCALL mman_interrupt_pf_handler(struct irregs_ie *__restrict info);
 PRIVATE struct interrupt mman_interrupt_pf = {
     .i_intno = EXC_PAGE_FAULT,
@@ -1992,7 +1988,6 @@ PRIVATE struct interrupt mman_interrupt_pf = {
     },
     .i_owner = THIS_INSTANCE,
 };
-#endif
 
 INTERN ATTR_FREETEXT void KCALL
 mman_initialize(void) {
@@ -2070,11 +2065,7 @@ mman_initialize(void) {
  ATOMIC_WRITE(mman_kernel.m_lock.orw_lock.aorw_lock,0);
 
  /* Register an interrupt handler for pagefaults. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- asserte(irq_set(&pf_isr,NULL,IRQ_SET_RELOAD));
-#else
  asserte(E_ISOK(int_addall(&mman_interrupt_pf)));
-#endif
 }
 
 

@@ -34,7 +34,7 @@
 #include <arch/cpustate.h>
 #include <kernel/paging.h>
 #include <dev/device.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <hybrid/section.h>
 #include <sched/task.h>
 #include <kernel/mman.h>

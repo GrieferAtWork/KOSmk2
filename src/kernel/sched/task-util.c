@@ -31,7 +31,7 @@
 #include <hybrid/sync/atomic-rwlock.h>
 #include <hybrid/traceback.h>
 #include <arch/cpustate.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/memory.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>

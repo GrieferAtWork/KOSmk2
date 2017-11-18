@@ -38,7 +38,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <syslog.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <arch/cpustate.h>
 #include <sched/cpu.h>
 #include <asm/instx.h>
@@ -453,42 +453,6 @@ SYSCALL_DEFINE4(xvirtinfo,VIRT void *,addr,
  return result;
 }
 
-#ifdef CONFIG_USE_OLD_SYSCALL
-GLOBAL_ASM(
-L(.section .text                                                                 )
-L(INTERN_ENTRY(sys_xdlfini)                                                      )
-#if defined(__x86_64__) || defined(__i386__)
-L(    sti /* Enable interrupts. */                                               )
-L(    movx %xsp, %xcx      /* Load IRET registers into ECX (argument to `dl_loadfini()') */)
-L(    __ASM_PUSH_SGREGS                                                          )
-L(    __ASM_LOAD_SEGMENTS(%ax) /* Load kernel segments */                        )
-L(    call dl_loadfini                                                           )
-L(    __ASM_POP_SGREGS                                                         )
-L(    __ASM_IRET                                                                 )
-#else
-#error "ERROR: Unsupported architecture."
-#endif
-L(SYM_END(sys_xdlfini)                                                           )
-L(.previous                                                                      )
-);
-INTERN void FCALL
-dl_loadfini(struct irregs *__restrict regs) {
- struct mman *mm = THIS_MMAN;
- task_crit();
- /* XXX: Clear all pending user-alarm()s. */
-
- /* NOTE: We need a write-lock in case pushing
-  *       data onto the user-stack causes a #PF. */
- if (E_ISERR(mman_write(mm))) goto end;
- /* Use a user-worker to handle segfaults when pushing data onto the user-stack. */
- call_user_worker(&dl_do_loadfini,2,mm,regs);
- mman_endwrite(mm);
-end:
- task_endcrit();
-}
-
-#else
-
 SYSCALL_DEFINE0(xdlfini) {
  struct mman *mm = THIS_MMAN;
  task_crit();
@@ -504,9 +468,6 @@ end:
  task_endcrit();
  return IRREGS_SYSCALL_GET()->orig_xax;
 }
-
-#endif
-
 
 DECL_END
 

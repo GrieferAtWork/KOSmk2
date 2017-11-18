@@ -617,7 +617,7 @@ L(    /* Setup paging. */                                                     )
 L(    movl $pdir_kernel, %eax                                                 )
 L(    movl %eax, %cr3                                                         )
 L(    movl %cr4, %eax                                                         )
-L(    /* Required for large pages (Also enable wr(fs|gs)base instructions). */)
+L(    /* Required for large pages. */                                         )
 L(    orl  $(/*CR4_PSE|*/CR4_PAE), %eax                                       )
 L(    movl %eax, %cr4                                                         )
 L(                                                                            )
@@ -1089,7 +1089,12 @@ INTERN ATTR_FREETEXT void KCALL kernel_perform_fixups(void) {
   fixup_fsgsbase();
  else {
   register register_t temp;
-  /* Enable user-space access to these instructions. */
+  /* Enable user-space access to these instructions.
+   * NOTE: If not supported by the CPU, the `/mod/x86-emu' driver
+   *       can be loaded to emulate these instructions.
+   *  XXX: Shouldn't we integrate that driver into the core?
+   *       The fs/gs base fixup code is only applied to kernel
+   *       code, but not drivers! */
   __asm__ __volatile__("movq %%cr4, %0\n"
                        "orq  $(" PP_STR(CR4_FSGSBASE) "), %0\n"
                        "movq %0, %%cr4\n"

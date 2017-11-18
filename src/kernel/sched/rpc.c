@@ -38,15 +38,6 @@
 
 DECL_BEGIN
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-INTDEF void rpc_interrupt_handler(void);
-__asm__(".hidden rpc_irq_handler\n"
-        ".global rpc_irq_handler\n");
-INTERN DEFINE_INT_HANDLER(rpc_irq_handler,rpc_interrupt_handler);
-#else
-INTDEF void INTCALL rpc_interrupt_handler(void);
-#endif
-
 struct rpc_command {
  struct sig c_done; /*< Signal broadcast when the command is done executing. */
  cpu_rpc_t  c_cmd;  /*< [lock(c_done)] RPC command (NOTE: `CPU_RPC_NOOP' when no command is being executed). */
@@ -80,18 +71,10 @@ INTERN ssize_t ASMCALL rpc_exec(void) {
 
  case CPU_RPC_IDT_SET:
   /* Install the given ISR descriptor. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-  irq_set(&ARG(struct rpc_update_idt *)->ui_isr,
-          &ARG(struct rpc_update_idt *)->ui_isr,
-           IRQ_SET_RELOAD|IRQ_SET_INHERIT);
-#endif
   break;
 
  case CPU_RPC_IDT_DEL:
   /* Install the given ISR descriptor. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-  irq_del(*ARG(irq_t *),true);
-#endif
   break;
 
  case CPU_RPC_TLB_SHOOTDOWN:
@@ -106,15 +89,7 @@ INTERN ssize_t ASMCALL rpc_exec(void) {
 }
 
 
-
-
-
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-INTERN void rpc_interrupt_handler(void)
-#else
-INTERN void INTCALL rpc_interrupt_handler(void)
-#endif
-{
+INTERN void INTCALL rpc_interrupt_handler(void) {
  ssize_t return_value;
  /* Acknowledge the LAPIC IPC interrupt. */
  apic_write(APIC_EOI,APIC_EOI_ACK);

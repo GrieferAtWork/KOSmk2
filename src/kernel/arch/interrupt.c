@@ -44,7 +44,7 @@
 #include <hybrid/panic.h>
 #include <sched/smp.h>
 #include <sched/cpu.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <asm/registers.h>
 #include <syslog.h>
 #include <kernel/paging.h>
@@ -1701,12 +1701,10 @@ int_del(struct interrupt *__restrict entry) {
  return result;
 }
 
-#ifndef CONFIG_USE_OLD_INTERRUPTS
 INTERN void KCALL
 irq_delete_from_instance(struct instance *__restrict inst) {
  /* TODO */
 }
-#endif
 
 
 #ifdef CONFIG_SMP

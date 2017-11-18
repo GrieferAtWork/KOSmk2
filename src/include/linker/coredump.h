@@ -41,6 +41,9 @@ struct __siginfo_struct;
  * @param: vm:          The VM in which `thread' was running.
  * @param: thread:      The thread that caused the coredump.
  * @param: state:       The CPU state as of when the coredump was caused.
+ *                      NOTE: To access the state's tail, `IRREGS_TAIL()' must be used,
+ *                            meaning that based on the interrupt number, no exception
+ *                            code may be associated with the state.
  * @param: reason:      A `siginfo_t' structure describing the reason of a dump caused by a signal.
  * @param: flags:       A set of `COREDUMP_FLAG_*'
  * @param: closure:     The closure argument stored in the associated `coreformat'.

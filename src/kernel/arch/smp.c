@@ -40,7 +40,7 @@
 #include <arch/mp.h>
 #include <arch/realmode.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/paging.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
@@ -56,10 +56,7 @@
 #include <malloc.h>
 #include <arch/asm.h>
 #include <asm/instx.h>
-
-#ifndef CONFIG_USE_OLD_INTERRUPTS
 #include "interrupt_intern.h"
-#endif
 
 
 DECL_BEGIN
@@ -238,13 +235,8 @@ INTERN ATTR_NORETURN void cpu_bootstrap_c(void) {
 
  /* Load our own IDT table. */
  { struct idt_pointer idt;
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-   idt.ip_idt   = CPU(cpu_idt).i_vector;
-   idt.ip_limit = sizeof(cpu_idt.i_vector)-1;
-#else
    idt.ip_idt   = CPU(inttab).it_idt;
    idt.ip_limit = sizeof(inttab.it_idt)-1;
-#endif
    __asm__ __volatile__("lidt %0\n" : : "m" (idt));
  }
 
@@ -769,55 +761,7 @@ smp_init_cpu(struct cpu *__restrict vcpu) {
  }
 
  /* Initialize the CPU's Interrupt Descriptor Table (IDT) */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- irq_setup(vcpu);
-
- /* Define the sporadic interrupt handler used by LAPIC. */
-#ifdef __x86_64__
-#define INIT_VECTOR(vec,ptr) \
- ((vec)->ie_off1  = (u16)((uintptr_t)(ptr)), \
-  (vec)->ie_sel   = __KERNEL_CS, \
-  (vec)->ie_ist   = 0, \
-  (vec)->ie_flags = (IDTFLAG_PRESENT| \
-                     IDTTYPE_80386_32_INTERRUPT_GATE), \
-  (vec)->ie_off2  = (u16)((uintptr_t)(ptr) >> 16), \
-  (vec)->ie_off3  = (u32)((uintptr_t)(ptr) >> 32))
-#else
-#define INIT_VECTOR(vec,ptr) \
- ((vec)->ie_off1  = (u16)((uintptr_t)(ptr)), \
-  (vec)->ie_sel   = __KERNEL_CS, \
-  (vec)->ie_zero  = 0, \
-  (vec)->ie_flags = (IDTFLAG_PRESENT| \
-                     IDTTYPE_80386_32_INTERRUPT_GATE), \
-  (vec)->ie_off2  = (u16)((uintptr_t)(ptr) >> 16))
-#endif
- if (vcpu->c_arch.ac_flags&CPUFLAG_LAPIC) {
-  struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+INTNO_LAPIC_SPURIOUS;
-  INIT_VECTOR(idt,&lapic_spurious_irq_handler);
- }
-
- /* Install the page-fault handler. */
- { INTDEF void ASMCALL mman_asm_pf(void);
-   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+EXC_PAGE_FAULT;
-   INIT_VECTOR(idt,&mman_asm_pf);
- }
-
- /* Install the system-call interrupt handler. */
- { INTDEF void ASMCALL syscall_irq(void);
-   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+SYSCALL_INT;
-   INIT_VECTOR(idt,&syscall_irq);
- }
-
-#ifndef CONFIG_NO_FPU
- /* Install the FPU context switch handler. */
- { INTDEF void (ASMCALL fpu_asm_nm)(void);
-   struct idtentry *idt = VCPU(vcpu,cpu_idt).i_vector+INTNO_EXC_NM;
-   INIT_VECTOR(idt,&fpu_asm_nm);
- }
-#endif /* !CONFIG_NO_FPU */
-#else
  cpu_interrupt_initialize(vcpu);
-#endif
 
  return -EOK;
 }
@@ -846,11 +790,6 @@ cpu_sendipc_unlocked(struct cpu *__restrict self, irq_t intno) {
 }
 
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-INTDEF void ASMCALL rpc_irq_handler(void);
-PRIVATE ATTR_FREERODATA isr_t const lapic_spurious = ISR_DEFAULT(INTNO_LAPIC_SPURIOUS,&lapic_spurious_irq_handler);
-PRIVATE ATTR_FREERODATA isr_t const lapic_rpc      = ISR_DEFAULT(INTNO_LAPIC_RPC,&rpc_irq_handler);
-#else
 INTDEF void INTCALL rpc_interrupt_handler(void);
 PRIVATE struct interrupt lapic_spurious_interrupt = {
     .i_intno = INTNO_LAPIC_SPURIOUS,
@@ -874,19 +813,13 @@ PRIVATE struct interrupt lapic_rpc_interrupt = {
     },
     .i_owner = THIS_INSTANCE,
 };
-#endif
 
 INTERN void KCALL smp_initialize_lapic(void) {
  if (!APIC_SUPPORTED()) return;
 
  /* Define the sporadic interrupt handler used by LAPIC. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- irq_set(&lapic_spurious,NULL,IRQ_SET_QUICK);
- irq_set(&lapic_rpc,NULL,IRQ_SET_RELOAD);
-#else
- int_addall(&lapic_spurious_interrupt);
- int_addall(&lapic_rpc_interrupt);
-#endif
+ asserte(E_ISOK(int_addall(&lapic_spurious_interrupt)));
+ asserte(E_ISOK(int_addall(&lapic_rpc_interrupt)));
 
  apic_write(APIC_SPIV,INTNO_LAPIC_SPURIOUS|
             APIC_SPIV_DIRECTED_EOI|

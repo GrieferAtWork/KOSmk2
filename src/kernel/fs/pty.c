@@ -31,7 +31,7 @@
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
 #include <sys/syslog.h>

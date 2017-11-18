@@ -44,7 +44,7 @@
 #include <arch/realmode.h>
 #include <kernel/boot.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/malloc.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
@@ -464,11 +464,7 @@ kernel_boot(u32        mb_magic,
 
  /* Install the default IDT table as soon as possible, so-as to be able
   * to dump exceptions resulting in kernel panic during early booting. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- irq_initialize();
-#else
  interrupt_initialize();
-#endif
 
  /* Initialize basic data using the information potentially provided by the bootloader. */
  basicdata_initialize(mb_magic,mb_mbt);
@@ -540,9 +536,8 @@ kernel_boot(u32        mb_magic,
  //mallopt(M_MALL_CHECK_FREQUENCY,1); /* Most effective when checked constantly! */
 #endif
 
-#ifndef CONFIG_USE_OLD_SYSCALL
+ /* Initialize the user-space system-call interrupt handler. */
  syscall_initialize();
-#endif
 
  /* Run kernel-level constructors, thereby initializing core modules. */
  KERNEL_RUN_CONSTRUCTORS();

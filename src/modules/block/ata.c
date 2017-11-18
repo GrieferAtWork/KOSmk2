@@ -28,7 +28,7 @@
 #include <hybrid/sched/yield.h>
 #include <hybrid/section.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <limits.h>
 #include <malloc.h>
 #include <modules/ata.h>
@@ -90,29 +90,6 @@ PRIVATE struct bus busses[2] = {
 #define ata_endread(x)            rwlock_endread(ATA_LOCK(x))
 #define ata_endwrite(x)           rwlock_endwrite(ATA_LOCK(x))
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-PRIVATE ATTR_USED void ata0_inthandler(void);
-PRIVATE ATTR_USED void ata1_inthandler(void);
-INTERN DEFINE_INT_HANDLER(ata0_irqhandler,ata0_inthandler);
-INTERN DEFINE_INT_HANDLER(ata1_irqhandler,ata1_inthandler);
-PRIVATE ATTR_FREEDATA isr_t const ata0_handler = ISR_DEFAULT(INTNO_PIC2_ATA1,&ata0_irqhandler);
-PRIVATE ATTR_FREEDATA isr_t const ata1_handler = ISR_DEFAULT(INTNO_PIC2_ATA2,&ata1_irqhandler);
-
-PRIVATE ATTR_USED void ata0_inthandler(void) {
- if (IRQ_PIC_SPURIOUS(INTNO_PIC2_ATA1)) return;
- /* Primary ATA interrupt */
- inb(ATA_PRIMARY+ATA_STATUS);
- PIC_EOI(INTNO_PIC2_ATA1);
- sem_release(&PRIMARY_BUS.b_signaled,1);
-}
-PRIVATE ATTR_USED void ata1_inthandler(void) {
- if (IRQ_PIC_SPURIOUS(INTNO_PIC2_ATA2)) return;
- /* Secondary ATA interrupt */
- inb(ATA_SECONDARY+ATA_STATUS);
- PIC_EOI(INTNO_PIC2_ATA2);
- sem_release(&SECONDARY_BUS.b_signaled,1);
-}
-#else
 PRIVATE void INTCALL ata0_interrupt_handler(void) {
  /* Primary ATA interrupt */
  inb(ATA_PRIMARY+ATA_STATUS);
@@ -147,7 +124,6 @@ PRIVATE struct interrupt ata1_interrupt = {
     },
     .i_owner = THIS_INSTANCE,
 };
-#endif
 
 
 PRIVATE void KCALL ata_sleep(u16 bus) {
@@ -337,13 +313,8 @@ ata_probe(u16 iobase, u16 ctrl, u8 drive) {
 
 PRIVATE MODULE_INIT void KCALL ata_init(void) {
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- irq_vset(BOOTCPU,&ata0_handler,NULL,IRQ_SET_QUICK);
- irq_vset(BOOTCPU,&ata1_handler,NULL,IRQ_SET_RELOAD);
-#else
  int_addboot(&ata0_interrupt);
  int_addboot(&ata1_interrupt);
-#endif
 
  /* Probe for devices. */
  ata_probe(ATA_SECONDARY,ATA_CTRL_SECONDARY,ATA_DRIVE_SLAVE);

@@ -173,6 +173,15 @@ struct interrupt_name {
 };
 DATDEF struct interrupt_name const exception_names[32];
 
+
+/* Return a pointer to the effective interrupt IRREGS-IRET tail,
+ * assuming that the calling thread entered kernel-space using
+ * a system-call, or interrupt.
+ * HINT: The returned structure is compatible with `IRREGS_SYSCALL_GET()' */
+#define IRREGS_INTERRUPT_GET()         (((struct irregs *)THIS_CPU->c_arch.ac_tss.xsp0)-1)
+#define IRREGS_INTERRUPT_GET_FOR(task) (((struct irregs *)(task)->t_hstack.hs_end)-1)
+
+
 struct cpu;
 struct task;
 struct cpustate_ie;

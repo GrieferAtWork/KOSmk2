@@ -35,7 +35,7 @@
 #include <arch/gdt.h>
 #include <arch/mp.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/malloc.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>

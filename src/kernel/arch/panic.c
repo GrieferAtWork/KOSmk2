@@ -36,7 +36,7 @@
 #include <arch/preemption.h>
 #include <kernel/boot.h>
 #include <kernel/interrupt.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/paging.h>
 #include <kernel/stack.h>
 #include <linker/module.h>

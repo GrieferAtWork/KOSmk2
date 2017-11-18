@@ -46,7 +46,7 @@
 #include <sched/cpu.h>
 #include <sched/types.h>
 #include <modules/tty.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/mman.h>
 #include <linker/module.h>
 #include <arch/cpustate.h>

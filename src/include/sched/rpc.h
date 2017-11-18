@@ -24,7 +24,7 @@
 #ifdef CONFIG_SMP
 #include <errno.h>
 #include <hybrid/types.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 
 DECL_BEGIN
 
@@ -59,9 +59,6 @@ typedef u32 cpu_rpc_t;
 
 
 struct rpc_callback { ssize_t (KCALL *c_callback)(void *closure); void *c_closure; };
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-struct rpc_update_idt { REF isr_t ui_isr; }; /* NOTE: 'ui_isr' contains a reference to the associated instance _BOTH_ on entry & exit. */
-#endif /* CONFIG_USE_OLD_INTERRUPTS */
 struct rpc_tlb_shootdown { void *ts_begin; size_t ts_size; };
 
 
@@ -81,41 +78,12 @@ FUNDEF SAFE ssize_t KCALL cpu_rpc_send(struct cpu *__restrict self, cpu_rpc_t co
 LOCAL SAFE void KCALL cpu_rpc_broadcast(cpu_rpc_t command, void *arg);
 
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-/* Cross-cpu IRQ setter helper function.
- * >> Behaves the same as `irq_set', but takes an additional cpu-argument `self'. */
-LOCAL SAFE bool KCALL irq_vset(struct cpu *__restrict self,
-                               isr_t const *__restrict new_handler,
-                           REF isr_t *old_handler, int mode);
-LOCAL SAFE void KCALL irq_vdel(struct cpu *__restrict self, irq_t num);
-#endif
-
 DECL_END
 
 #ifndef __INTELLISENSE__
 #include <linker/module.h>
 #include <sched/smp.h>
 DECL_BEGIN
-
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-LOCAL SAFE bool KCALL irq_vset(struct cpu *__restrict self,
-                               isr_t const *__restrict new_handler,
-                           REF isr_t *old_handler, int mode) {
- struct rpc_update_idt arg; bool result;
- arg.ui_isr = *new_handler;
- if (!(mode&IRQ_SET_INHERIT) &&
-     !INSTANCE_INCREF(arg.ui_isr.i_owner))
-      return false;
- result = E_ISOK(cpu_rpc_send(self,CPU_RPC_IDT_SET,&arg));
- if (old_handler) *old_handler = arg.ui_isr;
- else INSTANCE_DECREF(arg.ui_isr.i_owner);
- return result;
-}
-LOCAL SAFE void KCALL irq_vdel(struct cpu *__restrict self, irq_t num) {
- cpu_rpc_send(self,CPU_RPC_IDT_DEL,&num);
-}
-#endif /* CONFIG_USE_OLD_INTERRUPTS */
-
 LOCAL SAFE void KCALL cpu_rpc_broadcast(cpu_rpc_t command, void *arg) {
  struct cpu *c;
  FOREACH_CPU(c) cpu_rpc_send(c,command,arg);
@@ -123,13 +91,6 @@ LOCAL SAFE void KCALL cpu_rpc_broadcast(cpu_rpc_t command, void *arg) {
 
 DECL_END
 #endif
-
-#else /* CONFIG_SMP */
-#include <kernel/irq.h>
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-#define irq_vset(self,new_handler,old_handler,mode) irq_set(new_handler,old_handler,mode)
-#define irq_vdel(self,num)                          irq_del(num,true)
-#endif
-#endif /* !CONFIG_SMP */
+#endif /* CONFIG_SMP */
 
 #endif /* !GUARD_INCLUDE_KERNEL_RPC_H */

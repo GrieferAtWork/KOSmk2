@@ -29,7 +29,7 @@
 #include <sched/cpu.h>
 #include <string.h>
 #include <syslog.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <hybrid/section.h>
 #include <hybrid/align.h>
 #include <sched/paging.h>
@@ -48,13 +48,6 @@ STATIC_ASSERT(IS_ALIGNED(FPUSTATE_SIZE,FPUSTATE_ALIGN));
  *  The task that the currently loaded FPU state belongs to. */
 PUBLIC CPU_BSS struct task *fpu_current;
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-PRIVATE ATTR_USED void FCALL fpu_irq_nm(struct cpustate *__restrict info);
-__asm__(".global fpu_asm_nm\n"
-        ".hidden fpu_asm_nm\n");
-INTERN DEFINE_EXC_HANDLER(fpu_asm_nm,fpu_irq_nm);
-PRIVATE ATTR_FREERODATA isr_t const fpu_switch = ISR_DEFAULT(INTNO_EXC_NM,&fpu_asm_nm);
-#else
 #ifdef CONFIG_DEBUG
 PRIVATE int FCALL fpu_interrupt_nm_handler(struct irregs_i *__restrict info);
 #else
@@ -86,26 +79,16 @@ PRIVATE struct interrupt fpu_interrupt_nm = {
     },
     .i_owner = THIS_INSTANCE,
 };
-#endif
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-PRIVATE void FCALL
-fpu_irq_nm(struct cpustate *__restrict info)
-#else
 #ifdef CONFIG_DEBUG
 PRIVATE int FCALL fpu_interrupt_nm_handler(struct irregs_i *__restrict info)
 #else
 PRIVATE int FCALL fpu_interrupt_nm_handler(void)
 #endif
-#endif
 {
  struct task *old_task = CPU(fpu_current);
  struct task *new_task = THIS_TASK;
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- assertf((info->iret.cs&3) == 3,
-         "Kernel code at %p isn't allowed to use floating point registers.",
-         info->iret.xip);
-#elif defined(CONFIG_DEBUG)
+#ifdef CONFIG_DEBUG
  assertf((info->cs&3) == 3,
          "Kernel code at %p isn't allowed to use floating point registers.",
          info->xip);
@@ -134,11 +117,7 @@ PRIVATE int FCALL fpu_interrupt_nm_handler(void)
   }
   CPU(fpu_current) = new_task;
   /* Continue execution normally. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-  return;
-#else
   return INTCODE_HANDLED;
-#endif
  } else {
   /* If the task-switched flag is set, unset it because it
    * is possible that the calling task is the only actually
@@ -147,23 +126,12 @@ PRIVATE int FCALL fpu_interrupt_nm_handler(void)
   __asm__ __volatile__("mov %%cr0, %0\n" : "=r" (temp));
   if (temp&CR0_TS) {
    __asm__ __volatile__("mov %0, %%cr0\n" : : "r" (temp&~CR0_TS));
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-   return;
-#else
    return INTCODE_HANDLED;
-#endif
   }
  }
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- /* Fallback: This is something else... */
- { struct cpustate_e state;
-   CPUSTATE_TO_CPUSTATE_E(*info,state,0);
-   irq_default(INTNO_EXC_NM,&state);
- }
-#else
+ /* Fallback: Search for another handler. */
  return INTCODE_SEARCH;
-#endif
 }
 
 PRIVATE MODULE_INIT void KCALL fpu_init(void) {
@@ -179,11 +147,7 @@ PRIVATE MODULE_INIT void KCALL fpu_init(void) {
                       "mov %0, %%cr4\n"
                       : "=r" (temp));
  /* Install the IRQ handler used when switching FPU tasks. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- asserte(irq_set(&fpu_switch,NULL,IRQ_SET_RELOAD));
-#else
  asserte(E_ISOK(int_addall(&fpu_interrupt_nm)));
-#endif
 }
 
 DECL_END

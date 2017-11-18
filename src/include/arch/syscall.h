@@ -91,7 +91,9 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
  * HINT: This data structure can be modified to override system-call
  *       the system-call return address, a behavior that is used by
  *       KOS's POSIX-signal() implementation to capture user-space
- *       register values. */
+ *       register values.
+ * HINT: So long as `sysno' or orig_?a[x] isn't modified, this
+ *       structure is compatible with `IRREGS_INTERRUPT_GET()' */
 #define IRREGS_SYSCALL_GET()         (((struct irregs_syscall *)THIS_CPU->c_arch.ac_tss.xsp0)-1)
 #define IRREGS_SYSCALL_GET_FOR(task) (((struct irregs_syscall *)(task)->t_hstack.hs_end)-1)
 

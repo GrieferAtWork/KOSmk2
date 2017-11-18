@@ -37,7 +37,7 @@
 #include <arch/gdt.h>
 #include <arch/mp.h>
 #include <kernel/boot.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
 #include <sys/syslog.h>
@@ -597,36 +597,29 @@ INTDEF ATTR_NORETURN void KCALL cpu_jobworker(void);
 
 INTDEF struct cpustate *FCALL
 pit_interrupt_handler(struct cpustate *__restrict state);
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-INTERN DEFINE_TASK_HANDLER(pit_irq,pit_interrupt_handler);
-PRIVATE ATTR_FREERODATA isr_t const pit_isr = ISR_DEFAULT(INTNO_PIC1_PIT,&pit_irq);
-#else
 INTDEF void ASMCALL pit_interrupt_wrapper(void);
 GLOBAL_ASM(
 L(.section .text.hot                                                          )
 L(PRIVATE_ENTRY(pit_interrupt_wrapper)                                        )
 L(    __ASM_PUSH_COMREGS                                                      )
-L(    movx %xsp, %FASTCALL_REG1 /* Pass a pointer to the generated cpustate. */)
+L(    movx   %xsp, %FASTCALL_REG1 /* Pass a pointer to the generated cpustate. */)
 #ifdef __x86_64__
-L(    testq $3, CPUSTATE_OFFSETOF_IRET+IRREGS_OFFSETOF_CS(%rsp)               )
-L(    jz    1f                                                                )
+L(    testb  $3, CPUSTATE_OFFSETOF_IRET+IRREGS_OFFSETOF_CS(%rsp)              )
+L(    jz     1f                                                               )
 L(    swapgs /* Load the kernel's GS base address */                          )
-L(    call  pit_interrupt_handler                                             )
+L(    call   pit_interrupt_handler                                            )
 L(    swapgs /* Restore the user-space GS */                                  )
-L(    movq %rax, %rsp /* Use the handler's return value as new stack. */      )
+L(    movq   %rax, %rsp /* Use the handler's return value as new stack. */    )
 L(    __ASM_POP_COMREGS                                                       )
 L(    ASM_IRET                                                                )
-L(1:  call pit_interrupt_handler                                              )
-L(    movq %rax, %rsp /* Use the handler's return value as new stack. */      )
-L(    __ASM_POP_COMREGS                                                       )
-L(    ASM_IRET                                                                )
+L(1:  call   pit_interrupt_handler                                            )
 #else
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
-L(    call pit_interrupt_handler                                              )
-L(    movl %eax, %esp /* Use the handler's return value as new stack. */      )
+L(    call   pit_interrupt_handler                                            )
+#endif
+L(    movx   %xax, %xsp /* Use the handler's return value as new stack. */    )
 L(    __ASM_POP_COMREGS                                                       )
 L(    ASM_IRET                                                                )
-#endif
 L(SYM_END(pit_interrupt_wrapper)                                              )
 L(.previous                                                                   )
 );
@@ -641,7 +634,6 @@ PRIVATE struct interrupt pit_interrupt = {
     },
     .i_owner = THIS_INSTANCE,
 };
-#endif
 
 INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
 #ifndef CONFIG_NO_JOBS
@@ -664,11 +656,7 @@ INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
 #endif /* !CONFIG_NO_JOBS */
 
  /* Install the PIT IRQ handler. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- irq_set(&pit_isr,NULL,IRQ_SET_RELOAD);
-#else
- int_addall(&pit_interrupt);
-#endif
+ asserte(E_ISOK(int_addall(&pit_interrupt)));
 
  /* Unmask the PIT Interrupt pin again. */
  PIC1_STMASK(PIC1_GTMASK() & ~(1 << (INTNO_PIC1_PIT-INTNO_PIC1_BASE)));

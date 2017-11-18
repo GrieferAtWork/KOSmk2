@@ -30,7 +30,7 @@
 #include <hybrid/panic.h>
 #include <hybrid/section.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
 #include <kernel/user.h>

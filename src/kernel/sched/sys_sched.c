@@ -35,7 +35,7 @@
 #include <hybrid/minmax.h>
 #include <hybrid/types.h>
 #include <arch/hints.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <kernel/mman.h>
 #include <kernel/paging.h>
 #include <kernel/stack.h>
@@ -55,8 +55,7 @@
 
 DECL_BEGIN
 
-INTERN ATTR_NORETURN void KCALL
-task_userexit_group(void *exitcode) {
+SYSCALL_DEFINE1(exit_group,void *,exitcode) {
  /* More commonly known as stdlib:`exit()' */
  struct task *caller = THIS_TASK;
  REF struct task *leader;
@@ -103,76 +102,15 @@ task_userexit_group(void *exitcode) {
  __builtin_unreachable();
 }
 
-INTERN ATTR_NORETURN void KCALL task_userexit(void *exitcode) {
+SYSCALL_DEFINE1(exit,void *,exitcode) {
  /* More commonly known as pthread:`pthread_exit()' */
  task_terminate(THIS_TASK,(void *)(uintptr_t)__W_EXITCODE((u8)(uintptr_t)exitcode,0));
  __builtin_unreachable();
 }
 
-GLOBAL_ASM(
-L(.section .text                                                              )
-L(INTERN_ENTRY(sys_exit_group)                                                )
-#ifdef CONFIG_USE_OLD_SYSCALL
-L(    sti                                                                     )
-L(    /* Load segment registers */                                            )
-L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
-#ifndef __x86_64__
-L(    pushl %ebx                                                              )
-#endif /* !__x86_64__ */
-L(    call  task_userexit_group                                               )
-#ifdef CONFIG_DEBUG
-L(.global __assertion_unreachable                                             )
-L(    call __assertion_unreachable                                            )
-#endif
-#else
-L(    jmp  task_userexit                                                      )
-#endif
-L(SYM_END(sys_exit_group)                                                     )
-L(.previous                                                                   )
-);
-
-GLOBAL_ASM(
-L(.section .text                                                              )
-L(INTERN_ENTRY(sys_exit)                                                      )
-#ifdef CONFIG_USE_OLD_SYSCALL
-L(    sti                                                                     )
-L(    /* Load segment registers */                                            )
-L(    __ASM_LOAD_SEGMENTS(%dx)                                                )
-#ifndef __x86_64__
-L(    pushl %ebx                                                              )
-#endif /* !__x86_64__ */
-L(    call task_userexit                                                      )
-#ifdef CONFIG_DEBUG
-L(.global __assertion_unreachable                                             )
-L(    call __assertion_unreachable                                            )
-#endif
-#else
-L(    jmp  task_userexit                                                      )
-#endif
-L(SYM_END(sys_exit)                                                           )
-L(.previous                                                                   )
-);
-
-GLOBAL_ASM(
-L(.section .text                                                              )
-L(INTERN_ENTRY(sys_sched_yield)                                               )
-#ifdef CONFIG_USE_OLD_SYSCALL
-L(    sti                                                                     )
-L(    /* Safe & load segment registers */                                     )
-L(    __ASM_PUSH_SGREGS                                                       )
-L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
-L(    call task_yield                                                         )
-L(    __ASM_POP_SGREGS                                                        )
-L(    xorx %xax, %xax                                                         )
-L(    __ASM_IRET                                                              )
-#else
-L(    call task_yield                                                         )
-L(    ret                                                                     )
-#endif
-L(SYM_END(sys_sched_yield)                                                    )
-L(.previous                                                                   )
-);
-
+SYSCALL_DEFINE0(sched_yield) {
+ return task_yield();
+}
 
 SYSCALL_DEFINE1(unshare,int,flags) {
  errno_t error = -EOK;

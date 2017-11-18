@@ -32,7 +32,7 @@
 #include <input/keyboard.h>
 #include <arch/cpustate.h>
 #include <kernel/export.h>
-#include <kernel/irq.h>
+#include <kernel/interrupt.h>
 #include <dev/rtc.h>
 #include <sys/syslog.h>
 #include <kernel/user.h>
@@ -157,12 +157,6 @@ PRIVATE void KCALL keyboard_send(kbkey_t k) {
  }
 }
 
-#ifdef CONFIG_USE_OLD_INTERRUPTS
-INTERN DEFINE_INT_HANDLER(ps2_irq_1,ps2_interrupt1_handler);
-INTERN DEFINE_INT_HANDLER(ps2_irq_c,ps2_interruptc_handler);
-PRIVATE isr_t ps2_isr_1 = ISR_DEFAULT(INTNO_PIC1_KBD,&ps2_irq_1);
-PRIVATE isr_t ps2_isr_c = ISR_DEFAULT(INTNO_PIC2_PS2M,&ps2_irq_c);
-#else
 /* TODO: Use the interrupt controller to hold a reference to `ps2_keyboard' */
 PRIVATE void INTCALL ps2_interrupt1_handler(void);
 PRIVATE void INTCALL ps2_interruptc_handler(void);
@@ -188,7 +182,7 @@ PRIVATE struct interrupt ps2_interruptc = {
     },
     .i_owner = THIS_INSTANCE,
 };
-#endif
+
 PRIVATE u8 ps2_cmd_maxretry = 3; /* TODO: Commandline option? */
 PRIVATE jtime_t ps2_cmd_timeout = MSEC_TO_JIFFIES(100); /* TODO: Commandline option? */
 
@@ -571,14 +565,11 @@ keyboard_irqctl(struct device *__restrict dev, unsigned int cmd) {
 
 
 PRIVATE ATTR_USED void INTCALL ps2_interrupt1_handler(void) {
- if (IRQ_PIC_SPURIOUS(INTNO_PIC1_KBD)) return;
  ps2_handle_interrupt();
  PIC_EOI(INTNO_PIC1_KBD);
 }
 PRIVATE ATTR_USED void INTCALL ps2_interruptc_handler(void) {
- if (IRQ_PIC_SPURIOUS(INTNO_PIC2_PS2M)) return;
  /* TODO: PS/2 mouse event? */
-
  PIC_EOI(INTNO_PIC2_PS2M);
 }
 
@@ -610,13 +601,8 @@ PRIVATE MODULE_INIT errno_t ps2_init(void) {
      ps2_write_cmd(PS2_CONTROLLER_DISABLE_PORT2);
 
  /* Install the PS/2 interrupt handlers. */
-#ifdef CONFIG_USE_OLD_INTERRUPTS
- irq_vset(BOOTCPU,&ps2_isr_1,NULL,IRQ_SET_QUICK);
- irq_vset(BOOTCPU,&ps2_isr_c,NULL,IRQ_SET_RELOAD);
-#else
  int_addboot(&ps2_interrupt1);
  int_addboot(&ps2_interruptc);
-#endif
 
  ps_syscfg = (PS2_CONTROLLER_CFG_PORT1_IRQ|
               PS2_CONTROLLER_CFG_SYSTEMFLAG);
