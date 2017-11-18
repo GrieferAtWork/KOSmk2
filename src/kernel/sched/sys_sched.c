@@ -34,6 +34,7 @@
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <hybrid/types.h>
+#include <arch/cpustate.h>
 #include <arch/hints.h>
 #include <kernel/interrupt.h>
 #include <kernel/mman.h>
@@ -52,6 +53,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/syslog.h>
+#include <arch/current_context.h>
 
 DECL_BEGIN
 
@@ -820,11 +822,7 @@ SYSCALL_SDEFINE(clone,regs) {
     if unlikely(!result->t_ustack) { error = -ENOMEM; goto end_double_lock; }
    }
    result_needs_stack = false;
-#ifdef CONFIG_USE_OLD_SYSCALL
-   newsp = (void *)THIS_SYSCALL_USERESP;
-#else
-   newsp = (void *)IRREGS_SYSCALL_GET()->userxsp;
-#endif
+   newsp = get_current_usersp();
   }
 end_double_lock:
   mman_endwrite(caller->t_mman);

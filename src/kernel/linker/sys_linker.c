@@ -42,6 +42,7 @@
 #include <arch/cpustate.h>
 #include <sched/cpu.h>
 #include <asm/instx.h>
+#include <arch/current_context.h>
 
 DECL_BEGIN
 
@@ -87,7 +88,7 @@ dl_do_pushinit(VIRT void *pfun,
                modfun_t UNUSED(single_type),
                void *closure) {
  struct init_closure *arg = (struct init_closure *)closure;
- byte_t USER *user_stack = (byte_t USER *)THIS_SYSCALL_REAL_USERXSP;
+ byte_t USER *user_stack = (byte_t USER *)get_current_usersp();
  if (arg->pbase_return_value != (void *)-1) {
   USER struct dl_saved_registers *regs;
   /* Special handling after the last initializer: restore registers. */
@@ -98,19 +99,19 @@ dl_do_pushinit(VIRT void *pfun,
   memcpy(&regs->gp,&arg->state->gp,sizeof(struct gpregs));
 #ifndef __x86_64__
   regs->gp.esp = arg->state->iret.useresp;
-  /* Return the base address of the first module to the original caller. */
-  regs->gp.eax = (uintptr_t)arg->pbase_return_value;
 #endif
+  /* Return the base address of the first module to the original caller. */
+  GPREGS_SYSCALL_RET1(regs->gp) = (uintptr_t)arg->pbase_return_value;
+  
   /* Return to this special location. */
-  SET_THIS_SYSCALL_REAL_XIP((void *)dl_restore_regs);
+  set_current_userip((void *)dl_restore_regs);
   arg->pbase_return_value = (void *)-1;
  }
 
  /* Now just push the given callback onto the user-stack. */
  user_stack -= sizeof(USER void *);
- *(USER void **)user_stack = THIS_SYSCALL_REAL_XIP;
- SET_THIS_SYSCALL_REAL_XIP(pfun);
- SET_THIS_SYSCALL_REAL_USERXSP(user_stack);
+ *(USER void **)user_stack = get_current_userip();
+ set_current_useripsp(pfun,user_stack);
 
  return 0;
 }
@@ -139,12 +140,12 @@ PRIVATE errno_t KCALL
 dl_loadinit(struct instance *__restrict inst,
             struct init_closure *arg) {
  errno_t error; struct mman *mm = THIS_MMAN;
- void *safed_xsp,*safed_xip;
+ void *safed_ip,*safed_sp;
  /* Disable preemption to prevent the signal delivery from
   * interfering with us modifying system-call return information. */
  pflag_t was = PREEMPTION_PUSH();
- safed_xsp = THIS_SYSCALL_REAL_USERXSP;
- safed_xip = THIS_SYSCALL_REAL_XIP;
+ get_current_useripsp(&safed_ip,&safed_sp);
+
  /* Make sure to lock the memory manager to prevent
   * changes to the instance's dependency tree. */
  error = mman_write(mm);
@@ -153,8 +154,7 @@ dl_loadinit(struct instance *__restrict inst,
  mman_endwrite(mm);
  if (E_ISERR(error)) {
   /* Restore the saved system call registers */
-  SET_THIS_SYSCALL_REAL_USERXSP(safed_xsp);
-  SET_THIS_SYSCALL_REAL_XIP(safed_xip);
+  set_current_useripsp(safed_ip,safed_sp);
  }
  PREEMPTION_POP(was);
  return error;
@@ -293,9 +293,6 @@ search_module:
  inst = mman_instance_at_unlocked(mm,handle);
  if unlikely(!inst) goto end2;
 
- /* TODO: Run instance finalizers.
-  * NOTE: In case the instance is munmap()'ed instead, finalizers will never be run. */
-
  /* Decrement the dlopen()/dlclose() recursion counter.
   * >> Only actually unmap the module when it hits ZERO(0). */
  { ref_t old_counter;
@@ -392,21 +389,18 @@ end:  task_endcrit();
 #endif
 
 PRIVATE ssize_t KCALL
-dl_enum_fini(VIRT void *pfun,
-             modfun_t UNUSED(single_type),
-             void *closure) {
- struct irregs *regs = (struct irregs *)closure;
- /* Push the previous return address and replace it with the finalizer. */
+dl_enum_fini(VIRT void *pfun, modfun_t UNUSED(single_type), void *closure) {
+ void *user_ip,**user_sp;
  DLFINI_DEBUG(syslog(LOG_DEBUG,"[DLFINI] Push finalizer at %p\n",pfun));
- regs->userxsp -= sizeof(USER void *);
- (*(USER void *USER *)regs->userxsp) = (USER void *)regs->xip;
- regs->xip = (uintptr_t)pfun;
+ /* Push the previous return address and replace it with the finalizer. */
+ get_current_useripsp(&user_ip,(USER void **)&user_sp);
+ *--user_sp = user_ip;
+ set_current_useripsp(pfun,user_sp);
  return 0;
 }
 
 PRIVATE void FCALL /* Use fastcall to optimize the loop calling this function. */
-dl_do_loadfini_inst(struct instance *__restrict inst,
-                    struct irregs *__restrict regs) {
+dl_do_loadfini_inst(struct instance *__restrict inst) {
  ssize_t (KCALL *pmodfun)(struct instance *__restrict self,
                           modfun_t types, penummodfun callback, void *closure);
  struct instance **iter,**end;
@@ -419,38 +413,27 @@ dl_do_loadfini_inst(struct instance *__restrict inst,
  pmodfun = inst->i_module->m_ops->o_modfun;
  if (pmodfun) {
   DLFINI_DEBUG(syslog(LOG_DEBUG,"[DLFINI] Scan module `%[file]' for finalizers\n",inst->i_module->m_file));
-  (*pmodfun)(inst,MODFUN_FINI|MODFUN_REVERSE,&dl_enum_fini,regs);
+  (*pmodfun)(inst,MODFUN_FINI|MODFUN_REVERSE,&dl_enum_fini,NULL);
  }
 
  /* NOTE: Holding a lock to the memory manager, there should
   *       be no way the dependency/using chains can change. */
  end = (iter = inst->i_deps.is_setv)+inst->i_deps.is_setc;
- for (; iter != end; ++iter) dl_do_loadfini_inst(*iter,regs);
+ for (; iter != end; ++iter) dl_do_loadfini_inst(*iter);
 }
 
 INTERN void KCALL
-dl_do_loadfini(struct mman *__restrict mm,
-               struct irregs *__restrict regs) {
+dl_do_loadfini(struct mman *__restrict mm) {
  struct instance *inst;
  /* Start out by pushing finalizers for the executable
   * itself, as well as its dependencies. */
  if (mm->m_exe)
-     dl_do_loadfini_inst(mm->m_exe,regs);
+     dl_do_loadfini_inst(mm->m_exe);
  /* Now go through the list of instances again and make sure
   * we didn't skip anything (Such as lazily loaded modules). */
  MMAN_FOREACH_INST(inst,mm) {
-  dl_do_loadfini_inst(inst,regs);
+  dl_do_loadfini_inst(inst);
  }
-}
-
-SYSCALL_DEFINE4(xvirtinfo,VIRT void *,addr,
-                USER struct virtinfo *,buf,
-                size_t,bufsize,u32,flags) {
- ssize_t result;
- task_crit();
- result = user_virtinfo(addr,buf,bufsize,flags);
- task_endcrit();
- return result;
 }
 
 SYSCALL_DEFINE0(xdlfini) {
@@ -462,11 +445,22 @@ SYSCALL_DEFINE0(xdlfini) {
   *       data onto the user-stack causes a #PF. */
  if (E_ISERR(mman_write(mm))) goto end;
  /* Use a user-worker to handle segfaults when pushing data onto the user-stack. */
- call_user_worker(&dl_do_loadfini,2,mm,&IRREGS_SYSCALL_GET()->tail);
+ call_user_worker(&dl_do_loadfini,1,mm);
  mman_endwrite(mm);
 end:
  task_endcrit();
- return IRREGS_SYSCALL_GET()->orig_xax;
+ return -EOK;
+}
+
+
+SYSCALL_DEFINE4(xvirtinfo,VIRT void *,addr,
+                USER struct virtinfo *,buf,
+                size_t,bufsize,u32,flags) {
+ ssize_t result;
+ task_crit();
+ result = user_virtinfo(addr,buf,bufsize,flags);
+ task_endcrit();
+ return result;
 }
 
 DECL_END

@@ -193,7 +193,7 @@ DECL_BEGIN
 #define GPREGS_SYSCALL_ARG5(x) ((x).r8)
 #define GPREGS_SYSCALL_ARG6(x) ((x).r9)
 #define GPREGS_SYSCALL_RET1(x) ((x).rax)
-#define GPREGS_SYSCALL_RET2(x) ((x).rdx)
+#define GPREGS_SYSCALL_RET2(x) ((x).rdx) /* NOTE: Requires `CONFIG_HAVE_SYSCALL_LONGBIT' */
 
 #define GPREGS_SYSV_ARG1(x)    ((x).rdi)
 #define GPREGS_SYSV_ARG2(x)    ((x).rsi)
@@ -219,7 +219,7 @@ DECL_BEGIN
 #define GPREGS_SYSCALL_ARG5(x)  ((x).edi)
 #define GPREGS_SYSCALL_ARG6(x)  ((x).ebp)
 #define GPREGS_SYSCALL_RET1(x)  ((x).eax)
-#define GPREGS_SYSCALL_RET2(x)  ((x).edx)
+#define GPREGS_SYSCALL_RET2(x)  ((x).edx) /* NOTE: Requires `CONFIG_HAVE_SYSCALL_LONGBIT' */
 
 #define GPREGS_FASTCALL_ARG1(x) ((x).ecx)
 #define GPREGS_FASTCALL_ARG2(x) ((x).edx)

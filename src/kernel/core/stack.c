@@ -30,6 +30,7 @@
 #include <bits/signum.h>
 #include <kernel/syscall.h>
 #include <kos/thread.h>
+#include <arch/current_context.h>
 
 DECL_BEGIN
 
@@ -98,7 +99,7 @@ stack_mnotify(unsigned int type, void *__restrict closure,
    memset(&info,0,sizeof(siginfo_t));
    info.si_signo = SIGSEGV;
    info.si_code  = SEGV_MAPERR;
-   info.si_addr  = THIS_SYSCALL_REAL_XIP;
+   info.si_addr  = get_current_userip();
    info.si_lower = STACK->s_begin;
    info.si_upper = STACK->s_end;
    task_kill2(owner,&info,0,0);

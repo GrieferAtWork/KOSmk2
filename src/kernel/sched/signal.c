@@ -55,6 +55,7 @@
 #include <arch/hints.h>
 #include <arch/asm.h>
 #include <bits/sigstack.h>
+#include <arch/current_context.h>
 
 DECL_BEGIN
 
@@ -847,8 +848,9 @@ SYSCALL_DEFINE2(sigaltstack,USER stack_t const *,new_stack,
   stack.ss_size  = caller->t_sigstack.ss_size;
   stack.ss_flags = !stack.ss_size
                   ? SS_DISABLE
-                  : KERNEL_SIGSTACK_CONTAINS(caller->t_sigstack,
-                                             IRREGS_SYSCALL_GET()->userxsp)
+                  : XBLOCK({ void *sp = get_current_usersp();
+                             XRETURN KERNEL_SIGSTACK_CONTAINS(caller->t_sigstack,sp);
+                    })
                   ? SS_ONSTACK
                   : 0;
   if (copy_to_user(old_stack,&stack,sizeof(stack_t)))

@@ -122,6 +122,7 @@
 #define MMIO                __MMIO         /* Annotation for memory-mapped I/O-port pointers. */
 #define CRIT                __CRIT         /* Annotation for functions that require `TASK_ISCRIT()' (When called from within the kernel). */
 #define SAFE                __SAFE         /* Annotation for functions that require `TASK_ISSAFE()' (When called from within the kernel). */
+#define NOIRQ               __NOIRQ        /* Annotation for functions that require interrupts to be disabled. */
 #define NOMP                __NOMP         /* Annotation for functions that are not thread-safe and require caller-synchronization. */
 #define PERCPU              __PERCPU       /* Annotation for variables that must be accessed using the per-cpu API. */
 #define ASMCALL             __ASMCALL      /* Annotation for functions that are implemented in assembly and require a custom calling convention. */

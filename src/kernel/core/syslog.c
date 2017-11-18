@@ -32,6 +32,7 @@
 #include <sys/io.h>
 #include <sched/cpu.h>
 #include <kernel/boot.h>
+#include <arch/current_context.h>
 
 DECL_BEGIN
 
@@ -174,7 +175,7 @@ PUBLIC void (LIBCCALL vsyslog)(int level, char const *format, va_list args) {
 #ifdef CONFIG_DEBUG
 SYSCALL_DEFINE1(xpaused,USER char const *,message) {
  volatile unsigned int i = 0;
- syslog(LOG_CONFIRM,"PAUSED: %q (EIP = %p)\n",message,THIS_SYSCALL_EIP);
+ syslog(LOG_CONFIRM,"PAUSED: %q (IP = %p)\n",message,get_current_userip());
  while (++i < (1 << 29));
  return -EOK;
 }

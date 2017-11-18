@@ -152,6 +152,7 @@
     <ClInclude Include="..\..\src\include\arch\cpu.h" />
     <ClInclude Include="..\..\src\include\arch\cpufeatures.h" />
     <ClInclude Include="..\..\src\include\arch\cpustate.h" />
+    <ClInclude Include="..\..\src\include\arch\current_context.h" />
     <ClInclude Include="..\..\src\include\arch\fpu.h" />
     <ClInclude Include="..\..\src\include\arch\gdt.h" />
     <ClInclude Include="..\..\src\include\arch\hints.h" />

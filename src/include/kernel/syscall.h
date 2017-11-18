@@ -205,11 +205,7 @@ FUNDEF bool KCALL syscall_is_long(register_t sysno);
 #define syscall_is_long(sysno)    false
 #endif /* !CONFIG_HAVE_SYSCALL_LONGBIT */
 
-#endif /* __CC__ */
-
-
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-
 #define SYSCALL_SDEFINE(name,state) __SYSCALL_SDEFINE(INTERN,_##name,state)
 #define SYSCALL_DEFINE0(name)       __SYSCALL_NDEFINE(INTERN,0,_##name,(void))
 #define SYSCALL_DEFINE1(name,...)   __SYSCALL_NDEFINE(INTERN,1,_##name,(__VA_ARGS__))
@@ -225,18 +221,8 @@ FUNDEF bool KCALL syscall_is_long(register_t sysno);
 #define SYSCALL64_DEFINE4(name,...) __SYSCALL_DEFINE64(INTERN,4,_##name,(__VA_ARGS__))
 #define SYSCALL64_DEFINE5(name,...) __SYSCALL_DEFINE64(INTERN,5,_##name,(__VA_ARGS__))
 #define SYSCALL64_DEFINE6(name,...) __SYSCALL_DEFINE64(INTERN,6,_##name,(__VA_ARGS__))
-
-/* TODO: Get rid of these macros. */
-#define THIS_SYSCALL_EIP                    THIS_SYSCALL_GETIP()
-/* TODO: Get rid of these macros. */
-#define THIS_SYSCALL_REAL_XIP              (THIS_TASK->t_sigenter.se_count ? (void *)THIS_TASK->t_sigenter.se_xip : THIS_SYSCALL_EIP)
-#define THIS_SYSCALL_REAL_XFLAGS           (THIS_TASK->t_sigenter.se_count ? THIS_TASK->t_sigenter.se_xflags : IRREGS_SYSCALL_GET()->xflags)
-#define THIS_SYSCALL_REAL_USERXSP          (THIS_TASK->t_sigenter.se_count ? (void *)THIS_TASK->t_sigenter.se_xsp : (void *)IRREGS_SYSCALL_GET()->userxsp)
-#define SET_THIS_SYSCALL_REAL_XIP(x)     (*(THIS_TASK->t_sigenter.se_count ? (void **)&THIS_TASK->t_sigenter.se_xip : (void **)&IRREGS_SYSCALL_GET()->xip) = (x))
-#define SET_THIS_SYSCALL_REAL_XFLAGS(x)  (*(THIS_TASK->t_sigenter.se_count ? &THIS_TASK->t_sigenter.se_xflags : &IRREGS_SYSCALL_GET()->xflags) = (x))
-#define SET_THIS_SYSCALL_REAL_USERXSP(x) (*(THIS_TASK->t_sigenter.se_count ? (void **)&THIS_TASK->t_sigenter.se_xsp : (void **)&IRREGS_SYSCALL_GET()->userxsp) = (x))
-
 #endif /* CONFIG_BUILDING_KERNEL_CORE */
+#endif /* __CC__ */
 
 DECL_END
 
