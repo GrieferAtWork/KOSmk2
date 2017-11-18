@@ -36,29 +36,31 @@
 #include <bits/siginfo.h>
 #include <bits/signum.h>
 #include <bits/sigset.h>
+#include <bits/sigstack.h>
+#include <bits/waitstatus.h>
 #include <errno.h>
 #include <hybrid/asm.h>
+#include <hybrid/panic.h>
+#include <hybrid/section.h>
 #include <hybrid/typecore.h>
 #include <hybrid/types.h>
+#include <kernel/mman.h>
 #include <kernel/paging.h>
 #include <kernel/stack.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
+#include <linker/coredump.h>
+#include <sched/cpu.h>
 #include <sched/paging.h>
 #include <sched/percpu.h>
 #include <sched/signal.h>
+#include <sched/task.h>
 #include <sched/types.h>
 #include <signal.h>
 #include <stddef.h>
-#include <syslog.h>
 #include <string.h>
 #include <sys/ucontext.h>
-#include <hybrid/section.h>
-#include <bits/waitstatus.h>
-#include <sched/task.h>
-#include <sched/cpu.h>
-#include <kernel/mman.h>
-#include <bits/sigstack.h>
+#include <syslog.h>
 
 DECL_BEGIN
 
@@ -106,14 +108,200 @@ PRIVATE void KCALL
 coredump_user_task(struct task *__restrict t,
                    siginfo_t const *__restrict reason,
                    greg_t reg_trapno, greg_t reg_err) {
- /* TODO */
+ assert(!PREEMPTION_ENABLED());
+ assert(t != THIS_TASK);
+ assert(TASK_CPU(t) == THIS_CPU);
+ assertf(t->t_flags&TASKFLAG_WILLTERM,
+         "The task must be scheduled for termination");
+ if (INTNO_HAS_EXC_CODE(reg_trapno)) {
+  struct cpustate_ie state;
+  CPUSTATE_TO_CPUSTATE_IE(*t->t_cstate,state,IRREGS_ENCODE_INTNO(reg_trapno),reg_err);
+  core_dodump(t->t_real_mman,t,&state,reason,COREDUMP_FLAG_NORMAL);
+ } else {
+  struct cpustate_i state;
+  CPUSTATE_TO_CPUSTATE_I(*t->t_cstate,state,IRREGS_ENCODE_INTNO(reg_trapno));
+  core_dodump(t->t_real_mman,t,
+             (struct cpustate_ie *)&state,
+              reason,COREDUMP_FLAG_NORMAL);
+ }
 }
+
+
+PRIVATE SAFE bool KCALL
+task_is_running_syscall(struct mman *__restrict mm, uintptr_t xip) {
+ byte_t code[2]; struct mman *omm; size_t copy_error;
+ TASK_PDIR_BEGIN(omm,mm);
+ copy_error = copy_from_user(code,(void *)(xip-2),sizeof(code));
+ TASK_PDIR_END(omm,mm);
+ if (copy_error) return false;
+ if (code[0] == 0xcd && code[1] == INTNO_SYSCALL /* int $0x80 */)
+     return true;
+ /* XXX: Must also detect other ways of invoking system calls here! */
+ return false;
+}
+
+
+#define CD_STACKTOP_INFO_OFFSETOF_REASON      0
+#define CD_STACKTOP_INFO_OFFSETOF_REG_TRAPNO  __SIGINFO_SIZE
+#define CD_STACKTOP_INFO_OFFSETOF_REG_ERR    (__SIGINFO_SIZE+__SIZEOF_GREG_T__)
+#define CD_STACKTOP_INFO_SIZE                (__SIGINFO_SIZE+2*__SIZEOF_GREG_T__)
+struct cd_stacktop_info {
+ siginfo_t reason;
+ greg_t    reg_trapno;
+ greg_t    reg_err;
+};
+
+STATIC_ASSERT(offsetof(struct cd_stacktop_info,reason) == CD_STACKTOP_INFO_OFFSETOF_REASON);
+STATIC_ASSERT(offsetof(struct cd_stacktop_info,reg_trapno) == CD_STACKTOP_INFO_OFFSETOF_REG_TRAPNO);
+STATIC_ASSERT(offsetof(struct cd_stacktop_info,reg_err) == CD_STACKTOP_INFO_OFFSETOF_REG_ERR);
+STATIC_ASSERT(sizeof(struct cd_stacktop_info) == CD_STACKTOP_INFO_SIZE);
+
+
+
+INTDEF ATTR_NORETURN void ASMCALL coredump_enter(void);
+GLOBAL_ASM(
+L(.section .text.cold                                                            )
+L(PRIVATE_ENTRY(coredump_enter)                                                  )
+L(    /* This is where we transition after a host-level task was configured for a coredump. */)
+L(    /* Reserve space for 2 IRET tails. */                                      )
+L(    /* NOTE: The first tail is required to fake a working `IRREGS_SYSCALL_GET_FOR()' */)
+L(    subx $(IRREGS_SYSCALL_SIZE+IRREGS_IE_SIZE), %xsp                           )
+L(    __ASM_PUSH_COMREGS /* Save all user-space registers. */                    )
+#ifdef __x86_64__
+L(    swapgs                                                                     )
+#else /* __x86_64__ */
+L(    __ASM_LOAD_SEGMENTS(%dx)                                                   )
+#endif /* !__x86_64__ */
+#define IRREGS_SYSCALL(offset) (offset+CPUSTATE_IE_SIZE)(%xsp)
+#define CPUSTATE(offset)       (offset)(%xsp)
+L(                                                                               )
+L(    movx   %xax, IRREGS_SYSCALL(IRREGS_SYSCALL_OFFSETOF_ORIG_XAX)              )
+L(    movx   ASM_CPU(CPU_OFFSETOF_RUNNING), %xsi                                 )
+L(    /* Check if we've managed to store the original XAX before. */             )
+L(    testb  $1, TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_NEXT(%xsi)             )
+L(    jz     1f                                                                  )
+L(    /* Yes, we did. - Overwrite the orig_xax field in our IRET tail. */        )
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XAX(%xsi), %xax            )
+L(    movx   %xax, IRREGS_SYSCALL(IRREGS_SYSCALL_OFFSETOF_ORIG_XAX)              )
+L(1:  /* Now fill in the remainder of registers in both tails, using sigenter data. */)
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XIP(%xsi), %xax            )
+L(    movx   %xax, IRREGS_SYSCALL(IRREGS_SYSCALL_OFFSETOF_IP)                    )
+L(    movx   %xax, CPUSTATE(CPUSTATE_IE_OFFSETOF_IRET+IRREGS_IE_OFFSETOF_IP)     )
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XFLAGS(%xsi), %xax         )
+L(    movx   %xax, IRREGS_SYSCALL(IRREGS_SYSCALL_OFFSETOF_FLAGS)                 )
+L(    movx   %xax, CPUSTATE(CPUSTATE_IE_OFFSETOF_IRET+IRREGS_IE_OFFSETOF_FLAGS)  )
+L(    movx   TASK_OFFSETOF_SIGENTER+SIGENTER_OFFSETOF_XSP(%xsi), %xax            )
+L(    movx   %xax, IRREGS_SYSCALL(IRREGS_SYSCALL_OFFSETOF_USERSP)                )
+L(    movx   %xax, CPUSTATE(CPUSTATE_IE_OFFSETOF_IRET+IRREGS_IE_OFFSETOF_USERSP) )
+L(    movx   $(__USER_CS), %xax                                                  )
+L(    movx   %xax, IRREGS_SYSCALL(IRREGS_SYSCALL_OFFSETOF_CS)                    )
+L(    movx   %xax, CPUSTATE(CPUSTATE_IE_OFFSETOF_IRET+IRREGS_IE_OFFSETOF_CS)     )
+L(    movx   $(__USER_DS), %xax                                                  )
+L(    movx   %xax, IRREGS_SYSCALL(IRREGS_SYSCALL_OFFSETOF_SS)                    )
+L(    movx   %xax, CPUSTATE(CPUSTATE_IE_OFFSETOF_IRET+IRREGS_IE_OFFSETOF_SS)     )
+L(    sti    /* With a valid IRET tail at the base of our stack, we can re-enable interrupts. */)
+L(                                                                               )
+L(    /* Load the signal information from this task's stack-stop. */             )
+L(    movx   TASK_OFFSETOF_HSTACK+HSTACK_OFFSETOF_BEGIN(%xsi), %FASTCALL_REG2    )
+L(    /* Save the trap_no/error registers in our new cpustate. */                )
+L(    movx   CD_STACKTOP_INFO_OFFSETOF_REG_TRAPNO(%FASTCALL_REG2), %xax          )
+L(    movx   %xax, CPUSTATE(CPUSTATE_IE_OFFSETOF_IRET+IRREGS_IE_OFFSETOF_INTNO)  )
+L(    movx   CD_STACKTOP_INFO_OFFSETOF_REG_ERR(%FASTCALL_REG2), %xax             )
+L(    movx   %xax, CPUSTATE(CPUSTATE_IE_OFFSETOF_IRET+IRREGS_IE_OFFSETOF_EXC_CODE))
+L(                                                                               )
+L(    leax   CPUSTATE(0),                         %FASTCALL_REG1 /* state */     )
+#if CD_STACKTOP_INFO_OFFSETOF_REASON != 0
+L(    addx   $(CD_STACKTOP_INFO_OFFSETOF_REASON), %FASTCALL_REG2 /* reason */    )
+#endif
+L(    /* We can use `jmp' because all arguments are passed through registers. */ )
+L(    jmp    coredump_after_iret                                                 )
+L(SYM_END(coredump_enter)                                                        )
+L(.previous                                                                      )
+);
+
+INTERN ATTR_NORETURN void FCALL
+coredump_after_iret(struct cpustate_ie *__restrict state,
+                    siginfo_t *__restrict reason) {
+ /* Since the assembly above always generates a cpustate_ie,
+  * even when the associated interrupt number doesn't correspond
+  * to an interrupt that includes an error code, we must adjust
+  * the given state to delete the exc_code field if it shouldn't be present. */
+ if (!INTNO_HAS_EXC_CODE(state->iret.intno)) {
+  /* Shift data in the given state to delete the exception code. */
+  memmove((byte_t *)state+sizeof(register_t),
+          (byte_t *)state,
+          offsetof(struct cpustate_ie,iret.exc_code));
+  /* Adjust to point to the new state base address. */
+  *(byte_t **)&state += sizeof(register_t);
+ }
+ /* Encode the interrupt number in the correct format. */
+ state->iret.intno = IRREGS_ENCODE_INTNO(state->iret.intno);
+
+ /* Actually invoke the coredump. */
+ core_dodump(THIS_TASK->t_real_mman,THIS_TASK,
+             state,reason,COREDUMP_FLAG_NORMAL);
+
+ task_endcrit(); /* Close the critical block that kept the task alive. */
+ PANIC("Task was not terminated after critical block was "
+       "closed in `coredump_after_iret()' (critical = %I32u)",
+       THIS_TASK->t_critical);
+}
+
 
 PRIVATE void KCALL
 coredump_host_task(struct task *__restrict t,
                    siginfo_t const *__restrict reason,
                    greg_t reg_trapno, greg_t reg_err) {
- /* TODO */
+ struct irregs_syscall *return_registers;
+ assert(!PREEMPTION_ENABLED());
+ assert(TASK_CPU(t) == THIS_CPU);
+ assertf(t->t_flags&TASKFLAG_WILLTERM,
+         "The task must be scheduled for termination");
+ return_registers = IRREGS_SYSCALL_GET_FOR(t);
+ /* Delete the task's SIGENTER chain. */
+ if (t->t_sigenter.se_count) {
+  return_registers->xip     = t->t_sigenter.se_xip;
+  return_registers->cs      = __USER_CS;
+  return_registers->xflags  = t->t_sigenter.se_xflags;
+  return_registers->userxsp = t->t_sigenter.se_xsp;
+  return_registers->ss      = __USER_DS;
+  t->t_sigenter.se_count    = 0;
+ }
+
+ t->t_sigenter.se_next = NULL;
+ if (task_is_running_syscall(t->t_real_mman,return_registers->xip)) {
+  /* Save the original XAX (system call number) for the coredump. */
+  t->t_sigenter.se_xax  = return_registers->orig_xax;
+  /* Indicator that orig_xax is valid. (Checked in `coredump_enter') */
+  t->t_sigenter.se_next = (USER struct sigenter_tail *)-1;
+ }
+
+ /* Dirty hack -- Don't look. */
+ /* Store the trap number, error register and reason at the end of the task's kernel stack.
+  * While that stack is still in use, we can pretty much assume that if it ever
+  * came to the task using that portion of its data, something already went wrong. */
+ { struct cd_stacktop_info *save;
+   /* Stacks grow down on x86_64, so use `hs_begin'. */
+   save = (struct cd_stacktop_info *)t->t_hstack.hs_begin;
+   memcpy(&save->reason,reason,sizeof(siginfo_t));
+   save->reg_trapno = reg_trapno;
+   save->reg_err    = reg_err;
+ }
+
+ return_registers->xflags &= ~EFLAGS_IF;
+ return_registers->xip     = (uintptr_t)&coredump_enter;
+ return_registers->cs      = __KERNEL_CS;
+#ifdef __x86_64__
+ /* x86_64 always requires the full IRET tail,
+  * meaning we must update these members, too. */
+ return_registers->userrsp = (u64)t->t_hstack.hs_end;
+ return_registers->ss      = __KERNEL_DS;
+#endif
+
+ /* Make to task critical to prolong its termination until after
+  * its fake transition to user-space and the following coredump.
+  * NOTE: This critical block is closed in `coredump_after_iret()' */
+ ATOMIC_FETCHINC(t->t_critical);
 }
 
 
@@ -143,7 +331,11 @@ PRIVATE errno_t KCALL raise_segfault(void *fault_addr) {
  memset(&info,0,sizeof(siginfo_t));
  info.si_signo = SIGSEGV;
  info.si_code  = SI_KERNEL;
- info.si_addr  = fault_addr;
+ PREEMPTION_DISABLE();
+ info.si_addr  = (void *)(THIS_TASK->t_sigenter.se_count
+                        ? THIS_TASK->t_sigenter.se_xip
+                        : IRREGS_SYSCALL_GET()->xip);
+ PREEMPTION_ENABLE();
  info.si_lower = fault_addr;
  info.si_upper = fault_addr;
  /* XXX: exc_code is hard-coded as `0' - That shouldn't be. */
@@ -557,10 +749,6 @@ L(    movx   $(-ERESTART), %xax                                                 
 L(PRIVATE_ENTRY(sigenter)                                                        )
 L(    pushx  $(SIGENTER_MODE_NORMAL)                                             )
 L(1:                                                                             )
-#ifdef __x86_64__
-L(    swapgs                                                                     )
-L(    sti                                                                        )
-#endif
 L(    pushx  %xax                                                                )
 L(    pushx  %xcx                                                                )
 L(    pushx  %xdi                                                                )
@@ -568,14 +756,9 @@ L(    pushx  %xsi                                                               
 #ifdef __x86_64__
 L(    pushx  %r10                                                                )
 L(    pushx  %r11                                                                )
+L(    ASM_RDGSBASE(r10) /* XXX: ASM_RDGSBASE(r11)? */                            )
+L(    movq   %r10, %r11                                                          )
 L(    ASM_RDFSBASE(r10)                                                          )
-L(    movl   $(IA32_KERNEL_GS_BASE), %ecx                                        )
-L(    pushq  %rdx                                                                )
-L(    rdmsr                                                                      )
-L(    shlq   $32,  %rdx                                                          )
-L(    movq   %rdx, %r11                                                          )
-L(    orq    %rax, %r11                                                          )
-L(    popq   %rdx                                                                )
 /* TODO: For some reason, GS_BASE is correct at this point
  *      (containing the kernel's GS_BASE rather than the user's)
  *       The only reason this isn't a critical bug is because nothing's
@@ -583,10 +766,13 @@ L(    popq   %rdx                                                               
  *       should really be invenstigated and fixed ASAP! */
 #define FS_BASE  %r10
 #define GS_BASE  %r11
+L(    swapgs                                                                     )
 #else
 L(    __ASM_PUSH_SGREGS                                                          )
 L(    __ASM_LOAD_SEGMENTS(%ax)                                                   )
 #endif
+//L(  sti    /* TODO: Cannot be enabled unless we place a valid IRET tail at the stack base... */)
+L(           /*      (In case further signals are raised while we're entering the current) */)
 L(                                                                               )
 #define CALLER     %xsi
 #define ITER       %xdi
@@ -802,7 +988,6 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
  if (++t->t_sigenter.se_count == 1) {
   /* The first signal enter. */
   void (ASMCALL *used_sigenter)(void);
-  byte_t code[2];
   /* Terminate the chain of user-space signal handler contexts.
    * (Thus allowing userspace to detect invocation recursion) */
   t->t_sigenter.se_next = container_of((ucontext_t *)NULL,struct sigenter_tail,t_ctx);
@@ -811,11 +996,7 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
   used_sigenter = &sigenter;
   if (syscall_is_norestart(return_registers->sysno));
   else {
-   TASK_PDIR_BEGIN(omm,t->t_real_mman);
-   copy_error = copy_from_user(code,(void *)(return_registers->xip-2),sizeof(code));
-   TASK_PDIR_END(omm,t->t_real_mman);
-   if (!copy_error && code[0] == 0xcd && code[1] == INTNO_SYSCALL /* int $0x80 */
-        /* XXX: Must also detect other ways of invoking system calls here! */) {
+   if (task_is_running_syscall(t->t_real_mman,return_registers->xip)) {
     if (action->sa_flags&SA_RESTART) {
      t->t_sigenter.se_xax = return_registers->sysno;
      /* Adjust the instruction pointer to repeat the system-call. */
@@ -887,15 +1068,10 @@ deliver_signal_to_task_in_host(struct task *__restrict t,
 #ifdef __x86_64__
   /* x86_64 always requires the full IRET tail,
    * meaning we must update these members, too. */
-  return_registers->userrsp = (u64)(return_registers+1);
+  return_registers->userrsp = (u64)t->t_hstack.hs_end;
   return_registers->ss      = __KERNEL_DS;
 #endif
-
-#ifdef __x86_64__ /* Must disable interrupts before `swapgs' is called. */
-  return_registers->xflags = 0;
-#else
-  return_registers->xflags = EFLAGS_IF;
-#endif
+  return_registers->xflags &= ~EFLAGS_IF;
  } else {
   /* Secondary signal. */
  }

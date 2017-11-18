@@ -60,6 +60,7 @@ DECL_BEGIN
 #define PIC1_EOI()      (outb(PIC1_CMD,PIC_CMD_EOI))
 #define PIC2_EOI()      (outb(PIC2_CMD,PIC_CMD_EOI),outb(PIC1_CMD,PIC_CMD_EOI))
 
+
 struct spurious_pic {
  u32 sp_pic1; /*< Amount of spurious interrupts that occurred on PIC #1. */
  u32 sp_pic2; /*< Amount of spurious interrupts that occurred on PIC #2. */

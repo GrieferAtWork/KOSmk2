@@ -28,10 +28,10 @@
 #include <hybrid/debuginfo.h>
 #include <kernel/export.h>
 #include <kernel/mman.h>
+#include <arch/cpustate.h>
 #include <linker/coredump.h>
 #include <signal.h>
 #include <string.h>
-#include <sys/ucontext.h>
 #include <syslog.h>
 #include <kernel/paging.h>
 #include <fs/file.h>
@@ -511,7 +511,7 @@ PRIVATE Elf_NhdrCore const nhdr_prxfpreg_pattern = {
 
 FUNDEF errno_t KCALL
 elfcore_create(struct file *__restrict fp, struct mman *__restrict vm,
-               struct task *__restrict thread, ucontext_t *__restrict state,
+               struct task *__restrict thread, struct cpustate_ie *__restrict state,
                siginfo_t const *__restrict reason, u32 UNUSED(flags),
                void *UNUSED(closure)) {
  Elf_Ehdr ehdr; errno_t error;
@@ -519,6 +519,7 @@ elfcore_create(struct file *__restrict fp, struct mman *__restrict vm,
  struct notes note_section = NOTES_INIT;
  struct mbranch *branch; Elf_Phdr *note_phdr;
  Elf_Off content_offset; size_t num_filemaps = 0;
+ struct irregs *tail = IRREGS_TAIL(&state->iret);
  assert(PDIR_ISKPD());
  assert(mman_writing(vm));
  memcpy(&ehdr,&ehdr_pattern,sizeof(Elf_Ehdr));
@@ -597,63 +598,58 @@ elfcore_create(struct file *__restrict fp, struct mman *__restrict vm,
    d->p.pr_cutime        = d->p.pr_utime;
    d->p.pr_cstime        = d->p.pr_utime;
 #if defined(__x86_64__)
-   d->p.pr_reg.r15       = state->uc_mcontext.gregs[REG_R15];
-   d->p.pr_reg.r14       = state->uc_mcontext.gregs[REG_R14];
-   d->p.pr_reg.r13       = state->uc_mcontext.gregs[REG_R13];
-   d->p.pr_reg.r12       = state->uc_mcontext.gregs[REG_R12];
-   d->p.pr_reg.rbp       = state->uc_mcontext.gregs[REG_RBP];
-   d->p.pr_reg.rbx       = state->uc_mcontext.gregs[REG_RBX];
-   d->p.pr_reg.r11       = state->uc_mcontext.gregs[REG_R11];
-   d->p.pr_reg.r10       = state->uc_mcontext.gregs[REG_R10];
-   d->p.pr_reg.r9        = state->uc_mcontext.gregs[REG_R9];
-   d->p.pr_reg.r8        = state->uc_mcontext.gregs[REG_R8];
-   d->p.pr_reg.rax       = state->uc_mcontext.gregs[REG_RAX];
-   d->p.pr_reg.rcx       = state->uc_mcontext.gregs[REG_RCX];
-   d->p.pr_reg.rdx       = state->uc_mcontext.gregs[REG_RDX];
-   d->p.pr_reg.rsi       = state->uc_mcontext.gregs[REG_RSI];
-   d->p.pr_reg.rdi       = state->uc_mcontext.gregs[REG_RDI];
-   d->p.pr_reg.orig_rax  = state->uc_mcontext.gregs[REG_RAX]; /* XXX: System call number? */
-   d->p.pr_reg.rip       = state->uc_mcontext.gregs[REG_RIP];
-   d->p.pr_reg.cs        = (state->uc_mcontext.gregs[REG_CSGSFS] & 0xffff);
-   d->p.pr_reg.eflags    = state->uc_mcontext.gregs[REG_EFL];
-   d->p.pr_reg.rsp       = state->uc_mcontext.gregs[REG_RSP];
-   d->p.pr_reg.ss        = __USER_DS;
-#ifdef CONFIG_NO_TLB
-   d->p.pr_reg.fs_base   = 0;
-   d->p.pr_reg.gs_base   = 0;
-#else
-   d->p.pr_reg.fs_base   = (Elf64_greg_t)thread->t_tlb;
-   d->p.pr_reg.gs_base   = (Elf64_greg_t)&thread->t_tlb->tl_tib;
-#endif
+   d->p.pr_reg.r15       = state->gp.r15;
+   d->p.pr_reg.r14       = state->gp.r14;
+   d->p.pr_reg.r13       = state->gp.r13;
+   d->p.pr_reg.r12       = state->gp.r12;
+   d->p.pr_reg.rbp       = state->gp.rbp;
+   d->p.pr_reg.rbx       = state->gp.rbx;
+   d->p.pr_reg.r11       = state->gp.r11;
+   d->p.pr_reg.r10       = state->gp.r10;
+   d->p.pr_reg.r9        = state->gp.r9;
+   d->p.pr_reg.r8        = state->gp.r8;
+   d->p.pr_reg.rax       = state->gp.rax;
+   d->p.pr_reg.rcx       = state->gp.rcx;
+   d->p.pr_reg.rdx       = state->gp.rdx;
+   d->p.pr_reg.rsi       = state->gp.rsi;
+   d->p.pr_reg.rdi       = state->gp.rdi;
+   d->p.pr_reg.orig_rax  = IRREGS_SYSCALL_GET_FOR(thread)->orig_rax;
+   d->p.pr_reg.rip       = tail->rip;
+   d->p.pr_reg.cs        = tail->cs;
+   d->p.pr_reg.eflags    = tail->rflags;
+   d->p.pr_reg.rsp       = tail->userrsp;
+   d->p.pr_reg.ss        = tail->ss;
+   d->p.pr_reg.fs_base   = state->sg.fs_base;
+   d->p.pr_reg.gs_base   = state->sg.gs_base;
    d->p.pr_reg.ds        = __USER_DS;
    d->p.pr_reg.es        = __USER_DS;
-   d->p.pr_reg.fs        = (u16)(state->uc_mcontext.gregs[REG_CSGSFS] >> 32);
-   d->p.pr_reg.gs        = (u16)(state->uc_mcontext.gregs[REG_CSGSFS] >> 16);
+   d->p.pr_reg.fs        = __USER_FS;
+   d->p.pr_reg.gs        = __USER_GS;
 #elif defined(__i386__)
-   d->p.pr_reg.ebx      = state->uc_mcontext.gregs[REG_EBX];
-   d->p.pr_reg.ecx      = state->uc_mcontext.gregs[REG_ECX];
-   d->p.pr_reg.edx      = state->uc_mcontext.gregs[REG_EDX];
-   d->p.pr_reg.esi      = state->uc_mcontext.gregs[REG_ESI];
-   d->p.pr_reg.edi      = state->uc_mcontext.gregs[REG_EDI];
-   d->p.pr_reg.ebp      = state->uc_mcontext.gregs[REG_EBP];
-   d->p.pr_reg.eax      = state->uc_mcontext.gregs[REG_EAX];
-   d->p.pr_reg.ds       = state->uc_mcontext.gregs[REG_DS];
-   d->p.pr_reg.es       = state->uc_mcontext.gregs[REG_ES];
-   d->p.pr_reg.fs       = state->uc_mcontext.gregs[REG_FS];
-   d->p.pr_reg.gs       = state->uc_mcontext.gregs[REG_GS];
-   d->p.pr_reg.orig_eax = state->uc_mcontext.gregs[REG_EAX];
-   d->p.pr_reg.eip      = state->uc_mcontext.gregs[REG_EIP];
-   d->p.pr_reg.cs       = state->uc_mcontext.gregs[REG_CS];
-   d->p.pr_reg.eflags   = state->uc_mcontext.gregs[REG_EFL];
-   d->p.pr_reg.esp      = state->uc_mcontext.gregs[REG_ESP];
-   d->p.pr_reg.ss       = state->uc_mcontext.gregs[REG_SS];
+   d->p.pr_reg.ebx      = state->gp.ebx;
+   d->p.pr_reg.ecx      = state->gp.ecx;
+   d->p.pr_reg.edx      = state->gp.edx;
+   d->p.pr_reg.esi      = state->gp.esi;
+   d->p.pr_reg.edi      = state->gp.edi;
+   d->p.pr_reg.ebp      = state->gp.ebp;
+   d->p.pr_reg.eax      = state->gp.eax;
+   d->p.pr_reg.ds       = state->sg.ds;
+   d->p.pr_reg.es       = state->sg.es;
+   d->p.pr_reg.fs       = state->sg.fs;
+   d->p.pr_reg.gs       = state->sg.gs;
+   d->p.pr_reg.orig_eax = IRREGS_SYSCALL_GET_FOR(thread)->orig_eax;
+   d->p.pr_reg.eip      = tail->eip;
+   d->p.pr_reg.cs       = tail->cs;
+   d->p.pr_reg.eflags   = tail->eflags;
+   d->p.pr_reg.esp      = tail->useresp;
+   d->p.pr_reg.ss       = tail->ss;
+#else
+#error FIXME
+#endif
 #ifndef CONFIG_NO_FPU
    d->p.pr_fpvalid      = thread->t_arch.at_fpu != FPUSTATE_NULL ? 1 : 0;
 #else
    d->p.pr_fpvalid      = 0;
-#endif
-#else
-#error FIXME
 #endif
  }
  { struct data { Elf_NhdrCore b; Elf_Prpsinfo p; } *d;

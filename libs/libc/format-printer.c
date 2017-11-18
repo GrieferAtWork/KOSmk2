@@ -320,7 +320,7 @@ LONG_PRINTER(unit_printer) {
 LONG_PRINTER(vinfo_printer) {
 #if 1 /* Use moddebug information. */
  char const *flush_start; void *addr;
- char ch,buffer[256]; ssize_t temp,result = 0;
+ char ch,buffer[sizeof(struct virtinfo)+128]; ssize_t temp,result = 0;
 #define VI  (*(struct virtinfo *)buffer)
  addr = va_arg(args->args,void *);
 #ifdef __KERNEL__
@@ -329,6 +329,7 @@ LONG_PRINTER(vinfo_printer) {
  temp = libc_xvirtinfo2(addr,&VI,sizeof(buffer),VIRTINFO_NORMAL);
 #endif
  if (temp < 0) memset(buffer,0,sizeof(buffer));
+ COMPILER_ENDOF(buffer)[-1] = '\0';
  /* Format options:
   *    %%: Emit a '%' character.
   *    %f: Source file name. (Or `"???"')
@@ -342,7 +343,7 @@ LONG_PRINTER(vinfo_printer) {
   * >>my_label:
   * >>    syslog(LOG_DEBUG,"%[vinfo:%f(%l,%c) : %n] : This is me\n",&&my_label);
   */
- /* Use a debug representation if no argument was given. */
+ /* Use a default representation if no argument was given. */
  if (*cmd == ']' || !*cmd) cmd = "%f(%l,%c) : %n";
 
  flush_start = cmd;

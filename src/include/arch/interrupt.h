@@ -101,11 +101,10 @@ typedef u8 intmode_t;
 /* Returns the suggested default interrupt mode, given the interrupt's number.
  * NOTE: This functions grants user-access to the following interrupts:
  *   - INTNO_EXC_DE *< Divide-by-zero.
- *   - INTNO_EXC_DB *< Debug.
  *   - INTNO_EXC_BP *< Breakpoint.
  *   - INTNO_EXC_OF *< Overflow.
  *   - INTNO_EXC_BR *< Bound Range Exceeded. */
-#define INTMODE_DEFAULT(intno) ((intno) <= 5 ? INTMODE_USER : INTMODE_HOST)
+#define INTMODE_DEFAULT(intno) (((intno) <= 5 && (intno) != INTNO_EXC_DB && (intno) != INTNO_EXC_NMI) ? INTMODE_USER : INTMODE_HOST)
 #define __INTMODE_USER_MASK   0
 
 

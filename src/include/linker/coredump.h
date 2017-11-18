@@ -31,7 +31,7 @@ struct file;
 struct mman;
 struct task;
 struct instance;
-struct ucontext;
+struct cpustate_ie;
 struct __siginfo_struct;
 
 /* Generate and write a coredump of user-defined format to `fp'.
@@ -47,7 +47,7 @@ struct __siginfo_struct;
  * @return: -EOK:       The coredump was successfully written to `fp'
  * @return: E_ISERR(*): Failed to write the dump for some reason. */
 typedef KPD errno_t (KCALL *coreformat_callback)(struct file *__restrict fp, struct mman *__restrict vm,
-                                                 struct task *__restrict thread, struct ucontext *__restrict state,
+                                                 struct task *__restrict thread, struct cpustate_ie *__restrict state,
                                                  struct __siginfo_struct const *__restrict reason, u32 flags, void *closure);
 #define COREDUMP_FLAG_NORMAL 0x00000000 /*< Create a regular coredump containing all information. */
 
@@ -83,7 +83,7 @@ FUNDEF SAFE bool KCALL core_delformat(struct coreformat *__restrict format);
  * @return: E_ISERR(*): Failed to create the dump for some reason. */
 FUNDEF SAFE errno_t KCALL
 core_makedump(struct file *__restrict fp, struct mman *__restrict vm,
-              struct task *__restrict thread, struct ucontext *__restrict state,
+              struct task *__restrict thread, struct cpustate_ie *__restrict state,
               struct __siginfo_struct const *__restrict reason, u32 flags);
 
 /* Open/create a new coredump file for writing, following the linux-style
@@ -97,7 +97,7 @@ core_opendump(struct mman *__restrict vm,
 /* Helper function that combines `core_opendump' with `core_makedump' */
 FUNDEF SAFE errno_t KCALL
 core_dodump(struct mman *__restrict vm, struct task *__restrict thread,
-            struct ucontext *__restrict state,
+            struct cpustate_ie *__restrict state,
             struct __siginfo_struct const *__restrict reason,
             u32 flags);
 

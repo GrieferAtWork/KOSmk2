@@ -54,9 +54,11 @@
 #include <kernel/stack.h>
 #include <arch/pic.h>
 #include <sched/types.h>
+#include <hybrid/minmax.h>
+#include <sched/signal.h>
+#include <bits/signum.h>
 
 #include "interrupt_intern.h"
-#include <hybrid/minmax.h>
 
 DECL_BEGIN
 
@@ -168,7 +170,6 @@ for (local i = 0; i < 32; ++i) {
 
 
 GLOBAL_ASM(
-/* TODO: The bytecode below is only tested on x86_64 (i386 may use different bytes?) */
 #define DIRQ(n,target) \
    .byte 0x68; .long MOD(n);           /* pushq $(MOD(n)) */ \
    .byte 0xe9; .long target - 97f; 97: /* jmp target */
@@ -246,7 +247,7 @@ L(    SKIP_FRAME                                                              )
 L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
-L(    addq   $8, %rsp /* intno */                                             )
+L(    addq   $(1*XSZ), %rsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 L(1:  call   exec_deflirq                                                     )
 #else
@@ -255,7 +256,7 @@ L(    call   exec_deflirq                                                     )
 #endif
 L(    SKIP_FRAME                                                              )
 L(    __ASM_POP_COMREGS                                                       )
-L(    addx   $(XSZ), %xsp /* intno */                                         )
+L(    addx   $(1*XSZ), %xsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 L(SYM_END(default_irq_ncode)                                                  )
 L(SYM_END(default_irq_spuri)                                                  )
@@ -274,7 +275,7 @@ L(    SKIP_FRAME                                                              )
 L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
-L(    addq   $8, %rsp /* intno */                                             )
+L(    addq   $(2*XSZ), %rsp /* exc_code + intno */                            )
 L(    ASM_IRET                                                                )
 L(1:  call   exec_deflirq                                                     )
 #else
@@ -302,23 +303,23 @@ L(    jz     1f /* if (ORIGINATES_FROM_USERSPACE()) { ... */                  )
 L(    swapgs                                                                  )
 L(    pushq  $4f /* return_address */                                         )
 L(    pushq  %rax                                                             )
-L(    movq   16(%rsp), %rax /* intno */                                       )
+L(    movq   (2*XSZ)(%rsp), %rax /* intno */                                  )
 L(    ADJUST_INTNO_TO_INTERRUPT(%rax)                                         )
 L(    movq   INTERRUPT_OFFSETOF_CALLBACK(%rax), %rax /* XAX now contains the interrupt entry point */)
 L(    xchgq  0(%rsp), %rax /* Restore original XAX and safe interrupt entry point on-stack. */)
 L(    ret    /* ~return~ to the interrupt handler. */                         )
 L(4:  cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
-L(    addq   $8, %rsp /* intno */                                             )
+L(    addq   $(1*XSZ), %rsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 L(1:  pushq  $4f /* } else { ... */                                           )
 L(    pushq  %rax                                                             )
-L(    movq   16(%rsp), %rax /* intno */                                       )
+L(    movq   (2*XSZ)(%rsp), %rax /* intno */                                  )
 L(    ADJUST_INTNO_TO_INTERRUPT(%rax)                                         )
 L(    movq   INTERRUPT_OFFSETOF_CALLBACK(%rax), %rax /* RAX now contains the interrupt entry point */)
 L(    xchgq  0(%rsp), %rax /* Restore original RAX and safe interrupt entry point on-stack. */)
 L(    ret    /* ~return~ to the interrupt handler. */                         )
-L(4:  addq   $8, %rsp /* intno */                                             )
+L(4:  addq   $(1*XSZ), %rsp /* intno */                                       )
 L(    ASM_IRET /*  } */                                                       )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
@@ -331,7 +332,7 @@ L(    movl   INTERRUPT_OFFSETOF_CALLBACK(%eax), %eax /* EAX now contains the int
 L(    xchgl  0(%esp), %eax /* Restore original EAX and safe interrupt entry point on-stack. */)
 L(    ret    /* ~return~ to the interrupt handler. */                         )
 L(4:  __ASM_POP_SGREGS                                                        )
-L(    addl   $4, %esp /* intno */                                             )
+L(    addl   $(1*XSZ), %esp /* intno */                                       )
 L(    ASM_IRET                                                                )
 #endif
 L(SYM_END(user_irq_ncode)                                                     )
@@ -360,7 +361,7 @@ L(    ADJUST_INTNO_TO_INTERRUPT(%rax)                                         )
 L(    movq   INTERRUPT_OFFSETOF_CALLBACK(%rax), %rax /* RAX now contains the interrupt entry point */)
 L(    xchgq  0(%rsp), %rax /* Restore original RAX and safe interrupt entry point on-stack. */)
 L(    ret    /* ~return~ to the interrupt handler. */                         )
-L(4:  addq $16, %rsp /* ecx_code + intno */                                   )
+L(4:  addq   $(2*XSZ), %rsp /* ecx_code + intno */                            )
 L(    ASM_IRET /*  } */                                                       )
 #else
 L(    __ASM_PUSH_SGREGS                                                       )
@@ -373,7 +374,7 @@ L(    movl   INTERRUPT_OFFSETOF_CALLBACK(%eax), %eax /* EAX now contains the int
 L(    xchgl  0(%esp), %eax /* Restore original EAX and safe interrupt entry point on-stack. */)
 L(    ret    /* ~return~ to the interrupt handler. */                         )
 L(4:  __ASM_POP_SGREGS                                                        )
-L(    addl   $8, %esp /* ecx_code + intno */                                  )
+L(    addl   $(2*XSZ), %esp /* ecx_code + intno */                            )
 L(    ASM_IRET                                                                )
 #endif
 L(SYM_END(user_irq_ycode)                                                     )
@@ -401,7 +402,7 @@ L(    swapgs /* Restore the user-space GS */                                  )
 L(    testq  %rax, %rax                                                       )
 L(    jz     2f                                                               )
 L(    __ASM_POP_SCRATCH                                                       )
-L(    addq   $8, %rsp /* intno */                                             )
+L(    addq   $(1*XSZ), %rsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 L(2:  __ASM_POP_SCRATCH                                                       )
 L(    jmp    default_irq_ncode                                                )
@@ -421,7 +422,7 @@ L(    testl  %eax, %eax                                                       )
 L(    jz     1f                                                               )
 #endif
 L(    __ASM_POP_SCRATCH                                                       )
-L(    addx   $(XSZ), %xsp                                                     )
+L(    addx   $(1*XSZ), %xsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 #ifndef __x86_64__
 L(1:  __ASM_POP_SCRATCH                                                       )
@@ -448,7 +449,7 @@ L(    swapgs /* Restore the user-space GS */                                  )
 L(    testq  %rax, %rax                                                       )
 L(    jz     2f                                                               )
 L(    __ASM_POP_SCRATCH                                                       )
-L(    addq   $16, %rsp /* intno */                                            )
+L(    addq   $(2*XSZ), %rsp /* exc_code + intno */                            )
 L(    ASM_IRET                                                                )
 L(2:  __ASM_POP_SCRATCH                                                       )
 L(    jmp    default_irq_ycode                                                )
@@ -468,7 +469,7 @@ L(    testl  %eax, %eax                                                       )
 L(    jz     1f                                                               )
 #endif
 L(    __ASM_POP_SCRATCH                                                       )
-L(    addx   $(2*XSZ), %xsp                                                   )
+L(    addx   $(2*XSZ), %xsp /* exc_code + intno */                            )
 L(    ASM_IRET                                                                )
 #ifndef __x86_64__
 L(1:  __ASM_POP_SCRATCH                                                       )
@@ -500,7 +501,7 @@ L(    swapgs /* Restore the user-space GS */                                  )
 L(    testq  %rax, %rax                                                       )
 L(    jz     2f                                                               )
 L(    __ASM_POP_SCRATCH                                                       )
-L(    addq   $8, %rsp /* intno */                                             )
+L(    addq   $(1*XSZ), %rsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 L(2:  __ASM_POP_SCRATCH                                                       )
 L(    jmp    default_irq_ncode                                                )
@@ -520,7 +521,7 @@ L(    testl  %eax, %eax                                                       )
 L(    jz     1f                                                               )
 #endif
 L(    __ASM_POP_SCRATCH                                                       )
-L(    addx   $(XSZ), %xsp /* intno */                                         )
+L(    addx   $(1*XSZ), %xsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 #ifndef __x86_64__
 L(1:  __ASM_POP_SCRATCH                                                       )
@@ -548,7 +549,7 @@ L(    swapgs /* Restore the user-space GS */                                  )
 L(    testq  %rax, %rax                                                       )
 L(    jz     2f                                                               )
 L(    __ASM_POP_SCRATCH                                                       )
-L(    addq   $16, %rsp /* intno */                                            )
+L(    addq   $(2*XSZ), %rsp /* exc_code + intno */                            )
 L(    ASM_IRET                                                                )
 L(2:  __ASM_POP_SCRATCH                                                       )
 L(    jmp    default_irq_ycode                                                )
@@ -568,7 +569,7 @@ L(    testl  %eax, %eax                                                       )
 L(    jz     1f                                                               )
 #endif
 L(    __ASM_POP_SCRATCH                                                       )
-L(    addx   $(2*XSZ), %xsp /* intno, exc_code */                             )
+L(    addx   $(2*XSZ), %xsp /* exc_code + intno */                            )
 L(    ASM_IRET                                                                )
 #ifndef __x86_64__
 L(1:  __ASM_POP_SCRATCH                                                       )
@@ -599,7 +600,7 @@ L(    SKIP_FRAME                                                              )
 L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
-L(    addq   $8, %rsp /* intno */                                             )
+L(    addq   $(1*XSZ), %rsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 L(1:  ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call   exec_statirq                                                     )
@@ -610,7 +611,7 @@ L(    call   exec_statirq                                                     )
 #endif
 L(    SKIP_FRAME                                                              )
 L(    __ASM_POP_COMREGS                                                       )
-L(    addx   $(XSZ), %xsp /* intno */                                         )
+L(    addx   $(1*XSZ), %xsp /* intno */                                       )
 L(    ASM_IRET                                                                )
 L(SYM_END(stat_irq_ncode)                                                     )
 L(SYM_END(stat_irq_spuri)                                                     )
@@ -632,7 +633,7 @@ L(    SKIP_FRAME                                                              )
 L(    cli    /* Prevent race-condition involving `swapgs' */                  )
 L(    swapgs /* Restore the user-space GS */                                  )
 L(    __ASM_POP_COMREGS                                                       )
-L(    addq   $8, %rsp /* intno */                                             )
+L(    addq   $(2*XSZ), %rsp /* exc_code + intno */                            )
 L(    ASM_IRET                                                                )
 L(1:  ADJUST_INTNO_TO_INTERRUPT(%FASTCALL_REG1)                               )
 L(    call   exec_statirq                                                     )
@@ -652,13 +653,13 @@ L(.previous                                                                   )
 
 
 PUBLIC struct spurious_pic pic_spurious = {0,0};
-PRIVATE ATTR_USED void KCALL pic1_is_spurious(void) {
+PRIVATE ATTR_COLDTEXT ATTR_USED void KCALL pic1_is_spurious(void) {
  u32 num = ATOMIC_INCFETCH(pic_spurious.sp_pic1);
  syslog(LOG_HW|LOG_WARN,
         COLDSTR("[IRQ] Ignoring spurious interrupt on PIC #1 (#%I32u)\n"),
         num);
 }
-PRIVATE ATTR_USED void KCALL pic2_is_spurious(void) {
+PRIVATE ATTR_COLDTEXT ATTR_USED void KCALL pic2_is_spurious(void) {
  u32 num = ATOMIC_INCFETCH(pic_spurious.sp_pic1);
  syslog(LOG_HW|LOG_WARN,
         COLDSTR("[IRQ] Ignoring spurious interrupt on PIC #1 (#%I32u)\n"),
@@ -666,7 +667,7 @@ PRIVATE ATTR_USED void KCALL pic2_is_spurious(void) {
 }
 
 GLOBAL_ASM(
-L(.section .text.hot                                                          )
+L(.section .text                                                              )
 L(PRIVATE_ENTRY(check_spuri)                                                  )
 L(    pushx  %xax                                                             )
 L(    movb   $(PIC_READ_ISR), %al                                             )
@@ -681,7 +682,7 @@ L(    jz     2f /* if unlikely(!(inb(PIC2_CMD) & 0x80)) goto 2f; */           )
 L(    popx   %xax                                                             )
 L(    ret                                                                     )
 L(2:  __ASM_PUSH_SCRATCH_NOXAX                                                )
-L(    call pic1_is_spurious                                                   )
+L(    call   pic1_is_spurious                                                 )
 L(    __ASM_POP_SCRATCH_NOXAX                                                 )
 L(    jmp    99f                                                              )
 L(1:  /* Check PIC1 */                                                        )
@@ -843,9 +844,62 @@ PRIVATE ATTR_NORETURN void KCALL
 deflirq_illegal_recursion(struct cpustate_ie *__restrict state, irq_t intno) {
  PRIVATE int in_illegal_recursion = 0;
  if (ATOMIC_FETCHINC(in_illegal_recursion) == 0) {
+  register_t xsp; u16 ss;
+  struct irregs *tail = IRREGS_TAIL(&state->iret);
   debug_printf("\n\nPANIC!!! IRQ HANDLER RECURSION!\n");
-  debug_printf(REGISTER_PREFIX "IP   = %p\n",IRREGS_TAIL(&state->iret)->xip);
+  debug_printf(REGISTER_PREFIX "IP   = %p\n",tail->xip);
   debug_printf("I"             "NTNO = %d\n",intno);
+  /* Try do dump some extended information (If this recurses, we won't try again)
+   * I mean: If we've already crashed _HARD_, it might even be helpful to see
+   *         if we can still do something. And even if we can't, the check
+   *         against `in_illegal_recursion' will prevent any secondary attempts.
+   *        (That is assuming that the hardware isn't faulty, in which case there
+   *         really isn't anything we could do.)
+   * NOTE: But don't try to generate a full traceback.
+   *       That will probably fail spectacularly if we've gotten here and may
+   *       even spam any information we've managed to print out of sight. */
+  debug_printf(REGISTER_PREFIX "AX %p  " REGISTER_PREFIX "CX %p  "
+               REGISTER_PREFIX "DX %p  " REGISTER_PREFIX "BX %p\n",
+               state->gp.xax,state->gp.xcx,
+               state->gp.xdx,state->gp.xbx);
+#ifdef __x86_64__
+  xsp = tail->userxsp;
+  ss  = tail->ss;
+#else
+  if (tail->cs&3) {
+   xsp = tail->userxsp;
+   ss  = tail->ss;
+  } else {
+   xsp = (register_t)(&tail->host+1);
+   __asm__ __volatile__("movw %%ss, %w0\n" : "=r" (ss));
+  }
+#endif
+  debug_printf(REGISTER_PREFIX "SP %p  " REGISTER_PREFIX "BP %p  "
+               REGISTER_PREFIX "SI %p  " REGISTER_PREFIX "DI %p\n",
+               xsp,state->gp.xbp,state->gp.xsi,state->gp.xdi);
+#ifdef __x86_64__
+  debug_printf("R8  %p  R9  %p  R10 %p  R11 %p\n"
+               "R12 %p  R13 %p  R14 %p  R15 %p\n",
+               state->gp.r8,state->gp.r9,state->gp.r10,state->gp.r11,
+               state->gp.r12,state->gp.r13,state->gp.r14,state->gp.r15);
+#endif
+  debug_printf("CS %.4I16X",tail->cs);
+       if (tail->cs == __KERNEL_CS) debug_printf(" (__KERNEL_CS)");
+  else if (tail->cs == __USER_CS)   debug_printf(" (__USER_CS)");
+  debug_printf("  SS %.4I16X",ss);
+       if (ss == __KERNEL_DS) debug_printf(" (__KERNEL_DS)");
+  else if (ss == __USER_DS)   debug_printf(" (__USER_DS)");
+  debug_printf("\n");
+#ifdef __x86_64__
+  debug_printf("FS_BASE %p  GS_BASE %p\n",
+               state->sg.fs_base,
+               state->sg.gs_base);
+#else
+  debug_printf("DS %.4I16X  ES %.4I16X\n"
+               "FS %.4I16X  GS %.4I16X\n",
+               state->sg.ds,state->sg.es,
+               state->sg.fs,state->sg.gs);
+#endif
  }
  /* Freeze the CPU */
  PREEMPTION_FREEZE();
@@ -956,6 +1010,7 @@ deflirq_enter_early(struct irq_frame *__restrict caller_frame,
 #define DEFLIRQ_LEAVE(intno)       DEFLIRQ_DO_LEAVE(intno)
 #endif
 #else
+#define __DEFLIRQ_LEAVE_IS_NOOP 1
 #define DEFLIRQ_DECLARE_VARS       /* nothing */
 #define DEFLIRQ_ENTER_EARLY(intno) /* nothing */
 #define DEFLIRQ_ENTER_LATER(intno) /* nothing */
@@ -1136,14 +1191,142 @@ set_default_gs_base:
  if (iret_tail->cs&3) {
   /* TODO: Exception doesn't originate from kernel-space.
    *    >> Send a signal to the calling task. */
+#if defined(CONFIG_DEBUG) && 0
+  if (boot_emulation == BOOT_EMULATION_REALHW)
+#endif
+  {
+   siginfo_t info;
+   memset(&info,0,sizeof(siginfo_t));
+   switch (intno) {
+   case INTNO_EXC_DE:
+    info.si_signo = SIGFPE;
+    info.si_code  = FPE_INTDIV;
+set_addr:
+    PREEMPTION_DISABLE();
+    /* Extract the original IRET return pointer. */
+    info.si_addr  = (void *)(this_task->t_sigenter.se_count
+                           ? this_task->t_sigenter.se_xip
+                           : IRREGS_SYSCALL_GET_FOR(this_task)->xip);
+    PREEMPTION_ENABLE();
+    break;
+
+   case INTNO_EXC_DB: /* Breakpoint. */
+#if defined(CONFIG_DEBUG)
+    /* On emulator, use breakpoints to quickly dump panic information. (For now) */
+    if (boot_emulation != BOOT_EMULATION_REALHW)
+        goto handle_error;
+#endif
+    info.si_signo = SIGTRAP;
+    info.si_code  = TRAP_BRKPT;
+    break;
+
+   case INTNO_EXC_NMI:
+    /* XXX: I don't think we should even try to tell userspace about this... */
+    info.si_signo = SIGBUS;
+    info.si_code  = BUS_MCEERR_AR;
+    goto set_addr;
+
+   case INTNO_EXC_BP:
+    /* XXX: This isn't ~really~ what this is for. */
+    info.si_signo = SIGTRAP;
+    info.si_code  = TRAP_BRKPT;
+    break;
+
+   case INTNO_EXC_OF:
+    info.si_signo = SIGFPE;
+    info.si_code  = FPE_INTOVF;
+    goto set_addr;
+
+   case INTNO_EXC_BR:
+   case INTNO_EXC_NP:
+   case INTNO_EXC_SS:
+    info.si_signo = SIGSEGV;
+    info.si_code  = SEGV_MAPERR;
+    goto set_addr;
+
+   case INTNO_EXC_UD:
+    info.si_signo = SIGILL;
+    info.si_code  = ILL_ILLOPC;
+    break;
+
+   case INTNO_EXC_GP:
+    info.si_signo = SIGILL;
+    info.si_code  = ILL_PRVOPC;
+    /* XXX: ILL_ILLOPN */
+    /* XXX: ILL_PRVREG */
+    break;
+
+   case INTNO_EXC_PF:
+    info.si_signo = SIGSEGV;
+    info.si_code  = state->iret.exc_code&1 ? SEGV_ACCERR : SEGV_MAPERR;
+    goto set_addr;
+
+   case INTNO_EXC_MF:
+   case INTNO_EXC_XM:
+    info.si_signo = SIGFPE;
+    info.si_code  = FPE_FLTINV;
+#ifndef CONFIG_NO_FPU
+    { struct fpustate *fpu = this_task->t_arch.at_fpu;
+      if (fpu != FPUSTATE_NULL) {
+       u32 error;
+       FPUSTATE_SAVE(*fpu);
+       if (intno == INTNO_EXC_MF) {
+        error = (u32)(fpu->fp_fsw & ~fpu->fp_fcw);
+       } else {
+        error = (u32)fpu->fp_mxcsr;
+        error = ~(error >> 7) & error;
+       }
+       if (error & 0x0001) { /* Invalid opcode. */
+        /*info.si_code = FPE_FLTINV;*/
+       } else if (error & 0x0004) { /* Divide by zero. */
+        info.si_code = FPE_FLTDIV;
+       } else if (error & 0x0008) { /* Overflow. */
+        info.si_code = FPE_FLTOVF;
+       } else if (error & 0x0012) { /* Denormal / Underflow. */
+        info.si_code = FPE_FLTUND;
+       } else if (error & 0x0020) { /* Underflow. */
+        info.si_code = FPE_FLTRES;
+       } else {
+        return; /* Spurious? */
+       }
+      }
+    }
+#endif
+    goto set_addr;
+
+   /* 8,10,11,12,13,14,17,30 */
+   case INTNO_EXC_AC:
+    info.si_signo = SIGBUS;
+    info.si_code  = BUS_ADRALN;
+    goto set_addr;
+
+   default:
+    info.si_signo = SIGILL;
+    info.si_code  = ILL_PRVOPC;
+    goto set_addr;
+   }
+   /* Send a signal to the current task. */
+#ifndef __DEFLIRQ_LEAVE_IS_NOOP
+   task_crit();
+#endif
+   task_kill2(this_task,&info,intno,
+              INTNO_HAS_EXC_CODE(intno) ?
+              state->iret.exc_code : 0);
+#ifndef __DEFLIRQ_LEAVE_IS_NOOP
+   DEFLIRQ_LEAVE(intno); /* Always leave the IRQ handler! */
+   task_endcrit();
+#endif
+   return;
+  }
  } else {
-  /* Try to run for local exception handlers. */
+  /* Try to run local exception handlers. */
   exec_local_exception_handler(this_task,state,iret_tail,intno
 #ifdef CONFIG_DEBUG
                                ,&__irq_frame
 #endif
                                );
  }
+handle_error: ATTR_UNUSED;
 
  /* Process the kernel panic and dump debug information. */
  kernel_panic_process(this_cpu,this_task,state,
@@ -1394,7 +1577,13 @@ cpu_exists:
   do if (int_is_unused(result,affinity))
          goto got_intno;
   while (result--);
+  /* TODO: Only search for shared handlers if the caller's can be.
+   *       Otherwise, check if we can merge other handlers to free
+   *       up a unique slot for the caller.
+   */
   result = 0xff;
+  /* TODO: Use the interrupt with the least amount
+   *       of shared handlers, rather than the first! */
   do if (int_is_unused2(result,affinity))
          goto got_intno;
   while (result--);

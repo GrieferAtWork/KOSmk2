@@ -230,16 +230,21 @@ do_cont:
 
    case DA_CORE:
 do_core:
+    task_crit();
     error = task_terminate_cpu_endwrite(c,t,(void *)(uintptr_t)
                                        (__WCOREFLAG|__W_EXITCODE(0,signal_info->si_signo)));
-    /* Actually generate the coredump. (arch-specific) */
+    /* Actually generate the coredump. (arch-specific)
+     * NOTE: This function may override the IRET tail and call `task_crit()'
+     *       to perform the coredump before the task would have switched to
+     *       user-space, thus allowing current kernel-operations to finish 
+     *       and all user-space registers to be restored. */
     coredump_task(t,signal_info,reg_trapno,reg_err);
+    task_endcrit();
     goto ppop_end;
 
    default:
     error = task_terminate_cpu_endwrite(c,t,(void *)(uintptr_t)__W_EXITCODE(0,signal_info->si_signo));
     goto ppop_end;
-
    }
   }
   /* KOS extension builtin signal handlers. */
@@ -262,6 +267,14 @@ do_core:
 ignore_signal:;
   } else {
    sigword_t *dst,*end,*src;
+   /* Ignore the signal if the task is being terminated.
+    * NOTE: This is especially required if the task is pending for a
+    *       coredump, in which case it's IRET tail has been overwritten,
+    *       and the task itself is no longer suitable for scheduling more
+    *       signal handlers in userspace. */
+   if unlikely(t->t_flags&TASKFLAG_WILLTERM)
+      goto ignore_signal;
+
    /* Actually deliver the signal to the task. (arch-specific) */
    error = deliver_signal(t,action,signal_info,reg_trapno,reg_err);
    /* Mask all blocked signals in this task */

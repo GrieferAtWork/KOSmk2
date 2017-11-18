@@ -117,7 +117,7 @@ core_delformat(struct coreformat *__restrict format) {
 
 PUBLIC SAFE errno_t KCALL
 core_makedump(struct file *__restrict fp, struct mman *__restrict vm,
-              struct task *__restrict thread, struct ucontext *__restrict state,
+              struct task *__restrict thread, struct cpustate_ie *__restrict state,
               siginfo_t const *__restrict reason, u32 flags) {
  errno_t error; struct moduleops const *exe_ops;
  struct coreformat *format,*used_format = NULL;
@@ -317,7 +317,7 @@ err_nolock:
 
 PUBLIC SAFE errno_t KCALL
 core_dodump(struct mman *__restrict vm, struct task *__restrict thread,
-            struct ucontext *__restrict state, siginfo_t const *__restrict reason,
+            struct cpustate_ie *__restrict state, siginfo_t const *__restrict reason,
             u32 flags) {
  errno_t result; REF struct file *fp;
  fp = core_opendump(vm,thread,reason);
