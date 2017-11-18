@@ -27,6 +27,31 @@
 DECL_BEGIN
 
 
+#if defined(__i386__) || defined(__x86_64__)
+#   include "arch/i386-kos/asm.c.inl"
+#elif defined(__arm__)
+#   include "arch/arm-kos/asm.c.inl"
+#else
+#   error "Unsupported architecture"
+#endif
+
+#undef setjmp
+#undef sigsetjmp
+#undef siglongjmp
+#undef __longjmp2
+#undef alloca
+DEFINE_PUBLIC_ALIAS(setjmp,libc_setjmp);
+DEFINE_PUBLIC_ALIAS(sigsetjmp,libc_sigsetjmp);
+DEFINE_PUBLIC_ALIAS(siglongjmp,libc_siglongjmp);
+DEFINE_PUBLIC_ALIAS(longjmp,libc_longjmp);
+DEFINE_PUBLIC_ALIAS(__longjmp2,libc___longjmp2);
+DEFINE_PUBLIC_ALIAS(alloca,libc_alloca);
+
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+DEFINE_PUBLIC_ALIAS(_alloca,libc_alloca);
+DEFINE_PUBLIC_ALIAS(_setjmp,libc_setjmp);
+DEFINE_PUBLIC_ALIAS(_setjmpex,libc_setjmp); /* TODO: Must safe local exception handlers. */
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 
 DECL_END
