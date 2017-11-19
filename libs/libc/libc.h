@@ -19,6 +19,11 @@
 #ifndef GUARD_LIBS_LIBC_LIBC_H
 #define GUARD_LIBS_LIBC_LIBC_H 1
 
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#ifdef __arm__
+#define CONFIG_LIBC_NO_DOS_LIBC 1
+#endif
+#endif
 
 #if defined(__KERNEL__) || defined(__BUILDING_LIBC)
 #ifdef __KERNEL__

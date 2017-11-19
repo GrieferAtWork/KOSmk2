@@ -40,7 +40,9 @@
 #include <hybrid/minmax.h>
 #include <assert.h>
 #include <hybrid/align.h>
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
 #include <bits/dos-errno.h>
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_BEGIN
 
@@ -1236,11 +1238,11 @@ DEFINE_PUBLIC_ALIAS(fwide,libc_fwide);
 
 
 /* Wide-string API */
-INTERN ATTR_DOSTEXT FILE *LIBCCALL libc_32open_wmemstream(char32_t **bufloc, size_t *sizeloc) { NOT_IMPLEMENTED(); return NULL; }
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32getwchar(void) { return libc_32getwc(stdin); }
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32putwchar(char32_t wc) { return libc_32putwc(wc,stdout); }
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32getwchar_unlocked(void) { return libc_32getwc_unlocked(stdin); }
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32putwchar_unlocked(char32_t wc) { return libc_32putwc_unlocked(wc,stdout); }
+INTERN FILE *LIBCCALL libc_32open_wmemstream(char32_t **bufloc, size_t *sizeloc) { NOT_IMPLEMENTED(); return NULL; }
+INTERN wint_t LIBCCALL libc_32getwchar(void) { return libc_32getwc(stdin); }
+INTERN wint_t LIBCCALL libc_32putwchar(char32_t wc) { return libc_32putwc(wc,stdout); }
+INTERN wint_t LIBCCALL libc_32getwchar_unlocked(void) { return libc_32getwc_unlocked(stdin); }
+INTERN wint_t LIBCCALL libc_32putwchar_unlocked(char32_t wc) { return libc_32putwc_unlocked(wc,stdout); }
 DEFINE_INTERN_ALIAS(libc_32getwc,libc_32fgetwc);
 DEFINE_INTERN_ALIAS(libc_32putwc,libc_32fputwc);
 DEFINE_INTERN_ALIAS(libc_32getwc_unlocked,libc_32fgetwc_unlocked);
@@ -1249,39 +1251,39 @@ DEFINE_INTERN_ALIAS(libc_32putwc_unlocked,libc_32fputwc_unlocked);
 DEFINE_INTERN_ALIAS(libc_32fgetws_int,libc_32fgetws);
 DEFINE_INTERN_ALIAS(libc_32fgetws_unlocked_int,libc_32fgetws_unlocked);
 #else
-INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32fgetws_int(char32_t *__restrict buf, int n, FILE *__restrict self) { return libc_32fgetws(buf,(size_t)n,self); }
-INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32fgetws_unlocked_int(char32_t *__restrict buf, int n, FILE *__restrict self) { return libc_32fgetws_unlocked_int(buf,(size_t)n,self); }
+INTERN char32_t *LIBCCALL libc_32fgetws_int(char32_t *__restrict buf, int n, FILE *__restrict self) { return libc_32fgetws(buf,(size_t)n,self); }
+INTERN char32_t *LIBCCALL libc_32fgetws_unlocked_int(char32_t *__restrict buf, int n, FILE *__restrict self) { return libc_32fgetws_unlocked_int(buf,(size_t)n,self); }
 #endif
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32fgetwc(FILE *self) { wint_t result; file_write(self); result = libc_32fgetwc_unlocked(self); file_endwrite(self); return result; }
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32fputwc(char32_t wc, FILE *self) { wint_t result; file_write(self); result = libc_32fputwc_unlocked(wc,self); file_endwrite(self); return result; }
-INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32fgetws(char32_t *__restrict buf, size_t n, FILE *__restrict self) { char32_t *result; file_write(self); result = libc_32fgetws_unlocked(buf,n,self); file_endwrite(self); return result; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_32fputws(char32_t const *__restrict str, FILE *__restrict self) { int result; file_write(self); result = libc_32fputws_unlocked(str,self); file_endwrite(self); return result; }
-INTERN ATTR_DOSTEXT ssize_t LIBCCALL libc_32vfwprintf(FILE *__restrict self, char32_t const *__restrict format, va_list args) {
+INTERN wint_t LIBCCALL libc_32fgetwc(FILE *self) { wint_t result; file_write(self); result = libc_32fgetwc_unlocked(self); file_endwrite(self); return result; }
+INTERN wint_t LIBCCALL libc_32fputwc(char32_t wc, FILE *self) { wint_t result; file_write(self); result = libc_32fputwc_unlocked(wc,self); file_endwrite(self); return result; }
+INTERN char32_t *LIBCCALL libc_32fgetws(char32_t *__restrict buf, size_t n, FILE *__restrict self) { char32_t *result; file_write(self); result = libc_32fgetws_unlocked(buf,n,self); file_endwrite(self); return result; }
+INTERN int LIBCCALL libc_32fputws(char32_t const *__restrict str, FILE *__restrict self) { int result; file_write(self); result = libc_32fputws_unlocked(str,self); file_endwrite(self); return result; }
+INTERN ssize_t LIBCCALL libc_32vfwprintf(FILE *__restrict self, char32_t const *__restrict format, va_list args) {
  ssize_t result = -1; char *utf8_format = libc_utf32to8m(format);
- if likely(utf8_format) result = libc_dos_vfprintf(self,utf8_format,args),libc_free(utf8_format);
+ if likely(utf8_format) result = libc_vfprintf(self,utf8_format,args),libc_free(utf8_format);
  return result;
 }
-INTERN ATTR_DOSTEXT ssize_t LIBCCALL libc_32vfwscanf(FILE *__restrict self, char32_t const *__restrict format, va_list args) {
+INTERN ssize_t LIBCCALL libc_32vfwscanf(FILE *__restrict self, char32_t const *__restrict format, va_list args) {
  ssize_t result = -1; char *utf8_format = libc_utf32to8m(format);
  if likely(utf8_format) result = libc_vfscanf(self,utf8_format,args),libc_free(utf8_format);
  return result;
 }
-INTERN ATTR_DOSTEXT ssize_t ATTR_CDECL libc_32fwprintf(FILE *__restrict self, char32_t const *__restrict format, ...) { va_list args; ssize_t result; va_start(args,format); result = libc_32vfwprintf(self,format,args); va_end(args); return result; }
-INTERN ATTR_DOSTEXT ssize_t ATTR_CDECL libc_32wprintf(char32_t const *__restrict format, ...) { va_list args; ssize_t result; va_start(args,format); result = libc_32vwprintf(format,args); va_end(args); return result; }
-INTERN ATTR_DOSTEXT ssize_t ATTR_CDECL libc_32fwscanf(FILE *__restrict self, char32_t const *__restrict format, ...) { va_list args; ssize_t result; va_start(args,format); result = libc_32vfwscanf(self,format,args); va_end(args); return result; }
-INTERN ATTR_DOSTEXT ssize_t ATTR_CDECL libc_32wscanf(char32_t const *__restrict format, ...) { va_list args; ssize_t result; va_start(args,format); result = libc_32vwscanf(format,args); va_end(args); return result; }
-INTERN ATTR_DOSTEXT ssize_t LIBCCALL libc_32vwprintf(char32_t const *__restrict format, va_list args) { return libc_32vfwprintf(stdout,format,args); }
-INTERN ATTR_DOSTEXT ssize_t LIBCCALL libc_32vwscanf(char32_t const *__restrict format, va_list args) { return libc_32vfwscanf(stdin,format,args); }
+INTERN ssize_t ATTR_CDECL libc_32fwprintf(FILE *__restrict self, char32_t const *__restrict format, ...) { va_list args; ssize_t result; va_start(args,format); result = libc_32vfwprintf(self,format,args); va_end(args); return result; }
+INTERN ssize_t ATTR_CDECL libc_32wprintf(char32_t const *__restrict format, ...) { va_list args; ssize_t result; va_start(args,format); result = libc_32vwprintf(format,args); va_end(args); return result; }
+INTERN ssize_t ATTR_CDECL libc_32fwscanf(FILE *__restrict self, char32_t const *__restrict format, ...) { va_list args; ssize_t result; va_start(args,format); result = libc_32vfwscanf(self,format,args); va_end(args); return result; }
+INTERN ssize_t ATTR_CDECL libc_32wscanf(char32_t const *__restrict format, ...) { va_list args; ssize_t result; va_start(args,format); result = libc_32vwscanf(format,args); va_end(args); return result; }
+INTERN ssize_t LIBCCALL libc_32vwprintf(char32_t const *__restrict format, va_list args) { return libc_32vfwprintf(stdout,format,args); }
+INTERN ssize_t LIBCCALL libc_32vwscanf(char32_t const *__restrict format, va_list args) { return libc_32vfwscanf(stdin,format,args); }
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32ungetwc(wint_t wc, FILE *self) { wint_t result; file_write(self); result = libc_32ungetwc_unlocked(wc,self); file_endwrite(self); return result; }
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32ungetwc_unlocked(wint_t wc, FILE *self) { /* TODO? */ return (wint_t)libc_ungetc_unlocked((int)wc,self); }
+INTERN wint_t LIBCCALL libc_32ungetwc(wint_t wc, FILE *self) { wint_t result; file_write(self); result = libc_32ungetwc_unlocked(wc,self); file_endwrite(self); return result; }
+INTERN wint_t LIBCCALL libc_32ungetwc_unlocked(wint_t wc, FILE *self) { /* TODO? */ return (wint_t)libc_ungetc_unlocked((int)wc,self); }
 #else /* !CONFIG_LIBC_NO_DOS_LIBC */
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32ungetwc(wint_t wc, FILE *self) { wint_t result; file_write(self); /* TODO? */ result = (wint_t)libc_ungetc_unlocked((int)wc,self); file_endwrite(self); return result; }
+INTERN wint_t LIBCCALL libc_32ungetwc(wint_t wc, FILE *self) { wint_t result; file_write(self); /* TODO? */ result = (wint_t)libc_doungetc((int)wc,self); file_endwrite(self); return result; }
 #endif /* CONFIG_LIBC_NO_DOS_LIBC */
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32fgetwc_unlocked(FILE *self) { /* TODO? */ return (wint_t)libc_fgetc_unlocked(self); }
-INTERN ATTR_DOSTEXT wint_t LIBCCALL libc_32fputwc_unlocked(char32_t wc, FILE *self) { /* TODO? */ return (wint_t)libc_fputc_unlocked((int)wc,self); }
-INTERN ATTR_DOSTEXT char32_t *LIBCCALL libc_32fgetws_unlocked(char32_t *__restrict buf, size_t n, FILE *__restrict self) { NOT_IMPLEMENTED(); return 0; }
-INTERN ATTR_DOSTEXT int LIBCCALL libc_32fputws_unlocked(char32_t const *__restrict buf, FILE *__restrict self) {
+INTERN wint_t LIBCCALL libc_32fgetwc_unlocked(FILE *self) { /* TODO? */ return (wint_t)libc_fgetc_unlocked(self); }
+INTERN wint_t LIBCCALL libc_32fputwc_unlocked(char32_t wc, FILE *self) { /* TODO? */ return (wint_t)libc_fputc_unlocked((int)wc,self); }
+INTERN char32_t *LIBCCALL libc_32fgetws_unlocked(char32_t *__restrict buf, size_t n, FILE *__restrict self) { NOT_IMPLEMENTED(); return 0; }
+INTERN int LIBCCALL libc_32fputws_unlocked(char32_t const *__restrict buf, FILE *__restrict self) {
  int result = -1; char *utf8_str = libc_utf32to8m(buf);
  if likely(utf8_str) result = libc_fputs_unlocked(utf8_str,self),libc_free(utf8_str);
  return result;

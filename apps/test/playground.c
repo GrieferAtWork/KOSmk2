@@ -33,9 +33,6 @@
 #include <kos/vga.h>
 #include <hybrid/align.h>
 
-#include <sys/ipc.h>
-#include <sys/shm.h>
-
 PRIVATE int          vga_dev;
 PRIVATE byte_t      *screen;
 PRIVATE unsigned int screen_width  = 320;

@@ -57,7 +57,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\libs\libc\arch\arm-kos\asm.c.inl" />
+    <None Include="..\..\libs\libc\arch\arm-kos\assert.c.inl" />
     <None Include="..\..\libs\libc\arch\i386-kos\asm.c.inl" />
+    <None Include="..\..\libs\libc\arch\i386-kos\assert.c.inl" />
     <None Include="..\..\libs\libc\dlmalloc.c.inl" />
     <None Include="..\..\libs\libc\malloc-dos.c.inl" />
     <None Include="..\..\libs\libc\strerror.inl" />
@@ -69,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\libc\asm.h" />
+    <ClInclude Include="..\..\libs\libc\assert.h" />
     <ClInclude Include="..\..\libs\libc\ctype.h" />
     <ClInclude Include="..\..\libs\libc\dirent.h" />
     <ClInclude Include="..\..\libs\libc\environ.h" />

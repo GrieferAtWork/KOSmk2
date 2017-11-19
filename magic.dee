@@ -22,6 +22,7 @@
 #if defined(TARGET_ARM)
 #   define CONFIG_TOOLCHAIN    "arm-none-eabi"
 #   define CONFIG_TARGET_ARCH  "arm-kos"
+#   define CONFIG_QEMU_FLAGS   "-M","vexpress-a15","-cpu","cortex-a15"
 #elif defined(TARGET_X86_64)
 #   define CONFIG_TARGET_ARCH  "x86_64-kos"
 #   define CONFIG_TARGET_NAME  "i386-kos"

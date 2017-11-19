@@ -10,7 +10,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <LocalDebuggerCommand>E:\c\deemon\deemon\deemon.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>$(SolutionDir)..\magic.dee --run-only --hosted keymap=/lib/keymap/de_DE.map</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-DTARGET_ARM $(SolutionDir)..\magic.dee --run-only --hosted keymap=/lib/keymap/de_DE.map</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..\</LocalDebuggerWorkingDirectory>
     <LocalDebuggerAttach>false</LocalDebuggerAttach>
   </PropertyGroup>
@@ -30,7 +30,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <LocalDebuggerCommand>E:\c\deemon\deemon\deemon.exe</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>$(SolutionDir)..\magic.dee --run-only --hosted</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-DTARGET_ARM $(SolutionDir)..\magic.dee --run-only --hosted</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..\</LocalDebuggerWorkingDirectory>
     <LocalDebuggerAttach>false</LocalDebuggerAttach>

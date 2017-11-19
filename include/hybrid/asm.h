@@ -34,29 +34,29 @@ DECL_BEGIN
 #   define L(...)                  /* Nothing */
 #   define GLOBAL_ASM(...)         /* Nothing */
 #endif
-#define SYM_PRIVATE(x)           .hidden x; .local x
-#define SYM_INTERN(x)            .hidden x; .globl x
-#define SYM_PUBLIC(x)                       .globl x
+#define DEFINE_PRIVATE(x)        .hidden x; .local x
+#define DEFINE_INTERN(x)         .hidden x; .globl x
+#define DEFINE_PUBLIC(x)                    .globl x
+#define DEFINE_PRIVATE_T(x,kind) .hidden x; .local x; .type x, #kind
+#define DEFINE_INTERN_T(x,kind)  .hidden x; .globl x; .type x, #kind
+#define DEFINE_PUBLIC_T(x,kind)             .globl x; .type x, #kind
 #define SYM_END(x)               .size x, . - x
-#define FUN_PRIVATE(x)           .hidden x; .local x; .type x, @function
-#define FUN_INTERN(x)            .hidden x; .globl x; .type x, @function
-#define FUN_PUBLIC(x)                       .globl x; .type x, @function
-#define OBJ_PRIVATE(x)           .hidden x; .local x; .type x, @object
-#define OBJ_INTERN(x)            .hidden x; .globl x; .type x, @object
-#define OBJ_PUBLIC(x)                       .globl x; .type x, @object
-#define PRIVATE_LABEL(x)         .hidden x; .local x; x:
-#define INTERN_LABEL(x)          .hidden x; .globl x; x:
-#define PUBLIC_LABEL(x)                     .globl x; x:
-#define PRIVATE_OBJECT(x)        .hidden x; .local x; .type x, @object; x:
-#define INTERN_OBJECT(x)         .hidden x; .globl x; .type x, @object; x:
-#define PUBLIC_OBJECT(x)                    .globl x; .type x, @object; x:
-#define PRIVATE_ENTRY(x)         .hidden x; .local x; .type x, @function; x:
-#define INTERN_ENTRY(x)          .hidden x; .globl x; .type x, @function; x:
-#define PUBLIC_ENTRY(x)                     .globl x; .type x, @function; x:
-#define DEFINE_BSS(name,n_bytes) name: .skip (n_bytes); .size name, . - name
+
+#define PRIVATE_LABEL(x)         DEFINE_PRIVATE(x); x:
+#define INTERN_LABEL(x)          DEFINE_INTERN(x); x:
+#define PUBLIC_LABEL(x)          DEFINE_PUBLIC(x); x:
+#define PRIVATE_OBJECT(x)        DEFINE_PRIVATE_T(x,object); x:
+#define INTERN_OBJECT(x)         DEFINE_INTERN_T(x,object); x:
+#define PUBLIC_OBJECT(x)         DEFINE_PUBLIC_T(x,object); x:
+#define PRIVATE_ENTRY(x)         DEFINE_PRIVATE_T(x,function); x:
+#define INTERN_ENTRY(x)          DEFINE_INTERN_T(x,function); x:
+#define PUBLIC_ENTRY(x)          DEFINE_PUBLIC_T(x,function); x:
+
 #define PRIVATE_STRING(x,str)    PRIVATE_OBJECT(x) .string str; SYM_END(x)
 #define INTERN_STRING(x,str)     INTERN_OBJECT(x)  .string str; SYM_END(x)
 #define PUBLIC_STRING(x,str)     PUBLIC_OBJECT(x)  .string str; SYM_END(x)
+
+#define DEFINE_BSS(x,n_bytes)    x: .skip (n_bytes); SYM_END(x)
 
 #ifdef __PIC__
 #   define PLT_SYM(x) x@PLT

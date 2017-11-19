@@ -141,7 +141,7 @@ __LIBC int (__LIBCCALL setns)(int __fd, int __nstype);
 #define __CPU_SETSIZE       256
 #endif /* !__CPU_SETSIZE */
 
-#define __SIZEOF_CPU_SET_T__  (__CPU_SETSIZE/8)
+#define __SIZEOF_CPU_SET_T__  (__CPU_SETSIZE / 8)
 #define __NCPUBITS            (8*sizeof(__cpu_mask))
 #define __SIZEOF_CPU_MASK__    4
 #define __CPUELT(cpu)  ((cpu)/__NCPUBITS)

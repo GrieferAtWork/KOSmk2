@@ -74,6 +74,7 @@
 #include <string.h>
 #include <sys/io.h>
 #include <sys/mman.h>
+#include <kos/thread.h>
 
 #include <dev/net.h>
 #include <dev/net-stack.h>
@@ -81,7 +82,6 @@
 #include <netinet/in.h>
 #include <asm/instx.h>
 #include <arch/hints.h>
-#include <kos/thread.h>
 #include <arch/asm.h>
 
 DECL_BEGIN

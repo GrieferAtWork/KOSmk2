@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _SYS_TTYDEFAULTS_H
+#ifndef _I386_KOS_SYS_TTYDEFAULTS_H
+#define _I386_KOS_SYS_TTYDEFAULTS_H 1
 #define _SYS_TTYDEFAULTS_H 1
 
 /* DISCLAIMER: _STRONGLY_ Based on '/usr/include/i386-linux-gnu/sys/ttydefaults.h' */
@@ -103,7 +104,7 @@ __SYSDECL_BEGIN
 
 __SYSDECL_END
 
-#endif /* !_SYS_TTYDEFAULTS_H */
+#endif /* !_I386_KOS_SYS_TTYDEFAULTS_H */
 
 /* #define TTYDEFCHARS to include an array of default control characters. */
 #ifdef TTYDEFCHARS

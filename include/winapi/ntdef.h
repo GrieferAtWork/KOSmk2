@@ -142,10 +142,12 @@
 #endif
 
 /* Returns the byte offset of the specified structure's member */
+#ifndef FIELD_OFFSET
 #ifndef __GNUC__
 #define FIELD_OFFSET(Type, Field) ((LONG)(LONG_PTR)&(((Type*) 0)->Field))
 #else
 #define FIELD_OFFSET(Type, Field) __builtin_offsetof(Type, Field)
+#endif
 #endif
 
 /* Returns the type's alignment */
@@ -168,8 +170,12 @@
 /* Import and Export Specifiers */
 
 /* Done the same way as in windef.h for now */
+#ifndef DECLSPEC_IMPORT
 #define DECLSPEC_IMPORT __declspec(dllimport)
+#endif /* !DECLSPEC_IMPORT */
+#ifndef DECLSPEC_NORETURN
 #define DECLSPEC_NORETURN __declspec(noreturn)
+#endif /* !DECLSPEC_NORETURN */
 
 #ifndef DECLSPEC_ADDRSAFE
 #if (_MSC_VER >= 1200) && (defined(_M_ALPHA) || defined(_M_AXP64))
@@ -230,10 +236,18 @@
 #endif /* DECLSPEC_ALIGN */
 
 /* Use to silence unused variable warnings when it is intentional */
+#ifndef UNREFERENCED_PARAMETER
 #define UNREFERENCED_PARAMETER(P) {(P) = (P);}
+#endif /* !UNREFERENCED_PARAMETER */
+#ifndef UNREFERENCED_LOCAL_VARIABLE
 #define UNREFERENCED_LOCAL_VARIABLE(L) {(L) = (L);}
+#endif /* !UNREFERENCED_LOCAL_VARIABLE */
+#ifndef DBG_UNREFERENCED_PARAMETER
 #define DBG_UNREFERENCED_PARAMETER(P) (P)
+#endif /* !DBG_UNREFERENCED_PARAMETER */
+#ifndef DBG_UNREFERENCED_LOCAL_VARIABLE
 #define DBG_UNREFERENCED_LOCAL_VARIABLE(L) (L)
+#endif /* !DBG_UNREFERENCED_LOCAL_VARIABLE */
 
 /* min/max helper macros */
 #ifndef NOMINMAX
@@ -258,10 +272,14 @@ typedef void * POINTER_64 PVOID64;
 /* Handle Type */
 #ifdef STRICT
 typedef void *HANDLE;
+#ifndef DECLARE_HANDLE
 #define DECLARE_HANDLE(n) typedef struct n##__{int i;}*n
+#endif /* !DECLARE_HANDLE */
 #else
 typedef PVOID HANDLE;
+#ifndef DECLARE_HANDLE
 #define DECLARE_HANDLE(n) typedef HANDLE n
+#endif /* !DECLARE_HANDLE */
 #endif
 typedef HANDLE *PHANDLE;
 
@@ -474,20 +492,38 @@ typedef struct _STRING64 {
   ANSI_STRING64, *PANSI_STRING64;
 
 /* LangID and NLS */
+#ifndef MAKELANGID
 #define MAKELANGID(p, s)       ((((USHORT)(s)) << 10) | (USHORT)(p))
+#endif /* !MAKELANGID */
+#ifndef PRIMARYLANGID
 #define PRIMARYLANGID(lgid)    ((USHORT)(lgid) & 0x3ff)
+#endif /* !PRIMARYLANGID */
+#ifndef SUBLANGID
 #define SUBLANGID(lgid)        ((USHORT)(lgid) >> 10)
+#endif /* !SUBLANGID */
 
+#ifndef NLS_VALID_LOCALE_MASK
 #define NLS_VALID_LOCALE_MASK  0x000fffff
+#endif /* !NLS_VALID_LOCALE_MASK */
 
+#ifndef MAKELCID
 #define MAKELCID(lgid, srtid)  ((ULONG)((((ULONG)((USHORT)(srtid))) << 16) |  \
                                          ((ULONG)((USHORT)(lgid)))))
+#endif /* !MAKELCID */
+#ifndef MAKESORTLCID
 #define MAKESORTLCID(lgid, srtid, ver)                                        \
                                ((ULONG)((MAKELCID(lgid, srtid)) |             \
                                     (((ULONG)((USHORT)(ver))) << 20)))
+#endif /* !MAKESORTLCID */
+#ifndef LANGIDFROMLCID
 #define LANGIDFROMLCID(lcid)   ((USHORT)(lcid))
+#endif /* !LANGIDFROMLCID */
+#ifndef SORTIDFROMLCID
 #define SORTIDFROMLCID(lcid)   ((USHORT)((((ULONG)(lcid)) >> 16) & 0xf))
+#endif /* !SORTIDFROMLCID */
+#ifndef SORTVERSIONFROMLCID
 #define SORTVERSIONFROMLCID(lcid)  ((USHORT)((((ULONG)(lcid)) >> 20) & 0xf))
+#endif /* !SORTVERSIONFROMLCID */
 
 
 /* Object Attributes */
@@ -605,26 +641,58 @@ typedef struct _GROUP_AFFINITY {
 #define ARRAYSIZE(A)    RTL_NUMBER_OF_V2(A)
 
 /* Type Limits */
+#ifndef MINCHAR
 #define MINCHAR   0x80
+#endif /* !MINCHAR */
+#ifndef MAXCHAR
 #define MAXCHAR   0x7f
+#endif /* !MAXCHAR */
+#ifndef MINSHORT
 #define MINSHORT  0x8000
+#endif /* !MINSHORT */
+#ifndef MAXSHORT
 #define MAXSHORT  0x7fff
+#endif /* !MAXSHORT */
+#ifndef MINLONG
 #define MINLONG   0x80000000
+#endif /* !MINLONG */
+#ifndef MAXLONG
 #define MAXLONG   0x7fffffff
+#endif /* !MAXLONG */
+#ifndef MAXUCHAR
 #define MAXUCHAR  0xff
+#endif /* !MAXUCHAR */
+#ifndef MAXUSHORT
 #define MAXUSHORT 0xffff
+#endif /* !MAXUSHORT */
+#ifndef MAXULONG
 #define MAXULONG  0xffffffff
+#endif /* !MAXULONG */
+#ifndef MAXLONGLONG
 #define MAXLONGLONG (0x7fffffffffffffffLL)
+#endif /* !MAXLONGLONG */
 
 /* Multiplication and Shift Operations */
+#ifndef Int32x32To64
 #define Int32x32To64(a,b) ((LONGLONG)(a)*(LONGLONG)(b))
+#endif /* !Int32x32To64 */
+#ifndef UInt32x32To64
 #define UInt32x32To64(a,b) ((ULONGLONG)(a)*(ULONGLONG)(b))
+#endif /* !UInt32x32To64 */
+#ifndef Int64ShllMod32
 #define Int64ShllMod32(a,b) ((ULONGLONG)(a)<<(b))
+#endif /* !Int64ShllMod32 */
+#ifndef Int64ShraMod32
 #define Int64ShraMod32(a,b) ((LONGLONG)(a)>>(b))
+#endif /* !Int64ShraMod32 */
+#ifndef Int64ShrlMod32
 #define Int64ShrlMod32(a,b) ((ULONGLONG)(a)>>(b))
+#endif /* !Int64ShrlMod32 */
 
 /* C_ASSERT Definition */
+#ifndef C_ASSERT
 #define C_ASSERT(expr) extern char (*c_assert(void)) [(expr) ? 1 : -1]
+#endif /* !C_ASSERT */
 
 #define VER_WORKSTATION_NT                  0x40000000
 #define VER_SERVER_NT                       0x80000000

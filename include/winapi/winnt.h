@@ -355,7 +355,7 @@ typedef DWORD LCID;
 #define UInt32x32To64(a,b) ((ULONGLONG)((DWORD)(a)) *(ULONGLONG)((DWORD)(b)))
 #define Int64ShrlMod32(a,b) ((ULONGLONG)(a) >> (b))
 #else
-#error Must define a target architecture.
+//#error Must define a target architecture.
 #endif
 
 #define Int64ShraMod32(a,b) ((LONGLONG)(a) >> (b))
@@ -2296,6 +2296,12 @@ typedef DWORD LCID;
     VOID RtlRestoreContext (PCONTEXT ContextRecord,struct _EXCEPTION_RECORD *ExceptionRecord);
     VOID __jump_unwind(ULONGLONG TargetMsFrame,ULONGLONG TargetBsFrame,ULONGLONG TargetPc);
 #endif /* end of _IA64_ */
+
+#if !defined(__i386__) && !defined(__x86_64__)
+typedef void *PCONTEXT;
+#define CONTEXT void
+struct _CONTEXT;
+#endif
 
 #define EXCEPTION_NONCONTINUABLE 0x1
 #define EXCEPTION_MAXIMUM_PARAMETERS 15

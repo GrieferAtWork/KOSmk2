@@ -16,7 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _SYS_IO_H
+#ifndef _I386_KOS_SYS_IO_H
+#define _I386_KOS_SYS_IO_H 1
 #define _SYS_IO_H 1
 
 #include <__stdinc.h>
@@ -392,4 +393,4 @@ __FORCELOCAL void (__LIBCCALL io_delay)(void) { __IO_SLOWDOWN }
 
 __SYSDECL_END
 
-#endif /* !_SYS_IO_H */
+#endif /* !_I386_KOS_SYS_IO_H */

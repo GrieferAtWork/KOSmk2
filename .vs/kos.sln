@@ -421,9 +421,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "arm-kos", "arm-kos", "{985B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "asm", "asm", "{0DA22AB6-242E-4446-8DE9-CC22C3752ED2}"
 	ProjectSection(SolutionItems) = preProject
+		..\include\arm-kos\asm\ioctl.h = ..\include\arm-kos\asm\ioctl.h
+		..\include\arm-kos\asm\ioctls.h = ..\include\arm-kos\asm\ioctls.h
+		..\include\arm-kos\asm\param.h = ..\include\arm-kos\asm\param.h
 		..\include\arm-kos\asm\registers.h = ..\include\arm-kos\asm\registers.h
+		..\include\arm-kos\asm\sigcontext.h = ..\include\arm-kos\asm\sigcontext.h
+		..\include\arm-kos\asm\socket.h = ..\include\arm-kos\asm\socket.h
+		..\include\arm-kos\asm\sockios.h = ..\include\arm-kos\asm\sockios.h
 		..\include\arm-kos\asm\string.h = ..\include\arm-kos\asm\string.h
 		..\include\arm-kos\asm\syscallno.ci = ..\include\arm-kos\asm\syscallno.ci
+		..\include\arm-kos\asm\types.h = ..\include\arm-kos\asm\types.h
 		..\include\arm-kos\asm\unistd.h = ..\include\arm-kos\asm\unistd.h
 	EndProjectSection
 EndProject
@@ -431,27 +438,51 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bits", "bits", "{33C0798A-C
 	ProjectSection(SolutionItems) = preProject
 		..\include\arm-kos\bits\byteswap.h = ..\include\arm-kos\bits\byteswap.h
 		..\include\arm-kos\bits\confname.h = ..\include\arm-kos\bits\confname.h
+		..\include\arm-kos\bits\dirent.h = ..\include\arm-kos\bits\dirent.h
+		..\include\arm-kos\bits\dlfcn.h = ..\include\arm-kos\bits\dlfcn.h
 		..\include\arm-kos\bits\endian.h = ..\include\arm-kos\bits\endian.h
 		..\include\arm-kos\bits\environments.h = ..\include\arm-kos\bits\environments.h
 		..\include\arm-kos\bits\fcntl-linux.h = ..\include\arm-kos\bits\fcntl-linux.h
 		..\include\arm-kos\bits\fcntl.h = ..\include\arm-kos\bits\fcntl.h
+		..\include\arm-kos\bits\in.h = ..\include\arm-kos\bits\in.h
+		..\include\arm-kos\bits\io-file.h = ..\include\arm-kos\bits\io-file.h
+		..\include\arm-kos\bits\ioctl-types.h = ..\include\arm-kos\bits\ioctl-types.h
+		..\include\arm-kos\bits\ioctls.h = ..\include\arm-kos\bits\ioctls.h
 		..\include\arm-kos\bits\local_lim.h = ..\include\arm-kos\bits\local_lim.h
+		..\include\arm-kos\bits\locale.h = ..\include\arm-kos\bits\locale.h
 		..\include\arm-kos\bits\mbstate.h = ..\include\arm-kos\bits\mbstate.h
+		..\include\arm-kos\bits\netdb.h = ..\include\arm-kos\bits\netdb.h
+		..\include\arm-kos\bits\poll.h = ..\include\arm-kos\bits\poll.h
 		..\include\arm-kos\bits\posix1_lim.h = ..\include\arm-kos\bits\posix1_lim.h
 		..\include\arm-kos\bits\posix2_lim.h = ..\include\arm-kos\bits\posix2_lim.h
 		..\include\arm-kos\bits\posix_opt.h = ..\include\arm-kos\bits\posix_opt.h
+		..\include\arm-kos\bits\pthreadtypes.h = ..\include\arm-kos\bits\pthreadtypes.h
+		..\include\arm-kos\bits\resource.h = ..\include\arm-kos\bits\resource.h
 		..\include\arm-kos\bits\rotate.h = ..\include\arm-kos\bits\rotate.h
 		..\include\arm-kos\bits\sched.h = ..\include\arm-kos\bits\sched.h
+		..\include\arm-kos\bits\select.h = ..\include\arm-kos\bits\select.h
 		..\include\arm-kos\bits\setjmp.h = ..\include\arm-kos\bits\setjmp.h
+		..\include\arm-kos\bits\sigcontext.h = ..\include\arm-kos\bits\sigcontext.h
 		..\include\arm-kos\bits\sigevent.h = ..\include\arm-kos\bits\sigevent.h
 		..\include\arm-kos\bits\siginfo.h = ..\include\arm-kos\bits\siginfo.h
+		..\include\arm-kos\bits\signum.h = ..\include\arm-kos\bits\signum.h
 		..\include\arm-kos\bits\sigset.h = ..\include\arm-kos\bits\sigset.h
+		..\include\arm-kos\bits\sigstack.h = ..\include\arm-kos\bits\sigstack.h
+		..\include\arm-kos\bits\sigthread.h = ..\include\arm-kos\bits\sigthread.h
+		..\include\arm-kos\bits\sockaddr.h = ..\include\arm-kos\bits\sockaddr.h
+		..\include\arm-kos\bits\socket.h = ..\include\arm-kos\bits\socket.h
+		..\include\arm-kos\bits\socket_type.h = ..\include\arm-kos\bits\socket_type.h
 		..\include\arm-kos\bits\stat.h = ..\include\arm-kos\bits\stat.h
 		..\include\arm-kos\bits\stdio_lim.h = ..\include\arm-kos\bits\stdio_lim.h
+		..\include\arm-kos\bits\syscall.h = ..\include\arm-kos\bits\syscall.h
 		..\include\arm-kos\bits\syslog-path.h = ..\include\arm-kos\bits\syslog-path.h
+		..\include\arm-kos\bits\termios.h = ..\include\arm-kos\bits\termios.h
+		..\include\arm-kos\bits\time.h = ..\include\arm-kos\bits\time.h
 		..\include\arm-kos\bits\types.h = ..\include\arm-kos\bits\types.h
+		..\include\arm-kos\bits\uio.h = ..\include\arm-kos\bits\uio.h
 		..\include\arm-kos\bits\waitflags.h = ..\include\arm-kos\bits\waitflags.h
 		..\include\arm-kos\bits\waitstatus.h = ..\include\arm-kos\bits\waitstatus.h
+		..\include\arm-kos\bits\wchar.h = ..\include\arm-kos\bits\wchar.h
 		..\include\arm-kos\bits\wctype.h = ..\include\arm-kos\bits\wctype.h
 		..\include\arm-kos\bits\xopen_lim.h = ..\include\arm-kos\bits\xopen_lim.h
 	EndProjectSection
@@ -459,33 +490,90 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bits-generic", "bits-generic", "{344B9E37-4C1D-4F52-B671-C7D7AECDAAF9}"
 	ProjectSection(SolutionItems) = preProject
 		..\include\bits-generic\byteswap.h = ..\include\bits-generic\byteswap.h
+		..\include\bits-generic\dirent.h = ..\include\bits-generic\dirent.h
+		..\include\bits-generic\dlfcn.h = ..\include\bits-generic\dlfcn.h
 		..\include\bits-generic\fcntl-linux.h = ..\include\bits-generic\fcntl-linux.h
+		..\include\bits-generic\in.h = ..\include\bits-generic\in.h
+		..\include\bits-generic\io-file.h = ..\include\bits-generic\io-file.h
+		..\include\bits-generic\locale.h = ..\include\bits-generic\locale.h
 		..\include\bits-generic\mbstate.h = ..\include\bits-generic\mbstate.h
+		..\include\bits-generic\netdb.h = ..\include\bits-generic\netdb.h
+		..\include\bits-generic\poll.h = ..\include\bits-generic\poll.h
 		..\include\bits-generic\posix1_lim.h = ..\include\bits-generic\posix1_lim.h
 		..\include\bits-generic\posix2_lim.h = ..\include\bits-generic\posix2_lim.h
+		..\include\bits-generic\resource.h = ..\include\bits-generic\resource.h
 		..\include\bits-generic\rotate.h = ..\include\bits-generic\rotate.h
 		..\include\bits-generic\sched.h = ..\include\bits-generic\sched.h
+		..\include\bits-generic\select.h = ..\include\bits-generic\select.h
 		..\include\bits-generic\sigaction.h = ..\include\bits-generic\sigaction.h
 		..\include\bits-generic\sigset.h = ..\include\bits-generic\sigset.h
+		..\include\bits-generic\sigstack.h = ..\include\bits-generic\sigstack.h
+		..\include\bits-generic\sigthread.h = ..\include\bits-generic\sigthread.h
+		..\include\bits-generic\sockaddr.h = ..\include\bits-generic\sockaddr.h
+		..\include\bits-generic\socket.h = ..\include\bits-generic\socket.h
+		..\include\bits-generic\socket_type.h = ..\include\bits-generic\socket_type.h
 		..\include\bits-generic\stat.h = ..\include\bits-generic\stat.h
 		..\include\bits-generic\stdio_lim.h = ..\include\bits-generic\stdio_lim.h
+		..\include\bits-generic\time.h = ..\include\bits-generic\time.h
 		..\include\bits-generic\types.h = ..\include\bits-generic\types.h
+		..\include\bits-generic\uio.h = ..\include\bits-generic\uio.h
 		..\include\bits-generic\waitflags.h = ..\include\bits-generic\waitflags.h
 		..\include\bits-generic\waitstatus.h = ..\include\bits-generic\waitstatus.h
+		..\include\bits-generic\wchar.h = ..\include\bits-generic\wchar.h
 		..\include\bits-generic\wctype.h = ..\include\bits-generic\wctype.h
 		..\include\bits-generic\xopen_lim.h = ..\include\bits-generic\xopen_lim.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys-generic", "sys-generic", "{4D48A6D4-6FE3-40B7-99ED-31BF0A41FA66}"
 	ProjectSection(SolutionItems) = preProject
+		..\include\sys-generic\io.h = ..\include\sys-generic\io.h
+		..\include\sys-generic\ioctl.h = ..\include\sys-generic\ioctl.h
 		..\include\sys-generic\mman.h = ..\include\sys-generic\mman.h
+		..\include\sys-generic\mount.h = ..\include\sys-generic\mount.h
+		..\include\sys-generic\poll.h = ..\include\sys-generic\poll.h
+		..\include\sys-generic\resource.h = ..\include\sys-generic\resource.h
+		..\include\sys-generic\select.h = ..\include\sys-generic\select.h
+		..\include\sys-generic\socket.h = ..\include\sys-generic\socket.h
+		..\include\sys-generic\stat.h = ..\include\sys-generic\stat.h
+		..\include\sys-generic\sysinfo.h = ..\include\sys-generic\sysinfo.h
 		..\include\sys-generic\syslog.h = ..\include\sys-generic\syslog.h
+		..\include\sys-generic\sysmacros.h = ..\include\sys-generic\sysmacros.h
+		..\include\sys-generic\time.h = ..\include\sys-generic\time.h
+		..\include\sys-generic\timeb.h = ..\include\sys-generic\timeb.h
+		..\include\sys-generic\times.h = ..\include\sys-generic\times.h
+		..\include\sys-generic\types.h = ..\include\sys-generic\types.h
+		..\include\sys-generic\uio.h = ..\include\sys-generic\uio.h
+		..\include\sys-generic\wait.h = ..\include\sys-generic\wait.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sys", "sys", "{BF3163DE-5364-401E-9939-60D4D1FC0A1B}"
 	ProjectSection(SolutionItems) = preProject
+		..\include\arm-kos\sys\io.h = ..\include\arm-kos\sys\io.h
+		..\include\arm-kos\sys\ioctl.h = ..\include\arm-kos\sys\ioctl.h
 		..\include\arm-kos\sys\mman.h = ..\include\arm-kos\sys\mman.h
+		..\include\arm-kos\sys\mount.h = ..\include\arm-kos\sys\mount.h
+		..\include\arm-kos\sys\poll.h = ..\include\arm-kos\sys\poll.h
+		..\include\arm-kos\sys\resource.h = ..\include\arm-kos\sys\resource.h
+		..\include\arm-kos\sys\select.h = ..\include\arm-kos\sys\select.h
+		..\include\arm-kos\sys\socket.h = ..\include\arm-kos\sys\socket.h
+		..\include\arm-kos\sys\stat.h = ..\include\arm-kos\sys\stat.h
+		..\include\arm-kos\sys\syscall.h = ..\include\arm-kos\sys\syscall.h
+		..\include\arm-kos\sys\sysinfo.h = ..\include\arm-kos\sys\sysinfo.h
 		..\include\arm-kos\sys\syslog.h = ..\include\arm-kos\sys\syslog.h
+		..\include\arm-kos\sys\sysmacros.h = ..\include\arm-kos\sys\sysmacros.h
+		..\include\arm-kos\sys\time.h = ..\include\arm-kos\sys\time.h
+		..\include\arm-kos\sys\timeb.h = ..\include\arm-kos\sys\timeb.h
+		..\include\arm-kos\sys\times.h = ..\include\arm-kos\sys\times.h
+		..\include\arm-kos\sys\ttydefaults.h = ..\include\arm-kos\sys\ttydefaults.h
+		..\include\arm-kos\sys\types.h = ..\include\arm-kos\sys\types.h
+		..\include\arm-kos\sys\ucontext.h = ..\include\arm-kos\sys\ucontext.h
+		..\include\arm-kos\sys\uio.h = ..\include\arm-kos\sys\uio.h
+		..\include\arm-kos\sys\wait.h = ..\include\arm-kos\sys\wait.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "i386-kos", "i386-kos", "{54AEB147-2E78-47CF-8CD7-7948780A5D58}"
+	ProjectSection(SolutionItems) = preProject
+		..\include\kos\i386-kos\thread.h = ..\include\kos\i386-kos\thread.h
 	EndProjectSection
 EndProject
 Global
@@ -695,5 +783,6 @@ Global
 		{344B9E37-4C1D-4F52-B671-C7D7AECDAAF9} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
 		{4D48A6D4-6FE3-40B7-99ED-31BF0A41FA66} = {EA6EEC02-606F-4004-8FB6-DBFA474B9157}
 		{BF3163DE-5364-401E-9939-60D4D1FC0A1B} = {985BD14A-CD5A-4A68-B131-A3691BCA62CF}
+		{54AEB147-2E78-47CF-8CD7-7948780A5D58} = {AF58F0E7-5058-4D46-B809-727D330670C2}
 	EndGlobalSection
 EndGlobal

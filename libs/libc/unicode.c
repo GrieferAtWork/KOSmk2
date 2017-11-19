@@ -650,8 +650,17 @@ again:
 
 INTERN ATTR_UNITEXT char16_t *LIBCCALL libc_utf8to16m(char const *__restrict utf8) { return libc_utf8to16ms(utf8,libc_strlen(utf8)); }
 INTERN ATTR_UNITEXT char32_t *LIBCCALL libc_utf8to32m(char const *__restrict utf8) { return libc_utf8to32ms(utf8,libc_strlen(utf8)); }
-INTERN ATTR_UNITEXT char *LIBCCALL libc_utf16to8m(char16_t const *__restrict utf16) { return libc_utf16to8ms(utf16,libc_16wcslen(utf16)); }
 INTERN ATTR_UNITEXT char *LIBCCALL libc_utf32to8m(char32_t const *__restrict utf32) { return libc_utf32to8ms(utf32,libc_32wcslen(utf32)); }
+INTERN ATTR_UNITEXT char *LIBCCALL
+libc_utf16to8m(char16_t const *__restrict utf16) {
+#ifdef CONFIG_LIBC_NO_DOS_LIBC
+ char16_t const *utf16_end = utf16;
+ while (*utf16_end) ++utf16_end;
+ return libc_utf16to8ms(utf16,(size_t)(utf16_end-utf16));
+#else
+ return libc_utf16to8ms(utf16,libc_16wcslen(utf16));
+#endif
+}
 
 
 /* Export the Unicode API (available through the <unicode.h> KOS extension header) */

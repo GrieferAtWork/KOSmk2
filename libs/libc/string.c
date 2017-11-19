@@ -33,7 +33,6 @@
 #include <bits/signum.h>
 #include <hybrid/section.h>
 #include <errno.h>
-#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/atomic.h>
 #include <hybrid/byteorder.h>
@@ -50,6 +49,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <errno.h>
+
+#if defined(__i386__) || defined(__x86_64__)
+#include <asm/cpu-flags.h>
+#endif
 
 #ifndef __KERNEL__
 #include "system.h"

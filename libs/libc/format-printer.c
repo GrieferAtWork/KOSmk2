@@ -828,16 +828,20 @@ have_precision:;
      } else
 #endif
 #if PRINTF_EXTENSION_UNICODE
-     if (length == len_U16)
+     if (length == len_U16) {
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
       precision = libc_16wcsnlen((char16_t *)s,precision);
-     else if (length == len_U32)
-      precision = libc_32wcsnlen((char32_t *)s,precision);
-     else
+#else
+      char16_t *iter,*end;
+      end = (iter = (char16_t *)s)+precision;
+      while (iter != end && *iter) ++iter;
+      precision = (size_t)(iter-(char16_t *)s);
 #endif
-     {
-      
-      precision = libc_strnlen(s,precision);
-     }
+     } else if (length == len_U32) {
+      precision = libc_32wcsnlen((char32_t *)s,precision);
+     } else
+#endif
+     { precision = libc_strnlen(s,precision); }
     }
 #ifdef PRINTF_FLAG_QUOTE
     if (flags&PRINTF_FLAG_QUOTE)
@@ -874,8 +878,12 @@ quote_string:
 #ifndef __KERNEL__
      if (length == len_l) {
       mbstate_t state = MBSTATE_INIT;
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
       temp = unlikely(wch16) ? libc_format_16wsztomb(printer,closure,(char16_t *)s,precision,&state,UNICODE_F_NOFAIL)
                              : libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state,UNICODE_F_NOFAIL);
+#else /* CONFIG_LIBC_NO_DOS_LIBC */
+      temp = libc_format_32wsztomb(printer,closure,(char32_t *)s,precision,&state,UNICODE_F_NOFAIL);
+#endif /* CONFIG_LIBC_NO_DOS_LIBC */
      } else
 #endif
 #if PRINTF_EXTENSION_UNICODE

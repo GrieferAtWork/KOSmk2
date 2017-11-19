@@ -29,6 +29,7 @@ BEGIN
 #endif
 	DEFINE("CONFIG_STRALIGN="+KERNEL_CONFIG_STRALIGN)
 
+#if defined(TARGET_X86_64) || defined(TARGET_I386)
 	/* Disable generation of code that uses floating point registers.
 	 * It would be too expensive for kernel code to make use of floating
 	 * point registers in a way that preserves the original user-space
@@ -42,6 +43,7 @@ BEGIN
 	C_FLAGS("-mno-3dnow")
 	C_FLAGS("-mno-avx")
 	C_FLAGS("-mtls-direct-seg-refs")
+#endif
 
 	INCLUDE("arch/" CONFIG_TARGET_NAME "/include")
 	INCLUDE("include")

@@ -44,11 +44,11 @@
 #include <hybrid/xch.h>
 #include <sys/syslog.h>
 #include <sys/mman.h>
-#include <bits/dos-errno.h>
 #include <sys/sysinfo.h>
 #include <bits/confname.h>
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <bits/dos-errno.h>
 #include <byteswap.h>
 #include <bits/rotate.h>
 #include <winapi/windows.h>

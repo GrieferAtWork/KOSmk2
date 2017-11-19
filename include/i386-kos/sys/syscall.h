@@ -16,10 +16,11 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _SYS_SYSCALL_H
+#ifndef _I386_KOS_SYS_SYSCALL_H
+#define _I386_KOS_SYS_SYSCALL_H 1
 #define _SYS_SYSCALL_H 1
 
 #include <asm/unistd.h>
 #include <bits/syscall.h>
 
-#endif /* !_SYS_SYSCALL_H */
+#endif /* !_I386_KOS_SYS_SYSCALL_H */

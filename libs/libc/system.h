@@ -22,6 +22,7 @@
 #include "libc.h"
 #include <bits/siginfo.h>
 #include <bits/sigset.h>
+#include <bits/sigcontext.h>
 #include <hybrid/compiler.h>
 #include <hybrid/timespec.h>
 #include <hybrid/types.h>
@@ -145,7 +146,7 @@ LOCAL SYSCALL0(pid_t,getppid,(void));
 LOCAL SYSCALL0(pid_t,gettid,(void));
 LOCAL SYSCALL1(pid_t,getpgid,(pid_t,pid));
 LOCAL SYSCALL2(int,setpgid,(pid_t,pid,pid_t,pgid));
-LOCAL SYSCALL1(void,sigreturn,(struct ucontext const *,scp));
+LOCAL SYSCALL1(void,sigreturn,(struct sigcontext const *,scp));
 LOCAL SYSCALL4(errno_t,sigaction,(int,sig,USER struct sigaction const *,act,USER struct sigaction *,oact,size_t,sigsetsize));
 LOCAL SYSCALL4(errno_t,sigprocmask,(int,how,USER __sigset_t const *,set,USER __sigset_t *,oldset,size_t,sigsetsize));
 LOCAL SYSCALL4(errno_t,sigtimedwait,(USER __sigset_t const *,uthese,USER siginfo_t *,uinfo,USER struct kernel_timespec const *,uts,size_t,sigsetsize));

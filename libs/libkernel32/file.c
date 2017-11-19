@@ -1146,7 +1146,6 @@ K32_CopyFileExA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName,
  /* Transfer data to the target stream. */
  for (;;) {
   if (pbCancel && *pbCancel) goto err_cancel_delete;
-  ERROR_REQUEST_ABORTED;
   read_part = read(sfd,buffer,source_info.st_blksize);
   if (!read_part) break; /* That was the last part. - we're done! */
   if (read_part < 0) goto end;

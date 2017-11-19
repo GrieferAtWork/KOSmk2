@@ -44,7 +44,7 @@ PUBLIC struct envdata *appenv;
 
 PUBLIC ATTR_NORETURN
 void (FCALL __entry)(struct envdata *__restrict env, pmain main) {
-#if 1
+#if defined(TLB_PEEKI) && 1
  /* With module initializer now a thing, we can no longer rely
   * on the original ECX/RDI passed by the kernel to be correct...
   * XXX: Find a better solution? */

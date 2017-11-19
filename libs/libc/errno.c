@@ -45,9 +45,16 @@ DECL_BEGIN
 #define NTERRNO2   offsetof(struct tib,it_error_code)
 
 #ifdef CONFIG_LIBC_NO_DOS_LIBC
+#ifdef TLB_ADDR
 INTERN errno_t *LIBCCALL libc_errno(void) { return (errno_t *)TLB_ADDR(ERRNO_VAL); }
 INTERN errno_t LIBCCALL libc_get_errno(void) { return (errno_t)TLB_PEEKL(ERRNO_VAL); }
 INTERN errno_t LIBCCALL libc_set_errno(errno_t err) { TLB_POKEL(ERRNO_VAL,(u32)err); return EOK; }
+#else
+PRIVATE errno_t current_errno;
+INTERN errno_t *LIBCCALL libc_errno(void) { return &current_errno; }
+INTERN errno_t LIBCCALL libc_get_errno(void) { return current_errno; }
+INTERN errno_t LIBCCALL libc_set_errno(errno_t err) { current_errno = err; return EOK; }
+#endif
 #else
 
 INTERN errno_t *LIBCCALL libc_errno(void) {

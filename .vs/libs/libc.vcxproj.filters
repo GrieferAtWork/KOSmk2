@@ -56,6 +56,12 @@
     <None Include="..\..\libs\libc\arch\arm-kos\asm.c.inl">
       <Filter>arch\arm-kos</Filter>
     </None>
+    <None Include="..\..\libs\libc\arch\i386-kos\assert.c.inl">
+      <Filter>arch\i386-kos</Filter>
+    </None>
+    <None Include="..\..\libs\libc\arch\arm-kos\assert.c.inl">
+      <Filter>arch\arm-kos</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\libc\system.h" />
@@ -88,6 +94,7 @@
     <ClInclude Include="..\..\libs\libc\unicode.h" />
     <ClInclude Include="..\..\libs\libc\file.h" />
     <ClInclude Include="..\..\libs\libc\regex.h" />
+    <ClInclude Include="..\..\libs\libc\assert.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">

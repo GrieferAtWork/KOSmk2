@@ -29,8 +29,11 @@
 #include <sched/signal.h>
 #include <bits/signum.h>
 #include <kernel/syscall.h>
-#include <kos/thread.h>
 #include <arch/current_context.h>
+
+#if defined(__i386__) || defined(__x86_64__)
+#include <kos/thread.h>
+#endif
 
 DECL_BEGIN
 
@@ -70,6 +73,7 @@ stack_mnotify(unsigned int type, void *__restrict closure,
   if (STACK->s_end < addr)
       STACK->s_end = addr;
 
+#if defined(__i386__) || defined(__x86_64__)
 #ifndef CONFIG_NO_TLB
   if ((t = stack_task(STACK)) != NULL) {
    struct {
@@ -85,6 +89,7 @@ stack_mnotify(unsigned int type, void *__restrict closure,
    TASK_DECREF(t);
   }
 #endif /* !CONFIG_NO_TLB */
+#endif
 
  } break;
 

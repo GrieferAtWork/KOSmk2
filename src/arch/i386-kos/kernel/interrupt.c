@@ -80,7 +80,7 @@ STATIC_ASSERT(offsetof(struct interrupt_table,it_tab) == 256*IDTENTRY_SIZE);
 
 INTERN CPU_BSS struct PACKED interrupt_table inttab;
 GLOBAL_ASM(
-L(SYM_PUBLIC(intno_offset)                         )
+L(DEFINE_PUBLIC(intno_offset)                         )
 L(intno_offset = inttab+(256*IDTENTRY_SIZE)        )
 );
 

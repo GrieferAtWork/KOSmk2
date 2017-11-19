@@ -21,49 +21,24 @@
 
 #include <hybrid/typecore.h>
 
-#if __SIZEOF_REGISTER__ == 4
-#   define __ASM_SCRATCH_OFFSETOF_R0   0
-#   define __ASM_SCRATCH_OFFSETOF_R1   4
-#   define __ASM_SCRATCH_OFFSETOF_R2   8
-#   define __ASM_SCRATCH_OFFSETOF_R3   12
-#   define __ASM_SCRATCH_SIZE          16 /* 4*4 */
-#elif __SIZEOF_REGISTER__ == 8
-#   define __ASM_SCRATCH_OFFSETOF_R0   0
-#   define __ASM_SCRATCH_OFFSETOF_R1   8
-#   define __ASM_SCRATCH_OFFSETOF_R2   16
-#   define __ASM_SCRATCH_OFFSETOF_R3   24
-#   define __ASM_SCRATCH_SIZE          32 /* 4*8 */
-#else
-#   error "Unsupported sizeof(register_t)"
-#endif
+#define __ASM_SCRATCH_OFFSETOF_R0   0
+#define __ASM_SCRATCH_OFFSETOF_R1   4
+#define __ASM_SCRATCH_OFFSETOF_R2   8
+#define __ASM_SCRATCH_OFFSETOF_R3   12
+#define __ASM_SCRATCH_SIZE          16 /* 4*4 */
 #define __ASM_PUSH_SCRATCH          push {r0-r3};
 #define __ASM_POP_SCRATCH           pop  {r0-r3};
 
-#if __SIZEOF_REGISTER__ == 4
-#   define __ASM_SCRATCH_OFFSETOF_R4   0
-#   define __ASM_SCRATCH_OFFSETOF_R5   4
-#   define __ASM_SCRATCH_OFFSETOF_R6   8
-#   define __ASM_SCRATCH_OFFSETOF_R7   12
-#   define __ASM_SCRATCH_OFFSETOF_R8   16
-#   define __ASM_SCRATCH_OFFSETOF_R9   20
-#   define __ASM_SCRATCH_OFFSETOF_R10  24
-#   define __ASM_SCRATCH_OFFSETOF_R11  28
-#   define __ASM_SCRATCH_OFFSETOF_R13  32
-#   define __ASM_PRESERVE_SIZE         36 /* 9*4 */
-#elif __SIZEOF_REGISTER__ == 8
-#   define __ASM_SCRATCH_OFFSETOF_R4   0
-#   define __ASM_SCRATCH_OFFSETOF_R5   8
-#   define __ASM_SCRATCH_OFFSETOF_R6   16
-#   define __ASM_SCRATCH_OFFSETOF_R7   24
-#   define __ASM_SCRATCH_OFFSETOF_R8   32
-#   define __ASM_SCRATCH_OFFSETOF_R9   40
-#   define __ASM_SCRATCH_OFFSETOF_R10  48
-#   define __ASM_SCRATCH_OFFSETOF_R11  56
-#   define __ASM_SCRATCH_OFFSETOF_R13  64
-#   define __ASM_PRESERVE_SIZE         72 /* 9*8 */
-#else
-#   error "Unsupported sizeof(register_t)"
-#endif
+#define __ASM_SCRATCH_OFFSETOF_R4   0
+#define __ASM_SCRATCH_OFFSETOF_R5   4
+#define __ASM_SCRATCH_OFFSETOF_R6   8
+#define __ASM_SCRATCH_OFFSETOF_R7   12
+#define __ASM_SCRATCH_OFFSETOF_R8   16
+#define __ASM_SCRATCH_OFFSETOF_R9   20
+#define __ASM_SCRATCH_OFFSETOF_R10  24
+#define __ASM_SCRATCH_OFFSETOF_R11  28
+#define __ASM_SCRATCH_OFFSETOF_R13  32
+#define __ASM_PRESERVE_SIZE         36 /* 9*4 */
 #define __ASM_PUSH_PRESERVE         push {r4-r11,r13};
 #define __ASM_POP_PRESERVE          pop  {r13,r4-r11};
 

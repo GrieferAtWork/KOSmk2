@@ -305,6 +305,10 @@ __SYSDECL_BEGIN
 #define _SC_THREAD_ROBUST_PRIO_INHERIT 262
 #define _SC_THREAD_ROBUST_PRIO_PROTECT 263
 
+#ifdef __USE_KOS
+#define _SC_COUNT                  264
+#endif
+
 /* Values for the NAME argument to `confstr'.  */
 #define _CS_PATH                   0
 #define _CS_V6_WIDTH_RESTRICTED_ENVS 1

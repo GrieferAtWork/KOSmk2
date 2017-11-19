@@ -233,10 +233,10 @@ __LIBC __WUNUSED int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t _
 #else /* !__GLC_COMPAT__ && __CRT_DOS */
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isleadbyte)(int __wc)) { return __wc >= 192 && __wc <= 255; }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isleadbyte_l)(int __wc, __locale_t __UNUSED(__locale))) { return __wc >= 192 && __wc <= 255; }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __iswcsymf)(wint_t __wc)) { return __NAMESPACE_STD_SYM iswalpha(wc) || wc == '_' }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __iswcsym)(wint_t __wc)) { return __NAMESPACE_STD_SYM iswalnum(wc) || wc == '_' }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _iswcsymf_l)(wint_t __wc, __locale_t __locale)) { return _iswalpha_l(wc,__locale) || wc == '_' }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t __locale)) { return _iswalnum_l(wc,__locale) || wc == '_' }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __iswcsymf)(wint_t __wc)) { return __NAMESPACE_STD_SYM iswalpha(__wc) || __wc == '_'; }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL __iswcsym)(wint_t __wc)) { return __NAMESPACE_STD_SYM iswalnum(__wc) || __wc == '_'; }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _iswcsymf_l)(wint_t __wc, __locale_t __locale)) { return _iswalpha_l(__wc,__locale) || __wc == '_'; }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _iswcsym_l)(wint_t __wc, __locale_t __locale)) { return _iswalnum_l(__wc,__locale) || __wc == '_'; }
 #endif /* __GLC_COMPAT__ || !__CRT_DOS */
 #endif /* __USE_DOS */
 #endif /* !_WCTYPE_DEFINED */

@@ -134,7 +134,7 @@ INTDEF ATTR_NORETURN void  cpu_bootstrap_c(void);
 
 GLOBAL_ASM(
 L(RM_BEGIN_EX(0x1000)                                   )
-L(SYM_PRIVATE(cpu_bootstrap)                            )
+L(DEFINE_PRIVATE(cpu_bootstrap)                            )
 L(cpu_bootstrap:                                        )
 //L(1:  jmp 1b                                            )
 L(    /* This is where a newly started CPU begins */    )
@@ -190,7 +190,7 @@ L(    movl ASM_CPU(CPU_OFFSETOF_IDLE+ \
            %esp                                         )
 L(                                                      )
 L(    /* Time to switch to C */                         )
-L(SYM_PRIVATE(cpu_bootstrap_c)                          )
+L(DEFINE_PRIVATE(cpu_bootstrap_c)                          )
 L(    jmp cpu_bootstrap_c                               )
 L(.size cpu_bootstrap_32, . - cpu_bootstrap_32          )
 L(.previous                                             )
@@ -574,7 +574,7 @@ end:
 INTDEF void ASMCALL lapic_spurious_irq_handler(void);
 GLOBAL_ASM(
 L(.section .text.cold                                   )
-L(SYM_PRIVATE(lapic_spurious_irq_handler)               )
+L(DEFINE_PRIVATE(lapic_spurious_irq_handler)               )
 L(lapic_spurious_irq_handler:                           )
 L(    /* Atomically increment the sporadic IRQ counter */)
 L(    ASM_LOCK incl ASM_CPU(CPU_OFFSETOF_ARCH+ \

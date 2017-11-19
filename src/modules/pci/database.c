@@ -164,11 +164,11 @@
 
 /* Export database sections and constants. */
 #define EXPORT_CONSTANT(name,value) \
-__asm__(PP_STR(SYM_PUBLIC(name)) "\n" \
+__asm__(PP_STR(DEFINE_PUBLIC(name)) "\n" \
         ".type " PP_STR(name) ", @notype\n" \
         ".set " PP_STR(name) ", " PP_STR(value) "\n")
 #define EXPORT_SECTION(name,section_name) \
-__asm__(PP_STR(SYM_PUBLIC(name)) "\n" \
+__asm__(PP_STR(DEFINE_PUBLIC(name)) "\n" \
         ".type " PP_STR(name) ", @object\n" \
         ".set " PP_STR(name) ", " section_name "\n")
 

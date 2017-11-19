@@ -29,6 +29,9 @@ BEGIN LIBRARY("libc")
 	if (config_debug) {
 		DEFINE("CONFIG_DEBUG=1")
 	}
+#ifdef TARGET_ARM
+	DEFINE("CONFIG_LIBC_NO_DOS_LIBC")
+#endif
 
 	/* Linking with -Bsymbolic further speeds up linking,
 	 * because no GOT needs to be used meaning that the 

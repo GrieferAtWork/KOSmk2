@@ -30,7 +30,6 @@
 #include <sys/syslog.h>
 #include <malloc.h>
 #include <string.h>
-#include <sys/utsname.h>
 
 DECL_BEGIN
 

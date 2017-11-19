@@ -55,8 +55,10 @@
 //#   define __x86_64 1
 #   define WIN64    1
 #   define _WIN64   1
-#else
+#elif defined(__i386__)
 #   define _X86_    1
+#elif defined(__arm__)
+#   define _ARM_    1
 #endif
 
 #ifdef __WCHAR_DEFINED

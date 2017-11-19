@@ -38,11 +38,13 @@
 #include <hybrid/section.h>
 #include <limits.h>
 #include <bits/fcntl-linux.h>
-#include <bits/dos-errno.h>
 #include <sys/timeb.h>
 #include <utime.h>
 #include <bits/stat.h>
 #include <sys/times.h>
+#ifndef CONFIG_LIBC_NO_DOS_LIBC
+#include <bits/dos-errno.h>
+#endif /* !CONFIG_LIBC_NO_DOS_LIBC */
 
 DECL_BEGIN
 

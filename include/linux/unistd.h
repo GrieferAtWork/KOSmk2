@@ -35,7 +35,7 @@ __SYSDECL_BEGIN
 #define __PRIVATE_SYSCALL_ATTR4(x)    __PRIVATE_SYSCALL_ATTR5 x
 #define __PRIVATE_SYSCALL_ATTR3(x)    __PRIVATE_SYSCALL_ATTR4((__PRIVATE_SYSCALL_ATTR6_##x 1,0))
 #define __PRIVATE_SYSCALL_ATTR2(x)    __PRIVATE_SYSCALL_ATTR3(x)
-#ifdef __x86_64__
+#if defined(__x86_64__) && 0
 #define __PRIVATE_IMPL__CLOB_0
 #define __PRIVATE_IMPL__CLOB_1(x)    ,x
 #define __PRIVATE_IMPL_CLOB2(x) __PRIVATE_IMPL##x
@@ -121,13 +121,13 @@ __SYSDECL_BEGIN
     __asm__ __volatile__("int {$}0x80\n" \
                          : "=a" (res) \
                          : "a" (id) __SYSCALL_ASMREG##n args \
-                         : "r11" __SYSCALL_CLOBB(id)); \
+                         : /*"r11"*/ __SYSCALL_CLOBB(id)); \
   }
 #define __PRIVATE_SYSCALL_ASM_1(n,id,args) \
   { __SYSCALL_ASMLOC##n args \
     __asm__ __volatile__("int {$}0x80\n" \
                          : : "a" (id) __SYSCALL_ASMREG##n args \
-                         : "r11" __SYSCALL_CLOBB(id)); \
+                         : /*"r11"*/ __SYSCALL_CLOBB(id)); \
   }
 #endif
 #elif defined(__i386__)
@@ -180,9 +180,140 @@ __SYSDECL_BEGIN
                              : : "a" (id) __SYSCALL_ASMREG##n args \
                              : __SYSCALL_CLOBB(id))
 #endif
+#elif defined(__arm__)
+#define __SYSCALL_ASMREGGRP_00        1
+#define __SYSCALL_ASMREGGRP_10        0
+#define __SYSCALL_ASMREGGRP_01        2
+#define __SYSCALL_ASMREGGRP_11        0
+#define __SYSCALL_ASMREGGRP3(nrt,lng) __SYSCALL_ASMREGGRP_##nrt##lng
+#define __SYSCALL_ASMREGGRP2(nrt,lng) __SYSCALL_ASMREGGRP3(nrt,lng)
+#define __SYSCALL_ASMREGGRP(id) __SYSCALL_ASMREGGRP2(__SYSCALL_ISNRT(id),__SYSCALL_ISLNG(id))
+/* Input registers       v 0: void/noreturn, 1: normal, 2: long */
+#define __SYSCALL_ASMIREG00(...)                                                   /* Nothing */
+#define __SYSCALL_ASMIREG01(a1)                                                    , "r" (__sc_r0)
+#define __SYSCALL_ASMIREG02(a1,a2)              __SYSCALL_ASMIREG01(a1)            , "r" (__sc_r1)
+#define __SYSCALL_ASMIREG03(a1,a2,a3)           __SYSCALL_ASMIREG02(a1,a2)         , "r" (__sc_r2)
+#define __SYSCALL_ASMIREG04(a1,a2,a3,a4)        __SYSCALL_ASMIREG03(a1,a2,a3)      , "r" (__sc_r3)
+#define __SYSCALL_ASMIREG05(a1,a2,a3,a4,a5)     __SYSCALL_ASMIREG04(a1,a2,a3,a4)   , "r" (__sc_r4)
+#define __SYSCALL_ASMIREG06(a1,a2,a3,a4,a5,a6)  __SYSCALL_ASMIREG05(a1,a2,a3,a4,a5), "r" (__sc_r5)
+#define __SYSCALL_ASMIREG10(...)                                                   /* Nothing */
+#define __SYSCALL_ASMIREG11(a1)                                                    /* Nothing */
+#define __SYSCALL_ASMIREG12(a1,a2)                                                 , "r" (__sc_r1)
+#define __SYSCALL_ASMIREG13(a1,a2,a3)           __SYSCALL_ASMIREG12(a1,a2)         , "r" (__sc_r2)
+#define __SYSCALL_ASMIREG14(a1,a2,a3,a4)        __SYSCALL_ASMIREG13(a1,a2,a3)      , "r" (__sc_r3)
+#define __SYSCALL_ASMIREG15(a1,a2,a3,a4,a5)     __SYSCALL_ASMIREG14(a1,a2,a3,a4)   , "r" (__sc_r4)
+#define __SYSCALL_ASMIREG16(a1,a2,a3,a4,a5,a6)  __SYSCALL_ASMIREG15(a1,a2,a3,a4,a5), "r" (__sc_r5)
+#define __SYSCALL_ASMIREG20(...)                                                   /* Nothing */
+#define __SYSCALL_ASMIREG21(a1)                                                    /* Nothing */
+#define __SYSCALL_ASMIREG22(a1,a2)                                                 /* Nothing */
+#define __SYSCALL_ASMIREG23(a1,a2,a3)                                              , "r" (__sc_r2)
+#define __SYSCALL_ASMIREG24(a1,a2,a3,a4)        __SYSCALL_ASMIREG23(a1,a2,a3)      , "r" (__sc_r3)
+#define __SYSCALL_ASMIREG25(a1,a2,a3,a4,a5)     __SYSCALL_ASMIREG24(a1,a2,a3,a4)   , "r" (__sc_r4)
+#define __SYSCALL_ASMIREG26(a1,a2,a3,a4,a5,a6)  __SYSCALL_ASMIREG25(a1,a2,a3,a4,a5), "r" (__sc_r5)
+/* Output registers      v 0: void/noreturn, 1: normal, 2: long */
+#define __SYSCALL_ASMOREG00(...)                                                   /* Nothing */
+#define __SYSCALL_ASMOREG01(a1)                                                    /* Nothing */
+#define __SYSCALL_ASMOREG02(a1,a2)                                                 /* Nothing */
+#define __SYSCALL_ASMOREG03(a1,a2,a3)                                              /* Nothing */
+#define __SYSCALL_ASMOREG04(a1,a2,a3,a4)                                           /* Nothing */
+#define __SYSCALL_ASMOREG05(a1,a2,a3,a4,a5)                                        /* Nothing */
+#define __SYSCALL_ASMOREG06(a1,a2,a3,a4,a5,a6)                                     /* Nothing */
+#define __SYSCALL_ASMOREG10(...)                                                   "=r" (__sc_r0)
+#define __SYSCALL_ASMOREG11(a1)                                                    "+r" (__sc_r0)
+#define __SYSCALL_ASMOREG12(a1,a2)                                                 "+r" (__sc_r0)
+#define __SYSCALL_ASMOREG13(a1,a2,a3)                                              "+r" (__sc_r0)
+#define __SYSCALL_ASMOREG14(a1,a2,a3,a4)                                           "+r" (__sc_r0)
+#define __SYSCALL_ASMOREG15(a1,a2,a3,a4,a5)                                        "+r" (__sc_r0)
+#define __SYSCALL_ASMOREG16(a1,a2,a3,a4,a5,a6)                                     "+r" (__sc_r0)
+#define __SYSCALL_ASMOREG20(...)                                                   "=r" (__sc_r0), "=r" (__sc_r1)
+#define __SYSCALL_ASMOREG21(a1)                                                    "+r" (__sc_r0), "=r" (__sc_r1)
+#define __SYSCALL_ASMOREG22(a1,a2)                                                 "+r" (__sc_r0), "+r" (__sc_r1)
+#define __SYSCALL_ASMOREG23(a1,a2,a3)                                              "+r" (__sc_r0), "+r" (__sc_r1)
+#define __SYSCALL_ASMOREG24(a1,a2,a3,a4)                                           "+r" (__sc_r0), "+r" (__sc_r1)
+#define __SYSCALL_ASMOREG25(a1,a2,a3,a4,a5)                                        "+r" (__sc_r0), "+r" (__sc_r1)
+#define __SYSCALL_ASMOREG26(a1,a2,a3,a4,a5,a6)                                     "+r" (__sc_r0), "+r" (__sc_r1)
+/* Register variables   v 0: void/noreturn, 1: normal, 2: long */
+#define __SYSCALL_ASMLREG00(...)                                                    /* nothing */
+#define __SYSCALL_ASMLREG01(a1)                                                     register __UINTPTR_TYPE__ __sc_r0 asm("r0") = (__UINTPTR_TYPE__)(a1);
+#define __SYSCALL_ASMLREG02(a1,a2)              __SYSCALL_ASMLREG01(a1)             register __UINTPTR_TYPE__ __sc_r1 asm("r1") = (__UINTPTR_TYPE__)(a2);
+#define __SYSCALL_ASMLREG03(a1,a2,a3)           __SYSCALL_ASMLREG02(a1,a2)          register __UINTPTR_TYPE__ __sc_r2 asm("r2") = (__UINTPTR_TYPE__)(a3);
+#define __SYSCALL_ASMLREG04(a1,a2,a3,a4)        __SYSCALL_ASMLREG03(a1,a2,a3)       register __UINTPTR_TYPE__ __sc_r3 asm("r3") = (__UINTPTR_TYPE__)(a4);
+#define __SYSCALL_ASMLREG05(a1,a2,a3,a4,a5)     __SYSCALL_ASMLREG04(a1,a2,a3,a4)    register __UINTPTR_TYPE__ __sc_r4 asm("r4") = (__UINTPTR_TYPE__)(a5);
+#define __SYSCALL_ASMLREG06(a1,a2,a3,a4,a5,a6)  __SYSCALL_ASMLREG05(a1,a2,a3,a4,a5) register __UINTPTR_TYPE__ __sc_r5 asm("r5") = (__UINTPTR_TYPE__)(a6);
+#define __SYSCALL_ASMLREG10(...)                                                    register __UINTPTR_TYPE__ __sc_r0 asm("r0");
+#define __SYSCALL_ASMLREG11(a1)                                                     register __UINTPTR_TYPE__ __sc_r0 asm("r0") = (__UINTPTR_TYPE__)(a1);
+#define __SYSCALL_ASMLREG12(a1,a2)              __SYSCALL_ASMLREG11(a1)             register __UINTPTR_TYPE__ __sc_r1 asm("r1") = (__UINTPTR_TYPE__)(a2);
+#define __SYSCALL_ASMLREG13(a1,a2,a3)           __SYSCALL_ASMLREG12(a1,a2)          register __UINTPTR_TYPE__ __sc_r2 asm("r2") = (__UINTPTR_TYPE__)(a3);
+#define __SYSCALL_ASMLREG14(a1,a2,a3,a4)        __SYSCALL_ASMLREG13(a1,a2,a3)       register __UINTPTR_TYPE__ __sc_r3 asm("r3") = (__UINTPTR_TYPE__)(a4);
+#define __SYSCALL_ASMLREG15(a1,a2,a3,a4,a5)     __SYSCALL_ASMLREG14(a1,a2,a3,a4)    register __UINTPTR_TYPE__ __sc_r4 asm("r4") = (__UINTPTR_TYPE__)(a5);
+#define __SYSCALL_ASMLREG16(a1,a2,a3,a4,a5,a6)  __SYSCALL_ASMLREG15(a1,a2,a3,a4,a5) register __UINTPTR_TYPE__ __sc_r5 asm("r5") = (__UINTPTR_TYPE__)(a6);
+#define __SYSCALL_ASMLREG20(...)                                                    register __UINTPTR_TYPE__ __sc_r0 asm("r0"); \
+                                                                                    register __UINTPTR_TYPE__ __sc_r1 asm("r1");
+#define __SYSCALL_ASMLREG21(a1)                                                     register __UINTPTR_TYPE__ __sc_r0 asm("r0") = (__UINTPTR_TYPE__)(a1); \
+                                                                                    register __UINTPTR_TYPE__ __sc_r1 asm("r1");
+#define __SYSCALL_ASMLREG22(a1,a2)                                                  register __UINTPTR_TYPE__ __sc_r0 asm("r0") = (__UINTPTR_TYPE__)(a1); \
+                                                                                    register __UINTPTR_TYPE__ __sc_r1 asm("r1") = (__UINTPTR_TYPE__)(a2);
+#define __SYSCALL_ASMLREG23(a1,a2,a3)           __SYSCALL_ASMLREG22(a1,a2)          register __UINTPTR_TYPE__ __sc_r2 asm("r2") = (__UINTPTR_TYPE__)(a3);
+#define __SYSCALL_ASMLREG24(a1,a2,a3,a4)        __SYSCALL_ASMLREG23(a1,a2,a3)       register __UINTPTR_TYPE__ __sc_r3 asm("r3") = (__UINTPTR_TYPE__)(a4);
+#define __SYSCALL_ASMLREG25(a1,a2,a3,a4,a5)     __SYSCALL_ASMLREG24(a1,a2,a3,a4)    register __UINTPTR_TYPE__ __sc_r4 asm("r4") = (__UINTPTR_TYPE__)(a5);
+#define __SYSCALL_ASMLREG26(a1,a2,a3,a4,a5,a6)  __SYSCALL_ASMLREG25(a1,a2,a3,a4,a5) register __UINTPTR_TYPE__ __sc_r5 asm("r5") = (__UINTPTR_TYPE__)(a6);
+
+
+#define __SYSCALL_ASMIREG_3(mode,n,args) __SYSCALL_ASMIREG##mode##n args
+#define __SYSCALL_ASMOREG_3(mode,n,args) __SYSCALL_ASMOREG##mode##n args
+#define __SYSCALL_ASMLREG_3(mode,n,args) __SYSCALL_ASMLREG##mode##n args
+#define __SYSCALL_ASMIREG_2(mode,n,args) __SYSCALL_ASMIREG_3(mode,n,args)
+#define __SYSCALL_ASMOREG_2(mode,n,args) __SYSCALL_ASMOREG_3(mode,n,args)
+#define __SYSCALL_ASMLREG_2(mode,n,args) __SYSCALL_ASMLREG_3(mode,n,args)
+#define __SYSCALL_ASMIREG(id,n,args) __SYSCALL_ASMIREG_2(__SYSCALL_ASMREGGRP(id),n,args)
+#define __SYSCALL_ASMOREG(id,n,args) __SYSCALL_ASMOREG_2(__SYSCALL_ASMREGGRP(id),n,args)
+#define __SYSCALL_ASMLREG(id,n,args) __SYSCALL_ASMLREG_2(__SYSCALL_ASMREGGRP(id),n,args)
+
+#define __PRIVATE_SYSCALL_PACK_RESULT_0                       __sc_r0
+#define __PRIVATE_SYSCALL_PACK_RESULT_1     ((__UINT64_TYPE__)__sc_r0 | (__UINT64_TYPE__)__sc_r1 << 32)
+#define __PRIVATE_SYSCALL_PACK_RESULT2(lng) __PRIVATE_SYSCALL_PACK_RESULT_##lng
+#define __PRIVATE_SYSCALL_PACK_RESULT(lng)  __PRIVATE_SYSCALL_PACK_RESULT2(lng)
+
+#define __PRIVATE_SYSCALL_INL4_1(n,type,id,args) \
+        __XBLOCK({ __SYSCALL_ASMLREG(id,n,args) \
+                   register __UINTPTR_TYPE__ __sc_r7 asm("r7") = (id); \
+                   __asm__ __volatile__("svc 0x0\n" \
+                                        : __SYSCALL_ASMOREG(id,n,args) \
+                                        : "r" (__sc_r7) __SYSCALL_ASMIREG(id,n,args) \
+                                        : __SYSCALL_CLOBB(id)); \
+                   __builtin_unreachable(); (void)0; })
+#define __PRIVATE_SYSCALL_INL4_0(n,type,id,args) \
+        __XBLOCK({ __SYSCALL_ASMLREG(id,n,args) \
+                   register __UINTPTR_TYPE__ __sc_r7 asm("r7") = (id); \
+                   __asm__ __volatile__("svc 0x0\n" \
+                                        : __SYSCALL_ASMOREG(id,n,args) \
+                                        : "r" (__sc_r7) __SYSCALL_ASMIREG(id,n,args) \
+                                        : __SYSCALL_CLOBB(id)); \
+                   __XRETURN (type)__PRIVATE_SYSCALL_PACK_RESULT(__SYSCALL_ISLNG(id)); })
+#define __PRIVATE_SYSCALL_FUN4_1(n,cc,post_attr,type,id,name,decl) \
+       __ATTR_NORETURN void (cc name)(__SYSCALL_DECL##n decl) post_attr { \
+           __SYSCALL_ASMLREG(id,n,(__SYSCALL_ENUM##n decl)) \
+           register __UINTPTR_TYPE__ __sc_r7 asm("r7") = (id); \
+           __asm__ __volatile__("svc 0x0\n" \
+                                : __SYSCALL_ASMOREG(id,n,(__SYSCALL_ENUM##n decl)) \
+                                : "r" (__sc_r7) __SYSCALL_ASMIREG(id,n,(__SYSCALL_ENUM##n decl)) \
+                                : __SYSCALL_CLOBB(id)); \
+           __builtin_unreachable(); \
+       }
+#define __PRIVATE_SYSCALL_FUN4_0(n,cc,post_attr,type,id,name,decl) \
+       type (cc name)(__SYSCALL_DECL##n decl) post_attr { \
+           __SYSCALL_ASMLREG(id,n,(__SYSCALL_ENUM##n decl)) \
+           register __UINTPTR_TYPE__ __sc_r7 asm("r7") = (id); \
+           __asm__ __volatile__("svc 0x0\n" \
+                                : __SYSCALL_ASMOREG(id,n,(__SYSCALL_ENUM##n decl)) \
+                                : "r" (__sc_r7) __SYSCALL_ASMIREG(id,n,(__SYSCALL_ENUM##n decl)) \
+                                : __SYSCALL_CLOBB(id)); \
+           return (type)__PRIVATE_SYSCALL_PACK_RESULT(__SYSCALL_ISLNG(id)); \
+       }
 #else
 #error "Unsupported arch"
 #endif
+#define __SYSCALL_TRACE(id) /* Nothing */
 
 #define __SYSCALL_INL(n,type,id,args)                   __PRIVATE_SYSCALL_INL2(__SYSCALL_ISNRT(id),n,type,id,args)
 #define __SYSCALL_FUN(n,cc,post_attr,type,id,name,decl) __PRIVATE_SYSCALL_FUN2(__SYSCALL_ISNRT(id),n,cc,post_attr,type,id,name,decl)
@@ -192,8 +323,8 @@ __SYSDECL_BEGIN
 #define __PRIVATE_SYSCALL_INL3(nr,n,type,id,args)                   __PRIVATE_SYSCALL_INL4_##nr(n,type,id,args)
 #define __PRIVATE_SYSCALL_FUN3(nr,n,cc,post_attr,type,id,name,decl) __PRIVATE_SYSCALL_FUN4_##nr(n,cc,post_attr,type,id,name,decl)
 
-#define __SYSCALL_TRACE(id) /* Nothing */
 
+#ifndef __PRIVATE_SYSCALL_INL4_1
 #define __PRIVATE_SYSCALL_INL4_1(n,type,id,args) \
         __XBLOCK({ __SYSCALL_TRACE(id) \
                    __PRIVATE_SYSCALL_ASM_1(n,id,args); \
@@ -208,7 +339,7 @@ __SYSDECL_BEGIN
         __XBLOCK({ register type __res; \
                    __SYSCALL_TRACE(id) \
                    __PRIVATE_SYSCALL_ASM_0(n,__res,id,args); \
-                   XRETURN __res; })
+                   __XRETURN __res; })
 #define __PRIVATE_SYSCALL_FUN4_0(n,cc,post_attr,type,id,name,decl) \
        type (cc name)(__SYSCALL_DECL##n decl) post_attr { \
            register type __res; \
@@ -216,6 +347,7 @@ __SYSDECL_BEGIN
            __PRIVATE_SYSCALL_ASM_0(n,__res,id,(__SYSCALL_ENUM##n decl)); \
            return __res; \
        }
+#endif /* !__PRIVATE_SYSCALL_INL4_1 */
 
 
 /* Call a system-call in-line, or define a wrapper function. */

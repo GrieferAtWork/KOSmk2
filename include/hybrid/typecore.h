@@ -131,9 +131,9 @@
 
 #ifndef __SIZEOF_POINTER__
 #   include <hybrid/host.h>
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(__aarch64__)
 #   define __SIZEOF_POINTER__ 8
-#elif defined(__i386__)
+#elif defined(__i386__) || defined(__arm__)
 #   define __SIZEOF_POINTER__ 4
 #elif defined(__SIZEOF_SIZE_T__)
 #   define __SIZEOF_POINTER__ __SIZEOF_SIZE_T__
