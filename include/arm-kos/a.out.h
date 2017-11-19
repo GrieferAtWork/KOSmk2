@@ -16,11 +16,12 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ARM_KOS_ASM_UNISTD_H
-#define _ARM_KOS_ASM_UNISTD_H 1
-#define _ASM_UNISTD_H 1
+#ifndef _ARM_KOS_A_OUT_H
+#define _ARM_KOS_A_OUT_H 1
 
-#include <bits/types.h>
-#include "syscallno.ci"
+#include <__stdinc.h>
+#include <features.h>
 
-#endif /* !_ARM_KOS_ASM_UNISTD_H */
+#define __NO_A_OUT_SUPPORT 1
+
+#endif /* !_ARM_KOS_A_OUT_H */

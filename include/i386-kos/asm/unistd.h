@@ -18,6 +18,7 @@
  */
 #ifndef _I386_KOS_ASM_UNISTD_H
 #define _I386_KOS_ASM_UNISTD_H 1
+#define _ASM_UNISTD_H 1
 
 #include <bits/types.h>
 #include "syscallno.ci"

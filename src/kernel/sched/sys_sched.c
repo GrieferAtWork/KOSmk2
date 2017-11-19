@@ -23,7 +23,6 @@
 
 #include <alloca.h>
 #include <arch/cpustate.h>
-#include <asm/instx.h>
 #include <bits/resource.h>
 #include <bits/sched.h>
 #include <bits/waitflags.h>
@@ -271,7 +270,7 @@ end_double_lock:
    result->t_cstate = cs = ((HOST struct cpustate *)result->t_hstack.hs_end-1);
    /* Inherit practically all registers from the calling thread. */
    memcpy(cs,state,sizeof(struct cpustate));
-   cs->gp.xax = 0; /* The child process returns ZERO(0) in EAX. */
+   GPREGS_SYSCALL_RET1(cs->gp) = 0; /* The child process returns ZERO(0). */
 #if 0
    syslog(LOG_DEBUG,"FORK at %p\n",cs->iret.xip);
    syslog(LOG_DEBUG,REGISTER_PREFIX "AX %p "
@@ -964,8 +963,8 @@ end_double_lock:
    /* Inherit all registers from the calling thread. */
    memcpy(cs,regs,sizeof(struct cpustate));
    /* Override special registers indicative of the child thread. */
-   cs->iret.userxsp = (uintptr_t)newsp;
-   cs->gp.xax = 0; /* The child process returns ZERO(0) in EAX. */
+   CPUSTATE_SP(cs) = (uintptr_t)newsp;
+   GPREGS_SYSCALL_RET1(cs->gp) = 0; /* The child process returns ZERO(0). */
 #if 0
    syslog(LOG_DEBUG,"FORK at %p\n",cs->iret.xip);
    syslog(LOG_DEBUG,"EAX %p  ECX %p  EDX %p  EBX %p EFLAGS %p\n",

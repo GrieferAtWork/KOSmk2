@@ -25,6 +25,7 @@
 /*#include <signal.h>*/
 #include <bits/sigstack.h>
 #include <asm/sigcontext.h>
+#include <bits/sigset.h>
 
 /* Copyright (C) 1998-2016 Free Software Foundation, Inc.
    This file is part of the GNU C Library.

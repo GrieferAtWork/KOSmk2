@@ -37,6 +37,10 @@ DECL_BEGIN
  * NOTE: On i386, that simply is every bit there is (All 32). */
 #define VIRT_MASK       __UINT32_C(0xffffffff)
 
+
+
+#define PDIR_ATTR_PRESENT 0
+#define PDIR_ATTR_WRITE   0
 #ifdef __CC__
 typedef u32 pdir_attr_t;
 typedef struct _pdir pdir_t;

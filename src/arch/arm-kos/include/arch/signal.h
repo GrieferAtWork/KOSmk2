@@ -24,6 +24,7 @@
 #include <hybrid/host.h>
 #include <sys/ucontext.h>
 #include <bits/siginfo.h>
+#include <arch/syscall.h>
 
 DECL_BEGIN
 
@@ -52,7 +53,13 @@ union PACKED {
 #define SIGENTER_OFFSETOF_NEXT      __SIZEOF_POINTER__
 #define SIGENTER_OFFSETOF_IP     (2*__SIZEOF_POINTER__)
 #define SIGENTER_OFFSETOF_SP     (3*__SIZEOF_POINTER__)
-#define SIGENTER_SIZE            (4*__SIZEOF_POINTER__)
+#define SIGENTER_OFFSETOF_R0     (4*__SIZEOF_POINTER__)
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
+#define SIGENTER_OFFSETOF_R1     (5*__SIZEOF_POINTER__)
+#define SIGENTER_SIZE            (6*__SIZEOF_POINTER__)
+#else
+#define SIGENTER_SIZE            (5*__SIZEOF_POINTER__)
+#endif
 
 #ifdef __CC__
 struct PACKED sigenter {
@@ -60,7 +67,41 @@ struct PACKED sigenter {
  USER struct sigenter_tail *se_next;  /* [0..1][valid_if(se_count != 0)] Next user-space signal handler context. */
  uintptr_t                  se_ip;
  uintptr_t                  se_sp;
+ uintptr_t                  se_r0;
+#ifdef CONFIG_HAVE_SYSCALL_LONGBIT
+ uintptr_t                  se_r1;
+#endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
 };
+
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+struct task;
+struct sigaction;
+struct __siginfo_struct;
+
+#ifndef __greg_t_defined
+#define __greg_t_defined 1
+typedef __SREGISTER_TYPE__ greg_t;
+#endif /* !__greg_t_defined */
+
+#ifndef __errno_t_defined
+#define __errno_t_defined 1
+typedef int errno_t;
+#endif /* !__errno_t_defined */
+
+/* Deliver a signal to a given task `t', invoking `action'.
+ * WARNING: This function does not apply the action's blocking mask. */
+INTDEF errno_t KCALL
+deliver_signal(struct task *__restrict t,
+               struct sigaction const *__restrict action,
+               struct __siginfo_struct const *__restrict signal_info,
+               greg_t reg_trapno, greg_t reg_err);
+
+INTDEF void KCALL
+coredump_task(struct task *__restrict t,
+              siginfo_t const *__restrict reason,
+              greg_t reg_trapno, greg_t reg_err);
+
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 #endif /* __CC__ */
 
 DECL_END

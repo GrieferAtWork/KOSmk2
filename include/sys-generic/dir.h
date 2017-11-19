@@ -16,11 +16,11 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ARM_KOS_ASM_UNISTD_H
-#define _ARM_KOS_ASM_UNISTD_H 1
-#define _ASM_UNISTD_H 1
+#ifndef	_SYS_GENERIC_DIR_H
+#define	_SYS_GENERIC_DIR_H 1
+#define	_SYS_DIR_H 1
 
-#include <bits/types.h>
-#include "syscallno.ci"
+#include <dirent.h>
+#define direct dirent
 
-#endif /* !_ARM_KOS_ASM_UNISTD_H */
+#endif /* !_SYS_GENERIC_DIR_H */

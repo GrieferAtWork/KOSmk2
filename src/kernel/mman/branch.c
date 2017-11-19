@@ -56,7 +56,11 @@ mbranch_remap_unlocked(struct mbranch const *__restrict self,
                        pdir_t *__restrict pdir, bool update_prot) {
  struct mregion_part *part; struct mman *old_mman = NULL;
  struct mregion *region; errno_t error = -EOK;
+#ifdef PDIR_FLAG_NOFLUSH
  pdir_attr_t page_prot = PDIR_FLAG_NOFLUSH;
+#else
+ pdir_attr_t page_prot = 0;
+#endif
  raddr_t region_begin,region_end;
  CHECK_HOST_DOBJ(self);
  CHECK_HOST_DOBJ(pdir);
@@ -76,8 +80,10 @@ mbranch_remap_unlocked(struct mbranch const *__restrict self,
  /* Don't touch page-directory mappings of reserved regions. */
  if unlikely(region->mr_type == MREGION_TYPE_RESERVED)
        goto end;
+#ifdef PDIR_ATTR_USER
  if (!(self->mb_prot&PROT_NOUSER))
        page_prot |= PDIR_ATTR_USER;
+#endif /* PDIR_ATTR_USER */
  if (!(self->mb_prot&(PROT_WRITE|PROT_READ)))
        goto end; /* No access at all... */
  /* Must map for copy-on-write when write access is given, but sharing isn't allowed. */
@@ -202,8 +208,13 @@ mbranch_unmap(struct mbranch const *__restrict self,
  if unlikely(self->mb_region->mr_type == MREGION_TYPE_RESERVED)
     return -EOK;
  TASK_PDIR_KERNEL_BEGIN(old_mman);
+#ifdef PDIR_FLAG_NOFLUSH
  error = pdir_munmap(pdir,(ppage_t)self->mb_node.a_vmin,
                      MBRANCH_SIZE(self),PDIR_FLAG_NOFLUSH);
+#else
+ error = pdir_munmap(pdir,(ppage_t)self->mb_node.a_vmin,
+                     MBRANCH_SIZE(self),0);
+#endif
  TASK_PDIR_KERNEL_END(old_mman);
  return error;
 }

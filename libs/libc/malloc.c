@@ -202,20 +202,20 @@ L(SYM_END(libc__mall_nofree)                                                    
 L(SYM_END(libc__mall_untrack)                                                             )
 );
 #else
-INTERN void   *(LIBCCALL _mall_getattrib)(void *__restrict UNUSED(ptr), int UNUSED(attrib)) { return NULL; }
-INTERN ssize_t (LIBCCALL _mall_traceback)(void *__restrict UNUSED(ptr), ptbwalker UNUSED(callback), void *UNUSED(closure)) { return 0; }
-INTERN void    (LIBCCALL _mall_printleaks)(void) {}
-INTERN void    (LIBCCALL _mall_validate)(void) {}
-INTERN ssize_t (LIBCCALL _mall_enum)(void *UNUSED(checkpoint), ssize_t (*callback)(void *__restrict ptr,void *closure), void *UNUSED(closure)) { (void)callback; return 0; }
-INTERN void   *(LIBCCALL _mall_untrack)(void *mallptr) { return mallptr; }
-INTERN void   *(LIBCCALL _mall_nofree)(void *mallptr) { return mallptr; }
-INTERN void   *(LIBCCALL _mall_getattrib_d)(void *__restrict UNUSED(ptr), int UNUSED(attrib), DEBUGINFO_UNUSED) { return NULL; }
-INTERN ssize_t (LIBCCALL _mall_traceback_d)(void *__restrict UNUSED(ptr), ptbwalker UNUSED(callback), void *UNUSED(closure), DEBUGINFO_UNUSED) { return 0; }
-INTERN void    (LIBCCALL _mall_printleaks_d)(DEBUGINFO_UNUSED) {}
-INTERN void    (LIBCCALL _mall_validate_d)(DEBUGINFO_UNUSED) {}
-INTERN ssize_t (LIBCCALL _mall_enum_d)(void *UNUSED(checkpoint), ssize_t (*callback)(void *__restrict ptr,void *closure), void *UNUSED(closure), DEBUGINFO_UNUSED) { (void)callback; return 0; }
-INTERN void   *(LIBCCALL _mall_untrack_d)(void *mallptr, DEBUGINFO_UNUSED) { return mallptr; }
-INTERN void   *(LIBCCALL _mall_nofree_d)(void *mallptr, DEBUGINFO_UNUSED) { return mallptr; }
+INTERN void   *(LIBCCALL libc__mall_getattrib)(void *__restrict UNUSED(ptr), int UNUSED(attrib)) { return NULL; }
+INTERN ssize_t (LIBCCALL libc__mall_traceback)(void *__restrict UNUSED(ptr), ptbwalker UNUSED(callback), void *UNUSED(closure)) { return 0; }
+INTERN void    (LIBCCALL libc__mall_printleaks)(void) {}
+INTERN void    (LIBCCALL libc__mall_validate)(void) {}
+INTERN ssize_t (LIBCCALL libc__mall_enum)(void *UNUSED(checkpoint), ssize_t (*callback)(void *__restrict ptr,void *closure), void *UNUSED(closure)) { (void)callback; return 0; }
+INTERN void   *(LIBCCALL libc__mall_untrack)(void *mallptr) { return mallptr; }
+INTERN void   *(LIBCCALL libc__mall_nofree)(void *mallptr) { return mallptr; }
+INTERN void   *(LIBCCALL libc__mall_getattrib_d)(void *__restrict UNUSED(ptr), int UNUSED(attrib), DEBUGINFO_UNUSED) { return NULL; }
+INTERN ssize_t (LIBCCALL libc__mall_traceback_d)(void *__restrict UNUSED(ptr), ptbwalker UNUSED(callback), void *UNUSED(closure), DEBUGINFO_UNUSED) { return 0; }
+INTERN void    (LIBCCALL libc__mall_printleaks_d)(DEBUGINFO_UNUSED) {}
+INTERN void    (LIBCCALL libc__mall_validate_d)(DEBUGINFO_UNUSED) {}
+INTERN ssize_t (LIBCCALL libc__mall_enum_d)(void *UNUSED(checkpoint), ssize_t (*callback)(void *__restrict ptr,void *closure), void *UNUSED(closure), DEBUGINFO_UNUSED) { (void)callback; return 0; }
+INTERN void   *(LIBCCALL libc__mall_untrack_d)(void *mallptr, DEBUGINFO_UNUSED) { return mallptr; }
+INTERN void   *(LIBCCALL libc__mall_nofree_d)(void *mallptr, DEBUGINFO_UNUSED) { return mallptr; }
 #endif
 
 /* Extended malloc functions. */

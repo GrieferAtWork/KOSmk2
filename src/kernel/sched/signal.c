@@ -23,39 +23,31 @@
 
 #include <hybrid/compiler.h>
 #ifndef CONFIG_NO_SIGNALS
-#include <asm/instx.h>
-#include <asm/unistd.h>
-#include <bits/signum.h>
-#include <bits/waitstatus.h>
+#include <arch/current_context.h>
+#include <arch/preemption.h>
+#include <arch/signal.h>
+#include <assert.h>
+#include <bits-generic/sigaction.h>
+#include <bits/sigaction.h>
+#include <bits/siginfo.h>
 #include <dev/rtc.h>
 #include <errno.h>
-#include <asm/cpu-flags.h>
-#include <hybrid/asm.h>
 #include <hybrid/check.h>
-#include <hybrid/traceback.h>
-#include <arch/gdt.h>
-#include <kernel/interrupt.h>
-#include <kernel/mman.h>
-#include <kernel/stack.h>
-#include <kernel/syscall.h>
+#include <hybrid/types.h>
 #include <kernel/syscall.h>
 #include <kernel/user.h>
-#include <linker/coredump.h>
 #include <malloc.h>
 #include <sched/cpu.h>
-#include <sched/paging.h>
+#include <sched/percpu.h>
 #include <sched/signal.h>
 #include <sched/task.h>
 #include <sched/types.h>
 #include <signal.h>
-#include <stdarg.h>
-#include <sys/syslog.h>
+#include <stddef.h>
+#include <string.h>
 #include <sys/ucontext.h>
-#include <kos/thread.h>
-#include <arch/hints.h>
-#include <arch/asm.h>
-#include <bits/sigstack.h>
-#include <arch/current_context.h>
+#include <sys/wait.h>
+#include <syslog.h>
 
 DECL_BEGIN
 

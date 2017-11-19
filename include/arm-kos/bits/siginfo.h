@@ -63,15 +63,7 @@ typedef union sigval {
 #else
 #   define __SI_PAD_SIZE  ((__SI_MAX_SIZE/__SIZEOF_INT__)-3)
 #endif
-
-#if defined(__x86_64__) && __SIZEOF_POINTER__ == 4
-typedef __typedef_clock_t __ATTR_ALIGNED(4) __sigchld_clock_t;
-#else /* ... */
-typedef __typedef_clock_t __sigchld_clock_t;
-#endif /* !... */
 #endif /* __CC__ */
-#define __SIZEOF_SIGCHLD_CLOCK_T__ __SIZEOF_CLOCK_T__
-
 
 
 #define __SIGINFO_OFFSETOF_SIGNO        0
@@ -85,12 +77,12 @@ typedef __typedef_clock_t __sigchld_clock_t;
 #define __SIGINFO_OFFSETOF_INT       (6*__SIZEOF_INT__)
 #define __SIGINFO_OFFSETOF_PTR       (6*__SIZEOF_INT__)
 #define __SIGINFO_OFFSETOF_STATUS    (4*__SIZEOF_INT__+2*__SIZEOF_PID_T__)
-#if __SIZEOF_SIGCHLD_CLOCK_T__ >= 8
+#if __SIZEOF_CLOCK_T__ >= 8
 #define __SIGINFO_OFFSETOF_UTIME     (4*__SIZEOF_POINTER__)
-#define __SIGINFO_OFFSETOF_STIME     (4*__SIZEOF_POINTER__+__SIZEOF_SIGCHLD_CLOCK_T__)
+#define __SIGINFO_OFFSETOF_STIME     (4*__SIZEOF_POINTER__+__SIZEOF_CLOCK_T__)
 #else
 #define __SIGINFO_OFFSETOF_UTIME     (5*__SIZEOF_INT__+2*__SIZEOF_PID_T__)
-#define __SIGINFO_OFFSETOF_STIME     (5*__SIZEOF_INT__+2*__SIZEOF_PID_T__+__SIZEOF_SIGCHLD_CLOCK_T__)
+#define __SIGINFO_OFFSETOF_STIME     (5*__SIZEOF_INT__+2*__SIZEOF_PID_T__+__SIZEOF_CLOCK_T__)
 #endif
 #define __SIGINFO_OFFSETOF_ADDR      (4*__SIZEOF_INT__)
 #define __SIGINFO_OFFSETOF_ADDR_LSB  (4*__SIZEOF_INT__+__SIZEOF_POINTER__)
@@ -102,16 +94,13 @@ typedef __typedef_clock_t __sigchld_clock_t;
 #define __SIGINFO_OFFSETOF_SYSCALL   (4*__SIZEOF_INT__+__SIZEOF_POINTER__)
 #define __SIGINFO_OFFSETOF_ARCH      (5*__SIZEOF_INT__+__SIZEOF_POINTER__)
 #ifdef __KERNEL__
-#define __SIGINFO_SIZE               (__SIGINFO_OFFSETOF_STIME+__SIZEOF_SIGCHLD_CLOCK_T__)
+#define __SIGINFO_SIZE               (__SIGINFO_OFFSETOF_STIME+__SIZEOF_CLOCK_T__)
 #else
 #define __SIGINFO_SIZE                __SI_MAX_SIZE
 #endif
 
 
 #ifdef __CC__
-#if defined(__x86_64__) && __SIZEOF_POINTER__ == 4
-__ATTR_ALIGNED(8)
-#endif
 typedef struct __siginfo_struct {
     int si_signo; /*< Signal number. */
     int si_errno; /*< If non-zero, an errno value associated with this signal, as defined in <errno.h>. */
@@ -145,11 +134,11 @@ typedef struct __siginfo_struct {
             __pid_t      __cld_si_pid;    /*< Which child. */
             __uid_t      __cld_si_uid;    /*< Real user ID of sending process. */
             int                si_status; /*< Exit value or signal. */
-#if __SIZEOF_SIGCHLD_CLOCK_T__ >= 8
+#if __SIZEOF_CLOCK_T__ >= 8
             __UINT32_TYPE__  __si_pad1;   /*< Invisible padding made visible. */
 #endif
-            __sigchld_clock_t  si_utime;
-            __sigchld_clock_t  si_stime;
+            __typedef_clock_t  si_utime;
+            __typedef_clock_t  si_stime;
         };
         struct { /* SIGILL, SIGFPE, SIGSEGV, SIGBUS. */
             void          *si_addr;     /*< Faulting insn/memory ref. */
@@ -197,8 +186,8 @@ typedef struct __siginfo_struct {
 #if __SIZEOF_POINTER__ >= 8
             __UINT32_TYPE__  __si_pad1;   /*< Invisible padding made visible. */
 #endif
-            __sigchld_clock_t si_utime;
-            __sigchld_clock_t si_stime;
+            __typedef_clock_t si_utime;
+            __typedef_clock_t si_stime;
         } _sigchld;
         struct { /* SIGILL, SIGFPE, SIGSEGV, SIGBUS. */
             void          *si_addr;     /*< Faulting insn/memory ref. */

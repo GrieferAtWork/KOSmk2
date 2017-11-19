@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\memory-detect.c" />
+    <ClCompile Include="..\..\src\arch\arm-kos\kernel\signal.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\boot.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\fpu.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\gdt.c" />

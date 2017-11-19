@@ -251,6 +251,9 @@ BEGIN
 	BEGIN DEFAULT_MODULE("ne2000")     SOURCE("modules/net/ne2k.c") USING("pci") END
 	BEGIN BASIC_MODULE("elf-coredump") SOURCE("modules/linker/elf-coredump.c") END
 	BEGIN BASIC_MODULE("elf-debug")    SOURCE("modules/linker/elf-debug.c")    END
+#ifdef TARGET_I386
+	BEGIN BASIC_MODULE("a.out")        SOURCE("modules/linker/a.out.c")        END
+#endif
 	BEGIN
 		_c_flags.remove("-Wsystem-headers");
 		BEGIN BASIC_MODULE("pe") SOURCE("modules/linker/pe.c") END

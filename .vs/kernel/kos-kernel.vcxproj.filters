@@ -576,6 +576,9 @@
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\memory-detect.c">
       <Filter>arch\arm-kos\kernel</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\arch\arm-kos\kernel\signal.c">
+      <Filter>arch\arm-kos\kernel</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\mman\intern.h">

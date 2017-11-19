@@ -25,7 +25,6 @@
 
 #include <assert.h>
 #include <fs/fd.h>
-#include <asm/cpu-flags.h>
 #include <hybrid/asm.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
@@ -98,7 +97,7 @@ ATTR_FREEDATA struct task inittask = {
             .tss_self = &inittask,
         },
     },
-    .t_event      = SIG_INIT,
+    .t_event     = SIG_INIT,
     .t_critical  = 1, /* Start out as a critical task. */
     .t_nointr    = 1, /* Start out as a no-interrupt task. */
     .t_addrlimit = USER_END,

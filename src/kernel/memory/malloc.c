@@ -56,6 +56,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <string.h>
+#include <arch/hints.h>
 #include <sys/mman.h>
 #if defined(__i386__) || defined(__x86_64__)
 #include <asm/instx.h>

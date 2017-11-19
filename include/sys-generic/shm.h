@@ -16,11 +16,38 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef _ARM_KOS_ASM_UNISTD_H
-#define _ARM_KOS_ASM_UNISTD_H 1
-#define _ASM_UNISTD_H 1
+#ifndef _SYS_GENERIC_SHM_H
+#define _SYS_GENERIC_SHM_H 1
+#define _SYS_SHM_H 1
 
-#include <bits/types.h>
-#include "syscallno.ci"
+#include <features.h>
+#include <sys/ipc.h>
+#include <bits/shm.h>
 
-#endif /* !_ARM_KOS_ASM_UNISTD_H */
+__SYSDECL_BEGIN
+
+#ifdef __USE_XOPEN
+#ifndef __pid_t_defined
+#define __pid_t_defined 1
+typedef __pid_t pid_t;
+#endif /* __pid_t_defined */
+#endif /* __USE_XOPEN */
+
+#ifndef __size_t_defined
+#define __size_t_defined 1
+typedef __SIZE_TYPE__ size_t;
+#endif /* !__size_t_defined */
+
+#ifndef __time_t_defined
+#define __time_t_defined 1
+typedef __time_t time_t;
+#endif /* !__time_t_defined */
+
+__LIBC int __NOTHROW((__LIBCCALL shmctl)(int __shmid, int __cmd, struct shmid_ds *__buf));
+__LIBC int __NOTHROW((__LIBCCALL shmget)(key_t __key, size_t __size, int __shmflg));
+__LIBC void *__NOTHROW((__LIBCCALL shmat)(int __shmid, const void *__shmaddr, int __shmflg));
+__LIBC int __NOTHROW((__LIBCCALL shmdt)(const void *__shmaddr));
+
+__SYSDECL_END
+
+#endif /* !_SYS_GENERIC_SHM_H */

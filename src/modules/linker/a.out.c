@@ -44,6 +44,10 @@
 #define AOUT_DEBUG(x) (void)0
 #endif
 
+#ifdef __NO_A_OUT_SUPPORT
+#error "No a.out support on this architecture (Please disable this module)"
+#endif
+
 DECL_BEGIN
 
 typedef struct aout_module aout_t;
