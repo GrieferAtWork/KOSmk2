@@ -71,6 +71,14 @@ L(SYM_END(libc_alloca)                                                        )
 L(.previous                                                                   )
 );
 
+GLOBAL_ASM(
+L(.section .text                                                              )
+L(INTERN_ENTRY(libc_syscall)                                                  )
+L(    /* TODO */                                                              )
+L(SYM_END(libc_syscall)                                                       )
+L(.previous                                                                   )
+);
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_ARCH_ARM_KOS_ASM_C */

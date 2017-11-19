@@ -235,6 +235,9 @@
     <Filter Include="arch\arm-kos\kernel">
       <UniqueIdentifier>{22cbd034-f24e-45ce-8204-26d90ff201e1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="arch\arm-kos\include\arch">
+      <UniqueIdentifier>{e85f1525-e7b2-4508-9733-7a26aca0a673}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core\main.c">
@@ -334,9 +337,6 @@
       <Filter>kernel\memory</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\memory\malloc.c">
-      <Filter>kernel\memory</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\memory\detect.c">
       <Filter>kernel\memory</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\linker\driver-module.c">
@@ -569,6 +569,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\gdt.c">
       <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\memory-detect.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\arm-kos\kernel\memory-detect.c">
+      <Filter>arch\arm-kos\kernel</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -886,6 +892,45 @@
     </ClInclude>
     <ClInclude Include="..\..\src\arch\i386-kos\kernel\interrupt_intern.h">
       <Filter>arch\i386-kos\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\cpustate.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\cpu.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\signal.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\task.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\percpu.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\percpu.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\paging.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\hints.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\syscall.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\interrupt.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\preemption.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\current_context.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

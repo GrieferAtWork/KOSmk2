@@ -128,6 +128,9 @@ libc_clone(int (LIBCCALL *fn)(void *arg),
                       : "memory");
 #elif defined(__arm__)
  /* TODO */
+ (void)ptid;
+ (void)newtls;
+ (void)ctid;
  result = -ENOSYS;
 #else
 #error "Unsupport arch"

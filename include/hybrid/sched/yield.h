@@ -41,7 +41,8 @@ typedef int errno_t;
 FUNDEF errno_t (KCALL task_yield)(void);
 
 #if !defined(__NO_XBLOCK) && defined(__COMPILER_HAVE_GCC_ASM) && \
-   (!defined(__x86_64__) || defined(CONFIG_BUILDING_KERNEL_CORE))
+   (!defined(__x86_64__) || defined(CONFIG_BUILDING_KERNEL_CORE)) && \
+     defined(__i386__)
 /* Take advantage of the fact that `task_yield()' doesn't clobber anything. */
 #define task_yield() \
  __XBLOCK({ register errno_t __y_err; \

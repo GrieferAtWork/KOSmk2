@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_PAGING64_H
-#define GUARD_INCLUDE_ARCH_PAGING64_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_PAGING64_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_PAGING64_H 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/host.h>
@@ -325,4 +325,4 @@ INTDEF INITCALL void KCALL early_map_identity(PHYS void *addr, size_t n_bytes);
 DECL_END
 #endif /* __x86_64__ */
 
-#endif /* !GUARD_INCLUDE_ARCH_PAGING64_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_PAGING64_H */

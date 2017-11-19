@@ -1,0 +1,6 @@
+#ifndef _ARM_KOS_ASM_BITSPERLONG_H
+#define _ARM_KOS_ASM_BITSPERLONG_H 1
+
+#define __BITS_PER_LONG 32
+
+#endif /* !_ARM_KOS_ASM_BITSPERLONG_H */

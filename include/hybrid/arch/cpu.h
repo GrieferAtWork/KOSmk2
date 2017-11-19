@@ -20,12 +20,14 @@
 #define __GUARD_HYBRID_ARCH_CPU_H 1
 
 #include <hybrid/compiler.h>
+#include <hybrid/host.h>
+
+#if defined(__i386__) || defined(__x86_64__)
 #include <asm/cpu-flags.h>
 #include <stdbool.h>
 
 DECL_BEGIN
 
-#ifdef __i386__
 LOCAL bool KCALL cpu_is_486(void) {
  /* NOTE: This variable _must_ be aligned, because the AC flag's
   *       intended purpose (other than checking for 486), is to
@@ -44,9 +46,9 @@ LOCAL bool KCALL cpu_is_486(void) {
  return (f1&EFLAGS_AC) != (f2&EFLAGS_AC);
 }
 
+DECL_END
+
 #endif
 
-
-DECL_END
 
 #endif /* !__GUARD_HYBRID_ARCH_CPU_H */

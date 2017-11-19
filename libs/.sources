@@ -70,6 +70,7 @@ BEGIN LIBRARY("libpthread")
 	SOURCE("libpthread/*.c")
 END
 
+#ifndef TARGET_ARM
 BEGIN LIBRARY("libkernel32")
 	SET_OUTPUT(CONFIG_LIB_PATH "/kernel32.so")
 	SET_DISKFILE("/lib/KERNEL32.dll")
@@ -79,6 +80,7 @@ BEGIN LIBRARY("libkernel32")
 	LIB("c")
 	SOURCE("libkernel32/*.c")
 END
+#endif /* !TARGET_ARM */
 
 BEGIN ARCHIVE("_start")
 	SET_ARCHIVER("")

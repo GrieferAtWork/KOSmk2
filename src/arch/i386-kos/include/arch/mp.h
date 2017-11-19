@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_MP_H
-#define GUARD_INCLUDE_ARCH_MP_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_MP_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_MP_H 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -130,4 +130,4 @@ union mpcfg {
 
 DECL_END
 
-#endif /* !GUARD_INCLUDE_ARCH_MP_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_MP_H */

@@ -228,9 +228,11 @@ FUNDEF void (KCALL task_endnointr)(void);
 #else
 #define task_iscrit()    (THIS_TASK->t_critical != 0)
 #ifdef __x86_64__
-#define task_issafe()    (task_iscrit() || !XBLOCK({ register register_t __efl; __asm__ __volatile__("pushfq; popq %0" : "=g" (__efl)); XRETURN __efl&0x200; }))
+#   define task_issafe() (task_iscrit() || !XBLOCK({ register register_t __efl; __asm__ __volatile__("pushfq; popq %0" : "=g" (__efl)); XRETURN __efl&0x200; }))
+#elif defined(__i386__)
+#   define task_issafe() (task_iscrit() || !XBLOCK({ register register_t __efl; __asm__ __volatile__("pushfl; popl %0" : "=g" (__efl)); XRETURN __efl&0x200; }))
 #else
-#define task_issafe()    (task_iscrit() || !XBLOCK({ register register_t __efl; __asm__ __volatile__("pushfl; popl %0" : "=g" (__efl)); XRETURN __efl&0x200; }))
+#   define task_issafe()  1 /* TODO: ARM */
 #endif
 #define task_isnointr()  (THIS_TASK->t_nointr != 0)
 /* Increment the critical counter with a write-barrier directly afterwards. */

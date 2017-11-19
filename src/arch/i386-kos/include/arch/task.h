@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_TASK_H
-#define GUARD_INCLUDE_ARCH_TASK_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_TASK_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_TASK_H 1
 
 #include <hybrid/compiler.h>
 
@@ -157,6 +157,13 @@ union PACKED { struct PACKED {
 #endif /* __CC__ */
 #endif /* CONFIG_NO_LDT || CONFIG_NO_FPU */
 
+
+#ifdef __x86_64__
+#define TASK_DEFAULT_FS_BASE(x) ((uintptr_t) (x)->t_tlb)
+#define TASK_DEFAULT_GS_BASE(x) ((uintptr_t)&(x)->t_tlb->tl_tib)
+#endif
+
+
 DECL_END
 
-#endif /* !GUARD_INCLUDE_ARCH_TASK_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_TASK_H */

@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_CPUSTATE_H
-#define GUARD_INCLUDE_ARCH_CPUSTATE_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_CPUSTATE_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_CPUSTATE_H 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -818,6 +818,15 @@ struct PACKED {
 #endif /* __CC__ */
 
 #ifdef __CC__
+#ifdef __x86_64__
+#define CPUSTATE_SP(x)  ((x)->iret.userrsp)
+#define CPUSTATE_IP(x)  ((x)->iret.rip)
+#else
+#define CPUSTATE_SP(x)  ((x)->iret.useresp)
+#define CPUSTATE_IP(x)  ((x)->iret.eip)
+#endif
+
+
 /* iret/cpustate conversion functions. */
 #define IRREGS_TO_IRREGS_E(irr,irre,exc_code_)            (void)((irre).tail = (irr),(irre).exc_code = (exc_code_))
 #define IRREGS_TO_IRREGS_I(irr,irri,intno_)               (void)((irri).tail = (irr),(irri).intno = (intno_))
@@ -851,4 +860,4 @@ struct PACKED {
 
 DECL_END
 
-#endif /* !GUARD_INCLUDE_ARCH_CPUSTATE_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_CPUSTATE_H */

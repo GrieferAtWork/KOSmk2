@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_ASM_H
-#define GUARD_INCLUDE_ARCH_ASM_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_ASM_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_ASM_H 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/host.h>
@@ -103,4 +103,4 @@ LOCAL void KCALL asm_wrgsbase(u64 base) { register u64 baseval __ASMNAME("r10") 
 
 DECL_END
 
-#endif /* !GUARD_INCLUDE_ARCH_ASM_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_ASM_H */

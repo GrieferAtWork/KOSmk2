@@ -59,7 +59,9 @@ struct utsname const kernel_uname ASMNAME("uname") = {
 #ifdef __i386__
     .machine    = "i386",
 #elif defined(__x86_64__)
-    .machine    = "x86-64",
+    .machine    = "x86_64",
+#elif defined(__arm__)
+    .machine    = "arm",
 #else
 #warning "Unknown host architecture"
     .machine    = "UNKNOWN",

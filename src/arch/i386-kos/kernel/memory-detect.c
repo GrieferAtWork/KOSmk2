@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_KERNEL_MEMORY_DETECT_C
-#define GUARD_KERNEL_MEMORY_DETECT_C 1
+#ifndef GUARD_ARCH_I386_KOS_KERNEL_MEMORY_DECTECT_C
+#define GUARD_ARCH_I386_KOS_KERNEL_MEMORY_DECTECT_C 1
 #define _KOS_SOURCE 1
 
 #include <hybrid/align.h>
@@ -228,4 +228,4 @@ DEFINE_EARLY_SETUP_NOARG("detect-memory",detect_memory) {
 
 DECL_END
 
-#endif /* !GUARD_KERNEL_MEMORY_DETECT_C */
+#endif /* !GUARD_ARCH_I386_KOS_KERNEL_MEMORY_DECTECT_C */

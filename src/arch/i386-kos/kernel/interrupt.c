@@ -747,10 +747,15 @@ ignored:
  return false;
 }
 
-/* Fast C-level IRQ handler. */
+/* Basic C-level IRQ handler. */
 PRIVATE ATTR_USED bool FCALL
 exec_basiirq(struct interrupt *__restrict handler,
              struct irregs_i *__restrict info) {
+ /* TODO: On x86_64, a #PF IRQ recursion can happen! (very rarely?)
+  *       Although I've yet to determine what triggers/causes it, a
+  *       step in the right direction would be add to IRQ recursion
+  *       detection to all other IRQ handler (not just `deflirq') */
+
  /* C-level IRQ handler with full CPU-state. */
  struct interrupt *iter = handler;
  assert(iter);

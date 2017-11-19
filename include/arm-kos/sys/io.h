@@ -101,18 +101,73 @@ __NAMESPACE_INT_END
 #   define __writesl(port,addr,count) __writesl((__UINTPTR_TYPE__)(port),addr,count)
 #endif
 
-__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL __readb)(__MEMPORT_T __addr)  { __UINT8_TYPE__  __result = *(__UINT8_TYPE__  volatile *)__addr; __COMPILER_READ_BARRIER(); return __result; }
-__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL __readw)(__MEMPORT_T __addr) { __UINT16_TYPE__ __result = *(__UINT16_TYPE__ volatile *)__addr; __COMPILER_READ_BARRIER(); return __result; }
-__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL __readl)(__MEMPORT_T __addr) { __UINT32_TYPE__ __result = *(__UINT32_TYPE__ volatile *)__addr; __COMPILER_READ_BARRIER(); return __result; }
-__FORCELOCAL void (__LIBCCALL __writeb)(__MEMPORT_T __addr, __UINT8_TYPE__  __val) { *(__UINT8_TYPE__  volatile *)__addr = __val; __COMPILER_WRITE_BARRIER(); }
-__FORCELOCAL void (__LIBCCALL __writew)(__MEMPORT_T __addr, __UINT16_TYPE__ __val) { *(__UINT16_TYPE__ volatile *)__addr = __val; __COMPILER_WRITE_BARRIER(); }
-__FORCELOCAL void (__LIBCCALL __writel)(__MEMPORT_T __addr, __UINT32_TYPE__ __val) { *(__UINT32_TYPE__ volatile *)__addr = __val; __COMPILER_WRITE_BARRIER(); }
+#define __IO_PAUSE() (void)0 /* ??? */
 
-#if defined(__USE_KOS) || defined(__KERNEL__)
-__FORCELOCAL void (__LIBCCALL io_delay)(void) { /* TODO */ }
-#endif /* __USE_KOS || __KERNEL__ */
+#ifdef __INTELLISENSE__
+__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL __readb)(__MEMPORT_T __port);
+__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL __readw)(__MEMPORT_T __port);
+__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL __readl)(__MEMPORT_T __port);
+__FORCELOCAL void (__LIBCCALL __writeb)(__MEMPORT_T __port, __UINT8_TYPE__ __val);
+__FORCELOCAL void (__LIBCCALL __writew)(__MEMPORT_T __port, __UINT16_TYPE__ __val);
+__FORCELOCAL void (__LIBCCALL __writel)(__MEMPORT_T __port, __UINT32_TYPE__ __val);
+__FORCELOCAL void (__LIBCCALL __readsb)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count);
+__FORCELOCAL void (__LIBCCALL __readsw)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count);
+__FORCELOCAL void (__LIBCCALL __readsl)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count);
+__FORCELOCAL void (__LIBCCALL __writesb)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count);
+__FORCELOCAL void (__LIBCCALL __writesw)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count);
+__FORCELOCAL void (__LIBCCALL __writesl)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count);
+__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL __readb_p)(__MEMPORT_T __port);
+__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL __readw_p)(__MEMPORT_T __port);
+__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL __readl_p)(__MEMPORT_T __port);
+__FORCELOCAL void (__LIBCCALL __writeb_p)(__MEMPORT_T __port, __UINT8_TYPE__ __val);
+__FORCELOCAL void (__LIBCCALL __writew_p)(__MEMPORT_T __port, __UINT16_TYPE__ __val);
+__FORCELOCAL void (__LIBCCALL __writel_p)(__MEMPORT_T __port, __UINT32_TYPE__ __val);
+#else
+__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL __readb)(__MEMPORT_T __port) { __UINT8_TYPE__  __result = *(__UINT8_TYPE__  volatile *)__port; __COMPILER_READ_BARRIER(); return __result; }
+__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL __readw)(__MEMPORT_T __port) { __UINT16_TYPE__ __result = *(__UINT16_TYPE__ volatile *)__port; __COMPILER_READ_BARRIER(); return __result; }
+__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL __readl)(__MEMPORT_T __port) { __UINT32_TYPE__ __result = *(__UINT32_TYPE__ volatile *)__port; __COMPILER_READ_BARRIER(); return __result; }
+__FORCELOCAL void (__LIBCCALL __writeb)(__MEMPORT_T __port, __UINT8_TYPE__ __val) { *(__UINT8_TYPE__  volatile *)__port = __val; __COMPILER_WRITE_BARRIER(); }
+__FORCELOCAL void (__LIBCCALL __writew)(__MEMPORT_T __port, __UINT16_TYPE__ __val) { *(__UINT16_TYPE__ volatile *)__port = __val; __COMPILER_WRITE_BARRIER(); }
+__FORCELOCAL void (__LIBCCALL __writel)(__MEMPORT_T __port, __UINT32_TYPE__ __val) { *(__UINT32_TYPE__ volatile *)__port = __val; __COMPILER_WRITE_BARRIER(); }
+__FORCELOCAL void (__LIBCCALL __readsb)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(*(__UINT8_TYPE__ **)&__addr)++ = *(__UINT8_TYPE__  volatile *)__port; __COMPILER_READ_BARRIER(); } }
+__FORCELOCAL void (__LIBCCALL __readsw)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(*(__UINT16_TYPE__ **)&__addr)++ = *(__UINT16_TYPE__ volatile *)__port; __COMPILER_READ_BARRIER(); } }
+__FORCELOCAL void (__LIBCCALL __readsl)(__MEMPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(*(__UINT32_TYPE__ **)&__addr)++ = *(__UINT32_TYPE__ volatile *)__port; __COMPILER_READ_BARRIER(); } }
+__FORCELOCAL void (__LIBCCALL __writesb)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(__UINT8_TYPE__  volatile *)__port = *(*(__UINT8_TYPE__ **)&__addr)++; __COMPILER_WRITE_BARRIER(); } }
+__FORCELOCAL void (__LIBCCALL __writesw)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(__UINT16_TYPE__ volatile *)__port = *(*(__UINT16_TYPE__ **)&__addr)++; __COMPILER_WRITE_BARRIER(); } }
+__FORCELOCAL void (__LIBCCALL __writesl)(__MEMPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(__UINT32_TYPE__ volatile *)__port = *(*(__UINT32_TYPE__ **)&__addr)++; __COMPILER_WRITE_BARRIER(); } }
+__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL __readb_p)(__MEMPORT_T __port) { __UINT8_TYPE__  __result = *(__UINT8_TYPE__  volatile *)__port; __IO_PAUSE(); __COMPILER_READ_BARRIER(); return __result; }
+__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL __readw_p)(__MEMPORT_T __port) { __UINT16_TYPE__ __result = *(__UINT16_TYPE__ volatile *)__port; __IO_PAUSE(); __COMPILER_READ_BARRIER(); return __result; }
+__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL __readl_p)(__MEMPORT_T __port) { __UINT32_TYPE__ __result = *(__UINT32_TYPE__ volatile *)__port; __IO_PAUSE(); __COMPILER_READ_BARRIER(); return __result; }
+__FORCELOCAL void (__LIBCCALL __writeb_p)(__MEMPORT_T __port, __UINT8_TYPE__ __val) { *(__UINT8_TYPE__  volatile *)__port = __val; __IO_PAUSE(); __COMPILER_WRITE_BARRIER(); }
+__FORCELOCAL void (__LIBCCALL __writew_p)(__MEMPORT_T __port, __UINT16_TYPE__ __val) { *(__UINT16_TYPE__ volatile *)__port = __val; __IO_PAUSE(); __COMPILER_WRITE_BARRIER(); }
+__FORCELOCAL void (__LIBCCALL __writel_p)(__MEMPORT_T __port, __UINT32_TYPE__ __val) { *(__UINT32_TYPE__ volatile *)__port = __val; __IO_PAUSE(); __COMPILER_WRITE_BARRIER(); }
+#endif
 
 /* TODO: in(b|w|l), etc. */
+
+__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL inb)(__IOPORT_T __port) { return 0; } /* TODO */
+__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL inw)(__IOPORT_T __port) { return 0; } /* TODO */
+__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL inl)(__IOPORT_T __port) { return 0; } /* TODO */
+__FORCELOCAL void (__LIBCCALL outb)(__IOPORT_T __port, __UINT8_TYPE__ __val) { } /* TODO */
+__FORCELOCAL void (__LIBCCALL outw)(__IOPORT_T __port, __UINT16_TYPE__ __val) { } /* TODO */
+__FORCELOCAL void (__LIBCCALL outl)(__IOPORT_T __port, __UINT32_TYPE__ __val) { } /* TODO */
+
+__FORCELOCAL __UINT8_TYPE__ (__LIBCCALL inb_p)(__IOPORT_T __port) { __UINT8_TYPE__ __result = inb(__port); __IO_PAUSE(); return __result; }
+__FORCELOCAL __UINT16_TYPE__ (__LIBCCALL inw_p)(__IOPORT_T __port) { __UINT16_TYPE__ __result = inw(__port); __IO_PAUSE(); return __result; }
+__FORCELOCAL __UINT32_TYPE__ (__LIBCCALL inl_p)(__IOPORT_T __port) { __UINT32_TYPE__ __result = inl(__port); __IO_PAUSE(); return __result; }
+__FORCELOCAL void (__LIBCCALL outb_p)(__IOPORT_T __port, __UINT8_TYPE__ __val) { outb(__port,__val); __IO_PAUSE(); }
+__FORCELOCAL void (__LIBCCALL outw_p)(__IOPORT_T __port, __UINT16_TYPE__ __val) { outw(__port,__val); __IO_PAUSE(); }
+__FORCELOCAL void (__LIBCCALL outl_p)(__IOPORT_T __port, __UINT32_TYPE__ __val) { outl(__port,__val); __IO_PAUSE(); }
+__FORCELOCAL void (__LIBCCALL insb)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(*(__UINT8_TYPE__ **)&__addr)++ = inb(__port); } }
+__FORCELOCAL void (__LIBCCALL insw)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(*(__UINT16_TYPE__ **)&__addr)++ = inw(__port); } }
+__FORCELOCAL void (__LIBCCALL insl)(__IOPORT_T __port, void *__addr, __SIZE_TYPE__ __count) { while (__count--) { *(*(__UINT32_TYPE__ **)&__addr)++ = inl(__port); } }
+__FORCELOCAL void (__LIBCCALL outsb)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { while (__count--) { outb(__port,*(*(__UINT8_TYPE__ **)&__addr)++); } }
+__FORCELOCAL void (__LIBCCALL outsw)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { while (__count--) { outw(__port,*(*(__UINT16_TYPE__ **)&__addr)++); } }
+__FORCELOCAL void (__LIBCCALL outsl)(__IOPORT_T __port, void const *__addr, __SIZE_TYPE__ __count) { while (__count--) { outl(__port,*(*(__UINT32_TYPE__ **)&__addr)++); } }
+
+#if defined(__USE_KOS) || defined(__KERNEL__)
+__FORCELOCAL void (__LIBCCALL io_delay)(void) { __IO_PAUSE(); }
+#endif /* __USE_KOS || __KERNEL__ */
 
 #undef __IOPORT_T
 #undef __MEMPORT_T

@@ -210,8 +210,10 @@ __LIBC __PORT_DOSONLY __procfun (__LIBCCALL _getdllprocaddr)(intptr_t __hnd, cha
 #undef __FIXED_CONST
 #endif /* __CRT_DOS */
 
-
-__REDIRECT_IFDOS(__LIBC,,int,__LIBCCALL,getpid,(void),_getpid,())
+#ifndef __getpid_defined
+#define __getpid_defined 1
+__REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__WUNUSED,int,__LIBCCALL,getpid,(void),getpid,())
+#endif /* !__getpid_defined */
 
 #ifndef __execl_defined
 #define __execl_defined 1

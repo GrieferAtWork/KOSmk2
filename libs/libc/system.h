@@ -189,6 +189,7 @@ LOCAL SYSCALL5(errno_t,xrenameat,(int,olddfd,USER char const *,oldname,int,newdf
 LOCAL SYSCALL2(void *,xdlopen,(char const *,filename,int,flags));
 LOCAL SYSCALL2(void *,xfdlopen,(int,fd,int,flags));
 LOCAL SYSCALL2(void *,xdlsym,(void *,handle,char const *,symbol));
+LOCAL SYSCALL0(int,xdlfini,(void));
 LOCAL SYSCALL1(int,xdlclose,(void *,handle));
 LOCAL SYSCALL4(errno_t,xfsymlinkat,(USER char const *,oldname,int,newdfd,USER char const *,newname,int,flags));
 LOCAL SYSCALL5(ssize_t,xfreadlinkat,(int,dfd,USER char const *,path,USER char *,buf,size_t,len,int,flags));

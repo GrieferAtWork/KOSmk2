@@ -58,10 +58,12 @@
     <None Include="..\..\src\modules\nt\flavor-link.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\arch\arm-kos\kernel\memory-detect.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\boot.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\fpu.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\gdt.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\interrupt.c" />
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\memory-detect.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\paging.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\panic.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\pic.c" />
@@ -127,7 +129,6 @@
     <ClCompile Include="..\..\src\kernel\linker\module.c" />
     <ClCompile Include="..\..\src\kernel\linker\patch.c" />
     <ClCompile Include="..\..\src\kernel\linker\sys_linker.c" />
-    <ClCompile Include="..\..\src\kernel\memory\detect.c" />
     <ClCompile Include="..\..\src\kernel\memory\install.c" />
     <ClCompile Include="..\..\src\kernel\memory\malloc.c" />
     <ClCompile Include="..\..\src\kernel\memory\memory.c" />
@@ -171,6 +172,17 @@
     <ClCompile Include="..\..\src\modules\video\vga.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\cpu.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\cpustate.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\current_context.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\hints.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\interrupt.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\paging.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\percpu.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\preemption.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\signal.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\syscall.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\task.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\apic.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\apicdef.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\asm.h" />
@@ -184,8 +196,10 @@
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\idt_pointer.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\interrupt.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\mp.h" />
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging32.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging64.h" />
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\percpu.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\pic.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\preemption.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\realmode.h" />

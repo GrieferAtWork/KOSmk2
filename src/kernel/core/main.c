@@ -30,18 +30,13 @@
 #include <fs/fs.h>
 #include <fs/superblock.h>
 #include <hybrid/align.h>
-#include <asm/cpu-flags.h>
 #include <hybrid/compiler.h>
 #include <hybrid/minmax.h>
 #include <hybrid/sched/yield.h>
 #include <hybrid/section.h>
 #include <hybrid/traceback.h>
 #include <hybrid/types.h>
-#include <arch/apic.h>
 #include <arch/cpustate.h>
-#include <arch/gdt.h>
-#include <arch/idt_pointer.h>
-#include <arch/realmode.h>
 #include <kernel/boot.h>
 #include <kernel/export.h>
 #include <kernel/interrupt.h>
@@ -80,9 +75,12 @@
 #include <dev/net-stack.h>
 #include <hybrid/byteswap.h>
 #include <netinet/in.h>
-#include <asm/instx.h>
 #include <arch/hints.h>
-#include <arch/asm.h>
+
+#if defined(__i386__) || defined(__x86_64__)
+#include <arch/realmode.h>
+#include <asm/instx.h>
+#endif
 
 DECL_BEGIN
 
@@ -237,6 +235,11 @@ run_init(char const *__restrict filename) {
  task_ldtlb(thrd);
 #endif /* !CONFIG_NO_TLB */
 
+#ifdef __arm__
+ state->gp.r0 = (uintptr_t)penviron; /* Pass the environment block through R0. */
+ state->xc.sp = (uintptr_t)thrd->t_ustack->s_end;
+ state->xc.pc = (uintptr_t)inst->i_base+mod->m_entry;
+#else
 #ifdef __x86_64__
  state->host.sg.fs_base = TASK_DEFAULT_FS_BASE(thrd);
  state->host.sg.gs_base = TASK_DEFAULT_GS_BASE(thrd);
@@ -260,13 +263,14 @@ run_init(char const *__restrict filename) {
 #else
  state->iret.xflags  = EFLAGS_IF;
 #endif
+#endif
 
  //asserte(E_ISOK(mman_read(mm)));
  //mman_print_unlocked(mm,&syslog_printer,SYSLOG_PRINTER_CLOSURE(LOG_DEBUG));
  //mman_endread(mm);
 
  syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in `%[file]') at %p\n",
-        filename,mod->m_file,state->iret.xip);
+        filename,mod->m_file,CPUSTATE_IP(state));
  syslog(LOG_EXEC|LOG_INFO,"[APP] TLB at %p\n",thrd->t_tlb);
 
  assert(mm == thrd->t_mman);
@@ -504,9 +508,11 @@ kernel_boot(u32        mb_magic,
   * freeing up some of the much more valuable memory below 1Mb */
  mem_relocate_info();
 
+#if defined(__i386__) || defined(__x86_64__)
  /* Initialize realmode now that `mem_unpreserve()' and `mem_relocate_info()'
   * have likely released a whole bunch of data within the 1Mb memory zone. */
  realmode_initialize();
+#endif
 
  /* Must initialize the global PID namespaces before creating secondary
   * SMP CPUs, as additional cores will also allocate additional IDLE-tasks,

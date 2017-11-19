@@ -206,6 +206,30 @@ FUNDEF bool KCALL syscall_is_long(register_t sysno);
 #endif /* !CONFIG_HAVE_SYSCALL_LONGBIT */
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
+#ifndef __SYSCALL_NDEFINE
+#if 0
+#include <syslog.h>
+#define __SYSCALL_NDEFINE(visibility,n,name,args) \
+  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args); \
+  visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
+    __SC_TEST##n args; syscall_slong_t __res; \
+    __res = (SYSC##name)(__SC_CAST##n args); \
+    syslog(LOG_DEBUG,"[SYSCALL] END sys" #name "() -> %p\n",(void *)__res); \
+    return __res; \
+  } \
+  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
+#else
+#define __SYSCALL_NDEFINE(visibility,n,name,args) \
+  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args); \
+  visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
+    __SC_TEST##n args; \
+    return (SYSC##name)(__SC_CAST##n args); \
+  } \
+  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
+#endif
+#endif /* !__SYSCALL_NDEFINE */
+
+
 #define SYSCALL_SDEFINE(name,state) __SYSCALL_SDEFINE(INTERN,_##name,state)
 #define SYSCALL_DEFINE0(name)       __SYSCALL_NDEFINE(INTERN,0,_##name,(void))
 #define SYSCALL_DEFINE1(name,...)   __SYSCALL_NDEFINE(INTERN,1,_##name,(__VA_ARGS__))

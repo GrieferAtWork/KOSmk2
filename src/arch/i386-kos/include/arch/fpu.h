@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_FPU_H
-#define GUARD_INCLUDE_ARCH_FPU_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_FPU_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_FPU_H 1
 
 #include <hybrid/compiler.h>
 #ifndef CONFIG_NO_FPU
@@ -96,4 +96,4 @@ DECL_END
 
 #endif /* !CONFIG_NO_FPU */
 
-#endif /* !GUARD_INCLUDE_ARCH_FPU_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_FPU_H */

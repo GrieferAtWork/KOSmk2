@@ -56,7 +56,6 @@
 #endif /* !CONFIG_JIFFY_TIMEOUT */
 #include <hybrid/host.h>
 #include <hybrid/types.h>
-#include <arch/cpustate.h>
 #include <arch/cpu.h>
 #include <arch/task.h>
 #include <arch/signal.h>
@@ -791,11 +790,6 @@ struct PACKED {
 #endif
 };
 
-#ifdef __x86_64__
-#define TASK_DEFAULT_FS_BASE(x)  ((uintptr_t)(x)->t_tlb)
-#define TASK_DEFAULT_GS_BASE(x) ((uintptr_t)&(x)->t_tlb->tl_tib)
-#endif
-
 #define TASK_ISSUSPENDED(self) ((self)->t_suspend[0] > 0 || (self)->t_suspend[1] != 0)
 
 LOCAL SAFE pid_t KCALL thread_pid_getpgid(struct thread_pid *__restrict self, pidtype_t type) {
@@ -856,16 +850,24 @@ union PACKED {
 #define CPU_OFFSETOF_SLEEPING    (5*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE)
 #define CPU_OFFSETOF_IDLE        (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE)
 #ifndef CONFIG_NO_JOBS
-#define CPU_OFFSETOF_WORK        (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
-#define CPU_OFFSETOF_ARCH        (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
+#   define CPU_OFFSETOF_WORK     (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
+#if defined(ARCHCPU_SIZE) && ARCHCPU_SIZE != 0
+#   define CPU_OFFSETOF_ARCH     (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
+#   define __CPU_OFFSETAFTER_ARCH (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE+ARCHCPU_SIZE)
 #else
-#define CPU_OFFSETOF_ARCH        (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
+#   define __CPU_OFFSETAFTER_ARCH (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+2*TASK_SIZE)
 #endif
-#define CPU_OFFSETOF_N_RUN       (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE)
-#define CPU_OFFSETOF_N_IDLE      (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+__SIZEOF_SIZE_T__)
-#define CPU_OFFSETOF_N_SUSP      (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+2*__SIZEOF_SIZE_T__)
-#define CPU_OFFSETOF_N_SLEEP     (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+3*__SIZEOF_SIZE_T__)
-#define __CPU_SIZE               (CPU_OFFSETOF_ARCH+ARCHCPU_SIZE+4*__SIZEOF_SIZE_T__)
+#elif defined(ARCHCPU_SIZE) && ARCHCPU_SIZE != 0
+#   define CPU_OFFSETOF_ARCH     (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
+#   define __CPU_OFFSETAFTER_ARCH (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+TASK_SIZE+ARCHCPU_SIZE)
+#else
+#   define __CPU_OFFSETAFTER_ARCH (7*__SIZEOF_POINTER__+ATOMIC_RWLOCK_SIZE+TASK_SIZE)
+#endif
+#define CPU_OFFSETOF_N_RUN        __CPU_OFFSETAFTER_ARCH
+#define CPU_OFFSETOF_N_IDLE      (__CPU_OFFSETAFTER_ARCH+__SIZEOF_SIZE_T__)
+#define CPU_OFFSETOF_N_SUSP      (__CPU_OFFSETAFTER_ARCH+2*__SIZEOF_SIZE_T__)
+#define CPU_OFFSETOF_N_SLEEP     (__CPU_OFFSETAFTER_ARCH+3*__SIZEOF_SIZE_T__)
+#define __CPU_SIZE               (__CPU_OFFSETAFTER_ARCH+4*__SIZEOF_SIZE_T__)
 #define CPU_ALIGN                 TASK_ALIGN
 #if (__CPU_SIZE % CPU_ALIGN) != 0
 #   define CPU_SIZE             ((__CPU_SIZE+(CPU_ALIGN-1))&~(CPU_ALIGN-1))
@@ -920,7 +922,9 @@ struct PACKED {
                                           *  yet any single job can only be scheduled in one place before being made
                                           *  available again just before being executed. */
 #endif /* !CONFIG_NO_JOBS */
+#if defined(ARCHCPU_SIZE) && ARCHCPU_SIZE != 0
  struct archcpu             c_arch;      /*< Arch-specific per-cpu information. */
+#endif
  WEAK size_t                c_n_run;     /*< [lock(PRIVATE(THIS_CPU))][!0] Total amount of tasks within `c_running' */
  WEAK size_t                c_n_idle;    /*< [lock(PRIVATE(THIS_CPU))] Total amount of tasks within `c_idling' */
  WEAK size_t                c_n_susp;    /*< [lock(c_lock)] Total amount of tasks within `c_suspended' */

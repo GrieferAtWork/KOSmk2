@@ -62,9 +62,6 @@ stack_mnotify(unsigned int type, void *__restrict closure,
   break;
 
  {
-#ifndef CONFIG_NO_TLB
-  REF struct task *t;
-#endif /* !CONFIG_NO_TLB */
  case MNOTIFY_GUARD_ALLOCATE:
   /* Update the stack begin/end */
   if (STACK->s_begin > addr)
@@ -75,18 +72,20 @@ stack_mnotify(unsigned int type, void *__restrict closure,
 
 #if defined(__i386__) || defined(__x86_64__)
 #ifndef CONFIG_NO_TLB
-  if ((t = stack_task(STACK)) != NULL) {
-   struct {
-    void *hi,*lo;
-   } stck;
-   /* Update the user-space thread information block. */
-   if (t->t_tlb != PAGE_ERROR) {
-    stck.hi = STACK->s_end;
-    stck.lo = STACK->s_begin;
-    copy_to_user(&t->t_tlb->tl_tib.ti_stackhi,
-                 &stck,2*sizeof(void *));
-   }
-   TASK_DECREF(t);
+  { REF struct task *t;
+    if ((t = stack_task(STACK)) != NULL) {
+     struct {
+      void *hi,*lo;
+     } stck;
+     /* Update the user-space thread information block. */
+     if (t->t_tlb != PAGE_ERROR) {
+      stck.hi = STACK->s_end;
+      stck.lo = STACK->s_begin;
+      copy_to_user(&t->t_tlb->tl_tib.ti_stackhi,
+                   &stck,2*sizeof(void *));
+     }
+     TASK_DECREF(t);
+    }
   }
 #endif /* !CONFIG_NO_TLB */
 #endif

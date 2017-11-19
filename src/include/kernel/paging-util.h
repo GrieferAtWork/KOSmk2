@@ -23,7 +23,7 @@
 #include <kernel/paging.h>
 #include <stdbool.h>
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__arm__)
 /* TODO: Implement later */
 #define CONFIG_NO_PDIR_SELFMAP 1
 #endif

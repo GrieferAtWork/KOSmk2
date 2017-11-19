@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_INTERRUPT_H
-#define GUARD_INCLUDE_ARCH_INTERRUPT_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_INTERRUPTS_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_INTERRUPTS_H 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
@@ -220,4 +220,4 @@ DATDEF u32 kernel_panic_mask;
 
 DECL_END
 
-#endif /* !GUARD_INCLUDE_ARCH_INTERRUPT_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_INTERRUPTS_H */

@@ -24,6 +24,7 @@
 
 #define __KSYM_PREFIX  ".kern."
 
+#undef __KSYM
 #ifdef __KERNEL__
 #   define __KSYM(name) __ASMNAME(#name)
 #elif defined(__INTELLISENSE__)

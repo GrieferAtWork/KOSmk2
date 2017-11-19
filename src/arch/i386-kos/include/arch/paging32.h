@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_PAGING32_H
-#define GUARD_INCLUDE_ARCH_PAGING32_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_PAGING32_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_PAGING32_H 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/host.h>
@@ -227,4 +227,4 @@ pdir_mmap_early(pdir_t *__restrict self, VIRT ppage_t start,
 DECL_END
 #endif /* !__x86_64__ */
 
-#endif /* !GUARD_INCLUDE_ARCH_PAGING32_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_PAGING32_H */

@@ -46,6 +46,7 @@ DEFINE_PUBLIC_ALIAS(siglongjmp,libc_siglongjmp);
 DEFINE_PUBLIC_ALIAS(longjmp,libc_longjmp);
 DEFINE_PUBLIC_ALIAS(__longjmp2,libc___longjmp2);
 DEFINE_PUBLIC_ALIAS(alloca,libc_alloca);
+DEFINE_PUBLIC_ALIAS(syscall,libc_syscall);
 
 #ifndef CONFIG_LIBC_NO_DOS_LIBC
 DEFINE_PUBLIC_ALIAS(_alloca,libc_alloca);

@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_INCLUDE_ARCH_SYSCALL_H
-#define GUARD_INCLUDE_ARCH_SYSCALL_H 1
+#ifndef GUARD_ARCH_I386_KOS_INCLUDE_ARCH_SYSCALL_H
+#define GUARD_ARCH_I386_KOS_INCLUDE_ARCH_SYSCALL_H 1
 
 #include <hybrid/compiler.h>
 #include <arch/cpustate.h>
@@ -97,44 +97,16 @@ struct PACKED irregs_syscall { union PACKED { __COMMON_REG1_EX(orig_,a); registe
 #define IRREGS_SYSCALL_GET()         (((struct irregs_syscall *)THIS_CPU->c_arch.ac_tss.xsp0)-1)
 #define IRREGS_SYSCALL_GET_FOR(task) (((struct irregs_syscall *)(task)->t_hstack.hs_end)-1)
 
-/* Standardized: The current system-call return address. */
-#ifdef __x86_64__
-#define THIS_SYSCALL_GETIP() ((void *)IRREGS_SYSCALL_GET()->rip)
-#else
-#define THIS_SYSCALL_GETIP() ((void *)IRREGS_SYSCALL_GET()->eip)
-#endif
-
 #endif /* __CC__ */
 
 
 
-/* System-call defintions macros:
+/* System-call definitions macros:
  *  - __SYSCALL_NDEFINE: Define a ~normal~ c-level system call handler.
  *  - __SYSCALL_LDEFINE: Define a c-level system call handler that returns double the data (May not be defined).
  *  - __SYSCALL_SDEFINE: Define a c-level system call handler that takes a full `struct cpustate *' as argument.
  */
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-#if 0
-#include <syslog.h>
-#define __SYSCALL_NDEFINE(visibility,n,name,args) \
-  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args); \
-  visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
-    __SC_TEST##n args; syscall_slong_t __res; \
-    __res = (SYSC##name)(__SC_CAST##n args); \
-    syslog(LOG_DEBUG,"[SYSCALL] END sys" #name "() -> %p\n",(void *)__res); \
-    return __res; \
-  } \
-  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
-#else
-#define __SYSCALL_NDEFINE(visibility,n,name,args) \
-  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args); \
-  visibility syscall_slong_t (SYSCALL_HANDLER sys##name)(__SC_LONG##n args) { \
-    __SC_TEST##n args; \
-    return (SYSC##name)(__SC_CAST##n args); \
-  } \
-  LOCAL syscall_slong_t (SYSCALL_HANDLER SYSC##name)(__SC_DECL##n args)
-#endif
-
 /* Because the kernel doesn't make use of system-call extensions, but rather
  * hard-codes it's system calls, optimizing them for default usage, we need
  * some wrapper magic.
@@ -330,4 +302,4 @@ INTDEF INITCALL void KCALL syscall_initialize(void);
 
 DECL_END
 
-#endif /* !GUARD_INCLUDE_ARCH_SYSCALL_H */
+#endif /* !GUARD_ARCH_I386_KOS_INCLUDE_ARCH_SYSCALL_H */

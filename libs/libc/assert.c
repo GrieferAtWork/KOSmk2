@@ -49,7 +49,11 @@ DECL_BEGIN
 INTERN ATTR_COLDTEXT ssize_t LIBCCALL
 libc_debug_print(char const *__restrict data, size_t datalen,
                  void *UNUSED(ignored_closure)) {
+#ifdef __KERNEL__
+ return syslog_printer(data,datalen,SYSLOG_PRINTER_CLOSURE(LOG_EMERG));
+#else
  return libc_syslog_printer(data,datalen,SYSLOG_PRINTER_CLOSURE(LOG_EMERG));
+#endif
 }
 #endif /* !HAVE_LIBC_DEBUG_PRINT */
 

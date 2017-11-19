@@ -232,6 +232,58 @@ L(SYM_END(libc_alloca)                                                        )
 L(.previous                                                                   )
 );
 
+
+GLOBAL_ASM(
+L(.section .text                                                              )
+L(INTERN_ENTRY(libc_syscall)                                                  )
+#ifdef __x86_64__
+/* Must transform registers as follows:
+ * %rdi, %rsi, %rdx, %rcx, %r8,  %r9, 8(%rsp)
+ *   v     v      v    v     v    v    v
+ * %rax, %rdi, %rsi, %rdx, %r10, %r8, %r9
+ * NOTE: No registers must be saved, because none that are
+ *       callee-save ones are used for system calls arguments. */
+L(    movq  %rdi,    %rax /* SYSNO */                                         )
+L(    movq  %rsi,    %rdi /* ARG #1 */                                        )
+L(    movq  %rdx,    %rsi /* ARG #2 */                                        )
+L(    movq  %rcx,    %rdx /* ARG #3 */                                        )
+L(    movq  %r8,     %r10 /* ARG #4 */                                        )
+L(    movq  %r9,     %r8  /* ARG #5 */                                        )
+L(    movq  8(%rsp), %r9  /* ARG #6 */                                        )
+L(    int   $0x80         /* Invoke the system call. */                       )
+L(    ret                                                                     )
+#else
+L(    /* Save callee-save registers */                                        )
+L(    pushl %ebx                                                              )
+L(    pushl %edi                                                              )
+L(    pushl %esi                                                              )
+L(    pushl %ebp                                                              )
+L(                                                                            )
+L(    /* Load arguments */                                                    )
+#define    A  20 /* return+4*register (4+4*4) */
+L(    movl A+ 0(%esp), %eax /* sysno */                                       )
+L(    movl A+ 4(%esp), %ebx /* Arg #1 */                                      )
+L(    movl A+ 8(%esp), %ecx /* Arg #2 */                                      )
+L(    movl A+12(%esp), %edx /* Arg #3 */                                      )
+L(    movl A+16(%esp), %esi /* Arg #4 */                                      )
+L(    movl A+20(%esp), %edi /* Arg #5 */                                      )
+L(    movl A+24(%esp), %ebp /* Arg #6 */                                      )
+#undef A
+L(                                                                            )
+L(    int $0x80 /* Invoke the system call interrupt vector */                 )
+L(                                                                            )
+L(    /* Restore callee-save registers */                                     )
+L(    popl %ebp                                                               )
+L(    popl %esi                                                               )
+L(    popl %edi                                                               )
+L(    popl %ebx                                                               )
+L(    ret                                                                     )
+#endif
+L(SYM_END(libc_syscall)                                                       )
+L(.previous                                                                   )
+);
+
+
 DECL_END
 
 #endif /* !GUARD_LIBS_LIBC_ARCH_I386_KOS_ASM_C */

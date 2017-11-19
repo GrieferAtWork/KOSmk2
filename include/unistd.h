@@ -231,7 +231,10 @@ __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2,3)),int,__LIBCCALL,execve,(char
 __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__NONNULL((1,2)),int,__LIBCCALL,execvp,(char const *__restrict __file, __TARGV),execvp,(__path,___argv))
 #endif /* !__execl_defined */
 
+#ifndef __getpid_defined
+#define __getpid_defined 1
 __REDIRECT_UFS_FUNC_OLDPEA(__LIBC,__WUNUSED,__pid_t,__LIBCCALL,getpid,(void),getpid,())
+#endif /* !__getpid_defined */
 
 #ifdef __DOS_COMPAT__
 __REDIRECT(__LIBC,__WUNUSED_SUGGESTED __NONNULL((1)),int,__LIBCCALL,__dos_pipe,(int __pipedes[2], __UINT32_TYPE__ __pipesize, int __textmode),_pipe,(__pipedes,__pipesize,__textmode))

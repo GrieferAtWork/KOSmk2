@@ -102,13 +102,16 @@ INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_abort(void) { libc__exit(E
                       "call libc__exit\n" \
                       : : "a" (__NR_xdlfini), "m" (status) \
                       : "memory")
-#else
+#elif defined(__i386__)
 #define xdlfini_exit(status) \
  __asm__ __volatile__("int $0x80\n" \
                       "pushl %1\n" \
                       "call libc__exit\n" \
                       : : "a" (__NR_xdlfini), "m" (status) \
                       : "memory")
+#else
+#define xdlfini_exit(status) \
+   (sys_xdlfini(),libc__exit(status))
 #endif
 
 INTERN ATTR_NORETURN ATTR_COLDTEXT void LIBCCALL libc_exit(int status) {

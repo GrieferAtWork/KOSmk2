@@ -157,19 +157,25 @@ PUBLIC char const memtype_names[MEMTYPE_COUNT][8] = {
 };
 
 #ifdef CONFIG_USE_NEW_MEMINFO
-#ifdef __x86_64__
-#define STATIC_MEMINFO_MAX ((HOST_IDLE_STCKSIZE- \
-                            (sizeof(struct cpustate)))/ \
-                             sizeof(struct meminfo))
-#else
+#ifdef __i386__
 #define STATIC_MEMINFO_MAX ((HOST_IDLE_STCKSIZE- \
                             (sizeof(struct cpustate_host)))/ \
                              sizeof(struct meminfo))
+#else
+#define STATIC_MEMINFO_MAX ((HOST_IDLE_STCKSIZE- \
+                            (sizeof(struct cpustate)))/ \
+                             sizeof(struct meminfo))
 #endif
 #else
+#ifdef __i386__
 #define STATIC_MEMINFO_MAX ((HOST_IDLE_STCKSIZE- \
                             (sizeof(struct cpustate_host)+sizeof(size_t)))/ \
                              sizeof(struct meminfo))
+#else
+#define STATIC_MEMINFO_MAX ((HOST_IDLE_STCKSIZE- \
+                            (sizeof(struct cpustate)+sizeof(size_t)))/ \
+                             sizeof(struct meminfo))
+#endif
 #endif
 
 INTDEF struct PACKED {

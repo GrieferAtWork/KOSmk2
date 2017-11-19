@@ -24,9 +24,12 @@ BEGIN
 	/* Don't use the `red zone' in kernel mode. */
 	C_FLAGS("-mno-red-zone")
 	DEFINE("CONFIG_NO_BOOTLOADER=1")
-#else
-	DEFINE("CONFIG_SMP")
 #endif
+
+#if !defined(TARGET_X86_64) && !defined(TARGET_ARM)
+	DEFINE("CONFIG_SMP") /* TODO: Add SMP support to x86_64 */
+#endif
+
 	DEFINE("CONFIG_STRALIGN="+KERNEL_CONFIG_STRALIGN)
 
 #if defined(TARGET_X86_64) || defined(TARGET_I386)

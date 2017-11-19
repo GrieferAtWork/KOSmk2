@@ -21,14 +21,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/host.h>
-
-#ifdef __x86_64__
-#include "arch/paging64.h"
-#elif defined(__i386__)
-#include "arch/paging32.h"
-#else
-#error "Unsupported arch"
-#endif
+#include <arch/paging.h>
 
 #ifdef __CC__
 #include <errno.h>
@@ -36,6 +29,10 @@
 #include <kernel/memory.h>
 #include <format-printer.h>
 #endif /* __CC__ */
+
+#ifndef PDIR_OFFSETOF_DIRECTORY
+#define PDIR_OFFSETOF_DIRECTORY 0
+#endif
 
 DECL_BEGIN
 
