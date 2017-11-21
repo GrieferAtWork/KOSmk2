@@ -16,48 +16,47 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
+#ifndef GUARD_KERNEL_ARCH_LOG_C
+#define GUARD_KERNEL_ARCH_LOG_C 1
+#define _KOS_SOURCE 1
 
+#include <assert.h>
+#include <hybrid/check.h>
+#include <hybrid/compiler.h>
+#include <hybrid/sync/atomic-rwlock.h>
+#include <hybrid/types.h>
+#include <kernel/boot.h>
+#include <kernel/export.h>
+#include <kernel/paging.h>
+#include <modules/tty.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/io.h>
 
-#define STRING_BEGIN .section .linker.strings
-#define STRING_END	 /* Nothing */
-#define STR(n)       .string n
-#ifdef __x86_64__
-#define ASM_PTR   .quad
-#else
-#define ASM_PTR   .long
-#endif
-#define BUCKET_BEGIN \
-		.section .linker.buckets; \
-		ASM_PTR 912f; \
-		.section .linker.symbols; \
-	912:
-#define BUCKET_END \
-		.int    0; \
-		.int    0; \
-		ASM_PTR 0
-#define EMPTY_BUCKET \
-		.section .linker.buckets; \
-		ASM_PTR _empty_bucket
-#define SYM(off,hash,name,addr) \
-		.int    off; \
-		.int    hash; \
-		ASM_PTR addr
+DECL_BEGIN
 
-.section .linker.symbols
-.hidden _empty_bucket
-.local _empty_bucket
-_empty_bucket:
-	.int    0 /* offset */
-	.int    0 /* hash */
-	ASM_PTR 0 /* address */
-.size _empty_bucket, . - _empty_bucket
+#define UART0_BASE 0x1c090000
 
-#ifdef __x86_64__
-#   include "ksym-x86_64-kos.h"
-#elif defined(__i386__)
-#   include "ksym-i386-kos.h"
-#elif defined(__arm__)
-#   include "ksym-arm-kos.h"
-#else
-#   error "Unknown target arch"
-#endif
+PUBLIC vtty_char_t tty_color;
+PUBLIC void KCALL tty_putc(char c) {
+ volatile unsigned int *uart0 = (volatile unsigned int *)UART0_BASE;
+ *uart0 = c;
+}
+
+PUBLIC void KCALL
+tty_print(char const *__restrict str, size_t len) {
+ char const *end = str+len;
+ CHECK_HOST_TEXT(str,len);
+ for (; str != end; ++str) tty_putc(*str);
+}
+
+PUBLIC ssize_t KCALL
+tty_printer(char const *__restrict str, size_t len,
+            void *UNUSED(closure)) {
+ tty_print(str,len);
+ return (ssize_t)len;
+}
+
+DECL_END
+
+#endif /* !GUARD_KERNEL_ARCH_LOG_C */

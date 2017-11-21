@@ -223,10 +223,10 @@ BEGIN
 			 *    thus lying the basis for dynamically loading more.
 			 * WARNING: The order in which these modules appear here is their load order!
 			 */
-			SOURCE("kernel/core-modules/io/tty.c")
 			/* Must be installed before disk drivers! */
 			SOURCE("kernel/core-modules/autopart/mbr.c")
 #if defined(TARGET_I386) || defined(TARGET_X86_64)
+			SOURCE("arch/i386-kos/core-modules/io/tty.c")
 			SOURCE("arch/i386-kos/core-modules/disk/bios-disk.c")
 #endif
 			SOURCE("kernel/core-modules/fs/fat.c")

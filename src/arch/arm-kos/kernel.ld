@@ -27,7 +27,7 @@
 #include <arch/hints.h>
 
 #define DEFAULT_SECTION(name) \
-  name BLOCK(PAGESIZE) : AT(ADDR(name) - CORE_BASE)
+  name BLOCK(PAGESIZE) : AT(ADDR(name))
 #define PHYSICAL_SECTION(name) \
   name BLOCK(PAGESIZE) : AT(ADDR(name))
 
@@ -37,7 +37,7 @@
 #   define TEST_SECTION(x) *(x)
 #endif
 
-#if 1
+#if 0
 PHDRS {
 	p_kernel PT_LOAD;
 	p_phys   PT_LOAD;

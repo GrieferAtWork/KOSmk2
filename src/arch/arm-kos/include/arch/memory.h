@@ -16,48 +16,26 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
+#ifndef GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_MEMORY_H
+#define GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_MEMORY_H 1
+
+#include <hybrid/compiler.h>
+#include <hybrid/types.h>
+#include <kernel/memory.h>
+#include <kernel/export.h>
+#include <arch/paging.h>
+
+DECL_BEGIN
+
+/* Predefined memory regions. */
+#define MEMORY_PREDEF_COUNT  4
+#define MEMORY_PREDEF_LIST \
+  { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0, }, \
+  { .mi_type = MEMTYPE_KERNEL, .mi_addr = (void *)KERNEL_START, }, \
+  { .mi_type = MEMTYPE_KFREE,  .mi_addr = (void *)KERNEL_FREE_START, }, \
+  { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)KERNEL_FREE_END, },
 
 
-#define STRING_BEGIN .section .linker.strings
-#define STRING_END	 /* Nothing */
-#define STR(n)       .string n
-#ifdef __x86_64__
-#define ASM_PTR   .quad
-#else
-#define ASM_PTR   .long
-#endif
-#define BUCKET_BEGIN \
-		.section .linker.buckets; \
-		ASM_PTR 912f; \
-		.section .linker.symbols; \
-	912:
-#define BUCKET_END \
-		.int    0; \
-		.int    0; \
-		ASM_PTR 0
-#define EMPTY_BUCKET \
-		.section .linker.buckets; \
-		ASM_PTR _empty_bucket
-#define SYM(off,hash,name,addr) \
-		.int    off; \
-		.int    hash; \
-		ASM_PTR addr
+DECL_END
 
-.section .linker.symbols
-.hidden _empty_bucket
-.local _empty_bucket
-_empty_bucket:
-	.int    0 /* offset */
-	.int    0 /* hash */
-	ASM_PTR 0 /* address */
-.size _empty_bucket, . - _empty_bucket
-
-#ifdef __x86_64__
-#   include "ksym-x86_64-kos.h"
-#elif defined(__i386__)
-#   include "ksym-i386-kos.h"
-#elif defined(__arm__)
-#   include "ksym-arm-kos.h"
-#else
-#   error "Unknown target arch"
-#endif
+#endif /* !GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_MEMORY_H */

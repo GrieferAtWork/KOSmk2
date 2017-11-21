@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_KERNEL_CORE_MODULES_TTY_C
-#define GUARD_KERNEL_CORE_MODULES_TTY_C 1
+#ifndef GUARD_KERNEL_ARCH_MODULES_TTY_C
+#define GUARD_KERNEL_ARCH_MODULES_TTY_C 1
 #define _KOS_SOURCE 1
 
 #include <assert.h>
@@ -102,4 +102,4 @@ tty_printer(char const *__restrict str, size_t len,
 
 DECL_END
 
-#endif /* !GUARD_KERNEL_CORE_MODULES_TTY_C */
+#endif /* !GUARD_KERNEL_ARCH_MODULES_TTY_C */

@@ -858,7 +858,7 @@ pdir_kernel_do_unmap(VIRT uintptr_t begin, size_t n_bytes) {
 
 /* These mappings must be kept to ensure proper  */
 #define PDIR_KERNEL_KEEP_VIRTUAL_PHYSMAPPINGS 1
-#define PDIR_KERNEL_PHYS_BEGIN   KERNEL_PHYS_BEGIN
+#define PDIR_KERNEL_PHYS_BEGIN   KERNEL_PHYS_START
 #define PDIR_KERNEL_PHYS_END     KERNEL_PHYS_END
 
 INTERN ATTR_FREETEXT void KCALL
@@ -892,7 +892,6 @@ pdir_kernel_unmap(VIRT uintptr_t begin, size_t n_bytes) {
  pdir_kernel_do_unmap(begin,n_bytes);
 }
 
-#ifdef CONFIG_USE_NEW_MEMINFO
 INTERN ATTR_FREETEXT void KCALL
 pdir_kernel_unmap_unused(void) {
  struct meminfo const *iter;
@@ -916,43 +915,6 @@ pdir_kernel_unmap_unused(void) {
  if (!is_mapping)
       pdir_kernel_unmap(last_begin,KERNEL_BASE-last_begin);
 }
-#else
-INTERN ATTR_FREETEXT void KCALL
-pdir_kernel_unmap_mzone(mzone_t zone_id) {
- /* Use memory information, as not to miss anything. */
- struct meminfo const *iter;
- PHYS uintptr_t del_begin,del_end;
- del_begin = MZONE_MIN(zone_id);
- iter      = mem_info[zone_id];
- for (;; iter = iter->mi_next) {
-  if (iter == MEMINFO_EARLY_NULL)
-   del_end = MZONE_MAX(zone_id)+1;
-  else {
-   /* Ignore memory that should not be mapped. */
-   if (!MEMTYPE_ISMAP(iter->mi_type)) continue;
-#if 0
-   syslog(LOG_MEM|LOG_DEBUG,FREESTR("[PD] CORE_RANGE(%p...%p) (type %d, zone #%d)\n"),
-          iter->mi_part_addr,(uintptr_t)iter->mi_part_addr+iter->mi_part_size-1,iter->mi_type,zone_id);
-#endif
-   del_end = (uintptr_t)iter->mi_part_addr;
-  }
-  assertf(!del_end || del_end >= del_begin,
-          FREESTR("del_begin = %p\n"
-                  "del_end   = %p"),
-          del_begin,del_end);
-  if (del_begin != del_end) {
-   //if (zone_id < MZONE_HIMEM) {
-   // pdir_kernel_unmap((uintptr_t)phys_to_virt(del_begin),
-   //                    del_end-del_begin);
-   //}
-   pdir_kernel_unmap(del_begin,del_end-del_begin);
-  }
-  if (iter == MEMINFO_EARLY_NULL) break;
-  del_begin = (uintptr_t)iter->mi_part_addr+
-                         iter->mi_part_size;
- }
-}
-#endif
 
 
 /* Define initialization hooks. */
@@ -960,15 +922,8 @@ pdir_kernel_unmap_mzone(mzone_t zone_id) {
         pdir_kernel_transform_tables()
 #define PDIR_KERNEL_INITIALIZE_SELFMAP() \
         pdir_initialize_selfmap(&pdir_kernel)
-
-#ifdef CONFIG_USE_NEW_MEMINFO
 #define PDIR_KERNEL_UNMAP_UNUSED() \
         pdir_kernel_unmap_unused()
-#else
-#define PDIR_KERNEL_UNMAP_UNUSED() \
-       (pdir_kernel_unmap_mzone(MZONE_1MB), \
-        pdir_kernel_unmap_mzone(MZONE_HIMEM))
-#endif
 #define PDIR_KERNEL_UNMAP_AFTEREND() \
         pdir_kernel_unmap(KERNEL_END,KERNEL_AFTER_END);
 #define PDIR_KERNEL_UNMAP_BEFOREBEGIN() \

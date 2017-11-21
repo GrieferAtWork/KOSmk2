@@ -48,6 +48,7 @@
 #include <kernel/export.h>
 #include <kos/thread.h>
 #include <arch/hints.h>
+#include <arch/memory.h>
 
 DECL_BEGIN
 
@@ -179,21 +180,16 @@ INTDEF byte_t __kernel_nofree_size[];
  * NOTE: This stack isn't actually require for the task itself,
  *       but for interrupts such as PIT timer, or others. */
 INTERN ATTR_ALIGNED(16) struct PACKED {
- struct meminfo       s_kmeminfo[4];
+ struct meminfo       s_kmeminfo[MEMORY_PREDEF_COUNT];
  byte_t               s_data[HOST_IDLE_STCKSIZE-
                             (sizeof(struct cpustate)+
-                             sizeof(struct meminfo)*4+
+                             sizeof(struct meminfo)*MEMORY_PREDEF_COUNT+
                              sizeof(size_t))];
  struct cpustate      s_boot;
 } __bootidlestack = {
     /* Bootstrap kernel memory info.
      * >> Used to describe the kernel itself in physical memory. */
-    .s_kmeminfo = {
-        { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0, },
-        { .mi_type = MEMTYPE_KERNEL, .mi_addr = (void *)((uintptr_t)__kernel_start - CORE_BASE), },
-        { .mi_type = MEMTYPE_KFREE,  .mi_addr = (void *)((uintptr_t)__kernel_free_start - CORE_BASE), },
-        { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)((uintptr_t)__kernel_free_end - CORE_BASE), },
-    },
+    .s_kmeminfo = { MEMORY_PREDEF_LIST },
 #ifdef CONFIG_DEBUG
     .s_data = {
         [0 ... COMPILER_LENOF(__bootidlestack.s_data)-1] = (KERNEL_DEBUG_MEMPAT_HOSTSTACK & 0xff)

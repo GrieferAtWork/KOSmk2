@@ -27,6 +27,7 @@
 #include <arch/hints.h>
 #include <sched/cpu.h>
 #include <kernel/boot.h>
+#include <modules/tty.h>
 
 DECL_BEGIN
 
@@ -39,7 +40,6 @@ PUBLIC u8  boot_emulation = BOOT_EMULATION_DEFAULT;
 PUBLIC u16 boot_emulation_logport = (u16)0x80;
 
 GLOBAL_ASM(
-L(.syntax unified                                                             )
 L(.section .text.entry                                                        )
 L(INTERN_ENTRY(_start)                                                        )
 L(    ldr   sp, 1f                                                            )
@@ -49,11 +49,6 @@ L(SYM_END(_start)                                                             )
 L(.previous                                                                   )
 );
 
-PUBLIC void foo(void) {
- register byte_t *x asm("sp");
- x = __bootstack;
- *x = 42;
-}
 
 DECL_END
 

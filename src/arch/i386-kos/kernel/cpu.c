@@ -53,6 +53,7 @@
 #include <arch/hints.h>
 #include <arch/pic.h>
 #include <arch/asm.h>
+#include <arch/memory.h>
 
 DECL_BEGIN
 
@@ -210,64 +211,24 @@ INTDEF byte_t __kernel_nofree_size[];
  * NOTE: This stack isn't actually require for the task itself,
  *       but for interrupts such as PIT timer, or others. */
 INTERN ATTR_ALIGNED(16) struct PACKED {
-#ifdef CONFIG_USE_NEW_MEMINFO
-#define NUM_MEMINFO 6
- struct meminfo       s_kmeminfo[6];
-#else
-#define NUM_MEMINFO 2
- size_t               s_kernused;
- struct meminfo       s_kmeminfo[2];
-#endif
+ struct meminfo       s_kmeminfo[MEMORY_PREDEF_COUNT];
 #ifdef __x86_64__
  byte_t               s_data[HOST_IDLE_STCKSIZE-
                             (sizeof(struct cpustate)+
-                             sizeof(struct meminfo)*NUM_MEMINFO+
+                             sizeof(struct meminfo)*MEMORY_PREDEF_COUNT+
                              sizeof(size_t))];
  struct cpustate      s_boot;
 #else
  byte_t               s_data[HOST_IDLE_STCKSIZE-
                             (sizeof(struct cpustate_host)+
-                             sizeof(struct meminfo)*NUM_MEMINFO+
+                             sizeof(struct meminfo)*MEMORY_PREDEF_COUNT+
                              sizeof(size_t))];
  struct cpustate_host s_boot;
 #endif
 } __bootidlestack = {
     /* Bootstrap kernel memory info.
      * >> Used to describe the kernel itself in physical memory. */
-#ifndef CONFIG_USE_NEW_MEMINFO
-    .s_kernused = COMPILER_LENOF(__bootidlestack.s_kmeminfo),
-#endif /* !CONFIG_USE_NEW_MEMINFO */
-    .s_kmeminfo = {
-#ifdef CONFIG_USE_NEW_MEMINFO
-        [0] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0, },
-        [1] = { .mi_type = MEMTYPE_DEVICE, .mi_addr = (void *)0x000A0000, }, /* VGA display buffer (Not defined by BIOS functions) */
-        [2] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0x000C0000, },
-        [3] = { .mi_type = MEMTYPE_KERNEL, .mi_addr = (void *)((uintptr_t)__kernel_start - CORE_BASE), },
-        [4] = { .mi_type = MEMTYPE_KFREE,  .mi_addr = (void *)((uintptr_t)__kernel_free_start - CORE_BASE), },
-        [5] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)((uintptr_t)__kernel_free_end - CORE_BASE), },
-#else /* CONFIG_USE_NEW_MEMINFO */
-        [0] = {
-            .mi_next      = &__bootidlestack.s_kmeminfo[1],
-            .mi_type      = MEMTYPE_KERNEL,
-            .mi_addr      = (void *)((uintptr_t)__kernel_start - CORE_BASE),
-            .mi_part_addr = (ppage_t)((uintptr_t)__kernel_start - CORE_BASE),
-            .mi_full_addr = (ppage_t)((uintptr_t)__kernel_start - CORE_BASE),
-            .mi_size      = (PAGE_ALIGNED size_t)__kernel_nofree_size,
-            .mi_part_size = (PAGE_ALIGNED size_t)__kernel_nofree_size,
-            .mi_full_size = (PAGE_ALIGNED size_t)__kernel_nofree_size,
-        },
-        [1] = {
-            .mi_next      = MEMINFO_EARLY_NULL,
-            .mi_type      = MEMTYPE_KFREE,
-            .mi_addr      = (void *)((uintptr_t)__kernel_free_start - CORE_BASE),
-            .mi_part_addr = (ppage_t)((uintptr_t)__kernel_free_start - CORE_BASE),
-            .mi_full_addr = (ppage_t)((uintptr_t)__kernel_free_start - CORE_BASE),
-            .mi_size      = (PAGE_ALIGNED size_t)__kernel_free_size,
-            .mi_part_size = (PAGE_ALIGNED size_t)__kernel_free_size,
-            .mi_full_size = (PAGE_ALIGNED size_t)__kernel_free_size,
-        },
-#endif /* !CONFIG_USE_NEW_MEMINFO */
-    },
+    .s_kmeminfo = { MEMORY_PREDEF_LIST },
 #ifdef CONFIG_DEBUG
     .s_data = {
         [0 ... COMPILER_LENOF(__bootidlestack.s_data)-1] = (KERNEL_DEBUG_MEMPAT_HOSTSTACK & 0xff)

@@ -1820,8 +1820,8 @@ struct addrpair {
  u32       ap_prot;
 };
 PRIVATE ATTR_FREERODATA struct addrpair const kernel_core_ranges[] = {
-    [CORE_RANGE_ROTEXT] = {KERNEL_RO_BEGIN,KERNEL_RO_END-1,PROT_NOUSER|PROT_READ|PROT_EXEC},
-    [CORE_RANGE_RWDATA] = {KERNEL_RW_BEGIN,KERNEL_RW_END-1,PROT_NOUSER|PROT_READ|PROT_WRITE|PROT_EXEC},
+    [CORE_RANGE_ROTEXT] = {KERNEL_RO_START,KERNEL_RO_END-1,PROT_NOUSER|PROT_READ|PROT_EXEC},
+    [CORE_RANGE_RWDATA] = {KERNEL_RW_START,KERNEL_RW_END-1,PROT_NOUSER|PROT_READ|PROT_WRITE|PROT_EXEC},
     /* XXX: Add another range for the user-share segment? */
 #ifdef CONFIG_PDIR_SELFMAP
     [CORE_RANGE_THIS_PDIR] = {
@@ -1859,7 +1859,7 @@ PRIVATE ATTR_COLDDATA struct mregion kernel_core_regions[] = {
             .mt_locked = 1,
             .mt_memory = {
                 .m_next  = NULL,
-                .m_start = (ppage_t)virt_to_phys(KERNEL_RO_BEGIN),
+                .m_start = (ppage_t)virt_to_phys(KERNEL_RO_START),
                 .m_size  = KERNEL_RO_SIZE,
             },
         },
@@ -1889,7 +1889,7 @@ PRIVATE ATTR_COLDDATA struct mregion kernel_core_regions[] = {
             .mt_locked = 1,
             .mt_memory = {
                 .m_next  = NULL,
-                .m_start = (ppage_t)virt_to_phys(KERNEL_RW_BEGIN),
+                .m_start = (ppage_t)virt_to_phys(KERNEL_RW_START),
                 .m_size  = KERNEL_RW_SIZE,
             },
         },
@@ -2018,7 +2018,6 @@ mman_initialize(void) {
   *       way it got used during fixup initialization of the
   *       kernel page directory.
   * NOTE: Just like the mappings above, these mappings must remain forever! */
-#ifdef CONFIG_USE_NEW_MEMINFO
  { struct meminfo const *iter;
    uintptr_t last_begin = 0;
    bool is_mapping = false;
@@ -2040,17 +2039,6 @@ mman_initialize(void) {
    if (is_mapping)
        mman_map_dynmem((ppage_t)last_begin,KERNEL_BASE-last_begin);
  }
-#else
- { mzone_t id;
-   for (id = 0; id != MZONE_REAL_COUNT; ++id) {
-    PHYS struct meminfo const *iter = mem_info[id];
-    for (; iter != MEMINFO_EARLY_NULL; iter = iter->mi_next) {
-     if (!MEMTYPE_ISMAP(iter->mi_type)) continue;
-     mman_map_dynmem(iter->mi_part_addr,iter->mi_part_size);
-    }
-   }
- }
-#endif
  assert(mman_kernel.m_map != NULL);
  ATOMIC_WRITE(mman_kernel.m_lock.orw_lock.aorw_lock,0);
 

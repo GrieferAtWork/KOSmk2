@@ -137,17 +137,6 @@ LOCAL mzone_t KCALL mzone_of(PHYS void *ptr) {
  return result;
 }
 
-/* TODO: Once it has proven itself (Which it kind-of already has),
- *       remove all traces of the currently deprecated, old meminfo system.
- *       Fun fact: Since going public, 'CONFIG_USE_NEW_MEMINFO' is actually
- *                 the 3rd rendition of meminfo systems created for KOS...
- *                (Let's hope this one sticks around and doesn't break due
- *                 to another situation undefined by the system.
- *                 Although for once, I very much doubt that, simply because given
- *                 the much simplified design this time around, any addition/change
- *                 that could come up should be quite straight forward.) */
-#define CONFIG_USE_NEW_MEMINFO 1
-
 /* NOTE: The order of these is important, in that greater
  *       memory types override lower ones during re-definitions. */
 #define MEMTYPE_NDEF       0 /*< Undefined memory (Handled identically to `MEMTYPE_BADRAM') */
@@ -156,9 +145,7 @@ LOCAL mzone_t KCALL mzone_of(PHYS void *ptr) {
 #define MEMTYPE_PRESERVE   2 /*< [USE_LATER_0|MAP] Preserve the original content of this memory until `mem_unpreserve()' is called,
                               *  at which point the memory will be transformed into `MEMTYPE_RAM', and made
                               *  available to the physical memory allocator. */
-#ifdef CONFIG_USE_NEW_MEMINFO
 #define MEMTYPE_ALLOCATED  3 /*< [USE_LATER_1|MAP] Same as 'MEMTYPE_RAM', but don't make memory available to `page_malloc' */
-#endif /* CONFIG_USE_NEW_MEMINFO */
 #endif /* CONFIG_BUILDING_KERNEL_CORE */
 #define MEMTYPE_KFREE      4 /*< [USE_LATER_2|MAP] Kernel memory later turned into `MEMTYPE_RAM' (The `.free' section...) */
 #define MEMTYPE_KERNEL     5 /*< [MAP] Kernel core memory (mapped, not used) */
@@ -171,29 +158,14 @@ typedef int memtype_t;
 
 #define MEMTYPE_ISUSE(x) ((x) == MEMTYPE_RAM) /* Should this type of memory be used as generic RAM? */
 #define MEMTYPE_ISMAP(x) ((x) > MEMTYPE_NDEF && (x) < MEMTYPE_BADRAM) /* Should this type of memory be mapped and be accessible. */
-#ifdef CONFIG_BUILDING_KERNEL_CORE
-#ifndef CONFIG_USE_NEW_MEMINFO
-/* Before `mem_relocate_info()' is called, this constant
- * is used as NULL-pointer within memory information.
- * Afterwards, NULL is used instead. */
-#define MEMINFO_EARLY_NULL ((struct meminfo *)-1)
-#endif /* !CONFIG_USE_NEW_MEMINFO */
-#endif
-
 
 struct meminfo {
-#ifndef CONFIG_USE_NEW_MEMINFO
- /* NOTE: `mi_part_addr..+=mi_part_size' never overlaps with another info record's range,
-  *        meaning that different info records with sub-page overlapping ranges are truncated. */
- PHYS struct meminfo const *mi_next;      /*< [0..1][->mi_addr >= mi_addr+mi_size][const] Next info link. */
-#endif /* !CONFIG_USE_NEW_MEMINFO */
 union{
  memtype_t                  mi_type;      /*< [const] Memory type (One of `MEMTYPE_*')
                                            *   NOTE: Adjacent meminfo descriptors never feature the same type!
                                            *         If a situation arises where they do, they are split. */
  uintptr_t                __mi_pad0;      /* ... */
 };
-#ifdef CONFIG_USE_NEW_MEMINFO
  PHYS void                 *mi_addr;      /*< [const][<= mi_part_addr && >= mi_full_addr] First associated address.
                                            *   NOTE: This pointer is _NOT_ necessarily page-aligned! */
 #define MEMINFO_BEGIN(x) ((uintptr_t)(x)->mi_addr)
@@ -201,27 +173,8 @@ union{
 #define MEMINFO_MIN(x)   ((uintptr_t)(x)->mi_addr)
 #define MEMINFO_MAX(x)   (MEMINFO_END(x)-1)
 #define MEMINFO_SIZE(x)  (MEMINFO_END(x)-MEMINFO_BEGIN(x))
-#else
- PHYS void                 *mi_addr;      /*< [const][<= mi_part_addr && >= mi_full_addr] First associated address. */
- size_t                     mi_size;      /*< [const][<= mi_part_size && >= mi_full_size][!0] Amount of bytes part of this region. */
- /* Partial, and full page-aligned address ranges of this memory range.
-  * Both serve different roles, in that `mi_part_*' is the larger range
-  * which refers to what is mapped within the kernel page directory,
-  * whereas `mi_full_*' refers to what can actually be used by the page
-  * allocator (assuming that the memory region is physical).
-  * >> In addition, the exact ranges, as provided by the bootloader,
-  *    BIOS or the hardware are stored in `mi_addr...+=mi_size', allowing
-  *    the user to identify the exact address ranges, as would be allowed
-  *    by the actual underlying hardware.
-  */
- PHYS ppage_t               mi_part_addr; /*< [const][== FLOOR_ALIGN(mi_addr,PAGESIZE)][>= mi_full_addr] First partially associated page. */
- PAGE_ALIGNED size_t        mi_part_size; /*< [const][== CEIL_ALIGN(mi_size+(mi_addr-mi_part_addr),PAGESIZE)][>= mi_full_size][!0] Amount of bytes apart of partially, or fully associated pages. */
- PHYS ppage_t               mi_full_addr; /*< [const][== CEIL_ALIGN(mi_addr,PAGESIZE)][<= mi_part_addr] First fully associated page. */
- PAGE_ALIGNED size_t        mi_full_size; /*< [const][== CEIL_ALIGN(mi_addr+mi_size,PAGESIZE)-mi_full_addr][<= mi_part_size][!0] Amount of bytes apart of full pages. */
-#endif
 };
 
-#ifdef CONFIG_USE_NEW_MEMINFO
 /* Physical memory information.
  * Information is stored as a vector sorted ascendingly by start
  * address, with each entry extending until the next, and the last one
@@ -233,24 +186,8 @@ DATDEF struct meminfo const *const __mem_info_last ASMNAME("mem_info_last"); /* 
 #define MEMINFO_FOREACH(iter) \
  for ((iter) = mem_info_v; \
       (iter) <= __mem_info_last; ++(iter))
-#else
-/* [0..1][MZONE_COUNT] Per-zone information about memory available for dynamic allocation.
- * NOTE:    This information is allocated during bootup and is never modified afterwards.
- * WARNING: This structure is allocated in `MZONE_NOSHARE' using physical
- *          addresses, meaning that access requires the kernel page directory! */
-DATDEF struct meminfo const *const mem_info[MZONE_COUNT];
-#define MEMINFO_FOREACH(iter,zone) \
- for ((iter)  = mem_info[zone]; \
-      (iter) != NULL; (iter) = (iter)->mi_next)
-#endif
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
-#ifndef CONFIG_USE_NEW_MEMINFO
-#define MEMINFO_EARLY_FOREACH(iter,zone) \
- for ((iter)  = mem_info[zone]; \
-      (iter) != MEMINFO_EARLY_NULL; (iter) = (iter)->mi_next)
-#endif /* !CONFIG_USE_NEW_MEMINFO */
-
 
 /* Install a new memory range during early boot.
  * This function will automatically check for overlaps with other regions,

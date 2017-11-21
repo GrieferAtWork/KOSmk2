@@ -738,10 +738,10 @@ pdir_mmap(pdir_t *__restrict self, VIRT ppage_t start,
  assert((uintptr_t)start+n_bytes == 0 ||
         (uintptr_t)start+n_bytes >= (uintptr_t)start);
  /* Make sure we're not accidentally remapping the core. */
- assertf(!((uintptr_t)start < KERNEL_END && (uintptr_t)start+n_bytes > KERNEL_BEGIN) ||
+ assertf(!((uintptr_t)start < KERNEL_END && (uintptr_t)start+n_bytes > KERNEL_START) ||
           ((uintptr_t)target == (uintptr_t)virt_to_phys(start)),
          "Remapping %p...%p overlapping the core at %p...%p to %p...%p will most certainly crash",
-        (uintptr_t)start,(uintptr_t)start+n_bytes-1,KERNEL_BEGIN,KERNEL_END-1,
+        (uintptr_t)start,(uintptr_t)start+n_bytes-1,KERNEL_START,KERNEL_END-1,
         (uintptr_t)target,(uintptr_t)target+n_bytes-1);
 
  /* Figure out if we can use 2Mib pages for mapping the target. */
@@ -843,10 +843,10 @@ pdir_munmap(pdir_t *__restrict self, VIRT ppage_t start,
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert((uintptr_t)start+n_bytes > (uintptr_t)start);
  /* Make sure we're not accidentally unmapping the core. */
- assertf(!((uintptr_t)start < KERNEL_END && (uintptr_t)start+n_bytes > KERNEL_BEGIN),
+ assertf(!((uintptr_t)start < KERNEL_END && (uintptr_t)start+n_bytes > KERNEL_START),
          "I can't let you do that, dave.\n"
          "Unmapping %p...%p overlapping the core at %p...%p will most certainly crash",
-        (uintptr_t)start,(uintptr_t)start+n_bytes-1,KERNEL_BEGIN,KERNEL_END-1);
+        (uintptr_t)start,(uintptr_t)start+n_bytes-1,KERNEL_START,KERNEL_END-1);
  *(uintptr_t *)&start &= VIRT_MASK; /* Mask out sign extension bits. */
 
  /* Make sure that level #3, #2 and #1 vectors are split at

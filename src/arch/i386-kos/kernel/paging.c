@@ -278,13 +278,13 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
  /* Change the protection of the kernel's text/rodata segment to read-only. */
  { ssize_t error;
    error = pdir_mprotect(&pdir_kernel,
-                        (ppage_t)KERNEL_RO_BEGIN,KERNEL_RO_SIZE,
+                        (ppage_t)KERNEL_RO_START,KERNEL_RO_SIZE,
                          PDIR_ATTR_ACCESSED|PDIR_ATTR_PRESENT|
                          PDIR_ATTR_GLOBAL|PDIR_FLAG_NOFLUSH);
    if (E_ISERR(error)) {
     syslog(LOG_MEM|LOG_ERROR,
            FREESTR("[PD] Failed to mark kernel text %p...%p as read-only: %[errno]\n"),
-           KERNEL_RO_BEGIN,KERNEL_RO_END-1,-error);
+           KERNEL_RO_START,KERNEL_RO_END-1,-error);
    }
 #ifdef PDIR_ATTR_USER
    /* Make the kernel's user-share segment readable from user-space. */

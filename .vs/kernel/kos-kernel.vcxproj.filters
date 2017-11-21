@@ -133,9 +133,6 @@
     <Filter Include="kernel\core-modules\autopart">
       <UniqueIdentifier>{f7eb02ad-cd37-444d-91cc-60f26cda9a2d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="kernel\core-modules\io">
-      <UniqueIdentifier>{7cc0721a-c2a1-4154-9f91-27f7bae6dc9f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="kernel\memory">
       <UniqueIdentifier>{5de744a6-4d5f-4ef0-86e9-932ea8e0e536}</UniqueIdentifier>
     </Filter>
@@ -226,6 +223,9 @@
     <Filter Include="arch\i386-kos\core-modules\disk">
       <UniqueIdentifier>{ac8272e1-0c7e-479a-bce6-e1484220b36c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="arch\i386-kos\core-modules\io">
+      <UniqueIdentifier>{d50bc99c-9765-4eaa-9bd9-1a38c460ad2f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core\main.c">
@@ -296,9 +296,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core-modules\autopart\mbr.c">
       <Filter>kernel\core-modules\autopart</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c">
-      <Filter>kernel\core-modules\io</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core-modules\fs\fat.c">
       <Filter>kernel\core-modules\fs</Filter>
@@ -556,6 +553,12 @@
       <Filter>arch\arm-kos\kernel</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\pagefault.c">
+      <Filter>arch\arm-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\core-modules\io\tty.c">
+      <Filter>arch\i386-kos\core-modules\io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\arm-kos\kernel\log.c">
       <Filter>arch\arm-kos\kernel</Filter>
     </ClCompile>
   </ItemGroup>
@@ -922,6 +925,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\thread_context.h">
       <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\memory.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\memory.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

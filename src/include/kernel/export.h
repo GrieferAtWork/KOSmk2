@@ -52,17 +52,21 @@ INTDEF byte_t (PAGE_ALIGNED __kernel_after_end)[]; /* KERNEL_GLOBAL_END - __kern
 
 /* Helper macros for kernel layout information.
  * NOTE: All addresses are virtual (>= KERNEL_BASE) */
-#define KERNEL_BEGIN      (PAGE_ALIGNED VIRT uintptr_t)__kernel_start
+#define KERNEL_START      (PAGE_ALIGNED VIRT uintptr_t)__kernel_start
 #define KERNEL_END        (PAGE_ALIGNED VIRT uintptr_t)__kernel_end
-#define KERNEL_RO_BEGIN   (PAGE_ALIGNED VIRT uintptr_t)__kernel_start
+#define KERNEL_RO_START   (PAGE_ALIGNED VIRT uintptr_t)__kernel_start
 #define KERNEL_RO_END     (PAGE_ALIGNED VIRT uintptr_t)__kernel_ro_end
-#define KERNEL_RW_BEGIN   (PAGE_ALIGNED VIRT uintptr_t)__kernel_rw_start
+#define KERNEL_RW_START   (PAGE_ALIGNED VIRT uintptr_t)__kernel_rw_start
 #define KERNEL_RW_END     (PAGE_ALIGNED VIRT uintptr_t)__kernel_end
 
 /* Begin/end of the physical .data section.
  * NOTE: This is where pdir_kernel (the physical version) are stored. */
-#define KERNEL_PHYS_BEGIN (PAGE_ALIGNED PHYS uintptr_t)__kernel_phys_start
+#define KERNEL_PHYS_START (PAGE_ALIGNED PHYS uintptr_t)__kernel_phys_start
 #define KERNEL_PHYS_END   (PAGE_ALIGNED PHYS uintptr_t)__kernel_phys_end
+
+/* Begin/end of the .free section. */
+#define KERNEL_FREE_START (PAGE_ALIGNED PHYS uintptr_t)__kernel_free_start
+#define KERNEL_FREE_END   (PAGE_ALIGNED PHYS uintptr_t)__kernel_free_end
 
 #define KERNEL_SIZE       (PAGE_ALIGNED size_t)__kernel_size
 #define KERNEL_RO_SIZE    (PAGE_ALIGNED size_t)__kernel_ro_size

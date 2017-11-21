@@ -58,6 +58,7 @@
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\boot.c" />
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\cpu.c" />
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\interrupt.c" />
+    <ClCompile Include="..\..\src\arch\arm-kos\kernel\log.c" />
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\memory-detect.c" />
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\pagefault.c" />
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\paging.c" />
@@ -66,6 +67,7 @@
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\task.c" />
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\user.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\core-modules\disk\bios-disk.c" />
+    <ClCompile Include="..\..\src\arch\i386-kos\core-modules\io\tty.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\boot.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\cpu.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\fpu.c" />
@@ -86,7 +88,6 @@
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\user.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\autopart\mbr.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\fs\fat.c" />
-    <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\linker\elf.c" />
     <ClCompile Include="..\..\src\kernel\core\boot.c" />
     <ClCompile Include="..\..\src\kernel\core\iomgr.c" />
@@ -172,6 +173,7 @@
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\current_context.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\hints.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\interrupt.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\memory.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\pagefault.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\paging.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\percpu.h" />
@@ -192,6 +194,7 @@
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\hints.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\idt_pointer.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\interrupt.h" />
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\memory.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\mp.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\pagefault.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging.h" />
