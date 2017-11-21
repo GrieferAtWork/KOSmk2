@@ -2811,6 +2811,7 @@ mptr_setup(struct mptr *__restrict self,
      }
 #else
 #warning "FIXME: No local exception handler used for tracebacks."
+     /* TODO: Use `call_user_worker' */
      { struct frame { struct frame *f_caller; void *f_return; };
        struct frame *frame = (struct frame *)setup->s_tbebp;
        for (; tail_size; --tail_size, ++iter) {

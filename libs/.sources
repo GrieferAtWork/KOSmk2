@@ -52,6 +52,9 @@ BEGIN LIBRARY("libc")
 	
 	SOURCE("libc/*.c")
 	SOURCE("libc/inet/*.c")
+#ifdef TARGET_ARM
+	SOURCE("libc/arch/arm-kos/atomic.c")
+#endif
 END
 
 BEGIN LIBRARY("libdl")

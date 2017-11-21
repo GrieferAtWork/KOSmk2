@@ -67,6 +67,7 @@ struct PACKED gpregs {
     register_t r1;
     register_t r2;
     register_t r3;
+    register_t r4;
     register_t r5;
     register_t r6;
     register_t r7;

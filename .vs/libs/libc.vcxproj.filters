@@ -32,6 +32,9 @@
     <ClCompile Include="..\..\libs\libc\unicode.c" />
     <ClCompile Include="..\..\libs\libc\file.c" />
     <ClCompile Include="..\..\libs\libc\regex.c" />
+    <ClCompile Include="..\..\libs\libc\arch\arm-kos\atomic.c">
+      <Filter>arch\arm-kos</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\libs\libc\templates\fuzzy_memcmp.code">
@@ -95,6 +98,9 @@
     <ClInclude Include="..\..\libs\libc\file.h" />
     <ClInclude Include="..\..\libs\libc\regex.h" />
     <ClInclude Include="..\..\libs\libc\assert.h" />
+    <ClInclude Include="..\..\libs\libc\arch\arm-kos\atomic.h">
+      <Filter>arch\arm-kos</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="templates">

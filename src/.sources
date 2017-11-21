@@ -54,6 +54,9 @@ BEGIN
 #if defined(TARGET_X86_64) && 0
 	DEFINE("CONFIG_USE_EXTERNAL_ADDR2LINE")
 #endif
+#ifdef TARGET_ARM
+	DEFINE("CONFIG_NO_BIOS")
+#endif
 	//C_FLAGS("-momit-lock-prefix=no") /* Enable when `CONFIG_SMP' is disabled. */
 	if (config_debug) {
 		DEFINE("CONFIG_DEBUG")
@@ -88,6 +91,9 @@ BEGIN
 			SOURCE("../libs/libc/assert.c")
 			SOURCE("../libs/libc/ctype.c")
 			SOURCE("../libs/libc/format-printer.c")
+#ifdef TARGET_ARM
+			SOURCE("../libs/libc/arch/arm-kos/atomic.c")
+#endif
 		END
 
 

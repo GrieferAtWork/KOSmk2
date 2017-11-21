@@ -28,12 +28,12 @@ DECL_BEGIN
 
 #ifdef __x86_64__
 
-#define HOST_STCK_ALIGN                                 __SIZE_C(32) /* Alignment hint that should be respected by all host-stack allocators. */
-#define HOST_STCK_SIZE                              __SIZE_C(0x8000) /* Default, generic size for host stacks. */
-#define HOST_BOOT_STCKSIZE                          __SIZE_C(0x8000) /* For reference: The size of the boot stack. */
-#define HOST_IDLE_STCKSIZE                          __SIZE_C(0x8000) /* For reference: The size of IDLE-thread stacks. */
+#define HOST_STCK_ALIGN                                          32  /* Alignment hint that should be respected by all host-stack allocators. */
+#define HOST_STCK_SIZE                                       0x8000  /* Default, generic size for host stacks. */
+#define HOST_BOOT_STCKSIZE                                   0x8000  /* For reference: The size of the boot stack. */
+#define HOST_IDLE_STCKSIZE                                   0x8000  /* For reference: The size of IDLE-thread stacks. */
 #ifndef CONFIG_NO_JOBS
-#define HOST_WOKER_STCKSIZE                         __SIZE_C(0x8000) /* For reference: The size of per-cpu WORK-thread stacks. */
+#define HOST_WOKER_STCKSIZE                                  0x8000  /* For reference: The size of per-cpu WORK-thread stacks. */
 #endif /* !CONFIG_NO_JOBS */
 
 #define USER_MODULE_STATIC_ADDRHINT  __UINTPTR_C(0x0000000008000000) /* Default base address of user-space applications. (Grows up) */
@@ -43,14 +43,14 @@ DECL_BEGIN
 #define USER_STCK_ADDRHINT           __UINTPTR_C(0x00007ff000000000) /* Initial value for `struct man::m_ustck' (Grows down) */
 #define USER_TASK_TLB_ADDRHINT       __UINTPTR_C(0x00007fff00000000) /* Address hint for the per-thread TLB/TIB block. (Grows down) */
 #define USER_ENVIRON_ADDRHINT       (__UINTPTR_C(0x0000800000000000)-(64*PAGESIZE)) /* Address hint when attempting to place the appenv data block in user-space. (Grows down) */
-#define USER_STCK_BASESIZE                          __SIZE_C(0x8000) /* Default, generic size for user stacks. */
-#define USER_STCK_ALIGN                                 __SIZE_C(32) /* Alignment hint that should be respected by all user-stack allocators. */
+#define USER_STCK_BASESIZE                                   0x8000  /* Default, generic size for user stacks. */
+#define USER_STCK_ALIGN                                          32  /* Alignment hint that should be respected by all user-stack allocators. */
 #define USER_STCK_ADDRGAP                              (64*PAGESIZE) /* Allocation gap size when initially reserving space for a user-space stack.
                                                                       * NOTE: If no free memory region can be found that fits this gap, the search
                                                                       *       is attempted a second time while ignoring this hint. */
-#define USER_STCK_FUNDS                                 __SIZE_C(16) /* Default amount of funding for guard-pages in user-space stacks. */
+#define USER_STCK_FUNDS                                          16  /* Default amount of funding for guard-pages in user-space stacks. */
 #define USER_STCK_GUARDSIZE                                PAGESIZE  /* Default user-space stack guard size. */
-#define USER_REDZONE_SIZE                              __SIZE_C(128) /* Size of the so-called `red' zone (Basically, a memory gap left on user-stacks when a signal handler is executed)
+#define USER_REDZONE_SIZE                                       128  /* Size of the so-called `red' zone (Basically, a memory gap left on user-stacks when a signal handler is executed)
                                                                       * The 128 bytes specified here are mandated by the SysV ABI standard (Which KOS tries to be compatible with). */
 
 #define HOST_HEAPEND_KERNEL_LOCKED   __UINTPTR_C(0x0000500000000000) /* Start address of the GFP_KERNEL|GFP_LOCKED heap. (Grows up) */
@@ -66,12 +66,12 @@ DECL_BEGIN
 
 #else /* __x86_64__ */
 
-#define HOST_STCK_ALIGN                         __SIZE_C(16) /* Alignment hint that should be respected by all host-stack allocators. */
-#define HOST_STCK_SIZE                      __SIZE_C(0x4000) /* Default, generic size for host stacks. */
-#define HOST_BOOT_STCKSIZE                  __SIZE_C(0x4000) /* For reference: The size of the boot stack. */
-#define HOST_IDLE_STCKSIZE                  __SIZE_C(0x4000) /* For reference: The size of IDLE-thread stacks. */
+#define HOST_STCK_ALIGN                                  16  /* Alignment hint that should be respected by all host-stack allocators. */
+#define HOST_STCK_SIZE                               0x4000  /* Default, generic size for host stacks. */
+#define HOST_BOOT_STCKSIZE                           0x4000  /* For reference: The size of the boot stack. */
+#define HOST_IDLE_STCKSIZE                           0x4000  /* For reference: The size of IDLE-thread stacks. */
 #ifndef CONFIG_NO_JOBS
-#define HOST_WOKER_STCKSIZE                 __SIZE_C(0x4000) /* For reference: The size of per-cpu WORK-thread stacks. */
+#define HOST_WOKER_STCKSIZE                          0x4000  /* For reference: The size of per-cpu WORK-thread stacks. */
 #endif /* !CONFIG_NO_JOBS */
 
 #define USER_MODULE_STATIC_ADDRHINT  __UINTPTR_C(0x08000000) /* Default base address of user-space applications. */
@@ -80,14 +80,14 @@ DECL_BEGIN
 #define USER_STCK_ADDRHINT           __UINTPTR_C(0x70000000) /* Initial value for `struct man::m_ustck' (Grows down) */
 #define USER_TASK_TLB_ADDRHINT       __UINTPTR_C(0xa0000000) /* Address hint for the per-thread TLB/TIB block. (Grows down) */
 #define USER_ENVIRON_ADDRHINT       (__UINTPTR_C(0xc0000000)-(4*PAGESIZE)) /* Address hint when attempting to place the appenv data block in user-space. (Grows down) */
-#define USER_STCK_BASESIZE                  __SIZE_C(0x4000) /* Default, generic size for user stacks. */
-#define USER_STCK_ALIGN                         __SIZE_C(16) /* Alignment hint that should be respected by all user-stack allocators. */
+#define USER_STCK_BASESIZE                           0x4000  /* Default, generic size for user stacks. */
+#define USER_STCK_ALIGN                                  16  /* Alignment hint that should be respected by all user-stack allocators. */
 #define USER_STCK_ADDRGAP                      (16*PAGESIZE) /* Allocation gap size when initially reserving space for a user-space stack.
                                                               * NOTE: If no free memory region can be found that fits this gap, the search
                                                               *       is attempted a second time while ignoring this hint. */
-#define USER_STCK_FUNDS                          __SIZE_C(8) /* Default amount of funding for guard-pages in user-space stacks. */
+#define USER_STCK_FUNDS                                   8  /* Default amount of funding for guard-pages in user-space stacks. */
 #define USER_STCK_GUARDSIZE                        PAGESIZE  /* Default user-space stack guard size. */
-#define USER_REDZONE_SIZE                        __SIZE_C(0) /* Size of the so-called `red' zone (Basically, a memory gap left on user-stacks when a signal handler is executed) */
+#define USER_REDZONE_SIZE                                 0  /* Size of the so-called `red' zone (Basically, a memory gap left on user-stacks when a signal handler is executed) */
 
 #define HOST_HEAPEND_KERNEL_LOCKED   __UINTPTR_C(0x10000000) /* Start address of the GFP_KERNEL|GFP_LOCKED heap. (Grows up) */
 #define HOST_HEAPEND_KERNEL          __UINTPTR_C(0x14000000) /* Start address of the GFP_KERNEL heap. (Grows up) */

@@ -866,6 +866,17 @@ mem_install64(PHYS u64 base, u64 num_bytes, memtype_t type) {
 }
 #endif
 
+
+INTERN ATTR_FREERODATA u8 const memtype_bios_matrix[6] = {
+    [0] = MEMTYPE_NDEF,   /* Undefined (Fallback). */
+    [1] = MEMTYPE_RAM,    /* Available. */
+    [2] = MEMTYPE_DEVICE, /* Reserved. */
+    [3] = MEMTYPE_COUNT,  /* ACPI-Reclaimable. (Ignored) */
+    [4] = MEMTYPE_NVS,    /* NVS. */
+    [5] = MEMTYPE_BADRAM, /* Badram. */
+};
+
+
 INTERN ATTR_FREETEXT SAFE KPD size_t KCALL
 memory_load_mb_mmap(struct mb_mmap_entry *__restrict iter, u32 info_len) {
  mb_memory_map_t *end; size_t result = 0;

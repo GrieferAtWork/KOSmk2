@@ -314,7 +314,10 @@ end: MODULE_DECREF(mod);
 }
 
 
+#ifndef CONFIG_NO_BIOS
 INTDEF u8 boot_drive;
+#endif /* !CONFIG_NO_BIOS */
+
 PRIVATE ATTR_FREETEXT void KCALL
 basicdata_initialize(u32 mb_magic, mb_info_t *info) {
  size_t mbt_memory = 0;
@@ -324,8 +327,10 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
   /* Multiboot information. */
  case MB_BOOTLOADER_MAGIC:
   early_map_identity(info,sizeof(mb_info_t));
+#ifndef CONFIG_NO_BIOS
   if (info->flags&MB_INFO_BOOTDEV)
       boot_drive = (u8)(info->boot_device >> 24);
+#endif /* !CONFIG_NO_BIOS */
   if (info->flags&MB_INFO_CMDLINE &&
      (early_map_identity((void *)(uintptr_t)info->cmdline,0x10000000),
       KERNEL_COMMANDLINE.cl_size = strlen((char *)(uintptr_t)info->cmdline)) != 0) {
@@ -429,9 +434,11 @@ basicdata_initialize(u32 mb_magic, mb_info_t *info) {
                             TAG(mb2_tag_module)->cmdline);
     break;
 
+#ifndef CONFIG_NO_BIOS
    case MB2_TAG_TYPE_BOOTDEV:
     boot_drive = (u8)TAG(mb2_tag_bootdev)->biosdev;
     break;
+#endif /* !CONFIG_NO_BIOS */
 
    default:
 #if 0

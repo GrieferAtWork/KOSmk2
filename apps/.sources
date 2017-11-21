@@ -48,11 +48,11 @@ END
 #include "private/.sources"
 #endif
 
-BEGIN APPLICATION("my_test")
-	SET_OUTPUT(CONFIG_APP_PATH "/my_test")
-	SET_DISKFILE("/opt/my_test")
-	SOURCE("test/my_test.c")
-END
+//BEGIN APPLICATION("my_test")
+//	SET_OUTPUT(CONFIG_APP_PATH "/my_test")
+//	SET_DISKFILE("/opt/my_test")
+//	SOURCE("test/my_test.c")
+//END
 
 BEGIN APPLICATION("dosfs")
 	SET_OUTPUT(CONFIG_APP_PATH "/dosfs")
@@ -73,12 +73,11 @@ BEGIN APPLICATION("playground")
 END
 
 /* Test compiling C++ headers with something other than MSVC. */
-BEGIN PROJECT("gcc_dos_userapp")
+BEGIN APPLICATION("gcc_dos_userapp")
 	//SET_COMPILER("c++")
 	//SET_LINKER("c++")
 	SET_LINKER("c")
 	C_FLAGS("-std=c11")
-	PROJ_DEP("libc")
 
 	SET_OUTPUT(CONFIG_APP_PATH "/elf_dos_userapp")
 	SET_DISKFILE("/bin/elf_dos_userapp")

@@ -27,6 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\libs\libc\arch\arm-kos\atomic.c" />
     <ClCompile Include="..\..\libs\libc\asm.c" />
     <ClCompile Include="..\..\libs\libc\assert.c" />
     <ClCompile Include="..\..\libs\libc\ctype.c" />
@@ -70,6 +71,7 @@
     <None Include="..\..\libs\libc\typecore.c.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\libs\libc\arch\arm-kos\atomic.h" />
     <ClInclude Include="..\..\libs\libc\asm.h" />
     <ClInclude Include="..\..\libs\libc\assert.h" />
     <ClInclude Include="..\..\libs\libc\ctype.h" />

@@ -78,29 +78,12 @@ PHDRS {
 ENTRY(_start)
 SECTIONS {
 
-	. = CORE_BASE + 1M;
+	. = CORE_BASE + 0x00010000;
 	DEFINE(__kernel_start = .);
 
 	/* Kernel core section. */
 	DEFAULT_SECTION(.kernel) {
-
-		KEEP(*(.multiboot))
-		DEFINE_HERE(__multiboot2_begin);
-		KEEP(*(.multiboot2))
-		DEFINE_HERE(__multiboot2_tag_begin);
-		KEEP(*(.multiboot2.tag))
-		KEEP(*(.multiboot2.tag.end))
-		DEFINE_HERE(__multiboot2_end);
-		DEFINE(__multiboot2_size = ABSOLUTE(__multiboot2_end - __multiboot2_begin));
-#if __SIZEOF_POINTER__ >= 8
-		DEFINE(__multiboot2_hdrlen_chksum =
-				(ABSOLUTE(__multiboot2_size) |
-				(ABSOLUTE(0 - (MB2_HEADER_MAGIC + MB2_ARCHITECTURE + __multiboot2_size)) << 32)));
-#else
-		DEFINE(__multiboot2_hdrlen = ABSOLUTE(__multiboot2_size));
-		DEFINE(__multiboot2_chksum = ABSOLUTE(0 - (MB2_HEADER_MAGIC + MB2_ARCHITECTURE + __multiboot2_size)));
-#endif
-
+		*(.text.entry)
 		*(.text.hot)
 		*(.text)
 

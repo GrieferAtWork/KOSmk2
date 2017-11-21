@@ -1080,12 +1080,14 @@ blkdev_get_nth_partition(struct blkdev *__restrict self,
 }
 
 
+#ifndef CONFIG_NO_BIOS
 INTDEF ssize_t KCALL
 bd_chs_read(struct blkdev *__restrict self, blkaddr_t block,
             USER void *buf, size_t n_blocks);
 INTDEF ssize_t KCALL
 bd_lba_read(struct blkdev *__restrict self, blkaddr_t block,
             USER void *buf, size_t n_blocks);
+#endif /* !CONFIG_NO_BIOS */
 
 PUBLIC SAFE errno_t KCALL
 replace_bootdev(struct blkdev *__restrict new_bootdisk) {
@@ -1118,9 +1120,14 @@ again:
  }
 use_olddisk:
  /* The bootdisk has already been replaced (It's no longer a bios-disk) */
+#ifndef CONFIG_NO_BIOS
  if ((bootdisk->bd_read != &bd_chs_read &&
       bootdisk->bd_read != &bd_lba_read) ||
-      user_bootdisk != NULL) {
+      user_bootdisk != NULL)
+#else /* !CONFIG_NO_BIOS */
+ if (user_bootdisk != NULL)
+#endif /* CONFIG_NO_BIOS */
+ {
   atomic_rwlock_endread(&boot_lock);
   return -EPERM;
  }
@@ -1268,15 +1275,18 @@ not_the_same_parts:
 }
 
 
+#ifndef CONFIG_NO_BIOS
 INTDEF ATTR_FREETEXT REF struct biosblkdev *KCALL bios_find_dev(u8 drive);
-
 #define BOOTDRIVE_UNKNOWN 0xff
 INTERN ATTR_FREEDATA u8 boot_drive = BOOTDRIVE_UNKNOWN;
 DEFINE_EARLY_SETUP_VAR("bios-drive",boot_drive);
+#endif /* !CONFIG_NO_BIOS */
+
 
 INTERN ATTR_FREETEXT void KCALL
 blkdev_bootdisk_initialize(void) {
  assert(!bootdisk);
+#ifndef CONFIG_NO_BIOS
  if (boot_drive == BOOTDRIVE_UNKNOWN) {
   /* TODO: Consult the BIOS? (Is there even an interrupt we can use for this?) */
  }
@@ -1286,18 +1296,24 @@ blkdev_bootdisk_initialize(void) {
   /* TODO: Check if we have a proprietary driver for the bootdisk! */
   syslog(LOG_FS|LOG_CONFIRM,FREESTR("[BIOS] Using bios root drive %#.2I8x in %[dev_t]\n"),
          boot_drive,bootdisk->bd_device.d_id);
- } else {
+ } else
+#endif /* !CONFIG_NO_BIOS */
+ {
+#ifndef CONFIG_NO_BIOS
   syslog(LOG_FS|LOG_ERROR,FREESTR("[BOOT] Failed to determine correct boot disk (just guess).\n"));
+#endif /* !CONFIG_NO_BIOS */
   /* Use the first ATA driver (If that driver was loaded). */
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_PRIMARY_MASTER);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_PRIMARY_SLAVE);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_SECONDARY_MASTER);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(ATA_SECONDARY_SLAVE);
+#ifndef CONFIG_NO_BIOS
   /* Use the first BIOS driver. */
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(BIOS_DISK_A);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(BIOS_DISK_B);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(BIOS_DISK_C);
   if (!bootdisk) bootdisk = BLKDEV_LOOKUP(BIOS_DISK_D);
+#endif /* !CONFIG_NO_BIOS */
   /* If we still haven't found anything, create a small RAMDISK. */
   if (!bootdisk) PANIC("TODO: Can't create RAMDISK (Not implemented)");
  }

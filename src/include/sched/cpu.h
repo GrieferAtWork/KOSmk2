@@ -216,9 +216,6 @@ DATDEF struct task inittask;
 
 #ifdef CONFIG_BUILDING_KERNEL_CORE
 INTDEF byte_t __bootstack[];
-#define BOOTSTACK_ADDR  (byte_t *)__bootstack
-#define BOOTSTACK_SIZE            0x4000
-
 struct mb_info; /* From `/proprietary/multiboot.h' */
 
 /* Initialize the scheduler by installing a PIT IRQ

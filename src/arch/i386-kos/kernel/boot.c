@@ -41,6 +41,7 @@
 #include <asm/instx.h>
 #include <syslog.h>
 #include <arch/asm.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 
@@ -109,13 +110,8 @@ HIDE(__multiboot2_chksum);
 
 
 /* Statically allocate the initial boot stack. */
-INTERN ATTR_FREEBSS
-#if defined(CONFIG_DEBUG) && 0
-    ATTR_ALIGNED(BOOTSTACK_SIZE)
-#else
-    ATTR_ALIGNED(16)
-#endif
-byte_t __bootstack[BOOTSTACK_SIZE];
+INTERN ATTR_FREEBSS ATTR_ALIGNED(HOST_STCK_ALIGN)
+byte_t __bootstack[HOST_BOOT_STCKSIZE];
 
 
 
@@ -536,7 +532,7 @@ L(    cli                                                                     )
 L(    /* Switch to long mode. */                                              )
 L(    movl %eax, %esi  /* mb_magic */                                         )
 L(    movl %ebx, %ebp  /* mb_mbt */                                           )
-L(    leal __bootstack - ASM_CORE_BASE, %esp                                  )
+L(    leal __bootstack + HOST_BOOT_STCKSIZE - ASM_CORE_BASE, %esp             )
 L(                                                                            )
 L(    /* Check for the availability of `cpuid' */                             )
 L(    pushf                                                                   )
@@ -741,7 +737,7 @@ L(    jmp    ASM_CORE_BASE + 1f                                               )
 L(1:                                                                          )
 #endif
 L(    /* Load the boot stack. */                                              )
-L(    movl   $(__bootstack+BOOTSTACK_SIZE), %esp                              )
+L(    movl   $(__bootstack+HOST_BOOT_STCKSIZE), %esp                          )
 L(                                                                            )
 L(    /* Relocate per-cpu data for the boot CPU. */                           )
 L(    leal  (__percpu_template - CORE_BASE), %esi                             )
@@ -802,7 +798,7 @@ L(    movabs $1f, %rax                                                        )
 L(    jmp    *%rax /* Jump into virtual memory. */                            )
 L(1:                                                                          )
 L(    /* Load correct address of the boot stack. */                           )
-L(    leaq   __bootstack+BOOTSTACK_SIZE(%rip), %rsp                           )
+L(    leaq   __bootstack+HOST_BOOT_STCKSIZE(%rip), %rsp                       )
 L(                                                                            )
 L(    /* Relocate per-cpu data for the boot CPU. */                           )
 L(    leaq   __percpu_template(%rip), %rsi                                    )

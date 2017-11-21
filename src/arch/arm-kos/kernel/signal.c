@@ -30,6 +30,7 @@
 #include <hybrid/panic.h>
 #include <sched/types.h>
 #include <sys/ucontext.h>
+#include <kernel/syscall.h>
 
 DECL_BEGIN
 
@@ -73,6 +74,10 @@ STATIC_ASSERT(offsetof(struct sigenter,se_r1) == SIGENTER_OFFSETOF_R1);
 #endif /* CONFIG_HAVE_SYSCALL_LONGBIT */
 STATIC_ASSERT(sizeof(struct sigenter) == SIGENTER_SIZE);
 
+SYSCALL_DEFINE1(sigreturn,USER struct sigcontext *,context) {
+ /* TODO */
+ return -ENOSYS;
+}
 
 INTERN void KCALL
 coredump_task(struct task *__restrict t,

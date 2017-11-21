@@ -33,8 +33,6 @@
 #include <hybrid/traceback.h>
 #include <arch/cpu.h>
 #include <arch/cpustate.h>
-#include <arch/gdt.h>
-#include <arch/mp.h>
 #include <kernel/boot.h>
 #include <kernel/interrupt.h>
 #include <kernel/mman.h>
@@ -49,10 +47,7 @@
 #include <kernel/memory.h>
 #include <kernel/export.h>
 #include <kos/thread.h>
-#include <asm/instx.h>
 #include <arch/hints.h>
-#include <arch/pic.h>
-#include <arch/asm.h>
 
 DECL_BEGIN
 
@@ -141,15 +136,6 @@ ATTR_FREEDATA struct task inittask = {
     .t_sigpend = SIGPENDING_INIT,
     .t_sigshare = &sigshare_kernel,
 #endif /* !CONFIG_NO_SIGNALS */
-#ifndef CONFIG_NO_LDT
-    .t_arch = {
-        .at_ldt_tasks = {
-            .le_pself = &ldt_kernel.l_tasks,
-            .le_next  = &__bootcpu.c_idle,
-        },
-        .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
-    },
-#endif
 };
 
 
@@ -173,32 +159,15 @@ PRIVATE ATTR_USED void switch_before_idle(void) {
   assert(THIS_CPU->c_running == &THIS_CPU->c_idle);
   THIS_CPU->c_running = THIS_CPU->c_idle.t_sched.sd_running.re_next;
   TASK_SWITCH_CONTEXT(&THIS_CPU->c_idle,THIS_CPU->c_running);
-  cpu_sched_setrunning_savef(&THIS_CPU->c_idle,EFLAGS_IF);
+  cpu_sched_setrunning_save(&THIS_CPU->c_idle);
+  PREEMPTION_ENABLE();
  }
 }
 
 GLOBAL_ASM(
-/* Nothing really to see here:
- * >> hlt forever, automatically serving
- *    interrupts as they arrive. */
 L(.section .text                                   )
 L(PRIVATE_ENTRY(cpu_idle)                          )
-#ifdef CONFIG_DEBUG
-L(    movx ASM_CPU(CPU_OFFSETOF_RUNNING), %xax     )
-L(    movx ASM_CPU(CPU_OFFSETOF_SELF),    %xbx     )
-L(    addx $(CPU_OFFSETOF_IDLE),          %xbx     )
-L(    cmpx %xbx, %xax                              )
-L(    je   1f                                      )
-L(    call invalid_idle_task                       )
-L(1:                                               )
-#endif
-#if CONFIG_NO_IDLE
-L(    call task_yield                              )
-#else /* CONFIG_NO_IDLE */
-L(    call switch_before_idle                      )
-L(    hlt                                          )
-#endif /* !CONFIG_NO_IDLE */
-L(    jmp cpu_idle                                 )
+L(    /* TODO */                                   )
 L(SYM_END(cpu_idle)                                )
 L(.previous                                        )
 );
@@ -210,63 +179,20 @@ INTDEF byte_t __kernel_nofree_size[];
  * NOTE: This stack isn't actually require for the task itself,
  *       but for interrupts such as PIT timer, or others. */
 INTERN ATTR_ALIGNED(16) struct PACKED {
-#ifdef CONFIG_USE_NEW_MEMINFO
-#define NUM_MEMINFO 6
- struct meminfo       s_kmeminfo[6];
-#else
-#define NUM_MEMINFO 2
- size_t               s_kernused;
- struct meminfo       s_kmeminfo[2];
-#endif
-#ifdef __x86_64__
+ struct meminfo       s_kmeminfo[4];
  byte_t               s_data[HOST_IDLE_STCKSIZE-
                             (sizeof(struct cpustate)+
-                             sizeof(struct meminfo)*NUM_MEMINFO+
+                             sizeof(struct meminfo)*4+
                              sizeof(size_t))];
  struct cpustate      s_boot;
-#else
- byte_t               s_data[HOST_IDLE_STCKSIZE-
-                            (sizeof(struct cpustate_host)+
-                             sizeof(struct meminfo)*NUM_MEMINFO+
-                             sizeof(size_t))];
- struct cpustate_host s_boot;
-#endif
 } __bootidlestack = {
     /* Bootstrap kernel memory info.
      * >> Used to describe the kernel itself in physical memory. */
-#ifndef CONFIG_USE_NEW_MEMINFO
-    .s_kernused = COMPILER_LENOF(__bootidlestack.s_kmeminfo),
-#endif /* !CONFIG_USE_NEW_MEMINFO */
     .s_kmeminfo = {
-#ifdef CONFIG_USE_NEW_MEMINFO
-        [0] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0, },
-        [1] = { .mi_type = MEMTYPE_DEVICE, .mi_addr = (void *)0x000A0000, }, /* VGA display buffer (Not defined by BIOS functions) */
-        [2] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0x000C0000, },
-        [3] = { .mi_type = MEMTYPE_KERNEL, .mi_addr = (void *)((uintptr_t)__kernel_start - CORE_BASE), },
-        [4] = { .mi_type = MEMTYPE_KFREE,  .mi_addr = (void *)((uintptr_t)__kernel_free_start - CORE_BASE), },
-        [5] = { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)((uintptr_t)__kernel_free_end - CORE_BASE), },
-#else /* CONFIG_USE_NEW_MEMINFO */
-        [0] = {
-            .mi_next      = &__bootidlestack.s_kmeminfo[1],
-            .mi_type      = MEMTYPE_KERNEL,
-            .mi_addr      = (void *)((uintptr_t)__kernel_start - CORE_BASE),
-            .mi_part_addr = (ppage_t)((uintptr_t)__kernel_start - CORE_BASE),
-            .mi_full_addr = (ppage_t)((uintptr_t)__kernel_start - CORE_BASE),
-            .mi_size      = (PAGE_ALIGNED size_t)__kernel_nofree_size,
-            .mi_part_size = (PAGE_ALIGNED size_t)__kernel_nofree_size,
-            .mi_full_size = (PAGE_ALIGNED size_t)__kernel_nofree_size,
-        },
-        [1] = {
-            .mi_next      = MEMINFO_EARLY_NULL,
-            .mi_type      = MEMTYPE_KFREE,
-            .mi_addr      = (void *)((uintptr_t)__kernel_free_start - CORE_BASE),
-            .mi_part_addr = (ppage_t)((uintptr_t)__kernel_free_start - CORE_BASE),
-            .mi_full_addr = (ppage_t)((uintptr_t)__kernel_free_start - CORE_BASE),
-            .mi_size      = (PAGE_ALIGNED size_t)__kernel_free_size,
-            .mi_part_size = (PAGE_ALIGNED size_t)__kernel_free_size,
-            .mi_full_size = (PAGE_ALIGNED size_t)__kernel_free_size,
-        },
-#endif /* !CONFIG_USE_NEW_MEMINFO */
+        { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0, },
+        { .mi_type = MEMTYPE_KERNEL, .mi_addr = (void *)((uintptr_t)__kernel_start - CORE_BASE), },
+        { .mi_type = MEMTYPE_KFREE,  .mi_addr = (void *)((uintptr_t)__kernel_free_start - CORE_BASE), },
+        { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)((uintptr_t)__kernel_free_end - CORE_BASE), },
     },
 #ifdef CONFIG_DEBUG
     .s_data = {
@@ -274,39 +200,16 @@ INTERN ATTR_ALIGNED(16) struct PACKED {
     },
 #endif /* CONFIG_DEBUG */
     .s_boot = {
-        .sg = {
-#ifdef __x86_64__
-            .gs_base = (uintptr_t)&__bootcpu,
-            .fs_base = 0,
-#else
-            .gs = __KERNEL_DS,
-            .fs = __KERNEL_PERCPU,
-            .es = __KERNEL_DS,
-            .ds = __KERNEL_DS,
-#endif
-        },
-        .iret = {
-            .xip    = (uintptr_t)&cpu_idle,
-            .cs     = __KERNEL_CS,
-            /* All other flags don't matter, but `IF' (interrupt flag) must be set.
-             * If it wasn't, the idle task would otherwise block forever! */
-            .xflags = EFLAGS_IF|EFLAGS_IOPL(0),
-#ifdef __x86_64__
-            .userxsp = (uintptr_t)&__bootidlestack+HOST_IDLE_STCKSIZE,
-            .ss      = __KERNEL_DS,
-#endif
+        .xc = {
+            .sp = (uintptr_t)(&__bootidlestack+1),
+            .pc = (uintptr_t)&cpu_idle,
         },
     },
 };
 
 #ifndef CONFIG_NO_JOBS
 INTERN ATTR_RAREBSS ATTR_ALIGNED(16) u8 __bootworkstack[HOST_WOKER_STCKSIZE];
-#ifdef __x86_64__
 #define WORKSTATE ((struct cpustate *)(__bootworkstack+(HOST_WOKER_STCKSIZE-sizeof(struct cpustate))))
-#else
-#define WORKSTATE ((struct cpustate_host *)(__bootworkstack+(HOST_WOKER_STCKSIZE-sizeof(struct cpustate_host))))
-#endif
-
 #endif /* !CONFIG_NO_JOBS */
 
 PRIVATE ATTR_FREETEXT taskprio_t KCALL
@@ -447,19 +350,6 @@ PUBLIC struct cpu __bootcpu = {
         .t_sigblock = __SIGSET_INIT_FULL,
         .t_sigshare = &sigshare_kernel,
 #endif /* !CONFIG_NO_SIGNALS */
-#ifndef CONFIG_NO_LDT
-        .t_arch = {
-            .at_ldt_tasks = {
-                .le_pself = &inittask.t_arch.at_ldt_tasks.le_next,
-#ifndef CONFIG_NO_JOBS
-                .le_next  = &__bootcpu.c_work,
-#else /* !CONFIG_NO_JOBS */
-                .le_next  = NULL,
-#endif /* CONFIG_NO_JOBS */
-            },
-            .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
-        },
-#endif /* !CONFIG_NO_LDT */
     },
 #ifndef CONFIG_NO_JOBS
     .c_work = {
@@ -550,37 +440,8 @@ PUBLIC struct cpu __bootcpu = {
         .t_sigblock = __SIGSET_INIT_FULL,
         .t_sigshare = &sigshare_kernel,
 #endif /* !CONFIG_NO_SIGNALS */
-#ifndef CONFIG_NO_LDT
-        .t_arch = {
-            .at_ldt_tasks = {
-                .le_pself = &__bootcpu.c_idle.t_arch.at_ldt_tasks.le_next,
-                .le_next  = NULL,
-            },
-            .at_ldt_gdt = SEG(SEG_KERNEL_LDT),
-        },
-#endif /* !CONFIG_NO_LDT */
     },
 #endif /* !CONFIG_NO_JOBS */
-    .c_arch = {
-#if defined(__i386__) || defined(__x86_64__)
-        .ac_tss = {
-            /* Define initial boot-cpu TSS data. */
-#ifdef __x86_64__
-            .rsp0       = (uintptr_t)(__bootstack+HOST_BOOT_STCKSIZE),
-#else
-            .esp0       = (uintptr_t)(__bootstack+HOST_BOOT_STCKSIZE),
-            .ss0        = __KERNEL_DS,
-            .eflags     = EFLAGS_IF,
-#endif
-            .iomap_base = sizeof(struct tss),
-        },
-        .ac_mode          = CPUMODE_ONLINE,
-        /* These flags are deleted if the opposite is proven during early boot. */
-        .ac_flags         = CPUFLAG_486|CPUFLAG_IINIT,
-        .ac_lapic_id      = 0, /* Likely updated later */
-        .ac_lapic_version = APICVER_82489DX, /* Likely updated later */
-#endif
-    },
     .c_n_run   = 1,
     .c_n_idle  = 1,
 #ifndef CONFIG_NO_JOBS
@@ -596,33 +457,13 @@ PUBLIC struct cpu __bootcpu = {
 INTDEF ATTR_NORETURN void KCALL cpu_jobworker(void);
 #endif /* !CONFIG_NO_JOBS */
 
-INTDEF struct interrupt pit_interrupt;
-
 INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
 #ifndef CONFIG_NO_JOBS
  /* Initialize the stack of the boot CPU's worker task. */
- WORKSTATE->iret.cs     = __KERNEL_CS;
- WORKSTATE->iret.xflags = EFLAGS_IF|EFLAGS_IOPL(3);
- WORKSTATE->iret.xip    = (uintptr_t)&cpu_jobworker;
  memset(&WORKSTATE->gp,0,sizeof(WORKSTATE->gp));
-#ifdef __x86_64__
- WORKSTATE->iret.userxsp = (uintptr_t)__bootworkstack+HOST_WOKER_STCKSIZE;
- WORKSTATE->iret.ss      = __KERNEL_DS;
- WORKSTATE->sg.gs_base   = (uintptr_t)&__bootcpu;
- WORKSTATE->sg.fs_base   = 0;
-#else /* __x86_64__ */
- WORKSTATE->sg.ds       = __KERNEL_DS;
- WORKSTATE->sg.es       = __KERNEL_DS;
- WORKSTATE->sg.fs       = __KERNEL_PERCPU;
- WORKSTATE->sg.gs       = __KERNEL_DS;
-#endif /* !__x86_64__ */
+ WORKSTATE->xc.pc = (uintptr_t)&cpu_jobworker;
+ WORKSTATE->xc.sp = (uintptr_t)__bootworkstack+HOST_WOKER_STCKSIZE;
 #endif /* !CONFIG_NO_JOBS */
-
- /* Install the PIT IRQ handler. */
- asserte(E_ISOK(int_addall(&pit_interrupt)));
-
- /* Unmask the PIT Interrupt pin again. */
- PIC1_STMASK(PIC1_GTMASK() & ~(1 << (INTNO_PIC1_PIT-INTNO_PIC1_BASE)));
 }
 
 DECL_END

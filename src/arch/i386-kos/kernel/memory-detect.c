@@ -52,17 +52,6 @@ struct smap_entry {
 
 #define SMAP_BUFFER ((struct smap_entry *)(REALMODE_STARTRELO+0xf00))
 
-INTERN ATTR_FREERODATA u8 const memtype_bios_matrix[6] = {
-    [0] = MEMTYPE_NDEF,   /* Undefined (Fallback). */
-    [1] = MEMTYPE_RAM,    /* Available. */
-    [2] = MEMTYPE_DEVICE, /* Reserved. */
-    [3] = MEMTYPE_COUNT,  /* ACPI-Reclaimable. (Ignored) */
-    [4] = MEMTYPE_NVS,    /* NVS. */
-    [5] = MEMTYPE_BADRAM, /* Badram. */
-};
-
-
-
 PRIVATE ATTR_FREETEXT
 SAFE KPD size_t KCALL detect_e820(void) {
  struct smap_entry *entry; struct cpustate16 s;
