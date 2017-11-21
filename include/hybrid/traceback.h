@@ -36,12 +36,14 @@ __LIBC void (__LIBCCALL debug_tbprint)(void);
   __XBLOCK({ register void *__ebp; \
              __asm__ __volatile__("movq %%rbp, %0\n" : "=g" (__ebp)); \
              debug_tbprint2(__ebp,__n_skip); })
-#else /* __x86_64__ */
+#elif defined(__i386__)
 #define debug_tbprint(__n_skip) \
   __XBLOCK({ register void *__ebp; \
              __asm__ __volatile__("movl %%ebp, %0\n" : "=g" (__ebp)); \
              debug_tbprint2(__ebp,__n_skip); })
-#endif /* !__x86_64__ */
+#else
+#define debug_tbprint(__n_skip) debug_tbprint()
+#endif
 
 __SYSDECL_END
 

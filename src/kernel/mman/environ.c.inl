@@ -40,14 +40,16 @@
 #include <sys/mman.h>
 #include <stdlib.h>
 #include <arch/hints.h>
+#if defined(__x86_64__) || defined(__i386__)
 #include <asm/instx.h>
+#endif
 
 DECL_BEGIN
 
 /* Counter pointers until NULL, returning that
  * number or -EFAULT if a fault occurred. */
-INTDEF ssize_t FCALL count_pointers(USER char *USER *vec);
 #if defined(__x86_64__) || defined(__i386__)
+INTDEF ssize_t FCALL count_pointers(USER char *USER *vec);
 GLOBAL_ASM(
 L(PRIVATE_ENTRY(count_pointers)                           )
 #ifndef __x86_64__
@@ -90,7 +92,12 @@ L(    jmp   6b /* Allow points apart of user-share */     )
 L(SYM_END(count_pointers)                                 )
 );
 #else
-#error "Error: Unsupported Architecture"
+PRIVATE ssize_t FCALL count_pointers_impl(USER char *USER *vec) {
+ USER char **iter = vec;
+ while (iter <= (USER char *USER *)(USER_END-sizeof(USER char *)) && *iter) ++iter;
+ return (ssize_t)(iter-vec);
+}
+#define count_pointers(vec) call_user_worker(&count_pointers_impl,1,vec)
 #endif
 
 #define CONFIG_ENVIRON_USE_TEMPORARY_BUFFER 1

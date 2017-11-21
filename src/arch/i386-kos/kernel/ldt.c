@@ -16,8 +16,8 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_KERNEL_MMAN_LDT_C_INL
-#define GUARD_KERNEL_MMAN_LDT_C_INL 1
+#ifndef GUARD_KERNEL_ARCH_LDT_C
+#define GUARD_KERNEL_ARCH_LDT_C 1
 #define _GNU_SOURCE 1
 #define _KOS_SOURCE 2
 
@@ -95,8 +95,7 @@ mman_getldt_unlocked(struct mman *__restrict self, ldt_t id) {
  return result;
 }
 
-
 DECL_END
 #endif /* !CONFIG_NO_LDT */
 
-#endif /* !GUARD_KERNEL_MMAN_LDT_C_INL */
+#endif /* !GUARD_KERNEL_ARCH_LDT_C */

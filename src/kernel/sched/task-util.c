@@ -46,7 +46,6 @@
 #include <string.h>
 #include <sync/sig.h>
 #include <sys/mman.h>
-#include <asm/instx.h>
 #include <arch/hints.h>
 #ifndef CONFIG_NO_TLB
 #include <kos/thread.h>

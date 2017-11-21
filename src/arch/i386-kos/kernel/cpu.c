@@ -16,12 +16,12 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_KERNEL_SCHED_CPU_C
-#define GUARD_KERNEL_SCHED_CPU_C 1
+#ifndef GUARD_KERNEL_ARCH_CPU_C
+#define GUARD_KERNEL_ARCH_CPU_C 1
 #define _KOS_SOURCE 1
 #define _GNU_SOURCE 1 /* CPU_* */
 
-#include "../debug-config.h"
+#include "../../../kernel/debug-config.h"
 
 #include <assert.h>
 #include <fs/fd.h>
@@ -594,45 +594,7 @@ PUBLIC struct cpu __bootcpu = {
 INTDEF ATTR_NORETURN void KCALL cpu_jobworker(void);
 #endif /* !CONFIG_NO_JOBS */
 
-INTDEF struct cpustate *FCALL
-pit_interrupt_handler(struct cpustate *__restrict state);
-INTDEF void ASMCALL pit_interrupt_wrapper(void);
-GLOBAL_ASM(
-L(.section .text.hot                                                          )
-L(PRIVATE_ENTRY(pit_interrupt_wrapper)                                        )
-L(    __ASM_PUSH_COMREGS                                                      )
-L(    movx   %xsp, %FASTCALL_REG1 /* Pass a pointer to the generated cpustate. */)
-#ifdef __x86_64__
-L(    testb  $3, CPUSTATE_OFFSETOF_IRET+IRREGS_OFFSETOF_CS(%rsp)              )
-L(    jz     1f                                                               )
-L(    swapgs /* Load the kernel's GS base address */                          )
-L(    call   pit_interrupt_handler                                            )
-L(    swapgs /* Restore the user-space GS */                                  )
-L(    movq   %rax, %rsp /* Use the handler's return value as new stack. */    )
-L(    __ASM_POP_COMREGS                                                       )
-L(    ASM_IRET                                                                )
-L(1:  call   pit_interrupt_handler                                            )
-#else
-L(    __ASM_LOAD_SEGMENTS(%ax)                                                )
-L(    call   pit_interrupt_handler                                            )
-#endif
-L(    movx   %xax, %xsp /* Use the handler's return value as new stack. */    )
-L(    __ASM_POP_COMREGS                                                       )
-L(    ASM_IRET                                                                )
-L(SYM_END(pit_interrupt_wrapper)                                              )
-L(.previous                                                                   )
-);
-PRIVATE struct interrupt pit_interrupt = {
-    .i_intno = INTNO_PIC1_PIT,
-    .i_mode  = INTMODE_HW,
-    .i_type  = INTTYPE_ASM,
-    .i_prio  = INTPRIO_MAX,
-    .i_flags = INTFLAG_PRIMARY,
-    .i_proto = {
-        .p_asm = &pit_interrupt_wrapper,
-    },
-    .i_owner = THIS_INSTANCE,
-};
+INTDEF struct interrupt pit_interrupt;
 
 INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
 #ifndef CONFIG_NO_JOBS
@@ -663,4 +625,4 @@ INTERN ATTR_FREETEXT void KCALL sched_initialize(void) {
 
 DECL_END
 
-#endif /* !GUARD_KERNEL_SCHED_CPU_C */
+#endif /* !GUARD_KERNEL_ARCH_CPU_C */

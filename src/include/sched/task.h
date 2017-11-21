@@ -29,55 +29,13 @@
 #include <sched/percpu.h>
 #include <sched/types.h>
 #include <hybrid/typecore.h>
+#include <arch/thread_context.h>
 
 DECL_BEGIN
 
-#ifdef CONFIG_NO_LDT
-#define __TASK_SWITCH_LDT(old,new) /* Nothing */
-#else
-#define __TASK_SWITCH_LDT(old,new) \
-    if ((old)->t_arch.at_ldt_gdt != \
-        (new)->t_arch.at_ldt_gdt) { \
-     __asm__ __volatile__("lldt %w0\n" : : "g" ((new)->t_arch.at_ldt_gdt)); \
-    }
+#ifndef TASK_SWITCH_CONTEXT
+#define TASK_SWITCH_CONTEXT(old,new) {}
 #endif
-
-#ifdef CONFIG_NO_FPU
-#define __TASK_SWITCH_FPU(old,new) /* Nothing */
-#else
-#define __TASK_SWITCH_FPU(old,new) FPUSTATE_DISABLE();
-#endif
-
-#ifdef CONFIG_NO_TLB
-#define __TASK_SWITCH_TLB(old,new) /* Nothing */
-#else
-/* Update the TLB pointers in the current cpu's GDT. */
-#define __TASK_SWITCH_TLB(old,new) \
-    { struct segment *seg = &CPU(cpu_gdt).ip_gdt[SEG_USER_TLB]; \
-      SEGMENT_STBASE(seg[SEG_USER_TLB-SEG_USER_TLB],(new)->t_tlb); \
-      SEGMENT_STBASE(seg[SEG_USER_TIB-SEG_USER_TLB],&(new)->t_tlb->tl_tib); \
-    }
-#endif
-
-
-/* Switch secondary context registers such as LDT, page-directory or
- * the FPU-state as is required when switching from 'old' to `new'. */
-#define TASK_SWITCH_CONTEXT(old,new) \
-do{ struct mman *const new_mm = (new)->t_mman; \
-    if ((old)->t_mman != new_mm) { \
-     /* Switch page directories. */ \
-     PDIR_STCURR(new_mm->m_ppdir); \
-     /* Switch LDT descriptors. (NOTE: Must always \
-      * be equal within the same page-directory) */ \
-     __TASK_SWITCH_LDT(old,new) \
-    } \
-    /* Disable the FPU to cause lazy register save/ \
-     * restore the next time operations are performed. */ \
-    __TASK_SWITCH_FPU(old,new) \
-    /* Load the new task's TLB and TIB. */ \
-    __TASK_SWITCH_TLB(old,new) \
-}while(0)
-
 
 struct task;
 
@@ -529,22 +487,6 @@ FUNDEF SAFE errno_t KCALL task_unshare_fdman(void);
  * @return: -ENOMEM: Not enough available memory.
  * @return: -EINTR:  The calling thread was interrupted. */
 FUNDEF SAFE errno_t KCALL task_unshare_sighand(void);
-
-#if defined(CONFIG_DEBUG) && 1
-#define CONFIG_LOG_WAITING   1
-#if 1
-#define SUPPRESS_WAITLOGS_BEGIN() (void)0
-#define SUPPRESS_WAITLOGS_END()   (void)0
-#else
-DATDEF u8 dont_log_waiting;
-#define SUPPRESS_WAITLOGS_BEGIN() (void)ATOMIC_FETCHINC(dont_log_waiting)
-#define SUPPRESS_WAITLOGS_END()   (void)ATOMIC_FETCHDEC(dont_log_waiting)
-#endif
-#else
-#define SUPPRESS_WAITLOGS_BEGIN() (void)0
-#define SUPPRESS_WAITLOGS_END()   (void)0
-#endif
-
 
 DECL_END
 #endif /* __CC__ */

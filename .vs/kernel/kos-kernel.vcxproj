@@ -28,10 +28,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\.sources" />
+    <None Include="..\..\src\arch\arm-kos\kernel.ld" />
+    <None Include="..\..\src\arch\arm-kos\module.ld" />
+    <None Include="..\..\src\arch\i386-kos\kernel.ld" />
+    <None Include="..\..\src\arch\i386-kos\kernel\ldt-set-new.c.inl" />
     <None Include="..\..\src\arch\i386-kos\kernel\paging32.c.inl" />
     <None Include="..\..\src\arch\i386-kos\kernel\paging64.c.inl" />
     <None Include="..\..\src\arch\i386-kos\kernel\user32.c.inl" />
     <None Include="..\..\src\arch\i386-kos\kernel\user64.c.inl" />
+    <None Include="..\..\src\arch\i386-kos\module.ld" />
     <None Include="..\..\src\kernel\arch\paging32.c.inl" />
     <None Include="..\..\src\kernel\arch\paging64.c.inl" />
     <None Include="..\..\src\kernel\arch\user32.c.inl" />
@@ -46,25 +51,25 @@
     <None Include="..\..\src\kernel\linker\ksym.S" />
     <None Include="..\..\src\kernel\memory\malloc-realign.c.inl" />
     <None Include="..\..\src\kernel\mman\environ.c.inl" />
-    <None Include="..\..\src\kernel\mman\ldt-set-new.c.inl" />
-    <None Include="..\..\src\kernel\mman\ldt.c.inl" />
     <None Include="..\..\src\kernel\mman\mcore.c.inl" />
     <None Include="..\..\src\kernel\mman\mregion-io.c.inl" />
     <None Include="..\..\src\kernel\sched\pid.c.inl" />
     <None Include="..\..\src\kernel\sched\sighand.c.inl" />
-    <None Include="..\..\src\linker-scripts\kernel.ld" />
-    <None Include="..\..\src\linker-scripts\module.ld" />
     <None Include="..\..\src\modules\block\ata-io.c.inl" />
     <None Include="..\..\src\modules\nt\flavor-link.inl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\memory-detect.c" />
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\signal.c" />
+    <ClCompile Include="..\..\src\arch\i386-kos\core-modules\disk\bios-disk.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\boot.c" />
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\cpu.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\fpu.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\gdt.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\interrupt.c" />
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\ldt.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\memory-detect.c" />
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\pagefault.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\paging.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\panic.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\pic.c" />
@@ -73,6 +78,7 @@
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\smp-init.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\smp.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\syscall.c" />
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\task.c" />
     <ClCompile Include="..\..\src\arch\i386-kos\kernel\user.c" />
     <ClCompile Include="..\..\src\kernel\arch\boot.c" />
     <ClCompile Include="..\..\src\kernel\arch\fpu.c" />
@@ -88,7 +94,6 @@
     <ClCompile Include="..\..\src\kernel\arch\syscall.c" />
     <ClCompile Include="..\..\src\kernel\arch\user.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\autopart\mbr.c" />
-    <ClCompile Include="..\..\src\kernel\core-modules\disk\bios-disk.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\fs\fat.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c" />
     <ClCompile Include="..\..\src\kernel\core-modules\linker\elf.c" />
@@ -137,10 +142,8 @@
     <ClCompile Include="..\..\src\kernel\mman\futex.c" />
     <ClCompile Include="..\..\src\kernel\mman\mman.c" />
     <ClCompile Include="..\..\src\kernel\mman\mswap.c" />
-    <ClCompile Include="..\..\src\kernel\mman\pagefault.c" />
     <ClCompile Include="..\..\src\kernel\mman\part.c" />
     <ClCompile Include="..\..\src\kernel\mman\sys_mman.c" />
-    <ClCompile Include="..\..\src\kernel\sched\cpu.c" />
     <ClCompile Include="..\..\src\kernel\sched\rpc.c" />
     <ClCompile Include="..\..\src\kernel\sched\signal.c" />
     <ClCompile Include="..\..\src\kernel\sched\sys_sched.c" />
@@ -178,12 +181,14 @@
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\current_context.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\hints.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\interrupt.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\pagefault.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\paging.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\percpu.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\preemption.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\signal.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\syscall.h" />
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\task.h" />
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\thread_context.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\apic.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\apicdef.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\asm.h" />
@@ -197,6 +202,7 @@
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\idt_pointer.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\interrupt.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\mp.h" />
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\pagefault.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging32.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\paging64.h" />
@@ -207,6 +213,7 @@
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\signal.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\syscall.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\task.h" />
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\thread_context.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\include\arch\tss.h" />
     <ClInclude Include="..\..\src\arch\i386-kos\kernel\interrupt_intern.h" />
     <ClInclude Include="..\..\src\include\dev\blkdev.h" />

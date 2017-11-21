@@ -401,7 +401,6 @@ PRIVATE ssize_t KCALL
 master_read(struct file *__restrict fp, USER void *buf, size_t bufsize) {
  ssize_t result;
  struct ptymaster *master;
- SUPPRESS_WAITLOGS_BEGIN();
  master = M;
  if (master->pm_chr.cd_device.d_node.i_state&INODE_STATE_CLOSING)
   result = 0; /* Don't read any more data if the slave was closed. */
@@ -413,7 +412,6 @@ master_read(struct file *__restrict fp, USER void *buf, size_t bufsize) {
          (ATOMIC_READ(master->pm_chr.cd_device.d_node.i_state)&INODE_STATE_CLOSING),
           "The master PTY must only indicate EOF once being closed!");
  }
- SUPPRESS_WAITLOGS_END();
  return result;
 }
 PRIVATE ssize_t KCALL
@@ -475,13 +473,9 @@ master_poll(struct file *__restrict fp, pollmode_t mode) {
 #define S  ((struct ptyslave *)fp->f_node)
 PRIVATE ssize_t KCALL
 slave_read(struct file *__restrict fp, USER void *buf, size_t bufsize) {
- ssize_t result;
- SUPPRESS_WAITLOGS_BEGIN();
- result = iobuffer_read(&M->pm_m2s,buf,bufsize,
-                       (fp->f_mode&O_NONBLOCK) ?
-                        IO_BLOCKNONE : IO_BLOCKFIRST);
- SUPPRESS_WAITLOGS_END();
- return result;
+ return iobuffer_read(&M->pm_m2s,buf,bufsize,
+                     (fp->f_mode&O_NONBLOCK) ?
+                      IO_BLOCKNONE : IO_BLOCKFIRST);
 }
 PRIVATE ssize_t KCALL
 slave_write(struct file *__restrict fp, USER void const *buf, size_t bufsize) {

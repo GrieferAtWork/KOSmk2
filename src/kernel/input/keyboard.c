@@ -24,7 +24,6 @@
 #include <fcntl.h>
 #include <fs/file.h>
 #include <fs/fs.h>
-#include <asm/cpu-flags.h>
 #include <hybrid/byteorder.h>
 #include <hybrid/byteswap.h>
 #include <hybrid/check.h>

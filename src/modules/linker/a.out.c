@@ -196,7 +196,7 @@ PRIVATE void MODULE_INIT KCALL aout_init(void) {
  struct modloader *iter;
  /* Register a.out module linkers. */
  for (iter = aout_linkers;
-      iter != COMPILER_LENOF(aout_linkers); ++iter)
+      iter != COMPILER_ENDOF(aout_linkers); ++iter)
       module_addloader(iter,MODULE_LOADER_NORMAL);
 }
 

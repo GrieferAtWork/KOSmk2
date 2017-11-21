@@ -53,6 +53,8 @@ typedef register_t pflag_t; /* Push+disable/Pop preemption-enabled. */
 #define PREEMPTION_PUSHON() XBLOCK({ register pflag_t _r; __asm__ __volatile__("pushfl\npopl %0\nsti" : "=g" (_r)); XRETURN _r; })
 #define PREEMPTION_POP(f)   XBLOCK({ __asm__ __volatile__("pushl %0\npopfl\n" : : "g" (f) : "cc"); (void)0; })
 #endif /* !__x86_64__ */
+#define PREEMPTION_WAS(f) ((f)&0x00000200)
+
 
 DECL_END
 

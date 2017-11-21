@@ -271,7 +271,9 @@ run_init(char const *__restrict filename) {
 
  syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app %q (in `%[file]') at %p\n",
         filename,mod->m_file,CPUSTATE_IP(state));
+#ifndef CONFIG_NO_TLB
  syslog(LOG_EXEC|LOG_INFO,"[APP] TLB at %p\n",thrd->t_tlb);
+#endif
 
  assert(mm == thrd->t_mman);
 

@@ -179,8 +179,8 @@
 
 #ifdef __LINKER__
 /* Help figure out the origin of illegal preprocessor content in linker scripts. */
-#define struct    <<__FILE__:__LINE__:ERROR: Invalid keyword: `struct'>>
-#define union     <<__FILE__:__LINE__:ERROR: Invalid keyword: `union'>>
-#define typedef   <<__FILE__:__LINE__:ERROR: Invalid keyword: `typedef'>>
-#define enum      <<__FILE__:__LINE__:ERROR: Invalid keyword: `enum'>>
+#define struct    <<__FILE__:__LINE__:ERROR: Invalid keyword: 'struct'>>
+#define union     <<__FILE__:__LINE__:ERROR: Invalid keyword: 'union'>>
+#define typedef   <<__FILE__:__LINE__:ERROR: Invalid keyword: 'typedef'>>
+#define enum      <<__FILE__:__LINE__:ERROR: Invalid keyword: 'enum'>>
 #endif

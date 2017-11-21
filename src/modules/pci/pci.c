@@ -62,7 +62,7 @@ pci_db_getvendor(u16 vendor_id) {
  struct db_vendor const *iter,*end;
  struct db_vendorbucket const *bucket;
  /* Lookup the vendor associated with the given ID. */
- assertf(DB_VENDOR_BUCKETS,"The database is empty?");
+ //assertf(DB_VENDOR_BUCKETS,"The database is empty?");
  bucket = &db_vendor_hashmap[DB_HASH_VENDOR(vendor_id) % DB_VENDOR_BUCKETS];
  end = (iter = DB_VENDORBUCKET_VENDORV(bucket))+bucket->vb_vendorc;
  for (; iter != end; ++iter) {

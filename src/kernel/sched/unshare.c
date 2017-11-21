@@ -133,7 +133,12 @@ loose_branch:
  error = pdir_munmap(&self->m_pdir,
                     (ppage_t)MBRANCH_BEGIN(old_branch),
                      MBRANCH_SIZE(old_branch),
-                     PDIR_FLAG_NOFLUSH);
+#ifdef PDIR_FLAG_NOFLUSH
+                     PDIR_FLAG_NOFLUSH
+#else
+                     0
+#endif
+                     );
  if (E_ISERR(error)) return error;
  goto check_more;
 }
@@ -235,6 +240,7 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
   }
  }
 
+#if defined(__i386__) || defined(__x86_64__)
 #ifndef CONFIG_NO_LDT
  assert(nm->m_ldt == &ldt_empty);
  assert(ldt_empty.l_refcnt >= 2);
@@ -243,6 +249,7 @@ mman_init_copy_unlocked(struct mman *__restrict nm,
  assert(nm->m_ldt);
  CHECK_HOST_DOBJ(nm->m_ldt);
  LDT_INCREF(nm->m_ldt);
+#endif
 #endif
 
  /* Copy environment context and linear allocation hints. */

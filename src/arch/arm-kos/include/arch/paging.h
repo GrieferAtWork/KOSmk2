@@ -21,6 +21,7 @@
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
+#include <hybrid/limits.h>
 
 DECL_BEGIN
 
@@ -49,15 +50,15 @@ typedef struct _pdir pdir_t;
 
 /* TODO */
 
-#define PDIR_SIZE  8
-#define PDIR_ALIGN 8
+#define PDIR_SIZE  PAGESIZE
+#define PDIR_ALIGN PAGESIZE
 #ifdef __CC__
 struct _pdir {
- int pd_directory[2];
+ unsigned int pd_directory[512];
 };
 #endif /* __CC__ */
 
-#define PDIR_KERNELBASE_STARTINDEX  0
+#define PDIR_KERNELBASE_STARTINDEX  256
 #define PDIR_ROOTENTRY_REPRSIZE     0x80000000
 
 #ifdef __CC__

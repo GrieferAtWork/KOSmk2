@@ -16,11 +16,11 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_KERNEL_MMAN_PAGEFAULT_C
-#define GUARD_KERNEL_MMAN_PAGEFAULT_C 1
+#ifndef GUARD_KERNEL_ARCH_PAGEFAULT_C
+#define GUARD_KERNEL_ARCH_PAGEFAULT_C 1
 #define _KOS_SOURCE 2
 
-#include "intern.h"
+#include "../../../kernel/mman/intern.h"
 #include <hybrid/align.h>
 #include <asm/cpu-flags.h>
 #include <hybrid/check.h>
@@ -36,6 +36,7 @@
 #include <sched/task.h>
 #include <sched/types.h>
 #include <asm/instx.h>
+#include <hybrid/section.h>
 
 DECL_BEGIN
 
@@ -45,7 +46,7 @@ DECL_BEGIN
 #define PF_R (1 << 3) /*< 0x08: Reserved write. */
 #define PF_I (1 << 4) /*< 0x10: Instruction Fetch. */
 
-INTERN int FCALL
+PRIVATE int INTCALL
 mman_interrupt_pf_handler(struct irregs_ie *__restrict info) {
  u32 core_mode; VIRT uintptr_t fault_addr,fault_page;
  VIRT struct mman *user_mman; ssize_t error;
@@ -215,6 +216,31 @@ end_mcore: ATTR_UNUSED;
 }
 
 
+/* The low-level assembly handler for PAGEFAULTs */
+PRIVATE struct interrupt mman_interrupt_pf = {
+    .i_intno = EXC_PAGE_FAULT,
+    /* Must disable interrupts due to recursive page fault handling
+     * that may happen when driver callbacks trigger additional faults.
+     * ALSO: If a context switch happens before CR2 was saved, the wrong
+     *       fault address may be used, causing a non-recoverable PAGEFAULT
+     *       wherever the original one arose. */
+    .i_mode  = INTMODE_EXCEPT_NOINT,
+    .i_type  = INTTYPE_BASIC,
+    .i_prio  = INTPRIO_MAX,
+    .i_flags = INTFLAG_PRIMARY,
+    .i_proto = {
+        .p_baseexcept = &mman_interrupt_pf_handler,
+    },
+    .i_owner = THIS_INSTANCE,
+};
+
+
+INTERN ATTR_FREETEXT void KCALL
+pagefault_initialize(void) {
+ /* Register an interrupt handler for pagefaults. */
+ asserte(E_ISOK(int_addall(&mman_interrupt_pf)));
+}
+
 DECL_END
 
-#endif /* !GUARD_KERNEL_MMAN_PAGEFAULT_C */
+#endif /* !GUARD_KERNEL_ARCH_PAGEFAULT_C */

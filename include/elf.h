@@ -2746,6 +2746,7 @@ typedef Elf(auxv_t)    Elf_auxv_t;
 typedef Elf(Nhdr)      Elf_Nhdr;
 typedef Elf(Move)      Elf_Move;
 typedef Elf(Lib)       Elf_Lib;
+#if defined(__i386__) || defined(__x86_64__)
 typedef Elf(pid_t)     Elf_pid_t;
 typedef Elf(greg_t)    Elf_greg_t;
 typedef Elf(Siginfo)   Elf_Siginfo;
@@ -2756,7 +2757,7 @@ typedef Elf(Prpsinfo)  Elf_Prpsinfo;
 typedef Elf(Ntfileent) Elf_Ntfileent;
 typedef Elf(Ntfile)    Elf_Ntfile;
 typedef Elf(Fpregset)  Elf_Fpregset;
-
+#endif
 #endif /* __CC__ */
 
 #define ELF_ST_BIND(val)       ELF(ST_BIND)(val)

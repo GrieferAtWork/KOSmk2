@@ -38,8 +38,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <asm/instx.h>
-#include <asm/registers.h>
+#include <kernel/user.h>
 
 DECL_BEGIN
 
@@ -201,7 +200,8 @@ STATIC_ASSERT(sizeof(struct modpatch)          == MODPATCH_SIZE);
 /* Enabling this also swallows some ~real~ kernel errors.
  * >> Disable it in debug builds (for now), but must re-enable
  *    later once the system is fully stable. */
-#if !defined(CONFIG_DEBUG) || 0
+#if (defined(__i386__) || defined(__x86_64__)) && \
+   (!defined(CONFIG_DEBUG) || 0)
 GLOBAL_ASM(
 L(.section .text                                                   )
 L(PUBLIC_ENTRY(modpatch_patch)                                     )
@@ -260,15 +260,17 @@ L(.previous                                                        )
 #else
 PUBLIC errno_t KCALL
 modpatch_patch(struct modpatch *__restrict self) {
- /* NOTE: Must be implemented in assembly to
-  *       use local interrupt handlers. */
  CHECK_HOST_DOBJ(self);
  if (!self->p_inst) return -EOK;
  CHECK_HOST_DOBJ(self->p_inst);
  CHECK_HOST_DOBJ(self->p_inst->i_module);
  CHECK_HOST_DOBJ(self->p_inst->i_module->m_ops);
  CHECK_HOST_TEXT(self->p_inst->i_module->m_ops->o_patch,1);
+#if !defined(CONFIG_DEBUG) || 0
+ return (errno_t)call_user_worker(self->p_inst->i_module->m_ops->o_patch,1,self);
+#else
  return (*self->p_inst->i_module->m_ops->o_patch)(self);
+#endif
 }
 #endif
 

@@ -24,6 +24,8 @@
 #include "../debug-config.h"
 #include "intern.h"
 
+#include <arch/hints.h>
+#include <arch/pagefault.h>
 #include <assert.h>
 #include <dev/blkdev.h>
 #include <fs/dentry.h>
@@ -41,7 +43,6 @@
 #include <kernel/mman.h>
 #include <kernel/paging-util.h>
 #include <kernel/stack.h>
-#include <sys/syslog.h>
 #include <limits.h>
 #include <linker/module.h>
 #include <malloc.h>
@@ -50,6 +51,7 @@
 #include <stdalign.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/syslog.h>
 
 /* Define the ABI for the address tree used by mman. */
 #define ATREE(x) mbranch_tree_##x
@@ -68,7 +70,6 @@ DECL_BEGIN
  *       memory, and those allocated in physical memory. */
 PRIVATE VIRT LIST_HEAD(struct mregion) mregion_chain_v = NULL;
 PRIVATE PHYS LIST_HEAD(struct mregion) mregion_chain_p = NULL;
-#include <arch/hints.h>
 PRIVATE DEFINE_ATOMIC_RWLOCK(mregion_chain_lock);
 
 
@@ -337,8 +338,12 @@ err:
  result->m_uheap = (ppage_t)USER_HEAP_ADDRHINT;
  result->m_ustck = (ppage_t)USER_STCK_ADDRHINT;
  /* Start out with an empty LDT. */
+#if defined(__i386__) || defined(__x86_64__)
+#ifndef CONFIG_NO_LDT
  LDT_INCREF(&ldt_empty);
  result->m_ldt = &ldt_empty;
+#endif
+#endif
 end:
  TASK_PDIR_KERNEL_END(old_mm);
  task_endnointr();
@@ -380,7 +385,11 @@ mman_destroy(struct mman *__restrict self) {
           (ppage_t)&self->m_pdir,sizeof(self->m_pdir),(errno_t)-error);
    }
  }
+#if defined(__i386__) || defined(__x86_64__)
+#ifndef CONFIG_NO_LDT
  LDT_DECREF(self->m_ldt);
+#endif
+#endif
  heap_ffree(HPTR(self,self->m_size),GFP_SHARED);
  TASK_PDIR_KERNEL_END(old_mman);
 }
@@ -1970,25 +1979,6 @@ mman_map_dynmem(PHYS ppage_t start, size_t n_bytes) {
 }
 
 
-/* The low-level assembly handler for PAGEFAULTs */
-INTDEF int FCALL mman_interrupt_pf_handler(struct irregs_ie *__restrict info);
-PRIVATE struct interrupt mman_interrupt_pf = {
-    .i_intno = EXC_PAGE_FAULT,
-    /* Must disable interrupts due to recursive page fault handling
-     * that may happen when driver callbacks trigger additional faults.
-     * ALSO: If a context switch happens before CR2 was saved, the wrong
-     *       fault address may be used, causing a non-recoverable PAGEFAULT
-     *       wherever the original one arose. */
-    .i_mode  = INTMODE_EXCEPT_NOINT,
-    .i_type  = INTTYPE_BASIC,
-    .i_prio  = INTPRIO_MAX,
-    .i_flags = INTFLAG_PRIMARY,
-    .i_proto = {
-        .p_baseexcept = &mman_interrupt_pf_handler,
-    },
-    .i_owner = THIS_INSTANCE,
-};
-
 INTERN ATTR_FREETEXT void KCALL
 mman_initialize(void) {
  unsigned int region_index;
@@ -2065,7 +2055,7 @@ mman_initialize(void) {
  ATOMIC_WRITE(mman_kernel.m_lock.orw_lock.aorw_lock,0);
 
  /* Register an interrupt handler for pagefaults. */
- asserte(E_ISOK(int_addall(&mman_interrupt_pf)));
+ pagefault_initialize();
 }
 
 
@@ -2250,9 +2240,6 @@ DECL_END
 #include "mregion-io.c.inl"
 #include "environ.c.inl"
 #include "mcore.c.inl"
-#ifndef CONFIG_NO_LDT
-#include "ldt.c.inl"
-#endif /* !CONFIG_NO_LDT */
 #endif
 
 #endif /* !GUARD_KERNEL_MMAN_MMAN_C */

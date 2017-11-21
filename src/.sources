@@ -97,7 +97,7 @@ BEGIN
 			SET_DISKFILE("/boot/kos.bin")
 			BEGIN
 				DEFINE("BUILD_TIME="+str time.now().time_t)
-				LINKER_SCRIPT("linker-scripts/kernel.ld")
+				LINKER_SCRIPT("arch/" CONFIG_TARGET_NAME "/kernel.ld")
 			END
 			__STATIC_LIBGCC
 			__NOSTDLIB
@@ -220,7 +220,9 @@ BEGIN
 			SOURCE("kernel/core-modules/io/tty.c")
 			/* Must be installed before disk drivers! */
 			SOURCE("kernel/core-modules/autopart/mbr.c")
-			SOURCE("kernel/core-modules/disk/bios-disk.c")
+#if defined(TARGET_I386) || defined(TARGET_X86_64)
+			SOURCE("arch/i386-kos/core-modules/disk/bios-disk.c")
+#endif
 			SOURCE("kernel/core-modules/fs/fat.c")
 			SOURCE("kernel/core-modules/linker/elf.c")
 		END
@@ -240,20 +242,23 @@ BEGIN
 #define USING(name) PROJ_DEP(name) LIB(name.lsstrip("lib"))
 
 	/* Dynamic kernel modules. */
-	BEGIN BASIC_MODULE("ps2")          SOURCE("modules/input/ps2.c")           END
 	BEGIN BASIC_MODULE("devfs")        SOURCE("modules/fs/devfs.c")            END
 	BEGIN BASIC_MODULE("memdev")       SOURCE("modules/char/memdev.c")         END
-	BEGIN BASIC_MODULE("ata")          SOURCE("modules/block/ata.c")           END
 	BEGIN BASIC_MODULE("procfs")       SOURCE("modules/fs/proc/*.c")           END
+#if defined(TARGET_I386) || defined(TARGET_X86_64)
+	BEGIN BASIC_MODULE("ps2")          SOURCE("modules/input/ps2.c")           END
+	BEGIN BASIC_MODULE("ata")          SOURCE("modules/block/ata.c")           END
 	BEGIN BASIC_MODULE("vga")          SOURCE("modules/video/vga.c")           END
-	BEGIN BASIC_MODULE("shebang")      SOURCE("modules/linker/shebang.c")      END
-	BEGIN LIBRARY_MODULE("pci")        SOURCE("modules/pci/*.c")               END
 	BEGIN DEFAULT_MODULE("ne2000")     SOURCE("modules/net/ne2k.c") USING("pci") END
 	BEGIN BASIC_MODULE("elf-coredump") SOURCE("modules/linker/elf-coredump.c") END
+	BEGIN LIBRARY_MODULE("pci")        SOURCE("modules/pci/*.c")               END
+#endif
+	BEGIN BASIC_MODULE("shebang")      SOURCE("modules/linker/shebang.c")      END
 	BEGIN BASIC_MODULE("elf-debug")    SOURCE("modules/linker/elf-debug.c")    END
 #ifdef TARGET_I386
 	BEGIN BASIC_MODULE("a.out")        SOURCE("modules/linker/a.out.c")        END
 #endif
+#if defined(TARGET_I386) || defined(TARGET_X86_64)
 	BEGIN
 		_c_flags.remove("-Wsystem-headers");
 		BEGIN BASIC_MODULE("pe") SOURCE("modules/linker/pe.c") END
@@ -262,13 +267,12 @@ BEGIN
 #endif
 		BEGIN BASIC_MODULE("pdb-debug") SOURCE("modules/linker/pdb-debug.c") END
 	END
-#if defined(TARGET_I386) || defined(TARGET_X86_64)
 	BEGIN BASIC_MODULE("x86-emu") SOURCE("modules/cpu/x86_emu.c") END
-#endif
 	BEGIN BASIC_MODULE("cmos")
 		DEFINE("__DATE_YEAR__="+str __DATE_YEAR__)
 		SOURCE("modules/rtc/cmos.c")
 	END
+#endif
 END
 
 

@@ -146,20 +146,9 @@ FUNDEF errno_t KCALL schedule_delayed_work_j(struct job *__restrict work, jtime_
 #endif /* !CONFIG_NO_JOBS */
 
 
-#ifdef CONFIG_BUILDING_KERNEL_CORE
-INTDEF void KCALL cpu_add_running(REF struct task *__restrict t);
-INTDEF void KCALL cpu_del_running(/*OUT REF*/struct task *__restrict t);
-INTDEF void KCALL cpu_add_sleeping(struct cpu *__restrict c, REF struct task *__restrict t);
-INTDEF void KCALL cpu_del_sleeping(struct cpu *__restrict c, /*OUT REF*/struct task *__restrict t);
-INTDEF void KCALL cpu_add_suspended(struct cpu *__restrict c, REF struct task *__restrict t);
-INTDEF void KCALL cpu_del_suspended(struct cpu *__restrict c, /*OUT REF*/struct task *__restrict t);
-#endif /* CONFIG_BUILDING_KERNEL_CORE */
-
-
 /* Load the CPU state of the currently selected task in the calling CPU.
  * HINT: You may use 'jmp cpu_sched_setrunning' even when no valid stack is set in %ESP */
 FUNDEF ATTR_NORETURN void KCALL cpu_sched_setrunning(void);
-
 /* Same as `cpu_sched_setrunning', but saves the previous CPU state inside of `task'.
  * NOTE: To ensure that the saved CPU state is that of the caller,
  *       this function must be called using CDECL conventions (call-cleanup),
@@ -173,9 +162,26 @@ FUNDEF ATTR_NORETURN void KCALL cpu_sched_setrunning(void);
  */
 FUNDEF void ATTR_CDECL cpu_sched_setrunning_save(struct task *__restrict task);
 #if defined(__i386__) || defined(__x86_64__)
+#define HAVE_CPU_SCHED_SETRUNNING_SAVEF
 FUNDEF void ATTR_CDECL cpu_sched_setrunning_savef(struct task *__restrict task, register_t xflags);
 #endif
 
+FUNDEF void KCALL cpu_schedule_running(struct task *__restrict t);
+FUNDEF void KCALL cpu_reload_priority(void);
+FUNDEF void KCALL cpu_add_idling(struct task *__restrict t);
+/* Park all IDLE tasks from `c_running' into `c_idling'
+ * WARNING: Upon completion, `c_running' may be set to NULL if all tasks were parked,
+ *          meaning it is the caller's responsibility to install at least one new task. */
+FUNDEF SAFE void KCALL cpu_park_idle(void);
+FUNDEF void KCALL cpu_add_running(REF struct task *__restrict t);
+FUNDEF void KCALL cpu_del_running(/*OUT REF*/struct task *__restrict t);
+FUNDEF void KCALL cpu_add_sleeping(struct cpu *__restrict c, REF struct task *__restrict t);
+FUNDEF void KCALL cpu_add_suspended(struct cpu *__restrict c, REF struct task *__restrict t);
+FUNDEF void KCALL cpu_del_sleeping(struct cpu *__restrict c, /*OUT REF*/struct task *__restrict t);
+FUNDEF void KCALL cpu_del_suspended(struct cpu *__restrict c, /*OUT REF*/struct task *__restrict t);
+FUNDEF struct task *FCALL cpu_sched_rotate(void);
+FUNDEF struct task *FCALL cpu_sched_rotate_yield(void);
+FUNDEF REF struct task *FCALL cpu_sched_remove_current(void);
 
 /* Perform a regular task rotation, selecting the next appropriate task for execution.
  * NOTE: The caller must disable preemption before calling this function.
@@ -183,7 +189,6 @@ FUNDEF void ATTR_CDECL cpu_sched_setrunning_savef(struct task *__restrict task, 
 FUNDEF struct task *FCALL cpu_sched_rotate(void);
 /* Same as `cpu_sched_rotate', but try not to return the previously running task. */
 FUNDEF struct task *FCALL cpu_sched_rotate_yield(void);
-
 /* Remove the current task, causing the caller to inherit a
  * reference to it, before switching to the next available task.
  * NOTE: The caller must disable preemption before calling this function.

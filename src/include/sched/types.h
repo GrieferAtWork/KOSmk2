@@ -778,8 +778,6 @@ struct PACKED {
  PAGE_ALIGNED USER struct tlb *t_tlb;  /*< [0..1|null(PAGE_ERROR)][owned] A user-space memory mapping for this task's thread-local information block.
                                         *  NOTE: During context switching, the calling CPU's GDT is updated to the new task's tlb and tib.
                                         *  HINT: Apply negative offsets to this pointer to access ELF user-space thread-local memory. */
-#else
- uintptr_t                t_padding3;  /*< ... */
 #endif
 #ifdef ARCHTASK_SIZE
  struct archtask          t_arch;      /*< Arch-specific task information controller. */
@@ -830,7 +828,7 @@ union PACKED {
 #endif /* !CONFIG_JIFFY_TIMEOUT */
 };
 #ifdef CONFIG_JIFFY_TIMEOUT
-#define JOB_INIT(work,data) {{NULL,NULL},work,data,THIS_INSTANCE,0}
+#define JOB_INIT(work,data) {{NULL,NULL},work,data,THIS_INSTANCE,{0}}
 #else /* CONFIG_JIFFY_TIMEOUT */
 #define JOB_INIT(work,data) {{NULL,NULL},work,data,THIS_INSTANCE,{0,0}}
 #endif /* !CONFIG_JIFFY_TIMEOUT */

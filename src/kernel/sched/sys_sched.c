@@ -988,9 +988,11 @@ end_double_lock:
     * NOTE: If the VM was cloned, we must be careful doing this,
     *       because another thread may have unmap()-ed its memory
     *       in the mean time. */
+#ifndef CONFIG_NO_TLB
    if (CLONE_FLAGS&CLONE_VM)
         task_ldtlb(result);
    else task_filltlb(result);
+#endif /* !CONFIG_NO_TLB */
  }
 
  /* YAY! Now we're REALLY done! Simply kick-start it now! */

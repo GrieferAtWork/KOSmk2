@@ -2,12 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <None Include="..\..\src\.sources" />
-    <None Include="..\..\src\linker-scripts\module.ld">
-      <Filter>linker-scripts</Filter>
-    </None>
-    <None Include="..\..\src\linker-scripts\kernel.ld">
-      <Filter>linker-scripts</Filter>
-    </None>
     <None Include="..\..\src\kernel\linker\ksym.S">
       <Filter>kernel\linker</Filter>
     </None>
@@ -34,12 +28,6 @@
     </None>
     <None Include="..\..\src\kernel\sched\pid.c.inl">
       <Filter>kernel\sched</Filter>
-    </None>
-    <None Include="..\..\src\kernel\mman\ldt.c.inl">
-      <Filter>kernel\mman</Filter>
-    </None>
-    <None Include="..\..\src\kernel\mman\ldt-set-new.c.inl">
-      <Filter>kernel\mman</Filter>
     </None>
     <None Include="..\..\src\kernel\core-modules\fs\fat-mkent.c.inl">
       <Filter>kernel\core-modules\fs</Filter>
@@ -86,6 +74,21 @@
     <None Include="..\..\src\arch\i386-kos\kernel\user64.c.inl">
       <Filter>arch\i386-kos\kernel</Filter>
     </None>
+    <None Include="..\..\src\arch\i386-kos\kernel.ld">
+      <Filter>arch\i386-kos</Filter>
+    </None>
+    <None Include="..\..\src\arch\i386-kos\module.ld">
+      <Filter>arch\i386-kos</Filter>
+    </None>
+    <None Include="..\..\src\arch\arm-kos\kernel.ld">
+      <Filter>arch\arm-kos</Filter>
+    </None>
+    <None Include="..\..\src\arch\arm-kos\module.ld">
+      <Filter>arch\arm-kos</Filter>
+    </None>
+    <None Include="..\..\src\arch\i386-kos\kernel\ldt-set-new.c.inl">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -127,17 +130,11 @@
     <Filter Include="kernel\dev">
       <UniqueIdentifier>{1debcea3-784f-4669-a6bb-6c20203f432f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="linker-scripts">
-      <UniqueIdentifier>{06ac0445-88dd-4b66-ac30-92c6e2256fce}</UniqueIdentifier>
-    </Filter>
     <Filter Include="modules">
       <UniqueIdentifier>{5a748a9f-d4bb-4097-b8c4-afbb881af239}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\dev">
       <UniqueIdentifier>{78075379-d41c-4039-a797-75e25a4fe1fb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="kernel\core-modules\disk">
-      <UniqueIdentifier>{a564439d-3357-4d13-bd16-9842db0b14ed}</UniqueIdentifier>
     </Filter>
     <Filter Include="kernel\core-modules\linker">
       <UniqueIdentifier>{e8658633-db8d-4780-aff8-e90b009cf724}</UniqueIdentifier>
@@ -238,6 +235,12 @@
     <Filter Include="arch\arm-kos\include\arch">
       <UniqueIdentifier>{e85f1525-e7b2-4508-9733-7a26aca0a673}</UniqueIdentifier>
     </Filter>
+    <Filter Include="arch\i386-kos\core-modules">
+      <UniqueIdentifier>{b88654c0-1301-434a-84b9-1c94fd0f82c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="arch\i386-kos\core-modules\disk">
+      <UniqueIdentifier>{ac8272e1-0c7e-479a-bce6-e1484220b36c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\core\main.c">
@@ -245,9 +248,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core\syslog.c">
       <Filter>kernel\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\sched\cpu.c">
-      <Filter>kernel\sched</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\sched\task.c">
       <Filter>kernel\sched</Filter>
@@ -265,9 +265,6 @@
       <Filter>kernel\mman</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\mman\branch.c">
-      <Filter>kernel\mman</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\mman\pagefault.c">
       <Filter>kernel\mman</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core\user.c">
@@ -317,9 +314,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core-modules\io\tty.c">
       <Filter>kernel\core-modules\io</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\core-modules\disk\bios-disk.c">
-      <Filter>kernel\core-modules\disk</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\core-modules\fs\fat.c">
       <Filter>kernel\core-modules\fs</Filter>
@@ -578,6 +572,21 @@
     </ClCompile>
     <ClCompile Include="..\..\src\arch\arm-kos\kernel\signal.c">
       <Filter>arch\arm-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\task.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\cpu.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\pagefault.c">
+      <Filter>arch\i386-kos\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\core-modules\disk\bios-disk.c">
+      <Filter>arch\i386-kos\core-modules\disk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\arch\i386-kos\kernel\ldt.c">
+      <Filter>arch\i386-kos\kernel</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -933,6 +942,18 @@
       <Filter>arch\arm-kos\include\arch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\arch\arm-kos\include\arch\current_context.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\pagefault.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\pagefault.h">
+      <Filter>arch\arm-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\i386-kos\include\arch\thread_context.h">
+      <Filter>arch\i386-kos\include\arch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\arch\arm-kos\include\arch\thread_context.h">
       <Filter>arch\arm-kos\include\arch</Filter>
     </ClInclude>
   </ItemGroup>

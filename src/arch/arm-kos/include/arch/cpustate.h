@@ -108,7 +108,9 @@ union PACKED { register_t r12; register_t ip; }; /* Intra-procedure scratch regi
 #ifdef __CC__
 struct PACKED xcregs {
 union PACKED { register_t r13; register_t sp; }; /* Stack pointer. */
-union PACKED { register_t r14; register_t lr; }; /* Link registers (__builtin_return_address(0)) */
+union PACKED { register_t r14; register_t lr; }; /* Link registers (__builtin_return_address(0))
+                                                  * NOTE: Bit #0 controls ARM (0) vs. THUMB (1) execution
+                                                  *       mode when loaded using `bx' or `bLx' */
 union PACKED { register_t r15; register_t pc; }; /* Program counter. (Current instruction address) */
 };
 #endif /* __CC__ */

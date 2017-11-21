@@ -24,11 +24,9 @@
 #include <fs/dentry.h>
 #include <fs/fd.h>
 #include <hybrid/align.h>
-#include <asm/cpu-flags.h>
 #include <hybrid/check.h>
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
-#include <arch/gdt.h>
 #include <kernel/mman.h>
 #include <kernel/stack.h>
 #include <kernel/syscall.h>
@@ -44,10 +42,17 @@
 #include <sched/signal.h>
 #include <bits/waitstatus.h>
 #include <arch/hints.h>
+#if defined(__i386__) || defined(__x86_64__)
+#include <asm/cpu-flags.h>
+#include <arch/gdt.h>
 #include <asm/instx.h>
+#endif
 #ifndef CONFIG_NO_TLB
 #include <kos/thread.h>
 #endif /* !CONFIG_NO_TLB */
+
+
+
 
 DECL_BEGIN
 
@@ -403,7 +408,22 @@ endwrite:
  /* All right! Everything's been set up!
   * >> The last thing remaining now, is to actually start execution of the module! */
  { struct cpustate state;
+   struct user_collect_data data;
+
+   /* Call module constructors. (Push the real entry point and all
+    * constructors but the first in reverse order on the user-stack,
+    * then simply jump to the first. - When it rets, it will execute
+    * the next constructor, and so on.
+    *    >> With that in mind, we'll probably have to move the
+    *       environment block to a callee-save register such as EBX.
+    */
+   data.last_xip = (void *)((uintptr_t)inst->i_base+mod->m_entry);
+   data.user_stack = (void **)exec_task->t_ustack->s_end;
+   error = (errno_t)call_user_worker(user_collect_init,2,inst,&data);
+   if (E_ISERR(error)) goto end_too_late;
+
    memset(&state,0,sizeof(struct cpustate));
+#if defined(__i386__) || defined(__x86_64__)
 #ifdef __x86_64__
    state.sg.gs_base   = TASK_DEFAULT_GS_BASE(exec_task);
    state.sg.fs_base   = TASK_DEFAULT_FS_BASE(exec_task);
@@ -422,24 +442,18 @@ endwrite:
 #else
    state.iret.xflags  = EFLAGS_IF;
 #endif
-   /* Call module constructors. (Push the real entry point and all
-    * constructors but the first in reverse order on the user-stack,
-    * then simply jump to the first. - When it rets, it will execute
-    * the next constructor, and so on.
-    *    >> With that in mind, we'll probably have to move the
-    *       environment block to a callee-save register such as EBX.
-    */
-   { struct user_collect_data data;
-     data.last_xip = (void *)((uintptr_t)inst->i_base+mod->m_entry);
-     data.user_stack = (void **)exec_task->t_ustack->s_end;
-     error = (errno_t)call_user_worker(user_collect_init,2,inst,&data);
-     if (E_ISERR(error)) goto end_too_late;
-     state.iret.xip     = (uintptr_t)data.last_xip;
-     state.iret.userxsp = (uintptr_t)data.user_stack;
-   }
+   state.iret.xip     = (uintptr_t)data.last_xip;
+   state.iret.userxsp = (uintptr_t)data.user_stack;
+#elif defined(__arm__)
+   state.gp.r0 = (uintptr_t)environ;
+   state.xc.pc = (uintptr_t)data.last_xip;
+   state.xc.sp = (uintptr_t)data.user_stack;
+#else
+#error "Unsupported architecture"
+#endif
 
    syslog(LOG_EXEC|LOG_INFO,"[APP] Starting user app `%[file]' at %p\n",
-          mod->m_file,state.iret.xip);
+          mod->m_file,CPUSTATE_IP(&state));
 
    /* Last phase: Cleanup stuff the caller gave us. */
    moduleset_fini(free_modules);
@@ -450,7 +464,12 @@ endwrite:
    PREEMPTION_DISABLE();
    assert(exec_task == THIS_TASK);
    exec_task->t_cstate = &state;
+#if defined(__i386__) || defined(__x86_64__)
    __asm__ __volatile__("jmp cpu_sched_setrunning\n" : : : "memory");
+#else
+   COMPILER_BARRIER();
+   cpu_sched_setrunning();
+#endif
    __builtin_unreachable();
  }
 

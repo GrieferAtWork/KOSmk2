@@ -21,4 +21,7 @@
 
 #include <hybrid/compiler.h>
 
+#define CONFIG_NO_TLB 1
+#define CONFIG_NO_FPU 1
+
 #endif /* !GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_TASK_H */

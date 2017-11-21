@@ -69,7 +69,7 @@
 		__MODULE_FIX \
 		L_FLAGS("--shared") \
 		C_FLAGS("-fPIC") \
-		LINKER_SCRIPT("linker-scripts/module.ld")
+		LINKER_SCRIPT("/src/arch/" CONFIG_TARGET_NAME "/module.ld")
 #define STATIC_MODULE(name) \
 		MODULE_NOSTDLIB(name) \
 		PROJ_DEP("kernel") \

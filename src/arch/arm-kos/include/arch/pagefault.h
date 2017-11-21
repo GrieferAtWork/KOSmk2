@@ -16,35 +16,18 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PREEMPTION_H
-#define GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PREEMPTION_H 1
+#ifndef GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PAGEFAULT_H
+#define GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PAGEFAULT_H 1
 
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
-#include <hybrid/host.h>
 
 DECL_BEGIN
 
-#ifndef __pflag_t_defined
-#define __pflag_t_defined 1
-typedef register_t pflag_t; /* Push+disable/Pop preemption-enabled. */
-#endif /* !__pflag_t_defined */
-
-/* Thread/CPU-local preemption control. */
-#define PREEMPTION_ENABLE()  (void)0 /* TODO */
-#define PREEMPTION_DISABLE() (void)0 /* TODO */
-#define PREEMPTION_ENABLED()       0 /* TODO */
-#define PREEMPTION_IDLE()    (void)0 /* TODO */
-#define PREEMPTION_FREEZE()  XBLOCK({ for (;;) {} }) /* TODO */
-
-/* Relax the calling CPU. */
-#define cpu_relax()          (void)0 /* TODO */
-
-#define PREEMPTION_PUSH()           0  /* TODO */
-#define PREEMPTION_PUSHON()         0  /* TODO */
-#define PREEMPTION_POP(f)    (void)(f) /* TODO */
-#define PREEMPTION_WAS(f)           0
+#ifdef CONFIG_BUILDING_KERNEL_CORE
+INTDEF INITCALL void KCALL pagefault_initialize(void);
+#endif /* CONFIG_BUILDING_KERNEL_CORE */
 
 DECL_END
 
-#endif /* !GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PREEMPTION_H */
+#endif /* !GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PAGEFAULT_H */

@@ -1794,6 +1794,7 @@ mheap_validate_addr(struct dsetup *setup, struct mfree *node) {
 
 PRIVATE void *KCALL
 priv_scandata(void *start, uintptr_t xword, size_t n_bytes) {
+#if defined(__i386__) || defined(__x86_64__)
  byte_t *iter,*end; bool is_ok;
  assert(n_bytes);
  end = (iter = (byte_t *)start)+n_bytes;
@@ -1819,6 +1820,32 @@ priv_scandata(void *start, uintptr_t xword, size_t n_bytes) {
   return iter;
  }
  return NULL;
+#else
+ uintptr_t *iter,*end;
+ while ((uintptr_t)start & (__SIZEOF_POINTER__-1)) {
+  if (!n_bytes) return NULL;
+  if unlikely(*(byte_t *)start != ((byte_t *)&xword)[(uintptr_t)start & (__SIZEOF_POINTER__-1)])
+     return start;
+  --n_bytes;
+  ++*(byte_t **)&start;
+ }
+ end = (iter = (uintptr_t *)start)+(n_bytes/__SIZEOF_POINTER__);
+ n_bytes %= __SIZEOF_POINTER__;
+ for (; iter != end; ++iter) {
+  if likely(*iter == xword) continue;
+  while ((assert(iter < end),
+         *iter == ((u8 *)&xword)[(uintptr_t)iter & (__SIZEOF_POINTER__-1)]))
+         ++iter;
+  return iter;
+ }
+ while (n_bytes) {
+  if unlikely(*(byte_t *)iter != ((byte_t *)&xword)[(uintptr_t)iter & (__SIZEOF_POINTER__-1)])
+     return iter;
+  --n_bytes;
+  ++*(byte_t **)&iter;
+ }
+ return NULL;
+#endif
 }
 
 PRIVATE void *KCALL
@@ -3240,8 +3267,12 @@ PRIVATE void *(KCALL debug_setflag)(struct dsetup *__restrict setup,
 
 #ifdef __x86_64__
 #define GET_EBP(r) __asm__ __volatile__("movq %%rbp, %0" : "=g" (r))
-#else
+#elif defined(__i386__)
 #define GET_EBP(r) __asm__ __volatile__("movl %%ebp, %0" : "=g" (r))
+#elif defined(__arm__)
+#define GET_EBP(r) __asm__ __volatile__("mov %0, lr" : "=r" (r))
+#else
+#define GET_EBP(r) (void)((r) = NULL)
 #endif
 
 #define DEF_SETUP(name) \

@@ -16,35 +16,49 @@
  *    misrepresented as being the original software.                          *
  * 3. This notice may not be removed or altered from any source distribution. *
  */
-#ifndef GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PREEMPTION_H
-#define GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PREEMPTION_H 1
+#ifndef _BITS_GENERIC_ELF_TYPES_H
+#define _BITS_GENERIC_ELF_TYPES_H 1
+#define _BITS_ELF_TYPES_H 1
 
-#include <hybrid/compiler.h>
-#include <hybrid/types.h>
-#include <hybrid/host.h>
+#include <__stdinc.h>
+#include <hybrid/typecore.h>
 
-DECL_BEGIN
+__SYSDECL_BEGIN
 
-#ifndef __pflag_t_defined
-#define __pflag_t_defined 1
-typedef register_t pflag_t; /* Push+disable/Pop preemption-enabled. */
-#endif /* !__pflag_t_defined */
+#ifdef __CC__
+/* Type for a 16-bit quantity. */
+typedef __UINT16_TYPE__ Elf32_Half;
+typedef __UINT16_TYPE__ Elf64_Half;
 
-/* Thread/CPU-local preemption control. */
-#define PREEMPTION_ENABLE()  (void)0 /* TODO */
-#define PREEMPTION_DISABLE() (void)0 /* TODO */
-#define PREEMPTION_ENABLED()       0 /* TODO */
-#define PREEMPTION_IDLE()    (void)0 /* TODO */
-#define PREEMPTION_FREEZE()  XBLOCK({ for (;;) {} }) /* TODO */
+/* Types for signed and unsigned 32-bit quantities. */
+typedef __UINT32_TYPE__ Elf32_Word;
+typedef __INT32_TYPE__  Elf32_Sword;
+typedef __UINT32_TYPE__ Elf64_Word;
+typedef __INT32_TYPE__  Elf64_Sword;
 
-/* Relax the calling CPU. */
-#define cpu_relax()          (void)0 /* TODO */
+/* Types for signed and unsigned 64-bit quantities. */
+typedef __UINT64_TYPE__ Elf32_Xword;
+typedef __INT64_TYPE__  Elf32_Sxword;
+typedef __UINT64_TYPE__ Elf64_Xword;
+typedef __INT64_TYPE__  Elf64_Sxword;
 
-#define PREEMPTION_PUSH()           0  /* TODO */
-#define PREEMPTION_PUSHON()         0  /* TODO */
-#define PREEMPTION_POP(f)    (void)(f) /* TODO */
-#define PREEMPTION_WAS(f)           0
+/* Type of addresses. */
+typedef __UINT32_TYPE__ Elf32_Addr;
+typedef __UINT64_TYPE__ Elf64_Addr;
 
-DECL_END
+/* Type of file offsets. */
+typedef __UINT32_TYPE__ Elf32_Off;
+typedef __UINT64_TYPE__ Elf64_Off;
 
-#endif /* !GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PREEMPTION_H */
+/* Type for section indices, which are 16-bit quantities. */
+typedef __UINT16_TYPE__ Elf32_Section;
+typedef __UINT16_TYPE__ Elf64_Section;
+
+/* Type for version symbol information. */
+typedef Elf32_Half Elf32_Versym;
+typedef Elf64_Half Elf64_Versym;
+#endif /* __CC__ */
+
+__SYSDECL_END
+
+#endif /* !_BITS_GENERIC_ELF_TYPES_H */

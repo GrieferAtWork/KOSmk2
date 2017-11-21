@@ -41,8 +41,10 @@
 #include <kernel/interrupt.h>
 #include <arch/cpustate.h>
 #include <sched/cpu.h>
-#include <asm/instx.h>
 #include <arch/current_context.h>
+#if defined(__x86_64__) || defined(__i386__)
+#include <asm/instx.h>
+#endif
 
 DECL_BEGIN
 
@@ -56,7 +58,7 @@ struct dl_saved_registers {
  __COMMON_REG2(flags);
  __COMMON_REG2(ip);
 #else
-#error "ERROR: Unsupported architecture."
+ struct cpustate state;
 #endif
 };
 
@@ -70,9 +72,12 @@ L(PRIVATE_ENTRY(dl_restore_regs)                                                
 L(    __ASM_POP_GPREGS /* gpregs */                                              )
 L(    popfx            /* xflags */                                              )
 L(    ret              /* xip */                                                 )
+#elif defined(__arm__)
+L(    /* TODO */                                                                 )
 #else
 #error "ERROR: Unsupported architecture."
 #endif
+L(SYM_END(dl_restore_regs)                                                       )
 L(.previous                                                                      )
 );
 
@@ -94,6 +99,7 @@ dl_do_pushinit(VIRT void *pfun,
   /* Special handling after the last initializer: restore registers. */
   user_stack -= sizeof(struct dl_saved_registers);
   regs = (struct dl_saved_registers *)user_stack;
+#if defined(__x86_64__) || defined(__i386__)
   regs->xip    = arg->state->iret.xip;
   regs->xflags = arg->state->iret.xflags;
   memcpy(&regs->gp,&arg->state->gp,sizeof(struct gpregs));
@@ -102,6 +108,12 @@ dl_do_pushinit(VIRT void *pfun,
 #endif
   /* Return the base address of the first module to the original caller. */
   GPREGS_SYSCALL_RET1(regs->gp) = (uintptr_t)arg->pbase_return_value;
+#else
+  memcpy(&regs->state,&arg->state,sizeof(struct cpustate));
+  /* Return the base address of the first module to the original caller. */
+  GPREGS_SYSCALL_RET1(regs->state.gp) = (uintptr_t)arg->pbase_return_value;
+#endif
+
   
   /* Return to this special location. */
   set_current_userip((void *)dl_restore_regs);
