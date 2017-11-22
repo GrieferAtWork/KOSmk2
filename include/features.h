@@ -69,6 +69,7 @@
 #undef __USE_KOS         /* `#ifdef _KOS_SOURCE'     Additions added & Changes made by KOS. */
 #undef __USE_KXS         /* `#if _KOS_SOURCE >= 2'   Minor extended functionality that is likely to collide with existing programs. */
 #undef __USE_UTF         /* `#ifdef _UTF_SOURCE'     Enable additional string functions that accept `char16_t' and `char32_t'. (Referred to as `c16'/`u' and `c32'/`U') */
+#undef __USE_CYG         /* `#ifdef _CYG_SOURCE'     Functions usually only found in Cygwin. */
 #undef __USE_DOS         /* `#ifdef _DOS_SOURCE'     Functions usually only found in DOS: `spawn', `strlwr', etc. */
 #undef __USE_OLD_DOS     /* `#if _DOS_SOURCE >= 2'   Make some old, long deprecated DOS APIs (namely in `<dos.h>') available. */
 #undef __USE_DOSFS       /* `#ifdef _DOSFS_SOURCE'   Link filesystem functions that follow DOS path resolution (case-insensitive, '\\' == '/'). - Only when option when linking against __CRT_KOS. (s.a.: `fsmode') */
@@ -96,6 +97,8 @@
 #undef __CRT_KOS
 #ifdef __KOS__
 #   define __CRT_KOS 1
+#elif defined(__CYGWIN__) || defined(__CYGWIN32__)
+#   define __CRT_CYG 1
 #elif defined(__linux__) || defined(__linux) || defined(linux) || \
       defined(__unix__) || defined(__unix) || defined(unix)
 #   define __CRT_GLC 1
@@ -113,6 +116,7 @@
 #else
 #   define __CRT_KOS 1
 #endif
+
 #ifdef __CRT_KOS
 #ifndef __arm__
 #   define __CRT_DOS 1
@@ -122,11 +126,14 @@
 
 #ifndef __CRT_KOS
 #if defined(__CRT_DOS) && !defined(__CRT_GLC)
-#undef __DOS_COMPAT__
-#define __DOS_COMPAT__ 1
+#   undef __DOS_COMPAT__
+#   define __DOS_COMPAT__ 1
 #elif defined(__CRT_GLC) && !defined(__CRT_DOS)
-#undef __GLC_COMPAT__
-#define __GLC_COMPAT__ 1
+#   undef __GLC_COMPAT__
+#   define __GLC_COMPAT__ 1
+#elif defined(__CRT_CYG)
+#   undef __CYG_COMPAT__
+#   define __CYG_COMPAT__ 1
 #endif
 #endif /* !__CRT_KOS */
 
@@ -348,8 +355,54 @@
 # define __USE_GNU 1
 #endif
 
-#if defined(_REENTRANT) || defined(_THREAD_SAFE)
-# define __USE_REENTRANT 1
+#if (defined(_REENTRANT) || defined(_THREAD_SAFE)) || \
+    (defined(__CRT_CYG) && defined(__DYNAMIC_REENT__) && !defined(__SINGLE_THREAD__))
+#define __USE_REENTRANT 1
+#endif
+
+/* When targeting PE or DOS's CRT, enable DOS-extensions and DOS-filesystem by default. */
+#if defined(__CRT_DOS) && !defined(__CRT_GLC) && !defined(__CRT_CYG)
+#define __USE_DOSFS 1 /* Enable DOS filesystem semantics. */
+#endif
+#if defined(__PE__) && !defined(__CRT_CYG)
+#define __USE_DOS   1 /* Enable DOS extensions. */
+#endif
+#ifdef __CRT_CYG
+#define __USE_CYG   1 /* Enable Cygwin extensions. */
+#endif
+
+#ifdef _CYG_SOURCE
+#undef __USE_CYG
+#if (_CYG_SOURCE+0) != 0
+#   define __USE_CYG   1
+#endif
+#endif
+
+/* HINT: You can forceably disable DOS extensions in PE-mode by
+ *       defining `_DOS_SOURCE' as an empty macro, or as a value
+ *       equal to ZERO(0). */
+#ifdef _DOS_SOURCE
+#undef __USE_DOS
+#if (_DOS_SOURCE+0) == 0
+#ifdef __CRT_KOS
+#   undef __USE_DOSFS /* Also disable DOS-FS when linking against KOS's CRT. */
+#endif
+#else
+#   define __USE_DOS   1
+#endif
+#if (_DOS_SOURCE+0) >= 2
+#   define __USE_OLD_DOS 1
+#endif
+#endif
+
+/* HINT: In order to be able to use _DOS_SOURCE or `_DOSFS_SOURCE', `libc'
+ *       must be built with `CONFIG_LIBC_NO_DOS_LIBC' disabled! */
+#ifdef _DOSFS_SOURCE
+#undef __USE_DOSFS
+/* Manually enable DOS-FS */
+#if (_DOSFS_SOURCE+0) != 0
+#   define __USE_DOSFS 1
+#endif
 #endif
 
 /* Try to enable 64-bit time by default (future-proofing) */
@@ -359,6 +412,17 @@
 #elif (!defined(_NO_EXPERIMENTAL_SOURCE) && 0) && \
       (defined(__CRT_KOS) || defined(__CRT_DOS))
 #   define __USE_TIME_BITS64 1
+#elif defined(__CYGWIN__) || defined(__CYGWIN32__)
+#   include <hybrid/typecore.h>
+#if __SIZEOF_POINTER__ >= 8
+#   define __USE_TIME_BITS64 1
+#endif
+#endif
+
+#if defined(__CYGWIN__) || defined(__CYGWIN32__) || \
+    defined(__MINGW32__) || defined(WIN32) || defined(_WIN32) || \
+    defined(WIN64) || defined(_WIN64)
+#   define __WINDOWS_HOST__ 1
 #endif
 
 
@@ -405,41 +469,6 @@
 #   define __USE_UTF 1
 #endif
 
-/* When targeting PE or DOS's CRT, enable DOS-extensions and DOS-filesystem by default. */
-#if defined(__CRT_DOS) && !defined(__CRT_GLC)
-#define __USE_DOSFS 1 /* Enable DOS filesystem semantics. */
-#endif
-#ifdef __PE__
-#define __USE_DOS   1 /* Enable DOS extensions. */
-#endif
-
-/* HINT: You can forceably disable DOS extensions in PE-mode by
- *       defining `_DOS_SOURCE' as an empty macro, or as a value
- *       equal to ZERO(0). */
-#ifdef _DOS_SOURCE
-#undef __USE_DOS
-#if (_DOS_SOURCE+0) == 0
-#ifdef __CRT_KOS
-#   undef __USE_DOSFS /* Also disable DOS-FS when linking against KOS's CRT. */
-#endif
-#else
-#   define __USE_DOS   1
-#endif
-#if (_DOS_SOURCE+0) >= 2
-#   define __USE_OLD_DOS 1
-#endif
-#endif
-
-/* HINT: In order to be able to use _DOS_SOURCE or `_DOSFS_SOURCE', `libc'
- *       must be built with `CONFIG_LIBC_NO_DOS_LIBC' disabled! */
-#ifdef _DOSFS_SOURCE
-#undef __USE_DOSFS
-/* Manually enable DOS-FS */
-#if (_DOSFS_SOURCE+0) != 0
-#   define __USE_DOSFS 1
-#endif
-#endif
-
 #ifdef __KERNEL__
 /* Within the kernel, pre-configure based on config options. */
 #   undef __USE_DOSFS
@@ -479,7 +508,8 @@
 #endif /* __KERNEL__ */
 
 #if (!defined(__CRT_DOS) && !defined(__CRT_KOS)) && \
-    (defined(__USE_TIME64) || defined(__USE_TIME_BITS64))
+    (defined(__USE_TIME64) || defined(__USE_TIME_BITS64)) && \
+    (!defined(__CYGWIN__) && !defined(__CYGWIN32__))
 #error "The selected CRT does not support 64-bit time() functions (Try building with `-D_TIME_T_BITS=32')"
 #endif
 
@@ -489,7 +519,7 @@
 #ifndef __USE_DOSFS
 #   error "The linked CRT only supports DOS-FS mode (Try building with `-D_DOSFS_SOURCE=1')"
 #endif
-#elif defined(__CRT_GLC) && !defined(__CRT_DOS)
+#elif (defined(__CRT_GLC) || defined(__CRT_CYG)) && !defined(__CRT_DOS)
 #ifdef __USE_DOSFS
 #   error "The linked CRT does not support DOS-FS mode (Try building with `-D_DOSFS_SOURCE=0')"
 #endif
@@ -508,7 +538,7 @@
 
 
 #ifndef __SIZEOF_WCHAR_T__
-#ifdef __PE__
+#if defined(__PE__) && defined(__CRT_DOS)
 #   define __SIZEOF_WCHAR_T__ 2
 #else
 #   define __SIZEOF_WCHAR_T__ 4
@@ -550,7 +580,7 @@
 #   define __REDIRECT_UFS_FUNCn_OLDPEB    __REDIRECT
 #endif
 #endif
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __PE_FUNC_OLDPEA(x)          __ASMNAME("_" #x)
 #   define __PE_FUNC_OLDPEB(x)          /* nothing (linked by default) */
 #   define __REDIRECT_PE_FUNC_OLDPEA(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -564,7 +594,7 @@
 #endif
 
 #ifdef __USE_DOSFS
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __W16FS_FUNC(x)           /* nothing (linked by default) */
 #   define __W16FS_FUNC_(x)          __ASMNAME(#x)
 #   define __W32FS_FUNC(x)           __ASMNAME("U" #x)
@@ -587,8 +617,8 @@
 #   define __REDIRECT_UFS(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
 #endif
-#else /* __USE_DOSFS */
-#ifdef __PE__
+#else
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __W16FS_FUNC(x)       __ASMNAME(".kos.u" #x)
 #   define __W32FS_FUNC(x)       __ASMNAME(".kos." #x)
 #   define __UFS_FUNC(x)         __ASMNAME(".kos." #x)
@@ -645,19 +675,15 @@
 #   error "Unsupport wide-character width"
 #endif
 
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __C16_DECL(x)     __ASMNAME(#x)
 #   define __C32_DECL(x)     __ASMNAME(".kos." #x)
 #   define __C16_FUNC_ALT(x) __ASMNAME("_wcs" #x)
 #   define __C32_FUNC_ALT(x) __ASMNAME(".kos.wcs" #x)
 #   define __REDIRECT_C16(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
-#   define __REDIRECT_C16_ALT(decl,attr,Treturn,cc,name,param,asmname,args) \
-           __REDIRECT(decl,attr,Treturn,cc,name,param,_##asmname,args)
 #ifndef __NO_ASMNAME
 #   define __REDIRECT_C32(decl,attr,Treturn,cc,name,param,asmname,args) \
-           __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
-#   define __REDIRECT_C32_ALT(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
 #endif
 #else
@@ -667,23 +693,17 @@
 #   define __C32_FUNC_ALT(x) __ASMNAME("wcs" #x)
 #   define __REDIRECT_C32(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
-#   define __REDIRECT_C32_ALT(decl,attr,Treturn,cc,name,param,asmname,args) \
-           __REDIRECT(decl,attr,Treturn,cc,name,param,asmname,args)
 #ifndef __NO_ASMNAME
 #   define __REDIRECT_C16(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,__PORT_DOSONLY attr,Treturn,cc,name,param,.dos.asmname,args)
-#   define __REDIRECT_C16_ALT(decl,attr,Treturn,cc,name,param,asmname,args) \
-           __REDIRECT(decl,__PORT_DOSONLY attr,Treturn,cc,name,param,.dos._##asmname,args)
 #endif
 #endif
 
 #ifndef __REDIRECT_C16
 #   define __REDIRECT_C16     __IGNORE_REDIRECT
-#   define __REDIRECT_C16_ALT __IGNORE_REDIRECT_ALT
 #endif
 #ifndef __REDIRECT_C32
 #   define __REDIRECT_C32     __IGNORE_REDIRECT
-#   define __REDIRECT_C32_ALT __IGNORE_REDIRECT_ALT
 #endif
 
 
@@ -693,7 +713,7 @@
 #   define __REDIRECT_FS_FUNC_R(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64_r,args)
 #ifdef __USE_DOSFS
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __UFS_FUNCn(x)    __ASMNAME(#x "64")
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
@@ -707,7 +727,7 @@
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##64_r,args)
 #endif
 #else /* __USE_DOSFS */
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __UFS_FUNCn(x)    __ASMNAME(".kos." #x "64")
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64,args)
@@ -728,7 +748,7 @@
 #   define __REDIRECT_FS_FUNC_R_(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##_r,args)
 #ifdef __USE_DOSFS
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __UFS_FUNCn(x)    /* Nothing */
 #   define __UFS_FUNCn_(x)   __ASMNAME(#x)
 #   define __REDIRECT_UFS_FUNCn       __NOREDIRECT
@@ -744,7 +764,7 @@
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##_r,args)
 #endif
 #else /* __USE_DOSFS */
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __UFS_FUNCn(x)    __ASMNAME(".kos." #x)
 #   define __REDIRECT_UFS_FUNCn(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
@@ -773,7 +793,7 @@
 
 #ifdef __USE_TIME_BITS64
 #ifdef __USE_DOSFS
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,asmname##64,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -785,7 +805,7 @@
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##64_r,args)
 #endif
 #else /* __USE_DOSFS */
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname##64,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -799,7 +819,7 @@
 #endif /* !__USE_DOSFS */
 #else /* __USE_TIME_BITS64 */
 #ifdef __USE_DOSFS
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __REDIRECT_UFS_FUNCt       __NOREDIRECT
 #   define __REDIRECT_UFS_FUNCt_      __REDIRECT
 #   define __REDIRECT_UFS_FUNCt_R     __NOREDIRECT
@@ -812,7 +832,7 @@
            __REDIRECT(decl,attr,Treturn,cc,name,param,.dos.asmname##_r,args)
 #endif
 #else /* __USE_DOSFS */
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __REDIRECT_UFS_FUNCt(decl,attr,Treturn,cc,name,param,asmname,args) \
            __REDIRECT(decl,attr,Treturn,cc,name,param,.kos.asmname,args)
 #   define __REDIRECT_UFS_FUNCt_R(decl,attr,Treturn,cc,name,param,asmname,args) \
@@ -838,7 +858,7 @@
  * >> Used for functions available in both DOS and KOS mode, but
  *    with incompatible prototypes or associated data objects. */
 #if defined(__USE_DOS) || defined(__DOS_COMPAT__)
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __REDIRECT_DOS_FUNC          __NOREDIRECT
 #   define __REDIRECT_DOS_FUNC_         __REDIRECT
 #   define __REDIRECT_DOS_FUNC_NOTHROW  __NOREDIRECT_NOTHROW
@@ -854,7 +874,7 @@
            __REDIRECT_NOTHROW(decl,attr,Treturn,cc,name,param,.dos.asmname,args)
 #endif
 #else /* __USE_DOS || __DOS_COMPAT__ */
-#ifdef __PE__
+#if defined(__PE__) && defined(__DOS_COMPAT__)
 #   define __DOS_FUNC(x)  __ASMNAME(".kos." #x)
 #   define __DOS_FUNC_(x) __ASMNAME(".kos." #x)
 #   define __REDIRECT_DOS_FUNC(decl,attr,Treturn,cc,name,param,asmname,args) \

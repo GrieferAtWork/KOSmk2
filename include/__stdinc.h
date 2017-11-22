@@ -147,7 +147,7 @@
 #if defined(__linux__) || defined(__linux) || defined(linux) || \
     defined(__unix__) || defined(__unix) || defined(unix)
 #   define __ELF__ 1
-#elif defined(__CYGWIN__) || defined(__MINGW32__) || defined(__WINDOWS__) || \
+#elif defined(__CYGWIN__) || defined(__CYGWIN32__) || defined(__MINGW32__) || defined(__WINDOWS__) || \
       defined(_WIN16) || defined(WIN16) || defined(_WIN32) || defined(WIN32) || \
       defined(_WIN64) || defined(WIN64) || defined(__WIN32__) || defined(__TOS_WIN__) || \
       defined(_WIN32_WCE) || defined(WIN32_WCE)
@@ -291,10 +291,10 @@ __LOCAL attr void __NOTHROW((cc name) param) { \
 #endif
 #else
 #ifdef __CC__
-__NAMESPACE_STD_BEGIN struct _IO_FILE;
+__NAMESPACE_STD_BEGIN struct __IO_FILE;
 __NAMESPACE_STD_END
 #endif /* __CC__ */
-#define __FILE     struct __NAMESPACE_STD_SYM _IO_FILE
+#define __FILE     struct __NAMESPACE_STD_SYM __IO_FILE
 #endif
 
 #ifndef __LIBCCALL

@@ -23,8 +23,11 @@
 #include <__stdinc.h>
 #include <hybrid/typecore.h>
 
-/* TODO: On targets with DOS support, we can merge `iofile_data' into the `struct _IO_FILE' */
+#ifdef __CYG_COMPAT__
+#include <sys/reent.h>
+#else /* __CYG_COMPAT__ */
 
+/* TODO: On targets with DOS support, we can merge `iofile_data' into the `struct __IO_FILE' */
 
 /* I/O buffer flags (DOS-compatible)
  * WARNING: These flags may change in the future. */
@@ -64,7 +67,7 @@ __NAMESPACE_STD_BEGIN
  * for the most part, the only exception being that '_tmpfname'
  * has been re-purposed as a pointer to a block of internal data.
  * Yet seeing as how  */
-struct _IO_FILE {
+struct __IO_FILE {
 #ifdef __BUILDING_LIBC
     char               *if_ptr;        /*< [0..1] Pointer to the next character to-be read. */
     __UINT32_TYPE__     if_cnt;        /*< Amount of characters available in 'if_ptr'.
@@ -177,5 +180,7 @@ struct _IO_FILE {
 #endif /* !__BUILDING_LIBC */
 };
 __NAMESPACE_STD_END
+
+#endif /* !__CYG_COMPAT__ */
 
 #endif /* !_BITS_GENERIC_IO_FILE_H */

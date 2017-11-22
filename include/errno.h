@@ -28,10 +28,6 @@
 
 __SYSDECL_BEGIN
 
-#ifdef __CC__
-typedef int __errno_t;
-#endif /* __CC__ */
-
 #if defined(__KERNEL__) || defined(__USE_KOS)
 #ifdef __CC__
 #ifndef __errno_t_defined

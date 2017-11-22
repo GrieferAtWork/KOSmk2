@@ -892,10 +892,28 @@ typedef int (__LIBCCALL *_onexit_t)(void);
 
 #ifndef _CRT_ERRNO_DEFINED
 #define _CRT_ERRNO_DEFINED 1
-#define errno                                            (*__errno())
-__REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,,errno_t *,__LIBCCALL,__errno,(void),_errno,())
-__REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,,errno_t,__LIBCCALL,__get_errno,(void),_get_errno,())
-__REDIRECT_DOS_FUNC_NOTHROW_(__LIBC,,errno_t,__LIBCCALL,__set_errno,(errno_t __err),_set_errno,(__err))
+__NAMESPACE_INT_BEGIN
+#define errno     (*__NAMESPACE_INT_SYM __errno())
+__REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,errno_t *,__LIBCCALL,__errno,(void),_errno,())
+__NAMESPACE_INT_END
+__REDIRECT_IFDOS_NOTHROW(__LIBC,,errno_t,__LIBCCALL,__set_errno,(errno_t __err),_set_errno,(__err))
+#if defined(__CRT_KOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+__REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,errno_t,__LIBCCALL,__get_errno,(void),__get_dos_errno,())
+#else /* Builtin... */
+__LOCAL __WUNUSED errno_t __NOTHROW((__LIBCCALL __get_errno)(void)) { return errno; }
+#endif /* Compat... */
+#if defined(__CRT_DOS) && !defined(__GLC_COMPAT__)
+#ifdef __USE_DOS
+__LIBC errno_t __NOTHROW((__LIBCCALL _get_errno)(errno_t *__perr));
+__LIBC errno_t __NOTHROW((__LIBCCALL _set_errno)(errno_t __err));
+#else /* __USE_DOS */
+__LIBC errno_t __NOTHROW((__LIBCCALL _get_errno)(errno_t *__perr));
+__LIBC errno_t __NOTHROW((__LIBCCALL _set_errno)(errno_t __err));
+#endif /* !__USE_DOS */
+#else /* Builtin... */
+__LOCAL errno_t __NOTHROW((__LIBCCALL _get_errno)(errno_t *__perr)) { if (__perr) *__perr = errno; return 0; }
+__LOCAL errno_t __NOTHROW((__LIBCCALL _set_errno)(errno_t __err)) { return (errno = __err); }
+#endif /* Compat... */
 #endif /* !_CRT_ERRNO_DEFINED */
 
 #define _doserrno     (*__doserrno())

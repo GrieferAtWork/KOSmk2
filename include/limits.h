@@ -23,15 +23,18 @@
 #include <features.h>
 #include <hybrid/limitcore.h>
 
-__SYSDECL_BEGIN
-
 
 /* You should really just always using 'MB_CUR_MAX'... */
-#ifdef __USE_DOS
-#define MB_LEN_MAX   5
+#ifdef __DOS_COMPAT__
+#   define MB_LEN_MAX 5
+#elif defined(__CYG_COMPAT__)
+#   include <newlib.h>
+#   define MB_LEN_MAX _MB_LEN_MAX
 #else
-#define MB_LEN_MAX	16
+#   define MB_LEN_MAX 16
 #endif
+
+__SYSDECL_BEGIN
 
 #define CHAR_BIT    __CHAR_BIT__
 #define SCHAR_MIN   __SCHAR_MIN__

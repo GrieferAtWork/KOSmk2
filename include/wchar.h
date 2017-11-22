@@ -34,6 +34,9 @@
 #include <asm-generic/string.h>
 #endif /* __OPTIMIZE_LIBC__ */
 #endif /* __USE_DOS */
+#ifdef __CYG_COMPAT__
+#include <sys/reent.h>
+#endif /* __CYG_COMPAT__ */
 
 #if defined(__USE_XOPEN2K8) || defined(__USE_GNU)
 #   include <xlocale.h>
@@ -731,7 +734,7 @@ __NAMESPACE_STD_USING(FILE)
 
 
 #ifndef _iobuf
-#define _iobuf   _IO_FILE
+#define _iobuf   __IO_FILE
 #endif /* !_iobuf */
 
 #ifndef __stdstreams_defined
@@ -739,25 +742,29 @@ __NAMESPACE_STD_USING(FILE)
 #undef stdin
 #undef stdout
 #undef stderr
-#ifdef __DOS_COMPAT__
+#ifdef __CYG_COMPAT__
+#   define stdin  (__CYG_REENT->__cyg_stdin)
+#   define stdout (__CYG_REENT->__cyg_stdout)
+#   define stderr (__CYG_REENT->__cyg_stderr)
+#elif defined(__DOS_COMPAT__)
 #ifdef __USE_DOS_LINKOBJECTS
 __LIBC FILE _iob[];
-#define stdin  (_iob+0)
-#define stdout (_iob+1)
-#define stderr (_iob+2)
+#   define stdin  (_iob+0)
+#   define stdout (_iob+1)
+#   define stderr (_iob+2)
 #else /* __USE_DOS_LINKOBJECTS */
 __LIBC FILE *(__LIBCCALL __iob_func)(void);
-#define stdin  (__iob_func()+0)
-#define stdout (__iob_func()+1)
-#define stderr (__iob_func()+2)
+#   define stdin  (__iob_func()+0)
+#   define stdout (__iob_func()+1)
+#   define stderr (__iob_func()+2)
 #endif /* !__USE_DOS_LINKOBJECTS */
 #else /* __DOS_COMPAT__ */
 __LIBC __FILE *stdin;
 __LIBC __FILE *stdout;
 __LIBC __FILE *stderr;
-#define stdin  stdin
-#define stdout stdout
-#define stderr stderr
+#   define stdin  stdin
+#   define stdout stdout
+#   define stderr stderr
 #endif /* !__DOS_COMPAT__ */
 #endif /* !__stdstreams_defined */
 

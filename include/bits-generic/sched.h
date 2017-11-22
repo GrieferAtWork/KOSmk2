@@ -183,8 +183,8 @@ typedef struct { __cpu_mask __bits[__CPU_SETSIZE/__NCPUBITS]; } __cpu_set_t;
 #   error FIXME
 #endif
 
-#define __CPU_FILL_S(setsize,cpusetp)   do __hybrid_memset(cpusetp,0xff,setsize); while (0)
-#define __CPU_ZERO_S(setsize,cpusetp)   do __hybrid_memset(cpusetp,0x00,setsize); while (0)
+#define __CPU_FILL_S(setsize,cpusetp)   do{__hybrid_memset(cpusetp,0xff,setsize);}__WHILE0
+#define __CPU_ZERO_S(setsize,cpusetp)   do{__hybrid_memset(cpusetp,0x00,setsize);}__WHILE0
 #define __CPU_SET_S(cpu,setsize,cpusetp) \
  __XBLOCK({ __size_t const __cpu = (cpu); \
             __XRETURN (__cpu/8 < (setsize)) ? ((cpusetp)->__bits[__CPUELT(__cpu)] |= __CPUMASK(__cpu)) : 0; \

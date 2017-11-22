@@ -31,6 +31,9 @@
 #ifdef __CRT_DOS
 #include <xlocale.h>
 #endif /* __CRT_DOS */
+#ifdef __CYG_COMPAT__
+#include <sys/reent.h>
+#endif /* __CYG_COMPAT__ */
 
 __SYSDECL_BEGIN
 
@@ -160,7 +163,11 @@ __NAMESPACE_STD_USING(FILE)
 #undef stdin
 #undef stdout
 #undef stderr
-#ifdef __DOS_COMPAT__
+#ifdef __CYG_COMPAT__
+#   define stdin  (__CYG_REENT->__cyg_stdin)
+#   define stdout (__CYG_REENT->__cyg_stdout)
+#   define stderr (__CYG_REENT->__cyg_stderr)
+#elif defined(__DOS_COMPAT__)
 #ifdef __USE_DOS_LINKOBJECTS
 __LIBC FILE _iob[];
 #   define stdin  (_iob+0)
@@ -658,7 +665,7 @@ __LIBC __ATTR_LIBC_PRINTF(2,0) __PORT_NODOS __WUNUSED int (__LIBCCALL vasprintf)
 /* DOS Extensions */
 #ifdef __USE_DOS
 #ifndef _iobuf
-#define _iobuf   _IO_FILE
+#define _iobuf   __IO_FILE
 #endif /* !_iobuf */
 
 #define _NFILE        512

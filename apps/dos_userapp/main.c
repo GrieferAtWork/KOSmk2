@@ -32,6 +32,9 @@
  *    KOS's system headers should be usable cross-platform and cross-compiler,
  *    supporting GLibc, KOS's CRT and DOS (msvcrt).
  */
+#ifdef __INTELLISENSE__
+#define __CYGWIN__ 1
+#endif
 
 //#define _DOS_SOURCE  0
 //#define _KOS_PRINTF_SOURCE 1

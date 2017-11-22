@@ -686,6 +686,13 @@
 #define __TYPEFOR_INTIB(n)  __PRIVATE_TYPEFOR_INTIB(n)
 #define __TYPEFOR_UINTIB(n) __PRIVATE_TYPEFOR_UINTIB(n)
 
+#ifndef __CHAR8_TYPE__
+#if __SIZEOF_CHAR__ == 1
+#   define __CHAR8_TYPE__ char
+#else
+#   define __CHAR8_TYPE__ __INT8_TYPE__
+#endif
+#endif
 #ifndef __INT8_TYPE__
 #define __INT8_TYPE__   __TYPEFOR_INTIB1
 #endif

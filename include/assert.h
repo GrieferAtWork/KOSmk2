@@ -86,6 +86,27 @@ __LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL _assert)(const char *__asser
 #   define __yes_assertf_d(sexpr,expr,...)  __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
 #   define __yes_asserte_d(sexpr,expr,...)  __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
 #   define __yes_assertef_d(sexpr,expr,...) __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#elif defined(__CRT_CYG)
+__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __assert_func)(const char *__file, int __line, const char *__func, const char *__expr);
+#ifdef __NO_FUNCTION__
+__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __assert)(const char *__file, int __line, const char *__expr);
+#   define __yes_assert(sexpr,expr)         (void)(__ASSERT_LIKELY(expr) || (__assert(__FILE__,__LINE__,sexpr),0))
+#   define __yes_asserte(sexpr,expr)        (void)(__ASSERT_LIKELY(expr) || (__assert(__FILE__,__LINE__,sexpr),0))
+#   define __yes_assertf(sexpr,expr,...)    (void)(__ASSERT_LIKELY(expr) || (__assert(__FILE__,__LINE__,sexpr),0))
+#   define __yes_assertef(sexpr,expr,...)   (void)(__ASSERT_LIKELY(expr) || (__assert(__FILE__,__LINE__,sexpr),0))
+#   define __IMPL2_yes_assert_d(sexpr,expr,file,line,func,...) (void)(__ASSERT_LIKELY(expr) || (__assert_func(file,line,func,sexpr),0))
+#else /* __NO_FUNCTION__ */
+#   define __yes_assert(sexpr,expr)         (void)(__ASSERT_LIKELY(expr) || (__assert_func(__FILE__,__LINE__,__FUNCTION__,sexpr),0))
+#   define __yes_asserte(sexpr,expr)        (void)(__ASSERT_LIKELY(expr) || (__assert_func(__FILE__,__LINE__,__FUNCTION__,sexpr),0))
+#   define __yes_assertf(sexpr,expr,...)    (void)(__ASSERT_LIKELY(expr) || (__assert_func(__FILE__,__LINE__,__FUNCTION__,sexpr),0))
+#   define __yes_assertef(sexpr,expr,...)   (void)(__ASSERT_LIKELY(expr) || (__assert_func(__FILE__,__LINE__,__FUNCTION__,sexpr),0))
+#   define __IMPL2_yes_assert_d(sexpr,expr,file,line,func,...) (void)(__ASSERT_LIKELY(expr) || (__assert_func(file,line,func,sexpr),0))
+#endif /* !__NO_FUNCTION__ */
+#   define __IMPL_yes_assert_d(args)        __IMPL2_yes_assert_d args
+#   define __yes_assert_d(sexpr,expr,...)   __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_assertf_d(sexpr,expr,...)  __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_asserte_d(sexpr,expr,...)  __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
+#   define __yes_assertef_d(sexpr,expr,...) __IMPL_yes_assert_d((sexpr,expr,__VA_ARGS__))
 #else
 #   error "Not way of implementing assert()"
 #endif

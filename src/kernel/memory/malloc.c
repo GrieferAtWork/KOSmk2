@@ -992,6 +992,7 @@ check_again:
                                           PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
     }
 #if defined(CONFIG_NO_PDIR_SELFMAP) || (__ERRNO_THRESHOLD < THIS_PDIR_BASE)
+#define NEED_END2_ERR
     if unlikely(result == PAGE_ERROR ||
                (uintptr_t)result >= FLOOR_ALIGN(__ERRNO_THRESHOLD,PAGESIZE))
                 goto end2_err;
@@ -1027,7 +1028,10 @@ end:  if (!(flags&GFP_KERNEL)) TASK_PDIR_KERNEL_END(old_mman);
  }
  if (result == PAGE_ERROR) BAD_ALLOC(n_bytes,flags);
  return result;
+#ifdef NEED_END2_ERR
+#undef NEED_END2_ERR
 end2_err: result = PAGE_ERROR; goto end2;
+#endif
 }
 
 

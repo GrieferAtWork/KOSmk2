@@ -500,9 +500,9 @@ __REDIRECT_UFS(__LIBC,__NONNULL((1)),int,__LIBCCALL,truncate64,
               (char const *__file, __off64_t __length),truncate64,(__file,__length))
 #endif /* __USE_LARGEFILE64 */
 #else /* __CRT_GLC */
-__LOCAL __NONNULL((1)) int (__LIBCCALL truncate)(char const *__file, __FS_TYPE(off) __length) { return 0; /* TODO: open()+ftruncate(); */ }
+__LOCAL __NONNULL((1)) int (__LIBCCALL truncate)(char const *__UNUSED(__file), __FS_TYPE(off) __UNUSED(__length)) { return 0; /* TODO: open()+ftruncate(); */ }
 #ifdef __USE_LARGEFILE64
-__LOCAL __NONNULL((1)) int (__LIBCCALL truncate64)(char const *__file, __off64_t __length) { return 0; /* TODO: open()+ftruncate64(); */ }
+__LOCAL __NONNULL((1)) int (__LIBCCALL truncate64)(char const *__UNUSED(__file), __off64_t __UNUSED(__length)) { return 0; /* TODO: open()+ftruncate64(); */ }
 #endif /* __USE_LARGEFILE64 */
 #endif /* !__CRT_GLC */
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
