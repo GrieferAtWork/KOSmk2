@@ -19,6 +19,15 @@
 #ifndef ___STDINC_H
 #define ___STDINC_H 1
 
+/* Indicator for user-applications that KOS's system headers are available.
+ * >> #include <string.h> // Will define `__KOS_SYSTEM_HEADERS__'
+ * >> #ifdef __KOS_SYSTEM_HEADERS__
+ * >> #include <hybrid/compiler.h> // Pull in KOS-specific headers without relying on `__has_include'.
+ * >> #endif
+ */
+#define __KOS_SYSTEM_HEADERS__ 1
+
+
 /* ... */
 
 #ifndef __has_builtin
