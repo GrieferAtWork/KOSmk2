@@ -106,7 +106,12 @@ STATIC_ASSERT(offsetof(struct task,t_exitcode) == TASK_OFFSETOF_EXITCODE);
 STATIC_ASSERT(offsetof(struct task,t_event) == TASK_OFFSETOF_EVENT);
 STATIC_ASSERT(offsetof(struct task,t_critical) == TASK_OFFSETOF_CRITICAL);
 STATIC_ASSERT(offsetof(struct task,t_nointr) == TASK_OFFSETOF_NOINTR);
+#ifdef CONFIG_HIGH_KERNEL
 STATIC_ASSERT(offsetof(struct task,t_addrlimit) == TASK_OFFSETOF_ADDRLIMIT);
+#endif /* CONFIG_HIGH_KERNEL */
+#ifdef CONFIG_LOW_KERNEL
+STATIC_ASSERT(offsetof(struct task,t_addrbase) == TASK_OFFSETOF_ADDRBASE);
+#endif /* CONFIG_LOW_KERNEL */
 STATIC_ASSERT(offsetof(struct task,t_ic) == TASK_OFFSETOF_IC);
 STATIC_ASSERT(offsetof(struct task,t_suspend) == TASK_OFFSETOF_SUSPEND);
 STATIC_ASSERT(offsetof(struct task,t_pid) == TASK_OFFSETOF_PID);
@@ -192,7 +197,12 @@ task_cinit(struct task *t) {
   atomic_rwlock_cinit(&t->t_pid.tp_childlock);
   atomic_rwlock_cinit(&t->t_pid.tp_grouplock);
 
-  t->t_addrlimit = USER_END;
+#ifdef CONFIG_HIGH_KERNEL
+  t->t_addrlimit = VM_USER_MAX+1;
+#endif /* CONFIG_HIGH_KERNEL */
+#ifdef CONFIG_LOW_KERNEL
+  t->t_addrbase = VM_USER_BASE;
+#endif /* CONFIG_LOW_KERNEL */
   t->t_weakcnt   = 1; /* The initial weak reference owned by `t_refcnt' itself. */
   t->t_refcnt    = 1;
 
@@ -364,7 +374,6 @@ task_start(struct task *__restrict t) {
          "User-level tasks must run with the #IF flag enabled\n"
          "Either change the task CPL to non-3, or set EFLAGS_IF in eflags.");
 #endif /* X86 */
- /* assert(t->t_addrlimit != USER_END); */
  t->t_real_mman = t->t_mman;
  COMPILER_WRITE_BARRIER();
 

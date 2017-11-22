@@ -229,8 +229,8 @@ __REDIRECT(__LIBC,,__time32_t,__LIBCCALL,__time32,(__time32_t *__timer),time,(__
 __REDIRECT(__LIBC,__ATTR_CONST,double,__LIBCCALL,__difftime32,(__time32_t __time1, __time32_t __time0),difftime,(__time1,__time0))
 __REDIRECT(__LIBC,__WUNUSED ,__time32_t,__LIBCCALL,__mktime32,(struct tm __FIXED_CONST *__tp),mktime,(__tp))
 __REDIRECT(__LIBC,__WUNUSED,char *,__LIBCCALL,__ctime32,(__time32_t const *__timer),ctime,(__timer))
-__REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,__gmtime32,(time_t const *__timer),gmtime,(__timer))
-__REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,__localtime32,(time_t const *__timer),localtime,(__timer))
+__REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,__gmtime32,(__time32_t const *__timer),gmtime,(__timer))
+__REDIRECT(__LIBC,__WUNUSED,struct tm *,__LIBCCALL,__localtime32,(__time32_t const *__timer),localtime,(__timer))
 __LOCAL time_t (__LIBCCALL time)(time_t *__timer) { __time32_t __t = __time32(0); if (__timer) *__timer = (time_t)__t; return (time_t)__t; }
 __LOCAL __WUNUSED __ATTR_CONST double (__LIBCCALL difftime)(time_t __time1, time_t __time0) { return __difftime32((__time32_t)__time1,(__time32_t)__time0); }
 __LOCAL __WUNUSED time_t (__LIBCCALL mktime)(struct tm __FIXED_CONST *__tp) { return (__time_t)__mktime32(__tp); }
@@ -488,14 +488,14 @@ __LOCAL int (__LIBCCALL nanosleep64)(struct timespec64 const *__requested_time,
 }
 #endif /* __USE_TIME64 */
 #elif defined(__GLC_COMPAT__) && defined(__USE_TIME_BITS64)
-__REDIRECT(__LIBC,,int,__LIBCCALL,__nanosleep32,(struct __timespec32 const *__requested_time, struct __timespec32 *__remaining),(__requested_time,__remaining))
+__REDIRECT(__LIBC,,int,__LIBCCALL,__nanosleep32,(struct __timespec32 const *__requested_time, struct __timespec32 *__remaining),nanosleep,(__requested_time,__remaining))
 __LOCAL int (__LIBCCALL nanosleep)(struct timespec const *__requested_time, struct timespec *__remaining) {
  struct __timespec32 __req,__rem; int __result;
  if (__requested_time) __req.tv_sec = (__time32_t)__requested_time->tv_sec,
                        __req.tv_nsec = __requested_time->tv_nsec;
  __result = __nanosleep32(__requested_time ? &__req : 0,__remaining ? &__rem : 0);
- if (__remaining) __remaining->tv_sec = (__time64_t)rem.tv_sec,
-                  __remaining->tv_nsec = rem.tv_nsec;
+ if (__remaining) __remaining->tv_sec = (__time64_t)__rem.tv_sec,
+                  __remaining->tv_nsec = __rem.tv_nsec;
  return __result;
 }
 #ifdef __USE_TIME64
@@ -515,8 +515,8 @@ __LOCAL int (__LIBCCALL nanosleep64)(struct timespec64 const *__requested_time,
 #else /* __USE_TIME_BITS64 */
  __result = nanosleep(__requested_time ? &__req : 0,__remaining ? &__rem : 0);
 #endif /* !__USE_TIME_BITS64 */
- if (__remaining) __remaining->tv_sec = (__time64_t)rem.tv_sec,
-                  __remaining->tv_nsec = rem.tv_nsec;
+ if (__remaining) __remaining->tv_sec = (__time64_t)__rem.tv_sec,
+                  __remaining->tv_nsec = __rem.tv_nsec;
  return __result;
 }
 #else /* __GLC_COMPAT__ */
@@ -536,9 +536,9 @@ struct __itimerspec32 {
     struct __timespec32 it_value;
 };
 #endif /* !__USE_KOS */
-__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__clock_getres32,(clockid_t __clock_id, struct timespec *__res),clock_getres,(__clock_id,__res))
-__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__clock_gettime32,(clockid_t __clock_id, struct timespec *__tp),clock_gettime,(__clock_id,__tp))
-__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__clock_settime32,(clockid_t __clock_id, struct timespec const *__tp),clock_settime,(__clock_id,__tp))
+__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__clock_getres32,(clockid_t __clock_id, struct __timespec32 *__res),clock_getres,(__clock_id,__res))
+__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__clock_gettime32,(clockid_t __clock_id, struct __timespec32 *__tp),clock_gettime,(__clock_id,__tp))
+__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__clock_settime32,(clockid_t __clock_id, struct __timespec32 const *__tp),clock_settime,(__clock_id,__tp))
 __REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__timer_settime32,(timer_t __timerid, int __flags, struct __itimerspec32 const *__restrict __value, struct __itimerspec32 *__restrict __ovalue),timer_settime,(__timerid,__flags,__value,__ovalue))
 __REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__timer_gettime32,(timer_t __timerid, struct __itimerspec32 *__value),timer_gettime,(__timerid,__value))
 __LOCAL __PORT_NODOS int (__LIBCCALL clock_getres)(clockid_t __clock_id, struct timespec *__res) {
@@ -583,14 +583,14 @@ __LOCAL __PORT_NODOS int (__LIBCCALL timer_gettime)(timer_t __timerid, struct it
  return __timer_gettime32(__timerid,__value ? &__val : 0);
 }
 #ifdef __USE_XOPEN2K
-__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__clock_nanosleep32,(clockid_t __clock_id, int __flags, struct timespec const *__req, struct timespec *__rem),clock_nanosleep,(__clock_id,__flags,__req,__rem))
-__LOCAL __PORT_NODOS int (__LIBCCALL clock_nanosleep)(clockid_t __clock_id, int __flags, struct timespec const *__req, struct timespec *__rem) {
+__REDIRECT(__LIBC,__PORT_NODOS,int,__LIBCCALL,__clock_nanosleep32,(clockid_t __clock_id, int __flags, struct __timespec32 const *__requested_time, struct __timespec32 *__remaining),clock_nanosleep,(__clock_id,__flags,__req,__rem))
+__LOCAL __PORT_NODOS int (__LIBCCALL clock_nanosleep)(clockid_t __clock_id, int __flags, struct timespec const *__requested_time, struct timespec *__remaining) {
  struct __timespec32 __req,__rem; int __result;
  if (__requested_time) __req.tv_sec = (__time32_t)__requested_time->tv_sec,
                        __req.tv_nsec = __requested_time->tv_nsec;
  __result = __clock_nanosleep32(__clock_id,__flags,__requested_time ? &__req : 0,__remaining ? &__rem : 0);
- if (__remaining) __remaining->tv_sec = (__time64_t)rem.tv_sec,
-                  __remaining->tv_nsec = rem.tv_nsec;
+ if (__remaining) __remaining->tv_sec = (__time64_t)__rem.tv_sec,
+                  __remaining->tv_nsec = __rem.tv_nsec;
  return __result;
 }
 #endif /* __USE_XOPEN2K */
@@ -678,8 +678,8 @@ __LOCAL __PORT_NODOS int (__LIBCCALL clock_nanosleep64)(clockid_t __clock_id, in
 #else /* __USE_TIME_BITS64 */
  __result = clock_nanosleep(__clock_id,__flags,__requested_time ? &__req : 0,__remaining ? &__rem : 0);
 #endif /* !__USE_TIME_BITS64 */
- if (__remaining) __remaining->tv_sec = (__time64_t)rem.tv_sec,
-                  __remaining->tv_nsec = rem.tv_nsec;
+ if (__remaining) __remaining->tv_sec = (__time64_t)__rem.tv_sec,
+                  __remaining->tv_nsec = __rem.tv_nsec;
  return __result;
 }
 #endif /* __USE_XOPEN2K */
@@ -708,7 +708,7 @@ __LIBC __PORT_NODOS int (__LIBCCALL clock_getcpuclockid)(pid_t __pid, clockid_t 
 #ifdef __USE_ISOC11
 #ifdef __GLC_COMPAT__
 #ifdef __USE_TIME_BITS64
-__REDIRECT(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,__timespec_get32,(struct timespec *__ts, int __base),timespec_get,(__ts,__base))
+__REDIRECT(__LIBC,__PORT_NODOS __NONNULL((1)),int,__LIBCCALL,__timespec_get32,(struct __timespec32 *__ts, int __base),timespec_get,(__ts,__base))
 __LOCAL __PORT_NODOS __NONNULL((1)) int (__LIBCCALL timespec_get)(struct timespec *__ts, int __base) {
  int __result; struct __timespec32 __res;
  __result = __timespec_get32(&__res,__base);
@@ -810,7 +810,7 @@ __REDIRECT(__LIBC,,struct tm *,__LIBCCALL,__gmtime32_r,(__time32_t const *__rest
 __REDIRECT(__LIBC,,struct tm *,__LIBCCALL,__localtime32_r,(__time32_t const *__restrict __timer, struct tm *__restrict __tp),localtime_r,(__timer,__tp))
 __REDIRECT(__LIBC,,char *,__LIBCCALL,__ctime32_r,(__time32_t const *__restrict __timer, char *__restrict __buf),ctime_r,(__timer,__buf))
 #endif /* !____ctime32_r_defined */
-__LOCAL errno_t (__LIBCCALL _ctime32_s)(char __buf[26], size_t __bufsize, __time32_t const *__restrict __timer) { return __bufsize >= 26 && __ctime32_r(__timer_t,__buf) ? 0 : 1; }
+__LOCAL errno_t (__LIBCCALL _ctime32_s)(char __buf[26], size_t __bufsize, __time32_t const *__restrict __timer) { return __bufsize >= 26 && __ctime32_r(__timer,__buf) ? 0 : 1; }
 __LOCAL errno_t (__LIBCCALL _ctime64_s)(char __buf[26], size_t __bufsize, __time64_t const *__restrict __timer) { __time32_t __tm = (__time32_t)*__timer; return _ctime32_s(__buf,__bufsize,&__tm); }
 __LOCAL errno_t (__LIBCCALL _gmtime32_s)(struct tm *__restrict __tp, __time32_t const *__restrict __timer) { return __gmtime32_r(__timer,__tp) ? 0 : 1; }
 __LOCAL errno_t (__LIBCCALL _localtime32_s)(struct tm *__restrict __tp, __time32_t const *__restrict __timer) { return __localtime32_r(__timer,__tp) ? 0 : 1; }

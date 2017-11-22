@@ -949,8 +949,8 @@ again:
   hint = (ppage_t)(0-n_bytes);
   goto again;
  }
- info.bi_min      = NULL;
- info.bi_max      = NULL;
+ info.bi_min = NULL;
+ info.bi_max = NULL;
  mman_findbranches(&info,self->m_map,
                    ATREE_SEMI0(VIRT uintptr_t),
                    ATREE_LEVEL0(VIRT uintptr_t));
@@ -1017,8 +1017,31 @@ again:
    iter = MBRANCH_NEXT(iter);
   }
  }
+fail:
+ if (mode&MMAN_FINDSPACE_TRYHARD) {
+  ppage_t max_hint;
+  switch (mode&(MMAN_FINDSPACE_PRIVATE|MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_ABOVE)) {
+  case MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE:  max_hint = addr_isuser(hint) ? (ppage_t)VM_USER_BASE : (ppage_t)VM_HOST_BASE; break;
+  case MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_PRIVATE:  max_hint = addr_isuser(hint) ? (ppage_t)((uintptr_t)(VM_USER_MAX+1)-n_bytes) : (ppage_t)((uintptr_t)(VM_HOST_MAX+1)-n_bytes); break;
+  case MMAN_FINDSPACE_ABOVE:                         max_hint = (ppage_t)0; break;
+  case MMAN_FINDSPACE_BELOW:                         max_hint = (ppage_t)((uintptr_t)0-n_bytes); break;
+  default: __builtin_unreachable();
+  }
+  /* Level #1: Try again within the max possible address range. */
+  if likely(hint != max_hint) { hint = max_hint; goto again; }
+  /* Level #2: Try again without a padding offset. */
+  if likely(pad_size) { pad_size = 0; mode &= ~(MMAN_FINDSPACE_FORCEGAP); goto again; }
+ }
  return PAGE_ERROR;
 winner:
+ if (mode&MMAN_FINDSPACE_PRIVATE) {
+  /* Make sure that the given address is suitable. */
+  if (addr_isuser(hint)) {
+   if (!addr_isuser_r(candidate,n_bytes)) goto fail;
+  } else {
+   if (!addr_ishost_r(candidate,n_bytes)) goto fail;
+  }
+ }
  return (ppage_t)candidate;
 }
 
@@ -2022,7 +2045,15 @@ mman_initialize(void) {
    uintptr_t last_begin = 0;
    bool is_mapping = false;
    MEMINFO_FOREACH(iter) {
-    if ((uintptr_t)iter->mi_addr >= KERNEL_BASE) break;
+#ifdef CONFIG_LOW_KERNEL
+    if ((uintptr_t)iter->mi_addr <= VM_CORE_MAX) continue;
+#if !((__SIZEOF_POINTER__ == 4 && VM_USER_MAX == __UINTPTR_C(0xffffffff)) || \
+      (__SIZEOF_POINTER__ == 8 && VM_USER_MAX == __UINTPTR_C(0xffffffffffffffff)))
+    if ((uintptr_t)iter->mi_addr > VM_USER_MAX) break;
+#endif
+#elif defined(CONFIG_HIGH_KERNEL)
+    if ((uintptr_t)iter->mi_addr >= VM_CORE_BASE) break;
+#endif
     if (MEMTYPE_ISMAP(iter->mi_type) == is_mapping)
         continue;
     is_mapping = !is_mapping;
@@ -2037,7 +2068,7 @@ mman_initialize(void) {
    }
    /* Install the remainder. */
    if (is_mapping)
-       mman_map_dynmem((ppage_t)last_begin,KERNEL_BASE-last_begin);
+       mman_map_dynmem((ppage_t)last_begin,(uintptr_t)(VM_USER_MAX+1)-last_begin);
  }
  assert(mman_kernel.m_map != NULL);
  ATOMIC_WRITE(mman_kernel.m_lock.orw_lock.aorw_lock,0);

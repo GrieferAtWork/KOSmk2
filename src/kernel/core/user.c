@@ -45,16 +45,20 @@ DECL_BEGIN
 DATDEF byte_t __kernel_user_start[];
 INTDEF byte_t __kernel_user_end[];
 
-PUBLIC bool (KCALL addr_isuser)(void const *addr, size_t len) {
+PUBLIC bool (KCALL addr_isuser_range)(void const *addr, size_t len) {
  uintptr_t endaddr;
  if (__builtin_add_overflow((uintptr_t)addr,len,&endaddr))
      return false;
- if ((uintptr_t)endaddr <= THIS_TASK->t_addrlimit)
-      return true;
- if ((uintptr_t)addr    >= (uintptr_t)__kernel_user_start &&
-     (uintptr_t)endaddr <= (uintptr_t)__kernel_user_end)
-      return true;
- return false;
+#ifdef CONFIG_HIGH_KERNEL
+ if (endaddr >= THIS_TASK->t_addrlimit) return false;
+#endif
+#ifdef CONFIG_LOW_KERNEL
+ if (endaddr < THIS_TASK->t_addrbase) return false;
+#endif
+ if ((uintptr_t)addr    <  (uintptr_t)__kernel_user_start ||
+     (uintptr_t)endaddr >= (uintptr_t)__kernel_user_end)
+      return false;
+ return true;
 }
 
 
@@ -376,7 +380,7 @@ PRIVATE struct mregion usershare_region = {
 /* Make sure that the writable user-share segment is located
  * below the kernel in what would otherwise be user-space.
  * (Though the writable copy is only mapped in the kernel's page directory) */
-STATIC_ASSERT(HOST_USHARE_WRITE_ADDRHINT <= USER_END);
+STATIC_ASSERT(HOST_USHARE_WRITE_ADDRHINT <= VM_USER_MAX+1);
 
 PRIVATE MODULE_INIT void KCALL
 usershare_writable_initialize(void) {
@@ -390,16 +394,11 @@ usershare_writable_initialize(void) {
  map_address = mman_findspace_unlocked(&mman_kernel,
                                       (ppage_t)(HOST_USHARE_WRITE_ADDRHINT-(uintptr_t)__kernel_user_size),
                                       (uintptr_t)__kernel_user_size,PAGESIZE,0,
-                                       MMAN_FINDSPACE_BELOW);
+                                       MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
  if unlikely(map_address == PAGE_ERROR) {
-  map_address = mman_findspace_unlocked(&mman_kernel,(ppage_t)KERNEL_BASE,
-                                       (uintptr_t)__kernel_user_size,PAGESIZE,0,
-                                        MMAN_FINDSPACE_ABOVE);
-  if unlikely(map_address == PAGE_ERROR) {
-   error = -ENOMEM;
+  error = -ENOMEM;
 err:
-   PANIC(FREESTR("Failed to find suitable location for writable user-share segment: %[errno]"),-error);
-  }
+  PANIC(FREESTR("Failed to find suitable location for writable user-share segment: %[errno]"),-error);
  }
  error = mman_mmap_unlocked(&mman_kernel,map_address,
                            (uintptr_t)__kernel_user_size,0,

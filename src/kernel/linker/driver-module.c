@@ -79,10 +79,8 @@ kernel_insmod(struct module *__restrict mod,
  result = instance_new_driver(mod);
  if unlikely(!result) goto local_nomem;
 
- module_base = mman_findspace_unlocked(&mman_kernel,module_loadhint,
-                                        mod->m_size,PAGESIZE,0,
-                                        MMAN_FINDSPACE_ABOVE);
- if unlikely((uintptr_t)module_base < KERNEL_BASE) module_base = PAGE_ERROR;
+ module_base = mman_findspace_unlocked(&mman_kernel,module_loadhint,mod->m_size,PAGESIZE,0,
+                                        MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
  if unlikely(module_base == PAGE_ERROR) {
 local_nomem:
   error = -ENOMEM;

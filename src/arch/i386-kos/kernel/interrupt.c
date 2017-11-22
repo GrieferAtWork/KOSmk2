@@ -1129,7 +1129,7 @@ exec_deflirq(struct cpustate_ie *__restrict state) {
   * to fix a potentially broken `gs_base' value. */
  { u64 old_gs_base = asm_rdgsbase();
 #ifdef CONFIG_SMP
-   if unlikely(old_gs_base < KERNEL_BASE)
+   if unlikely(!addr_ishost(old_gs_base))
 #else
    if unlikely(old_gs_base != (u64)BOOTCPU)
 #endif
@@ -1139,7 +1139,7 @@ exec_deflirq(struct cpustate_ie *__restrict state) {
     __asm__ __volatile__("swapgs\n" : : : "memory"); /* Likely just a missing swapgs */
     new_gs_base = asm_rdgsbase();
 #ifdef CONFIG_SMP
-    if likely(new_gs_base >= KERNEL_BASE)
+    if likely(addr_ishost(new_gs_base))
 #else
     if likely(new_gs_base == (u64)BOOTCPU)
 #endif

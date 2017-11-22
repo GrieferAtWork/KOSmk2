@@ -50,9 +50,9 @@
   (!defined(__LINKER__) && !defined(__ASSEMBLY__) && \
    !defined(__ASSEMBLER__) && !defined(__DEEMON__))
 #define __CC__ 1 /* C Compiler. */
-#define __CCAST(T,v) ((T)(v))
+#define __CCAST(T) (T)
 #else
-#define __CCAST(T,v)     (v)
+#define __CCAST(T) /* nothing */
 #endif
 
 

@@ -517,7 +517,7 @@ pe_loader(struct file *__restrict fp) {
 #define USE_HEADER(x) \
       (((x)->VirtualAddress+(x)->Misc.VirtualSize) > (x)->VirtualAddress && \
       !((x)->Characteristics&(IMAGE_SCN_LNK_INFO|IMAGE_SCN_LNK_REMOVE)) && \
-       ((x)->VirtualAddress+(x)->Misc.VirtualSize) <= USER_END)
+         addr_isuser_r((x)->VirtualAddress,(x)->Misc.VirtualSize))
  { IMAGE_SECTION_HEADER *iter,*end; DWORD min_section_address = (DWORD)-1;
    struct modseg *dst; size_t section_count = 1; /* +1 section for hidden program headers */
    end = (iter = section_headers)+nt_header.FileHeader.NumberOfSections;

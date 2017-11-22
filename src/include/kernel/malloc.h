@@ -208,7 +208,7 @@ FUNDEF SAFE bool KCALL heap_ffree(hptr_t ptr, gfp_t flags);
                            *  ring#0, but shared between all page directories.
                            * (In fact, this is the same as `GFP_SHARED') */
 #define GFP_SHARED 0x0000 /*< Allocate memory shared between all page directories. (_ALWAYS_ ZERO(0))
-                           *  NOTE: All memory allocated by this is located above `KERNEL_BASE'.
+                           *  NOTE: All memory allocated by this is located within `addr_ishost()'.
                            *  NOTE: Dispite being mapped in all page directories,
                            *        only the kernel can access this type of memory.
                            *  WARNING: Unless stated otherwise, _ALL_ dynamically allocated
@@ -218,7 +218,7 @@ FUNDEF SAFE bool KCALL heap_ffree(hptr_t ptr, gfp_t flags);
                            *  NOTE: May only or'd together with `GFP_KERNEL' and `GFP_SHARED'
                            *  HINT: You may or- this heap name with `GFP_INCORE' to  */
 #define GFP_KERNEL 0x0002 /*< [KPD] Allocate virtual memory only visible to the kernel
-                           *  NOTE: All memory allocate by this heap is located below `KERNEL_BASE'. */
+                           *  NOTE: All memory allocate by this heap is located within `addr_ishost()'. */
 #define GFP_MEMORY 0x0004 /*< [KPD] Directly allocate physical memory.
                            *  NOTE: This flag implies `GFP_INCORE' behavior, but does
                            *        not create mman mappings, meaning it must be

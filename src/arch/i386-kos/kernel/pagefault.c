@@ -66,7 +66,7 @@ mman_interrupt_pf_handler(struct irregs_ie *__restrict info) {
  } else {
 #if 1 /* TO-DO: Re-enable me */
   assertf((info->cs&3) != 3,"User-level task with interrupts disabled");
-  assertf(info->xip >= KERNEL_BASE &&
+  assertf(addr_ishost(info->xip) &&
          (info->xip <  (uintptr_t)__kernel_user_start ||
           info->xip >= (uintptr_t)__kernel_user_end),
          "User-space address %p with interrupts disabled & ring-0 permissions");
@@ -117,7 +117,7 @@ mman_interrupt_pf_handler(struct irregs_ie *__restrict info) {
   struct mman *old_mman = NULL;
   /* Must always search for core data in the kernel memory
    * manager for addresses greater than the kernel base. */
-  if ((uintptr_t)fault_page >= KERNEL_BASE) {
+  if (addr_ishost(fault_page)) {
    TASK_PDIR_KERNEL_BEGIN(old_mman);
    eff_mman = &mman_kernel;
   }

@@ -30,6 +30,7 @@
 #include <linker/module.h>
 #include <kernel/malloc.h>
 #include <hybrid/panic.h>
+#include <modules/tty.h>
 
 DECL_BEGIN
 
@@ -57,29 +58,28 @@ PRIVATE DEFINE_ATOMIC_RWLOCK(inttab_lock);
 #endif
 
 
-#define MAX_VECTOR_NUMBER 7
 struct entry {
  LIST_HEAD(struct interrupt) e_head; /*< [0..1] Chain of interrupt handlers in this entry. */
 };
 struct PACKED interrupt_table {
- struct entry it_tab[8]; /*< Per-cpu + per-vector descriptors. */
+ struct entry it_tab[INTNO_COUNT]; /*< Per-cpu + per-vector descriptors. */
 };
 INTERN CPU_BSS struct PACKED interrupt_table inttab;
 
+
+
+INTDEF u32 arm_interrupt_table0[INTNO_COUNT];
+INTDEF u32 arm_interrupt_long_table0[INTNO_COUNT];
+PUBLIC u32 (*arm_interrupt_table)[INTNO_COUNT] = &arm_interrupt_table0;
+
 PRIVATE void KCALL
-receive_rpc_update_idt(irq_t intno) {
- /* TODO */
-}
-
-
-
-INTERN ATTR_FREETEXT void KCALL
-cpu_interrupt_initialize(struct cpu *__restrict c) {
+update_interrupt_table(irq_t intno) {
+ struct interrupt *chain = CPU(inttab).it_tab[intno].e_head;
+ (void)chain;
 }
 
 INTERN ATTR_FREETEXT void KCALL interrupt_initialize(void) {
- /* Initialize the default IDT vector. */
- cpu_interrupt_initialize(BOOTCPU);
+
 }
 
 
@@ -146,7 +146,7 @@ cpu_exists:
 #endif
  if (entry->i_flags&INTFLAG_DYNINTNO) {
   /* Dynamically lookup an unused interrupt number. */
-  result = MAX_VECTOR_NUMBER;
+  result = INTNO_COUNT-1;
   do if (int_is_unused(result,affinity))
          goto got_intno;
   while (result--);
@@ -154,7 +154,7 @@ cpu_exists:
    *       Otherwise, check if we can merge other handlers to free
    *       up a unique slot for the caller.
    */
-  result = MAX_VECTOR_NUMBER;
+  result = INTNO_COUNT-1;
   /* TODO: Use the interrupt with the least amount
    *       of shared handlers, rather than the first! */
   do if (int_is_unused2(result,affinity))
@@ -241,12 +241,9 @@ got_intno:
 
 #ifdef CONFIG_SMP
  atomic_rwlock_endwrite(&inttab_lock);
- /* TODO: Send an RPC command to all CPUs apart of `affinity' */
- if (CPU_ISSET(THIS_CPU->c_id,affinity))
 #endif
- {
-  receive_rpc_update_idt(entry->i_intno);
- }
+ /* XXX: How does this work with multiple cores? */
+ update_interrupt_table(entry->i_intno);
 done:
  PREEMPTION_POP(was);
  /* Delete any interrupts that were overwritten. */

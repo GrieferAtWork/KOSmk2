@@ -25,6 +25,33 @@
 
 DECL_BEGIN
 
+#define ARM4_XRQ_RESET   0x00
+#define ARM4_XRQ_UNDEF   0x01
+#define ARM4_XRQ_SWINT   0x02
+#define ARM4_XRQ_ABRTP   0x03
+#define ARM4_XRQ_ABRTD   0x04
+#define ARM4_XRQ_RESV1   0x05
+#define ARM4_XRQ_IRQ     0x06
+#define ARM4_XRQ_FIQ     0x07
+
+/* Interrupt vector table indices.                        MODE/BANK  AFI */
+#define INTNO_RESET   0 /* CPU reset.                     Supervisor 111 */
+#define INTNO_UNDEF   1 /* Undefined instruction handler. Undefined  --1 */
+#define INTNO_SWINT   2 /* Software interrupt.            Supervisor --1 */
+#define INTNO_ABRTP   3 /* Abort (prefetch).              Abort      1-1 */
+#define INTNO_ABRTD   4 /* Abort (data).                  Abort      1-1 */
+//      INTNO_RESRV   5 /* ------------------------------ ---------- ??? */
+#define INTNO_IRQ     6 /* Interrupt handler.             IRQ        1-1 */
+#define INTNO_FIQ     7 /* Fast interrupt handler.        FIQ        111 */
+#define INTNO_COUNT   8 /* Amount of interrupt vectors. */
+
+
+/* Physical address of the interrupt vector table.
+ * Don't be confused if this is `NULL': The vector table actually starts out there. */
+#define ARM_INTERRUPT_TABLE   (*arm_interrupt_table)
+DATDEF PHYS u32 (*arm_interrupt_table)[INTNO_COUNT];
+
+
 #define INTMODE_HOST  0
 #define INTMODE_USER  0
 typedef u8 intmode_t;

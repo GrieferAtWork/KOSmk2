@@ -22,20 +22,14 @@
 #include <hybrid/compiler.h>
 #include <hybrid/types.h>
 #include <hybrid/limits.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 
-#define ASM_USER_MAX               0x7fffffff
-#define ASM_USER_END               0x80000000
-#define ASM_KERNEL_BASE            0x80000000
-#define ASM_CORE_BASE              0x80000000
-#define USER_MAX        __UINT32_C(0x7fffffff)
-#define USER_END        __UINT32_C(0x80000000)
-#define KERNEL_BASE     __UINT32_C(0x80000000)
-#define CORE_BASE       __UINT32_C(0x80000000)
 
-/* Mask of all address bits that can actually be used.
- * NOTE: On i386, that simply is every bit there is (All 32). */
+#define KERNEL_BASE     __UINT32_C(0x00000000)
+
+/* Mask of all address bits that can actually be used. */
 #define VIRT_MASK       __UINT32_C(0xffffffff)
 
 
@@ -53,8 +47,16 @@ typedef struct _pdir pdir_t;
 #define PDIR_SIZE  PAGESIZE
 #define PDIR_ALIGN PAGESIZE
 #ifdef __CC__
+
+union PACKED pdir_e1 {
+ u32 e1_data;
+};
+union PACKED pdir_e2 {
+ u32 e2_data;
+};
+
 struct _pdir {
- unsigned int pd_directory[512];
+ union pdir_e2 pd_directory[4096];
 };
 #endif /* __CC__ */
 

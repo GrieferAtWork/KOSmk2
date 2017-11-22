@@ -35,10 +35,11 @@
 #include <hybrid/align.h>
 #include <hybrid/minmax.h>
 #include <sched/paging.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 
-#define SHM_REGION_SIZE  USER_END
+#define SHM_REGION_SIZE  VM_USER_SIZE
 
 PRIVATE struct mregion *KCALL
 shm_region(struct shm_node *__restrict self) {

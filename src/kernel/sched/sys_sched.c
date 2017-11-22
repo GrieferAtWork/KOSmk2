@@ -738,20 +738,13 @@ err_stack:
  gap_size = USER_STCK_ADDRGAP;
 find_space:
  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(USER_STCK_ADDRHINT-USER_STCK_BASESIZE),
-                                           USER_STCK_BASESIZE,MAX(PAGESIZE,USER_STCK_ALIGN),
-                                           gap_size,MMAN_FINDSPACE_BELOW);
- if (ustack->s_begin == PAGE_ERROR ||
-    (uintptr_t)ustack->s_begin+USER_STCK_BASESIZE > USER_END) {
-  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)USER_STCK_ADDRHINT,
-                                            USER_STCK_BASESIZE,MAX(PAGESIZE,USER_STCK_ALIGN),
-                                            gap_size,MMAN_FINDSPACE_ABOVE);
-  if (ustack->s_begin == PAGE_ERROR ||
-     (uintptr_t)ustack->s_begin+USER_STCK_BASESIZE > USER_END) {
-   if (gap_size) { gap_size = 0; goto find_space; } /* Try without a gap. */
-   mman_endwrite(mm);
-   error = -ENOMEM;
-   goto err_stack;
-  }
+                                           USER_STCK_BASESIZE,MAX(PAGESIZE,USER_STCK_ALIGN),gap_size,
+                                           MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
+ if (ustack->s_begin == PAGE_ERROR) {
+  if (gap_size) { gap_size = 0; goto find_space; } /* Try without a gap. */
+  mman_endwrite(mm);
+  error = -ENOMEM;
+  goto err_stack;
  }
  /* All right! We know where the stack should go. */
  thread->t_ustack      = ustack; /* Inherit reference. */

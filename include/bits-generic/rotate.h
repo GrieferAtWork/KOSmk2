@@ -38,6 +38,7 @@ __SYSDECL_BEGIN
 #if defined(_MSC_VER)
 __NAMESPACE_INT_BEGIN
 #ifndef __rol_nonconst_8
+#define __NAMESPACE_INT_CONTAINS_ROT8
 extern unsigned char (__cdecl _rotl8)(unsigned char __x, unsigned char __shift);
 extern unsigned char (__cdecl _rotr8)(unsigned char __x, unsigned char __shift);
 #define __rol_nonconst_8(x,shift)  (__NAMESPACE_INT_SYM _rotl8)(x,shift)
@@ -46,6 +47,7 @@ extern unsigned char (__cdecl _rotr8)(unsigned char __x, unsigned char __shift);
 #pragma intrinsic(_rotr8)
 #endif /* !__rol_nonconst_8 */
 #ifndef __rol_nonconst_16
+#define __NAMESPACE_INT_CONTAINS_ROT16
 extern unsigned short (__cdecl _rotl16)(unsigned short __x, unsigned char __shift);
 extern unsigned short (__cdecl _rotr16)(unsigned short __x, unsigned char __shift);
 #define __rol_nonconst_16(x,shift) (__NAMESPACE_INT_SYM _rotl16)(x,shift)
@@ -54,14 +56,26 @@ extern unsigned short (__cdecl _rotr16)(unsigned short __x, unsigned char __shif
 #pragma intrinsic(_rotr16)
 #endif /* !__rol_nonconst_16 */
 #ifndef __rol_nonconst_32
+#if __SIZEOF_INT__ == 4
+#define __NAMESPACE_INT_CONTAINS_ROT
 extern unsigned int (__cdecl _rotl)(unsigned int __x, int __shift);
 extern unsigned int (__cdecl _rotr)(unsigned int __x, int __shift);
 #define __rol_nonconst_32(x,shift) (__NAMESPACE_INT_SYM _rotl)(x,shift)
 #define __ror_nonconst_32(x,shift) (__NAMESPACE_INT_SYM _rotr)(x,shift)
 #pragma intrinsic(_rotl)
 #pragma intrinsic(_rotr)
+#elif __SIZEOF_LONG__ == 4
+#define __NAMESPACE_INT_CONTAINS_ROTL
+extern unsigned long (__cdecl _lrotl)(unsigned long __x, int __shift);
+extern unsigned long (__cdecl _lrotr)(unsigned long __x, int __shift);
+#define __rol_nonconst_32(x,shift) (__NAMESPACE_INT_SYM _lrotl)(x,shift)
+#define __ror_nonconst_32(x,shift) (__NAMESPACE_INT_SYM _lrotr)(x,shift)
+#pragma intrinsic(_rotl)
+#pragma intrinsic(_rotr)
+#endif
 #endif /* !__rol_nonconst_32 */
 #ifndef __rol_nonconst_64
+#define __NAMESPACE_INT_CONTAINS_ROT64
 extern unsigned __int64 (__cdecl _rotl64)(unsigned __int64 __x, int __shift);
 extern unsigned __int64 (__cdecl _rotr64)(unsigned __int64 __x, int __shift);
 #define __rol_nonconst_64(x,shift) (__NAMESPACE_INT_SYM _rotl64)(x,shift)

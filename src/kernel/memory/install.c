@@ -55,15 +55,24 @@ page_addmemory(mzone_t zone_id, ppage_t start,
 #if 1
  ppage_t *piter,iter,free_end;
  struct mzone *zone;
- if unlikely((uintptr_t)start >= KERNEL_BASE) return 0;
- if unlikely((uintptr_t)start+n_bytes > KERNEL_BASE)
-    n_bytes = KERNEL_BASE-(uintptr_t)start;
+#ifdef CONFIG_HIGH_KERNEL
+ if unlikely((uintptr_t)start >= VM_HOST_BASE) return 0;
+ if unlikely((uintptr_t)start+n_bytes > VM_HOST_BASE)
+    n_bytes = VM_HOST_BASE-(uintptr_t)start;
+#endif /* CONFIG_HIGH_KERNEL */
+#ifdef CONFIG_LOW_KERNEL
+ if unlikely((uintptr_t)start <= VM_HOST_MAX) {
+  if unlikely((uintptr_t)start+n_bytes <= VM_HOST_MAX+1)
+     return 0;
+  n_bytes = ((uintptr_t)start+n_bytes)-(VM_HOST_MAX+1);
+  start   = (ppage_t)(VM_HOST_MAX+1);
+ }
+#endif /* CONFIG_LOW_KERNEL */
  if unlikely(!n_bytes) return 0;
  syslog(LOG_DEBUG,FREESTR("[MEM] Using dynamic memory range %p...%p\n"),
        (uintptr_t)start,(uintptr_t)start+n_bytes-1);
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
  assert(IS_ALIGNED((uintptr_t)n_bytes,PAGESIZE));
- assert(addr_isphys(start));
  assert(mzone_of((void *)start) == zone_id);
  assertf(mzone_of((void *)((uintptr_t)start+n_bytes-1)) == zone_id,
          "Different zone at end of %p...%p (Isn't %d)",
@@ -222,8 +231,8 @@ page_do_addmemory(PAGE_ALIGNED uintptr_t base, PAGE_ALIGNED size_t n_bytes) {
     *       to allocate memory using `page_malloc()' first, before falling back
     *       to blindly assuming available RAM past `KERNEL_END'
     */
-#define EARLY_PAGE_BEGIN_P  (EARLY_PAGE_BEGIN-CORE_BASE)
-#define EARLY_PAGE_END_P      (EARLY_PAGE_END-CORE_BASE)
+#define EARLY_PAGE_BEGIN_P  (uintptr_t)virt_to_phys(EARLY_PAGE_BEGIN)
+#define EARLY_PAGE_END_P    (uintptr_t)virt_to_phys(EARLY_PAGE_END)
    if (base < EARLY_PAGE_END_P &&
        base+zone_bytes > EARLY_PAGE_BEGIN_P) {
     /* Overlap! */

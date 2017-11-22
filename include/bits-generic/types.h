@@ -26,13 +26,8 @@
 __SYSDECL_BEGIN
 
 #define __SIZEOF_SYSCALL_LONG__ __SIZEOF_REGISTER__
-#if __SIZEOF_REGISTER__ == __SIZEOF_LONG__
-#   define __SYSCALL_SLONG_TYPE signed long
-#   define __SYSCALL_ULONG_TYPE unsigned long
-#else
-#   define __SYSCALL_SLONG_TYPE __SREGISTER_TYPE__
-#   define __SYSCALL_ULONG_TYPE __REGISTER_TYPE__
-#endif
+#define __SYSCALL_SLONG_TYPE    __SREGISTER_TYPE__
+#define __SYSCALL_ULONG_TYPE    __REGISTER_TYPE__
 
 
 #define __SIZEOF_BLKADDR32_T__  4
@@ -165,10 +160,8 @@ typedef __INT32_TYPE__          __daddr_t;
 typedef __INT32_TYPE__          __int32_t;
 typedef __INT32_TYPE__          __key_t;
 typedef __INT32_TYPE__          __pid_t;
-typedef __INT32_TYPE__          __time32_t;
 typedef __INT64_TYPE__          __int64_t;
 typedef __INT64_TYPE__          __quad_t;
-typedef __INT64_TYPE__          __time64_t;
 typedef __INT8_TYPE__           __int8_t;
 typedef __INTPTR_TYPE__         __intptr_t;
 typedef __LONG32_TYPE__         __blkcnt32_t;
@@ -293,8 +286,6 @@ typedef void                   *__timer_t;
 #define __suseconds_t           __suseconds_t
 #define __syscall_slong_t       __syscall_slong_t
 #define __syscall_ulong_t       __syscall_ulong_t
-#define __time32_t              __time32_t
-#define __time64_t              __time64_t
 #define __timer_t               __timer_t
 #define __u_char                __u_char
 #define __u_int                 __u_int
@@ -308,6 +299,23 @@ typedef void                   *__timer_t;
 #define __uint8_t               __uint8_t
 #define __uintptr_t             __uintptr_t
 #define __useconds_t            __useconds_t
+
+#ifndef _TIME32_T_DEFINED
+#define _TIME32_T_DEFINED 1
+typedef __INT32_TYPE__          __time32_t;
+#define __time32_t              __time32_t
+#else /* !_TIME32_T_DEFINED */
+#define __time32_t              __INT32_TYPE__
+#endif /* _TIME32_T_DEFINED */
+
+#ifndef _TIME64_T_DEFINED
+#define _TIME64_T_DEFINED 1
+typedef __INT64_TYPE__          __time64_t;
+#define __time64_t              __time64_t
+#else /* !_TIME64_T_DEFINED */
+#define __time64_t              __INT64_TYPE__
+#endif /* _TIME64_T_DEFINED */
+
 #endif /* __CC__ */
 
 #if __SIZEOF_LOFF_T__ > __SIZEOF_SYSCALL_LONG__

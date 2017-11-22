@@ -46,6 +46,11 @@
 
 DECL_BEGIN
 
+/* Check if 4Mib pages are allowed for the given address.
+ * NOTE: They are not allowed for kernel pages, so-as to
+ *       keep the indirection required for sharing pages. */
+#define PDIR_ATTR_ALLOW_4MIB(addr) ((uintptr_t)(addr) < VM_HOST_BASE)
+
 /* Memory zone used for dynamic allocation of page tables. */
 #define PDIR_PAGEZONE  MZONE_ANY
 
@@ -62,8 +67,9 @@ STATIC_ASSERT(PDENTRY_REPRSIZE                   == PAGESIZE);
 STATIC_ASSERT(PTTABLE_ARRAYSIZE*PDENTRY_REPRSIZE == PDTABLE_REPRSIZE);
 STATIC_ASSERT(PDIR_SIZE                        == PDIR_TABLE_COUNT*PD_TABLE_SIZE);
 STATIC_ASSERT(PDIR_TABLE_COUNT                   == PD_TABLE_ENTRY_COUNT);
-STATIC_ASSERT(IS_ALIGNED(KERNEL_BASE,PDTABLE_REPRSIZE));
-STATIC_ASSERT(IS_ALIGNED(CORE_BASE,PDTABLE_REPRSIZE));
+STATIC_ASSERT(IS_ALIGNED(VM_USER_BASE,PDTABLE_REPRSIZE));
+STATIC_ASSERT(IS_ALIGNED(VM_HOST_BASE,PDTABLE_REPRSIZE));
+STATIC_ASSERT(IS_ALIGNED(VM_CORE_BASE,PDTABLE_REPRSIZE));
 STATIC_ASSERT(sizeof(union pd_entry) == 4);
 STATIC_ASSERT(sizeof(union pd_table) == 4);
 
@@ -77,7 +83,7 @@ STATIC_ASSERT((uintptr_t)(THIS_PDIR_BASE+THIS_PDIR_SIZE) == 0 ||
 
 
 #ifdef CONFIG_PDIR_SELFMAP
-/* Initialize the page-directory self-mappings for all addresses above `KERNEL_BASE'.
+/* Initialize the page-directory self-mappings for all addresses above `VM_HOST_BASE'.
  * NOTE: The caller is responsible for allocating the
  *       page table at `THIS_PDIR_BASE/PDTABLE_REPRSIZE'. */
 PRIVATE void KCALL
@@ -85,16 +91,15 @@ pdir_initialize_selfmap(pdir_t *__restrict self) {
  union pd_entry *selfmap_table;
  union pd_table *iter,*end;
  CHECK_HOST_DOBJ(self);
- assert(IS_ALIGNED(KERNEL_BASE,PDTABLE_REPRSIZE));
  assert(PDTABLE_ISALLOC(self->pd_directory[THIS_PDIR_BASE/PDTABLE_REPRSIZE]));
  assert(PDIR_TABLE_COUNT == PD_TABLE_ENTRY_COUNT);
  selfmap_table  = PDTABLE_GETPTEV(self->pd_directory[THIS_PDIR_BASE/PDTABLE_REPRSIZE]);
- selfmap_table += KERNEL_BASE/PDTABLE_REPRSIZE;
- iter           = self->pd_directory+(KERNEL_BASE/PDTABLE_REPRSIZE);
+ selfmap_table += VM_HOST_BASE/PDTABLE_REPRSIZE;
+ iter           = self->pd_directory+(VM_HOST_BASE/PDTABLE_REPRSIZE);
  end            = self->pd_directory+(PDIR_TABLE_COUNT);
  for (; iter != end; ++iter,++selfmap_table) {
   assertf(PDTABLE_ISALLOC(*iter),
-          "All page tables above `KERNEL_BASE' must be allocated, but %p...%p isn't",
+          "All page tables above `VM_HOST_BASE' must be allocated, but %p...%p isn't",
          ((uintptr_t)((iter-self->pd_directory)  )*PDTABLE_REPRSIZE),
          ((uintptr_t)((iter-self->pd_directory)+1)*PDTABLE_REPRSIZE)-1);
   selfmap_table->pe_data  = (iter->pt_data & ~(PDIR_ATTR_MASK));
@@ -102,7 +107,7 @@ pdir_initialize_selfmap(pdir_t *__restrict self) {
                              PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
   /* NOTE: We enable the `PDIR_ATTR_GLOBAL' flag, because all
    *       page directory tables (except for the last) above
-   *      `KERNEL_BASE' are still global (the last is the self-map itself). */
+   *      `VM_HOST_BASE' are still global (the last is the self-map itself). */
   if likely(iter != end-1) selfmap_table->pe_data |= PDIR_ATTR_GLOBAL;
  }
 }
@@ -112,13 +117,13 @@ pdir_initialize_selfmap(pdir_t *__restrict self) {
 PUBLIC bool KCALL pdir_init(pdir_t *__restrict self) {
  CHECK_HOST_DOBJ(self);
  /* Fill lower memory with unallocated pages. */
- memsetl(self->pd_directory,~PDIR_ATTR_MASK,KERNEL_BASE/PDTABLE_REPRSIZE);
+ memsetl(self->pd_directory,~PDIR_ATTR_MASK,VM_HOST_BASE/PDTABLE_REPRSIZE);
  assert(IS_ALIGNED(KERNEL_GLOBAL_END,PDTABLE_REPRSIZE));
 
  /* Clone kernel pages into upper memory. */
- memcpy(&self->pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
-        &pdir_kernel_v.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE],
-      ((KERNEL_GLOBAL_END-KERNEL_BASE)/PDTABLE_REPRSIZE)*sizeof(union pd_table));
+ memcpy(&self->pd_directory[VM_HOST_BASE/PDTABLE_REPRSIZE],
+        &pdir_kernel_v.pd_directory[VM_HOST_BASE/PDTABLE_REPRSIZE],
+      ((KERNEL_GLOBAL_END-VM_HOST_BASE)/PDTABLE_REPRSIZE)*sizeof(union pd_table));
 
 #ifdef CONFIG_PDIR_SELFMAP
  /* Allocate the table for the page-directory self-map. */
@@ -131,15 +136,15 @@ PUBLIC bool KCALL pdir_init(pdir_t *__restrict self) {
    self->pd_directory[THIS_PDIR_BASE/PDTABLE_REPRSIZE].
          pt_data = (u32)last_table | (PDIR_ATTR_DIRTY|PDIR_ATTR_ACCESSED|
                                       PDIR_ATTR_PRESENT|PDIR_ATTR_WRITE);
-   memsetl(last_table,~PDIR_ATTR_MASK,KERNEL_BASE/PDTABLE_REPRSIZE);
+   memsetl(last_table,~PDIR_ATTR_MASK,VM_HOST_BASE/PDTABLE_REPRSIZE);
    pdir_initialize_selfmap(self);
  }
 #endif /* CONFIG_PDIR_SELFMAP */
 
 #if 0
  syslog(LOG_DEBUG,"%$[hex]\n",
-      ((KERNEL_GLOBAL_END-KERNEL_BASE)/PDTABLE_REPRSIZE)*sizeof(union pd_table),
-        &self->pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE]);
+      ((KERNEL_GLOBAL_END-VM_HOST_BASE)/PDTABLE_REPRSIZE)*sizeof(union pd_table),
+        &self->pd_directory[VM_HOST_BASE/PDTABLE_REPRSIZE]);
 #endif
  return true;
 }
@@ -153,7 +158,7 @@ pdir_load_copy(pdir_t *__restrict self, pdir_t const *__restrict existing) {
  union pd_table const *src,*end;
  dst = &self->pd_directory[0];
  src = &existing->pd_directory[0];
- end = src+(KERNEL_BASE/PDTABLE_REPRSIZE);
+ end = src+(VM_HOST_BASE/PDTABLE_REPRSIZE);
 #ifdef CONFIG_PDIR_SELFMAP
  assert(PDTABLE_ISALLOC(self->pd_directory[THIS_PDIR_BASE/PDTABLE_REPRSIZE]));
  dst_selfmap = PDTABLE_GETPTEV(self->pd_directory[THIS_PDIR_BASE/PDTABLE_REPRSIZE]);
@@ -195,7 +200,7 @@ PUBLIC void KCALL pdir_fini(pdir_t *__restrict self) {
  PHYS union pd_entry *entry;
  CHECK_HOST_DOBJ(self);
  assert(self != &pdir_kernel_v && self != &pdir_kernel);
- end = (iter = self->pd_directory)+(KERNEL_BASE/PDTABLE_REPRSIZE);
+ end = (iter = self->pd_directory)+(VM_HOST_BASE/PDTABLE_REPRSIZE);
  for (; iter != end; ++iter) {
   entry = PDTABLE_GETPTEV(*iter);
   if (entry != (PHYS union pd_entry *)(~PDIR_ATTR_MASK) &&
@@ -779,12 +784,12 @@ pdir_kernel_transform_tables(void) {
  /* until it overflows! */
 #if 1
  iter = &pdir_kernel.pd_directory[PDIR_TABLE_COUNT-1];
- for (addr_iter = (0-KERNEL_BASE)-PDTABLE_REPRSIZE;
-      addr_iter < (0-KERNEL_BASE);
+ for (addr_iter = (0-VM_HOST_BASE)-PDTABLE_REPRSIZE;
+      addr_iter < (0-VM_HOST_BASE);
       addr_iter -= PDTABLE_REPRSIZE,--iter)
 #else
- iter = &pdir_kernel.pd_directory[KERNEL_BASE/PDTABLE_REPRSIZE];
- for (addr_iter  = 0; addr_iter < (0-KERNEL_BASE);
+ iter = &pdir_kernel.pd_directory[VM_HOST_BASE/PDTABLE_REPRSIZE];
+ for (addr_iter  = 0; addr_iter < (0-VM_HOST_BASE);
       addr_iter += PDTABLE_REPRSIZE,++iter)
 #endif
  {
@@ -898,7 +903,7 @@ pdir_kernel_unmap_unused(void) {
  uintptr_t last_begin = 0;
  bool is_mapping = false;
  MEMINFO_FOREACH(iter) {
-  if ((uintptr_t)iter->mi_addr >= KERNEL_BASE) break;
+  if ((uintptr_t)iter->mi_addr >= VM_HOST_BASE) break;
   if (MEMTYPE_ISMAP(iter->mi_type) == is_mapping)
       continue;
   is_mapping = !is_mapping;
@@ -913,7 +918,7 @@ pdir_kernel_unmap_unused(void) {
  }
  /* Unmap the remainder. */
  if (!is_mapping)
-      pdir_kernel_unmap(last_begin,KERNEL_BASE-last_begin);
+      pdir_kernel_unmap(last_begin,VM_HOST_BASE-last_begin);
 }
 
 
@@ -927,11 +932,11 @@ pdir_kernel_unmap_unused(void) {
 #define PDIR_KERNEL_UNMAP_AFTEREND() \
         pdir_kernel_unmap(KERNEL_END,KERNEL_AFTER_END);
 #define PDIR_KERNEL_UNMAP_BEFOREBEGIN() \
-        pdir_kernel_unmap(CORE_BASE,0x000a0000)
+        pdir_kernel_unmap(VM_CORE_BASE,0x000a0000)
 #ifdef CONFIG_DEBUG
 #define PDIR_KERNEL_CHECK_INTEGRITY_AFTER_SETUP() \
  { union pd_table *iter,*end; \
-   iter = &pdir_kernel.pd_directory[CORE_BASE/PDTABLE_REPRSIZE]; \
+   iter = &pdir_kernel.pd_directory[VM_CORE_BASE/PDTABLE_REPRSIZE]; \
    end  = COMPILER_ENDOF(pdir_kernel.pd_directory); \
    for (; iter != end; ++iter) { \
     assertf(PDTABLE_ISALLOC(*iter), \

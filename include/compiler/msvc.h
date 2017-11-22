@@ -219,6 +219,15 @@ template<> struct __static_if<true> { bool __is_true__(); };
 #define __empty_arr(T,x)         T x[1]
 #define __attribute__(x)         /* Nothing */
 
+#define __INT8_TYPE__            signed __int8
+#define __UINT8_TYPE__           unsigned __int8
+#define __INT16_TYPE__           signed __int16
+#define __UINT16_TYPE__          unsigned __int16
+#define __INT32_TYPE__           signed __int32
+#define __UINT32_TYPE__          unsigned __int32
+#define __INT64_TYPE__           signed __int64
+#define __UINT64_TYPE__          unsigned __int64
+
 /* Define intrinsic barrier functions. */
 #ifdef __cplusplus
 namespace __int { extern "C" {

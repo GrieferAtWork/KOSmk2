@@ -59,9 +59,9 @@ PHYS struct mman __mman_kernel_p = {
              * required to re-write the associated page directory entries afterwards.
              * NOTE: This assumes that the kernel core won't ever be larger than
              *       1Gb, but I think that's a pretty safe assumption to make (right?) */
-            [0] = { (EARLY_PAGE_BEGIN-CORE_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+            [0] = { (EARLY_PAGE_BEGIN-VM_CORE_BASE)+(PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
             [1 ... PDIR_E4_COUNT-2] = { PDIR_LINK_MASK },
-            [PDIR_E4_COUNT-1] = { ((uintptr_t)coreboot_e3-CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+            [PDIR_E4_COUNT-1] = { ((uintptr_t)coreboot_e3-VM_CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
 #else /* __x86_64__ */
 #define PD(phys) \
            {phys+0x00000083},{phys+0x00400083},{phys+0x00800083},{phys+0x00c00083}, \
@@ -81,7 +81,7 @@ PHYS struct mman __mman_kernel_p = {
             /* Map lower memory a second time. (NOTE: 0x100 is `PDIR_ATTR_GLOBAL') */
             PD(0x00000100) PD(0x08000100) PD(0x10000100) PD(0x18000100) /* 0xd8000000 */
             PD(0x20000100) PD(0x28000100) PD(0x30000100) PD(0x38000100) /* 0xf8000000 */
-#if CORE_BASE != 0xc0000000
+#if VM_CORE_BASE != 0xc0000000
 #error "FIXME: Fix the bootstrap page table above"
 #endif
 #undef PD
@@ -126,9 +126,9 @@ PHYS struct mman __mman_kernel_p = {
 GLOBAL_ASM(
 /* Define physical/virtual versions of the kernel mman/pdir. */
 L(.global mman_kernel, pdir_kernel, pdir_kernel_v                   )
-L(mman_kernel   = __mman_kernel_p+ASM_CORE_BASE                   )
-L(pdir_kernel   = __mman_kernel_p+MMAN_OFFSETOF_PDIR                )
-L(pdir_kernel_v = __mman_kernel_p+ASM_CORE_BASE+MMAN_OFFSETOF_PDIR)
+L(mman_kernel   = phys_to_virt_a(__mman_kernel_p)                   )
+L(pdir_kernel   =                __mman_kernel_p +MMAN_OFFSETOF_PDIR)
+L(pdir_kernel_v = phys_to_virt_a(__mman_kernel_p)+MMAN_OFFSETOF_PDIR)
 );
 
 
@@ -214,9 +214,6 @@ L(.previous                                                                   )
 );
 
 INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
- assert(addr_isphys(&pdir_kernel));
- assert(addr_isvirt(&pdir_kernel_v));
- assert(addr_isvirt(&mman_kernel));
 
 #ifndef __x86_64__
  if (!(THIS_CPU->c_arch.ac_flags&CPUFLAG_486)) {
@@ -233,7 +230,7 @@ INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
 #endif
 
 #ifdef PDIR_KERNEL_MAP_IDENTITY
- /* Create identity mappings for all physical memory below KERNEL_BASE. */
+ /* Create identity mappings for all physical memory below VM_HOST_BASE. */
  PDIR_KERNEL_MAP_IDENTITY();
 #endif
 

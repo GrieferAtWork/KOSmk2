@@ -567,7 +567,7 @@ struct mman {
  ATREE_HEAD(struct mbranch)
                    m_map;    /*< [lock(m_lock)][0..1] Memory mappings (not including kernel mappings).
                               *   NOTE: When instructed from userspace, the caller must ensure never
-                              *         to map memory within kernel-space (aka. above `KERNEL_BASE'). */
+                              *         to map memory within kernel-space (aka. within `addr_ishost()'). */
  LIST_HEAD(struct mbranch)
                    m_order;  /*< [lock(m_lock)][0..1] Ordered list of branches. */
  LIST_HEAD(struct instance)
@@ -1074,9 +1074,20 @@ FUNDEF VIRT ppage_t KCALL mman_findspace_unlocked(struct mman *__restrict self,
                                                   VIRT ppage_t hint, size_t n_bytes,
                                                   size_t alignment, size_t gap_size,
                                                   u32 mode);
-#define MMAN_FINDSPACE_ABOVE    0x00 /*< If `hint...+=n_bytes' cannot be used, search for a greater, suitable address range. */
-#define MMAN_FINDSPACE_BELOW    0x01 /*< If `hint...+=n_bytes' cannot be used, search for a lower, suitable address range. */
-#define MMAN_FINDSPACE_FORCEGAP 0x02 /*< Force a gap before and after any kind of memory mapping. */
+#define MMAN_FINDSPACE_ABOVE    0x0000 /*< If `hint...+=n_bytes' cannot be used, search for a greater, suitable address range. */
+#define MMAN_FINDSPACE_BELOW    0x0001 /*< If `hint...+=n_bytes' cannot be used, search for a lower, suitable address range. */
+#define MMAN_FINDSPACE_FORCEGAP 0x0002 /*< Force a gap before and after any kind of memory mapping. */
+#define MMAN_FINDSPACE_TRYHARD  0x4000 /*< If no suitable range was found at first, extend the search
+                                        *  scope to the maximum allowed by `MMAN_FINDSPACE_FIND*' flags.
+                                        *  If that fails, try one more time with `gap_size' set to ZERO,
+                                        *  regardless of `MMAN_FINDSPACE_FORCEGAP'. */
+#define MMAN_FINDSPACE_PRIVATE  0x8000 /*< Only return address ranges associated with the memory division of the given `hint' argument.
+                                        *  >> if (addr_isuser(hint)) assert(addr_isuser_r(return,n_bytes));
+                                        *  >> if (addr_ishost(hint)) assert(addr_ishost_r(return,n_bytes));
+                                        */
+
+
+
 
 /* Check if any address within the given range is currently in use.
  * NOTE: The caller is responsible for holding a read-lock to `self->m_lock'

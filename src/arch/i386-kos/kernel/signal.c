@@ -815,10 +815,10 @@ L(1:                                                                            
 #endif /* CONFIG_DEBUG */
 L(77:                                                                            )
 #ifdef __x86_64__
-L(    movabs $(ASM_USER_END - SIGENTER_TAIL_SIZE), %rax                          )
-L(    cmpq   %rax,                                 ITER                          )
+L(    movabs $((VM_USER_MAX_A - SIGENTER_TAIL_SIZE)+1), %rax                     )
+L(    cmpq   %rax,                                     ITER                      )
 #else
-L(    cmpx   $(ASM_USER_END - SIGENTER_TAIL_SIZE), ITER                          )
+L(    cmpx   $((VM_USER_MAX_A - SIGENTER_TAIL_SIZE)+1), ITER                     )
 #endif
 L(    ja     .pointer_out_of_bounds                                              )
 L(                                                                               )

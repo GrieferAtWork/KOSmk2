@@ -28,27 +28,41 @@
 #include <sched/cpu.h>
 #include <kernel/boot.h>
 #include <modules/tty.h>
+#include <arch/interrupt.h>
 
 DECL_BEGIN
 
 /* Statically allocate the initial boot stack. */
-INTERN ATTR_FREEBSS ATTR_ALIGNED(HOST_STCK_ALIGN)
+INTERN ATTR_BSS ATTR_ALIGNED(HOST_STCK_ALIGN)
 byte_t __bootstack[HOST_BOOT_STCKSIZE];
 
 /* Hosting emulation information. */
 PUBLIC u8  boot_emulation = BOOT_EMULATION_DEFAULT;
 PUBLIC u16 boot_emulation_logport = (u16)0x80;
 
+
 GLOBAL_ASM(
 L(.section .text.entry                                                        )
+L(INTERN_ENTRY(arm_interrupt_table0)                                          )
+L(    b     _start                                                            )
+L(    b     .                                                                 )
+L(    b     .                                                                 )
+L(    b     .                                                                 )
+L(    b     .                                                                 )
+L(    b     .                                                                 )
+L(    b     .                                                                 )
+L(    b     .                                                                 )
+L(SYM_END(arm_interrupt_table0)                                               )
+L(INTERN_ENTRY(arm_interrupt_long_table0)                                     )
+L(    .space (INTNO_COUNT*4)                                                  )
+L(SYM_END(arm_interrupt_long_table0)                                          )
 L(INTERN_ENTRY(_start)                                                        )
 L(    ldr   sp, 1f                                                            )
-L(    bl    kernel_boot                                                       )
+L(    b     kernel_boot                                                       )
 L(1:  .long __bootstack+HOST_BOOT_STCKSIZE                                    )
 L(SYM_END(_start)                                                             )
 L(.previous                                                                   )
 );
-
 
 DECL_END
 

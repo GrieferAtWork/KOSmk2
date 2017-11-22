@@ -270,7 +270,7 @@ PUBLIC SAFE ssize_t KCALL
 kern_virtinfo(VIRT void *addr, HOST struct virtinfo *buf,
               size_t bufsize, u32 flags) {
  ssize_t result; struct mman *vm;
- vm = (uintptr_t)addr >= KERNEL_BASE ? &mman_kernel : THIS_TASK->t_real_mman;
+ vm = addr_ishost(addr) ? &mman_kernel : THIS_TASK->t_real_mman;
  HOSTMEMORY_BEGIN {
   result = mman_virtinfo(vm,addr,buf,bufsize,flags);
  }
@@ -281,7 +281,7 @@ PUBLIC SAFE ssize_t KCALL
 user_virtinfo(VIRT void *addr, USER struct virtinfo *buf,
               size_t bufsize, u32 flags) {
  /* Don't allow access to kernel-level data. */
- if ((uintptr_t)addr >= USER_END) return -ENODATA;
+ if (!addr_isuser(addr)) return -ENODATA;
  return mman_virtinfo(THIS_TASK->t_real_mman,addr,buf,bufsize,flags);
 }
 

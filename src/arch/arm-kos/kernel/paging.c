@@ -83,9 +83,9 @@ PHYS struct mman __mman_kernel_p = {
 GLOBAL_ASM(
 /* Define physical/virtual versions of the kernel mman/pdir. */
 L(.global mman_kernel, pdir_kernel, pdir_kernel_v                   )
-L(mman_kernel   = __mman_kernel_p+ASM_CORE_BASE                   )
-L(pdir_kernel   = __mman_kernel_p+MMAN_OFFSETOF_PDIR                )
-L(pdir_kernel_v = __mman_kernel_p+ASM_CORE_BASE+MMAN_OFFSETOF_PDIR)
+L(mman_kernel   = phys_to_virt_a(__mman_kernel_p)                   )
+L(pdir_kernel   =                __mman_kernel_p +MMAN_OFFSETOF_PDIR)
+L(pdir_kernel_v = phys_to_virt_a(__mman_kernel_p)+MMAN_OFFSETOF_PDIR)
 );
 
 
@@ -183,9 +183,7 @@ L(.previous                                                                   )
 );
 
 INTERN ATTR_FREETEXT void KCALL pdir_initialize(void) {
- assert(addr_isphys(&pdir_kernel));
- assert(addr_isvirt(&pdir_kernel_v));
- assert(addr_isvirt(&mman_kernel));
+
 }
 
 DECL_END

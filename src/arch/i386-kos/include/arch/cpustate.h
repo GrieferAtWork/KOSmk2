@@ -609,8 +609,8 @@ FUNDEF struct irregs_host const *IRREGS_TAIL(struct irregs_host_ie const *x);
 DATDEF byte_t intno_offset[];
 #endif /* __CC__ */
 
-#define IRREGS_ENCODE_INTNO(x)     (__CCAST(uintptr_t,intno_offset)+((x)*__SIZEOF_POINTER__))
-#define IRREGS_DECODE_INTNO(x)     (((x)-__CCAST(uintptr_t,intno_offset))/__SIZEOF_POINTER__)
+#define IRREGS_ENCODE_INTNO(x)     (__CCAST(uintptr_t)(intno_offset)+((x)*__SIZEOF_POINTER__))
+#define IRREGS_DECODE_INTNO(x)     (((x)-__CCAST(uintptr_t)(intno_offset))/__SIZEOF_POINTER__)
 #define ASM_IRREGS_ENCODE_INTNO(x) (intno_offset+((x)*__SIZEOF_POINTER__))
 #define ASM_IRREGS_DECODE_INTNO(x) (((x)-intno_offset)/__SIZEOF_POINTER__)
 

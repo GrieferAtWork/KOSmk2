@@ -709,7 +709,6 @@ page_ffree(ppage_t start, size_t n_bytes, pgattr_t attr) {
  CHECK_HOST_TEXT(start,n_bytes);
  if unlikely(!n_bytes) return;
  assert(IS_ALIGNED((uintptr_t)start,PAGESIZE));
- assert(addr_isphys(start));
  n_bytes = CEIL_ALIGN(n_bytes,PAGESIZE);
  zone_id = mzone_of(start);
 

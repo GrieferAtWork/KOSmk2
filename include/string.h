@@ -432,8 +432,8 @@ __REDIRECT_IFDOS(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC __
 #ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
 extern "C++" {
 #if !defined(__DOS_COMPAT__) && !defined(__OPTIMIZE_LIBC__)
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void *,__LIBCCALL,memrchr,(void *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle))
-__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void const *,__LIBCCALL,memrchr,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void *,__LIBCCALL,memrchr,(void *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle,__n_bytes))
+__REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1)),void const *,__LIBCCALL,memrchr,(void const *__restrict __haystack, int __needle, size_t __n_bytes),memrchr,(__haystack,__needle,__n_bytes))
 #else
 __OPT_LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void *(__LIBCCALL memrchr)(void *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
 __OPT_LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) void const *(__LIBCCALL memrchr)(void const *__restrict __haystack, int __needle, size_t __n_bytes) { return __local_memrchr(__haystack,__needle,__n_bytes); }
@@ -1496,13 +1496,13 @@ __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_tolower,(int __c),tolo
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
 int (__LIBCCALL _memicmp)(void const *__a, void const *__b, size_t __n_bytes) {
     __BYTE_TYPE__ *__ai = (__BYTE_TYPE__ *)__a,*__bi = (__BYTE_TYPE__ *)__b; int __temp;
-    while (__n_bytes--) if ((__temp = __libc_tolower(*__ai++) - __libc_tolower(*__bi++)) != 0) return temp;
+    while (__n_bytes--) if ((__temp = __libc_tolower(*__ai++) - __libc_tolower(*__bi++)) != 0) return __temp;
     return 0;
 }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
 int (__LIBCCALL _memicmp_l)(void const *__a, void const *__b,
                             size_t __n_bytes, __locale_t __UNUSED(__locale)) {
-    return _memicmp(__a,__b);
+    return _memicmp(__a,__b,__n_bytes);
 }
 #elif defined(__CRT_DOS)
 __LIBC __PORT_DOSONLY __ATTR_RETNONNULL __NONNULL((1)) char *(__LIBCCALL _strlwr)(char *__restrict __str);

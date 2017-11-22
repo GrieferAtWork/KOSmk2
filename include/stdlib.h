@@ -1049,7 +1049,7 @@ __REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64,(char const *__restrict __n
 #ifdef __CRT_DOS
 __REDIRECT(__LIBC,,__INT64_TYPE__,__LIBCCALL,_atoi64_l,(char const *__restrict __nptr, __locale_t __locale),_atol_l,(__nptr,__locale))
 #else /* __CRT_DOS */
-__LOCAL __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtol_l(__nptr,0,__locale); }
+__LOCAL __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __locale_t __locale) { return __libc_strtol_l(__nptr,__NULLPTR,0,__locale); }
 #endif /* !__CRT_DOS */
 __REDIRECT(__LIBC,,__INT64_TYPE__ ,__LIBCCALL,_strtoi64,(char const *__restrict __nptr, char **__restrict __endptr, int __radix),strtol,(__nptr,__endptr,__radix))
 __REDIRECT(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64,(char const *__restrict __nptr, char **__restrict __endptr, int __radix),strtoul,(__nptr,__endptr,__radix))
@@ -1378,12 +1378,36 @@ __LIBC __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotr)(unsigned lon
 __SYSDECL_END
 #include <bits/rotate.h>
 __SYSDECL_BEGIN
+#ifdef __NAMESPACE_INT_CONTAINS_ROT
+__NAMESPACE_INT_USING(_rotl)
+__NAMESPACE_INT_USING(_rotr)
+#elif defined(__WINDOWS_HOST__)
+extern unsigned int (__LIBCCALL _rotl)(unsigned int __val, int __shift);
+extern unsigned int (__LIBCCALL _rotr)(unsigned int __val, int __shift);
+#else
 __LOCAL __ATTR_CONST unsigned int __NOTHROW((__LIBCCALL _rotl)(unsigned int __val, int __shift)) { return __rol_32(__val,__shift); }
 __LOCAL __ATTR_CONST unsigned int __NOTHROW((__LIBCCALL _rotr)(unsigned int __val, int __shift)) { return __ror_32(__val,__shift); }
+#endif
+#ifdef __NAMESPACE_INT_CONTAINS_ROT64
+__NAMESPACE_INT_USING(_rotl64)
+__NAMESPACE_INT_USING(_rotr64)
+#elif defined(__WINDOWS_HOST__)
+extern unsigned long long (__cdecl _rotl64)(unsigned long long __val, int __shift);
+extern unsigned long long (__cdecl _rotr64)(unsigned long long __val, int __shift);
+#else
 __LOCAL __ATTR_CONST __UINT64_TYPE__ __NOTHROW((__LIBCCALL _rotl64)(__UINT64_TYPE__ __val, int __shift)) { return __rol_64(__val,__shift); }
 __LOCAL __ATTR_CONST __UINT64_TYPE__ __NOTHROW((__LIBCCALL _rotr64)(__UINT64_TYPE__ __val, int __shift)) { return __ror_64(__val,__shift); }
+#endif
+#ifdef __NAMESPACE_INT_CONTAINS_ROTL
 __LOCAL __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotl)(unsigned long int __val, int __shift)) { return __rol_32(__val,__shift); }
 __LOCAL __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotr)(unsigned long int __val, int __shift)) { return __ror_32(__val,__shift); }
+#elif defined(__WINDOWS_HOST__)
+extern unsigned long int (__LIBCCALL _lrotl)(unsigned long int __val, int __shift);
+extern unsigned long int (__LIBCCALL _lrotr)(unsigned long int __val, int __shift);
+#else
+__LOCAL __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotl)(unsigned long int __val, int __shift)) { return __rol_32(__val,__shift); }
+__LOCAL __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotr)(unsigned long int __val, int __shift)) { return __ror_32(__val,__shift); }
+#endif
 #endif /* !__CRT_DOS */
 
 

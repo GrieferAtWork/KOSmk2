@@ -202,7 +202,7 @@ master_s2m_write_crlf(struct ptymaster *__restrict self,
                       USER void const *buf, size_t bufsize) {
  char const *iter,*end,*flush_start;
  ssize_t result = 0,temp; size_t partsize;
- if (!addr_isuser(buf,bufsize)) return -EFAULT;
+ if (!addr_isuser_range(buf,bufsize)) return -EFAULT;
  /* Must convert '\n' to '\r\n' (LF -> CRLF; 10 -> 13,10) */
  end = (flush_start = iter = (char const *)buf)+(bufsize/sizeof(char));
  for (;;) {
@@ -255,7 +255,7 @@ master_canon_write_impl(struct ptymaster *__restrict self,
  ssize_t result = 0,temp; size_t n_clear;
  cc_t const *iter,*end,*canon_start;
  tcflag_t lflags = ATOMIC_READ(self->pm_ios.c_lflag);
- if (!addr_isuser(buf,bufsize)) return -EFAULT;
+ if (!addr_isuser_range(buf,bufsize)) return -EFAULT;
  /* Must use the line buffer, as well as check for control characters */
  end = (canon_start = iter = (cc_t const *)buf)+bufsize;
  while (iter != end) {

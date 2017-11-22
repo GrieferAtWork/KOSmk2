@@ -274,7 +274,7 @@ relock_tasks_again:
 
  /* Unmap _EVERYTHING_ from the calling process.
   * NOTE: Since this isn't the kernel page directory,
-  *       only mappings below `KERNEL_BASE' should exist. */
+  *       only mappings within `addr_isuser()' should exist. */
  mman_munmap_unlocked(mm,(ppage_t)0,(size_t)-1,
                       MMAN_MUNMAP_ALL,NULL);
 
@@ -350,8 +350,8 @@ endwrite:
  if (!mman_inuse_unlocked(mm,environ,mm->m_envsize)) {
   error = (errno_t)mman_mrestore_unlocked(mm,&env_maps,(ppage_t)environ,true);
  } else {
-  environ = (USER struct envdata *)mman_findspace_unlocked(mm,(ppage_t)(USER_ENVIRON_ADDRHINT-mm->m_envsize),
-                                                           mm->m_envsize,PAGESIZE,0,MMAN_FINDSPACE_BELOW);
+  environ = (USER struct envdata *)mman_findspace_unlocked(mm,(ppage_t)(USER_ENVIRON_ADDRHINT-mm->m_envsize),mm->m_envsize,PAGESIZE,0,
+                                                           MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
   if unlikely(environ == PAGE_ERROR) error = -ENOMEM;
   else error = (errno_t)mman_mrestore_unlocked(mm,&env_maps,(ppage_t)environ,true);
  }

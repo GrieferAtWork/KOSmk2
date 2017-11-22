@@ -25,6 +25,7 @@
 #include <hybrid/types.h>
 #include <sched/percpu.h>
 #include <kernel/paging.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 
@@ -34,7 +35,7 @@ FUNDEF size_t (KCALL __copy_in_user)(USER void *dst, USER void const *src, size_
 FUNDEF size_t (KCALL __memset_user)(USER void *dst, int byte, size_t n_bytes) ASMNAME("memset_user");
 FUNDEF char  *(KCALL __strend_user)(USER char const *str) ASMNAME("strend_user"); /* Returns NULL on error */
 FUNDEF char  *(KCALL __stpncpy_from_user)(HOST void *__restrict dst, USER char const *str, size_t max_chars) ASMNAME("stpncpy_from_user"); /* Returns NULL on error */
-FUNDEF bool   (KCALL __addr_isuser)(void const *addr, size_t len) ASMNAME("addr_isuser"); /* Returns true if user-space is allowed access to `addr'. */
+FUNDEF bool   (KCALL __addr_isuser_range)(void const *addr, size_t len) ASMNAME("addr_isuser_range"); /* Returns true if user-space is allowed access to `addr'. */
 
 /* User-buffered I/O functions.
  * @return: 0 : Successfully transferred all data.
@@ -123,7 +124,7 @@ copy_string(USER char const *str, size_t max_length, size_t *opt_pstrlen);
  * Worker should look like this:
  * >> ssize_t KCALL my_worker(USER char const *s) {
  * >>     size_t result = strlen(s);
- * >>     if (!addr_isuser(s,result))
+ * >>     if (!addr_isuser_range(s,result))
  * >>          return -EFAULT;
  * >>     return result;
  * >> }
@@ -162,15 +163,23 @@ FORCELOCAL char *(KCALL _stpncpy_from_user)(HOST char *__restrict dst,
  return __stpncpy_from_user(dst,str,max_chars);
 
 }
-FORCELOCAL bool (KCALL _addr_isuser)(void const *addr, size_t len) {
+FORCELOCAL bool (KCALL _addr_isuser_range)(void const *addr, size_t len) {
  if (__builtin_constant_p(len)) {
   if (!len) return true;
+#ifdef CONFIG_LOW_KERNEL
+  if (len > VM_USER_SIZE) return false;
+  return (uintptr_t)addr >= VM_USER_BASE;
+#else
   if (__builtin_constant_p(addr)) {
-   if ((uintptr_t)addr+len <= USER_END)
-        return true;
+#ifdef CONFIG_HIGH_KERNEL
+   if ((uintptr_t)addr+len >= VM_USER_MAX)
+        return false;
+#endif
+   return true;
   }  
+#endif
  }
- return __addr_isuser(addr,len);
+ return __addr_isuser_range(addr,len);
 }
 FORCELOCAL size_t (KCALL _insb_user)(u16 port, USER void *addr, size_t count) {
  if (__builtin_constant_p(count) && !count) return 0;
@@ -204,8 +213,8 @@ FORCELOCAL size_t (KCALL _outsl_user)(u16 port, USER void const *addr, size_t co
 #define memset_user(dst,byte,n_bytes)        __builtin_expect(_memset_user(dst,byte,n_bytes),0)
 #define strend_user(str)                              __strend_user(str)
 #define stpncpy_from_user(dst,src,max_chars) _stpncpy_from_user(dst,src,max_chars)
-#define addr_isuser(addr,len)                __builtin_expect(_addr_isuser(addr,len),true)
-#define addr_ishost(addr,len)                __builtin_expect(!_addr_isuser(addr,len),true)
+#define addr_isuser_range(addr,len)          __builtin_expect(_addr_isuser_range(addr,len),true)
+#define addr_ishost_range(addr,len)          __builtin_expect(!_addr_isuser_range(addr,len),true)
 
 #define insb_user(port,addr,count)  __builtin_expect(_insb_user(port,addr,count),0)
 #define insw_user(port,addr,count)  __builtin_expect(_insw_user(port,addr,count),0)
@@ -217,14 +226,38 @@ FORCELOCAL size_t (KCALL _outsl_user)(u16 port, USER void const *addr, size_t co
 
 /* Begin/End a region of code during which all calls normally accepting
  * user-space memory will instead (or in addition) work with host memory. */
-#if 1
+#if defined(CONFIG_HIGH_KERNEL) && \
+    defined(CONFIG_LOW_KERNEL)
 #define HOSTMEMORY_BEGIN \
-do{ uintptr_t _old_addrlimit = THIS_TASK->t_addrlimit; \
+do{ uintptr_t const _old_addrbase = THIS_TASK->t_addrbase; \
+    uintptr_t const _old_addrlimit = THIS_TASK->t_addrlimit; \
+    THIS_TASK->t_addrbase = 0; \
     THIS_TASK->t_addrlimit = (uintptr_t)-1; \
     COMPILER_BARRIER(); do
 #define HOSTMEMORY_END  while(0); \
     COMPILER_BARRIER(); \
     THIS_TASK->t_addrlimit = _old_addrlimit; \
+    THIS_TASK->t_addrbase = _old_addrbase; \
+    COMPILER_WRITE_BARRIER(); \
+}while(0)
+#elif defined(CONFIG_HIGH_KERNEL)
+#define HOSTMEMORY_BEGIN \
+do{ uintptr_t const _old_addrlimit = THIS_TASK->t_addrlimit; \
+    THIS_TASK->t_addrlimit = (uintptr_t)-1; \
+    COMPILER_BARRIER(); do
+#define HOSTMEMORY_END  while(0); \
+    COMPILER_BARRIER(); \
+    THIS_TASK->t_addrlimit = _old_addrlimit; \
+    COMPILER_WRITE_BARRIER(); \
+}while(0)
+#elif defined(CONFIG_LOW_KERNEL)
+#define HOSTMEMORY_BEGIN \
+do{ uintptr_t const _old_addrbase = THIS_TASK->t_addrbase; \
+    THIS_TASK->t_addrbase = 0; \
+    COMPILER_BARRIER(); do
+#define HOSTMEMORY_END  while(0); \
+    COMPILER_BARRIER(); \
+    THIS_TASK->t_addrbase = _old_addrbase; \
     COMPILER_WRITE_BARRIER(); \
 }while(0)
 #else

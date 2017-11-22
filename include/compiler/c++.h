@@ -71,6 +71,7 @@
 #define __NAMESPACE_INT_BEGIN    namespace __int {
 #define __NAMESPACE_INT_END      }
 #define __NAMESPACE_INT_SYM      ::__int::
+#define __NAMESPACE_INT_USING(x) using ::__int::x;
 #define __BOOL                   bool
 
 __NAMESPACE_INT_BEGIN

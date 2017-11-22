@@ -182,13 +182,13 @@ struct PACKED {
 
 
 #define __SEG_ENCODELO_32(base,size,config) \
- (__CCAST(u32,(size)&__UINT16_C(0xffff))|       /* 0x0000ffff */\
- (__CCAST(u32,(base)&__UINT16_C(0xffff)) << 16) /* 0xffff0000 */)
+ (__CCAST(u32)((size)&__UINT16_C(0xffff))|       /* 0x0000ffff */\
+ (__CCAST(u32)((base)&__UINT16_C(0xffff)) << 16) /* 0xffff0000 */)
 #define __SEG_ENCODEHI_32(base,size,config) \
- ((__CCAST(u32,(base)&__UINT32_C(0x00ff0000)) >> 16)| /* 0x000000ff */\
-   __CCAST(u32,(config)&__UINT32_C(0x00f0ff00))|      /* 0x00f0ff00 */\
-   __CCAST(u32,(size)&__UINT32_C(0x000f0000))|        /* 0x000f0000 */\
-   __CCAST(u32,(base)&__UINT32_C(0xff000000))         /* 0xff000000 */)
+ ((__CCAST(u32)((base)&__UINT32_C(0x00ff0000)) >> 16)| /* 0x000000ff */\
+   __CCAST(u32)((config)&__UINT32_C(0x00f0ff00))|      /* 0x00f0ff00 */\
+   __CCAST(u32)((size)&__UINT32_C(0x000f0000))|        /* 0x000f0000 */\
+   __CCAST(u32)((base)&__UINT32_C(0xff000000))         /* 0xff000000 */)
 #define __ASM_SEG_ENCODELO_32(base,size,config) \
  (((size)&0xffff)|       /* 0x0000ffff */\
  (((base)&0xffff) << 16) /* 0xffff0000 */)
@@ -200,10 +200,10 @@ struct PACKED {
 
 #ifdef __x86_64__
 #define __SEG_ENCODELO(base,size,config) \
-       (__CCAST(u64,__SEG_ENCODEHI_32(base,size,config)) << 32 | \
-        __CCAST(u64,__SEG_ENCODELO_32(base,size,config)))
+       (__CCAST(u64)(__SEG_ENCODEHI_32(base,size,config)) << 32 | \
+        __CCAST(u64)(__SEG_ENCODELO_32(base,size,config)))
 #define __SEG_ENCODEHI(base,size,config) \
-      ((__CCAST(u64,base) >> 32) & __UINT64_C(0x00000000ffffffff))
+      ((__CCAST(u64)(base) >> 32) & __UINT64_C(0x00000000ffffffff))
 #else
 #define __SEG_ENCODELO(base,size,config) __SEG_ENCODELO_32(base,size,config)
 #define __SEG_ENCODEHI(base,size,config) __SEG_ENCODEHI_32(base,size,config)

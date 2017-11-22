@@ -43,6 +43,7 @@
 #include <sched/cpu.h>
 #include <asm/instx.h>
 #include <arch/hints.h>
+#include <arch/hints.h>
 
 DECL_BEGIN
 
@@ -133,7 +134,7 @@ L(    movl %eax, %cr3                             )
 L(    RM_MOVL_R(rm_bios_int_cr0, eax)             )
 L(    movl %eax, %cr0                             )
 L(                                                )
-L(    ljmpl $(__KERNEL_CS), $(rm_bios_int_exit - ASM_CORE_BASE))
+L(    ljmpl $(__KERNEL_CS), $(virt_to_phys_a(rm_bios_int_exit)))
 #else
 #if 1 /* TODO: Disable this and test if real hardware still works. */
 L(    movw $(SEG(SEG_HOST_DATA16)), %ax           )
@@ -256,7 +257,7 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    movq %%rsp, rm_bios_int_esp(%%rdi)          ) /* Safe our original long-mode RSP */
      L(                                                )
      L(    sgdt rm_bios_int_gdt(%%rdi)                 )
-     L(    subq $(ASM_CORE_BASE), rm_bios_int_gdt+2(%%rdi))
+     L(    subq $(VM_CORE_BASE_A), rm_bios_int_gdt+2(%%rdi))
      L(    lgdt rm_bios_int_gdt(%%rdi)                 ) /* Reload our own GDT with a physical base address. */
      L(                                                )
      L(    pushq  $(SEG(SEG_HOST_CODE16))              )
@@ -271,7 +272,7 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    subq $__rm_core_start, %%rdi                )
      L(    movq rm_bios_int_esp(%%rdi), %%rsp          )
      L(                                                )
-     L(    addq $(ASM_CORE_BASE), rm_bios_int_gdt+2(%%rdi))
+     L(    addq $(VM_CORE_BASE_A), rm_bios_int_gdt+2(%%rdi))
      L(    lgdt rm_bios_int_gdt(%%rdi)                 ) /* Reload our own GDT with a virtual base address. */
      L(                                                )
      L(    popq %%r10                                  )
@@ -289,7 +290,7 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    movl %%esp, rm_bios_int_esp(%%edi)          )
      L(                                                )
      L(    sgdt rm_bios_int_gdt(%%edi)                 )
-     L(    subl $(ASM_CORE_BASE), rm_bios_int_gdt+2(%%edi))
+     L(    subl $(VM_CORE_BASE_A), rm_bios_int_gdt+2(%%edi))
      L(    lgdt rm_bios_int_gdt(%%edi)                 )
      L(                                                )
      L(    movl %%cr0, %%eax                           )
@@ -320,7 +321,7 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(    movw  %%ax, %%ds                            )
      L(                                                )
      L(    /* Reload where realmode code begins */     )
-     L(    movzwl (realmode_base - ASM_CORE_BASE), %%edi)
+     L(    movzwl (realmode_base - VM_CORE_BASE_A), %%edi)
      L(    subl $__rm_core_start, %%edi                )
      L(                                                )
      L(    movl rm_bios_int_cr3(%%edi), %%eax          )
@@ -330,7 +331,7 @@ do_rm_interrupt(struct cpustate16 *__restrict state, irq_t intno) {
      L(                                                )
      L(    jmp 1f                                      )
      L(.previous                                       )
-     L(1:  addl $(ASM_CORE_BASE), rm_bios_int_gdt+2(%%edi))
+     L(1:  addl $(VM_CORE_BASE_A), rm_bios_int_gdt+2(%%edi))
      L(    lgdt rm_bios_int_gdt(%%edi)                 )
      L(                                                )
      /* TODO: The general segment register should be restored to their proper values immediatly,
@@ -487,10 +488,10 @@ KCALL realmode_initialize(void) {
    mman_write(&mman_kernel);
    alloc_size     = CEIL_ALIGN(alloc_size,PAGESIZE);
    realmode_vbase = (uintptr_t)mman_findspace_unlocked(&mman_kernel,
-                                                      (ppage_t)(0-alloc_size),alloc_size,
-                                                       PAGESIZE,0,MMAN_FINDSPACE_BELOW);
-   if unlikely(realmode_vbase == (uintptr_t)(void *)PAGE_ERROR ||
-               realmode_vbase <  (uintptr_t)(void *)KERNEL_BASE)
+                                                      (ppage_t)(0-alloc_size),alloc_size,PAGESIZE,0,
+                                                       MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_TRYHARD|
+                                                       MMAN_FINDSPACE_PRIVATE);
+   if unlikely(realmode_vbase == (uintptr_t)(void *)PAGE_ERROR)
       PANIC(FREESTR("Failed to locate free memory from virtual realmode-segment mapping"));
    rm_region = mregion_new_phys(MMAN_DATAGFP(&mman_kernel),
                                (ppage_t)base,alloc_size);

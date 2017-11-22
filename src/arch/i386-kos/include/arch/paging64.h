@@ -27,39 +27,13 @@
 #include <hybrid/limits.h>
 #include <hybrid/typecore.h>
 #include <kernel/memory.h>
+#include <arch/hints.h>
 #include <assert.h>
 
 DECL_BEGIN
 
-/* Virtual starting address of the kernel-share segment.
- * This constant describes a 47-bit address space at the upper end of virtual memory.
- * Any address greater than, or equal to this value is mapped identically in all
- * existing page directories and is considered to be owned by the kernel, meaning
- * that user-space is not allowed to access that memory in any way (with the exception
- * of the user-share segment which is mapped with user-space read-only access permissions).
- * Similar to i386-mode, the kernel page directory maps all physical memory below
- * this address to that same address, meaning that on x86_64, usable RAM is limited
- * to a maximum of 2^47 bytes (or `65536' (`0x10000') Terrabyte, so we're good in that department)
- * Usage:
- * 0000000000000000 - 00007FFFFFFFFFFF  USER
- * --- Hole due to bit#48 -> 49..63 sign extension.
- * FFFF800000000000 - FFFFFFFF7FFFFFFF  HOST (Extended Heap, file mappings, modules, etc)
- * FFFFFFFF80000000 - FFFFFFFFFFFFFFFF  CORE (Core, Heap, drivers. Permanently mapped to the first 2Gb of physical memory)
- * This range contains the kernel core and is later truncated to end past the
- * core itself (`__kernel_end'), leaving a one-on-one physical mappings of the first
- * Mb of physical memory intact (Which is used by e.g.: The core's VGA-TTY driver)
- * HINT: In this configuration, user and kernel-space are of equal size.
- */
-#define ASM_USER_MAX               0x00007fffffffffff
-#define ASM_USER_END               0x0000800000000000
-#define ASM_PHYS_END               0x0000800000000000
-#define ASM_KERNEL_BASE            0xffff800000000000
-#define ASM_CORE_BASE              0xffffffff80000000
-#define USER_MAX        __UINT64_C(0x00007fffffffffff)
-#define USER_END        __UINT64_C(0x0000800000000000)
 #define PHYS_END        __UINT64_C(0x0000800000000000) /* The end of the physical identity-mapping in the kernel page directory. */
 #define KERNEL_BASE     __UINT64_C(0xffff800000000000)
-#define CORE_BASE       __UINT64_C(0xffffffff80000000) /* -2Gb */
 
 
 /* Mask of all address bits that can actually be used.
@@ -196,7 +170,7 @@ struct _pdir { /* Controller structure for a page directory. */
  union pdir_e4 pd_directory[PDIR_E4_COUNT];
 };
 #define PDIR_KERNELBASE_STARTINDEX \
-     (((KERNEL_BASE&(PDIR_E4_TOTALSIZE-1))*PDIR_E4_COUNT)/PDIR_E4_TOTALSIZE)
+     (((VM_HOST_BASE&(PDIR_E4_TOTALSIZE-1))*PDIR_E4_COUNT)/PDIR_E4_TOTALSIZE)
 #define PDIR_ROOTENTRY_REPRSIZE   PDIR_E4_TOTALSIZE
 
 

@@ -62,7 +62,7 @@ kernel_bootmod_register(PHYS uintptr_t addr, size_t size,
  bootmod_t *mod,**piter,*iter;
  /* Quickly confirm that this really is a module. */
  if (addr+size <= addr) goto notamodule;
- if (addr+size > KERNEL_BASE) goto notamodule;
+ if (addr+size > VM_HOST_BASE) goto notamodule;
  if (size <= sizeof(Elf_Ehdr)) goto notamodule;
 
  /* By checking for the ELF header here, we can re-use its static portions

@@ -31,6 +31,7 @@
 #define __NAMESPACE_INT_BEGIN      /* Nothing */
 #define __NAMESPACE_INT_END        /* Nothing */
 #define __NAMESPACE_INT_SYM        /* Nothing */
+#define __NAMESPACE_INT_USING(x)   /* Nothing */
 
 #if 1
 #   define __BOOL _Bool

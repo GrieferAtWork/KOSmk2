@@ -26,36 +26,12 @@
 #include <hybrid/limits.h>
 #include <hybrid/typecore.h>
 #include <kernel/memory.h>
+#include <arch/hints.h>
 #include <assert.h>
 
 DECL_BEGIN
 
-/* The virtual base address of the kernel itself!
- * WARNING: Changing this values requires additional changes in:
- * >> /src/kernel/core/paging.c:  pdir_kernel
- * >> /src/kernel/include/mman.h: ZONE_* (Comments)
- * WARNING: The kernel may never map addresses lower than this to itself!
- * All addresses lower than this are usually unmapped, with the exception
- * of special memory regions that encompass physical memory, which
- * map 1 on 1 to kernel virtual addresses.
- * As a consequence of this, KOS is (by default) limited to only using
- * 3GB of physically available memory, as anything higher cannot actually
- * be used (due to the associated address space being reserved by the kernel).
- * TODO: Add a config that still allows use of physical memory above 3Gb,
- *       adding a new memory zone who's memory cannot be accessed directly,
- *       and is therefor managed by special code that must be deleted during
- *       boot when it is detected that no physical memory above 3Gb exists,
- *       as well as minor changes to mman ALLOA to make use of such memory
- *       for userspace applications/virtual kernel memory.
- */
-#define ASM_USER_MAX               0xbfffffff
-#define ASM_USER_END               0xc0000000
-#define ASM_KERNEL_BASE            0xc0000000
-#define ASM_CORE_BASE              0xc0000000
-#define USER_MAX        __UINT32_C(0xbfffffff)
-#define USER_END        __UINT32_C(0xc0000000)
 #define KERNEL_BASE     __UINT32_C(0xc0000000)
-#define CORE_BASE       __UINT32_C(0xc0000000)
 
 /* Mask of all address bits that can actually be used.
  * NOTE: On i386, that simply is every bit there is (All 32). */
@@ -77,15 +53,9 @@ typedef u16 pdir_attr_t; /* Set of `PDIR_ATTR_*|PDIR_FLAG_*' */
 /* Page directory action flags (accepted by `pdir_mprotect', `pdir_mmap', `pdir_mremap' and `pdir_munmap') */
 #define PDIR_FLAG_NOFLUSH  0x8000u /* Don't sync the page directory entry - instead, the caller must invalidate it. */
 
-
 /* Internal/arch-specific attributes. */
 #define PDIR_ATTR_4MIB     0x0080u /* Only used by `pd_table': Directly map a physical address.
                                     * NOTE: Use of this requires the `CR4_PSE' bit to be set. */
-
-/* Check if 4Mib pages are allowed for the given address.
- * NOTE: They are not allowed for kernel pages, so-as to
- *       keep the indirection required for sharing pages. */
-#define PDIR_ATTR_ALLOW_4MIB(addr) ((uintptr_t)(addr) < KERNEL_BASE)
 
 
 #define PD_ENTRY_SIZE        4
@@ -112,7 +82,7 @@ union PACKED pd_table {
       u32             pt_data; /*< Table data. */
 union{
  PHYS union pd_entry *pt_ptev; /*< [0..1=PD_TABLE_ENTRY_COUNT][MASK(~PDIR_ATTR_MASK)]
-                                *  [owned_if((self-pd_directory)*0x400000 < KERNEL_BASE)] // NOTE: `0x400000 == (1 << 32) / PD_TABLE_ENTRY_COUNT' (Aka: The first kernel-page)
+                                *  [owned_if((self-pd_directory)*0x400000 < VM_HOST_BASE)] // NOTE: `0x400000 == (1 << 32) / PD_TABLE_ENTRY_COUNT' (Aka: The first kernel-page)
                                 *  [valid_if(PDTABLE_ISVALID(self))]
                                 *  [alloc_if(PDTABLE_ISALLOC(self))]
                                 *   The associated page table entry-vector (Always contains PD_TABLE_ENTRY_COUNT elements).
@@ -152,8 +122,8 @@ struct _pdir {
 };
 #endif /* __CC__ */
 
-#define PDIR_KERNELBASE_STARTINDEX  (KERNEL_BASE/PDTABLE_REPRSIZE)
-#define PDIR_ROOTENTRY_REPRSIZE       PDTABLE_REPRSIZE
+#define PDIR_KERNELBASE_STARTINDEX  (VM_HOST_BASE/PDTABLE_REPRSIZE)
+#define PDIR_ROOTENTRY_REPRSIZE      PDTABLE_REPRSIZE
 
 #define PDENTRY_REPRSIZE    PAGESIZE /* 1 << 12 */
 #define PDTABLE_REPRSIZE    0x400000 /* 1 << 22 */

@@ -21,6 +21,11 @@
 
 #include <hybrid/compiler.h>
 
-/* ... */
+#ifdef __CC__
+DATDEF byte_t __percpu_begin[];
+#endif
+
+#define CPU_OFFSETOF(sym)  ((__UINTPTR_TYPE__)&(sym)-(__UINTPTR_TYPE__)__percpu_begin)
+#define CPU_TEMPLATE(x)     (x)
 
 #endif /* !GUARD_ARCH_ARM_KOS_INCLUDE_ARCH_PERCPU_H */

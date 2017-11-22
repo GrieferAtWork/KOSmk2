@@ -163,22 +163,22 @@ __NAMESPACE_STD_USING(FILE)
 #ifdef __DOS_COMPAT__
 #ifdef __USE_DOS_LINKOBJECTS
 __LIBC FILE _iob[];
-#define stdin  (_iob+0)
-#define stdout (_iob+1)
-#define stderr (_iob+2)
+#   define stdin  (_iob+0)
+#   define stdout (_iob+1)
+#   define stderr (_iob+2)
 #else /* __USE_DOS_LINKOBJECTS */
 __LIBC FILE *(__LIBCCALL __iob_func)(void);
-#define stdin  (__iob_func()+0)
-#define stdout (__iob_func()+1)
-#define stderr (__iob_func()+2)
+#   define stdin  (__iob_func()+0)
+#   define stdout (__iob_func()+1)
+#   define stderr (__iob_func()+2)
 #endif /* !__USE_DOS_LINKOBJECTS */
 #else /* __DOS_COMPAT__ */
 __LIBC __FILE *stdin;
 __LIBC __FILE *stdout;
 __LIBC __FILE *stderr;
-#define stdin  stdin
-#define stdout stdout
-#define stderr stderr
+#   define stdin  stdin
+#   define stdout stdout
+#   define stderr stderr
 #endif /* !__DOS_COMPAT__ */
 #endif /* !__stdstreams_defined */
 
@@ -864,7 +864,7 @@ __LOCAL int (__ATTR_CDECL _scanf_s_l)(char const *__restrict __format, __locale_
 __LOCAL int (__ATTR_CDECL _sscanf_l)(char const *__restrict __src, char const *__restrict __format, __locale_t __locale, ...) { int __result; __builtin_va_list __args; __builtin_va_start(__args,__locale); __result = vsscanf(__src,__format,__args); __builtin_va_end(__args); return __result; }
 __LOCAL int (__ATTR_CDECL _sscanf_s_l)(char const *__restrict __src, char const *__restrict __format, __locale_t __locale, ...) { int __result; __builtin_va_list __args; __builtin_va_start(__args,__locale); __result = vsscanf(__src,__format,__args); __builtin_va_end(__args); return __result; }
 __LOCAL int (__LIBCCALL _vsprintf_l)(char *__restrict __buf, char const *__restrict __format, __locale_t __UNUSED(__locale), __builtin_va_list __args) { return vsprintf(__buf,__format,__args); }
-__LOCAL int (__LIBCCALL _vsprintf_p)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __builtin_va_list __args) { return vsprintf(__buf,__format,__args); }
+__LOCAL int (__LIBCCALL _vsprintf_p)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __builtin_va_list __args) { return vsnprintf(__buf,__buflen,__format,__args); }
 __LOCAL int (__LIBCCALL _vsprintf_p_l)(char *__restrict __buf, size_t __buflen, char const *__restrict __format, __locale_t __UNUSED(__locale),  __builtin_va_list __args) { return __libc_vsnprintf(__buf,__buflen,__format,__args); }
 __LOCAL int (__LIBCCALL _vsprintf_s_l)(char *__restrict __buf, size_t __bufsize, char const *__restrict __format, __locale_t __UNUSED(__locale), __builtin_va_list __args) { return __libc_vsnprintf(__buf,__bufsize,__format,__args); }
 __LOCAL int (__LIBCCALL _vscprintf)(char const *__restrict __format, __builtin_va_list __args) { return __libc_vsnprintf(NULL,0,__format,__args); }

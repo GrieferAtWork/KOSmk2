@@ -40,6 +40,7 @@
 #include <stdbool.h>
 #include <sys/mman.h>
 #include <malloc.h>
+#include <arch/hints.h>
 
 #include "intern.h"
 
@@ -58,10 +59,17 @@ mman_userspace_unlocked(struct mman *__restrict self, bool below, bool above,
 try_again:
  assert(n_bytes);
  assert(IS_ALIGNED(n_bytes,PAGESIZE));
- if ((uintptr_t)hint+n_bytes > USER_END) {
+ if (!addr_isuser_r(hint,n_bytes)) {
+#ifdef CONFIG_HIGH_KERNEL
   if (!below) return PAGE_ERROR;
   above = false;
-  hint  = (ppage_t)((uintptr_t)USER_END-n_bytes);
+  hint  = (ppage_t)((VM_USER_MAX+1)-n_bytes);
+#endif
+#ifdef CONFIG_LOW_KERNEL
+  if (!above) return PAGE_ERROR;
+  below = false;
+  hint  = (ppage_t)VM_USER_BASE;
+#endif
  }
  if (above && below) {
   ppage_t result_below,result_above;
@@ -69,11 +77,11 @@ try_again:
                                          info->mi_align,gap,
                                          MMAN_FINDSPACE_ABOVE|flags);
   if (result_above == hint) return result_above;
-  if ((uintptr_t)result_above+n_bytes > USER_END) result_above = PAGE_ERROR;
+  if (!addr_isuser_r(result_above,n_bytes)) result_above = PAGE_ERROR;
   result_below = mman_findspace_unlocked(self,hint,n_bytes,
                                          info->mi_align,gap,
                                          MMAN_FINDSPACE_BELOW|flags);
-  if ((uintptr_t)result_below+n_bytes > USER_END) result_below = PAGE_ERROR;
+  if (!addr_isuser_r(result_below,n_bytes)) result_below = PAGE_ERROR;
   /* Select whatever free space is closer. */
   if (result_below == PAGE_ERROR) { if (result_above == PAGE_ERROR) goto try_nogap; return result_above; }
   if (result_above == PAGE_ERROR) { return result_below; }
@@ -87,16 +95,16 @@ try_again:
                                   above ? MMAN_FINDSPACE_ABOVE|flags
                                         : MMAN_FINDSPACE_BELOW|flags);
  if (result == hint) return result;
- if ((uintptr_t)result+info->mi_size > USER_END) result = PAGE_ERROR;
+ if (!addr_isuser_r(result,info->mi_size)) result = PAGE_ERROR;
  if (result != PAGE_ERROR) return result;
  /* Wrap around & search the entire address space! */
  result = mman_findspace_unlocked(self,
-                                  above ? (ppage_t)((uintptr_t)0x00000000)
-                                        : (ppage_t)((uintptr_t)USER_END-n_bytes),
+                                  above ? (ppage_t)((uintptr_t)VM_USER_BASE)
+                                        : (ppage_t)((uintptr_t)(VM_USER_MAX+1)-n_bytes),
                                   n_bytes,info->mi_align,gap,
                                   above ? MMAN_FINDSPACE_ABOVE|flags
                                         : MMAN_FINDSPACE_BELOW|flags);
- if ((uintptr_t)result+info->mi_size > USER_END) result = PAGE_ERROR;
+ if (!addr_isuser_r(result,info->mi_size)) result = PAGE_ERROR;
  if (result != PAGE_ERROR) return result;
 try_nogap:
  if (gap && !(info->mi_flags&XMAP_NOTRYNGAP)) {
@@ -125,10 +133,11 @@ user_mmap(struct mmap_info *__restrict info) {
  /* Check for address overflow.
   * HINT: Also handles the case of `info->mi_size == 0' */
  if unlikely((uintptr_t)base_addr+info->mi_size <=
-             (uintptr_t)base_addr) return -EINVAL;
+             (uintptr_t)base_addr)
+    return -EINVAL;
  if unlikely((info->mi_flags&MAP_FIXED) &&
-             (uintptr_t)base_addr+info->mi_size >
-             (uintptr_t)USER_END) return -EINVAL;
+             !addr_isuser_r(base_addr,info->mi_size))
+    return -EINVAL;
  if (info->mi_xflag&XMAP_PHYSICAL) {
   if (!capable(CAP_SYS_ADMIN))
        return -EPERM;
@@ -439,13 +448,13 @@ SYSCALL_DEFINE5(mremap,VIRT void *,addr,size_t,old_len,size_t,new_len,
  if (!IS_ALIGNED((uintptr_t)addr,PAGESIZE)) return -EINVAL;
  /* Make sure neither the old, nor the new memory regions overflow. */
  if ((uintptr_t)addr+old_len < (uintptr_t)addr ||
-     (uintptr_t)addr+old_len > USER_END)
+     !addr_isuser_r(addr,old_len))
       return -EFAULT;
  /* Make sure a fixed target mapping is valid. */
  if (flags&MREMAP_FIXED &&
     ((uintptr_t)new_addr+new_len < (uintptr_t)new_addr ||
-     (uintptr_t)new_addr+new_len > USER_END))
-     return -EFAULT;
+     !addr_isuser_r(new_addr,new_len)))
+      return -EFAULT;
 
  task_crit();
  result = E_PTR(mman_read(mm));
@@ -496,14 +505,13 @@ maybe_remap:
   else if (mman_inuse_unlocked(mm,(ppage_t)((uintptr_t)addr+old_len),diff)) {
    /* Check if the memory immediately after is currently in use. */
    if (!(flags&MREMAP_MAYMOVE)) { result = E_PTR(-ENOMEM); goto end2; }
-   /* Find a new suiltable location where we can map memory. */
+   /* Find a new suitable location where we can map memory. */
    result = mman_findspace_unlocked(mm,(ppage_t)((uintptr_t)result+old_len),new_len,
                                     PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
-   if unlikely(result == PAGE_ERROR ||
-              (uintptr_t)result+new_len > USER_END) {
+   if unlikely(result == PAGE_ERROR || !addr_isuser_r(result,new_len)) {
     result = mman_findspace_unlocked(mm,(ppage_t)((uintptr_t)result-new_len),new_len,
                                      PAGESIZE,0,MMAN_FINDSPACE_BELOW);
-    if unlikely((uintptr_t)result+new_len > USER_END) result = PAGE_ERROR;
+    if unlikely(!addr_isuser_r(result,new_len)) result = PAGE_ERROR;
    }
    if unlikely(result == PAGE_ERROR) { result = E_PTR(-ENOMEM); goto end2; }
   }

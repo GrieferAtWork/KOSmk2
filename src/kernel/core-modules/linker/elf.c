@@ -655,11 +655,11 @@ elf_patch(struct modpatch *__restrict patcher) {
   *    of the module's data, as well as prior check for
   *    all table points being within that block of data,
   *    as well as the caller being required to map user-space
-  *    module instances below USER_END
+  *    module instances below VM_USER_MAX+1
   */
- assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)string_end   <= USER_END);
- assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)data_end     <= USER_END);
- assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || (uintptr_t)symtab_end   <= USER_END);
+ assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || addr_isuser_r(string_table,(uintptr_t)string_end-(uintptr_t)string_table));
+ assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || addr_isuser_r(data_begin,data_end-data_begin));
+ assert((inst->i_flags&INSTANCE_FLAG_DRIVER) || addr_isuser_r(symtab_begin,(uintptr_t)symtab_end-(uintptr_t)symtab_begin));
 
  /* Load all module dependencies. */
  { Elf_Word *dep_iter,*dep_begin;
@@ -1014,7 +1014,7 @@ got_symbol:
      uintptr_t sym_end;
      if (__builtin_add_overflow(rel_value,sym->st_size,&sym_end))
          goto symend_overflow;
-     if (sym_end > USER_END) {
+     if (!addr_isuser(sym_end)) {
       /* Special case: Allow relocations against user-share symbols */
       if (rel_value >= (uintptr_t)__kernel_user_start &&
           sym_end   <= (uintptr_t)__kernel_user_end) {

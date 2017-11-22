@@ -246,10 +246,32 @@ DECL_BEGIN
 #define MEMORY_PHYS_ZONE          MZONE_ANY
 
 /* Address ranges used by virtual kernel/shared memory allocations. */
+#ifdef CONFIG_HIGH_KERNEL
 #define KERNEL_VIRT_BEGIN         __UINTPTR_C(0x00000000)  /* 0x00000000...0xbfffffff */
-#define KERNEL_VIRT_END           KERNEL_BASE                /* 0x00000000...0xbfffffff */
-#define SHARED_VIRT_BEGIN         KERNEL_BASE                /* 0xc0000000...0xffffffff */
+#define KERNEL_VIRT_END          (VM_USER_MAX+1)           /* 0x00000000...0xbfffffff */
+#define SHARED_VIRT_BEGIN         VM_HOST_BASE             /* 0xc0000000...0xffffffff */
+#if (__SIZEOF_POINTER__ == 4 && VM_HOST_MAX == __UINTPTR_C(0xffffffff)) || \
+    (__SIZEOF_POINTER__ == 8 && VM_HOST_MAX == __UINTPTR_C(0xffffffffffffffff))
 #define SHARED_VIRT_END           __UINTPTR_C(0x00000000)  /* 0xc0000000...0xffffffff */
+#else
+#define SHARED_VIRT_END          (VM_HOST_MAX+1)           /* 0xc0000000...0xffffffff */
+#endif
+#elif defined(CONFIG_LOW_KERNEL)
+#define KERNEL_VIRT_BEGIN         VM_USER_BASE             /* 0x40000000...0xffffffff */
+#if (__SIZEOF_POINTER__ == 4 && VM_USER_MAX == __UINTPTR_C(0xffffffff)) || \
+    (__SIZEOF_POINTER__ == 8 && VM_USER_MAX == __UINTPTR_C(0xffffffffffffffff))
+#define KERNEL_VIRT_END           __UINTPTR_C(0x00000000)  /* 0x40000000...0xffffffff */
+#else
+#define KERNEL_VIRT_END          (VM_USER_MAX+1)           /* 0x40000000...0xffffffff */
+#endif
+#if VM_HOST_BASE == 0
+#define SHARED_VIRT_BEGIN         __UINTPTR_C(0x00000000)  /* 0x00000000...0x3fffffff */
+#define SHARED_VIRT_END           VM_HOST_SIZE             /* 0x00000000...0x3fffffff */
+#else
+#define SHARED_VIRT_BEGIN         VM_HOST_BASE             /* 0x00000000...0x3fffffff */
+#define SHARED_VIRT_END          (VM_HOST_MAX+1)           /* 0x00000000...0x3fffffff */
+#endif
+#endif
 
 #define BAD_ALLOC(n_bytes,flags) (void)0
 #define M_ISNONNULL(p) likely((p) != NULL)
@@ -888,10 +910,6 @@ core_page_alloc(size_t n_bytes, gfp_t flags) {
   PHYS struct mman *old_mman; bool has_write_lock = false;
 #define HEAPEND_MASK  (GFP_SHARED|GFP_KERNEL|GFP_LOCKED)
   /* Make sure that default heap addresses are in valid ranges. */
-  STATIC_ASSERT(HOST_HEAPEND_SHARED >= SHARED_VIRT_BEGIN);
-  STATIC_ASSERT(HOST_HEAPEND_SHARED_LOCKED >= SHARED_VIRT_BEGIN);
-  STATIC_ASSERT(HOST_HEAPEND_KERNEL <= KERNEL_VIRT_END);
-  STATIC_ASSERT(HOST_HEAPEND_KERNEL_LOCKED <= KERNEL_VIRT_END);
   PRIVATE VIRT uintptr_t heap_end[HEAPEND_MASK+1] = {
       [GFP_SHARED]            = HOST_HEAPEND_SHARED,        /* 0xd4000000 / 0xffffd10000000000 */
       [GFP_SHARED|GFP_LOCKED] = HOST_HEAPEND_SHARED_LOCKED, /* 0xd0000000 / 0xffffd00000000000 */
@@ -909,35 +927,32 @@ core_page_alloc(size_t n_bytes, gfp_t flags) {
   }
 check_again:
   result = mman_findspace_unlocked(&mman_kernel,
-                                  (ppage_t)heap_end[flags&HEAPEND_MASK],
-                                   n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+                                  (ppage_t)heap_end[flags&HEAPEND_MASK],n_bytes,PAGESIZE,
+                                   0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
   /* Make sure that we're not allocating out-of-bounds. */
   if unlikely(flags&GFP_KERNEL) {
-   if (result == PAGE_ERROR ||
-      (uintptr_t)result+n_bytes >= KERNEL_VIRT_END) {
+   if (result == PAGE_ERROR) {
     /* Try to re-scan the heap for a free gap. */
     result = mman_findspace_unlocked(&mman_kernel,(ppage_t)(flags&GFP_LOCKED ? HOST_HEAPEND_KERNEL_LOCKED
                                                                              : HOST_HEAPEND_KERNEL),
-                                     n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
-    if unlikely(result == PAGE_ERROR ||
-               (uintptr_t)result+n_bytes >= KERNEL_VIRT_END) {
+                                     n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
+    if unlikely(result == PAGE_ERROR) {
      /* Try to scan an extended address range. */
 #if HOST_HEAPEND_KERNEL_LOCKED < HOST_HEAPEND_KERNEL
      if (!(flags&GFP_LOCKED))
-           result = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_HEAPEND_KERNEL_LOCKED,
-                                             n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+           result = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_HEAPEND_KERNEL_LOCKED,n_bytes,
+                                             PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
 #elif HOST_HEAPEND_KERNEL < HOST_HEAPEND_KERNEL_LOCKED
      if (flags&GFP_LOCKED)
-         result = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_HEAPEND_KERNEL,
-                                           n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+         result = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_HEAPEND_KERNEL,n_bytes,
+                                           PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
 #endif
      /* Try to scan the entire virtual address range. */
-     if unlikely(result == PAGE_ERROR || (uintptr_t)result+n_bytes >= KERNEL_VIRT_END)
-        result = mman_findspace_unlocked(&mman_kernel,(ppage_t)(KERNEL_VIRT_BEGIN),
-                                         n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+     if unlikely(result == PAGE_ERROR)
+        result = mman_findspace_unlocked(&mman_kernel,(ppage_t)(KERNEL_VIRT_BEGIN),n_bytes,
+                                          PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
     }
     if unlikely(result == PAGE_ERROR) goto end2;
-    if unlikely((uintptr_t)result+n_bytes >= KERNEL_VIRT_END) goto end2_err;
    }
   } else {
    /* Make sure not to allocate dynamic memory above what is reserved for error-codes.
@@ -960,21 +975,21 @@ check_again:
     /* Try to stay inside the designated region of memory as long as possible. */
     result = mman_findspace_unlocked(&mman_kernel,(ppage_t)(flags&GFP_LOCKED ? HOST_HEAPEND_SHARED_LOCKED
                                                                              : HOST_HEAPEND_SHARED),
-                                     n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+                                     n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
     if unlikely(!PAGE_ISOK(result)) {
 #if HOST_HEAPEND_SHARED_LOCKED < HOST_HEAPEND_SHARED
      if (!(flags&GFP_LOCKED))
-           result = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_HEAPEND_SHARED_LOCKED,
-                                             n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+           result = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_HEAPEND_SHARED_LOCKED,n_bytes,
+                                             PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
 #elif HOST_HEAPEND_SHARED < HOST_HEAPEND_SHARED_LOCKED
      if (flags&GFP_LOCKED)
-         result = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_HEAPEND_SHARED,
-                                           n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+         result = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_HEAPEND_SHARED,n_bytes,
+                                           PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
 #endif
      /* re-scan the entire shared address space as a last resort. */
      if unlikely(!PAGE_ISOK(result))
-        result = mman_findspace_unlocked(&mman_kernel,(ppage_t)SHARED_VIRT_BEGIN,
-                                         n_bytes,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
+        result = mman_findspace_unlocked(&mman_kernel,(ppage_t)SHARED_VIRT_BEGIN,n_bytes,
+                                          PAGESIZE,0,MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_PRIVATE);
     }
 #if defined(CONFIG_NO_PDIR_SELFMAP) || (__ERRNO_THRESHOLD < THIS_PDIR_BASE)
     if unlikely(result == PAGE_ERROR ||
@@ -1035,9 +1050,9 @@ core_page_allocat(PAGE_ALIGNED void *start,
   assert(IS_ALIGNED(n_bytes,PAGESIZE));
   if unlikely((uintptr_t)start+n_bytes < (uintptr_t)start) return PAGE_ERROR;
   if (flags&GFP_KERNEL) {
-   if unlikely((uintptr_t)start+n_bytes > KERNEL_VIRT_END) return PAGE_ERROR;
+   if unlikely(!addr_ishost_r(start,n_bytes)) return PAGE_ERROR;
   } else {
-   if unlikely((uintptr_t)start < SHARED_VIRT_BEGIN) return PAGE_ERROR;
+   if unlikely(!addr_isuser_r(start,n_bytes)) return PAGE_ERROR;
   }
   task_nointr();
   if (!(flags&GFP_KERNEL)) TASK_PDIR_KERNEL_BEGIN(old_mman);
@@ -1079,8 +1094,8 @@ core_page_free(PAGE_ALIGNED void *ptr,
  } else {
   PHYS struct mman *old_mman;
   assert((flags&GFP_KERNEL)
-         ? ((uintptr_t)ptr+CEIL_ALIGN(n_bytes,PAGESIZE) <= KERNEL_VIRT_END)
-         : ((uintptr_t)ptr >= SHARED_VIRT_BEGIN));
+         ? addr_isuser_r(ptr,CEIL_ALIGN(n_bytes,PAGESIZE))
+         : addr_ishost_r(ptr,CEIL_ALIGN(n_bytes,PAGESIZE)));
   task_nointr();
   if (!(flags&GFP_KERNEL)) TASK_PDIR_KERNEL_BEGIN(old_mman);
   mman_write(&mman_kernel);

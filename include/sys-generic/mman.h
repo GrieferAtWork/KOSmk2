@@ -74,7 +74,7 @@ typedef __mode_t mode_t;
 #ifdef __KERNEL__
 #ifndef PROT_NOUSER
 #define PROT_NOUSER   0x40 /*< Map memory as inaccessible to user-space.
-                            *  WARNING: Not fully enforced for addresses below `USER_END'. */
+                            *  WARNING: Not fully enforced for addresses within user-memory. */
 #endif /* !PROT_NOUSER */
 #ifndef PROT_CLEAN
 #define PROT_CLEAN    0x80 /*< Unset whenever user-space re-maps a page as writable. - Cannot be removed.

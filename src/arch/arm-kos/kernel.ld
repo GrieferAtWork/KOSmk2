@@ -78,11 +78,12 @@ PHDRS {
 ENTRY(_start)
 SECTIONS {
 
-	. = CORE_BASE + 0x00010000;
+	. = 0;
 	DEFINE(__kernel_start = .);
 
 	/* Kernel core section. */
 	DEFAULT_SECTION(.kernel) {
+		ASSERT(. == 0,"The interrupt vector must be loaded to 0x0");
 		*(.text.entry)
 		*(.text.hot)
 		*(.text)
@@ -105,7 +106,7 @@ SECTIONS {
 	} P_KERNEL
 
 	/* Physical-mirror section. */
-	. -= CORE_BASE;
+	. -= VM_CORE_BASE;
 	.phys BLOCK(PAGESIZE) : AT(ADDR(.phys)){
 		DEFINE_HERE(__kernel_phys_start);
 		*(.text.phys)
@@ -116,14 +117,13 @@ SECTIONS {
 		. = ALIGN(PAGESIZE);
 		DEFINE_HERE(__kernel_phys_end);
 	} P_PHYS
-	. += CORE_BASE;
+	. += VM_CORE_BASE;
 
 	/* Per-cpu template data. */
 	. = ALIGN(__SIZEOF_POINTER__);
 	DEFINE_HERE(__percpu_template);
-	DEFINE(__percpu_begin = ALIGNED_CPUSIZE); /* Base offset added to any per-cpu symbol. */
-	.cpu __percpu_begin : AT(__percpu_template - CORE_BASE) {
-		/* TODO: This stuff should be part of `.free' (Because the per-cpu template can be deleted later) */
+	DEFINE_HERE(__percpu_begin);
+	.cpu BLOCK(1) : AT(ADDR(.cpu)) {
 		*(.text.cpu)
 		*(.rodata.cpu)
 		*(.rodata.str.cpu)

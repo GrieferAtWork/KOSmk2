@@ -24,6 +24,7 @@
 #include <kernel/memory.h>
 #include <kernel/export.h>
 #include <arch/paging.h>
+#include <kernel/paging.h>
 
 DECL_BEGIN
 
@@ -34,9 +35,9 @@ DECL_BEGIN
      /* VGA display buffer (Not defined by BIOS functions) */ \
    { .mi_type = MEMTYPE_DEVICE, .mi_addr = (void *)0x000A0000, }, \
    { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)0x000C0000, }, \
-   { .mi_type = MEMTYPE_KERNEL, .mi_addr = (void *)(KERNEL_START - CORE_BASE), }, \
-   { .mi_type = MEMTYPE_KFREE,  .mi_addr = (void *)(KERNEL_FREE_START - CORE_BASE), }, \
-   { .mi_type = MEMTYPE_NDEF,   .mi_addr = (void *)(KERNEL_FREE_END - CORE_BASE), },
+   { .mi_type = MEMTYPE_KERNEL, .mi_addr = virt_to_phys(KERNEL_START), }, \
+   { .mi_type = MEMTYPE_KFREE,  .mi_addr = virt_to_phys(KERNEL_FREE_START), }, \
+   { .mi_type = MEMTYPE_NDEF,   .mi_addr = virt_to_phys(KERNEL_FREE_END), },
 
 DECL_END
 

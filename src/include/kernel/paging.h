@@ -28,6 +28,7 @@
 #include <hybrid/types.h>
 #include <kernel/memory.h>
 #include <format-printer.h>
+#include <arch/hints.h>
 #endif /* __CC__ */
 
 #ifndef PDIR_OFFSETOF_DIRECTORY
@@ -36,25 +37,64 @@
 
 DECL_BEGIN
 
-#ifdef __CC__
-#define phys_to_virt(ptr)  ((VIRT void *)((uintptr_t)(ptr)+CORE_BASE))
-#define virt_to_phys(ptr)  ((PHYS void *)((uintptr_t)(ptr)-CORE_BASE))
-#define addr_isphys(ptr)   ((uintptr_t)(ptr) <  CORE_BASE)
-#define addr_isvirt(ptr)   ((uintptr_t)(ptr) >= CORE_BASE)
-#define addr_isglob(ptr)   ((uintptr_t)(ptr) >= KERNEL_BASE)
-#define addr_ispriv(ptr)   ((uintptr_t)(ptr) <  KERNEL_BASE)
+#if defined(CONFIG_HIGH_KERNEL) && defined(CONFIG_LOW_KERNEL)
+#   define phys_to_virt(ptr)       (__CCAST(VIRT void *)(__CCAST(uintptr_t)(ptr)+VM_CORE_BASE))
+#   define virt_to_phys(ptr)       (__CCAST(PHYS void *)(__CCAST(uintptr_t)(ptr)-VM_CORE_BASE))
+#   define phys_to_virt_a(ptr)     ((ptr)+VM_CORE_BASE_A)
+#   define virt_to_phys_a(ptr)     ((ptr)-VM_CORE_BASE_A)
+#   define addr_isglob(ptr)        (__CCAST(uintptr_t)(ptr) >= VM_HOST_BASE && __CCAST(uintptr_t)(ptr) <= VM_HOST_MAX)
+#   define addr_isglob_r(ptr,size) (__CCAST(uintptr_t)(ptr) >= VM_HOST_BASE && __CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_HOST_MAX+1)
+#   define addr_ispriv(ptr)        (__CCAST(uintptr_t)(ptr) <  VM_HOST_BASE || __CCAST(uintptr_t)(ptr) > VM_HOST_MAX)
+#   define addr_ispriv_r(ptr,size) (__CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_HOST_BASE || __CCAST(uintptr_t)(ptr) > VM_HOST_MAX)
+#   define addr_isuser(ptr)        (__CCAST(uintptr_t)(ptr) <  VM_CORE_BASE || __CCAST(uintptr_t)(ptr) > VM_CORE_MAX)
+#   define addr_isuser_r(ptr,size) (__CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_CORE_BASE || __CCAST(uintptr_t)(ptr) > VM_CORE_MAX)
+#   define addr_ishost(ptr)        (__CCAST(uintptr_t)(ptr) >= VM_HOST_BASE && __CCAST(uintptr_t)(ptr) <= VM_HOST_MAX)
+#   define addr_ishost_r(ptr,size) (__CCAST(uintptr_t)(ptr) >= VM_HOST_BASE && __CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_HOST_MAX+1)
+#   define addr_iscore(ptr)        (__CCAST(uintptr_t)(ptr) >= VM_CORE_BASE && __CCAST(uintptr_t)(ptr) <= VM_CORE_MAX)
+#   define addr_iscore_r(ptr,size) (__CCAST(uintptr_t)(ptr) >= VM_CORE_BASE && __CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_CORE_MAX+1)
+#elif defined(CONFIG_HIGH_KERNEL)
+#   define phys_to_virt(ptr)       (__CCAST(VIRT void *)(__CCAST(uintptr_t)(ptr)+VM_CORE_BASE))
+#   define virt_to_phys(ptr)       (__CCAST(PHYS void *)(__CCAST(uintptr_t)(ptr)-VM_CORE_BASE))
+#   define phys_to_virt_a(ptr)     ((ptr)+VM_CORE_BASE_A)
+#   define virt_to_phys_a(ptr)     ((ptr)-VM_CORE_BASE_A)
+#   define addr_isglob(ptr)        (__CCAST(uintptr_t)(ptr) >= VM_HOST_BASE)
+#   define addr_isglob_r(ptr,size) (__CCAST(uintptr_t)(ptr) >= VM_HOST_BASE)
+#   define addr_ispriv(ptr)        (__CCAST(uintptr_t)(ptr) <  VM_HOST_BASE)
+#   define addr_ispriv_r(ptr,size) (__CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_HOST_BASE)
+#   define addr_isuser(ptr)        (__CCAST(uintptr_t)(ptr) <= VM_USER_MAX)
+#   define addr_isuser_r(ptr,size) (__CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_USER_MAX+1)
+#   define addr_ishost(ptr)        (__CCAST(uintptr_t)(ptr) >= VM_HOST_BASE)
+#   define addr_ishost_r(ptr,size) (__CCAST(uintptr_t)(ptr) >= VM_HOST_BASE)
+#   define addr_iscore(ptr)        (__CCAST(uintptr_t)(ptr) >= VM_CORE_BASE)
+#   define addr_iscore_r(ptr,size) (__CCAST(uintptr_t)(ptr) >= VM_CORE_BASE)
+#elif defined(CONFIG_LOW_KERNEL)
+#if VM_CORE_BASE != 0
+#   define phys_to_virt(ptr)       (__CCAST(VIRT void *)(__CCAST(uintptr_t)(ptr)+VM_CORE_BASE))
+#   define virt_to_phys(ptr)       (__CCAST(PHYS void *)(__CCAST(uintptr_t)(ptr)-VM_CORE_BASE))
+#   define phys_to_virt_a(ptr)     ((ptr)+VM_CORE_BASE_A)
+#   define virt_to_phys_a(ptr)     ((ptr)-VM_CORE_BASE_A)
 #else
-#define phys_to_virt(ptr)  ((ptr)+CORE_BASE)
-#define virt_to_phys(ptr)  ((ptr)-CORE_BASE)
-#define addr_isphys(ptr)   ((ptr) <  CORE_BASE)
-#define addr_isvirt(ptr)   ((ptr) >= CORE_BASE)
-#define addr_isglob(ptr)   ((ptr) >= KERNEL_BASE)
-#define addr_ispriv(ptr)   ((ptr) <  KERNEL_BASE)
+#   define phys_to_virt(ptr)       (__CCAST(VIRT void *)(ptr))
+#   define virt_to_phys(ptr)       (__CCAST(PHYS void *)(ptr))
+#   define phys_to_virt_a(ptr)                          (ptr)
+#   define virt_to_phys_a(ptr)                          (ptr)
 #endif
+#   define addr_isglob(ptr)        (__CCAST(uintptr_t)(ptr) <= VM_HOST_MAX)
+#   define addr_isglob_r(ptr,size) (__CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_HOST_MAX+1)
+#   define addr_ispriv(ptr)        (__CCAST(uintptr_t)(ptr) >  VM_HOST_MAX)
+#   define addr_ispriv_r(ptr,size) (__CCAST(uintptr_t)(ptr) >  VM_HOST_MAX)
+#   define addr_isuser(ptr)        (__CCAST(uintptr_t)(ptr) >= VM_USER_BASE)
+#   define addr_isuser_r(ptr,size) (__CCAST(uintptr_t)(ptr) >= VM_USER_BASE)
+#   define addr_ishost(ptr)        (__CCAST(uintptr_t)(ptr) <= VM_HOST_MAX)
+#   define addr_ishost_r(ptr,size) (__CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_HOST_MAX+1)
+#   define addr_iscore(ptr)        (__CCAST(uintptr_t)(ptr) <= VM_CORE_MAX)
+#   define addr_iscore_r(ptr,size) (__CCAST(uintptr_t)(ptr)+__CCAST(uintptr_t)(size) <= VM_CORE_MAX+1)
+#endif
+
 
 #ifdef __CC__
 /* The global kernel page directory.
- * NOTE: All data above `KERNEL_BASE' is mirrored in all user-space directories. */
+ * NOTE: All data above `VM_HOST_BASE' is mirrored in all user-space directories. */
 DATDEF PHYS pdir_t pdir_kernel;
 DATDEF VIRT pdir_t pdir_kernel_v;
 

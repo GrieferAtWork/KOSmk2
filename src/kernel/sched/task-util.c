@@ -142,21 +142,9 @@ again_findspace:
   if (E_ISERR(error)) return error;
  }
  tlb_address = mman_findspace_unlocked(mm,(ppage_t)(USER_TASK_TLB_ADDRHINT-tlb_size),
-                                       tlb_size,MAX(PAGESIZE,USER_STCK_ALIGN),
-                                       USER_STCK_ADDRGAP,MMAN_FINDSPACE_BELOW);
- if (tlb_address != PAGE_ERROR &&
-    (uintptr_t)tlb_address+tlb_size < USER_END) goto got_space;
- /* Try without a gap. */
- tlb_address = mman_findspace_unlocked(mm,(ppage_t)(USER_TASK_TLB_ADDRHINT-tlb_size),
-                                       tlb_size,MAX(PAGESIZE,USER_STCK_ALIGN),
-                                       0,MMAN_FINDSPACE_BELOW);
- if (tlb_address != PAGE_ERROR &&
-    (uintptr_t)tlb_address+tlb_size < USER_END) goto got_space;
- tlb_address = mman_findspace_unlocked(mm,(ppage_t)0,tlb_size,
-                                       MAX(PAGESIZE,USER_STCK_ALIGN),
-                                       0,MMAN_FINDSPACE_ABOVE);
- if (tlb_address != PAGE_ERROR &&
-    (uintptr_t)tlb_address+tlb_size < USER_END) goto got_space;
+                                       tlb_size,MAX(PAGESIZE,USER_STCK_ALIGN),USER_STCK_ADDRGAP,
+                                       MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
+ if (tlb_address != PAGE_ERROR) goto got_space;
  /* Failed to find sufficient space. */
  if (!caller_locked) mman_endread(mm);
  error = -ENOMEM;
@@ -252,7 +240,7 @@ PUBLIC void KCALL
 task_filltlb(struct task *__restrict self) {
  USER struct tlb *info = self->t_tlb;
  /* Fill in TLB information. */
- assert((uintptr_t)info+CEIL_ALIGN(sizeof(struct tlb),PAGESIZE) <= USER_END);
+ assert(addr_isuser_r(info,CEIL_ALIGN(sizeof(struct tlb),PAGESIZE)));
  assert(THIS_TASK->t_mman == self->t_mman);
  info->tl_self        = info;
  info->tl_env         = self->t_mman->m_environ;
@@ -323,16 +311,9 @@ reload_spc:
  /* Search for suitable stack. */
  stack_addr = mman_findspace_unlocked(&mman_kernel,
                                      (ppage_t)(HOST_STCK_ADDRHINT-n_bytes),n_bytes,
-                                      MAX(HOST_STCK_ALIGN,PAGESIZE),0,
-                                      MMAN_FINDSPACE_BELOW);
- if unlikely(stack_addr == PAGE_ERROR) {
-  /* Search above the previous search range. (This could get bad...) */
-  stack_addr = mman_findspace_unlocked(&mman_kernel,
-                                      (ppage_t)HOST_STCK_ADDRHINT,n_bytes,
-                                       MAX(HOST_STCK_ALIGN,PAGESIZE),0,
-                                       MMAN_FINDSPACE_ABOVE);
-  if unlikely(stack_addr == PAGE_ERROR) goto nospc;
- }
+                                      MAX(HOST_STCK_ALIGN,PAGESIZE),0,MMAN_FINDSPACE_BELOW|
+                                      MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
+ if unlikely(stack_addr == PAGE_ERROR) goto nospc;
  if (!has_write_lock) {
   error = mman_upgrade(&mman_kernel);
   has_write_lock = true;
@@ -375,20 +356,9 @@ task_mkustack(struct task *__restrict self,
 again_findspace:
  error = mman_read(mm);
  ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(USER_STCK_ADDRHINT-n_bytes),
-                                           n_bytes+guard_size,MAX(PAGESIZE,USER_STCK_ALIGN),
-                                           gap_size,MMAN_FINDSPACE_BELOW);
- if (ustack->s_begin != PAGE_ERROR &&
-    (uintptr_t)ustack->s_begin+n_bytes < USER_END) goto got_space;
- ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(USER_STCK_ADDRHINT-n_bytes),
-                                           n_bytes+guard_size,MAX(PAGESIZE,USER_STCK_ALIGN),0,
-                                           MMAN_FINDSPACE_BELOW);
- if (ustack->s_begin != PAGE_ERROR &&
-    (uintptr_t)ustack->s_begin+n_bytes < USER_END) goto got_space;
- ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)0,n_bytes+guard_size,
-                                           MAX(PAGESIZE,USER_STCK_ALIGN),
-                                           0,MMAN_FINDSPACE_ABOVE);
- if (ustack->s_begin != PAGE_ERROR &&
-    (uintptr_t)ustack->s_begin+n_bytes < USER_END) goto got_space;
+                                           n_bytes+guard_size,MAX(PAGESIZE,USER_STCK_ALIGN),gap_size,
+                                           MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
+ if (ustack->s_begin != PAGE_ERROR) goto got_space;
  /* Failed to find sufficient space. */
  mman_endread(mm);
  error = -ENOMEM;

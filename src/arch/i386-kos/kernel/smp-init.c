@@ -117,7 +117,7 @@ PRIVATE ATTR_FREETEXT bool KCALL smp_init_default(u8 cfg) {
  u32 boot_apic_id;
  syslog(LOG_SCHED|LOG_INFO,FREESTR("[SMP] Using default configuration %#.2I8x\n"),cfg);
  __apic_base_p_rw = APIC_DEFAULT_PHYS_BASE;
-#if APIC_DEFAULT_PHYS_BASE >= KERNEL_BASE
+#if APIC_DEFAULT_PHYS_BASE >= VM_HOST_BASE
 #define PHYS_PAGE  FLOOR_ALIGN(APIC_DEFAULT_PHYS_BASE+APIC_ID,PAGESIZE)
 #define VIRT_PAGE  (0-PAGESIZE)
 #define VIRT_ID    (VIRT_PAGE+((APIC_DEFAULT_PHYS_BASE+APIC_ID)&(PAGESIZE-1)))
@@ -231,7 +231,7 @@ nocfg:
   syslog(LOG_SCHED|LOG_INFO,
          FREESTR("[SMP] Using configuration table at %p\n"),
          mp->mp_cfgtab);
-  if (mp->mp_cfgtab >= KERNEL_BASE) {
+  if (mp->mp_cfgtab >= VM_HOST_BASE) {
    errno_t error;
    size_t max_bytes = 0-mp->mp_cfgtab;
    if (max_bytes > 0x10000000) max_bytes = 0x10000000;
@@ -356,7 +356,9 @@ INTERN ATTR_FREETEXT void KCALL smp_initialize_repage(void) {
   /* Find a suitable location for mapping. */
   smp_hint = mman_findspace_unlocked(&mman_kernel,(ppage_t)smp_hint,
                                      PERCPU_DATASIZE,PAGESIZE,0,
-                                     MMAN_FINDSPACE_ABOVE);
+                                     MMAN_FINDSPACE_ABOVE|
+                                     MMAN_FINDSPACE_TRYHARD|
+                                     MMAN_FINDSPACE_PRIVATE);
   if unlikely(smp_hint == PAGE_ERROR) { kfree(branch); goto err_region; }
   vcpu = (VIRT struct cpu *)(uintptr_t)smp_hint;
 
@@ -468,14 +470,9 @@ done_cpu:
    lapic_region = mregion_new_phys(MMAN_DATAGFP(&mman_kernel),
                                    lapic_ppage,lapic_size);
    if (E_ISERR(lapic_region)) { error = E_GTERR(lapic_region); goto err;}
-   lapic_vpage = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_MEMORY_ADDRHINT,
-                                         lapic_size,PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
-   if unlikely(lapic_vpage == PAGE_ERROR)
-      lapic_vpage = mman_findspace_unlocked(&mman_kernel,(ppage_t)(0-lapic_size),
-                                            lapic_size,PAGESIZE,0,MMAN_FINDSPACE_BELOW);
-   if unlikely(lapic_vpage == PAGE_ERROR ||
-              (uintptr_t)lapic_vpage < KERNEL_BASE)
-               error = -ENOMEM;
+   lapic_vpage = mman_findspace_unlocked(&mman_kernel,(ppage_t)HOST_MEMORY_ADDRHINT,lapic_size,PAGESIZE,0,
+                                         MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
+   if unlikely(lapic_vpage == PAGE_ERROR) error = -ENOMEM;
    else error = mman_mmap_unlocked(&mman_kernel,lapic_vpage,lapic_size,0,
                                    lapic_region,PROT_READ|PROT_WRITE|PROT_NOUSER,
                                    NULL,NULL);
@@ -502,8 +499,8 @@ done_cpu:
    VIRT ppage_t jmp_vpage;
    jmp_region = mregion_new_phys(MMAN_DATAGFP(&mman_kernel),(ppage_t)0,PAGESIZE);
    if (E_ISERR(jmp_region)) { error = E_GTERR(jmp_region); goto err; }
-   jmp_vpage = mman_findspace_unlocked(&mman_kernel,(ppage_t)(0-PAGESIZE),
-                                       PAGESIZE,PAGESIZE,0,MMAN_FINDSPACE_BELOW);
+   jmp_vpage = mman_findspace_unlocked(&mman_kernel,(ppage_t)(0-PAGESIZE),PAGESIZE,PAGESIZE,0,
+                                       MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
    if unlikely(jmp_vpage == PAGE_ERROR) error = -ENOMEM;
    else error = mman_mmap_unlocked(&mman_kernel,jmp_vpage,PAGESIZE,0,
                                    jmp_region,PROT_READ|PROT_WRITE|PROT_NOUSER,

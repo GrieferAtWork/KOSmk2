@@ -295,12 +295,10 @@ bd_set_bios_page_size(PAGE_ALIGNED size_t n_bytes) {
  { struct mregion *region = NULL;
    /* Map the bios page region into virtual, shared kernel memory. */
    bios_page_v = (ppage_t)mman_findspace_unlocked(&mman_kernel,
-                                                 (ppage_t)HOST_MEMORY_ADDRHINT,n_bytes,
-                                                  PAGESIZE,0,MMAN_FINDSPACE_ABOVE);
-   if (bios_page_v == PAGE_ERROR)
-       bios_page_v = (ppage_t)mman_findspace_unlocked(&mman_kernel,(ppage_t)(0-n_bytes),n_bytes,
-                                                      PAGESIZE,0,MMAN_FINDSPACE_BELOW);
-   if (bios_page_v == PAGE_ERROR || bios_page_v < (ppage_t)KERNEL_BASE ||
+                                                 (ppage_t)HOST_MEMORY_ADDRHINT,n_bytes,PAGESIZE,0,
+                                                  MMAN_FINDSPACE_ABOVE|MMAN_FINDSPACE_TRYHARD|
+                                                  MMAN_FINDSPACE_PRIVATE);
+   if (bios_page_v == PAGE_ERROR ||
       (region = _mall_untrack(mregion_new_phys(MMAN_DATAGFP(&mman_kernel),new_page,n_bytes))) == NULL ||
        E_ISERR(mman_mmap_unlocked(&mman_kernel,bios_page_v,n_bytes,0,region,
                                    PROT_READ|PROT_WRITE|PROT_NOUSER,NULL,new_page))) {

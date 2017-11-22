@@ -35,12 +35,15 @@
 
 DECL_BEGIN
 
-#define UART0_BASE 0x1c090000
+#define SERIAL_BASE 0x16000000
+#define SERIAL_FLAG_REGISTER 0x18
+#define SERIAL_BUFFER_FULL (1 << 5)
 
 PUBLIC vtty_char_t tty_color;
 PUBLIC void KCALL tty_putc(char c) {
- volatile unsigned int *uart0 = (volatile unsigned int *)UART0_BASE;
- *uart0 = c;
+ while (*(volatile unsigned long*)(SERIAL_BASE + SERIAL_FLAG_REGISTER)
+        & (SERIAL_BUFFER_FULL));
+ *(volatile unsigned long*)SERIAL_BASE = c;
 }
 
 PUBLIC void KCALL

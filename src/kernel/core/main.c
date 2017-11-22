@@ -129,8 +129,8 @@ alloc_user_stack(struct task *thread, struct mman *mm, size_t n_bytes) {
  ustack = omalloc(struct stack);
  assert(ustack);
  mman_write(mm);
- ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(USER_STCK_ADDRHINT-n_bytes),
-                                           n_bytes,8,0,MMAN_FINDSPACE_BELOW);
+ ustack->s_begin = mman_findspace_unlocked(mm,(ppage_t)(USER_STCK_ADDRHINT-n_bytes),n_bytes,8,0,
+                                           MMAN_FINDSPACE_BELOW|MMAN_FINDSPACE_TRYHARD|MMAN_FINDSPACE_PRIVATE);
  assert(ustack->s_begin != PAGE_ERROR);
  thread->t_ustack      = ustack; /* Inherit reference. */
  ustack->s_refcnt      = 1;

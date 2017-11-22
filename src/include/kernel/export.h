@@ -51,7 +51,7 @@ INTDEF byte_t (PAGE_ALIGNED __kernel_free_size)[]; /* __kernel_free_end - __kern
 INTDEF byte_t (PAGE_ALIGNED __kernel_after_end)[]; /* KERNEL_GLOBAL_END - __kernel_end */
 
 /* Helper macros for kernel layout information.
- * NOTE: All addresses are virtual (>= KERNEL_BASE) */
+ * NOTE: All addresses are virtual. */
 #define KERNEL_START      (PAGE_ALIGNED VIRT uintptr_t)__kernel_start
 #define KERNEL_END        (PAGE_ALIGNED VIRT uintptr_t)__kernel_end
 #define KERNEL_RO_START   (PAGE_ALIGNED VIRT uintptr_t)__kernel_start

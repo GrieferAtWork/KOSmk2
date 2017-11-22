@@ -63,7 +63,7 @@ __NAMESPACE_INT_END
 #   define __yes_asserte_d(sexpr,expr,...)  (void)(__ASSERT_LIKELY(expr) || (__NAMESPACE_INT_SYM __afail(sexpr,__VA_ARGS__),0))
 #   define __yes_assertef_d(sexpr,expr,...) (void)(__ASSERT_LIKELY(expr) || (__NAMESPACE_INT_SYM __afailf(sexpr,__VA_ARGS__),0))
 #elif defined(__CRT_GLC) && !defined(__DOS_COMPAT__)
-__LIBC __ATTR_NORETURN __ATTR_COLD (__LIBCCALL __assert_fail)(const char *__assertion, const char *__file, unsigned int __line, const char *__function);
+__LIBC __ATTR_NORETURN __ATTR_COLD void (__LIBCCALL __assert_fail)(const char *__assertion, const char *__file, unsigned int __line, const char *__function);
 #   define __yes_assert(sexpr,expr)         (void)(__ASSERT_LIKELY(expr) || (__assert_fail(sexpr,__FILE__,__LINE__,__FUNCTION__),0))
 #   define __yes_asserte(sexpr,expr)        (void)(__ASSERT_LIKELY(expr) || (__assert_fail(sexpr,__FILE__,__LINE__,__FUNCTION__),0))
 #   define __yes_assertf(sexpr,expr,...)    (void)(__ASSERT_LIKELY(expr) || (__assert_fail(sexpr,__FILE__,__LINE__,__FUNCTION__),0))

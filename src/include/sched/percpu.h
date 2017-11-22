@@ -137,9 +137,15 @@ DATDEF struct cpu __bootcpu;
 /* >> T &CPU(T &x);
  *    Translate a given l-value expression `x' for direct access of per-cpu data.
  *   (Essentially, this simply adds the base-address of the per-cpu segment to `&x') */
+#ifndef CPU
 #define CPU(x)          (*(__typeof__(&(x)))THISCPU_ADDR(CPU_OFFSETOF(x)))
+#endif
+#ifndef CPU_TEMPLATE
 #define CPU_TEMPLATE(x) (*(__typeof__(&(x)))CPUTMPL_ADDR(CPU_OFFSETOF(x)))
+#endif
+#ifndef VCPU
 #define VCPU(cpu,x)     (*(__typeof__(&(x)))THATCPU_ADDR(cpu,CPU_OFFSETOF(x)))
+#endif
 
 #ifdef __INTELLISENSE__
 /* Smaller code; same semantics... */

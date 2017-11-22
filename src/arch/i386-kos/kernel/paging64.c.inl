@@ -43,6 +43,10 @@
 
 DECL_BEGIN
 
+/* The end of the physical identity-mapping in the kernel page directory. */
+#define PHYS_END __UINT64_C(0x0000800000000000)
+STATIC_ASSERT(VM_USER_MAX+1 == PHYS_END);
+
 #define PDIR_ISKERNEL(self) ((self) == &pdir_kernel || (self) == &pdir_kernel_v)
 
 typedef union pdir_e1 e1_t;
@@ -95,8 +99,8 @@ INTERN ATTR_BSS ATTR_ALIGNED(PAGESIZE) e3_t coreboot_e2_c0000000[PDIR_E2_COUNT];
 INTERN ATTR_BSS ATTR_ALIGNED(PAGESIZE) e4_t coreboot_e3[PDIR_E3_COUNT]
 #if 0
 = {
-    [PDIR_E3_COUNT-2] = { ((uintptr_t)coreboot_e2_80000000 - CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
-    [PDIR_E3_COUNT-1] = { ((uintptr_t)coreboot_e2_c0000000 - CORE_BASE)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+    [PDIR_E3_COUNT-2] = { (uintptr_t)virt_to_phys(coreboot_e2_80000000)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
+    [PDIR_E3_COUNT-1] = { (uintptr_t)virt_to_phys(coreboot_e2_c0000000)+(PDIR_ATTR_GLOBAL|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT) },
 }
 #endif
 ;
@@ -138,7 +142,7 @@ kernel_do_map_identity(PHYS void *addr, size_t n_bytes, bool early) {
   if (!PDIR_E4_ISLINK(ent->e4)) {
    uintptr_t page = (uintptr_t)memsetq(do_page_malloc(early),
                                        PDIR_LINK_MASK,PAGESIZE/8);
-   if (addr_isvirt(page)) page = (uintptr_t)virt_to_phys(page);
+   if (page >= VM_CORE_BASE) page = (uintptr_t)virt_to_phys(page);
    pdir_writeq(&ent->e4.e4_data,PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|page);
   }
   ent = (union pdir_e *)&PDIR_E4_RDLINK(ent->e4)[PDIR_E3_INDEX(addr)];
@@ -152,7 +156,7 @@ kernel_do_map_identity(PHYS void *addr, size_t n_bytes, bool early) {
    base = ((uintptr_t)addr & PDIR_E3_MASK) | (PDIR_ATTR_2MIB|PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT);
    for (i = 0; i < PDIR_E2_COUNT; ++i)
         e2[i].e2_data = (base+i*PDIR_E2_SIZE);
-   if (addr_isvirt(e2)) e2 = (union pdir_e2 *)virt_to_phys(e2);
+   if ((uintptr_t)e2 >= VM_CORE_BASE) e2 = (union pdir_e2 *)virt_to_phys(e2);
    pdir_writeq(&ent->e3.e3_data,PDIR_ATTR_WRITE|PDIR_ATTR_PRESENT|(uintptr_t)e2);
   }
   if (n_bytes <= PDIR_E3_SIZE) break;
@@ -527,7 +531,7 @@ pdir_mergeat(pdir_t *__restrict self, uintptr_t addr) {
 
  /* Check if the level #3 vector can be deleted. */
  assert(PDIR_E4_ISALLOC(*e4));
- /* Don't delete level #3 vectors above `KERNEL_BASE' (They must always remain) */
+ /* Don't delete level #3 vectors above `VM_HOST_BASE' (They must always remain) */
  if (PDIR_E4_INDEX(addr) >= PDIR_E4_SHARESTART) return;
  e3 = PDIR_E4_RDLINK(*e4);
  tag = e3[0].e3_attr;
@@ -867,7 +871,7 @@ pdir_munmap(pdir_t *__restrict self, VIRT ppage_t start,
    if (unmap_rel_begin == 0 && unmap_rel_end == PDIR_E4_SIZE) {
     /* Delete this entire entry. */
     e3_t *deltab = PDIR_E4_RDLINK(*e4);
-    /* Make sure not to deallocate tables above `KERNEL_BASE' */
+    /* Make sure not to deallocate tables above `VM_HOST_BASE' */
     if (e4_index >= PDIR_E4_SHARESTART) {
      e3_t *iter,*end;
      end = (iter = deltab)+PDIR_E3_COUNT;
@@ -1236,7 +1240,7 @@ mscatter_memsetq(struct mscatter *__restrict scatter, u64 filler_qword) {
         pdir_kernel_transform_tables()
 PRIVATE void KCALL pdir_kernel_transform_tables(void) {
  /* Make sure that all entries of the kernel page directory
-  * above `KERNEL_BASE' are pre-allocated, thus allowing those
+  * above `VM_HOST_BASE' are pre-allocated, thus allowing those
   * entires to remain forever and be weakly aliases by every
   * existing page directory, essentially allowing for what
   * is often referred to as the kernel-share segment.
@@ -1252,7 +1256,7 @@ PRIVATE void KCALL pdir_kernel_transform_tables(void) {
   *       how much memory we'll need to fully initialize the required area.
   * HINT: The address range initialized for sharing here is:
   *       FFFF800000000000...FFFFFFFF7FFFFFFF
-  *       KERNEL_BASE     ...CORE_BASE-1
+  *       VM_HOST_BASE    ...VM_CORE_BASE-1
   */
  struct mscatter scatter;
  union pdir_e4 *iter,*end;

@@ -29,7 +29,7 @@
 #include <arch/hints.h>
 
 #define DEFAULT_SECTION(name) \
-  name BLOCK(PAGESIZE) : AT(ADDR(name) - CORE_BASE)
+  name BLOCK(PAGESIZE) : AT(ADDR(name) - VM_CORE_BASE)
 #define PHYSICAL_SECTION(name) \
   name BLOCK(PAGESIZE) : AT(ADDR(name))
 
@@ -80,7 +80,7 @@ PHDRS {
 ENTRY(_start)
 SECTIONS {
 
-	. = CORE_BASE + 1M;
+	. = VM_CORE_BASE + 1M;
 	DEFINE(__kernel_start = .);
 
 #ifndef CONFIG_NO_BOOTLOADER
@@ -88,7 +88,7 @@ SECTIONS {
 #define XBOOT_ALIGNMENT   XBOOT_BLOCKSIZE
 	. = ALIGN(XBOOT_ALIGNMENT);
 	DEFINE_HERE(__bootloader_start);
-	.boot 0x7c00 : AT(__bootloader_start - CORE_BASE) {
+	.boot 0x7c00 : AT(__bootloader_start - VM_CORE_BASE) {
 		KEEP(*(.boot_loader))
 		ASSERT(ABSOLUTE(.) <= (0x7c00 + XBOOT_BLOCKSIZE), \
 		       "The boot loader is larger than a single sector");
@@ -166,7 +166,7 @@ SECTIONS {
 	} P_KERNEL
 
 	/* Physical-mirror section. */
-	. -= CORE_BASE;
+	. -= VM_CORE_BASE;
 	.phys BLOCK(PAGESIZE) : AT(ADDR(.phys)){
 		DEFINE_HERE(__kernel_phys_start);
 		*(.text.phys)
@@ -177,13 +177,13 @@ SECTIONS {
 		. = ALIGN(PAGESIZE);
 		DEFINE_HERE(__kernel_phys_end);
 	} P_PHYS
-	. += CORE_BASE;
+	. += VM_CORE_BASE;
 
 	/* Per-cpu template data. */
 	. = ALIGN(__SIZEOF_POINTER__);
 	DEFINE_HERE(__percpu_template);
 	DEFINE(__percpu_begin = ALIGNED_CPUSIZE); /* Base offset added to any per-cpu symbol. */
-	.cpu __percpu_begin : AT(__percpu_template - CORE_BASE) {
+	.cpu __percpu_begin : AT(__percpu_template - VM_CORE_BASE) {
 		/* TODO: This stuff should be part of `.free' (Because the per-cpu template can be deleted later) */
 		*(.text.cpu)
 		*(.rodata.cpu)
