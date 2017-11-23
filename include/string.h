@@ -377,10 +377,13 @@ __LOCAL __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerror_s)(int __errnum)
 }
 #elif !defined(__CRT_KOS) && defined(__DOS_COMPAT__)
 /* DOS/MSVcrt compatibility (NOTE: Doesn't work in KOS) */
+#ifndef __int___sys_errlist_defined
+#define __int___sys_errlist_defined 1
 __NAMESPACE_INT_BEGIN
 __LIBC __WUNUSED __ATTR_CONST char **(__LIBCCALL __sys_errlist)(void);
 __LIBC __WUNUSED __ATTR_CONST int *(__LIBCCALL __sys_nerr)(void);
 __NAMESPACE_INT_END
+#endif /* !__int___sys_errlist_defined */
 __LOCAL __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerror_s)(int __errnum) {
  return (unsigned int)__errnum < (unsigned int)*(__NAMESPACE_INT_SYM __sys_nerr)() ?
         (__NAMESPACE_INT_SYM __sys_errlist)()[__errnum] : __NULLPTR;

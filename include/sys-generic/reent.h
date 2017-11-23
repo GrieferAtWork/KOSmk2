@@ -23,8 +23,9 @@
 
 /* DISCLAIMER: This file is based off of cygwin's `/usr/include/sys/reent.h' */
 
-#include <_ansi.h>
 #include <__stdinc.h>
+#ifndef __KERNEL__
+#include <_ansi.h>
 #include <features.h>
 #include <hybrid/typecore.h>
 #include <sys/config.h>
@@ -930,7 +931,7 @@ __LIBC struct __cyg_reent *(__LIBCCALL __getreent)(void);
 #endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
 #endif /* __USE_CYG */
 
-
 __SYSDECL_END
+#endif /* !__KERNEL__ */
 
 #endif /* !_SYS_GENERIC_REENT_H */

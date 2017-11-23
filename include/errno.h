@@ -296,9 +296,12 @@ __NAMESPACE_INT_END
 __LIBC char *program_invocation_name;
 __LIBC char *program_invocation_short_name;
 #else
+#ifndef __int___p__pgmptr_defined
+#define __int___p__pgmptr_defined 1
 __NAMESPACE_INT_BEGIN
 __LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
 __NAMESPACE_INT_END
+#endif /* !__int___p__pgmptr_defined */
 #define program_invocation_name        (*__NAMESPACE_INT_SYM __p__pgmptr())
 #define program_invocation_short_name  (*__NAMESPACE_INT_SYM __p__pgmptr())
 #endif
@@ -351,7 +354,10 @@ __REDIRECT(__LIBC,__PORT_KOSONLY __WUNUSED __ATTR_CONST,errno_t *,__LIBCCALL,__c
 #define SET_DOS_ERRNO(x)   __NAMESPACE_INT_SYM __dos_seterrno(x)
 __REDIRECT(__LIBC,__PORT_DOSONLY __WUNUSED __ATTR_CONST,errno_t *,__LIBCCALL,__dos_errno,(void),_errno,())
 #ifdef __DOS_COMPAT__
+#ifndef __int___private_dos_errno_defined
+#define __int___private_dos_errno_defined 1
 __REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,errno_t *,__LIBCCALL,__private_dos_errno,(void),_errno,())
+#endif /* !__int___private_dos_errno_defined */
 __LOCAL __PORT_DOSONLY __WUNUSED errno_t (__LIBCCALL __dos_geterrno)(void) { return *__private_dos_errno(); }
 #else /* __DOS_COMPAT__ */
 __REDIRECT(__LIBC,__PORT_DOSONLY __WUNUSED,errno_t,__LIBCCALL,__dos_geterrno,(void),__get_doserrno,())
