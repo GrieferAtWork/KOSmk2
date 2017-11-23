@@ -54,6 +54,7 @@ typedef union sigval {
     void *sival_ptr;
 } sigval_t;
 #endif /* !__have_sigval_t */
+#endif /* __CC__ */
 
 #ifndef __have_siginfo_t
 #define __have_siginfo_t 1
@@ -63,7 +64,6 @@ typedef union sigval {
 #else
 #   define __SI_PAD_SIZE  ((__SI_MAX_SIZE/__SIZEOF_INT__)-3)
 #endif
-#endif /* __CC__ */
 
 
 #define __SIGINFO_OFFSETOF_SIGNO        0

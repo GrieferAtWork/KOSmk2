@@ -146,13 +146,13 @@
 
 /* At some point, DOS decided to rename the assembly symbols for the findfirst/findnext/stat functions.
  * And even though KOS exports both the old names, as well as the new, DOS is only exporting
- * one at a time, meaning that during compilation one has to select which names should be used:
+ * either at a time, meaning that during compilation one has to select which names should be used:
  *     OLD           NEW
  *     _findfirst    _findfirst32
  *     _findfirst64  _findfirst64|_findfirst64i32
  *     _findfirsti64 _findfirst32i64
  *     ... (All other triples follow the same overlap)
- * Not is should be obvious that the old function not affected by
+ * Now is should be obvious that the old function not affected by
  * this is `_findfirst64' (Which only gained an alias we don't ever use)
  * Yet the pure 32-bit and the 32-bit time/64-bit size versions are
  * impossible to link while maintaining binary compatibility.
@@ -249,7 +249,8 @@
 #endif
 
 #ifdef _DEFAULT_SOURCE
-# if !defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE)
+# if !defined(_POSIX_SOURCE) && \
+     !defined(_POSIX_C_SOURCE)
 #  define __USE_POSIX_IMPLICITLY 1
 # endif
 # undef  _POSIX_SOURCE
@@ -257,15 +258,15 @@
 # undef  _POSIX_C_SOURCE
 # define _POSIX_C_SOURCE 200809L
 #endif
-#if ((!defined(__STRICT_ANSI__)     \
-     || (defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE - 0) >= 500)) \
-     && !defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE))
+#if (!defined(__STRICT_ANSI__) || \
+     (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE+0 >= 500)) && \
+     !defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE)
 # define _POSIX_SOURCE 1
-# if defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE - 0) < 500
+# if defined(_XOPEN_SOURCE) && _XOPEN_SOURCE+0 < 500
 #  define _POSIX_C_SOURCE 2
-# elif defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE - 0) < 600
+# elif defined(_XOPEN_SOURCE) && _XOPEN_SOURCE+0 < 600
 #  define _POSIX_C_SOURCE 199506L
-# elif defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE - 0) < 700
+# elif defined(_XOPEN_SOURCE) && _XOPEN_SOURCE+0 < 700
 #  define _POSIX_C_SOURCE 200112L
 # else
 #  define _POSIX_C_SOURCE 200809L
@@ -273,25 +274,26 @@
 # define __USE_POSIX_IMPLICITLY 1
 #endif
 
-#if (defined(_POSIX_SOURCE)     \
-     || (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 1) \
-     || defined(_XOPEN_SOURCE))
+#if defined(_POSIX_SOURCE) || \
+   (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE+0 >= 1) || \
+    defined(_XOPEN_SOURCE)
 # define __USE_POSIX 1
 #endif
 
-#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 2) || defined(_XOPEN_SOURCE)
+#if defined(_XOPEN_SOURCE) || \
+   (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE+0 >= 2)
 # define __USE_POSIX2 1
 #endif
 
-#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE - 0) >= 199309L
+#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE+0 >= 199309L
 # define __USE_POSIX199309 1
 #endif
 
-#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE - 0) >= 199506L
+#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE+0 >= 199506L
 # define __USE_POSIX199506 1
 #endif
 
-#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE - 0) >= 200112L
+#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE+0 >= 200112L
 # define __USE_XOPEN2K  1
 # undef __USE_ISOC95
 # define __USE_ISOC95  1
@@ -299,7 +301,7 @@
 # define __USE_ISOC99  1
 #endif
 
-#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE - 0) >= 200809L
+#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE+0 >= 200809L
 # define __USE_XOPEN2K8  1
 # undef  _ATFILE_SOURCE
 # define _ATFILE_SOURCE 1
@@ -307,13 +309,13 @@
 
 #ifdef _XOPEN_SOURCE
 # define __USE_XOPEN 1
-# if (_XOPEN_SOURCE - 0) >= 500
+# if _XOPEN_SOURCE+0 >= 500
 #  define __USE_XOPEN_EXTENDED 1
 #  define __USE_UNIX98 1
 #  undef _LARGEFILE_SOURCE
 #  define _LARGEFILE_SOURCE 1
-#  if (_XOPEN_SOURCE - 0) >= 600
-#   if (_XOPEN_SOURCE - 0) >= 700
+#  if _XOPEN_SOURCE+0 >= 600
+#   if _XOPEN_SOURCE+0 >= 700
 #    define __USE_XOPEN2K8 1
 #    define __USE_XOPEN2K8XSI 1
 #   endif
@@ -339,7 +341,7 @@
 # define __USE_LARGEFILE64 1
 #endif
 
-#if defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS == 64
+#if defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS+0 == 64
 # define __USE_FILE_OFFSET64 1
 #endif
 
@@ -373,7 +375,7 @@
 
 #ifdef _CYG_SOURCE
 #undef __USE_CYG
-#if (_CYG_SOURCE+0) != 0
+#if _CYG_SOURCE+0 != 0
 #   define __USE_CYG   1
 #endif
 #endif
@@ -383,14 +385,14 @@
  *       equal to ZERO(0). */
 #ifdef _DOS_SOURCE
 #undef __USE_DOS
-#if (_DOS_SOURCE+0) == 0
+#if _DOS_SOURCE+0 == 0
 #ifdef __CRT_KOS
 #   undef __USE_DOSFS /* Also disable DOS-FS when linking against KOS's CRT. */
 #endif
 #else
 #   define __USE_DOS   1
 #endif
-#if (_DOS_SOURCE+0) >= 2
+#if _DOS_SOURCE+0 >= 2
 #   define __USE_OLD_DOS 1
 #endif
 #endif
@@ -400,7 +402,7 @@
 #ifdef _DOSFS_SOURCE
 #undef __USE_DOSFS
 /* Manually enable DOS-FS */
-#if (_DOSFS_SOURCE+0) != 0
+#if _DOSFS_SOURCE+0 != 0
 #   define __USE_DOSFS 1
 #endif
 #endif
@@ -432,9 +434,9 @@
 #ifdef _TIME64_SOURCE
 #   define __USE_TIME64 1
 #endif
-#if defined(_TIME_T_BITS) && (_TIME_T_BITS+0) >= 64
+#if defined(_TIME_T_BITS) && _TIME_T_BITS+0 >= 64
 #   define __USE_TIME_BITS64 1
-#elif defined(_TIME_T_BITS) && (_TIME_T_BITS-10) != -10 && (_TIME_T_BITS+0) < 64
+#elif defined(_TIME_T_BITS) && _TIME_T_BITS+0 && _TIME_T_BITS+0 < 64
 #   undef __USE_TIME_BITS64
 #elif defined(_USE_32BIT_TIME_T)
 #   undef __USE_TIME_BITS64
@@ -1054,6 +1056,7 @@
 #ifdef __USE_PORTABLE
 #   define __PORT_KOSONLY        __ATTR_DEPRECATED("Non-portable KOS extension")
 #   define __PORT_DOSONLY        __ATTR_DEPRECATED("Only available under DOS")
+#   define __PORT_NOCYG          __ATTR_DEPRECATED("Not available on cygwin")
 #   define __PORT_NODOS          __ATTR_DEPRECATED("Not available under DOS")
 #   define __PORT_KOSONLY_ALT(x) __ATTR_DEPRECATED("Non-portable KOS extension (Consider using `" #x "' in portable code)")
 #   define __PORT_DOSONLY_ALT(x) __ATTR_DEPRECATED("Only available under DOS (Consider using `" #x "' instead)")
@@ -1064,6 +1067,7 @@
 #else
 #   define __PORT_KOSONLY        /* Nothing */
 #   define __PORT_DOSONLY        /* Nothing */
+#   define __PORT_NOCYG          /* Nothing */
 #   define __PORT_NODOS          /* Nothing */
 #   define __PORT_KOSONLY_ALT(x) /* Nothing */
 #   define __PORT_DOSONLY_ALT(x) /* Nothing */
@@ -1108,13 +1112,13 @@
 
 #ifdef __USE_DOS
 #if defined(__STDC_WANT_SECURE_LIB__) && \
-           (__STDC_WANT_SECURE_LIB__+0) != 0
+            __STDC_WANT_SECURE_LIB__+0 != 0
 #define __USE_DOS_SLIB 1
 #endif
 #endif
 
 #ifdef _DEBUG_SOURCE
-#if (_DEBUG_SOURCE+0) == 0
+#if _DEBUG_SOURCE+0 == 0
 #   define __USE_DEBUG 0
 #else
 #   define __USE_DEBUG 1

@@ -74,6 +74,9 @@
 #define __COMPILER_HAVE_TRANSPARENT_STRUCT 1
 #define __COMPILER_HAVE_TRANSPARENT_UNION 1
 #define __COMPILER_HAVE_PRAGMA_PUSHMACRO 1
+#if __has_feature(__tpp_pragma_deprecated__)
+#define __COMPILER_HAVE_PRAGMA_DEPRECATED 1
+#endif
 #ifdef __CC__
 #define __COMPILER_HAVE_PRAGMA_PACK 1
 #endif

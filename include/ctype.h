@@ -24,64 +24,46 @@
 #include <hybrid/typecore.h>
 #include <hybrid/byteorder.h>
 #include <bits/endian.h>
-#ifdef __CRT_DOS
-#include <bits/dos-ctype.h>
-#endif /* __CRT_DOS */
+#include <libc/ctype.h>
 #ifdef __USE_DOS
 #include <bits/wctype.h>
-#include <xlocale.h>
 #endif /* __USE_DOS */
 
 __SYSDECL_BEGIN
 
-#ifdef __CRT_GLC
-#if __BYTE_ORDER == __BIG_ENDIAN
-#   define _ISbit(bit) (1 << (bit))
-#else
-#   define _ISbit(bit) ((bit) < 8 ? ((1 << (bit)) << 8) : ((1 << (bit)) >> 8))
-#endif
-
-#define _ISupper  _ISbit(0)  /*< UPPERCASE. */
-#define _ISlower  _ISbit(1)  /*< lowercase. */
-#define _ISalpha  _ISbit(2)  /*< Alphabetic. */
-#define _ISdigit  _ISbit(3)  /*< Numeric. */
-#define _ISxdigit _ISbit(4)  /*< Hexadecimal numeric. */
-#define _ISspace  _ISbit(5)  /*< Whitespace. */
-#define _ISprint  _ISbit(6)  /*< Printing. */
-#define _ISgraph  _ISbit(7)  /*< Graphical. */
-#define _ISblank  _ISbit(8)  /*< Blank (usually SPC and TAB). */
-#define _IScntrl  _ISbit(9)  /*< Control character. */
-#define _ISpunct  _ISbit(10) /*< Punctuation. */
-#define _ISalnum  _ISbit(11) /*< Alphanumeric. */
-#endif /* __CRT_GLC */
-
-#define	__isascii(c) (!((c)&0x80)) /* If C is a 7 bit value. */
-#define	__toascii(c)   ((c)&0x7f)  /* Mask off high bits. */
-
-#if defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__)
-__NAMESPACE_INT_BEGIN __LIBC __UINT16_TYPE__ const __chattr[256]; __NAMESPACE_INT_END
-#define __isctype(c,type) (__NAMESPACE_INT_SYM __chattr[(__UINT8_TYPE__)(c)]&(__UINT16_TYPE__)type)
-#else
-__REDIRECT2_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__isctype,(int __c, int __mask),isctype,_isctype,(__c,__mask))
-#endif
-
 __NAMESPACE_STD_BEGIN
-#if defined(__CRT_GLC) && defined(__cplusplus)
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isalpha)(int __c)) { return __isctype(__c,_ISalpha); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isupper)(int __c)) { return __isctype(__c,_ISupper); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL islower)(int __c)) { return __isctype(__c,_ISlower); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isdigit)(int __c)) { return __isctype(__c,_ISdigit); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isxdigit)(int __c)) { return __isctype(__c,_ISxdigit); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isspace)(int __c)) { return __isctype(__c,_ISspace); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL ispunct)(int __c)) { return __isctype(__c,_ISpunct); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isalnum)(int __c)) { return __isctype(__c,_ISalnum); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isprint)(int __c)) { return __isctype(__c,_ISprint); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isgraph)(int __c)) { return __isctype(__c,_ISgraph); }
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL iscntrl)(int __c)) { return __isctype(__c,_IScntrl); }
+#if defined(__OPTIMIZE__) && !defined(__OPTIMIZE_SIZE__)
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isalpha)(int __c))  { return __inline_isalpha(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isupper)(int __c))  { return __inline_isupper(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL islower)(int __c))  { return __inline_islower(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isdigit)(int __c))  { return __inline_isdigit(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isxdigit)(int __c)) { return __inline_isxdigit(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isspace)(int __c))  { return __inline_isspace(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL ispunct)(int __c))  { return __inline_ispunct(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isalnum)(int __c))  { return __inline_isalnum(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isprint)(int __c))  { return __inline_isprint(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL isgraph)(int __c))  { return __inline_isgraph(__c); }
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL iscntrl)(int __c))  { return __inline_iscntrl(__c); }
 #ifdef __USE_ISOC99
-__LIBC __WUNUSED int __NOTHROW((__LIBCCALL isblank)(int __c)) { return __isctype(__c,_ISblank); }
+__LIBC __WUNUSED int __NOTHROW((__LIBCCALL isblank)(int __c)) { return __inline_isblank(__c); }
 #endif /* __USE_ISOC99 */
-#else /* __CRT_GLC && __cplusplus */
+#ifndef __cplusplus
+#define isalnum(c)  __inline_isalnum(c)
+#define isalpha(c)  __inline_isalpha(c)
+#define iscntrl(c)  __inline_iscntrl(c)
+#define isdigit(c)  __inline_isdigit(c)
+#define islower(c)  __inline_islower(c)
+#define isgraph(c)  __inline_isgraph(c)
+#define isprint(c)  __inline_isprint(c)
+#define ispunct(c)  __inline_ispunct(c)
+#define isspace(c)  __inline_isspace(c)
+#define isupper(c)  __inline_isupper(c)
+#define isxdigit(c) __inline_isxdigit(c)
+#ifdef __USE_ISOC99
+#define isblank(c)  __inline_isblank(c)
+#endif /* __USE_ISOC99 */
+#endif /* !__cplusplus */
+#else /* Inline */
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL isalpha)(int __c));
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL isupper)(int __c));
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL islower)(int __c));
@@ -96,7 +78,7 @@ __LIBC __WUNUSED int __NOTHROW((__LIBCCALL iscntrl)(int __c));
 #ifdef __USE_ISOC99
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL isblank)(int __c));
 #endif /* __USE_ISOC99 */
-#endif /* !__CRT_GLC || !__cplusplus */
+#endif /* !Inline */
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL toupper)(int __c));
 __LIBC __WUNUSED int __NOTHROW((__LIBCCALL tolower)(int __c));
 __NAMESPACE_STD_END
@@ -120,37 +102,13 @@ __NAMESPACE_STD_USING(isblank)
 #endif /* __USE_ISOC99 */
 #endif /* !__CXX_SYSTEM_HEADER */
 #if defined(__USE_KOS) || defined(__USE_DOS)
+#ifdef __CYG_COMPAT__
+__LIBC __WUNUSED int (__LIBCCALL isascii)(int __c);
+#else
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,isascii,(int __c),__isascii,(__c))
-#endif /* __USE_KOS || __USE_DOS */
-
-#if defined(__CRT_GLC) && !defined(__cplusplus)
-#define isalnum(c)  __isctype((c),_ISalnum)
-#define isalpha(c)  __isctype((c),_ISalpha)
-#define iscntrl(c)  __isctype((c),_IScntrl)
-#define isdigit(c)  __isctype((c),_ISdigit)
-#define islower(c)  __isctype((c),_ISlower)
-#define isgraph(c)  __isctype((c),_ISgraph)
-#define isprint(c)  __isctype((c),_ISprint)
-#define ispunct(c)  __isctype((c),_ISpunct)
-#define isspace(c)  __isctype((c),_ISspace)
-#define isupper(c)  __isctype((c),_ISupper)
-#define isxdigit(c) __isctype((c),_ISxdigit)
-#ifdef __USE_ISOC99
-#define isblank(c)  __isctype((c),_ISblank)
-#endif /* __USE_ISOC99 */
-#endif /* __CRT_GLC && !defined(__cplusplus) */
-
-#if defined(__USE_KOS) || defined(__USE_DOS)
-#define isascii(c)  __isascii((__UINT8_TYPE__)(c))
-#endif /* __USE_KOS || __USE_DOS */
-
-#ifdef __USE_GNU
-__REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,isctype,
-                        (int __c, int __mask),_isctype,(__c,__mask))
-#if !defined(__cplusplus) && defined(__isctype)
-#define isctype(c,mask) __isctype((c),(mask))
 #endif
-#endif /* __USE_GNU */
+#define isascii(c)  __inline_isascii(c)
+#endif /* __USE_KOS || __USE_DOS */
 
 #define __tolower(c) ((c)+0x20)
 #define __toupper(c) ((c)-0x20)
@@ -217,7 +175,9 @@ __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_tolower_l,(int __c, __locale
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_toupper_l,(int __c, __locale_t __locale),toupper,(__c,__locale))
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,_isblank_l,(int __c, __locale_t __locale),isblank,(__c,__locale))
 #else /* ... */
-__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isctype_l)(int __c, int __mask, __locale_t __UNUSED(__locale))) { return __NAMESPACE_INT_SYM __isctype(__c,__mask); }
+#ifdef __isctype
+__LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isctype_l)(int __c, int __mask, __locale_t __UNUSED(__locale))) { return __isctype(__c,__mask); }
+#endif /* __isctype */
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isalpha_l)(int __c, __locale_t __UNUSED(__locale))) { return __NAMESPACE_STD_SYM isalpha(__c); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _isupper_l)(int __c, __locale_t __UNUSED(__locale))) { return __NAMESPACE_STD_SYM isupper(__c); }
 __LOCAL __WUNUSED int __NOTHROW((__LIBCCALL _islower_l)(int __c, __locale_t __UNUSED(__locale))) { return __NAMESPACE_STD_SYM islower(__c); }

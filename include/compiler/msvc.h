@@ -31,6 +31,7 @@
 #define __COMPILER_HAVE_TRANSPARENT_STRUCT 1
 #define __COMPILER_HAVE_TRANSPARENT_UNION 1
 #define __COMPILER_HAVE_PRAGMA_PUSHMACRO 1
+#define __COMPILER_HAVE_PRAGMA_DEPRECATED 1
 #ifdef __CC__
 #define __COMPILER_HAVE_PRAGMA_PACK 1
 #endif
@@ -114,10 +115,10 @@
 #   define __NO_ATTR_DEPRECATED  1
 #   define __ATTR_DEPRECATED(text) /* Nothing */
 #endif
-#define __NO_ATTR_WARNING        1
+#define __NO_ATTR_ERROR          1
 #define __ATTR_ERROR(text)       /* Nothing */
 #define __NO_ATTR_WARNING        1
-#define __ATTR_ERROR(text)       /* Nothing */
+#define __ATTR_WARNING(text)     /* Nothing */
 #define __NO_ATTR_SECTION        1
 #define __ATTR_SECTION(name)     /* Nothing */
 #ifdef __cplusplus

@@ -53,11 +53,11 @@
 
 DECL_BEGIN
 
-#define FAT_ISSPACE(c) __isctype((c),(_ISspace|_ISblank|_IScntrl))
+#define FAT_ISSPACE(c) isctype((c),(_ISspace|_ISblank|_IScntrl))
 #if 1
 #define LFN_ISTRAIL(c) ((c) == '\0' || (c) == '\xff')
 #else
-#define LFN_ISTRAIL(c) __isctype((c),(_IScntrl))
+#define LFN_ISTRAIL(c) isctype((c),(_IScntrl))
 #endif
 
 #if defined(CONFIG_DEBUG) && 0

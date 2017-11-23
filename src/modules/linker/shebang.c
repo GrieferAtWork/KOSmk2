@@ -19,6 +19,7 @@
 #ifndef GUARD_MODULES_LINKER_SHEBANG_C
 #define GUARD_MODULES_LINKER_SHEBANG_C 1
 #define _KOS_SOURCE 2
+#define _GNU_SOURCE 1
 
 #include <string.h>
 #include <fs/file.h>
@@ -220,7 +221,7 @@ err_buffer:
  textbegin = buffer+2;
  textend   = bufend;
  assert(textbegin <= textend);
-#define SHEBANG_ISSPACE(c)  __isctype((c),(_ISspace|_ISblank|_IScntrl))
+#define SHEBANG_ISSPACE(c)  isctype((c),(_ISspace|_ISblank|_IScntrl))
 
  /* Truncate space/control characters from the start & end of the commandline. */
  while (textbegin != textend && SHEBANG_ISSPACE(textbegin[0])) ++textbegin;

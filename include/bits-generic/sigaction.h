@@ -65,7 +65,9 @@ struct sigaction {
 #endif /* !__USE_POSIX199309 */
     __sigset_t sa_mask;  /*< Additional set of signals to be blocked. */
     int        sa_flags; /*< Special flags. */
+#ifndef __CYG_COMPAT__
     void (__ATTR_CDECL *sa_restorer)(void); /*< Restore handler. */
+#endif /* !__CYG_COMPAT__ */
 };
 #endif /* !__sigaction_defined */
 #endif /* !__CC__ */
@@ -82,7 +84,11 @@ struct sigaction {
 #endif /* !SA_SIGINFO */
 #if defined(__USE_UNIX98) || defined(__USE_MISC)
 #ifndef SA_ONSTACK
+#ifdef __CYG_COMPAT__
+#define SA_ONSTACK    0x20000000 /*< Use signal stack by using `sa_restorer'. */
+#else
 #define SA_ONSTACK    0x08000000 /*< Use signal stack by using `sa_restorer'. */
+#endif
 #endif /* !SA_ONSTACK */
 #endif /* __USE_UNIX98 || __USE_MISC */
 #if defined(__USE_UNIX98) || defined(__USE_XOPEN2K8)

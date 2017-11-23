@@ -260,6 +260,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dos", "dos", "{C3DF0168-3FC
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libc", "libc", "{C7A7D468-3AA5-4DF8-B5D7-F14F23D76C69}"
 	ProjectSection(SolutionItems) = preProject
+		..\include\libc\ctype.h = ..\include\libc\ctype.h
 		..\include\libc\format-printer.h = ..\include\libc\format-printer.h
 		..\include\libc\string.h = ..\include\libc\string.h
 	EndProjectSection

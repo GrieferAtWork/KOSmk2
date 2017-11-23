@@ -171,12 +171,13 @@
 #   define __IMPDEF  extern __ATTR_DLLIMPORT
 #   define __EXPDEF  extern __ATTR_DLLEXPORT
 #   define __PUBDEF  extern
-#   define __PUBLIC  extern __ATTR_DLLEXPORT
 #   define __PRIVATE static
 #   define __INTDEF  extern
 #ifdef _MSC_VER
+#   define __PUBLIC  extern __ATTR_DLLEXPORT
 #   define __INTERN  extern
 #else
+#   define __PUBLIC  __ATTR_DLLEXPORT
 #   define __INTERN  /* Nothing */
 #endif
 #else

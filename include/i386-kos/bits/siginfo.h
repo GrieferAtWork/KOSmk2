@@ -54,16 +54,104 @@ typedef union sigval {
     void *sival_ptr;
 } sigval_t;
 #endif /* !__have_sigval_t */
+#endif /* __CC__ */
 
 #ifndef __have_siginfo_t
 #define __have_siginfo_t 1
 #define __SI_MAX_SIZE    128
-#if __SIZEOF_POINTER__ == 8
-#   define __SI_PAD_SIZE  ((__SI_MAX_SIZE/__SIZEOF_INT__)-4)
-#else
-#   define __SI_PAD_SIZE  ((__SI_MAX_SIZE/__SIZEOF_INT__)-3)
+#define __SI_PAD_SIZE   (__SI_MAX_SIZE / 4)
+
+#ifdef __CYG_COMPAT__
+#ifdef __CC__
+#ifdef __COMPILER_HAVE_PRAGMA_PACK
+#pragma pack(push,4)
 #endif
 
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma push_macro("_sigcommune")
+#pragma push_macro("_si_code")
+#pragma push_macro("_si_read_handle")
+#pragma push_macro("_si_write_handle")
+#pragma push_macro("_si_process_handle")
+#pragma push_macro("_si_fd")
+#pragma push_macro("_si_pipe_unique_id")
+#pragma push_macro("_si_str")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
+#undef _sigcommune
+#undef _si_code
+#undef _si_read_handle
+#undef _si_write_handle
+#undef _si_process_handle
+#undef _si_fd
+#undef _si_pipe_unique_id
+#undef _si_str
+
+struct __PACKED _sigcommune {
+    __uint32_t       _si_code;
+    void            *_si_read_handle;
+    void            *_si_write_handle;
+    void            *_si_process_handle;
+    union __PACKED {
+        __INT32_TYPE__ _si_fd;
+        int64_t        _si_pipe_unique_id;
+        char          *_si_str;
+    };
+};
+
+#ifdef __COMPILER_HAVE_PRAGMA_PUSHMACRO
+#pragma pop_macro("_si_str")
+#pragma pop_macro("_si_pipe_unique_id")
+#pragma pop_macro("_si_fd")
+#pragma pop_macro("_si_process_handle")
+#pragma pop_macro("_si_write_handle")
+#pragma pop_macro("_si_read_handle")
+#pragma pop_macro("_si_code")
+#pragma pop_macro("_sigcommune")
+#endif /* __COMPILER_HAVE_PRAGMA_PUSHMACRO */
+
+typedef struct __PACKED {
+    __INT32_TYPE__ si_signo;
+    __INT32_TYPE__ si_code;
+    __pid_t        si_pid;
+    __uid_t        si_uid;
+    __INT32_TYPE__ si_errno;
+    union __PACKED {
+        __uint32_t __pad[__SI_PAD_SIZE];
+        struct _sigcommune _si_commune;
+        struct __PACKED {
+            union __PACKED {
+                sigval_t        si_sigval;
+                sigval_t        si_value;
+            };
+            struct __PACKED {
+                timer_t         si_tid;
+                __UINT32_TYPE__ si_overrun;
+            };
+        };
+        struct __PACKED {
+            __INT32_TYPE__  si_status;
+            clock_t         si_utime;
+            clock_t         si_stime;
+        };
+        void               *si_addr;
+    };
+} siginfo_t;
+
+#ifdef __COMPILER_HAVE_PRAGMA_PACK
+#pragma pack(pop)
+#endif
+#endif /* __CC__ */
+
+#else /* __CYG_COMPAT__ */
+
+#if __SIZEOF_POINTER__ == 8
+#   define __SI_PAD_SIZE  ((__SI_MAX_SIZE/4)-4)
+#else
+#   define __SI_PAD_SIZE  ((__SI_MAX_SIZE/4)-3)
+#endif
+
+#ifdef __CC__
 #if defined(__x86_64__) && __SIZEOF_POINTER__ == 4
 typedef __typedef_clock_t __ATTR_ALIGNED(4) __sigchld_clock_t;
 #else /* ... */
@@ -72,35 +160,33 @@ typedef __typedef_clock_t __sigchld_clock_t;
 #endif /* __CC__ */
 #define __SIZEOF_SIGCHLD_CLOCK_T__ __SIZEOF_CLOCK_T__
 
-
-
 #define __SIGINFO_OFFSETOF_SIGNO        0
-#define __SIGINFO_OFFSETOF_ERRNO        __SIZEOF_INT__
-#define __SIGINFO_OFFSETOF_CODE      (2*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_PID       (4*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_UID       (4*__SIZEOF_INT__+__SIZEOF_PID_T__)
-#define __SIGINFO_OFFSETOF_TIMERID   (4*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_OVERRUN   (5*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_VALUE     (6*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_INT       (6*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_PTR       (6*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_STATUS    (4*__SIZEOF_INT__+2*__SIZEOF_PID_T__)
+#define __SIGINFO_OFFSETOF_ERRNO        4
+#define __SIGINFO_OFFSETOF_CODE      (2*4)
+#define __SIGINFO_OFFSETOF_PID       (4*4)
+#define __SIGINFO_OFFSETOF_UID       (4*4+__SIZEOF_PID_T__)
+#define __SIGINFO_OFFSETOF_TIMERID   (4*4)
+#define __SIGINFO_OFFSETOF_OVERRUN   (5*4)
+#define __SIGINFO_OFFSETOF_VALUE     (6*4)
+#define __SIGINFO_OFFSETOF_INT       (6*4)
+#define __SIGINFO_OFFSETOF_PTR       (6*4)
+#define __SIGINFO_OFFSETOF_STATUS    (4*4+2*__SIZEOF_PID_T__)
 #if __SIZEOF_SIGCHLD_CLOCK_T__ >= 8
 #define __SIGINFO_OFFSETOF_UTIME     (4*__SIZEOF_POINTER__)
 #define __SIGINFO_OFFSETOF_STIME     (4*__SIZEOF_POINTER__+__SIZEOF_SIGCHLD_CLOCK_T__)
 #else
-#define __SIGINFO_OFFSETOF_UTIME     (5*__SIZEOF_INT__+2*__SIZEOF_PID_T__)
-#define __SIGINFO_OFFSETOF_STIME     (5*__SIZEOF_INT__+2*__SIZEOF_PID_T__+__SIZEOF_SIGCHLD_CLOCK_T__)
+#define __SIGINFO_OFFSETOF_UTIME     (5*4+2*__SIZEOF_PID_T__)
+#define __SIGINFO_OFFSETOF_STIME     (5*4+2*__SIZEOF_PID_T__+__SIZEOF_SIGCHLD_CLOCK_T__)
 #endif
-#define __SIGINFO_OFFSETOF_ADDR      (4*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_ADDR_LSB  (4*__SIZEOF_INT__+__SIZEOF_POINTER__)
-#define __SIGINFO_OFFSETOF_LOWER     (4*__SIZEOF_INT__+2*__SIZEOF_POINTER__)
-#define __SIGINFO_OFFSETOF_UPPER     (4*__SIZEOF_INT__+3*__SIZEOF_POINTER__)
-#define __SIGINFO_OFFSETOF_BAND      (4*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_FD        (4*__SIZEOF_INT__+__SIZEOF_POINTER__)
-#define __SIGINFO_OFFSETOF_CALL_ADDR (4*__SIZEOF_INT__)
-#define __SIGINFO_OFFSETOF_SYSCALL   (4*__SIZEOF_INT__+__SIZEOF_POINTER__)
-#define __SIGINFO_OFFSETOF_ARCH      (5*__SIZEOF_INT__+__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_ADDR      (4*4)
+#define __SIGINFO_OFFSETOF_ADDR_LSB  (4*4+__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_LOWER     (4*4+2*__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_UPPER     (4*4+3*__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_BAND      (4*4)
+#define __SIGINFO_OFFSETOF_FD        (4*4+__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_CALL_ADDR (4*4)
+#define __SIGINFO_OFFSETOF_SYSCALL   (4*4+__SIZEOF_POINTER__)
+#define __SIGINFO_OFFSETOF_ARCH      (5*4+__SIZEOF_POINTER__)
 #ifdef __KERNEL__
 #define __SIGINFO_SIZE               (__SIGINFO_OFFSETOF_STIME+__SIZEOF_SIGCHLD_CLOCK_T__)
 #else
@@ -113,10 +199,10 @@ typedef __typedef_clock_t __sigchld_clock_t;
 __ATTR_ALIGNED(8)
 #endif
 typedef struct __siginfo_struct {
-    int si_signo; /*< Signal number. */
-    int si_errno; /*< If non-zero, an errno value associated with this signal, as defined in <errno.h>. */
-    int si_code;  /*< Signal code. */
-    int __si_pad0; /*< Invisible padding made visible. */
+    __INT32_TYPE__ si_signo; /*< Signal number. */
+    __INT32_TYPE__ si_errno; /*< If non-zero, an errno value associated with this signal, as defined in <errno.h>. */
+    __INT32_TYPE__ si_code;  /*< Signal code. */
+    __INT32_TYPE__ __si_pad0; /*< Invisible padding made visible. */
 #if defined(__COMPILER_HAVE_TRANSPARENT_STRUCT) && \
     defined(__COMPILER_HAVE_TRANSPARENT_UNION)
 #ifndef __USE_KOS
@@ -128,12 +214,12 @@ typedef struct __siginfo_struct {
             __uid_t  si_uid; /*< Real user ID of sending process. */
         };
         struct { /* POSIX.1b timers. */
-            int      si_timerid; /*< Timer ID. */
-            int      si_overrun; /*< Overrun count. */
+            __INT32_TYPE__ si_timerid; /*< Timer ID. */
+            __INT32_TYPE__ si_overrun; /*< Overrun count. */
             union {
-                sigval_t si_value;   /*< Signal value. */
-                int      si_int;
-                void    *si_ptr;
+                sigval_t       si_value;   /*< Signal value. */
+                __INT32_TYPE__ si_int;
+                void          *si_ptr;
             };
         };
         struct { /* POSIX.1b signals. */
@@ -144,7 +230,7 @@ typedef struct __siginfo_struct {
         struct { /* SIGCHLD. */
             __pid_t      __cld_si_pid;    /*< Which child. */
             __uid_t      __cld_si_uid;    /*< Real user ID of sending process. */
-            int                si_status; /*< Exit value or signal. */
+            __INT32_TYPE__     si_status; /*< Exit value or signal. */
 #if __SIZEOF_SIGCHLD_CLOCK_T__ >= 8
             __UINT32_TYPE__  __si_pad1;   /*< Invisible padding made visible. */
 #endif
@@ -160,12 +246,12 @@ typedef struct __siginfo_struct {
         };
         struct { /* SIGPOLL. */
             __LONGPTR_TYPE__ si_band; /*< Band event for SIGPOLL. */
-            int              si_fd;
+            __INT32_TYPE__   si_fd;
         };
         struct { /* SIGSYS. */
-            void        *si_call_addr; /*< Calling user insn. */
-            int          si_syscall;   /*< Triggering system call number. */
-            unsigned int si_arch;      /*< AUDIT_ARCH_* of syscall. */
+            void           *si_call_addr; /*< Calling user insn. */
+            __INT32_TYPE__  si_syscall;   /*< Triggering system call number. */
+            __UINT32_TYPE__ si_arch;      /*< AUDIT_ARCH_* of syscall. */
         };
     };
 #endif /* Transparent struct/union */
@@ -174,16 +260,16 @@ typedef struct __siginfo_struct {
     !defined(__USE_KOS)
     union {
 #ifndef __KERNEL__
-        int _pad[__SI_PAD_SIZE];
+        __INT32_TYPE__ _pad[__SI_PAD_SIZE];
 #endif
         struct { /* kill(). */
             __pid_t si_pid; /*< Sending process ID. */
             __uid_t si_uid; /*< Real user ID of sending process. */
         } _kill;
         struct { /* POSIX.1b timers. */
-            int      si_tid;     /*< Timer ID. */
-            int      si_overrun; /*< Overrun count. */
-            sigval_t si_sigval;  /*< Signal value. */
+            __INT32_TYPE__ si_tid;     /*< Timer ID. */
+            __INT32_TYPE__ si_overrun; /*< Overrun count. */
+            sigval_t       si_sigval;  /*< Signal value. */
         } _timer;
         struct { /* POSIX.1b signals. */
             __pid_t  si_pid;    /*< Sending process ID. */
@@ -193,7 +279,7 @@ typedef struct __siginfo_struct {
         struct { /* SIGCHLD. */
             __pid_t           si_pid;    /*< Which child. */
             __uid_t           si_uid;    /*< Real user ID of sending process. */
-            int               si_status; /*< Exit value or signal. */
+            __INT32_TYPE__    si_status; /*< Exit value or signal. */
 #if __SIZEOF_POINTER__ >= 8
             __UINT32_TYPE__  __si_pad1;   /*< Invisible padding made visible. */
 #endif
@@ -211,12 +297,12 @@ typedef struct __siginfo_struct {
         } _sigfault;
         struct { /* SIGPOLL. */
             __LONGPTR_TYPE__ si_band; /*< Band event for SIGPOLL. */
-            int              si_fd;
+            __INT32_TYPE__   si_fd;
         } _sigpoll;
         struct { /* SIGSYS. */
-            void        *_call_addr; /*< Calling user insn. */
-            int          _syscall;   /*< Triggering system call number. */
-            unsigned int _arch;      /*< AUDIT_ARCH_* of syscall. */
+            void           *_call_addr; /*< Calling user insn. */
+            __INT32_TYPE__  _syscall;   /*< Triggering system call number. */
+            __UINT32_TYPE__ _arch;      /*< AUDIT_ARCH_* of syscall. */
         } _sigsys;
     } _sifields;
 #endif /* ... */
@@ -247,9 +333,50 @@ typedef struct __siginfo_struct {
 #define si_arch      _sifields._sigsys._arch
 #endif /* !__COMPILER_HAVE_TRANSPARENT_UNION */
 } siginfo_t;
+#endif /* !__CYG_COMPAT__ */
 #endif /* __CC__ */
 
+#ifdef __CYG_COMPAT__
 
+#define SI_USER       0
+#define SI_ASYNCIO    2
+#define SI_MESGQ      3
+#define SI_TIMER      4
+#define SI_QUEUE      5
+#define SI_KERNEL     6
+#define ILL_ILLOPC    7
+#define ILL_ILLOPN    8
+#define ILL_ILLADR    9
+#define ILL_ILLTRP    10
+#define ILL_PRVOPC    11
+#define ILL_PRVREG    12
+#define ILL_COPROC    13
+#define ILL_BADSTK    14
+#define FPE_INTDIV    15
+#define FPE_INTOVF    16
+#define FPE_FLTDIV    17
+#define FPE_FLTOVF    18
+#define FPE_FLTUND    19
+#define FPE_FLTRES    20
+#define FPE_FLTINV    21
+#define FPE_FLTSUB    22
+#define SEGV_MAPERR   23
+#define SEGV_ACCERR   24
+#define BUS_ADRALN    25
+#define BUS_ADRERR    26
+#define BUS_OBJERR    27
+#define CLD_EXITED    28
+#define CLD_KILLED    29
+#define CLD_DUMPED    30
+#define CLD_TRAPPED   31
+#define CLD_STOPPED   32
+#define CLD_CONTINUED 33
+
+#define SIGEV_SIGNAL  0
+#define SIGEV_NONE    1
+#define SIGEV_THREAD  2
+
+#else /* __CYG_COMPAT__ */
 
 /* Values for `si_code'. Positive values are reserved for kernel-generated signals. */
 #ifdef __COMPILER_PREFERR_ENUMS
@@ -450,6 +577,7 @@ enum {
 #define POLL_HUP 6 /*< Device disconnected. */
 #endif /* !__COMPILER_PREFERR_ENUMS */
 #endif /* __USE_XOPEN_EXTENDED || __USE_XOPEN2K8 */
+#endif /* !__CYG_COMPAT__ */
 #endif /* !__have_siginfo_t */
 
 __SYSDECL_END

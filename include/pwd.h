@@ -22,9 +22,9 @@
 #include <features.h>
 #include <bits/types.h>
 
-#ifndef __CRT_GLC
+#if !defined(__CRT_GLC) && !defined(__CRT_CYG)
 #error "<pwd.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
+#endif /* !__CRT_GLC && !__CRT_CYG */
 
 __SYSDECL_BEGIN
 
@@ -80,21 +80,25 @@ __LIBC void (__LIBCCALL setpwent)(void);
 __LIBC void (__LIBCCALL endpwent)(void);
 __LIBC struct passwd *(__LIBCCALL getpwent)(void);
 #endif /* __USE_MISC || __USE_XOPEN_EXTENDED */
+
+#ifdef __CRT_GLC
 #ifdef __USE_MISC
-__LIBC __NONNULL((1)) struct passwd *(__LIBCCALL fgetpwent)(FILE *__stream);
-__LIBC int (__LIBCCALL putpwent)(struct passwd const *__restrict __p, FILE *__restrict __f);
+__LIBC __PORT_NOCYG __NONNULL((1)) struct passwd *(__LIBCCALL fgetpwent)(FILE *__stream);
+__LIBC __PORT_NOCYG int (__LIBCCALL putpwent)(struct passwd const *__restrict __p, FILE *__restrict __f);
 #endif /* __USE_MISC */
 #ifdef __USE_POSIX
-__LIBC __NONNULL((2,3,5)) int (__LIBCCALL getpwuid_r)(__uid_t __uid, struct passwd *__restrict __resultbuf, char *__restrict __buffer, size_t __buflen, struct passwd **__restrict __result);
-__LIBC __NONNULL((1,2,3,5)) int (__LIBCCALL getpwnam_r)(char const *__restrict __name, struct passwd *__restrict __resultbuf, char *__restrict __buffer, size_t __buflen, struct passwd **__restrict __result);
+__LIBC __PORT_NOCYG __NONNULL((2,3,5)) int (__LIBCCALL getpwuid_r)(__uid_t __uid, struct passwd *__restrict __resultbuf, char *__restrict __buffer, size_t __buflen, struct passwd **__restrict __result);
+__LIBC __PORT_NOCYG __NONNULL((1,2,3,5)) int (__LIBCCALL getpwnam_r)(char const *__restrict __name, struct passwd *__restrict __resultbuf, char *__restrict __buffer, size_t __buflen, struct passwd **__restrict __result);
 #ifdef __USE_MISC
-__LIBC __NONNULL((1,2,4)) int (__LIBCCALL getpwent_r)(struct passwd *__restrict __resultbuf, char *__restrict __buffer, size_t __buflen, struct passwd **__restrict __result);
-__LIBC __NONNULL((1,2,3,5)) int (__LIBCCALL fgetpwent_r)(FILE *__restrict __stream, struct passwd *__restrict __resultbuf, char *__restrict __buffer, size_t __buflen, struct passwd **__restrict __result);
+__LIBC __PORT_NOCYG __NONNULL((1,2,4)) int (__LIBCCALL getpwent_r)(struct passwd *__restrict __resultbuf, char *__restrict __buffer, size_t __buflen, struct passwd **__restrict __result);
+__LIBC __PORT_NOCYG __NONNULL((1,2,3,5)) int (__LIBCCALL fgetpwent_r)(FILE *__restrict __stream, struct passwd *__restrict __resultbuf, char *__restrict __buffer, size_t __buflen, struct passwd **__restrict __result);
 #endif /* __USE_MISC */
 #endif /* __USE_POSIX */
 #ifdef __USE_GNU
-__LIBC int (__LIBCCALL getpw)(__uid_t __uid, char *__buffer);
+__LIBC __PORT_NOCYG int (__LIBCCALL getpw)(__uid_t __uid, char *__buffer);
 #endif /* __USE_GNU */
+#endif /* __CRT_GLC */
+
 #endif /* !__KERNEL__ */
 
 __SYSDECL_END

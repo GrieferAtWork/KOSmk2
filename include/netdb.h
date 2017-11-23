@@ -52,9 +52,9 @@
 #include <hybrid/timespec.h>
 #endif /* __USE_GNU */
 
-#ifndef __CRT_GLC
+#if !defined(__CRT_GLC) && !defined(__CRT_CYG)
 #error "<netdb.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
+#endif /* !__CRT_GLC && !__CRT_CYG */
 
 __SYSDECL_BEGIN
 

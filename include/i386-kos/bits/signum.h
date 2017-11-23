@@ -80,43 +80,79 @@ __SYSDECL_BEGIN
 #define SIGTRAP   5     /*< Trace trap (POSIX). */
 #define SIGABRT   6     /*< Abort (ANSI). */
 #define SIGIOT    6     /*< IOT trap (4.2 BSD). */
+#ifdef __CYG_COMPAT__
+#define SIGEMT    7     /*< EMT instruction. */
+#else
 #define SIGBUS    7     /*< BUS error (4.2 BSD). */
+#endif
 #define SIGFPE    8     /*< Floating-point exception (ANSI). */
 #define SIGKILL   9     /*< Kill, unblockable (POSIX). */
+#ifdef __CYG_COMPAT__
+#define SIGBUS    10    /*< BUS error (4.2 BSD). */
+#else
 #define SIGUSR1   10    /*< User-defined signal 1 (POSIX). */
+#endif
 #define SIGSEGV   11    /*< Segmentation violation (ANSI). */
+#ifdef __CYG_COMPAT__
+#define SIGSYS    12    /*< Bad system call. */
+#else
 #define SIGUSR2   12    /*< User-defined signal 2 (POSIX). */
+#endif
 #define SIGPIPE   13    /*< Broken pipe (POSIX). */
 #define SIGALRM   14    /*< Alarm clock (POSIX). */
 #define SIGTERM   15    /*< Termination (ANSI). */
-#define SIGSTKFLT 16    /*< Stack fault. */
 #define SIGCLD    SIGCHLD /*< Same as SIGCHLD (System V). */
+#ifdef __CYG_COMPAT__
+#define SIGURG    16    /*< Urgent condition on socket (4.2 BSD). */
+#define SIGSTOP   17	/*< Stop, unblockable (POSIX). */
+#define SIGTSTP   18	/*< Keyboard stop (POSIX). */
+#define SIGCONT   19	/*< Continue (POSIX). */
+#define SIGCHLD   20	/*< Child status has changed (POSIX). */
+#else
+#define SIGSTKFLT 16    /*< Stack fault. */
 #define SIGCHLD   17    /*< Child status has changed (POSIX). */
 #define SIGCONT   18    /*< Continue (POSIX). */
 #define SIGSTOP   19    /*< Stop, unblockable (POSIX). */
 #define SIGTSTP   20    /*< Keyboard stop (POSIX). */
+#endif
 #define SIGTTIN   21    /*< Background read from tty (POSIX). */
 #define SIGTTOU   22    /*< Background write to tty (POSIX). */
+#ifdef __CYG_COMPAT__
+#define SIGIO     23    /*< I/O now possible (4.2 BSD). */
+#else
 #define SIGURG    23    /*< Urgent condition on socket (4.2 BSD). */
+#endif
 #define SIGXCPU   24    /*< CPU limit exceeded (4.2 BSD). */
 #define SIGXFSZ   25    /*< File size limit exceeded (4.2 BSD). */
 #define SIGVTALRM 26    /*< Virtual alarm clock (4.2 BSD). */
 #define SIGPROF   27    /*< Profiling alarm clock (4.2 BSD). */
 #define SIGWINCH  28    /*< Window size change (4.3 BSD, Sun). */
 #define SIGPOLL   SIGIO /*< Pollable event occurred (System V). */
+#ifdef __CYG_COMPAT__
+#define SIGLOST   29    /*< Resource lost. */
+#define SIGPWR    SIGLOST /*< Power failure restart (System V). */
+#define SIGUSR1   30    /*< User-defined signal 1 (POSIX). */
+#define SIGUSR2   31    /*< User-defined signal 2 (POSIX). */
+#else
 #define SIGIO     29    /*< I/O now possible (4.2 BSD). */
 #define SIGPWR    30    /*< Power failure restart (System V). */
 #define SIGSYS    31    /*< Bad system call. */
 #define SIGUNUSED 31
+#endif
 #define _NSIG     65    /*< Biggest signal number + 1 (including real-time signals). */
-
-#define SIGRTMIN   (__libc_current_sigrtmin())
-#define SIGRTMAX   (__libc_current_sigrtmax())
 
 /* These are the hard limits of the kernel.
  * These values should not be used directly at user level. */
 #define __SIGRTMIN  32
 #define __SIGRTMAX (_NSIG - 1)
+
+#ifdef __CYG_COMPAT__
+#define SIGRTMIN    __SIGRTMIN
+#define SIGRTMAX    __SIGRTMAX
+#else
+#define SIGRTMIN   (__libc_current_sigrtmin())
+#define SIGRTMAX   (__libc_current_sigrtmax())
+#endif
 
 #ifdef __USE_DOS
 /* Define DOS's signal name aliases. */

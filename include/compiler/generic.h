@@ -74,6 +74,9 @@
    (defined(__TPP_VERSION__) && __TPP_VERSION__ == 103)
 #define __COMPILER_HAVE_PRAGMA_PUSHMACRO 1
 #endif
+#if __has_feature(__tpp_pragma_deprecated__)
+#define __COMPILER_HAVE_PRAGMA_DEPRECATED 1
+#endif
 
 #if defined(__DCC_VERSION__)
 #   define __COMPILER_HAVE_AUTOTYPE 1

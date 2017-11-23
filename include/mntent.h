@@ -22,9 +22,9 @@
 #include <features.h>
 #include <paths.h>
 
-#ifndef __CRT_GLC
+#if !defined(__CRT_GLC) && !defined(__CRT_CYG)
 #error "<mntent.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
+#endif /* !__CRT_GLC && !__CRT_CYG */
 
 __SYSDECL_BEGIN
 
@@ -65,12 +65,16 @@ __NAMESPACE_STD_USING(FILE)
 
 __LIBC FILE *(__LIBCCALL setmntent)(char const *__file, char const *__mode) __UFS_FUNC(setmntent);
 __LIBC struct mntent *(__LIBCCALL getmntent)(FILE *__stream);
-__LIBC int (__LIBCCALL addmntent)(FILE *__restrict __stream, struct mntent const *__restrict __mnt);
 __LIBC int (__LIBCCALL endmntent)(FILE *__stream);
-__LIBC char *(__LIBCCALL hasmntopt)(struct mntent const *__mnt, char const *__opt);
 #ifdef __USE_MISC
 __LIBC struct mntent *(__LIBCCALL getmntent_r)(FILE *__restrict __stream, struct mntent *__restrict __result, char *__restrict __buffer, int __bufsize);
 #endif /* __USE_MISC */
+
+#ifndef __CRT_CYG
+__LIBC __PORT_NOCYG int (__LIBCCALL addmntent)(FILE *__restrict __stream, struct mntent const *__restrict __mnt);
+__LIBC __PORT_NOCYG char *(__LIBCCALL hasmntopt)(struct mntent const *__mnt, char const *__opt);
+#endif /* __CRT_CYG */
+
 #endif /* !__KERNEL__ */
 
 __SYSDECL_END

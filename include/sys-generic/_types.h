@@ -25,7 +25,7 @@
 
 __DECL_BEGIN
 
-typedef __FS_TYPE(off)    __cyg_off_t;
+typedef __LONGPTR_TYPE__  __cyg_off_t;
 typedef __off64_t         __cyg_off64_t;
 typedef __LONGPTR_TYPE__  __cyg_fpos_t;
 typedef __off64_t         __cyg_fpos64_t;

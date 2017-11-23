@@ -45,20 +45,13 @@
 
 __SYSDECL_BEGIN
 
-#define __SIGEV_MAX_SIZE    64
-#if __SIZEOF_POINTER__ == 8
-#   define __SIGEV_PAD_SIZE    ((__SIGEV_MAX_SIZE/sizeof(int))-4)
-#else
-#   define __SIGEV_PAD_SIZE    ((__SIGEV_MAX_SIZE/sizeof(int))-3)
-#endif
-
 #ifdef __CC__
 #ifndef __have_sigval_t
 #define __have_sigval_t 1
 /* Type for data associated with a signal. */
 typedef union sigval {
-    int   sival_int;
-    void *sival_ptr;
+    __INT32_TYPE__ sival_int;
+    void          *sival_ptr;
 } sigval_t;
 #endif /* !__have_sigval_t */
 
@@ -66,18 +59,37 @@ typedef union sigval {
 #define __have_pthread_attr_t 1
 typedef union pthread_attr_t pthread_attr_t;
 #endif /* !__have_pthread_attr_t */
+#endif /* __CC__ */
 
+
+#ifdef __CYG_COMPAT__
 typedef struct sigevent {
-    sigval_t sigev_value;
-    int      sigev_signo;
-    int      sigev_notify;
+  sigval_t        sigev_value;
+  __INT32_TYPE__  sigev_signo;
+  __INT32_TYPE__  sigev_notify;
+  void          (*sigev_notify_function)(sigval_t);
+  pthread_attr_t *sigev_notify_attributes;
+} sigevent_t;
+#else /* __CYG_COMPAT__ */
+#define __SIGEV_MAX_SIZE    64
+#if __SIZEOF_POINTER__ == 8
+#   define __SIGEV_PAD_SIZE    ((__SIGEV_MAX_SIZE/4)-4)
+#else
+#   define __SIGEV_PAD_SIZE    ((__SIGEV_MAX_SIZE/4)-3)
+#endif
+
+#ifdef __CC__
+typedef struct sigevent {
+    sigval_t       sigev_value;
+    __INT32_TYPE__ sigev_signo;
+    __INT32_TYPE__ sigev_notify;
 #if defined(__COMPILER_HAVE_TRANSPARENT_STRUCT) && \
     defined(__COMPILER_HAVE_TRANSPARENT_UNION)
 #ifndef __USE_KOS
     struct{
 #endif /* !__USE_KOS */
     union {
-        int _pad[__SIGEV_PAD_SIZE];
+        __INT32_TYPE__ _pad[__SIGEV_PAD_SIZE];
         /* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the thread to receive the signal. */
         __pid_t _tid;
         struct {
@@ -87,7 +99,7 @@ typedef struct sigevent {
     };
 #ifndef __USE_KOS
     union {
-        int _pad[__SIGEV_PAD_SIZE];
+        __INT32_TYPE__ _pad[__SIGEV_PAD_SIZE];
         /* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the thread to receive the signal. */
         __pid_t _tid;
         struct {
@@ -99,7 +111,7 @@ typedef struct sigevent {
 #endif /* !__USE_KOS */
 #else
     union {
-        int _pad[__SIGEV_PAD_SIZE];
+        __INT32_TYPE__ _pad[__SIGEV_PAD_SIZE];
         /* When SIGEV_SIGNAL and SIGEV_THREAD_ID set, LWP ID of the thread to receive the signal. */
         __pid_t _tid;
         struct {
@@ -112,6 +124,7 @@ typedef struct sigevent {
 #endif
 } sigevent_t;
 #endif /* __CC__ */
+#endif /* !__CYG_COMPAT__ */
 
 /* `sigev_notify' values. */
 #ifdef __COMPILER_PREFERR_ENUMS

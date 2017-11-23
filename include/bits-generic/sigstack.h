@@ -65,10 +65,18 @@ enum { /* Possible values for `ss_flags.'. */
 #endif
 
 #ifndef MINSIGSTKSZ
+#ifdef __CYG_COMPAT__
+#define MINSIGSTKSZ 8192 /*< Minimum stack size for a signal handler. */
+#else
 #define MINSIGSTKSZ 2048 /*< Minimum stack size for a signal handler. */
+#endif
 #endif /* !MINSIGSTKSZ */
 #ifndef SIGSTKSZ
+#ifdef __CYG_COMPAT__
+#define SIGSTKSZ   32768 /*< System default stack size. */
+#else
 #define SIGSTKSZ    8192 /*< System default stack size. */
+#endif
 #endif /* !SIGSTKSZ */
 
 

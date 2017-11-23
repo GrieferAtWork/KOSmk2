@@ -23,9 +23,9 @@
 
 #include <__stdinc.h>
 
-#ifndef __CRT_GLC
+#if !defined(__CRT_GLC) && !defined(__CRT_CYG)
 #error "<paths.h> is not supported by the linked libc"
-#endif /* !__CRT_GLC */
+#endif /* !__CRT_GLC && !__CRT_CYG */
 
 __SYSDECL_BEGIN
 
@@ -60,42 +60,69 @@ __SYSDECL_BEGIN
  *    @(#)paths.h    8.1 (Berkeley) 6/2/93
  */
 
-#define _PATH_DEFPATH  "/usr/bin:/bin" /* Default search path. */
-#define _PATH_STDPATH  "/usr/bin:/bin:/usr/sbin:/sbin" /* All standard utilities path. */
+#ifdef __CRT_CYG
+#   define _PATH_DEFPATH  "/bin" /* Default search path. */
+#   define _PATH_STDPATH  "/bin:/usr/sbin:/sbin" /* All standard utilities path. */
+#   define _PATH_MAILDIR  "/var/spool/mail/"
+#   define _PATH_VI       "/bin/vi"
+#else
+#   define _PATH_DEFPATH  "/usr/bin:/bin" /* Default search path. */
+#   define _PATH_STDPATH  "/usr/bin:/bin:/usr/sbin:/sbin" /* All standard utilities path. */
+#   define _PATH_MAILDIR  "/var/mail"
+#   define _PATH_VI       "/usr/bin/vi"
+#endif
 
 #define _PATH_BSHELL   "/bin/sh"
-#define _PATH_CONSOLE  "/dev/console"
 #define _PATH_CSHELL   "/bin/csh"
-#define _PATH_DEVDB    "/var/run/dev.db"
 #define _PATH_DEVNULL  "/dev/null"
-#define _PATH_DRUM     "/dev/drum"
-#define _PATH_GSHADOW  "/etc/gshadow"
-#define _PATH_KLOG     "/proc/kmsg"
-#define _PATH_KMEM     "/dev/kmem"
 #define _PATH_LASTLOG  "/var/log/lastlog"
-#define _PATH_MAILDIR  "/var/mail"
 #define _PATH_MAN      "/usr/share/man"
 #define _PATH_MEM      "/dev/mem"
 #define _PATH_MNTTAB   "/etc/fstab"
 #define _PATH_MOUNTED  "/etc/mtab"
-#define _PATH_NOLOGIN  "/etc/nologin"
-#define _PATH_PRESERVE "/var/lib"
-#define _PATH_RWHODIR  "/var/spool/rwho"
-#define _PATH_SENDMAIL "/usr/sbin/sendmail"
-#define _PATH_SHADOW   "/etc/shadow"
 #define _PATH_SHELLS   "/etc/shells"
 #define _PATH_TTY      "/dev/tty"
-#define _PATH_UNIX     "/boot/vmlinux"
 #define _PATH_UTMP     "/var/run/utmp"
-#define _PATH_VI       "/usr/bin/vi"
 #define _PATH_WTMP     "/var/log/wtmp"
 
 /* Provide trailing slash, since mostly used for building pathnames. */
 #define _PATH_DEV      "/dev/"
 #define _PATH_TMP      "/tmp/"
-#define _PATH_VARDB    "/var/lib/misc/"
 #define _PATH_VARRUN   "/var/run/"
 #define _PATH_VARTMP   "/var/tmp/"
+
+#ifdef __CRT_GLC
+#define _PATH_CONSOLE  "/dev/console"
+#define _PATH_DEVDB    "/var/run/dev.db"
+#define _PATH_DRUM     "/dev/drum"
+#define _PATH_GSHADOW  "/etc/gshadow"
+#define _PATH_KLOG     "/proc/kmsg"
+#define _PATH_KMEM     "/dev/kmem"
+#define _PATH_NOLOGIN  "/etc/nologin"
+#define _PATH_PRESERVE "/var/lib"
+#define _PATH_RWHODIR  "/var/spool/rwho"
+#define _PATH_SENDMAIL "/usr/sbin/sendmail"
+#define _PATH_SHADOW   "/etc/shadow"
+#define _PATH_UNIX     "/boot/vmlinux"
+#define _PATH_VARDB    "/var/lib/misc/"
+#if defined(__USE_PORTABLE) && \
+    defined(__COMPILER_HAVE_PRAGMA_DEPRECATED)
+/* Mark non-portable GLibc paths as deprecated. */
+#pragma deprecated(_PATH_CONSOLE)
+#pragma deprecated(_PATH_DEVDB)
+#pragma deprecated(_PATH_DRUM)
+#pragma deprecated(_PATH_GSHADOW)
+#pragma deprecated(_PATH_KLOG)
+#pragma deprecated(_PATH_KMEM)
+#pragma deprecated(_PATH_NOLOGIN)
+#pragma deprecated(_PATH_PRESERVE)
+#pragma deprecated(_PATH_RWHODIR)
+#pragma deprecated(_PATH_SENDMAIL)
+#pragma deprecated(_PATH_SHADOW)
+#pragma deprecated(_PATH_UNIX)
+#pragma deprecated(_PATH_VARDB)
+#endif
+#endif /* __CRT_GLC */
 
 __SYSDECL_END
 
