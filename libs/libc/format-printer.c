@@ -328,7 +328,7 @@ LONG_PRINTER(vinfo_printer) {
 #else
  temp = libc_xvirtinfo2(addr,&VI,sizeof(buffer),VIRTINFO_NORMAL);
 #endif
- if (temp < 0) memset(buffer,0,sizeof(buffer));
+ if (temp < 0) libc_memset(buffer,0,sizeof(buffer));
  COMPILER_ENDOF(buffer)[-1] = '\0';
  /* Format options:
   *    %%: Emit a '%' character.
@@ -1203,7 +1203,7 @@ libc_format_hexdump(pformatprinter printer, void *closure,
     /* Filter out non-printable characters, replacing them with '.' */
     aend = (aiter = ascii_line)+textcount;
     for (; aiter != aend; ++aiter) {
-     if (!isprint(*aiter)) *aiter = '.';
+     if (!libc_isprint(*aiter)) *aiter = '.';
     }
     /* Print our ascii text portion. */
     print(ascii_line,textcount);
