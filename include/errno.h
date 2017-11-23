@@ -22,9 +22,11 @@
 #include "__stdinc.h"
 #include <features.h>
 
-#ifdef __USE_DOS
-#include <bits/dos-errno.h>
-#endif /* __USE_DOS */
+#ifdef __DOS_COMPAT__
+#   include <bits/dos-errno.h>
+#elif defined(__CYG_COMPAT__)
+#   include <bits/cyg-errno.h>
+#endif /* __DOS_COMPAT__ */
 
 __SYSDECL_BEGIN
 
@@ -43,7 +45,7 @@ typedef int errno_t;
 #endif
 
 
-#ifndef __USE_DOS
+#if !defined(__DOS_COMPAT__) && !defined(__CYG_COMPAT__)
 
 /* NOTE: Linux error codes are taken from comments
  *      in /usr/include/asm-generic/errno.h
@@ -215,12 +217,12 @@ typedef int errno_t;
 
 #define EHWPOISON       133 /* Memory page has hardware error */
 #define __EBASEMAX      133
-#endif /* !__USE_DOS */
+#endif /* !__DOS_COMPAT__ && !__CYG_COMPAT__ */
 
 /* Error assembly names:
  *
  * KOS/GLC format: (Linux)
- *    errno_t *CDECL __errno(void);           // return a poitner to ERRNO.
+ *    errno_t *CDECL __errno_location(void);  // return a poitner to ERRNO.
  *    errno_t CDECL __get_errno(void);        // Returns the current ERRNO value.
  *    errno_t CDECL __set_errno(errno_t err); // Set ERRNO to `err' and return 0.
  *
@@ -236,6 +238,9 @@ typedef int errno_t;
  *    errno_t CDECL _set_doserrno(u32 err);   // Don't be confused by the name. `SetLastError()'
  *    u32     CDECL __get_nterrno(void);      // == GetLastError()
  *    
+ * CYG format: (Cygwin; Not emulated by KOS, but supported by headers)
+ *    errno_t *CDECL __errno(void);
+ *
  *
  * NOTE:   
  *    Internally, KOS's libc only tracks one `errno' variable, meaning
@@ -251,8 +256,14 @@ typedef int errno_t;
 #ifndef _CRT_ERRNO_DEFINED
 #define _CRT_ERRNO_DEFINED 1
 __NAMESPACE_INT_BEGIN
+#ifdef __CYG_COMPAT__
+/* NOTE: Cygwin calls it `__errno()' and DOS calls it `_errno()' */
 #define errno     (*__NAMESPACE_INT_SYM __errno())
-__REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,__errno_t *,__LIBCCALL,__errno,(void),_errno,())
+__LIBC __WUNUSED __ATTR_CONST __errno_t *(__LIBCCALL __errno)(void);
+#else /* __CYG_COMPAT__ */
+#define errno     (*__NAMESPACE_INT_SYM __errno_location())
+__REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED __ATTR_CONST,__errno_t *,__LIBCCALL,__errno_location,(void),_errno,())
+#endif /* !__CYG_COMPAT__ */
 __NAMESPACE_INT_END
 __REDIRECT_IFDOS_NOTHROW(__LIBC,,__errno_t,__LIBCCALL,__set_errno,(__errno_t __err),_set_errno,(__err))
 #if defined(__CRT_KOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
@@ -261,13 +272,8 @@ __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,__errno_t,__LIBCCALL,__get_errno,(void
 __LOCAL __WUNUSED __errno_t __NOTHROW((__LIBCCALL __get_errno)(void)) { return errno; }
 #endif /* Compat... */
 #if defined(__CRT_DOS) && !defined(__GLC_COMPAT__)
-#ifdef __USE_DOS
 __LIBC __errno_t __NOTHROW((__LIBCCALL _get_errno)(__errno_t *__perr));
 __LIBC __errno_t __NOTHROW((__LIBCCALL _set_errno)(__errno_t __err));
-#else /* __USE_DOS */
-__LIBC __errno_t __NOTHROW((__LIBCCALL _get_errno)(__errno_t *__perr));
-__LIBC __errno_t __NOTHROW((__LIBCCALL _set_errno)(__errno_t __err));
-#endif /* !__USE_DOS */
 #else /* Builtin... */
 __LOCAL __errno_t __NOTHROW((__LIBCCALL _get_errno)(__errno_t *__perr)) { if (__perr) *__perr = errno; return 0; }
 __LOCAL __errno_t __NOTHROW((__LIBCCALL _set_errno)(__errno_t __err)) { return (errno = __err); }
@@ -277,20 +283,24 @@ __LOCAL __errno_t __NOTHROW((__LIBCCALL _set_errno)(__errno_t __err)) { return (
 #ifdef __USE_GNU
 #undef program_invocation_name
 #undef program_invocation_short_name
-#if defined(__CRT_KOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+#if defined(__CRT_KOS) && \
+  (!defined(__DOS_COMPAT__) && !defined(__CYG_COMPAT__) && \
+  (!defined(__GLC_COMPAT__) || !defined(__CRT_GLC)))
 #define program_invocation_name       (__NAMESPACE_INT_SYM __libc_program_invocation_name())
 #define program_invocation_short_name (__NAMESPACE_INT_SYM __libc_program_invocation_short_name())
 __NAMESPACE_INT_BEGIN
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_name)(void));
 __LIBC __ATTR_CONST char *__NOTHROW((__LIBCCALL __libc_program_invocation_short_name)(void));
 __NAMESPACE_INT_END
-#elif defined(__CRT_GLC) && !defined(__GLC_COMPAT__)
+#elif !defined(__DOS_COMPAT__)
 __LIBC char *program_invocation_name;
 __LIBC char *program_invocation_short_name;
-#elif defined(__CRT_DOS)
+#else
+__NAMESPACE_INT_BEGIN
 __LIBC char **__NOTHROW((__LIBCCALL __p__pgmptr)(void));
-#define program_invocation_name        (*__p__pgmptr())
-#define program_invocation_short_name  (*__p__pgmptr())
+__NAMESPACE_INT_END
+#define program_invocation_name        (*__NAMESPACE_INT_SYM __p__pgmptr())
+#define program_invocation_short_name  (*__NAMESPACE_INT_SYM __p__pgmptr())
 #endif
 #endif /* __USE_GNU */
 
@@ -307,27 +317,41 @@ __LIBC __PORT_KOSONLY __WUNUSED __UINT32_TYPE__ __NOTHROW((__LIBCCALL errno_kos2
 __LOCAL __PORT_KOSONLY __WUNUSED errno_t (__LIBCCALL errno_nt2kos)(__UINT32_TYPE__ __eno) { return errno_dos2kos(errno_nt2dos(__eno)); }
 #endif /* __CRT_KOS && __DOS_COMPAT__ && !__GLC_COMPAT__ && !__DOS_COMPAT__ */
 
-#ifndef __GLC_COMPAT__
 /* types error code access. */
 __NAMESPACE_INT_BEGIN
 
+#if (defined(__CRT_KOS) || defined(__CRT_GLC)) && \
+   (!defined(__DOS_COMPAT__) && !defined(__CYG_COMPAT__))
 /* KOS/GLC/Linux Error code format */
-#ifndef __DOS_COMPAT__
 #define kos_errno       (*__NAMESPACE_INT_SYM __kos_errno())
+__REDIRECT(__LIBC,__PORT_KOSONLY __WUNUSED __ATTR_CONST,errno_t *,__LIBCCALL,__kos_errno,(void),__errno_location,())
+#ifdef __GLC_COMPAT__
+#define GET_KOS_ERRNO()  ((errno_t)kos_errno)
+#define SET_KOS_ERRNO(x) (kos_errno = (x),EOK)
+#else
 #define GET_KOS_ERRNO()   __NAMESPACE_INT_SYM __kos_geterrno()
 #define SET_KOS_ERRNO(x)  __NAMESPACE_INT_SYM __kos_seterrno(x)
-__REDIRECT(__LIBC,__PORT_KOSONLY __WUNUSED,errno_t *,__LIBCCALL,__kos_errno,(void),__errno,())
 __REDIRECT(__LIBC,__PORT_KOSONLY __WUNUSED,errno_t,__LIBCCALL,__kos_geterrno,(void),__get_errno,())
 __REDIRECT(__LIBC,__PORT_KOSONLY,errno_t,__LIBCCALL,__kos_seterrno,(errno_t __eno),__set_errno,(__eno))
-#endif /* !__DOS_COMPAT__ */
+#endif
+#endif /* !__DOS_COMPAT__ && !__CYG_COMPAT__ */
 
+#if defined(__CRT_CYG) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))
+/* Cygwin Error code format */
+#define cyg_errno         (*__NAMESPACE_INT_SYM __cyg_errno())
+#define GET_CYG_ERRNO()   ((errno_t)cyg_errno)
+#define SET_CYG_ERRNO(x)  (cyg_errno = (x),EOK)
+__REDIRECT(__LIBC,__PORT_KOSONLY __WUNUSED __ATTR_CONST,errno_t *,__LIBCCALL,__cyg_errno,(void),__errno,())
+#endif /* __CRT_CYG && (!__DOS_COMPAT__ && !__GLC_COMPAT__) */
+
+#if defined(__CRT_DOS) && (!defined(__CYG_COMPAT__) && !defined(__GLC_COMPAT__))
 /* DOS/MSVC Error code format */
 #define dos_errno        (*__NAMESPACE_INT_SYM __dos_errno())
 #define GET_DOS_ERRNO()    __NAMESPACE_INT_SYM __dos_geterrno()
 #define SET_DOS_ERRNO(x)   __NAMESPACE_INT_SYM __dos_seterrno(x)
-__REDIRECT(__LIBC,__PORT_DOSONLY __WUNUSED,errno_t *,__LIBCCALL,__dos_errno,(void),_errno,())
+__REDIRECT(__LIBC,__PORT_DOSONLY __WUNUSED __ATTR_CONST,errno_t *,__LIBCCALL,__dos_errno,(void),_errno,())
 #ifdef __DOS_COMPAT__
-__REDIRECT(__LIBC,__WUNUSED,errno_t *,__LIBCCALL,__private_dos_errno,(void),_errno,())
+__REDIRECT(__LIBC,__WUNUSED __ATTR_CONST,errno_t *,__LIBCCALL,__private_dos_errno,(void),_errno,())
 __LOCAL __PORT_DOSONLY __WUNUSED errno_t (__LIBCCALL __dos_geterrno)(void) { return *__private_dos_errno(); }
 #else /* __DOS_COMPAT__ */
 __REDIRECT(__LIBC,__PORT_DOSONLY __WUNUSED,errno_t,__LIBCCALL,__dos_geterrno,(void),__get_doserrno,())
@@ -346,23 +370,29 @@ __LOCAL __PORT_DOSONLY __WUNUSED __UINT32_TYPE__ (__LIBCCALL __nt_geterrno)(void
 __REDIRECT(__LIBC,__PORT_DOSONLY __WUNUSED,__UINT32_TYPE__,__LIBCCALL,__nt_geterrno,(void),__get_nterrno,())
 #endif /* !__DOS_COMPAT__ */
 __REDIRECT(__LIBC,__PORT_DOSONLY,errno_t,__LIBCCALL,__nt_seterrno,(__UINT32_TYPE__ __eno),_set_doserrno,(__eno))
+#endif /* __CRT_DOS && (!__CYG_COMPAT__ && !__GLC_COMPAT__) */
+
 __NAMESPACE_INT_END
-#endif /* !__GLC_COMPAT__ */
 
 #ifndef GET_ERRNO
-#ifdef __USE_DOS
-#define GET_ERRNO()  GET_DOS_ERRNO()
-#define SET_ERRNO(v) SET_DOS_ERRNO(v)
-#else /* __USE_DOS */
-#define GET_ERRNO()  GET_KOS_ERRNO()
-#define SET_ERRNO(v) SET_KOS_ERRNO(v)
-#endif /* !__USE_DOS */
+#ifdef __DOS_COMPAT__
+#   define GET_ERRNO()  GET_DOS_ERRNO()
+#   define SET_ERRNO(v) SET_DOS_ERRNO(v)
+#elif defined(__CYG_COMPAT__)
+#   define GET_ERRNO()  GET_CYG_ERRNO()
+#   define SET_ERRNO(v) SET_CYG_ERRNO(v)
+#else
+#   define GET_ERRNO()  GET_KOS_ERRNO()
+#   define SET_ERRNO(v) SET_KOS_ERRNO(v)
+#endif
 #endif /* !GET_ERRNO */
 
 #endif /* __USE_KOS */
 #endif /* !__KERNEL__ */
 #endif /* __CC__ */
 
+
+#if defined(__USE_KOS) || defined(__KERNEL__)
 #ifdef __KERNEL__
 #define ERELOAD         500 /* Resource must be reloaded (after a lock was temporarily lost). */
 #define ELOST           501 /* Resource was lost (During an attempt to acquire a resource, another was lost). */
@@ -379,7 +409,6 @@ __NAMESPACE_INT_END
 #   define __ERRNO_THRESHOLD __ERRNO_THRESHOLD32
 #endif
 
-#if defined(__USE_KOS) || defined(__KERNEL__)
 
 /* Make sure that the errno-threshold is within a valid range.
  * NOTE: To ensure that `E_PTR()' works correctly, we reserve part

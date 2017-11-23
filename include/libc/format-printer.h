@@ -40,7 +40,7 @@
 
 #if !defined(__NO_ATTR_WEAK) && \
     !defined(__ATTR_WEAK_IS_SELECTANY)
-#define __FORMAT_PRINTER_IMPL __INTERN __ATTR_WEAK
+#define __FORMAT_PRINTER_IMPL extern __ATTR_VISIBILITY("hidden") __ATTR_WEAK
 #else /* !__NO_ATTR_WEAK */
 #define __FORMAT_PRINTER_IMPL __PRIVATE
 #endif /* __NO_ATTR_WEAK */
@@ -52,7 +52,7 @@
 __SYSDECL_BEGIN
 
 #ifdef __ATTR_WEAK_IS_SELECTANY
-__INTERN __ATTR_WEAK
+extern __ATTR_VISIBILITY("hidden") __ATTR_WEAK
 #else
 __FORMAT_PRINTER_IMPL
 #endif

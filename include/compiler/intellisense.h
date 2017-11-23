@@ -37,19 +37,6 @@
 #error "Syntax highlighting depends on C++ features being available"
 #endif
 
-/* Get rid of MSVC's predefined macros */
-#undef WIN32
-#undef WIN64
-#undef _WIN32
-#undef _M_IX86
-#undef _M_IX86_FP
-#undef _MSC_VER
-#undef _MSC_BUILD
-#undef _MSC_EXTENSIONS
-#undef _MT
-#undef __BOOL_DEFINED
-
-
 #ifdef _M_ARM
 #   define __arm__              1
 #elif defined(_WIN64)
@@ -82,17 +69,37 @@
 #endif
 
 #define __STDC__ 1
-#define __KOS__  1
 #ifdef __KOS__
-#define __kos    1
-#define __kos__  1
-#define __unix   1
-#define __unix__ 1
-#define __ELF__  1
-#endif /* __KOS__ */
+/* Hosted KOS development mode. */
+#   define __kos    1
+#   define __kos__  1
+#   define __unix   1
+#   define __unix__ 1
+#   define __ELF__  1
+#elif defined(_WIN32) || defined(WIN32) || \
+      defined(_WIN64) || defined(WIN64)
+/* Assume hosted CYGWIN development mode.
+ * NOTE: Hosted MSVC mode doesn't need be handled here, as in
+ *       that case, this header should not be included at all! */
+#   define __CYGWIN__ 1
+#else
+/* XXX: Hosted GLibC development mode? */
+#endif
+
+/* Get rid of MSVC's predefined macros */
+#undef WIN32
+#undef WIN64
+#undef _WIN32
+#undef _WIN64
+#undef _M_IX86
+#undef _M_IX86_FP
+#undef _MSC_VER
+#undef _MSC_BUILD
+#undef _MSC_EXTENSIONS
+#undef _MT
+#undef __BOOL_DEFINED
 
 #define ____INTELLISENSE_ENDIAN  1234
-#undef _WIN64
 
 #define __DATE_DAY__   1
 #define __DATE_WDAY__  0

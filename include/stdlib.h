@@ -893,8 +893,14 @@ typedef int (__LIBCCALL *_onexit_t)(void);
 #ifndef _CRT_ERRNO_DEFINED
 #define _CRT_ERRNO_DEFINED 1
 __NAMESPACE_INT_BEGIN
+#ifdef __CYG_COMPAT__
+/* NOTE: Cygwin calls it `__errno()' and DOS calls it `_errno()' */
 #define errno     (*__NAMESPACE_INT_SYM __errno())
-__REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,errno_t *,__LIBCCALL,__errno,(void),_errno,())
+__LIBC __WUNUSED __ATTR_CONST errno_t *(__LIBCCALL __errno)(void);
+#else /* __CYG_COMPAT__ */
+#define errno     (*__NAMESPACE_INT_SYM __errno_location())
+__REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED __ATTR_CONST,errno_t *,__LIBCCALL,__errno_location,(void),_errno,())
+#endif /* !__CYG_COMPAT__ */
 __NAMESPACE_INT_END
 __REDIRECT_IFDOS_NOTHROW(__LIBC,,errno_t,__LIBCCALL,__set_errno,(errno_t __err),_set_errno,(__err))
 #if defined(__CRT_KOS) && (!defined(__DOS_COMPAT__) && !defined(__GLC_COMPAT__))

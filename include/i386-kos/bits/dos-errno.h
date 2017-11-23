@@ -109,7 +109,7 @@ __SYSDECL_BEGIN
 #define __DOS_EWOULDBLOCK     140
 #define __DOS_EMAX            140
 
-#ifdef __USE_DOS
+#ifdef __DOS_COMPAT__
 #define EPERM           __DOS_EPERM
 #define ENOENT          __DOS_ENOENT
 #define ESRCH           __DOS_ESRCH
@@ -191,7 +191,7 @@ __SYSDECL_BEGIN
 #define ETIMEDOUT       __DOS_ETIMEDOUT
 #define ETXTBSY         __DOS_ETXTBSY
 #define EWOULDBLOCK     __DOS_EWOULDBLOCK
-#endif
+#endif /* __DOS_COMPAT__ */
 
 __SYSDECL_END
 

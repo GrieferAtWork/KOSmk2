@@ -192,7 +192,7 @@
     </NMakeCleanCommandLine>
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__BUILDING_LIBC=1;CONFIG_DEBUG=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__BUILDING_LIBC=1;CONFIG_DEBUG=1</NMakePreprocessorDefinitions>
     <NMakeOutput>
     </NMakeOutput>
     <NMakeIncludeSearchPath>
@@ -211,7 +211,7 @@
     <NMakeCleanCommandLine />
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__BUILDING_LIBC=1;CONFIG_DEBUG=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__BUILDING_LIBC=1;CONFIG_DEBUG=1</NMakePreprocessorDefinitions>
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
@@ -230,7 +230,7 @@
     <NMakeCleanCommandLine />
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__BUILDING_LIBC=1;CONFIG_DEBUG=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__BUILDING_LIBC=1;CONFIG_DEBUG=1</NMakePreprocessorDefinitions>
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
@@ -256,7 +256,7 @@
     </NMakeCleanCommandLine>
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__BUILDING_LIBC=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__BUILDING_LIBC=1</NMakePreprocessorDefinitions>
     <NMakeOutput>
     </NMakeOutput>
     <NMakeIncludeSearchPath>
@@ -275,7 +275,7 @@
     <NMakeCleanCommandLine />
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__BUILDING_LIBC=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__BUILDING_LIBC=1</NMakePreprocessorDefinitions>
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
@@ -294,7 +294,7 @@
     <NMakeCleanCommandLine />
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler/intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__BUILDING_LIBC=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__BUILDING_LIBC=1</NMakePreprocessorDefinitions>
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>

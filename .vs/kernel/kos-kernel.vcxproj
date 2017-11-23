@@ -384,7 +384,7 @@
     </NMakeCleanCommandLine>
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler\intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1;CONFIG_DEBUG=1;CONFIG_TRACE_LEAKS=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1;CONFIG_DEBUG=1;CONFIG_TRACE_LEAKS=1</NMakePreprocessorDefinitions>
     <NMakeOutput>
     </NMakeOutput>
     <NMakeIncludeSearchPath>
@@ -403,7 +403,7 @@
     <NMakeCleanCommandLine />
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler\intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1;CONFIG_DEBUG=1;CONFIG_TRACE_LEAKS=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1;CONFIG_DEBUG=1;CONFIG_TRACE_LEAKS=1</NMakePreprocessorDefinitions>
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
@@ -422,7 +422,7 @@
     <NMakeCleanCommandLine />
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler\intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1;CONFIG_DEBUG=1;CONFIG_TRACE_LEAKS=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1;CONFIG_DEBUG=1;CONFIG_TRACE_LEAKS=1</NMakePreprocessorDefinitions>
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
@@ -448,7 +448,7 @@
     </NMakeCleanCommandLine>
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler\intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1</NMakePreprocessorDefinitions>
     <NMakeOutput>
     </NMakeOutput>
     <NMakeIncludeSearchPath>
@@ -467,7 +467,7 @@
     <NMakeCleanCommandLine />
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler\intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1</NMakePreprocessorDefinitions>
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>
@@ -486,7 +486,7 @@
     <NMakeCleanCommandLine />
     <NMakeForcedIncludes>$(SolutionDir)..\include\compiler\intellisense.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <AdditionalOptions>/TP</AdditionalOptions>
-    <NMakePreprocessorDefinitions>__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__KOS__=1;__KERNEL__=1;CONFIG_BUILDING_KERNEL_CORE=1;CONFIG_SMP=1</NMakePreprocessorDefinitions>
     <NMakeOutput />
     <NMakeIncludeSearchPath />
     <IntermediateOutputPath>$(ProjectDir)</IntermediateOutputPath>

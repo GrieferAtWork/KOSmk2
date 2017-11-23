@@ -173,13 +173,8 @@
 #   define __PUBDEF  extern
 #   define __PRIVATE static
 #   define __INTDEF  extern
-#if defined(_MSC_VER) && 0
-#   define __PUBLIC  extern __ATTR_DLLEXPORT
-#   define __INTERN  extern
-#else
 #   define __PUBLIC  __ATTR_DLLEXPORT
 #   define __INTERN  /* Nothing */
-#endif
 #else
 #   define __IMPDEF  extern __ATTR_VISIBILITY("default")
 #   define __EXPDEF  extern __ATTR_VISIBILITY("default")

@@ -13,9 +13,18 @@
 #else
 #   include <features.h>
 #   define __DYNAMIC_REENT__ 1
-#   define _READ_WRITE_RETURN_TYPE  int
-#   define _READ_WRITE_BUFSIZE_TYPE int
+#   define _READ_WRITE_RETURN_TYPE  __SSIZE_TYPE__
+#   define _READ_WRITE_BUFSIZE_TYPE __SIZE_TYPE__
+#   define __LINUX_ERRNO_EXTENSIONS__ 1
 #endif /* ... */
+
+
+#ifndef _READ_WRITE_RETURN_TYPE
+#define _READ_WRITE_RETURN_TYPE  int
+#endif
+#ifndef _READ_WRITE_BUFSIZE_TYPE
+#define _READ_WRITE_BUFSIZE_TYPE int
+#endif
 
 #ifndef __size_t_defined
 #define __size_t_defined 1

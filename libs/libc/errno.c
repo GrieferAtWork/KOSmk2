@@ -157,7 +157,8 @@ DEFINE_PUBLIC_ALIAS(_set_doserrno,libc_set_nterrno);   /* NT */
 DEFINE_PUBLIC_ALIAS(_get_doserrno,libc_get_nterrno2);  /* NT */
 DEFINE_PUBLIC_ALIAS(__get_nterrno,libc_get_nterrno);   /* NT */
 #endif
-DEFINE_PUBLIC_ALIAS(__errno,libc_errno);               /* KOS */
+DEFINE_PUBLIC_ALIAS(__errno,libc_errno);               /* Cygwin */
+DEFINE_PUBLIC_ALIAS(__errno_location,libc_errno);      /* GLibC */
 DEFINE_PUBLIC_ALIAS(__get_errno,libc_get_errno);       /* KOS */
 DEFINE_PUBLIC_ALIAS(__set_errno,libc_set_errno);       /* KOS */
 /* NOTE: There is no KOS-version that stores the error in a pointer. */

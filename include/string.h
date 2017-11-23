@@ -367,10 +367,34 @@ __NAMESPACE_STD_USING(strrchr)
 #endif /* !__CXX_SYSTEM_HEADER */
 
 
-#if defined(__USE_KOS) && (defined(__CRT_KOS) && !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__))
-__LIBC __PORT_KOSONLY __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerror_s)(int __errnum);
+#ifdef __USE_KOS
+#if !defined(__CRT_KOS) && \
+    (defined(__CYG_COMPAT__) || defined(__GLC_COMPAT__))
+/* GLibC/Cygwin compatibility (NOTE: Doesn't work in KOS) */
+__LOCAL __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerror_s)(int __errnum) {
+ __LIBC char const *const _sys_errlist[]; __LIBC int _sys_nerr;
+ return (unsigned int)__errnum < (unsigned int)_sys_nerr ? _sys_errlist[__errnum] : __NULLPTR;
+}
+#elif !defined(__CRT_KOS) && defined(__DOS_COMPAT__)
+/* DOS/MSVcrt compatibility (NOTE: Doesn't work in KOS) */
+__NAMESPACE_INT_BEGIN
+__LIBC __WUNUSED __ATTR_CONST char **(__LIBCCALL __sys_errlist)(void);
+__LIBC __WUNUSED __ATTR_CONST int *(__LIBCCALL __sys_nerr)(void);
+__NAMESPACE_INT_END
+__LOCAL __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerror_s)(int __errnum) {
+ return (unsigned int)__errnum < (unsigned int)*(__NAMESPACE_INT_SYM __sys_nerr)() ?
+        (__NAMESPACE_INT_SYM __sys_errlist)()[__errnum] : __NULLPTR;
+}
+#else
+/* KOS direct function implementation. */
+__LIBC __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerror_s)(int __errnum);
+#endif
+#if defined(__CRT_KOS) && !defined(__CYG_COMPAT__) && \
+   !defined(__GLC_COMPAT__) && !defined(__DOS_COMPAT__)
 __LIBC __PORT_KOSONLY __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerrorname_s)(int __errnum);
-#endif /* __USE_KOS && __CRT_KOS */
+#endif /* ... */
+#endif /* __USE_KOS */
+
 #ifndef __KERNEL__
 __NAMESPACE_STD_BEGIN
 __LIBC __WUNUSED __ATTR_RETNONNULL char *(__LIBCCALL strerror)(int __errnum);
@@ -638,7 +662,8 @@ __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemlen)(void c
 __LIBC __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL rawmemrlen)(void const *__restrict __haystack, int __needle);
 #endif
 
-#if !defined(__CRT_KOS) || defined(__DOS_COMPAT__) || defined(__GLC_COMPAT__)
+#if !defined(__CRT_KOS) || defined(__DOS_COMPAT__) || \
+     defined(__GLC_COMPAT__) || defined(__CYG_COMPAT__)
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL stroff)(char const *__restrict __haystack, int __needle) { return __libc_stroff(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strroff)(char const *__restrict __haystack, int __needle) { return __libc_strroff(__haystack,__needle); }
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1)) size_t (__LIBCCALL strnoff)(char const *__restrict __haystack, int __needle, size_t __max_chars) { return __libc_strnoff(__haystack,__needle,__max_chars); }
