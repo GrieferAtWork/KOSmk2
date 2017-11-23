@@ -92,7 +92,7 @@ __LIBC __WUNUSED int (__LIBCCALL isctype)(int __c, int __mask);
 
 #ifdef __CRT_DOS
 __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__dos_isctype,(int __c, int __mask),_isctype,(__c,__mask))
-__REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__dos_isctype_l,(int __c, int __mask, __locale_t __locale),_isctype_l,(__c,__mask))
+__REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__dos_isctype_l,(int __c, int __mask, __locale_t __locale),_isctype_l,(__c,__mask,__locale))
 #endif /* __CRT_DOS */
 
 #ifndef __NO_ATTR_INLINE
@@ -108,8 +108,8 @@ __LOCAL __BOOL (__LIBCCALL __ascii_isalnum)(int __ch)  { return __ascii_isupper(
 __LOCAL __BOOL (__LIBCCALL __ascii_ispunct)(int __ch)  { return ((__UINT8_TYPE__)__ch >= 0x21 && (__UINT8_TYPE__)__ch <= 0x2f) || ((__UINT8_TYPE__)__ch >= 0x3a && (__UINT8_TYPE__)__ch <= 0x40) || ((__UINT8_TYPE__)__ch >= 0x5b && (__UINT8_TYPE__)__ch <= 0x60) || ((__UINT8_TYPE__)__ch >= 0x7b && (__UINT8_TYPE__)__ch <= 0x7e); }
 __LOCAL __BOOL (__LIBCCALL __ascii_isgraph)(int __ch)  { return (__UINT8_TYPE__)__ch >= 0x21 && (__UINT8_TYPE__)__ch <= 0x7e; }
 __LOCAL __BOOL (__LIBCCALL __ascii_isprint)(int __ch)  { return (__UINT8_TYPE__)__ch >= 0x20 && (__UINT8_TYPE__)__ch <= 0x7e; }
-__LOCAL __BOOL (__LIBCCALL __ascii_tolower)(int __ch)  { return __ascii_isupper(__ch) ? ((__UINT8_TYPE__)__ch+0x20) : __ch; }
-__LOCAL __BOOL (__LIBCCALL __ascii_toupper)(int __ch)  { return __ascii_islower(__ch) ? ((__UINT8_TYPE__)__ch-0x20) : __ch; }
+__LOCAL int (__LIBCCALL __ascii_tolower)(int __ch) { return __ascii_isupper(__ch) ? ((__UINT8_TYPE__)__ch+0x20) : __ch; }
+__LOCAL int (__LIBCCALL __ascii_toupper)(int __ch) { return __ascii_islower(__ch) ? ((__UINT8_TYPE__)__ch-0x20) : __ch; }
 #elif !defined(__NO_XBLOCK)
 #define __ascii_iscntrl(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN __ac_ch <= 0x1f || __ac_ch == 0x7f; })
 #define __ascii_isblank(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN __ac_ch == 0x09 || __ac_ch == 0x20; })
@@ -123,8 +123,8 @@ __LOCAL __BOOL (__LIBCCALL __ascii_toupper)(int __ch)  { return __ascii_islower(
 #define __ascii_ispunct(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN (__ac_ch >= 0x21 && __ac_ch <= 0x2f) || (__ac_ch >= 0x3a && __ac_ch <= 0x40) || (__ac_ch >= 0x5b && __ac_ch <= 0x60) || (__ac_ch >= 0x7b && __ac_ch <= 0x7e); })
 #define __ascii_isgraph(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN __ac_ch >= 0x21 && __ac_ch <= 0x7e; })
 #define __ascii_isprint(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN __ac_ch >= 0x20 && __ac_ch <= 0x7e; })
-#define __ascii_tolower(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN __ascii_isupper(ch) ? (__ac_ch+0x20) : __ac_ch; })
-#define __ascii_toupper(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN __ascii_islower(ch) ? (__ac_ch-0x20) : __ac_ch; })
+#define __ascii_tolower(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN (int)(__ascii_isupper(ch) ? (__ac_ch+0x20) : __ac_ch); })
+#define __ascii_toupper(ch)  __XBLOCK({ __UINT8_TYPE__ const __ac_ch = (__UINT8_TYPE__)(ch); __XRETURN (int)(__ascii_islower(ch) ? (__ac_ch-0x20) : __ac_ch); })
 #else
 #define __ascii_iscntrl(ch)  ((__UINT8_TYPE__)(ch) <= 0x1f || (__UINT8_TYPE__)(ch) == 0x7f)
 #define __ascii_isblank(ch)  ((__UINT8_TYPE__)(ch) == 0x09 || (__UINT8_TYPE__)(ch) == 0x20)
@@ -144,8 +144,8 @@ __LOCAL __BOOL (__LIBCCALL __ascii_toupper)(int __ch)  { return __ascii_islower(
                              ((__UINT8_TYPE__)(ch) >= 0x7b && (__UINT8_TYPE__)(ch) <= 0x7e))
 #define __ascii_isgraph(ch)  ((__UINT8_TYPE__)(ch) >= 0x21 && (__UINT8_TYPE__)(ch) <= 0x7e)
 #define __ascii_isprint(ch)  ((__UINT8_TYPE__)(ch) >= 0x20 && (__UINT8_TYPE__)(ch) <= 0x7e)
-#define __ascii_tolower(ch)  (__ascii_isupper(ch) ? ((ch)+0x20) : (ch))
-#define __ascii_toupper(ch)  (__ascii_islower(ch) ? ((ch)-0x20) : (ch))
+#define __ascii_tolower(ch)  ((int)(__ascii_isupper(ch) ? ((ch)+0x20) : (ch)))
+#define __ascii_toupper(ch)  ((int)(__ascii_islower(ch) ? ((ch)-0x20) : (ch)))
 #endif
 
 #define	__inline_isascii(c) (!((__UINT8_TYPE__)(c)&0x80)) /* If C is a 7 bit value. */

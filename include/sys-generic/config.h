@@ -2,6 +2,7 @@
 #define _SYS_GENERIC_CONFIG_H 1
 
 #include <__stdinc.h>
+#include <hybrid/typecore.h>
 
 /* DISCLAIMER: This file is based off of cygwin's `/usr/include/sys/config.h' */
 
@@ -15,6 +16,11 @@
 #   define _READ_WRITE_RETURN_TYPE  int
 #   define _READ_WRITE_BUFSIZE_TYPE int
 #endif /* ... */
+
+#ifndef __size_t_defined
+#define __size_t_defined 1
+typedef __SIZE_TYPE__ size_t;
+#endif /* !__size_t_defined */
 
 #ifndef _SYS_CONFIG_H
 #define _SYS_CONFIG_H 1

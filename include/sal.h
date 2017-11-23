@@ -331,7 +331,7 @@
 #define _Inout_opt_z_count_(size)
 #define _Inout_opt_z_count_c_(size)
 #define _Inout_ptrdiff_count_(size)
-#define _Inout_updates_(size)y
+#define _Inout_updates_(size)
 #define _Inout_updates_all_(size)
 #define _Inout_updates_all_opt_(size)
 #define _Inout_updates_bytes_(size)
@@ -987,6 +987,13 @@
 #define __useHeader
 #define __valid
 #define __writableTo(size)
+
+#define _SAL1_Source_(Name,args,annotes)
+#define _SAL1_1_Source_(Name,args,annotes)
+#define _SAL1_2_Source_(Name,args,annotes)
+#define _SAL2_Source_(Name,args,annotes)
+#define _SAL_L_Source_(Name,args,annotes)
+
 
 //#define __GENSYM(x)  __MKID(x,__COUNTER__)
 //#define __MKID(x,y)  ___MKID(x,y)

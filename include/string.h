@@ -24,6 +24,7 @@
 #include "features.h"
 #include "hybrid/typecore.h"
 #include "libc/string.h"
+#include "xlocale.h"
 #ifdef __OPTIMIZE_LIBC__
 #include <asm-generic/string.h>
 #endif
@@ -393,12 +394,6 @@ __LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL __stpcpy)(char *__r
 __LOCAL __ATTR_RETNONNULL __NONNULL((1,2)) char *(__LIBCCALL __stpncpy)(char *__restrict __dst, char const *__restrict __src, size_t __dstsize) { return stpncpy(__dst,__src,__dstsize); }
 #endif /* __DOS_COMPAT__ */
 #ifndef __KERNEL__
-__SYSDECL_END
-#include "xlocale.h"
-#ifdef __DOS_COMPAT__
-#include "hybrid/malloc.h"
-#endif /* __DOS_COMPAT__ */
-__SYSDECL_BEGIN
 __REDIRECT_IFDOS(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2,3)),int,__LIBCCALL,strcoll_l,(char const *__s1, char const *__s2, __locale_t __locale),_strcoll_l,(__s1,__s2,__locale))
 __REDIRECT_IFDOS(__LIBC,__NONNULL((2)),size_t,__LIBCCALL,strxfrm_l,(char *__dst, char const *__restrict __src, size_t __n, __locale_t __locale),_strxfrm_l,(__dst,__src,__n,__locale))
 #ifndef __DOS_COMPAT__
@@ -406,6 +401,9 @@ __LIBC __WUNUSED __NONNULL((2)) char *(__LIBCCALL strerror_l)(int __errnum, __lo
 __LIBC __PORT_NODOS __WUNUSED __ATTR_RETNONNULL char *(__LIBCCALL strsignal)(int __sig);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC char *(__LIBCCALL strndup)(char const *__restrict __str, size_t __max_chars);
 #else /* !__DOS_COMPAT__ */
+__SYSDECL_END
+#include "hybrid/malloc.h"
+__SYSDECL_BEGIN
 __LOCAL __WUNUSED __NONNULL((2)) char *(__LIBCCALL strerror_l)(int __errnum, __locale_t __UNUSED(__locale)) { return strerror(__errnum); }
 __LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED
 __ATTR_MALLOC char *(__LIBCCALL strndup)(char const *__restrict __str, size_t __max_chars) {
@@ -1118,9 +1116,6 @@ __OPT_LOCAL __WUNUSED __ATTR_PURE __ATTR_RETNONNULL __NONNULL((1)) __UINT64_TYPE
 
 
 #ifdef __CRT_KOS
-__SYSDECL_END
-#include "xlocale.h"
-__SYSDECL_BEGIN
 
 /* Fuzzy string compare extensions.
  *  - Lower return values indicate more closely matching data.
@@ -1140,7 +1135,7 @@ __LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL wil
 __LIBC __PORT_KOSONLY __WUNUSED __ATTR_PURE __NONNULL((1,2)) int (__LIBCCALL wildstrcasecmp_l)(char const *__pattern, char const *__string, __locale_t __locale);
 #endif /* __CRT_KOS */
 
-#ifndef __GLC_COMPAT__
+#if !defined(__GLC_COMPAT__) && !defined(__CYG_COMPAT__)
 __REDIRECT(__LIBC,__WUNUSED __ATTR_PURE __NONNULL((1,2)),int,__LIBCCALL,memcasecmp,
           (void const *__a, void const *__b, size_t __n_bytes),_memicmp,(__a,__b,__n_bytes))
 #ifndef __KERNEL__
@@ -1155,7 +1150,7 @@ __REDIRECT_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,__libc_tolower,(int __c),tolo
 __LOCAL __WUNUSED __ATTR_PURE __NONNULL((1,2))
 int (__LIBCCALL memcasecmp)(void const *__a, void const *__b, size_t __n_bytes) {
     __BYTE_TYPE__ *__ai = (__BYTE_TYPE__ *)__a,*__bi = (__BYTE_TYPE__ *)__b; int __temp;
-    while (__n_bytes--) if ((__temp = __libc_tolower(*__ai++) - __libc_tolower(*__bi++)) != 0) return temp;
+    while (__n_bytes--) if ((__temp = __libc_tolower(*__ai++) - __libc_tolower(*__bi++)) != 0) return __temp;
     return 0;
 }
 #ifndef __KERNEL__

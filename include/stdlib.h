@@ -475,10 +475,10 @@ __REDIRECT(__LIBC,__SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) 
 #else /* __USE_DEBUG != 0 */
 #ifndef __malloc_calloc_d_defined
 #define __malloc_calloc_d_defined 1
-#   define _malloc_d(n_bytes,...)                      malloc(n_bytes)
-#   define _calloc_d(count,n_bytes,...)                calloc(count,n_bytes)
-#   define _realloc_d(ptr,n_bytes,...)                 realloc(ptr,n_bytes)
-#   define _free_d(ptr,...)                            free(ptr)
+#   define _malloc_d(n_bytes,...)                      __NAMESPACE_STD_SYM malloc(n_bytes)
+#   define _calloc_d(count,n_bytes,...)                __NAMESPACE_STD_SYM calloc(count,n_bytes)
+#   define _realloc_d(ptr,n_bytes,...)                 __NAMESPACE_STD_SYM realloc(ptr,n_bytes)
+#   define _free_d(ptr,...)                            __NAMESPACE_STD_SYM free(ptr)
 #endif /* !__malloc_calloc_d_defined */
 #ifdef __USE_MISC
 #ifndef __cfree_d_defined
@@ -982,7 +982,10 @@ __REDIRECT_NOTHROW(__LIBC,__PORT_DOSONLY,char32_t ***,__LIBCCALL,__p___Uinitenv,
 #define _countof(a) __COMPILER_LENOF(a)
 #endif /* !_countof */
 
-#if __SIZEOF_LONG_LONG__ == 8
+#ifdef _MSC_VER
+extern __ATTR_CONST __INT64_TYPE__ (__LIBCCALL _abs64)(__INT64_TYPE__ __x);
+#pragma intrinsic(_abs64)
+#elif __SIZEOF_LONG_LONG__ == 8
 __REDIRECT_NOTHROW(__LIBC,__ATTR_CONST,__INT64_TYPE__,__LIBCCALL,_abs64,(__INT64_TYPE__ __x),llabs,(__x))
 #elif __SIZEOF_LONG__ == 8
 __REDIRECT_NOTHROW(__LIBC,__ATTR_CONST,__INT64_TYPE__,__LIBCCALL,_abs64,(__INT64_TYPE__ __x),labs,(__x))
@@ -1082,8 +1085,8 @@ __LOCAL __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __l
 #endif /* !__CRT_DOS */
 __REDIRECT(__LIBC,,__INT64_TYPE__ ,__LIBCCALL,_strtoi64,(char const *__restrict __nptr, char **__restrict __endptr, int __radix),strtoll,(__nptr,__endptr,__radix))
 __REDIRECT(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64,(char const *__restrict __nptr, char **__restrict __endptr, int __radix),strtoull,(__nptr,__endptr,__radix))
-__REDIRECT2(__LIBC,,__INT64_TYPE__ ,__LIBCCALL,_strtoi64_l, (char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t __locale),strtoll_l,_strtoll_l,(__nptr,__endptr,__radix))
-__REDIRECT2(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64_l,(char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t __locale),strtoull_l,_strtoull_l,(__nptr,__endptr,__radix))
+__REDIRECT2(__LIBC,,__INT64_TYPE__ ,__LIBCCALL,_strtoi64_l, (char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t __locale),strtoll_l,_strtoll_l,(__nptr,__endptr,__radix,__locale))
+__REDIRECT2(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_strtoui64_l,(char const *__restrict __nptr, char **__restrict __endptr, int __radix, __locale_t __locale),strtoull_l,_strtoull_l,(__nptr,__endptr,__radix,__locale))
 #else
 __LIBC __INT64_TYPE__ (__LIBCCALL _atoi64)(char const *__restrict __nptr);
 __LIBC __INT64_TYPE__ (__LIBCCALL _atoi64_l)(char const *__restrict __nptr, __locale_t __locale);
@@ -1316,7 +1319,7 @@ __REDIRECT2(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wcstoi64_l,(wchar_t const *__rest
 __REDIRECT2(__LIBC,,__UINT64_TYPE__,__LIBCCALL,_wcstoui64_l,(wchar_t const *__restrict __s , wchar_t **__pend, int __radix, __locale_t __locale),wcstoull_l,_wcstoull_l,(__s,__pend,__radix,__locale))
 #ifdef __CRT_DOS
 __REDIRECT2(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wtoi64,(wchar_t const *__restrict __s),wtoll,_wtoll,(__s))
-__REDIRECT2(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wtoi64_l,(wchar_t const *__restrict __s, __locale_t __locale),wtoll_l,_wtoll_l,(__s))
+__REDIRECT2(__LIBC,,__INT64_TYPE__,__LIBCCALL,_wtoi64_l,(wchar_t const *__restrict __s, __locale_t __locale),wtoll_l,_wtoll_l,(__s,__locale))
 #else /* __CRT_DOS */
 __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64)(wchar_t const *__restrict __s) { return _wcstoi64(__s,0,10); }
 __LOCAL __INT64_TYPE__ (__LIBCCALL _wtoi64_l)(wchar_t const *__restrict __s, __locale_t __locale) { return _wcstoi64_l(__s,0,10,__locale); }
@@ -1396,30 +1399,21 @@ __LIBC __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotr)(unsigned lon
 __SYSDECL_END
 #include <bits/rotate.h>
 __SYSDECL_BEGIN
-#ifdef __NAMESPACE_INT_CONTAINS_ROT
-__NAMESPACE_INT_USING(_rotl)
-__NAMESPACE_INT_USING(_rotr)
-#elif defined(__WINDOWS_HOST__)
+#ifdef __WINDOWS_HOST__
 extern unsigned int (__LIBCCALL _rotl)(unsigned int __val, int __shift);
 extern unsigned int (__LIBCCALL _rotr)(unsigned int __val, int __shift);
 #else
 __LOCAL __ATTR_CONST unsigned int __NOTHROW((__LIBCCALL _rotl)(unsigned int __val, int __shift)) { return __rol_32(__val,__shift); }
 __LOCAL __ATTR_CONST unsigned int __NOTHROW((__LIBCCALL _rotr)(unsigned int __val, int __shift)) { return __ror_32(__val,__shift); }
 #endif
-#ifdef __NAMESPACE_INT_CONTAINS_ROT64
-__NAMESPACE_INT_USING(_rotl64)
-__NAMESPACE_INT_USING(_rotr64)
-#elif defined(__WINDOWS_HOST__)
+#ifdef __WINDOWS_HOST__
 extern unsigned long long (__cdecl _rotl64)(unsigned long long __val, int __shift);
 extern unsigned long long (__cdecl _rotr64)(unsigned long long __val, int __shift);
 #else
 __LOCAL __ATTR_CONST __UINT64_TYPE__ __NOTHROW((__LIBCCALL _rotl64)(__UINT64_TYPE__ __val, int __shift)) { return __rol_64(__val,__shift); }
 __LOCAL __ATTR_CONST __UINT64_TYPE__ __NOTHROW((__LIBCCALL _rotr64)(__UINT64_TYPE__ __val, int __shift)) { return __ror_64(__val,__shift); }
 #endif
-#ifdef __NAMESPACE_INT_CONTAINS_ROTL
-__LOCAL __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotl)(unsigned long int __val, int __shift)) { return __rol_32(__val,__shift); }
-__LOCAL __ATTR_CONST unsigned long int __NOTHROW((__LIBCCALL _lrotr)(unsigned long int __val, int __shift)) { return __ror_32(__val,__shift); }
-#elif defined(__WINDOWS_HOST__)
+#ifdef __WINDOWS_HOST__
 extern unsigned long int (__LIBCCALL _lrotl)(unsigned long int __val, int __shift);
 extern unsigned long int (__LIBCCALL _lrotr)(unsigned long int __val, int __shift);
 #else

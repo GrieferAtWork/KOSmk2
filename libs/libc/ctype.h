@@ -119,7 +119,7 @@ __NAMESPACE_STD_END
 #endif /* !__std_wctype_t_defined */
 #ifndef __wctype_t_defined
 #define __wctype_t_defined 1
-__NAMESPACE_STD_USING(wctype_t)
+typedef __WCTYPE_TYPE__ wctype_t;
 #endif /* !__wctype_t_defined */
 
 #ifndef __wctrans_t_defined

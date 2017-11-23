@@ -106,7 +106,7 @@ __NAMESPACE_STD_USING(towctrans)
 #ifdef __USE_XOPEN2K8
 #ifndef __wctype_t_defined
 #define __wctype_t_defined 1
-__NAMESPACE_STD_USING(wctype_t)
+typedef __WCTYPE_TYPE__ wctype_t;
 #endif /* !__wctype_t_defined */
 
 __REDIRECT_IFDOS_NOTHROW(__LIBC,__WUNUSED,int,__LIBCCALL,iswalnum_l,(wint_t __wc, __locale_t __locale),_iswalnum_l,(__wc,__locale))

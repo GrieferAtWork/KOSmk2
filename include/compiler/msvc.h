@@ -168,7 +168,7 @@
 #define __NO_ATTR_TRANSPARENT_UNION 1
 #define __ATTR_TRANSPARENT_UNION    /* nothing */
 #define __NO_XBLOCK              1
-#ifdef _M_X64
+#if defined(_M_X64) || 1
 /* For some reason, the __LINE__ == -1 trick doesn't work on x86-64... */
 #   define __IF0                 __pragma(warning(suppress: 4127)) if(0)
 #   define __IF1                 __pragma(warning(suppress: 4127)) if(0)
@@ -341,6 +341,11 @@ extern void (__cdecl __va_start)(__builtin_va_list *, ...);
 /* Suppress warnings caused by C-mode redirections in system headers. */
 #define __SYSDECL_BEGIN __DECL_BEGIN __REDIRECT_WSUPPRESS_BEGIN
 #define __SYSDECL_END   __REDIRECT_WSUPPRESS_END __DECL_END
+#else
+/* Disable some warnings that are caused by function redirections in system headers. */
+/* Suppress warnings caused by C-mode redirections in system headers. */
+#define __SYSDECL_BEGIN __DECL_BEGIN __pragma(warning(push)) __pragma(warning(disable: /* Unnamed union */4201))
+#define __SYSDECL_END   __pragma(warning(pop)) __DECL_END
 #endif
 
 

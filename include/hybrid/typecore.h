@@ -505,7 +505,14 @@
 #endif
 #endif /* __WINT_MAX__ */
 #ifndef __SIZEOF_WINT_T__
+#if defined(__CYGWIN__) || defined(__CYGWIN32__) || \
+    defined(__MINGW32__) || defined(WIN32) || defined(_WIN32) || \
+    defined(WIN64) || defined(_WIN64)
+#   define __SIZEOF_WINT_T__ 2
+#   define __WINT_UNSIGNED__ 1
+#else
 #   define __SIZEOF_WINT_T__ __SIZEOF_INT__
+#endif
 #endif /* !__SIZEOF_WINT_T__ */
 #endif /* !__SIZEOF_WINT_T__ */
 #else /* !__SIZEOF_WINT_T__ */
@@ -825,7 +832,15 @@
 #endif
 #endif
 #ifndef __WCTYPE_TYPE__
-#define __WCTYPE_TYPE__   __ULONGPTR_TYPE__
+#if defined(__CYGWIN__) || defined(__CYGWIN32__) || \
+    defined(__MINGW32__) || defined(WIN32) || defined(_WIN32) || \
+    defined(WIN64) || defined(_WIN64)
+#   define __WCTYPE_TYPE__      __UINT16_TYPE__
+#   define __SIZEOF_WCTYPE_T__  2
+#else
+#   define __WCTYPE_TYPE__      __ULONGPTR_TYPE__
+#   define __SIZEOF_WCTYPE_T__  __SIZEOF_POINTER__
+#endif
 #endif /* !__WCTYPE_TYPE__ */
 #ifndef __CHAR16_TYPE__
 #define __CHAR16_TYPE__ __UINT16_TYPE__

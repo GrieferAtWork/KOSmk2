@@ -35,10 +35,22 @@ __SYSDECL_BEGIN
 #define _STRUCT_TIMEVAL 1
 #ifndef __timeval_defined
 #define __timeval_defined 1
+#ifdef __WINDOWS_HOST__
+#ifndef _WINSOCKAPI_
+#define _WINSOCKAPI_ 1
+/* Windows unconditionally defines this in <winsock.h> * (Furthermore as incompatible...),
+ * so we must fix that by not defining it when `<winsock.h>' was already included. */
 struct timeval {
     __time_t      tv_sec;  /*< Seconds. */
     __suseconds_t tv_usec; /*< Microseconds. */
 };
+#endif /* !_WINSOCKAPI_ */
+#else
+struct timeval {
+    __time_t      tv_sec;  /*< Seconds. */
+    __suseconds_t tv_usec; /*< Microseconds. */
+};
+#endif
 #endif /* !__timeval_defined */
 #endif /* !_STRUCT_TIMEVAL */
 

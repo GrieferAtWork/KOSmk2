@@ -457,6 +457,21 @@
 #endif
 #endif
 
+#undef __USE_KOS_STDEXT
+#if defined(__USE_KXS) && !defined(__GNUC__) && \
+    defined(__CRT_KOS) && (__SIZEOF_POINTER__ == __SIZEOF_INT__ || \
+  (!defined(__DOS_COMPAT__) && !defined(__CYG_COMPAT__) && !defined(__GLC_COMPAT__)))
+/* KOS offers extensions for ~fixing~ some STD-C functions,
+ * such as having printf() return `ssize_t' instead of `int',
+ * the logic here being that `printf()' returns the number
+ * of printed characters, which depends on `strlen(format)',
+ * which in turn evaluates to `size_t'.
+ * >> This extension is disabled in compatibility mode, or when
+ *    GCC is being used (which will otherwise complain about
+ *    non-conforming builtin function prototypes). */
+#define __USE_KOS_STDEXT 1
+#endif
+
 #if defined(__KOS_CRT) || \
     defined(_KOS_PRINTF_SOURCE) || \
     defined(__USE_KXS)

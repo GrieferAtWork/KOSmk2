@@ -214,7 +214,7 @@ __LIBC int (__LIBCCALL fputc)(int __ch, __FILE *__stream);
 __LIBC int (__LIBCCALL putc)(int __ch, __FILE *__stream);
 __LIBC int (__LIBCCALL putchar)(int __ch);
 
-#ifdef __USE_KOS
+#ifdef __USE_KOS_STDEXT
 #if __SIZEOF_SIZE_T__ == __SIZEOF_INT__
 __LIBC __WUNUSED char *(__LIBCCALL fgets)(char *__restrict __buf, size_t __n, __FILE *__restrict __stream);
 #else /* __SIZEOF_SIZE_T__ == __SIZEOF_INT__ */
@@ -222,11 +222,11 @@ __REDIRECT(__LIBC,__WUNUSED,char *,__LIBCCALL,fgets,(char *__restrict __buf, siz
 #endif /* __SIZEOF_SIZE_T__ != __SIZEOF_INT__ */
 __LIBC __ssize_t (__LIBCCALL fputs)(char const *__restrict __buf, __FILE *__restrict __stream);
 __LIBC __ssize_t (__LIBCCALL puts)(char const *__restrict __str);
-#else /* __USE_KOS */
+#else /* __USE_KOS_STDEXT */
 __LIBC __WUNUSED char *(__LIBCCALL fgets)(char *__restrict __buf, int __n, __FILE *__restrict __stream);
 __LIBC int (__LIBCCALL fputs)(char const *__restrict __str, __FILE *__restrict __stream);
 __LIBC int (__LIBCCALL puts)(char const *__restrict __str);
-#endif /* !__USE_KOS */
+#endif /* !__USE_KOS_STDEXT */
 __LIBC int (__LIBCCALL ungetc)(int __ch, __FILE *__restrict __stream);
 __LIBC __WUNUSED size_t (__LIBCCALL fread)(void *__restrict __buf, size_t __size, size_t __n, __FILE *__restrict __stream);
 __LIBC size_t (__LIBCCALL fwrite)(void const *__restrict __buf, size_t __size, size_t __n, __FILE *__restrict __stream);
@@ -244,7 +244,7 @@ __REDIRECT_UFS_FUNCn(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,fopen,(char const *__r
 __REDIRECT_UFS_FUNCn(__LIBC,__WUNUSED,__FILE *,__LIBCCALL,freopen,(char const *__restrict __filename, char const *__restrict __modes, __FILE *__restrict __stream),freopen,(__filename,__modes,__stream))
 __REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,fgetpos,(__FILE *__restrict __stream, fpos_t *__restrict __pos),fgetpos,(__stream,__pos))
 __REDIRECT_FS_FUNC(__LIBC,,int,__LIBCCALL,fsetpos,(__FILE *__restrict __stream, fpos_t const *__restrict __pos),fsetpos,(__stream,__pos))
-#ifdef __USE_KOS
+#ifdef __USE_KOS_STDEXT
 __LIBC __ATTR_LIBC_PRINTF(1,2) __ssize_t (__ATTR_CDECL printf)(char const *__restrict __format, ...);
 __LIBC __ATTR_LIBC_PRINTF(2,3) __ssize_t (__ATTR_CDECL fprintf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
 __LIBC __ATTR_LIBC_PRINTF(1,0) __ssize_t (__LIBCCALL vprintf)(char const *__restrict __format, __builtin_va_list __args);
@@ -255,7 +255,7 @@ __LIBC __ATTR_LIBC_SCANF(1,2) __WUNUSED __size_t (__ATTR_CDECL scanf)(char const
 __LIBC __ATTR_LIBC_SCANF(2,0) __WUNUSED __size_t (__LIBCCALL vfscanf)(__FILE *__restrict __stream, char const *__restrict __format, __builtin_va_list __args);
 __LIBC __ATTR_LIBC_SCANF(1,0) __WUNUSED __size_t (__LIBCCALL vscanf)(char const *__restrict __format, __builtin_va_list __args);
 #endif /* __USE_ISOC99 || __USE_DOS */
-#else /* __USE_KOS */
+#else /* __USE_KOS_STDEXT */
 __LIBC __ATTR_LIBC_PRINTF(1,2) int (__ATTR_CDECL printf)(char const *__restrict __format, ...);
 __LIBC __ATTR_LIBC_PRINTF(2,3) int (__ATTR_CDECL fprintf)(__FILE *__restrict __stream, char const *__restrict __format, ...);
 __LIBC __ATTR_LIBC_PRINTF(1,0) int (__LIBCCALL vprintf)(char const *__restrict __format, __builtin_va_list __args);
@@ -266,7 +266,7 @@ __LIBC __ATTR_LIBC_SCANF(1,2) __WUNUSED int (__ATTR_CDECL scanf)(char const *__r
 __LIBC __ATTR_LIBC_SCANF(2,0) __WUNUSED int (__LIBCCALL vfscanf)(__FILE *__restrict __stream, char const *__restrict __format, __builtin_va_list __args);
 __LIBC __ATTR_LIBC_SCANF(1,0) __WUNUSED int (__LIBCCALL vscanf)(char const *__restrict __format, __builtin_va_list __args);
 #endif /* __USE_ISOC99 || __USE_DOS */
-#endif /* !__USE_KOS */
+#endif /* !__USE_KOS_STDEXT */
 #if !defined(__USE_ISOC11) || \
     (defined(__cplusplus) && __cplusplus <= 201103L)
 __LIBC __WUNUSED __ATTR_DEPRECATED("No buffer size checks") char *(__LIBCCALL gets)(char *__restrict __buf);

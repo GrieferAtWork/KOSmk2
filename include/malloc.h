@@ -42,11 +42,11 @@ typedef __SIZE_TYPE__ size_t;
  *  - `realloc(p,0)' does NOT act as `free(p)', but return some small, non-empty block of memory.
  *  - `free()' never modifies the currently set value of `errno', even when an underlying `munmap()' fails.
  *  - Any allocation function failing in libc will set `errno' to `ENOMEM' */
-#ifndef __malloc_stdlib_defined
+#ifndef __malloc_calloc_defined
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1)) __ATTR_MALLOC void *(__LIBCCALL malloc)(size_t __n_bytes);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((1,2)) __ATTR_MALLOC void *(__LIBCCALL calloc)(size_t __count, size_t __n_bytes);
 __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) void *(__LIBCCALL realloc)(void *__restrict __mallptr, size_t __n_bytes);
-#endif /* !__malloc_stdlib_defined */
+#endif /* !__malloc_calloc_defined */
 __REDIRECT_IFDOS(__LIBC,__SAFE __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)),void *,__LIBCCALL,realloc_in_place,(void *__restrict __mallptr, size_t __n_bytes),_expand,(__mallptr,__n_bytes))
 #ifdef __CRT_GLC
 __LIBC __PORT_NODOS __SAFE __WUNUSED __ATTR_ALLOC_ALIGN(1) __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memalign)(size_t __alignment, size_t __n_bytes);
@@ -65,20 +65,20 @@ __LIBC __PORT_NODOS __SAFE __NONNULL((1)) int (__LIBCCALL posix_memalign)(void *
 #define M_GRANULARITY        (-2)
 
 #ifdef __KERNEL__
-#ifndef __malloc_stdlib_defined
-#define __malloc_stdlib_defined 1
+#ifndef __malloc_calloc_defined
+#define __malloc_calloc_defined 1
 __REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,free,(void *__restrict __mallptr),kfree,(__mallptr))
-#endif /* !__malloc_stdlib_defined */
+#endif /* !__malloc_calloc_defined */
 #ifndef __cfree_defined
 #define __cfree_defined 1
 __REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,cfree,(void *__restrict __mallptr),kfree,(__mallptr))
 #endif /* !__cfree_defined */
 __REDIRECT(__LIBC,__SAFE __WUNUSED,size_t,__LIBCCALL,malloc_usable_size,(void *__restrict __mallptr),kmalloc_usable_size,(__mallptr))
 #else /* __KERNEL__ */
-#ifndef __malloc_stdlib_defined
-#define __malloc_stdlib_defined 1
+#ifndef __malloc_calloc_defined
+#define __malloc_calloc_defined 1
 __LIBC __SAFE void (__LIBCCALL free)(void *__restrict __mallptr);
-#endif /* !__malloc_stdlib_defined */
+#endif /* !__malloc_calloc_defined */
 #ifndef __cfree_defined
 #define __cfree_defined 1
 __REDIRECT_VOID(__LIBC,__SAFE,__LIBCCALL,cfree,(void *__restrict __mallptr),free,(__mallptr))
@@ -118,12 +118,8 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL m
 __SYSDECL_END
 #include <hybrid/string.h>
 __SYSDECL_BEGIN
-__REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC,
-           void *,__LIBCCALL,__memdup,(void const *__restrict __ptr, size_t __n_bytes),memdup,(__ptr,__n_bytes))
-__REDIRECT(__LIBC,__SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC,
-           void *,__LIBCCALL,__memcdup,(void const *__restrict __ptr, int __needle, size_t __n_bytes),memcdup,(__ptr,__needle,__n_bytes))
-__LOCAL void *(__LIBCCALL __memdup)(void const *__restrict __ptr, size_t __n_bytes) { void *__result = malloc(__n_bytes); if (__result) __hybrid_memcpy(__result,__ptr,__n_bytes); return __result; }
-__LOCAL void *(__LIBCCALL __memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) { if (__n_bytes) { void const *__endaddr = __hybrid_memchr(__ptr,__needle,__n_bytes-1); if (__endaddr) __n_bytes = ((__UINTPTR_TYPE__)__endaddr-(__UINTPTR_TYPE__)__ptr)+1; } return __memdup(__ptr,__size); }
+__LOCAL __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL __memdup)(void const *__restrict __ptr, size_t __n_bytes) { void *__result = malloc(__n_bytes); if (__result) __hybrid_memcpy(__result,__ptr,__n_bytes); return __result; }
+__LOCAL __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL __memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) { if (__n_bytes) { void const *__endaddr = __hybrid_memchr(__ptr,__needle,__n_bytes-1); if (__endaddr) __n_bytes = ((__UINTPTR_TYPE__)__endaddr-(__UINTPTR_TYPE__)__ptr)+1; } return __memdup(__ptr,__n_bytes); }
 #ifdef __USE_KOS
 __LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memdup)(void const *__restrict __ptr, size_t __n_bytes) { return (__memdup)(__ptr,__n_bytes) }
 __LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) { return (__memcdup)(__ptr,__n_bytes) }
@@ -513,10 +509,10 @@ __LIBC __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL _
 #else /* __USE_DEBUG != 0 */
 #ifndef __malloc_calloc_d_defined
 #define __malloc_calloc_d_defined 1
-#   define _malloc_d(n_bytes,...)                           malloc(n_bytes)
-#   define _calloc_d(count,n_bytes,...)                     calloc(count,n_bytes)
-#   define _realloc_d(ptr,n_bytes,...)                      realloc(ptr,n_bytes)
-#   define _free_d(ptr,...)                                 free(ptr)
+#   define _malloc_d(n_bytes,...)                           __NAMESPACE_STD_SYM malloc(n_bytes)
+#   define _calloc_d(count,n_bytes,...)                     __NAMESPACE_STD_SYM calloc(count,n_bytes)
+#   define _realloc_d(ptr,n_bytes,...)                      __NAMESPACE_STD_SYM realloc(ptr,n_bytes)
+#   define _free_d(ptr,...)                                 __NAMESPACE_STD_SYM free(ptr)
 #endif /* !__malloc_calloc_d_defined */
 #ifndef __cfree_d_defined
 #define __cfree_d_defined 1
