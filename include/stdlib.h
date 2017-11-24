@@ -927,10 +927,18 @@ __LIBC __UINT32_TYPE__ *__NOTHROW((__LIBCCALL __doserrno)(void));
 __LIBC errno_t __NOTHROW((__LIBCCALL _get_doserrno)(__UINT32_TYPE__ *__perr));
 __LIBC errno_t __NOTHROW((__LIBCCALL _set_doserrno)(__UINT32_TYPE__ __err));
 
+#ifndef ___sys_errlist_defined
+#define ___sys_errlist_defined 1
+#if defined(__CYG_COMPAT__) || defined(__GLC_COMPAT__)
+ __LIBC char const *const _sys_errlist[];
+ __LIBC int               _sys_nerr;
+#else
 __LIBC char **__NOTHROW((__LIBCCALL __sys_errlist)(void));
 __LIBC int *__NOTHROW((__LIBCCALL __sys_nerr)(void));
-#define _sys_errlist (__sys_errlist())
+#define _sys_errlist (*__sys_errlist())
 #define _sys_nerr    (*__sys_nerr())
+#endif
+#endif /* !___sys_errlist_defined */
 
 #undef _environ
 #ifdef __DOS_COMPAT__

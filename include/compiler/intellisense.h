@@ -71,19 +71,28 @@
 #define __STDC__ 1
 #ifdef __KOS__
 /* Hosted KOS development mode. */
-#   define __kos    1
-#   define __kos__  1
-#   define __unix   1
-#   define __unix__ 1
-#   define __ELF__  1
+#   define __kos      1
+#   define __kos__    1
+#   define __unix     1
+#   define __unix__   1
+#   define __ELF__    1
 #elif defined(_WIN32) || defined(WIN32) || \
       defined(_WIN64) || defined(WIN64)
 /* Assume hosted CYGWIN development mode.
  * NOTE: Hosted MSVC mode doesn't need be handled here, as in
  *       that case, this header should not be included at all! */
+#   define unix       1
+#   define __unix     1
+#   define __unix__   1
 #   define __CYGWIN__ 1
 #else
-/* XXX: Hosted GLibC development mode? */
+/* Hosted GLibC development mode. */
+#   define unix       1
+#   define __unix     1
+#   define __unix__   1
+#   define linux      1
+#   define __linux    1
+#   define __linux__  1
 #endif
 
 /* Get rid of MSVC's predefined macros */

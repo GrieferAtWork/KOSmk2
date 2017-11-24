@@ -107,6 +107,7 @@
 #define PP_PRIVATE_MUL8     __PP_PRIVATE_MUL8
 #define PP_MUL8             __PP_MUL8
 #define STATIC_ASSERT       __STATIC_ASSERT
+#define STATIC_ASSERT_MSG   __STATIC_ASSERT_MSG
 
 #define NONNULL             __NONNULL
 #define WUNUSED             __WUNUSED

@@ -372,7 +372,9 @@ __NAMESPACE_STD_USING(strrchr)
     (defined(__CYG_COMPAT__) || defined(__GLC_COMPAT__))
 /* GLibC/Cygwin compatibility (NOTE: Doesn't work in KOS) */
 __LOCAL __WUNUSED __ATTR_CONST char const *(__LIBCCALL strerror_s)(int __errnum) {
+#ifndef ___sys_errlist_defined
  __LIBC char const *const _sys_errlist[]; __LIBC int _sys_nerr;
+#endif
  return (unsigned int)__errnum < (unsigned int)_sys_nerr ? _sys_errlist[__errnum] : __NULLPTR;
 }
 #elif !defined(__CRT_KOS) && defined(__DOS_COMPAT__)
@@ -1244,7 +1246,7 @@ __LOCAL __ATTR_LIBC_PRINTF(2,0) char *(__LIBCCALL __forward_vsprintf)(char *__re
   })
 #endif /* !__NO_XBLOCK */
 
-#elif defined(__GLC_COMPAT__)
+#elif defined(__GLC_COMPAT__) || defined(__CYG_COMPAT__)
 __SYSDECL_END
 #include <hybrid/alloca.h>
 __SYSDECL_BEGIN

@@ -1164,7 +1164,7 @@ __LIBC __NONNULL((1,3)) wchar_t *(__LIBCCALL fgetws)(wchar_t *__restrict __buf, 
 #define fgetws(buf,n,stream) fgetws(buf,(int)(n),stream)
 #else /* __NO_ASMNAME */
 __REDIRECT(__LIBC,,wchar_t *,__LIBCCALL,__pe_fgetws,(wchar_t *__restrict __buf, int __n, __FILE *__restrict __stream),fgetws,(__buf,__n,__stream))
-__LOCAL __NONNULL((1,3)) wchar_t *(__LIBCCALL fgetws)(wchar_t *__restrict __buf, size_t __n, __FILE *__restrict __stream) { return __pe_fgetws(__ws,(int)__n,__stream); }
+__LOCAL __NONNULL((1,3)) wchar_t *(__LIBCCALL fgetws)(wchar_t *__restrict __buf, size_t __n, __FILE *__restrict __stream) { return __pe_fgetws(__buf,(int)__n,__stream); }
 #endif /* !__NO_ASMNAME */
 #else /* ... */
 __REDIRECT(__LIBC,__NONNULL((1,3)),wchar_t *,__LIBCCALL,fgetws,(wchar_t *__restrict __buf, size_t __n, __FILE *__restrict __stream),fgetws_sz,(__buf,__n,__stream))

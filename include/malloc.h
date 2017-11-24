@@ -31,6 +31,12 @@ __SYSDECL_BEGIN
 typedef __SIZE_TYPE__ size_t;
 #endif
 
+#ifdef __CRT_KOS
+/* malloc behavior attributes. */
+#define __MALLOC_ZERO_IS_NONNULL  1
+#define __REALLOC_ZERO_IS_NONNULL 1
+#endif
+
 /* Malloc implementation notes:
  *  - libk use `kmalloc()' from `/src/include/kernel/malloc.h'
  *    All allocation functions will pass `GFP_NORMAL' for flags,
@@ -121,8 +127,8 @@ __SYSDECL_BEGIN
 __LOCAL __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL __memdup)(void const *__restrict __ptr, size_t __n_bytes) { void *__result = malloc(__n_bytes); if (__result) __hybrid_memcpy(__result,__ptr,__n_bytes); return __result; }
 __LOCAL __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL __memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) { if (__n_bytes) { void const *__endaddr = __hybrid_memchr(__ptr,__needle,__n_bytes-1); if (__endaddr) __n_bytes = ((__UINTPTR_TYPE__)__endaddr-(__UINTPTR_TYPE__)__ptr)+1; } return __memdup(__ptr,__n_bytes); }
 #ifdef __USE_KOS
-__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memdup)(void const *__restrict __ptr, size_t __n_bytes) { return (__memdup)(__ptr,__n_bytes) }
-__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) { return (__memcdup)(__ptr,__n_bytes) }
+__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_ALLOC_SIZE((2)) __ATTR_MALLOC void *(__LIBCCALL memdup)(void const *__restrict __ptr, size_t __n_bytes) { return (__memdup)(__ptr,__n_bytes); }
+__LOCAL __SAFE __WUNUSED __MALL_DEFAULT_ALIGNED __ATTR_MALLOC void *(__LIBCCALL memcdup)(void const *__restrict __ptr, int __needle, size_t __n_bytes) { return (__memcdup)(__ptr,__needle,__n_bytes); }
 #endif /* __USE_KOS */
 #endif /* !__CRT_KOS */
 
